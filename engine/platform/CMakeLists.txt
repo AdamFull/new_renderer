@@ -1,0 +1,12 @@
+cmake_minimum_required(VERSION 3.18.0)
+project(platform_specific)
+
+set(PLATFORM_SOURCES "")
+set(PLATFORM_HEADERS "")
+
+if(WIN32)
+set(PLATFORM_SOURCES "${PLATFORM_SOURCES} ${CMAKE_CURRENT_SOURCE_DIR}/window/WindowWin32.cpp")
+set(PLATFORM_HEADERS "${PLATFORM_SOURCES} ${CMAKE_CURRENT_SOURCE_DIR}/window/WindowWin32.h")
+endif()
+
+add_library(${PROJECT_NAME} STATIC ${PLATFORM_SOURCES} ${PLATFORM_HEADERS})
