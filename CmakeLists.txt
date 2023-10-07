@@ -30,8 +30,20 @@ set(SPIRV_CROSS_CLI OFF CACHE BOOL "Build the CLI binary. Requires SPIRV_CROSS_S
 set(SPIRV_CROSS_ENABLE_TESTS OFF CACHE BOOL "Enable SPIRV-Cross tests." FORCE)
 set(SPIRV_CROSS_ENABLE_UTIL OFF CACHE BOOL "Enable util module support." FORCE)
 
+if(WIN32)
+add_compile_definitions("PLATFORM_WIN32")
+endif()
+
+add_subdirectory(libraries/utllib)
 add_subdirectory(engine)
 
 add_executable(engine main.cpp)
 
-target_link_libraries(engine PRIVATE application)
+target_include_directories(engine 
+	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}"
+)
+
+target_link_libraries(engine 
+	PRIVATE application
+	PRIVATE utility_lib
+)

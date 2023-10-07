@@ -1,0 +1,85 @@
+#pragma once
+
+#include <vulkan/vulkan.hpp>
+#include <unordered_map>
+#include <vector>
+#include <string>
+#include <optional>
+
+namespace engine
+{
+	namespace render
+	{
+		namespace vulkan
+		{
+			struct FVkReflectionUniform
+			{
+				uint32_t set{ 0u };
+				uint32_t binding{ 0u };
+				size_t offset{ 0ull };
+				size_t size{ 0ull };
+				vk::ShaderStageFlags stageFlags{ vk::ShaderStageFlagBits::eAll };
+				vk::DescriptorType descriptorType{};
+			};
+
+			struct FVkReflectionUniformBlock
+			{
+				uint32_t set{ 0u };
+				uint32_t binding{ 0u };
+				size_t size{ 0ull };
+				vk::ShaderStageFlags stageFlags{ vk::ShaderStageFlagBits::eAll };
+				vk::DescriptorType descriptorType;
+				std::unordered_map<std::string, FVkReflectionUniform> uniforms{};
+			};
+
+			struct FVkReflectionPushConstantBlock
+			{
+				size_t size{ 0ull };
+				vk::ShaderStageFlags stageFlags{ vk::ShaderStageFlagBits::eAll };
+				std::unordered_map<std::string, FVkReflectionUniform> uniforms{};
+			};
+
+			struct FVkReflectionSpecializationConstant
+			{
+				uint32_t constant_id{ 0u };
+				size_t size{ 0ull };
+				uint32_t offset{ 0u };
+				vk::ShaderStageFlags stageFlags{ vk::ShaderStageFlagBits::eAll };
+			};
+
+			struct FVkSpecializationConstantData
+			{
+				std::vector<vk::SpecializationMapEntry> entries{};
+				vk::SpecializationInfo info{};
+			};
+
+			struct FVkShaderReflectionData
+			{
+				std::vector<std::array<std::optional<uint32_t>, 3>> localSizes;
+				uint32_t executionModeInvocations{ 0 };
+				uint32_t executionModeOutputVertices{ 0 };
+
+				std::unordered_map<std::string, FVkReflectionUniform> uniforms;
+				std::unordered_map<std::string, FVkReflectionUniformBlock> uniformBlocks;
+				std::unordered_map<std::string, FVkReflectionPushConstantBlock> pushBlocks;
+				std::unordered_map<std::string, FVkReflectionSpecializationConstant> specializationConstants;
+
+				std::vector<char> specializationDataBuffer{};
+
+				std::unordered_map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>> descriptorSetLayoutBindings;
+				std::vector<vk::DescriptorPoolSize> descriptorPoolSizes;
+				std::unordered_map<vk::ShaderStageFlagBits, FVkSpecializationConstantData> specializationConstantStages{};
+			};
+
+			class CVkShaderReflectionBuilder
+			{
+			public:
+				void addShaderStage(vk::ShaderStageFlagBits shaderStage, const std::vector<uint32_t>& shaderCode);
+				const FVkShaderReflectionData& build();
+			private:
+				FVkShaderReflectionData reflectionData{};
+				std::vector<vk::ShaderStageFlagBits> shaderStages{};
+			};
+		}
+	}
+}

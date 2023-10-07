@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.18.0)
 project(VulkanMemoryAllocator)
 
-include_directories(${Vulkan_INCLUDE_DIR})
-
 option(VMA_STATIC_VULKAN_FUNCTIONS "Link statically with Vulkan API" OFF)
 option(VMA_DYNAMIC_VULKAN_FUNCTIONS "Fetch pointers to Vulkan functions internally (no static linking)" ON)
 option(VMA_DEBUG_ALWAYS_DEDICATED_MEMORY "Every allocation will have its own memory block" OFF)
@@ -37,6 +35,12 @@ set_target_properties(
     # Use C++14
     CXX_STANDARD 14
     CXX_STANDARD_REQUIRED ON
+)
+
+target_include_directories(${PROJECT_NAME}
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/vma"
+    PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/Vulkan-Headers/include"
 )
 
 if(${VMA_STATIC_VULKAN_FUNCTIONS})
