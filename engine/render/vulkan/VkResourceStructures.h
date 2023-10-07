@@ -283,11 +283,6 @@ namespace engine
 #endif
 			};
 
-			struct FVkShaderReflectionData
-			{
-
-			};
-
 			struct FVkShader
 			{
 				std::vector<vk::Pipeline> handles{};

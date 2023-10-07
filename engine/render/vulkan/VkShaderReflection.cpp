@@ -258,4 +258,6 @@ const FVkShaderReflectionData& CVkShaderReflectionBuilder::build()
         constants_data.info.dataSize = static_cast<uint32_t>(reflectionData.specializationDataBuffer.size());
         constants_data.info.pData = reflectionData.specializationDataBuffer.data();
     }
+
+    return reflectionData;
 }

@@ -6,6 +6,54 @@
 
 using namespace engine::render::vulkan;
 
+template<class _Ty>
+FRenderApiErrorInfo create_and_apply_shader_reflection_data(const std::unique_ptr<CVkRenderContext>& context, const _Ty& shader_ci, const FVkShaderReflectionData& reflection, std::vector<vk::PipelineShaderStageCreateInfo>& shader_stages, FVkShader& shader)
+{
+	// Apply specialization constants
+	for (auto& shader_stage : shader_stages)
+	{
+		auto found = reflection.specializationConstantStages.find(shader_stage.stage);
+		if (found != reflection.specializationConstantStages.end())
+			shader_stage.pSpecializationInfo = &found->second.info;
+	}
+
+	// Create descriptor set layouts
+	for (const auto& [set, layout_bindings] : reflection.descriptorSetLayoutBindings)
+	{
+		FVkDescriptorSetLayoutCreateInfo descriptor_set_layout_ci{};
+#ifndef BUILD_WITHOUT_DEBUGGIND
+		descriptor_set_layout_ci.name = std::format("{}: set #{}", shader_ci.name, set);
+#endif
+		descriptor_set_layout_ci.layoutBindings = layout_bindings; // TODO: may be send pointer to vector here?
+
+		auto& descriptor_set_Layout = shader.descriptorSetLayouts[set];
+		RETURN_WHEN_FAULT(context->createDescriptorSetLayout(descriptor_set_layout_ci, descriptor_set_Layout));
+	}
+
+	// Create pipeline layout
+	FVkPipelineLayoutCreateInfo layout_ci{};
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	layout_ci.name = shader_ci.name;
+#endif
+	// Send descriptor set layouts to create info
+	for (const auto& [set, descriptor_set_layout] : shader.descriptorSetLayouts)
+		layout_ci.descriptorSetLayouts.emplace_back(descriptor_set_layout);
+
+	// Prepare push blocks info
+	uint32_t current_offset{ 0u };
+	for (const auto& [name, block] : reflection.pushBlocks)
+	{
+		layout_ci.pushConstantRanges.emplace_back();
+		auto& push_constant_range = layout_ci.pushConstantRanges.back();
+		push_constant_range.stageFlags = block.stageFlags;
+		push_constant_range.offset = current_offset;
+		push_constant_range.size = static_cast<uint32_t>(block.size);
+		current_offset += push_constant_range.size;
+	}
+
+	return context->createPipelineLayout(layout_ci, shader.layout);
+}
+
 CVkRenderHandle::~CVkRenderHandle()
 {
 
@@ -192,10 +240,14 @@ FRenderApiErrorInfo CVkRenderHandle::createShader(const FVkGraphicsShaderCreateI
 	pipeline_ci.vertexAttributeDescriptions = shader_ci.vertexAttributeDescriptions;
 
 	// Create shader stages
+	uint32_t shader_index{ 0u };
 	for (const auto& [stage, code] : shader_ci.shaderStageCode)
 	{
 		FVkShaderModuleCreateInfo shader_module_ci{};
 		shader_module_ci.shaderCode = code;
+#ifndef BUILD_WITHOUT_DEBUGGIND
+		shader_module_ci.name = std::format("{} stage {} #{}", shader_ci.name, vk::to_string(stage), shader_index);
+#endif
 
 		shader.shaderModules.emplace_back();
 		auto& shader_module = shader.shaderModules.back();
@@ -208,53 +260,12 @@ FRenderApiErrorInfo CVkRenderHandle::createShader(const FVkGraphicsShaderCreateI
 		stage_ci.pName = shaderEntryPoint;
 
 		reflection_builder.addShaderStage(stage, code);
+		shader_index++;
 	}
 
 	auto& shader_reflection = reflection_builder.build();
 
-	// Apply specialization constants
-	for (auto& stage_ci : pipeline_ci.shaderStages)
-	{
-		auto found = shader_reflection.specializationConstantStages.find(stage_ci.stage);
-		if (found != shader_reflection.specializationConstantStages.end())
-			stage_ci.pSpecializationInfo = &found->second.info;
-	}
-
-	// Create descriptor set layouts
-	for (const auto& [set, layout_bindings] : shader_reflection.descriptorSetLayoutBindings)
-	{
-		FVkDescriptorSetLayoutCreateInfo descriptor_set_layout_ci{};
-#ifndef BUILD_WITHOUT_DEBUGGIND
-		descriptor_set_layout_ci.name = std::format("{}: set #{}", shader_ci.name, set);
-#endif
-		descriptor_set_layout_ci.layoutBindings = layout_bindings; // TODO: may be send pointer to vector here?
-
-		auto& descriptor_set_Layout = shader.descriptorSetLayouts[set];
-		RETURN_WHEN_FAULT(context->createDescriptorSetLayout(descriptor_set_layout_ci, descriptor_set_Layout));
-	}
-
-	// Create pipeline layout
-	FVkPipelineLayoutCreateInfo layout_ci{};
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	layout_ci.name = shader_ci.name;
-#endif
-	// Send descriptor set layouts to create info
-	for (const auto& [set, descriptor_set_layout] : shader.descriptorSetLayouts)
-		layout_ci.descriptorSetLayouts.emplace_back(descriptor_set_layout);
-
-	// Prepare push blocks info
-	uint32_t current_offset{ 0u };
-	for (const auto& [name, block] : shader_reflection.pushBlocks)
-	{
-		layout_ci.pushConstantRanges.emplace_back();
-		auto& push_constant_range = layout_ci.pushConstantRanges.back();
-		push_constant_range.stageFlags = block.stageFlags;
-		push_constant_range.offset = current_offset;
-		push_constant_range.size = static_cast<uint32_t>(block.size);
-		current_offset += push_constant_range.size;
-	}
-
-	RETURN_WHEN_FAULT(context->createPipelineLayout(layout_ci, shader.layout));
+	RETURN_WHEN_FAULT(create_and_apply_shader_reflection_data(context, shader_ci, shader_reflection, pipeline_ci.shaderStages, shader));
 
 	pipeline_ci.layout = shader.layout;
 
@@ -268,21 +279,53 @@ FRenderApiErrorInfo CVkRenderHandle::createShader(const FVkComputeShaderCreateIn
 {
 	const char* shaderEntryPoint{ "main" };
 
-	for (auto& code : shader_ci.shaderCode)
-	{
-		FVkComputePipelineCreateInfo pipeline_ci{};
+	CVkShaderReflectionBuilder reflection_builder{};
+	std::vector<vk::PipelineShaderStageCreateInfo> shader_stages{};
 
+	for (size_t idx = 0ull; idx < shader_ci.shaderCode.size(); ++idx)
+	{
+		auto& code = shader_ci.shaderCode.at(idx);
 		FVkShaderModuleCreateInfo shader_module_ci{};
 		shader_module_ci.shaderCode = code;
+#ifndef BUILD_WITHOUT_DEBUGGIND
+		shader_module_ci.name = std::format("{} stage {} #{}", shader_ci.name, vk::to_string(vk::ShaderStageFlagBits::eCompute), idx);
+#endif
 
 		shader.shaderModules.emplace_back();
 		auto& shader_module = shader.shaderModules.back();
 		RETURN_WHEN_FAULT(context->createShaderModule(shader_module_ci, shader_module));
 
-		pipeline_ci.shaderStage.stage = vk::ShaderStageFlagBits::eCompute;
-		pipeline_ci.shaderStage.module = shader_module;
-		pipeline_ci.shaderStage.pName = shaderEntryPoint;
+		shader_stages.emplace_back();
+		auto& stage = shader_stages.back();
+		stage.stage = vk::ShaderStageFlagBits::eCompute;
+		stage.module = shader_module;
+		stage.pName = shaderEntryPoint;
+
+		reflection_builder.addShaderStage(vk::ShaderStageFlagBits::eCompute, code);
 	}
+
+	auto& shader_reflection = reflection_builder.build();
+
+	RETURN_WHEN_FAULT(create_and_apply_shader_reflection_data(context, shader_ci, shader_reflection, shader_stages, shader));
+
+	FVkComputePipelineCreateInfo pipeline_ci{};
+	pipeline_ci.layout = shader.layout;
+
+	for (size_t idx = 0ull; idx < shader_stages.size(); ++idx)
+	{
+		auto& stage = shader_stages.at(idx);
+		pipeline_ci.shaderStage = stage;
+#ifndef BUILD_WITHOUT_DEBUGGIND
+		pipeline_ci.name = std::format("{} #{}", shader_ci.name, idx);
+#endif
+
+		shader.handles.emplace_back();
+		auto& pipeline = shader.handles.back();
+
+		RETURN_WHEN_FAULT(context->createPipeline(pipeline_ci, pipeline));
+	}
+
+	return make_api_error(vk::ObjectType::ePipeline, vk::Result::eSuccess);
 }
 
 void CVkRenderHandle::destroyShader(FVkShader& shader)
