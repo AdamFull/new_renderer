@@ -10,7 +10,8 @@ namespace engine
 		enum EWindowStateFlagBits : uint32_t
 		{
 			WINDOW_STATE_MINIMIZED_FLAG_BIT = 1 << 0,
-			WINDOW_STATE_RESIZED_FLAG_BIT = 1 << 1
+			WINDOW_STATE_MAXIMIZED_FLAG_BIT = 1 << 1,
+			WINDOW_STATE_RESIZED_FLAG_BIT = 1 << 2,
 		};
 
 		class CWindowWin32 : public IWindowInterface

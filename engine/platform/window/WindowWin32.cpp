@@ -17,24 +17,33 @@ LRESULT CALLBACK CWindowWin32::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, L
     {
         window->window_width = LOWORD(lParam);
         window->window_height = HIWORD(lParam);
-
-        switch (wParam) 
-        {
-        case SIZE_MINIMIZED: window->window_state |= WINDOW_STATE_MINIMIZED_FLAG_BIT; break;
-        case SIZE_MAXIMIZED: window->window_state &= ~WINDOW_STATE_MINIMIZED_FLAG_BIT; break;
-        case SIZE_RESTORED: window->window_state &= ~WINDOW_STATE_MINIMIZED_FLAG_BIT; break;
-        }
-
-        window->window_state |= WINDOW_STATE_RESIZED_FLAG_BIT;
-    } break;
-    case WM_SYSCOMMAND:
-    {
+    
         switch (wParam)
         {
-        case SC_MINIMIZE: window->window_state |= WINDOW_STATE_MINIMIZED_FLAG_BIT; break;
-        case SC_RESTORE: window->window_state &= ~WINDOW_STATE_MINIMIZED_FLAG_BIT; break;
+        case SIZE_MINIMIZED: {
+            window->window_state |= WINDOW_STATE_MINIMIZED_FLAG_BIT;
+            window->window_state &= ~WINDOW_STATE_MAXIMIZED_FLAG_BIT;
+        } break;
+        case SIZE_MAXIMIZED: { 
+            window->window_state |= WINDOW_STATE_MAXIMIZED_FLAG_BIT;
+            window->window_state &= ~WINDOW_STATE_MINIMIZED_FLAG_BIT;
+        } break;
+        case SIZE_RESTORED:  { 
+            window->window_state &= ~WINDOW_STATE_MINIMIZED_FLAG_BIT;
+        }break;
         }
+    
+        window->window_state |= WINDOW_STATE_RESIZED_FLAG_BIT;
     } break;
+    //case WM_SYSCOMMAND:
+    //{
+    //    switch (wParam)
+    //    {
+    //    case SC_MINIMIZE: { ShowWindow(hwnd, SW_MINIMIZE); } break;
+    //    case SC_MAXIMIZE: { ShowWindow(hwnd, SW_MAXIMIZE); } break;
+    //    case SC_RESTORE: { ShowWindow(hwnd, SW_RESTORE); } break;
+    //    }
+    //} break;
     case WM_DESTROY:
         PostQuitMessage(0);
         return 0;
@@ -82,7 +91,7 @@ void CWindowWin32::create(const FWindowCreateInfo& window_ci)
     }
 
     if (window_ci.flags & WINDOW_RESIZABLE_FLAG_BIT)
-        window_style_flags |= WS_THICKFRAME;
+        window_style_flags |= WS_TILEDWINDOW;
     if (window_ci.flags & WINDOW_VISIBLE_FLAG_BIT)
         window_style_flags |= WS_VISIBLE;
     if (window_ci.flags & WINDOW_DISABLED_FLAG_BIT)
@@ -118,14 +127,14 @@ void CWindowWin32::destroy()
 
 bool CWindowWin32::process()
 {
+    if (window_state & WINDOW_STATE_RESIZED_FLAG_BIT)
+        window_state &= ~WINDOW_STATE_RESIZED_FLAG_BIT;
+
     MSG msg = {};
     while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
     {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
-
-        if(window_state & WINDOW_STATE_RESIZED_FLAG_BIT)
-            window_state &= ~WINDOW_STATE_RESIZED_FLAG_BIT;
 
         if (msg.message == WM_QUIT)
             return false;
