@@ -1,6 +1,7 @@
 #pragma once
 
-#include "VkRenderContext.h"
+#include <VkRenderContext.h>
+#include <VkResourceContext.h>
 #include <interface/RenderInterface.h>
 
 namespace engine
@@ -16,7 +17,6 @@ namespace engine
 
 				void create(const FRenderContextCreateInfo& context_ci) override;
 
-				void syncGPUIdle() override;
 				void updateSurface(int32_t surface_width, int32_t surface_height) override;
 
 				void beginFrameCommandBuffers() override;
@@ -29,14 +29,27 @@ namespace engine
 				FRenderApiErrorInfo createShader(const FVkComputeShaderCreateInfo& shader_ci, FVkShader& shader);
 				void destroyShader(FVkShader& shader);
 
-				void uploadTextureData();
+				void beginRendering(const FVkCommandBuffer command_buffer, const FVkRenderingInfo& rendering_info);
+				void endRendering(const FVkCommandBuffer command_buffer, const FVkRenderingInfo& rendering_info);
+
+				void processMemoryBarriers(const FVkCommandBuffer& command_buffer, const FVkTranslationInfo& translation_info);
+				void processImageLayoutTranslation(const FVkCommandBuffer& command_buffer, const FVkImageTranslationInfo& image_translation_info);
+				void textureLayoutTranslation(const FVkCommandBuffer& command_buffer, FVkTexture& texture, const FVkTextureTranslationInfo& translation_info);
+
+				void draw();
 			private:
 				std::unique_ptr<CVkRenderContext> context{};
+				std::unique_ptr<CVkResourceContext> resources{};
 
 				FVkCommandBuffer commandBuffer{};
 				bool isFrameStarted{ false };
 
 				int32_t surface_width{}, surface_height{};
+
+				std::vector<resource_handle_t> swapchainTargets{};
+
+				// TEMPORARY. FOR TESTING
+				FVkShader testShader{};
 			};
 		}
 	}

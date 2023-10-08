@@ -174,7 +174,7 @@ void CVkRenderContext::destroyUnusedCommandPools()
 	{
 		for (auto it = pools.begin(); it != pools.end();)
 		{
-			if (it->second.use_count() <= 1)
+			if (it->second.use_count() < 1)
 			{
 				destroyCommandPool(it->second);
 				it = pools.erase(it);
@@ -435,7 +435,7 @@ FRenderApiErrorInfo CVkRenderContext::createPipeline(const FVkGraphicsPipelineCr
 	vertex_input_state.pVertexBindingDescriptions = pipeline_ci.vertexBindingDescriptions.data();
 
 	std::vector<vk::PipelineColorBlendAttachmentState> color_blend_attachment_states{};
-	for (uint32_t idx = 0u; idx < pipeline_ci.colorAttachmentCount; ++idx)
+	for (uint32_t idx = 0u; idx < pipeline_ci.colorAttachmentFormats.size(); ++idx)
 	{
 		color_blend_attachment_states.emplace_back();
 		auto& state = color_blend_attachment_states.back();
@@ -496,6 +496,13 @@ FRenderApiErrorInfo CVkRenderContext::createPipeline(const FVkGraphicsPipelineCr
 
 	auto enableTessellation = pipeline_ci.primitiveTopology == vk::PrimitiveTopology::ePatchList;
 
+	vk::PipelineRenderingCreateInfoKHR rendering_ci{};
+	rendering_ci.colorAttachmentCount = static_cast<uint32_t>(pipeline_ci.colorAttachmentFormats.size());
+	rendering_ci.pColorAttachmentFormats = pipeline_ci.colorAttachmentFormats.data();
+	//rendering_ci.depthAttachmentFormat = depth_format;
+	//if (is_depth_only_format(depth_format))
+	//	rendering_ci.stencilAttachmentFormat = depth_format;
+
 	vk::GraphicsPipelineCreateInfo graphics_pipeline_ci{};
 	graphics_pipeline_ci.stageCount = static_cast<uint32_t>(pipeline_ci.shaderStages.size());
 	graphics_pipeline_ci.pStages = pipeline_ci.shaderStages.data();
@@ -512,6 +519,7 @@ FRenderApiErrorInfo CVkRenderContext::createPipeline(const FVkGraphicsPipelineCr
 	graphics_pipeline_ci.basePipelineHandle = nullptr;
 	graphics_pipeline_ci.pDynamicState = &dynamic_state;
 	graphics_pipeline_ci.pTessellationState = (enableTessellation ? &tessellation_state : nullptr);
+	graphics_pipeline_ci.pNext = &rendering_ci;
 
 	vk::Result res = logicalDevice.handle.createGraphicsPipelines(pipelineCache, 1u, &graphics_pipeline_ci, allocationCallbacks, &pipeline);
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -605,7 +613,7 @@ vk::Result CVkRenderContext::present(FVkCommandBuffer& command_buffer)
 	vk::SwapchainKHR swap_chains[] = { swapchain.handle };
 	present_info.swapchainCount = 1;
 	present_info.pSwapchains = swap_chains;
-	present_info.pImageIndices = &command_buffer.commandBufferIndex;
+	present_info.pImageIndices = &swapchain.currentFrame;
 
 	auto& present_queue = getQueue(QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT);
 	res = present_queue.presentKHR(present_info);
@@ -1276,9 +1284,9 @@ void CVkRenderContext::cleanupSwapchain()
 {
 	for (size_t idx = 0ull; idx < swapchain.framesInFlight; ++idx)
 	{
-		logicalDevice.handle.destroyFence(swapchain.inFlightFences.at(idx));
-		logicalDevice.handle.destroyImageView(swapchain.imageViews.at(idx));
-		logicalDevice.handle.destroySemaphore(swapchain.imageAvaliableSemaphores.at(idx));
-		logicalDevice.handle.destroySemaphore(swapchain.renderFinishedSemaphores.at(idx));
+		logicalDevice.handle.destroyFence(swapchain.inFlightFences.at(idx), allocationCallbacks);
+		logicalDevice.handle.destroyImageView(swapchain.imageViews.at(idx), allocationCallbacks);
+		logicalDevice.handle.destroySemaphore(swapchain.imageAvaliableSemaphores.at(idx), allocationCallbacks);
+		logicalDevice.handle.destroySemaphore(swapchain.renderFinishedSemaphores.at(idx), allocationCallbacks);
 	}
 }

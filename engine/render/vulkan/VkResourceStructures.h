@@ -261,9 +261,10 @@ namespace engine
 				vk::CullModeFlags cullMode{};
 				vk::FrontFace frontFace{};
 				bool depthTest{ false };
-				uint32_t colorAttachmentCount{ 0u };
-				vk::SampleCountFlagBits sampleCount{};
+				vk::SampleCountFlagBits sampleCount{ vk::SampleCountFlagBits::e1 };
 				uint32_t patchControlPoints{ 0u };
+
+				std::vector<vk::Format> colorAttachmentFormats{};
 
 				std::vector<vk::VertexInputBindingDescription> vertexBindingDescriptions{};
 				std::vector<vk::VertexInputAttributeDescription> vertexAttributeDescriptions{};
@@ -298,9 +299,10 @@ namespace engine
 				vk::CullModeFlags cullMode{};
 				vk::FrontFace frontFace{};
 				bool depthTest{ false };
-				uint32_t colorAttachmentCount{ 0u };
-				vk::SampleCountFlagBits sampleCount{};
+				vk::SampleCountFlagBits sampleCount{ vk::SampleCountFlagBits::e1 };
 				uint32_t patchControlPoints{ 0u };
+
+				std::vector<vk::Format> colorAttachmentFormats{};
 
 				std::vector<vk::VertexInputBindingDescription> vertexBindingDescriptions{};
 				std::vector<vk::VertexInputAttributeDescription> vertexAttributeDescriptions{};
@@ -324,12 +326,40 @@ namespace engine
 			// ---------------------------------------------------------------------------------
 			// ===================================| TEXTURE |===================================
 			// ---------------------------------------------------------------------------------
+			enum EVkTextureImageTypeFlagBits
+			{
+				TEXTURE_IMAGE_TYPE_ARRAY_FLAG_BIT = 1 << 0,
+				TEXTURE_IMAGE_TYPE_CUBEMAP_FLAG_BIT = 1 << 1,
+				TEXTURE_IMAGE_TYPE_2D_FLAG_BIT = 1 << 2,
+				TEXTURE_IMAGE_TYPE_3D_FLAG_BIT = 1 << 3
+			};
+
+			struct FVkTextureInitialData
+			{
+				vk::ImageLayout layout{};
+				vk::Format format{};
+				vk::ImageAspectFlags aspectFlags{};
+				vk::ImageUsageFlags usageFlags{};
+				vk::SampleCountFlagBits sampleCount{};
+				vk::Extent3D extent{};
+
+				uint32_t imageTypeFlags{ 0u };
+				uint32_t mipLevelCount{ 1u };
+				uint32_t arrayLayersCount{ 0u };
+				uint32_t numDimensions{ 0u };
+			};
+
 			struct FVkTexture
 			{
 				FVkImage image{};
 				std::vector<vk::ImageView> imageViews{};
 				vk::Sampler sampler{};
-				vk::ImageLayout layout{};
+
+				FVkTextureInitialData initialData;
+
+				uint32_t totalLayers{ 1u };
+
+				bool isRenderTarget{ false };
 			};
 
 			struct FVkTextureCreateInfo
@@ -338,10 +368,9 @@ namespace engine
 				vk::ImageUsageFlags usageFlags{};
 				vk::ImageAspectFlags aspectFlags{ vk::ImageAspectFlagBits::eColor };
 				vk::Extent3D extent{};
-				vk::ImageLayout initialLayout{};
+				vk::ImageLayout layout{};
 
-				bool isArray{ false };
-				bool isCubemap{ false };
+				uint32_t imageTypeFlags{ 0u };
 
 				uint32_t mipLevelCount{ 1u };
 				uint32_t arrayLayersCount{ 0u };
@@ -349,6 +378,7 @@ namespace engine
 
 				vk::SampleCountFlagBits sampleCount{ };
 
+				bool createSampler{ true };
 				vk::Filter filter{ vk::Filter::eLinear };
 				vk::SamplerAddressMode addressMode{};
 				bool enableAnisotropy{ false };
@@ -382,10 +412,73 @@ namespace engine
 #endif
 			};
 
-			// ---------------------------------------------------------------------------------
-			// ==================================| RENDERING |==================================
-			// ---------------------------------------------------------------------------------
-			// 
+			struct FVkRenderingInfo
+			{
+				vk::Rect2D renderArea{};
+				vk::Rect2D scissorRect{};
+				bool flipViewport{ false };
+
+				std::vector<size_t> colorAttachments{};
+				size_t depthAttachment{ ~0ull };
+			};
+
+			struct FVkImageTranslationInfo
+			{
+				vk::Image handle;
+
+				vk::PipelineStageFlags2KHR srcStageMask{};
+				vk::AccessFlags2KHR srcAccessMask{};
+				vk::ImageLayout oldLayout{};
+				uint32_t srcQueueFamilyIndex{ VK_QUEUE_FAMILY_IGNORED };
+
+				vk::PipelineStageFlags2KHR dstStageMask{};
+				vk::AccessFlags2KHR dstAccessMask{};
+				vk::ImageLayout newLayout{};
+				uint32_t dstQueueFamilyIndex{ VK_QUEUE_FAMILY_IGNORED };
+
+				vk::ImageSubresourceRange subresourceRange{};
+			};
+
+			struct FVkBufferTranslationInfo
+			{
+				vk::Buffer handle{};
+
+				vk::PipelineStageFlags2KHR srcStageMask{};
+				vk::AccessFlags2KHR srcAccessMask{};
+				uint32_t srcQueueFamilyIndex{ VK_QUEUE_FAMILY_IGNORED };
+
+				vk::PipelineStageFlags2KHR dstStageMask{};
+				vk::AccessFlags2KHR dstAccessMask{};
+				uint32_t dstQueueFamilyIndex{ VK_QUEUE_FAMILY_IGNORED };
+
+				vk::DeviceSize size{};
+				vk::DeviceSize offset{};
+			};
+
+			struct FVkMemoryTranslationInfo
+			{
+				vk::PipelineStageFlags2KHR srcStageMask{};
+				vk::AccessFlags2KHR srcAccessMask{};
+
+				vk::PipelineStageFlags2KHR dstStageMask{};
+				vk::AccessFlags2KHR dstAccessMask{};
+			};
+
+			struct FVkTranslationInfo
+			{
+				std::vector<FVkImageTranslationInfo> imageTranslationInfos{};
+				std::vector<FVkBufferTranslationInfo> bufferTranslationInfos{};
+				std::vector<FVkMemoryTranslationInfo> memoryTranslationInfos{};
+			};
+
+			struct FVkTextureTranslationInfo
+			{
+				vk::ImageLayout oldLayout{};
+				vk::ImageLayout newLayout{};
+				uint32_t baseArrayLayer{ 0u };
+				uint32_t baseMipLevel{ 0u };
+			};
+			
 			// Helper functions
 			inline bool check_contains_single(const std::string& s1, const std::vector<std::string>& rhs)
 			{

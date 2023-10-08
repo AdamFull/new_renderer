@@ -73,7 +73,6 @@ namespace engine
 				FRenderApiErrorInfo createSemaphore(const FVkSemaphoreCreateInfo& semaphore_ci, vk::Semaphore& semaphore);
 				FRenderApiErrorInfo createFence(const FVkFenceCreateInfo& fence_ci, vk::Fence& fence);
 
-
 				vk::Result present(FVkCommandBuffer& command_buffer);
 				vk::Result acquireNextImage(uint32_t& image_index);
 

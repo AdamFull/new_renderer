@@ -25,19 +25,16 @@ std::unique_ptr<engine::IRenderHandleInterface> make_render_handle_interface(con
 		context_ci.apiVersion = rhi_ci.render_api;
 		context_ci.requiredDeviceExtensions = {
 			VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-			VK_KHR_MAINTENANCE_3_EXTENSION_NAME,
 			VK_KHR_MAINTENANCE_4_EXTENSION_NAME,
 			VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
 			VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
 			VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
-			VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME,
 			VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME,
-			VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME
 			VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
 			VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME,
+			VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
 			VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
-			VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME,
-			VK_EXT_SHADER_OBJECT_EXTENSION_NAME
+			VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME
 		};
 		
 		context_ci.optionalDeviceExtensions = {
@@ -73,7 +70,6 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 
 void CRenderInterface::updateSurfaceSize(int32_t width, int32_t height)
 {
-	render_handle->syncGPUIdle();
 	render_handle->updateSurface(width, height);
 }
 

@@ -85,7 +85,6 @@ namespace engine
 
 		virtual void create(const FRenderContextCreateInfo& context_ci) = 0;
 		
-		virtual void syncGPUIdle() = 0;
 		virtual void updateSurface(int32_t surface_width, int32_t surface_height) = 0;
 
 		virtual void beginFrameCommandBuffers() = 0;
