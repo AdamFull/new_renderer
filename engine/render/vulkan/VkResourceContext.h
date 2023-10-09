@@ -28,6 +28,20 @@ namespace engine
 				}
 
 				template<class _Ty>
+				_Ty& get(resource_handle_t id)
+				{
+					auto container = get_container<_Ty>();
+					return container->get(id);
+				}
+
+				template<class _Ty>
+				_Ty& get(const std::string& name)
+				{
+					auto container = get_container<_Ty>();
+					return container->get(name);
+				}
+
+				template<class _Ty>
 				void remove(resource_handle_t id)
 				{
 					auto container = get_container<_Ty>();

@@ -4,6 +4,7 @@
 #include <set>
 
 #include <udetail.hpp>
+#include <VkCommon.h>
 
 #include <vulkan/vulkan.hpp>
 
@@ -87,14 +88,16 @@ VKAPI_ATTR vk::Bool32 VKAPI_CALL debug_report_callback(VkDebugReportFlagsEXT fla
 
 CVkRenderContext::~CVkRenderContext()
 {
+	destroyCommandPools();
+
 	cleanupSwapchain();
 	logicalDevice.handle.destroySwapchainKHR(swapchain.handle, allocationCallbacks);
 	logicalDevice.handle.destroyPipelineCache(pipelineCache, allocationCallbacks);
 	memoryAllocator.destroy();
 	logicalDevice.handle.destroy(allocationCallbacks);
-	vkInstance.destroySurfaceKHR(vkSurface);
 	vkInstance.destroyDebugUtilsMessengerEXT(debugMessenger, allocationCallbacks);
 	vkInstance.destroyDebugReportCallbackEXT(debugReport, allocationCallbacks);
+	vkInstance.destroySurfaceKHR(vkSurface, allocationCallbacks);
 	vkInstance.destroy(allocationCallbacks);
 
 	if (allocationCallbacks)
@@ -496,12 +499,16 @@ FRenderApiErrorInfo CVkRenderContext::createPipeline(const FVkGraphicsPipelineCr
 
 	auto enableTessellation = pipeline_ci.primitiveTopology == vk::PrimitiveTopology::ePatchList;
 
+	// VK_KHR_dynamic_rendering
 	vk::PipelineRenderingCreateInfoKHR rendering_ci{};
 	rendering_ci.colorAttachmentCount = static_cast<uint32_t>(pipeline_ci.colorAttachmentFormats.size());
 	rendering_ci.pColorAttachmentFormats = pipeline_ci.colorAttachmentFormats.data();
-	//rendering_ci.depthAttachmentFormat = depth_format;
-	//if (is_depth_only_format(depth_format))
-	//	rendering_ci.stencilAttachmentFormat = depth_format;
+	if (pipeline_ci.depthAttachmentFormat != vk::Format::eUndefined)
+	{
+		rendering_ci.depthAttachmentFormat = pipeline_ci.depthAttachmentFormat;
+		if (!is_depth_only_format(pipeline_ci.depthAttachmentFormat))
+			rendering_ci.stencilAttachmentFormat = pipeline_ci.depthAttachmentFormat;
+	}
 
 	vk::GraphicsPipelineCreateInfo graphics_pipeline_ci{};
 	graphics_pipeline_ci.stageCount = static_cast<uint32_t>(pipeline_ci.shaderStages.size());

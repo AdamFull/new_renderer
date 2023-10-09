@@ -1,6 +1,7 @@
 #include "VkRenderHandle.h"
 
 #include <VkShaderReflection.h>
+#include <VkCommon.h>
 
 #include <logger/logger.h>
 
@@ -9,9 +10,32 @@ using namespace engine::render::vulkan;
 const std::vector<uint32_t> vertex_shader{ 119734787, 65536, 851979, 40, 0, 131089, 1, 393227, 1, 1280527431, 1685353262, 808793134, 0, 196622, 0, 1, 524303, 0, 4, 1852399981, 0, 9, 12, 26, 196611, 2, 460, 655364, 1197427783, 1279741775, 1885560645, 1953718128, 1600482425, 1701734764, 1919509599, 1769235301, 25974, 524292, 1197427783, 1279741775, 1852399429, 1685417059, 1768185701, 1952671090, 6649449, 262149, 4, 1852399981, 0, 262149, 9, 1433695599, 86, 393221, 12, 1449094247, 1702130277, 1684949368, 30821, 393221, 24, 1348430951, 1700164197, 2019914866, 0, 393222, 24, 0, 1348430951, 1953067887, 7237481, 196613, 26, 0, 262215, 9, 30, 0, 262215, 12, 11, 42, 327752, 24, 0, 11, 0, 196679, 24, 2, 131091, 2, 196641, 3, 2, 196630, 6, 32, 262167, 7, 6, 2, 262176, 8, 3, 7, 262203, 8, 9, 3, 262165, 10, 32, 1, 262176, 11, 1, 10, 262203, 11, 12, 1, 262187, 10, 14, 1, 262187, 10, 16, 2, 262167, 23, 6, 4, 196638, 24, 23, 262176, 25, 3, 24, 262203, 25, 26, 3, 262187, 10, 27, 0, 262187, 6, 29, 1073741824, 262187, 6, 31, 1065353216, 262187, 6, 34, 0, 262176, 38, 3, 23, 327734, 2, 4, 0, 3, 131320, 5, 262205, 10, 13, 12, 327876, 10, 15, 13, 14, 327879, 10, 17, 15, 16, 262255, 6, 18, 17, 262205, 10, 19, 12, 327879, 10, 20, 19, 16, 262255, 6, 21, 20, 327760, 7, 22, 18, 21, 196670, 9, 22, 262205, 7, 28, 9, 327822, 7, 30, 28, 29, 327760, 7, 32, 31, 31, 327811, 7, 33, 30, 32, 327761, 6, 35, 33, 0, 327761, 6, 36, 33, 1, 458832, 23, 37, 35, 36, 34, 31, 327745, 38, 39, 26, 27, 196670, 39, 37, 65789, 65592 };
 const std::vector<uint32_t> fragment_shader{ 119734787, 65536, 851979, 19, 0, 131089, 1, 393227, 1, 1280527431, 1685353262, 808793134, 0, 196622, 0, 1, 458767, 4, 4, 1852399981, 0, 9, 12, 196624, 4, 7, 196611, 2, 460, 655364, 1197427783, 1279741775, 1885560645, 1953718128, 1600482425, 1701734764, 1919509599, 1769235301, 25974, 524292, 1197427783, 1279741775, 1852399429, 1685417059, 1768185701, 1952671090, 6649449, 262149, 4, 1852399981, 0, 327685, 9, 1131705711, 1919904879, 0, 262149, 12, 1448439401, 0, 262215, 9, 30, 0, 262215, 12, 30, 0, 131091, 2, 196641, 3, 2, 196630, 6, 32, 262167, 7, 6, 4, 262176, 8, 3, 7, 262203, 8, 9, 3, 262167, 10, 6, 2, 262176, 11, 1, 10, 262203, 11, 12, 1, 262187, 6, 14, 0, 262187, 6, 15, 1065353216, 327734, 2, 4, 0, 3, 131320, 5, 262205, 10, 13, 12, 327761, 6, 16, 13, 0, 327761, 6, 17, 13, 1, 458832, 7, 18, 16, 17, 14, 15, 196670, 9, 18, 65789, 65592 };
 
+vk::BufferUsageFlagBits get_buffer_usage_by_descriptor_type(vk::DescriptorType descriptor_type)
+{
+	switch (descriptor_type)
+	{
+	case vk::DescriptorType::eSampler:
+	case vk::DescriptorType::eCombinedImageSampler:
+	case vk::DescriptorType::eSampledImage:
+	case vk::DescriptorType::eStorageImage:
+		return vk::BufferUsageFlagBits::eSamplerDescriptorBufferEXT;
+	case vk::DescriptorType::eUniformTexelBuffer:
+	case vk::DescriptorType::eStorageTexelBuffer:
+	case vk::DescriptorType::eUniformBuffer:
+	case vk::DescriptorType::eStorageBuffer:
+	case vk::DescriptorType::eUniformBufferDynamic:
+	case vk::DescriptorType::eStorageBufferDynamic:
+	case vk::DescriptorType::eInlineUniformBlock:
+		return vk::BufferUsageFlagBits::eResourceDescriptorBufferEXT;
+	}
+	return static_cast<vk::BufferUsageFlagBits>(0u);
+}
+
 template<class _Ty>
 FRenderApiErrorInfo create_and_apply_shader_reflection_data(const std::unique_ptr<CVkRenderContext>& context, const _Ty& shader_ci, const FVkShaderReflectionData& reflection, std::vector<vk::PipelineShaderStageCreateInfo>& shader_stages, FVkShader& shader)
 {
+	auto& logical = context->getLogicalDevice();
+
 	// Apply specialization constants
 	for (auto& shader_stage : shader_stages)
 	{
@@ -31,6 +55,22 @@ FRenderApiErrorInfo create_and_apply_shader_reflection_data(const std::unique_pt
 
 		auto& descriptor_set_Layout = shader.descriptorSetLayouts[set];
 		RETURN_WHEN_FAULT(context->createDescriptorSetLayout(descriptor_set_layout_ci, descriptor_set_Layout));
+
+		// Prepare descriptor buffers
+		FVkBufferCreateInfo buffer_ci{};
+#ifndef BUILD_WITHOUT_DEBUGGIND
+		buffer_ci.name = std::format("{}: descriptor #{}", shader_ci.name, set);
+#endif
+		buffer_ci.usageFlags = vk::BufferUsageFlagBits::eShaderDeviceAddressKHR;
+
+		for (auto& binding : layout_bindings)
+			buffer_ci.usageFlags |= get_buffer_usage_by_descriptor_type(binding.descriptorType);
+		
+		buffer_ci.instanceSize = logical.getDescriptorSetLayoutSizeEXT(descriptor_set_Layout);
+		buffer_ci.instanceCount = 1ull;
+		buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
+
+		RETURN_WHEN_FAULT(context->createBuffer(buffer_ci, shader.descriptorBuffers[set]));
 	}
 
 	// Create pipeline layout
@@ -57,97 +97,32 @@ FRenderApiErrorInfo create_and_apply_shader_reflection_data(const std::unique_pt
 	return context->createPipelineLayout(layout_ci, shader.layout);
 }
 
-vk::PipelineStageFlags2KHR get_translation_stage_flags(vk::ImageLayout layout)
-{
-	switch (layout)
-	{
-	case vk::ImageLayout::eUndefined: return vk::PipelineStageFlagBits2KHR::eTopOfPipe;
-	case vk::ImageLayout::ePreinitialized: return vk::PipelineStageFlagBits2KHR::eHost;
-	case vk::ImageLayout::eTransferDstOptimal:
-	case vk::ImageLayout::eTransferSrcOptimal: return vk::PipelineStageFlagBits2KHR::eTransfer;
-	case vk::ImageLayout::eColorAttachmentOptimal: return vk::PipelineStageFlagBits2KHR::eColorAttachmentOutput;
-	case vk::ImageLayout::eDepthAttachmentOptimal: return vk::PipelineStageFlagBits2KHR::eEarlyFragmentTests | vk::PipelineStageFlagBits2KHR::eLateFragmentTests;
-	case vk::ImageLayout::eFragmentShadingRateAttachmentOptimalKHR: return vk::PipelineStageFlagBits2KHR::eFragmentShadingRateAttachmentKHR;
-	case vk::ImageLayout::eShaderReadOnlyOptimal: return vk::PipelineStageFlagBits2KHR::eFragmentShader | vk::PipelineStageFlagBits2KHR::eVertexShader;
-	case vk::ImageLayout::ePresentSrcKHR: return vk::PipelineStageFlagBits2KHR::eBottomOfPipe;
-	default: return vk::PipelineStageFlagBits2KHR::eNone;
-	}
-}
-
-vk::AccessFlags2KHR get_translation_access_flags(vk::ImageLayout layout)
-{
-	switch (layout)
-	{
-	case vk::ImageLayout::eUndefined:
-	case vk::ImageLayout::ePresentSrcKHR: return vk::AccessFlagBits2KHR::eNone;
-	case vk::ImageLayout::ePreinitialized: return vk::AccessFlagBits2KHR::eHostWrite;
-	case vk::ImageLayout::eColorAttachmentOptimal: return vk::AccessFlagBits2KHR::eColorAttachmentRead | vk::AccessFlagBits2KHR::eColorAttachmentWrite;
-	case vk::ImageLayout::eDepthAttachmentOptimal: return vk::AccessFlagBits2KHR::eDepthStencilAttachmentRead | vk::AccessFlagBits2KHR::eDepthStencilAttachmentWrite;
-	case vk::ImageLayout::eFragmentShadingRateAttachmentOptimalKHR: return vk::AccessFlagBits2KHR::eFragmentShadingRateAttachmentReadKHR;
-	case vk::ImageLayout::eShaderReadOnlyOptimal: return vk::AccessFlagBits2KHR::eShaderRead | vk::AccessFlagBits2KHR::eInputAttachmentRead;
-	case vk::ImageLayout::eTransferSrcOptimal: return vk::AccessFlagBits2KHR::eTransferRead;
-	case vk::ImageLayout::eTransferDstOptimal: return vk::AccessFlagBits2KHR::eTransferWrite;
-	default: return vk::AccessFlagBits2KHR::eNone;
-	}
-}
-
-vk::ImageLayout get_render_target_final_layout(const FVkTexture& texture)
-{
-	if (texture.initialData.usageFlags & vk::ImageUsageFlagBits::eColorAttachment)
-	{
-		if (texture.initialData.usageFlags & vk::ImageUsageFlagBits::eTransferSrc)
-			return vk::ImageLayout::eTransferSrcOptimal;
-		if (texture.initialData.usageFlags & vk::ImageUsageFlagBits::eSampled && texture.initialData.usageFlags & vk::ImageUsageFlagBits::eStorage)
-			return vk::ImageLayout::eGeneral;
-		else if (texture.initialData.usageFlags & vk::ImageUsageFlagBits::eSampled)
-			return vk::ImageLayout::eShaderReadOnlyOptimal;
-		else if (texture.initialData.usageFlags & vk::ImageUsageFlagBits::eInputAttachment)
-		{
-			if(texture.initialData.usageFlags & vk::ImageUsageFlagBits::eSampled)
-				return vk::ImageLayout::eShaderReadOnlyOptimal;
-			else
-				return vk::ImageLayout::eColorAttachmentOptimal;
-		}
-	}
-	else if (texture.initialData.usageFlags & vk::ImageUsageFlagBits::eDepthStencilAttachment)
-	{
-		if (texture.initialData.usageFlags & vk::ImageUsageFlagBits::eSampled)
-			return vk::ImageLayout::eDepthStencilReadOnlyOptimal;
-		else
-			return vk::ImageLayout::eDepthStencilAttachmentOptimal;
-	}
-
-	return vk::ImageLayout::ePresentSrcKHR;
-}
-
-FVkImageTranslationInfo get_texture_layout_translation_info(const FVkTexture& texture, const FVkTextureTranslationInfo& translation_info)
-{
-	FVkImageTranslationInfo image_layout_translation{};
-	image_layout_translation.srcStageMask = get_translation_stage_flags(translation_info.oldLayout);
-	image_layout_translation.srcAccessMask = get_translation_access_flags(translation_info.oldLayout);
-	image_layout_translation.oldLayout = translation_info.oldLayout;
-	image_layout_translation.dstStageMask = get_translation_stage_flags(translation_info.newLayout);
-	image_layout_translation.dstAccessMask = get_translation_access_flags(translation_info.newLayout);
-	image_layout_translation.newLayout = translation_info.newLayout;
-	image_layout_translation.handle = texture.image.handle;
-
-	image_layout_translation.subresourceRange.aspectMask = texture.initialData.aspectFlags;
-	image_layout_translation.subresourceRange.baseArrayLayer = translation_info.baseArrayLayer;
-	image_layout_translation.subresourceRange.layerCount = texture.totalLayers;
-	image_layout_translation.subresourceRange.baseMipLevel = translation_info.baseMipLevel;
-	image_layout_translation.subresourceRange.levelCount = texture.initialData.mipLevelCount;
-	
-	return image_layout_translation;
-}
-
-bool is_depth_only_format(vk::Format format)
-{
-	return format == vk::Format::eD16Unorm || format == vk::Format::eD32Sfloat;
-}
-
 CVkRenderHandle::~CVkRenderHandle()
 {
+	auto& logical_device = context->getLogicalDevice();
+	logical_device.waitIdle();
 
+	context->destroyCommandBuffer(commandBuffer);
+
+	// Destroy all textures
+	auto& textures = resources->data<FVkTexture>();
+	for (resource_handle_t texture_id = 0ull; texture_id < textures.size(); ++texture_id)
+	{
+		auto is_swapchain_image = std::find(swapchainTargets.begin(), swapchainTargets.end(), texture_id);
+		if (is_swapchain_image != swapchainTargets.end())
+			continue;
+
+		auto& texture = textures.at(texture_id);
+		destroyTexture(texture);
+	}
+
+	// Destroy all shaders
+	auto& shaders = resources->data<FVkShader>();
+	for (resource_handle_t shader_id = 0ull; shader_id < shaders.size(); ++shader_id)
+	{
+		auto& shader = shaders.at(shader_id);
+		destroyShader(shader);
+	}
 }
 
 void CVkRenderHandle::create(const FRenderContextCreateInfo& context_ci)
@@ -194,7 +169,10 @@ void CVkRenderHandle::create(const FRenderContextCreateInfo& context_ci)
 	shader_ci.name = "test_shader_uv";
 #endif
 
-	createShader(shader_ci, testShader);
+	FVkShader shader{};
+	createShader(shader_ci, shader);
+
+	resources->add("test_shader_uv", std::move(shader));
 }
 
 void CVkRenderHandle::updateSurface(int32_t surface_width, int32_t surface_height)
@@ -229,7 +207,7 @@ void CVkRenderHandle::updateSurface(int32_t surface_width, int32_t surface_heigh
 
 		// Updating render targets
 		
-		for (size_t texture_id = 0ull; textures.size(); ++texture_id)
+		for (size_t texture_id = 0ull; texture_id < textures.size(); ++texture_id)
 		{
 			auto is_swapchain_image = std::find(swapchainTargets.begin(), swapchainTargets.end(), texture_id);
 			if (is_swapchain_image != swapchainTargets.end())
@@ -259,12 +237,6 @@ void CVkRenderHandle::updateSurface(int32_t surface_width, int32_t surface_heigh
 			texture_ci.createSampler = false;
 
 			createTexture(texture_ci, target);
-		}
-
-		// Update all render targets here
-		for (const auto& texture_id : swapchainTargets)
-		{
-
 		}
 	}
 }
@@ -531,8 +503,90 @@ void CVkRenderHandle::destroyShader(FVkShader& shader)
 
 	context->destroyPipelineLayout(shader.layout);
 
+	for (auto& [set, buffer] : shader.descriptorBuffers)
+		context->destroyBuffer(buffer);
+
 	for (auto& [set, descriptor_set_layout] : shader.descriptorSetLayouts)
 		context->destroyDescriptorSetLayout(descriptor_set_layout);
+}
+
+void CVkRenderHandle::updateDescriptors(const FVkDescriptorBufferUpdateInfo& update_info, FVkShader& shader)
+{
+	auto& logical = context->getLogicalDevice();
+	auto& physical = context->getPhysicalDevice();
+
+	vk::PhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_props{};
+	vk::PhysicalDeviceProperties2KHR device_props{};
+	device_props.pNext = &descriptor_buffer_props;
+	physical.handle.getProperties2KHR(&device_props);
+
+	// TODO: FVkDescriptorBufferUpdateInfo data should be sorted by set index and by layout index
+	for (const auto& descriptor_info : update_info.updateInfos)
+	{
+		auto& current_buffer = shader.descriptorBuffers[descriptor_info.set];
+		for (const auto& resource_info : descriptor_info.resourceInfos)
+		{
+			vk::DescriptorImageInfo image_descriptor_info{};
+			image_descriptor_info.imageLayout = resource_info.textureInfo.layout;
+			image_descriptor_info.sampler = resource_info.textureInfo.sampler;
+			image_descriptor_info.imageView = resource_info.textureInfo.handle;
+
+			vk::DescriptorAddressInfoEXT address_info{};
+			address_info.address = resource_info.bufferInfo.address;
+			address_info.range = resource_info.bufferInfo.size;
+			address_info.format = resource_info.bufferInfo.format;
+
+			// Here i need descriptor type and for buffers i need another type of data
+			vk::DescriptorGetInfoEXT descriptor_get_info{};
+			descriptor_get_info.type = resource_info.descriptorType;
+
+			vk::DeviceSize descriptor_size{};
+			switch (resource_info.descriptorType)
+			{
+			case vk::DescriptorType::eCombinedImageSampler: {
+				descriptor_get_info.data.pCombinedImageSampler = &image_descriptor_info;
+				descriptor_size = descriptor_buffer_props.combinedImageSamplerDescriptorSize;
+			} break;
+			case vk::DescriptorType::eInputAttachment: { 
+				descriptor_get_info.data.pInputAttachmentImage = &image_descriptor_info; 
+				descriptor_size = descriptor_buffer_props.inputAttachmentDescriptorSize;
+			} break;
+			case vk::DescriptorType::eSampledImage: {
+				descriptor_get_info.data.pSampledImage = &image_descriptor_info;
+				descriptor_size = descriptor_buffer_props.sampledImageDescriptorSize;
+			} break;
+			case vk::DescriptorType::eStorageImage: {
+				descriptor_get_info.data.pStorageImage = &image_descriptor_info;
+				descriptor_size = descriptor_buffer_props.storageImageDescriptorSize;
+			}break;
+			case vk::DescriptorType::eSampler: {
+				descriptor_size = descriptor_buffer_props.samplerDescriptorSize;
+			} break;
+			case vk::DescriptorType::eStorageBuffer: {
+				descriptor_get_info.data.pStorageBuffer = &address_info;
+				descriptor_size = descriptor_buffer_props.storageBufferDescriptorSize;
+			} break;
+			case vk::DescriptorType::eStorageTexelBuffer: {
+				descriptor_get_info.data.pStorageTexelBuffer = &address_info;
+				descriptor_size = descriptor_buffer_props.storageTexelBufferDescriptorSize;
+			} break;
+			case vk::DescriptorType::eUniformBuffer: {
+				descriptor_get_info.data.pUniformBuffer = &address_info;
+				descriptor_size = descriptor_buffer_props.uniformBufferDescriptorSize;
+			} break;
+			case vk::DescriptorType::eUniformTexelBuffer: {
+				descriptor_get_info.data.pUniformTexelBuffer = &address_info;
+				descriptor_size = descriptor_buffer_props.uniformTexelBufferDescriptorSize;
+			} break;
+			}
+
+			void* mapped_data{ nullptr };
+			context->mapBufferMemory(current_buffer, mapped_data);
+
+			// TODO: add alignment
+			logical.getDescriptorEXT(&descriptor_get_info, descriptor_size, mapped_data);
+		}
+	}
 }
 
 void CVkRenderHandle::beginRendering(const FVkCommandBuffer command_buffer, const FVkRenderingInfo& rendering_info)
@@ -766,7 +820,9 @@ void CVkRenderHandle::draw()
 	beginRendering(commandBuffer, rendering_info);
 
 	auto& command_buffer = commandBuffer.handles.at(commandBuffer.commandBufferIndex);
-	for (auto& pipeline_handle : testShader.handles)
+
+	auto& shader = resources->get<FVkShader>(testShader);
+	for (const auto& pipeline_handle : shader.handles)
 	{
 		command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline_handle);
 		command_buffer.draw(3, 1, 0, 0);

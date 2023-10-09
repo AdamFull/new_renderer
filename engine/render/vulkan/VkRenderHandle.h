@@ -29,6 +29,8 @@ namespace engine
 				FRenderApiErrorInfo createShader(const FVkComputeShaderCreateInfo& shader_ci, FVkShader& shader);
 				void destroyShader(FVkShader& shader);
 
+				void updateDescriptors(const FVkDescriptorBufferUpdateInfo& update_info, FVkShader& shader)
+
 				void beginRendering(const FVkCommandBuffer command_buffer, const FVkRenderingInfo& rendering_info);
 				void endRendering(const FVkCommandBuffer command_buffer, const FVkRenderingInfo& rendering_info);
 
@@ -49,7 +51,7 @@ namespace engine
 				std::vector<resource_handle_t> swapchainTargets{};
 
 				// TEMPORARY. FOR TESTING
-				FVkShader testShader{};
+				resource_handle_t testShader{};
 			};
 		}
 	}
