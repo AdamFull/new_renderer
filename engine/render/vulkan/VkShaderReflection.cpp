@@ -3,6 +3,8 @@
 #include <spirv_cross.hpp>
 #include <spirv_glsl.hpp>
 
+#include <udetail.hpp>
+
 using namespace engine::render::vulkan;
 
 bool has_substring(const std::string& str, const std::string& target)
@@ -26,8 +28,7 @@ void parse_execution_mode(FVkShaderReflectionData& reflection_data, spirv_cross:
     case spv::ExecutionMode::ExecutionModeInvocations: reflection_data.executionModeInvocations = compiler->get_execution_mode_argument(mode, 0); break;
     case spv::ExecutionMode::ExecutionModeLocalSize:
     {
-        reflection_data.localSizes.emplace_back();
-        auto& sizes = reflection_data.localSizes.back();
+        auto& sizes = reflection_data.localSizes.emplace_back();
         for (uint32_t dim = 0u; dim < 3u; ++dim)
             sizes[dim] = compiler->get_execution_mode_argument(mode, dim);
     } break;
@@ -39,7 +40,8 @@ void build_specialization_constant_reflection(FVkShaderReflectionData& reflectio
 {
     auto name = compiler->get_name(spec_const.id);
 
-    auto it = reflection_data.specializationConstants.find(name);
+    size_t name_hash = utl::fnv1a_64_hash(name.c_str());
+    auto it = reflection_data.specializationConstants.find(name_hash);
     if (it != reflection_data.specializationConstants.end())
     {
         it->second.stageFlags |= shaderStage;
@@ -60,12 +62,13 @@ void build_specialization_constant_reflection(FVkShaderReflectionData& reflectio
     reflection_data.specializationDataBuffer.resize(offset + specialization_constant.size);
     std::memcpy(reflection_data.specializationDataBuffer.data() + offset, &constant.m.c[0].r[0], specialization_constant.size);
 
-    reflection_data.specializationConstants.emplace(name, specialization_constant);
+    reflection_data.specializationConstants.emplace(name_hash, specialization_constant);
 }
 
 void build_uniform_block_reflection(FVkShaderReflectionData& reflection_data, spirv_cross::CompilerGLSL* compiler, const spirv_cross::Resource& res, vk::ShaderStageFlagBits shaderStage, vk::DescriptorType descriptorType)
 {
-    auto it = reflection_data.uniformBlocks.find(res.name);
+    size_t name_hash = utl::fnv1a_64_hash(res.name.c_str());
+    auto it = reflection_data.uniformBlocks.find(name_hash);
     if (it != reflection_data.uniformBlocks.end())
     {
         it->second.stageFlags |= shaderStage;
@@ -95,18 +98,21 @@ void build_uniform_block_reflection(FVkShaderReflectionData& reflection_data, sp
             matrix_stride = compiler->type_struct_member_matrix_stride(type, i);
 
         uniform.stageFlags = shaderStage;
-        uniform_block.uniforms.emplace(compiler->get_member_name(type.self, i), uniform);
+
+        size_t member_name_hash = utl::fnv1a_64_hash(compiler->get_member_name(type.self, i).c_str());
+        uniform_block.uniforms.emplace(member_name_hash, uniform);
     }
 
     uniform_block.descriptorType = descriptorType;
     uniform_block.size = compiler->get_declared_struct_size(type);
 
-    reflection_data.uniformBlocks.emplace(res.name, uniform_block);
+    reflection_data.uniformBlocks.emplace(name_hash, uniform_block);
 }
 
 void build_push_constants_block_reflection(FVkShaderReflectionData& reflection_data, spirv_cross::CompilerGLSL* compiler, const spirv_cross::Resource& res, vk::ShaderStageFlagBits shaderStage)
 {
-    auto it = reflection_data.pushBlocks.find(res.name);
+    size_t name_hash = utl::fnv1a_64_hash(res.name.c_str());
+    auto it = reflection_data.pushBlocks.find(name_hash);
     if (it != reflection_data.pushBlocks.end())
     {
         it->second.stageFlags |= shaderStage;
@@ -128,16 +134,19 @@ void build_push_constants_block_reflection(FVkShaderReflectionData& reflection_d
         if (member_type.columns > 1) 
             size_t matrix_stride = compiler->type_struct_member_matrix_stride(type, i);
         uniform.stageFlags = shaderStage;
-        push_block.uniforms.emplace(compiler->get_member_name(type.self, i), uniform);
+
+        size_t member_name_hash = utl::fnv1a_64_hash(compiler->get_member_name(type.self, i).c_str());
+        push_block.uniforms.emplace(member_name_hash, uniform);
     }
 
     push_block.size = compiler->get_declared_struct_size(type);
-    reflection_data.pushBlocks.emplace(res.name, push_block);
+    reflection_data.pushBlocks.emplace(name_hash, push_block);
 }
 
 void build_uniform_reflection(FVkShaderReflectionData& reflection_data, spirv_cross::CompilerGLSL* compiler, const spirv_cross::Resource& res, vk::ShaderStageFlagBits shaderStage, vk::DescriptorType descriptorType)
 {
-    auto it = reflection_data.uniforms.find(res.name);
+    size_t name_hash = utl::fnv1a_64_hash(res.name.c_str());
+    auto it = reflection_data.uniforms.find(name_hash);
     if (it != reflection_data.uniforms.end())
     {
         it->second.stageFlags |= shaderStage;
@@ -153,7 +162,7 @@ void build_uniform_reflection(FVkShaderReflectionData& reflection_data, spirv_cr
     uniform.descriptorType = descriptorType;
     uniform.stageFlags = shaderStage;
 
-    reflection_data.uniforms.emplace(res.name, uniform);
+    reflection_data.uniforms.emplace(name_hash, uniform);
 }
 
 
@@ -202,7 +211,7 @@ void CVkShaderReflectionBuilder::addShaderStage(vk::ShaderStageFlagBits shaderSt
     shaderStages.emplace_back(shaderStage);
 }
 
-const FVkShaderReflectionData& CVkShaderReflectionBuilder::build()
+FVkShaderReflectionData CVkShaderReflectionBuilder::build()
 {
     std::unordered_map<vk::DescriptorType, uint32_t> descriptorUsageCounter{};
 
@@ -245,8 +254,7 @@ const FVkShaderReflectionData& CVkShaderReflectionBuilder::build()
             auto constant_stage_flags = constant.stageFlags;
             if (constant_stage_flags & stage)
             {
-                constants_data.entries.emplace_back();
-                auto& entry = constants_data.entries.back();
+                auto& entry = constants_data.entries.emplace_back();
                 entry.constantID = constant.constant_id;
                 entry.size = constant.size;
                 entry.offset = constant.offset;

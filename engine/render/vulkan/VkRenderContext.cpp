@@ -133,7 +133,7 @@ void CVkRenderContext::create(const FRenderContextCreateInfo& context_ci)
 	check_api_result(createSwapchain(context_ci.initialWidth, context_ci.initialHeight));
 }
 
-FRenderApiErrorInfo CVkRenderContext::createCommandPool(const FVkCommandPoolCreateInfo& command_pool_ci, FCommandPool& command_pool)
+FRenderApiErrorInfo CVkRenderContext::createCommandPool(const FVkCommandPoolCreateInfo& command_pool_ci, FVkCommandPool& command_pool)
 {
 	auto& physical_device = getPhysicalDevice();
 
@@ -166,7 +166,7 @@ FRenderApiErrorInfo CVkRenderContext::createCommandPool(const FVkCommandPoolCrea
 	return make_api_error(command_pool.handle.objectType, res, "Failed to create");
 }
 
-void CVkRenderContext::destroyCommandPool(FCommandPool& command_pool)
+void CVkRenderContext::destroyCommandPool(FVkCommandPool& command_pool)
 {
 	logicalDevice.handle.destroyCommandPool(command_pool.handle, allocationCallbacks);
 }
@@ -392,6 +392,70 @@ void CVkRenderContext::destroyDescriptorSetLayout(vk::DescriptorSetLayout& descr
 	logicalDevice.handle.destroyDescriptorSetLayout(descriptor_set_layout);
 }
 
+FRenderApiErrorInfo CVkRenderContext::createDescriptorPool(const FVkDescriptorPoolCreateInfo& pool_ci, FVkDescriptorPool& descriptor_pool)
+{
+	std::vector<vk::DescriptorPoolSize> pool_sizes{ pool_ci.poolSizes };
+
+	// Calculate total descriptor set count in descriptor pool and update descriptor sizes
+	uint32_t maxSets{ 1u };
+	for (auto& pool_size : pool_sizes)
+	{
+		pool_size.descriptorCount *= swapchain.framesInFlight * pool_ci.usageCount;
+		maxSets += pool_size.descriptorCount;
+	}
+
+	vk::DescriptorPoolCreateInfo descriptor_pool_ci{};
+	descriptor_pool_ci.poolSizeCount = static_cast<uint32_t>(pool_sizes.size());
+	descriptor_pool_ci.pPoolSizes = pool_sizes.data();
+	descriptor_pool_ci.maxSets = maxSets;
+	descriptor_pool_ci.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
+
+	vk::Result res = logicalDevice.handle.createDescriptorPool(&descriptor_pool_ci, allocationCallbacks, &descriptor_pool.handle);
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	debugSetObjectName(descriptor_pool.handle, pool_ci.name);
+#endif
+
+	descriptor_pool.thread_id = std::this_thread::get_id();
+
+	return make_api_error(descriptor_pool.handle.objectType, res, "Failed to create");
+}
+
+FRenderApiErrorInfo CVkRenderContext::growDescriptorPool(const FVkDescriptorPoolCreateInfo& pool_ci, FVkDescriptorPool& descriptor_pool)
+{
+	destroyDescriptorPool(descriptor_pool);
+	return createDescriptorPool(pool_ci, descriptor_pool);
+}
+
+void CVkRenderContext::destroyDescriptorPool(FVkDescriptorPool& descriptor_pool)
+{
+	logicalDevice.handle.destroyDescriptorPool(descriptor_pool.handle, allocationCallbacks);
+}
+
+FRenderApiErrorInfo CVkRenderContext::createDescriptorSet(const FVkDescriptorSetCreateInfo& set_ci, FVkDescriptorSet& descriptor_set)
+{
+	std::vector<vk::DescriptorSetLayout> per_frame_layout(swapchain.framesInFlight, set_ci.layout);
+
+	vk::DescriptorSetAllocateInfo descriptor_ai{};
+	descriptor_ai.descriptorPool = set_ci.pool;;
+	descriptor_ai.descriptorSetCount = static_cast<uint32_t>(per_frame_layout.size());
+	descriptor_ai.pSetLayouts = per_frame_layout.data();
+
+	descriptor_set.handles.resize(swapchain.framesInFlight);
+	vk::Result res = logicalDevice.handle.allocateDescriptorSets(&descriptor_ai, descriptor_set.handles.data());
+
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	for (size_t idx = 0ull; idx < descriptor_set.handles.size(); ++idx)
+		debugSetObjectName(descriptor_set.handles.at(idx), std::format("{} #{}", set_ci.name, idx));
+#endif
+
+	return make_api_error(vk::ObjectType::eDescriptorSet, res, "Failed to allocate");
+}
+
+void CVkRenderContext::destroyDescriptorSet(const FVkDescriptorPool& descriptor_pool, FVkDescriptorSet& descriptor_set)
+{
+	logicalDevice.handle.freeDescriptorSets(descriptor_pool.handle, descriptor_set.handles);
+}
+
 FRenderApiErrorInfo CVkRenderContext::createShaderModule(const FVkShaderModuleCreateInfo& shader_module_ci, vk::ShaderModule& shader_module)
 {
 	vk::ShaderModuleCreateInfo module_ci{};
@@ -440,8 +504,7 @@ FRenderApiErrorInfo CVkRenderContext::createPipeline(const FVkGraphicsPipelineCr
 	std::vector<vk::PipelineColorBlendAttachmentState> color_blend_attachment_states{};
 	for (uint32_t idx = 0u; idx < pipeline_ci.colorAttachmentFormats.size(); ++idx)
 	{
-		color_blend_attachment_states.emplace_back();
-		auto& state = color_blend_attachment_states.back();
+		auto& state = color_blend_attachment_states.emplace_back();
 
 		state.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
 		state.blendEnable = false; // TODO: add color blending support
@@ -477,8 +540,8 @@ FRenderApiErrorInfo CVkRenderContext::createPipeline(const FVkGraphicsPipelineCr
 	color_blending_state.pAttachments = color_blend_attachment_states.data();
 
 	vk::PipelineDepthStencilStateCreateInfo depth_stencil_state{};
-	depth_stencil_state.depthTestEnable = pipeline_ci.depthTest;
-	depth_stencil_state.depthWriteEnable = pipeline_ci.depthTest;
+	depth_stencil_state.depthTestEnable = pipeline_ci.depthAttachmentFormat != vk::Format::eUndefined;
+	depth_stencil_state.depthWriteEnable = pipeline_ci.depthAttachmentFormat != vk::Format::eUndefined;
 	depth_stencil_state.depthCompareOp = vk::CompareOp::eLessOrEqual;
 	depth_stencil_state.back.compareOp = vk::CompareOp::eAlways;
 	depth_stencil_state.depthBoundsTestEnable = false;
@@ -571,6 +634,24 @@ FRenderApiErrorInfo CVkRenderContext::createFence(const FVkFenceCreateInfo& fenc
 	debugSetObjectName(fence, fence_ci.name);
 #endif
 	return make_api_error(fence.objectType, res, "Failed to create");
+}
+
+void CVkRenderContext::submitCommandBuffer(const FVkCommandBuffer& command_buffer)
+{
+	vk::SubmitInfo submitInfo{};
+	submitInfo.commandBufferCount = static_cast<uint32_t>(command_buffer.handles.size());
+	submitInfo.pCommandBuffers = command_buffer.handles.data();
+
+	FVkFenceCreateInfo fence_ci{};
+	vk::Fence fence{};
+	createFence(fence_ci, fence);
+
+	logicalDevice.handle.resetFences(1, &fence);
+
+	auto& queue = getQueue(command_buffer.mask);
+	queue.submit(submitInfo, fence);
+	logicalDevice.handle.waitForFences(1, &fence, VK_TRUE, (std::numeric_limits<uint64_t>::max)());
+	logicalDevice.handle.destroyFence(fence, allocationCallbacks);
 }
 
 vk::Result CVkRenderContext::present(FVkCommandBuffer& command_buffer)
@@ -779,7 +860,7 @@ const FSwapchain& CVkRenderContext::getSwapchain() const
 	return swapchain;
 }
 
-const FCommandPool& CVkRenderContext::getCommandPool(uint32_t mask, const std::thread::id& thread_id)
+const FVkCommandPool& CVkRenderContext::getCommandPool(uint32_t mask, const std::thread::id& thread_id)
 {
 	auto found_it = commandPools.find(mask);
 	if (found_it != commandPools.end())
@@ -1085,8 +1166,7 @@ FRenderApiErrorInfo CVkRenderContext::createLogicalDevice(const FRenderContextCr
 		for (size_t usage = 0; usage < usages; ++usage)
 			queue_priorities[index].emplace_back(1.f);
 
-		queue_create_infos.emplace_back();
-		auto& create_info = queue_create_infos.back();
+		auto& create_info = queue_create_infos.emplace_back();
 		create_info.flags = vk::DeviceQueueCreateFlags{};
 		create_info.queueFamilyIndex = index;
 		create_info.queueCount = usages;

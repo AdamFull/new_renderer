@@ -24,13 +24,14 @@ namespace engine
 				void create(const FRenderContextCreateInfo& context_ci);
 
 				// VkCommandPool
-				FRenderApiErrorInfo createCommandPool(const FVkCommandPoolCreateInfo& command_pool_ci, FCommandPool& command_pool);
-				void destroyCommandPool(FCommandPool& command_pool);
+				FRenderApiErrorInfo createCommandPool(const FVkCommandPoolCreateInfo& command_pool_ci, FVkCommandPool& command_pool);
+				void destroyCommandPool(FVkCommandPool& command_pool);
 				void destroyUnusedCommandPools();
 				void destroyCommandPools();
 
 				// VkCommandBuffer
 				FRenderApiErrorInfo createCommandBuffer(const FVkCommandBufferCreateInfo& command_buffer_ci, FVkCommandBuffer& command_buffer);
+				FVkCommandBuffer& getCommandBuffer(const FVkGetCommandBufferInfo& get_info);
 				void destroyCommandBuffer(FVkCommandBuffer& command_buffer);
 				void beginCommandBuffer(FVkCommandBuffer& command_buffer, vk::CommandBufferUsageFlags usage, uint32_t image_index);
 				void endCommandBuffer(FVkCommandBuffer& command_buffer);
@@ -57,6 +58,13 @@ namespace engine
 				FRenderApiErrorInfo createDescriptorSetLayout(const FVkDescriptorSetLayoutCreateInfo& layout_ci, vk::DescriptorSetLayout& descriptor_set_layout);
 				void destroyDescriptorSetLayout(vk::DescriptorSetLayout& descriptor_set_layout);
 
+				FRenderApiErrorInfo createDescriptorPool(const FVkDescriptorPoolCreateInfo& pool_ci, FVkDescriptorPool& descriptor_pool);
+				FRenderApiErrorInfo growDescriptorPool(const FVkDescriptorPoolCreateInfo& pool_ci, FVkDescriptorPool& descriptor_pool);
+				void destroyDescriptorPool(FVkDescriptorPool& descriptor_pool);
+
+				FRenderApiErrorInfo createDescriptorSet(const FVkDescriptorSetCreateInfo& set_ci, FVkDescriptorSet& descriptor_set);
+				void destroyDescriptorSet(const FVkDescriptorPool& descriptor_pool, FVkDescriptorSet& descriptor_set);
+
 				// VkShaderModule
 				FRenderApiErrorInfo createShaderModule(const FVkShaderModuleCreateInfo& shader_module_ci, vk::ShaderModule& shader_module);
 				void destroyShaderModule(vk::ShaderModule& shader_module);
@@ -73,6 +81,7 @@ namespace engine
 				FRenderApiErrorInfo createSemaphore(const FVkSemaphoreCreateInfo& semaphore_ci, vk::Semaphore& semaphore);
 				FRenderApiErrorInfo createFence(const FVkFenceCreateInfo& fence_ci, vk::Fence& fence);
 
+				void submitCommandBuffer(const FVkCommandBuffer& command_buffer);
 				vk::Result present(FVkCommandBuffer& command_buffer);
 				vk::Result acquireNextImage(uint32_t& image_index);
 
@@ -140,7 +149,7 @@ namespace engine
 
 				const FSwapchain& getSwapchain() const;
 
-				const FCommandPool& getCommandPool(uint32_t mask, const std::thread::id& thread_id = std::this_thread::get_id());
+				const FVkCommandPool& getCommandPool(uint32_t mask, const std::thread::id& thread_id = std::this_thread::get_id());
 			protected:
 				void registerAllocationCallbacks();
 				FRenderApiErrorInfo createInstance(const FRenderContextCreateInfo& context_ci);
@@ -205,7 +214,7 @@ namespace engine
 				vk::PipelineCache pipelineCache{ nullptr };
 				FSwapchain swapchain{};
 
-				std::unordered_map<uint32_t, std::unordered_map<std::thread::id, FCommandPool>> commandPools{};
+				std::unordered_map<uint32_t, std::unordered_map<std::thread::id, FVkCommandPool>> commandPools{};
 			};
 		}
 	}

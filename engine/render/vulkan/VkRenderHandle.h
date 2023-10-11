@@ -1,7 +1,7 @@
 #pragma once
 
 #include <VkRenderContext.h>
-#include <VkResourceContext.h>
+#include <interface/ResourceContainer.h>
 #include <interface/RenderInterface.h>
 
 namespace engine
@@ -22,14 +22,19 @@ namespace engine
 				void beginFrameCommandBuffers() override;
 				void endFrameCommandBuffers() override;
 			protected:
+				void processResourceUpload();
+
+
 				FRenderApiErrorInfo createTexture(const FVkTextureCreateInfo& texture_ci, FVkTexture& texture);
 				void destroyTexture(FVkTexture& texture);
 
+				FRenderApiErrorInfo createShaderResources(const FVkShaderResourcesInfo& resources_info, FVkShader& shader);
 				FRenderApiErrorInfo createShader(const FVkGraphicsShaderCreateInfo& shader_ci, FVkShader& shader);
 				FRenderApiErrorInfo createShader(const FVkComputeShaderCreateInfo& shader_ci, FVkShader& shader);
 				void destroyShader(FVkShader& shader);
 
-				void updateDescriptors(const FVkDescriptorBufferUpdateInfo& update_info, FVkShader& shader)
+				void updateShaderDescriptor(const FVkShaderDescriptorsUpdateInfo& update_info);
+				void bindShaderDescriptors(const FVkCommandBuffer& command_buffer, const FVkShader& shader);
 
 				void beginRendering(const FVkCommandBuffer command_buffer, const FVkRenderingInfo& rendering_info);
 				void endRendering(const FVkCommandBuffer command_buffer, const FVkRenderingInfo& rendering_info);
@@ -38,12 +43,17 @@ namespace engine
 				void processImageLayoutTranslation(const FVkCommandBuffer& command_buffer, const FVkImageTranslationInfo& image_translation_info);
 				void textureLayoutTranslation(const FVkCommandBuffer& command_buffer, FVkTexture& texture, const FVkTextureTranslationInfo& translation_info);
 
+				void copyBufferToTexture(const FVkCommandBuffer& command_buffer, const FVkBuffer& buffer, const FVkTexture& texture, const std::vector<vk::BufferImageCopy2KHR>& copy_regions);
+				//void blitImage(const FVkCommandBuffer& command_buffer, );
+
 				void draw();
 			private:
 				std::unique_ptr<CVkRenderContext> context{};
-				std::unique_ptr<CVkResourceContext> resources{};
+				std::unique_ptr<CResourceContainer> resources{};
 
-				FVkCommandBuffer commandBuffer{};
+				std::vector<FVkTextureUploadInfo> textureUploadInfos{};
+
+				std::vector<FVkCommandBuffer> commandBuffers{};
 				bool isFrameStarted{ false };
 
 				int32_t surface_width{}, surface_height{};

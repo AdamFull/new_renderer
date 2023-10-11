@@ -6,6 +6,7 @@
 
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 namespace engine
 {
@@ -54,15 +55,77 @@ namespace engine
 		std::vector<std::string> validationLayers{};
 	};
 
-	enum ERenderMessageType
+	enum class EPrimitiveTopology
 	{
-		RENDER_MESSAGE_INITIALIZE,
-
+		ePointList,
+		eLineStrip,
+		eTriangleList,
+		eTriangleStrip,
+		ePatchList
 	};
 
-	struct FRenderMessage
+	enum class ECullingMode
 	{
+		eNone,
+		eBackFace,
+		eFrontFace,
+		eDoubleSided
+	};
 
+	enum class EFrontFace
+	{
+		eClockwise,
+		eCounterClockwise
+	};
+
+	enum class EShaderStage
+	{
+		eVertexShader,
+		eControlShader,
+		eEvaluationShader,
+		eGeometryShader,
+		eFragmentShader,
+		eComputeShader
+	};
+
+	struct FVertexBindingDescription
+	{
+		uint32_t binding{};
+		uint32_t stride{};
+	};
+
+	struct FVertexAttributeDescription
+	{
+		uint32_t elementSize{};
+		uint32_t stride{};
+
+		uint32_t binding{};
+		uint32_t location{};
+		uint32_t offset{};
+	};
+
+	struct FVertexDeclaration
+	{
+		std::vector<FVertexBindingDescription> bindingDescriptions{};
+		std::vector<FVertexAttributeDescription> attributeDescriptions{};
+	};
+
+	struct FGraphicsShaderCreateInfo
+	{
+		uint32_t usageCoutn{ 1u };
+
+		EPrimitiveTopology primitiveTopology{};
+		ECullingMode cullingMode{};
+		EFrontFace frontFace{};
+
+		// TODO: add multisampling info
+
+		std::vector<size_t> colorAttachments{};
+		size_t depthAttachment{ ~0ull };
+
+		FVertexDeclaration vertexDeclaration{};
+
+		std::unordered_map<EShaderStage, std::vector<uint32_t>> shaderStageCode{};
 	};
 
 	class IRenderInterface

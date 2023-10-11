@@ -29,14 +29,14 @@ namespace engine
 				size_t size{ 0ull };
 				vk::ShaderStageFlags stageFlags{ vk::ShaderStageFlagBits::eAll };
 				vk::DescriptorType descriptorType;
-				std::unordered_map<std::string, FVkReflectionUniform> uniforms{};
+				std::unordered_map<size_t, FVkReflectionUniform> uniforms{};
 			};
 
 			struct FVkReflectionPushConstantBlock
 			{
 				size_t size{ 0ull };
 				vk::ShaderStageFlags stageFlags{ vk::ShaderStageFlagBits::eAll };
-				std::unordered_map<std::string, FVkReflectionUniform> uniforms{};
+				std::unordered_map<size_t, FVkReflectionUniform> uniforms{};
 			};
 
 			struct FVkReflectionSpecializationConstant
@@ -59,10 +59,10 @@ namespace engine
 				uint32_t executionModeInvocations{ 0 };
 				uint32_t executionModeOutputVertices{ 0 };
 
-				std::unordered_map<std::string, FVkReflectionUniform> uniforms;
-				std::unordered_map<std::string, FVkReflectionUniformBlock> uniformBlocks;
-				std::unordered_map<std::string, FVkReflectionPushConstantBlock> pushBlocks;
-				std::unordered_map<std::string, FVkReflectionSpecializationConstant> specializationConstants;
+				std::unordered_map<size_t, FVkReflectionUniform> uniforms;
+				std::unordered_map<size_t, FVkReflectionUniformBlock> uniformBlocks;
+				std::unordered_map<size_t, FVkReflectionPushConstantBlock> pushBlocks;
+				std::unordered_map<size_t, FVkReflectionSpecializationConstant> specializationConstants;
 
 				std::vector<char> specializationDataBuffer{};
 
@@ -75,7 +75,7 @@ namespace engine
 			{
 			public:
 				void addShaderStage(vk::ShaderStageFlagBits shaderStage, const std::vector<uint32_t>& shaderCode);
-				const FVkShaderReflectionData& build();
+				FVkShaderReflectionData build();
 			private:
 				FVkShaderReflectionData reflectionData{};
 				std::vector<vk::ShaderStageFlagBits> shaderStages{};

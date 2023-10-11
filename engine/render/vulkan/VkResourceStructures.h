@@ -97,17 +97,17 @@ namespace engine
 			// ---------------------------------------------------------------------------------
 			// ================================| COMMAND POOL |=================================
 			// ---------------------------------------------------------------------------------
-			struct FCommandPool
+			struct FVkCommandPool
 			{
-				FCommandPool() { incrementUsage(); }
-				~FCommandPool() { decrementUsage(); }
+				FVkCommandPool() { incrementUsage(); }
+				~FVkCommandPool() { decrementUsage(); }
 
-				FCommandPool(const FCommandPool& other) : handle(other.handle), threadId(other.threadId)
+				FVkCommandPool(const FVkCommandPool& other) : handle(other.handle), threadId(other.threadId)
 				{
 					incrementUsage();
 				}
 
-				FCommandPool& operator=(const FCommandPool& other)
+				FVkCommandPool& operator=(const FVkCommandPool& other)
 				{
 					if (this != &other)
 					{
@@ -130,7 +130,7 @@ namespace engine
 			struct FVkCommandPoolCreateInfo
 			{
 				uint32_t mask{ 0u };
-				std::thread::id threadId{};
+				std::thread::id threadId{ std::this_thread::get_id() };
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				std::string name{};
 #endif
@@ -233,6 +233,68 @@ namespace engine
 #endif
 			};
 
+			struct FVkDescriptorPool
+			{
+				vk::DescriptorPool handle{};
+				std::thread::id thread_id{};
+			};
+
+			struct FVkDescriptorPoolCreateInfo
+			{
+				std::vector<vk::DescriptorPoolSize> poolSizes{};
+				uint32_t usageCount{ 1u };
+#ifndef BUILD_WITHOUT_DEBUGGIND
+				std::string name{};
+#endif
+			};
+
+			struct FVkDescriptorSet
+			{
+				// Per frame descriptor sets
+				std::vector<vk::DescriptorSet> handles{};
+			};
+
+			struct FVkDescriptorSetCreateInfo
+			{
+				vk::DescriptorPool pool{};
+				vk::DescriptorSetLayout layout{};
+#ifndef BUILD_WITHOUT_DEBUGGIND
+				std::string name{};
+#endif
+			};
+
+			enum class EVkResourceDescriptorType
+			{
+				eTexture,
+				eBuffer
+			};
+
+			struct FVkShaderDescriptorUpdateInfo
+			{
+				size_t resourceReflectionName{};
+				size_t resourceId{ ~0ull };
+				EVkResourceDescriptorType resourceType{};
+			};
+
+			struct FVkGetCommandBufferInfo
+			{
+				uint32_t queueType{};
+				std::thread::id threadId{ std::this_thread::get_id() };
+				size_t bufferIndex{};
+			};
+
+			struct FVkShaderDescriptorsUpdateInfo
+			{
+				size_t shaderId{ ~0ull };
+				std::vector<FVkShaderDescriptorUpdateInfo> resourceInfos{};
+			};
+
+			struct FVkBindDescriptorInfo
+			{
+				vk::PipelineLayout layout{};
+				vk::PipelineBindPoint bindPoint{};
+			};
+
 			// ---------------------------------------------------------------------------------
 			// ====================================| PIPELINE |=================================
 			// ---------------------------------------------------------------------------------
@@ -260,7 +322,6 @@ namespace engine
 				vk::PrimitiveTopology primitiveTopology{};
 				vk::CullModeFlags cullMode{};
 				vk::FrontFace frontFace{};
-				bool depthTest{ false };
 				vk::SampleCountFlagBits sampleCount{ vk::SampleCountFlagBits::e1 };
 				uint32_t patchControlPoints{ 0u };
 
@@ -310,39 +371,6 @@ namespace engine
 #endif
 			};
 
-			struct FVkDescriptorBufferResourceInfo
-			{
-				vk::DeviceAddress address{};
-				vk::DeviceSize size{};
-				vk::Format format{};
-			};
-
-			struct FVkDescriptorTextureResourceInfo
-			{
-				vk::ImageView handle{};
-				vk::Sampler sampler{};
-				vk::ImageLayout layout{};
-			};
-
-			struct FVkDescriptorResourceInfo
-			{
-				uint32_t layout{ 0u };
-				FVkDescriptorBufferResourceInfo bufferInfo{};
-				FVkDescriptorTextureResourceInfo textureInfo{};
-				vk::DescriptorType descriptorType{};
-			};
-
-			struct FVkDescriptorSetUpdateInfo
-			{
-				uint32_t set{ 0u };
-				std::vector<FVkDescriptorResourceInfo> resourceInfos{};
-			};
-
-			struct FVkDescriptorBufferUpdateInfo
-			{
-				std::vector<FVkDescriptorSetUpdateInfo> updateInfos{};
-			};
-
 			// HIGH LEVEL OBJECTS
 
 			struct FVkShader
@@ -351,20 +379,36 @@ namespace engine
 				vk::PipelineLayout layout{};
 				std::vector<vk::ShaderModule> shaderModules{};
 				std::unordered_map<uint32_t, vk::DescriptorSetLayout> descriptorSetLayouts{};
-				std::unordered_map<uint32_t, FVkBuffer> descriptorBuffers{};
+				std::unordered_map<uint32_t, std::vector<FVkDescriptorSet>> descriptorSets{};
+				std::unordered_map<uint32_t, uint32_t> descriptorUsage{};
+				FVkDescriptorPool descriptorPool{};
 				std::vector<vk::PushConstantRange> pushConstantRanges{};
+				
+				vk::PipelineBindPoint bindPoint{};
+
+				size_t reflection{ ~0ull };
+			};
+
+			struct FVkShaderResourcesInfo
+			{
+				uint32_t usageCount{ 1u };
+#ifndef BUILD_WITHOUT_DEBUGGIND
+				std::string name{};
+#endif
 			};
 
 			struct FVkGraphicsShaderCreateInfo
 			{
+				uint32_t usageCount{ 1u };
+
 				vk::PrimitiveTopology primitiveTopology{};
 				vk::CullModeFlags cullMode{};
 				vk::FrontFace frontFace{};
-				bool depthTest{ false };
 				vk::SampleCountFlagBits sampleCount{ vk::SampleCountFlagBits::e1 };
 				uint32_t patchControlPoints{ 0u };
 
 				std::vector<vk::Format> colorAttachmentFormats{};
+				vk::Format depthAttachmentFormat{ vk::Format::eUndefined };
 
 				std::vector<vk::VertexInputBindingDescription> vertexBindingDescriptions{};
 				std::vector<vk::VertexInputAttributeDescription> vertexAttributeDescriptions{};
@@ -378,6 +422,8 @@ namespace engine
 
 			struct FVkComputeShaderCreateInfo
 			{
+				uint32_t usageCount{ 1u };
+
 				std::vector<std::vector<uint32_t>> shaderCode{};
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				std::string name{};
@@ -416,12 +462,11 @@ namespace engine
 				FVkImage image{};
 				std::vector<vk::ImageView> imageViews{};
 				vk::Sampler sampler{};
+				vk::ImageLayout layout{};
+				uint32_t totalLayers{ 1u };
+				bool isRenderTarget{ false };
 
 				FVkTextureInitialData initialData;
-
-				uint32_t totalLayers{ 1u };
-
-				bool isRenderTarget{ false };
 			};
 
 			struct FVkTextureCreateInfo
@@ -449,6 +494,14 @@ namespace engine
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				std::string name{};
 #endif
+			};
+
+			struct FVkTextureUploadInfo
+			{
+				size_t textureId{ ~0ull };
+				vk::DeviceSize size{};
+				std::unique_ptr<uint8_t[]> data{};
+				std::vector<std::vector<size_t>> mipLayerOffsets{};
 			};
 
 			struct FVkRenderingInfo

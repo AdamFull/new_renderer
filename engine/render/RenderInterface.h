@@ -18,8 +18,6 @@ namespace engine
 
 			void beginFrame() override;
 			void endFrame() override;
-		protected:
-			void processMessage(const FRenderMessage& message);
 		private:
 			std::unique_ptr<IRenderHandleInterface> render_handle{};
 		};

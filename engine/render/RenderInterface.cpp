@@ -82,8 +82,3 @@ void CRenderInterface::endFrame()
 {
 	render_handle->endFrameCommandBuffers();
 }
-
-void CRenderInterface::processMessage(const FRenderMessage& message)
-{
-
-}
