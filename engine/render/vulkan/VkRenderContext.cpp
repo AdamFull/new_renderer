@@ -348,11 +348,11 @@ void CVkRenderContext::destroyBuffer(FVkBuffer& buffer)
 	memoryAllocator.destroyBuffer(buffer.handle, buffer.memory);
 }
 
-FRenderApiErrorInfo CVkRenderContext::mapBufferMemory(FVkBuffer& buffer, void* mappedMemory)
+FRenderApiErrorInfo CVkRenderContext::mapBufferMemory(FVkBuffer& buffer, void** mappedMemory)
 {
 	if (!buffer.isMapped)
 	{
-		vk::Result res = memoryAllocator.mapMemory(buffer.memory, &mappedMemory);
+		vk::Result res = memoryAllocator.mapMemory(buffer.memory, mappedMemory);
 		buffer.isMapped = res == vk::Result::eSuccess;
 		return make_api_error(buffer.handle.objectType, res, "Failed to map buffer memory");
 	}

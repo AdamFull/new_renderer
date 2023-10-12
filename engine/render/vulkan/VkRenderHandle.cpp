@@ -93,6 +93,39 @@ void CVkRenderHandle::create(const FRenderContextCreateInfo& context_ci)
 	resources->add("test_shader_uv", std::move(shader));
 }
 
+size_t CVkRenderHandle::createTexture(const FTextureCreateInfo& texture_ci)
+{
+	FVkTextureCreateInfo vk_texture_ci{};
+	vk_texture_ci.format = static_cast<vk::Format>(texture_ci.format);
+	vk_texture_ci.usageFlags = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
+	vk_texture_ci.aspectFlags = vk::ImageAspectFlagBits::eColor;
+	vk_texture_ci.extent = vk::Extent3D{ texture_ci.width, texture_ci.height, texture_ci.depth };
+	vk_texture_ci.layout = vk::ImageLayout::eUndefined;
+
+	vk_texture_ci.imageTypeFlags = texture_ci.typeFlags;
+	vk_texture_ci.mipLevelCount = texture_ci.mipLevels;
+	vk_texture_ci.arrayLayersCount = texture_ci.arrayLayers;
+
+	vk_texture_ci.sampleCount = vk::SampleCountFlagBits::e1;
+
+	vk_texture_ci.addressMode = vk::SamplerAddressMode::eRepeat;
+	vk_texture_ci.enableAnisotropy = true;
+
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	vk_texture_ci.name = texture_ci.name;
+#endif
+
+	FVkTexture texture{};
+	createTexture(vk_texture_ci, texture);
+
+	auto& upload_info = textureUploadInfos.emplace_back();
+	upload_info.textureId = resources->add<FVkTexture>(texture_ci.name.c_str(), std::move(texture));
+	upload_info.mipLayerOffsets = texture_ci.offsets;
+	upload_info.data = std::move(texture_ci.data);
+
+	return upload_info.textureId;
+}
+
 void CVkRenderHandle::updateSurface(int32_t surface_width, int32_t surface_height)
 {
 	if (this->surface_width != surface_width || this->surface_height != surface_height)
@@ -151,7 +184,6 @@ void CVkRenderHandle::updateSurface(int32_t surface_width, int32_t surface_heigh
 			texture_ci.layout = target.initialData.layout;
 			texture_ci.mipLevelCount = target.initialData.mipLevelCount;
 			texture_ci.arrayLayersCount = target.initialData.arrayLayersCount;
-			texture_ci.numDimensions = target.initialData.numDimensions;
 			texture_ci.createSampler = false;
 
 			createTexture(texture_ci, target);
@@ -221,7 +253,7 @@ void CVkRenderHandle::processResourceUpload()
 
 	FVkCommandBufferCreateInfo command_buffer_ci{};
 	command_buffer_ci.count = 1u;
-	command_buffer_ci.level = vk::CommandBufferLevel::eSecondary;
+	command_buffer_ci.level = vk::CommandBufferLevel::ePrimary;
 	command_buffer_ci.mask = QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT;
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	command_buffer_ci.name = "resource_upload";
@@ -236,11 +268,11 @@ void CVkRenderHandle::processResourceUpload()
 
 	// Prepare staging buffers
 	std::vector<FVkBuffer> staging_buffers{};
-	for (const auto& texture_upload : textureUploadInfos)
+	for (auto& texture_upload : textureUploadInfos)
 	{
 		FVkBufferCreateInfo staging_buffer_ci{};
 		staging_buffer_ci.instanceCount = 1ull;
-		staging_buffer_ci.instanceSize = texture_upload.size;
+		staging_buffer_ci.instanceSize = texture_upload.data.size();
 		staging_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
 		staging_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuOnly;
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -252,12 +284,11 @@ void CVkRenderHandle::processResourceUpload()
 
 		// Copy data to buffer
 		void* mapped_buffer_memory{ nullptr };
-		context->mapBufferMemory(staging_buffer, mapped_buffer_memory);
-		std::memcpy(mapped_buffer_memory, texture_upload.data.get(), texture_upload.size);
+		context->mapBufferMemory(staging_buffer, &mapped_buffer_memory);
+		std::memcpy(mapped_buffer_memory, texture_upload.data.data(), texture_upload.data.size());
 		context->unmapBufferMemory(staging_buffer);
 
-		// TODO: For optimize ram usage i should free memory here
-		//texture_upload.data = nullptr;
+		texture_upload.data.clear();
 	}
 
 	// Translate all images to transfer dst stage
@@ -425,7 +456,6 @@ FRenderApiErrorInfo CVkRenderHandle::createTexture(const FVkTextureCreateInfo& t
 {
 	texture.initialData.imageTypeFlags = texture_ci.imageTypeFlags;
 	texture.initialData.arrayLayersCount = texture_ci.arrayLayersCount;
-	texture.initialData.numDimensions = texture_ci.numDimensions;
 	
 	FVkImageCreateInfo image_ci{};
 	FVkImageViewCreateInfo image_view_ci{};
@@ -433,17 +463,27 @@ FRenderApiErrorInfo CVkRenderHandle::createTexture(const FVkTextureCreateInfo& t
 	image_ci.name = texture_ci.name;
 #endif
 
-	if (texture_ci.extent.depth > 1)
+	if (texture_ci.extent.depth > 1 || (texture_ci.imageTypeFlags & TEXTURE_IMAGE_TYPE_3D_FLAG_BIT))
 		image_ci.ci.imageType = vk::ImageType::e3D;
 	else
-		image_ci.ci.imageType = static_cast<vk::ImageType>(texture_ci.numDimensions - 1u);
+	{
+		if (texture_ci.imageTypeFlags & TEXTURE_IMAGE_TYPE_1D_FLAG_BIT)
+			image_ci.ci.imageType = vk::ImageType::e1D;
+		else if (texture_ci.imageTypeFlags & TEXTURE_IMAGE_TYPE_2D_FLAG_BIT)
+			image_ci.ci.imageType = vk::ImageType::e2D;
+		else if (texture_ci.imageTypeFlags & TEXTURE_IMAGE_TYPE_3D_FLAG_BIT)
+			image_ci.ci.imageType = vk::ImageType::e3D;
+		else
+			image_ci.ci.imageType = vk::ImageType::e2D;
+	}
 
 	texture.initialData.extent = image_ci.ci.extent = texture_ci.extent;
 	texture.initialData.mipLevelCount = image_ci.ci.mipLevels = texture_ci.mipLevelCount;
 
+	image_ci.ci.arrayLayers = texture_ci.arrayLayersCount;
 	if ((texture_ci.imageTypeFlags & TEXTURE_IMAGE_TYPE_ARRAY_FLAG_BIT) && (texture_ci.imageTypeFlags & TEXTURE_IMAGE_TYPE_CUBEMAP_FLAG_BIT))
 	{
-		image_ci.ci.arrayLayers = texture_ci.arrayLayersCount * 6u;
+		image_ci.ci.arrayLayers *= 6u;
 		image_view_ci.ci.viewType = vk::ImageViewType::eCubeArray;
 	}
 	else if (texture_ci.imageTypeFlags & TEXTURE_IMAGE_TYPE_ARRAY_FLAG_BIT)
@@ -1070,7 +1110,7 @@ void CVkRenderHandle::copyBufferToTexture(const FVkCommandBuffer& command_buffer
 	copy_info.regionCount = static_cast<uint32_t>(copy_regions.size());
 	copy_info.pRegions = copy_regions.data();
 
-	current_buffer.copyBufferToImage2KHR(copy_info);
+	current_buffer.copyBufferToImage2KHR(&copy_info);
 }
 
 void CVkRenderHandle::draw()

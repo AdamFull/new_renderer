@@ -4,9 +4,12 @@
 #include <Windows.h>
 #endif
 
+#include <memory>
 #include <string>
 #include <vector>
 #include <unordered_map>
+
+#include "SharedStructure.h"
 
 namespace engine
 {
@@ -53,6 +56,15 @@ namespace engine
 		bool validationState{ false };
 		uint32_t validationFeatures{ 0u };
 		std::vector<std::string> validationLayers{};
+	};
+
+	enum ETextureImageTypeFlagBits
+	{
+		TEXTURE_IMAGE_TYPE_ARRAY_FLAG_BIT = 1 << 0,
+		TEXTURE_IMAGE_TYPE_CUBEMAP_FLAG_BIT = 1 << 1,
+		TEXTURE_IMAGE_TYPE_1D_FLAG_BIT = 1 << 2,
+		TEXTURE_IMAGE_TYPE_2D_FLAG_BIT = 1 << 3,
+		TEXTURE_IMAGE_TYPE_3D_FLAG_BIT = 1 << 4
 	};
 
 	enum class EPrimitiveTopology
@@ -128,12 +140,33 @@ namespace engine
 		std::unordered_map<EShaderStage, std::vector<uint32_t>> shaderStageCode{};
 	};
 
+	struct FTextureCreateInfo
+	{
+		std::string name{};
+
+		uint32_t format{};
+		uint32_t typeFlags{};
+
+		uint32_t width{};
+		uint32_t height{};
+		uint32_t depth{};
+
+		uint32_t mipLevels{ 1u };
+		uint32_t arrayLayers{ 1u };
+
+		std::vector<std::vector<size_t>> offsets{};
+		std::vector<uint8_t> data{};
+
+		bool result{ false };
+	};
+
 	class IRenderInterface
 	{
 	public:
 		virtual ~IRenderInterface() = default;
 
 		virtual void create(const FRenderInterfaceCreateInfo& render_interface_ci) = 0;
+		virtual size_t createTexture(const std::string& name, const std::vector<uint8_t>& data, EMimeType mime) = 0;
 
 		virtual void updateSurfaceSize(int32_t width, int32_t height) = 0;
 
@@ -147,6 +180,7 @@ namespace engine
 		virtual ~IRenderHandleInterface() = default;
 
 		virtual void create(const FRenderContextCreateInfo& context_ci) = 0;
+		virtual size_t createTexture(const FTextureCreateInfo& texture_ci) = 0;
 		
 		virtual void updateSurface(int32_t surface_width, int32_t surface_height) = 0;
 

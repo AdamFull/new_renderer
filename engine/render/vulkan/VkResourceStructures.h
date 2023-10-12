@@ -434,14 +434,6 @@ namespace engine
 			// ---------------------------------------------------------------------------------
 			// ===================================| TEXTURE |===================================
 			// ---------------------------------------------------------------------------------
-			enum EVkTextureImageTypeFlagBits
-			{
-				TEXTURE_IMAGE_TYPE_ARRAY_FLAG_BIT = 1 << 0,
-				TEXTURE_IMAGE_TYPE_CUBEMAP_FLAG_BIT = 1 << 1,
-				TEXTURE_IMAGE_TYPE_2D_FLAG_BIT = 1 << 2,
-				TEXTURE_IMAGE_TYPE_3D_FLAG_BIT = 1 << 3
-			};
-
 			struct FVkTextureInitialData
 			{
 				vk::ImageLayout layout{};
@@ -454,7 +446,6 @@ namespace engine
 				uint32_t imageTypeFlags{ 0u };
 				uint32_t mipLevelCount{ 1u };
 				uint32_t arrayLayersCount{ 0u };
-				uint32_t numDimensions{ 0u };
 			};
 
 			struct FVkTexture
@@ -481,7 +472,6 @@ namespace engine
 
 				uint32_t mipLevelCount{ 1u };
 				uint32_t arrayLayersCount{ 0u };
-				uint32_t numDimensions{ 0u };
 
 				vk::SampleCountFlagBits sampleCount{ };
 
@@ -499,8 +489,7 @@ namespace engine
 			struct FVkTextureUploadInfo
 			{
 				size_t textureId{ ~0ull };
-				vk::DeviceSize size{};
-				std::unique_ptr<uint8_t[]> data{};
+				std::vector<uint8_t> data{};
 				std::vector<std::vector<size_t>> mipLayerOffsets{};
 			};
 

@@ -38,11 +38,11 @@ target_include_directories(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-	PUBLIC utility_lib
-	PUBLIC Vulkan-Headers
-	PUBLIC VulkanMemoryAllocator
-	PUBLIC spirv-cross-core
-	PUBLIC spirv-cross-glsl
+	PRIVATE utility_lib
+	PRIVATE Vulkan-Headers
+	PRIVATE VulkanMemoryAllocator
+	PRIVATE spirv-cross-core
+	PRIVATE spirv-cross-glsl
 )
 
 target_compile_definitions(${PROJECT_NAME} 

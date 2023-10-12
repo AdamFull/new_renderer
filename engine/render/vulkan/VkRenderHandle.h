@@ -16,6 +16,7 @@ namespace engine
 				~CVkRenderHandle() override;
 
 				void create(const FRenderContextCreateInfo& context_ci) override;
+				size_t createTexture(const FTextureCreateInfo& texture_ci) override;
 
 				void updateSurface(int32_t surface_width, int32_t surface_height) override;
 

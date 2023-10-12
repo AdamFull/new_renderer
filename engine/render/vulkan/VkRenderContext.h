@@ -50,7 +50,7 @@ namespace engine
 				// VkBuffer
 				FRenderApiErrorInfo createBuffer(const FVkBufferCreateInfo& buffer_ci, FVkBuffer& buffer);
 				void destroyBuffer(FVkBuffer& buffer);
-				FRenderApiErrorInfo mapBufferMemory(FVkBuffer& buffer, void* mappedMemory);
+				FRenderApiErrorInfo mapBufferMemory(FVkBuffer& buffer, void** mappedMemory);
 				void unmapBufferMemory(FVkBuffer& buffer);
 				void flushBufferMemory(const FVkBuffer& buffer, vk::DeviceSize size, vk::DeviceSize offset);
 

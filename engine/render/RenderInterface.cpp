@@ -34,7 +34,8 @@ std::unique_ptr<engine::IRenderHandleInterface> make_render_handle_interface(con
 			VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME,
 			VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
 			VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
-			VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME
+			VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME,
+			VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME
 		};
 		
 		context_ci.optionalDeviceExtensions = {
@@ -65,20 +66,29 @@ CRenderInterface::~CRenderInterface()
 
 void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 {
-	render_handle = make_render_handle_interface(rhi_ci);
+	resourceLoader = std::make_unique<CResourceLoader>();
+	renderHandle = make_render_handle_interface(rhi_ci);
+}
+
+size_t CRenderInterface::createTexture(const std::string& name, const std::vector<uint8_t>& data, EMimeType mime)
+{
+	FTextureCreateInfo texture_ci = resourceLoader->loadTexture(data, mime);
+	texture_ci.name = name;
+
+	return renderHandle->createTexture(texture_ci);
 }
 
 void CRenderInterface::updateSurfaceSize(int32_t width, int32_t height)
 {
-	render_handle->updateSurface(width, height);
+	renderHandle->updateSurface(width, height);
 }
 
 void CRenderInterface::beginFrame()
 {
-	render_handle->beginFrameCommandBuffers();
+	renderHandle->beginFrameCommandBuffers();
 }
 
 void CRenderInterface::endFrame()
 {
-	render_handle->endFrameCommandBuffers();
+	renderHandle->endFrameCommandBuffers();
 }
