@@ -1,6 +1,17 @@
 #include "Application.h"
 #include <platform/PlatformSpecific.h>
-#include "render/RenderInterface.h"
+#include <render/RenderInterface.h>
+
+#include <filesystem/VirtualFileSystemManager.h>
+#include <filesystem/native/NativeFileSystem.h>
+#include <filesystem/vfs_helper.h>
+
+#include <iostream>
+#include <fstream>
+#include <sstream>
+
+#include <interface/SharedStructure.h>
+
 
 using namespace engine;
 
@@ -14,11 +25,33 @@ void get_platform_specific_window_data(FRenderInterfaceCreateInfo& rhi_ci, const
 
 void CApplication::create()
 {
+	vfs = std::make_unique<filesystem::CVirtualFileSystemManager>();
+
+	vfs->mount("/root", std::make_unique<filesystem::CNativeFileSystem>(""));
+
 	FWindowCreateInfo window_ci{};
 	window_ci.name = "Vulkan App";
 	window_ci.flags = WINDOW_RESIZABLE_FLAG_BIT;
 	window_ci.width = 800;
 	window_ci.height = 600;
+
+	/*std::ifstream f("test_shader.frag.spv", std::ios::in | std::ios::binary);
+	std::vector<char> bytes{ std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>() };
+
+	if (bytes.size() % sizeof(uint32_t) != 0) {
+		std::cerr << "Data in not aligned uint32_t" << std::endl;
+		return;
+	}
+
+	std::vector<uint32_t> data(bytes.size() / sizeof(uint32_t));
+	std::memcpy(data.data(), bytes.data(), bytes.size());
+
+	std::stringstream ss{};
+	ss << "const std::vector<uint32_t> fragment_shader {";
+	for (auto& n : data)
+		ss << n << ", ";
+	ss << "};";
+	std::cout << ss.str();*/
 
 	window_handle = make_platform_window(window_ci);
 
@@ -29,6 +62,21 @@ void CApplication::create()
 
 	render_interface = std::make_unique<render::CRenderInterface>();
 	render_interface->create(rhi_ci);
+
+	loadTexture("/root/skybox.ktx2");
+	loadTexture("/root/3dtex_1_reference_u.ktx2");
+}
+
+size_t CApplication::loadTexture(const std::string& path)
+{
+	auto name = filesystem::fs::get_stem(path);
+	auto ext = filesystem::fs::get_ext(path);
+	auto ext_hash = utl::const_hash(ext.c_str(), ext.size());
+
+	std::vector<uint8_t> data{};
+	vfs->readFile(path, data);
+
+	return render_interface->createTexture(name, data, static_cast<EMimeType>(ext_hash));
 }
 
 void CApplication::loop()
