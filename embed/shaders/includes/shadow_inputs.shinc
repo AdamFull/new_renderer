@@ -1,0 +1,44 @@
+{
+	includes: [];
+
+	code: 
+	"""
+		#ifdef BINDLESS_TEXTURES
+		#extension GL_EXT_nonuniform_qualifier : enable
+		layout(set = 1, binding = 0) uniform sampler2D textures[];
+		#else
+		#ifdef HAS_BASECOLORMAP
+		layout(set = 1, binding = 0) uniform sampler2D color_tex;
+		#endif // HAS_BASECOLORMAP
+		#endif // BINDLESS_TEXTURES
+
+		layout(std140, set = 0, binding = 0) uniform FSkinning
+		{
+			mat4 jointMatrices[128];
+		};
+
+		//layout(std140, set = 0, binding = 1) uniform UBOMeshData
+		//{
+		//	mat4 model;
+		//} modelData;
+		
+		struct FInstance
+		{
+			mat4 model;
+			vec4 color;
+		};
+		
+		layout(std430, set = 0, binding = 3) buffer readonly UBOInstancing
+		{
+			FInstance instances[512];
+		} instancing;
+		
+		#ifdef BINDLESS_TEXTURES
+		#define sample_texture(samplerName, texCoord) texture(textures[texture_ids.samplerName], texCoord)
+		#define sample_texture_lod(samplerName, texCoord, lodn) textureLod(textures[texture_ids.samplerName], texCoord, lodn)
+		#else
+		#define sample_texture(samplerName, texCoord) texture(samplerName, texCoord)
+		#define sample_texture_lod(samplerName, texCoord, lodn) textureLod(samplerName, texCoord, lodn)
+		#endif
+	""";
+}

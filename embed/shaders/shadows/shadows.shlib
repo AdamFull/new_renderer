@@ -1,0 +1,74 @@
+{
+	name: "shadows";
+
+	shaders: [
+		{
+			name: "cascaded";
+			sources: [
+				{
+					type: "vertex";
+					shader_name: "base_directional_shadow_vert";
+				}
+				//{
+				//	type: "fragment";
+				//	shader_name: "cascade_shadow_frag";
+				//}
+			];
+		},
+		{
+			name: "directional";
+			sources: [
+				{
+					type: "vertex";
+					shader_name: "base_directional_shadow_vert";
+				}
+			];
+		},
+		{
+			name: "omni";
+			sources: [
+				{
+					type: "vertex";
+					shader_name: "omni_shadow_vert";
+				},
+				{
+					type: "fragment";
+					shader_name: "omni_shadow_frag";
+				}
+			];
+		}
+	];
+
+	compile: [
+		{ 
+			shader_name: "cascaded";
+			permutation_generator: {
+				definitions: [
+					"EDITOR_MODE",
+					"BINDLESS_TEXTURES",
+					"HAS_BASECOLORMAP"
+				];
+			};
+		},
+		{ 
+			shader_name: "directional";
+			permutation_generator: {
+				definitions: [
+					"EDITOR_MODE",
+					"BINDLESS_TEXTURES",
+					"HAS_BASECOLORMAP"
+				];
+			};
+		},
+		{ 
+			shader_name: "omni";
+			permutation_generator: {
+				definitions: [
+					"EDITOR_MODE",
+					"BINDLESS_TEXTURES",
+					"HAS_BASECOLORMAP"
+				];
+			};
+		}
+	];
+}
