@@ -74,8 +74,6 @@ FResourceView CVkRenderHandle::createTexture(const std::string& name, const FTex
 	// Create texture handle
 	FVkTextureCreateInfo vk_texture_ci{};
 	vk_texture_ci.base = texture_ci;
-	vk_texture_ci.usageFlags = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
-	vk_texture_ci.aspectFlags = vk::ImageAspectFlagBits::eColor;
 	vk_texture_ci.sampleCount = vk::SampleCountFlagBits::e1;
 	vk_texture_ci.addressMode = vk::SamplerAddressMode::eRepeat;
 	vk_texture_ci.enableAnisotropy = true;
@@ -97,8 +95,6 @@ FResourceView CVkRenderHandle::createRenderTarget(const std::string& name, const
 {
 	FVkTextureCreateInfo vk_texture_ci{};
 	vk_texture_ci.base = texture_ci;
-	vk_texture_ci.usageFlags = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled;
-	vk_texture_ci.aspectFlags = vk::ImageAspectFlagBits::eColor;
 	vk_texture_ci.sampleCount = vk::SampleCountFlagBits::e1;
 	vk_texture_ci.addressMode = vk::SamplerAddressMode::eRepeat;
 
@@ -107,8 +103,9 @@ FResourceView CVkRenderHandle::createRenderTarget(const std::string& name, const
 #endif
 
 	FVkTexture texture{};
-	createTexture(vk_texture_ci, texture);
 	texture.isRenderTarget = true;
+
+	createTexture(vk_texture_ci, texture);
 
 	return { resources->add<FVkTexture>(name.c_str(), std::move(texture)), RESOURCE_TYPE_RENDER_TARGET_BIT };
 }
@@ -125,10 +122,9 @@ FResourceView CVkRenderHandle::createRenderTargets(const std::string& name, cons
 		{
 			FVkTexture texture{};
 			texture.isRenderTarget = true;
-			texture.initialData.base.format = static_cast<uint32_t>(swapchain.format);
+			texture.initialData.base = texture_ci;
 			texture.image.handle = swapchain.images.at(idx);
 			texture.imageViews.emplace_back(swapchain.imageViews.at(idx));
-			texture.initialData.aspectFlags = vk::ImageAspectFlagBits::eColor;
 
 			resource_view.id = resources->add<FVkTexture>(name.c_str(), std::move(texture));
 		}
@@ -248,8 +244,6 @@ void CVkRenderHandle::updateSurface(int32_t surface_width, int32_t surface_heigh
 
 				FVkTextureCreateInfo texture_ci{};
 				texture_ci.base = target.initialData.base;
-				texture_ci.aspectFlags = target.initialData.aspectFlags;
-				texture_ci.usageFlags = target.initialData.usageFlags;
 				texture_ci.createSampler = false;
 
 				createTexture(texture_ci, target);
@@ -393,6 +387,8 @@ void CVkRenderHandle::processResourceUpload()
 		auto& texture = textures.at(texture_upload.textureId).front();
 		auto& staging_buffer = staging_buffers.at(idx);
 
+		auto aspect_mask = get_texture_aspect_flags(texture);
+
 		std::vector<vk::BufferImageCopy2KHR> copy_regions{};
 		if (!texture_upload.mipLayerOffsets.empty())
 		{
@@ -403,7 +399,7 @@ void CVkRenderHandle::processResourceUpload()
 				{
 					size_t offset = layer_offsets.at(mip);
 					auto& copy_region = copy_regions.emplace_back();
-					copy_region.imageSubresource.aspectMask = texture.initialData.aspectFlags;
+					copy_region.imageSubresource.aspectMask = aspect_mask;
 					copy_region.imageSubresource.mipLevel = mip;
 					copy_region.imageSubresource.baseArrayLayer = layer;
 					copy_region.imageSubresource.layerCount = texture.initialData.base.arrayLayers;
@@ -417,7 +413,7 @@ void CVkRenderHandle::processResourceUpload()
 		else
 		{
 			auto& copy_region = copy_regions.emplace_back();
-			copy_region.imageSubresource.aspectMask = texture.initialData.aspectFlags;
+			copy_region.imageSubresource.aspectMask = aspect_mask;
 			copy_region.imageSubresource.mipLevel = 0u;
 			copy_region.imageSubresource.baseArrayLayer = 0u;
 			copy_region.imageSubresource.layerCount = texture.totalLayers;
@@ -452,16 +448,18 @@ void CVkRenderHandle::processResourceUpload()
 			image_translation_info.subresourceRange.layerCount = texture.totalLayers;
 			processImageLayoutTranslation(command_buffer, image_translation_info);
 
+			auto aspect_mask = get_texture_aspect_flags(texture);
+
 			vk::ImageBlit2KHR image_blit{};
 			image_blit.srcOffsets[0] = vk::Offset3D{ 0, 0, 0 };
 			image_blit.srcOffsets[1] = vk::Offset3D{ static_cast<int32_t>(mip_width), static_cast<int32_t>(mip_heigth), 1 };
-			image_blit.srcSubresource.aspectMask = texture.initialData.aspectFlags;
+			image_blit.srcSubresource.aspectMask = aspect_mask;
 			image_blit.srcSubresource.mipLevel = image_translation_info.subresourceRange.levelCount;
 			image_blit.srcSubresource.baseArrayLayer = 0u;
 			image_blit.srcSubresource.layerCount = 1u;
 			image_blit.dstOffsets[0] = vk::Offset3D{ 0, 0, 0 };
 			image_blit.dstOffsets[1] = vk::Offset3D{ static_cast<int32_t>(mip_width > 1u ? mip_width / 2u : 1u), static_cast<int32_t>(mip_heigth > 1u ? mip_heigth / 2u : 1u), 1 };
-			image_blit.dstSubresource.aspectMask = texture.initialData.aspectFlags;
+			image_blit.dstSubresource.aspectMask = aspect_mask;
 			image_blit.dstSubresource.mipLevel = mip;
 			image_blit.dstSubresource.baseArrayLayer = 0u;
 			image_blit.dstSubresource.layerCount = 1u;
@@ -575,18 +573,22 @@ FRenderApiErrorInfo CVkRenderHandle::createTexture(const FVkTextureCreateInfo& t
 
 	image_view_ci.ci.subresourceRange.layerCount = texture.totalLayers = image_ci.ci.arrayLayers;
 
+	auto usageFlags = get_texture_usage_flags(texture);
+
 	image_ci.memoryUsage = vma::MemoryUsage::eUnknown;
 	image_view_ci.ci.format = image_ci.ci.format = static_cast<vk::Format>(texture_ci.base.format);
 	image_ci.ci.initialLayout = vk::ImageLayout::eUndefined;
-	texture.initialData.usageFlags = image_ci.ci.usage = texture_ci.usageFlags;
+	image_ci.ci.usage = usageFlags;
 	texture.initialData.sampleCount = image_ci.ci.samples = texture_ci.sampleCount;
 	image_ci.ci.sharingMode = vk::SharingMode::eExclusive;
 	image_ci.ci.flags = (texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_CUBEMAP_FLAG_BIT) ? vk::ImageCreateFlagBits::eCubeCompatible : vk::ImageCreateFlagBits::eExtendedUsage;
 
 	RETURN_WHEN_FAULT(context->createImage(image_ci, texture.image));
 
+	auto image_aspect = get_texture_aspect_flags(texture);
+
 	image_view_ci.ci.components = { vk::ComponentSwizzle::eR, vk::ComponentSwizzle::eG, vk::ComponentSwizzle::eB, vk::ComponentSwizzle::eA };
-	texture.initialData.aspectFlags = image_view_ci.ci.subresourceRange.aspectMask = texture_ci.aspectFlags;
+	image_view_ci.ci.subresourceRange.aspectMask = image_aspect;
 	image_view_ci.ci.subresourceRange.baseArrayLayer = 0u;
 	image_view_ci.ci.image = texture.image.handle;
 

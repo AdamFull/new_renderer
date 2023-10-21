@@ -23,7 +23,7 @@ void init_render_targets()
         // TODO: it should be storage target
         FTextureCreateInfo target_ci = FTextureCreateInfo();
         target_ci.format = render_context.getApiFormat(FORMAT_RG16_SFLOAT);
-        target_ci.type = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT;
+        target_ci.type = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT | TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT | TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT;
         target_ci.width = target_ci.height = 1024;
 
         render_context.createRenderTarget("brdf_lut_target", target_ci);
@@ -32,7 +32,7 @@ void init_render_targets()
     {
         FTextureCreateInfo target_ci;
         target_ci.format = render_context.getApiFormat(FORMAT_RGBA32_SFLOAT);
-        target_ci.type = TEXTURE_IMAGE_TYPE_CUBEMAP_FLAG_BIT;
+        target_ci.type = TEXTURE_IMAGE_TYPE_CUBEMAP_FLAG_BIT | TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT | TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT;
         target_ci.width = target_ci.height = 64;
 
         render_context.createRenderTarget("irradiance_cube_target", target_ci);
@@ -41,7 +41,7 @@ void init_render_targets()
     {
         FTextureCreateInfo target_ci;
         target_ci.format = render_context.getApiFormat(FORMAT_RGBA16_SFLOAT);
-        target_ci.type = TEXTURE_IMAGE_TYPE_CUBEMAP_FLAG_BIT;
+        target_ci.type = TEXTURE_IMAGE_TYPE_CUBEMAP_FLAG_BIT | TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT | TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT;
         target_ci.width = target_ci.height = 512;
 
         render_context.createRenderTarget("prefiltered_cube_target", target_ci);
@@ -51,7 +51,7 @@ void init_render_targets()
     {
         FTextureCreateInfo target_ci;
         target_ci.format = render_context.getDepthFormat();
-        target_ci.type = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT | TEXTURE_IMAGE_TYPE_ARRAY_FLAG_BIT;
+        target_ci.type = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT | TEXTURE_IMAGE_TYPE_ARRAY_FLAG_BIT | TEXTURE_IMAGE_TYPE_DEPTH_FLAG_BIT | TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT;
         target_ci.width = target_ci.height = global_settings::cascade_shadowmap_resolution;
         target_ci.array_layers = global_settings::cascade_shadowmap_cascade_count * global_settings::max_directional_light_shadow_count;
 
@@ -61,7 +61,7 @@ void init_render_targets()
     {
         FTextureCreateInfo target_ci;
         target_ci.format = render_context.getDepthFormat();
-        target_ci.type = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT | TEXTURE_IMAGE_TYPE_ARRAY_FLAG_BIT;
+        target_ci.type = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT | TEXTURE_IMAGE_TYPE_ARRAY_FLAG_BIT | TEXTURE_IMAGE_TYPE_DEPTH_FLAG_BIT | TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT;
         target_ci.width = target_ci.height = global_settings::spotlight_shadowmap_resolution;
         target_ci.array_layers = global_settings::max_spot_light_shadow_count;
 
@@ -71,7 +71,7 @@ void init_render_targets()
     {
         FTextureCreateInfo target_ci;
         target_ci.format = render_context.getDepthFormat();
-        target_ci.type = TEXTURE_IMAGE_TYPE_CUBEMAP_FLAG_BIT | TEXTURE_IMAGE_TYPE_ARRAY_FLAG_BIT;
+        target_ci.type = TEXTURE_IMAGE_TYPE_CUBEMAP_FLAG_BIT | TEXTURE_IMAGE_TYPE_ARRAY_FLAG_BIT | TEXTURE_IMAGE_TYPE_DEPTH_FLAG_BIT | TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT;
         target_ci.width = target_ci.height = global_settings::point_light_shadowmap_resolution;
         target_ci.array_layers = global_settings::max_point_light_shadow_count;
 
@@ -81,7 +81,7 @@ void init_render_targets()
     {
         FTextureCreateInfo target_ci;
         target_ci.format = render_context.getDepthFormat();
-        target_ci.type = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT;
+        target_ci.type = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT | TEXTURE_IMAGE_TYPE_DEPTH_FLAG_BIT | TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT;
         target_ci.width = render_resolution.x;
         target_ci.height = render_resolution.y;
 
@@ -92,7 +92,7 @@ void init_render_targets()
     {
         FTextureCreateInfo target_ci;
         target_ci.format = render_context.getApiFormat(FORMAT_RGBA8_SRGB);
-        target_ci.type = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT;
+        target_ci.type = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT | TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT;
         target_ci.width = render_resolution.x;
         target_ci.height = render_resolution.y;
 
@@ -102,7 +102,7 @@ void init_render_targets()
     {
         FTextureCreateInfo target_ci;
         target_ci.format = render_context.getApiFormat(FORMAT_RGBA16_SFLOAT);
-        target_ci.type = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT;
+        target_ci.type = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT | TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT;
         target_ci.width = render_resolution.x;
         target_ci.height = render_resolution.y;
 
@@ -112,7 +112,7 @@ void init_render_targets()
     {
         FTextureCreateInfo target_ci;
         target_ci.format = render_context.getApiFormat(FORMAT_RGBA8_UNORM);
-        target_ci.type = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT;
+        target_ci.type = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT | TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT;
         target_ci.width = render_resolution.x;
         target_ci.height = render_resolution.y;
 
@@ -122,7 +122,7 @@ void init_render_targets()
     {
         FTextureCreateInfo target_ci;
         target_ci.format = render_context.getApiFormat(FORMAT_RGBA8_SRGB);
-        target_ci.type = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT;
+        target_ci.type = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT | TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT;
         target_ci.width = render_resolution.x;
         target_ci.height = render_resolution.y;
 
@@ -132,7 +132,7 @@ void init_render_targets()
     {
         FTextureCreateInfo target_ci;
         target_ci.format = render_context.getDepthFormat();
-        target_ci.type = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT;
+        target_ci.type = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT | TEXTURE_IMAGE_TYPE_DEPTH_FLAG_BIT | TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT;
         target_ci.width = render_resolution.x;
         target_ci.height = render_resolution.y;
 

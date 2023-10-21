@@ -433,9 +433,6 @@ namespace engine
 			struct FVkTextureInitialData
 			{
 				FTextureCreateInfo base{};
-
-				vk::ImageAspectFlags aspectFlags{};
-				vk::ImageUsageFlags usageFlags{};
 				vk::SampleCountFlagBits sampleCount{};
 			};
 
@@ -454,9 +451,6 @@ namespace engine
 			struct FVkTextureCreateInfo
 			{
 				FTextureCreateInfo base{};
-
-				vk::ImageUsageFlags usageFlags{};
-				vk::ImageAspectFlags aspectFlags{ vk::ImageAspectFlagBits::eColor };
 
 				vk::SampleCountFlagBits sampleCount{ };
 

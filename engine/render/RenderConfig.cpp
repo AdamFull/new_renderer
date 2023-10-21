@@ -50,6 +50,10 @@ void CRenderConfig::initialize(IRenderInterface* render_interface, IRenderHandle
 	res = scriptEngine->RegisterEnumValue("ETextureImageTypeFlagBits", "TEXTURE_IMAGE_TYPE_1D_FLAG_BIT", TEXTURE_IMAGE_TYPE_1D_FLAG_BIT);
 	res = scriptEngine->RegisterEnumValue("ETextureImageTypeFlagBits", "TEXTURE_IMAGE_TYPE_2D_FLAG_BIT", TEXTURE_IMAGE_TYPE_2D_FLAG_BIT);
 	res = scriptEngine->RegisterEnumValue("ETextureImageTypeFlagBits", "TEXTURE_IMAGE_TYPE_3D_FLAG_BIT", TEXTURE_IMAGE_TYPE_3D_FLAG_BIT);
+	res = scriptEngine->RegisterEnumValue("ETextureImageTypeFlagBits", "TEXTURE_IMAGE_TYPE_DEPTH_FLAG_BIT", TEXTURE_IMAGE_TYPE_DEPTH_FLAG_BIT);
+	res = scriptEngine->RegisterEnumValue("ETextureImageTypeFlagBits", "TEXTURE_IMAGE_TYPE_TRANSFERABLE_FLAG_BIT", TEXTURE_IMAGE_TYPE_TRANSFERABLE_FLAG_BIT);
+	res = scriptEngine->RegisterEnumValue("ETextureImageTypeFlagBits", "TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT", TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT);
+	res = scriptEngine->RegisterEnumValue("ETextureImageTypeFlagBits", "TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT", TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT);
 
 	res = scriptEngine->RegisterEnum("EQueueFamilyUsageFlagBits");
 	res = scriptEngine->RegisterEnumValue("EQueueFamilyUsageFlagBits", "QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT", QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT);

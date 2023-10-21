@@ -131,6 +131,8 @@ bool CResourceLoader::loadKTX2FromMemory(const std::vector<uint8_t>& data, FText
 	if (ktxresult != KTX_SUCCESS)
 		return false;
 
+	create_info.typeFlags |= TEXTURE_IMAGE_TYPE_TRANSFERABLE_FLAG_BIT | TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT;
+
 	if (kTexture->isArray)
 		create_info.typeFlags |= TEXTURE_IMAGE_TYPE_ARRAY_FLAG_BIT;
 	if (kTexture->isCubemap)

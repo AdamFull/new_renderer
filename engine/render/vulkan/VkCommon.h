@@ -31,6 +31,35 @@ namespace engine
 #endif
 			}
 
+			inline vk::ImageUsageFlags get_texture_usage_flags(const FVkTexture& texture)
+			{
+				vk::ImageUsageFlags usageFlags{};
+
+				if (texture.isRenderTarget)
+					usageFlags |= ((texture.initialData.base.typeFlags & TEXTURE_IMAGE_TYPE_DEPTH_FLAG_BIT) ? vk::ImageUsageFlagBits::eDepthStencilAttachment : vk::ImageUsageFlagBits::eColorAttachment);
+
+				if (texture.initialData.base.typeFlags & TEXTURE_IMAGE_TYPE_TRANSFERABLE_FLAG_BIT)
+					usageFlags |= vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst;
+
+				if (texture.initialData.base.typeFlags & TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT)
+					usageFlags |= vk::ImageUsageFlagBits::eSampled;
+
+				if (texture.initialData.base.typeFlags & TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT)
+					usageFlags |= vk::ImageUsageFlagBits::eStorage;
+
+				return usageFlags;
+			}
+
+			inline vk::ImageAspectFlags get_texture_aspect_flags(const FVkTexture& texture)
+			{
+				vk::ImageAspectFlags aspectFlags{ vk::ImageAspectFlagBits::eColor };
+
+				if (texture.initialData.base.typeFlags & TEXTURE_IMAGE_TYPE_DEPTH_FLAG_BIT)
+					aspectFlags = vk::ImageAspectFlagBits::eDepth;
+
+				return aspectFlags;
+			}
+
 			inline FVkPhysicalDevice make_physical_device(vk::PhysicalDevice device)
 			{
 				FVkPhysicalDevice current_device{};
@@ -201,25 +230,27 @@ namespace engine
 
 			inline vk::ImageLayout get_render_target_final_layout(const FVkTexture& texture)
 			{
-				if (texture.initialData.usageFlags & vk::ImageUsageFlagBits::eColorAttachment)
+				auto usage_flags = get_texture_usage_flags(texture);
+
+				if (usage_flags & vk::ImageUsageFlagBits::eColorAttachment)
 				{
-					if (texture.initialData.usageFlags & vk::ImageUsageFlagBits::eTransferSrc)
+					if (usage_flags & vk::ImageUsageFlagBits::eTransferSrc)
 						return vk::ImageLayout::eTransferSrcOptimal;
-					if (texture.initialData.usageFlags & vk::ImageUsageFlagBits::eSampled && texture.initialData.usageFlags & vk::ImageUsageFlagBits::eStorage)
+					if ((usage_flags & vk::ImageUsageFlagBits::eSampled) && (usage_flags & vk::ImageUsageFlagBits::eStorage))
 						return vk::ImageLayout::eGeneral;
-					else if (texture.initialData.usageFlags & vk::ImageUsageFlagBits::eSampled)
+					else if (usage_flags & vk::ImageUsageFlagBits::eSampled)
 						return vk::ImageLayout::eShaderReadOnlyOptimal;
-					else if (texture.initialData.usageFlags & vk::ImageUsageFlagBits::eInputAttachment)
+					else if (usage_flags & vk::ImageUsageFlagBits::eInputAttachment)
 					{
-						if (texture.initialData.usageFlags & vk::ImageUsageFlagBits::eSampled)
+						if (usage_flags & vk::ImageUsageFlagBits::eSampled)
 							return vk::ImageLayout::eShaderReadOnlyOptimal;
 						else
 							return vk::ImageLayout::eColorAttachmentOptimal;
 					}
 				}
-				else if (texture.initialData.usageFlags & vk::ImageUsageFlagBits::eDepthStencilAttachment)
+				else if (usage_flags & vk::ImageUsageFlagBits::eDepthStencilAttachment)
 				{
-					if (texture.initialData.usageFlags & vk::ImageUsageFlagBits::eSampled)
+					if (usage_flags & vk::ImageUsageFlagBits::eSampled)
 						return vk::ImageLayout::eDepthStencilReadOnlyOptimal;
 					else
 						return vk::ImageLayout::eDepthStencilAttachmentOptimal;
@@ -239,7 +270,7 @@ namespace engine
 				image_layout_translation.newLayout = translation_info.newLayout;
 				image_layout_translation.handle = texture.image.handle;
 
-				image_layout_translation.subresourceRange.aspectMask = texture.initialData.aspectFlags;
+				image_layout_translation.subresourceRange.aspectMask = get_texture_aspect_flags(texture);
 				image_layout_translation.subresourceRange.baseArrayLayer = translation_info.baseArrayLayer;
 				image_layout_translation.subresourceRange.layerCount = texture.totalLayers;
 				image_layout_translation.subresourceRange.baseMipLevel = translation_info.baseMipLevel;
