@@ -3,6 +3,7 @@ project(render_interface)
 
 add_subdirectory(vulkan)
 add_subdirectory("${MAIN_PROJECT_DIRECTORY_PATH}/libraries/KTX-Software" KTX-Software)
+add_subdirectory("${MAIN_PROJECT_DIRECTORY_PATH}/libraries/angelscript" ascript)
 
 file(GLOB ENGINE_RENDER_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 file(GLOB ENGINE_RENDER_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
@@ -20,10 +21,14 @@ target_include_directories(${PROJECT_NAME}
     PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/engine"
     PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/KTX-Software/include"
     PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/KTX-Software/lib"
+    PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/angelscript/sdk/angelscript/include"
+    PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/angelscript/sdk/add_on"
 )
 
 target_link_libraries(${PROJECT_NAME}
 	PUBLIC vulkan_renderer
+    PRIVATE angelscript
+    PRIVATE angelscript_addon
     PRIVATE ktx
 )
 

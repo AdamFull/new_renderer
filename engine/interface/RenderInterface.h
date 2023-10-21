@@ -23,6 +23,53 @@ namespace engine
 		eDirectX12
 	};
 
+	enum EResourceTypeBits : uint32_t
+	{
+		RESOURCE_TYPE_TEXTURE_BIT = 1 << 0,
+		RESOURCE_TYPE_RENDER_TARGET_BIT = 1 << 1,
+		RESOURCE_TYPE_BUFFER_BIT = 1 << 2,
+		RESOURCE_TYPE_SHADER_BIT = 1 << 3
+	};
+
+	enum ETextureImageTypeFlagBits : uint32_t
+	{
+		TEXTURE_IMAGE_TYPE_ARRAY_FLAG_BIT = 1 << 0,
+		TEXTURE_IMAGE_TYPE_CUBEMAP_FLAG_BIT = 1 << 1,
+		TEXTURE_IMAGE_TYPE_1D_FLAG_BIT = 1 << 2,
+		TEXTURE_IMAGE_TYPE_2D_FLAG_BIT = 1 << 3,
+		TEXTURE_IMAGE_TYPE_3D_FLAG_BIT = 1 << 4
+	};
+
+	enum EQueueFamilyUsageFlagBits : uint32_t
+	{
+		QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT = 1 << 0,
+		QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT = 1 << 1,
+		QUEUE_FAMILY_USAGE_COMPUTE_FLAG_BIT = 1 << 2,
+		QUEUE_FAMILY_USAGE_TRANSFER_FLAG_BIT = 1 << 3
+	};
+
+	enum ETextureFormat : uint32_t
+	{
+		FORMAT_RG16_SFLOAT,
+		FORMAT_RGBA8_SRGB,
+		FORMAT_RGBA8_UNORM,
+		FORMAT_RGBA16_SFLOAT,
+		FORMAT_RGBA32_SFLOAT 
+	};
+
+	enum ERenderingType
+	{
+		RENDERING_TYPE_CASCADED_SHADOWS,
+		RENDERING_TYPE_DIRECTIONAL_SHADOWS,
+		RENDERING_TYPE_OMNI_SHADOWS,
+		RENDERING_TYPE_COMPUTE,
+		RENDERING_TYPE_ZBUFFER,
+		RENDERING_TYPE_SCREENSPACE,
+		RENDERING_TYPE_BRDFLUT_GENERATOR,
+		RENDERING_TYPE_IRRADIANCE_CUBE_GENERATOR,
+		RENDERING_TYPE_PREFILTERED_CUBE_GENERATOR
+	};
+
 	struct FRenderInterfaceCreateInfo
 	{
 		ERenderApi render_api{};
@@ -58,106 +105,95 @@ namespace engine
 		std::vector<std::string> validationLayers{};
 	};
 
-	enum ETextureImageTypeFlagBits
+	struct FResourceView
 	{
-		TEXTURE_IMAGE_TYPE_ARRAY_FLAG_BIT = 1 << 0,
-		TEXTURE_IMAGE_TYPE_CUBEMAP_FLAG_BIT = 1 << 1,
-		TEXTURE_IMAGE_TYPE_1D_FLAG_BIT = 1 << 2,
-		TEXTURE_IMAGE_TYPE_2D_FLAG_BIT = 1 << 3,
-		TEXTURE_IMAGE_TYPE_3D_FLAG_BIT = 1 << 4
+		size_t id{ ~0ull };
+		uint32_t mask{};
 	};
 
-	enum class EPrimitiveTopology
+	struct FTextureUploadInfo
 	{
-		ePointList,
-		eLineStrip,
-		eTriangleList,
-		eTriangleStrip,
-		ePatchList
-	};
-
-	enum class ECullingMode
-	{
-		eNone,
-		eBackFace,
-		eFrontFace,
-		eDoubleSided
-	};
-
-	enum class EFrontFace
-	{
-		eClockwise,
-		eCounterClockwise
-	};
-
-	enum class EShaderStage
-	{
-		eVertexShader,
-		eControlShader,
-		eEvaluationShader,
-		eGeometryShader,
-		eFragmentShader,
-		eComputeShader
-	};
-
-	struct FVertexBindingDescription
-	{
-		uint32_t binding{};
-		uint32_t stride{};
-	};
-
-	struct FVertexAttributeDescription
-	{
-		uint32_t elementSize{};
-		uint32_t stride{};
-
-		uint32_t binding{};
-		uint32_t location{};
-		uint32_t offset{};
-	};
-
-	struct FVertexDeclaration
-	{
-		std::vector<FVertexBindingDescription> bindingDescriptions{};
-		std::vector<FVertexAttributeDescription> attributeDescriptions{};
-	};
-
-	struct FGraphicsShaderCreateInfo
-	{
-		uint32_t usageCoutn{ 1u };
-
-		EPrimitiveTopology primitiveTopology{};
-		ECullingMode cullingMode{};
-		EFrontFace frontFace{};
-
-		// TODO: add multisampling info
-
-		std::vector<size_t> colorAttachments{};
-		size_t depthAttachment{ ~0ull };
-
-		FVertexDeclaration vertexDeclaration{};
-
-		std::unordered_map<EShaderStage, std::vector<uint32_t>> shaderStageCode{};
+		size_t textureId{ ~0ull };
+		std::vector<uint8_t> data{};
+		std::vector<std::vector<size_t>> mipLayerOffsets{};
 	};
 
 	struct FTextureCreateInfo
 	{
-		std::string name{};
+		bool isSwapchainTarget{ false };
 
-		uint32_t format{};
-		uint32_t typeFlags{};
+		uint32_t format{ 0u };
+		uint32_t typeFlags{ 0u };
 
-		uint32_t width{};
-		uint32_t height{};
-		uint32_t depth{};
+		uint32_t width{ 1u };
+		uint32_t height{ 1u };
+		uint32_t depth{ 1u };
 
 		uint32_t mipLevels{ 1u };
 		uint32_t arrayLayers{ 1u };
+	};
 
-		std::vector<std::vector<size_t>> offsets{};
-		std::vector<uint8_t> data{};
+	struct FReflectionUniform
+	{
+		uint32_t set{ 0u };
+		uint32_t binding{ 0u };
+		size_t offset{ 0ull };
+		size_t size{ 0ull };
+	};
 
-		bool result{ false };
+	template<class _Ty>
+	struct FReflectionUniformBlock
+	{
+		uint32_t set{ 0u };
+		uint32_t binding{ 0u };
+		size_t size{ 0ull };
+		std::unordered_map<size_t, _Ty> uniforms{};
+	};
+
+	template<class _Ty>
+	struct FReflectionPushConstantBlock
+	{
+		size_t size{ 0ull };
+		std::unordered_map<size_t, _Ty> uniforms{};
+	};
+
+	template<class _Ty>
+	struct FPoint2D
+	{
+		_Ty x{ 0 }, y{ 0 };
+	};
+
+	template<class _Ty>
+	struct FRect2D
+	{
+		FPoint2D<_Ty> offset{};
+		FPoint2D<_Ty> size{};
+	};
+
+	struct FRenderingCreateInfo
+	{
+		uint32_t queue{ 0u };
+		uint32_t type{ 0u };
+
+		FResourceView shader{};
+
+		bool oneTime{ false };
+		bool flipViewport{ false };
+
+		std::vector<FResourceView> shaderInputs{};
+		std::vector<FResourceView> renderTargets{};
+		FResourceView depthTarget{};
+	};
+
+	struct FBeginRenderingInfo
+	{
+		uint32_t queue{ 0u };
+		FRect2D<float> scissorRect{};
+		FRect2D<float> renderArea{};
+		bool flipViewport{ false };
+
+		std::vector<FResourceView> colorAttachments{};
+		FResourceView depthAttachment{};
 	};
 
 	class IRenderInterface
@@ -166,7 +202,11 @@ namespace engine
 		virtual ~IRenderInterface() = default;
 
 		virtual void create(const FRenderInterfaceCreateInfo& render_interface_ci) = 0;
-		virtual size_t createTexture(const std::string& name, const std::vector<uint8_t>& data, EMimeType mime) = 0;
+		virtual void createRendererBehavior(const std::vector<uint8_t>& script) = 0;
+		virtual FResourceView createTexture(const std::string& name, const std::vector<uint8_t>& data, EMimeType mime) = 0;
+
+		virtual FResourceView getShaderNameTag(const std::string& name) = 0;
+		virtual void createRendering(const FRenderingCreateInfo& rendering_ci) = 0;
 
 		virtual void updateSurfaceSize(int32_t width, int32_t height) = 0;
 
@@ -180,7 +220,16 @@ namespace engine
 		virtual ~IRenderHandleInterface() = default;
 
 		virtual void create(const FRenderContextCreateInfo& context_ci) = 0;
-		virtual size_t createTexture(const FTextureCreateInfo& texture_ci) = 0;
+		virtual FResourceView createTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) = 0;
+		virtual FResourceView createRenderTargets(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
+
+		virtual FResourceView getResource(const char* name, uint32_t resource_type) = 0;
+
+		virtual FPoint2D<uint32_t> getRenderResolution() = 0;
+
+		virtual uint32_t getDepthFormat() = 0;
+		virtual uint32_t getApiFormat(uint32_t global_format) = 0;
+		virtual uint32_t getPresentFormat() = 0;
 		
 		virtual void updateSurface(int32_t surface_width, int32_t surface_height) = 0;
 

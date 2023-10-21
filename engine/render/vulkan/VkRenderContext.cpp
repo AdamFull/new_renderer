@@ -760,6 +760,24 @@ void CVkRenderContext::endLabel(vk::Queue& queue)
 #endif
 }
 
+vk::Format CVkRenderContext::findSupportedFormat(const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features)
+{
+	auto& phusical_device = getPhysicalDevice();
+
+	for (const auto& candidate : candidates)
+	{
+		vk::FormatProperties format_properties;
+		phusical_device.handle.getFormatProperties(candidate, &format_properties);
+
+		if (tiling == vk::ImageTiling::eLinear && (format_properties.linearTilingFeatures & features) == features)
+			return candidate;
+		else if (tiling == vk::ImageTiling::eOptimal && (format_properties.optimalTilingFeatures & features) == features)
+			return candidate;
+	}
+
+	return vk::Format::eUndefined;
+}
+
 const vk::DynamicLoader& CVkRenderContext::getDynamicLoader() const
 {
 	return dynamicLoader;

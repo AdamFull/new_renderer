@@ -127,6 +127,8 @@ namespace engine
 				}
 
 				// Getters
+				vk::Format findSupportedFormat(const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features);
+
 				const vk::DynamicLoader& getDynamicLoader() const;
 				const vk::AllocationCallbacks* getAllocationCallbacks() const;
 

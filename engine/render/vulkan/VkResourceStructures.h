@@ -4,6 +4,8 @@
 
 #include <logger/logger.h>
 
+#include <interface/RenderInterface.h>
+
 #include <stdexcept>
 #include <unordered_map>
 #include <map>
@@ -30,14 +32,6 @@ namespace engine
 				BEST_PRACTICE_FLAG_BIT = 1 << 2,
 				DEBUG_PRINTF_FLAG_BIT = 1 << 3,
 				SYNCHRONIZATION_VALIDATION_FLAG_BIT = 1 << 4
-			};
-
-			enum EQueueFamilyUsageFlagBits
-			{
-				QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT = 1 << 0,
-				QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT = 1 << 1,
-				QUEUE_FAMILY_USAGE_COMPUTE_FLAG_BIT = 1 << 2,
-				QUEUE_FAMILY_USAGE_TRANSFER_FLAG_BIT = 1 << 3
 			};
 
 			struct FQueueFamilies
@@ -383,6 +377,8 @@ namespace engine
 				std::unordered_map<uint32_t, uint32_t> descriptorUsage{};
 				FVkDescriptorPool descriptorPool{};
 				std::vector<vk::PushConstantRange> pushConstantRanges{};
+
+				std::unordered_map<size_t, std::vector<FVkBuffer>> uniformBuffers{};
 				
 				vk::PipelineBindPoint bindPoint{};
 
@@ -436,16 +432,11 @@ namespace engine
 			// ---------------------------------------------------------------------------------
 			struct FVkTextureInitialData
 			{
-				vk::ImageLayout layout{};
-				vk::Format format{};
+				FTextureCreateInfo base{};
+
 				vk::ImageAspectFlags aspectFlags{};
 				vk::ImageUsageFlags usageFlags{};
 				vk::SampleCountFlagBits sampleCount{};
-				vk::Extent3D extent{};
-
-				uint32_t imageTypeFlags{ 0u };
-				uint32_t mipLevelCount{ 1u };
-				uint32_t arrayLayersCount{ 0u };
 			};
 
 			struct FVkTexture
@@ -462,16 +453,10 @@ namespace engine
 
 			struct FVkTextureCreateInfo
 			{
-				vk::Format format{};
+				FTextureCreateInfo base{};
+
 				vk::ImageUsageFlags usageFlags{};
 				vk::ImageAspectFlags aspectFlags{ vk::ImageAspectFlagBits::eColor };
-				vk::Extent3D extent{};
-				vk::ImageLayout layout{};
-
-				uint32_t imageTypeFlags{ 0u };
-
-				uint32_t mipLevelCount{ 1u };
-				uint32_t arrayLayersCount{ 0u };
 
 				vk::SampleCountFlagBits sampleCount{ };
 
@@ -484,13 +469,6 @@ namespace engine
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				std::string name{};
 #endif
-			};
-
-			struct FVkTextureUploadInfo
-			{
-				size_t textureId{ ~0ull };
-				std::vector<uint8_t> data{};
-				std::vector<std::vector<size_t>> mipLayerOffsets{};
 			};
 
 			struct FVkRenderingInfo

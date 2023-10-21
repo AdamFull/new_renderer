@@ -1,9 +1,7 @@
 #pragma once
 
 #include <vulkan/vulkan.hpp>
-#include <unordered_map>
-#include <vector>
-#include <string>
+#include <interface/RenderInterface.h>
 #include <optional>
 
 namespace engine
@@ -12,31 +10,22 @@ namespace engine
 	{
 		namespace vulkan
 		{
-			struct FVkReflectionUniform
+			struct FVkReflectionUniform : FReflectionUniform
 			{
-				uint32_t set{ 0u };
-				uint32_t binding{ 0u };
-				size_t offset{ 0ull };
-				size_t size{ 0ull };
 				vk::ShaderStageFlags stageFlags{ vk::ShaderStageFlagBits::eAll };
 				vk::DescriptorType descriptorType{};
 			};
 
-			struct FVkReflectionUniformBlock
+			struct FVkReflectionUniformBlock : FReflectionUniformBlock<FVkReflectionUniform>
 			{
-				uint32_t set{ 0u };
-				uint32_t binding{ 0u };
-				size_t size{ 0ull };
 				vk::ShaderStageFlags stageFlags{ vk::ShaderStageFlagBits::eAll };
 				vk::DescriptorType descriptorType;
-				std::unordered_map<size_t, FVkReflectionUniform> uniforms{};
 			};
 
-			struct FVkReflectionPushConstantBlock
+			struct FVkReflectionPushConstantBlock : FReflectionPushConstantBlock<FVkReflectionUniform>
 			{
 				size_t size{ 0ull };
 				vk::ShaderStageFlags stageFlags{ vk::ShaderStageFlagBits::eAll };
-				std::unordered_map<size_t, FVkReflectionUniform> uniforms{};
 			};
 
 			struct FVkReflectionSpecializationConstant

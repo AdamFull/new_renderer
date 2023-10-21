@@ -2,6 +2,7 @@
 
 #include <vulkan/VkRenderHandle.h>
 
+using namespace engine;
 using namespace engine::render;
 
 void copy_platform_specific_create_data(engine::FRenderContextCreateInfo& context_ci, const engine::FRenderInterfaceCreateInfo& rhi_ci)
@@ -68,14 +69,23 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 {
 	resourceLoader = std::make_unique<CResourceLoader>();
 	renderHandle = make_render_handle_interface(rhi_ci);
+
+    renderConfig = std::make_unique<CRenderConfig>();
+    renderConfig->initialize(this, renderHandle.get());
 }
 
-size_t CRenderInterface::createTexture(const std::string& name, const std::vector<uint8_t>& data, EMimeType mime)
+void CRenderInterface::createRendererBehavior(const std::vector<uint8_t>& script)
 {
-	FTextureCreateInfo texture_ci = resourceLoader->loadTexture(data, mime);
-	texture_ci.name = name;
+    renderConfig->execute(script);
+}
 
-	return renderHandle->createTexture(texture_ci);
+FResourceView CRenderInterface::createTexture(const std::string& name, const std::vector<uint8_t>& data, EMimeType mime)
+{
+	FTextureCreateInfo texture_ci{};
+	FTextureUploadInfo texture_ui{};
+	resourceLoader->loadTexture(data, mime, texture_ci, texture_ui);
+
+	return renderHandle->createTexture(name, texture_ci, std::move(texture_ui));
 }
 
 void CRenderInterface::updateSurfaceSize(int32_t width, int32_t height)
@@ -91,4 +101,14 @@ void CRenderInterface::beginFrame()
 void CRenderInterface::endFrame()
 {
 	renderHandle->endFrameCommandBuffers();
+}
+
+FResourceView CRenderInterface::getShaderNameTag(const std::string& name)
+{
+	return {};
+}
+
+void CRenderInterface::createRendering(const FRenderingCreateInfo& rendering_ci)
+{
+	return;
 }

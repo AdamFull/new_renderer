@@ -16,7 +16,17 @@ namespace engine
 				~CVkRenderHandle() override;
 
 				void create(const FRenderContextCreateInfo& context_ci) override;
-				size_t createTexture(const FTextureCreateInfo& texture_ci) override;
+				FResourceView createTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) override;
+				FResourceView createRenderTarget(const std::string& name, const FTextureCreateInfo& texture_ci);
+				FResourceView createRenderTargets(const std::string& name, const FTextureCreateInfo& texture_ci) override;
+
+				FResourceView getResource(const char* name, uint32_t resource_type) override;
+
+				FPoint2D<uint32_t> getRenderResolution() override;
+
+				uint32_t getDepthFormat() override;
+				uint32_t getApiFormat(uint32_t global_format) override;
+				uint32_t getPresentFormat() override;
 
 				void updateSurface(int32_t surface_width, int32_t surface_height) override;
 
@@ -52,17 +62,12 @@ namespace engine
 				std::unique_ptr<CVkRenderContext> context{};
 				std::unique_ptr<CResourceContainer> resources{};
 
-				std::vector<FVkTextureUploadInfo> textureUploadInfos{};
+				std::vector<FTextureUploadInfo> textureUploadInfos{};
 
 				std::vector<FVkCommandBuffer> commandBuffers{};
 				bool isFrameStarted{ false };
 
 				int32_t surface_width{}, surface_height{};
-
-				std::vector<resource_handle_t> swapchainTargets{};
-
-				// TEMPORARY. FOR TESTING
-				resource_handle_t testShader{};
 			};
 		}
 	}

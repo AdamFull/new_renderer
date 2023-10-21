@@ -243,7 +243,7 @@ namespace engine
 				image_layout_translation.subresourceRange.baseArrayLayer = translation_info.baseArrayLayer;
 				image_layout_translation.subresourceRange.layerCount = texture.totalLayers;
 				image_layout_translation.subresourceRange.baseMipLevel = translation_info.baseMipLevel;
-				image_layout_translation.subresourceRange.levelCount = texture.initialData.mipLevelCount;
+				image_layout_translation.subresourceRange.levelCount = texture.initialData.base.mipLevels;
 
 				return image_layout_translation;
 			}

@@ -7,6 +7,7 @@
 
 #include <unordered_set>
 
+using namespace engine;
 using namespace engine::render::vulkan;
 
 const std::vector<uint32_t> vertex_shader{ 119734787, 65536, 851979, 40, 0, 131089, 1, 393227, 1, 1280527431, 1685353262, 808793134, 0, 196622, 0, 1, 524303, 0, 4, 1852399981, 0, 9, 12, 26, 196611, 2, 460, 655364, 1197427783, 1279741775, 1885560645, 1953718128, 1600482425, 1701734764, 1919509599, 1769235301, 25974, 524292, 1197427783, 1279741775, 1852399429, 1685417059, 1768185701, 1952671090, 6649449, 262149, 4, 1852399981, 0, 262149, 9, 1433695599, 86, 393221, 12, 1449094247, 1702130277, 1684949368, 30821, 393221, 24, 1348430951, 1700164197, 2019914866, 0, 393222, 24, 0, 1348430951, 1953067887, 7237481, 196613, 26, 0, 262215, 9, 30, 0, 262215, 12, 11, 42, 327752, 24, 0, 11, 0, 196679, 24, 2, 131091, 2, 196641, 3, 2, 196630, 6, 32, 262167, 7, 6, 2, 262176, 8, 3, 7, 262203, 8, 9, 3, 262165, 10, 32, 1, 262176, 11, 1, 10, 262203, 11, 12, 1, 262187, 10, 14, 1, 262187, 10, 16, 2, 262167, 23, 6, 4, 196638, 24, 23, 262176, 25, 3, 24, 262203, 25, 26, 3, 262187, 10, 27, 0, 262187, 6, 29, 1073741824, 262187, 6, 31, 1065353216, 262187, 6, 34, 0, 262176, 38, 3, 23, 327734, 2, 4, 0, 3, 131320, 5, 262205, 10, 13, 12, 327876, 10, 15, 13, 14, 327879, 10, 17, 15, 16, 262255, 6, 18, 17, 262205, 10, 19, 12, 327879, 10, 20, 19, 16, 262255, 6, 21, 20, 327760, 7, 22, 18, 21, 196670, 9, 22, 262205, 7, 28, 9, 327822, 7, 30, 28, 29, 327760, 7, 32, 31, 31, 327811, 7, 33, 30, 32, 327761, 6, 35, 33, 0, 327761, 6, 36, 33, 1, 458832, 23, 37, 35, 36, 34, 31, 327745, 38, 39, 26, 27, 196670, 39, 37, 65789, 65592 };
@@ -24,20 +25,23 @@ CVkRenderHandle::~CVkRenderHandle()
 	auto& textures = resources->data<FVkTexture>();
 	for (resource_handle_t texture_id = 0ull; texture_id < textures.size(); ++texture_id)
 	{
-		auto is_swapchain_image = std::find(swapchainTargets.begin(), swapchainTargets.end(), texture_id);
-		if (is_swapchain_image != swapchainTargets.end())
-			continue;
+		auto& texture_instances = textures.at(texture_id);
+		for (auto& instance : texture_instances)
+		{
+			if (instance.initialData.base.isSwapchainTarget)
+				continue;
 
-		auto& texture = textures.at(texture_id);
-		destroyTexture(texture);
+			destroyTexture(instance);
+		}
 	}
 
 	// Destroy all shaders
 	auto& shaders = resources->data<FVkShader>();
 	for (resource_handle_t shader_id = 0ull; shader_id < shaders.size(); ++shader_id)
 	{
-		auto& shader = shaders.at(shader_id);
-		destroyShader(shader);
+		auto& shader_instances = shaders.at(shader_id);
+		for(auto& instance : shader_instances)
+			destroyShader(instance);
 	}
 }
 
@@ -53,18 +57,6 @@ void CVkRenderHandle::create(const FRenderContextCreateInfo& context_ci)
 
 	auto& swapchain = context->getSwapchain();
 
-	for (uint32_t idx = 0u; idx < swapchain.framesInFlight; ++idx)
-	{
-		FVkTexture texture{};
-		texture.isRenderTarget = true;
-		texture.initialData.format = swapchain.format;
-		texture.image.handle = swapchain.images.at(idx);
-		texture.imageViews.emplace_back(swapchain.imageViews.at(idx));
-		texture.initialData.aspectFlags = vk::ImageAspectFlagBits::eColor;
-
-		swapchainTargets.emplace_back(resources->add<FVkTexture>(std::format("present{}", idx).c_str(), std::move(texture)));
-	}
-
 	FVkCommandBufferCreateInfo command_buffer_ci{};
 	command_buffer_ci.count = swapchain.framesInFlight;
 	command_buffer_ci.mask = QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT;
@@ -75,57 +67,141 @@ void CVkRenderHandle::create(const FRenderContextCreateInfo& context_ci)
 
 	auto& command_buffer = commandBuffers.emplace_back();
 	auto result = context->createCommandBuffer(command_buffer_ci, command_buffer);
-
-	FVkGraphicsShaderCreateInfo shader_ci{};
-	shader_ci.cullMode = vk::CullModeFlagBits::eBack;
-	shader_ci.frontFace = vk::FrontFace::eCounterClockwise;
-	shader_ci.primitiveTopology = vk::PrimitiveTopology::eTriangleList;
-	shader_ci.colorAttachmentFormats.emplace_back(swapchain.format);
-	shader_ci.shaderStageCode[vk::ShaderStageFlagBits::eVertex] = vertex_shader;
-	shader_ci.shaderStageCode[vk::ShaderStageFlagBits::eFragment] = fragment_shader;
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	shader_ci.name = "test_shader_uv";
-#endif
-
-	FVkShader shader{};
-	createShader(shader_ci, shader);
-
-	resources->add("test_shader_uv", std::move(shader));
 }
 
-size_t CVkRenderHandle::createTexture(const FTextureCreateInfo& texture_ci)
+FResourceView CVkRenderHandle::createTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info)
 {
+	// Create texture handle
 	FVkTextureCreateInfo vk_texture_ci{};
-	vk_texture_ci.format = static_cast<vk::Format>(texture_ci.format);
+	vk_texture_ci.base = texture_ci;
 	vk_texture_ci.usageFlags = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
 	vk_texture_ci.aspectFlags = vk::ImageAspectFlagBits::eColor;
-	vk_texture_ci.extent = vk::Extent3D{ texture_ci.width, texture_ci.height, texture_ci.depth };
-	vk_texture_ci.layout = vk::ImageLayout::eUndefined;
-
-	vk_texture_ci.imageTypeFlags = texture_ci.typeFlags;
-	vk_texture_ci.mipLevelCount = texture_ci.mipLevels;
-	vk_texture_ci.arrayLayersCount = texture_ci.arrayLayers;
-
 	vk_texture_ci.sampleCount = vk::SampleCountFlagBits::e1;
-
 	vk_texture_ci.addressMode = vk::SamplerAddressMode::eRepeat;
 	vk_texture_ci.enableAnisotropy = true;
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-	vk_texture_ci.name = texture_ci.name;
+	vk_texture_ci.name = name;
 #endif
 
 	FVkTexture texture{};
 	createTexture(vk_texture_ci, texture);
 
-	auto& upload_info = textureUploadInfos.emplace_back();
-	upload_info.textureId = resources->add<FVkTexture>(texture_ci.name.c_str(), std::move(texture));
-	upload_info.mipLayerOffsets = texture_ci.offsets;
-	upload_info.data = std::move(texture_ci.data);
+	auto& upload_data = textureUploadInfos.emplace_back(std::move(upload_info));
+	upload_data.textureId = resources->add<FVkTexture>(name.c_str(), std::move(texture));
 
-	return upload_info.textureId;
+	return { upload_data.textureId, RESOURCE_TYPE_TEXTURE_BIT };
 }
 
+FResourceView CVkRenderHandle::createRenderTarget(const std::string& name, const FTextureCreateInfo& texture_ci)
+{
+	FVkTextureCreateInfo vk_texture_ci{};
+	vk_texture_ci.base = texture_ci;
+	vk_texture_ci.usageFlags = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled;
+	vk_texture_ci.aspectFlags = vk::ImageAspectFlagBits::eColor;
+	vk_texture_ci.sampleCount = vk::SampleCountFlagBits::e1;
+	vk_texture_ci.addressMode = vk::SamplerAddressMode::eRepeat;
+
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	vk_texture_ci.name = name;
+#endif
+
+	FVkTexture texture{};
+	createTexture(vk_texture_ci, texture);
+	texture.isRenderTarget = true;
+
+	return { resources->add<FVkTexture>(name.c_str(), std::move(texture)), RESOURCE_TYPE_RENDER_TARGET_BIT };
+}
+
+FResourceView CVkRenderHandle::createRenderTargets(const std::string& name, const FTextureCreateInfo& texture_ci)
+{
+	auto& swapchain = context->getSwapchain();
+
+	FResourceView resource_view{};
+
+	for (uint32_t idx = 0u; idx < swapchain.framesInFlight; ++idx)
+	{
+		if (texture_ci.isSwapchainTarget)
+		{
+			FVkTexture texture{};
+			texture.isRenderTarget = true;
+			texture.initialData.base.format = static_cast<uint32_t>(swapchain.format);
+			texture.image.handle = swapchain.images.at(idx);
+			texture.imageViews.emplace_back(swapchain.imageViews.at(idx));
+			texture.initialData.aspectFlags = vk::ImageAspectFlagBits::eColor;
+
+			resource_view.id = resources->add<FVkTexture>(name.c_str(), std::move(texture));
+		}
+		else
+			resource_view = createRenderTarget(name, texture_ci);
+	}
+
+	return resource_view;
+}
+
+FResourceView CVkRenderHandle::getResource(const char* name, uint32_t resource_type)
+{
+	enum EResourceTypeBits : uint32_t
+	{
+		RESOURCE_TYPE_TEXTURE_BIT = 1 << 0,
+		RESOURCE_TYPE_RENDER_TARGET_BIT = 1 << 1,
+		RESOURCE_TYPE_BUFFER_BIT = 1 << 2,
+		RESOURCE_TYPE_SHADER_BIT = 1 << 3
+	};
+
+	if ((resource_type & RESOURCE_TYPE_TEXTURE_BIT) || (resource_type & RESOURCE_TYPE_RENDER_TARGET_BIT))
+		return { resources->getId<FVkTexture>(name), RESOURCE_TYPE_TEXTURE_BIT | RESOURCE_TYPE_RENDER_TARGET_BIT };
+
+	return {};
+}
+
+FPoint2D<uint32_t> CVkRenderHandle::getRenderResolution()
+{
+	auto& swapchain = context->getSwapchain();
+
+	FPoint2D<uint32_t> resolution{};
+	resolution.x = swapchain.extent.width;
+	resolution.y = swapchain.extent.height;
+
+	return resolution;
+}
+
+uint32_t CVkRenderHandle::getDepthFormat()
+{
+	auto found_format = context->findSupportedFormat
+	(
+		{
+			vk::Format::eD32Sfloat,
+			vk::Format::eD32SfloatS8Uint,
+			vk::Format::eD24UnormS8Uint
+		},
+		vk::ImageTiling::eOptimal,
+		vk::FormatFeatureFlagBits::eDepthStencilAttachment
+	);
+
+	return static_cast<uint32_t>(found_format);
+}
+
+uint32_t CVkRenderHandle::getApiFormat(uint32_t global_format)
+{
+	switch (global_format)
+	{
+	case FORMAT_RG16_SFLOAT: return VK_FORMAT_R16G16_SFLOAT; break;
+	case FORMAT_RGBA8_SRGB: return VK_FORMAT_R8G8B8A8_SRGB; break;
+	case FORMAT_RGBA8_UNORM: return VK_FORMAT_R8G8B8A8_UNORM; break;
+	case FORMAT_RGBA16_SFLOAT: return VK_FORMAT_R16G16B16A16_SFLOAT; break;
+	case FORMAT_RGBA32_SFLOAT: return VK_FORMAT_R32G32B32A32_SFLOAT; break;
+	default: return 0; break;
+	}
+}
+
+uint32_t CVkRenderHandle::getPresentFormat()
+{
+	auto& swapchain = context->getSwapchain();
+	return static_cast<uint32_t>(swapchain.format);
+}
+
+// TODO: update only targets, that have same size with swapchain
 void CVkRenderHandle::updateSurface(int32_t surface_width, int32_t surface_height)
 {
 	if (this->surface_width != surface_width || this->surface_height != surface_height)
@@ -142,51 +218,42 @@ void CVkRenderHandle::updateSurface(int32_t surface_width, int32_t surface_heigh
 
 		auto& swapchain = context->getSwapchain();
 		auto& textures = resources->data<FVkTexture>();
-		
-		// Update swapchain render targets first
-		size_t swapchainFrameIndex{ 0ull };
-		for (const auto& swapchain_target : swapchainTargets)
-		{
-			auto& target = textures.at(swapchain_target);
-			target.imageViews.clear();
-
-			target.image.handle = swapchain.images.at(swapchainFrameIndex);
-			target.imageViews.emplace_back(swapchain.imageViews.at(swapchainFrameIndex));
-
-			swapchainFrameIndex++;
-		}
 
 		// Updating render targets
 		
 		for (size_t texture_id = 0ull; texture_id < textures.size(); ++texture_id)
 		{
-			auto is_swapchain_image = std::find(swapchainTargets.begin(), swapchainTargets.end(), texture_id);
-			if (is_swapchain_image != swapchainTargets.end())
-				continue;
+			size_t swapchainFrameIndex{ 0ull };
+			for (auto& target : textures.at(texture_id))
+			{
+				if (!target.isRenderTarget)
+					continue;
 
-			auto& target = textures.at(texture_id);
-			if (!target.isRenderTarget)
-				continue;
+				// Update sapchain target
+				if (target.initialData.base.isSwapchainTarget)
+				{
+					target.imageViews.clear();
+					target.image.handle = swapchain.images.at(swapchainFrameIndex);
+					target.imageViews.emplace_back(swapchain.imageViews.at(swapchainFrameIndex));
 
-			for (auto& image_view : target.imageViews)
-				context->destroyImageView(image_view);
-			target.imageViews.clear();
+					swapchainFrameIndex++;
+					continue;
+				}
 
-			context->destroyImage(target.image);
+				for (auto& image_view : target.imageViews)
+					context->destroyImageView(image_view);
+				target.imageViews.clear();
 
-			FVkTextureCreateInfo texture_ci{};
-			texture_ci.extent = target.initialData.extent;
-			texture_ci.extent.width = swapchain.extent.width;
-			texture_ci.extent.height = swapchain.extent.height;
-			texture_ci.aspectFlags = target.initialData.aspectFlags;
-			texture_ci.usageFlags = target.initialData.usageFlags;
-			texture_ci.format = target.initialData.format;
-			texture_ci.layout = target.initialData.layout;
-			texture_ci.mipLevelCount = target.initialData.mipLevelCount;
-			texture_ci.arrayLayersCount = target.initialData.arrayLayersCount;
-			texture_ci.createSampler = false;
+				context->destroyImage(target.image);
 
-			createTexture(texture_ci, target);
+				FVkTextureCreateInfo texture_ci{};
+				texture_ci.base = target.initialData.base;
+				texture_ci.aspectFlags = target.initialData.aspectFlags;
+				texture_ci.usageFlags = target.initialData.usageFlags;
+				texture_ci.createSampler = false;
+
+				createTexture(texture_ci, target);
+			}
 		}
 	}
 }
@@ -234,15 +301,21 @@ void CVkRenderHandle::endFrameCommandBuffers()
 
 	// Frame is finished. We can reuse descriptors
 	auto& shaders = resources->data<FVkShader>();
-	for (auto& shader : shaders)
-		shader.descriptorUsage.clear();
+	for (auto& shader_instances : shaders)
+	{
+		for(auto& shader : shader_instances)
+			shader.descriptorUsage.clear();
+	}
 
 	// Frame finished. Textures in now again in initial layout
 	auto& textures = resources->data<FVkTexture>();
-	for (auto& texture : textures)
+	for (auto& texture_instances : textures)
 	{
-		if (texture.isRenderTarget)
-			texture.layout = texture.initialData.layout;
+		for (auto& texture : texture_instances)
+		{
+			if (texture.isRenderTarget)
+				texture.layout = vk::ImageLayout::eUndefined;
+		}
 	}
 }
 
@@ -296,7 +369,7 @@ void CVkRenderHandle::processResourceUpload()
 	FVkTranslationInfo translation_info{};
 	for (const auto& texture_upload : textureUploadInfos)
 	{
-		auto& texture = textures.at(texture_upload.textureId);
+		auto& texture = textures.at(texture_upload.textureId).front();
 
 		auto& image_translation = translation_info.imageTranslationInfos.emplace_back();
 
@@ -306,7 +379,7 @@ void CVkRenderHandle::processResourceUpload()
 
 		image_translation = get_texture_layout_translation_info(texture, texture_translation_info);
 
-		if (texture.initialData.mipLevelCount > 1u && texture_upload.mipLayerOffsets.empty())
+		if (texture.initialData.base.mipLevels > 1u && texture_upload.mipLayerOffsets.empty())
 			generate_mip_textures.emplace_back(texture_upload.textureId);
 	}
 
@@ -317,7 +390,7 @@ void CVkRenderHandle::processResourceUpload()
 	for (size_t idx = 0ull; idx < textureUploadInfos.size(); ++idx)
 	{
 		auto& texture_upload = textureUploadInfos.at(idx);
-		auto& texture = textures.at(texture_upload.textureId);
+		auto& texture = textures.at(texture_upload.textureId).front();
 		auto& staging_buffer = staging_buffers.at(idx);
 
 		std::vector<vk::BufferImageCopy2KHR> copy_regions{};
@@ -326,17 +399,17 @@ void CVkRenderHandle::processResourceUpload()
 			for (uint32_t layer = 0u; layer < texture.totalLayers; ++layer)
 			{
 				auto& layer_offsets = texture_upload.mipLayerOffsets.at(layer);
-				for (uint32_t mip = 0u; mip < texture.initialData.mipLevelCount; ++mip)
+				for (uint32_t mip = 0u; mip < texture.initialData.base.mipLevels; ++mip)
 				{
 					size_t offset = layer_offsets.at(mip);
 					auto& copy_region = copy_regions.emplace_back();
 					copy_region.imageSubresource.aspectMask = texture.initialData.aspectFlags;
 					copy_region.imageSubresource.mipLevel = mip;
 					copy_region.imageSubresource.baseArrayLayer = layer;
-					copy_region.imageSubresource.layerCount = texture.initialData.arrayLayersCount;
-					copy_region.imageExtent.width = texture.initialData.extent.width >> mip;
-					copy_region.imageExtent.height = texture.initialData.extent.height >> mip;
-					copy_region.imageExtent.depth = texture.initialData.extent.depth;
+					copy_region.imageSubresource.layerCount = texture.initialData.base.arrayLayers;
+					copy_region.imageExtent.width = texture.initialData.base.width >> mip;
+					copy_region.imageExtent.height = texture.initialData.base.height >> mip;
+					copy_region.imageExtent.depth = texture.initialData.base.depth;
 					copy_region.bufferOffset = offset;
 				}
 			}
@@ -348,9 +421,9 @@ void CVkRenderHandle::processResourceUpload()
 			copy_region.imageSubresource.mipLevel = 0u;
 			copy_region.imageSubresource.baseArrayLayer = 0u;
 			copy_region.imageSubresource.layerCount = texture.totalLayers;
-			copy_region.imageExtent.width = texture.initialData.extent.width;
-			copy_region.imageExtent.height = texture.initialData.extent.height;
-			copy_region.imageExtent.depth = texture.initialData.extent.depth;
+			copy_region.imageExtent.width = texture.initialData.base.width;
+			copy_region.imageExtent.height = texture.initialData.base.height;
+			copy_region.imageExtent.depth = texture.initialData.base.depth;
 			copy_region.bufferOffset = 0ull;
 		}
 
@@ -360,12 +433,12 @@ void CVkRenderHandle::processResourceUpload()
 	auto& current_command_buffer = command_buffer.handles.at(command_buffer.commandBufferIndex);
 	for (auto& texture_id : generate_mip_textures)
 	{
-		auto& texture = textures.at(texture_id);
+		auto& texture = textures.at(texture_id).front();
 
-		uint32_t mip_width{ texture.initialData.extent.width };
-		uint32_t mip_heigth{ texture.initialData.extent.height };
+		uint32_t mip_width{ texture.initialData.base.width };
+		uint32_t mip_heigth{ texture.initialData.base.height };
 
-		for (uint32_t mip = 1u; mip < texture.initialData.mipLevelCount; mip++)
+		for (uint32_t mip = 1u; mip < texture.initialData.base.mipLevels; mip++)
 		{
 			FVkImageTranslationInfo image_translation_info{};
 			image_translation_info.handle = texture.image.handle;
@@ -422,7 +495,7 @@ void CVkRenderHandle::processResourceUpload()
 	// Translate images to shader read only layout
 	for (const auto& texture_upload : textureUploadInfos)
 	{
-		auto& texture = textures.at(texture_upload.textureId);
+		auto& texture = textures.at(texture_upload.textureId).front();
 
 		auto& image_translation = translation_info.imageTranslationInfos.emplace_back();
 
@@ -454,8 +527,7 @@ void CVkRenderHandle::processResourceUpload()
 
 FRenderApiErrorInfo CVkRenderHandle::createTexture(const FVkTextureCreateInfo& texture_ci, FVkTexture& texture)
 {
-	texture.initialData.imageTypeFlags = texture_ci.imageTypeFlags;
-	texture.initialData.arrayLayersCount = texture_ci.arrayLayersCount;
+	texture.initialData.base = texture_ci.base;
 	
 	FVkImageCreateInfo image_ci{};
 	FVkImageViewCreateInfo image_view_ci{};
@@ -463,43 +535,38 @@ FRenderApiErrorInfo CVkRenderHandle::createTexture(const FVkTextureCreateInfo& t
 	image_ci.name = texture_ci.name;
 #endif
 
-	if (texture_ci.extent.depth > 1 || (texture_ci.imageTypeFlags & TEXTURE_IMAGE_TYPE_3D_FLAG_BIT))
+	if (texture_ci.base.depth > 1 || (texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_3D_FLAG_BIT))
 		image_ci.ci.imageType = vk::ImageType::e3D;
 	else
 	{
-		if (texture_ci.imageTypeFlags & TEXTURE_IMAGE_TYPE_1D_FLAG_BIT)
+		if (texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_1D_FLAG_BIT)
 			image_ci.ci.imageType = vk::ImageType::e1D;
-		else if (texture_ci.imageTypeFlags & TEXTURE_IMAGE_TYPE_2D_FLAG_BIT)
+		else if (texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_2D_FLAG_BIT)
 			image_ci.ci.imageType = vk::ImageType::e2D;
-		else if (texture_ci.imageTypeFlags & TEXTURE_IMAGE_TYPE_3D_FLAG_BIT)
+		else if (texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_3D_FLAG_BIT)
 			image_ci.ci.imageType = vk::ImageType::e3D;
 		else
 			image_ci.ci.imageType = vk::ImageType::e2D;
 	}
 
-	texture.initialData.extent = image_ci.ci.extent = texture_ci.extent;
-	texture.initialData.mipLevelCount = image_ci.ci.mipLevels = texture_ci.mipLevelCount;
+	image_ci.ci.extent = vk::Extent3D{ texture_ci.base.width, texture_ci.base.height, texture_ci.base.depth };
+	image_ci.ci.mipLevels = texture_ci.base.mipLevels;
 
-	image_ci.ci.arrayLayers = texture_ci.arrayLayersCount;
-	if ((texture_ci.imageTypeFlags & TEXTURE_IMAGE_TYPE_ARRAY_FLAG_BIT) && (texture_ci.imageTypeFlags & TEXTURE_IMAGE_TYPE_CUBEMAP_FLAG_BIT))
+	image_ci.ci.arrayLayers = texture_ci.base.arrayLayers;
+	if ((texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_ARRAY_FLAG_BIT) && (texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_CUBEMAP_FLAG_BIT))
 	{
 		image_ci.ci.arrayLayers *= 6u;
 		image_view_ci.ci.viewType = vk::ImageViewType::eCubeArray;
 	}
-	else if (texture_ci.imageTypeFlags & TEXTURE_IMAGE_TYPE_ARRAY_FLAG_BIT)
-	{
-		image_ci.ci.arrayLayers = texture_ci.arrayLayersCount;
+	else if (texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_ARRAY_FLAG_BIT)
 		image_view_ci.ci.viewType = vk::ImageViewType::e2DArray;
-	}
-	else if (texture_ci.imageTypeFlags & TEXTURE_IMAGE_TYPE_CUBEMAP_FLAG_BIT)
+	else if (texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_CUBEMAP_FLAG_BIT)
 	{
 		image_ci.ci.arrayLayers = 6u;
 		image_view_ci.ci.viewType = vk::ImageViewType::eCube;
 	}
-	else if (texture_ci.imageTypeFlags & TEXTURE_IMAGE_TYPE_3D_FLAG_BIT)
-	{
+	else if (texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_3D_FLAG_BIT)
 		image_view_ci.ci.viewType = vk::ImageViewType::e3D;
-	}
 	else
 	{
 		image_ci.ci.arrayLayers = 1u;
@@ -509,12 +576,12 @@ FRenderApiErrorInfo CVkRenderHandle::createTexture(const FVkTextureCreateInfo& t
 	image_view_ci.ci.subresourceRange.layerCount = texture.totalLayers = image_ci.ci.arrayLayers;
 
 	image_ci.memoryUsage = vma::MemoryUsage::eUnknown;
-	texture.initialData.format = image_view_ci.ci.format = image_ci.ci.format = texture_ci.format;
-	texture.initialData.layout = image_ci.ci.initialLayout = texture_ci.layout;
+	image_view_ci.ci.format = image_ci.ci.format = static_cast<vk::Format>(texture_ci.base.format);
+	image_ci.ci.initialLayout = vk::ImageLayout::eUndefined;
 	texture.initialData.usageFlags = image_ci.ci.usage = texture_ci.usageFlags;
 	texture.initialData.sampleCount = image_ci.ci.samples = texture_ci.sampleCount;
 	image_ci.ci.sharingMode = vk::SharingMode::eExclusive;
-	image_ci.ci.flags = (texture_ci.imageTypeFlags & TEXTURE_IMAGE_TYPE_CUBEMAP_FLAG_BIT) ? vk::ImageCreateFlagBits::eCubeCompatible : vk::ImageCreateFlagBits::eExtendedUsage;
+	image_ci.ci.flags = (texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_CUBEMAP_FLAG_BIT) ? vk::ImageCreateFlagBits::eCubeCompatible : vk::ImageCreateFlagBits::eExtendedUsage;
 
 	RETURN_WHEN_FAULT(context->createImage(image_ci, texture.image));
 
@@ -523,11 +590,11 @@ FRenderApiErrorInfo CVkRenderHandle::createTexture(const FVkTextureCreateInfo& t
 	image_view_ci.ci.subresourceRange.baseArrayLayer = 0u;
 	image_view_ci.ci.image = texture.image.handle;
 
-	texture.imageViews.resize(texture_ci.mipLevelCount);
-	for (uint32_t mip = 0u; mip < texture_ci.mipLevelCount; ++mip)
+	texture.imageViews.resize(texture_ci.base.mipLevels);
+	for (uint32_t mip = 0u; mip < texture_ci.base.mipLevels; ++mip)
 	{
 		image_view_ci.ci.subresourceRange.baseMipLevel = mip;
-		image_view_ci.ci.subresourceRange.levelCount = mip == 0u ?texture_ci.mipLevelCount : 1u;
+		image_view_ci.ci.subresourceRange.levelCount = mip == 0u ?texture_ci.base.mipLevels : 1u;
 #ifndef BUILD_WITHOUT_DEBUGGIND
 		image_view_ci.name = std::format("{} mip #{}", texture_ci.name, mip);
 #endif
@@ -539,7 +606,7 @@ FRenderApiErrorInfo CVkRenderHandle::createTexture(const FVkTextureCreateInfo& t
 	sampler_ci.enableAnisotropy = texture_ci.enableAnisotropy;
 	sampler_ci.enableCompareOp = texture_ci.enableCompareOp;
 	sampler_ci.minFilter = sampler_ci.magFilter = texture_ci.filter;
-	sampler_ci.mipLevels = texture_ci.mipLevelCount;
+	sampler_ci.mipLevels = texture_ci.base.mipLevels;
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	sampler_ci.name = texture_ci.name;
 #endif
@@ -602,6 +669,25 @@ FRenderApiErrorInfo CVkRenderHandle::createShaderResources(const FVkShaderResour
 
 			auto& descriptor_set = shader.descriptorSets[set].emplace_back();
 			RETURN_WHEN_FAULT(context->createDescriptorSet(descriptor_set_ci, descriptor_set));
+		}
+	}
+
+	for (size_t idx = 0ull; idx < resources_info.usageCount; ++idx)
+	{
+		for (const auto& [id, uniform_block] : reflection.uniformBlocks)
+		{
+			FVkBufferCreateInfo buffer_ci{};
+			buffer_ci.instanceCount = 1u;
+			buffer_ci.instanceSize = uniform_block.size;
+			buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
+
+			if (uniform_block.descriptorType == vk::DescriptorType::eUniformBuffer)
+				buffer_ci.usageFlags = vk::BufferUsageFlagBits::eUniformBuffer;
+			else if (uniform_block.descriptorType == vk::DescriptorType::eStorageBuffer)
+				buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer;
+
+			auto& buffer = shader.uniformBuffers[id].emplace_back();
+			RETURN_WHEN_FAULT(context->createBuffer(buffer_ci, buffer));
 		}
 	}
 
@@ -778,6 +864,12 @@ void CVkRenderHandle::destroyShader(FVkShader& shader)
 			context->destroyDescriptorSet(shader.descriptorPool, descriptor_set);
 	}
 
+	for (auto& [id, buffers] : shader.uniformBuffers)
+	{
+		for (auto& buffer : buffers)
+			context->destroyBuffer(buffer);
+	}
+
 	context->destroyDescriptorPool(shader.descriptorPool);
 
 	context->destroyPipelineLayout(shader.layout);
@@ -888,6 +980,7 @@ void CVkRenderHandle::bindShaderDescriptors(const FVkCommandBuffer& command_buff
 void CVkRenderHandle::beginRendering(const FVkCommandBuffer command_buffer, const FVkRenderingInfo& rendering_info)
 {
 	auto& textures = resources->data<FVkTexture>();
+	auto& swapchain = context->getSwapchain();
 
 	FVkTranslationInfo translation_info{};
 
@@ -897,11 +990,11 @@ void CVkRenderHandle::beginRendering(const FVkCommandBuffer command_buffer, cons
 	{
 		vk::ClearValue clear_color{ {0.0f, 0.0f, 0.0f, 0.0f} };
 
-		auto& render_target = textures.at(target_id);
+		auto& render_target = textures.at(target_id).at(swapchain.currentFrame);
 		
 		// Translating render target layout to color attachment
 		FVkTextureTranslationInfo texture_translation_info{};
-		texture_translation_info.oldLayout = render_target.initialData.layout;
+		texture_translation_info.oldLayout = vk::ImageLayout::eUndefined;
 		render_target.layout = texture_translation_info.newLayout = vk::ImageLayout::eColorAttachmentOptimal;
 		auto target_layout_translation = get_texture_layout_translation_info(render_target, texture_translation_info);
 		translation_info.imageTranslationInfos.emplace_back(target_layout_translation);
@@ -926,10 +1019,10 @@ void CVkRenderHandle::beginRendering(const FVkCommandBuffer command_buffer, cons
 	{
 		vk::ClearValue clear_color{ {0.f, 0u} };
 
-		auto& depth_target = textures.at(rendering_info.depthAttachment);
+		auto& depth_target = textures.at(rendering_info.depthAttachment).at(swapchain.currentFrame);
 
 		FVkTextureTranslationInfo texture_translation_info{};
-		texture_translation_info.oldLayout = depth_target.initialData.layout;
+		texture_translation_info.oldLayout = vk::ImageLayout::eUndefined;
 		depth_target.layout = texture_translation_info.newLayout = vk::ImageLayout::eDepthAttachmentOptimal;
 		auto target_layout_translation = get_texture_layout_translation_info(depth_target, texture_translation_info);
 		translation_info.imageTranslationInfos.emplace_back(target_layout_translation);
@@ -955,8 +1048,8 @@ void CVkRenderHandle::beginRendering(const FVkCommandBuffer command_buffer, cons
 	{
 		begin_rendering_info.pDepthAttachment = &depth_attachment;
 
-		auto& depth_target = textures.at(rendering_info.depthAttachment);
-		if (!is_depth_only_format(depth_target.initialData.format))
+		auto& depth_target = textures.at(rendering_info.depthAttachment).at(swapchain.currentFrame);
+		if (!is_depth_only_format(static_cast<vk::Format>(depth_target.initialData.base.format)))
 			begin_rendering_info.pStencilAttachment = &depth_attachment;
 	}
 
@@ -987,6 +1080,7 @@ void CVkRenderHandle::beginRendering(const FVkCommandBuffer command_buffer, cons
 void CVkRenderHandle::endRendering(const FVkCommandBuffer command_buffer, const FVkRenderingInfo& rendering_info)
 {
 	auto& textures = resources->data<FVkTexture>();
+	auto& swapchain = context->getSwapchain();
 
 	auto& current_buffer = command_buffer.handles.at(commandBuffers[0].commandBufferIndex);
 	current_buffer.endRenderingKHR();
@@ -995,7 +1089,7 @@ void CVkRenderHandle::endRendering(const FVkCommandBuffer command_buffer, const 
 
 	for (const auto& target_id : rendering_info.colorAttachments)
 	{
-		auto& render_target = textures.at(target_id);
+		auto& render_target = textures.at(target_id).at(swapchain.currentFrame);
 
 		// Translating render target layout to color attachment
 		FVkTextureTranslationInfo texture_translation_info{};
@@ -1007,7 +1101,7 @@ void CVkRenderHandle::endRendering(const FVkCommandBuffer command_buffer, const 
 
 	if (rendering_info.depthAttachment != invalid_handle)
 	{
-		auto& depth_target = textures.at(rendering_info.depthAttachment);
+		auto& depth_target = textures.at(rendering_info.depthAttachment).at(swapchain.currentFrame);;
 
 		FVkTextureTranslationInfo texture_translation_info{};
 		texture_translation_info.oldLayout = vk::ImageLayout::eDepthAttachmentOptimal;
@@ -1115,24 +1209,24 @@ void CVkRenderHandle::copyBufferToTexture(const FVkCommandBuffer& command_buffer
 
 void CVkRenderHandle::draw()
 {
-	auto& swapchain = context->getSwapchain();
-
-	FVkRenderingInfo rendering_info{};
-	rendering_info.flipViewport = true;
-	rendering_info.renderArea.extent = swapchain.extent;
-	rendering_info.scissorRect = rendering_info.renderArea;
-	rendering_info.colorAttachments.emplace_back(swapchainTargets.at(swapchain.currentFrame));
-
-	beginRendering(commandBuffers[0], rendering_info);
-
-	auto& command_buffer = commandBuffers[0].handles.at(commandBuffers[0].commandBufferIndex);
-
-	auto& shader = resources->get<FVkShader>(testShader);
-	for (const auto& pipeline_handle : shader.handles)
-	{
-		command_buffer.bindPipeline(shader.bindPoint, pipeline_handle);
-		command_buffer.draw(3, 1, 0, 0);
-	}
-
-	endRendering(commandBuffers[0], rendering_info);
+	//auto& swapchain = context->getSwapchain();
+	//
+	//FVkRenderingInfo rendering_info{};
+	//rendering_info.flipViewport = true;
+	//rendering_info.renderArea.extent = swapchain.extent;
+	//rendering_info.scissorRect = rendering_info.renderArea;
+	//rendering_info.colorAttachments.emplace_back(swapchainTarget);
+	//
+	//beginRendering(commandBuffers[0], rendering_info);
+	//
+	//auto& command_buffer = commandBuffers[0].handles.at(commandBuffers[0].commandBufferIndex);
+	//
+	//auto& shader = resources->get<FVkShader>(testShader);
+	//for (const auto& pipeline_handle : shader.handles)
+	//{
+	//	command_buffer.bindPipeline(shader.bindPoint, pipeline_handle);
+	//	command_buffer.draw(3, 1, 0, 0);
+	//}
+	//
+	//endRendering(commandBuffers[0], rendering_info);
 }

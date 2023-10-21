@@ -63,11 +63,16 @@ void CApplication::create()
 	render_interface = std::make_unique<render::CRenderInterface>();
 	render_interface->create(rhi_ci);
 
-	loadTexture("/root/skybox.ktx2");
-	loadTexture("/root/3dtex_1_reference_u.ktx2");
+	std::vector<uint8_t> render_config{};
+	vfs->readFile("/root/render_config.as", render_config);
+
+	render_interface->createRendererBehavior(render_config);
+
+	//loadTexture("/root/skybox.ktx2");
+	//loadTexture("/root/3dtex_1_reference_u.ktx2");
 }
 
-size_t CApplication::loadTexture(const std::string& path)
+FResourceView CApplication::loadTexture(const std::string& path)
 {
 	auto name = filesystem::fs::get_stem(path);
 	auto ext = filesystem::fs::get_ext(path);
@@ -77,6 +82,11 @@ size_t CApplication::loadTexture(const std::string& path)
 	vfs->readFile(path, data);
 
 	return render_interface->createTexture(name, data, static_cast<EMimeType>(ext_hash));
+}
+
+FResourceView CApplication::loadShader(const std::string& name)
+{
+	return FResourceView{};
 }
 
 void CApplication::loop()

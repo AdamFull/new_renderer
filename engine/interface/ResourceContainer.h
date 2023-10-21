@@ -20,14 +20,22 @@ namespace engine
 		resource_handle_t add(const char* name, _Ty&& object)
 		{
 			static std::atomic<resource_handle_t> uid{ 0ull };
+
+			auto name_hash = utl::fnv1a_64_hash(name);
+			auto found_association = nameToId.find(name_hash);
+			if (found_association != nameToId.end())
+			{
+				auto& current_id = found_association->second;
+				objects.at(current_id).emplace_back(object);
+				return current_id;
+			}
 			
 			if (!freeIds.empty())
 			{
 				resource_handle_t current_id = freeIds.front();
 				freeIds.pop();
 
-				auto insertion_point = objects.begin() + current_id;
-				objects.insert(insertion_point, object);
+				objects.at(current_id).emplace_back(object);
 
 				return current_id;
 			}
@@ -36,7 +44,8 @@ namespace engine
 			uid.fetch_add(1ull, std::memory_order_relaxed);
 
 			nameToId.emplace(utl::fnv1a_64_hash(name), current_id);
-			objects.emplace_back(object);
+			auto& instances = objects.emplace_back();
+			instances.emplace_back(object);
 
 			return current_id;
 		}
@@ -48,6 +57,7 @@ namespace engine
 			{
 				freeIds.push(id);
 				nameToId.erase(it);
+				objects.at(id).clear();
 			}
 		}
 
@@ -58,28 +68,38 @@ namespace engine
 			{
 				freeIds.push(it->second);
 				nameToId.erase(it);
+				objects.at(it->second).clear();
 			}
 		}
 
-		_Ty& get(resource_handle_t id)
+		_Ty& get(resource_handle_t id, size_t index = 0ull)
 		{
-			return objects.at(id);
+			return objects.at(id).at(index);
 		}
 
-		_Ty& get(const char* name)
+		_Ty& get(const char* name, size_t index = 0ull)
 		{
 			auto id = nameToId[utl::fnv1a_64_hash(name)];
-			return get(id);
+			return get(id, index);
 		}
 
-		std::vector<_Ty>& data()
+		std::vector<std::vector<_Ty>>& data()
 		{
 			return objects;
+		}
+
+		resource_handle_t getId(const char* name)
+		{
+			auto it = nameToId.find(utl::fnv1a_64_hash(name));
+			if (it != nameToId.end())
+				return it->second;
+
+			return ~0ull;
 		}
 	private:
 		std::queue<resource_handle_t> freeIds{};
 		std::unordered_map<size_t, resource_handle_t> nameToId{};
-		std::vector<_Ty> objects{};
+		std::vector<std::vector<_Ty>> objects{};
 	};
 
 	class CResourceContainer
@@ -128,10 +148,17 @@ namespace engine
 		}
 
 		template<class _Ty>
-		std::vector<_Ty>& data()
+		std::vector<std::vector<_Ty>>& data()
 		{
 			auto container = get_container<_Ty>();
 			return container->data();
+		}
+
+		template<class _Ty>
+		resource_handle_t getId(const char* name)
+		{
+			auto container = get_container<_Ty>();
+			return container->getId(name);
 		}
 	protected:
 		template<class _Ty>

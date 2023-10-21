@@ -10,12 +10,12 @@ namespace engine
 		class CResourceLoader
 		{
 		public:
-			FTextureCreateInfo loadTexture(const std::vector<uint8_t>& data, EMimeType mime);
+			bool loadTexture(const std::vector<uint8_t>& data, EMimeType mime, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info);
 		private:
-			FTextureCreateInfo loadSTBFromMemory(const std::vector<uint8_t>& data);
-			FTextureCreateInfo loadKTXFromMemory(const std::vector<uint8_t>& data);
-			FTextureCreateInfo loadKTX2FromMemory(const std::vector<uint8_t>& data);
-			FTextureCreateInfo loadDDSFromMemory(const std::vector<uint8_t>& data);
+			bool loadSTBFromMemory(const std::vector<uint8_t>& data, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info);
+			bool loadKTXFromMemory(const std::vector<uint8_t>& data, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info);
+			bool loadKTX2FromMemory(const std::vector<uint8_t>& data, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info);
+			bool loadDDSFromMemory(const std::vector<uint8_t>& data, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info);
 		};
 	}
 }
