@@ -24,7 +24,6 @@ namespace engine
 
 			struct FVkReflectionPushConstantBlock : FReflectionPushConstantBlock<FVkReflectionUniform>
 			{
-				size_t size{ 0ull };
 				vk::ShaderStageFlags stageFlags{ vk::ShaderStageFlagBits::eAll };
 			};
 

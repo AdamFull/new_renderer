@@ -20,7 +20,8 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 )
 
 target_include_directories(${PROJECT_NAME} 
-	PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
+	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/"
+    PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/tools"
     PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/engine"
     PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/KTX-Software/include"
     PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/KTX-Software/lib"

@@ -294,7 +294,7 @@ namespace engine
 			// ---------------------------------------------------------------------------------
 			struct FVkShaderModuleCreateInfo
 			{
-				std::vector<uint32_t> shaderCode{};
+				std::vector<uint32_t>* shaderCode{};
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				std::string name{};
 #endif
@@ -321,6 +321,7 @@ namespace engine
 
 				std::vector<vk::Format> colorAttachmentFormats{};
 				vk::Format depthAttachmentFormat{ vk::Format::eUndefined };
+				vk::Format stencilAttachmentFormat{ vk::Format::eUndefined };
 
 				std::vector<vk::VertexInputBindingDescription> vertexBindingDescriptions{};
 				std::vector<vk::VertexInputAttributeDescription> vertexAttributeDescriptions{};
@@ -393,39 +394,6 @@ namespace engine
 #endif
 			};
 
-			struct FVkGraphicsShaderCreateInfo
-			{
-				uint32_t usageCount{ 1u };
-
-				vk::PrimitiveTopology primitiveTopology{};
-				vk::CullModeFlags cullMode{};
-				vk::FrontFace frontFace{};
-				vk::SampleCountFlagBits sampleCount{ vk::SampleCountFlagBits::e1 };
-				uint32_t patchControlPoints{ 0u };
-
-				std::vector<vk::Format> colorAttachmentFormats{};
-				vk::Format depthAttachmentFormat{ vk::Format::eUndefined };
-
-				std::vector<vk::VertexInputBindingDescription> vertexBindingDescriptions{};
-				std::vector<vk::VertexInputAttributeDescription> vertexAttributeDescriptions{};
-
-				std::unordered_map<vk::ShaderStageFlagBits, std::vector<uint32_t>> shaderStageCode{};
-
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				std::string name{};
-#endif
-			};
-
-			struct FVkComputeShaderCreateInfo
-			{
-				uint32_t usageCount{ 1u };
-
-				std::vector<std::vector<uint32_t>> shaderCode{};
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				std::string name{};
-#endif
-			};
-
 
 			// ---------------------------------------------------------------------------------
 			// ===================================| TEXTURE |===================================
@@ -463,16 +431,6 @@ namespace engine
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				std::string name{};
 #endif
-			};
-
-			struct FVkRenderingInfo
-			{
-				vk::Rect2D renderArea{};
-				vk::Rect2D scissorRect{};
-				bool flipViewport{ false };
-
-				std::vector<size_t> colorAttachments{};
-				size_t depthAttachment{ ~0ull };
 			};
 
 			struct FVkImageTranslationInfo

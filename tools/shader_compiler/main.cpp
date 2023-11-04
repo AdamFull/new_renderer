@@ -5,11 +5,12 @@
 
 #include <logger/logger.h>
 
-#include "library_compiler.h"
+#include <library_compiler.h>
 
-#include "compiler_util.h"
+#include <compiler_util.h>
 
 namespace fs = std::filesystem;
+using namespace shader_compiler;
 
 ETargetAPIType parse_api_type(const std::string& api_type_str)
 {

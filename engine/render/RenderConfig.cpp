@@ -1,4 +1,4 @@
-#include "RenderConfig.h"
+#include <RenderConfig.h>
 
 #include <angelscript.h>
 #include <scriptstdvector/scriptstdvector.h>
@@ -84,6 +84,11 @@ void CRenderConfig::initialize(IRenderInterface* render_interface, IRenderHandle
 	RegisterStdString(scriptEngine);
 	RegisterStdVector<FResourceView>(scriptEngine);
 
+	// FShaderNameLoadInfo registration
+	RegisterASType<FShaderNameLoadInfo>(scriptEngine);
+	res = scriptEngine->RegisterObjectProperty("FShaderNameLoadInfo", "uint64 library", asOFFSET(FShaderNameLoadInfo, libraryId));
+	res = scriptEngine->RegisterObjectProperty("FShaderNameLoadInfo", "uint64 shader", asOFFSET(FShaderNameLoadInfo, shaderId));
+
 	// FTextureCreateInfo registration
 	RegisterASType<FTextureCreateInfo>(scriptEngine);
 	res = scriptEngine->RegisterObjectProperty("FTextureCreateInfo", "bool present_image", asOFFSET(FTextureCreateInfo, isSwapchainTarget));
@@ -99,15 +104,16 @@ void CRenderConfig::initialize(IRenderInterface* render_interface, IRenderHandle
 	RegisterASType<FRenderingCreateInfo>(scriptEngine);
 	res = scriptEngine->RegisterObjectProperty("FRenderingCreateInfo", "uint queue", asOFFSET(FRenderingCreateInfo, queue));
 	res = scriptEngine->RegisterObjectProperty("FRenderingCreateInfo", "uint type", asOFFSET(FRenderingCreateInfo, type));
-	res = scriptEngine->RegisterObjectProperty("FRenderingCreateInfo", "FResourceView shader", asOFFSET(FRenderingCreateInfo, shader));
+	res = scriptEngine->RegisterObjectProperty("FRenderingCreateInfo", "FShaderNameLoadInfo shader", asOFFSET(FRenderingCreateInfo, shader));
 	res = scriptEngine->RegisterObjectProperty("FRenderingCreateInfo", "bool one_time", asOFFSET(FRenderingCreateInfo, oneTime));
 	res = scriptEngine->RegisterObjectProperty("FRenderingCreateInfo", "uint flip_viewport", asOFFSET(FRenderingCreateInfo, flipViewport));
 	res = scriptEngine->RegisterObjectProperty("FRenderingCreateInfo", "vector_FResourceView input", asOFFSET(FRenderingCreateInfo, shaderInputs));
 	res = scriptEngine->RegisterObjectProperty("FRenderingCreateInfo", "vector_FResourceView output", asOFFSET(FRenderingCreateInfo, renderTargets));
 	res = scriptEngine->RegisterObjectProperty("FRenderingCreateInfo", "FResourceView depth", asOFFSET(FRenderingCreateInfo, depthTarget));
+	res = scriptEngine->RegisterObjectProperty("FRenderingCreateInfo", "FResourceView stencil", asOFFSET(FRenderingCreateInfo, stencilTarget));
 
 	res = scriptEngine->RegisterObjectType("IRenderInterface", 0, asOBJ_REF | asOBJ_NOCOUNT);
-	res = scriptEngine->RegisterObjectMethod("IRenderInterface", "FResourceView getShaderNameTag(const string &in)", asMETHOD(IRenderInterface, getShaderNameTag), asCALL_THISCALL);
+	res = scriptEngine->RegisterObjectMethod("IRenderInterface", "FShaderNameLoadInfo getShaderNameTag(const string &in)", asMETHOD(IRenderInterface, getShaderNameTag), asCALL_THISCALL);
 	res = scriptEngine->RegisterObjectMethod("IRenderInterface", "void createRendering(const FRenderingCreateInfo &in)", asMETHOD(IRenderInterface, createRendering), asCALL_THISCALL);
 	res = scriptEngine->RegisterGlobalProperty("IRenderInterface render_interface", render_interface);
 

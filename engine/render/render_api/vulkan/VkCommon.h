@@ -60,6 +60,64 @@ namespace engine
 				return aspectFlags;
 			}
 
+			inline vk::PrimitiveTopology get_primitive_topology(uint32_t mask)
+			{
+				switch (mask)
+				{
+				case SHADER_PRIMITIVE_TOPOLOGY_POINT_LIST: return vk::PrimitiveTopology::ePointList; break;
+				case SHADER_PRIMITIVE_TOPOLOGY_LINE_LIST: return vk::PrimitiveTopology::eLineList; break;
+				case SHADER_PRIMITIVE_TOPOLOGY_LINE_STRIP: return vk::PrimitiveTopology::eLineStrip; break;
+				case SHADER_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST: return vk::PrimitiveTopology::eTriangleList; break;
+				case SHADER_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP: return vk::PrimitiveTopology::eTriangleStrip; break;
+				case SHADER_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN: return vk::PrimitiveTopology::eTriangleFan; break;
+				}
+			}
+
+			inline vk::ShaderStageFlagBits get_shader_stage(uint32_t mask)
+			{
+				switch (mask)
+				{
+				case 1: return vk::ShaderStageFlagBits::eVertex; break;
+				case 2: return vk::ShaderStageFlagBits::eTessellationControl; break;
+				case 3: return vk::ShaderStageFlagBits::eTessellationEvaluation; break;
+				case 4: return vk::ShaderStageFlagBits::eGeometry; break;
+				case 5: return vk::ShaderStageFlagBits::eFragment; break;
+				case 6: return vk::ShaderStageFlagBits::eCompute; break;
+				case 7: return vk::ShaderStageFlagBits::eRaygenKHR; break;
+				case 8: return vk::ShaderStageFlagBits::eIntersectionKHR; break;
+				case 9: return vk::ShaderStageFlagBits::eAnyHitKHR; break;
+				case 10: return vk::ShaderStageFlagBits::eClosestHitKHR; break;
+				case 11: return vk::ShaderStageFlagBits::eMissKHR; break;
+				case 12: return vk::ShaderStageFlagBits::eCallableKHR; break;
+				case 13: return vk::ShaderStageFlagBits::eTaskEXT; break;
+				case 14: return vk::ShaderStageFlagBits::eMeshEXT; break;
+				}
+
+				return vk::ShaderStageFlagBits::eAll;
+			}
+
+			inline vk::CullModeFlags get_cull_mode_flags(uint32_t mask)
+			{
+				vk::CullModeFlags flags{};
+
+				if (mask & SHADER_CULL_MODE_NONE)
+					flags |= vk::CullModeFlagBits::eNone;
+				if (mask & SHADER_CULL_MODE_FRONT_BIT)
+					flags |= vk::CullModeFlagBits::eFront;
+				if (mask & SHADER_CULL_MODE_BACK_BIT)
+					flags |= vk::CullModeFlagBits::eBack;
+
+				return flags;
+			}
+
+			inline vk::FrontFace get_front_face(uint32_t mask)
+			{
+				if (mask == SHADER_FRONT_FACE_CCW)
+					return vk::FrontFace::eCounterClockwise;
+
+				return vk::FrontFace::eClockwise;
+			}
+
 			inline FVkPhysicalDevice make_physical_device(vk::PhysicalDevice device)
 			{
 				FVkPhysicalDevice current_device{};

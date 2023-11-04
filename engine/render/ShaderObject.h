@@ -48,12 +48,13 @@ namespace engine
 		class CShaderObject
 		{
 		public:
+			void create(FResourceView resource, const FShaderReflectionData& reflection);
 			const std::unique_ptr<CUniformHandle>& getUniformBlock(const char* name);
 			void bindTexture(const char* name, FResourceView texture_resource);
 		private:
 			std::unordered_map<size_t, std::unique_ptr<CUniformHandle>> uniformBlocks{};
 			std::unordered_map<size_t, FResourceView> bindTextures{};
-			size_t resourceHandle{ ~0ull };
+			FResourceView shaderView{};
 		};
 	}
 }

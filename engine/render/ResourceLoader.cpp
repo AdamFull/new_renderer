@@ -1,10 +1,14 @@
-#include "ResourceLoader.h"
+#include <ResourceLoader.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 
 #include <ktx.h>
 #include <vk_format.h>
+
+#include <logger/logger.h>
+
+#include <shader_compiler/compiler_util.h>
 
 using namespace engine;
 using namespace engine::render;
@@ -51,6 +55,41 @@ bool CResourceLoader::loadTexture(const std::vector<uint8_t>& data, EMimeType mi
 	}
 
 	return false;
+}
+
+bool CResourceLoader::loadShaderData(const FShaderNameLoadInfo& load_info, std::vector<FShaderCreationBlockInfo>& shader_stages)
+{
+	auto found_library = shaderLibraries.find(load_info.libraryId);
+	if (found_library == shaderLibraries.end())
+		return false;
+
+	shader_compiler::FCompiledLibrary& shader_library = found_library->second;
+
+	auto found_shader_module = shader_library.modules.find(load_info.shaderId);
+	if (found_shader_module == shader_library.modules.end())
+		return false;
+
+	std::vector<shader_compiler::FShaderModule>& shader_modules = found_shader_module->second;
+	for (auto& module : shader_modules)
+	{
+		auto pool_name = shader_compiler::get_shader_type(module.type);
+
+		auto found_shader_pool = shader_library.shaders.find(pool_name);
+		if (found_shader_pool == shader_library.shaders.end())
+			continue;
+
+		auto& shader_pool = found_shader_pool->second;
+
+		auto found_shader_code = shader_pool.find(module.link);
+		if (found_shader_code == shader_pool.end())
+			continue;
+
+		auto& shader_code_info = shader_stages.emplace_back();
+		shader_code_info.stage = static_cast<uint32_t>(module.type);
+		shader_code_info.code = &found_shader_code->second;
+	}
+
+	return true;
 }
 
 bool CResourceLoader::loadSTBFromMemory(const std::vector<uint8_t>& data, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info)

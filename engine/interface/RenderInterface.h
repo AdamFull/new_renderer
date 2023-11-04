@@ -11,6 +11,8 @@
 
 #include "SharedStructure.h"
 
+//#include <shader_compiler/compiler_util.h>
+
 namespace engine
 {
 	enum class ERenderApi
@@ -161,6 +163,13 @@ namespace engine
 		std::unordered_map<size_t, _Ty> uniforms{};
 	};
 
+	struct FShaderReflectionData
+	{
+		std::unordered_map<size_t, FReflectionUniform> uniforms{};
+		std::unordered_map<size_t, FReflectionUniformBlock<FReflectionUniform>> uniformBlocks{};
+		std::unordered_map<size_t, FReflectionPushConstantBlock<FReflectionUniform>> pushBlocks{};
+	};
+
 	template<class _Ty>
 	struct FPoint2D
 	{
@@ -174,19 +183,28 @@ namespace engine
 		FPoint2D<_Ty> size{};
 	};
 
+	struct FShaderNameLoadInfo
+	{
+		size_t libraryId{ ~0ull };
+		size_t shaderId{ ~0ull };
+		std::string originalName{};
+	};
+
 	struct FRenderingCreateInfo
 	{
 		uint32_t queue{ 0u };
 		uint32_t type{ 0u };
 
-		FResourceView shader{};
+		FShaderNameLoadInfo shader{};
 
 		bool oneTime{ false };
 		bool flipViewport{ false };
 
 		std::vector<FResourceView> shaderInputs{};
 		std::vector<FResourceView> renderTargets{};
+
 		FResourceView depthTarget{};
+		FResourceView stencilTarget{};
 	};
 
 	struct FBeginRenderingInfo
@@ -198,6 +216,77 @@ namespace engine
 
 		std::vector<FResourceView> colorAttachments{};
 		FResourceView depthAttachment{};
+		FResourceView stencilAttachment{};
+	};
+
+	enum EShaderPrimitiveTopology : uint32_t
+	{
+		SHADER_PRIMITIVE_TOPOLOGY_POINT_LIST,
+		SHADER_PRIMITIVE_TOPOLOGY_LINE_LIST,
+		SHADER_PRIMITIVE_TOPOLOGY_LINE_STRIP,
+		SHADER_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+		SHADER_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
+		SHADER_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN,
+	};
+
+	enum EShaderCullMode : uint32_t
+	{
+		SHADER_CULL_MODE_NONE = 1 << 0,
+		SHADER_CULL_MODE_FRONT_BIT = 1 << 1,
+		SHADER_CULL_MODE_BACK_BIT = 1 << 2,
+		SHADER_CULL_MODE_FRONT_AND_BACK = SHADER_CULL_MODE_FRONT_BIT | SHADER_CULL_MODE_BACK_BIT
+	};
+
+	enum EShaderFrontFace : uint32_t
+	{
+		SHADER_FRONT_FACE_CCW,
+		SHADER_FRONT_FACE_CW
+	};
+
+	struct FVertexBindingDescription
+	{
+		uint32_t binding{};
+		uint32_t stride{};
+	};
+
+	struct FVertexAttributeDescription
+	{
+		uint32_t location{};
+		uint32_t binding{};
+		uint32_t format{};
+		uint32_t offset{};
+	};
+
+	struct FVertexDeclarationInfo
+	{
+		std::vector<FVertexBindingDescription> bindingDescriptions{};
+		std::vector<FVertexAttributeDescription> attributeDescriptions{};
+	};
+
+	struct FShaderCreationBlockInfo
+	{
+		uint32_t stage{ 0u };
+		std::vector<uint32_t>* code{ nullptr };
+	};
+
+	struct FGraphicsShaderCreateInfo
+	{
+		uint32_t primitiveTopology{};
+		uint32_t cullMode{};
+		uint32_t frontFace{};
+
+		uint32_t usageCount{ 1u };
+
+		std::vector<FResourceView> colorAttachments{};
+		FResourceView depthAttachment{};
+		FResourceView stencilAttachment{};
+
+		FVertexDeclarationInfo vertexDeclaration{};
+	};
+
+	struct FComputeShaderCreateInfo
+	{
+		uint32_t usageCount{ 1u };
 	};
 
 	class IRenderInterface
@@ -209,7 +298,10 @@ namespace engine
 		virtual void createRendererBehavior(const std::vector<uint8_t>& script) = 0;
 		virtual FResourceView createTexture(const std::string& name, const std::vector<uint8_t>& data, EMimeType mime) = 0;
 
-		virtual FResourceView getShaderNameTag(const std::string& name) = 0;
+		virtual FResourceView createShader(const FShaderNameLoadInfo& name_info, const FGraphicsShaderCreateInfo& create_info) = 0;
+		virtual FResourceView createShader(const FShaderNameLoadInfo& name_info, const FComputeShaderCreateInfo& create_info) = 0;
+
+		virtual FShaderNameLoadInfo getShaderNameTag(const std::string& name) = 0;
 		virtual void createRendering(const FRenderingCreateInfo& rendering_ci) = 0;
 
 		virtual void updateSurfaceSize(int32_t width, int32_t height) = 0;
@@ -226,6 +318,11 @@ namespace engine
 		virtual void create(const FRenderContextCreateInfo& context_ci) = 0;
 		virtual FResourceView createTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) = 0;
 		virtual FResourceView createRenderTargets(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
+
+		virtual FResourceView createShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
+		virtual FResourceView createShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
+
+		virtual FShaderReflectionData getShaderReflection(const FResourceView& shader_view) = 0;
 
 		virtual FResourceView getResource(const char* name, uint32_t resource_type) = 0;
 

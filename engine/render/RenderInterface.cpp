@@ -1,6 +1,7 @@
-#include "RenderInterface.h"
+#include <RenderInterface.h>
 
 #include <render_api/vulkan/VkRenderHandle.h>
+#include <shader_compiler/compiler_util.h>
 
 using namespace engine;
 using namespace engine::render;
@@ -60,6 +61,32 @@ std::unique_ptr<engine::IRenderHandleInterface> make_render_handle_interface(con
 	return render_handle;
 }
 
+struct FShaderNameInfo
+{
+	std::string library_name;
+	std::string shader_name;
+	std::vector<std::string> definitions;
+};
+
+FShaderNameInfo get_shader_name_info(const std::string& shader_name)
+{
+	FShaderNameInfo name_info{};
+
+	std::string token;
+	std::stringstream ss(shader_name);
+
+	if (std::getline(ss, token, ':'))
+		name_info.library_name = token;
+
+	if (std::getline(ss, token, ':'))
+		name_info.shader_name = token;
+
+	while (std::getline(ss, token, ':'))
+		name_info.definitions.emplace_back(token);
+
+	return name_info;
+}
+
 CRenderInterface::~CRenderInterface()
 {
 
@@ -88,6 +115,16 @@ FResourceView CRenderInterface::createTexture(const std::string& name, const std
 	return renderHandle->createTexture(name, texture_ci, std::move(texture_ui));
 }
 
+FResourceView CRenderInterface::createShader(const FShaderNameLoadInfo& name_info, const FGraphicsShaderCreateInfo& create_info)
+{
+	return createShader<FGraphicsShaderCreateInfo>(name_info, create_info);
+}
+
+FResourceView CRenderInterface::createShader(const FShaderNameLoadInfo& name_info, const FComputeShaderCreateInfo& create_info)
+{
+	return createShader<FComputeShaderCreateInfo>(name_info, create_info);
+}
+
 void CRenderInterface::updateSurfaceSize(int32_t width, int32_t height)
 {
 	renderHandle->updateSurface(width, height);
@@ -103,9 +140,16 @@ void CRenderInterface::endFrame()
 	renderHandle->endFrameCommandBuffers();
 }
 
-FResourceView CRenderInterface::getShaderNameTag(const std::string& name)
+FShaderNameLoadInfo CRenderInterface::getShaderNameTag(const std::string& name)
 {
-	return {};
+	auto name_info = get_shader_name_info(name);
+
+	FShaderNameLoadInfo load_info{};
+	load_info.libraryId = utl::fnv1a_64_hash(name_info.library_name.c_str());
+	load_info.shaderId = shader_compiler::make_module_unique_name(name_info.shader_name, name_info.definitions);
+	load_info.originalName = name;
+
+	return load_info;
 }
 
 void CRenderInterface::createRendering(const FRenderingCreateInfo& rendering_ci)

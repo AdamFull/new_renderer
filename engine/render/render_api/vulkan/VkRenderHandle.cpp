@@ -127,12 +127,239 @@ FResourceView CVkRenderHandle::createRenderTargets(const std::string& name, cons
 			texture.imageViews.emplace_back(swapchain.imageViews.at(idx));
 
 			resource_view.id = resources->add<FVkTexture>(name.c_str(), std::move(texture));
+			resource_view.mask = RESOURCE_TYPE_RENDER_TARGET_BIT;
 		}
 		else
 			resource_view = createRenderTarget(name, texture_ci);
 	}
 
 	return resource_view;
+}
+
+FResourceView CVkRenderHandle::createShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages)
+{
+	const char* shaderEntryPoint{ "main" };
+
+	FVkShader shader{};
+	CVkShaderReflectionBuilder reflection_builder{};
+
+	FVkGraphicsPipelineCreateInfo pipeline_ci{};
+	pipeline_ci.primitiveTopology = get_primitive_topology(shader_ci.primitiveTopology);
+	pipeline_ci.cullMode = get_cull_mode_flags(shader_ci.cullMode);
+	pipeline_ci.frontFace = get_front_face(shader_ci.frontFace);
+
+	// Get color attachment formats
+	auto& textures = resources->data<FVkTexture>();
+	for (auto& attachment : shader_ci.colorAttachments)
+	{
+		auto& texture = textures.at(attachment.id).at(0);
+		pipeline_ci.colorAttachmentFormats.emplace_back(static_cast<vk::Format>(texture.initialData.base.format));
+	}
+
+	// Get depth format
+	if(shader_ci.depthAttachment.id != invalid_handle)
+	{
+		auto& texture = textures.at(shader_ci.depthAttachment.id).at(0);
+		pipeline_ci.depthAttachmentFormat = static_cast<vk::Format>(texture.initialData.base.format);
+	}
+
+	// Get stencil format
+	if (shader_ci.stencilAttachment.id != invalid_handle)
+	{
+		auto& texture = textures.at(shader_ci.stencilAttachment.id).at(0);
+		pipeline_ci.stencilAttachmentFormat = static_cast<vk::Format>(texture.initialData.base.format);
+	}
+
+	pipeline_ci.sampleCount = vk::SampleCountFlagBits::e1;
+	pipeline_ci.patchControlPoints = 0;
+
+	for (auto& vertex_binding : shader_ci.vertexDeclaration.bindingDescriptions)
+	{
+		auto& description = pipeline_ci.vertexBindingDescriptions.emplace_back();
+		description.binding = vertex_binding.binding;
+		description.stride = vertex_binding.stride;
+		description.inputRate = vk::VertexInputRate::eVertex;
+	}
+
+	for (auto& vertex_binding : shader_ci.vertexDeclaration.attributeDescriptions)
+	{
+		auto& description = pipeline_ci.vertexAttributeDescriptions.emplace_back();
+		description.location = vertex_binding.location;
+		description.binding = vertex_binding.binding;
+		description.format = static_cast<vk::Format>(getApiFormat(vertex_binding.format));
+		description.offset = vertex_binding.offset;
+	}
+
+	// Create shader modules and collect reflection data
+	uint32_t shader_index{ 0u };
+	for (const auto& [stage, code] : shader_stages)
+	{
+		auto shader_stage = get_shader_stage(stage);
+		FVkShaderModuleCreateInfo shader_module_ci{};
+		shader_module_ci.shaderCode = code;
+#ifndef BUILD_WITHOUT_DEBUGGIND
+		shader_module_ci.name = std::format("{} stage {} #{}", name, vk::to_string(shader_stage), shader_index);
+#endif
+
+		auto& shader_module = shader.shaderModules.emplace_back();
+		context->createShaderModule(shader_module_ci, shader_module);
+
+		auto& stage_ci = pipeline_ci.shaderStages.emplace_back();
+		stage_ci.stage = shader_stage;
+		stage_ci.module = shader_module;
+		stage_ci.pName = shaderEntryPoint;
+
+		reflection_builder.addShaderStage(shader_stage, *code);
+		shader_index++;
+	}
+
+	auto reflection = reflection_builder.build();
+
+	// Update shader stage specialization info
+	for (auto& shader_stage : pipeline_ci.shaderStages)
+	{
+		auto found = reflection.specializationConstantStages.find(shader_stage.stage);
+		if (found != reflection.specializationConstantStages.end())
+			shader_stage.pSpecializationInfo = &found->second.info;
+	}
+
+	shader.reflection = resources->add<FVkShaderReflectionData>("", std::move(reflection));
+
+	FVkShaderResourcesInfo resources_info{};
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	resources_info.name = name;
+#endif
+	resources_info.usageCount = shader_ci.usageCount;
+
+	createShaderResources(resources_info, shader);
+
+	pipeline_ci.layout = shader.layout;
+
+	shader.bindPoint = vk::PipelineBindPoint::eGraphics;
+
+	auto& pipeline = shader.handles.emplace_back();
+	context->createPipeline(pipeline_ci, pipeline);
+
+	return { resources->add<FVkShader>(name.c_str(), std::move(shader)), RESOURCE_TYPE_SHADER_BIT };
+}
+
+FResourceView CVkRenderHandle::createShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages)
+{
+	const char* shaderEntryPoint{ "main" };
+
+	FVkShader shader{};
+	CVkShaderReflectionBuilder reflection_builder{};
+	std::vector<vk::PipelineShaderStageCreateInfo> pipeline_stages{};
+
+	// Create shader modules and collect reflection data
+	for (size_t idx = 0ull; idx < shader_stages.size(); ++idx)
+	{
+		auto& code = shader_stages.at(idx);
+		FVkShaderModuleCreateInfo shader_module_ci{};
+		shader_module_ci.shaderCode = code.code;
+#ifndef BUILD_WITHOUT_DEBUGGIND
+		shader_module_ci.name = std::format("{} stage {} #{}", name, vk::to_string(vk::ShaderStageFlagBits::eCompute), idx);
+#endif
+
+		auto& shader_module = shader.shaderModules.emplace_back();
+		context->createShaderModule(shader_module_ci, shader_module);
+
+		auto& stage = pipeline_stages.emplace_back();
+		stage.stage = vk::ShaderStageFlagBits::eCompute;
+		stage.module = shader_module;
+		stage.pName = shaderEntryPoint;
+
+		reflection_builder.addShaderStage(vk::ShaderStageFlagBits::eCompute, *code.code);
+	}
+
+	auto reflection = reflection_builder.build();
+
+	// Update shader stage specialization info
+	for (auto& shader_stage : pipeline_stages)
+	{
+		auto found = reflection.specializationConstantStages.find(shader_stage.stage);
+		if (found != reflection.specializationConstantStages.end())
+			shader_stage.pSpecializationInfo = &found->second.info;
+	}
+
+	shader.reflection = resources->add<FVkShaderReflectionData>("", std::move(reflection));
+
+	FVkShaderResourcesInfo resources_info{};
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	resources_info.name = name;
+#endif
+	resources_info.usageCount = shader_ci.usageCount;
+
+	createShaderResources(resources_info, shader);
+
+	FVkComputePipelineCreateInfo pipeline_ci{};
+	pipeline_ci.layout = shader.layout;
+
+	for (size_t idx = 0ull; idx < pipeline_stages.size(); ++idx)
+	{
+		auto& stage = pipeline_stages.at(idx);
+		pipeline_ci.shaderStage = stage;
+#ifndef BUILD_WITHOUT_DEBUGGIND
+		pipeline_ci.name = std::format("{} #{}", name, idx);
+#endif
+
+		auto& pipeline = shader.handles.emplace_back();
+		context->createPipeline(pipeline_ci, pipeline);
+	}
+
+	shader.bindPoint = vk::PipelineBindPoint::eCompute;
+
+	return { resources->add<FVkShader>(name.c_str(), std::move(shader)), RESOURCE_TYPE_SHADER_BIT };
+}
+
+FShaderReflectionData CVkRenderHandle::getShaderReflection(const FResourceView& shader_view)
+{
+	auto& shader = resources->get<FVkShader>(shader_view.id);
+	auto& shader_reflection = resources->get<FVkShaderReflectionData>(shader.reflection);
+	FShaderReflectionData reflection_data{};
+
+	for (auto& [id, vkuniform] : shader_reflection.uniforms)
+	{
+		auto& uniform = reflection_data.uniforms[id];
+		uniform.binding = vkuniform.binding;
+		uniform.set = vkuniform.set;
+		uniform.offset = vkuniform.offset;
+		uniform.size = vkuniform.size;
+	}
+
+	for (auto& [aid, vkuniform_block] : shader_reflection.uniformBlocks)
+	{
+		auto& uniform_block = reflection_data.uniformBlocks[aid];
+		uniform_block.binding = vkuniform_block.binding;
+		uniform_block.set = vkuniform_block.set;
+		uniform_block.size = vkuniform_block.size;
+
+		for (auto& [bid, vkuniform] : vkuniform_block.uniforms)
+		{
+			auto& uniform = uniform_block.uniforms[bid];
+			uniform.binding = vkuniform.binding;
+			uniform.set = vkuniform.set;
+			uniform.offset = vkuniform.offset;
+			uniform.size = vkuniform.size;
+		}
+	}
+
+	for (auto& [aid, vkpush_block] : shader_reflection.pushBlocks)
+	{
+		auto& push_block = reflection_data.pushBlocks[aid];
+		push_block.size = vkpush_block.size;
+
+		for (auto& [bid, vkuniform] : vkpush_block.uniforms)
+		{
+			auto& uniform = vkpush_block.uniforms[bid];
+			uniform.binding = vkuniform.binding;
+			uniform.set = vkuniform.set;
+			uniform.offset = vkuniform.offset;
+			uniform.size = vkuniform.size;
+		}
+	}
+
+	return reflection_data;
 }
 
 FResourceView CVkRenderHandle::getResource(const char* name, uint32_t resource_type)
@@ -716,141 +943,6 @@ FRenderApiErrorInfo CVkRenderHandle::createShaderResources(const FVkShaderResour
 	return context->createPipelineLayout(layout_ci, shader.layout);
 }
 
-FRenderApiErrorInfo CVkRenderHandle::createShader(const FVkGraphicsShaderCreateInfo& shader_ci, FVkShader& shader)
-{
-	const char* shaderEntryPoint{ "main" };
-
-	CVkShaderReflectionBuilder reflection_builder{};
-
-	FVkGraphicsPipelineCreateInfo pipeline_ci{};
-	pipeline_ci.primitiveTopology = shader_ci.primitiveTopology;
-	pipeline_ci.cullMode = shader_ci.cullMode;
-	pipeline_ci.frontFace = shader_ci.frontFace;
-	pipeline_ci.colorAttachmentFormats = shader_ci.colorAttachmentFormats;
-	pipeline_ci.depthAttachmentFormat = shader_ci.depthAttachmentFormat;
-	pipeline_ci.sampleCount = shader_ci.sampleCount;
-	pipeline_ci.patchControlPoints = shader_ci.patchControlPoints;
-	pipeline_ci.vertexBindingDescriptions = shader_ci.vertexBindingDescriptions;
-	pipeline_ci.vertexAttributeDescriptions = shader_ci.vertexAttributeDescriptions;
-
-	// Create shader modules and collect reflection data
-	uint32_t shader_index{ 0u };
-	for (const auto& [stage, code] : shader_ci.shaderStageCode)
-	{
-		FVkShaderModuleCreateInfo shader_module_ci{};
-		shader_module_ci.shaderCode = code;
-#ifndef BUILD_WITHOUT_DEBUGGIND
-		shader_module_ci.name = std::format("{} stage {} #{}", shader_ci.name, vk::to_string(stage), shader_index);
-#endif
-
-		auto& shader_module = shader.shaderModules.emplace_back();
-		RETURN_WHEN_FAULT(context->createShaderModule(shader_module_ci, shader_module));
-
-		auto& stage_ci = pipeline_ci.shaderStages.emplace_back();
-		stage_ci.stage = stage;
-		stage_ci.module = shader_module;
-		stage_ci.pName = shaderEntryPoint;
-
-		reflection_builder.addShaderStage(stage, code);
-		shader_index++;
-	}
-
-	auto reflection = reflection_builder.build();
-
-	// Update shader stage specialization info
-	for (auto& shader_stage : pipeline_ci.shaderStages)
-	{
-		auto found = reflection.specializationConstantStages.find(shader_stage.stage);
-		if (found != reflection.specializationConstantStages.end())
-			shader_stage.pSpecializationInfo = &found->second.info;
-	}
-
-	shader.reflection = resources->add<FVkShaderReflectionData>("", std::move(reflection));
-
-	FVkShaderResourcesInfo resources_info{};
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	resources_info.name = shader_ci.name;
-#endif
-	resources_info.usageCount = shader_ci.usageCount;
-
-	RETURN_WHEN_FAULT(createShaderResources(resources_info, shader));
-
-	pipeline_ci.layout = shader.layout;
-
-	shader.bindPoint = vk::PipelineBindPoint::eGraphics;
-
-	auto& pipeline = shader.handles.emplace_back();
-	return context->createPipeline(pipeline_ci, pipeline);
-}
-
-FRenderApiErrorInfo CVkRenderHandle::createShader(const FVkComputeShaderCreateInfo& shader_ci, FVkShader& shader)
-{
-	const char* shaderEntryPoint{ "main" };
-
-	CVkShaderReflectionBuilder reflection_builder{};
-	std::vector<vk::PipelineShaderStageCreateInfo> shader_stages{};
-
-	// Create shader modules and collect reflection data
-	for (size_t idx = 0ull; idx < shader_ci.shaderCode.size(); ++idx)
-	{
-		auto& code = shader_ci.shaderCode.at(idx);
-		FVkShaderModuleCreateInfo shader_module_ci{};
-		shader_module_ci.shaderCode = code;
-#ifndef BUILD_WITHOUT_DEBUGGIND
-		shader_module_ci.name = std::format("{} stage {} #{}", shader_ci.name, vk::to_string(vk::ShaderStageFlagBits::eCompute), idx);
-#endif
-
-		auto& shader_module = shader.shaderModules.emplace_back();
-		RETURN_WHEN_FAULT(context->createShaderModule(shader_module_ci, shader_module));
-
-		auto& stage = shader_stages.emplace_back();
-		stage.stage = vk::ShaderStageFlagBits::eCompute;
-		stage.module = shader_module;
-		stage.pName = shaderEntryPoint;
-
-		reflection_builder.addShaderStage(vk::ShaderStageFlagBits::eCompute, code);
-	}
-
-	auto reflection = reflection_builder.build();
-
-	// Update shader stage specialization info
-	for (auto& shader_stage : shader_stages)
-	{
-		auto found = reflection.specializationConstantStages.find(shader_stage.stage);
-		if (found != reflection.specializationConstantStages.end())
-			shader_stage.pSpecializationInfo = &found->second.info;
-	}
-
-	shader.reflection = resources->add<FVkShaderReflectionData>("", std::move(reflection));
-
-	FVkShaderResourcesInfo resources_info{};
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	resources_info.name = shader_ci.name;
-#endif
-	resources_info.usageCount = shader_ci.usageCount;
-
-	RETURN_WHEN_FAULT(createShaderResources(resources_info, shader));
-
-	FVkComputePipelineCreateInfo pipeline_ci{};
-	pipeline_ci.layout = shader.layout;
-
-	for (size_t idx = 0ull; idx < shader_stages.size(); ++idx)
-	{
-		auto& stage = shader_stages.at(idx);
-		pipeline_ci.shaderStage = stage;
-#ifndef BUILD_WITHOUT_DEBUGGIND
-		pipeline_ci.name = std::format("{} #{}", shader_ci.name, idx);
-#endif
-
-		auto& pipeline = shader.handles.emplace_back();
-		RETURN_WHEN_FAULT(context->createPipeline(pipeline_ci, pipeline));
-	}
-
-	shader.bindPoint = vk::PipelineBindPoint::eCompute;
-
-	return make_api_error(vk::ObjectType::ePipeline, vk::Result::eSuccess);
-}
-
 // Destroy shader object
 void CVkRenderHandle::destroyShader(FVkShader& shader)
 {
@@ -979,7 +1071,7 @@ void CVkRenderHandle::bindShaderDescriptors(const FVkCommandBuffer& command_buff
 	current_command_buffer.bindDescriptorSets(shader.bindPoint, shader.layout, 0, static_cast<uint32_t>(bindDescriptorSets.size()), bindDescriptorSets.data(), 0u, nullptr);
 }
 
-void CVkRenderHandle::beginRendering(const FVkCommandBuffer command_buffer, const FVkRenderingInfo& rendering_info)
+void CVkRenderHandle::beginRendering(const FVkCommandBuffer command_buffer, const FBeginRenderingInfo& rendering_info)
 {
 	auto& textures = resources->data<FVkTexture>();
 	auto& swapchain = context->getSwapchain();
@@ -988,11 +1080,11 @@ void CVkRenderHandle::beginRendering(const FVkCommandBuffer command_buffer, cons
 
 	// Prepare render targets
 	std::vector<vk::RenderingAttachmentInfoKHR> color_attachments{};
-	for (const auto& target_id : rendering_info.colorAttachments)
+	for (const auto& target_view : rendering_info.colorAttachments)
 	{
 		vk::ClearValue clear_color{ {0.0f, 0.0f, 0.0f, 0.0f} };
 
-		auto& render_target = textures.at(target_id).at(swapchain.currentFrame);
+		auto& render_target = textures.at(target_view.id).at(swapchain.currentFrame);
 		
 		// Translating render target layout to color attachment
 		FVkTextureTranslationInfo texture_translation_info{};
@@ -1017,15 +1109,17 @@ void CVkRenderHandle::beginRendering(const FVkCommandBuffer command_buffer, cons
 
 	// Prepare depth target
 	vk::RenderingAttachmentInfoKHR depth_attachment{};
-	if(rendering_info.depthAttachment != invalid_handle)
+	if(rendering_info.depthAttachment.id != invalid_handle)
 	{
 		vk::ClearValue clear_color{ {0.f, 0u} };
 
-		auto& depth_target = textures.at(rendering_info.depthAttachment).at(swapchain.currentFrame);
+		auto& depth_target = textures.at(rendering_info.depthAttachment.id).at(swapchain.currentFrame);
+
+		bool is_depth_stencil_attachment = (rendering_info.stencilAttachment.id == rendering_info.depthAttachment.id) && rendering_info.stencilAttachment.id != invalid_handle;
 
 		FVkTextureTranslationInfo texture_translation_info{};
 		texture_translation_info.oldLayout = vk::ImageLayout::eUndefined;
-		depth_target.layout = texture_translation_info.newLayout = vk::ImageLayout::eDepthAttachmentOptimal;
+		depth_target.layout = texture_translation_info.newLayout = is_depth_stencil_attachment ? vk::ImageLayout::eDepthStencilAttachmentOptimal : vk::ImageLayout::eDepthAttachmentOptimal;
 		auto target_layout_translation = get_texture_layout_translation_info(depth_target, texture_translation_info);
 		translation_info.imageTranslationInfos.emplace_back(target_layout_translation);
 
@@ -1037,49 +1131,82 @@ void CVkRenderHandle::beginRendering(const FVkCommandBuffer command_buffer, cons
 		depth_attachment.clearValue = clear_color;
 	}
 
+	vk::RenderingAttachmentInfoKHR stencil_attachment{};
+	if (rendering_info.stencilAttachment.id != rendering_info.depthAttachment.id && rendering_info.stencilAttachment.id != invalid_handle)
+	{
+		vk::ClearValue clear_color{ {0.f, 0u} };
+
+		auto& stencil_target = textures.at(rendering_info.stencilAttachment.id).at(swapchain.currentFrame);
+
+		FVkTextureTranslationInfo texture_translation_info{};
+		texture_translation_info.oldLayout = vk::ImageLayout::eUndefined;
+		stencil_target.layout = texture_translation_info.newLayout = vk::ImageLayout::eStencilAttachmentOptimal;
+		auto target_layout_translation = get_texture_layout_translation_info(stencil_target, texture_translation_info);
+		translation_info.imageTranslationInfos.emplace_back(target_layout_translation);
+
+		stencil_attachment.imageView = stencil_target.imageViews.front();
+		stencil_attachment.imageLayout = stencil_target.layout;
+		stencil_attachment.resolveMode = vk::ResolveModeFlagBits::eNone;
+		stencil_attachment.loadOp = vk::AttachmentLoadOp::eClear;
+		stencil_attachment.storeOp = vk::AttachmentStoreOp::eDontCare;
+		stencil_attachment.clearValue = clear_color;
+	}
+
 	// Translate all render target layouts
 	processMemoryBarriers(command_buffer, translation_info);
 
 	vk::RenderingInfoKHR begin_rendering_info{};
-	begin_rendering_info.renderArea = rendering_info.renderArea;
+	begin_rendering_info.renderArea.offset.x = rendering_info.renderArea.offset.x;
+	begin_rendering_info.renderArea.offset.y = rendering_info.renderArea.offset.y;
+	begin_rendering_info.renderArea.extent.width = rendering_info.renderArea.size.x;
+	begin_rendering_info.renderArea.extent.height = rendering_info.renderArea.size.y;
 	begin_rendering_info.colorAttachmentCount = static_cast<uint32_t>(color_attachments.size());
 	begin_rendering_info.pColorAttachments = color_attachments.data();
 	begin_rendering_info.layerCount = 1u;
 
-	if (rendering_info.depthAttachment != invalid_handle)
+	if (rendering_info.depthAttachment.id != invalid_handle)
 	{
 		begin_rendering_info.pDepthAttachment = &depth_attachment;
 
-		auto& depth_target = textures.at(rendering_info.depthAttachment).at(swapchain.currentFrame);
-		if (!is_depth_only_format(static_cast<vk::Format>(depth_target.initialData.base.format)))
+		auto& depth_target = textures.at(rendering_info.depthAttachment.id).at(swapchain.currentFrame);
+		if (!is_depth_only_format(static_cast<vk::Format>(depth_target.initialData.base.format)) && rendering_info.stencilAttachment.id == rendering_info.depthAttachment.id)
 			begin_rendering_info.pStencilAttachment = &depth_attachment;
 	}
+
+	if (rendering_info.stencilAttachment.id != invalid_handle)
+		begin_rendering_info.pStencilAttachment = &stencil_attachment;
 
 	// Set viewport
 	vk::Viewport viewport{};
 	if (rendering_info.flipViewport)
 	{
-		viewport.width = static_cast<float>(rendering_info.renderArea.extent.width);
-		viewport.height = -static_cast<float>(rendering_info.renderArea.extent.height);
+		viewport.width = static_cast<float>(rendering_info.renderArea.size.x);
+		viewport.height = -static_cast<float>(rendering_info.renderArea.size.y);
 		viewport.x = 0.f;
-		viewport.y = static_cast<float>(rendering_info.renderArea.extent.height);
+		viewport.y = static_cast<float>(rendering_info.renderArea.size.y);
 	}
 	else
 	{
-		viewport.width = static_cast<float>(rendering_info.renderArea.extent.width);
-		viewport.height = static_cast<float>(rendering_info.renderArea.extent.height);
+		viewport.width = static_cast<float>(rendering_info.renderArea.size.x);
+		viewport.height = static_cast<float>(rendering_info.renderArea.size.y);
 		viewport.x = 0.f;
 		viewport.y = 0.f;
 	}
+
+	vk::Rect2D scissor_rect{};
+	scissor_rect.offset.x = rendering_info.scissorRect.offset.x;
+	scissor_rect.offset.y = rendering_info.scissorRect.offset.y;
+	scissor_rect.extent.width = rendering_info.scissorRect.size.x;
+	scissor_rect.extent.height = rendering_info.scissorRect.size.y;
 
 	auto& current_buffer = command_buffer.handles.at(commandBuffers[0].commandBufferIndex);
 	current_buffer.beginRenderingKHR(begin_rendering_info);
 
 	current_buffer.setViewport(0, 1, &viewport);
-	current_buffer.setScissor(0, 1, &rendering_info.renderArea);
+	current_buffer.setScissor(0, 1, &scissor_rect);
 }
 
-void CVkRenderHandle::endRendering(const FVkCommandBuffer command_buffer, const FVkRenderingInfo& rendering_info)
+void CVkRenderHandle::endRendering(const FVkCommandBuffer command_buffer, const FBeginRenderingInfo& rendering_info)
 {
 	auto& textures = resources->data<FVkTexture>();
 	auto& swapchain = context->getSwapchain();
@@ -1089,9 +1216,9 @@ void CVkRenderHandle::endRendering(const FVkCommandBuffer command_buffer, const 
 
 	FVkTranslationInfo translation_info{};
 
-	for (const auto& target_id : rendering_info.colorAttachments)
+	for (const auto& target_view : rendering_info.colorAttachments)
 	{
-		auto& render_target = textures.at(target_id).at(swapchain.currentFrame);
+		auto& render_target = textures.at(target_view.id).at(swapchain.currentFrame);
 
 		// Translating render target layout to color attachment
 		FVkTextureTranslationInfo texture_translation_info{};
@@ -1101,14 +1228,27 @@ void CVkRenderHandle::endRendering(const FVkCommandBuffer command_buffer, const 
 		translation_info.imageTranslationInfos.emplace_back(target_layout_translation);
 	}
 
-	if (rendering_info.depthAttachment != invalid_handle)
+	if (rendering_info.depthAttachment.id != invalid_handle)
 	{
-		auto& depth_target = textures.at(rendering_info.depthAttachment).at(swapchain.currentFrame);;
+		auto& depth_target = textures.at(rendering_info.depthAttachment.id).at(swapchain.currentFrame);
+
+		bool is_depth_stencil_attachment = (rendering_info.stencilAttachment.id == rendering_info.depthAttachment.id) && rendering_info.stencilAttachment.id != invalid_handle;
 
 		FVkTextureTranslationInfo texture_translation_info{};
-		texture_translation_info.oldLayout = vk::ImageLayout::eDepthAttachmentOptimal;
+		texture_translation_info.oldLayout = is_depth_stencil_attachment ? vk::ImageLayout::eDepthStencilAttachmentOptimal : vk::ImageLayout::eDepthAttachmentOptimal;
 		texture_translation_info.newLayout = get_render_target_final_layout(depth_target);
 		auto target_layout_translation = get_texture_layout_translation_info(depth_target, texture_translation_info);
+		translation_info.imageTranslationInfos.emplace_back(target_layout_translation);
+	}
+
+	if (rendering_info.stencilAttachment.id != invalid_handle && rendering_info.depthAttachment.id != rendering_info.stencilAttachment.id)
+	{
+		auto& stencil_target = textures.at(rendering_info.stencilAttachment.id).at(swapchain.currentFrame);;
+
+		FVkTextureTranslationInfo texture_translation_info{};
+		texture_translation_info.oldLayout = vk::ImageLayout::eStencilAttachmentOptimal;
+		texture_translation_info.newLayout = get_render_target_final_layout(stencil_target);
+		auto target_layout_translation = get_texture_layout_translation_info(stencil_target, texture_translation_info);
 		translation_info.imageTranslationInfos.emplace_back(target_layout_translation);
 	}
 	

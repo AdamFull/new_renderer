@@ -20,6 +20,11 @@ namespace engine
 				FResourceView createRenderTarget(const std::string& name, const FTextureCreateInfo& texture_ci);
 				FResourceView createRenderTargets(const std::string& name, const FTextureCreateInfo& texture_ci) override;
 
+				FResourceView createShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) override;
+				FResourceView createShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) override;
+
+				FShaderReflectionData getShaderReflection(const FResourceView& shader_view) override;
+
 				FResourceView getResource(const char* name, uint32_t resource_type) override;
 
 				FPoint2D<uint32_t> getRenderResolution() override;
@@ -40,15 +45,13 @@ namespace engine
 				void destroyTexture(FVkTexture& texture);
 
 				FRenderApiErrorInfo createShaderResources(const FVkShaderResourcesInfo& resources_info, FVkShader& shader);
-				FRenderApiErrorInfo createShader(const FVkGraphicsShaderCreateInfo& shader_ci, FVkShader& shader);
-				FRenderApiErrorInfo createShader(const FVkComputeShaderCreateInfo& shader_ci, FVkShader& shader);
 				void destroyShader(FVkShader& shader);
 
 				void updateShaderDescriptor(const FVkShaderDescriptorsUpdateInfo& update_info);
 				void bindShaderDescriptors(const FVkCommandBuffer& command_buffer, const FVkShader& shader);
 
-				void beginRendering(const FVkCommandBuffer command_buffer, const FVkRenderingInfo& rendering_info);
-				void endRendering(const FVkCommandBuffer command_buffer, const FVkRenderingInfo& rendering_info);
+				void beginRendering(const FVkCommandBuffer command_buffer, const FBeginRenderingInfo& rendering_info);
+				void endRendering(const FVkCommandBuffer command_buffer, const FBeginRenderingInfo& rendering_info);
 
 				void processMemoryBarriers(const FVkCommandBuffer& command_buffer, const FVkTranslationInfo& translation_info);
 				void processImageLayoutTranslation(const FVkCommandBuffer& command_buffer, const FVkImageTranslationInfo& image_translation_info);

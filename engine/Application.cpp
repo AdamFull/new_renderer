@@ -1,4 +1,5 @@
-#include "Application.h"
+#include <Application.h>
+
 #include <platform/PlatformSpecific.h>
 #include <render/RenderInterface.h>
 

@@ -1,14 +1,16 @@
-#include "library_compiler.h"
+#include <library_compiler.h>
 
-#include "compiler_util.h"
-#include "compiler_parse.h"
-#include "shader_library_parse.hpp"
+#include <compiler_util.h>
+#include <compiler_parse.h>
+#include <shader_library_parse.hpp>
 #include "sjson_parser.h"
 
 #include <fstream>
 
 #include <logger/logger.h>
 #include <json.hpp>
+
+using namespace shader_compiler;
 
 std::string emplace_data(std::string base_string, const std::string& target, const std::string& replacement)
 {
@@ -208,8 +210,8 @@ void CLibraryCompiler::compile(const std::filesystem::path& library_path, const 
 
 			// Generate shader code (apply extensions, process includes and definitions)
 			auto base_shader_code = generate_shader_code(shader_object, m_srIncludesPath);
-			auto shader_type_string = get_shader_type(source.type);
-			auto& shader_pool = compiled_library.shaders[shader_type_string];
+			auto name_type_hash = get_shader_type(source.type);
+			auto& shader_pool = compiled_library.shaders[name_type_hash];
 			
 			// Process and compile all definition combinations
 			for (auto& definitions : cached_permutations)
@@ -242,15 +244,14 @@ void CLibraryCompiler::compile(const std::filesystem::path& library_path, const 
 				}
 
 				// Make hash for preprocessed data
-				auto hash_string = make_shader_unique_name(preprocessed_hash);
-				auto& compiled_spirv = shader_pool[hash_string];
+				auto& compiled_spirv = shader_pool[preprocessed_hash];
 
 				bool is_compiling_first_time{ false };
 				FShaderModule* shader_module{ nullptr };
 
 				// Find existing shader or create new
 				auto found_module = std::find_if(shader_modules.begin(), shader_modules.end(), 
-					[type = source.type, link = hash_string](const FShaderModule& sm) 
+					[type = source.type, link = preprocessed_hash](const FShaderModule& sm)
 					{ 
 						return (sm.type == type) && (sm.link == link);
 					});
@@ -266,18 +267,18 @@ void CLibraryCompiler::compile(const std::filesystem::path& library_path, const 
 				shader_module->type = source.type;
 
 				// Compile shader if we need
-				bool need_to_compile = is_compiling_first_time ? (compiled_spirv.empty()) : (shader_module->link != hash_string);
+				bool need_to_compile = is_compiling_first_time ? (compiled_spirv.empty()) : (shader_module->link != preprocessed_hash);
 				if (need_to_compile)
 				{
 					compiled_spirv = m_pShaderCompiler->compile(preprocessed_code, compile_info);
-					log_info("{} shader {}[{}] was {}.", shader_type_string, compile_info.name, hash_string, is_compiling_first_time ? "compiled" : "recompiled");
+					log_info("{} shader {}[{}] was {}.", name_type_hash, compile_info.name, preprocessed_hash, is_compiling_first_time ? "compiled" : "recompiled");
 				}
 
 				// Removing old shader data
-				if (!shader_module->link.empty() && need_to_compile)
+				if ((shader_module->link != ~0ull) && need_to_compile)
 					shader_pool.erase(shader_module->link);
 
-				shader_module->link = hash_string;
+				shader_module->link = preprocessed_hash;
 			}
 		}
 	}

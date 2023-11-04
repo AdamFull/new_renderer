@@ -1,4 +1,4 @@
-#include "shader_compiler.h"
+#include <shader_compiler.h>
 
 #include <SPIRV/GlslangToSpv.h>
 #include <glslang/Public/ShaderLang.h>
@@ -7,6 +7,8 @@
 #include <udetail.hpp>
 
 #include <stack>
+
+using namespace shader_compiler;
 
 class empty_includer : public glslang::TShader::Includer
 {

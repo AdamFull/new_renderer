@@ -459,8 +459,8 @@ void CVkRenderContext::destroyDescriptorSet(const FVkDescriptorPool& descriptor_
 FRenderApiErrorInfo CVkRenderContext::createShaderModule(const FVkShaderModuleCreateInfo& shader_module_ci, vk::ShaderModule& shader_module)
 {
 	vk::ShaderModuleCreateInfo module_ci{};
-	module_ci.codeSize = shader_module_ci.shaderCode.size() * sizeof(uint32_t);
-	module_ci.pCode = shader_module_ci.shaderCode.data();
+	module_ci.codeSize = shader_module_ci.shaderCode->size() * sizeof(uint32_t);
+	module_ci.pCode = shader_module_ci.shaderCode->data();
 
 	vk::Result res = logicalDevice.handle.createShaderModule(&module_ci, allocationCallbacks, &shader_module);
 #ifndef BUILD_WITHOUT_DEBUGGIND
