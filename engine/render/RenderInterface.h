@@ -76,7 +76,7 @@ namespace engine
 		private:
 			std::unique_ptr<IRenderHandleInterface> renderHandle{};
 			std::unique_ptr<CResourceLoader> resourceLoader{};
-			std::unique_ptr<CRenderConfig> renderConfig{};
+			std::unique_ptr<CRenderScriptCore> renderScriptCore{};
 		};
 	}
 }

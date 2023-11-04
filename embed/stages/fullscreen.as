@@ -1,0 +1,8 @@
+
+void create()
+{
+}
+
+void render()
+{
+}

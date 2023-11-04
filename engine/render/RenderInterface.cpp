@@ -97,13 +97,18 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 	resourceLoader = std::make_unique<CResourceLoader>();
 	renderHandle = make_render_handle_interface(rhi_ci);
 
-    renderConfig = std::make_unique<CRenderConfig>();
-    renderConfig->initialize(this, renderHandle.get());
+	renderScriptCore = std::make_unique<CRenderScriptCore>();
+	renderScriptCore->create(this, renderHandle.get());
 }
 
 void CRenderInterface::createRendererBehavior(const std::vector<uint8_t>& script)
 {
-    renderConfig->execute(script);
+	std::unordered_map<std::string, std::vector<uint8_t>> scripts{};
+	scripts.emplace("render_config", script);
+
+	renderScriptCore->build(scripts);
+	auto result = renderScriptCore->execute("render_config");
+	return;
 }
 
 FResourceView CRenderInterface::createTexture(const std::string& name, const std::vector<uint8_t>& data, EMimeType mime)
@@ -154,5 +159,6 @@ FShaderNameLoadInfo CRenderInterface::getShaderNameTag(const std::string& name)
 
 void CRenderInterface::createRendering(const FRenderingCreateInfo& rendering_ci)
 {
+	// Create CRenderStages here. Load script and create executable.
 	return;
 }
