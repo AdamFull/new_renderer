@@ -35,6 +35,10 @@ if(WIN32)
 add_compile_definitions("PLATFORM_WIN32")
 endif()
 
+if(MSVC)
+    add_compile_options(/bigobj)
+endif()
+
 add_subdirectory(libraries/utllib)
 add_subdirectory(engine)
 

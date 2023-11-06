@@ -19,3 +19,6 @@
 [submodule "libraries/pak_archive"]
 	path = libraries/pak_archive
 	url = https://github.com/AdamFull/pak_archive.git
+[submodule "libraries/glm"]
+	path = libraries/glm
+	url = https://github.com/g-truc/glm.git

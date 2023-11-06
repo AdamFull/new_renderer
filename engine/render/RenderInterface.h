@@ -1,6 +1,6 @@
 #pragma once
 
-#include <RenderConfig.h>
+#include <render_config/RenderConfig.h>
 #include <ResourceLoader.h>
 #include <memory>
 

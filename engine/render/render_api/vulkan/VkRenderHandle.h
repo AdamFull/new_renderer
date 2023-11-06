@@ -23,6 +23,9 @@ namespace engine
 				FResourceView createShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) override;
 				FResourceView createShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) override;
 
+				void beginRendering(const FBeginRenderingInfo& rendering_info);
+				void endRendering(const FBeginRenderingInfo& rendering_info);
+
 				FShaderReflectionData getShaderReflection(const FResourceView& shader_view) override;
 
 				FResourceView getResource(const char* name, uint32_t resource_type) override;

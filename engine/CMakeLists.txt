@@ -4,6 +4,7 @@ project(application)
 add_subdirectory(platform)
 add_subdirectory(render)
 add_subdirectory(filesystem)
+add_subdirectory(scripting)
 
 file(GLOB ENGINE_APP_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 file(GLOB ENGINE_APP_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
@@ -24,4 +25,5 @@ target_link_libraries(${PROJECT_NAME}
 	PUBLIC platform_specific
 	PUBLIC virtual_filesystem
 	PRIVATE render_interface
+	PRIVATE script_engine
 )

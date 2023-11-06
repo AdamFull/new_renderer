@@ -17,20 +17,26 @@ namespace engine
 				uniforms = block.uniforms;
 			}
 
-			template<class _Ty>
-			void set(const _Ty& object, size_t offset, size_t size)
+			// For render script
+			void set(const char* name, const void* raw_data, size_t size)
 			{
-				if (!data)
+				auto found = uniforms.find(utl::fnv1a_64_hash(name));
+				if (found == uniforms.end() || !data || !raw_data)
 					return;
 
-				std::memcpy(data.get(), ((char*)&object) + offset, size);
+				auto& uniform = found->second;
+
+				if (size == 0ull)
+					size = uniform.size;
+
+				std::memcpy(data.get() + uniform.offset, raw_data, size);
 			}
 
 			template<class _Ty>
 			void set(const char* name, const _Ty& object, size_t size = 0ull)
 			{
 				auto found = uniforms.find(utl::fnv1a_64_hash(name));
-				if (found == uniforms.end())
+				if (found == uniforms.end() || !data)
 					return;
 
 				auto& uniform = found->second;
@@ -38,7 +44,7 @@ namespace engine
 				if (size == 0ull)
 					size = (std::min)(sizeof(_Ty), uniform.size);
 
-				set(object, uniform.offset, size);
+				std::memcpy(data.get() + uniform.offset, &object + uniform.offset, size);
 			}
 		private:
 			std::unordered_map<size_t, FReflectionUniform> uniforms{};

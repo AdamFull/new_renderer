@@ -193,7 +193,7 @@ namespace engine
 	struct FRenderingCreateInfo
 	{
 		uint32_t queue{ 0u };
-		uint32_t type{ 0u };
+		std::string renderScript{};
 
 		FShaderNameLoadInfo shader{};
 

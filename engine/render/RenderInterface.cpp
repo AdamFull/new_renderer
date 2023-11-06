@@ -103,11 +103,8 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 
 void CRenderInterface::createRendererBehavior(const std::vector<uint8_t>& script)
 {
-	std::unordered_map<std::string, std::vector<uint8_t>> scripts{};
-	scripts.emplace("render_config", script);
-
-	renderScriptCore->build(scripts);
-	auto result = renderScriptCore->execute("render_config");
+	auto render_config_executor = renderScriptCore->build("render_config", script);
+	auto result = render_config_executor->run();
 	return;
 }
 

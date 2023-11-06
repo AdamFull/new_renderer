@@ -3,15 +3,27 @@ project(render_interface)
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/render_api/vulkan")
 add_subdirectory("${MAIN_PROJECT_DIRECTORY_PATH}/libraries/KTX-Software" KTX-Software)
-add_subdirectory("${MAIN_PROJECT_DIRECTORY_PATH}/libraries/angelscript" ascript)
+add_subdirectory("${MAIN_PROJECT_DIRECTORY_PATH}/libraries/luajit" luajit)
 
 file(GLOB ENGINE_RENDER_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 file(GLOB ENGINE_RENDER_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 
+file(GLOB ENGINE_RENDER_CONFIG_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/render_config/*.cpp")
+file(GLOB ENGINE_RENDER_CONFIG_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/render_config/*.h")
+
 file(GLOB ENGINE_RENDER_RULES_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/rendering_rules/*.cpp")
 file(GLOB ENGINE_RENDER_RULES_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/rendering_rules/*.h")
 
-add_library(${PROJECT_NAME} STATIC ${ENGINE_RENDER_SOURCES} ${ENGINE_RENDER_RULES_SOURCES} ${ENGINE_RENDER_HEADERS} ${ENGINE_RENDER_RULES_HEADERS})
+set(RENDER_INTERFACE_SOURCES
+    ${ENGINE_RENDER_SOURCES}
+    ${ENGINE_RENDER_HEADERS}
+    ${ENGINE_RENDER_CONFIG_SOURCES}
+    ${ENGINE_RENDER_CONFIG_HEADERS}
+    ${ENGINE_RENDER_RULES_SOURCES}
+    ${ENGINE_RENDER_RULES_HEADERS}
+)
+
+add_library(${PROJECT_NAME} STATIC ${RENDER_INTERFACE_SOURCES})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     CXX_EXTENSIONS OFF
@@ -25,14 +37,14 @@ target_include_directories(${PROJECT_NAME}
     PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/engine"
     PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/KTX-Software/include"
     PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/KTX-Software/lib"
-    PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/angelscript/sdk/angelscript/include"
-    PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/angelscript/sdk/add_on"
+    PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/luajit/src"
+    PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/sol2"
+    PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/glm"
 )
 
 target_link_libraries(${PROJECT_NAME}
 	PUBLIC vulkan_renderer
-    PRIVATE angelscript
-    PRIVATE angelscript_addon
+    PRIVATE libluajit
     PRIVATE ktx
 )
 
