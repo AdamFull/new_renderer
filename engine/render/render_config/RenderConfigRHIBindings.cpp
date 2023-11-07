@@ -321,13 +321,13 @@ namespace engine
 			);
 
 			// Shader object registration
-			//lua->new_usertype<CShaderObject>(
-			//	"ShaderObject",
-			//	"new", sol::factories([]() { return std::make_unique<CShaderObject>(); }),
-			//	"create", &CShaderObject::create,
-			//	"get_uniform_block", &CShaderObject::getUniformBlock,
-			//	"bind_texture", &CShaderObject::bindTexture
-			//);
+			lua->new_usertype<IShaderObject>(
+				"ShaderObject",
+				"new", sol::factories([]() { return std::make_unique<CShaderObject>(); }),
+				"create", &IShaderObject::create,
+				"get_uniform_block", [](IShaderObject& self, const std::string& name) { return self.getUniformBlock(name.c_str()).get(); },
+				"bind_texture", & IShaderObject::bindTexture
+			);
 		}
 
 		void bindRenderInterface(sol::state* lua)

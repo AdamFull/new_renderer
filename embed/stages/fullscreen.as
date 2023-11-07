@@ -1,8 +1,0 @@
-
-void create()
-{
-}
-
-void render()
-{
-}

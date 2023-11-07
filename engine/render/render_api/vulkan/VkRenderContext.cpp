@@ -10,6 +10,7 @@
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
+using namespace engine::render;
 using namespace engine::render::vulkan;
 
 void* vk_malloc(void* pUserData, size_t size, size_t alignment, VkSystemAllocationScope allocationScope)
@@ -37,17 +38,17 @@ void vk_free_notification(void* pUserData, size_t size, VkInternalAllocationType
 {
 }
 
-uint32_t get_api_version(engine::ERenderApi version)
+uint32_t get_api_version(ERenderApi version)
 {
 	switch (version)
 	{
-	case engine::ERenderApi::eVulkan10:
+	case ERenderApi::eVulkan10:
 		return VK_API_VERSION_1_0;
-	case engine::ERenderApi::eVulkan11:
+	case ERenderApi::eVulkan11:
 		return VK_API_VERSION_1_1;
-	case engine::ERenderApi::eVulkan12:
+	case ERenderApi::eVulkan12:
 		return VK_API_VERSION_1_2;
-	case engine::ERenderApi::eVulkan13:
+	case ERenderApi::eVulkan13:
 		return VK_API_VERSION_1_3;
 	}
 

@@ -3,10 +3,12 @@
 #include <render_api/vulkan/VkRenderHandle.h>
 #include <shader_compiler/compiler_util.h>
 
+#include <filesystem/vfs_helper.h>
+
 using namespace engine;
 using namespace engine::render;
 
-void copy_platform_specific_create_data(engine::FRenderContextCreateInfo& context_ci, const engine::FRenderInterfaceCreateInfo& rhi_ci)
+void copy_platform_specific_create_data(FRenderContextCreateInfo& context_ci, const FRenderInterfaceCreateInfo& rhi_ci)
 {
 #if defined(PLATFORM_WIN32)
 	context_ci.hinstance = rhi_ci.hinstance;
@@ -14,13 +16,13 @@ void copy_platform_specific_create_data(engine::FRenderContextCreateInfo& contex
 #endif
 }
 
-std::unique_ptr<engine::IRenderHandleInterface> make_render_handle_interface(const engine::FRenderInterfaceCreateInfo& rhi_ci)
+std::unique_ptr<IRenderHandleInterface> make_render_handle_interface(const FRenderInterfaceCreateInfo& rhi_ci)
 {
-	engine::FRenderContextCreateInfo context_ci{};
-	std::unique_ptr<engine::IRenderHandleInterface> render_handle{};
+	FRenderContextCreateInfo context_ci{};
+	std::unique_ptr<IRenderHandleInterface> render_handle{};
 
-	if (rhi_ci.render_api == engine::ERenderApi::eVulkan10 || rhi_ci.render_api == engine::ERenderApi::eVulkan11 ||
-		rhi_ci.render_api == engine::ERenderApi::eVulkan12 || rhi_ci.render_api == engine::ERenderApi::eVulkan13)
+	if (rhi_ci.render_api == ERenderApi::eVulkan10 || rhi_ci.render_api == ERenderApi::eVulkan11 ||
+		rhi_ci.render_api == ERenderApi::eVulkan12 || rhi_ci.render_api == ERenderApi::eVulkan13)
 	{
 		render_handle = std::make_unique<vulkan::CVkRenderHandle>();
 
@@ -87,6 +89,11 @@ FShaderNameInfo get_shader_name_info(const std::string& shader_name)
 	return name_info;
 }
 
+CRenderInterface::CRenderInterface(filesystem::IVirtualFileSystemInterface* vfs)
+{
+	m_pVFS = vfs;
+}
+
 CRenderInterface::~CRenderInterface()
 {
 
@@ -94,27 +101,24 @@ CRenderInterface::~CRenderInterface()
 
 void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 {
-	resourceLoader = std::make_unique<CResourceLoader>();
-	renderHandle = make_render_handle_interface(rhi_ci);
+	m_pResourceLoader = std::make_unique<CResourceLoader>();
+	m_pRenderHandle = make_render_handle_interface(rhi_ci);
 
-	renderScriptCore = std::make_unique<CRenderScriptCore>();
-	renderScriptCore->create(this, renderHandle.get());
-}
+	m_pRenderScriptCore = std::make_unique<CRenderScriptCore>();
+	m_pRenderScriptCore->create(this, m_pRenderHandle.get());
 
-void CRenderInterface::createRendererBehavior(const std::vector<uint8_t>& script)
-{
-	auto render_config_executor = renderScriptCore->build("render_config", script);
-	auto result = render_config_executor->run();
-	return;
+	std::vector<uint8_t> render_config{};
+	m_pVFS->readFile("/root/test_render_config.lua", render_config);
+	m_pRenderScriptCore->build("render_config", render_config);
 }
 
 FResourceView CRenderInterface::createTexture(const std::string& name, const std::vector<uint8_t>& data, EMimeType mime)
 {
 	FTextureCreateInfo texture_ci{};
 	FTextureUploadInfo texture_ui{};
-	resourceLoader->loadTexture(data, mime, texture_ci, texture_ui);
+	m_pResourceLoader->loadTexture(data, mime, texture_ci, texture_ui);
 
-	return renderHandle->createTexture(name, texture_ci, std::move(texture_ui));
+	return m_pRenderHandle->createTexture(name, texture_ci, std::move(texture_ui));
 }
 
 FResourceView CRenderInterface::createShader(const FShaderNameLoadInfo& name_info, const FGraphicsShaderCreateInfo& create_info)
@@ -129,17 +133,17 @@ FResourceView CRenderInterface::createShader(const FShaderNameLoadInfo& name_inf
 
 void CRenderInterface::updateSurfaceSize(int32_t width, int32_t height)
 {
-	renderHandle->updateSurface(width, height);
+	m_pRenderHandle->updateSurface(width, height);
 }
 
 void CRenderInterface::beginFrame()
 {
-	renderHandle->beginFrameCommandBuffers();
+	m_pRenderHandle->beginFrameCommandBuffers();
 }
 
 void CRenderInterface::endFrame()
 {
-	renderHandle->endFrameCommandBuffers();
+	m_pRenderHandle->endFrameCommandBuffers();
 }
 
 FShaderNameLoadInfo CRenderInterface::getShaderNameTag(const std::string& name)
@@ -156,6 +160,14 @@ FShaderNameLoadInfo CRenderInterface::getShaderNameTag(const std::string& name)
 
 void CRenderInterface::createRendering(const FRenderingCreateInfo& rendering_ci)
 {
-	// Create CRenderStages here. Load script and create executable.
+	auto& stage = m_vRenderStages.emplace_back();
+	stage = std::make_unique<CDynamicRenderStage>();
+
+	// Load render script
+	std::vector<uint8_t> render_script{};
+	m_pVFS->readFile(rendering_ci.renderScript, render_script);
+	stage->m_pScriptExecutor = m_pRenderScriptCore->build(filesystem::fs::get_stem(rendering_ci.renderScript), render_script);
+
+	stage->create();
 	return;
 }

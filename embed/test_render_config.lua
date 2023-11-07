@@ -29,6 +29,3 @@ do
     
     render_interface.create_renderer(renderer_ci)
 end
-
-function foo() print('Hello, foo!') end 
-function bar() print('Hello, bar!') end

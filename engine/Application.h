@@ -4,6 +4,7 @@
 #include <interface/WindowInterface.h>
 #include <interface/RenderInterface.h>
 #include <interface/filesystem/VirtualFileSystemInterface.h>
+#include <scripting/ScriptEngine.h>
 
 namespace engine
 {
@@ -13,11 +14,12 @@ namespace engine
 		void create();
 		void loop();
 
-		FResourceView loadTexture(const std::string& path);
-		FResourceView loadShader(const std::string& name);
+		render::FResourceView loadTexture(const std::string& path);
+		render::FResourceView loadShader(const std::string& name);
 	private:
-		std::unique_ptr<IWindowInterface> window_handle{};
-		std::unique_ptr<IRenderInterface> render_interface{};
-		std::unique_ptr<filesystem::IVirtualFileSystemInterface> vfs{};
+		std::unique_ptr<IWindowInterface> m_pWindowHandle{};
+		std::unique_ptr<render::IRenderInterface> m_pRenderInterface{};
+		std::unique_ptr<filesystem::IVirtualFileSystemInterface> m_pVirtualFileSystem{};
+		std::unique_ptr<scripting::CScriptEngine> m_pScriptEngine{};
 	};
 }

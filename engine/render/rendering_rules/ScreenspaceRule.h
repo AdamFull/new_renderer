@@ -13,7 +13,7 @@ namespace engine
 			CScreenspaceRule(IRenderInterface* render_interface, IRenderHandleInterface* render_context);
 
 			void create(const FRenderingCreateInfo& create_info) override;
-			void render() override;
+			void render(float dt) override;
 		private:
 			std::unique_ptr<CShaderObject> m_pShader{};
 		};

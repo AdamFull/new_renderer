@@ -1,7 +1,6 @@
 #include <render_config/RenderConfig.h>
 #include <render_config/RenderConfigBindings.h>
-
-#include <sol/sol.hpp>
+#include <render/ShaderObject.h>
 
 #include <logger/logger.h>
 
@@ -26,20 +25,6 @@ CRenderScriptExecutor::~CRenderScriptExecutor()
 	m_scriptFunctions.clear();
 }
 
-int CRenderScriptExecutor::run(const char* function)
-{
-	auto found_function = m_scriptFunctions.find(utl::fnv1a_64_hash(function));
-	if (found_function != m_scriptFunctions.end())
-	{
-		//m_pContext->Unprepare();
-		//m_pContext->Prepare(found_function->second);
-		//return m_pContext->Execute();
-		return 0;
-	}
-
-	return -1;
-}
-
 CRenderScriptCore::~CRenderScriptCore()
 {
 	safe_delete(m_pLuaState);
@@ -54,9 +39,13 @@ void CRenderScriptCore::create(IRenderInterface* render_interface, IRenderHandle
 	bindGLMath(m_pLuaState);
 	bindRenderInterface(m_pLuaState);
 
-	registerEnums();
-	registerObjects();
-	registerGlobals(render_interface, render_context);
+	m_pLuaState->new_usertype<CDynamicRenderStage>(
+		"DynamicRenderStage",
+		"get_shader", [](CDynamicRenderStage& self) { return self.getShader().get(); }
+	);
+
+	(*m_pLuaState)["render_interface"] = render_interface;
+	(*m_pLuaState)["render_context"] = render_context;
 }
 
 std::unique_ptr<CRenderScriptExecutor> CRenderScriptCore::build(const std::string& name, const std::vector<uint8_t>& program_code)
@@ -84,17 +73,19 @@ std::unique_ptr<CRenderScriptExecutor> CRenderScriptCore::build(const std::strin
 	return render_script;
 }
 
-void CRenderScriptCore::registerEnums()
+void CDynamicRenderStage::create()
 {
-	
+	m_pStageShader = std::make_unique<CShaderObject>();
+
+	m_pScriptExecutor->run("create");
 }
 
-void CRenderScriptCore::registerObjects()
+void CDynamicRenderStage::update(float dt)
 {
+	m_pScriptExecutor->run("update", dt);
 }
 
-void CRenderScriptCore::registerGlobals(IRenderInterface* render_interface, IRenderHandleInterface* render_context)
+const std::unique_ptr<IShaderObject>& CDynamicRenderStage::getShader() const
 {
-	(*m_pLuaState)["render_interface"] = render_interface;
-	(*m_pLuaState)["render_context"] = render_context;
+	return m_pStageShader;
 }

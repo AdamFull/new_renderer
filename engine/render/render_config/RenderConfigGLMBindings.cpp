@@ -1,6 +1,8 @@
 #include "RenderConfigBindings.h"
 
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <sol/sol.hpp>
 
 namespace engine
@@ -48,6 +50,15 @@ namespace engine
             );
         }
 
+        template<class _Ty, class _Kty>
+        auto make_mat_div()
+        {
+            return sol::overload(
+                [](const _Ty& v1, _Kty f) -> _Ty { return v1 / f; },
+                [](_Kty f, const _Ty& v1) -> _Ty { return f / v1; }
+            );
+        }
+
         template<class _NumType>
         void register_vec1(const char* name, sol::state& lua)
         {
@@ -58,7 +69,7 @@ namespace engine
                 name,
                 sol::constructors<
                 _TargetType(), _TargetType(_NumType),
-                _TargetType(_TargetType)
+                _TargetType(const _TargetType&)
                 >(),
                 sol::meta_function::addition, make_vec_add<_TargetType, _NumType>(),
                 sol::meta_function::subtraction, make_vec_sub<_TargetType, _NumType>(),
@@ -79,8 +90,8 @@ namespace engine
                 name,
                 sol::constructors<
                 _TargetType(), _TargetType(_NumType), _TargetType(_NumType, _NumType),
-                _TargetType(_TargetType), _TargetType(_Vec1Type), _TargetType(_Vec1Type, _Vec1Type),
-                _TargetType(_Vec1Type, _NumType), _TargetType(_NumType, _Vec1Type)
+                _TargetType(const _TargetType&), _TargetType(const _Vec1Type&), _TargetType(const _Vec1Type&, const _Vec1Type&),
+                _TargetType(const _Vec1Type&, _NumType), _TargetType(_NumType, const _Vec1Type&)
                 >(),
                 sol::meta_function::addition, make_vec_add<_TargetType, _NumType>(),
                 sol::meta_function::subtraction, make_vec_sub<_TargetType, _NumType>(),
@@ -103,8 +114,8 @@ namespace engine
                 name,
                 sol::constructors<
                 _TargetType(), _TargetType(_NumType), _TargetType(_NumType, _NumType, _NumType),
-                _TargetType(_TargetType), _TargetType(_Vec1Type), _TargetType(_Vec1Type, _Vec1Type, _Vec1Type),
-                _TargetType(_Vec2Type, _NumType), _TargetType(_NumType, _Vec2Type)
+                _TargetType(const _TargetType&), _TargetType(const _Vec1Type&), _TargetType(const _Vec1Type&, const _Vec1Type&, const _Vec1Type&),
+                _TargetType(const _Vec2Type&, _NumType), _TargetType(_NumType, const _Vec2Type&)
                 >(),
                 sol::meta_function::addition, make_vec_add<_TargetType, _NumType>(),
                 sol::meta_function::subtraction, make_vec_sub<_TargetType, _NumType>(),
@@ -129,9 +140,9 @@ namespace engine
                 name,
                 sol::constructors<
                 _TargetType(), _TargetType(_NumType), _TargetType(_NumType, _NumType, _NumType, _NumType),
-                _TargetType(_TargetType), _TargetType(_Vec1Type), _TargetType(_Vec1Type, _Vec1Type, _Vec1Type, _Vec1Type),
-                _TargetType(_Vec2Type, _NumType, _NumType), _TargetType(_NumType, _Vec2Type, _NumType), _TargetType(_NumType, _NumType, _Vec2Type), _TargetType(_Vec2Type, _Vec2Type),
-                _TargetType(_Vec3Type, _NumType), _TargetType(_NumType, _Vec3Type)
+                _TargetType(const _TargetType&), _TargetType(const _Vec1Type&), _TargetType(const _Vec1Type&, const _Vec1Type&, const _Vec1Type&, const _Vec1Type&),
+                _TargetType(const _Vec2Type&, _NumType, _NumType), _TargetType(_NumType, const _Vec2Type&, _NumType), _TargetType(_NumType, _NumType, const _Vec2Type&), _TargetType(const _Vec2Type&, const _Vec2Type&),
+                _TargetType(const _Vec3Type&, _NumType), _TargetType(_NumType, const _Vec3Type&)
                 >(),
                 sol::meta_function::addition, make_vec_add<_TargetType, _NumType>(),
                 sol::meta_function::subtraction, make_vec_sub<_TargetType, _NumType>(),
@@ -144,76 +155,317 @@ namespace engine
             );
         }
 
-        template<class _TargetType, class _Vec2Type, class _NumType>
+        template<class _NumType>
         void register_mat2(const char* name, sol::state& lua)
         {
-            //lua->new_usertype<glm::mat2>(
-            //    "mat2",
-            //    sol::constructors<
-            //    glm::mat2(), glm::mat2(float), glm::mat2(float, float, float, float),
-            //    glm::mat2(glm::mat2),
-            //    glm::mat2(glm::vec2, glm::vec2)
-            //    >(),
-            //    sol::meta_function::addition, make_vec_add<glm::mat2, float>(),
-            //    sol::meta_function::subtraction, make_vec_sub<glm::mat2, float>(),
-            //    sol::meta_function::multiplication, make_vec_mult<glm::mat2, float>(),
-            //    sol::meta_function::division, make_vec_div<glm::mat2, float>()
-            //);
+            using namespace glm;
+
+            using _Vec2Type = vec<2, _NumType, defaultp>;
+            using _TargetType = mat<2, 2, _NumType, defaultp>;
+
+            lua.new_usertype<_TargetType>(
+                name,
+                sol::constructors<
+                _TargetType(), _TargetType(_NumType), _TargetType(_NumType, _NumType, _NumType, _NumType),
+                _TargetType(const _TargetType&),
+                _TargetType(const _Vec2Type&, const _Vec2Type&)
+                >(),
+                sol::meta_function::addition, make_vec_add<_TargetType, _NumType>(),
+                sol::meta_function::subtraction, make_vec_sub<_TargetType, _NumType>(),
+                sol::meta_function::multiplication, make_vec_mult<_TargetType, _NumType>(),
+                sol::meta_function::division, make_mat_div<_TargetType, _NumType>()
+            );
+        }
+
+        template<class _NumType>
+        void register_mat3(const char* name, sol::state& lua)
+        {
+            using namespace glm;
+
+            using _Vec1Type = vec<1, _NumType, defaultp>;
+            using _Vec3Type = vec<3, _NumType, defaultp>;
+            using _TargetType = mat<3, 3, _NumType, defaultp>;
+
+            lua.new_usertype<_TargetType>(
+                name,
+                sol::constructors<
+                _TargetType(), _TargetType(_NumType), _TargetType(_NumType, _NumType, _NumType, _NumType, _NumType, _NumType, _NumType, _NumType, _NumType),
+                _TargetType(const _TargetType&),
+                _TargetType(const _Vec1Type&, const _Vec1Type&, const _Vec1Type&, const _Vec1Type&, const _Vec1Type&, const _Vec1Type&, const _Vec1Type&, const _Vec1Type&, const _Vec1Type&),
+                _TargetType(const _Vec3Type&, const _Vec3Type&, const _Vec3Type&)
+                >(),
+                sol::meta_function::addition, make_vec_add<_TargetType, _NumType>(),
+                sol::meta_function::subtraction, make_vec_sub<_TargetType, _NumType>(),
+                sol::meta_function::multiplication, make_vec_mult<_TargetType, _NumType>(),
+                sol::meta_function::division, make_mat_div<_TargetType, _NumType>()
+            );
+        }
+
+        template<class _NumType>
+        void register_mat4(const char* name, sol::state& lua)
+        {
+            using namespace glm;
+
+            using _Vec4Type = vec<4, _NumType, defaultp>;
+            using _TargetType = mat<4, 4, _NumType, defaultp>;
+
+            lua.new_usertype<_TargetType>(
+                name,
+                sol::constructors<
+                _TargetType(), _TargetType(_NumType), _TargetType(_NumType, _NumType, _NumType, _NumType, _NumType, _NumType, _NumType, _NumType, _NumType, _NumType, _NumType, _NumType, _NumType, _NumType, _NumType, _NumType),
+                _TargetType(const _TargetType&),
+                _TargetType(const _Vec4Type&, const _Vec4Type&, const _Vec4Type&, const _Vec4Type&)
+                >(),
+                sol::meta_function::addition, make_vec_add<_TargetType, _NumType>(),
+                sol::meta_function::subtraction, make_vec_sub<_TargetType, _NumType>(),
+                sol::meta_function::multiplication, make_vec_mult<_TargetType, _NumType>(),
+                sol::meta_function::division, make_mat_div<_TargetType, _NumType>()
+                );
+        }
+
+        template<class _NumType>
+        void register_quat(const char* name, sol::state& lua)
+        {
+            using namespace glm;
+
+            using _TargetType = qua<_NumType, defaultp>;
+            using _Vec3Type = vec<3, _NumType, defaultp>;
+            using _Matrix3Type = mat<3, 3, _NumType, defaultp>;
+            using _Matrix4Type = mat<4, 4, _NumType, defaultp>;
+
+            lua.new_usertype<_TargetType>(
+                name,
+                sol::constructors<
+                _TargetType(), _TargetType(_NumType, _NumType, _NumType, _NumType),
+                _TargetType(const _Vec3Type&, const _Vec3Type&), _TargetType(const _Vec3Type&),
+                _TargetType(const _Matrix3Type&), _TargetType(const _Matrix4Type&)
+                >(),
+                sol::meta_function::addition, [](const _TargetType& a, const _TargetType& b) { return a + b; },
+                sol::meta_function::subtraction, [](const _TargetType& a, const _TargetType& b) { return a - b; },
+                sol::meta_function::multiplication, [](const _TargetType& a, const _TargetType& b) { return a * b; },
+                sol::meta_function::equal_to, [](const _TargetType& a, const _TargetType& b) { return a == b; },
+                "x", &_TargetType::x,
+                "y", &_TargetType::y,
+                "z", &_TargetType::z,
+                "w", &_TargetType::w
+            );
         }
 
 		void bindGLMVector(sol::state* lua)
 		{
             // Integer signed
-            register_vec1<int32_t>("ivec1", *lua);
-            register_vec2<int32_t>("ivec2", *lua);
-            register_vec3<int32_t>("ivec3", *lua);
-            register_vec4<int32_t>("ivec4", *lua);
+            register_vec1<int32_t>("I32Vector1", *lua);
+            register_vec2<int32_t>("I32Vector2", *lua);
+            register_vec3<int32_t>("I32Vector3", *lua);
+            register_vec4<int32_t>("I32Vector4", *lua);
 
             // UInteger unsigned
-            register_vec1<uint32_t>("uvec1", *lua);
-            register_vec2<uint32_t>("uvec2", *lua);
-            register_vec3<uint32_t>("uvec3", *lua);
-            register_vec4<uint32_t>("uvec4", *lua);
+            register_vec1<uint32_t>("U32Vector1", *lua);
+            register_vec2<uint32_t>("U32Vector2", *lua);
+            register_vec3<uint32_t>("U32Vector3", *lua);
+            register_vec4<uint32_t>("U32Vector4", *lua);
             
             // Floating point
-            register_vec1<float>("vec1", *lua);
-            register_vec2<float>("vec2", *lua);
-            register_vec3<float>("vec3", *lua);
-            register_vec4<float>("vec4", *lua);
+            register_vec1<float>("Vector1", *lua);
+            register_vec2<float>("Vector2", *lua);
+            register_vec3<float>("Vector3", *lua);
+            register_vec4<float>("Vector4", *lua);
             
             // Double
-            register_vec1<double>("dvec1", *lua);
-            register_vec2<double>("dvec2", *lua);
-            register_vec3<double>("dvec3", *lua);
-            register_vec4<double>("dvec4", *lua);
+            register_vec1<double>("F64Vector1", *lua);
+            register_vec2<double>("F64Vector2", *lua);
+            register_vec3<double>("F64Vector3", *lua);
+            register_vec4<double>("F64Vector4", *lua);
 		}
 
 		void bindGLMMatrix(sol::state* lua)
 		{
-            lua->new_usertype<glm::mat2>(
-                "mat2",
-                sol::constructors<
-                glm::mat2(), glm::mat2(float), glm::mat2(float, float, float, float),
-                glm::mat2(glm::mat2),
-                glm::mat2(glm::vec2, glm::vec2)
-                >(),
-                sol::meta_function::addition, make_vec_add<glm::mat2, float>(),
-                sol::meta_function::subtraction, make_vec_sub<glm::mat2, float>(),
-                sol::meta_function::multiplication, make_vec_mult<glm::mat2, float>(),
-                sol::meta_function::division, make_vec_div<glm::mat2, float>()
-                );
+            register_mat2<int32_t>("I32Matrix2", *lua);
+            register_mat3<int32_t>("I32Matrix3", *lua);
+            register_mat4<int32_t>("I32Matrix3", *lua);
+
+            register_mat2<uint32_t>("U32Matrix2", *lua);
+            register_mat3<uint32_t>("U32Matrix2", *lua);
+            register_mat4<uint32_t>("U32Matrix2", *lua);
+
+            register_mat2<float>("Matrix2", *lua);
+            register_mat3<float>("Matrix2", *lua);
+            register_mat4<float>("Matrix2", *lua);
+
+            register_mat2<double>("F64Matrix2", *lua);
+            register_mat3<double>("F64Matrix2", *lua);
+            register_mat4<double>("F64Matrix2", *lua);
 		}
 
-        void bingGLMFunctions(sol::state* lua)
+        void bingGLMGeometricFunctions(sol::state* lua)
         {
+            lua->set_function("Length", sol::overload(
+                [](glm::vec2& a) { return glm::length(a); },
+                [](glm::vec3& a) { return glm::length(a); },
+                [](glm::vec4& a) { return glm::length(a); },
+                [](glm::dvec2& a) { return glm::length(a); },
+                [](glm::dvec3& a) { return glm::length(a); },
+                [](glm::dvec4& a) { return glm::length(a); }
+            ));
 
+            lua->set_function("Distance", sol::overload(
+                [](glm::vec2& a, glm::vec2& b) { return glm::distance(a, b); },
+                [](glm::vec3& a, glm::vec3& b) { return glm::distance(a, b); },
+                [](glm::vec4& a, glm::vec4& b) { return glm::distance(a, b); },
+                [](glm::dvec2& a, glm::dvec2& b) { return glm::distance(a, b); },
+                [](glm::dvec3& a, glm::dvec3& b) { return glm::distance(a, b); },
+                [](glm::dvec4& a, glm::dvec4& b) { return glm::distance(a, b); }
+            ));
+
+            lua->set_function("DotProduct", sol::overload(
+                [](glm::vec2& a, glm::vec2& b) { return glm::dot(a, b); },
+                [](glm::vec3& a, glm::vec3& b) { return glm::dot(a, b); },
+                [](glm::vec4& a, glm::vec4& b) { return glm::dot(a, b); },
+                [](glm::dvec2& a, glm::dvec2& b) { return glm::dot(a, b); },
+                [](glm::dvec3& a, glm::dvec3& b) { return glm::dot(a, b); },
+                [](glm::dvec4& a, glm::dvec4& b) { return glm::dot(a, b); }
+            ));
+
+            lua->set_function("CrossProduct", sol::overload(
+                [](glm::vec3& a, glm::vec3& b) { return glm::cross(a, b); },
+                [](glm::dvec3& a, glm::dvec3& b) { return glm::cross(a, b); }
+            ));
+
+            lua->set_function("Nrmalizeormalize", sol::overload(
+                [](glm::vec2& a) { return glm::normalize(a); },
+                [](glm::vec3& a) { return glm::normalize(a); },
+                [](glm::vec4& a) { return glm::normalize(a); },
+                [](glm::dvec2& a) { return glm::normalize(a); },
+                [](glm::dvec3& a) { return glm::normalize(a); },
+                [](glm::dvec4& a) { return glm::normalize(a); },
+                [](glm::quat& a) { return glm::normalize(a); },
+                [](glm::dquat& a) { return glm::normalize(a); }
+            ));
+
+            lua->set_function("Reflect", sol::overload(
+                [](glm::vec2& a, glm::vec2& b) { return glm::reflect(a, b); },
+                [](glm::vec3& a, glm::vec3& b) { return glm::reflect(a, b); },
+                [](glm::vec4& a, glm::vec4& b) { return glm::reflect(a, b); },
+                [](glm::dvec2& a, glm::dvec2& b) { return glm::reflect(a, b); },
+                [](glm::dvec3& a, glm::dvec3& b) { return glm::reflect(a, b); },
+                [](glm::dvec4& a, glm::dvec4& b) { return glm::reflect(a, b); }
+            ));
+
+            lua->set_function("Refract", sol::overload(
+                [](glm::vec2& a, glm::vec2& b, float i) { return glm::refract(a, b, i); },
+                [](glm::vec3& a, glm::vec3& b, float i) { return glm::refract(a, b, i); },
+                [](glm::vec4& a, glm::vec4& b, float i) { return glm::refract(a, b, i); },
+                [](glm::dvec2& a, glm::dvec2& b, double i) { return glm::refract(a, b, i); },
+                [](glm::dvec3& a, glm::dvec3& b, double i) { return glm::refract(a, b, i); },
+                [](glm::dvec4& a, glm::dvec4& b, double i) { return glm::refract(a, b, i); }
+            ));
+        }
+
+        void bindGLMMatrixTransformation(sol::state* lua)
+        {
+            lua->set_function("TranslateMatrix", sol::overload(
+                [](glm::mat4& a, glm::vec3& b) { return glm::translate(a, b); },
+                [](glm::dmat4& a, glm::dvec3& b) { return glm::translate(a, b); }
+                ));
+
+            lua->set_function("RotateMatrix", sol::overload(
+                [](glm::mat4& a, float b, glm::vec3& c) { return glm::rotate(a, b, c); },
+                [](glm::dmat4& a, double b, glm::dvec3& c) { return glm::rotate(a, b, c); }
+            ));
+            
+            lua->set_function("ScaleMatrix", sol::overload(
+                [](glm::mat4& a, glm::vec3& b) { return glm::scale(a, b); },
+                [](glm::dmat4& a, glm::dvec3& b) { return glm::scale(a, b); }
+            ));
+
+            lua->set_function("TransposeMatrix", sol::overload(
+                [](glm::mat2& a) { return glm::transpose(a); },
+                [](glm::mat3& a) { return glm::transpose(a); },
+                [](glm::mat4& a) { return glm::transpose(a); },
+                [](glm::dmat2& a) { return glm::transpose(a); },
+                [](glm::dmat3& a) { return glm::transpose(a); },
+                [](glm::dmat4& a) { return glm::transpose(a); }
+            ));
+
+            lua->set_function("InverseMatrix", sol::overload(
+                [](glm::mat2& a) { return glm::inverse(a); },
+                [](glm::mat3& a) { return glm::inverse(a); },
+                [](glm::mat4& a) { return glm::inverse(a); },
+                [](glm::dmat2& a) { return glm::inverse(a); },
+                [](glm::dmat3& a) { return glm::inverse(a); },
+                [](glm::dmat4& a) { return glm::inverse(a); }
+            ));
+        }
+        
+        void bindGLMQuaternion(sol::state* lua)
+        {
+            register_quat<float>("Quaternion", *lua);
+            register_quat<double>("F64Quaternion", *lua);
+
+            lua->set_function("QuatToEulerAngles", sol::overload(
+                [](glm::quat& a) { return glm::eulerAngles(a); },
+                [](glm::dquat& a) { return glm::eulerAngles(a); }
+            ));
+
+            lua->set_function("RollQuat", sol::overload(
+                [](glm::quat& a) { return glm::roll(a); },
+                [](glm::dquat& a) { return glm::roll(a); }
+            ));
+
+            lua->set_function("PitchQuat", sol::overload(
+                [](glm::quat& a) { return glm::pitch(a); },
+                [](glm::dquat& a) { return glm::pitch(a); }
+            ));
+
+            lua->set_function("YawQuat", sol::overload(
+                [](glm::quat& a) { return glm::yaw(a); },
+                [](glm::dquat& a) { return glm::yaw(a); }
+            ));
+
+            lua->set_function("QuatToMatrix3", sol::overload(
+                [](glm::quat& a) { return glm::mat3_cast(a); },
+                [](glm::dquat& a) { return glm::mat3_cast(a); }
+            ));
+
+            lua->set_function("QuatToMatrix4", sol::overload(
+                [](glm::quat& a) { return glm::mat4_cast(a); },
+                [](glm::dquat& a) { return glm::mat4_cast(a); }
+            ));
+
+            lua->set_function("MatrixToQuat", sol::overload(
+                [](glm::mat3& a) { return glm::quat_cast(a); },
+                [](glm::dmat3& a) { return glm::quat_cast(a); },
+                [](glm::mat4& a) { return glm::quat_cast(a); },
+                [](glm::dmat4& a) { return glm::quat_cast(a); }
+            ));
+        }
+
+        void bindGLMCamera(sol::state* lua)
+        {
+            lua->set_function("PerspectiveProjection", sol::overload(
+                [](float fov, float aspect, float znear, float zfar) { return glm::perspective(fov, aspect, znear, zfar); },
+                [](double fov, double aspect, double znear, double zfar) { return glm::perspective(fov, aspect, znear, zfar); }
+            ));
+            
+            lua->set_function("PerspectiveProjection", sol::overload(
+                [](float left, float right, float bottom, float top) { return glm::ortho(left, right, bottom, top); },
+                [](double left, double right, double bottom, double top) { return glm::ortho(left, right, bottom, top); }
+            ));
+
+            lua->set_function("LookAt", sol::overload(
+                [](const glm::vec3& eye, const glm::vec3& center, const glm::vec3& up) { return glm::lookAt(eye, center, up); },
+                [](const glm::dvec3& eye, const glm::dvec3& center, const glm::dvec3& up) { return glm::lookAt(eye, center, up); }
+            ));
         }
 
 		void bindGLMath(sol::state* lua)
 		{
 			bindGLMVector(lua);
 			bindGLMMatrix(lua);
-            bingGLMFunctions(lua);
+            bingGLMGeometricFunctions(lua);
+            bindGLMMatrixTransformation(lua);
+            bindGLMQuaternion(lua);
+            bindGLMCamera(lua);
 		}
 	}
 }

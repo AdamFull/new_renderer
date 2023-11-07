@@ -31,13 +31,13 @@ void CScreenspaceRule::create(const FRenderingCreateInfo& create_info)
 	m_pShader->create(shader_view, shader_reflection);
 }
 
-void CScreenspaceRule::render()
+void CScreenspaceRule::render(float dt)
 {
+	// begin rendering
 	// set viewport
 	// set scissor
 	// update shader uniforms and textures
 	// submit shader
-	// begin rendering
 	// render
 	// end rendering
 }

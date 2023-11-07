@@ -1,10 +1,9 @@
 #pragma once
 
+#include <interface/filesystem/VirtualFileSystemInterface.h>
 #include <render_config/RenderConfig.h>
 #include <ResourceLoader.h>
 #include <memory>
-
-#include "ShaderObject.h"
 
 namespace engine
 {
@@ -13,11 +12,10 @@ namespace engine
 		class CRenderInterface : public IRenderInterface
 		{
 		public:
+			CRenderInterface(filesystem::IVirtualFileSystemInterface* vfs);
 			~CRenderInterface() override;
 
 			void create(const FRenderInterfaceCreateInfo& render_interface_ci) override;
-
-			void createRendererBehavior(const std::vector<uint8_t>& script) override;
 
 			FResourceView createTexture(const std::string& name, const std::vector<uint8_t>& data, EMimeType mime) override;
 
@@ -33,50 +31,23 @@ namespace engine
 			FResourceView createShader(const FShaderNameLoadInfo& name_info, const _Ty& create_info)
 			{
 				std::vector<FShaderCreationBlockInfo> shader_stages{};
-				if (resourceLoader->loadShaderData(name_info, shader_stages))
-					return renderHandle->createShader(name_info.originalName, create_info, shader_stages);
+				if (m_pResourceLoader->loadShaderData(name_info, shader_stages))
+					return m_pRenderHandle->createShader(name_info.originalName, create_info, shader_stages);
 
 				return {};
-			}
-
-			template<class _Ty>
-			std::unique_ptr<CShaderObject> createShaderObject(const FShaderNameLoadInfo& name_info, const _Ty& create_info)
-			{
-				std::vector<FShaderCreationBlockInfo> shader_stages{};
-				if (resourceLoader->loadShaderData(name_info, shader_stages))
-				{
-					auto shader_object = std::make_unique<CShaderObject>();
-					shader_object->shaderView = renderHandle->createShader(name_info.originalName, create_info, shader_stages);
-
-					auto reflection_data = renderHandle->getShaderReflection(shader_object->shaderView);
-
-					for (auto& [id, uniform_block] : reflection_data.uniformBlocks)
-					{
-						auto uniform_handle = std::make_unique<CUniformHandle>();
-						uniform_handle->create(uniform_block);
-						shader_object->uniformBlocks[id] = std::move(uniform_handle);
-					}
-
-					for (auto& [id, push_block] : reflection_data.pushBlocks)
-					{
-						auto uniform_handle = std::make_unique<CUniformHandle>();
-						uniform_handle->create(push_block);
-						shader_object->uniformBlocks[id] = std::move(uniform_handle);
-					}
-
-					return shader_object;
-				}
-
-				return nullptr;
 			}
 
 			FShaderNameLoadInfo getShaderNameTag(const std::string& name) override;
 			void createRendering(const FRenderingCreateInfo& rendering_ci) override;
 
 		private:
-			std::unique_ptr<IRenderHandleInterface> renderHandle{};
-			std::unique_ptr<CResourceLoader> resourceLoader{};
-			std::unique_ptr<CRenderScriptCore> renderScriptCore{};
+			filesystem::IVirtualFileSystemInterface* m_pVFS{ nullptr };
+
+			std::vector<std::unique_ptr<CDynamicRenderStage>> m_vRenderStages{};
+
+			std::unique_ptr<IRenderHandleInterface> m_pRenderHandle{};
+			std::unique_ptr<CResourceLoader> m_pResourceLoader{};
+			std::unique_ptr<CRenderScriptCore> m_pRenderScriptCore{};
 		};
 	}
 }

@@ -15,6 +15,7 @@
 
 
 using namespace engine;
+using namespace engine::render;
 
 void get_platform_specific_window_data(FRenderInterfaceCreateInfo& rhi_ci, const std::unique_ptr<IWindowInterface>& window)
 {
@@ -26,9 +27,12 @@ void get_platform_specific_window_data(FRenderInterfaceCreateInfo& rhi_ci, const
 
 void CApplication::create()
 {
-	vfs = std::make_unique<filesystem::CVirtualFileSystemManager>();
+	m_pVirtualFileSystem = std::make_unique<filesystem::CVirtualFileSystemManager>();
 
-	vfs->mount("/root", std::make_unique<filesystem::CNativeFileSystem>(""));
+	m_pVirtualFileSystem->mount("/root", std::make_unique<filesystem::CNativeFileSystem>(""));
+
+	m_pScriptEngine = std::make_unique<scripting::CScriptEngine>();
+	m_pScriptEngine->initialize();
 
 	FWindowCreateInfo window_ci{};
 	window_ci.name = "Vulkan App";
@@ -36,41 +40,16 @@ void CApplication::create()
 	window_ci.width = 800;
 	window_ci.height = 600;
 
-	/*std::ifstream f("test_shader.frag.spv", std::ios::in | std::ios::binary);
-	std::vector<char> bytes{ std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>() };
-
-	if (bytes.size() % sizeof(uint32_t) != 0) {
-		std::cerr << "Data in not aligned uint32_t" << std::endl;
-		return;
-	}
-
-	std::vector<uint32_t> data(bytes.size() / sizeof(uint32_t));
-	std::memcpy(data.data(), bytes.data(), bytes.size());
-
-	std::stringstream ss{};
-	ss << "const std::vector<uint32_t> fragment_shader {";
-	for (auto& n : data)
-		ss << n << ", ";
-	ss << "};";
-	std::cout << ss.str();*/
-
-	window_handle = make_platform_window(window_ci);
+	m_pWindowHandle = make_platform_window(window_ci);
 
 	FRenderInterfaceCreateInfo rhi_ci{};
 	rhi_ci.render_api = ERenderApi::eVulkan11;
-	window_handle->getWindowSize(rhi_ci.initialWidth, rhi_ci.initialHeight);
-	get_platform_specific_window_data(rhi_ci, window_handle);
+	m_pWindowHandle->getWindowSize(rhi_ci.initialWidth, rhi_ci.initialHeight);
+	get_platform_specific_window_data(rhi_ci, m_pWindowHandle);
 
-	render_interface = std::make_unique<render::CRenderInterface>();
-	render_interface->create(rhi_ci);
+	m_pRenderInterface = std::make_unique<render::CRenderInterface>(m_pVirtualFileSystem.get());
+	m_pRenderInterface->create(rhi_ci);
 
-	std::vector<uint8_t> render_config{};
-	vfs->readFile("/root/render_config.as", render_config);
-
-	render_interface->createRendererBehavior(render_config);
-
-	//loadTexture("/root/skybox.ktx2");
-	//loadTexture("/root/3dtex_1_reference_u.ktx2");
 }
 
 FResourceView CApplication::loadTexture(const std::string& path)
@@ -80,9 +59,9 @@ FResourceView CApplication::loadTexture(const std::string& path)
 	auto ext_hash = utl::const_hash(ext.c_str(), ext.size());
 
 	std::vector<uint8_t> data{};
-	vfs->readFile(path, data);
+	m_pVirtualFileSystem->readFile(path, data);
 
-	return render_interface->createTexture(name, data, static_cast<EMimeType>(ext_hash));
+	return m_pRenderInterface->createTexture(name, data, static_cast<EMimeType>(ext_hash));
 }
 
 FResourceView CApplication::loadShader(const std::string& name)
@@ -92,23 +71,23 @@ FResourceView CApplication::loadShader(const std::string& name)
 
 void CApplication::loop()
 {
-	while (window_handle->process())
+	while (m_pWindowHandle->process())
 	{
-		if (window_handle->isResized())
+		if (m_pWindowHandle->isResized())
 		{
 			// Wait while window is minimized
-			while (window_handle->isMinimized())
+			while (m_pWindowHandle->isMinimized())
 			{
-				if (!window_handle->process())
+				if (!m_pWindowHandle->process())
 					return;
 			}
 
 			int32_t window_width{}, window_height{};
-			window_handle->getWindowSize(window_width, window_height);
-			render_interface->updateSurfaceSize(window_width, window_height);
+			m_pWindowHandle->getWindowSize(window_width, window_height);
+			m_pRenderInterface->updateSurfaceSize(window_width, window_height);
 		}
 
-		render_interface->beginFrame();
-		render_interface->endFrame();
+		m_pRenderInterface->beginFrame();
+		m_pRenderInterface->endFrame();
 	}
 }

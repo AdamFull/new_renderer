@@ -39,6 +39,8 @@ if(MSVC)
     add_compile_options(/bigobj)
 endif()
 
+include_directories("${CMAKE_BINARY_DIR}/exports")
+
 add_subdirectory(libraries/utllib)
 add_subdirectory(engine)
 
