@@ -57,7 +57,7 @@ bool CResourceLoader::loadTexture(const std::vector<uint8_t>& data, EMimeType mi
 	return false;
 }
 
-bool CResourceLoader::loadShaderData(const FShaderNameLoadInfo& load_info, std::vector<FShaderCreationBlockInfo>& shader_stages)
+bool CResourceLoader::loadShaderData(const FShaderUploadInfo& load_info, std::vector<FShaderCreationBlockInfo>& shader_stages)
 {
 	auto found_library = shaderLibraries.find(load_info.libraryId);
 	if (found_library == shaderLibraries.end())

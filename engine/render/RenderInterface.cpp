@@ -108,7 +108,7 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 	m_pRenderScriptCore->create(this, m_pRenderHandle.get());
 
 	std::vector<uint8_t> render_config{};
-	m_pVFS->readFile("/root/test_render_config.lua", render_config);
+	m_pVFS->readFile("/root/embed/rendering/test_render_config.lua", render_config);
 	m_pRenderScriptCore->build("render_config", render_config);
 }
 
@@ -121,13 +121,15 @@ FResourceView CRenderInterface::createTexture(const std::string& name, const std
 	return m_pRenderHandle->createTexture(name, texture_ci, std::move(texture_ui));
 }
 
-FResourceView CRenderInterface::createShader(const FShaderNameLoadInfo& name_info, const FGraphicsShaderCreateInfo& create_info)
+FResourceView CRenderInterface::createShader(const std::string& name, const FGraphicsShaderCreateInfo& create_info)
 {
+	auto name_info = getShaderNameTag(name);
 	return createShader<FGraphicsShaderCreateInfo>(name_info, create_info);
 }
 
-FResourceView CRenderInterface::createShader(const FShaderNameLoadInfo& name_info, const FComputeShaderCreateInfo& create_info)
+FResourceView CRenderInterface::createShader(const std::string& name, const FComputeShaderCreateInfo& create_info)
 {
+	auto name_info = getShaderNameTag(name);
 	return createShader<FComputeShaderCreateInfo>(name_info, create_info);
 }
 
@@ -146,11 +148,11 @@ void CRenderInterface::endFrame()
 	m_pRenderHandle->endFrameCommandBuffers();
 }
 
-FShaderNameLoadInfo CRenderInterface::getShaderNameTag(const std::string& name)
+FShaderUploadInfo CRenderInterface::getShaderNameTag(const std::string& name)
 {
 	auto name_info = get_shader_name_info(name);
 
-	FShaderNameLoadInfo load_info{};
+	FShaderUploadInfo load_info{};
 	load_info.libraryId = utl::fnv1a_64_hash(name_info.library_name.c_str());
 	load_info.shaderId = shader_compiler::make_module_unique_name(name_info.shader_name, name_info.definitions);
 	load_info.originalName = name;
@@ -163,11 +165,21 @@ void CRenderInterface::createRendering(const FRenderingCreateInfo& rendering_ci)
 	auto& stage = m_vRenderStages.emplace_back();
 	stage = std::make_unique<CDynamicRenderStage>();
 
+	stage->m_renderingInfo.flipViewport = rendering_ci.flipViewport;
+	stage->m_renderingInfo.queue = rendering_ci.queue;
+	stage->m_renderingInfo.colorAttachments = rendering_ci.renderTargets;
+	stage->m_renderingInfo.depthAttachment = rendering_ci.depthTarget;
+	stage->m_renderingInfo.stencilAttachment = rendering_ci.stencilTarget;
+
 	// Load render script
 	std::vector<uint8_t> render_script{};
 	m_pVFS->readFile(rendering_ci.renderScript, render_script);
 	stage->m_pScriptExecutor = m_pRenderScriptCore->build(filesystem::fs::get_stem(rendering_ci.renderScript), render_script);
 
 	stage->create();
+
+	for (auto& [binding_point, texture] : rendering_ci.shaderInputs)
+		stage->m_pStageShader->bindTexture(binding_point.c_str(), texture);
+
 	return;
 }

@@ -19,8 +19,8 @@ namespace engine
 
 			FResourceView createTexture(const std::string& name, const std::vector<uint8_t>& data, EMimeType mime) override;
 
-			FResourceView createShader(const FShaderNameLoadInfo& name_info, const FGraphicsShaderCreateInfo& create_info) override;
-			FResourceView createShader(const FShaderNameLoadInfo& name_info, const FComputeShaderCreateInfo& create_info) override;
+			FResourceView createShader(const std::string& name, const FGraphicsShaderCreateInfo& create_info) override;
+			FResourceView createShader(const std::string& name, const FComputeShaderCreateInfo& create_info) override;
 
 			void updateSurfaceSize(int32_t width, int32_t height) override;
 
@@ -28,7 +28,7 @@ namespace engine
 			void endFrame() override;
 		protected:
 			template<class _Ty>
-			FResourceView createShader(const FShaderNameLoadInfo& name_info, const _Ty& create_info)
+			FResourceView createShader(const FShaderUploadInfo& name_info, const _Ty& create_info)
 			{
 				std::vector<FShaderCreationBlockInfo> shader_stages{};
 				if (m_pResourceLoader->loadShaderData(name_info, shader_stages))
@@ -37,7 +37,7 @@ namespace engine
 				return {};
 			}
 
-			FShaderNameLoadInfo getShaderNameTag(const std::string& name) override;
+			FShaderUploadInfo getShaderNameTag(const std::string& name) override;
 			void createRendering(const FRenderingCreateInfo& rendering_ci) override;
 
 		private:

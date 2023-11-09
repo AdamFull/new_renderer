@@ -115,13 +115,13 @@ namespace engine
 				"y", &FPoint2D<float>::y
 			);
 
-			// FShaderNameLoadInfo registration
-			lua->new_usertype<FShaderNameLoadInfo>(
+			// FShaderUploadInfo registration
+			lua->new_usertype<FShaderUploadInfo>(
 				"ShaderNameDesc",
-				sol::constructors<FShaderNameLoadInfo()>(),
-				"library", &FShaderNameLoadInfo::libraryId,
-				"shader", &FShaderNameLoadInfo::shaderId,
-				"name", &FShaderNameLoadInfo::originalName
+				sol::constructors<FShaderUploadInfo()>(),
+				"library", &FShaderUploadInfo::libraryId,
+				"shader", &FShaderUploadInfo::shaderId,
+				"name", &FShaderUploadInfo::originalName
 			);
 
 			// FTextureCreateInfo registration
@@ -144,7 +144,7 @@ namespace engine
 				sol::constructors<FRenderingCreateInfo()>(),
 				"render_script", &FRenderingCreateInfo::renderScript,
 				"queue", &FRenderingCreateInfo::queue,
-				"shader", &FRenderingCreateInfo::shader,
+				"shader_name", &FRenderingCreateInfo::shaderName,
 				"one_time", &FRenderingCreateInfo::oneTime,
 				"flip_viewport", &FRenderingCreateInfo::flipViewport,
 				"input_targets", &FRenderingCreateInfo::shaderInputs,
@@ -255,8 +255,8 @@ namespace engine
 				"create_renderer", &IRenderInterface::createRendering,
 				"create_texture", &IRenderInterface::createTexture,
 				"create_shader", sol::overload(
-					static_cast<FResourceView(IRenderInterface::*)(const FShaderNameLoadInfo&, const FGraphicsShaderCreateInfo&)>(&IRenderInterface::createShader),
-					static_cast<FResourceView(IRenderInterface::*)(const FShaderNameLoadInfo&, const FComputeShaderCreateInfo&)>(&IRenderInterface::createShader)
+					static_cast<FResourceView(IRenderInterface::*)(const std::string&, const FGraphicsShaderCreateInfo&)>(&IRenderInterface::createShader),
+					static_cast<FResourceView(IRenderInterface::*)(const std::string&, const FComputeShaderCreateInfo&)>(&IRenderInterface::createShader)
 				)
 			);
 

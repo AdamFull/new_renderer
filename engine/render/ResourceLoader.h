@@ -14,7 +14,7 @@ namespace engine
 		{
 		public:
 			bool loadTexture(const std::vector<uint8_t>& data, EMimeType mime, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info);
-			bool loadShaderData(const FShaderNameLoadInfo& load_info, std::vector<FShaderCreationBlockInfo>& shader_stages);
+			bool loadShaderData(const FShaderUploadInfo& load_info, std::vector<FShaderCreationBlockInfo>& shader_stages);
 		private:
 			bool loadSTBFromMemory(const std::vector<uint8_t>& data, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info);
 			bool loadKTXFromMemory(const std::vector<uint8_t>& data, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info);

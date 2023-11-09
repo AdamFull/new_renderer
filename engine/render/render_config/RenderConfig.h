@@ -49,6 +49,8 @@ namespace engine
 		private:
 			std::unique_ptr<CRenderScriptExecutor> m_pScriptExecutor{};
 			std::unique_ptr<IShaderObject> m_pStageShader{};
+
+			FBeginRenderingInfo m_renderingInfo{};
 		};
 
 		class CRenderScriptCore

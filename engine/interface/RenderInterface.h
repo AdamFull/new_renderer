@@ -185,7 +185,7 @@ namespace engine
 			FPoint2D<_Ty> size{};
 		};
 
-		struct FShaderNameLoadInfo
+		struct FShaderUploadInfo
 		{
 			size_t libraryId{ ~0ull };
 			size_t shaderId{ ~0ull };
@@ -197,12 +197,12 @@ namespace engine
 			uint32_t queue{ 0u };
 			std::string renderScript{};
 
-			FShaderNameLoadInfo shader{};
+			std::string shaderName{};
 
 			bool oneTime{ false };
 			bool flipViewport{ false };
 
-			std::vector<FResourceView> shaderInputs{};
+			std::unordered_map<std::string, FResourceView> shaderInputs{};
 			std::vector<FResourceView> renderTargets{};
 
 			FResourceView depthTarget{};
@@ -352,10 +352,10 @@ namespace engine
 			virtual void create(const FRenderInterfaceCreateInfo& render_interface_ci) = 0;
 			virtual FResourceView createTexture(const std::string& name, const std::vector<uint8_t>& data, EMimeType mime) = 0;
 
-			virtual FResourceView createShader(const FShaderNameLoadInfo& name_info, const FGraphicsShaderCreateInfo& create_info) = 0;
-			virtual FResourceView createShader(const FShaderNameLoadInfo& name_info, const FComputeShaderCreateInfo& create_info) = 0;
+			virtual FResourceView createShader(const std::string& name_info, const FGraphicsShaderCreateInfo& create_info) = 0;
+			virtual FResourceView createShader(const std::string& name_info, const FComputeShaderCreateInfo& create_info) = 0;
 
-			virtual FShaderNameLoadInfo getShaderNameTag(const std::string& name) = 0;
+			virtual FShaderUploadInfo getShaderNameTag(const std::string& name) = 0;
 			virtual void createRendering(const FRenderingCreateInfo& rendering_ci) = 0;
 
 			virtual void updateSurfaceSize(int32_t width, int32_t height) = 0;
