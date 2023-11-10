@@ -29,7 +29,7 @@ void CApplication::create()
 {
 	m_pVirtualFileSystem = std::make_unique<filesystem::CVirtualFileSystemManager>();
 
-	m_pVirtualFileSystem->mount("/root", std::make_unique<filesystem::CNativeFileSystem>(""));
+	m_pVirtualFileSystem->mount("/root", std::make_unique<filesystem::CNativeFileSystem>("./"));
 
 	m_pScriptEngine = std::make_unique<scripting::CScriptEngine>();
 	m_pScriptEngine->initialize();

@@ -41,7 +41,13 @@ void CRenderScriptCore::create(IRenderInterface* render_interface, IRenderHandle
 
 	m_pLuaState->new_usertype<CDynamicRenderStage>(
 		"DynamicRenderStage",
-		"get_shader", [](CDynamicRenderStage& self) { return self.getShader().get(); }
+		"get_shader", [](CDynamicRenderStage& self) { return self.getShader().get(); },
+		"get_render_targets", [](CDynamicRenderStage& self, FGraphicsShaderCreateInfo& shader_ci) {
+			auto& rendering_info = self.getRenderingInfo();
+			shader_ci.colorAttachments = rendering_info.colorAttachments;
+			shader_ci.depthAttachment = rendering_info.depthAttachment;
+			shader_ci.stencilAttachment = rendering_info.stencilAttachment;
+		}
 	);
 
 	(*m_pLuaState)["render_interface"] = render_interface;
@@ -73,19 +79,24 @@ std::unique_ptr<CRenderScriptExecutor> CRenderScriptCore::build(const std::strin
 	return render_script;
 }
 
-void CDynamicRenderStage::create()
+void CDynamicRenderStage::create(const std::string& stage)
 {
 	m_pStageShader = std::make_unique<CShaderObject>();
 
-	m_pScriptExecutor->run("create");
+	m_pScriptExecutor->run("on_create", stage);
 }
 
 void CDynamicRenderStage::update(float dt)
 {
-	m_pScriptExecutor->run("update", dt);
+	m_pScriptExecutor->run("on_update", dt);
 }
 
 const std::unique_ptr<IShaderObject>& CDynamicRenderStage::getShader() const
 {
 	return m_pStageShader;
+}
+
+FBeginRenderingInfo& CDynamicRenderStage::getRenderingInfo()
+{
+	return m_renderingInfo;
 }

@@ -10,7 +10,10 @@
 
 #include <shader_compiler/compiler_util.h>
 
+#include <filesystem/vfs_helper.h>
+
 using namespace engine;
+using namespace engine::filesystem;
 using namespace engine::render;
 
 uint32_t get_ktx_format(ktxTexture* This)
@@ -29,6 +32,29 @@ uint32_t get_ktx_format(ktxTexture* This)
 uint32_t get_ktx_api_specific_format(ktxTexture* This)
 {
 	return 0;
+}
+
+void CResourceLoader::initialize(IVirtualFileSystemInterface* vfs)
+{
+	auto directory_iterator = vfs->walk("/root/embed/shader_libraries", true);
+	for (auto& it = directory_iterator->begin(); it != directory_iterator->end(); ++it)
+	{
+		auto& current_path = *it;
+		if (vfs->isDirectory(current_path) || fs::get_ext(current_path) != ".shc")
+			continue;
+
+		shader_compiler::FCompiledLibrary compiled_library{};
+		if (vfs->readBson(current_path, compiled_library))
+		{
+			auto library_name = fs::get_stem(current_path);
+			auto library_hash_name = utl::fnv1a_64_hash(library_name.c_str());
+
+			if (m_shaderLibraries.find(library_hash_name) != m_shaderLibraries.end())
+				log_error("Shader library \"{}\" is already loaded. Trying to load it twice. Maybe something wrong with library name?");
+
+			m_shaderLibraries.emplace(library_hash_name, compiled_library);
+		}
+	}
 }
 
 bool CResourceLoader::loadTexture(const std::vector<uint8_t>& data, EMimeType mime, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info)
@@ -59,8 +85,8 @@ bool CResourceLoader::loadTexture(const std::vector<uint8_t>& data, EMimeType mi
 
 bool CResourceLoader::loadShaderData(const FShaderUploadInfo& load_info, std::vector<FShaderCreationBlockInfo>& shader_stages)
 {
-	auto found_library = shaderLibraries.find(load_info.libraryId);
-	if (found_library == shaderLibraries.end())
+	auto found_library = m_shaderLibraries.find(load_info.libraryId);
+	if (found_library == m_shaderLibraries.end())
 		return false;
 
 	shader_compiler::FCompiledLibrary& shader_library = found_library->second;

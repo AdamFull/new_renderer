@@ -1,0 +1,30 @@
+{
+	name: "testing";
+
+	shaders: [
+		{
+			name: "screenspace";
+			sources: [
+				{
+					type: "vertex";
+					common: true;
+					shader_name: "screenspace_vert";
+				},
+				{
+					type: "fragment";
+					shader_name: "screenspace_frag";
+				}
+			];
+		}
+	];
+
+	compile: [
+		{ 
+			shader_name: "screenspace";
+			permutations: [
+				{ definitions: [] },
+				{ definitions: ["EDITOR_MODE"] }
+			];
+		}
+	];
+}

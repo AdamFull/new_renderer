@@ -17,7 +17,7 @@ do
     local renderer_ci = RendererCI.new()
     renderer_ci.render_script = "/root/embed/rendering/render_stages/fullscreen.lua"
     renderer_ci.queue = QueueType.present
-    renderer_ci.shader = render_interface:get_shader_desc("fullscreen:test")
+    renderer_ci.shader_name = "testing:screenspace"
     
     -- renderer_ci.input_targets:set("zbuffer_albedo_target", render_context.get_resource("zbuffer_albedo_target", ResType.rt))
     -- renderer_ci.input_targets:set("zbuffer_normal_target", render_context.get_resource("zbuffer_normal_target", ResType.rt))

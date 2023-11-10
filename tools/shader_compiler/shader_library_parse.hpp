@@ -25,10 +25,10 @@ namespace shader_compiler
             { EShaderType::eMesh, "mesh" },
         })
 
-        struct FShaderModule
+    struct FShaderModule
     {
         EShaderType type{ EShaderType::eUnknown };
-        size_t link;
+        int64_t link;
     };
 
     struct FCompiledLibrary
@@ -43,8 +43,8 @@ namespace shader_compiler
         *       { type, shader_hash }
         * ]
         */
-        std::unordered_map<size_t, std::unordered_map<size_t, std::vector<uint32_t>>> shaders;
-        std::unordered_map<size_t, std::vector<FShaderModule>> modules;
+        std::unordered_map<int64_t, std::unordered_map<int64_t, std::vector<uint32_t>>> shaders;
+        std::unordered_map<int64_t, std::vector<FShaderModule>> modules;
     };
 
     inline void to_json(nlohmann::json& json, const FShaderModule& type)
@@ -73,4 +73,26 @@ namespace shader_compiler
         utl::parse_to("shaders", json, type.shaders);
         utl::parse_to("modules", json, type.modules);
     }
+}
+
+namespace nlohmann
+{
+    template <typename _Ty>
+    struct adl_serializer<std::unordered_map<int64_t, _Ty>>
+    {
+        static void to_json(json& j, const std::unordered_map<int64_t, _Ty>& map)
+        {
+            for (const auto& [key, value] : map)
+                j[std::to_string(key)] = value;
+        }
+
+        static void from_json(const json& j, std::unordered_map<int64_t, _Ty>& map)
+        {
+            for (const auto& item : j.items())
+            {
+                int64_t key = std::stoll(item.key());
+                map[key] = item.value().get<_Ty>();
+            }
+        }
+    };
 }

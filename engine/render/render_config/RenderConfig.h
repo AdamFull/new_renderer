@@ -3,6 +3,7 @@
 #include <interface/RenderInterface.h>
 
 #include <sol/sol.hpp>
+#include <logger/logger.h>
 
 namespace engine
 {
@@ -15,6 +16,12 @@ namespace engine
 
 			~CRenderScriptExecutor();
 
+			template<class _Ty>
+			void addToEnvironment(const char* name, _Ty* data)
+			{
+				(*m_pEnvironment)[name] = data;
+			}
+
 			template<class... _Args>
 			int run(const char* function, _Args&&... args)
 			{
@@ -25,7 +32,7 @@ namespace engine
 					if (!result.valid())
 					{
 						auto err = result.get<sol::error>();
-						//log_error(err.what());
+						log_error(err.what());
 						return -1;
 					}
 
@@ -42,10 +49,11 @@ namespace engine
 		public:
 			friend class CRenderInterface;
 
-			void create();
+			void create(const std::string& stage);
 			void update(float dt);
 
 			const std::unique_ptr<IShaderObject>& getShader() const;
+			FBeginRenderingInfo& getRenderingInfo();
 		private:
 			std::unique_ptr<CRenderScriptExecutor> m_pScriptExecutor{};
 			std::unique_ptr<IShaderObject> m_pStageShader{};

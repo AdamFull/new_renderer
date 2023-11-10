@@ -109,6 +109,11 @@ int main(int argc, char** argv)
 	ETargetAPIType target_api{ ETargetAPIType::eVK10 };
 	ETargetBuildType build_type{ ETargetBuildType::eRelease };
 
+	input_path = "D:\\GitHub\\new_renderer\\embed\\shaders";
+	compiled_libraries_output = "D:\\GitHub\\new_renderer\\bin\\Debug\\engine\\embed\\shader_libraries";
+	shaders_common = "D:\\GitHub\\new_renderer\\embed\\shaders\\common";
+	shaders_include = "D:\\GitHub\\new_renderer\\embed\\shaders\\includes";
+
 	input_path = argparse.try_get("-in", input_path);
 	if (input_path.empty())
 	{

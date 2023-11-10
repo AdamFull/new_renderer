@@ -4,7 +4,7 @@ from types import SimpleNamespace
 
 def main():
 	parser = ArgumentParser(description='Project prepare script.')
-	parser.add_argument('-build_type', type=str, action='store', help='Project build type.')
+	parser.add_argument('-build_type', type=str, action='store', default='Debug', help='Project build type.')
 	args = parser.parse_args()
 
 	build_type = args.build_type
@@ -42,7 +42,7 @@ def main():
 		"-build_type", shader_compile_type
 		]
 	
-	#subprocess.Popen(shader_compiler_comand).communicate()
+	subprocess.Popen(shader_compiler_comand).communicate()
 
 	shutil.copy(os.path.join(embed_path, "engine_config.json"), os.path.join(engine_binaries, "engine_config.json"))
 	shutil.copytree(os.path.join(embed_path, "mono"), os.path.join(embed_binaries, "mono"))

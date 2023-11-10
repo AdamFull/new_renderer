@@ -12,7 +12,10 @@ CNativeFileSystem::CNativeFileSystem(const std::string& fspath)
 
 bool CNativeFileSystem::create(const std::string& fspath)
 {
-	m_fsRoot = fspath;
+	if (fspath.empty())
+		throw std::runtime_error("Invalid path for native fs.");
+
+	m_fsRoot = std::filesystem::weakly_canonical(std::filesystem::path(fspath));
 	return true;
 }
 

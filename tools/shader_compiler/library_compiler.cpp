@@ -178,9 +178,6 @@ void CLibraryCompiler::compile(const std::filesystem::path& library_path, const 
 
 		FShaderDescription& shader_desc = found_shader_desc->second;
 
-		if (compile.name == "tonemap")
-			int iii = 0;
-
 		// Generate all shader permutations
 		bool generate_permutations = !compile.permutation_gen.definitions.empty();
 		size_t perm_n = compile.permutation_gen.definitions.size();
@@ -271,11 +268,11 @@ void CLibraryCompiler::compile(const std::filesystem::path& library_path, const 
 				if (need_to_compile)
 				{
 					compiled_spirv = m_pShaderCompiler->compile(preprocessed_code, compile_info);
-					log_info("{} shader {}[{}] was {}.", name_type_hash, compile_info.name, preprocessed_hash, is_compiling_first_time ? "compiled" : "recompiled");
+					log_info("{} shader {}[{}] was {}.", name_type_hash, source.shader_name, preprocessed_hash, is_compiling_first_time ? "compiled" : "recompiled");
 				}
 
 				// Removing old shader data
-				if ((shader_module->link != ~0ull) && need_to_compile)
+				if (shader_module->link != preprocessed_hash && !is_compiling_first_time)
 					shader_pool.erase(shader_module->link);
 
 				shader_module->link = preprocessed_hash;

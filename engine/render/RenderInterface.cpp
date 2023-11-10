@@ -102,6 +102,8 @@ CRenderInterface::~CRenderInterface()
 void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 {
 	m_pResourceLoader = std::make_unique<CResourceLoader>();
+	m_pResourceLoader->initialize(m_pVFS);
+
 	m_pRenderHandle = make_render_handle_interface(rhi_ci);
 
 	m_pRenderScriptCore = std::make_unique<CRenderScriptCore>();
@@ -175,11 +177,13 @@ void CRenderInterface::createRendering(const FRenderingCreateInfo& rendering_ci)
 	std::vector<uint8_t> render_script{};
 	m_pVFS->readFile(rendering_ci.renderScript, render_script);
 	stage->m_pScriptExecutor = m_pRenderScriptCore->build(filesystem::fs::get_stem(rendering_ci.renderScript), render_script);
+	stage->m_pScriptExecutor->addToEnvironment("this", stage.get());
 
-	stage->create();
+	// At first i should create shader 
+	// After that shader object
+	stage->create(rendering_ci.shaderName);
 
+	// Apply shader inputh
 	for (auto& [binding_point, texture] : rendering_ci.shaderInputs)
 		stage->m_pStageShader->bindTexture(binding_point.c_str(), texture);
-
-	return;
 }
