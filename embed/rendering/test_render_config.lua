@@ -19,7 +19,7 @@ do
 
     step_ci.rendering.type = RenderingType.fullscreen
     step_ci.rendering.queue = QueueType.graphics
-    step_ci.shader_name = "testing:screenspace"
+    step_ci.rendering.shader_name = "testing:screenspace"
     
     -- renderer_ci.input_targets:set("zbuffer_albedo_target", render_context.get_texture_resource("zbuffer_albedo_target"))
     -- renderer_ci.input_targets:set("zbuffer_normal_target", render_context.get_texture_resource("zbuffer_normal_target"))
@@ -27,7 +27,7 @@ do
     -- renderer_ci.input_targets:set("zbuffer_emission_target", render_context.get_texture_resource("zbuffer_emission_target"))
     -- renderer_ci.input_targets:set("zbuffer_depth_target", render_context.get_texture_resource("zbuffer_depth_target"))
     -- renderer_ci.input_targets:set("shadowmap_composition_target"render_context.get_texture_resource("shadowmap_composition_target"))
-    renderer_ci.output_targets:add(render_context:get_texture_resource("present_target"))
+    step_ci.rendering.output_targets:add(render_context:get_texture_resource("present_target"))
     
-    render_interface:create_renderer(renderer_ci)
+    render_interface:create_renderer(step_ci)
 end
