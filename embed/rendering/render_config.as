@@ -156,7 +156,7 @@ void init_render_passes()
 {
     // Other passes
     {
-        FRenderingCreateInfo rendering_ci;
+        FRenderingStepCreateInfo rendering_ci;
         rendering_ci.queue = QUEUE_FAMILY_USAGE_COMPUTE_FLAG_BIT;
         rendering_ci.type = RENDERING_TYPE_BRDFLUT_GENERATOR;
         rendering_ci.shader = render_interface.getShaderNameTag("generators:brdflut_generator");
@@ -168,7 +168,7 @@ void init_render_passes()
 
     // Cubemap generation
     {
-        FRenderingCreateInfo rendering_ci;
+        FRenderingStepCreateInfo rendering_ci;
         rendering_ci.queue = QUEUE_FAMILY_USAGE_COMPUTE_FLAG_BIT;
         rendering_ci.type = RENDERING_TYPE_IRRADIANCE_CUBE_GENERATOR;
         rendering_ci.shader = render_interface.getShaderNameTag("generators:irradiancecube_generator");
@@ -178,7 +178,7 @@ void init_render_passes()
     }
 
     {
-        FRenderingCreateInfo rendering_ci;
+        FRenderingStepCreateInfo rendering_ci;
         rendering_ci.queue = QUEUE_FAMILY_USAGE_COMPUTE_FLAG_BIT;
         rendering_ci.type = RENDERING_TYPE_PREFILTERED_CUBE_GENERATOR;
         rendering_ci.shader = render_interface.getShaderNameTag("generators:prefilteredmap_generator");
@@ -189,7 +189,7 @@ void init_render_passes()
 
     // Render shadows
     {
-        FRenderingCreateInfo rendering_ci;
+        FRenderingStepCreateInfo rendering_ci;
         rendering_ci.queue = QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT;
         rendering_ci.type = RENDERING_TYPE_CASCADED_SHADOWS;
         rendering_ci.shader = render_interface.getShaderNameTag("shadows:cascaded");
@@ -199,7 +199,7 @@ void init_render_passes()
     }
 
     {
-        FRenderingCreateInfo rendering_ci;
+        FRenderingStepCreateInfo rendering_ci;
         rendering_ci.queue = QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT;
         rendering_ci.type = RENDERING_TYPE_DIRECTIONAL_SHADOWS;
         rendering_ci.shader = render_interface.getShaderNameTag("shadows:directional");
@@ -209,7 +209,7 @@ void init_render_passes()
     }
 
     {
-        FRenderingCreateInfo rendering_ci;
+        FRenderingStepCreateInfo rendering_ci;
         rendering_ci.queue = QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT;
         rendering_ci.type = RENDERING_TYPE_OMNI_SHADOWS;
         rendering_ci.shader = render_interface.getShaderNameTag("shadows:omni");
@@ -220,7 +220,7 @@ void init_render_passes()
 
     // Compose shadowmaps in one target (shadowmap projection)
     {
-        FRenderingCreateInfo rendering_ci;
+        FRenderingStepCreateInfo rendering_ci;
         rendering_ci.queue = QUEUE_FAMILY_USAGE_COMPUTE_FLAG_BIT;
         rendering_ci.type = RENDERING_TYPE_COMPUTE;
         rendering_ci.shader = render_interface.getShaderNameTag("shadows:projection");
@@ -234,7 +234,7 @@ void init_render_passes()
 
     // Z-buffer pass
     {
-        FRenderingCreateInfo rendering_ci;
+        FRenderingStepCreateInfo rendering_ci;
         rendering_ci.queue = QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT;
         rendering_ci.type = RENDERING_TYPE_ZBUFFER;
         //rendering_ci.internal_control = true;
@@ -245,7 +245,7 @@ void init_render_passes()
 
     // Render image to final target
     {
-        FRenderingCreateInfo rendering_ci;
+        FRenderingStepCreateInfo rendering_ci;
         rendering_ci.queue = QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT;
         rendering_ci.type = RENDERING_TYPE_SCREENSPACE;
         rendering_ci.shader = render_interface.getShaderNameTag("lighting:lighting");

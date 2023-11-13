@@ -65,17 +65,31 @@ namespace engine
 			FORMAT_RGBA32_SFLOAT
 		};
 
+		enum EShaderResourcesUpdateFlagBits
+		{
+			SHADER_RESOURCES_UPDATE_UNIFORM_BLOCKS_FLAG_BIT = 1 << 0,
+			SHADER_RESOURCES_UPDATE_TEXTURES_FLAG_BIT = 1 << 1,
+			SHADER_RESOURCES_UPDATE_ALL_FLAG_BIT = 
+													SHADER_RESOURCES_UPDATE_UNIFORM_BLOCKS_FLAG_BIT | 
+													SHADER_RESOURCES_UPDATE_TEXTURES_FLAG_BIT
+		};
+
+		enum ERenderingStepType
+		{
+			RENDERING_STEP_SYNCHRONIZATION_TYPE,
+			RENDERING_STEP_RENDERING_TYPE
+		};
+
 		enum ERenderingType
 		{
-			RENDERING_TYPE_CASCADED_SHADOWS,
-			RENDERING_TYPE_DIRECTIONAL_SHADOWS,
-			RENDERING_TYPE_OMNI_SHADOWS,
-			RENDERING_TYPE_COMPUTE,
-			RENDERING_TYPE_ZBUFFER,
-			RENDERING_TYPE_SCREENSPACE,
-			RENDERING_TYPE_BRDFLUT_GENERATOR,
-			RENDERING_TYPE_IRRADIANCE_CUBE_GENERATOR,
-			RENDERING_TYPE_PREFILTERED_CUBE_GENERATOR
+			RENDERING_FULLSCREEN_TYPE,
+			RENDERING_RENDER_SCRIPT_TYPE
+		};
+
+		enum ESynchronizationType
+		{
+			SYNCHRONIZATION_WAIT_TYPE,
+			SYNCHRONIZATION_SIGNAL_TYPE
 		};
 
 		struct FRenderInterfaceCreateInfo
@@ -113,11 +127,11 @@ namespace engine
 			std::vector<std::string> validationLayers{};
 		};
 
-		struct FResourceView
-		{
-			size_t id{ ~0ull };
-			uint32_t mask{};
-		};
+		//struct FResourceView
+		//{
+		//	size_t id{ ~0ull };
+		//	uint32_t mask{};
+		//};
 
 		struct FTextureUploadInfo
 		{
@@ -175,12 +189,20 @@ namespace engine
 		template<class _Ty>
 		struct FPoint2D
 		{
+			FPoint2D() = default;
+			FPoint2D(_Ty val) : x(val), y(val) {}
+			FPoint2D(_Ty _x, _Ty _y) : x(_x), y(_y) {}
+
 			_Ty x{ 0 }, y{ 0 };
 		};
 
 		template<class _Ty>
 		struct FRect2D
 		{
+			FRect2D() = default;
+			FRect2D(const FPoint2D<_Ty>& _offset, const FPoint2D<_Ty>& _size) : offset(_offset), size(_size) {}
+			FRect2D(_Ty offset_x, _Ty offset_y, _Ty size_x, _Ty size_y) : offset(offset_x, offset_y), size(size_x, size_y) {}
+
 			FPoint2D<_Ty> offset{};
 			FPoint2D<_Ty> size{};
 		};
@@ -192,33 +214,51 @@ namespace engine
 			std::string originalName{};
 		};
 
-		struct FRenderingCreateInfo
+		struct FRenderingStepSynchronizationInfo
 		{
+			uint32_t type{};
+
+			uint32_t queueFrom{};
+			uint32_t queueTo{};
+		};
+
+		struct FRenderingStepRenderingInfo
+		{
+			uint32_t type{ ~0u };
+
 			uint32_t queue{ 0u };
-			std::string renderScript{};
 
-			std::string shaderName{};
+			std::string renderScript{}; // Optional
 
-			bool oneTime{ false };
-			bool flipViewport{ false };
+			std::string shaderName{}; // Optional
 
-			std::unordered_map<std::string, FResourceView> shaderInputs{};
-			std::vector<FResourceView> renderTargets{};
+			bool oneTime{ false }; // Destroy after execution
+			bool flipViewport{ false }; // Flip viewport horizontally
 
-			FResourceView depthTarget{};
-			FResourceView stencilTarget{};
+			std::unordered_map<std::string, size_t> shaderInputs{};
+			std::vector<size_t> renderTargets{};
+
+			size_t depthTarget{ ~0ull };
+			size_t stencilTarget{ ~0ull };
+		};
+
+		struct FRenderingStepCreateInfo
+		{
+			uint32_t type{};
+
+			FRenderingStepSynchronizationInfo synchronization{};
+			FRenderingStepRenderingInfo rendering{};
 		};
 
 		struct FBeginRenderingInfo
 		{
 			uint32_t queue{ 0u };
-			FRect2D<float> scissorRect{};
 			FRect2D<float> renderArea{};
 			bool flipViewport{ false };
 
-			std::vector<FResourceView> colorAttachments{};
-			FResourceView depthAttachment{};
-			FResourceView stencilAttachment{};
+			std::vector<size_t> colorAttachments{};
+			size_t depthAttachment{ ~0ull };
+			size_t stencilAttachment{ ~0ull };
 		};
 
 		enum EShaderPrimitiveTopology : uint32_t
@@ -279,9 +319,9 @@ namespace engine
 
 			uint32_t usageCount{ 1u };
 
-			std::vector<FResourceView> colorAttachments{};
-			FResourceView depthAttachment{};
-			FResourceView stencilAttachment{};
+			std::vector<size_t> colorAttachments{};
+			size_t depthAttachment{ ~0ull };
+			size_t stencilAttachment{ ~0ull };
 
 			FVertexDeclarationInfo vertexDeclaration{};
 		};
@@ -291,21 +331,35 @@ namespace engine
 			uint32_t usageCount{ 1u };
 		};
 
+		struct FUniformDataView
+		{
+			const void* data{ nullptr };
+			size_t size{ 0ull };
+		};
+
+		struct FShaderResourceCommit
+		{
+			size_t shaderId{ ~0ull };
+			std::unordered_map<size_t, FUniformDataView> uniforms{};
+			std::unordered_map<size_t, FUniformDataView> constants{}; // TODO: remove all other posibilities to have more than one push block. 
+			std::unordered_map<size_t, size_t> textures{};
+		};
+
 		class CUniformHandle
 		{
 		public:
 			template<class _Ty>
 			void create(const _Ty& block)
 			{
-				data = std::make_unique<char[]>(block.size);
-				uniforms = block.uniforms;
+				m_data.resize(block.size);
+				m_uniforms = block.uniforms;
 			}
 
 			// For render script
 			void set(const char* name, const void* raw_data, size_t size)
 			{
-				auto found = uniforms.find(utl::fnv1a_64_hash(name));
-				if (found == uniforms.end() || !data || !raw_data)
+				auto found = m_uniforms.find(utl::fnv1a_64_hash(name));
+				if (found == m_uniforms.end() || !m_data.empty() || !raw_data)
 					return;
 
 				auto& uniform = found->second;
@@ -313,14 +367,14 @@ namespace engine
 				if (size == 0ull)
 					size = uniform.size;
 
-				std::memcpy(data.get() + uniform.offset, raw_data, size);
+				std::memcpy(m_data.data() + uniform.offset, raw_data, size);
 			}
 
 			template<class _Ty>
 			void set(const char* name, const _Ty& object, size_t size = 0ull)
 			{
-				auto found = uniforms.find(utl::fnv1a_64_hash(name));
-				if (found == uniforms.end() || !data)
+				auto found = m_uniforms.find(utl::fnv1a_64_hash(name));
+				if (found == m_uniforms.end() || !m_data.empty())
 					return;
 
 				auto& uniform = found->second;
@@ -328,20 +382,55 @@ namespace engine
 				if (size == 0ull)
 					size = (std::min)(sizeof(_Ty), uniform.size);
 
-				std::memcpy(data.get() + uniform.offset, &object + uniform.offset, size);
+				std::memcpy(m_data.data() + uniform.offset, &object + uniform.offset, size);
+			}
+
+			template<class _Ty>
+			_Ty* get(const char* name)
+			{
+				auto found = m_uniforms.find(utl::fnv1a_64_hash(name));
+				if (found == m_uniforms.end() || !m_data.empty())
+					return nullptr;
+
+				auto& uniform = found->second;
+
+				if (sizeof(_Ty) > uniform.size)
+					return nullptr;
+
+				return reinterpret_cast<_Ty*>(m_data.data() + uniform.offset);
+			}
+
+			const std::vector<char>& data() const
+			{
+				return m_data;
 			}
 		private:
-			std::unordered_map<size_t, FReflectionUniform> uniforms{};
-			std::unique_ptr<char[]> data{};
+			std::unordered_map<size_t, FReflectionUniform> m_uniforms{};
+			std::vector<char> m_data{};
 		};
 
 		class IShaderObject
 		{
 		public:
 			virtual ~IShaderObject() = default;
-			virtual void create(FResourceView resource, const FShaderReflectionData& reflection) = 0;
+			virtual void create(size_t resource, const FShaderReflectionData& reflection) = 0;
+
 			virtual const std::unique_ptr<CUniformHandle>& getUniformBlock(const char* name) = 0;
-			virtual void bindTexture(const char* name, FResourceView texture_resource) = 0;
+			virtual const std::unique_ptr<CUniformHandle>& getConstantBlock(const char* name) = 0;
+
+			virtual void bindTexture(const char* name, size_t texture_resource) = 0;
+
+			virtual FShaderResourceCommit getResourceCommit() = 0;
+			virtual size_t getId() = 0;
+		};
+
+		class IRenderingStep
+		{
+		public:
+			virtual ~IRenderingStep() = default;
+
+			virtual void create(const FRenderingStepCreateInfo& create_info) = 0;
+			virtual void execute(float dt) = 0;
 		};
 
 		class IRenderInterface
@@ -350,35 +439,45 @@ namespace engine
 			virtual ~IRenderInterface() = default;
 
 			virtual void create(const FRenderInterfaceCreateInfo& render_interface_ci) = 0;
-			virtual FResourceView createTexture(const std::string& name, const std::vector<uint8_t>& data, EMimeType mime) = 0;
+			virtual void render(float dt) = 0;
 
-			virtual FResourceView createShader(const std::string& name_info, const FGraphicsShaderCreateInfo& create_info) = 0;
-			virtual FResourceView createShader(const std::string& name_info, const FComputeShaderCreateInfo& create_info) = 0;
+			virtual size_t createTexture(const std::string& name, const std::vector<uint8_t>& data, EMimeType mime) = 0;
+
+			virtual size_t createShader(const std::string& name_info, const FGraphicsShaderCreateInfo& create_info) = 0;
+			virtual size_t createShader(const std::string& name_info, const FComputeShaderCreateInfo& create_info) = 0;
 
 			virtual FShaderUploadInfo getShaderNameTag(const std::string& name) = 0;
-			virtual void createRendering(const FRenderingCreateInfo& rendering_ci) = 0;
+			virtual void createRendering(const FRenderingStepCreateInfo& rendering_ci) = 0;
 
 			virtual void updateSurfaceSize(int32_t width, int32_t height) = 0;
-
-			virtual void beginFrame() = 0;
-			virtual void endFrame() = 0;
 		};
 
-		class IRenderHandleInterface
+		class IRenderContext
 		{
 		public:
-			virtual ~IRenderHandleInterface() = default;
+			virtual ~IRenderContext() = default;
 
 			virtual void create(const FRenderContextCreateInfo& context_ci) = 0;
-			virtual FResourceView createTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) = 0;
-			virtual FResourceView createRenderTargets(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
+			virtual size_t createTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) = 0;
+			virtual size_t createRenderTargets(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
 
-			virtual FResourceView createShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
-			virtual FResourceView createShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
+			virtual size_t createShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
+			virtual size_t createShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
 
-			virtual FShaderReflectionData getShaderReflection(const FResourceView& shader_view) = 0;
+			virtual void beginRendering(const FBeginRenderingInfo& rendering_info) = 0;
+			virtual void endRendering(const FBeginRenderingInfo& rendering_info) = 0;
 
-			virtual FResourceView getResource(const char* name, uint32_t resource_type) = 0;
+			virtual void setViewport(float width, float height, bool flip_viewport) = 0;
+			virtual void setScissorRect(int32_t offset_x, int32_t offset_y, uint32_t width, uint32_t height) = 0;
+
+			virtual void bindShader(size_t shader_id, uint32_t queue_type) = 0;
+
+			virtual FShaderReflectionData getShaderReflection(const size_t& shader_view) = 0;
+			virtual void updateShaderResources(const FShaderResourceCommit& resources, uint32_t /*EShaderResourcesUpdateFlagBits*/ flags = SHADER_RESOURCES_UPDATE_ALL_FLAG_BIT) = 0;
+			virtual void flushConstantRanges(const FShaderResourceCommit& shader_resources, uint32_t queue_type) = 0;
+
+			virtual size_t getTextureResource(const char* name) = 0;
+			virtual size_t getShaderResource(const char* name) = 0;
 
 			virtual FPoint2D<uint32_t> getRenderResolution() = 0;
 

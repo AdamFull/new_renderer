@@ -30,7 +30,7 @@ CRenderScriptCore::~CRenderScriptCore()
 	safe_delete(m_pLuaState);
 }
 
-void CRenderScriptCore::create(IRenderInterface* render_interface, IRenderHandleInterface* render_context)
+void CRenderScriptCore::create(IRenderInterface* render_interface, IRenderContext* render_context)
 {
 	m_pLuaState = new sol::state();
 
@@ -42,6 +42,7 @@ void CRenderScriptCore::create(IRenderInterface* render_interface, IRenderHandle
 	m_pLuaState->new_usertype<CDynamicRenderStage>(
 		"DynamicRenderStage",
 		"get_shader", [](CDynamicRenderStage& self) { return self.getShader().get(); },
+		"get_rendering_info", [](CDynamicRenderStage& self) { return self.getRenderingInfo(); },
 		"get_render_targets", [](CDynamicRenderStage& self, FGraphicsShaderCreateInfo& shader_ci) {
 			auto& rendering_info = self.getRenderingInfo();
 			shader_ci.colorAttachments = rendering_info.colorAttachments;
@@ -86,9 +87,10 @@ void CDynamicRenderStage::create(const std::string& stage)
 	m_pScriptExecutor->run("on_create", stage);
 }
 
-void CDynamicRenderStage::update(float dt)
+void CDynamicRenderStage::render(float dt)
 {
-	m_pScriptExecutor->run("on_update", dt);
+	// TODO: begin profiling scope here. Name of this scope is stage name or shader name
+	m_pScriptExecutor->run("on_render", dt);
 }
 
 const std::unique_ptr<IShaderObject>& CDynamicRenderStage::getShader() const

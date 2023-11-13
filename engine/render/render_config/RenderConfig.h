@@ -50,7 +50,7 @@ namespace engine
 			friend class CRenderInterface;
 
 			void create(const std::string& stage);
-			void update(float dt);
+			void render(float dt);
 
 			const std::unique_ptr<IShaderObject>& getShader() const;
 			FBeginRenderingInfo& getRenderingInfo();
@@ -65,7 +65,7 @@ namespace engine
 		{
 		public:
 			~CRenderScriptCore();
-			void create(IRenderInterface* render_interface, IRenderHandleInterface* render_context);
+			void create(IRenderInterface* render_interface, IRenderContext* render_context);
 			std::unique_ptr<CRenderScriptExecutor> build(const std::string& name, const std::vector<uint8_t>& program_code);
 		private:
 			sol::state* m_pLuaState{ nullptr };

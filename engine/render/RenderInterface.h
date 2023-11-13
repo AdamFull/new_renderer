@@ -16,36 +16,34 @@ namespace engine
 			~CRenderInterface() override;
 
 			void create(const FRenderInterfaceCreateInfo& render_interface_ci) override;
+			void render(float dt) override;
 
-			FResourceView createTexture(const std::string& name, const std::vector<uint8_t>& data, EMimeType mime) override;
+			size_t createTexture(const std::string& name, const std::vector<uint8_t>& data, EMimeType mime) override;
 
-			FResourceView createShader(const std::string& name, const FGraphicsShaderCreateInfo& create_info) override;
-			FResourceView createShader(const std::string& name, const FComputeShaderCreateInfo& create_info) override;
+			size_t createShader(const std::string& name, const FGraphicsShaderCreateInfo& create_info) override;
+			size_t createShader(const std::string& name, const FComputeShaderCreateInfo& create_info) override;
 
 			void updateSurfaceSize(int32_t width, int32_t height) override;
-
-			void beginFrame() override;
-			void endFrame() override;
 		protected:
 			template<class _Ty>
-			FResourceView createShader(const FShaderUploadInfo& name_info, const _Ty& create_info)
+			size_t createShader(const FShaderUploadInfo& name_info, const _Ty& create_info)
 			{
 				std::vector<FShaderCreationBlockInfo> shader_stages{};
 				if (m_pResourceLoader->loadShaderData(name_info, shader_stages))
-					return m_pRenderHandle->createShader(name_info.originalName, create_info, shader_stages);
+					return m_pRenderContext->createShader(name_info.originalName, create_info, shader_stages);
 
-				return {};
+				return ~0ull;
 			}
 
 			FShaderUploadInfo getShaderNameTag(const std::string& name) override;
-			void createRendering(const FRenderingCreateInfo& rendering_ci) override;
+			void createRendering(const FRenderingStepCreateInfo& rendering_ci) override;
 
 		private:
 			filesystem::IVirtualFileSystemInterface* m_pVFS{ nullptr };
 
-			std::vector<std::unique_ptr<CDynamicRenderStage>> m_vRenderStages{};
+			std::vector<std::unique_ptr<IRenderingStep>> m_vRenderingSteps{};
 
-			std::unique_ptr<IRenderHandleInterface> m_pRenderHandle{};
+			std::unique_ptr<IRenderContext> m_pRenderContext{};
 			std::unique_ptr<CResourceLoader> m_pResourceLoader{};
 			std::unique_ptr<CRenderScriptCore> m_pRenderScriptCore{};
 		};

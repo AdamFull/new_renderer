@@ -52,6 +52,20 @@ namespace engine
 				PHYSICAL_DEVICE_COMPAT_ASYNC_TRANSFER_FLAG_BIT
 			};
 
+			struct FVkThreadKeyResolver
+			{
+				FVkThreadKeyResolver() : threadId{ std::this_thread::get_id() }, queueType{ QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT } {}
+				FVkThreadKeyResolver(uint32_t queue_type, std::thread::id thread_id = std::this_thread::get_id()) : threadId{ thread_id }, queueType{ queue_type } {}
+
+				friend bool operator==(const FVkThreadKeyResolver& lhs, const FVkThreadKeyResolver& rhs)
+				{
+					return lhs.threadId == rhs.threadId && lhs.queueType == rhs.queueType;
+				}
+
+				std::thread::id threadId{};
+				uint32_t queueType{ 0 };
+			};
+
 			// =================================================================================
 			// ==================================Object Handles=================================
 			// =================================================================================
@@ -135,11 +149,16 @@ namespace engine
 			// ---------------------------------------------------------------------------------
 			struct FVkCommandBuffer
 			{
-				std::vector<vk::CommandBuffer, std::allocator<vk::CommandBuffer>> handles{};
+				std::vector<vk::CommandBuffer> handles{};
 				std::thread::id threadId{};
 				uint32_t mask{ 0u };
 				bool isRunning{ false };
 				uint32_t commandBufferIndex{ 0u };
+
+				const vk::CommandBuffer& get() const
+				{
+					return handles.at(commandBufferIndex);
+				}
 			};
 
 			struct FVkCommandBufferCreateInfo
@@ -257,30 +276,11 @@ namespace engine
 #endif
 			};
 
-			enum class EVkResourceDescriptorType
-			{
-				eTexture,
-				eBuffer
-			};
-
-			struct FVkShaderDescriptorUpdateInfo
-			{
-				size_t resourceReflectionName{};
-				size_t resourceId{ ~0ull };
-				EVkResourceDescriptorType resourceType{};
-			};
-
 			struct FVkGetCommandBufferInfo
 			{
 				uint32_t queueType{};
 				std::thread::id threadId{ std::this_thread::get_id() };
 				size_t bufferIndex{};
-			};
-
-			struct FVkShaderDescriptorsUpdateInfo
-			{
-				size_t shaderId{ ~0ull };
-				std::vector<FVkShaderDescriptorUpdateInfo> resourceInfos{};
 			};
 
 			struct FVkBindDescriptorInfo
@@ -379,7 +379,8 @@ namespace engine
 				FVkDescriptorPool descriptorPool{};
 				std::vector<vk::PushConstantRange> pushConstantRanges{};
 
-				std::unordered_map<size_t, std::vector<FVkBuffer>> uniformBuffers{};
+				std::unordered_map<size_t, size_t> uniformBuffers{};
+				size_t maximumDescriptorSlots{ 0ull };
 				
 				vk::PipelineBindPoint bindPoint{};
 
@@ -491,6 +492,20 @@ namespace engine
 			};
 		}
 	}
+}
+
+namespace std 
+{
+	template<>
+	struct hash<engine::render::vulkan::FVkThreadKeyResolver>
+	{
+		size_t operator()(const engine::render::vulkan::FVkThreadKeyResolver& key) const
+		{
+			size_t hash1 = hash<thread::id>()(key.threadId);
+			size_t hash2 = hash<uint32_t>()(key.queueType);
+			return hash1 ^ (hash2 << 1);
+		}
+	};
 }
 
 #define RETURN_WHEN_FAULT(result) \

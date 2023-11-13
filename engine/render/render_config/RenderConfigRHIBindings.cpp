@@ -9,6 +9,39 @@ namespace engine
 {
 	namespace render
 	{
+		template<class _Ty>
+		void register_point2d(const char* name, sol::state* lua)
+		{
+			using _TargetType = FPoint2D<_Ty>;
+
+			lua->new_usertype<_TargetType>(
+				name,
+				sol::constructors<
+				_TargetType(), _TargetType(_Ty), _TargetType(_Ty, _Ty),
+				_TargetType(const _TargetType&)
+				>(),
+				"x", &_TargetType::x,
+				"y", &_TargetType::y
+			);
+		}
+
+		template<class _Ty>
+		void register_rect2d(const char* name, sol::state* lua)
+		{
+			using _TargetType = FRect2D<_Ty>;
+			using _PointType = FPoint2D<_Ty>;
+
+			lua->new_usertype<_TargetType>(
+				name,
+				sol::constructors<
+				_TargetType(), _TargetType(_PointType, _PointType), _TargetType(_Ty, _Ty, _Ty, _Ty),
+				_TargetType(const _TargetType&)
+				>(),
+				"offset", &_TargetType::offset,
+				"size", &_TargetType::size
+			);
+		}
+
 		void bindRenderInterfaceEnums(sol::state* lua)
 		{
 			// Register ETextureFormat
@@ -79,41 +112,62 @@ namespace engine
 				"ccw", SHADER_FRONT_FACE_CCW,
 				"cw", SHADER_FRONT_FACE_CW
 			);
+
+			// Register EShaderResourcesUpdateFlagBits
+			lua->new_enum(
+				"ShaderUpdateFlags",
+				"uniform_blocks", SHADER_RESOURCES_UPDATE_UNIFORM_BLOCKS_FLAG_BIT,
+				"textures", SHADER_RESOURCES_UPDATE_TEXTURES_FLAG_BIT,
+				"all", SHADER_RESOURCES_UPDATE_ALL_FLAG_BIT
+			);
+
+			// Register ERenderingStepType
+			lua->new_enum(
+				"RenderingStepType",
+				"synchronization", RENDERING_STEP_SYNCHRONIZATION_TYPE,
+				"rendering", RENDERING_STEP_RENDERING_TYPE
+			);
+
+			// Register ERenderingType
+			lua->new_enum(
+				"RenderingType",
+				"fullscreen", RENDERING_FULLSCREEN_TYPE,
+				"render_script", RENDERING_RENDER_SCRIPT_TYPE
+			);
+
+			// Register ESynchronizationType
+			lua->new_enum(
+				"SynchronizationType",
+				"wait", SYNCHRONIZATION_WAIT_TYPE,
+				"signal", SYNCHRONIZATION_SIGNAL_TYPE
+			);
 		}
 
 		void bindRenderInterfaceStructures(sol::state* lua)
 		{
-			// FResourceView registration
-			lua->new_usertype<FResourceView>(
-				"ResourceView",
-				sol::constructors<FResourceView()>(),
-				"id", &FResourceView::id,
-				"mask", &FResourceView::mask
-			);
+			// FPoint2D<> registration
+			register_point2d<int8_t>("I8Point2D", lua);
+			register_point2d<uint8_t>("U8Point2D", lua);
+			register_point2d<int16_t>("I16Point2D", lua);
+			register_point2d<uint16_t>("U16Point2D", lua);
+			register_point2d<int32_t>("I32Point2D", lua);
+			register_point2d<uint32_t>("U32Point2D", lua);
+			register_point2d<int64_t>("I64Point2D", lua);
+			register_point2d<uint64_t>("U64Point2D", lua);
+			register_point2d<float>("F32Point2D", lua);
+			register_point2d<double>("F64Point2D", lua);
 
-			// FPoint2D<int32_t> registration
-			lua->new_usertype<FPoint2D<int32_t>>(
-				"I32Point2D",
-				sol::constructors<FPoint2D<int32_t>()>(),
-				"x", &FPoint2D<int32_t>::x,
-				"y", &FPoint2D<int32_t>::y
-			);
-
-			// FPoint2D<uint32_t> registration
-			lua->new_usertype<FPoint2D<uint32_t>>(
-				"U32Point2D",
-				sol::constructors<FPoint2D<uint32_t>()>(),
-				"x", &FPoint2D<uint32_t>::x,
-				"y", &FPoint2D<uint32_t>::y
-			);
-
-			// FPoint2D<float> registration
-			lua->new_usertype<FPoint2D<float>>(
-				"F32Point2D",
-				sol::constructors<FPoint2D<float>()>(),
-				"x", &FPoint2D<float>::x,
-				"y", &FPoint2D<float>::y
-			);
+			// FRect2D<> registration
+			register_rect2d<int8_t>("I8Rect2D", lua);
+			register_rect2d<uint8_t>("U8Rect2D", lua);
+			register_rect2d<int16_t>("I16Rect2D", lua);
+			register_rect2d<uint16_t>("U16Rect2D", lua);
+			register_rect2d<int32_t>("I32Rect2D", lua);
+			register_rect2d<uint32_t>("U32Rect2D", lua);
+			register_rect2d<int64_t>("I64Rect2D", lua);
+			register_rect2d<uint64_t>("U64Rect2D", lua);
+			register_rect2d<float>("F32Rect2D", lua);
+			register_rect2d<double>("F64Rect2D", lua);
 
 			// FShaderUploadInfo registration
 			lua->new_usertype<FShaderUploadInfo>(
@@ -138,19 +192,42 @@ namespace engine
 				"array_layers", &FTextureCreateInfo::arrayLayers
 			);
 
-			// FRenderingCreateInfo registration
-			lua->new_usertype<FRenderingCreateInfo>(
-				"RendererCI",
-				sol::constructors<FRenderingCreateInfo()>(),
-				"render_script", &FRenderingCreateInfo::renderScript,
-				"queue", &FRenderingCreateInfo::queue,
-				"shader_name", &FRenderingCreateInfo::shaderName,
-				"one_time", &FRenderingCreateInfo::oneTime,
-				"flip_viewport", &FRenderingCreateInfo::flipViewport,
-				"input_targets", &FRenderingCreateInfo::shaderInputs,
-				"output_targets", &FRenderingCreateInfo::renderTargets,
-				"depth_target", &FRenderingCreateInfo::depthTarget,
-				"stencil_target", &FRenderingCreateInfo::stencilTarget
+			// FRenderingStepSynchronizationInfo registration
+			// in {queue} wait for {queue} // in {queue} signal
+			lua->new_usertype<FRenderingStepSynchronizationInfo>(
+				"SynchronizationStepInfo",
+				sol::constructors<FRenderingStepSynchronizationInfo()>(),
+				"type", &FRenderingStepSynchronizationInfo::type,
+				"from", &FRenderingStepSynchronizationInfo::queueFrom,
+				"to", &FRenderingStepSynchronizationInfo::queueTo
+			);
+
+			// FRenderingStepSynchronizationInfo registration
+			lua->new_usertype<FRenderingStepRenderingInfo>(
+				"RenderingStepInfo",
+				sol::constructors<FRenderingStepRenderingInfo()>(),
+				"type", &FRenderingStepRenderingInfo::type,
+				"queue", &FRenderingStepRenderingInfo::queue,
+
+				"render_script", &FRenderingStepRenderingInfo::renderScript,
+				"shader_name", &FRenderingStepRenderingInfo::shaderName,
+
+				"one_time", & FRenderingStepRenderingInfo::oneTime,
+				"flip_viewport", & FRenderingStepRenderingInfo::flipViewport,
+
+				"input_targets", & FRenderingStepRenderingInfo::shaderInputs,
+				"output_targets", & FRenderingStepRenderingInfo::renderTargets,
+				"depth_target", & FRenderingStepRenderingInfo::depthTarget,
+				"stencil_target", & FRenderingStepRenderingInfo::stencilTarget
+			);
+
+			// FRenderingStepCreateInfo registration
+			lua->new_usertype<FRenderingStepCreateInfo>(
+				"RenderingStepCI",
+				sol::constructors<FRenderingStepCreateInfo()>(),
+				"type", &FRenderingStepCreateInfo::type,
+				"synchronization", &FRenderingStepCreateInfo::synchronization,
+				"rendering", &FRenderingStepCreateInfo::rendering
 			);
 
 			// FVertexBindingDescription registration
@@ -244,6 +321,17 @@ namespace engine
 				"uniform_blocks", &FShaderReflectionData::uniformBlocks,
 				"push_blocks", &FShaderReflectionData::pushBlocks
 			);
+
+			// FBeginRenderingInfo registration
+			lua->new_usertype<FBeginRenderingInfo>(
+				"BeginRenderingInfo",
+				"queue", &FBeginRenderingInfo::queue,
+				"render_area", &FBeginRenderingInfo::renderArea,
+				"flip_viewport", &FBeginRenderingInfo::flipViewport,
+				"color_attachments", &FBeginRenderingInfo::colorAttachments,
+				"depth_attachment", &FBeginRenderingInfo::depthAttachment,
+				"stencil_attachment", &FBeginRenderingInfo::stencilAttachment
+			);
 		}
 
 		void bindRenderInterfaceObjects(sol::state* lua)
@@ -255,25 +343,26 @@ namespace engine
 				"create_renderer", &IRenderInterface::createRendering,
 				"create_texture", &IRenderInterface::createTexture,
 				"create_shader", sol::overload(
-					static_cast<FResourceView(IRenderInterface::*)(const std::string&, const FGraphicsShaderCreateInfo&)>(&IRenderInterface::createShader),
-					static_cast<FResourceView(IRenderInterface::*)(const std::string&, const FComputeShaderCreateInfo&)>(&IRenderInterface::createShader)
+					static_cast<size_t(IRenderInterface::*)(const std::string&, const FGraphicsShaderCreateInfo&)>(&IRenderInterface::createShader),
+					static_cast<size_t(IRenderInterface::*)(const std::string&, const FComputeShaderCreateInfo&)>(&IRenderInterface::createShader)
 				)
 			);
 
-			// IRenderHandleInterface registration
-			lua->new_usertype<IRenderHandleInterface>(
-				"IRenderHandleInterface",
-				"create_render_target", &IRenderHandleInterface::createRenderTargets,
+			// IRenderContext registration
+			lua->new_usertype<IRenderContext>(
+				"IRenderContext",
+				"create_render_target", &IRenderContext::createRenderTargets,
 				"create_shader", sol::overload(
-					static_cast<FResourceView(IRenderHandleInterface::*)(const std::string&, const FGraphicsShaderCreateInfo&, const std::vector<FShaderCreationBlockInfo>&)>(&IRenderHandleInterface::createShader),
-					static_cast<FResourceView(IRenderHandleInterface::*)(const std::string&, const FComputeShaderCreateInfo&, const std::vector<FShaderCreationBlockInfo>&)>(&IRenderHandleInterface::createShader)
+					static_cast<size_t(IRenderContext::*)(const std::string&, const FGraphicsShaderCreateInfo&, const std::vector<FShaderCreationBlockInfo>&)>(&IRenderContext::createShader),
+					static_cast<size_t(IRenderContext::*)(const std::string&, const FComputeShaderCreateInfo&, const std::vector<FShaderCreationBlockInfo>&)>(&IRenderContext::createShader)
 				),
-				"get_resource", &IRenderHandleInterface::getResource,
-				"get_surface_resolution", &IRenderHandleInterface::getRenderResolution,
-				"get_depth_format", &IRenderHandleInterface::getDepthFormat,
-				"get_api_format", &IRenderHandleInterface::getApiFormat,
-				"get_present_format", &IRenderHandleInterface::getPresentFormat,
-				"get_shader_reflection", &IRenderHandleInterface::getShaderReflection
+				"get_texture_resource", &IRenderContext::getTextureResource,
+				"get_shader_resource", &IRenderContext::getShaderResource,
+				"get_surface_resolution", &IRenderContext::getRenderResolution,
+				"get_depth_format", &IRenderContext::getDepthFormat,
+				"get_api_format", &IRenderContext::getApiFormat,
+				"get_present_format", &IRenderContext::getPresentFormat,
+				"get_shader_reflection", &IRenderContext::getShaderReflection
 			);
 
 			// Uniform block handler registration
@@ -326,8 +415,13 @@ namespace engine
 				"new", sol::factories([]() { return std::make_unique<CShaderObject>(); }),
 				"create", &IShaderObject::create,
 				"get_uniform_block", [](IShaderObject& self, const std::string& name) { return self.getUniformBlock(name.c_str()).get(); },
+				"get_resource_commit", &IShaderObject::getResourceCommit,
 				"bind_texture", & IShaderObject::bindTexture
 			);
+		}
+
+		void bindGlobalFunctions(sol::state* lua)
+		{
 		}
 
 		void bindRenderInterface(sol::state* lua)
@@ -335,6 +429,7 @@ namespace engine
 			bindRenderInterfaceEnums(lua);
 			bindRenderInterfaceStructures(lua);
 			bindRenderInterfaceObjects(lua);
+			bindGlobalFunctions(lua);
 		}
 	}
 }

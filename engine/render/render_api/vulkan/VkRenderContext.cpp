@@ -1,1398 +1,1492 @@
 #include "VkRenderContext.h"
 
-#include <sstream>
-#include <set>
-
-#include <udetail.hpp>
+#include <VkShaderReflection.h>
 #include <VkCommon.h>
 
-#include <vulkan/vulkan.hpp>
+#include <logger/logger.h>
 
-VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
+#include <unordered_set>
 
+using namespace engine;
 using namespace engine::render;
 using namespace engine::render::vulkan;
 
-void* vk_malloc(void* pUserData, size_t size, size_t alignment, VkSystemAllocationScope allocationScope)
-{
-	void* ptr = malloc(size);
-	memset(ptr, 0, size);
-	return ptr;
-}
-
-void vk_free(void* pUserData, void* pMemory)
-{
-	free(pMemory);
-}
-
-void* vk_realloc(void* pUserData, void* pOriginal, size_t size, size_t alignment, VkSystemAllocationScope allocationScope)
-{
-	return realloc(pOriginal, size);
-}
-
-void vk_malloc_notification(void* pUserData, size_t  size, VkInternalAllocationType allocationType, VkSystemAllocationScope allocationScope)
-{
-}
-
-void vk_free_notification(void* pUserData, size_t size, VkInternalAllocationType  allocationType, VkSystemAllocationScope allocationScope)
-{
-}
-
-uint32_t get_api_version(ERenderApi version)
-{
-	switch (version)
-	{
-	case ERenderApi::eVulkan10:
-		return VK_API_VERSION_1_0;
-	case ERenderApi::eVulkan11:
-		return VK_API_VERSION_1_1;
-	case ERenderApi::eVulkan12:
-		return VK_API_VERSION_1_2;
-	case ERenderApi::eVulkan13:
-		return VK_API_VERSION_1_3;
-	}
-
-	return 0u;
-}
-
-
-VKAPI_ATTR VkBool32 VKAPI_CALL debug_messenger_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
-{
-	switch (messageSeverity)
-	{
-	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT: log_verbose(pCallbackData->pMessage); break;
-	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT: log_info(pCallbackData->pMessage); break;
-	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT: log_warning(pCallbackData->pMessage); break;
-	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:  log_error(pCallbackData->pMessage); break;
-	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT: break;
-	}
-
-	return VK_FALSE;
-}
-
-VKAPI_ATTR vk::Bool32 VKAPI_CALL debug_report_callback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, uint64_t object, size_t location, int32_t messageCode, const char* pLayerPrefix, const char* pMessage, void* pUserData)
-{
-	vk::DebugReportObjectTypeEXT object_type = static_cast<vk::DebugReportObjectTypeEXT>(objectType);
-	auto report_text = std::format("Report[{}:{}:{}]: {}", pLayerPrefix, vk::to_string(object_type), location, pMessage);
-
-	switch (flags)
-	{
-	case VK_DEBUG_REPORT_INFORMATION_BIT_EXT: log_info(report_text); break;
-	case VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT: log_warning(report_text); break;
-	case VK_DEBUG_REPORT_WARNING_BIT_EXT: log_warning(report_text); break;
-	case VK_DEBUG_REPORT_ERROR_BIT_EXT: log_error(report_text); break;
-	case VK_DEBUG_REPORT_DEBUG_BIT_EXT: log_debug(report_text); break;
-	}
-	
-	return VK_FALSE;
-}
-
 CVkRenderContext::~CVkRenderContext()
 {
-	destroyCommandPools();
+	auto& logical_device = m_pContext->getLogicalDevice();
+	logical_device.waitIdle();
 
-	cleanupSwapchain();
-	logicalDevice.handle.destroySwapchainKHR(swapchain.handle, allocationCallbacks);
-	logicalDevice.handle.destroyPipelineCache(pipelineCache, allocationCallbacks);
-	memoryAllocator.destroy();
-	logicalDevice.handle.destroy(allocationCallbacks);
-	vkInstance.destroyDebugUtilsMessengerEXT(debugMessenger, allocationCallbacks);
-	vkInstance.destroyDebugReportCallbackEXT(debugReport, allocationCallbacks);
-	vkInstance.destroySurfaceKHR(vkSurface, allocationCallbacks);
-	vkInstance.destroy(allocationCallbacks);
-
-	if (allocationCallbacks)
+	for (auto& [key, command_buffers] : m_commandBuffers)
 	{
-		delete allocationCallbacks;
-		allocationCallbacks = nullptr;
+		for(auto& command_buffer : command_buffers)
+			m_pContext->destroyCommandBuffer(command_buffer);
+	}
+
+	// Destroy all textures
+	auto& textures = m_pResources->data<FVkTexture>();
+	for (resource_handle_t texture_id = 0ull; texture_id < textures.size(); ++texture_id)
+	{
+		auto& texture_instances = textures.at(texture_id);
+		for (auto& instance : texture_instances)
+		{
+			if (instance.initialData.base.isSwapchainTarget)
+				continue;
+
+			destroyTexture(instance);
+		}
+	}
+
+	// Destroy all shaders
+	auto& shaders = m_pResources->data<FVkShader>();
+	for (resource_handle_t shader_id = 0ull; shader_id < shaders.size(); ++shader_id)
+	{
+		auto& shader_instances = shaders.at(shader_id);
+		for(auto& instance : shader_instances)
+			destroyShader(instance);
 	}
 }
 
 void CVkRenderContext::create(const FRenderContextCreateInfo& context_ci)
 {
-	// Register dispatcher
-	PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr = dynamicLoader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
-	VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
+	m_pContext = std::make_unique<CVkRenderDevice>();
+	m_pContext->create(context_ci);
 
-	// Create allocation callbacks
-	registerAllocationCallbacks();
+	m_pResources = std::make_unique<CResourceContainer>();
+	m_pResources->registerResource<FVkTexture>();
+	m_pResources->registerResource<FVkShader>();
+	m_pResources->registerResource<FVkShaderReflectionData>();
 
-	check_api_result(createInstance(context_ci));
-	VULKAN_HPP_DEFAULT_DISPATCHER.init(vkInstance);
-	createDebugMessanger(context_ci);
+	auto& swapchain = m_pContext->getSwapchain();
 
-	check_api_result(createSurface(context_ci));
-	check_api_result(selectPhysicalDevice(context_ci));
-	prepareRequestedLogicalDeviceFeatures();
-
-	check_api_result(createLogicalDevice(context_ci));
-	VULKAN_HPP_DEFAULT_DISPATCHER.init(logicalDevice.handle);
-
-	createMemoryAllocator(context_ci);
-
-	check_api_result(createPipelineCache(context_ci));
-	check_api_result(createSwapchain(context_ci.initialWidth, context_ci.initialHeight));
-}
-
-FRenderApiErrorInfo CVkRenderContext::createCommandPool(const FVkCommandPoolCreateInfo& command_pool_ci, FVkCommandPool& command_pool)
-{
-	auto& physical_device = getPhysicalDevice();
-
-	const bool async_compute_support = physical_device.compatFlags & PHYSICAL_DEVICE_COMPAT_ASYNC_COMPUTE_FLAG_BIT;
-	const bool async_transfer_support = physical_device.compatFlags & PHYSICAL_DEVICE_COMPAT_ASYNC_TRANSFER_FLAG_BIT;
-
-	const bool is_compute_queue = (command_pool_ci.mask & QUEUE_FAMILY_USAGE_COMPUTE_FLAG_BIT) && async_compute_support;
-	const bool is_transfer_queue = (command_pool_ci.mask & QUEUE_FAMILY_USAGE_TRANSFER_FLAG_BIT) && async_transfer_support;
-
-	command_pool.threadId = command_pool_ci.threadId;
-
-	vk::CommandPoolCreateInfo pool_ci{};
-	pool_ci.flags = vk::CommandPoolCreateFlagBits::eTransient | vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
-
-	uint32_t queue_family_index{ physical_device.queueFamilies.queueToFamily[QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT] };
-	if (is_compute_queue)
-		queue_family_index = physical_device.queueFamilies.queueToFamily[QUEUE_FAMILY_USAGE_COMPUTE_FLAG_BIT];
-	else if(is_transfer_queue)
-		queue_family_index = physical_device.queueFamilies.queueToFamily[QUEUE_FAMILY_USAGE_TRANSFER_FLAG_BIT];
-
-	pool_ci.queueFamilyIndex = queue_family_index;
-
-	vk::Result res = logicalDevice.handle.createCommandPool(&pool_ci, allocationCallbacks, &command_pool.handle);
+	FVkCommandBufferCreateInfo command_buffer_ci{};
+	command_buffer_ci.count = swapchain.framesInFlight;
+	command_buffer_ci.mask = QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT;
+	command_buffer_ci.level = vk::CommandBufferLevel::ePrimary;
 #ifndef BUILD_WITHOUT_DEBUGGIND
-	std::stringstream ss{};
-	ss << command_pool_ci.threadId;
-	debugSetObjectName(command_pool.handle, std::format("{} thread_id {}", command_pool_ci.name, ss.str()));
+	command_buffer_ci.name = "Graphics";
 #endif
 
-	return make_api_error(command_pool.handle.objectType, res, "Failed to create");
+	createCommandBuffer(command_buffer_ci);
 }
 
-void CVkRenderContext::destroyCommandPool(FVkCommandPool& command_pool)
+size_t CVkRenderContext::createTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info)
 {
-	logicalDevice.handle.destroyCommandPool(command_pool.handle, allocationCallbacks);
+	// Create texture handle
+	FVkTextureCreateInfo vk_texture_ci{};
+	vk_texture_ci.base = texture_ci;
+	vk_texture_ci.sampleCount = vk::SampleCountFlagBits::e1;
+	vk_texture_ci.addressMode = vk::SamplerAddressMode::eRepeat;
+	vk_texture_ci.enableAnisotropy = true;
+
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	vk_texture_ci.name = name;
+#endif
+
+	FVkTexture texture{};
+	createTexture(vk_texture_ci, texture);
+
+	auto& upload_data = m_textureUploadInfos.emplace_back(std::move(upload_info));
+	upload_data.textureId = m_pResources->add<FVkTexture>(name.c_str(), std::move(texture));
+
+	return upload_data.textureId;
 }
 
-void CVkRenderContext::destroyUnusedCommandPools()
+size_t CVkRenderContext::createRenderTarget(const std::string& name, const FTextureCreateInfo& texture_ci)
 {
-	for (auto& [queue_type, pools] : commandPools)
+	FVkTextureCreateInfo vk_texture_ci{};
+	vk_texture_ci.base = texture_ci;
+	vk_texture_ci.sampleCount = vk::SampleCountFlagBits::e1;
+	vk_texture_ci.addressMode = vk::SamplerAddressMode::eRepeat;
+
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	vk_texture_ci.name = name;
+#endif
+
+	FVkTexture texture{};
+	texture.isRenderTarget = true;
+
+	createTexture(vk_texture_ci, texture);
+
+	return m_pResources->add<FVkTexture>(name.c_str(), std::move(texture));
+}
+
+size_t CVkRenderContext::createRenderTargets(const std::string& name, const FTextureCreateInfo& texture_ci)
+{
+	auto& swapchain = m_pContext->getSwapchain();
+
+	size_t resource_id{ ~0ull };
+
+	for (uint32_t idx = 0u; idx < swapchain.framesInFlight; ++idx)
 	{
-		for (auto it = pools.begin(); it != pools.end();)
+		if (texture_ci.isSwapchainTarget)
 		{
-			if (it->second.use_count() < 1)
-			{
-				destroyCommandPool(it->second);
-				it = pools.erase(it);
-				continue;
-			}
-			++it;
+			FVkTexture texture{};
+			texture.isRenderTarget = true;
+			texture.initialData.base = texture_ci;
+			texture.image.handle = swapchain.images.at(idx);
+			texture.imageViews.emplace_back(swapchain.imageViews.at(idx));
+
+			resource_id = m_pResources->add<FVkTexture>(name.c_str(), std::move(texture));
 		}
+		else
+			resource_id = createRenderTarget(name, texture_ci);
 	}
+
+	return resource_id;
 }
 
-void CVkRenderContext::destroyCommandPools()
+size_t CVkRenderContext::createShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages)
 {
-	for (auto& [queue_type, pools] : commandPools)
+	const char* shaderEntryPoint{ "main" };
+
+	FVkShader shader{};
+	CVkShaderReflectionBuilder reflection_builder{};
+
+	FVkGraphicsPipelineCreateInfo pipeline_ci{};
+	pipeline_ci.primitiveTopology = get_primitive_topology(shader_ci.primitiveTopology);
+	pipeline_ci.cullMode = get_cull_mode_flags(shader_ci.cullMode);
+	pipeline_ci.frontFace = get_front_face(shader_ci.frontFace);
+
+	// Get color attachment formats
+	auto& textures = m_pResources->data<FVkTexture>();
+	for (auto& attachment : shader_ci.colorAttachments)
 	{
-		for (auto& [thread_id, pool] : pools)
-			destroyCommandPool(pool);
+		auto& texture = textures.at(attachment).at(0);
+		pipeline_ci.colorAttachmentFormats.emplace_back(static_cast<vk::Format>(texture.initialData.base.format));
 	}
 
-	commandPools.clear();
-}
+	// Get depth format
+	if(shader_ci.depthAttachment != invalid_handle)
+	{
+		auto& texture = textures.at(shader_ci.depthAttachment).at(0);
+		pipeline_ci.depthAttachmentFormat = static_cast<vk::Format>(texture.initialData.base.format);
+	}
 
-FRenderApiErrorInfo CVkRenderContext::createCommandBuffer(const FVkCommandBufferCreateInfo& command_buffer_ci, FVkCommandBuffer& command_buffer)
-{
-	auto& command_pool = getCommandPool(command_buffer_ci.mask);
+	// Get stencil format
+	if (shader_ci.stencilAttachment != invalid_handle)
+	{
+		auto& texture = textures.at(shader_ci.stencilAttachment).at(0);
+		pipeline_ci.stencilAttachmentFormat = static_cast<vk::Format>(texture.initialData.base.format);
+	}
 
-	command_buffer.mask = command_buffer_ci.mask;
-	command_buffer.threadId = command_pool.threadId;
+	pipeline_ci.sampleCount = vk::SampleCountFlagBits::e1;
+	pipeline_ci.patchControlPoints = 0;
 
-	vk::CommandBufferAllocateInfo command_buffer_ai{};
-	command_buffer_ai.commandPool = command_pool.handle;
-	command_buffer_ai.level = command_buffer_ci.level;
-	command_buffer_ai.commandBufferCount = command_buffer_ci.count;
+	for (auto& vertex_binding : shader_ci.vertexDeclaration.bindingDescriptions)
+	{
+		auto& description = pipeline_ci.vertexBindingDescriptions.emplace_back();
+		description.binding = vertex_binding.binding;
+		description.stride = vertex_binding.stride;
+		description.inputRate = vk::VertexInputRate::eVertex;
+	}
 
-	command_buffer.handles.resize(command_buffer_ci.count);
+	for (auto& vertex_binding : shader_ci.vertexDeclaration.attributeDescriptions)
+	{
+		auto& description = pipeline_ci.vertexAttributeDescriptions.emplace_back();
+		description.location = vertex_binding.location;
+		description.binding = vertex_binding.binding;
+		description.format = static_cast<vk::Format>(getApiFormat(vertex_binding.format));
+		description.offset = vertex_binding.offset;
+	}
 
-	vk::Result res = logicalDevice.handle.allocateCommandBuffers(&command_buffer_ai, command_buffer.handles.data());
+	// Create shader modules and collect reflection data
+	uint32_t shader_index{ 0u };
+	for (const auto& [stage, code] : shader_stages)
+	{
+		auto shader_stage = get_shader_stage(stage);
+		FVkShaderModuleCreateInfo shader_module_ci{};
+		shader_module_ci.shaderCode = code;
 #ifndef BUILD_WITHOUT_DEBUGGIND
-	for(size_t idx = 0ull; idx < command_buffer.handles.size(); ++idx)
-		debugSetObjectName(command_buffer.handles.at(idx), std::format("{} #{}", command_buffer_ci.name, idx));
+		shader_module_ci.name = std::format("{} stage {} #{}", name, vk::to_string(shader_stage), shader_index);
 #endif
 
-	return make_api_error(vk::ObjectType::eCommandBuffer, res, "Failed to allocate");
+		auto& shader_module = shader.shaderModules.emplace_back();
+		m_pContext->createShaderModule(shader_module_ci, shader_module);
+
+		auto& stage_ci = pipeline_ci.shaderStages.emplace_back();
+		stage_ci.stage = shader_stage;
+		stage_ci.module = shader_module;
+		stage_ci.pName = shaderEntryPoint;
+
+		reflection_builder.addShaderStage(shader_stage, *code);
+		shader_index++;
+	}
+
+	auto reflection = reflection_builder.build();
+
+	// Update shader stage specialization info
+	for (auto& shader_stage : pipeline_ci.shaderStages)
+	{
+		auto found = reflection.specializationConstantStages.find(shader_stage.stage);
+		if (found != reflection.specializationConstantStages.end())
+			shader_stage.pSpecializationInfo = &found->second.info;
+	}
+
+	shader.reflection = m_pResources->add<FVkShaderReflectionData>("", std::move(reflection));
+
+	FVkShaderResourcesInfo resources_info{};
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	resources_info.name = name;
+#endif
+	resources_info.usageCount = shader_ci.usageCount;
+
+	createShaderResources(resources_info, shader);
+
+	pipeline_ci.layout = shader.layout;
+
+	shader.bindPoint = vk::PipelineBindPoint::eGraphics;
+
+	auto& pipeline = shader.handles.emplace_back();
+	m_pContext->createPipeline(pipeline_ci, pipeline);
+
+	return m_pResources->add<FVkShader>(name.c_str(), std::move(shader));
 }
 
-void CVkRenderContext::destroyCommandBuffer(FVkCommandBuffer& command_buffer)
+size_t CVkRenderContext::createShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages)
 {
-	auto& command_pool = getCommandPool(command_buffer.mask, command_buffer.threadId);
-	logicalDevice.handle.freeCommandBuffers(command_pool.handle, command_buffer.handles);
+	const char* shaderEntryPoint{ "main" };
+
+	FVkShader shader{};
+	CVkShaderReflectionBuilder reflection_builder{};
+	std::vector<vk::PipelineShaderStageCreateInfo> pipeline_stages{};
+
+	// Create shader modules and collect reflection data
+	for (size_t idx = 0ull; idx < shader_stages.size(); ++idx)
+	{
+		auto& code = shader_stages.at(idx);
+		FVkShaderModuleCreateInfo shader_module_ci{};
+		shader_module_ci.shaderCode = code.code;
+#ifndef BUILD_WITHOUT_DEBUGGIND
+		shader_module_ci.name = std::format("{} stage {} #{}", name, vk::to_string(vk::ShaderStageFlagBits::eCompute), idx);
+#endif
+
+		auto& shader_module = shader.shaderModules.emplace_back();
+		m_pContext->createShaderModule(shader_module_ci, shader_module);
+
+		auto& stage = pipeline_stages.emplace_back();
+		stage.stage = vk::ShaderStageFlagBits::eCompute;
+		stage.module = shader_module;
+		stage.pName = shaderEntryPoint;
+
+		reflection_builder.addShaderStage(vk::ShaderStageFlagBits::eCompute, *code.code);
+	}
+
+	auto reflection = reflection_builder.build();
+
+	// Update shader stage specialization info
+	for (auto& shader_stage : pipeline_stages)
+	{
+		auto found = reflection.specializationConstantStages.find(shader_stage.stage);
+		if (found != reflection.specializationConstantStages.end())
+			shader_stage.pSpecializationInfo = &found->second.info;
+	}
+
+	shader.reflection = m_pResources->add<FVkShaderReflectionData>("", std::move(reflection));
+
+	FVkShaderResourcesInfo resources_info{};
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	resources_info.name = name;
+#endif
+	resources_info.usageCount = shader_ci.usageCount;
+
+	createShaderResources(resources_info, shader);
+
+	FVkComputePipelineCreateInfo pipeline_ci{};
+	pipeline_ci.layout = shader.layout;
+
+	for (size_t idx = 0ull; idx < pipeline_stages.size(); ++idx)
+	{
+		auto& stage = pipeline_stages.at(idx);
+		pipeline_ci.shaderStage = stage;
+#ifndef BUILD_WITHOUT_DEBUGGIND
+		pipeline_ci.name = std::format("{} #{}", name, idx);
+#endif
+
+		auto& pipeline = shader.handles.emplace_back();
+		m_pContext->createPipeline(pipeline_ci, pipeline);
+	}
+
+	shader.bindPoint = vk::PipelineBindPoint::eCompute;
+
+	return m_pResources->add<FVkShader>(name.c_str(), std::move(shader));
 }
 
-void CVkRenderContext::beginCommandBuffer(FVkCommandBuffer& command_buffer, vk::CommandBufferUsageFlags usage, uint32_t image_index)
+void CVkRenderContext::beginRendering(const FBeginRenderingInfo& rendering_info)
 {
-	if (command_buffer.isRunning)
-		return;
+	// TODO: looks very bad. Maybe remove other method and do all work here?
+	auto& command_buffer = getLastCommandBuffer(rendering_info.queue);
 
-	command_buffer.commandBufferIndex = image_index;
+	auto& textures = m_pResources->data<FVkTexture>();
+	auto& swapchain = m_pContext->getSwapchain();
 
-	vk::CommandBufferBeginInfo begin_info{};
-	begin_info.flags = usage;
+	FVkTranslationInfo translation_info{};
 
-	auto& current_command_buffer_handle = command_buffer.handles.at(command_buffer.commandBufferIndex);
-	current_command_buffer_handle.begin(begin_info);
-	command_buffer.isRunning = true;
+	// Prepare render targets
+	std::vector<vk::RenderingAttachmentInfoKHR> color_attachments{};
+	for (const auto& target_view : rendering_info.colorAttachments)
+	{
+		vk::ClearValue clear_color{ {0.0f, 0.0f, 0.0f, 0.0f} };
+
+		auto& render_target = textures.at(target_view).at(swapchain.currentFrame);
+
+		// Translating render target layout to color attachment
+		FVkTextureTranslationInfo texture_translation_info{};
+		texture_translation_info.oldLayout = vk::ImageLayout::eUndefined;
+		render_target.layout = texture_translation_info.newLayout = vk::ImageLayout::eColorAttachmentOptimal;
+		auto target_layout_translation = get_texture_layout_translation_info(render_target, texture_translation_info);
+		translation_info.imageTranslationInfos.emplace_back(target_layout_translation);
+
+		auto& attachment_info = color_attachments.emplace_back();
+
+		// TODO: here i binding first image view to rendering, 
+		// but it is incorrect, because other image views can be 
+		// mip levels, it means that current code can't draw in mip 
+		// levels or array layers.
+		attachment_info.imageView = render_target.imageViews.front();
+		attachment_info.imageLayout = render_target.layout;
+		attachment_info.resolveMode = vk::ResolveModeFlagBits::eNone;
+		attachment_info.loadOp = vk::AttachmentLoadOp::eClear;
+		attachment_info.storeOp = vk::AttachmentStoreOp::eStore;
+		attachment_info.clearValue = clear_color;
+	}
+
+	// Prepare depth target
+	vk::RenderingAttachmentInfoKHR depth_attachment{};
+	if (rendering_info.depthAttachment != invalid_handle)
+	{
+		vk::ClearValue clear_color{ {0.f, 0u} };
+
+		auto& depth_target = textures.at(rendering_info.depthAttachment).at(swapchain.currentFrame);
+
+		bool is_depth_stencil_attachment = (rendering_info.stencilAttachment == rendering_info.depthAttachment) && rendering_info.stencilAttachment != invalid_handle;
+
+		FVkTextureTranslationInfo texture_translation_info{};
+		texture_translation_info.oldLayout = vk::ImageLayout::eUndefined;
+		depth_target.layout = texture_translation_info.newLayout = is_depth_stencil_attachment ? vk::ImageLayout::eDepthStencilAttachmentOptimal : vk::ImageLayout::eDepthAttachmentOptimal;
+		auto target_layout_translation = get_texture_layout_translation_info(depth_target, texture_translation_info);
+		translation_info.imageTranslationInfos.emplace_back(target_layout_translation);
+
+		depth_attachment.imageView = depth_target.imageViews.front();
+		depth_attachment.imageLayout = depth_target.layout;
+		depth_attachment.resolveMode = vk::ResolveModeFlagBits::eNone;
+		depth_attachment.loadOp = vk::AttachmentLoadOp::eClear;
+		depth_attachment.storeOp = vk::AttachmentStoreOp::eDontCare;
+		depth_attachment.clearValue = clear_color;
+	}
+
+	vk::RenderingAttachmentInfoKHR stencil_attachment{};
+	if (rendering_info.stencilAttachment != rendering_info.depthAttachment && rendering_info.stencilAttachment != invalid_handle)
+	{
+		vk::ClearValue clear_color{ {0.f, 0u} };
+
+		auto& stencil_target = textures.at(rendering_info.stencilAttachment).at(swapchain.currentFrame);
+
+		FVkTextureTranslationInfo texture_translation_info{};
+		texture_translation_info.oldLayout = vk::ImageLayout::eUndefined;
+		stencil_target.layout = texture_translation_info.newLayout = vk::ImageLayout::eStencilAttachmentOptimal;
+		auto target_layout_translation = get_texture_layout_translation_info(stencil_target, texture_translation_info);
+		translation_info.imageTranslationInfos.emplace_back(target_layout_translation);
+
+		stencil_attachment.imageView = stencil_target.imageViews.front();
+		stencil_attachment.imageLayout = stencil_target.layout;
+		stencil_attachment.resolveMode = vk::ResolveModeFlagBits::eNone;
+		stencil_attachment.loadOp = vk::AttachmentLoadOp::eClear;
+		stencil_attachment.storeOp = vk::AttachmentStoreOp::eDontCare;
+		stencil_attachment.clearValue = clear_color;
+	}
+
+	// Translate all render target layouts
+	processMemoryBarriers(command_buffer, translation_info);
+
+	vk::RenderingInfoKHR begin_rendering_info{};
+	begin_rendering_info.renderArea.offset.x = rendering_info.renderArea.offset.x;
+	begin_rendering_info.renderArea.offset.y = rendering_info.renderArea.offset.y;
+	begin_rendering_info.renderArea.extent.width = rendering_info.renderArea.size.x;
+	begin_rendering_info.renderArea.extent.height = rendering_info.renderArea.size.y;
+	begin_rendering_info.colorAttachmentCount = static_cast<uint32_t>(color_attachments.size());
+	begin_rendering_info.pColorAttachments = color_attachments.data();
+	begin_rendering_info.layerCount = 1u;
+
+	if (rendering_info.depthAttachment != invalid_handle)
+	{
+		begin_rendering_info.pDepthAttachment = &depth_attachment;
+
+		auto& depth_target = textures.at(rendering_info.depthAttachment).at(swapchain.currentFrame);
+		if (!is_depth_only_format(static_cast<vk::Format>(depth_target.initialData.base.format)) && rendering_info.stencilAttachment == rendering_info.depthAttachment)
+			begin_rendering_info.pStencilAttachment = &depth_attachment;
+	}
+
+	if (rendering_info.stencilAttachment != invalid_handle)
+		begin_rendering_info.pStencilAttachment = &stencil_attachment;
+
+	auto& current_buffer = command_buffer.get();
+	current_buffer.beginRenderingKHR(begin_rendering_info);
 }
 
-void CVkRenderContext::endCommandBuffer(FVkCommandBuffer& command_buffer)
+void CVkRenderContext::endRendering(const FBeginRenderingInfo& rendering_info)
 {
-	if (!command_buffer.isRunning)
-		return;
-
-	auto& current_command_buffer_handle = command_buffer.handles.at(command_buffer.commandBufferIndex);
-	current_command_buffer_handle.end();
-
-	command_buffer.isRunning = false;
-}
-
-FRenderApiErrorInfo CVkRenderContext::createImage(const FVkImageCreateInfo& image_ci, FVkImage& image)
-{
-	vma::AllocationCreateInfo alloc_ci{};
-	alloc_ci.usage = image_ci.memoryUsage;
+	auto& command_buffer = getLastCommandBuffer(rendering_info.queue);
 	
-	vk::Result res = memoryAllocator.createImage(&image_ci.ci, &alloc_ci, &image.handle, &image.memory, nullptr);
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	debugSetObjectName(image.handle, image_ci.name);
-#endif
-	return make_api_error(image.handle.objectType, res, "Failed to create");
-}
+	auto& textures = m_pResources->data<FVkTexture>();
+	auto& swapchain = m_pContext->getSwapchain();
 
-void CVkRenderContext::destroyImage(FVkImage& image)
-{
-	memoryAllocator.destroyImage(image.handle, image.memory);
-}
+	auto& current_buffer = command_buffer.get();
 
-FRenderApiErrorInfo CVkRenderContext::createImageView(const FVkImageViewCreateInfo& image_view_ci, vk::ImageView& image_view)
-{
-	vk::Result res = logicalDevice.handle.createImageView(&image_view_ci.ci, allocationCallbacks, &image_view);
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	debugSetObjectName(image_view, image_view_ci.name);
-#endif
-	return make_api_error(image_view.objectType, res, "Failed to create");
-}
+	// TODO: REMOVE THIS. JUST FOR TESTING
+	current_buffer.draw(3, 1, 0, 0);
 
-void CVkRenderContext::destroyImageView(vk::ImageView& image_view)
-{
-	logicalDevice.handle.destroyImageView(image_view, allocationCallbacks);
-}
+	current_buffer.endRenderingKHR();
 
-FRenderApiErrorInfo CVkRenderContext::createSampler(const FVkSamplerCreateInfo& sampler_ci, vk::Sampler& sampler)
-{
-	auto& physical_device = getPhysicalDevice();
+	FVkTranslationInfo translation_info{};
 
-	vk::SamplerCreateInfo ci{};
-	ci.magFilter = sampler_ci.magFilter;
-	ci.minFilter = sampler_ci.minFilter;
-	ci.addressModeU = sampler_ci.addressMode;
-	ci.addressModeV = sampler_ci.addressMode;
-	ci.addressModeW = sampler_ci.addressMode;
-	ci.borderColor = vk::BorderColor::eIntOpaqueWhite;
-	ci.unnormalizedCoordinates = VK_FALSE;
-
-	// Anisotropy filtering
-	ci.anisotropyEnable = sampler_ci.enableAnisotropy;
-	ci.maxAnisotropy = physical_device.properties.limits.maxSamplerAnisotropy;
-
-	// Depth
-	ci.compareEnable = sampler_ci.enableCompareOp;
-	ci.compareOp = vk::CompareOp::eLess;
-
-	ci.mipmapMode = vk::SamplerMipmapMode::eNearest;
-	ci.mipLodBias = 0.f;
-	ci.minLod = 0.f;
-	ci.maxLod = static_cast<float>(sampler_ci.mipLevels);
-
-	vk::Result res = logicalDevice.handle.createSampler(&ci, allocationCallbacks, &sampler);
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	debugSetObjectName(sampler, sampler_ci.name);
-#endif
-	return make_api_error(sampler.objectType, res, "Failed to create");
-}
-
-void CVkRenderContext::destroySampler(vk::Sampler& sampler)
-{
-	logicalDevice.handle.destroySampler(sampler, allocationCallbacks);
-}
-
-FRenderApiErrorInfo CVkRenderContext::createBuffer(const FVkBufferCreateInfo& buffer_ci, FVkBuffer& buffer)
-{
-	auto alligned_instance_size = get_alligned_instance_size(buffer_ci.instanceSize, buffer_ci.minOffsetAlignment);
-
-	vk::BufferCreateInfo ci{};
-	buffer.size = ci.size = alligned_instance_size * buffer_ci.instanceCount;
-	ci.usage = buffer_ci.usageFlags;
-	ci.sharingMode = vk::SharingMode::eExclusive;
-
-	vma::AllocationCreateInfo alloc_ci{};
-	alloc_ci.usage = buffer_ci.memoryUsage;
-
-	vk::Result res = memoryAllocator.createBuffer(&ci, &alloc_ci, &buffer.handle, &buffer.memory, nullptr);
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	debugSetObjectName(buffer.handle, buffer_ci.name);
-#endif
-	return make_api_error(buffer.handle.objectType, res, "Failed to create");
-}
-
-void CVkRenderContext::destroyBuffer(FVkBuffer& buffer)
-{
-	unmapBufferMemory(buffer);
-	memoryAllocator.destroyBuffer(buffer.handle, buffer.memory);
-}
-
-FRenderApiErrorInfo CVkRenderContext::mapBufferMemory(FVkBuffer& buffer, void** mappedMemory)
-{
-	if (!buffer.isMapped)
+	for (const auto& target_view : rendering_info.colorAttachments)
 	{
-		vk::Result res = memoryAllocator.mapMemory(buffer.memory, mappedMemory);
-		buffer.isMapped = res == vk::Result::eSuccess;
-		return make_api_error(buffer.handle.objectType, res, "Failed to map buffer memory");
+		auto& render_target = textures.at(target_view).at(swapchain.currentFrame);
+
+		// Translating render target layout to color attachment
+		FVkTextureTranslationInfo texture_translation_info{};
+		texture_translation_info.oldLayout = vk::ImageLayout::eColorAttachmentOptimal;
+		texture_translation_info.newLayout = get_render_target_final_layout(render_target);
+		auto target_layout_translation = get_texture_layout_translation_info(render_target, texture_translation_info);
+		translation_info.imageTranslationInfos.emplace_back(target_layout_translation);
 	}
 
-	return make_api_error(vk::ObjectType::eBuffer, vk::Result::eSuccess);
-}
-
-void CVkRenderContext::unmapBufferMemory(FVkBuffer& buffer)
-{
-	if (buffer.isMapped)
+	if (rendering_info.depthAttachment != invalid_handle)
 	{
-		memoryAllocator.unmapMemory(buffer.memory);
-		buffer.isMapped = false;
-	}
-}
+		auto& depth_target = textures.at(rendering_info.depthAttachment).at(swapchain.currentFrame);
 
-void CVkRenderContext::flushBufferMemory(const FVkBuffer& buffer, vk::DeviceSize size, vk::DeviceSize offset)
-{
-	memoryAllocator.flushAllocation(buffer.memory, size, offset);
-}
+		bool is_depth_stencil_attachment = (rendering_info.stencilAttachment == rendering_info.depthAttachment) && rendering_info.stencilAttachment != invalid_handle;
 
-FRenderApiErrorInfo CVkRenderContext::createDescriptorSetLayout(const FVkDescriptorSetLayoutCreateInfo& layout_ci, vk::DescriptorSetLayout& descriptor_set_layout)
-{
-	vk::DescriptorSetLayoutCreateInfo descriptor_set_layout_ci{};
-	descriptor_set_layout_ci.bindingCount = static_cast<uint32_t>(layout_ci.layoutBindings.size());
-	descriptor_set_layout_ci.pBindings = layout_ci.layoutBindings.data();
-
-	vk::Result res = logicalDevice.handle.createDescriptorSetLayout(&descriptor_set_layout_ci, allocationCallbacks, &descriptor_set_layout);
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	debugSetObjectName(descriptor_set_layout, layout_ci.name);
-#endif
-	return make_api_error(descriptor_set_layout.objectType, res, "Failed to create");
-}
-
-void CVkRenderContext::destroyDescriptorSetLayout(vk::DescriptorSetLayout& descriptor_set_layout)
-{
-	logicalDevice.handle.destroyDescriptorSetLayout(descriptor_set_layout);
-}
-
-FRenderApiErrorInfo CVkRenderContext::createDescriptorPool(const FVkDescriptorPoolCreateInfo& pool_ci, FVkDescriptorPool& descriptor_pool)
-{
-	std::vector<vk::DescriptorPoolSize> pool_sizes{ pool_ci.poolSizes };
-
-	// Calculate total descriptor set count in descriptor pool and update descriptor sizes
-	uint32_t maxSets{ 1u };
-	for (auto& pool_size : pool_sizes)
-	{
-		pool_size.descriptorCount *= swapchain.framesInFlight * pool_ci.usageCount;
-		maxSets += pool_size.descriptorCount;
+		FVkTextureTranslationInfo texture_translation_info{};
+		texture_translation_info.oldLayout = is_depth_stencil_attachment ? vk::ImageLayout::eDepthStencilAttachmentOptimal : vk::ImageLayout::eDepthAttachmentOptimal;
+		texture_translation_info.newLayout = get_render_target_final_layout(depth_target);
+		auto target_layout_translation = get_texture_layout_translation_info(depth_target, texture_translation_info);
+		translation_info.imageTranslationInfos.emplace_back(target_layout_translation);
 	}
 
-	vk::DescriptorPoolCreateInfo descriptor_pool_ci{};
-	descriptor_pool_ci.poolSizeCount = static_cast<uint32_t>(pool_sizes.size());
-	descriptor_pool_ci.pPoolSizes = pool_sizes.data();
-	descriptor_pool_ci.maxSets = maxSets;
-	descriptor_pool_ci.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
-
-	vk::Result res = logicalDevice.handle.createDescriptorPool(&descriptor_pool_ci, allocationCallbacks, &descriptor_pool.handle);
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	debugSetObjectName(descriptor_pool.handle, pool_ci.name);
-#endif
-
-	descriptor_pool.thread_id = std::this_thread::get_id();
-
-	return make_api_error(descriptor_pool.handle.objectType, res, "Failed to create");
-}
-
-FRenderApiErrorInfo CVkRenderContext::growDescriptorPool(const FVkDescriptorPoolCreateInfo& pool_ci, FVkDescriptorPool& descriptor_pool)
-{
-	destroyDescriptorPool(descriptor_pool);
-	return createDescriptorPool(pool_ci, descriptor_pool);
-}
-
-void CVkRenderContext::destroyDescriptorPool(FVkDescriptorPool& descriptor_pool)
-{
-	logicalDevice.handle.destroyDescriptorPool(descriptor_pool.handle, allocationCallbacks);
-}
-
-FRenderApiErrorInfo CVkRenderContext::createDescriptorSet(const FVkDescriptorSetCreateInfo& set_ci, FVkDescriptorSet& descriptor_set)
-{
-	std::vector<vk::DescriptorSetLayout> per_frame_layout(swapchain.framesInFlight, set_ci.layout);
-
-	vk::DescriptorSetAllocateInfo descriptor_ai{};
-	descriptor_ai.descriptorPool = set_ci.pool;;
-	descriptor_ai.descriptorSetCount = static_cast<uint32_t>(per_frame_layout.size());
-	descriptor_ai.pSetLayouts = per_frame_layout.data();
-
-	descriptor_set.handles.resize(swapchain.framesInFlight);
-	vk::Result res = logicalDevice.handle.allocateDescriptorSets(&descriptor_ai, descriptor_set.handles.data());
-
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	for (size_t idx = 0ull; idx < descriptor_set.handles.size(); ++idx)
-		debugSetObjectName(descriptor_set.handles.at(idx), std::format("{} #{}", set_ci.name, idx));
-#endif
-
-	return make_api_error(vk::ObjectType::eDescriptorSet, res, "Failed to allocate");
-}
-
-void CVkRenderContext::destroyDescriptorSet(const FVkDescriptorPool& descriptor_pool, FVkDescriptorSet& descriptor_set)
-{
-	logicalDevice.handle.freeDescriptorSets(descriptor_pool.handle, descriptor_set.handles);
-}
-
-FRenderApiErrorInfo CVkRenderContext::createShaderModule(const FVkShaderModuleCreateInfo& shader_module_ci, vk::ShaderModule& shader_module)
-{
-	vk::ShaderModuleCreateInfo module_ci{};
-	module_ci.codeSize = shader_module_ci.shaderCode->size() * sizeof(uint32_t);
-	module_ci.pCode = shader_module_ci.shaderCode->data();
-
-	vk::Result res = logicalDevice.handle.createShaderModule(&module_ci, allocationCallbacks, &shader_module);
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	debugSetObjectName(shader_module, shader_module_ci.name);
-#endif
-	return make_api_error(shader_module.objectType, res, "Failed to create");
-}
-
-void CVkRenderContext::destroyShaderModule(vk::ShaderModule& shader_module)
-{
-	logicalDevice.handle.destroyShaderModule(shader_module, allocationCallbacks);
-}
-
-FRenderApiErrorInfo CVkRenderContext::createPipelineLayout(const FVkPipelineLayoutCreateInfo& pipeline_layout_ci, vk::PipelineLayout& pipeline_layout)
-{
-	vk::PipelineLayoutCreateInfo layout_ci{};
-	layout_ci.setLayoutCount = static_cast<uint32_t>(pipeline_layout_ci.descriptorSetLayouts.size());
-	layout_ci.pSetLayouts = pipeline_layout_ci.descriptorSetLayouts.data();
-	layout_ci.pushConstantRangeCount = static_cast<uint32_t>(pipeline_layout_ci.pushConstantRanges.size());
-	layout_ci.pPushConstantRanges = pipeline_layout_ci.pushConstantRanges.data();
-	vk::Result res = logicalDevice.handle.createPipelineLayout(&layout_ci, allocationCallbacks, &pipeline_layout);
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	debugSetObjectName(pipeline_layout, pipeline_layout_ci.name);
-#endif
-	return make_api_error(pipeline_layout.objectType, res, "Failed to create");
-}
-
-void CVkRenderContext::destroyPipelineLayout(vk::PipelineLayout& pipeline_layout)
-{
-	logicalDevice.handle.destroyPipelineLayout(pipeline_layout, allocationCallbacks);
-}
-
-FRenderApiErrorInfo CVkRenderContext::createPipeline(const FVkGraphicsPipelineCreateInfo& pipeline_ci, vk::Pipeline& pipeline)
-{
-	vk::PipelineVertexInputStateCreateInfo vertex_input_state{};
-	vertex_input_state.vertexAttributeDescriptionCount = static_cast<uint32_t>(pipeline_ci.vertexAttributeDescriptions.size());
-	vertex_input_state.pVertexAttributeDescriptions = pipeline_ci.vertexAttributeDescriptions.data();
-	vertex_input_state.vertexBindingDescriptionCount = static_cast<uint32_t>(pipeline_ci.vertexBindingDescriptions.size());
-	vertex_input_state.pVertexBindingDescriptions = pipeline_ci.vertexBindingDescriptions.data();
-
-	std::vector<vk::PipelineColorBlendAttachmentState> color_blend_attachment_states{};
-	for (uint32_t idx = 0u; idx < pipeline_ci.colorAttachmentFormats.size(); ++idx)
+	if (rendering_info.stencilAttachment != invalid_handle && rendering_info.depthAttachment != rendering_info.stencilAttachment)
 	{
-		auto& state = color_blend_attachment_states.emplace_back();
+		auto& stencil_target = textures.at(rendering_info.stencilAttachment).at(swapchain.currentFrame);;
 
-		state.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
-		state.blendEnable = false; // TODO: add color blending support
-
-		state.srcColorBlendFactor = vk::BlendFactor::eSrcAlpha;
-		state.dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
-		state.colorBlendOp = vk::BlendOp::eAdd;
-		state.srcAlphaBlendFactor = vk::BlendFactor::eOne;
-		state.dstAlphaBlendFactor = vk::BlendFactor::eZero;
-		state.alphaBlendOp = vk::BlendOp::eAdd;
+		FVkTextureTranslationInfo texture_translation_info{};
+		texture_translation_info.oldLayout = vk::ImageLayout::eStencilAttachmentOptimal;
+		texture_translation_info.newLayout = get_render_target_final_layout(stencil_target);
+		auto target_layout_translation = get_texture_layout_translation_info(stencil_target, texture_translation_info);
+		translation_info.imageTranslationInfos.emplace_back(target_layout_translation);
 	}
 
-	vk::PipelineInputAssemblyStateCreateInfo input_assembly{};
-	input_assembly.topology = pipeline_ci.primitiveTopology;
-	input_assembly.primitiveRestartEnable = false;
+	// Translate all render target layouts
+	processMemoryBarriers(command_buffer, translation_info);
+}
 
-	vk::PipelineRasterizationStateCreateInfo rasterization_state{};
-	rasterization_state.depthClampEnable = false;
-	rasterization_state.rasterizerDiscardEnable = false;
-	rasterization_state.polygonMode = vk::PolygonMode::eFill;
-	rasterization_state.lineWidth = 1.0f;
-	rasterization_state.cullMode = pipeline_ci.cullMode;
-	rasterization_state.frontFace = pipeline_ci.frontFace;
-	rasterization_state.depthBiasEnable = false;
-
-	vk::PipelineMultisampleStateCreateInfo multisample_state{};
-	multisample_state.rasterizationSamples = pipeline_ci.sampleCount;
-
-	vk::PipelineColorBlendStateCreateInfo color_blending_state{};
-	color_blending_state.logicOpEnable = false;
-	color_blending_state.logicOp = vk::LogicOp::eCopy;
-	color_blending_state.attachmentCount = static_cast<uint32_t>(color_blend_attachment_states.size());
-	color_blending_state.pAttachments = color_blend_attachment_states.data();
-
-	vk::PipelineDepthStencilStateCreateInfo depth_stencil_state{};
-	depth_stencil_state.depthTestEnable = pipeline_ci.depthAttachmentFormat != vk::Format::eUndefined;
-	depth_stencil_state.depthWriteEnable = pipeline_ci.depthAttachmentFormat != vk::Format::eUndefined;
-	depth_stencil_state.depthCompareOp = vk::CompareOp::eLessOrEqual;
-	depth_stencil_state.back.compareOp = vk::CompareOp::eAlways;
-	depth_stencil_state.depthBoundsTestEnable = false;
-	depth_stencil_state.stencilTestEnable = false;
-
-	std::vector<vk::DynamicState> dynamic_states{ vk::DynamicState::eViewport, vk::DynamicState::eScissor };
-
-	vk::PipelineDynamicStateCreateInfo dynamic_state{};
-	dynamic_state.pDynamicStates = dynamic_states.data();
-	dynamic_state.dynamicStateCount = static_cast<uint32_t>(dynamic_states.size());
-
-	vk::PipelineViewportStateCreateInfo viewport_state{};
-	viewport_state.viewportCount = 1u;
-	viewport_state.scissorCount = 1u;
-
-	vk::PipelineTessellationStateCreateInfo tessellation_state{};
-	tessellation_state.patchControlPoints = pipeline_ci.patchControlPoints;
-
-	auto enableTessellation = pipeline_ci.primitiveTopology == vk::PrimitiveTopology::ePatchList;
-
-	// VK_KHR_dynamic_rendering
-	vk::PipelineRenderingCreateInfoKHR rendering_ci{};
-	rendering_ci.colorAttachmentCount = static_cast<uint32_t>(pipeline_ci.colorAttachmentFormats.size());
-	rendering_ci.pColorAttachmentFormats = pipeline_ci.colorAttachmentFormats.data();
-	if (pipeline_ci.depthAttachmentFormat != vk::Format::eUndefined)
+void CVkRenderContext::processMemoryBarriers(const FVkCommandBuffer& command_buffer, const FVkTranslationInfo& translation_info)
+{
+	std::vector<vk::ImageMemoryBarrier2KHR> image_barriers{};
+	for (const auto& image_info : translation_info.imageTranslationInfos)
 	{
-		rendering_ci.depthAttachmentFormat = pipeline_ci.depthAttachmentFormat;
-		if (!is_depth_only_format(pipeline_ci.depthAttachmentFormat))
-			rendering_ci.stencilAttachmentFormat = pipeline_ci.depthAttachmentFormat;
+		auto& image_barrier = image_barriers.emplace_back();
+
+		// Translate from
+		image_barrier.srcStageMask = image_info.srcStageMask;
+		image_barrier.srcAccessMask = image_info.srcAccessMask;
+		image_barrier.oldLayout = image_info.oldLayout;
+		image_barrier.srcQueueFamilyIndex = image_info.srcQueueFamilyIndex;
+
+		// Translate to
+		image_barrier.dstStageMask = image_info.dstStageMask;
+		image_barrier.dstAccessMask = image_info.dstAccessMask;
+		image_barrier.newLayout = image_info.newLayout;
+		image_barrier.dstQueueFamilyIndex = image_info.dstQueueFamilyIndex;
+
+		image_barrier.image = image_info.handle;
+		image_barrier.subresourceRange = image_info.subresourceRange;
 	}
 
-	vk::GraphicsPipelineCreateInfo graphics_pipeline_ci{};
-	graphics_pipeline_ci.stageCount = static_cast<uint32_t>(pipeline_ci.shaderStages.size());
-	graphics_pipeline_ci.pStages = pipeline_ci.shaderStages.data();
-	graphics_pipeline_ci.pVertexInputState = &vertex_input_state;
-	graphics_pipeline_ci.pInputAssemblyState = &input_assembly;
-	graphics_pipeline_ci.pViewportState = &viewport_state;
-	graphics_pipeline_ci.pRasterizationState = &rasterization_state;
-	graphics_pipeline_ci.pMultisampleState = &multisample_state;
-	graphics_pipeline_ci.pColorBlendState = &color_blending_state;
-	graphics_pipeline_ci.pDepthStencilState = &depth_stencil_state;
-	graphics_pipeline_ci.layout = pipeline_ci.layout;
-	graphics_pipeline_ci.renderPass = nullptr;
-	graphics_pipeline_ci.subpass = 0;
-	graphics_pipeline_ci.basePipelineHandle = nullptr;
-	graphics_pipeline_ci.pDynamicState = &dynamic_state;
-	graphics_pipeline_ci.pTessellationState = (enableTessellation ? &tessellation_state : nullptr);
-	graphics_pipeline_ci.pNext = &rendering_ci;
-
-	vk::Result res = logicalDevice.handle.createGraphicsPipelines(pipelineCache, 1u, &graphics_pipeline_ci, allocationCallbacks, &pipeline);
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	debugSetObjectName(pipeline, pipeline_ci.name);
-#endif
-	return make_api_error(pipeline.objectType, res, "Failed to create");
-}
-
-FRenderApiErrorInfo CVkRenderContext::createPipeline(const FVkComputePipelineCreateInfo& pipeline_ci, vk::Pipeline& pipeline)
-{
-	vk::ComputePipelineCreateInfo compute_pipeline_ci{};
-	compute_pipeline_ci.stage = pipeline_ci.shaderStage;
-	compute_pipeline_ci.layout = pipeline_ci.layout;
-	compute_pipeline_ci.basePipelineHandle = nullptr;
-	compute_pipeline_ci.basePipelineIndex = -1;
-
-	vk::Result res = logicalDevice.handle.createComputePipelines(pipelineCache, 1u, &compute_pipeline_ci, allocationCallbacks, &pipeline);
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	debugSetObjectName(pipeline, pipeline_ci.name);
-#endif
-	return make_api_error(pipeline.objectType, res, "Failed to create");
-}
-
-void CVkRenderContext::destroyPipeline(vk::Pipeline& pipeline)
-{
-	logicalDevice.handle.destroyPipeline(pipeline, allocationCallbacks);
-}
-
-FRenderApiErrorInfo CVkRenderContext::createSemaphore(const FVkSemaphoreCreateInfo& semaphore_ci, vk::Semaphore& semaphore)
-{
-	vk::Result res = logicalDevice.handle.createSemaphore(&semaphore_ci.ci, allocationCallbacks, &semaphore);
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	debugSetObjectName(semaphore, semaphore_ci.name);
-#endif
-	return make_api_error(semaphore.objectType, res, "Failed to create");
-}
-
-FRenderApiErrorInfo CVkRenderContext::createFence(const FVkFenceCreateInfo& fence_ci, vk::Fence& fence)
-{
-	vk::Result res = logicalDevice.handle.createFence(&fence_ci.ci, allocationCallbacks, &fence);
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	debugSetObjectName(fence, fence_ci.name);
-#endif
-	return make_api_error(fence.objectType, res, "Failed to create");
-}
-
-void CVkRenderContext::submitCommandBuffer(const FVkCommandBuffer& command_buffer)
-{
-	vk::SubmitInfo submitInfo{};
-	submitInfo.commandBufferCount = static_cast<uint32_t>(command_buffer.handles.size());
-	submitInfo.pCommandBuffers = command_buffer.handles.data();
-
-	FVkFenceCreateInfo fence_ci{};
-	vk::Fence fence{};
-	createFence(fence_ci, fence);
-
-	logicalDevice.handle.resetFences(1, &fence);
-
-	auto& queue = getQueue(command_buffer.mask);
-	queue.submit(submitInfo, fence);
-	logicalDevice.handle.waitForFences(1, &fence, VK_TRUE, (std::numeric_limits<uint64_t>::max)());
-	logicalDevice.handle.destroyFence(fence, allocationCallbacks);
-}
-
-vk::Result CVkRenderContext::present(FVkCommandBuffer& command_buffer)
-{
-	vk::Result res = logicalDevice.handle.resetFences(1, &swapchain.inFlightFences.at(swapchain.currentFrame));
-	check_api_result(make_api_error(vk::ObjectType::eFence, res, "Failed to reset"));
-
-	try
+	std::vector<vk::BufferMemoryBarrier2KHR> buffer_barriers{};
+	for (const auto& buffer_info : translation_info.bufferTranslationInfos)
 	{
-		auto& queue = getQueue(command_buffer.mask);
+		auto& buffer_barrier = buffer_barriers.emplace_back();
 
-		vk::SubmitInfo2 submit_info{};
+		buffer_barrier.srcStageMask = buffer_info.srcStageMask;
+		buffer_barrier.srcAccessMask = buffer_info.srcAccessMask;
+		buffer_barrier.srcQueueFamilyIndex = buffer_info.srcQueueFamilyIndex;
 
-		vk::SemaphoreSubmitInfo semaphore_si{};
-		semaphore_si.semaphore = swapchain.imageAvaliableSemaphores[swapchain.currentFrame];
-		semaphore_si.stageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
+		buffer_barrier.dstStageMask = buffer_info.dstStageMask;
+		buffer_barrier.dstAccessMask = buffer_info.dstAccessMask;
+		buffer_barrier.dstQueueFamilyIndex = buffer_info.dstQueueFamilyIndex;
 
-		submit_info.pWaitSemaphoreInfos = &semaphore_si;
-		submit_info.waitSemaphoreInfoCount = 1;
-
-		vk::SemaphoreSubmitInfo signal_si{};
-		signal_si.semaphore = swapchain.renderFinishedSemaphores[swapchain.currentFrame];
-		signal_si.stageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
-
-		submit_info.pSignalSemaphoreInfos = &signal_si;
-		submit_info.signalSemaphoreInfoCount = 1;
-
-		auto& current_command_buffer = command_buffer.handles.at(command_buffer.commandBufferIndex);
-
-		vk::CommandBufferSubmitInfo command_buffer_si{};
-		command_buffer_si.commandBuffer = current_command_buffer;
-
-		submit_info.pCommandBufferInfos = &command_buffer_si;
-		submit_info.commandBufferInfoCount = 1;
-
-		queue.submit2(submit_info, swapchain.inFlightFences.at(swapchain.currentFrame));
-	}
-	catch (vk::SystemError error)
-	{
-		log_error("failed to submit draw command buffer!");
+		buffer_barrier.buffer = buffer_info.handle;
+		buffer_barrier.size = buffer_info.size;
+		buffer_barrier.offset = buffer_info.offset;
 	}
 
-	vk::PresentInfoKHR present_info = {};
-	present_info.waitSemaphoreCount = 1;
-	present_info.pWaitSemaphores = &swapchain.renderFinishedSemaphores[swapchain.currentFrame];
-
-	vk::SwapchainKHR swap_chains[] = { swapchain.handle };
-	present_info.swapchainCount = 1;
-	present_info.pSwapchains = swap_chains;
-	present_info.pImageIndices = &swapchain.currentFrame;
-
-	auto& present_queue = getQueue(QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT);
-	res = present_queue.presentKHR(present_info);
-	check_api_result(make_api_error(vk::ObjectType::eQueue, res, "Failed to present"));
-
-	res = logicalDevice.handle.waitForFences(1, &swapchain.inFlightFences[swapchain.currentFrame], VK_TRUE, (std::numeric_limits<uint64_t>::max)());
-	swapchain.currentFrame = (swapchain.currentFrame + 1) % swapchain.framesInFlight;
-
-	return res;
-}
-
-vk::Result CVkRenderContext::acquireNextImage(uint32_t& image_index)
-{
-	return logicalDevice.handle.acquireNextImageKHR(swapchain.handle, (std::numeric_limits<uint64_t>::max)(), swapchain.imageAvaliableSemaphores[swapchain.currentFrame], nullptr, &image_index);
-}
-
-void CVkRenderContext::debugBeginLabel(vk::CommandBuffer& command_buffer, const std::string& name, uint32_t color)
-{
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	command_buffer.beginDebugUtilsLabelEXT(make_debug_label(name.c_str(), color));
-#endif
-}
-
-void CVkRenderContext::debugInsertLabel(vk::CommandBuffer& command_buffer, const std::string& name, uint32_t color)
-{
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	command_buffer.insertDebugUtilsLabelEXT(make_debug_label(name.c_str(), color));
-#endif
-}
-
-void CVkRenderContext::endLabel(vk::CommandBuffer& command_buffer)
-{
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	command_buffer.endDebugUtilsLabelEXT();
-#endif
-}
-
-void CVkRenderContext::debugBeginLabel(vk::Queue& queue, const std::string& name, uint32_t color)
-{
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	queue.beginDebugUtilsLabelEXT(make_debug_label(name.c_str(), color));
-#endif
-}
-
-void CVkRenderContext::debugInsertLabel(vk::Queue& queue, const std::string& name, uint32_t color)
-{
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	queue.insertDebugUtilsLabelEXT(make_debug_label(name.c_str(), color));
-#endif
-}
-
-void CVkRenderContext::endLabel(vk::Queue& queue)
-{
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	queue.endDebugUtilsLabelEXT();
-#endif
-}
-
-vk::Format CVkRenderContext::findSupportedFormat(const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features)
-{
-	auto& phusical_device = getPhysicalDevice();
-
-	for (const auto& candidate : candidates)
+	std::vector<vk::MemoryBarrier2KHR> memory_barriers{};
+	for (const auto& memory_info : translation_info.memoryTranslationInfos)
 	{
-		vk::FormatProperties format_properties;
-		phusical_device.handle.getFormatProperties(candidate, &format_properties);
+		auto& memory_barrier = memory_barriers.emplace_back();
 
-		if (tiling == vk::ImageTiling::eLinear && (format_properties.linearTilingFeatures & features) == features)
-			return candidate;
-		else if (tiling == vk::ImageTiling::eOptimal && (format_properties.optimalTilingFeatures & features) == features)
-			return candidate;
+		memory_barrier.srcStageMask = memory_info.srcStageMask;
+		memory_barrier.srcAccessMask = memory_info.srcAccessMask;
+
+		memory_barrier.dstStageMask = memory_info.dstStageMask;
+		memory_barrier.dstAccessMask = memory_info.dstAccessMask;
 	}
 
-	return vk::Format::eUndefined;
+	vk::DependencyInfoKHR dependency_info{};
+	dependency_info.imageMemoryBarrierCount = static_cast<uint32_t>(image_barriers.size());
+	dependency_info.pImageMemoryBarriers = image_barriers.data();
+	dependency_info.bufferMemoryBarrierCount = static_cast<uint32_t>(buffer_barriers.size());
+	dependency_info.pBufferMemoryBarriers = buffer_barriers.data();
+	dependency_info.memoryBarrierCount = static_cast<uint32_t>(memory_barriers.size());
+	dependency_info.pMemoryBarriers = memory_barriers.data();
+	dependency_info.dependencyFlags = vk::DependencyFlagBits::eByRegion;
+
+	auto& current_buffer = command_buffer.get();
+	current_buffer.pipelineBarrier2KHR(dependency_info);
 }
 
-const vk::DynamicLoader& CVkRenderContext::getDynamicLoader() const
+void CVkRenderContext::setViewport(float width, float height, bool flip_viewport)
 {
-	return dynamicLoader;
-}
-
-const vk::AllocationCallbacks* CVkRenderContext::getAllocationCallbacks() const
-{
-	return allocationCallbacks;
-}
-
-const vk::Instance& CVkRenderContext::getInstance() const
-{
-	return vkInstance;
-}
-
-const vk::DebugUtilsMessengerEXT& CVkRenderContext::getDebugMessanger() const
-{
-	return debugMessenger;
-}
-
-const vk::DebugReportCallbackEXT& CVkRenderContext::getDebugReport() const
-{
-	return debugReport;
-}
-
-const vk::SurfaceKHR& CVkRenderContext::getSurface() const
-{
-	return vkSurface;
-}
-
-FVkPhysicalDevice& CVkRenderContext::getPhysicalDevice()
-{
-	return physicalDevices.at(selectedPhysicalDevice);
-}
-
-const vk::SampleCountFlagBits CVkRenderContext::getMultisamplingCount() const
-{
-	return requiredSampleCount;
-}
-
-vk::Device& CVkRenderContext::getLogicalDevice()
-{
-	return logicalDevice.handle;
-}
-
-vk::Queue& CVkRenderContext::getQueue(uint32_t flag)
-{
-	auto& physical_device = getPhysicalDevice();
-
-	const bool async_compute_support = physical_device.compatFlags & PHYSICAL_DEVICE_COMPAT_ASYNC_COMPUTE_FLAG_BIT;
-	const bool async_transfer_support = physical_device.compatFlags & PHYSICAL_DEVICE_COMPAT_ASYNC_TRANSFER_FLAG_BIT;
-
-	const bool is_present_queue = (flag & QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT);
-	const bool is_compute_queue = (flag & QUEUE_FAMILY_USAGE_COMPUTE_FLAG_BIT) && async_compute_support;
-	const bool is_transfer_queue = (flag & QUEUE_FAMILY_USAGE_TRANSFER_FLAG_BIT) && async_transfer_support;
-
-	// Code can require compute or transfer queue, but device might not support it. It means that we will use graphics as default.
-	uint32_t selected_queue_type{ QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT };
-	if (is_present_queue)
-		selected_queue_type = QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT;
-	else if (is_compute_queue)
-		selected_queue_type = QUEUE_FAMILY_USAGE_COMPUTE_FLAG_BIT;
-	else if (is_transfer_queue)
-		selected_queue_type = QUEUE_FAMILY_USAGE_TRANSFER_FLAG_BIT;
-	
-	return logicalDevice.queues[selected_queue_type];
-}
-
-vma::Allocator& CVkRenderContext::getMemoryAllocator()
-{
-	return memoryAllocator;
-}
-
-const vk::PipelineCache& CVkRenderContext::getPipelineCache() const
-{
-	return pipelineCache;
-}
-
-std::vector<char> CVkRenderContext::getPipelineCacheData() const
-{
-	std::vector<char> pipeline_cache_data{};
-
-	size_t data_size{ 0ull };
-	void* data_ptr{ nullptr };
-	vk::Result res = logicalDevice.handle.getPipelineCacheData(pipelineCache, &data_size, data_ptr);
-
-	if (res == vk::Result::eSuccess)
+	vk::Viewport viewport{};
+	if (flip_viewport)
 	{
-		pipeline_cache_data.resize(data_size);
-		std::memcpy(pipeline_cache_data.data(), data_ptr, data_size);
-	}
-
-	return pipeline_cache_data;
-}
-
-const FSwapchain& CVkRenderContext::getSwapchain() const
-{
-	return swapchain;
-}
-
-const FVkCommandPool& CVkRenderContext::getCommandPool(uint32_t mask, const std::thread::id& thread_id)
-{
-	auto found_it = commandPools.find(mask);
-	if (found_it != commandPools.end())
-	{
-		auto thread_it = found_it->second.find(thread_id);
-		if (thread_it != found_it->second.end())
-			return thread_it->second;
-	}
-
-	auto& new_pool = commandPools[mask];
-
-	FVkCommandPoolCreateInfo pool_ci{};
-	pool_ci.mask = mask;
-	pool_ci.threadId = thread_id;
-
-	auto& pool = new_pool[thread_id];
-	check_api_result(createCommandPool(pool_ci, pool));
-	return new_pool[thread_id];
-}
-
-void CVkRenderContext::registerAllocationCallbacks()
-{
-	allocationCallbacks = new vk::AllocationCallbacks();
-	memset(allocationCallbacks, 0, sizeof(vk::AllocationCallbacks));
-
-	allocationCallbacks->pfnAllocation = (PFN_vkAllocationFunction)(&vk_malloc);
-	allocationCallbacks->pfnReallocation = (PFN_vkReallocationFunction)(&vk_realloc);
-	allocationCallbacks->pfnFree = (PFN_vkFreeFunction)(&vk_free);
-	allocationCallbacks->pfnInternalAllocation = (PFN_vkInternalAllocationNotification)(&vk_malloc_notification);
-	allocationCallbacks->pfnInternalFree = (PFN_vkInternalFreeNotification)(&vk_free_notification);
-}
-
-FRenderApiErrorInfo CVkRenderContext::createInstance(const FRenderContextCreateInfo& context_ci)
-{
-	// Load instance layer props
-	auto layer_props = vk::enumerateInstanceLayerProperties();
-	for (auto& layer : layer_props)
-		avaliableLayers.push_back(layer.layerName);
-
-	if (context_ci.validationState && !check_contains_all(context_ci.validationLayers, avaliableLayers))
-		return make_api_error(vk::ObjectType::eInstance, vk::Result::eErrorUnknown, "Some validation layers is not supported");
-
-	vk::ApplicationInfo app_info{};
-	app_info.applicationVersion = app_info.engineVersion = app_info.apiVersion = get_api_version(context_ci.apiVersion);
-	app_info.pApplicationName = app_info.pEngineName = context_ci.appName.c_str();
-
-	auto instance_extensions = get_instance_extension_names();
-
-	vk::InstanceCreateInfo instance_ci{};
-	instance_ci.pApplicationInfo = &app_info;
-	instance_ci.enabledExtensionCount = static_cast<uint32_t>(instance_extensions.size());
-	instance_ci.ppEnabledExtensionNames = instance_extensions.data();
-
-	// Apply validation features
-	std::vector<vk::ValidationFeatureEnableEXT> feature_enables{};
-	vk::ValidationFeaturesEXT validation_features{};
-
-	if (context_ci.validationFeatures & GPU_ASSISTED_FLAG_BIT)
-		feature_enables.emplace_back(vk::ValidationFeatureEnableEXT::eGpuAssisted);
-	if (context_ci.validationFeatures & GPU_ASSISTED_RESERVE_BINDING_SLOT_FLAG_BIT)
-		feature_enables.emplace_back(vk::ValidationFeatureEnableEXT::eGpuAssistedReserveBindingSlot);
-	if (context_ci.validationFeatures & BEST_PRACTICE_FLAG_BIT)
-		feature_enables.emplace_back(vk::ValidationFeatureEnableEXT::eBestPractices);
-	if (context_ci.validationFeatures & DEBUG_PRINTF_FLAG_BIT)
-		feature_enables.emplace_back(vk::ValidationFeatureEnableEXT::eDebugPrintf);
-	if (context_ci.validationFeatures & SYNCHRONIZATION_VALIDATION_FLAG_BIT)
-		feature_enables.emplace_back(vk::ValidationFeatureEnableEXT::eSynchronizationValidation);
-
-	validation_features.enabledValidationFeatureCount = static_cast<uint32_t>(feature_enables.size());
-	validation_features.pEnabledValidationFeatures = feature_enables.data();
-
-	std::vector<const char*> layer_names{};
-	for (auto& layer_name : context_ci.validationLayers)
-		layer_names.emplace_back(layer_name.c_str());
-
-	if (context_ci.validationState)
-	{
-		instance_ci.enabledLayerCount = static_cast<uint32_t>(layer_names.size());
-		instance_ci.ppEnabledLayerNames = layer_names.data();
-		instance_ci.pNext = &validation_features;
-	}
-	return make_api_error(vk::ObjectType::eInstance, vk::createInstance(&instance_ci, allocationCallbacks, &vkInstance), "Failed to create");
-}
-
-void CVkRenderContext::createDebugMessanger(const FRenderContextCreateInfo& context_ci)
-{
-	if (context_ci.validationState)
-	{
-		vk::DebugUtilsMessengerCreateInfoEXT debug_messenger_ci{};
-		debug_messenger_ci.flags = vk::DebugUtilsMessengerCreateFlagsEXT();
-		debug_messenger_ci.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
-		debug_messenger_ci.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance;
-		debug_messenger_ci.pfnUserCallback = &debug_messenger_callback;
-		debug_messenger_ci.pUserData = this;
-
-		debugMessenger = vkInstance.createDebugUtilsMessengerEXT(debug_messenger_ci, allocationCallbacks);
-
-		vk::DebugReportCallbackCreateInfoEXT debug_report_ci{};
-		debug_report_ci.flags = vk::DebugReportFlagBitsEXT::eWarning | vk::DebugReportFlagBitsEXT::eError;
-		debug_report_ci.pfnCallback = &debug_report_callback;
-		debug_report_ci.pUserData = this;
-
-		debugReport = vkInstance.createDebugReportCallbackEXT(debug_report_ci, allocationCallbacks);
-	}
-}
-
-FRenderApiErrorInfo CVkRenderContext::createSurface(const FRenderContextCreateInfo& context_ci)
-{
-	vk::Result result{ vk::Result::eErrorUnknown };
-#if defined( VK_USE_PLATFORM_WIN32_KHR )
-	vk::Win32SurfaceCreateInfoKHR surface_ci{};
-	surface_ci.hinstance = context_ci.hinstance;
-	surface_ci.hwnd = context_ci.hwnd;
-	
-	result = vkInstance.createWin32SurfaceKHR(&surface_ci, allocationCallbacks, &vkSurface);
-#else
-#endif;
-	return make_api_error(vk::ObjectType::eSurfaceKHR, result, "Failed to create");
-}
-
-void CVkRenderContext::selectQueueFamilies(FVkPhysicalDevice& device_info)
-{
-	std::unordered_map<uint32_t, vk::QueueFamilyProperties> family_properties{};
-
-	auto& physical_device = device_info.handle;
-	auto& families_info = device_info.queueFamilies;
-	auto& family_usages = families_info.familyUsages;
-
-	{
-		auto family_props = physical_device.getQueueFamilyProperties();
-		for (uint32_t index = 0u; index < family_props.size(); ++index)
-			family_properties[index] = family_props.at(index);
-	}
-
-	auto is_family_queues_enought = [&family_usages](uint32_t index, const vk::QueueFamilyProperties& prop) -> bool { return family_usages[index] < prop.queueCount; };
-	auto is_family_selected = [&families_info](uint32_t mask) -> bool { return families_info.queueMask & mask; };
-	auto apply_family_usage = [&families_info](uint32_t index, uint32_t mask) -> void { families_info.queueToFamily[mask] = index; families_info.queueMask |= mask; families_info.familyUsages[index]++; };
-	
-	for (auto& [index, prop] : family_properties)
-	{
-		const bool has_graphics_bit = static_cast<bool>(prop.queueFlags & vk::QueueFlagBits::eGraphics);
-		const bool has_compute_bit = static_cast<bool>(prop.queueFlags & vk::QueueFlagBits::eCompute);
-		const bool has_transfer_bit = static_cast<bool>(prop.queueFlags & vk::QueueFlagBits::eTransfer);
-		const bool has_present_bit = physical_device.getSurfaceSupportKHR(index, vkSurface);
-
-		const bool is_present_only = has_present_bit && !(has_graphics_bit || has_compute_bit || has_transfer_bit);
-		const bool is_compute_compat = has_compute_bit && !has_graphics_bit;
-		const bool is_transfer_only = has_transfer_bit && !has_compute_bit && !has_graphics_bit;
-
-		// Looking for present family
-		if (is_present_only && !is_family_selected(QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT) && is_family_queues_enought(index, prop))
-			apply_family_usage(index, QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT);
-
-		// Looking for suitable graphics family
-		if (has_graphics_bit && !is_family_selected(QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT) && is_family_queues_enought(index, prop))
-			apply_family_usage(index, QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT);
-
-		// Looking for compute only family
-		if (is_compute_compat && !is_family_selected(QUEUE_FAMILY_USAGE_COMPUTE_FLAG_BIT) && is_family_queues_enought(index, prop))
-			apply_family_usage(index, QUEUE_FAMILY_USAGE_COMPUTE_FLAG_BIT);
-
-		// Looking for transfer only family
-		if (is_transfer_only && !is_family_selected(QUEUE_FAMILY_USAGE_TRANSFER_FLAG_BIT) && is_family_queues_enought(index, prop))
-			apply_family_usage(index, QUEUE_FAMILY_USAGE_TRANSFER_FLAG_BIT);
-	}
-
-	// Try to find compute and transfer family if not found
-	for (auto& [index, prop] : family_properties)
-	{
-		const bool has_compute_bit = static_cast<bool>(prop.queueFlags & vk::QueueFlagBits::eCompute);
-		const bool has_transfer_bit = static_cast<bool>(prop.queueFlags & vk::QueueFlagBits::eTransfer);
-		const bool has_present_bit = physical_device.getSurfaceSupportKHR(index, vkSurface);
-
-		if (has_present_bit && !is_family_selected(QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT) && is_family_queues_enought(index, prop))
-			apply_family_usage(index, QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT);
-
-		if (has_compute_bit && !is_family_selected(QUEUE_FAMILY_USAGE_COMPUTE_FLAG_BIT) && is_family_queues_enought(index, prop))
-			apply_family_usage(index, QUEUE_FAMILY_USAGE_COMPUTE_FLAG_BIT);
-
-		if (has_transfer_bit && !is_family_selected(QUEUE_FAMILY_USAGE_TRANSFER_FLAG_BIT) && is_family_queues_enought(index, prop))
-			apply_family_usage(index, QUEUE_FAMILY_USAGE_TRANSFER_FLAG_BIT);
-	}
-
-	if ((families_info.queueMask & QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT) && (families_info.queueMask & QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT))
-		device_info.compatFlags |= PHYSICAL_DEVICE_COMPAT_BETTER_THEN_NOTHING_FLAG_BIT;
-
-	if (families_info.queueMask & QUEUE_FAMILY_USAGE_COMPUTE_FLAG_BIT)
-		device_info.compatFlags |= PHYSICAL_DEVICE_COMPAT_ASYNC_COMPUTE_FLAG_BIT;
-
-	if (families_info.queueMask & QUEUE_FAMILY_USAGE_TRANSFER_FLAG_BIT)
-		device_info.compatFlags |= PHYSICAL_DEVICE_COMPAT_ASYNC_TRANSFER_FLAG_BIT;
-
-	std::set<uint32_t> unique_families{};
-	for (auto& [index, count] : family_usages)
-	{
-		if(count > 0)
-			unique_families.emplace(index);
-	}
-
-	device_info.queueFamilies.uniqueFamilies = std::vector<uint32_t>(unique_families.begin(), unique_families.end());
-}
-
-FRenderApiErrorInfo CVkRenderContext::selectPhysicalDevice(const FRenderContextCreateInfo& context_ci)
-{
-	auto api_version = get_api_version(context_ci.apiVersion);
-	auto avaliable_devices = vkInstance.enumeratePhysicalDevices();
-
-	int32_t fallback_device_index{ -1 };
-	for (auto& device : avaliable_devices)
-	{
-		auto device_index = physicalDevices.size();
-		physicalDevices.emplace_back(make_physical_device(device));
-		auto& current_device = physicalDevices.back();
-
-		if (current_device.properties.apiVersion < api_version)
-			continue;
-
-		if (!check_contains_all(context_ci.requiredDeviceExtensions, current_device.avaliableExtensions))
-			continue;
-
-		// Get supported queue families for this device
-		selectQueueFamilies(current_device);
-		const bool is_device_better_then_nothing = current_device.compatFlags & PHYSICAL_DEVICE_COMPAT_BETTER_THEN_NOTHING_FLAG_BIT;
-		const bool is_device_best_candidate = current_device.compatFlags & PHYSICAL_DEVICE_COMPAT_BEST_CANDIDATE_FLAG_BIT;
-		if (!(is_device_best_candidate || is_device_better_then_nothing))
-			continue;
-
-		// Discrete gpu is in higher priority
-		if (current_device.properties.deviceType != vk::PhysicalDeviceType::eDiscreteGpu)
-		{
-			fallback_device_index = device_index;
-			continue;
-		}
-
-		selectedPhysicalDevice = device_index;
-		break;
-	}
-
-	if (selectedPhysicalDevice < 0)
-	{
-		if (fallback_device_index < 0)
-			return make_api_error(vk::ObjectType::ePhysicalDevice, vk::Result::eErrorUnknown, "Not found any suitable device");
-		selectedPhysicalDevice = fallback_device_index;
-	}
-
-	auto& selected_device = getPhysicalDevice();
-	for (auto& extension_name : context_ci.requiredDeviceExtensions)
-		selected_device.supportedExtensions[utl::const_hash(extension_name.c_str())] = true;
-
-	for (auto& extension_name : context_ci.optionalDeviceExtensions)
-		selected_device.supportedExtensions[utl::const_hash(extension_name.c_str())] = check_contains_single(extension_name, selected_device.avaliableExtensions);
-
-	return make_api_error(vk::ObjectType::ePhysicalDevice, vk::Result::eSuccess);
-}
-
-void CVkRenderContext::prepareRequestedLogicalDeviceFeatures()
-{
-	auto& physical_device = getPhysicalDevice();
-	for (auto& extension_name : physical_device.avaliableExtensions)
-	{
-		auto extension_name_hash = utl::const_hash(extension_name.c_str());
-		if (physical_device.supportedExtensions.count(extension_name_hash))
-		{
-			if (extension_name == VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)
-				requestExtensionFeatures<vk::PhysicalDeviceSynchronization2FeaturesKHR>();
-			else if (extension_name == VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)
-				requestExtensionFeatures<vk::PhysicalDeviceTimelineSemaphoreFeaturesKHR>();
-			else if (extension_name == VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)
-				requestExtensionFeatures<vk::PhysicalDeviceDynamicRenderingFeaturesKHR>();
-			else if (extension_name == VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)
-				requestExtensionFeatures<vk::PhysicalDeviceBufferDeviceAddressFeaturesKHR>();
-			else if (extension_name == VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME)
-				requestExtensionFeatures<vk::PhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT>();
-			else if (extension_name == VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME)
-				requestExtensionFeatures<vk::PhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
-			else if (extension_name == VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)
-				requestExtensionFeatures<vk::PhysicalDeviceDescriptorIndexingFeaturesEXT>();
-			else if (extension_name == VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)
-				requestExtensionFeatures<vk::PhysicalDeviceBufferDeviceAddressFeaturesKHR>();
-			else if (extension_name == VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME)
-				requestExtensionFeatures<vk::PhysicalDeviceDescriptorBufferFeaturesEXT>();
-			else if (extension_name == VK_EXT_SHADER_OBJECT_EXTENSION_NAME)
-				requestExtensionFeatures<vk::PhysicalDeviceShaderObjectFeaturesEXT>();
-		}
-	}
-}
-
-FRenderApiErrorInfo CVkRenderContext::createLogicalDevice(const FRenderContextCreateInfo& context_ci)
-{
-	auto api_version = get_api_version(context_ci.apiVersion);
-	auto& physical_device = getPhysicalDevice();
-	bool bindless_support = physical_device.supportedExtensions.count(utl::const_hash(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME));
-	bool timeline_semaphore_support = physical_device.supportedExtensions.count(utl::const_hash(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME));
-
-	if (!is_sample_count_supported(physical_device, requiredSampleCount))
-		requiredSampleCount = vk::SampleCountFlagBits::e1;
-
-	// Get queue create infos
-	std::vector<vk::DeviceQueueCreateInfo> queue_create_infos{};
-	std::unordered_map<uint32_t, std::vector<float>> queue_priorities{};
-	for (auto& [index, usages] : physical_device.queueFamilies.familyUsages)
-	{
-		for (size_t usage = 0; usage < usages; ++usage)
-			queue_priorities[index].emplace_back(1.f);
-
-		auto& create_info = queue_create_infos.emplace_back();
-		create_info.flags = vk::DeviceQueueCreateFlags{};
-		create_info.queueFamilyIndex = index;
-		create_info.queueCount = usages;
-		create_info.pQueuePriorities = queue_priorities[index].data();
-	}
-
-	// Vulkan 1.0 features
-	vk::PhysicalDeviceFeatures vk10features{};
-	vk10features.samplerAnisotropy = true;
-	vk10features.sampleRateShading = true;
-	vk10features.fillModeNonSolid = true;
-	vk10features.multiViewport = true;
-	vk10features.geometryShader = true;
-	vk10features.tessellationShader = true;
-	vk10features.fragmentStoresAndAtomics = true;
-	vk10features.logicOp = true;
-	vk10features.imageCubeArray = true;
-	vk10features.depthClamp = true;
-	vk10features.independentBlend = true;
-
-	vk::DeviceCreateInfo device_ci{};
-	device_ci.queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size());
-	device_ci.pQueueCreateInfos = queue_create_infos.data();
-	device_ci.pEnabledFeatures = &vk10features;
-	device_ci.pNext = logicalDevice.lastExtensionFeature;
-
-	std::vector<const char*> enabled_extension_names{};
-	for (auto& ext_name : physical_device.avaliableExtensions)
-	{
-		if (physical_device.supportedExtensions.count(utl::const_hash(ext_name.c_str())))
-			enabled_extension_names.emplace_back(ext_name.c_str());
-	}
-
-	device_ci.enabledExtensionCount = static_cast<uint32_t>(enabled_extension_names.size());
-	device_ci.ppEnabledExtensionNames = enabled_extension_names.data();
-
-	std::vector<const char*> layer_names{};
-	for (auto& layer_name : context_ci.validationLayers)
-		layer_names.emplace_back(layer_name.c_str());
-
-	if (context_ci.validationState)
-	{
-		device_ci.enabledLayerCount = static_cast<uint32_t>(layer_names.size());
-		device_ci.ppEnabledLayerNames = layer_names.data();
-	}
-
-	auto res = make_api_error(vk::ObjectType::eDevice, physical_device.handle.createDevice(&device_ci, allocationCallbacks, &logicalDevice.handle), "Failed to create");
-
-	auto get_queue_family_index = [&physical_device](uint32_t mask) -> uint32_t { return physical_device.queueFamilies.queueToFamily.count(mask) ? physical_device.queueFamilies.queueToFamily[mask] : ~0u; };
-
-	std::unordered_map<uint32_t, uint32_t> family_usages{};
-	for (auto& [type, family] : physical_device.queueFamilies.queueToFamily)
-		logicalDevice.queues[type] = logicalDevice.handle.getQueue(family, family_usages[family]++);
-
-	return res;
-}
-
-void CVkRenderContext::createMemoryAllocator(const FRenderContextCreateInfo& context_ci)
-{
-	vma::VulkanFunctions vk_functions{};
-	vk_functions.vkGetInstanceProcAddr = dynamicLoader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
-	vk_functions.vkGetDeviceProcAddr = dynamicLoader.getProcAddress<PFN_vkGetDeviceProcAddr>("vkGetDeviceProcAddr");
-
-	auto& physical_device = getPhysicalDevice();
-	vma::AllocatorCreateInfo allocator_ci{};
-	allocator_ci.instance = vkInstance;
-	allocator_ci.physicalDevice = physical_device.handle;
-	allocator_ci.device = logicalDevice.handle;
-	allocator_ci.pAllocationCallbacks = allocationCallbacks;
-	allocator_ci.vulkanApiVersion = get_api_version(context_ci.apiVersion);
-	allocator_ci.pVulkanFunctions = &vk_functions;
-
-	memoryAllocator = vma::createAllocator(allocator_ci);
-}
-
-FRenderApiErrorInfo CVkRenderContext::createPipelineCache(const FRenderContextCreateInfo& context_ci)
-{
-	vk::PipelineCacheCreateInfo pipeline_cache_ci{};
-	pipeline_cache_ci.initialDataSize = static_cast<uint32_t>(context_ci.pipelineCache.size());
-	pipeline_cache_ci.pInitialData = context_ci.pipelineCache.data();
-	return make_api_error(vk::ObjectType::ePipelineCache, logicalDevice.handle.createPipelineCache(&pipeline_cache_ci, allocationCallbacks, &pipelineCache), "Failed to create");
-}
-
-FRenderApiErrorInfo CVkRenderContext::createSwapchain(uint32_t surface_width, uint32_t surface_height)
-{
-	auto& physical_device = getPhysicalDevice();
-
-	vk::SwapchainKHR old_swapchain{ swapchain.handle };
-	swapchain.handle = nullptr;
-
-	auto surface_caps = physical_device.handle.getSurfaceCapabilitiesKHR(vkSurface);
-	auto surface_formats = physical_device.handle.getSurfaceFormatsKHR(vkSurface);
-	auto present_modes = physical_device.handle.getSurfacePresentModesKHR(vkSurface);
-
-	auto surface_format = choice_surface_format(surface_formats);
-	auto present_mode = choice_surface_present_mode(present_modes);
-	swapchain.extent = choice_swapchain_extent(surface_caps, surface_width, surface_height);
-	swapchain.format = surface_format.format;
-
-	uint32_t image_count{ swapchain.framesInFlight };
-	if (surface_caps.maxImageCount > 0 && image_count > surface_caps.maxImageCount)
-		image_count = surface_caps.maxImageCount;
-	else if (image_count < surface_caps.minImageCount)
-		image_count = surface_caps.minImageCount;
-	swapchain.framesInFlight = image_count;
-
-	vk::SwapchainCreateInfoKHR swapchain_ci{};
-	swapchain_ci.surface = vkSurface;
-	swapchain_ci.minImageCount = image_count;
-	swapchain_ci.imageFormat = surface_format.format;
-	swapchain_ci.imageColorSpace = surface_format.colorSpace;
-	swapchain_ci.imageExtent = swapchain.extent;
-	swapchain_ci.imageArrayLayers = 1u;
-	swapchain_ci.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
-
-	if (surface_caps.supportedUsageFlags & vk::ImageUsageFlagBits::eTransferSrc)
-		swapchain_ci.imageUsage |= vk::ImageUsageFlagBits::eTransferSrc;
-	if (surface_caps.supportedUsageFlags & vk::ImageUsageFlagBits::eTransferDst)
-		swapchain_ci.imageUsage |= vk::ImageUsageFlagBits::eTransferDst;
-
-	const auto graphics_family = physical_device.queueFamilies.queueToFamily[QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT];
-	const auto present_family = physical_device.queueFamilies.queueToFamily[QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT];
-	if (graphics_family != present_family)
-	{
-		swapchain_ci.imageSharingMode = vk::SharingMode::eConcurrent;
-		swapchain_ci.queueFamilyIndexCount = static_cast<uint32_t>(physical_device.queueFamilies.uniqueFamilies.size());
-		swapchain_ci.pQueueFamilyIndices = physical_device.queueFamilies.uniqueFamilies.data();
+		viewport.width = width;
+		viewport.height = -height;
+		viewport.x = 0.f;
+		viewport.y = height;
 	}
 	else
-		swapchain_ci.imageSharingMode = vk::SharingMode::eExclusive;
-
-	swapchain_ci.preTransform = surface_caps.currentTransform;
-	swapchain_ci.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
-	swapchain_ci.presentMode = present_mode;
-	swapchain_ci.clipped = VK_TRUE;
-	swapchain_ci.oldSwapchain = old_swapchain;
-
-	vk::Result res = logicalDevice.handle.createSwapchainKHR(&swapchain_ci, allocationCallbacks, &swapchain.handle);
-	check_api_result(make_api_error(vk::ObjectType::eSwapchainKHR, res, "Failed to create"));
-
-	swapchain.images.resize(image_count);
-	res = logicalDevice.handle.getSwapchainImagesKHR(swapchain.handle, &image_count, swapchain.images.data());
-	check_api_result(make_api_error(vk::ObjectType::eSwapchainKHR, res, "Failed to create images"));
-
-	if (old_swapchain)
-		logicalDevice.handle.destroySwapchainKHR(old_swapchain, allocationCallbacks);
-
-	// Create swapchain image views
 	{
-		swapchain.imageViews.resize(image_count);
-
-		FVkImageViewCreateInfo image_view_ci{};
-		image_view_ci.ci.viewType = vk::ImageViewType::e2D;
-		image_view_ci.ci.format = swapchain.format;
-		image_view_ci.ci.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-		image_view_ci.ci.subresourceRange.baseMipLevel = 0;
-		image_view_ci.ci.subresourceRange.levelCount = 1;
-		image_view_ci.ci.subresourceRange.baseArrayLayer = 0;
-		image_view_ci.ci.subresourceRange.layerCount = 1;
-		image_view_ci.ci.components.r = vk::ComponentSwizzle::eR;
-		image_view_ci.ci.components.g = vk::ComponentSwizzle::eG;
-		image_view_ci.ci.components.b = vk::ComponentSwizzle::eB;
-		image_view_ci.ci.components.a = vk::ComponentSwizzle::eA;
-
-		for (uint32_t idx = 0u; idx < image_count; ++idx)
-		{
-#ifndef BUILD_WITHOUT_DEBUGGIND
-			image_view_ci.name = std::format("frame #{}", idx);
-#endif
-			image_view_ci.ci.image = swapchain.images.at(idx);
-			check_api_result(createImageView(image_view_ci, swapchain.imageViews.at(idx)));
-		}
+		viewport.width = width;
+		viewport.height = height;
+		viewport.x = 0.f;
+		viewport.y = 0.f;
 	}
 
-	// Create swapchain sync objects
-	{
-		swapchain.imageAvaliableSemaphores.resize(image_count);
-		swapchain.renderFinishedSemaphores.resize(image_count);
-		swapchain.inFlightFences.resize(image_count);
+	// Because i can set family only in graphics
+	auto& command_buffer = getLastCommandBuffer(QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT);
+	auto& current = command_buffer.get();
 
-		FVkSemaphoreCreateInfo ia_semaphore_ci{};
-		FVkSemaphoreCreateInfo rf_semaphore_ci{};
-		FVkFenceCreateInfo fence_ci{};
-		fence_ci.ci.flags = vk::FenceCreateFlagBits::eSignaled;
-		for (size_t idx = 0ull; idx < image_count; ++idx)
-		{
-#ifndef BUILD_WITHOUT_DEBUGGIND
-			ia_semaphore_ci.name = std::format("image avaliable #{}", idx);
-			rf_semaphore_ci.name = std::format("render finished #{}", idx);
-			fence_ci.name = std::format("frame #{}", idx);
-#endif
-			check_api_result(createSemaphore(ia_semaphore_ci, swapchain.imageAvaliableSemaphores.at(idx)));
-			check_api_result(createSemaphore(rf_semaphore_ci, swapchain.renderFinishedSemaphores.at(idx)));
-			check_api_result(createFence(fence_ci, swapchain.inFlightFences.at(idx)));
-		}
-	}
-
-	return make_api_error(vk::ObjectType::eSwapchainKHR, vk::Result::eSuccess);
+	current.setViewport(0, 1, &viewport);
 }
 
-void CVkRenderContext::cleanupSwapchain()
+void CVkRenderContext::setScissorRect(int32_t offset_x, int32_t offset_y, uint32_t width, uint32_t height)
 {
-	for (size_t idx = 0ull; idx < swapchain.framesInFlight; ++idx)
+	vk::Rect2D scissor_rect{};
+	scissor_rect.offset.x = offset_x;
+	scissor_rect.offset.y = offset_y;
+	scissor_rect.extent.width = width;
+	scissor_rect.extent.height = height;
+
+	// Because i can set family only in graphics
+	auto& command_buffer = getLastCommandBuffer(QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT);
+	auto& current = command_buffer.get();
+
+	current.setScissor(0, 1, &scissor_rect);
+}
+
+void CVkRenderContext::bindShader(size_t shader_id, uint32_t queue_type)
+{
+	auto& command_buffer = getLastCommandBuffer(queue_type);
+	auto& current = command_buffer.get();
+
+	auto& shader = m_pResources->get<FVkShader>(shader_id);
+	
+	// TODO: make possible to select what pipeline i have to bind now
+	current.bindPipeline(shader.bindPoint, shader.handles.back());
+
+	bindShaderDescriptors(command_buffer, shader);
+}
+
+FShaderReflectionData CVkRenderContext::getShaderReflection(const size_t& shader_view)
+{
+	auto& shader = m_pResources->get<FVkShader>(shader_view);
+	auto& shader_reflection = m_pResources->get<FVkShaderReflectionData>(shader.reflection);
+	FShaderReflectionData reflection_data{};
+
+	for (auto& [id, vkuniform] : shader_reflection.uniforms)
 	{
-		logicalDevice.handle.destroyFence(swapchain.inFlightFences.at(idx), allocationCallbacks);
-		logicalDevice.handle.destroyImageView(swapchain.imageViews.at(idx), allocationCallbacks);
-		logicalDevice.handle.destroySemaphore(swapchain.imageAvaliableSemaphores.at(idx), allocationCallbacks);
-		logicalDevice.handle.destroySemaphore(swapchain.renderFinishedSemaphores.at(idx), allocationCallbacks);
+		auto& uniform = reflection_data.uniforms[id];
+		uniform.binding = vkuniform.binding;
+		uniform.set = vkuniform.set;
+		uniform.offset = vkuniform.offset;
+		uniform.size = vkuniform.size;
+	}
+
+	for (auto& [aid, vkuniform_block] : shader_reflection.uniformBlocks)
+	{
+		auto& uniform_block = reflection_data.uniformBlocks[aid];
+		uniform_block.binding = vkuniform_block.binding;
+		uniform_block.set = vkuniform_block.set;
+		uniform_block.size = vkuniform_block.size;
+
+		for (auto& [bid, vkuniform] : vkuniform_block.uniforms)
+		{
+			auto& uniform = uniform_block.uniforms[bid];
+			uniform.binding = vkuniform.binding;
+			uniform.set = vkuniform.set;
+			uniform.offset = vkuniform.offset;
+			uniform.size = vkuniform.size;
+		}
+	}
+
+	for (auto& [aid, vkpush_block] : shader_reflection.pushBlocks)
+	{
+		auto& push_block = reflection_data.pushBlocks[aid];
+		push_block.size = vkpush_block.size;
+
+		for (auto& [bid, vkuniform] : vkpush_block.uniforms)
+		{
+			auto& uniform = vkpush_block.uniforms[bid];
+			uniform.binding = vkuniform.binding;
+			uniform.set = vkuniform.set;
+			uniform.offset = vkuniform.offset;
+			uniform.size = vkuniform.size;
+		}
+	}
+
+	return reflection_data;
+}
+
+// TODO: I only need to write data to descriptors if I have not written anything yet for the current 
+// swapchain frame and if the previous hash sum of data does not match the current one. Otherwise, 
+// I'll just be doing unnecessary work both copying data and loading it, including loading descriptors.
+void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader_resources, uint32_t flags)
+{
+	auto& shader = m_pResources->get<FVkShader>(shader_resources.shaderId);
+	auto& shader_reflection = m_pResources->get<FVkShaderReflectionData>(shader.reflection);
+	auto& swapchain = m_pContext->getSwapchain();
+
+	std::unordered_set<uint32_t> updated_descriptor_sets{};
+	std::vector<vk::WriteDescriptorSet> write_descriptor_sets{};
+	std::vector<vk::DescriptorImageInfo> image_descriptors{};
+	std::vector<vk::DescriptorBufferInfo> buffer_descriptors{};
+
+	// TODO: add something like check sum to check changed data in buffers or not
+	if (flags & SHADER_RESOURCES_UPDATE_UNIFORM_BLOCKS_FLAG_BIT)
+	{
+		for (const auto& [uniform_name, uniform_data] : shader_resources.uniforms)
+		{
+			auto found_reflection = shader_reflection.uniformBlocks.find(uniform_name);
+			if (found_reflection == shader_reflection.uniformBlocks.end())
+				continue;
+
+			// Prepare descriptor update data
+			auto& uniform_block = found_reflection->second;
+			auto current_descriptor_usage = shader.descriptorUsage[uniform_block.set];
+			updated_descriptor_sets.emplace(uniform_block.set);
+
+			auto buffer_id = shader.uniformBuffers[uniform_name];
+			auto& buffer = m_pResources->get<FVkBuffer>(buffer_id);
+
+			// Not sure that it is correct, because i don't know how to determine previous buffer
+			auto& buffer_descriptor = buffer_descriptors.emplace_back();
+			buffer_descriptor.buffer = buffer.handle;
+			buffer_descriptor.range = uniform_block.size;
+			buffer_descriptor.offset = current_descriptor_usage * uniform_block.size;
+
+			
+			auto& current_descriptor_set = shader.descriptorSets[uniform_block.set].at(current_descriptor_usage).handles.at(swapchain.currentFrame);
+
+			auto& write_descriptor_set = write_descriptor_sets.emplace_back();
+			write_descriptor_set.descriptorType = uniform_block.descriptorType;
+			write_descriptor_set.dstBinding = uniform_block.binding;
+			write_descriptor_set.dstSet = current_descriptor_set;
+			write_descriptor_set.pBufferInfo = &buffer_descriptor;
+			write_descriptor_set.descriptorCount = 1;
+
+			// Write new data to buffer memory
+			void* mapped_memory{ nullptr };
+			m_pContext->mapBufferMemory(buffer, &mapped_memory);
+			std::memcpy(mapped_memory, uniform_data.data, uniform_data.size);
+			m_pContext->unmapBufferMemory(buffer);
+		}
+	}
+
+	// Updating textures in shader
+	if (flags & SHADER_RESOURCES_UPDATE_TEXTURES_FLAG_BIT)
+	{
+		for (const auto& [texture_name, texture_id] : shader_resources.textures)
+		{
+			auto& texture = m_pResources->get<FVkTexture>(texture_id);
+
+			auto found_reflection = shader_reflection.uniforms.find(texture_name);
+			if (found_reflection == shader_reflection.uniforms.end())
+				continue;
+
+			auto& uniform = found_reflection->second;
+			updated_descriptor_sets.emplace(uniform.set);
+
+			// TODO: add image view selection support
+			auto& image_descriptor = image_descriptors.emplace_back();
+			image_descriptor.imageView = texture.imageViews.front();
+			image_descriptor.sampler = texture.sampler;
+			image_descriptor.imageLayout = texture.layout;
+
+			auto current_descriptor_usage = shader.descriptorUsage[uniform.set];
+			auto& current_descriptor_set = shader.descriptorSets[uniform.set].at(current_descriptor_usage).handles.at(swapchain.currentFrame);
+
+			auto& write_descriptor_set = write_descriptor_sets.emplace_back();
+			write_descriptor_set.descriptorType = uniform.descriptorType;
+			write_descriptor_set.dstBinding = uniform.binding;
+			write_descriptor_set.dstSet = current_descriptor_set;
+			write_descriptor_set.pImageInfo = &image_descriptor;
+			write_descriptor_set.descriptorCount = 1;
+		}
+	}
+
+	// NOTE: here we updating index for descriptor set that we will bind in future
+	for (auto& descriptor_set : updated_descriptor_sets)
+	{
+		auto usages = shader.descriptorUsage[descriptor_set];
+		shader.descriptorUsage[descriptor_set] = (usages + 1u) % shader.maximumDescriptorSlots;
+	}
+
+	// Update descriptor sets if needed
+	if (!write_descriptor_sets.empty())
+	{
+		auto& logical = m_pContext->getLogicalDevice();
+		logical.updateDescriptorSets(static_cast<uint32_t>(write_descriptor_sets.size()), write_descriptor_sets.data(), 0, nullptr);
 	}
 }
+
+void CVkRenderContext::flushConstantRanges(const FShaderResourceCommit& shader_resources, uint32_t queue_type)
+{
+	auto& shader = m_pResources->get<FVkShader>(shader_resources.shaderId);
+	auto& shader_reflection = m_pResources->get<FVkShaderReflectionData>(shader.reflection);
+
+	auto& command_buffer = getLastCommandBuffer(queue_type);
+	auto& current = command_buffer.get();
+
+	// TODO: remove all other posibilities to have more than one push block. 
+	for (const auto& [constant_name, constant_data] : shader_resources.constants)
+	{
+		auto found_reflection = shader_reflection.pushBlocks.find(constant_name);
+		if (found_reflection == shader_reflection.pushBlocks.end())
+			continue;
+
+		auto& constant_block = found_reflection->second;
+		current.pushConstants(shader.layout, constant_block.stageFlags, 0, constant_data.size, constant_data.data);
+
+		// Break, because we can have only one push constants block
+		break;
+	}
+}
+
+size_t CVkRenderContext::getTextureResource(const char* name)
+{
+	return m_pResources->getId<FVkTexture>(name);
+}
+
+size_t CVkRenderContext::getShaderResource(const char* name)
+{
+	return m_pResources->getId<FVkShader>(name);
+}
+
+FPoint2D<uint32_t> CVkRenderContext::getRenderResolution()
+{
+	auto& swapchain = m_pContext->getSwapchain();
+
+	FPoint2D<uint32_t> resolution{};
+	resolution.x = swapchain.extent.width;
+	resolution.y = swapchain.extent.height;
+
+	return resolution;
+}
+
+uint32_t CVkRenderContext::getDepthFormat()
+{
+	auto found_format = m_pContext->findSupportedFormat
+	(
+		{
+			vk::Format::eD32Sfloat,
+			vk::Format::eD32SfloatS8Uint,
+			vk::Format::eD24UnormS8Uint
+		},
+		vk::ImageTiling::eOptimal,
+		vk::FormatFeatureFlagBits::eDepthStencilAttachment
+	);
+
+	return static_cast<uint32_t>(found_format);
+}
+
+uint32_t CVkRenderContext::getApiFormat(uint32_t global_format)
+{
+	switch (global_format)
+	{
+	case FORMAT_RG16_SFLOAT: return VK_FORMAT_R16G16_SFLOAT; break;
+	case FORMAT_RGBA8_SRGB: return VK_FORMAT_R8G8B8A8_SRGB; break;
+	case FORMAT_RGBA8_UNORM: return VK_FORMAT_R8G8B8A8_UNORM; break;
+	case FORMAT_RGBA16_SFLOAT: return VK_FORMAT_R16G16B16A16_SFLOAT; break;
+	case FORMAT_RGBA32_SFLOAT: return VK_FORMAT_R32G32B32A32_SFLOAT; break;
+	default: return 0; break;
+	}
+}
+
+uint32_t CVkRenderContext::getPresentFormat()
+{
+	auto& swapchain = m_pContext->getSwapchain();
+	return static_cast<uint32_t>(swapchain.format);
+}
+
+// TODO: update only targets, that have same size with swapchain
+void CVkRenderContext::updateSurface(int32_t surface_width, int32_t surface_height)
+{
+	if (this->m_iSurfaceWidth != surface_width || this->m_iSurfaceHeight != surface_height)
+	{
+		this->m_iSurfaceWidth = surface_width;
+		this->m_iSurfaceHeight = surface_height;
+
+		auto& logical_device = m_pContext->getLogicalDevice();
+		logical_device.waitIdle();
+
+		m_pContext->cleanupSwapchain();
+		m_pContext->createSwapchain(surface_width, surface_height);
+		m_pContext->swapchain.currentFrame = 0u;
+
+		auto& swapchain = m_pContext->getSwapchain();
+		auto& textures = m_pResources->data<FVkTexture>();
+
+		// Updating render targets
+		
+		for (size_t texture_id = 0ull; texture_id < textures.size(); ++texture_id)
+		{
+			size_t swapchainFrameIndex{ 0ull };
+			for (auto& target : textures.at(texture_id))
+			{
+				if (!target.isRenderTarget)
+					continue;
+
+				// Update sapchain target
+				if (target.initialData.base.isSwapchainTarget)
+				{
+					target.imageViews.clear();
+					target.image.handle = swapchain.images.at(swapchainFrameIndex);
+					target.imageViews.emplace_back(swapchain.imageViews.at(swapchainFrameIndex));
+
+					swapchainFrameIndex++;
+					continue;
+				}
+
+				for (auto& image_view : target.imageViews)
+					m_pContext->destroyImageView(image_view);
+				target.imageViews.clear();
+
+				m_pContext->destroyImage(target.image);
+
+				FVkTextureCreateInfo texture_ci{};
+				texture_ci.base = target.initialData.base;
+				texture_ci.createSampler = false;
+
+				createTexture(texture_ci, target);
+			}
+		}
+	}
+}
+
+FVkCommandBuffer& CVkRenderContext::createCommandBuffer(const FVkCommandBufferCreateInfo& command_buffer_ci, std::thread::id thread_id)
+{
+	auto& command_buffers = m_commandBuffers[FVkThreadKeyResolver{ command_buffer_ci.mask, thread_id }];
+	auto& command_buffer = command_buffers.emplace_back();
+
+	m_pContext->createCommandBuffer(command_buffer_ci, command_buffer);
+
+	return command_buffer;
+}
+
+FVkCommandBuffer& CVkRenderContext::getLastCommandBuffer(uint32_t queue_type, std::thread::id thread_id)
+{
+	auto& command_buffers = m_commandBuffers[FVkThreadKeyResolver{ queue_type, thread_id }];
+	return command_buffers.back();
+}
+
+FVkCommandBuffer& CVkRenderContext::getCommandBuffer(uint32_t queue_type, size_t index, std::thread::id thread_id)
+{
+	auto& command_buffers = m_commandBuffers[FVkThreadKeyResolver{ queue_type, thread_id }];
+	return command_buffers.at(index);
+}
+
+std::vector<FVkCommandBuffer>& CVkRenderContext::getCommandBuffers(uint32_t queue_type, std::thread::id thread_id)
+{
+	return m_commandBuffers[FVkThreadKeyResolver{ queue_type, thread_id }];
+}
+
+void CVkRenderContext::beginFrameCommandBuffers()
+{
+	uint32_t image_index{ 0u };
+
+	processResourceUpload();
+	// TODO: sync queues here
+
+	vk::Result res{};
+	try { res = m_pContext->acquireNextImage(image_index); }
+	catch (vk::OutOfDateKHRError error) { res = vk::Result::eErrorOutOfDateKHR; }
+	catch (vk::SystemError err) { log_error("Failed to acquire swap chain image!"); }
+
+	if (res == vk::Result::eErrorOutOfDateKHR)
+		updateSurface(m_iSurfaceWidth, m_iSurfaceHeight);
+	else if (res == vk::Result::eSuboptimalKHR)
+		log_error("Failed to acquire swap chain image!");
+
+	if (res != vk::Result::eSuccess)
+		return;
+
+	m_bIsFrameStarted = true;
+
+	// TODO: here i should run only main command buffer. But for now i getting the last one
+	auto& command_buffer = getLastCommandBuffer(QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT);
+	m_pContext->beginCommandBuffer(command_buffer, vk::CommandBufferUsageFlagBits::eRenderPassContinue, image_index);
+}
+
+void CVkRenderContext::endFrameCommandBuffers()
+{
+	// TODO: here i should run only main command buffer. But for now i getting the last one
+	auto& command_buffer = getLastCommandBuffer(QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT);
+	m_pContext->endCommandBuffer(command_buffer);
+	m_bIsFrameStarted = false;
+
+	vk::Result presentResult{};
+	try { presentResult = m_pContext->present(command_buffer); }
+	catch (vk::OutOfDateKHRError err) { presentResult = vk::Result::eErrorOutOfDateKHR; }
+	catch (vk::SystemError err) { log_error("failed to present swap chain image!"); }
+
+	if (presentResult == vk::Result::eSuboptimalKHR || presentResult == vk::Result::eErrorOutOfDateKHR)
+		updateSurface(m_iSurfaceWidth, m_iSurfaceHeight);
+
+	m_pContext->destroyUnusedCommandPools();
+
+	// Frame is finished. We can reuse descriptors
+	//auto& shaders = m_pResources->data<FVkShader>();
+	//for (auto& shader_instances : shaders)
+	//{
+	//	for(auto& shader : shader_instances)
+	//		shader.descriptorUsage.clear();
+	//}
+
+	// Frame finished. Textures in now again in initial layout
+	auto& textures = m_pResources->data<FVkTexture>();
+	for (auto& texture_instances : textures)
+	{
+		for (auto& texture : texture_instances)
+		{
+			if (texture.isRenderTarget)
+				texture.layout = vk::ImageLayout::eUndefined;
+		}
+	}
+}
+
+void CVkRenderContext::processResourceUpload()
+{
+	if (m_textureUploadInfos.empty())
+		return;
+
+	FVkCommandBufferCreateInfo command_buffer_ci{};
+	command_buffer_ci.count = 1u;
+	command_buffer_ci.level = vk::CommandBufferLevel::ePrimary;
+	command_buffer_ci.mask = QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT;
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	command_buffer_ci.name = "resource_upload";
+#endif
+
+	auto& textures = m_pResources->data<FVkTexture>();
+
+	FVkCommandBuffer command_buffer{};
+	m_pContext->createCommandBuffer(command_buffer_ci, command_buffer);
+
+	m_pContext->beginCommandBuffer(command_buffer, vk::CommandBufferUsageFlagBits::eOneTimeSubmit, 0u);
+
+	// Prepare staging buffers
+	std::vector<FVkBuffer> staging_buffers{};
+	for (auto& texture_upload : m_textureUploadInfos)
+	{
+		FVkBufferCreateInfo staging_buffer_ci{};
+		staging_buffer_ci.instanceCount = 1ull;
+		staging_buffer_ci.instanceSize = texture_upload.data.size();
+		staging_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
+		staging_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuOnly;
+#ifndef BUILD_WITHOUT_DEBUGGIND
+		staging_buffer_ci.name = std::format("texture upload #{}", texture_upload.textureId);
+#endif
+
+		auto& staging_buffer = staging_buffers.emplace_back();
+		m_pContext->createBuffer(staging_buffer_ci, staging_buffer);
+
+		// Copy data to buffer
+		void* mapped_buffer_memory{ nullptr };
+		m_pContext->mapBufferMemory(staging_buffer, &mapped_buffer_memory);
+		std::memcpy(mapped_buffer_memory, texture_upload.data.data(), texture_upload.data.size());
+		m_pContext->unmapBufferMemory(staging_buffer);
+
+		texture_upload.data.clear();
+	}
+
+	// Translate all images to transfer dst stage
+	std::vector<size_t> generate_mip_textures{};
+	FVkTranslationInfo translation_info{};
+	for (const auto& texture_upload : m_textureUploadInfos)
+	{
+		auto& texture = textures.at(texture_upload.textureId).front();
+
+		auto& image_translation = translation_info.imageTranslationInfos.emplace_back();
+
+		FVkTextureTranslationInfo texture_translation_info{};
+		texture_translation_info.oldLayout = vk::ImageLayout::eUndefined;
+		texture.layout = texture_translation_info.newLayout = vk::ImageLayout::eTransferDstOptimal;
+
+		image_translation = get_texture_layout_translation_info(texture, texture_translation_info);
+
+		if (texture.initialData.base.mipLevels > 1u && texture_upload.mipLayerOffsets.empty())
+			generate_mip_textures.emplace_back(texture_upload.textureId);
+	}
+
+	processMemoryBarriers(command_buffer, translation_info);
+	translation_info.imageTranslationInfos.clear();
+
+	// Copy buffer to image
+	for (size_t idx = 0ull; idx < m_textureUploadInfos.size(); ++idx)
+	{
+		auto& texture_upload = m_textureUploadInfos.at(idx);
+		auto& texture = textures.at(texture_upload.textureId).front();
+		auto& staging_buffer = staging_buffers.at(idx);
+
+		auto aspect_mask = get_texture_aspect_flags(texture);
+
+		std::vector<vk::BufferImageCopy2KHR> copy_regions{};
+		if (!texture_upload.mipLayerOffsets.empty())
+		{
+			for (uint32_t layer = 0u; layer < texture.totalLayers; ++layer)
+			{
+				auto& layer_offsets = texture_upload.mipLayerOffsets.at(layer);
+				for (uint32_t mip = 0u; mip < texture.initialData.base.mipLevels; ++mip)
+				{
+					size_t offset = layer_offsets.at(mip);
+					auto& copy_region = copy_regions.emplace_back();
+					copy_region.imageSubresource.aspectMask = aspect_mask;
+					copy_region.imageSubresource.mipLevel = mip;
+					copy_region.imageSubresource.baseArrayLayer = layer;
+					copy_region.imageSubresource.layerCount = texture.initialData.base.arrayLayers;
+					copy_region.imageExtent.width = texture.initialData.base.width >> mip;
+					copy_region.imageExtent.height = texture.initialData.base.height >> mip;
+					copy_region.imageExtent.depth = texture.initialData.base.depth;
+					copy_region.bufferOffset = offset;
+				}
+			}
+		}
+		else
+		{
+			auto& copy_region = copy_regions.emplace_back();
+			copy_region.imageSubresource.aspectMask = aspect_mask;
+			copy_region.imageSubresource.mipLevel = 0u;
+			copy_region.imageSubresource.baseArrayLayer = 0u;
+			copy_region.imageSubresource.layerCount = texture.totalLayers;
+			copy_region.imageExtent.width = texture.initialData.base.width;
+			copy_region.imageExtent.height = texture.initialData.base.height;
+			copy_region.imageExtent.depth = texture.initialData.base.depth;
+			copy_region.bufferOffset = 0ull;
+		}
+
+		copyBufferToTexture(command_buffer, staging_buffer, texture, copy_regions);
+	}
+
+	auto& current_command_buffer = command_buffer.get();
+	for (auto& texture_id : generate_mip_textures)
+	{
+		auto& texture = textures.at(texture_id).front();
+
+		uint32_t mip_width{ texture.initialData.base.width };
+		uint32_t mip_heigth{ texture.initialData.base.height };
+
+		for (uint32_t mip = 1u; mip < texture.initialData.base.mipLevels; mip++)
+		{
+			FVkImageTranslationInfo image_translation_info{};
+			image_translation_info.handle = texture.image.handle;
+			image_translation_info.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+			image_translation_info.srcStageMask = get_translation_stage_flags(image_translation_info.oldLayout);
+			image_translation_info.srcAccessMask = get_translation_access_flags(image_translation_info.oldLayout);
+			image_translation_info.newLayout = vk::ImageLayout::eTransferSrcOptimal;
+			image_translation_info.dstStageMask = get_translation_stage_flags(image_translation_info.newLayout);
+			image_translation_info.dstAccessMask = get_translation_access_flags(image_translation_info.newLayout);
+			image_translation_info.subresourceRange.levelCount = mip - 1u;
+			image_translation_info.subresourceRange.layerCount = texture.totalLayers;
+			processImageLayoutTranslation(command_buffer, image_translation_info);
+
+			auto aspect_mask = get_texture_aspect_flags(texture);
+
+			vk::ImageBlit2KHR image_blit{};
+			image_blit.srcOffsets[0] = vk::Offset3D{ 0, 0, 0 };
+			image_blit.srcOffsets[1] = vk::Offset3D{ static_cast<int32_t>(mip_width), static_cast<int32_t>(mip_heigth), 1 };
+			image_blit.srcSubresource.aspectMask = aspect_mask;
+			image_blit.srcSubresource.mipLevel = image_translation_info.subresourceRange.levelCount;
+			image_blit.srcSubresource.baseArrayLayer = 0u;
+			image_blit.srcSubresource.layerCount = 1u;
+			image_blit.dstOffsets[0] = vk::Offset3D{ 0, 0, 0 };
+			image_blit.dstOffsets[1] = vk::Offset3D{ static_cast<int32_t>(mip_width > 1u ? mip_width / 2u : 1u), static_cast<int32_t>(mip_heigth > 1u ? mip_heigth / 2u : 1u), 1 };
+			image_blit.dstSubresource.aspectMask = aspect_mask;
+			image_blit.dstSubresource.mipLevel = mip;
+			image_blit.dstSubresource.baseArrayLayer = 0u;
+			image_blit.dstSubresource.layerCount = 1u;
+
+			vk::BlitImageInfo2KHR blit_info{};
+			blit_info.srcImage = texture.image.handle;
+			blit_info.srcImageLayout = vk::ImageLayout::eTransferDstOptimal;
+			blit_info.dstImage = texture.image.handle;
+			blit_info.dstImageLayout = vk::ImageLayout::eTransferDstOptimal;
+			blit_info.regionCount = 1u;
+			blit_info.pRegions = &image_blit;
+			blit_info.filter = vk::Filter::eNearest;
+
+			current_command_buffer.blitImage2KHR(blit_info);
+
+			image_translation_info.oldLayout = vk::ImageLayout::eTransferSrcOptimal;
+			image_translation_info.srcStageMask = get_translation_stage_flags(image_translation_info.oldLayout);
+			image_translation_info.srcAccessMask = get_translation_access_flags(image_translation_info.oldLayout);
+			image_translation_info.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+			image_translation_info.dstStageMask = get_translation_stage_flags(image_translation_info.newLayout);
+			image_translation_info.dstAccessMask = get_translation_access_flags(image_translation_info.newLayout);
+			processImageLayoutTranslation(command_buffer, image_translation_info);
+
+			if (mip_width > 1u)
+				mip_width /= 2u;
+			if (mip_heigth > 1u)
+				mip_heigth /= 2u;
+		}
+	}
+
+	// Translate images to shader read only layout
+	for (const auto& texture_upload : m_textureUploadInfos)
+	{
+		auto& texture = textures.at(texture_upload.textureId).front();
+
+		auto& image_translation = translation_info.imageTranslationInfos.emplace_back();
+
+		FVkTextureTranslationInfo texture_translation_info{};
+		texture_translation_info.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+		texture.layout = texture_translation_info.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+
+		image_translation = get_texture_layout_translation_info(texture, texture_translation_info);
+	}
+
+	processMemoryBarriers(command_buffer, translation_info);
+	translation_info.imageTranslationInfos.clear();
+
+	// Process buffers and other things
+
+	m_pContext->endCommandBuffer(command_buffer);
+
+	m_pContext->submitCommandBuffer(command_buffer);
+
+	// TODO: submit command buffer. But with pushing semaphores for synchronize with main command buffer
+	m_pContext->destroyCommandBuffer(command_buffer);
+
+	// destroy staging buffers
+	for (auto& staging_buffer : staging_buffers)
+		m_pContext->destroyBuffer(staging_buffer);
+
+	m_textureUploadInfos.clear();
+}
+
+FRenderApiErrorInfo CVkRenderContext::createTexture(const FVkTextureCreateInfo& texture_ci, FVkTexture& texture)
+{
+	texture.initialData.base = texture_ci.base;
+	
+	FVkImageCreateInfo image_ci{};
+	FVkImageViewCreateInfo image_view_ci{};
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	image_ci.name = texture_ci.name;
+#endif
+
+	if (texture_ci.base.depth > 1 || (texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_3D_FLAG_BIT))
+		image_ci.ci.imageType = vk::ImageType::e3D;
+	else
+	{
+		if (texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_1D_FLAG_BIT)
+			image_ci.ci.imageType = vk::ImageType::e1D;
+		else if (texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_2D_FLAG_BIT)
+			image_ci.ci.imageType = vk::ImageType::e2D;
+		else if (texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_3D_FLAG_BIT)
+			image_ci.ci.imageType = vk::ImageType::e3D;
+		else
+			image_ci.ci.imageType = vk::ImageType::e2D;
+	}
+
+	image_ci.ci.extent = vk::Extent3D{ texture_ci.base.width, texture_ci.base.height, texture_ci.base.depth };
+	image_ci.ci.mipLevels = texture_ci.base.mipLevels;
+
+	image_ci.ci.arrayLayers = texture_ci.base.arrayLayers;
+	if ((texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_ARRAY_FLAG_BIT) && (texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_CUBEMAP_FLAG_BIT))
+	{
+		image_ci.ci.arrayLayers *= 6u;
+		image_view_ci.ci.viewType = vk::ImageViewType::eCubeArray;
+	}
+	else if (texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_ARRAY_FLAG_BIT)
+		image_view_ci.ci.viewType = vk::ImageViewType::e2DArray;
+	else if (texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_CUBEMAP_FLAG_BIT)
+	{
+		image_ci.ci.arrayLayers = 6u;
+		image_view_ci.ci.viewType = vk::ImageViewType::eCube;
+	}
+	else if (texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_3D_FLAG_BIT)
+		image_view_ci.ci.viewType = vk::ImageViewType::e3D;
+	else
+	{
+		image_ci.ci.arrayLayers = 1u;
+		image_view_ci.ci.viewType = vk::ImageViewType::e2D;
+	}
+
+	image_view_ci.ci.subresourceRange.layerCount = texture.totalLayers = image_ci.ci.arrayLayers;
+
+	auto usageFlags = get_texture_usage_flags(texture);
+
+	image_ci.memoryUsage = vma::MemoryUsage::eUnknown;
+	image_view_ci.ci.format = image_ci.ci.format = static_cast<vk::Format>(texture_ci.base.format);
+	image_ci.ci.initialLayout = vk::ImageLayout::eUndefined;
+	image_ci.ci.usage = usageFlags;
+	texture.initialData.sampleCount = image_ci.ci.samples = texture_ci.sampleCount;
+	image_ci.ci.sharingMode = vk::SharingMode::eExclusive;
+	image_ci.ci.flags = (texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_CUBEMAP_FLAG_BIT) ? vk::ImageCreateFlagBits::eCubeCompatible : vk::ImageCreateFlagBits::eExtendedUsage;
+
+	RETURN_WHEN_FAULT(m_pContext->createImage(image_ci, texture.image));
+
+	auto image_aspect = get_texture_aspect_flags(texture);
+
+	image_view_ci.ci.components = { vk::ComponentSwizzle::eR, vk::ComponentSwizzle::eG, vk::ComponentSwizzle::eB, vk::ComponentSwizzle::eA };
+	image_view_ci.ci.subresourceRange.aspectMask = image_aspect;
+	image_view_ci.ci.subresourceRange.baseArrayLayer = 0u;
+	image_view_ci.ci.image = texture.image.handle;
+
+	texture.imageViews.resize(texture_ci.base.mipLevels);
+	for (uint32_t mip = 0u; mip < texture_ci.base.mipLevels; ++mip)
+	{
+		image_view_ci.ci.subresourceRange.baseMipLevel = mip;
+		image_view_ci.ci.subresourceRange.levelCount = mip == 0u ?texture_ci.base.mipLevels : 1u;
+#ifndef BUILD_WITHOUT_DEBUGGIND
+		image_view_ci.name = std::format("{} mip #{}", texture_ci.name, mip);
+#endif
+		RETURN_WHEN_FAULT(m_pContext->createImageView(image_view_ci, texture.imageViews.at(mip)))
+	}
+
+	FVkSamplerCreateInfo sampler_ci{};
+	sampler_ci.addressMode = texture_ci.addressMode;
+	sampler_ci.enableAnisotropy = texture_ci.enableAnisotropy;
+	sampler_ci.enableCompareOp = texture_ci.enableCompareOp;
+	sampler_ci.minFilter = sampler_ci.magFilter = texture_ci.filter;
+	sampler_ci.mipLevels = texture_ci.base.mipLevels;
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	sampler_ci.name = texture_ci.name;
+#endif
+
+	FRenderApiErrorInfo res = make_api_error(vk::ObjectType::eSampler, vk::Result::eSuccess);
+	if(texture_ci.createSampler)
+		res = m_pContext->createSampler(sampler_ci, texture.sampler);
+
+	return res;
+}
+
+void CVkRenderContext::destroyTexture(FVkTexture& texture)
+{
+	m_pContext->destroySampler(texture.sampler);
+	
+	for (auto& image_view : texture.imageViews)
+		m_pContext->destroyImageView(image_view);
+	texture.imageViews.clear();
+
+	m_pContext->destroyImage(texture.image);
+}
+
+FRenderApiErrorInfo CVkRenderContext::createShaderResources(const FVkShaderResourcesInfo& resources_info, FVkShader& shader)
+{
+	auto& reflection = m_pResources->get<FVkShaderReflectionData>(shader.reflection);
+	auto& swapchain = m_pContext->getSwapchain();
+
+	// Remember maximum shader usage count
+	shader.maximumDescriptorSlots = swapchain.framesInFlight * resources_info.usageCount;
+
+	// Create descriptor set layouts
+	for (const auto& [set, layout_bindings] : reflection.descriptorSetLayoutBindings)
+	{
+		FVkDescriptorSetLayoutCreateInfo descriptor_set_layout_ci{};
+#ifndef BUILD_WITHOUT_DEBUGGIND
+		descriptor_set_layout_ci.name = std::format("{}: set #{}", resources_info.name, set);
+#endif
+		descriptor_set_layout_ci.layoutBindings = layout_bindings; // TODO: may be send pointer to vector here?
+
+		auto& descriptor_set_Layout = shader.descriptorSetLayouts[set];
+		RETURN_WHEN_FAULT(m_pContext->createDescriptorSetLayout(descriptor_set_layout_ci, descriptor_set_Layout));
+	}
+
+	// Create descriptor pool
+	FVkDescriptorPoolCreateInfo pool_ci{};
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	pool_ci.name = resources_info.name;
+#endif
+	pool_ci.poolSizes = reflection.descriptorPoolSizes;
+	pool_ci.usageCount = resources_info.usageCount;
+	RETURN_WHEN_FAULT(m_pContext->createDescriptorPool(pool_ci, shader.descriptorPool));
+
+	// Create descrioptor sets for each shader usage
+	for (size_t idx = 0ull; idx < resources_info.usageCount; ++idx)
+	{
+		for (const auto& [set, layout] : shader.descriptorSetLayouts)
+		{
+			FVkDescriptorSetCreateInfo descriptor_set_ci{};
+#ifndef BUILD_WITHOUT_DEBUGGIND
+			descriptor_set_ci.name = std::format("{}: set #{} usage #{}", resources_info.name, set, idx);
+#endif
+			descriptor_set_ci.pool = shader.descriptorPool.handle;
+			descriptor_set_ci.layout = layout;
+
+			auto& descriptor_set = shader.descriptorSets[set].emplace_back();
+			RETURN_WHEN_FAULT(m_pContext->createDescriptorSet(descriptor_set_ci, descriptor_set));
+		}
+	}
+
+	// Create uniform buffers
+	for (const auto& [id, uniform_block] : reflection.uniformBlocks)
+	{
+		FVkBufferCreateInfo buffer_ci{};
+		buffer_ci.instanceCount = shader.maximumDescriptorSlots;
+		buffer_ci.instanceSize = uniform_block.size;
+		buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
+
+		if (uniform_block.descriptorType == vk::DescriptorType::eUniformBuffer)
+			buffer_ci.usageFlags = vk::BufferUsageFlagBits::eUniformBuffer;
+		else if (uniform_block.descriptorType == vk::DescriptorType::eStorageBuffer)
+			buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer;
+
+		FVkBuffer buffer{};
+		RETURN_WHEN_FAULT(m_pContext->createBuffer(buffer_ci, buffer));
+
+		auto buffer_name = std::format("{}", id);
+		auto buffer_id = m_pResources->add<FVkBuffer>(buffer_name.c_str(), std::move(buffer));
+		shader.uniformBuffers.emplace(id, buffer_id);
+	}
+
+	// Create pipeline layout
+	FVkPipelineLayoutCreateInfo layout_ci{};
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	layout_ci.name = resources_info.name;
+#endif
+	// Send descriptor set layouts to create info
+	for (const auto& [set, descriptor_set_layout] : shader.descriptorSetLayouts)
+		layout_ci.descriptorSetLayouts.emplace_back(descriptor_set_layout);
+
+	// Prepare push blocks info
+	uint32_t current_offset{ 0u };
+	for (const auto& [name, block] : reflection.pushBlocks)
+	{
+		auto& push_constant_range = layout_ci.pushConstantRanges.emplace_back();
+		push_constant_range.stageFlags = block.stageFlags;
+		push_constant_range.offset = current_offset;
+		push_constant_range.size = static_cast<uint32_t>(block.size);
+		current_offset += push_constant_range.size;
+	}
+
+	return m_pContext->createPipelineLayout(layout_ci, shader.layout);
+}
+
+// Destroy shader object
+void CVkRenderContext::destroyShader(FVkShader& shader)
+{
+	for (auto& pipeline : shader.handles)
+		m_pContext->destroyPipeline(pipeline);
+
+	for (auto& shader_module : shader.shaderModules)
+		m_pContext->destroyShaderModule(shader_module);
+
+	for (auto& [set, descriptor_sets] : shader.descriptorSets)
+	{
+		for (auto& descriptor_set : descriptor_sets)
+			m_pContext->destroyDescriptorSet(shader.descriptorPool, descriptor_set);
+	}
+
+	for (auto& [id, buffer_id] : shader.uniformBuffers)
+	{
+		auto& buffer = m_pResources->get<FVkBuffer>(buffer_id);
+		m_pContext->destroyBuffer(buffer);
+		m_pResources->remove<FVkBuffer>(buffer_id);
+	}
+
+	m_pContext->destroyDescriptorPool(shader.descriptorPool);
+
+	m_pContext->destroyPipelineLayout(shader.layout);
+
+	for (auto& [set, descriptor_set_layout] : shader.descriptorSetLayouts)
+		m_pContext->destroyDescriptorSetLayout(descriptor_set_layout);
+}
+
+void CVkRenderContext::bindShaderDescriptors(const FVkCommandBuffer& command_buffer, const FVkShader& shader)
+{
+	std::vector<vk::DescriptorSet> bindDescriptorSets{};
+
+	// NOTE: shader.descriptorUsage contains next index of descriptor set to use. 
+	// Here i collecting all shader descriptor sets, that was changed in past
+	auto& swapchain = m_pContext->getSwapchain();
+	for (auto& [set, usage_index] : shader.descriptorUsage)
+	{
+		auto actual_descriptor_usage = usage_index == 0u ? shader.maximumDescriptorSlots - 1u : usage_index - 1u;
+		auto found_descriptor_sets = shader.descriptorSets.find(set);
+		if (found_descriptor_sets != shader.descriptorSets.end())
+		{
+			auto& descriptor_sets = found_descriptor_sets->second;
+			auto& target_descriptor_set = descriptor_sets.at(actual_descriptor_usage);
+			bindDescriptorSets.emplace_back(target_descriptor_set.handles.at(swapchain.currentFrame));
+		}
+	}
+
+	if (!bindDescriptorSets.empty())
+	{
+		auto& current_command_buffer = command_buffer.get();
+		current_command_buffer.bindDescriptorSets(shader.bindPoint, shader.layout, 0, static_cast<uint32_t>(bindDescriptorSets.size()), bindDescriptorSets.data(), 0u, nullptr);
+	}
+}
+
+void CVkRenderContext::processImageLayoutTranslation(const FVkCommandBuffer& command_buffer, const FVkImageTranslationInfo& image_translation_info)
+{
+	FVkTranslationInfo translation_info{};
+	translation_info.imageTranslationInfos.emplace_back(image_translation_info);
+	processMemoryBarriers(command_buffer, translation_info);
+}
+
+void CVkRenderContext::textureLayoutTranslation(const FVkCommandBuffer& command_buffer, FVkTexture& texture, const FVkTextureTranslationInfo& translation_info)
+{
+	auto image_layout_translation = get_texture_layout_translation_info(texture, translation_info);
+	processImageLayoutTranslation(command_buffer, image_layout_translation);
+}
+
+void CVkRenderContext::copyBufferToTexture(const FVkCommandBuffer& command_buffer, const FVkBuffer& buffer, const FVkTexture& texture, const std::vector<vk::BufferImageCopy2KHR>& copy_regions)
+{
+	auto& current_buffer = command_buffer.get();
+
+	vk::CopyBufferToImageInfo2KHR copy_info{};
+	copy_info.srcBuffer = buffer.handle;
+	copy_info.dstImage = texture.image.handle;
+	copy_info.dstImageLayout = texture.layout;
+	copy_info.regionCount = static_cast<uint32_t>(copy_regions.size());
+	copy_info.pRegions = copy_regions.data();
+
+	current_buffer.copyBufferToImage2KHR(&copy_info);
+}
+
+//void CVkRenderContext::draw()
+//{
+	//auto& swapchain = m_pContext->getSwapchain();
+	//
+	//FVkRenderingInfo rendering_info{};
+	//rendering_info.flipViewport = true;
+	//rendering_info.renderArea.extent = swapchain.extent;
+	//rendering_info.scissorRect = rendering_info.renderArea;
+	//rendering_info.colorAttachments.emplace_back(swapchainTarget);
+	//
+	//beginRendering(commandBuffers[0], rendering_info);
+	//
+	//auto& command_buffer = commandBuffers[0].handles.at(commandBuffers[0].commandBufferIndex);
+	//
+	//auto& shader = m_pResources->get<FVkShader>(testShader);
+	//for (const auto& pipeline_handle : shader.handles)
+	//{
+	//	command_buffer.bindPipeline(shader.bindPoint, pipeline_handle);
+	//	command_buffer.draw(3, 1, 0, 0);
+	//}
+	//
+	//endRendering(commandBuffers[0], rendering_info);
+//}

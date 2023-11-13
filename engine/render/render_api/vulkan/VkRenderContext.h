@@ -1,9 +1,8 @@
 #pragma once
 
+#include <VkRenderDevice.h>
+#include <interface/ResourceContainer.h>
 #include <interface/RenderInterface.h>
-#include <VkResourceStructures.h>
-
-#include <format>
 
 namespace engine
 {
@@ -11,212 +10,76 @@ namespace engine
 	{
 		namespace vulkan
 		{
-			// =================================================================================
-			// =================================CVkRenderContext================================
-			// =================================================================================
-			class CVkRenderContext
+			class CVkRenderContext : public IRenderContext
 			{
 			public:
-				friend class CVkRenderHandle;
+				~CVkRenderContext() override;
 
-				~CVkRenderContext();
+				void create(const FRenderContextCreateInfo& context_ci) override;
+				size_t createTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) override;
+				size_t createRenderTarget(const std::string& name, const FTextureCreateInfo& texture_ci);
+				size_t createRenderTargets(const std::string& name, const FTextureCreateInfo& texture_ci) override;
 
-				void create(const FRenderContextCreateInfo& context_ci);
+				size_t createShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) override;
+				size_t createShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) override;
 
-				// VkCommandPool
-				FRenderApiErrorInfo createCommandPool(const FVkCommandPoolCreateInfo& command_pool_ci, FVkCommandPool& command_pool);
-				void destroyCommandPool(FVkCommandPool& command_pool);
-				void destroyUnusedCommandPools();
-				void destroyCommandPools();
+				void beginRendering(const FBeginRenderingInfo& rendering_info) override;
+				void endRendering(const FBeginRenderingInfo& rendering_info) override;
 
-				// VkCommandBuffer
-				FRenderApiErrorInfo createCommandBuffer(const FVkCommandBufferCreateInfo& command_buffer_ci, FVkCommandBuffer& command_buffer);
-				FVkCommandBuffer& getCommandBuffer(const FVkGetCommandBufferInfo& get_info);
-				void destroyCommandBuffer(FVkCommandBuffer& command_buffer);
-				void beginCommandBuffer(FVkCommandBuffer& command_buffer, vk::CommandBufferUsageFlags usage, uint32_t image_index);
-				void endCommandBuffer(FVkCommandBuffer& command_buffer);
+				void setViewport(float width, float height, bool flip_viewport = false) override;
+				void setScissorRect(int32_t offset_x, int32_t offset_y, uint32_t width, uint32_t height) override;
 
-				// VkImage
-				FRenderApiErrorInfo createImage(const FVkImageCreateInfo& image_ci, FVkImage& image);
-				void destroyImage(FVkImage& image);
+				void bindShader(size_t shader_id, uint32_t queue_type) override;
 
-				// VkImageView
-				FRenderApiErrorInfo createImageView(const FVkImageViewCreateInfo& image_view_ci, vk::ImageView& image_view);
-				void destroyImageView(vk::ImageView& image_view);
+				FShaderReflectionData getShaderReflection(const size_t& shader_view) override;
+				void updateShaderResources(const FShaderResourceCommit& shader_resources, uint32_t flags = SHADER_RESOURCES_UPDATE_ALL_FLAG_BIT) override;
+				void flushConstantRanges(const FShaderResourceCommit& shader_resources, uint32_t queue_type) override;
 
-				FRenderApiErrorInfo createSampler(const FVkSamplerCreateInfo& sampler_ci, vk::Sampler& sampler);
-				void destroySampler(vk::Sampler& sampler);
+				size_t getTextureResource(const char* name) override;
+				size_t getShaderResource(const char* name) override;
 
-				// VkBuffer
-				FRenderApiErrorInfo createBuffer(const FVkBufferCreateInfo& buffer_ci, FVkBuffer& buffer);
-				void destroyBuffer(FVkBuffer& buffer);
-				FRenderApiErrorInfo mapBufferMemory(FVkBuffer& buffer, void** mappedMemory);
-				void unmapBufferMemory(FVkBuffer& buffer);
-				void flushBufferMemory(const FVkBuffer& buffer, vk::DeviceSize size, vk::DeviceSize offset);
+				FPoint2D<uint32_t> getRenderResolution() override;
 
-				// VkDescriptorSetLayout
-				FRenderApiErrorInfo createDescriptorSetLayout(const FVkDescriptorSetLayoutCreateInfo& layout_ci, vk::DescriptorSetLayout& descriptor_set_layout);
-				void destroyDescriptorSetLayout(vk::DescriptorSetLayout& descriptor_set_layout);
+				uint32_t getDepthFormat() override;
+				uint32_t getApiFormat(uint32_t global_format) override;
+				uint32_t getPresentFormat() override;
 
-				FRenderApiErrorInfo createDescriptorPool(const FVkDescriptorPoolCreateInfo& pool_ci, FVkDescriptorPool& descriptor_pool);
-				FRenderApiErrorInfo growDescriptorPool(const FVkDescriptorPoolCreateInfo& pool_ci, FVkDescriptorPool& descriptor_pool);
-				void destroyDescriptorPool(FVkDescriptorPool& descriptor_pool);
+				void updateSurface(int32_t surface_width, int32_t surface_height) override;
 
-				FRenderApiErrorInfo createDescriptorSet(const FVkDescriptorSetCreateInfo& set_ci, FVkDescriptorSet& descriptor_set);
-				void destroyDescriptorSet(const FVkDescriptorPool& descriptor_pool, FVkDescriptorSet& descriptor_set);
+				FVkCommandBuffer& createCommandBuffer(const FVkCommandBufferCreateInfo& command_buffer_ci, std::thread::id thread_id = std::this_thread::get_id());
+				FVkCommandBuffer& getLastCommandBuffer(uint32_t queue_type, std::thread::id thread_id = std::this_thread::get_id());
+				FVkCommandBuffer& getCommandBuffer(uint32_t queue_type, size_t index, std::thread::id thread_id = std::this_thread::get_id());
+				std::vector<FVkCommandBuffer>& getCommandBuffers(uint32_t queue_type, std::thread::id thread_id = std::this_thread::get_id());
 
-				// VkShaderModule
-				FRenderApiErrorInfo createShaderModule(const FVkShaderModuleCreateInfo& shader_module_ci, vk::ShaderModule& shader_module);
-				void destroyShaderModule(vk::ShaderModule& shader_module);
-
-				// VkPipelineLayout
-				FRenderApiErrorInfo createPipelineLayout(const FVkPipelineLayoutCreateInfo& pipeline_layout_ci, vk::PipelineLayout& pipeline_layout);
-				void destroyPipelineLayout(vk::PipelineLayout& pipeline_layout);
-
-				// VkPipeline
-				FRenderApiErrorInfo createPipeline(const FVkGraphicsPipelineCreateInfo& pipeline_ci, vk::Pipeline& pipeline);
-				FRenderApiErrorInfo createPipeline(const FVkComputePipelineCreateInfo& pipeline_ci, vk::Pipeline& pipeline);
-				void destroyPipeline(vk::Pipeline& shader_object);
-
-				FRenderApiErrorInfo createSemaphore(const FVkSemaphoreCreateInfo& semaphore_ci, vk::Semaphore& semaphore);
-				FRenderApiErrorInfo createFence(const FVkFenceCreateInfo& fence_ci, vk::Fence& fence);
-
-				void submitCommandBuffer(const FVkCommandBuffer& command_buffer);
-				vk::Result present(FVkCommandBuffer& command_buffer);
-				vk::Result acquireNextImage(uint32_t& image_index);
-
-				// Debug markers
-				void debugBeginLabel(vk::CommandBuffer& command_buffer, const std::string& name, uint32_t color);
-				void debugInsertLabel(vk::CommandBuffer& command_buffer, const std::string& name, uint32_t color);
-				void endLabel(vk::CommandBuffer& command_buffer);
-
-				void debugBeginLabel(vk::Queue& queue, const std::string& name, uint32_t color);
-				void debugInsertLabel(vk::Queue& queue, const std::string& name, uint32_t color);
-				void endLabel(vk::Queue& queue);
-
-				template<class _Ty>
-				void debugSetObjectName(const _Ty& object, const std::string& name)
-				{
-#ifndef BUILD_WITHOUT_DEBUGGIND
-					if (!name.empty())
-					{
-						auto formatted_debug_object_name = std::format("{}:{}", vk::to_string(object.objectType), name);
-						vk::DebugUtilsObjectNameInfoEXT object_name_info{};
-						object_name_info.objectType = object.objectType;
-						object_name_info.objectHandle = reinterpret_cast<uint64_t>(static_cast<_Ty::CType>(object));
-						object_name_info.pObjectName = formatted_debug_object_name.c_str();
-
-						logicalDevice.handle.setDebugUtilsObjectNameEXT(object_name_info);
-					}
-#endif
-				}
-
-				template<class _Ty>
-				void debugSetObjectTag(const _Ty& object, uint64_t name, const void* data, size_t size)
-				{
-#ifndef BUILD_WITHOUT_DEBUGGIND
-					vk::DebugUtilsObjectTagInfoEXT object_tag_info{};
-					object_tag_info.objectType = object.objectType;
-					object_tag_info.objectHandle = reinterpret_cast<uint64_t>(static_cast<_Ty::CType>(object));
-					object_tag_info.tagName = name;
-					object_tag_info.pTag = data;
-					object_tag_info.tagSize = size;
-
-					logicalDevice.handle.setDebugUtilsObjectTagEXT(object_tag_info);
-#endif
-				}
-
-				// Getters
-				vk::Format findSupportedFormat(const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features);
-
-				const vk::DynamicLoader& getDynamicLoader() const;
-				const vk::AllocationCallbacks* getAllocationCallbacks() const;
-
-				const vk::Instance& getInstance() const;
-				const vk::DebugUtilsMessengerEXT& getDebugMessanger() const;
-				const vk::DebugReportCallbackEXT& getDebugReport() const;
-				const vk::SurfaceKHR& getSurface() const;
-				
-				FVkPhysicalDevice& getPhysicalDevice();
-
-				const vk::SampleCountFlagBits getMultisamplingCount() const;
-				vk::Device& getLogicalDevice();
-
-				vk::Queue& getQueue(uint32_t flag);
-
-				vma::Allocator& getMemoryAllocator();
-
-				const vk::PipelineCache& getPipelineCache() const;
-				std::vector<char> getPipelineCacheData() const;
-
-				const FSwapchain& getSwapchain() const;
-
-				const FVkCommandPool& getCommandPool(uint32_t mask, const std::thread::id& thread_id = std::this_thread::get_id());
+				void beginFrameCommandBuffers() override;
+				void endFrameCommandBuffers() override;
 			protected:
-				void registerAllocationCallbacks();
-				FRenderApiErrorInfo createInstance(const FRenderContextCreateInfo& context_ci);
-				void createDebugMessanger(const FRenderContextCreateInfo& context_ci);
-				FRenderApiErrorInfo createSurface(const FRenderContextCreateInfo& context_ci);
-				void selectQueueFamilies(FVkPhysicalDevice& device_info);
-				FRenderApiErrorInfo selectPhysicalDevice(const FRenderContextCreateInfo& context_ci);
-				void prepareRequestedLogicalDeviceFeatures();
-				FRenderApiErrorInfo createLogicalDevice(const FRenderContextCreateInfo& context_ci);
-				void createMemoryAllocator(const FRenderContextCreateInfo& context_ci);
-				FRenderApiErrorInfo createPipelineCache(const FRenderContextCreateInfo& context_ci);
-				FRenderApiErrorInfo createSwapchain(uint32_t surface_width, uint32_t surface_height);
+				void processResourceUpload();
 
-				void cleanupSwapchain();
+				FRenderApiErrorInfo createTexture(const FVkTextureCreateInfo& texture_ci, FVkTexture& texture);
+				void destroyTexture(FVkTexture& texture);
 
-				template<class _Ty>
-				_Ty& requestExtensionFeatures()
-				{
-					auto structure_type = _Ty::structureType;
+				FRenderApiErrorInfo createShaderResources(const FVkShaderResourcesInfo& resources_info, FVkShader& shader);
+				void destroyShader(FVkShader& shader);
 
-					auto& physical_device = getPhysicalDevice();
-					auto& extension_features = logicalDevice.extensionFeatures;
+				void bindShaderDescriptors(const FVkCommandBuffer& command_buffer, const FVkShader& shader);
 
-					auto found_feature = extension_features.find(structure_type);
-					if (found_feature != extension_features.end())
-						return *static_cast<_Ty*>(found_feature->second.get());
+				void processMemoryBarriers(const FVkCommandBuffer& command_buffer, const FVkTranslationInfo& translation_info);
+				void processImageLayoutTranslation(const FVkCommandBuffer& command_buffer, const FVkImageTranslationInfo& image_translation_info);
+				void textureLayoutTranslation(const FVkCommandBuffer& command_buffer, FVkTexture& texture, const FVkTextureTranslationInfo& translation_info);
 
-					vk::PhysicalDeviceFeatures2KHR physical_device_features2{};
-					_Ty extension{};
-					physical_device_features2.pNext = &extension;
-
-					physical_device.handle.getFeatures2KHR(&physical_device_features2);
-
-					extension_features.insert({ structure_type, std::make_shared<_Ty>(extension) });
-
-					auto* extension_ptr = static_cast<_Ty*>(extension_features[structure_type].get());
-
-					if (logicalDevice.lastExtensionFeature)
-						extension_ptr->pNext = logicalDevice.lastExtensionFeature;
-					logicalDevice.lastExtensionFeature = extension_ptr;
-
-					return *extension_ptr;
-				}
+				void copyBufferToTexture(const FVkCommandBuffer& command_buffer, const FVkBuffer& buffer, const FVkTexture& texture, const std::vector<vk::BufferImageCopy2KHR>& copy_regions);
+				//void blitImage(const FVkCommandBuffer& command_buffer, );
 			private:
-				vk::DynamicLoader dynamicLoader;
-				vk::AllocationCallbacks* allocationCallbacks{ nullptr };
+				std::unique_ptr<CVkRenderDevice> m_pContext{};
+				std::unique_ptr<CResourceContainer> m_pResources{};
 
-				vk::Instance vkInstance{ nullptr };
-				vk::DebugUtilsMessengerEXT debugMessenger{ nullptr };
-				vk::DebugReportCallbackEXT debugReport{ nullptr };
-				vk::SurfaceKHR vkSurface{ nullptr };
-				std::vector<std::string> avaliableLayers{};
+				std::vector<FTextureUploadInfo> m_textureUploadInfos{};
 
-				int32_t selectedPhysicalDevice{ -1 };
-				std::vector<FVkPhysicalDevice> physicalDevices{};
+				std::unordered_map<FVkThreadKeyResolver, std::vector<FVkCommandBuffer>> m_commandBuffers{};
+				bool m_bIsFrameStarted{ false };
 
-				vk::SampleCountFlagBits requiredSampleCount{ vk::SampleCountFlagBits::e1 };
-				FVkLogicalDevice logicalDevice{};
-
-				vma::Allocator memoryAllocator{ nullptr };
-
-				vk::PipelineCache pipelineCache{ nullptr };
-				FSwapchain swapchain{};
-
-				std::unordered_map<uint32_t, std::unordered_map<std::thread::id, FVkCommandPool>> commandPools{};
+				int32_t m_iSurfaceWidth{}, m_iSurfaceHeight{};
 			};
 		}
 	}

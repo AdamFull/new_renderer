@@ -52,7 +52,7 @@ void CApplication::create()
 
 }
 
-FResourceView CApplication::loadTexture(const std::string& path)
+size_t CApplication::loadTexture(const std::string& path)
 {
 	auto name = filesystem::fs::get_stem(path);
 	auto ext = filesystem::fs::get_ext(path);
@@ -64,9 +64,9 @@ FResourceView CApplication::loadTexture(const std::string& path)
 	return m_pRenderInterface->createTexture(name, data, static_cast<EMimeType>(ext_hash));
 }
 
-FResourceView CApplication::loadShader(const std::string& name)
+size_t CApplication::loadShader(const std::string& name)
 {
-	return FResourceView{};
+	return ~0ull;
 }
 
 void CApplication::loop()
@@ -87,7 +87,8 @@ void CApplication::loop()
 			m_pRenderInterface->updateSurfaceSize(window_width, window_height);
 		}
 
-		m_pRenderInterface->beginFrame();
-		m_pRenderInterface->endFrame();
+
+		// TODO: render thread should signal game thread about finish rendering
+		m_pRenderInterface->render(0.f);
 	}
 }

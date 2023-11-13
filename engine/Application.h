@@ -14,8 +14,8 @@ namespace engine
 		void create();
 		void loop();
 
-		render::FResourceView loadTexture(const std::string& path);
-		render::FResourceView loadShader(const std::string& name);
+		size_t loadTexture(const std::string& path);
+		size_t loadShader(const std::string& name);
 	private:
 		std::unique_ptr<IWindowInterface> m_pWindowHandle{};
 		std::unique_ptr<render::IRenderInterface> m_pRenderInterface{};

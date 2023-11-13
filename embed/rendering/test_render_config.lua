@@ -14,18 +14,20 @@ end
 
 -- Present pass
 do
-    local renderer_ci = RendererCI.new()
-    renderer_ci.render_script = "/root/embed/rendering/render_stages/fullscreen.lua"
-    renderer_ci.queue = QueueType.present
-    renderer_ci.shader_name = "testing:screenspace"
+    local step_ci = RenderingStepCI.new()
+    step_ci.type = RenderingStepType.rendering
+
+    step_ci.rendering.type = RenderingType.fullscreen
+    step_ci.rendering.queue = QueueType.graphics
+    step_ci.shader_name = "testing:screenspace"
     
-    -- renderer_ci.input_targets:set("zbuffer_albedo_target", render_context.get_resource("zbuffer_albedo_target", ResType.rt))
-    -- renderer_ci.input_targets:set("zbuffer_normal_target", render_context.get_resource("zbuffer_normal_target", ResType.rt))
-    -- renderer_ci.input_targets:set("zbuffer_pbr_target", render_context.get_resource("zbuffer_pbr_target", ResType.rt))
-    -- renderer_ci.input_targets:set("zbuffer_emission_target", render_context.get_resource("zbuffer_emission_target", ResType.rt))
-    -- renderer_ci.input_targets:set("zbuffer_depth_target", render_context.get_resource("zbuffer_depth_target", ResType.rt))
-    -- renderer_ci.input_targets:set("shadowmap_composition_target"render_context.get_resource("shadowmap_composition_target", ResType.rt))
-    renderer_ci.output_targets:add(render_context:get_resource("present_target", ResType.rt))
+    -- renderer_ci.input_targets:set("zbuffer_albedo_target", render_context.get_texture_resource("zbuffer_albedo_target"))
+    -- renderer_ci.input_targets:set("zbuffer_normal_target", render_context.get_texture_resource("zbuffer_normal_target"))
+    -- renderer_ci.input_targets:set("zbuffer_pbr_target", render_context.get_texture_resource("zbuffer_pbr_target"))
+    -- renderer_ci.input_targets:set("zbuffer_emission_target", render_context.get_texture_resource("zbuffer_emission_target"))
+    -- renderer_ci.input_targets:set("zbuffer_depth_target", render_context.get_texture_resource("zbuffer_depth_target"))
+    -- renderer_ci.input_targets:set("shadowmap_composition_target"render_context.get_texture_resource("shadowmap_composition_target"))
+    renderer_ci.output_targets:add(render_context:get_texture_resource("present_target"))
     
     render_interface:create_renderer(renderer_ci)
 end
