@@ -5,6 +5,7 @@
 
 #include <logger/logger.h>
 
+#include <numeric>
 #include <unordered_set>
 
 using namespace engine;
@@ -54,6 +55,7 @@ void CVkRenderContext::create(const FRenderContextCreateInfo& context_ci)
 	m_pResources = std::make_unique<CResourceContainer>();
 	m_pResources->registerResource<FVkTexture>();
 	m_pResources->registerResource<FVkShader>();
+	m_pResources->registerResource<FVkBuffer>();
 	m_pResources->registerResource<FVkShaderReflectionData>();
 
 	auto& swapchain = m_pContext->getSwapchain();
@@ -637,7 +639,7 @@ FShaderReflectionData CVkRenderContext::getShaderReflection(const size_t& shader
 
 		for (auto& [bid, vkuniform] : vkpush_block.uniforms)
 		{
-			auto& uniform = vkpush_block.uniforms[bid];
+			auto& uniform = push_block.uniforms[bid];
 			uniform.binding = vkuniform.binding;
 			uniform.set = vkuniform.set;
 			uniform.offset = vkuniform.offset;
@@ -655,7 +657,6 @@ void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader
 {
 	auto& shader = m_pResources->get<FVkShader>(shader_resources.shaderId);
 	auto& shader_reflection = m_pResources->get<FVkShaderReflectionData>(shader.reflection);
-	auto& swapchain = m_pContext->getSwapchain();
 
 	std::unordered_set<uint32_t> updated_descriptor_sets{};
 	std::vector<vk::WriteDescriptorSet> write_descriptor_sets{};
@@ -673,20 +674,20 @@ void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader
 
 			// Prepare descriptor update data
 			auto& uniform_block = found_reflection->second;
-			auto current_descriptor_usage = shader.descriptorUsage[uniform_block.set];
+			auto descriptor_index = shader.descriptorUsage[uniform_block.set];
 			updated_descriptor_sets.emplace(uniform_block.set);
 
 			auto buffer_id = shader.uniformBuffers[uniform_name];
 			auto& buffer = m_pResources->get<FVkBuffer>(buffer_id);
+			auto buffer_element_size = buffer.size / buffer.instanceCount;
 
 			// Not sure that it is correct, because i don't know how to determine previous buffer
 			auto& buffer_descriptor = buffer_descriptors.emplace_back();
 			buffer_descriptor.buffer = buffer.handle;
 			buffer_descriptor.range = uniform_block.size;
-			buffer_descriptor.offset = current_descriptor_usage * uniform_block.size;
+			buffer_descriptor.offset = descriptor_index * buffer_element_size;
 
-			
-			auto& current_descriptor_set = shader.descriptorSets[uniform_block.set].at(current_descriptor_usage).handles.at(swapchain.currentFrame);
+			auto& current_descriptor_set = shader.descriptorSets[uniform_block.set].handles.at(descriptor_index);
 
 			auto& write_descriptor_set = write_descriptor_sets.emplace_back();
 			write_descriptor_set.descriptorType = uniform_block.descriptorType;
@@ -698,7 +699,7 @@ void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader
 			// Write new data to buffer memory
 			void* mapped_memory{ nullptr };
 			m_pContext->mapBufferMemory(buffer, &mapped_memory);
-			std::memcpy(mapped_memory, uniform_data.data, uniform_data.size);
+			std::memcpy((char*)mapped_memory + buffer_descriptor.offset, uniform_data.data, uniform_data.size);
 			m_pContext->unmapBufferMemory(buffer);
 		}
 	}
@@ -723,8 +724,8 @@ void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader
 			image_descriptor.sampler = texture.sampler;
 			image_descriptor.imageLayout = texture.layout;
 
-			auto current_descriptor_usage = shader.descriptorUsage[uniform.set];
-			auto& current_descriptor_set = shader.descriptorSets[uniform.set].at(current_descriptor_usage).handles.at(swapchain.currentFrame);
+			auto descriptor_index = shader.descriptorUsage[uniform.set];
+			auto& current_descriptor_set = shader.descriptorSets[uniform.set].handles.at(descriptor_index);
 
 			auto& write_descriptor_set = write_descriptor_sets.emplace_back();
 			write_descriptor_set.descriptorType = uniform.descriptorType;
@@ -1324,21 +1325,23 @@ FRenderApiErrorInfo CVkRenderContext::createShaderResources(const FVkShaderResou
 	RETURN_WHEN_FAULT(m_pContext->createDescriptorPool(pool_ci, shader.descriptorPool));
 
 	// Create descrioptor sets for each shader usage
-	for (size_t idx = 0ull; idx < resources_info.usageCount; ++idx)
+	for (const auto& [set, layout] : shader.descriptorSetLayouts)
 	{
-		for (const auto& [set, layout] : shader.descriptorSetLayouts)
-		{
-			FVkDescriptorSetCreateInfo descriptor_set_ci{};
+		FVkDescriptorSetCreateInfo descriptor_set_ci{};
 #ifndef BUILD_WITHOUT_DEBUGGIND
-			descriptor_set_ci.name = std::format("{}: set #{} usage #{}", resources_info.name, set, idx);
+		descriptor_set_ci.name = std::format("{}: set #{}", resources_info.name, set);
 #endif
-			descriptor_set_ci.pool = shader.descriptorPool.handle;
-			descriptor_set_ci.layout = layout;
+		descriptor_set_ci.pool = shader.descriptorPool.handle;
+		descriptor_set_ci.layout = layout;
+		descriptor_set_ci.descriptorCount = shader.maximumDescriptorSlots;
 
-			auto& descriptor_set = shader.descriptorSets[set].emplace_back();
-			RETURN_WHEN_FAULT(m_pContext->createDescriptorSet(descriptor_set_ci, descriptor_set));
-		}
+		auto& descriptor_set = shader.descriptorSets[set];
+		RETURN_WHEN_FAULT(m_pContext->createDescriptorSet(descriptor_set_ci, descriptor_set));
 	}
+
+	// Minimal buffer offset
+	auto& physical = m_pContext->getPhysicalDevice();
+	auto minOffsetAllignment = std::lcm(physical.properties.limits.minUniformBufferOffsetAlignment, physical.properties.limits.nonCoherentAtomSize);
 
 	// Create uniform buffers
 	for (const auto& [id, uniform_block] : reflection.uniformBlocks)
@@ -1346,6 +1349,7 @@ FRenderApiErrorInfo CVkRenderContext::createShaderResources(const FVkShaderResou
 		FVkBufferCreateInfo buffer_ci{};
 		buffer_ci.instanceCount = shader.maximumDescriptorSlots;
 		buffer_ci.instanceSize = uniform_block.size;
+		buffer_ci.minOffsetAlignment = minOffsetAllignment;
 		buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
 
 		if (uniform_block.descriptorType == vk::DescriptorType::eUniformBuffer)
@@ -1393,11 +1397,8 @@ void CVkRenderContext::destroyShader(FVkShader& shader)
 	for (auto& shader_module : shader.shaderModules)
 		m_pContext->destroyShaderModule(shader_module);
 
-	for (auto& [set, descriptor_sets] : shader.descriptorSets)
-	{
-		for (auto& descriptor_set : descriptor_sets)
-			m_pContext->destroyDescriptorSet(shader.descriptorPool, descriptor_set);
-	}
+	for (auto& [set, descriptor_set] : shader.descriptorSets)
+		m_pContext->destroyDescriptorSet(shader.descriptorPool, descriptor_set);
 
 	for (auto& [id, buffer_id] : shader.uniformBuffers)
 	{
@@ -1420,16 +1421,15 @@ void CVkRenderContext::bindShaderDescriptors(const FVkCommandBuffer& command_buf
 
 	// NOTE: shader.descriptorUsage contains next index of descriptor set to use. 
 	// Here i collecting all shader descriptor sets, that was changed in past
-	auto& swapchain = m_pContext->getSwapchain();
 	for (auto& [set, usage_index] : shader.descriptorUsage)
 	{
 		auto actual_descriptor_usage = usage_index == 0u ? shader.maximumDescriptorSlots - 1u : usage_index - 1u;
 		auto found_descriptor_sets = shader.descriptorSets.find(set);
 		if (found_descriptor_sets != shader.descriptorSets.end())
 		{
-			auto& descriptor_sets = found_descriptor_sets->second;
-			auto& target_descriptor_set = descriptor_sets.at(actual_descriptor_usage);
-			bindDescriptorSets.emplace_back(target_descriptor_set.handles.at(swapchain.currentFrame));
+			auto& descriptor_set = found_descriptor_sets->second;
+			auto& target_descriptor_set = descriptor_set.handles.at(actual_descriptor_usage);
+			bindDescriptorSets.emplace_back(target_descriptor_set);
 		}
 	}
 

@@ -18,9 +18,14 @@
 		layout (location = 0) in vec2 inUV;
 		layout (location = 0) out vec4 outFragcolor;
 
+		layout (std140, binding = 0) uniform FUniformData 
+        { 
+            vec3 color;
+        } data; 
+
 		void main() 
 		{
-			outFragcolor = vec4(inUV, 0.f, 0.f);
+			outFragcolor = vec4(data.color, 0.f);
 		}
 	""";
 }

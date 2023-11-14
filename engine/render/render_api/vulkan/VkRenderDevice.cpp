@@ -329,6 +329,7 @@ FRenderApiErrorInfo CVkRenderDevice::createBuffer(const FVkBufferCreateInfo& buf
 	auto alligned_instance_size = get_alligned_instance_size(buffer_ci.instanceSize, buffer_ci.minOffsetAlignment);
 
 	vk::BufferCreateInfo ci{};
+	buffer.instanceCount = buffer_ci.instanceCount;
 	buffer.size = ci.size = alligned_instance_size * buffer_ci.instanceCount;
 	ci.usage = buffer_ci.usageFlags;
 	ci.sharingMode = vk::SharingMode::eExclusive;
@@ -434,14 +435,14 @@ void CVkRenderDevice::destroyDescriptorPool(FVkDescriptorPool& descriptor_pool)
 
 FRenderApiErrorInfo CVkRenderDevice::createDescriptorSet(const FVkDescriptorSetCreateInfo& set_ci, FVkDescriptorSet& descriptor_set)
 {
-	std::vector<vk::DescriptorSetLayout> per_frame_layout(swapchain.framesInFlight, set_ci.layout);
+	std::vector<vk::DescriptorSetLayout> per_frame_layout(set_ci.descriptorCount, set_ci.layout);
 
 	vk::DescriptorSetAllocateInfo descriptor_ai{};
 	descriptor_ai.descriptorPool = set_ci.pool;;
 	descriptor_ai.descriptorSetCount = static_cast<uint32_t>(per_frame_layout.size());
 	descriptor_ai.pSetLayouts = per_frame_layout.data();
 
-	descriptor_set.handles.resize(swapchain.framesInFlight);
+	descriptor_set.handles.resize(set_ci.descriptorCount);
 	vk::Result res = logicalDevice.handle.allocateDescriptorSets(&descriptor_ai, descriptor_set.handles.data());
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -1218,8 +1219,9 @@ FRenderApiErrorInfo CVkRenderDevice::createLogicalDevice(const FRenderContextCre
 	std::vector<const char*> enabled_extension_names{};
 	for (auto& ext_name : physical_device.avaliableExtensions)
 	{
-		if (physical_device.supportedExtensions.count(utl::const_hash(ext_name.c_str())))
-			enabled_extension_names.emplace_back(ext_name.c_str());
+		auto ext_name_c = ext_name.c_str();
+		if (physical_device.supportedExtensions.count(utl::const_hash(ext_name_c)))
+			enabled_extension_names.emplace_back(ext_name_c);
 	}
 
 	device_ci.enabledExtensionCount = static_cast<uint32_t>(enabled_extension_names.size());

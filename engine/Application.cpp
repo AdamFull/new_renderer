@@ -43,7 +43,7 @@ void CApplication::create()
 	m_pWindowHandle = make_platform_window(window_ci);
 
 	FRenderInterfaceCreateInfo rhi_ci{};
-	rhi_ci.render_api = ERenderApi::eVulkan11;
+	rhi_ci.render_api = ERenderApi::eVulkan13;
 	m_pWindowHandle->getWindowSize(rhi_ci.initialWidth, rhi_ci.initialHeight);
 	get_platform_specific_window_data(rhi_ci, m_pWindowHandle);
 

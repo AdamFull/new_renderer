@@ -3,6 +3,8 @@
 #include <ShaderObject.h>
 #include <logger/logger.h>
 
+#include <glm/glm.hpp>
+
 using namespace engine::render;
 
 CFullscreenRenderingStep::CFullscreenRenderingStep(IRenderInterface* render_interface, IRenderContext* render_context)
@@ -61,6 +63,9 @@ void CFullscreenRenderingStep::execute(float dt)
 
 	m_pRenderContext->setViewport(static_cast<float>(render_resolution.x), static_cast<float>(render_resolution.y), m_beginRenderingInfo.flipViewport);
 	m_pRenderContext->setScissorRect(0, 0, render_resolution.x, render_resolution.y);
+
+	auto& push_block = m_pShader->getUniformBlock("FUniformData");
+	push_block->set("color", glm::vec3(1.f, 1.f, 0.f));
 
 	// Here i can update uniforms
 

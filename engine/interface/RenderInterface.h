@@ -359,7 +359,7 @@ namespace engine
 			void set(const char* name, const void* raw_data, size_t size)
 			{
 				auto found = m_uniforms.find(utl::fnv1a_64_hash(name));
-				if (found == m_uniforms.end() || !m_data.empty() || !raw_data)
+				if (found == m_uniforms.end() || !raw_data)
 					return;
 
 				auto& uniform = found->second;
@@ -374,7 +374,7 @@ namespace engine
 			void set(const char* name, const _Ty& object, size_t size = 0ull)
 			{
 				auto found = m_uniforms.find(utl::fnv1a_64_hash(name));
-				if (found == m_uniforms.end() || !m_data.empty())
+				if (found == m_uniforms.end())
 					return;
 
 				auto& uniform = found->second;
@@ -389,7 +389,7 @@ namespace engine
 			_Ty* get(const char* name)
 			{
 				auto found = m_uniforms.find(utl::fnv1a_64_hash(name));
-				if (found == m_uniforms.end() || !m_data.empty())
+				if (found == m_uniforms.end())
 					return nullptr;
 
 				auto& uniform = found->second;

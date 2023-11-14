@@ -271,6 +271,7 @@ namespace engine
 			{
 				vk::DescriptorPool pool{};
 				vk::DescriptorSetLayout layout{};
+				uint32_t descriptorCount{ 0u };
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				std::string name{};
 #endif
@@ -350,6 +351,7 @@ namespace engine
 				vk::Buffer handle{};
 				vma::Allocation memory{};
 				vk::DeviceSize size{};
+				vk::DeviceSize instanceCount{};
 				vk::BufferUsageFlags usageFlags{};
 				bool isMapped{ false };
 			};
@@ -374,7 +376,7 @@ namespace engine
 				vk::PipelineLayout layout{};
 				std::vector<vk::ShaderModule> shaderModules{};
 				std::unordered_map<uint32_t, vk::DescriptorSetLayout> descriptorSetLayouts{};
-				std::unordered_map<uint32_t, std::vector<FVkDescriptorSet>> descriptorSets{};
+				std::unordered_map<uint32_t, FVkDescriptorSet> descriptorSets{};
 				std::unordered_map<uint32_t, uint32_t> descriptorUsage{};
 				FVkDescriptorPool descriptorPool{};
 				std::vector<vk::PushConstantRange> pushConstantRanges{};
