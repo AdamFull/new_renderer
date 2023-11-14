@@ -56,8 +56,8 @@ namespace engine
 				void beginFrameCommandBuffers() override;
 				void endFrameCommandBuffers() override;
 			protected:
-				void createBindlessTexturesDescriptor();
-				void updateBindlessTexturesData();
+				void createGlobalDescriptor();
+				void updateGlobalDescriptorData();
 
 				void processResourceUpload();
 
@@ -81,7 +81,8 @@ namespace engine
 
 				std::vector<FTextureUploadInfo> m_textureUploadInfos{};
 
-				FVkBindlessTexturesDescriptor m_bindlessDescriptor{};
+				// NOTE: global descriptor uses set 0 and binding 0 and 1 (0 is for global uniform, 1 is for texture array)
+				FVkGlobalDescriptor m_globalDescriptor{};
 				std::unordered_map<uint32_t, utl::unique_queue<size_t>> m_textureToUpdate{};
 
 				std::unordered_map<FVkThreadKeyResolver, std::vector<FVkCommandBuffer>> m_commandBuffers{};

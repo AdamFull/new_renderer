@@ -497,7 +497,7 @@ namespace engine
 				uint32_t baseMipLevel{ 0u };
 			};
 
-			struct FVkBindlessTexturesDescriptor
+			struct FVkGlobalDescriptor
 			{
 				FVkDescriptorPool descriptorPool{};
 				vk::DescriptorSetLayout deecriptorSetLayout{};

@@ -60,8 +60,8 @@ void CVkRenderContext::create(const FRenderContextCreateInfo& context_ci)
 	m_pResources->registerResource<FVkBuffer>();
 	m_pResources->registerResource<FVkShaderReflectionData>();
 
-	createBindlessTexturesDescriptor();
-	// TODO: add here global scene descriptor init (or create and share set 0 with bindless texture array adn with uniform buffer)
+	// NOTE: Creates global descriptor set, that uses slot 0 for global frame data and bindless textures array
+	createGlobalDescriptor();
 
 	auto& swapchain = m_pContext->getSwapchain();
 
@@ -616,7 +616,7 @@ void CVkRenderContext::bindShader(size_t shader_id, uint32_t queue_type)
 	{
 		auto& swapchain = m_pContext->getSwapchain();
 		// Idk. Maybe reserve set 0 for global buffers?
-		current.bindDescriptorSets(shader.bindPoint, shader.layout, 0, 1, &m_bindlessDescriptor.descriptorSet.handles.at(swapchain.currentFrame), 0, nullptr);
+		current.bindDescriptorSets(shader.bindPoint, shader.layout, 0, 1, &m_globalDescriptor.descriptorSet.handles.at(swapchain.currentFrame), 0, nullptr);
 	}
 }
 
@@ -939,8 +939,7 @@ void CVkRenderContext::beginFrameCommandBuffers()
 	processResourceUpload();
 	// TODO: sync queues here
 
-	// TODO: for now it calles as "bindles" but in future it will be something like: updateGlobalDescriptorResources
-	updateBindlessTexturesData();
+	updateGlobalDescriptorData();
 
 	vk::Result res{};
 	try { res = m_pContext->acquireNextImage(image_index); }
@@ -999,7 +998,7 @@ void CVkRenderContext::endFrameCommandBuffers()
 	}
 }
 
-void CVkRenderContext::createBindlessTexturesDescriptor()
+void CVkRenderContext::createGlobalDescriptor()
 {
 	auto& swapchain = m_pContext->getSwapchain();
 
@@ -1012,7 +1011,7 @@ void CVkRenderContext::createBindlessTexturesDescriptor()
 	pool_ci.name = "bindless_textures";
 #endif
 
-	m_pContext->createDescriptorPool(pool_ci, m_bindlessDescriptor.descriptorPool);
+	m_pContext->createDescriptorPool(pool_ci, m_globalDescriptor.descriptorPool);
 
 	// Create descriptor set layout
 	FVkDescriptorSetLayoutCreateInfo set_layout_ci{};
@@ -1048,13 +1047,13 @@ void CVkRenderContext::createBindlessTexturesDescriptor()
 	set_layout_ci.name = "bindless_textures";
 #endif
 
-	m_pContext->createDescriptorSetLayout(set_layout_ci, m_bindlessDescriptor.deecriptorSetLayout);
+	m_pContext->createDescriptorSetLayout(set_layout_ci, m_globalDescriptor.deecriptorSetLayout);
 
 	// Create descriptor set
 	FVkDescriptorSetCreateInfo set_ci{};
 	set_ci.descriptorCount = swapchain.framesInFlight;
-	set_ci.layout = m_bindlessDescriptor.deecriptorSetLayout;
-	set_ci.pool = m_bindlessDescriptor.descriptorPool.handle;
+	set_ci.layout = m_globalDescriptor.deecriptorSetLayout;
+	set_ci.pool = m_globalDescriptor.descriptorPool.handle;
 
 	std::vector<uint32_t> max_sets(swapchain.framesInFlight, k_max_bindless_resources - 1);
 	vk::DescriptorSetVariableDescriptorCountAllocateInfoEXT descriptor_set_variable_descriptor_count_AIEXT{};
@@ -1066,10 +1065,10 @@ void CVkRenderContext::createBindlessTexturesDescriptor()
 	set_ci.name = "bindless_textures";
 #endif
 
-	m_pContext->createDescriptorSet(set_ci, m_bindlessDescriptor.descriptorSet);
+	m_pContext->createDescriptorSet(set_ci, m_globalDescriptor.descriptorSet);
 }
 
-void CVkRenderContext::updateBindlessTexturesData()
+void CVkRenderContext::updateGlobalDescriptorData()
 {
 	auto& swapchain = m_pContext->getSwapchain();
 
@@ -1078,6 +1077,7 @@ void CVkRenderContext::updateBindlessTexturesData()
 		return;
 
 	std::vector<vk::DescriptorImageInfo> image_descriptors{};
+	std::vector<vk::DescriptorBufferInfo> buffer_descriptors{};
 	std::vector<vk::WriteDescriptorSet> write_descriptor_sets{};
 	while (!texture_queue.empty())
 	{
@@ -1092,13 +1092,15 @@ void CVkRenderContext::updateBindlessTexturesData()
 		auto& writeDescriptorSet = write_descriptor_sets.emplace_back();
 		writeDescriptorSet.dstArrayElement = texture_id;
 		writeDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-		writeDescriptorSet.dstSet = m_bindlessDescriptor.descriptorSet.handles.at(swapchain.currentFrame);
+		writeDescriptorSet.dstSet = m_globalDescriptor.descriptorSet.handles.at(swapchain.currentFrame);
 		writeDescriptorSet.dstBinding = 1u;
 		writeDescriptorSet.descriptorCount = 1u;
 		writeDescriptorSet.pImageInfo = &image_descriptor;
 
 		texture_queue.pop();
 	}
+
+	// TODO: add here buffer update too
 
 	// Update descriptor sets if needed
 	if (!write_descriptor_sets.empty())
