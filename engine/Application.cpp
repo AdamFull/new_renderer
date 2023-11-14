@@ -50,6 +50,8 @@ void CApplication::create()
 	m_pRenderInterface = std::make_unique<render::CRenderInterface>(m_pVirtualFileSystem.get());
 	m_pRenderInterface->create(rhi_ci);
 
+	m_pScene = std::make_unique<world::CScene>();
+
 	// TODO: incorrect stb image loading. I guess it requires to generate copy info
 	auto ttt = m_pRenderInterface->createTexture("/root/cavern-deposits_albedo.ktx2");
 }

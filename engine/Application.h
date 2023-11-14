@@ -5,6 +5,7 @@
 #include <interface/RenderInterface.h>
 #include <interface/filesystem/VirtualFileSystemInterface.h>
 #include <scripting/ScriptEngine.h>
+#include <world/Scene.h>
 
 namespace engine
 {
@@ -19,5 +20,6 @@ namespace engine
 		std::unique_ptr<render::IRenderInterface> m_pRenderInterface{};
 		std::unique_ptr<filesystem::IVirtualFileSystemInterface> m_pVirtualFileSystem{};
 		std::unique_ptr<scripting::CScriptEngine> m_pScriptEngine{};
+		std::unique_ptr<world::CScene> m_pScene{};
 	};
 }

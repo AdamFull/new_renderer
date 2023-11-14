@@ -1055,6 +1055,7 @@ void CVkRenderContext::createGlobalDescriptor()
 	set_ci.layout = m_globalDescriptor.deecriptorSetLayout;
 	set_ci.pool = m_globalDescriptor.descriptorPool.handle;
 
+	// TODO: Potential problems here in future. I think that max_sets array is incorrect
 	std::vector<uint32_t> max_sets(swapchain.framesInFlight, k_max_bindless_resources - 1);
 	vk::DescriptorSetVariableDescriptorCountAllocateInfoEXT descriptor_set_variable_descriptor_count_AIEXT{};
 	descriptor_set_variable_descriptor_count_AIEXT.descriptorSetCount = swapchain.framesInFlight;

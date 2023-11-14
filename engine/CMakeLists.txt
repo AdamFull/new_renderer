@@ -6,6 +6,7 @@ add_subdirectory(render)
 add_subdirectory(filesystem)
 add_subdirectory(scripting)
 add_subdirectory(profiler)
+add_subdirectory(world)
 
 file(GLOB ENGINE_APP_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 file(GLOB ENGINE_APP_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
