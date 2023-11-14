@@ -18,7 +18,7 @@ namespace engine
 			void create(const FRenderInterfaceCreateInfo& render_interface_ci) override;
 			void render(float dt) override;
 
-			size_t createTexture(const std::string& name, const std::vector<uint8_t>& data, EMimeType mime) override;
+			size_t createTexture(const std::string& path) override;
 
 			size_t createShader(const std::string& name, const FGraphicsShaderCreateInfo& create_info) override;
 			size_t createShader(const std::string& name, const FComputeShaderCreateInfo& create_info) override;

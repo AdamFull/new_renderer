@@ -441,7 +441,7 @@ namespace engine
 			virtual void create(const FRenderInterfaceCreateInfo& render_interface_ci) = 0;
 			virtual void render(float dt) = 0;
 
-			virtual size_t createTexture(const std::string& name, const std::vector<uint8_t>& data, EMimeType mime) = 0;
+			virtual size_t createTexture(const std::string& path) = 0;
 
 			virtual size_t createShader(const std::string& name_info, const FGraphicsShaderCreateInfo& create_info) = 0;
 			virtual size_t createShader(const std::string& name_info, const FComputeShaderCreateInfo& create_info) = 0;

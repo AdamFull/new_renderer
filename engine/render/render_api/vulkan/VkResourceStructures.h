@@ -241,6 +241,8 @@ namespace engine
 			struct FVkDescriptorSetLayoutCreateInfo
 			{
 				std::vector<vk::DescriptorSetLayoutBinding> layoutBindings{};
+				vk::DescriptorSetLayoutCreateFlags flags{};
+				void* next{ nullptr };
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				std::string name{};
 #endif
@@ -256,6 +258,7 @@ namespace engine
 			{
 				std::vector<vk::DescriptorPoolSize> poolSizes{};
 				uint32_t usageCount{ 1u };
+				vk::DescriptorPoolCreateFlags flags{ vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet };
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				std::string name{};
 #endif
@@ -272,6 +275,7 @@ namespace engine
 				vk::DescriptorPool pool{};
 				vk::DescriptorSetLayout layout{};
 				uint32_t descriptorCount{ 0u };
+				void* next{ nullptr };
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				std::string name{};
 #endif
@@ -491,6 +495,13 @@ namespace engine
 				vk::ImageLayout newLayout{};
 				uint32_t baseArrayLayer{ 0u };
 				uint32_t baseMipLevel{ 0u };
+			};
+
+			struct FVkBindlessTexturesDescriptor
+			{
+				FVkDescriptorPool descriptorPool{};
+				vk::DescriptorSetLayout deecriptorSetLayout{};
+				FVkDescriptorSet descriptorSet{};
 			};
 		}
 	}

@@ -65,7 +65,9 @@ void CFullscreenRenderingStep::execute(float dt)
 	m_pRenderContext->setScissorRect(0, 0, render_resolution.x, render_resolution.y);
 
 	auto& push_block = m_pShader->getUniformBlock("FUniformData");
-	push_block->set("color", glm::vec3(1.f, 1.f, 0.f));
+	push_block->set("color", glm::vec3(2.f, 2.f, 2.f));
+
+	m_pShader->bindTexture("penis", 1);
 
 	// Here i can update uniforms
 

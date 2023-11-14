@@ -50,23 +50,8 @@ void CApplication::create()
 	m_pRenderInterface = std::make_unique<render::CRenderInterface>(m_pVirtualFileSystem.get());
 	m_pRenderInterface->create(rhi_ci);
 
-}
-
-size_t CApplication::loadTexture(const std::string& path)
-{
-	auto name = filesystem::fs::get_stem(path);
-	auto ext = filesystem::fs::get_ext(path);
-	auto ext_hash = utl::const_hash(ext.c_str(), ext.size());
-
-	std::vector<uint8_t> data{};
-	m_pVirtualFileSystem->readFile(path, data);
-
-	return m_pRenderInterface->createTexture(name, data, static_cast<EMimeType>(ext_hash));
-}
-
-size_t CApplication::loadShader(const std::string& name)
-{
-	return ~0ull;
+	// TODO: incorrect stb image loading. I guess it requires to generate copy info
+	auto ttt = m_pRenderInterface->createTexture("/root/cavern-deposits_albedo.ktx2");
 }
 
 void CApplication::loop()

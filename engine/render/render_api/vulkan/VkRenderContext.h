@@ -4,6 +4,8 @@
 #include <interface/ResourceContainer.h>
 #include <interface/RenderInterface.h>
 
+#include <ucontainer.hpp>
+
 namespace engine
 {
 	namespace render
@@ -54,6 +56,9 @@ namespace engine
 				void beginFrameCommandBuffers() override;
 				void endFrameCommandBuffers() override;
 			protected:
+				void createBindlessTexturesDescriptor();
+				void updateBindlessTexturesData();
+
 				void processResourceUpload();
 
 				FRenderApiErrorInfo createTexture(const FVkTextureCreateInfo& texture_ci, FVkTexture& texture);
@@ -75,6 +80,9 @@ namespace engine
 				std::unique_ptr<CResourceContainer> m_pResources{};
 
 				std::vector<FTextureUploadInfo> m_textureUploadInfos{};
+
+				FVkBindlessTexturesDescriptor m_bindlessDescriptor{};
+				std::unordered_map<uint32_t, utl::unique_queue<size_t>> m_textureToUpdate{};
 
 				std::unordered_map<FVkThreadKeyResolver, std::vector<FVkCommandBuffer>> m_commandBuffers{};
 				bool m_bIsFrameStarted{ false };

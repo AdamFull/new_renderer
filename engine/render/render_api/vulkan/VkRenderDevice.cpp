@@ -381,6 +381,8 @@ FRenderApiErrorInfo CVkRenderDevice::createDescriptorSetLayout(const FVkDescript
 	vk::DescriptorSetLayoutCreateInfo descriptor_set_layout_ci{};
 	descriptor_set_layout_ci.bindingCount = static_cast<uint32_t>(layout_ci.layoutBindings.size());
 	descriptor_set_layout_ci.pBindings = layout_ci.layoutBindings.data();
+	descriptor_set_layout_ci.flags = layout_ci.flags;
+	descriptor_set_layout_ci.pNext = layout_ci.next;
 
 	vk::Result res = logicalDevice.handle.createDescriptorSetLayout(&descriptor_set_layout_ci, allocationCallbacks, &descriptor_set_layout);
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -402,7 +404,7 @@ FRenderApiErrorInfo CVkRenderDevice::createDescriptorPool(const FVkDescriptorPoo
 	uint32_t maxSets{ 1u };
 	for (auto& pool_size : pool_sizes)
 	{
-		pool_size.descriptorCount *= swapchain.framesInFlight * pool_ci.usageCount;
+		pool_size.descriptorCount *= pool_ci.usageCount;
 		maxSets += pool_size.descriptorCount;
 	}
 
@@ -410,7 +412,7 @@ FRenderApiErrorInfo CVkRenderDevice::createDescriptorPool(const FVkDescriptorPoo
 	descriptor_pool_ci.poolSizeCount = static_cast<uint32_t>(pool_sizes.size());
 	descriptor_pool_ci.pPoolSizes = pool_sizes.data();
 	descriptor_pool_ci.maxSets = maxSets;
-	descriptor_pool_ci.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
+	descriptor_pool_ci.flags = pool_ci.flags;
 
 	vk::Result res = logicalDevice.handle.createDescriptorPool(&descriptor_pool_ci, allocationCallbacks, &descriptor_pool.handle);
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -438,9 +440,10 @@ FRenderApiErrorInfo CVkRenderDevice::createDescriptorSet(const FVkDescriptorSetC
 	std::vector<vk::DescriptorSetLayout> per_frame_layout(set_ci.descriptorCount, set_ci.layout);
 
 	vk::DescriptorSetAllocateInfo descriptor_ai{};
-	descriptor_ai.descriptorPool = set_ci.pool;;
+	descriptor_ai.descriptorPool = set_ci.pool;
 	descriptor_ai.descriptorSetCount = static_cast<uint32_t>(per_frame_layout.size());
 	descriptor_ai.pSetLayouts = per_frame_layout.data();
+	descriptor_ai.pNext = set_ci.next;
 
 	descriptor_set.handles.resize(set_ci.descriptorCount);
 	vk::Result res = logicalDevice.handle.allocateDescriptorSets(&descriptor_ai, descriptor_set.handles.data());

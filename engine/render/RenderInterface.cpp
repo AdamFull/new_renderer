@@ -128,8 +128,16 @@ void CRenderInterface::render(float dt)
 	m_pRenderContext->endFrameCommandBuffers();
 }
 
-size_t CRenderInterface::createTexture(const std::string& name, const std::vector<uint8_t>& data, EMimeType mime)
+size_t CRenderInterface::createTexture(const std::string& path)
 {
+	auto name = filesystem::fs::get_stem(path);
+	auto ext = filesystem::fs::get_ext(path);
+	auto ext_hash = utl::const_hash(ext.c_str(), ext.size());
+	auto mime = static_cast<EMimeType>(ext_hash);
+
+	std::vector<uint8_t> data{};
+	m_pVFS->readFile(path, data);
+
 	FTextureCreateInfo texture_ci{};
 	FTextureUploadInfo texture_ui{};
 	m_pResourceLoader->loadTexture(data, mime, texture_ci, texture_ui);

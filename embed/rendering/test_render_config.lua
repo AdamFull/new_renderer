@@ -27,6 +27,7 @@ do
     -- renderer_ci.input_targets:set("zbuffer_emission_target", render_context.get_texture_resource("zbuffer_emission_target"))
     -- renderer_ci.input_targets:set("zbuffer_depth_target", render_context.get_texture_resource("zbuffer_depth_target"))
     -- renderer_ci.input_targets:set("shadowmap_composition_target"render_context.get_texture_resource("shadowmap_composition_target"))
+    -- step_ci.rendering.input_targets:set("penis", render_context.get_texture_resource("penis"))
     step_ci.rendering.output_targets:add(render_context:get_texture_resource("present_target"))
     
     render_interface:create_renderer(step_ci)

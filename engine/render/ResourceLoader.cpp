@@ -59,6 +59,8 @@ void CResourceLoader::initialize(IVirtualFileSystemInterface* vfs)
 
 bool CResourceLoader::loadTexture(const std::vector<uint8_t>& data, EMimeType mime, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info)
 {
+	create_info.typeFlags = TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT | TEXTURE_IMAGE_TYPE_TRANSFERABLE_FLAG_BIT;
+
 	switch (mime)
 	{
 	case EMimeType::eJPG:
@@ -132,7 +134,7 @@ bool CResourceLoader::loadSTBFromMemory(const std::vector<uint8_t>& data, FTextu
 	upload_info.data.resize(data_size);
 	std::memcpy(upload_info.data.data(), rawdata, data_size);
 
-	create_info.typeFlags |= TEXTURE_IMAGE_TYPE_3D_FLAG_BIT;
+	create_info.typeFlags |= TEXTURE_IMAGE_TYPE_2D_FLAG_BIT;
 
 	create_info.mipLevels = static_cast<uint32_t>(std::floor(std::log2((std::max)(width, height)))) + 1u;
 
