@@ -20,7 +20,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 target_include_directories(${PROJECT_NAME} 
 	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/"
     PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/engine"
-    PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/glm"
+    PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/entt"
+    PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/glm"
     PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/utllib"
-    PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/entt"
 )

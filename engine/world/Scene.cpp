@@ -1,53 +1,98 @@
 #include "Scene.h"
 
+#include <world/SceneGraph.h>
+
 // TODO: create my own scene format, but based on gltf
-#define TINYGLTF_IMPLEMENTATION
-#define TINYGLTF_NO_STB_IMAGE
-#define TINYGLTF_NO_STB_IMAGE_WRITE
-#include <tiny_gltf.h>
+#include <parser/easygltf.h>
 
 #include <filesystem/vfs_helper.h>
+#include <logger/logger.h>
 
 using namespace engine::world;
 using namespace engine::filesystem;
 
-bool gltfFileSystemFileExists(const std::string& filename, void* userdata)
+class FSWrapper : public easygltf::IFilesystemWrapper
 {
-	auto* vfs = static_cast<IVirtualFileSystemInterface*>(userdata);
-	return vfs->exists(filename);
-}
+public:
+	FSWrapper(IVirtualFileSystemInterface* vfs) : m_pVFS(vfs) {}
+	~FSWrapper() override = default;
 
-std::string gltfFileSystemExpandFilePath(const std::string& filename, void* userdata)
-{
-	return fs::normalize(fs::to_posix_path(filename));
-}
+	bool exists(const std::string& path) override
+	{
+		return m_pVFS->exists(path);
+	}
 
-bool gltfFileSystemReadFile(std::vector<uint8_t>* u8data, std::string* err, const std::string& filename, void* userdata)
-{
-	auto* vfs = static_cast<IVirtualFileSystemInterface*>(userdata);
-	return vfs->readFile(filename, *u8data);
-}
+	std::string expandFilePath(const std::string& path) override
+	{
+		return fs::normalize(fs::to_posix_path(path));
+	}
 
-bool gltfFileSystemWriteFile(std::string* err, const std::string& filename, const std::vector<uint8_t>& u8data, void* userdata)
-{
-	auto* vfs = static_cast<IVirtualFileSystemInterface*>(userdata);
-	return vfs->writeFile(filename, u8data);
-}
+	bool readFile(const std::string& path, std::vector<uint8_t>& data) override
+	{
+		return m_pVFS->readFile(path, data);
+	}
+
+	bool writeFile(const std::string& path, const std::vector<uint8_t>& data) override
+	{
+		return m_pVFS->writeFile(path, data);
+	}
+
+	size_t fileSize(const std::string& path) override
+	{
+		return m_pVFS->fileSize(path);
+	}
+private:
+	IVirtualFileSystemInterface* m_pVFS{ nullptr };
+};
 
 CScene::CScene(IVirtualFileSystemInterface* vfs)
 {
 	m_pVFS = vfs;
 
-	m_pSceneGraph = std::make_unique<CSceneGraph>();
+	m_pSceneGraph = new CSceneGraph();
+	m_pScene = new easygltf::CGltfProject();
 }
 
-void CScene::create()
+CScene::~CScene()
 {
-	
+	if (m_pSceneGraph)
+	{
+		delete m_pSceneGraph;
+		m_pSceneGraph = nullptr;
+	}
+
+	if (m_pScene)
+	{
+		delete m_pScene;
+		m_pScene = nullptr;
+	}
 }
 
 void CScene::load(const std::string& path)
 {
-	tinygltf::Model gltfModel;
-	tinygltf::TinyGLTF gltfContext;
+	m_pScene->setFilesystemWrapper(std::make_unique<FSWrapper>(m_pVFS));
+	
+	if (!m_pScene->load(path))
+	{
+		log_warning(m_pScene->getWarnings());
+		log_error(m_pScene->getErrors());
+		return;
+	}
+
+	loadTextures();
+}
+
+void CScene::loadTextures()
+{
+	auto& gltf = m_pScene->getGltf();
+
+	for (const auto& texture : gltf.textures)
+	{
+		auto& image = gltf.images.at(texture.source);
+		auto& sampler = gltf.images.at(texture.sampler);
+
+		// TODO: add ability to override format and sampler params
+		auto image_path = m_pScene->getResourcePath(image.uri);
+		m_loadedTextures.emplace_back(m_pRenderInterface->createTexture(image_path));
+	}
 }

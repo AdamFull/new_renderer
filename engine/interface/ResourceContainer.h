@@ -17,7 +17,7 @@ namespace engine
 	class CResourceHolder
 	{
 	public:
-		resource_handle_t add(const char* name, _Ty&& object)
+		resource_handle_t add(const char* name, std::unique_ptr<_Ty>&& object)
 		{
 			static std::atomic<resource_handle_t> uid{ 0ull };
 
@@ -26,7 +26,7 @@ namespace engine
 			if (found_association != nameToId.end())
 			{
 				auto& current_id = found_association->second;
-				objects.at(current_id).emplace_back(object);
+				objects.at(current_id).emplace_back(std::move(object));
 				return current_id;
 			}
 			
@@ -35,7 +35,7 @@ namespace engine
 				resource_handle_t current_id = freeIds.front();
 				freeIds.pop();
 
-				objects.at(current_id).emplace_back(object);
+				objects.at(current_id).emplace_back(std::move(object));
 
 				return current_id;
 			}
@@ -45,7 +45,7 @@ namespace engine
 
 			nameToId.emplace(utl::fnv1a_64_hash(name), current_id);
 			auto& instances = objects.emplace_back();
-			instances.emplace_back(object);
+			instances.emplace_back(std::move(object));
 
 			return current_id;
 		}
@@ -72,18 +72,18 @@ namespace engine
 			}
 		}
 
-		_Ty& get(resource_handle_t id, size_t index = 0ull)
+		const std::unique_ptr<_Ty>& get(resource_handle_t id, size_t index = 0ull)
 		{
 			return objects.at(id).at(index);
 		}
 
-		_Ty& get(const char* name, size_t index = 0ull)
+		const std::unique_ptr<_Ty>& get(const char* name, size_t index = 0ull)
 		{
 			auto id = nameToId[utl::fnv1a_64_hash(name)];
 			return get(id, index);
 		}
 
-		std::vector<std::vector<_Ty>>& data()
+		std::vector<std::vector<std::unique_ptr<_Ty>>>& data()
 		{
 			return objects;
 		}
@@ -99,7 +99,7 @@ namespace engine
 	private:
 		std::queue<resource_handle_t> freeIds{};
 		std::unordered_map<size_t, resource_handle_t> nameToId{};
-		std::vector<std::vector<_Ty>> objects{};
+		std::vector<std::vector<std::unique_ptr<_Ty>>> objects{};
 	};
 
 	class CResourceContainer
@@ -113,21 +113,21 @@ namespace engine
 		}
 
 		template<class _Ty>
-		resource_handle_t add(const char* name, _Ty&& object)
+		resource_handle_t add(const char* name, std::unique_ptr<_Ty>&& object)
 		{
 			auto container = get_container<_Ty>();
-			return container->add(name, std::forward<_Ty>(object));
+			return container->add(name, std::move(object));
 		}
 
 		template<class _Ty>
-		_Ty& get(resource_handle_t id)
+		const std::unique_ptr<_Ty>& get(resource_handle_t id)
 		{
 			auto container = get_container<_Ty>();
 			return container->get(id);
 		}
 
 		template<class _Ty>
-		_Ty& get(const char* name)
+		const std::unique_ptr<_Ty>& get(const char* name)
 		{
 			auto container = get_container<_Ty>();
 			return container->get(name);
@@ -148,7 +148,7 @@ namespace engine
 		}
 
 		template<class _Ty>
-		std::vector<std::vector<_Ty>>& data()
+		std::vector<std::vector<std::unique_ptr<_Ty>>>& data()
 		{
 			auto container = get_container<_Ty>();
 			return container->data();

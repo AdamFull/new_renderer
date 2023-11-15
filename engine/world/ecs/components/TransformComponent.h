@@ -29,3 +29,29 @@ namespace engine
 		}
 	}
 }
+
+/*
+* {
+*	images: [],
+*	textures: [],
+*	materials: [],
+*	
+*	root: {
+*		components: {
+*			base_component: {
+*				name: "bla_bla",
+*				visible: true,
+*				enabled: true
+*			},
+*			transform_component: {
+*				pos: [],
+*				rot: [],
+*				scale: [],
+*				mat: []
+*			},
+*			hierarchy_component: {
+*			}
+*		}
+*	}
+* }
+*/

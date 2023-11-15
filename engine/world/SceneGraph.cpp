@@ -14,7 +14,7 @@ CSceneGraph::CSceneGraph()
 entt::entity CSceneGraph::createNode(const std::string& name)
 {
 	auto entity = m_pRegistry->create();
-	m_pRegistry->emplace<FTransformComponent>(entity, FBaseComponent{name});
+	m_pRegistry->emplace<FBaseComponent>(entity, FBaseComponent{name});
 	m_pRegistry->emplace<FTransformComponent>(entity, FTransformComponent{});
 	m_pRegistry->emplace<FHierarchyComponent>(entity, FHierarchyComponent{});
 	log_debug("Entity with id {} was created", static_cast<uint32_t>(entity));

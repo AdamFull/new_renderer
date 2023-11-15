@@ -214,6 +214,7 @@ namespace engine
 
 				"one_time", & FRenderingStepRenderingInfo::oneTime,
 				"flip_viewport", & FRenderingStepRenderingInfo::flipViewport,
+				"material_pass", & FRenderingStepRenderingInfo::materialPass,
 
 				"input_targets", & FRenderingStepRenderingInfo::shaderInputs,
 				"output_targets", & FRenderingStepRenderingInfo::renderTargets,

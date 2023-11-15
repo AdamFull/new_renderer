@@ -21,6 +21,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 
 target_include_directories(${PROJECT_NAME} 
 	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}"
+	PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/glm"
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -28,4 +29,5 @@ target_link_libraries(${PROJECT_NAME}
 	PUBLIC virtual_filesystem
 	PRIVATE render_interface
 	PRIVATE script_engine
+	PRIVATE engine_world
 )

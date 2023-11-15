@@ -4,6 +4,7 @@
 #include <rendering_steps/FullscreenRenderingStep.h>
 #include <rendering_steps/RenderScriptRenderingStep.h>
 #include <rendering_steps/SynchronizationRenderingStep.h>
+#include <Material.h>
 
 #include <shader_compiler/compiler_util.h>
 
@@ -116,6 +117,9 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 	std::vector<uint8_t> render_config{};
 	m_pVFS->readFile("/root/embed/rendering/test_render_config.lua", render_config);
 	m_pRenderScriptCore->build("render_config", render_config);
+
+	m_pResources = std::make_unique<CResourceContainer>();
+	m_pResources->registerResource<CMaterial>();
 }
 
 void CRenderInterface::render(float dt)
@@ -157,6 +161,35 @@ size_t CRenderInterface::createShader(const std::string& name, const FComputeSha
 	return createShader<FComputeShaderCreateInfo>(name_info, create_info);
 }
 
+size_t CRenderInterface::createMaterial(const std::string& name, const FMaterialCreateInfo& material_ci)
+{
+	auto material = std::make_unique<CMaterial>();
+
+	std::string shader_name = material_ci.baseShaderName;
+	for (const auto& define : material_ci.definitions)
+		shader_name += ":" + define;
+
+	// TODO: i don't know how to set output targets for this shader. 
+	FGraphicsShaderCreateInfo shader_ci{};
+	shader_ci.cullMode = SHADER_CULL_MODE_BACK_BIT;
+	shader_ci.frontFace = SHADER_FRONT_FACE_CCW;
+	shader_ci.primitiveTopology = SHADER_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	shader_ci.colorAttachments = m_matPassRTs;
+	shader_ci.depthAttachment = m_matPassDepth;
+	shader_ci.stencilAttachment = m_matPassStencil;
+
+	auto shader_id = createShader(shader_name, shader_ci);
+	auto shader_reflection = m_pRenderContext->getShaderReflection(shader_id);
+
+	material->m_pShader->create(shader_id, shader_reflection);
+
+	// Bind default textures to shader
+	for (auto& [binding_point, texture] : material_ci.textures)
+		material->m_pShader->bindTexture(binding_point.c_str(), texture);
+
+	return m_pResources->add<CMaterial>(name.c_str(), std::move(material));
+}
+
 void CRenderInterface::updateSurfaceSize(int32_t width, int32_t height)
 {
 	m_pRenderContext->updateSurface(width, height);
@@ -177,6 +210,13 @@ FShaderUploadInfo CRenderInterface::getShaderNameTag(const std::string& name)
 void CRenderInterface::createRendering(const FRenderingStepCreateInfo& rendering_ci)
 {
 	auto& new_step = m_vRenderingSteps.emplace_back();
+
+	if (rendering_ci.rendering.materialPass)
+	{
+		m_matPassRTs = rendering_ci.rendering.renderTargets;
+		m_matPassDepth = rendering_ci.rendering.depthTarget;
+		m_matPassStencil = rendering_ci.rendering.stencilTarget;
+	}
 
 	if (rendering_ci.type == RENDERING_STEP_SYNCHRONIZATION_TYPE)
 		new_step = std::make_unique<CSynchronizationRenderingStep>(this, m_pRenderContext.get());

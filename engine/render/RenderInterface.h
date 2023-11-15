@@ -1,6 +1,7 @@
 #pragma once
 
 #include <interface/filesystem/VirtualFileSystemInterface.h>
+#include <interface/ResourceContainer.h>
 #include <render_config/RenderConfig.h>
 #include <ResourceLoader.h>
 #include <memory>
@@ -23,6 +24,8 @@ namespace engine
 			size_t createShader(const std::string& name, const FGraphicsShaderCreateInfo& create_info) override;
 			size_t createShader(const std::string& name, const FComputeShaderCreateInfo& create_info) override;
 
+			size_t createMaterial(const std::string& name, const FMaterialCreateInfo& material_ci) override;
+
 			void updateSurfaceSize(int32_t width, int32_t height) override;
 		protected:
 			template<class _Ty>
@@ -43,6 +46,11 @@ namespace engine
 
 			std::vector<std::unique_ptr<IRenderingStep>> m_vRenderingSteps{};
 
+			std::vector<size_t> m_matPassRTs{};
+			size_t m_matPassDepth{ ~0ull };
+			size_t m_matPassStencil{ ~0ull };
+
+			std::unique_ptr<CResourceContainer> m_pResources{};
 			std::unique_ptr<IRenderContext> m_pRenderContext{};
 			std::unique_ptr<CResourceLoader> m_pResourceLoader{};
 			std::unique_ptr<CRenderScriptCore> m_pRenderScriptCore{};
