@@ -86,6 +86,7 @@ namespace engine
 		enum ERenderingType
 		{
 			RENDERING_FULLSCREEN_TYPE,
+			RENDERING_GEOMETRY_TYPE,
 			RENDERING_RENDER_SCRIPT_TYPE
 		};
 

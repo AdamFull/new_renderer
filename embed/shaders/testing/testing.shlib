@@ -15,12 +15,32 @@
 					shader_name: "screenspace_frag";
 				}
 			];
+		},
+		{
+			name: "visbufferwrite";
+			sources: [
+				{
+					type: "vertex";
+					shader_name: "visbufferwrite_vert";
+				},
+				{
+					type: "fragment";
+					shader_name: "visbufferwrite_frag";
+				}
+			];
 		}
 	];
 
 	compile: [
 		{ 
 			shader_name: "screenspace";
+			permutations: [
+				{ definitions: [] },
+				{ definitions: ["EDITOR_MODE"] }
+			];
+		},
+		{ 
+			shader_name: "visbufferwrite";
 			permutations: [
 				{ definitions: [] },
 				{ definitions: ["EDITOR_MODE"] }

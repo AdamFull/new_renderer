@@ -132,6 +132,7 @@ namespace engine
 			lua->new_enum(
 				"RenderingType",
 				"fullscreen", RENDERING_FULLSCREEN_TYPE,
+				"geometry", RENDERING_GEOMETRY_TYPE,
 				"render_script", RENDERING_RENDER_SCRIPT_TYPE
 			);
 

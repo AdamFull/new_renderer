@@ -76,6 +76,23 @@ namespace easygltf
 				constexpr const int32_t uint_type{ 5125 };
 				constexpr const int32_t float_type{ 5126 };
 				constexpr const int32_t double_type{ 5130 };
+
+				constexpr const int32_t float_vec2_type{ 35664 };
+				constexpr const int32_t float_vec3_type{ 35665 };
+				constexpr const int32_t float_vec4_type{ 35666 };
+
+				constexpr const int32_t int_vec2_type{ 35667 };
+				constexpr const int32_t int_vec3_type{ 35668 };
+				constexpr const int32_t int_vec4_type{ 35669 };
+
+				constexpr const int32_t bool_type{ 35670 };
+				constexpr const int32_t bool_vec2_type{ 35671 };
+				constexpr const int32_t bool_vec3_type{ 35672 };
+				constexpr const int32_t bool_vec4_type{ 35673 };
+
+				constexpr const int32_t float_mat2_type{ 35674 };
+				constexpr const int32_t float_mat3_type{ 35675 };
+				constexpr const int32_t float_mat4_type{ 35676 };
 			}
 
 			namespace texture_filter

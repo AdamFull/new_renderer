@@ -53,6 +53,15 @@ namespace easygltf
 
 		std::string getResourcePath(const std::string& path);
 
+		template<class _Ty>
+		_Ty* getBufferPointer(int32_t accessor_id, Accessor*& accessor)
+		{
+			accessor = &m_scene.accessors[accessor_id];
+			const BufferView& buffer_view = m_scene.bufferViews[accessor->bufferView];
+			auto& buffer = m_mBufferData[buffer_view.buffer];
+			return reinterpret_cast<_Ty*>(&buffer[accessor->byteOffset + buffer_view.byteOffset]);
+		}
+
 		// Getters
 		//const Accessor& getAccessor(int32_t idx) const;
 		//const Animation& getAnimation(int32_t idx) const;

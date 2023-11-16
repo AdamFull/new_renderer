@@ -4,6 +4,7 @@
 #include <rendering_steps/FullscreenRenderingStep.h>
 #include <rendering_steps/RenderScriptRenderingStep.h>
 #include <rendering_steps/SynchronizationRenderingStep.h>
+#include <rendering_steps/GeometryRenderingStep.h>
 #include <Material.h>
 
 #include <shader_compiler/compiler_util.h>
@@ -224,6 +225,8 @@ void CRenderInterface::createRendering(const FRenderingStepCreateInfo& rendering
 	{
 		if(rendering_ci.rendering.type == RENDERING_FULLSCREEN_TYPE)
 			new_step = std::make_unique<CFullscreenRenderingStep>(this, m_pRenderContext.get());
+		else if (rendering_ci.rendering.type == RENDERING_GEOMETRY_TYPE)
+			new_step = std::make_unique<CGeometryRenderingStep>(this, m_pRenderContext.get());
 		else if(rendering_ci.rendering.type == RENDERING_RENDER_SCRIPT_TYPE)
 			new_step = std::make_unique<CRenderScriptRenderingStep>(this, m_pRenderContext.get());
 	}
