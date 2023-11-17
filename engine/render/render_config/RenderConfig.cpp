@@ -82,7 +82,7 @@ std::unique_ptr<CRenderScriptExecutor> CRenderScriptCore::build(const std::strin
 
 void CDynamicRenderStage::create(const std::string& stage)
 {
-	m_pStageShader = std::make_unique<CShaderObject>();
+	//m_pStageShader = std::make_unique<CShaderObject>();
 
 	m_pScriptExecutor->run("on_create", stage);
 }

@@ -414,10 +414,12 @@ namespace engine
 			// Shader object registration
 			lua->new_usertype<IShaderObject>(
 				"ShaderObject",
-				"new", sol::factories([]() { return std::make_unique<CShaderObject>(); }),
-				"create", &IShaderObject::create,
+				//"new", sol::factories([]() { return std::make_unique<CShaderObject>(); }),
+				"create", sol::overload(
+					static_cast<void(IShaderObject::*)(const std::string&, const FGraphicsShaderCreateInfo&)>(&IShaderObject::create),
+					static_cast<void(IShaderObject::*)(const std::string&, const FComputeShaderCreateInfo&)>(&IShaderObject::create)
+				),
 				"get_uniform_block", [](IShaderObject& self, const std::string& name) { return self.getUniformBlock(name.c_str()).get(); },
-				"get_resource_commit", &IShaderObject::getResourceCommit,
 				"bind_texture", & IShaderObject::bindTexture
 			);
 		}

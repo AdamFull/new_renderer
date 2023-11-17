@@ -11,7 +11,7 @@ namespace engine
 		{
 		public:
 			CShaderObject(IRenderInterface* render_interface, IRenderContext* render_context);
-			~CShaderObject() override = default;
+			~CShaderObject() override;
 
 			void create(const std::string& name, const FGraphicsShaderCreateInfo& create_info) override;
 			void create(const std::string& name, const FComputeShaderCreateInfo& create_info) override;

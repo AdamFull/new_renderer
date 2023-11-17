@@ -5,7 +5,9 @@
 #include <rendering_steps/RenderScriptRenderingStep.h>
 #include <rendering_steps/SynchronizationRenderingStep.h>
 #include <rendering_steps/GeometryRenderingStep.h>
+
 #include <Material.h>
+#include <VertexHandler.h>
 
 #include <shader_compiler/compiler_util.h>
 
@@ -164,7 +166,7 @@ size_t CRenderInterface::createShader(const std::string& name, const FComputeSha
 
 size_t CRenderInterface::createMaterial(const std::string& name, const FMaterialCreateInfo& material_ci)
 {
-	auto material = std::make_unique<CMaterial>();
+	auto material = std::make_unique<CMaterial>(this, m_pRenderContext.get());
 
 	std::string shader_name = material_ci.baseShaderName;
 	for (const auto& define : material_ci.definitions)
@@ -179,10 +181,7 @@ size_t CRenderInterface::createMaterial(const std::string& name, const FMaterial
 	shader_ci.depthAttachment = m_matPassDepth;
 	shader_ci.stencilAttachment = m_matPassStencil;
 
-	auto shader_id = createShader(shader_name, shader_ci);
-	auto shader_reflection = m_pRenderContext->getShaderReflection(shader_id);
-
-	material->m_pShader->create(shader_id, shader_reflection);
+	material->m_pShader->create(shader_name, shader_ci);
 
 	// Bind default textures to shader
 	for (auto& [binding_point, texture] : material_ci.textures)

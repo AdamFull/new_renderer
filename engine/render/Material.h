@@ -11,7 +11,7 @@ namespace engine
 		public:
 			friend class CRenderInterface;
 
-			CMaterial();
+			CMaterial(IRenderInterface* render_interface, IRenderContext* render_context);
 			~CMaterial() override = default;
 			
 			void addTexture(const char* name, size_t texture_id) override;
@@ -19,6 +19,9 @@ namespace engine
 		private:
 			FMaterial m_materialParameters{};
 			std::unique_ptr<IShaderObject> m_pShader{};
+
+			IRenderInterface* m_pRenderInterface{ nullptr };
+			IRenderContext* m_pRenderContext{ nullptr };
 		};
 	}
 }
