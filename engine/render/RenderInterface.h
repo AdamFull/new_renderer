@@ -46,6 +46,8 @@ namespace engine
 
 			std::vector<std::unique_ptr<IRenderingStep>> m_vRenderingSteps{};
 
+			// TODO: add map with entity id and mesh data
+
 			std::vector<size_t> m_matPassRTs{};
 			size_t m_matPassDepth{ ~0ull };
 			size_t m_matPassStencil{ ~0ull };

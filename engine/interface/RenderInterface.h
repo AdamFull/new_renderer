@@ -103,6 +103,18 @@ namespace engine
 			EBLEND
 		};
 
+		enum class EVertexAttributeType : uint32_t
+		{
+			ePosition,
+			eColor,
+			eTexCoord,
+			eNormal,
+			eTangent,
+			eJoint,
+			eWeight,
+			eIndex
+		};
+
 		struct FRenderInterfaceCreateInfo
 		{
 			ERenderApi render_api{};
@@ -353,7 +365,6 @@ namespace engine
 		{
 			size_t shaderId{ ~0ull };
 			std::unordered_map<size_t, FUniformDataView> uniforms{};
-			std::unordered_map<size_t, FUniformDataView> constants{}; // TODO: remove all other posibilities to have more than one push block. 
 			std::unordered_map<size_t, size_t> textures{};
 		};
 
@@ -415,6 +426,14 @@ namespace engine
 			size_t usageCount{ 0ull };
 
 			FMaterial parameters{};
+		};
+
+		struct FVertexAttributePointer
+		{
+			EVertexAttributeType type{ EVertexAttributeType::eIndex };
+			uint8_t* data{ nullptr };
+			size_t stride{ 0ull };
+			size_t count{ 0ull };
 		};
 
 		class CUniformHandle
@@ -485,15 +504,18 @@ namespace engine
 		{
 		public:
 			virtual ~IShaderObject() = default;
-			virtual void create(size_t resource, const FShaderReflectionData& reflection) = 0;
+
+			virtual void create(const std::string& name, const FGraphicsShaderCreateInfo& create_info) = 0;
+			virtual void create(const std::string& name, const FComputeShaderCreateInfo& create_info) = 0;
 
 			virtual const std::unique_ptr<CUniformHandle>& getUniformBlock(const char* name) = 0;
 			virtual const std::unique_ptr<CUniformHandle>& getConstantBlock(const char* name) = 0;
 
 			virtual void bindTexture(const char* name, size_t texture_resource) = 0;
 
-			virtual FShaderResourceCommit getResourceCommit() = 0;
-			virtual size_t getId() = 0;
+			virtual void flushDescriptors() = 0;
+			virtual void flushConstants(uint32_t queue) = 0;
+			virtual void bind(uint32_t queue) = 0;
 		};
 
 		class IRenderMaterial
@@ -512,6 +534,20 @@ namespace engine
 
 			virtual void create(const FRenderingStepCreateInfo& create_info) = 0;
 			virtual void execute(float dt) = 0;
+		};
+
+		class IVertexHandler
+		{
+		public:
+			virtual ~IVertexHandler() = default;
+
+			virtual void create() = 0;
+
+			virtual size_t addVertices(const std::vector<FVertexAttributePointer>& attributes_data) = 0;
+			virtual size_t addIndices(const FVertexAttributePointer& indices) = 0;
+
+			virtual size_t getLastVertex() = 0;
+			virtual size_t getLastIndex() = 0;
 		};
 
 		class IRenderInterface
@@ -557,7 +593,7 @@ namespace engine
 
 			virtual FShaderReflectionData getShaderReflection(const size_t& shader_view) = 0;
 			virtual void updateShaderResources(const FShaderResourceCommit& resources, uint32_t /*EShaderResourcesUpdateFlagBits*/ flags = SHADER_RESOURCES_UPDATE_ALL_FLAG_BIT) = 0;
-			virtual void flushConstantRanges(const FShaderResourceCommit& shader_resources, uint32_t queue_type) = 0;
+			virtual void flushConstantRanges(size_t shader_id, const std::unordered_map<size_t, FUniformDataView>& constants, uint32_t queue_type) = 0;
 
 			virtual size_t getTextureResource(const char* name) = 0;
 			virtual size_t getShaderResource(const char* name) = 0;

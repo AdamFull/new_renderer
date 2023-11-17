@@ -195,6 +195,19 @@ std::string CGltfProject::getResourcePath(const std::string& path)
 	return path_helper::path_append(m_srParentPath, path_helper::url_decode(path));
 }
 
+uint8_t* CGltfProject::getBufferPointer(const Accessor& accessor)
+{
+	const BufferView& buffer_view = m_scene.bufferViews[accessor.bufferView];
+	auto& buffer = m_mBufferData[buffer_view.buffer];
+	return &buffer[accessor.byteOffset + buffer_view.byteOffset];
+}
+
+uint8_t* CGltfProject::getBufferPointer(int32_t accessor_id)
+{
+	const Accessor& accessor = m_scene.accessors[accessor_id];
+	return getBufferPointer(accessor);
+}
+
 int32_t CGltfProject::createAccessor(const std::string& name)
 {
 	Accessor accessor{};

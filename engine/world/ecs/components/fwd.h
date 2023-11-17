@@ -10,6 +10,9 @@ namespace engine
 			struct FCameraComponent;
 			struct FHierarchyComponent;
 			struct FTransformComponent;
+			struct FDirectionalLightComponent;
+			struct FPointLightComponent;
+			struct FSpotLightComponent;
 		}
 	}
 }

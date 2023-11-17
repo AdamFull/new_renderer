@@ -325,6 +325,16 @@ size_t CVkRenderContext::createShader(const std::string& name, const FComputeSha
 	return m_pResources->add<FVkShader>(name.c_str(), std::move(shader));
 }
 
+void CVkRenderContext::destroyTexture(size_t resource_id)
+{
+	// TODO: we can't remove resources instantly in any time. Here i should add resource to delete queue
+}
+
+void CVkRenderContext::destroyShader(size_t resource_id)
+{
+	// TODO: we can't remove resources instantly in any time. Here i should add resource to delete queue
+}
+
 void CVkRenderContext::beginRendering(const FBeginRenderingInfo& rendering_info)
 {
 	// TODO: looks very bad. Maybe remove other method and do all work here?
@@ -771,16 +781,16 @@ void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader
 	}
 }
 
-void CVkRenderContext::flushConstantRanges(const FShaderResourceCommit& shader_resources, uint32_t queue_type)
+void CVkRenderContext::flushConstantRanges(size_t shader_id, const std::unordered_map<size_t, FUniformDataView>& constants, uint32_t queue_type)
 {
-	auto& shader = m_pResources->get<FVkShader>(shader_resources.shaderId);
+	auto& shader = m_pResources->get<FVkShader>(shader_id);
 	auto& shader_reflection = m_pResources->get<FVkShaderReflectionData>(shader->reflection);
 
 	auto& command_buffer = getLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
 
 	// TODO: remove all other posibilities to have more than one push block. 
-	for (const auto& [constant_name, constant_data] : shader_resources.constants)
+	for (const auto& [constant_name, constant_data] : constants)
 	{
 		auto found_reflection = shader_reflection->pushBlocks.find(constant_name);
 		if (found_reflection == shader_reflection->pushBlocks.end())

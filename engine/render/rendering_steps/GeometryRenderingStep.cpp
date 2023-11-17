@@ -32,12 +32,9 @@ void CGeometryRenderingStep::create(const FRenderingStepCreateInfo& create_info)
 		// TODO: if using global shader for all geometry, should get usage count from scene
 		shader_ci.usageCount = 50u;
 
-		auto shader_id = m_pRenderInterface->createShader(rendering_ci.shaderName, shader_ci);
-		auto shader_reflection = m_pRenderContext->getShaderReflection(shader_id);
-
 		// Make RHI shader object (more like reflection object)
-		m_pShader = std::make_unique<CShaderObject>();
-		m_pShader->create(shader_id, shader_reflection);
+		m_pShader = std::make_unique<CShaderObject>(m_pRenderInterface, m_pRenderContext);
+		m_pShader->create(rendering_ci.shaderName, shader_ci);
 
 		// Bind default textures to shader
 		for (auto& [binding_point, texture] : rendering_ci.shaderInputs)
@@ -69,11 +66,9 @@ void CGeometryRenderingStep::execute(float dt)
 	if (m_pShader)
 	{
 		// Update all shader uniforms and other things. It should be before i bind shader
-		auto resource_commit = m_pShader->getResourceCommit();
-		m_pRenderContext->updateShaderResources(resource_commit);
-		m_pRenderContext->flushConstantRanges(resource_commit, m_beginRenderingInfo.queue);
-
-		m_pRenderContext->bindShader(m_pShader->getId(), m_beginRenderingInfo.queue);
+		m_pShader->flushDescriptors();
+		m_pShader->flushConstants(m_beginRenderingInfo.queue);
+		m_pShader->bind(m_beginRenderingInfo.queue);
 	}
 	else
 	{

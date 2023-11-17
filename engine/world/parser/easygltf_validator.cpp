@@ -308,11 +308,11 @@ bool easygltf::validateNormalTexture(size_t id, const NormalTexture& normalTextu
 
 bool easygltf::validateTextureInfo(size_t id, const TextureInfo& textureInfo, std::stringstream& errors, std::stringstream& warnings)
 {
-	if (textureInfo.index == base::constants::not_set)
-	{
-		errors << std::format(validation_error_not_set, "TextureInfo", id, "index");
-		return false;
-	}
+	//if (textureInfo.index == base::constants::not_set)
+	//{
+	//	errors << std::format(validation_error_not_set, "TextureInfo", id, "index");
+	//	return false;
+	//}
 
 	return true;
 }

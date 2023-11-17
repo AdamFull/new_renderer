@@ -25,6 +25,9 @@ namespace engine
 				size_t createShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) override;
 				size_t createShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) override;
 
+				void destroyTexture(size_t resource_id) override;
+				void destroyShader(size_t resource_id) override;
+
 				void beginRendering(const FBeginRenderingInfo& rendering_info) override;
 				void endRendering(const FBeginRenderingInfo& rendering_info) override;
 
@@ -35,7 +38,7 @@ namespace engine
 
 				FShaderReflectionData getShaderReflection(const size_t& shader_view) override;
 				void updateShaderResources(const FShaderResourceCommit& shader_resources, uint32_t flags = SHADER_RESOURCES_UPDATE_ALL_FLAG_BIT) override;
-				void flushConstantRanges(const FShaderResourceCommit& shader_resources, uint32_t queue_type) override;
+				void flushConstantRanges(size_t shader_id, const std::unordered_map<size_t, FUniformDataView>& constants, uint32_t queue_type) override;
 
 				size_t getTextureResource(const char* name) override;
 				size_t getShaderResource(const char* name) override;

@@ -173,9 +173,10 @@ namespace easygltf
 		Default& operator=(const Default&) = default;
 		Default& operator=(Default&&) noexcept = default;
 
-		const bool hasExtension(const std::string& extension_name) const
+		template<class _Ty>
+		const bool hasExtension() const
 		{
-			return extensions.count(extension_name);
+			return extensions.count(_Ty::name);
 		}
 
 		bool compareExtensionsAndExtras(const Default& other) const

@@ -6,6 +6,8 @@
 // TODO: create my own scene format, but based on gltf
 #include <parser/easygltf.h>
 
+#include <meshoptimizer.h>
+
 #include <filesystem/vfs_helper.h>
 #include <logger/logger.h>
 #include <glm/gtc/type_ptr.hpp>
@@ -13,6 +15,49 @@
 using namespace engine::world;
 using namespace engine::world::ecs;
 using namespace engine::filesystem;
+
+size_t getSizeByType(int32_t component_type, const std::string& type)
+{
+	size_t size{ 0ull };
+
+	switch (component_type)
+	{
+	case easygltf::base::enumerators::component_type::byte_type:
+	case easygltf::base::enumerators::component_type::ubyte_type: size = 1ull; break;
+	case easygltf::base::enumerators::component_type::short_type:
+	case easygltf::base::enumerators::component_type::ushort_type: size = 2ull; break;
+	case easygltf::base::enumerators::component_type::uint_type:
+	case easygltf::base::enumerators::component_type::float_type: size = 4ull; break;
+	}
+
+	if (type == "VEC2")
+		size *= 2ull;
+	else if (type == "VEC3")
+		size *= 3ull;
+	else if (type == "VEC4")
+		size *= 4ull;
+	else if (type == "MAT2")
+		size *= 4ull;
+	else if (type == "MAT3")
+		size *= 9ull;
+	else if (type == "MAT4")
+		size *= 16ull;
+
+	return size;
+}
+
+engine::render::EVertexAttributeType getVertexAttributeTypeByName(const std::string& name)
+{
+	using namespace engine::render;
+
+	if (name == "POSITION") return EVertexAttributeType::ePosition;
+	else if (name == "COLOR_0") return EVertexAttributeType::eColor;
+	else if (name == "TEXCOORD_0") return EVertexAttributeType::eTexCoord;
+	else if (name == "NORMAL") return EVertexAttributeType::eNormal;
+	else if (name == "TANGENT") return EVertexAttributeType::eTangent;
+	else if (name == "JOINTS_0") return EVertexAttributeType::eJoint;
+	else if (name == "WEIGHTS_0") return EVertexAttributeType::eWeight;
+}
 
 class FSWrapper : public easygltf::IFilesystemWrapper
 {
@@ -48,6 +93,35 @@ private:
 	IVirtualFileSystemInterface* m_pVFS{ nullptr };
 };
 
+void convertIndicesSpace(std::vector<uint8_t>& indices, size_t index_size, int32_t vertex_start)
+{
+	for (size_t shift = 0ull; shift < indices.size() / index_size; shift += index_size)
+	{
+		switch (index_size)
+		{
+		case 4: {
+			uint32_t index = *reinterpret_cast<uint32_t*>(&indices[shift]);
+			index += vertex_start;
+			*reinterpret_cast<uint32_t*>(&indices[shift]) = index;
+		} break;
+		case 2:
+		{
+			uint16_t index = *reinterpret_cast<uint16_t*>(&indices[shift]);
+			index += vertex_start;
+			*reinterpret_cast<uint16_t*>(&indices[shift]) = static_cast<uint16_t>(index);
+		} break;
+		case 1:
+		{
+			uint8_t index = indices[shift];
+			index += vertex_start;
+			indices[shift] = index;
+		} break;
+		default:
+			throw std::runtime_error("Unsupported vertex size");
+		}
+	}
+}
+
 CScene::CScene(IVirtualFileSystemInterface* vfs)
 {
 	m_pVFS = vfs;
@@ -82,8 +156,8 @@ void CScene::load(const std::string& path)
 		return;
 	}
 
-	loadTextures();
-	loadMaterials();
+	//loadTextures();
+	//loadMaterials();
 
 	auto& gltf = m_pScene->getGltf();
 
@@ -139,6 +213,14 @@ void CScene::loadNode(const uint32_t parent, uint32_t node_index, float global_s
 
 	if(node.mesh >= 0)
 		loadMeshComponent(m_nodeToEntityMap[node_index], node_index);
+
+	if(node.camera >= 0)
+		loadCameraComponent(m_nodeToEntityMap[node_index], node_index);
+
+	if(node.hasExtension<easygltf::extensions::KHR_lights_punctual>())
+		loadLightComponent(m_nodeToEntityMap[node_index], node_index);
+
+	m_pSceneGraph->attachChild(static_cast<entt::entity>(parent), new_node);
 }
 
 void CScene::loadMeshComponent(const uint32_t parent, uint32_t node_index)
@@ -166,152 +248,117 @@ void CScene::loadMeshComponent(const uint32_t parent, uint32_t node_index)
 	// Load mesh primitives
 	for (size_t i = 0ull; i < mesh.primitives.size(); ++i)
 	{
-		std::vector<uint8_t> index_buffer;
-		std::vector<uint8_t> vertex_buffer;
-
 		const auto& primitive = mesh.primitives[i];
 
-		uint32_t index_start = m_lastIndex;
-		uint32_t vertex_start = m_lastVertex;
+		uint32_t index_start = m_pVertexHandler->getLastIndex();
+		uint32_t vertex_start = m_pVertexHandler->getLastVertex();
 		uint32_t index_count{ 0u }, vertex_count{ 0u };
-		glm::vec3 pos_min{}, pos_max{};
 
-		bool has_skin{ false }, has_normals{ false }, has_tangents{ false };
+		// TODO: add min max
+		glm::vec3 pos_min{}, pos_max{};
 
 		// Load vertices
 		{
-			const float* position_buffer{ nullptr };
-			const float* normals_buffer{ nullptr };
-			const float* texcoord_buffer{ nullptr };
-			const float* colors_buffer{ nullptr };
-			const float* tangents_buffer{ nullptr };
-			uint32_t num_color_components{ 0u };
-			const uint16_t* joints_buffer{ nullptr };
-			const float* weights_buffer{ nullptr };
+			std::vector<render::FVertexAttributePointer> attributes{};
 
-			// Position attribute is required
-			assert(primitive.attributes.count("POSITION"));
-			easygltf::Accessor* position_accessor{ nullptr };
-			position_buffer = m_pScene->getBufferPointer<const float>(primitive.attributes.find("POSITION")->second, position_accessor);
-			pos_min = glm::vec3(position_accessor->min[0], position_accessor->min[1], position_accessor->min[2]);
-			pos_max = glm::vec3(position_accessor->max[0], position_accessor->max[1], position_accessor->max[2]);
-
-			// Load model normals
-			if (auto found = primitive.attributes.find("NORMAL"); found != primitive.attributes.end())
+			for (const auto& [name, accessor_idx] : primitive.attributes)
 			{
-				easygltf::Accessor* normals_accessor{ nullptr };
-				normals_buffer = m_pScene->getBufferPointer<const float>(found->second, normals_accessor);
-				has_normals = true;
+				auto& attrib = attributes.emplace_back();
+				attrib.type = getVertexAttributeTypeByName(name);
+				
+				const easygltf::Accessor& accessor = gltf.accessors[accessor_idx];
+				attrib.data = m_pScene->getBufferPointer(accessor);
+				attrib.stride = getSizeByType(accessor.componentType, accessor.type);
+				attrib.count = accessor.count;
 			}
 
-			// Load UV coordinates
-			if (auto found = primitive.attributes.find("TEXCOORD_0"); found != primitive.attributes.end())
-			{
-				easygltf::Accessor* texcoord_accessor{ nullptr };
-				texcoord_buffer = m_pScene->getBufferPointer<const float>(found->second, texcoord_accessor);
-			}
+			// Attributes should be sorted by value type
+			std::sort(attributes.begin(), attributes.end(), [](const auto& lhs, const auto& rhs) { return static_cast<uint32_t>(lhs.type) < static_cast<uint32_t>(rhs.type); });
 
-			// Load mesh color data
-			if (auto found = primitive.attributes.find("COLOR_0"); found != primitive.attributes.end())
-			{
-				easygltf::Accessor* color_accessor{ nullptr };
-				colors_buffer = m_pScene->getBufferPointer<const float>(found->second, color_accessor);
-				num_color_components = color_accessor->componentType == easygltf::base::enumerators::component_type::float_vec3_type ? 3 : 4;
-			}
-
-			// Load tangent
-			if (auto found = primitive.attributes.find("TANGENT"); found != primitive.attributes.end())
-			{
-				easygltf::Accessor* tangent_accessor{ nullptr };
-				tangents_buffer = m_pScene->getBufferPointer<const float>(found->second, tangent_accessor);
-				has_tangents = true;
-			}
-
-			// Load joints
-			if (auto found = primitive.attributes.find("JOINTS_0"); found != primitive.attributes.end())
-			{
-				easygltf::Accessor* joints_accessor{ nullptr };
-				joints_buffer = m_pScene->getBufferPointer<const uint16_t>(found->second, joints_accessor);
-			}
-
-			// Load weight
-			if (auto found = primitive.attributes.find("WEIGHTS_0"); found != primitive.attributes.end())
-			{
-				easygltf::Accessor* weigths_accessor{ nullptr };
-				weights_buffer = m_pScene->getBufferPointer<const float>(found->second, weigths_accessor);
-			}
-
-			has_skin = (joints_buffer && weights_buffer);
-
-			vertex_count = static_cast<uint32_t>(position_accessor->count);
-
-			// TODO: push vertex data here
+			vertex_count = m_pVertexHandler->addVertices(attributes);
 		}
 
 		// Load indices
-		size_t index_size{ 1ull };
 		if (primitive.indices >= 0)
 		{
-			easygltf::Accessor* accessor{ nullptr };
-			const char* buffer = m_pScene->getBufferPointer<const char>(primitive.indices, accessor);
-			
+			render::FVertexAttributePointer indices{};
 
-			switch (accessor->componentType)
-			{
-			case easygltf::base::enumerators::component_type::uint_type: { index_size = 4ull; } break;
-			case easygltf::base::enumerators::component_type::ushort_type: { index_size = 2ull; } break;
-			case easygltf::base::enumerators::component_type::ubyte_type: { index_size = 1ull; } break;
-			default:
-			{
-				std::stringstream ss;
-				ss << "Index component type " << accessor->componentType << " not supported!";
-				log_warning("Warning while loading gltf scene: {}", ss.str());
-				return;
-			} break;
-			}
+			const easygltf::Accessor& accessor = gltf.accessors[primitive.indices];
+			indices.data = m_pScene->getBufferPointer(accessor);
+			indices.stride = getSizeByType(accessor.componentType, accessor.type);
+			indices.count = accessor.count;
 
-			std::vector<char> temp(accessor->count * index_size);
-			std::memcpy(temp.data(), buffer, accessor->count * index_size);
-			index_buffer.insert(index_buffer.end(), temp.begin(), temp.end());
+			index_count = m_pVertexHandler->addIndices(indices);
 		}
 
 		FMeshPrimitive mesh_primitive{};
 		mesh_primitive.setDimensions(pos_min, pos_max);
 
-		// TODO: set primitive material here
-		//if (!m_materials.empty())
-		//{
-		//	Here i can handle material create infos, but in future i should set material ids
-		//}
+		mesh_primitive.lods[0].begin_index = index_start;
+		mesh_primitive.lods[0].index_count = index_count;
+		mesh_primitive.lods[0].begin_vertex = vertex_start;
+		mesh_primitive.lods[0].vertex_count = vertex_count;
 
-		// Convert index to local
-		for (size_t shift = 0ull; shift < index_buffer.size() / index_size; shift += index_size)
-		{
-			switch (index_size)
-			{
-			case 4: {
-				uint32_t index = *reinterpret_cast<uint32_t*>(&index_buffer[i]);
-				index -= vertex_start;
-				*reinterpret_cast<uint32_t*>(&index_buffer[i]) = index;
-			} break;
-			case 2:
-			{
-				uint16_t index = *reinterpret_cast<uint16_t*>(&index_buffer[i]);
-				index -= vertex_start;
-				*reinterpret_cast<uint16_t*>(&index_buffer[i]) = static_cast<uint16_t>(index);
-			} break;
-			case 1:
-			{
-				uint8_t index = index_buffer[i];
-				index -= vertex_start;
-				index_buffer[i] = index;
-			} break;
-			default:
-				throw std::runtime_error("Unsupported vertex size");
-			}
-		}
+		primitives->emplace_back(mesh_primitive);
+	}
 
-		meshopt_optimizeVertexFetch(vertices, indexBuffer.data(), indexCount, vertices, vertexBuffer.size(), sizeof(FVertex));
-		meshopt_optimizeVertexCache(indexBuffer.data(), indexBuffer.data(), indexBuffer.size(), vertexBuffer.size());
+	// TODO: sort primitives by material
+}
+
+void CScene::loadCameraComponent(const uint32_t parent, uint32_t node_index)
+{
+	const auto& gltf = m_pScene->getGltf();
+	const auto& node = gltf.nodes[node_index];
+	const auto& camera = gltf.cameras[node.camera];
+
+	FCameraComponent camera_component;
+	if (camera.type == easygltf::base::enumerators::camera_type::orthographic)
+	{
+		camera_component.type = ECameraType::eOrthographic;
+		camera_component.xmag = camera.orthographic.xmag;
+		camera_component.ymag = camera.orthographic.ymag;
+		camera_component.nearPlane = camera.orthographic.znear;
+		camera_component.farPlane = camera.orthographic.zfar;
+	}
+	else if (camera.type == easygltf::base::enumerators::camera_type::perspective)
+	{
+		camera_component.type = ECameraType::ePerspective;
+		camera_component.fieldOfView = camera.perspective.yfov;
+		camera_component.nearPlane = camera.perspective.znear;
+		camera_component.farPlane = camera.perspective.zfar;
+	}
+
+	m_pSceneGraph->addComponent<FCameraComponent>(static_cast<entt::entity>(parent), std::move(camera_component));
+}
+
+void CScene::loadLightComponent(const uint32_t parent, uint32_t node_index)
+{
+	const auto& gltf = m_pScene->getGltf();
+	const auto& node = gltf.nodes[node_index];
+
+	auto& light = gltf.khrLightsPunctual.lights[node.khrLightsPunctual.light];
+	if (light.type == easygltf::extensions::KHR_lights_punctual::enumerators::light_type::directional)
+	{
+		FDirectionalLightComponent light_component;
+		light_component.color = glm::make_vec3(light.color.data());
+		light_component.intencity = light.intensity;
+		m_pSceneGraph->addComponent<FDirectionalLightComponent>(static_cast<entt::entity>(parent), std::move(light_component));
+	}
+	else if (light.type == easygltf::extensions::KHR_lights_punctual::enumerators::light_type::spot)
+	{
+		FSpotLightComponent light_component;
+		light_component.color = glm::make_vec3(light.color.data());
+		light_component.innerAngle = light.spot.innerConeAngle;
+		light_component.outerAngle = light.spot.outerConeAngle;
+		light_component.intencity = light.intensity;
+		m_pSceneGraph->addComponent<FSpotLightComponent>(static_cast<entt::entity>(parent), std::move(light_component));
+	}
+	else if (light.type == easygltf::extensions::KHR_lights_punctual::enumerators::light_type::point)
+	{
+		FPointLightComponent light_component;
+		light_component.color = glm::make_vec3(light.color.data());
+		light_component.intencity = light.intensity;
+		light_component.radius = light.range;
+		m_pSceneGraph->addComponent<FPointLightComponent>(static_cast<entt::entity>(parent), std::move(light_component));
 	}
 }

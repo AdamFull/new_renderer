@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.18.0)
 project(engine_world)
 
+add_subdirectory("${MAIN_PROJECT_DIRECTORY_PATH}/libraries/meshoptimizer" meshopt)
+
 file(GLOB_RECURSE ENGINE_WORLD_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 file(GLOB_RECURSE ENGINE_WORLD_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 
@@ -23,4 +25,9 @@ target_include_directories(${PROJECT_NAME}
     PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/entt"
     PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/glm"
     PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/utllib"
+    PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/meshoptimizer/src"
+)
+
+target_link_libraries(${PROJECT_NAME}
+	PUBLIC meshoptimizer
 )

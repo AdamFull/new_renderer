@@ -29,12 +29,9 @@ void CFullscreenRenderingStep::create(const FRenderingStepCreateInfo& create_inf
 	shader_ci.depthAttachment = rendering_ci.depthTarget;
 	shader_ci.stencilAttachment = rendering_ci.stencilTarget;
 
-	auto shader_id = m_pRenderInterface->createShader(rendering_ci.shaderName, shader_ci);
-	auto shader_reflection = m_pRenderContext->getShaderReflection(shader_id);
-
-	// Make RHI shader object (more like reflection object)
-	m_pShader = std::make_unique<CShaderObject>();
-	m_pShader->create(shader_id, shader_reflection);
+	// Make RHI shader object
+	m_pShader = std::make_unique<CShaderObject>(m_pRenderInterface, m_pRenderContext);
+	m_pShader->create(rendering_ci.shaderName, shader_ci);
 
 	// Bind default textures to shader
 	for (auto& [binding_point, texture] : rendering_ci.shaderInputs)
@@ -72,11 +69,9 @@ void CFullscreenRenderingStep::execute(float dt)
 	// Here i can update uniforms
 
 	// Update all shader uniforms and other things. It should be before i bind shader
-	auto resource_commit = m_pShader->getResourceCommit();
-	m_pRenderContext->updateShaderResources(resource_commit);
-	m_pRenderContext->flushConstantRanges(resource_commit, m_beginRenderingInfo.queue);
-
-	m_pRenderContext->bindShader(m_pShader->getId(), m_beginRenderingInfo.queue);
+	m_pShader->flushDescriptors();
+	m_pShader->flushConstants(m_beginRenderingInfo.queue);
+	m_pShader->bind(m_beginRenderingInfo.queue);	
 
 	// Here i can draw
 
