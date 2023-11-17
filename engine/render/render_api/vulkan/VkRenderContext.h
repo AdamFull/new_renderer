@@ -25,6 +25,9 @@ namespace engine
 				size_t createShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) override;
 				size_t createShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) override;
 
+				size_t createBuffer(const std::string& name, const FBufferCreateInfo& buffer_ci) override;
+				void uploadDataToBuffer(const FBufferUploadInfo& upload_info) override;
+
 				void destroyTexture(size_t resource_id) override;
 				void destroyShader(size_t resource_id) override;
 
@@ -33,6 +36,9 @@ namespace engine
 
 				void setViewport(float width, float height, bool flip_viewport = false) override;
 				void setScissorRect(int32_t offset_x, int32_t offset_y, uint32_t width, uint32_t height) override;
+
+				void bindVertexBuffers(const FVertexBufferBindingInfo& binding_info, uint32_t queue_type) override;
+				void bindIndexBuffer(const FIndexBufferBindingInfo& binding_info, uint32_t queue_type) override;
 
 				void bindShader(size_t shader_id, uint32_t queue_type) override;
 
@@ -83,6 +89,7 @@ namespace engine
 				std::unique_ptr<CResourceContainer> m_pResources{};
 
 				std::vector<FTextureUploadInfo> m_textureUploadInfos{};
+				std::vector<FBufferUploadInfo> m_bufferUploadInfos{};
 
 				// NOTE: global descriptor uses set 0 and binding 0 and 1 (0 is for global uniform, 1 is for texture array)
 				FVkGlobalDescriptor m_globalDescriptor{};

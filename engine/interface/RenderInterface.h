@@ -51,6 +51,15 @@ namespace engine
 			TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT = 1 << 8
 		};
 
+		enum EBufferTypeFlagBits
+		{
+			BUFFER_TYPE_STAGING_FLAG_BIT = 1 << 0,
+			BUFFER_TYPE_VERTEX_FLAG_BIT = 1 << 1,
+			BUFFER_TYPE_INDEX_FLAG_BIT = 1 << 2,
+			BUFFER_TYPE_STORAGE_FLAG_BIT = 1 << 3,
+			BUFFER_TYPE_UNIFORM_FLAG_BIT = 1 << 4
+		};
+
 		enum EQueueFamilyUsageFlagBits : uint32_t
 		{
 			QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT = 1 << 0,
@@ -161,6 +170,13 @@ namespace engine
 			size_t textureId{ ~0ull };
 			std::vector<uint8_t> data{};
 			std::vector<std::vector<size_t>> mipLayerOffsets{};
+		};
+
+		struct FBufferUploadInfo
+		{
+			size_t bufferId{ ~0ull };
+			std::vector<uint8_t> data{};
+			size_t offset{ 0ull };
 		};
 
 		struct FTextureCreateInfo
@@ -355,6 +371,15 @@ namespace engine
 			uint32_t usageCount{ 1u };
 		};
 
+		struct FBufferCreateInfo
+		{
+			uint32_t flags{ 0u };
+			size_t count{ 1ull };
+			size_t size{ 0ull };
+
+			FBufferUploadInfo upload{};
+		};
+
 		struct FUniformDataView
 		{
 			const void* data{ nullptr };
@@ -434,6 +459,20 @@ namespace engine
 			uint8_t* data{ nullptr };
 			size_t stride{ 0ull };
 			size_t count{ 0ull };
+		};
+
+		struct FVertexBufferBindingInfo
+		{
+			uint32_t firstBinding{ 0u };
+			std::vector<size_t> buffers{};
+			std::vector<size_t> offsets{};
+		};
+
+		struct FIndexBufferBindingInfo
+		{
+			size_t bufferId{ ~0ull };
+			size_t offset{ 0ull };
+			size_t indexSize{ 0ull };
 		};
 
 		class CUniformHandle
@@ -543,6 +582,8 @@ namespace engine
 
 			virtual void create() = 0;
 
+			virtual void bind(uint32_t queue) = 0;
+
 			virtual size_t addVertices(const std::vector<FVertexAttributePointer>& attributes_data) = 0;
 			virtual size_t addIndices(const FVertexAttributePointer& indices) = 0;
 
@@ -583,11 +624,20 @@ namespace engine
 			virtual size_t createShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
 			virtual size_t createShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
 
+			virtual size_t createBuffer(const std::string& name, const FBufferCreateInfo& buffer_ci) = 0;
+			virtual void uploadDataToBuffer(const FBufferUploadInfo& upload_info) = 0;
+
+			virtual void destroyTexture(size_t resource_id) = 0;
+			virtual void destroyShader(size_t resource_id) = 0;
+
 			virtual void beginRendering(const FBeginRenderingInfo& rendering_info) = 0;
 			virtual void endRendering(const FBeginRenderingInfo& rendering_info) = 0;
 
 			virtual void setViewport(float width, float height, bool flip_viewport) = 0;
 			virtual void setScissorRect(int32_t offset_x, int32_t offset_y, uint32_t width, uint32_t height) = 0;
+
+			virtual void bindVertexBuffers(const FVertexBufferBindingInfo& binding_info, uint32_t queue) = 0;
+			virtual void bindIndexBuffer(const FIndexBufferBindingInfo& binding_info, uint32_t queue) = 0;
 
 			virtual void bindShader(size_t shader_id, uint32_t queue_type) = 0;
 

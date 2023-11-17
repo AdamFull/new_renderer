@@ -325,6 +325,65 @@ size_t CVkRenderContext::createShader(const std::string& name, const FComputeSha
 	return m_pResources->add<FVkShader>(name.c_str(), std::move(shader));
 }
 
+size_t CVkRenderContext::createBuffer(const std::string& name, const FBufferCreateInfo& buffer_ci)
+{
+	auto& physical = m_pContext->getPhysicalDevice();
+
+	FVkBufferCreateInfo vk_buffer_ci{};
+	vk_buffer_ci.instanceCount = buffer_ci.count;
+	vk_buffer_ci.instanceSize = buffer_ci.size;
+	vk_buffer_ci.minOffsetAlignment = std::lcm(physical.properties.limits.minUniformBufferOffsetAlignment, physical.properties.limits.nonCoherentAtomSize);
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	vk_buffer_ci.name = name;
+#endif
+
+	switch (buffer_ci.flags)
+	{
+	case BUFFER_TYPE_STAGING_FLAG_BIT: {
+		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuOnly;
+		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
+	} break;
+	case BUFFER_TYPE_VERTEX_FLAG_BIT: {
+		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eUnknown;
+		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer;
+	} break;
+	case BUFFER_TYPE_INDEX_FLAG_BIT: {
+		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eUnknown;
+		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer;
+	} break;
+	case BUFFER_TYPE_STORAGE_FLAG_BIT: {
+		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
+		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer;
+	} break;
+	case BUFFER_TYPE_UNIFORM_FLAG_BIT: {
+		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
+		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eUniformBuffer;
+	} break;
+	default:
+		break;
+	}
+
+	auto buffer = std::make_unique<FVkBuffer>();
+	m_pContext->createBuffer(vk_buffer_ci, *buffer);
+
+	auto buffer_id = m_pResources->add<FVkBuffer>(name.c_str(), std::move(buffer));
+
+	if (!buffer_ci.upload.data.empty())
+	{
+		auto& upload_info = m_bufferUploadInfos.emplace_back();
+		upload_info.bufferId = buffer_id;
+		upload_info.offset = buffer_ci.upload.offset;
+		upload_info.data = buffer_ci.upload.data;
+	}
+
+	return buffer_id;
+}
+
+void CVkRenderContext::uploadDataToBuffer(const FBufferUploadInfo& upload_info)
+{
+	m_bufferUploadInfos.emplace_back(upload_info);
+}
+
 void CVkRenderContext::destroyTexture(size_t resource_id)
 {
 	// TODO: we can't remove resources instantly in any time. Here i should add resource to delete queue
@@ -607,6 +666,35 @@ void CVkRenderContext::setScissorRect(int32_t offset_x, int32_t offset_y, uint32
 	auto& current = command_buffer.get();
 
 	current.setScissor(0, 1, &scissor_rect);
+}
+
+void CVkRenderContext::bindVertexBuffers(const FVertexBufferBindingInfo& binding_info, uint32_t queue_type)
+{
+	auto& command_buffer = getLastCommandBuffer(queue_type);
+	auto& current = command_buffer.get();
+
+	std::vector<vk::Buffer> buffers{};
+	for(const auto& buffer_id : binding_info.buffers)
+		buffers.emplace_back(m_pResources->get<FVkBuffer>(buffer_id)->handle);
+
+	current.bindVertexBuffers(binding_info.firstBinding, buffers, binding_info.offsets);
+}
+
+void CVkRenderContext::bindIndexBuffer(const FIndexBufferBindingInfo& binding_info, uint32_t queue_type)
+{
+	auto& command_buffer = getLastCommandBuffer(queue_type);
+	auto& current = command_buffer.get();
+
+	vk::IndexType index_type{ vk::IndexType::eNoneKHR };
+	switch (binding_info.indexSize)
+	{
+	case 4: index_type = vk::IndexType::eUint32; break;
+	case 2: index_type = vk::IndexType::eUint16; break;
+	case 1: index_type = vk::IndexType::eUint8EXT; break;
+	}
+
+	auto& buffer = m_pResources->get<FVkBuffer>(binding_info.bufferId);
+	current.bindIndexBuffer(buffer->handle, binding_info.offset, index_type);
 }
 
 void CVkRenderContext::bindShader(size_t shader_id, uint32_t queue_type)
@@ -1123,7 +1211,7 @@ void CVkRenderContext::updateGlobalDescriptorData()
 
 void CVkRenderContext::processResourceUpload()
 {
-	if (m_textureUploadInfos.empty())
+	if (m_textureUploadInfos.empty() && m_bufferUploadInfos.empty())
 		return;
 
 	FVkCommandBufferCreateInfo command_buffer_ci{};
@@ -1141,181 +1229,227 @@ void CVkRenderContext::processResourceUpload()
 
 	m_pContext->beginCommandBuffer(command_buffer, vk::CommandBufferUsageFlagBits::eOneTimeSubmit, 0u);
 
-	// Prepare staging buffers
 	std::vector<FVkBuffer> staging_buffers{};
-	for (auto& texture_upload : m_textureUploadInfos)
+
+	// Upload textures
 	{
-		FVkBufferCreateInfo staging_buffer_ci{};
-		staging_buffer_ci.instanceCount = 1ull;
-		staging_buffer_ci.instanceSize = texture_upload.data.size();
-		staging_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
-		staging_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuOnly;
+		// Prepare staging buffers
+		
+		for (auto& texture_upload : m_textureUploadInfos)
+		{
+			FVkBufferCreateInfo staging_buffer_ci{};
+			staging_buffer_ci.instanceCount = 1ull;
+			staging_buffer_ci.instanceSize = texture_upload.data.size();
+			staging_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
+			staging_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuOnly;
 #ifndef BUILD_WITHOUT_DEBUGGIND
-		staging_buffer_ci.name = std::format("texture upload #{}", texture_upload.textureId);
+			staging_buffer_ci.name = std::format("texture upload #{}", texture_upload.textureId);
 #endif
 
-		auto& staging_buffer = staging_buffers.emplace_back();
-		m_pContext->createBuffer(staging_buffer_ci, staging_buffer);
+			auto& staging_buffer = staging_buffers.emplace_back();
+			m_pContext->createBuffer(staging_buffer_ci, staging_buffer);
 
-		// Copy data to buffer
-		void* mapped_buffer_memory{ nullptr };
-		m_pContext->mapBufferMemory(staging_buffer, &mapped_buffer_memory);
-		std::memcpy(mapped_buffer_memory, texture_upload.data.data(), texture_upload.data.size());
-		m_pContext->unmapBufferMemory(staging_buffer);
+			// Copy data to buffer
+			void* mapped_buffer_memory{ nullptr };
+			m_pContext->mapBufferMemory(staging_buffer, &mapped_buffer_memory);
+			std::memcpy(mapped_buffer_memory, texture_upload.data.data(), texture_upload.data.size());
+			m_pContext->unmapBufferMemory(staging_buffer);
 
-		texture_upload.data.clear();
-	}
-
-	// Translate all images to transfer dst stage
-	std::vector<size_t> generate_mip_textures{};
-	FVkTranslationInfo translation_info{};
-	for (const auto& texture_upload : m_textureUploadInfos)
-	{
-		auto& texture = textures.at(texture_upload.textureId).front();
-
-		auto& image_translation = translation_info.imageTranslationInfos.emplace_back();
-
-		FVkTextureTranslationInfo texture_translation_info{};
-		texture_translation_info.oldLayout = vk::ImageLayout::eUndefined;
-		texture->layout = texture_translation_info.newLayout = vk::ImageLayout::eTransferDstOptimal;
-
-		image_translation = get_texture_layout_translation_info(*texture, texture_translation_info);
-
-		if (texture->initialData.base.mipLevels > 1u && texture_upload.mipLayerOffsets.empty())
-			generate_mip_textures.emplace_back(texture_upload.textureId);
-	}
-
-	processMemoryBarriers(command_buffer, translation_info);
-	translation_info.imageTranslationInfos.clear();
-
-	// Copy buffer to image
-	for (size_t idx = 0ull; idx < m_textureUploadInfos.size(); ++idx)
-	{
-		auto& texture_upload = m_textureUploadInfos.at(idx);
-		auto& texture = textures.at(texture_upload.textureId).front();
-		auto& staging_buffer = staging_buffers.at(idx);
-
-		auto aspect_mask = get_texture_aspect_flags(*texture);
-
-		std::vector<vk::BufferImageCopy2KHR> copy_regions{};
-		if (!texture_upload.mipLayerOffsets.empty())
-		{
-			for (uint32_t layer = 0u; layer < texture->totalLayers; ++layer)
-			{
-				auto& layer_offsets = texture_upload.mipLayerOffsets.at(layer);
-				for (uint32_t mip = 0u; mip < texture->initialData.base.mipLevels; ++mip)
-				{
-					size_t offset = layer_offsets.at(mip);
-					auto& copy_region = copy_regions.emplace_back();
-					copy_region.imageSubresource.aspectMask = aspect_mask;
-					copy_region.imageSubresource.mipLevel = mip;
-					copy_region.imageSubresource.baseArrayLayer = layer;
-					copy_region.imageSubresource.layerCount = texture->initialData.base.arrayLayers;
-					copy_region.imageExtent.width = texture->initialData.base.width >> mip;
-					copy_region.imageExtent.height = texture->initialData.base.height >> mip;
-					copy_region.imageExtent.depth = texture->initialData.base.depth;
-					copy_region.bufferOffset = offset;
-				}
-			}
-		}
-		else
-		{
-			auto& copy_region = copy_regions.emplace_back();
-			copy_region.imageSubresource.aspectMask = aspect_mask;
-			copy_region.imageSubresource.mipLevel = 0u;
-			copy_region.imageSubresource.baseArrayLayer = 0u;
-			copy_region.imageSubresource.layerCount = texture->totalLayers;
-			copy_region.imageExtent.width = texture->initialData.base.width;
-			copy_region.imageExtent.height = texture->initialData.base.height;
-			copy_region.imageExtent.depth = texture->initialData.base.depth;
-			copy_region.bufferOffset = 0ull;
+			texture_upload.data.clear();
 		}
 
-		copyBufferToTexture(command_buffer, staging_buffer, *texture, copy_regions);
-	}
-
-	auto& current_command_buffer = command_buffer.get();
-	for (auto& texture_id : generate_mip_textures)
-	{
-		auto& texture = textures.at(texture_id).front();
-
-		uint32_t mip_width{ texture->initialData.base.width };
-		uint32_t mip_heigth{ texture->initialData.base.height };
-
-		for (uint32_t mip = 1u; mip < texture->initialData.base.mipLevels; mip++)
+		// Translate all images to transfer dst stage
+		std::vector<size_t> generate_mip_textures{};
+		FVkTranslationInfo translation_info{};
+		for (const auto& texture_upload : m_textureUploadInfos)
 		{
-			FVkImageTranslationInfo image_translation_info{};
-			image_translation_info.handle = texture->image.handle;
-			image_translation_info.oldLayout = vk::ImageLayout::eTransferDstOptimal;
-			image_translation_info.srcStageMask = get_translation_stage_flags(image_translation_info.oldLayout);
-			image_translation_info.srcAccessMask = get_translation_access_flags(image_translation_info.oldLayout);
-			image_translation_info.newLayout = vk::ImageLayout::eTransferSrcOptimal;
-			image_translation_info.dstStageMask = get_translation_stage_flags(image_translation_info.newLayout);
-			image_translation_info.dstAccessMask = get_translation_access_flags(image_translation_info.newLayout);
-			image_translation_info.subresourceRange.levelCount = mip - 1u;
-			image_translation_info.subresourceRange.layerCount = texture->totalLayers;
-			processImageLayoutTranslation(command_buffer, image_translation_info);
+			auto& texture = textures.at(texture_upload.textureId).front();
+
+			auto& image_translation = translation_info.imageTranslationInfos.emplace_back();
+
+			FVkTextureTranslationInfo texture_translation_info{};
+			texture_translation_info.oldLayout = vk::ImageLayout::eUndefined;
+			texture->layout = texture_translation_info.newLayout = vk::ImageLayout::eTransferDstOptimal;
+
+			image_translation = get_texture_layout_translation_info(*texture, texture_translation_info);
+
+			if (texture->initialData.base.mipLevels > 1u && texture_upload.mipLayerOffsets.empty())
+				generate_mip_textures.emplace_back(texture_upload.textureId);
+		}
+
+		processMemoryBarriers(command_buffer, translation_info);
+		translation_info.imageTranslationInfos.clear();
+
+		// Copy buffer to image
+		for (size_t idx = 0ull; idx < m_textureUploadInfos.size(); ++idx)
+		{
+			auto& texture_upload = m_textureUploadInfos.at(idx);
+			auto& texture = textures.at(texture_upload.textureId).front();
+			auto& staging_buffer = staging_buffers.at(idx);
 
 			auto aspect_mask = get_texture_aspect_flags(*texture);
 
-			vk::ImageBlit2KHR image_blit{};
-			image_blit.srcOffsets[0] = vk::Offset3D{ 0, 0, 0 };
-			image_blit.srcOffsets[1] = vk::Offset3D{ static_cast<int32_t>(mip_width), static_cast<int32_t>(mip_heigth), 1 };
-			image_blit.srcSubresource.aspectMask = aspect_mask;
-			image_blit.srcSubresource.mipLevel = image_translation_info.subresourceRange.levelCount;
-			image_blit.srcSubresource.baseArrayLayer = 0u;
-			image_blit.srcSubresource.layerCount = 1u;
-			image_blit.dstOffsets[0] = vk::Offset3D{ 0, 0, 0 };
-			image_blit.dstOffsets[1] = vk::Offset3D{ static_cast<int32_t>(mip_width > 1u ? mip_width / 2u : 1u), static_cast<int32_t>(mip_heigth > 1u ? mip_heigth / 2u : 1u), 1 };
-			image_blit.dstSubresource.aspectMask = aspect_mask;
-			image_blit.dstSubresource.mipLevel = mip;
-			image_blit.dstSubresource.baseArrayLayer = 0u;
-			image_blit.dstSubresource.layerCount = 1u;
+			std::vector<vk::BufferImageCopy2KHR> copy_regions{};
+			if (!texture_upload.mipLayerOffsets.empty())
+			{
+				for (uint32_t layer = 0u; layer < texture->totalLayers; ++layer)
+				{
+					auto& layer_offsets = texture_upload.mipLayerOffsets.at(layer);
+					for (uint32_t mip = 0u; mip < texture->initialData.base.mipLevels; ++mip)
+					{
+						size_t offset = layer_offsets.at(mip);
+						auto& copy_region = copy_regions.emplace_back();
+						copy_region.imageSubresource.aspectMask = aspect_mask;
+						copy_region.imageSubresource.mipLevel = mip;
+						copy_region.imageSubresource.baseArrayLayer = layer;
+						copy_region.imageSubresource.layerCount = texture->initialData.base.arrayLayers;
+						copy_region.imageExtent.width = texture->initialData.base.width >> mip;
+						copy_region.imageExtent.height = texture->initialData.base.height >> mip;
+						copy_region.imageExtent.depth = texture->initialData.base.depth;
+						copy_region.bufferOffset = offset;
+					}
+				}
+			}
+			else
+			{
+				auto& copy_region = copy_regions.emplace_back();
+				copy_region.imageSubresource.aspectMask = aspect_mask;
+				copy_region.imageSubresource.mipLevel = 0u;
+				copy_region.imageSubresource.baseArrayLayer = 0u;
+				copy_region.imageSubresource.layerCount = texture->totalLayers;
+				copy_region.imageExtent.width = texture->initialData.base.width;
+				copy_region.imageExtent.height = texture->initialData.base.height;
+				copy_region.imageExtent.depth = texture->initialData.base.depth;
+				copy_region.bufferOffset = 0ull;
+			}
 
-			vk::BlitImageInfo2KHR blit_info{};
-			blit_info.srcImage = texture->image.handle;
-			blit_info.srcImageLayout = vk::ImageLayout::eTransferDstOptimal;
-			blit_info.dstImage = texture->image.handle;
-			blit_info.dstImageLayout = vk::ImageLayout::eTransferDstOptimal;
-			blit_info.regionCount = 1u;
-			blit_info.pRegions = &image_blit;
-			blit_info.filter = vk::Filter::eNearest;
-
-			current_command_buffer.blitImage2KHR(blit_info);
-
-			image_translation_info.oldLayout = vk::ImageLayout::eTransferSrcOptimal;
-			image_translation_info.srcStageMask = get_translation_stage_flags(image_translation_info.oldLayout);
-			image_translation_info.srcAccessMask = get_translation_access_flags(image_translation_info.oldLayout);
-			image_translation_info.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-			image_translation_info.dstStageMask = get_translation_stage_flags(image_translation_info.newLayout);
-			image_translation_info.dstAccessMask = get_translation_access_flags(image_translation_info.newLayout);
-			processImageLayoutTranslation(command_buffer, image_translation_info);
-
-			if (mip_width > 1u)
-				mip_width /= 2u;
-			if (mip_heigth > 1u)
-				mip_heigth /= 2u;
+			copyBufferToTexture(command_buffer, staging_buffer, *texture, copy_regions);
 		}
+
+		auto& current_command_buffer = command_buffer.get();
+		for (auto& texture_id : generate_mip_textures)
+		{
+			auto& texture = textures.at(texture_id).front();
+
+			uint32_t mip_width{ texture->initialData.base.width };
+			uint32_t mip_heigth{ texture->initialData.base.height };
+
+			for (uint32_t mip = 1u; mip < texture->initialData.base.mipLevels; mip++)
+			{
+				FVkImageTranslationInfo image_translation_info{};
+				image_translation_info.handle = texture->image.handle;
+				image_translation_info.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+				image_translation_info.srcStageMask = get_translation_stage_flags(image_translation_info.oldLayout);
+				image_translation_info.srcAccessMask = get_translation_access_flags(image_translation_info.oldLayout);
+				image_translation_info.newLayout = vk::ImageLayout::eTransferSrcOptimal;
+				image_translation_info.dstStageMask = get_translation_stage_flags(image_translation_info.newLayout);
+				image_translation_info.dstAccessMask = get_translation_access_flags(image_translation_info.newLayout);
+				image_translation_info.subresourceRange.levelCount = mip - 1u;
+				image_translation_info.subresourceRange.layerCount = texture->totalLayers;
+				processImageLayoutTranslation(command_buffer, image_translation_info);
+
+				auto aspect_mask = get_texture_aspect_flags(*texture);
+
+				vk::ImageBlit2KHR image_blit{};
+				image_blit.srcOffsets[0] = vk::Offset3D{ 0, 0, 0 };
+				image_blit.srcOffsets[1] = vk::Offset3D{ static_cast<int32_t>(mip_width), static_cast<int32_t>(mip_heigth), 1 };
+				image_blit.srcSubresource.aspectMask = aspect_mask;
+				image_blit.srcSubresource.mipLevel = image_translation_info.subresourceRange.levelCount;
+				image_blit.srcSubresource.baseArrayLayer = 0u;
+				image_blit.srcSubresource.layerCount = 1u;
+				image_blit.dstOffsets[0] = vk::Offset3D{ 0, 0, 0 };
+				image_blit.dstOffsets[1] = vk::Offset3D{ static_cast<int32_t>(mip_width > 1u ? mip_width / 2u : 1u), static_cast<int32_t>(mip_heigth > 1u ? mip_heigth / 2u : 1u), 1 };
+				image_blit.dstSubresource.aspectMask = aspect_mask;
+				image_blit.dstSubresource.mipLevel = mip;
+				image_blit.dstSubresource.baseArrayLayer = 0u;
+				image_blit.dstSubresource.layerCount = 1u;
+
+				vk::BlitImageInfo2KHR blit_info{};
+				blit_info.srcImage = texture->image.handle;
+				blit_info.srcImageLayout = vk::ImageLayout::eTransferDstOptimal;
+				blit_info.dstImage = texture->image.handle;
+				blit_info.dstImageLayout = vk::ImageLayout::eTransferDstOptimal;
+				blit_info.regionCount = 1u;
+				blit_info.pRegions = &image_blit;
+				blit_info.filter = vk::Filter::eNearest;
+
+				current_command_buffer.blitImage2KHR(blit_info);
+
+				image_translation_info.oldLayout = vk::ImageLayout::eTransferSrcOptimal;
+				image_translation_info.srcStageMask = get_translation_stage_flags(image_translation_info.oldLayout);
+				image_translation_info.srcAccessMask = get_translation_access_flags(image_translation_info.oldLayout);
+				image_translation_info.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+				image_translation_info.dstStageMask = get_translation_stage_flags(image_translation_info.newLayout);
+				image_translation_info.dstAccessMask = get_translation_access_flags(image_translation_info.newLayout);
+				processImageLayoutTranslation(command_buffer, image_translation_info);
+
+				if (mip_width > 1u)
+					mip_width /= 2u;
+				if (mip_heigth > 1u)
+					mip_heigth /= 2u;
+			}
+		}
+
+		// Translate images to shader read only layout
+		for (const auto& texture_upload : m_textureUploadInfos)
+		{
+			auto& texture = textures.at(texture_upload.textureId).front();
+
+			auto& image_translation = translation_info.imageTranslationInfos.emplace_back();
+
+			FVkTextureTranslationInfo texture_translation_info{};
+			texture_translation_info.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+			texture->layout = texture_translation_info.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+
+			image_translation = get_texture_layout_translation_info(*texture, texture_translation_info);
+		}
+
+		processMemoryBarriers(command_buffer, translation_info);
+		translation_info.imageTranslationInfos.clear();
 	}
 
-	// Translate images to shader read only layout
-	for (const auto& texture_upload : m_textureUploadInfos)
+	// Upload buffers
+	for(const auto& upload_info : m_bufferUploadInfos)
 	{
-		auto& texture = textures.at(texture_upload.textureId).front();
+		auto& physical = m_pContext->getPhysicalDevice();
 
-		auto& image_translation = translation_info.imageTranslationInfos.emplace_back();
+		FVkBufferCreateInfo vk_buffer_ci{};
+		vk_buffer_ci.instanceCount = upload_info.data.size();
+		vk_buffer_ci.instanceSize = 1ull;
+		vk_buffer_ci.minOffsetAlignment = std::lcm(physical.properties.limits.minUniformBufferOffsetAlignment, physical.properties.limits.nonCoherentAtomSize);
+		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuOnly;
+		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
+#ifndef BUILD_WITHOUT_DEBUGGIND
+		vk_buffer_ci.name = std::format("staging for #{}", upload_info.bufferId);
+#endif
 
-		FVkTextureTranslationInfo texture_translation_info{};
-		texture_translation_info.oldLayout = vk::ImageLayout::eTransferDstOptimal;
-		texture->layout = texture_translation_info.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		auto src_buffer = staging_buffers.emplace_back();
+		m_pContext->createBuffer(vk_buffer_ci, src_buffer);
 
-		image_translation = get_texture_layout_translation_info(*texture, texture_translation_info);
+		// Copy data to staging buffer
+		void* mapped_memory{ nullptr };
+		m_pContext->mapBufferMemory(src_buffer, &mapped_memory);
+
+		char* dst_memory = static_cast<char*>(mapped_memory) + upload_info.offset;
+		std::memcpy(dst_memory, upload_info.data.data(), upload_info.data.size());
+		m_pContext->unmapBufferMemory(src_buffer);
+
+		auto& dst_buffer = m_pResources->get<FVkBuffer>(upload_info.bufferId);
+
+		vk::BufferCopy2KHR copy_region{};
+		copy_region.srcOffset = 0ull;
+		copy_region.dstOffset = 0ull;
+		copy_region.size = upload_info.data.size();
+
+		vk::CopyBufferInfo2KHR copy_buffer{};
+		copy_buffer.srcBuffer = src_buffer.handle;
+		copy_buffer.dstBuffer = dst_buffer->handle;
+		copy_buffer.regionCount = 1u;
+		copy_buffer.pRegions = &copy_region;
+		
+		auto& current = command_buffer.get();
+		current.copyBuffer2KHR(copy_buffer);
 	}
-
-	processMemoryBarriers(command_buffer, translation_info);
-	translation_info.imageTranslationInfos.clear();
-
-	// Process buffers and other things
 
 	m_pContext->endCommandBuffer(command_buffer);
 
@@ -1496,6 +1630,9 @@ FRenderApiErrorInfo CVkRenderContext::createShaderResources(const FVkShaderResou
 		buffer_ci.instanceSize = uniform_block.size;
 		buffer_ci.minOffsetAlignment = minOffsetAllignment;
 		buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
+#ifndef BUILD_WITHOUT_DEBUGGIND
+		buffer_ci.name = std::format("{}: {}", resources_info.name, id);
+#endif
 
 		if (uniform_block.descriptorType == vk::DescriptorType::eUniformBuffer)
 			buffer_ci.usageFlags = vk::BufferUsageFlagBits::eUniformBuffer;
