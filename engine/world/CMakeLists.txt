@@ -23,11 +23,11 @@ target_include_directories(${PROJECT_NAME}
 	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/"
     PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/engine"
     PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/entt"
-    PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/glm"
-    PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/utllib"
     PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/meshoptimizer/src"
 )
 
 target_link_libraries(${PROJECT_NAME}
 	PUBLIC meshoptimizer
 )
+
+target_precompile_headers(${PROJECT_NAME} PUBLIC world_pch.h)

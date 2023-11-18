@@ -50,7 +50,7 @@ void CApplication::create()
 	m_pRenderInterface = std::make_unique<render::CRenderInterface>(m_pVirtualFileSystem.get());
 	m_pRenderInterface->create(rhi_ci);
 
-	m_pScene = std::make_unique<world::CScene>(m_pVirtualFileSystem.get());
+	m_pScene = std::make_unique<world::CScene>(m_pVirtualFileSystem.get(), m_pRenderInterface.get());
 	m_pScene->load("/root/reflections/reflections.gltf");
 
 	// TODO: incorrect stb image loading. I guess it requires to generate copy info
@@ -59,6 +59,9 @@ void CApplication::create()
 
 void CApplication::loop()
 {
+	utl::stopwatch sw{};
+	float dt{ 0.f };
+
 	while (m_pWindowHandle->process())
 	{
 		if (m_pWindowHandle->isResized())
@@ -75,8 +78,10 @@ void CApplication::loop()
 			m_pRenderInterface->updateSurfaceSize(window_width, window_height);
 		}
 
-
+		m_pScene->update(dt);
 		// TODO: render thread should signal game thread about finish rendering
-		m_pRenderInterface->render(0.f);
+		m_pRenderInterface->render(dt);
+
+		dt = sw.stop<float>();
 	}
 }

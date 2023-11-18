@@ -1,18 +1,18 @@
 #include "ScenegraphSystem.h"
 
-#include <entt/entt.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 
 #include <world/ecs/components/BaseComponent.h>
 #include <world/ecs/components/HierarchyComponent.h>
 #include <world/ecs/components/TransformComponent.h>
 
+#include <world/SceneGraph.h>
+
 using namespace engine::world::ecs;
 
-CScenegraphSystem::CScenegraphSystem(entt::registry* registry, uint32_t root)
+CScenegraphSystem::CScenegraphSystem(CSceneGraph* scenegraph)
 {
-	m_pRegistry = registry;
-	m_root = root;
+	m_pSceneGraph = scenegraph;
 }
 
 void CScenegraphSystem::__create()
@@ -22,18 +22,19 @@ void CScenegraphSystem::__create()
 
 void CScenegraphSystem::__update(float fDt)
 {
-	if (!m_pRegistry->valid(static_cast<entt::entity>(m_root)))
+	auto& registry = m_pSceneGraph->getRegistry();
+	auto root = m_pSceneGraph->getRoot();
+	if (!registry->valid(root))
 		return;
 
-	buildHierarchy(m_pRegistry, m_root);
+	buildHierarchy(registry.get(), root);
 }
 
-void CScenegraphSystem::buildHierarchy(entt::registry* registry, uint32_t node)
+void CScenegraphSystem::buildHierarchy(entt::registry* registry, entt::entity node)
 {
-	auto entity = static_cast<entt::entity>(node);
-	auto& base = registry->get<FBaseComponent>(entity);
-	auto& transform = registry->get<FTransformComponent>(entity);
-	auto& hierarchy = registry->get<FHierarchyComponent>(entity);
+	auto& base = registry->get<FBaseComponent>(node);
+	auto& transform = registry->get<FTransformComponent>(node);
+	auto& hierarchy = registry->get<FHierarchyComponent>(node);
 
 	// Check is update disabled for branch
 	if (!base.enabled)
@@ -42,7 +43,7 @@ void CScenegraphSystem::buildHierarchy(entt::registry* registry, uint32_t node)
 	transform.oldmodel = transform.gmodel;
 	initMatrix(&transform);
 
-	auto parent = static_cast<entt::entity>(hierarchy.parent);
+	auto parent = hierarchy.parent;
 	if (registry->valid(parent))
 	{
 		auto& ptransform = registry->get<FTransformComponent>(parent);
@@ -62,10 +63,10 @@ void CScenegraphSystem::initMatrix(FTransformComponent* transform)
 	transform->gmodel = glm::translate(glm::mat4(1.0f), transform->lposition) * glm::mat4(transform->lrotation) * glm::scale(glm::mat4(1.0f), transform->lscale) * transform->lmodel;
 }
 
-void CScenegraphSystem::initMatrices(entt::registry* registry, uint32_t node)
+void CScenegraphSystem::initMatrices(entt::registry* registry, entt::entity node)
 {
 }
 
-void CScenegraphSystem::calculateMatrices(entt::registry* registry, uint32_t node)
+void CScenegraphSystem::calculateMatrices(entt::registry* registry, entt::entity node)
 {
 }

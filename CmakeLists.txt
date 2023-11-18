@@ -39,7 +39,13 @@ if(MSVC)
     add_compile_options(/bigobj)
 endif()
 
-include_directories("${CMAKE_BINARY_DIR}/exports")
+# global includes
+include_directories(
+    "${CMAKE_BINARY_DIR}/exports"
+    "${CMAKE_CURRENT_SOURCE_DIR}/libraries/glm"
+    "${CMAKE_CURRENT_SOURCE_DIR}/libraries/utllib"
+    "${CMAKE_CURRENT_SOURCE_DIR}/libraries/entt"
+)
 
 add_subdirectory(libraries/utllib)
 add_subdirectory(engine)

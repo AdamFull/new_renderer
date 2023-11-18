@@ -11,6 +11,15 @@ CSceneGraph::CSceneGraph()
 	m_pRegistry = std::make_unique<entt::registry>();
 }
 
+entt::entity CSceneGraph::createRoot(const std::string& name)
+{
+	if (m_pRegistry->valid(m_root))
+		return m_root;
+
+	m_root = createNode(name);
+	return m_root;
+}
+
 entt::entity CSceneGraph::createNode(const std::string& name)
 {
 	auto entity = m_pRegistry->create();
@@ -119,4 +128,14 @@ void CSceneGraph::parentExchange(entt::entity new_parent, entt::entity child)
 	auto& chierarchy = m_pRegistry->get<FHierarchyComponent>(child);
 	detachChild(chierarchy.parent, child);
 	attachChild(new_parent, child);
+}
+
+const std::unique_ptr<entt::registry>& CSceneGraph::getRegistry() const
+{
+	return m_pRegistry;
+}
+
+entt::entity CSceneGraph::getRoot() const
+{
+	return m_root;
 }

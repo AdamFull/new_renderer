@@ -30,5 +30,4 @@ target_link_libraries(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME} 
 	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}"
 	PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/glslang"
-	PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/utllib"
 )

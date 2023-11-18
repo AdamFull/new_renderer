@@ -1,8 +1,5 @@
 #pragma once
 
-#include <glm/glm.hpp>
-#include <array>
-
 #define CASCADE_SHADOW_MAP_CASCADE_COUNT 8u
 
 namespace engine

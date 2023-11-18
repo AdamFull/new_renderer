@@ -1,7 +1,5 @@
 #pragma once
 
-#include <entt/entt.hpp>
-
 namespace engine
 {
 	namespace world
@@ -11,6 +9,7 @@ namespace engine
 		public:
 			CSceneGraph();
 
+			entt::entity createRoot(const std::string& name);
 			entt::entity createNode(const std::string& name);
 			void destroyNode(entt::entity node);
 			void attachChild(entt::entity parent, entt::entity child);
@@ -18,6 +17,9 @@ namespace engine
 			void detachChild(entt::entity child);
 			entt::entity duplicateNode(entt::entity child);
 			void parentExchange(entt::entity new_parent, entt::entity child);
+
+			const std::unique_ptr<entt::registry>& getRegistry() const;
+			entt::entity getRoot() const;
 
 			template<class _Ty>
 			_Ty& addComponent(entt::entity entity, _Ty&& component)
@@ -32,6 +34,7 @@ namespace engine
 			}
 		private:
 			std::unique_ptr<entt::registry> m_pRegistry{};
+			entt::entity m_root{};
 		};
 	}
 }

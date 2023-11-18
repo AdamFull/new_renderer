@@ -2,6 +2,7 @@
 
 #include <world/SceneGraph.h>
 #include <world/ecs/components/components.h>
+#include <world/ecs/systems/systems.h>
 
 // TODO: create my own scene format, but based on gltf
 #include <parser/easygltf.h>
@@ -16,7 +17,7 @@ using namespace engine::world;
 using namespace engine::world::ecs;
 using namespace engine::filesystem;
 
-size_t getSizeByType(int32_t component_type, const std::string& type)
+size_t get_size_by_type(int32_t component_type, const std::string& type)
 {
 	size_t size{ 0ull };
 
@@ -46,7 +47,7 @@ size_t getSizeByType(int32_t component_type, const std::string& type)
 	return size;
 }
 
-engine::render::EVertexAttributeType getVertexAttributeTypeByName(const std::string& name)
+engine::render::EVertexAttributeType get_vertex_attribute_type_by_name(const std::string& name)
 {
 	using namespace engine::render;
 
@@ -93,7 +94,7 @@ private:
 	IVirtualFileSystemInterface* m_pVFS{ nullptr };
 };
 
-void convertIndicesSpace(std::vector<uint8_t>& indices, size_t index_size, int32_t vertex_start)
+void convert_indices_space(std::vector<uint8_t>& indices, size_t index_size, int32_t vertex_start)
 {
 	for (size_t shift = 0ull; shift < indices.size() / index_size; shift += index_size)
 	{
@@ -122,12 +123,17 @@ void convertIndicesSpace(std::vector<uint8_t>& indices, size_t index_size, int32
 	}
 }
 
-CScene::CScene(IVirtualFileSystemInterface* vfs)
+CScene::CScene(IVirtualFileSystemInterface* vfs, render::IRenderInterface* render_interface)
 {
 	m_pVFS = vfs;
+	m_pRenderInterface = render_interface;
 
 	m_pSceneGraph = new CSceneGraph();
 	m_pScene = new easygltf::CGltfProject();
+
+	m_systems.emplace_back(std::make_unique<ecs::CAnimationSystem>(m_pSceneGraph));
+	m_systems.emplace_back(std::make_unique<ecs::CScenegraphSystem>(m_pSceneGraph));
+	m_systems.emplace_back(std::make_unique<ecs::CSkinningSystem>(m_pSceneGraph));
 }
 
 CScene::~CScene()
@@ -162,13 +168,19 @@ void CScene::load(const std::string& path)
 	auto& gltf = m_pScene->getGltf();
 
 	const easygltf::Scene& scene = gltf.scenes[gltf.scene > -1 ? gltf.scene : 0]; 
-	m_root = static_cast<uint32_t>(m_pSceneGraph->createNode(scene.name));
+	auto root = m_pSceneGraph->createRoot(scene.name);
 
 	for (const auto& node_index : scene.nodes)
-		loadNode(m_root, node_index);
+		loadNode(root, node_index);
 
 	void loadAnimations();
 	void loadSkins();
+}
+
+void CScene::update(float dt)
+{
+	for (auto& system : m_systems)
+		system->update(dt);
 }
 
 void CScene::loadTextures()
@@ -191,14 +203,14 @@ void CScene::loadMaterials()
 
 }
 
-void CScene::loadNode(const uint32_t parent, uint32_t node_index, float global_scale)
+void CScene::loadNode(const entt::entity parent, uint32_t node_index, float global_scale)
 {
 	const auto& gltf = m_pScene->getGltf();
 	const auto& node = gltf.nodes[node_index];
 
 	auto new_node = m_pSceneGraph->createNode(node.name);
 
-	m_nodeToEntityMap[node_index] = static_cast<uint32_t>(new_node);
+	m_nodeToEntityMap[node_index] = new_node;
 
 	// Parse node local transform
 	auto& transform = m_pSceneGraph->getComponent<FTransformComponent>(new_node);
@@ -223,28 +235,25 @@ void CScene::loadNode(const uint32_t parent, uint32_t node_index, float global_s
 	if(node.hasExtension<easygltf::extensions::KHR_lights_punctual>())
 		loadLightComponent(m_nodeToEntityMap[node_index], node_index);
 
-	m_pSceneGraph->attachChild(static_cast<entt::entity>(parent), new_node);
+	m_pSceneGraph->attachChild(parent, new_node);
 }
 
-void CScene::loadMeshComponent(const uint32_t parent, uint32_t node_index)
+void CScene::loadMeshComponent(const entt::entity parent, uint32_t node_index)
 {
 	const auto& gltf = m_pScene->getGltf();
 	const auto& node = gltf.nodes[node_index];
 	const auto& mesh = gltf.meshes[node.mesh];
 
-	auto entity = static_cast<entt::entity>(parent);
-
 	std::vector<FMeshPrimitive>* primitives{ nullptr };
 	if (node.skin >= 0)
 	{
-		auto& mesh_component = m_pSceneGraph->addComponent<FDynamicMeshComponent>(entity, FDynamicMeshComponent{});
+		auto& mesh_component = m_pSceneGraph->addComponent<FDynamicMeshComponent>(parent, FDynamicMeshComponent{});
 		mesh_component.skin = node.skin;
-		mesh_component.head = 0; // TODO
 		primitives = &mesh_component.primitives;
 	}
 	else
 	{
-		auto& mesh_component = m_pSceneGraph->addComponent<FStaticMeshComponent>(entity, FStaticMeshComponent{});
+		auto& mesh_component = m_pSceneGraph->addComponent<FStaticMeshComponent>(parent, FStaticMeshComponent{});
 		primitives = &mesh_component.primitives;
 	}
 
@@ -267,11 +276,11 @@ void CScene::loadMeshComponent(const uint32_t parent, uint32_t node_index)
 			for (const auto& [name, accessor_idx] : primitive.attributes)
 			{
 				auto& attrib = attributes.emplace_back();
-				attrib.type = getVertexAttributeTypeByName(name);
+				attrib.type = get_vertex_attribute_type_by_name(name);
 				
 				const easygltf::Accessor& accessor = gltf.accessors[accessor_idx];
 				attrib.data = m_pScene->getBufferPointer(accessor);
-				attrib.stride = getSizeByType(accessor.componentType, accessor.type);
+				attrib.stride = get_size_by_type(accessor.componentType, accessor.type);
 				attrib.count = accessor.count;
 			}
 
@@ -288,7 +297,7 @@ void CScene::loadMeshComponent(const uint32_t parent, uint32_t node_index)
 
 			const easygltf::Accessor& accessor = gltf.accessors[primitive.indices];
 			indices.data = m_pScene->getBufferPointer(accessor);
-			indices.stride = getSizeByType(accessor.componentType, accessor.type);
+			indices.stride = get_size_by_type(accessor.componentType, accessor.type);
 			indices.count = accessor.count;
 
 			index_count = m_pVertexHandler->addIndices(indices);
@@ -309,7 +318,7 @@ void CScene::loadMeshComponent(const uint32_t parent, uint32_t node_index)
 	// TODO: sort primitives by material
 }
 
-void CScene::loadCameraComponent(const uint32_t parent, uint32_t node_index)
+void CScene::loadCameraComponent(const entt::entity parent, uint32_t node_index)
 {
 	const auto& gltf = m_pScene->getGltf();
 	const auto& node = gltf.nodes[node_index];
@@ -332,10 +341,10 @@ void CScene::loadCameraComponent(const uint32_t parent, uint32_t node_index)
 		camera_component.farPlane = camera.perspective.zfar;
 	}
 
-	m_pSceneGraph->addComponent<FCameraComponent>(static_cast<entt::entity>(parent), std::move(camera_component));
+	m_pSceneGraph->addComponent<FCameraComponent>(parent, std::move(camera_component));
 }
 
-void CScene::loadLightComponent(const uint32_t parent, uint32_t node_index)
+void CScene::loadLightComponent(const entt::entity parent, uint32_t node_index)
 {
 	const auto& gltf = m_pScene->getGltf();
 	const auto& node = gltf.nodes[node_index];
@@ -346,7 +355,7 @@ void CScene::loadLightComponent(const uint32_t parent, uint32_t node_index)
 		FDirectionalLightComponent light_component;
 		light_component.color = glm::make_vec3(light.color.data());
 		light_component.intencity = light.intensity;
-		m_pSceneGraph->addComponent<FDirectionalLightComponent>(static_cast<entt::entity>(parent), std::move(light_component));
+		m_pSceneGraph->addComponent<FDirectionalLightComponent>(parent, std::move(light_component));
 	}
 	else if (light.type == easygltf::extensions::KHR_lights_punctual::enumerators::light_type::spot)
 	{
@@ -355,7 +364,7 @@ void CScene::loadLightComponent(const uint32_t parent, uint32_t node_index)
 		light_component.innerAngle = light.spot.innerConeAngle;
 		light_component.outerAngle = light.spot.outerConeAngle;
 		light_component.intencity = light.intensity;
-		m_pSceneGraph->addComponent<FSpotLightComponent>(static_cast<entt::entity>(parent), std::move(light_component));
+		m_pSceneGraph->addComponent<FSpotLightComponent>(parent, std::move(light_component));
 	}
 	else if (light.type == easygltf::extensions::KHR_lights_punctual::enumerators::light_type::point)
 	{
@@ -363,12 +372,15 @@ void CScene::loadLightComponent(const uint32_t parent, uint32_t node_index)
 		light_component.color = glm::make_vec3(light.color.data());
 		light_component.intencity = light.intensity;
 		light_component.radius = light.range;
-		m_pSceneGraph->addComponent<FPointLightComponent>(static_cast<entt::entity>(parent), std::move(light_component));
+		m_pSceneGraph->addComponent<FPointLightComponent>(parent, std::move(light_component));
 	}
 }
 
 void CScene::loadAnimations()
 {
+	auto root = m_pSceneGraph->getRoot();
+	auto& root_component = m_pSceneGraph->getComponent<FRootComponent>(root);
+
 	const auto& gltf = m_pScene->getGltf();
 	for (auto& anim : gltf.animations)
 	{
@@ -466,12 +478,15 @@ void CScene::loadAnimations()
 			animation.channels.push_back(channel);
 		}
 
-		// TODO: add animation to somewhere
+		root_component.animations.emplace_back(animation);
 	}
 }
 
 void CScene::loadSkins()
 {
+	auto root = m_pSceneGraph->getRoot();
+	auto& root_component = m_pSceneGraph->getComponent<FRootComponent>(root);
+
 	const auto& gltf = m_pScene->getGltf();
 	for (auto& source : gltf.skins)
 	{
@@ -503,6 +518,6 @@ void CScene::loadSkins()
 			memcpy(skin.inverseBindMatrices.data(), buffer_pointer, accessor.count * sizeof(glm::mat4));
 		}
 
-		// TODO: add it to somewhere
+		root_component.skins.emplace_back(skin);
 	}
 }

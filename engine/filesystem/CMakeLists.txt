@@ -76,7 +76,6 @@ generate_export_header(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME}  
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}"
     PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/engine"
-    PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/utllib"
     PUBLIC "${CMAKE_BINARY_DIR}/exports"
     PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/pak_archive/lib"
 )

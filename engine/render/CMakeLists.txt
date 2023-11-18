@@ -39,7 +39,6 @@ target_include_directories(${PROJECT_NAME}
     PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/KTX-Software/lib"
     PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/luajit/src"
     PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/sol2"
-    PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/glm"
 )
 
 target_link_libraries(${PROJECT_NAME}

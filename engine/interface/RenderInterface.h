@@ -12,7 +12,7 @@
 #include <vector>
 #include <unordered_map>
 
-#include "SharedStructure.h"
+#include <interface/SharedStructure.h>
 
 //#include <shader_compiler/compiler_util.h>
 

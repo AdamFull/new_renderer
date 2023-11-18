@@ -1,8 +1,8 @@
 #pragma once
 
-#include "FullscreenRenderingStep.h"
-#include "RenderScriptRenderingStep.h"
-#include "SynchronizationRenderingStep.h"
+#include <render/rendering_steps/FullscreenRenderingStep.h>
+#include <render/rendering_steps/RenderScriptRenderingStep.h>
+#include <render/rendering_steps/SynchronizationRenderingStep.h>
 
 namespace engine
 {

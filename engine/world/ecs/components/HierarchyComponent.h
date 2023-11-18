@@ -1,7 +1,5 @@
 #pragma once
 
-#include <vector>
-
 namespace engine
 {
 	namespace world
@@ -10,8 +8,8 @@ namespace engine
 		{
 			struct FHierarchyComponent
 			{
-				uint32_t parent{ ~0u };
-				std::vector<uint32_t> children{};
+				entt::entity parent{ entt::null };
+				std::vector<entt::entity> children{};
 			};
 		}
 	}

@@ -31,11 +31,9 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 target_include_directories(${PROJECT_NAME} 
 	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}"
 	PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/engine"
-	PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/utllib"
 	PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/vma/include"
 	PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/Vulkan-Headers/include"
 	PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/SPIRV-Cross"
-	PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/glm"
 )
 
 target_link_libraries(${PROJECT_NAME}

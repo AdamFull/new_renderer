@@ -8,11 +8,13 @@ namespace engine
 		{
 			struct FBaseComponent;
 			struct FCameraComponent;
-			struct FHierarchyComponent;
-			struct FTransformComponent;
 			struct FDirectionalLightComponent;
+			struct FHierarchyComponent;
+			struct FMeshComponent;
 			struct FPointLightComponent;
+			struct FRootComponent;
 			struct FSpotLightComponent;
+			struct FTransformComponent;
 		}
 	}
 }
