@@ -95,6 +95,17 @@ namespace easygltf
 				constexpr const int32_t float_mat4_type{ 35676 };
 			}
 
+			namespace accessor_type
+			{
+				constexpr const char* scalar_type = "SCALAR";
+				constexpr const char* vec2_type = "VEC2";
+				constexpr const char* vec3_type = "VEC3";
+				constexpr const char* vec4_type = "VEC4";
+				constexpr const char* mat2_type = "MAT2";
+				constexpr const char* mat3_type = "MAT3";
+				constexpr const char* mat4_type = "MAT4";
+			}
+
 			namespace texture_filter
 			{
 				constexpr const int32_t nearest{ 9728 };

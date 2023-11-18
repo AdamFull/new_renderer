@@ -26,12 +26,16 @@ namespace engine
 			void loadMeshComponent(const uint32_t parent, uint32_t node_index);
 			void loadCameraComponent(const uint32_t parent, uint32_t node_index);
 			void loadLightComponent(const uint32_t parent, uint32_t node_index);
+
+			void loadAnimations();
+			void loadSkins();
 		private:
 			CSceneGraph* m_pSceneGraph{ nullptr };
 			easygltf::CGltfProject* m_pScene{ nullptr };
 
 			uint32_t m_root{ ~0u };
 			std::unordered_map<uint32_t, uint32_t> m_nodeToEntityMap{};
+			size_t m_primitiveCount{ 0ull };
 
 			std::vector<size_t> m_loadedTextures{};
 

@@ -2,6 +2,7 @@
 
 #include <array>
 #include <vector>
+#include <string>
 
 #include <glm/glm.hpp>
 
@@ -13,6 +14,52 @@ namespace engine
 	{
 		namespace ecs
 		{
+			enum class EPathType
+			{
+				eTranslation,
+				eRotation,
+				eScale
+			};
+
+			struct FAnimationChannel
+			{
+				EPathType path{};
+				uint32_t samplerIndex{ 0u };
+				uint32_t node{ ~0u };
+			};
+
+			enum class EInterpolationType
+			{
+				eLinear,
+				eStep,
+				eCubicSpline
+			};
+
+			struct FAnimationSampler
+			{
+				EInterpolationType interpolation;
+				std::vector<float> inputs;
+				std::vector<glm::vec4> outputsVec4;
+			};
+
+			struct FMeshAnimation
+			{
+				std::string name;
+				std::vector<FAnimationSampler> samplers;
+				std::vector<FAnimationChannel> channels;
+				float start = std::numeric_limits<float>::max();
+				float end = std::numeric_limits<float>::min();
+			};
+
+			struct FMeshSkin
+			{
+				std::string name;
+				uint32_t root{ ~0u };
+				std::vector<glm::mat4> inverseBindMatrices;
+				std::vector<uint32_t> joints;
+				std::array<glm::mat4, 128> jointMatrices;
+			};
+
 			struct FPrimitiveLOD
 			{
 				size_t begin_index, index_count;

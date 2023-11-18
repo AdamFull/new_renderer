@@ -1,6 +1,6 @@
 #pragma once
 
-#include <entt/entt.hpp>
+#include <vector>
 
 namespace engine
 {
@@ -10,8 +10,8 @@ namespace engine
 		{
 			struct FHierarchyComponent
 			{
-				entt::entity parent{ entt::null };
-				std::vector<entt::entity> children{};
+				uint32_t parent{ ~0u };
+				std::vector<uint32_t> children{};
 			};
 		}
 	}

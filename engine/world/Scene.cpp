@@ -30,17 +30,17 @@ size_t getSizeByType(int32_t component_type, const std::string& type)
 	case easygltf::base::enumerators::component_type::float_type: size = 4ull; break;
 	}
 
-	if (type == "VEC2")
+	if (type == easygltf::base::enumerators::accessor_type::vec2_type)
 		size *= 2ull;
-	else if (type == "VEC3")
+	else if (type == easygltf::base::enumerators::accessor_type::vec3_type)
 		size *= 3ull;
-	else if (type == "VEC4")
+	else if (type == easygltf::base::enumerators::accessor_type::vec4_type)
 		size *= 4ull;
-	else if (type == "MAT2")
+	else if (type == easygltf::base::enumerators::accessor_type::mat2_type)
 		size *= 4ull;
-	else if (type == "MAT3")
+	else if (type == easygltf::base::enumerators::accessor_type::mat3_type)
 		size *= 9ull;
-	else if (type == "MAT4")
+	else if (type == easygltf::base::enumerators::accessor_type::mat4_type)
 		size *= 16ull;
 
 	return size;
@@ -166,6 +166,9 @@ void CScene::load(const std::string& path)
 
 	for (const auto& node_index : scene.nodes)
 		loadNode(m_root, node_index);
+
+	void loadAnimations();
+	void loadSkins();
 }
 
 void CScene::loadTextures()
@@ -300,6 +303,7 @@ void CScene::loadMeshComponent(const uint32_t parent, uint32_t node_index)
 		mesh_primitive.lods[0].vertex_count = vertex_count;
 
 		primitives->emplace_back(mesh_primitive);
+		m_primitiveCount++;
 	}
 
 	// TODO: sort primitives by material
@@ -360,5 +364,145 @@ void CScene::loadLightComponent(const uint32_t parent, uint32_t node_index)
 		light_component.intencity = light.intensity;
 		light_component.radius = light.range;
 		m_pSceneGraph->addComponent<FPointLightComponent>(static_cast<entt::entity>(parent), std::move(light_component));
+	}
+}
+
+void CScene::loadAnimations()
+{
+	const auto& gltf = m_pScene->getGltf();
+	for (auto& anim : gltf.animations)
+	{
+		FMeshAnimation animation;
+		animation.name = anim.name;
+
+		for (auto& samp : anim.samplers)
+		{
+			FAnimationSampler sampler{};
+
+			if (samp.interpolation == "LINEAR")
+				sampler.interpolation = EInterpolationType::eLinear;
+			if (samp.interpolation == "STEP")
+				sampler.interpolation = EInterpolationType::eStep;
+			if (samp.interpolation == "CUBICSPLINE")
+				sampler.interpolation = EInterpolationType::eCubicSpline;
+
+			// Read sampler input time values
+			{
+				const easygltf::Accessor& accessor = gltf.accessors[samp.input];
+				const uint8_t* buffer_pointer = m_pScene->getBufferPointer(accessor);
+
+				assert(accessor.componentType == easygltf::base::enumerators::component_type::float_type);
+
+				float* buf = new float[accessor.count];
+				std::memcpy(buf, buffer_pointer, accessor.count * sizeof(float));
+				for (size_t index = 0; index < accessor.count; index++)
+					sampler.inputs.push_back(buf[index]);
+
+				delete[] buf;
+
+				for (auto input : sampler.inputs)
+				{
+					if (input < animation.start)
+						animation.start = input;
+					if (input > animation.end)
+						animation.end = input;
+				}
+			}
+
+			// Read sampler output T/R/S values 
+			{
+				const easygltf::Accessor& accessor = gltf.accessors[samp.output];
+				const uint8_t* buffer_pointer = m_pScene->getBufferPointer(accessor);
+
+				assert(accessor.componentType == easygltf::base::enumerators::component_type::float_type);
+
+				if(accessor.type == easygltf::base::enumerators::accessor_type::vec3_type)
+				{
+					glm::vec3* buf = new glm::vec3[accessor.count];
+					std::memcpy(buf, buffer_pointer, accessor.count * sizeof(glm::vec3));
+					for (size_t index = 0; index < accessor.count; index++)
+						sampler.outputsVec4.push_back(glm::vec4(buf[index], 0.0f));
+
+					delete[] buf;
+				}
+				else if (accessor.type == easygltf::base::enumerators::accessor_type::vec4_type)
+				{
+					glm::vec4* buf = new glm::vec4[accessor.count];
+					memcpy(buf, buffer_pointer, accessor.count * sizeof(glm::vec4));
+					for (size_t index = 0; index < accessor.count; index++)
+						sampler.outputsVec4.push_back(buf[index]);
+
+					delete buf;
+				}
+			}
+
+			animation.samplers.push_back(sampler);
+		}
+
+		// Load animation channdls
+		for (auto& source : anim.channels)
+		{
+			FAnimationChannel channel{};
+
+			if (source.target.path == "rotation")
+				channel.path = EPathType::eRotation;
+			if (source.target.path == "translation")
+				channel.path = EPathType::eTranslation;
+			if (source.target.path == "scale")
+				channel.path = EPathType::eScale;
+
+			if (source.target.path == "weights") {
+				log_warning("Weights channel is not yet supported. Skipping.");
+				continue;
+			}
+			channel.samplerIndex = source.sampler;
+
+			auto target = m_nodeToEntityMap.find(source.target.node);
+			if (target != m_nodeToEntityMap.end())
+				channel.node = target->second;
+			else
+				continue;
+
+			animation.channels.push_back(channel);
+		}
+
+		// TODO: add animation to somewhere
+	}
+}
+
+void CScene::loadSkins()
+{
+	const auto& gltf = m_pScene->getGltf();
+	for (auto& source : gltf.skins)
+	{
+		FMeshSkin skin{};
+		skin.name = source.name;
+
+		// Find skeleton root node
+		if (source.skeleton > -1)
+		{
+			auto target = m_nodeToEntityMap.find(source.skeleton);
+			if (target != m_nodeToEntityMap.end())
+				skin.root = target->second;
+		}
+
+		// Find joint nodes
+		for (int jointIndex : source.joints)
+		{
+			auto target = m_nodeToEntityMap.find(jointIndex);
+			if (target != m_nodeToEntityMap.end())
+				skin.joints.emplace_back(target->second);
+		}
+
+		// Get inverse bind matrices from buffer
+		if (source.inverseBindMatrices > -1)
+		{
+			const easygltf::Accessor& accessor = gltf.accessors[source.inverseBindMatrices];
+			const uint8_t* buffer_pointer = m_pScene->getBufferPointer(accessor);
+			skin.inverseBindMatrices.resize(accessor.count);
+			memcpy(skin.inverseBindMatrices.data(), buffer_pointer, accessor.count * sizeof(glm::mat4));
+		}
+
+		// TODO: add it to somewhere
 	}
 }
