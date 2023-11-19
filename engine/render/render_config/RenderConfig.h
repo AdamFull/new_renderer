@@ -1,6 +1,6 @@
 #pragma once
 
-#include <interface/RenderInterface.h>
+#include <interface/render/RenderInterface.h>
 
 #include <sol/sol.hpp>
 #include <logger/logger.h>

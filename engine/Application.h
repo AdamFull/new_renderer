@@ -2,7 +2,7 @@
 
 #include <memory>
 #include <interface/WindowInterface.h>
-#include <interface/RenderInterface.h>
+#include <interface/render/RenderInterface.h>
 #include <interface/filesystem/VirtualFileSystemInterface.h>
 #include <scripting/ScriptEngine.h>
 #include <world/Scene.h>

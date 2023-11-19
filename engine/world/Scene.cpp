@@ -134,6 +134,10 @@ CScene::CScene(IVirtualFileSystemInterface* vfs, render::IRenderInterface* rende
 	m_systems.emplace_back(std::make_unique<ecs::CAnimationSystem>(m_pSceneGraph));
 	m_systems.emplace_back(std::make_unique<ecs::CScenegraphSystem>(m_pSceneGraph));
 	m_systems.emplace_back(std::make_unique<ecs::CSkinningSystem>(m_pSceneGraph));
+
+	m_systems.emplace_back(std::make_unique<ecs::CCameraSystem>(m_pSceneGraph, render_interface));
+	m_systems.emplace_back(std::make_unique<ecs::CLightingSystem>(m_pSceneGraph, render_interface));
+	m_systems.emplace_back(std::make_unique<ecs::CShadowsSystem>(m_pSceneGraph, render_interface));
 }
 
 CScene::~CScene()

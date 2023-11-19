@@ -10,8 +10,8 @@ namespace engine
 		{
 			struct FPrimitiveLOD
 			{
-				size_t begin_index, index_count;
-				size_t begin_vertex, vertex_count;
+				size_t beginIndex, indexCount;
+				size_t beginVertex, vertexCount;
 			};
 
 			struct FMeshPrimitive
@@ -23,26 +23,27 @@ namespace engine
 					glm::vec3 size;
 					glm::vec3 center;
 					float radius;
-				} dimensions;
+				} dims;
 
 				void setDimensions(glm::vec3 min, glm::vec3 max)
 				{
-					dimensions.min = min;
-					dimensions.max = max;
-					dimensions.size = max - min;
-					dimensions.center = (min + max) / 2.0f;
-					dimensions.radius = glm::distance(min, max) / 2.0f;
+					dims.min = min;
+					dims.max = max;
+					dims.size = max - min;
+					dims.center = (min + max) / 2.0f;
+					dims.radius = glm::distance(min, max) / 2.0f;
 				}
 
 				std::array<FPrimitiveLOD, MAX_LEVEL_OF_DETAIL> lods{};
 
 				size_t material{};
-				bool castShadows{ false };
 			};
 
 			struct FStaticMeshComponent
 			{
 				std::vector<FMeshPrimitive> primitives{};
+				size_t vboId{ ~0ull };
+				bool castShadows{ true };
 			};
 
 			struct FDynamicMeshComponent : public FStaticMeshComponent

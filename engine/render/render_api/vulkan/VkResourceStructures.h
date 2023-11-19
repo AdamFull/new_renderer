@@ -4,7 +4,7 @@
 
 #include <logger/logger.h>
 
-#include <interface/RenderInterface.h>
+#include <interface/render/RenderInterface.h>
 
 #include <stdexcept>
 #include <unordered_map>

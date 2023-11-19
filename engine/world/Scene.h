@@ -2,8 +2,10 @@
 
 #include <world/parser/easygltf_fwd.h>
 #include <interface/filesystem/VirtualFileSystemInterface.h>
-#include <interface/RenderInterface.h>
+#include <interface/render/RenderInterface.h>
 #include <world/ecs/systems/BaseSystem.h>
+
+#include <entt/fwd.hpp>
 
 namespace engine
 {

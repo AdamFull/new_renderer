@@ -1,0 +1,32 @@
+#pragma once
+
+namespace engine
+{
+	namespace render
+	{
+		enum EApiDataFormat
+		{
+			FORMAT_RG16_SFLOAT,
+			FORMAT_RGBA8_SRGB,
+			FORMAT_RGBA8_UNORM,
+			FORMAT_RGBA16_SFLOAT,
+			FORMAT_RGBA32_SFLOAT
+		};
+
+		enum EResourceTypeBits
+		{
+			RESOURCE_TYPE_TEXTURE_BIT = 1 << 0,
+			RESOURCE_TYPE_RENDER_TARGET_BIT = 1 << 1,
+			RESOURCE_TYPE_BUFFER_BIT = 1 << 2,
+			RESOURCE_TYPE_SHADER_BIT = 1 << 3
+		};
+
+		enum EQueueFamilyUsageFlagBits
+		{
+			QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT = 1 << 0,
+			QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT = 1 << 1,
+			QUEUE_FAMILY_USAGE_COMPUTE_FLAG_BIT = 1 << 2,
+			QUEUE_FAMILY_USAGE_TRANSFER_FLAG_BIT = 1 << 3
+		};
+	}
+}

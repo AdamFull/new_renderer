@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vulkan/vulkan.hpp>
-#include <interface/RenderInterface.h>
+#include <interface/render/RenderInterface.h>
 #include <optional>
 
 namespace engine

@@ -100,6 +100,10 @@ FShaderNameInfo get_shader_name_info(const std::string& shader_name)
 CRenderInterface::CRenderInterface(filesystem::IVirtualFileSystemInterface* vfs)
 {
 	m_pVFS = vfs;
+
+	m_pResourceLoader = std::make_unique<CResourceLoader>();
+	m_pRenderScriptCore = std::make_unique<CRenderScriptCore>();
+	m_pRenderPacket = std::make_unique<FRenderDataPacket>();
 }
 
 CRenderInterface::~CRenderInterface()
@@ -109,12 +113,10 @@ CRenderInterface::~CRenderInterface()
 
 void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 {
-	m_pResourceLoader = std::make_unique<CResourceLoader>();
 	m_pResourceLoader->initialize(m_pVFS);
 
 	m_pRenderContext = make_render_context(rhi_ci);
-
-	m_pRenderScriptCore = std::make_unique<CRenderScriptCore>();
+	
 	m_pRenderScriptCore->create(this, m_pRenderContext.get());
 
 	std::vector<uint8_t> render_config{};
@@ -193,6 +195,11 @@ size_t CRenderInterface::createMaterial(const std::string& name, const FMaterial
 void CRenderInterface::updateSurfaceSize(int32_t width, int32_t height)
 {
 	m_pRenderContext->updateSurface(width, height);
+}
+
+const std::unique_ptr<FRenderDataPacket>& CRenderInterface::getRenderPacket()
+{
+	return m_pRenderPacket;
 }
 
 FShaderUploadInfo CRenderInterface::getShaderNameTag(const std::string& name)
