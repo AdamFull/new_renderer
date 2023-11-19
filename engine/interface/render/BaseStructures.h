@@ -80,13 +80,28 @@ namespace engine
 			FPoint2D<_Ty> size{};
 		};
 
+		struct FGeometryRanges
+		{
+			size_t beginIndex{ 0ull }, indexCount{ 0ull };
+			size_t beginVertex{ 0ull }, vertexCount{ 0ull };
+		};
+
 		struct FGeometryDrawData
 		{
 			size_t vboId{ ~0ull };
 			size_t materialId{ ~0ull };
+			int32_t skin{ -1 };
 
-			size_t beginIndex{ 0ull }, indexCount{ 0ull };
-			size_t beginVertex{ 0ull }, vertexCount{ 0ull };
+			FGeometryRanges range{};
+		};
+
+		struct FGeometryBatch
+		{
+			size_t vboId{ ~0ull };
+			size_t materialId{ ~0ull };
+			int32_t skin{ -1 };
+
+			std::vector<FGeometryRanges> ranges{};
 		};
 
 		struct FFrustum

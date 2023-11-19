@@ -4,13 +4,57 @@
 
 using namespace engine::render;
 
+uint32_t get_attribute_format_by_type(EVertexAttributeType type)
+{
+	switch (type)
+	{
+	case EVertexAttributeType::ePosition: return FORMAT_RGB32_SFLOAT; break;
+	case EVertexAttributeType::eColor: return FORMAT_RGB32_SFLOAT; break;
+	case EVertexAttributeType::eTexCoord: return FORMAT_RG32_SFLOAT; break;
+	case EVertexAttributeType::eNormal: return FORMAT_RGB32_SFLOAT; break;
+	case EVertexAttributeType::eTangent: return FORMAT_RGBA32_SFLOAT; break;
+	case EVertexAttributeType::eJoint: return FORMAT_RGBA16_UNORM; break;
+	case EVertexAttributeType::eWeight: return FORMAT_RGBA32_SFLOAT; break;
+	}
+	return 0;
+}
+
 CVertexHandler::CVertexHandler(IRenderInterface* render_interface, IRenderContext* render_context)
 {
 	m_pRenderInterface = render_interface;
 	m_pRenderContext = render_context;
 }
 
-void CVertexHandler::create()
+// TODO: destroy buffers
+CVertexHandler::~CVertexHandler()
+{
+
+}
+
+
+// NOTE: current implementation work only with interleaved vertex
+void CVertexHandler::create(const FVertexHandlerCreateInfo& create_info)
+{
+	for (const auto& desc : create_info.descriptions)
+	{
+		auto& attrib = m_declaration.attributeDescriptions.emplace_back();
+		attrib.binding = 0u;
+		attrib.location = static_cast<uint32_t>(desc.type);
+		auto format = get_attribute_format_by_type(desc.type);
+		attrib.format = m_pRenderContext->getApiFormat(format);
+		attrib.offset = m_vertexBuffer.elementSize;
+
+		m_vertexBuffer.elementSize += desc.size;
+	}
+
+	auto& desc = m_declaration.bindingDescriptions.emplace_back();
+	desc.binding = 0u;
+	desc.stride = m_vertexBuffer.elementSize;
+
+	m_indexBuffer.elementSize = create_info.indexSize;
+}
+
+void CVertexHandler::allocate()
 {
 	// Create vertex buffer
 	FBufferCreateInfo buffer_ci{};
@@ -52,20 +96,6 @@ void CVertexHandler::bind(uint32_t queue)
 
 size_t CVertexHandler::addVertices(const std::vector<FVertexAttributePointer>& attributes_data)
 {
-	if (m_vertexBuffer.elementSize == 0ull)
-	{
-		for (const auto& attrib : attributes_data)
-			m_vertexBuffer.elementSize += attrib.stride;
-	}
-	else
-	{
-		size_t vertex_size{ 0ull };
-		for (const auto& attrib : attributes_data)
-			vertex_size += attrib.stride;
-
-		log_cerror(vertex_size == m_vertexBuffer.elementSize, "Your vertex size was {}, but now it's {}.", m_vertexBuffer.elementSize, vertex_size);
-	}
-
 	auto vertex_count = attributes_data.front().count;
 	for (size_t v = 0ull; v < vertex_count; ++v)
 	{
@@ -87,11 +117,6 @@ size_t CVertexHandler::addVertices(const std::vector<FVertexAttributePointer>& a
 
 size_t CVertexHandler::addIndices(const FVertexAttributePointer& indices)
 {
-	if (m_indexBuffer.elementSize == 0ull)
-		m_indexBuffer.elementSize = indices.stride;
-	else
-		log_cerror(m_indexBuffer.elementSize == indices.stride, "Your index size was {}, but now it's {}.", m_indexBuffer.elementSize, indices.stride);
-
 	std::vector<char> temp(indices.count * m_indexBuffer.elementSize);
 	std::memcpy(temp.data(), indices.data, indices.count * m_indexBuffer.elementSize);
 	m_indexBuffer.data.insert(m_indexBuffer.data.end(), temp.begin(), temp.end());
@@ -108,4 +133,9 @@ size_t CVertexHandler::getLastVertex()
 size_t CVertexHandler::getLastIndex()
 {
 	return m_indexBuffer.elementCount;
+}
+
+const FVertexDeclarationInfo& CVertexHandler::getVertexDeclaration() const
+{
+	return m_declaration;
 }

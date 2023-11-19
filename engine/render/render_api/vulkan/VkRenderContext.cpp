@@ -933,10 +933,26 @@ uint32_t CVkRenderContext::getApiFormat(uint32_t global_format)
 {
 	switch (global_format)
 	{
-	case FORMAT_RG16_SFLOAT: return VK_FORMAT_R16G16_SFLOAT; break;
 	case FORMAT_RGBA8_SRGB: return VK_FORMAT_R8G8B8A8_SRGB; break;
+
+	case FORMAT_R8_UNORM: return VK_FORMAT_R8_UNORM; break;
+	case FORMAT_RG8_UNORM: return VK_FORMAT_R8G8_UNORM; break;
+	case FORMAT_RGB8_UNORM: return VK_FORMAT_R8G8B8_UNORM; break;
 	case FORMAT_RGBA8_UNORM: return VK_FORMAT_R8G8B8A8_UNORM; break;
+
+	case FORMAT_R16_UNORM: return VK_FORMAT_R16_UNORM; break;
+	case FORMAT_RG16_UNORM: return VK_FORMAT_R16G16_UNORM; break;
+	case FORMAT_RGB16_UNORM: return VK_FORMAT_R16G16B16_UNORM; break;
+	case FORMAT_RGBA16_UNORM: return VK_FORMAT_R16G16B16A16_UNORM; break;
+
+	case FORMAT_R16_SFLOAT: return VK_FORMAT_R16_SFLOAT; break;
+	case FORMAT_RG16_SFLOAT: return VK_FORMAT_R16G16_SFLOAT; break;
+	case FORMAT_RGB16_SFLOAT: return VK_FORMAT_R16G16B16_SFLOAT; break;
 	case FORMAT_RGBA16_SFLOAT: return VK_FORMAT_R16G16B16A16_SFLOAT; break;
+
+	case FORMAT_R32_SFLOAT: return VK_FORMAT_R32_SFLOAT; break;
+	case FORMAT_RG32_SFLOAT: return VK_FORMAT_R32G32_SFLOAT; break;
+	case FORMAT_RGB32_SFLOAT: return VK_FORMAT_R32G32B32_SFLOAT; break;
 	case FORMAT_RGBA32_SFLOAT: return VK_FORMAT_R32G32B32A32_SFLOAT; break;
 	default: return 0; break;
 	}

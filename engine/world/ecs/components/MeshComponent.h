@@ -36,19 +36,15 @@ namespace engine
 
 				std::array<FPrimitiveLOD, MAX_LEVEL_OF_DETAIL> lods{};
 
-				size_t material{};
+				size_t materialId{ ~0ull };
+				size_t vboId{ ~0ull };
 			};
 
-			struct FStaticMeshComponent
+			struct FMeshComponent
 			{
 				std::vector<FMeshPrimitive> primitives{};
-				size_t vboId{ ~0ull };
-				bool castShadows{ true };
-			};
-
-			struct FDynamicMeshComponent : public FStaticMeshComponent
-			{
 				int32_t skin{ -1 };
+				bool castShadows{ true };
 			};
 		}
 	}

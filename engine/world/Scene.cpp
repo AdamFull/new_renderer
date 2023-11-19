@@ -138,6 +138,7 @@ CScene::CScene(IVirtualFileSystemInterface* vfs, render::IRenderInterface* rende
 	m_systems.emplace_back(std::make_unique<ecs::CCameraSystem>(m_pSceneGraph, render_interface));
 	m_systems.emplace_back(std::make_unique<ecs::CLightingSystem>(m_pSceneGraph, render_interface));
 	m_systems.emplace_back(std::make_unique<ecs::CShadowsSystem>(m_pSceneGraph, render_interface));
+	m_systems.emplace_back(std::make_unique<ecs::CMeshSystem>(m_pSceneGraph, render_interface));
 }
 
 CScene::~CScene()
@@ -166,8 +167,8 @@ void CScene::load(const std::string& path)
 		return;
 	}
 
-	//loadTextures();
-	//loadMaterials();
+	loadTextures();
+	loadMaterials();
 
 	auto& gltf = m_pScene->getGltf();
 
@@ -176,6 +177,12 @@ void CScene::load(const std::string& path)
 
 	for (const auto& node_index : scene.nodes)
 		loadNode(root, node_index);
+
+	// Create materials
+	for (const auto& material_ci : m_temporary.materialCis)
+	{
+		//m_pRenderInterface->create(material_ci.)
+	}
 
 	void loadAnimations();
 	void loadSkins();
@@ -197,14 +204,105 @@ void CScene::loadTextures()
 		auto& sampler = gltf.images.at(texture.sampler);
 
 		// TODO: add ability to override format and sampler params
+		// TODO: find format from materials
 		auto image_path = m_pScene->getResourcePath(image.uri);
-		m_loadedTextures.emplace_back(m_pRenderInterface->createTexture(image_path));
+		m_resources.textures.emplace_back(m_pRenderInterface->createTexture(image_path));
+		m_resources.lastTexture++;
 	}
 }
 
 void CScene::loadMaterials()
 {
+	const auto& gltf = m_pScene->getGltf();
 
+	uint32_t material_index{ 0u };
+	for (const auto& material : gltf.materials)
+	{
+		auto& material_ci = m_temporary.materialCis.emplace_back();
+		m_temporary.materialNames.emplace_back(material.name);
+		// TODO: add my own ext that will contain shader EXT_material_shader or something. But in my case it will contain name in format {library}:{shader_name} and other helpfull data
+
+		// Attach base color (aka albedo)
+		if (auto& texture = material.pbrMetallicRoughness.baseColorTexture; texture.index >= 0)
+		{
+			material_ci.textures.emplace("basecolor_tex", m_resources.textures.at(texture.index));
+			material_ci.definitions.emplace("HAS_BASECOLORMAP");
+		}
+
+		// Attach metallic roughness texture (metallic = green, roughness = blue)
+		if (auto& texture = material.pbrMetallicRoughness.metallicRoughnessTexture; texture.index >= 0)
+		{
+			material_ci.textures.emplace("metallic_roughness_tex", m_resources.textures.at(texture.index));
+			material_ci.definitions.emplace("HAS_METALLIC_ROUGHNESS");
+		}
+
+		// Attach normal map texture
+		if (auto& texture = material.normalTexture; texture.index >= 0)
+		{
+			material_ci.parameters.normalScale = static_cast<float>(texture.scale);
+			material_ci.textures.emplace("normal_map_tex", m_resources.textures.at(texture.index));
+			material_ci.definitions.emplace("HAS_NORMALMAP");
+		}
+
+		// Attach baked ambient occlusion texture
+		if (auto& texture = material.occlusionTexture; texture.index >= 0)
+		{
+			material_ci.parameters.occlusionStrenth = static_cast<float>(texture.strength);
+			material_ci.textures.emplace("ambient_occlusion_tex", m_resources.textures.at(texture.index));
+			material_ci.definitions.emplace("HAS_OCCLUSIONMAP");
+		}
+
+		// Attach emissive texture
+		if (auto& texture = material.emissiveTexture; texture.index >= 0)
+		{
+			material_ci.textures.emplace("emission_tex", m_resources.textures.at(texture.index));
+			material_ci.definitions.emplace("HAS_METALLIC_ROUGHNESS");
+		}
+
+		material_ci.parameters.emissiveFactor = glm::make_vec3(material.emissiveFactor.data());
+		material_ci.parameters.roughnessFactor = static_cast<float>(material.pbrMetallicRoughness.roughnessFactor);
+		material_ci.parameters.metallicFactor = static_cast<float>(material.pbrMetallicRoughness.metallicFactor);
+		material_ci.parameters.baseColorFactor = glm::make_vec4(material.pbrMetallicRoughness.baseColorFactor.data());
+
+		if (material.alphaMode == easygltf::base::enumerators::alpha_mode::blend)
+			material_ci.parameters.alphaMode = render::EAlphaMode::EBLEND;
+		else if(material.alphaMode == easygltf::base::enumerators::alpha_mode::mask)
+			material_ci.parameters.alphaMode = render::EAlphaMode::EMASK;
+		else
+			material_ci.parameters.alphaMode = render::EAlphaMode::EOPAQUE;
+
+		material_ci.parameters.alphaCutoff = static_cast<float>(material.alphaCutoff);
+		material_ci.parameters.doubleSided = material.doubleSided;
+
+		if (material.hasExtension<easygltf::extensions::KHR_materials_clearcoat>())
+		{
+			auto& extension = material.khrMaterialClearcoat;
+
+			material_ci.parameters.clearcoatFactor = static_cast<float>(extension.clearcoatFactor);
+			material_ci.parameters.clearcoatRoughnessFactor = static_cast<float>(extension.clearcoatRoughnessFactor);
+
+			if (auto& texture = extension.clearcoatTexture; texture.index >= 0)
+			{
+				material_ci.textures.emplace("clearcoat_tex", m_resources.textures.at(texture.index));
+				material_ci.definitions.emplace("HAS_CLEARCOAT_TEX");
+			}
+
+			if (auto& texture = extension.clearcoatTexture; texture.index >= 0)
+			{
+				material_ci.textures.emplace("clearcoat_roughness_tex", m_resources.textures.at(texture.index));
+				material_ci.definitions.emplace("HAS_CLEARCOAT_ROUGHNESS_TEX");
+			}
+
+			if (auto& texture = extension.clearcoatTexture; texture.index >= 0)
+			{
+				material_ci.textures.emplace("clearcoat_normal_map_tex", m_resources.textures.at(texture.index));
+				material_ci.definitions.emplace("HAS_CLEARCOAT_NORMAL_MAP_TEX");
+			}
+		}
+
+		if (material.hasExtension<easygltf::extensions::KHR_materials_emissive_strength>())
+			material_ci.parameters.emissiveStrength = static_cast<float>(material.khrMaterialEmissiveStrength.emissiveStrength);
+	}
 }
 
 void CScene::loadNode(const entt::entity parent, uint32_t node_index, float global_scale)
@@ -214,7 +312,7 @@ void CScene::loadNode(const entt::entity parent, uint32_t node_index, float glob
 
 	auto new_node = m_pSceneGraph->createNode(node.name);
 
-	m_nodeToEntityMap[node_index] = new_node;
+	m_temporary.nodeToEntity[node_index] = new_node;
 
 	// Parse node local transform
 	auto& transform = m_pSceneGraph->getComponent<FTransformComponent>(new_node);
@@ -227,17 +325,17 @@ void CScene::loadNode(const entt::entity parent, uint32_t node_index, float glob
 	if (!node.children.empty())
 	{
 		for (const auto& child_node_index : node.children)
-			loadNode(m_nodeToEntityMap[node_index], child_node_index);
+			loadNode(m_temporary.nodeToEntity[node_index], child_node_index);
 	}
 
 	if(node.mesh >= 0)
-		loadMeshComponent(m_nodeToEntityMap[node_index], node_index);
+		loadMeshComponent(m_temporary.nodeToEntity[node_index], node_index);
 
 	if(node.camera >= 0)
-		loadCameraComponent(m_nodeToEntityMap[node_index], node_index);
+		loadCameraComponent(m_temporary.nodeToEntity[node_index], node_index);
 
 	if(node.hasExtension<easygltf::extensions::KHR_lights_punctual>())
-		loadLightComponent(m_nodeToEntityMap[node_index], node_index);
+		loadLightComponent(m_temporary.nodeToEntity[node_index], node_index);
 
 	m_pSceneGraph->attachChild(parent, new_node);
 }
@@ -248,78 +346,118 @@ void CScene::loadMeshComponent(const entt::entity parent, uint32_t node_index)
 	const auto& node = gltf.nodes[node_index];
 	const auto& mesh = gltf.meshes[node.mesh];
 
-	std::vector<FMeshPrimitive>* primitives{ nullptr };
-	if (node.skin >= 0)
-	{
-		auto& mesh_component = m_pSceneGraph->addComponent<FDynamicMeshComponent>(parent, FDynamicMeshComponent{});
-		mesh_component.skin = node.skin;
-		primitives = &mesh_component.primitives;
-	}
-	else
-	{
-		auto& mesh_component = m_pSceneGraph->addComponent<FStaticMeshComponent>(parent, FStaticMeshComponent{});
-		primitives = &mesh_component.primitives;
-	}
+	auto& mesh_component = m_pSceneGraph->addComponent<FMeshComponent>(parent, FMeshComponent{});
 
 	// Load mesh primitives
 	for (size_t i = 0ull; i < mesh.primitives.size(); ++i)
 	{
 		const auto& primitive = mesh.primitives[i];
 
-		uint32_t index_start = m_pVertexHandler->getLastIndex();
-		uint32_t vertex_start = m_pVertexHandler->getLastVertex();
-		uint32_t index_count{ 0u }, vertex_count{ 0u };
-
 		// TODO: add min max
 		glm::vec3 pos_min{}, pos_max{};
 
 		// Load vertices
-		{
-			std::vector<render::FVertexAttributePointer> attributes{};
+		
+		std::hash<uint32_t> attribute_hasher;
+		std::vector<render::FVertexAttributePointer> attributes{};
 
-			for (const auto& [name, accessor_idx] : primitive.attributes)
+		size_t attributes_hash{ 0ull };
+		for (const auto& [name, accessor_idx] : primitive.attributes)
+		{
+			auto& attrib = attributes.emplace_back();
+			attrib.type = get_vertex_attribute_type_by_name(name);
+			
+			const easygltf::Accessor& accessor = gltf.accessors[accessor_idx];
+			attrib.data = m_pScene->getBufferPointer(accessor);
+			attrib.stride = get_size_by_type(accessor.componentType, accessor.type);
+			attrib.count = accessor.count;
+
+			if (attrib.type == render::EVertexAttributeType::ePosition)
 			{
-				auto& attrib = attributes.emplace_back();
-				attrib.type = get_vertex_attribute_type_by_name(name);
-				
-				const easygltf::Accessor& accessor = gltf.accessors[accessor_idx];
-				attrib.data = m_pScene->getBufferPointer(accessor);
-				attrib.stride = get_size_by_type(accessor.componentType, accessor.type);
-				attrib.count = accessor.count;
+				pos_min = !accessor.min.empty() ? glm::vec3(accessor.min[0], accessor.min[1], accessor.min[2]) : glm::vec3(0.f);
+				pos_max = !accessor.max.empty() ? glm::vec3(accessor.max[0], accessor.max[1], accessor.max[2]) : glm::vec3(0.f);
 			}
 
-			// Attributes should be sorted by value type
-			std::sort(attributes.begin(), attributes.end(), [](const auto& lhs, const auto& rhs) { return static_cast<uint32_t>(lhs.type) < static_cast<uint32_t>(rhs.type); });
-
-			vertex_count = m_pVertexHandler->addVertices(attributes);
+			attributes_hash += attribute_hasher(static_cast<uint32_t>(attrib.type) + 1u);
 		}
 
+		// Attributes should be sorted by value type
+		std::sort(attributes.begin(), attributes.end(), [](const auto& lhs, const auto& rhs) { return static_cast<uint32_t>(lhs.type) < static_cast<uint32_t>(rhs.type); });
+
 		// Load indices
+		render::FVertexAttributePointer indices{};
 		if (primitive.indices >= 0)
 		{
-			render::FVertexAttributePointer indices{};
-
 			const easygltf::Accessor& accessor = gltf.accessors[primitive.indices];
 			indices.data = m_pScene->getBufferPointer(accessor);
 			indices.stride = get_size_by_type(accessor.componentType, accessor.type);
 			indices.count = accessor.count;
 
-			index_count = m_pVertexHandler->addIndices(indices);
+			attributes_hash += attribute_hasher(static_cast<uint32_t>(indices.stride));
 		}
 
+		// Get or create vertex buffer
+		render::IVertexHandler* vertex_handler{nullptr};
+		if (auto found = m_resources.vertexHandlers.find(attributes_hash); found != m_resources.vertexHandlers.end())
+		{
+			auto& handler = m_pRenderInterface->getVertexHandler(found->second);
+			vertex_handler = handler.get();
+		}
+		else
+		{
+			render::FVertexHandlerCreateInfo handler_ci{};
+			handler_ci.indexSize = indices.stride;
+			handler_ci.name = mesh.name;
+
+			for (const auto& attrib : attributes)
+			{
+				auto& desc = handler_ci.descriptions.emplace_back();
+				desc.type = attrib.type;
+				desc.size = attrib.stride;
+			}
+
+			auto handler_name = std::format("{}_{}", mesh.name, attributes_hash);
+			auto handler_id = m_pRenderInterface->createVertexHandler(handler_name, handler_ci);
+			m_resources.vertexHandlers[attributes_hash] = handler_id;
+
+			auto& handler = m_pRenderInterface->getVertexHandler(handler_id);
+			vertex_handler = handler.get();
+		}
+
+		// Create mesh primitive
 		FMeshPrimitive mesh_primitive{};
+		mesh_primitive.vboId = m_resources.vertexHandlers[attributes_hash];
 		mesh_primitive.setDimensions(pos_min, pos_max);
 
-		mesh_primitive.lods[0].begin_index = index_start;
-		mesh_primitive.lods[0].index_count = index_count;
-		mesh_primitive.lods[0].begin_vertex = vertex_start;
-		mesh_primitive.lods[0].vertex_count = vertex_count;
+		mesh_primitive.lods[0].beginIndex = vertex_handler->getLastIndex();
+		mesh_primitive.lods[0].indexCount = vertex_handler->addIndices(indices);
+		mesh_primitive.lods[0].beginVertex = vertex_handler->getLastIndex();
+		mesh_primitive.lods[0].vertexCount = vertex_handler->addVertices(attributes);
 
-		primitives->emplace_back(mesh_primitive);
-		m_primitiveCount++;
+		// NOTE: Updating material create info for future shader creation
+		if (primitive.material >= 0)
+		{
+			mesh_primitive.materialId = primitive.material;
+
+			auto& material_ci = m_temporary.materialCis.at(primitive.material);
+			for (const auto& attribute : attributes)
+			{
+				switch (attribute.type)
+				{
+				case render::EVertexAttributeType::eColor: material_ci.definitions.emplace("HAS_COLOR"); break;
+				case render::EVertexAttributeType::eTexCoord: material_ci.definitions.emplace("HAS_TEXCOORD"); break;
+				case render::EVertexAttributeType::eNormal: material_ci.definitions.emplace("HAS_NORMAL"); break;
+				case render::EVertexAttributeType::eTangent: material_ci.definitions.emplace("HAS_TANGENT"); break;
+				case render::EVertexAttributeType::eJoint: material_ci.definitions.emplace("HAS_SKIN"); break;
+				case render::EVertexAttributeType::eWeight: material_ci.definitions.emplace("HAS_SKIN"); break;
+				}
+			}
+			material_ci.usageCount++;
+		}
+
+		mesh_component.primitives.emplace_back(mesh_primitive);
+		m_resources.primitiveCount++;
 	}
-
-	// TODO: sort primitives by material
 }
 
 void CScene::loadCameraComponent(const entt::entity parent, uint32_t node_index)
@@ -473,8 +611,8 @@ void CScene::loadAnimations()
 			}
 			channel.samplerIndex = source.sampler;
 
-			auto target = m_nodeToEntityMap.find(source.target.node);
-			if (target != m_nodeToEntityMap.end())
+			auto target = m_temporary.nodeToEntity.find(source.target.node);
+			if (target != m_temporary.nodeToEntity.end())
 				channel.node = target->second;
 			else
 				continue;
@@ -500,16 +638,16 @@ void CScene::loadSkins()
 		// Find skeleton root node
 		if (source.skeleton > -1)
 		{
-			auto target = m_nodeToEntityMap.find(source.skeleton);
-			if (target != m_nodeToEntityMap.end())
+			auto target = m_temporary.nodeToEntity.find(source.skeleton);
+			if (target != m_temporary.nodeToEntity.end())
 				skin.root = target->second;
 		}
 
 		// Find joint nodes
 		for (int jointIndex : source.joints)
 		{
-			auto target = m_nodeToEntityMap.find(jointIndex);
-			if (target != m_nodeToEntityMap.end())
+			auto target = m_temporary.nodeToEntity.find(jointIndex);
+			if (target != m_temporary.nodeToEntity.end())
 				skin.joints.emplace_back(target->second);
 		}
 

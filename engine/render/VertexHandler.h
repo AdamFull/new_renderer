@@ -18,9 +18,10 @@ namespace engine
 			};
 
 			CVertexHandler(IRenderInterface* render_interface, IRenderContext* render_context);
-			~CVertexHandler() override = default;
+			~CVertexHandler() override;
 
-			void create() override;
+			void create(const FVertexHandlerCreateInfo& create_info) override;
+			void allocate() override;
 
 			void bind(uint32_t queue) override;
 
@@ -29,6 +30,8 @@ namespace engine
 
 			size_t getLastVertex() override;
 			size_t getLastIndex() override;
+
+			const FVertexDeclarationInfo& getVertexDeclaration() const override;
 		private:
 			FBufferInfo m_vertexBuffer{};
 			FBufferInfo m_indexBuffer{};

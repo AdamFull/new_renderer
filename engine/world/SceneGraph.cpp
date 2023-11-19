@@ -17,6 +17,7 @@ entt::entity CSceneGraph::createRoot(const std::string& name)
 		return m_root;
 
 	m_root = createNode(name);
+	m_pRegistry->emplace<FRootComponent>(m_root, FRootComponent{});
 	return m_root;
 }
 

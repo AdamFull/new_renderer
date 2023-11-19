@@ -20,15 +20,21 @@ namespace engine
 			void render(float dt) override;
 
 			size_t createTexture(const std::string& path) override;
+			// TODO: add texture may be?
 
 			size_t createShader(const std::string& name, const FGraphicsShaderCreateInfo& create_info) override;
 			size_t createShader(const std::string& name, const FComputeShaderCreateInfo& create_info) override;
 
 			size_t createMaterial(const std::string& name, const FMaterialCreateInfo& material_ci) override;
 
+			size_t createVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) override;
+			const std::unique_ptr<IVertexHandler>& getVertexHandler(size_t id) override;
+
 			void updateSurfaceSize(int32_t width, int32_t height) override;
 
 			const std::unique_ptr<FRenderDataPacket>& getRenderPacket() override;
+
+			IRenderContext* getRenderContext() override;
 		protected:
 			template<class _Ty>
 			size_t createShader(const FShaderUploadInfo& name_info, const _Ty& create_info)

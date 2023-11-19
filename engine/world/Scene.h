@@ -13,6 +13,26 @@ namespace engine
 	{
 		class CSceneGraph;
 
+		struct FSceneLoadedResources
+		{
+			std::unordered_map<size_t, size_t> vertexHandlers{};
+
+			std::vector<size_t> textures{};
+			size_t lastTexture{ 0ull };
+
+			std::vector<size_t> materials{};
+			size_t lastMaterial{ 0ull };
+
+			size_t primitiveCount{ 0ull };
+		};
+
+		struct FSceneTemporaryResources
+		{
+			std::vector<render::FMaterialCreateInfo> materialCis{};
+			std::vector<std::string> materialNames{};
+			std::unordered_map<uint32_t, entt::entity> nodeToEntity{};
+		};
+
 		class CScene
 		{
 		public:
@@ -40,12 +60,8 @@ namespace engine
 
 			std::vector<std::unique_ptr<ecs::ISystem>> m_systems{};
 
-			std::unordered_map<uint32_t, entt::entity> m_nodeToEntityMap{};
-			size_t m_primitiveCount{ 0ull };
-
-			std::vector<size_t> m_loadedTextures{};
-
-			std::unique_ptr<render::IVertexHandler> m_pVertexHandler{};
+			FSceneLoadedResources m_resources{};
+			FSceneTemporaryResources m_temporary{};
 
 			render::IRenderInterface* m_pRenderInterface{ nullptr };
 			filesystem::IVirtualFileSystemInterface* m_pVFS{ nullptr };

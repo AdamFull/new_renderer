@@ -233,21 +233,21 @@ namespace engine
 			);
 
 			// FVertexBindingDescription registration
-			lua->new_usertype<FVertexBindingDescription>(
-				"FVertexBindingDescription",
-				sol::constructors<FVertexBindingDescription()>(),
-				"binding", &FVertexBindingDescription::binding,
-				"stride", &FVertexBindingDescription::stride
+			lua->new_usertype<FVertexDeclarationBindingDescription>(
+				"VertexBindingDescription",
+				sol::constructors<FVertexDeclarationBindingDescription()>(),
+				"binding", &FVertexDeclarationBindingDescription::binding,
+				"stride", &FVertexDeclarationBindingDescription::stride
 			);
 
 			// FVertexAttributeDescription registration
-			lua->new_usertype<FVertexAttributeDescription>(
+			lua->new_usertype<FVertexDeclarationAttributeDescription>(
 				"VertexAttributeDescription",
-				sol::constructors<FVertexDeclarationInfo()>(),
-				"location", &FVertexAttributeDescription::location,
-				"binding", &FVertexAttributeDescription::binding,
-				"format", &FVertexAttributeDescription::format,
-				"offset", &FVertexAttributeDescription::offset
+				sol::constructors<FVertexDeclarationAttributeDescription()>(),
+				"location", &FVertexDeclarationAttributeDescription::location,
+				"binding", &FVertexDeclarationAttributeDescription::binding,
+				"format", &FVertexDeclarationAttributeDescription::format,
+				"offset", &FVertexDeclarationAttributeDescription::offset
 			);
 
 			// FVertexDeclaration registration

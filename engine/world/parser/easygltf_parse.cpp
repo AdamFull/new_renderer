@@ -718,6 +718,11 @@ namespace easygltf
         parsing::serialize_to("componentType", json, type.componentType, true);
         parsing::serialize_to("type", json, type.type, true);
 
+        parsing::serialize_to("min", json, type.min, true);
+        parsing::serialize_to("max", json, type.max, true);
+
+        parsing::serialize_to("sparse", json, type.sparse, type.sparse != SparseAccessor{});
+
         parsing::serialize_extensions_and_extras(json, type);
     }
 
@@ -730,6 +735,11 @@ namespace easygltf
         parsing::parse_from("normalized", json, type.normalized);
         parsing::parse_from("componentType", json, type.componentType);
         parsing::parse_from("type", json, type.type);
+        
+        parsing::parse_from("min", json, type.min);
+        parsing::parse_from("max", json, type.max);
+
+        parsing::parse_from("sparse", json, type.sparse);
 
         parsing::parse_extensions_and_extras(json, type);
     }

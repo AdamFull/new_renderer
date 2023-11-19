@@ -15,10 +15,9 @@ using namespace engine::world::ecs;
 constexpr const float cascade_split_lambda = 0.985f;
 constexpr const float cascade_split_overlap = 0.9f;
 
-template<class _Ty>
 void get_primitives_in_shadow_view(const std::unique_ptr<entt::registry>& registry, const FFrustum& frustum, std::vector<FGeometryDrawData>& geometry_list)
 {
-	auto meshes = registry->view<FTransformComponent, FBaseComponent, _Ty>();
+	auto meshes = registry->view<FTransformComponent, FBaseComponent, FMeshComponent>();
 	for (auto [entity, mtransform, base, mesh] : meshes.each())
 	{
 		if (!base.visible || !mesh.castShadows)
@@ -36,11 +35,11 @@ void get_primitives_in_shadow_view(const std::unique_ptr<entt::registry>& regist
 				auto& lod = primitive.lods[0ull];
 
 				auto& draw_data = geometry_list.emplace_back();
-				draw_data.vboId = mesh.vboId;
-				draw_data.beginIndex = lod.beginIndex;
-				draw_data.indexCount = lod.indexCount;
-				draw_data.beginVertex = lod.beginVertex;
-				draw_data.vertexCount = lod.indexCount;
+				draw_data.vboId = primitive.vboId;
+				draw_data.range.beginIndex = lod.beginIndex;
+				draw_data.range.indexCount = lod.indexCount;
+				draw_data.range.beginVertex = lod.beginVertex;
+				draw_data.range.vertexCount = lod.indexCount;
 			}
 		}
 	}
@@ -184,8 +183,7 @@ void CShadowsSystem::__update(float fDt)
 					auto& geometry_list = geometry_lists.at(i);
 
 					// Prepare static mesh data
-					get_primitives_in_shadow_view<FStaticMeshComponent>(registry, frustum, geometry_list);
-					get_primitives_in_shadow_view<FDynamicMeshComponent>(registry, frustum, geometry_list);
+					get_primitives_in_shadow_view(registry, frustum, geometry_list);
 				}
 
 				// Set shadow index and increment it
@@ -229,8 +227,7 @@ void CShadowsSystem::__update(float fDt)
 					FFrustum frustum{};
 					frustum.update(shadow_commit.viewProj.at(face), shadowProj);
 
-					get_primitives_in_shadow_view<FStaticMeshComponent>(registry, frustum, geometry_list);
-					get_primitives_in_shadow_view<FDynamicMeshComponent>(registry, frustum, geometry_list);
+					get_primitives_in_shadow_view(registry, frustum, geometry_list);
 				}
 			}
 		}
@@ -260,8 +257,7 @@ void CShadowsSystem::__update(float fDt)
 				FFrustum frustum{};
 				frustum.update(shadowView, shadowProj);
 
-				get_primitives_in_shadow_view<FStaticMeshComponent>(registry, frustum, geometry_list);
-				get_primitives_in_shadow_view<FDynamicMeshComponent>(registry, frustum, geometry_list);
+				get_primitives_in_shadow_view(registry, frustum, geometry_list);
 			}
 		}
 	}

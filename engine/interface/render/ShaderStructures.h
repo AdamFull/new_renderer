@@ -85,13 +85,13 @@ namespace engine
 			std::vector<uint32_t>* code{ nullptr };
 		};
 
-		struct FVertexBindingDescription
+		struct FVertexDeclarationBindingDescription
 		{
 			uint32_t binding{};
 			uint32_t stride{};
 		};
 
-		struct FVertexAttributeDescription
+		struct FVertexDeclarationAttributeDescription
 		{
 			uint32_t location{};
 			uint32_t binding{};
@@ -101,8 +101,8 @@ namespace engine
 
 		struct FVertexDeclarationInfo
 		{
-			std::vector<FVertexBindingDescription> bindingDescriptions{};
-			std::vector<FVertexAttributeDescription> attributeDescriptions{};
+			std::vector<FVertexDeclarationBindingDescription> bindingDescriptions{};
+			std::vector<FVertexDeclarationAttributeDescription> attributeDescriptions{};
 		};
 
 		struct FGraphicsShaderCreateInfo
@@ -139,22 +139,6 @@ namespace engine
 			size_t shaderId{ ~0ull };
 			std::unordered_map<size_t, FUniformDataView> uniforms{};
 			std::unordered_map<size_t, size_t> textures{};
-		};
-
-		class IVertexHandler
-		{
-		public:
-			virtual ~IVertexHandler() = default;
-
-			virtual void create() = 0;
-
-			virtual void bind(uint32_t queue) = 0;
-
-			virtual size_t addVertices(const std::vector<FVertexAttributePointer>& attributes_data) = 0;
-			virtual size_t addIndices(const FVertexAttributePointer& indices) = 0;
-
-			virtual size_t getLastVertex() = 0;
-			virtual size_t getLastIndex() = 0;
 		};
 	}
 }

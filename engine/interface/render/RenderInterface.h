@@ -2,7 +2,6 @@
 
 #include <interface/SharedStructure.h>
 #include <interface/render/BaseEnumerators.h>
-#include <interface/render/BaseStructures.h>
 #include <interface/render/BufferStructures.h>
 #include <interface/render/LightStructures.h>
 #include <interface/render/MaterialStructures.h>
@@ -143,29 +142,6 @@ namespace engine
 			FSpotLightsData spotLights{};
 		};
 
-		class IRenderInterface
-		{
-		public:
-			virtual ~IRenderInterface() = default;
-
-			virtual void create(const FRenderInterfaceCreateInfo& render_interface_ci) = 0;
-			virtual void render(float dt) = 0;
-
-			virtual size_t createTexture(const std::string& path) = 0;
-
-			virtual size_t createShader(const std::string& name_info, const FGraphicsShaderCreateInfo& create_info) = 0;
-			virtual size_t createShader(const std::string& name_info, const FComputeShaderCreateInfo& create_info) = 0;
-
-			virtual size_t createMaterial(const std::string& name, const FMaterialCreateInfo& material_ci) = 0;
-
-			virtual FShaderUploadInfo getShaderNameTag(const std::string& name) = 0;
-			virtual void createRendering(const FRenderingStepCreateInfo& rendering_ci) = 0;
-
-			virtual void updateSurfaceSize(int32_t width, int32_t height) = 0;
-
-			virtual const std::unique_ptr<FRenderDataPacket>& getRenderPacket() = 0;
-		};
-
 		class IRenderContext
 		{
 		public:
@@ -212,6 +188,34 @@ namespace engine
 
 			virtual void beginFrameCommandBuffers() = 0;
 			virtual void endFrameCommandBuffers() = 0;
+		};
+
+		class IRenderInterface
+		{
+		public:
+			virtual ~IRenderInterface() = default;
+
+			virtual void create(const FRenderInterfaceCreateInfo& render_interface_ci) = 0;
+			virtual void render(float dt) = 0;
+
+			virtual size_t createTexture(const std::string& path) = 0;
+
+			virtual size_t createShader(const std::string& name_info, const FGraphicsShaderCreateInfo& create_info) = 0;
+			virtual size_t createShader(const std::string& name_info, const FComputeShaderCreateInfo& create_info) = 0;
+
+			virtual size_t createMaterial(const std::string& name, const FMaterialCreateInfo& material_ci) = 0;
+
+			virtual size_t createVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) = 0;
+			virtual const std::unique_ptr<IVertexHandler>& getVertexHandler(size_t id) = 0;
+
+			virtual FShaderUploadInfo getShaderNameTag(const std::string& name) = 0;
+			virtual void createRendering(const FRenderingStepCreateInfo& rendering_ci) = 0;
+
+			virtual void updateSurfaceSize(int32_t width, int32_t height) = 0;
+
+			virtual const std::unique_ptr<FRenderDataPacket>& getRenderPacket() = 0;
+
+			virtual IRenderContext* getRenderContext() = 0;
 		};
 	}
 }

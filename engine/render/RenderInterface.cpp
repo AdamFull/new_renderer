@@ -104,6 +104,9 @@ CRenderInterface::CRenderInterface(filesystem::IVirtualFileSystemInterface* vfs)
 	m_pResourceLoader = std::make_unique<CResourceLoader>();
 	m_pRenderScriptCore = std::make_unique<CRenderScriptCore>();
 	m_pRenderPacket = std::make_unique<FRenderDataPacket>();
+
+	m_pResources = std::make_unique<CResourceContainer>();
+	m_pResources->registerResource<IVertexHandler>();
 }
 
 CRenderInterface::~CRenderInterface()
@@ -122,9 +125,6 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 	std::vector<uint8_t> render_config{};
 	m_pVFS->readFile("/root/embed/rendering/test_render_config.lua", render_config);
 	m_pRenderScriptCore->build("render_config", render_config);
-
-	m_pResources = std::make_unique<CResourceContainer>();
-	m_pResources->registerResource<CMaterial>();
 }
 
 void CRenderInterface::render(float dt)
@@ -192,6 +192,19 @@ size_t CRenderInterface::createMaterial(const std::string& name, const FMaterial
 	return m_pResources->add<CMaterial>(name.c_str(), std::move(material));
 }
 
+size_t CRenderInterface::createVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci)
+{
+	auto vertex_handler = std::make_unique<CVertexHandler>(this, m_pRenderContext.get());
+	vertex_handler->create(handler_ci);
+
+	return m_pResources->add<IVertexHandler>(name.c_str(), std::move(vertex_handler));
+}
+
+const std::unique_ptr<IVertexHandler>& CRenderInterface::getVertexHandler(size_t id)
+{
+	return m_pResources->get<IVertexHandler>(id);
+}
+
 void CRenderInterface::updateSurfaceSize(int32_t width, int32_t height)
 {
 	m_pRenderContext->updateSurface(width, height);
@@ -200,6 +213,11 @@ void CRenderInterface::updateSurfaceSize(int32_t width, int32_t height)
 const std::unique_ptr<FRenderDataPacket>& CRenderInterface::getRenderPacket()
 {
 	return m_pRenderPacket;
+}
+
+IRenderContext* CRenderInterface::getRenderContext()
+{
+	return m_pRenderContext.get();
 }
 
 FShaderUploadInfo CRenderInterface::getShaderNameTag(const std::string& name)

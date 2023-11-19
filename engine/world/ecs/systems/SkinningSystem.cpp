@@ -47,7 +47,7 @@ void CSkinningSystem::__update(float fDt)
 	auto root = m_pSceneGraph->getRoot();
 	auto& root_component = m_pSceneGraph->getComponent<FRootComponent>(root);
 
-	auto view = registry->view<FTransformComponent, FBaseComponent, FDynamicMeshComponent>();
+	auto view = registry->view<FTransformComponent, FBaseComponent, FMeshComponent>();
 	for (auto [entity, transform, base, mesh] : view.each())
 	{
 		if (!base.enabled || mesh.skin < 0)
