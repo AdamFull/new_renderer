@@ -46,6 +46,8 @@ namespace engine
 				void updateShaderResources(const FShaderResourceCommit& shader_resources, uint32_t flags = SHADER_RESOURCES_UPDATE_ALL_FLAG_BIT) override;
 				void flushConstantRanges(size_t shader_id, const std::unordered_map<size_t, FUniformDataView>& constants, uint32_t queue_type) override;
 
+				void draw(uint32_t queue_type, const FGeometryDrawInfo& draw_info) override;
+
 				size_t getTextureResource(const char* name) override;
 				size_t getShaderResource(const char* name) override;
 

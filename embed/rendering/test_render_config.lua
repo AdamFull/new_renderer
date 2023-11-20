@@ -3,7 +3,8 @@ surface_resolution = render_context:get_surface_resolution()
 do
     local target_ci = TextureCI.new()
     target_ci.format = render_context:get_api_format(Format.rgba8_unorm)
-    target_ci.type = TexType.two_dim | TexType.samplable
+    -- target_ci.type = TexType.two_dim | TexType.samplable
+    target_ci.type = bit_or(TexType.two_dim, TexType.samplable)
     target_ci.width = surface_resolution.x
     target_ci.height = surface_resolution.y
     
@@ -13,7 +14,7 @@ end
 do
     local target_ci = TextureCI.new()
     target_ci.format = render_context:get_api_format(Format.rgba8_srgb)
-    target_ci.type = TexType.two_dim | TexType.samplable
+    target_ci.type = bit_or(TexType.two_dim, TexType.samplable)
     target_ci.width = surface_resolution.x
     target_ci.height = surface_resolution.y
     
@@ -23,7 +24,7 @@ end
 do
     local target_ci = TextureCI.new()
     target_ci.format = render_context:get_depth_format()
-    target_ci.type = TexType.two_dim | TexType.depth | TexType.samplable
+    target_ci.type = bit_or(TexType.two_dim, TexType.depth, TexType.samplable)
     target_ci.width = surface_resolution.x
     target_ci.height = surface_resolution.y
 
@@ -52,7 +53,8 @@ do
     step_ci.rendering.shader_name = "testing:visbufferwrite"
 
     step_ci.rendering.output_targets:add(render_context:get_texture_resource("visibility_buffer_target"))
-    step_ci.rendering.depth_target = step_ci.rendering.stencil_target = render_context:get_texture_resource("zbuffer_depth_target")
+    step_ci.rendering.depth_target = render_context:get_texture_resource("zbuffer_depth_target")
+    step_ci.rendering.stencil_target = step_ci.rendering.depth_target
 
     render_interface:create_renderer(step_ci)
 end

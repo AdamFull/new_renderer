@@ -57,6 +57,11 @@ LRESULT CALLBACK CWindowWin32::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, L
     return 0;
 }
 
+CWindowWin32::CWindowWin32()
+{
+    
+}
+
 CWindowWin32::~CWindowWin32()
 {
     destroy();

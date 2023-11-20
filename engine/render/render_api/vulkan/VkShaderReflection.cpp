@@ -105,6 +105,7 @@ void build_uniform_block_reflection(FVkShaderReflectionData& reflection_data, sp
 
     uniform_block.descriptorType = descriptorType;
     uniform_block.size = compiler->get_declared_struct_size(type);
+    uniform_block.stageFlags = shaderStage;
 
     reflection_data.uniformBlocks.emplace(name_hash, uniform_block);
 }
@@ -140,6 +141,7 @@ void build_push_constants_block_reflection(FVkShaderReflectionData& reflection_d
     }
 
     push_block.size = compiler->get_declared_struct_size(type);
+    push_block.stageFlags = shaderStage;
     reflection_data.pushBlocks.emplace(name_hash, push_block);
 }
 

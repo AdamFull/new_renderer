@@ -48,7 +48,7 @@ void CCameraSystem::__update(float fDt)
 				else
 				{
 					auto aspect = static_cast<float>(render_resolution.x) / static_cast<float>(render_resolution.y);
-					camera.projection = glm::perspective(glm::radians(camera.fieldOfView), aspect, camera.nearPlane, camera.farPlane);
+					camera.projection = glm::perspective(camera.fieldOfView, aspect, camera.nearPlane, camera.farPlane);
 				}
 
 				camera.invProjection = glm::inverse(camera.projection);

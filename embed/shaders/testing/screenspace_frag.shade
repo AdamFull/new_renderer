@@ -18,7 +18,7 @@
 		layout (location = 0) in vec2 inUV;
 		layout (location = 0) out vec4 outFragcolor;
 
-		layout(binding = 1) uniform sampler2D penis;
+		layout(binding = 1) uniform sampler2D visibility_buffer;
 
 		layout (std140, binding = 0) uniform FUniformData 
         { 
@@ -27,7 +27,7 @@
 
 		void main() 
 		{
-			outFragcolor = vec4(data.color, 1.f) * texture(penis, inUV);
+			outFragcolor = texture(visibility_buffer, inUV) + vec4(data.color, 1.f);
 		}
 	""";
 }

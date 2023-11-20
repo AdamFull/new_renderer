@@ -1101,11 +1101,45 @@ FRenderApiErrorInfo CVkRenderDevice::selectPhysicalDevice(const FRenderContextCr
 		physicalDevices.emplace_back(make_physical_device(device));
 		auto& current_device = physicalDevices.back();
 
-		if (current_device.properties.apiVersion < api_version)
-			continue;
+#ifndef BUILD_WITHOUT_DEBUGGIND
+		std::stringstream uuid_ss;
+		for (uint8_t byte : current_device.properties.pipelineCacheUUID)
+			uuid_ss << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(byte);
 
-		if (!check_contains_all(context_ci.requiredDeviceExtensions, current_device.avaliableExtensions))
+		log_debug("Physical device: \nName: {}\nID: {}\nVendor: {}\nDriver: {}\nAPI version: {}\nType: {}\nCache UUID: {}",
+			current_device.properties.deviceName.data(),
+			current_device.properties.deviceID,
+			current_device.properties.vendorID,
+			current_device.properties.driverVersion,
+			current_device.properties.apiVersion,
+			vk::to_string(current_device.properties.deviceType),
+			uuid_ss.str()
+		);
+#endif
+
+		if (current_device.properties.apiVersion < api_version)
+		{
+			log_warning("Device is not supported. Required API version: {}, but device supporting {}.", api_version, current_device.properties.apiVersion);
 			continue;
+		}
+
+		std::vector<std::string> unsupported_extensions{};
+		for (const auto& req : context_ci.requiredDeviceExtensions)
+		{
+			if (!check_contains_single(req, current_device.avaliableExtensions))
+				unsupported_extensions.emplace_back(req);
+		}
+
+		if (!unsupported_extensions.empty())
+		{
+#ifndef BUILD_WITHOUT_DEBUGGIND
+			std::stringstream ss{};
+			for (const auto& ext : unsupported_extensions)
+				ss << ext << " ";
+			log_info("Device is not supporting extensions: {}.", ss.str());
+#endif
+			continue;
+		}
 
 		// Get supported queue families for this device
 		selectQueueFamilies(current_device);
@@ -1129,6 +1163,7 @@ FRenderApiErrorInfo CVkRenderDevice::selectPhysicalDevice(const FRenderContextCr
 	{
 		if (fallback_device_index < 0)
 			return make_api_error(vk::ObjectType::ePhysicalDevice, vk::Result::eErrorUnknown, "Not found any suitable device");
+			
 		selectedPhysicalDevice = fallback_device_index;
 	}
 

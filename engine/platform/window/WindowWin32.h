@@ -17,6 +17,7 @@ namespace engine
 		class CWindowWin32 : public IWindowInterface
 		{
 		public:
+			CWindowWin32();
 			~CWindowWin32() override;
 
 			void create(const FWindowCreateInfo& window_ci) override;

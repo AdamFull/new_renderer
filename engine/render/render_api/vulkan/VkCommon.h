@@ -317,6 +317,23 @@ namespace engine
 				return vk::ImageLayout::ePresentSrcKHR;
 			}
 
+			inline vk::AttachmentLoadOp get_attachment_load_op(const FVkTexture& texture)
+			{
+				return vk::AttachmentLoadOp::eClear;
+			}
+
+			inline vk::AttachmentStoreOp get_attachment_store_op(const FVkTexture& texture)
+			{
+				bool transferable = (texture.initialData.base.typeFlags & TEXTURE_IMAGE_TYPE_TRANSFERABLE_FLAG_BIT);
+				bool samplable = (texture.initialData.base.typeFlags & TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT);
+				bool depth = (texture.initialData.base.typeFlags & TEXTURE_IMAGE_TYPE_DEPTH_FLAG_BIT);
+
+				if ((transferable || samplable) && !depth)
+					return vk::AttachmentStoreOp::eStore;
+
+				return vk::AttachmentStoreOp::eDontCare;
+			}
+
 			inline FVkImageTranslationInfo get_texture_layout_translation_info(const FVkTexture& texture, const FVkTextureTranslationInfo& translation_info)
 			{
 				FVkImageTranslationInfo image_layout_translation{};

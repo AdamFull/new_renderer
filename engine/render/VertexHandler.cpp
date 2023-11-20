@@ -65,7 +65,7 @@ void CVertexHandler::allocate()
 	m_vertexBuffer.buffer = m_pRenderContext->createBuffer("scene vertices", buffer_ci);
 
 	// Create index buffer
-	buffer_ci.flags = BUFFER_TYPE_VERTEX_FLAG_BIT;
+	buffer_ci.flags = BUFFER_TYPE_INDEX_FLAG_BIT;
 	buffer_ci.size = m_indexBuffer.elementSize;
 	buffer_ci.count = m_indexBuffer.elementCount;
 	buffer_ci.upload.data = m_indexBuffer.data;

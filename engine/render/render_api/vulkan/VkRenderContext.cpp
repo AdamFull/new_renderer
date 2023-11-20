@@ -14,6 +14,11 @@ using namespace engine::render::vulkan;
 
 static const uint32_t k_max_bindless_resources = 16536;
 
+void apply_render_target_load_store_ops(vk::RenderingAttachmentInfoKHR& attachment_info, uint32_t flags)
+{
+
+}
+
 CVkRenderContext::~CVkRenderContext()
 {
 	auto& logical_device = m_pContext->getLogicalDevice();
@@ -160,6 +165,9 @@ size_t CVkRenderContext::createShader(const std::string& name, const FGraphicsSh
 	pipeline_ci.primitiveTopology = get_primitive_topology(shader_ci.primitiveTopology);
 	pipeline_ci.cullMode = get_cull_mode_flags(shader_ci.cullMode);
 	pipeline_ci.frontFace = get_front_face(shader_ci.frontFace);
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	pipeline_ci.name = name;
+#endif
 
 	// Get color attachment formats
 	auto& textures = m_pResources->data<FVkTexture>();
@@ -199,7 +207,7 @@ size_t CVkRenderContext::createShader(const std::string& name, const FGraphicsSh
 		auto& description = pipeline_ci.vertexAttributeDescriptions.emplace_back();
 		description.location = vertex_binding.location;
 		description.binding = vertex_binding.binding;
-		description.format = static_cast<vk::Format>(getApiFormat(vertex_binding.format));
+		description.format = static_cast<vk::Format>(vertex_binding.format);
 		description.offset = vertex_binding.offset;
 	}
 
@@ -244,7 +252,7 @@ size_t CVkRenderContext::createShader(const std::string& name, const FGraphicsSh
 #endif
 	resources_info.usageCount = shader_ci.usageCount;
 
-	createShaderResources(resources_info, *shader);
+	auto res = createShaderResources(resources_info, *shader);
 
 	pipeline_ci.layout = shader->layout;
 
@@ -428,8 +436,8 @@ void CVkRenderContext::beginRendering(const FBeginRenderingInfo& rendering_info)
 		attachment_info.imageView = render_target->imageViews.front();
 		attachment_info.imageLayout = render_target->layout;
 		attachment_info.resolveMode = vk::ResolveModeFlagBits::eNone;
-		attachment_info.loadOp = vk::AttachmentLoadOp::eClear;
-		attachment_info.storeOp = vk::AttachmentStoreOp::eStore;
+		attachment_info.loadOp = get_attachment_load_op(*render_target);
+		attachment_info.storeOp = get_attachment_store_op(*render_target);
 		attachment_info.clearValue = clear_color;
 	}
 
@@ -452,8 +460,8 @@ void CVkRenderContext::beginRendering(const FBeginRenderingInfo& rendering_info)
 		depth_attachment.imageView = depth_target->imageViews.front();
 		depth_attachment.imageLayout = depth_target->layout;
 		depth_attachment.resolveMode = vk::ResolveModeFlagBits::eNone;
-		depth_attachment.loadOp = vk::AttachmentLoadOp::eClear;
-		depth_attachment.storeOp = vk::AttachmentStoreOp::eDontCare;
+		depth_attachment.loadOp = get_attachment_load_op(*depth_target);
+		depth_attachment.storeOp = get_attachment_store_op(*depth_target);
 		depth_attachment.clearValue = clear_color;
 	}
 
@@ -473,8 +481,8 @@ void CVkRenderContext::beginRendering(const FBeginRenderingInfo& rendering_info)
 		stencil_attachment.imageView = stencil_target->imageViews.front();
 		stencil_attachment.imageLayout = stencil_target->layout;
 		stencil_attachment.resolveMode = vk::ResolveModeFlagBits::eNone;
-		stencil_attachment.loadOp = vk::AttachmentLoadOp::eClear;
-		stencil_attachment.storeOp = vk::AttachmentStoreOp::eDontCare;
+		stencil_attachment.loadOp = get_attachment_load_op(*stencil_target);
+		stencil_attachment.storeOp = get_attachment_store_op(*stencil_target);
 		stencil_attachment.clearValue = clear_color;
 	}
 
@@ -514,10 +522,6 @@ void CVkRenderContext::endRendering(const FBeginRenderingInfo& rendering_info)
 	auto& swapchain = m_pContext->getSwapchain();
 
 	auto& current_buffer = command_buffer.get();
-
-	// TODO: REMOVE THIS. JUST FOR TESTING
-	current_buffer.draw(3, 1, 0, 0);
-
 	current_buffer.endRenderingKHR();
 
 	FVkTranslationInfo translation_info{};
@@ -529,7 +533,7 @@ void CVkRenderContext::endRendering(const FBeginRenderingInfo& rendering_info)
 		// Translating render target layout to color attachment
 		FVkTextureTranslationInfo texture_translation_info{};
 		texture_translation_info.oldLayout = vk::ImageLayout::eColorAttachmentOptimal;
-		texture_translation_info.newLayout = get_render_target_final_layout(*render_target);
+		render_target->layout = texture_translation_info.newLayout = get_render_target_final_layout(*render_target);
 		auto target_layout_translation = get_texture_layout_translation_info(*render_target, texture_translation_info);
 		translation_info.imageTranslationInfos.emplace_back(target_layout_translation);
 	}
@@ -542,7 +546,7 @@ void CVkRenderContext::endRendering(const FBeginRenderingInfo& rendering_info)
 
 		FVkTextureTranslationInfo texture_translation_info{};
 		texture_translation_info.oldLayout = is_depth_stencil_attachment ? vk::ImageLayout::eDepthStencilAttachmentOptimal : vk::ImageLayout::eDepthAttachmentOptimal;
-		texture_translation_info.newLayout = get_render_target_final_layout(*depth_target);
+		depth_target->layout = texture_translation_info.newLayout = get_render_target_final_layout(*depth_target);
 		auto target_layout_translation = get_texture_layout_translation_info(*depth_target, texture_translation_info);
 		translation_info.imageTranslationInfos.emplace_back(target_layout_translation);
 	}
@@ -553,7 +557,7 @@ void CVkRenderContext::endRendering(const FBeginRenderingInfo& rendering_info)
 
 		FVkTextureTranslationInfo texture_translation_info{};
 		texture_translation_info.oldLayout = vk::ImageLayout::eStencilAttachmentOptimal;
-		texture_translation_info.newLayout = get_render_target_final_layout(*stencil_target);
+		stencil_target->layout = texture_translation_info.newLayout = get_render_target_final_layout(*stencil_target);
 		auto target_layout_translation = get_texture_layout_translation_info(*stencil_target, texture_translation_info);
 		translation_info.imageTranslationInfos.emplace_back(target_layout_translation);
 	}
@@ -775,6 +779,10 @@ void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader
 {
 	auto& shader = m_pResources->get<FVkShader>(shader_resources.shaderId);
 	auto& shader_reflection = m_pResources->get<FVkShaderReflectionData>(shader->reflection);
+	auto& swapchain = m_pContext->getSwapchain();
+
+	auto& textures = m_pResources->data<FVkTexture>();
+	auto& buffers = m_pResources->data<FVkBuffer>();
 
 	std::unordered_set<uint32_t> updated_descriptor_sets{};
 	std::vector<vk::WriteDescriptorSet> write_descriptor_sets{};
@@ -796,7 +804,7 @@ void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader
 			updated_descriptor_sets.emplace(uniform_block.set);
 
 			auto buffer_id = shader->uniformBuffers[uniform_name];
-			auto& buffer = m_pResources->get<FVkBuffer>(buffer_id);
+			auto& buffer = buffers.at(buffer_id).front();
 			auto buffer_element_size = buffer->size / buffer->instanceCount;
 
 			// Not sure that it is correct, because i don't know how to determine previous buffer
@@ -827,7 +835,11 @@ void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader
 	{
 		for (const auto& [texture_name, texture_id] : shader_resources.textures)
 		{
-			auto& texture = m_pResources->get<FVkTexture>(texture_id);
+			size_t texture_index{ 0ull };
+			if (textures.at(texture_id).size() == swapchain.framesInFlight)
+				texture_index = swapchain.currentFrame;
+
+			auto& texture = textures.at(texture_id).at(texture_index);
 
 			auto found_reflection = shader_reflection->uniforms.find(texture_name);
 			if (found_reflection == shader_reflection->uniforms.end())
@@ -889,6 +901,26 @@ void CVkRenderContext::flushConstantRanges(size_t shader_id, const std::unordere
 
 		// Break, because we can have only one push constants block
 		break;
+	}
+}
+
+// TODO: add indirect draw support
+void CVkRenderContext::draw(uint32_t queue_type, const FGeometryDrawInfo& draw_info)
+{
+	auto& command_buffer = getLastCommandBuffer(queue_type);
+	auto& current = command_buffer.get();
+
+	if (draw_info.lastIndex == 0ull && draw_info.lastVertex == 0ull)
+		current.draw(draw_info.range.vertexCount, 1, draw_info.range.beginVertex, 0);
+	else if (draw_info.lastIndex == 0ull)
+	{
+		auto vertex_count = draw_info.range.vertexCount == 0ull ? draw_info.lastIndex : draw_info.range.vertexCount;
+		current.draw(vertex_count, 1, draw_info.range.beginVertex, 0);
+	}
+	else
+	{
+		auto index_count = draw_info.range.indexCount == 0ull ? draw_info.lastIndex : draw_info.range.indexCount;
+		current.drawIndexed(index_count, 1, draw_info.range.beginIndex, 0, 0);
 	}
 }
 
@@ -1012,6 +1044,12 @@ void CVkRenderContext::updateSurface(int32_t surface_width, int32_t surface_heig
 				FVkTextureCreateInfo texture_ci{};
 				texture_ci.base = target->initialData.base;
 				texture_ci.createSampler = false;
+#ifndef BUILD_WITHOUT_DEBUGGIND
+				texture_ci.name = target->name;
+#endif
+				// TODO: here i should set rendering resolution, not swapchain image size
+				texture_ci.base.width = surface_width;
+				texture_ci.base.height = surface_height;
 
 				createTexture(texture_ci, *target);
 			}
@@ -1479,6 +1517,7 @@ void CVkRenderContext::processResourceUpload()
 		m_pContext->destroyBuffer(staging_buffer);
 
 	m_textureUploadInfos.clear();
+	m_bufferUploadInfos.clear();
 }
 
 FRenderApiErrorInfo CVkRenderContext::createTexture(const FVkTextureCreateInfo& texture_ci, FVkTexture& texture)
@@ -1488,7 +1527,7 @@ FRenderApiErrorInfo CVkRenderContext::createTexture(const FVkTextureCreateInfo& 
 	FVkImageCreateInfo image_ci{};
 	FVkImageViewCreateInfo image_view_ci{};
 #ifndef BUILD_WITHOUT_DEBUGGIND
-	image_ci.name = texture_ci.name;
+	texture.name = image_ci.name = texture_ci.name;
 #endif
 
 	if (texture_ci.base.depth > 1 || (texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_3D_FLAG_BIT))
@@ -1594,6 +1633,8 @@ FRenderApiErrorInfo CVkRenderContext::createShaderResources(const FVkShaderResou
 	auto& reflection = m_pResources->get<FVkShaderReflectionData>(shader.reflection);
 	auto& swapchain = m_pContext->getSwapchain();
 
+	// TODO: generate better object names. Current names can overlap
+
 	// Remember maximum shader usage count
 	shader.maximumDescriptorSlots = swapchain.framesInFlight * resources_info.usageCount;
 
@@ -1668,6 +1709,9 @@ FRenderApiErrorInfo CVkRenderContext::createShaderResources(const FVkShaderResou
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	layout_ci.name = resources_info.name;
 #endif
+
+	// TODO: add global set layout here
+
 	// Send descriptor set layouts to create info
 	for (const auto& [set, descriptor_set_layout] : shader.descriptorSetLayouts)
 		layout_ci.descriptorSetLayouts.emplace_back(descriptor_set_layout);

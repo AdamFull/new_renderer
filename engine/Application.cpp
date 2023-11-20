@@ -20,7 +20,7 @@ using namespace engine::render;
 void get_platform_specific_window_data(FRenderInterfaceCreateInfo& rhi_ci, const std::unique_ptr<IWindowInterface>& window)
 {
 #if defined(PLATFORM_WIN32)
-	auto platform_window = static_cast<platform::CWindowWin32*>(window.get());
+	auto platform_window = static_cast<platform::CWindowGLFW*>(window.get());
 	platform_window->getPlatformData(rhi_ci.hinstance, rhi_ci.hwnd);
 #endif
 }
@@ -37,8 +37,8 @@ void CApplication::create()
 	FWindowCreateInfo window_ci{};
 	window_ci.name = "Vulkan App";
 	window_ci.flags = WINDOW_RESIZABLE_FLAG_BIT;
-	window_ci.width = 800;
-	window_ci.height = 600;
+	window_ci.width = 1920;
+	window_ci.height = 1080;
 
 	m_pWindowHandle = make_platform_window(window_ci);
 

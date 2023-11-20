@@ -81,7 +81,7 @@ void CShadowsSystem::__update(float fDt)
 			// Reset shadow index
 			light.shadowIndex = -1;
 
-			auto& geometry_lists = render_packet->directionalLights.shadows.draws.at(shadow_index);
+			auto& geometry_batches = render_packet->directionalLights.shadows.batches.at(shadow_index);
 
 			// Calculate shadows
 			std::array<float, cascade_shadow_map_cascade_count> cascadeSplits;
@@ -180,10 +180,12 @@ void CShadowsSystem::__update(float fDt)
 					FFrustum frustum{};
 					frustum.update(lightViewMatrix, lightProjectionMatrix);
 
-					auto& geometry_list = geometry_lists.at(i);
-
 					// Prepare static mesh data
+					std::vector<FGeometryDrawData> geometry_list{};
 					get_primitives_in_shadow_view(registry, frustum, geometry_list);
+
+					auto& batches = geometry_batches.at(i);
+					createGeometryBatches(geometry_list, batches);
 				}
 
 				// Set shadow index and increment it
@@ -206,7 +208,7 @@ void CShadowsSystem::__update(float fDt)
 
 			if (light.castShadows && base.enabled && shadow_index < max_point_light_shadow_count)
 			{
-				auto& geometry_lists = render_packet->pointLights.shadows.draws.at(shadow_index);
+				auto& geometry_batches = render_packet->pointLights.shadows.batches.at(shadow_index);
 				auto& shadow_commit = render_packet->pointLights.shadows.commits.at(shadow_index);
 
 				uint32_t array_shift = shadow_index * 6u;
@@ -222,12 +224,14 @@ void CShadowsSystem::__update(float fDt)
 				// Calculate geometry to draw
 				for (uint32_t face = 0u; face < 6u; face++)
 				{
-					auto& geometry_list = geometry_lists.at(face);
-
 					FFrustum frustum{};
 					frustum.update(shadow_commit.viewProj.at(face), shadowProj);
 
+					std::vector<FGeometryDrawData> geometry_list{};
 					get_primitives_in_shadow_view(registry, frustum, geometry_list);
+
+					auto& batches = geometry_batches.at(face);
+					createGeometryBatches(geometry_list, batches);
 				}
 			}
 		}
@@ -246,7 +250,6 @@ void CShadowsSystem::__update(float fDt)
 
 			if (light.castShadows && base.enabled && shadow_index < max_spot_light_count)
 			{
-				auto& geometry_list = render_packet->spotLights.shadows.draws.at(shadow_index);
 				auto& shadow_commit = render_packet->spotLights.shadows.commits.at(shadow_index);
 
 				auto light_dir = light.toTarget ? light.target : glm::normalize(glm::toQuat(ltransform.gmodel) * glm::vec3(0.f, 0.f, 1.f));
@@ -257,7 +260,11 @@ void CShadowsSystem::__update(float fDt)
 				FFrustum frustum{};
 				frustum.update(shadowView, shadowProj);
 
+				std::vector<FGeometryDrawData> geometry_list{};
 				get_primitives_in_shadow_view(registry, frustum, geometry_list);
+
+				auto& batches = render_packet->spotLights.shadows.batches.at(shadow_index);
+				createGeometryBatches(geometry_list, batches);
 			}
 		}
 	}

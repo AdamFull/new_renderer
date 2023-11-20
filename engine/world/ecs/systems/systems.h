@@ -2,6 +2,7 @@
 
 #include <world/ecs/systems/AnimationSystem.h>
 #include <world/ecs/systems/CameraSystem.h>
+#include <world/ecs/systems/InputSystem.h>
 #include <world/ecs/systems/LightingSystem.h>
 #include <world/ecs/systems/MeshSystem.h>
 #include <world/ecs/systems/ScenegraphSystem.h>

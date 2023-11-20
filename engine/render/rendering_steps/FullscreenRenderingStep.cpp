@@ -23,7 +23,7 @@ void CFullscreenRenderingStep::create(const FRenderingStepCreateInfo& create_inf
 	// Create shader
 	FGraphicsShaderCreateInfo shader_ci{};
 	shader_ci.cullMode = rendering_ci.flipViewport ? SHADER_CULL_MODE_BACK_BIT : SHADER_CULL_MODE_FRONT_BIT;
-	shader_ci.frontFace = rendering_ci.flipViewport ? SHADER_FRONT_FACE_CW : SHADER_FRONT_FACE_CCW;
+	shader_ci.frontFace = SHADER_FRONT_FACE_CCW;
 	shader_ci.primitiveTopology = SHADER_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 	shader_ci.colorAttachments = rendering_ci.renderTargets;
 	shader_ci.depthAttachment = rendering_ci.depthTarget;
@@ -36,6 +36,9 @@ void CFullscreenRenderingStep::create(const FRenderingStepCreateInfo& create_inf
 	// Bind default textures to shader
 	for (auto& [binding_point, texture] : rendering_ci.shaderInputs)
 		m_pShader->bindTexture(binding_point.c_str(), texture);
+
+	// NOTE: testing
+	m_pShader->bindTexture("visibility_buffer", m_pRenderContext->getTextureResource("visibility_buffer_target"));
 
 	// Save rendering info
 	m_beginRenderingInfo.queue = rendering_ci.queue;
@@ -61,17 +64,22 @@ void CFullscreenRenderingStep::execute(float dt)
 	m_pRenderContext->setViewport(static_cast<float>(render_resolution.x), static_cast<float>(render_resolution.y), m_beginRenderingInfo.flipViewport);
 	m_pRenderContext->setScissorRect(0, 0, render_resolution.x, render_resolution.y);
 
-	auto& push_block = m_pShader->getUniformBlock("FUniformData");
-	push_block->set("color", glm::vec3(2.f, 2.f, 2.f));
+	//auto& push_block = m_pShader->getUniformBlock("FUniformData");
+	//push_block->set("color", glm::vec3(2.f, 2.f, 2.f));
 
-	m_pShader->bindTexture("penis", 1);
+	//m_pShader->bindTexture("penis", 1);
 
 	// Here i can update uniforms
 
 	// Update all shader uniforms and other things. It should be before i bind shader
 	m_pShader->flushDescriptors();
 	m_pShader->flushConstants(m_beginRenderingInfo.queue);
-	m_pShader->bind(m_beginRenderingInfo.queue);	
+	m_pShader->bind(m_beginRenderingInfo.queue);
+
+	FGeometryDrawInfo draw_info{};
+	draw_info.range.vertexCount = 3ull;
+
+	m_pRenderContext->draw(m_beginRenderingInfo.queue, draw_info);
 
 	// Here i can draw
 

@@ -3,6 +3,7 @@
 #if defined(PLATFORM_WIN32)
 #include <Windows.h>
 #include <window/WindowWin32.h>
+#include <window/WindowGLFW.h>
 #endif
 
 #include <memory>
@@ -14,7 +15,7 @@ namespace engine
 		std::unique_ptr<IWindowInterface> window_handle{};
 
 #if defined(PLATFORM_WIN32)
-		window_handle = std::make_unique<platform::CWindowWin32>();
+		window_handle = std::make_unique<platform::CWindowGLFW>();
 #endif
 		window_handle->create(window_ci);
 

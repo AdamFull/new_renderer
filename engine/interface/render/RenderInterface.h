@@ -53,7 +53,7 @@ namespace engine
 				if (size == 0ull)
 					size = (std::min)(sizeof(_Ty), uniform.size);
 
-				std::memcpy(m_data.data() + uniform.offset, &object + uniform.offset, size);
+				std::memcpy(m_data.data() + uniform.offset, &object, size);
 			}
 
 			template<class _Ty>
@@ -130,11 +130,19 @@ namespace engine
 			glm::vec3 right{ 0.f };
 		};
 
+		struct FRenderNode
+		{
+			glm::mat4 model{};
+		};
+
 		struct FRenderDataPacket
 		{
 			FRenderCamera camera{};
 
-			std::vector<FGeometryDrawData> sceneGeometry{};
+			std::vector<FGeometryBatch> sceneBatches{};
+
+			std::unordered_map<uint32_t, FRenderNode> nodes{};
+			std::vector<std::array<glm::mat4, 128>> skins{};
 
 			// Lights data
 			FDirectionalLightsData directionalLights{};
@@ -174,6 +182,8 @@ namespace engine
 			virtual FShaderReflectionData getShaderReflection(const size_t& shader_view) = 0;
 			virtual void updateShaderResources(const FShaderResourceCommit& resources, uint32_t /*EShaderResourcesUpdateFlagBits*/ flags = SHADER_RESOURCES_UPDATE_ALL_FLAG_BIT) = 0;
 			virtual void flushConstantRanges(size_t shader_id, const std::unordered_map<size_t, FUniformDataView>& constants, uint32_t queue_type) = 0;
+
+			virtual void draw(uint32_t queue_type, const FGeometryDrawInfo& draw_info) = 0;
 
 			virtual size_t getTextureResource(const char* name) = 0;
 			virtual size_t getShaderResource(const char* name) = 0;

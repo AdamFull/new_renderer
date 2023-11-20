@@ -4,6 +4,7 @@
 
 #include <world/ecs/components/BaseComponent.h>
 #include <world/ecs/components/MeshComponent.h>
+#include <world/ecs/components/RootComponent.h>
 #include <world/ecs/components/TransformComponent.h>
 
 using namespace engine::render;
@@ -23,18 +24,23 @@ void CMeshSystem::__create()
 void CMeshSystem::__update(float fDt)
 {
 	auto& registry = m_pSceneGraph->getRegistry();
+	auto root = m_pSceneGraph->getRoot();
+	auto& root_component = m_pSceneGraph->getComponent<FRootComponent>(root);
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
 
 	FFrustum frustum{};
 	frustum.update(render_packet->camera.view, render_packet->camera.projection);
 
-	auto& geometry_list = render_packet->sceneGeometry;
+	std::vector<FGeometryDrawData> geometry_list{};
 
 	auto view = registry->view<FTransformComponent, FBaseComponent, FMeshComponent>();
 	for (auto [entity, transform, base, mesh] : view.each())
 	{
 		if (!base.visible)
 			continue;
+
+		auto node = static_cast<uint32_t>(entity);
+		render_packet->nodes[node].model = transform.gmodel;
 
 		for (const auto& primitive : mesh.primitives)
 		{
@@ -47,6 +53,7 @@ void CMeshSystem::__update(float fDt)
 				auto& draw_data = geometry_list.emplace_back();
 				draw_data.vboId = primitive.vboId;
 				draw_data.materialId = primitive.materialId;
+				draw_data.node = node;
 				draw_data.skin = mesh.skin;
 				draw_data.range.beginIndex = lod.beginIndex;
 				draw_data.range.indexCount = lod.indexCount;
@@ -56,6 +63,8 @@ void CMeshSystem::__update(float fDt)
 		}
 	}
 
-	auto batches = createGeometryBatches(geometry_list);
-	return;
+	for (const auto& skin : root_component.skins)
+		render_packet->skins.emplace_back(skin.jointMatrices);
+
+	createGeometryBatches(geometry_list, render_packet->sceneBatches);
 }

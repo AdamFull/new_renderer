@@ -131,6 +131,7 @@ CScene::CScene(IVirtualFileSystemInterface* vfs, render::IRenderInterface* rende
 	m_pSceneGraph = new CSceneGraph();
 	m_pScene = new easygltf::CGltfProject();
 
+	m_systems.emplace_back(std::make_unique<ecs::CInputSystem>(m_pSceneGraph));
 	m_systems.emplace_back(std::make_unique<ecs::CAnimationSystem>(m_pSceneGraph));
 	m_systems.emplace_back(std::make_unique<ecs::CScenegraphSystem>(m_pSceneGraph));
 	m_systems.emplace_back(std::make_unique<ecs::CSkinningSystem>(m_pSceneGraph));
@@ -186,6 +187,15 @@ void CScene::load(const std::string& path)
 
 	void loadAnimations();
 	void loadSkins();
+
+	for (const auto& [hash, id] : m_resources.vertexHandlers)
+	{
+		auto& handler = m_pRenderInterface->getVertexHandler(id);
+		handler->allocate();
+	}
+
+	for (auto& system : m_systems)
+		system->create();
 }
 
 void CScene::update(float dt)

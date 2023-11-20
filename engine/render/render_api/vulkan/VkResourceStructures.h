@@ -408,7 +408,7 @@ namespace engine
 			struct FVkTextureInitialData
 			{
 				FTextureCreateInfo base{};
-				vk::SampleCountFlagBits sampleCount{};
+				vk::SampleCountFlagBits sampleCount{ vk::SampleCountFlagBits::e1 };
 			};
 
 			struct FVkTexture
@@ -421,13 +421,16 @@ namespace engine
 				bool isRenderTarget{ false };
 
 				FVkTextureInitialData initialData;
+#ifndef BUILD_WITHOUT_DEBUGGIND
+				std::string name{};
+#endif
 			};
 
 			struct FVkTextureCreateInfo
 			{
 				FTextureCreateInfo base{};
 
-				vk::SampleCountFlagBits sampleCount{ };
+				vk::SampleCountFlagBits sampleCount{ vk::SampleCountFlagBits::e1 };
 
 				bool createSampler{ true };
 				vk::Filter filter{ vk::Filter::eLinear };

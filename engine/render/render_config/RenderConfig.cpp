@@ -51,6 +51,15 @@ void CRenderScriptCore::create(IRenderInterface* render_interface, IRenderContex
 		}
 	);
 
+	m_pLuaState->set_function("bit_or", 
+		[](sol::variadic_args args) 
+		{
+			int result = 0;
+			for (auto arg : args)
+				result |= arg.as<int>();
+			return result;
+		});
+
 	(*m_pLuaState)["render_interface"] = render_interface;
 	(*m_pLuaState)["render_context"] = render_context;
 }

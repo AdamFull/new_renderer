@@ -90,6 +90,7 @@ namespace engine
 		{
 			size_t vboId{ ~0ull };
 			size_t materialId{ ~0ull };
+			uint32_t node{ ~0u };
 			int32_t skin{ -1 };
 
 			FGeometryRanges range{};
@@ -99,9 +100,17 @@ namespace engine
 		{
 			size_t vboId{ ~0ull };
 			size_t materialId{ ~0ull };
+			uint32_t node{ ~0u };
 			int32_t skin{ -1 };
 
 			std::vector<FGeometryRanges> ranges{};
+		};
+
+		struct FGeometryDrawInfo
+		{
+			size_t lastIndex{ 0ull };
+			size_t lastVertex{ 0ull };
+			FGeometryRanges range{};
 		};
 
 		struct FFrustum

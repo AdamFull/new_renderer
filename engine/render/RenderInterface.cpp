@@ -45,8 +45,9 @@ std::unique_ptr<IRenderContext> make_render_context(const FRenderInterfaceCreate
 			VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
 			VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME,
 			VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
-			VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
-			VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME,
+			VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME,
+			//VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+			//VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME,
 			VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME
 		};
 		
@@ -131,10 +132,31 @@ void CRenderInterface::render(float dt)
 {
 	m_pRenderContext->beginFrameCommandBuffers();
 
+	// fill globaluniform buffer here
+
 	for (auto& stage : m_vRenderingSteps)
 		stage->execute(dt);
 
 	m_pRenderContext->endFrameCommandBuffers();
+
+	m_pRenderPacket->sceneBatches.clear();
+
+	for (auto& batches : m_pRenderPacket->directionalLights.shadows.batches)
+	{
+		for (auto& batch : batches)
+			batch.clear();
+	}
+
+	for (auto& batches : m_pRenderPacket->pointLights.shadows.batches)
+	{
+		for (auto& batch : batches)
+			batch.clear();
+	}
+
+	for (auto& batch : m_pRenderPacket->spotLights.shadows.batches)
+		batch.clear();
+
+	m_pRenderPacket->skins.clear();
 }
 
 size_t CRenderInterface::createTexture(const std::string& path)
