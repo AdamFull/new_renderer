@@ -45,10 +45,12 @@ namespace engine
 				void mouseMovementInput(float x, float y, float xmax, float ymax);
 				void mouseWheelInput(float x, float y);
 			private:
+				CKeyDecoder m_keyDecoder{};
 				float m_deltaTime{ 0.f };
 				float oldX{ 0.f }, oldY{ 0.f }, curX{ 0.f }, curY{ 0.f };
 
 				float movF{ 0.f }, movR{ 0.f }, movU{ 0.f };
+				bool allowRotation{ false };
 			};
 		}
 	}

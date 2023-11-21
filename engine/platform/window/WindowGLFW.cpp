@@ -180,7 +180,7 @@ namespace window_callbacks
 
 	void window_input_mouse_button_cb(GLFWwindow* window, int32_t button, int32_t action, int32_t mods)
 	{
-        FWindowCallbackMapper::windowInputMouseButton(key_converter::glfw_key_to_engine_code(button), key_converter::glfw_key_state_to_engine_code(action));
+        FWindowCallbackMapper::windowInputMouseButton(key_converter::glfw_mouse_key_to_engine_code(button), key_converter::glfw_key_state_to_engine_code(action));
 	}
 
 	void window_input_cursor_position_cb(GLFWwindow* window, double xpos, double ypos)

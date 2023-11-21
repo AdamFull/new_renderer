@@ -35,29 +35,44 @@ void CInputSystem::__update(float fDt)
 {
 	m_deltaTime = fDt;
 
+	if (m_keyDecoder.test(EKeyCode::eKeyW)) movF = 1.f;
+	if (m_keyDecoder.test(EKeyCode::eKeyS)) movF = -1.f;
+	if (m_keyDecoder.test(EKeyCode::eKeyA)) movR = -1.f;
+	if (m_keyDecoder.test(EKeyCode::eKeyD)) movR = 1.f;
+	if (m_keyDecoder.test(EKeyCode::eKeySpace)) movU = 1.f;
+	if (m_keyDecoder.test(EKeyCode::eKeyLCtrl)) movU = -1.f;
+	if (m_keyDecoder.test(EKeyCode::eMouseMiddle))
+		allowRotation = true;
+
+	float dX = (curX - oldX) * fDt;
+	oldX = curX;
+	float dY = (curY - oldY) * fDt;
+	oldY = curY;
+
+
 	auto& registry = m_pSceneGraph->getRegistry();
 	auto view = registry->view<FTransformComponent, FBaseComponent, FCameraComponent>();
 	for (auto [entity, transform, base, camera] : view.each())
 	{
 		if (base.enabled)
 		{
-			float dX = (curX - oldX) * fDt;
-			oldX = curX;
-			float dY = (curY - oldY) * fDt;
-			oldY = curY;
-
-			if (dX != 0.f || dY != 0.f)
+			if (allowRotation)
 			{
-				dX *= movement_scale;
-				dY *= movement_scale;
+				if (dX != 0.f || dY != 0.f)
+				{
+					dX *= movement_scale * 2.f;
+					dY *= movement_scale * 2.f;
 
-				glm::quat pitch = glm::angleAxis(-dY, camera.right);
-				glm::quat yaw = glm::angleAxis(-dX, camera.up);
-				glm::quat q = glm::normalize(glm::cross(pitch, yaw));
+					glm::quat pitch = glm::angleAxis(-dY, camera.right);
+					glm::quat yaw = glm::angleAxis(-dX, camera.up);
+					glm::quat q = glm::normalize(glm::cross(pitch, yaw));
 
-				transform.lrotation = q * transform.lrotation;
+					transform.lrotation = q * transform.lrotation;
 
-				camera.moved = true;
+					camera.moved = true;
+				}
+
+				allowRotation = false;
 			}
 
 			if (movF != 0.f)
@@ -87,23 +102,7 @@ void CInputSystem::__update(float fDt)
 
 void CInputSystem::keyInput(EKeyCode code, EKeyState state)
 {
-	auto& registry = m_pSceneGraph->getRegistry();
-
-	auto view = registry->view<FTransformComponent, FBaseComponent, FCameraComponent>();
-	for (auto [entity, transform, base, camera] : view.each())
-	{
-		if (base.enabled && state == EKeyState::ePress)
-		{
-			if(code == EKeyCode::eKeyW) movF = 1.f;
-			if(code == EKeyCode::eKeyS) movF = -1.f;
-			if(code == EKeyCode::eKeyA) movR = -1.f;
-			if(code == EKeyCode::eKeyD) movR = 1.f;
-			if(code == EKeyCode::eKeySpace) movU = 1.f;
-			if(code == EKeyCode::eKeyLCtrl) movU = -1.f;
-
-			break;
-		}
-	}
+	m_keyDecoder.update(code, state == EKeyState::ePress);
 }
 
 void CInputSystem::mouseMovementInput(float x, float y, float xmax, float ymax)
