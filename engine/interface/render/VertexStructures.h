@@ -64,7 +64,7 @@ namespace engine
 			virtual void bind(uint32_t queue) = 0;
 
 			virtual size_t addVertices(const std::vector<FVertexAttributePointer>& attributes_data) = 0;
-			virtual size_t addIndices(const FVertexAttributePointer& indices) = 0;
+			virtual size_t addIndices(const FVertexAttributePointer& indices, size_t vertex_offset) = 0;
 
 			virtual size_t getLastVertex() = 0;
 			virtual size_t getLastIndex() = 0;
