@@ -19,6 +19,8 @@ namespace engine
 		{
 			size_t bufferId{ ~0ull };
 			std::vector<uint8_t> data{};
+			size_t count{ 1ull };
+			size_t size{ 0ull };
 			size_t offset{ 0ull };
 		};
 

@@ -380,6 +380,8 @@ size_t CVkRenderContext::createBuffer(const std::string& name, const FBufferCrea
 	{
 		auto& upload_info = m_bufferUploadInfos.emplace_back();
 		upload_info.bufferId = buffer_id;
+		upload_info.count = buffer_ci.count;
+		upload_info.size = buffer_ci.size;
 		upload_info.offset = buffer_ci.upload.offset;
 		upload_info.data = buffer_ci.upload.data;
 	}
@@ -951,8 +953,8 @@ uint32_t CVkRenderContext::getDepthFormat()
 	(
 		{
 			vk::Format::eD32Sfloat,
+			vk::Format::eD24UnormS8Uint,
 			vk::Format::eD32SfloatS8Uint,
-			vk::Format::eD24UnormS8Uint
 		},
 		vk::ImageTiling::eOptimal,
 		vk::FormatFeatureFlagBits::eDepthStencilAttachment
@@ -1468,8 +1470,8 @@ void CVkRenderContext::processResourceUpload()
 		auto& physical = m_pContext->getPhysicalDevice();
 
 		FVkBufferCreateInfo vk_buffer_ci{};
-		vk_buffer_ci.instanceCount = upload_info.data.size();
-		vk_buffer_ci.instanceSize = 1ull;
+		vk_buffer_ci.instanceCount = upload_info.count;
+		vk_buffer_ci.instanceSize = upload_info.size;
 		vk_buffer_ci.minOffsetAlignment = std::lcm(physical.properties.limits.minUniformBufferOffsetAlignment, physical.properties.limits.nonCoherentAtomSize);
 		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuOnly;
 		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
