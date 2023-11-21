@@ -545,9 +545,10 @@ FRenderApiErrorInfo CVkRenderDevice::createPipeline(const FVkGraphicsPipelineCre
 	color_blending_state.attachmentCount = static_cast<uint32_t>(color_blend_attachment_states.size());
 	color_blending_state.pAttachments = color_blend_attachment_states.data();
 
+	auto enable_depth = pipeline_ci.depthAttachmentFormat != vk::Format::eUndefined;
 	vk::PipelineDepthStencilStateCreateInfo depth_stencil_state{};
-	depth_stencil_state.depthTestEnable = pipeline_ci.depthAttachmentFormat != vk::Format::eUndefined;
-	depth_stencil_state.depthWriteEnable = pipeline_ci.depthAttachmentFormat != vk::Format::eUndefined; // TODO: depth write should be set by texture state
+	depth_stencil_state.depthTestEnable = enable_depth;
+	depth_stencil_state.depthWriteEnable = enable_depth; // TODO: depth write should be set by texture state
 	depth_stencil_state.depthCompareOp = vk::CompareOp::eLessOrEqual;
 	depth_stencil_state.back.compareOp = vk::CompareOp::eAlways;
 	depth_stencil_state.depthBoundsTestEnable = false;

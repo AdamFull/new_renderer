@@ -447,7 +447,7 @@ void CVkRenderContext::beginRendering(const FBeginRenderingInfo& rendering_info)
 	vk::RenderingAttachmentInfoKHR depth_attachment{};
 	if (rendering_info.depthAttachment != invalid_handle)
 	{
-		vk::ClearValue clear_color{ {0.f, 0u} };
+		vk::ClearValue clear_color{ {1.f, 0u} };
 
 		auto& depth_target = textures.at(rendering_info.depthAttachment).at(swapchain.currentFrame);
 
@@ -470,7 +470,7 @@ void CVkRenderContext::beginRendering(const FBeginRenderingInfo& rendering_info)
 	vk::RenderingAttachmentInfoKHR stencil_attachment{};
 	if (rendering_info.stencilAttachment != rendering_info.depthAttachment && rendering_info.stencilAttachment != invalid_handle)
 	{
-		vk::ClearValue clear_color{ {0.f, 0u} };
+		vk::ClearValue clear_color{ {1.f, 0u} };
 
 		auto& stencil_target = textures.at(rendering_info.stencilAttachment).at(swapchain.currentFrame);
 
