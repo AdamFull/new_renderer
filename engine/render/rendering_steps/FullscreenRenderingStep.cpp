@@ -46,12 +46,14 @@ void CFullscreenRenderingStep::create(const FRenderingStepCreateInfo& create_inf
 	m_beginRenderingInfo.depthAttachment = rendering_ci.depthTarget;
 	m_beginRenderingInfo.stencilAttachment = rendering_ci.stencilTarget;
 	m_beginRenderingInfo.flipViewport = rendering_ci.flipViewport;
+
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	m_beginRenderingInfo.name = std::format("fullscreen:{}", rendering_ci.shaderName);
+#endif
 }
 
 void CFullscreenRenderingStep::execute(float dt)
 {
-	// TODO: Push profiling scope here (tracy and push debug label to api). As name use shader name or add stage name for future
-
 	auto render_resolution = m_pRenderContext->getRenderResolution();
 
 	m_beginRenderingInfo.renderArea.offset.x = 0;

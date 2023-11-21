@@ -100,10 +100,11 @@ namespace engine
 #ifndef BUILD_WITHOUT_DEBUGGIND
 					if (!name.empty())
 					{
-						auto formatted_debug_object_name = std::format("{}:{}", vk::to_string(object.objectType), name);
 						vk::DebugUtilsObjectNameInfoEXT object_name_info{};
 						object_name_info.objectType = object.objectType;
 						object_name_info.objectHandle = reinterpret_cast<uint64_t>(static_cast<_Ty::CType>(object));
+
+						auto formatted_debug_object_name = std::format("{}:{} | {}", vk::to_string(object.objectType), name, object_name_info.objectHandle);
 						object_name_info.pObjectName = formatted_debug_object_name.c_str();
 
 						logicalDevice.handle.setDebugUtilsObjectNameEXT(object_name_info);
@@ -127,7 +128,7 @@ namespace engine
 				}
 
 				// Getters
-				vk::Format findSupportedFormat(const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features);
+				vk::Format findSupportedFormat(const std::vector<vk::Format>& candidates, bool depth_only);
 
 				const vk::DynamicLoader& getDynamicLoader() const;
 				const vk::AllocationCallbacks* getAllocationCallbacks() const;

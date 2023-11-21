@@ -91,6 +91,7 @@ namespace engine
 			virtual const std::unique_ptr<CUniformHandle>& getUniformBlock(const char* name) = 0;
 			virtual const std::unique_ptr<CUniformHandle>& getConstantBlock(const char* name) = 0;
 
+			virtual void bindBuffer(const char* name, size_t buffer_resource) = 0;
 			virtual void bindTexture(const char* name, size_t texture_resource) = 0;
 
 			virtual void flushDescriptors() = 0;
@@ -158,30 +159,30 @@ namespace engine
 			virtual void create(const FRenderContextCreateInfo& context_ci) = 0;
 			virtual size_t createTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) = 0;
 			virtual size_t createRenderTargets(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
+			virtual void destroyTexture(size_t resource_id) = 0;
 
 			virtual size_t createShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
 			virtual size_t createShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
+			virtual FShaderReflectionData getShaderReflection(const size_t& shader_view) = 0;
+			virtual void updateShaderResources(const FShaderResourceCommit& resources, uint32_t /*EShaderResourcesUpdateFlagBits*/ flags = SHADER_RESOURCES_UPDATE_ALL_FLAG_BIT) = 0;
+			virtual void flushConstantRanges(size_t shader_id, const std::unordered_map<size_t, FUniformDataView>& constants, uint32_t queue_type) = 0;
+			virtual void bindShader(size_t shader_id, uint32_t queue_type) = 0;
+			virtual void destroyShader(size_t resource_id) = 0;
 
 			virtual size_t createBuffer(const std::string& name, const FBufferCreateInfo& buffer_ci) = 0;
 			virtual void uploadDataToBuffer(const FBufferUploadInfo& upload_info) = 0;
-
-			virtual void destroyTexture(size_t resource_id) = 0;
-			virtual void destroyShader(size_t resource_id) = 0;
+			virtual void bindVertexBuffers(const FVertexBufferBindingInfo& binding_info, uint32_t queue) = 0;
+			virtual void bindIndexBuffer(const FIndexBufferBindingInfo& binding_info, uint32_t queue) = 0;
+			virtual void mapBufferMemory(size_t buffer_id, void*& memory) = 0;
+			virtual void unmapBufferMemory(size_t buffer_id) = 0;
+			virtual void flushBuffer(size_t buffer_id, size_t size, size_t offset) = 0;
+			virtual void destroyBuffer(size_t resource_id) = 0;
 
 			virtual void beginRendering(const FBeginRenderingInfo& rendering_info) = 0;
 			virtual void endRendering(const FBeginRenderingInfo& rendering_info) = 0;
 
 			virtual void setViewport(float width, float height, bool flip_viewport) = 0;
 			virtual void setScissorRect(int32_t offset_x, int32_t offset_y, uint32_t width, uint32_t height) = 0;
-
-			virtual void bindVertexBuffers(const FVertexBufferBindingInfo& binding_info, uint32_t queue) = 0;
-			virtual void bindIndexBuffer(const FIndexBufferBindingInfo& binding_info, uint32_t queue) = 0;
-
-			virtual void bindShader(size_t shader_id, uint32_t queue_type) = 0;
-
-			virtual FShaderReflectionData getShaderReflection(const size_t& shader_view) = 0;
-			virtual void updateShaderResources(const FShaderResourceCommit& resources, uint32_t /*EShaderResourcesUpdateFlagBits*/ flags = SHADER_RESOURCES_UPDATE_ALL_FLAG_BIT) = 0;
-			virtual void flushConstantRanges(size_t shader_id, const std::unordered_map<size_t, FUniformDataView>& constants, uint32_t queue_type) = 0;
 
 			virtual void draw(uint32_t queue_type, const FGeometryDrawInfo& draw_info) = 0;
 
@@ -190,7 +191,7 @@ namespace engine
 
 			virtual FPoint2D<uint32_t> getRenderResolution() = 0;
 
-			virtual uint32_t getDepthFormat() = 0;
+			virtual uint32_t getDepthFormat(bool depth_only) = 0;
 			virtual uint32_t getApiFormat(uint32_t global_format) = 0;
 			virtual uint32_t getPresentFormat() = 0;
 
@@ -198,6 +199,10 @@ namespace engine
 
 			virtual void beginFrameCommandBuffers() = 0;
 			virtual void endFrameCommandBuffers() = 0;
+
+			virtual void beginDebugLabel(const std::string& label, uint32_t queue_type, uint32_t color = 0xffffffff) = 0;
+			virtual void insertDebugLabel(const std::string& label, uint32_t queue_type, uint32_t color = 0xffffffff) = 0;
+			virtual void endDebugLabel(uint32_t queue_type) = 0;
 		};
 
 		class IRenderInterface

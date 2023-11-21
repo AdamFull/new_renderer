@@ -11,9 +11,11 @@ namespace engine
 		enum EShaderResourcesUpdateFlagBits
 		{
 			SHADER_RESOURCES_UPDATE_UNIFORM_BLOCKS_FLAG_BIT = 1 << 0,
-			SHADER_RESOURCES_UPDATE_TEXTURES_FLAG_BIT = 1 << 1,
+			SHADER_RESOURCES_UPDATE_STORAGE_BLOCKS_FLAG_BIT = 1 << 1,
+			SHADER_RESOURCES_UPDATE_TEXTURES_FLAG_BIT = 1 << 2,
 			SHADER_RESOURCES_UPDATE_ALL_FLAG_BIT =
 			SHADER_RESOURCES_UPDATE_UNIFORM_BLOCKS_FLAG_BIT |
+			SHADER_RESOURCES_UPDATE_STORAGE_BLOCKS_FLAG_BIT |
 			SHADER_RESOURCES_UPDATE_TEXTURES_FLAG_BIT
 		};
 
@@ -139,6 +141,7 @@ namespace engine
 			size_t shaderId{ ~0ull };
 			std::unordered_map<size_t, FUniformDataView> uniforms{};
 			std::unordered_map<size_t, size_t> textures{};
+			std::unordered_map<size_t, size_t> buffers{};
 		};
 	}
 }

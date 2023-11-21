@@ -155,10 +155,8 @@ namespace engine
 				bool isRunning{ false };
 				uint32_t commandBufferIndex{ 0u };
 
-				const vk::CommandBuffer& get() const
-				{
-					return handles.at(commandBufferIndex);
-				}
+				vk::CommandBuffer& get() { return handles.at(commandBufferIndex); }
+				const vk::CommandBuffer& get() const { return handles.at(commandBufferIndex); }
 			};
 
 			struct FVkCommandBufferCreateInfo
@@ -434,9 +432,8 @@ namespace engine
 
 				bool createSampler{ true };
 				vk::Filter filter{ vk::Filter::eLinear };
-				vk::SamplerAddressMode addressMode{};
+				vk::SamplerAddressMode addressMode{ vk::SamplerAddressMode::eClampToEdge };
 				bool enableAnisotropy{ false };
-				bool enableCompareOp{ false };
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				std::string name{};

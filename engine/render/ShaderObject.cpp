@@ -47,6 +47,11 @@ const std::unique_ptr<CUniformHandle>& CShaderObject::getConstantBlock(const cha
 	return null;
 }
 
+void CShaderObject::bindBuffer(const char* name, size_t buffer_resource)
+{
+	m_bindBuffers[utl::fnv1a_64_hash(name)] = buffer_resource;
+}
+
 void CShaderObject::bindTexture(const char* name, size_t texture_resource)
 {
 	m_bindTextures[utl::fnv1a_64_hash(name)] = texture_resource;

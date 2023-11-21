@@ -8,6 +8,24 @@ namespace engine
 	{
 		namespace vulkan
 		{
+			inline bool is_depth_only_format(vk::Format format)
+			{
+				return format == vk::Format::eD16Unorm ||
+					format == vk::Format::eD32Sfloat;
+			}
+
+			inline bool is_depth_stencil_format(vk::Format format)
+			{
+				return format == vk::Format::eD16UnormS8Uint ||
+					format == vk::Format::eD24UnormS8Uint ||
+					format == vk::Format::eD32SfloatS8Uint;
+			}
+
+			inline bool is_depth_format(vk::Format format)
+			{
+				return is_depth_only_format(format) || is_depth_stencil_format(format);
+			}
+
 			// Helper functions
 			inline bool check_contains_single(const std::string& s1, const std::vector<std::string>& rhs)
 			{
@@ -36,7 +54,10 @@ namespace engine
 				vk::ImageUsageFlags usageFlags{};
 
 				if (texture.isRenderTarget)
-					usageFlags |= ((texture.initialData.base.typeFlags & TEXTURE_IMAGE_TYPE_DEPTH_FLAG_BIT) ? vk::ImageUsageFlagBits::eDepthStencilAttachment : vk::ImageUsageFlagBits::eColorAttachment);
+				{
+					auto format = static_cast<vk::Format>(texture.initialData.base.format);
+					usageFlags |= (is_depth_format(format) ? vk::ImageUsageFlagBits::eDepthStencilAttachment : vk::ImageUsageFlagBits::eColorAttachment);
+				}
 
 				if (texture.initialData.base.typeFlags & TEXTURE_IMAGE_TYPE_TRANSFERABLE_FLAG_BIT)
 					usageFlags |= vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst;
@@ -52,10 +73,16 @@ namespace engine
 
 			inline vk::ImageAspectFlags get_texture_aspect_flags(const FVkTexture& texture)
 			{
-				vk::ImageAspectFlags aspectFlags{ vk::ImageAspectFlagBits::eColor };
+				vk::ImageAspectFlags aspectFlags{};
 
-				if (texture.initialData.base.typeFlags & TEXTURE_IMAGE_TYPE_DEPTH_FLAG_BIT)
-					aspectFlags = vk::ImageAspectFlagBits::eDepth;
+				auto format = static_cast<vk::Format>(texture.initialData.base.format);
+				if (is_depth_format(format))
+					aspectFlags |= vk::ImageAspectFlagBits::eDepth;
+				if (is_depth_stencil_format(format))
+					aspectFlags |= vk::ImageAspectFlagBits::eStencil;
+
+				if (aspectFlags == vk::ImageAspectFlagBits::eNone)
+					aspectFlags = vk::ImageAspectFlagBits::eColor;
 
 				return aspectFlags;
 			}
@@ -326,7 +353,6 @@ namespace engine
 			{
 				bool transferable = (texture.initialData.base.typeFlags & TEXTURE_IMAGE_TYPE_TRANSFERABLE_FLAG_BIT);
 				bool samplable = (texture.initialData.base.typeFlags & TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT);
-				bool depth = (texture.initialData.base.typeFlags & TEXTURE_IMAGE_TYPE_DEPTH_FLAG_BIT);
 
 				if (transferable || samplable || texture.initialData.base.isSwapchainTarget)
 					return vk::AttachmentStoreOp::eStore;
@@ -352,11 +378,6 @@ namespace engine
 				image_layout_translation.subresourceRange.levelCount = texture.initialData.base.mipLevels;
 
 				return image_layout_translation;
-			}
-
-			inline bool is_depth_only_format(vk::Format format)
-			{
-				return format == vk::Format::eD16Unorm || format == vk::Format::eD32Sfloat;
 			}
 		}
 	}

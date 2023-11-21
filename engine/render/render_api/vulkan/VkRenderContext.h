@@ -21,30 +21,33 @@ namespace engine
 				size_t createTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) override;
 				size_t createRenderTarget(const std::string& name, const FTextureCreateInfo& texture_ci);
 				size_t createRenderTargets(const std::string& name, const FTextureCreateInfo& texture_ci) override;
+				void destroyTexture(size_t resource_id) override;
+
 
 				size_t createShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) override;
 				size_t createShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) override;
+				FShaderReflectionData getShaderReflection(const size_t& shader_view) override;
+				void updateShaderResources(const FShaderResourceCommit& shader_resources, uint32_t flags = SHADER_RESOURCES_UPDATE_ALL_FLAG_BIT) override;
+				void flushConstantRanges(size_t shader_id, const std::unordered_map<size_t, FUniformDataView>& constants, uint32_t queue_type) override;
+				void bindShader(size_t shader_id, uint32_t queue_type) override;
+				void destroyShader(size_t resource_id) override;
+
 
 				size_t createBuffer(const std::string& name, const FBufferCreateInfo& buffer_ci) override;
 				void uploadDataToBuffer(const FBufferUploadInfo& upload_info) override;
-
-				void destroyTexture(size_t resource_id) override;
-				void destroyShader(size_t resource_id) override;
+				void bindVertexBuffers(const FVertexBufferBindingInfo& binding_info, uint32_t queue_type) override;
+				void bindIndexBuffer(const FIndexBufferBindingInfo& binding_info, uint32_t queue_type) override;
+				void mapBufferMemory(size_t buffer_id, void*& memory) override;
+				void unmapBufferMemory(size_t buffer_id) override;
+				void flushBuffer(size_t buffer_id, size_t size, size_t offset) override;
+				void destroyBuffer(size_t resource_id) override;
+				
 
 				void beginRendering(const FBeginRenderingInfo& rendering_info) override;
 				void endRendering(const FBeginRenderingInfo& rendering_info) override;
 
 				void setViewport(float width, float height, bool flip_viewport = false) override;
 				void setScissorRect(int32_t offset_x, int32_t offset_y, uint32_t width, uint32_t height) override;
-
-				void bindVertexBuffers(const FVertexBufferBindingInfo& binding_info, uint32_t queue_type) override;
-				void bindIndexBuffer(const FIndexBufferBindingInfo& binding_info, uint32_t queue_type) override;
-
-				void bindShader(size_t shader_id, uint32_t queue_type) override;
-
-				FShaderReflectionData getShaderReflection(const size_t& shader_view) override;
-				void updateShaderResources(const FShaderResourceCommit& shader_resources, uint32_t flags = SHADER_RESOURCES_UPDATE_ALL_FLAG_BIT) override;
-				void flushConstantRanges(size_t shader_id, const std::unordered_map<size_t, FUniformDataView>& constants, uint32_t queue_type) override;
 
 				void draw(uint32_t queue_type, const FGeometryDrawInfo& draw_info) override;
 
@@ -53,7 +56,7 @@ namespace engine
 
 				FPoint2D<uint32_t> getRenderResolution() override;
 
-				uint32_t getDepthFormat() override;
+				uint32_t getDepthFormat(bool depth_only = false) override;
 				uint32_t getApiFormat(uint32_t global_format) override;
 				uint32_t getPresentFormat() override;
 
@@ -66,6 +69,10 @@ namespace engine
 
 				void beginFrameCommandBuffers() override;
 				void endFrameCommandBuffers() override;
+
+				void beginDebugLabel(const std::string& label, uint32_t queue_type, uint32_t color = 0xffffffff) override;
+				void insertDebugLabel(const std::string& label, uint32_t queue_type, uint32_t color = 0xffffffff) override;
+				void endDebugLabel(uint32_t queue_type) override;
 			protected:
 				void createGlobalDescriptor();
 				void updateGlobalDescriptorData();
@@ -87,7 +94,7 @@ namespace engine
 				void copyBufferToTexture(const FVkCommandBuffer& command_buffer, const FVkBuffer& buffer, const FVkTexture& texture, const std::vector<vk::BufferImageCopy2KHR>& copy_regions);
 				//void blitImage(const FVkCommandBuffer& command_buffer, );
 			private:
-				std::unique_ptr<CVkRenderDevice> m_pContext{};
+				std::unique_ptr<CVkRenderDevice> m_pDevice{};
 				std::unique_ptr<CResourceContainer> m_pResources{};
 
 				std::vector<FTextureUploadInfo> m_textureUploadInfos{};

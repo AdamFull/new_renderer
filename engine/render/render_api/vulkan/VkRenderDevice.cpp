@@ -550,6 +550,7 @@ FRenderApiErrorInfo CVkRenderDevice::createPipeline(const FVkGraphicsPipelineCre
 	depth_stencil_state.depthTestEnable = enable_depth;
 	depth_stencil_state.depthWriteEnable = enable_depth; // TODO: depth write should be set by texture state
 	depth_stencil_state.depthCompareOp = vk::CompareOp::eLessOrEqual;
+	depth_stencil_state.front = depth_stencil_state.back;
 	depth_stencil_state.back.compareOp = vk::CompareOp::eAlways;
 	depth_stencil_state.depthBoundsTestEnable = false;
 	depth_stencil_state.stencilTestEnable = false; // TODO: implement stencil test
@@ -769,22 +770,28 @@ void CVkRenderDevice::endLabel(vk::Queue& queue)
 #endif
 }
 
-vk::Format CVkRenderDevice::findSupportedFormat(const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features)
+vk::Format CVkRenderDevice::findSupportedFormat(const std::vector<vk::Format>& candidates, bool depth_only)
 {
 	auto& phusical_device = getPhysicalDevice();
 
-	for (const auto& candidate : candidates)
+	vk::Format depth_format{ vk::Format::eUndefined };
+	for (const auto& format : candidates)
 	{
-		vk::FormatProperties format_properties;
-		phusical_device.handle.getFormatProperties(candidate, &format_properties);
+		if (depth_only && !is_depth_only_format(format))
+			continue;
 
-		if (tiling == vk::ImageTiling::eLinear && (format_properties.linearTilingFeatures & features) == features)
-			return candidate;
-		else if (tiling == vk::ImageTiling::eOptimal && (format_properties.optimalTilingFeatures & features) == features)
-			return candidate;
+		vk::FormatProperties format_properties;
+		phusical_device.handle.getFormatProperties(format, &format_properties);
+
+		// Format must support depth stencil attachment for optimal tiling
+		if (format_properties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment)
+		{
+			depth_format = format;
+			break;
+		}
 	}
 
-	return vk::Format::eUndefined;
+	return depth_format;
 }
 
 const vk::DynamicLoader& CVkRenderDevice::getDynamicLoader() const
