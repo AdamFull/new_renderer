@@ -328,7 +328,7 @@ namespace engine
 				bool samplable = (texture.initialData.base.typeFlags & TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT);
 				bool depth = (texture.initialData.base.typeFlags & TEXTURE_IMAGE_TYPE_DEPTH_FLAG_BIT);
 
-				if ((transferable || samplable) && !depth)
+				if (transferable || samplable || texture.initialData.base.isSwapchainTarget)
 					return vk::AttachmentStoreOp::eStore;
 
 				return vk::AttachmentStoreOp::eDontCare;
