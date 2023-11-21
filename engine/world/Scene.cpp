@@ -374,6 +374,9 @@ void CScene::loadMeshComponent(const entt::entity parent, uint32_t node_index)
 		size_t attributes_hash{ 0ull };
 		for (const auto& [name, accessor_idx] : primitive.attributes)
 		{
+			//if (name != "POSITION")
+			//	continue;
+
 			auto& attrib = attributes.emplace_back();
 			attrib.type = get_vertex_attribute_type_by_name(name);
 			
@@ -388,7 +391,7 @@ void CScene::loadMeshComponent(const entt::entity parent, uint32_t node_index)
 				pos_max = !accessor.max.empty() ? glm::vec3(accessor.max[0], accessor.max[1], accessor.max[2]) : glm::vec3(0.f);
 			}
 
-			attributes_hash += attribute_hasher(static_cast<uint32_t>(attrib.type) + 1u);
+			attributes_hash ^= attribute_hasher(static_cast<uint32_t>(attrib.type) + 1u) << 1;
 		}
 
 		// Attributes should be sorted by value type
@@ -439,10 +442,10 @@ void CScene::loadMeshComponent(const entt::entity parent, uint32_t node_index)
 		mesh_primitive.vboId = m_resources.vertexHandlers[attributes_hash];
 		mesh_primitive.setDimensions(pos_min, pos_max);
 
-		mesh_primitive.lods[0].beginIndex = vertex_handler->getLastIndex();
-		mesh_primitive.lods[0].indexCount = vertex_handler->addIndices(indices);
-		mesh_primitive.lods[0].beginVertex = vertex_handler->getLastIndex();
+		mesh_primitive.lods[0].beginVertex = vertex_handler->getLastVertex();
 		mesh_primitive.lods[0].vertexCount = vertex_handler->addVertices(attributes);
+		mesh_primitive.lods[0].beginIndex = vertex_handler->getLastIndex();
+		mesh_primitive.lods[0].indexCount = vertex_handler->addIndices(indices, mesh_primitive.lods[0].beginVertex);
 
 		// NOTE: Updating material create info for future shader creation
 		if (primitive.material >= 0)
