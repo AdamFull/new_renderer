@@ -1,17 +1,17 @@
-#include "GeometryRenderingStep.h"
+#include "VisibilityBufferRenderingStep.h"
 
 #include <ShaderObject.h>
 #include <logger/logger.h>
 
 using namespace engine::render;
 
-CGeometryRenderingStep::CGeometryRenderingStep(IRenderInterface* render_interface, IRenderContext* render_context)
+CVisibilityBufferRenderingStep::CVisibilityBufferRenderingStep(IRenderInterface* render_interface, IRenderContext* render_context)
 {
 	m_pRenderInterface = render_interface;
 	m_pRenderContext = render_context;
 }
 
-void CGeometryRenderingStep::create(const FRenderingStepCreateInfo& create_info)
+void CVisibilityBufferRenderingStep::create(const FRenderingStepCreateInfo& create_info)
 {
 	auto& rendering_ci = create_info.rendering;
 
@@ -21,7 +21,7 @@ void CGeometryRenderingStep::create(const FRenderingStepCreateInfo& create_info)
 		// Create shader
 		FGraphicsShaderCreateInfo shader_ci{};
 		shader_ci.cullMode = rendering_ci.flipViewport ? SHADER_CULL_MODE_FRONT_BIT : SHADER_CULL_MODE_BACK_BIT;
-		shader_ci.frontFace = SHADER_FRONT_FACE_CCW;
+		shader_ci.frontFace = rendering_ci.flipViewport ? SHADER_FRONT_FACE_CW : SHADER_FRONT_FACE_CCW;
 		shader_ci.primitiveTopology = SHADER_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 		shader_ci.colorAttachments = rendering_ci.renderTargets;
 		shader_ci.depthAttachment = rendering_ci.depthTarget;
@@ -51,9 +51,13 @@ void CGeometryRenderingStep::create(const FRenderingStepCreateInfo& create_info)
 	m_beginRenderingInfo.depthAttachment = rendering_ci.depthTarget;
 	m_beginRenderingInfo.stencilAttachment = rendering_ci.stencilTarget;
 	m_beginRenderingInfo.flipViewport = rendering_ci.flipViewport;
+
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	m_beginRenderingInfo.name = std::format("visbuffer:{}", rendering_ci.shaderName);
+#endif
 }
 
-void CGeometryRenderingStep::execute(float dt)
+void CVisibilityBufferRenderingStep::execute(float dt)
 {
 	auto render_resolution = m_pRenderContext->getRenderResolution();
 
@@ -69,8 +73,6 @@ void CGeometryRenderingStep::execute(float dt)
 
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
 
-	if (m_pShader)
-	{
 		for (auto& batch : render_packet->sceneBatches)
 		{
 			auto& node = render_packet->nodes.at(batch.node);
@@ -108,11 +110,6 @@ void CGeometryRenderingStep::execute(float dt)
 				m_pRenderContext->draw(m_beginRenderingInfo.queue, draw_info);
 			}
 		}
-	}
-	else
-	{
-		// TODO: use shader from batch
-	}
 
 	// Here i can draw
 

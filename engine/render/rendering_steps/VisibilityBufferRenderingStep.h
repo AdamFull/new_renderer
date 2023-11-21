@@ -6,13 +6,13 @@ namespace engine
 {
 	namespace render
 	{
-		class CGeometryRenderingStep : public IRenderingStep
+		class CVisibilityBufferRenderingStep : public IRenderingStep
 		{
 		public:
-			CGeometryRenderingStep() = default;
-			CGeometryRenderingStep(IRenderInterface* render_interface, IRenderContext* render_context);
+			CVisibilityBufferRenderingStep() = default;
+			CVisibilityBufferRenderingStep(IRenderInterface* render_interface, IRenderContext* render_context);
 
-			~CGeometryRenderingStep() override = default;
+			~CVisibilityBufferRenderingStep() override = default;
 
 			void create(const FRenderingStepCreateInfo& create_info) override;
 			void execute(float dt) override;
