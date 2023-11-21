@@ -71,7 +71,6 @@ namespace engine
 				"one_dim", TEXTURE_IMAGE_TYPE_1D_FLAG_BIT,
 				"two_dim", TEXTURE_IMAGE_TYPE_2D_FLAG_BIT,
 				"three_dim", TEXTURE_IMAGE_TYPE_3D_FLAG_BIT,
-				"depth", TEXTURE_IMAGE_TYPE_DEPTH_FLAG_BIT,
 				"transferable", TEXTURE_IMAGE_TYPE_TRANSFERABLE_FLAG_BIT,
 				"samplable", TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT,
 				"storage", TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT
@@ -132,7 +131,7 @@ namespace engine
 			lua->new_enum(
 				"RenderingType",
 				"fullscreen", RENDERING_FULLSCREEN_TYPE,
-				"geometry", RENDERING_GEOMETRY_TYPE,
+				"visbuffer", RENDERING_VISBUFFER_TYPE,
 				"render_script", RENDERING_RENDER_SCRIPT_TYPE
 			);
 

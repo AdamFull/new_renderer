@@ -17,7 +17,7 @@ namespace engine
 		enum ERenderingType
 		{
 			RENDERING_FULLSCREEN_TYPE,
-			RENDERING_GEOMETRY_TYPE,
+			RENDERING_VISBUFFER_TYPE,
 			RENDERING_RENDER_SCRIPT_TYPE
 		};
 
@@ -76,6 +76,9 @@ namespace engine
 			std::vector<size_t> colorAttachments{};
 			size_t depthAttachment{ ~0ull };
 			size_t stencilAttachment{ ~0ull };
+#ifndef BUILD_WITHOUT_DEBUGGIND
+			std::string name{};
+#endif
 		};
 	}
 }
