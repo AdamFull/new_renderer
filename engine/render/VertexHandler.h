@@ -26,7 +26,7 @@ namespace engine
 			void bind(uint32_t queue) override;
 
 			size_t addVertices(const std::vector<FVertexAttributePointer>& attributes_data) override;
-			size_t addIndices(const FVertexAttributePointer& indices) override;
+			size_t addIndices(const FVertexAttributePointer& indices, size_t vertex_offset) override;
 
 			size_t getLastVertex() override;
 			size_t getLastIndex() override;

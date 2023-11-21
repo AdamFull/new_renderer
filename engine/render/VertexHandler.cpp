@@ -31,7 +31,6 @@ CVertexHandler::~CVertexHandler()
 
 }
 
-
 // NOTE: current implementation work only with interleaved vertex
 void CVertexHandler::create(const FVertexHandlerCreateInfo& create_info)
 {
@@ -52,6 +51,7 @@ void CVertexHandler::create(const FVertexHandlerCreateInfo& create_info)
 	desc.stride = m_vertexBuffer.elementSize;
 
 	m_indexBuffer.elementSize = create_info.indexSize;
+	return;
 }
 
 void CVertexHandler::allocate()
@@ -115,12 +115,42 @@ size_t CVertexHandler::addVertices(const std::vector<FVertexAttributePointer>& a
 	return vertex_count;
 }
 
-size_t CVertexHandler::addIndices(const FVertexAttributePointer& indices)
+size_t CVertexHandler::addIndices(const FVertexAttributePointer& indices, size_t vertex_offset)
 {
-	std::vector<char> temp(indices.count * m_indexBuffer.elementSize);
-	std::memcpy(temp.data(), indices.data, indices.count * m_indexBuffer.elementSize);
-	m_indexBuffer.data.insert(m_indexBuffer.data.end(), temp.begin(), temp.end());
+	//auto whole_size = indices.count * m_indexBuffer.elementSize;
+	//
+	//std::vector<uint8_t> temp(whole_size);
+	//std::memcpy(temp.data(), indices.data, whole_size);
+	//m_indexBuffer.data.insert(m_indexBuffer.data.end(), temp.begin(), temp.end());
+	//
+	//m_indexBuffer.elementCount += indices.count;
+	//return indices.count;
 
+	auto whole_size = indices.count * m_indexBuffer.elementSize;
+	std::vector<uint8_t> temp(whole_size);
+
+	for (size_t i = 0ull; i < indices.count; ++i)
+	{
+		size_t index_position = i * m_indexBuffer.elementSize;
+
+		if (m_indexBuffer.elementSize == 1ull)
+		{
+			uint8_t index = indices.data[index_position] + static_cast<uint8_t>(vertex_offset);
+			temp[index_position] = index;
+		}
+		else if (m_indexBuffer.elementSize == 2ull)
+		{
+			uint16_t index = *reinterpret_cast<const uint16_t*>(&indices.data[index_position]) + static_cast<uint16_t>(vertex_offset);
+			*reinterpret_cast<uint16_t*>(&temp[index_position]) = index;
+		}
+		else if (m_indexBuffer.elementSize == 4ull)
+		{
+			uint32_t index = *reinterpret_cast<const uint32_t*>(&indices.data[index_position]) + static_cast<uint32_t>(vertex_offset);
+			*reinterpret_cast<uint32_t*>(&temp[index_position]) = index;
+		}
+	}
+
+	m_indexBuffer.data.insert(m_indexBuffer.data.end(), temp.begin(), temp.end());
 	m_indexBuffer.elementCount += indices.count;
 	return indices.count;
 }
