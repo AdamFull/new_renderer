@@ -14,20 +14,22 @@
 
 	code: 
 	"""
-		//layout(std140, binding = 0) uniform GlobalUniformFrameData
-		//{
-		//	mat4 view;
-		//	mat4 projection;
-		//	vec3 viewDirection;
-		//	vec2 viewportDimension;
-		//	vec4 frustumPlanes[6];
-		//} frameData;
+		layout(std140, binding = 0) uniform GlobalUniformFrameData
+		{
+			mat4 view;
+			mat4 invView;
+			mat4 projection;
+			mat4 invProjection;
+			mat4 viewProjection;
+			mat4 invViewProjection;
+			vec3 viewDirection;
+			vec2 viewportDimension;
+			vec4 frustumPlanes[6];
+		} frameData;
 
-		layout(std140, set = 0, binding = 0) uniform UBOMeshData
+		layout(std140, set = 1, binding = 0) uniform UniformMeshData
 		{
 			mat4 model;
-			mat4 view;
-			mat4 projection;
 			mat4 normal;
 			vec4 object_id;
 		} meshData;
@@ -38,6 +40,7 @@
 		layout(location = 4) in vec4 inTangent;
 
 		layout(location = 0) flat out uint drawID;
+		layout(location = 1) out vec2 uv;
 		out gl_PerVertex
 		{
 			vec4 gl_Position;
@@ -45,10 +48,9 @@
 
 		void main() 
 		{
-			//gl_Position = frameData.projection * frameData.view * meshData.model * vec4(inPosition, 1.f);
-
 			drawID = gl_DrawIDARB;
-			gl_Position = meshData.projection * meshData.view * meshData.model * vec4(inPosition, 1.f);
+			uv = inTexCoord;
+			gl_Position = frameData.projection * frameData.view * meshData.model * vec4(inPosition, 1.f);
 		}
 	""";
 }
