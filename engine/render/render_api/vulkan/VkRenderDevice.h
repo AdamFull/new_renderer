@@ -104,7 +104,7 @@ namespace engine
 						object_name_info.objectType = object.objectType;
 						object_name_info.objectHandle = reinterpret_cast<uint64_t>(static_cast<_Ty::CType>(object));
 
-						auto formatted_debug_object_name = std::format("{}:{} | {}", vk::to_string(object.objectType), name, object_name_info.objectHandle);
+						auto formatted_debug_object_name = std::format("{}:{} | {:x}", vk::to_string(object.objectType), name, object_name_info.objectHandle);
 						object_name_info.pObjectName = formatted_debug_object_name.c_str();
 
 						logicalDevice.handle.setDebugUtilsObjectNameEXT(object_name_info);
