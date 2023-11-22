@@ -16,6 +16,29 @@ namespace engine
 {
 	namespace render
 	{
+#ifndef BUILD_WITHOUT_DEBUGGIND
+		namespace debug_mapping
+		{
+			inline constexpr std::pair<size_t, const char*> uniform_to_name_mapping[] =
+			{
+				{ utl::fnv1a_64_hash("GlobalUniformFrameData"), "GlobalUniformFrameData" },
+				{ utl::fnv1a_64_hash("UniformMeshData"), "UniformMeshData" },
+				{ utl::fnv1a_64_hash("UniformJoints"), "UniformJoints" },
+			};
+
+			constexpr const char* find(size_t key) 
+			{
+				for (const auto& kv : uniform_to_name_mapping)
+				{
+					if (kv.first == key)
+						return kv.second;
+				}
+
+				return nullptr;
+			}
+		}
+#endif
+
 		struct FGlobalUniformCreateInfo
 		{
 			std::unordered_map<size_t, FReflectionUniformBlock<FReflectionUniform>> uniforms{};
@@ -24,6 +47,27 @@ namespace engine
 		struct FGlobalUniformUpdateInfo
 		{
 			std::unordered_map<size_t, FUniformDataView> uniforms{};
+		};
+
+		struct FRenderCamera
+		{
+			float fov{ 45.f };
+			float nearp{ 0.1f };
+			float farp{ 1024.f };
+
+			glm::vec3 viewPos{ 0.f };
+			glm::mat4 view{ 1.f }, invView{ 1.f }, projection{ 1.f }, invProjection{ 1.f }, viewProjection{ 1.f }, invViewProjection{ 1.f };
+
+			glm::vec3 up{ 0.f };
+			glm::vec3 forward{ 0.f };
+			glm::vec3 right{ 0.f };
+
+			FFrustum frustum{};
+		};
+
+		struct FRenderNode
+		{
+			glm::mat4 model{};
 		};
 
 		class CUniformHandle
@@ -125,27 +169,6 @@ namespace engine
 
 			virtual void create(const FRenderingStepCreateInfo& create_info) = 0;
 			virtual void execute(float dt) = 0;
-		};
-
-		struct FRenderCamera
-		{
-			float fov{ 45.f };
-			float nearp{ 0.1f };
-			float farp{ 1024.f };
-
-			glm::vec3 viewPos{ 0.f };
-			glm::mat4 view{ 1.f }, invView{ 1.f }, projection{ 1.f }, invProjection{ 1.f }, viewProjection{ 1.f }, invViewProjection{ 1.f };
-
-			glm::vec3 up{ 0.f };
-			glm::vec3 forward{ 0.f };
-			glm::vec3 right{ 0.f };
-
-			FFrustum frustum{};
-		};
-
-		struct FRenderNode
-		{
-			glm::mat4 model{};
 		};
 
 		struct FRenderDataPacket

@@ -152,7 +152,7 @@ void CVkRenderContext::createGlobalDescriptor(const FGlobalUniformCreateInfo& un
 	auto& physical = m_pDevice->getPhysicalDevice();
 	auto minOffsetAllignment = std::lcm(physical.properties.limits.minUniformBufferOffsetAlignment, physical.properties.limits.nonCoherentAtomSize);
 
-	for (const auto& [uniform_name, uniform_block] : uniform_ci.uniforms)
+	for (auto& [uniform_name, uniform_block] : uniform_ci.uniforms)
 	{
 		FVkBufferCreateInfo buffer_ci{};
 		buffer_ci.instanceCount = swapchain.framesInFlight;
@@ -161,7 +161,12 @@ void CVkRenderContext::createGlobalDescriptor(const FGlobalUniformCreateInfo& un
 		buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
 		buffer_ci.usageFlags = vk::BufferUsageFlagBits::eUniformBuffer;
 #ifndef BUILD_WITHOUT_DEBUGGIND
-		buffer_ci.name = std::format("global:{}", uniform_name);
+		auto* debug_name = debug_mapping::find(uniform_name);
+
+		if(debug_name)
+			buffer_ci.name = std::format("global:{}", debug_name);
+		else
+			buffer_ci.name = std::format("global:{:x}", uniform_name);
 #endif
 
 		auto buffer = std::make_unique<FVkBuffer>();
@@ -906,7 +911,7 @@ void CVkRenderContext::beginRendering(const FBeginRenderingInfo& rendering_info)
 	{
 		auto& depth_target = textures.at(rendering_info.depthAttachment).at(swapchain.currentFrame);
 
-		bool is_depth_stencil_attachment = !is_depth_only_format(static_cast<vk::Format>(depth_target->initialData.base.format)) && (rendering_info.stencilAttachment == rendering_info.depthAttachment) && rendering_info.stencilAttachment != invalid_handle;
+		bool is_depth_stencil_attachment = !is_depth_only_format(static_cast<vk::Format>(depth_target->initialData.base.format)) && (rendering_info.stencilAttachment == rendering_info.depthAttachment);
 
 		FVkTextureTranslationInfo texture_translation_info{};
 		texture_translation_info.oldLayout = vk::ImageLayout::eUndefined;
@@ -962,7 +967,7 @@ void CVkRenderContext::beginRendering(const FBeginRenderingInfo& rendering_info)
 			begin_rendering_info.pStencilAttachment = &depth_attachment;
 	}
 
-	if (rendering_info.stencilAttachment != invalid_handle)
+	if (rendering_info.stencilAttachment != invalid_handle && rendering_info.stencilAttachment != rendering_info.depthAttachment)
 		begin_rendering_info.pStencilAttachment = &stencil_attachment;
 
 	auto& current_buffer = command_buffer.get();
@@ -1843,7 +1848,11 @@ FRenderApiErrorInfo CVkRenderContext::createShaderResources(const FVkShaderResou
 		buffer_ci.minOffsetAlignment = minOffsetAllignment;
 		buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
 #ifndef BUILD_WITHOUT_DEBUGGIND
-		buffer_ci.name = std::format("{}: {}", resources_info.name, id);
+		auto* debug_name = debug_mapping::find(id);
+		if (debug_name)
+			buffer_ci.name = std::format("{}:{}", resources_info.name, debug_name);
+		else
+			buffer_ci.name = std::format("{}:{:x}", resources_info.name, id);
 #endif
 
 		if (uniform_block.descriptorType == vk::DescriptorType::eUniformBuffer)
@@ -1854,7 +1863,7 @@ FRenderApiErrorInfo CVkRenderContext::createShaderResources(const FVkShaderResou
 		auto buffer = std::make_unique<FVkBuffer>();
 		RETURN_WHEN_FAULT(m_pDevice->createBuffer(buffer_ci, *buffer));
 
-		auto buffer_name = std::format("{}", id);
+		auto buffer_name = std::format("{}:{:x}", vk::to_string(uniform_block.descriptorType), id);
 		auto buffer_id = m_pResources->add<FVkBuffer>(buffer_name.c_str(), std::move(buffer));
 		shader.uniformBuffers.emplace(id, buffer_id);
 	}
