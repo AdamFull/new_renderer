@@ -33,5 +33,26 @@ namespace engine
 
 			FBufferUploadInfo upload{};
 		};
+
+		struct FBufferView
+		{
+			size_t alignedSize{ 0ull };
+			size_t elementCount{ 0ull };
+		};
+
+		class IBufferObject
+		{
+		public:
+			virtual ~IBufferObject() = default;
+
+			virtual void create(const std::string& name, const FBufferCreateInfo& create_info) = 0;
+
+			virtual void map() = 0;
+			virtual void unmap() = 0;
+			virtual void write(void* data, size_t size = ~0ull, size_t offset = 0ull) = 0;
+			virtual void flush(size_t size = ~0ull, size_t offset = 0ull) = 0;
+
+			virtual char* at(size_t index) = 0;
+		};
 	}
 }
