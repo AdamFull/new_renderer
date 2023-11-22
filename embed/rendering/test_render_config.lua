@@ -23,7 +23,7 @@ end
 
 do
     local target_ci = TextureCI.new()
-    target_ci.format = render_context:get_depth_format()
+    target_ci.format = render_context:get_depth_format(true)
     target_ci.type = bit_or(TexType.two_dim, TexType.depth, TexType.samplable)
     target_ci.width = surface_resolution.x
     target_ci.height = surface_resolution.y
@@ -48,7 +48,7 @@ do
     local step_ci = RenderingStepCI.new()
     step_ci.type = RenderingStepType.rendering
 
-    step_ci.rendering.type = RenderingType.geometry
+    step_ci.rendering.type = RenderingType.visbuffer
     step_ci.rendering.queue = QueueType.graphics
     step_ci.rendering.shader_name = "testing:visbufferwrite"
 
@@ -67,6 +67,7 @@ do
     step_ci.rendering.type = RenderingType.fullscreen
     step_ci.rendering.queue = QueueType.graphics
     step_ci.rendering.shader_name = "testing:screenspace"
+    step_ci.rendering.flip_viewport = true
     
     -- renderer_ci.input_targets:set("zbuffer_albedo_target", render_context.get_texture_resource("zbuffer_albedo_target"))
     -- renderer_ci.input_targets:set("zbuffer_normal_target", render_context.get_texture_resource("zbuffer_normal_target"))
