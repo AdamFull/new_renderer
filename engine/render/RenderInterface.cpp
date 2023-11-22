@@ -163,7 +163,8 @@ void CRenderInterface::render(float dt)
 	m_pGlobalUniformHandler->set("invView", m_pRenderPacket->camera.invView);
 	m_pGlobalUniformHandler->set("projection", m_pRenderPacket->camera.projection);
 	m_pGlobalUniformHandler->set("invProjection", m_pRenderPacket->camera.invProjection);
-	m_pGlobalUniformHandler->set("viewProjection", viewProjection);
+	m_pGlobalUniformHandler->set("viewProjection", m_pRenderPacket->camera.viewProjection);
+	m_pGlobalUniformHandler->set("invViewProjection", m_pRenderPacket->camera.invViewProjection);
 	m_pGlobalUniformHandler->set("viewDirection", m_pRenderPacket->camera.viewPos);
 	m_pGlobalUniformHandler->set("frustumPlanes", m_pRenderPacket->camera.frustum.frustumSides);
 
