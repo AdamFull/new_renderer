@@ -14,9 +14,11 @@ using namespace engine::render::vulkan;
 
 static const uint32_t k_max_bindless_resources = 16536;
 
-void apply_render_target_load_store_ops(vk::RenderingAttachmentInfoKHR& attachment_info, uint32_t flags)
+template<class _Ty, class ..._Args>
+std::string create_object_unique_name(const char* fmt, const _Ty& handle, _Args&&... args)
 {
-
+	auto object_handle = reinterpret_cast<uint64_t>(static_cast<_Ty::CType>(handle));
+	return std::vformat(fmt, std::make_format_args(object_handle, std::forward<_Args>(args)...));
 }
 
 CVkRenderContext::~CVkRenderContext()
@@ -172,7 +174,7 @@ void CVkRenderContext::createGlobalDescriptor(const FGlobalUniformCreateInfo& un
 		auto buffer = std::make_unique<FVkBuffer>();
 		m_pDevice->createBuffer(buffer_ci, *buffer);
 
-		auto buffer_name = std::format("global:{}", uniform_name);
+		auto buffer_name = create_object_unique_name("global:{:x}:{:x}", buffer->handle, uniform_name);
 		auto buffer_id = m_pResources->add<FVkBuffer>(buffer_name.c_str(), std::move(buffer));
 		m_globalDescriptor.uniformBuffers.emplace(uniform_name, buffer_id);
 	}
@@ -432,7 +434,8 @@ size_t CVkRenderContext::createShader(const std::string& name, const FGraphicsSh
 	auto& pipeline = shader->handles.emplace_back();
 	m_pDevice->createPipeline(pipeline_ci, pipeline);
 
-	return m_pResources->add<FVkShader>(name.c_str(), std::move(shader));
+	auto shader_unique_name = create_object_unique_name("shader:{:x}:{}", shader->handles.back(), vk::to_string(shader->bindPoint));
+	return m_pResources->add<FVkShader>(shader_unique_name.c_str(), std::move(shader));
 }
 
 size_t CVkRenderContext::createShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages)
@@ -501,7 +504,13 @@ size_t CVkRenderContext::createShader(const std::string& name, const FComputeSha
 
 	shader->bindPoint = vk::PipelineBindPoint::eCompute;
 
-	return m_pResources->add<FVkShader>(name.c_str(), std::move(shader));
+	std::stringstream ss{};
+	ss << name;
+	for (const auto& handle : shader->handles)
+		ss << ":" << std::hex << reinterpret_cast<uint64_t>(static_cast<vk::Pipeline::CType>(handle));
+
+	auto shader_unique_name = ss.str()
+	return m_pResources->add<FVkShader>(shader_unique_name.c_str(), std::move(shader));
 }
 
 FShaderReflectionData CVkRenderContext::getShaderReflection(const size_t& shader_view)
@@ -784,7 +793,8 @@ size_t CVkRenderContext::createBuffer(const std::string& name, const FBufferCrea
 	auto buffer = std::make_unique<FVkBuffer>();
 	m_pDevice->createBuffer(vk_buffer_ci, *buffer);
 
-	auto buffer_id = m_pResources->add<FVkBuffer>(name.c_str(), std::move(buffer));
+	auto buffer_unique_name = create_object_unique_name("buffer:{:x}:{}", buffer->handle, name);
+	auto buffer_id = m_pResources->add<FVkBuffer>(buffer_unique_name.c_str(), std::move(buffer));
 
 	if (!buffer_ci.upload.data.empty())
 	{
@@ -1863,7 +1873,8 @@ FRenderApiErrorInfo CVkRenderContext::createShaderResources(const FVkShaderResou
 		auto buffer = std::make_unique<FVkBuffer>();
 		RETURN_WHEN_FAULT(m_pDevice->createBuffer(buffer_ci, *buffer));
 
-		auto buffer_name = std::format("{}:{:x}", vk::to_string(uniform_block.descriptorType), id);
+
+		auto buffer_name = create_object_unique_name("buffer:{:x}:{}", buffer->handle, id);
 		auto buffer_id = m_pResources->add<FVkBuffer>(buffer_name.c_str(), std::move(buffer));
 		shader.uniformBuffers.emplace(id, buffer_id);
 	}
