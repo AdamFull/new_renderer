@@ -75,6 +75,9 @@ void build_uniform_block_reflection(FVkShaderReflectionData& reflection_data, sp
         return;
     }
 
+    if (has_substring(res.name, "global"))
+        return;
+
     const auto& type = compiler->get_type(res.type_id);
     auto& decoration = compiler->get_decoration_bitset(type.self);
     unsigned member_count = type.member_types.size();

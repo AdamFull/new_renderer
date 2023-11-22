@@ -18,6 +18,10 @@ namespace engine
 				~CVkRenderContext() override;
 
 				void create(const FRenderContextCreateInfo& context_ci) override;
+				void createGlobalDescriptor(const FGlobalUniformCreateInfo& uniform_ci) override;
+				void updateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view) override;
+
+
 				size_t createTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) override;
 				size_t createRenderTarget(const std::string& name, const FTextureCreateInfo& texture_ci);
 				size_t createRenderTargets(const std::string& name, const FTextureCreateInfo& texture_ci) override;
@@ -35,13 +39,14 @@ namespace engine
 
 				size_t createBuffer(const std::string& name, const FBufferCreateInfo& buffer_ci) override;
 				void uploadDataToBuffer(const FBufferUploadInfo& upload_info) override;
+				FBufferView getBufferView(size_t buffer_id) override;
 				void bindVertexBuffers(const FVertexBufferBindingInfo& binding_info, uint32_t queue_type) override;
 				void bindIndexBuffer(const FIndexBufferBindingInfo& binding_info, uint32_t queue_type) override;
 				void mapBufferMemory(size_t buffer_id, void*& memory) override;
 				void unmapBufferMemory(size_t buffer_id) override;
 				void flushBuffer(size_t buffer_id, size_t size, size_t offset) override;
 				void destroyBuffer(size_t resource_id) override;
-				
+			
 
 				void beginRendering(const FBeginRenderingInfo& rendering_info) override;
 				void endRendering(const FBeginRenderingInfo& rendering_info) override;
@@ -50,6 +55,7 @@ namespace engine
 				void setScissorRect(int32_t offset_x, int32_t offset_y, uint32_t width, uint32_t height) override;
 
 				void draw(uint32_t queue_type, const FGeometryDrawInfo& draw_info) override;
+				void drawIndirect(uint32_t queue_type);
 
 				size_t getTextureResource(const char* name) override;
 				size_t getShaderResource(const char* name) override;
@@ -74,9 +80,6 @@ namespace engine
 				void insertDebugLabel(const std::string& label, uint32_t queue_type, uint32_t color = 0xffffffff) override;
 				void endDebugLabel(uint32_t queue_type) override;
 			protected:
-				void createGlobalDescriptor();
-				void updateGlobalDescriptorData();
-
 				void processResourceUpload();
 
 				FRenderApiErrorInfo createTexture(const FVkTextureCreateInfo& texture_ci, FVkTexture& texture);

@@ -52,6 +52,7 @@ namespace engine
 		private:
 			filesystem::IVirtualFileSystemInterface* m_pVFS{ nullptr };
 
+			std::unique_ptr<CUniformHandle> m_pGlobalUniformHandler{};
 			std::vector<std::unique_ptr<IRenderingStep>> m_vRenderingSteps{};
 
 			// TODO: add map with entity id and mesh data

@@ -16,6 +16,16 @@ namespace engine
 {
 	namespace render
 	{
+		struct FGlobalUniformCreateInfo
+		{
+			std::unordered_map<size_t, FReflectionUniformBlock<FReflectionUniform>> uniforms{};
+		};
+
+		struct FGlobalUniformUpdateInfo
+		{
+			std::unordered_map<size_t, FUniformDataView> uniforms{};
+		};
+
 		class CUniformHandle
 		{
 		public:
@@ -124,11 +134,13 @@ namespace engine
 			float farp{ 1024.f };
 
 			glm::vec3 viewPos{ 0.f };
-			glm::mat4 view{ 1.f }, invView{ 1.f }, projection{ 1.f }, invProjection{ 1.f };
+			glm::mat4 view{ 1.f }, invView{ 1.f }, projection{ 1.f }, invProjection{ 1.f }, viewProjection{ 1.f }, invViewProjection{ 1.f };
 
 			glm::vec3 up{ 0.f };
 			glm::vec3 forward{ 0.f };
 			glm::vec3 right{ 0.f };
+
+			FFrustum frustum{};
 		};
 
 		struct FRenderNode
@@ -157,6 +169,9 @@ namespace engine
 			virtual ~IRenderContext() = default;
 
 			virtual void create(const FRenderContextCreateInfo& context_ci) = 0;
+			virtual void createGlobalDescriptor(const FGlobalUniformCreateInfo& uniform_ci) = 0;
+			virtual void updateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view) = 0;
+
 			virtual size_t createTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) = 0;
 			virtual size_t createRenderTargets(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
 			virtual void destroyTexture(size_t resource_id) = 0;
@@ -171,6 +186,7 @@ namespace engine
 
 			virtual size_t createBuffer(const std::string& name, const FBufferCreateInfo& buffer_ci) = 0;
 			virtual void uploadDataToBuffer(const FBufferUploadInfo& upload_info) = 0;
+			virtual FBufferView getBufferView(size_t buffer_id) = 0;
 			virtual void bindVertexBuffers(const FVertexBufferBindingInfo& binding_info, uint32_t queue) = 0;
 			virtual void bindIndexBuffer(const FIndexBufferBindingInfo& binding_info, uint32_t queue) = 0;
 			virtual void mapBufferMemory(size_t buffer_id, void*& memory) = 0;

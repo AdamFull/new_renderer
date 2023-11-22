@@ -108,6 +108,8 @@ CRenderInterface::CRenderInterface(filesystem::IVirtualFileSystemInterface* vfs)
 
 	m_pResources = std::make_unique<CResourceContainer>();
 	m_pResources->registerResource<IVertexHandler>();
+
+	m_pGlobalUniformHandler = std::make_unique<CUniformHandle>();
 }
 
 CRenderInterface::~CRenderInterface()
@@ -123,6 +125,29 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 	
 	m_pRenderScriptCore->create(this, m_pRenderContext.get());
 
+	// TODO: make it better
+	std::vector<std::pair<size_t, size_t>> sizemap{};
+	sizemap.emplace_back(utl::fnv1a_64_hash("view"), 64ull);					// mat4 view;
+	sizemap.emplace_back(utl::fnv1a_64_hash("invView"), 64ull);				// mat4 invView;
+	sizemap.emplace_back(utl::fnv1a_64_hash("projection"), 64ull);			// mat4 projection;
+	sizemap.emplace_back(utl::fnv1a_64_hash("invProjection"), 64ull);		// mat4 invProjection;
+	sizemap.emplace_back(utl::fnv1a_64_hash("viewProjection"), 64ull);		// mat4 viewProjection;
+	sizemap.emplace_back(utl::fnv1a_64_hash("invViewProjection"), 64ull);	// mat4 invViewProjection;
+	sizemap.emplace_back(utl::fnv1a_64_hash("viewDirection"), 16ull);		// vec3 viewDirection;
+	sizemap.emplace_back(utl::fnv1a_64_hash("viewportDimension"), 8ull);		// vec2 viewportDimension;
+	sizemap.emplace_back(utl::fnv1a_64_hash("frustumPlanes"), 96ull);		// vec4 frustumPlanes[6];
+
+	FGlobalUniformCreateInfo global_buffer_ci{};
+	auto& ublock = global_buffer_ci.uniforms[utl::fnv1a_64_hash("GlobalUniformFrameData")];
+	for (const auto& [name, size] : sizemap)
+	{
+		ublock.uniforms.emplace(name, FReflectionUniform{ 0u, 0u, ublock.size, size });
+		ublock.size += size;
+	}
+
+	m_pGlobalUniformHandler->create(ublock);
+	m_pRenderContext->createGlobalDescriptor(global_buffer_ci);
+
 	std::vector<uint8_t> render_config{};
 	m_pVFS->readFile("/root/embed/rendering/test_render_config.lua", render_config);
 	m_pRenderScriptCore->build("render_config", render_config);
@@ -132,7 +157,24 @@ void CRenderInterface::render(float dt)
 {
 	m_pRenderContext->beginFrameCommandBuffers();
 
-	// fill globaluniform buffer here
+	// TODO: make it better
+	m_pRenderPacket->camera.frustum.update(m_pRenderPacket->camera.view, m_pRenderPacket->camera.projection);
+	m_pGlobalUniformHandler->set("view", m_pRenderPacket->camera.view);
+	m_pGlobalUniformHandler->set("invView", m_pRenderPacket->camera.invView);
+	m_pGlobalUniformHandler->set("projection", m_pRenderPacket->camera.projection);
+	m_pGlobalUniformHandler->set("invProjection", m_pRenderPacket->camera.invProjection);
+	m_pGlobalUniformHandler->set("viewProjection", viewProjection);
+	m_pGlobalUniformHandler->set("viewDirection", m_pRenderPacket->camera.viewPos);
+	m_pGlobalUniformHandler->set("frustumPlanes", m_pRenderPacket->camera.frustum.frustumSides);
+
+	FGlobalUniformUpdateInfo update_info{};
+	auto& uniform = update_info.uniforms[utl::fnv1a_64_hash("GlobalUniformFrameData")];
+	auto& block_data = m_pGlobalUniformHandler->data();
+	uniform.data = block_data.data();
+	uniform.size = block_data.size();
+
+	m_pRenderContext->updateGlobalDescriptorData(update_info);
+
 
 	for (auto& stage : m_vRenderingSteps)
 		stage->execute(dt);

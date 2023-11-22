@@ -65,9 +65,6 @@ void CVkRenderContext::create(const FRenderContextCreateInfo& context_ci)
 	m_pResources->registerResource<FVkBuffer>();
 	m_pResources->registerResource<FVkShaderReflectionData>();
 
-	// NOTE: Creates global descriptor set, that uses slot 0 for global frame data and bindless textures array
-	createGlobalDescriptor();
-
 	auto& swapchain = m_pDevice->getSwapchain();
 
 	FVkCommandBufferCreateInfo command_buffer_ci{};
@@ -79,6 +76,169 @@ void CVkRenderContext::create(const FRenderContextCreateInfo& context_ci)
 #endif
 
 	createCommandBuffer(command_buffer_ci);
+}
+
+void CVkRenderContext::createGlobalDescriptor(const FGlobalUniformCreateInfo& uniform_ci)
+{
+	auto& swapchain = m_pDevice->getSwapchain();
+
+	// Create descriptor pool
+	FVkDescriptorPoolCreateInfo pool_ci{};
+	pool_ci.poolSizes = { { vk::DescriptorType::eCombinedImageSampler, k_max_bindless_resources }, {vk::DescriptorType::eUniformBuffer, 1u} };
+	pool_ci.usageCount = 1u * swapchain.framesInFlight;
+	pool_ci.flags |= vk::DescriptorPoolCreateFlagBits::eUpdateAfterBindEXT;
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	pool_ci.name = "global:textures";
+#endif
+
+	m_pDevice->createDescriptorPool(pool_ci, m_globalDescriptor.descriptorPool);
+
+	// Create descriptor set layout
+	FVkDescriptorSetLayoutCreateInfo set_layout_ci{};
+	set_layout_ci.flags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPoolEXT;
+
+	// Frame data
+	auto& global_uniform_binding = set_layout_ci.layoutBindings.emplace_back();
+	global_uniform_binding.descriptorType = vk::DescriptorType::eUniformBuffer;
+	global_uniform_binding.descriptorCount = 1u;
+	global_uniform_binding.binding = 0u;
+	global_uniform_binding.stageFlags = vk::ShaderStageFlagBits::eAllGraphics | vk::ShaderStageFlagBits::eCompute;
+
+	// Bindles textures
+	auto& global_textures_binding = set_layout_ci.layoutBindings.emplace_back();
+	global_textures_binding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+	global_textures_binding.descriptorCount = k_max_bindless_resources;
+	global_textures_binding.binding = 1u;
+	global_textures_binding.stageFlags = vk::ShaderStageFlagBits::eAllGraphics | vk::ShaderStageFlagBits::eCompute;
+	global_textures_binding.pImmutableSamplers = nullptr;
+
+	// Descriptor binding extension
+	std::vector<vk::DescriptorBindingFlags> bindingFlags{};
+	bindingFlags.emplace_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
+	bindingFlags.emplace_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eVariableDescriptorCount | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
+
+	vk::DescriptorSetLayoutBindingFlagsCreateInfoEXT descriptorSetLayoutBindingFlagsCIEXT{};
+	descriptorSetLayoutBindingFlagsCIEXT.bindingCount = static_cast<uint32_t>(bindingFlags.size());
+	descriptorSetLayoutBindingFlagsCIEXT.pBindingFlags = bindingFlags.data();
+
+	set_layout_ci.next = &descriptorSetLayoutBindingFlagsCIEXT;
+
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	set_layout_ci.name = "global:textures";
+#endif
+
+	m_pDevice->createDescriptorSetLayout(set_layout_ci, m_globalDescriptor.deecriptorSetLayout);
+
+	// Create descriptor set
+	FVkDescriptorSetCreateInfo set_ci{};
+	set_ci.descriptorCount = swapchain.framesInFlight;
+	set_ci.layout = m_globalDescriptor.deecriptorSetLayout;
+	set_ci.pool = m_globalDescriptor.descriptorPool.handle;
+
+	// TODO: Potential problems here in future. I think that max_sets array is incorrect
+	std::vector<uint32_t> max_sets(swapchain.framesInFlight, k_max_bindless_resources - 1);
+	vk::DescriptorSetVariableDescriptorCountAllocateInfoEXT descriptor_set_variable_descriptor_count_AIEXT{};
+	descriptor_set_variable_descriptor_count_AIEXT.descriptorSetCount = swapchain.framesInFlight;
+	descriptor_set_variable_descriptor_count_AIEXT.pDescriptorCounts = max_sets.data();
+	set_ci.next = &descriptor_set_variable_descriptor_count_AIEXT;
+
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	set_ci.name = "global:textures";
+#endif
+
+	m_pDevice->createDescriptorSet(set_ci, m_globalDescriptor.descriptorSet);
+
+	// Create uniform buffers
+	auto& physical = m_pDevice->getPhysicalDevice();
+	auto minOffsetAllignment = std::lcm(physical.properties.limits.minUniformBufferOffsetAlignment, physical.properties.limits.nonCoherentAtomSize);
+
+	for (const auto& [uniform_name, uniform_block] : uniform_ci.uniforms)
+	{
+		FVkBufferCreateInfo buffer_ci{};
+		buffer_ci.instanceCount = swapchain.framesInFlight;
+		buffer_ci.instanceSize = uniform_block.size;
+		buffer_ci.minOffsetAlignment = minOffsetAllignment;
+		buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
+		buffer_ci.usageFlags = vk::BufferUsageFlagBits::eUniformBuffer;
+#ifndef BUILD_WITHOUT_DEBUGGIND
+		buffer_ci.name = std::format("global:{}", uniform_name);
+#endif
+
+		auto buffer = std::make_unique<FVkBuffer>();
+		m_pDevice->createBuffer(buffer_ci, *buffer);
+
+		auto buffer_name = std::format("global:{}", uniform_name);
+		auto buffer_id = m_pResources->add<FVkBuffer>(buffer_name.c_str(), std::move(buffer));
+		m_globalDescriptor.uniformBuffers.emplace(uniform_name, buffer_id);
+	}
+}
+
+void CVkRenderContext::updateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view)
+{
+	auto& swapchain = m_pDevice->getSwapchain();
+
+	auto& dest_set = m_globalDescriptor.descriptorSet.handles.at(swapchain.currentFrame);
+
+	std::vector<vk::DescriptorImageInfo> image_descriptors{};
+	std::vector<vk::DescriptorBufferInfo> buffer_descriptors{};
+	std::vector<vk::WriteDescriptorSet> write_descriptor_sets{};
+
+	auto& texture_queue = m_textureToUpdate[swapchain.currentFrame];
+	while (!texture_queue.empty())
+	{
+		auto texture_id = texture_queue.front();
+		auto& texture = m_pResources->get<FVkTexture>(texture_id);
+
+		auto& image_descriptor = image_descriptors.emplace_back();
+		image_descriptor.imageView = texture->imageViews.front();
+		image_descriptor.sampler = texture->sampler;
+		image_descriptor.imageLayout = texture->layout;
+
+		auto& write_descriptor_set = write_descriptor_sets.emplace_back();
+		write_descriptor_set.dstArrayElement = texture_id;
+		write_descriptor_set.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+		write_descriptor_set.dstSet = dest_set;
+		write_descriptor_set.dstBinding = 1u;
+		write_descriptor_set.descriptorCount = 1u;
+		write_descriptor_set.pImageInfo = &image_descriptor;
+
+		texture_queue.pop();
+	}
+
+	// Bind and update global uniform
+	for (const auto& [uniform_name, uniform_data] : data_view.uniforms)
+	{
+		auto found_buffer = m_globalDescriptor.uniformBuffers.find(uniform_name);
+		if (found_buffer == m_globalDescriptor.uniformBuffers.end())
+			continue;
+
+		auto& buffer = m_pResources->get<FVkBuffer>(found_buffer->second);
+		auto element_size = buffer->size / buffer->instanceCount;
+
+		auto& buffer_descriptor = buffer_descriptors.emplace_back();
+		buffer_descriptor.buffer = buffer->handle;
+		buffer_descriptor.range = element_size;
+		buffer_descriptor.offset = swapchain.currentFrame * element_size;
+
+		auto& write_descriptor_set = write_descriptor_sets.emplace_back();
+		write_descriptor_set.descriptorType = vk::DescriptorType::eUniformBuffer;
+		write_descriptor_set.dstSet = dest_set;
+		write_descriptor_set.dstBinding = 0u;
+		write_descriptor_set.descriptorCount = 1u;
+		write_descriptor_set.pBufferInfo = &buffer_descriptor;
+
+		void* mapped_memory{ nullptr };
+		m_pDevice->mapBufferMemory(*buffer, &mapped_memory);
+		std::memcpy((char*)mapped_memory + buffer_descriptor.offset, uniform_data.data, uniform_data.size);
+		m_pDevice->unmapBufferMemory(*buffer);
+	}
+
+	// Update descriptor sets if needed
+	if (!write_descriptor_sets.empty())
+	{
+		auto& logical = m_pDevice->getLogicalDevice();
+		logical.updateDescriptorSets(static_cast<uint32_t>(write_descriptor_sets.size()), write_descriptor_sets.data(), 0, nullptr);
+	}
 }
 
 size_t CVkRenderContext::createTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info)
@@ -571,14 +731,6 @@ void CVkRenderContext::bindShader(size_t shader_id, uint32_t queue_type)
 	current.bindPipeline(shader->bindPoint, shader->handles.back());
 
 	bindShaderDescriptors(command_buffer, *shader);
-
-	// TODO: if support bindless textures. And maybe check in reflection does shader has a global uniforms (with Global in name)
-	if (false)
-	{
-		auto& swapchain = m_pDevice->getSwapchain();
-		// Idk. Maybe reserve set 0 for global buffers?
-		current.bindDescriptorSets(shader->bindPoint, shader->layout, 0, 1, &m_globalDescriptor.descriptorSet.handles.at(swapchain.currentFrame), 0, nullptr);
-	}
 }
 
 void CVkRenderContext::destroyShader(size_t resource_id)
@@ -645,6 +797,12 @@ size_t CVkRenderContext::createBuffer(const std::string& name, const FBufferCrea
 void CVkRenderContext::uploadDataToBuffer(const FBufferUploadInfo& upload_info)
 {
 	m_bufferUploadInfos.emplace_back(upload_info);
+}
+
+FBufferView CVkRenderContext::getBufferView(size_t buffer_id)
+{
+	auto& buffer = m_pResources->get<FVkBuffer>(buffer_id);
+	return { buffer->size, buffer->instanceCount };
 }
 
 void CVkRenderContext::bindVertexBuffers(const FVertexBufferBindingInfo& binding_info, uint32_t queue_type)
@@ -1001,6 +1159,12 @@ void CVkRenderContext::draw(uint32_t queue_type, const FGeometryDrawInfo& draw_i
 	}
 }
 
+void CVkRenderContext::drawIndirect(uint32_t queue_type)
+{
+	auto& command_buffer = getLastCommandBuffer(queue_type);
+	auto& current = command_buffer.get();
+}
+
 size_t CVkRenderContext::getTextureResource(const char* name)
 {
 	return m_pResources->getId<FVkTexture>(name);
@@ -1169,8 +1333,6 @@ void CVkRenderContext::beginFrameCommandBuffers()
 	processResourceUpload();
 	// TODO: sync queues here
 
-	updateGlobalDescriptorData();
-
 	vk::Result res{};
 	try { res = m_pDevice->acquireNextImage(image_index); }
 	catch (vk::OutOfDateKHRError error) { res = vk::Result::eErrorOutOfDateKHR; }
@@ -1250,119 +1412,6 @@ void CVkRenderContext::endDebugLabel(uint32_t queue_type)
 	auto& current = command_buffer.get();
 
 	m_pDevice->endLabel(current);
-}
-
-void CVkRenderContext::createGlobalDescriptor()
-{
-	auto& swapchain = m_pDevice->getSwapchain();
-
-	// Create descriptor pool
-	FVkDescriptorPoolCreateInfo pool_ci{};
-	pool_ci.poolSizes = { { vk::DescriptorType::eCombinedImageSampler, k_max_bindless_resources }, {vk::DescriptorType::eUniformBuffer, 1u} };
-	pool_ci.usageCount = 1u * swapchain.framesInFlight;
-	pool_ci.flags |= vk::DescriptorPoolCreateFlagBits::eUpdateAfterBindEXT;
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	pool_ci.name = "bindless_textures";
-#endif
-
-	m_pDevice->createDescriptorPool(pool_ci, m_globalDescriptor.descriptorPool);
-
-	// Create descriptor set layout
-	FVkDescriptorSetLayoutCreateInfo set_layout_ci{};
-	set_layout_ci.flags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPoolEXT;
-
-	// Frame data
-	auto& global_uniform_binding = set_layout_ci.layoutBindings.emplace_back();
-	global_uniform_binding.descriptorType = vk::DescriptorType::eUniformBuffer;
-	global_uniform_binding.descriptorCount = 1u;
-	global_uniform_binding.binding = 0u;
-	global_uniform_binding.stageFlags = vk::ShaderStageFlagBits::eAllGraphics | vk::ShaderStageFlagBits::eCompute;
-
-	// Bindles textures
-	auto& global_textures_binding = set_layout_ci.layoutBindings.emplace_back();
-	global_textures_binding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-	global_textures_binding.descriptorCount = k_max_bindless_resources;
-	global_textures_binding.binding = 1u;
-	global_textures_binding.stageFlags = vk::ShaderStageFlagBits::eAllGraphics;
-	global_textures_binding.pImmutableSamplers = nullptr;
-
-	// Descriptor binding extension
-	std::vector<vk::DescriptorBindingFlags> bindingFlags{};
-	bindingFlags.emplace_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
-	bindingFlags.emplace_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eVariableDescriptorCount | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
-
-	vk::DescriptorSetLayoutBindingFlagsCreateInfoEXT descriptorSetLayoutBindingFlagsCIEXT{};
-	descriptorSetLayoutBindingFlagsCIEXT.bindingCount = static_cast<uint32_t>(bindingFlags.size());
-	descriptorSetLayoutBindingFlagsCIEXT.pBindingFlags = bindingFlags.data();
-
-	set_layout_ci.next = &descriptorSetLayoutBindingFlagsCIEXT;
-
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	set_layout_ci.name = "bindless_textures";
-#endif
-
-	m_pDevice->createDescriptorSetLayout(set_layout_ci, m_globalDescriptor.deecriptorSetLayout);
-
-	// Create descriptor set
-	FVkDescriptorSetCreateInfo set_ci{};
-	set_ci.descriptorCount = swapchain.framesInFlight;
-	set_ci.layout = m_globalDescriptor.deecriptorSetLayout;
-	set_ci.pool = m_globalDescriptor.descriptorPool.handle;
-
-	// TODO: Potential problems here in future. I think that max_sets array is incorrect
-	std::vector<uint32_t> max_sets(swapchain.framesInFlight, k_max_bindless_resources - 1);
-	vk::DescriptorSetVariableDescriptorCountAllocateInfoEXT descriptor_set_variable_descriptor_count_AIEXT{};
-	descriptor_set_variable_descriptor_count_AIEXT.descriptorSetCount = swapchain.framesInFlight;
-	descriptor_set_variable_descriptor_count_AIEXT.pDescriptorCounts = max_sets.data();
-	set_ci.next = &descriptor_set_variable_descriptor_count_AIEXT;
-
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	set_ci.name = "bindless_textures";
-#endif
-
-	m_pDevice->createDescriptorSet(set_ci, m_globalDescriptor.descriptorSet);
-}
-
-void CVkRenderContext::updateGlobalDescriptorData()
-{
-	auto& swapchain = m_pDevice->getSwapchain();
-
-	auto& texture_queue = m_textureToUpdate[swapchain.currentFrame];
-	if (texture_queue.empty())
-		return;
-
-	std::vector<vk::DescriptorImageInfo> image_descriptors{};
-	std::vector<vk::DescriptorBufferInfo> buffer_descriptors{};
-	std::vector<vk::WriteDescriptorSet> write_descriptor_sets{};
-	while (!texture_queue.empty())
-	{
-		auto texture_id = texture_queue.front();
-		auto& texture = m_pResources->get<FVkTexture>(texture_id);
-
-		auto& image_descriptor = image_descriptors.emplace_back();
-		image_descriptor.imageView = texture->imageViews.front();
-		image_descriptor.sampler = texture->sampler;
-		image_descriptor.imageLayout = texture->layout;
-
-		auto& writeDescriptorSet = write_descriptor_sets.emplace_back();
-		writeDescriptorSet.dstArrayElement = texture_id;
-		writeDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-		writeDescriptorSet.dstSet = m_globalDescriptor.descriptorSet.handles.at(swapchain.currentFrame);
-		writeDescriptorSet.dstBinding = 1u;
-		writeDescriptorSet.descriptorCount = 1u;
-		writeDescriptorSet.pImageInfo = &image_descriptor;
-
-		texture_queue.pop();
-	}
-
-	// TODO: add here buffer update too
-
-	// Update descriptor sets if needed
-	if (!write_descriptor_sets.empty())
-	{
-		auto& logical = m_pDevice->getLogicalDevice();
-		logical.updateDescriptorSets(static_cast<uint32_t>(write_descriptor_sets.size()), write_descriptor_sets.data(), 0, nullptr);
-	}
 }
 
 void CVkRenderContext::processResourceUpload()
@@ -1816,7 +1865,8 @@ FRenderApiErrorInfo CVkRenderContext::createShaderResources(const FVkShaderResou
 	layout_ci.name = resources_info.name;
 #endif
 
-	// TODO: add global set layout here
+	// NOTE: adding global descriptor set layout
+	layout_ci.descriptorSetLayouts.emplace_back(m_globalDescriptor.deecriptorSetLayout);
 
 	// Send descriptor set layouts to create info
 	for (const auto& [set, descriptor_set_layout] : shader.descriptorSetLayouts)
@@ -1866,6 +1916,10 @@ void CVkRenderContext::destroyShader(FVkShader& shader)
 void CVkRenderContext::bindShaderDescriptors(const FVkCommandBuffer& command_buffer, const FVkShader& shader)
 {
 	std::vector<vk::DescriptorSet> bindDescriptorSets{};
+
+	// NOTE: bind global descriptor set
+	auto& swapchain = m_pDevice->getSwapchain();
+	bindDescriptorSets.emplace_back(m_globalDescriptor.descriptorSet.handles.at(swapchain.currentFrame));
 
 	// NOTE: shader.descriptorUsage contains next index of descriptor set to use. 
 	// Here i collecting all shader descriptor sets, that was changed in past

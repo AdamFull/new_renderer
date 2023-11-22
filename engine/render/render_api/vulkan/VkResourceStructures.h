@@ -502,6 +502,7 @@ namespace engine
 				FVkDescriptorPool descriptorPool{};
 				vk::DescriptorSetLayout deecriptorSetLayout{};
 				FVkDescriptorSet descriptorSet{};
+				std::unordered_map<size_t, size_t> uniformBuffers{};
 			};
 		}
 	}
