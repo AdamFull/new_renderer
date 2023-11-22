@@ -5,6 +5,12 @@
 
 using namespace engine::render;
 
+struct FTestInfo
+{
+	glm::vec3 color;
+	glm::vec3 mul{};
+};
+
 CVisibilityBufferRenderingStep::CVisibilityBufferRenderingStep(IRenderInterface* render_interface, IRenderContext* render_context)
 {
 	m_pRenderInterface = render_interface;
@@ -77,14 +83,14 @@ void CVisibilityBufferRenderingStep::execute(float dt)
 		{
 			auto& node = render_packet->nodes.at(batch.node);
 
-			auto& ubo = m_pShader->getUniformBlock("UBOMeshData");
+			auto& ubo = m_pShader->getUniformBlock("UniformMeshData");
 			ubo->set("model", node.model);
 			ubo->set("view", render_packet->camera.view);
 			ubo->set("projection", render_packet->camera.projection);
 
 			if (batch.skin >= 0)
 			{
-				auto& joints = m_pShader->getUniformBlock("SkinningData");
+				auto& joints = m_pShader->getUniformBlock("UniformJoints");
 				auto& matrices = render_packet->skins.at(batch.skin);
 				joints->set("matrices", matrices);
 			}
