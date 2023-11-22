@@ -62,6 +62,7 @@ void CShaderObject::flushDescriptors()
 	FShaderResourceCommit update_data{};
 	update_data.shaderId = m_shaderId;
 	update_data.textures = m_bindTextures;
+	update_data.buffers = m_bindBuffers;
 
 	// Collect uniform buffers and storage buffers
 	for (auto& [id, block] : m_uniformBlocks)
