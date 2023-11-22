@@ -69,6 +69,8 @@ void CCameraSystem::__update(float fDt)
 				render_packet->camera.forward = camera.forward;
 				render_packet->camera.right = camera.right;
 				render_packet->camera.up = camera.up;
+				render_packet->camera.viewProjection = render_packet->camera.projection * render_packet->camera.view;
+				render_packet->camera.invViewProjection = glm::inverse(render_packet->camera.viewProjection);
 
 				camera.moved = false;
 			}
