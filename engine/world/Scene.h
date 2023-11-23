@@ -15,7 +15,7 @@ namespace engine
 
 		struct FSceneLoadedResources
 		{
-			std::unordered_map<size_t, size_t> vertexHandlers{};
+			std::unordered_map<size_t, std::vector<size_t>> vertexHandlers{};
 
 			std::vector<size_t> textures{};
 			size_t lastTexture{ 0ull };

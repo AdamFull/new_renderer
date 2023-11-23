@@ -17,6 +17,15 @@ using namespace engine::world;
 using namespace engine::world::ecs;
 using namespace engine::filesystem;
 
+template<class _Ty>
+bool check_overflow(_Ty a, _Ty b)
+{
+	if constexpr (std::is_unsigned<_Ty>::value)
+		return a > (std::numeric_limits<_Ty>::max)() - b;
+	
+	return (b > static_cast<_Ty>(0) && a > (std::numeric_limits<_Ty>::max)() - b) || (b < static_cast<_Ty>(0) && a < (std::numeric_limits<_Ty>::min)() - b);
+}
+
 size_t get_size_by_type(int32_t component_type, const std::string& type)
 {
 	size_t size{ 0ull };
@@ -188,10 +197,13 @@ void CScene::load(const std::string& path)
 	void loadAnimations();
 	void loadSkins();
 
-	for (const auto& [hash, id] : m_resources.vertexHandlers)
+	for (const auto& [hash, handler_ids] : m_resources.vertexHandlers)
 	{
-		auto& handler = m_pRenderInterface->getVertexHandler(id);
-		handler->allocate();
+		for (const auto& id : handler_ids)
+		{
+			auto& handler = m_pRenderInterface->getVertexHandler(id);
+			handler->allocate();
+		}
 	}
 
 	for (auto& system : m_systems)
@@ -207,12 +219,16 @@ void CScene::update(float dt)
 void CScene::loadTextures()
 {
 	auto& gltf = m_pScene->getGltf();
-
+	
 	for (const auto& texture : gltf.textures)
 	{
-		auto& image = gltf.images.at(texture.source);
+		int32_t texture_source{ texture.source };
+		if (texture.source < 0)
+			texture_source = texture.khrTextureBasisU.source;
+	
+		auto& image = gltf.images.at(texture_source);
 		auto& sampler = gltf.images.at(texture.sampler);
-
+	
 		// TODO: add ability to override format and sampler params
 		// TODO: find format from materials
 		auto image_path = m_pScene->getResourcePath(image.uri);
@@ -411,12 +427,34 @@ void CScene::loadMeshComponent(const entt::entity parent, uint32_t node_index)
 
 		// Get or create vertex buffer
 		render::IVertexHandler* vertex_handler{nullptr};
+		size_t current_handler_id{ ~0ull };
+
 		if (auto found = m_resources.vertexHandlers.find(attributes_hash); found != m_resources.vertexHandlers.end())
 		{
-			auto& handler = m_pRenderInterface->getVertexHandler(found->second);
-			vertex_handler = handler.get();
+			for (const auto& handler_id : found->second)
+			{
+				auto& handler = m_pRenderInterface->getVertexHandler(handler_id);
+
+				auto cur_vertex_count = handler->getLastVertex();
+				auto new_vertex_count = attributes.front().count;
+
+				bool is_overflow{ false };
+				switch (indices.stride)
+				{
+				case 4ull: is_overflow = check_overflow(static_cast<uint32_t>(cur_vertex_count), static_cast<uint32_t>(new_vertex_count)); break;
+				case 2ull: is_overflow = check_overflow(static_cast<uint16_t>(cur_vertex_count), static_cast<uint16_t>(new_vertex_count)); break;
+				case 1ull: is_overflow = check_overflow(static_cast<uint8_t>(cur_vertex_count), static_cast<uint8_t>(new_vertex_count)); break;
+				}
+
+				if (!is_overflow)
+				{
+					vertex_handler = handler.get();
+					current_handler_id = handler_id;
+				}
+			}
 		}
-		else
+
+		if(!vertex_handler)
 		{
 			render::FVertexHandlerCreateInfo handler_ci{};
 			handler_ci.indexSize = indices.stride;
@@ -429,17 +467,20 @@ void CScene::loadMeshComponent(const entt::entity parent, uint32_t node_index)
 				desc.size = attrib.stride;
 			}
 
-			auto handler_name = std::format("{}_{}", mesh.name, attributes_hash);
+			auto& handlers = m_resources.vertexHandlers[attributes_hash];
+
+			auto handler_name = std::format("{}_{}_{}", mesh.name, attributes_hash, handlers.size());
 			auto handler_id = m_pRenderInterface->createVertexHandler(handler_name, handler_ci);
-			m_resources.vertexHandlers[attributes_hash] = handler_id;
+			handlers.emplace_back(handler_id);
 
 			auto& handler = m_pRenderInterface->getVertexHandler(handler_id);
 			vertex_handler = handler.get();
+			current_handler_id = handler_id;
 		}
 
 		// Create mesh primitive
 		FMeshPrimitive mesh_primitive{};
-		mesh_primitive.vboId = m_resources.vertexHandlers[attributes_hash];
+		mesh_primitive.vboId = current_handler_id;
 		mesh_primitive.setDimensions(pos_min, pos_max);
 
 		mesh_primitive.lods[0].beginVertex = vertex_handler->getLastVertex();
@@ -451,7 +492,7 @@ void CScene::loadMeshComponent(const entt::entity parent, uint32_t node_index)
 		if (primitive.material >= 0)
 		{
 			mesh_primitive.materialId = primitive.material;
-
+		
 			auto& material_ci = m_temporary.materialCis.at(primitive.material);
 			for (const auto& attribute : attributes)
 			{
