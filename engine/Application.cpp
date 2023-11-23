@@ -13,6 +13,7 @@
 
 #include <interface/SharedStructure.h>
 
+#include <profiler/Profiler.h>
 
 using namespace engine;
 using namespace engine::render;
@@ -51,10 +52,8 @@ void CApplication::create()
 	m_pRenderInterface->create(rhi_ci);
 
 	m_pScene = std::make_unique<world::CScene>(m_pVirtualFileSystem.get(), m_pRenderInterface.get());
-	m_pScene->load("/root/reflections/reflections.gltf");
-
-	// TODO: incorrect stb image loading. I guess it requires to generate copy info
-	auto ttt = m_pRenderInterface->createTexture("/root/cavern-deposits_albedo.ktx2");
+	//m_pScene->load("/root/reflections/reflections.gltf");
+	m_pScene->load("/root/sponza/sponza.gltf");
 }
 
 void CApplication::loop()
@@ -81,6 +80,8 @@ void CApplication::loop()
 		m_pScene->update(dt);
 		// TODO: render thread should signal game thread about finish rendering
 		m_pRenderInterface->render(dt);
+
+		TRACY_PROFILE_FRAMEMARKER();
 
 		dt = sw.stop<float>();
 	}
