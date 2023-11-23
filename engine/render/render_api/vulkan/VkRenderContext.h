@@ -23,6 +23,7 @@ namespace engine
 
 
 				size_t createTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) override;
+				size_t getTextureId(const std::string& name) override;
 				size_t createRenderTarget(const std::string& name, const FTextureCreateInfo& texture_ci);
 				size_t createRenderTargets(const std::string& name, const FTextureCreateInfo& texture_ci) override;
 				void destroyTexture(size_t resource_id) override;

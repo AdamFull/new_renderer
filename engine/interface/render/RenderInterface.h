@@ -196,6 +196,7 @@ namespace engine
 			virtual void updateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view) = 0;
 
 			virtual size_t createTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) = 0;
+			virtual size_t getTextureId(const std::string& name) = 0;
 			virtual size_t createRenderTargets(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
 			virtual void destroyTexture(size_t resource_id) = 0;
 

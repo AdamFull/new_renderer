@@ -209,6 +209,10 @@ size_t CRenderInterface::createTexture(const std::string& path)
 	auto ext_hash = utl::const_hash(ext.c_str(), ext.size());
 	auto mime = static_cast<EMimeType>(ext_hash);
 
+	size_t texture_id = m_pRenderContext->getTextureId(name);
+	if (texture_id != ~0ull)
+		return texture_id;
+
 	std::vector<uint8_t> data{};
 	m_pVFS->readFile(path, data);
 

@@ -12,7 +12,9 @@ using namespace engine;
 using namespace engine::render;
 using namespace engine::render::vulkan;
 
-static const uint32_t k_max_bindless_resources = 16536;
+static const uint32_t k_max_bindless_resources{ 16536u };
+static const size_t k_max_texture_update_per_frame{ 64ull };
+static const size_t k_max_buffer_update_per_frame{ 64ull };
 
 template<class _Ty, class ..._Args>
 std::string create_object_unique_name(const char* fmt, const _Ty& handle, _Args&&... args)
@@ -186,17 +188,23 @@ void CVkRenderContext::updateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 
 	auto& dest_set = m_globalDescriptor.descriptorSet.handles.at(swapchain.currentFrame);
 
-	std::vector<vk::DescriptorImageInfo> image_descriptors{};
-	std::vector<vk::DescriptorBufferInfo> buffer_descriptors{};
+	std::array<vk::DescriptorImageInfo, k_max_texture_update_per_frame> image_descriptors{};
+	std::array<vk::DescriptorBufferInfo, k_max_buffer_update_per_frame> buffer_descriptors{};
 	std::vector<vk::WriteDescriptorSet> write_descriptor_sets{};
+
+	size_t texture_count{ 0ull };
+	size_t buffer_count{ 0ull };
 
 	auto& texture_queue = m_textureToUpdate[swapchain.currentFrame];
 	while (!texture_queue.empty())
 	{
+		if (texture_count >= k_max_texture_update_per_frame)
+			break;
+
 		auto texture_id = texture_queue.front();
 		auto& texture = m_pResources->get<FVkTexture>(texture_id);
 
-		auto& image_descriptor = image_descriptors.emplace_back();
+		auto& image_descriptor = image_descriptors.at(texture_count);
 		image_descriptor.imageView = texture->imageViews.front();
 		image_descriptor.sampler = texture->sampler;
 		image_descriptor.imageLayout = texture->layout;
@@ -210,6 +218,7 @@ void CVkRenderContext::updateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 		write_descriptor_set.pImageInfo = &image_descriptor;
 
 		texture_queue.pop();
+		texture_count++;
 	}
 
 	// Bind and update global uniform
@@ -222,7 +231,7 @@ void CVkRenderContext::updateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 		auto& buffer = m_pResources->get<FVkBuffer>(found_buffer->second);
 		auto element_size = buffer->size / buffer->instanceCount;
 
-		auto& buffer_descriptor = buffer_descriptors.emplace_back();
+		auto& buffer_descriptor = buffer_descriptors.at(buffer_count);
 		buffer_descriptor.buffer = buffer->handle;
 		buffer_descriptor.range = element_size;
 		buffer_descriptor.offset = swapchain.currentFrame * element_size;
@@ -238,6 +247,7 @@ void CVkRenderContext::updateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 		m_pDevice->mapBufferMemory(*buffer, &mapped_memory);
 		std::memcpy((char*)mapped_memory + buffer_descriptor.offset, uniform_data.data, uniform_data.size);
 		m_pDevice->unmapBufferMemory(*buffer);
+		buffer_count++;
 	}
 
 	// Update descriptor sets if needed
@@ -275,6 +285,11 @@ size_t CVkRenderContext::createTexture(const std::string& name, const FTextureCr
 	}
 
 	return upload_data.textureId;
+}
+
+size_t CVkRenderContext::getTextureId(const std::string& name)
+{
+	return m_pResources->getId<FVkTexture>(name.c_str());
 }
 
 size_t CVkRenderContext::createRenderTarget(const std::string& name, const FTextureCreateInfo& texture_ci)
@@ -509,7 +524,7 @@ size_t CVkRenderContext::createShader(const std::string& name, const FComputeSha
 	for (const auto& handle : shader->handles)
 		ss << ":" << std::hex << reinterpret_cast<uint64_t>(static_cast<vk::Pipeline::CType>(handle));
 
-	auto shader_unique_name = ss.str()
+	auto shader_unique_name = ss.str();
 	return m_pResources->add<FVkShader>(shader_unique_name.c_str(), std::move(shader));
 }
 
@@ -1478,6 +1493,8 @@ void CVkRenderContext::processResourceUpload()
 			texture_upload.data.clear();
 		}
 
+		//std::unordered_map<size_t, size_t> image_counter{};
+
 		// Translate all images to transfer dst stage
 		std::vector<size_t> generate_mip_textures{};
 		FVkTranslationInfo translation_info{};
@@ -1495,6 +1512,9 @@ void CVkRenderContext::processResourceUpload()
 
 			if (texture->initialData.base.mipLevels > 1u && texture_upload.mipLayerOffsets.empty())
 				generate_mip_textures.emplace_back(texture_upload.textureId);
+
+			//auto id = reinterpret_cast<uint64_t>(static_cast<vk::Image::CType>(texture->image.handle));
+			//image_counter[id]++;
 		}
 
 		processMemoryBarriers(command_buffer, translation_info);
