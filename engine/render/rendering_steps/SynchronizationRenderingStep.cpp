@@ -1,5 +1,7 @@
 #include "SynchronizationRenderingStep.h"
 
+#include <profiler/Profiler.h>
+
 using namespace engine::render;
 
 CSynchronizationRenderingStep::CSynchronizationRenderingStep(IRenderInterface* render_interface, IRenderContext* render_context)

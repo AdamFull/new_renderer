@@ -8,6 +8,8 @@
 
 #include <world/SceneGraph.h>
 
+#include <profiler/Profiler.h>
+
 using namespace engine::world::ecs;
 
 CScenegraphSystem::CScenegraphSystem(CSceneGraph* scenegraph)
@@ -17,11 +19,13 @@ CScenegraphSystem::CScenegraphSystem(CSceneGraph* scenegraph)
 
 void CScenegraphSystem::__create()
 {
-
+	TRACY_PROFILE_FUNCTION();
 }
 
 void CScenegraphSystem::__update(float fDt)
 {
+	TRACY_PROFILE_FUNCTION();
+
 	auto& registry = m_pSceneGraph->getRegistry();
 	auto root = m_pSceneGraph->getRoot();
 	if (!registry->valid(root))

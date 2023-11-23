@@ -5,6 +5,11 @@
 
 #include <format>
 
+namespace tracy
+{
+	class VkCtx;
+}
+
 namespace engine
 {
 	namespace render
@@ -168,6 +173,8 @@ namespace engine
 
 				void cleanupSwapchain();
 
+				void initProfiler();
+
 				template<class _Ty>
 				_Ty& requestExtensionFeatures()
 				{
@@ -218,6 +225,11 @@ namespace engine
 				FSwapchain swapchain{};
 
 				std::unordered_map<uint32_t, std::unordered_map<std::thread::id, FVkCommandPool>> commandPools{};
+
+#ifdef ENABLE_TRACY_PROFILING
+				std::vector<tracy::VkCtx*> m_tracyContext;
+				tracy::VkCtx* m_presentTracyContext;
+#endif
 			};
 		}
 	}

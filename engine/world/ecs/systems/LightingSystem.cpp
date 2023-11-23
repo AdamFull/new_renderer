@@ -8,6 +8,8 @@
 #include <world/ecs/components/PointLightComponent.h>
 #include <world/ecs/components/SpotLightComponent.h>
 
+#include <profiler/Profiler.h>
+
 using namespace engine;
 using namespace engine::render;
 using namespace engine::world::ecs;
@@ -20,11 +22,13 @@ CLightingSystem::CLightingSystem(CSceneGraph* scenegraph, IRenderInterface* rend
 
 void CLightingSystem::__create()
 {
-
+	TRACY_PROFILE_FUNCTION();
 }
 
 void CLightingSystem::__update(float fDt)
 {
+	TRACY_PROFILE_FUNCTION();
+
 	auto& registry = m_pSceneGraph->getRegistry();
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
 	

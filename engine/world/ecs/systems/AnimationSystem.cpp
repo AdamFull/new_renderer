@@ -3,6 +3,8 @@
 #include <world/ecs/components/components.h>
 #include <world/SceneGraph.h>
 
+#include <profiler/Profiler.h>
+
 using namespace engine::world::ecs;
 
 glm::quat q_linear(const std::vector<glm::vec4>& positions, uint32_t index, const float interp)
@@ -102,11 +104,13 @@ CAnimationSystem::CAnimationSystem(CSceneGraph* scenegraph)
 
 void CAnimationSystem::__create()
 {
-
+	TRACY_PROFILE_FUNCTION();
 }
 
 void CAnimationSystem::__update(float fDt)
 {
+	TRACY_PROFILE_FUNCTION();
+
 	auto& registry = m_pSceneGraph->getRegistry();
 	auto root = m_pSceneGraph->getRoot();
 

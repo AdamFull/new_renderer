@@ -13,6 +13,8 @@
 #include <logger/logger.h>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <profiler/Profiler.h>
+
 using namespace engine::world;
 using namespace engine::world::ecs;
 using namespace engine::filesystem;
@@ -212,6 +214,10 @@ void CScene::load(const std::string& path)
 
 void CScene::update(float dt)
 {
+	TRACY_PROFILE_FUNCTION();
+
+	TRACY_PROFILE_SCOPE("Scene update")
+
 	for (auto& system : m_systems)
 		system->update(dt);
 }

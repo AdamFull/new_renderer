@@ -7,6 +7,8 @@
 #include <world/ecs/components/RootComponent.h>
 #include <world/ecs/components/TransformComponent.h>
 
+#include <profiler/Profiler.h>
+
 using namespace engine::render;
 using namespace engine::world::ecs;
 
@@ -18,11 +20,13 @@ CMeshSystem::CMeshSystem(CSceneGraph* scenegraph, render::IRenderInterface* rend
 
 void CMeshSystem::__create()
 {
-
+	TRACY_PROFILE_FUNCTION();
 }
 
 void CMeshSystem::__update(float fDt)
 {
+	TRACY_PROFILE_FUNCTION();
+
 	auto& registry = m_pSceneGraph->getRegistry();
 	auto root = m_pSceneGraph->getRoot();
 	auto& root_component = m_pSceneGraph->getComponent<FRootComponent>(root);

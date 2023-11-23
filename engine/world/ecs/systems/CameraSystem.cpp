@@ -6,6 +6,8 @@
 #include <world/ecs/components/CameraComponent.h>
 #include <world/ecs/components/TransformComponent.h>
 
+#include <profiler/Profiler.h>
+
 using namespace engine::render;
 using namespace engine::world::ecs;
 
@@ -17,11 +19,13 @@ CCameraSystem::CCameraSystem(CSceneGraph* scenegraph, IRenderInterface* render_i
 
 void CCameraSystem::__create()
 {
-
+	TRACY_PROFILE_FUNCTION();
 }
 
 void CCameraSystem::__update(float fDt)
 {
+	TRACY_PROFILE_FUNCTION();
+
 	auto& registry = m_pSceneGraph->getRegistry();
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
 	auto* render_context = m_pRenderInterface->getRenderContext();

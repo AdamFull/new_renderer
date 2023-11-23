@@ -9,6 +9,8 @@
 #include <world/ecs/components/SpotLightComponent.h>
 #include <world/ecs/components/MeshComponent.h>
 
+#include <profiler/Profiler.h>
+
 using namespace engine::render;
 using namespace engine::world::ecs;
 
@@ -53,11 +55,13 @@ CShadowsSystem::CShadowsSystem(CSceneGraph* scenegraph, IRenderInterface* render
 
 void CShadowsSystem::__create()
 {
-
+	TRACY_PROFILE_FUNCTION();
 }
 
 void CShadowsSystem::__update(float fDt)
 {
+	TRACY_PROFILE_FUNCTION();
+
 	auto& registry = m_pSceneGraph->getRegistry();
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
 

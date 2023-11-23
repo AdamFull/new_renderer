@@ -1,5 +1,7 @@
 #include "RenderScriptRenderingStep.h"
 
+#include <profiler/Profiler.h>
+
 using namespace engine::render;
 
 CRenderScriptRenderingStep::CRenderScriptRenderingStep(IRenderInterface* render_interface, IRenderContext* render_context)

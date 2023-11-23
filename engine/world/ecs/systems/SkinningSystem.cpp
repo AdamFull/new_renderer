@@ -8,6 +8,8 @@
 #include <world/ecs/components/RootComponent.h>
 #include <world/ecs/components/TransformComponent.h>
 
+#include <profiler/Profiler.h>
+
 using namespace engine::world::ecs;
 
 void debug_draw_skeleton(entt::registry* registry, entt::entity node, glm::mat4 parent_matrix = glm::mat4(1.f))
@@ -38,11 +40,13 @@ CSkinningSystem::CSkinningSystem(CSceneGraph* scenegraph)
 
 void CSkinningSystem::__create()
 {
-
+	TRACY_PROFILE_FUNCTION();
 }
 
 void CSkinningSystem::__update(float fDt)
 {
+	TRACY_PROFILE_FUNCTION();
+
 	auto& registry = m_pSceneGraph->getRegistry();
 	auto root = m_pSceneGraph->getRoot();
 	auto& root_component = m_pSceneGraph->getComponent<FRootComponent>(root);

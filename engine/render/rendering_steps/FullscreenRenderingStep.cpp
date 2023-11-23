@@ -5,6 +5,8 @@
 
 #include <glm/glm.hpp>
 
+#include <profiler/Profiler.h>
+
 using namespace engine::render;
 
 CFullscreenRenderingStep::CFullscreenRenderingStep(IRenderInterface* render_interface, IRenderContext* render_context)
@@ -15,6 +17,8 @@ CFullscreenRenderingStep::CFullscreenRenderingStep(IRenderInterface* render_inte
 
 void CFullscreenRenderingStep::create(const FRenderingStepCreateInfo& create_info)
 {
+	TRACY_PROFILE_FUNCTION();
+
 	auto& rendering_ci = create_info.rendering;
 
 	if (rendering_ci.shaderName.empty())
@@ -54,6 +58,8 @@ void CFullscreenRenderingStep::create(const FRenderingStepCreateInfo& create_inf
 
 void CFullscreenRenderingStep::execute(float dt)
 {
+	TRACY_PROFILE_FUNCTION();
+
 	auto render_resolution = m_pRenderContext->getRenderResolution();
 
 	m_beginRenderingInfo.renderArea.offset.x = 0;

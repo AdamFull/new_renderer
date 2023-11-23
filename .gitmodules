@@ -25,3 +25,6 @@
 [submodule "libraries/meshoptimizer"]
 	path = libraries/meshoptimizer
 	url = https://github.com/zeux/meshoptimizer.git
+[submodule "libraries/tracy"]
+	path = libraries/tracy
+	url = https://github.com/wolfpld/tracy.git

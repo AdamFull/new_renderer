@@ -5,6 +5,8 @@
 
 #include <unordered_set>
 
+#include <profiler/Profiler.h>
+
 using namespace engine::render;
 
 std::string attr_type_to_definition(EVertexAttributeType type)
@@ -28,6 +30,8 @@ CVisibilityBufferRenderingStep::CVisibilityBufferRenderingStep(IRenderInterface*
 
 void CVisibilityBufferRenderingStep::create(const FRenderingStepCreateInfo& create_info)
 {
+	TRACY_PROFILE_FUNCTION();
+
 	auto& rendering_ci = create_info.rendering;
 
 	// Save rendering info
@@ -46,6 +50,8 @@ void CVisibilityBufferRenderingStep::create(const FRenderingStepCreateInfo& crea
 
 void CVisibilityBufferRenderingStep::execute(float dt)
 {
+	TRACY_PROFILE_FUNCTION();
+
 	auto render_resolution = m_pRenderContext->getRenderResolution();
 
 	m_beginRenderingInfo.renderArea.offset.x = 0;
@@ -106,10 +112,14 @@ void CVisibilityBufferRenderingStep::execute(float dt)
 
 			auto& node = render_packet->nodes.at(batch.node);
 
-			auto& ubo = shader->getUniformBlock("UniformMeshData");
-			ubo->set("model", node.model);
-			ubo->set("view", render_packet->camera.view);
-			ubo->set("projection", render_packet->camera.projection);
+			{
+				TRACY_PROFILE_SCOPE("Update UniformMeshData");
+
+				auto& ubo = shader->getUniformBlock("UniformMeshData");
+				ubo->set("model", node.model);
+				ubo->set("view", render_packet->camera.view);
+				ubo->set("projection", render_packet->camera.projection);
+			}
 
 			if (batch.skin >= 0)
 			{

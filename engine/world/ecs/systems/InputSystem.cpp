@@ -8,6 +8,8 @@
 
 #include <platform/window/WindowCallback.h>
 
+#include <profiler/Profiler.h>
+
 constexpr const float movement_scale{ 50.f };
 
 template<class _Ty>
@@ -25,6 +27,8 @@ CInputSystem::CInputSystem(CSceneGraph* scenegraph)
 
 void CInputSystem::__create()
 {
+	TRACY_PROFILE_FUNCTION();
+
 	FWindowCallbackMapper::subscribeKeyInput(this, &CInputSystem::keyInput);
 	FWindowCallbackMapper::subscribeMousePosition(this, &CInputSystem::mouseMovementInput);
 	FWindowCallbackMapper::subscribeMouseScroll(this, &CInputSystem::mouseWheelInput);
@@ -33,6 +37,8 @@ void CInputSystem::__create()
 
 void CInputSystem::__update(float fDt)
 {
+	TRACY_PROFILE_FUNCTION();
+
 	m_deltaTime = fDt;
 
 	if (m_keyDecoder.test(EKeyCode::eKeyW)) movF = 1.f;

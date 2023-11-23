@@ -8,6 +8,9 @@
 
 #include <vulkan/vulkan.hpp>
 
+#define PROFILE_VULKAN
+#include <profiler/Profiler.h>
+
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 using namespace engine::render;
@@ -106,6 +109,12 @@ CVkRenderDevice::~CVkRenderDevice()
 		delete allocationCallbacks;
 		allocationCallbacks = nullptr;
 	}
+
+#if defined(BUILD_WITHOUT_DEBUGGIND) && defined(ENABLE_TRACY_PROFILING)
+	for (auto& context : m_tracyContext)
+		TracyVkDestroy(context);
+	TracyVkDestroy(m_presentTracyContext);
+#endif
 }
 
 void CVkRenderDevice::create(const FRenderContextCreateInfo& context_ci)
@@ -132,6 +141,8 @@ void CVkRenderDevice::create(const FRenderContextCreateInfo& context_ci)
 
 	check_api_result(createPipelineCache(context_ci));
 	check_api_result(createSwapchain(context_ci.initialWidth, context_ci.initialHeight));
+
+	initProfiler();
 }
 
 FRenderApiErrorInfo CVkRenderDevice::createCommandPool(const FVkCommandPoolCreateInfo& command_pool_ci, FVkCommandPool& command_pool)
@@ -327,7 +338,7 @@ void CVkRenderDevice::destroySampler(vk::Sampler& sampler)
 FRenderApiErrorInfo CVkRenderDevice::createBuffer(const FVkBufferCreateInfo& buffer_ci, FVkBuffer& buffer)
 {
 	auto alligned_instance_size = get_alligned_instance_size(buffer_ci.instanceSize, buffer_ci.minOffsetAlignment);
-
+	
 	vk::BufferCreateInfo ci{};
 	buffer.instanceCount = buffer_ci.instanceCount;
 	buffer.size = ci.size = alligned_instance_size * buffer_ci.instanceCount;
@@ -731,6 +742,9 @@ vk::Result CVkRenderDevice::acquireNextImage(uint32_t& image_index)
 void CVkRenderDevice::debugBeginLabel(vk::CommandBuffer& command_buffer, const std::string& name, uint32_t color)
 {
 #ifndef BUILD_WITHOUT_DEBUGGIND
+#ifdef ENABLE_TRACY_PROFILING
+	TracyVkZone(m_tracyContext.at(swapchain.currentFrame), command_buffer, name.c_str());
+#endif
 	command_buffer.beginDebugUtilsLabelEXT(make_debug_label(name.c_str(), color));
 #endif
 }
@@ -1446,4 +1460,30 @@ void CVkRenderDevice::cleanupSwapchain()
 		logicalDevice.handle.destroySemaphore(swapchain.imageAvaliableSemaphores.at(idx), allocationCallbacks);
 		logicalDevice.handle.destroySemaphore(swapchain.renderFinishedSemaphores.at(idx), allocationCallbacks);
 	}
+}
+
+void CVkRenderDevice::initProfiler()
+{
+#if defined(BUILD_WITHOUT_DEBUGGIND) && defined(ENABLE_TRACY_PROFILING)
+	FVkCommandBufferCreateInfo command_buffer_ci{};
+	command_buffer_ci.level = vk::CommandBufferLevel::ePrimary;
+	command_buffer_ci.count = 1u;
+
+	FVkCommandBuffer tracy_cmd_buffer{};
+	createCommandBuffer(command_buffer_ci, tracy_cmd_buffer);
+
+	auto& physical_device = getPhysicalDevice();
+	
+	auto& graphics = logicalDevice.queues[QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT];
+	auto& present = logicalDevice.queues[QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT];
+		
+	m_tracyContext.resize(swapchain.framesInFlight);
+	for (uint32_t idx = 0u; idx < swapchain.framesInFlight; ++idx)
+		m_tracyContext[idx] = TracyVkContext(physical_device.handle, logicalDevice.handle, graphics, tracy_cmd_buffer.handles.back());
+
+	m_presentTracyContext = TracyVkContext(physical_device.handle, logicalDevice.handle, present, tracy_cmd_buffer.handles.back());
+
+	graphics.waitIdle();
+	destroyCommandBuffer(tracy_cmd_buffer);
+#endif
 }

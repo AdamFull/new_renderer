@@ -26,6 +26,7 @@ target_include_directories(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
 	PUBLIC platform_specific
 	PUBLIC virtual_filesystem
+	PRIVATE engine_profiler
 	PRIVATE render_interface
 	PRIVATE script_engine
 	PRIVATE engine_world
