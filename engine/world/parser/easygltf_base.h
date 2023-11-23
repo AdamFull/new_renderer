@@ -118,9 +118,9 @@ namespace easygltf
 
 			namespace texture_wrap
 			{
-				constexpr const int32_t repeat{ 9728 };
-				constexpr const int32_t clamp_to_edge{ 9728 };
-				constexpr const int32_t mirrored_repeat{ 9728 };
+				constexpr const int32_t repeat{ 10497 };
+				constexpr const int32_t clamp_to_edge{ 33071 };
+				constexpr const int32_t mirrored_repeat{ 33648 };
 			}
 
 			namespace camera_type
