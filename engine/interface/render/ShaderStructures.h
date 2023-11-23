@@ -1,8 +1,8 @@
 #pragma once
 
 #include <string>
-#include <vector>
 #include <unordered_map>
+#include <interface/render/VertexStructures.h>
 
 namespace engine
 {
@@ -85,26 +85,6 @@ namespace engine
 		{
 			uint32_t stage{ 0u };
 			std::vector<uint32_t>* code{ nullptr };
-		};
-
-		struct FVertexDeclarationBindingDescription
-		{
-			uint32_t binding{};
-			uint32_t stride{};
-		};
-
-		struct FVertexDeclarationAttributeDescription
-		{
-			uint32_t location{};
-			uint32_t binding{};
-			uint32_t format{};
-			uint32_t offset{};
-		};
-
-		struct FVertexDeclarationInfo
-		{
-			std::vector<FVertexDeclarationBindingDescription> bindingDescriptions{};
-			std::vector<FVertexDeclarationAttributeDescription> attributeDescriptions{};
 		};
 
 		struct FGraphicsShaderCreateInfo

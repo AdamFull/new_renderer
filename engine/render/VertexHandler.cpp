@@ -37,8 +37,10 @@ void CVertexHandler::create(const FVertexHandlerCreateInfo& create_info)
 	for (const auto& desc : create_info.descriptions)
 	{
 		auto& attrib = m_declaration.attributeDescriptions.emplace_back();
+		attrib.type = desc.type;
 		attrib.binding = 0u;
 		attrib.location = static_cast<uint32_t>(desc.type);
+
 		auto format = get_attribute_format_by_type(desc.type);
 		attrib.format = m_pRenderContext->getApiFormat(format);
 		attrib.offset = m_vertexBuffer.elementSize;

@@ -14,10 +14,12 @@
 	code: 
 	"""
 		// Force early depth/stencil test
-		//layout(early_fragment_tests) in;
+		layout(early_fragment_tests) in;
 
 		layout(location = 0) in flat uint drawID;
+#ifdef HAS_TEXCOORD
 		layout(location = 1) in vec2 uv;
+#endif
 		
 		layout(location = 0) out vec4 visBuffer;
 
@@ -31,8 +33,8 @@
 		void main() 
 		{
 			uint outVBID = calculateOutputVBID(drawID, gl_PrimitiveID + 1);
-			//visBuffer = unpackUnorm4x8(outVBID);
-			visBuffer = vec4(uv, 0, 1);
+			visBuffer = unpackUnorm4x8(outVBID);
+			//visBuffer = vec4(uv, 0, 1);
 		}
 	""";
 }

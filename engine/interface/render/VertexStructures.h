@@ -53,6 +53,28 @@ namespace engine
 			std::string name{};
 		};
 
+
+		struct FVertexDeclarationBindingDescription
+		{
+			uint32_t binding{ 0u };
+			uint32_t stride{ 0u };
+		};
+
+		struct FVertexDeclarationAttributeDescription
+		{
+			EVertexAttributeType type{ EVertexAttributeType::eIndex };
+			uint32_t location{ 0u };
+			uint32_t binding{ 0u };;
+			uint32_t format{ 0u };
+			uint32_t offset{ 0u };
+		};
+
+		struct FVertexDeclarationInfo
+		{
+			std::vector<FVertexDeclarationBindingDescription> bindingDescriptions{};
+			std::vector<FVertexDeclarationAttributeDescription> attributeDescriptions{};
+		};
+
 		class IVertexHandler
 		{
 		public:
@@ -72,4 +94,42 @@ namespace engine
 			virtual const FVertexDeclarationInfo& getVertexDeclaration() const = 0;
 		};
 	}
+}
+
+
+namespace std
+{
+	template<>
+	struct hash<engine::render::FVertexDeclarationBindingDescription>
+	{
+		size_t operator()(const engine::render::FVertexDeclarationBindingDescription& desc) const
+		{
+			return hash<uint32_t>()(desc.binding) ^ (hash<uint32_t>()(desc.stride) << 1);
+		}
+	};
+
+	template<>
+	struct hash<engine::render::FVertexDeclarationAttributeDescription> {
+		size_t operator()(const engine::render::FVertexDeclarationAttributeDescription& attr) const
+		{
+			return hash<uint32_t>()(attr.location) ^
+				(hash<uint32_t>()(attr.binding) << 1) ^
+				(hash<uint32_t>()(attr.format) << 2) ^
+				(hash<uint32_t>()(attr.offset) << 3);
+		}
+	};
+
+	template<>
+	struct hash<engine::render::FVertexDeclarationInfo>
+	{
+		size_t operator()(const engine::render::FVertexDeclarationInfo& info) const
+		{
+			size_t h = 0;
+			for (const auto& desc : info.bindingDescriptions)
+				h ^= hash<engine::render::FVertexDeclarationBindingDescription>()(desc) + 0x9e3779b9 + (h << 6) + (h >> 2);
+			for (const auto& attr : info.attributeDescriptions)
+				h ^= hash<engine::render::FVertexDeclarationAttributeDescription>()(attr) + 0x9e3779b9 + (h << 6) + (h >> 2);
+			return h;
+		}
+	};
 }

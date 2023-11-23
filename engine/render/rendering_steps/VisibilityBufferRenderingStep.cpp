@@ -3,13 +3,22 @@
 #include <ShaderObject.h>
 #include <logger/logger.h>
 
+#include <unordered_set>
+
 using namespace engine::render;
 
-struct FTestInfo
+std::string attr_type_to_definition(EVertexAttributeType type)
 {
-	glm::vec3 color;
-	glm::vec3 mul{};
-};
+	switch (type)
+	{
+	case engine::render::EVertexAttributeType::eColor: return "HAS_COLOR"; break;
+	case engine::render::EVertexAttributeType::eTexCoord: return "HAS_TEXCOORD"; break;
+	case engine::render::EVertexAttributeType::eNormal: return "HAS_NORMAL"; break;
+	case engine::render::EVertexAttributeType::eTangent: return "HAS_TANGENT"; break;
+	case engine::render::EVertexAttributeType::eJoint:
+	case engine::render::EVertexAttributeType::eWeight: return "HAS_SKIN"; break;
+	}
+}
 
 CVisibilityBufferRenderingStep::CVisibilityBufferRenderingStep(IRenderInterface* render_interface, IRenderContext* render_context)
 {
@@ -21,42 +30,14 @@ void CVisibilityBufferRenderingStep::create(const FRenderingStepCreateInfo& crea
 {
 	auto& rendering_ci = create_info.rendering;
 
-	// Geometry pass with included shader
-	if (!rendering_ci.shaderName.empty())
-	{
-		// Create shader
-		FGraphicsShaderCreateInfo shader_ci{};
-		shader_ci.cullMode = rendering_ci.flipViewport ? SHADER_CULL_MODE_FRONT_BIT : SHADER_CULL_MODE_BACK_BIT;
-		shader_ci.frontFace = rendering_ci.flipViewport ? SHADER_FRONT_FACE_CW : SHADER_FRONT_FACE_CCW;
-		shader_ci.primitiveTopology = SHADER_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		shader_ci.colorAttachments = rendering_ci.renderTargets;
-		shader_ci.depthAttachment = rendering_ci.depthTarget;
-		shader_ci.stencilAttachment = rendering_ci.stencilTarget;
-		// TODO: Add attribute description
-		shader_ci.vertexDeclaration.bindingDescriptions.emplace_back(FVertexDeclarationBindingDescription{ 0u, 48u });
-		shader_ci.vertexDeclaration.attributeDescriptions.emplace_back(FVertexDeclarationAttributeDescription{ 0u, 0u, 106u, 0u });
-		shader_ci.vertexDeclaration.attributeDescriptions.emplace_back(FVertexDeclarationAttributeDescription{ 2u, 0u, 103u, 12u });
-		shader_ci.vertexDeclaration.attributeDescriptions.emplace_back(FVertexDeclarationAttributeDescription{ 3u, 0u, 106u, 20u });
-		shader_ci.vertexDeclaration.attributeDescriptions.emplace_back(FVertexDeclarationAttributeDescription{ 4u, 0u, 109u, 32u });
-
-		// TODO: if using global shader for all geometry, should get usage count from scene
-		shader_ci.usageCount = 50u;
-
-		// Make RHI shader object (more like reflection object)
-		m_pShader = std::make_unique<CShaderObject>(m_pRenderInterface, m_pRenderContext);
-		m_pShader->create(rendering_ci.shaderName, shader_ci);
-
-		// Bind default textures to shader
-		for (auto& [binding_point, texture] : rendering_ci.shaderInputs)
-			m_pShader->bindTexture(binding_point.c_str(), texture);		
-	}
-
 	// Save rendering info
 	m_beginRenderingInfo.queue = rendering_ci.queue;
 	m_beginRenderingInfo.colorAttachments = rendering_ci.renderTargets;
 	m_beginRenderingInfo.depthAttachment = rendering_ci.depthTarget;
 	m_beginRenderingInfo.stencilAttachment = rendering_ci.stencilTarget;
 	m_beginRenderingInfo.flipViewport = rendering_ci.flipViewport;
+
+	m_baseShaderName = rendering_ci.shaderName;
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	m_beginRenderingInfo.name = std::format("visbuffer:{}", rendering_ci.shaderName);
@@ -79,43 +60,81 @@ void CVisibilityBufferRenderingStep::execute(float dt)
 
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
 
-		for (auto& batch : render_packet->sceneBatches)
+	for (auto& batch : render_packet->sceneBatches)
+	{
+		auto& vbo = m_pRenderInterface->getVertexHandler(batch.vboId);
+		if (vbo)
 		{
+			auto& vertex_decl = vbo->getVertexDeclaration();
+			//auto vertex_hash = std::hash<FVertexDeclarationInfo>()(vertex_decl);
+			auto vertex_hash = 0ull;
+
+			// TODO: this code looks very ugly as i think
+			// Create shader for vertex declaration if not exists
+			auto& shader = m_shaders[vertex_hash];
+			if (!shader)
+			{
+				shader = std::make_unique<CShaderObject>(m_pRenderInterface, m_pRenderContext);
+
+				std::unordered_set<std::string> definitions{};
+				for (const auto& attrib : vertex_decl.attributeDescriptions)
+				{
+					if (attrib.type == EVertexAttributeType::ePosition)
+						continue;
+					definitions.emplace(attr_type_to_definition(attrib.type));
+				}
+
+				// Generate shader name
+				auto shader_name = m_baseShaderName;
+				for (const auto& define : definitions)
+					shader_name += ":" + define;
+
+				FGraphicsShaderCreateInfo shader_ci{};
+				shader_ci.cullMode = m_beginRenderingInfo.flipViewport ? SHADER_CULL_MODE_FRONT_BIT : SHADER_CULL_MODE_BACK_BIT;
+				shader_ci.frontFace = m_beginRenderingInfo.flipViewport ? SHADER_FRONT_FACE_CW : SHADER_FRONT_FACE_CCW;
+				shader_ci.primitiveTopology = SHADER_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+				shader_ci.colorAttachments = m_beginRenderingInfo.colorAttachments;
+				shader_ci.depthAttachment = m_beginRenderingInfo.depthAttachment;
+				shader_ci.stencilAttachment = m_beginRenderingInfo.stencilAttachment;
+
+				// TODO: i think i can calculate number of calls
+				shader_ci.usageCount = 50u;
+				shader_ci.vertexDeclaration = vertex_decl;
+
+				shader->create(shader_name, shader_ci);
+			}
+
 			auto& node = render_packet->nodes.at(batch.node);
 
-			auto& ubo = m_pShader->getUniformBlock("UniformMeshData");
+			auto& ubo = shader->getUniformBlock("UniformMeshData");
 			ubo->set("model", node.model);
 			ubo->set("view", render_packet->camera.view);
 			ubo->set("projection", render_packet->camera.projection);
 
 			if (batch.skin >= 0)
 			{
-				auto& joints = m_pShader->getUniformBlock("UniformJoints");
+				auto& joints = shader->getUniformBlock("UniformJoints");
 				auto& matrices = render_packet->skins.at(batch.skin);
 				joints->set("matrices", matrices);
 			}
 
 			// Bind vbo and flush descriptors, then bind and draw
-			m_pShader->flushDescriptors();
-			m_pShader->flushConstants(m_beginRenderingInfo.queue);
-			m_pShader->bind(m_beginRenderingInfo.queue);
+			shader->flushDescriptors();
+			shader->flushConstants(m_beginRenderingInfo.queue);
+			shader->bind(m_beginRenderingInfo.queue);
 
 			for (const auto& range : batch.ranges)
 			{
 				FGeometryDrawInfo draw_info{};
 				draw_info.range = range;
-
-				auto& vbo = m_pRenderInterface->getVertexHandler(batch.vboId);
-				if (vbo)
-				{
-					draw_info.lastIndex = vbo->getLastIndex();
-					draw_info.lastVertex = vbo->getLastVertex();
-					vbo->bind(m_beginRenderingInfo.queue);
-				}
+				draw_info.lastIndex = vbo->getLastIndex();
+				draw_info.lastVertex = vbo->getLastVertex();
+				vbo->bind(m_beginRenderingInfo.queue);
 
 				m_pRenderContext->draw(m_beginRenderingInfo.queue, draw_info);
 			}
 		}
+	}
 
 	// Here i can draw
 

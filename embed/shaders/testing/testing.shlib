@@ -41,10 +41,15 @@
 		},
 		{ 
 			shader_name: "visbufferwrite";
-			permutations: [
-				{ definitions: [] },
-				{ definitions: ["EDITOR_MODE"] }
-			];
+			permutation_generator: {
+				definitions: [
+					"HAS_COLOR",
+					"HAS_TEXCOORD",
+					"HAS_NORMAL",
+					"HAS_TANGENT",
+					"HAS_SKIN"
+				];
+			};
 		}
 	];
 }

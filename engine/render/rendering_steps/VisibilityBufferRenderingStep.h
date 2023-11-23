@@ -19,7 +19,8 @@ namespace engine
 
 		private:
 			FBeginRenderingInfo m_beginRenderingInfo{};
-			std::unique_ptr<IShaderObject> m_pShader{};
+			std::unordered_map<size_t, std::unique_ptr<IShaderObject>> m_shaders{};
+			std::string m_baseShaderName{};
 
 			IRenderInterface* m_pRenderInterface{ nullptr };
 			IRenderContext* m_pRenderContext{ nullptr };
