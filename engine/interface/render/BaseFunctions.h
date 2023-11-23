@@ -32,7 +32,7 @@ namespace engine
             };
 		}
 
-		inline void createGeometryBatches(const std::vector<FGeometryDrawData>& geometry_list, std::vector<FGeometryBatch>& batches)
+		inline void createGeometryBatches(const std::vector<FGeometryDrawData>& geometry_list, std::vector<FGeometryBatch>& batches, bool merge_drawcalls = true)
 		{
             std::unordered_map<batcher::BatchKey, FGeometryBatch, batcher::BatchKeyHash> batch_map;
 
@@ -48,20 +48,25 @@ namespace engine
                 batch.ranges.push_back(data.range);
             }
 
+            // Apply geometry batches
             for (auto& [key, batch] : batch_map)
             {
-                //std::sort(batch.ranges.begin(), batch.ranges.end(), [](const FGeometryRanges& a, const FGeometryRanges& b) { return a.beginIndex < b.beginIndex; });
-                //
-                //std::vector<FGeometryRanges> combinedRanges;
-                //for (const auto& range : batch.ranges)
-                //{
-                //    if (!combinedRanges.empty() && combinedRanges.back().beginIndex + combinedRanges.back().indexCount == range.beginIndex)
-                //        combinedRanges.back().indexCount += range.indexCount;
-                //    else
-                //        combinedRanges.push_back(range);
-                //}
-            
-                //batch.ranges = std::move(combinedRanges);
+                if (merge_drawcalls)
+                {
+                    std::sort(batch.ranges.begin(), batch.ranges.end(), [](const FGeometryRanges& a, const FGeometryRanges& b) { return a.beginIndex < b.beginIndex; });
+
+                    std::vector<FGeometryRanges> combinedRanges;
+                    for (const auto& range : batch.ranges)
+                    {
+                        if (!combinedRanges.empty() && combinedRanges.back().beginIndex + combinedRanges.back().indexCount == range.beginIndex)
+                            combinedRanges.back().indexCount += range.indexCount;
+                        else
+                            combinedRanges.push_back(range);
+                    }
+
+                    batch.ranges = std::move(combinedRanges);
+                }
+                
                 batches.emplace_back(std::move(batch));
             }
 		}
