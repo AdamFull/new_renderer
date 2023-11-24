@@ -33,8 +33,8 @@ namespace engine
 
     enum class EKeyState
     {
-        ePress = 1,
-        eRelease = 0,
+        ePress = 0,
+        eRelease,
         ePressed,
         eReleased
     };

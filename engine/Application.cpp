@@ -43,6 +43,9 @@ void CApplication::create()
 
 	m_pWindowHandle = make_platform_window(window_ci);
 
+	m_pInputMapper = std::make_unique<CInputMapper>();
+	m_pInputMapper->create();
+
 	FRenderInterfaceCreateInfo rhi_ci{};
 	rhi_ci.render_api = ERenderApi::eVulkan13;
 	m_pWindowHandle->getWindowSize(rhi_ci.initialWidth, rhi_ci.initialHeight);
@@ -76,6 +79,8 @@ void CApplication::loop()
 			m_pWindowHandle->getWindowSize(window_width, window_height);
 			m_pRenderInterface->updateSurfaceSize(window_width, window_height);
 		}
+
+		m_pInputMapper->update(dt);
 
 		m_pScene->update(dt);
 		// TODO: render thread should signal game thread about finish rendering
