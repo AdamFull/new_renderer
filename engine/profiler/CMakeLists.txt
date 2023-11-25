@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.18.0)
 project(engine_profiler)
 
-add_subdirectory("${MAIN_PROJECT_DIRECTORY_PATH}/libraries/tracy" Tracy)
+find_package(Tracy CONFIG REQUIRED)
 
 file(GLOB ENGINE_PROFILER_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 file(GLOB ENGINE_PROFILER_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
@@ -25,5 +25,5 @@ target_compile_definitions(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-	PUBLIC Tracy::TracyClient
+	PRIVATE Tracy::TracyClient
 )

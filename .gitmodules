@@ -4,6 +4,3 @@
 [submodule "libraries/pak_archive"]
 	path = libraries/pak_archive
 	url = https://github.com/AdamFull/pak_archive.git
-[submodule "libraries/tracy"]
-	path = libraries/tracy
-	url = https://github.com/wolfpld/tracy.git
