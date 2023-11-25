@@ -39,8 +39,7 @@ set_target_properties(
 
 target_include_directories(${PROJECT_NAME}
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
-    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/vma"
-    PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/Vulkan-Headers/include"
+    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/vma"
 )
 
 if(${VMA_STATIC_VULKAN_FUNCTIONS})
