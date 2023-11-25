@@ -24,7 +24,7 @@ namespace engine
 			bool loadKTX2FromMemory(const std::vector<uint8_t>& data, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info);
 			bool loadDDSFromMemory(const std::vector<uint8_t>& data, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info);
 		private:
-			std::unordered_map<int64_t, shader_compiler::FCompiledLibrary> m_shaderLibraries{};
+			shader_compiler::FShaderCacheData m_shaderCache{};
 		};
 	}
 }

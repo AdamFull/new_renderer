@@ -36,25 +36,8 @@ uint32_t get_ktx_api_specific_format(ktxTexture* This)
 
 void CResourceLoader::initialize(IVirtualFileSystemInterface* vfs)
 {
-	auto directory_iterator = vfs->walk("/root/embed/shader_libraries", true);
-	for (auto& it = directory_iterator->begin(); it != directory_iterator->end(); ++it)
-	{
-		auto& current_path = *it;
-		if (vfs->isDirectory(current_path) || fs::get_ext(current_path) != ".shc")
-			continue;
-
-		shader_compiler::FCompiledLibrary compiled_library{};
-		if (vfs->readBson(current_path, compiled_library))
-		{
-			auto library_name = fs::get_stem(current_path);
-			auto library_hash_name = utl::fnv1a_64_hash(library_name.c_str());
-
-			if (m_shaderLibraries.find(library_hash_name) != m_shaderLibraries.end())
-				log_error("Shader library \"{}\" is already loaded. Trying to load it twice. Maybe something wrong with library name?");
-
-			m_shaderLibraries.emplace(library_hash_name, compiled_library);
-		}
-	}
+	if (!vfs->readBson("/root/embed/rendering/shader_cache.shc", m_shaderCache))
+		log_error("Failed to load shader cache. ")
 }
 
 bool CResourceLoader::loadTexture(const std::vector<uint8_t>& data, EMimeType mime, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info)
@@ -87,33 +70,38 @@ bool CResourceLoader::loadTexture(const std::vector<uint8_t>& data, EMimeType mi
 
 bool CResourceLoader::loadShaderData(const FShaderUploadInfo& load_info, std::vector<FShaderCreationBlockInfo>& shader_stages)
 {
-	auto found_library = m_shaderLibraries.find(load_info.libraryId);
-	if (found_library == m_shaderLibraries.end())
+	// Looking for shader library (container with shader code and with shader modules)
+	auto found_library = m_shaderCache.libraries.find(load_info.libraryId);
+	if (found_library == m_shaderCache.libraries.end())
 		return false;
 
 	shader_compiler::FCompiledLibrary& shader_library = found_library->second;
 
+	// Looking for shader module (shader type with shader association links)
 	auto found_shader_module = shader_library.modules.find(load_info.shaderId);
 	if (found_shader_module == shader_library.modules.end())
 		return false;
 
-	std::vector<shader_compiler::FShaderModule>& shader_modules = found_shader_module->second;
-	for (auto& module : shader_modules)
-	{
-		auto pool_name = shader_compiler::get_shader_type(module.type);
+	const std::vector<shader_compiler::FShaderModule>& shader_modules = found_shader_module->second;
 
+	for (const auto& shader_module : shader_modules)
+	{
+		auto pool_name = shader_compiler::get_shader_type(shader_module.type);
 		auto found_shader_pool = shader_library.shaders.find(pool_name);
 		if (found_shader_pool == shader_library.shaders.end())
-			continue;
+		{
+			log_error("Shader pool for module named \"{}\" was not found.", load_info.shaderId);
+			return false;
+		}
 
 		auto& shader_pool = found_shader_pool->second;
 
-		auto found_shader_code = shader_pool.find(module.link);
+		auto found_shader_code = shader_pool.find(shader_module.link);
 		if (found_shader_code == shader_pool.end())
 			continue;
 
 		auto& shader_code_info = shader_stages.emplace_back();
-		shader_code_info.stage = static_cast<uint32_t>(module.type);
+		shader_code_info.stage = static_cast<uint32_t>(shader_module.type);
 		shader_code_info.code = &found_shader_code->second;
 	}
 
