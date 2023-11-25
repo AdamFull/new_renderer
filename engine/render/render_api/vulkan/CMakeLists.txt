@@ -3,9 +3,11 @@ project(vulkan_renderer)
 
 include(GenerateExportHeader)
 
-add_subdirectory("${MAIN_PROJECT_DIRECTORY_PATH}/libraries/Vulkan-Headers" Vulkan-Headers)
+find_package(VulkanHeaders CONFIG)
+find_package(spirv_cross_core CONFIG REQUIRED)
+find_package(spirv_cross_glsl CONFIG REQUIRED)
+
 add_subdirectory("${MAIN_PROJECT_DIRECTORY_PATH}/libraries/vma" vma)
-add_subdirectory("${MAIN_PROJECT_DIRECTORY_PATH}/libraries/SPIRV-Cross" SPIRV-Cross)
 
 set(VULKAN_RENDERER_DEFINITIONS 
 	"VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1"
@@ -33,13 +35,12 @@ target_include_directories(${PROJECT_NAME}
 	PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/engine"
 	PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/vma/include"
 	PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/Vulkan-Headers/include"
-	PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/SPIRV-Cross"
 	PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/tracy/public"
 )
 
 target_link_libraries(${PROJECT_NAME}
 	PRIVATE utility_lib
-	PRIVATE Vulkan-Headers
+	PRIVATE Vulkan::Headers
 	PRIVATE VulkanMemoryAllocator
 	PRIVATE spirv-cross-core
 	PRIVATE spirv-cross-glsl

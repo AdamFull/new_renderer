@@ -46,19 +46,20 @@ if(MSVC)
     add_compile_options(/bigobj)
 endif()
 
+find_package(Taskflow CONFIG REQUIRED)
+# target_link_libraries(main PRIVATE Taskflow::Taskflow)
+
 # global includes
 include_directories(
     "${CMAKE_BINARY_DIR}/exports"
-    "${CMAKE_CURRENT_SOURCE_DIR}/libraries/glm"
     "${CMAKE_CURRENT_SOURCE_DIR}/libraries/utllib"
-    "${CMAKE_CURRENT_SOURCE_DIR}/libraries/entt"
-    "${CMAKE_CURRENT_SOURCE_DIR}/libraries/tracy/public"
+    "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include"
 )
 
 add_subdirectory(libraries/utllib)
-add_subdirectory(engine)
-
 add_subdirectory(tools/shader_compiler)
+
+add_subdirectory(engine)
 
 add_executable(${PROJECT_NAME} main.cpp)
 

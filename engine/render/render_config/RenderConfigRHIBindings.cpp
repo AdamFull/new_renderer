@@ -2,8 +2,9 @@
 
 #include <interface/render/RenderInterface.h>
 #include <render/ShaderObject.h>
-#include <sol/sol.hpp>
 #include <glm/glm.hpp>
+
+#include <sol/sol.hpp>
 
 namespace engine
 {

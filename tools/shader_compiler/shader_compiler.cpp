@@ -1,6 +1,6 @@
 #include <shader_compiler.h>
 
-#include <SPIRV/GlslangToSpv.h>
+#include <glslang/SPIRV/GlslangToSpv.h>
 #include <glslang/Public/ShaderLang.h>
 
 #include <logger/logger.h>
@@ -8,6 +8,7 @@
 
 #include <stack>
 
+#include <glslang/build_info.h>
 #include <spirv_glsl.hpp>
 #include <spirv_hlsl.hpp>
 #include <spirv_msl.hpp>

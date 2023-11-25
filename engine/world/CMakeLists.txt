@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.18.0)
 project(engine_world)
 
-add_subdirectory("${MAIN_PROJECT_DIRECTORY_PATH}/libraries/meshoptimizer" meshopt)
+find_package(meshoptimizer CONFIG REQUIRED)
+find_package(EnTT CONFIG REQUIRED)
 
 file(GLOB_RECURSE ENGINE_WORLD_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 file(GLOB_RECURSE ENGINE_WORLD_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
@@ -22,12 +23,11 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 target_include_directories(${PROJECT_NAME} 
 	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/"
     PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/engine"
-    PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/entt"
-    PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/meshoptimizer/src"
 )
 
 target_link_libraries(${PROJECT_NAME}
-	PUBLIC meshoptimizer
+	PRIVATE meshoptimizer::meshoptimizer
+    PRIVATE EnTT::EnTT
 )
 
 target_precompile_headers(${PROJECT_NAME} PUBLIC world_pch.h)

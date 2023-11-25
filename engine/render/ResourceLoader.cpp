@@ -4,7 +4,7 @@
 #include <stb/stb_image.h>
 
 #include <ktx.h>
-#include <vk_format.h>
+#include <native_format/vk_format.h>
 
 #include <logger/logger.h>
 

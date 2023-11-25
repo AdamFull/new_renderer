@@ -1,9 +1,16 @@
 cmake_minimum_required(VERSION 3.18.0)
 project(render_interface)
 
+find_package(Ktx CONFIG REQUIRED)
+
+find_package(Lua REQUIRED)
+
+find_package(PkgConfig REQUIRED)  
+pkg_check_modules(LuaJIT REQUIRED IMPORTED_TARGET luajit)
+
+find_package(sol2 CONFIG REQUIRED)
+
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/render_api/vulkan")
-add_subdirectory("${MAIN_PROJECT_DIRECTORY_PATH}/libraries/KTX-Software" KTX-Software)
-add_subdirectory("${MAIN_PROJECT_DIRECTORY_PATH}/libraries/luajit" luajit)
 
 file(GLOB ENGINE_RENDER_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 file(GLOB ENGINE_RENDER_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
@@ -35,16 +42,14 @@ target_include_directories(${PROJECT_NAME}
 	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/"
     PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/tools"
     PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/engine"
-    PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/KTX-Software/include"
-    PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/KTX-Software/lib"
-    PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/luajit/src"
-    PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/sol2"
 )
 
 target_link_libraries(${PROJECT_NAME}
 	PUBLIC vulkan_renderer
-    PRIVATE libluajit
-    PRIVATE ktx
+    PRIVATE ${LUA_LIBRARIES}
+    PRIVATE PkgConfig::LuaJIT
+    PRIVATE sol2
+    PRIVATE KTX::ktx
 )
 
 target_compile_definitions(${PROJECT_NAME} 
