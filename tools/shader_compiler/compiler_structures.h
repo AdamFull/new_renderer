@@ -12,7 +12,10 @@ namespace shader_compiler
 		eVK11,
 		eVK12,
 		eVK13,
-		eGL
+		eGL,
+		eDX11,
+		eDX12,
+		eMTL
 	};
 
 	enum class ETargetBuildType

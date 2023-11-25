@@ -3,8 +3,14 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <filesystem>
+
+#include <json.hpp>
 #include <udetail.hpp>
 #include "compiler_structures.h"
+#include <sjson_parser.h>
+
+#include <logger/logger.h>
 
 namespace shader_compiler
 {
@@ -45,11 +51,40 @@ namespace shader_compiler
 		return 0ull;
 	}
 
-	inline size_t make_module_unique_name(const std::string& shader_name, const std::vector<std::string>& definitions)
+	inline std::string get_shader_type_str(EShaderType type)
+	{
+		switch (type)
+		{
+		case EShaderType::eUnknown: return "invalid"; break;
+		case EShaderType::eVertex: return "vertex"; break;
+		case EShaderType::eControl: return "control"; break;
+		case EShaderType::eEvaluation: return "evaluation"; break;
+		case EShaderType::eGeometry: return "geometry"; break;
+		case EShaderType::eFragment: return "fragment"; break;
+		case EShaderType::eCompute: return "compute"; break;
+		case EShaderType::eRayGen: return "raygen"; break;
+		case EShaderType::eIntersection: return "intersection"; break;
+		case EShaderType::eAnyHit: return "anyhit"; break;
+		case EShaderType::eClosestHit: return "closesthit"; break;
+		case EShaderType::eMiss: return "miss"; break;
+		case EShaderType::eCallable: return "callable"; break;
+		case EShaderType::eTask: return "task"; break;
+		case EShaderType::eMesh: return "mesh"; break;
+		}
+
+		return "";
+	}
+
+	inline std::string make_module_unique_name_str(const std::string& shader_name, const std::vector<std::string>& definitions)
 	{
 		std::vector<std::string> shader_name_tokens{ shader_name };
 		shader_name_tokens.insert(shader_name_tokens.end(), definitions.begin(), definitions.end());
-		return utl::fnv1a_64_hash(make_shader_hashname(shader_name_tokens).c_str());
+		return make_shader_hashname(shader_name_tokens);
+	}
+
+	inline size_t make_module_unique_name(const std::string& shader_name, const std::vector<std::string>& definitions)
+	{
+		return utl::fnv1a_64_hash(make_module_unique_name_str(shader_name, definitions).c_str());
 	}
 
 	inline std::string make_shader_unique_name(size_t value)
@@ -57,5 +92,64 @@ namespace shader_compiler
 		std::stringstream stream;
 		stream << std::hex << value;
 		return stream.str();
+	}
+
+	template<class _Ty>
+	inline bool parse_file_to(const std::filesystem::path& file_path, _Ty& output)
+	{
+		if (!std::filesystem::exists(file_path))
+		{
+			log_error("File {} was not found.", file_path.string());
+			return false;
+		}
+
+		std::ifstream file(file_path, std::ios_base::in | std::ios_base::binary);
+		if (!file.is_open())
+		{
+			log_error("Failed to open file: {}.", file_path.string());
+			return false;
+		}
+
+		std::string file_data{ std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>() };
+		if (file_data.empty())
+		{
+			log_warning("File loaded from: {} is empty.", file_path.string());
+			return false;
+		}
+
+		sjson::parse(file_data).parse_to<_Ty>(output);
+
+		return true;
+	}
+
+	template<class _Ty>
+	inline bool parse_json_to(const std::filesystem::path& file_path, _Ty& output)
+	{
+		if (!std::filesystem::exists(file_path))
+			return false;
+
+		std::ifstream file(file_path, std::ios_base::in | std::ios_base::binary);
+		if (!file.is_open())
+			return false;
+
+		std::string file_data{ std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>() };
+		if (file_data.empty())
+			return false;
+
+		nlohmann::json::from_bson(file_data).get_to(output);
+	}
+
+	template<class _Ty>
+	inline bool dump_json_from(const std::filesystem::path& file_path, const _Ty& input)
+	{
+		std::ofstream file(file_path, std::ios_base::out | std::ios_base::binary);
+		if (!file.is_open())
+			return false;
+
+		auto data = nlohmann::json::to_bson(nlohmann::json(input));
+		file.write(reinterpret_cast<const char*>(data.data()), data.size());
+		file.close();
+
+		return true;
 	}
 }

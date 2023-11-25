@@ -6,6 +6,8 @@
 #include <memory>
 #include <shader_compiler.h>
 
+#include <shader_library_parse.hpp>
+
 namespace shader_compiler
 {
 	class CLibraryCompiler
@@ -15,7 +17,7 @@ namespace shader_compiler
 		CLibraryCompiler(const std::filesystem::path& common_path, const std::filesystem::path& includes_path);
 
 		void initialize(ETargetAPIType target_api, ETargetBuildType build_type);
-		void compile(const std::filesystem::path& library_path, const std::filesystem::path& library_out);
+		void compile(const std::filesystem::path& library_path, FShaderCacheData& shader_cache);
 	private:
 		std::unique_ptr<CShaderCompiler> m_pShaderCompiler{};
 		std::filesystem::path m_srCommonPath{};

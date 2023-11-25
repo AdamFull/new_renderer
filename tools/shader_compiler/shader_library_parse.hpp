@@ -25,12 +25,14 @@ namespace shader_compiler
             { EShaderType::eMesh, "mesh" },
         })
 
+    // Contain info about shader type and links to code
     struct FShaderModule
     {
         EShaderType type{ EShaderType::eUnknown };
-        int64_t link;
+        int64_t link{ 0ll };
     };
 
+    // Contains associative maps for cantaining compiled shader code
     struct FCompiledLibrary
     {
         /*
@@ -43,8 +45,16 @@ namespace shader_compiler
         *       { type, shader_hash }
         * ]
         */
+
+        // Key is the type of shader (EShaderType) it's like container of same shader types. 
+        // Key in value it's link to shader from shader module. 
         std::unordered_map<int64_t, std::unordered_map<int64_t, std::vector<uint32_t>>> shaders;
         std::unordered_map<int64_t, std::vector<FShaderModule>> modules;
+    };
+
+    struct FShaderCacheData
+    {
+        std::unordered_map<int64_t, FCompiledLibrary> libraries{};
     };
 
     inline void to_json(nlohmann::json& json, const FShaderModule& type)
@@ -72,6 +82,18 @@ namespace shader_compiler
     {
         utl::parse_to("shaders", json, type.shaders);
         utl::parse_to("modules", json, type.modules);
+    }
+
+
+    inline void to_json(nlohmann::json& json, const FShaderCacheData& type)
+    {
+        json = nlohmann::json();
+        utl::serialize_from("libraries", json, type.libraries, true);
+    }
+
+    inline void from_json(const nlohmann::json& json, FShaderCacheData& type)
+    {
+        utl::parse_to("libraries", json, type.libraries);
     }
 }
 

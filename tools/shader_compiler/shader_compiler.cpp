@@ -8,6 +8,10 @@
 
 #include <stack>
 
+#include <spirv_glsl.hpp>
+#include <spirv_hlsl.hpp>
+#include <spirv_msl.hpp>
+
 using namespace shader_compiler;
 
 class empty_includer : public glslang::TShader::Includer
@@ -317,6 +321,9 @@ std::vector<uint32_t> CShaderCompiler::compile(const std::string& shader_code, c
 	auto shader_name = info.name.c_str();
 	shader.setStringsWithLengthsAndNames(&shader_source, nullptr, &shader_name, 1);
 
+	shader.setAutoMapBindings(true);
+	shader.setAutoMapLocations(true);
+
 	auto client_version = get_client_version(target_api);
 	auto compile_client = get_compile_client(target_api);
 	auto spir_version = get_SPIR_version(target_api);
@@ -353,6 +360,47 @@ std::vector<uint32_t> CShaderCompiler::compile(const std::string& shader_code, c
 	logger.warning(warning);
 	if(!warning.empty())
 		log_error("SPIRV generation warnings: In shader \"{}\" \n{}\n", info.name, warning);
+
+	// TODO: i can cross compile spirv inside apis
+	//// Cross compilation
+	//std::string cross_compiled{};
+	//if (target_api == ETargetAPIType::eGL)
+	//{
+	//	spirv_cross::CompilerGLSL::Options ops;
+	//	ops.version = 450;
+	//	ops.es = false;
+	//
+	//	spirv_cross::CompilerGLSL glsl(spirv);
+	//	glsl.set_common_options(ops);
+	//
+	//	cross_compiled = glsl.compile();
+	//	
+	//}
+	//else if (target_api == ETargetAPIType::eDX11 || target_api == ETargetAPIType::eDX12)
+	//{
+	//	spirv_cross::CompilerHLSL::Options hlslOptions;
+	//	hlslOptions.shader_model = target_api == ETargetAPIType::eDX11 ? 500 : 600;
+	//
+	//	spirv_cross::CompilerHLSL hlsl(spirv);
+	//	hlsl.set_hlsl_options(hlslOptions);
+	//
+	//	cross_compiled = hlsl.compile();
+	//}
+	//else if (target_api == ETargetAPIType::eMTL)
+	//{
+	//	spirv_cross::CompilerMSL msl(spirv);
+	//
+	//	cross_compiled = msl.compile();
+	//}
+	//
+	//// Copy cross compiled data
+	//if (!cross_compiled.empty())
+	//{
+	//	auto out_size = cross_compiled.size() / sizeof(uint32_t);
+	//
+	//	spirv.resize(out_size);
+	//	std::memcpy(spirv.data(), cross_compiled.data(), cross_compiled.size());
+	//}
 
 	return spirv;
 }

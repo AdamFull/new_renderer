@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.18.0)
 project(shader_compiler)
 
 add_subdirectory("${MAIN_PROJECT_DIRECTORY_PATH}/libraries/glslang" glslang)
+add_subdirectory("${MAIN_PROJECT_DIRECTORY_PATH}/libraries/SPIRV-Cross" SPIRV-Cross)
 
 file(GLOB_RECURSE COMPILER_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 file(GLOB_RECURSE COMPILER_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
@@ -26,8 +27,13 @@ target_link_libraries(${PROJECT_NAME}
 	PRIVATE glslang
     PRIVATE SPIRV
 	PRIVATE utility_lib
+    PRIVATE spirv-cross-core
+	PRIVATE spirv-cross-glsl
+	PRIVATE spirv-cross-msl
+	PRIVATE spirv-cross-hlsl
 )
 target_include_directories(${PROJECT_NAME} 
 	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}"
 	PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/glslang"
+    PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/SPIRV-Cross"
 )

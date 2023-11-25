@@ -3,14 +3,36 @@
 #include <compiler_util.h>
 #include <compiler_parse.h>
 #include <shader_library_parse.hpp>
-#include "sjson_parser.h"
 
 #include <fstream>
 
-#include <logger/logger.h>
-#include <json.hpp>
-
 using namespace shader_compiler;
+
+std::string get_definition_by_shader_type(EShaderType type)
+{
+	std::string res{};
+
+	switch (type)
+	{
+	case shader_compiler::EShaderType::eUnknown: res = "INVALID_SHADER"; break;
+	case shader_compiler::EShaderType::eVertex: res = "VERTEX_SHADER"; break;
+	case shader_compiler::EShaderType::eControl: res = "TESS_CONTROL_SHADER"; break;
+	case shader_compiler::EShaderType::eEvaluation: res = "TESS_EVAL_SHADER"; break;
+	case shader_compiler::EShaderType::eGeometry: res = "GEOMETRY_SHADER"; break;
+	case shader_compiler::EShaderType::eFragment: res = "FRAGMENT_SHADER"; break;
+	case shader_compiler::EShaderType::eCompute: res = "COMPUTE_SHADER"; break;
+	case shader_compiler::EShaderType::eRayGen: res = "RAY_GEN_SHADER"; break;
+	case shader_compiler::EShaderType::eIntersection: res = "INTERSECTION_SHADER"; break;
+	case shader_compiler::EShaderType::eAnyHit: res = "ANY_HIT_SHADER"; break;
+	case shader_compiler::EShaderType::eClosestHit: res = "CLOSEST_HIT_SHADER"; break;
+	case shader_compiler::EShaderType::eMiss: res = "MISS_SHADER"; break;
+	case shader_compiler::EShaderType::eCallable: res = "CALLABLE_SHADER"; break;
+	case shader_compiler::EShaderType::eTask: res = "TASK_SHADER"; break;
+	case shader_compiler::EShaderType::eMesh: res = "MESH_SHADER"; break;
+	}
+
+	return res;
+}
 
 std::string emplace_data(std::string base_string, const std::string& target, const std::string& replacement)
 {
@@ -19,65 +41,6 @@ std::string emplace_data(std::string base_string, const std::string& target, con
 		return base_string;
 	base_string.replace(start_pos, target.length(), replacement);
 	return base_string;
-}
-
-template<class _Ty>
-bool parse_file_to(const std::filesystem::path& file_path, _Ty& output)
-{
-	if (!std::filesystem::exists(file_path))
-	{
-		log_error("File {} was not found.", file_path.string());
-		return false;
-	}
-
-	std::ifstream file(file_path, std::ios_base::in | std::ios_base::binary);
-	if (!file.is_open())
-	{
-		log_error("Failed to open file: {}.", file_path.string());
-		return false;
-	}
-
-	std::string file_data{ std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>() };
-	if (file_data.empty())
-	{
-		log_warning("File loaded from: {} is empty.", file_path.string());
-		return false;
-	}
-
-	sjson::parse(file_data).parse_to<_Ty>(output);
-
-	return true;
-}
-
-template<class _Ty>
-bool parse_json_to(const std::filesystem::path& file_path, _Ty& output)
-{
-	if (!std::filesystem::exists(file_path))
-		return false;
-
-	std::ifstream file(file_path, std::ios_base::in | std::ios_base::binary);
-	if (!file.is_open())
-		return false;
-
-	std::string file_data{ std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>() };
-	if (file_data.empty())
-		return false;
-
-	nlohmann::json::from_bson(file_data).get_to(output);
-}
-
-template<class _Ty>
-bool dump_json_from(const std::filesystem::path& file_path, const _Ty& input)
-{
-	std::ofstream file(file_path, std::ios_base::out | std::ios_base::binary);
-	if (!file.is_open())
-		return false;
-
-	auto data = nlohmann::json::to_bson(nlohmann::json(input));
-	file.write(reinterpret_cast<const char*>(data.data()), data.size());
-	file.close();
-	
-	return true;
 }
 
 std::vector<std::string> make_permutation(size_t mask, size_t total, const std::vector<std::string>& source)
@@ -152,17 +115,13 @@ void CLibraryCompiler::initialize(ETargetAPIType target_api, ETargetBuildType bu
 	m_pShaderCompiler->initialize();
 }
 
-void CLibraryCompiler::compile(const std::filesystem::path& library_path, const std::filesystem::path& library_out)
+void CLibraryCompiler::compile(const std::filesystem::path& library_path, FShaderCacheData& shader_cache)
 {
-	FCompiledLibrary compiled_library{};
-
 	FShaderLibrary shader_library_ci{};
 	if (!parse_file_to(library_path, shader_library_ci))
 		return;
 
-	auto out_library_path = library_out / (shader_library_ci.name + ".shc");
-	if (!parse_json_to(out_library_path, compiled_library))
-		log_info("Compiling library {} first time.", shader_library_ci.name);
+	FCompiledLibrary& compiled_library = shader_cache.libraries[utl::fnv1a_64_hash(shader_library_ci.name.c_str())];
 
 	auto parent_path = library_path.parent_path();
 
@@ -194,6 +153,7 @@ void CLibraryCompiler::compile(const std::filesystem::path& library_path, const 
 		for (auto& permutation : compile.permutations)
 			cached_permutations.emplace_back(permutation.definitions);
 
+		size_t shader_index{ 0ull };
 		// Process all shader included sources
 		for (auto& source : shader_desc.sources)
 		{
@@ -213,17 +173,23 @@ void CLibraryCompiler::compile(const std::filesystem::path& library_path, const 
 			// Process and compile all definition combinations
 			for (auto& definitions : cached_permutations)
 			{
+				bool is_compiling_first_time{ false };
 				FCompileInfo compile_info{ source.type, source.shader_name };
 
+				// This thing will add unique definitions by shader type. Dor example for vertex shader it will add VERTEX_SHADER definition
+				std::vector<std::string> unique_shader_definitions(definitions.begin(), definitions.end());
+				unique_shader_definitions.emplace_back(get_definition_by_shader_type(source.type));
+
 				// Make unique shader name(key)
-				auto unique_module_name = make_module_unique_name(compile.name, definitions);
+				auto module_name_str = make_module_unique_name_str(compile.name, definitions);
+				auto unique_module_name = utl::fnv1a_64_hash(module_name_str.c_str());
 
 				// Get shader module
 				std::vector<FShaderModule>& shader_modules = compiled_library.modules[unique_module_name];
 
 				// Apply definitions for current permutation
 				std::stringstream ss{""};
-				for (auto& definition : definitions)
+				for (auto& definition : unique_shader_definitions)
 					ss << std::format("#define {}", definition) << std::endl;
 				ss << std::endl;
 
@@ -236,49 +202,57 @@ void CLibraryCompiler::compile(const std::filesystem::path& library_path, const 
 
 				if (preprocessed_code.empty())
 				{
-					log_error("Something went wrong while preprocessing code. Empty string after preprocessing.");
+					log_error("Something went wrong while preprocessing code for module: \"{}\". Empty string after preprocessing.", module_name_str);
 					return; // throw error here
 				}
 
 				// Make hash for preprocessed data
 				auto& compiled_spirv = shader_pool[preprocessed_hash];
 
-				bool is_compiling_first_time{ false };
-				FShaderModule* shader_module{ nullptr };
-
-				// Find existing shader or create new
-				auto found_module = std::find_if(shader_modules.begin(), shader_modules.end(), 
-					[type = source.type, link = preprocessed_hash](const FShaderModule& sm)
-					{ 
-						return (sm.type == type) && (sm.link == link);
-					});
-				if (found_module != shader_modules.end())
-					shader_module = &(*found_module);
-				else
+				// Create new shader module
+				if (shader_modules.empty() || (shader_modules.size() <= shader_index))
 				{
-					shader_modules.emplace_back();
-					shader_module = &shader_modules.back();
+					shader_modules.emplace_back(source.type, 0ull);
 					is_compiling_first_time = true;
 				}
 
-				shader_module->type = source.type;
+				auto& current_module = shader_modules.at(shader_index);
+
+				bool is_code_outdated = current_module.link != static_cast<int64_t>(preprocessed_hash);
+				bool is_type_missmatch = current_module.type != source.type;
+
+				// Notify, that type was changed
+				if (is_type_missmatch)
+				{
+					log_warning("Type mismatch for shader module named: \"{}\". Previous type: \"{}\" new type: \"{}\". Old shaders will be removed.", 
+						module_name_str, get_shader_type_str(current_module.type), get_shader_type_str(source.type));
+
+					// Removing old shaders
+					for (auto& shmodule : shader_modules)
+						shader_pool.erase(shmodule.link);
+
+					// Cleaning links
+					shader_modules.clear();
+					current_module = shader_modules.emplace_back(source.type, 0ull);
+				}
 
 				// Compile shader if we need
-				bool need_to_compile = is_compiling_first_time ? (compiled_spirv.empty()) : (shader_module->link != preprocessed_hash);
-				if (need_to_compile)
+				if (is_code_outdated || is_type_missmatch || is_compiling_first_time)
 				{
 					compiled_spirv = m_pShaderCompiler->compile(preprocessed_code, compile_info);
 					log_info("{} shader {}[{}] was {}.", name_type_hash, source.shader_name, preprocessed_hash, is_compiling_first_time ? "compiled" : "recompiled");
 				}
 
 				// Removing old shader data
-				if (shader_module->link != preprocessed_hash && !is_compiling_first_time)
-					shader_pool.erase(shader_module->link);
+				if ((is_code_outdated || is_type_missmatch) && !is_compiling_first_time)
+					shader_pool.erase(current_module.link);
 
-				shader_module->link = preprocessed_hash;
+				current_module.link = static_cast<int64_t>(preprocessed_hash);
 			}
+
+			shader_index++;
 		}
 	}
 
-	dump_json_from(out_library_path, compiled_library);
+	//dump_json_from(out_library_path, compiled_library);
 }

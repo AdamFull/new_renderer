@@ -7,6 +7,7 @@
 
 #include <library_compiler.h>
 
+#include <shader_library_parse.hpp>
 #include <compiler_util.h>
 
 namespace fs = std::filesystem;
@@ -110,7 +111,7 @@ int main(int argc, char** argv)
 	ETargetBuildType build_type{ ETargetBuildType::eRelease };
 
 	input_path = "D:\\GitHub\\new_renderer\\embed\\shaders";
-	compiled_libraries_output = "D:\\GitHub\\new_renderer\\bin\\Debug\\engine\\embed\\shader_libraries";
+	compiled_libraries_output = "D:\\GitHub\\new_renderer\\bin\\Debug\\engine\\embed\\rendering\\shader_cache.shc";
 	shaders_common = "D:\\GitHub\\new_renderer\\embed\\shaders\\common";
 	shaders_include = "D:\\GitHub\\new_renderer\\embed\\shaders\\includes";
 
@@ -154,6 +155,11 @@ int main(int argc, char** argv)
 	auto library_compiler = std::make_unique<CLibraryCompiler>(shaders_common, shaders_include);
 	library_compiler->initialize(target_api, build_type);
 
+	FShaderCacheData shader_cahce{};
+
+	if (!parse_json_to(compiled_libraries_output, shader_cahce))
+		log_info("No shader cache found.");
+
 	// Start compilation process
 	if (std::filesystem::is_regular_file(input_path))
 	{
@@ -166,11 +172,7 @@ int main(int argc, char** argv)
 			return -1;
 		}
 
-		auto library_out = make_current_library_output_path(input_path.parent_path(), compiled_libraries_output, input_path.parent_path());
-		if (!fs::exists(library_out))
-			fs::create_directories(library_out);
-
-		library_compiler->compile(input_path, library_out);
+		library_compiler->compile(input_path, shader_cahce);
 	}
 	else
 	{
@@ -184,13 +186,11 @@ int main(int argc, char** argv)
 			if (file_extension != ".shlib")
 				continue;
 
-			auto library_out = make_current_library_output_path(input_path, compiled_libraries_output, current_path.parent_path());
-			if (!fs::exists(library_out))
-				fs::create_directories(library_out);
-
-			library_compiler->compile(current_path, library_out);
+			library_compiler->compile(current_path, shader_cahce);
 		}
 	}
+
+	dump_json_from(compiled_libraries_output, shader_cahce);
 
 	return 0;
 }
