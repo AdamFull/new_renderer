@@ -7,21 +7,25 @@ class ShaderCompiler:
         self.build_type = build_type
 
     def execute(self):
-        engine_workdir = os.getcwd()
+        engine_workdir = os.path.normpath(os.getcwd())
 
         embed_path = os.path.join(engine_workdir, "embed")
-        engine_binaries = os.path.join(engine_workdir, f"bin/{self.build_type}/engine")
+        engine_binaries = os.path.normpath(os.path.join(engine_workdir, f"bin/{self.build_type}/engine"))
         embed_binaries = os.path.join(engine_binaries, "embed")
-        shader_compiler_exec = os.path.join(engine_workdir, f"bin/{self.build_type}/tools/shader_compiler/shader_compiler")
+        shader_compiler_exec = os.path.normpath(os.path.join(engine_workdir, f"bin/{self.build_type}/tools/shader_compiler/shader_compiler"))
+        rendering_path = os.path.join(embed_binaries, "rendering")
         
         if not os.path.exists(embed_binaries):
             os.makedirs(embed_binaries)
+
+        if not os.path.exists(rendering_path):
+            os.makedirs(rendering_path)
 
         shader_compiler_api = self.shader_lang.lower()
         shader_compile_type = self.build_type.lower()
 
         shader_input_directory = os.path.join(embed_path, "shaders")
-        shader_output_directory = os.path.join(embed_binaries, "rendering/shader_cache.shc")
+        shader_output_directory = os.path.join(rendering_path, "shader_cache.shc")
         shader_common_directory = os.path.join(shader_input_directory, "common")
         shader_includes_directory = os.path.join(shader_input_directory, "includes")
         

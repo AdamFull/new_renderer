@@ -110,11 +110,6 @@ int main(int argc, char** argv)
 	ETargetAPIType target_api{ ETargetAPIType::eVK10 };
 	ETargetBuildType build_type{ ETargetBuildType::eRelease };
 
-	input_path = "D:\\GitHub\\new_renderer\\embed\\shaders";
-	compiled_libraries_output = "D:\\GitHub\\new_renderer\\bin\\Debug\\engine\\embed\\rendering\\shader_cache.shc";
-	shaders_common = "D:\\GitHub\\new_renderer\\embed\\shaders\\common";
-	shaders_include = "D:\\GitHub\\new_renderer\\embed\\shaders\\includes";
-
 	input_path = argparse.try_get("-in", input_path);
 	if (input_path.empty())
 	{
@@ -191,6 +186,8 @@ int main(int argc, char** argv)
 	}
 
 	dump_json_from(compiled_libraries_output, shader_cahce);
+
+	log_info("Cache saved to: {}", compiled_libraries_output.string());
 
 	return 0;
 }

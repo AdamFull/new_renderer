@@ -24,7 +24,7 @@ end
 do
     local target_ci = TextureCI.new()
     target_ci.format = render_context:get_depth_format(true)
-    target_ci.type = bit_or(TexType.two_dim, TexType.depth, TexType.samplable)
+    target_ci.type = bit_or(TexType.two_dim, TexType.samplable)
     target_ci.width = surface_resolution.x
     target_ci.height = surface_resolution.y
 
