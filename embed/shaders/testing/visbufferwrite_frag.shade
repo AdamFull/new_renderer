@@ -18,6 +18,7 @@
 
 		layout(location = 0) in flat uint drawID;
 		layout(location = 1) in flat uint matID;
+		layout(location = 2) in flat uint objID;
 		
 		layout(location = 0) out vec4 visBuffer;
 		layout(location = 1) out vec4 matBuffer;
@@ -25,15 +26,16 @@
 		// Engel's packing function (without alpha bit)
 		uint calculateOutputVBID(uint drawID, uint primitiveID)
 		{
-			uint drawID_primID = ((drawID << 23) & 0x7F800000) | (primitiveID & 0x007FFFFF);
-			return drawID_primID;
+			return ((drawID << 23) & 0x7F800000) | (primitiveID & 0x007FFFFF);
 		}
 
 		void main() 
 		{
 			uint outVBID = calculateOutputVBID(drawID, gl_PrimitiveID + 1);
 			visBuffer = unpackUnorm4x8(outVBID);
-			matBuffer = unpackUnorm4x8(matID);
+
+			uint outMOOID = calculateOutputVBID(matID, objID);
+			matBuffer = unpackUnorm4x8(outMOOID);
 		}
 	""";
 }

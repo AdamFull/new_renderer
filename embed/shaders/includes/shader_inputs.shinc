@@ -50,7 +50,7 @@
 	{
 		mat4 model;
 		mat4 normal;
-		vec4 object_id;
+		uint objectId;
 		uint materialId;
 	} meshData;	
 #ifdef HAS_SKIN

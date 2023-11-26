@@ -84,6 +84,7 @@ void CVisibilityBufferRenderingStep::execute(float dt)
 				ubo->set("model", node.model);
 				ubo->set("view", render_packet->camera.view);
 				ubo->set("projection", render_packet->camera.projection);
+				ubo->set("objectId", batch.node);
 				ubo->set("materialId", static_cast<uint32_t>(batch.materialId));
 			}
 

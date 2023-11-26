@@ -4,30 +4,35 @@
 	enable_extensions: [
 		"GL_ARB_separate_shader_objects",
 		"GL_ARB_shading_language_420pack",
-		"GL_EXT_scalar_block_layout",
-		"GL_ARB_texture_cube_map_array"
+		"GL_ARB_shader_draw_parameters",
+		"GL_EXT_nonuniform_qualifier",
+		"GL_EXT_shader_8bit_storage",
+		"GL_EXT_shader_16bit_storage"
 	];
 
 	definitions: [];
 
-	require_extensions: [];
-	includes: [];
+	require_extensions: [
+		"GL_EXT_shader_explicit_arithmetic_types",
+		"GL_EXT_shader_explicit_arithmetic_types_int8"
+	];
+	includes: ["shader_inputs"];
 
 	code: 
 	"""
 		layout (location = 0) in vec2 inUV;
-		layout (location = 0) out vec4 outFragcolor;
 
-		layout(set = 1, binding = 0) uniform sampler2D visibility_buffer;
+		layout(location = 0) out vec4 outAlbedo;
+		layout(location = 1) out vec4 outNormal;
+		layout(location = 2) out vec4 outMRAH;
+		layout(location = 3) out vec4 outEmissive;
 
-		layout (std140, set = 1, binding = 1) uniform FUniformData 
-        { 
-            vec3 color;
-        } data; 
+		layout(set = 1, binding = 3) uniform sampler2D visibility_buffer;
+		layout(set = 1, binding = 4) uniform sampler2D material_buffer;
 
 		void main() 
 		{
-			outFragcolor = texture(visibility_buffer, inUV) + vec4(data.color, 1.f);
+			
 		}
 	""";
 }
