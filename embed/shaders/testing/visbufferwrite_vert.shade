@@ -10,7 +10,7 @@
 		"GL_EXT_shader_16bit_storage"
 	];
 
-	definitions: ["VERTEX_SHADER", "MESH_DATA"];
+	definitions: ["MESH_DATA"];
 
 	require_extensions: [
 		"GL_EXT_shader_explicit_arithmetic_types",
@@ -21,9 +21,8 @@
 	code: 
 	"""
 		layout(location = 0) flat out uint drawID;
-#ifdef HAS_TEXCOORD
-		layout(location = 1) out vec2 uv;
-#endif
+		layout(location = 1) flat out uint matID;
+
 		out gl_PerVertex
 		{
 			vec4 gl_Position;
@@ -46,15 +45,13 @@
 				inWeights.w * matrices[joints.w];
 		
 			modelMatrix = modelMatrix * skinMat;
-#endif
+#endif // HAS_SKIN
 
 			vec4 localPos = modelMatrix * vec4(inPosition, 1.0);
 			localPos = vec4(localPos.xyz / localPos.w, 1.0);
 
 			drawID = gl_DrawIDARB;
-#ifdef HAS_TEXCOORD
-			uv = inTexCoord;
-#endif
+			matID = meshData.materialId;
 			gl_Position = frameData.projection * frameData.view * localPos;
 		}
 	""";

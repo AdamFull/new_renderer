@@ -17,11 +17,10 @@
 		layout(early_fragment_tests) in;
 
 		layout(location = 0) in flat uint drawID;
-#ifdef HAS_TEXCOORD
-		layout(location = 1) in vec2 uv;
-#endif
+		layout(location = 1) in flat uint matID;
 		
 		layout(location = 0) out vec4 visBuffer;
+		layout(location = 1) out vec4 matBuffer;
 
 		// Engel's packing function (without alpha bit)
 		uint calculateOutputVBID(uint drawID, uint primitiveID)
@@ -34,9 +33,7 @@
 		{
 			uint outVBID = calculateOutputVBID(drawID, gl_PrimitiveID + 1);
 			visBuffer = unpackUnorm4x8(outVBID);
-#ifdef HAS_TEXCOORD
-			//visBuffer = vec4(uv, 0, 1);
-#endif
+			matBuffer = unpackUnorm4x8(matID);
 		}
 	""";
 }

@@ -667,19 +667,18 @@ void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader
 
 			// Prepare descriptor update data
 			auto& uniform_block = found_reflection->second;
-			auto descriptor_index = shader->descriptorUsage[uniform_block.set];
 			updated_descriptor_sets.emplace(uniform_block.set);
 
 			auto& buffer = buffers.at(buffer_id).front();
-			auto buffer_element_size = buffer->size / buffer->instanceCount;
 
 			// Not sure that it is correct, because i don't know how to determine previous buffer
 			auto& buffer_descriptor = buffer_descriptors.at(buffer_count);
 			buffer_descriptor.buffer = buffer->handle;
-			buffer_descriptor.range = uniform_block.size;
-			buffer_descriptor.offset = descriptor_index * buffer_element_size;
+			buffer_descriptor.range = buffer->size;
+			buffer_descriptor.offset = 0ull;
 			buffer_count++;
 
+			auto descriptor_index = shader->descriptorUsage[uniform_block.set];
 			auto& current_descriptor_set = shader->descriptorSets[uniform_block.set].handles.at(descriptor_index);
 
 			auto& write_descriptor_set = write_descriptor_sets.at(writes_count);

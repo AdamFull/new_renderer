@@ -28,7 +28,6 @@ namespace engine
 
 		struct FSceneTemporaryResources
 		{
-			std::vector<render::FMaterialCreateInfo> materialCis{};
 			std::vector<std::string> materialNames{};
 			std::unordered_map<uint32_t, entt::entity> nodeToEntity{};
 		};

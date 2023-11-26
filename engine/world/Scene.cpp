@@ -190,12 +190,6 @@ void CScene::load(const std::string& path)
 	for (const auto& node_index : scene.nodes)
 		loadNode(root, node_index);
 
-	// Create materials
-	for (const auto& material_ci : m_temporary.materialCis)
-	{
-		//m_pRenderInterface->create(material_ci.)
-	}
-
 	loadAnimations();
 	loadSkins();
 
@@ -207,6 +201,9 @@ void CScene::load(const std::string& path)
 			handler->allocate();
 		}
 	}
+
+	// TODO: may be store materials only in scene?
+	m_pRenderInterface->createMaterialBuffer();
 
 	for (auto& system : m_systems)
 		system->create();
@@ -250,93 +247,56 @@ void CScene::loadMaterials()
 {
 	const auto& gltf = m_pScene->getGltf();
 
+	auto& render_packet = m_pRenderInterface->getRenderPacket();
+
 	uint32_t material_index{ 0u };
 	for (const auto& material : gltf.materials)
 	{
-		auto& material_ci = m_temporary.materialCis.emplace_back();
+		auto& material_data = render_packet->materials.emplace_back();
+
 		m_temporary.materialNames.emplace_back(material.name);
 		// TODO: add my own ext that will contain shader EXT_material_shader or something. But in my case it will contain name in format {library}:{shader_name} and other helpfull data
 
 		// Attach base color (aka albedo)
 		if (auto& texture = material.pbrMetallicRoughness.baseColorTexture; texture.index >= 0)
-		{
-			material_ci.textures.emplace("basecolor_tex", m_resources.textures.at(texture.index));
-			material_ci.definitions.emplace("HAS_BASECOLORMAP");
-		}
+			material_data.parameters.baseColorTexture = m_resources.textures.at(texture.index);
 
 		// Attach metallic roughness texture (metallic = green, roughness = blue)
 		if (auto& texture = material.pbrMetallicRoughness.metallicRoughnessTexture; texture.index >= 0)
-		{
-			material_ci.textures.emplace("metallic_roughness_tex", m_resources.textures.at(texture.index));
-			material_ci.definitions.emplace("HAS_METALLIC_ROUGHNESS");
-		}
+			material_data.parameters.metallicRoughnessTexture = m_resources.textures.at(texture.index);
 
 		// Attach normal map texture
 		if (auto& texture = material.normalTexture; texture.index >= 0)
 		{
-			material_ci.parameters.normalScale = static_cast<float>(texture.scale);
-			material_ci.textures.emplace("normal_map_tex", m_resources.textures.at(texture.index));
-			material_ci.definitions.emplace("HAS_NORMALMAP");
+			material_data.parameters.normalScale = static_cast<float>(texture.scale);
+			material_data.parameters.normalTexture = m_resources.textures.at(texture.index);
 		}
 
 		// Attach baked ambient occlusion texture
 		if (auto& texture = material.occlusionTexture; texture.index >= 0)
 		{
-			material_ci.parameters.occlusionStrenth = static_cast<float>(texture.strength);
-			material_ci.textures.emplace("ambient_occlusion_tex", m_resources.textures.at(texture.index));
-			material_ci.definitions.emplace("HAS_OCCLUSIONMAP");
+			material_data.parameters.occlusionStrenth = static_cast<float>(texture.strength);
+			material_data.parameters.occlusionTexture = m_resources.textures.at(texture.index);
 		}
 
 		// Attach emissive texture
 		if (auto& texture = material.emissiveTexture; texture.index >= 0)
-		{
-			material_ci.textures.emplace("emission_tex", m_resources.textures.at(texture.index));
-			material_ci.definitions.emplace("HAS_METALLIC_ROUGHNESS");
-		}
+			material_data.parameters.emissiveTexture = m_resources.textures.at(texture.index);
 
-		material_ci.parameters.emissiveFactor = glm::make_vec3(material.emissiveFactor.data());
-		material_ci.parameters.roughnessFactor = static_cast<float>(material.pbrMetallicRoughness.roughnessFactor);
-		material_ci.parameters.metallicFactor = static_cast<float>(material.pbrMetallicRoughness.metallicFactor);
-		material_ci.parameters.baseColorFactor = glm::make_vec4(material.pbrMetallicRoughness.baseColorFactor.data());
+		material_data.parameters.emissiveFactor = glm::make_vec3(material.emissiveFactor.data());
+		material_data.parameters.roughnessFactor = static_cast<float>(material.pbrMetallicRoughness.roughnessFactor);
+		material_data.parameters.metallicFactor = static_cast<float>(material.pbrMetallicRoughness.metallicFactor);
+		material_data.parameters.baseColorFactor = glm::make_vec4(material.pbrMetallicRoughness.baseColorFactor.data());
 
 		if (material.alphaMode == easygltf::base::enumerators::alpha_mode::blend)
-			material_ci.parameters.alphaMode = render::EAlphaMode::EBLEND;
+			material_data.parameters.alphaMode = render::MATERIAL_APLHA_MODE_BLEND;
 		else if(material.alphaMode == easygltf::base::enumerators::alpha_mode::mask)
-			material_ci.parameters.alphaMode = render::EAlphaMode::EMASK;
+			material_data.parameters.alphaMode = render::MATERIAL_APLHA_MODE_MASK;
 		else
-			material_ci.parameters.alphaMode = render::EAlphaMode::EOPAQUE;
+			material_data.parameters.alphaMode = render::MATERIAL_APLHA_MODE_OPAQUE;
 
-		material_ci.parameters.alphaCutoff = static_cast<float>(material.alphaCutoff);
-		material_ci.parameters.doubleSided = material.doubleSided;
-
-		if (material.hasExtension<easygltf::extensions::KHR_materials_clearcoat>())
-		{
-			auto& extension = material.khrMaterialClearcoat;
-
-			material_ci.parameters.clearcoatFactor = static_cast<float>(extension.clearcoatFactor);
-			material_ci.parameters.clearcoatRoughnessFactor = static_cast<float>(extension.clearcoatRoughnessFactor);
-
-			if (auto& texture = extension.clearcoatTexture; texture.index >= 0)
-			{
-				material_ci.textures.emplace("clearcoat_tex", m_resources.textures.at(texture.index));
-				material_ci.definitions.emplace("HAS_CLEARCOAT_TEX");
-			}
-
-			if (auto& texture = extension.clearcoatTexture; texture.index >= 0)
-			{
-				material_ci.textures.emplace("clearcoat_roughness_tex", m_resources.textures.at(texture.index));
-				material_ci.definitions.emplace("HAS_CLEARCOAT_ROUGHNESS_TEX");
-			}
-
-			if (auto& texture = extension.clearcoatTexture; texture.index >= 0)
-			{
-				material_ci.textures.emplace("clearcoat_normal_map_tex", m_resources.textures.at(texture.index));
-				material_ci.definitions.emplace("HAS_CLEARCOAT_NORMAL_MAP_TEX");
-			}
-		}
-
-		if (material.hasExtension<easygltf::extensions::KHR_materials_emissive_strength>())
-			material_ci.parameters.emissiveStrength = static_cast<float>(material.khrMaterialEmissiveStrength.emissiveStrength);
+		material_data.parameters.alphaCutoff = static_cast<float>(material.alphaCutoff);
+		material_data.parameters.doubleSided = material.doubleSided;
 	}
 }
 
@@ -506,19 +466,8 @@ void CScene::loadMeshComponent(const entt::entity parent, uint32_t node_index)
 		{
 			mesh_primitive.materialId = primitive.material;
 		
-			auto& material_ci = m_temporary.materialCis.at(primitive.material);
-			for (const auto& attribute : attributes)
-			{
-				switch (attribute.type)
-				{
-				case render::EVertexAttributeType::eColor: material_ci.definitions.emplace("HAS_COLOR"); break;
-				case render::EVertexAttributeType::eTexCoord: material_ci.definitions.emplace("HAS_TEXCOORD"); break;
-				case render::EVertexAttributeType::eNormal: material_ci.definitions.emplace("HAS_NORMAL"); break;
-				case render::EVertexAttributeType::eTangent: material_ci.definitions.emplace("HAS_TANGENT"); break;
-				case render::EVertexAttributeType::eJoint: material_ci.definitions.emplace("HAS_SKIN"); break;
-				case render::EVertexAttributeType::eWeight: material_ci.definitions.emplace("HAS_SKIN"); break;
-				}
-			}
+			auto& render_packet = m_pRenderInterface->getRenderPacket();
+			auto& material_ci = render_packet->materials.at(primitive.material);
 			material_ci.usageCount++;
 		}
 

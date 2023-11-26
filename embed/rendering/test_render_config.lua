@@ -1,5 +1,6 @@
 surface_resolution = render_context:get_surface_resolution()
 
+-- Visibility buffer targets
 do
     local target_ci = TextureCI.new()
     target_ci.format = render_context:get_api_format(Format.rgba8_unorm)
@@ -11,6 +12,17 @@ do
     render_context:create_render_target("visibility_buffer_target", target_ci)
 end
 
+do
+    local target_ci = TextureCI.new()
+    target_ci.format = render_context:get_api_format(Format.rgba8_unorm)
+    target_ci.type = bit_or(TexType.two_dim, TexType.samplable)
+    target_ci.width = surface_resolution.x
+    target_ci.height = surface_resolution.y
+    
+    render_context:create_render_target("material_buffer_target", target_ci)
+end
+
+-- Z-Buffer targets
 do
     local target_ci = TextureCI.new()
     target_ci.format = render_context:get_api_format(Format.rgba8_srgb)
@@ -43,6 +55,7 @@ do
     render_context:create_render_target("present_target", target_ci)
 end
 
+
 -- visibility buffer write
 do
     local step_ci = RenderingStepCI.new()
@@ -53,6 +66,7 @@ do
     step_ci.rendering.shader_name = "testing:visbufferwrite"
 
     step_ci.rendering.output_targets:add(render_context:get_texture_resource("visibility_buffer_target"))
+    step_ci.rendering.output_targets:add(render_context:get_texture_resource("material_buffer_target"))
     step_ci.rendering.depth_target = render_context:get_texture_resource("zbuffer_depth_target")
     step_ci.rendering.stencil_target = step_ci.rendering.depth_target
 

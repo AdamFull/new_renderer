@@ -153,15 +153,6 @@ namespace engine
 			virtual void bind(uint32_t queue) = 0;
 		};
 
-		class IRenderMaterial
-		{
-		public:
-			virtual ~IRenderMaterial() = default;
-
-			virtual void addTexture(const char* name, size_t texture_id) = 0;
-			virtual void bind() = 0;
-		};
-
 		class IRenderingStep
 		{
 		public:
@@ -177,6 +168,9 @@ namespace engine
 
 			size_t primitiveCount{ 0ull };
 			std::vector<FGeometryBatch> sceneBatches{};
+
+			std::vector<render::FMaterialCreateInfo> materials{};
+			size_t materialBuffer{ ~0ull };
 
 			std::unordered_map<uint32_t, FRenderNode> nodes{};
 			std::vector<std::array<glm::mat4, 128>> skins{};
@@ -259,7 +253,7 @@ namespace engine
 			virtual size_t createShader(const std::string& name_info, const FGraphicsShaderCreateInfo& create_info) = 0;
 			virtual size_t createShader(const std::string& name_info, const FComputeShaderCreateInfo& create_info) = 0;
 
-			virtual size_t createMaterial(const std::string& name, const FMaterialCreateInfo& material_ci) = 0;
+			virtual void createMaterialBuffer() = 0;
 
 			virtual size_t createVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) = 0;
 			virtual const std::unique_ptr<IVertexHandler>& getVertexHandler(size_t id) = 0;

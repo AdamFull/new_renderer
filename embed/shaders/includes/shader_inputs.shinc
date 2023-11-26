@@ -23,118 +23,114 @@
 		layout(location = 4) in vec4 inTangent;
 #endif // HAS_TANGENT
 #ifdef HAS_SKIN
-			layout(location = 5) in vec4 inJoints;
-			layout(location = 6) in vec4 inWeights;
+		layout(location = 5) in vec4 inJoints;
+		layout(location = 6) in vec4 inWeights;
 #endif // HAS_SKIN
 #endif // VERTEX_SHADER
 
-		// Global descriptors
-		layout(std140, set = 0, binding = 0) uniform GlobalUniformFrameData
-		{
-			mat4 view;
-			mat4 invView;
-			mat4 projection;
-			mat4 invProjection;
-			mat4 viewProjection;
-			mat4 invViewProjection;
-			vec3 viewDirection;
-			vec2 viewportDimension;
-			vec4 frustumPlanes[6];
-		} frameData;
+	// Global descriptors
+	layout(std140, set = 0, binding = 0) uniform GlobalUniformFrameData
+	{
+		mat4 view;
+		mat4 invView;
+		mat4 projection;
+		mat4 invProjection;
+		mat4 viewProjection;
+		mat4 invViewProjection;
+		vec3 viewDirection;
+		vec2 viewportDimension;
+		vec4 frustumPlanes[6];
+	} frameData;
 
-		layout(set = 0, binding = 1) uniform sampler2D textures[];
+	// Bindless texture
+	layout(set = 0, binding = 1) uniform sampler2D textures[];
 
 #ifdef MESH_DATA
-		layout(std140, set = 1, binding = 0) uniform UniformMeshData
-		{
-			mat4 model;
-			mat4 normal;
-			vec4 object_id;
-		} meshData;
-		
+	layout(std140, set = 1, binding = 0) uniform UniformMeshData
+	{
+		mat4 model;
+		mat4 normal;
+		vec4 object_id;
+		uint materialId;
+	} meshData;	
 #ifdef HAS_SKIN
-		layout(std140, set = 1, binding = 1) uniform UniformSkinningJoints
-		{
-			mat4 matrices[128];
-		};
+	layout(std140, set = 1, binding = 1) uniform UniformSkinningJoints
+	{
+		mat4 matrices[128];
+	};
 #endif // HAS_SKIN
 #endif // MESH_DATA
-
-		struct Vertex
-		{
-			vec3 pos;
+	struct Vertex
+	{
+		vec3 pos;
 #if defined(COLOR_VEC3)
-			vec3 color;
+		vec3 color;
 #elif defined(COLOR_VEC4)
-			vec4 color;
+		vec4 color;
 #endif // HAS_COLOR
 #ifdef HAS_TEXCOORD
-			vec2 uv;
+		vec2 uv;
 #endif // HAS_TEXCOORD
 #ifdef HAS_NORMAL
-			vec3 normal;
+		vec3 normal;
 #endif // HAS_NORMAL
 #if defined(TANGENT_VEC3)
-			vec3 tangent;
+		vec3 tangent;
 #elif defined(TANGENT_VEC4)
-			vec4 tangent;
+		vec4 tangent;
 #endif // HAS_TANGENT
 #ifdef HAS_SKIN
 #if defined(JOINTS_8BIT)
-			u8vec4 joints;
+		u8vec4 joints;
 #elif defined(JOINTS_16BIT)
-			u16vec4 joints;
+		u16vec4 joints;
 #endif // JOINTS_BIT
-			vec4 weights;
+		vec4 weights;
 #endif // HAS_SKIN
-		};
+	};
 		
-		//layout(std140, set = 0, binding = 3) uniform UBOMaterial
-		//{
-		//	vec4 baseColorFactor;
-		//	vec3 emissiveFactor;
-		//	float emissiveStrength;
-		//	int alphaMode;
-		//	float alphaCutoff;
-		//	float normalScale;
-		//	float occlusionStrenth;
-		//	float metallicFactor;
-		//	float roughnessFactor;
-		//	float tessellationFactor;
-		//	float displacementStrength;
-		//} material;
-		//
-		//#ifdef BINDLESS_TEXTURES
-		//layout(std140, set = 0, binding = 4) uniform UBOMaterialTextures
-		//{
-		//	uint color_tex;
-		//	uint rmah_tex;
-		//	uint normal_tex;
-		//	uint occlusion_tex;
-		//	uint emissive_tex;
-		//	uint height_tex;
-		//} texture_ids;
-		//#endif
-		//
-		//struct FInstance
-		//{
-		//	mat4 model;
-		//	vec4 color;
-		//};
-		//
-		//layout(std430, set = 0, binding = 5) buffer readonly UBOInstancing
-		//{
-		//	FInstance instances[512];
-		//} instancing;
-		//
-		//#ifdef BINDLESS_TEXTURES
-		//#define sample_texture(samplerName, texCoord) texture(textures[texture_ids.samplerName], texCoord)
-		//#define sample_texture_lod(samplerName, texCoord, lodn) textureLod(textures[texture_ids.samplerName], texCoord, lodn)
-		//#define get_texture_size(samplerName, lodn) textureSize(textures[texture_ids.samplerName], lodn)
-		//#else
-		//#define sample_texture(samplerName, texCoord) texture(samplerName, texCoord)
-		//#define sample_texture_lod(samplerName, texCoord, lodn) textureLod(samplerName, texCoord, lodn)
-		//#define get_texture_size(samplerName, lodn) textureSize(samplerName, lodn)
-		//#endif
+	//layout(std140, set = 0, binding = 3) uniform UBOMaterial
+	//{
+	//	vec4 baseColorFactor;
+	//	vec3 emissiveFactor;
+	//	float emissiveStrength;
+	//	int alphaMode;
+	//	float alphaCutoff;
+	//	float normalScale;
+	//	float occlusionStrenth;
+	//	float metallicFactor;
+	//	float roughnessFactor;
+	//	float tessellationFactor;
+	//	float displacementStrength;
+	//} material;
+	//
+	//#ifdef BINDLESS_TEXTURES
+	//layout(std140, set = 0, binding = 4) uniform UBOMaterialTextures
+	//{
+	//	uint color_tex;
+	//	uint rmah_tex;
+	//	uint normal_tex;
+	//	uint occlusion_tex;
+	//	uint emissive_tex;
+	//	uint height_tex;
+	//} texture_ids;
+	//#endif
+	//
+	//struct FInstance
+	//{
+	//	mat4 model;
+	//	vec4 color;
+	//};
+	//
+	//layout(std430, set = 0, binding = 5) buffer readonly UBOInstancing
+	//{
+	//	FInstance instances[512];
+	//} instancing;
+	//
+
+	//#define sample_texture(samplerName, texCoord) texture(textures[texture_ids.samplerName], texCoord)
+	//#define sample_texture_lod(samplerName, texCoord, lodn) textureLod(textures[texture_ids.samplerName], texCoord, lodn)
+	//#define get_texture_size(samplerName, lodn) textureSize(textures[texture_ids.samplerName], lodn)
+
 	""";
 }

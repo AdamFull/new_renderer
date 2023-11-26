@@ -6,7 +6,6 @@
 #include <rendering_steps/SynchronizationRenderingStep.h>
 #include <rendering_steps/VisibilityBufferRenderingStep.h>
 
-#include <Material.h>
 #include <VertexHandler.h>
 
 #include <shader_compiler/compiler_util.h>
@@ -236,30 +235,23 @@ size_t CRenderInterface::createShader(const std::string& name, const FComputeSha
 	return createShader<FComputeShaderCreateInfo>(name_info, create_info);
 }
 
-size_t CRenderInterface::createMaterial(const std::string& name, const FMaterialCreateInfo& material_ci)
+void CRenderInterface::createMaterialBuffer()
 {
-	auto material = std::make_unique<CMaterial>(this, m_pRenderContext.get());
+	FBufferCreateInfo buffer_ci{};
+	buffer_ci.flags = BUFFER_TYPE_STORAGE_FLAG_BIT;
+	buffer_ci.size = sizeof(FMaterial);
+	buffer_ci.count = m_pRenderPacket->materials.size();
 
-	std::string shader_name = material_ci.baseShaderName;
-	for (const auto& define : material_ci.definitions)
-		shader_name += ":" + define;
+	buffer_ci.upload.data.resize(buffer_ci.size * buffer_ci.count);
 
-	// TODO: i don't know how to set output targets for this shader. 
-	FGraphicsShaderCreateInfo shader_ci{};
-	shader_ci.cullMode = SHADER_CULL_MODE_BACK_BIT;
-	shader_ci.frontFace = SHADER_FRONT_FACE_CCW;
-	shader_ci.primitiveTopology = SHADER_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-	shader_ci.colorAttachments = m_matPassRTs;
-	shader_ci.depthAttachment = m_matPassDepth;
-	shader_ci.stencilAttachment = m_matPassStencil;
+	size_t offset{ 0ull };
+	for (const auto& material : m_pRenderPacket->materials)
+	{
+		std::memcpy(buffer_ci.upload.data.data() + offset, &material.parameters, buffer_ci.size);
+		offset += buffer_ci.size;
+	}
 
-	material->m_pShader->create(shader_name, shader_ci);
-
-	// Bind default textures to shader
-	for (auto& [binding_point, texture] : material_ci.textures)
-		material->m_pShader->bindTexture(binding_point.c_str(), texture);
-
-	return m_pResources->add<CMaterial>(name.c_str(), std::move(material));
+	m_pRenderPacket->materialBuffer = m_pRenderContext->createBuffer("global_material_buffer", buffer_ci);
 }
 
 size_t CRenderInterface::createVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci)

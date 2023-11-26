@@ -84,7 +84,11 @@ void CVisibilityBufferRenderingStep::execute(float dt)
 				ubo->set("model", node.model);
 				ubo->set("view", render_packet->camera.view);
 				ubo->set("projection", render_packet->camera.projection);
+				ubo->set("materialId", static_cast<uint32_t>(batch.materialId));
 			}
+
+			if (render_packet->materialBuffer != ~0ull)
+				shader->bindBuffer("MaterialStorage", render_packet->materialBuffer);
 
 			if (batch.skin >= 0)
 			{
