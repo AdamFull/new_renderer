@@ -16,6 +16,8 @@ namespace engine
 
 			void create(const FRenderingStepCreateInfo& create_info) override;
 			void execute(float dt) override;
+		protected:
+			const std::unique_ptr<IShaderObject>& getShaderByVBO(const std::unique_ptr<IVertexHandler>& vbo);
 
 		private:
 			FBeginRenderingInfo m_beginRenderingInfo{};

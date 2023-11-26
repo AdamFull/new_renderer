@@ -71,44 +71,9 @@ void CVisibilityBufferRenderingStep::execute(float dt)
 		auto& vbo = m_pRenderInterface->getVertexHandler(batch.vboId);
 		if (vbo)
 		{
-			auto& vertex_decl = vbo->getVertexDeclaration();
-			//auto vertex_hash = std::hash<FVertexDeclarationInfo>()(vertex_decl);
-			auto vertex_hash = 0ull;
-
 			// TODO: this code looks very ugly as i think
 			// Create shader for vertex declaration if not exists
-			auto& shader = m_shaders[vertex_hash];
-			if (!shader)
-			{
-				shader = std::make_unique<CShaderObject>(m_pRenderInterface, m_pRenderContext);
-
-				std::unordered_set<std::string> definitions{};
-				for (const auto& attrib : vertex_decl.attributeDescriptions)
-				{
-					if (attrib.type == EVertexAttributeType::ePosition)
-						continue;
-					definitions.emplace(attr_type_to_definition(attrib.type));
-				}
-
-				// Generate shader name
-				auto shader_name = m_baseShaderName;
-				for (const auto& define : definitions)
-					shader_name += ":" + define;
-
-				FGraphicsShaderCreateInfo shader_ci{};
-				shader_ci.cullMode = m_beginRenderingInfo.flipViewport ? SHADER_CULL_MODE_FRONT_BIT : SHADER_CULL_MODE_BACK_BIT;
-				shader_ci.frontFace = m_beginRenderingInfo.flipViewport ? SHADER_FRONT_FACE_CW : SHADER_FRONT_FACE_CCW;
-				shader_ci.primitiveTopology = SHADER_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-				shader_ci.colorAttachments = m_beginRenderingInfo.colorAttachments;
-				shader_ci.depthAttachment = m_beginRenderingInfo.depthAttachment;
-				shader_ci.stencilAttachment = m_beginRenderingInfo.stencilAttachment;
-
-				// TODO: i think i can calculate number of calls
-				shader_ci.usageCount = 50u;
-				shader_ci.vertexDeclaration = vertex_decl;
-
-				shader->create(shader_name, shader_ci);
-			}
+			auto& shader = getShaderByVBO(vbo);
 
 			auto& node = render_packet->nodes.at(batch.node);
 
@@ -123,7 +88,7 @@ void CVisibilityBufferRenderingStep::execute(float dt)
 
 			if (batch.skin >= 0)
 			{
-				auto& joints = shader->getUniformBlock("UniformJoints");
+				auto& joints = shader->getUniformBlock("UniformSkinningJoints");
 				auto& matrices = render_packet->skins.at(batch.skin);
 				joints->set("matrices", matrices);
 			}
@@ -149,4 +114,33 @@ void CVisibilityBufferRenderingStep::execute(float dt)
 	// Here i can draw
 
 	m_pRenderContext->endRendering(m_beginRenderingInfo);
+}
+
+const std::unique_ptr<IShaderObject>& CVisibilityBufferRenderingStep::getShaderByVBO(const std::unique_ptr<IVertexHandler>& vbo)
+{
+	auto& shader = m_shaders[vbo->getHash()];
+	if (!shader)
+	{
+		shader = std::make_unique<CShaderObject>(m_pRenderInterface, m_pRenderContext);
+
+		// Generate shader name
+		auto shader_name = m_baseShaderName + vbo->getDefinitions();
+
+		FGraphicsShaderCreateInfo shader_ci{};
+		shader_ci.cullMode = m_beginRenderingInfo.flipViewport ? SHADER_CULL_MODE_BACK_BIT : SHADER_CULL_MODE_FRONT_BIT;
+		shader_ci.frontFace = m_beginRenderingInfo.flipViewport ? SHADER_FRONT_FACE_CW : SHADER_FRONT_FACE_CCW;
+		shader_ci.primitiveTopology = SHADER_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		shader_ci.colorAttachments = m_beginRenderingInfo.colorAttachments;
+		shader_ci.depthAttachment = m_beginRenderingInfo.depthAttachment;
+		shader_ci.stencilAttachment = m_beginRenderingInfo.stencilAttachment;
+
+		auto& render_packet = m_pRenderInterface->getRenderPacket();
+		// TODO: i think i can calculate number of calls
+		shader_ci.usageCount = render_packet->primitiveCount;
+		shader_ci.vertexDeclaration = vbo->getVertexDeclaration();
+
+		shader->create(shader_name, shader_ci);
+	}
+
+	return shader;
 }

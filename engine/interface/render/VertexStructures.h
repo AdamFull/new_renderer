@@ -92,6 +92,8 @@ namespace engine
 			virtual size_t getLastIndex() = 0;
 
 			virtual const FVertexDeclarationInfo& getVertexDeclaration() const = 0;
+			virtual size_t getHash() const = 0;
+			virtual const std::string& getDefinitions() const = 0;
 		};
 	}
 }

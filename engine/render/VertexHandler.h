@@ -1,6 +1,7 @@
 #pragma once
 
 #include <interface/render/RenderInterface.h>
+#include <unordered_set>
 
 namespace engine
 {
@@ -32,10 +33,15 @@ namespace engine
 			size_t getLastIndex() override;
 
 			const FVertexDeclarationInfo& getVertexDeclaration() const override;
+			size_t getHash() const override;
+			const std::string& getDefinitions() const override;
 		private:
 			FBufferInfo m_vertexBuffer{};
 			FBufferInfo m_indexBuffer{};
 
+			// For shader creation
+			std::string m_definitions{};
+			size_t m_attributeHash{ 0ull };
 			FVertexDeclarationInfo m_declaration{};
 
 			IRenderInterface* m_pRenderInterface{ nullptr };

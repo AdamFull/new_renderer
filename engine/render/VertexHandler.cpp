@@ -4,19 +4,95 @@
 
 using namespace engine::render;
 
-uint32_t get_attribute_format_by_type(EVertexAttributeType type)
+// For debugging
+//struct FVertex
+//{
+//	glm::vec3 pos{};
+//	glm::vec2 uv{};
+//	glm::vec3 norm{};
+//	glm::vec4 tan{};
+//	glm::u8vec4 joints{};
+//	glm::vec4 weights{};
+//};
+
+uint32_t get_attribute_format_by_type(EVertexAttributeType type, size_t size)
 {
-	switch (type)
+	if (size == 4ull)
 	{
-	case EVertexAttributeType::ePosition: return FORMAT_RGB32_SFLOAT; break;
-	case EVertexAttributeType::eColor: return FORMAT_RGB32_SFLOAT; break;
-	case EVertexAttributeType::eTexCoord: return FORMAT_RG32_SFLOAT; break;
-	case EVertexAttributeType::eNormal: return FORMAT_RGB32_SFLOAT; break;
-	case EVertexAttributeType::eTangent: return FORMAT_RGBA32_SFLOAT; break;
-	case EVertexAttributeType::eJoint: return FORMAT_RGBA16_UNORM; break;
-	case EVertexAttributeType::eWeight: return FORMAT_RGBA32_SFLOAT; break;
+		switch (type)
+		{
+		case EVertexAttributeType::eJoint: return FORMAT_RGBA8_UNORM; break;
+		}
 	}
+	else if (size == 8ull)
+	{
+		switch (type)
+		{
+		case EVertexAttributeType::eTexCoord: return FORMAT_RG32_SFLOAT; break;
+		case EVertexAttributeType::eJoint: return FORMAT_RGBA16_UNORM; break;
+		}
+	}
+	else if (size == 12ull)
+	{
+		switch (type)
+		{
+		case EVertexAttributeType::ePosition:
+		case EVertexAttributeType::eColor: 
+		case EVertexAttributeType::eNormal: 
+		case EVertexAttributeType::eTangent: return FORMAT_RGBA32_SFLOAT; break;
+		}
+	}
+	else if (size == 16ull)
+	{
+		switch (type)
+		{
+		case EVertexAttributeType::ePosition:
+		case EVertexAttributeType::eColor:
+		case EVertexAttributeType::eTangent:
+		case EVertexAttributeType::eWeight: return FORMAT_RGBA32_SFLOAT; break;
+		}
+	}
+
 	return 0;
+}
+// HAS_TEXCOORD, HAS_NORMAL, HAS_SKIN, COLOR_VEC3, COLOR_VEC4, TANGENT_VEC3, TANGENT_VEC4, JOINTS_8BIT, JOINTS_16BIT
+std::string get_attribute_definition(EVertexAttributeType type, size_t size)
+{
+	if (size == 4ull)
+	{
+		switch (type)
+		{
+		case EVertexAttributeType::eJoint: return "JOINTS_8BIT"; break;
+		}
+	}
+	else if (size == 8ull)
+	{
+		switch (type)
+		{
+		case EVertexAttributeType::eTexCoord: return "HAS_TEXCOORD"; break;
+		case EVertexAttributeType::eJoint: return "JOINTS_16BIT"; break;
+		}
+	}
+	else if (size == 12ull)
+	{
+		switch (type)
+		{
+		case EVertexAttributeType::eColor: return "COLOR_VEC3"; break;
+		case EVertexAttributeType::eNormal: return "HAS_NORMAL"; break;
+		case EVertexAttributeType::eTangent: return "TANGENT_VEC3"; break;
+		}
+	}
+	else if (size == 16ull)
+	{
+		switch (type)
+		{
+		case EVertexAttributeType::eColor: return "COLOR_VEC4"; break;
+		case EVertexAttributeType::eTangent: return "TANGENT_VEC4"; break;
+		case EVertexAttributeType::eWeight: return "HAS_SKIN"; break;
+		}
+	}
+
+	return "";
 }
 
 CVertexHandler::CVertexHandler(IRenderInterface* render_interface, IRenderContext* render_context)
@@ -34,16 +110,25 @@ CVertexHandler::~CVertexHandler()
 // NOTE: current implementation work only with interleaved vertex
 void CVertexHandler::create(const FVertexHandlerCreateInfo& create_info)
 {
+	std::unordered_set<std::string> definitions{};
+
+	// Initialize attribute descriptions
 	for (const auto& desc : create_info.descriptions)
 	{
+		//if (desc.type == EVertexAttributeType::eJoint)
+		//	skinned = true;
+
 		auto& attrib = m_declaration.attributeDescriptions.emplace_back();
 		attrib.type = desc.type;
 		attrib.binding = 0u;
 		attrib.location = static_cast<uint32_t>(desc.type);
 
-		auto format = get_attribute_format_by_type(desc.type);
+		auto format = get_attribute_format_by_type(desc.type, desc.size);
 		attrib.format = m_pRenderContext->getApiFormat(format);
 		attrib.offset = m_vertexBuffer.elementSize;
+
+		if(desc.type != EVertexAttributeType::ePosition)
+			definitions.emplace(get_attribute_definition(desc.type, desc.size));
 
 		m_vertexBuffer.elementSize += desc.size;
 	}
@@ -53,6 +138,15 @@ void CVertexHandler::create(const FVertexHandlerCreateInfo& create_info)
 	desc.stride = m_vertexBuffer.elementSize;
 
 	m_indexBuffer.elementSize = create_info.indexSize;
+
+	// Initialize attribute definitions and hash
+	std::stringstream ss{};
+	for (const auto& definition : definitions)
+		ss << ":" << definition;
+	m_definitions = ss.str();
+
+	m_attributeHash = utl::fnv1a_64_hash(m_definitions.c_str());
+
 	return;
 }
 
@@ -109,6 +203,13 @@ size_t CVertexHandler::addVertices(const std::vector<FVertexAttributePointer>& a
 			std::memcpy(temp.data() + offset, &attrib.data[v * attrib.stride], attrib.stride);
 			offset += attrib.stride;
 		}
+
+		//if (skinned)
+		//{
+		//	FVertex vertex{};
+		//	std::memcpy(&vertex, temp.data(), temp.size());
+		//	int iiii = 0;
+		//}
 
 		m_vertexBuffer.data.insert(m_vertexBuffer.data.end(), temp.begin(), temp.end());
 	}
@@ -170,4 +271,14 @@ size_t CVertexHandler::getLastIndex()
 const FVertexDeclarationInfo& CVertexHandler::getVertexDeclaration() const
 {
 	return m_declaration;
+}
+
+size_t CVertexHandler::getHash() const
+{
+	return m_attributeHash;
+}
+
+const std::string& CVertexHandler::getDefinitions() const
+{
+	return m_definitions;
 }
