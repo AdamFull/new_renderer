@@ -196,8 +196,8 @@ void CScene::load(const std::string& path)
 		//m_pRenderInterface->create(material_ci.)
 	}
 
-	void loadAnimations();
-	void loadSkins();
+	loadAnimations();
+	loadSkins();
 
 	for (const auto& [hash, handler_ids] : m_resources.vertexHandlers)
 	{
@@ -217,6 +217,9 @@ void CScene::update(float dt)
 	TRACY_PROFILE_FUNCTION();
 
 	TRACY_PROFILE_SCOPE("Scene update")
+
+	auto& render_packet = m_pRenderInterface->getRenderPacket();
+	render_packet->primitiveCount = m_resources.primitiveCount;
 
 	for (auto& system : m_systems)
 		system->update(dt);
@@ -379,6 +382,10 @@ void CScene::loadMeshComponent(const entt::entity parent, uint32_t node_index)
 	const auto& mesh = gltf.meshes[node.mesh];
 
 	auto& mesh_component = m_pSceneGraph->addComponent<FMeshComponent>(parent, FMeshComponent{});
+	mesh_component.skin = node.skin;
+
+	if (mesh_component.skin > -1)
+		int iiiii = 0;
 
 	// Load mesh primitives
 	for (size_t i = 0ull; i < mesh.primitives.size(); ++i)
@@ -428,7 +435,7 @@ void CScene::loadMeshComponent(const entt::entity parent, uint32_t node_index)
 			indices.stride = get_size_by_type(accessor.componentType, accessor.type);
 			indices.count = accessor.count;
 
-			attributes_hash += attribute_hasher(static_cast<uint32_t>(indices.stride));
+			attributes_hash ^= attribute_hasher(static_cast<uint32_t>(indices.stride)) << 1;
 		}
 
 		// Get or create vertex buffer
