@@ -34,7 +34,9 @@
 		{
 			uint outVBID = calculateOutputVBID(drawID, gl_PrimitiveID + 1);
 			visBuffer = unpackUnorm4x8(outVBID);
+#ifdef HAS_TEXCOORD
 			//visBuffer = vec4(uv, 0, 1);
+#endif
 		}
 	""";
 }

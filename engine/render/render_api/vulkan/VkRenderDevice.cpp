@@ -1227,6 +1227,12 @@ void CVkRenderDevice::prepareRequestedLogicalDeviceFeatures()
 				requestExtensionFeatures<vk::PhysicalDeviceDescriptorBufferFeaturesEXT>();
 			else if (extension_name == VK_EXT_SHADER_OBJECT_EXTENSION_NAME)
 				requestExtensionFeatures<vk::PhysicalDeviceShaderObjectFeaturesEXT>();
+			else if (extension_name == VK_KHR_8BIT_STORAGE_EXTENSION_NAME)
+				requestExtensionFeatures<vk::PhysicalDevice8BitStorageFeaturesKHR>();
+			else if (extension_name == VK_KHR_16BIT_STORAGE_EXTENSION_NAME)
+				requestExtensionFeatures<vk::PhysicalDevice16BitStorageFeaturesKHR>();
+			else if (extension_name == VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME)
+				requestExtensionFeatures<vk::PhysicalDeviceShaderFloat16Int8FeaturesKHR>();
 		}
 	}
 }

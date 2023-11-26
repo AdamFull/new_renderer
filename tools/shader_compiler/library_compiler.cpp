@@ -43,14 +43,21 @@ std::string emplace_data(std::string base_string, const std::string& target, con
 	return base_string;
 }
 
-std::vector<std::string> make_permutation(size_t mask, size_t total, const std::vector<std::string>& source)
+std::vector<std::string> make_permutation(size_t mask, const std::vector<FDefinitionChain>& chains) 
 {
 	std::vector<std::string> permutation;
-	for (size_t j = 0; j < total; ++j)
+
+	for (size_t j = 0; j < chains.size(); ++j) 
 	{
-		if (mask & (1 << j))
-			permutation.emplace_back(source[j]);
+		if (mask & (1 << j)) 
+		{
+			permutation.emplace_back(chains[j].base);
+
+			if (!chains[j].var.empty())
+				permutation.emplace_back(chains[j].var[0].base);
+		}
 	}
+
 	return permutation;
 }
 
@@ -147,7 +154,7 @@ void CLibraryCompiler::compile(const std::filesystem::path& library_path, FShade
 		if (generate_permutations)
 		{
 			for (size_t mask = 0; mask < total_permutations; ++mask)
-				cached_permutations.emplace_back(make_permutation(mask, perm_n, compile.permutation_gen.definitions));
+				cached_permutations.emplace_back(make_permutation(mask, compile.permutation_gen.definitions));
 		}
 
 		for (auto& permutation : compile.permutations)

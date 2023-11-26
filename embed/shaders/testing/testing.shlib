@@ -43,11 +43,13 @@
 			shader_name: "visbufferwrite";
 			permutation_generator: {
 				definitions: [
-					"HAS_COLOR",
-					"HAS_TEXCOORD",
-					"HAS_NORMAL",
-					"HAS_TANGENT",
-					"HAS_SKIN"
+					{ base: "HAS_TEXCOORD" },
+					{ base: "HAS_NORMAL" },
+					{ base: "HAS_SKIN", var:[{ base: "JOINTS_8BIT" }, { base: "JOINTS_16BIT" }] },
+					{ base: "COLOR_VEC3" },
+					{ base: "COLOR_VEC4" },
+					{ base: "TANGENT_VEC3" },
+					{ base: "TANGENT_VEC4" }
 				];
 			};
 		}

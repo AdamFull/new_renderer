@@ -71,6 +71,12 @@ namespace shader_compiler
 		sjson.try_parse_to("definitions", value.definitions);
 	}
 
+	void deserialize(const sjson::sjson_object& sjson, FDefinitionChain& value)
+	{
+		sjson.try_parse_to("base", value.base);
+		sjson.try_parse_to("var", value.var);
+	}
+
 	void deserialize(const sjson::sjson_object& sjson, FShaderPermutationGenerator& value)
 	{
 		sjson.try_parse_to("definitions", value.definitions);

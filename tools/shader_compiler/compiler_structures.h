@@ -73,9 +73,15 @@ namespace shader_compiler
 		std::vector<std::string> definitions;
 	};
 
+	struct FDefinitionChain
+	{
+		std::string base{};
+		std::vector<FDefinitionChain> var{};
+	};
+
 	struct FShaderPermutationGenerator
 	{
-		std::vector<std::string> definitions;
+		std::vector<FDefinitionChain> definitions;
 	};
 
 	struct FShaderCompile
