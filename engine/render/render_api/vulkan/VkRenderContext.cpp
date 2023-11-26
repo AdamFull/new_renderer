@@ -594,11 +594,13 @@ void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader
 	auto& buffers = m_pResources->data<FVkBuffer>();
 
 	std::unordered_set<uint32_t> updated_descriptor_sets{};
-	std::vector<vk::WriteDescriptorSet> write_descriptor_sets{};
-	std::vector<vk::DescriptorImageInfo> image_descriptors{};
-	std::vector<vk::DescriptorBufferInfo> buffer_descriptors{};
+	std::array<vk::WriteDescriptorSet, 64ull> write_descriptor_sets{};
+	std::array<vk::DescriptorImageInfo, 64ull> image_descriptors{};
+	std::array<vk::DescriptorBufferInfo, 64ull> buffer_descriptors{};
 
-	std::unordered_map<size_t, size_t> buffers_to_bind{};
+	size_t texture_count{ 0ull };
+	size_t buffer_count{ 0ull };
+	size_t writes_count{ 0ull };
 
 	// TODO: add something like check sum to check changed data in buffers or not
 	if (flags & SHADER_RESOURCES_UPDATE_UNIFORM_BLOCKS_FLAG_BIT)
@@ -619,19 +621,21 @@ void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader
 			auto buffer_element_size = buffer->size / buffer->instanceCount;
 
 			// Not sure that it is correct, because i don't know how to determine previous buffer
-			auto& buffer_descriptor = buffer_descriptors.emplace_back();
+			auto& buffer_descriptor = buffer_descriptors.at(buffer_count);
 			buffer_descriptor.buffer = buffer->handle;
 			buffer_descriptor.range = uniform_block.size;
 			buffer_descriptor.offset = descriptor_index * buffer_element_size;
+			buffer_count++;
 
 			auto& current_descriptor_set = shader->descriptorSets[uniform_block.set].handles.at(descriptor_index);
 
-			auto& write_descriptor_set = write_descriptor_sets.emplace_back();
+			auto& write_descriptor_set = write_descriptor_sets.at(writes_count);
 			write_descriptor_set.descriptorType = uniform_block.descriptorType;
 			write_descriptor_set.dstBinding = uniform_block.binding;
 			write_descriptor_set.dstSet = current_descriptor_set;
 			write_descriptor_set.pBufferInfo = &buffer_descriptor;
 			write_descriptor_set.descriptorCount = 1;
+			writes_count++;
 
 			// Write new data to buffer memory
 			void* mapped_memory{ nullptr };
@@ -659,19 +663,21 @@ void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader
 			auto buffer_element_size = buffer->size / buffer->instanceCount;
 
 			// Not sure that it is correct, because i don't know how to determine previous buffer
-			auto& buffer_descriptor = buffer_descriptors.emplace_back();
+			auto& buffer_descriptor = buffer_descriptors.at(buffer_count);
 			buffer_descriptor.buffer = buffer->handle;
 			buffer_descriptor.range = uniform_block.size;
 			buffer_descriptor.offset = descriptor_index * buffer_element_size;
+			buffer_count++;
 
 			auto& current_descriptor_set = shader->descriptorSets[uniform_block.set].handles.at(descriptor_index);
 
-			auto& write_descriptor_set = write_descriptor_sets.emplace_back();
+			auto& write_descriptor_set = write_descriptor_sets.at(writes_count);
 			write_descriptor_set.descriptorType = uniform_block.descriptorType;
 			write_descriptor_set.dstBinding = uniform_block.binding;
 			write_descriptor_set.dstSet = current_descriptor_set;
 			write_descriptor_set.pBufferInfo = &buffer_descriptor;
 			write_descriptor_set.descriptorCount = 1;
+			writes_count++;
 		}
 	}
 
@@ -694,20 +700,22 @@ void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader
 			updated_descriptor_sets.emplace(uniform.set);
 
 			// TODO: add image view selection support
-			auto& image_descriptor = image_descriptors.emplace_back();
+			auto& image_descriptor = image_descriptors.at(texture_count);
 			image_descriptor.imageView = texture->imageViews.front();
 			image_descriptor.sampler = texture->sampler;
 			image_descriptor.imageLayout = texture->layout;
+			texture_count++;
 
 			auto descriptor_index = shader->descriptorUsage[uniform.set];
 			auto& current_descriptor_set = shader->descriptorSets[uniform.set].handles.at(descriptor_index);
 
-			auto& write_descriptor_set = write_descriptor_sets.emplace_back();
+			auto& write_descriptor_set = write_descriptor_sets.at(writes_count);
 			write_descriptor_set.descriptorType = uniform.descriptorType;
 			write_descriptor_set.dstBinding = uniform.binding;
 			write_descriptor_set.dstSet = current_descriptor_set;
 			write_descriptor_set.pImageInfo = &image_descriptor;
 			write_descriptor_set.descriptorCount = 1;
+			writes_count++;
 		}
 	}
 
@@ -722,7 +730,7 @@ void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader
 	if (!write_descriptor_sets.empty())
 	{
 		auto& logical = m_pDevice->getLogicalDevice();
-		logical.updateDescriptorSets(static_cast<uint32_t>(write_descriptor_sets.size()), write_descriptor_sets.data(), 0, nullptr);
+		logical.updateDescriptorSets(static_cast<uint32_t>(writes_count), write_descriptor_sets.data(), 0, nullptr);
 	}
 }
 
