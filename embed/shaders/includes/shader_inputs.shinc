@@ -6,8 +6,10 @@
 	// Vertex inputs
 #ifdef VERTEX_SHADER
 		layout(location = 0) in vec3 inPosition;
-#ifdef HAS_COLOR
+#if defined(COLOR_VEC3)
 		layout(location = 1) in vec3 inColor;
+#elif defined(COLOR_VEC4)
+		layout(location = 1) in vec4 inColor;
 #endif // HAS_COLOR
 #ifdef HAS_TEXCOORD
 		layout(location = 2) in vec2 inTexCoord;
@@ -15,7 +17,9 @@
 #ifdef HAS_NORMAL
 		layout(location = 3) in vec3 inNormal;
 #endif // HAS_NORMAL
-#ifdef HAS_TANGENT
+#if defined(TANGENT_VEC3)
+		layout(location = 4) in vec3 inTangent;
+#elif defined(TANGENT_VEC4)
 		layout(location = 4) in vec4 inTangent;
 #endif // HAS_TANGENT
 #ifdef HAS_SKIN
@@ -49,9 +53,9 @@
 		} meshData;
 		
 #ifdef HAS_SKIN
-		layout(std140, set = 0, binding = 2) uniform FSkinning
+		layout(std140, set = 1, binding = 1) uniform UniformSkinningJoints
 		{
-			mat4 jointMatrices[128];
+			mat4 matrices[128];
 		};
 #endif // HAS_SKIN
 #endif // MESH_DATA
@@ -59,20 +63,28 @@
 		struct Vertex
 		{
 			vec3 pos;
-#ifdef HAS_COLOR
+#if defined(COLOR_VEC3)
 			vec3 color;
+#elif defined(COLOR_VEC4)
+			vec4 color;
 #endif // HAS_COLOR
 #ifdef HAS_TEXCOORD
-		vec2 uv;
+			vec2 uv;
 #endif // HAS_TEXCOORD
 #ifdef HAS_NORMAL
-		vec3 normal;
+			vec3 normal;
 #endif // HAS_NORMAL
-#ifdef HAS_TANGENT
-		vec4 tangent;
+#if defined(TANGENT_VEC3)
+			vec3 tangent;
+#elif defined(TANGENT_VEC4)
+			vec4 tangent;
 #endif // HAS_TANGENT
 #ifdef HAS_SKIN
-			vec4 joints;
+#if defined(JOINTS_8BIT)
+			u8vec4 joints;
+#elif defined(JOINTS_16BIT)
+			u16vec4 joints;
+#endif // JOINTS_BIT
 			vec4 weights;
 #endif // HAS_SKIN
 		};
