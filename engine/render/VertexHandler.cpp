@@ -104,7 +104,8 @@ CVertexHandler::CVertexHandler(IRenderInterface* render_interface, IRenderContex
 // TODO: destroy buffers
 CVertexHandler::~CVertexHandler()
 {
-
+	m_pRenderContext->destroyBuffer(m_vertexBuffer.buffer);
+	m_pRenderContext->destroyBuffer(m_indexBuffer.buffer);
 }
 
 // NOTE: current implementation work only with interleaved vertex

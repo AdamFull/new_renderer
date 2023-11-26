@@ -41,7 +41,7 @@ CVkRenderContext::~CVkRenderContext()
 		auto& texture_instances = textures.at(texture_id);
 		for (auto& instance : texture_instances)
 		{
-			if (instance->initialData.base.isSwapchainTarget)
+			if (instance->initialData.base.isSwapchainTarget || !instance->isAlive)
 				continue;
 
 			destroyTexture(*instance);
@@ -53,8 +53,27 @@ CVkRenderContext::~CVkRenderContext()
 	for (resource_handle_t shader_id = 0ull; shader_id < shaders.size(); ++shader_id)
 	{
 		auto& shader_instances = shaders.at(shader_id);
-		for(auto& instance : shader_instances)
+		for (auto& instance : shader_instances)
+		{
+			if (!instance->isAlive)
+				continue;
+
 			destroyShader(*instance);
+		}
+	}
+
+	// Destroy all buffers
+	auto& buffers = m_pResources->data<FVkBuffer>();
+	for (resource_handle_t buffer_id = 0ull; buffer_id < buffers.size(); ++buffer_id)
+	{
+		auto& buffer_instances = buffers.at(buffer_id);
+		for (auto& instance : buffer_instances)
+		{
+			if (!instance->isAlive)
+				continue;
+
+			m_pDevice->destroyBuffer(*instance);
+		}
 	}
 }
 
@@ -69,10 +88,8 @@ void CVkRenderContext::create(const FRenderContextCreateInfo& context_ci)
 	m_pResources->registerResource<FVkBuffer>();
 	m_pResources->registerResource<FVkShaderReflectionData>();
 
-	auto& swapchain = m_pDevice->getSwapchain();
-
 	FVkCommandBufferCreateInfo command_buffer_ci{};
-	command_buffer_ci.count = swapchain.framesInFlight;
+	command_buffer_ci.count = m_pDevice->m_swapchain.framesInFlight;
 	command_buffer_ci.mask = QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT;
 	command_buffer_ci.level = vk::CommandBufferLevel::ePrimary;
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -84,12 +101,10 @@ void CVkRenderContext::create(const FRenderContextCreateInfo& context_ci)
 
 void CVkRenderContext::createGlobalDescriptor(const FGlobalUniformCreateInfo& uniform_ci)
 {
-	auto& swapchain = m_pDevice->getSwapchain();
-
 	// Create descriptor pool
 	FVkDescriptorPoolCreateInfo pool_ci{};
 	pool_ci.poolSizes = { { vk::DescriptorType::eCombinedImageSampler, k_max_bindless_resources }, {vk::DescriptorType::eUniformBuffer, 1u} };
-	pool_ci.usageCount = 1u * swapchain.framesInFlight;
+	pool_ci.usageCount = 1u * m_pDevice->m_swapchain.framesInFlight;
 	pool_ci.flags |= vk::DescriptorPoolCreateFlagBits::eUpdateAfterBindEXT;
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	pool_ci.name = "global:textures";
@@ -135,14 +150,14 @@ void CVkRenderContext::createGlobalDescriptor(const FGlobalUniformCreateInfo& un
 
 	// Create descriptor set
 	FVkDescriptorSetCreateInfo set_ci{};
-	set_ci.descriptorCount = swapchain.framesInFlight;
+	set_ci.descriptorCount = m_pDevice->m_swapchain.framesInFlight;
 	set_ci.layout = m_globalDescriptor.deecriptorSetLayout;
 	set_ci.pool = m_globalDescriptor.descriptorPool.handle;
 
 	// TODO: Potential problems here in future. I think that max_sets array is incorrect
-	std::vector<uint32_t> max_sets(swapchain.framesInFlight, k_max_bindless_resources - 1);
+	std::vector<uint32_t> max_sets(m_pDevice->m_swapchain.framesInFlight, k_max_bindless_resources - 1);
 	vk::DescriptorSetVariableDescriptorCountAllocateInfoEXT descriptor_set_variable_descriptor_count_AIEXT{};
-	descriptor_set_variable_descriptor_count_AIEXT.descriptorSetCount = swapchain.framesInFlight;
+	descriptor_set_variable_descriptor_count_AIEXT.descriptorSetCount = m_pDevice->m_swapchain.framesInFlight;
 	descriptor_set_variable_descriptor_count_AIEXT.pDescriptorCounts = max_sets.data();
 	set_ci.next = &descriptor_set_variable_descriptor_count_AIEXT;
 
@@ -159,7 +174,7 @@ void CVkRenderContext::createGlobalDescriptor(const FGlobalUniformCreateInfo& un
 	for (auto& [uniform_name, uniform_block] : uniform_ci.uniforms)
 	{
 		FVkBufferCreateInfo buffer_ci{};
-		buffer_ci.instanceCount = swapchain.framesInFlight;
+		buffer_ci.instanceCount = m_pDevice->m_swapchain.framesInFlight;
 		buffer_ci.instanceSize = uniform_block.size;
 		buffer_ci.minOffsetAlignment = minOffsetAllignment;
 		buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
@@ -184,9 +199,7 @@ void CVkRenderContext::createGlobalDescriptor(const FGlobalUniformCreateInfo& un
 
 void CVkRenderContext::updateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view)
 {
-	auto& swapchain = m_pDevice->getSwapchain();
-
-	auto& dest_set = m_globalDescriptor.descriptorSet.handles.at(swapchain.currentFrame);
+	auto& dest_set = m_globalDescriptor.descriptorSet.handles.at(m_pDevice->m_swapchain.currentFrame);
 
 	std::array<vk::DescriptorImageInfo, k_max_texture_update_per_frame> image_descriptors{};
 	std::array<vk::DescriptorBufferInfo, k_max_buffer_update_per_frame> buffer_descriptors{};
@@ -195,7 +208,7 @@ void CVkRenderContext::updateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 	size_t texture_count{ 0ull };
 	size_t buffer_count{ 0ull };
 
-	auto& texture_queue = m_textureToUpdate[swapchain.currentFrame];
+	auto& texture_queue = m_textureToUpdate[m_pDevice->m_swapchain.currentFrame];
 	while (!texture_queue.empty())
 	{
 		if (texture_count >= k_max_texture_update_per_frame)
@@ -234,7 +247,7 @@ void CVkRenderContext::updateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 		auto& buffer_descriptor = buffer_descriptors.at(buffer_count);
 		buffer_descriptor.buffer = buffer->handle;
 		buffer_descriptor.range = element_size;
-		buffer_descriptor.offset = swapchain.currentFrame * element_size;
+		buffer_descriptor.offset = m_pDevice->m_swapchain.currentFrame * element_size;
 
 		auto& write_descriptor_set = write_descriptor_sets.emplace_back();
 		write_descriptor_set.descriptorType = vk::DescriptorType::eUniformBuffer;
@@ -279,8 +292,7 @@ size_t CVkRenderContext::createTexture(const std::string& name, const FTextureCr
 
 	// Add texture to bindless buffer
 	{
-		auto& swapchain = m_pDevice->getSwapchain();
-		for (uint32_t frame = 0u; frame < swapchain.framesInFlight; ++frame)
+		for (uint32_t frame = 0u; frame < m_pDevice->m_swapchain.framesInFlight; ++frame)
 			m_textureToUpdate[frame].push(upload_data.textureId);
 	}
 
@@ -313,19 +325,17 @@ size_t CVkRenderContext::createRenderTarget(const std::string& name, const FText
 
 size_t CVkRenderContext::createRenderTargets(const std::string& name, const FTextureCreateInfo& texture_ci)
 {
-	auto& swapchain = m_pDevice->getSwapchain();
-
 	size_t resource_id{ ~0ull };
 
-	for (uint32_t idx = 0u; idx < swapchain.framesInFlight; ++idx)
+	for (uint32_t idx = 0u; idx < m_pDevice->m_swapchain.framesInFlight; ++idx)
 	{
 		if (texture_ci.isSwapchainTarget)
 		{
 			auto texture = std::make_unique<FVkTexture>();
 			texture->isRenderTarget = true;
 			texture->initialData.base = texture_ci;
-			texture->image.handle = swapchain.images.at(idx);
-			texture->imageViews.emplace_back(swapchain.imageViews.at(idx));
+			texture->image.handle = m_pDevice->m_swapchain.images.at(idx);
+			texture->imageViews.emplace_back(m_pDevice->m_swapchain.imageViews.at(idx));
 
 			resource_id = m_pResources->add<FVkTexture>(name.c_str(), std::move(texture));
 		}
@@ -338,7 +348,7 @@ size_t CVkRenderContext::createRenderTargets(const std::string& name, const FTex
 
 void CVkRenderContext::destroyTexture(size_t resource_id)
 {
-	// TODO: we can't remove resources instantly in any time. Here i should add resource to delete queue
+	m_destroyResource.push(FAPIObjectDestroyInfo{ resource_id, RESOURCE_TYPE_TEXTURE_BIT });
 }
 
 
@@ -448,6 +458,8 @@ size_t CVkRenderContext::createShader(const std::string& name, const FGraphicsSh
 
 	auto& pipeline = shader->handles.emplace_back();
 	m_pDevice->createPipeline(pipeline_ci, pipeline);
+	
+	shader->isAlive = true;
 
 	auto shader_unique_name = create_object_unique_name("shader:{:x}:{}", shader->handles.back(), vk::to_string(shader->bindPoint));
 	return m_pResources->add<FVkShader>(shader_unique_name.c_str(), std::move(shader));
@@ -588,7 +600,6 @@ void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader
 {
 	auto& shader = m_pResources->get<FVkShader>(shader_resources.shaderId);
 	auto& shader_reflection = m_pResources->get<FVkShaderReflectionData>(shader->reflection);
-	auto& swapchain = m_pDevice->getSwapchain();
 
 	auto& textures = m_pResources->data<FVkTexture>();
 	auto& buffers = m_pResources->data<FVkBuffer>();
@@ -687,8 +698,8 @@ void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader
 		for (const auto& [texture_name, texture_id] : shader_resources.textures)
 		{
 			size_t texture_index{ 0ull };
-			if (textures.at(texture_id).size() == swapchain.framesInFlight)
-				texture_index = swapchain.currentFrame;
+			if (textures.at(texture_id).size() == m_pDevice->m_swapchain.framesInFlight)
+				texture_index = m_pDevice->m_swapchain.currentFrame;
 
 			auto& texture = textures.at(texture_id).at(texture_index);
 
@@ -772,7 +783,7 @@ void CVkRenderContext::bindShader(size_t shader_id, uint32_t queue_type)
 
 void CVkRenderContext::destroyShader(size_t resource_id)
 {
-	// TODO: we can't remove resources instantly in any time. Here i should add resource to delete queue
+	m_destroyResource.push(FAPIObjectDestroyInfo{ resource_id, RESOURCE_TYPE_SHADER_BIT });
 }
 
 size_t CVkRenderContext::createBuffer(const std::string& name, const FBufferCreateInfo& buffer_ci)
@@ -892,7 +903,7 @@ void CVkRenderContext::flushBuffer(size_t buffer_id, size_t size, size_t offset)
 
 void CVkRenderContext::destroyBuffer(size_t resource_id)
 {
-	// TODO: we can't remove resources instantly in any time. Here i should add resource to delete queue
+	m_destroyResource.push(FAPIObjectDestroyInfo{ resource_id, RESOURCE_TYPE_BUFFER_BIT });
 }
 
 
@@ -902,7 +913,6 @@ void CVkRenderContext::beginRendering(const FBeginRenderingInfo& rendering_info)
 	auto& command_buffer = getLastCommandBuffer(rendering_info.queue);
 
 	auto& textures = m_pResources->data<FVkTexture>();
-	auto& swapchain = m_pDevice->getSwapchain();
 
 	FVkTranslationInfo translation_info{};
 
@@ -915,7 +925,7 @@ void CVkRenderContext::beginRendering(const FBeginRenderingInfo& rendering_info)
 	std::vector<vk::RenderingAttachmentInfoKHR> color_attachments{};
 	for (const auto& target_view : rendering_info.colorAttachments)
 	{
-		auto& render_target = textures.at(target_view).at(swapchain.currentFrame);
+		auto& render_target = textures.at(target_view).at(m_pDevice->m_swapchain.currentFrame);
 
 		// Translating render target layout to color attachment
 		FVkTextureTranslationInfo texture_translation_info{};
@@ -942,7 +952,7 @@ void CVkRenderContext::beginRendering(const FBeginRenderingInfo& rendering_info)
 	vk::RenderingAttachmentInfoKHR depth_attachment{};
 	if (rendering_info.depthAttachment != invalid_handle)
 	{
-		auto& depth_target = textures.at(rendering_info.depthAttachment).at(swapchain.currentFrame);
+		auto& depth_target = textures.at(rendering_info.depthAttachment).at(m_pDevice->m_swapchain.currentFrame);
 
 		bool is_depth_stencil_attachment = !is_depth_only_format(static_cast<vk::Format>(depth_target->initialData.base.format)) && (rendering_info.stencilAttachment == rendering_info.depthAttachment);
 
@@ -963,7 +973,7 @@ void CVkRenderContext::beginRendering(const FBeginRenderingInfo& rendering_info)
 	vk::RenderingAttachmentInfoKHR stencil_attachment{};
 	if (rendering_info.stencilAttachment != rendering_info.depthAttachment && rendering_info.stencilAttachment != invalid_handle)
 	{
-		auto& stencil_target = textures.at(rendering_info.stencilAttachment).at(swapchain.currentFrame);
+		auto& stencil_target = textures.at(rendering_info.stencilAttachment).at(m_pDevice->m_swapchain.currentFrame);
 
 		FVkTextureTranslationInfo texture_translation_info{};
 		texture_translation_info.oldLayout = vk::ImageLayout::eUndefined;
@@ -995,7 +1005,7 @@ void CVkRenderContext::beginRendering(const FBeginRenderingInfo& rendering_info)
 	{
 		begin_rendering_info.pDepthAttachment = &depth_attachment;
 
-		auto& depth_target = textures.at(rendering_info.depthAttachment).at(swapchain.currentFrame);
+		auto& depth_target = textures.at(rendering_info.depthAttachment).at(m_pDevice->m_swapchain.currentFrame);
 		if (!is_depth_only_format(static_cast<vk::Format>(depth_target->initialData.base.format)) && rendering_info.stencilAttachment == rendering_info.depthAttachment)
 			begin_rendering_info.pStencilAttachment = &depth_attachment;
 	}
@@ -1017,7 +1027,6 @@ void CVkRenderContext::endRendering(const FBeginRenderingInfo& rendering_info)
 	auto& command_buffer = getLastCommandBuffer(rendering_info.queue);
 	
 	auto& textures = m_pResources->data<FVkTexture>();
-	auto& swapchain = m_pDevice->getSwapchain();
 
 	auto& current_buffer = command_buffer.get();
 	current_buffer.endRenderingKHR();
@@ -1030,7 +1039,7 @@ void CVkRenderContext::endRendering(const FBeginRenderingInfo& rendering_info)
 
 	for (const auto& target_view : rendering_info.colorAttachments)
 	{
-		auto& render_target = textures.at(target_view).at(swapchain.currentFrame);
+		auto& render_target = textures.at(target_view).at(m_pDevice->m_swapchain.currentFrame);
 
 		// Translating render target layout to color attachment
 		FVkTextureTranslationInfo texture_translation_info{};
@@ -1042,7 +1051,7 @@ void CVkRenderContext::endRendering(const FBeginRenderingInfo& rendering_info)
 
 	if (rendering_info.depthAttachment != invalid_handle)
 	{
-		auto& depth_target = textures.at(rendering_info.depthAttachment).at(swapchain.currentFrame);
+		auto& depth_target = textures.at(rendering_info.depthAttachment).at(m_pDevice->m_swapchain.currentFrame);
 
 		bool is_depth_stencil_attachment = (rendering_info.stencilAttachment == rendering_info.depthAttachment) && rendering_info.stencilAttachment != invalid_handle;
 
@@ -1055,7 +1064,7 @@ void CVkRenderContext::endRendering(const FBeginRenderingInfo& rendering_info)
 
 	if (rendering_info.stencilAttachment != invalid_handle && rendering_info.depthAttachment != rendering_info.stencilAttachment)
 	{
-		auto& stencil_target = textures.at(rendering_info.stencilAttachment).at(swapchain.currentFrame);;
+		auto& stencil_target = textures.at(rendering_info.stencilAttachment).at(m_pDevice->m_swapchain.currentFrame);;
 
 		FVkTextureTranslationInfo texture_translation_info{};
 		texture_translation_info.oldLayout = vk::ImageLayout::eStencilAttachmentOptimal;
@@ -1215,11 +1224,9 @@ size_t CVkRenderContext::getShaderResource(const char* name)
 
 FPoint2D<uint32_t> CVkRenderContext::getRenderResolution()
 {
-	auto& swapchain = m_pDevice->getSwapchain();
-
 	FPoint2D<uint32_t> resolution{};
-	resolution.x = swapchain.extent.width;
-	resolution.y = swapchain.extent.height;
+	resolution.x = m_pDevice->m_swapchain.extent.width;
+	resolution.y = m_pDevice->m_swapchain.extent.height;
 
 	return resolution;
 }
@@ -1272,8 +1279,7 @@ uint32_t CVkRenderContext::getApiFormat(uint32_t global_format)
 
 uint32_t CVkRenderContext::getPresentFormat()
 {
-	auto& swapchain = m_pDevice->getSwapchain();
-	return static_cast<uint32_t>(swapchain.format);
+	return static_cast<uint32_t>(m_pDevice->m_swapchain.format);
 }
 
 // TODO: update only targets, that have same size with swapchain
@@ -1289,9 +1295,8 @@ void CVkRenderContext::updateSurface(int32_t surface_width, int32_t surface_heig
 
 		m_pDevice->cleanupSwapchain();
 		m_pDevice->createSwapchain(surface_width, surface_height);
-		m_pDevice->swapchain.currentFrame = 0u;
+		m_pDevice->m_swapchain.currentFrame = 0u;
 
-		auto& swapchain = m_pDevice->getSwapchain();
 		auto& textures = m_pResources->data<FVkTexture>();
 
 		// Updating render targets
@@ -1308,8 +1313,8 @@ void CVkRenderContext::updateSurface(int32_t surface_width, int32_t surface_heig
 				if (target->initialData.base.isSwapchainTarget)
 				{
 					target->imageViews.clear();
-					target->image.handle = swapchain.images.at(swapchainFrameIndex);
-					target->imageViews.emplace_back(swapchain.imageViews.at(swapchainFrameIndex));
+					target->image.handle = m_pDevice->m_swapchain.images.at(swapchainFrameIndex);
+					target->imageViews.emplace_back(m_pDevice->m_swapchain.imageViews.at(swapchainFrameIndex));
 
 					swapchainFrameIndex++;
 					continue;
@@ -1331,7 +1336,7 @@ void CVkRenderContext::updateSurface(int32_t surface_width, int32_t surface_heig
 				texture_ci.base.width = surface_width;
 				texture_ci.base.height = surface_height;
 
-				createTexture(texture_ci, *target);
+				check_api_result(createTexture(texture_ci, *target));
 			}
 		}
 	}
@@ -1342,7 +1347,7 @@ FVkCommandBuffer& CVkRenderContext::createCommandBuffer(const FVkCommandBufferCr
 	auto& command_buffers = m_commandBuffers[FVkThreadKeyResolver{ command_buffer_ci.mask, thread_id }];
 	auto& command_buffer = command_buffers.emplace_back();
 
-	m_pDevice->createCommandBuffer(command_buffer_ci, command_buffer);
+	check_api_result(m_pDevice->createCommandBuffer(command_buffer_ci, command_buffer));
 
 	return command_buffer;
 }
@@ -1408,13 +1413,9 @@ void CVkRenderContext::endFrameCommandBuffers()
 
 	m_pDevice->destroyUnusedCommandPools();
 
-	// Frame is finished. We can reuse descriptors
-	//auto& shaders = m_pResources->data<FVkShader>();
-	//for (auto& shader_instances : shaders)
-	//{
-	//	for(auto& shader : shader_instances)
-	//		shader.descriptorUsage.clear();
-	//}
+	// Try to free resources
+	if (m_utilizationCounter % m_pDevice->m_swapchain.framesInFlight == 0)
+		processResourceUtilization();
 
 	// Frame finished. Textures in now again in initial layout
 	auto& textures = m_pResources->data<FVkTexture>();
@@ -1426,6 +1427,8 @@ void CVkRenderContext::endFrameCommandBuffers()
 				texture->layout = vk::ImageLayout::eUndefined;
 		}
 	}
+
+	m_utilizationCounter++;
 }
 
 void CVkRenderContext::beginDebugLabel(const std::string& label, uint32_t queue_type, uint32_t color)
@@ -1714,6 +1717,35 @@ void CVkRenderContext::processResourceUpload()
 	m_bufferUploadInfos.clear();
 }
 
+void CVkRenderContext::processResourceUtilization()
+{
+	while (!m_destroyResource.empty())
+	{
+		auto destroy_resource = m_destroyResource.front();
+
+		if (destroy_resource.mask & RESOURCE_TYPE_TEXTURE_BIT)
+		{
+			auto& texture = m_pResources->get<FVkTexture>(destroy_resource.id);
+			destroyTexture(*texture);
+			m_pResources->remove<FVkTexture>(destroy_resource.id);
+		}
+		else if (destroy_resource.mask & RESOURCE_TYPE_SHADER_BIT)
+		{
+			auto& shader = m_pResources->get<FVkShader>(destroy_resource.id);
+			destroyShader(*shader);
+			m_pResources->remove<FVkShader>(destroy_resource.id);
+		}
+		else if (destroy_resource.mask & RESOURCE_TYPE_BUFFER_BIT)
+		{
+			auto& buffer = m_pResources->get<FVkBuffer>(destroy_resource.id);
+			m_pDevice->destroyBuffer(*buffer);
+			m_pResources->remove<FVkBuffer>(destroy_resource.id);
+		}
+
+		m_destroyResource.pop();
+	}
+}
+
 FRenderApiErrorInfo CVkRenderContext::createTexture(const FVkTextureCreateInfo& texture_ci, FVkTexture& texture)
 {
 	texture.initialData.base = texture_ci.base;
@@ -1808,6 +1840,8 @@ FRenderApiErrorInfo CVkRenderContext::createTexture(const FVkTextureCreateInfo& 
 	if(texture_ci.createSampler)
 		res = m_pDevice->createSampler(sampler_ci, texture.sampler);
 
+	texture.isAlive = true;
+
 	return res;
 }
 
@@ -1820,17 +1854,18 @@ void CVkRenderContext::destroyTexture(FVkTexture& texture)
 	texture.imageViews.clear();
 
 	m_pDevice->destroyImage(texture.image);
+
+	texture.isAlive = false;
 }
 
 FRenderApiErrorInfo CVkRenderContext::createShaderResources(const FVkShaderResourcesInfo& resources_info, FVkShader& shader)
 {
 	auto& reflection = m_pResources->get<FVkShaderReflectionData>(shader.reflection);
-	auto& swapchain = m_pDevice->getSwapchain();
 
 	// TODO: generate better object names. Current names can overlap
 
 	// Remember maximum shader usage count
-	shader.maximumDescriptorSlots = swapchain.framesInFlight * resources_info.usageCount;
+	shader.maximumDescriptorSlots = m_pDevice->m_swapchain.framesInFlight * resources_info.usageCount;
 
 	// Create descriptor set layouts
 	for (const auto& [set, layout_bindings] : reflection->descriptorSetLayoutBindings)
@@ -1851,7 +1886,7 @@ FRenderApiErrorInfo CVkRenderContext::createShaderResources(const FVkShaderResou
 	pool_ci.name = resources_info.name;
 #endif
 	pool_ci.poolSizes = reflection->descriptorPoolSizes;
-	pool_ci.usageCount = resources_info.usageCount * swapchain.framesInFlight;
+	pool_ci.usageCount = resources_info.usageCount * m_pDevice->m_swapchain.framesInFlight;
 	RETURN_WHEN_FAULT(m_pDevice->createDescriptorPool(pool_ci, shader.descriptorPool));
 
 	// Create descrioptor sets for each shader usage
@@ -1959,6 +1994,8 @@ void CVkRenderContext::destroyShader(FVkShader& shader)
 
 	for (auto& [set, descriptor_set_layout] : shader.descriptorSetLayouts)
 		m_pDevice->destroyDescriptorSetLayout(descriptor_set_layout);
+
+	shader.isAlive = false;
 }
 
 void CVkRenderContext::bindShaderDescriptors(const FVkCommandBuffer& command_buffer, const FVkShader& shader)
@@ -1966,8 +2003,7 @@ void CVkRenderContext::bindShaderDescriptors(const FVkCommandBuffer& command_buf
 	std::vector<vk::DescriptorSet> bindDescriptorSets{};
 
 	// NOTE: bind global descriptor set
-	auto& swapchain = m_pDevice->getSwapchain();
-	bindDescriptorSets.emplace_back(m_globalDescriptor.descriptorSet.handles.at(swapchain.currentFrame));
+	bindDescriptorSets.emplace_back(m_globalDescriptor.descriptorSet.handles.at(m_pDevice->m_swapchain.currentFrame));
 
 	// NOTE: shader.descriptorUsage contains next index of descriptor set to use. 
 	// Here i collecting all shader descriptor sets, that was changed in past

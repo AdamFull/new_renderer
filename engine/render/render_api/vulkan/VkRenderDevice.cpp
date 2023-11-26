@@ -95,19 +95,19 @@ CVkRenderDevice::~CVkRenderDevice()
 	destroyCommandPools();
 
 	cleanupSwapchain();
-	logicalDevice.handle.destroySwapchainKHR(swapchain.handle, allocationCallbacks);
-	logicalDevice.handle.destroyPipelineCache(pipelineCache, allocationCallbacks);
-	memoryAllocator.destroy();
-	logicalDevice.handle.destroy(allocationCallbacks);
-	vkInstance.destroyDebugUtilsMessengerEXT(debugMessenger, allocationCallbacks);
-	vkInstance.destroyDebugReportCallbackEXT(debugReport, allocationCallbacks);
-	vkInstance.destroySurfaceKHR(vkSurface, allocationCallbacks);
-	vkInstance.destroy(allocationCallbacks);
+	m_logicalDevice.handle.destroySwapchainKHR(m_swapchain.handle, m_allocationCallbacks);
+	m_logicalDevice.handle.destroyPipelineCache(m_pipelineCache, m_allocationCallbacks);
+	m_memoryAllocator.destroy();
+	m_logicalDevice.handle.destroy(m_allocationCallbacks);
+	m_vkInstance.destroyDebugUtilsMessengerEXT(m_debugMessenger, m_allocationCallbacks);
+	m_vkInstance.destroyDebugReportCallbackEXT(m_debugReport, m_allocationCallbacks);
+	m_vkInstance.destroySurfaceKHR(m_vkSurface, m_allocationCallbacks);
+	m_vkInstance.destroy(m_allocationCallbacks);
 
-	if (allocationCallbacks)
+	if (m_allocationCallbacks)
 	{
-		delete allocationCallbacks;
-		allocationCallbacks = nullptr;
+		delete m_allocationCallbacks;
+		m_allocationCallbacks = nullptr;
 	}
 
 #if defined(BUILD_WITHOUT_DEBUGGIND) && defined(ENABLE_TRACY_PROFILING)
@@ -120,14 +120,14 @@ CVkRenderDevice::~CVkRenderDevice()
 void CVkRenderDevice::create(const FRenderContextCreateInfo& context_ci)
 {
 	// Register dispatcher
-	PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr = dynamicLoader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
+	PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr = m_dynamicLoader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
 	VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 
 	// Create allocation callbacks
 	registerAllocationCallbacks();
 
 	check_api_result(createInstance(context_ci));
-	VULKAN_HPP_DEFAULT_DISPATCHER.init(vkInstance);
+	VULKAN_HPP_DEFAULT_DISPATCHER.init(m_vkInstance);
 	createDebugMessanger(context_ci);
 
 	check_api_result(createSurface(context_ci));
@@ -135,7 +135,7 @@ void CVkRenderDevice::create(const FRenderContextCreateInfo& context_ci)
 	prepareRequestedLogicalDeviceFeatures();
 
 	check_api_result(createLogicalDevice(context_ci));
-	VULKAN_HPP_DEFAULT_DISPATCHER.init(logicalDevice.handle);
+	VULKAN_HPP_DEFAULT_DISPATCHER.init(m_logicalDevice.handle);
 
 	createMemoryAllocator(context_ci);
 
@@ -168,7 +168,7 @@ FRenderApiErrorInfo CVkRenderDevice::createCommandPool(const FVkCommandPoolCreat
 
 	pool_ci.queueFamilyIndex = queue_family_index;
 
-	vk::Result res = logicalDevice.handle.createCommandPool(&pool_ci, allocationCallbacks, &command_pool.handle);
+	vk::Result res = m_logicalDevice.handle.createCommandPool(&pool_ci, m_allocationCallbacks, &command_pool.handle);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	std::stringstream ss{};
 	ss << command_pool_ci.threadId;
@@ -180,35 +180,29 @@ FRenderApiErrorInfo CVkRenderDevice::createCommandPool(const FVkCommandPoolCreat
 
 void CVkRenderDevice::destroyCommandPool(FVkCommandPool& command_pool)
 {
-	logicalDevice.handle.destroyCommandPool(command_pool.handle, allocationCallbacks);
+	m_logicalDevice.handle.destroyCommandPool(command_pool.handle, m_allocationCallbacks);
 }
 
 void CVkRenderDevice::destroyUnusedCommandPools()
 {
-	for (auto& [queue_type, pools] : commandPools)
+	for (auto it = m_commandPools.begin(); it != m_commandPools.end();)
 	{
-		for (auto it = pools.begin(); it != pools.end();)
+		if (it->second.use_count() < 1)
 		{
-			if (it->second.use_count() < 1)
-			{
-				destroyCommandPool(it->second);
-				it = pools.erase(it);
-				continue;
-			}
-			++it;
+			destroyCommandPool(it->second);
+			it = m_commandPools.erase(it);
+			continue;
 		}
+		++it;
 	}
 }
 
 void CVkRenderDevice::destroyCommandPools()
 {
-	for (auto& [queue_type, pools] : commandPools)
-	{
-		for (auto& [thread_id, pool] : pools)
-			destroyCommandPool(pool);
-	}
+	for (auto& [key, pool] : m_commandPools)
+		destroyCommandPool(pool);
 
-	commandPools.clear();
+	m_commandPools.clear();
 }
 
 FRenderApiErrorInfo CVkRenderDevice::createCommandBuffer(const FVkCommandBufferCreateInfo& command_buffer_ci, FVkCommandBuffer& command_buffer)
@@ -225,7 +219,7 @@ FRenderApiErrorInfo CVkRenderDevice::createCommandBuffer(const FVkCommandBufferC
 
 	command_buffer.handles.resize(command_buffer_ci.count);
 
-	vk::Result res = logicalDevice.handle.allocateCommandBuffers(&command_buffer_ai, command_buffer.handles.data());
+	vk::Result res = m_logicalDevice.handle.allocateCommandBuffers(&command_buffer_ai, command_buffer.handles.data());
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	for(size_t idx = 0ull; idx < command_buffer.handles.size(); ++idx)
 		debugSetObjectName(command_buffer.get(), std::format("{} #{}", command_buffer_ci.name, idx));
@@ -237,7 +231,7 @@ FRenderApiErrorInfo CVkRenderDevice::createCommandBuffer(const FVkCommandBufferC
 void CVkRenderDevice::destroyCommandBuffer(FVkCommandBuffer& command_buffer)
 {
 	auto& command_pool = getCommandPool(command_buffer.mask, command_buffer.threadId);
-	logicalDevice.handle.freeCommandBuffers(command_pool.handle, command_buffer.handles);
+	m_logicalDevice.handle.freeCommandBuffers(command_pool.handle, command_buffer.handles);
 }
 
 void CVkRenderDevice::beginCommandBuffer(FVkCommandBuffer& command_buffer, vk::CommandBufferUsageFlags usage, uint32_t image_index)
@@ -270,8 +264,8 @@ FRenderApiErrorInfo CVkRenderDevice::createImage(const FVkImageCreateInfo& image
 {
 	vma::AllocationCreateInfo alloc_ci{};
 	alloc_ci.usage = image_ci.memoryUsage;
-	
-	vk::Result res = memoryAllocator.createImage(&image_ci.ci, &alloc_ci, &image.handle, &image.memory, nullptr);
+
+	vk::Result res = m_memoryAllocator.createImage(&image_ci.ci, &alloc_ci, &image.handle, &image.memory, nullptr);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	debugSetObjectName(image.handle, image_ci.name);
 #endif
@@ -280,12 +274,12 @@ FRenderApiErrorInfo CVkRenderDevice::createImage(const FVkImageCreateInfo& image
 
 void CVkRenderDevice::destroyImage(FVkImage& image)
 {
-	memoryAllocator.destroyImage(image.handle, image.memory);
+	m_memoryAllocator.destroyImage(image.handle, image.memory);
 }
 
 FRenderApiErrorInfo CVkRenderDevice::createImageView(const FVkImageViewCreateInfo& image_view_ci, vk::ImageView& image_view)
 {
-	vk::Result res = logicalDevice.handle.createImageView(&image_view_ci.ci, allocationCallbacks, &image_view);
+	vk::Result res = m_logicalDevice.handle.createImageView(&image_view_ci.ci, m_allocationCallbacks, &image_view);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	debugSetObjectName(image_view, image_view_ci.name);
 #endif
@@ -294,7 +288,7 @@ FRenderApiErrorInfo CVkRenderDevice::createImageView(const FVkImageViewCreateInf
 
 void CVkRenderDevice::destroyImageView(vk::ImageView& image_view)
 {
-	logicalDevice.handle.destroyImageView(image_view, allocationCallbacks);
+	m_logicalDevice.handle.destroyImageView(image_view, m_allocationCallbacks);
 }
 
 FRenderApiErrorInfo CVkRenderDevice::createSampler(const FVkSamplerCreateInfo& sampler_ci, vk::Sampler& sampler)
@@ -323,7 +317,7 @@ FRenderApiErrorInfo CVkRenderDevice::createSampler(const FVkSamplerCreateInfo& s
 	ci.minLod = 0.f;
 	ci.maxLod = static_cast<float>(sampler_ci.mipLevels);
 
-	vk::Result res = logicalDevice.handle.createSampler(&ci, allocationCallbacks, &sampler);
+	vk::Result res = m_logicalDevice.handle.createSampler(&ci, m_allocationCallbacks, &sampler);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	debugSetObjectName(sampler, sampler_ci.name);
 #endif
@@ -332,7 +326,7 @@ FRenderApiErrorInfo CVkRenderDevice::createSampler(const FVkSamplerCreateInfo& s
 
 void CVkRenderDevice::destroySampler(vk::Sampler& sampler)
 {
-	logicalDevice.handle.destroySampler(sampler, allocationCallbacks);
+	m_logicalDevice.handle.destroySampler(sampler, m_allocationCallbacks);
 }
 
 FRenderApiErrorInfo CVkRenderDevice::createBuffer(const FVkBufferCreateInfo& buffer_ci, FVkBuffer& buffer)
@@ -348,24 +342,27 @@ FRenderApiErrorInfo CVkRenderDevice::createBuffer(const FVkBufferCreateInfo& buf
 	vma::AllocationCreateInfo alloc_ci{};
 	alloc_ci.usage = buffer_ci.memoryUsage;
 
-	vk::Result res = memoryAllocator.createBuffer(&ci, &alloc_ci, &buffer.handle, &buffer.memory, nullptr);
+	vk::Result res = m_memoryAllocator.createBuffer(&ci, &alloc_ci, &buffer.handle, &buffer.memory, nullptr);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	debugSetObjectName(buffer.handle, buffer_ci.name);
 #endif
+	buffer.isAlive = true;
+
 	return make_api_error(buffer.handle.objectType, res, "Failed to create");
 }
 
 void CVkRenderDevice::destroyBuffer(FVkBuffer& buffer)
 {
 	unmapBufferMemory(buffer);
-	memoryAllocator.destroyBuffer(buffer.handle, buffer.memory);
+	m_memoryAllocator.destroyBuffer(buffer.handle, buffer.memory);
+	buffer.isAlive = false;
 }
 
 FRenderApiErrorInfo CVkRenderDevice::mapBufferMemory(FVkBuffer& buffer, void** mappedMemory)
 {
 	if (!buffer.isMapped)
 	{
-		vk::Result res = memoryAllocator.mapMemory(buffer.memory, mappedMemory);
+		vk::Result res = m_memoryAllocator.mapMemory(buffer.memory, mappedMemory);
 		buffer.isMapped = res == vk::Result::eSuccess;
 		return make_api_error(buffer.handle.objectType, res, "Failed to map buffer memory");
 	}
@@ -377,14 +374,14 @@ void CVkRenderDevice::unmapBufferMemory(FVkBuffer& buffer)
 {
 	if (buffer.isMapped)
 	{
-		memoryAllocator.unmapMemory(buffer.memory);
+		m_memoryAllocator.unmapMemory(buffer.memory);
 		buffer.isMapped = false;
 	}
 }
 
 void CVkRenderDevice::flushBufferMemory(const FVkBuffer& buffer, vk::DeviceSize size, vk::DeviceSize offset)
 {
-	memoryAllocator.flushAllocation(buffer.memory, size, offset);
+	m_memoryAllocator.flushAllocation(buffer.memory, size, offset);
 }
 
 FRenderApiErrorInfo CVkRenderDevice::createDescriptorSetLayout(const FVkDescriptorSetLayoutCreateInfo& layout_ci, vk::DescriptorSetLayout& descriptor_set_layout)
@@ -395,7 +392,7 @@ FRenderApiErrorInfo CVkRenderDevice::createDescriptorSetLayout(const FVkDescript
 	descriptor_set_layout_ci.flags = layout_ci.flags;
 	descriptor_set_layout_ci.pNext = layout_ci.next;
 
-	vk::Result res = logicalDevice.handle.createDescriptorSetLayout(&descriptor_set_layout_ci, allocationCallbacks, &descriptor_set_layout);
+	vk::Result res = m_logicalDevice.handle.createDescriptorSetLayout(&descriptor_set_layout_ci, m_allocationCallbacks, &descriptor_set_layout);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	debugSetObjectName(descriptor_set_layout, layout_ci.name);
 #endif
@@ -404,7 +401,7 @@ FRenderApiErrorInfo CVkRenderDevice::createDescriptorSetLayout(const FVkDescript
 
 void CVkRenderDevice::destroyDescriptorSetLayout(vk::DescriptorSetLayout& descriptor_set_layout)
 {
-	logicalDevice.handle.destroyDescriptorSetLayout(descriptor_set_layout);
+	m_logicalDevice.handle.destroyDescriptorSetLayout(descriptor_set_layout, m_allocationCallbacks);
 }
 
 FRenderApiErrorInfo CVkRenderDevice::createDescriptorPool(const FVkDescriptorPoolCreateInfo& pool_ci, FVkDescriptorPool& descriptor_pool)
@@ -425,7 +422,7 @@ FRenderApiErrorInfo CVkRenderDevice::createDescriptorPool(const FVkDescriptorPoo
 	descriptor_pool_ci.maxSets = maxSets;
 	descriptor_pool_ci.flags = pool_ci.flags;
 
-	vk::Result res = logicalDevice.handle.createDescriptorPool(&descriptor_pool_ci, allocationCallbacks, &descriptor_pool.handle);
+	vk::Result res = m_logicalDevice.handle.createDescriptorPool(&descriptor_pool_ci, m_allocationCallbacks, &descriptor_pool.handle);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	debugSetObjectName(descriptor_pool.handle, pool_ci.name);
 #endif
@@ -443,7 +440,7 @@ FRenderApiErrorInfo CVkRenderDevice::growDescriptorPool(const FVkDescriptorPoolC
 
 void CVkRenderDevice::destroyDescriptorPool(FVkDescriptorPool& descriptor_pool)
 {
-	logicalDevice.handle.destroyDescriptorPool(descriptor_pool.handle, allocationCallbacks);
+	m_logicalDevice.handle.destroyDescriptorPool(descriptor_pool.handle, m_allocationCallbacks);
 }
 
 FRenderApiErrorInfo CVkRenderDevice::createDescriptorSet(const FVkDescriptorSetCreateInfo& set_ci, FVkDescriptorSet& descriptor_set)
@@ -457,7 +454,7 @@ FRenderApiErrorInfo CVkRenderDevice::createDescriptorSet(const FVkDescriptorSetC
 	descriptor_ai.pNext = set_ci.next;
 
 	descriptor_set.handles.resize(set_ci.descriptorCount);
-	vk::Result res = logicalDevice.handle.allocateDescriptorSets(&descriptor_ai, descriptor_set.handles.data());
+	vk::Result res = m_logicalDevice.handle.allocateDescriptorSets(&descriptor_ai, descriptor_set.handles.data());
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	for (size_t idx = 0ull; idx < descriptor_set.handles.size(); ++idx)
@@ -469,7 +466,7 @@ FRenderApiErrorInfo CVkRenderDevice::createDescriptorSet(const FVkDescriptorSetC
 
 void CVkRenderDevice::destroyDescriptorSet(const FVkDescriptorPool& descriptor_pool, FVkDescriptorSet& descriptor_set)
 {
-	logicalDevice.handle.freeDescriptorSets(descriptor_pool.handle, descriptor_set.handles);
+	m_logicalDevice.handle.freeDescriptorSets(descriptor_pool.handle, descriptor_set.handles);
 }
 
 FRenderApiErrorInfo CVkRenderDevice::createShaderModule(const FVkShaderModuleCreateInfo& shader_module_ci, vk::ShaderModule& shader_module)
@@ -478,7 +475,7 @@ FRenderApiErrorInfo CVkRenderDevice::createShaderModule(const FVkShaderModuleCre
 	module_ci.codeSize = shader_module_ci.shaderCode->size() * sizeof(uint32_t);
 	module_ci.pCode = shader_module_ci.shaderCode->data();
 
-	vk::Result res = logicalDevice.handle.createShaderModule(&module_ci, allocationCallbacks, &shader_module);
+	vk::Result res = m_logicalDevice.handle.createShaderModule(&module_ci, m_allocationCallbacks, &shader_module);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	debugSetObjectName(shader_module, shader_module_ci.name);
 #endif
@@ -487,7 +484,7 @@ FRenderApiErrorInfo CVkRenderDevice::createShaderModule(const FVkShaderModuleCre
 
 void CVkRenderDevice::destroyShaderModule(vk::ShaderModule& shader_module)
 {
-	logicalDevice.handle.destroyShaderModule(shader_module, allocationCallbacks);
+	m_logicalDevice.handle.destroyShaderModule(shader_module, m_allocationCallbacks);
 }
 
 FRenderApiErrorInfo CVkRenderDevice::createPipelineLayout(const FVkPipelineLayoutCreateInfo& pipeline_layout_ci, vk::PipelineLayout& pipeline_layout)
@@ -497,7 +494,7 @@ FRenderApiErrorInfo CVkRenderDevice::createPipelineLayout(const FVkPipelineLayou
 	layout_ci.pSetLayouts = pipeline_layout_ci.descriptorSetLayouts.data();
 	layout_ci.pushConstantRangeCount = static_cast<uint32_t>(pipeline_layout_ci.pushConstantRanges.size());
 	layout_ci.pPushConstantRanges = pipeline_layout_ci.pushConstantRanges.data();
-	vk::Result res = logicalDevice.handle.createPipelineLayout(&layout_ci, allocationCallbacks, &pipeline_layout);
+	vk::Result res = m_logicalDevice.handle.createPipelineLayout(&layout_ci, m_allocationCallbacks, &pipeline_layout);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	debugSetObjectName(pipeline_layout, pipeline_layout_ci.name);
 #endif
@@ -506,7 +503,7 @@ FRenderApiErrorInfo CVkRenderDevice::createPipelineLayout(const FVkPipelineLayou
 
 void CVkRenderDevice::destroyPipelineLayout(vk::PipelineLayout& pipeline_layout)
 {
-	logicalDevice.handle.destroyPipelineLayout(pipeline_layout, allocationCallbacks);
+	m_logicalDevice.handle.destroyPipelineLayout(pipeline_layout, m_allocationCallbacks);
 }
 
 FRenderApiErrorInfo CVkRenderDevice::createPipeline(const FVkGraphicsPipelineCreateInfo& pipeline_ci, vk::Pipeline& pipeline)
@@ -612,7 +609,7 @@ FRenderApiErrorInfo CVkRenderDevice::createPipeline(const FVkGraphicsPipelineCre
 	graphics_pipeline_ci.pTessellationState = (enableTessellation ? &tessellation_state : nullptr);
 	graphics_pipeline_ci.pNext = &rendering_ci;
 
-	vk::Result res = logicalDevice.handle.createGraphicsPipelines(pipelineCache, 1u, &graphics_pipeline_ci, allocationCallbacks, &pipeline);
+	vk::Result res = m_logicalDevice.handle.createGraphicsPipelines(m_pipelineCache, 1u, &graphics_pipeline_ci, m_allocationCallbacks, &pipeline);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	debugSetObjectName(pipeline, pipeline_ci.name);
 #endif
@@ -627,7 +624,7 @@ FRenderApiErrorInfo CVkRenderDevice::createPipeline(const FVkComputePipelineCrea
 	compute_pipeline_ci.basePipelineHandle = nullptr;
 	compute_pipeline_ci.basePipelineIndex = -1;
 
-	vk::Result res = logicalDevice.handle.createComputePipelines(pipelineCache, 1u, &compute_pipeline_ci, allocationCallbacks, &pipeline);
+	vk::Result res = m_logicalDevice.handle.createComputePipelines(m_pipelineCache, 1u, &compute_pipeline_ci, m_allocationCallbacks, &pipeline);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	debugSetObjectName(pipeline, pipeline_ci.name);
 #endif
@@ -636,12 +633,12 @@ FRenderApiErrorInfo CVkRenderDevice::createPipeline(const FVkComputePipelineCrea
 
 void CVkRenderDevice::destroyPipeline(vk::Pipeline& pipeline)
 {
-	logicalDevice.handle.destroyPipeline(pipeline, allocationCallbacks);
+	m_logicalDevice.handle.destroyPipeline(pipeline, m_allocationCallbacks);
 }
 
 FRenderApiErrorInfo CVkRenderDevice::createSemaphore(const FVkSemaphoreCreateInfo& semaphore_ci, vk::Semaphore& semaphore)
 {
-	vk::Result res = logicalDevice.handle.createSemaphore(&semaphore_ci.ci, allocationCallbacks, &semaphore);
+	vk::Result res = m_logicalDevice.handle.createSemaphore(&semaphore_ci.ci, m_allocationCallbacks, &semaphore);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	debugSetObjectName(semaphore, semaphore_ci.name);
 #endif
@@ -650,7 +647,7 @@ FRenderApiErrorInfo CVkRenderDevice::createSemaphore(const FVkSemaphoreCreateInf
 
 FRenderApiErrorInfo CVkRenderDevice::createFence(const FVkFenceCreateInfo& fence_ci, vk::Fence& fence)
 {
-	vk::Result res = logicalDevice.handle.createFence(&fence_ci.ci, allocationCallbacks, &fence);
+	vk::Result res = m_logicalDevice.handle.createFence(&fence_ci.ci, m_allocationCallbacks, &fence);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	debugSetObjectName(fence, fence_ci.name);
 #endif
@@ -667,17 +664,17 @@ void CVkRenderDevice::submitCommandBuffer(const FVkCommandBuffer& command_buffer
 	vk::Fence fence{};
 	createFence(fence_ci, fence);
 
-	logicalDevice.handle.resetFences(1, &fence);
+	m_logicalDevice.handle.resetFences(1, &fence);
 
 	auto& queue = getQueue(command_buffer.mask);
 	queue.submit(submitInfo, fence);
-	logicalDevice.handle.waitForFences(1, &fence, VK_TRUE, (std::numeric_limits<uint64_t>::max)());
-	logicalDevice.handle.destroyFence(fence, allocationCallbacks);
+	m_logicalDevice.handle.waitForFences(1, &fence, VK_TRUE, (std::numeric_limits<uint64_t>::max)());
+	m_logicalDevice.handle.destroyFence(fence, m_allocationCallbacks);
 }
 
 vk::Result CVkRenderDevice::present(FVkCommandBuffer& command_buffer)
 {
-	vk::Result res = logicalDevice.handle.resetFences(1, &swapchain.inFlightFences.at(swapchain.currentFrame));
+	vk::Result res = m_logicalDevice.handle.resetFences(1, &m_swapchain.inFlightFences.at(m_swapchain.currentFrame));
 	check_api_result(make_api_error(vk::ObjectType::eFence, res, "Failed to reset"));
 
 	try
@@ -687,14 +684,14 @@ vk::Result CVkRenderDevice::present(FVkCommandBuffer& command_buffer)
 		vk::SubmitInfo2 submit_info{};
 
 		vk::SemaphoreSubmitInfo semaphore_si{};
-		semaphore_si.semaphore = swapchain.imageAvaliableSemaphores[swapchain.currentFrame];
+		semaphore_si.semaphore = m_swapchain.imageAvaliableSemaphores[m_swapchain.currentFrame];
 		semaphore_si.stageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
 
 		submit_info.pWaitSemaphoreInfos = &semaphore_si;
 		submit_info.waitSemaphoreInfoCount = 1;
 
 		vk::SemaphoreSubmitInfo signal_si{};
-		signal_si.semaphore = swapchain.renderFinishedSemaphores[swapchain.currentFrame];
+		signal_si.semaphore = m_swapchain.renderFinishedSemaphores[m_swapchain.currentFrame];
 		signal_si.stageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
 
 		submit_info.pSignalSemaphoreInfos = &signal_si;
@@ -708,7 +705,7 @@ vk::Result CVkRenderDevice::present(FVkCommandBuffer& command_buffer)
 		submit_info.pCommandBufferInfos = &command_buffer_si;
 		submit_info.commandBufferInfoCount = 1;
 
-		queue.submit2(submit_info, swapchain.inFlightFences.at(swapchain.currentFrame));
+		queue.submit2(submit_info, m_swapchain.inFlightFences.at(m_swapchain.currentFrame));
 	}
 	catch (vk::SystemError error)
 	{
@@ -717,33 +714,33 @@ vk::Result CVkRenderDevice::present(FVkCommandBuffer& command_buffer)
 
 	vk::PresentInfoKHR present_info = {};
 	present_info.waitSemaphoreCount = 1;
-	present_info.pWaitSemaphores = &swapchain.renderFinishedSemaphores[swapchain.currentFrame];
+	present_info.pWaitSemaphores = &m_swapchain.renderFinishedSemaphores[m_swapchain.currentFrame];
 
-	vk::SwapchainKHR swap_chains[] = { swapchain.handle };
+	vk::SwapchainKHR swap_chains[] = { m_swapchain.handle };
 	present_info.swapchainCount = 1;
 	present_info.pSwapchains = swap_chains;
-	present_info.pImageIndices = &swapchain.currentFrame;
+	present_info.pImageIndices = &m_swapchain.currentFrame;
 
 	auto& present_queue = getQueue(QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT);
 	res = present_queue.presentKHR(present_info);
 	check_api_result(make_api_error(vk::ObjectType::eQueue, res, "Failed to present"));
 
-	res = logicalDevice.handle.waitForFences(1, &swapchain.inFlightFences[swapchain.currentFrame], VK_TRUE, (std::numeric_limits<uint64_t>::max)());
-	swapchain.currentFrame = (swapchain.currentFrame + 1) % swapchain.framesInFlight;
+	res = m_logicalDevice.handle.waitForFences(1, &m_swapchain.inFlightFences[m_swapchain.currentFrame], VK_TRUE, (std::numeric_limits<uint64_t>::max)());
+	m_swapchain.currentFrame = (m_swapchain.currentFrame + 1) % m_swapchain.framesInFlight;
 
 	return res;
 }
 
 vk::Result CVkRenderDevice::acquireNextImage(uint32_t& image_index)
 {
-	return logicalDevice.handle.acquireNextImageKHR(swapchain.handle, (std::numeric_limits<uint64_t>::max)(), swapchain.imageAvaliableSemaphores[swapchain.currentFrame], nullptr, &image_index);
+	return m_logicalDevice.handle.acquireNextImageKHR(m_swapchain.handle, (std::numeric_limits<uint64_t>::max)(), m_swapchain.imageAvaliableSemaphores[m_swapchain.currentFrame], nullptr, &image_index);
 }
 
 void CVkRenderDevice::debugBeginLabel(vk::CommandBuffer& command_buffer, const std::string& name, uint32_t color)
 {
 #ifndef BUILD_WITHOUT_DEBUGGIND
 #ifdef ENABLE_TRACY_PROFILING
-	TracyVkZone(m_tracyContext.at(swapchain.currentFrame), command_buffer, name.c_str());
+	TracyVkZone(m_tracyContext.at(m_swapchain.currentFrame), command_buffer, name.c_str());
 #endif
 	command_buffer.beginDebugUtilsLabelEXT(make_debug_label(name.c_str(), color));
 #endif
@@ -810,47 +807,47 @@ vk::Format CVkRenderDevice::findSupportedFormat(const std::vector<vk::Format>& c
 
 const vk::DynamicLoader& CVkRenderDevice::getDynamicLoader() const
 {
-	return dynamicLoader;
+	return m_dynamicLoader;
 }
 
 const vk::AllocationCallbacks* CVkRenderDevice::getAllocationCallbacks() const
 {
-	return allocationCallbacks;
+	return m_allocationCallbacks;
 }
 
 const vk::Instance& CVkRenderDevice::getInstance() const
 {
-	return vkInstance;
+	return m_vkInstance;
 }
 
 const vk::DebugUtilsMessengerEXT& CVkRenderDevice::getDebugMessanger() const
 {
-	return debugMessenger;
+	return m_debugMessenger;
 }
 
 const vk::DebugReportCallbackEXT& CVkRenderDevice::getDebugReport() const
 {
-	return debugReport;
+	return m_debugReport;
 }
 
 const vk::SurfaceKHR& CVkRenderDevice::getSurface() const
 {
-	return vkSurface;
+	return m_vkSurface;
 }
 
 FVkPhysicalDevice& CVkRenderDevice::getPhysicalDevice()
 {
-	return physicalDevices.at(selectedPhysicalDevice);
+	return m_physicalDevices.at(m_selectedPhysicalDevice);
 }
 
 const vk::SampleCountFlagBits CVkRenderDevice::getMultisamplingCount() const
 {
-	return requiredSampleCount;
+	return m_requiredSampleCount;
 }
 
 vk::Device& CVkRenderDevice::getLogicalDevice()
 {
-	return logicalDevice.handle;
+	return m_logicalDevice.handle;
 }
 
 vk::Queue& CVkRenderDevice::getQueue(uint32_t flag)
@@ -873,17 +870,17 @@ vk::Queue& CVkRenderDevice::getQueue(uint32_t flag)
 	else if (is_transfer_queue)
 		selected_queue_type = QUEUE_FAMILY_USAGE_TRANSFER_FLAG_BIT;
 	
-	return logicalDevice.queues[selected_queue_type];
+	return m_logicalDevice.queues[selected_queue_type];
 }
 
 vma::Allocator& CVkRenderDevice::getMemoryAllocator()
 {
-	return memoryAllocator;
+	return m_memoryAllocator;
 }
 
 const vk::PipelineCache& CVkRenderDevice::getPipelineCache() const
 {
-	return pipelineCache;
+	return m_pipelineCache;
 }
 
 std::vector<char> CVkRenderDevice::getPipelineCacheData() const
@@ -892,7 +889,7 @@ std::vector<char> CVkRenderDevice::getPipelineCacheData() const
 
 	size_t data_size{ 0ull };
 	void* data_ptr{ nullptr };
-	vk::Result res = logicalDevice.handle.getPipelineCacheData(pipelineCache, &data_size, data_ptr);
+	vk::Result res = m_logicalDevice.handle.getPipelineCacheData(m_pipelineCache, &data_size, data_ptr);
 
 	if (res == vk::Result::eSuccess)
 	{
@@ -905,40 +902,35 @@ std::vector<char> CVkRenderDevice::getPipelineCacheData() const
 
 const FSwapchain& CVkRenderDevice::getSwapchain() const
 {
-	return swapchain;
+	return m_swapchain;
 }
 
 const FVkCommandPool& CVkRenderDevice::getCommandPool(uint32_t mask, const std::thread::id& thread_id)
 {
-	auto found_it = commandPools.find(mask);
-	if (found_it != commandPools.end())
-	{
-		auto thread_it = found_it->second.find(thread_id);
-		if (thread_it != found_it->second.end())
-			return thread_it->second;
-	}
-
-	auto& new_pool = commandPools[mask];
+	auto thread_key = FVkThreadKeyResolver{ mask, thread_id };
+	auto found_pool = m_commandPools.find(thread_key);
+	if (found_pool != m_commandPools.end())
+		return found_pool->second;
 
 	FVkCommandPoolCreateInfo pool_ci{};
 	pool_ci.mask = mask;
 	pool_ci.threadId = thread_id;
 
-	auto& pool = new_pool[thread_id];
+	auto& pool = m_commandPools[thread_key];
 	check_api_result(createCommandPool(pool_ci, pool));
-	return new_pool[thread_id];
+	return pool;
 }
 
 void CVkRenderDevice::registerAllocationCallbacks()
 {
-	allocationCallbacks = new vk::AllocationCallbacks();
-	memset(allocationCallbacks, 0, sizeof(vk::AllocationCallbacks));
+	m_allocationCallbacks = new vk::AllocationCallbacks();
+	memset(m_allocationCallbacks, 0, sizeof(vk::AllocationCallbacks));
 
-	allocationCallbacks->pfnAllocation = (PFN_vkAllocationFunction)(&vk_malloc);
-	allocationCallbacks->pfnReallocation = (PFN_vkReallocationFunction)(&vk_realloc);
-	allocationCallbacks->pfnFree = (PFN_vkFreeFunction)(&vk_free);
-	allocationCallbacks->pfnInternalAllocation = (PFN_vkInternalAllocationNotification)(&vk_malloc_notification);
-	allocationCallbacks->pfnInternalFree = (PFN_vkInternalFreeNotification)(&vk_free_notification);
+	m_allocationCallbacks->pfnAllocation = (PFN_vkAllocationFunction)(&vk_malloc);
+	m_allocationCallbacks->pfnReallocation = (PFN_vkReallocationFunction)(&vk_realloc);
+	m_allocationCallbacks->pfnFree = (PFN_vkFreeFunction)(&vk_free);
+	m_allocationCallbacks->pfnInternalAllocation = (PFN_vkInternalAllocationNotification)(&vk_malloc_notification);
+	m_allocationCallbacks->pfnInternalFree = (PFN_vkInternalFreeNotification)(&vk_free_notification);
 }
 
 FRenderApiErrorInfo CVkRenderDevice::createInstance(const FRenderContextCreateInfo& context_ci)
@@ -946,9 +938,9 @@ FRenderApiErrorInfo CVkRenderDevice::createInstance(const FRenderContextCreateIn
 	// Load instance layer props
 	auto layer_props = vk::enumerateInstanceLayerProperties();
 	for (auto& layer : layer_props)
-		avaliableLayers.push_back(layer.layerName);
+		m_avaliableLayers.push_back(layer.layerName);
 
-	if (context_ci.validationState && !check_contains_all(context_ci.validationLayers, avaliableLayers))
+	if (context_ci.validationState && !check_contains_all(context_ci.validationLayers, m_avaliableLayers))
 		return make_api_error(vk::ObjectType::eInstance, vk::Result::eErrorUnknown, "Some validation layers is not supported");
 
 	vk::ApplicationInfo app_info{};
@@ -990,7 +982,7 @@ FRenderApiErrorInfo CVkRenderDevice::createInstance(const FRenderContextCreateIn
 		instance_ci.ppEnabledLayerNames = layer_names.data();
 		instance_ci.pNext = &validation_features;
 	}
-	return make_api_error(vk::ObjectType::eInstance, vk::createInstance(&instance_ci, allocationCallbacks, &vkInstance), "Failed to create");
+	return make_api_error(vk::ObjectType::eInstance, vk::createInstance(&instance_ci, m_allocationCallbacks, &m_vkInstance), "Failed to create");
 }
 
 void CVkRenderDevice::createDebugMessanger(const FRenderContextCreateInfo& context_ci)
@@ -1004,14 +996,14 @@ void CVkRenderDevice::createDebugMessanger(const FRenderContextCreateInfo& conte
 		debug_messenger_ci.pfnUserCallback = &debug_messenger_callback;
 		debug_messenger_ci.pUserData = this;
 
-		debugMessenger = vkInstance.createDebugUtilsMessengerEXT(debug_messenger_ci, allocationCallbacks);
+		m_debugMessenger = m_vkInstance.createDebugUtilsMessengerEXT(debug_messenger_ci, m_allocationCallbacks);
 
 		vk::DebugReportCallbackCreateInfoEXT debug_report_ci{};
 		debug_report_ci.flags = vk::DebugReportFlagBitsEXT::eWarning | vk::DebugReportFlagBitsEXT::eError;
 		debug_report_ci.pfnCallback = &debug_report_callback;
 		debug_report_ci.pUserData = this;
 
-		debugReport = vkInstance.createDebugReportCallbackEXT(debug_report_ci, allocationCallbacks);
+		m_debugReport = m_vkInstance.createDebugReportCallbackEXT(debug_report_ci, m_allocationCallbacks);
 	}
 }
 
@@ -1023,7 +1015,7 @@ FRenderApiErrorInfo CVkRenderDevice::createSurface(const FRenderContextCreateInf
 	surface_ci.hinstance = context_ci.hinstance;
 	surface_ci.hwnd = context_ci.hwnd;
 	
-	result = vkInstance.createWin32SurfaceKHR(&surface_ci, allocationCallbacks, &vkSurface);
+	result = m_vkInstance.createWin32SurfaceKHR(&surface_ci, m_allocationCallbacks, &m_vkSurface);
 #else
 #endif;
 	return make_api_error(vk::ObjectType::eSurfaceKHR, result, "Failed to create");
@@ -1052,7 +1044,7 @@ void CVkRenderDevice::selectQueueFamilies(FVkPhysicalDevice& device_info)
 		const bool has_graphics_bit = static_cast<bool>(prop.queueFlags & vk::QueueFlagBits::eGraphics);
 		const bool has_compute_bit = static_cast<bool>(prop.queueFlags & vk::QueueFlagBits::eCompute);
 		const bool has_transfer_bit = static_cast<bool>(prop.queueFlags & vk::QueueFlagBits::eTransfer);
-		const bool has_present_bit = physical_device.getSurfaceSupportKHR(index, vkSurface);
+		const bool has_present_bit = physical_device.getSurfaceSupportKHR(index, m_vkSurface);
 
 		const bool is_present_only = has_present_bit && !(has_graphics_bit || has_compute_bit || has_transfer_bit);
 		const bool is_compute_compat = has_compute_bit && !has_graphics_bit;
@@ -1080,7 +1072,7 @@ void CVkRenderDevice::selectQueueFamilies(FVkPhysicalDevice& device_info)
 	{
 		const bool has_compute_bit = static_cast<bool>(prop.queueFlags & vk::QueueFlagBits::eCompute);
 		const bool has_transfer_bit = static_cast<bool>(prop.queueFlags & vk::QueueFlagBits::eTransfer);
-		const bool has_present_bit = physical_device.getSurfaceSupportKHR(index, vkSurface);
+		const bool has_present_bit = physical_device.getSurfaceSupportKHR(index, m_vkSurface);
 
 		if (has_present_bit && !is_family_selected(QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT) && is_family_queues_enought(index, prop))
 			apply_family_usage(index, QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT);
@@ -1114,14 +1106,14 @@ void CVkRenderDevice::selectQueueFamilies(FVkPhysicalDevice& device_info)
 FRenderApiErrorInfo CVkRenderDevice::selectPhysicalDevice(const FRenderContextCreateInfo& context_ci)
 {
 	auto api_version = get_api_version(context_ci.apiVersion);
-	auto avaliable_devices = vkInstance.enumeratePhysicalDevices();
+	auto avaliable_devices = m_vkInstance.enumeratePhysicalDevices();
 
 	int32_t fallback_device_index{ -1 };
 	for (auto& device : avaliable_devices)
 	{
-		auto device_index = physicalDevices.size();
-		physicalDevices.emplace_back(make_physical_device(device));
-		auto& current_device = physicalDevices.back();
+		auto device_index = m_physicalDevices.size();
+		m_physicalDevices.emplace_back(make_physical_device(device));
+		auto& current_device = m_physicalDevices.back();
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
 		std::stringstream uuid_ss;
@@ -1177,16 +1169,16 @@ FRenderApiErrorInfo CVkRenderDevice::selectPhysicalDevice(const FRenderContextCr
 			continue;
 		}
 
-		selectedPhysicalDevice = device_index;
+		m_selectedPhysicalDevice = device_index;
 		break;
 	}
 
-	if (selectedPhysicalDevice < 0)
+	if (m_selectedPhysicalDevice < 0)
 	{
 		if (fallback_device_index < 0)
 			return make_api_error(vk::ObjectType::ePhysicalDevice, vk::Result::eErrorUnknown, "Not found any suitable device");
 			
-		selectedPhysicalDevice = fallback_device_index;
+		m_selectedPhysicalDevice = fallback_device_index;
 	}
 
 	auto& selected_device = getPhysicalDevice();
@@ -1244,8 +1236,8 @@ FRenderApiErrorInfo CVkRenderDevice::createLogicalDevice(const FRenderContextCre
 	bool bindless_support = physical_device.supportedExtensions.count(utl::const_hash(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME));
 	bool timeline_semaphore_support = physical_device.supportedExtensions.count(utl::const_hash(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME));
 
-	if (!is_sample_count_supported(physical_device, requiredSampleCount))
-		requiredSampleCount = vk::SampleCountFlagBits::e1;
+	if (!is_sample_count_supported(physical_device, m_requiredSampleCount))
+		m_requiredSampleCount = vk::SampleCountFlagBits::e1;
 
 	// Get queue create infos
 	std::vector<vk::DeviceQueueCreateInfo> queue_create_infos{};
@@ -1280,7 +1272,7 @@ FRenderApiErrorInfo CVkRenderDevice::createLogicalDevice(const FRenderContextCre
 	device_ci.queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size());
 	device_ci.pQueueCreateInfos = queue_create_infos.data();
 	device_ci.pEnabledFeatures = &vk10features;
-	device_ci.pNext = logicalDevice.lastExtensionFeature;
+	device_ci.pNext = m_logicalDevice.lastExtensionFeature;
 
 	std::vector<const char*> enabled_extension_names{};
 	for (auto& ext_name : physical_device.avaliableExtensions)
@@ -1303,13 +1295,13 @@ FRenderApiErrorInfo CVkRenderDevice::createLogicalDevice(const FRenderContextCre
 		device_ci.ppEnabledLayerNames = layer_names.data();
 	}
 
-	auto res = make_api_error(vk::ObjectType::eDevice, physical_device.handle.createDevice(&device_ci, allocationCallbacks, &logicalDevice.handle), "Failed to create");
+	auto res = make_api_error(vk::ObjectType::eDevice, physical_device.handle.createDevice(&device_ci, m_allocationCallbacks, &m_logicalDevice.handle), "Failed to create");
 
 	auto get_queue_family_index = [&physical_device](uint32_t mask) -> uint32_t { return physical_device.queueFamilies.queueToFamily.count(mask) ? physical_device.queueFamilies.queueToFamily[mask] : ~0u; };
 
 	std::unordered_map<uint32_t, uint32_t> family_usages{};
 	for (auto& [type, family] : physical_device.queueFamilies.queueToFamily)
-		logicalDevice.queues[type] = logicalDevice.handle.getQueue(family, family_usages[family]++);
+		m_logicalDevice.queues[type] = m_logicalDevice.handle.getQueue(family, family_usages[family]++);
 
 	return res;
 }
@@ -1317,19 +1309,19 @@ FRenderApiErrorInfo CVkRenderDevice::createLogicalDevice(const FRenderContextCre
 void CVkRenderDevice::createMemoryAllocator(const FRenderContextCreateInfo& context_ci)
 {
 	vma::VulkanFunctions vk_functions{};
-	vk_functions.vkGetInstanceProcAddr = dynamicLoader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
-	vk_functions.vkGetDeviceProcAddr = dynamicLoader.getProcAddress<PFN_vkGetDeviceProcAddr>("vkGetDeviceProcAddr");
+	vk_functions.vkGetInstanceProcAddr = m_dynamicLoader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
+	vk_functions.vkGetDeviceProcAddr = m_dynamicLoader.getProcAddress<PFN_vkGetDeviceProcAddr>("vkGetDeviceProcAddr");
 
 	auto& physical_device = getPhysicalDevice();
 	vma::AllocatorCreateInfo allocator_ci{};
-	allocator_ci.instance = vkInstance;
+	allocator_ci.instance = m_vkInstance;
 	allocator_ci.physicalDevice = physical_device.handle;
-	allocator_ci.device = logicalDevice.handle;
-	allocator_ci.pAllocationCallbacks = allocationCallbacks;
+	allocator_ci.device = m_logicalDevice.handle;
+	allocator_ci.pAllocationCallbacks = m_allocationCallbacks;
 	allocator_ci.vulkanApiVersion = get_api_version(context_ci.apiVersion);
 	allocator_ci.pVulkanFunctions = &vk_functions;
 
-	memoryAllocator = vma::createAllocator(allocator_ci);
+	m_memoryAllocator = vma::createAllocator(allocator_ci);
 }
 
 FRenderApiErrorInfo CVkRenderDevice::createPipelineCache(const FRenderContextCreateInfo& context_ci)
@@ -1337,38 +1329,38 @@ FRenderApiErrorInfo CVkRenderDevice::createPipelineCache(const FRenderContextCre
 	vk::PipelineCacheCreateInfo pipeline_cache_ci{};
 	pipeline_cache_ci.initialDataSize = static_cast<uint32_t>(context_ci.pipelineCache.size());
 	pipeline_cache_ci.pInitialData = context_ci.pipelineCache.data();
-	return make_api_error(vk::ObjectType::ePipelineCache, logicalDevice.handle.createPipelineCache(&pipeline_cache_ci, allocationCallbacks, &pipelineCache), "Failed to create");
+	return make_api_error(vk::ObjectType::ePipelineCache, m_logicalDevice.handle.createPipelineCache(&pipeline_cache_ci, m_allocationCallbacks, &m_pipelineCache), "Failed to create");
 }
 
 FRenderApiErrorInfo CVkRenderDevice::createSwapchain(uint32_t surface_width, uint32_t surface_height)
 {
 	auto& physical_device = getPhysicalDevice();
 
-	vk::SwapchainKHR old_swapchain{ swapchain.handle };
-	swapchain.handle = nullptr;
+	vk::SwapchainKHR old_swapchain{ m_swapchain.handle };
+	m_swapchain.handle = nullptr;
 
-	auto surface_caps = physical_device.handle.getSurfaceCapabilitiesKHR(vkSurface);
-	auto surface_formats = physical_device.handle.getSurfaceFormatsKHR(vkSurface);
-	auto present_modes = physical_device.handle.getSurfacePresentModesKHR(vkSurface);
+	auto surface_caps = physical_device.handle.getSurfaceCapabilitiesKHR(m_vkSurface);
+	auto surface_formats = physical_device.handle.getSurfaceFormatsKHR(m_vkSurface);
+	auto present_modes = physical_device.handle.getSurfacePresentModesKHR(m_vkSurface);
 
 	auto surface_format = choice_surface_format(surface_formats);
 	auto present_mode = choice_surface_present_mode(present_modes);
-	swapchain.extent = choice_swapchain_extent(surface_caps, surface_width, surface_height);
-	swapchain.format = surface_format.format;
+	m_swapchain.extent = choice_swapchain_extent(surface_caps, surface_width, surface_height);
+	m_swapchain.format = surface_format.format;
 
-	uint32_t image_count{ swapchain.framesInFlight };
+	uint32_t image_count{ m_swapchain.framesInFlight };
 	if (surface_caps.maxImageCount > 0 && image_count > surface_caps.maxImageCount)
 		image_count = surface_caps.maxImageCount;
 	else if (image_count < surface_caps.minImageCount)
 		image_count = surface_caps.minImageCount;
-	swapchain.framesInFlight = image_count;
+	m_swapchain.framesInFlight = image_count;
 
 	vk::SwapchainCreateInfoKHR swapchain_ci{};
-	swapchain_ci.surface = vkSurface;
+	swapchain_ci.surface = m_vkSurface;
 	swapchain_ci.minImageCount = image_count;
 	swapchain_ci.imageFormat = surface_format.format;
 	swapchain_ci.imageColorSpace = surface_format.colorSpace;
-	swapchain_ci.imageExtent = swapchain.extent;
+	swapchain_ci.imageExtent = m_swapchain.extent;
 	swapchain_ci.imageArrayLayers = 1u;
 	swapchain_ci.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
 
@@ -1394,23 +1386,23 @@ FRenderApiErrorInfo CVkRenderDevice::createSwapchain(uint32_t surface_width, uin
 	swapchain_ci.clipped = VK_TRUE;
 	swapchain_ci.oldSwapchain = old_swapchain;
 
-	vk::Result res = logicalDevice.handle.createSwapchainKHR(&swapchain_ci, allocationCallbacks, &swapchain.handle);
+	vk::Result res = m_logicalDevice.handle.createSwapchainKHR(&swapchain_ci, m_allocationCallbacks, &m_swapchain.handle);
 	check_api_result(make_api_error(vk::ObjectType::eSwapchainKHR, res, "Failed to create"));
 
-	swapchain.images.resize(image_count);
-	res = logicalDevice.handle.getSwapchainImagesKHR(swapchain.handle, &image_count, swapchain.images.data());
+	m_swapchain.images.resize(image_count);
+	res = m_logicalDevice.handle.getSwapchainImagesKHR(m_swapchain.handle, &image_count, m_swapchain.images.data());
 	check_api_result(make_api_error(vk::ObjectType::eSwapchainKHR, res, "Failed to create images"));
 
 	if (old_swapchain)
-		logicalDevice.handle.destroySwapchainKHR(old_swapchain, allocationCallbacks);
+		m_logicalDevice.handle.destroySwapchainKHR(old_swapchain, m_allocationCallbacks);
 
-	// Create swapchain image views
+	// Create m_swapchain image views
 	{
-		swapchain.imageViews.resize(image_count);
+		m_swapchain.imageViews.resize(image_count);
 
 		FVkImageViewCreateInfo image_view_ci{};
 		image_view_ci.ci.viewType = vk::ImageViewType::e2D;
-		image_view_ci.ci.format = swapchain.format;
+		image_view_ci.ci.format = m_swapchain.format;
 		image_view_ci.ci.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
 		image_view_ci.ci.subresourceRange.baseMipLevel = 0;
 		image_view_ci.ci.subresourceRange.levelCount = 1;
@@ -1426,16 +1418,16 @@ FRenderApiErrorInfo CVkRenderDevice::createSwapchain(uint32_t surface_width, uin
 #ifndef BUILD_WITHOUT_DEBUGGIND
 			image_view_ci.name = std::format("frame #{}", idx);
 #endif
-			image_view_ci.ci.image = swapchain.images.at(idx);
-			check_api_result(createImageView(image_view_ci, swapchain.imageViews.at(idx)));
+			image_view_ci.ci.image = m_swapchain.images.at(idx);
+			check_api_result(createImageView(image_view_ci, m_swapchain.imageViews.at(idx)));
 		}
 	}
 
-	// Create swapchain sync objects
+	// Create m_swapchain sync objects
 	{
-		swapchain.imageAvaliableSemaphores.resize(image_count);
-		swapchain.renderFinishedSemaphores.resize(image_count);
-		swapchain.inFlightFences.resize(image_count);
+		m_swapchain.imageAvaliableSemaphores.resize(image_count);
+		m_swapchain.renderFinishedSemaphores.resize(image_count);
+		m_swapchain.inFlightFences.resize(image_count);
 
 		FVkSemaphoreCreateInfo ia_semaphore_ci{};
 		FVkSemaphoreCreateInfo rf_semaphore_ci{};
@@ -1448,9 +1440,9 @@ FRenderApiErrorInfo CVkRenderDevice::createSwapchain(uint32_t surface_width, uin
 			rf_semaphore_ci.name = std::format("render finished #{}", idx);
 			fence_ci.name = std::format("frame #{}", idx);
 #endif
-			check_api_result(createSemaphore(ia_semaphore_ci, swapchain.imageAvaliableSemaphores.at(idx)));
-			check_api_result(createSemaphore(rf_semaphore_ci, swapchain.renderFinishedSemaphores.at(idx)));
-			check_api_result(createFence(fence_ci, swapchain.inFlightFences.at(idx)));
+			check_api_result(createSemaphore(ia_semaphore_ci, m_swapchain.imageAvaliableSemaphores.at(idx)));
+			check_api_result(createSemaphore(rf_semaphore_ci, m_swapchain.renderFinishedSemaphores.at(idx)));
+			check_api_result(createFence(fence_ci, m_swapchain.inFlightFences.at(idx)));
 		}
 	}
 
@@ -1459,12 +1451,12 @@ FRenderApiErrorInfo CVkRenderDevice::createSwapchain(uint32_t surface_width, uin
 
 void CVkRenderDevice::cleanupSwapchain()
 {
-	for (size_t idx = 0ull; idx < swapchain.framesInFlight; ++idx)
+	for (size_t idx = 0ull; idx < m_swapchain.framesInFlight; ++idx)
 	{
-		logicalDevice.handle.destroyFence(swapchain.inFlightFences.at(idx), allocationCallbacks);
-		logicalDevice.handle.destroyImageView(swapchain.imageViews.at(idx), allocationCallbacks);
-		logicalDevice.handle.destroySemaphore(swapchain.imageAvaliableSemaphores.at(idx), allocationCallbacks);
-		logicalDevice.handle.destroySemaphore(swapchain.renderFinishedSemaphores.at(idx), allocationCallbacks);
+		m_logicalDevice.handle.destroyFence(m_swapchain.inFlightFences.at(idx), m_allocationCallbacks);
+		m_logicalDevice.handle.destroyImageView(m_swapchain.imageViews.at(idx), m_allocationCallbacks);
+		m_logicalDevice.handle.destroySemaphore(m_swapchain.imageAvaliableSemaphores.at(idx), m_allocationCallbacks);
+		m_logicalDevice.handle.destroySemaphore(m_swapchain.renderFinishedSemaphores.at(idx), m_allocationCallbacks);
 	}
 }
 
@@ -1480,14 +1472,14 @@ void CVkRenderDevice::initProfiler()
 
 	auto& physical_device = getPhysicalDevice();
 	
-	auto& graphics = logicalDevice.queues[QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT];
-	auto& present = logicalDevice.queues[QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT];
+	auto& graphics = m_logicalDevice.queues[QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT];
+	auto& present = m_logicalDevice.queues[QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT];
 		
-	m_tracyContext.resize(swapchain.framesInFlight);
-	for (uint32_t idx = 0u; idx < swapchain.framesInFlight; ++idx)
-		m_tracyContext[idx] = TracyVkContext(physical_device.handle, logicalDevice.handle, graphics, tracy_cmd_buffer.handles.back());
+	m_tracyContext.resize(m_swapchain.framesInFlight);
+	for (uint32_t idx = 0u; idx < m_swapchain.framesInFlight; ++idx)
+		m_tracyContext[idx] = TracyVkContext(physical_device.handle, m_logicalDevice.handle, graphics, tracy_cmd_buffer.handles.back());
 
-	m_presentTracyContext = TracyVkContext(physical_device.handle, logicalDevice.handle, present, tracy_cmd_buffer.handles.back());
+	m_presentTracyContext = TracyVkContext(physical_device.handle, m_logicalDevice.handle, present, tracy_cmd_buffer.handles.back());
 
 	graphics.waitIdle();
 	destroyCommandBuffer(tracy_cmd_buffer);

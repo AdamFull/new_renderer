@@ -113,6 +113,12 @@ namespace engine
 			FGeometryRanges range{};
 		};
 
+		struct FAPIObjectDestroyInfo
+		{
+			size_t id{ ~0ull };
+			uint32_t mask{ 0u };
+		};
+
 		struct FFrustum
 		{
 		public:

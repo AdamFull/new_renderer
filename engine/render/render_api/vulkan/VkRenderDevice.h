@@ -112,7 +112,7 @@ namespace engine
 						auto formatted_debug_object_name = std::format("{}:{} | {:x}", vk::to_string(object.objectType), name, object_name_info.objectHandle);
 						object_name_info.pObjectName = formatted_debug_object_name.c_str();
 
-						logicalDevice.handle.setDebugUtilsObjectNameEXT(object_name_info);
+						m_logicalDevice.handle.setDebugUtilsObjectNameEXT(object_name_info);
 					}
 #endif
 				}
@@ -128,7 +128,7 @@ namespace engine
 					object_tag_info.pTag = data;
 					object_tag_info.tagSize = size;
 
-					logicalDevice.handle.setDebugUtilsObjectTagEXT(object_tag_info);
+					m_logicalDevice.handle.setDebugUtilsObjectTagEXT(object_tag_info);
 #endif
 				}
 
@@ -181,7 +181,7 @@ namespace engine
 					auto structure_type = _Ty::structureType;
 
 					auto& physical_device = getPhysicalDevice();
-					auto& extension_features = logicalDevice.extensionFeatures;
+					auto& extension_features = m_logicalDevice.extensionFeatures;
 
 					auto found_feature = extension_features.find(structure_type);
 					if (found_feature != extension_features.end())
@@ -197,34 +197,34 @@ namespace engine
 
 					auto* extension_ptr = static_cast<_Ty*>(extension_features[structure_type].get());
 
-					if (logicalDevice.lastExtensionFeature)
-						extension_ptr->pNext = logicalDevice.lastExtensionFeature;
-					logicalDevice.lastExtensionFeature = extension_ptr;
+					if (m_logicalDevice.lastExtensionFeature)
+						extension_ptr->pNext = m_logicalDevice.lastExtensionFeature;
+					m_logicalDevice.lastExtensionFeature = extension_ptr;
 
 					return *extension_ptr;
 				}
 			private:
-				vk::DynamicLoader dynamicLoader;
-				vk::AllocationCallbacks* allocationCallbacks{ nullptr };
+				vk::DynamicLoader m_dynamicLoader;
+				vk::AllocationCallbacks* m_allocationCallbacks{ nullptr };
 
-				vk::Instance vkInstance{ nullptr };
-				vk::DebugUtilsMessengerEXT debugMessenger{ nullptr };
-				vk::DebugReportCallbackEXT debugReport{ nullptr };
-				vk::SurfaceKHR vkSurface{ nullptr };
-				std::vector<std::string> avaliableLayers{};
+				vk::Instance m_vkInstance{ nullptr };
+				vk::DebugUtilsMessengerEXT m_debugMessenger{ nullptr };
+				vk::DebugReportCallbackEXT m_debugReport{ nullptr };
+				vk::SurfaceKHR m_vkSurface{ nullptr };
+				std::vector<std::string> m_avaliableLayers{};
 
-				int32_t selectedPhysicalDevice{ -1 };
-				std::vector<FVkPhysicalDevice> physicalDevices{};
+				int32_t m_selectedPhysicalDevice{ -1 };
+				std::vector<FVkPhysicalDevice> m_physicalDevices{};
 
-				vk::SampleCountFlagBits requiredSampleCount{ vk::SampleCountFlagBits::e1 };
-				FVkLogicalDevice logicalDevice{};
+				vk::SampleCountFlagBits m_requiredSampleCount{ vk::SampleCountFlagBits::e1 };
+				FVkLogicalDevice m_logicalDevice{};
 
-				vma::Allocator memoryAllocator{ nullptr };
+				vma::Allocator m_memoryAllocator{ nullptr };
 
-				vk::PipelineCache pipelineCache{ nullptr };
-				FSwapchain swapchain{};
+				vk::PipelineCache m_pipelineCache{ nullptr };
+				FSwapchain m_swapchain{};
 
-				std::unordered_map<uint32_t, std::unordered_map<std::thread::id, FVkCommandPool>> commandPools{};
+				std::unordered_map<FVkThreadKeyResolver, FVkCommandPool> m_commandPools{};
 
 #ifdef ENABLE_TRACY_PROFILING
 				std::vector<tracy::VkCtx*> m_tracyContext;

@@ -82,6 +82,7 @@ namespace engine
 				void endDebugLabel(uint32_t queue_type) override;
 			protected:
 				void processResourceUpload();
+				void processResourceUtilization();
 
 				FRenderApiErrorInfo createTexture(const FVkTextureCreateInfo& texture_ci, FVkTexture& texture);
 				void destroyTexture(FVkTexture& texture);
@@ -104,12 +105,16 @@ namespace engine
 				std::vector<FTextureUploadInfo> m_textureUploadInfos{};
 				std::vector<FBufferUploadInfo> m_bufferUploadInfos{};
 
+				std::queue<FAPIObjectDestroyInfo> m_destroyResource{};
+
 				// NOTE: global descriptor uses set 0 and binding 0 and 1 (0 is for global uniform, 1 is for texture array)
 				FVkGlobalDescriptor m_globalDescriptor{};
 				std::unordered_map<uint32_t, utl::unique_queue<size_t>> m_textureToUpdate{};
 
 				std::unordered_map<FVkThreadKeyResolver, std::vector<FVkCommandBuffer>> m_commandBuffers{};
 				bool m_bIsFrameStarted{ false };
+
+				size_t m_utilizationCounter{ 0ull };
 
 				int32_t m_iSurfaceWidth{}, m_iSurfaceHeight{};
 			};

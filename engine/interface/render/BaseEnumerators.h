@@ -32,9 +32,8 @@ namespace engine
 		enum EResourceTypeBits
 		{
 			RESOURCE_TYPE_TEXTURE_BIT = 1 << 0,
-			RESOURCE_TYPE_RENDER_TARGET_BIT = 1 << 1,
-			RESOURCE_TYPE_BUFFER_BIT = 1 << 2,
-			RESOURCE_TYPE_SHADER_BIT = 1 << 3
+			RESOURCE_TYPE_BUFFER_BIT = 1 << 1,
+			RESOURCE_TYPE_SHADER_BIT = 1 << 2
 		};
 
 		enum EQueueFamilyUsageFlagBits

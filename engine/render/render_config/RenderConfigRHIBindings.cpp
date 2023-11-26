@@ -55,15 +55,6 @@ namespace engine
 				"rgba32_sfloat", FORMAT_RGBA32_SFLOAT
 			);
 
-			// Register EResourceTypeBits
-			lua->new_enum(
-				"ResType",
-				"texture", RESOURCE_TYPE_TEXTURE_BIT,
-				"rt", RESOURCE_TYPE_RENDER_TARGET_BIT,
-				"buffer", RESOURCE_TYPE_BUFFER_BIT,
-				"shader", RESOURCE_TYPE_SHADER_BIT
-			);
-
 			// Register ETextureImageTypeFlagBits
 			lua->new_enum(
 				"TexType",

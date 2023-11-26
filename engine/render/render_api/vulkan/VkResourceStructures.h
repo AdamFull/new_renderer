@@ -356,6 +356,7 @@ namespace engine
 				vk::DeviceSize instanceCount{};
 				vk::BufferUsageFlags usageFlags{};
 				bool isMapped{ false };
+				bool isAlive{ false };
 			};
 
 			struct FVkBufferCreateInfo
@@ -389,6 +390,8 @@ namespace engine
 				vk::PipelineBindPoint bindPoint{};
 
 				size_t reflection{ ~0ull };
+
+				bool isAlive{ false };
 			};
 
 			struct FVkShaderResourcesInfo
@@ -417,6 +420,8 @@ namespace engine
 				vk::ImageLayout layout{};
 				uint32_t totalLayers{ 1u };
 				bool isRenderTarget{ false };
+
+				bool isAlive{ false };
 
 				FVkTextureInitialData initialData;
 #ifndef BUILD_WITHOUT_DEBUGGIND
