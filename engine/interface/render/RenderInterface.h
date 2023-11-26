@@ -23,7 +23,7 @@ namespace engine
 			{
 				{ utl::fnv1a_64_hash("GlobalUniformFrameData"), "GlobalUniformFrameData" },
 				{ utl::fnv1a_64_hash("UniformMeshData"), "UniformMeshData" },
-				{ utl::fnv1a_64_hash("UniformJoints"), "UniformJoints" },
+				{ utl::fnv1a_64_hash("UniformSkinningJoints"), "UniformSkinningJoints" },
 			};
 
 			constexpr const char* find(size_t key) 
@@ -175,6 +175,7 @@ namespace engine
 		{
 			FRenderCamera camera{};
 
+			size_t primitiveCount{ 0ull };
 			std::vector<FGeometryBatch> sceneBatches{};
 
 			std::unordered_map<uint32_t, FRenderNode> nodes{};

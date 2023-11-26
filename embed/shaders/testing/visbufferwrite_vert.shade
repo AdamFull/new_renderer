@@ -5,12 +5,17 @@
 		"GL_ARB_separate_shader_objects",
 		"GL_ARB_shading_language_420pack",
 		"GL_ARB_shader_draw_parameters",
-		"GL_EXT_nonuniform_qualifier"
+		"GL_EXT_nonuniform_qualifier",
+		"GL_EXT_shader_8bit_storage",
+		"GL_EXT_shader_16bit_storage"
 	];
 
 	definitions: ["VERTEX_SHADER", "MESH_DATA"];
 
-	require_extensions: [];
+	require_extensions: [
+		"GL_EXT_shader_explicit_arithmetic_types",
+		"GL_EXT_shader_explicit_arithmetic_types_int8"
+	];
 	includes: ["shader_inputs"];
 
 	code: 
@@ -26,11 +31,31 @@
 
 		void main() 
 		{
+			// Calculate skinned matrix from weights and joint indices of the current vertex
+			mat4 modelMatrix = meshData.model;
+#ifdef HAS_SKIN
+#if defined(JOINTS_8BIT)
+			u8vec4 joints = u8vec4(uint8_t(inJoints.x * 255.0), uint8_t(inJoints.y * 255.0), uint8_t(inJoints.z * 255.0), uint8_t(inJoints.w * 255.0));
+#elif defined(JOINTS_16BIT)
+			u16vec4 joints = u16vec4(uint16_t(inJoints.x * 65535.0), uint16_t(inJoints.y * 65535.0), uint16_t(inJoints.z * 65535.0), uint16_t(inJoints.w * 65535.0));
+#endif
+			mat4 skinMat = 
+				inWeights.x * matrices[joints.x] +
+				inWeights.y * matrices[joints.y] +
+				inWeights.z * matrices[joints.z] +
+				inWeights.w * matrices[joints.w];
+		
+			modelMatrix = modelMatrix * skinMat;
+#endif
+
+			vec4 localPos = modelMatrix * vec4(inPosition, 1.0);
+			localPos = vec4(localPos.xyz / localPos.w, 1.0);
+
 			drawID = gl_DrawIDARB;
 #ifdef HAS_TEXCOORD
 			uv = inTexCoord;
 #endif
-			gl_Position = frameData.projection * frameData.view * meshData.model * vec4(inPosition, 1.f);
+			gl_Position = frameData.projection * frameData.view * localPos;
 		}
 	""";
 }
