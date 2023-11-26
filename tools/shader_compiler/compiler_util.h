@@ -103,21 +103,36 @@ namespace shader_compiler
 			return false;
 		}
 
-		std::ifstream file(file_path, std::ios_base::in | std::ios_base::binary);
-		if (!file.is_open())
+		auto path_str = file_path.string();
+		FILE* file = fopen(path_str.c_str(), "rb");
+		if (!file)
 		{
-			log_error("Failed to open file: {}.", file_path.string());
+			log_error("Failed to open file: %s.", path_str);
 			return false;
 		}
 
-		std::string file_data{ std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>() };
-		if (file_data.empty())
+		fseek(file, 0, SEEK_END);
+		long file_size = ftell(file);
+		rewind(file);
+
+		if (file_size == 0)
 		{
-			log_warning("File loaded from: {} is empty.", file_path.string());
+			log_warning("File loaded from: %s is empty.", path_str);
+			fclose(file);
 			return false;
 		}
 
-		sjson::parse(file_data).parse_to<_Ty>(output);
+		std::vector<char> buffer(file_size);
+		size_t result = fread(buffer.data(), 1, file_size, file);
+		fclose(file);
+
+		if (result != file_size)
+		{
+			log_error("Error reading file: %s.", path_str);
+			return false;
+		}
+
+		sjson::parse(buffer).parse_to<_Ty>(output);
 
 		return true;
 	}
@@ -128,27 +143,48 @@ namespace shader_compiler
 		if (!std::filesystem::exists(file_path))
 			return false;
 
-		std::ifstream file(file_path, std::ios_base::in | std::ios_base::binary);
-		if (!file.is_open())
+		auto path_str = file_path.string();
+		FILE* file = fopen(path_str.c_str(), "rb");
+		if (!file)
 			return false;
 
-		std::string file_data{ std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>() };
-		if (file_data.empty())
+		fseek(file, 0, SEEK_END);
+		long file_size = ftell(file);
+		rewind(file);
+
+		if (file_size == 0)
+		{
+			fclose(file);
+			return false;
+		}
+
+		std::vector<char> buffer(file_size);
+		size_t result = fread(buffer.data(), 1, file_size, file);
+		fclose(file);
+
+		if (result != file_size)
 			return false;
 
-		nlohmann::json::from_bson(file_data).get_to(output);
+		nlohmann::json::from_bson(buffer).get_to(output);
+
+		return true;
 	}
 
 	template<class _Ty>
 	inline bool dump_json_from(const std::filesystem::path& file_path, const _Ty& input)
 	{
-		std::ofstream file(file_path, std::ios_base::out | std::ios_base::binary);
-		if (!file.is_open())
+		auto path_str = file_path.string();
+		FILE* file = fopen(path_str.c_str(), "wb");
+		if (!file)
 			return false;
 
-		auto data = nlohmann::json::to_bson(nlohmann::json(input));
-		file.write(reinterpret_cast<const char*>(data.data()), data.size());
-		file.close();
+		std::vector<uint8_t> data = nlohmann::json::to_bson(nlohmann::json(input));
+
+		size_t result = fwrite(data.data(), 1, data.size(), file);
+		fclose(file);
+
+		if (result != data.size())
+			return false;
 
 		return true;
 	}
