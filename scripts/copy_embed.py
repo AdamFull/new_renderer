@@ -1,4 +1,4 @@
-import os, shutil, subprocess
+import os, shutil, filecmp
 from argparse import ArgumentParser
 
 def copy_with_override(src, dst):
@@ -24,9 +24,6 @@ class CopyEmbedded:
 
         embed_path = os.path.join(engine_workdir, "embed")
         engine_binaries = os.path.join(engine_workdir, f"bin/{self.build_type}/engine")
-        
-        #copy_with_override(os.path.join(embed_path, "engine_config.json"), os.path.join(engine_binaries, "engine_config.json"))
-        #copy_with_override(os.path.join(embed_path, "mono"), os.path.join(embed_binaries, "mono"))
 
         for root, dirs, files in os.walk(embed_path):
             for file in files:
@@ -42,7 +39,11 @@ class CopyEmbedded:
                 if not os.path.exists(dst_dir):
                     os.makedirs(dst_dir)
 
-                copy_with_override(src, dst)
+                if not os.path.exists(dst) or not filecmp.cmp(src, dst, shallow=False):
+                    copy_with_override(src, dst)
+                    print(f"Copied and overwritten: {src} to {dst}")
+                else:
+                    print(f"No changes detected, skipping copy for: {src}")
 
 def main():
     parser = ArgumentParser(description='Embedder resource copyer.')
