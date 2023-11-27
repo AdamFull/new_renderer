@@ -1503,8 +1503,6 @@ void CVkRenderContext::processResourceUpload()
 			texture_upload.data.clear();
 		}
 
-		//std::unordered_map<size_t, size_t> image_counter{};
-
 		// Translate all images to transfer dst stage
 		std::vector<size_t> generate_mip_textures{};
 		FVkTranslationInfo translation_info{};
@@ -1522,11 +1520,9 @@ void CVkRenderContext::processResourceUpload()
 
 			if (texture->initialData.base.mipLevels > 1u && texture_upload.mipLayerOffsets.empty())
 				generate_mip_textures.emplace_back(texture_upload.textureId);
-
-			//auto id = reinterpret_cast<uint64_t>(static_cast<vk::Image::CType>(texture->image.handle));
-			//image_counter[id]++;
 		}
 
+		// Process layout transfers
 		processMemoryBarriers(command_buffer, translation_info);
 		translation_info.imageTranslationInfos.clear();
 
@@ -1580,31 +1576,35 @@ void CVkRenderContext::processResourceUpload()
 		for (auto& texture_id : generate_mip_textures)
 		{
 			auto& texture = textures.at(texture_id).front();
+			auto aspect_mask = get_texture_aspect_flags(*texture);
 
 			uint32_t mip_width{ texture->initialData.base.width };
 			uint32_t mip_heigth{ texture->initialData.base.height };
 
-			for (uint32_t mip = 1u; mip < texture->initialData.base.mipLevels; mip++)
+			FVkImageTranslationInfo image_translation_info{};
+			image_translation_info.handle = texture->image.handle;
+			image_translation_info.subresourceRange.baseArrayLayer = 0u;
+			image_translation_info.subresourceRange.levelCount = 1;
+			image_translation_info.subresourceRange.layerCount = texture->totalLayers;
+			image_translation_info.subresourceRange.aspectMask = aspect_mask;
+
+			for (uint32_t mip = 1u; mip < texture->initialData.base.mipLevels; ++mip)
 			{
-				FVkImageTranslationInfo image_translation_info{};
-				image_translation_info.handle = texture->image.handle;
+				image_translation_info.subresourceRange.baseMipLevel = mip - 1u;
 				image_translation_info.oldLayout = vk::ImageLayout::eTransferDstOptimal;
 				image_translation_info.srcStageMask = get_translation_stage_flags(image_translation_info.oldLayout);
 				image_translation_info.srcAccessMask = get_translation_access_flags(image_translation_info.oldLayout);
 				image_translation_info.newLayout = vk::ImageLayout::eTransferSrcOptimal;
 				image_translation_info.dstStageMask = get_translation_stage_flags(image_translation_info.newLayout);
 				image_translation_info.dstAccessMask = get_translation_access_flags(image_translation_info.newLayout);
-				image_translation_info.subresourceRange.levelCount = mip - 1u;
-				image_translation_info.subresourceRange.layerCount = texture->totalLayers;
+				
 				processImageLayoutTranslation(command_buffer, image_translation_info);
-
-				auto aspect_mask = get_texture_aspect_flags(*texture);
 
 				vk::ImageBlit2KHR image_blit{};
 				image_blit.srcOffsets[0] = vk::Offset3D{ 0, 0, 0 };
 				image_blit.srcOffsets[1] = vk::Offset3D{ static_cast<int32_t>(mip_width), static_cast<int32_t>(mip_heigth), 1 };
 				image_blit.srcSubresource.aspectMask = aspect_mask;
-				image_blit.srcSubresource.mipLevel = image_translation_info.subresourceRange.levelCount;
+				image_blit.srcSubresource.mipLevel = image_translation_info.subresourceRange.baseMipLevel;
 				image_blit.srcSubresource.baseArrayLayer = 0u;
 				image_blit.srcSubresource.layerCount = 1u;
 				image_blit.dstOffsets[0] = vk::Offset3D{ 0, 0, 0 };
@@ -1616,7 +1616,7 @@ void CVkRenderContext::processResourceUpload()
 
 				vk::BlitImageInfo2KHR blit_info{};
 				blit_info.srcImage = texture->image.handle;
-				blit_info.srcImageLayout = vk::ImageLayout::eTransferDstOptimal;
+				blit_info.srcImageLayout = vk::ImageLayout::eTransferSrcOptimal;
 				blit_info.dstImage = texture->image.handle;
 				blit_info.dstImageLayout = vk::ImageLayout::eTransferDstOptimal;
 				blit_info.regionCount = 1u;
@@ -1628,7 +1628,7 @@ void CVkRenderContext::processResourceUpload()
 				image_translation_info.oldLayout = vk::ImageLayout::eTransferSrcOptimal;
 				image_translation_info.srcStageMask = get_translation_stage_flags(image_translation_info.oldLayout);
 				image_translation_info.srcAccessMask = get_translation_access_flags(image_translation_info.oldLayout);
-				image_translation_info.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+				image_translation_info.newLayout = vk::ImageLayout::eTransferDstOptimal;
 				image_translation_info.dstStageMask = get_translation_stage_flags(image_translation_info.newLayout);
 				image_translation_info.dstAccessMask = get_translation_access_flags(image_translation_info.newLayout);
 				processImageLayoutTranslation(command_buffer, image_translation_info);
