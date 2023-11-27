@@ -1225,6 +1225,8 @@ void CVkRenderDevice::prepareRequestedLogicalDeviceFeatures()
 				requestExtensionFeatures<vk::PhysicalDevice16BitStorageFeaturesKHR>();
 			else if (extension_name == VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME)
 				requestExtensionFeatures<vk::PhysicalDeviceShaderFloat16Int8FeaturesKHR>();
+			else if (extension_name == VK_NV_MESH_SHADER_EXTENSION_NAME)
+				requestExtensionFeatures<vk::PhysicalDeviceMeshShaderPropertiesEXT>();
 		}
 	}
 }
