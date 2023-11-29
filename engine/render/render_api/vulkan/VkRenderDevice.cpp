@@ -397,8 +397,6 @@ FRenderApiErrorInfo CVkRenderDevice::createDescriptorPool(const FVkDescriptorPoo
 	debugSetObjectName(descriptor_pool.handle, pool_ci.name);
 #endif
 
-	descriptor_pool.thread_id = std::this_thread::get_id();
-
 	return make_api_error(descriptor_pool.handle.objectType, res, "Failed to create");
 }
 
@@ -406,6 +404,11 @@ FRenderApiErrorInfo CVkRenderDevice::growDescriptorPool(const FVkDescriptorPoolC
 {
 	destroyDescriptorPool(descriptor_pool);
 	return createDescriptorPool(pool_ci, descriptor_pool);
+}
+
+void CVkRenderDevice::resetDescriptorPool(FVkDescriptorPool& descriptor_pool)
+{
+	m_logicalDevice.handle.resetDescriptorPool(descriptor_pool.handle);
 }
 
 void CVkRenderDevice::destroyDescriptorPool(FVkDescriptorPool& descriptor_pool)

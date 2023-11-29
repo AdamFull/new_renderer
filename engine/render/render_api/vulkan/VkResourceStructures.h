@@ -52,20 +52,6 @@ namespace engine
 				PHYSICAL_DEVICE_COMPAT_ASYNC_TRANSFER_FLAG_BIT
 			};
 
-			struct FVkThreadKeyResolver
-			{
-				FVkThreadKeyResolver() : threadId{ std::this_thread::get_id() }, queueType{ QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT } {}
-				FVkThreadKeyResolver(uint32_t queue_type, std::thread::id thread_id = std::this_thread::get_id()) : threadId{ thread_id }, queueType{ queue_type } {}
-
-				friend bool operator==(const FVkThreadKeyResolver& lhs, const FVkThreadKeyResolver& rhs)
-				{
-					return lhs.threadId == rhs.threadId && lhs.queueType == rhs.queueType;
-				}
-
-				std::thread::id threadId{};
-				uint32_t queueType{ 0 };
-			};
-
 			// =================================================================================
 			// ==================================Object Handles=================================
 			// =================================================================================
@@ -222,7 +208,6 @@ namespace engine
 			struct FVkDescriptorPool
 			{
 				vk::DescriptorPool handle{};
-				std::thread::id thread_id{};
 			};
 
 			struct FVkDescriptorPoolCreateInfo
@@ -520,20 +505,6 @@ namespace engine
 			};
 		}
 	}
-}
-
-namespace std 
-{
-	template<>
-	struct hash<engine::render::vulkan::FVkThreadKeyResolver>
-	{
-		size_t operator()(const engine::render::vulkan::FVkThreadKeyResolver& key) const
-		{
-			size_t hash1 = hash<thread::id>()(key.threadId);
-			size_t hash2 = hash<uint32_t>()(key.queueType);
-			return hash1 ^ (hash2 << 1);
-		}
-	};
 }
 
 #define RETURN_WHEN_FAULT(result) \

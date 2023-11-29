@@ -12,7 +12,7 @@ using namespace engine;
 using namespace engine::render;
 using namespace engine::render::vulkan;
 
-static const uint32_t k_max_bindless_resources{ 16536u };
+static const uint32_t k_max_bindless_resources{ 2048u };
 static const size_t k_max_texture_update_per_frame{ 64ull };
 static const size_t k_max_buffer_update_per_frame{ 64ull };
 
@@ -596,6 +596,8 @@ FShaderReflectionData CVkRenderContext::getShaderReflection(const size_t& shader
 // I'll just be doing unnecessary work both copying data and loading it, including loading descriptors.
 void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader_resources, uint32_t flags)
 {
+	auto& thread_context = m_perThreadContext[std::this_thread::get_id()];
+
 	auto& shader = m_pResources->get<FVkShader>(shader_resources.shaderId);
 	auto& shader_reflection = m_pResources->get<FVkShaderReflectionData>(shader->reflection);
 

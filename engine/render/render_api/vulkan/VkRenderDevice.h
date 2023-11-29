@@ -63,6 +63,7 @@ namespace engine
 
 				FRenderApiErrorInfo createDescriptorPool(const FVkDescriptorPoolCreateInfo& pool_ci, FVkDescriptorPool& descriptor_pool);
 				FRenderApiErrorInfo growDescriptorPool(const FVkDescriptorPoolCreateInfo& pool_ci, FVkDescriptorPool& descriptor_pool);
+				void resetDescriptorPool(FVkDescriptorPool& descriptor_pool);
 				void destroyDescriptorPool(FVkDescriptorPool& descriptor_pool);
 
 				FRenderApiErrorInfo createDescriptorSet(const FVkDescriptorSetCreateInfo& set_ci, FVkDescriptorSet& descriptor_set);
