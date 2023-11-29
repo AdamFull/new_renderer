@@ -28,11 +28,9 @@ CVkRenderContext::~CVkRenderContext()
 	auto& logical_device = m_pDevice->getLogicalDevice();
 	logical_device.waitIdle();
 
-	for (auto& [key, command_buffers] : m_commandBuffers)
-	{
-		for(auto& command_buffer : command_buffers)
-			m_pDevice->destroyCommandBuffer(command_buffer);
-	}
+	// Destroy thread contexts
+	for (auto& [thread_id, context] : m_perThreadContext)
+		destroyThreadContext(context);
 
 	// Destroy all textures
 	auto& textures = m_pResources->data<FVkTexture>();
@@ -1343,29 +1341,55 @@ void CVkRenderContext::updateSurface(int32_t surface_width, int32_t surface_heig
 
 FVkCommandBuffer& CVkRenderContext::createCommandBuffer(const FVkCommandBufferCreateInfo& command_buffer_ci, std::thread::id thread_id)
 {
-	auto& command_buffers = m_commandBuffers[FVkThreadKeyResolver{ command_buffer_ci.mask, thread_id }];
-	auto& command_buffer = command_buffers.emplace_back();
+	auto& thread_context = m_perThreadContext[thread_id];
+	auto& per_queue = thread_context.perQueue[command_buffer_ci.mask];
 
-	check_api_result(m_pDevice->createCommandBuffer(command_buffer_ci, command_buffer));
+	if (!per_queue.commandPool.handle)
+	{
+		FVkCommandPoolCreateInfo pool_ci{};
+		pool_ci.mask = command_buffer_ci.mask;
+
+		check_api_result(m_pDevice->createCommandPool(pool_ci, per_queue.commandPool));
+	}
+	
+	auto& command_buffer = per_queue.commandBuffers.emplace_back();
+	check_api_result(m_pDevice->createCommandBuffer(command_buffer_ci, per_queue.commandPool, command_buffer));
 
 	return command_buffer;
 }
 
 FVkCommandBuffer& CVkRenderContext::getLastCommandBuffer(uint32_t queue_type, std::thread::id thread_id)
 {
-	auto& command_buffers = m_commandBuffers[FVkThreadKeyResolver{ queue_type, thread_id }];
-	return command_buffers.back();
+	auto& thread_context = m_perThreadContext[thread_id];
+	auto& per_queue = thread_context.perQueue[queue_type];
+
+	return per_queue.commandBuffers.back();
 }
 
 FVkCommandBuffer& CVkRenderContext::getCommandBuffer(uint32_t queue_type, size_t index, std::thread::id thread_id)
 {
-	auto& command_buffers = m_commandBuffers[FVkThreadKeyResolver{ queue_type, thread_id }];
-	return command_buffers.at(index);
+	auto& thread_context = m_perThreadContext[thread_id];
+	auto& per_queue = thread_context.perQueue[queue_type];
+
+	return per_queue.commandBuffers.at(index);
 }
 
 std::vector<FVkCommandBuffer>& CVkRenderContext::getCommandBuffers(uint32_t queue_type, std::thread::id thread_id)
 {
-	return m_commandBuffers[FVkThreadKeyResolver{ queue_type, thread_id }];
+	auto& thread_context = m_perThreadContext[thread_id];
+	auto& per_queue = thread_context.perQueue[queue_type];
+
+	return per_queue.commandBuffers;
+}
+
+void CVkRenderContext::destroyCommandBuffer(uint32_t queue_type, std::thread::id thread_id)
+{
+	auto& thread_context = m_perThreadContext[thread_id];
+	auto& per_queue = thread_context.perQueue[queue_type];
+
+	auto& command_buffer = per_queue.commandBuffers.back();
+	m_pDevice->destroyCommandBuffer(per_queue.commandPool, command_buffer);
+	per_queue.commandBuffers.pop_back();
 }
 
 void CVkRenderContext::beginFrameCommandBuffers()
@@ -1410,7 +1434,17 @@ void CVkRenderContext::endFrameCommandBuffers()
 	if (presentResult == vk::Result::eSuboptimalKHR || presentResult == vk::Result::eErrorOutOfDateKHR)
 		updateSurface(m_iSurfaceWidth, m_iSurfaceHeight);
 
-	m_pDevice->destroyUnusedCommandPools();
+	// Destroy unused contexts
+	for (auto it = m_perThreadContext.begin(); it != m_perThreadContext.end();)
+	{
+		if (it->second.use_count() < 1)
+		{
+			destroyThreadContext(it->second);
+			it = m_perThreadContext.erase(it);
+			continue;
+		}
+		++it;
+	}
 
 	// Try to free resources
 	if (m_utilizationCounter % m_pDevice->m_swapchain.framesInFlight == 0)
@@ -1454,6 +1488,25 @@ void CVkRenderContext::endDebugLabel(uint32_t queue_type)
 	m_pDevice->endLabel(current);
 }
 
+void CVkRenderContext::destroyThreadContext(FVkThreadContext& context)
+{
+	// Destroy command buffers and pools
+	for (auto& [queue_id, queue_resources] : context.perQueue)
+	{
+		for (auto& command_buffer : queue_resources.commandBuffers)
+			m_pDevice->destroyCommandBuffer(queue_resources.commandPool, command_buffer);
+
+		m_pDevice->destroyCommandPool(queue_resources.commandPool);
+	}
+
+	// Destroy descriptor sets
+	for (auto& [id, descriptor_set] : context.descriptorSets)
+		m_pDevice->destroyDescriptorSet(context.descriptorPool, descriptor_set);
+
+	// Destroy descriptor pool
+	m_pDevice->destroyDescriptorPool(context.descriptorPool);
+}
+
 void CVkRenderContext::processResourceUpload()
 {
 	if (m_textureUploadInfos.empty() && m_bufferUploadInfos.empty())
@@ -1469,8 +1522,7 @@ void CVkRenderContext::processResourceUpload()
 
 	auto& textures = m_pResources->data<FVkTexture>();
 
-	FVkCommandBuffer command_buffer{};
-	m_pDevice->createCommandBuffer(command_buffer_ci, command_buffer);
+	auto& command_buffer = createCommandBuffer(command_buffer_ci);
 
 	m_pDevice->beginCommandBuffer(command_buffer, vk::CommandBufferUsageFlagBits::eOneTimeSubmit, 0u);
 
@@ -1706,7 +1758,7 @@ void CVkRenderContext::processResourceUpload()
 	m_pDevice->submitCommandBuffer(command_buffer);
 
 	// TODO: submit command buffer. But with pushing semaphores for synchronize with main command buffer
-	m_pDevice->destroyCommandBuffer(command_buffer);
+	destroyCommandBuffer(QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT);
 
 	// destroy staging buffers
 	for (auto& staging_buffer : staging_buffers)

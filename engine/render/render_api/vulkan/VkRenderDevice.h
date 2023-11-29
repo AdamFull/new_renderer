@@ -31,13 +31,11 @@ namespace engine
 				// VkCommandPool
 				FRenderApiErrorInfo createCommandPool(const FVkCommandPoolCreateInfo& command_pool_ci, FVkCommandPool& command_pool);
 				void destroyCommandPool(FVkCommandPool& command_pool);
-				void destroyUnusedCommandPools();
-				void destroyCommandPools();
 
 				// VkCommandBuffer
-				FRenderApiErrorInfo createCommandBuffer(const FVkCommandBufferCreateInfo& command_buffer_ci, FVkCommandBuffer& command_buffer);
+				FRenderApiErrorInfo createCommandBuffer(const FVkCommandBufferCreateInfo& command_buffer_ci, const FVkCommandPool& command_pool, FVkCommandBuffer& command_buffer);
 				FVkCommandBuffer& getCommandBuffer(const FVkGetCommandBufferInfo& get_info);
-				void destroyCommandBuffer(FVkCommandBuffer& command_buffer);
+				void destroyCommandBuffer(const FVkCommandPool& command_pool, FVkCommandBuffer& command_buffer);
 				void beginCommandBuffer(FVkCommandBuffer& command_buffer, vk::CommandBufferUsageFlags usage, uint32_t image_index);
 				void endCommandBuffer(FVkCommandBuffer& command_buffer);
 
@@ -156,8 +154,6 @@ namespace engine
 				std::vector<char> getPipelineCacheData() const;
 
 				const FSwapchain& getSwapchain() const;
-
-				const FVkCommandPool& getCommandPool(uint32_t mask, const std::thread::id& thread_id = std::this_thread::get_id());
 			protected:
 				void registerAllocationCallbacks();
 				FRenderApiErrorInfo createInstance(const FRenderContextCreateInfo& context_ci);
@@ -223,8 +219,6 @@ namespace engine
 
 				vk::PipelineCache m_pipelineCache{ nullptr };
 				FSwapchain m_swapchain{};
-
-				std::unordered_map<FVkThreadKeyResolver, FVkCommandPool> m_commandPools{};
 
 #ifdef ENABLE_TRACY_PROFILING
 				std::vector<tracy::VkCtx*> m_tracyContext;

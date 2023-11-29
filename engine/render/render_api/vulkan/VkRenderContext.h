@@ -21,7 +21,6 @@ namespace engine
 				void createGlobalDescriptor(const FGlobalUniformCreateInfo& uniform_ci) override;
 				void updateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view) override;
 
-
 				size_t createTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) override;
 				size_t getTextureId(const std::string& name) override;
 				size_t createRenderTarget(const std::string& name, const FTextureCreateInfo& texture_ci);
@@ -73,6 +72,7 @@ namespace engine
 				FVkCommandBuffer& getLastCommandBuffer(uint32_t queue_type, std::thread::id thread_id = std::this_thread::get_id());
 				FVkCommandBuffer& getCommandBuffer(uint32_t queue_type, size_t index, std::thread::id thread_id = std::this_thread::get_id());
 				std::vector<FVkCommandBuffer>& getCommandBuffers(uint32_t queue_type, std::thread::id thread_id = std::this_thread::get_id());
+				void destroyCommandBuffer(uint32_t queue_type, std::thread::id thread_id = std::this_thread::get_id());
 
 				void beginFrameCommandBuffers() override;
 				void endFrameCommandBuffers() override;
@@ -81,6 +81,7 @@ namespace engine
 				void insertDebugLabel(const std::string& label, uint32_t queue_type, uint32_t color = 0xffffffff) override;
 				void endDebugLabel(uint32_t queue_type) override;
 			protected:
+				void destroyThreadContext(FVkThreadContext& context);
 				void processResourceUpload();
 				void processResourceUtilization();
 
@@ -111,7 +112,7 @@ namespace engine
 				FVkGlobalDescriptor m_globalDescriptor{};
 				std::unordered_map<uint32_t, utl::unique_queue<size_t>> m_textureToUpdate{};
 
-				std::unordered_map<FVkThreadKeyResolver, std::vector<FVkCommandBuffer>> m_commandBuffers{};
+				std::unordered_map<std::thread::id, FVkThreadContext> m_perThreadContext{};
 				bool m_bIsFrameStarted{ false };
 
 				size_t m_utilizationCounter{ 0ull };

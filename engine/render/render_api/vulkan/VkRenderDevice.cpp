@@ -92,8 +92,6 @@ VKAPI_ATTR vk::Bool32 VKAPI_CALL debug_report_callback(VkDebugReportFlagsEXT fla
 
 CVkRenderDevice::~CVkRenderDevice()
 {
-	destroyCommandPools();
-
 	cleanupSwapchain();
 	m_logicalDevice.handle.destroySwapchainKHR(m_swapchain.handle, m_allocationCallbacks);
 	m_logicalDevice.handle.destroyPipelineCache(m_pipelineCache, m_allocationCallbacks);
@@ -155,8 +153,6 @@ FRenderApiErrorInfo CVkRenderDevice::createCommandPool(const FVkCommandPoolCreat
 	const bool is_compute_queue = (command_pool_ci.mask & QUEUE_FAMILY_USAGE_COMPUTE_FLAG_BIT) && async_compute_support;
 	const bool is_transfer_queue = (command_pool_ci.mask & QUEUE_FAMILY_USAGE_TRANSFER_FLAG_BIT) && async_transfer_support;
 
-	command_pool.threadId = command_pool_ci.threadId;
-
 	vk::CommandPoolCreateInfo pool_ci{};
 	pool_ci.flags = vk::CommandPoolCreateFlagBits::eTransient | vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
 
@@ -172,7 +168,7 @@ FRenderApiErrorInfo CVkRenderDevice::createCommandPool(const FVkCommandPoolCreat
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	std::stringstream ss{};
 	ss << command_pool_ci.threadId;
-	debugSetObjectName(command_pool.handle, std::format("{} thread_id {}", command_pool_ci.name, ss.str()));
+	debugSetObjectName(command_pool.handle, std::format("thread_id {}", ss.str()));
 #endif
 
 	return make_api_error(command_pool.handle.objectType, res, "Failed to create");
@@ -183,35 +179,8 @@ void CVkRenderDevice::destroyCommandPool(FVkCommandPool& command_pool)
 	m_logicalDevice.handle.destroyCommandPool(command_pool.handle, m_allocationCallbacks);
 }
 
-void CVkRenderDevice::destroyUnusedCommandPools()
+FRenderApiErrorInfo CVkRenderDevice::createCommandBuffer(const FVkCommandBufferCreateInfo& command_buffer_ci, const FVkCommandPool& command_pool, FVkCommandBuffer& command_buffer)
 {
-	for (auto it = m_commandPools.begin(); it != m_commandPools.end();)
-	{
-		if (it->second.use_count() < 1)
-		{
-			destroyCommandPool(it->second);
-			it = m_commandPools.erase(it);
-			continue;
-		}
-		++it;
-	}
-}
-
-void CVkRenderDevice::destroyCommandPools()
-{
-	for (auto& [key, pool] : m_commandPools)
-		destroyCommandPool(pool);
-
-	m_commandPools.clear();
-}
-
-FRenderApiErrorInfo CVkRenderDevice::createCommandBuffer(const FVkCommandBufferCreateInfo& command_buffer_ci, FVkCommandBuffer& command_buffer)
-{
-	auto& command_pool = getCommandPool(command_buffer_ci.mask);
-
-	command_buffer.mask = command_buffer_ci.mask;
-	command_buffer.threadId = command_pool.threadId;
-
 	vk::CommandBufferAllocateInfo command_buffer_ai{};
 	command_buffer_ai.commandPool = command_pool.handle;
 	command_buffer_ai.level = command_buffer_ci.level;
@@ -225,12 +194,13 @@ FRenderApiErrorInfo CVkRenderDevice::createCommandBuffer(const FVkCommandBufferC
 		debugSetObjectName(command_buffer.get(), std::format("{} #{}", command_buffer_ci.name, idx));
 #endif
 
+	command_buffer.mask = command_buffer_ci.mask;
+
 	return make_api_error(vk::ObjectType::eCommandBuffer, res, "Failed to allocate");
 }
 
-void CVkRenderDevice::destroyCommandBuffer(FVkCommandBuffer& command_buffer)
+void CVkRenderDevice::destroyCommandBuffer(const FVkCommandPool& command_pool, FVkCommandBuffer& command_buffer)
 {
-	auto& command_pool = getCommandPool(command_buffer.mask, command_buffer.threadId);
 	m_logicalDevice.handle.freeCommandBuffers(command_pool.handle, command_buffer.handles);
 }
 
@@ -903,22 +873,6 @@ std::vector<char> CVkRenderDevice::getPipelineCacheData() const
 const FSwapchain& CVkRenderDevice::getSwapchain() const
 {
 	return m_swapchain;
-}
-
-const FVkCommandPool& CVkRenderDevice::getCommandPool(uint32_t mask, const std::thread::id& thread_id)
-{
-	auto thread_key = FVkThreadKeyResolver{ mask, thread_id };
-	auto found_pool = m_commandPools.find(thread_key);
-	if (found_pool != m_commandPools.end())
-		return found_pool->second;
-
-	FVkCommandPoolCreateInfo pool_ci{};
-	pool_ci.mask = mask;
-	pool_ci.threadId = thread_id;
-
-	auto& pool = m_commandPools[thread_key];
-	check_api_result(createCommandPool(pool_ci, pool));
-	return pool;
 }
 
 void CVkRenderDevice::registerAllocationCallbacks()

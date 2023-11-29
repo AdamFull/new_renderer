@@ -107,40 +107,14 @@ namespace engine
 			// ---------------------------------------------------------------------------------
 			struct FVkCommandPool
 			{
-				FVkCommandPool() { incrementUsage(); }
-				~FVkCommandPool() { decrementUsage(); }
-
-				FVkCommandPool(const FVkCommandPool& other) : handle(other.handle), threadId(other.threadId)
-				{
-					incrementUsage();
-				}
-
-				FVkCommandPool& operator=(const FVkCommandPool& other)
-				{
-					if (this != &other)
-					{
-						handle = other.handle;
-						threadId = other.threadId;
-					}
-					return *this;
-				}
-
-				int32_t use_count() { return refCounter.load(std::memory_order_relaxed); }
-
 				vk::CommandPool handle{ nullptr };
-				std::thread::id threadId{};
-			private:
-				void incrementUsage() { refCounter.fetch_add(1, std::memory_order_relaxed); }
-				void decrementUsage() { refCounter.fetch_sub(1, std::memory_order_relaxed); }
-				std::atomic<int32_t> refCounter{ 0 };
 			};
 
 			struct FVkCommandPoolCreateInfo
 			{
 				uint32_t mask{ 0u };
-				std::thread::id threadId{ std::this_thread::get_id() };
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				std::string name{};
+				std::thread::id threadId{ std::this_thread::get_id() };
 #endif
 			};
 
@@ -150,7 +124,6 @@ namespace engine
 			struct FVkCommandBuffer
 			{
 				std::vector<vk::CommandBuffer> handles{};
-				std::thread::id threadId{};
 				uint32_t mask{ 0u };
 				bool isRunning{ false };
 				uint32_t commandBufferIndex{ 0u };
@@ -508,6 +481,42 @@ namespace engine
 				vk::DescriptorSetLayout deecriptorSetLayout{};
 				FVkDescriptorSet descriptorSet{};
 				std::unordered_map<size_t, size_t> uniformBuffers{};
+			};
+
+			struct FVkPerQueueResources
+			{
+				FVkCommandPool commandPool{};
+				std::vector<FVkCommandBuffer> commandBuffers{};
+			};
+
+			struct FVkThreadContext
+			{
+				FVkThreadContext() { incrementUsage(); }
+				~FVkThreadContext() { decrementUsage(); }
+
+				FVkThreadContext(const FVkThreadContext& other) : perQueue(other.perQueue), descriptorPool(other.descriptorPool), descriptorSets(other.descriptorSets)
+				{ incrementUsage(); }
+
+				FVkThreadContext& operator=(const FVkThreadContext& other)
+				{
+					if (this != &other)
+					{
+						perQueue = other.perQueue;
+						descriptorPool.handle = other.descriptorPool.handle;
+						descriptorSets = other.descriptorSets;
+					}
+					return *this;
+				}
+
+				int32_t use_count() { return refCounter.load(std::memory_order_relaxed); }
+
+				std::unordered_map<uint32_t, FVkPerQueueResources> perQueue{};
+				FVkDescriptorPool descriptorPool{};
+				std::unordered_map<size_t, FVkDescriptorSet> descriptorSets{};
+			private:
+				void incrementUsage() { refCounter.fetch_add(1, std::memory_order_relaxed); }
+				void decrementUsage() { refCounter.fetch_sub(1, std::memory_order_relaxed); }
+				std::atomic<int32_t> refCounter{ 0 };
 			};
 		}
 	}
