@@ -1,17 +1,6 @@
 #pragma once
 
-#include <cmath>
-#include <limits>
-
-#include <string>
-#include <sstream>
-#include <vector>
-#include <unordered_map>
-#include <unordered_set>
-
-#include <memory>
-
-#include "easygltf_base.h"
+#include <easygltf_base.h>
 
 namespace easygltf
 {

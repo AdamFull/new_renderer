@@ -1,11 +1,11 @@
-#include "easygltf.h"
+#include <easygltf.h>
 
 #include <fstream>
 #include <filesystem>
 #include <format>
 
-#include "easygltf_parse.h"
-#include "easygltf_validator.h"
+#include <easygltf_parse.h>
+#include <easygltf_validator.h>
 
 using namespace easygltf;
 

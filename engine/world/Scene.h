@@ -1,11 +1,15 @@
 #pragma once
 
-#include <world/parser/easygltf_fwd.h>
 #include <interface/filesystem/VirtualFileSystemInterface.h>
 #include <interface/render/RenderInterface.h>
 #include <world/ecs/systems/BaseSystem.h>
 
 #include <entt/fwd.hpp>
+
+namespace easygltf
+{
+	class CGltfProject;
+}
 
 namespace engine
 {

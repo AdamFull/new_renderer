@@ -4,8 +4,7 @@
 #include <world/ecs/components/components.h>
 #include <world/ecs/systems/systems.h>
 
-// TODO: create my own scene format, but based on gltf
-#include <parser/easygltf.h>
+#include<easygltf/easygltf.h>
 
 #include <meshoptimizer.h>
 

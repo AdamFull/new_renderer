@@ -40,23 +40,24 @@
     "glfw3",
     "luajit",
     "sol2",
-    "meshoptimizer",
     "glm",
     {
       "name": "taskflow",
       "version>=": "3.6.0"
     },
     {
-        "name": "tracy",
-        "version>=": "0.9.1#1"
+      "name": "tracy",
+      "version>=": "0.9.1#1"
     },
     {
-        "name": "entt",
-        "version>=": "3.11.1"
+      "name": "entt",
+      "version>=": "3.11.1"
     },
     {
-        "name": "backward-cpp",
-        "version>=": "1.6#1"
-    }
+      "name": "backward-cpp",
+      "version>=": "1.6#1"
+    },
+    "meshoptimizer",
+    "nlohmann-json"
   ]
 }

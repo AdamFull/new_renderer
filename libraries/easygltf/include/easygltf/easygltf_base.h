@@ -1,13 +1,6 @@
 #pragma once
 
-#include <cmath>
-#include <array>
-#include <vector>
-#include <string>
-#include <unordered_map>
-#include <unordered_set>
-
-#include "json.hpp"
+#include <nlohmann/json.hpp>
 
 namespace easygltf
 {
