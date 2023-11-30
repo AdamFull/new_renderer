@@ -4,18 +4,6 @@
 
 namespace easygltf
 {
-	class IFilesystemWrapper
-	{
-	public:
-		virtual ~IFilesystemWrapper() = default;
-
-		virtual bool exists(const std::string& path) = 0;
-		virtual std::string expandFilePath(const std::string& path) = 0;
-		virtual bool readFile(const std::string& path, std::vector<uint8_t>& data) = 0;
-		virtual bool writeFile(const std::string& path, const std::vector<uint8_t>& data) = 0;
-		virtual size_t fileSize(const std::string& path) = 0;
-	};
-
 	struct FImportGltfInfo
 	{
 		bool mergeBuffers{ false };
@@ -28,22 +16,27 @@ namespace easygltf
 		int32_t importSceneId{ -1 };
 	};
 
-	class CGltfProject
+
+
+	class CGLTFProject
 	{
 	public:
 		void useDefaultFilesystemWrapper();
 		void setFilesystemWrapper(std::unique_ptr<IFilesystemWrapper>&& wrapper);
 
+		void useDefaultDebugMessenger();
+		void setDebugMessenger(std::unique_ptr<IDebugMessenger>&& messenger);
+
 		bool load(const std::string& fsPath);
-		bool save(const std::string& fsPath);
+		bool save(const std::string& fsPath = "");
 		bool import(const std::string& fsPath, const FImportGltfInfo& importInfo);
 
-		const FGltf& getGltf() const;
+		const FGLTFRoot& getGltf() const;
 
 		std::string getResourcePath(const std::string& path);
 
-		uint8_t* getBufferPointer(const Accessor& accessor);
-		uint8_t* getBufferPointer(int32_t accessor_id);
+		Stream getStream(const Accessor& accessor);
+		Stream getStream(int32_t accessor_id);
 
 		// Getters
 		//const Accessor& getAccessor(int32_t idx) const;
@@ -88,25 +81,21 @@ namespace easygltf
 		size_t removeScene(int32_t index);
 		size_t removeSkin(int32_t index);
 		size_t removeTexture(int32_t index);
-
-		std::string getErrors();
-		std::string getWarnings();
 	private:
-		bool _load(const std::string& fsPath, FGltf& gltf_scene);
-		bool _loadGltfFromMemory(const std::vector<uint8_t>& data, FGltf& gltf_scene);
-		bool _loadGlbFromMemory(const std::vector<uint8_t>& data, FGltf& gltf_scene);
+		bool _load(const std::string& fsPath, FGLTFRoot& gltf_scene);
+		bool _loadGltfFromMemory(const std::vector<uint8_t>& data, FGLTFRoot& gltf_scene);
+		bool _loadGlbFromMemory(const std::vector<uint8_t>& data, FGLTFRoot& gltf_scene);
+		bool _saveAsGltf(const std::string& path);
+		bool _saveAsGlb(const std::string& path);
 
-		bool _loadBuffer(int32_t bufferId);
+		bool _loadBuffer(int32_t buffer_id);
 	private:
+		std::string m_srOpennedFilePath{};
 		std::string m_srParentPath{};
 		std::unique_ptr<IFilesystemWrapper> m_pFS{};
+		std::unique_ptr<IDebugMessenger> m_pMessenger{};
 
-		std::stringstream m_ssErrors{};
-		std::stringstream m_ssWarnings{};
-
-		FGltf m_scene{};
+		FGLTFRoot m_root{};
 		bool bInBinaryMode{ false };
-
-		std::unordered_map<int32_t, std::vector<uint8_t>> m_mBufferData{};
 	};
 }

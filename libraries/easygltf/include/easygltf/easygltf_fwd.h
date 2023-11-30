@@ -4,5 +4,5 @@ namespace easygltf
 {
 	class IFilesystemWrapper;
 	struct FImportGltfInfo;
-	class CGltfProject;
+	class CGLTFProject;
 }

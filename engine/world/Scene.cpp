@@ -27,36 +27,6 @@ bool check_overflow(_Ty a, _Ty b)
 	return (b > static_cast<_Ty>(0) && a > (std::numeric_limits<_Ty>::max)() - b) || (b < static_cast<_Ty>(0) && a < (std::numeric_limits<_Ty>::min)() - b);
 }
 
-size_t get_size_by_type(int32_t component_type, const std::string& type)
-{
-	size_t size{ 0ull };
-
-	switch (component_type)
-	{
-	case easygltf::base::enumerators::component_type::byte_type:
-	case easygltf::base::enumerators::component_type::ubyte_type: size = 1ull; break;
-	case easygltf::base::enumerators::component_type::short_type:
-	case easygltf::base::enumerators::component_type::ushort_type: size = 2ull; break;
-	case easygltf::base::enumerators::component_type::uint_type:
-	case easygltf::base::enumerators::component_type::float_type: size = 4ull; break;
-	}
-
-	if (type == easygltf::base::enumerators::accessor_type::vec2_type)
-		size *= 2ull;
-	else if (type == easygltf::base::enumerators::accessor_type::vec3_type)
-		size *= 3ull;
-	else if (type == easygltf::base::enumerators::accessor_type::vec4_type)
-		size *= 4ull;
-	else if (type == easygltf::base::enumerators::accessor_type::mat2_type)
-		size *= 4ull;
-	else if (type == easygltf::base::enumerators::accessor_type::mat3_type)
-		size *= 9ull;
-	else if (type == easygltf::base::enumerators::accessor_type::mat4_type)
-		size *= 16ull;
-
-	return size;
-}
-
 engine::render::EVertexAttributeType get_vertex_attribute_type_by_name(const std::string& name)
 {
 	using namespace engine::render;
@@ -139,7 +109,7 @@ CScene::CScene(IVirtualFileSystemInterface* vfs, render::IRenderInterface* rende
 	m_pRenderInterface = render_interface;
 
 	m_pSceneGraph = new CSceneGraph();
-	m_pScene = new easygltf::CGltfProject();
+	m_pScene = new easygltf::CGLTFProject();
 
 	m_systems.emplace_back(std::make_unique<ecs::CInputSystem>(m_pSceneGraph));
 	m_systems.emplace_back(std::make_unique<ecs::CAnimationSystem>(m_pSceneGraph));
@@ -173,8 +143,6 @@ void CScene::load(const std::string& path)
 	
 	if (!m_pScene->load(path))
 	{
-		log_warning(m_pScene->getWarnings());
-		log_error(m_pScene->getErrors());
 		return;
 	}
 
@@ -365,13 +333,14 @@ void CScene::loadMeshComponent(const entt::entity parent, uint32_t node_index)
 			//if (name != "POSITION")
 			//	continue;
 
+			const easygltf::Accessor& accessor = gltf.accessors[accessor_idx];
+			auto stream = m_pScene->getStream(accessor);
+
 			auto& attrib = attributes.emplace_back();
 			attrib.type = get_vertex_attribute_type_by_name(name);
-			
-			const easygltf::Accessor& accessor = gltf.accessors[accessor_idx];
-			attrib.data = m_pScene->getBufferPointer(accessor);
-			attrib.stride = get_size_by_type(accessor.componentType, accessor.type);
-			attrib.count = accessor.count;
+			attrib.data = stream.data;
+			attrib.stride = stream.stride;
+			attrib.count = stream.count;
 
 			if (attrib.type == render::EVertexAttributeType::ePosition)
 			{
@@ -390,9 +359,10 @@ void CScene::loadMeshComponent(const entt::entity parent, uint32_t node_index)
 		if (primitive.indices >= 0)
 		{
 			const easygltf::Accessor& accessor = gltf.accessors[primitive.indices];
-			indices.data = m_pScene->getBufferPointer(accessor);
-			indices.stride = get_size_by_type(accessor.componentType, accessor.type);
-			indices.count = accessor.count;
+			auto stream = m_pScene->getStream(accessor);
+			indices.data = stream.data;
+			indices.stride = stream.stride;
+			indices.count = stream.count;
 
 			attributes_hash ^= attribute_hasher(static_cast<uint32_t>(indices.stride)) << 1;
 		}
@@ -558,13 +528,13 @@ void CScene::loadAnimations()
 			// Read sampler input time values
 			{
 				const easygltf::Accessor& accessor = gltf.accessors[samp.input];
-				const uint8_t* buffer_pointer = m_pScene->getBufferPointer(accessor);
+				auto stream = m_pScene->getStream(accessor);
 
 				assert(accessor.componentType == easygltf::base::enumerators::component_type::float_type);
 
 				float* buf = new float[accessor.count];
-				std::memcpy(buf, buffer_pointer, accessor.count * sizeof(float));
-				for (size_t index = 0; index < accessor.count; index++)
+				std::memcpy(buf, stream.data, stream.count * sizeof(float));
+				for (size_t index = 0; index < stream.count; index++)
 					sampler.inputs.push_back(buf[index]);
 
 				delete[] buf;
@@ -581,27 +551,27 @@ void CScene::loadAnimations()
 			// Read sampler output T/R/S values 
 			{
 				const easygltf::Accessor& accessor = gltf.accessors[samp.output];
-				const uint8_t* buffer_pointer = m_pScene->getBufferPointer(accessor);
+				auto stream = m_pScene->getStream(accessor);
 
 				assert(accessor.componentType == easygltf::base::enumerators::component_type::float_type);
 
 				if(accessor.type == easygltf::base::enumerators::accessor_type::vec3_type)
 				{
-					glm::vec3* buf = new glm::vec3[accessor.count];
-					std::memcpy(buf, buffer_pointer, accessor.count * sizeof(glm::vec3));
-					for (size_t index = 0; index < accessor.count; index++)
+					glm::vec3* buf = new glm::vec3[stream.count];
+					std::memcpy(buf, stream.data, stream.count * sizeof(glm::vec3));
+					for (size_t index = 0; index < stream.count; index++)
 						sampler.outputsVec4.push_back(glm::vec4(buf[index], 0.0f));
 
 					delete[] buf;
 				}
 				else if (accessor.type == easygltf::base::enumerators::accessor_type::vec4_type)
 				{
-					glm::vec4* buf = new glm::vec4[accessor.count];
-					memcpy(buf, buffer_pointer, accessor.count * sizeof(glm::vec4));
-					for (size_t index = 0; index < accessor.count; index++)
+					glm::vec4* buf = new glm::vec4[stream.count];
+					memcpy(buf, stream.data, stream.count * sizeof(glm::vec4));
+					for (size_t index = 0; index < stream.count; index++)
 						sampler.outputsVec4.push_back(buf[index]);
 
-					delete buf;
+					delete[] buf;
 				}
 			}
 
@@ -670,9 +640,9 @@ void CScene::loadSkins()
 		if (source.inverseBindMatrices > -1)
 		{
 			const easygltf::Accessor& accessor = gltf.accessors[source.inverseBindMatrices];
-			const uint8_t* buffer_pointer = m_pScene->getBufferPointer(accessor);
-			skin.inverseBindMatrices.resize(accessor.count);
-			memcpy(skin.inverseBindMatrices.data(), buffer_pointer, accessor.count * sizeof(glm::mat4));
+			auto stream = m_pScene->getStream(accessor);
+			skin.inverseBindMatrices.resize(stream.count);
+			std::memcpy(skin.inverseBindMatrices.data(), stream.data, stream.count * sizeof(glm::mat4));
 		}
 
 		root_component.skins.emplace_back(skin);

@@ -73,7 +73,7 @@ namespace parsing
         }
     }
     //template<class _Ty>
-    //void apply_used_extensions(easygltf::FGltf::)
+    //void apply_used_extensions(easygltf::FGLTFRoot::)
 }
 
 namespace easygltf
@@ -1359,7 +1359,7 @@ namespace easygltf
     }
 
     // ----------------- GLTF -----------------
-    void to_json(nlohmann::json& json, const FGltf& type)
+    void to_json(nlohmann::json& json, const FGLTFRoot& type)
     {
         parsing::serialize_to("asset", json, type.asset, type.asset != Asset{});
 
@@ -1392,7 +1392,7 @@ namespace easygltf
         parsing::serialize_to("extensionsRequired", json, type.extensionsRequired, !type.extensionsRequired.empty());
     }
 
-    void from_json(const nlohmann::json& json, FGltf& type)
+    void from_json(const nlohmann::json& json, FGLTFRoot& type)
     {
         parsing::parse_from("asset", json, type.asset, true);
 

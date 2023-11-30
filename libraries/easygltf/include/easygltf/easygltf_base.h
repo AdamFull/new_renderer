@@ -143,6 +143,20 @@ namespace easygltf
 				constexpr const char* step{ "STEP" };
 				constexpr const char* cubicspline{ "CUBICSPLINE" };
 			}
+
+			namespace vertex_attribute_type
+			{
+				constexpr const char* position{ "POSITION" };
+				constexpr const char* normal{ "NORMAL" };
+				constexpr const char* texcoord_0{ "TEXCOORD_0" };
+				constexpr const char* texcoord_1{ "TEXCOORD_1" };
+				constexpr const char* color_0{ "COLOR_0" };
+				constexpr const char* color_1{ "COLOR_1" };
+				constexpr const char* tangent{ "TANGENT" };
+				constexpr const char* joints_0{ "JOINTS_0 " };
+				constexpr const char* weights_0{ "WEIGHTS_0 " };
+				constexpr const char* custom{ "CUSTOM" };
+			}
 		}
 
 		namespace constants
@@ -950,6 +964,16 @@ namespace easygltf
 				}
 			};
 		};
+
+		struct EXT_geometry_meshlets
+		{
+			static constexpr const char* name{ "EXT_geometry_meshlets" };
+
+			struct Meshlet : Default
+			{
+
+			};
+		};
 	}
 
 	// https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/schema/accessor.sparse.indices.schema.json
@@ -1105,6 +1129,8 @@ namespace easygltf
 		std::string name{};
 		std::string uri{};
 		size_t byteLength{ 0ull }; // (required)
+
+		std::vector<uint8_t> data{};
 
 		bool operator==(const Buffer& other) const
 		{
@@ -1419,7 +1445,7 @@ namespace easygltf
 	};
 
 	// https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/schema/glTF.schema.json
-	struct FGltf : public Default
+	struct FGLTFRoot : public Default
 	{
 		std::vector<Accessor> accessors{};
 		std::vector<Animation> animations{};
@@ -1445,5 +1471,43 @@ namespace easygltf
 
 		mutable std::unordered_set<std::string> extensionsUsed;
 		mutable std::unordered_set<std::string> extensionsRequired;
+	};
+
+	// Other types and structures
+	struct Stream
+	{
+		uint8_t* data{ nullptr };
+		size_t stride{ 0ull };
+		size_t count{ 0ull };
+	};
+
+	enum class DebugMessageType
+	{
+		info,
+		debug,
+		warning,
+		error
+	};
+
+	// Abstract classes for upper level
+
+	class IFilesystemWrapper
+	{
+	public:
+		virtual ~IFilesystemWrapper() = default;
+
+		virtual bool exists(const std::string& path) = 0;
+		virtual std::string expandFilePath(const std::string& path) = 0;
+		virtual bool readFile(const std::string& path, std::vector<uint8_t>& data) = 0;
+		virtual bool writeFile(const std::string& path, const std::vector<uint8_t>& data) = 0;
+		virtual size_t fileSize(const std::string& path) = 0;
+	};
+
+	class IDebugMessenger
+	{
+	public:
+		virtual ~IDebugMessenger() = default;
+
+		virtual void message(DebugMessageType type, const std::string& data) = 0;
 	};
 }

@@ -8,7 +8,7 @@
 
 namespace easygltf
 {
-	class CGltfProject;
+	class CGLTFProject;
 }
 
 namespace engine
@@ -59,7 +59,7 @@ namespace engine
 			void loadSkins();
 		private:
 			CSceneGraph* m_pSceneGraph{ nullptr };
-			easygltf::CGltfProject* m_pScene{ nullptr };
+			easygltf::CGLTFProject* m_pScene{ nullptr };
 
 			std::vector<std::unique_ptr<ecs::ISystem>> m_systems{};
 

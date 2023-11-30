@@ -85,6 +85,6 @@ namespace easygltf
 	void to_json(nlohmann::json& json, const Texture& type);
 	void from_json(const nlohmann::json& json, Texture& type);
 
-	void to_json(nlohmann::json& json, const FGltf& type);
-	void from_json(const nlohmann::json& json, FGltf& type);
+	void to_json(nlohmann::json& json, const FGLTFRoot& type);
+	void from_json(const nlohmann::json& json, FGLTFRoot& type);
 }
