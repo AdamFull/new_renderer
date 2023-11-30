@@ -1,25 +1,32 @@
 #pragma once
 
 #include <easygltf/easygltf_fwd.h>
+#include <common.h>
 
 namespace mesh_compiler
 {
 	struct FVertexStream
 	{
 		uint32_t type{};
-
-		std::vector<uint8_t> data{};
-
-		size_t stride{ 0ull };
-		size_t count{ 0ull };
+		FBuffer buffer{};
 	};
 
 	struct FMesh
 	{
-		int32_t meshIndex{ -1 };
-
 		std::vector<FVertexStream> streams{};
+		std::vector<std::vector<FVertexStream>> morphs{};
 		std::vector<uint32_t> indices{};
+	};
+
+	struct FSkin
+	{
+		FBuffer buffer{};
+	};
+
+	struct FAnimationSampler
+	{
+		FBuffer input{};
+		FBuffer output{};
 	};
 
 	class CMeshPorcessor
@@ -29,7 +36,10 @@ namespace mesh_compiler
 
 		void prepare(easygltf::CGLTFProject* project);
 		void process();
+		void apply(easygltf::CGLTFProject* project);
 	private:
-		std::vector<FMesh> m_meshes{};
+		std::unordered_map<int32_t, std::vector<FMesh>> m_meshes{};
+		std::unordered_map<int32_t, FSkin> m_skins{};
+		std::unordered_map<int32_t, std::vector<FAnimationSampler>> m_samplers{};
 	};
 }
