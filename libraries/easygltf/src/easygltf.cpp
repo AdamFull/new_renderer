@@ -8,6 +8,7 @@
 
 #include <easygltf_parse.h>
 #include <easygltf_validator.h>
+#include <easygltf_helpers.h>
 
 using namespace easygltf;
 
@@ -22,6 +23,18 @@ namespace path_helper
 		}
 
 		return "";
+	}
+
+	std::string get_filename(const std::string& path)
+	{
+		return path.substr(path.find_last_of("/\\") + 1);
+	}
+
+	std::string get_stem(const std::string& path)
+	{
+		auto filename = get_filename(path);
+		auto ext = get_ext(filename);
+		return filename.erase(filename.size() - ext.size(), filename.size());
 	}
 
 	std::string path_append(const std::string& base_path, const std::string& relative_path)
@@ -170,36 +183,6 @@ public:
 		std::cout << std::format("[GLTFProject][{}]: {}", severity, data) << std::endl;
 	}
 };
-
-size_t get_accessor_element_size(const Accessor& accessor)
-{
-	size_t size{ 0ull };
-
-	switch (accessor.componentType)
-	{
-	case easygltf::base::enumerators::component_type::byte_type:
-	case easygltf::base::enumerators::component_type::ubyte_type: size = 1ull; break;
-	case easygltf::base::enumerators::component_type::short_type:
-	case easygltf::base::enumerators::component_type::ushort_type: size = 2ull; break;
-	case easygltf::base::enumerators::component_type::uint_type:
-	case easygltf::base::enumerators::component_type::float_type: size = 4ull; break;
-	}
-
-	if (accessor.type == easygltf::base::enumerators::accessor_type::vec2_type)
-		size *= 2ull;
-	else if (accessor.type == easygltf::base::enumerators::accessor_type::vec3_type)
-		size *= 3ull;
-	else if (accessor.type == easygltf::base::enumerators::accessor_type::vec4_type)
-		size *= 4ull;
-	else if (accessor.type == easygltf::base::enumerators::accessor_type::mat2_type)
-		size *= 4ull;
-	else if (accessor.type == easygltf::base::enumerators::accessor_type::mat3_type)
-		size *= 9ull;
-	else if (accessor.type == easygltf::base::enumerators::accessor_type::mat4_type)
-		size *= 16ull;
-
-	return size;
-}
 
 // CGLTFProject
 
@@ -536,7 +519,19 @@ bool CGLTFProject::import(const std::string& fsPath, const FImportGltfInfo& impo
 	return validate(m_root, m_pMessenger);
 }
 
+void CGLTFProject::clearBuffers()
+{
+	m_root.accessors.clear();
+	m_root.bufferViews.clear();
+	m_root.buffers.clear();
+}
+
 const FGLTFRoot& CGLTFProject::getGltf() const
+{
+	return m_root;
+}
+
+FGLTFRoot& CGLTFProject::getGltf()
 {
 	return m_root;
 }
@@ -941,6 +936,16 @@ bool CGLTFProject::_loadGlbFromMemory(const std::vector<uint8_t>& data, FGLTFRoo
 
 bool CGLTFProject::_saveAsGltf(const std::string& path)
 {
+	for (auto& buffer : m_root.buffers)
+	{
+		if (buffer.uri.empty())
+			buffer.uri = path_helper::get_stem(path) + ".bin";
+
+		auto parent_path = path_helper::parent_path(path);
+		auto buffer_path = path_helper::path_append(parent_path, path_helper::url_decode(buffer.uri));
+		m_pFS->writeFile(buffer_path, buffer.data);
+	}
+
 	auto json = nlohmann::json(m_root);
 	auto dumped = json.dump(4);
 	

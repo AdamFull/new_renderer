@@ -85,6 +85,8 @@ namespace easygltf
         // ----------------- MaterialsDisplacement -----------------
         void to_json(nlohmann::json& json, const EXT_materials_displacement::MaterialsDisplacement& type)
         {
+            json = nlohmann::json::object();
+
             parsing::serialize_to("displacementTexture", json, type.displacementTexture, type.displacementTexture != TextureInfo{});
             parsing::serialize_to("tessellationFactor", json, type.tessellationFactor, !compare_double(type.tessellationFactor, base::constants::done));
             parsing::serialize_to("displacementStrength", json, type.displacementStrength, !compare_double(type.displacementStrength, base::constants::done));
@@ -105,6 +107,8 @@ namespace easygltf
         // ----------------- CastShadows -----------------
         void to_json(nlohmann::json& json, const EXT_lights_shadows::CastShadows& type)
         {
+            json = nlohmann::json::object();
+
             parsing::serialize_to("castShadows", json, type.castShadows, true);
 
             parsing::serialize_extensions_and_extras(json, type);
@@ -121,6 +125,8 @@ namespace easygltf
         // ----------------- AudioNode -----------------
         void to_json(nlohmann::json& json, const KHR_audio::AudioNode& type)
         {
+            json = nlohmann::json::object();
+
             parsing::serialize_to("emitter", json, type.emitter, true);
 
             parsing::serialize_extensions_and_extras(json, type);
@@ -136,6 +142,8 @@ namespace easygltf
         // ----------------- AudioScene -----------------
         void to_json(nlohmann::json& json, const KHR_audio::AudioScene& type)
         {
+            json = nlohmann::json::object();
+
             parsing::serialize_to("emitters", json, type.emitters, true);
 
             parsing::serialize_extensions_and_extras(json, type);
@@ -151,6 +159,8 @@ namespace easygltf
         // ----------------- PositionalEmitter -----------------
         void to_json(nlohmann::json& json, const KHR_audio::PositionalEmitter& type)
         {
+            json = nlohmann::json::object();
+
             parsing::serialize_to("coneInnerAngle", json, type.coneInnerAngle, !compare_double(type.coneInnerAngle, KHR_audio::constants::cone_angle_default));
             parsing::serialize_to("coneOuterAngle", json, type.coneOuterAngle, !compare_double(type.coneOuterAngle, KHR_audio::constants::cone_angle_default));
             parsing::serialize_to("coneOuterGain", json, type.coneOuterGain, !compare_double(type.coneOuterGain, KHR_audio::constants::outer_gain_default));
@@ -176,6 +186,8 @@ namespace easygltf
         // ----------------- AudioEmitter -----------------
         void to_json(nlohmann::json& json, const KHR_audio::AudioEmitter& type)
         {
+            json = nlohmann::json::object();
+
             parsing::serialize_to("name", json, type.name, !type.name.empty());
             parsing::serialize_to("gain", json, type.gain, !compare_double(type.gain, base::constants::done));
             parsing::serialize_to("loop", json, type.loop, type.loop);
@@ -207,6 +219,8 @@ namespace easygltf
         // ----------------- AudioSource -----------------
         void to_json(nlohmann::json& json, const KHR_audio::AudioSource& type)
         {
+            json = nlohmann::json::object();
+
             parsing::serialize_to("name", json, type.name, !type.name.empty());
 
             if (!type.uri.empty())
@@ -237,6 +251,8 @@ namespace easygltf
         // ----------------- Audio -----------------
         void to_json(nlohmann::json& json, const KHR_audio::Audio& type)
         {
+            json = nlohmann::json::object();
+
             parsing::serialize_to("emitters", json, type.emitters, true);
             parsing::serialize_to("sources", json, type.sources, true);
 
@@ -255,6 +271,8 @@ namespace easygltf
         // ----------------- DracoMeshCompression -----------------
         void to_json(nlohmann::json& json, const KHR_draco_mesh_compression::DracoMeshCompression& type)
         {
+            json = nlohmann::json::object();
+
             parsing::serialize_to("bufferView", json, type.bufferView, true);
             parsing::serialize_to("attributes", json, type.attributes, true);
 
@@ -273,6 +291,8 @@ namespace easygltf
         // ----------------- SpotLight -----------------
         void to_json(nlohmann::json& json, const KHR_lights_punctual::SpotLight& type)
         {
+            json = nlohmann::json::object();
+
             parsing::serialize_to("innerConeAngle", json, type.innerConeAngle, !compare_double(type.innerConeAngle, KHR_lights_punctual::constants::inner_default));
             parsing::serialize_to("outerConeAngle", json, type.outerConeAngle, !compare_double(type.outerConeAngle, KHR_lights_punctual::constants::outer_default));
 
@@ -290,6 +310,8 @@ namespace easygltf
         // ----------------- Light -----------------
         void to_json(nlohmann::json& json, const KHR_lights_punctual::Light& type)
         {
+            json = nlohmann::json::object();
+
             parsing::serialize_to("name", json, type.name, !type.name.empty());
             parsing::serialize_to("color", json, type.color, !compare_dvec3(type.color, base::constants::dvec3ones));
             parsing::serialize_to("intensity", json, type.color, !compare_double(type.intensity, base::constants::done));
@@ -323,6 +345,8 @@ namespace easygltf
         // ----------------- LightsPunctual -----------------
         void to_json(nlohmann::json& json, const KHR_lights_punctual::LightsPunctual& type)
         {
+            json = nlohmann::json::object();
+
             parsing::serialize_to("lights", json, type.lights, true);
 
             parsing::serialize_extensions_and_extras(json, type);
@@ -338,6 +362,8 @@ namespace easygltf
         // ----------------- LightsPunctualNode -----------------
         void to_json(nlohmann::json& json, const KHR_lights_punctual::LightsPunctualNode& type)
         {
+            json = nlohmann::json::object();
+
             parsing::serialize_to("light", json, type.light, true);
 
             parsing::serialize_extensions_and_extras(json, type);
@@ -354,6 +380,8 @@ namespace easygltf
         // ----------------- MaterialsAnisotropy -----------------
         void to_json(nlohmann::json& json, const KHR_materials_anisotropy::MaterialsAnisotropy& type)
         {
+            json = nlohmann::json::object();
+
             parsing::serialize_to("anisotropyStrength", json, type.anisotropyStrength, !compare_double(type.anisotropyStrength, KHR_materials_anisotropy::constants::anisotropy_strength_default));
             parsing::serialize_to("anisotropyRotation", json, type.anisotropyRotation, !compare_double(type.anisotropyRotation, base::constants::dzero));
             parsing::serialize_to("anisotropyTexture", json, type.anisotropyTexture, type.anisotropyTexture != TextureInfo{});
@@ -374,6 +402,8 @@ namespace easygltf
         // ----------------- MaterialClearcoat -----------------
         void to_json(nlohmann::json& json, const KHR_materials_clearcoat::MaterialClearcoat& type)
         {
+            json = nlohmann::json::object();
+
             parsing::serialize_to("clearcoatFactor", json, type.clearcoatFactor, !compare_double(type.clearcoatFactor, base::constants::dzero));
             parsing::serialize_to("clearcoatTexture", json, type.clearcoatTexture, type.clearcoatTexture != TextureInfo{});
             parsing::serialize_to("clearcoatRoughnessFactor", json, type.clearcoatRoughnessFactor, !compare_double(type.clearcoatRoughnessFactor, base::constants::dzero));
@@ -398,6 +428,8 @@ namespace easygltf
         // ----------------- MaterialEmissiveStrength -----------------
         void to_json(nlohmann::json& json, const KHR_materials_emissive_strength::MaterialEmissiveStrength& type)
         {
+            json = nlohmann::json::object();
+
             parsing::serialize_to("emissiveStrength", json, type.emissiveStrength, !compare_double(type.emissiveStrength, base::constants::done));
 
             parsing::serialize_extensions_and_extras(json, type);
@@ -414,6 +446,8 @@ namespace easygltf
         // ----------------- MaterialIor -----------------
         void to_json(nlohmann::json& json, const KHR_materials_ior::MaterialIor& type)
         {
+            json = nlohmann::json::object();
+
             parsing::serialize_to("ior", json, type.ior, !compare_double(type.ior, KHR_materials_ior::constants::ior_default));
 
             parsing::serialize_extensions_and_extras(json, type);
@@ -430,6 +464,8 @@ namespace easygltf
         // ----------------- MaterialIridescence -----------------
         void to_json(nlohmann::json& json, const KHR_materials_iridescence::MaterialIridescence& type)
         {
+            json = nlohmann::json::object();
+
             parsing::serialize_to("iridescenceFactor", json, type.iridescenceFactor, !compare_double(type.iridescenceFactor, KHR_materials_iridescence::constants::factor_default));
             parsing::serialize_to("iridescenceTexture", json, type.iridescenceTexture, type.iridescenceTexture != TextureInfo{});
             parsing::serialize_to("iridescenceIor", json, type.iridescenceIor, !compare_double(type.iridescenceIor, KHR_materials_iridescence::constants::ior_default));
@@ -456,6 +492,8 @@ namespace easygltf
         // ----------------- MaterialSheen -----------------
         void to_json(nlohmann::json& json, const KHR_materials_sheen::MaterialSheen& type)
         {
+            json = nlohmann::json::object();
+
             parsing::serialize_to("sheenColorFactor", json, type.sheenColorFactor, !compare_dvec3(type.sheenColorFactor, base::constants::dvec3zeros));
             parsing::serialize_to("sheenColorTexture", json, type.sheenColorTexture, type.sheenColorTexture != TextureInfo{});
             parsing::serialize_to("sheenRoughnessFactor", json, type.sheenRoughnessFactor, !compare_double(type.sheenRoughnessFactor, base::constants::dzero));
@@ -478,6 +516,8 @@ namespace easygltf
         // ----------------- MaterialSpecular -----------------
         void to_json(nlohmann::json& json, const KHR_materials_specular::MaterialSpecular& type)
         {
+            json = nlohmann::json::object();
+
             parsing::serialize_to("specularFactor", json, type.specularFactor, !compare_double(type.specularFactor, KHR_materials_specular::constants::factor_default));
             parsing::serialize_to("specularTexture", json, type.specularTexture, type.specularTexture != TextureInfo{});
             parsing::serialize_to("specularColorFactor", json, type.specularColorFactor, !compare_dvec3(type.specularColorFactor, base::constants::dvec3ones));
@@ -500,6 +540,8 @@ namespace easygltf
         // ----------------- MaterialTransmission -----------------
         void to_json(nlohmann::json& json, const KHR_materials_transmission::MaterialTransmission& type)
         {
+            json = nlohmann::json::object();
+
             parsing::serialize_to("transmissionFactor", json, type.transmissionFactor, !compare_double(type.transmissionFactor, KHR_materials_transmission::constants::factor_default));
             parsing::serialize_to("transmissionTexture", json, type.transmissionTexture, type.transmissionTexture != TextureInfo{});
 
@@ -518,6 +560,8 @@ namespace easygltf
         // ----------------- MaterialUnlit -----------------
         void to_json(nlohmann::json& json, const KHR_materials_unlit::MaterialUnlit& type)
         {
+            json = nlohmann::json::object();
+
             parsing::serialize_extensions_and_extras(json, type);
         }
 
@@ -530,6 +574,8 @@ namespace easygltf
         // ----------------- Variant -----------------
         void to_json(nlohmann::json& json, const KHR_materials_variants::Variant& type)
         {
+            json = nlohmann::json::object();
+
             parsing::serialize_to("name", json, type.name, !type.name.empty());
 
             parsing::serialize_extensions_and_extras(json, type);
@@ -545,6 +591,8 @@ namespace easygltf
         // ----------------- MaterialVariants -----------------
         void to_json(nlohmann::json& json, const KHR_materials_variants::MaterialVariants& type)
         {
+            json = nlohmann::json::object();
+
             parsing::serialize_to("variants", json, type.variants, true);
 
             parsing::serialize_extensions_and_extras(json, type);
@@ -560,6 +608,8 @@ namespace easygltf
         // ----------------- Mapping -----------------
         void to_json(nlohmann::json& json, const KHR_materials_variants::Mapping& type)
         {
+            json = nlohmann::json::object();
+
             parsing::serialize_to("name", json, type.name, !type.name.empty());
             parsing::serialize_to("variants", json, type.variants, true);
             parsing::serialize_to("material", json, type.material, true);
@@ -579,6 +629,8 @@ namespace easygltf
         // ----------------- MaretialVariant -----------------
         void to_json(nlohmann::json& json, const KHR_materials_variants::MaretialVariant& type)
         {
+            json = nlohmann::json::object();
+
             parsing::serialize_to("mappings", json, type.mappings, true);
 
             parsing::serialize_extensions_and_extras(json, type);
@@ -595,6 +647,8 @@ namespace easygltf
         // ----------------- MaterialVolume -----------------
         void to_json(nlohmann::json& json, const KHR_materials_volume::MaterialVolume& type)
         {
+            json = nlohmann::json::object();
+
             parsing::serialize_to("thicknessFactor", json, type.thicknessFactor, !compare_double(type.thicknessFactor, base::constants::dzero));
             parsing::serialize_to("thicknessTexture", json, type.thicknessTexture, type.thicknessTexture != TextureInfo{});
             parsing::serialize_to("attenuationDistance", json, type.attenuationDistance, !compare_double(type.attenuationDistance, base::constants::dzero));
@@ -617,6 +671,8 @@ namespace easygltf
         // ----------------- TextureBasisU -----------------
         void to_json(nlohmann::json& json, const KHR_texture_basisu::TextureBasisU& type)
         {
+            json = nlohmann::json::object();
+
             parsing::serialize_to("source", json, type.source, true);
 
             parsing::serialize_extensions_and_extras(json, type);
@@ -633,6 +689,8 @@ namespace easygltf
         // ----------------- TextureTransform -----------------
         void to_json(nlohmann::json& json, const KHR_texture_transform::TextureTransform& type)
         {
+            json = nlohmann::json::object();
+
             parsing::serialize_to("offset", json, type.offset, !compare_dvec2(type.offset, base::constants::dvec2zeros));
             parsing::serialize_to("rotation", json, type.rotation, !compare_double(type.rotation, base::constants::dzero));
             parsing::serialize_to("scale", json, type.scale, !compare_dvec2(type.scale, base::constants::dvec2ones));
@@ -655,6 +713,8 @@ namespace easygltf
     // ----------------- SparseAccessorIndices -----------------
     void to_json(nlohmann::json& json, const SparseAccessorIndices& type)
     {
+        json = nlohmann::json::object();
+
         parsing::serialize_to("bufferView", json, type.bufferView, true);
         parsing::serialize_to("byteOffset", json, type.byteOffset, type.byteOffset != 0ull);
         parsing::serialize_to("componentType", json, type.componentType, true);
@@ -674,6 +734,8 @@ namespace easygltf
     // ----------------- SparseAccessorValues -----------------
     void to_json(nlohmann::json& json, const SparseAccessorValues& type)
     {
+        json = nlohmann::json::object();
+
         parsing::serialize_to("bufferView", json, type.bufferView, true);
         parsing::serialize_to("byteOffset", json, type.byteOffset, type.byteOffset != 0ull);
 
@@ -691,6 +753,8 @@ namespace easygltf
     // ----------------- SparseAccessor -----------------
     void to_json(nlohmann::json& json, const SparseAccessor& type)
     {
+        json = nlohmann::json::object();
+
         parsing::serialize_to("count", json, type.count, true);
         parsing::serialize_to("indices", json, type.indices, true);
         parsing::serialize_to("values", json, type.values, true);
@@ -710,6 +774,8 @@ namespace easygltf
     // ----------------- Accessor -----------------
     void to_json(nlohmann::json& json, const Accessor& type)
     {
+        json = nlohmann::json::object();
+
         parsing::serialize_to("name", json, type.name, !type.name.empty());
         parsing::serialize_to("bufferView", json, type.bufferView, type.bufferView > base::constants::not_set);
         parsing::serialize_to("byteOffset", json, type.byteOffset, type.byteOffset != 0ull);
@@ -747,6 +813,8 @@ namespace easygltf
     // ----------------- AnimationTarget -----------------
     void to_json(nlohmann::json& json, const AnimationTarget& type)
     {
+        json = nlohmann::json::object();
+
         parsing::serialize_to("node", json, type.node, type.node > base::constants::not_set);
         parsing::serialize_to("path", json, type.path, true);
 
@@ -764,6 +832,8 @@ namespace easygltf
     // ----------------- AnimationChannel -----------------
     void to_json(nlohmann::json& json, const AnimationChannel& type)
     {
+        json = nlohmann::json::object();
+
         parsing::serialize_to("sampler", json, type.sampler, true);
         parsing::serialize_to("target", json, type.target, true);
 
@@ -781,6 +851,8 @@ namespace easygltf
     // ----------------- AnimationSampler -----------------
     void to_json(nlohmann::json& json, const AnimationSampler& type)
     {
+        json = nlohmann::json::object();
+
         parsing::serialize_to("input", json, type.input, true);
         parsing::serialize_to("output", json, type.output, true);
         parsing::serialize_to("interpolation", json, type.interpolation, type.interpolation != base::enumerators::interpolation::linear);
@@ -800,6 +872,8 @@ namespace easygltf
     // ----------------- Animation -----------------
     void to_json(nlohmann::json& json, const Animation& type)
     {
+        json = nlohmann::json::object();
+
         parsing::serialize_to("name", json, type.name, !type.name.empty());
         parsing::serialize_to("channels", json, type.channels, true);
         parsing::serialize_to("samplers", json, type.samplers, true);
@@ -819,6 +893,8 @@ namespace easygltf
     // ----------------- Asset -----------------
     void to_json(nlohmann::json& json, const Asset& type)
     {
+        json = nlohmann::json::object();
+
         parsing::serialize_to("version", json, type.version, !type.version.empty());
         parsing::serialize_to("generator", json, type.generator, !type.generator.empty());
         parsing::serialize_to("minVersion", json, type.minVersion, !type.minVersion.empty());
@@ -841,6 +917,8 @@ namespace easygltf
     // ----------------- Buffer -----------------
     void to_json(nlohmann::json& json, const Buffer& type)
     {
+        json = nlohmann::json::object();
+
         parsing::serialize_to("name", json, type.name, !type.name.empty());
         parsing::serialize_to("uri", json, type.uri, !type.uri.empty());
         parsing::serialize_to("byteLength", json, type.byteLength, true);
@@ -860,6 +938,8 @@ namespace easygltf
     // ----------------- BufferView -----------------
     void to_json(nlohmann::json& json, const BufferView& type)
     {
+        json = nlohmann::json::object();
+
         parsing::serialize_to("name", json, type.name, !type.name.empty());
         parsing::serialize_to("buffer", json, type.buffer, true);
         parsing::serialize_to("byteOffset", json, type.byteOffset, type.byteOffset != 0ull);
@@ -885,6 +965,8 @@ namespace easygltf
     // ----------------- Perspective -----------------
     void to_json(nlohmann::json& json, const PerspectiveCamera& type)
     {
+        json = nlohmann::json::object();
+
         parsing::serialize_to("aspectRatio", json, type.aspectRatio, !compare_double(type.aspectRatio, base::constants::dzero));
         parsing::serialize_to("yfov", json, type.yfov, true);
         parsing::serialize_to("zfar", json, type.zfar, !compare_double(type.zfar, base::constants::dzero));
@@ -906,6 +988,8 @@ namespace easygltf
     // ----------------- Orthographic -----------------
     void to_json(nlohmann::json& json, const OrthographicCamera& type)
     {
+        json = nlohmann::json::object();
+
         parsing::serialize_to("xmag", json, type.xmag, true);
         parsing::serialize_to("ymag", json, type.ymag, true);
         parsing::serialize_to("zfar", json, type.zfar, true);
@@ -927,6 +1011,8 @@ namespace easygltf
     // ----------------- Camera -----------------
     void to_json(nlohmann::json& json, const Camera& type)
     {
+        json = nlohmann::json::object();
+
         parsing::serialize_to("name", json, type.name, !type.name.empty());
         parsing::serialize_to("type", json, type.type, type.type != base::enumerators::camera_type::perspective);
 
@@ -954,6 +1040,8 @@ namespace easygltf
     // ----------------- Image -----------------
     void to_json(nlohmann::json& json, const Image& type)
     {
+        json = nlohmann::json::object();
+
         parsing::serialize_to("name", json, type.name, !type.name.empty());
 
         if (!type.uri.empty())
@@ -984,6 +1072,8 @@ namespace easygltf
     // ----------------- TextureInfo -----------------
     void to_json(nlohmann::json& json, const TextureInfo& type)
     {
+        json = nlohmann::json::object();
+
         parsing::serialize_to("index", json, type.index, true);
         parsing::serialize_to("texCoord", json, type.texCoord, type.texCoord > base::constants::not_set);
 
@@ -1010,6 +1100,8 @@ namespace easygltf
     // ----------------- TextureInfo -----------------
     void to_json(nlohmann::json& json, const CubemapTexture& type)
     {
+        json = nlohmann::json::object();
+
         auto* baseClass = static_cast<const TextureInfo*>(&type);
         to_json(json, *baseClass);
 
@@ -1043,6 +1135,8 @@ namespace easygltf
     // ----------------- PbrMetallicRoughness -----------------
     void to_json(nlohmann::json& json, const PbrMetallicRoughness& type)
     {
+        json = nlohmann::json::object();
+
         parsing::serialize_to("baseColorFactor", json, type.baseColorFactor, !compare_dvec4(type.baseColorFactor, base::constants::dvec4ones));
         parsing::serialize_to("baseColorTexture", json, type.baseColorTexture, type.baseColorTexture != TextureInfo{});
         parsing::serialize_to("metallicFactor", json, type.metallicFactor, !compare_double(type.metallicFactor, base::constants::done));
@@ -1066,6 +1160,8 @@ namespace easygltf
     // ----------------- NormalTexture -----------------
     void to_json(nlohmann::json& json, const NormalTexture& type)
     {
+        json = nlohmann::json::object();
+
         auto* baseClass = static_cast<const TextureInfo*>(&type);
         to_json(json, *baseClass);
 
@@ -1083,6 +1179,8 @@ namespace easygltf
     // ----------------- OcclusionTexture -----------------
     void to_json(nlohmann::json& json, const OcclusionTexture& type)
     {
+        json = nlohmann::json::object();
+
         auto* baseClass = static_cast<const TextureInfo*>(&type);
         to_json(json, *baseClass);
 
@@ -1100,6 +1198,8 @@ namespace easygltf
     // ----------------- Material -----------------
     void to_json(nlohmann::json& json, const Material& type)
     {
+        json = nlohmann::json::object();
+
         parsing::serialize_to("name", json, type.name, !type.name.empty());
         parsing::serialize_to("pbrMetallicRoughness", json, type.pbrMetallicRoughness, type.pbrMetallicRoughness != PbrMetallicRoughness{});
         parsing::serialize_to("normalTexture", json, type.normalTexture, type.normalTexture != NormalTexture{});
@@ -1158,6 +1258,8 @@ namespace easygltf
     // ----------------- Primitive -----------------
     void to_json(nlohmann::json& json, const Primitive& type)
     {
+        json = nlohmann::json::object();
+
         parsing::serialize_to("attributes", json, type.attributes, true);
         parsing::serialize_to("targets", json, type.targets, !type.targets.empty());
         parsing::serialize_to("material", json, type.material, type.material > base::constants::not_set);
@@ -1194,6 +1296,8 @@ namespace easygltf
     // ----------------- Mesh -----------------
     void to_json(nlohmann::json& json, const Mesh& type)
     {
+        json = nlohmann::json::object();
+
         parsing::serialize_to("name", json, type.name, !type.name.empty());
         parsing::serialize_to("primitives", json, type.primitives, true);
         parsing::serialize_to("weights", json, type.weights, !type.weights.empty());
@@ -1218,6 +1322,8 @@ namespace easygltf
     // ----------------- Node -----------------
     void to_json(nlohmann::json& json, const Node& type)
     {
+        json = nlohmann::json::object();
+
         parsing::serialize_to("name", json, type.name, !type.name.empty());
         parsing::serialize_to("camera", json, type.camera, type.camera >= 0);
         parsing::serialize_to("skin", json, type.skin, type.skin >= 0);
@@ -1262,6 +1368,8 @@ namespace easygltf
     // ----------------- Sampler -----------------
     void to_json(nlohmann::json& json, const Sampler& type)
     {
+        json = nlohmann::json::object();
+
         parsing::serialize_to("name", json, type.name, !type.name.empty());
         parsing::serialize_to("minFilter", json, type.minFilter, type.minFilter > base::constants::not_set);
         parsing::serialize_to("magFilter", json, type.magFilter, type.magFilter > base::constants::not_set);
@@ -1285,6 +1393,8 @@ namespace easygltf
     // ----------------- Scene -----------------
     void to_json(nlohmann::json& json, const Scene& type)
     {
+        json = nlohmann::json::object();
+
         parsing::serialize_to("name", json, type.name, !type.name.empty());
         parsing::serialize_to("nodes", json, type.nodes, !type.nodes.empty());
 
@@ -1312,6 +1422,8 @@ namespace easygltf
     // ----------------- Skin -----------------
     void to_json(nlohmann::json& json, const Skin& type)
     {
+        json = nlohmann::json::object();
+
         parsing::serialize_to("name", json, type.name, !type.name.empty());
         parsing::serialize_to("inverseBindMatrices", json, type.inverseBindMatrices, type.inverseBindMatrices > base::constants::not_set);
         parsing::serialize_to("skeleton", json, type.skeleton, type.skeleton > base::constants::not_set);
@@ -1333,6 +1445,8 @@ namespace easygltf
     // ----------------- Texture -----------------
     void to_json(nlohmann::json& json, const Texture& type)
     {
+        json = nlohmann::json::object();
+
         parsing::serialize_to("name", json, type.name, !type.name.empty());
         parsing::serialize_to("sampler", json, type.sampler, type.sampler > base::constants::not_set);
         parsing::serialize_to("source", json, type.source, type.source > base::constants::not_set);
@@ -1361,6 +1475,8 @@ namespace easygltf
     // ----------------- GLTF -----------------
     void to_json(nlohmann::json& json, const FGLTFRoot& type)
     {
+        json = nlohmann::json::object();
+
         parsing::serialize_to("asset", json, type.asset, type.asset != Asset{});
 
         parsing::serialize_to("accessors", json, type.accessors, !type.accessors.empty());

@@ -31,27 +31,15 @@ namespace easygltf
 		bool save(const std::string& fsPath = "");
 		bool import(const std::string& fsPath, const FImportGltfInfo& importInfo);
 
+		void clearBuffers();
+
 		const FGLTFRoot& getGltf() const;
+		FGLTFRoot& getGltf();
 
 		std::string getResourcePath(const std::string& path);
 
 		Stream getStream(const Accessor& accessor);
 		Stream getStream(int32_t accessor_id);
-
-		// Getters
-		//const Accessor& getAccessor(int32_t idx) const;
-		//const Animation& getAnimation(int32_t idx) const;
-		//const Buffer& getBuffer(int32_t idx) const;
-		//const BufferView& getBufferView(int32_t idx) const;
-		//const Camera& getCamera(int32_t idx) const;
-		//const Image& getImage(int32_t idx) const;
-		//const Material& getMaterial(int32_t idx) const;
-		//const Mesh& getMesh(int32_t idx) const;
-		//const Node& getNode(int32_t idx) const;
-		//const Sampler& getSampler(int32_t idx) const;
-		//const Scene& getScene(int32_t idx) const;
-		//const Skin& getSkin(int32_t idx) const;
-		//const Texture& getTexture(int32_t idx) const;
 
 		// Editing
 		int32_t createAccessor(const std::string& name);

@@ -157,6 +157,12 @@ namespace easygltf
 				constexpr const char* weights_0{ "WEIGHTS_0 " };
 				constexpr const char* custom{ "CUSTOM" };
 			}
+
+			namespace buffer_view_type
+			{
+				constexpr int32_t array_buffer{ 34962 };
+				constexpr int32_t element_array_buffer{ 34963 };
+			}
 		}
 
 		namespace constants
