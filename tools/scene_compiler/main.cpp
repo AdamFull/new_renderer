@@ -1,5 +1,3 @@
-#include <easygltf/easygltf.h>
-
 #include <mesh_processor.h>
 #include <image_processor.h>
 
@@ -53,19 +51,11 @@ private:
 int main(int argc, char** argv)
 {
 	CArgumentParser argparse(argc, argv);
-
-	easygltf::CGLTFProject project{};
-	CMeshPorcessor mesh_processor{};
+	CGLTFEditor mesh_processor{};
 	
-	bool loaded = project.load("D:\\GitHub\\Incenerate-Project\\assets\\models\\glTF-Sample-Models\\2.0\\DamagedHelmet\\glTF\\DamagedHelmet.gltf");
-
-	mesh_processor.prepare(&project);
-	project.clearBuffers();
-
+	mesh_processor.load("D:\\GitHub\\Incenerate-Project\\assets\\models\\glTF-Sample-Models\\2.0\\DamagedHelmet\\glTF\\DamagedHelmet.gltf");
 	mesh_processor.process();
-	mesh_processor.apply(&project);
-
-	project.save("C:\\Users\\logot\\Desktop\\scene_compiler_test\\DamagedHelmet_new.gltf");
+	mesh_processor.save("C:\\Users\\logot\\Desktop\\scene_compiler_test\\DamagedHelmet_new.gltf");
 
 	return 0;
 }

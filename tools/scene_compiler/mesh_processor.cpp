@@ -1,6 +1,5 @@
 #include "mesh_processor.h"
 
-#include <easygltf/easygltf.h>
 #include <easygltf/easygltf_helpers.h>
 
 #include <meshoptimizer.h>
@@ -22,6 +21,9 @@ namespace data_type
 	constexpr const uint32_t vertex_weights_0 = utl::const_hash(easygltf::base::enumerators::vertex_attribute_type::weights_0);
 	constexpr const uint32_t vertex_custom = utl::const_hash(easygltf::base::enumerators::vertex_attribute_type::custom);
 	constexpr const uint32_t indices = utl::const_hash("INDICES");
+	constexpr const uint32_t skin = utl::const_hash("SKIN");
+	constexpr const uint32_t animation_input = utl::const_hash("ANIMATION_INPUT");
+	constexpr const uint32_t animation_output = utl::const_hash("ANIMATION_OUTPUT");
 }
 
 uint32_t get_data_type(const char* name)
@@ -44,6 +46,7 @@ const char* get_data_name(uint32_t type)
 	case data_type::vertex_weights_0: return easygltf::base::enumerators::vertex_attribute_type::weights_0; break;
 	case data_type::vertex_custom: return easygltf::base::enumerators::vertex_attribute_type::custom; break;
 	case data_type::indices: return "INDICES"; break;
+	case data_type::skin: return "SKIN"; break;
 	}
 
 	return "";
@@ -83,6 +86,7 @@ int32_t get_component_type_by_data_type(uint32_t type, size_t size)
 		case 4ull: return easygltf::base::enumerators::component_type::uint_type; break;
 		}
 	} break;
+	case data_type::skin: return easygltf::base::enumerators::component_type::float_type; break;
 	}
 }
 
@@ -96,7 +100,16 @@ const char* get_accessor_type_by_attribute_type(int32_t component_type, size_t s
 	case 1: return easygltf::base::enumerators::accessor_type::scalar_type; break;
 	case 2: return easygltf::base::enumerators::accessor_type::vec2_type; break;
 	case 3: return easygltf::base::enumerators::accessor_type::vec3_type; break;
-	case 4: return easygltf::base::enumerators::accessor_type::vec4_type; break;
+	case 4: { 
+		switch (component_type)
+		{
+		case data_type::skin: return easygltf::base::enumerators::accessor_type::mat2_type; break;
+		default: return easygltf::base::enumerators::accessor_type::vec4_type; break;
+		}
+		 
+	} break;
+	case 9: return easygltf::base::enumerators::accessor_type::mat3_type; break;
+	case 16: return easygltf::base::enumerators::accessor_type::mat4_type; break;
 	}
 
 	return nullptr;
@@ -220,7 +233,462 @@ void read_index_stream(const easygltf::Stream& stream, std::vector<uint32_t>& in
 	}
 }
 
-void reindex_mesh(FMesh& mesh)
+bool check_merge_ability(int32_t mesh_id, FMesh& lhs, FMesh& rhs)
+{
+
+	return true;
+}
+
+void merge_meshes(FMesh& target, const FMesh& mesh)
+{
+	assert(target.streams.size() == mesh.streams.size());
+
+	size_t vertex_offset = target.streams[0].buffer.count;
+	size_t index_offset = target.indices.size();
+
+	for (size_t idx = 0; idx < target.streams.size(); ++idx)
+	{
+		auto& tstream = target.streams[idx];
+		auto& mstream = mesh.streams[idx];
+		tstream.buffer.data.insert(tstream.buffer.data.end(), mstream.buffer.data.begin(), mstream.buffer.data.end());
+	}
+
+	target.indices.resize(target.indices.size() + mesh.indices.size());
+
+	size_t index_count = mesh.indices.size();
+
+	for (size_t idx = 0ull; idx < index_count; ++idx)
+		target.indices[index_offset + idx] = static_cast<uint32_t>(vertex_offset + mesh.indices[idx]);
+}
+
+void merge_meshes(int32_t mesh_id, std::vector<FMesh>& meshes)
+{
+	for (size_t idx = 0ull; idx < meshes.size(); ++idx)
+	{
+		FMesh& target = meshes[idx];
+
+		if (target.streams.empty())
+			continue;
+
+		size_t target_vertices = target.streams[0].buffer.count;
+		size_t target_indices = target.indices.size();
+
+		size_t last_merged = idx;
+
+		for (size_t jdx = idx + 1ull; jdx < meshes.size(); ++jdx)
+		{
+			FMesh& mesh = meshes[jdx];
+
+			if (!mesh.streams.empty() && check_merge_ability(mesh_id, target, mesh))
+			{
+				target_vertices += mesh.streams[0].buffer.count;
+				target_indices += mesh.indices.size();
+				last_merged = jdx;
+			}
+		}
+
+		for (size_t jdx = 0ull; jdx < target.streams.size(); ++jdx)
+		{
+			auto& stream = target.streams[jdx];
+			auto& buffer = stream.buffer;
+			buffer.data.reserve(target_vertices * buffer.stride);
+			buffer.count = target_vertices;
+		}
+
+		target.indices.reserve(target_indices);
+
+		for (size_t jdx = idx + 1ull; jdx <= last_merged; ++jdx)
+		{
+			FMesh& mesh = meshes[jdx];
+
+			if (!mesh.streams.empty() && check_merge_ability(mesh_id, target, mesh))
+			{
+				merge_meshes(target, mesh);
+
+				mesh.streams.clear();
+				mesh.indices.clear();
+				//mesh.nodes.clear();
+				//mesh.instances.clear();
+			}
+		}
+
+		assert(target.streams[0].buffer.count == target_vertices);
+		assert(target.indices.size() == target_indices);
+	}
+}
+
+// filterStreams
+// mergeMeshes 
+// mergeMeshInstances
+
+CGLTFEditor::CGLTFEditor()
+{
+	meshopt_encodeVertexVersion(0);
+	meshopt_encodeIndexVersion(1);
+}
+
+bool CGLTFEditor::load(const std::string& path)
+{
+	if (!m_project.load(path))
+		return false;
+
+	prepare();
+
+	return true;
+}
+
+bool CGLTFEditor::save(const std::string& path)
+{
+	m_project.clearBuffers();
+	apply();
+
+	if (!m_project.save(path))
+		return false;
+
+	return true;
+}
+
+void CGLTFEditor::process()
+{
+	for (auto& [mesh_id, meshes] : m_meshes)
+	{
+		filterEmptyMeshes(mesh_id, meshes);
+
+		// TODO: 
+		for (auto& mesh : meshes)
+		{
+			reindexMesh(mesh);
+			filterTriangles(mesh);
+			simplifyMesh(mesh, 0.8f, true, false);
+			optimizeMesh(mesh);
+		}
+
+		filterEmptyMeshes(mesh_id, meshes);
+	}
+
+	mergeMaterials();
+}
+
+// Load all meshes and load local vertex data to proxy objects
+void CGLTFEditor::prepare()
+{
+	auto& root = m_project.getGltf();
+
+	for (const auto& node : root.nodes)
+	{
+		// Load meshes
+		if (node.mesh != easygltf::base::constants::not_set)
+		{
+			const auto& mesh = root.meshes.at(node.mesh);
+			for (const auto& primitive : mesh.primitives)
+			{
+				auto& nmesh = m_meshes[node.mesh].emplace_back();
+
+				// Load vertex streams
+				for (const auto& [name, accessor_id] : primitive.attributes)
+				{
+					auto stream = m_project.getStream(accessor_id);
+					read_vertex_stream(name, stream, nmesh.streams);
+				}
+
+				// Load indices
+				if (primitive.indices != easygltf::base::constants::not_set)
+				{
+					auto index_stream = m_project.getStream(primitive.indices);
+					read_index_stream(index_stream, nmesh.indices);
+				}
+
+				// Load morph data
+				for (const auto& target : primitive.targets)
+				{
+					auto& morph_streams = nmesh.morphs.emplace_back();
+					for (const auto& [name, accessor_id] : primitive.attributes)
+					{
+						auto stream = m_project.getStream(accessor_id);
+						read_vertex_stream(name, stream, morph_streams);
+					}
+				}
+			}
+		}
+
+		// Load skins
+		if (node.skin != easygltf::base::constants::not_set)
+		{
+			auto& skin = root.skins.at(node.skin);
+			if (skin.inverseBindMatrices != easygltf::base::constants::not_set)
+			{
+				auto stream = m_project.getStream(skin.inverseBindMatrices);
+
+				auto& nskin = m_skins[node.skin];
+				auto& buffer = nskin.buffer;
+				buffer.count = stream.count;
+				buffer.stride = stream.stride;
+				buffer.data.insert(buffer.data.end(), stream.data, stream.data + (stream.stride * stream.count));
+			}
+		}
+	}
+
+	for (int32_t animation_id = 0; animation_id < root.animations.size(); ++animation_id)
+	{
+		auto& animation = root.animations.at(animation_id);
+		// Load samplers
+		for (const auto& sampler : animation.samplers)
+		{
+			auto& nsampler = m_samplers[animation_id].emplace_back();
+
+			{
+				auto stream = m_project.getStream(sampler.input);
+				nsampler.input.count;
+				nsampler.input.stride;
+				nsampler.input.data.insert(nsampler.input.data.end(), stream.data, stream.data + (stream.stride * stream.count));
+			}
+
+			{
+				auto stream = m_project.getStream(sampler.output);
+				nsampler.output.count;
+				nsampler.output.stride;
+				nsampler.output.data.insert(nsampler.output.data.end(), stream.data, stream.data + (stream.stride * stream.count));
+			}
+		}
+	}
+}
+
+void CGLTFEditor::apply()
+{
+	std::unordered_map<uint32_t, std::vector<uint8_t>> buffer_map{};
+	std::unordered_map<uint32_t, int32_t> buffer_view_map{};
+
+	// TODO: think about how to create buffer views
+	auto& root = m_project.getGltf();
+
+	// Helper functions
+	auto add_buffer_view = [&buffer_view_map, &root](uint32_t type)
+		{
+			if (!buffer_view_map.count(type))
+			{
+				buffer_view_map[type] = static_cast<int32_t>(root.bufferViews.size());
+				root.bufferViews.emplace_back();
+			}
+		};
+
+	auto apply_accessor_and_data = [&buffer_map, &buffer_view_map, &root](const FBuffer& buffer, uint32_t type) -> int32_t
+		{
+			int32_t last_accessor = static_cast<int32_t>(root.accessors.size());
+
+			auto& temp_buffer = buffer_map[type];
+			auto& accessor = root.accessors.emplace_back();
+			accessor.bufferView = buffer_view_map[type];
+			init_accessor_and_copy_data(accessor, buffer, type, temp_buffer);
+
+			return last_accessor;
+		};
+
+	for (const auto& [mesh_idx, primitives] : m_meshes)
+	{
+		auto& mesh = root.meshes.at(mesh_idx);
+		assert(mesh.primitives.size() == primitives.size());
+
+		for (size_t idx = 0ull; idx < primitives.size(); ++idx)
+		{
+			auto& mesh_primitive = mesh.primitives.at(idx);
+			auto& primitive = primitives.at(idx);
+
+			mesh_primitive.attributes.clear();
+			mesh_primitive.targets.clear();
+
+			// Create attribute accessors
+			for (const auto& stream : primitive.streams)
+			{
+				add_buffer_view(stream.type);
+				auto attribute_name = get_data_name(stream.type);
+				mesh_primitive.attributes[attribute_name] = apply_accessor_and_data(stream.buffer, stream.type);
+			}
+
+			// Create morph accessors
+			for (const auto& morph_streams : primitive.morphs)
+			{
+				auto& mesh_morph = mesh_primitive.targets.emplace_back();
+				for (const auto& stream : morph_streams)
+				{
+					add_buffer_view(stream.type);
+					auto attribute_name = get_data_name(stream.type);
+					mesh_morph[attribute_name] = apply_accessor_and_data(stream.buffer, stream.type);
+				}
+			}
+
+			if (!primitive.indices.empty())
+			{
+				FBuffer buffer{};
+				buffer.stride = get_index_stream_optimal_size(primitive.indices.size());
+				buffer.count = primitive.indices.size();
+
+				add_buffer_view(data_type::indices);
+
+				switch (buffer.stride)
+				{
+				case 1ull: {
+					buffer.data.insert(buffer.data.end(), primitive.indices.begin(), primitive.indices.end());
+				} break;
+				case 2ull: {
+					std::vector<uint16_t> temp{};
+					temp.insert(temp.end(), primitive.indices.begin(), primitive.indices.end());
+
+					buffer.data.resize(buffer.count * buffer.stride);
+					std::memcpy(&buffer.data[0], &temp[0], buffer.data.size());
+				} break;
+				case 4ull: {
+					buffer.data.resize(buffer.count * buffer.stride);
+					std::memcpy(&buffer.data[0], &primitive.indices[0], buffer.data.size());
+				} break;
+				}
+
+				mesh_primitive.indices = apply_accessor_and_data(buffer, data_type::indices);
+			}
+		}
+	}
+
+	// Process all skins
+	for (auto& [skin_idx, skin] : m_skins)
+	{
+		auto& mesh_skin = root.skins[skin_idx];
+		add_buffer_view(data_type::skin);
+		mesh_skin.inverseBindMatrices = apply_accessor_and_data(skin.buffer, data_type::skin);
+	}
+
+	// Process all anims
+	for (auto& [anim_idx, samplers] : m_samplers)
+	{
+		auto& animation = root.animations[anim_idx];
+		assert(samplers.size() == animation.samplers.size());
+
+		for (size_t idx = 0ull; idx < animation.samplers.size(); ++idx)
+		{
+			auto& anim_sampler = animation.samplers[idx];
+			auto& sampler = samplers[idx];
+
+			add_buffer_view(data_type::animation_input);
+			anim_sampler.input = apply_accessor_and_data(sampler.input, data_type::animation_input);
+
+			add_buffer_view(data_type::animation_output);
+			anim_sampler.input = apply_accessor_and_data(sampler.output, data_type::animation_output);
+		}
+	}
+
+	// TODO: idk about this, but in future i should create buffers in not this way
+	auto& buffer = root.buffers.emplace_back();
+
+	// Fill buffer and create buffer views
+	for (const auto& [type, temp_buffer] : buffer_map)
+	{
+		auto buffer_view_idx = buffer_view_map[type];
+		auto& buffer_view = root.bufferViews.at(buffer_view_idx);
+
+		buffer_view.buffer = 0;
+		buffer_view.byteOffset = buffer.data.size();
+		buffer_view.byteLength = temp_buffer.size();
+		buffer_view.target = get_view_target_by_data_type(type);
+
+		buffer.data.insert(buffer.data.end(), temp_buffer.begin(), temp_buffer.end());
+	}
+
+	buffer.byteLength = buffer.data.size();
+}
+
+void CGLTFEditor::mergeMaterials()
+{
+	auto& root = m_project.getGltf();
+
+	std::vector<int32_t> remapped(root.materials.size());
+	for (size_t idx = 0ull; idx < root.materials.size(); ++idx)
+	{
+		remapped[idx] = idx;
+
+		if (!root.materials[idx].name.empty())
+			continue;
+
+		for (size_t jdx = 0ull; jdx < idx; ++jdx)
+		{
+			if (!root.materials[jdx].name.empty())
+				continue;
+
+			if (root.materials[idx] == root.materials[jdx])
+			{
+				remapped[idx] = jdx;
+				break;
+			}
+		}
+	}
+
+	for (size_t idx = 0ull; idx < root.meshes.size(); ++idx)
+	{
+		auto& mesh = root.meshes[idx];
+
+		for (auto& primitive : mesh.primitives)
+		{
+			if (primitive.material != easygltf::base::constants::not_set)
+				primitive.material = remapped[primitive.material];
+
+			if (primitive.hasExtension<easygltf::extensions::KHR_materials_variants>())
+			{
+				auto& ext = primitive.khrMaterialVariants;
+				for (auto& mapping : ext.mappings)
+				{
+					if (mapping.material != easygltf::base::constants::not_set)
+						mapping.material = remapped[mapping.material];
+				}
+			}
+		}
+	}
+}
+
+void CGLTFEditor::filterEmptyMeshes(int32_t mesh_id, std::vector<FMesh>& meshes)
+{
+	auto& root = m_project.getGltf();
+	auto& nmesh = root.meshes[mesh_id];
+
+	size_t writen{ 0ull };
+	for (size_t idx = 0ull; idx < meshes.size(); ++idx)
+	{
+		auto& mesh = meshes[idx];
+
+		if (mesh.streams.empty())
+			continue;
+
+		if (mesh.streams[0].buffer.data.empty())
+			continue;
+
+		if (mesh.indices.empty())
+			continue;
+
+		std::vector<FVertexStream> streams{};
+		streams.swap(mesh.streams);
+
+		std::vector<uint32_t> indices{};
+		indices.swap(mesh.indices);
+
+		meshes[writen] = mesh;
+		meshes[writen].streams.swap(streams);
+		meshes[writen].indices.swap(indices);
+
+		// Same thing for mesh primitive
+		auto& primitive = nmesh.primitives[idx];
+
+		std::unordered_map<std::string, int32_t> attributes;
+		attributes.swap(primitive.attributes);
+
+		int32_t index{ primitive.indices };
+
+		nmesh.primitives[writen] = primitive;
+		nmesh.primitives[writen].attributes.swap(attributes);
+		nmesh.primitives[writen].indices = index;
+
+		writen++;
+	}
+
+	meshes.resize(writen);
+}
+
+void CGLTFEditor::reindexMesh(FMesh& mesh)
 {
 	size_t total_vertices{ 0ull };
 	std::vector<meshopt_Stream> streams{};
@@ -251,228 +719,84 @@ void reindex_mesh(FMesh& mesh)
 	}
 }
 
-CMeshPorcessor::CMeshPorcessor()
+void CGLTFEditor::filterTriangles(FMesh& mesh)
 {
-	meshopt_encodeVertexVersion(0);
-	meshopt_encodeIndexVersion(1);
-}
-
-// Load all meshes and load local vertex data to proxy objects
-void CMeshPorcessor::prepare(easygltf::CGLTFProject* project)
-{
-	auto& root = project->getGltf();
-
-	for (const auto& node : root.nodes)
+	size_t writen{ 0ull };
+	for (size_t idx = 0ull; idx < mesh.indices.size(); idx += 3ull)
 	{
-		// Load meshes
-		if (node.mesh != easygltf::base::constants::not_set)
+		uint32_t a = mesh.indices[idx];
+		uint32_t b = mesh.indices[idx + 1ull];
+		uint32_t c = mesh.indices[idx + 2ull];
+
+		if (a != b && a != c && b != c)
 		{
-			const auto& mesh = root.meshes.at(node.mesh);
-			for (const auto& primitive : mesh.primitives)
-			{
-				auto& nmesh = m_meshes[node.mesh].emplace_back();
-
-				// Load vertex streams
-				for (const auto& [name, accessor_id] : primitive.attributes)
-				{
-					auto stream = project->getStream(accessor_id);
-					read_vertex_stream(name, stream, nmesh.streams);
-				}
-
-				// Load indices
-				if (primitive.indices != easygltf::base::constants::not_set)
-				{
-					auto index_stream = project->getStream(primitive.indices);
-					read_index_stream(index_stream, nmesh.indices);
-				}
-
-				// Load morph data
-				for (const auto& target : primitive.targets)
-				{
-					auto& morph_streams = nmesh.morphs.emplace_back();
-					for (const auto& [name, accessor_id] : primitive.attributes)
-					{
-						auto stream = project->getStream(accessor_id);
-						read_vertex_stream(name, stream, morph_streams);
-					}
-				}
-			}
-		}
-
-		// Load skins
-		if (node.skin != easygltf::base::constants::not_set)
-		{
-			auto& skin = root.skins.at(node.skin);
-			if (skin.inverseBindMatrices != easygltf::base::constants::not_set)
-			{
-				auto stream = project->getStream(skin.inverseBindMatrices);
-
-				auto& nskin = m_skins[node.skin];
-				auto& buffer = nskin.buffer;
-				buffer.count = stream.count;
-				buffer.stride = stream.stride;
-				buffer.data.insert(buffer.data.end(), stream.data, stream.data + (stream.stride * stream.count));
-			}
+			mesh.indices[writen] = a;
+			mesh.indices[writen + 1ull] = b;
+			mesh.indices[writen + 2ull] = c;
+			writen += 3ull;
 		}
 	}
 
-	for (int32_t animation_id = 0; animation_id < root.animations.size(); ++animation_id)
+	mesh.indices.resize(writen);
+}
+
+void CGLTFEditor::simplifyMesh(FMesh& mesh, float threshold, bool agressive, bool lock_borders)
+{
+	if (mesh.indices.empty())
+		return;
+
+	auto positions = std::find_if(mesh.streams.begin(), mesh.streams.end(), [](const FVertexStream& stream) { return stream.type == data_type::vertex_position; });
+	if (positions == mesh.streams.end())
+		return;
+
+	size_t vertex_count = positions->buffer.count;
+
+	size_t target_index_count = static_cast<size_t>(static_cast<float>(mesh.indices.size() / 3ull) * threshold) * 3ull;
+	float target_error{ 1e-2f };
+	float target_error_aggressive{ 1e-1f };
+	uint32_t options = lock_borders ? meshopt_SimplifyLockBorder : 0u;
+
+	if (target_index_count < 1ull)
+		return;
+
+	float* vertices = reinterpret_cast<float*>(positions->buffer.get());
+
+	std::vector<uint32_t> new_indices(mesh.indices.size());
+	new_indices.resize(meshopt_simplify(&new_indices[0], &mesh.indices[0], mesh.indices.size(), vertices, positions->buffer.count, positions->buffer.stride, target_index_count, target_error, options));
+	mesh.indices.swap(new_indices);
+
+	if (agressive && mesh.indices.size() > target_index_count)
 	{
-		auto& animation = root.animations.at(animation_id);
-		// Load samplers
-		for (const auto& sampler : animation.samplers)
-		{
-			auto& nsampler = m_samplers[animation_id].emplace_back();
-
-			{
-				auto stream = project->getStream(sampler.input);
-				nsampler.input.count;
-				nsampler.input.stride;
-				nsampler.input.data.insert(nsampler.input.data.end(), stream.data, stream.data + (stream.stride * stream.count));
-			}
-
-			{
-				auto stream = project->getStream(sampler.output);
-				nsampler.output.count;
-				nsampler.output.stride;
-				nsampler.output.data.insert(nsampler.output.data.end(), stream.data, stream.data + (stream.stride * stream.count));
-			}
-		}
+		new_indices.resize(meshopt_simplify(&new_indices[0], &mesh.indices[0], mesh.indices.size(), vertices, positions->buffer.count, positions->buffer.stride, target_index_count, target_error_aggressive, options));
+		mesh.indices.swap(new_indices);
 	}
 }
 
-void CMeshPorcessor::process()
+void CGLTFEditor::optimizeMesh(FMesh& mesh, bool compressmore)
 {
-	for (auto& [mesh_id, meshes] : m_meshes)
+	if (mesh.indices.empty())
+		return;
+
+	size_t vertex_count = mesh.streams.front().buffer.count;
+
+	if (compressmore)
+		meshopt_optimizeVertexCacheStrip(&mesh.indices[0], &mesh.indices[0], mesh.indices.size(), vertex_count);
+	else
+		meshopt_optimizeVertexCache(&mesh.indices[0], &mesh.indices[0], mesh.indices.size(), vertex_count);
+
+	std::vector<uint32_t> remapped(vertex_count);
+	size_t unique_vertices = meshopt_optimizeVertexFetchRemap(&remapped[0], &mesh.indices[0], mesh.indices.size(), vertex_count);
+	assert(unique_vertices <= vertex_count);
+
+	meshopt_remapIndexBuffer(&mesh.indices[0], &mesh.indices[0], mesh.indices.size(), &remapped[0]);
+
+	for (auto& stream : mesh.streams)
 	{
-		for (auto& mesh : meshes)
-		{
-			reindex_mesh(mesh);
-		}
+		auto& buffer = stream.buffer;
+		assert(buffer.count == vertex_count);
+
+		meshopt_remapVertexBuffer(&buffer.data[0], &buffer.data[0], buffer.count, buffer.stride, &remapped[0]);
+		buffer.data.resize(unique_vertices * buffer.stride);
+		buffer.count = unique_vertices;
 	}
-}
-
-void CMeshPorcessor::apply(easygltf::CGLTFProject* project)
-{
-	std::unordered_map<uint32_t, std::vector<uint8_t>> buffer_map{};
-	std::unordered_map<uint32_t, int32_t> buffer_view_map{};
-
-	// TODO: think about how to create buffer views
-	auto& root = project->getGltf();
-
-	for (const auto& [mesh_idx, primitives] : m_meshes)
-	{
-		auto& mesh = root.meshes.at(mesh_idx);
-		assert(mesh.primitives.size() == primitives.size());
-
-		for (size_t idx = 0ull; idx < primitives.size(); ++idx)
-		{
-			auto& mesh_primitive = mesh.primitives.at(idx);
-			auto& primitive = primitives.at(idx);
-
-			mesh_primitive.attributes.clear();
-			mesh_primitive.targets.clear();
-
-			// Create attribute accessors
-			for (const auto& stream : primitive.streams)
-			{
-				if (!buffer_view_map.count(stream.type))
-				{
-					buffer_view_map[stream.type] = static_cast<int32_t>(root.bufferViews.size());
-					root.bufferViews.emplace_back();
-				}
-
-				auto attribute_name = get_data_name(stream.type);
-				mesh_primitive.attributes[attribute_name] = static_cast<int32_t>(root.accessors.size());
-
-				auto& temp_buffer = buffer_map[stream.type];
-
-				auto& accessor = root.accessors.emplace_back();
-				accessor.bufferView = buffer_view_map[stream.type];
-				init_accessor_and_copy_data(accessor, stream.buffer, stream.type, temp_buffer);
-			}
-
-			// Create morph accessors
-			for (const auto& morph_streams : primitive.morphs)
-			{
-				auto& mesh_morph = mesh_primitive.targets.emplace_back();
-				for (const auto& stream : morph_streams)
-				{
-					if (!buffer_view_map.count(stream.type))
-					{
-						buffer_view_map[stream.type] = static_cast<int32_t>(root.bufferViews.size());
-						root.bufferViews.emplace_back();
-					}
-
-					auto attribute_name = get_data_name(stream.type);
-					mesh_morph[attribute_name] = static_cast<int32_t>(root.accessors.size());
-
-					auto& temp_buffer = buffer_map[stream.type];
-
-					auto& accessor = root.accessors.emplace_back();
-					accessor.bufferView = buffer_view_map[stream.type];
-					init_accessor_and_copy_data(accessor, stream.buffer, stream.type, temp_buffer);
-					init_accessor_and_copy_data(root.accessors.emplace_back(), stream.buffer, stream.type, temp_buffer);
-				}
-			}
-
-			if (!primitive.indices.empty())
-			{
-				mesh_primitive.indices = static_cast<int32_t>(root.accessors.size());
-
-				FBuffer buffer{};
-				buffer.stride = get_index_stream_optimal_size(primitive.indices.size());
-				buffer.count = primitive.indices.size();
-
-				if (!buffer_view_map.count(data_type::indices))
-				{
-					buffer_view_map[data_type::indices] = static_cast<int32_t>(root.bufferViews.size());
-					root.bufferViews.emplace_back();
-				}
-
-				switch (buffer.stride)
-				{
-				case 1ull: {
-					buffer.data.insert(buffer.data.end(), primitive.indices.begin(), primitive.indices.end());
-				} break;
-				case 2ull: {
-					std::vector<uint16_t> temp{};
-					temp.insert(temp.end(), primitive.indices.begin(), primitive.indices.end());
-
-					buffer.data.resize(buffer.count * buffer.stride);
-					std::memcpy(&buffer.data[0], &temp[0], buffer.data.size());
-				} break;
-				case 4ull: {
-					buffer.data.resize(buffer.count * buffer.stride);
-					std::memcpy(&buffer.data[0], &primitive.indices[0], buffer.data.size());
-				} break;
-				}
-
-				auto& temp_buffer = buffer_map[data_type::indices];
-
-				auto& accessor = root.accessors.emplace_back();
-				accessor.bufferView = buffer_view_map[data_type::indices];
-				init_accessor_and_copy_data(accessor, buffer, data_type::indices, temp_buffer);
-			}
-		}
-	}
-
-	// TODO: idk about this, but in future i should create buffers in not this way
-	auto& buffer = root.buffers.emplace_back();
-
-	// Fill buffer and create buffer views
-	for (const auto& [type, temp_buffer] : buffer_map)
-	{
-		auto buffer_view_idx = buffer_view_map[type];
-		auto& buffer_view = root.bufferViews.at(buffer_view_idx);
-
-		buffer_view.buffer = 0;
-		buffer_view.byteOffset = buffer.data.size();
-		buffer_view.byteLength = temp_buffer.size();
-		buffer_view.target = get_view_target_by_data_type(type);
-
-		buffer.data.insert(buffer.data.end(), temp_buffer.begin(), temp_buffer.end());
-	}
-
-	buffer.byteLength = buffer.data.size();
 }

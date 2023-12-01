@@ -1,6 +1,6 @@
 #pragma once
 
-#include <easygltf/easygltf_fwd.h>
+#include <easygltf/easygltf.h>
 #include <common.h>
 
 namespace mesh_compiler
@@ -29,15 +29,28 @@ namespace mesh_compiler
 		FBuffer output{};
 	};
 
-	class CMeshPorcessor
+	class CGLTFEditor
 	{
 	public:
-		CMeshPorcessor();
+		CGLTFEditor();
 
-		void prepare(easygltf::CGLTFProject* project);
+		bool load(const std::string& path);
+		bool save(const std::string& path);
+
 		void process();
-		void apply(easygltf::CGLTFProject* project);
+	protected:
+		void prepare();
+		void apply();
+
+		void mergeMaterials();
+		void filterEmptyMeshes(int32_t mesh_id, std::vector<FMesh>& meshes);
+		void reindexMesh(FMesh& mesh);
+		void filterTriangles(FMesh& mesh);
+		void simplifyMesh(FMesh& mesh, float threshold = 1.f, bool agressive = false, bool lock_borders = false);
+		void optimizeMesh(FMesh& mesh, bool compressmore = false);
 	private:
+		easygltf::CGLTFProject m_project{};
+
 		std::unordered_map<int32_t, std::vector<FMesh>> m_meshes{};
 		std::unordered_map<int32_t, FSkin> m_skins{};
 		std::unordered_map<int32_t, std::vector<FAnimationSampler>> m_samplers{};

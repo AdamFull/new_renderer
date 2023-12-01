@@ -968,5 +968,5 @@ bool CGLTFProject::_loadBuffer(int32_t buffer_id)
 		return false;
 	}
 
-	return false;
+	return true;
 }
