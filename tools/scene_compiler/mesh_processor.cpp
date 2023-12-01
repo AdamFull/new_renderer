@@ -233,90 +233,6 @@ void read_index_stream(const easygltf::Stream& stream, std::vector<uint32_t>& in
 	}
 }
 
-bool check_merge_ability(int32_t mesh_id, FMesh& lhs, FMesh& rhs)
-{
-
-	return true;
-}
-
-void merge_meshes(FMesh& target, const FMesh& mesh)
-{
-	assert(target.streams.size() == mesh.streams.size());
-
-	size_t vertex_offset = target.streams[0].buffer.count;
-	size_t index_offset = target.indices.size();
-
-	for (size_t idx = 0; idx < target.streams.size(); ++idx)
-	{
-		auto& tstream = target.streams[idx];
-		auto& mstream = mesh.streams[idx];
-		tstream.buffer.data.insert(tstream.buffer.data.end(), mstream.buffer.data.begin(), mstream.buffer.data.end());
-	}
-
-	target.indices.resize(target.indices.size() + mesh.indices.size());
-
-	size_t index_count = mesh.indices.size();
-
-	for (size_t idx = 0ull; idx < index_count; ++idx)
-		target.indices[index_offset + idx] = static_cast<uint32_t>(vertex_offset + mesh.indices[idx]);
-}
-
-void merge_meshes(int32_t mesh_id, std::vector<FMesh>& meshes)
-{
-	for (size_t idx = 0ull; idx < meshes.size(); ++idx)
-	{
-		FMesh& target = meshes[idx];
-
-		if (target.streams.empty())
-			continue;
-
-		size_t target_vertices = target.streams[0].buffer.count;
-		size_t target_indices = target.indices.size();
-
-		size_t last_merged = idx;
-
-		for (size_t jdx = idx + 1ull; jdx < meshes.size(); ++jdx)
-		{
-			FMesh& mesh = meshes[jdx];
-
-			if (!mesh.streams.empty() && check_merge_ability(mesh_id, target, mesh))
-			{
-				target_vertices += mesh.streams[0].buffer.count;
-				target_indices += mesh.indices.size();
-				last_merged = jdx;
-			}
-		}
-
-		for (size_t jdx = 0ull; jdx < target.streams.size(); ++jdx)
-		{
-			auto& stream = target.streams[jdx];
-			auto& buffer = stream.buffer;
-			buffer.data.reserve(target_vertices * buffer.stride);
-			buffer.count = target_vertices;
-		}
-
-		target.indices.reserve(target_indices);
-
-		for (size_t jdx = idx + 1ull; jdx <= last_merged; ++jdx)
-		{
-			FMesh& mesh = meshes[jdx];
-
-			if (!mesh.streams.empty() && check_merge_ability(mesh_id, target, mesh))
-			{
-				merge_meshes(target, mesh);
-
-				mesh.streams.clear();
-				mesh.indices.clear();
-				//mesh.nodes.clear();
-				//mesh.instances.clear();
-			}
-		}
-
-		assert(target.streams[0].buffer.count == target_vertices);
-		assert(target.indices.size() == target_indices);
-	}
-}
-
 // filterStreams
 // mergeMeshes 
 // mergeMeshInstances
@@ -798,5 +714,90 @@ void CGLTFEditor::optimizeMesh(FMesh& mesh, bool compressmore)
 		meshopt_remapVertexBuffer(&buffer.data[0], &buffer.data[0], buffer.count, buffer.stride, &remapped[0]);
 		buffer.data.resize(unique_vertices * buffer.stride);
 		buffer.count = unique_vertices;
+	}
+}
+
+bool CGLTFEditor::checkMergeAbility(int32_t mesh_id, FMesh& lhs, FMesh& rhs)
+{
+
+	return true;
+}
+
+void CGLTFEditor::mergeMeshes(FMesh& target, const FMesh& mesh)
+{
+	assert(target.streams.size() == mesh.streams.size());
+
+	size_t vertex_offset = target.streams[0].buffer.count;
+	size_t index_offset = target.indices.size();
+
+	for (size_t idx = 0; idx < target.streams.size(); ++idx)
+	{
+		auto& tstream = target.streams[idx];
+		auto& mstream = mesh.streams[idx];
+		tstream.buffer.data.insert(tstream.buffer.data.end(), mstream.buffer.data.begin(), mstream.buffer.data.end());
+		tstream.buffer.count += mstream.buffer.count;
+	}
+
+	target.indices.resize(target.indices.size() + mesh.indices.size());
+
+	size_t index_count = mesh.indices.size();
+
+	for (size_t idx = 0ull; idx < index_count; ++idx)
+		target.indices[index_offset + idx] = static_cast<uint32_t>(vertex_offset + mesh.indices[idx]);
+}
+
+void CGLTFEditor::mergeMeshes(int32_t mesh_id, std::vector<FMesh>& meshes)
+{
+	for (size_t idx = 0ull; idx < meshes.size(); ++idx)
+	{
+		FMesh& target = meshes[idx];
+
+		if (target.streams.empty())
+			continue;
+
+		size_t target_vertices = target.streams[0].buffer.count;
+		size_t target_indices = target.indices.size();
+
+		size_t last_merged = idx;
+
+		for (size_t jdx = idx + 1ull; jdx < meshes.size(); ++jdx)
+		{
+			FMesh& mesh = meshes[jdx];
+
+			if (!mesh.streams.empty() && checkMergeAbility(mesh_id, target, mesh))
+			{
+				target_vertices += mesh.streams[0].buffer.count;
+				target_indices += mesh.indices.size();
+				last_merged = jdx;
+			}
+		}
+
+		for (size_t jdx = 0ull; jdx < target.streams.size(); ++jdx)
+		{
+			auto& stream = target.streams[jdx];
+			auto& buffer = stream.buffer;
+			buffer.data.reserve(target_vertices * buffer.stride);
+			buffer.count = target_vertices;
+		}
+
+		target.indices.reserve(target_indices);
+
+		for (size_t jdx = idx + 1ull; jdx <= last_merged; ++jdx)
+		{
+			FMesh& mesh = meshes[jdx];
+
+			if (!mesh.streams.empty() && checkMergeAbility(mesh_id, target, mesh))
+			{
+				mergeMeshes(target, mesh);
+
+				mesh.streams.clear();
+				mesh.indices.clear();
+				//mesh.nodes.clear();
+				//mesh.instances.clear();
+			}
+		}
+
+		assert(target.streams[0].buffer.count == target_vertices);
+		assert(target.indices.size() == target_indices);
 	}
 }

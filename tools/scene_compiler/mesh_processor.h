@@ -48,6 +48,10 @@ namespace mesh_compiler
 		void filterTriangles(FMesh& mesh);
 		void simplifyMesh(FMesh& mesh, float threshold = 1.f, bool agressive = false, bool lock_borders = false);
 		void optimizeMesh(FMesh& mesh, bool compressmore = false);
+
+		bool checkMergeAbility(int32_t mesh_id, FMesh& lhs, FMesh& rhs);
+		void mergeMeshes(FMesh& target, const FMesh& mesh);
+		void mergeMeshes(int32_t mesh_id, std::vector<FMesh>& meshes);
 	private:
 		easygltf::CGLTFProject m_project{};
 
