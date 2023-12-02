@@ -12,4 +12,9 @@ namespace mesh_compiler
 		size_t count{ 0ull };
 		std::vector<uint8_t> data{};
 	};
+
+	struct FCompilerSettings
+	{
+		
+	};
 }

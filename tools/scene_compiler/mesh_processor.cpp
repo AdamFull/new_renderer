@@ -1,5 +1,6 @@
 #include "mesh_processor.h"
 
+#include <easygltf/easygltf_loader.h>
 #include <easygltf/easygltf_helpers.h>
 
 #include <meshoptimizer.h>
@@ -245,7 +246,9 @@ CGLTFEditor::CGLTFEditor()
 
 bool CGLTFEditor::load(const std::string& path)
 {
-	if (!m_project.load(path))
+	easygltf::CGLTFLoader loader{};
+
+	if (!loader.load(path, m_root))
 		return false;
 
 	prepare();
@@ -255,12 +258,11 @@ bool CGLTFEditor::load(const std::string& path)
 
 bool CGLTFEditor::save(const std::string& path)
 {
-	m_project.clearBuffers();
-	apply();
-
-	if (!m_project.save(path))
-		return false;
-
+	//apply();
+	//
+	//if (!m_project.save(path))
+	//	return false;
+	//
 	return true;
 }
 
@@ -288,14 +290,12 @@ void CGLTFEditor::process()
 // Load all meshes and load local vertex data to proxy objects
 void CGLTFEditor::prepare()
 {
-	auto& root = m_project.getGltf();
-
-	for (const auto& node : root.nodes)
+	for (const auto& node : m_root.nodes)
 	{
 		// Load meshes
 		if (node.mesh != easygltf::base::constants::not_set)
 		{
-			const auto& mesh = root.meshes.at(node.mesh);
+			const auto& mesh = m_root.meshes.at(node.mesh);
 			for (const auto& primitive : mesh.primitives)
 			{
 				auto& nmesh = m_meshes[node.mesh].emplace_back();
@@ -303,14 +303,14 @@ void CGLTFEditor::prepare()
 				// Load vertex streams
 				for (const auto& [name, accessor_id] : primitive.attributes)
 				{
-					auto stream = m_project.getStream(accessor_id);
+					auto stream = m_root.getStream(accessor_id);
 					read_vertex_stream(name, stream, nmesh.streams);
 				}
 
 				// Load indices
 				if (primitive.indices != easygltf::base::constants::not_set)
 				{
-					auto index_stream = m_project.getStream(primitive.indices);
+					auto index_stream = m_root.getStream(primitive.indices);
 					read_index_stream(index_stream, nmesh.indices);
 				}
 
@@ -320,7 +320,7 @@ void CGLTFEditor::prepare()
 					auto& morph_streams = nmesh.morphs.emplace_back();
 					for (const auto& [name, accessor_id] : primitive.attributes)
 					{
-						auto stream = m_project.getStream(accessor_id);
+						auto stream = m_root.getStream(accessor_id);
 						read_vertex_stream(name, stream, morph_streams);
 					}
 				}
@@ -330,10 +330,10 @@ void CGLTFEditor::prepare()
 		// Load skins
 		if (node.skin != easygltf::base::constants::not_set)
 		{
-			auto& skin = root.skins.at(node.skin);
+			auto& skin = m_root.skins.at(node.skin);
 			if (skin.inverseBindMatrices != easygltf::base::constants::not_set)
 			{
-				auto stream = m_project.getStream(skin.inverseBindMatrices);
+				auto stream = m_root.getStream(skin.inverseBindMatrices);
 
 				auto& nskin = m_skins[node.skin];
 				auto& buffer = nskin.buffer;
@@ -344,23 +344,23 @@ void CGLTFEditor::prepare()
 		}
 	}
 
-	for (int32_t animation_id = 0; animation_id < root.animations.size(); ++animation_id)
+	for (int32_t animation_id = 0; animation_id < m_root.animations.size(); ++animation_id)
 	{
-		auto& animation = root.animations.at(animation_id);
+		auto& animation = m_root.animations.at(animation_id);
 		// Load samplers
 		for (const auto& sampler : animation.samplers)
 		{
 			auto& nsampler = m_samplers[animation_id].emplace_back();
 
 			{
-				auto stream = m_project.getStream(sampler.input);
+				auto stream = m_root.getStream(sampler.input);
 				nsampler.input.count;
 				nsampler.input.stride;
 				nsampler.input.data.insert(nsampler.input.data.end(), stream.data, stream.data + (stream.stride * stream.count));
 			}
 
 			{
-				auto stream = m_project.getStream(sampler.output);
+				auto stream = m_root.getStream(sampler.output);
 				nsampler.output.count;
 				nsampler.output.stride;
 				nsampler.output.data.insert(nsampler.output.data.end(), stream.data, stream.data + (stream.stride * stream.count));
@@ -374,25 +374,22 @@ void CGLTFEditor::apply()
 	std::unordered_map<uint32_t, std::vector<uint8_t>> buffer_map{};
 	std::unordered_map<uint32_t, int32_t> buffer_view_map{};
 
-	// TODO: think about how to create buffer views
-	auto& root = m_project.getGltf();
-
 	// Helper functions
-	auto add_buffer_view = [&buffer_view_map, &root](uint32_t type)
+	auto add_buffer_view = [this, &buffer_view_map](uint32_t type)
 		{
 			if (!buffer_view_map.count(type))
 			{
-				buffer_view_map[type] = static_cast<int32_t>(root.bufferViews.size());
-				root.bufferViews.emplace_back();
+				buffer_view_map[type] = static_cast<int32_t>(m_root.bufferViews.size());
+				m_root.bufferViews.emplace_back();
 			}
 		};
 
-	auto apply_accessor_and_data = [&buffer_map, &buffer_view_map, &root](const FBuffer& buffer, uint32_t type) -> int32_t
+	auto apply_accessor_and_data = [this, &buffer_map, &buffer_view_map](const FBuffer& buffer, uint32_t type) -> int32_t
 		{
-			int32_t last_accessor = static_cast<int32_t>(root.accessors.size());
+			int32_t last_accessor = static_cast<int32_t>(m_root.accessors.size());
 
 			auto& temp_buffer = buffer_map[type];
-			auto& accessor = root.accessors.emplace_back();
+			auto& accessor = m_root.accessors.emplace_back();
 			accessor.bufferView = buffer_view_map[type];
 			init_accessor_and_copy_data(accessor, buffer, type, temp_buffer);
 
@@ -401,7 +398,7 @@ void CGLTFEditor::apply()
 
 	for (const auto& [mesh_idx, primitives] : m_meshes)
 	{
-		auto& mesh = root.meshes.at(mesh_idx);
+		auto& mesh = m_root.meshes.at(mesh_idx);
 		assert(mesh.primitives.size() == primitives.size());
 
 		for (size_t idx = 0ull; idx < primitives.size(); ++idx)
@@ -466,7 +463,7 @@ void CGLTFEditor::apply()
 	// Process all skins
 	for (auto& [skin_idx, skin] : m_skins)
 	{
-		auto& mesh_skin = root.skins[skin_idx];
+		auto& mesh_skin = m_root.skins[skin_idx];
 		add_buffer_view(data_type::skin);
 		mesh_skin.inverseBindMatrices = apply_accessor_and_data(skin.buffer, data_type::skin);
 	}
@@ -474,7 +471,7 @@ void CGLTFEditor::apply()
 	// Process all anims
 	for (auto& [anim_idx, samplers] : m_samplers)
 	{
-		auto& animation = root.animations[anim_idx];
+		auto& animation = m_root.animations[anim_idx];
 		assert(samplers.size() == animation.samplers.size());
 
 		for (size_t idx = 0ull; idx < animation.samplers.size(); ++idx)
@@ -491,13 +488,13 @@ void CGLTFEditor::apply()
 	}
 
 	// TODO: idk about this, but in future i should create buffers in not this way
-	auto& buffer = root.buffers.emplace_back();
+	auto& buffer = m_root.buffers.emplace_back();
 
 	// Fill buffer and create buffer views
 	for (const auto& [type, temp_buffer] : buffer_map)
 	{
 		auto buffer_view_idx = buffer_view_map[type];
-		auto& buffer_view = root.bufferViews.at(buffer_view_idx);
+		auto& buffer_view = m_root.bufferViews.at(buffer_view_idx);
 
 		buffer_view.buffer = 0;
 		buffer_view.byteOffset = buffer.data.size();
@@ -512,22 +509,20 @@ void CGLTFEditor::apply()
 
 void CGLTFEditor::mergeMaterials()
 {
-	auto& root = m_project.getGltf();
-
-	std::vector<int32_t> remapped(root.materials.size());
-	for (size_t idx = 0ull; idx < root.materials.size(); ++idx)
+	std::vector<int32_t> remapped(m_root.materials.size());
+	for (size_t idx = 0ull; idx < m_root.materials.size(); ++idx)
 	{
 		remapped[idx] = idx;
 
-		if (!root.materials[idx].name.empty())
+		if (!m_root.materials[idx].name.empty())
 			continue;
 
 		for (size_t jdx = 0ull; jdx < idx; ++jdx)
 		{
-			if (!root.materials[jdx].name.empty())
+			if (!m_root.materials[jdx].name.empty())
 				continue;
 
-			if (root.materials[idx] == root.materials[jdx])
+			if (m_root.materials[idx] == m_root.materials[jdx])
 			{
 				remapped[idx] = jdx;
 				break;
@@ -535,9 +530,9 @@ void CGLTFEditor::mergeMaterials()
 		}
 	}
 
-	for (size_t idx = 0ull; idx < root.meshes.size(); ++idx)
+	for (size_t idx = 0ull; idx < m_root.meshes.size(); ++idx)
 	{
-		auto& mesh = root.meshes[idx];
+		auto& mesh = m_root.meshes[idx];
 
 		for (auto& primitive : mesh.primitives)
 		{
@@ -559,8 +554,7 @@ void CGLTFEditor::mergeMaterials()
 
 void CGLTFEditor::filterEmptyMeshes(int32_t mesh_id, std::vector<FMesh>& meshes)
 {
-	auto& root = m_project.getGltf();
-	auto& nmesh = root.meshes[mesh_id];
+	auto& nmesh = m_root.meshes[mesh_id];
 
 	size_t writen{ 0ull };
 	for (size_t idx = 0ull; idx < meshes.size(); ++idx)

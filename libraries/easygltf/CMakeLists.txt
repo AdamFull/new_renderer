@@ -12,7 +12,7 @@ set(ENGINE_WORLD_SOURCES
     ${ENGINE_WORLD_HEADERS}
 )
 
-add_library(${PROJECT_NAME} STATIC ${ENGINE_WORLD_SOURCES})
+ add_library(${PROJECT_NAME} STATIC ${ENGINE_WORLD_SOURCES})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     CXX_EXTENSIONS OFF
@@ -29,5 +29,3 @@ target_link_libraries(${PROJECT_NAME}
 	PRIVATE meshoptimizer::meshoptimizer
     PRIVATE nlohmann_json::nlohmann_json
 )
-
-target_precompile_headers(${PROJECT_NAME} PUBLIC easygltf_pch.h)

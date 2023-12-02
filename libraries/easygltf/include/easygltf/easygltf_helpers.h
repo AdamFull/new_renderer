@@ -4,6 +4,32 @@
 
 namespace easygltf
 {
+	inline std::string url_decode(const std::string& str)
+	{
+		std::string ret;
+		char ch;
+		int i, ii, len = str.length();
+
+		for (i = 0; i < len; i++)
+		{
+			if (str[i] != '%')
+			{
+				if (str[i] == '+')
+					ret += ' ';
+				else
+					ret += str[i];
+			}
+			else
+			{
+				sscanf(str.substr(i + 1, 2).c_str(), "%x", &ii);
+				ch = static_cast<char>(ii);
+				ret += ch;
+				i = i + 2;
+			}
+		}
+		return ret;
+	}
+
 	inline size_t get_size_by_component_type(int32_t component_type)
 	{
 		switch (component_type)

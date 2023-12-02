@@ -4,5 +4,10 @@
 
 namespace mesh_compiler
 {
-
+	class CImagePorcessor
+	{
+	public:
+		CImagePorcessor() = default;
+	private:
+	};
 }

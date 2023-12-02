@@ -1,6 +1,6 @@
 #pragma once
 
-#include <easygltf/easygltf.h>
+#include <easygltf/easygltf_base.h>
 #include <common.h>
 
 namespace mesh_compiler
@@ -53,7 +53,7 @@ namespace mesh_compiler
 		void mergeMeshes(FMesh& target, const FMesh& mesh);
 		void mergeMeshes(int32_t mesh_id, std::vector<FMesh>& meshes);
 	private:
-		easygltf::CGLTFProject m_project{};
+		easygltf::FGLTFRoot m_root{};
 
 		std::unordered_map<int32_t, std::vector<FMesh>> m_meshes{};
 		std::unordered_map<int32_t, FSkin> m_skins{};

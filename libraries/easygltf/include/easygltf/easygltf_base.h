@@ -2,6 +2,14 @@
 
 #include <nlohmann/json.hpp>
 
+#include <string>
+#include <vector>
+#include <array>
+#include <unordered_map>
+#include <unordered_set>
+
+#include <limits>
+
 namespace easygltf
 {
 	using dvec2 = std::array<double, 2>;
@@ -369,6 +377,26 @@ namespace easygltf
 						this->index == other.index && this->environments == other.environments && 
 						compareExtensionsAndExtras(other);
 				}
+			};
+		};
+
+		struct EXT_mesh_gpu_instancing
+		{
+			static constexpr const char* name{ "EXT_mesh_gpu_instancing" };
+		};
+
+		struct EXT_meshopt_compression
+		{
+			static constexpr const char* name{ "EXT_meshopt_compression" };
+		};
+
+		struct EXT_geometry_meshlets
+		{
+			static constexpr const char* name{ "EXT_geometry_meshlets" };
+
+			struct Meshlet : Default
+			{
+
 			};
 		};
 
@@ -970,16 +998,6 @@ namespace easygltf
 				}
 			};
 		};
-
-		struct EXT_geometry_meshlets
-		{
-			static constexpr const char* name{ "EXT_geometry_meshlets" };
-
-			struct Meshlet : Default
-			{
-
-			};
-		};
 	}
 
 	// https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/schema/accessor.sparse.indices.schema.json
@@ -1450,9 +1468,20 @@ namespace easygltf
 		}
 	};
 
+	// Other types and structures
+	struct Stream
+	{
+		const uint8_t* data{ nullptr };
+		size_t stride{ 0ull };
+		size_t count{ 0ull };
+	};
+
 	// https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/schema/glTF.schema.json
 	struct FGLTFRoot : public Default
 	{
+		Stream getStream(const Accessor& accessor);
+		Stream getStream(int32_t accessor_id);
+
 		std::vector<Accessor> accessors{};
 		std::vector<Animation> animations{};
 		Asset asset{};
@@ -1477,14 +1506,8 @@ namespace easygltf
 
 		mutable std::unordered_set<std::string> extensionsUsed;
 		mutable std::unordered_set<std::string> extensionsRequired;
-	};
 
-	// Other types and structures
-	struct Stream
-	{
-		uint8_t* data{ nullptr };
-		size_t stride{ 0ull };
-		size_t count{ 0ull };
+		std::string rootDirectory{};
 	};
 
 	enum class DebugMessageType
