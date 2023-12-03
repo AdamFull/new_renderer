@@ -75,44 +75,46 @@ void CVisibilityBufferRenderingStep::execute(float dt)
 			// Create shader for vertex declaration if not exists
 			auto& shader = getShaderByVBO(vbo);
 
-			auto& node = render_packet->nodes.at(batch.node);
-
 			{
 				TRACY_PROFILE_SCOPE("Update UniformMeshData");
-
+			
 				auto& ubo = shader->getUniformBlock("UniformMeshData");
-				ubo->set("model", node.model);
-				ubo->set("view", render_packet->camera.view);
-				ubo->set("projection", render_packet->camera.projection);
 				ubo->set("objectId", batch.node);
 				ubo->set("materialId", static_cast<uint32_t>(batch.materialId));
 			}
 
-			if (render_packet->materialBuffer != ~0ull)
-				shader->bindBuffer("MaterialStorage", render_packet->materialBuffer);
-
-			if (batch.skin >= 0)
+			if (render_packet->materialBuffer)
 			{
-				auto& joints = shader->getUniformBlock("UniformSkinningJoints");
-				auto& matrices = render_packet->skins.at(batch.skin);
-				joints->set("matrices", matrices);
+				size_t handle = render_packet->materialBuffer->handle();
+				shader->bindBuffer("MaterialStorage", handle);
 			}
+
+			if (render_packet->nodeBuffer)
+			{
+				size_t handle = render_packet->nodeBuffer->handle();
+				shader->bindBuffer("ModelStorage", handle);
+			}
+
+			//if (batch.skin >= 0)
+			//{
+			//	auto& joints = shader->getUniformBlock("UniformSkinningJoints");
+			//	auto& matrices = render_packet->skins.at(batch.skin);
+			//	joints->set("matrices", matrices);
+			//}
 
 			// Bind vbo and flush descriptors, then bind and draw
 			shader->flushDescriptors();
 			shader->flushConstants(m_beginRenderingInfo.queue);
 			shader->bind(m_beginRenderingInfo.queue);
 
-			for (const auto& range : batch.ranges)
-			{
-				FGeometryDrawInfo draw_info{};
-				draw_info.range = range;
-				draw_info.lastIndex = vbo->getLastIndex();
-				draw_info.lastVertex = vbo->getLastVertex();
-				vbo->bind(m_beginRenderingInfo.queue);
+			vbo->bind(m_beginRenderingInfo.queue);
 
-				m_pRenderContext->draw(m_beginRenderingInfo.queue, draw_info);
-			}
+			FGeometryDrawInfo draw_info{};
+			draw_info.lastIndex = vbo->getLastIndex();
+			draw_info.lastVertex = vbo->getLastVertex();
+			draw_info.ranges = batch.ranges;
+
+			m_pRenderContext->draw(m_beginRenderingInfo.queue, draw_info);
 		}
 	}
 

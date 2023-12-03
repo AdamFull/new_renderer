@@ -12,7 +12,8 @@ namespace engine
 			BUFFER_TYPE_VERTEX_FLAG_BIT = 1 << 1,
 			BUFFER_TYPE_INDEX_FLAG_BIT = 1 << 2,
 			BUFFER_TYPE_STORAGE_FLAG_BIT = 1 << 3,
-			BUFFER_TYPE_UNIFORM_FLAG_BIT = 1 << 4
+			BUFFER_TYPE_UNIFORM_FLAG_BIT = 1 << 4,
+			BUFFER_TYPE_INDIRECT_FLAG_BIT = 1 << 5,
 		};
 
 		struct FBufferUploadInfo
@@ -51,6 +52,8 @@ namespace engine
 			virtual void unmap() = 0;
 			virtual void write(void* data, size_t size = ~0ull, size_t offset = 0ull) = 0;
 			virtual void flush(size_t size = ~0ull, size_t offset = 0ull) = 0;
+
+			virtual size_t handle() = 0;
 
 			virtual char* at(size_t index) = 0;
 		};

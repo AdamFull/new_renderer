@@ -19,6 +19,8 @@ namespace engine
 			void write(void* data, size_t size = ~0ull, size_t offset = 0ull) override;
 			void flush(size_t size = ~0ull, size_t offset = 0ull) override;
 
+			size_t handle() override;
+
 			char* at(size_t index) override;
 
 		private:

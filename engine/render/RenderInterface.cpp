@@ -7,6 +7,7 @@
 #include "rendering_steps/VisibilityBufferRenderingStep.h"
 
 #include "VertexHandler.h"
+#include "BufferObject.h"
 
 #include <shader_compiler/compiler_util.h>
 
@@ -14,6 +15,9 @@
 
 using namespace engine;
 using namespace engine::render;
+
+constexpr const size_t MAX_PRIMITIVE_COUNT{ 512ull };
+constexpr const size_t MAX_MATERIAL_COUNT{ 512ull };
 
 void copy_platform_specific_create_data(FRenderContextCreateInfo& context_ci, const FRenderInterfaceCreateInfo& rhi_ci)
 {
@@ -151,10 +155,61 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 	std::vector<uint8_t> render_config{};
 	m_pVFS->readFile("/root/embed/rendering/test_render_config.lua", render_config);
 	m_pRenderScriptCore->build("render_config", render_config);
+
+	// Create material storage buffer
+	{
+		FBufferCreateInfo buffer_ci{};
+		buffer_ci.flags = BUFFER_TYPE_STORAGE_FLAG_BIT;
+		buffer_ci.size = sizeof(FMaterial);
+		buffer_ci.count = MAX_MATERIAL_COUNT;
+
+		auto& buffer = m_pRenderPacket->materialBuffer;
+		buffer = std::make_unique<CBufferObject>(this, m_pRenderContext.get());
+		buffer->create("global_material_buffer", buffer_ci);
+	}
+
+	// Create node storage buffer
+	{
+		FBufferCreateInfo buffer_ci{};
+		buffer_ci.flags = BUFFER_TYPE_STORAGE_FLAG_BIT;
+		buffer_ci.size = sizeof(glm::mat4);
+		buffer_ci.count = MAX_PRIMITIVE_COUNT;
+
+		auto& buffer = m_pRenderPacket->nodeBuffer;
+		buffer = std::make_unique<CBufferObject>(this, m_pRenderContext.get());
+		buffer->create("global_primitive_data_buffer", buffer_ci);
+	}
 }
 
 void CRenderInterface::render(float dt)
 {
+	// Update materials
+	{
+		auto& buffer = m_pRenderPacket->materialBuffer;
+	
+		buffer->map();
+		for (size_t idx = 0ull; idx < m_pRenderPacket->materials.size(); ++idx)
+		{
+			auto& material = m_pRenderPacket->materials.at(idx);
+			auto* dst = buffer->at(idx);
+			std::memcpy(dst, &material.parameters, sizeof(FMaterial));
+		}
+		buffer->unmap();
+	}
+
+	// Update nodes
+	{
+		auto& buffer = m_pRenderPacket->nodeBuffer;
+
+		buffer->map();
+		for (auto& [node, model] : m_pRenderPacket->nodes)
+		{
+			auto* dst = buffer->at(node);
+			std::memcpy(dst, &model, sizeof(glm::mat4));
+		}
+		buffer->unmap();
+	}
+
 	m_pRenderContext->beginFrameCommandBuffers();
 
 	// TODO: make it better
@@ -233,25 +288,6 @@ size_t CRenderInterface::createShader(const std::string& name, const FComputeSha
 {
 	auto name_info = getShaderNameTag(name);
 	return createShader<FComputeShaderCreateInfo>(name_info, create_info);
-}
-
-void CRenderInterface::createMaterialBuffer()
-{
-	FBufferCreateInfo buffer_ci{};
-	buffer_ci.flags = BUFFER_TYPE_STORAGE_FLAG_BIT;
-	buffer_ci.size = sizeof(FMaterial);
-	buffer_ci.count = m_pRenderPacket->materials.size();
-
-	buffer_ci.upload.data.resize(buffer_ci.size * buffer_ci.count);
-
-	size_t offset{ 0ull };
-	for (const auto& material : m_pRenderPacket->materials)
-	{
-		std::memcpy(buffer_ci.upload.data.data() + offset, &material.parameters, buffer_ci.size);
-		offset += buffer_ci.size;
-	}
-
-	m_pRenderPacket->materialBuffer = m_pRenderContext->createBuffer("global_material_buffer", buffer_ci);
 }
 
 size_t CRenderInterface::createVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci)

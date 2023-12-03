@@ -170,9 +170,11 @@ namespace engine
 			std::vector<FGeometryBatch> sceneBatches{};
 
 			std::vector<render::FMaterialCreateInfo> materials{};
-			size_t materialBuffer{ ~0ull };
+			std::unique_ptr<IBufferObject> materialBuffer{};
 
-			std::unordered_map<uint32_t, FRenderNode> nodes{};
+			std::unordered_map<uint32_t, glm::mat4> nodes{};
+			std::unique_ptr<IBufferObject> nodeBuffer{};
+
 			std::vector<std::array<glm::mat4, 128>> skins{};
 
 			// Lights data
@@ -252,8 +254,6 @@ namespace engine
 
 			virtual size_t createShader(const std::string& name_info, const FGraphicsShaderCreateInfo& create_info) = 0;
 			virtual size_t createShader(const std::string& name_info, const FComputeShaderCreateInfo& create_info) = 0;
-
-			virtual void createMaterialBuffer() = 0;
 
 			virtual size_t createVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) = 0;
 			virtual const std::unique_ptr<IVertexHandler>& getVertexHandler(size_t id) = 0;

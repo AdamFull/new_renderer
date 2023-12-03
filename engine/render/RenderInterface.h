@@ -25,8 +25,6 @@ namespace engine
 			size_t createShader(const std::string& name, const FGraphicsShaderCreateInfo& create_info) override;
 			size_t createShader(const std::string& name, const FComputeShaderCreateInfo& create_info) override;
 
-			void createMaterialBuffer() override;
-
 			size_t createVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) override;
 			const std::unique_ptr<IVertexHandler>& getVertexHandler(size_t id) override;
 

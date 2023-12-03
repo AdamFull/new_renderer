@@ -229,9 +229,6 @@ void CScene::load(const std::string& path)
 		}
 	}
 
-	// TODO: may be store materials only in scene?
-	m_pRenderInterface->createMaterialBuffer();
-
 	for (auto& system : m_systems)
 		system->create();
 }

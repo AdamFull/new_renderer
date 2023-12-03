@@ -110,7 +110,7 @@ namespace engine
 		{
 			size_t lastIndex{ 0ull };
 			size_t lastVertex{ 0ull };
-			FGeometryRanges range{};
+			std::vector<FGeometryRanges> ranges{};
 		};
 
 		struct FAPIObjectDestroyInfo

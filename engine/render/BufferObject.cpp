@@ -18,8 +18,8 @@ void CBufferObject::create(const std::string& name, const FBufferCreateInfo& cre
 	m_bufferId = m_pRenderContext->createBuffer(name, create_info);
 	
 	auto buffer_view = m_pRenderContext->getBufferView(m_bufferId);
-	m_elemSize = buffer_view.alignedSize;
 	m_elemCount = buffer_view.elementCount;
+	m_elemSize = buffer_view.alignedSize / buffer_view.elementCount;
 }
 
 void CBufferObject::map()
@@ -50,6 +50,11 @@ void CBufferObject::write(void* data, size_t size, size_t offset)
 void CBufferObject::flush(size_t size, size_t offset) 
 {
 	m_pRenderContext->flushBuffer(m_bufferId, size, offset);
+}
+
+size_t CBufferObject::handle()
+{
+	return m_bufferId;
 }
 
 char* CBufferObject::at(size_t index)

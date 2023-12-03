@@ -43,7 +43,7 @@ void CMeshSystem::__update(float fDt)
 			continue;
 
 		auto node = static_cast<uint32_t>(entity);
-		render_packet->nodes[node].model = transform.gmodel;
+		render_packet->nodes[node] = transform.gmodel;
 
 		for (const auto& primitive : mesh.primitives)
 		{
