@@ -1,10 +1,10 @@
-#include <easygltf_parse.h>
-#include <easygltf_validator.h>
-#include <easygltf_helpers.h>
+#include <include/easygltf/easygltf_parse.h>
+#include <include/easygltf/easygltf_validator.h>
+#include <include/easygltf/easygltf_helpers.h>
 
 using namespace easygltf;
 
-Stream FGLTFRoot::getStream(const Accessor& accessor)
+Stream FGLTFRoot::getStream(const Accessor& accessor) const
 {
 	Stream stream{};
 
@@ -18,7 +18,7 @@ Stream FGLTFRoot::getStream(const Accessor& accessor)
 	return stream;
 }
 
-Stream FGLTFRoot::getStream(int32_t accessor_id)
+Stream FGLTFRoot::getStream(int32_t accessor_id) const
 {
 	const Accessor& accessor = accessors[accessor_id];
 	return getStream(accessor);

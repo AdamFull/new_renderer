@@ -1,4 +1,4 @@
-#include <editor/easygltf_editor.h>
+#include <include/easygltf/editor/easygltf_editor.h>
 
 using namespace easygltf::editor;
 

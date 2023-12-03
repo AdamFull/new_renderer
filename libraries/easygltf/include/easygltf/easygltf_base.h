@@ -1479,8 +1479,8 @@ namespace easygltf
 	// https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/schema/glTF.schema.json
 	struct FGLTFRoot : public Default
 	{
-		Stream getStream(const Accessor& accessor);
-		Stream getStream(int32_t accessor_id);
+		Stream getStream(const Accessor& accessor) const;
+		Stream getStream(int32_t accessor_id) const;
 
 		std::vector<Accessor> accessors{};
 		std::vector<Animation> animations{};

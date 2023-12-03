@@ -1,4 +1,4 @@
-#include <easygltf_base.h>
+#include <include/easygltf/easygltf_base.h>
 
 namespace parsing
 {

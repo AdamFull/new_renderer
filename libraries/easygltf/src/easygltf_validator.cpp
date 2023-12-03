@@ -1,4 +1,4 @@
-#include <easygltf_validator.h>
+#include <include/easygltf/easygltf_validator.h>
 
 constexpr const char* validation_error_not_set{ "Validation Error: {} with id \"{}\", have not set required attribure \"{}\"" };
 constexpr const char* validation_error_invalid_value{ "Validation Error: {} with id \"{}\", has invalid required attribute \"{}\". Value: {}" };

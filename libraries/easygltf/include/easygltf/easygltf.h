@@ -1,3 +1,3 @@
 #pragma once
 
-#include <easygltf_loader.h>
+#include <include/easygltf/easygltf_loader.h>

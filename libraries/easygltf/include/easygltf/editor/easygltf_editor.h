@@ -1,6 +1,6 @@
 #pragma once
 
-#include <editor/easygltf_editor_base.h>
+#include <include/easygltf/editor/easygltf_editor_base.h>
 
 namespace easygltf
 {
