@@ -1,5 +1,4 @@
-#include <mesh_processor.h>
-#include <image_processor.h>
+#include "mesh_processor.h"
 
 using namespace mesh_compiler;
 

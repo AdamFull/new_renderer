@@ -1,4 +1,4 @@
-#include <compiler_parse.h>
+#include "compiler_parse.h"
 
 namespace shader_compiler
 {

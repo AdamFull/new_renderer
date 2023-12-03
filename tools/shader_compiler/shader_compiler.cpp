@@ -1,4 +1,4 @@
-#include <shader_compiler.h>
+#include "shader_compiler.h"
 
 #include <glslang/SPIRV/GlslangToSpv.h>
 #include <glslang/Public/ShaderLang.h>

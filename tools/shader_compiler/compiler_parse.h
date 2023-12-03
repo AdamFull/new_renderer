@@ -1,7 +1,7 @@
 #pragma once
 
 #include <sjson_parser.h>
-#include <compiler_structures.h>
+#include "compiler_structures.h"
 
 namespace shader_compiler
 {

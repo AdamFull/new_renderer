@@ -1,8 +1,8 @@
-#include <library_compiler.h>
+#include "library_compiler.h"
 
-#include <compiler_util.h>
-#include <compiler_parse.h>
-#include <shader_library_parse.hpp>
+#include "compiler_util.h"
+#include "compiler_parse.h"
+#include "shader_library_parse.hpp"
 
 #include <fstream>
 

@@ -1,14 +1,23 @@
 #pragma once
 
 #include <easygltf/easygltf_base.h>
-#include <common.h>
+#include <vector>
 
 namespace mesh_compiler
 {
+	struct FStream
+	{
+		uint8_t* get(size_t index = 0ull) { return &data.at(index * stride); }
+
+		size_t stride{ 0ull };
+		size_t count{ 0ull };
+		std::vector<uint8_t> data{};
+	};
+
 	struct FVertexStream
 	{
 		uint32_t type{};
-		FBuffer buffer{};
+		FStream buffer{};
 	};
 
 	struct FMesh
@@ -20,13 +29,13 @@ namespace mesh_compiler
 
 	struct FSkin
 	{
-		FBuffer buffer{};
+		FStream buffer{};
 	};
 
 	struct FAnimationSampler
 	{
-		FBuffer input{};
-		FBuffer output{};
+		FStream input{};
+		FStream output{};
 	};
 
 	class CGLTFEditor

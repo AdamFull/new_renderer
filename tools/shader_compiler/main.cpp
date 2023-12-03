@@ -5,10 +5,10 @@
 
 #include <logger/logger.h>
 
-#include <library_compiler.h>
+#include "library_compiler.h"
 
-#include <shader_library_parse.hpp>
-#include <compiler_util.h>
+#include "shader_library_parse.hpp"
+#include "compiler_util.h"
 
 namespace fs = std::filesystem;
 using namespace shader_compiler;
@@ -107,7 +107,12 @@ int main(int argc, char** argv)
 	fs::path shaders_common{};
 	fs::path shaders_include{};
 
-	ETargetAPIType target_api{ ETargetAPIType::eVK10 };
+	input_path = "D:\\GitHub\\new_renderer\\embed\\shaders";
+	compiled_libraries_output = "D:\\GitHub\\new_renderer\\bin\\Debug\\engine\\embed\\rendering\\shader_cache.shc";
+	shaders_common = "D:\\GitHub\\new_renderer\\embed\\shaders\\common";
+	shaders_include = "D:\\GitHub\\new_renderer\\embed\\shaders\\includes";
+
+	ETargetAPIType target_api{ ETargetAPIType::eVK11 };
 	ETargetBuildType build_type{ ETargetBuildType::eRelease };
 
 	input_path = argparse.try_get("-in", input_path);

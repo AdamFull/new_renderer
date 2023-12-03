@@ -4,9 +4,9 @@
 #include <unordered_map>
 #include <filesystem>
 #include <memory>
-#include <shader_compiler.h>
+#include "shader_compiler.h"
 
-#include <shader_library_parse.hpp>
+#include "shader_library_parse.hpp"
 
 namespace shader_compiler
 {

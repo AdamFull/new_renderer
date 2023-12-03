@@ -149,7 +149,7 @@ void copy_element(const uint8_t* src, double& dst)
 	}
 }
 
-void calculate_accessor_min_and_max(easygltf::Accessor& accessor, const FBuffer& stream)
+void calculate_accessor_min_and_max(easygltf::Accessor& accessor, const FStream& stream)
 {
 	auto component_size = easygltf::get_size_by_component_type(accessor.componentType);
 	auto element_count = easygltf::get_element_count_by_accessor_type(accessor.type.c_str());
@@ -187,7 +187,7 @@ void calculate_accessor_min_and_max(easygltf::Accessor& accessor, const FBuffer&
 	}
 }
 
-void init_accessor_and_copy_data(easygltf::Accessor& accessor, const FBuffer& buffer, uint32_t type, std::vector<uint8_t>& out)
+void init_accessor_and_copy_data(easygltf::Accessor& accessor, const FStream& buffer, uint32_t type, std::vector<uint8_t>& out)
 {
 	accessor.byteOffset = out.size();
 	accessor.count = buffer.count;
@@ -384,7 +384,7 @@ void CGLTFEditor::apply()
 			}
 		};
 
-	auto apply_accessor_and_data = [this, &buffer_map, &buffer_view_map](const FBuffer& buffer, uint32_t type) -> int32_t
+	auto apply_accessor_and_data = [this, &buffer_map, &buffer_view_map](const FStream& buffer, uint32_t type) -> int32_t
 		{
 			int32_t last_accessor = static_cast<int32_t>(m_root.accessors.size());
 
@@ -431,7 +431,7 @@ void CGLTFEditor::apply()
 
 			if (!primitive.indices.empty())
 			{
-				FBuffer buffer{};
+				FStream buffer{};
 				buffer.stride = get_index_stream_optimal_size(primitive.indices.size());
 				buffer.count = primitive.indices.size();
 
