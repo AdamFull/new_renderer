@@ -1,7 +1,7 @@
 #pragma once
 
-#include <interface/render/RenderInterface.h>
-#include <world/ecs/systems/BaseSystem.h>
+#include <engine/interface/render/RenderInterface.h>
+#include <engine/world/ecs/systems/BaseSystem.h>
 
 namespace engine
 {

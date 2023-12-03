@@ -2,7 +2,7 @@
 
 #include <string>
 #include <unordered_map>
-#include <interface/render/VertexStructures.h>
+#include "VertexStructures.h"
 
 namespace engine
 {

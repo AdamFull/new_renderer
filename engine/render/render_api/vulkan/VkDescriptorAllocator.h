@@ -2,7 +2,7 @@
 
 // Based on https://github.com/vblanco20-1/vulkan-guide/blob/engine/extra-engine/vk_descriptors.h
 
-#include <VkResourceStructures.h>
+#include "VkResourceStructures.h"
 
 namespace engine
 {

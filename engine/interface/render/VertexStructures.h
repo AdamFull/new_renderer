@@ -21,7 +21,7 @@ namespace engine
 		struct FVertexAttributePointer
 		{
 			EVertexAttributeType type{ EVertexAttributeType::eIndex };
-			uint8_t* data{ nullptr };
+			const uint8_t* data{ nullptr };
 			size_t stride{ 0ull };
 			size_t count{ 0ull };
 		};

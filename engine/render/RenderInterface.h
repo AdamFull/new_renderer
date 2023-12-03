@@ -1,9 +1,9 @@
 #pragma once
 
-#include <interface/filesystem/VirtualFileSystemInterface.h>
-#include <interface/ResourceContainer.h>
-#include <render_config/RenderConfig.h>
-#include <ResourceLoader.h>
+#include <engine/interface/filesystem/VirtualFileSystemInterface.h>
+#include <engine/interface/ResourceContainer.h>
+#include "render_config/RenderConfig.h"
+#include "ResourceLoader.h"
 #include <memory>
 
 namespace engine

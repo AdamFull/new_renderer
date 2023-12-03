@@ -1,12 +1,13 @@
 #pragma once
 
 #include <memory>
-#include <interface/WindowInterface.h>
-#include <interface/render/RenderInterface.h>
-#include <interface/filesystem/VirtualFileSystemInterface.h>
-#include <InputMapper.h>
-#include <scripting/ScriptEngine.h>
-#include <world/Scene.h>
+#include <engine/interface/WindowInterface.h>
+#include <engine/interface/render/RenderInterface.h>
+#include <engine/interface/filesystem/VirtualFileSystemInterface.h>
+#include <engine/scripting/ScriptEngine.h>
+#include <engine/world/Scene.h>
+
+#include "InputMapper.h"
 
 namespace engine
 {

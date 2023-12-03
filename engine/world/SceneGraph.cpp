@@ -1,7 +1,7 @@
 #include "SceneGraph.h"
 
 #include <logger/logger.h>
-#include <world/ecs/components/components.h>
+#include <engine/world/ecs/components/components.h>
 
 using namespace engine::world;
 using namespace engine::world::ecs;

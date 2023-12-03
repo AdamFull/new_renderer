@@ -1,16 +1,16 @@
-#include <ResourceLoader.h>
+#include "ResourceLoader.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 
 #include <ktx.h>
-#include <native_format/vk_format.h>
+#include "native_format/vk_format.h"
 
 #include <logger/logger.h>
 
 #include <shader_compiler/compiler_util.h>
 
-#include <filesystem/vfs_helper.h>
+#include <engine/filesystem/vfs_helper.h>
 
 using namespace engine;
 using namespace engine::filesystem;

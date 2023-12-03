@@ -1,6 +1,6 @@
-#include <render_config/RenderConfig.h>
-#include <render_config/RenderConfigBindings.h>
-#include <render/ShaderObject.h>
+#include "RenderConfig.h"
+#include "RenderConfigBindings.h"
+#include <engine/render/ShaderObject.h>
 
 #include <logger/logger.h>
 

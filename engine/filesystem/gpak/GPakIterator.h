@@ -2,7 +2,7 @@
 
 #include <ie_vfs_exports.h>
 
-#include <interface/filesystem/DirectoryIteratorInterface.h>
+#include <engine/interface/filesystem/DirectoryIteratorInterface.h>
 
 struct gpak;
 struct filesystem_tree_iterator;

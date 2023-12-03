@@ -1,14 +1,13 @@
 #include "LightingSystem.h"
 
-#include <world/SceneGraph.h>
+#include <engine/world/SceneGraph.h>
+#include <engine/world/ecs/components/BaseComponent.h>
+#include <engine/world/ecs/components/TransformComponent.h>
+#include <engine/world/ecs/components/DirectionalLightComponent.h>
+#include <engine/world/ecs/components/PointLightComponent.h>
+#include <engine/world/ecs/components/SpotLightComponent.h>
 
-#include <world/ecs/components/BaseComponent.h>
-#include <world/ecs/components/TransformComponent.h>
-#include <world/ecs/components/DirectionalLightComponent.h>
-#include <world/ecs/components/PointLightComponent.h>
-#include <world/ecs/components/SpotLightComponent.h>
-
-#include <profiler/Profiler.h>
+#include <engine/profiler/Profiler.h>
 
 using namespace engine;
 using namespace engine::render;

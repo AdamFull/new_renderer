@@ -1,18 +1,19 @@
 #include "Scene.h"
 
-#include <world/SceneGraph.h>
-#include <world/ecs/components/components.h>
-#include <world/ecs/systems/systems.h>
+#include <engine/world/SceneGraph.h>
+#include <engine/world/ecs/components/components.h>
+#include <engine/world/ecs/systems/systems.h>
 
-#include<easygltf/easygltf.h>
+#include<easygltf/easygltf_loader.h>
+#include<easygltf/easygltf_helpers.h>
 
 #include <meshoptimizer.h>
 
-#include <filesystem/vfs_helper.h>
+#include <engine/filesystem/vfs_helper.h>
 #include <logger/logger.h>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <profiler/Profiler.h>
+#include <engine/profiler/Profiler.h>
 
 using namespace engine::world;
 using namespace engine::world::ecs;
@@ -109,7 +110,6 @@ CScene::CScene(IVirtualFileSystemInterface* vfs, render::IRenderInterface* rende
 	m_pRenderInterface = render_interface;
 
 	m_pSceneGraph = new CSceneGraph();
-	m_pScene = new easygltf::CGLTFProject();
 
 	m_systems.emplace_back(std::make_unique<ecs::CInputSystem>(m_pSceneGraph));
 	m_systems.emplace_back(std::make_unique<ecs::CAnimationSystem>(m_pSceneGraph));
@@ -129,95 +129,39 @@ CScene::~CScene()
 		delete m_pSceneGraph;
 		m_pSceneGraph = nullptr;
 	}
-
-	if (m_pScene)
-	{
-		delete m_pScene;
-		m_pScene = nullptr;
-	}
 }
 
 void CScene::load(const std::string& path)
 {
-	m_pScene->setFilesystemWrapper(std::make_unique<FSWrapper>(m_pVFS));
-	
-	if (!m_pScene->load(path))
-	{
-		return;
-	}
-
-	loadTextures();
-	loadMaterials();
-
-	auto& gltf = m_pScene->getGltf();
-
-	const easygltf::Scene& scene = gltf.scenes[gltf.scene > -1 ? gltf.scene : 0]; 
-	auto root = m_pSceneGraph->createRoot(scene.name);
-
-	for (const auto& node_index : scene.nodes)
-		loadNode(root, node_index);
-
-	loadAnimations();
-	loadSkins();
-
-	for (const auto& [hash, handler_ids] : m_resources.vertexHandlers)
-	{
-		for (const auto& id : handler_ids)
-		{
-			auto& handler = m_pRenderInterface->getVertexHandler(id);
-			handler->allocate();
-		}
-	}
-
-	// TODO: may be store materials only in scene?
-	m_pRenderInterface->createMaterialBuffer();
-
-	for (auto& system : m_systems)
-		system->create();
-}
-
-void CScene::update(float dt)
-{
-	TRACY_PROFILE_FUNCTION();
-
-	TRACY_PROFILE_SCOPE("Scene update")
-
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
-	render_packet->primitiveCount = m_resources.primitiveCount;
 
-	for (auto& system : m_systems)
-		system->update(dt);
-}
-
-void CScene::loadTextures()
-{
-	auto& gltf = m_pScene->getGltf();
+	easygltf::CGLTFLoader loader{};
+	loader.setFilesystemWrapper(std::make_unique<FSWrapper>(m_pVFS));
 	
-	for (const auto& texture : gltf.textures)
+	easygltf::FGLTFRoot root{};
+	if (!loader.load(path, root))
+		return;
+
+	// Load textures
+	for (const auto& texture : root.textures)
 	{
 		int32_t texture_source{ texture.source };
 		if (texture.source < 0)
 			texture_source = texture.khrTextureBasisU.source;
-	
-		auto& image = gltf.images.at(texture_source);
-		auto& sampler = gltf.images.at(texture.sampler);
-	
+
+		auto& image = root.images.at(texture_source);
+		auto& sampler = root.images.at(texture.sampler);
+
 		// TODO: add ability to override format and sampler params
 		// TODO: find format from materials
-		auto image_path = m_pScene->getResourcePath(image.uri);
+		auto image_path = fs::path_append(root.rootDirectory, easygltf::url_decode(image.uri));
 		m_resources.textures.emplace_back(m_pRenderInterface->createTexture(image_path));
 		m_resources.lastTexture++;
 	}
-}
 
-void CScene::loadMaterials()
-{
-	const auto& gltf = m_pScene->getGltf();
-
-	auto& render_packet = m_pRenderInterface->getRenderPacket();
-
+	// Load materials
 	uint32_t material_index{ 0u };
-	for (const auto& material : gltf.materials)
+	for (const auto& material : root.materials)
 	{
 		auto& material_data = render_packet->materials.emplace_back();
 
@@ -257,7 +201,7 @@ void CScene::loadMaterials()
 
 		if (material.alphaMode == easygltf::base::enumerators::alpha_mode::blend)
 			material_data.parameters.alphaMode = render::MATERIAL_APLHA_MODE_BLEND;
-		else if(material.alphaMode == easygltf::base::enumerators::alpha_mode::mask)
+		else if (material.alphaMode == easygltf::base::enumerators::alpha_mode::mask)
 			material_data.parameters.alphaMode = render::MATERIAL_APLHA_MODE_MASK;
 		else
 			material_data.parameters.alphaMode = render::MATERIAL_APLHA_MODE_OPAQUE;
@@ -265,12 +209,49 @@ void CScene::loadMaterials()
 		material_data.parameters.alphaCutoff = static_cast<float>(material.alphaCutoff);
 		material_data.parameters.doubleSided = material.doubleSided;
 	}
+
+	// Loading nodes
+	const easygltf::Scene& scene = root.scenes[root.scene > -1 ? root.scene : 0];
+	auto root_node = m_pSceneGraph->createRoot(scene.name);
+
+	for (const auto& node_index : scene.nodes)
+		loadNode(root, root_node, node_index);
+
+	loadAnimations(root);
+	loadSkins(root);
+
+	for (const auto& [hash, handler_ids] : m_resources.vertexHandlers)
+	{
+		for (const auto& id : handler_ids)
+		{
+			auto& handler = m_pRenderInterface->getVertexHandler(id);
+			handler->allocate();
+		}
+	}
+
+	// TODO: may be store materials only in scene?
+	m_pRenderInterface->createMaterialBuffer();
+
+	for (auto& system : m_systems)
+		system->create();
 }
 
-void CScene::loadNode(const entt::entity parent, uint32_t node_index, float global_scale)
+void CScene::update(float dt)
 {
-	const auto& gltf = m_pScene->getGltf();
-	const auto& node = gltf.nodes[node_index];
+	TRACY_PROFILE_FUNCTION();
+
+	TRACY_PROFILE_SCOPE("Scene update")
+
+	auto& render_packet = m_pRenderInterface->getRenderPacket();
+	render_packet->primitiveCount = m_resources.primitiveCount;
+
+	for (auto& system : m_systems)
+		system->update(dt);
+}
+
+void CScene::loadNode(const easygltf::FGLTFRoot root, const entt::entity parent, uint32_t node_index, float global_scale)
+{
+	const auto& node = root.nodes[node_index];
 
 	auto new_node = m_pSceneGraph->createNode(node.name);
 
@@ -287,32 +268,28 @@ void CScene::loadNode(const entt::entity parent, uint32_t node_index, float glob
 	if (!node.children.empty())
 	{
 		for (const auto& child_node_index : node.children)
-			loadNode(m_temporary.nodeToEntity[node_index], child_node_index);
+			loadNode(root, m_temporary.nodeToEntity[node_index], child_node_index);
 	}
 
 	if(node.mesh >= 0)
-		loadMeshComponent(m_temporary.nodeToEntity[node_index], node_index);
+		loadMeshComponent(root, m_temporary.nodeToEntity[node_index], node_index);
 
 	if(node.camera >= 0)
-		loadCameraComponent(m_temporary.nodeToEntity[node_index], node_index);
+		loadCameraComponent(root, m_temporary.nodeToEntity[node_index], node_index);
 
 	if(node.hasExtension<easygltf::extensions::KHR_lights_punctual>())
-		loadLightComponent(m_temporary.nodeToEntity[node_index], node_index);
+		loadLightComponent(root, m_temporary.nodeToEntity[node_index], node_index);
 
 	m_pSceneGraph->attachChild(parent, new_node);
 }
 
-void CScene::loadMeshComponent(const entt::entity parent, uint32_t node_index)
+void CScene::loadMeshComponent(const easygltf::FGLTFRoot root, const entt::entity parent, uint32_t node_index)
 {
-	const auto& gltf = m_pScene->getGltf();
-	const auto& node = gltf.nodes[node_index];
-	const auto& mesh = gltf.meshes[node.mesh];
+	const auto& node = root.nodes[node_index];
+	const auto& mesh = root.meshes[node.mesh];
 
 	auto& mesh_component = m_pSceneGraph->addComponent<FMeshComponent>(parent, FMeshComponent{});
 	mesh_component.skin = node.skin;
-
-	if (mesh_component.skin > -1)
-		int iiiii = 0;
 
 	// Load mesh primitives
 	for (size_t i = 0ull; i < mesh.primitives.size(); ++i)
@@ -333,8 +310,8 @@ void CScene::loadMeshComponent(const entt::entity parent, uint32_t node_index)
 			//if (name != "POSITION")
 			//	continue;
 
-			const easygltf::Accessor& accessor = gltf.accessors[accessor_idx];
-			auto stream = m_pScene->getStream(accessor);
+			const easygltf::Accessor& accessor = root.accessors[accessor_idx];
+			auto stream = root.getStream(accessor);
 
 			auto& attrib = attributes.emplace_back();
 			attrib.type = get_vertex_attribute_type_by_name(name);
@@ -358,8 +335,8 @@ void CScene::loadMeshComponent(const entt::entity parent, uint32_t node_index)
 		render::FVertexAttributePointer indices{};
 		if (primitive.indices >= 0)
 		{
-			const easygltf::Accessor& accessor = gltf.accessors[primitive.indices];
-			auto stream = m_pScene->getStream(accessor);
+			const easygltf::Accessor& accessor = root.accessors[primitive.indices];
+			auto stream = root.getStream(accessor);
 			indices.data = stream.data;
 			indices.stride = stream.stride;
 			indices.count = stream.count;
@@ -445,11 +422,10 @@ void CScene::loadMeshComponent(const entt::entity parent, uint32_t node_index)
 	}
 }
 
-void CScene::loadCameraComponent(const entt::entity parent, uint32_t node_index)
+void CScene::loadCameraComponent(const easygltf::FGLTFRoot root, const entt::entity parent, uint32_t node_index)
 {
-	const auto& gltf = m_pScene->getGltf();
-	const auto& node = gltf.nodes[node_index];
-	const auto& camera = gltf.cameras[node.camera];
+	const auto& node = root.nodes[node_index];
+	const auto& camera = root.cameras[node.camera];
 
 	FCameraComponent camera_component;
 	if (camera.type == easygltf::base::enumerators::camera_type::orthographic)
@@ -471,12 +447,11 @@ void CScene::loadCameraComponent(const entt::entity parent, uint32_t node_index)
 	m_pSceneGraph->addComponent<FCameraComponent>(parent, std::move(camera_component));
 }
 
-void CScene::loadLightComponent(const entt::entity parent, uint32_t node_index)
+void CScene::loadLightComponent(const easygltf::FGLTFRoot root, const entt::entity parent, uint32_t node_index)
 {
-	const auto& gltf = m_pScene->getGltf();
-	const auto& node = gltf.nodes[node_index];
+	const auto& node = root.nodes[node_index];
 
-	auto& light = gltf.khrLightsPunctual.lights[node.khrLightsPunctual.light];
+	auto& light = root.khrLightsPunctual.lights[node.khrLightsPunctual.light];
 	if (light.type == easygltf::extensions::KHR_lights_punctual::enumerators::light_type::directional)
 	{
 		FDirectionalLightComponent light_component;
@@ -503,13 +478,12 @@ void CScene::loadLightComponent(const entt::entity parent, uint32_t node_index)
 	}
 }
 
-void CScene::loadAnimations()
+void CScene::loadAnimations(const easygltf::FGLTFRoot root)
 {
-	auto root = m_pSceneGraph->getRoot();
-	auto& root_component = m_pSceneGraph->getComponent<FRootComponent>(root);
+	auto scene_root = m_pSceneGraph->getRoot();
+	auto& root_component = m_pSceneGraph->getComponent<FRootComponent>(scene_root);
 
-	const auto& gltf = m_pScene->getGltf();
-	for (auto& anim : gltf.animations)
+	for (auto& anim : root.animations)
 	{
 		FMeshAnimation animation;
 		animation.name = anim.name;
@@ -527,8 +501,8 @@ void CScene::loadAnimations()
 
 			// Read sampler input time values
 			{
-				const easygltf::Accessor& accessor = gltf.accessors[samp.input];
-				auto stream = m_pScene->getStream(accessor);
+				const easygltf::Accessor& accessor = root.accessors[samp.input];
+				auto stream = root.getStream(accessor);
 
 				assert(accessor.componentType == easygltf::base::enumerators::component_type::float_type);
 
@@ -550,8 +524,8 @@ void CScene::loadAnimations()
 
 			// Read sampler output T/R/S values 
 			{
-				const easygltf::Accessor& accessor = gltf.accessors[samp.output];
-				auto stream = m_pScene->getStream(accessor);
+				const easygltf::Accessor& accessor = root.accessors[samp.output];
+				auto stream = root.getStream(accessor);
 
 				assert(accessor.componentType == easygltf::base::enumerators::component_type::float_type);
 
@@ -609,13 +583,12 @@ void CScene::loadAnimations()
 	}
 }
 
-void CScene::loadSkins()
+void CScene::loadSkins(const easygltf::FGLTFRoot root)
 {
-	auto root = m_pSceneGraph->getRoot();
-	auto& root_component = m_pSceneGraph->getComponent<FRootComponent>(root);
+	auto scene_root = m_pSceneGraph->getRoot();
+	auto& root_component = m_pSceneGraph->getComponent<FRootComponent>(scene_root);
 
-	const auto& gltf = m_pScene->getGltf();
-	for (auto& source : gltf.skins)
+	for (auto& source : root.skins)
 	{
 		FMeshSkin skin{};
 		skin.name = source.name;
@@ -639,8 +612,8 @@ void CScene::loadSkins()
 		// Get inverse bind matrices from buffer
 		if (source.inverseBindMatrices > -1)
 		{
-			const easygltf::Accessor& accessor = gltf.accessors[source.inverseBindMatrices];
-			auto stream = m_pScene->getStream(accessor);
+			const easygltf::Accessor& accessor = root.accessors[source.inverseBindMatrices];
+			auto stream = root.getStream(accessor);
 			skin.inverseBindMatrices.resize(stream.count);
 			std::memcpy(skin.inverseBindMatrices.data(), stream.data, stream.count * sizeof(glm::mat4));
 		}

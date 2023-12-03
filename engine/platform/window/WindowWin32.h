@@ -1,6 +1,6 @@
 #pragma once
 
-#include <interface/WindowInterface.h>
+#include <engine/interface/WindowInterface.h>
 #include <Windows.h>
 
 namespace engine

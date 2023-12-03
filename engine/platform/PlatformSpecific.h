@@ -2,8 +2,8 @@
 
 #if defined(PLATFORM_WIN32)
 #include <Windows.h>
-#include <window/WindowWin32.h>
-#include <window/WindowGLFW.h>
+#include "window/WindowWin32.h"
+#include "window/WindowGLFW.h"
 #endif
 
 #include <memory>

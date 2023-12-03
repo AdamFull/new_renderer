@@ -1,14 +1,12 @@
 #include "InputSystem.h"
 
-#include <world/SceneGraph.h>
+#include <engine/world/SceneGraph.h>
+#include <engine/world/ecs/components/BaseComponent.h>
+#include <engine/world/ecs/components/CameraComponent.h>
+#include <engine/world/ecs/components/TransformComponent.h>
 
-#include <world/ecs/components/BaseComponent.h>
-#include <world/ecs/components/CameraComponent.h>
-#include <world/ecs/components/TransformComponent.h>
-
-#include <platform/window/WindowCallback.h>
-
-#include <profiler/Profiler.h>
+#include <engine/platform/window/WindowCallback.h>
+#include <engine/profiler/Profiler.h>
 
 constexpr const float movement_scale{ 50.f };
 
@@ -41,6 +39,9 @@ void CInputSystem::__update(float fDt)
 
 	m_deltaTime = fDt;
 
+	glm::vec3 orbitCenter{ 0.0f, 0.0f, 0.0f };
+	float orbitDistance{ 10.0f };
+
 	if (m_keyDecoder.test(EKeyCode::eKeyW)) movF = 1.f;
 	if (m_keyDecoder.test(EKeyCode::eKeyS)) movF = -1.f;
 	if (m_keyDecoder.test(EKeyCode::eKeyA)) movR = -1.f;
@@ -54,7 +55,6 @@ void CInputSystem::__update(float fDt)
 	oldX = curX;
 	float dY = (curY - oldY) * fDt;
 	oldY = curY;
-
 
 	auto& registry = m_pSceneGraph->getRegistry();
 	auto view = registry->view<FTransformComponent, FBaseComponent, FCameraComponent>();
@@ -71,8 +71,8 @@ void CInputSystem::__update(float fDt)
 
 					glm::quat pitch = glm::angleAxis(-dY, camera.right);
 					glm::quat yaw = glm::angleAxis(-dX, camera.up);
-					glm::quat q = glm::normalize(glm::cross(pitch, yaw));
 
+					glm::quat q = glm::normalize(glm::cross(pitch, yaw));
 					transform.lrotation = q * transform.lrotation;
 
 					camera.moved = true;

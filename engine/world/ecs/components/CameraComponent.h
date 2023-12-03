@@ -34,6 +34,7 @@ namespace engine
 				bool moved{ true };
 				bool active{ true };
 				bool controllable{ true };
+				bool orbit{ true };
 			};
 		}
 	}

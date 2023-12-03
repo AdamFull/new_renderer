@@ -1,19 +1,19 @@
-#include <Application.h>
+#include "Application.h"
 
-#include <platform/PlatformSpecific.h>
-#include <render/RenderInterface.h>
+#include <engine/platform/PlatformSpecific.h>
+#include <engine/render/RenderInterface.h>
 
-#include <filesystem/VirtualFileSystemManager.h>
-#include <filesystem/native/NativeFileSystem.h>
-#include <filesystem/vfs_helper.h>
+#include <engine/filesystem/VirtualFileSystemManager.h>
+#include <engine/filesystem/native/NativeFileSystem.h>
+#include <engine/filesystem/vfs_helper.h>
 
 #include <iostream>
 #include <fstream>
 #include <sstream>
 
-#include <interface/SharedStructure.h>
+#include <engine/interface/SharedStructure.h>
 
-#include <profiler/Profiler.h>
+#include <engine/profiler/Profiler.h>
 
 using namespace engine;
 using namespace engine::render;
@@ -56,7 +56,7 @@ void CApplication::create()
 
 	m_pScene = std::make_unique<world::CScene>(m_pVirtualFileSystem.get(), m_pRenderInterface.get());
 	//m_pScene->load("/root/reflections/reflections.gltf");
-	m_pScene->load("/root/sponza/sponza.gltf");
+	m_pScene->load("/root/helmet/DamagedHelmet.gltf");
 }
 
 void CApplication::loop()

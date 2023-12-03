@@ -51,6 +51,7 @@ find_package(Taskflow CONFIG REQUIRED)
 
 # global includes
 include_directories(
+    "${CMAKE_CURRENT_SOURCE_DIR}"
     "${CMAKE_BINARY_DIR}/exports"
     "${CMAKE_CURRENT_SOURCE_DIR}/libraries/utllib"
     "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include"
@@ -63,10 +64,6 @@ add_subdirectory(tools/scene_compiler)
 add_subdirectory(engine)
 
 add_executable(${PROJECT_NAME} main.cpp)
-
-target_include_directories(${PROJECT_NAME} 
-	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}"
-)
 
 target_link_libraries(${PROJECT_NAME} 
 	PRIVATE application

@@ -1,13 +1,12 @@
 #include "MeshSystem.h"
 
-#include <world/SceneGraph.h>
+#include <engine/world/SceneGraph.h>
+#include <engine/world/ecs/components/BaseComponent.h>
+#include <engine/world/ecs/components/MeshComponent.h>
+#include <engine/world/ecs/components/RootComponent.h>
+#include <engine/world/ecs/components/TransformComponent.h>
 
-#include <world/ecs/components/BaseComponent.h>
-#include <world/ecs/components/MeshComponent.h>
-#include <world/ecs/components/RootComponent.h>
-#include <world/ecs/components/TransformComponent.h>
-
-#include <profiler/Profiler.h>
+#include <engine/profiler/Profiler.h>
 
 using namespace engine::render;
 using namespace engine::world::ecs;

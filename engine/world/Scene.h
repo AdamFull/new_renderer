@@ -1,15 +1,12 @@
 #pragma once
 
-#include <interface/filesystem/VirtualFileSystemInterface.h>
-#include <interface/render/RenderInterface.h>
-#include <world/ecs/systems/BaseSystem.h>
+#include <engine/interface/filesystem/VirtualFileSystemInterface.h>
+#include <engine/interface/render/RenderInterface.h>
+#include <engine/world/ecs/systems/BaseSystem.h>
+
+#include <libraries/easygltf/include/easygltf/easygltf_base.h>
 
 #include <entt/fwd.hpp>
-
-namespace easygltf
-{
-	class CGLTFProject;
-}
 
 namespace engine
 {
@@ -46,20 +43,16 @@ namespace engine
 
 			void update(float dt);
 		protected:
-			void loadTextures();
-			void loadMaterials();
+			void loadNode(const easygltf::FGLTFRoot root, const entt::entity parent, uint32_t node_index, float global_scale = 1.f);
 
-			void loadNode(const entt::entity parent, uint32_t node_index, float global_scale = 1.f);
+			void loadMeshComponent(const easygltf::FGLTFRoot root, const entt::entity parent, uint32_t node_index);
+			void loadCameraComponent(const easygltf::FGLTFRoot root, const entt::entity parent, uint32_t node_index);
+			void loadLightComponent(const easygltf::FGLTFRoot root, const entt::entity parent, uint32_t node_index);
 
-			void loadMeshComponent(const entt::entity parent, uint32_t node_index);
-			void loadCameraComponent(const entt::entity parent, uint32_t node_index);
-			void loadLightComponent(const entt::entity parent, uint32_t node_index);
-
-			void loadAnimations();
-			void loadSkins();
+			void loadAnimations(const easygltf::FGLTFRoot root);
+			void loadSkins(const easygltf::FGLTFRoot root);
 		private:
 			CSceneGraph* m_pSceneGraph{ nullptr };
-			easygltf::CGLTFProject* m_pScene{ nullptr };
 
 			std::vector<std::unique_ptr<ecs::ISystem>> m_systems{};
 

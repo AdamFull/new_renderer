@@ -2,8 +2,8 @@
 
 #include <ie_vfs_exports.h>
 
-#include <interface/filesystem/DirectoryIteratorInterface.h>
-#include "vfs_helper.h"
+#include <engine/interface/filesystem/DirectoryIteratorInterface.h>
+#include <engine/filesystem/vfs_helper.h>
 
 #include <string>
 
@@ -14,7 +14,7 @@ namespace engine
         /**
          * @class CNativeIterator
          * @brief A template class providing an interface for native directory iteration.
-         *
+         
          * CNativeIterator is a derived class from IDirectoryIterator that provides
          * a platform-specific implementation for iterating through directories using the
          * native filesystem functions. The class is templated to allow for different types

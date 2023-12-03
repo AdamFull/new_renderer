@@ -1,11 +1,11 @@
 #include "VisibilityBufferRenderingStep.h"
 
-#include <ShaderObject.h>
+#include <engine/render/ShaderObject.h>
 #include <logger/logger.h>
 
 #include <unordered_set>
 
-#include <profiler/Profiler.h>
+#include <engine/profiler/Profiler.h>
 
 using namespace engine::render;
 

@@ -2,7 +2,7 @@
 
 #include <ie_vfs_exports.h>
 
-#include <interface/filesystem/VirtualFileSystemInterface.h>
+#include <engine/interface/filesystem/VirtualFileSystemInterface.h>
 
 namespace engine
 {

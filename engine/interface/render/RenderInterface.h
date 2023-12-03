@@ -1,14 +1,14 @@
 #pragma once
 
-#include <interface/SharedStructure.h>
-#include <interface/render/BaseEnumerators.h>
-#include <interface/render/BufferStructures.h>
-#include <interface/render/LightStructures.h>
-#include <interface/render/MaterialStructures.h>
-#include <interface/render/RenderingStructures.h>
-#include <interface/render/ShaderStructures.h>
-#include <interface/render/TextureStructures.h>
-#include <interface/render/VertexStructures.h>
+#include <engine/interface/SharedStructure.h>
+#include "BaseEnumerators.h"
+#include "BufferStructures.h"
+#include "LightStructures.h"
+#include "MaterialStructures.h"
+#include "RenderingStructures.h"
+#include "ShaderStructures.h"
+#include "TextureStructures.h"
+#include "VertexStructures.h"
 
 #include <memory>
 

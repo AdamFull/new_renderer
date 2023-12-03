@@ -1,6 +1,6 @@
 #include "SynchronizationRenderingStep.h"
 
-#include <profiler/Profiler.h>
+#include <engine/profiler/Profiler.h>
 
 using namespace engine::render;
 

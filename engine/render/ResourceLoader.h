@@ -1,8 +1,8 @@
 #pragma once
 
-#include <interface/render/RenderInterface.h>
-#include <interface/SharedStructure.h>
-#include <interface/filesystem/VirtualFileSystemInterface.h>
+#include <engine/interface/render/RenderInterface.h>
+#include <engine/interface/SharedStructure.h>
+#include <engine/interface/filesystem/VirtualFileSystemInterface.h>
 
 #include <shader_compiler/shader_library_parse.hpp>
 //#include "shader_compiler/shader_library_parse.hpp"

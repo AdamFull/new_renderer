@@ -1,6 +1,6 @@
 #pragma once
 
-#include <interface/WindowInterface.h>
+#include <engine/interface/WindowInterface.h>
 #if defined(PLATFORM_WIN32)
 #include <Windows.h>
 #endif

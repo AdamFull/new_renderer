@@ -2,8 +2,8 @@
 
 #include <ie_vfs_exports.h>
 
-#include <interface/filesystem/OutputFileInterface.h>
-#include <interface/filesystem/VFSOutputFileInterface.h>
+#include <engine/interface/filesystem/OutputFileInterface.h>
+#include <engine/interface/filesystem/VFSOutputFileInterface.h>
 
 namespace engine
 {

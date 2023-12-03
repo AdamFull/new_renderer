@@ -1,7 +1,8 @@
 #pragma once
 
-#include <interface/WindowInterface.h>
-#include <world/ecs/systems/BaseSystem.h>
+#include <engine/interface/WindowInterface.h>
+#include <engine/world/ecs/systems/BaseSystem.h>
+
 #include <ufunction.hpp>
 
 namespace engine

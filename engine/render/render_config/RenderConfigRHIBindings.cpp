@@ -1,7 +1,7 @@
 #include "RenderConfigBindings.h"
 
-#include <interface/render/RenderInterface.h>
-#include <render/ShaderObject.h>
+#include <engine/interface/render/RenderInterface.h>
+#include <engine/render/ShaderObject.h>
 #include <glm/glm.hpp>
 
 #include <sol/sol.hpp>

@@ -4,12 +4,12 @@
 #include <set>
 
 #include <udetail.hpp>
-#include <VkCommon.h>
+#include "VkCommon.h"
 
 #include <vulkan/vulkan.hpp>
 
 #define PROFILE_VULKAN
-#include <profiler/Profiler.h>
+#include <engine/profiler/Profiler.h>
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 

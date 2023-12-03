@@ -1,11 +1,11 @@
 #include "FullscreenRenderingStep.h"
 
-#include <ShaderObject.h>
+#include <engine/render/ShaderObject.h>
 #include <logger/logger.h>
 
 #include <glm/glm.hpp>
 
-#include <profiler/Profiler.h>
+#include <engine/profiler/Profiler.h>
 
 using namespace engine::render;
 

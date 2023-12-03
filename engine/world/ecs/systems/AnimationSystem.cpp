@@ -1,9 +1,9 @@
 #include "AnimationSystem.h"
 
-#include <world/ecs/components/components.h>
-#include <world/SceneGraph.h>
+#include <engine/world/ecs/components/components.h>
+#include <engine/world/SceneGraph.h>
 
-#include <profiler/Profiler.h>
+#include <engine/profiler/Profiler.h>
 
 using namespace engine::world::ecs;
 

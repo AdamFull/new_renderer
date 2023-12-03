@@ -1,6 +1,6 @@
 #pragma once
 
-#include <interface/render/BaseStructures.h>
+#include "BaseStructures.h"
 #include <unordered_map>
 #include <algorithm>
 
