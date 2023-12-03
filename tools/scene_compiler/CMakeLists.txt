@@ -27,6 +27,5 @@ target_link_libraries(${PROJECT_NAME}
     PRIVATE utility_lib
 )
 target_include_directories(${PROJECT_NAME} 
-	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}"
     PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/easygltf/include"
 )
