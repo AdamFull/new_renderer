@@ -15,33 +15,6 @@
 					shader_name: "screenspace_frag";
 				}
 			];
-		},
-		{
-			name: "visbufferwrite";
-			sources: [
-				{
-					type: "vertex";
-					shader_name: "visbufferwrite_vert";
-				},
-				{
-					type: "fragment";
-					shader_name: "visbufferwrite_frag";
-				}
-			];
-		},
-		{
-			name: "visbuffershade";
-			sources: [
-				{
-					type: "vertex";
-					common: true;
-					shader_name: "screenspace_vert";
-				},
-				{
-					type: "fragment";
-					shader_name: "visbuffershade_frag";
-				}
-			];
 		}
 	];
 
@@ -52,34 +25,6 @@
 				{ definitions: [] },
 				{ definitions: ["EDITOR_MODE"] }
 			];
-		},
-		{ 
-			shader_name: "visbufferwrite";
-			permutation_generator: {
-				definitions: [
-					{ base: "HAS_TEXCOORD" },
-					{ base: "HAS_NORMAL" },
-					{ base: "HAS_SKIN", var:[{ base: "JOINTS_8BIT" }, { base: "JOINTS_16BIT" }] },
-					{ base: "COLOR_VEC3" },
-					{ base: "COLOR_VEC4" },
-					{ base: "TANGENT_VEC3" },
-					{ base: "TANGENT_VEC4" }
-				];
-			};
-		},
-		{
-			shader_name: "visbuffershade";
-			permutation_generator: {
-				definitions: [
-					{ base: "HAS_TEXCOORD" },
-					{ base: "HAS_NORMAL" },
-					{ base: "HAS_SKIN", var:[{ base: "JOINTS_8BIT" }, { base: "JOINTS_16BIT" }] },
-					{ base: "COLOR_VEC3" },
-					{ base: "COLOR_VEC4" },
-					{ base: "TANGENT_VEC3" },
-					{ base: "TANGENT_VEC4" }
-				];
-			};
 		}
 	];
 }

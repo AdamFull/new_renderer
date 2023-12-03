@@ -1,0 +1,61 @@
+{
+	version: 460;
+
+	enable_extensions: [
+		"GL_ARB_separate_shader_objects",
+		"GL_ARB_shading_language_420pack",
+		"GL_ARB_shader_draw_parameters",
+		"GL_EXT_nonuniform_qualifier",
+		"GL_EXT_shader_8bit_storage",
+		"GL_EXT_shader_16bit_storage"
+	];
+
+	definitions: [];
+
+	require_extensions: [
+		"GL_EXT_shader_explicit_arithmetic_types",
+		"GL_EXT_shader_explicit_arithmetic_types_int8"
+	];
+	includes: ["shader_inputs"];
+
+	code: 
+	"""
+		layout (location = 0) in vec2 inUV;
+
+		layout(location = 0) out vec4 outFragcolor;
+		//layout(location = 0) out vec4 outAlbedo;
+		//layout(location = 1) out vec4 outNormal;
+		//layout(location = 2) out vec4 outMRAH;
+		//layout(location = 3) out vec4 outEmissive;
+
+		layout(set = 1, binding = 3) uniform sampler2D visibility_buffer;
+		layout(set = 1, binding = 4) uniform sampler2D material_buffer;
+		layout(set = 1, binding = 5) uniform sampler2D depth_buffer;
+
+		void main() 
+		{
+			// Sampling visibility buffer
+			vec4 vb_raw = texture(visibility_buffer, inUV);
+			if(vb_raw != vec4(0.0))
+			{
+				// Sampling material buffer
+				vec4 mb_raw = texture(material_buffer, inUV);
+
+				// Unpack data
+				uint packedVBID = packUnorm4x8(vb_raw);
+				uint drawID = (packedVBID >> 23) & 0x000000FF;
+				uint triangleID = (packedVBID & 0x007FFFFF) - 1;
+
+				uint packedMOID = packUnorm4x8(mb_raw);
+				uint matID = packedMOID & 0xFFFFu;
+				uint objID = (packedMOID >> 16) & 0xFFFFu;
+
+				outFragcolor = vb_raw;
+			}
+			else
+			{
+				outFragcolor = vec4(0.35f, 0.55f, 0.7f, 1.0f);
+			}
+		}
+	""";
+}

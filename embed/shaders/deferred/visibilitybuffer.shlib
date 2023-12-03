@@ -1,0 +1,64 @@
+{
+	name: "visibilitybuffer";
+
+	shaders: [
+		{
+			name: "write";
+			sources: [
+				{
+					type: "vertex";
+					shader_name: "visbufferwrite_vert";
+				},
+				{
+					type: "fragment";
+					shader_name: "visbufferwrite_frag";
+				}
+			];
+		},
+		{
+			name: "shade";
+			sources: [
+				{
+					type: "vertex";
+					common: true;
+					shader_name: "screenspace_vert";
+				},
+				{
+					type: "fragment";
+					shader_name: "visbuffershade_frag";
+				}
+			];
+		}
+	];
+
+	compile: [
+		{ 
+			shader_name: "write";
+			permutation_generator: {
+				definitions: [
+					{ base: "HAS_TEXCOORD" },
+					{ base: "HAS_NORMAL" },
+					{ base: "HAS_SKIN", var:[{ base: "JOINTS_8BIT" }, { base: "JOINTS_16BIT" }] },
+					{ base: "COLOR_VEC3" },
+					{ base: "COLOR_VEC4" },
+					{ base: "TANGENT_VEC3" },
+					{ base: "TANGENT_VEC4" }
+				];
+			};
+		},
+		{
+			shader_name: "shade";
+			permutation_generator: {
+				definitions: [
+					{ base: "HAS_TEXCOORD" },
+					{ base: "HAS_NORMAL" },
+					{ base: "HAS_SKIN", var:[{ base: "JOINTS_8BIT" }, { base: "JOINTS_16BIT" }] },
+					{ base: "COLOR_VEC3" },
+					{ base: "COLOR_VEC4" },
+					{ base: "TANGENT_VEC3" },
+					{ base: "TANGENT_VEC4" }
+				];
+			};
+		}
+	];
+}

@@ -48,13 +48,16 @@
 #ifdef MESH_DATA
 	layout(std140, set = 1, binding = 0) uniform UniformMeshData
 	{
-		mat4 model;
-		mat4 normal;
 		uint objectId;
 		uint materialId;
-	} meshData;	
+	} meshData;
+
+	layout(std430, set = 1, binding = 1) readonly buffer ModelStorage
+	{
+		mat4 model[];
+	} modelStorage;	
 #ifdef HAS_SKIN
-	layout(std140, set = 1, binding = 1) uniform UniformSkinningJoints
+	layout(std140, set = 1, binding = 2) uniform UniformSkinningJoints
 	{
 		mat4 matrices[128];
 	};

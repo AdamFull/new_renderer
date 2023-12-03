@@ -22,17 +22,6 @@ do
     render_context:create_render_target("material_buffer_target", target_ci)
 end
 
--- Z-Buffer targets
-do
-    local target_ci = TextureCI.new()
-    target_ci.format = render_context:get_api_format(Format.rgba8_srgb)
-    target_ci.type = bit_or(TexType.two_dim, TexType.samplable)
-    target_ci.width = surface_resolution.x
-    target_ci.height = surface_resolution.y
-    
-    render_context:create_render_target("zbuffer_albedo_target", target_ci)
-end
-
 do
     local target_ci = TextureCI.new()
     target_ci.format = render_context:get_depth_format(true)
@@ -63,7 +52,7 @@ do
 
     step_ci.rendering.type = RenderingType.visbuffer
     step_ci.rendering.queue = QueueType.graphics
-    step_ci.rendering.shader_name = "testing:visbufferwrite"
+    step_ci.rendering.shader_name = "visibilitybuffer:write"
 
     step_ci.rendering.output_targets:add(render_context:get_texture_resource("visibility_buffer_target"))
     step_ci.rendering.output_targets:add(render_context:get_texture_resource("material_buffer_target"))
@@ -80,16 +69,12 @@ do
 
     step_ci.rendering.type = RenderingType.fullscreen
     step_ci.rendering.queue = QueueType.graphics
-    step_ci.rendering.shader_name = "testing:screenspace"
+    step_ci.rendering.shader_name = "visibilitybuffer:shade"
     step_ci.rendering.flip_viewport = true
     
-    -- renderer_ci.input_targets:set("zbuffer_albedo_target", render_context.get_texture_resource("zbuffer_albedo_target"))
-    -- renderer_ci.input_targets:set("zbuffer_normal_target", render_context.get_texture_resource("zbuffer_normal_target"))
-    -- renderer_ci.input_targets:set("zbuffer_pbr_target", render_context.get_texture_resource("zbuffer_pbr_target"))
-    -- renderer_ci.input_targets:set("zbuffer_emission_target", render_context.get_texture_resource("zbuffer_emission_target"))
-    -- renderer_ci.input_targets:set("zbuffer_depth_target", render_context.get_texture_resource("zbuffer_depth_target"))
-    -- renderer_ci.input_targets:set("shadowmap_composition_target"render_context.get_texture_resource("shadowmap_composition_target"))
-    -- step_ci.rendering.input_targets:set("penis", render_context.get_texture_resource("penis"))
+    step_ci.rendering.input_targets:set("visibility_buffer", render_context:get_texture_resource("visibility_buffer_target"))
+    step_ci.rendering.input_targets:set("material_buffer", render_context:get_texture_resource("material_buffer_target"))
+    step_ci.rendering.input_targets:set("depth_buffer", render_context:get_texture_resource("zbuffer_depth_target"))
     step_ci.rendering.output_targets:add(render_context:get_texture_resource("present_target"))
     
     render_interface:create_renderer(step_ci)

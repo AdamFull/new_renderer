@@ -22,9 +22,9 @@
 		layout (location = 0) in vec2 inUV;
 		layout (location = 0) out vec4 outFragcolor;
 
-		layout(set = 1, binding = 0) uniform sampler2D visibility_buffer;
+		layout(set = 1, binding = 5) uniform sampler2D visibility_buffer;
 
-		layout (std140, set = 1, binding = 1) uniform FUniformData 
+		layout (std140, set = 1, binding = 6) uniform FUniformData 
         { 
             vec3 color;
         } data; 

@@ -32,7 +32,7 @@
 		void main() 
 		{
 			// Calculate skinned matrix from weights and joint indices of the current vertex
-			mat4 modelMatrix = meshData.model;
+			mat4 modelMatrix = modelStorage.model[meshData.objectId];
 #ifdef HAS_SKIN
 #if defined(JOINTS_8BIT)
 			u8vec4 joints = u8vec4(uint8_t(inJoints.x * 255.0), uint8_t(inJoints.y * 255.0), uint8_t(inJoints.z * 255.0), uint8_t(inJoints.w * 255.0));
@@ -52,8 +52,8 @@
 			localPos = vec4(localPos.xyz / localPos.w, 1.0);
 
 			drawID = gl_DrawIDARB;
-			matID = meshData.materialId;
-			objID = meshData.objectId;
+			//matID = meshData.materialId;
+			//objID = meshData.objectId;
 			gl_Position = frameData.projection * frameData.view * localPos;
 		}
 	""";
