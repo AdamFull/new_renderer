@@ -47,27 +47,22 @@ void CMeshSystem::__update(float fDt)
 
 		for (const auto& primitive : mesh.primitives)
 		{
-			//bool is_in_view = frustum.checkBox(transform.gposition + primitive.dims.min * transform.gscale, transform.gposition + primitive.dims.max * transform.gscale);
-			bool is_in_view{ true };
-			if (is_in_view)
-			{
-				auto& lod = primitive.lods[0ull];
+			auto& lod = primitive.lods[0ull];
 
-				auto& draw_data = geometry_list.emplace_back();
-				draw_data.vboId = primitive.vboId;
-				draw_data.materialId = primitive.materialId;
-				draw_data.node = node;
-				draw_data.skin = mesh.skin;
-				draw_data.range.beginIndex = lod.beginIndex;
-				draw_data.range.indexCount = lod.indexCount;
-				draw_data.range.beginVertex = lod.beginVertex;
-				draw_data.range.vertexCount = lod.indexCount;
-			}
+			auto& draw_data = geometry_list.emplace_back();
+			draw_data.vboId = primitive.vboId;
+			draw_data.materialId = primitive.materialId;
+			draw_data.node = node;
+			draw_data.skin = mesh.skin;
+			draw_data.range.beginIndex = lod.beginIndex;
+			draw_data.range.indexCount = lod.indexCount;
+			draw_data.range.beginVertex = lod.beginVertex;
+			draw_data.range.vertexCount = lod.indexCount;
 		}
 	}
 
 	for (const auto& skin : root_component.skins)
 		render_packet->skins.emplace_back(skin.jointMatrices);
 
-	createGeometryBatches(geometry_list, render_packet->sceneBatches);
+	createGeometryBatches(geometry_list, render_packet->sceneBatches, GEOMETRY_BATCHER_MERGE_DRAWCALLS_FLAG_BIT);
 }

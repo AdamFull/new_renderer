@@ -189,7 +189,7 @@ void CShadowsSystem::__update(float fDt)
 					get_primitives_in_shadow_view(registry, frustum, geometry_list);
 
 					auto& batches = geometry_batches.at(i);
-					createGeometryBatches(geometry_list, batches);
+					createGeometryBatches(geometry_list, batches, GEOMETRY_BATCHER_MERGE_DRAWCALLS_FLAG_BIT);
 				}
 
 				// Set shadow index and increment it
@@ -235,7 +235,7 @@ void CShadowsSystem::__update(float fDt)
 					get_primitives_in_shadow_view(registry, frustum, geometry_list);
 
 					auto& batches = geometry_batches.at(face);
-					createGeometryBatches(geometry_list, batches);
+					createGeometryBatches(geometry_list, batches, GEOMETRY_BATCHER_MERGE_DRAWCALLS_FLAG_BIT);
 				}
 			}
 		}
@@ -268,7 +268,7 @@ void CShadowsSystem::__update(float fDt)
 				get_primitives_in_shadow_view(registry, frustum, geometry_list);
 
 				auto& batches = render_packet->spotLights.shadows.batches.at(shadow_index);
-				createGeometryBatches(geometry_list, batches);
+				createGeometryBatches(geometry_list, batches, GEOMETRY_BATCHER_MERGE_DRAWCALLS_FLAG_BIT);
 			}
 		}
 	}
