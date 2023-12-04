@@ -130,6 +130,15 @@
 	};
 #endif // HAS_SKIN
 #endif // MESH_DATA
+
+#if defined(INDEX_8BIT)
+	#define Index uint8_t
+#elif defined(INDEX_16BIT)
+	#define Index uint16_t
+#else
+	#define Index uint
+#endif
+
 	struct Vertex
 	{
 		vec3 pos;
@@ -158,6 +167,25 @@
 		vec4 weights;
 #endif // HAS_SKIN
 	};
+
+	void apply_joint_matrix(inout mat4 model, in vec4 in_joints, in vec4 in_weights)
+	{
+#ifdef HAS_SKIN
+#if defined(JOINTS_8BIT)
+			u8vec4 joints = u8vec4(uint8_t(in_joints.x * 255.0), uint8_t(in_joints.y * 255.0), uint8_t(in_joints.z * 255.0), uint8_t(in_joints.w * 255.0));
+#elif defined(JOINTS_16BIT)
+			u16vec4 joints = u16vec4(uint16_t(in_joints.x * 65535.0), uint16_t(in_joints.y * 65535.0), uint16_t(in_joints.z * 65535.0), uint16_t(in_joints.w * 65535.0));
+#endif
+			uint begin_pos = meshData.skinId * 128;
+			mat4 skinMat = 
+				in_weights.x * matrices[begin_pos + joints.x] +
+				in_weights.y * matrices[begin_pos + joints.y] +
+				in_weights.z * matrices[begin_pos + joints.z] +
+				in_weights.w * matrices[begin_pos + joints.w];
+		
+			model = model * skinMat;
+#endif // HAS_SKIN
+	}
 		
 	//layout(std140, set = 0, binding = 3) uniform UBOMaterial
 	//{

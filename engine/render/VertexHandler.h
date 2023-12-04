@@ -35,6 +35,9 @@ namespace engine
 			const FVertexDeclarationInfo& getVertexDeclaration() const override;
 			size_t getHash() const override;
 			const std::string& getDefinitions() const override;
+
+			size_t getVertexHandle() const override;
+			size_t getIndexHandle() const override;
 		private:
 			FBufferInfo m_vertexBuffer{};
 			FBufferInfo m_indexBuffer{};

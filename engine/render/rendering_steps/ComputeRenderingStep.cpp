@@ -85,6 +85,12 @@ void CComputeRenderingStep::execute(float dt)
 				shader->bindBuffer("SkinningJoints", handle);
 			}
 
+			size_t vertex_handle = last_vbo->getVertexHandle();
+			shader->bindBuffer("VertexBuffer", vertex_handle);
+
+			size_t index_buffer = last_vbo->getIndexHandle();
+			shader->bindBuffer("IndexBuffer", vertex_handle);
+
 			shader->flushDescriptors();
 			shader->flushConstants(m_beginRenderingInfo.queue);
 			shader->bind(m_beginRenderingInfo.queue);

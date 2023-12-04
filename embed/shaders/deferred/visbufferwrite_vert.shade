@@ -34,20 +34,9 @@
 			// Calculate skinned matrix from weights and joint indices of the current vertex
 			mat4 modelMatrix = modelStorage.model[meshData.objectId];
 #ifdef HAS_SKIN
-#if defined(JOINTS_8BIT)
-			u8vec4 joints = u8vec4(uint8_t(inJoints.x * 255.0), uint8_t(inJoints.y * 255.0), uint8_t(inJoints.z * 255.0), uint8_t(inJoints.w * 255.0));
-#elif defined(JOINTS_16BIT)
-			u16vec4 joints = u16vec4(uint16_t(inJoints.x * 65535.0), uint16_t(inJoints.y * 65535.0), uint16_t(inJoints.z * 65535.0), uint16_t(inJoints.w * 65535.0));
+			apply_joint_matrix(modelMatrix, inJoints, inWeights);
 #endif
-			uint begin_pos = meshData.skinId * 128;
-			mat4 skinMat = 
-				inWeights.x * matrices[begin_pos + joints.x] +
-				inWeights.y * matrices[begin_pos + joints.y] +
-				inWeights.z * matrices[begin_pos + joints.z] +
-				inWeights.w * matrices[begin_pos + joints.w];
-		
-			modelMatrix = modelMatrix * skinMat;
-#endif // HAS_SKIN
+
 
 			vec4 localPos = modelMatrix * vec4(inPosition, 1.0);
 			localPos = vec4(localPos.xyz / localPos.w, 1.0);

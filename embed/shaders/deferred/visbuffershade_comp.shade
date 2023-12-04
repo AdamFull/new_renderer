@@ -27,15 +27,80 @@
 		layout(set = 1, binding = 6) uniform sampler2D material_buffer;
 		layout(set = 1, binding = 7) uniform sampler2D depth_buffer;
 
-		//layout(std430, set = 1, binding = 7) readonly buffer VertexBuffer
-		//{
-		//	Vertex vertices[];
-		//};
+		layout(std430, set = 1, binding = 7) readonly buffer VertexBuffer
+		{
+			Vertex vertices[];
+		} vb;
 
-		//layout(std430, set = 1, binding = 8) readonly buffer IndexBuffer
-		//{
-		//	Index indices[];
-		//};
+		layout(std430, set = 1, binding = 8) readonly buffer IndexBuffer
+		{
+			Index indices[];
+		} ib;
+
+		struct DerivativesOutput
+		{
+			vec3 dbDx;
+			vec3 dbDy;
+		};
+
+		// Interpolate 2D attributes using the partial derivatives and generates dx and dy for texture sampling.
+		vec2 interpolate2DAttributes(mat3x2 attributes, vec3 dbDx, vec3 dbDy, vec2 d)
+		{
+			vec3 attr0 = vec3(attributes[0].x, attributes[1].x, attributes[2].x);
+			vec3 attr1 = vec3(attributes[0].y, attributes[1].y, attributes[2].y);
+			vec2 attribute_x = vec2(dot(dbDx,attr0), dot(dbDx,attr1));
+			vec2 attribute_y = vec2(dot(dbDy,attr0), dot(dbDy,attr1));
+			vec2 attribute_s = attributes[0];
+			
+			vec2 result = (attribute_s + d.x * attribute_x + d.y * attribute_y);
+			return result;
+		}
+		
+		// Interpolate vertex attributes at point 'd' using the partial derivatives
+		vec3 interpolate3DAttributes(mat3 attributes, vec3 dbDx, vec3 dbDy, vec2 d)
+		{
+			vec3 attribute_x = attributes * dbDx;
+			vec3 attribute_y = attributes * dbDy;
+			vec3 attribute_s = attributes[0];
+			
+			return (attribute_s + d.x * attribute_x + d.y * attribute_y);
+		}
+
+		// Engel's barycentric coord partial derivs function. Follows equation from [Schied][Dachsbacher]
+		// Computes the partial derivatives of point's barycentric coordinates from the projected screen space vertices
+		DerivativesOutput computePartialDerivatives(vec2 v[3])
+		{
+			DerivativesOutput derivatives;
+			float d = 1.0 / determinant(mat2(v[2] - v[1], v[0] - v[1]));
+			derivatives.dbDx = vec3(v[1].y - v[2].y, v[2].y - v[0].y, v[0].y - v[1].y) * d;
+			derivatives.dbDy = vec3(v[2].x - v[1].x, v[0].x - v[2].x, v[1].x - v[0].x) * d;
+			return derivatives;
+		}
+
+		Vertex[3] loadTriangle(in uint drawID, in uint primID)
+		{
+			Vertex[3] vertices;
+
+			// Index of the first vertex of this draw call's geometry
+			uint startIndex = drawID; // There's only one draw call at the moment, so drawID should always be 0. This would work out the offset of the first vertex in the nth draw call if using MultiDraw commands. 
+
+			// Get position in the Index Buffer of each vertex in this triangle (eg 31, 32, 33)
+			uint triVert1IndexBufferPosition = (primID * 3 + 0) + startIndex;
+			uint triVert2IndexBufferPosition = (primID * 3 + 1) + startIndex;
+			uint triVert3IndexBufferPosition = (primID * 3 + 2) + startIndex;	
+
+			// Now get vertex index from index buffer (eg, 17, 41, 32)
+			uint triVert0Index = ib.indices[triVert1IndexBufferPosition];
+			uint triVert1Index = ib.indices[triVert2IndexBufferPosition];
+			uint triVert2Index = ib.indices[triVert3IndexBufferPosition];
+
+			// Load vertex data of the 3 control points
+			vertices[0] = vb.vertices[triVert0Index];
+			vertices[1] = vb.vertices[triVert1Index];
+			vertices[2] = vb.vertices[triVert2Index];
+
+			return vertices;
+		}
 
 		void main() 
 		{
@@ -46,31 +111,76 @@
 			if(swizzle_compute_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, image_size, uv, px))
 				return;
 
+			// Sampling object/material buffer
+			vec4 mb_raw = texture(material_buffer, uv);
+
+			uint packedMOID = packUnorm4x8(mb_raw);
+			uint matID = packedMOID & 0xFFFFu;
+			uint objID = (packedMOID >> 16) & 0xFFFFu;
+
+			if(objID != meshData.objectId || matID != meshData.materialId)
+				return;
+
 			vec4 pixel_color = vec4(0, 0, 0, 1);
 
 			// Sampling visibility buffer
 			vec4 vb_raw = texture(visibility_buffer, uv);
 			if(vb_raw != vec4(0.0))
 			{
-				// Sampling material buffer
-				vec4 mb_raw = texture(material_buffer, uv);
-
 				// Unpack data
 				uint packedVBID = packUnorm4x8(vb_raw);
 				uint drawID = (packedVBID >> 23) & 0x000000FF;
 				uint triangleID = (packedVBID & 0x007FFFFF) - 1;
+				
+				Vertex[3] vertices = loadTriangle(drawID, triangleID);
 
-				uint packedMOID = packUnorm4x8(mb_raw);
-				uint matID = packedMOID & 0xFFFFu;
-				uint objID = (packedMOID >> 16) & 0xFFFFu;
+				// Load position data of the 3 vertices
+				vec3 vert0_pos = vertices[0].pos;
+				vec3 vert1_pos = vertices[1].pos;
+				vec3 vert2_pos = vertices[2].pos;
 
-				if(matID != meshData.materialId)
-					return;
+				mat4 model = modelStorage.model[meshData.objectId];
+#ifdef HAS_SKIN
+				//apply_joint_matrix(model);
+#endif
 
-				FMaterial material = materials[matID];
+				mat4 mvp = frameData.projection * frameData.view * model;
+
+				vec4 clip_pos_0 = mvp * vec4(vert0_pos, 1.0);
+				vec4 clip_pos_1 = mvp * vec4(vert1_pos, 1.0);
+				vec4 clip_pos_2 = mvp * vec4(vert2_pos, 1.0);
+
+				// Pre-calculate 1 over w components
+				vec3 one_over_w = 1.0 / vec3(clip_pos_0.w, clip_pos_1.w, clip_pos_2.w);
+
+				// Calculate 2D screen positions
+				clip_pos_0 *= one_over_w.x;
+				clip_pos_1 *= one_over_w.y;
+				clip_pos_2 *= one_over_w.z;
+
+				vec2 screen_positions[3] = { clip_pos_0.xy, clip_pos_1.xy, clip_pos_2.xy };
+
+				// Get barycentric coordinates for attribute interpolation
+				DerivativesOutput derivatives = computePartialDerivatives(screen_positions);
+
+				vec2 delta = uv + screen_positions[0];
+
+				// Interpolate texture coordinates
+				vec2 texcoord;
+#ifdef HAS_TEXCOORD
+				mat3x2 tri_tex_coords =
+				{
+					vertices[0].uv,
+					vertices[1].uv,
+					vertices[2].uv
+				};
+				texcoord = interpolate2DAttributes(tri_tex_coords, derivatives.dbDx, derivatives.dbDy, delta);
+#endif
+
+				FMaterial material = materials[meshData.materialId];
 
 				if(material.baseColorTexture != ~0u)
-					pixel_color = texture(textures[material.baseColorTexture], uv);
+					pixel_color = texture(textures[material.baseColorTexture], texcoord);
 
 				//pixel_color = vb_raw;
 			}

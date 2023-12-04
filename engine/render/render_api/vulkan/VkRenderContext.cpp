@@ -836,11 +836,11 @@ size_t CVkRenderContext::createBuffer(const std::string& name, const FBufferCrea
 	} break;
 	case BUFFER_TYPE_VERTEX_FLAG_BIT: {
 		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eUnknown;
-		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer;
+		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eVertexBuffer;
 	} break;
 	case BUFFER_TYPE_INDEX_FLAG_BIT: {
 		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eUnknown;
-		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer;
+		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndexBuffer;
 	} break;
 	case BUFFER_TYPE_STORAGE_FLAG_BIT: {
 		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;

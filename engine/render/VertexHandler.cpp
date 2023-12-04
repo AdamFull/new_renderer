@@ -95,6 +95,16 @@ std::string get_attribute_definition(EVertexAttributeType type, size_t size)
 	return "";
 }
 
+std::string get_index_definition(size_t size)
+{
+	if (size == 1ull)
+		return "INDEX_8BIT";
+	else if (size == 2ull)
+		return "INDEX_16BIT";
+
+	return "";
+}
+
 CVertexHandler::CVertexHandler(IRenderInterface* render_interface, IRenderContext* render_context)
 {
 	m_pRenderInterface = render_interface;
@@ -139,6 +149,9 @@ void CVertexHandler::create(const FVertexHandlerCreateInfo& create_info)
 	desc.stride = m_vertexBuffer.elementSize;
 
 	m_indexBuffer.elementSize = create_info.indexSize;
+
+	if (m_indexBuffer.elementSize != 4ull)
+		definitions.emplace(get_index_definition(m_indexBuffer.elementSize));
 
 	// Initialize attribute definitions and hash
 	std::stringstream ss{};
@@ -273,4 +286,14 @@ size_t CVertexHandler::getHash() const
 const std::string& CVertexHandler::getDefinitions() const
 {
 	return m_definitions;
+}
+
+size_t CVertexHandler::getVertexHandle() const
+{
+	return m_vertexBuffer.buffer;
+}
+
+size_t CVertexHandler::getIndexHandle() const
+{
+	return m_indexBuffer.buffer;
 }

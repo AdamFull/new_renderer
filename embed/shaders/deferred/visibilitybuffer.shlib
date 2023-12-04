@@ -37,7 +37,9 @@
 					{ base: "COLOR_VEC3" },
 					{ base: "COLOR_VEC4" },
 					{ base: "TANGENT_VEC3" },
-					{ base: "TANGENT_VEC4" }
+					{ base: "TANGENT_VEC4" },
+					{ base: "INDEX_8BIT" },
+					{ base: "INDEX_16BIT" }
 				];
 			};
 		},
@@ -51,7 +53,9 @@
 					{ base: "COLOR_VEC3" },
 					{ base: "COLOR_VEC4" },
 					{ base: "TANGENT_VEC3" },
-					{ base: "TANGENT_VEC4" }
+					{ base: "TANGENT_VEC4" },
+					{ base: "INDEX_8BIT" },
+					{ base: "INDEX_16BIT" }
 				];
 			};
 		}
