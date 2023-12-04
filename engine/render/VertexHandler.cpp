@@ -221,15 +221,6 @@ size_t CVertexHandler::addVertices(const std::vector<FVertexAttributePointer>& a
 
 size_t CVertexHandler::addIndices(const FVertexAttributePointer& indices, size_t vertex_offset)
 {
-	//auto whole_size = indices.count * m_indexBuffer.elementSize;
-	//
-	//std::vector<uint8_t> temp(whole_size);
-	//std::memcpy(temp.data(), indices.data, whole_size);
-	//m_indexBuffer.data.insert(m_indexBuffer.data.end(), temp.begin(), temp.end());
-	//
-	//m_indexBuffer.elementCount += indices.count;
-	//return indices.count;
-
 	auto whole_size = indices.count * m_indexBuffer.elementSize;
 	std::vector<uint8_t> temp(whole_size);
 
