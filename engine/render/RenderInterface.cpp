@@ -179,6 +179,18 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 		buffer = std::make_unique<CBufferObject>(this, m_pRenderContext.get());
 		buffer->create("global_primitive_data_buffer", buffer_ci);
 	}
+
+	// Create skin storage buffer
+	{
+		FBufferCreateInfo buffer_ci{};
+		buffer_ci.flags = BUFFER_TYPE_STORAGE_FLAG_BIT;
+		buffer_ci.size = sizeof(glm::mat4);
+		buffer_ci.count = MAX_PRIMITIVE_COUNT * 128ull;
+
+		auto& buffer = m_pRenderPacket->skinBuffer;
+		buffer = std::make_unique<CBufferObject>(this, m_pRenderContext.get());
+		buffer->create("global_joints_buffer", buffer_ci);
+	}
 }
 
 void CRenderInterface::render(float dt)
@@ -206,6 +218,21 @@ void CRenderInterface::render(float dt)
 		{
 			auto* dst = buffer->at(node);
 			std::memcpy(dst, &model, sizeof(glm::mat4));
+		}
+		buffer->unmap();
+	}
+
+	// Update skins
+	{
+		auto& buffer = m_pRenderPacket->skinBuffer;
+
+		size_t offset{ 0ull };
+		buffer->map();
+		for (auto& joints : m_pRenderPacket->skins)
+		{
+			auto* dst = buffer->at(offset);
+			std::memcpy(dst, joints.data(), sizeof(glm::mat4) * joints.size());
+			offset += joints.size();
 		}
 		buffer->unmap();
 	}

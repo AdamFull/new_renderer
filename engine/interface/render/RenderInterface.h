@@ -176,6 +176,7 @@ namespace engine
 			std::unique_ptr<IBufferObject> nodeBuffer{};
 
 			std::vector<std::array<glm::mat4, 128>> skins{};
+			std::unique_ptr<IBufferObject> skinBuffer{};
 
 			// Lights data
 			FDirectionalLightsData directionalLights{};
