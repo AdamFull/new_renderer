@@ -39,11 +39,12 @@
 #elif defined(JOINTS_16BIT)
 			u16vec4 joints = u16vec4(uint16_t(inJoints.x * 65535.0), uint16_t(inJoints.y * 65535.0), uint16_t(inJoints.z * 65535.0), uint16_t(inJoints.w * 65535.0));
 #endif
+			uint begin_pos = meshData.skinId * 128;
 			mat4 skinMat = 
-				inWeights.x * matrices[joints.x] +
-				inWeights.y * matrices[joints.y] +
-				inWeights.z * matrices[joints.z] +
-				inWeights.w * matrices[joints.w];
+				inWeights.x * matrices[begin_pos + joints.x] +
+				inWeights.y * matrices[begin_pos + joints.y] +
+				inWeights.z * matrices[begin_pos + joints.z] +
+				inWeights.w * matrices[begin_pos + joints.w];
 		
 			modelMatrix = modelMatrix * skinMat;
 #endif // HAS_SKIN

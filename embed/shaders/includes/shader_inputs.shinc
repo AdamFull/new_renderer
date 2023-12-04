@@ -50,6 +50,7 @@
 	{
 		uint objectId;
 		uint materialId;
+		uint skinId;
 	} meshData;
 
 	layout(std430, set = 1, binding = 1) readonly buffer ModelStorage
@@ -57,9 +58,9 @@
 		mat4 model[];
 	} modelStorage;	
 #ifdef HAS_SKIN
-	layout(std140, set = 1, binding = 2) uniform UniformSkinningJoints
+	layout(std430, set = 1, binding = 2) readonly buffer SkinningJoints
 	{
-		mat4 matrices[128];
+		mat4 matrices[];
 	};
 #endif // HAS_SKIN
 #endif // MESH_DATA
