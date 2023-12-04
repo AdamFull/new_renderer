@@ -116,6 +116,10 @@ void CVkRenderContext::create(const FRenderContextCreateInfo& context_ci)
 	}
 
 	createCommandBuffer(command_buffer_ci);
+
+	auto& per_thread = m_perThreadContext[std::this_thread::get_id()];
+	auto& per_queue = per_thread.perQueue[QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT];
+	m_pDevice->initProfiler(per_queue.commandPool);
 }
 
 void CVkRenderContext::createGlobalDescriptor(const FGlobalUniformCreateInfo& uniform_ci)
@@ -936,6 +940,65 @@ void CVkRenderContext::destroyBuffer(size_t resource_id)
 	m_destroyResource.push(FAPIObjectDestroyInfo{ resource_id, RESOURCE_TYPE_BUFFER_BIT });
 }
 
+void CVkRenderContext::pushG2CBarriers(uint32_t queue_type, const std::vector<size_t>& texture_ids)
+{
+	auto& command_buffer = getLastCommandBuffer(queue_type);
+
+	auto& textures = m_pResources->data<FVkTexture>();
+
+	FVkTranslationInfo translation_info{};
+	for (auto texture_id : texture_ids)
+	{
+		auto& texture = textures.at(texture_id);
+		auto& current = texture.at(m_pDevice->m_swapchain.currentFrame);
+
+		auto& image_trans_info = translation_info.imageTranslationInfos.emplace_back();
+		image_trans_info.srcStageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
+		image_trans_info.srcAccessMask = vk::AccessFlagBits2::eColorAttachmentWrite;
+		image_trans_info.oldLayout = vk::ImageLayout::eUndefined;
+		image_trans_info.dstStageMask = vk::PipelineStageFlagBits2::eComputeShader;
+		image_trans_info.dstAccessMask = vk::AccessFlagBits2::eShaderRead;
+		image_trans_info.newLayout = current->layout;
+		image_trans_info.handle = current->image.handle;
+
+		image_trans_info.subresourceRange.aspectMask = get_texture_aspect_flags(*current);
+		image_trans_info.subresourceRange.baseArrayLayer = 0;
+		image_trans_info.subresourceRange.layerCount = current->totalLayers;
+		image_trans_info.subresourceRange.baseMipLevel = 0;
+		image_trans_info.subresourceRange.levelCount = current->initialData.base.mipLevels;
+	}
+
+	processMemoryBarriers(command_buffer, translation_info);
+}
+
+void CVkRenderContext::pushC2CBarrier(uint32_t queue_type)
+{
+	auto& command_buffer = getLastCommandBuffer(queue_type);
+
+	FVkTranslationInfo translation_info{};
+	auto& barrier = translation_info.memoryTranslationInfos.emplace_back();
+	barrier.srcStageMask = vk::PipelineStageFlagBits2::eComputeShader;
+	barrier.srcAccessMask = vk::AccessFlagBits2::eShaderWrite;
+	barrier.dstStageMask = vk::PipelineStageFlagBits2::eComputeShader;
+	barrier.dstAccessMask = vk::AccessFlagBits2::eShaderRead;
+
+	processMemoryBarriers(command_buffer, translation_info);
+}
+
+void CVkRenderContext::pushC2GBarrier(uint32_t queue_type)
+{
+	auto& command_buffer = getLastCommandBuffer(queue_type);
+
+	FVkTranslationInfo translation_info{};
+	auto& barrier = translation_info.memoryTranslationInfos.emplace_back();
+	barrier.srcStageMask = vk::PipelineStageFlagBits2::eComputeShader;
+	barrier.srcAccessMask = vk::AccessFlagBits2::eShaderWrite;
+	barrier.dstStageMask = vk::PipelineStageFlagBits2::eFragmentShader;
+	barrier.dstAccessMask = vk::AccessFlagBits2::eShaderRead;
+
+	processMemoryBarriers(command_buffer, translation_info);
+}
+
 
 void CVkRenderContext::beginRendering(const FBeginRenderingInfo& rendering_info)
 {
@@ -1423,6 +1486,7 @@ void CVkRenderContext::updateSurface(int32_t surface_width, int32_t surface_heig
 		
 		for (size_t texture_id = 0ull; texture_id < textures.size(); ++texture_id)
 		{
+			bool is_storage{ false };
 			size_t swapchainFrameIndex{ 0ull };
 			for (auto& target : textures.at(texture_id))
 			{
@@ -1457,7 +1521,12 @@ void CVkRenderContext::updateSurface(int32_t surface_width, int32_t surface_heig
 				texture_ci.base.height = surface_height;
 
 				check_api_result(createTexture(texture_ci, *target));
+
+				is_storage = texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT;
 			}
+
+			if (is_storage)
+				m_textureLayoutInfos.emplace_back(texture_id);
 		}
 	}
 }
@@ -1663,7 +1732,7 @@ void CVkRenderContext::processResourceBarriers()
 				auto& image_translation = translation_info.imageTranslationInfos.emplace_back();
 
 				FVkTextureTranslationInfo texture_translation_info{};
-				texture_translation_info.oldLayout = current->layout;
+				texture_translation_info.oldLayout = vk::ImageLayout::eUndefined;
 				current->layout = texture_translation_info.newLayout = vk::ImageLayout::eGeneral;
 
 				image_translation = get_texture_layout_translation_info(*current, texture_translation_info);

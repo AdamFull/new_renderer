@@ -46,6 +46,8 @@ if(MSVC)
     add_compile_options(/bigobj)
 endif()
 
+#add_compile_definitions("ENABLE_TRACY_PROFILING")
+
 find_package(Taskflow CONFIG REQUIRED)
 # target_link_libraries(main PRIVATE Taskflow::Taskflow)
 

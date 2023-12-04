@@ -48,6 +48,10 @@ namespace engine
 				void destroyBuffer(size_t resource_id) override;
 			
 
+				void pushG2CBarriers(uint32_t queue_type, const std::vector<size_t>& texture_ids) override;
+				void pushC2CBarrier(uint32_t queue_type) override;
+				void pushC2GBarrier(uint32_t queue_type) override;
+
 				void beginRendering(const FBeginRenderingInfo& rendering_info) override;
 				void endRendering(const FBeginRenderingInfo& rendering_info) override;
 

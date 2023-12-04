@@ -1,11 +1,16 @@
 #pragma once
 
-#if defined(BUILD_WITHOUT_DEBUGGIND) && defined(ENABLE_TRACY_PROFILING)
+#if !defined(BUILD_WITHOUT_DEBUGGIND) && defined(ENABLE_TRACY_PROFILING)
+
+#if _WIN32
+#undef max
+#undef min
+#endif // _WIN32
 
 #include <tracy/Tracy.hpp>
 #ifdef PROFILE_VULKAN
 #include <tracy/TracyVulkan.hpp>
-#endif
+#endif // PROFILE_VULKAN
 
 #define TRACY_PROFILE_SCOPE(name) ZoneScopedN(name)
 #define TRACY_PROFILE_FUNCTION() ZoneScoped

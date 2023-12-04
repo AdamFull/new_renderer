@@ -131,6 +131,8 @@ namespace engine
 #endif
 				}
 
+				void initProfiler(const FVkCommandPool& command_pool);
+
 				// Getters
 				vk::Format findSupportedFormat(const std::vector<vk::Format>& candidates, bool depth_only);
 
@@ -169,8 +171,6 @@ namespace engine
 				FRenderApiErrorInfo createSwapchain(uint32_t surface_width, uint32_t surface_height);
 
 				void cleanupSwapchain();
-
-				void initProfiler();
 
 				template<class _Ty>
 				_Ty& requestExtensionFeatures()

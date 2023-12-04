@@ -3,7 +3,8 @@
 #include "render_api/vulkan/VkRenderContext.h"
 #include "rendering_steps/FullscreenRenderingStep.h"
 #include "rendering_steps/RenderScriptRenderingStep.h"
-#include "rendering_steps/SynchronizationRenderingStep.h"
+#include "rendering_steps/SemaphoreRenderingStep.h"
+#include "rendering_steps/BarrierRenderingStep.h"
 #include "rendering_steps/VisibilityBufferRenderingStep.h"
 #include "rendering_steps/ComputeRenderingStep.h"
 
@@ -370,7 +371,12 @@ void CRenderInterface::createRendering(const FRenderingStepCreateInfo& rendering
 	}
 
 	if (rendering_ci.type == RENDERING_STEP_SYNCHRONIZATION_TYPE)
-		new_step = std::make_unique<CSynchronizationRenderingStep>(this, m_pRenderContext.get());
+	{
+		if (rendering_ci.synchronization.type == SYNCHRONIZATION_SEMAPHORE_TYPE)
+			new_step = std::make_unique<CSemaphoreRenderingStep>(this, m_pRenderContext.get());
+		else if (rendering_ci.synchronization.type == SYNCHRONIZATION_BARRIER_TYPE)
+			new_step = std::make_unique<CBarrierRenderingStep>(this, m_pRenderContext.get());
+	}
 	else if (rendering_ci.type == RENDERING_STEP_RENDERING_TYPE)
 	{
 		if(rendering_ci.rendering.type == RENDERING_FULLSCREEN_TYPE)

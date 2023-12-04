@@ -24,17 +24,46 @@ namespace engine
 
 		enum ESynchronizationType
 		{
-			SYNCHRONIZATION_WAIT_TYPE,
-			SYNCHRONIZATION_SIGNAL_TYPE
+			SYNCHRONIZATION_SEMAPHORE_TYPE,
+			SYNCHRONIZATION_BARRIER_TYPE
+		};
+
+		enum ESemaphoreMode
+		{
+			SEMAPHORE_SIGNAL_MODE,
+			SEMAPHORE_WAIT_MODE
+		};
+
+		enum EBarrierType
+		{
+			BARRIER_FROM_GRAPHICS_TO_COMPUTE,
+			BARRIER_FROM_GRAPHICS_TO_GRAPHICS,
+			BARRIER_FROM_COMPUTE_TO_COMPUTE,
+			BARRIER_FROM_COMPUTE_TO_GRAPHICS,
+		};
+
+		struct FRenderingStepSemaphore
+		{
+			uint32_t type{};
+
+			size_t value{};
+
+			uint32_t srcQueue{};
+			uint32_t dstQueue{};
+		};
+
+		struct FRenderingStepBarrier
+		{
+			uint32_t type{};
+			uint32_t queue{};
+			std::vector<size_t> targets;
 		};
 
 		struct FRenderingStepSynchronizationInfo
 		{
-			// ESynchronizationType
 			uint32_t type{};
-
-			uint32_t queueFrom{};
-			uint32_t queueTo{};
+			FRenderingStepSemaphore semaphore{};
+			FRenderingStepBarrier barrier{};
 		};
 
 		struct FRenderingStepRenderingInfo

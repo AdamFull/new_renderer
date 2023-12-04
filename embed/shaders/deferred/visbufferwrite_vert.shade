@@ -53,8 +53,8 @@
 			localPos = vec4(localPos.xyz / localPos.w, 1.0);
 
 			drawID = gl_DrawIDARB;
-			//matID = meshData.materialId;
-			//objID = meshData.objectId;
+			matID = meshData.materialId;
+			objID = meshData.objectId;
 			gl_Position = frameData.projection * frameData.view * localPos;
 		}
 	""";

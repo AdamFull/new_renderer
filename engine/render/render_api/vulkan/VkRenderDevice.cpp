@@ -108,7 +108,7 @@ CVkRenderDevice::~CVkRenderDevice()
 		m_allocationCallbacks = nullptr;
 	}
 
-#if defined(BUILD_WITHOUT_DEBUGGIND) && defined(ENABLE_TRACY_PROFILING)
+#if !defined(BUILD_WITHOUT_DEBUGGIND) && defined(ENABLE_TRACY_PROFILING)
 	for (auto& context : m_tracyContext)
 		TracyVkDestroy(context);
 	TracyVkDestroy(m_presentTracyContext);
@@ -139,8 +139,6 @@ void CVkRenderDevice::create(const FRenderContextCreateInfo& context_ci)
 
 	check_api_result(createPipelineCache(context_ci));
 	check_api_result(createSwapchain(context_ci.initialWidth, context_ci.initialHeight));
-
-	initProfiler();
 }
 
 FRenderApiErrorInfo CVkRenderDevice::createCommandPool(const FVkCommandPoolCreateInfo& command_pool_ci, FVkCommandPool& command_pool)
@@ -751,6 +749,32 @@ void CVkRenderDevice::endLabel(vk::Queue& queue)
 {
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	queue.endDebugUtilsLabelEXT();
+#endif
+}
+
+void CVkRenderDevice::initProfiler(const FVkCommandPool& command_pool)
+{
+#if !defined(BUILD_WITHOUT_DEBUGGIND) && defined(ENABLE_TRACY_PROFILING)
+	FVkCommandBufferCreateInfo command_buffer_ci{};
+	command_buffer_ci.level = vk::CommandBufferLevel::ePrimary;
+	command_buffer_ci.count = 1u;
+
+	FVkCommandBuffer tracy_cmd_buffer{};
+	createCommandBuffer(command_buffer_ci, command_pool, tracy_cmd_buffer);
+
+	auto& physical_device = getPhysicalDevice();
+
+	auto& graphics = m_logicalDevice.queues[QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT];
+	auto& present = m_logicalDevice.queues[QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT];
+
+	m_tracyContext.resize(m_swapchain.framesInFlight);
+	for (uint32_t idx = 0u; idx < m_swapchain.framesInFlight; ++idx)
+		m_tracyContext[idx] = TracyVkContext(physical_device.handle, m_logicalDevice.handle, graphics, tracy_cmd_buffer.handles.back());
+
+	m_presentTracyContext = TracyVkContext(physical_device.handle, m_logicalDevice.handle, present, tracy_cmd_buffer.handles.back());
+
+	graphics.waitIdle();
+	destroyCommandBuffer(command_pool, tracy_cmd_buffer);
 #endif
 }
 
@@ -1420,30 +1444,4 @@ void CVkRenderDevice::cleanupSwapchain()
 		m_logicalDevice.handle.destroySemaphore(m_swapchain.imageAvaliableSemaphores.at(idx), m_allocationCallbacks);
 		m_logicalDevice.handle.destroySemaphore(m_swapchain.renderFinishedSemaphores.at(idx), m_allocationCallbacks);
 	}
-}
-
-void CVkRenderDevice::initProfiler()
-{
-#if defined(BUILD_WITHOUT_DEBUGGIND) && defined(ENABLE_TRACY_PROFILING)
-	FVkCommandBufferCreateInfo command_buffer_ci{};
-	command_buffer_ci.level = vk::CommandBufferLevel::ePrimary;
-	command_buffer_ci.count = 1u;
-
-	FVkCommandBuffer tracy_cmd_buffer{};
-	createCommandBuffer(command_buffer_ci, tracy_cmd_buffer);
-
-	auto& physical_device = getPhysicalDevice();
-	
-	auto& graphics = m_logicalDevice.queues[QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT];
-	auto& present = m_logicalDevice.queues[QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT];
-		
-	m_tracyContext.resize(m_swapchain.framesInFlight);
-	for (uint32_t idx = 0u; idx < m_swapchain.framesInFlight; ++idx)
-		m_tracyContext[idx] = TracyVkContext(physical_device.handle, m_logicalDevice.handle, graphics, tracy_cmd_buffer.handles.back());
-
-	m_presentTracyContext = TracyVkContext(physical_device.handle, m_logicalDevice.handle, present, tracy_cmd_buffer.handles.back());
-
-	graphics.waitIdle();
-	destroyCommandBuffer(tracy_cmd_buffer);
-#endif
 }

@@ -218,6 +218,10 @@ namespace engine
 			virtual void flushBuffer(size_t buffer_id, size_t size, size_t offset) = 0;
 			virtual void destroyBuffer(size_t resource_id) = 0;
 
+			virtual void pushG2CBarriers(uint32_t queue_type, const std::vector<size_t>& textures) = 0;
+			virtual void pushC2CBarrier(uint32_t queue_type) = 0;
+			virtual void pushC2GBarrier(uint32_t queue_type) = 0;
+
 			virtual void beginRendering(const FBeginRenderingInfo& rendering_info) = 0;
 			virtual void endRendering(const FBeginRenderingInfo& rendering_info) = 0;
 

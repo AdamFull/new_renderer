@@ -130,9 +130,25 @@ namespace engine
 
 			// Register ESynchronizationType
 			lua->new_enum(
-				"SynchronizationType",
-				"wait", SYNCHRONIZATION_WAIT_TYPE,
-				"signal", SYNCHRONIZATION_SIGNAL_TYPE
+				"SyncType",
+				"semaphore", SYNCHRONIZATION_SEMAPHORE_TYPE,
+				"barrier", SYNCHRONIZATION_BARRIER_TYPE
+			);
+
+			// Register ESemaphoreMode
+			lua->new_enum(
+				"SemaphoreMode",
+				"signal", SEMAPHORE_SIGNAL_MODE,
+				"wait", SEMAPHORE_WAIT_MODE
+			);
+
+			// Register EBarrierType
+			lua->new_enum(
+				"BarrierType",
+				"g2c", BARRIER_FROM_GRAPHICS_TO_COMPUTE,
+				"g2g", BARRIER_FROM_GRAPHICS_TO_GRAPHICS,
+				"c2c", BARRIER_FROM_COMPUTE_TO_COMPUTE,
+				"c2g", BARRIER_FROM_COMPUTE_TO_GRAPHICS
 			);
 		}
 
@@ -185,14 +201,32 @@ namespace engine
 				"array_layers", &FTextureCreateInfo::arrayLayers
 			);
 
+			// FRenderingStepSemaphore registration
+			lua->new_usertype<FRenderingStepSemaphore>(
+				"SemaphoreStep",
+				sol::constructors<FRenderingStepSemaphore()>(),
+				"type", &FRenderingStepSemaphore::type,
+				"value", &FRenderingStepSemaphore::value,
+				"srcQueue", &FRenderingStepSemaphore::srcQueue,
+				"dstQueue", &FRenderingStepSemaphore::dstQueue
+			);
+
+			// FRenderingStepBarrier registration
+			lua->new_usertype<FRenderingStepBarrier>(
+				"BarrierStep",
+				sol::constructors<FRenderingStepBarrier()>(),
+				"type", &FRenderingStepBarrier::type,
+				"queue", &FRenderingStepBarrier::queue,
+				"targets", &FRenderingStepBarrier::targets
+			);
+
 			// FRenderingStepSynchronizationInfo registration
-			// in {queue} wait for {queue} // in {queue} signal
 			lua->new_usertype<FRenderingStepSynchronizationInfo>(
 				"SynchronizationStepInfo",
 				sol::constructors<FRenderingStepSynchronizationInfo()>(),
 				"type", &FRenderingStepSynchronizationInfo::type,
-				"from", &FRenderingStepSynchronizationInfo::queueFrom,
-				"to", &FRenderingStepSynchronizationInfo::queueTo
+				"semaphore", &FRenderingStepSynchronizationInfo::semaphore,
+				"barrier", &FRenderingStepSynchronizationInfo::barrier
 			);
 
 			// FRenderingStepSynchronizationInfo registration
@@ -220,7 +254,7 @@ namespace engine
 				"RenderingStepCI",
 				sol::constructors<FRenderingStepCreateInfo()>(),
 				"type", &FRenderingStepCreateInfo::type,
-				"synchronization", &FRenderingStepCreateInfo::synchronization,
+				"sync", &FRenderingStepCreateInfo::synchronization,
 				"rendering", &FRenderingStepCreateInfo::rendering
 			);
 

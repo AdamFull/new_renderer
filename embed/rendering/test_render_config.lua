@@ -1,3 +1,5 @@
+
+
 surface_resolution = render_context:get_surface_resolution()
 
 -- Visibility buffer targets
@@ -72,6 +74,22 @@ do
     render_interface:create_renderer(step_ci)
 end
 
+-- sync point
+do
+    local step_ci = RenderingStepCI.new()
+    step_ci.type = RenderingStepType.synchronization
+
+    step_ci.sync.type = SyncType.barrier
+    step_ci.sync.barrier.type = BarrierType.g2c
+    step_ci.sync.barrier.queue = QueueType.graphics
+
+    step_ci.sync.barrier.targets:add(render_context:get_texture_resource("visibility_buffer_target"))
+    step_ci.sync.barrier.targets:add(render_context:get_texture_resource("material_buffer_target"))
+    step_ci.sync.barrier.targets:add(render_context:get_texture_resource("zbuffer_depth_target"))
+
+    render_interface:create_renderer(step_ci)
+end
+
 -- visibility buffer material pass
 do
     local step_ci = RenderingStepCI.new()
@@ -85,6 +103,18 @@ do
     step_ci.rendering.input_targets:set("visibility_buffer", render_context:get_texture_resource("visibility_buffer_target"))
     step_ci.rendering.input_targets:set("material_buffer", render_context:get_texture_resource("material_buffer_target"))
     step_ci.rendering.input_targets:set("depth_buffer", render_context:get_texture_resource("zbuffer_depth_target"))
+
+    render_interface:create_renderer(step_ci)
+end
+
+-- sync point
+do
+    local step_ci = RenderingStepCI.new()
+    step_ci.type = RenderingStepType.synchronization
+
+    step_ci.sync.type = SyncType.barrier
+    step_ci.sync.barrier.type = BarrierType.c2g
+    step_ci.sync.barrier.queue = QueueType.graphics
 
     render_interface:create_renderer(step_ci)
 end
