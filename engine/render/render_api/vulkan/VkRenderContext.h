@@ -55,6 +55,7 @@ namespace engine
 				void setScissorRect(int32_t offset_x, int32_t offset_y, uint32_t width, uint32_t height) override;
 
 				void draw(uint32_t queue_type, const FGeometryDrawInfo& draw_info) override;
+				void dispatch(uint32_t queue_type, const FDispatchInfo& dispatch_info) override;
 
 				size_t getTextureResource(const char* name) override;
 				size_t getShaderResource(const char* name) override;
@@ -81,6 +82,7 @@ namespace engine
 				void endDebugLabel(uint32_t queue_type) override;
 			protected:
 				void destroyThreadContext(FVkThreadContext& context);
+				void processResourceBarriers();
 				void processResourceUpload();
 				void processResourceUtilization();
 
@@ -104,6 +106,7 @@ namespace engine
 
 				std::vector<FTextureUploadInfo> m_textureUploadInfos{};
 				std::vector<FBufferUploadInfo> m_bufferUploadInfos{};
+				std::vector<FVkTextureLayoutChangeInfo> m_textureLayoutInfos{};
 
 				std::queue<FAPIObjectDestroyInfo> m_destroyResource{};
 
@@ -112,6 +115,9 @@ namespace engine
 
 				size_t m_indirectIndexedDrawBuffer{ ~0ull };
 				size_t m_drawIndexedBufferOffset{ 0ull };
+
+				size_t m_indirectDispatchBuffer{ ~0ull };
+				size_t m_dispatchBufferOffset{ 0ull };
 
 				// NOTE: global descriptor uses set 0 and binding 0 and 1 (0 is for global uniform, 1 is for texture array)
 				FVkGlobalDescriptor m_globalDescriptor{};

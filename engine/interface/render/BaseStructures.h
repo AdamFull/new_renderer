@@ -113,6 +113,16 @@ namespace engine
 			std::vector<FGeometryRanges> ranges{};
 		};
 
+		struct FDispatchGroup
+		{
+			uint32_t x, y, z{};
+		};
+
+		struct FDispatchInfo
+		{
+			std::vector<FDispatchGroup> groups{};
+		};
+
 		struct FAPIObjectDestroyInfo
 		{
 			size_t id{ ~0ull };

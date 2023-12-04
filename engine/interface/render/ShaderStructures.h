@@ -72,6 +72,8 @@ namespace engine
 			std::unordered_map<size_t, FReflectionUniform> uniforms{};
 			std::unordered_map<size_t, FReflectionUniformBlock<FReflectionUniform>> uniformBlocks{};
 			std::unordered_map<size_t, FReflectionPushConstantBlock<FReflectionUniform>> pushBlocks{};
+
+			std::array<uint32_t, 3ull> localSizes;
 		};
 
 		struct FShaderUploadInfo

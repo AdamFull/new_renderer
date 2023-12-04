@@ -1,11 +1,11 @@
 #include "VisibilityBufferRenderingStep.h"
 
-#include <engine/render/ShaderObject.h>
-#include <logger/logger.h>
-
 #include <unordered_set>
 
+#include <engine/render/ShaderObject.h>
 #include <engine/profiler/Profiler.h>
+
+#include <logger/logger.h>
 
 using namespace engine::render;
 
@@ -44,7 +44,7 @@ void CVisibilityBufferRenderingStep::create(const FRenderingStepCreateInfo& crea
 	m_baseShaderName = rendering_ci.shaderName;
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-	m_beginRenderingInfo.name = std::format("visbuffer:{}", rendering_ci.shaderName);
+	m_beginRenderingInfo.name = std::format("geometry:{}", rendering_ci.shaderName);
 #endif
 }
 

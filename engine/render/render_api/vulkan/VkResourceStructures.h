@@ -460,6 +460,11 @@ namespace engine
 				uint32_t baseMipLevel{ 0u };
 			};
 
+			struct FVkTextureLayoutChangeInfo
+			{
+				size_t textureId{ ~0ull };
+			};
+
 			struct FVkGlobalDescriptor
 			{
 				FVkDescriptorPool descriptorPool{};

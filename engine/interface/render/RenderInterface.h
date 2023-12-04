@@ -151,6 +151,8 @@ namespace engine
 			virtual void flushDescriptors() = 0;
 			virtual void flushConstants(uint32_t queue) = 0;
 			virtual void bind(uint32_t queue) = 0;
+
+			virtual const FShaderReflectionData& getReflection() const = 0;
 		};
 
 		class IRenderingStep
@@ -223,6 +225,7 @@ namespace engine
 			virtual void setScissorRect(int32_t offset_x, int32_t offset_y, uint32_t width, uint32_t height) = 0;
 
 			virtual void draw(uint32_t queue_type, const FGeometryDrawInfo& draw_info) = 0;
+			virtual void dispatch(uint32_t queue_type, const FDispatchInfo& dispatch_info) = 0;
 
 			virtual size_t getTextureResource(const char* name) = 0;
 			virtual size_t getShaderResource(const char* name) = 0;

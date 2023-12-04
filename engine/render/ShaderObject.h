@@ -27,6 +27,8 @@ namespace engine
 
 			void bind(uint32_t queue) override;
 
+			const FShaderReflectionData& getReflection() const override;
+
 		protected:
 			void buildReflection();
 		private:
@@ -36,6 +38,8 @@ namespace engine
 			std::unordered_map<size_t, size_t> m_bindBuffers{};
 			std::unordered_map<size_t, size_t> m_bindTextures{};
 			size_t m_shaderId{ ~0ull };
+
+			FShaderReflectionData m_reflection{};
 
 			IRenderInterface* m_pRenderInterface{ nullptr };
 			IRenderContext* m_pRenderContext{ nullptr };

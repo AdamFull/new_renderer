@@ -22,16 +22,11 @@
 		layout (location = 0) in vec2 inUV;
 		layout (location = 0) out vec4 outFragcolor;
 
-		layout(set = 1, binding = 5) uniform sampler2D visibility_buffer;
-
-		layout (std140, set = 1, binding = 6) uniform FUniformData 
-        { 
-            vec3 color;
-        } data; 
+		layout(set = 1, binding = 5) uniform sampler2D input_image;
 
 		void main() 
 		{
-			outFragcolor = texture(visibility_buffer, inUV) + vec4(data.color, 1.f);
+			outFragcolor = texture(input_image, inUV);
 		}
 	""";
 }

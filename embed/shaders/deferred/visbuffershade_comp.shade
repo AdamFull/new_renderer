@@ -1,0 +1,65 @@
+{
+	version: 460;
+
+	enable_extensions: [
+		"GL_ARB_separate_shader_objects",
+		"GL_ARB_shading_language_420pack",
+		"GL_ARB_shader_draw_parameters",
+		"GL_EXT_nonuniform_qualifier",
+		"GL_EXT_shader_8bit_storage",
+		"GL_EXT_shader_16bit_storage"
+	];
+
+	definitions: [];
+
+	require_extensions: [
+		"GL_EXT_shader_explicit_arithmetic_types",
+		"GL_EXT_shader_explicit_arithmetic_types_int8"
+	];
+	includes: ["shader_inputs", "compute_common"];
+
+	code: 
+	"""
+		layout(set = 1, binding = 3, rgba16f) uniform writeonly image2D write_color;
+		layout(set = 1, binding = 4) uniform sampler2D visibility_buffer;
+		layout(set = 1, binding = 5) uniform sampler2D material_buffer;
+		layout(set = 1, binding = 6) uniform sampler2D depth_buffer;
+
+		void main() 
+		{
+			uvec2 image_size = imageSize(write_color);
+
+			uvec2 px = uvec2(0, 0);
+			vec2 uv = vec2(0.0, 0.0);
+			if(swizzle_compute_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, image_size, uv, px))
+				return;
+
+			vec4 pixel_color = vec4(0, 0, 0, 1);
+
+			// Sampling visibility buffer
+			vec4 vb_raw = texture(visibility_buffer, uv);
+			if(vb_raw != vec4(0.0))
+			{
+				// Sampling material buffer
+				vec4 mb_raw = texture(material_buffer, uv);
+
+				// Unpack data
+				uint packedVBID = packUnorm4x8(vb_raw);
+				uint drawID = (packedVBID >> 23) & 0x000000FF;
+				uint triangleID = (packedVBID & 0x007FFFFF) - 1;
+
+				uint packedMOID = packUnorm4x8(mb_raw);
+				uint matID = packedMOID & 0xFFFFu;
+				uint objID = (packedMOID >> 16) & 0xFFFFu;
+
+				pixel_color = vb_raw;
+			}
+			else
+			{
+				pixel_color = vec4(0.35f, 0.55f, 0.7f, 1.0f);
+			}
+
+			imageStore(write_color, ivec2(px), pixel_color);
+		}
+	""";
+}

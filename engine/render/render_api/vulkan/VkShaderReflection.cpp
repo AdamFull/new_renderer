@@ -201,16 +201,16 @@ void CVkShaderReflectionBuilder::addShaderStage(vk::ShaderStageFlagBits shaderSt
     for (const auto& res : resources.sampled_images)
         build_uniform_reflection(reflectionData, &compiler, res, shaderStage, vk::DescriptorType::eCombinedImageSampler);
 
-    for (const auto& res : resources.sampled_images)
+    for (const auto& res : resources.separate_images)
         build_uniform_reflection(reflectionData, &compiler, res, shaderStage, vk::DescriptorType::eSampledImage);
 
-    for (const auto& res : resources.sampled_images)
+    for (const auto& res : resources.separate_samplers)
         build_uniform_reflection(reflectionData, &compiler, res, shaderStage, vk::DescriptorType::eSampler);
 
-    for (const auto& res : resources.sampled_images)
+    for (const auto& res : resources.storage_images)
         build_uniform_reflection(reflectionData, &compiler, res, shaderStage, vk::DescriptorType::eStorageImage);
 
-    for (const auto& res : resources.sampled_images)
+    for (const auto& res : resources.subpass_inputs)
         build_uniform_reflection(reflectionData, &compiler, res, shaderStage, vk::DescriptorType::eInputAttachment);
 
     shaderStages.emplace_back(shaderStage);

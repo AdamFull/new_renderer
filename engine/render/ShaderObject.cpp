@@ -96,18 +96,23 @@ void CShaderObject::bind(uint32_t queue)
 	m_pRenderContext->bindShader(m_shaderId, queue);
 }
 
+const FShaderReflectionData& CShaderObject::getReflection() const
+{
+	return m_reflection;
+}
+
 void CShaderObject::buildReflection()
 {
-	auto reflection = m_pRenderContext->getShaderReflection(m_shaderId);
+	m_reflection = m_pRenderContext->getShaderReflection(m_shaderId);
 
-	for (auto& [id, uniform_block] : reflection.uniformBlocks)
+	for (auto& [id, uniform_block] : m_reflection.uniformBlocks)
 	{
 		auto uniform_handle = std::make_unique<CUniformHandle>();
 		uniform_handle->create(uniform_block);
 		m_uniformBlocks[id] = std::move(uniform_handle);
 	}
 
-	for (auto& [id, push_block] : reflection.pushBlocks)
+	for (auto& [id, push_block] : m_reflection.pushBlocks)
 	{
 		auto uniform_handle = std::make_unique<CUniformHandle>();
 		uniform_handle->create(push_block);

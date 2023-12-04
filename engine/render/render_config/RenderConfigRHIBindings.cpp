@@ -123,7 +123,8 @@ namespace engine
 			lua->new_enum(
 				"RenderingType",
 				"fullscreen", RENDERING_FULLSCREEN_TYPE,
-				"visbuffer", RENDERING_VISBUFFER_TYPE,
+				"geometry", RENDERING_GEOMETRY_TYPE,
+				"compute", RENDERING_COMPUTE_TYPE,
 				"render_script", RENDERING_RENDER_SCRIPT_TYPE
 			);
 

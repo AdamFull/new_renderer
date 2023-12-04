@@ -19,13 +19,8 @@
 			name: "shade";
 			sources: [
 				{
-					type: "vertex";
-					common: true;
-					shader_name: "screenspace_vert";
-				},
-				{
-					type: "fragment";
-					shader_name: "visbuffershade_frag";
+					type: "compute";
+					shader_name: "visbuffershade_comp";
 				}
 			];
 		}

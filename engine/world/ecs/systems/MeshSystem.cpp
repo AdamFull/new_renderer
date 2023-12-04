@@ -64,5 +64,5 @@ void CMeshSystem::__update(float fDt)
 	for (const auto& skin : root_component.skins)
 		render_packet->skins.emplace_back(skin.jointMatrices);
 
-	createGeometryBatches(geometry_list, render_packet->sceneBatches, GEOMETRY_BATCHER_MERGE_DRAWCALLS_FLAG_BIT);
+	createGeometryBatches(geometry_list, render_packet->sceneBatches);
 }

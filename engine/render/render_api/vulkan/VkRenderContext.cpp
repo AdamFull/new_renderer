@@ -362,6 +362,9 @@ size_t CVkRenderContext::createRenderTargets(const std::string& name, const FTex
 			resource_id = createRenderTarget(name, texture_ci);
 	}
 
+	if (texture_ci.typeFlags & TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT)
+		m_textureLayoutInfos.emplace_back(FVkTextureLayoutChangeInfo{ resource_id });
+
 	return resource_id;
 }
 
@@ -565,7 +568,7 @@ FShaderReflectionData CVkRenderContext::getShaderReflection(const size_t& shader
 	auto& shader_reflection = m_pResources->get<FVkShaderReflectionData>(shader->reflection);
 	FShaderReflectionData reflection_data{};
 
-	for (auto& [id, vkuniform] : shader_reflection->uniforms)
+	for (const auto& [id, vkuniform] : shader_reflection->uniforms)
 	{
 		auto& uniform = reflection_data.uniforms[id];
 		uniform.binding = vkuniform.binding;
@@ -574,7 +577,7 @@ FShaderReflectionData CVkRenderContext::getShaderReflection(const size_t& shader
 		uniform.size = vkuniform.size;
 	}
 
-	for (auto& [aid, vkuniform_block] : shader_reflection->uniformBlocks)
+	for (const auto& [aid, vkuniform_block] : shader_reflection->uniformBlocks)
 	{
 		if (vkuniform_block.descriptorType == vk::DescriptorType::eStorageBuffer)
 			continue;
@@ -584,7 +587,7 @@ FShaderReflectionData CVkRenderContext::getShaderReflection(const size_t& shader
 		uniform_block.set = vkuniform_block.set;
 		uniform_block.size = vkuniform_block.size;
 
-		for (auto& [bid, vkuniform] : vkuniform_block.uniforms)
+		for (const auto& [bid, vkuniform] : vkuniform_block.uniforms)
 		{
 			auto& uniform = uniform_block.uniforms[bid];
 			uniform.binding = vkuniform.binding;
@@ -594,12 +597,12 @@ FShaderReflectionData CVkRenderContext::getShaderReflection(const size_t& shader
 		}
 	}
 
-	for (auto& [aid, vkpush_block] : shader_reflection->pushBlocks)
+	for (const auto& [aid, vkpush_block] : shader_reflection->pushBlocks)
 	{
 		auto& push_block = reflection_data.pushBlocks[aid];
 		push_block.size = vkpush_block.size;
 
-		for (auto& [bid, vkuniform] : vkpush_block.uniforms)
+		for (const auto& [bid, vkuniform] : vkpush_block.uniforms)
 		{
 			auto& uniform = push_block.uniforms[bid];
 			uniform.binding = vkuniform.binding;
@@ -608,6 +611,9 @@ FShaderReflectionData CVkRenderContext::getShaderReflection(const size_t& shader
 			uniform.size = vkuniform.size;
 		}
 	}
+
+	if(!shader_reflection->localSizes.empty())
+		reflection_data.localSizes = shader_reflection->localSizes.front();
 
 	return reflection_data;
 }
@@ -1293,6 +1299,39 @@ void CVkRenderContext::draw(uint32_t queue_type, const FGeometryDrawInfo& draw_i
 	}
 }
 
+void CVkRenderContext::dispatch(uint32_t queue_type, const FDispatchInfo& dispatch_info)
+{
+	auto& command_buffer = getLastCommandBuffer(queue_type);
+	auto& current = command_buffer.get();
+
+	bool use_indirect_dispatch{ dispatch_info.groups.size() > 1ull };
+
+	std::vector<vk::DispatchIndirectCommand> commands{};
+	for (const auto& group : dispatch_info.groups)
+	{
+		auto& command = commands.emplace_back();
+		command.x = group.x;
+		command.y = group.y;
+		command.z = group.z;
+	}
+
+	if (use_indirect_dispatch)
+	{
+		void* memory{ nullptr };
+
+		auto& buffer = m_pResources->get<FVkBuffer>(m_indirectDispatchBuffer);
+		m_pDevice->mapBufferMemory(*buffer, &memory);
+		std::memcpy(static_cast<char*>(memory) + m_dispatchBufferOffset, commands.data(), commands.size() * sizeof(vk::DispatchIndirectCommand));
+		m_pDevice->unmapBufferMemory(*buffer);
+		current.dispatchIndirect(buffer->handle, m_dispatchBufferOffset);
+	}
+	else
+	{
+		auto& command = commands.front();
+		current.dispatch(command.x, command.y, command.z);
+	}
+}
+
 size_t CVkRenderContext::getTextureResource(const char* name)
 {
 	return m_pResources->getId<FVkTexture>(name);
@@ -1480,8 +1519,9 @@ void CVkRenderContext::beginFrameCommandBuffers()
 {
 	uint32_t image_index{ 0u };
 
-	m_drawBufferOffset = m_drawIndexedBufferOffset = 0ull;
+	m_drawBufferOffset = m_drawIndexedBufferOffset = m_dispatchBufferOffset = 0ull;
 
+	processResourceBarriers();
 	processResourceUpload();
 	// TODO: sync queues here
 
@@ -1542,7 +1582,7 @@ void CVkRenderContext::endFrameCommandBuffers()
 	{
 		for (auto& texture : texture_instances)
 		{
-			if (texture->isRenderTarget)
+			if (texture->isRenderTarget && !(texture->initialData.base.typeFlags & TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT))
 				texture->layout = vk::ImageLayout::eUndefined;
 		}
 	}
@@ -1591,6 +1631,54 @@ void CVkRenderContext::destroyThreadContext(FVkThreadContext& context)
 
 	// Destroy descriptor pool
 	m_pDevice->destroyDescriptorPool(context.descriptorPool);
+}
+
+void CVkRenderContext::processResourceBarriers()
+{
+	if (m_textureLayoutInfos.empty())
+		return;
+
+	FVkCommandBufferCreateInfo command_buffer_ci{};
+	command_buffer_ci.count = 1u;
+	command_buffer_ci.level = vk::CommandBufferLevel::ePrimary;
+	command_buffer_ci.mask = QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT;
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	command_buffer_ci.name = "resource_barriers";
+#endif
+
+	auto& textures = m_pResources->data<FVkTexture>();
+
+	auto& command_buffer = createCommandBuffer(command_buffer_ci);
+
+	m_pDevice->beginCommandBuffer(command_buffer, vk::CommandBufferUsageFlagBits::eOneTimeSubmit, 0u);
+
+	FVkTranslationInfo translation_info{};
+	for (const auto& layout_info : m_textureLayoutInfos)
+	{
+		auto& texture = textures.at(layout_info.textureId);
+		for (auto& current : texture)
+		{
+			if (current->initialData.base.typeFlags & TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT)
+			{
+				auto& image_translation = translation_info.imageTranslationInfos.emplace_back();
+
+				FVkTextureTranslationInfo texture_translation_info{};
+				texture_translation_info.oldLayout = current->layout;
+				current->layout = texture_translation_info.newLayout = vk::ImageLayout::eGeneral;
+
+				image_translation = get_texture_layout_translation_info(*current, texture_translation_info);
+			}
+		}
+	}
+
+	processMemoryBarriers(command_buffer, translation_info);
+
+	m_pDevice->endCommandBuffer(command_buffer);
+	m_pDevice->submitCommandBuffer(command_buffer);
+
+	destroyCommandBuffer(QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT);
+
+	m_textureLayoutInfos.clear();
 }
 
 void CVkRenderContext::processResourceUpload()

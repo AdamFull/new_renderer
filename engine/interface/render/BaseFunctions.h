@@ -74,8 +74,12 @@ namespace engine
                     std::vector<FGeometryRanges> combinedRanges;
                     for (const auto& range : batch.ranges)
                     {
-                        if (!combinedRanges.empty() && combinedRanges.back().beginIndex + combinedRanges.back().indexCount == range.beginIndex)
-                            combinedRanges.back().indexCount += range.indexCount;
+                        if (!combinedRanges.empty())
+                        {
+                            auto& lastRange = combinedRanges.back();
+                            if(lastRange.beginIndex + lastRange.indexCount == range.beginIndex)
+                                lastRange.indexCount += range.indexCount;
+                        }
                         else
                             combinedRanges.push_back(range);
                     }

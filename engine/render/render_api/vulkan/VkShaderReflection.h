@@ -43,7 +43,7 @@ namespace engine
 
 			struct FVkShaderReflectionData
 			{
-				std::vector<std::array<std::optional<uint32_t>, 3>> localSizes;
+				std::vector<std::array<uint32_t, 3ull>> localSizes;
 				uint32_t executionModeInvocations{ 0 };
 				uint32_t executionModeOutputVertices{ 0 };
 
