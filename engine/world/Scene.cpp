@@ -329,13 +329,34 @@ void CScene::loadMeshComponent(const easygltf::FGLTFRoot root, const entt::entit
 		std::sort(attributes.begin(), attributes.end(), [](const auto& lhs, const auto& rhs) { return static_cast<uint32_t>(lhs.type) < static_cast<uint32_t>(rhs.type); });
 
 		// Load indices
+		std::vector<uint32_t> indices_tmp{};
 		render::FVertexAttributePointer indices{};
 		if (primitive.indices >= 0)
 		{
 			const easygltf::Accessor& accessor = root.accessors[primitive.indices];
 			auto stream = root.getStream(accessor);
-			indices.data = stream.data;
-			indices.stride = stream.stride;
+
+			bool force_32_bit_indices{ false };
+			if (force_32_bit_indices && stream.stride != 4ull)
+			{
+				if (stream.stride == 2ull)
+				{
+					std::vector<uint16_t> temp(stream.count);
+					std::memcpy(temp.data(), stream.data, stream.stride * stream.count);
+					indices_tmp.insert(indices_tmp.end(), temp.begin(), temp.end());
+				}
+				else if (stream.stride == 1ull)
+					indices_tmp.insert(indices_tmp.end(), stream.data, stream.data + stream.count);
+
+				indices.data = reinterpret_cast<const uint8_t*>(indices_tmp.data());
+				indices.stride = sizeof(uint32_t);
+			}
+			else
+			{
+				indices.data = stream.data;
+				indices.stride = stream.stride;
+			}
+
 			indices.count = stream.count;
 
 			attributes_hash ^= attribute_hasher(static_cast<uint32_t>(indices.stride)) << 1;
