@@ -66,14 +66,21 @@ void CVisibilityBufferRenderingStep::execute(float dt)
 
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
 
+	IVertexHandler* last_vbo{ nullptr };
 	for (auto& batch : render_packet->sceneBatches)
 	{
-		auto& vbo = m_pRenderInterface->getVertexHandler(batch.vboId);
-		if (vbo)
+ 		auto& vbo = m_pRenderInterface->getVertexHandler(batch.vboId);
+		if (!last_vbo || vbo.get() != last_vbo)
+		{
+			last_vbo = vbo.get();
+			last_vbo->bind(m_beginRenderingInfo.queue);
+		}
+		
+		if (last_vbo)
 		{
 			// TODO: this code looks very ugly as i think
 			// Create shader for vertex declaration if not exists
-			auto& shader = getShaderByVBO(vbo);
+			auto& shader = getShaderByVBO(last_vbo);
 
 			{
 				TRACY_PROFILE_SCOPE("Update UniformMeshData");
@@ -81,6 +88,7 @@ void CVisibilityBufferRenderingStep::execute(float dt)
 				auto& ubo = shader->getUniformBlock("UniformMeshData");
 				ubo->set("objectId", batch.node);
 				ubo->set("materialId", static_cast<uint32_t>(batch.materialId));
+				ubo->set("skinId", static_cast<uint32_t>(batch.skin));
 			}
 
 			if (render_packet->materialBuffer)
@@ -95,23 +103,20 @@ void CVisibilityBufferRenderingStep::execute(float dt)
 				shader->bindBuffer("ModelStorage", handle);
 			}
 
-			//if (batch.skin >= 0)
-			//{
-			//	auto& joints = shader->getUniformBlock("UniformSkinningJoints");
-			//	auto& matrices = render_packet->skins.at(batch.skin);
-			//	joints->set("matrices", matrices);
-			//}
+			if (batch.skin >= 0)
+			{
+				size_t handle = render_packet->skinBuffer->handle();
+				shader->bindBuffer("SkinningJoints", handle);
+			}
 
 			// Bind vbo and flush descriptors, then bind and draw
 			shader->flushDescriptors();
 			shader->flushConstants(m_beginRenderingInfo.queue);
 			shader->bind(m_beginRenderingInfo.queue);
 
-			vbo->bind(m_beginRenderingInfo.queue);
-
 			FGeometryDrawInfo draw_info{};
-			draw_info.lastIndex = vbo->getLastIndex();
-			draw_info.lastVertex = vbo->getLastVertex();
+			draw_info.lastIndex = last_vbo->getLastIndex();
+			draw_info.lastVertex = last_vbo->getLastVertex();
 			draw_info.ranges = batch.ranges;
 
 			m_pRenderContext->draw(m_beginRenderingInfo.queue, draw_info);
@@ -123,7 +128,7 @@ void CVisibilityBufferRenderingStep::execute(float dt)
 	m_pRenderContext->endRendering(m_beginRenderingInfo);
 }
 
-const std::unique_ptr<IShaderObject>& CVisibilityBufferRenderingStep::getShaderByVBO(const std::unique_ptr<IVertexHandler>& vbo)
+const std::unique_ptr<IShaderObject>& CVisibilityBufferRenderingStep::getShaderByVBO(const IVertexHandler* vbo)
 {
 	auto& shader = m_shaders[vbo->getHash()];
 	if (!shader)

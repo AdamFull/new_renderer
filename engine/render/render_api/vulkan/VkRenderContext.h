@@ -108,7 +108,10 @@ namespace engine
 				std::queue<FAPIObjectDestroyInfo> m_destroyResource{};
 
 				size_t m_indirectDrawBuffer{ ~0ull };
+				size_t m_drawBufferOffset{ 0ull };
+
 				size_t m_indirectIndexedDrawBuffer{ ~0ull };
+				size_t m_drawIndexedBufferOffset{ 0ull };
 
 				// NOTE: global descriptor uses set 0 and binding 0 and 1 (0 is for global uniform, 1 is for texture array)
 				FVkGlobalDescriptor m_globalDescriptor{};

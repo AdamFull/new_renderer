@@ -1184,6 +1184,8 @@ void CVkRenderDevice::prepareRequestedLogicalDeviceFeatures()
 				requestExtensionFeatures<vk::PhysicalDeviceShaderFloat16Int8FeaturesKHR>();
 			else if (extension_name == VK_NV_MESH_SHADER_EXTENSION_NAME)
 				requestExtensionFeatures<vk::PhysicalDeviceMeshShaderPropertiesEXT>();
+			else if (extension_name == VK_EXT_MULTI_DRAW_EXTENSION_NAME)
+				requestExtensionFeatures<vk::PhysicalDeviceMultiDrawFeaturesEXT>();
 		}
 	}
 }
@@ -1226,6 +1228,7 @@ FRenderApiErrorInfo CVkRenderDevice::createLogicalDevice(const FRenderContextCre
 	vk10features.imageCubeArray = true;
 	vk10features.depthClamp = true;
 	vk10features.independentBlend = true;
+	vk10features.multiDrawIndirect = true;
 
 	vk::DeviceCreateInfo device_ci{};
 	device_ci.queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size());

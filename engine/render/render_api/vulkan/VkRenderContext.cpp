@@ -1215,66 +1215,80 @@ void CVkRenderContext::draw(uint32_t queue_type, const FGeometryDrawInfo& draw_i
 {
 	auto& command_buffer = getLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
-	bool is_indirect_call = draw_info.ranges.size() > 1ull;
 
-	//if (!is_indirect_call)
-	//{
-	//	auto& range = draw_info.ranges.front();
-	//	if (draw_info.lastIndex == 0ull && draw_info.lastVertex == 0ull)
-	//		current.draw(range.vertexCount, 1, range.beginVertex, 0);
-	//	else if (draw_info.lastIndex == 0ull)
-	//	{
-	//		auto vertex_count = range.vertexCount == 0ull ? draw_info.lastIndex : range.vertexCount;
-	//		current.draw(vertex_count, 1, range.beginVertex, 0);
-	//	}
-	//	else
-	//	{
-	//		auto index_count = range.indexCount == 0ull ? draw_info.lastIndex : range.indexCount;
-	//		current.drawIndexed(index_count, 1, range.beginIndex, 0, 0);
-	//	}
-	//}
-	//else
+	bool use_indirect_draw{ draw_info.ranges.size() > 1ull };
+
+	std::vector<vk::DrawIndirectCommand> draw_commands{};
+	std::vector<vk::DrawIndexedIndirectCommand> draw_indexed_commands{};
+
+	// Prepare comands
+	for (auto& range : draw_info.ranges)
 	{
-		if (draw_info.lastIndex == 0ull && draw_info.lastVertex == 0ull)
-			current.draw(draw_info.ranges.front().vertexCount, 1, draw_info.ranges.front().beginVertex, 0);
-		else if (draw_info.lastIndex == 0ull)
+		if (draw_info.lastIndex == 0ull)
 		{
-			std::vector<vk::DrawIndirectCommand> commands{};
 			for (auto& range : draw_info.ranges)
 			{
-				auto& command = commands.emplace_back();
+				auto& command = draw_commands.emplace_back();
 				command.vertexCount = range.vertexCount == 0ull ? draw_info.lastIndex : range.vertexCount;
 				command.instanceCount = 1;
 				command.firstVertex = range.beginVertex;
 				command.firstInstance = 0;
 			}
-
-			auto& buffer = m_pResources->get<FVkBuffer>(m_indirectDrawBuffer);
-			current.updateBuffer(buffer->handle, 0ull, commands.size() * sizeof(vk::DrawIndirectCommand), commands.data());
-			current.drawIndirect(buffer->handle, 0ull, commands.size(), sizeof(vk::DrawIndirectCommand));
 		}
 		else
 		{
-			std::vector<vk::DrawIndexedIndirectCommand> commands{};
 			for (auto& range : draw_info.ranges)
 			{
-				auto& command = commands.emplace_back();
+				auto& command = draw_indexed_commands.emplace_back();
 				command.indexCount = range.indexCount == 0ull ? draw_info.lastIndex : range.indexCount;
 				command.instanceCount = 1;
 				command.firstIndex = range.beginIndex;
 				command.vertexOffset = 0;
 				command.firstInstance = 0;
 			}
+		}
+	}
 
-			void* memory{ nullptr };
+	void* memory{ nullptr };
+	if (draw_info.lastIndex == 0ull && draw_info.lastVertex == 0ull)
+	{
+		auto& range = draw_info.ranges.front();
+		current.draw(range.vertexCount, 1, range.beginVertex, 0);
+	}
+	else if (draw_info.lastIndex == 0ull)
+	{
+		if (use_indirect_draw)
+		{
+			auto& buffer = m_pResources->get<FVkBuffer>(m_indirectDrawBuffer);
+			m_pDevice->mapBufferMemory(*buffer, &memory);
+			std::memcpy(static_cast<char*>(memory) + m_drawBufferOffset, draw_commands.data(), draw_commands.size() * sizeof(vk::DrawIndirectCommand));
+			m_pDevice->unmapBufferMemory(*buffer);
+			current.drawIndirect(buffer->handle, m_drawBufferOffset, draw_commands.size(), sizeof(vk::DrawIndirectCommand));
 
+			m_drawBufferOffset += draw_commands.size() * sizeof(vk::DrawIndirectCommand);
+		}
+		else
+		{
+			for(auto& command : draw_commands)
+				current.draw(command.vertexCount, command.instanceCount, command.firstVertex, command.firstInstance);
+		}
+	}
+	else
+	{
+		if (use_indirect_draw)
+		{
 			auto& buffer = m_pResources->get<FVkBuffer>(m_indirectIndexedDrawBuffer);
 			m_pDevice->mapBufferMemory(*buffer, &memory);
-			std::memcpy(memory, commands.data(), commands.size() * sizeof(vk::DrawIndexedIndirectCommand));
+			std::memcpy(static_cast<char*>(memory) + m_drawIndexedBufferOffset, draw_indexed_commands.data(), draw_indexed_commands.size() * sizeof(vk::DrawIndexedIndirectCommand));
 			m_pDevice->unmapBufferMemory(*buffer);
+			current.drawIndexedIndirect(buffer->handle, m_drawIndexedBufferOffset, draw_indexed_commands.size(), sizeof(vk::DrawIndexedIndirectCommand));
 
-			//current.updateBuffer(buffer->handle, 0ull, commands.size() * sizeof(vk::DrawIndexedIndirectCommand), commands.data());
-			current.drawIndexedIndirect(buffer->handle, 0ull, commands.size(), sizeof(vk::DrawIndexedIndirectCommand));
+			m_drawIndexedBufferOffset += draw_indexed_commands.size() * sizeof(vk::DrawIndexedIndirectCommand);
+		}
+		else
+		{
+			for (auto& command : draw_indexed_commands)
+				current.drawIndexed(command.indexCount, command.instanceCount, command.firstIndex, command.vertexOffset, command.firstInstance);
 		}
 	}
 }
@@ -1465,6 +1479,8 @@ void CVkRenderContext::destroyCommandBuffer(uint32_t queue_type, std::thread::id
 void CVkRenderContext::beginFrameCommandBuffers()
 {
 	uint32_t image_index{ 0u };
+
+	m_drawBufferOffset = m_drawIndexedBufferOffset = 0ull;
 
 	processResourceUpload();
 	// TODO: sync queues here
