@@ -141,7 +141,7 @@
 
 				mat4 model = modelStorage.model[meshData.objectId];
 #ifdef HAS_SKIN
-				//apply_joint_matrix(model);
+				apply_joint_matrix(model, vertices[0].joints, vertices[0].weights);
 #endif
 
 				mat4 mvp = frameData.projection * frameData.view * model;

@@ -7,13 +7,26 @@ using namespace engine::render;
 // For debugging
 //struct FVertex
 //{
-//	glm::vec3 pos{};
-//	glm::vec2 uv{};
-//	glm::vec3 norm{};
-//	glm::vec4 tan{};
-//	glm::u8vec4 joints{};
-//	glm::vec4 weights{};
+//	alignas(16) glm::vec3 pos{};
+//	alignas(8) glm::vec2 uv{};
+//	alignas(16) glm::vec3 norm{};
+//	alignas(16) glm::vec4 tan{};
+//	alignas(4) glm::u8vec4 joints{};
+//	alignas(16) glm::vec4 weights{};
 //};
+
+size_t align_std140(size_t size)
+{
+	constexpr const size_t maxalignment{ 0ull };
+	if (size <= 4ull)
+		return 4ull;
+	else if (size <= 8ull)
+		return 8ull;
+	else if (size <= 16ull)
+		return 16ull;
+
+	return (size + maxalignment - 1ull) & ~(maxalignment - 1ull);
+}
 
 uint32_t get_attribute_format_by_type(EVertexAttributeType type, size_t size)
 {
@@ -141,7 +154,7 @@ void CVertexHandler::create(const FVertexHandlerCreateInfo& create_info)
 		if(desc.type != EVertexAttributeType::ePosition)
 			definitions.emplace(get_attribute_definition(desc.type, desc.size));
 
-		m_vertexBuffer.elementSize += desc.size;
+		m_vertexBuffer.elementSize += align_std140(desc.size);
 	}
 
 	auto& desc = m_declaration.bindingDescriptions.emplace_back();
@@ -215,7 +228,7 @@ size_t CVertexHandler::addVertices(const std::vector<FVertexAttributePointer>& a
 		for (const auto& attrib : attributes_data)
 		{
 			std::memcpy(temp.data() + offset, &attrib.data[v * attrib.stride], attrib.stride);
-			offset += attrib.stride;
+			offset += align_std140(attrib.stride);
 		}
 
 		//if (skinned)
