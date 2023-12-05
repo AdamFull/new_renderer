@@ -20,19 +20,19 @@
 
 	code: 
 	"""
-		layout(local_size_x = 8, local_size_y = 8) in;
+		layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
 		layout(set = 1, binding = 4, rgba16f) uniform writeonly image2D write_color;
 		layout(set = 1, binding = 5) uniform sampler2D visibility_buffer;
 		layout(set = 1, binding = 6) uniform sampler2D material_buffer;
 		layout(set = 1, binding = 7) uniform sampler2D depth_buffer;
 
-		layout(std430, set = 1, binding = 7) readonly buffer VertexBuffer
+		layout(std430, set = 1, binding = 8) readonly buffer VertexBuffer
 		{
 			RawVertex vertices[];
 		} vb;
 
-		layout(std430, set = 1, binding = 8) readonly buffer IndexBuffer
+		layout(std430, set = 1, binding = 9) readonly buffer IndexBuffer
 		{
 			Index indices[];
 		} ib;
@@ -195,9 +195,6 @@
 			if(swizzle_compute_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, image_size, uv, px))
 				return;
 
-			Index test_index = ib.indices[0];
-			RawVertex test_vertex = vb.vertices[test_index];
-
 			// Sampling object/material buffer
 			vec4 mb_raw = texture(material_buffer, uv);
 
@@ -205,10 +202,10 @@
 			uint matID = packedMOID & 0xFFFFu;
 			uint objID = (packedMOID >> 16) & 0xFFFFu;
 
-			if(matID != meshData.materialId)
+			if(objID != meshData.objectId && matID != meshData.materialId)
 				return;
 
-			vec4 pixel_color = vec4(0, 0, 0, 1);
+			vec4 pixel_color = vec4(0.0, 0.0, 0.0, 1.0);
 
 			// Sampling visibility buffer
 			vec4 vb_raw = texture(visibility_buffer, uv);
@@ -285,6 +282,8 @@
 //				// First the projected coordinates at this point are calculated using In.screenPos and the computed Z value at this point.
 //				// Then, multiplying the perspective projected coordinates by the inverse view-projection matrix (invVP) produces world coordinates
 //				vec3 position = (frameData.invViewProjection * vec4(uv * w, z, w)).xyz;
+//
+//				pixel_color = vec4(pos0, 1.0);
 //
 //				// Interpolate texture coordinates
 //				vec2 texCoord;
