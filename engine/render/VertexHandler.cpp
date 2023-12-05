@@ -24,7 +24,7 @@ size_t align_std140(size_t size)
 		return 8ull;
 	else if (size <= 16ull)
 		return 16ull;
-
+	
 	return (size + maxalignment - 1ull) & ~(maxalignment - 1ull);
 }
 
@@ -154,7 +154,7 @@ void CVertexHandler::create(const FVertexHandlerCreateInfo& create_info)
 		if(desc.type != EVertexAttributeType::ePosition)
 			definitions.emplace(get_attribute_definition(desc.type, desc.size));
 
-		m_vertexBuffer.elementSize += align_std140(desc.size);
+		m_vertexBuffer.elementSize += desc.size;
 	}
 
 	auto& desc = m_declaration.bindingDescriptions.emplace_back();
@@ -228,15 +228,8 @@ size_t CVertexHandler::addVertices(const std::vector<FVertexAttributePointer>& a
 		for (const auto& attrib : attributes_data)
 		{
 			std::memcpy(temp.data() + offset, &attrib.data[v * attrib.stride], attrib.stride);
-			offset += align_std140(attrib.stride);
+			offset += attrib.stride;
 		}
-
-		//if (skinned)
-		//{
-		//	FVertex vertex{};
-		//	std::memcpy(&vertex, temp.data(), temp.size());
-		//	int iiii = 0;
-		//}
 
 		m_vertexBuffer.data.insert(m_vertexBuffer.data.end(), temp.begin(), temp.end());
 	}

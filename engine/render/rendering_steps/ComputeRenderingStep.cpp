@@ -89,7 +89,7 @@ void CComputeRenderingStep::execute(float dt)
 			shader->bindBuffer("VertexBuffer", vertex_handle);
 
 			size_t index_buffer = last_vbo->getIndexHandle();
-			shader->bindBuffer("IndexBuffer", vertex_handle);
+			shader->bindBuffer("IndexBuffer", index_buffer);
 
 			shader->flushDescriptors();
 			shader->flushConstants(m_beginRenderingInfo.queue);
@@ -108,6 +108,7 @@ void CComputeRenderingStep::execute(float dt)
 			group.z = glm::max(group.z, 1u);
 
 			m_pRenderContext->dispatch(m_beginRenderingInfo.queue, dispatch_info);
+			//break;
 		}
 	}
 }

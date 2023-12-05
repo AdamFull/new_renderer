@@ -39,6 +39,8 @@
 		mat4 invViewProjection;
 		vec3 viewDirection;
 		vec2 viewportDimension;
+		float nearPlane;
+		float farPlane;
 		vec4 frustumPlanes[6];
 	} frameData;
 
@@ -139,34 +141,86 @@
 	#define Index uint
 #endif
 
-	struct Vertex
-	{
-		vec3 pos;
-#if defined(COLOR_VEC3)
-		vec3 color;
-#elif defined(COLOR_VEC4)
-		vec4 color;
-#endif // HAS_COLOR
+//	struct Vertex
+//	{
+//		vec3 pos;
+//#if defined(COLOR_VEC3)
+//		vec3 color;
+//#elif defined(COLOR_VEC4)
+//		vec4 color;
+//#endif // HAS_COLOR
+//#ifdef HAS_TEXCOORD
+//		vec2 uv;
+//#endif // HAS_TEXCOORD
+//#ifdef HAS_NORMAL
+//		vec3 normal;
+//#endif // HAS_NORMAL
+//#if defined(TANGENT_VEC3)
+//		vec3 tangent;
+//#elif defined(TANGENT_VEC4)
+//		vec4 tangent;
+//#endif // HAS_TANGENT
+//#ifdef HAS_SKIN
+//#if defined(JOINTS_8BIT)
+//		u8vec4 joints;
+//#elif defined(JOINTS_16BIT)
+//		u16vec4 joints;
+//#endif // JOINTS_BIT
+//		vec4 weights;
+//#endif // HAS_SKIN
+//	};
+
+struct RawVertex
+{
+	float px;
+	float py;
+	float pz;
+
+#if defined(COLOR_VEC3) || defined(COLOR_VEC4)
+	float cr;
+	float cg;
+	float cb;
+#endif // COLOR_VEC3
+#if defined(COLOR_VEC4)
+	float ca;
+#endif // COLOR_VEC4
+
 #ifdef HAS_TEXCOORD
-		vec2 uv;
+	float u;
+	float v;
 #endif // HAS_TEXCOORD
+
 #ifdef HAS_NORMAL
-		vec3 normal;
+	float nx;
+	float ny;
+	float nz;
 #endif // HAS_NORMAL
-#if defined(TANGENT_VEC3)
-		vec3 tangent;
-#elif defined(TANGENT_VEC4)
-		vec4 tangent;
-#endif // HAS_TANGENT
+
+#if defined(TANGENT_VEC3) || defined(TANGENT_VEC4)
+	float tx;
+	float ty;
+	float tz;
+#endif // TANGENT_VEC3
+#if defined(TANGENT_VEC4)
+	float tw;
+#endif // TANGENT_VEC4
+
 #ifdef HAS_SKIN
-#if defined(JOINTS_8BIT)
-		u8vec4 joints;
-#elif defined(JOINTS_16BIT)
-		u16vec4 joints;
-#endif // JOINTS_BIT
-		vec4 weights;
+#if defined(JOINTS_8BIT) || defined(JOINTS_16BIT)
+	uint joints_8;
+#endif // JOINTS_8BIT
+#if defined(JOINTS_16BIT)
+	uint joints_16;
+#endif // JOINTS_16BIT
+
+	float wx;
+	float wy;
+	float wz;
+	float ww;
 #endif // HAS_SKIN
-	};
+};
+
+	//Vertex get_hl_vertex(in RawVertex)
 
 	void apply_joint_matrix(inout mat4 model, in vec4 in_joints, in vec4 in_weights)
 	{

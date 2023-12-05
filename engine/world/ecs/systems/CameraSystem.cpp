@@ -59,6 +59,7 @@ void CCameraSystem::__update(float fDt)
 				// Update render camera
 				render_packet->camera.projection = camera.projection;
 				render_packet->camera.invProjection = camera.invProjection;
+				render_packet->camera.dimensions = glm::vec2(static_cast<float>(render_resolution.x), static_cast<float>(render_resolution.y));
 			}
 
 			if (camera.moved)

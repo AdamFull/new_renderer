@@ -29,7 +29,7 @@
 
 		layout(std430, set = 1, binding = 7) readonly buffer VertexBuffer
 		{
-			Vertex vertices[];
+			RawVertex vertices[];
 		} vb;
 
 		layout(std430, set = 1, binding = 8) readonly buffer IndexBuffer
@@ -37,49 +37,133 @@
 			Index indices[];
 		} ib;
 
-		struct DerivativesOutput
+
+		float depthLinearization(float depth, float near, float far)
 		{
-			vec3 dbDx;
-			vec3 dbDy;
+			return (2.0 * near) / (far + near - depth * (far - near));
+		}
+
+		// Barycentric coordinates and gradients, struct needed to interpolate values.
+		struct BarycentricDeriv
+		{
+			vec3 m_lambda;
+			vec3 m_ddx;
+			vec3 m_ddy;
 		};
 
+		// 2D interpolation results for texture gradient values
+		struct GradientInterpolationResults
+		{
+			vec2 interp;
+			vec2 dx;
+			vec2 dy;
+		};
+
+		// Interpolate a vec3 vector.
+		float InterpolateWithDeriv(BarycentricDeriv deriv, vec3 v)
+		{
+			return dot(v, deriv.m_lambda);
+		}
+
+		// Interpolate single values over triangle vertices.
+		float InterpolateWithDeriv(BarycentricDeriv deriv, float v0, float v1, float v2)
+		{
+			vec3 mergedV = vec3(v0, v1, v2);
+			return InterpolateWithDeriv(deriv, mergedV);
+		}
+
+		// Interpolate a vec3 attribute for each vertex of the triangle.
+		// Attribute parameters: a 3x3 matrix (Row denotes attributes per vertex).
+		vec3 InterpolateWithDeriv(BarycentricDeriv deriv, mat3 attributes)
+		{
+			vec3 attr0 = attributes[0];
+			vec3 attr1 = attributes[1];
+			vec3 attr2 = attributes[2];
+			return vec3(dot(attr0, deriv.m_lambda), dot(attr1, deriv.m_lambda), dot(attr2, deriv.m_lambda));
+		}
+
 		// Interpolate 2D attributes using the partial derivatives and generates dx and dy for texture sampling.
-		vec2 interpolate2DAttributes(mat3x2 attributes, vec3 dbDx, vec3 dbDy, vec2 d)
+		// Attribute paramters: a 3x2 matrix of float2 attributes (Column denotes attribuets per vertex).
+		GradientInterpolationResults Interpolate2DWithDeriv(BarycentricDeriv deriv, mat3x2 attributes)
 		{
 			vec3 attr0 = vec3(attributes[0].x, attributes[1].x, attributes[2].x);
 			vec3 attr1 = vec3(attributes[0].y, attributes[1].y, attributes[2].y);
-			vec2 attribute_x = vec2(dot(dbDx,attr0), dot(dbDx,attr1));
-			vec2 attribute_y = vec2(dot(dbDy,attr0), dot(dbDy,attr1));
-			vec2 attribute_s = attributes[0];
 			
-			vec2 result = (attribute_s + d.x * attribute_x + d.y * attribute_y);
+			GradientInterpolationResults result;
+			// independently interpolate x and y attributes.
+			result.interp.x = InterpolateWithDeriv(deriv,attr0);
+			result.interp.y = InterpolateWithDeriv(deriv,attr1);
+		
+			// Calculate attributes' dx and dy (for texture sampling).
+			result.dx.x = dot(attr0,deriv.m_ddx);
+			result.dx.y = dot(attr1,deriv.m_ddx);
+			result.dy.x = dot(attr0,deriv.m_ddy);
+			result.dy.y = dot(attr1,deriv.m_ddy);
 			return result;
 		}
-		
-		// Interpolate vertex attributes at point 'd' using the partial derivatives
-		vec3 interpolate3DAttributes(mat3 attributes, vec3 dbDx, vec3 dbDy, vec2 d)
+
+		// Computes the partial derivatives of a triangle from the projected screen space vertices
+		BarycentricDeriv CalcFullBary(vec4 pt0, vec4 pt1, vec4 pt2, vec2 pixelNdc, vec2 winSize)
 		{
-			vec3 attribute_x = attributes * dbDx;
-			vec3 attribute_y = attributes * dbDy;
-			vec3 attribute_s = attributes[0];
+			BarycentricDeriv ret ;
+			vec3 invW =  1.0f / vec3(pt0.w, pt1.w, pt2.w);
+			//Project points on screen to calculate post projection positions in 2D
+			vec2 ndc0 = pt0.xy * invW.x;
+			vec2 ndc1 = pt1.xy * invW.y;
+			vec2 ndc2 = pt2.xy * invW.z;
+
+			// Computing partial derivatives and prospective correct attribute interpolation with barycentric coordinates
+			// Equation for calculation taken from Appendix A of DAIS paper:
+			// https://cg.ivd.kit.edu/publications/2015/dais/DAIS.pdf
+
+			// Calculating inverse of determinant(rcp of area of triangle).
+			float invDet = 1.0 / determinant(mat2(ndc2 - ndc1, ndc0 - ndc1));
+
+			//determining the partial derivatives
+			// ddx[i] = (y[i+1] - y[i-1])/Determinant
+			ret.m_ddx = vec3(ndc1.y - ndc2.y, ndc2.y - ndc0.y, ndc0.y - ndc1.y) * invDet * invW;
+			ret.m_ddy = vec3(ndc2.x - ndc1.x, ndc0.x - ndc2.x, ndc1.x - ndc0.x) * invDet * invW;
+			// sum of partial derivatives.
+			float ddxSum = dot(ret.m_ddx, vec3(1,1,1));
+			float ddySum = dot(ret.m_ddy, vec3(1,1,1));
 			
-			return (attribute_s + d.x * attribute_x + d.y * attribute_y);
+			// Delta vector from pixel's screen position to vertex 0 of the triangle.
+			vec2 deltaVec = pixelNdc - ndc0;
+
+			// Calculating interpolated W at point.
+			float interpInvW = invW.x + deltaVec.x*ddxSum + deltaVec.y*ddySum;
+			float interpW = 1.0 / interpInvW;
+			// The barycentric co-ordinate (m_lambda) is determined by perspective-correct interpolation. 
+			// Equation taken from DAIS paper.
+			ret.m_lambda.x = interpW * (invW[0] + deltaVec.x*ret.m_ddx.x + deltaVec.y*ret.m_ddy.x);
+			ret.m_lambda.y = interpW * (0.0f    + deltaVec.x*ret.m_ddx.y + deltaVec.y*ret.m_ddy.y);
+			ret.m_lambda.z = interpW * (0.0f    + deltaVec.x*ret.m_ddx.z + deltaVec.y*ret.m_ddy.z);
+
+			//Scaling from NDC to pixel units
+			ret.m_ddx *= (2.0f/winSize.x);
+			ret.m_ddy *= (2.0f/winSize.y);
+			ddxSum    *= (2.0f/winSize.x);
+			ddySum    *= (2.0f/winSize.y);
+
+			// This part fixes the derivatives error happening for the projected triangles.
+			// Instead of calculating the derivatives constantly across the 2D triangle we use a projected version
+			// of the gradients, this is more accurate and closely matches GPU raster behavior.
+			// Final gradient equation: ddx = (((lambda/w) + ddx) / (w+|ddx|)) - lambda
+
+			// Calculating interpW at partial derivatives position sum.
+			float interpW_ddx = 1.0f / (interpInvW + ddxSum);
+			float interpW_ddy = 1.0f / (interpInvW + ddySum);
+
+			// Calculating perspective projected derivatives.
+			ret.m_ddx = interpW_ddx*(ret.m_lambda*interpInvW + ret.m_ddx) - ret.m_lambda;
+			ret.m_ddy = interpW_ddy*(ret.m_lambda*interpInvW + ret.m_ddy) - ret.m_lambda;  
+
+			return ret;
 		}
 
-		// Engel's barycentric coord partial derivs function. Follows equation from [Schied][Dachsbacher]
-		// Computes the partial derivatives of point's barycentric coordinates from the projected screen space vertices
-		DerivativesOutput computePartialDerivatives(vec2 v[3])
+		RawVertex[3] loadTriangle(in uint drawID, in uint primID)
 		{
-			DerivativesOutput derivatives;
-			float d = 1.0 / determinant(mat2(v[2] - v[1], v[0] - v[1]));
-			derivatives.dbDx = vec3(v[1].y - v[2].y, v[2].y - v[0].y, v[0].y - v[1].y) * d;
-			derivatives.dbDy = vec3(v[2].x - v[1].x, v[0].x - v[2].x, v[1].x - v[0].x) * d;
-			return derivatives;
-		}
-
-		Vertex[3] loadTriangle(in uint drawID, in uint primID)
-		{
-			Vertex[3] vertices;
+			RawVertex[3] vertices;
 
 			// Index of the first vertex of this draw call's geometry
 			uint startIndex = drawID; // There's only one draw call at the moment, so drawID should always be 0. This would work out the offset of the first vertex in the nth draw call if using MultiDraw commands. 
@@ -90,9 +174,9 @@
 			uint triVert3IndexBufferPosition = (primID * 3 + 2) + startIndex;	
 
 			// Now get vertex index from index buffer (eg, 17, 41, 32)
-			uint triVert0Index = ib.indices[triVert1IndexBufferPosition];
-			uint triVert1Index = ib.indices[triVert2IndexBufferPosition];
-			uint triVert2Index = ib.indices[triVert3IndexBufferPosition];
+			Index triVert0Index = ib.indices[triVert1IndexBufferPosition];
+			Index triVert1Index = ib.indices[triVert2IndexBufferPosition];
+			Index triVert2Index = ib.indices[triVert3IndexBufferPosition];
 
 			// Load vertex data of the 3 control points
 			vertices[0] = vb.vertices[triVert0Index];
@@ -107,9 +191,12 @@
 			uvec2 image_size = imageSize(write_color);
 
 			uvec2 px = uvec2(0, 0);
-			vec2 uv = vec2(0.0, 0.0);
+			vec2 uv = vec2(0, 0);
 			if(swizzle_compute_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, image_size, uv, px))
 				return;
+
+			Index test_index = ib.indices[0];
+			RawVertex test_vertex = vb.vertices[test_index];
 
 			// Sampling object/material buffer
 			vec4 mb_raw = texture(material_buffer, uv);
@@ -118,7 +205,7 @@
 			uint matID = packedMOID & 0xFFFFu;
 			uint objID = (packedMOID >> 16) & 0xFFFFu;
 
-			if(objID != meshData.objectId || matID != meshData.materialId)
+			if(matID != meshData.materialId)
 				return;
 
 			vec4 pixel_color = vec4(0, 0, 0, 1);
@@ -132,57 +219,105 @@
 				uint drawID = (packedVBID >> 23) & 0x000000FF;
 				uint triangleID = (packedVBID & 0x007FFFFF) - 1;
 				
-				Vertex[3] vertices = loadTriangle(drawID, triangleID);
+				RawVertex[3] vertices = loadTriangle(drawID, triangleID);
 
-				// Load position data of the 3 vertices
-				vec3 vert0_pos = vertices[0].pos;
-				vec3 vert1_pos = vertices[1].pos;
-				vec3 vert2_pos = vertices[2].pos;
+				// Load vertex data of the 3 vertices
+				vec3 v0pos = vec3(vertices[0].px, vertices[0].py, vertices[0].pz);
+				vec3 v1pos = vec3(vertices[1].px, vertices[1].py, vertices[1].pz);
+				vec3 v2pos = vec3(vertices[2].px, vertices[2].py, vertices[2].pz);
 
 				mat4 model = modelStorage.model[meshData.objectId];
+
 #ifdef HAS_SKIN
-				apply_joint_matrix(model, vertices[0].joints, vertices[0].weights);
+#if defined(JOINTS_8BIT)
+			u8vec4 joints;
+			joints.x = uint8_t(vertices[0].joints_8 & 0xFF);
+			joints.y = uint8_t((vertices[0].joints_8 >> 8) & 0xFF);
+			joints.z = uint8_t((vertices[0].joints_8 >> 16) & 0xFF);
+			joints.w = uint8_t((vertices[0].joints_8 >> 24) & 0xFF);
+#elif defined(JOINTS_16BIT)
+			u16vec4 joints;
 #endif
 
+			uint begin_pos = meshData.skinId * 128;
+			mat4 skinMat = 
+				vertices[0].wx * matrices[begin_pos + joints.x] +
+				vertices[0].wy * matrices[begin_pos + joints.y] +
+				vertices[0].wz * matrices[begin_pos + joints.z] +
+				vertices[0].ww * matrices[begin_pos + joints.w];
+		
+			model = model * skinMat;
+#endif // HAS_SKIN
+
+				// Transform positions to clip space
 				mat4 mvp = frameData.projection * frameData.view * model;
+				vec4 pos0 = mvp * vec4(v0pos, 1.0);
+				vec4 pos1 = mvp * vec4(v1pos, 1.0);
+				vec4 pos2 = mvp * vec4(v2pos, 1.0);
 
-				vec4 clip_pos_0 = mvp * vec4(vert0_pos, 1.0);
-				vec4 clip_pos_1 = mvp * vec4(vert1_pos, 1.0);
-				vec4 clip_pos_2 = mvp * vec4(vert2_pos, 1.0);
+				pixel_color = vec4(pos0.xyz, 1.0);
 
-				// Pre-calculate 1 over w components
-				vec3 one_over_w = 1.0 / vec3(clip_pos_0.w, clip_pos_1.w, clip_pos_2.w);
-
-				// Calculate 2D screen positions
-				clip_pos_0 *= one_over_w.x;
-				clip_pos_1 *= one_over_w.y;
-				clip_pos_2 *= one_over_w.z;
-
-				vec2 screen_positions[3] = { clip_pos_0.xy, clip_pos_1.xy, clip_pos_2.xy };
-
-				// Get barycentric coordinates for attribute interpolation
-				DerivativesOutput derivatives = computePartialDerivatives(screen_positions);
-
-				vec2 delta = uv + screen_positions[0];
-
-				// Interpolate texture coordinates
-				vec2 texcoord;
-#ifdef HAS_TEXCOORD
-				mat3x2 tri_tex_coords =
-				{
-					vertices[0].uv,
-					vertices[1].uv,
-					vertices[2].uv
-				};
-				texcoord = interpolate2DAttributes(tri_tex_coords, derivatives.dbDx, derivatives.dbDy, delta);
-#endif
-
-				FMaterial material = materials[meshData.materialId];
-
-				if(material.baseColorTexture != ~0u)
-					pixel_color = texture(textures[material.baseColorTexture], texcoord);
-
-				//pixel_color = vb_raw;
+//				vec4 wPos0 = frameData.invViewProjection * pos0;
+//				vec4 wPos1 = frameData.invViewProjection * pos1;
+//				vec4 wPos2 = frameData.invViewProjection * pos2;
+//
+//				// Calculate the inverse of w, since it's going to be used several times
+//				vec3 one_over_w = 1.0f / vec3(pos0.w, pos1.w, pos2.w);
+//
+//				// Project vertex positions to calculate 2D post-perspective positions
+//				pos0 *= one_over_w[0];
+//				pos1 *= one_over_w[1];
+//				pos2 *= one_over_w[2];
+//
+//				// Compute partial derivatives and baycentric coordinates.
+//				// This is necessary to interpolate triangle attributes per pixel.
+//				BarycentricDeriv derivativesOut = CalcFullBary(pos0, pos1, pos2, uv, frameData.viewportDimension);
+//
+//				// Interpolated 1/w (one_over_w) for all three vertices of the triangle
+//				// using the barycentric coordinates and the delta vector
+//				float w = 1.0f / dot(one_over_w, derivativesOut.m_lambda);
+//
+//				// Reconstruct the Z value at this screen point performing only the necessary matrix * vector multiplication
+//				// operations that involve computing Z
+//				float z = w * frameData.projection[2][2] + frameData.projection[3][2];
+//
+//				// Calculate the world position coordinates:
+//				// First the projected coordinates at this point are calculated using In.screenPos and the computed Z value at this point.
+//				// Then, multiplying the perspective projected coordinates by the inverse view-projection matrix (invVP) produces world coordinates
+//				vec3 position = (frameData.invViewProjection * vec4(uv * w, z, w)).xyz;
+//
+//				// Interpolate texture coordinates
+//				vec2 texCoord;
+//				vec2 texCoordDX;
+//				vec2 texCoordDY;
+//#ifdef HAS_TEXCOORD
+//				mat3x2 texCoords =
+//				{
+//					vec2(vertices[0].u, vertices[0].v),
+//					vec2(vertices[1].u, vertices[1].v),
+//					vec2(vertices[2].u, vertices[2].v)
+//				};
+//
+//				// Interpolate texture coordinates and calculate the gradients for texture sampling with mipmapping support
+//				GradientInterpolationResults results = Interpolate2DWithDeriv(derivativesOut, texCoords);
+//
+//				float linearZ = depthLinearization(z / w, frameData.nearPlane, frameData.farPlane);
+//				float mip = pow(pow(linearZ, 0.9f) * 5.0f, 1.5f);
+//
+//				texCoordDX = results.dx * mip;
+//				texCoordDY = results.dy * mip;
+//				texCoord = results.interp;
+//
+//				//Perspective correct in case of screen differentials
+//				texCoord *= w;
+//				texCoordDX *= w;
+//				texCoordDY *= w;
+//#endif
+//
+//				FMaterial material = materials[meshData.materialId];
+//
+//				if(material.baseColorTexture != ~0u)
+//					pixel_color = textureGrad(textures[material.baseColorTexture], texCoord, texCoordDX, texCoordDY);
 			}
 			else
 			{

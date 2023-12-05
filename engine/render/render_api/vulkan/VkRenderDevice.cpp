@@ -1253,6 +1253,7 @@ FRenderApiErrorInfo CVkRenderDevice::createLogicalDevice(const FRenderContextCre
 	vk10features.depthClamp = true;
 	vk10features.independentBlend = true;
 	vk10features.multiDrawIndirect = true;
+	vk10features.shaderInt16 = true;
 
 	vk::DeviceCreateInfo device_ci{};
 	device_ci.queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size());

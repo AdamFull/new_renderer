@@ -62,6 +62,8 @@ namespace engine
 			glm::vec3 forward{ 0.f };
 			glm::vec3 right{ 0.f };
 
+			glm::vec2 dimensions{};
+
 			FFrustum frustum{};
 		};
 
