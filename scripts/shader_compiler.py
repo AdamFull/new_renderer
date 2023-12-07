@@ -23,6 +23,7 @@ class ShaderCompiler:
 
         shader_compiler_api = self.shader_lang.lower()
         shader_compile_type = self.build_type.lower()
+        shader_compile_type = "debug"
 
         shader_input_directory = os.path.join(embed_path, "shaders")
         shader_output_directory = os.path.join(rendering_path, "shader_cache.shc")
