@@ -141,35 +141,6 @@
 	#define Index uint
 #endif
 
-//	struct Vertex
-//	{
-//		vec3 pos;
-//#if defined(COLOR_VEC3)
-//		vec3 color;
-//#elif defined(COLOR_VEC4)
-//		vec4 color;
-//#endif // HAS_COLOR
-//#ifdef HAS_TEXCOORD
-//		vec2 uv;
-//#endif // HAS_TEXCOORD
-//#ifdef HAS_NORMAL
-//		vec3 normal;
-//#endif // HAS_NORMAL
-//#if defined(TANGENT_VEC3)
-//		vec3 tangent;
-//#elif defined(TANGENT_VEC4)
-//		vec4 tangent;
-//#endif // HAS_TANGENT
-//#ifdef HAS_SKIN
-//#if defined(JOINTS_8BIT)
-//		u8vec4 joints;
-//#elif defined(JOINTS_16BIT)
-//		u16vec4 joints;
-//#endif // JOINTS_BIT
-//		vec4 weights;
-//#endif // HAS_SKIN
-//	};
-
 struct RawVertex
 {
 	float px;
