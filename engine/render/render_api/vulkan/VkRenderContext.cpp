@@ -1051,7 +1051,7 @@ void CVkRenderContext::beginRendering(const FBeginRenderingInfo& rendering_info)
 
 		FVkTextureTranslationInfo texture_translation_info{};
 		texture_translation_info.oldLayout = vk::ImageLayout::eUndefined;
-		depth_target->layout = texture_translation_info.newLayout = is_depth_stencil_attachment ? vk::ImageLayout::eDepthStencilAttachmentOptimal : vk::ImageLayout::eDepthAttachmentOptimal;
+		depth_target->layout = texture_translation_info.newLayout = is_depth_stencil_attachment ? vk::ImageLayout::eDepthStencilAttachmentOptimal : vk::ImageLayout::eDepthAttachmentOptimalKHR;
 		auto target_layout_translation = get_texture_layout_translation_info(*depth_target, texture_translation_info);
 		translation_info.imageTranslationInfos.emplace_back(target_layout_translation);
 		
@@ -1070,7 +1070,7 @@ void CVkRenderContext::beginRendering(const FBeginRenderingInfo& rendering_info)
 
 		FVkTextureTranslationInfo texture_translation_info{};
 		texture_translation_info.oldLayout = vk::ImageLayout::eUndefined;
-		stencil_target->layout = texture_translation_info.newLayout = vk::ImageLayout::eStencilAttachmentOptimal;
+		stencil_target->layout = texture_translation_info.newLayout = vk::ImageLayout::eStencilAttachmentOptimalKHR;
 		auto target_layout_translation = get_texture_layout_translation_info(*stencil_target, texture_translation_info);
 		translation_info.imageTranslationInfos.emplace_back(target_layout_translation);
 
@@ -1285,7 +1285,8 @@ void CVkRenderContext::draw(uint32_t queue_type, const FGeometryDrawInfo& draw_i
 	auto& command_buffer = getLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
 
-	bool use_indirect_draw{ draw_info.ranges.size() > 1ull };
+	bool use_indirect_draw{ false };
+	//bool use_indirect_draw{ draw_info.ranges.size() > 1ull };
 
 	std::vector<vk::DrawIndirectCommand> draw_commands{};
 	std::vector<vk::DrawIndexedIndirectCommand> draw_indexed_commands{};
