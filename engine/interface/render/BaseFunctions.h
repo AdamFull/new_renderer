@@ -48,6 +48,51 @@ namespace engine
             };
 		}
 
+        inline void rebatchGeometry(const std::vector<FGeometryBatch>& batches, std::vector<FGeometryBatch>& rebatched, uint32_t flags = GEOMETRY_BATCHER_ALL_FLAG_BIT)
+        {
+            std::unordered_map<batcher::BatchKey, FGeometryBatch, batcher::BatchKeyHash> batch_map;
+
+            for (const auto& batch : batches)
+            {
+                batcher::BatchKey key{ flags, batch.vboId, batch.materialId, batch.node, batch.skin };
+                auto& nbatch = batch_map[key];
+
+                nbatch.vboId = batch.vboId;
+                nbatch.materialId = (flags & GEOMETRY_BATCHER_COUNT_ON_MATERIAL_FLAG_BIT) ? batch.materialId : ~0ull;
+                nbatch.node = batch.node;
+                nbatch.skin = batch.skin;
+
+                for(const auto& range : batch.ranges)
+                    nbatch.ranges.emplace_back(range);
+            }
+
+            // Apply geometry batches
+            for (auto& [key, batch] : batch_map)
+            {
+                if (flags & GEOMETRY_BATCHER_MERGE_DRAWCALLS_FLAG_BIT)
+                {
+                    std::sort(batch.ranges.begin(), batch.ranges.end(), [](const FGeometryRanges& a, const FGeometryRanges& b) { return a.beginIndex < b.beginIndex; });
+
+                    std::vector<FGeometryRanges> combinedRanges;
+                    for (const auto& range : batch.ranges)
+                    {
+                        if (!combinedRanges.empty())
+                        {
+                            auto& lastRange = combinedRanges.back();
+                            if (lastRange.beginIndex + lastRange.indexCount == range.beginIndex)
+                                lastRange.indexCount += range.indexCount;
+                        }
+                        else
+                            combinedRanges.push_back(range);
+                    }
+
+                    batch.ranges = std::move(combinedRanges);
+                }
+
+                rebatched.emplace_back(std::move(batch));
+            }
+        }
+
 		inline void createGeometryBatches(const std::vector<FGeometryDrawData>& geometry_list, std::vector<FGeometryBatch>& batches, uint32_t flags = GEOMETRY_BATCHER_ALL_FLAG_BIT)
 		{
             std::unordered_map<batcher::BatchKey, FGeometryBatch, batcher::BatchKeyHash> batch_map;

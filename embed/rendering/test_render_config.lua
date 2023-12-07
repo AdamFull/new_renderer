@@ -26,6 +26,16 @@ end
 
 do
     local target_ci = TextureCI.new()
+    target_ci.format = render_context:get_api_format(Format.rgba8_unorm)
+    target_ci.type = bit_or(TexType.two_dim, TexType.samplable)
+    target_ci.width = surface_resolution.x
+    target_ci.height = surface_resolution.y
+    
+    render_context:create_render_target("vbo_id_buffer_target", target_ci)
+end
+
+do
+    local target_ci = TextureCI.new()
     target_ci.format = render_context:get_depth_format(true)
     target_ci.type = bit_or(TexType.two_dim, TexType.samplable)
     target_ci.width = surface_resolution.x
@@ -68,6 +78,7 @@ do
 
     step_ci.rendering.output_targets:add(render_context:get_texture_resource("visibility_buffer_target"))
     step_ci.rendering.output_targets:add(render_context:get_texture_resource("material_buffer_target"))
+    step_ci.rendering.output_targets:add(render_context:get_texture_resource("vbo_id_buffer_target"))
     step_ci.rendering.depth_target = render_context:get_texture_resource("zbuffer_depth_target")
     step_ci.rendering.stencil_target = step_ci.rendering.depth_target
 
@@ -85,6 +96,7 @@ do
 
     step_ci.sync.barrier.targets:add(render_context:get_texture_resource("visibility_buffer_target"))
     step_ci.sync.barrier.targets:add(render_context:get_texture_resource("material_buffer_target"))
+    step_ci.sync.barrier.targets:add(render_context:get_texture_resource("vbo_id_buffer_target"))
     step_ci.sync.barrier.targets:add(render_context:get_texture_resource("zbuffer_depth_target"))
 
     render_interface:create_renderer(step_ci)
@@ -102,6 +114,7 @@ do
     step_ci.rendering.input_targets:set("write_color", render_context:get_texture_resource("final_lighting_target"))
     step_ci.rendering.input_targets:set("visibility_buffer", render_context:get_texture_resource("visibility_buffer_target"))
     step_ci.rendering.input_targets:set("material_buffer", render_context:get_texture_resource("material_buffer_target"))
+    step_ci.rendering.input_targets:set("vbo_id_buffer", render_context:get_texture_resource("vbo_id_buffer_target"))
     step_ci.rendering.input_targets:set("depth_buffer", render_context:get_texture_resource("zbuffer_depth_target"))
 
     render_interface:create_renderer(step_ci)

@@ -53,7 +53,7 @@ namespace engine
 		{
 			float fov{ 45.f };
 			float nearp{ 0.1f };
-			float farp{ 1024.f };
+			float farp{ 512.f };
 
 			glm::vec3 viewPos{ 0.f };
 			glm::mat4 view{ 1.f }, invView{ 1.f }, projection{ 1.f }, invProjection{ 1.f }, viewProjection{ 1.f }, invViewProjection{ 1.f };

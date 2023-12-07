@@ -110,6 +110,7 @@
 
 	layout(std140, set = 1, binding = 0) uniform UniformMeshData
 	{
+		uint vboId;
 		uint objectId;
 		uint materialId;
 		uint skinId;

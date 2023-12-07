@@ -45,8 +45,11 @@ void CComputeRenderingStep::execute(float dt)
 
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
 
+	std::vector<FGeometryBatch> rebatched{};
+	rebatchGeometry(render_packet->sceneBatches, rebatched, GEOMETRY_BATCHER_MERGE_DRAWCALLS_FLAG_BIT);
+
 	IVertexHandler* last_vbo{ nullptr };
-	for (auto& batch : render_packet->sceneBatches)
+	for (auto& batch : rebatched)
 	{
 		auto& vbo = m_pRenderInterface->getVertexHandler(batch.vboId);
 		if (!last_vbo || vbo.get() != last_vbo)
@@ -62,6 +65,7 @@ void CComputeRenderingStep::execute(float dt)
 			auto& ubo = shader->getUniformBlock("UniformMeshData");
 			if (ubo)
 			{
+				ubo->set("vboId", static_cast<uint32_t>(batch.vboId));
 				ubo->set("objectId", batch.node);
 				ubo->set("materialId", static_cast<uint32_t>(batch.materialId));
 				ubo->set("skinId", static_cast<uint32_t>(batch.skin));
@@ -96,19 +100,18 @@ void CComputeRenderingStep::execute(float dt)
 			shader->bind(m_beginRenderingInfo.queue);
 
 			auto& reflection = shader->getReflection();
-
+			
 			FDispatchInfo dispatch_info{};
 			auto& group = dispatch_info.groups.emplace_back();
 			group.x = static_cast<uint32_t>(std::ceil(static_cast<float>(render_resolution.x) / static_cast<float>(reflection.localSizes[0])));
 			group.y = static_cast<uint32_t>(std::ceil(static_cast<float>(render_resolution.y) / static_cast<float>(reflection.localSizes[1])));
 			group.z = 0u;
-
+			
 			group.x = glm::max(group.x, 1u);
 			group.y = glm::max(group.y, 1u);
 			group.z = glm::max(group.z, 1u);
-
+			
 			m_pRenderContext->dispatch(m_beginRenderingInfo.queue, dispatch_info);
-			//break;
 		}
 	}
 }

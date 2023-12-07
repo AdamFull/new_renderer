@@ -86,6 +86,7 @@ void CVisibilityBufferRenderingStep::execute(float dt)
 				TRACY_PROFILE_SCOPE("Update UniformMeshData");
 			
 				auto& ubo = shader->getUniformBlock("UniformMeshData");
+				ubo->set("vboId", static_cast<uint32_t>(batch.vboId));
 				ubo->set("objectId", batch.node);
 				ubo->set("materialId", static_cast<uint32_t>(batch.materialId));
 				ubo->set("skinId", static_cast<uint32_t>(batch.skin));
@@ -123,8 +124,6 @@ void CVisibilityBufferRenderingStep::execute(float dt)
 		}
 	}
 
-	// Here i can draw
-
 	m_pRenderContext->endRendering(m_beginRenderingInfo);
 }
 
@@ -139,7 +138,7 @@ const std::unique_ptr<IShaderObject>& CVisibilityBufferRenderingStep::getShaderB
 		auto shader_name = m_baseShaderName + vbo->getDefinitions();
 
 		FGraphicsShaderCreateInfo shader_ci{};
-		shader_ci.cullMode = m_beginRenderingInfo.flipViewport ? SHADER_CULL_MODE_BACK_BIT : SHADER_CULL_MODE_FRONT_BIT;
+		shader_ci.cullMode = m_beginRenderingInfo.flipViewport ? SHADER_CULL_MODE_FRONT_BIT : SHADER_CULL_MODE_FRONT_BIT;
 		shader_ci.frontFace = m_beginRenderingInfo.flipViewport ? SHADER_FRONT_FACE_CW : SHADER_FRONT_FACE_CCW;
 		shader_ci.primitiveTopology = SHADER_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 		shader_ci.colorAttachments = m_beginRenderingInfo.colorAttachments;

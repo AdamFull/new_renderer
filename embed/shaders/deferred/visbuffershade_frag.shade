@@ -278,7 +278,6 @@
 
 			// Sampling visibility buffer
 			vec4 vb_raw = texture(visibility_buffer, inUV);
-			
 			if(vb_raw != vec4(0.0))
 			{
 				// Unpack data
@@ -291,11 +290,11 @@
 
 				pixel_color = vec4(interpolated.pos, 1.0);
 
-				//FMaterial material = materials[matID];
-				//
-				//if(material.baseColorTexture != ~0u)
-				//	//pixel_color = textureGrad(textures[material.baseColorTexture], texCoord, texCoordDX, texCoordDY);
-				//	pixel_color = texture(textures[material.baseColorTexture], texCoord);
+				FMaterial material = materials[matID];
+				
+				if(material.baseColorTexture != ~0u)
+					//pixel_color = textureGrad(textures[material.baseColorTexture], texCoord, texCoordDX, texCoordDY);
+					pixel_color = texture(textures[material.baseColorTexture], interpolated.uv);
 			}
 
 			outFragcolor = pixel_color;
