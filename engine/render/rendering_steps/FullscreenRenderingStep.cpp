@@ -41,9 +41,6 @@ void CFullscreenRenderingStep::create(const FRenderingStepCreateInfo& create_inf
 	for (auto& [binding_point, texture] : rendering_ci.shaderInputs)
 		m_pShader->bindTexture(binding_point.c_str(), texture);
 
-	// NOTE: testing
-	m_pShader->bindTexture("visibility_buffer", m_pRenderContext->getTextureResource("visibility_buffer_target"));
-
 	// Save rendering info
 	m_beginRenderingInfo.queue = rendering_ci.queue;
 	m_beginRenderingInfo.colorAttachments = rendering_ci.renderTargets;
