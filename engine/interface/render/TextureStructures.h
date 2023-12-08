@@ -18,6 +18,13 @@ namespace engine
 			TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT = 1 << 7
 		};
 
+		enum ETextureSizePolicy
+		{
+			TEXTURE_SIZE_POLICY_FULL,
+			TEXTURE_SIZE_POLICY_SCALABLE,
+			TEXTURE_SIZE_POLICY_FIXED
+		};
+
 		struct FTextureCreateInfo
 		{
 			bool isSwapchainTarget{ false };
@@ -25,6 +32,7 @@ namespace engine
 			// EApiDataFormat
 			uint32_t format{ 0u };
 			uint32_t typeFlags{ 0u };
+			uint32_t sizePolicy{ 0u };
 
 			uint32_t width{ 1u };
 			uint32_t height{ 1u };

@@ -48,10 +48,31 @@ namespace engine
 			// Register ETextureFormat
 			lua->new_enum(
 				"Format",
-				"rg16_sfloat", FORMAT_RG16_SFLOAT,
 				"rgba8_srgb", FORMAT_RGBA8_SRGB,
+
+				"r8_unorm", FORMAT_R8_UNORM,
+				"rg8_unorm", FORMAT_RG8_UNORM,
+				"rgb8_unorm", FORMAT_RGB8_UNORM,
 				"rgba8_unorm", FORMAT_RGBA8_UNORM,
+
+				"r16_unorm", FORMAT_R16_UNORM,
+				"rg16_unorm", FORMAT_RG16_UNORM,
+				"rgb16_unorm", FORMAT_RGB16_UNORM,
+				"rgba16_unorm", FORMAT_RGBA16_UNORM,
+
+				"r32_uint", FORMAT_R32_UINT,
+				"rg32_uint", FORMAT_RG32_UINT,
+				"rgb32_uint", FORMAT_RGB32_UINT,
+				"rgba32_uint", FORMAT_RGBA32_UINT,
+
+				"r16_sfloat", FORMAT_R16_SFLOAT,
+				"rg16_sfloat", FORMAT_RG16_SFLOAT,
+				"rgb16_sfloat", FORMAT_RGB16_SFLOAT,
 				"rgba16_sfloat", FORMAT_RGBA16_SFLOAT,
+
+				"r32_sfloat", FORMAT_R32_SFLOAT,
+				"rg32_sfloat", FORMAT_RG32_SFLOAT,
+				"rgb32_sfloat", FORMAT_RGB32_SFLOAT,
 				"rgba32_sfloat", FORMAT_RGBA32_SFLOAT
 			);
 
@@ -66,6 +87,14 @@ namespace engine
 				"transferable", TEXTURE_IMAGE_TYPE_TRANSFERABLE_FLAG_BIT,
 				"samplable", TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT,
 				"storage", TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT
+			);
+
+			// Register ETextureSizePolicy
+			lua->new_enum(
+				"SizePolicy",
+				"full", TEXTURE_SIZE_POLICY_FULL,
+				"scalable", TEXTURE_SIZE_POLICY_SCALABLE,
+				"fixed", TEXTURE_SIZE_POLICY_FIXED
 			);
 
 			// Register EQueueFamilyUsageFlagBits
@@ -194,6 +223,7 @@ namespace engine
 				"present_image", &FTextureCreateInfo::isSwapchainTarget,
 				"format", &FTextureCreateInfo::format,
 				"type", &FTextureCreateInfo::typeFlags,
+				"size_policy", &FTextureCreateInfo::sizePolicy,
 				"width", &FTextureCreateInfo::width,
 				"height", &FTextureCreateInfo::height,
 				"depth", &FTextureCreateInfo::depth,
