@@ -23,9 +23,9 @@
 		layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
 		layout(set = 1, binding = 4, rgba16f) uniform writeonly image2D write_color;
-		layout(set = 1, binding = 5) uniform sampler2D visibility_buffer;
-		layout(set = 1, binding = 6) uniform sampler2D material_buffer;
-		layout(set = 1, binding = 7) uniform sampler2D vbo_id_buffer;
+		layout(set = 1, binding = 5) uniform sampler2D visbuffer_geometry;
+		layout(set = 1, binding = 6) uniform sampler2D visbuffer_matobj;
+		layout(set = 1, binding = 7) uniform sampler2D visbuffer_skinvbo;
 		layout(set = 1, binding = 8) uniform sampler2D depth_buffer;
 
 		layout(std430, set = 1, binding = 9) readonly buffer VertexBuffer
@@ -41,7 +41,7 @@
 		struct VertexAttribute
 		{
 			vec3 pos;
-			float linearDepth;
+			float linearZ;
 			vec2 uv;
 			vec3 normal;
 			vec4 tangent;
@@ -50,6 +50,9 @@
 			vec2 dx;
 			vec2 dy;
 			vec3 barycentrics;
+
+			vec3 ddx;
+			vec3 ddy;
 		};
 
 		struct BarycentricDeriv
@@ -58,6 +61,39 @@
 			vec3 ddx;
 			vec3 ddy;
 		};
+
+		struct VisibilityBuffer
+		{
+			uint drawID;
+			uint triangleID;
+			uint transparent;
+
+			uint matID;
+			uint objID;
+
+			uint skinID;
+			uint vboID;
+		};
+
+		VisibilityBuffer loadVisBuffer(in vec2 uv)
+		{
+			VisibilityBuffer res;
+
+			uint geometryData = packUnorm4x8(texture(visbuffer_geometry, uv));
+			res.drawID = (geometryData >> 23) & 0x000000FF;
+			res.triangleID = (geometryData & 0x007FFFFF);
+			res.transparent = (geometryData >> 31);
+
+			uint matobjData = packUnorm4x8(texture(visbuffer_matobj, uv));
+			res.matID = matobjData & 0xFFFF;
+			res.objID = matobjData >> 16;
+
+			uint skinvboData = packUnorm4x8(texture(visbuffer_skinvbo, uv));
+			res.skinID = skinvboData & 0xFFFF;
+			res.vboID = skinvboData >> 16;
+
+			return res;
+		}
 
 		RawVertex[3] loadTriangle(in uint drawID, in uint primID)
 		{
@@ -91,7 +127,7 @@
 		}
 
 		// Computes the partial derivatives of a triangle from the projected screen space vertices
-		BarycentricDeriv computeBarycentrics(vec4 vertexCS0, vec4 vertexCS1, vec4 vertexCS2, vec2 pixelCS, vec2 winSize)
+		BarycentricDeriv computeBarycentrics(vec4 vertexCS0, vec4 vertexCS1, vec4 vertexCS2, vec2 pixelCS, vec2 invSize)
 		{
 			BarycentricDeriv ret ;
 
@@ -123,8 +159,8 @@
 			float H_dx = dot(C_dx, RcpW);
 			float H_dy = dot(C_dy, RcpW);
 
-			ret.ddx = (G_dx * H - G * H_dx) * (rcpH * rcpH) * ( 2.0f * winSize.x);
-			ret.ddy = (G_dy * H - G * H_dy) * (rcpH * rcpH) * (-2.0f * winSize.y);
+			ret.ddx = (G_dx * H - G * H_dx) * (rcpH * rcpH) * (2.0f * invSize.x);
+			ret.ddy = (G_dy * H - G * H_dy) * (rcpH * rcpH) * (-2.0f * invSize.y);
 
 			return ret;
 		}
@@ -149,9 +185,9 @@
 			return a * barycentrics.x + b * barycentrics.y + c * barycentrics.z;
 		}
 
-		VertexAttribute getVertexData(vec2 uv, uint objID, uint drawID, uint triangleID)
+		VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 		{
-			RawVertex[3] vertices = loadTriangle(drawID, triangleID);
+			RawVertex[3] vertices = loadTriangle(visbuffer.drawID, visbuffer.triangleID);
 
 			// Load vertex data of the 3 vertices
 			vec3 position0 = vec3(vertices[0].px, vertices[0].py, vertices[0].pz);
@@ -159,7 +195,7 @@
 			vec3 position2 = vec3(vertices[2].px, vertices[2].py, vertices[2].pz);
 
 			// Load mesh model matrix
-			mat4 model = modelStorage.model[objID];
+			mat4 model = modelStorage.model[visbuffer.objID];
 			
 #ifdef HAS_SKIN
 #if defined(JOINTS_8BIT)
@@ -172,7 +208,7 @@
 				u16vec4 joints;
 #endif
 
-				uint begin_pos = meshData.skinId * 128;
+				uint begin_pos = visbuffer.skinID * 128;
 				mat4 skinMat = 
 					vertices[0].wx * matrices[begin_pos + joints.x] +
 					vertices[0].wy * matrices[begin_pos + joints.y] +
@@ -191,7 +227,7 @@
 			vec2 ndcClip = uv * 2.0 - 1.0;
 			//ndcClip.y *= -1.0;
 
-			BarycentricDeriv bary = computeBarycentrics(clipPos0, clipPos1, clipPos2, ndcClip, frameData.viewportDimension);
+			BarycentricDeriv bary = computeBarycentrics(clipPos0, clipPos1, clipPos2, ndcClip, frameData.invViewportDimension);
 
 			VertexAttribute res;
 
@@ -199,9 +235,12 @@
 			position0 = (model * vec4(position0, 1.0)).xyz;
 			position1 = (model * vec4(position1, 1.0)).xyz;
 			position2 = (model * vec4(position2, 1.0)).xyz;
+			
 			res.pos = interpolate(position0, position1, position2, bary.barycentrics);
-			res.linearDepth = interpolate(clipPos0.w, clipPos1.w, clipPos2.w, bary.barycentrics);
+			res.linearZ = interpolate(clipPos0.w, clipPos1.w, clipPos2.w, bary.barycentrics);
 			res.barycentrics = bary.barycentrics;
+			res.ddx = bary.ddx;
+			res.ddy = bary.ddy;
 
 			// INTERPOLATE TEXCOORD
 #ifdef HAS_TEXCOORD
@@ -264,37 +303,17 @@
 			if(swizzle_compute_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, image_size, uv, px))
 				return;
 
-			vec4 vbo_id_raw = texture(vbo_id_buffer, uv);
-			uint vboid = packUnorm4x8(vbo_id_raw);
-			if(vboid != meshData.vboId)
-				return;
-
 			vec4 pixel_color = vec4(0.35f, 0.55f, 0.7f, 1.0f);
 
-			// Sampling visibility buffer
-			vec4 vb_raw = texture(visibility_buffer, uv);
-			if(vb_raw != vec4(0.0))
-			{
-				// Unpack data
-				uint packedVBID = packUnorm4x8(vb_raw);
-				uint drawID = (packedVBID >> 23) & 0x000000FF;
-				uint triangleID = (packedVBID & 0x007FFFFF);
-				uint isTransparent = (packedVBID >> 31);
+			VisibilityBuffer visbuffer = loadVisBuffer(uv);
+			if(visbuffer.vboID != meshData.vboId)
+				return;
 
-				// Sampling object/material buffer
-				vec4 mb_raw = texture(material_buffer, uv);
-				uint packedMOID = packUnorm4x8(mb_raw);
-				uint matID = packedMOID & 0xFFFF;
-				uint objID = packedMOID >> 16;
-				
-				VertexAttribute interpolated = getVertexData(uv, objID, drawID, triangleID);
-
-				FMaterial material = materials[matID];
-				
-				if(material.baseColorTexture != ~0u)
-					//pixel_color = textureGrad(textures[material.baseColorTexture], texCoord, texCoordDX, texCoordDY);
-					pixel_color = texture(textures[material.baseColorTexture], interpolated.uv);
-			}
+			VertexAttribute v = getVertexData(uv, visbuffer);
+			FMaterial material = materials[visbuffer.matID];
+			
+			if(material.baseColorTexture != ~0u)
+				pixel_color = textureGrad(textures[material.baseColorTexture], v.uv, v.dx, v.dy);
 
 			imageStore(write_color, ivec2(px), pixel_color);
 		}

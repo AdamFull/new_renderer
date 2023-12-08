@@ -39,6 +39,7 @@
 		mat4 invViewProjection;
 		vec3 viewDirection;
 		vec2 viewportDimension;
+		vec2 invViewportDimension;
 		float nearPlane;
 		float farPlane;
 		vec4 frustumPlanes[6];

@@ -143,6 +143,7 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 	sizemap.emplace_back(utl::fnv1a_64_hash("invViewProjection"), 64ull);	// mat4 invViewProjection;
 	sizemap.emplace_back(utl::fnv1a_64_hash("viewDirection"), 16ull);		// vec3 viewDirection;
 	sizemap.emplace_back(utl::fnv1a_64_hash("viewportDimension"), 8ull);	// vec2 viewportDimension;
+	sizemap.emplace_back(utl::fnv1a_64_hash("invViewportDimension"), 8ull);	// vec2 viewportDimension;
 	sizemap.emplace_back(utl::fnv1a_64_hash("nearPlane"), 4ull);			// float nearPlane;
 	sizemap.emplace_back(utl::fnv1a_64_hash("farPlane"), 4ull);				// float farPlane;
 	sizemap.emplace_back(utl::fnv1a_64_hash("frustumPlanes"), 96ull);		// vec4 frustumPlanes[6];
@@ -255,6 +256,7 @@ void CRenderInterface::render(float dt)
 	m_pGlobalUniformHandler->set("invViewProjection", m_pRenderPacket->camera.invViewProjection);
 	m_pGlobalUniformHandler->set("viewDirection", m_pRenderPacket->camera.viewPos);
 	m_pGlobalUniformHandler->set("viewportDimension", m_pRenderPacket->camera.dimensions);
+	m_pGlobalUniformHandler->set("invViewportDimension", 1.f / m_pRenderPacket->camera.dimensions);
 	m_pGlobalUniformHandler->set("nearPlane", m_pRenderPacket->camera.nearp);
 	m_pGlobalUniformHandler->set("farPlane", m_pRenderPacket->camera.farp);
 	m_pGlobalUniformHandler->set("frustumPlanes", m_pRenderPacket->camera.frustum.frustumSides);

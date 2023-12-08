@@ -23,7 +23,8 @@
 		layout(location = 0) flat out uint drawID;
 		layout(location = 1) flat out uint matID;
 		layout(location = 2) flat out uint objID;
-		layout(location = 3) flat out uint vboID;
+		layout(location = 3) flat out uint skinID;
+		layout(location = 4) flat out uint vboID;
 
 		out gl_PerVertex
 		{
@@ -45,6 +46,7 @@
 			drawID = gl_DrawIDARB;
 			matID = meshData.materialId;
 			objID = meshData.objectId;
+			skinID = meshData.skinId;
 			vboID = meshData.vboId;
 			gl_Position = frameData.projection * frameData.view * localPos;
 		}
