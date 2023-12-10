@@ -141,11 +141,14 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 	sizemap.emplace_back(utl::fnv1a_64_hash("invProjection"), 64ull);		// mat4 invProjection;
 	sizemap.emplace_back(utl::fnv1a_64_hash("viewProjection"), 64ull);		// mat4 viewProjection;
 	sizemap.emplace_back(utl::fnv1a_64_hash("invViewProjection"), 64ull);	// mat4 invViewProjection;
-	sizemap.emplace_back(utl::fnv1a_64_hash("viewDirection"), 16ull);		// vec3 viewDirection;
+	sizemap.emplace_back(utl::fnv1a_64_hash("reprojection"), 64ull);		// mat4 reprojection;
 	sizemap.emplace_back(utl::fnv1a_64_hash("viewportDimension"), 8ull);	// vec2 viewportDimension;
 	sizemap.emplace_back(utl::fnv1a_64_hash("invViewportDimension"), 8ull);	// vec2 viewportDimension;
 	sizemap.emplace_back(utl::fnv1a_64_hash("nearPlane"), 4ull);			// float nearPlane;
 	sizemap.emplace_back(utl::fnv1a_64_hash("farPlane"), 4ull);				// float farPlane;
+	sizemap.emplace_back(utl::fnv1a_64_hash("directionalLightCount"), 4ull);				// uint directionalLightCount;
+	sizemap.emplace_back(utl::fnv1a_64_hash("pointLightCount"), 4ull);				// uint pointLightCount;
+	sizemap.emplace_back(utl::fnv1a_64_hash("spotLightCount"), 4ull);				// uint spotLightCount;
 	sizemap.emplace_back(utl::fnv1a_64_hash("frustumPlanes"), 96ull);		// vec4 frustumPlanes[6];
 
 	FGlobalUniformCreateInfo global_buffer_ci{};
@@ -198,6 +201,43 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 		buffer = std::make_unique<CBufferObject>(this, m_pRenderContext.get());
 		buffer->create("global_joints_buffer", buffer_ci);
 	}
+
+
+	// Create directional lights storage buffer
+	{
+		FBufferCreateInfo buffer_ci{};
+		buffer_ci.flags = BUFFER_TYPE_STORAGE_FLAG_BIT;
+		buffer_ci.size = sizeof(FDirectionalLightCommit);
+		buffer_ci.count = max_directional_light_count;
+
+		auto& buffer = m_pRenderPacket->directionalLightBuffer;
+		buffer = std::make_unique<CBufferObject>(this, m_pRenderContext.get());
+		buffer->create("global_directional_lights_buffer", buffer_ci);
+	}
+
+	// Create point lights storage buffer
+	{
+		FBufferCreateInfo buffer_ci{};
+		buffer_ci.flags = BUFFER_TYPE_STORAGE_FLAG_BIT;
+		buffer_ci.size = sizeof(FPointLightCommit);
+		buffer_ci.count = max_point_light_count;
+
+		auto& buffer = m_pRenderPacket->pointLightBuffer;
+		buffer = std::make_unique<CBufferObject>(this, m_pRenderContext.get());
+		buffer->create("global_point_lights_buffer", buffer_ci);
+	}
+
+	// Create spot lights storage buffer
+	{
+		FBufferCreateInfo buffer_ci{};
+		buffer_ci.flags = BUFFER_TYPE_STORAGE_FLAG_BIT;
+		buffer_ci.size = sizeof(FSpotLightCommit);
+		buffer_ci.count = max_spot_light_count;
+
+		auto& buffer = m_pRenderPacket->spotLightBuffer;
+		buffer = std::make_unique<CBufferObject>(this, m_pRenderContext.get());
+		buffer->create("global_spot_lights_buffer", buffer_ci);
+	}
 }
 
 void CRenderInterface::render(float dt)
@@ -244,6 +284,48 @@ void CRenderInterface::render(float dt)
 		buffer->unmap();
 	}
 
+	// Update directional lights
+	{
+		auto& buffer = m_pRenderPacket->directionalLightBuffer;
+
+		buffer->map();
+		for (size_t idx = 0ull; idx < m_pRenderPacket->directionalLights.lights.count; ++idx)
+		{
+			auto& light = m_pRenderPacket->directionalLights.lights.lights[idx];
+			auto* dst = buffer->at(idx);
+			std::memcpy(dst, &light, sizeof(FDirectionalLightCommit));
+		}
+		buffer->unmap();
+	}
+
+	// Update point lights
+	{
+		auto& buffer = m_pRenderPacket->pointLightBuffer;
+
+		buffer->map();
+		for (size_t idx = 0ull; idx < m_pRenderPacket->pointLights.lights.count; ++idx)
+		{
+			auto& light = m_pRenderPacket->pointLights.lights.lights[idx];
+			auto* dst = buffer->at(idx);
+			std::memcpy(dst, &light, sizeof(FPointLightCommit));
+		}
+		buffer->unmap();
+	}
+
+	// Update spot lights
+	{
+		auto& buffer = m_pRenderPacket->spotLightBuffer;
+
+		buffer->map();
+		for (size_t idx = 0ull; idx < m_pRenderPacket->spotLights.lights.count; ++idx)
+		{
+			auto& light = m_pRenderPacket->spotLights.lights.lights[idx];
+			auto* dst = buffer->at(idx);
+			std::memcpy(dst, &light, sizeof(FSpotLightCommit));
+		}
+		buffer->unmap();
+	}
+
 	m_pRenderContext->beginFrameCommandBuffers();
 
 	// TODO: make it better
@@ -254,11 +336,14 @@ void CRenderInterface::render(float dt)
 	m_pGlobalUniformHandler->set("invProjection", m_pRenderPacket->camera.invProjection);
 	m_pGlobalUniformHandler->set("viewProjection", m_pRenderPacket->camera.viewProjection);
 	m_pGlobalUniformHandler->set("invViewProjection", m_pRenderPacket->camera.invViewProjection);
-	m_pGlobalUniformHandler->set("viewDirection", m_pRenderPacket->camera.viewPos);
+	m_pGlobalUniformHandler->set("reprojection", m_pRenderPacket->camera.reprojection);
 	m_pGlobalUniformHandler->set("viewportDimension", m_pRenderPacket->camera.dimensions);
 	m_pGlobalUniformHandler->set("invViewportDimension", 1.f / m_pRenderPacket->camera.dimensions);
 	m_pGlobalUniformHandler->set("nearPlane", m_pRenderPacket->camera.nearp);
 	m_pGlobalUniformHandler->set("farPlane", m_pRenderPacket->camera.farp);
+	m_pGlobalUniformHandler->set("directionalLightCount", m_pRenderPacket->directionalLights.lights.count);
+	m_pGlobalUniformHandler->set("pointLightCount", m_pRenderPacket->pointLights.lights.count);
+	m_pGlobalUniformHandler->set("spotLightCount", m_pRenderPacket->spotLights.lights.count);
 	m_pGlobalUniformHandler->set("frustumPlanes", m_pRenderPacket->camera.frustum.frustumSides);
 
 	FGlobalUniformUpdateInfo update_info{};

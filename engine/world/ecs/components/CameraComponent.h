@@ -23,7 +23,6 @@ namespace engine
 				float xmag{ 0.f };
 				float ymag{ 0.f };
 
-				glm::vec3 viewPos{ 0.f };
 				glm::mat4 view{ 1.f }, invView{ 1.f }, projection{ 1.f }, invProjection{ 1.f };
 				glm::uvec2 viewportExtent{};
 

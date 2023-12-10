@@ -10,288 +10,151 @@
 		"GL_EXT_shader_16bit_storage"
 	];
 
-	definitions: ["MESH_DATA"];
+	definitions: ["MESH_DATA", "LIGHT_DATA"];
 
 	require_extensions: [
 		"GL_EXT_shader_explicit_arithmetic_types",
 		"GL_EXT_shader_explicit_arithmetic_types_int8"
 	];
-	includes: ["shader_inputs", "compute_common"];
+	includes: ["visibility_buffer", "compute_common", "lighting_model"];
 
 	code: 
 	"""
 		layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
-		layout(set = 1, binding = 4, rgba16f) uniform writeonly image2D write_color;
-		layout(set = 1, binding = 5) uniform sampler2D visbuffer_geometry;
-		layout(set = 1, binding = 6) uniform sampler2D visbuffer_matobj;
-		layout(set = 1, binding = 7) uniform sampler2D visbuffer_skinvbo;
-		layout(set = 1, binding = 8) uniform sampler2D depth_buffer;
+		layout(set = 2, binding = 5, rgba16f) uniform writeonly image2D write_color;
+		layout(set = 2, binding = 6) uniform sampler2D depth_buffer;
 
-		layout(std430, set = 1, binding = 9) readonly buffer VertexBuffer
+		vec4 sampleTexture(in uint s, in VertexAttribute va)
 		{
-			RawVertex vertices[];
-		} vb;
+			return textureGrad(textures[s], va.uv, va.uv_dx, va.uv_dy);
+		}
 
-		layout(std430, set = 1, binding = 10) readonly buffer IndexBuffer
+		MaterialSample sampleMaterial(in FMaterial mat, in VertexAttribute va)
 		{
-			Index indices[];
-		} ib;
+			MaterialSample res;
 
-		struct VertexAttribute
-		{
-			vec3 pos;
-			float linearZ;
-			vec2 uv;
-			vec3 normal;
-			vec4 tangent;
-			vec4 color;
-		
-			vec2 dx;
-			vec2 dy;
-			vec3 barycentrics;
+			// Sample albedo
+			vec4 base_color = mat.baseColorFactor * va.color;
+			if(mat.baseColorTexture != ~0u)
+				base_color *= sampleTexture(mat.baseColorTexture, va);
 
-			vec3 ddx;
-			vec3 ddy;
-		};
+			res.albedo = base_color.rgb;
+			res.opacity = base_color.a;
 
-		struct BarycentricDeriv
-		{
-			vec3 barycentrics;
-			vec3 ddx;
-			vec3 ddy;
-		};
+			// Sample emission
+			res.emission = mat.emissiveFactor;
+			if(mat.emissiveTexture != ~0u)
+				res.emission *= sampleTexture(mat.emissiveTexture, va).rgb;
+			res.emission *= mat.emissiveStrength;
 
-		struct VisibilityBuffer
-		{
-			uint drawID;
-			uint triangleID;
-			uint transparent;
+			// Sample metallic roughness
+			res.metallic = mat.metallicFactor;
+			res.roughness = mat.roughnessFactor;
+			if(mat.metallicRoughnessTexture != ~0u)
+			{
+				vec4 mr = sampleTexture(mat.metallicRoughnessTexture, va);
+				res.metallic *= mr.b;
+				res.roughness *= mr.g;
+			}
+			res.roughness = clamp(res.roughness, 0.04, 1.0);
 
-			uint matID;
-			uint objID;
+			// Sample normals
+			res.normal = va.normal;
+			if(mat.normalTexture != ~0u)
+			{
+				vec3 ts_normal = sampleTexture(mat.normalTexture, va).rgb;
 
-			uint skinID;
-			uint vboID;
-		};
+				vec3 b = cross(va.normal, va.tangent.xyz) * va.tangent.w;
+				mat3 tbn = mat3(va.tangent.xyz, b, va.normal);
 
-		VisibilityBuffer loadVisBuffer(in vec2 uv)
-		{
-			VisibilityBuffer res;
+				res.normal = normalize(tbn * ((2.0 * ts_normal - 1.0) * vec3(mat.normalScale, mat.normalScale, 1.0)));
+			}
 
-			uint geometryData = packUnorm4x8(texture(visbuffer_geometry, uv));
-			res.drawID = (geometryData >> 23) & 0x000000FF;
-			res.triangleID = (geometryData & 0x007FFFFF);
-			res.transparent = (geometryData >> 31);
+			// Sample AO
+			res.ao = 1.0;
+			if(mat.occlusionTexture != ~0u)
+				res.ao = sampleTexture(mat.occlusionTexture, va).r * mat.occlusionStrenth;
 
-			uint matobjData = packUnorm4x8(texture(visbuffer_matobj, uv));
-			res.matID = matobjData & 0xFFFF;
-			res.objID = matobjData >> 16;
-
-			uint skinvboData = packUnorm4x8(texture(visbuffer_skinvbo, uv));
-			res.skinID = skinvboData & 0xFFFF;
-			res.vboID = skinvboData >> 16;
+			res.ior = mat.ior;
 
 			return res;
 		}
 
-		RawVertex[3] loadTriangle(in uint drawID, in uint primID)
+
+		vec3 calculateDirectionalLight(in FDirectionalLightCommit light, in vec3 worldPosition, in vec3 albedo, in vec3 V, in vec3 N, in vec3 F0, in float metallic, in float roughness)
 		{
-			RawVertex[3] vertices;
-
-			// Index of the first vertex of this draw call's geometry
-			uint startIndex = drawID; // There's only one draw call at the moment, so drawID should always be 0. This would work out the offset of the first vertex in the nth draw call if using MultiDraw commands. 
-
-			// Get position in the Index Buffer of each vertex in this triangle (eg 31, 32, 33)
-			uint triVert1IndexBufferPosition = (primID * 3 + 0) + startIndex;
-			uint triVert2IndexBufferPosition = (primID * 3 + 1) + startIndex;
-			uint triVert3IndexBufferPosition = (primID * 3 + 2) + startIndex;	
-
-			// Now get vertex index from index buffer (eg, 17, 41, 32)
-			Index triVert0Index = ib.indices[triVert1IndexBufferPosition];
-			Index triVert1Index = ib.indices[triVert2IndexBufferPosition];
-			Index triVert2Index = ib.indices[triVert3IndexBufferPosition];
-
-			// Load vertex data of the 3 control points
-			vertices[0] = vb.vertices[triVert0Index];
-			vertices[1] = vb.vertices[triVert1Index];
-			vertices[2] = vb.vertices[triVert2Index];
-
-			return vertices;
-		}
-
-
-		float depthLinearization(float depth, float near, float far)
-		{
-			return (2.0 * near) / (far + near - depth * (far - near));
-		}
-
-		// Computes the partial derivatives of a triangle from the projected screen space vertices
-		BarycentricDeriv computeBarycentrics(vec4 vertexCS0, vec4 vertexCS1, vec4 vertexCS2, vec2 pixelCS, vec2 invSize)
-		{
-			BarycentricDeriv ret ;
-
-			vec3 pos0 = vertexCS0.xyz / vertexCS0.w;
-			vec3 pos1 = vertexCS1.xyz / vertexCS1.w;
-			vec3 pos2 = vertexCS2.xyz / vertexCS2.w;
-
-			vec3 RcpW = 1.0 / vec3(vertexCS0.w, vertexCS1.w, vertexCS2.w);
-
-			vec3 pos120X = vec3(pos1.x, pos2.x, pos0.x);
-			vec3 pos120Y = vec3(pos1.y, pos2.y, pos0.y);
-			vec3 pos201X = vec3(pos2.x, pos0.x, pos1.x);
-			vec3 pos201Y = vec3(pos2.y, pos0.y, pos1.y);
-
-			vec3 C_dx = pos201Y - pos120Y;
-			vec3 C_dy = pos120X - pos201X;
-
-			vec3 C = C_dx * (pixelCS.x - pos120X) + C_dy * (pixelCS.y - pos120Y);
-			vec3 G = C * RcpW;
-
-			float H = dot(C, RcpW);
-			float rcpH = 1.0 / H;
-
-			ret.barycentrics = G * rcpH;
-
-			vec3 G_dx = C_dx * RcpW;
-			vec3 G_dy = C_dy * RcpW;
-
-			float H_dx = dot(C_dx, RcpW);
-			float H_dy = dot(C_dy, RcpW);
-
-			ret.ddx = (G_dx * H - G * H_dx) * (rcpH * rcpH) * (2.0f * invSize.x);
-			ret.ddy = (G_dy * H - G * H_dy) * (rcpH * rcpH) * (-2.0f * invSize.y);
-
-			return ret;
-		}
-
-		float interpolate(float a, float b, float c, vec3 barycentrics)
-		{
-			return a * barycentrics.x + b * barycentrics.y + c * barycentrics.z;
-		}
-
-		vec2 interpolate(vec2 a, vec2 b, vec2 c, vec3 barycentrics)
-		{
-			return a * barycentrics.x + b * barycentrics.y + c * barycentrics.z;
-		}
-
-		vec3 interpolate(vec3 a, vec3 b, vec3 c, vec3 barycentrics)
-		{
-			return a * barycentrics.x + b * barycentrics.y + c * barycentrics.z;
-		}
-
-		vec4 interpolate(vec4 a, vec4 b, vec4 c, vec3 barycentrics)
-		{
-			return a * barycentrics.x + b * barycentrics.y + c * barycentrics.z;
-		}
-
-		VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
-		{
-			RawVertex[3] vertices = loadTriangle(visbuffer.drawID, visbuffer.triangleID);
-
-			// Load vertex data of the 3 vertices
-			vec3 position0 = vec3(vertices[0].px, vertices[0].py, vertices[0].pz);
-			vec3 position1 = vec3(vertices[1].px, vertices[1].py, vertices[1].pz);
-			vec3 position2 = vec3(vertices[2].px, vertices[2].py, vertices[2].pz);
-
-			// Load mesh model matrix
-			mat4 model = modelStorage.model[visbuffer.objID];
-			
-#ifdef HAS_SKIN
-#if defined(JOINTS_8BIT)
-				u8vec4 joints;
-				joints.x = uint8_t(vertices[0].joints_8 & 0xFF);
-				joints.y = uint8_t((vertices[0].joints_8 >> 8) & 0xFF);
-				joints.z = uint8_t((vertices[0].joints_8 >> 16) & 0xFF);
-				joints.w = uint8_t((vertices[0].joints_8 >> 24) & 0xFF);
-#elif defined(JOINTS_16BIT)
-				u16vec4 joints;
-#endif
-
-				uint begin_pos = visbuffer.skinID * 128;
-				mat4 skinMat = 
-					vertices[0].wx * matrices[begin_pos + joints.x] +
-					vertices[0].wy * matrices[begin_pos + joints.y] +
-					vertices[0].wz * matrices[begin_pos + joints.z] +
-					vertices[0].ww * matrices[begin_pos + joints.w];
+			vec3 L = normalize(-light.direction);
 		
-				model = model * skinMat;
-#endif // HAS_SKIN
+			vec3 color = specularContribution(albedo, L, V, N, F0, metallic, roughness);
+		
+			float shadow_factor = 1.0;
+			return light.color * light.intencity * color * shadow_factor;
+		}
 
-			// Transform positions to clip space
-			mat4 mvp = frameData.projection * frameData.view * model;
-			vec4 clipPos0 = mvp * vec4(position0, 1.0);
-			vec4 clipPos1 = mvp * vec4(position1, 1.0);
-			vec4 clipPos2 = mvp * vec4(position2, 1.0);
-
-			vec2 ndcClip = uv * 2.0 - 1.0;
-			//ndcClip.y *= -1.0;
-
-			BarycentricDeriv bary = computeBarycentrics(clipPos0, clipPos1, clipPos2, ndcClip, frameData.invViewportDimension);
-
-			VertexAttribute res;
-
-			// INTERPOLATE POSITION
-			position0 = (model * vec4(position0, 1.0)).xyz;
-			position1 = (model * vec4(position1, 1.0)).xyz;
-			position2 = (model * vec4(position2, 1.0)).xyz;
+		vec3 calculatePointLight(in FPointLightCommit light, in vec3 worldPosition, in vec3 albedo, in vec3 V, in vec3 N, in vec3 F0, in float metallic, in float roughness)
+		{
+			vec3 L = normalize(light.position - worldPosition);
+			float dist = distance(worldPosition, light.position);
 			
-			res.pos = interpolate(position0, position1, position2, bary.barycentrics);
-			res.linearZ = interpolate(clipPos0.w, clipPos1.w, clipPos2.w, bary.barycentrics);
-			res.barycentrics = bary.barycentrics;
-			res.ddx = bary.ddx;
-			res.ddy = bary.ddy;
+			float atten = clamp(1.0 - pow(dist, 2.0f)/pow(light.radius, 2.0f), 0.0f, 1.0f); atten *= atten;
+			vec3 color = specularContribution(albedo, L, V, N, F0, metallic, roughness);
+		
+			float shadow_factor = 1.0;
+			return light.color * atten * color * light.intencity * shadow_factor;
+		}
 
-			// INTERPOLATE TEXCOORD
-#ifdef HAS_TEXCOORD
-			vec2 uv0 = vec2(vertices[0].u, vertices[0].v);
-			vec2 uv1 = vec2(vertices[1].u, vertices[1].v);
-			vec2 uv2 = vec2(vertices[2].u, vertices[2].v);
-			res.uv = interpolate(uv0, uv1, uv2, bary.barycentrics);
-			res.dx = interpolate(uv0, uv1, uv2, bary.ddx);
-			res.dy = interpolate(uv0, uv1, uv2, bary.ddy);
-#endif
+		vec3 calculateSpotlight(in FSpotLightCommit light, in vec3 worldPosition, in vec3 albedo, in vec3 V, in vec3 N, in vec3 F0, in float metallic, in float roughness)
+		{
+			vec3 L = normalize(light.position - worldPosition);
+		
+			// Direction vector from source to target
+			vec3 dir = vec3(normalize(light.direction));
+			if(light.toTarget > 0)
+				dir = normalize(light.position - light.direction);
+		
+			vec3 color = specularContribution(albedo, L, V, N, F0, metallic, roughness);
+		
+			// https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_lights_punctual/README.md
+			float cd = dot(light.toTarget > 0 ? L : -L, dir);
+			float angularAttenuation = clamp(cd * light.lightAngleScale + light.lightAngleOffset, 0.0, 1.0);
+			angularAttenuation *= angularAttenuation;	
+			
+			float shadow_factor = 1.0;
+			return light.color * light.intencity * color * angularAttenuation * shadow_factor;
+		}
 
-			// INTERPOLATE NORMAL
-#ifdef HAS_NORMAL
-			vec3 normal0 = vec3(vertices[0].nx, vertices[0].ny, vertices[0].nz);
-			vec3 normal1 = vec3(vertices[1].nx, vertices[1].ny, vertices[1].nz);
-			vec3 normal2 = vec3(vertices[2].nx, vertices[2].ny, vertices[2].nz);
+		vec3 calculateLights(in VertexAttribute va, in MaterialSample ms, in MaterialBRDF brdf)
+		{
+			vec3 Lo =  vec3(0.0);
 
-			vec3 normal = interpolate(normal0, normal1, normal2, bary.barycentrics);
-			res.normal = normalize(mat3(model) * normal);
-#endif
+			vec3 camera_pos = vec3(frameData.invView[3]);
 
-			// INTERPOLATE TANGENT
-#if defined(TANGENT_VEC3) || defined(TANGENT_VEC4)
-			vec4 tangent0 = vec4(vertices[0].tx, vertices[0].ty, vertices[0].tz, 1.0);
-			vec4 tangent1 = vec4(vertices[1].tx, vertices[1].ty, vertices[1].tz, 1.0);
-			vec4 tangent2 = vec4(vertices[2].tx, vertices[2].ty, vertices[2].tz, 1.0);
-#if defined(TANGENT_VEC4)
-			tangent0.w = vertices[0].tw;
-			tangent1.w = vertices[1].tw;
-			tangent2.w = vertices[2].tw;
-#endif // TANGENT_VEC4
+			// Calculate direction from fragment to viewPosition
+			vec3 V = normalize(camera_pos - va.pos);
 
-			vec4 tangent = interpolate(tangent0, tangent1, tangent2, bary.barycentrics);
-			res.tangent = vec4(normalize(mat3(model) * vec3(tangent)), tangent.w);
-#endif // TANGENT
+			//Directional light
+			for(uint i = 0u; i < frameData.directionalLightCount; i++)
+			{
+				FDirectionalLightCommit light = directional_lights[i];
+				Lo += calculateDirectionalLight(light, va.pos, ms.albedo, V, ms.normal, brdf.f0, ms.metallic, ms.roughness);
+			}
 
-			// INTERPOLATE COLOR
-#if defined(COLOR_VEC3) || defined(COLOR_VEC4)
-			vec4 color0 = vec4(vertices[0].cr, vertices[0].cg, vertices[0].cb, 1.0);
-			vec4 color1 = vec4(vertices[1].cr, vertices[1].cg, vertices[1].cb, 1.0);
-			vec4 color2 = vec4(vertices[2].cr, vertices[2].cg, vertices[2].cb, 1.0);
-#if defined(COLOR_VEC4)
-			color0.a = vertices[0].ca;
-			color1.a = vertices[1].ca;
-			color2.a = vertices[2].ca;
-#endif
+			//Point light
+			for(uint i = 0u; i < frameData.pointLightCount; i++) 
+			{
+				FPointLightCommit light = point_lights[i];
+				Lo += calculatePointLight(light, va.pos, ms.albedo, V, ms.normal, brdf.f0, ms.metallic, ms.roughness);
+			}
+			
+			//Spot light
+			for(uint i = 0u; i < frameData.spotLightCount; i++)
+			{
+				FSpotLightCommit light = spot_lights[i];
+				Lo += calculateSpotlight(light, va.pos, ms.albedo, V, ms.normal, brdf.f0, ms.metallic, ms.roughness);
+			}
 
-			res.color = interpolate(color0, color1, color2, bary.barycentrics);
-#endif // COLOR
-
-			return res;
+			return Lo;
 		}
 
 		void main() 
@@ -309,11 +172,16 @@
 			if(visbuffer.vboID != meshData.vboId)
 				return;
 
-			VertexAttribute v = getVertexData(uv, visbuffer);
+			VertexAttribute va = getVertexData(uv, visbuffer);
 			FMaterial material = materials[visbuffer.matID];
-			
-			if(material.baseColorTexture != ~0u)
-				pixel_color = textureGrad(textures[material.baseColorTexture], v.uv, v.dx, v.dy);
+			MaterialSample ms = sampleMaterial(material, va);
+			MaterialBRDF brdf = calculateBRDF(ms);
+
+			vec3 res = ms.ao * (brdf.diffuse / PI);
+			res += calculateLights(va, ms, brdf);
+			res += ms.emission;
+
+			pixel_color = vec4(res, 1.0);
 
 			imageStore(write_color, ivec2(px), pixel_color);
 		}

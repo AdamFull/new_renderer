@@ -1,0 +1,29 @@
+{
+	name: "utility";
+
+	shaders: [
+		{
+			name: "copy";
+			sources: [
+				{
+					type: "vertex";
+					common: true;
+					shader_name: "screenspace_vert";
+				},
+				{
+					type: "fragment";
+					shader_name: "copy_frag";
+				}
+			];
+		}
+	];
+
+	compile: [
+		{ 
+			shader_name: "copy";
+			permutations: [
+				{ definitions: [] }
+			];
+		}
+	];
+}

@@ -72,7 +72,6 @@ do
 end
 
 
-
 -- visibility buffer write
 do
     local step_ci = RenderingStepCI.new()
@@ -137,6 +136,21 @@ do
 
     render_interface:create_renderer(step_ci)
 end
+
+-- copy last final image
+--do 
+--    local step_ci = RenderingStepCI.new()
+--    step_ci.type = RenderingStepType.rendering
+--
+--    step_ci.rendering.type = RenderingType.fullscreen
+--    step_ci.rendering.queue = QueueType.graphics
+--    step_ci.rendering.shader_name = "utility:copy"
+--    
+--    step_ci.rendering.input_targets:set("copy_target", render_context:get_texture_resource("final_lighting_target"))
+--    step_ci.rendering.output_targets:add(render_context:get_texture_resource("previous_color_target"))
+--    
+--    render_interface:create_renderer(step_ci)
+--end
 
 -- Present pass
 do

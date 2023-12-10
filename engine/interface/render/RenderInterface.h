@@ -55,8 +55,16 @@ namespace engine
 			float nearp{ 0.1f };
 			float farp{ 512.f };
 
-			glm::vec3 viewPos{ 0.f };
-			glm::mat4 view{ 1.f }, invView{ 1.f }, projection{ 1.f }, invProjection{ 1.f }, viewProjection{ 1.f }, invViewProjection{ 1.f };
+			glm::mat4 view{ 1.f };
+			glm::mat4 invView{ 1.f };
+
+			glm::mat4 projection{ 1.f };
+			glm::mat4 invProjection{ 1.f };
+
+			glm::mat4 viewProjection{ 1.f };
+			glm::mat4 invViewProjection{ 1.f };
+			glm::mat4 prevViewProjection{ 1.f };
+			glm::mat4 reprojection{ 1.f };
 
 			glm::vec3 up{ 0.f };
 			glm::vec3 forward{ 0.f };
@@ -184,8 +192,16 @@ namespace engine
 
 			// Lights data
 			FDirectionalLightsData directionalLights{};
+			std::unique_ptr<IBufferObject> directionalLightBuffer{};
+			std::unique_ptr<IBufferObject> cascadedShadowBuffer{};
+
 			FPointLightsData pointLights{};
+			std::unique_ptr<IBufferObject> pointLightBuffer{};
+			std::unique_ptr<IBufferObject> omniShadowBuffer{};
+
 			FSpotLightsData spotLights{};
+			std::unique_ptr<IBufferObject> spotLightBuffer{};
+			std::unique_ptr<IBufferObject> spotShadowBuffer{};
 		};
 
 		class IRenderContext
@@ -222,7 +238,7 @@ namespace engine
 
 			virtual void pushG2CBarriers(uint32_t queue_type, const std::vector<size_t>& textures) = 0;
 			virtual void pushC2CBarrier(uint32_t queue_type) = 0;
-			virtual void pushC2GBarrier(uint32_t queue_type) = 0;
+			virtual void pushC2GBarrier(uint32_t queue_type, const std::vector<size_t>& texture_ids) = 0;
 
 			virtual void beginRendering(const FBeginRenderingInfo& rendering_info) = 0;
 			virtual void endRendering(const FBeginRenderingInfo& rendering_info) = 0;

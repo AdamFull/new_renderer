@@ -73,8 +73,26 @@ void CCameraSystem::__update(float fDt)
 				render_packet->camera.forward = camera.forward;
 				render_packet->camera.right = camera.right;
 				render_packet->camera.up = camera.up;
+				render_packet->camera.prevViewProjection = render_packet->camera.viewProjection;
 				render_packet->camera.viewProjection = render_packet->camera.projection * render_packet->camera.view;
 				render_packet->camera.invViewProjection = glm::inverse(render_packet->camera.viewProjection);
+
+				glm::mat4 pre {
+					2.0f, 0.f, 0.f, 0.f,
+					0.f, -2.0f, 0.f, 0.f,
+					0.f, 0.f, 1.f, 0.f,
+					-1.f, 1.f, 0.f, 1.f
+				};
+
+				glm::mat4 post = {
+					0.5f, 0.f, 0.f, 0.f,
+					0.f, -0.5f, 0.f, 0.f,
+					0.f, 0.f, 1.f, 0.f,
+					0.5f, 0.5f, 0.f, 1.f
+				};
+
+				glm::mat4 reprojectionMatrix = render_packet->camera.invViewProjection * render_packet->camera.prevViewProjection;
+				render_packet->camera.reprojection = pre * reprojectionMatrix * post;
 
 				camera.moved = false;
 			}

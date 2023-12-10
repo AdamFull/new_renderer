@@ -744,7 +744,7 @@ void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader
 			auto& image_descriptor = image_descriptors.at(texture_count);
 			image_descriptor.imageView = texture->imageViews.front();
 			image_descriptor.sampler = texture->sampler;
-			image_descriptor.imageLayout = texture->layout;
+			image_descriptor.imageLayout = get_render_target_final_layout(*texture);
 			texture_count++;
 
 			auto descriptor_index = shader->descriptorUsage[uniform.set];
@@ -943,7 +943,6 @@ void CVkRenderContext::destroyBuffer(size_t resource_id)
 void CVkRenderContext::pushG2CBarriers(uint32_t queue_type, const std::vector<size_t>& texture_ids)
 {
 	auto& command_buffer = getLastCommandBuffer(queue_type);
-
 	auto& textures = m_pResources->data<FVkTexture>();
 
 	FVkTranslationInfo translation_info{};
@@ -958,7 +957,7 @@ void CVkRenderContext::pushG2CBarriers(uint32_t queue_type, const std::vector<si
 		image_trans_info.oldLayout = vk::ImageLayout::eUndefined;
 		image_trans_info.dstStageMask = vk::PipelineStageFlagBits2::eComputeShader;
 		image_trans_info.dstAccessMask = vk::AccessFlagBits2::eShaderRead;
-		image_trans_info.newLayout = current->layout;
+		image_trans_info.newLayout = get_render_target_final_layout(*current);
 		image_trans_info.handle = current->image.handle;
 
 		image_trans_info.subresourceRange.aspectMask = get_texture_aspect_flags(*current);
@@ -985,11 +984,33 @@ void CVkRenderContext::pushC2CBarrier(uint32_t queue_type)
 	processMemoryBarriers(command_buffer, translation_info);
 }
 
-void CVkRenderContext::pushC2GBarrier(uint32_t queue_type)
+void CVkRenderContext::pushC2GBarrier(uint32_t queue_type, const std::vector<size_t>& texture_ids)
 {
 	auto& command_buffer = getLastCommandBuffer(queue_type);
+	auto& textures = m_pResources->data<FVkTexture>();
 
 	FVkTranslationInfo translation_info{};
+	for (auto texture_id : texture_ids)
+	{
+		auto& texture = textures.at(texture_id);
+		auto& current = texture.at(m_pDevice->m_swapchain.currentFrame);
+
+		auto& image_trans_info = translation_info.imageTranslationInfos.emplace_back();
+		image_trans_info.srcStageMask = vk::PipelineStageFlagBits2::eComputeShader;
+		image_trans_info.srcAccessMask = vk::AccessFlagBits2::eShaderRead;
+		image_trans_info.oldLayout = get_render_target_final_layout(*current);
+		image_trans_info.dstStageMask = vk::PipelineStageFlagBits2::eFragmentShader;
+		image_trans_info.dstAccessMask = vk::AccessFlagBits2::eColorAttachmentWrite;
+		image_trans_info.newLayout = get_render_target_final_layout(*current);
+		image_trans_info.handle = current->image.handle;
+
+		image_trans_info.subresourceRange.aspectMask = get_texture_aspect_flags(*current);
+		image_trans_info.subresourceRange.baseArrayLayer = 0;
+		image_trans_info.subresourceRange.layerCount = current->totalLayers;
+		image_trans_info.subresourceRange.baseMipLevel = 0;
+		image_trans_info.subresourceRange.levelCount = current->initialData.base.mipLevels;
+	}
+
 	auto& barrier = translation_info.memoryTranslationInfos.emplace_back();
 	barrier.srcStageMask = vk::PipelineStageFlagBits2::eComputeShader;
 	barrier.srcAccessMask = vk::AccessFlagBits2::eShaderWrite;

@@ -94,22 +94,15 @@ namespace shader_compiler
 		return stream.str();
 	}
 
-	template<class _Ty>
-	inline bool parse_file_to(const std::filesystem::path& file_path, _Ty& output)
+	inline bool read_file(const std::filesystem::path& file_path, std::vector<char>& buffer)
 	{
 		if (!std::filesystem::exists(file_path))
-		{
-			log_error("File {} was not found.", file_path.string());
 			return false;
-		}
 
 		auto path_str = file_path.string();
 		FILE* file = fopen(path_str.c_str(), "rb");
 		if (!file)
-		{
-			log_error("Failed to open file: %s.", path_str);
 			return false;
-		}
 
 		fseek(file, 0, SEEK_END);
 		long file_size = ftell(file);
@@ -117,20 +110,26 @@ namespace shader_compiler
 
 		if (file_size == 0)
 		{
-			log_warning("File loaded from: %s is empty.", path_str);
 			fclose(file);
 			return false;
 		}
 
-		std::vector<char> buffer(file_size);
+		buffer.resize(file_size);
 		size_t result = fread(buffer.data(), 1, file_size, file);
 		fclose(file);
 
 		if (result != file_size)
-		{
-			log_error("Error reading file: %s.", path_str);
 			return false;
-		}
+
+		return true;
+	}
+
+	template<class _Ty>
+	inline bool parse_file_to(const std::filesystem::path& file_path, _Ty& output)
+	{
+		std::vector<char> buffer{};
+		if (!read_file(file_path, buffer))
+			return false;
 
 		sjson::parse(buffer).parse_to<_Ty>(output);
 
@@ -140,33 +139,22 @@ namespace shader_compiler
 	template<class _Ty>
 	inline bool parse_json_to(const std::filesystem::path& file_path, _Ty& output)
 	{
-		if (!std::filesystem::exists(file_path))
-			return false;
-
-		auto path_str = file_path.string();
-		FILE* file = fopen(path_str.c_str(), "rb");
-		if (!file)
-			return false;
-
-		fseek(file, 0, SEEK_END);
-		long file_size = ftell(file);
-		rewind(file);
-
-		if (file_size == 0)
-		{
-			fclose(file);
-			return false;
-		}
-
-		std::vector<char> buffer(file_size);
-		size_t result = fread(buffer.data(), 1, file_size, file);
-		fclose(file);
-
-		if (result != file_size)
+		std::vector<char> buffer{};
+		if (!read_file(file_path, buffer))
 			return false;
 
 		nlohmann::json::from_bson(buffer).get_to(output);
 
+		return true;
+	}
+
+	inline bool parse_header(const std::filesystem::path& file_path, std::string& data)
+	{
+		std::vector<char> buffer{};
+		if (!read_file(file_path, buffer))
+			return false;
+
+		data = std::string(buffer.begin(), buffer.end());
 		return true;
 	}
 

@@ -89,6 +89,24 @@ void CComputeRenderingStep::execute(float dt)
 				shader->bindBuffer("SkinningJoints", handle);
 			}
 
+			if (render_packet->directionalLightBuffer)
+			{
+				size_t handle = render_packet->directionalLightBuffer->handle();
+				shader->bindBuffer("DirectionalLights", handle);
+			}
+
+			if (render_packet->pointLightBuffer)
+			{
+				size_t handle = render_packet->pointLightBuffer->handle();
+				shader->bindBuffer("PointLights", handle);
+			}
+
+			if (render_packet->spotLightBuffer)
+			{
+				size_t handle = render_packet->spotLightBuffer->handle();
+				shader->bindBuffer("SpotLights", handle);
+			}
+
 			size_t vertex_handle = last_vbo->getVertexHandle();
 			shader->bindBuffer("VertexBuffer", vertex_handle);
 
@@ -129,7 +147,7 @@ const std::unique_ptr<IShaderObject>& CComputeRenderingStep::getShaderByVBO(cons
 		auto& render_packet = m_pRenderInterface->getRenderPacket();
 
 		FComputeShaderCreateInfo shader_ci{};
-		shader_ci.usageCount = render_packet->materials.size();
+		shader_ci.usageCount = std::max(render_packet->materials.size(), render_packet->primitiveCount);
 		shader->create(shader_name, shader_ci);
 
 		for (auto& [binding_point, texture] : m_shaderInputs)

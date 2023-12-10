@@ -334,8 +334,7 @@ std::vector<uint32_t> CShaderCompiler::compile(const std::string& shader_code, c
 
 	empty_includer includer;
 
-	if (!shader.parse(&resources, client_version, true, messages, includer))
-		log_error("\nParsing error: In shader \"{}\" \n{}\n{}\n", info.name, shader.getInfoLog(), shader.getInfoDebugLog());
+	if (!shader.parse(&resources, client_version, true, messages, includer))		log_error("\nParsing error: In shader \"{}\" \n{}\n{}\n", info.name, shader.getInfoLog(), shader.getInfoDebugLog());
 
 	program.addShader(&shader);
 

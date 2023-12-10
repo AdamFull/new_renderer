@@ -5,6 +5,7 @@
 #include "shader_library_parse.hpp"
 
 #include <fstream>
+#include <regex>
 
 using namespace shader_compiler;
 
@@ -61,6 +62,8 @@ std::vector<std::string> make_permutation(size_t mask, const std::vector<FDefini
 	return permutation;
 }
 
+std::string process_include(const std::string& include, const std::filesystem::path& includes_path, size_t depth);
+
 std::string generate_shader_code(const FShaderObject& sobject, const std::filesystem::path& includes_path, size_t depth = 0)
 {
 	std::stringstream ss{};
@@ -90,21 +93,68 @@ std::string generate_shader_code(const FShaderObject& sobject, const std::filesy
 
 	// Include 
 	for (auto& sinclude : sobject.includes)
-	{
-		auto include_path = includes_path / (sinclude + ".shinc");
-		FShaderObject include_so{};
-		if (!parse_file_to(include_path, include_so))
-			continue;
-
-		auto protector_name = std::format("{}_protector", include_path.stem().string());
-
-		ss << std::format("\n#ifndef {}\n#define {}", protector_name, protector_name) << std::endl;
-		ss << generate_shader_code(include_so, includes_path, depth + 1);
-		ss << "\n#endif" << std::endl << std::endl;
-	}
+		ss << process_include(sinclude, includes_path, depth);
 
 	// Apply code
 	ss << sobject.code;
+
+	return ss.str();
+}
+
+std::string process_include(const std::string& include, const std::filesystem::path& includes_path, size_t depth)
+{
+	std::stringstream ss{};
+	std::string guard_name{};
+
+	auto base_include_path = (includes_path / include).string();
+
+	FShaderObject include_so{};
+	if (parse_file_to(base_include_path + ".shinc", include_so))
+		guard_name = std::format("{}_protector", std::filesystem::path(base_include_path).stem().string());
+	else if (parse_header(base_include_path + ".h", include_so.code))
+	{
+		std::regex guard_start_pattern("#ifndef (.+)");
+		std::regex guard_define_pattern("#define (.+)");
+		std::regex guard_end_pattern("#endif.*");
+		std::regex include_pattern("#include \"(.+)\"");
+		std::smatch matches;
+
+		std::istringstream stream(include_so.code);
+		std::string line;
+		
+		bool in_guard_block{ false };
+		bool is_guard_defined{ false };
+
+		include_so.code.clear();
+		while (std::getline(stream, line)) 
+		{
+			if (std::regex_search(line, matches, guard_start_pattern) && !in_guard_block)
+			{
+				guard_name = matches[1].str();
+				in_guard_block = true;
+			}
+			else if (in_guard_block && !is_guard_defined && std::regex_search(line, matches, guard_define_pattern))
+				is_guard_defined = guard_name == matches[1].str();
+			else if (in_guard_block && is_guard_defined && std::regex_search(line, matches, guard_end_pattern) && stream.eof())
+			{
+				in_guard_block = false;
+				is_guard_defined = false;
+			}
+			else
+			{
+				if (std::regex_search(line, matches, include_pattern)) 
+					include_so.includes.emplace_back(matches[1].matched ? matches[1].str() : matches[2].str());
+				else
+					include_so.code += line + "\n";
+			}
+		}
+	}
+	else
+		log_error("Include {} was not found, or not supported format.", include);
+
+	ss << std::format("\n#ifndef {}\n#define {}", guard_name, guard_name) << std::endl;
+	ss << generate_shader_code(include_so, includes_path, depth + 1);
+	ss << "\n#endif" << std::endl << std::endl;
 
 	return ss.str();
 }

@@ -1,0 +1,169 @@
+{
+	includes: ["util"];
+
+	code: 
+	"""
+        const float rayStep = 0.2f;
+		const int iterationCount = 100;
+		const float distanceBias = 0.05f;
+		const int sampleCount = 4;
+		const float samplingCoefficient = 0.01f;
+		const float reflectionSpecularFalloffExponent = 3.f;
+		const int debugDraw = -1;
+		const int isBinarySearchEnabled = 1;
+		const int isAdaptiveStepEnabled = 1;
+		const int isExponentialStepEnabled = -1;
+		const int isSamplingEnabled = 1;
+
+		vec3 generatePositionFromDepth(vec2 texturePos, float depth) 
+		{
+			vec4 ndc = vec4((texturePos - 0.5) * 2, depth, 1.f);
+			vec4 inversed = frameData.invProjection * ndc;
+			inversed /= inversed.w;
+			return inversed.xyz;
+		}
+		
+		vec2 generateProjectedPosition(vec3 pos)
+		{
+			vec4 samplePosition = frameData.projection * vec4(pos, 1.f);
+			samplePosition.xy = (samplePosition.xy / samplePosition.w) * 0.5 + 0.5;
+			return samplePosition.xy;
+		}
+
+		vec2 SSRRaycast(in vec3 position, in vec3 reflection, in sampler2D depth_sampler, out vec3 color) 
+		{
+			vec3 stp = rayStep * reflection;
+			vec3 marchingPosition = position + stp;
+			float delta;
+			float depthFromScreen;
+			vec2 screenPosition;
+			
+			int i = 0;
+			for (; i < iterationCount; i++) 
+			{
+				screenPosition = generateProjectedPosition(marchingPosition);
+				depthFromScreen = abs(generatePositionFromDepth(screenPosition, texture(depth_sampler, screenPosition).x).z);
+				delta = abs(marchingPosition.z) - depthFromScreen;
+		
+				if (abs(delta) < distanceBias) 
+				{
+					color = vec3(1);
+					if(debugDraw > 0)
+						color = vec3( 0.5+ sign(delta)/2,0.3,0.5- sign(delta)/2);
+					return screenPosition;
+				}
+		
+				if (isBinarySearchEnabled > 0 && delta >= 0)
+					break;
+		
+				if (isAdaptiveStepEnabled > 0)
+				{
+					float directionSign = sign(abs(marchingPosition.z) - depthFromScreen);
+					//this is sort of adapting step, should prevent lining reflection by doing sort of iterative converging
+					//some implementation doing it by binary search, but I found this idea more cheaty and way easier to implement
+					stp = stp * (1.0 - rayStep * max(directionSign, 0.0));
+					marchingPosition += stp * (-directionSign);
+				}
+				else
+					marchingPosition += stp;
+			
+				if (isExponentialStepEnabled > 0)
+					stp *= 1.05;
+		    }
+		
+		
+			if(isBinarySearchEnabled > 0)
+			{
+				for(; i < iterationCount; i++){
+					
+					stp *= 0.5;
+					marchingPosition = marchingPosition - stp * sign(delta);
+					
+					screenPosition = generateProjectedPosition(marchingPosition);
+					depthFromScreen = abs(generatePositionFromDepth(screenPosition, texture(depth_sampler, screenPosition).x).z);
+					delta = abs(marchingPosition.z) - depthFromScreen;
+					
+					if (abs(delta) < distanceBias) 
+					{
+		                color = vec3(1);
+		                if(debugDraw > 0)
+		                    color = vec3( 0.5+ sign(delta)/2,0.3,0.5- sign(delta)/2);
+						return screenPosition;
+					}
+				}
+			}
+			
+		    return vec2(0.0);
+		}
+
+		vec3 computeSSR(in vec2 uv, in vec3 position, in vec3 normal, in float metallic, in float roughness, in sampler2D depth_sampler, in sampler2D color_sampler)
+		{
+			vec3 ssr = vec3(0.0);
+
+			const float roughnessThreshold = 0.7f;
+			bool ssrEnabled = roughness < roughnessThreshold;
+			if(ssrEnabled)
+			{
+				vec3 reflectionDirection = normalize(reflect(position, normalize(normal)));
+				if (isSamplingEnabled > 0)
+				{
+					vec3 firstBasis = normalize(cross(vec3(0.f, 0.f, 1.f), reflectionDirection));
+					vec3 secondBasis = normalize(cross(reflectionDirection, firstBasis));
+					vec4 resultingColor = vec4(0.f);
+		
+					for (int i = 0; i < sampleCount; i++) 
+					{
+						vec2 coeffs = vec2(random(uv + vec2(0, i)) + random(uv + vec2(i, 0))) * samplingCoefficient * roughness;
+						vec3 reflectionDirectionRandomized = reflectionDirection + firstBasis * coeffs.x + secondBasis * coeffs.y;
+		
+						vec3 debugColor;
+						vec2 coords = SSRRaycast(position, normalize(reflectionDirectionRandomized), depth_sampler, debugColor);
+						if (coords != vec2(0.0f))
+						{
+							vec4 reflColor = texture(color_sampler, coords);
+							reflColor.rgb *= debugColor;
+		
+							vec2 dCoords = smoothstep(0.2, 0.6, abs(vec2(0.5, 0.5) - coords.xy));
+							float screenEdgefactor = clamp(1.0 - (dCoords.x + dCoords.y), 0.0, 1.0);
+							float reflectionMultiplier = pow(metallic, reflectionSpecularFalloffExponent) * screenEdgefactor * -reflectionDirection.z;
+		
+							reflColor.rgb *= clamp(reflectionMultiplier, 0.0, 0.9);
+		
+							resultingColor += reflColor;
+						}
+					}
+		
+					if (resultingColor.w != 0)
+					{
+						resultingColor /= resultingColor.w;
+						ssr = resultingColor.rgb;
+					}
+				}
+				else
+				{
+					// Applying roughness to resulting reflection vertor
+					vec2 coeffs = vec2(random(uv)) * roughness;
+					vec3 firstBasis = normalize(cross(vec3(0.f, 0.f, 1.f), reflectionDirection));
+					vec3 secondBasis = normalize(cross(reflectionDirection, firstBasis));
+					reflectionDirection += firstBasis * coeffs.x + secondBasis * coeffs.y;
+		
+					vec3 debugColor;
+					vec2 coords = SSRRaycast(position, normalize(reflectionDirection), depth_sampler, debugColor);
+					if (coords != vec2(0.f))
+					{
+						ssr = texture(color_sampler, coords).rgb;
+						ssr *= debugColor;
+		
+						vec2 dCoords = smoothstep(0.2, 0.6, abs(vec2(0.5, 0.5) - coords.xy));
+						float screenEdgefactor = clamp(1.0 - (dCoords.x + dCoords.y), 0.0, 1.0);
+						float reflectionMultiplier = pow(metallic, reflectionSpecularFalloffExponent) * screenEdgefactor * -reflectionDirection.z;
+		
+						ssr *= clamp(reflectionMultiplier, 0.0, 0.9);
+					}	
+				}
+			}
+
+			return ssr;
+		}
+	""";
+}

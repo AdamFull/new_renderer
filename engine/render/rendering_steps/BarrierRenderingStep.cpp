@@ -23,5 +23,5 @@ void CBarrierRenderingStep::execute(float dt)
 	else if (m_barrier.type == BARRIER_FROM_COMPUTE_TO_COMPUTE)
 		m_pRenderContext->pushC2CBarrier(m_barrier.queue);
 	else if (m_barrier.type == BARRIER_FROM_COMPUTE_TO_GRAPHICS)
-		m_pRenderContext->pushC2GBarrier(m_barrier.queue);
+		m_pRenderContext->pushC2GBarrier(m_barrier.queue, m_barrier.targets);
 }

@@ -1,8 +1,48 @@
 {
-	includes: ["math"];
+	includes: ["math", "util"];
 
 	code: 
 	"""
+		// Sampled material data
+		struct MaterialSample 
+		{
+			vec3 albedo;
+			float opacity;
+
+			vec3 emission;
+
+			float metallic;
+			float roughness;
+
+			vec3 normal;
+
+			float ao;
+
+			float ior;
+		};
+
+		// Calculated material brdf data
+		struct MaterialBRDF
+		{
+			vec3 diffuse;
+			vec3 f0;
+			float roughness;
+		};
+
+		MaterialBRDF calculateBRDF(MaterialSample ms)
+		{
+			MaterialBRDF brdf;
+
+			brdf.diffuse = ms.albedo * (1.0 - ms.metallic);
+
+			float a = (1.f - ms.ior) / (1.f + ms.ior);
+			brdf.f0 = mix(vec3(a * a), ms.albedo, ms.metallic);
+
+			brdf.roughness = ms.roughness;
+
+			return brdf;
+		}
+
 		vec3 cubeDir(vec2 texCoord, uint side) 
 		{
 			vec2 tex = texCoord * 2.0f - 1.0f;
@@ -43,17 +83,6 @@
 		vec3 F_SchlickR(float cosTheta, vec3 F0, float roughness)
 		{
 			return F0 + (max(vec3(1.0f - roughness), F0) - F0) * pow(1.0f - cosTheta, 5.0f);
-		}
-		
-		// Based omn http://byteblacksmith.com/improvements-to-the-canonical-one-liner-glsl-rand-for-opengl-es-2-0/
-		float random(vec2 co)
-		{
-			float a = 12.9898f;
-			float b = 78.233f;
-			float c = 43758.5453f;
-			float dt= dot(co.xy ,vec2(a,b));
-			float sn= mod(dt,3.14f);
-			return fract(sin(sn) * c);
 		}
 		
 		vec2 hammersley2d(uint i, uint N) 
@@ -105,7 +134,7 @@
 		
 		}
 		
-		vec3 specularContribution(vec3 diffuse, vec3 L, vec3 V, vec3 N, vec3 F0, float metallic, float roughness)
+		vec3 specularContribution(in vec3 diffuse, in vec3 L, in vec3 V, in vec3 N, in vec3 F0, in float metallic, in float roughness)
 		{
 			// Precalculate vectors and dot products	
 			vec3 H = normalize (V + L);
