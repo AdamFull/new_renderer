@@ -116,7 +116,7 @@ CScene::CScene(IVirtualFileSystemInterface* vfs, render::IRenderInterface* rende
 	m_systems.emplace_back(std::make_unique<ecs::CInputSystem>(m_pSceneGraph));
 	m_systems.emplace_back(std::make_unique<ecs::CAnimationSystem>(m_pSceneGraph));
 	m_systems.emplace_back(std::make_unique<ecs::CScenegraphSystem>(m_pSceneGraph));
-	m_systems.emplace_back(std::make_unique<ecs::CSkinningSystem>(m_pSceneGraph));
+	m_systems.emplace_back(std::make_unique<ecs::CSkinningSystem>(m_pSceneGraph, render_interface));
 
 	m_systems.emplace_back(std::make_unique<ecs::CCameraSystem>(m_pSceneGraph, render_interface));
 	m_systems.emplace_back(std::make_unique<ecs::CLightingSystem>(m_pSceneGraph, render_interface));
@@ -162,54 +162,57 @@ void CScene::load(const std::string& path)
 	}
 
 	// Load materials
-	uint32_t material_index{ 0u };
-	for (const auto& material : root.materials)
+	auto& materials = render_packet->materials;
+	for (size_t idx = 0ull; idx < root.materials.size(); ++idx)
 	{
-		auto& material_data = render_packet->materials.emplace_back();
+		auto& material = root.materials[idx];
+		render::FMaterial material_data{};
 
 		m_temporary.materialNames.emplace_back(material.name);
 		// TODO: add my own ext that will contain shader EXT_material_shader or something. But in my case it will contain name in format {library}:{shader_name} and other helpfull data
 
 		// Attach base color (aka albedo)
 		if (auto& texture = material.pbrMetallicRoughness.baseColorTexture; texture.index >= 0)
-			material_data.parameters.baseColorTexture = m_resources.textures.at(texture.index);
+			material_data.baseColorTexture = m_resources.textures.at(texture.index);
 
 		// Attach metallic roughness texture (metallic = green, roughness = blue)
 		if (auto& texture = material.pbrMetallicRoughness.metallicRoughnessTexture; texture.index >= 0)
-			material_data.parameters.metallicRoughnessTexture = m_resources.textures.at(texture.index);
+			material_data.metallicRoughnessTexture = m_resources.textures.at(texture.index);
 
 		// Attach normal map texture
 		if (auto& texture = material.normalTexture; texture.index >= 0)
 		{
-			material_data.parameters.normalScale = static_cast<float>(texture.scale);
-			material_data.parameters.normalTexture = m_resources.textures.at(texture.index);
+			material_data.normalScale = static_cast<float>(texture.scale);
+			material_data.normalTexture = m_resources.textures.at(texture.index);
 		}
 
 		// Attach baked ambient occlusion texture
 		if (auto& texture = material.occlusionTexture; texture.index >= 0)
 		{
-			material_data.parameters.occlusionStrenth = static_cast<float>(texture.strength);
-			material_data.parameters.occlusionTexture = m_resources.textures.at(texture.index);
+			material_data.occlusionStrenth = static_cast<float>(texture.strength);
+			material_data.occlusionTexture = m_resources.textures.at(texture.index);
 		}
 
 		// Attach emissive texture
 		if (auto& texture = material.emissiveTexture; texture.index >= 0)
-			material_data.parameters.emissiveTexture = m_resources.textures.at(texture.index);
+			material_data.emissiveTexture = m_resources.textures.at(texture.index);
 
-		material_data.parameters.emissiveFactor = glm::make_vec3(material.emissiveFactor.data());
-		material_data.parameters.roughnessFactor = static_cast<float>(material.pbrMetallicRoughness.roughnessFactor);
-		material_data.parameters.metallicFactor = static_cast<float>(material.pbrMetallicRoughness.metallicFactor);
-		material_data.parameters.baseColorFactor = glm::make_vec4(material.pbrMetallicRoughness.baseColorFactor.data());
+		material_data.emissiveFactor = glm::make_vec3(material.emissiveFactor.data());
+		material_data.roughnessFactor = static_cast<float>(material.pbrMetallicRoughness.roughnessFactor);
+		material_data.metallicFactor = static_cast<float>(material.pbrMetallicRoughness.metallicFactor);
+		material_data.baseColorFactor = glm::make_vec4(material.pbrMetallicRoughness.baseColorFactor.data());
 
 		if (material.alphaMode == easygltf::base::enumerators::alpha_mode::blend)
-			material_data.parameters.alphaMode = render::MATERIAL_APLHA_MODE_BLEND;
+			material_data.alphaMode = render::MATERIAL_APLHA_MODE_BLEND;
 		else if (material.alphaMode == easygltf::base::enumerators::alpha_mode::mask)
-			material_data.parameters.alphaMode = render::MATERIAL_APLHA_MODE_MASK;
+			material_data.alphaMode = render::MATERIAL_APLHA_MODE_MASK;
 		else
-			material_data.parameters.alphaMode = render::MATERIAL_APLHA_MODE_OPAQUE;
+			material_data.alphaMode = render::MATERIAL_APLHA_MODE_OPAQUE;
 
-		material_data.parameters.alphaCutoff = static_cast<float>(material.alphaCutoff);
-		material_data.parameters.doubleSided = material.doubleSided;
+		material_data.alphaCutoff = static_cast<float>(material.alphaCutoff);
+		material_data.doubleSided = material.doubleSided;
+
+		materials->insert(&material_data, idx);
 	}
 
 	// Loading nodes
@@ -489,13 +492,7 @@ void CScene::loadMeshComponent(const easygltf::FGLTFRoot root, const entt::entit
 
 		// NOTE: Updating material create info for future shader creation
 		if (primitive.material >= 0)
-		{
 			mesh_primitive.materialId = primitive.material;
-		
-			auto& render_packet = m_pRenderInterface->getRenderPacket();
-			auto& material_ci = render_packet->materials.at(primitive.material);
-			material_ci.usageCount++;
-		}
 
 		mesh_component.primitives.emplace_back(mesh_primitive);
 		m_resources.primitiveCount++;

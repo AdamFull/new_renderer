@@ -23,8 +23,7 @@
 		layout(location = 0) flat out uint drawID;
 		layout(location = 1) flat out uint matID;
 		layout(location = 2) flat out uint objID;
-		layout(location = 3) flat out uint skinID;
-		layout(location = 4) flat out uint vboID;
+		layout(location = 3) flat out uint vboID;
 
 		out gl_PerVertex
 		{
@@ -34,10 +33,27 @@
 		void main() 
 		{
 			// Calculate skinned matrix from weights and joint indices of the current vertex
-			mat4 modelMatrix = modelStorage.model[meshData.objectId];
+			FSceneNode node = nodes[meshData.objectId];
+			mat4 modelMatrix = node.model;
+
 #ifdef HAS_SKIN
-			apply_joint_matrix(modelMatrix, inJoints, inWeights);
+			if(node.skin != ~0u)
+			{
+#if defined(JOINTS_8BIT)
+				u8vec4 joints = u8vec4(uint8_t(inJoints.x * 255.0), uint8_t(inJoints.y * 255.0), uint8_t(inJoints.z * 255.0), uint8_t(inJoints.w * 255.0));
+#elif defined(JOINTS_16BIT)
+				u16vec4 joints = u16vec4(uint16_t(inJoints.x * 65535.0), uint16_t(inJoints.y * 65535.0), uint16_t(inJoints.z * 65535.0), uint16_t(inJoints.w * 65535.0));
 #endif
+				uint begin_pos = node.skin * 128;
+				mat4 skinMat = 
+					inWeights.x * matrices[begin_pos + joints.x] +
+					inWeights.y * matrices[begin_pos + joints.y] +
+					inWeights.z * matrices[begin_pos + joints.z] +
+					inWeights.w * matrices[begin_pos + joints.w];
+		
+				modelMatrix = modelMatrix * skinMat;
+			}
+#endif // HAS_SKIN
 
 
 			vec4 localPos = modelMatrix * vec4(inPosition, 1.0);
@@ -46,7 +62,6 @@
 			drawID = gl_DrawIDARB;
 			matID = meshData.materialId;
 			objID = meshData.objectId;
-			skinID = meshData.skinId;
 			vboID = meshData.vboId;
 			gl_Position = frameData.projection * frameData.view * localPos;
 		}

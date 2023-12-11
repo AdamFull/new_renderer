@@ -59,39 +59,42 @@ struct FCascadedShadowCommit
 {
 	ARRAY_OF(splitDepths, float, cascade_shadow_map_cascade_count);
 	ARRAY_OF(cascadeViewProj, MATRIX4, cascade_shadow_map_cascade_count);
-	ALIGN_AS(4) float farClip;
+	float farClip;
+	uint32_t pad;
 };
 
 struct FDirectionalLightCommit
 {
 	ALIGN_AS(16) VECTOR3 direction;
 	ALIGN_AS(16) VECTOR3 color;
-	ALIGN_AS(4) float intencity;
-	ALIGN_AS(4) int shadowIndex;
-	ALIGN_AS(4) int castShadows;
+	float intencity;
+	int shadowIndex;
+	int castShadows;
+	uint32_t pad;
 };
 
 struct FOmniShadowCommit
 {
 	ARRAY_OF(viewProj, MATRIX4, 6u);
-	ALIGN_AS(4) float farPlane;
-	ALIGN_AS(4) int index;
+	float farPlane;
+	int index;
 };
 
 struct FPointLightCommit
 {
 	ALIGN_AS(16) VECTOR3 position;
 	ALIGN_AS(16) VECTOR3 color;
-	ALIGN_AS(4) float intencity;
-	ALIGN_AS(4) float radius;
-	ALIGN_AS(4) int shadowIndex;
-	ALIGN_AS(4) int castShadows;
+	float intencity;
+	float radius;
+	int shadowIndex;
+	int castShadows;
 };
 
 struct FSpotShadowCommit
 {
 	MATRIX4 viewProj;
-	ALIGN_AS(4) int index;
+	int index;
+	uint32_t pad;
 };
 
 struct FSpotLightCommit
@@ -99,12 +102,24 @@ struct FSpotLightCommit
 	ALIGN_AS(16) VECTOR3 position;
 	ALIGN_AS(16) VECTOR3 direction;
 	ALIGN_AS(16) VECTOR3 color;
-	ALIGN_AS(4) float intencity;
-	ALIGN_AS(4) float lightAngleScale;
-	ALIGN_AS(4) float lightAngleOffset;
-	ALIGN_AS(4) int toTarget;
-	ALIGN_AS(4) int shadowIndex;
-	ALIGN_AS(4) int castShadows;
+	float intencity;
+	float lightAngleScale;
+	float lightAngleOffset;
+	int toTarget;
+	int shadowIndex;
+	int castShadows;
+};
+
+struct FSceneNode
+{
+#ifdef __cplusplus
+	FSceneNode() : model{ 1.f }, skin{ ~0u }, instances{ ~0u }, instanceCount{ 0u } {}
+#endif
+	MATRIX4 model;
+	uint32_t skin;
+	uint32_t instances;
+	uint32_t instanceCount;
+	uint32_t pad;
 };
 
 // Material
@@ -138,59 +153,59 @@ struct FMaterial
 	{}
 #endif
 	// Alpha
-	ALIGN_AS(4) uint32_t alphaMode;
-	ALIGN_AS(4) float alphaCutoff;
+	uint32_t alphaMode;
+	float alphaCutoff;
 
-	ALIGN_AS(4) uint32_t baseColorTexture;
+	uint32_t baseColorTexture;
 	ALIGN_AS(16) VECTOR4 baseColorFactor;
 
-	ALIGN_AS(4) uint32_t metallicRoughnessTexture;
-	ALIGN_AS(4) float metallicFactor;
-	ALIGN_AS(4) float roughnessFactor;
+	uint32_t metallicRoughnessTexture;
+	float metallicFactor;
+	float roughnessFactor;
 
-	ALIGN_AS(4) uint32_t normalTexture;
-	ALIGN_AS(4) float normalScale;
+	uint32_t normalTexture;
+	float normalScale;
 
-	ALIGN_AS(4) uint32_t occlusionTexture;
-	ALIGN_AS(4) float occlusionStrenth;
+	uint32_t occlusionTexture;
+	float occlusionStrenth;
 
-	ALIGN_AS(4) uint32_t emissiveTexture;
+	uint32_t emissiveTexture;
 	ALIGN_AS(16) VECTOR3 emissiveFactor;
 
-	ALIGN_AS(4) uint32_t doubleSided;
+	uint32_t doubleSided;
 
 	// KHR_materials_clearcoat
-	ALIGN_AS(4) float clearcoatFactor;
-	ALIGN_AS(4) float clearcoatRoughnessFactor;
+	float clearcoatFactor;
+	float clearcoatRoughnessFactor;
 
 	// KHR_materials_emissive_strength
-	ALIGN_AS(4) float emissiveStrength;
+	float emissiveStrength;
 
 	// KHR_materials_ior
-	ALIGN_AS(4) float ior;
+	float ior;
 
 	// KHR_materials_iridescence
-	ALIGN_AS(4) float iridescenceFactor;
-	ALIGN_AS(4) float iridescenceIor;
-	ALIGN_AS(4) float iridescenceThicknessMinimum;
-	ALIGN_AS(4) float iridescenceThicknessMaximum;
+	float iridescenceFactor;
+	float iridescenceIor;
+	float iridescenceThicknessMinimum;
+	float iridescenceThicknessMaximum;
 
 	// KHR_materials_sheen
 	ALIGN_AS(16) VECTOR3 sheenColorFactor;
-	ALIGN_AS(4) float sheenRoughnessFactor;
+	float sheenRoughnessFactor;
 
 	// KHR_materials_specular
-	ALIGN_AS(4) float specularFactor;
+	float specularFactor;
 	ALIGN_AS(16) VECTOR3 specularColorFactor;
 
 	// KHR_materials_transmission
-	ALIGN_AS(4) float transmissionFactor;
+	float transmissionFactor;
 
 	// KHR_materials_unlit ?
 
 	// KHR_materials_volume
-	ALIGN_AS(4) float thicknessFactor;
-	ALIGN_AS(4) float attenuationDistance;
+	float thicknessFactor;
+	float attenuationDistance;
 	ALIGN_AS(16) VECTOR3 attenuationColor;
 };
 

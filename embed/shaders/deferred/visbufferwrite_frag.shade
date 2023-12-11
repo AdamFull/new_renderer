@@ -19,8 +19,7 @@
 		layout(location = 0) in flat uint drawID;
 		layout(location = 1) in flat uint matID;
 		layout(location = 2) in flat uint objID;
-		layout(location = 3) in flat uint skinID;
-		layout(location = 4) in flat uint vboID;
+		layout(location = 3) in flat uint vboID;
 		
 		layout(location = 0) out vec4 vbid;
 		layout(location = 1) out vec4 moid;
@@ -42,7 +41,7 @@
 		{
 			vbid = unpackUnorm4x8(packVBID(true, drawID, gl_PrimitiveID));
 			moid = unpackUnorm4x8(packMOID(matID, objID));
-			svid = unpackUnorm4x8(packMOID(skinID, vboID));
+			svid = unpackUnorm4x8(vboID);
 		}
 	""";
 }

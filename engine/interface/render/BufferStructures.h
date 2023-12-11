@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 
 namespace engine
 {
@@ -56,6 +57,25 @@ namespace engine
 			virtual size_t handle() = 0;
 
 			virtual char* at(size_t index) = 0;
+		};
+
+		class IGPUArrayHandle
+		{
+		public:
+			virtual ~IGPUArrayHandle() = default;
+
+			virtual void create(const std::string& name, size_t stride, size_t count) = 0;
+			virtual void flush(size_t count = ~0ull, size_t offset = 0ull) = 0;
+
+			virtual uint8_t* at(size_t index) = 0;
+			virtual const uint8_t* at(size_t index) const = 0;
+
+			virtual void insert(void* data, size_t index) = 0;
+
+			virtual const std::vector<uint8_t>& getData() const = 0;
+			virtual const std::unique_ptr<IBufferObject>& getBufferObject() const = 0;
+
+			virtual size_t getLastInsertionIndex() = 0;
 		};
 	}
 }

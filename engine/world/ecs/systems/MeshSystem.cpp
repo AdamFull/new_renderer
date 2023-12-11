@@ -36,6 +36,8 @@ void CMeshSystem::__update(float fDt)
 
 	std::vector<FGeometryDrawData> geometry_list{};
 
+	auto& nodes = render_packet->nodes;
+
 	auto view = registry->view<FTransformComponent, FBaseComponent, FMeshComponent>();
 	for (auto [entity, transform, base, mesh] : view.each())
 	{
@@ -43,7 +45,11 @@ void CMeshSystem::__update(float fDt)
 			continue;
 
 		auto node = static_cast<uint32_t>(entity);
-		render_packet->nodes[node] = transform.gmodel;
+
+		FSceneNode scene_node{};
+		scene_node.model = transform.gmodel;
+		scene_node.skin = static_cast<uint32_t>(mesh.skin);
+		nodes->insert(&scene_node, node);
 
 		for (const auto& primitive : mesh.primitives)
 		{
@@ -53,7 +59,6 @@ void CMeshSystem::__update(float fDt)
 			draw_data.vboId = primitive.vboId;
 			draw_data.materialId = primitive.materialId;
 			draw_data.node = node;
-			draw_data.skin = mesh.skin;
 			draw_data.range.beginIndex = lod.beginIndex;
 			draw_data.range.indexCount = lod.indexCount;
 			draw_data.range.beginVertex = lod.beginVertex;
@@ -61,8 +66,6 @@ void CMeshSystem::__update(float fDt)
 		}
 	}
 
-	for (const auto& skin : root_component.skins)
-		render_packet->skins.emplace_back(skin.jointMatrices);
-
 	createGeometryBatches(geometry_list, render_packet->sceneBatches);
+	createGeometryBatches(geometry_list, render_packet->shadowBatches, GEOMETRY_BATCHER_MERGE_DRAWCALLS_FLAG_BIT);
 }

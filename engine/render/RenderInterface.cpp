@@ -10,6 +10,7 @@
 
 #include "VertexHandler.h"
 #include "BufferObject.h"
+#include "GPUArrayHandle.h"
 
 #include <shader_compiler/compiler_util.h>
 
@@ -166,165 +167,55 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 	m_pVFS->readFile("/root/embed/rendering/test_render_config.lua", render_config);
 	m_pRenderScriptCore->build("render_config", render_config);
 
-	// Create material storage buffer
-	{
-		FBufferCreateInfo buffer_ci{};
-		buffer_ci.flags = BUFFER_TYPE_STORAGE_FLAG_BIT;
-		buffer_ci.size = sizeof(FMaterial);
-		buffer_ci.count = MAX_MATERIAL_COUNT;
 
-		auto& buffer = m_pRenderPacket->materialBuffer;
-		buffer = std::make_unique<CBufferObject>(this, m_pRenderContext.get());
-		buffer->create("global_material_buffer", buffer_ci);
-	}
+	m_pRenderPacket->materials = std::make_unique<CGPUArrayHandle>(this, m_pRenderContext.get());
+	m_pRenderPacket->materials->create("MaterialStorage", sizeof(FMaterial), MAX_MATERIAL_COUNT);
 
-	// Create node storage buffer
-	{
-		FBufferCreateInfo buffer_ci{};
-		buffer_ci.flags = BUFFER_TYPE_STORAGE_FLAG_BIT;
-		buffer_ci.size = sizeof(glm::mat4);
-		buffer_ci.count = MAX_PRIMITIVE_COUNT;
+	m_pRenderPacket->nodes = std::make_unique<CGPUArrayHandle>(this, m_pRenderContext.get());
+	m_pRenderPacket->nodes->create("NodeStorage", sizeof(FSceneNode), MAX_PRIMITIVE_COUNT);
 
-		auto& buffer = m_pRenderPacket->nodeBuffer;
-		buffer = std::make_unique<CBufferObject>(this, m_pRenderContext.get());
-		buffer->create("global_primitive_data_buffer", buffer_ci);
-	}
-
-	// Create skin storage buffer
-	{
-		FBufferCreateInfo buffer_ci{};
-		buffer_ci.flags = BUFFER_TYPE_STORAGE_FLAG_BIT;
-		buffer_ci.size = sizeof(glm::mat4);
-		buffer_ci.count = MAX_PRIMITIVE_COUNT * 128ull;
-
-		auto& buffer = m_pRenderPacket->skinBuffer;
-		buffer = std::make_unique<CBufferObject>(this, m_pRenderContext.get());
-		buffer->create("global_joints_buffer", buffer_ci);
-	}
+	m_pRenderPacket->skins = std::make_unique<CGPUArrayHandle>(this, m_pRenderContext.get());
+	m_pRenderPacket->skins->create("SkinningJoints", sizeof(glm::mat4) * 128ull, MAX_PRIMITIVE_COUNT);
 
 
-	// Create directional lights storage buffer
-	{
-		FBufferCreateInfo buffer_ci{};
-		buffer_ci.flags = BUFFER_TYPE_STORAGE_FLAG_BIT;
-		buffer_ci.size = sizeof(FDirectionalLightCommit);
-		buffer_ci.count = max_directional_light_count;
+	// Directional light data
+	m_pRenderPacket->dlights.lights = std::make_unique<CGPUArrayHandle>(this, m_pRenderContext.get());
+	m_pRenderPacket->dlights.lights->create("DirectionalLights", sizeof(FDirectionalLightCommit), max_directional_light_count);
 
-		auto& buffer = m_pRenderPacket->directionalLightBuffer;
-		buffer = std::make_unique<CBufferObject>(this, m_pRenderContext.get());
-		buffer->create("global_directional_lights_buffer", buffer_ci);
-	}
+	m_pRenderPacket->dlights.shadows = std::make_unique<CGPUArrayHandle>(this, m_pRenderContext.get());
+	m_pRenderPacket->dlights.shadows->create("CascadedShadows", sizeof(FCascadedShadowCommit), max_directional_light_shadow_count);
 
-	// Create point lights storage buffer
-	{
-		FBufferCreateInfo buffer_ci{};
-		buffer_ci.flags = BUFFER_TYPE_STORAGE_FLAG_BIT;
-		buffer_ci.size = sizeof(FPointLightCommit);
-		buffer_ci.count = max_point_light_count;
+	// Point light data
+	m_pRenderPacket->plights.lights = std::make_unique<CGPUArrayHandle>(this, m_pRenderContext.get());
+	m_pRenderPacket->plights.lights->create("PointLights", sizeof(FPointLightCommit), max_point_light_count);
 
-		auto& buffer = m_pRenderPacket->pointLightBuffer;
-		buffer = std::make_unique<CBufferObject>(this, m_pRenderContext.get());
-		buffer->create("global_point_lights_buffer", buffer_ci);
-	}
+	m_pRenderPacket->plights.shadows = std::make_unique<CGPUArrayHandle>(this, m_pRenderContext.get());
+	m_pRenderPacket->plights.shadows->create("OmniShadows", sizeof(FOmniShadowCommit), max_point_light_shadow_count);
 
-	// Create spot lights storage buffer
-	{
-		FBufferCreateInfo buffer_ci{};
-		buffer_ci.flags = BUFFER_TYPE_STORAGE_FLAG_BIT;
-		buffer_ci.size = sizeof(FSpotLightCommit);
-		buffer_ci.count = max_spot_light_count;
+	// Spot light data
+	m_pRenderPacket->slights.lights = std::make_unique<CGPUArrayHandle>(this, m_pRenderContext.get());
+	m_pRenderPacket->slights.lights->create("SpotLights", sizeof(FSpotLightCommit), max_spot_light_count);
 
-		auto& buffer = m_pRenderPacket->spotLightBuffer;
-		buffer = std::make_unique<CBufferObject>(this, m_pRenderContext.get());
-		buffer->create("global_spot_lights_buffer", buffer_ci);
-	}
+	m_pRenderPacket->slights.shadows = std::make_unique<CGPUArrayHandle>(this, m_pRenderContext.get());
+	m_pRenderPacket->slights.shadows->create("SpotShadows", sizeof(FSpotShadowCommit), max_spot_light_shadow_count);
 }
 
 void CRenderInterface::render(float dt)
 {
-	// Update materials
-	{
-		auto& buffer = m_pRenderPacket->materialBuffer;
-	
-		buffer->map();
-		for (size_t idx = 0ull; idx < m_pRenderPacket->materials.size(); ++idx)
-		{
-			auto& material = m_pRenderPacket->materials.at(idx);
-			auto* dst = buffer->at(idx);
-			std::memcpy(dst, &material.parameters, sizeof(FMaterial));
-		}
-		buffer->unmap();
-	}
 
-	// Update nodes
-	{
-		auto& buffer = m_pRenderPacket->nodeBuffer;
+	//m_pRenderPacket->resources->flush();
+	m_pRenderPacket->materials->flush();
+	m_pRenderPacket->nodes->flush();
+	m_pRenderPacket->skins->flush();
 
-		buffer->map();
-		for (auto& [node, model] : m_pRenderPacket->nodes)
-		{
-			auto* dst = buffer->at(node);
-			std::memcpy(dst, &model, sizeof(glm::mat4));
-		}
-		buffer->unmap();
-	}
+	m_pRenderPacket->dlights.lights->flush(m_pRenderPacket->dlights.lcount);
+	m_pRenderPacket->dlights.shadows->flush(m_pRenderPacket->dlights.scount);
 
-	// Update skins
-	{
-		auto& buffer = m_pRenderPacket->skinBuffer;
+	m_pRenderPacket->plights.lights->flush(m_pRenderPacket->plights.lcount);
+	m_pRenderPacket->plights.shadows->flush(m_pRenderPacket->plights.scount);
 
-		size_t offset{ 0ull };
-		buffer->map();
-		for (auto& joints : m_pRenderPacket->skins)
-		{
-			auto* dst = buffer->at(offset);
-			std::memcpy(dst, joints.data(), sizeof(glm::mat4) * joints.size());
-			offset += joints.size();
-		}
-		buffer->unmap();
-	}
-
-	// Update directional lights
-	{
-		auto& buffer = m_pRenderPacket->directionalLightBuffer;
-
-		buffer->map();
-		for (size_t idx = 0ull; idx < m_pRenderPacket->directionalLights.lights.count; ++idx)
-		{
-			auto& light = m_pRenderPacket->directionalLights.lights.lights[idx];
-			auto* dst = buffer->at(idx);
-			std::memcpy(dst, &light, sizeof(FDirectionalLightCommit));
-		}
-		buffer->unmap();
-	}
-
-	// Update point lights
-	{
-		auto& buffer = m_pRenderPacket->pointLightBuffer;
-
-		buffer->map();
-		for (size_t idx = 0ull; idx < m_pRenderPacket->pointLights.lights.count; ++idx)
-		{
-			auto& light = m_pRenderPacket->pointLights.lights.lights[idx];
-			auto* dst = buffer->at(idx);
-			std::memcpy(dst, &light, sizeof(FPointLightCommit));
-		}
-		buffer->unmap();
-	}
-
-	// Update spot lights
-	{
-		auto& buffer = m_pRenderPacket->spotLightBuffer;
-
-		buffer->map();
-		for (size_t idx = 0ull; idx < m_pRenderPacket->spotLights.lights.count; ++idx)
-		{
-			auto& light = m_pRenderPacket->spotLights.lights.lights[idx];
-			auto* dst = buffer->at(idx);
-			std::memcpy(dst, &light, sizeof(FSpotLightCommit));
-		}
-		buffer->unmap();
-	}
+	m_pRenderPacket->slights.lights->flush(m_pRenderPacket->slights.lcount);
+	m_pRenderPacket->slights.shadows->flush(m_pRenderPacket->slights.scount);
 
 	m_pRenderContext->beginFrameCommandBuffers();
 
@@ -341,9 +232,9 @@ void CRenderInterface::render(float dt)
 	m_pGlobalUniformHandler->set("invViewportDimension", 1.f / m_pRenderPacket->camera.dimensions);
 	m_pGlobalUniformHandler->set("nearPlane", m_pRenderPacket->camera.nearp);
 	m_pGlobalUniformHandler->set("farPlane", m_pRenderPacket->camera.farp);
-	m_pGlobalUniformHandler->set("directionalLightCount", m_pRenderPacket->directionalLights.lights.count);
-	m_pGlobalUniformHandler->set("pointLightCount", m_pRenderPacket->pointLights.lights.count);
-	m_pGlobalUniformHandler->set("spotLightCount", m_pRenderPacket->spotLights.lights.count);
+	m_pGlobalUniformHandler->set("directionalLightCount", m_pRenderPacket->dlights.lcount);
+	m_pGlobalUniformHandler->set("pointLightCount", m_pRenderPacket->plights.lcount);
+	m_pGlobalUniformHandler->set("spotLightCount", m_pRenderPacket->slights.lcount);
 	m_pGlobalUniformHandler->set("frustumPlanes", m_pRenderPacket->camera.frustum.frustumSides);
 
 	FGlobalUniformUpdateInfo update_info{};
@@ -361,23 +252,6 @@ void CRenderInterface::render(float dt)
 	m_pRenderContext->endFrameCommandBuffers();
 
 	m_pRenderPacket->sceneBatches.clear();
-
-	for (auto& batches : m_pRenderPacket->directionalLights.shadows.batches)
-	{
-		for (auto& batch : batches)
-			batch.clear();
-	}
-
-	for (auto& batches : m_pRenderPacket->pointLights.shadows.batches)
-	{
-		for (auto& batch : batches)
-			batch.clear();
-	}
-
-	for (auto& batch : m_pRenderPacket->spotLights.shadows.batches)
-		batch.clear();
-
-	m_pRenderPacket->skins.clear();
 }
 
 size_t CRenderInterface::createTexture(const std::string& path)

@@ -11,11 +11,15 @@
 #include "VertexStructures.h"
 
 #include <memory>
+#include <typeindex>
 
 namespace engine
 {
 	namespace render
 	{
+		class IRenderContext;
+		class IRenderInterface;
+
 #ifndef BUILD_WITHOUT_DEBUGGIND
 		namespace debug_mapping
 		{
@@ -174,34 +178,63 @@ namespace engine
 			virtual void execute(float dt) = 0;
 		};
 
+		class CGPUArrayHolder
+		{
+		public:
+			template<class _Ty>
+			const std::unique_ptr<IGPUArrayHandle>& registerResource(std::unique_ptr<IGPUArrayHandle>&& new_handle)
+			{
+				const std::type_index type_index(typeid(_Ty));
+				return m_handles[type_index] = std::move(new_handle);
+			}
+
+			template<class _Ty>
+			const std::unique_ptr<IGPUArrayHandle>& getResource()
+			{
+				const std::type_index type_index(typeid(_Ty));
+				return m_handles[type_index];
+			}
+
+			void flush()
+			{
+				for (const auto& [id, handle] : m_handles)
+					handle->flush();
+			}
+		private:
+			std::unordered_map<std::type_index, std::unique_ptr<IGPUArrayHandle>> m_handles{};
+		};
+
+		struct FLightBuffer
+		{
+			std::unique_ptr<IGPUArrayHandle> lights{};
+			uint32_t lcount{ 0u };
+
+			std::unique_ptr<IGPUArrayHandle> shadows{};
+			uint32_t scount{ 0u };
+		};
+
 		struct FRenderDataPacket
 		{
+			FRenderDataPacket()
+			{
+				//resources = std::make_unique<CGPUArrayHolder>();
+			}
+
 			FRenderCamera camera{};
 
 			size_t primitiveCount{ 0ull };
 			std::vector<FGeometryBatch> sceneBatches{};
+			std::vector<FGeometryBatch> shadowBatches{};
 
-			std::vector<render::FMaterialCreateInfo> materials{};
-			std::unique_ptr<IBufferObject> materialBuffer{};
+			//std::unique_ptr<CGPUArrayHolder> resources{};
 
-			std::unordered_map<uint32_t, glm::mat4> nodes{};
-			std::unique_ptr<IBufferObject> nodeBuffer{};
+			std::unique_ptr<IGPUArrayHandle> materials{};
+			std::unique_ptr<IGPUArrayHandle> nodes{};
+			std::unique_ptr<IGPUArrayHandle> skins{};
 
-			std::vector<std::array<glm::mat4, 128>> skins{};
-			std::unique_ptr<IBufferObject> skinBuffer{};
-
-			// Lights data
-			FDirectionalLightsData directionalLights{};
-			std::unique_ptr<IBufferObject> directionalLightBuffer{};
-			std::unique_ptr<IBufferObject> cascadedShadowBuffer{};
-
-			FPointLightsData pointLights{};
-			std::unique_ptr<IBufferObject> pointLightBuffer{};
-			std::unique_ptr<IBufferObject> omniShadowBuffer{};
-
-			FSpotLightsData spotLights{};
-			std::unique_ptr<IBufferObject> spotLightBuffer{};
-			std::unique_ptr<IBufferObject> spotShadowBuffer{};
+			FLightBuffer dlights{};
+			FLightBuffer plights{};
+			FLightBuffer slights{};
 		};
 
 		class IRenderContext
@@ -293,5 +326,7 @@ namespace engine
 
 			virtual IRenderContext* getRenderContext() = 0;
 		};
+
+
 	}
 }

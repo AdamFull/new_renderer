@@ -91,7 +91,6 @@ namespace engine
 			size_t vboId{ ~0ull };
 			size_t materialId{ ~0ull };
 			uint32_t node{ ~0u };
-			int32_t skin{ -1 };
 
 			FGeometryRanges range{};
 		};
@@ -101,7 +100,6 @@ namespace engine
 			size_t vboId{ ~0ull };
 			size_t materialId{ ~0ull };
 			uint32_t node{ ~0u };
-			int32_t skin{ -1 };
 
 			std::vector<FGeometryRanges> ranges{};
 		};

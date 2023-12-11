@@ -25,11 +25,10 @@ namespace engine
                 size_t vboId{};
                 size_t materialId{};
                 uint32_t node{};
-                int32_t skin{};
 
                 bool operator==(const BatchKey& other) const
                 {
-                    bool is_same = vboId == other.vboId && node == other.node && skin == other.skin;
+                    bool is_same = vboId == other.vboId && node == other.node;
                     return is_same && ((flags & GEOMETRY_BATCHER_COUNT_ON_MATERIAL_FLAG_BIT) ? materialId == other.materialId : true);
                 }
             };
@@ -38,7 +37,7 @@ namespace engine
             {
                 size_t operator()(const BatchKey& key) const
                 {
-                    size_t hash = std::hash<size_t>()(key.vboId) ^ std::hash<uint32_t>()(key.node) ^ std::hash<int32_t>()(key.skin);
+                    size_t hash = std::hash<size_t>()(key.vboId) ^ std::hash<uint32_t>()(key.node);
 
                     if (key.flags & GEOMETRY_BATCHER_COUNT_ON_MATERIAL_FLAG_BIT)
                         hash ^= std::hash<size_t>()(key.materialId);
@@ -54,13 +53,12 @@ namespace engine
 
             for (const auto& batch : batches)
             {
-                batcher::BatchKey key{ flags, batch.vboId, batch.materialId, batch.node, batch.skin };
+                batcher::BatchKey key{ flags, batch.vboId, batch.materialId, batch.node };
                 auto& nbatch = batch_map[key];
 
                 nbatch.vboId = batch.vboId;
                 nbatch.materialId = (flags & GEOMETRY_BATCHER_COUNT_ON_MATERIAL_FLAG_BIT) ? batch.materialId : ~0ull;
                 nbatch.node = batch.node;
-                nbatch.skin = batch.skin;
 
                 for(const auto& range : batch.ranges)
                     nbatch.ranges.emplace_back(range);
@@ -99,13 +97,12 @@ namespace engine
 
             for (const auto& data : geometry_list)
             {
-                batcher::BatchKey key{ flags, data.vboId, data.materialId, data.node, data.skin };
+                batcher::BatchKey key{ flags, data.vboId, data.materialId, data.node};
                 auto& batch = batch_map[key];
 
                 batch.vboId = data.vboId;
                 batch.materialId = (flags & GEOMETRY_BATCHER_COUNT_ON_MATERIAL_FLAG_BIT) ? data.materialId : ~0ull;
                 batch.node = data.node;
-                batch.skin = data.skin;
                 batch.ranges.emplace_back(data.range);
             }
 

@@ -66,6 +66,10 @@ void CVisibilityBufferRenderingStep::execute(float dt)
 
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
 
+	auto& materials = render_packet->materials;
+	auto& nodes = render_packet->nodes;
+	auto& skins = render_packet->skins;
+
 	IVertexHandler* last_vbo{ nullptr };
 	for (auto& batch : render_packet->sceneBatches)
 	{
@@ -89,24 +93,26 @@ void CVisibilityBufferRenderingStep::execute(float dt)
 				ubo->set("vboId", static_cast<uint32_t>(batch.vboId));
 				ubo->set("objectId", batch.node);
 				ubo->set("materialId", static_cast<uint32_t>(batch.materialId));
-				ubo->set("skinId", static_cast<uint32_t>(batch.skin));
 			}
 
-			if (render_packet->materialBuffer)
+			if (materials)
 			{
-				size_t handle = render_packet->materialBuffer->handle();
+				auto& buffer = materials->getBufferObject();
+				size_t handle = buffer->handle();
 				shader->bindBuffer("MaterialStorage", handle);
 			}
 
-			if (render_packet->nodeBuffer)
+			if (nodes)
 			{
-				size_t handle = render_packet->nodeBuffer->handle();
-				shader->bindBuffer("ModelStorage", handle);
+				auto& buffer = nodes->getBufferObject();
+				size_t handle = buffer->handle();
+				shader->bindBuffer("NodeStorage", handle);
 			}
 
-			if (batch.skin >= 0)
+			if (skins)
 			{
-				size_t handle = render_packet->skinBuffer->handle();
+				auto& buffer = skins->getBufferObject();
+				size_t handle = buffer->handle();
 				shader->bindBuffer("SkinningJoints", handle);
 			}
 

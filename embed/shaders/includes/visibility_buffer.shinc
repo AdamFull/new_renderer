@@ -54,7 +54,6 @@
 			uint matID;
 			uint objID;
 
-			uint skinID;
 			uint vboID;
 		};
 
@@ -71,9 +70,7 @@
 			res.matID = matobjData & 0xFFFF;
 			res.objID = matobjData >> 16;
 
-			uint skinvboData = packUnorm4x8(texture(visbuffer_skinvbo, uv));
-			res.skinID = skinvboData & 0xFFFF;
-			res.vboID = skinvboData >> 16;
+			res.vboID = packUnorm4x8(texture(visbuffer_skinvbo, uv));
 
 			return res;
 		}
@@ -172,9 +169,12 @@
 			vec3 position2 = vec3(vertices[2].px, vertices[2].py, vertices[2].pz);
 
 			// Load mesh model matrix
-			mat4 model = modelStorage.model[visbuffer.objID];
+			FSceneNode node = nodes[visbuffer.objID];
+			mat4 model = node.model;
 			
 #ifdef HAS_SKIN
+			if(node.skin != ~0u)
+			{
 #if defined(JOINTS_8BIT)
 				u8vec4 joints;
 				joints.x = uint8_t(vertices[0].joints_8 & 0xFF);
@@ -185,7 +185,7 @@
 				u16vec4 joints;
 #endif
 
-				uint begin_pos = visbuffer.skinID * 128;
+				uint begin_pos = node.skin * 128;
 				mat4 skinMat = 
 					vertices[0].wx * matrices[begin_pos + joints.x] +
 					vertices[0].wy * matrices[begin_pos + joints.y] +
@@ -193,6 +193,7 @@
 					vertices[0].ww * matrices[begin_pos + joints.w];
 		
 				model = model * skinMat;
+			}
 #endif // HAS_SKIN
 
 			// Transform positions to clip space

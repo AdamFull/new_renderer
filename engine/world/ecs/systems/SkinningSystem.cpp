@@ -33,9 +33,10 @@ void debug_draw_skeleton(entt::registry* registry, entt::entity node, glm::mat4 
 		debug_draw_skeleton(registry, child, node_transform.gmodel);
 }
 
-CSkinningSystem::CSkinningSystem(CSceneGraph* scenegraph)
+CSkinningSystem::CSkinningSystem(CSceneGraph* scenegraph, render::IRenderInterface* render_interface)
 {
 	m_pSceneGraph = scenegraph;
+	m_pRenderInterface = render_interface;
 }
 
 void CSkinningSystem::__create()
@@ -71,5 +72,13 @@ void CSkinningSystem::__update(float fDt)
 			skin.jointMatrices[i] = jtransform.gmodel * skin.inverseBindMatrices[i];
 			skin.jointMatrices[i] = inv_transform * skin.jointMatrices[i];
 		}
+	}
+
+	auto& render_packet = m_pRenderInterface->getRenderPacket();
+	auto& skins = render_packet->skins;
+	for (size_t idx = 0ull; idx < root_component.skins.size(); ++idx)
+	{
+		auto& skin = root_component.skins[idx];
+		skins->insert(&skin.jointMatrices[0ull], idx);
 	}
 }

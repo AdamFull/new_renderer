@@ -1,5 +1,6 @@
 #pragma once
 
+#include <engine/interface/render/RenderInterface.h>
 #include <engine/world/ecs/systems/BaseSystem.h>
 
 namespace engine
@@ -11,11 +12,13 @@ namespace engine
 			class CSkinningSystem : public ISystem
 			{
 			public:
-				CSkinningSystem(CSceneGraph* scenegraph);
+				CSkinningSystem(CSceneGraph* scenegraph, render::IRenderInterface* render_interface);
 				virtual ~CSkinningSystem() override = default;
 
 				void __create() override;
 				void __update(float fDt) override;
+			private:
+				render::IRenderInterface* m_pRenderInterface{ nullptr };
 			};
 		}
 	}

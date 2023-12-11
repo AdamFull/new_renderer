@@ -1,48 +1,38 @@
 #pragma once
 
 #include <engine/interface/render/RenderInterface.h>
-#include "BufferObject.h"
 
 namespace engine
 {
 	namespace render
 	{
-		template<class _Ty>
-		class CGPUArrayHandle
+		class CGPUArrayHandle : public IGPUArrayHandle
 		{
 		public:
-			CGPUArrayHandle(IRenderInterface* render_interface, IRenderContext* render_context)
-			{
-				m_pRenderInterface = render_interface;
-				m_pRenderContext = render_context;
+			~CGPUArrayHandle() override;
 
-				m_pBuffer = std::make_unique<CBufferObject>(m_pRenderInterface, m_pRenderContext);
-			}
+			CGPUArrayHandle(IRenderInterface* render_interface, IRenderContext* render_context);
 
-			void create(const std::string& name, size_t count)
-			{
-				FBufferCreateInfo buffer_ci{};
-				buffer_ci.flags = BUFFER_TYPE_STORAGE_FLAG_BIT;
-				buffer_ci.size = sizeof(_Ty);
-				buffer_ci.count = count;
+			void create(const std::string& name, size_t stride, size_t count) override;
+			void flush(size_t count = ~0ull, size_t offset = 0ull) override;
 
-				m_pBuffer->create(name, buffer_ci);
-			}
+			uint8_t* at(size_t index) override;
+			const uint8_t* at(size_t index) const override;
 
-			void flush()
-			{
-				m_pBuffer->map();
-				for (size_t idx = 0ull; idx < m_elements.size(); ++idx)
-				{
-					auto& element = m_elements.at(idx);
-					auto* dst = m_pBuffer->at(idx);
-					std::memcpy(dst, &element, sizeof(_Ty));
-				}
-				m_pBuffer->unmap();
-			}
+			void insert(void* data, size_t index = 0ull) override;
+
+			const std::vector<uint8_t>& getData() const override;
+			const std::unique_ptr<IBufferObject>& getBufferObject() const override;
+
+			size_t getLastInsertionIndex() override;
+			
 		private:
-			std::vector<_Ty> m_elements{};
+			std::vector<uint8_t> m_elements{};
 			std::unique_ptr<IBufferObject> m_pBuffer{};
+
+			size_t m_elementSize{ 0ull };
+			size_t m_elementCount{ 0ull };
+			size_t m_lastInsertionIndex{ 0ull };
 
 			IRenderInterface* m_pRenderInterface{ nullptr };
 			IRenderContext* m_pRenderContext{ nullptr };
