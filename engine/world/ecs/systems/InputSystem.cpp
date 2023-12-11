@@ -8,7 +8,7 @@
 #include <engine/platform/window/WindowCallback.h>
 #include <engine/profiler/Profiler.h>
 
-constexpr const float movement_scale{ 25.f };
+constexpr const float movement_scale{ 50.f };
 
 template<class _Ty>
 inline _Ty remap(_Ty input, _Ty in_min, _Ty in_max, _Ty out_min, _Ty out_max)

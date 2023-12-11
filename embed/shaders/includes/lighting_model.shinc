@@ -75,6 +75,12 @@
 		}
 		
 		// Fresnel function ----------------------------------------------------
+		vec3 F0FromIOR(in float ior)
+		{
+			float a = (1.f - ior) / (1.f + ior);
+			return vec3(a * a);
+		}
+
 		vec3 F_Schlick(float cosTheta, float f90, vec3 F0)
 		{
 			return F0 + (f90 - F0) * pow(1.0f - cosTheta, 5.0f);

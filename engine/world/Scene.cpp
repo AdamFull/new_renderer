@@ -119,8 +119,8 @@ CScene::CScene(IVirtualFileSystemInterface* vfs, render::IRenderInterface* rende
 	m_systems.emplace_back(std::make_unique<ecs::CSkinningSystem>(m_pSceneGraph, render_interface));
 
 	m_systems.emplace_back(std::make_unique<ecs::CCameraSystem>(m_pSceneGraph, render_interface));
-	m_systems.emplace_back(std::make_unique<ecs::CLightingSystem>(m_pSceneGraph, render_interface));
 	m_systems.emplace_back(std::make_unique<ecs::CShadowsSystem>(m_pSceneGraph, render_interface));
+	m_systems.emplace_back(std::make_unique<ecs::CLightingSystem>(m_pSceneGraph, render_interface));
 	m_systems.emplace_back(std::make_unique<ecs::CMeshSystem>(m_pSceneGraph, render_interface));
 }
 
@@ -550,7 +550,7 @@ void CScene::loadLightComponent(const easygltf::FGLTFRoot root, const entt::enti
 		FPointLightComponent light_component;
 		light_component.color = glm::make_vec3(light.color.data());
 		light_component.intencity = light.intensity;
-		light_component.radius = light.range;
+		light_component.radius = (std::max)(light.range, 1.0);
 		m_pSceneGraph->addComponent<FPointLightComponent>(parent, std::move(light_component));
 	}
 }

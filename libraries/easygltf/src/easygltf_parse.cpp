@@ -336,6 +336,9 @@ namespace easygltf
 
             parsing::parse_from("range", json, type.range);
 
+            // NOTE: Blender export temporary fix
+            type.intensity /= 683.0;
+
             parsing::parse_extensions_and_extras(json, type);
 
             for (auto& [name, ext] : type.extensions)
