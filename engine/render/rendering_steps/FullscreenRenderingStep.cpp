@@ -15,7 +15,7 @@ CFullscreenRenderingStep::CFullscreenRenderingStep(IRenderInterface* render_inte
 	m_pRenderContext = render_context;
 }
 
-void CFullscreenRenderingStep::create(const FRenderingStepCreateInfo& create_info)
+void CFullscreenRenderingStep::_create(const FRenderingStepCreateInfo& create_info)
 {
 	TRACY_PROFILE_FUNCTION();
 
@@ -41,19 +41,12 @@ void CFullscreenRenderingStep::create(const FRenderingStepCreateInfo& create_inf
 	for (auto& [binding_point, texture] : rendering_ci.shaderInputs)
 		m_pShader->bindTexture(binding_point.c_str(), texture);
 
-	// Save rendering info
-	m_beginRenderingInfo.queue = rendering_ci.queue;
-	m_beginRenderingInfo.colorAttachments = rendering_ci.renderTargets;
-	m_beginRenderingInfo.depthAttachment = rendering_ci.depthTarget;
-	m_beginRenderingInfo.stencilAttachment = rendering_ci.stencilTarget;
-	m_beginRenderingInfo.flipViewport = rendering_ci.flipViewport;
-
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	m_beginRenderingInfo.name = std::format("fullscreen:{}", rendering_ci.shaderName);
 #endif
 }
 
-void CFullscreenRenderingStep::execute(float dt)
+void CFullscreenRenderingStep::_execute(float dt)
 {
 	TRACY_PROFILE_FUNCTION();
 

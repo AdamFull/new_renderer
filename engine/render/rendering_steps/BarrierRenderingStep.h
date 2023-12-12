@@ -6,7 +6,7 @@ namespace engine
 {
 	namespace render
 	{
-		class CBarrierRenderingStep : public IRenderingStep
+		class CBarrierRenderingStep : public ISynchronizationStep
 		{
 		public:
 			CBarrierRenderingStep() = default;
@@ -14,12 +14,10 @@ namespace engine
 
 			~CBarrierRenderingStep() override = default;
 
-			void create(const FRenderingStepCreateInfo& create_info) override;
-			void execute(float dt) override;
+			void _create(const FRenderingStepCreateInfo& create_info) override;
+			void _execute(float dt) override;
 
 		private:
-			FRenderingStepBarrier m_barrier{};
-
 			IRenderInterface* m_pRenderInterface{ nullptr };
 			IRenderContext* m_pRenderContext{ nullptr };
 		};

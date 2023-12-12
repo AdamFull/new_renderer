@@ -5,8 +5,9 @@
 #include "rendering_steps/RenderScriptRenderingStep.h"
 #include "rendering_steps/SemaphoreRenderingStep.h"
 #include "rendering_steps/BarrierRenderingStep.h"
-#include "rendering_steps/VisibilityBufferRenderingStep.h"
+#include "rendering_steps/GeometryRenderingStep.h"
 #include "rendering_steps/ComputeRenderingStep.h"
+#include "rendering_steps/ComputeGeometryRenderingStep.h"
 
 #include "VertexHandler.h"
 #include "BufferObject.h"
@@ -249,6 +250,12 @@ void CRenderInterface::render(float dt)
 	for (auto& stage : m_vRenderingSteps)
 		stage->execute(dt);
 
+	auto to_remove = std::remove_if(m_vRenderingSteps.begin(), m_vRenderingSteps.end(),
+		[](const std::unique_ptr<IRenderGraphStep>& stage) { return stage->expired(); });
+
+	if (to_remove != m_vRenderingSteps.end())
+		m_vRenderingSteps.erase(to_remove, m_vRenderingSteps.end());
+
 	m_pRenderContext->endFrameCommandBuffers();
 
 	m_pRenderPacket->sceneBatches.clear();
@@ -350,9 +357,11 @@ void CRenderInterface::createRendering(const FRenderingStepCreateInfo& rendering
 		if(rendering_ci.rendering.type == RENDERING_FULLSCREEN_TYPE)
 			new_step = std::make_unique<CFullscreenRenderingStep>(this, m_pRenderContext.get());
 		else if (rendering_ci.rendering.type == RENDERING_GEOMETRY_TYPE)
-			new_step = std::make_unique<CVisibilityBufferRenderingStep>(this, m_pRenderContext.get());
+			new_step = std::make_unique<CGeometryRenderingStep>(this, m_pRenderContext.get());
 		else if (rendering_ci.rendering.type == RENDERING_COMPUTE_TYPE)
 			new_step = std::make_unique<CComputeRenderingStep>(this, m_pRenderContext.get());
+		else if (rendering_ci.rendering.type == RENDERING_COMPUTE_GEOMETRY_TYPE)
+			new_step = std::make_unique<CComputeGeometryRenderingStep>(this, m_pRenderContext.get());
 		else if(rendering_ci.rendering.type == RENDERING_RENDER_SCRIPT_TYPE)
 			new_step = std::make_unique<CRenderScriptRenderingStep>(this, m_pRenderContext.get());
 	}

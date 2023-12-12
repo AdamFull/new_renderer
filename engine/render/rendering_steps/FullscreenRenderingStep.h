@@ -14,11 +14,10 @@ namespace engine
 
 			~CFullscreenRenderingStep() override = default;
 
-			void create(const FRenderingStepCreateInfo& create_info) override;
-			void execute(float dt) override;
+			void _create(const FRenderingStepCreateInfo& create_info) override;
+			void _execute(float dt) override;
 
 		private:
-			FBeginRenderingInfo m_beginRenderingInfo{};
 			std::unique_ptr<IShaderObject> m_pShader{};
 
 			IRenderInterface* m_pRenderInterface{ nullptr };

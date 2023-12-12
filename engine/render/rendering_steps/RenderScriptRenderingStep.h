@@ -14,8 +14,8 @@ namespace engine
 
 			~CRenderScriptRenderingStep() override = default;
 
-			void create(const FRenderingStepCreateInfo& create_info) override;
-			void execute(float dt) override;
+			void _create(const FRenderingStepCreateInfo& create_info) override;
+			void _execute(float dt) override;
 
 		private:
 			IRenderInterface* m_pRenderInterface{ nullptr };

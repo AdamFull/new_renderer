@@ -14,14 +14,10 @@ namespace engine
 
 			~CComputeRenderingStep() override = default;
 
-			void create(const FRenderingStepCreateInfo& create_info) override;
-			void execute(float dt) override;
-		protected:
-			const std::unique_ptr<IShaderObject>& getShaderByVBO(const IVertexHandler* vbo);
+			void _create(const FRenderingStepCreateInfo& create_info) override;
+			void _execute(float dt) override;
 		private:
-			FBeginRenderingInfo m_beginRenderingInfo{};
-			std::unordered_map<size_t, std::unique_ptr<IShaderObject>> m_shaders{};
-			std::string m_baseShaderName{};
+			std::unique_ptr<IShaderObject> m_pShader{};
 
 			std::unordered_map<std::string, size_t> m_shaderInputs{};
 

@@ -18,7 +18,7 @@
 			float roughness;
 		} object;
 		
-		layout(set = 1, binding = 0, rgba32f) uniform writeonly imageCube out_colour;
+		layout(set = 1, binding = 0, rgba32f) uniform writeonly imageCube out_color;
 		layout(set = 1, binding = 1) uniform samplerCube sampler_color;
 
 		const uint samples = 32u;
@@ -64,12 +64,12 @@
 		
 		void main() 
 		{
-			vec2 uv = (gl_GlobalInvocationID.xy + vec2(0.5f)) / vec2(imageSize(out_colour).xy);
+			vec2 uv = (gl_GlobalInvocationID.xy + vec2(0.5f)) / vec2(imageSize(out_color).xy);
 		
 			for (uint i = 0; i != 6; ++i) 
 		    {
 				vec3 R = normalize(cubeDir(uv, i));
-				imageStore(out_colour, ivec3(gl_GlobalInvocationID.xy, i), vec4(prefilterEnvMap(sampler_color, R, object.roughness), 1.0f));
+				imageStore(out_color, ivec3(gl_GlobalInvocationID.xy, i), vec4(prefilterEnvMap(sampler_color, R, object.roughness), 1.0f));
 			}
 		}
 	""";

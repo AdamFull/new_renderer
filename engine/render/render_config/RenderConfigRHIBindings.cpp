@@ -154,6 +154,7 @@ namespace engine
 				"fullscreen", RENDERING_FULLSCREEN_TYPE,
 				"geometry", RENDERING_GEOMETRY_TYPE,
 				"compute", RENDERING_COMPUTE_TYPE,
+				"compute_geometry", RENDERING_COMPUTE_GEOMETRY_TYPE,
 				"render_script", RENDERING_RENDER_SCRIPT_TYPE
 			);
 

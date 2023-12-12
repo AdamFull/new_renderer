@@ -6,23 +6,23 @@ namespace engine
 {
 	namespace render
 	{
-		class CVisibilityBufferRenderingStep : public IRenderingStep
+		class CComputeGeometryRenderingStep : public IRenderingStep
 		{
 		public:
-			CVisibilityBufferRenderingStep() = default;
-			CVisibilityBufferRenderingStep(IRenderInterface* render_interface, IRenderContext* render_context);
+			CComputeGeometryRenderingStep() = default;
+			CComputeGeometryRenderingStep(IRenderInterface* render_interface, IRenderContext* render_context);
 
-			~CVisibilityBufferRenderingStep() override = default;
+			~CComputeGeometryRenderingStep() override = default;
 
-			void create(const FRenderingStepCreateInfo& create_info) override;
-			void execute(float dt) override;
+			void _create(const FRenderingStepCreateInfo& create_info) override;
+			void _execute(float dt) override;
 		protected:
 			const std::unique_ptr<IShaderObject>& getShaderByVBO(const IVertexHandler* vbo);
-
 		private:
-			FBeginRenderingInfo m_beginRenderingInfo{};
 			std::unordered_map<size_t, std::unique_ptr<IShaderObject>> m_shaders{};
 			std::string m_baseShaderName{};
+
+			std::unordered_map<std::string, size_t> m_shaderInputs{};
 
 			IRenderInterface* m_pRenderInterface{ nullptr };
 			IRenderContext* m_pRenderContext{ nullptr };

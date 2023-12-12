@@ -1,4 +1,4 @@
-#include "VisibilityBufferRenderingStep.h"
+#include "GeometryRenderingStep.h"
 
 #include <unordered_set>
 
@@ -22,24 +22,17 @@ std::string attr_type_to_definition(EVertexAttributeType type)
 	}
 }
 
-CVisibilityBufferRenderingStep::CVisibilityBufferRenderingStep(IRenderInterface* render_interface, IRenderContext* render_context)
+CGeometryRenderingStep::CGeometryRenderingStep(IRenderInterface* render_interface, IRenderContext* render_context)
 {
 	m_pRenderInterface = render_interface;
 	m_pRenderContext = render_context;
 }
 
-void CVisibilityBufferRenderingStep::create(const FRenderingStepCreateInfo& create_info)
+void CGeometryRenderingStep::_create(const FRenderingStepCreateInfo& create_info)
 {
 	TRACY_PROFILE_FUNCTION();
 
 	auto& rendering_ci = create_info.rendering;
-
-	// Save rendering info
-	m_beginRenderingInfo.queue = rendering_ci.queue;
-	m_beginRenderingInfo.colorAttachments = rendering_ci.renderTargets;
-	m_beginRenderingInfo.depthAttachment = rendering_ci.depthTarget;
-	m_beginRenderingInfo.stencilAttachment = rendering_ci.stencilTarget;
-	m_beginRenderingInfo.flipViewport = rendering_ci.flipViewport;
 
 	m_baseShaderName = rendering_ci.shaderName;
 
@@ -48,7 +41,7 @@ void CVisibilityBufferRenderingStep::create(const FRenderingStepCreateInfo& crea
 #endif
 }
 
-void CVisibilityBufferRenderingStep::execute(float dt)
+void CGeometryRenderingStep::_execute(float dt)
 {
 	TRACY_PROFILE_FUNCTION();
 
@@ -133,7 +126,7 @@ void CVisibilityBufferRenderingStep::execute(float dt)
 	m_pRenderContext->endRendering(m_beginRenderingInfo);
 }
 
-const std::unique_ptr<IShaderObject>& CVisibilityBufferRenderingStep::getShaderByVBO(const IVertexHandler* vbo)
+const std::unique_ptr<IShaderObject>& CGeometryRenderingStep::getShaderByVBO(const IVertexHandler* vbo)
 {
 	auto& shader = m_shaders[vbo->getHash()];
 	if (!shader)

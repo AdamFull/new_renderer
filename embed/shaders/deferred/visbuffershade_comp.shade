@@ -23,7 +23,10 @@
 		layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
 		layout(set = 2, binding = 5, rgba16f) uniform writeonly image2D write_color;
-		layout(set = 2, binding = 6) uniform sampler2D depth_buffer;
+		layout(set = 2, binding = 6) uniform sampler2D brdf_lut;
+		layout(set = 2, binding = 7) uniform samplerCube irradiance_cube;
+		layout(set = 2, binding = 8) uniform samplerCube prefiltered_cube;
+		layout(set = 2, binding = 9) uniform sampler2D depth_buffer;
 
 		vec4 sampleTexture(in uint s, in VertexAttribute va)
 		{
@@ -173,7 +176,6 @@
 			VertexAttribute va = getVertexData(uv, visbuffer);
 			FMaterial material = materials[visbuffer.matID];
 			MaterialSample ms = sampleMaterial(material, va);
-			MaterialBRDF brdf = calculateBRDF(ms);
 
 			vec3 camera_pos = vec3(frameData.invView[3]);
 
@@ -185,11 +187,24 @@
 
 			vec3 Lo = calculateLights(va.pos, V, ms.normal, ms.albedo, F0, ms.metallic, ms.roughness);
 
-			vec3 diffuse = ms.albedo;
-			vec3 F = F_SchlickR(max(dot(ms.normal, V), 0.0f), F0, ms.roughness);
+			// Reflection vector
+			vec3 R = -normalize(reflect(V, ms.normal));
+
+			float NdotV = dot(ms.normal, V);
+			vec2 brdf = texture(brdf_lut, vec2(max(NdotV, 0.0f), ms.roughness)).rg;
+			vec3 reflection = prefilteredReflection(R, ms.roughness, prefiltered_cube);
+			vec3 irradiance = texture(irradiance_cube, ms.normal).rgb;
+
+			// Diffuse based on irradiance
+			vec3 diffuse = ms.albedo * irradiance;
+
+			vec3 F = F_SchlickR(max(NdotV, 0.0f), F0, ms.roughness);
+
+			// Specular reflectance
+			vec3 specular = reflection * (F * brdf.x + brdf.y);
 
 			vec3 kD = (1.0 - F) * (1.0 - ms.metallic);
-			vec3 ambient = kD * diffuse;
+			vec3 ambient = kD * diffuse + specular;
 
 			ambient = mix(ambient, ambient * ms.ao, material.occlusionStrenth);
 

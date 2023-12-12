@@ -10,13 +10,13 @@ CSemaphoreRenderingStep::CSemaphoreRenderingStep(IRenderInterface* render_interf
 	m_pRenderContext = render_context;
 }
 
-void CSemaphoreRenderingStep::create(const FRenderingStepCreateInfo& create_info)
+void CSemaphoreRenderingStep::_create(const FRenderingStepCreateInfo& create_info)
 {
 	auto& sync = create_info.synchronization;
 
 }
 
-void CSemaphoreRenderingStep::execute(float dt)
+void CSemaphoreRenderingStep::_execute(float dt)
 {
 
 }

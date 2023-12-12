@@ -169,13 +169,88 @@ namespace engine
 			virtual const FShaderReflectionData& getReflection() const = 0;
 		};
 
-		class IRenderingStep
+
+
+		class IRenderGraphStep
 		{
 		public:
-			virtual ~IRenderingStep() = default;
+			virtual ~IRenderGraphStep() = default;
 
-			virtual void create(const FRenderingStepCreateInfo& create_info) = 0;
-			virtual void execute(float dt) = 0;
+			virtual void create(const FRenderingStepCreateInfo& create_info)
+			{
+				m_bOneTime = create_info.rendering.oneTime;
+			}
+
+			virtual void execute(float dt)
+			{
+				if (!m_bNeedToBeDestroyed && m_bOneTime)
+					m_bNeedToBeDestroyed = true;
+			}
+
+			bool expired()
+			{
+				return m_bNeedToBeDestroyed;
+			}
+		protected:
+			bool m_bOneTime{ false };
+			bool m_bNeedToBeDestroyed{ false };
+		};
+
+		class ISynchronizationStep : public IRenderGraphStep
+		{
+		public:
+			virtual ~ISynchronizationStep() override = default;
+
+			void create(const FRenderingStepCreateInfo& create_info) override
+			{
+				m_barrier = create_info.synchronization.barrier;
+
+				_create(create_info);
+				IRenderGraphStep::create(create_info);
+			}
+
+			void execute(float dt) override
+			{
+				_execute(dt);
+				IRenderGraphStep::execute(dt);
+			}
+
+		protected:
+			virtual void _create(const FRenderingStepCreateInfo& create_info) = 0;
+			virtual void _execute(float dt) = 0;
+		protected:
+			FRenderingStepBarrier m_barrier{};
+		};
+
+		class IRenderingStep : public IRenderGraphStep
+		{
+		public:
+			virtual ~IRenderingStep() override = default;
+
+			void create(const FRenderingStepCreateInfo& create_info) override
+			{
+				// Save rendering info
+				m_beginRenderingInfo.queue = create_info.rendering.queue;
+				m_beginRenderingInfo.colorAttachments = create_info.rendering.renderTargets;
+				m_beginRenderingInfo.depthAttachment = create_info.rendering.depthTarget;
+				m_beginRenderingInfo.stencilAttachment = create_info.rendering.stencilTarget;
+				m_beginRenderingInfo.flipViewport = create_info.rendering.flipViewport;
+
+				_create(create_info);
+				IRenderGraphStep::create(create_info);
+			}
+
+			void execute(float dt) override
+			{
+				_execute(dt);
+				IRenderGraphStep::execute(dt);
+			}
+		protected:
+			virtual void _create(const FRenderingStepCreateInfo& create_info) = 0;
+			virtual void _execute(float dt) = 0;
+		protected:
+			FBeginRenderingInfo m_beginRenderingInfo{};
+			
 		};
 
 		class CGPUArrayHolder
@@ -270,7 +345,7 @@ namespace engine
 			virtual void destroyBuffer(size_t resource_id) = 0;
 
 			virtual void pushG2CBarriers(uint32_t queue_type, const std::vector<size_t>& textures) = 0;
-			virtual void pushC2CBarrier(uint32_t queue_type) = 0;
+			virtual void pushC2CBarrier(uint32_t queue_type, const std::vector<size_t>& texture_ids) = 0;
 			virtual void pushC2GBarrier(uint32_t queue_type, const std::vector<size_t>& texture_ids) = 0;
 
 			virtual void beginRendering(const FBeginRenderingInfo& rendering_info) = 0;

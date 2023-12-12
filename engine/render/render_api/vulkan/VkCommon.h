@@ -340,6 +340,11 @@ namespace engine
 					else
 						return vk::ImageLayout::eDepthStencilAttachmentOptimal;
 				}
+				else
+				{
+					if (usage_flags & vk::ImageUsageFlagBits::eSampled && usage_flags & vk::ImageUsageFlagBits::eTransferDst)
+						return vk::ImageLayout::eShaderReadOnlyOptimal;
+				}
 
 				return vk::ImageLayout::ePresentSrcKHR;
 			}

@@ -10,12 +10,12 @@ CRenderScriptRenderingStep::CRenderScriptRenderingStep(IRenderInterface* render_
 	m_pRenderContext = render_context;
 }
 
-void CRenderScriptRenderingStep::create(const FRenderingStepCreateInfo& create_info)
+void CRenderScriptRenderingStep::_create(const FRenderingStepCreateInfo& create_info)
 {
 
 }
 
-void CRenderScriptRenderingStep::execute(float dt)
+void CRenderScriptRenderingStep::_execute(float dt)
 {
 
 }

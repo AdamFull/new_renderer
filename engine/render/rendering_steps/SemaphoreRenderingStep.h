@@ -6,7 +6,7 @@ namespace engine
 {
 	namespace render
 	{
-		class CSemaphoreRenderingStep : public IRenderingStep
+		class CSemaphoreRenderingStep : public ISynchronizationStep
 		{
 		public:
 			CSemaphoreRenderingStep() = default;
@@ -14,8 +14,8 @@ namespace engine
 
 			~CSemaphoreRenderingStep() override = default;
 
-			void create(const FRenderingStepCreateInfo& create_info) override;
-			void execute(float dt) override;
+			void _create(const FRenderingStepCreateInfo& create_info) override;
+			void _execute(float dt) override;
 
 		private:
 			IRenderInterface* m_pRenderInterface{ nullptr };
