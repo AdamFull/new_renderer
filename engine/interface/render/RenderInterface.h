@@ -351,6 +351,9 @@ namespace engine
 			virtual void beginRendering(const FBeginRenderingInfo& rendering_info) = 0;
 			virtual void endRendering(const FBeginRenderingInfo& rendering_info) = 0;
 
+			virtual void beginCompute(const FBeginRenderingInfo& rendering_info) = 0;
+			virtual void endCompute(const FBeginRenderingInfo& rendering_info) = 0;
+
 			virtual void setViewport(float width, float height, bool flip_viewport) = 0;
 			virtual void setScissorRect(int32_t offset_x, int32_t offset_y, uint32_t width, uint32_t height) = 0;
 
@@ -370,6 +373,8 @@ namespace engine
 
 			virtual void beginFrameCommandBuffers() = 0;
 			virtual void endFrameCommandBuffers() = 0;
+
+			virtual bool isSwapChainFinished() = 0;
 
 			virtual void beginDebugLabel(const std::string& label, uint32_t queue_type, uint32_t color = 0xffffffff) = 0;
 			virtual void insertDebugLabel(const std::string& label, uint32_t queue_type, uint32_t color = 0xffffffff) = 0;

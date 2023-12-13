@@ -8,11 +8,11 @@
 
 	definitions: [];
 	require_extensions: [];
-	includes: ["lighting_model"];
+	includes: ["compute_common", "lighting_model"];
 
 	code: 
 	"""
-		layout(local_size_x = 16, local_size_y = 16) in;
+		layout(local_size_x = 8, local_size_y = 8) in;
 
 		layout(set = 1, binding = 0, rg16f) uniform writeonly image2D out_color;
 
@@ -51,8 +51,14 @@
 		
 		void main() 
 		{
-			vec2 uv = (gl_GlobalInvocationID.xy + vec2(0.5f)) / vec2(imageSize(out_color).xy);
-			imageStore(out_color, ivec2(gl_GlobalInvocationID.xy), vec4(BRDF(uv.x, 1.0f - uv.y), 0.0f, 1.0f));
+			uvec2 image_size = imageSize(out_color);
+
+			uvec2 px = uvec2(0, 0);
+			vec2 uv = vec2(0, 0);
+			if(swizzle_compute_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, image_size, uv, px))
+				return;
+
+			imageStore(out_color, ivec2(px), vec4(BRDF(uv.x, 1.0f - uv.y), 0.0f, 1.0f));
 		}
 	""";
 }

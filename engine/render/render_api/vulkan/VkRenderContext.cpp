@@ -366,8 +366,8 @@ size_t CVkRenderContext::createRenderTargets(const std::string& name, const FTex
 			resource_id = createRenderTarget(name, texture_ci);
 	}
 
-	if (texture_ci.typeFlags & TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT)
-		m_textureLayoutInfos.emplace_back(FVkTextureLayoutChangeInfo{ resource_id });
+	//if (texture_ci.typeFlags & TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT)
+	//	m_textureLayoutInfos.emplace_back(FVkTextureLayoutChangeInfo{ resource_id });
 
 	return resource_id;
 }
@@ -744,7 +744,7 @@ void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader
 			auto& image_descriptor = image_descriptors.at(texture_count);
 			image_descriptor.imageView = texture->imageViews.front();
 			image_descriptor.sampler = texture->sampler;
-			image_descriptor.imageLayout = get_render_target_final_layout(*texture);
+			image_descriptor.imageLayout = texture->layout;
 			texture_count++;
 
 			auto descriptor_index = shader->descriptorUsage[uniform.set];
@@ -1214,6 +1214,62 @@ void CVkRenderContext::endRendering(const FBeginRenderingInfo& rendering_info)
 	processMemoryBarriers(command_buffer, translation_info);
 }
 
+void CVkRenderContext::beginCompute(const FBeginRenderingInfo& rendering_info)
+{
+	auto& command_buffer = getLastCommandBuffer(rendering_info.queue);
+	auto& textures = m_pResources->data<FVkTexture>();
+
+	FVkTranslationInfo translation_info{};
+
+	// Translate storage images to general layout (uav)
+	for (const auto& target_view : rendering_info.colorAttachments)
+	{
+		auto& render_target = textures.at(target_view).at(m_pDevice->m_swapchain.currentFrame);
+
+		// Translating render target layout to color attachment
+		FVkTextureTranslationInfo texture_translation_info{};
+		texture_translation_info.oldLayout = vk::ImageLayout::eUndefined;
+		render_target->layout = texture_translation_info.newLayout = vk::ImageLayout::eGeneral;
+		auto target_layout_translation = get_texture_layout_translation_info(*render_target, texture_translation_info);
+		translation_info.imageTranslationInfos.emplace_back(target_layout_translation);
+	}
+
+	processMemoryBarriers(command_buffer, translation_info);
+
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	auto& current_buffer = command_buffer.get();
+	m_pDevice->debugBeginLabel(current_buffer, rendering_info.name, 0x888888ff);
+#endif
+}
+
+void CVkRenderContext::endCompute(const FBeginRenderingInfo& rendering_info)
+{
+	auto& command_buffer = getLastCommandBuffer(rendering_info.queue);
+	auto& textures = m_pResources->data<FVkTexture>();
+
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	auto& current_buffer = command_buffer.get();
+	m_pDevice->endLabel(current_buffer);
+#endif
+
+	FVkTranslationInfo translation_info{};
+
+	// Translate storage images to general layout (uav)
+	for (const auto& target_view : rendering_info.colorAttachments)
+	{
+		auto& render_target = textures.at(target_view).at(m_pDevice->m_swapchain.currentFrame);
+
+		// Translating render target layout to color attachment
+		FVkTextureTranslationInfo texture_translation_info{};
+		texture_translation_info.oldLayout = vk::ImageLayout::eGeneral;
+		render_target->layout = texture_translation_info.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		auto target_layout_translation = get_texture_layout_translation_info(*render_target, texture_translation_info);
+		translation_info.imageTranslationInfos.emplace_back(target_layout_translation);
+	}
+
+	processMemoryBarriers(command_buffer, translation_info);
+}
+
 void CVkRenderContext::processMemoryBarriers(const FVkCommandBuffer& command_buffer, const FVkTranslationInfo& translation_info)
 {
 	std::vector<vk::ImageMemoryBarrier2KHR> image_barriers{};
@@ -1575,8 +1631,8 @@ void CVkRenderContext::updateSurface(int32_t surface_width, int32_t surface_heig
 				is_storage = texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT;
 			}
 
-			if (is_storage)
-				m_textureLayoutInfos.emplace_back(texture_id);
+			//if (is_storage)
+			//	m_textureLayoutInfos.emplace_back(texture_id);
 		}
 	}
 }
@@ -1707,6 +1763,11 @@ void CVkRenderContext::endFrameCommandBuffers()
 	}
 
 	m_utilizationCounter++;
+}
+
+bool CVkRenderContext::isSwapChainFinished()
+{
+	return m_utilizationCounter % m_pDevice->m_swapchain.framesInFlight == 0;
 }
 
 void CVkRenderContext::beginDebugLabel(const std::string& label, uint32_t queue_type, uint32_t color)

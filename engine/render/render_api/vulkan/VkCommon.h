@@ -290,8 +290,9 @@ namespace engine
 				case vk::ImageLayout::eColorAttachmentOptimal: return vk::PipelineStageFlagBits2KHR::eColorAttachmentOutput;
 				case vk::ImageLayout::eDepthAttachmentOptimal: return vk::PipelineStageFlagBits2KHR::eEarlyFragmentTests | vk::PipelineStageFlagBits2KHR::eLateFragmentTests;
 				case vk::ImageLayout::eFragmentShadingRateAttachmentOptimalKHR: return vk::PipelineStageFlagBits2KHR::eFragmentShadingRateAttachmentKHR;
-				case vk::ImageLayout::eShaderReadOnlyOptimal: return vk::PipelineStageFlagBits2KHR::eFragmentShader | vk::PipelineStageFlagBits2KHR::eVertexShader;
+				case vk::ImageLayout::eShaderReadOnlyOptimal: return vk::PipelineStageFlagBits2KHR::eFragmentShader | vk::PipelineStageFlagBits2KHR::eVertexShader | vk::PipelineStageFlagBits2KHR::eComputeShader;
 				case vk::ImageLayout::ePresentSrcKHR: return vk::PipelineStageFlagBits2KHR::eBottomOfPipe;
+				case vk::ImageLayout::eGeneral: return vk::PipelineStageFlagBits2KHR::eComputeShader;
 				default: return vk::PipelineStageFlagBits2KHR::eNone;
 				}
 			}
@@ -309,6 +310,7 @@ namespace engine
 				case vk::ImageLayout::eShaderReadOnlyOptimal: return vk::AccessFlagBits2KHR::eShaderRead | vk::AccessFlagBits2KHR::eInputAttachmentRead;
 				case vk::ImageLayout::eTransferSrcOptimal: return vk::AccessFlagBits2KHR::eTransferRead;
 				case vk::ImageLayout::eTransferDstOptimal: return vk::AccessFlagBits2KHR::eTransferWrite;
+				case vk::ImageLayout::eGeneral: return vk::AccessFlagBits2KHR::eShaderRead | vk::AccessFlagBits2KHR::eShaderWrite;
 				default: return vk::AccessFlagBits2KHR::eNone;
 				}
 			}
@@ -321,8 +323,6 @@ namespace engine
 				{
 					if (usage_flags & vk::ImageUsageFlagBits::eTransferSrc)
 						return vk::ImageLayout::eTransferSrcOptimal;
-					if ((usage_flags & vk::ImageUsageFlagBits::eSampled) && (usage_flags & vk::ImageUsageFlagBits::eStorage))
-						return vk::ImageLayout::eGeneral;
 					else if (usage_flags & vk::ImageUsageFlagBits::eSampled)
 						return vk::ImageLayout::eShaderReadOnlyOptimal;
 					else if (usage_flags & vk::ImageUsageFlagBits::eInputAttachment)
@@ -340,6 +340,8 @@ namespace engine
 					else
 						return vk::ImageLayout::eDepthStencilAttachmentOptimal;
 				}
+				else if (usage_flags & vk::ImageUsageFlagBits::eStorage)
+					return vk::ImageLayout::eShaderReadOnlyOptimal;
 				else
 				{
 					if (usage_flags & vk::ImageUsageFlagBits::eSampled && usage_flags & vk::ImageUsageFlagBits::eTransferDst)

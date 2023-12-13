@@ -8,12 +8,12 @@
 
 	definitions: [];
 	require_extensions: [];
-	includes: ["lighting_model"];
+	includes: ["compute_common", "lighting_model"];
 
 	// TODO: add permute reject
 	code: 
 	"""
-		layout(local_size_x = 16, local_size_y = 16) in;
+		layout(local_size_x = 8, local_size_y = 8) in;
 		
 		layout(set = 1, binding = 0, rgba32f) uniform writeonly imageCube out_color;
 		layout(set = 1, binding = 1) uniform samplerCube sampler_color;
@@ -23,7 +23,12 @@
 		
 		void main() 
 		{
-			vec2 uv = (gl_GlobalInvocationID.xy + vec2(0.5f)) / vec2(imageSize(out_color).xy);
+			uvec2 image_size = imageSize(out_color);
+
+			uvec2 px = uvec2(0, 0);
+			vec2 uv = vec2(0, 0);
+			if(swizzle_compute_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, image_size, uv, px))
+				return;
 		
 			for (uint i = 0; i != 6; ++i) 
 			{
@@ -46,7 +51,7 @@
 					}
 				}
 		
-				imageStore(out_color, ivec3(gl_GlobalInvocationID.xy, i), vec4(PI * colour / float(sampleCount), 1.0f));
+				imageStore(out_color, ivec3(px, i), vec4(PI * colour / float(sampleCount), 1.0f));
 			}
 		}
 	""";

@@ -36,6 +36,8 @@ void CComputeGeometryRenderingStep::_execute(float dt)
 
 	auto render_resolution = m_pRenderContext->getRenderResolution();
 
+	m_pRenderContext->beginCompute(m_beginRenderingInfo);
+
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
 
 	std::vector<FGeometryBatch> rebatched{};
@@ -139,6 +141,8 @@ void CComputeGeometryRenderingStep::_execute(float dt)
 			m_pRenderContext->dispatch(m_beginRenderingInfo.queue, dispatch_info);
 		}
 	}
+
+	m_pRenderContext->endCompute(m_beginRenderingInfo);
 }
 
 const std::unique_ptr<IShaderObject>& CComputeGeometryRenderingStep::getShaderByVBO(const IVertexHandler* vbo)

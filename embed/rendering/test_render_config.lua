@@ -155,7 +155,37 @@ end
 
 
 
+-- generate brdf lut
+do
+    local step_ci = RenderingStepCI.new()
+    step_ci.type = RenderingStepType.rendering
 
+    step_ci.rendering.type = RenderingType.compute
+    step_ci.rendering.queue = QueueType.graphics
+    step_ci.rendering.shader_name = "lighting:brgflut_generator"
+    step_ci.rendering.one_time = true
+
+    step_ci.rendering.output_targets:add(render_context:get_texture_resource("brdf_lut_target"))
+    step_ci.rendering.input_targets:set("out_color", render_context:get_texture_resource("brdf_lut_target"))
+
+    render_interface:create_renderer(step_ci)
+end
+
+do
+    local step_ci = RenderingStepCI.new()
+    step_ci.type = RenderingStepType.rendering
+
+    step_ci.rendering.type = RenderingType.compute
+    step_ci.rendering.queue = QueueType.graphics
+    step_ci.rendering.shader_name = "lighting:irradiancecube_generator"
+    step_ci.rendering.one_time = true
+
+    step_ci.rendering.output_targets:add(render_context:get_texture_resource("irradiance_cube_target"))
+    step_ci.rendering.input_targets:set("out_color", render_context:get_texture_resource("irradiance_cube_target"))
+    step_ci.rendering.input_targets:set("sampler_color", render_context:get_texture_resource("CasualDay4K"))
+
+    render_interface:create_renderer(step_ci)
+end
 
 -- visibility buffer write
 do
@@ -175,67 +205,6 @@ do
     render_interface:create_renderer(step_ci)
 end
 
--- sync point
-do
-    local step_ci = RenderingStepCI.new()
-    step_ci.type = RenderingStepType.synchronization
-
-    step_ci.sync.type = SyncType.barrier
-    step_ci.sync.barrier.type = BarrierType.g2c
-    step_ci.sync.barrier.queue = QueueType.graphics
-
-    step_ci.sync.barrier.targets:add(render_context:get_texture_resource("visbuffer_geometry_target"))
-    step_ci.sync.barrier.targets:add(render_context:get_texture_resource("visbuffer_matobj_target"))
-    step_ci.sync.barrier.targets:add(render_context:get_texture_resource("visbuffer_skinvbo_target"))
-    step_ci.sync.barrier.targets:add(render_context:get_texture_resource("zbuffer_depth_target"))
-
-    render_interface:create_renderer(step_ci)
-end
-
--- generate brdf lut
-do
-    local step_ci = RenderingStepCI.new()
-    step_ci.type = RenderingStepType.rendering
-
-    step_ci.rendering.type = RenderingType.compute
-    step_ci.rendering.queue = QueueType.graphics
-    step_ci.rendering.shader_name = "lighting:brgflut_generator"
-    step_ci.rendering.one_time = true
-
-    step_ci.rendering.input_targets:set("out_color", render_context:get_texture_resource("brdf_lut_target"))
-
-    render_interface:create_renderer(step_ci)
-end
-
-do
-    local step_ci = RenderingStepCI.new()
-    step_ci.type = RenderingStepType.rendering
-
-    step_ci.rendering.type = RenderingType.compute
-    step_ci.rendering.queue = QueueType.graphics
-    step_ci.rendering.shader_name = "lighting:irradiancecube_generator"
-    step_ci.rendering.one_time = true
-
-    step_ci.rendering.input_targets:set("out_color", render_context:get_texture_resource("irradiance_cube_target"))
-    step_ci.rendering.input_targets:set("sampler_color", render_context:get_texture_resource("CasualDay4K"))
-
-    render_interface:create_renderer(step_ci)
-end
-
-do
-    local step_ci = RenderingStepCI.new()
-    step_ci.type = RenderingStepType.synchronization
-
-    step_ci.sync.type = SyncType.barrier
-    step_ci.sync.barrier.type = BarrierType.c2c
-    step_ci.sync.barrier.queue = QueueType.graphics
-
-    step_ci.sync.barrier.targets:add(render_context:get_texture_resource("brdf_lut_target"))
-    step_ci.sync.barrier.targets:add(render_context:get_texture_resource("irradiance_cube_target"))
-
-    render_interface:create_renderer(step_ci)
-end
-
 -- visibility buffer material pass
 do
     local step_ci = RenderingStepCI.new()
@@ -245,7 +214,9 @@ do
     step_ci.rendering.queue = QueueType.graphics
     step_ci.rendering.shader_name = "visibilitybuffer:shade"
 
+    step_ci.rendering.output_targets:add(render_context:get_texture_resource("final_lighting_target"))
     step_ci.rendering.input_targets:set("write_color", render_context:get_texture_resource("final_lighting_target"))
+
     step_ci.rendering.input_targets:set("visbuffer_geometry", render_context:get_texture_resource("visbuffer_geometry_target"))
     step_ci.rendering.input_targets:set("visbuffer_matobj", render_context:get_texture_resource("visbuffer_matobj_target"))
     step_ci.rendering.input_targets:set("visbuffer_skinvbo", render_context:get_texture_resource("visbuffer_skinvbo_target"))
@@ -256,35 +227,6 @@ do
 
     render_interface:create_renderer(step_ci)
 end
-
--- sync point
-do
-    local step_ci = RenderingStepCI.new()
-    step_ci.type = RenderingStepType.synchronization
-
-    step_ci.sync.type = SyncType.barrier
-    step_ci.sync.barrier.type = BarrierType.c2g
-    step_ci.sync.barrier.queue = QueueType.graphics
-
-    step_ci.sync.barrier.targets:add(render_context:get_texture_resource("final_lighting_target"))
-
-    render_interface:create_renderer(step_ci)
-end
-
--- copy last final image
---do 
---    local step_ci = RenderingStepCI.new()
---    step_ci.type = RenderingStepType.rendering
---
---    step_ci.rendering.type = RenderingType.fullscreen
---    step_ci.rendering.queue = QueueType.graphics
---    step_ci.rendering.shader_name = "utility:copy"
---    
---    step_ci.rendering.input_targets:set("copy_target", render_context:get_texture_resource("final_lighting_target"))
---    step_ci.rendering.output_targets:add(render_context:get_texture_resource("previous_color_target"))
---    
---    render_interface:create_renderer(step_ci)
---end
 
 -- Present pass
 do

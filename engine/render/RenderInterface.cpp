@@ -250,15 +250,19 @@ void CRenderInterface::render(float dt)
 	for (auto& stage : m_vRenderingSteps)
 		stage->execute(dt);
 
-	auto to_remove = std::remove_if(m_vRenderingSteps.begin(), m_vRenderingSteps.end(),
-		[](const std::unique_ptr<IRenderGraphStep>& stage) { return stage->expired(); });
-
-	if (to_remove != m_vRenderingSteps.end())
-		m_vRenderingSteps.erase(to_remove, m_vRenderingSteps.end());
-
 	m_pRenderContext->endFrameCommandBuffers();
 
+	if (m_pRenderContext->isSwapChainFinished())
+	{
+		auto to_remove = std::remove_if(m_vRenderingSteps.begin(), m_vRenderingSteps.end(),
+			[](const std::unique_ptr<IRenderGraphStep>& stage) { return stage->expired(); });
+
+		if (to_remove != m_vRenderingSteps.end())
+			m_vRenderingSteps.erase(to_remove, m_vRenderingSteps.end());
+	}
+
 	m_pRenderPacket->sceneBatches.clear();
+	m_pRenderPacket->shadowBatches.clear();
 }
 
 size_t CRenderInterface::createTexture(const std::string& path)

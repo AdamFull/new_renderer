@@ -55,6 +55,9 @@ namespace engine
 				void beginRendering(const FBeginRenderingInfo& rendering_info) override;
 				void endRendering(const FBeginRenderingInfo& rendering_info) override;
 
+				void beginCompute(const FBeginRenderingInfo& rendering_info) override;
+				void endCompute(const FBeginRenderingInfo& rendering_info) override;
+
 				void setViewport(float width, float height, bool flip_viewport = false) override;
 				void setScissorRect(int32_t offset_x, int32_t offset_y, uint32_t width, uint32_t height) override;
 
@@ -80,6 +83,8 @@ namespace engine
 
 				void beginFrameCommandBuffers() override;
 				void endFrameCommandBuffers() override;
+				
+				bool isSwapChainFinished() override;
 
 				void beginDebugLabel(const std::string& label, uint32_t queue_type, uint32_t color = 0xffffffff) override;
 				void insertDebugLabel(const std::string& label, uint32_t queue_type, uint32_t color = 0xffffffff) override;
