@@ -180,7 +180,7 @@ namespace easygltf
 			constexpr const int32_t not_set{ -1 };
 
 			constexpr const double dzero{ 0.0 };
-			constexpr const double done{ 0.0 };
+			constexpr const double done{ 1.0 };
 
 			constexpr const dvec2 dvec2zeros{ 0.0, 0.0 };
 			constexpr const dvec2 dvec2ones{ 1.0, 1.0 };

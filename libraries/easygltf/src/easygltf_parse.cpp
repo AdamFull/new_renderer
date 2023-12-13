@@ -1208,7 +1208,7 @@ namespace easygltf
         parsing::serialize_to("normalTexture", json, type.normalTexture, type.normalTexture != NormalTexture{});
         parsing::serialize_to("occlusionTexture", json, type.occlusionTexture, type.occlusionTexture != OcclusionTexture{});
         parsing::serialize_to("emissiveTexture", json, type.emissiveTexture, type.emissiveTexture != TextureInfo{});
-        parsing::serialize_to("emissiveTFactor", json, type.emissiveFactor, !compare_dvec3(type.emissiveFactor, base::constants::dvec3zeros));
+        parsing::serialize_to("emissiveFactor", json, type.emissiveFactor, !compare_dvec3(type.emissiveFactor, base::constants::dvec3zeros));
         parsing::serialize_to("alphaMode", json, type.alphaMode, type.alphaMode != base::enumerators::alpha_mode::opaque);
         parsing::serialize_to("alphaCutoff", json, type.alphaCutoff, !compare_double(type.alphaCutoff, 0.5));
         parsing::serialize_to("doubleSided", json, type.doubleSided, type.doubleSided);
@@ -1235,6 +1235,7 @@ namespace easygltf
         parsing::parse_from("normalTexture", json, type.normalTexture);
         parsing::parse_from("occlusionTexture", json, type.occlusionTexture);
         parsing::parse_from("emissiveTexture", json, type.emissiveTexture);
+        parsing::parse_from("emissiveFactor", json, type.emissiveFactor);
         parsing::parse_from("alphaMode", json, type.alphaMode);
         parsing::parse_from("alphaCutoff", json, type.alphaCutoff);
         parsing::parse_from("doubleSided", json, type.doubleSided);
