@@ -34,9 +34,9 @@ void CComputeGeometryRenderingStep::_execute(float dt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto render_resolution = m_pRenderContext->getRenderResolution();
-
 	m_pRenderContext->beginCompute(m_beginRenderingInfo);
+
+	auto& rect = m_beginRenderingInfo.renderArea.size;
 
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
 
@@ -130,8 +130,8 @@ void CComputeGeometryRenderingStep::_execute(float dt)
 			
 			FDispatchInfo dispatch_info{};
 			auto& group = dispatch_info.groups.emplace_back();
-			group.x = static_cast<uint32_t>(std::ceil(static_cast<float>(render_resolution.x) / static_cast<float>(reflection.localSizes[0])));
-			group.y = static_cast<uint32_t>(std::ceil(static_cast<float>(render_resolution.y) / static_cast<float>(reflection.localSizes[1])));
+			group.x = static_cast<uint32_t>(std::ceil(static_cast<float>(rect.x) / static_cast<float>(reflection.localSizes[0])));
+			group.y = static_cast<uint32_t>(std::ceil(static_cast<float>(rect.y) / static_cast<float>(reflection.localSizes[1])));
 			group.z = 0u;
 			
 			group.x = glm::max(group.x, 1u);

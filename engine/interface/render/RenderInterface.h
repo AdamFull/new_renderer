@@ -160,7 +160,7 @@ namespace engine
 			virtual const std::unique_ptr<CUniformHandle>& getConstantBlock(const char* name) = 0;
 
 			virtual void bindBuffer(const char* name, size_t buffer_resource) = 0;
-			virtual void bindTexture(const char* name, size_t texture_resource) = 0;
+			virtual void bindTexture(const char* name, size_t texture_resource, uint32_t mip = 0u) = 0;
 
 			virtual void flushDescriptors() = 0;
 			virtual void flushConstants(uint32_t queue) = 0;
@@ -235,6 +235,7 @@ namespace engine
 				m_beginRenderingInfo.depthAttachment = create_info.rendering.depthTarget;
 				m_beginRenderingInfo.stencilAttachment = create_info.rendering.stencilTarget;
 				m_beginRenderingInfo.flipViewport = create_info.rendering.flipViewport;
+				m_beginRenderingInfo.renderArea = create_info.rendering.renderRect;
 
 				_create(create_info);
 				IRenderGraphStep::create(create_info);
@@ -324,6 +325,7 @@ namespace engine
 			virtual size_t createTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) = 0;
 			virtual size_t getTextureId(const std::string& name) = 0;
 			virtual size_t createRenderTargets(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
+			virtual const FTextureCreateInfo& getTextureInfo(size_t texture_id) = 0;
 			virtual void destroyTexture(size_t resource_id) = 0;
 
 			virtual size_t createShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
@@ -364,6 +366,8 @@ namespace engine
 			virtual size_t getShaderResource(const char* name) = 0;
 
 			virtual FPoint2D<uint32_t> getRenderResolution() = 0;
+			virtual FRect2D<float> getRenderRectFromRT(size_t texture_id) = 0;
+			virtual FRect2D<float> getScreenRenderRect() = 0;
 
 			virtual uint32_t getDepthFormat(bool depth_only) = 0;
 			virtual uint32_t getApiFormat(uint32_t global_format) = 0;

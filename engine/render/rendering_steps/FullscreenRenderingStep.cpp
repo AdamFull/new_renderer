@@ -50,17 +50,11 @@ void CFullscreenRenderingStep::_execute(float dt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto render_resolution = m_pRenderContext->getRenderResolution();
-
-	m_beginRenderingInfo.renderArea.offset.x = 0;
-	m_beginRenderingInfo.renderArea.offset.y = 0;
-	m_beginRenderingInfo.renderArea.size.x = render_resolution.x;
-	m_beginRenderingInfo.renderArea.size.y = render_resolution.y;
-
 	m_pRenderContext->beginRendering(m_beginRenderingInfo);
 
-	m_pRenderContext->setViewport(static_cast<float>(render_resolution.x), static_cast<float>(render_resolution.y), m_beginRenderingInfo.flipViewport);
-	m_pRenderContext->setScissorRect(0, 0, render_resolution.x, render_resolution.y);
+	auto& rect = m_beginRenderingInfo.renderArea;
+	m_pRenderContext->setViewport(static_cast<float>(rect.size.x), static_cast<float>(rect.size.y), m_beginRenderingInfo.flipViewport);
+	m_pRenderContext->setScissorRect(0, 0, rect.size.x, rect.size.y);
 
 	//auto& push_block = m_pShader->getUniformBlock("FUniformData");
 	//push_block->set("color", glm::vec3(2.f, 2.f, 2.f));

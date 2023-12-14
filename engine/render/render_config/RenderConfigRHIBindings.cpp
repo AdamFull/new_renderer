@@ -155,6 +155,7 @@ namespace engine
 				"geometry", RENDERING_GEOMETRY_TYPE,
 				"compute", RENDERING_COMPUTE_TYPE,
 				"compute_geometry", RENDERING_COMPUTE_GEOMETRY_TYPE,
+				"compute_cubemap", RENDERING_COMPUTE_CUBEMAP_TYPE,
 				"render_script", RENDERING_RENDER_SCRIPT_TYPE
 			);
 
@@ -273,6 +274,8 @@ namespace engine
 				"one_time", & FRenderingStepRenderingInfo::oneTime,
 				"flip_viewport", & FRenderingStepRenderingInfo::flipViewport,
 				"material_pass", & FRenderingStepRenderingInfo::materialPass,
+
+				"render_rect", & FRenderingStepRenderingInfo::renderRect,
 
 				"input_targets", & FRenderingStepRenderingInfo::shaderInputs,
 				"output_targets", & FRenderingStepRenderingInfo::renderTargets,
@@ -421,7 +424,9 @@ namespace engine
 				"get_depth_format", &IRenderContext::getDepthFormat,
 				"get_api_format", &IRenderContext::getApiFormat,
 				"get_present_format", &IRenderContext::getPresentFormat,
-				"get_shader_reflection", &IRenderContext::getShaderReflection
+				"get_shader_reflection", &IRenderContext::getShaderReflection,
+				"get_render_rect_from_rt", &IRenderContext::getRenderRectFromRT,
+				"get_screen_render_rect", &IRenderContext::getScreenRenderRect
 			);
 
 			// Uniform block handler registration
@@ -483,6 +488,9 @@ namespace engine
 
 		void bindGlobalFunctions(sol::state* lua)
 		{
+			lua->set_function("calculate_mip_level_count", [](uint32_t width, uint32_t height) -> uint32_t {
+				return static_cast<uint32_t>(std::floor(std::log2((std::max)(width, height)))) + 1u;
+				});
 		}
 
 		void bindRenderInterface(sol::state* lua)

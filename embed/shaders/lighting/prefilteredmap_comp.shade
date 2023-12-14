@@ -8,18 +8,19 @@
 
 	definitions: [];
 	require_extensions: [];
-	includes: ["lighting_model"];
+	includes: ["lighting_model", "compute_common"];
 
 	code: 
 	"""
 		layout(local_size_x = 8, local_size_y = 8) in;
-
-		layout(push_constant) uniform PushObject {
-			float roughness;
-		} object;
 		
 		layout(set = 1, binding = 0, rgba32f) uniform writeonly imageCube out_color;
 		layout(set = 1, binding = 1) uniform samplerCube sampler_color;
+
+		layout(std140, set = 1, binding = 2) uniform ComputeCubemapData
+		{
+			float roughness;
+		} data;
 
 		const uint samples = 32u;
 
@@ -64,7 +65,7 @@
 		
 		void main() 
 		{
-			uvec2 image_size = imageSize(write_color);
+			uvec2 image_size = imageSize(out_color);
 
 			uvec2 px = uvec2(0, 0);
 			vec2 uv = vec2(0, 0);
@@ -74,7 +75,7 @@
 			for (uint i = 0; i != 6; ++i) 
 		    {
 				vec3 R = normalize(cubeDir(uv, i));
-				imageStore(out_color, ivec3(px, i), vec4(prefilterEnvMap(sampler_color, R, object.roughness), 1.0f));
+				imageStore(out_color, ivec3(px, i), vec4(prefilterEnvMap(sampler_color, R, data.roughness), 1.0f));
 			}
 		}
 	""";

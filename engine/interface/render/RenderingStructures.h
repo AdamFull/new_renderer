@@ -20,6 +20,7 @@ namespace engine
 			RENDERING_GEOMETRY_TYPE,
 			RENDERING_COMPUTE_TYPE,
 			RENDERING_COMPUTE_GEOMETRY_TYPE,
+			RENDERING_COMPUTE_CUBEMAP_TYPE,
 			RENDERING_RENDER_SCRIPT_TYPE
 		};
 
@@ -84,6 +85,8 @@ namespace engine
 
 			std::unordered_map<std::string, size_t> shaderInputs{};
 			std::vector<size_t> renderTargets{};
+
+			FRect2D<float> renderRect{};
 
 			size_t depthTarget{ ~0ull };
 			size_t stencilTarget{ ~0ull };

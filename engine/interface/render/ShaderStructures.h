@@ -118,11 +118,17 @@ namespace engine
 			size_t size{ 0ull };
 		};
 
+		struct FTextureBindInfo
+		{
+			size_t textureId{ ~0ull };
+			uint32_t mipLevel{ 0u };
+		};
+
 		struct FShaderResourceCommit
 		{
 			size_t shaderId{ ~0ull };
 			std::unordered_map<size_t, FUniformDataView> uniforms{};
-			std::unordered_map<size_t, size_t> textures{};
+			std::unordered_map<size_t, FTextureBindInfo> textures{};
 			std::unordered_map<size_t, size_t> buffers{};
 		};
 	}

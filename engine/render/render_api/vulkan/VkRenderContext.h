@@ -25,6 +25,7 @@ namespace engine
 				size_t getTextureId(const std::string& name) override;
 				size_t createRenderTarget(const std::string& name, const FTextureCreateInfo& texture_ci);
 				size_t createRenderTargets(const std::string& name, const FTextureCreateInfo& texture_ci) override;
+				const FTextureCreateInfo& getTextureInfo(size_t texture_id) override;
 				void destroyTexture(size_t resource_id) override;
 
 
@@ -68,6 +69,8 @@ namespace engine
 				size_t getShaderResource(const char* name) override;
 
 				FPoint2D<uint32_t> getRenderResolution() override;
+				FRect2D<float> getRenderRectFromRT(size_t texture_id) override;
+				FRect2D<float> getScreenRenderRect() override;
 
 				uint32_t getDepthFormat(bool depth_only = false) override;
 				uint32_t getApiFormat(uint32_t global_format) override;

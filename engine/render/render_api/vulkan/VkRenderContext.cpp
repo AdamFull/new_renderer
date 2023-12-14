@@ -366,10 +366,13 @@ size_t CVkRenderContext::createRenderTargets(const std::string& name, const FTex
 			resource_id = createRenderTarget(name, texture_ci);
 	}
 
-	//if (texture_ci.typeFlags & TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT)
-	//	m_textureLayoutInfos.emplace_back(FVkTextureLayoutChangeInfo{ resource_id });
-
 	return resource_id;
+}
+
+const FTextureCreateInfo& CVkRenderContext::getTextureInfo(size_t texture_id)
+{
+	auto& texture = m_pResources->get<FVkTexture>(texture_id);
+	return texture->initialData.base;
 }
 
 void CVkRenderContext::destroyTexture(size_t resource_id)
@@ -725,13 +728,13 @@ void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader
 	// Updating textures in shader
 	if (flags & SHADER_RESOURCES_UPDATE_TEXTURES_FLAG_BIT)
 	{
-		for (const auto& [texture_name, texture_id] : shader_resources.textures)
+		for (const auto& [texture_name, bind_info] : shader_resources.textures)
 		{
 			size_t texture_index{ 0ull };
-			if (textures.at(texture_id).size() == m_pDevice->m_swapchain.framesInFlight)
+			if (textures.at(bind_info.textureId).size() == m_pDevice->m_swapchain.framesInFlight)
 				texture_index = m_pDevice->m_swapchain.currentFrame;
 
-			auto& texture = textures.at(texture_id).at(texture_index);
+			auto& texture = textures.at(bind_info.textureId).at(texture_index);
 
 			auto found_reflection = shader_reflection->uniforms.find(texture_name);
 			if (found_reflection == shader_reflection->uniforms.end())
@@ -742,7 +745,7 @@ void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader
 
 			// TODO: add image view selection support
 			auto& image_descriptor = image_descriptors.at(texture_count);
-			image_descriptor.imageView = texture->imageViews.front();
+			image_descriptor.imageView = texture->imageViews.at(bind_info.mipLevel);
 			image_descriptor.sampler = texture->sampler;
 			image_descriptor.imageLayout = texture->layout;
 			texture_count++;
@@ -1515,6 +1518,25 @@ FPoint2D<uint32_t> CVkRenderContext::getRenderResolution()
 	return resolution;
 }
 
+FRect2D<float> CVkRenderContext::getRenderRectFromRT(size_t texture_id)
+{
+	auto& texture = m_pResources->get<FVkTexture>(texture_id);
+
+	FRect2D<float> rect{};
+	rect.size.x = static_cast<float>(texture->initialData.base.width);
+	rect.size.y = static_cast<float>(texture->initialData.base.height);
+
+	return rect;
+}
+
+FRect2D<float> CVkRenderContext::getScreenRenderRect()
+{
+	FRect2D<float> rect{};
+	rect.size.x = static_cast<float>(m_pDevice->m_swapchain.extent.width);
+	rect.size.y = static_cast<float>(m_pDevice->m_swapchain.extent.height);
+	return rect;
+}
+
 uint32_t CVkRenderContext::getDepthFormat(bool depth_only)
 {
 	auto found_format = m_pDevice->findSupportedFormat
@@ -2218,13 +2240,14 @@ FRenderApiErrorInfo CVkRenderContext::createTexture(const FVkTextureCreateInfo& 
 	image_view_ci.ci.components = { vk::ComponentSwizzle::eR, vk::ComponentSwizzle::eG, vk::ComponentSwizzle::eB, vk::ComponentSwizzle::eA };
 	image_view_ci.ci.subresourceRange.aspectMask = image_aspect;
 	image_view_ci.ci.subresourceRange.baseArrayLayer = 0u;
+	image_view_ci.ci.subresourceRange.layerCount = texture.totalLayers;
 	image_view_ci.ci.image = texture.image.handle;
 
 	texture.imageViews.resize(texture_ci.base.mipLevels);
 	for (uint32_t mip = 0u; mip < texture_ci.base.mipLevels; ++mip)
 	{
 		image_view_ci.ci.subresourceRange.baseMipLevel = mip;
-		image_view_ci.ci.subresourceRange.levelCount = mip == 0u ?texture_ci.base.mipLevels : 1u;
+		image_view_ci.ci.subresourceRange.levelCount = mip == 0u ? texture_ci.base.mipLevels : 1u;
 #ifndef BUILD_WITHOUT_DEBUGGIND
 		image_view_ci.name = std::format("{} mip #{}", texture_ci.name, mip);
 #endif
