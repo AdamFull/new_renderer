@@ -47,7 +47,7 @@ void CApplication::create()
 	m_pInputMapper->create();
 
 	FRenderInterfaceCreateInfo rhi_ci{};
-	rhi_ci.render_api = ERenderApi::eVulkan13;
+	rhi_ci.render_api = ERenderApi::eVulkan12;
 	m_pWindowHandle->getWindowSize(rhi_ci.initialWidth, rhi_ci.initialHeight);
 	get_platform_specific_window_data(rhi_ci, m_pWindowHandle);
 

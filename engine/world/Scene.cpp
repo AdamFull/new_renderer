@@ -306,6 +306,7 @@ void CScene::update(float dt)
 
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
 	render_packet->primitiveCount = m_resources.primitiveCount;
+	render_packet->vboCount = m_resources.vertexHandlers.size();
 
 	for (auto& system : m_systems)
 		system->update(dt);
@@ -478,6 +479,7 @@ void CScene::loadMeshComponent(const easygltf::FGLTFRoot root, const entt::entit
 			auto& handler = m_pRenderInterface->getVertexHandler(handler_id);
 			vertex_handler = handler.get();
 			current_handler_id = handler_id;
+
 		}
 
 		// Create mesh primitive

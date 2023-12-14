@@ -28,6 +28,19 @@
 					shader_name: "prefilteredmap_comp";
 				}
 			];
+		},
+		{
+			name: "unidirectional_shadow";
+			sources: [
+				{
+					type: "vertex";
+					shader_name: "unidirectional_shadow_vert";
+				},
+				{
+					type: "fragment";
+					shader_name: "unidirectional_shadow_frag";
+				}
+			];
 		}
 	];
 
@@ -49,6 +62,22 @@
 			permutations: [
 				{ definitions: [] }
 			];
+		},
+		{ 
+			shader_name: "unidirectional_shadow";
+			permutation_generator: {
+				definitions: [
+					{ base: "HAS_TEXCOORD" },
+					{ base: "HAS_NORMAL" },
+					{ base: "HAS_SKIN", var:[{ base: "JOINTS_8BIT" }, { base: "JOINTS_16BIT" }] },
+					{ base: "COLOR_VEC3" },
+					{ base: "COLOR_VEC4" },
+					{ base: "TANGENT_VEC3" },
+					{ base: "TANGENT_VEC4" },
+					{ base: "INDEX_8BIT" },
+					{ base: "INDEX_16BIT" }
+				];
+			};
 		}
 	];
 }

@@ -6,6 +6,7 @@
 #include "rendering_steps/SemaphoreRenderingStep.h"
 #include "rendering_steps/BarrierRenderingStep.h"
 #include "rendering_steps/GeometryRenderingStep.h"
+#include "rendering_steps/CSMRenderingStep.h"
 #include "rendering_steps/ComputeRenderingStep.h"
 #include "rendering_steps/ComputeCubemapRenderingStep.h"
 #include "rendering_steps/ComputeGeometryRenderingStep.h"
@@ -369,6 +370,8 @@ void CRenderInterface::createRendering(const FRenderingStepCreateInfo& rendering
 			new_step = std::make_unique<CComputeGeometryRenderingStep>(this, m_pRenderContext.get());
 		else if (rendering_ci.rendering.type == RENDERING_COMPUTE_CUBEMAP_TYPE)
 			new_step = std::make_unique<CComputeCubemapRenderingStep>(this, m_pRenderContext.get());
+		else if (rendering_ci.rendering.type == RENDERING_CSM_TYPE)
+			new_step = std::make_unique<CCascadedShadowMapsRenderingStep>(this, m_pRenderContext.get());
 		else if(rendering_ci.rendering.type == RENDERING_RENDER_SCRIPT_TYPE)
 			new_step = std::make_unique<CRenderScriptRenderingStep>(this, m_pRenderContext.get());
 	}

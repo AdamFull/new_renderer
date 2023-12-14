@@ -210,6 +210,20 @@ do
     render_interface:create_renderer(step_ci)
 end
 
+do
+    local step_ci = RenderingStepCI.new()
+    step_ci.type = RenderingStepType.rendering
+
+    step_ci.rendering.type = RenderingType.csm
+    step_ci.rendering.queue = QueueType.graphics
+    step_ci.rendering.shader_name = "lighting:unidirectional_shadow"
+
+    step_ci.rendering.depth_target = render_context:get_texture_resource("cascaded_shadows_target")
+    step_ci.rendering.render_rect = render_context:get_render_rect_from_rt(step_ci.rendering.depth_target)
+
+    render_interface:create_renderer(step_ci)
+end
+
 -- visibility buffer write
 do
     local step_ci = RenderingStepCI.new()

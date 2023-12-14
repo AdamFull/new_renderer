@@ -21,6 +21,7 @@ namespace engine
 			RENDERING_COMPUTE_TYPE,
 			RENDERING_COMPUTE_GEOMETRY_TYPE,
 			RENDERING_COMPUTE_CUBEMAP_TYPE,
+			RENDERING_CSM_TYPE,
 			RENDERING_RENDER_SCRIPT_TYPE
 		};
 
@@ -106,6 +107,7 @@ namespace engine
 			uint32_t queue{ 0u };
 			FRect2D<float> renderArea{};
 			bool flipViewport{ false };
+			uint32_t layerCount{ 1u };
 
 			std::vector<size_t> colorAttachments{};
 			size_t depthAttachment{ ~0ull };

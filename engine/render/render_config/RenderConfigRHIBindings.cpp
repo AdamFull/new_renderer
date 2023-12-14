@@ -156,6 +156,7 @@ namespace engine
 				"compute", RENDERING_COMPUTE_TYPE,
 				"compute_geometry", RENDERING_COMPUTE_GEOMETRY_TYPE,
 				"compute_cubemap", RENDERING_COMPUTE_CUBEMAP_TYPE,
+				"csm", RENDERING_CSM_TYPE,
 				"render_script", RENDERING_RENDER_SCRIPT_TYPE
 			);
 

@@ -127,7 +127,7 @@ void CShadowsSystem::__update(float fDt)
 					glm::vec3 maxExtents = glm::vec3(radius);
 					glm::vec3 minExtents = -maxExtents;
 
-					glm::vec3 lightDir = glm::normalize(glm::toQuat(ltransform.gmodel) * glm::vec3(0.f, 0.f, 1.f));
+					glm::vec3 lightDir = glm::normalize(glm::toQuat(ltransform.gmodel) * glm::vec3(0.f, 0.f, -1.f));
 					glm::mat4 lightViewMatrix = glm::lookAt(frustumCenter - lightDir * -minExtents.z, frustumCenter, render_packet->camera.up);
 					glm::mat4 lightOrthoMatrix = glm::ortho(minExtents.x, maxExtents.x, minExtents.y, maxExtents.y, minExtents.z, maxExtents.z - minExtents.z);
 
@@ -183,6 +183,7 @@ void CShadowsSystem::__update(float fDt)
 				shadow_commit.viewProj[4ull] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0));	// POSITIVE_Z
 				shadow_commit.viewProj[5ull] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0));	// NEGATIVE_Z
 
+				light.shadowIndex = lights.scount;
 				lights.shadows->insert(&shadow_commit, lights.scount++);
 			}
 		}
@@ -204,11 +205,12 @@ void CShadowsSystem::__update(float fDt)
 			{
 				FSpotShadowCommit shadow_commit{};
 
-				auto light_dir = light.toTarget ? light.target : glm::normalize(glm::toQuat(ltransform.gmodel) * glm::vec3(0.f, 0.f, 1.f));
+				auto light_dir = light.toTarget ? light.target : glm::normalize(glm::toQuat(ltransform.gmodel) * glm::vec3(0.f, 0.f, -1.f));
 				glm::mat4 shadowProj = glm::perspective(light.outerAngle * 2.f, 1.0f, 0.1f, 64.f);
 				glm::mat4 shadowView = glm::lookAt(ltransform.gposition, ltransform.gposition + light_dir, glm::vec3(0.0f, 1.0f, 0.0f));
 				shadow_commit.viewProj = shadowProj * shadowView;
 
+				light.shadowIndex = lights.scount;
 				lights.shadows->insert(&shadow_commit, lights.scount++);
 			}
 		}

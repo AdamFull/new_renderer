@@ -1139,7 +1139,7 @@ void CVkRenderContext::beginRendering(const FBeginRenderingInfo& rendering_info)
 	begin_rendering_info.renderArea.extent.height = rendering_info.renderArea.size.y;
 	begin_rendering_info.colorAttachmentCount = static_cast<uint32_t>(color_attachments.size());
 	begin_rendering_info.pColorAttachments = color_attachments.data();
-	begin_rendering_info.layerCount = 1u;
+	begin_rendering_info.layerCount = rendering_info.layerCount;
 
 	if (rendering_info.depthAttachment != invalid_handle)
 	{
@@ -1158,7 +1158,7 @@ void CVkRenderContext::beginRendering(const FBeginRenderingInfo& rendering_info)
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	m_pDevice->debugBeginLabel(current_buffer, rendering_info.name, 0xffffffff);
 #endif
-
+	
 	current_buffer.beginRenderingKHR(begin_rendering_info);
 }
 
