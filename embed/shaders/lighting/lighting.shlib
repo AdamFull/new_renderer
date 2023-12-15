@@ -75,7 +75,8 @@
 					{ base: "TANGENT_VEC3" },
 					{ base: "TANGENT_VEC4" },
 					{ base: "INDEX_8BIT" },
-					{ base: "INDEX_16BIT" }
+					{ base: "INDEX_16BIT" },
+					{ base: "CASCADED_SHADOW" }
 				];
 			};
 		}

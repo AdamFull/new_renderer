@@ -300,6 +300,8 @@ namespace engine
 
 			size_t primitiveCount{ 0ull };
 			size_t vboCount{ 0ull };
+			size_t nodeCount{ 0ull };
+
 			std::vector<FGeometryBatch> sceneBatches{};
 			std::vector<FGeometryBatch> shadowBatches{};
 

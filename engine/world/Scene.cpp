@@ -306,6 +306,7 @@ void CScene::update(float dt)
 
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
 	render_packet->primitiveCount = m_resources.primitiveCount;
+	render_packet->nodeCount = m_resources.nodeCount;
 	render_packet->vboCount = m_resources.vertexHandlers.size();
 
 	for (auto& system : m_systems)
@@ -344,6 +345,7 @@ void CScene::loadNode(const easygltf::FGLTFRoot root, const entt::entity parent,
 		loadLightComponent(root, m_temporary.nodeToEntity[node_index], node_index);
 
 	m_pSceneGraph->attachChild(parent, new_node);
+	m_resources.nodeCount++;
 }
 
 void CScene::loadMeshComponent(const easygltf::FGLTFRoot root, const entt::entity parent, uint32_t node_index)

@@ -116,6 +116,30 @@ void CComputeGeometryRenderingStep::_execute(float dt)
 				shader->bindBuffer("SpotLights", handle);
 			}
 
+			auto& dshadows = render_packet->dlights.shadows;
+			if (dshadows)
+			{
+				auto& buffer = dshadows->getBufferObject();
+				size_t handle = buffer->handle();
+				shader->bindBuffer("CascadedShadows", handle);
+			}
+
+			auto& pshadows = render_packet->plights.shadows;
+			if (pshadows)
+			{
+				auto& buffer = pshadows->getBufferObject();
+				size_t handle = buffer->handle();
+				shader->bindBuffer("OmniShadows", handle);
+			}
+
+			auto& sshadows = render_packet->slights.shadows;
+			if (sshadows)
+			{
+				auto& buffer = sshadows->getBufferObject();
+				size_t handle = buffer->handle();
+				shader->bindBuffer("SpotShadows", handle);
+			}
+
 			size_t vertex_handle = last_vbo->getVertexHandle();
 			shader->bindBuffer("VertexBuffer", vertex_handle);
 

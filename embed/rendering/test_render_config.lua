@@ -216,7 +216,7 @@ do
 
     step_ci.rendering.type = RenderingType.csm
     step_ci.rendering.queue = QueueType.graphics
-    step_ci.rendering.shader_name = "lighting:unidirectional_shadow"
+    step_ci.rendering.shader_name = "lighting:unidirectional_shadow:CASCADED_SHADOW"
 
     step_ci.rendering.depth_target = render_context:get_texture_resource("cascaded_shadows_target")
     step_ci.rendering.render_rect = render_context:get_render_rect_from_rt(step_ci.rendering.depth_target)
@@ -263,6 +263,7 @@ do
     step_ci.rendering.input_targets:set("brdf_lut", render_context:get_texture_resource("brdf_lut_target"))
     step_ci.rendering.input_targets:set("irradiance_cube", render_context:get_texture_resource("irradiance_cube_target"))
     step_ci.rendering.input_targets:set("prefiltered_cube", render_context:get_texture_resource("prefiltered_cube_target"))
+    step_ci.rendering.input_targets:set("cascaded_shadowmap", render_context:get_texture_resource("cascaded_shadows_target"))
     step_ci.rendering.input_targets:set("depth_buffer", render_context:get_texture_resource("zbuffer_depth_target"))
 
     render_interface:create_renderer(step_ci)

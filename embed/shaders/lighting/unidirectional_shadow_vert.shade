@@ -54,10 +54,16 @@
 #ifdef HAS_TEXCOORD
 			outTexcoord = inTexCoord;
 #endif
-		
+
+			mat4 viewProj;
+#if defined(CASCADED_SHADOW)
 			FCascadedShadowCommit shadow = cascaded_shadows[shadowData.shadowIndex];
-			
-			mat4 viewProj = shadow.cascadeViewProj[shadowData.layer];
+			viewProj = shadow.cascadeViewProj[shadowData.layer];
+#else
+			FSpotShadowCommit shadow = spot_shadows[shadowData.shadowIndex];
+			viewProj = shadow.viewProj;
+#endif
+
 			gl_Layer = shadowData.layer;
 			gl_Position = viewProj * localPos;
 		}

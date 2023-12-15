@@ -165,7 +165,7 @@ const std::unique_ptr<IShaderObject>& CCascadedShadowMapsRenderingStep::getShade
 
 		auto& render_packet = m_pRenderInterface->getRenderPacket();
 		// TODO: i think i can calculate number of calls
-		shader_ci.usageCount = render_packet->vboCount * max_directional_light_shadow_count * cascade_shadow_map_cascade_count;
+		shader_ci.usageCount = (std::max)(render_packet->vboCount, render_packet->nodeCount) * max_directional_light_shadow_count * cascade_shadow_map_cascade_count;
 		shader_ci.vertexDeclaration = vbo->getVertexDeclaration();
 
 		shader->create(shader_name, shader_ci);
