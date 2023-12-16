@@ -213,6 +213,8 @@ void CScene::load(const std::string& path)
 		material_data.doubleSided = material.doubleSided;
 
 		materials->insert(&material_data, idx);
+
+		render_packet->stats.materialCount++;
 	}
 
 	// Loading nodes
@@ -304,17 +306,14 @@ void CScene::update(float dt)
 
 	TRACY_PROFILE_SCOPE("Scene update")
 
-	auto& render_packet = m_pRenderInterface->getRenderPacket();
-	render_packet->primitiveCount = m_resources.primitiveCount;
-	render_packet->nodeCount = m_resources.nodeCount;
-	render_packet->vboCount = m_resources.vertexHandlers.size();
-
 	for (auto& system : m_systems)
 		system->update(dt);
 }
 
 void CScene::loadNode(const easygltf::FGLTFRoot root, const entt::entity parent, uint32_t node_index, float global_scale)
 {
+	auto& render_packet = m_pRenderInterface->getRenderPacket();
+
 	const auto& node = root.nodes[node_index];
 
 	auto new_node = m_pSceneGraph->createNode(node.name);
@@ -345,7 +344,7 @@ void CScene::loadNode(const easygltf::FGLTFRoot root, const entt::entity parent,
 		loadLightComponent(root, m_temporary.nodeToEntity[node_index], node_index);
 
 	m_pSceneGraph->attachChild(parent, new_node);
-	m_resources.nodeCount++;
+	render_packet->stats.nodeCount++;
 }
 
 void CScene::loadMeshComponent(const easygltf::FGLTFRoot root, const entt::entity parent, uint32_t node_index)
@@ -355,6 +354,8 @@ void CScene::loadMeshComponent(const easygltf::FGLTFRoot root, const entt::entit
 
 	auto& mesh_component = m_pSceneGraph->addComponent<FMeshComponent>(parent, FMeshComponent{});
 	mesh_component.skin = node.skin;
+
+	auto& render_packet = m_pRenderInterface->getRenderPacket();
 
 	// Load mesh primitives
 	for (size_t i = 0ull; i < mesh.primitives.size(); ++i)
@@ -372,8 +373,8 @@ void CScene::loadMeshComponent(const easygltf::FGLTFRoot root, const entt::entit
 		size_t attributes_hash{ 0ull };
 		for (const auto& [name, accessor_idx] : primitive.attributes)
 		{
-			//if (name != "POSITION")
-			//	continue;
+			if (name == "TEXCOORD_1")
+				continue;
 
 			const easygltf::Accessor& accessor = root.accessors[accessor_idx];
 			auto stream = root.getStream(accessor);
@@ -482,6 +483,8 @@ void CScene::loadMeshComponent(const easygltf::FGLTFRoot root, const entt::entit
 			vertex_handler = handler.get();
 			current_handler_id = handler_id;
 
+			render_packet->stats.perTypeVBOCount[handler->getHash()]++;
+			render_packet->stats.vboCount++;
 		}
 
 		// Create mesh primitive
@@ -499,7 +502,7 @@ void CScene::loadMeshComponent(const easygltf::FGLTFRoot root, const entt::entit
 			mesh_primitive.materialId = primitive.material;
 
 		mesh_component.primitives.emplace_back(mesh_primitive);
-		m_resources.primitiveCount++;
+		render_packet->stats.primitiveCount++;
 	}
 }
 

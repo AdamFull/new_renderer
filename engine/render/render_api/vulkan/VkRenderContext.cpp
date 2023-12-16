@@ -1131,7 +1131,7 @@ void CVkRenderContext::beginRendering(const FBeginRenderingInfo& rendering_info)
 
 	// Translate all render target layouts
 	processMemoryBarriers(command_buffer, translation_info);
-
+	
 	vk::RenderingInfoKHR begin_rendering_info{};
 	begin_rendering_info.renderArea.offset.x = rendering_info.renderArea.offset.x;
 	begin_rendering_info.renderArea.offset.y = rendering_info.renderArea.offset.y;

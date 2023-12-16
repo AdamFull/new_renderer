@@ -289,6 +289,17 @@ namespace engine
 			uint32_t scount{ 0u };
 		};
 
+		struct FRenderSceneStats
+		{
+			size_t vboCount{ 0ull };
+			size_t primitiveCount{ 0ull };
+			size_t materialCount{ 0ull };
+			size_t nodeCount{ 0ull };
+
+			// Type is a hash of all used attributes
+			std::unordered_map<size_t, size_t> perTypeVBOCount{};
+		};
+
 		struct FRenderDataPacket
 		{
 			FRenderDataPacket()
@@ -298,9 +309,7 @@ namespace engine
 
 			FRenderCamera camera{};
 
-			size_t primitiveCount{ 0ull };
-			size_t vboCount{ 0ull };
-			size_t nodeCount{ 0ull };
+			FRenderSceneStats stats{};
 
 			std::vector<FGeometryBatch> sceneBatches{};
 			std::vector<FGeometryBatch> shadowBatches{};

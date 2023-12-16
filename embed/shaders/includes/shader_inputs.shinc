@@ -52,25 +52,18 @@
 	layout(set = 0, binding = 1) uniform sampler2D textures[];
 
 #ifdef MESH_DATA
-	layout(std140, set = 1, binding = 0) uniform UniformMeshData
-	{
-		uint vboId;
-		uint objectId;
-		uint materialId;
-	} meshData;
-
-	layout(std430, set = 1, binding = 1) readonly buffer NodeStorage
+	layout(std430, set = 1, binding = 0) readonly buffer NodeStorage
 	{
 		FSceneNode nodes[];
 	};	
 
-	layout(std430, set = 1, binding = 2) readonly buffer MaterialStorage
+	layout(std430, set = 1, binding = 1) readonly buffer MaterialStorage
 	{
 		FMaterial materials[];
 	};	
 
 #ifdef HAS_SKIN
-	layout(std430, set = 1, binding = 3) readonly buffer SkinningJoints
+	layout(std430, set = 1, binding = 2) readonly buffer SkinningJoints
 	{
 		mat4 matrices[];
 	};
@@ -78,34 +71,34 @@
 #endif // MESH_DATA
 
 #ifdef LIGHT_DATA
-	layout(std430, set = 1, binding = 4) readonly buffer DirectionalLights
+	layout(std430, set = 1, binding = 3) readonly buffer DirectionalLights
 	{
 		FDirectionalLightCommit directional_lights[];
 	};
 
-	layout(std430, set = 1, binding = 5) readonly buffer PointLights
+	layout(std430, set = 1, binding = 4) readonly buffer PointLights
 	{
 		FPointLightCommit point_lights[];
 	};
 
-	layout(std430, set = 1, binding = 6) readonly buffer SpotLights
+	layout(std430, set = 1, binding = 5) readonly buffer SpotLights
 	{
 		FSpotLightCommit spot_lights[];
 	};
 #endif // LIGHT_DATA
 
 #ifdef SHADOW_DATA
-	layout(std430, set = 1, binding = 7) readonly buffer CascadedShadows
+	layout(std430, set = 1, binding = 6) readonly buffer CascadedShadows
 	{
 		FCascadedShadowCommit cascaded_shadows[];
 	};
 
-	layout(std430, set = 1, binding = 8) readonly buffer OmniShadows
+	layout(std430, set = 1, binding = 7) readonly buffer OmniShadows
 	{
 		FOmniShadowCommit omni_shadows[];
 	};
 
-	layout(std430, set = 1, binding = 9) readonly buffer SpotShadows
+	layout(std430, set = 1, binding = 8) readonly buffer SpotShadows
 	{
 		FSpotShadowCommit spot_shadows[];
 	};

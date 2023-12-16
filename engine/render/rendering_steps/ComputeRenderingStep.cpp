@@ -46,7 +46,6 @@ void CComputeRenderingStep::_execute(float dt)
 
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
 
-
 	auto& dlights = render_packet->dlights.lights;
 	if (dlights)
 	{

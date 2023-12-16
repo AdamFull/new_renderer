@@ -60,11 +60,13 @@ void CGeometryRenderingStep::_execute(float dt)
 	IVertexHandler* last_vbo{ nullptr };
 	for (auto& batch : render_packet->sceneBatches)
 	{
+		bool was_vbo_rebinded{ false };
  		auto& vbo = m_pRenderInterface->getVertexHandler(batch.vboId);
 		if (!last_vbo || vbo.get() != last_vbo)
 		{
 			last_vbo = vbo.get();
 			last_vbo->bind(m_beginRenderingInfo.queue);
+			was_vbo_rebinded = true;
 		}
 		
 		if (last_vbo)
@@ -73,40 +75,44 @@ void CGeometryRenderingStep::_execute(float dt)
 			// Create shader for vertex declaration if not exists
 			auto& shader = getShaderByVBO(last_vbo);
 
+			if (was_vbo_rebinded)
 			{
-				TRACY_PROFILE_SCOPE("Update UniformMeshData");
-			
-				auto& ubo = shader->getUniformBlock("UniformMeshData");
-				ubo->set("vboId", static_cast<uint32_t>(batch.vboId));
-				ubo->set("objectId", batch.node);
-				ubo->set("materialId", static_cast<uint32_t>(batch.materialId));
+				if (materials)
+				{
+					auto& buffer = materials->getBufferObject();
+					size_t handle = buffer->handle();
+					shader->bindBuffer("MaterialStorage", handle);
+				}
+
+				if (nodes)
+				{
+					auto& buffer = nodes->getBufferObject();
+					size_t handle = buffer->handle();
+					shader->bindBuffer("NodeStorage", handle);
+				}
+
+				if (skins)
+				{
+					auto& buffer = skins->getBufferObject();
+					size_t handle = buffer->handle();
+					shader->bindBuffer("SkinningJoints", handle);
+				}
+
+				shader->flushDescriptors();
+				shader->bind(m_beginRenderingInfo.queue);
 			}
 
-			if (materials)
+			auto& mesh_data = shader->getConstantBlock("meshData");
+			if(mesh_data)
 			{
-				auto& buffer = materials->getBufferObject();
-				size_t handle = buffer->handle();
-				shader->bindBuffer("MaterialStorage", handle);
-			}
-
-			if (nodes)
-			{
-				auto& buffer = nodes->getBufferObject();
-				size_t handle = buffer->handle();
-				shader->bindBuffer("NodeStorage", handle);
-			}
-
-			if (skins)
-			{
-				auto& buffer = skins->getBufferObject();
-				size_t handle = buffer->handle();
-				shader->bindBuffer("SkinningJoints", handle);
+				mesh_data->set("vboId", static_cast<uint32_t>(batch.vboId));
+				mesh_data->set("objectId", batch.node);
+				mesh_data->set("materialId", static_cast<uint32_t>(batch.materialId));
 			}
 
 			// Bind vbo and flush descriptors, then bind and draw
-			shader->flushDescriptors();
+			
 			shader->flushConstants(m_beginRenderingInfo.queue);
-			shader->bind(m_beginRenderingInfo.queue);
 
 			FGeometryDrawInfo draw_info{};
 			draw_info.lastIndex = last_vbo->getLastIndex();
@@ -122,7 +128,8 @@ void CGeometryRenderingStep::_execute(float dt)
 
 const std::unique_ptr<IShaderObject>& CGeometryRenderingStep::getShaderByVBO(const IVertexHandler* vbo)
 {
-	auto& shader = m_shaders[vbo->getHash()];
+	auto vbo_hash = vbo->getHash();
+	auto& shader = m_shaders[vbo_hash];
 	if (!shader)
 	{
 		shader = std::make_unique<CShaderObject>(m_pRenderInterface, m_pRenderContext);
@@ -140,7 +147,8 @@ const std::unique_ptr<IShaderObject>& CGeometryRenderingStep::getShaderByVBO(con
 
 		auto& render_packet = m_pRenderInterface->getRenderPacket();
 		// TODO: i think i can calculate number of calls
-		shader_ci.usageCount = render_packet->primitiveCount;
+		//shader_ci.usageCount = std::max(render_packet->stats.materialCount, render_packet->stats.primitiveCount);
+		shader_ci.usageCount = render_packet->stats.perTypeVBOCount[vbo_hash];
 		shader_ci.vertexDeclaration = vbo->getVertexDeclaration();
 
 		shader->create(shader_name, shader_ci);

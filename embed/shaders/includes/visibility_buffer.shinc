@@ -202,7 +202,9 @@
 			vec4 clipPos1 = mvp * vec4(position1, 1.0);
 			vec4 clipPos2 = mvp * vec4(position2, 1.0);
 
+			uv = vec2(uv.x, 1.f - uv.y);
 			vec2 ndcClip = uv * 2.0 - 1.0;
+			//ndcClip.y *= -1.f;
 
 			BarycentricDeriv bary = computeBarycentrics(clipPos0, clipPos1, clipPos2, ndcClip, frameData.invViewportDimension);
 

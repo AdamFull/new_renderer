@@ -23,9 +23,6 @@ namespace engine
 
 			std::vector<size_t> materials{};
 			size_t lastMaterial{ 0ull };
-
-			size_t primitiveCount{ 0ull };
-			size_t nodeCount{ 0ull };
 		};
 
 		struct FSceneTemporaryResources

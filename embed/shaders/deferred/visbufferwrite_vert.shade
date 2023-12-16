@@ -25,6 +25,13 @@
 		layout(location = 2) flat out uint objID;
 		layout(location = 3) flat out uint vboID;
 
+		layout(push_constant) uniform UniformMeshData
+		{
+			uint vboId;
+			uint objectId;
+			uint materialId;
+		} meshData;
+
 		out gl_PerVertex
 		{
 			vec4 gl_Position;

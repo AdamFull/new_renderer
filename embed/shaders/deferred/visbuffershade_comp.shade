@@ -30,6 +30,13 @@
 
 		layout (set = 2, binding = 10) uniform sampler2DArrayShadow cascaded_shadowmap;
 
+		layout(push_constant) uniform UniformMeshData
+		{
+			uint vboId;
+			uint objectId;
+			uint materialId;
+		} meshData;
+
 		vec4 sampleTexture(in uint s, in VertexAttribute va)
 		{
 			return textureGrad(textures[s], va.uv, va.uv_dx, va.uv_dy);

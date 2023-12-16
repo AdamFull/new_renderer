@@ -40,10 +40,9 @@ void CCascadedShadowMapsRenderingStep::_execute(float dt)
 
 	m_pRenderContext->beginRendering(m_beginRenderingInfo);
 
-	auto& rect = m_beginRenderingInfo.renderArea;
+	/*auto& rect = m_beginRenderingInfo.renderArea;
 	m_pRenderContext->setViewport(static_cast<float>(rect.size.x), static_cast<float>(rect.size.y), m_beginRenderingInfo.flipViewport);
 	m_pRenderContext->setScissorRect(0, 0, rect.size.x, rect.size.y);
-	
 
 	auto& materials = render_packet->materials;
 	auto& nodes = render_packet->nodes;
@@ -59,17 +58,18 @@ void CCascadedShadowMapsRenderingStep::_execute(float dt)
 			last_vbo->bind(m_beginRenderingInfo.queue);
 		}
 
+		if (batch.vboId == 28)
+			int iiii = 0;
+
 		if (last_vbo)
 		{
 			auto& shader = getShaderByVBO(last_vbo);
 
+			auto& shadow_data = shader->getConstantBlock("shadowData");
+			if(shadow_data)
 			{
-				TRACY_PROFILE_SCOPE("Update UniformMeshData");
-
-				auto& ubo = shader->getUniformBlock("UniformMeshData");
-				ubo->set("vboId", static_cast<uint32_t>(batch.vboId));
-				ubo->set("objectId", batch.node);
-				ubo->set("materialId", static_cast<uint32_t>(batch.materialId));
+				shadow_data->set("objectId", batch.node);
+				shadow_data->set("materialId", static_cast<uint32_t>(batch.materialId));
 			}
 
 			if (materials)
@@ -114,22 +114,20 @@ void CCascadedShadowMapsRenderingStep::_execute(float dt)
 				shader->bindBuffer("SpotShadows", handle);
 			}
 
-			auto& shadow_data = shader->getUniformBlock("ShadowmapData");
+			shader->flushDescriptors();
+			shader->bind(m_beginRenderingInfo.queue);
+
 			for (size_t idx = 0ull; idx < dlights.scount; ++idx)
 			{
 				for (size_t layer = 0ull; layer < cascade_shadow_map_cascade_count; ++layer)
 				{
-					// TODO: Can be changed to push const
 					if (shadow_data)
 					{
 						shadow_data->set("shadowIndex", static_cast<uint32_t>(idx));
 						shadow_data->set("layer", static_cast<int32_t>(layer));
 					}
-			
-					// Bind vbo and flush descriptors, then bind and draw
-					shader->flushDescriptors();
+
 					shader->flushConstants(m_beginRenderingInfo.queue);
-					shader->bind(m_beginRenderingInfo.queue);
 			
 					FGeometryDrawInfo draw_info{};
 					draw_info.lastIndex = last_vbo->getLastIndex();
@@ -140,14 +138,15 @@ void CCascadedShadowMapsRenderingStep::_execute(float dt)
 				}
 			}
 		}
-	}
+	}*/
 
 	m_pRenderContext->endRendering(m_beginRenderingInfo);
 }
 
 const std::unique_ptr<IShaderObject>& CCascadedShadowMapsRenderingStep::getShaderByVBO(const IVertexHandler* vbo)
 {
-	auto& shader = m_shaders[vbo->getHash()];
+	auto vbo_hash = vbo->getHash();
+	auto& shader = m_shaders[vbo_hash];
 	if (!shader)
 	{
 		shader = std::make_unique<CShaderObject>(m_pRenderInterface, m_pRenderContext);
@@ -165,7 +164,7 @@ const std::unique_ptr<IShaderObject>& CCascadedShadowMapsRenderingStep::getShade
 
 		auto& render_packet = m_pRenderInterface->getRenderPacket();
 		// TODO: i think i can calculate number of calls
-		shader_ci.usageCount = (std::max)(render_packet->vboCount, render_packet->nodeCount) * max_directional_light_shadow_count * cascade_shadow_map_cascade_count;
+		shader_ci.usageCount = render_packet->stats.perTypeVBOCount[vbo_hash];
 		shader_ci.vertexDeclaration = vbo->getVertexDeclaration();
 
 		shader->create(shader_name, shader_ci);

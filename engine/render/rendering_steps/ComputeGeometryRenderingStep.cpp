@@ -43,6 +43,8 @@ void CComputeGeometryRenderingStep::_execute(float dt)
 	std::vector<FGeometryBatch> rebatched{};
 	rebatchGeometry(render_packet->sceneBatches, rebatched, GEOMETRY_BATCHER_MERGE_DRAWCALLS_FLAG_BIT);
 
+	//std::sort(rebatched.begin(), rebatched.end(), [](const FGeometryBatch& a, const FGeometryBatch& b) { return a.vboId < b.vboId; });
+
 	auto& materials = render_packet->materials;
 	auto& nodes = render_packet->nodes;
 	auto& skins = render_packet->skins;
@@ -54,101 +56,107 @@ void CComputeGeometryRenderingStep::_execute(float dt)
 	IVertexHandler* last_vbo{ nullptr };
 	for (auto& batch : rebatched)
 	{
+		bool was_vbo_rebinded{ false };
 		auto& vbo = m_pRenderInterface->getVertexHandler(batch.vboId);
 		if (!last_vbo || vbo.get() != last_vbo)
 		{
 			last_vbo = vbo.get();
 			last_vbo->bind(m_beginRenderingInfo.queue);
+			was_vbo_rebinded = true;
 		}
 
 		if (last_vbo)
 		{
 			auto& shader = getShaderByVBO(last_vbo);
 
-			auto& ubo = shader->getUniformBlock("UniformMeshData");
-			if (ubo)
+			if (was_vbo_rebinded)
 			{
-				ubo->set("vboId", static_cast<uint32_t>(batch.vboId));
-				ubo->set("objectId", batch.node);
-				ubo->set("materialId", static_cast<uint32_t>(batch.materialId));
+				if (materials)
+				{
+					auto& buffer = materials->getBufferObject();
+					size_t handle = buffer->handle();
+					shader->bindBuffer("MaterialStorage", handle);
+				}
+
+				if (nodes)
+				{
+					auto& buffer = nodes->getBufferObject();
+					size_t handle = buffer->handle();
+					shader->bindBuffer("NodeStorage", handle);
+				}
+
+				if (skins)
+				{
+					auto& buffer = skins->getBufferObject();
+					size_t handle = buffer->handle();
+					shader->bindBuffer("SkinningJoints", handle);
+				}
+
+
+				if (dlights)
+				{
+					auto& buffer = dlights->getBufferObject();
+					size_t handle = buffer->handle();
+					shader->bindBuffer("DirectionalLights", handle);
+				}
+
+				if (plights)
+				{
+					auto& buffer = plights->getBufferObject();
+					size_t handle = buffer->handle();
+					shader->bindBuffer("PointLights", handle);
+				}
+
+				if (slights)
+				{
+					auto& buffer = slights->getBufferObject();
+					size_t handle = buffer->handle();
+					shader->bindBuffer("SpotLights", handle);
+				}
+
+				auto& dshadows = render_packet->dlights.shadows;
+				if (dshadows)
+				{
+					auto& buffer = dshadows->getBufferObject();
+					size_t handle = buffer->handle();
+					shader->bindBuffer("CascadedShadows", handle);
+				}
+
+				auto& pshadows = render_packet->plights.shadows;
+				if (pshadows)
+				{
+					auto& buffer = pshadows->getBufferObject();
+					size_t handle = buffer->handle();
+					shader->bindBuffer("OmniShadows", handle);
+				}
+
+				auto& sshadows = render_packet->slights.shadows;
+				if (sshadows)
+				{
+					auto& buffer = sshadows->getBufferObject();
+					size_t handle = buffer->handle();
+					shader->bindBuffer("SpotShadows", handle);
+				}
+
+				size_t vertex_handle = last_vbo->getVertexHandle();
+				shader->bindBuffer("VertexBuffer", vertex_handle);
+
+				size_t index_buffer = last_vbo->getIndexHandle();
+				shader->bindBuffer("IndexBuffer", index_buffer);
+
+				shader->flushDescriptors();
+				shader->bind(m_beginRenderingInfo.queue);
 			}
 
-			if (materials)
+			auto& mesh_data = shader->getConstantBlock("meshData");
+			if (mesh_data)
 			{
-				auto& buffer = materials->getBufferObject();
-				size_t handle = buffer->handle();
-				shader->bindBuffer("MaterialStorage", handle);
+				mesh_data->set("vboId", static_cast<uint32_t>(batch.vboId));
+				mesh_data->set("objectId", batch.node);
+				mesh_data->set("materialId", static_cast<uint32_t>(batch.materialId));
 			}
 
-			if (nodes)
-			{
-				auto& buffer = nodes->getBufferObject();
-				size_t handle = buffer->handle();
-				shader->bindBuffer("NodeStorage", handle);
-			}
-
-			if (skins)
-			{
-				auto& buffer = skins->getBufferObject();
-				size_t handle = buffer->handle();
-				shader->bindBuffer("SkinningJoints", handle);
-			}
-
-
-			if (dlights)
-			{
-				auto& buffer = dlights->getBufferObject();
-				size_t handle = buffer->handle();
-				shader->bindBuffer("DirectionalLights", handle);
-			}
-
-			if (plights)
-			{
-				auto& buffer = plights->getBufferObject();
-				size_t handle = buffer->handle();
-				shader->bindBuffer("PointLights", handle);
-			}
-
-			if (slights)
-			{
-				auto& buffer = slights->getBufferObject();
-				size_t handle = buffer->handle();
-				shader->bindBuffer("SpotLights", handle);
-			}
-
-			auto& dshadows = render_packet->dlights.shadows;
-			if (dshadows)
-			{
-				auto& buffer = dshadows->getBufferObject();
-				size_t handle = buffer->handle();
-				shader->bindBuffer("CascadedShadows", handle);
-			}
-
-			auto& pshadows = render_packet->plights.shadows;
-			if (pshadows)
-			{
-				auto& buffer = pshadows->getBufferObject();
-				size_t handle = buffer->handle();
-				shader->bindBuffer("OmniShadows", handle);
-			}
-
-			auto& sshadows = render_packet->slights.shadows;
-			if (sshadows)
-			{
-				auto& buffer = sshadows->getBufferObject();
-				size_t handle = buffer->handle();
-				shader->bindBuffer("SpotShadows", handle);
-			}
-
-			size_t vertex_handle = last_vbo->getVertexHandle();
-			shader->bindBuffer("VertexBuffer", vertex_handle);
-
-			size_t index_buffer = last_vbo->getIndexHandle();
-			shader->bindBuffer("IndexBuffer", index_buffer);
-
-			shader->flushDescriptors();
 			shader->flushConstants(m_beginRenderingInfo.queue);
-			shader->bind(m_beginRenderingInfo.queue);
 
 			auto& reflection = shader->getReflection();
 			
@@ -163,6 +171,7 @@ void CComputeGeometryRenderingStep::_execute(float dt)
 			group.z = glm::max(group.z, 1u);
 			
 			m_pRenderContext->dispatch(m_beginRenderingInfo.queue, dispatch_info);
+			//break;
 		}
 	}
 
@@ -182,7 +191,7 @@ const std::unique_ptr<IShaderObject>& CComputeGeometryRenderingStep::getShaderBy
 		auto& render_packet = m_pRenderInterface->getRenderPacket();
 
 		FComputeShaderCreateInfo shader_ci{};
-		shader_ci.usageCount = std::max(render_packet->materials->getLastInsertionIndex() + 1ull, render_packet->primitiveCount);
+		shader_ci.usageCount = std::max(render_packet->stats.materialCount, render_packet->stats.primitiveCount);
 		shader->create(shader_name, shader_ci);
 
 		for (auto& [binding_point, texture] : m_shaderInputs)

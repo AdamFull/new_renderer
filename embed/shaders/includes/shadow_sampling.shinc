@@ -3,7 +3,7 @@
 
 	code: 
 	"""
-		const bool enableCascadedPCF = true;
+		const bool enableCascadedPCF = false;
 		
 		const mat4 biasMat = mat4(
 			0.5, 0.0, 0.0, 0.0,

@@ -47,7 +47,7 @@ void CApplication::create()
 	m_pInputMapper->create();
 
 	FRenderInterfaceCreateInfo rhi_ci{};
-	rhi_ci.render_api = ERenderApi::eVulkan12;
+	rhi_ci.render_api = ERenderApi::eVulkan11;
 	m_pWindowHandle->getWindowSize(rhi_ci.initialWidth, rhi_ci.initialHeight);
 	get_platform_specific_window_data(rhi_ci, m_pWindowHandle);
 
@@ -55,9 +55,10 @@ void CApplication::create()
 	m_pRenderInterface->create(rhi_ci);
 
 	m_pScene = std::make_unique<world::CScene>(m_pVirtualFileSystem.get(), m_pRenderInterface.get());
-	m_pScene->load("/root/reflections/reflections.gltf");
+	//m_pScene->load("/root/reflections/reflections.gltf");
 	//m_pScene->load("/root/helmet/DamagedHelmet.gltf");
-	//m_pScene->load("/root/sponza/sponza.gltf");
+	m_pScene->load("/root/sponza/Sponza.gltf");
+	//m_pScene->load("/root/toadman/round1.gltf");
 	//m_pScene->load("/root/Landscape/landscape.gltf");
 }
 

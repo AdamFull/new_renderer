@@ -18,15 +18,17 @@
 	"""
 		layout(location = 0) out vec2 outTexcoord;
 		
-		layout(std140, set = 1, binding = 2) uniform ShadowmapData
+		layout(push_constant) uniform ShadowmapData
 		{
+			uint objectId;
+			uint materialId;
 			uint32_t shadowIndex;
 			int32_t layer;
 		} shadowData;
 		
 		void main()
 		{
-			FSceneNode node = nodes[meshData.objectId];
+			FSceneNode node = nodes[shadowData.objectId];
 			mat4 modelMatrix = node.model;
 
 #ifdef HAS_SKIN

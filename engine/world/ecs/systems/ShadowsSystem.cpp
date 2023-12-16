@@ -96,10 +96,9 @@ void CShadowsSystem::__update(float fDt)
 					};
 
 					// Project frustum corners into world space
-					glm::mat4 invCam = glm::inverse(render_packet->camera.projection * render_packet->camera.view);
 					for (auto& corner : frustumCorners)
 					{
-						glm::vec4 invCorner = invCam * corner;
+						glm::vec4 invCorner = render_packet->camera.invViewProjection * corner;
 						corner = invCorner / invCorner.w;
 					}
 
@@ -130,6 +129,7 @@ void CShadowsSystem::__update(float fDt)
 					glm::vec3 lightDir = glm::normalize(glm::toQuat(ltransform.gmodel) * glm::vec3(0.f, 0.f, -1.f));
 					glm::mat4 lightViewMatrix = glm::lookAt(frustumCenter - lightDir * -minExtents.z, frustumCenter, render_packet->camera.up);
 					glm::mat4 lightOrthoMatrix = glm::ortho(minExtents.x, maxExtents.x, minExtents.y, maxExtents.y, minExtents.z, maxExtents.z - minExtents.z);
+					//glm::mat4 lightOrthoMatrix = glm::ortho(minExtents.x, maxExtents.x, minExtents.y, maxExtents.y, 0.f, maxExtents.z - minExtents.z);
 
 					auto shadowMatrix = lightOrthoMatrix * lightViewMatrix;
 					glm::vec4 shadowOrigin = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
