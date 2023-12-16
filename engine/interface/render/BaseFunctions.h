@@ -131,6 +131,8 @@ namespace engine
                 
                 batches.emplace_back(std::move(batch));
             }
+
+            std::sort(batches.begin(), batches.end(), [](const FGeometryBatch& a, const FGeometryBatch& b) { return a.vboId < b.vboId; });
 		}
 	}
 }

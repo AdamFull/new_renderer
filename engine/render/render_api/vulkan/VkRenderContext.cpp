@@ -1094,7 +1094,7 @@ void CVkRenderContext::beginRendering(const FBeginRenderingInfo& rendering_info)
 	{
 		auto& depth_target = textures.at(rendering_info.depthAttachment).at(m_pDevice->m_swapchain.currentFrame);
 
-		bool is_depth_stencil_attachment = !is_depth_only_format(static_cast<vk::Format>(depth_target->initialData.base.format)) && (rendering_info.stencilAttachment == rendering_info.depthAttachment);
+		bool is_depth_stencil_attachment = !is_depth_only_format(static_cast<vk::Format>(depth_target->initialData.base.format));
 
 		FVkTextureTranslationInfo texture_translation_info{};
 		texture_translation_info.oldLayout = vk::ImageLayout::eUndefined;
@@ -1193,7 +1193,7 @@ void CVkRenderContext::endRendering(const FBeginRenderingInfo& rendering_info)
 	{
 		auto& depth_target = textures.at(rendering_info.depthAttachment).at(m_pDevice->m_swapchain.currentFrame);
 
-		bool is_depth_stencil_attachment = (rendering_info.stencilAttachment == rendering_info.depthAttachment) && rendering_info.stencilAttachment != invalid_handle;
+		bool is_depth_stencil_attachment = !is_depth_only_format(static_cast<vk::Format>(depth_target->initialData.base.format));
 
 		FVkTextureTranslationInfo texture_translation_info{};
 		texture_translation_info.oldLayout = is_depth_stencil_attachment ? vk::ImageLayout::eDepthStencilAttachmentOptimal : vk::ImageLayout::eDepthAttachmentOptimal;

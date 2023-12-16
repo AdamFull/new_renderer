@@ -28,7 +28,7 @@
 		layout(set = 2, binding = 8) uniform samplerCube prefiltered_cube;
 		layout(set = 2, binding = 9) uniform sampler2D depth_buffer;
 
-		layout (set = 2, binding = 10) uniform sampler2DArrayShadow cascaded_shadowmap;
+		//layout (set = 2, binding = 10) uniform sampler2DArrayShadow cascaded_shadowmap;
 
 		layout(push_constant) uniform UniformMeshData
 		{
@@ -126,11 +126,11 @@
 			vec3 color = specularContribution(albedo, L, V, N, F0, metallic, roughness);
 		
 			float shadow_factor = 1.0;
-			if(light.castShadows > 0 && light.shadowIndex > -1)
-			{
-				vec3 viewSpacePos = (frameData.view * vec4(worldPosition, 1.0)).xyz;
-				shadow_factor = getCascadeShadow(cascaded_shadowmap, viewSpacePos, worldPosition, L, N, uv, cascaded_shadows[light.shadowIndex]);
-			}
+			//if(light.castShadows > 0 && light.shadowIndex > -1)
+			//{
+			//	vec3 viewSpacePos = (frameData.view * vec4(worldPosition, 1.0)).xyz;
+			//	shadow_factor = getCascadeShadow(cascaded_shadowmap, viewSpacePos, worldPosition, L, N, uv, cascaded_shadows[light.shadowIndex]);
+			//}
 
 			return light.color * light.intencity * color * shadow_factor;
 		}

@@ -59,7 +59,7 @@ end
 -- Shadow targets
 do
     local target_ci = TextureCI.new()
-    target_ci.format = render_context:get_depth_format(true)
+    target_ci.format = render_context:get_depth_format(false)
     target_ci.type = bit_or(TexType.two_dim, TexType.array, TexType.samplable)
     target_ci.size_policy = SizePolicy.fixed
     target_ci.width = global_settings.cascade_shadowmap_resolution
@@ -67,17 +67,6 @@ do
     target_ci.array_layers = global_settings.cascade_shadowmap_cascade_count * global_settings.max_directional_light_shadow_count
 
     render_context:create_render_target("cascaded_shadows_target", target_ci)
-end
-
-do
-    local target_ci = TextureCI.new()
-    target_ci.format = render_context:get_depth_format(true)
-    target_ci.type = bit_or(TexType.two_dim, TexType.samplable)
-    target_ci.size_policy = SizePolicy.scalable
-    target_ci.width = surface_resolution.x
-    target_ci.height = surface_resolution.y
-
-    render_context:create_render_target("shadow_projection_target", target_ci)
 end
 
 -- Visibility buffer targets
@@ -116,7 +105,7 @@ end
 
 do
     local target_ci = TextureCI.new()
-    target_ci.format = render_context:get_depth_format(true)
+    target_ci.format = render_context:get_depth_format(false)
     target_ci.type = bit_or(TexType.two_dim, TexType.samplable)
     target_ci.size_policy = SizePolicy.scalable
     target_ci.width = surface_resolution.x
@@ -210,19 +199,19 @@ do
     render_interface:create_renderer(step_ci)
 end
 
---do
---    local step_ci = RenderingStepCI.new()
---    step_ci.type = RenderingStepType.rendering
---
---    step_ci.rendering.type = RenderingType.csm
---    step_ci.rendering.queue = QueueType.graphics
---    step_ci.rendering.shader_name = "lighting:unidirectional_shadow:CASCADED_SHADOW"
---
---    step_ci.rendering.depth_target = render_context:get_texture_resource("cascaded_shadows_target")
---    step_ci.rendering.render_rect = render_context:get_render_rect_from_rt(step_ci.rendering.depth_target)
---
---    render_interface:create_renderer(step_ci)
---end
+do
+    local step_ci = RenderingStepCI.new()
+    step_ci.type = RenderingStepType.rendering
+
+    step_ci.rendering.type = RenderingType.csm
+    step_ci.rendering.queue = QueueType.graphics
+    step_ci.rendering.shader_name = "lighting:unidirectional_shadow:CASCADED_SHADOW"
+
+    step_ci.rendering.depth_target = render_context:get_texture_resource("cascaded_shadows_target")
+    step_ci.rendering.render_rect = render_context:get_render_rect_from_rt(step_ci.rendering.depth_target)
+
+    render_interface:create_renderer(step_ci)
+end
 
 -- visibility buffer write
 do
@@ -264,7 +253,7 @@ do
     step_ci.rendering.input_targets:set("brdf_lut", render_context:get_texture_resource("brdf_lut_target"))
     step_ci.rendering.input_targets:set("irradiance_cube", render_context:get_texture_resource("irradiance_cube_target"))
     step_ci.rendering.input_targets:set("prefiltered_cube", render_context:get_texture_resource("prefiltered_cube_target"))
-    --step_ci.rendering.input_targets:set("cascaded_shadowmap", render_context:get_texture_resource("cascaded_shadows_target"))
+    step_ci.rendering.input_targets:set("cascaded_shadowmap", render_context:get_texture_resource("cascaded_shadows_target"))
     step_ci.rendering.input_targets:set("depth_buffer", render_context:get_texture_resource("zbuffer_depth_target"))
 
     render_interface:create_renderer(step_ci)
