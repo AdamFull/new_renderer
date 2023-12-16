@@ -40,7 +40,7 @@ void CCascadedShadowMapsRenderingStep::_execute(float dt)
 
 	m_pRenderContext->beginRendering(m_beginRenderingInfo);
 
-	/*auto& rect = m_beginRenderingInfo.renderArea;
+	auto& rect = m_beginRenderingInfo.renderArea;
 	m_pRenderContext->setViewport(static_cast<float>(rect.size.x), static_cast<float>(rect.size.y), m_beginRenderingInfo.flipViewport);
 	m_pRenderContext->setScissorRect(0, 0, rect.size.x, rect.size.y);
 
@@ -51,15 +51,14 @@ void CCascadedShadowMapsRenderingStep::_execute(float dt)
 	IVertexHandler* last_vbo{ nullptr };
 	for (auto& batch : render_packet->shadowBatches)
 	{
+		bool was_vbo_rebinded{ false };
 		auto& vbo = m_pRenderInterface->getVertexHandler(batch.vboId);
 		if (!last_vbo || vbo.get() != last_vbo)
 		{
 			last_vbo = vbo.get();
 			last_vbo->bind(m_beginRenderingInfo.queue);
+			was_vbo_rebinded = true;
 		}
-
-		if (batch.vboId == 28)
-			int iiii = 0;
 
 		if (last_vbo)
 		{
@@ -72,50 +71,53 @@ void CCascadedShadowMapsRenderingStep::_execute(float dt)
 				shadow_data->set("materialId", static_cast<uint32_t>(batch.materialId));
 			}
 
-			if (materials)
+			if (was_vbo_rebinded)
 			{
-				auto& buffer = materials->getBufferObject();
-				size_t handle = buffer->handle();
-				shader->bindBuffer("MaterialStorage", handle);
-			}
+				if (materials)
+				{
+					auto& buffer = materials->getBufferObject();
+					size_t handle = buffer->handle();
+					shader->bindBuffer("MaterialStorage", handle);
+				}
 
-			if (nodes)
-			{
-				auto& buffer = nodes->getBufferObject();
-				size_t handle = buffer->handle();
-				shader->bindBuffer("NodeStorage", handle);
-			}
+				if (nodes)
+				{
+					auto& buffer = nodes->getBufferObject();
+					size_t handle = buffer->handle();
+					shader->bindBuffer("NodeStorage", handle);
+				}
 
-			if (skins)
-			{
-				auto& buffer = skins->getBufferObject();
-				size_t handle = buffer->handle();
-				shader->bindBuffer("SkinningJoints", handle);
-			}
+				if (skins)
+				{
+					auto& buffer = skins->getBufferObject();
+					size_t handle = buffer->handle();
+					shader->bindBuffer("SkinningJoints", handle);
+				}
 
-			if (dlights.shadows)
-			{
-				auto& buffer = dlights.shadows->getBufferObject();
-				size_t handle = buffer->handle();
-				shader->bindBuffer("CascadedShadows", handle);
-			}
+				if (dlights.shadows)
+				{
+					auto& buffer = dlights.shadows->getBufferObject();
+					size_t handle = buffer->handle();
+					shader->bindBuffer("CascadedShadows", handle);
+				}
 
-			if (render_packet->plights.shadows)
-			{
-				auto& buffer = render_packet->plights.shadows->getBufferObject();
-				size_t handle = buffer->handle();
-				shader->bindBuffer("OmniShadows", handle);
-			}
+				if (render_packet->plights.shadows)
+				{
+					auto& buffer = render_packet->plights.shadows->getBufferObject();
+					size_t handle = buffer->handle();
+					shader->bindBuffer("OmniShadows", handle);
+				}
 
-			if (render_packet->slights.shadows)
-			{
-				auto& buffer = render_packet->slights.shadows->getBufferObject();
-				size_t handle = buffer->handle();
-				shader->bindBuffer("SpotShadows", handle);
-			}
+				if (render_packet->slights.shadows)
+				{
+					auto& buffer = render_packet->slights.shadows->getBufferObject();
+					size_t handle = buffer->handle();
+					shader->bindBuffer("SpotShadows", handle);
+				}
 
-			shader->flushDescriptors();
-			shader->bind(m_beginRenderingInfo.queue);
+				shader->flushDescriptors();
+				shader->bind(m_beginRenderingInfo.queue);
+			}
 
 			for (size_t idx = 0ull; idx < dlights.scount; ++idx)
 			{
@@ -138,7 +140,7 @@ void CCascadedShadowMapsRenderingStep::_execute(float dt)
 				}
 			}
 		}
-	}*/
+	}
 
 	m_pRenderContext->endRendering(m_beginRenderingInfo);
 }

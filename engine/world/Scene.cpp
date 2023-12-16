@@ -588,6 +588,7 @@ void CScene::loadAnimations(const easygltf::FGLTFRoot root)
 				const easygltf::Accessor& accessor = root.accessors[samp.input];
 				auto stream = root.getStream(accessor);
 
+				// TODO: add other type support
 				assert(accessor.componentType == easygltf::base::enumerators::component_type::float_type);
 
 				float* buf = new float[accessor.count];
