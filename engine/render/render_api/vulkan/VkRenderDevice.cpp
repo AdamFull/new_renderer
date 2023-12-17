@@ -507,13 +507,13 @@ FRenderApiErrorInfo CVkRenderDevice::createPipeline(const FVkGraphicsPipelineCre
 	input_assembly.primitiveRestartEnable = false;
 
 	vk::PipelineRasterizationStateCreateInfo rasterization_state{};
-	rasterization_state.depthClampEnable = false;
+	rasterization_state.depthClampEnable = pipeline_ci.colorAttachmentFormats.empty() && pipeline_ci.depthAttachmentFormat != vk::Format::eUndefined;
 	rasterization_state.rasterizerDiscardEnable = false;
 	rasterization_state.polygonMode = vk::PolygonMode::eFill;
 	rasterization_state.lineWidth = 1.0f;
 	rasterization_state.cullMode = pipeline_ci.cullMode;
 	rasterization_state.frontFace = pipeline_ci.frontFace;
-	rasterization_state.depthBiasEnable = false;
+	rasterization_state.depthBiasEnable = rasterization_state.depthClampEnable;
 
 	vk::PipelineMultisampleStateCreateInfo multisample_state{};
 	multisample_state.rasterizationSamples = pipeline_ci.sampleCount;

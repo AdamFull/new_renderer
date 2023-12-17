@@ -14,8 +14,7 @@
 using namespace engine::render;
 using namespace engine::world::ecs;
 
-constexpr const float cascade_split_lambda = 0.985f;
-constexpr const float cascade_split_overlap = 0.9f;
+constexpr const float cascade_split_lambda = 0.95f;
 
 CShadowsSystem::CShadowsSystem(CSceneGraph* scenegraph, IRenderInterface* render_interface)
 {
@@ -129,7 +128,6 @@ void CShadowsSystem::__update(float fDt)
 					glm::vec3 lightDir = glm::normalize(glm::toQuat(ltransform.gmodel) * glm::vec3(0.f, 0.f, -1.f));
 					glm::mat4 lightViewMatrix = glm::lookAt(frustumCenter - lightDir * -minExtents.z, frustumCenter, render_packet->camera.up);
 					glm::mat4 lightOrthoMatrix = glm::ortho(minExtents.x, maxExtents.x, minExtents.y, maxExtents.y, minExtents.z, maxExtents.z - minExtents.z);
-					//glm::mat4 lightOrthoMatrix = glm::ortho(minExtents.x, maxExtents.x, minExtents.y, maxExtents.y, 0.f, maxExtents.z - minExtents.z);
 
 					auto shadowMatrix = lightOrthoMatrix * lightViewMatrix;
 					glm::vec4 shadowOrigin = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
