@@ -142,28 +142,28 @@ namespace engine
                     return a.vboId < b.vboId;
                 });
 
-            //if (flags & GEOMETRY_BATCHER_COUNT_ON_MATERIAL_FLAG_BIT)
-            //{
-            //    size_t currentMaterial{ ~0ull };
-            //    for (auto& uni_batch : uni_batches)
-            //    {
-            //        if (!batches.empty() &&
-            //            batches.back().vboId == uni_batch.vboId &&
-            //            batches.back().node == uni_batch.node &&
-            //            currentMaterial + 1 == uni_batch.materialId)
-            //        {
-            //            batches.back().ranges.insert(batches.back().ranges.end(), uni_batch.ranges.begin(), uni_batch.ranges.end());
-            //            currentMaterial = uni_batch.materialId;
-            //        }
-            //        else
-            //        {
-            //            batches.emplace_back(std::move(uni_batch));
-            //            batches.back().materialId = uni_batch.materialId;
-            //            currentMaterial = uni_batch.materialId;
-            //        }
-            //    }
-            //}
-            //else
+            if (flags & GEOMETRY_BATCHER_COUNT_ON_MATERIAL_FLAG_BIT)
+            {
+                size_t currentMaterial{ ~0ull };
+                for (auto& uni_batch : uni_batches)
+                {
+                    if (!batches.empty() &&
+                        batches.back().vboId == uni_batch.vboId &&
+                        batches.back().node == uni_batch.node &&
+                        currentMaterial + 1 == uni_batch.materialId)
+                    {
+                        batches.back().ranges.insert(batches.back().ranges.end(), uni_batch.ranges.begin(), uni_batch.ranges.end());
+                        currentMaterial = uni_batch.materialId;
+                    }
+                    else
+                    {
+                        batches.emplace_back(std::move(uni_batch));
+                        batches.back().materialId = uni_batch.materialId;
+                        currentMaterial = uni_batch.materialId;
+                    }
+                }
+            }
+            else
             {
                 batches = std::move(uni_batches);
             }

@@ -59,7 +59,7 @@ void CGeometryRenderingStep::_execute(float dt)
 
 	size_t drawcall_id{ 0ull };
 	IVertexHandler* last_vbo{ nullptr };
-	for (auto& batch : render_packet->drawCalls)
+	for (auto& batch : render_packet->sceneDrawCalls)
 	{
 		bool was_vbo_rebinded{ false };
  		auto& vbo = m_pRenderInterface->getVertexHandler(batch.vboId);
@@ -116,9 +116,8 @@ void CGeometryRenderingStep::_execute(float dt)
 			
 			shader->flushConstants(m_beginRenderingInfo.queue);
 
-			auto& draw_info = render_packet->indirectDrawInfos[batch.commandId];
-			m_pRenderContext->draw(m_beginRenderingInfo.queue, draw_info);
-			drawcall_id += draw_info.count;
+			m_pRenderContext->draw(m_beginRenderingInfo.queue, batch.command);
+			drawcall_id += batch.command.count;
 		}
 	}
 

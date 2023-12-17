@@ -204,18 +204,21 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 
 	// Create draw buffers
 	m_pRenderPacket->drawCommands = std::make_unique<CBufferObject>(this, m_pRenderContext.get());
+	m_pRenderPacket->drawIndexedCommands = std::make_unique<CBufferObject>(this, m_pRenderContext.get());
+	m_pRenderPacket->shadowDrawCommands = std::make_unique<CBufferObject>(this, m_pRenderContext.get());
+	m_pRenderPacket->shadowDrawIndexedCommands = std::make_unique<CBufferObject>(this, m_pRenderContext.get());
 
 	FBufferCreateInfo buffer_ci{};
 	buffer_ci.flags = BUFFER_TYPE_INDIRECT_FLAG_BIT;
 	buffer_ci.size = sizeof(FDrawIndirectData);
 	buffer_ci.count = max_indirect_draw_count;
 	m_pRenderPacket->drawCommands->create("DrawIndirectBuffer", buffer_ci);
-
-	m_pRenderPacket->drawIndexedCommands = std::make_unique<CBufferObject>(this, m_pRenderContext.get());
+	m_pRenderPacket->shadowDrawCommands->create("ShadowDrawIndirectBuffer", buffer_ci);
 
 	buffer_ci.size = sizeof(FDrawIndexedIndirectData);
 	buffer_ci.count = max_indirect_draw_count;
 	m_pRenderPacket->drawIndexedCommands->create("IndexedDrawIndirectBuffer", buffer_ci);
+	m_pRenderPacket->shadowDrawIndexedCommands->create("ShadowIndexedDrawIndirectBuffer", buffer_ci);
 }
 
 void CRenderInterface::render(float dt)
@@ -279,8 +282,8 @@ void CRenderInterface::render(float dt)
 			m_vRenderingSteps.erase(to_remove, m_vRenderingSteps.end());
 	}
 
-	m_pRenderPacket->drawCalls.clear();
-	m_pRenderPacket->indirectDrawInfos.clear();
+	m_pRenderPacket->sceneDrawCalls.clear();
+	m_pRenderPacket->shadowDrawCalls.clear();
 }
 
 size_t CRenderInterface::createTexture(const std::string& path)
@@ -329,7 +332,7 @@ const std::unique_ptr<IVertexHandler>& CRenderInterface::getVertexHandler(size_t
 	return m_pResources->get<IVertexHandler>(id);
 }
 
-void CRenderInterface::fillDrawBuffers(const std::vector<FGeometryBatch>& batches)
+void CRenderInterface::fillDrawBuffer(const std::vector<FGeometryBatch>& batches, std::vector<FGeometryDrawCall>& draw_calls, const std::unique_ptr<IBufferObject>& buffer, const std::unique_ptr<IBufferObject>& indexed_buffer)
 {
 	size_t writen_commands{ 0ull };
 	for (const auto& batch : batches)
@@ -337,16 +340,14 @@ void CRenderInterface::fillDrawBuffers(const std::vector<FGeometryBatch>& batche
 		auto& vbo = getVertexHandler(batch.vboId);
 		if (vbo)
 		{
-			auto& draw_call = m_pRenderPacket->drawCalls.emplace_back();
+			auto& draw_call = draw_calls.emplace_back();
 			draw_call.vboId = batch.vboId;
 			draw_call.materialId = batch.materialId;
 			draw_call.node = batch.node;
-			draw_call.commandId = m_pRenderPacket->indirectDrawInfos.size();
 
-			auto& indirect_info = m_pRenderPacket->indirectDrawInfos.emplace_back();
-			indirect_info.bufferId = m_pRenderPacket->drawIndexedCommands->handle();
-			indirect_info.offset = writen_commands * sizeof(FDrawIndexedIndirectData);
-			indirect_info.count = batch.ranges.size();
+			draw_call.command.bufferId = indexed_buffer->handle();
+			draw_call.command.offset = writen_commands * sizeof(FDrawIndexedIndirectData);
+			draw_call.command.count = batch.ranges.size();
 
 			auto last_index = vbo->getLastIndex();
 			auto last_vertex = vbo->getLastVertex();
@@ -378,25 +379,34 @@ void CRenderInterface::fillDrawBuffers(const std::vector<FGeometryBatch>& batche
 
 			if (!drawIndirect.empty())
 			{
-				auto& buffer = m_pRenderPacket->drawCommands;
 				buffer->map();
 				auto* buffer_ptr = buffer->at(0ull);
-				std::memcpy(buffer_ptr + indirect_info.offset, &drawIndirect[0], drawIndirect.size() * sizeof(FDrawIndirectData));
+				std::memcpy(buffer_ptr + draw_call.command.offset, &drawIndirect[0], drawIndirect.size() * sizeof(FDrawIndirectData));
 				buffer->unmap();
 			}
 
 			if (!drawIndexedIndirect.empty())
 			{
-				auto& buffer = m_pRenderPacket->drawIndexedCommands;
-				buffer->map();
-				auto* buffer_ptr = buffer->at(0ull);
-				std::memcpy(buffer_ptr + indirect_info.offset, &drawIndexedIndirect[0], drawIndexedIndirect.size() * sizeof(FDrawIndexedIndirectData));
-				buffer->unmap();
+				indexed_buffer->map();
+				auto* buffer_ptr = indexed_buffer->at(0ull);
+				std::memcpy(buffer_ptr + draw_call.command.offset, &drawIndexedIndirect[0], drawIndexedIndirect.size() * sizeof(FDrawIndexedIndirectData));
+				indexed_buffer->unmap();
 			}
 
 			writen_commands += batch.ranges.size();
 		}
 	}
+}
+
+void CRenderInterface::fillDrawBuffers(const std::vector<FGeometryDrawData>& draw_data)
+{
+	std::vector<FGeometryBatch> scene_batches{};
+	createGeometryBatches(draw_data, scene_batches);
+	fillDrawBuffer(scene_batches, m_pRenderPacket->sceneDrawCalls, m_pRenderPacket->drawCommands, m_pRenderPacket->drawIndexedCommands);
+
+	std::vector<FGeometryBatch> shadow_batches{};
+	createGeometryBatches(draw_data, shadow_batches, GEOMETRY_BATCHER_MERGE_DRAWCALLS_FLAG_BIT);
+	fillDrawBuffer(shadow_batches, m_pRenderPacket->shadowDrawCalls, m_pRenderPacket->shadowDrawCommands, m_pRenderPacket->shadowDrawIndexedCommands);
 }
 
 void CRenderInterface::updateSurfaceSize(int32_t width, int32_t height)

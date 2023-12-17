@@ -49,7 +49,7 @@ void CComputeGeometryRenderingStep::_execute(float dt)
 	auto& slights = render_packet->slights.lights;
 
 	std::unordered_set<size_t> vbos{};
-	for (const auto& batch : render_packet->drawCalls)
+	for (const auto& batch : render_packet->sceneDrawCalls)
 		vbos.emplace(batch.vboId);
 
 	IVertexHandler* last_vbo{ nullptr };

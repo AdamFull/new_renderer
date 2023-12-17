@@ -316,9 +316,11 @@ namespace engine
 
 			std::unique_ptr<IBufferObject> drawCommands{};
 			std::unique_ptr<IBufferObject> drawIndexedCommands{};
+			std::vector<FGeometryDrawCall> sceneDrawCalls{};
 
-			std::vector<FGeometryDrawCall> drawCalls{};
-			std::vector<FIndirectGeometryDrawInfo> indirectDrawInfos{};
+			std::unique_ptr<IBufferObject> shadowDrawCommands{};
+			std::unique_ptr<IBufferObject> shadowDrawIndexedCommands{};
+			std::vector<FGeometryDrawCall> shadowDrawCalls{};
 
 			//std::unique_ptr<CGPUArrayHolder> resources{};
 
@@ -420,7 +422,7 @@ namespace engine
 			virtual size_t createVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) = 0;
 			virtual const std::unique_ptr<IVertexHandler>& getVertexHandler(size_t id) = 0;
 
-			virtual void fillDrawBuffers(const std::vector<FGeometryBatch>& batches) = 0;
+			virtual void fillDrawBuffers(const std::vector<FGeometryDrawData>& draw_data) = 0;
 
 			virtual FShaderUploadInfo getShaderNameTag(const std::string& name) = 0;
 			virtual void createRendering(const FRenderingStepCreateInfo& rendering_ci) = 0;

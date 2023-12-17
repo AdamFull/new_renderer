@@ -124,7 +124,7 @@ namespace engine
 			size_t materialId{ ~0ull };
 			uint32_t node{ ~0u };
 
-			size_t commandId{ ~0ull };
+			FIndirectGeometryDrawInfo command{};
 		};
 
 		struct FDispatchGroup

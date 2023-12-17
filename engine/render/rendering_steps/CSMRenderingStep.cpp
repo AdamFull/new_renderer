@@ -49,7 +49,7 @@ void CCascadedShadowMapsRenderingStep::_execute(float dt)
 	auto& skins = render_packet->skins;
 
 	IVertexHandler* last_vbo{ nullptr };
-	for (auto& batch : render_packet->drawCalls)
+	for (auto& batch : render_packet->shadowDrawCalls)
 	{
 		bool was_vbo_rebinded{ false };
 		auto& vbo = m_pRenderInterface->getVertexHandler(batch.vboId);
@@ -131,8 +131,7 @@ void CCascadedShadowMapsRenderingStep::_execute(float dt)
 
 					shader->flushConstants(m_beginRenderingInfo.queue);
 			
-					auto& draw_info = render_packet->indirectDrawInfos[batch.commandId];
-					m_pRenderContext->draw(m_beginRenderingInfo.queue, draw_info);
+					m_pRenderContext->draw(m_beginRenderingInfo.queue, batch.command);
 				}
 			}
 		}

@@ -93,7 +93,7 @@
 			return res;
 		}
 
-		float getCascadeShadow(sampler2DArrayShadow shadomwap_tex, vec3 viewPosition, vec3 worldPosition, vec3 L, vec3 N, vec2 inUV, FCascadedShadowCommit shadow)
+		float getCascadeShadow(sampler2DArrayShadow shadowmap_tex, vec3 viewPosition, vec3 worldPosition, vec3 L, vec3 N, vec2 inUV, FCascadedShadowCommit shadow)
 		{
 			uint cascadeIndex = 0;
 			for (uint i = 0; i < cascade_shadow_map_cascade_count - 1; ++i)
@@ -112,9 +112,9 @@
 		
 			float shadow_sample = 1.f;
 			if (enableCascadedPCF)
-				shadow_sample = cascadeShadowFilterPCF(shadomwap_tex, shadowCoord, cascadeIndex, bias);
+				shadow_sample = cascadeShadowFilterPCF(shadowmap_tex, shadowCoord, cascadeIndex, bias);
 			else
-				shadow_sample = cascadeShadowProjection(shadomwap_tex, shadowCoord, vec2(0.0), cascadeIndex, bias);
+				shadow_sample = cascadeShadowProjection(shadowmap_tex, shadowCoord, vec2(0.0), cascadeIndex, bias);
 		
 			return shadow_sample;
 		}
@@ -195,6 +195,34 @@
 			return Lo;
 		}
 
+		vec3 debug_visualize_cascades(in vec3 pos)
+		{
+			vec3 view_space_pos = (frameData.view * vec4(pos, 1.0)).xyz;
+
+			FCascadedShadowCommit shadow = cascaded_shadows[0];
+
+			uint cascadeIndex = 0;
+			for (uint i = 0; i < cascade_shadow_map_cascade_count - 1; ++i)
+			{
+				if (view_space_pos.z < shadow.splitDepths[i])
+					cascadeIndex = i + 1;
+			}
+
+			switch(cascadeIndex) 
+			{
+			case 0 : return vec3(1.0f, 0.25f, 0.25f); break;
+			case 1 : return vec3(0.25f, 1.0f, 0.25f); break;
+			case 2 : return vec3(0.25f, 0.25f, 1.0f); break;
+			case 3 : return vec3(1.0f, 1.0f, 0.25f); break;
+			case 4 : return vec3(0.25f, 1.0f, 1.0f); break;
+			case 5 : return vec3(1.0f, 0.25f, 1.0f); break;
+			case 6 : return vec3(1.0f, 0.5f, 0.5f); break;
+			case 7 : return vec3(0.5f, 1.0f, 0.5f); break;
+			}
+
+			return vec3(1.0f, 1.0f, 1.0f);
+		}
+
 		void main() 
 		{
 			uvec2 image_size = imageSize(write_color);
@@ -249,6 +277,7 @@
 			ambient = mix(ambient, ambient * ms.ao, material.occlusionStrenth);
 
 			vec3 res = ambient + ms.emission + Lo;
+			//res *= debug_visualize_cascades(va.pos);
 
 			pixel_color = vec4(res, 1.0);
 
