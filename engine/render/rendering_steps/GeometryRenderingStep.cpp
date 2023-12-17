@@ -57,8 +57,9 @@ void CGeometryRenderingStep::_execute(float dt)
 	auto& nodes = render_packet->nodes;
 	auto& skins = render_packet->skins;
 
+	size_t drawcall_id{ 0ull };
 	IVertexHandler* last_vbo{ nullptr };
-	for (auto& batch : render_packet->sceneBatches)
+	for (auto& batch : render_packet->drawCalls)
 	{
 		bool was_vbo_rebinded{ false };
  		auto& vbo = m_pRenderInterface->getVertexHandler(batch.vboId);
@@ -108,18 +109,16 @@ void CGeometryRenderingStep::_execute(float dt)
 				mesh_data->set("vboId", static_cast<uint32_t>(batch.vboId));
 				mesh_data->set("objectId", batch.node);
 				mesh_data->set("materialId", static_cast<uint32_t>(batch.materialId));
+				mesh_data->set("callId", static_cast<uint32_t>(drawcall_id));
 			}
 
 			// Bind vbo and flush descriptors, then bind and draw
 			
 			shader->flushConstants(m_beginRenderingInfo.queue);
 
-			FGeometryDrawInfo draw_info{};
-			draw_info.lastIndex = last_vbo->getLastIndex();
-			draw_info.lastVertex = last_vbo->getLastVertex();
-			draw_info.ranges = batch.ranges;
-
+			auto& draw_info = render_packet->indirectDrawInfos[batch.commandId];
 			m_pRenderContext->draw(m_beginRenderingInfo.queue, draw_info);
+			drawcall_id += draw_info.count;
 		}
 	}
 

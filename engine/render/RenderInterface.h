@@ -28,6 +28,8 @@ namespace engine
 			size_t createVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) override;
 			const std::unique_ptr<IVertexHandler>& getVertexHandler(size_t id) override;
 
+			void fillDrawBuffers(const std::vector<FGeometryBatch>& batches) override;
+
 			void updateSurfaceSize(int32_t width, int32_t height) override;
 
 			const std::unique_ptr<FRenderDataPacket>& getRenderPacket() override;

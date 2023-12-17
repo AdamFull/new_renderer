@@ -15,7 +15,6 @@ using namespace engine::render::vulkan;
 static const uint32_t k_max_bindless_resources{ 2048u };
 static const size_t k_max_texture_update_per_frame{ 64ull };
 static const size_t k_max_buffer_update_per_frame{ 64ull };
-static const size_t k_max_indirect_draw_count{ 512ull };
 
 template<class _Ty, class ..._Args>
 std::string create_object_unique_name(const char* fmt, const _Ty& handle, _Args&&... args)
@@ -94,26 +93,6 @@ void CVkRenderContext::create(const FRenderContextCreateInfo& context_ci)
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	command_buffer_ci.name = "Graphics";
 #endif
-
-	// Create indirect draw buffer
-	{
-		FBufferCreateInfo buffer_ci{};
-		buffer_ci.size = sizeof(vk::DrawIndirectCommand);
-		buffer_ci.count = k_max_indirect_draw_count;
-		buffer_ci.flags = BUFFER_TYPE_INDIRECT_FLAG_BIT;
-
-		m_indirectDrawBuffer = createBuffer("indirect_draw_buffer", buffer_ci);
-	}
-
-	// Create indirect draw indexed buffer
-	{
-		FBufferCreateInfo buffer_ci{};
-		buffer_ci.size = sizeof(vk::DrawIndexedIndirectCommand);
-		buffer_ci.count = k_max_indirect_draw_count;
-		buffer_ci.flags = BUFFER_TYPE_INDIRECT_FLAG_BIT;
-
-		m_indirectIndexedDrawBuffer = createBuffer("indirect_draw_indexed_buffer", buffer_ci);
-	}
 
 	createCommandBuffer(command_buffer_ci);
 
@@ -855,7 +834,7 @@ size_t CVkRenderContext::createBuffer(const std::string& name, const FBufferCrea
 	} break;
 	case BUFFER_TYPE_INDIRECT_FLAG_BIT: {
 		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
-		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndirectBuffer;
+		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndirectBuffer | vk::BufferUsageFlagBits::eStorageBuffer;
 	} break;
 	default:
 		break;
@@ -1388,41 +1367,6 @@ void CVkRenderContext::draw(uint32_t queue_type, const FGeometryDrawInfo& draw_i
 	auto& command_buffer = getLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
 
-	bool use_indirect_draw{ false };
-	//bool use_indirect_draw{ draw_info.ranges.size() > 1ull };
-
-	std::vector<vk::DrawIndirectCommand> draw_commands{};
-	std::vector<vk::DrawIndexedIndirectCommand> draw_indexed_commands{};
-
-	// Prepare comands
-	for (auto& range : draw_info.ranges)
-	{
-		if (draw_info.lastIndex == 0ull)
-		{
-			for (auto& range : draw_info.ranges)
-			{
-				auto& command = draw_commands.emplace_back();
-				command.vertexCount = range.vertexCount == 0ull ? draw_info.lastIndex : range.vertexCount;
-				command.instanceCount = 1;
-				command.firstVertex = range.beginVertex;
-				command.firstInstance = 0;
-			}
-		}
-		else
-		{
-			for (auto& range : draw_info.ranges)
-			{
-				auto& command = draw_indexed_commands.emplace_back();
-				command.indexCount = range.indexCount == 0ull ? draw_info.lastIndex : range.indexCount;
-				command.instanceCount = 1;
-				command.firstIndex = range.beginIndex;
-				command.vertexOffset = 0;
-				command.firstInstance = 0;
-			}
-		}
-	}
-
-	void* memory{ nullptr };
 	if (draw_info.lastIndex == 0ull && draw_info.lastVertex == 0ull)
 	{
 		auto& range = draw_info.ranges.front();
@@ -1430,40 +1374,30 @@ void CVkRenderContext::draw(uint32_t queue_type, const FGeometryDrawInfo& draw_i
 	}
 	else if (draw_info.lastIndex == 0ull)
 	{
-		if (use_indirect_draw)
+		for (auto& range : draw_info.ranges)
 		{
-			auto& buffer = m_pResources->get<FVkBuffer>(m_indirectDrawBuffer);
-			m_pDevice->mapBufferMemory(*buffer, &memory);
-			std::memcpy(static_cast<char*>(memory) + m_drawBufferOffset, draw_commands.data(), draw_commands.size() * sizeof(vk::DrawIndirectCommand));
-			m_pDevice->unmapBufferMemory(*buffer);
-			current.drawIndirect(buffer->handle, m_drawBufferOffset, draw_commands.size(), sizeof(vk::DrawIndirectCommand));
-
-			m_drawBufferOffset += draw_commands.size() * sizeof(vk::DrawIndirectCommand);
-		}
-		else
-		{
-			for(auto& command : draw_commands)
-				current.draw(command.vertexCount, command.instanceCount, command.firstVertex, command.firstInstance);
+			auto vertex_count = range.vertexCount == 0ull ? draw_info.lastIndex : range.vertexCount;
+			current.draw(vertex_count, 1, range.beginVertex, 0);
 		}
 	}
 	else
 	{
-		if (use_indirect_draw)
+		for (auto& range : draw_info.ranges)
 		{
-			auto& buffer = m_pResources->get<FVkBuffer>(m_indirectIndexedDrawBuffer);
-			m_pDevice->mapBufferMemory(*buffer, &memory);
-			std::memcpy(static_cast<char*>(memory) + m_drawIndexedBufferOffset, draw_indexed_commands.data(), draw_indexed_commands.size() * sizeof(vk::DrawIndexedIndirectCommand));
-			m_pDevice->unmapBufferMemory(*buffer);
-			current.drawIndexedIndirect(buffer->handle, m_drawIndexedBufferOffset, draw_indexed_commands.size(), sizeof(vk::DrawIndexedIndirectCommand));
-
-			m_drawIndexedBufferOffset += draw_indexed_commands.size() * sizeof(vk::DrawIndexedIndirectCommand);
-		}
-		else
-		{
-			for (auto& command : draw_indexed_commands)
-				current.drawIndexed(command.indexCount, command.instanceCount, command.firstIndex, command.vertexOffset, command.firstInstance);
+			auto index_count = range.indexCount == 0ull ? draw_info.lastIndex : range.indexCount;
+			current.drawIndexed(index_count, 1, range.beginIndex, 0, 0);
 		}
 	}
+}
+
+void CVkRenderContext::draw(uint32_t queue_type, const FIndirectGeometryDrawInfo& draw_info)
+{
+	auto& command_buffer = getLastCommandBuffer(queue_type);
+	auto& current = command_buffer.get();
+
+	auto& buffer = m_pResources->get<FVkBuffer>(draw_info.bufferId);
+
+	current.drawIndexedIndirect(buffer->handle, draw_info.offset, draw_info.count, sizeof(vk::DrawIndexedIndirectCommand));
 }
 
 void CVkRenderContext::dispatch(uint32_t queue_type, const FDispatchInfo& dispatch_info)
@@ -1715,8 +1649,6 @@ void CVkRenderContext::destroyCommandBuffer(uint32_t queue_type, std::thread::id
 void CVkRenderContext::beginFrameCommandBuffers()
 {
 	uint32_t image_index{ 0u };
-
-	m_drawBufferOffset = m_drawIndexedBufferOffset = m_dispatchBufferOffset = 0ull;
 
 	processResourceBarriers();
 	processResourceUpload();
@@ -2380,8 +2312,13 @@ FRenderApiErrorInfo CVkRenderContext::createShaderResources(const FVkShaderResou
 	layout_ci.descriptorSetLayouts.emplace_back(m_globalDescriptor.deecriptorSetLayout);
 
 	// Send descriptor set layouts to create info
-	for (const auto& [set, descriptor_set_layout] : shader.descriptorSetLayouts)
-		layout_ci.descriptorSetLayouts.emplace_back(descriptor_set_layout);
+	for (size_t idx = 1ull; idx < shader.descriptorSetLayouts.size() + 1ull; ++idx)
+	{
+		if(shader.descriptorSetLayouts.count(idx))
+			layout_ci.descriptorSetLayouts.emplace_back(shader.descriptorSetLayouts[idx]);
+	}
+	//for (const auto& [set, descriptor_set_layout] : shader.descriptorSetLayouts)
+	//	layout_ci.descriptorSetLayouts.emplace_back(descriptor_set_layout);
 
 	// Prepare push blocks info
 	uint32_t current_offset{ 0u };

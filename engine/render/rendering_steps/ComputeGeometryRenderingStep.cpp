@@ -40,11 +40,6 @@ void CComputeGeometryRenderingStep::_execute(float dt)
 
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
 
-	std::vector<FGeometryBatch> rebatched{};
-	rebatchGeometry(render_packet->sceneBatches, rebatched, GEOMETRY_BATCHER_MERGE_DRAWCALLS_FLAG_BIT);
-
-	//std::sort(rebatched.begin(), rebatched.end(), [](const FGeometryBatch& a, const FGeometryBatch& b) { return a.vboId < b.vboId; });
-
 	auto& materials = render_packet->materials;
 	auto& nodes = render_packet->nodes;
 	auto& skins = render_packet->skins;
@@ -53,11 +48,15 @@ void CComputeGeometryRenderingStep::_execute(float dt)
 	auto& plights = render_packet->plights.lights;
 	auto& slights = render_packet->slights.lights;
 
+	std::unordered_set<size_t> vbos{};
+	for (const auto& batch : render_packet->drawCalls)
+		vbos.emplace(batch.vboId);
+
 	IVertexHandler* last_vbo{ nullptr };
-	for (auto& batch : rebatched)
+	for (auto& vboId : vbos)
 	{
 		bool was_vbo_rebinded{ false };
-		auto& vbo = m_pRenderInterface->getVertexHandler(batch.vboId);
+		auto& vbo = m_pRenderInterface->getVertexHandler(vboId);
 		if (!last_vbo || vbo.get() != last_vbo)
 		{
 			last_vbo = vbo.get();
@@ -144,6 +143,9 @@ void CComputeGeometryRenderingStep::_execute(float dt)
 				size_t index_buffer = last_vbo->getIndexHandle();
 				shader->bindBuffer("IndexBuffer", index_buffer);
 
+				size_t indirect_buffer = render_packet->drawIndexedCommands->handle();
+				shader->bindBuffer("IndirectIndexedComands", indirect_buffer);
+
 				shader->flushDescriptors();
 				shader->bind(m_beginRenderingInfo.queue);
 			}
@@ -151,9 +153,9 @@ void CComputeGeometryRenderingStep::_execute(float dt)
 			auto& mesh_data = shader->getConstantBlock("meshData");
 			if (mesh_data)
 			{
-				mesh_data->set("vboId", static_cast<uint32_t>(batch.vboId));
-				mesh_data->set("objectId", batch.node);
-				mesh_data->set("materialId", static_cast<uint32_t>(batch.materialId));
+				mesh_data->set("vboId", static_cast<uint32_t>(vboId));
+				//mesh_data->set("objectId", batch.node);
+				//mesh_data->set("materialId", static_cast<uint32_t>(batch.materialId));
 			}
 
 			shader->flushConstants(m_beginRenderingInfo.queue);

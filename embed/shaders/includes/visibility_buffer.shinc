@@ -18,6 +18,11 @@
 			Index indices[];
 		} ib;
 
+		layout(std430, set = 2, binding = 5) readonly buffer IndirectIndexedComands
+		{
+			FDrawIndexedIndirectData indexed_draw_commands[];
+		};
+
 		// Visbuffer structures
 		struct VertexAttribute
 		{
@@ -79,8 +84,11 @@
 		{
 			RawVertex[3] vertices;
 
+			FDrawIndexedIndirectData draw_command = indexed_draw_commands[drawID];
+
 			// Index of the first vertex of this draw call's geometry
-			uint startIndex = drawID; // There's only one draw call at the moment, so drawID should always be 0. This would work out the offset of the first vertex in the nth draw call if using MultiDraw commands. 
+			uint startIndex = draw_command.firstIndex;
+			//uint startIndex = 0;
 
 			// Get position in the Index Buffer of each vertex in this triangle (eg 31, 32, 33)
 			uint triVert1IndexBufferPosition = (primID * 3 + 0) + startIndex;

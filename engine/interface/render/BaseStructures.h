@@ -111,6 +111,22 @@ namespace engine
 			std::vector<FGeometryRanges> ranges{};
 		};
 
+		struct FIndirectGeometryDrawInfo
+		{
+			size_t bufferId{ ~0ull };
+			size_t offset{ 0ull };
+			size_t count{ 0ull };
+		};
+
+		struct FGeometryDrawCall
+		{
+			size_t vboId{ ~0ull };
+			size_t materialId{ ~0ull };
+			uint32_t node{ ~0u };
+
+			size_t commandId{ ~0ull };
+		};
+
 		struct FDispatchGroup
 		{
 			uint32_t x, y, z{};

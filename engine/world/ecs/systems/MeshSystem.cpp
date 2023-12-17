@@ -66,6 +66,9 @@ void CMeshSystem::__update(float fDt)
 		}
 	}
 
-	createGeometryBatches(geometry_list, render_packet->sceneBatches);
-	createGeometryBatches(geometry_list, render_packet->shadowBatches, GEOMETRY_BATCHER_MERGE_DRAWCALLS_FLAG_BIT);
+	std::vector<FGeometryBatch> batches{};
+	createGeometryBatches(geometry_list, batches);
+
+	m_pRenderInterface->fillDrawBuffers(batches);
+	//createGeometryBatches(geometry_list, render_packet->shadowBatches, GEOMETRY_BATCHER_MERGE_DRAWCALLS_FLAG_BIT);
 }

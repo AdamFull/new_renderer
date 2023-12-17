@@ -63,6 +63,7 @@ namespace engine
 				void setScissorRect(int32_t offset_x, int32_t offset_y, uint32_t width, uint32_t height) override;
 
 				void draw(uint32_t queue_type, const FGeometryDrawInfo& draw_info) override;
+				void draw(uint32_t queue_type, const FIndirectGeometryDrawInfo& draw_info) override;
 				void dispatch(uint32_t queue_type, const FDispatchInfo& dispatch_info) override;
 
 				size_t getTextureResource(const char* name) override;
@@ -121,12 +122,6 @@ namespace engine
 				std::vector<FVkTextureLayoutChangeInfo> m_textureLayoutInfos{};
 
 				std::queue<FAPIObjectDestroyInfo> m_destroyResource{};
-
-				size_t m_indirectDrawBuffer{ ~0ull };
-				size_t m_drawBufferOffset{ 0ull };
-
-				size_t m_indirectIndexedDrawBuffer{ ~0ull };
-				size_t m_drawIndexedBufferOffset{ 0ull };
 
 				size_t m_indirectDispatchBuffer{ ~0ull };
 				size_t m_dispatchBufferOffset{ 0ull };

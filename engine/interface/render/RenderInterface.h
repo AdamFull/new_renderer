@@ -311,8 +311,14 @@ namespace engine
 
 			FRenderSceneStats stats{};
 
-			std::vector<FGeometryBatch> sceneBatches{};
-			std::vector<FGeometryBatch> shadowBatches{};
+			//std::vector<FGeometryBatch> sceneBatches{};
+			//std::vector<FGeometryBatch> shadowBatches{};
+
+			std::unique_ptr<IBufferObject> drawCommands{};
+			std::unique_ptr<IBufferObject> drawIndexedCommands{};
+
+			std::vector<FGeometryDrawCall> drawCalls{};
+			std::vector<FIndirectGeometryDrawInfo> indirectDrawInfos{};
 
 			//std::unique_ptr<CGPUArrayHolder> resources{};
 
@@ -372,6 +378,7 @@ namespace engine
 			virtual void setScissorRect(int32_t offset_x, int32_t offset_y, uint32_t width, uint32_t height) = 0;
 
 			virtual void draw(uint32_t queue_type, const FGeometryDrawInfo& draw_info) = 0;
+			virtual void draw(uint32_t queue_type, const FIndirectGeometryDrawInfo& draw_info) = 0;
 			virtual void dispatch(uint32_t queue_type, const FDispatchInfo& dispatch_info) = 0;
 
 			virtual size_t getTextureResource(const char* name) = 0;
@@ -412,6 +419,8 @@ namespace engine
 
 			virtual size_t createVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) = 0;
 			virtual const std::unique_ptr<IVertexHandler>& getVertexHandler(size_t id) = 0;
+
+			virtual void fillDrawBuffers(const std::vector<FGeometryBatch>& batches) = 0;
 
 			virtual FShaderUploadInfo getShaderNameTag(const std::string& name) = 0;
 			virtual void createRendering(const FRenderingStepCreateInfo& rendering_ci) = 0;

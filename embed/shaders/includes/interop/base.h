@@ -38,6 +38,8 @@ namespace engine {
 	namespace render {
 #endif
 
+CONSTANT uint32_t max_indirect_draw_count = 512u;
+
 // Directional light
 CONSTANT uint32_t max_directional_light_count = 3u;
 CONSTANT uint32_t max_directional_light_shadow_count = 1u;
@@ -120,6 +122,23 @@ struct FSceneNode
 	uint32_t instances;
 	uint32_t instanceCount;
 	uint32_t pad;
+};
+
+struct FDrawIndirectData
+{
+	uint32_t vertexCount;
+	uint32_t instanceCount;
+	uint32_t firstVertex;
+	uint32_t firstInstance;
+};
+
+struct FDrawIndexedIndirectData
+{
+	uint32_t indexCount;
+	uint32_t instanceCount;
+	uint32_t firstIndex;
+	int32_t  vertexOffset;
+	uint32_t firstInstance;
 };
 
 // Material

@@ -30,6 +30,7 @@
 			uint vboId;
 			uint objectId;
 			uint materialId;
+			uint callId;
 		} meshData;
 
 		out gl_PerVertex
@@ -66,8 +67,8 @@
 			vec4 localPos = modelMatrix * vec4(inPosition, 1.0);
 			localPos = vec4(localPos.xyz / localPos.w, 1.0);
 
-			drawID = gl_DrawIDARB;
-			matID = meshData.materialId;
+			drawID = meshData.callId + gl_DrawIDARB;
+			matID = meshData.materialId + gl_DrawIDARB;
 			objID = meshData.objectId;
 			vboID = meshData.vboId;
 			gl_Position = frameData.projection * frameData.view * localPos;
