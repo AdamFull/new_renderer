@@ -14,7 +14,7 @@
 using namespace engine::render;
 using namespace engine::world::ecs;
 
-constexpr const float cascade_split_lambda = 0.95f;
+constexpr const float cascade_split_lambda = 0.985f;
 
 CShadowsSystem::CShadowsSystem(CSceneGraph* scenegraph, IRenderInterface* render_interface)
 {
@@ -86,12 +86,22 @@ void CShadowsSystem::__update(float fDt)
 						glm::vec4{ -1.0f,  1.0f, -1.0f, 1.0f },
 						glm::vec4{  1.0f, -1.0f, -1.0f, 1.0f },
 						glm::vec4{ -1.0f, -1.0f, -1.0f, 1.0f },
-
+						
 						//Far face
 						glm::vec4{  1.0f,  1.0f, 1.0f, 1.0f },
 						glm::vec4{ -1.0f,  1.0f, 1.0f, 1.0f },
 						glm::vec4{  1.0f, -1.0f, 1.0f, 1.0f },
 						glm::vec4{ -1.0f, -1.0f, 1.0f, 1.0f },
+
+						//glm::vec4( -1.0f,  1.0f, 0.0f, 1.0f),
+						//glm::vec4(  1.0f,  1.0f, 0.0f, 1.0f),
+						//glm::vec4(  1.0f, -1.0f, 0.0f, 1.0f),
+						//glm::vec4( -1.0f, -1.0f, 0.0f, 1.0f),
+						//
+						//glm::vec4( -1.0f,  1.0f, 1.0f, 1.0f),
+						//glm::vec4(  1.0f,  1.0f, 1.0f, 1.0f),
+						//glm::vec4(  1.0f, -1.0f, 1.0f, 1.0f),
+						//glm::vec4( -1.0f, -1.0f, 1.0f, 1.0f),
 					};
 
 					// Project frustum corners into world space

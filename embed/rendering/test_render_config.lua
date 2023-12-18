@@ -2,8 +2,8 @@ global_settings =
 {
     max_directional_light_count = 3,
     max_directional_light_shadow_count = 1,
-    cascade_shadowmap_resolution = 2048,
-    cascade_shadowmap_cascade_count = 4,
+    cascade_shadowmap_resolution = 1024,
+    cascade_shadowmap_cascade_count = 8,
 
     max_spot_light_count = 64,
     max_spot_light_shadow_count = 16,
@@ -221,6 +221,7 @@ do
     step_ci.rendering.type = RenderingType.geometry
     step_ci.rendering.queue = QueueType.graphics
     step_ci.rendering.shader_name = "visibilitybuffer:write"
+    step_ci.rendering.flip_viewport = true
 
     step_ci.rendering.output_targets:add(render_context:get_texture_resource("visbuffer_geometry_target"))
     step_ci.rendering.output_targets:add(render_context:get_texture_resource("visbuffer_matobj_target"))
@@ -266,7 +267,6 @@ do
     step_ci.rendering.type = RenderingType.fullscreen
     step_ci.rendering.queue = QueueType.graphics
     step_ci.rendering.shader_name = "testing:screenspace"
-    step_ci.rendering.flip_viewport = true
     
     step_ci.rendering.input_targets:set("input_image", render_context:get_texture_resource("final_lighting_target"))
     step_ci.rendering.output_targets:add(render_context:get_texture_resource("present_target"))

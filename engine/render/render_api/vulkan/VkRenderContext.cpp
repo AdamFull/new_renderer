@@ -1178,6 +1178,7 @@ void CVkRenderContext::endRendering(const FBeginRenderingInfo& rendering_info)
 		texture_translation_info.oldLayout = is_depth_stencil_attachment ? vk::ImageLayout::eDepthStencilAttachmentOptimal : vk::ImageLayout::eDepthAttachmentOptimal;
 		depth_target->layout = texture_translation_info.newLayout = get_render_target_final_layout(*depth_target);
 		auto target_layout_translation = get_texture_layout_translation_info(*depth_target, texture_translation_info);
+		//target_layout_translation.subresourceRange.aspectMask = is_depth_stencil_attachment ? vk::ImageAspectFlagBits::eDepth : target_layout_translation.subresourceRange.aspectMask;
 		translation_info.imageTranslationInfos.emplace_back(target_layout_translation);
 	}
 
@@ -2168,6 +2169,8 @@ FRenderApiErrorInfo CVkRenderContext::createTexture(const FVkTextureCreateInfo& 
 	RETURN_WHEN_FAULT(m_pDevice->createImage(image_ci, texture.image));
 
 	auto image_aspect = get_texture_aspect_flags(texture);
+	if (image_aspect & vk::ImageAspectFlagBits::eStencil)
+		image_aspect = vk::ImageAspectFlagBits::eDepth;
 
 	image_view_ci.ci.components = { vk::ComponentSwizzle::eR, vk::ComponentSwizzle::eG, vk::ComponentSwizzle::eB, vk::ComponentSwizzle::eA };
 	image_view_ci.ci.subresourceRange.aspectMask = image_aspect;

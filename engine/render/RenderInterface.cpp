@@ -205,20 +205,16 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 	// Create draw buffers
 	m_pRenderPacket->drawCommands = std::make_unique<CBufferObject>(this, m_pRenderContext.get());
 	m_pRenderPacket->drawIndexedCommands = std::make_unique<CBufferObject>(this, m_pRenderContext.get());
-	m_pRenderPacket->shadowDrawCommands = std::make_unique<CBufferObject>(this, m_pRenderContext.get());
-	m_pRenderPacket->shadowDrawIndexedCommands = std::make_unique<CBufferObject>(this, m_pRenderContext.get());
 
 	FBufferCreateInfo buffer_ci{};
 	buffer_ci.flags = BUFFER_TYPE_INDIRECT_FLAG_BIT;
 	buffer_ci.size = sizeof(FDrawIndirectData);
 	buffer_ci.count = max_indirect_draw_count;
 	m_pRenderPacket->drawCommands->create("DrawIndirectBuffer", buffer_ci);
-	m_pRenderPacket->shadowDrawCommands->create("ShadowDrawIndirectBuffer", buffer_ci);
 
 	buffer_ci.size = sizeof(FDrawIndexedIndirectData);
 	buffer_ci.count = max_indirect_draw_count;
 	m_pRenderPacket->drawIndexedCommands->create("IndexedDrawIndirectBuffer", buffer_ci);
-	m_pRenderPacket->shadowDrawIndexedCommands->create("ShadowIndexedDrawIndirectBuffer", buffer_ci);
 }
 
 void CRenderInterface::render(float dt)
@@ -332,81 +328,90 @@ const std::unique_ptr<IVertexHandler>& CRenderInterface::getVertexHandler(size_t
 	return m_pResources->get<IVertexHandler>(id);
 }
 
-void CRenderInterface::fillDrawBuffer(const std::vector<FGeometryBatch>& batches, std::vector<FGeometryDrawCall>& draw_calls, const std::unique_ptr<IBufferObject>& buffer, const std::unique_ptr<IBufferObject>& indexed_buffer)
+void CRenderInterface::fillDrawBuffer(const std::vector<FGeometryBatch>& batches, const std::unique_ptr<IBufferObject>& buffer, const std::unique_ptr<IBufferObject>& indexed_buffer, std::vector<FGeometryDrawCall>& draw_calls, size_t& offset, size_t& indexed_offset)
 {
-	size_t writen_commands{ 0ull };
 	for (const auto& batch : batches)
 	{
 		auto& vbo = getVertexHandler(batch.vboId);
 		if (vbo)
 		{
+			auto last_index = vbo->getLastIndex();
+			auto last_vertex = vbo->getLastVertex();
+
 			auto& draw_call = draw_calls.emplace_back();
 			draw_call.vboId = batch.vboId;
 			draw_call.materialId = batch.materialId;
 			draw_call.node = batch.node;
 
-			draw_call.command.bufferId = indexed_buffer->handle();
-			draw_call.command.offset = writen_commands * sizeof(FDrawIndexedIndirectData);
-			draw_call.command.count = batch.ranges.size();
-
-			auto last_index = vbo->getLastIndex();
-			auto last_vertex = vbo->getLastVertex();
-
-			std::vector<FDrawIndirectData> drawIndirect{};
-			std::vector<FDrawIndexedIndirectData> drawIndexedIndirect{};
-
-			// Prepare comands
-			for (auto& range : batch.ranges)
+			if (last_index == 0ull)
 			{
-				if (last_index == 0ull)
+				std::vector<FDrawIndirectData> draw_commands{};
+
+				draw_call.command.bufferId = indexed_buffer->handle();
+				draw_call.command.offset = offset;
+				draw_call.command.count = batch.ranges.size();
+
+				for (auto& range : batch.ranges)
 				{
-					auto& command = drawIndirect.emplace_back();
+					auto& command = draw_commands.emplace_back();
 					command.vertexCount = range.vertexCount == 0ull ? last_vertex : range.vertexCount;
 					command.instanceCount = 1;
 					command.firstVertex = range.beginVertex;
 					command.firstInstance = 0;
 				}
-				else
+
+				if (!draw_commands.empty())
 				{
-					auto& command = drawIndexedIndirect.emplace_back();
+					buffer->map();
+					auto* buffer_ptr = buffer->at(0ull);
+					std::memcpy(buffer_ptr + draw_call.command.offset, &draw_commands[0], draw_commands.size() * sizeof(FDrawIndirectData));
+					buffer->unmap();
+				}
+
+				indexed_offset += draw_commands.size() * sizeof(FDrawIndirectData);
+			}
+			else
+			{
+				std::vector<FDrawIndexedIndirectData> draw_indexed_commands{};
+
+				draw_call.command.bufferId = indexed_buffer->handle();
+				draw_call.command.offset = indexed_offset;
+				draw_call.command.count = batch.ranges.size();
+
+				for (auto& range : batch.ranges)
+				{
+					auto& command = draw_indexed_commands.emplace_back();
 					command.indexCount = range.indexCount == 0ull ? last_index : range.indexCount;
 					command.instanceCount = 1;
 					command.firstIndex = range.beginIndex;
 					command.vertexOffset = 0;
 					command.firstInstance = 0;
 				}
-			}
 
-			if (!drawIndirect.empty())
-			{
-				buffer->map();
-				auto* buffer_ptr = buffer->at(0ull);
-				std::memcpy(buffer_ptr + draw_call.command.offset, &drawIndirect[0], drawIndirect.size() * sizeof(FDrawIndirectData));
-				buffer->unmap();
-			}
+				if (!draw_indexed_commands.empty())
+				{
+					indexed_buffer->map();
+					auto* buffer_ptr = indexed_buffer->at(0ull);
+					std::memcpy(buffer_ptr + draw_call.command.offset, &draw_indexed_commands[0], draw_indexed_commands.size() * sizeof(FDrawIndexedIndirectData));
+					indexed_buffer->unmap();
+				}
 
-			if (!drawIndexedIndirect.empty())
-			{
-				indexed_buffer->map();
-				auto* buffer_ptr = indexed_buffer->at(0ull);
-				std::memcpy(buffer_ptr + draw_call.command.offset, &drawIndexedIndirect[0], drawIndexedIndirect.size() * sizeof(FDrawIndexedIndirectData));
-				indexed_buffer->unmap();
+				indexed_offset += draw_indexed_commands.size() * sizeof(FDrawIndexedIndirectData);
 			}
-
-			writen_commands += batch.ranges.size();
 		}
 	}
 }
 
 void CRenderInterface::fillDrawBuffers(const std::vector<FGeometryDrawData>& draw_data)
 {
+	size_t offset{ 0ull }, indexed_offset{ 0ull };
 	std::vector<FGeometryBatch> scene_batches{};
 	createGeometryBatches(draw_data, scene_batches);
-	fillDrawBuffer(scene_batches, m_pRenderPacket->sceneDrawCalls, m_pRenderPacket->drawCommands, m_pRenderPacket->drawIndexedCommands);
+	fillDrawBuffer(scene_batches, m_pRenderPacket->drawCommands, m_pRenderPacket->drawIndexedCommands, m_pRenderPacket->sceneDrawCalls, offset, indexed_offset);
 
 	std::vector<FGeometryBatch> shadow_batches{};
 	createGeometryBatches(draw_data, shadow_batches, GEOMETRY_BATCHER_MERGE_DRAWCALLS_FLAG_BIT);
-	fillDrawBuffer(shadow_batches, m_pRenderPacket->shadowDrawCalls, m_pRenderPacket->shadowDrawCommands, m_pRenderPacket->shadowDrawIndexedCommands);
+	fillDrawBuffer(shadow_batches, m_pRenderPacket->drawCommands, m_pRenderPacket->drawIndexedCommands, m_pRenderPacket->shadowDrawCalls, offset, indexed_offset);
 }
 
 void CRenderInterface::updateSurfaceSize(int32_t width, int32_t height)

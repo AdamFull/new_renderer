@@ -311,15 +311,10 @@ namespace engine
 
 			FRenderSceneStats stats{};
 
-			//std::vector<FGeometryBatch> sceneBatches{};
-			//std::vector<FGeometryBatch> shadowBatches{};
-
 			std::unique_ptr<IBufferObject> drawCommands{};
 			std::unique_ptr<IBufferObject> drawIndexedCommands{};
-			std::vector<FGeometryDrawCall> sceneDrawCalls{};
 
-			std::unique_ptr<IBufferObject> shadowDrawCommands{};
-			std::unique_ptr<IBufferObject> shadowDrawIndexedCommands{};
+			std::vector<FGeometryDrawCall> sceneDrawCalls{};
 			std::vector<FGeometryDrawCall> shadowDrawCalls{};
 
 			//std::unique_ptr<CGPUArrayHolder> resources{};
