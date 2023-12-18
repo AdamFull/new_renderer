@@ -3,7 +3,7 @@
 
 	code: 
 	"""
-		const bool enableCascadedPCF = false;
+		const bool enableCascadedPCF = true;
 		
 		const mat4 biasMat = mat4(
 			0.5, 0.0, 0.0, 0.0,
@@ -15,8 +15,6 @@
 		float cascadeShadowProjection(sampler2DArrayShadow shadowmap_tex, vec4 shadowCoord, vec2 offset, uint cascadeIndex, float bias)
 		{
 			return texture(shadowmap_tex, vec4(shadowCoord.st + offset, cascadeIndex, shadowCoord.z - bias));
-			//float depth = texture(shadowmap_tex, vec3(shadowCoord.st + offset, cascadeIndex)).r;
-			//return depth < (shadowCoord.z - bias) ? 0.0 : 1.0;
 		}
 		
 		float cascadeShadowFilterPCF(sampler2DArrayShadow shadowmap_tex, vec4 sc, uint cascadeIndex, float bias)

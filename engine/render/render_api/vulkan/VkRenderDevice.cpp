@@ -513,7 +513,7 @@ FRenderApiErrorInfo CVkRenderDevice::createPipeline(const FVkGraphicsPipelineCre
 	rasterization_state.lineWidth = 1.0f;
 	rasterization_state.cullMode = pipeline_ci.cullMode;
 	rasterization_state.frontFace = pipeline_ci.frontFace;
-	rasterization_state.depthBiasEnable = rasterization_state.depthClampEnable;
+	rasterization_state.depthBiasEnable = VK_FALSE;
 
 	vk::PipelineMultisampleStateCreateInfo multisample_state{};
 	multisample_state.rasterizationSamples = pipeline_ci.sampleCount;
@@ -529,7 +529,6 @@ FRenderApiErrorInfo CVkRenderDevice::createPipeline(const FVkGraphicsPipelineCre
 	depth_stencil_state.depthTestEnable = enable_depth;
 	depth_stencil_state.depthWriteEnable = enable_depth; // TODO: depth write should be set by texture state
 	depth_stencil_state.depthCompareOp = vk::CompareOp::eLessOrEqual;
-	depth_stencil_state.front = depth_stencil_state.back;
 	depth_stencil_state.back.compareOp = vk::CompareOp::eAlways;
 	depth_stencil_state.depthBoundsTestEnable = false;
 	depth_stencil_state.stencilTestEnable = false; // TODO: implement stencil test

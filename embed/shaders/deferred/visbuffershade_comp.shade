@@ -93,7 +93,7 @@
 			return res;
 		}
 
-		float getCascadeShadow(sampler2DArrayShadow shadowmap_tex, vec3 viewPosition, vec3 worldPosition, vec3 L, vec3 N, vec2 inUV, FCascadedShadowCommit shadow)
+		float getCascadeShadow(sampler2DArrayShadow shadowmap_tex, vec3 viewPosition, vec3 worldPosition, vec3 L, vec3 N, FCascadedShadowCommit shadow)
 		{
 			uint cascadeIndex = 0;
 			for (uint i = 0; i < cascade_shadow_map_cascade_count - 1; ++i)
@@ -119,7 +119,7 @@
 			return shadow_sample;
 		}
 
-		vec3 calculateDirectionalLight(in FDirectionalLightCommit light, in vec3 worldPosition, in vec2 uv, in vec3 albedo, in vec3 V, in vec3 N, in vec3 F0, in float metallic, in float roughness)
+		vec3 calculateDirectionalLight(in FDirectionalLightCommit light, in vec3 worldPosition, in vec3 albedo, in vec3 V, in vec3 N, in vec3 F0, in float metallic, in float roughness)
 		{
 			vec3 L = normalize(-light.direction);
 		
@@ -129,13 +129,13 @@
 			if(light.castShadows > 0 && light.shadowIndex > -1)
 			{
 				vec3 viewSpacePos = (frameData.view * vec4(worldPosition, 1.0)).xyz;
-				shadow_factor = getCascadeShadow(cascaded_shadowmap, viewSpacePos, worldPosition, L, N, uv, cascaded_shadows[light.shadowIndex]);
+				shadow_factor = getCascadeShadow(cascaded_shadowmap, viewSpacePos, worldPosition, L, N, cascaded_shadows[light.shadowIndex]);
 			}
 
 			return light.color * light.intencity * color * shadow_factor;
 		}
 
-		vec3 calculatePointLight(in FPointLightCommit light, in vec3 worldPosition, in vec2 uv, in vec3 albedo, in vec3 V, in vec3 N, in vec3 F0, in float metallic, in float roughness)
+		vec3 calculatePointLight(in FPointLightCommit light, in vec3 worldPosition, in vec3 albedo, in vec3 V, in vec3 N, in vec3 F0, in float metallic, in float roughness)
 		{
 			vec3 L = normalize(light.position - worldPosition);
 			float dist = distance(worldPosition, light.position);
@@ -147,7 +147,7 @@
 			return light.color * atten * color * light.intencity * shadow_factor;
 		}
 
-		vec3 calculateSpotlight(in FSpotLightCommit light, in vec3 worldPosition, in vec2 uv, in vec3 albedo, in vec3 V, in vec3 N, in vec3 F0, in float metallic, in float roughness)
+		vec3 calculateSpotlight(in FSpotLightCommit light, in vec3 worldPosition, in vec3 albedo, in vec3 V, in vec3 N, in vec3 F0, in float metallic, in float roughness)
 		{
 			vec3 L = normalize(light.position - worldPosition);
 		
@@ -167,7 +167,7 @@
 			return light.color * light.intencity * color * angularAttenuation * shadow_factor;
 		}
 
-		vec3 calculateLights(in vec3 position, in vec2 uv, in vec3 V, in vec3 normal, in vec3 diffuse, in vec3 F0, in float metallic, in float roughness)
+		vec3 calculateLights(in vec3 position, in vec3 V, in vec3 normal, in vec3 diffuse, in vec3 F0, in float metallic, in float roughness)
 		{
 			vec3 Lo =  vec3(0.0);
 
@@ -175,21 +175,21 @@
 			for(uint i = 0u; i < frameData.directionalLightCount; i++)
 			{
 				FDirectionalLightCommit light = directional_lights[i];
-				Lo += calculateDirectionalLight(light, position, uv, diffuse, V, normal, F0, metallic, roughness);
+				Lo += calculateDirectionalLight(light, position, diffuse, V, normal, F0, metallic, roughness);
 			}
 
 			//Point light
 			for(uint i = 0u; i < frameData.pointLightCount; i++) 
 			{
 				FPointLightCommit light = point_lights[i];
-				Lo += calculatePointLight(light, position, uv, diffuse, V, normal, F0, metallic, roughness);
+				Lo += calculatePointLight(light, position, diffuse, V, normal, F0, metallic, roughness);
 			}
 			
 			//Spot light
 			for(uint i = 0u; i < frameData.spotLightCount; i++)
 			{
 				FSpotLightCommit light = spot_lights[i];
-				Lo += calculateSpotlight(light, position, uv, diffuse, V, normal, F0, metallic, roughness);
+				Lo += calculateSpotlight(light, position, diffuse, V, normal, F0, metallic, roughness);
 			}
 
 			return Lo;
@@ -253,7 +253,7 @@
 			vec3 F0 = F0FromIOR(ms.ior);
 			F0 = mix(F0, ms.albedo, ms.metallic);
 
-			vec3 Lo = calculateLights(va.pos, uv, V, ms.normal, ms.albedo, F0, ms.metallic, ms.roughness);
+			vec3 Lo = calculateLights(va.pos, V, ms.normal, ms.albedo, F0, ms.metallic, ms.roughness);
 
 			// Reflection vector
 			vec3 R = -normalize(reflect(V, ms.normal));

@@ -154,7 +154,7 @@ void CShadowsSystem::__update(float fDt)
 
 					// Store split distance and matrix in cascade
 					shadow_commit.farClip = far_clip;
-					shadow_commit.splitDepths[i] = (near_clip + splitDist * clip_range) * -1.0f;
+					shadow_commit.splitDepths[i] = (near_clip + splitDist * clip_range);
 					shadow_commit.cascadeViewProj[i] = lightProjectionMatrix * lightViewMatrix;
 
 					lastSplitDist = cascadeSplits[i];

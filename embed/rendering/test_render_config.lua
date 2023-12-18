@@ -221,7 +221,6 @@ do
     step_ci.rendering.type = RenderingType.geometry
     step_ci.rendering.queue = QueueType.graphics
     step_ci.rendering.shader_name = "visibilitybuffer:write"
-    step_ci.rendering.flip_viewport = true
 
     step_ci.rendering.output_targets:add(render_context:get_texture_resource("visbuffer_geometry_target"))
     step_ci.rendering.output_targets:add(render_context:get_texture_resource("visbuffer_matobj_target"))
@@ -267,6 +266,7 @@ do
     step_ci.rendering.type = RenderingType.fullscreen
     step_ci.rendering.queue = QueueType.graphics
     step_ci.rendering.shader_name = "testing:screenspace"
+    step_ci.rendering.flip_viewport = true
     
     step_ci.rendering.input_targets:set("input_image", render_context:get_texture_resource("final_lighting_target"))
     step_ci.rendering.output_targets:add(render_context:get_texture_resource("present_target"))
