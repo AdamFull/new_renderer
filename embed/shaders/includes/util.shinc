@@ -13,5 +13,16 @@
 			float sn= mod(dt,3.14f);
 			return fract(sin(sn) * c);
 		}
+
+		vec3 getPositionFromDepth(vec2 texcoord, float depth, mat4 invViewProjection)
+        {
+            vec4 clipSpaceLocation;
+            clipSpaceLocation.x = texcoord.x * 2.0f - 1.0f;
+            clipSpaceLocation.y = texcoord.y * 2.0f - 1.0f;
+            clipSpaceLocation.z = depth;
+            clipSpaceLocation.w = 1.0f;
+            vec4 homogenousLocation = invViewProjection * clipSpaceLocation;
+            return homogenousLocation.xyz / homogenousLocation.w;
+        }
 	""";
 }
