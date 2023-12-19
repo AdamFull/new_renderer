@@ -62,14 +62,13 @@
 			uint vboID;
 		};
 
-		VisibilityBuffer loadVisBuffer(in vec2 uv)
+		bool loadVisBuffer(in vec2 uv, out VisibilityBuffer res)
 		{
-			VisibilityBuffer res;
-
 			uint geometryData = packUnorm4x8(texture(visbuffer_geometry, uv));
 			res.drawID = (geometryData >> 23) & 0x000000FF;
 			res.triangleID = (geometryData & 0x007FFFFF);
 			res.transparent = (geometryData >> 31);
+			res.triangleID -= 1u;
 
 			uint matobjData = packUnorm4x8(texture(visbuffer_matobj, uv));
 			res.matID = matobjData & 0xFFFF;
@@ -77,7 +76,7 @@
 
 			res.vboID = packUnorm4x8(texture(visbuffer_skinvbo, uv));
 
-			return res;
+			return (res.triangleID != 0xFFFFFFFFu);
 		}
 
 		RawVertex[3] loadTriangle(in uint drawID, in uint primID)

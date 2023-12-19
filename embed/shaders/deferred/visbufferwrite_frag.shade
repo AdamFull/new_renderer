@@ -39,7 +39,7 @@
 
 		void main() 
 		{
-			vbid = unpackUnorm4x8(packVBID(true, drawID, gl_PrimitiveID));
+			vbid = unpackUnorm4x8(packVBID(true, drawID, gl_PrimitiveID + 1u));
 			moid = unpackUnorm4x8(packMOID(matID, objID));
 			svid = unpackUnorm4x8(vboID);
 		}
