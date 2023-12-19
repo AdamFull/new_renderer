@@ -18,7 +18,7 @@ namespace engine
 
 				float fieldOfView{ 45.f };
 				float nearPlane{ 0.1f };
-				float farPlane{ 64.f };
+				float farPlane{ 1024 };
 
 				float xmag{ 0.f };
 				float ymag{ 0.f };

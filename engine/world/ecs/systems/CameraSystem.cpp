@@ -97,6 +97,9 @@ void CCameraSystem::__update(float fDt)
 				camera.moved = false;
 			}
 
+			render_packet->camera.nearp = camera.nearPlane;
+			render_packet->camera.farp = camera.farPlane;
+
 			break;
 		}
 	}
