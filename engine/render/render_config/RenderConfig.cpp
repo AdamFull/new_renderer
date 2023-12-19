@@ -36,6 +36,20 @@ void CRenderScriptCore::create(IRenderInterface* render_interface, IRenderContex
 
 	m_pLuaState->open_libraries(sol::lib::base, sol::lib::package, sol::lib::math, sol::lib::table, sol::lib::os, sol::lib::string);
 
+	auto global_settings = m_pLuaState->create_named_table("global_settings");
+	global_settings["max_directional_light_count"] = max_directional_light_count;
+	global_settings["max_directional_light_shadow_count"] = max_directional_light_shadow_count;
+	global_settings["cascade_shadowmap_resolution"] = cascade_shadow_map_resolution;
+	global_settings["cascade_shadowmap_cascade_count"] = cascade_shadow_map_cascade_count;
+
+	global_settings["max_spot_light_count"] = max_spot_light_count;
+	global_settings["max_spot_light_shadow_count"] = max_spot_light_shadow_count;
+	global_settings["spotlight_shadowmap_resolution"] = spot_light_shadow_map_resolution;
+
+	global_settings["max_point_light_count"] = max_point_light_count;
+	global_settings["max_point_light_shadow_count"] = max_point_light_shadow_count;
+	global_settings["point_light_shadowmap_resolution"] = point_light_shadow_map_resolution;
+
 	bindGLMath(m_pLuaState);
 	bindRenderInterface(m_pLuaState);
 

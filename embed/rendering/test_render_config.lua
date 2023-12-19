@@ -1,19 +1,3 @@
-global_settings = 
-{
-    max_directional_light_count = 3,
-    max_directional_light_shadow_count = 1,
-    cascade_shadowmap_resolution = 1024,
-    cascade_shadowmap_cascade_count = 8,
-
-    max_spot_light_count = 64,
-    max_spot_light_shadow_count = 16,
-    spotlight_shadowmap_resolution = 1024,
-
-    max_point_light_count = 64,
-    max_point_light_shadow_count = 16,
-    point_light_shadowmap_resolution = 512
-}
-
 surface_resolution = render_context:get_surface_resolution()
 
 -- Loading test cubemap
