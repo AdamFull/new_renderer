@@ -46,7 +46,7 @@ void CLightingSystem::__update(float fDt)
 				break;
 
 			FDirectionalLightCommit commit;
-			commit.direction = glm::normalize(glm::toQuat(transform.gmodel) * glm::vec3(0.f, 0.f, -1.f));
+			commit.direction = glm::normalize(transform.grotation * glm::vec3(0.f, 0.f, -1.f));
 			commit.color = light.color;
 			commit.intencity = light.intencity;
 			commit.shadowIndex = light.shadowIndex;
@@ -97,7 +97,7 @@ void CLightingSystem::__update(float fDt)
 
 			FSpotLightCommit commit;
 			commit.position = transform.gposition;
-			commit.direction = light.toTarget ? light.target : glm::normalize(glm::toQuat(transform.gmodel) * glm::vec3(0.f, 0.f, -1.f));
+			commit.direction = light.toTarget ? light.target : glm::normalize(transform.grotation * glm::vec3(0.f, 0.f, -1.f));
 			commit.color = light.color;
 			commit.intencity = light.intencity;
 			commit.lightAngleScale = 1.f / (glm::max)(0.001f, glm::cos(light.innerAngle) - glm::cos(light.outerAngle));

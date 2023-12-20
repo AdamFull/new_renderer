@@ -11,10 +11,12 @@
 
 #include <engine/profiler/Profiler.h>
 
+#include <glm/gtc/matrix_transform.hpp>
+
 using namespace engine::render;
 using namespace engine::world::ecs;
 
-constexpr const float cascade_split_lambda = 0.985f;
+constexpr const float cascade_split_lambda = 0.85f;
 
 CShadowsSystem::CShadowsSystem(CSceneGraph* scenegraph, IRenderInterface* render_interface)
 {
@@ -82,26 +84,16 @@ void CShadowsSystem::__update(float fDt)
 					std::array<glm::vec4, 8> frustumCorners =
 					{
 						//Near face
-						glm::vec4{  1.0f,  1.0f, -1.0f, 1.0f },
-						glm::vec4{ -1.0f,  1.0f, -1.0f, 1.0f },
-						glm::vec4{  1.0f, -1.0f, -1.0f, 1.0f },
-						glm::vec4{ -1.0f, -1.0f, -1.0f, 1.0f },
-						
-						//Far face
-						glm::vec4{  1.0f,  1.0f, 1.0f, 1.0f },
-						glm::vec4{ -1.0f,  1.0f, 1.0f, 1.0f },
-						glm::vec4{  1.0f, -1.0f, 1.0f, 1.0f },
-						glm::vec4{ -1.0f, -1.0f, 1.0f, 1.0f },
+						glm::vec4(-1.0f,  1.0f, 0.0f, 1.0f),
+						glm::vec4(1.0f,  1.0f, 0.0f, 1.0f),
+						glm::vec4(1.0f, -1.0f, 0.0f, 1.0f),
+						glm::vec4(-1.0f, -1.0f, 0.0f, 1.0f),
 
-						//glm::vec4( -1.0f,  1.0f, 0.0f, 1.0f),
-						//glm::vec4(  1.0f,  1.0f, 0.0f, 1.0f),
-						//glm::vec4(  1.0f, -1.0f, 0.0f, 1.0f),
-						//glm::vec4( -1.0f, -1.0f, 0.0f, 1.0f),
-						//
-						//glm::vec4( -1.0f,  1.0f, 1.0f, 1.0f),
-						//glm::vec4(  1.0f,  1.0f, 1.0f, 1.0f),
-						//glm::vec4(  1.0f, -1.0f, 1.0f, 1.0f),
-						//glm::vec4( -1.0f, -1.0f, 1.0f, 1.0f),
+						//Far face
+						glm::vec4(-1.0f,  1.0f, 1.0f, 1.0f),
+						glm::vec4(1.0f,  1.0f, 1.0f, 1.0f),
+						glm::vec4(1.0f, -1.0f, 1.0f, 1.0f),
+						glm::vec4(-1.0f, -1.0f, 1.0f, 1.0f),
 					};
 
 					// Project frustum corners into world space
@@ -135,9 +127,9 @@ void CShadowsSystem::__update(float fDt)
 					glm::vec3 maxExtents = glm::vec3(radius);
 					glm::vec3 minExtents = -maxExtents;
 
-					glm::vec3 lightDir = glm::normalize(glm::toQuat(ltransform.gmodel) * glm::vec3(0.f, 0.f, -1.f));
-					glm::mat4 lightViewMatrix = glm::lookAt(frustumCenter - lightDir * -minExtents.z, frustumCenter, render_packet->camera.up);
-					glm::mat4 lightOrthoMatrix = glm::ortho(minExtents.x, maxExtents.x, minExtents.y, maxExtents.y, minExtents.z, maxExtents.z - minExtents.z);
+					glm::vec3 lightDir = glm::normalize(ltransform.grotation * glm::vec3(0.f, 0.f, -1.f));
+					glm::mat4 lightViewMatrix = glm::lookAt(frustumCenter - lightDir * radius, frustumCenter, glm::vec3(0.f, 1.f, 0.f));
+					glm::mat4 lightOrthoMatrix = glm::ortho(minExtents.x, maxExtents.x, minExtents.y, maxExtents.y, 0.f, maxExtents.z - minExtents.z);
 
 					auto shadowMatrix = lightOrthoMatrix * lightViewMatrix;
 					glm::vec4 shadowOrigin = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -213,7 +205,7 @@ void CShadowsSystem::__update(float fDt)
 			{
 				FSpotShadowCommit shadow_commit{};
 
-				auto light_dir = light.toTarget ? light.target : glm::normalize(glm::toQuat(ltransform.gmodel) * glm::vec3(0.f, 0.f, -1.f));
+				auto light_dir = light.toTarget ? light.target : glm::normalize(ltransform.grotation * glm::vec3(0.f, 0.f, -1.f));
 				glm::mat4 shadowProj = glm::perspective(light.outerAngle * 2.f, 1.0f, 0.1f, 64.f);
 				glm::mat4 shadowView = glm::lookAt(ltransform.gposition, ltransform.gposition + light_dir, glm::vec3(0.0f, 1.0f, 0.0f));
 				shadow_commit.viewProj = shadowProj * shadowView;
