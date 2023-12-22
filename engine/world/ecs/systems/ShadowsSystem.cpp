@@ -83,17 +83,17 @@ void CShadowsSystem::__update(float fDt)
 
 					std::array<glm::vec4, 8> frustumCorners =
 					{
-						//Near face
-						glm::vec4(-1.0f,  1.0f, 0.0f, 1.0f),
-						glm::vec4(1.0f,  1.0f, 0.0f, 1.0f),
-						glm::vec4(1.0f, -1.0f, 0.0f, 1.0f),
+						// Near face
 						glm::vec4(-1.0f, -1.0f, 0.0f, 1.0f),
-
-						//Far face
-						glm::vec4(-1.0f,  1.0f, 1.0f, 1.0f),
-						glm::vec4(1.0f,  1.0f, 1.0f, 1.0f),
-						glm::vec4(1.0f, -1.0f, 1.0f, 1.0f),
+						glm::vec4(1.0f, -1.0f, 0.0f, 1.0f),
+						glm::vec4(1.0f, 1.0f, 0.0f, 1.0f),
+						glm::vec4(-1.0f, 1.0f, 0.0f, 1.0f),
+						
+						// Far face
 						glm::vec4(-1.0f, -1.0f, 1.0f, 1.0f),
+						glm::vec4(1.0f, -1.0f, 1.0f, 1.0f),
+						glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
+						glm::vec4(-1.0f, 1.0f, 1.0f, 1.0f),
 					};
 
 					// Project frustum corners into world space
@@ -116,7 +116,7 @@ void CShadowsSystem::__update(float fDt)
 						frustumCenter += glm::vec3(corner);
 					frustumCenter /= frustumCorners.size();
 
-					float radius = 0.0f;
+					volatile float radius{ 0.0f };
 					for (auto& corner : frustumCorners)
 					{
 						float distance = glm::length(glm::vec3(corner) - frustumCenter);
@@ -129,7 +129,7 @@ void CShadowsSystem::__update(float fDt)
 
 					glm::vec3 lightDir = glm::normalize(ltransform.grotation * glm::vec3(0.f, 0.f, -1.f));
 					glm::mat4 lightViewMatrix = glm::lookAt(frustumCenter - lightDir * radius, frustumCenter, glm::vec3(0.f, 1.f, 0.f));
-					glm::mat4 lightOrthoMatrix = glm::ortho(minExtents.x, maxExtents.x, minExtents.y, maxExtents.y, 0.f, maxExtents.z - minExtents.z);
+					glm::mat4 lightOrthoMatrix = glm::ortho(minExtents.x, maxExtents.x, minExtents.y, maxExtents.y, minExtents.z - maxExtents.z, maxExtents.z - minExtents.z);
 
 					auto shadowMatrix = lightOrthoMatrix * lightViewMatrix;
 					glm::vec4 shadowOrigin = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
