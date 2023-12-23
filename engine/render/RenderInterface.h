@@ -28,6 +28,8 @@ namespace engine
 			size_t createVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) override;
 			const std::unique_ptr<IVertexHandler>& getVertexHandler(size_t id) override;
 
+			void drawPrimitive(const FGeometryDrawCallCommand& raw_comand) override;
+
 			void fillDrawBuffer(const std::vector<FGeometryBatch>& batches, const std::unique_ptr<IBufferObject>& buffer, const std::unique_ptr<IBufferObject>& indexed_buffer, std::vector<FGeometryDrawCall>& draw_calls, size_t& offset, size_t& indexed_offset);
 			void fillDrawBuffers(const std::vector<FGeometryDrawData>& draw_data) override;
 
