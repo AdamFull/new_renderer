@@ -337,7 +337,7 @@ void CScene::loadNode(const easygltf::FGLTFRoot root, const entt::entity parent,
 	if(node.mesh >= 0)
 		loadMeshComponent(root, m_temporary.nodeToEntity[node_index], node_index);
 
-	if(node.camera >= 0)
+	if (node.camera >= 0)
 		loadCameraComponent(root, m_temporary.nodeToEntity[node_index], node_index);
 
 	if(node.hasExtension<easygltf::extensions::KHR_lights_punctual>())

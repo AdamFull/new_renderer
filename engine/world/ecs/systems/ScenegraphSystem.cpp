@@ -57,6 +57,8 @@ void CScenegraphSystem::buildHierarchy(entt::registry* registry, entt::entity no
 	glm::vec4 perspective;
 	glm::decompose(transform.gmodel, transform.gscale, transform.grotation, transform.gposition, skew, perspective);
 
+	transform.grotation = glm::normalize(transform.grotation);
+
 	for (const auto& child : hierarchy.children)
 		buildHierarchy(registry, child);
 }

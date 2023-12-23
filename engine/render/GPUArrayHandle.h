@@ -19,7 +19,14 @@ namespace engine
 			uint8_t* at(size_t index) override;
 			const uint8_t* at(size_t index) const override;
 
-			void insert(void* data, size_t index = 0ull) override;
+			void insert(const void* data, size_t index = 0ull) override;
+
+			uint8_t* emplace_back(const void* data) override;
+
+			uint8_t* back() override;
+			const uint8_t* back() const override;
+
+			void clear() override;
 
 			const std::vector<uint8_t>& getData() const override;
 			const std::unique_ptr<IBufferObject>& getBufferObject() const override;
@@ -33,6 +40,8 @@ namespace engine
 			size_t m_elementSize{ 0ull };
 			size_t m_elementCount{ 0ull };
 			size_t m_lastInsertionIndex{ 0ull };
+
+			std::atomic<size_t> m_currentElementCount{ 0ull };
 
 			IRenderInterface* m_pRenderInterface{ nullptr };
 			IRenderContext* m_pRenderContext{ nullptr };

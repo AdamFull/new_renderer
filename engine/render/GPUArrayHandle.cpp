@@ -53,10 +53,41 @@ const uint8_t* CGPUArrayHandle::at(size_t index) const
 	return &m_elements[index * m_elementSize];
 }
 
-void CGPUArrayHandle::insert(void* data, size_t index)
+void CGPUArrayHandle::insert(const void* data, size_t index)
 {
 	m_lastInsertionIndex = std::max(m_lastInsertionIndex, index);
 	std::memcpy(at(index), data, m_elementSize);
+}
+
+uint8_t* CGPUArrayHandle::emplace_back(const void* data)
+{
+	size_t current_index = m_currentElementCount.load(std::memory_order_relaxed);
+	insert(data, current_index);
+	m_currentElementCount.fetch_add(1ull, std::memory_order_relaxed);
+	return at(current_index);
+}
+
+uint8_t* CGPUArrayHandle::back()
+{
+	size_t current_index = m_currentElementCount.load(std::memory_order_relaxed);
+	if (current_index != 0ull)
+		return at(current_index - 1ull);
+
+	return nullptr;
+}
+
+const uint8_t* CGPUArrayHandle::back() const
+{
+	size_t current_index = m_currentElementCount.load(std::memory_order_relaxed);
+	if (current_index != 0ull)
+		return at(current_index);
+
+	return nullptr;
+}
+
+void CGPUArrayHandle::clear()
+{
+	m_currentElementCount.store(0ull, std::memory_order_relaxed);
 }
 
 const std::vector<uint8_t>& CGPUArrayHandle::getData() const

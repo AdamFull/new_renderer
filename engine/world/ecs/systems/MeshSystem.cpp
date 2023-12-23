@@ -34,8 +34,6 @@ void CMeshSystem::__update(float fDt)
 	FFrustum frustum{};
 	frustum.update(render_packet->camera.view, render_packet->camera.projection);
 
-	std::vector<FGeometryDrawData> geometry_list{};
-
 	auto& nodes = render_packet->nodes;
 
 	auto view = registry->view<FTransformComponent, FBaseComponent, FMeshComponent>();
@@ -55,16 +53,20 @@ void CMeshSystem::__update(float fDt)
 		{
 			auto& lod = primitive.lods[0ull];
 
-			auto& draw_data = geometry_list.emplace_back();
-			draw_data.vboId = primitive.vboId;
-			draw_data.materialId = primitive.materialId;
-			draw_data.node = node;
+			FGeometryDrawCallCommand draw_data{};
+			draw_data.vboID = primitive.vboId;
+			draw_data.materialID = primitive.materialId;
+			draw_data.instanceID = node;
+
 			draw_data.range.beginIndex = lod.beginIndex;
 			draw_data.range.indexCount = lod.indexCount;
 			draw_data.range.beginVertex = lod.beginVertex;
 			draw_data.range.vertexCount = lod.indexCount;
+
+			draw_data.bounds.min = primitive.dims.min;
+			draw_data.bounds.max = primitive.dims.max;
+
+			m_pRenderInterface->drawPrimitive(draw_data);
 		}
 	}
-
-	m_pRenderInterface->fillDrawBuffers(geometry_list);
 }

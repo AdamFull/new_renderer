@@ -56,6 +56,61 @@ CONSTANT uint32_t max_point_light_count = 64u;
 CONSTANT uint32_t max_point_light_shadow_count = 1u;
 CONSTANT uint32_t point_light_shadow_map_resolution = 512u;
 
+struct FGeometryDrawBounds
+{
+	VECTOR3 min;
+	VECTOR3 max;
+};
+
+// Verticea range
+struct FGeometryDrawRange
+{
+	uint32_t beginIndex;
+	uint32_t indexCount;
+	uint32_t beginVertex;
+	uint32_t vertexCount;
+};
+
+// Raw draw command
+struct FGeometryDrawCallCommand
+{
+	uint32_t vboID;
+	uint32_t materialID;
+	uint32_t instanceID;
+
+	FGeometryDrawRange range;
+	FGeometryDrawBounds bounds;
+	uint32_t pad;
+};
+
+// Final batch with indirect draw data
+struct FGeometryDrawBatch
+{
+	uint32_t vboID;
+	uint32_t materialID;
+	uint32_t instanceID;
+
+	uint32_t commandOffset;
+	uint32_t drawCount;
+};
+
+struct FDrawIndirectData
+{
+	uint32_t vertexCount;
+	uint32_t instanceCount;
+	uint32_t firstVertex;
+	uint32_t firstInstance;
+};
+
+struct FDrawIndexedIndirectData
+{
+	uint32_t indexCount;
+	uint32_t instanceCount;
+	uint32_t firstIndex;
+	int32_t  vertexOffset;
+	uint32_t firstInstance;
+};
+
 // Lights and shadows
 struct FCascadedShadowCommit
 {
@@ -122,23 +177,6 @@ struct FSceneNode
 	uint32_t instances;
 	uint32_t instanceCount;
 	uint32_t pad;
-};
-
-struct FDrawIndirectData
-{
-	uint32_t vertexCount;
-	uint32_t instanceCount;
-	uint32_t firstVertex;
-	uint32_t firstInstance;
-};
-
-struct FDrawIndexedIndirectData
-{
-	uint32_t indexCount;
-	uint32_t instanceCount;
-	uint32_t firstIndex;
-	int32_t  vertexOffset;
-	uint32_t firstInstance;
 };
 
 // Material

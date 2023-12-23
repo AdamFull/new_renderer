@@ -70,7 +70,14 @@ namespace engine
 			virtual uint8_t* at(size_t index) = 0;
 			virtual const uint8_t* at(size_t index) const = 0;
 
-			virtual void insert(void* data, size_t index) = 0;
+			virtual void insert(const void* data, size_t index) = 0;
+
+			virtual uint8_t* emplace_back(const void* data) = 0;
+
+			virtual uint8_t* back() = 0;
+			virtual const uint8_t* back() const = 0;
+
+			virtual void clear() = 0;
 
 			virtual const std::vector<uint8_t>& getData() const = 0;
 			virtual const std::unique_ptr<IBufferObject>& getBufferObject() const = 0;

@@ -67,8 +67,6 @@ namespace engine
 
 			glm::mat4 viewProjection{ 1.f };
 			glm::mat4 invViewProjection{ 1.f };
-			glm::mat4 prevViewProjection{ 1.f };
-			glm::mat4 reprojection{ 1.f };
 
 			glm::vec3 up{ 0.f };
 			glm::vec3 forward{ 0.f };
@@ -311,6 +309,12 @@ namespace engine
 
 			FRenderSceneStats stats{};
 
+			// Contains raw commands for draw (FGeometryDrawCallCommand)
+			std::unique_ptr<IGPUArrayHandle> rawCommands{};
+			// Contains draw batches from gpu (FGeometryDrawBatch)
+			std::unique_ptr<IGPUArrayHandle> sceneBatches{};
+			//std::unique_ptr<IGPUArrayHandle> shadowBatches{};
+
 			std::unique_ptr<IBufferObject> drawCommands{};
 			std::unique_ptr<IBufferObject> drawIndexedCommands{};
 
@@ -416,6 +420,8 @@ namespace engine
 
 			virtual size_t createVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) = 0;
 			virtual const std::unique_ptr<IVertexHandler>& getVertexHandler(size_t id) = 0;
+
+			virtual void drawPrimitive(const FGeometryDrawCallCommand& raw_comand) = 0;
 
 			virtual void fillDrawBuffers(const std::vector<FGeometryDrawData>& draw_data) = 0;
 

@@ -245,7 +245,7 @@ void CRenderInterface::render(float dt)
 	m_pGlobalUniformHandler->set("invProjection", m_pRenderPacket->camera.invProjection);
 	m_pGlobalUniformHandler->set("viewProjection", m_pRenderPacket->camera.viewProjection);
 	m_pGlobalUniformHandler->set("invViewProjection", m_pRenderPacket->camera.invViewProjection);
-	m_pGlobalUniformHandler->set("reprojection", m_pRenderPacket->camera.reprojection);
+	//m_pGlobalUniformHandler->set("reprojection", m_pRenderPacket->camera.reprojection);
 	m_pGlobalUniformHandler->set("viewportDimension", m_pRenderPacket->camera.dimensions);
 	m_pGlobalUniformHandler->set("invViewportDimension", 1.f / m_pRenderPacket->camera.dimensions);
 	m_pGlobalUniformHandler->set("nearPlane", m_pRenderPacket->camera.nearp);
@@ -280,6 +280,8 @@ void CRenderInterface::render(float dt)
 
 	m_pRenderPacket->sceneDrawCalls.clear();
 	m_pRenderPacket->shadowDrawCalls.clear();
+
+	m_pRenderPacket->rawCommands->clear();
 }
 
 size_t CRenderInterface::createTexture(const std::string& path)
@@ -326,6 +328,24 @@ size_t CRenderInterface::createVertexHandler(const std::string& name, const FVer
 const std::unique_ptr<IVertexHandler>& CRenderInterface::getVertexHandler(size_t id)
 {
 	return m_pResources->get<IVertexHandler>(id);
+}
+
+void CRenderInterface::drawPrimitive(const FGeometryDrawCallCommand& raw_comand)
+{
+	auto& raw_commands = m_pRenderPacket->rawCommands;
+	size_t index{ 0ull };
+
+	raw_commands->insert(&raw_comand, index);
+
+	auto* command = reinterpret_cast<FGeometryDrawCallCommand*>(raw_commands->at(index));
+
+	auto& vbo = getVertexHandler(raw_comand.vboID);
+
+	auto last_index = vbo->getLastIndex();
+	command->range.indexCount = command->range.indexCount == 0ull ? last_index : command->range.indexCount;
+	
+	auto last_vertex = vbo->getLastVertex();
+	command->range.vertexCount = command->range.vertexCount == 0ull ? last_vertex : command->range.vertexCount;
 }
 
 void CRenderInterface::fillDrawBuffer(const std::vector<FGeometryBatch>& batches, const std::unique_ptr<IBufferObject>& buffer, const std::unique_ptr<IBufferObject>& indexed_buffer, std::vector<FGeometryDrawCall>& draw_calls, size_t& offset, size_t& indexed_offset)
