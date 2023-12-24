@@ -136,7 +136,7 @@ const std::unique_ptr<IShaderObject>& CGeometryRenderingStep::getShaderByVBO(con
 		auto shader_name = m_baseShaderName + vbo->getDefinitions();
 
 		FGraphicsShaderCreateInfo shader_ci{};
-		shader_ci.cullMode = m_beginRenderingInfo.flipViewport ? SHADER_CULL_MODE_FRONT_BIT : SHADER_CULL_MODE_FRONT_BIT;
+		shader_ci.cullMode = m_beginRenderingInfo.flipViewport ? SHADER_CULL_MODE_BACK_BIT : SHADER_CULL_MODE_FRONT_BIT;
 		shader_ci.frontFace = m_beginRenderingInfo.flipViewport ? SHADER_FRONT_FACE_CW : SHADER_FRONT_FACE_CCW;
 		shader_ci.primitiveTopology = SHADER_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 		shader_ci.colorAttachments = m_beginRenderingInfo.colorAttachments;

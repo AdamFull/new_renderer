@@ -22,6 +22,7 @@
 using namespace engine;
 using namespace engine::render;
 
+constexpr const size_t MAX_RENDER_OBJECT_COUNT{ 16384ull };
 constexpr const size_t MAX_PRIMITIVE_COUNT{ 512ull };
 constexpr const size_t MAX_MATERIAL_COUNT{ 512ull };
 
@@ -110,6 +111,14 @@ FShaderNameInfo get_shader_name_info(const std::string& shader_name)
 	return name_info;
 }
 
+template<class _Ty>
+std::unique_ptr<IGPUArrayHandle> allocateGPUArrayHandle(const std::string& name, size_t count, IRenderInterface* render_interface, IRenderContext* render_context)
+{
+	auto gpu_array = std::make_unique<CGPUArrayHandle>(render_interface, render_context);
+	gpu_array->create(name, sizeof(_Ty), count);
+	return gpu_array;
+}
+
 CRenderInterface::CRenderInterface(filesystem::IVirtualFileSystemInterface* vfs)
 {
 	m_pVFS = vfs;
@@ -170,37 +179,39 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 	m_pVFS->readFile("/root/embed/rendering/test_render_config.lua", render_config);
 	m_pRenderScriptCore->build("render_config", render_config);
 
-
-	m_pRenderPacket->materials = std::make_unique<CGPUArrayHandle>(this, m_pRenderContext.get());
-	m_pRenderPacket->materials->create("MaterialStorage", sizeof(FMaterial), MAX_MATERIAL_COUNT);
-
-	m_pRenderPacket->nodes = std::make_unique<CGPUArrayHandle>(this, m_pRenderContext.get());
-	m_pRenderPacket->nodes->create("NodeStorage", sizeof(FSceneNode), MAX_PRIMITIVE_COUNT);
-
-	m_pRenderPacket->skins = std::make_unique<CGPUArrayHandle>(this, m_pRenderContext.get());
-	m_pRenderPacket->skins->create("SkinningJoints", sizeof(glm::mat4) * 128ull, MAX_PRIMITIVE_COUNT);
+	// Allocating gpu to cpu side buffers
+	m_pRenderPacket->rawCommands = allocateGPUArrayHandle<FGeometryRawCommand>("RawDrawCommands", MAX_RENDER_OBJECT_COUNT, this, m_pRenderContext.get());
+	m_pRenderPacket->materials = allocateGPUArrayHandle<FMaterial>("MaterialStorage", MAX_MATERIAL_COUNT, this, m_pRenderContext.get());
+	m_pRenderPacket->nodes = allocateGPUArrayHandle<FSceneNode>("NodeStorage", MAX_PRIMITIVE_COUNT, this, m_pRenderContext.get());
+	m_pRenderPacket->skins = allocateGPUArrayHandle<glm::mat4>("SkinningJoints", MAX_PRIMITIVE_COUNT * 128ull, this, m_pRenderContext.get());
 
 
 	// Directional light data
-	m_pRenderPacket->dlights.lights = std::make_unique<CGPUArrayHandle>(this, m_pRenderContext.get());
-	m_pRenderPacket->dlights.lights->create("DirectionalLights", sizeof(FDirectionalLightCommit), max_directional_light_count);
-
-	m_pRenderPacket->dlights.shadows = std::make_unique<CGPUArrayHandle>(this, m_pRenderContext.get());
-	m_pRenderPacket->dlights.shadows->create("CascadedShadows", sizeof(FCascadedShadowCommit), max_directional_light_shadow_count);
+	m_pRenderPacket->dlights.lights = allocateGPUArrayHandle<FDirectionalLightCommit>("DirectionalLights", max_directional_light_count, this, m_pRenderContext.get());
+	m_pRenderPacket->dlights.shadows = allocateGPUArrayHandle<FCascadedShadowCommit>("CascadedShadows", max_directional_light_shadow_count, this, m_pRenderContext.get());
 
 	// Point light data
-	m_pRenderPacket->plights.lights = std::make_unique<CGPUArrayHandle>(this, m_pRenderContext.get());
-	m_pRenderPacket->plights.lights->create("PointLights", sizeof(FPointLightCommit), max_point_light_count);
-
-	m_pRenderPacket->plights.shadows = std::make_unique<CGPUArrayHandle>(this, m_pRenderContext.get());
-	m_pRenderPacket->plights.shadows->create("OmniShadows", sizeof(FOmniShadowCommit), max_point_light_shadow_count);
+	m_pRenderPacket->plights.lights = allocateGPUArrayHandle<FPointLightCommit>("PointLights", max_point_light_count, this, m_pRenderContext.get());
+	m_pRenderPacket->plights.shadows = allocateGPUArrayHandle<FOmniShadowCommit>("OmniShadows", max_point_light_shadow_count, this, m_pRenderContext.get());
 
 	// Spot light data
-	m_pRenderPacket->slights.lights = std::make_unique<CGPUArrayHandle>(this, m_pRenderContext.get());
-	m_pRenderPacket->slights.lights->create("SpotLights", sizeof(FSpotLightCommit), max_spot_light_count);
+	m_pRenderPacket->slights.lights = allocateGPUArrayHandle<FSpotLightCommit>("SpotLights", max_spot_light_count, this, m_pRenderContext.get());
+	m_pRenderPacket->slights.shadows = allocateGPUArrayHandle<FSpotShadowCommit>("SpotShadows", max_spot_light_shadow_count, this, m_pRenderContext.get());
 
-	m_pRenderPacket->slights.shadows = std::make_unique<CGPUArrayHandle>(this, m_pRenderContext.get());
-	m_pRenderPacket->slights.shadows->create("SpotShadows", sizeof(FSpotShadowCommit), max_spot_light_shadow_count);
+	
+	m_vArrayHandles.emplace_back(m_pRenderPacket->rawCommands.get());
+	m_vArrayHandles.emplace_back(m_pRenderPacket->materials.get());
+	m_vArrayHandles.emplace_back(m_pRenderPacket->nodes.get());
+	m_vArrayHandles.emplace_back(m_pRenderPacket->skins.get());
+
+	m_vArrayHandles.emplace_back(m_pRenderPacket->dlights.lights.get());
+	m_vArrayHandles.emplace_back(m_pRenderPacket->dlights.shadows.get());
+
+	m_vArrayHandles.emplace_back(m_pRenderPacket->plights.lights.get());
+	m_vArrayHandles.emplace_back(m_pRenderPacket->plights.shadows.get());
+
+	m_vArrayHandles.emplace_back(m_pRenderPacket->slights.lights.get());
+	m_vArrayHandles.emplace_back(m_pRenderPacket->slights.shadows.get());
 
 	// Create draw buffers
 	m_pRenderPacket->drawCommands = std::make_unique<CBufferObject>(this, m_pRenderContext.get());
@@ -219,21 +230,8 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 
 void CRenderInterface::render(float dt)
 {
-
-	//m_pRenderPacket->resources->flush();
-	m_pRenderPacket->materials->flush();
-	m_pRenderPacket->nodes->flush();
-	m_pRenderPacket->skins->flush();
-
-	m_pRenderPacket->dlights.lights->flush(m_pRenderPacket->dlights.lcount);
-	m_pRenderPacket->dlights.shadows->flush(m_pRenderPacket->dlights.scount);
-
-	m_pRenderPacket->plights.lights->flush(m_pRenderPacket->plights.lcount);
-	m_pRenderPacket->plights.shadows->flush(m_pRenderPacket->plights.scount);
-
-	m_pRenderPacket->slights.lights->flush(m_pRenderPacket->slights.lcount);
-	m_pRenderPacket->slights.shadows->flush(m_pRenderPacket->slights.scount);
-
+	for (auto* array_handle : m_vArrayHandles)
+		array_handle->flush();
 
 	m_pRenderContext->beginFrameCommandBuffers();
 
@@ -250,9 +248,9 @@ void CRenderInterface::render(float dt)
 	m_pGlobalUniformHandler->set("invViewportDimension", 1.f / m_pRenderPacket->camera.dimensions);
 	m_pGlobalUniformHandler->set("nearPlane", m_pRenderPacket->camera.nearp);
 	m_pGlobalUniformHandler->set("farPlane", m_pRenderPacket->camera.farp);
-	m_pGlobalUniformHandler->set("directionalLightCount", m_pRenderPacket->dlights.lcount);
-	m_pGlobalUniformHandler->set("pointLightCount", m_pRenderPacket->plights.lcount);
-	m_pGlobalUniformHandler->set("spotLightCount", m_pRenderPacket->slights.lcount);
+	m_pGlobalUniformHandler->set("directionalLightCount", static_cast<uint32_t>(m_pRenderPacket->dlights.lights->size()));
+	m_pGlobalUniformHandler->set("pointLightCount", static_cast<uint32_t>(m_pRenderPacket->plights.lights->size()));
+	m_pGlobalUniformHandler->set("spotLightCount", static_cast<uint32_t>(m_pRenderPacket->slights.lights->size()));
 	m_pGlobalUniformHandler->set("frustumPlanes", m_pRenderPacket->camera.frustum.frustumSides);
 
 	FGlobalUniformUpdateInfo update_info{};
@@ -282,6 +280,12 @@ void CRenderInterface::render(float dt)
 	m_pRenderPacket->shadowDrawCalls.clear();
 
 	m_pRenderPacket->rawCommands->clear();
+	m_pRenderPacket->dlights.lights->clear();
+	m_pRenderPacket->dlights.shadows->clear();
+	m_pRenderPacket->plights.lights->clear();
+	m_pRenderPacket->plights.shadows->clear();
+	m_pRenderPacket->slights.lights->clear();
+	m_pRenderPacket->slights.shadows->clear();
 }
 
 size_t CRenderInterface::createTexture(const std::string& path)
@@ -330,14 +334,10 @@ const std::unique_ptr<IVertexHandler>& CRenderInterface::getVertexHandler(size_t
 	return m_pResources->get<IVertexHandler>(id);
 }
 
-void CRenderInterface::drawPrimitive(const FGeometryDrawCallCommand& raw_comand)
+void CRenderInterface::drawPrimitive(const FGeometryRawCommand& raw_comand)
 {
 	auto& raw_commands = m_pRenderPacket->rawCommands;
-	size_t index{ 0ull };
-
-	raw_commands->insert(&raw_comand, index);
-
-	auto* command = reinterpret_cast<FGeometryDrawCallCommand*>(raw_commands->at(index));
+	auto* command = reinterpret_cast<FGeometryRawCommand*>(raw_commands->emplace_back(&raw_comand));
 
 	auto& vbo = getVertexHandler(raw_comand.vboID);
 
@@ -352,16 +352,16 @@ void CRenderInterface::fillDrawBuffer(const std::vector<FGeometryBatch>& batches
 {
 	for (const auto& batch : batches)
 	{
-		auto& vbo = getVertexHandler(batch.vboId);
+		auto& vbo = getVertexHandler(batch.vboID);
 		if (vbo)
 		{
 			auto last_index = vbo->getLastIndex();
 			auto last_vertex = vbo->getLastVertex();
 
 			auto& draw_call = draw_calls.emplace_back();
-			draw_call.vboId = batch.vboId;
-			draw_call.materialId = batch.materialId;
-			draw_call.node = batch.node;
+			draw_call.vboId = batch.vboID;
+			draw_call.materialId = batch.materialID;
+			draw_call.node = batch.nodeID;
 
 			if (last_index == 0ull)
 			{

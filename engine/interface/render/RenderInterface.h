@@ -281,10 +281,7 @@ namespace engine
 		struct FLightBuffer
 		{
 			std::unique_ptr<IGPUArrayHandle> lights{};
-			uint32_t lcount{ 0u };
-
 			std::unique_ptr<IGPUArrayHandle> shadows{};
-			uint32_t scount{ 0u };
 		};
 
 		struct FRenderSceneStats
@@ -309,11 +306,14 @@ namespace engine
 
 			FRenderSceneStats stats{};
 
-			// Contains raw commands for draw (FGeometryDrawCallCommand)
+			// Contains raw commands for draw (FGeometryRawCommand)
 			std::unique_ptr<IGPUArrayHandle> rawCommands{};
 			// Contains draw batches from gpu (FGeometryDrawBatch)
 			std::unique_ptr<IGPUArrayHandle> sceneBatches{};
 			//std::unique_ptr<IGPUArrayHandle> shadowBatches{};
+
+			// Atomic counters for counting batch count
+			std::unique_ptr<IBufferObject> atomicCounters{};
 
 			std::unique_ptr<IBufferObject> drawCommands{};
 			std::unique_ptr<IBufferObject> drawIndexedCommands{};
@@ -421,7 +421,7 @@ namespace engine
 			virtual size_t createVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) = 0;
 			virtual const std::unique_ptr<IVertexHandler>& getVertexHandler(size_t id) = 0;
 
-			virtual void drawPrimitive(const FGeometryDrawCallCommand& raw_comand) = 0;
+			virtual void drawPrimitive(const FGeometryRawCommand& raw_comand) = 0;
 
 			virtual void fillDrawBuffers(const std::vector<FGeometryDrawData>& draw_data) = 0;
 

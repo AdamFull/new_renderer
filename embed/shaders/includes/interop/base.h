@@ -72,7 +72,7 @@ struct FGeometryDrawRange
 };
 
 // Raw draw command
-struct FGeometryDrawCallCommand
+struct FGeometryRawCommand
 {
 	uint32_t vboID;
 	uint32_t materialID;

@@ -35,12 +35,14 @@ void CCascadedShadowMapsRenderingStep::_execute(float dt)
 
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
 	auto& dlights = render_packet->dlights;
-	if (!dlights.scount)
+	size_t shadow_count = dlights.shadows->size();
+
+	if (!shadow_count)
 		return;
 
 	m_pRenderContext->beginRendering(m_beginRenderingInfo);
 
-	auto& rect = m_beginRenderingInfo.renderArea;
+	/*auto& rect = m_beginRenderingInfo.renderArea;
 	m_pRenderContext->setViewport(static_cast<float>(rect.size.x), static_cast<float>(rect.size.y), m_beginRenderingInfo.flipViewport);
 	m_pRenderContext->setScissorRect(0, 0, rect.size.x, rect.size.y);
 
@@ -119,7 +121,7 @@ void CCascadedShadowMapsRenderingStep::_execute(float dt)
 				shader->bind(m_beginRenderingInfo.queue);
 			}
 
-			for (size_t idx = 0ull; idx < dlights.scount; ++idx)
+			for (size_t idx = 0ull; idx < shadow_count; ++idx)
 			{
 				for (size_t layer = 0ull; layer < cascade_shadow_map_cascade_count; ++layer)
 				{
@@ -135,7 +137,7 @@ void CCascadedShadowMapsRenderingStep::_execute(float dt)
 				}
 			}
 		}
-	}
+	}*/
 
 	m_pRenderContext->endRendering(m_beginRenderingInfo);
 }

@@ -97,9 +97,9 @@ namespace engine
 
 		struct FGeometryBatch
 		{
-			size_t vboId{ ~0ull };
-			size_t materialId{ ~0ull };
-			uint32_t node{ ~0u };
+			size_t vboID{ ~0ull };
+			size_t materialID{ ~0ull };
+			uint32_t nodeID{ ~0u };
 
 			std::vector<FGeometryRanges> ranges{};
 		};

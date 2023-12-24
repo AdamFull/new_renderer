@@ -53,12 +53,12 @@ namespace engine
 
             for (const auto& batch : batches)
             {
-                batcher::BatchKey key{ flags, batch.vboId, batch.materialId, batch.node };
+                batcher::BatchKey key{ flags, batch.vboID, batch.materialID, batch.nodeID };
                 auto& nbatch = batch_map[key];
 
-                nbatch.vboId = batch.vboId;
-                nbatch.materialId = (flags & GEOMETRY_BATCHER_COUNT_ON_MATERIAL_FLAG_BIT) ? batch.materialId : ~0ull;
-                nbatch.node = batch.node;
+                nbatch.vboID = batch.vboID;
+                nbatch.materialID = (flags & GEOMETRY_BATCHER_COUNT_ON_MATERIAL_FLAG_BIT) ? batch.materialID : ~0ull;
+                nbatch.nodeID = batch.nodeID;
 
                 for(const auto& range : batch.ranges)
                     nbatch.ranges.emplace_back(range);
@@ -100,9 +100,9 @@ namespace engine
                 batcher::BatchKey key{ flags, data.vboId, data.materialId, data.node};
                 auto& batch = batch_map[key];
 
-                batch.vboId = data.vboId;
-                batch.materialId = (flags & GEOMETRY_BATCHER_COUNT_ON_MATERIAL_FLAG_BIT) ? data.materialId : ~0ull;
-                batch.node = data.node;
+                batch.vboID = data.vboId;
+                batch.materialID = (flags & GEOMETRY_BATCHER_COUNT_ON_MATERIAL_FLAG_BIT) ? data.materialId : ~0ull;
+                batch.nodeID = data.node;
                 batch.ranges.emplace_back(data.range);
             }
 
@@ -136,10 +136,10 @@ namespace engine
             // Sort by vbo and material
             std::sort(uni_batches.begin(), uni_batches.end(), [](const FGeometryBatch& a, const FGeometryBatch& b)
                 { 
-                    if (a.vboId == b.vboId)
-                        return a.materialId < b.materialId;
+                    if (a.vboID == b.vboID)
+                        return a.materialID < b.materialID;
 
-                    return a.vboId < b.vboId;
+                    return a.vboID < b.vboID;
                 });
 
             if (flags & GEOMETRY_BATCHER_COUNT_ON_MATERIAL_FLAG_BIT)
@@ -148,18 +148,18 @@ namespace engine
                 for (auto& uni_batch : uni_batches)
                 {
                     if (!batches.empty() &&
-                        batches.back().vboId == uni_batch.vboId &&
-                        batches.back().node == uni_batch.node &&
-                        currentMaterial + 1 == uni_batch.materialId)
+                        batches.back().vboID == uni_batch.vboID &&
+                        batches.back().nodeID == uni_batch.nodeID &&
+                        currentMaterial + 1 == uni_batch.materialID)
                     {
                         batches.back().ranges.insert(batches.back().ranges.end(), uni_batch.ranges.begin(), uni_batch.ranges.end());
-                        currentMaterial = uni_batch.materialId;
+                        currentMaterial = uni_batch.materialID;
                     }
                     else
                     {
                         batches.emplace_back(std::move(uni_batch));
-                        batches.back().materialId = uni_batch.materialId;
-                        currentMaterial = uni_batch.materialId;
+                        batches.back().materialID = uni_batch.materialID;
+                        currentMaterial = uni_batch.materialID;
                     }
                 }
             }

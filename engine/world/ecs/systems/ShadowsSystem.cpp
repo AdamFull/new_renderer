@@ -39,7 +39,7 @@ void CShadowsSystem::__update(float fDt)
 	// Calculate cascades shadow data
 	{
 		auto& lights = render_packet->dlights;
-		lights.scount &= 0u;
+		size_t shadow_count = lights.shadows->size();
 
 		// Begin calculating cascades
 		const auto& near_clip = render_packet->camera.nearp;
@@ -60,7 +60,7 @@ void CShadowsSystem::__update(float fDt)
 
 			// Calculate shadows
 			std::array<float, cascade_shadow_map_cascade_count> cascadeSplits;
-			if (light.castShadows && base.enabled && lights.scount < max_directional_light_shadow_count)
+			if (light.castShadows && base.enabled && shadow_count < max_directional_light_shadow_count)
 			{
 				FCascadedShadowCommit shadow_commit{};
 
@@ -153,8 +153,9 @@ void CShadowsSystem::__update(float fDt)
 				}
 
 				// Set shadow index and increment it
-				light.shadowIndex = lights.scount;
-				lights.shadows->insert(&shadow_commit, lights.scount++);
+				light.shadowIndex = shadow_count;
+				lights.shadows->emplace_back(&shadow_commit);
+				shadow_count = lights.shadows->size();
 			}
 		}
 	}
@@ -164,14 +165,14 @@ void CShadowsSystem::__update(float fDt)
 	// Calculate omni shadows
 	{
 		auto& lights = render_packet->plights;
-		lights.scount &= 0u;
+		size_t shadow_count = lights.shadows->size();
 
 		auto view = registry->view<FTransformComponent, FBaseComponent, FPointLightComponent>();
 		for (auto [entity, ltransform, base, light] : view.each())
 		{
 			light.shadowIndex = -1;
 
-			if (light.castShadows && base.enabled && lights.scount < max_point_light_shadow_count)
+			if (light.castShadows && base.enabled && shadow_count < max_point_light_shadow_count)
 			{
 				glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, light.radius);
 
@@ -183,8 +184,9 @@ void CShadowsSystem::__update(float fDt)
 				shadow_commit.viewProj[4ull] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0));	// POSITIVE_Z
 				shadow_commit.viewProj[5ull] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0));	// NEGATIVE_Z
 
-				light.shadowIndex = lights.scount;
-				lights.shadows->insert(&shadow_commit, lights.scount++);
+				light.shadowIndex = shadow_count;
+				lights.shadows->emplace_back(&shadow_commit);
+				shadow_count = lights.shadows->size();
 			}
 		}
 	}
@@ -194,14 +196,14 @@ void CShadowsSystem::__update(float fDt)
 	// Calculate spot shadows
 	{
 		auto& lights = render_packet->slights;
-		lights.scount &= 0u;
+		size_t shadow_count = lights.shadows->size();
 
 		auto view = registry->view<FTransformComponent, FBaseComponent, FSpotLightComponent>();
 		for (auto [entity, ltransform, base, light] : view.each())
 		{
 			light.shadowIndex = -1;
 
-			if (light.castShadows && base.enabled && lights.scount < max_spot_light_count)
+			if (light.castShadows && base.enabled && shadow_count < max_spot_light_count)
 			{
 				FSpotShadowCommit shadow_commit{};
 
@@ -210,8 +212,9 @@ void CShadowsSystem::__update(float fDt)
 				glm::mat4 shadowView = glm::lookAt(ltransform.gposition, ltransform.gposition + light_dir, glm::vec3(0.0f, 1.0f, 0.0f));
 				shadow_commit.viewProj = shadowProj * shadowView;
 
-				light.shadowIndex = lights.scount;
-				lights.shadows->insert(&shadow_commit, lights.scount++);
+				light.shadowIndex = shadow_count;
+				lights.shadows->emplace_back(&shadow_commit);
+				shadow_count = lights.shadows->size();
 			}
 		}
 	}

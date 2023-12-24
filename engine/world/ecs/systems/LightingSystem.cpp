@@ -34,7 +34,7 @@ void CLightingSystem::__update(float fDt)
 	// Collecting directional lights
 	{
 		auto& lights = render_packet->dlights;
-		lights.lcount &= 0u;
+		size_t light_count = lights.lights->size();
 
 		auto view = registry->view<FTransformComponent, FBaseComponent, FDirectionalLightComponent>();
 		for (auto [entity, transform, base, light] : view.each())
@@ -42,7 +42,7 @@ void CLightingSystem::__update(float fDt)
 			if (!base.enabled)
 				continue;
 
-			if (lights.lcount > max_directional_light_count)
+			if (light_count > max_directional_light_count)
 				break;
 
 			FDirectionalLightCommit commit;
@@ -52,14 +52,15 @@ void CLightingSystem::__update(float fDt)
 			commit.shadowIndex = light.shadowIndex;
 			commit.castShadows = static_cast<int>(light.castShadows);
 
-			lights.lights->insert(&commit, lights.lcount++);
+			lights.lights->emplace_back(&commit);
+			light_count = lights.lights->size();
 		}
 	}
 
 	// Collecting point lights
 	{
 		auto& lights = render_packet->plights;
-		lights.lcount &= 0u;
+		size_t light_count = lights.lights->size();
 
 		auto view = registry->view<FTransformComponent, FBaseComponent, FPointLightComponent>();
 		for (auto [entity, transform, base, light] : view.each())
@@ -67,7 +68,7 @@ void CLightingSystem::__update(float fDt)
 			if (!base.enabled)
 				continue;
 
-			if (lights.lcount > max_point_light_count)
+			if (light_count > max_point_light_count)
 				break;
 
 			// Calculate light data
@@ -79,20 +80,21 @@ void CLightingSystem::__update(float fDt)
 			commit.shadowIndex = light.shadowIndex;
 			commit.castShadows = static_cast<int>(light.castShadows);
 
-			lights.lights->insert(&commit, lights.lcount++);
+			lights.lights->emplace_back(&commit);
+			light_count = lights.lights->size();
 		}
 	}
 
 	// Collecting spot lights
 	{
 		auto& lights = render_packet->slights;
-		lights.lcount &= 0u;
+		size_t light_count = lights.lights->size();
 
 		// TODO: direction as dot product of rotation and some vec
 		auto view = registry->view<FTransformComponent, FSpotLightComponent>();
 		for (auto [entity, transform, light] : view.each())
 		{
-			if (lights.lcount > max_spot_light_count)
+			if (light_count > max_spot_light_count)
 				break;
 
 			FSpotLightCommit commit;
@@ -106,7 +108,8 @@ void CLightingSystem::__update(float fDt)
 			commit.shadowIndex = light.shadowIndex;
 			commit.castShadows = static_cast<int>(light.castShadows);
 
-			lights.lights->insert(&commit, lights.lcount++);
+			lights.lights->emplace_back(&commit);
+			light_count = lights.lights->size();
 		}
 	}
 }

@@ -1,0 +1,26 @@
+{
+	name: "culling";
+
+	shaders: [
+		{
+			name: "cull_and_batch";
+			sources: [
+				{
+					type: "compute";
+					shader_name: "cull_and_batch_comp";
+				}
+			];
+		}
+	];
+
+	compile: [
+		{ 
+			shader_name: "write";
+			permutation_generator: {
+				permutations: [
+					{ definitions: [] }
+				];
+			};
+		}
+	];
+}

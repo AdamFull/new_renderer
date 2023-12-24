@@ -66,6 +66,7 @@ namespace engine
 
 			virtual void create(const std::string& name, size_t stride, size_t count) = 0;
 			virtual void flush(size_t count = ~0ull, size_t offset = 0ull) = 0;
+			virtual void sync(size_t count) = 0;
 
 			virtual uint8_t* at(size_t index) = 0;
 			virtual const uint8_t* at(size_t index) const = 0;
@@ -82,7 +83,7 @@ namespace engine
 			virtual const std::vector<uint8_t>& getData() const = 0;
 			virtual const std::unique_ptr<IBufferObject>& getBufferObject() const = 0;
 
-			virtual size_t getLastInsertionIndex() = 0;
+			virtual size_t size() const = 0;
 		};
 	}
 }

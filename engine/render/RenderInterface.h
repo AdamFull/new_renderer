@@ -28,7 +28,7 @@ namespace engine
 			size_t createVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) override;
 			const std::unique_ptr<IVertexHandler>& getVertexHandler(size_t id) override;
 
-			void drawPrimitive(const FGeometryDrawCallCommand& raw_comand) override;
+			void drawPrimitive(const FGeometryRawCommand& raw_comand) override;
 
 			void fillDrawBuffer(const std::vector<FGeometryBatch>& batches, const std::unique_ptr<IBufferObject>& buffer, const std::unique_ptr<IBufferObject>& indexed_buffer, std::vector<FGeometryDrawCall>& draw_calls, size_t& offset, size_t& indexed_offset);
 			void fillDrawBuffers(const std::vector<FGeometryDrawData>& draw_data) override;
@@ -64,6 +64,7 @@ namespace engine
 			size_t m_matPassDepth{ ~0ull };
 			size_t m_matPassStencil{ ~0ull };
 
+			std::vector<IGPUArrayHandle*> m_vArrayHandles{};
 			std::unique_ptr<FRenderDataPacket> m_pRenderPacket{};
 			std::unique_ptr<CResourceContainer> m_pResources{};
 			std::unique_ptr<IRenderContext> m_pRenderContext{};

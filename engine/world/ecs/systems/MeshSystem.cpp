@@ -36,6 +36,8 @@ void CMeshSystem::__update(float fDt)
 
 	auto& nodes = render_packet->nodes;
 
+	std::vector<FGeometryRawCommand> draw_primitives;
+
 	auto view = registry->view<FTransformComponent, FBaseComponent, FMeshComponent>();
 	for (auto [entity, transform, base, mesh] : view.each())
 	{
@@ -53,7 +55,7 @@ void CMeshSystem::__update(float fDt)
 		{
 			auto& lod = primitive.lods[0ull];
 
-			FGeometryDrawCallCommand draw_data{};
+			auto& draw_data = draw_primitives.emplace_back();
 			draw_data.vboID = primitive.vboId;
 			draw_data.materialID = primitive.materialId;
 			draw_data.instanceID = node;
@@ -65,8 +67,23 @@ void CMeshSystem::__update(float fDt)
 
 			draw_data.bounds.min = primitive.dims.min;
 			draw_data.bounds.max = primitive.dims.max;
-
-			m_pRenderInterface->drawPrimitive(draw_data);
 		}
 	}
+
+	// Sort drawings by vbo, material and node
+	std::sort(draw_primitives.begin(), draw_primitives.end(), [](const FGeometryRawCommand& a, const FGeometryRawCommand& b)
+		{
+			if (a.vboID == b.vboID)
+			{
+				if(a.materialID == b.materialID)
+					return a.instanceID < b.instanceID;
+
+				return a.materialID < b.materialID;
+			}
+
+			return a.vboID < b.vboID;
+		});
+
+	for(const auto& draw_data : draw_primitives)
+		m_pRenderInterface->drawPrimitive(draw_data);
 }
