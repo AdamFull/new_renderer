@@ -11,18 +11,23 @@ namespace engine
 		enum ERenderingStepType
 		{
 			RENDERING_STEP_SYNCHRONIZATION_TYPE,
-			RENDERING_STEP_RENDERING_TYPE
+			RENDERING_STEP_RENDERING_TYPE,
+			RENDERING_STEP_COMPUTE_TYPE
 		};
 
 		enum ERenderingType
 		{
 			RENDERING_FULLSCREEN_TYPE,
 			RENDERING_GEOMETRY_TYPE,
-			RENDERING_COMPUTE_TYPE,
-			RENDERING_COMPUTE_GEOMETRY_TYPE,
-			RENDERING_COMPUTE_CUBEMAP_TYPE,
 			RENDERING_CSM_TYPE,
 			RENDERING_RENDER_SCRIPT_TYPE
+		};
+
+		enum EComputeType
+		{
+			COMPUTE_DEFAULT_TYPE,
+			COMPUTE_GEOMETRY_TYPE,
+			COMPUTE_CUBEMAP_TYPE
 		};
 
 		enum ESynchronizationType
@@ -72,7 +77,7 @@ namespace engine
 		struct FRenderingStepRenderingInfo
 		{
 			// ERenderingType
-			uint32_t type{ ~0u };
+			uint32_t type{ 0u };
 
 			uint32_t queue{ 0u };
 
@@ -93,6 +98,26 @@ namespace engine
 			size_t stencilTarget{ ~0ull };
 		};
 
+		struct FRenderingStepComputeInfo
+		{
+			uint32_t type{ 0u };
+			uint32_t queue{ ~0u };
+
+			std::string renderScript{};
+
+			std::string shaderName{};
+
+			bool oneTime{ false };
+
+			std::unordered_map<std::string, size_t> shaderInputs{};
+			std::unordered_map<std::string, size_t> writeTargets{};
+			std::unordered_map<std::string, size_t> writeBuffers{};
+
+			uint32_t groupX{ 1u };
+			uint32_t groupY{ 1u };
+			uint32_t groupZ{ 1u };
+		};
+
 		struct FRenderingStepCreateInfo
 		{
 			// ERenderingStepType
@@ -100,6 +125,7 @@ namespace engine
 
 			FRenderingStepSynchronizationInfo synchronization{};
 			FRenderingStepRenderingInfo rendering{};
+			FRenderingStepComputeInfo compute{};
 		};
 
 		struct FBeginRenderingInfo
@@ -112,6 +138,19 @@ namespace engine
 			std::vector<size_t> colorAttachments{};
 			size_t depthAttachment{ ~0ull };
 			size_t stencilAttachment{ ~0ull };
+#ifndef BUILD_WITHOUT_DEBUGGIND
+			std::string name{};
+#endif
+		};
+
+		struct FBeginComputeInfo
+		{
+			uint32_t queue{ 0u };
+
+			std::vector<size_t> writeAttachments{};
+			std::vector<size_t> writeBuffers{};
+
+			FPoint3D<uint32_t> globalSizes{};
 #ifndef BUILD_WITHOUT_DEBUGGIND
 			std::string name{};
 #endif

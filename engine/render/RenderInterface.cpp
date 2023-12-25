@@ -280,6 +280,9 @@ void CRenderInterface::render(float dt)
 	m_pRenderPacket->shadowDrawCalls.clear();
 
 	m_pRenderPacket->rawCommands->clear();
+	m_pRenderPacket->nodes->clear();
+	m_pRenderPacket->skins->clear();
+
 	m_pRenderPacket->dlights.lights->clear();
 	m_pRenderPacket->dlights.shadows->clear();
 	m_pRenderPacket->plights.lights->clear();
@@ -485,16 +488,19 @@ void CRenderInterface::createRendering(const FRenderingStepCreateInfo& rendering
 			new_step = std::make_unique<CFullscreenRenderingStep>(this, m_pRenderContext.get());
 		else if (rendering_ci.rendering.type == RENDERING_GEOMETRY_TYPE)
 			new_step = std::make_unique<CGeometryRenderingStep>(this, m_pRenderContext.get());
-		else if (rendering_ci.rendering.type == RENDERING_COMPUTE_TYPE)
-			new_step = std::make_unique<CComputeRenderingStep>(this, m_pRenderContext.get());
-		else if (rendering_ci.rendering.type == RENDERING_COMPUTE_GEOMETRY_TYPE)
-			new_step = std::make_unique<CComputeGeometryRenderingStep>(this, m_pRenderContext.get());
-		else if (rendering_ci.rendering.type == RENDERING_COMPUTE_CUBEMAP_TYPE)
-			new_step = std::make_unique<CComputeCubemapRenderingStep>(this, m_pRenderContext.get());
 		else if (rendering_ci.rendering.type == RENDERING_CSM_TYPE)
 			new_step = std::make_unique<CCascadedShadowMapsRenderingStep>(this, m_pRenderContext.get());
 		else if(rendering_ci.rendering.type == RENDERING_RENDER_SCRIPT_TYPE)
 			new_step = std::make_unique<CRenderScriptRenderingStep>(this, m_pRenderContext.get());
+	}
+	else if (rendering_ci.type == RENDERING_STEP_COMPUTE_TYPE)
+	{
+		if (rendering_ci.compute.type == COMPUTE_DEFAULT_TYPE)
+			new_step = std::make_unique<CComputeRenderingStep>(this, m_pRenderContext.get());
+		else if (rendering_ci.compute.type == COMPUTE_GEOMETRY_TYPE)
+			new_step = std::make_unique<CComputeGeometryRenderingStep>(this, m_pRenderContext.get());
+		else if (rendering_ci.compute.type == COMPUTE_CUBEMAP_TYPE)
+			new_step = std::make_unique<CComputeCubemapRenderingStep>(this, m_pRenderContext.get());
 	}
 
 	new_step->create(rendering_ci);

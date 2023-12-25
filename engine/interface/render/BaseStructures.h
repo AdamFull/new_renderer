@@ -70,6 +70,16 @@ namespace engine
 		};
 
 		template<class _Ty>
+		struct FPoint3D
+		{
+			FPoint3D() = default;
+			FPoint3D(_Ty val) : x(val), y(val), z(val) {}
+			FPoint3D(_Ty _x, _Ty _y, _Ty _z) : x(_x), y(_y), z(_z) {}
+
+			_Ty x{ 0 }, y{ 0 }, z{ 0 };
+		};
+
+		template<class _Ty>
 		struct FRect2D
 		{
 			FRect2D() = default;
@@ -88,9 +98,9 @@ namespace engine
 
 		struct FGeometryDrawData
 		{
-			size_t vboId{ ~0ull };
-			size_t materialId{ ~0ull };
-			uint32_t node{ ~0u };
+			size_t vboID{ ~0ull };
+			size_t materialID{ ~0ull };
+			uint32_t nodeID{ ~0u };
 
 			FGeometryRanges range{};
 		};

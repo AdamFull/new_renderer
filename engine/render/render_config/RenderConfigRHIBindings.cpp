@@ -145,7 +145,8 @@ namespace engine
 			lua->new_enum(
 				"RenderingStepType",
 				"synchronization", RENDERING_STEP_SYNCHRONIZATION_TYPE,
-				"rendering", RENDERING_STEP_RENDERING_TYPE
+				"rendering", RENDERING_STEP_RENDERING_TYPE,
+				"compute", RENDERING_STEP_COMPUTE_TYPE
 			);
 
 			// Register ERenderingType
@@ -153,11 +154,16 @@ namespace engine
 				"RenderingType",
 				"fullscreen", RENDERING_FULLSCREEN_TYPE,
 				"geometry", RENDERING_GEOMETRY_TYPE,
-				"compute", RENDERING_COMPUTE_TYPE,
-				"compute_geometry", RENDERING_COMPUTE_GEOMETRY_TYPE,
-				"compute_cubemap", RENDERING_COMPUTE_CUBEMAP_TYPE,
 				"csm", RENDERING_CSM_TYPE,
 				"render_script", RENDERING_RENDER_SCRIPT_TYPE
+			);
+
+			// Register EComputeType
+			lua->new_enum(
+				"ComputeType",
+				"default", COMPUTE_DEFAULT_TYPE,
+				"geometry", COMPUTE_GEOMETRY_TYPE,
+				"cubemap", COMPUTE_CUBEMAP_TYPE
 			);
 
 			// Register ESynchronizationType
@@ -262,7 +268,7 @@ namespace engine
 				"barrier", &FRenderingStepSynchronizationInfo::barrier
 			);
 
-			// FRenderingStepSynchronizationInfo registration
+			// FRenderingStepRenderingInfo registration
 			lua->new_usertype<FRenderingStepRenderingInfo>(
 				"RenderingStepInfo",
 				sol::constructors<FRenderingStepRenderingInfo()>(),
@@ -284,13 +290,35 @@ namespace engine
 				"stencil_target", & FRenderingStepRenderingInfo::stencilTarget
 			);
 
+			// FRenderingStepComputeInfo registration
+			lua->new_usertype<FRenderingStepComputeInfo>(
+				"ComputeStepInfo",
+				sol::constructors<FRenderingStepComputeInfo()>(),
+				"type", &FRenderingStepComputeInfo::type,
+				"queue", &FRenderingStepComputeInfo::queue,
+
+				"render_script", & FRenderingStepComputeInfo::renderScript,
+				"shader_name", & FRenderingStepComputeInfo::shaderName,
+
+				"one_time", & FRenderingStepComputeInfo::oneTime,
+
+				"input_targets", & FRenderingStepComputeInfo::shaderInputs,
+				"write_targets", & FRenderingStepComputeInfo::writeTargets,
+				"write_buffers", & FRenderingStepComputeInfo::writeBuffers,
+
+				"group_x", & FRenderingStepComputeInfo::groupX,
+				"group_y", & FRenderingStepComputeInfo::groupY,
+				"group_z", & FRenderingStepComputeInfo::groupZ
+			);
+
 			// FRenderingStepCreateInfo registration
 			lua->new_usertype<FRenderingStepCreateInfo>(
 				"RenderingStepCI",
 				sol::constructors<FRenderingStepCreateInfo()>(),
 				"type", &FRenderingStepCreateInfo::type,
 				"sync", &FRenderingStepCreateInfo::synchronization,
-				"rendering", &FRenderingStepCreateInfo::rendering
+				"rendering", &FRenderingStepCreateInfo::rendering,
+				"compute", &FRenderingStepCreateInfo::compute
 			);
 
 			// FVertexBindingDescription registration

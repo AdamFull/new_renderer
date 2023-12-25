@@ -19,14 +19,15 @@ void CComputeGeometryRenderingStep::_create(const FRenderingStepCreateInfo& crea
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto& rendering_ci = create_info.rendering;
+	auto& rendering_ci = create_info.compute;
 
-	m_shaderInputs = rendering_ci.shaderInputs;
+	m_shaderInputs.insert(rendering_ci.shaderInputs.begin(), rendering_ci.shaderInputs.end());
+	m_shaderInputs.insert(rendering_ci.writeTargets.begin(), rendering_ci.writeTargets.end());
 
 	m_baseShaderName = rendering_ci.shaderName;
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-	m_beginRenderingInfo.name = std::format("compute_geometry:{}", rendering_ci.shaderName);
+	m_beginComputeInfo.name = std::format("compute_geometry:{}", rendering_ci.shaderName);
 #endif
 }
 
@@ -34,9 +35,9 @@ void CComputeGeometryRenderingStep::_execute(float dt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	m_pRenderContext->beginCompute(m_beginRenderingInfo);
+	m_pRenderContext->beginCompute(m_beginComputeInfo);
 
-	auto& rect = m_beginRenderingInfo.renderArea.size;
+	auto& sizes = m_beginComputeInfo.globalSizes;
 
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
 
@@ -60,7 +61,7 @@ void CComputeGeometryRenderingStep::_execute(float dt)
 		if (!last_vbo || vbo.get() != last_vbo)
 		{
 			last_vbo = vbo.get();
-			last_vbo->bind(m_beginRenderingInfo.queue);
+			last_vbo->bind(m_beginComputeInfo.queue);
 			was_vbo_rebinded = true;
 		}
 
@@ -147,7 +148,7 @@ void CComputeGeometryRenderingStep::_execute(float dt)
 				shader->bindBuffer("IndirectIndexedComands", indirect_buffer);
 
 				shader->flushDescriptors();
-				shader->bind(m_beginRenderingInfo.queue);
+				shader->bind(m_beginComputeInfo.queue);
 			}
 
 			auto& mesh_data = shader->getConstantBlock("meshData");
@@ -158,26 +159,22 @@ void CComputeGeometryRenderingStep::_execute(float dt)
 				//mesh_data->set("materialId", static_cast<uint32_t>(batch.materialId));
 			}
 
-			shader->flushConstants(m_beginRenderingInfo.queue);
+			shader->flushConstants(m_beginComputeInfo.queue);
 
 			auto& reflection = shader->getReflection();
 			
 			FDispatchInfo dispatch_info{};
 			auto& group = dispatch_info.groups.emplace_back();
-			group.x = static_cast<uint32_t>(std::ceil(static_cast<float>(rect.x) / static_cast<float>(reflection.localSizes[0])));
-			group.y = static_cast<uint32_t>(std::ceil(static_cast<float>(rect.y) / static_cast<float>(reflection.localSizes[1])));
-			group.z = 0u;
+			group.x = glm::max(static_cast<uint32_t>(std::ceil(static_cast<float>(sizes.x) / static_cast<float>(reflection.localSizes[0]))), 1u);
+			group.y = glm::max(static_cast<uint32_t>(std::ceil(static_cast<float>(sizes.y) / static_cast<float>(reflection.localSizes[1]))), 1u);
+			group.z = glm::max(static_cast<uint32_t>(std::ceil(static_cast<float>(sizes.z) / static_cast<float>(reflection.localSizes[2]))), 1u);
 			
-			group.x = glm::max(group.x, 1u);
-			group.y = glm::max(group.y, 1u);
-			group.z = glm::max(group.z, 1u);
-			
-			m_pRenderContext->dispatch(m_beginRenderingInfo.queue, dispatch_info);
+			m_pRenderContext->dispatch(m_beginComputeInfo.queue, dispatch_info);
 			//break;
 		}
 	}
 
-	m_pRenderContext->endCompute(m_beginRenderingInfo);
+	m_pRenderContext->endCompute(m_beginComputeInfo);
 }
 
 const std::unique_ptr<IShaderObject>& CComputeGeometryRenderingStep::getShaderByVBO(const IVertexHandler* vbo)

@@ -19,7 +19,7 @@ void CComputeRenderingStep::_create(const FRenderingStepCreateInfo& create_info)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto& rendering_ci = create_info.rendering;
+	auto& rendering_ci = create_info.compute;
 
 	FComputeShaderCreateInfo shader_ci{};
 
@@ -31,8 +31,12 @@ void CComputeRenderingStep::_create(const FRenderingStepCreateInfo& create_info)
 	for (auto& [binding_point, texture] : rendering_ci.shaderInputs)
 		m_pShader->bindTexture(binding_point.c_str(), texture);
 
+	// Bind texture writes
+	for(const auto& [binding_point, texture] : rendering_ci.writeTargets)
+		m_pShader->bindTexture(binding_point.c_str(), texture);
+
 #ifndef BUILD_WITHOUT_DEBUGGIND
-	m_beginRenderingInfo.name = std::format("compute:{}", rendering_ci.shaderName);
+	m_beginComputeInfo.name = std::format("compute:{}", rendering_ci.shaderName);
 #endif
 }
 
@@ -40,9 +44,9 @@ void CComputeRenderingStep::_execute(float dt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	m_pRenderContext->beginCompute(m_beginRenderingInfo);
+	m_pRenderContext->beginCompute(m_beginComputeInfo);
 
-	auto& rect = m_beginRenderingInfo.renderArea.size;
+	auto& sizes = m_beginComputeInfo.globalSizes;
 
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
 
@@ -95,22 +99,18 @@ void CComputeRenderingStep::_execute(float dt)
 	}
 
 	m_pShader->flushDescriptors();
-	m_pShader->flushConstants(m_beginRenderingInfo.queue);
-	m_pShader->bind(m_beginRenderingInfo.queue);
+	m_pShader->flushConstants(m_beginComputeInfo.queue);
+	m_pShader->bind(m_beginComputeInfo.queue);
 
 	auto& reflection = m_pShader->getReflection();
 
 	FDispatchInfo dispatch_info{};
 	auto& group = dispatch_info.groups.emplace_back();
-	group.x = static_cast<uint32_t>(std::ceil(static_cast<float>(rect.x) / static_cast<float>(reflection.localSizes[0])));
-	group.y = static_cast<uint32_t>(std::ceil(static_cast<float>(rect.y) / static_cast<float>(reflection.localSizes[1])));
-	group.z = 0u;
+	group.x = glm::max(static_cast<uint32_t>(std::ceil(static_cast<float>(sizes.x) / static_cast<float>(reflection.localSizes[0]))), 1u);
+	group.y = glm::max(static_cast<uint32_t>(std::ceil(static_cast<float>(sizes.y) / static_cast<float>(reflection.localSizes[1]))), 1u);
+	group.z = glm::max(static_cast<uint32_t>(std::ceil(static_cast<float>(sizes.z) / static_cast<float>(reflection.localSizes[2]))), 1u);
 
-	group.x = glm::max(group.x, 1u);
-	group.y = glm::max(group.y, 1u);
-	group.z = glm::max(group.z, 1u);
+	m_pRenderContext->dispatch(m_beginComputeInfo.queue, dispatch_info);
 
-	m_pRenderContext->dispatch(m_beginRenderingInfo.queue, dispatch_info);
-
-	m_pRenderContext->endCompute(m_beginRenderingInfo);
+	m_pRenderContext->endCompute(m_beginComputeInfo);
 }

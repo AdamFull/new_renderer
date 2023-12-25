@@ -15,7 +15,7 @@
 
 	compile: [
 		{ 
-			shader_name: "write";
+			shader_name: "cull_and_batch";
 			permutation_generator: {
 				permutations: [
 					{ definitions: [] }

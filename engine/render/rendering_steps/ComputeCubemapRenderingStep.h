@@ -6,7 +6,7 @@ namespace engine
 {
 	namespace render
 	{
-		class CComputeCubemapRenderingStep : public IRenderingStep
+		class CComputeCubemapRenderingStep : public IComputeStep
 		{
 		public:
 			CComputeCubemapRenderingStep() = default;

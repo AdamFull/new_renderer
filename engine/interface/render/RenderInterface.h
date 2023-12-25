@@ -176,7 +176,7 @@ namespace engine
 
 			virtual void create(const FRenderingStepCreateInfo& create_info)
 			{
-				m_bOneTime = create_info.rendering.oneTime;
+				
 			}
 
 			virtual void execute(float dt)
@@ -227,6 +227,8 @@ namespace engine
 
 			void create(const FRenderingStepCreateInfo& create_info) override
 			{
+				m_bOneTime = create_info.rendering.oneTime;
+
 				// Save rendering info
 				m_beginRenderingInfo.queue = create_info.rendering.queue;
 				m_beginRenderingInfo.colorAttachments = create_info.rendering.renderTargets;
@@ -249,7 +251,44 @@ namespace engine
 			virtual void _execute(float dt) = 0;
 		protected:
 			FBeginRenderingInfo m_beginRenderingInfo{};
-			
+		};
+
+		class IComputeStep : public IRenderGraphStep
+		{
+		public:
+			virtual ~IComputeStep() override = default;
+
+			void create(const FRenderingStepCreateInfo& create_info) override
+			{
+				m_bOneTime = create_info.compute.oneTime;
+
+				// Save rendering info
+				m_beginComputeInfo.queue = create_info.compute.queue;
+
+				for (const auto& [name, attachment] : create_info.compute.writeTargets)
+					m_beginComputeInfo.writeAttachments.emplace_back(attachment);
+
+				for (const auto& [name, buffer] : create_info.compute.writeBuffers)
+					m_beginComputeInfo.writeBuffers.emplace_back(buffer);
+
+				m_beginComputeInfo.globalSizes.x = create_info.compute.groupX;
+				m_beginComputeInfo.globalSizes.y = create_info.compute.groupY;
+				m_beginComputeInfo.globalSizes.z = create_info.compute.groupZ;
+
+				_create(create_info);
+				IRenderGraphStep::create(create_info);
+			}
+
+			void execute(float dt) override
+			{
+				_execute(dt);
+				IRenderGraphStep::execute(dt);
+			}
+		protected:
+			virtual void _create(const FRenderingStepCreateInfo& create_info) = 0;
+			virtual void _execute(float dt) = 0;
+		protected:
+			FBeginComputeInfo m_beginComputeInfo{};
 		};
 
 		class CGPUArrayHolder
@@ -372,8 +411,8 @@ namespace engine
 			virtual void beginRendering(const FBeginRenderingInfo& rendering_info) = 0;
 			virtual void endRendering(const FBeginRenderingInfo& rendering_info) = 0;
 
-			virtual void beginCompute(const FBeginRenderingInfo& rendering_info) = 0;
-			virtual void endCompute(const FBeginRenderingInfo& rendering_info) = 0;
+			virtual void beginCompute(const FBeginComputeInfo& rendering_info) = 0;
+			virtual void endCompute(const FBeginComputeInfo& rendering_info) = 0;
 
 			virtual void setViewport(float width, float height, bool flip_viewport) = 0;
 			virtual void setScissorRect(int32_t offset_x, int32_t offset_y, uint32_t width, uint32_t height) = 0;

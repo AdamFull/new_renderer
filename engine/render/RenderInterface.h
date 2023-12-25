@@ -65,6 +65,7 @@ namespace engine
 			size_t m_matPassStencil{ ~0ull };
 
 			std::vector<IGPUArrayHandle*> m_vArrayHandles{};
+
 			std::unique_ptr<FRenderDataPacket> m_pRenderPacket{};
 			std::unique_ptr<CResourceContainer> m_pResources{};
 			std::unique_ptr<IRenderContext> m_pRenderContext{};

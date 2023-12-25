@@ -212,7 +212,7 @@ void CScene::load(const std::string& path)
 		material_data.alphaCutoff = static_cast<float>(material.alphaCutoff);
 		material_data.doubleSided = material.doubleSided;
 
-		materials->insert(&material_data, idx);
+		materials->emplace_back(&material_data);
 
 		render_packet->stats.materialCount++;
 	}

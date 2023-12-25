@@ -97,12 +97,12 @@ namespace engine
 
             for (const auto& data : geometry_list)
             {
-                batcher::BatchKey key{ flags, data.vboId, data.materialId, data.node};
+                batcher::BatchKey key{ flags, data.vboID, data.materialID, data.nodeID};
                 auto& batch = batch_map[key];
 
-                batch.vboID = data.vboId;
-                batch.materialID = (flags & GEOMETRY_BATCHER_COUNT_ON_MATERIAL_FLAG_BIT) ? data.materialId : ~0ull;
-                batch.nodeID = data.node;
+                batch.vboID = data.vboID;
+                batch.materialID = (flags & GEOMETRY_BATCHER_COUNT_ON_MATERIAL_FLAG_BIT) ? data.materialID : ~0ull;
+                batch.nodeID = data.nodeID;
                 batch.ranges.emplace_back(data.range);
             }
 

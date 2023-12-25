@@ -33,7 +33,7 @@ void CGPUArrayHandle::create(const std::string& name, size_t stride, size_t coun
 
 void CGPUArrayHandle::flush(size_t count, size_t offset)
 {
-	size_t element_count = m_currentElementCount.load(std::memory_order_relaxed);
+	size_t element_count = m_currentElementCount.load(std::memory_order_relaxed) + 1ull;
 	if (count != ~0ull)
 		element_count = count;
 	else if (count == 0ull)
@@ -63,6 +63,7 @@ const uint8_t* CGPUArrayHandle::at(size_t index) const
 
 void CGPUArrayHandle::insert(const void* data, size_t index)
 {
+	m_currentElementCount.store(std::max(index, m_currentElementCount.load(std::memory_order_relaxed)));
 	std::memcpy(at(index), data, m_elementSize);
 }
 

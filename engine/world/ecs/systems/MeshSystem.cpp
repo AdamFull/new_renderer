@@ -84,6 +84,21 @@ void CMeshSystem::__update(float fDt)
 			return a.vboID < b.vboID;
 		});
 
-	for(const auto& draw_data : draw_primitives)
+	std::vector<FGeometryDrawData> old_draw_data{};
+	for (const auto& draw_data : draw_primitives)
+	{
+		auto& draw = old_draw_data.emplace_back();
+		draw.vboID = draw_data.vboID;
+		draw.materialID = draw_data.materialID;
+		draw.nodeID = draw_data.instanceID;
+
+		draw.range.beginIndex = draw_data.range.beginIndex;
+		draw.range.indexCount = draw_data.range.indexCount;
+		draw.range.beginVertex = draw_data.range.beginVertex;
+		draw.range.vertexCount = draw_data.range.vertexCount;
+
 		m_pRenderInterface->drawPrimitive(draw_data);
+	}
+
+	m_pRenderInterface->fillDrawBuffers(old_draw_data);
 }

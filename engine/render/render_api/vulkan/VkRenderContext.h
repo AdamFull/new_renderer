@@ -56,8 +56,8 @@ namespace engine
 				void beginRendering(const FBeginRenderingInfo& rendering_info) override;
 				void endRendering(const FBeginRenderingInfo& rendering_info) override;
 
-				void beginCompute(const FBeginRenderingInfo& rendering_info) override;
-				void endCompute(const FBeginRenderingInfo& rendering_info) override;
+				void beginCompute(const FBeginComputeInfo& rendering_info) override;
+				void endCompute(const FBeginComputeInfo& rendering_info) override;
 
 				void setViewport(float width, float height, bool flip_viewport = false) override;
 				void setScissorRect(int32_t offset_x, int32_t offset_y, uint32_t width, uint32_t height) override;

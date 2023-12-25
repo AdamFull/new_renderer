@@ -132,53 +132,62 @@ end
 -- generate brdf lut
 do
     local step_ci = RenderingStepCI.new()
-    step_ci.type = RenderingStepType.rendering
+    step_ci.type = RenderingStepType.compute
 
-    step_ci.rendering.type = RenderingType.compute
-    step_ci.rendering.queue = QueueType.graphics
-    step_ci.rendering.shader_name = "lighting:brgflut_generator"
-    step_ci.rendering.one_time = true
+    step_ci.compute.type = ComputeType.default
+    step_ci.compute.queue = QueueType.graphics
+    step_ci.compute.shader_name = "lighting:brgflut_generator"
+    step_ci.compute.one_time = true
 
     target_img = render_context:get_texture_resource("brdf_lut_target")
-    step_ci.rendering.output_targets:add(target_img)
-    step_ci.rendering.input_targets:set("out_color", target_img)
-    step_ci.rendering.render_rect = render_context:get_render_rect_from_rt(target_img)
+    rect = render_context:get_render_rect_from_rt(target_img)
+
+    step_ci.compute.group_x = math.floor(rect.size.x)
+    step_ci.compute.group_y = math.floor(rect.size.y)
+
+    step_ci.compute.write_targets:set("out_color", target_img)
 
     render_interface:create_renderer(step_ci)
 end
 
 do
     local step_ci = RenderingStepCI.new()
-    step_ci.type = RenderingStepType.rendering
+    step_ci.type = RenderingStepType.compute
 
-    step_ci.rendering.type = RenderingType.compute
-    step_ci.rendering.queue = QueueType.graphics
-    step_ci.rendering.shader_name = "lighting:irradiancecube_generator"
-    step_ci.rendering.one_time = true
+    step_ci.compute.type = ComputeType.default
+    step_ci.compute.queue = QueueType.graphics
+    step_ci.compute.shader_name = "lighting:irradiancecube_generator"
+    step_ci.compute.one_time = true
 
     target_img = render_context:get_texture_resource("irradiance_cube_target")
-    step_ci.rendering.output_targets:add(target_img)
-    step_ci.rendering.input_targets:set("out_color", target_img)
-    step_ci.rendering.input_targets:set("sampler_color", render_context:get_texture_resource("CasualDay4K"))
-    step_ci.rendering.render_rect = render_context:get_render_rect_from_rt(target_img)
+    rect = render_context:get_render_rect_from_rt(target_img)
+
+    step_ci.compute.group_x = math.floor(rect.size.x)
+    step_ci.compute.group_y = math.floor(rect.size.y)
+
+    step_ci.compute.write_targets:set("out_color", target_img)
+    step_ci.compute.input_targets:set("sampler_color", render_context:get_texture_resource("CasualDay4K"))
 
     render_interface:create_renderer(step_ci)
 end
 
 do
     local step_ci = RenderingStepCI.new()
-    step_ci.type = RenderingStepType.rendering
+    step_ci.type = RenderingStepType.compute
 
-    step_ci.rendering.type = RenderingType.compute_cubemap
-    step_ci.rendering.queue = QueueType.graphics
-    step_ci.rendering.shader_name = "lighting:prefilteredmap_generator"
-    step_ci.rendering.one_time = true
+    step_ci.compute.type = ComputeType.cubemap
+    step_ci.compute.queue = QueueType.graphics
+    step_ci.compute.shader_name = "lighting:prefilteredmap_generator"
+    step_ci.compute.one_time = true
 
     target_img = render_context:get_texture_resource("prefiltered_cube_target")
-    step_ci.rendering.output_targets:add(target_img)
-    step_ci.rendering.input_targets:set("out_color", target_img)
-    step_ci.rendering.input_targets:set("sampler_color", render_context:get_texture_resource("CasualDay4K"))
-    step_ci.rendering.render_rect = render_context:get_render_rect_from_rt(target_img)
+    rect = render_context:get_render_rect_from_rt(target_img)
+
+    step_ci.compute.group_x = math.floor(rect.size.x)
+    step_ci.compute.group_y = math.floor(rect.size.y)
+
+    step_ci.compute.write_targets:set("out_color", target_img)
+    step_ci.compute.input_targets:set("sampler_color", render_context:get_texture_resource("CasualDay4K"))
 
     render_interface:create_renderer(step_ci)
 end
@@ -219,25 +228,27 @@ end
 -- visibility buffer material pass
 do
     local step_ci = RenderingStepCI.new()
-    step_ci.type = RenderingStepType.rendering
+    step_ci.type = RenderingStepType.compute
 
-    step_ci.rendering.type = RenderingType.compute_geometry
-    step_ci.rendering.queue = QueueType.graphics
-    step_ci.rendering.shader_name = "visibilitybuffer:shade"
+    step_ci.compute.type = ComputeType.geometry
+    step_ci.compute.queue = QueueType.graphics
+    step_ci.compute.shader_name = "visibilitybuffer:shade"
 
     target_img = render_context:get_texture_resource("final_lighting_target")
-    step_ci.rendering.output_targets:add(target_img)
-    step_ci.rendering.input_targets:set("write_color", target_img)
-    step_ci.rendering.render_rect = render_context:get_render_rect_from_rt(target_img)
+    rect = render_context:get_render_rect_from_rt(target_img)
 
-    step_ci.rendering.input_targets:set("visbuffer_geometry", render_context:get_texture_resource("visbuffer_geometry_target"))
-    step_ci.rendering.input_targets:set("visbuffer_matobj", render_context:get_texture_resource("visbuffer_matobj_target"))
-    step_ci.rendering.input_targets:set("visbuffer_skinvbo", render_context:get_texture_resource("visbuffer_skinvbo_target"))
-    step_ci.rendering.input_targets:set("brdf_lut", render_context:get_texture_resource("brdf_lut_target"))
-    step_ci.rendering.input_targets:set("irradiance_cube", render_context:get_texture_resource("irradiance_cube_target"))
-    step_ci.rendering.input_targets:set("prefiltered_cube", render_context:get_texture_resource("prefiltered_cube_target"))
-    step_ci.rendering.input_targets:set("cascaded_shadowmap", render_context:get_texture_resource("cascaded_shadows_target"))
-    step_ci.rendering.input_targets:set("depth_buffer", render_context:get_texture_resource("zbuffer_depth_target"))
+    step_ci.compute.group_x = math.floor(rect.size.x)
+    step_ci.compute.group_y = math.floor(rect.size.y)
+
+    step_ci.compute.write_targets:set("write_color", target_img)
+    step_ci.compute.input_targets:set("visbuffer_geometry", render_context:get_texture_resource("visbuffer_geometry_target"))
+    step_ci.compute.input_targets:set("visbuffer_matobj", render_context:get_texture_resource("visbuffer_matobj_target"))
+    step_ci.compute.input_targets:set("visbuffer_skinvbo", render_context:get_texture_resource("visbuffer_skinvbo_target"))
+    step_ci.compute.input_targets:set("brdf_lut", render_context:get_texture_resource("brdf_lut_target"))
+    step_ci.compute.input_targets:set("irradiance_cube", render_context:get_texture_resource("irradiance_cube_target"))
+    step_ci.compute.input_targets:set("prefiltered_cube", render_context:get_texture_resource("prefiltered_cube_target"))
+    step_ci.compute.input_targets:set("cascaded_shadowmap", render_context:get_texture_resource("cascaded_shadows_target"))
+    step_ci.compute.input_targets:set("depth_buffer", render_context:get_texture_resource("zbuffer_depth_target"))
 
     render_interface:create_renderer(step_ci)
 end

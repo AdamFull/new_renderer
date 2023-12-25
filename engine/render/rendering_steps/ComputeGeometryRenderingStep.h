@@ -6,7 +6,7 @@ namespace engine
 {
 	namespace render
 	{
-		class CComputeGeometryRenderingStep : public IRenderingStep
+		class CComputeGeometryRenderingStep : public IComputeStep
 		{
 		public:
 			CComputeGeometryRenderingStep() = default;

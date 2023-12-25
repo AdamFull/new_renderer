@@ -1197,7 +1197,7 @@ void CVkRenderContext::endRendering(const FBeginRenderingInfo& rendering_info)
 	processMemoryBarriers(command_buffer, translation_info);
 }
 
-void CVkRenderContext::beginCompute(const FBeginRenderingInfo& rendering_info)
+void CVkRenderContext::beginCompute(const FBeginComputeInfo& rendering_info)
 {
 	auto& command_buffer = getLastCommandBuffer(rendering_info.queue);
 	auto& textures = m_pResources->data<FVkTexture>();
@@ -1205,7 +1205,7 @@ void CVkRenderContext::beginCompute(const FBeginRenderingInfo& rendering_info)
 	FVkTranslationInfo translation_info{};
 
 	// Translate storage images to general layout (uav)
-	for (const auto& target_view : rendering_info.colorAttachments)
+	for (const auto& target_view : rendering_info.writeAttachments)
 	{
 		auto& render_target = textures.at(target_view).at(m_pDevice->m_swapchain.currentFrame);
 
@@ -1225,7 +1225,7 @@ void CVkRenderContext::beginCompute(const FBeginRenderingInfo& rendering_info)
 #endif
 }
 
-void CVkRenderContext::endCompute(const FBeginRenderingInfo& rendering_info)
+void CVkRenderContext::endCompute(const FBeginComputeInfo& rendering_info)
 {
 	auto& command_buffer = getLastCommandBuffer(rendering_info.queue);
 	auto& textures = m_pResources->data<FVkTexture>();
@@ -1238,7 +1238,7 @@ void CVkRenderContext::endCompute(const FBeginRenderingInfo& rendering_info)
 	FVkTranslationInfo translation_info{};
 
 	// Translate storage images to general layout (uav)
-	for (const auto& target_view : rendering_info.colorAttachments)
+	for (const auto& target_view : rendering_info.writeAttachments)
 	{
 		auto& render_target = textures.at(target_view).at(m_pDevice->m_swapchain.currentFrame);
 

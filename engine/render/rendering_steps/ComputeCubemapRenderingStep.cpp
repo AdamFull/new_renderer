@@ -19,11 +19,11 @@ void CComputeCubemapRenderingStep::_create(const FRenderingStepCreateInfo& creat
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto& rendering_ci = create_info.rendering;
+	auto& rendering_ci = create_info.compute;
 
 	uint32_t calculated_usage{};
 
-	for (const auto& target : rendering_ci.renderTargets)
+	for (const auto& [name, target] : rendering_ci.writeTargets)
 	{
 		auto& info = m_pRenderContext->getTextureInfo(target);
 		calculated_usage += info.mipLevels;
@@ -36,14 +36,15 @@ void CComputeCubemapRenderingStep::_create(const FRenderingStepCreateInfo& creat
 	m_pShader = std::make_unique<CShaderObject>(m_pRenderInterface, m_pRenderContext);
 	m_pShader->create(rendering_ci.shaderName, shader_ci);
 
-	m_shaderInputs = rendering_ci.shaderInputs;
+	m_shaderInputs.insert(rendering_ci.shaderInputs.begin(), rendering_ci.shaderInputs.end());
+	m_shaderInputs.insert(rendering_ci.writeTargets.begin(), rendering_ci.writeTargets.end());
 
 	// Bind default textures to shader
 	for (auto& [binding_point, texture] : rendering_ci.shaderInputs)
 		m_pShader->bindTexture(binding_point.c_str(), texture);
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-	m_beginRenderingInfo.name = std::format("compute_cubemap:{}", rendering_ci.shaderName);
+	m_beginComputeInfo.name = std::format("compute_cubemap:{}", rendering_ci.shaderName);
 #endif
 }
 
@@ -51,11 +52,11 @@ void CComputeCubemapRenderingStep::_execute(float dt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	m_pRenderContext->beginCompute(m_beginRenderingInfo);
+	m_pRenderContext->beginCompute(m_beginComputeInfo);
 
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
 
-	for (const auto& target : m_beginRenderingInfo.colorAttachments)
+	for (const auto& target : m_beginComputeInfo.writeAttachments)
 	{
 		auto& info = m_pRenderContext->getTextureInfo(target);
 		for (uint32_t mip = 0u; mip < info.mipLevels; ++mip)
@@ -80,24 +81,20 @@ void CComputeCubemapRenderingStep::_execute(float dt)
 			}
 
 			m_pShader->flushDescriptors();
-			m_pShader->flushConstants(m_beginRenderingInfo.queue);
-			m_pShader->bind(m_beginRenderingInfo.queue);
+			m_pShader->flushConstants(m_beginComputeInfo.queue);
+			m_pShader->bind(m_beginComputeInfo.queue);
 
 			auto& reflection = m_pShader->getReflection();
 
 			FDispatchInfo dispatch_info{};
 			auto& group = dispatch_info.groups.emplace_back();
-			group.x = static_cast<uint32_t>(std::ceil(static_cast<float>(info.width) / static_cast<float>(reflection.localSizes[0])));
-			group.y = static_cast<uint32_t>(std::ceil(static_cast<float>(info.height) / static_cast<float>(reflection.localSizes[1])));
-			group.z = 0u;
+			group.x = glm::max(static_cast<uint32_t>(std::ceil(static_cast<float>(info.width) / static_cast<float>(reflection.localSizes[0]))), 1u);
+			group.y = glm::max(static_cast<uint32_t>(std::ceil(static_cast<float>(info.height) / static_cast<float>(reflection.localSizes[1]))), 1u);
+			group.z = glm::max(0u, 1u);
 
-			group.x = glm::max(group.x, 1u);
-			group.y = glm::max(group.y, 1u);
-			group.z = glm::max(group.z, 1u);
-
-			m_pRenderContext->dispatch(m_beginRenderingInfo.queue, dispatch_info);
+			m_pRenderContext->dispatch(m_beginComputeInfo.queue, dispatch_info);
 		}
 	}
 
-	m_pRenderContext->endCompute(m_beginRenderingInfo);
+	m_pRenderContext->endCompute(m_beginComputeInfo);
 }
