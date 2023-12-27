@@ -69,7 +69,7 @@ std::unique_ptr<IRenderContext> make_render_context(const FRenderInterfaceCreate
 		};
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-		context_ci.validationState = true;
+		//context_ci.validationState = true;
 		context_ci.validationLayers = { "VK_LAYER_KHRONOS_validation", "VK_LAYER_KHRONOS_synchronization2" };
 		context_ci.validationFeatures = vulkan::SYNCHRONIZATION_VALIDATION_FLAG_BIT;
 #endif
@@ -407,7 +407,7 @@ void CRenderInterface::fillDrawBuffer(const std::vector<FGeometryBatch>& batches
 					command.indexCount = range.indexCount == 0ull ? last_index : range.indexCount;
 					command.instanceCount = 1;
 					command.firstIndex = range.beginIndex;
-					command.vertexOffset = 0;
+					command.vertexOffset = range.beginVertex;
 					command.firstInstance = 0;
 				}
 
@@ -429,11 +429,11 @@ void CRenderInterface::fillDrawBuffers(const std::vector<FGeometryDrawData>& dra
 {
 	size_t offset{ 0ull }, indexed_offset{ 0ull };
 	std::vector<FGeometryBatch> scene_batches{};
-	createGeometryBatches(draw_data, scene_batches);
+	createGeometryBatches(draw_data, scene_batches, GEOMETRY_BATCHER_COUNT_ON_MATERIAL_FLAG_BIT);
 	fillDrawBuffer(scene_batches, m_pRenderPacket->drawCommands, m_pRenderPacket->drawIndexedCommands, m_pRenderPacket->sceneDrawCalls, offset, indexed_offset);
 
 	std::vector<FGeometryBatch> shadow_batches{};
-	createGeometryBatches(draw_data, shadow_batches, GEOMETRY_BATCHER_MERGE_DRAWCALLS_FLAG_BIT);
+	createGeometryBatches(draw_data, shadow_batches, GEOMETRY_BATCHER_COUNT_ON_MATERIAL_FLAG_BIT);
 	fillDrawBuffer(shadow_batches, m_pRenderPacket->drawCommands, m_pRenderPacket->drawIndexedCommands, m_pRenderPacket->shadowDrawCalls, offset, indexed_offset);
 }
 

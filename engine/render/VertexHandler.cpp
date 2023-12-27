@@ -238,33 +238,9 @@ size_t CVertexHandler::addVertices(const std::vector<FVertexAttributePointer>& a
 	return vertex_count;
 }
 
-size_t CVertexHandler::addIndices(const FVertexAttributePointer& indices, size_t vertex_offset)
+size_t CVertexHandler::addIndices(const FVertexAttributePointer& indices)
 {
-	auto whole_size = indices.count * m_indexBuffer.elementSize;
-	std::vector<uint8_t> temp(whole_size);
-
-	for (size_t i = 0ull; i < indices.count; ++i)
-	{
-		size_t index_position = i * m_indexBuffer.elementSize;
-
-		if (m_indexBuffer.elementSize == 1ull)
-		{
-			uint8_t index = indices.data[index_position] + static_cast<uint8_t>(vertex_offset);
-			temp[index_position] = index;
-		}
-		else if (m_indexBuffer.elementSize == 2ull)
-		{
-			uint16_t index = *reinterpret_cast<const uint16_t*>(&indices.data[index_position]) + static_cast<uint16_t>(vertex_offset);
-			*reinterpret_cast<uint16_t*>(&temp[index_position]) = index;
-		}
-		else if (m_indexBuffer.elementSize == 4ull)
-		{
-			uint32_t index = *reinterpret_cast<const uint32_t*>(&indices.data[index_position]) + static_cast<uint32_t>(vertex_offset);
-			*reinterpret_cast<uint32_t*>(&temp[index_position]) = index;
-		}
-	}
-
-	m_indexBuffer.data.insert(m_indexBuffer.data.end(), temp.begin(), temp.end());
+	m_indexBuffer.data.insert(m_indexBuffer.data.end(), indices.data, indices.data + (indices.count * m_indexBuffer.elementSize));
 	m_indexBuffer.elementCount += indices.count;
 	return indices.count;
 }

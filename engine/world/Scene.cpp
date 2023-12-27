@@ -404,28 +404,8 @@ void CScene::loadMeshComponent(const easygltf::FGLTFRoot root, const entt::entit
 		{
 			const easygltf::Accessor& accessor = root.accessors[primitive.indices];
 			auto stream = root.getStream(accessor);
-
-			bool force_32_bit_indices{ false };
-			if (force_32_bit_indices && stream.stride != 4ull)
-			{
-				if (stream.stride == 2ull)
-				{
-					std::vector<uint16_t> temp(stream.count);
-					std::memcpy(temp.data(), stream.data, stream.stride * stream.count);
-					indices_tmp.insert(indices_tmp.end(), temp.begin(), temp.end());
-				}
-				else if (stream.stride == 1ull)
-					indices_tmp.insert(indices_tmp.end(), stream.data, stream.data + stream.count);
-
-				indices.data = reinterpret_cast<const uint8_t*>(indices_tmp.data());
-				indices.stride = sizeof(uint32_t);
-			}
-			else
-			{
-				indices.data = stream.data;
-				indices.stride = stream.stride;
-			}
-
+			indices.data = stream.data;
+			indices.stride = stream.stride;
 			indices.count = stream.count;
 
 			attributes_hash ^= attribute_hasher(static_cast<uint32_t>(indices.stride)) << 1;
@@ -441,22 +421,8 @@ void CScene::loadMeshComponent(const easygltf::FGLTFRoot root, const entt::entit
 			{
 				auto& handler = m_pRenderInterface->getVertexHandler(handler_id);
 
-				auto cur_vertex_count = handler->getLastVertex();
-				auto new_vertex_count = attributes.front().count;
-
-				bool is_overflow{ false };
-				switch (indices.stride)
-				{
-				case 4ull: is_overflow = check_overflow(static_cast<uint32_t>(cur_vertex_count), static_cast<uint32_t>(new_vertex_count)); break;
-				case 2ull: is_overflow = check_overflow(static_cast<uint16_t>(cur_vertex_count), static_cast<uint16_t>(new_vertex_count)); break;
-				case 1ull: is_overflow = check_overflow(static_cast<uint8_t>(cur_vertex_count), static_cast<uint8_t>(new_vertex_count)); break;
-				}
-
-				if (!is_overflow)
-				{
-					vertex_handler = handler.get();
-					current_handler_id = handler_id;
-				}
+				vertex_handler = handler.get();
+				current_handler_id = handler_id;
 			}
 		}
 
@@ -495,7 +461,7 @@ void CScene::loadMeshComponent(const easygltf::FGLTFRoot root, const entt::entit
 		mesh_primitive.lods[0].beginVertex = vertex_handler->getLastVertex();
 		mesh_primitive.lods[0].vertexCount = vertex_handler->addVertices(attributes);
 		mesh_primitive.lods[0].beginIndex = vertex_handler->getLastIndex();
-		mesh_primitive.lods[0].indexCount = vertex_handler->addIndices(indices, mesh_primitive.lods[0].beginVertex);
+		mesh_primitive.lods[0].indexCount = vertex_handler->addIndices(indices);
 
 		// NOTE: Updating material create info for future shader creation
 		if (primitive.material >= 0)
