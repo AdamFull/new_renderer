@@ -278,7 +278,6 @@ namespace engine
 				"render_script", &FRenderingStepRenderingInfo::renderScript,
 				"shader_name", &FRenderingStepRenderingInfo::shaderName,
 
-				"one_time", & FRenderingStepRenderingInfo::oneTime,
 				"flip_viewport", & FRenderingStepRenderingInfo::flipViewport,
 				"material_pass", & FRenderingStepRenderingInfo::materialPass,
 
@@ -300,8 +299,6 @@ namespace engine
 				"render_script", & FRenderingStepComputeInfo::renderScript,
 				"shader_name", & FRenderingStepComputeInfo::shaderName,
 
-				"one_time", & FRenderingStepComputeInfo::oneTime,
-
 				"input_targets", & FRenderingStepComputeInfo::shaderInputs,
 				"write_targets", & FRenderingStepComputeInfo::writeTargets,
 				"write_buffers", & FRenderingStepComputeInfo::writeBuffers,
@@ -316,6 +313,7 @@ namespace engine
 				"RenderingStepCI",
 				sol::constructors<FRenderingStepCreateInfo()>(),
 				"type", &FRenderingStepCreateInfo::type,
+				"one_time", &FRenderingStepCreateInfo::oneTime,
 				"sync", &FRenderingStepCreateInfo::synchronization,
 				"rendering", &FRenderingStepCreateInfo::rendering,
 				"compute", &FRenderingStepCreateInfo::compute

@@ -85,7 +85,6 @@ namespace engine
 
 			std::string shaderName{}; // Optional
 
-			bool oneTime{ false }; // Destroy after execution
 			bool flipViewport{ false }; // Flip viewport horizontally
 			bool materialPass{ false };
 
@@ -107,8 +106,6 @@ namespace engine
 
 			std::string shaderName{};
 
-			bool oneTime{ false };
-
 			std::unordered_map<std::string, size_t> shaderInputs{};
 			std::unordered_map<std::string, size_t> writeTargets{};
 			std::unordered_map<std::string, size_t> writeBuffers{};
@@ -122,6 +119,7 @@ namespace engine
 		{
 			// ERenderingStepType
 			uint32_t type{};
+			bool oneTime{ false };
 
 			FRenderingStepSynchronizationInfo synchronization{};
 			FRenderingStepRenderingInfo rendering{};

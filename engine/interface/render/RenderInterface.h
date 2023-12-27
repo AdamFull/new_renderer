@@ -176,7 +176,7 @@ namespace engine
 
 			virtual void create(const FRenderingStepCreateInfo& create_info)
 			{
-				
+				m_bOneTime = create_info.oneTime;
 			}
 
 			virtual void execute(float dt)
@@ -227,8 +227,6 @@ namespace engine
 
 			void create(const FRenderingStepCreateInfo& create_info) override
 			{
-				m_bOneTime = create_info.rendering.oneTime;
-
 				// Save rendering info
 				m_beginRenderingInfo.queue = create_info.rendering.queue;
 				m_beginRenderingInfo.colorAttachments = create_info.rendering.renderTargets;
@@ -260,8 +258,6 @@ namespace engine
 
 			void create(const FRenderingStepCreateInfo& create_info) override
 			{
-				m_bOneTime = create_info.compute.oneTime;
-
 				// Save rendering info
 				m_beginComputeInfo.queue = create_info.compute.queue;
 

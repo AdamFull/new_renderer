@@ -133,11 +133,11 @@ end
 do
     local step_ci = RenderingStepCI.new()
     step_ci.type = RenderingStepType.compute
+    step_ci.one_time = true
 
     step_ci.compute.type = ComputeType.default
     step_ci.compute.queue = QueueType.graphics
     step_ci.compute.shader_name = "lighting:brgflut_generator"
-    step_ci.compute.one_time = true
 
     target_img = render_context:get_texture_resource("brdf_lut_target")
     rect = render_context:get_render_rect_from_rt(target_img)
@@ -153,11 +153,11 @@ end
 do
     local step_ci = RenderingStepCI.new()
     step_ci.type = RenderingStepType.compute
+    step_ci.one_time = true
 
     step_ci.compute.type = ComputeType.default
     step_ci.compute.queue = QueueType.graphics
     step_ci.compute.shader_name = "lighting:irradiancecube_generator"
-    step_ci.compute.one_time = true
 
     target_img = render_context:get_texture_resource("irradiance_cube_target")
     rect = render_context:get_render_rect_from_rt(target_img)
@@ -174,11 +174,11 @@ end
 do
     local step_ci = RenderingStepCI.new()
     step_ci.type = RenderingStepType.compute
+    step_ci.one_time = true
 
     step_ci.compute.type = ComputeType.cubemap
     step_ci.compute.queue = QueueType.graphics
     step_ci.compute.shader_name = "lighting:prefilteredmap_generator"
-    step_ci.compute.one_time = true
 
     target_img = render_context:get_texture_resource("prefiltered_cube_target")
     rect = render_context:get_render_rect_from_rt(target_img)
