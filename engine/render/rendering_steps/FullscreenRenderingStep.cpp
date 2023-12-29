@@ -69,7 +69,11 @@ void CFullscreenRenderingStep::_execute(float dt)
 	m_pShader->bind(m_beginRenderingInfo.queue);
 
 	FGeometryDrawInfo draw_info{};
-	draw_info.ranges.emplace_back(FGeometryRanges{ 0ull, 0ull, 0ull, 3ull });
+	auto& range = draw_info.ranges.emplace_back();
+	range.beginIndex = 0ull;
+	range.indexCount = 0ull;
+	range.beginVertex = 0ull;
+	range.vertexCount = 3ull;
 
 	m_pRenderContext->draw(m_beginRenderingInfo.queue, draw_info);
 

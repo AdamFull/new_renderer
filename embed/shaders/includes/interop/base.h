@@ -83,13 +83,6 @@ struct FGeometryGPUBatch
 	uint32_t pad;
 };
 
-// Raw draw command
-struct FGeometryRawBatch
-{
-	FGeometryGPUBatch callInfo;
-	FGeometryDrawRange range;
-};
-
 struct FDrawIndirectData
 {
 	uint32_t vertexCount;

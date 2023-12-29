@@ -30,8 +30,6 @@ namespace engine
 
 			void writeDrawData(const std::vector<FGeometryRawBatch>& draw_commands) override;
 
-			void fillDrawBuffers(const std::vector<FGeometryDrawData>& draw_data) override;
-
 			void updateSurfaceSize(int32_t width, int32_t height) override;
 
 			const std::unique_ptr<FRenderDataPacket>& getRenderPacket() override;

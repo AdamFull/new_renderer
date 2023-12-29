@@ -452,8 +452,6 @@ namespace engine
 
 			virtual void writeDrawData(const std::vector<FGeometryRawBatch>& draw_commands) = 0;
 
-			virtual void fillDrawBuffers(const std::vector<FGeometryDrawData>& draw_data) = 0;
-
 			virtual FShaderUploadInfo getShaderNameTag(const std::string& name) = 0;
 			virtual void createRendering(const FRenderingStepCreateInfo& rendering_ci) = 0;
 

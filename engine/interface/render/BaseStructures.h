@@ -6,9 +6,8 @@
 
 #include <string>
 #include <vector>
-#include <array>
 
-#include <glm/glm.hpp>
+#include <embed/shaders/includes/interop/base.h>
 
 namespace engine
 {
@@ -90,35 +89,17 @@ namespace engine
 			FPoint2D<_Ty> size{};
 		};
 
-		struct FGeometryRanges
+		struct FGeometryRawBatch
 		{
-			size_t beginIndex{ 0ull }, indexCount{ 0ull };
-			size_t beginVertex{ 0ull }, vertexCount{ 0ull };
-		};
-
-		struct FGeometryDrawData
-		{
-			size_t vboID{ ~0ull };
-			size_t materialID{ ~0ull };
-			uint32_t nodeID{ ~0u };
-
-			FGeometryRanges range{};
-		};
-
-		struct FGeometryBatch
-		{
-			size_t vboID{ ~0ull };
-			size_t materialID{ ~0ull };
-			uint32_t nodeID{ ~0u };
-
-			std::vector<FGeometryRanges> ranges{};
+			FGeometryGPUBatch callInfo;
+			FGeometryDrawRange range;
 		};
 
 		struct FGeometryDrawInfo
 		{
 			size_t lastIndex{ 0ull };
 			size_t lastVertex{ 0ull };
-			std::vector<FGeometryRanges> ranges{};
+			std::vector<FGeometryDrawRange> ranges{};
 		};
 
 		struct FIndirectGeometryDrawInfo

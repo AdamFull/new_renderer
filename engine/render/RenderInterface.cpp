@@ -410,18 +410,6 @@ void CRenderInterface::writeDrawData(const std::vector<FGeometryRawBatch>& draw_
 	m_pRenderPacket->drawCallCount = command_offset;
 }
 
-void CRenderInterface::fillDrawBuffers(const std::vector<FGeometryDrawData>& draw_data)
-{
-	//size_t offset{ 0ull }, indexed_offset{ 0ull };
-	//std::vector<FGeometryBatch> scene_batches{};
-	//createGeometryBatches(draw_data, scene_batches, GEOMETRY_BATCHER_COUNT_ON_MATERIAL_FLAG_BIT);
-	//fillDrawBuffer(scene_batches, m_pRenderPacket->drawCommands, m_pRenderPacket->drawIndexedCommands, m_pRenderPacket->sceneDrawCalls, offset, indexed_offset);
-	//
-	//std::vector<FGeometryBatch> shadow_batches{};
-	//createGeometryBatches(draw_data, shadow_batches, GEOMETRY_BATCHER_COUNT_ON_MATERIAL_FLAG_BIT);
-	//fillDrawBuffer(shadow_batches, m_pRenderPacket->drawCommands, m_pRenderPacket->drawIndexedCommands, m_pRenderPacket->shadowDrawCalls, offset, indexed_offset);
-}
-
 void CRenderInterface::updateSurfaceSize(int32_t width, int32_t height)
 {
 	m_pRenderContext->updateSurface(width, height);
