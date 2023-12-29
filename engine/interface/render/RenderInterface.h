@@ -341,20 +341,14 @@ namespace engine
 
 			FRenderSceneStats stats{};
 
-			// Contains raw commands for draw (FGeometryRawCommand)
-			std::unique_ptr<IGPUArrayHandle> rawCommands{};
-			// Contains draw batches from gpu (FGeometryDrawBatch)
-			std::unique_ptr<IGPUArrayHandle> sceneBatches{};
-			//std::unique_ptr<IGPUArrayHandle> shadowBatches{};
+			// Contains FGeometryGPUBatch
+			std::unique_ptr<IGPUArrayHandle> gpuBatches{};
+			size_t drawCallCount{ 0ull };
 
-			// Atomic counters for counting batch count
-			std::unique_ptr<IBufferObject> atomicCounters{};
-
-			std::unique_ptr<IBufferObject> drawCommands{};
 			std::unique_ptr<IBufferObject> drawIndexedCommands{};
 
-			std::vector<FGeometryDrawCall> sceneDrawCalls{};
-			std::vector<FGeometryDrawCall> shadowDrawCalls{};
+			std::vector<FGeometryCPUBatch> sceneDrawCalls{};
+			std::vector<FGeometryCPUBatch> shadowDrawCalls{};
 
 			//std::unique_ptr<CGPUArrayHolder> resources{};
 
@@ -456,7 +450,7 @@ namespace engine
 			virtual size_t createVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) = 0;
 			virtual const std::unique_ptr<IVertexHandler>& getVertexHandler(size_t id) = 0;
 
-			virtual void drawPrimitive(const FGeometryRawCommand& raw_comand) = 0;
+			virtual void writeDrawData(const std::vector<FGeometryRawBatch>& draw_commands) = 0;
 
 			virtual void fillDrawBuffers(const std::vector<FGeometryDrawData>& draw_data) = 0;
 

@@ -3,52 +3,56 @@
 
 	enable_extensions: [
 		"GL_ARB_separate_shader_objects",
-		"GL_ARB_shading_language_420pack"
+		"GL_ARB_shading_language_420pack",
+		"GL_ARB_shader_draw_parameters",
+		"GL_EXT_nonuniform_qualifier",
+		"GL_EXT_shader_8bit_storage",
+		"GL_EXT_shader_16bit_storage"
 	];
 
-	definitions: [];
-	require_extensions: [];
+	definitions: ["MESH_DATA"];
+
+	require_extensions: [
+		"GL_EXT_shader_explicit_arithmetic_types",
+		"GL_EXT_shader_explicit_arithmetic_types_int8"
+	];
+
 	includes: ["shader_inputs"];
 
 	code: 
 	"""
-		layout(local_size_x = 256) in;
+		#define GROUP_SIZE 256
 
-		layout(std430, set = 1, binding = 0) buffer AtomicCounters
+		layout(local_size_x = GROUP_SIZE) in;
+
+		//layout(std430, set = 2, binding = 0) readonly buffer VertexBuffer
+		//{
+		//	RawVertex vertex_buffer[];
+		//};
+		//
+		//layout(std430, set = 2, binding = 1) readonly buffer IndexBuffer
+		//{
+		//	Index index_buffer[];
+		//};
+
+		layout(std430, set = 1, binding = 10) buffer GeometryBatches
 		{
-			uint32_t indirectCommandCount;
-			uint32_t batchCount;
-		};
-
-		layout(std430, set = 2, binding = 1) readonly buffer VertexBuffer
-		{
-			RawVertex vertex_buffer[];
-		};
-
-		layout(std430, set = 2, binding = 2) readonly buffer IndexBuffer
-		{
-			Index index_buffer[];
-		};
-
-
-		layout(std430, set = 2, binding = 3) readonly buffer RawDrawCommands
-		{
-			FGeometryRawCommand raw_commands[];
-		};
-
-		layout(std430, set = 2, binding = 3) buffer GeometryBatches
-		{
-			FGeometryDrawBatch computed_batches[];
+			FGeometryGPUBatch geometry_batches[];
 		};
 		
-		layout(std430, set = 2, binding = 3) buffer IndirectIndexedComands
+		layout(std430, set = 1, binding = 11) buffer IndirectIndexedComands
 		{
 			FDrawIndexedIndirectData indexed_draw_commands[];
 		};
-		
+
 		void main() 
 		{
 			uint gID = gl_GlobalInvocationID.x;
+
+			if (gID >= frameData.rawCommandsCount) 
+				return;
+
+			indexed_draw_commands[gID].instanceCount = 1;
 		}
 	""";
 }

@@ -163,7 +163,8 @@ namespace engine
 				"ComputeType",
 				"default", COMPUTE_DEFAULT_TYPE,
 				"geometry", COMPUTE_GEOMETRY_TYPE,
-				"cubemap", COMPUTE_CUBEMAP_TYPE
+				"cubemap", COMPUTE_CUBEMAP_TYPE,
+				"culling", COMPUTE_CULLING_TYPE
 			);
 
 			// Register ESynchronizationType

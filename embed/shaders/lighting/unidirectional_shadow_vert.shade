@@ -3,7 +3,8 @@
 
 	enable_extensions: [
 		"GL_ARB_separate_shader_objects",
-		"GL_ARB_shading_language_420pack"
+		"GL_ARB_shading_language_420pack",
+		"GL_ARB_shader_draw_parameters"
 	];
 
 	definitions: ["MESH_DATA", "SHADOW_DATA"];
@@ -17,18 +18,26 @@
 	code: 
 	"""
 		layout(location = 0) out vec2 outTexcoord;
+		layout(location = 1) flat out uint materialID;
 		
 		layout(push_constant) uniform ShadowmapData
 		{
-			uint objectId;
-			uint materialId;
+			uint32_t callID;
+			uint batchID;
 			uint32_t shadowIndex;
 			int32_t layer;
 		} shadowData;
+
+		layout(std430, set = 1, binding = 9) buffer GeometryBatches
+		{
+			FGeometryGPUBatch geometry_batches[];
+		};
 		
 		void main()
 		{
-			FSceneNode node = nodes[shadowData.objectId];
+			FGeometryGPUBatch batch = geometry_batches[shadowData.batchID];
+
+			FSceneNode node = nodes[batch.instanceID];
 			mat4 modelMatrix = node.model;
 
 #ifdef HAS_SKIN
@@ -65,6 +74,12 @@
 			FSpotShadowCommit shadow = spot_shadows[shadowData.shadowIndex];
 			viewProj = shadow.viewProj;
 #endif
+			
+			materialID = ~0u;
+			if(batch.materialID != ~0u)
+			{
+				materialID = batch.materialID + gl_DrawIDARB;
+			}
 
 			gl_Layer = shadowData.layer;
 			gl_Position = viewProj * localPos;

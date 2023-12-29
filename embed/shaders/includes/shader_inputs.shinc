@@ -37,14 +37,14 @@
 		mat4 invProjection;
 		mat4 viewProjection;
 		mat4 invViewProjection;
-		mat4 reprojection;
 		vec2 viewportDimension;
 		vec2 invViewportDimension;
 		float nearPlane;
 		float farPlane;
-		uint directionalLightCount;
-		uint pointLightCount;
-		uint spotLightCount;
+		uint32_t directionalLightCount;
+		uint32_t pointLightCount;
+		uint32_t spotLightCount;
+		uint32_t rawCommandsCount;
 		vec4 frustumPlanes[6];
 	} frameData;
 

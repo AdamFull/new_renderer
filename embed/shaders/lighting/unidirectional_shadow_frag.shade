@@ -19,20 +19,13 @@
 	code: 
 	"""
 		layout(location = 0) in vec2 inUV;
-
-		layout(push_constant) uniform ShadowmapData
-		{
-			uint objectId;
-			uint materialId;
-			uint32_t shadowIndex;
-			int32_t layer;
-		} shadowData;
+		layout(location = 1) flat in uint materialID;
 		
 		void main() 
 		{
-			if(shadowData.materialId != ~0u)
+			if(materialID != ~0u)
 			{
-				FMaterial mat = materials[shadowData.materialId];
+				FMaterial mat = materials[materialID];
 				if(mat.baseColorTexture != ~0u)
 				{
 					float smaple = texture(globalTextures[mat.baseColorTexture], inUV).a;

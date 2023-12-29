@@ -26,7 +26,7 @@ void CGPUArrayHandle::create(const std::string& name, size_t stride, size_t coun
 	m_elementCount = buffer_ci.count = count;
 
 	m_pBuffer->create(name, buffer_ci);
-	m_elements.resize(stride * count);
+	m_elements.resize(m_elementSize * m_elementCount);
 
 	m_pBuffer->map();
 }

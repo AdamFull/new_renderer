@@ -28,7 +28,7 @@
 		layout(set = 3, binding = 3) uniform samplerCube prefiltered_cube;
 		layout(set = 3, binding = 4) uniform sampler2D depth_buffer;
 
-		//layout (set = 3, binding = 5) uniform sampler2DArrayShadow cascaded_shadowmap;
+		layout (set = 3, binding = 5) uniform sampler2DArrayShadow cascaded_shadowmap;
 
 		layout(push_constant) uniform UniformMeshData
 		{
@@ -146,7 +146,7 @@
 			if(light.castShadows > 0 && light.shadowIndex > -1)
 			{
 				FCascadedShadowCommit shadow = cascaded_shadows[light.shadowIndex];
-				//shadow_factor = getCascadeShadow(cascaded_shadowmap, shadow, va, ms, dither);
+				shadow_factor = getCascadeShadow(cascaded_shadowmap, shadow, va, ms, dither);
 			}
 
 			return light.color * light.intencity * color * shadow_factor;

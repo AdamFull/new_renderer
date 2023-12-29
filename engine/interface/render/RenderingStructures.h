@@ -27,7 +27,8 @@ namespace engine
 		{
 			COMPUTE_DEFAULT_TYPE,
 			COMPUTE_GEOMETRY_TYPE,
-			COMPUTE_CUBEMAP_TYPE
+			COMPUTE_CUBEMAP_TYPE,
+			COMPUTE_CULLING_TYPE
 		};
 
 		enum ESynchronizationType

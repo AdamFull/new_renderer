@@ -59,7 +59,9 @@ CONSTANT uint32_t point_light_shadow_map_resolution = 512u;
 struct FGeometryDrawBounds
 {
 	VECTOR3 min;
+	uint32_t pad0;
 	VECTOR3 max;
+	uint32_t pad1;
 };
 
 // Verticea range
@@ -69,29 +71,23 @@ struct FGeometryDrawRange
 	uint32_t indexCount;
 	uint32_t beginVertex;
 	uint32_t vertexCount;
+
+	FGeometryDrawBounds bounds;
 };
 
-// Raw draw command
-struct FGeometryRawCommand
+struct FGeometryGPUBatch
 {
 	uint32_t vboID;
 	uint32_t materialID;
 	uint32_t instanceID;
-
-	FGeometryDrawRange range;
-	FGeometryDrawBounds bounds;
 	uint32_t pad;
 };
 
-// Final batch with indirect draw data
-struct FGeometryDrawBatch
+// Raw draw command
+struct FGeometryRawBatch
 {
-	uint32_t vboID;
-	uint32_t materialID;
-	uint32_t instanceID;
-
-	uint32_t commandOffset;
-	uint32_t drawCount;
+	FGeometryGPUBatch callInfo;
+	FGeometryDrawRange range;
 };
 
 struct FDrawIndirectData
@@ -109,6 +105,9 @@ struct FDrawIndexedIndirectData
 	uint32_t firstIndex;
 	int32_t  vertexOffset;
 	uint32_t firstInstance;
+	uint32_t pad[3];
+
+	FGeometryDrawBounds aabb;
 };
 
 // Lights and shadows

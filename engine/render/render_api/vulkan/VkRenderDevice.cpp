@@ -1209,6 +1209,8 @@ void CVkRenderDevice::prepareRequestedLogicalDeviceFeatures()
 				requestExtensionFeatures<vk::PhysicalDeviceMeshShaderPropertiesEXT>();
 			else if (extension_name == VK_EXT_MULTI_DRAW_EXTENSION_NAME)
 				requestExtensionFeatures<vk::PhysicalDeviceMultiDrawFeaturesEXT>();
+			//else if(extension_name == VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME)
+			//	requestExtensionFeatures(vk::PhysicalDeviceIndirect)
 		}
 	}
 }

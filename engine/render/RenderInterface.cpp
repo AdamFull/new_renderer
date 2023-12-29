@@ -10,6 +10,7 @@
 #include "rendering_steps/ComputeRenderingStep.h"
 #include "rendering_steps/ComputeCubemapRenderingStep.h"
 #include "rendering_steps/ComputeGeometryRenderingStep.h"
+#include "rendering_steps/ComputeCullingRenderingStep.h"
 
 #include "VertexHandler.h"
 #include "BufferObject.h"
@@ -59,6 +60,7 @@ std::unique_ptr<IRenderContext> make_render_context(const FRenderInterfaceCreate
 			VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME,
 			VK_KHR_8BIT_STORAGE_EXTENSION_NAME,
 			VK_KHR_16BIT_STORAGE_EXTENSION_NAME,
+			VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME,
 			//VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
 			//VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME,
 			VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME
@@ -69,7 +71,7 @@ std::unique_ptr<IRenderContext> make_render_context(const FRenderInterfaceCreate
 		};
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-		//context_ci.validationState = true;
+		context_ci.validationState = true;
 		context_ci.validationLayers = { "VK_LAYER_KHRONOS_validation", "VK_LAYER_KHRONOS_synchronization2" };
 		context_ci.validationFeatures = vulkan::SYNCHRONIZATION_VALIDATION_FLAG_BIT;
 #endif
@@ -154,7 +156,6 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 	sizemap.emplace_back(utl::fnv1a_64_hash("invProjection"), 64ull);		// mat4 invProjection;
 	sizemap.emplace_back(utl::fnv1a_64_hash("viewProjection"), 64ull);		// mat4 viewProjection;
 	sizemap.emplace_back(utl::fnv1a_64_hash("invViewProjection"), 64ull);	// mat4 invViewProjection;
-	sizemap.emplace_back(utl::fnv1a_64_hash("reprojection"), 64ull);		// mat4 reprojection;
 	sizemap.emplace_back(utl::fnv1a_64_hash("viewportDimension"), 8ull);	// vec2 viewportDimension;
 	sizemap.emplace_back(utl::fnv1a_64_hash("invViewportDimension"), 8ull);	// vec2 viewportDimension;
 	sizemap.emplace_back(utl::fnv1a_64_hash("nearPlane"), 4ull);			// float nearPlane;
@@ -162,6 +163,7 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 	sizemap.emplace_back(utl::fnv1a_64_hash("directionalLightCount"), 4ull);				// uint directionalLightCount;
 	sizemap.emplace_back(utl::fnv1a_64_hash("pointLightCount"), 4ull);				// uint pointLightCount;
 	sizemap.emplace_back(utl::fnv1a_64_hash("spotLightCount"), 4ull);				// uint spotLightCount;
+	sizemap.emplace_back(utl::fnv1a_64_hash("rawCommandsCount"), 4ull);				// uint rawCommandsCount;
 	sizemap.emplace_back(utl::fnv1a_64_hash("frustumPlanes"), 96ull);		// vec4 frustumPlanes[6];
 
 	FGlobalUniformCreateInfo global_buffer_ci{};
@@ -180,7 +182,8 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 	m_pRenderScriptCore->build("render_config", render_config);
 
 	// Allocating gpu to cpu side buffers
-	m_pRenderPacket->rawCommands = allocateGPUArrayHandle<FGeometryRawCommand>("RawDrawCommands", MAX_RENDER_OBJECT_COUNT, this, m_pRenderContext.get());
+	m_pRenderPacket->gpuBatches = allocateGPUArrayHandle<FGeometryGPUBatch>("GeometryBatches", MAX_RENDER_OBJECT_COUNT, this, m_pRenderContext.get());
+
 	m_pRenderPacket->materials = allocateGPUArrayHandle<FMaterial>("MaterialStorage", MAX_MATERIAL_COUNT, this, m_pRenderContext.get());
 	m_pRenderPacket->nodes = allocateGPUArrayHandle<FSceneNode>("NodeStorage", MAX_PRIMITIVE_COUNT, this, m_pRenderContext.get());
 	m_pRenderPacket->skins = allocateGPUArrayHandle<glm::mat4>("SkinningJoints", MAX_PRIMITIVE_COUNT * 128ull, this, m_pRenderContext.get());
@@ -199,7 +202,7 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 	m_pRenderPacket->slights.shadows = allocateGPUArrayHandle<FSpotShadowCommit>("SpotShadows", max_spot_light_shadow_count, this, m_pRenderContext.get());
 
 	
-	m_vArrayHandles.emplace_back(m_pRenderPacket->rawCommands.get());
+	m_vArrayHandles.emplace_back(m_pRenderPacket->gpuBatches.get());
 	m_vArrayHandles.emplace_back(m_pRenderPacket->materials.get());
 	m_vArrayHandles.emplace_back(m_pRenderPacket->nodes.get());
 	m_vArrayHandles.emplace_back(m_pRenderPacket->skins.get());
@@ -214,15 +217,10 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 	m_vArrayHandles.emplace_back(m_pRenderPacket->slights.shadows.get());
 
 	// Create draw buffers
-	m_pRenderPacket->drawCommands = std::make_unique<CBufferObject>(this, m_pRenderContext.get());
 	m_pRenderPacket->drawIndexedCommands = std::make_unique<CBufferObject>(this, m_pRenderContext.get());
 
 	FBufferCreateInfo buffer_ci{};
 	buffer_ci.flags = BUFFER_TYPE_INDIRECT_FLAG_BIT;
-	buffer_ci.size = sizeof(FDrawIndirectData);
-	buffer_ci.count = max_indirect_draw_count;
-	m_pRenderPacket->drawCommands->create("DrawIndirectBuffer", buffer_ci);
-
 	buffer_ci.size = sizeof(FDrawIndexedIndirectData);
 	buffer_ci.count = max_indirect_draw_count;
 	m_pRenderPacket->drawIndexedCommands->create("IndexedDrawIndirectBuffer", buffer_ci);
@@ -243,7 +241,6 @@ void CRenderInterface::render(float dt)
 	m_pGlobalUniformHandler->set("invProjection", m_pRenderPacket->camera.invProjection);
 	m_pGlobalUniformHandler->set("viewProjection", m_pRenderPacket->camera.viewProjection);
 	m_pGlobalUniformHandler->set("invViewProjection", m_pRenderPacket->camera.invViewProjection);
-	//m_pGlobalUniformHandler->set("reprojection", m_pRenderPacket->camera.reprojection);
 	m_pGlobalUniformHandler->set("viewportDimension", m_pRenderPacket->camera.dimensions);
 	m_pGlobalUniformHandler->set("invViewportDimension", 1.f / m_pRenderPacket->camera.dimensions);
 	m_pGlobalUniformHandler->set("nearPlane", m_pRenderPacket->camera.nearp);
@@ -251,6 +248,7 @@ void CRenderInterface::render(float dt)
 	m_pGlobalUniformHandler->set("directionalLightCount", static_cast<uint32_t>(m_pRenderPacket->dlights.lights->size()));
 	m_pGlobalUniformHandler->set("pointLightCount", static_cast<uint32_t>(m_pRenderPacket->plights.lights->size()));
 	m_pGlobalUniformHandler->set("spotLightCount", static_cast<uint32_t>(m_pRenderPacket->slights.lights->size()));
+	m_pGlobalUniformHandler->set("rawCommandsCount", static_cast<uint32_t>(m_pRenderPacket->drawCallCount));
 	m_pGlobalUniformHandler->set("frustumPlanes", m_pRenderPacket->camera.frustum.frustumSides);
 
 	FGlobalUniformUpdateInfo update_info{};
@@ -279,7 +277,7 @@ void CRenderInterface::render(float dt)
 	m_pRenderPacket->sceneDrawCalls.clear();
 	m_pRenderPacket->shadowDrawCalls.clear();
 
-	m_pRenderPacket->rawCommands->clear();
+	m_pRenderPacket->gpuBatches->clear();
 	m_pRenderPacket->nodes->clear();
 	m_pRenderPacket->skins->clear();
 
@@ -337,104 +335,91 @@ const std::unique_ptr<IVertexHandler>& CRenderInterface::getVertexHandler(size_t
 	return m_pResources->get<IVertexHandler>(id);
 }
 
-void CRenderInterface::drawPrimitive(const FGeometryRawCommand& raw_comand)
+void CRenderInterface::writeDrawData(const std::vector<FGeometryRawBatch>& draw_commands)
 {
-	auto& raw_commands = m_pRenderPacket->rawCommands;
-	auto* command = reinterpret_cast<FGeometryRawCommand*>(raw_commands->emplace_back(&raw_comand));
+	std::vector<FDrawIndexedIndirectData> draw_indirect_data{};
+	std::vector<FGeometryGPUBatch> gpu_batches{};
+	std::vector<FGeometryCPUBatch> cpu_batches{};
+	std::vector<uint32_t> counted{};
 
-	auto& vbo = getVertexHandler(raw_comand.vboID);
-
-	auto last_index = vbo->getLastIndex();
-	command->range.indexCount = command->range.indexCount == 0ull ? last_index : command->range.indexCount;
-	
-	auto last_vertex = vbo->getLastVertex();
-	command->range.vertexCount = command->range.vertexCount == 0ull ? last_vertex : command->range.vertexCount;
-}
-
-void CRenderInterface::fillDrawBuffer(const std::vector<FGeometryBatch>& batches, const std::unique_ptr<IBufferObject>& buffer, const std::unique_ptr<IBufferObject>& indexed_buffer, std::vector<FGeometryDrawCall>& draw_calls, size_t& offset, size_t& indexed_offset)
-{
-	for (const auto& batch : batches)
+	// Prepare gpu data
+	size_t current_material{ ~0ull };
+	for (const auto& command : draw_commands)
 	{
-		auto& vbo = getVertexHandler(batch.vboID);
-		if (vbo)
+		auto& vbo = getVertexHandler(command.callInfo.vboID);
+
+		auto last_index = vbo->getLastIndex();
+		auto last_vertex = vbo->getLastVertex();
+
+		auto& indirect_command = draw_indirect_data.emplace_back();
+		indirect_command.indexCount = command.range.indexCount == 0ull ? last_index : command.range.indexCount;;
+		indirect_command.instanceCount = 1u;
+		indirect_command.firstIndex = command.range.beginIndex;
+		indirect_command.vertexOffset = command.range.beginVertex;
+		indirect_command.firstInstance = 0u;
+		command.range.vertexCount == 0ull ? last_vertex : command.range.vertexCount;
+
+		indirect_command.aabb.min = command.range.bounds.min;
+		indirect_command.aabb.max = command.range.bounds.max;
+
+		// Make compact batches by material chain
+		if (!gpu_batches.empty() &&
+			gpu_batches.back().vboID == command.callInfo.vboID &&
+			gpu_batches.back().instanceID == command.callInfo.instanceID &&
+			current_material + 1 == command.callInfo.materialID)
 		{
-			auto last_index = vbo->getLastIndex();
-			auto last_vertex = vbo->getLastVertex();
+			counted.back()++;
+			current_material = command.callInfo.materialID;
+		}
+		else
+		{
+			auto& new_gpu_batch = gpu_batches.emplace_back();
+			new_gpu_batch = command.callInfo;
+			counted.emplace_back(1ull);
 
-			auto& draw_call = draw_calls.emplace_back();
-			draw_call.vboId = batch.vboID;
-			draw_call.materialId = batch.materialID;
-			draw_call.node = batch.nodeID;
-
-			if (last_index == 0ull)
-			{
-				std::vector<FDrawIndirectData> draw_commands{};
-
-				draw_call.command.bufferId = indexed_buffer->handle();
-				draw_call.command.offset = offset;
-				draw_call.command.count = batch.ranges.size();
-
-				for (auto& range : batch.ranges)
-				{
-					auto& command = draw_commands.emplace_back();
-					command.vertexCount = range.vertexCount == 0ull ? last_vertex : range.vertexCount;
-					command.instanceCount = 1;
-					command.firstVertex = range.beginVertex;
-					command.firstInstance = 0;
-				}
-
-				if (!draw_commands.empty())
-				{
-					buffer->map();
-					auto* buffer_ptr = buffer->at(0ull);
-					std::memcpy(buffer_ptr + draw_call.command.offset, &draw_commands[0], draw_commands.size() * sizeof(FDrawIndirectData));
-					buffer->unmap();
-				}
-
-				indexed_offset += draw_commands.size() * sizeof(FDrawIndirectData);
-			}
-			else
-			{
-				std::vector<FDrawIndexedIndirectData> draw_indexed_commands{};
-
-				draw_call.command.bufferId = indexed_buffer->handle();
-				draw_call.command.offset = indexed_offset;
-				draw_call.command.count = batch.ranges.size();
-
-				for (auto& range : batch.ranges)
-				{
-					auto& command = draw_indexed_commands.emplace_back();
-					command.indexCount = range.indexCount == 0ull ? last_index : range.indexCount;
-					command.instanceCount = 1;
-					command.firstIndex = range.beginIndex;
-					command.vertexOffset = range.beginVertex;
-					command.firstInstance = 0;
-				}
-
-				if (!draw_indexed_commands.empty())
-				{
-					indexed_buffer->map();
-					auto* buffer_ptr = indexed_buffer->at(0ull);
-					std::memcpy(buffer_ptr + draw_call.command.offset, &draw_indexed_commands[0], draw_indexed_commands.size() * sizeof(FDrawIndexedIndirectData));
-					indexed_buffer->unmap();
-				}
-
-				indexed_offset += draw_indexed_commands.size() * sizeof(FDrawIndexedIndirectData);
-			}
+			current_material = command.callInfo.materialID;
 		}
 	}
+
+	// Prepare cpu data
+	size_t command_offset{ 0ull };
+	for (size_t idx = 0ull; idx < gpu_batches.size(); ++idx)
+	{
+		auto& gpu_batch = gpu_batches.at(idx);
+
+		auto& new_cpu_batch = cpu_batches.emplace_back();
+		new_cpu_batch.vboID = gpu_batch.vboID;
+		new_cpu_batch.command.bufferId = m_pRenderPacket->drawIndexedCommands->handle();
+		new_cpu_batch.command.offset = command_offset * sizeof(FDrawIndexedIndirectData);
+		new_cpu_batch.command.count = counted.at(idx);
+		new_cpu_batch.command.stride = sizeof(FDrawIndexedIndirectData);
+
+		command_offset += new_cpu_batch.command.count;
+	}
+
+	m_pRenderPacket->sceneDrawCalls = std::move(cpu_batches);
+
+	// Copy indexed draw comands
+	m_pRenderPacket->drawIndexedCommands->map();
+	m_pRenderPacket->drawIndexedCommands->write(draw_indirect_data.data(), draw_indirect_data.size());
+	m_pRenderPacket->drawIndexedCommands->unmap();
+
+	for (const auto& gpu_batch : gpu_batches)
+		m_pRenderPacket->gpuBatches->emplace_back(&gpu_batch);
+
+	m_pRenderPacket->drawCallCount = command_offset;
 }
 
 void CRenderInterface::fillDrawBuffers(const std::vector<FGeometryDrawData>& draw_data)
 {
-	size_t offset{ 0ull }, indexed_offset{ 0ull };
-	std::vector<FGeometryBatch> scene_batches{};
-	createGeometryBatches(draw_data, scene_batches, GEOMETRY_BATCHER_COUNT_ON_MATERIAL_FLAG_BIT);
-	fillDrawBuffer(scene_batches, m_pRenderPacket->drawCommands, m_pRenderPacket->drawIndexedCommands, m_pRenderPacket->sceneDrawCalls, offset, indexed_offset);
-
-	std::vector<FGeometryBatch> shadow_batches{};
-	createGeometryBatches(draw_data, shadow_batches, GEOMETRY_BATCHER_COUNT_ON_MATERIAL_FLAG_BIT);
-	fillDrawBuffer(shadow_batches, m_pRenderPacket->drawCommands, m_pRenderPacket->drawIndexedCommands, m_pRenderPacket->shadowDrawCalls, offset, indexed_offset);
+	//size_t offset{ 0ull }, indexed_offset{ 0ull };
+	//std::vector<FGeometryBatch> scene_batches{};
+	//createGeometryBatches(draw_data, scene_batches, GEOMETRY_BATCHER_COUNT_ON_MATERIAL_FLAG_BIT);
+	//fillDrawBuffer(scene_batches, m_pRenderPacket->drawCommands, m_pRenderPacket->drawIndexedCommands, m_pRenderPacket->sceneDrawCalls, offset, indexed_offset);
+	//
+	//std::vector<FGeometryBatch> shadow_batches{};
+	//createGeometryBatches(draw_data, shadow_batches, GEOMETRY_BATCHER_COUNT_ON_MATERIAL_FLAG_BIT);
+	//fillDrawBuffer(shadow_batches, m_pRenderPacket->drawCommands, m_pRenderPacket->drawIndexedCommands, m_pRenderPacket->shadowDrawCalls, offset, indexed_offset);
 }
 
 void CRenderInterface::updateSurfaceSize(int32_t width, int32_t height)
@@ -501,6 +486,8 @@ void CRenderInterface::createRendering(const FRenderingStepCreateInfo& rendering
 			new_step = std::make_unique<CComputeGeometryRenderingStep>(this, m_pRenderContext.get());
 		else if (rendering_ci.compute.type == COMPUTE_CUBEMAP_TYPE)
 			new_step = std::make_unique<CComputeCubemapRenderingStep>(this, m_pRenderContext.get());
+		else if (rendering_ci.compute.type == COMPUTE_CULLING_TYPE)
+			new_step = std::make_unique<CComputeCullingRenderingStep>(this, m_pRenderContext.get());
 	}
 
 	new_step->create(rendering_ci);

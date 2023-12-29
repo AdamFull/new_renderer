@@ -59,10 +59,12 @@ void CGeometryRenderingStep::_execute(float dt)
 
 	size_t drawcall_id{ 0ull };
 	IVertexHandler* last_vbo{ nullptr };
-	for (auto& batch : render_packet->sceneDrawCalls)
+	for (size_t batch_id = 0ull; batch_id < render_packet->sceneDrawCalls.size(); ++batch_id)
 	{
+		const auto& batch = render_packet->sceneDrawCalls.at(batch_id);
+
 		bool was_vbo_rebinded{ false };
- 		auto& vbo = m_pRenderInterface->getVertexHandler(batch.vboId);
+ 		auto& vbo = m_pRenderInterface->getVertexHandler(batch.vboID);
 		if (!last_vbo || vbo.get() != last_vbo)
 		{
 			last_vbo = vbo.get();
@@ -99,6 +101,13 @@ void CGeometryRenderingStep::_execute(float dt)
 					shader->bindBuffer("SkinningJoints", handle);
 				}
 
+				if (render_packet->gpuBatches)
+				{
+					auto& buffer = render_packet->gpuBatches->getBufferObject();
+					size_t batches = buffer->handle();
+					shader->bindBuffer("GeometryBatches", batches);
+				}
+
 				shader->flushDescriptors();
 				shader->bind(m_beginRenderingInfo.queue);
 			}
@@ -106,10 +115,8 @@ void CGeometryRenderingStep::_execute(float dt)
 			auto& mesh_data = shader->getConstantBlock("meshData");
 			if(mesh_data)
 			{
-				mesh_data->set("vboId", static_cast<uint32_t>(batch.vboId));
-				mesh_data->set("objectId", batch.node);
-				mesh_data->set("materialId", static_cast<uint32_t>(batch.materialId));
-				mesh_data->set("callId", static_cast<uint32_t>(drawcall_id));
+				mesh_data->set("callID", static_cast<uint32_t>(drawcall_id));
+				mesh_data->set("batchID", static_cast<uint32_t>(batch_id));
 			}
 
 			// Bind vbo and flush descriptors, then bind and draw

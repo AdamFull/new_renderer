@@ -194,6 +194,17 @@ end
 
 do
     local step_ci = RenderingStepCI.new()
+    step_ci.type = RenderingStepType.compute
+
+    step_ci.compute.type = ComputeType.culling
+    step_ci.compute.queue = QueueType.graphics
+    step_ci.compute.shader_name = "culling:cull_and_batch"
+
+    render_interface:create_renderer(step_ci)
+end
+
+do
+    local step_ci = RenderingStepCI.new()
     step_ci.type = RenderingStepType.rendering
 
     step_ci.rendering.type = RenderingType.csm

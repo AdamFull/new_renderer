@@ -1201,6 +1201,7 @@ void CVkRenderContext::beginCompute(const FBeginComputeInfo& rendering_info)
 {
 	auto& command_buffer = getLastCommandBuffer(rendering_info.queue);
 	auto& textures = m_pResources->data<FVkTexture>();
+	auto& buffers = m_pResources->data<FVkBuffer>();
 
 	FVkTranslationInfo translation_info{};
 
@@ -1215,6 +1216,20 @@ void CVkRenderContext::beginCompute(const FBeginComputeInfo& rendering_info)
 		render_target->layout = texture_translation_info.newLayout = vk::ImageLayout::eGeneral;
 		auto target_layout_translation = get_texture_layout_translation_info(*render_target, texture_translation_info);
 		translation_info.imageTranslationInfos.emplace_back(target_layout_translation);
+	}
+
+	for (const auto& target_view : rendering_info.writeBuffers)
+	{
+		auto& buffer = buffers.at(target_view).at(0);
+
+		FVkBufferTranslationInfo buffer_translation_info{};
+		buffer_translation_info.handle = buffer->handle;
+		buffer_translation_info.size = buffer->size;
+		buffer_translation_info.srcStageMask = vk::PipelineStageFlagBits2KHR::eComputeShader;
+		buffer_translation_info.srcAccessMask = vk::AccessFlagBits2KHR::eMemoryWrite | vk::AccessFlagBits2KHR::eShaderWrite;
+		buffer_translation_info.dstStageMask = vk::PipelineStageFlagBits2KHR::eComputeShader | vk::PipelineStageFlagBits2KHR::eVertexShader | vk::PipelineStageFlagBits2KHR::eFragmentShader;
+		buffer_translation_info.dstAccessMask = vk::AccessFlagBits2KHR::eMemoryRead | vk::AccessFlagBits2KHR::eShaderRead;
+		translation_info.bufferTranslationInfos.emplace_back(buffer_translation_info);
 	}
 
 	processMemoryBarriers(command_buffer, translation_info);
@@ -1396,9 +1411,8 @@ void CVkRenderContext::draw(uint32_t queue_type, const FIndirectGeometryDrawInfo
 	auto& command_buffer = getLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
 
-	auto& buffer = m_pResources->get<FVkBuffer>(draw_info.bufferId);
-
-	current.drawIndexedIndirect(buffer->handle, draw_info.offset, draw_info.count, sizeof(vk::DrawIndexedIndirectCommand));
+	auto& indirect_command_buffer = m_pResources->get<FVkBuffer>(draw_info.bufferId);
+	current.drawIndexedIndirect(indirect_command_buffer->handle, draw_info.offset, draw_info.count, draw_info.stride);
 }
 
 void CVkRenderContext::dispatch(uint32_t queue_type, const FDispatchInfo& dispatch_info)

@@ -44,12 +44,17 @@ void CBufferObject::write(void* data, size_t size, size_t offset)
 		return;
 	}
 
-	std::memcpy(static_cast<char*>(m_pMapped) + offset, data, size);
+	std::memcpy(static_cast<char*>(m_pMapped) + offset, data, size * m_elemSize);
 }
 
 void CBufferObject::flush(size_t size, size_t offset) 
 {
 	m_pRenderContext->flushBuffer(m_bufferId, size, offset);
+}
+
+void CBufferObject::clear()
+{
+	std::memset(m_pMapped, 0, m_elemCount * m_elemSize);
 }
 
 size_t CBufferObject::handle()

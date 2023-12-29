@@ -27,11 +27,14 @@
 
 		layout(push_constant) uniform UniformMeshData
 		{
-			uint vboId;
-			uint objectId;
-			uint materialId;
-			uint callId;
+			uint32_t callID;
+			uint32_t batchID;
 		} meshData;
+
+		layout(std430, set = 1, binding = 9) buffer GeometryBatches
+		{
+			FGeometryGPUBatch geometry_batches[];
+		};
 
 		out gl_PerVertex
 		{
@@ -40,8 +43,10 @@
 
 		void main() 
 		{
+			FGeometryGPUBatch batch = geometry_batches[meshData.batchID];
+
 			// Calculate skinned matrix from weights and joint indices of the current vertex
-			FSceneNode node = nodes[meshData.objectId];
+			FSceneNode node = nodes[batch.instanceID];
 			mat4 modelMatrix = node.model;
 
 #ifdef HAS_SKIN
@@ -67,10 +72,10 @@
 			vec4 localPos = modelMatrix * vec4(inPosition, 1.0);
 			localPos = vec4(localPos.xyz / localPos.w, 1.0);
 
-			drawID = meshData.callId + gl_DrawIDARB;
-			matID = meshData.materialId + gl_DrawIDARB;
-			objID = meshData.objectId;
-			vboID = meshData.vboId;
+			drawID = meshData.callID + gl_DrawIDARB;
+			matID = batch.materialID + gl_DrawIDARB;
+			objID = batch.instanceID;
+			vboID = batch.vboID;
 			gl_Position = frameData.projection * frameData.view * localPos;
 		}
 	""";

@@ -36,7 +36,7 @@ void CMeshSystem::__update(float fDt)
 
 	auto& nodes = render_packet->nodes;
 
-	std::vector<FGeometryRawCommand> draw_primitives;
+	std::vector<FGeometryRawBatch> draw_commands{};
 
 	auto view = registry->view<FTransformComponent, FBaseComponent, FMeshComponent>();
 	for (auto [entity, transform, base, mesh] : view.each())
@@ -55,50 +55,34 @@ void CMeshSystem::__update(float fDt)
 		{
 			auto& lod = primitive.lods[0ull];
 
-			auto& draw_data = draw_primitives.emplace_back();
-			draw_data.vboID = primitive.vboId;
-			draw_data.materialID = primitive.materialId;
-			draw_data.instanceID = node;
+			auto& draw_command = draw_commands.emplace_back();
+			draw_command.callInfo.vboID = primitive.vboId;
+			draw_command.callInfo.materialID = primitive.materialId;
+			draw_command.callInfo.instanceID = node;
+			
+			draw_command.range.beginIndex = lod.beginIndex;
+			draw_command.range.indexCount = lod.indexCount;
+			draw_command.range.beginVertex = lod.beginVertex;
+			draw_command.range.vertexCount = lod.indexCount;
 
-			draw_data.range.beginIndex = lod.beginIndex;
-			draw_data.range.indexCount = lod.indexCount;
-			draw_data.range.beginVertex = lod.beginVertex;
-			draw_data.range.vertexCount = lod.indexCount;
-
-			draw_data.bounds.min = primitive.dims.min;
-			draw_data.bounds.max = primitive.dims.max;
+			draw_command.range.bounds.min = primitive.dims.min;
+			draw_command.range.bounds.max = primitive.dims.max;
 		}
 	}
 
 	// Sort drawings by vbo, material and node
-	std::sort(draw_primitives.begin(), draw_primitives.end(), [](const FGeometryRawCommand& a, const FGeometryRawCommand& b)
+	std::sort(draw_commands.begin(), draw_commands.end(), [](const FGeometryRawBatch& a, const FGeometryRawBatch& b)
 		{
-			if (a.vboID == b.vboID)
+			if (a.callInfo.vboID == b.callInfo.vboID)
 			{
-				if(a.materialID == b.materialID)
-					return a.instanceID < b.instanceID;
+				if(a.callInfo.materialID == b.callInfo.materialID)
+					return a.callInfo.instanceID < b.callInfo.instanceID;
 
-				return a.materialID < b.materialID;
+				return a.callInfo.materialID < b.callInfo.materialID;
 			}
 
-			return a.vboID < b.vboID;
+			return a.callInfo.vboID < b.callInfo.vboID;
 		});
 
-	std::vector<FGeometryDrawData> old_draw_data{};
-	for (const auto& draw_data : draw_primitives)
-	{
-		auto& draw = old_draw_data.emplace_back();
-		draw.vboID = draw_data.vboID;
-		draw.materialID = draw_data.materialID;
-		draw.nodeID = draw_data.instanceID;
-
-		draw.range.beginIndex = draw_data.range.beginIndex;
-		draw.range.indexCount = draw_data.range.indexCount;
-		draw.range.beginVertex = draw_data.range.beginVertex;
-		draw.range.vertexCount = draw_data.range.vertexCount;
-
-		m_pRenderInterface->drawPrimitive(draw_data);
-	}
-
-	m_pRenderInterface->fillDrawBuffers(old_draw_data);
+	m_pRenderInterface->writeDrawData(draw_commands);
 }
