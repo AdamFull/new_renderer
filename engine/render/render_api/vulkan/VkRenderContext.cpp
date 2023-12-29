@@ -171,14 +171,13 @@ void CVkRenderContext::createGlobalDescriptor(const FGlobalUniformCreateInfo& un
 
 	// Create uniform buffers
 	auto& physical = m_pDevice->getPhysicalDevice();
-	auto minOffsetAllignment = std::lcm(physical.properties.limits.minUniformBufferOffsetAlignment, physical.properties.limits.nonCoherentAtomSize);
 
 	for (auto& [uniform_name, uniform_block] : uniform_ci.uniforms)
 	{
 		FVkBufferCreateInfo buffer_ci{};
 		buffer_ci.instanceCount = m_pDevice->m_swapchain.framesInFlight;
 		buffer_ci.instanceSize = uniform_block.size;
-		buffer_ci.minOffsetAlignment = minOffsetAllignment;
+		buffer_ci.minOffsetAlignment = std::lcm(physical.properties.limits.minUniformBufferOffsetAlignment, physical.properties.limits.nonCoherentAtomSize);
 		buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
 		buffer_ci.usageFlags = vk::BufferUsageFlagBits::eUniformBuffer;
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -805,7 +804,7 @@ size_t CVkRenderContext::createBuffer(const std::string& name, const FBufferCrea
 	FVkBufferCreateInfo vk_buffer_ci{};
 	vk_buffer_ci.instanceCount = buffer_ci.count;
 	vk_buffer_ci.instanceSize = buffer_ci.size;
-	vk_buffer_ci.minOffsetAlignment = std::lcm(physical.properties.limits.minUniformBufferOffsetAlignment, physical.properties.limits.nonCoherentAtomSize);
+	
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	vk_buffer_ci.name = name;
 #endif
@@ -831,6 +830,7 @@ size_t CVkRenderContext::createBuffer(const std::string& name, const FBufferCrea
 	case BUFFER_TYPE_UNIFORM_FLAG_BIT: {
 		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
 		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eUniformBuffer;
+		vk_buffer_ci.minOffsetAlignment = std::lcm(physical.properties.limits.minUniformBufferOffsetAlignment, physical.properties.limits.nonCoherentAtomSize);
 	} break;
 	case BUFFER_TYPE_INDIRECT_FLAG_BIT: {
 		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
