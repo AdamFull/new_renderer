@@ -172,11 +172,11 @@ void CVkRenderContext::createGlobalDescriptor(const FGlobalUniformCreateInfo& un
 	// Create uniform buffers
 	auto& physical = m_pDevice->getPhysicalDevice();
 
-	for (auto& [uniform_name, uniform_block] : uniform_ci.uniforms)
+	for (auto& [uniform_name, size] : uniform_ci.uniforms)
 	{
 		FVkBufferCreateInfo buffer_ci{};
 		buffer_ci.instanceCount = m_pDevice->m_swapchain.framesInFlight;
-		buffer_ci.instanceSize = uniform_block.size;
+		buffer_ci.instanceSize = size;
 		buffer_ci.minOffsetAlignment = std::lcm(physical.properties.limits.minUniformBufferOffsetAlignment, physical.properties.limits.nonCoherentAtomSize);
 		buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
 		buffer_ci.usageFlags = vk::BufferUsageFlagBits::eUniformBuffer;

@@ -56,6 +56,30 @@ CONSTANT uint32_t max_point_light_count = 64u;
 CONSTANT uint32_t max_point_light_shadow_count = 1u;
 CONSTANT uint32_t point_light_shadow_map_resolution = 512u;
 
+struct FGlobalUniformData
+{
+	MATRIX4 view;
+	MATRIX4 invView;
+	MATRIX4 projection;
+	MATRIX4 invProjection;
+	MATRIX4 viewProjection;
+	MATRIX4 invViewProjection;
+	VECTOR2 viewportDimension;
+	VECTOR2 invViewportDimension;
+	float nearPlane;
+	float farPlane;
+	uint32_t directionalLightCount;
+	uint32_t pointLightCount;
+	uint32_t spotLightCount;
+	uint32_t rawCommandsCount;
+};
+
+struct FGeometryGPUCullInfo
+{
+	uint32_t instanceID;
+	uint32_t frustumID;
+};
+
 struct FGeometryDrawBounds
 {
 	VECTOR3 min;

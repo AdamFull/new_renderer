@@ -45,7 +45,7 @@ namespace engine
 
 		struct FGlobalUniformCreateInfo
 		{
-			std::unordered_map<size_t, FReflectionUniformBlock<FReflectionUniform>> uniforms{};
+			std::unordered_map<size_t, size_t> uniforms{};
 		};
 
 		struct FGlobalUniformUpdateInfo
@@ -343,6 +343,8 @@ namespace engine
 
 			// Contains FGeometryGPUBatch
 			std::unique_ptr<IGPUArrayHandle> gpuBatches{};
+			std::unique_ptr<IGPUArrayHandle> cullingInfos{};
+			std::unique_ptr<IGPUArrayHandle> sceneFrustums{};
 			size_t drawCallCount{ 0ull };
 
 			std::unique_ptr<IBufferObject> drawIndexedCommands{};

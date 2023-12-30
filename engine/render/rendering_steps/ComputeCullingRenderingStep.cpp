@@ -69,26 +69,26 @@ void CComputeCullingRenderingStep::_execute(float dt)
 
 			if (was_vbo_rebinded)
 			{
-				//if (materials)
-				//{
-				//	auto& buffer = materials->getBufferObject();
-				//	size_t handle = buffer->handle();
-				//	shader->bindBuffer("MaterialStorage", handle);
-				//}
-				//
-				//if (nodes)
-				//{
-				//	auto& buffer = nodes->getBufferObject();
-				//	size_t handle = buffer->handle();
-				//	shader->bindBuffer("NodeStorage", handle);
-				//}
-				//
-				//if (skins)
-				//{
-				//	auto& buffer = skins->getBufferObject();
-				//	size_t handle = buffer->handle();
-				//	shader->bindBuffer("SkinningJoints", handle);
-				//}
+				if (materials)
+				{
+					auto& buffer = materials->getBufferObject();
+					size_t handle = buffer->handle();
+					shader->bindBuffer("MaterialStorage", handle);
+				}
+				
+				if (nodes)
+				{
+					auto& buffer = nodes->getBufferObject();
+					size_t handle = buffer->handle();
+					shader->bindBuffer("NodeStorage", handle);
+				}
+				
+				if (skins)
+				{
+					auto& buffer = skins->getBufferObject();
+					size_t handle = buffer->handle();
+					shader->bindBuffer("SkinningJoints", handle);
+				}
 
 				//size_t vertex_handle = last_vbo->getVertexHandle();
 				//shader->bindBuffer("VertexBuffer", vertex_handle);
@@ -101,6 +101,20 @@ void CComputeCullingRenderingStep::_execute(float dt)
 					auto& buffer = render_packet->gpuBatches->getBufferObject();
 					size_t batches = buffer->handle();
 					shader->bindBuffer("GeometryBatches", batches);
+				}
+
+				if (render_packet->cullingInfos)
+				{
+					auto& buffer = render_packet->cullingInfos->getBufferObject();
+					size_t handle = buffer->handle();
+					shader->bindBuffer("CullingInfo", handle);
+				}
+
+				if (render_packet->sceneFrustums)
+				{
+					auto& buffer = render_packet->sceneFrustums->getBufferObject();
+					size_t handle = buffer->handle();
+					shader->bindBuffer("SceneFrustum", handle);
 				}
 
 				size_t indirect_buffer = render_packet->drawIndexedCommands->handle();

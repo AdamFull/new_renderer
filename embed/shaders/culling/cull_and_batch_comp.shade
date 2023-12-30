@@ -45,6 +45,33 @@
 			FDrawIndexedIndirectData indexed_draw_commands[];
 		};
 
+		layout(std430, set = 1, binding = 12) readonly buffer CullingInfo
+		{
+			FGeometryGPUCullInfo culling_infos[];
+		};
+
+		layout(std430, set = 1, binding = 13) readonly buffer SceneFrustum
+		{
+			vec4 scene_frustums[];
+		};
+
+		bool checkObjectInFrustum(in vec3 minExtents, in vec3 maxExtents, in uint32_t frustumID)
+		{
+			for (uint32_t i = 0; i < 6; i++)
+			{
+				if (   scene_frustums[frustumID + i].x * minExtents.x + scene_frustums[frustumID + i].y * minExtents.y + scene_frustums[frustumID + i].z * minExtents.z + scene_frustums[frustumID + i].w <= 0.0f
+					&& scene_frustums[frustumID + i].x * maxExtents.x + scene_frustums[frustumID + i].y * minExtents.y + scene_frustums[frustumID + i].z * minExtents.z + scene_frustums[frustumID + i].w <= 0.0f
+					&& scene_frustums[frustumID + i].x * minExtents.x + scene_frustums[frustumID + i].y * maxExtents.y + scene_frustums[frustumID + i].z * minExtents.z + scene_frustums[frustumID + i].w <= 0.0f
+					&& scene_frustums[frustumID + i].x * maxExtents.x + scene_frustums[frustumID + i].y * maxExtents.y + scene_frustums[frustumID + i].z * minExtents.z + scene_frustums[frustumID + i].w <= 0.0f
+					&& scene_frustums[frustumID + i].x * minExtents.x + scene_frustums[frustumID + i].y * minExtents.y + scene_frustums[frustumID + i].z * maxExtents.z + scene_frustums[frustumID + i].w <= 0.0f
+					&& scene_frustums[frustumID + i].x * maxExtents.x + scene_frustums[frustumID + i].y * minExtents.y + scene_frustums[frustumID + i].z * maxExtents.z + scene_frustums[frustumID + i].w <= 0.0f
+					&& scene_frustums[frustumID + i].x * minExtents.x + scene_frustums[frustumID + i].y * maxExtents.y + scene_frustums[frustumID + i].z * maxExtents.z + scene_frustums[frustumID + i].w <= 0.0f
+					&& scene_frustums[frustumID + i].x * maxExtents.x + scene_frustums[frustumID + i].y * maxExtents.y + scene_frustums[frustumID + i].z * maxExtents.z + scene_frustums[frustumID + i].w <= 0.0f)
+					return false;
+			}
+			return true;
+		}
+
 		void main() 
 		{
 			uint gID = gl_GlobalInvocationID.x;
@@ -52,7 +79,17 @@
 			if (gID >= frameData.rawCommandsCount) 
 				return;
 
-			indexed_draw_commands[gID].instanceCount = 1;
+			FGeometryGPUCullInfo cull_info = culling_infos[gID];
+			FSceneNode node = nodes[cull_info.instanceID];
+			FDrawIndexedIndirectData command = indexed_draw_commands[gID];
+
+			vec4 minExtents = node.model * vec4(command.aabb.min, 1.f);
+			minExtents = vec4(minExtents.xyz / minExtents.w, 1.0);
+
+			vec4 maxExtents = node.model * vec4(command.aabb.max, 1.f);
+			maxExtents = vec4(maxExtents.xyz / maxExtents.w, 1.0);
+
+			indexed_draw_commands[gID].instanceCount = int(checkObjectInFrustum(minExtents.xyz, maxExtents.xyz, cull_info.frustumID));
 		}
 	""";
 }

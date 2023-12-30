@@ -210,7 +210,7 @@ namespace engine
 			{
 				for (uint32_t i = 0; i < 6; i++)
 				{
-					if (frustumSides[i][0] * pos.x + frustumSides[i][1] * pos.y + frustumSides[i][2] * pos.z + frustumSides[i][3] <= 0.0f)
+					if (frustumSides[i].x * pos.x + frustumSides[i].y * pos.y + frustumSides[i].z * pos.z + frustumSides[i].w <= 0.0f)
 						return false;
 				}
 				return true;
@@ -227,7 +227,7 @@ namespace engine
 			{
 				for (uint32_t i = 0; i < 6; i++)
 				{
-					if (frustumSides[i][0] * pos.x + frustumSides[i][1] * pos.y + frustumSides[i][2] * pos.z + frustumSides[i][3] <= -radius)
+					if (frustumSides[i].x * pos.x + frustumSides[i].y * pos.y + frustumSides[i].z * pos.z + frustumSides[i].w <= -radius)
 						return false;
 				}
 				return true;
@@ -244,20 +244,20 @@ namespace engine
 			{
 				for (uint32_t i = 0; i < 6; i++)
 				{
-					if (frustumSides[i][0] * start.x + frustumSides[i][1] * start.y + frustumSides[i][2] * start.z + frustumSides[i][3] <= 0.0f
-						&& frustumSides[i][0] * end.x + frustumSides[i][1] * start.y + frustumSides[i][2] * start.z + frustumSides[i][3] <= 0.0f
-						&& frustumSides[i][0] * start.x + frustumSides[i][1] * end.y + frustumSides[i][2] * start.z + frustumSides[i][3] <= 0.0f
-						&& frustumSides[i][0] * end.x + frustumSides[i][1] * end.y + frustumSides[i][2] * start.z + frustumSides[i][3] <= 0.0f
-						&& frustumSides[i][0] * start.x + frustumSides[i][1] * start.y + frustumSides[i][2] * end.z + frustumSides[i][3] <= 0.0f
-						&& frustumSides[i][0] * end.x + frustumSides[i][1] * start.y + frustumSides[i][2] * end.z + frustumSides[i][3] <= 0.0f
-						&& frustumSides[i][0] * start.x + frustumSides[i][1] * end.y + frustumSides[i][2] * end.z + frustumSides[i][3] <= 0.0f
-						&& frustumSides[i][0] * end.x + frustumSides[i][1] * end.y + frustumSides[i][2] * end.z + frustumSides[i][3] <= 0.0f)
+					if (   frustumSides[i].x * start.x + frustumSides[i].y * start.y + frustumSides[i].z * start.z + frustumSides[i].w <= 0.0f
+						&& frustumSides[i].x * end.x +   frustumSides[i].y * start.y + frustumSides[i].z * start.z + frustumSides[i].w <= 0.0f
+						&& frustumSides[i].x * start.x + frustumSides[i].y * end.y +   frustumSides[i].z * start.z + frustumSides[i].w <= 0.0f
+						&& frustumSides[i].x * end.x +   frustumSides[i].y * end.y +   frustumSides[i].z * start.z + frustumSides[i].w <= 0.0f
+						&& frustumSides[i].x * start.x + frustumSides[i].y * start.y + frustumSides[i].z * end.z +   frustumSides[i].w <= 0.0f
+						&& frustumSides[i].x * end.x +   frustumSides[i].y * start.y + frustumSides[i].z * end.z +   frustumSides[i].w <= 0.0f
+						&& frustumSides[i].x * start.x + frustumSides[i].y * end.y +   frustumSides[i].z * end.z +   frustumSides[i].w <= 0.0f
+						&& frustumSides[i].x * end.x +   frustumSides[i].y * end.y +   frustumSides[i].z * end.z +   frustumSides[i].w <= 0.0f)
 						return false;
 				}
 				return true;
 			}
 
-			std::array<std::array<float, 4>, 6> frustumSides{};
+			std::array<glm::vec4, 6> frustumSides{};
 			std::array<float, 16> clip;
 		private:
 			void normalizeFrustumSide(size_t side)

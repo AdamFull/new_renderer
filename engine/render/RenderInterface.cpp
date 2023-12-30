@@ -131,8 +131,6 @@ CRenderInterface::CRenderInterface(filesystem::IVirtualFileSystemInterface* vfs)
 
 	m_pResources = std::make_unique<CResourceContainer>();
 	m_pResources->registerResource<IVertexHandler>();
-
-	m_pGlobalUniformHandler = std::make_unique<CUniformHandle>();
 }
 
 CRenderInterface::~CRenderInterface()
@@ -148,33 +146,8 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 	
 	m_pRenderScriptCore->create(this, m_pRenderContext.get());
 
-	// TODO: make it better
-	std::vector<std::pair<size_t, size_t>> sizemap{};
-	sizemap.emplace_back(utl::fnv1a_64_hash("view"), 64ull);					// mat4 view;
-	sizemap.emplace_back(utl::fnv1a_64_hash("invView"), 64ull);				// mat4 invView;
-	sizemap.emplace_back(utl::fnv1a_64_hash("projection"), 64ull);			// mat4 projection;
-	sizemap.emplace_back(utl::fnv1a_64_hash("invProjection"), 64ull);		// mat4 invProjection;
-	sizemap.emplace_back(utl::fnv1a_64_hash("viewProjection"), 64ull);		// mat4 viewProjection;
-	sizemap.emplace_back(utl::fnv1a_64_hash("invViewProjection"), 64ull);	// mat4 invViewProjection;
-	sizemap.emplace_back(utl::fnv1a_64_hash("viewportDimension"), 8ull);	// vec2 viewportDimension;
-	sizemap.emplace_back(utl::fnv1a_64_hash("invViewportDimension"), 8ull);	// vec2 viewportDimension;
-	sizemap.emplace_back(utl::fnv1a_64_hash("nearPlane"), 4ull);			// float nearPlane;
-	sizemap.emplace_back(utl::fnv1a_64_hash("farPlane"), 4ull);				// float farPlane;
-	sizemap.emplace_back(utl::fnv1a_64_hash("directionalLightCount"), 4ull);				// uint directionalLightCount;
-	sizemap.emplace_back(utl::fnv1a_64_hash("pointLightCount"), 4ull);				// uint pointLightCount;
-	sizemap.emplace_back(utl::fnv1a_64_hash("spotLightCount"), 4ull);				// uint spotLightCount;
-	sizemap.emplace_back(utl::fnv1a_64_hash("rawCommandsCount"), 4ull);				// uint rawCommandsCount;
-	sizemap.emplace_back(utl::fnv1a_64_hash("frustumPlanes"), 96ull);		// vec4 frustumPlanes[6];
-
 	FGlobalUniformCreateInfo global_buffer_ci{};
-	auto& ublock = global_buffer_ci.uniforms[utl::fnv1a_64_hash("GlobalUniformFrameData")];
-	for (const auto& [name, size] : sizemap)
-	{
-		ublock.uniforms.emplace(name, FReflectionUniform{ 0u, 0u, ublock.size, size });
-		ublock.size += size;
-	}
-
-	m_pGlobalUniformHandler->create(ublock);
+	global_buffer_ci.uniforms[utl::fnv1a_64_hash("GlobalUniformFrameData")] = sizeof(FGlobalUniformData);
 	m_pRenderContext->createGlobalDescriptor(global_buffer_ci);
 
 	std::vector<uint8_t> render_config{};
@@ -183,6 +156,8 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 
 	// Allocating gpu to cpu side buffers
 	m_pRenderPacket->gpuBatches = allocateGPUArrayHandle<FGeometryGPUBatch>("GeometryBatches", MAX_RENDER_OBJECT_COUNT, this, m_pRenderContext.get());
+	m_pRenderPacket->cullingInfos = allocateGPUArrayHandle<FGeometryGPUCullInfo>("CullingInfo", MAX_RENDER_OBJECT_COUNT, this, m_pRenderContext.get());
+	m_pRenderPacket->sceneFrustums = allocateGPUArrayHandle<glm::vec4>("SceneFrustum", MAX_PRIMITIVE_COUNT * 6ull, this, m_pRenderContext.get());
 
 	m_pRenderPacket->materials = allocateGPUArrayHandle<FMaterial>("MaterialStorage", MAX_MATERIAL_COUNT, this, m_pRenderContext.get());
 	m_pRenderPacket->nodes = allocateGPUArrayHandle<FSceneNode>("NodeStorage", MAX_PRIMITIVE_COUNT, this, m_pRenderContext.get());
@@ -203,6 +178,8 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 
 	
 	m_vArrayHandles.emplace_back(m_pRenderPacket->gpuBatches.get());
+	m_vArrayHandles.emplace_back(m_pRenderPacket->cullingInfos.get());
+	m_vArrayHandles.emplace_back(m_pRenderPacket->sceneFrustums.get());
 	m_vArrayHandles.emplace_back(m_pRenderPacket->materials.get());
 	m_vArrayHandles.emplace_back(m_pRenderPacket->nodes.get());
 	m_vArrayHandles.emplace_back(m_pRenderPacket->skins.get());
@@ -233,29 +210,26 @@ void CRenderInterface::render(float dt)
 
 	m_pRenderContext->beginFrameCommandBuffers();
 
-	// TODO: make it better
-	m_pRenderPacket->camera.frustum.update(m_pRenderPacket->camera.view, m_pRenderPacket->camera.projection);
-	m_pGlobalUniformHandler->set("view", m_pRenderPacket->camera.view);
-	m_pGlobalUniformHandler->set("invView", m_pRenderPacket->camera.invView);
-	m_pGlobalUniformHandler->set("projection", m_pRenderPacket->camera.projection);
-	m_pGlobalUniformHandler->set("invProjection", m_pRenderPacket->camera.invProjection);
-	m_pGlobalUniformHandler->set("viewProjection", m_pRenderPacket->camera.viewProjection);
-	m_pGlobalUniformHandler->set("invViewProjection", m_pRenderPacket->camera.invViewProjection);
-	m_pGlobalUniformHandler->set("viewportDimension", m_pRenderPacket->camera.dimensions);
-	m_pGlobalUniformHandler->set("invViewportDimension", 1.f / m_pRenderPacket->camera.dimensions);
-	m_pGlobalUniformHandler->set("nearPlane", m_pRenderPacket->camera.nearp);
-	m_pGlobalUniformHandler->set("farPlane", m_pRenderPacket->camera.farp);
-	m_pGlobalUniformHandler->set("directionalLightCount", static_cast<uint32_t>(m_pRenderPacket->dlights.lights->size()));
-	m_pGlobalUniformHandler->set("pointLightCount", static_cast<uint32_t>(m_pRenderPacket->plights.lights->size()));
-	m_pGlobalUniformHandler->set("spotLightCount", static_cast<uint32_t>(m_pRenderPacket->slights.lights->size()));
-	m_pGlobalUniformHandler->set("rawCommandsCount", static_cast<uint32_t>(m_pRenderPacket->drawCallCount));
-	m_pGlobalUniformHandler->set("frustumPlanes", m_pRenderPacket->camera.frustum.frustumSides);
+	FGlobalUniformData global_uniform{};
+	global_uniform.view = m_pRenderPacket->camera.view;
+	global_uniform.invView = m_pRenderPacket->camera.invView;
+	global_uniform.projection = m_pRenderPacket->camera.projection;
+	global_uniform.invProjection = m_pRenderPacket->camera.invProjection;
+	global_uniform.viewProjection = m_pRenderPacket->camera.viewProjection;
+	global_uniform.invViewProjection = m_pRenderPacket->camera.invViewProjection;
+	global_uniform.viewportDimension = m_pRenderPacket->camera.dimensions;
+	global_uniform.invViewportDimension = 1.f / m_pRenderPacket->camera.dimensions;
+	global_uniform.nearPlane = m_pRenderPacket->camera.nearp;
+	global_uniform.farPlane = m_pRenderPacket->camera.farp;
+	global_uniform.directionalLightCount = static_cast<uint32_t>(m_pRenderPacket->dlights.lights->size());
+	global_uniform.pointLightCount = static_cast<uint32_t>(m_pRenderPacket->plights.lights->size());
+	global_uniform.spotLightCount = static_cast<uint32_t>(m_pRenderPacket->slights.lights->size());
+	global_uniform.rawCommandsCount = static_cast<uint32_t>(m_pRenderPacket->drawCallCount);
 
 	FGlobalUniformUpdateInfo update_info{};
 	auto& uniform = update_info.uniforms[utl::fnv1a_64_hash("GlobalUniformFrameData")];
-	auto& block_data = m_pGlobalUniformHandler->data();
-	uniform.data = block_data.data();
-	uniform.size = block_data.size();
+	uniform.data = &global_uniform;
+	uniform.size = sizeof(FGlobalUniformData);
 
 	m_pRenderContext->updateGlobalDescriptorData(update_info);
 
@@ -278,6 +252,8 @@ void CRenderInterface::render(float dt)
 	m_pRenderPacket->shadowDrawCalls.clear();
 
 	m_pRenderPacket->gpuBatches->clear();
+	m_pRenderPacket->cullingInfos->clear();
+	m_pRenderPacket->sceneFrustums->clear();
 	m_pRenderPacket->nodes->clear();
 	m_pRenderPacket->skins->clear();
 
@@ -346,6 +322,11 @@ void CRenderInterface::writeDrawData(const std::vector<FGeometryRawBatch>& draw_
 	size_t current_material{ ~0ull };
 	for (const auto& command : draw_commands)
 	{
+		FGeometryGPUCullInfo culling_info{};
+		culling_info.instanceID = command.callInfo.instanceID;
+
+		m_pRenderPacket->cullingInfos->emplace_back(&culling_info);
+
 		auto& vbo = getVertexHandler(command.callInfo.vboID);
 
 		auto last_index = vbo->getLastIndex();
@@ -408,6 +389,10 @@ void CRenderInterface::writeDrawData(const std::vector<FGeometryRawBatch>& draw_
 		m_pRenderPacket->gpuBatches->emplace_back(&gpu_batch);
 
 	m_pRenderPacket->drawCallCount = command_offset;
+
+	m_pRenderPacket->camera.frustum.update(m_pRenderPacket->camera.view, m_pRenderPacket->camera.projection);
+	for (const auto& side : m_pRenderPacket->camera.frustum.frustumSides)
+		m_pRenderPacket->sceneFrustums->emplace_back(&side);
 }
 
 void CRenderInterface::updateSurfaceSize(int32_t width, int32_t height)
