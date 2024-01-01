@@ -33,11 +33,10 @@ void CCascadedShadowMapsRenderingStep::_execute(float dt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto& render_packet = m_pRenderInterface->getRenderPacket();
-	auto& dlights = render_packet->dlights;
-	size_t shadow_count = dlights.shadows->size();
+	auto& render_world = m_pRenderInterface->getRenderWorld();
+	auto& world_stats = render_world->getStats();
 
-	if (!shadow_count)
+	if (!world_stats.cascadedShadowCount)
 		return;
 
 	m_pRenderContext->beginRendering(m_beginRenderingInfo);
@@ -46,103 +45,56 @@ void CCascadedShadowMapsRenderingStep::_execute(float dt)
 	m_pRenderContext->setViewport(static_cast<float>(rect.size.x), static_cast<float>(rect.size.y), m_beginRenderingInfo.flipViewport);
 	m_pRenderContext->setScissorRect(0, 0, rect.size.x, rect.size.y);
 	
-	auto& materials = render_packet->materials;
-	auto& nodes = render_packet->nodes;
-	auto& skins = render_packet->skins;
+	auto& batch_ranges = render_world->getGeometryRanges(RENDER_GEOMETRY_CULLER_CSM_TYPE);
 	
 	IVertexHandler* last_vbo{ nullptr };
-	for (size_t batch_id = 0ull; batch_id < render_packet->sceneDrawCalls.size(); ++batch_id)
+	
+	for (size_t range_id = 0ull; range_id < batch_ranges.size(); ++range_id)
 	{
-		const auto& batch = render_packet->sceneDrawCalls.at(batch_id);
+		size_t shadow_index = range_id / cascade_shadow_map_cascade_count;
 
-		bool was_vbo_rebinded{ false };
-		auto& vbo = m_pRenderInterface->getVertexHandler(batch.vboID);
-		if (!last_vbo || vbo.get() != last_vbo)
+		auto& batch_range = batch_ranges.at(range_id);
+		for (size_t batch_id = batch_range.offset; batch_id < batch_range.offset + batch_range.count; ++batch_id)
 		{
-			last_vbo = vbo.get();
-			last_vbo->bind(m_beginRenderingInfo.queue);
-			was_vbo_rebinded = true;
-		}
+			const auto& batch = render_world->getGeometryBatch(batch_id);
 	
-		if (last_vbo)
-		{
-			auto& shader = getShaderByVBO(last_vbo);
-	
-			auto& shadow_data = shader->getConstantBlock("shadowData");
-			if(shadow_data)
+			bool was_vbo_rebinded{ false };
+			auto& vbo = m_pRenderInterface->getVertexHandler(batch.vboID);
+			if (!last_vbo || vbo.get() != last_vbo)
 			{
-				shadow_data->set("batchID", static_cast<uint32_t>(batch_id));
+				last_vbo = vbo.get();
+				last_vbo->bind(m_beginRenderingInfo.queue);
+				was_vbo_rebinded = true;
 			}
 	
-			if (was_vbo_rebinded)
+			if (last_vbo)
 			{
-				if (materials)
+				auto& shader = getShaderByVBO(last_vbo);
+	
+				auto& shadow_data = shader->getConstantBlock("shadowData");
+				if (shadow_data)
 				{
-					auto& buffer = materials->getBufferObject();
-					size_t handle = buffer->handle();
-					shader->bindBuffer("MaterialStorage", handle);
+					shadow_data->set("batchID", static_cast<uint32_t>(batch_id));
 				}
 	
-				if (nodes)
+				if (was_vbo_rebinded)
 				{
-					auto& buffer = nodes->getBufferObject();
-					size_t handle = buffer->handle();
-					shader->bindBuffer("NodeStorage", handle);
-				}
+					render_world->bindDrawBuffers(shader.get(), SHADER_BUFFER_GEOMETRY_BIT | SHADER_BUFFER_LIGHT_BIT);
 	
-				if (skins)
-				{
-					auto& buffer = skins->getBufferObject();
-					size_t handle = buffer->handle();
-					shader->bindBuffer("SkinningJoints", handle);
-				}
-	
-				if (dlights.shadows)
-				{
-					auto& buffer = dlights.shadows->getBufferObject();
-					size_t handle = buffer->handle();
-					shader->bindBuffer("CascadedShadows", handle);
-				}
-	
-				if (render_packet->plights.shadows)
-				{
-					auto& buffer = render_packet->plights.shadows->getBufferObject();
-					size_t handle = buffer->handle();
-					shader->bindBuffer("OmniShadows", handle);
-				}
-	
-				if (render_packet->slights.shadows)
-				{
-					auto& buffer = render_packet->slights.shadows->getBufferObject();
-					size_t handle = buffer->handle();
-					shader->bindBuffer("SpotShadows", handle);
+					shader->flushDescriptors();
+					shader->bind(m_beginRenderingInfo.queue);
 				}
 
-				if (render_packet->gpuBatches)
+				// Draw shadfow
+				if (shadow_data)
 				{
-					auto& buffer = render_packet->gpuBatches->getBufferObject();
-					size_t batches = buffer->handle();
-					shader->bindBuffer("GeometryBatches", batches);
+					shadow_data->set("shadowIndex", static_cast<uint32_t>(shadow_index));
+					shadow_data->set("layer", static_cast<int32_t>(range_id));
 				}
-	
-				shader->flushDescriptors();
-				shader->bind(m_beginRenderingInfo.queue);
-			}
-	
-			for (size_t idx = 0ull; idx < shadow_count; ++idx)
-			{
-				for (size_t layer = 0ull; layer < cascade_shadow_map_cascade_count; ++layer)
-				{
-					if (shadow_data)
-					{
-						shadow_data->set("shadowIndex", static_cast<uint32_t>(idx));
-						shadow_data->set("layer", static_cast<int32_t>(layer));
-					}
-	
-					shader->flushConstants(m_beginRenderingInfo.queue);
-			
-					m_pRenderContext->draw(m_beginRenderingInfo.queue, batch.command);
-				}
+				
+				shader->flushConstants(m_beginRenderingInfo.queue);
+				
+				m_pRenderContext->draw(m_beginRenderingInfo.queue, batch.command);
 			}
 		}
 	}

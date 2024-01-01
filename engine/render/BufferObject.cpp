@@ -36,7 +36,7 @@ void CBufferObject::unmap()
 	}
 }
 
-void CBufferObject::write(void* data, size_t size, size_t offset) 
+void CBufferObject::write(const void* data, size_t size, size_t offset)
 {
 	if (size == ~0ull)
 	{

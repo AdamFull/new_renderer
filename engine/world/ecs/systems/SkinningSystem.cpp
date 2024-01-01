@@ -74,11 +74,13 @@ void CSkinningSystem::__update(float fDt)
 		}
 	}
 
-	auto& render_packet = m_pRenderInterface->getRenderPacket();
-	auto& skins = render_packet->skins;
+	auto& render_world = m_pRenderInterface->getRenderWorld();
+	auto& world_stats = render_world->getStats();
+	world_stats.skinCount = 0ull;
+
 	for (size_t idx = 0ull; idx < root_component.skins.size(); ++idx)
 	{
 		auto& skin = root_component.skins[idx];
-		skins->insert(&skin.jointMatrices[0ull], idx);
+		render_world->updateSkin(skin.jointMatrices);
 	}
 }

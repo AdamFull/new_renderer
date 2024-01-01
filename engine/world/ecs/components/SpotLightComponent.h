@@ -16,6 +16,8 @@ namespace engine
 				bool toTarget{ false };
 				int shadowIndex{ -1 };
 				bool castShadows{ false };
+
+				size_t frustumID{ ~0ull };
 			};
 		}
 	}

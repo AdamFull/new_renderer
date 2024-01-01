@@ -51,80 +51,55 @@ void CGeometryRenderingStep::_execute(float dt)
 	m_pRenderContext->setViewport(static_cast<float>(rect.size.x), static_cast<float>(rect.size.y), m_beginRenderingInfo.flipViewport);
 	m_pRenderContext->setScissorRect(0, 0, rect.size.x, rect.size.y);
 
-	auto& render_packet = m_pRenderInterface->getRenderPacket();
+	auto& render_world = m_pRenderInterface->getRenderWorld();
 
-	auto& materials = render_packet->materials;
-	auto& nodes = render_packet->nodes;
-	auto& skins = render_packet->skins;
+	auto& batch_ranges = render_world->getGeometryRanges(RENDER_GEOMETRY_CULLER_SCENE_TYPE);
 
 	size_t drawcall_id{ 0ull };
 	IVertexHandler* last_vbo{ nullptr };
-	for (size_t batch_id = 0ull; batch_id < render_packet->sceneDrawCalls.size(); ++batch_id)
+	for (const auto& batch_range : batch_ranges)
 	{
-		const auto& batch = render_packet->sceneDrawCalls.at(batch_id);
-
-		bool was_vbo_rebinded{ false };
- 		auto& vbo = m_pRenderInterface->getVertexHandler(batch.vboID);
-		if (!last_vbo || vbo.get() != last_vbo)
+		for (size_t batch_id = batch_range.offset; batch_id < batch_range.offset + batch_range.count; ++batch_id)
 		{
-			last_vbo = vbo.get();
-			last_vbo->bind(m_beginRenderingInfo.queue);
-			was_vbo_rebinded = true;
-		}
-		
-		if (last_vbo)
-		{
-			// TODO: this code looks very ugly as i think
-			// Create shader for vertex declaration if not exists
-			auto& shader = getShaderByVBO(last_vbo);
+			const auto& batch = render_world->getGeometryBatch(batch_id);
 
-			if (was_vbo_rebinded)
+			bool was_vbo_rebinded{ false };
+			auto& vbo = m_pRenderInterface->getVertexHandler(batch.vboID);
+			if (!last_vbo || vbo.get() != last_vbo)
 			{
-				if (materials)
-				{
-					auto& buffer = materials->getBufferObject();
-					size_t handle = buffer->handle();
-					shader->bindBuffer("MaterialStorage", handle);
-				}
-
-				if (nodes)
-				{
-					auto& buffer = nodes->getBufferObject();
-					size_t handle = buffer->handle();
-					shader->bindBuffer("NodeStorage", handle);
-				}
-
-				if (skins)
-				{
-					auto& buffer = skins->getBufferObject();
-					size_t handle = buffer->handle();
-					shader->bindBuffer("SkinningJoints", handle);
-				}
-
-				if (render_packet->gpuBatches)
-				{
-					auto& buffer = render_packet->gpuBatches->getBufferObject();
-					size_t batches = buffer->handle();
-					shader->bindBuffer("GeometryBatches", batches);
-				}
-
-				shader->flushDescriptors();
-				shader->bind(m_beginRenderingInfo.queue);
+				last_vbo = vbo.get();
+				last_vbo->bind(m_beginRenderingInfo.queue);
+				was_vbo_rebinded = true;
 			}
 
-			auto& mesh_data = shader->getConstantBlock("meshData");
-			if(mesh_data)
+			if (last_vbo)
 			{
-				mesh_data->set("callID", static_cast<uint32_t>(drawcall_id));
-				mesh_data->set("batchID", static_cast<uint32_t>(batch_id));
+				// TODO: this code looks very ugly as i think
+				// Create shader for vertex declaration if not exists
+				auto& shader = getShaderByVBO(last_vbo);
+
+				if (was_vbo_rebinded)
+				{
+					render_world->bindDrawBuffers(shader.get(), SHADER_BUFFER_GEOMETRY_BIT);
+
+					shader->flushDescriptors();
+					shader->bind(m_beginRenderingInfo.queue);
+				}
+
+				auto& mesh_data = shader->getConstantBlock("meshData");
+				if (mesh_data)
+				{
+					mesh_data->set("callID", static_cast<uint32_t>(drawcall_id));
+					mesh_data->set("batchID", static_cast<uint32_t>(batch_id));
+				}
+
+				// Bind vbo and flush descriptors, then bind and draw
+
+				shader->flushConstants(m_beginRenderingInfo.queue);
+
+				m_pRenderContext->draw(m_beginRenderingInfo.queue, batch.command);
+				drawcall_id += batch.command.count;
 			}
-
-			// Bind vbo and flush descriptors, then bind and draw
-			
-			shader->flushConstants(m_beginRenderingInfo.queue);
-
-			m_pRenderContext->draw(m_beginRenderingInfo.queue, batch.command);
-			drawcall_id += batch.command.count;
 		}
 	}
 

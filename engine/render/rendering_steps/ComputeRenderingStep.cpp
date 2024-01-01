@@ -48,55 +48,8 @@ void CComputeRenderingStep::_execute(float dt)
 
 	auto& sizes = m_beginComputeInfo.globalSizes;
 
-	auto& render_packet = m_pRenderInterface->getRenderPacket();
-
-	auto& dlights = render_packet->dlights.lights;
-	if (dlights)
-	{
-		auto& buffer = dlights->getBufferObject();
-		size_t handle = buffer->handle();
-		m_pShader->bindBuffer("DirectionalLights", handle);
-	}
-
-	auto& plights = render_packet->plights.lights;
-	if (plights)
-	{
-		auto& buffer = plights->getBufferObject();
-		size_t handle = buffer->handle();
-		m_pShader->bindBuffer("PointLights", handle);
-	}
-
-	auto& slights = render_packet->slights.lights;
-	if (slights)
-	{
-		auto& buffer = slights->getBufferObject();
-		size_t handle = buffer->handle();
-		m_pShader->bindBuffer("SpotLights", handle);
-	}
-
-	auto& dshadows = render_packet->dlights.shadows;
-	if (dshadows)
-	{
-		auto& buffer = dshadows->getBufferObject();
-		size_t handle = buffer->handle();
-		m_pShader->bindBuffer("CascadedShadows", handle);
-	}
-
-	auto& pshadows = render_packet->plights.shadows;
-	if (pshadows)
-	{
-		auto& buffer = pshadows->getBufferObject();
-		size_t handle = buffer->handle();
-		m_pShader->bindBuffer("OmniShadows", handle);
-	}
-
-	auto& sshadows = render_packet->slights.shadows;
-	if (sshadows)
-	{
-		auto& buffer = sshadows->getBufferObject();
-		size_t handle = buffer->handle();
-		m_pShader->bindBuffer("SpotShadows", handle);
-	}
+	auto& render_world = m_pRenderInterface->getRenderWorld();
+	render_world->bindDrawBuffers(m_pShader.get(), SHADER_BUFFER_ALL_BIT);
 
 	m_pShader->flushDescriptors();
 	m_pShader->flushConstants(m_beginComputeInfo.queue);

@@ -35,7 +35,7 @@
 		//	Index index_buffer[];
 		//};
 
-		layout(std430, set = 1, binding = 10) buffer GeometryBatches
+		layout(std430, set = 1, binding = 10) readonly buffer GeometryBatches
 		{
 			FGeometryGPUBatch geometry_batches[];
 		};
@@ -59,14 +59,14 @@
 		{
 			for (uint32_t i = 0; i < 6; i++)
 			{
-				if (   scene_frustums[frustumID + i].x * minExtents.x + scene_frustums[frustumID + i].y * minExtents.y + scene_frustums[frustumID + i].z * minExtents.z + scene_frustums[frustumID + i].w <= 0.0f
-					&& scene_frustums[frustumID + i].x * maxExtents.x + scene_frustums[frustumID + i].y * minExtents.y + scene_frustums[frustumID + i].z * minExtents.z + scene_frustums[frustumID + i].w <= 0.0f
-					&& scene_frustums[frustumID + i].x * minExtents.x + scene_frustums[frustumID + i].y * maxExtents.y + scene_frustums[frustumID + i].z * minExtents.z + scene_frustums[frustumID + i].w <= 0.0f
-					&& scene_frustums[frustumID + i].x * maxExtents.x + scene_frustums[frustumID + i].y * maxExtents.y + scene_frustums[frustumID + i].z * minExtents.z + scene_frustums[frustumID + i].w <= 0.0f
-					&& scene_frustums[frustumID + i].x * minExtents.x + scene_frustums[frustumID + i].y * minExtents.y + scene_frustums[frustumID + i].z * maxExtents.z + scene_frustums[frustumID + i].w <= 0.0f
-					&& scene_frustums[frustumID + i].x * maxExtents.x + scene_frustums[frustumID + i].y * minExtents.y + scene_frustums[frustumID + i].z * maxExtents.z + scene_frustums[frustumID + i].w <= 0.0f
-					&& scene_frustums[frustumID + i].x * minExtents.x + scene_frustums[frustumID + i].y * maxExtents.y + scene_frustums[frustumID + i].z * maxExtents.z + scene_frustums[frustumID + i].w <= 0.0f
-					&& scene_frustums[frustumID + i].x * maxExtents.x + scene_frustums[frustumID + i].y * maxExtents.y + scene_frustums[frustumID + i].z * maxExtents.z + scene_frustums[frustumID + i].w <= 0.0f)
+				if (   scene_frustums[frustumID * 6u + i].x * minExtents.x + scene_frustums[frustumID * 6u + i].y * minExtents.y + scene_frustums[frustumID * 6u + i].z * minExtents.z + scene_frustums[frustumID * 6u + i].w <= 0.0f
+					&& scene_frustums[frustumID * 6u + i].x * maxExtents.x + scene_frustums[frustumID * 6u + i].y * minExtents.y + scene_frustums[frustumID * 6u + i].z * minExtents.z + scene_frustums[frustumID * 6u + i].w <= 0.0f
+					&& scene_frustums[frustumID * 6u + i].x * minExtents.x + scene_frustums[frustumID * 6u + i].y * maxExtents.y + scene_frustums[frustumID * 6u + i].z * minExtents.z + scene_frustums[frustumID * 6u + i].w <= 0.0f
+					&& scene_frustums[frustumID * 6u + i].x * maxExtents.x + scene_frustums[frustumID * 6u + i].y * maxExtents.y + scene_frustums[frustumID * 6u + i].z * minExtents.z + scene_frustums[frustumID * 6u + i].w <= 0.0f
+					&& scene_frustums[frustumID * 6u + i].x * minExtents.x + scene_frustums[frustumID * 6u + i].y * minExtents.y + scene_frustums[frustumID * 6u + i].z * maxExtents.z + scene_frustums[frustumID * 6u + i].w <= 0.0f
+					&& scene_frustums[frustumID * 6u + i].x * maxExtents.x + scene_frustums[frustumID * 6u + i].y * minExtents.y + scene_frustums[frustumID * 6u + i].z * maxExtents.z + scene_frustums[frustumID * 6u + i].w <= 0.0f
+					&& scene_frustums[frustumID * 6u + i].x * minExtents.x + scene_frustums[frustumID * 6u + i].y * maxExtents.y + scene_frustums[frustumID * 6u + i].z * maxExtents.z + scene_frustums[frustumID * 6u + i].w <= 0.0f
+					&& scene_frustums[frustumID * 6u + i].x * maxExtents.x + scene_frustums[frustumID * 6u + i].y * maxExtents.y + scene_frustums[frustumID * 6u + i].z * maxExtents.z + scene_frustums[frustumID * 6u + i].w <= 0.0f)
 					return false;
 			}
 			return true;

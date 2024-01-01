@@ -19,6 +19,13 @@ CCameraSystem::CCameraSystem(CSceneGraph* scenegraph, IRenderInterface* render_i
 void CCameraSystem::__create()
 {
 	TRACY_PROFILE_FUNCTION();
+
+	auto& registry = m_pSceneGraph->getRegistry();
+	auto& render_world = m_pRenderInterface->getRenderWorld();
+
+	auto view = registry->view<FTransformComponent, FBaseComponent, FCameraComponent>();
+	for (auto [entity, transform, base, camera] : view.each())
+		camera.frustumID = render_world->registerFrustum(RENDER_GEOMETRY_CULLER_SCENE_TYPE);
 }
 
 void CCameraSystem::__update(float fDt)
@@ -28,6 +35,7 @@ void CCameraSystem::__update(float fDt)
 	auto& registry = m_pSceneGraph->getRegistry();
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
 	auto* render_context = m_pRenderInterface->getRenderContext();
+	auto& render_world = m_pRenderInterface->getRenderWorld();
 
 	auto view = registry->view<FTransformComponent, FBaseComponent, FCameraComponent>();
 	for (auto [entity, transform, base, camera] : view.each())
@@ -73,6 +81,7 @@ void CCameraSystem::__update(float fDt)
 			render_packet->camera.nearp = camera.nearPlane;
 			render_packet->camera.farp = camera.farPlane;
 
+			render_world->updateFrustum(camera.frustumID, camera.view, camera.projection);
 			break;
 		}
 	}

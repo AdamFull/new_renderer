@@ -12,6 +12,7 @@
 #include "rendering_steps/ComputeGeometryRenderingStep.h"
 #include "rendering_steps/ComputeCullingRenderingStep.h"
 
+#include "RenderWorld.h"
 #include "VertexHandler.h"
 #include "BufferObject.h"
 #include "GPUArrayHandle.h"
@@ -143,7 +144,10 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 	m_pResourceLoader->initialize(m_pVFS);
 
 	m_pRenderContext = make_render_context(rhi_ci);
-	
+
+	m_pRenderWorld = std::make_unique<CRenderWorld>(this, m_pRenderContext.get());
+	m_pRenderWorld->create();
+
 	m_pRenderScriptCore->create(this, m_pRenderContext.get());
 
 	FGlobalUniformCreateInfo global_buffer_ci{};
@@ -153,62 +157,15 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 	std::vector<uint8_t> render_config{};
 	m_pVFS->readFile("/root/embed/rendering/test_render_config.lua", render_config);
 	m_pRenderScriptCore->build("render_config", render_config);
-
-	// Allocating gpu to cpu side buffers
-	m_pRenderPacket->gpuBatches = allocateGPUArrayHandle<FGeometryGPUBatch>("GeometryBatches", MAX_RENDER_OBJECT_COUNT, this, m_pRenderContext.get());
-	m_pRenderPacket->cullingInfos = allocateGPUArrayHandle<FGeometryGPUCullInfo>("CullingInfo", MAX_RENDER_OBJECT_COUNT, this, m_pRenderContext.get());
-	m_pRenderPacket->sceneFrustums = allocateGPUArrayHandle<glm::vec4>("SceneFrustum", MAX_PRIMITIVE_COUNT * 6ull, this, m_pRenderContext.get());
-
-	m_pRenderPacket->materials = allocateGPUArrayHandle<FMaterial>("MaterialStorage", MAX_MATERIAL_COUNT, this, m_pRenderContext.get());
-	m_pRenderPacket->nodes = allocateGPUArrayHandle<FSceneNode>("NodeStorage", MAX_PRIMITIVE_COUNT, this, m_pRenderContext.get());
-	m_pRenderPacket->skins = allocateGPUArrayHandle<glm::mat4>("SkinningJoints", MAX_PRIMITIVE_COUNT * 128ull, this, m_pRenderContext.get());
-
-
-	// Directional light data
-	m_pRenderPacket->dlights.lights = allocateGPUArrayHandle<FDirectionalLightCommit>("DirectionalLights", max_directional_light_count, this, m_pRenderContext.get());
-	m_pRenderPacket->dlights.shadows = allocateGPUArrayHandle<FCascadedShadowCommit>("CascadedShadows", max_directional_light_shadow_count, this, m_pRenderContext.get());
-
-	// Point light data
-	m_pRenderPacket->plights.lights = allocateGPUArrayHandle<FPointLightCommit>("PointLights", max_point_light_count, this, m_pRenderContext.get());
-	m_pRenderPacket->plights.shadows = allocateGPUArrayHandle<FOmniShadowCommit>("OmniShadows", max_point_light_shadow_count, this, m_pRenderContext.get());
-
-	// Spot light data
-	m_pRenderPacket->slights.lights = allocateGPUArrayHandle<FSpotLightCommit>("SpotLights", max_spot_light_count, this, m_pRenderContext.get());
-	m_pRenderPacket->slights.shadows = allocateGPUArrayHandle<FSpotShadowCommit>("SpotShadows", max_spot_light_shadow_count, this, m_pRenderContext.get());
-
-	
-	m_vArrayHandles.emplace_back(m_pRenderPacket->gpuBatches.get());
-	m_vArrayHandles.emplace_back(m_pRenderPacket->cullingInfos.get());
-	m_vArrayHandles.emplace_back(m_pRenderPacket->sceneFrustums.get());
-	m_vArrayHandles.emplace_back(m_pRenderPacket->materials.get());
-	m_vArrayHandles.emplace_back(m_pRenderPacket->nodes.get());
-	m_vArrayHandles.emplace_back(m_pRenderPacket->skins.get());
-
-	m_vArrayHandles.emplace_back(m_pRenderPacket->dlights.lights.get());
-	m_vArrayHandles.emplace_back(m_pRenderPacket->dlights.shadows.get());
-
-	m_vArrayHandles.emplace_back(m_pRenderPacket->plights.lights.get());
-	m_vArrayHandles.emplace_back(m_pRenderPacket->plights.shadows.get());
-
-	m_vArrayHandles.emplace_back(m_pRenderPacket->slights.lights.get());
-	m_vArrayHandles.emplace_back(m_pRenderPacket->slights.shadows.get());
-
-	// Create draw buffers
-	m_pRenderPacket->drawIndexedCommands = std::make_unique<CBufferObject>(this, m_pRenderContext.get());
-
-	FBufferCreateInfo buffer_ci{};
-	buffer_ci.flags = BUFFER_TYPE_INDIRECT_FLAG_BIT;
-	buffer_ci.size = sizeof(FDrawIndexedIndirectData);
-	buffer_ci.count = max_indirect_draw_count;
-	m_pRenderPacket->drawIndexedCommands->create("IndexedDrawIndirectBuffer", buffer_ci);
 }
 
 void CRenderInterface::render(float dt)
 {
-	for (auto* array_handle : m_vArrayHandles)
-		array_handle->flush();
+	m_pRenderWorld->render(dt);
 
 	m_pRenderContext->beginFrameCommandBuffers();
+
+	const auto& world_stats = m_pRenderWorld->getStats();
 
 	FGlobalUniformData global_uniform{};
 	global_uniform.view = m_pRenderPacket->camera.view;
@@ -221,10 +178,10 @@ void CRenderInterface::render(float dt)
 	global_uniform.invViewportDimension = 1.f / m_pRenderPacket->camera.dimensions;
 	global_uniform.nearPlane = m_pRenderPacket->camera.nearp;
 	global_uniform.farPlane = m_pRenderPacket->camera.farp;
-	global_uniform.directionalLightCount = static_cast<uint32_t>(m_pRenderPacket->dlights.lights->size());
-	global_uniform.pointLightCount = static_cast<uint32_t>(m_pRenderPacket->plights.lights->size());
-	global_uniform.spotLightCount = static_cast<uint32_t>(m_pRenderPacket->slights.lights->size());
-	global_uniform.rawCommandsCount = static_cast<uint32_t>(m_pRenderPacket->drawCallCount);
+	global_uniform.directionalLightCount = static_cast<uint32_t>(world_stats.directionalLightCount);
+	global_uniform.pointLightCount = static_cast<uint32_t>(world_stats.pointLightCount);
+	global_uniform.spotLightCount = static_cast<uint32_t>(world_stats.spotLightCount);
+	global_uniform.rawCommandsCount = static_cast<uint32_t>(world_stats.drawCommandCount);
 
 	FGlobalUniformUpdateInfo update_info{};
 	auto& uniform = update_info.uniforms[utl::fnv1a_64_hash("GlobalUniformFrameData")];
@@ -232,7 +189,6 @@ void CRenderInterface::render(float dt)
 	uniform.size = sizeof(FGlobalUniformData);
 
 	m_pRenderContext->updateGlobalDescriptorData(update_info);
-
 
 	for (auto& stage : m_vRenderingSteps)
 		stage->execute(dt);
@@ -247,22 +203,6 @@ void CRenderInterface::render(float dt)
 		if (to_remove != m_vRenderingSteps.end())
 			m_vRenderingSteps.erase(to_remove, m_vRenderingSteps.end());
 	}
-
-	m_pRenderPacket->sceneDrawCalls.clear();
-	m_pRenderPacket->shadowDrawCalls.clear();
-
-	m_pRenderPacket->gpuBatches->clear();
-	m_pRenderPacket->cullingInfos->clear();
-	m_pRenderPacket->sceneFrustums->clear();
-	m_pRenderPacket->nodes->clear();
-	m_pRenderPacket->skins->clear();
-
-	m_pRenderPacket->dlights.lights->clear();
-	m_pRenderPacket->dlights.shadows->clear();
-	m_pRenderPacket->plights.lights->clear();
-	m_pRenderPacket->plights.shadows->clear();
-	m_pRenderPacket->slights.lights->clear();
-	m_pRenderPacket->slights.shadows->clear();
 }
 
 size_t CRenderInterface::createTexture(const std::string& path)
@@ -311,90 +251,6 @@ const std::unique_ptr<IVertexHandler>& CRenderInterface::getVertexHandler(size_t
 	return m_pResources->get<IVertexHandler>(id);
 }
 
-void CRenderInterface::writeDrawData(const std::vector<FGeometryRawBatch>& draw_commands)
-{
-	std::vector<FDrawIndexedIndirectData> draw_indirect_data{};
-	std::vector<FGeometryGPUBatch> gpu_batches{};
-	std::vector<FGeometryCPUBatch> cpu_batches{};
-	std::vector<uint32_t> counted{};
-
-	// Prepare gpu data
-	size_t current_material{ ~0ull };
-	for (const auto& command : draw_commands)
-	{
-		FGeometryGPUCullInfo culling_info{};
-		culling_info.instanceID = command.callInfo.instanceID;
-
-		m_pRenderPacket->cullingInfos->emplace_back(&culling_info);
-
-		auto& vbo = getVertexHandler(command.callInfo.vboID);
-
-		auto last_index = vbo->getLastIndex();
-		auto last_vertex = vbo->getLastVertex();
-
-		auto& indirect_command = draw_indirect_data.emplace_back();
-		indirect_command.indexCount = command.range.indexCount == 0ull ? last_index : command.range.indexCount;;
-		indirect_command.instanceCount = 1u;
-		indirect_command.firstIndex = command.range.beginIndex;
-		indirect_command.vertexOffset = command.range.beginVertex;
-		indirect_command.firstInstance = 0u;
-		command.range.vertexCount == 0ull ? last_vertex : command.range.vertexCount;
-
-		indirect_command.aabb.min = command.range.bounds.min;
-		indirect_command.aabb.max = command.range.bounds.max;
-
-		// Make compact batches by material chain
-		if (!gpu_batches.empty() &&
-			gpu_batches.back().vboID == command.callInfo.vboID &&
-			gpu_batches.back().instanceID == command.callInfo.instanceID &&
-			current_material + 1 == command.callInfo.materialID)
-		{
-			counted.back()++;
-			current_material = command.callInfo.materialID;
-		}
-		else
-		{
-			auto& new_gpu_batch = gpu_batches.emplace_back();
-			new_gpu_batch = command.callInfo;
-			counted.emplace_back(1ull);
-
-			current_material = command.callInfo.materialID;
-		}
-	}
-
-	// Prepare cpu data
-	size_t command_offset{ 0ull };
-	for (size_t idx = 0ull; idx < gpu_batches.size(); ++idx)
-	{
-		auto& gpu_batch = gpu_batches.at(idx);
-
-		auto& new_cpu_batch = cpu_batches.emplace_back();
-		new_cpu_batch.vboID = gpu_batch.vboID;
-		new_cpu_batch.command.bufferId = m_pRenderPacket->drawIndexedCommands->handle();
-		new_cpu_batch.command.offset = command_offset * sizeof(FDrawIndexedIndirectData);
-		new_cpu_batch.command.count = counted.at(idx);
-		new_cpu_batch.command.stride = sizeof(FDrawIndexedIndirectData);
-
-		command_offset += new_cpu_batch.command.count;
-	}
-
-	m_pRenderPacket->sceneDrawCalls = std::move(cpu_batches);
-
-	// Copy indexed draw comands
-	m_pRenderPacket->drawIndexedCommands->map();
-	m_pRenderPacket->drawIndexedCommands->write(draw_indirect_data.data(), draw_indirect_data.size());
-	m_pRenderPacket->drawIndexedCommands->unmap();
-
-	for (const auto& gpu_batch : gpu_batches)
-		m_pRenderPacket->gpuBatches->emplace_back(&gpu_batch);
-
-	m_pRenderPacket->drawCallCount = command_offset;
-
-	m_pRenderPacket->camera.frustum.update(m_pRenderPacket->camera.view, m_pRenderPacket->camera.projection);
-	for (const auto& side : m_pRenderPacket->camera.frustum.frustumSides)
-		m_pRenderPacket->sceneFrustums->emplace_back(&side);
-}
-
 void CRenderInterface::updateSurfaceSize(int32_t width, int32_t height)
 {
 	m_pRenderContext->updateSurface(width, height);
@@ -403,6 +259,11 @@ void CRenderInterface::updateSurfaceSize(int32_t width, int32_t height)
 const std::unique_ptr<FRenderDataPacket>& CRenderInterface::getRenderPacket()
 {
 	return m_pRenderPacket;
+}
+
+const std::unique_ptr<IRenderWorld>& CRenderInterface::getRenderWorld()
+{
+	return m_pRenderWorld;
 }
 
 IRenderContext* CRenderInterface::getRenderContext()

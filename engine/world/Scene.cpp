@@ -162,11 +162,13 @@ void CScene::load(const std::string& path)
 	}
 
 	// Load materials
-	auto& materials = render_packet->materials;
+	auto& render_world = m_pRenderInterface->getRenderWorld();
+
+	std::vector<render::FMaterial> materials{};
 	for (size_t idx = 0ull; idx < root.materials.size(); ++idx)
 	{
 		auto& material = root.materials[idx];
-		render::FMaterial material_data{};
+		auto& material_data = materials.emplace_back();
 
 		m_temporary.materialNames.emplace_back(material.name);
 		// TODO: add my own ext that will contain shader EXT_material_shader or something. But in my case it will contain name in format {library}:{shader_name} and other helpfull data
@@ -212,10 +214,10 @@ void CScene::load(const std::string& path)
 		material_data.alphaCutoff = static_cast<float>(material.alphaCutoff);
 		material_data.doubleSided = material.doubleSided;
 
-		materials->emplace_back(&material_data);
-
 		render_packet->stats.materialCount++;
 	}
+
+	render_world->addMaterials(materials);
 
 	// Loading nodes
 	const easygltf::Scene& scene = root.scenes[root.scene > -1 ? root.scene : 0];

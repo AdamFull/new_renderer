@@ -34,6 +34,8 @@ namespace engine
 				bool active{ true };
 				bool controllable{ true };
 				bool orbit{ true };
+
+				size_t frustumID{ ~0ull };
 			};
 		}
 	}

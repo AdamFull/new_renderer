@@ -23,12 +23,10 @@ void CComputeCullingRenderingStep::_create(const FRenderingStepCreateInfo& creat
 
 	m_baseShaderName = rendering_ci.shaderName;
 
-	auto& render_packet = m_pRenderInterface->getRenderPacket();
-	if (render_packet->drawIndexedCommands)
-	{
-		size_t batches = render_packet->drawIndexedCommands->handle();
-		m_beginComputeInfo.writeBuffers.emplace_back(batches);
-	}
+	auto& render_world = m_pRenderInterface->getRenderWorld();
+
+	size_t handle = render_world->getDrawBufferHandle();
+	m_beginComputeInfo.writeBuffers.emplace_back(handle);
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	m_beginComputeInfo.name = std::format("compute_geometry:{}", rendering_ci.shaderName);
@@ -41,15 +39,22 @@ void CComputeCullingRenderingStep::_execute(float dt)
 
 	m_pRenderContext->beginCompute(m_beginComputeInfo);
 
-	auto& render_packet = m_pRenderInterface->getRenderPacket();
-
-	auto& materials = render_packet->materials;
-	auto& nodes = render_packet->nodes;
-	auto& skins = render_packet->skins;
+	auto& render_world = m_pRenderInterface->getRenderWorld();
+	auto& world_stats = render_world->getStats();
 
 	std::unordered_set<size_t> vbos{};
-	for (const auto& batch : render_packet->sceneDrawCalls)
-		vbos.emplace(batch.vboID);
+
+	for (const auto& [type, batch_ranges] : render_world->getAllGeometryRanges())
+	{
+		for (const auto& batch_range : batch_ranges)
+		{
+			for (size_t batch_id = batch_range.offset; batch_id < batch_range.offset + batch_range.count; ++batch_id)
+			{
+				const auto& batch = render_world->getGeometryBatch(batch_id);
+				vbos.emplace(batch.vboID);
+			}
+		}
+	}
 
 	IVertexHandler* last_vbo{ nullptr };
 	for (auto& vboId : vbos)
@@ -69,56 +74,7 @@ void CComputeCullingRenderingStep::_execute(float dt)
 
 			if (was_vbo_rebinded)
 			{
-				if (materials)
-				{
-					auto& buffer = materials->getBufferObject();
-					size_t handle = buffer->handle();
-					shader->bindBuffer("MaterialStorage", handle);
-				}
-				
-				if (nodes)
-				{
-					auto& buffer = nodes->getBufferObject();
-					size_t handle = buffer->handle();
-					shader->bindBuffer("NodeStorage", handle);
-				}
-				
-				if (skins)
-				{
-					auto& buffer = skins->getBufferObject();
-					size_t handle = buffer->handle();
-					shader->bindBuffer("SkinningJoints", handle);
-				}
-
-				//size_t vertex_handle = last_vbo->getVertexHandle();
-				//shader->bindBuffer("VertexBuffer", vertex_handle);
-				//
-				//size_t index_buffer = last_vbo->getIndexHandle();
-				//shader->bindBuffer("IndexBuffer", index_buffer);
-
-				if (render_packet->gpuBatches)
-				{
-					auto& buffer = render_packet->gpuBatches->getBufferObject();
-					size_t batches = buffer->handle();
-					shader->bindBuffer("GeometryBatches", batches);
-				}
-
-				if (render_packet->cullingInfos)
-				{
-					auto& buffer = render_packet->cullingInfos->getBufferObject();
-					size_t handle = buffer->handle();
-					shader->bindBuffer("CullingInfo", handle);
-				}
-
-				if (render_packet->sceneFrustums)
-				{
-					auto& buffer = render_packet->sceneFrustums->getBufferObject();
-					size_t handle = buffer->handle();
-					shader->bindBuffer("SceneFrustum", handle);
-				}
-
-				size_t indirect_buffer = render_packet->drawIndexedCommands->handle();
-				shader->bindBuffer("IndirectIndexedComands", indirect_buffer);
+				render_world->bindDrawBuffers(shader.get(), SHADER_BUFFER_ALL_BIT);
 
 				shader->flushDescriptors();
 				shader->bind(m_beginComputeInfo.queue);
@@ -138,7 +94,7 @@ void CComputeCullingRenderingStep::_execute(float dt)
 
 			FDispatchInfo dispatch_info{};
 			auto& group = dispatch_info.groups.emplace_back();
-			group.x = glm::max(static_cast<uint32_t>(std::ceil(static_cast<float>(render_packet->drawCallCount) / static_cast<float>(reflection.localSizes[0]))), 1u);
+			group.x = glm::max(static_cast<uint32_t>(std::ceil(static_cast<float>(world_stats.drawCommandCount) / static_cast<float>(reflection.localSizes[0]))), 1u);
 			group.y = 1u;
 			group.z = 1u;
 

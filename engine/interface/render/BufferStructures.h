@@ -51,7 +51,7 @@ namespace engine
 
 			virtual void map() = 0;
 			virtual void unmap() = 0;
-			virtual void write(void* data, size_t size = ~0ull, size_t offset = 0ull) = 0;
+			virtual void write(const void* data, size_t size = ~0ull, size_t offset = 0ull) = 0;
 			virtual void flush(size_t size = ~0ull, size_t offset = 0ull) = 0;
 			virtual void clear() = 0;
 

@@ -330,6 +330,18 @@ namespace engine
 			std::unordered_map<size_t, size_t> perTypeVBOCount{};
 		};
 
+		struct FCullingInfo
+		{
+			size_t cullerID{};
+			uint32_t type{ 0u };
+		};
+
+		struct FGeometryBatchRange
+		{
+			size_t offset{ 0ull };
+			size_t count{ 0ull };
+		};
+
 		struct FRenderDataPacket
 		{
 			FRenderDataPacket()
@@ -338,29 +350,22 @@ namespace engine
 			}
 
 			FRenderCamera camera{};
-
 			FRenderSceneStats stats{};
+		};
 
-			// Contains FGeometryGPUBatch
-			std::unique_ptr<IGPUArrayHandle> gpuBatches{};
-			std::unique_ptr<IGPUArrayHandle> cullingInfos{};
-			std::unique_ptr<IGPUArrayHandle> sceneFrustums{};
-			size_t drawCallCount{ 0ull };
+		struct FRenderWorldStats
+		{
+			size_t directionalLightCount{ 0ull };
+			size_t pointLightCount{ 0ull };
+			size_t spotLightCount{ 0ull };
 
-			std::unique_ptr<IBufferObject> drawIndexedCommands{};
+			size_t cascadedShadowCount{ 0ull };
+			size_t omniShadowCount{ 0ull };
+			size_t spotShadowCount{ 0ull };
 
-			std::vector<FGeometryCPUBatch> sceneDrawCalls{};
-			std::vector<FGeometryCPUBatch> shadowDrawCalls{};
+			size_t skinCount{ 0ull };
 
-			//std::unique_ptr<CGPUArrayHolder> resources{};
-
-			std::unique_ptr<IGPUArrayHandle> materials{};
-			std::unique_ptr<IGPUArrayHandle> nodes{};
-			std::unique_ptr<IGPUArrayHandle> skins{};
-
-			FLightBuffer dlights{};
-			FLightBuffer plights{};
-			FLightBuffer slights{};
+			size_t drawCommandCount{ 0ull };
 		};
 
 		class IRenderContext
@@ -436,6 +441,45 @@ namespace engine
 			virtual void endDebugLabel(uint32_t queue_type) = 0;
 		};
 
+		class IRenderWorld
+		{
+		public:
+			virtual ~IRenderWorld() = default;
+
+			virtual void create() = 0;
+
+			virtual size_t registerFrustum(uint32_t type) = 0;
+			virtual void updateFrustum(size_t frustum_id, const glm::mat4& view, const glm::mat4& projection) = 0;
+
+			virtual void addDrawGeometry(const std::vector<FGeometryRawBatch>& new_geometry) = 0;
+			virtual void bindDrawBuffers(IShaderObject* shader, uint32_t flags) = 0;
+
+			virtual void render(float dt) = 0;
+
+			virtual void addLight(const FDirectionalLightCommit& light) = 0;
+			virtual void addLight(const FPointLightCommit& light) = 0;
+			virtual void addLight(const FSpotLightCommit& light) = 0;
+
+			virtual void addShadow(const FCascadedShadowCommit& commit) = 0;
+			virtual void addShadow(const FOmniShadowCommit& commit) = 0;
+			virtual void addShadow(const FSpotShadowCommit& commit) = 0;
+
+			virtual void updateNode(uint32_t node_id, const FSceneNode& node) = 0;
+			virtual void updateSkin(const std::array<glm::mat4, 128ull>& matrices) = 0;
+
+			virtual void addMaterial(const FMaterial& material) = 0;
+			virtual void addMaterials(const std::vector<FMaterial>& materials) = 0;
+
+			virtual size_t getDrawBufferHandle() = 0;
+
+			virtual const std::unordered_map<uint32_t, std::vector<FGeometryBatchRange>>& getAllGeometryRanges() const = 0;
+			virtual const std::vector<FGeometryBatchRange>& getGeometryRanges(uint32_t type) const = 0;
+			virtual const FGeometryCPUBatch& getGeometryBatch(size_t index) const = 0;
+
+			virtual FRenderWorldStats& getStats() = 0;
+			virtual const FRenderWorldStats& getStats() const = 0;
+		};
+
 		class IRenderInterface
 		{
 		public:
@@ -452,14 +496,13 @@ namespace engine
 			virtual size_t createVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) = 0;
 			virtual const std::unique_ptr<IVertexHandler>& getVertexHandler(size_t id) = 0;
 
-			virtual void writeDrawData(const std::vector<FGeometryRawBatch>& draw_commands) = 0;
-
 			virtual FShaderUploadInfo getShaderNameTag(const std::string& name) = 0;
 			virtual void createRendering(const FRenderingStepCreateInfo& rendering_ci) = 0;
 
 			virtual void updateSurfaceSize(int32_t width, int32_t height) = 0;
 
 			virtual const std::unique_ptr<FRenderDataPacket>& getRenderPacket() = 0;
+			virtual const std::unique_ptr<IRenderWorld>& getRenderWorld() = 0;
 
 			virtual IRenderContext* getRenderContext() = 0;
 		};

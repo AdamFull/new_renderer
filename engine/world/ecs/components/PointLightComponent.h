@@ -13,6 +13,8 @@ namespace engine
 				float radius{ 1.f };
 				int shadowIndex{ -1 };
 				bool castShadows{ false };
+
+				size_t frustumID{ ~0ull };
 			};
 		}
 	}

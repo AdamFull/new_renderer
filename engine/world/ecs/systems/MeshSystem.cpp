@@ -30,11 +30,7 @@ void CMeshSystem::__update(float fDt)
 	auto root = m_pSceneGraph->getRoot();
 	auto& root_component = m_pSceneGraph->getComponent<FRootComponent>(root);
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
-
-	FFrustum frustum{};
-	frustum.update(render_packet->camera.view, render_packet->camera.projection);
-
-	auto& nodes = render_packet->nodes;
+	auto& render_world = m_pRenderInterface->getRenderWorld();
 
 	std::vector<FGeometryRawBatch> draw_commands{};
 
@@ -49,7 +45,7 @@ void CMeshSystem::__update(float fDt)
 		FSceneNode scene_node{};
 		scene_node.model = transform.gmodel;
 		scene_node.skin = static_cast<uint32_t>(mesh.skin);
-		nodes->insert(&scene_node, node);
+		render_world->updateNode(node, scene_node);
 
 		for (const auto& primitive : mesh.primitives)
 		{
@@ -70,19 +66,5 @@ void CMeshSystem::__update(float fDt)
 		}
 	}
 
-	// Sort drawings by vbo, material and node
-	std::sort(draw_commands.begin(), draw_commands.end(), [](const FGeometryRawBatch& a, const FGeometryRawBatch& b)
-		{
-			if (a.callInfo.vboID == b.callInfo.vboID)
-			{
-				if(a.callInfo.materialID == b.callInfo.materialID)
-					return a.callInfo.instanceID < b.callInfo.instanceID;
-
-				return a.callInfo.materialID < b.callInfo.materialID;
-			}
-
-			return a.callInfo.vboID < b.callInfo.vboID;
-		});
-
-	m_pRenderInterface->writeDrawData(draw_commands);
+	render_world->addDrawGeometry(draw_commands);
 }

@@ -28,11 +28,10 @@ namespace engine
 			size_t createVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) override;
 			const std::unique_ptr<IVertexHandler>& getVertexHandler(size_t id) override;
 
-			void writeDrawData(const std::vector<FGeometryRawBatch>& draw_commands) override;
-
 			void updateSurfaceSize(int32_t width, int32_t height) override;
 
 			const std::unique_ptr<FRenderDataPacket>& getRenderPacket() override;
+			const std::unique_ptr<IRenderWorld>& getRenderWorld() override;
 
 			IRenderContext* getRenderContext() override;
 		protected:
@@ -60,9 +59,9 @@ namespace engine
 			size_t m_matPassDepth{ ~0ull };
 			size_t m_matPassStencil{ ~0ull };
 
-			std::vector<IGPUArrayHandle*> m_vArrayHandles{};
-
 			std::unique_ptr<FRenderDataPacket> m_pRenderPacket{};
+
+			std::unique_ptr<IRenderWorld> m_pRenderWorld{};
 			std::unique_ptr<CResourceContainer> m_pResources{};
 			std::unique_ptr<IRenderContext> m_pRenderContext{};
 			std::unique_ptr<CResourceLoader> m_pResourceLoader{};

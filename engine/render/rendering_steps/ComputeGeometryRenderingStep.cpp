@@ -39,19 +39,18 @@ void CComputeGeometryRenderingStep::_execute(float dt)
 
 	auto& sizes = m_beginComputeInfo.globalSizes;
 
-	auto& render_packet = m_pRenderInterface->getRenderPacket();
-
-	auto& materials = render_packet->materials;
-	auto& nodes = render_packet->nodes;
-	auto& skins = render_packet->skins;
-
-	auto& dlights = render_packet->dlights.lights;
-	auto& plights = render_packet->plights.lights;
-	auto& slights = render_packet->slights.lights;
-
 	std::unordered_set<size_t> vbos{};
-	for (const auto& batch : render_packet->sceneDrawCalls)
-		vbos.emplace(batch.vboID);
+
+	auto& render_world = m_pRenderInterface->getRenderWorld();
+	auto& batch_ranges = render_world->getGeometryRanges(RENDER_GEOMETRY_CULLER_SCENE_TYPE);
+	for (const auto& batch_range : batch_ranges)
+	{
+		for (size_t batch_id = batch_range.offset; batch_id < batch_range.offset + batch_range.count; ++batch_id)
+		{
+			const auto& batch = render_world->getGeometryBatch(batch_id);
+			vbos.emplace(batch.vboID);
+		}
+	}
 
 	IVertexHandler* last_vbo{ nullptr };
 	for (auto& vboId : vbos)
@@ -71,81 +70,13 @@ void CComputeGeometryRenderingStep::_execute(float dt)
 
 			if (was_vbo_rebinded)
 			{
-				if (materials)
-				{
-					auto& buffer = materials->getBufferObject();
-					size_t handle = buffer->handle();
-					shader->bindBuffer("MaterialStorage", handle);
-				}
-
-				if (nodes)
-				{
-					auto& buffer = nodes->getBufferObject();
-					size_t handle = buffer->handle();
-					shader->bindBuffer("NodeStorage", handle);
-				}
-
-				if (skins)
-				{
-					auto& buffer = skins->getBufferObject();
-					size_t handle = buffer->handle();
-					shader->bindBuffer("SkinningJoints", handle);
-				}
-
-
-				if (dlights)
-				{
-					auto& buffer = dlights->getBufferObject();
-					size_t handle = buffer->handle();
-					shader->bindBuffer("DirectionalLights", handle);
-				}
-
-				if (plights)
-				{
-					auto& buffer = plights->getBufferObject();
-					size_t handle = buffer->handle();
-					shader->bindBuffer("PointLights", handle);
-				}
-
-				if (slights)
-				{
-					auto& buffer = slights->getBufferObject();
-					size_t handle = buffer->handle();
-					shader->bindBuffer("SpotLights", handle);
-				}
-
-				auto& dshadows = render_packet->dlights.shadows;
-				if (dshadows)
-				{
-					auto& buffer = dshadows->getBufferObject();
-					size_t handle = buffer->handle();
-					shader->bindBuffer("CascadedShadows", handle);
-				}
-
-				auto& pshadows = render_packet->plights.shadows;
-				if (pshadows)
-				{
-					auto& buffer = pshadows->getBufferObject();
-					size_t handle = buffer->handle();
-					shader->bindBuffer("OmniShadows", handle);
-				}
-
-				auto& sshadows = render_packet->slights.shadows;
-				if (sshadows)
-				{
-					auto& buffer = sshadows->getBufferObject();
-					size_t handle = buffer->handle();
-					shader->bindBuffer("SpotShadows", handle);
-				}
+				render_world->bindDrawBuffers(shader.get(), SHADER_BUFFER_ALL_BIT);
 
 				size_t vertex_handle = last_vbo->getVertexHandle();
 				shader->bindBuffer("VertexBuffer", vertex_handle);
 
 				size_t index_buffer = last_vbo->getIndexHandle();
 				shader->bindBuffer("IndexBuffer", index_buffer);
-
-				size_t indirect_buffer = render_packet->drawIndexedCommands->handle();
-				shader->bindBuffer("IndirectIndexedComands", indirect_buffer);
 
 				shader->flushDescriptors();
 				shader->bind(m_beginComputeInfo.queue);

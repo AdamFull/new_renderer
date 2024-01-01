@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 namespace engine
 {
 	namespace world
@@ -12,6 +14,8 @@ namespace engine
 				float intencity{ 1.f };
 				int shadowIndex{ -1 };
 				bool castShadows{ true };
+
+				std::vector<size_t> frustumIDs{};
 			};
 		}
 	}
