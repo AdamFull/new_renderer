@@ -145,7 +145,7 @@
 			float shadow_factor = 1.0;
 			if(light.castShadows > 0 && light.shadowIndex > -1)
 			{
-				FCascadedShadowCommit shadow = cascaded_shadows[light.shadowIndex];
+				FCascadedShadowCommit shadow = csbn[nonuniformEXT(cascaded_shadow_buffer_index)].cascaded_shadows[light.shadowIndex];
 				shadow_factor = getCascadeShadow(cascaded_shadowmap, shadow, va, ms, dither);
 			}
 
@@ -191,21 +191,21 @@
 			//Directional light
 			for(uint i = 0u; i < frameData.directionalLightCount; i++)
 			{
-				FDirectionalLightCommit light = directional_lights[i];
+				FDirectionalLightCommit light = dlbn[nonuniformEXT(directional_light_buffer_index)].directional_lights[i];
 				Lo += calculateDirectionalLight(light, va, ms, V, F0, dither);
 			}
 
 			//Point light
 			for(uint i = 0u; i < frameData.pointLightCount; i++) 
 			{
-				FPointLightCommit light = point_lights[i];
+				FPointLightCommit light = plbn[nonuniformEXT(point_light_buffer_index)].point_lights[i];
 				Lo += calculatePointLight(light, va, ms, V, F0, dither);
 			}
 			
 			//Spot light
 			for(uint i = 0u; i < frameData.spotLightCount; i++)
 			{
-				FSpotLightCommit light = spot_lights[i];
+				FSpotLightCommit light = slbn[nonuniformEXT(spot_light_buffer_index)].spot_lights[i];
 				Lo += calculateSpotlight(light, va, ms, V, F0, dither);
 			}
 
@@ -217,7 +217,7 @@
 			//vec3 view_space_pos = (frameData.view * vec4(pos, 1.0)).xyz;
 			//float view_depth = view_space_pos.z * -1.0;
 
-			FCascadedShadowCommit shadow = cascaded_shadows[0];
+			FCascadedShadowCommit shadow = csbn[nonuniformEXT(cascaded_shadow_buffer_index)].cascaded_shadows[0];
 			uint cascade_index = getScadowCascadeSplit(shadow, view_depth, dither);
 
 			switch(cascade_index) 
@@ -281,7 +281,7 @@
 			float dither = interleavedGradientNoise(uv);
 
 			VertexAttribute va = getVertexData(uv, visbuffer);
-			FMaterial material = materials[visbuffer.matID];
+			FMaterial material = mbn[nonuniformEXT(material_buffer_index)].materials[visbuffer.matID];
 			MaterialSample ms = sampleMaterial(material, va);
 
 			// Calculate direction from fragment to viewPosition

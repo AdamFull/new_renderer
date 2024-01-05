@@ -48,9 +48,6 @@ void CComputeRenderingStep::_execute(float dt)
 
 	auto& sizes = m_beginComputeInfo.globalSizes;
 
-	auto& render_world = m_pRenderInterface->getRenderWorld();
-	render_world->bindDrawBuffers(m_pShader.get(), SHADER_BUFFER_ALL_BIT);
-
 	m_pShader->flushDescriptors();
 	m_pShader->flushConstants(m_beginComputeInfo.queue);
 	m_pShader->bind(m_beginComputeInfo.queue);

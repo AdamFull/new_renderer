@@ -31,11 +31,6 @@
 			uint32_t batchID;
 		} meshData;
 
-		layout(std430, set = 1, binding = 9) buffer GeometryBatches
-		{
-			FGeometryGPUBatch geometry_batches[];
-		};
-
 		out gl_PerVertex
 		{
 			vec4 gl_Position;
@@ -43,10 +38,10 @@
 
 		void main() 
 		{
-			FGeometryGPUBatch batch = geometry_batches[meshData.batchID];
+			FGeometryGPUBatch batch = gbn[nonuniformEXT(draw_batch_buffer_index)].geometry_batches[meshData.batchID];
 
 			// Calculate skinned matrix from weights and joint indices of the current vertex
-			FSceneNode node = nodes[batch.instanceID];
+			FSceneNode node = sbn[nonuniformEXT(node_buffer_index)].nodes[batch.instanceID];
 			mat4 modelMatrix = node.model;
 
 #ifdef HAS_SKIN
@@ -59,10 +54,10 @@
 #endif
 				uint begin_pos = node.skin * 128;
 				mat4 skinMat = 
-					inWeights.x * matrices[begin_pos + joints.x] +
-					inWeights.y * matrices[begin_pos + joints.y] +
-					inWeights.z * matrices[begin_pos + joints.z] +
-					inWeights.w * matrices[begin_pos + joints.w];
+					inWeights.x * jbn[nonuniformEXT(skin_buffer_index)].matrices[begin_pos + joints.x] +
+					inWeights.y * jbn[nonuniformEXT(skin_buffer_index)].matrices[begin_pos + joints.y] +
+					inWeights.z * jbn[nonuniformEXT(skin_buffer_index)].matrices[begin_pos + joints.z] +
+					inWeights.w * jbn[nonuniformEXT(skin_buffer_index)].matrices[begin_pos + joints.w];
 		
 				modelMatrix = modelMatrix * skinMat;
 			}

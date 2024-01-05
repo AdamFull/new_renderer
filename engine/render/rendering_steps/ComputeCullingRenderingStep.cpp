@@ -25,8 +25,10 @@ void CComputeCullingRenderingStep::_create(const FRenderingStepCreateInfo& creat
 
 	auto& render_world = m_pRenderInterface->getRenderWorld();
 
-	size_t handle = render_world->getDrawBufferHandle();
-	m_beginComputeInfo.writeBuffers.emplace_back(handle);
+	auto& buffer_mappings = render_world->getDrawBufferMappings();
+	auto found = buffer_mappings.find(draw_command_buffer_index);
+	if(found != buffer_mappings.end())
+		m_beginComputeInfo.writeBuffers.emplace_back(found->second);
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	m_beginComputeInfo.name = std::format("compute_geometry:{}", rendering_ci.shaderName);
@@ -74,8 +76,6 @@ void CComputeCullingRenderingStep::_execute(float dt)
 
 			if (was_vbo_rebinded)
 			{
-				render_world->bindDrawBuffers(shader.get(), SHADER_BUFFER_ALL_BIT);
-
 				shader->flushDescriptors();
 				shader->bind(m_beginComputeInfo.queue);
 			}

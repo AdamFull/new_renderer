@@ -154,6 +154,9 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 	global_buffer_ci.uniforms[utl::fnv1a_64_hash("GlobalUniformFrameData")] = sizeof(FGlobalUniformData);
 	m_pRenderContext->createGlobalDescriptor(global_buffer_ci);
 
+	auto& buffer_mappings = m_pRenderWorld->getDrawBufferMappings();
+	m_pRenderContext->registerGlobalDescriptorDrawBuffers(buffer_mappings);
+
 	std::vector<uint8_t> render_config{};
 	m_pVFS->readFile("/root/embed/rendering/test_render_config.lua", render_config);
 	m_pRenderScriptCore->build("render_config", render_config);

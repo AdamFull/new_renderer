@@ -32,6 +32,7 @@ void CRenderWorld::create()
 	m_pGPUBatchBuffer = createDrawBuffer<FGeometryGPUBatch>("GeometryBatches", BUFFER_TYPE_STORAGE_FLAG_BIT, MAX_RENDER_OBJECT_COUNT, m_pRenderInterface, m_pRenderContext);
 	m_pCullingInfoBuffer = createDrawBuffer<FGeometryGPUCullInfo>("GeometryCullingInfo", BUFFER_TYPE_STORAGE_FLAG_BIT, MAX_RENDER_OBJECT_COUNT, m_pRenderInterface, m_pRenderContext);
 	m_pFrustumSidesBuffer = createDrawBuffer<glm::vec4>("FrustumSides", BUFFER_TYPE_STORAGE_FLAG_BIT, MAX_PRIMITIVE_COUNT * 6ull, m_pRenderInterface, m_pRenderContext);
+
 	m_pMaterialBuffer = createDrawBuffer<FMaterial>("MaterialStorage", BUFFER_TYPE_STORAGE_FLAG_BIT, MAX_MATERIAL_COUNT, m_pRenderInterface, m_pRenderContext);
 	m_pNodeBuffer = createDrawBuffer<FSceneNode>("NodeStorage", BUFFER_TYPE_STORAGE_FLAG_BIT, MAX_PRIMITIVE_COUNT, m_pRenderInterface, m_pRenderContext);
 	m_pSkinBuffer = createDrawBuffer<glm::mat4>("SkinningJoints", BUFFER_TYPE_STORAGE_FLAG_BIT, MAX_PRIMITIVE_COUNT * 128ull, m_pRenderInterface, m_pRenderContext);
@@ -44,6 +45,24 @@ void CRenderWorld::create()
 	m_pSpotShadowBuffer = createDrawBuffer<FSpotShadowCommit>("SpotShadows", BUFFER_TYPE_STORAGE_FLAG_BIT, max_spot_light_shadow_count, m_pRenderInterface, m_pRenderContext);
 
 	m_pDrawCommandBuffer = createDrawBuffer<FDrawIndexedIndirectData>("IndexedDrawIndirectBuffer", BUFFER_TYPE_INDIRECT_FLAG_BIT, max_indirect_draw_count, m_pRenderInterface, m_pRenderContext);
+
+	// Buffer id mappings
+	m_bufferMappings.emplace(node_buffer_index, m_pNodeBuffer->handle());
+	m_bufferMappings.emplace(material_buffer_index, m_pMaterialBuffer->handle());
+	m_bufferMappings.emplace(skin_buffer_index, m_pSkinBuffer->handle());
+	
+	m_bufferMappings.emplace(directional_light_buffer_index, m_pDirectionalLightBuffer->handle());
+	m_bufferMappings.emplace(point_light_buffer_index, m_pPointLightBuffer->handle());
+	m_bufferMappings.emplace(spot_light_buffer_index, m_pSpotLightBuffer->handle());
+	
+	m_bufferMappings.emplace(cascaded_shadow_buffer_index, m_pCascadedShadowBuffer->handle());
+	m_bufferMappings.emplace(omni_shadow_buffer_index, m_pOmniShadowBuffer->handle());
+	m_bufferMappings.emplace(spot_shadow_buffer_index, m_pSpotShadowBuffer->handle());
+	
+	m_bufferMappings.emplace(draw_batch_buffer_index, m_pGPUBatchBuffer->handle());
+	m_bufferMappings.emplace(culling_info_buffer_index, m_pCullingInfoBuffer->handle());
+	m_bufferMappings.emplace(frustum_buffer_index, m_pFrustumSidesBuffer->handle());
+	m_bufferMappings.emplace(draw_command_buffer_index, m_pDrawCommandBuffer->handle());
 }
 
 size_t CRenderWorld::registerFrustum(uint32_t type)
@@ -81,39 +100,6 @@ void CRenderWorld::addDrawGeometry(const std::vector<FGeometryRawBatch>& new_geo
 
 			return a.callInfo.vboID < b.callInfo.vboID;
 		});
-}
-
-void CRenderWorld::bindDrawBuffers(IShaderObject* shader, uint32_t flags)
-{
-	std::unordered_map<std::string, size_t> shader_mappings{};
-
-	if (flags & SHADER_BUFFER_GEOMETRY_BIT)
-	{
-		shader_mappings.emplace("MaterialStorage", m_pMaterialBuffer->handle());
-		shader_mappings.emplace("NodeStorage", m_pNodeBuffer->handle());
-		shader_mappings.emplace("SkinningJoints", m_pSkinBuffer->handle());
-		shader_mappings.emplace("GeometryBatches", m_pGPUBatchBuffer->handle());
-		shader_mappings.emplace("IndirectIndexedComands", m_pDrawCommandBuffer->handle());
-	}
-
-	if (flags & SHADER_BUFFER_LIGHT_BIT)
-	{
-		shader_mappings.emplace("DirectionalLights", m_pDirectionalLightBuffer->handle());
-		shader_mappings.emplace("PointLights", m_pPointLightBuffer->handle());
-		shader_mappings.emplace("SpotLights", m_pSpotLightBuffer->handle());
-		shader_mappings.emplace("CascadedShadows", m_pCascadedShadowBuffer->handle());
-		shader_mappings.emplace("OmniShadows", m_pOmniShadowBuffer->handle());
-		shader_mappings.emplace("SpotShadows", m_pSpotShadowBuffer->handle());
-	}
-
-	if (flags & SHADER_BUFFER_CULLING_BIT)
-	{
-		shader_mappings.emplace("CullingInfo", m_pCullingInfoBuffer->handle());
-		shader_mappings.emplace("SceneFrustum", m_pFrustumSidesBuffer->handle());
-	}
-
-	for (const auto& [name, handle] : shader_mappings)
-		shader->bindBuffer(name.c_str(), handle);
 }
 
 void CRenderWorld::render(float dt)
@@ -349,9 +335,9 @@ void CRenderWorld::addMaterials(const std::vector<FMaterial>& materials)
 	m_vMaterials.insert(m_vMaterials.end(), materials.begin(), materials.end());
 }
 
-size_t CRenderWorld::getDrawBufferHandle()
+const std::unordered_map<uint32_t, size_t>& CRenderWorld::getDrawBufferMappings()
 {
-	return m_pDrawCommandBuffer->handle();
+	return m_bufferMappings;
 }
 
 const std::unordered_map<uint32_t, std::vector<FGeometryBatchRange>>& CRenderWorld::getAllGeometryRanges() const

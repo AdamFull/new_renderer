@@ -25,7 +25,7 @@
 		{
 			if(materialID != ~0u)
 			{
-				FMaterial mat = materials[materialID];
+				FMaterial mat = mbn[nonuniformEXT(material_buffer_index)].materials[materialID];
 				if(mat.baseColorTexture != ~0u)
 				{
 					float smaple = texture(globalTextures[mat.baseColorTexture], inUV).a;

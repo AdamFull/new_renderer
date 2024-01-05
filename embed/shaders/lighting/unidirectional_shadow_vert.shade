@@ -4,7 +4,10 @@
 	enable_extensions: [
 		"GL_ARB_separate_shader_objects",
 		"GL_ARB_shading_language_420pack",
-		"GL_ARB_shader_draw_parameters"
+		"GL_ARB_shader_draw_parameters",
+		"GL_EXT_nonuniform_qualifier",
+		"GL_EXT_shader_8bit_storage",
+		"GL_EXT_shader_16bit_storage"
 	];
 
 	definitions: ["MESH_DATA", "SHADOW_DATA"];
@@ -27,17 +30,12 @@
 			uint32_t shadowIndex;
 			int32_t layer;
 		} shadowData;
-
-		layout(std430, set = 1, binding = 9) buffer GeometryBatches
-		{
-			FGeometryGPUBatch geometry_batches[];
-		};
 		
 		void main()
 		{
-			FGeometryGPUBatch batch = geometry_batches[shadowData.batchID];
+			FGeometryGPUBatch batch = gbn[nonuniformEXT(draw_batch_buffer_index)].geometry_batches[shadowData.batchID];
 
-			FSceneNode node = nodes[batch.instanceID];
+			FSceneNode node = sbn[nonuniformEXT(node_buffer_index)].nodes[batch.instanceID];
 			mat4 modelMatrix = node.model;
 
 #ifdef HAS_SKIN
@@ -50,10 +48,10 @@
 #endif
 				uint begin_pos = node.skin * 128;
 				mat4 skinMat = 
-					inWeights.x * matrices[begin_pos + joints.x] +
-					inWeights.y * matrices[begin_pos + joints.y] +
-					inWeights.z * matrices[begin_pos + joints.z] +
-					inWeights.w * matrices[begin_pos + joints.w];
+					inWeights.x * jbn[nonuniformEXT(skin_buffer_index)].matrices[begin_pos + joints.x] +
+					inWeights.y * jbn[nonuniformEXT(skin_buffer_index)].matrices[begin_pos + joints.y] +
+					inWeights.z * jbn[nonuniformEXT(skin_buffer_index)].matrices[begin_pos + joints.z] +
+					inWeights.w * jbn[nonuniformEXT(skin_buffer_index)].matrices[begin_pos + joints.w];
 					
 				modelMatrix = modelMatrix * skinMat;
 			}
@@ -68,10 +66,10 @@
 
 			mat4 viewProj;
 #if defined(CASCADED_SHADOW)
-			FCascadedShadowCommit shadow = cascaded_shadows[shadowData.shadowIndex];
+			FCascadedShadowCommit shadow = csbn[nonuniformEXT(cascaded_shadow_buffer_index)].cascaded_shadows[shadowData.shadowIndex];
 			viewProj = shadow.cascadeViewProj[shadowData.layer];
 #else
-			FSpotShadowCommit shadow = spot_shadows[shadowData.shadowIndex];
+			FSpotShadowCommit shadow = ssbn[nonuniformEXT(spot_shadow_buffer_index)].spot_shadows[shadowData.shadowIndex];
 			viewProj = shadow.viewProj;
 #endif
 			

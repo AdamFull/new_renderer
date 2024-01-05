@@ -12,6 +12,8 @@ using namespace engine;
 using namespace engine::render;
 using namespace engine::render::vulkan;
 
+static const uint32_t k_max_bindless_buffers{ 256u };
+
 static const uint32_t k_max_bindless_resources{ 2048u };
 static const size_t k_max_texture_update_per_frame{ 64ull };
 static const size_t k_max_buffer_update_per_frame{ 64ull };
@@ -105,7 +107,7 @@ void CVkRenderContext::createGlobalDescriptor(const FGlobalUniformCreateInfo& un
 {
 	// Create descriptor pool
 	FVkDescriptorPoolCreateInfo pool_ci{};
-	pool_ci.poolSizes = { { vk::DescriptorType::eCombinedImageSampler, k_max_bindless_resources }, {vk::DescriptorType::eUniformBuffer, 1u} };
+	pool_ci.poolSizes = { { vk::DescriptorType::eCombinedImageSampler, k_max_bindless_resources }, { vk::DescriptorType::eStorageBuffer, k_max_bindless_buffers }, {vk::DescriptorType::eUniformBuffer, 1u} };
 	pool_ci.usageCount = 1u * m_pDevice->m_swapchain.framesInFlight;
 	pool_ci.flags |= vk::DescriptorPoolCreateFlagBits::eUpdateAfterBindEXT;
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -133,9 +135,17 @@ void CVkRenderContext::createGlobalDescriptor(const FGlobalUniformCreateInfo& un
 	global_textures_binding.stageFlags = vk::ShaderStageFlagBits::eAllGraphics | vk::ShaderStageFlagBits::eCompute;
 	global_textures_binding.pImmutableSamplers = nullptr;
 
+	auto& global_buffer_binding = set_layout_ci.layoutBindings.emplace_back();
+	global_buffer_binding.descriptorType = vk::DescriptorType::eStorageBuffer;
+	global_buffer_binding.descriptorCount = k_max_bindless_buffers;
+	global_buffer_binding.binding = 2u;
+	global_buffer_binding.stageFlags = vk::ShaderStageFlagBits::eAllGraphics | vk::ShaderStageFlagBits::eCompute;
+	global_buffer_binding.pImmutableSamplers = nullptr;
+
 	// Descriptor binding extension
 	std::vector<vk::DescriptorBindingFlags> bindingFlags{};
 	bindingFlags.emplace_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
+	bindingFlags.emplace_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eVariableDescriptorCount | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
 	bindingFlags.emplace_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eVariableDescriptorCount | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
 
 	vk::DescriptorSetLayoutBindingFlagsCreateInfoEXT descriptorSetLayoutBindingFlagsCIEXT{};
@@ -198,6 +208,17 @@ void CVkRenderContext::createGlobalDescriptor(const FGlobalUniformCreateInfo& un
 	}
 }
 
+void CVkRenderContext::registerGlobalDescriptorDrawBuffers(const std::unordered_map<uint32_t, size_t>& mappings)
+{
+	for (uint32_t frame = 0u; frame < m_pDevice->m_swapchain.framesInFlight; ++frame)
+	{
+		auto& current_frame = m_bufferToUpdate[frame];
+
+		for (const auto& [binding_point, buffer_id] : mappings)
+			current_frame[binding_point] = buffer_id;
+	}
+}
+
 void CVkRenderContext::updateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view)
 {
 	auto& dest_set = m_globalDescriptor.descriptorSet.handles.at(m_pDevice->m_swapchain.currentFrame);
@@ -206,36 +227,8 @@ void CVkRenderContext::updateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 	std::array<vk::DescriptorBufferInfo, k_max_buffer_update_per_frame> buffer_descriptors{};
 	std::vector<vk::WriteDescriptorSet> write_descriptor_sets{};
 
-	size_t texture_count{ 0ull };
-	size_t buffer_count{ 0ull };
-
-	auto& texture_queue = m_textureToUpdate[m_pDevice->m_swapchain.currentFrame];
-	while (!texture_queue.empty())
-	{
-		if (texture_count >= k_max_texture_update_per_frame)
-			break;
-
-		auto texture_id = texture_queue.front();
-		auto& texture = m_pResources->get<FVkTexture>(texture_id);
-
-		auto& image_descriptor = image_descriptors.at(texture_count);
-		image_descriptor.imageView = texture->imageViews.front();
-		image_descriptor.sampler = texture->sampler;
-		image_descriptor.imageLayout = texture->layout;
-
-		auto& write_descriptor_set = write_descriptor_sets.emplace_back();
-		write_descriptor_set.dstArrayElement = texture_id;
-		write_descriptor_set.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-		write_descriptor_set.dstSet = dest_set;
-		write_descriptor_set.dstBinding = 1u;
-		write_descriptor_set.descriptorCount = 1u;
-		write_descriptor_set.pImageInfo = &image_descriptor;
-
-		texture_queue.pop();
-		texture_count++;
-	}
-
 	// Bind and update global uniform
+	size_t buffer_count{ 0ull };
 	for (const auto& [uniform_name, uniform_data] : data_view.uniforms)
 	{
 		auto found_buffer = m_globalDescriptor.uniformBuffers.find(uniform_name);
@@ -263,6 +256,58 @@ void CVkRenderContext::updateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 		m_pDevice->unmapBufferMemory(*buffer);
 		buffer_count++;
 	}
+	
+	{
+		auto& texture_queue = m_textureToUpdate[m_pDevice->m_swapchain.currentFrame];
+
+		size_t texture_count{ 0ull };
+		while (!texture_queue.empty())
+		{
+			if (texture_count >= k_max_texture_update_per_frame)
+				break;
+
+			auto texture_id = texture_queue.front();
+			auto& texture = m_pResources->get<FVkTexture>(texture_id);
+
+			auto& image_descriptor = image_descriptors.at(texture_count);
+			image_descriptor.imageView = texture->imageViews.front();
+			image_descriptor.sampler = texture->sampler;
+			image_descriptor.imageLayout = texture->layout;
+
+			auto& write_descriptor_set = write_descriptor_sets.emplace_back();
+			write_descriptor_set.dstArrayElement = texture_id;
+			write_descriptor_set.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+			write_descriptor_set.dstSet = dest_set;
+			write_descriptor_set.dstBinding = 1u;
+			write_descriptor_set.descriptorCount = 1u;
+			write_descriptor_set.pImageInfo = &image_descriptor;
+
+			texture_queue.pop();
+			texture_count++;
+		}
+	}
+
+	for (const auto& [binding_point, buffer_id] : m_bufferToUpdate[m_pDevice->m_swapchain.currentFrame])
+	{
+		auto& buffer = m_pResources->get<FVkBuffer>(buffer_id);
+		auto element_size = buffer->size / buffer->instanceCount;
+
+		auto& buffer_descriptor = buffer_descriptors.at(buffer_count);
+		buffer_descriptor.buffer = buffer->handle;
+		buffer_descriptor.range = element_size;
+		buffer_descriptor.offset = 0; // NODE: no offset for storage buffers
+
+		auto& write_descriptor_set = write_descriptor_sets.emplace_back();
+		write_descriptor_set.dstArrayElement = binding_point;
+		write_descriptor_set.descriptorType = vk::DescriptorType::eStorageBuffer;
+		write_descriptor_set.dstSet = dest_set;
+		write_descriptor_set.dstBinding = 1u;
+		write_descriptor_set.descriptorCount = 1u;
+		write_descriptor_set.pBufferInfo = &buffer_descriptor;
+
+		buffer_count++;
+	}
+	m_bufferToUpdate[m_pDevice->m_swapchain.currentFrame].clear();
 
 	// Update descriptor sets if needed
 	if (!write_descriptor_sets.empty())

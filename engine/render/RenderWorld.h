@@ -18,7 +18,6 @@ namespace engine
 			void updateFrustum(size_t frustum_id, const glm::mat4& view, const glm::mat4& projection) override;
 
 			void addDrawGeometry(const std::vector<FGeometryRawBatch>& new_geometry) override;
-			void bindDrawBuffers(IShaderObject* shader, uint32_t flags) override;
 
 			void render(float dt) override;
 
@@ -36,7 +35,7 @@ namespace engine
 			void addMaterial(const FMaterial& material) override;
 			void addMaterials(const std::vector<FMaterial>& materials) override;
 
-			size_t getDrawBufferHandle() override;
+			const std::unordered_map<uint32_t, size_t>& getDrawBufferMappings() override;
 
 			const std::unordered_map<uint32_t, std::vector<FGeometryBatchRange>>& getAllGeometryRanges() const;
 			const std::vector<FGeometryBatchRange>& getGeometryRanges(uint32_t type) const;
@@ -66,6 +65,8 @@ namespace engine
 
 			FRenderWorldStats m_stats{};
 		protected:
+			std::unordered_map<uint32_t, size_t> m_bufferMappings{};
+
 			std::unique_ptr<IBufferObject> m_pGPUBatchBuffer{};
 			std::unique_ptr<IBufferObject> m_pCullingInfoBuffer{};
 			std::unique_ptr<IBufferObject> m_pFrustumSidesBuffer{};

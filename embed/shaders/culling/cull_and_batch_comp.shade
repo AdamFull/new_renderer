@@ -10,7 +10,7 @@
 		"GL_EXT_shader_16bit_storage"
 	];
 
-	definitions: ["MESH_DATA"];
+	definitions: ["MESH_DATA", "CULLING_DATA"];
 
 	require_extensions: [
 		"GL_EXT_shader_explicit_arithmetic_types",
@@ -35,38 +35,18 @@
 		//	Index index_buffer[];
 		//};
 
-		layout(std430, set = 1, binding = 10) readonly buffer GeometryBatches
-		{
-			FGeometryGPUBatch geometry_batches[];
-		};
-		
-		layout(std430, set = 1, binding = 11) buffer IndirectIndexedComands
-		{
-			FDrawIndexedIndirectData indexed_draw_commands[];
-		};
-
-		layout(std430, set = 1, binding = 12) readonly buffer CullingInfo
-		{
-			FGeometryGPUCullInfo culling_infos[];
-		};
-
-		layout(std430, set = 1, binding = 13) readonly buffer SceneFrustum
-		{
-			vec4 scene_frustums[];
-		};
-
 		bool checkObjectInFrustum(in vec3 minExtents, in vec3 maxExtents, in uint32_t frustumID)
 		{
 			for (uint32_t i = 0; i < 6; i++)
 			{
-				if (   scene_frustums[frustumID * 6u + i].x * minExtents.x + scene_frustums[frustumID * 6u + i].y * minExtents.y + scene_frustums[frustumID * 6u + i].z * minExtents.z + scene_frustums[frustumID * 6u + i].w <= 0.0f
-					&& scene_frustums[frustumID * 6u + i].x * maxExtents.x + scene_frustums[frustumID * 6u + i].y * minExtents.y + scene_frustums[frustumID * 6u + i].z * minExtents.z + scene_frustums[frustumID * 6u + i].w <= 0.0f
-					&& scene_frustums[frustumID * 6u + i].x * minExtents.x + scene_frustums[frustumID * 6u + i].y * maxExtents.y + scene_frustums[frustumID * 6u + i].z * minExtents.z + scene_frustums[frustumID * 6u + i].w <= 0.0f
-					&& scene_frustums[frustumID * 6u + i].x * maxExtents.x + scene_frustums[frustumID * 6u + i].y * maxExtents.y + scene_frustums[frustumID * 6u + i].z * minExtents.z + scene_frustums[frustumID * 6u + i].w <= 0.0f
-					&& scene_frustums[frustumID * 6u + i].x * minExtents.x + scene_frustums[frustumID * 6u + i].y * minExtents.y + scene_frustums[frustumID * 6u + i].z * maxExtents.z + scene_frustums[frustumID * 6u + i].w <= 0.0f
-					&& scene_frustums[frustumID * 6u + i].x * maxExtents.x + scene_frustums[frustumID * 6u + i].y * minExtents.y + scene_frustums[frustumID * 6u + i].z * maxExtents.z + scene_frustums[frustumID * 6u + i].w <= 0.0f
-					&& scene_frustums[frustumID * 6u + i].x * minExtents.x + scene_frustums[frustumID * 6u + i].y * maxExtents.y + scene_frustums[frustumID * 6u + i].z * maxExtents.z + scene_frustums[frustumID * 6u + i].w <= 0.0f
-					&& scene_frustums[frustumID * 6u + i].x * maxExtents.x + scene_frustums[frustumID * 6u + i].y * maxExtents.y + scene_frustums[frustumID * 6u + i].z * maxExtents.z + scene_frustums[frustumID * 6u + i].w <= 0.0f)
+				if (   sfbn[nonuniformEXT(frustum_buffer_index)].scene_frustums[frustumID * 6u + i].x * minExtents.x + sfbn[nonuniformEXT(frustum_buffer_index)].scene_frustums[frustumID * 6u + i].y * minExtents.y + sfbn[nonuniformEXT(frustum_buffer_index)].scene_frustums[frustumID * 6u + i].z * minExtents.z + sfbn[nonuniformEXT(frustum_buffer_index)].scene_frustums[frustumID * 6u + i].w <= 0.0f
+					&& sfbn[nonuniformEXT(frustum_buffer_index)].scene_frustums[frustumID * 6u + i].x * maxExtents.x + sfbn[nonuniformEXT(frustum_buffer_index)].scene_frustums[frustumID * 6u + i].y * minExtents.y + sfbn[nonuniformEXT(frustum_buffer_index)].scene_frustums[frustumID * 6u + i].z * minExtents.z + sfbn[nonuniformEXT(frustum_buffer_index)].scene_frustums[frustumID * 6u + i].w <= 0.0f
+					&& sfbn[nonuniformEXT(frustum_buffer_index)].scene_frustums[frustumID * 6u + i].x * minExtents.x + sfbn[nonuniformEXT(frustum_buffer_index)].scene_frustums[frustumID * 6u + i].y * maxExtents.y + sfbn[nonuniformEXT(frustum_buffer_index)].scene_frustums[frustumID * 6u + i].z * minExtents.z + sfbn[nonuniformEXT(frustum_buffer_index)].scene_frustums[frustumID * 6u + i].w <= 0.0f
+					&& sfbn[nonuniformEXT(frustum_buffer_index)].scene_frustums[frustumID * 6u + i].x * maxExtents.x + sfbn[nonuniformEXT(frustum_buffer_index)].scene_frustums[frustumID * 6u + i].y * maxExtents.y + sfbn[nonuniformEXT(frustum_buffer_index)].scene_frustums[frustumID * 6u + i].z * minExtents.z + sfbn[nonuniformEXT(frustum_buffer_index)].scene_frustums[frustumID * 6u + i].w <= 0.0f
+					&& sfbn[nonuniformEXT(frustum_buffer_index)].scene_frustums[frustumID * 6u + i].x * minExtents.x + sfbn[nonuniformEXT(frustum_buffer_index)].scene_frustums[frustumID * 6u + i].y * minExtents.y + sfbn[nonuniformEXT(frustum_buffer_index)].scene_frustums[frustumID * 6u + i].z * maxExtents.z + sfbn[nonuniformEXT(frustum_buffer_index)].scene_frustums[frustumID * 6u + i].w <= 0.0f
+					&& sfbn[nonuniformEXT(frustum_buffer_index)].scene_frustums[frustumID * 6u + i].x * maxExtents.x + sfbn[nonuniformEXT(frustum_buffer_index)].scene_frustums[frustumID * 6u + i].y * minExtents.y + sfbn[nonuniformEXT(frustum_buffer_index)].scene_frustums[frustumID * 6u + i].z * maxExtents.z + sfbn[nonuniformEXT(frustum_buffer_index)].scene_frustums[frustumID * 6u + i].w <= 0.0f
+					&& sfbn[nonuniformEXT(frustum_buffer_index)].scene_frustums[frustumID * 6u + i].x * minExtents.x + sfbn[nonuniformEXT(frustum_buffer_index)].scene_frustums[frustumID * 6u + i].y * maxExtents.y + sfbn[nonuniformEXT(frustum_buffer_index)].scene_frustums[frustumID * 6u + i].z * maxExtents.z + sfbn[nonuniformEXT(frustum_buffer_index)].scene_frustums[frustumID * 6u + i].w <= 0.0f
+					&& sfbn[nonuniformEXT(frustum_buffer_index)].scene_frustums[frustumID * 6u + i].x * maxExtents.x + sfbn[nonuniformEXT(frustum_buffer_index)].scene_frustums[frustumID * 6u + i].y * maxExtents.y + sfbn[nonuniformEXT(frustum_buffer_index)].scene_frustums[frustumID * 6u + i].z * maxExtents.z + sfbn[nonuniformEXT(frustum_buffer_index)].scene_frustums[frustumID * 6u + i].w <= 0.0f)
 					return false;
 			}
 			return true;
@@ -79,9 +59,9 @@
 			if (gID >= frameData.rawCommandsCount) 
 				return;
 
-			FGeometryGPUCullInfo cull_info = culling_infos[gID];
-			FSceneNode node = nodes[cull_info.instanceID];
-			FDrawIndexedIndirectData command = indexed_draw_commands[gID];
+			FGeometryGPUCullInfo cull_info = cibn[nonuniformEXT(culling_info_buffer_index)].culling_infos[gID];
+			FSceneNode node = sbn[nonuniformEXT(node_buffer_index)].nodes[cull_info.instanceID];
+			FDrawIndexedIndirectData command = cbn[nonuniformEXT(draw_command_buffer_index)].indexed_draw_commands[gID];
 
 			vec4 minExtents = node.model * vec4(command.aabb.min, 1.f);
 			minExtents = vec4(minExtents.xyz / minExtents.w, 1.0);
@@ -89,7 +69,7 @@
 			vec4 maxExtents = node.model * vec4(command.aabb.max, 1.f);
 			maxExtents = vec4(maxExtents.xyz / maxExtents.w, 1.0);
 
-			indexed_draw_commands[gID].instanceCount = int(checkObjectInFrustum(minExtents.xyz, maxExtents.xyz, cull_info.frustumID));
+			cbn[nonuniformEXT(draw_command_buffer_index)].indexed_draw_commands[gID].instanceCount = int(checkObjectInFrustum(minExtents.xyz, maxExtents.xyz, cull_info.frustumID));
 		}
 	""";
 }

@@ -70,8 +70,6 @@ void CComputeGeometryRenderingStep::_execute(float dt)
 
 			if (was_vbo_rebinded)
 			{
-				render_world->bindDrawBuffers(shader.get(), SHADER_BUFFER_ALL_BIT);
-
 				size_t vertex_handle = last_vbo->getVertexHandle();
 				shader->bindBuffer("VertexBuffer", vertex_handle);
 

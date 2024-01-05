@@ -38,57 +38,79 @@
 	layout(set = 0, binding = 1) uniform sampler2D globalTextures[];
 
 #ifdef MESH_DATA
-	layout(std430, set = 1, binding = 0) readonly buffer NodeStorage
+	layout(std430, set = 0, binding = 2) readonly buffer NodeStorage
 	{
 		FSceneNode nodes[];
-	};	
+	} sbn[];	
 
-	layout(std430, set = 1, binding = 1) readonly buffer MaterialStorage
+	layout(std430, set = 0, binding = 2) readonly buffer MaterialStorage
 	{
 		FMaterial materials[];
-	};	
+	} mbn[];	
 
 #ifdef HAS_SKIN
-	layout(std430, set = 1, binding = 2) readonly buffer SkinningJoints
+	layout(std430, set = 0, binding = 2) readonly buffer SkinningJoints
 	{
 		mat4 matrices[];
-	};
+	} jbn[];
 #endif // HAS_SKIN
+
+	layout(std430, set = 0, binding = 2) buffer GeometryBatches
+	{
+		FGeometryGPUBatch geometry_batches[];
+	} gbn[];
+
+	layout(std430, set = 0, binding = 2) buffer IndirectIndexedComands
+	{
+		FDrawIndexedIndirectData indexed_draw_commands[];
+	} cbn[];
 #endif // MESH_DATA
 
 #ifdef LIGHT_DATA
-	layout(std430, set = 1, binding = 3) readonly buffer DirectionalLights
+	layout(std430, set = 0, binding = 2) readonly buffer DirectionalLights
 	{
 		FDirectionalLightCommit directional_lights[];
-	};
+	} dlbn[];
 
-	layout(std430, set = 1, binding = 4) readonly buffer PointLights
+	layout(std430, set = 0, binding = 2) readonly buffer PointLights
 	{
 		FPointLightCommit point_lights[];
-	};
+	} plbn[];
 
-	layout(std430, set = 1, binding = 5) readonly buffer SpotLights
+	layout(std430, set = 0, binding = 2) readonly buffer SpotLights
 	{
 		FSpotLightCommit spot_lights[];
-	};
+	} slbn[];
 #endif // LIGHT_DATA
 
 #ifdef SHADOW_DATA
-	layout(std430, set = 1, binding = 6) readonly buffer CascadedShadows
+	layout(std430, set = 0, binding = 2) readonly buffer CascadedShadows
 	{
 		FCascadedShadowCommit cascaded_shadows[];
-	};
+	} csbn[];
 
-	layout(std430, set = 1, binding = 7) readonly buffer OmniShadows
+	layout(std430, set = 0, binding = 2) readonly buffer OmniShadows
 	{
 		FOmniShadowCommit omni_shadows[];
-	};
+	} osbn[];
 
-	layout(std430, set = 1, binding = 8) readonly buffer SpotShadows
+	layout(std430, set = 0, binding = 2) readonly buffer SpotShadows
 	{
 		FSpotShadowCommit spot_shadows[];
-	};
+	} ssbn[];
 #endif // SHADOW_DATA
+
+#ifdef CULLING_DATA
+	layout(std430, set = 0, binding = 2) readonly buffer CullingInfo
+	{
+		FGeometryGPUCullInfo culling_infos[];
+	} cibn[];
+
+	layout(std430, set = 0, binding = 2) readonly buffer SceneFrustum
+	{
+		vec4 scene_frustums[];
+	} sfbn[];
+#endif
 
 #if defined(INDEX_8BIT)
 	#define Index uint8_t

@@ -80,8 +80,6 @@ void CGeometryRenderingStep::_execute(float dt)
 
 				if (was_vbo_rebinded)
 				{
-					render_world->bindDrawBuffers(shader.get(), SHADER_BUFFER_GEOMETRY_BIT);
-
 					shader->flushDescriptors();
 					shader->bind(m_beginRenderingInfo.queue);
 				}

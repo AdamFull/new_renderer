@@ -374,6 +374,7 @@ namespace engine
 			virtual ~IRenderContext() = default;
 
 			virtual void create(const FRenderContextCreateInfo& context_ci) = 0;
+			virtual void registerGlobalDescriptorDrawBuffers(const std::unordered_map<uint32_t, size_t>& mappings) = 0;
 			virtual void createGlobalDescriptor(const FGlobalUniformCreateInfo& uniform_ci) = 0;
 			virtual void updateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view) = 0;
 
@@ -452,7 +453,6 @@ namespace engine
 			virtual void updateFrustum(size_t frustum_id, const glm::mat4& view, const glm::mat4& projection) = 0;
 
 			virtual void addDrawGeometry(const std::vector<FGeometryRawBatch>& new_geometry) = 0;
-			virtual void bindDrawBuffers(IShaderObject* shader, uint32_t flags) = 0;
 
 			virtual void render(float dt) = 0;
 
@@ -470,7 +470,7 @@ namespace engine
 			virtual void addMaterial(const FMaterial& material) = 0;
 			virtual void addMaterials(const std::vector<FMaterial>& materials) = 0;
 
-			virtual size_t getDrawBufferHandle() = 0;
+			virtual const std::unordered_map<uint32_t, size_t>& getDrawBufferMappings() = 0;
 
 			virtual const std::unordered_map<uint32_t, std::vector<FGeometryBatchRange>>& getAllGeometryRanges() const = 0;
 			virtual const std::vector<FGeometryBatchRange>& getGeometryRanges(uint32_t type) const = 0;
