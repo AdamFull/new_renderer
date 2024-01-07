@@ -116,6 +116,7 @@ namespace engine
 		{
 			const void* data{ nullptr };
 			size_t size{ 0ull };
+			uint32_t binding{ 0u };
 		};
 
 		struct FTextureBindInfo

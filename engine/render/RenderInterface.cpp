@@ -62,7 +62,7 @@ std::unique_ptr<IRenderContext> make_render_context(const FRenderInterfaceCreate
 			VK_KHR_8BIT_STORAGE_EXTENSION_NAME,
 			VK_KHR_16BIT_STORAGE_EXTENSION_NAME,
 			VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME,
-			//VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+			VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
 			//VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME,
 			VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME
 		};
@@ -152,10 +152,8 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 
 	FGlobalUniformCreateInfo global_buffer_ci{};
 	global_buffer_ci.uniforms[utl::fnv1a_64_hash("GlobalUniformFrameData")] = sizeof(FGlobalUniformData);
+	global_buffer_ci.uniforms[utl::fnv1a_64_hash("GlobalBufferReferences")] = sizeof(FGlobalBufferReference);
 	m_pRenderContext->createGlobalDescriptor(global_buffer_ci);
-
-	auto& buffer_mappings = m_pRenderWorld->getDrawBufferMappings();
-	m_pRenderContext->registerGlobalDescriptorDrawBuffers(buffer_mappings);
 
 	std::vector<uint8_t> render_config{};
 	m_pVFS->readFile("/root/embed/rendering/test_render_config.lua", render_config);
@@ -187,9 +185,32 @@ void CRenderInterface::render(float dt)
 	global_uniform.rawCommandsCount = static_cast<uint32_t>(world_stats.drawCommandCount);
 
 	FGlobalUniformUpdateInfo update_info{};
-	auto& uniform = update_info.uniforms[utl::fnv1a_64_hash("GlobalUniformFrameData")];
-	uniform.data = &global_uniform;
-	uniform.size = sizeof(FGlobalUniformData);
+	auto& frame_gata_uniform = update_info.uniforms[utl::fnv1a_64_hash("GlobalUniformFrameData")];
+	frame_gata_uniform.data = &global_uniform;
+	frame_gata_uniform.size = sizeof(FGlobalUniformData);
+	frame_gata_uniform.binding = 0u;
+
+
+	auto& buffer_mappings = m_pRenderWorld->getDrawBuffers();
+	FGlobalBufferReference global_references{};
+	global_references.nodeBuffer = buffer_mappings[node_buffer_index]->address();
+	global_references.materialBuffer = buffer_mappings[material_buffer_index]->address();
+	global_references.jointsBuffer = buffer_mappings[skin_buffer_index]->address();
+	global_references.directionalLightBuffer = buffer_mappings[directional_light_buffer_index]->address();
+	global_references.pointLightBuffer = buffer_mappings[point_light_buffer_index]->address();
+	global_references.spotLightBuffer = buffer_mappings[spot_light_buffer_index]->address();
+	global_references.cascadedShadowBuffer = buffer_mappings[cascaded_shadow_buffer_index]->address();
+	global_references.omniShadowBuffer = buffer_mappings[omni_shadow_buffer_index]->address();
+	global_references.spotShadowBuffer = buffer_mappings[spot_shadow_buffer_index]->address();
+	global_references.batchBuffer = buffer_mappings[draw_batch_buffer_index]->address();
+	global_references.indirectCommandBuffer = buffer_mappings[draw_command_buffer_index]->address();
+	global_references.cullingInfoBuffer = buffer_mappings[culling_info_buffer_index]->address();
+	global_references.frustumBuffer = buffer_mappings[frustum_buffer_index]->address();
+
+	auto& buffer_ref_uniform = update_info.uniforms[utl::fnv1a_64_hash("GlobalBufferReferences")];
+	buffer_ref_uniform.data = &global_references;
+	buffer_ref_uniform.size = sizeof(FGlobalBufferReference);
+	buffer_ref_uniform.binding = 1u;
 
 	m_pRenderContext->updateGlobalDescriptorData(update_info);
 

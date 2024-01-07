@@ -35,7 +35,7 @@ namespace engine
 			void addMaterial(const FMaterial& material) override;
 			void addMaterials(const std::vector<FMaterial>& materials) override;
 
-			const std::unordered_map<uint32_t, size_t>& getDrawBufferMappings() override;
+			const std::vector<std::unique_ptr<IBufferObject>>& getDrawBuffers() override;
 
 			const std::unordered_map<uint32_t, std::vector<FGeometryBatchRange>>& getAllGeometryRanges() const;
 			const std::vector<FGeometryBatchRange>& getGeometryRanges(uint32_t type) const;
@@ -65,24 +65,7 @@ namespace engine
 
 			FRenderWorldStats m_stats{};
 		protected:
-			std::unordered_map<uint32_t, size_t> m_bufferMappings{};
-
-			std::unique_ptr<IBufferObject> m_pGPUBatchBuffer{};
-			std::unique_ptr<IBufferObject> m_pCullingInfoBuffer{};
-			std::unique_ptr<IBufferObject> m_pFrustumSidesBuffer{};
-			std::unique_ptr<IBufferObject> m_pMaterialBuffer{};
-			std::unique_ptr<IBufferObject> m_pNodeBuffer{};
-			std::unique_ptr<IBufferObject> m_pSkinBuffer{};
-
-			// Light buffers
-			std::unique_ptr<IBufferObject> m_pDirectionalLightBuffer{};
-			std::unique_ptr<IBufferObject> m_pCascadedShadowBuffer{};
-			std::unique_ptr<IBufferObject> m_pPointLightBuffer{};
-			std::unique_ptr<IBufferObject> m_pOmniShadowBuffer{};
-			std::unique_ptr<IBufferObject> m_pSpotLightBuffer{};
-			std::unique_ptr<IBufferObject> m_pSpotShadowBuffer{};
-
-			std::unique_ptr<IBufferObject> m_pDrawCommandBuffer{};
+			std::vector<std::unique_ptr<IBufferObject>> m_vBuffers{};
 		private:
 			IRenderInterface* m_pRenderInterface{ nullptr };
 			IRenderContext* m_pRenderContext{ nullptr };

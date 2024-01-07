@@ -25,10 +25,8 @@ void CComputeCullingRenderingStep::_create(const FRenderingStepCreateInfo& creat
 
 	auto& render_world = m_pRenderInterface->getRenderWorld();
 
-	auto& buffer_mappings = render_world->getDrawBufferMappings();
-	auto found = buffer_mappings.find(draw_command_buffer_index);
-	if(found != buffer_mappings.end())
-		m_beginComputeInfo.writeBuffers.emplace_back(found->second);
+	auto& buffer_mappings = render_world->getDrawBuffers();
+	m_beginComputeInfo.writeBuffers.emplace_back(buffer_mappings.at(draw_command_buffer_index)->handle());
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	m_beginComputeInfo.name = std::format("compute_geometry:{}", rendering_ci.shaderName);

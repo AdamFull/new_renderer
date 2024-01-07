@@ -107,7 +107,7 @@ void CVkRenderContext::createGlobalDescriptor(const FGlobalUniformCreateInfo& un
 {
 	// Create descriptor pool
 	FVkDescriptorPoolCreateInfo pool_ci{};
-	pool_ci.poolSizes = { { vk::DescriptorType::eCombinedImageSampler, k_max_bindless_resources }, { vk::DescriptorType::eStorageBuffer, k_max_bindless_buffers }, {vk::DescriptorType::eUniformBuffer, 1u} };
+	pool_ci.poolSizes = { { vk::DescriptorType::eCombinedImageSampler, k_max_bindless_resources }, {vk::DescriptorType::eUniformBuffer, 2u} };
 	pool_ci.usageCount = 1u * m_pDevice->m_swapchain.framesInFlight;
 	pool_ci.flags |= vk::DescriptorPoolCreateFlagBits::eUpdateAfterBindEXT;
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -121,32 +121,32 @@ void CVkRenderContext::createGlobalDescriptor(const FGlobalUniformCreateInfo& un
 	set_layout_ci.flags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPoolEXT;
 
 	// Frame data
-	auto& global_uniform_binding = set_layout_ci.layoutBindings.emplace_back();
-	global_uniform_binding.descriptorType = vk::DescriptorType::eUniformBuffer;
-	global_uniform_binding.descriptorCount = 1u;
-	global_uniform_binding.binding = 0u;
-	global_uniform_binding.stageFlags = vk::ShaderStageFlagBits::eAllGraphics | vk::ShaderStageFlagBits::eCompute;
+	auto& global_frame_data_binding = set_layout_ci.layoutBindings.emplace_back();
+	global_frame_data_binding.descriptorType = vk::DescriptorType::eUniformBuffer;
+	global_frame_data_binding.descriptorCount = 1u;
+	global_frame_data_binding.binding = 0u;
+	global_frame_data_binding.stageFlags = vk::ShaderStageFlagBits::eAllGraphics | vk::ShaderStageFlagBits::eCompute;
+
+	// Uniform buffer with adresses to another buffers
+	auto& global_buffer_references_binding = set_layout_ci.layoutBindings.emplace_back();
+	global_buffer_references_binding.descriptorType = vk::DescriptorType::eUniformBuffer;
+	global_buffer_references_binding.descriptorCount = 1u;
+	global_buffer_references_binding.binding = 1u;
+	global_buffer_references_binding.stageFlags = vk::ShaderStageFlagBits::eAllGraphics | vk::ShaderStageFlagBits::eCompute;
 
 	// Bindles textures
 	auto& global_textures_binding = set_layout_ci.layoutBindings.emplace_back();
 	global_textures_binding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
 	global_textures_binding.descriptorCount = k_max_bindless_resources;
-	global_textures_binding.binding = 1u;
+	global_textures_binding.binding = 2u;
 	global_textures_binding.stageFlags = vk::ShaderStageFlagBits::eAllGraphics | vk::ShaderStageFlagBits::eCompute;
 	global_textures_binding.pImmutableSamplers = nullptr;
-
-	auto& global_buffer_binding = set_layout_ci.layoutBindings.emplace_back();
-	global_buffer_binding.descriptorType = vk::DescriptorType::eStorageBuffer;
-	global_buffer_binding.descriptorCount = k_max_bindless_buffers;
-	global_buffer_binding.binding = 2u;
-	global_buffer_binding.stageFlags = vk::ShaderStageFlagBits::eAllGraphics | vk::ShaderStageFlagBits::eCompute;
-	global_buffer_binding.pImmutableSamplers = nullptr;
 
 	// Descriptor binding extension
 	std::vector<vk::DescriptorBindingFlags> bindingFlags{};
 	bindingFlags.emplace_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
-	bindingFlags.emplace_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eVariableDescriptorCount | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
-	bindingFlags.emplace_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eVariableDescriptorCount | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
+	bindingFlags.emplace_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
+	bindingFlags.emplace_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
 
 	vk::DescriptorSetLayoutBindingFlagsCreateInfoEXT descriptorSetLayoutBindingFlagsCIEXT{};
 	descriptorSetLayoutBindingFlagsCIEXT.bindingCount = static_cast<uint32_t>(bindingFlags.size());
@@ -208,17 +208,6 @@ void CVkRenderContext::createGlobalDescriptor(const FGlobalUniformCreateInfo& un
 	}
 }
 
-void CVkRenderContext::registerGlobalDescriptorDrawBuffers(const std::unordered_map<uint32_t, size_t>& mappings)
-{
-	for (uint32_t frame = 0u; frame < m_pDevice->m_swapchain.framesInFlight; ++frame)
-	{
-		auto& current_frame = m_bufferToUpdate[frame];
-
-		for (const auto& [binding_point, buffer_id] : mappings)
-			current_frame[binding_point] = buffer_id;
-	}
-}
-
 void CVkRenderContext::updateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view)
 {
 	auto& dest_set = m_globalDescriptor.descriptorSet.handles.at(m_pDevice->m_swapchain.currentFrame);
@@ -246,7 +235,7 @@ void CVkRenderContext::updateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 		auto& write_descriptor_set = write_descriptor_sets.emplace_back();
 		write_descriptor_set.descriptorType = vk::DescriptorType::eUniformBuffer;
 		write_descriptor_set.dstSet = dest_set;
-		write_descriptor_set.dstBinding = 0u;
+		write_descriptor_set.dstBinding = uniform_data.binding;
 		write_descriptor_set.descriptorCount = 1u;
 		write_descriptor_set.pBufferInfo = &buffer_descriptor;
 
@@ -278,7 +267,7 @@ void CVkRenderContext::updateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 			write_descriptor_set.dstArrayElement = texture_id;
 			write_descriptor_set.descriptorType = vk::DescriptorType::eCombinedImageSampler;
 			write_descriptor_set.dstSet = dest_set;
-			write_descriptor_set.dstBinding = 1u;
+			write_descriptor_set.dstBinding = 2u;
 			write_descriptor_set.descriptorCount = 1u;
 			write_descriptor_set.pImageInfo = &image_descriptor;
 
@@ -286,28 +275,6 @@ void CVkRenderContext::updateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 			texture_count++;
 		}
 	}
-
-	for (const auto& [binding_point, buffer_id] : m_bufferToUpdate[m_pDevice->m_swapchain.currentFrame])
-	{
-		auto& buffer = m_pResources->get<FVkBuffer>(buffer_id);
-		auto element_size = buffer->size / buffer->instanceCount;
-
-		auto& buffer_descriptor = buffer_descriptors.at(buffer_count);
-		buffer_descriptor.buffer = buffer->handle;
-		buffer_descriptor.range = element_size;
-		buffer_descriptor.offset = 0; // NODE: no offset for storage buffers
-
-		auto& write_descriptor_set = write_descriptor_sets.emplace_back();
-		write_descriptor_set.dstArrayElement = binding_point;
-		write_descriptor_set.descriptorType = vk::DescriptorType::eStorageBuffer;
-		write_descriptor_set.dstSet = dest_set;
-		write_descriptor_set.dstBinding = 1u;
-		write_descriptor_set.descriptorCount = 1u;
-		write_descriptor_set.pBufferInfo = &buffer_descriptor;
-
-		buffer_count++;
-	}
-	m_bufferToUpdate[m_pDevice->m_swapchain.currentFrame].clear();
 
 	// Update descriptor sets if needed
 	if (!write_descriptor_sets.empty())
@@ -862,24 +829,24 @@ size_t CVkRenderContext::createBuffer(const std::string& name, const FBufferCrea
 	} break;
 	case BUFFER_TYPE_VERTEX_FLAG_BIT: {
 		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eUnknown;
-		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eVertexBuffer;
+		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eShaderDeviceAddressKHR | vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eVertexBuffer;
 	} break;
 	case BUFFER_TYPE_INDEX_FLAG_BIT: {
 		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eUnknown;
-		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndexBuffer;
+		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eShaderDeviceAddressKHR | vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndexBuffer;
 	} break;
 	case BUFFER_TYPE_STORAGE_FLAG_BIT: {
 		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
-		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer;
+		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eShaderDeviceAddressKHR | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer;
 	} break;
 	case BUFFER_TYPE_UNIFORM_FLAG_BIT: {
 		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
-		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eUniformBuffer;
+		vk_buffer_ci.usageFlags |= vk::BufferUsageFlagBits::eUniformBuffer;
 		vk_buffer_ci.minOffsetAlignment = std::lcm(physical.properties.limits.minUniformBufferOffsetAlignment, physical.properties.limits.nonCoherentAtomSize);
 	} break;
 	case BUFFER_TYPE_INDIRECT_FLAG_BIT: {
 		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
-		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndirectBuffer | vk::BufferUsageFlagBits::eStorageBuffer;
+		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eShaderDeviceAddressKHR | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndirectBuffer | vk::BufferUsageFlagBits::eStorageBuffer;
 	} break;
 	default:
 		break;
@@ -912,7 +879,7 @@ void CVkRenderContext::uploadDataToBuffer(const FBufferUploadInfo& upload_info)
 FBufferView CVkRenderContext::getBufferView(size_t buffer_id)
 {
 	auto& buffer = m_pResources->get<FVkBuffer>(buffer_id);
-	return { buffer->size, buffer->instanceCount };
+	return { buffer->size, buffer->instanceCount, buffer->address };
 }
 
 void CVkRenderContext::bindVertexBuffers(const FVertexBufferBindingInfo& binding_info, uint32_t queue_type)

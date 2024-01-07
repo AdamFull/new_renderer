@@ -13,6 +13,7 @@
 	definitions: ["MESH_DATA", "LIGHT_DATA", "SHADOW_DATA"];
 
 	require_extensions: [
+		"GL_EXT_buffer_reference",
 		"GL_EXT_shader_explicit_arithmetic_types",
 		"GL_EXT_shader_explicit_arithmetic_types_int8"
 	];
@@ -22,13 +23,13 @@
 	"""
 		layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
-		layout(set = 3, binding = 0, rgba16f) uniform writeonly image2D write_color;
-		layout(set = 3, binding = 1) uniform sampler2D brdf_lut;
-		layout(set = 3, binding = 2) uniform samplerCube irradiance_cube;
-		layout(set = 3, binding = 3) uniform samplerCube prefiltered_cube;
-		layout(set = 3, binding = 4) uniform sampler2D depth_buffer;
+		layout(set = 2, binding = 0, rgba16f) uniform writeonly image2D write_color;
+		layout(set = 2, binding = 1) uniform sampler2D brdf_lut;
+		layout(set = 2, binding = 2) uniform samplerCube irradiance_cube;
+		layout(set = 2, binding = 3) uniform samplerCube prefiltered_cube;
+		layout(set = 2, binding = 4) uniform sampler2D depth_buffer;
 
-		layout (set = 3, binding = 5) uniform sampler2DArrayShadow cascaded_shadowmap;
+		layout (set = 2, binding = 5) uniform sampler2DArrayShadow cascaded_shadowmap;
 
 		layout(push_constant) uniform UniformMeshData
 		{
@@ -145,7 +146,7 @@
 			float shadow_factor = 1.0;
 			if(light.castShadows > 0 && light.shadowIndex > -1)
 			{
-				FCascadedShadowCommit shadow = csbn[nonuniformEXT(cascaded_shadow_buffer_index)].cascaded_shadows[light.shadowIndex];
+				FCascadedShadowCommit shadow = cascadedShadowBuffer.cascaded_shadows[light.shadowIndex];
 				shadow_factor = getCascadeShadow(cascaded_shadowmap, shadow, va, ms, dither);
 			}
 
@@ -191,21 +192,21 @@
 			//Directional light
 			for(uint i = 0u; i < frameData.directionalLightCount; i++)
 			{
-				FDirectionalLightCommit light = dlbn[nonuniformEXT(directional_light_buffer_index)].directional_lights[i];
+				FDirectionalLightCommit light = directionalLightBuffer.directional_lights[i];
 				Lo += calculateDirectionalLight(light, va, ms, V, F0, dither);
 			}
 
 			//Point light
 			for(uint i = 0u; i < frameData.pointLightCount; i++) 
 			{
-				FPointLightCommit light = plbn[nonuniformEXT(point_light_buffer_index)].point_lights[i];
+				FPointLightCommit light = pointLightBuffer.point_lights[i];
 				Lo += calculatePointLight(light, va, ms, V, F0, dither);
 			}
 			
 			//Spot light
 			for(uint i = 0u; i < frameData.spotLightCount; i++)
 			{
-				FSpotLightCommit light = slbn[nonuniformEXT(spot_light_buffer_index)].spot_lights[i];
+				FSpotLightCommit light = spotLightBuffer.spot_lights[i];
 				Lo += calculateSpotlight(light, va, ms, V, F0, dither);
 			}
 
@@ -217,7 +218,7 @@
 			//vec3 view_space_pos = (frameData.view * vec4(pos, 1.0)).xyz;
 			//float view_depth = view_space_pos.z * -1.0;
 
-			FCascadedShadowCommit shadow = csbn[nonuniformEXT(cascaded_shadow_buffer_index)].cascaded_shadows[0];
+			FCascadedShadowCommit shadow = cascadedShadowBuffer.cascaded_shadows[0];
 			uint cascade_index = getScadowCascadeSplit(shadow, view_depth, dither);
 
 			switch(cascade_index) 
@@ -260,7 +261,7 @@
 				//
 				//for(uint i = 0u; i < frameData.directionalLightCount; i++)
 				//{
-				//	const FDirectionalLightCommit light = directional_lights[i];
+				//	const FDirectionalLightCommit light = directionalLightBuffer.directional_lights[i];
 				//	const vec3 dir_to_sun = normalize(-light.direction);
 				//	pixel_color.rgb += atmosphere(origin, dir_world_space.xyz, -dir_to_sun, light.intencity);
 				//}
@@ -281,7 +282,7 @@
 			float dither = interleavedGradientNoise(uv);
 
 			VertexAttribute va = getVertexData(uv, visbuffer);
-			FMaterial material = mbn[nonuniformEXT(material_buffer_index)].materials[visbuffer.matID];
+			FMaterial material = materialBuffer.materials[visbuffer.matID];
 			MaterialSample ms = sampleMaterial(material, va);
 
 			// Calculate direction from fragment to viewPosition

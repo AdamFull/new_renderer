@@ -4,16 +4,16 @@
 	code: 
 	"""
 		// Input buffers
-		layout(set = 2, binding = 0) uniform sampler2D visbuffer_geometry;
-		layout(set = 2, binding = 1) uniform sampler2D visbuffer_matobj;
-		layout(set = 2, binding = 2) uniform sampler2D visbuffer_skinvbo;
+		layout(set = 1, binding = 0) uniform sampler2D visbuffer_geometry;
+		layout(set = 1, binding = 1) uniform sampler2D visbuffer_matobj;
+		layout(set = 1, binding = 2) uniform sampler2D visbuffer_skinvbo;
 
-		layout(std430, set = 2, binding = 3) readonly buffer VertexBuffer
+		layout(std430, set = 1, binding = 3) readonly buffer VertexBuffer
 		{
 			RawVertex vertices[];
 		} vb;
 
-		layout(std430, set = 2, binding = 4) readonly buffer IndexBuffer
+		layout(std430, set = 1, binding = 4) readonly buffer IndexBuffer
 		{
 			Index indices[];
 		} ib;
@@ -78,7 +78,7 @@
 		{
 			RawVertex[3] vertices;
 
-			FDrawIndexedIndirectData draw_command = cbn[nonuniformEXT(draw_command_buffer_index)].indexed_draw_commands[drawID];
+			FDrawIndexedIndirectData draw_command = indirectCommandBuffer.indexed_draw_commands[drawID];
 
 			// Index of the first vertex of this draw call's geometry
 			uint startIndex = draw_command.firstIndex;
@@ -170,7 +170,7 @@
 			vec3 position2 = vec3(vertices[2].px, vertices[2].py, vertices[2].pz);
 
 			// Load mesh model matrix
-			FSceneNode node = sbn[nonuniformEXT(node_buffer_index)].nodes[visbuffer.objID];
+			FSceneNode node = nodeBuffer.nodes[visbuffer.objID];
 			mat4 model = node.model;
 			
 #ifdef HAS_SKIN
@@ -188,10 +188,10 @@
 
 				uint begin_pos = node.skin * 128;
 				mat4 skinMat = 
-					vertices[0].wx * jbn[nonuniformEXT(skin_buffer_index)].matrices[begin_pos + joints.x] +
-					vertices[0].wy * jbn[nonuniformEXT(skin_buffer_index)].matrices[begin_pos + joints.y] +
-					vertices[0].wz * jbn[nonuniformEXT(skin_buffer_index)].matrices[begin_pos + joints.z] +
-					vertices[0].ww * jbn[nonuniformEXT(skin_buffer_index)].matrices[begin_pos + joints.w];
+					vertices[0].wx * jointsBuffer.matrices[begin_pos + joints.x] +
+					vertices[0].wy * jointsBuffer.matrices[begin_pos + joints.y] +
+					vertices[0].wz * jointsBuffer.matrices[begin_pos + joints.z] +
+					vertices[0].ww * jointsBuffer.matrices[begin_pos + joints.w];
 		
 				model = model * skinMat;
 			}

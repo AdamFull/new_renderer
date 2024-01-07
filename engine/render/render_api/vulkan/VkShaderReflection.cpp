@@ -250,6 +250,15 @@ FVkShaderReflectionData CVkShaderReflectionBuilder::build()
     // Sort descriptors by binding.
     for (auto& [set, descriptors] : reflectionData.descriptorSetLayoutBindings)
         std::sort(descriptors.begin(), descriptors.end(), [](const vk::DescriptorSetLayoutBinding& l, const vk::DescriptorSetLayoutBinding& r) { return l.binding < r.binding; });
+
+    // Remove not unique elements
+    for (auto& [set, descriptors] : reflectionData.descriptorSetLayoutBindings)
+    {
+        auto first = std::unique(descriptors.begin(), descriptors.end(), [](const vk::DescriptorSetLayoutBinding& l, const vk::DescriptorSetLayoutBinding& r) { return l.binding == r.binding; });
+
+        if(first != descriptors.end())
+            descriptors.erase(first, descriptors.end());
+    }
     
     for (const auto& stage : shaderStages)
     {

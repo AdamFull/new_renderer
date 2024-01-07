@@ -18,7 +18,6 @@ namespace engine
 				~CVkRenderContext() override;
 
 				void create(const FRenderContextCreateInfo& context_ci) override;
-				void registerGlobalDescriptorDrawBuffers(const std::unordered_map<uint32_t, size_t>& mappings) override;
 				void createGlobalDescriptor(const FGlobalUniformCreateInfo& uniform_ci) override;
 				void updateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view) override;
 
@@ -130,7 +129,6 @@ namespace engine
 				// NOTE: global descriptor uses set 0 and binding 0 and 1 (0 is for global uniform, 1 is for texture array)
 				FVkGlobalDescriptor m_globalDescriptor{};
 				std::unordered_map<uint32_t, utl::unique_queue<size_t>> m_textureToUpdate{};
-				std::unordered_map<uint32_t, std::unordered_map<uint32_t, size_t>> m_bufferToUpdate{};
 
 				std::unordered_map<std::thread::id, FVkThreadContext> m_perThreadContext{};
 				bool m_bIsFrameStarted{ false };

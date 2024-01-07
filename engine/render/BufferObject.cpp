@@ -20,6 +20,7 @@ void CBufferObject::create(const std::string& name, const FBufferCreateInfo& cre
 	auto buffer_view = m_pRenderContext->getBufferView(m_bufferId);
 	m_elemCount = buffer_view.elementCount;
 	m_elemSize = buffer_view.alignedSize / buffer_view.elementCount;
+	m_virtualAddress = buffer_view.address;
 }
 
 void CBufferObject::map()
@@ -60,6 +61,11 @@ void CBufferObject::clear()
 size_t CBufferObject::handle()
 {
 	return m_bufferId;
+}
+
+uint64_t CBufferObject::address()
+{
+	return m_virtualAddress;
 }
 
 char* CBufferObject::at(size_t index)

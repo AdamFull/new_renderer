@@ -313,6 +313,8 @@ namespace engine
 				vk::DeviceSize size{};
 				vk::DeviceSize instanceCount{};
 				vk::BufferUsageFlags usageFlags{};
+				uint64_t address{};
+
 				bool isMapped{ false };
 				bool isAlive{ false };
 			};

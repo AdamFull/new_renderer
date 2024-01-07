@@ -21,6 +21,7 @@ namespace engine
 			void clear() override;
 
 			size_t handle() override;
+			uint64_t address() override;
 
 			char* at(size_t index) override;
 
@@ -28,6 +29,7 @@ namespace engine
 			size_t m_bufferId{ ~0ull };
 			size_t m_elemSize{ 0ull };
 			size_t m_elemCount{ 0ull };
+			uint64_t m_virtualAddress{ 0ull };
 			void* m_pMapped{ nullptr };
 
 			IRenderInterface* m_pRenderInterface{ nullptr };

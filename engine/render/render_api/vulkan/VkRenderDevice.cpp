@@ -316,6 +316,13 @@ FRenderApiErrorInfo CVkRenderDevice::createBuffer(const FVkBufferCreateInfo& buf
 #endif
 	buffer.isAlive = true;
 
+	if (buffer_ci.usageFlags & vk::BufferUsageFlagBits::eShaderDeviceAddressKHR)
+	{
+		vk::BufferDeviceAddressInfoKHR address_info{};
+		address_info.buffer = buffer.handle;
+		buffer.address = m_logicalDevice.handle.getBufferAddressKHR(address_info);
+	}
+
 	return make_api_error(buffer.handle.objectType, res, "Failed to create");
 }
 
@@ -1308,6 +1315,7 @@ void CVkRenderDevice::createMemoryAllocator(const FRenderContextCreateInfo& cont
 	allocator_ci.pAllocationCallbacks = m_allocationCallbacks;
 	allocator_ci.vulkanApiVersion = get_api_version(context_ci.apiVersion);
 	allocator_ci.pVulkanFunctions = &vk_functions;
+	allocator_ci.flags = vma::AllocatorCreateFlagBits::eBufferDeviceAddress;
 
 	m_memoryAllocator = vma::createAllocator(allocator_ci);
 }

@@ -374,7 +374,6 @@ namespace engine
 			virtual ~IRenderContext() = default;
 
 			virtual void create(const FRenderContextCreateInfo& context_ci) = 0;
-			virtual void registerGlobalDescriptorDrawBuffers(const std::unordered_map<uint32_t, size_t>& mappings) = 0;
 			virtual void createGlobalDescriptor(const FGlobalUniformCreateInfo& uniform_ci) = 0;
 			virtual void updateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view) = 0;
 
@@ -470,7 +469,7 @@ namespace engine
 			virtual void addMaterial(const FMaterial& material) = 0;
 			virtual void addMaterials(const std::vector<FMaterial>& materials) = 0;
 
-			virtual const std::unordered_map<uint32_t, size_t>& getDrawBufferMappings() = 0;
+			virtual const std::vector<std::unique_ptr<IBufferObject>>& getDrawBuffers() = 0;
 
 			virtual const std::unordered_map<uint32_t, std::vector<FGeometryBatchRange>>& getAllGeometryRanges() const = 0;
 			virtual const std::vector<FGeometryBatchRange>& getGeometryRanges(uint32_t type) const = 0;

@@ -40,6 +40,7 @@ namespace engine
 		{
 			size_t alignedSize{ 0ull };
 			size_t elementCount{ 0ull };
+			uint64_t address{ 0ull };
 		};
 
 		class IBufferObject
@@ -56,6 +57,7 @@ namespace engine
 			virtual void clear() = 0;
 
 			virtual size_t handle() = 0;
+			virtual uint64_t address() = 0;
 
 			virtual char* at(size_t index) = 0;
 		};

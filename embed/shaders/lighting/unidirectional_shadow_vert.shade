@@ -13,6 +13,7 @@
 	definitions: ["MESH_DATA", "SHADOW_DATA"];
 
 	require_extensions: [ 
+		"GL_EXT_buffer_reference",
 		"GL_EXT_shader_explicit_arithmetic_types",
 		"GL_ARB_shader_viewport_layer_array" 
 	];
@@ -33,9 +34,9 @@
 		
 		void main()
 		{
-			FGeometryGPUBatch batch = gbn[nonuniformEXT(draw_batch_buffer_index)].geometry_batches[shadowData.batchID];
+			FGeometryGPUBatch batch = batchBuffer.geometry_batches[shadowData.batchID];
 
-			FSceneNode node = sbn[nonuniformEXT(node_buffer_index)].nodes[batch.instanceID];
+			FSceneNode node = nodeBuffer.nodes[batch.instanceID];
 			mat4 modelMatrix = node.model;
 
 #ifdef HAS_SKIN
@@ -48,10 +49,10 @@
 #endif
 				uint begin_pos = node.skin * 128;
 				mat4 skinMat = 
-					inWeights.x * jbn[nonuniformEXT(skin_buffer_index)].matrices[begin_pos + joints.x] +
-					inWeights.y * jbn[nonuniformEXT(skin_buffer_index)].matrices[begin_pos + joints.y] +
-					inWeights.z * jbn[nonuniformEXT(skin_buffer_index)].matrices[begin_pos + joints.z] +
-					inWeights.w * jbn[nonuniformEXT(skin_buffer_index)].matrices[begin_pos + joints.w];
+					inWeights.x * jointsBuffer.matrices[begin_pos + joints.x] +
+					inWeights.y * jointsBuffer.matrices[begin_pos + joints.y] +
+					inWeights.z * jointsBuffer.matrices[begin_pos + joints.z] +
+					inWeights.w * jointsBuffer.matrices[begin_pos + joints.w];
 					
 				modelMatrix = modelMatrix * skinMat;
 			}
@@ -66,10 +67,10 @@
 
 			mat4 viewProj;
 #if defined(CASCADED_SHADOW)
-			FCascadedShadowCommit shadow = csbn[nonuniformEXT(cascaded_shadow_buffer_index)].cascaded_shadows[shadowData.shadowIndex];
+			FCascadedShadowCommit shadow = cascadedShadowBuffer.cascaded_shadows[shadowData.shadowIndex];
 			viewProj = shadow.cascadeViewProj[shadowData.layer];
 #else
-			FSpotShadowCommit shadow = ssbn[nonuniformEXT(spot_shadow_buffer_index)].spot_shadows[shadowData.shadowIndex];
+			FSpotShadowCommit shadow = spotShadowBuffer.spot_shadows[shadowData.shadowIndex];
 			viewProj = shadow.viewProj;
 #endif
 			
