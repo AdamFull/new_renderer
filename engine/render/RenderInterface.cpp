@@ -204,8 +204,6 @@ void CRenderInterface::render(float dt)
 	global_references.spotShadowBuffer = buffer_mappings[spot_shadow_buffer_index]->address();
 	global_references.batchBuffer = buffer_mappings[draw_batch_buffer_index]->address();
 	global_references.indirectCommandBuffer = buffer_mappings[draw_command_buffer_index]->address();
-	global_references.cullingInfoBuffer = buffer_mappings[culling_info_buffer_index]->address();
-	global_references.frustumBuffer = buffer_mappings[frustum_buffer_index]->address();
 
 	auto& buffer_ref_uniform = update_info.uniforms[utl::fnv1a_64_hash("GlobalBufferReferences")];
 	buffer_ref_uniform.data = &global_references;

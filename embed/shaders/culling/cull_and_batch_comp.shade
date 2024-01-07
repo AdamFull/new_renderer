@@ -26,6 +26,9 @@
 
 		layout(local_size_x = GROUP_SIZE) in;
 
+		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer CullingInfo { FGeometryGPUCullInfo culling_infos[]; };
+		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer SceneFrustum { vec4 scene_frustums[]; };
+
 		//layout(std430, set = 2, binding = 0) readonly buffer VertexBuffer
 		//{
 		//	RawVertex vertex_buffer[];
@@ -36,11 +39,17 @@
 		//	Index index_buffer[];
 		//};
 
+		layout(push_constant) uniform References
+		{
+			CullingInfo culling;
+			SceneFrustum frustum;
+		} references;
+
 		bool checkObjectInFrustum(in vec3 minExtents, in vec3 maxExtents, in uint32_t frustumID)
 		{
 			for (uint32_t i = 0; i < 6; i++)
 			{
-				vec4 edge = frustumBuffer.scene_frustums[frustumID * 6u + i];
+				vec4 edge = references.frustum.scene_frustums[frustumID * 6u + i];
 				if (   edge.x * minExtents.x + edge.y * minExtents.y + edge.z * minExtents.z + edge.w <= 0.0f
 					&& edge.x * maxExtents.x + edge.y * minExtents.y + edge.z * minExtents.z + edge.w <= 0.0f
 					&& edge.x * minExtents.x + edge.y * maxExtents.y + edge.z * minExtents.z + edge.w <= 0.0f
@@ -61,7 +70,7 @@
 			if (gID >= frameData.rawCommandsCount) 
 				return;
 
-			FGeometryGPUCullInfo cull_info = cullingInfoBuffer.culling_infos[gID];
+			FGeometryGPUCullInfo cull_info = references.culling.culling_infos[gID];
 			FSceneNode node = nodeBuffer.nodes[cull_info.instanceID];
 			FDrawIndexedIndirectData command = indirectCommandBuffer.indexed_draw_commands[gID];
 

@@ -78,12 +78,12 @@ void CComputeCullingRenderingStep::_execute(float dt)
 				shader->bind(m_beginComputeInfo.queue);
 			}
 
-			auto& mesh_data = shader->getConstantBlock("meshData");
-			if (mesh_data)
+			auto& references = shader->getConstantBlock("references");
+			if (references)
 			{
-				mesh_data->set("vboId", static_cast<uint32_t>(vboId));
-				//mesh_data->set("objectId", batch.node);
-				//mesh_data->set("materialId", static_cast<uint32_t>(batch.materialId));
+				auto& buffer_mappings = render_world->getDrawBuffers();
+				references->set("culling", buffer_mappings[culling_info_buffer_index]->address());
+				references->set("frustum", buffer_mappings[frustum_buffer_index]->address());
 			}
 
 			shader->flushConstants(m_beginComputeInfo.queue);

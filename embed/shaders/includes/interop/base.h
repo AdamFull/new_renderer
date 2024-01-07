@@ -325,9 +325,6 @@ namespace engine {
 		typedef uint64_t CascadedShadows;
 		typedef uint64_t OmniShadows;
 		typedef uint64_t SpotShadows;
-		
-		typedef uint64_t CullingInfo;
-		typedef uint64_t SceneFrustum;
 #else
 		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer NodeStorage { FSceneNode nodes[]; };
 		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer MaterialStorage { FMaterial materials[]; };
@@ -340,9 +337,6 @@ namespace engine {
 		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer CascadedShadows { FCascadedShadowCommit cascaded_shadows[]; };
 		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer OmniShadows { FOmniShadowCommit omni_shadows[]; };
 		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer SpotShadows { FSpotShadowCommit spot_shadows[]; };
-		
-		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer CullingInfo { FGeometryGPUCullInfo culling_infos[]; };
-		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer SceneFrustum { vec4 scene_frustums[]; };
 #endif
 
 #ifdef __cplusplus
@@ -365,8 +359,6 @@ namespace engine {
 		
 			GeometryBatches batchBuffer;
 			IndirectIndexedComands indirectCommandBuffer;
-			CullingInfo cullingInfoBuffer;
-			SceneFrustum frustumBuffer;
 		};
 
 #ifdef __cplusplus
