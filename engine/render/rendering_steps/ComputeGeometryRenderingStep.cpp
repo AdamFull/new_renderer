@@ -91,6 +91,8 @@ void CComputeGeometryRenderingStep::_execute(float dt)
 			shader->flushConstants(m_beginComputeInfo.queue);
 
 			auto& reflection = shader->getReflection();
+
+			glm::vec3 global_size{};
 			
 			FDispatchInfo dispatch_info{};
 			auto& group = dispatch_info.groups.emplace_back();

@@ -189,6 +189,14 @@ namespace engine
 				"c2c", BARRIER_FROM_COMPUTE_TO_COMPUTE,
 				"c2g", BARRIER_FROM_COMPUTE_TO_GRAPHICS
 			);
+
+			// Register ERenderingSizeType
+			lua->new_enum(
+				"RenderingSizeType",
+				"from_rt", RENDER_SIZE_TYPE_FROM_RT,
+				"from_buffer", RENDER_SIZE_TYPE_FROM_BUFFER,
+				"manual", RENDER_SIZE_TYPE_MANUAL
+			);
 		}
 
 		void bindRenderInterfaceStructures(sol::state* lua)
@@ -269,6 +277,19 @@ namespace engine
 				"barrier", &FRenderingStepSynchronizationInfo::barrier
 			);
 
+			// FRenderTargetSizeInfo registration
+			lua->new_usertype<FRenderTargetSizeInfo>(
+				"RenderTargetSizeInfo",
+				sol::constructors<FRenderTargetSizeInfo()>(),
+
+				"type", &FRenderTargetSizeInfo::type,
+				"target", &FRenderTargetSizeInfo::target,
+
+				"size_x", &FRenderTargetSizeInfo::sizeX,
+				"size_y", &FRenderTargetSizeInfo::sizeY,
+				"size_z", &FRenderTargetSizeInfo::sizeZ
+			);
+
 			// FRenderingStepRenderingInfo registration
 			lua->new_usertype<FRenderingStepRenderingInfo>(
 				"RenderingStepInfo",
@@ -282,7 +303,7 @@ namespace engine
 				"flip_viewport", & FRenderingStepRenderingInfo::flipViewport,
 				"material_pass", & FRenderingStepRenderingInfo::materialPass,
 
-				"render_rect", & FRenderingStepRenderingInfo::renderRect,
+				"size_info", & FRenderingStepRenderingInfo::sizeInfo,
 
 				"input_targets", & FRenderingStepRenderingInfo::shaderInputs,
 				"output_targets", & FRenderingStepRenderingInfo::renderTargets,
@@ -304,9 +325,8 @@ namespace engine
 				"write_targets", & FRenderingStepComputeInfo::writeTargets,
 				"write_buffers", & FRenderingStepComputeInfo::writeBuffers,
 
-				"group_x", & FRenderingStepComputeInfo::groupX,
-				"group_y", & FRenderingStepComputeInfo::groupY,
-				"group_z", & FRenderingStepComputeInfo::groupZ
+				"group_info", & FRenderingStepComputeInfo::dispatchInfo,
+				"divide_by_locals", & FRenderingStepComputeInfo::divideByLocals
 			);
 
 			// FRenderingStepCreateInfo registration

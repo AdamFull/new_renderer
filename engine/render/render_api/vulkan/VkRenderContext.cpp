@@ -1588,6 +1588,8 @@ void CVkRenderContext::updateSurface(int32_t surface_width, int32_t surface_heig
 					target->imageViews.clear();
 					target->image.handle = m_pDevice->m_swapchain.images.at(swapchainFrameIndex);
 					target->imageViews.emplace_back(m_pDevice->m_swapchain.imageViews.at(swapchainFrameIndex));
+					target->initialData.base.width = surface_width;
+					target->initialData.base.height = surface_height;
 
 					swapchainFrameIndex++;
 					continue;

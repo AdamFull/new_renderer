@@ -19,9 +19,6 @@ namespace engine
 
 		private:
 			std::unique_ptr<IShaderObject> m_pShader{};
-
-			IRenderInterface* m_pRenderInterface{ nullptr };
-			IRenderContext* m_pRenderContext{ nullptr };
 		};
 	}
 }

@@ -20,9 +20,6 @@ namespace engine
 			std::unique_ptr<IShaderObject> m_pShader{};
 
 			std::unordered_map<std::string, size_t> m_shaderInputs{};
-
-			IRenderInterface* m_pRenderInterface{ nullptr };
-			IRenderContext* m_pRenderContext{ nullptr };
 		};
 	}
 }

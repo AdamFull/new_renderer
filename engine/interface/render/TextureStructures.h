@@ -20,9 +20,9 @@ namespace engine
 
 		enum ETextureSizePolicy
 		{
-			TEXTURE_SIZE_POLICY_FULL,
-			TEXTURE_SIZE_POLICY_SCALABLE,
-			TEXTURE_SIZE_POLICY_FIXED
+			TEXTURE_SIZE_POLICY_FULL = 1,
+			TEXTURE_SIZE_POLICY_SCALABLE = 2,
+			TEXTURE_SIZE_POLICY_FIXED = 3
 		};
 
 		struct FTextureCreateInfo

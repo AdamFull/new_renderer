@@ -22,9 +22,6 @@ namespace engine
 		private:
 			std::unordered_map<size_t, std::unique_ptr<IShaderObject>> m_shaders{};
 			std::string m_baseShaderName{};
-
-			IRenderInterface* m_pRenderInterface{ nullptr };
-			IRenderContext* m_pRenderContext{ nullptr };
 		};
 	}
 }

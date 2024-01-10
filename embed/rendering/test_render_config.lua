@@ -140,10 +140,9 @@ do
     step_ci.compute.shader_name = "lighting:brgflut_generator"
 
     target_img = render_context:get_texture_resource("brdf_lut_target")
-    rect = render_context:get_render_rect_from_rt(target_img)
 
-    step_ci.compute.group_x = math.floor(rect.size.x)
-    step_ci.compute.group_y = math.floor(rect.size.y)
+    step_ci.compute.group_info.type = RenderingSizeType.from_rt
+    step_ci.compute.group_info.target = target_img
 
     step_ci.compute.write_targets:set("out_color", target_img)
 
@@ -160,10 +159,9 @@ do
     step_ci.compute.shader_name = "lighting:irradiancecube_generator"
 
     target_img = render_context:get_texture_resource("irradiance_cube_target")
-    rect = render_context:get_render_rect_from_rt(target_img)
 
-    step_ci.compute.group_x = math.floor(rect.size.x)
-    step_ci.compute.group_y = math.floor(rect.size.y)
+    step_ci.compute.group_info.type = RenderingSizeType.from_rt
+    step_ci.compute.group_info.target = target_img
 
     step_ci.compute.write_targets:set("out_color", target_img)
     step_ci.compute.input_targets:set("sampler_color", render_context:get_texture_resource("CasualDay4K"))
@@ -181,10 +179,9 @@ do
     step_ci.compute.shader_name = "lighting:prefilteredmap_generator"
 
     target_img = render_context:get_texture_resource("prefiltered_cube_target")
-    rect = render_context:get_render_rect_from_rt(target_img)
 
-    step_ci.compute.group_x = math.floor(rect.size.x)
-    step_ci.compute.group_y = math.floor(rect.size.y)
+    step_ci.compute.group_info.type = RenderingSizeType.from_rt
+    step_ci.compute.group_info.target = target_img
 
     step_ci.compute.write_targets:set("out_color", target_img)
     step_ci.compute.input_targets:set("sampler_color", render_context:get_texture_resource("CasualDay4K"))
@@ -212,7 +209,9 @@ do
     step_ci.rendering.shader_name = "lighting:unidirectional_shadow:CASCADED_SHADOW"
 
     step_ci.rendering.depth_target = render_context:get_texture_resource("cascaded_shadows_target")
-    step_ci.rendering.render_rect = render_context:get_render_rect_from_rt(step_ci.rendering.depth_target)
+
+    step_ci.rendering.size_info.type = RenderingSizeType.from_rt
+    step_ci.rendering.size_info.target = step_ci.rendering.depth_target
 
     render_interface:create_renderer(step_ci)
 end
@@ -231,7 +230,9 @@ do
     step_ci.rendering.output_targets:add(render_context:get_texture_resource("visbuffer_skinvbo_target"))
     step_ci.rendering.depth_target = render_context:get_texture_resource("zbuffer_depth_target")
     step_ci.rendering.stencil_target = step_ci.rendering.depth_target
-    step_ci.rendering.render_rect = render_context:get_render_rect_from_rt(render_context:get_texture_resource("visbuffer_geometry_target"))
+
+    step_ci.rendering.size_info.type = RenderingSizeType.from_rt
+    step_ci.rendering.size_info.target = render_context:get_texture_resource("visbuffer_geometry_target")
 
     render_interface:create_renderer(step_ci)
 end
@@ -246,10 +247,9 @@ do
     step_ci.compute.shader_name = "visibilitybuffer:shade"
 
     target_img = render_context:get_texture_resource("final_lighting_target")
-    rect = render_context:get_render_rect_from_rt(target_img)
 
-    step_ci.compute.group_x = math.floor(rect.size.x)
-    step_ci.compute.group_y = math.floor(rect.size.y)
+    step_ci.compute.group_info.type = RenderingSizeType.from_rt
+    step_ci.compute.group_info.target = target_img
 
     step_ci.compute.write_targets:set("write_color", target_img)
     step_ci.compute.input_targets:set("visbuffer_geometry", render_context:get_texture_resource("visbuffer_geometry_target"))
@@ -276,7 +276,9 @@ do
     
     step_ci.rendering.input_targets:set("input_image", render_context:get_texture_resource("final_lighting_target"))
     step_ci.rendering.output_targets:add(render_context:get_texture_resource("present_target"))
-    step_ci.rendering.render_rect = render_context:get_render_rect_from_rt(render_context:get_texture_resource("present_target"))
+
+    step_ci.rendering.size_info.type = RenderingSizeType.from_rt
+    step_ci.rendering.size_info.target = render_context:get_texture_resource("present_target")
     
     render_interface:create_renderer(step_ci)
 end

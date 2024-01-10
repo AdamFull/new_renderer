@@ -23,9 +23,6 @@ namespace engine
 			std::string m_baseShaderName{};
 
 			std::unordered_map<std::string, size_t> m_shaderInputs{};
-
-			IRenderInterface* m_pRenderInterface{ nullptr };
-			IRenderContext* m_pRenderContext{ nullptr };
 		};
 	}
 }

@@ -16,10 +16,6 @@ namespace engine
 
 			void _create(const FRenderingStepCreateInfo& create_info) override;
 			void _execute(float dt) override;
-
-		private:
-			IRenderInterface* m_pRenderInterface{ nullptr };
-			IRenderContext* m_pRenderContext{ nullptr };
 		};
 	}
 }

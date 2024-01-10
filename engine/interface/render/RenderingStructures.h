@@ -51,6 +51,13 @@ namespace engine
 			BARRIER_FROM_COMPUTE_TO_GRAPHICS,
 		};
 
+		enum ERenderingSizeType
+		{
+			RENDER_SIZE_TYPE_FROM_RT = 1,
+			RENDER_SIZE_TYPE_FROM_BUFFER = 2,
+			RENDER_SIZE_TYPE_MANUAL = 3
+		};
+
 		struct FRenderingStepSemaphore
 		{
 			uint32_t type{};
@@ -75,6 +82,16 @@ namespace engine
 			FRenderingStepBarrier barrier{};
 		};
 
+		struct FRenderTargetSizeInfo
+		{
+			uint32_t type{ RENDER_SIZE_TYPE_MANUAL };
+			size_t target{ ~0ull };
+
+			uint32_t sizeX{ 1u };
+			uint32_t sizeY{ 1u };
+			uint32_t sizeZ{ 1u };
+		};
+
 		struct FRenderingStepRenderingInfo
 		{
 			// ERenderingType
@@ -92,7 +109,7 @@ namespace engine
 			std::unordered_map<std::string, size_t> shaderInputs{};
 			std::vector<size_t> renderTargets{};
 
-			FRect2D<float> renderRect{};
+			FRenderTargetSizeInfo sizeInfo{};
 
 			size_t depthTarget{ ~0ull };
 			size_t stencilTarget{ ~0ull };
@@ -111,9 +128,8 @@ namespace engine
 			std::unordered_map<std::string, size_t> writeTargets{};
 			std::unordered_map<std::string, size_t> writeBuffers{};
 
-			uint32_t groupX{ 1u };
-			uint32_t groupY{ 1u };
-			uint32_t groupZ{ 1u };
+			FRenderTargetSizeInfo dispatchInfo{};
+			bool divideByLocals{ true };
 		};
 
 		struct FRenderingStepCreateInfo
