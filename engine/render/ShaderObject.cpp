@@ -96,6 +96,11 @@ void CShaderObject::bind(uint32_t queue)
 	m_pRenderContext->bindShader(m_shaderId, queue);
 }
 
+size_t CShaderObject::handle() const
+{
+	return m_shaderId;
+}
+
 const FShaderReflectionData& CShaderObject::getReflection() const
 {
 	return m_reflection;

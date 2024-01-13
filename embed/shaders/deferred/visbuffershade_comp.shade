@@ -40,7 +40,8 @@
 
 		vec4 sampleTexture(in uint s, in VertexAttribute va)
 		{
-			return textureGrad(globalTextures[s], va.uv, va.uv_dx, va.uv_dy);
+			//return textureGrad(globalTextures[s], va.uv, va.uv_dx, va.uv_dy);
+			return texture(globalTextures[s], va.uv);
 		}
 
 		MaterialSample sampleMaterial(in FMaterial mat, in VertexAttribute va)

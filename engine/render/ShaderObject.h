@@ -27,6 +27,8 @@ namespace engine
 
 			void bind(uint32_t queue) override;
 
+			size_t handle() const;
+
 			const FShaderReflectionData& getReflection() const override;
 
 		protected:

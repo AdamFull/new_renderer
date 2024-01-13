@@ -1209,6 +1209,103 @@ void CVkRenderContext::endRendering(const FBeginRenderingInfo& rendering_info)
 	processMemoryBarriers(command_buffer, translation_info);
 }
 
+void CVkRenderContext::beginRendering2(const FBeginRendering2Info& rendering_info)
+{
+	auto& command_buffer = getLastCommandBuffer(rendering_info.queue);
+
+	auto& textures = m_pResources->data<FVkTexture>();
+
+	std::array<vk::ClearValue, 3ull> clear_values{};
+	clear_values[0].color = vk::ClearColorValue{ 0.0f, 0.0f, 0.0f, 1.0f };
+	clear_values[1].depthStencil = vk::ClearDepthStencilValue{ 1.f, 0u };
+	clear_values[2].depthStencil = vk::ClearDepthStencilValue{ 1.f, 0u };
+
+	// Prepare render targets
+	std::vector<vk::RenderingAttachmentInfoKHR> color_attachments{};
+	for (const auto& attachment_info : rendering_info.colorAttachments)
+	{
+		auto& render_target = textures.at(attachment_info.handle).at(m_pDevice->m_swapchain.currentFrame);
+
+		auto& attachment_info = color_attachments.emplace_back();
+		attachment_info.imageView = render_target->imageViews.front();
+		attachment_info.imageLayout = render_target->layout;
+		attachment_info.resolveMode = vk::ResolveModeFlagBits::eNone;
+		attachment_info.loadOp = get_attachment_load_op(*render_target);
+		attachment_info.storeOp = get_attachment_store_op(*render_target);
+		attachment_info.clearValue = clear_values[0];
+	}
+
+	// Prepare depth target
+	vk::RenderingAttachmentInfoKHR depth_attachment{};
+	if (rendering_info.depthAttachment.handle != invalid_handle)
+	{
+		auto& depth_target = textures.at(rendering_info.depthAttachment.handle).at(m_pDevice->m_swapchain.currentFrame);
+
+		depth_attachment.imageView = depth_target->imageViews.front();
+		depth_attachment.imageLayout = depth_target->layout;
+		depth_attachment.resolveMode = vk::ResolveModeFlagBits::eNone;
+		depth_attachment.loadOp = get_attachment_load_op(*depth_target);
+		depth_attachment.storeOp = get_attachment_store_op(*depth_target);
+		depth_attachment.clearValue = clear_values[1];
+	}
+
+	vk::RenderingAttachmentInfoKHR stencil_attachment{};
+	if (rendering_info.stencilAttachment.handle != rendering_info.depthAttachment.handle && rendering_info.stencilAttachment.handle != invalid_handle)
+	{
+		auto& stencil_target = textures.at(rendering_info.stencilAttachment.handle).at(m_pDevice->m_swapchain.currentFrame);
+
+		stencil_attachment.imageView = stencil_target->imageViews.front();
+		stencil_attachment.imageLayout = stencil_target->layout;
+		stencil_attachment.resolveMode = vk::ResolveModeFlagBits::eNone;
+		stencil_attachment.loadOp = get_attachment_load_op(*stencil_target);
+		stencil_attachment.storeOp = get_attachment_store_op(*stencil_target);
+		stencil_attachment.clearValue = clear_values[2];
+	}
+
+	vk::RenderingInfoKHR begin_rendering_info{};
+	begin_rendering_info.renderArea.offset.x = rendering_info.renderArea.offset.x;
+	begin_rendering_info.renderArea.offset.y = rendering_info.renderArea.offset.y;
+	begin_rendering_info.renderArea.extent.width = rendering_info.renderArea.size.x;
+	begin_rendering_info.renderArea.extent.height = rendering_info.renderArea.size.y;
+	begin_rendering_info.colorAttachmentCount = static_cast<uint32_t>(color_attachments.size());
+	begin_rendering_info.pColorAttachments = color_attachments.data();
+	begin_rendering_info.layerCount = rendering_info.layerCount;
+
+	if (rendering_info.depthAttachment.handle != invalid_handle)
+	{
+		begin_rendering_info.pDepthAttachment = &depth_attachment;
+
+		auto& depth_target = textures.at(rendering_info.depthAttachment.handle).at(m_pDevice->m_swapchain.currentFrame);
+		if (!is_depth_only_format(static_cast<vk::Format>(depth_target->initialData.base.format)) && rendering_info.stencilAttachment.handle == rendering_info.depthAttachment.handle)
+			begin_rendering_info.pStencilAttachment = &depth_attachment;
+	}
+
+	if (rendering_info.stencilAttachment.handle != invalid_handle && rendering_info.stencilAttachment.handle != rendering_info.depthAttachment.handle)
+		begin_rendering_info.pStencilAttachment = &stencil_attachment;
+
+	auto& current_buffer = command_buffer.get();
+
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	m_pDevice->debugBeginLabel(current_buffer, rendering_info.name, 0xffffffff);
+#endif
+
+	current_buffer.beginRenderingKHR(begin_rendering_info);
+}
+
+void CVkRenderContext::endRendering2(uint32_t queue)
+{
+	auto& command_buffer = getLastCommandBuffer(queue);
+
+	auto& textures = m_pResources->data<FVkTexture>();
+
+	auto& current_buffer = command_buffer.get();
+	current_buffer.endRenderingKHR();
+
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	m_pDevice->endLabel(current_buffer);
+#endif
+}
+
 void CVkRenderContext::beginCompute(const FBeginComputeInfo& rendering_info)
 {
 	auto& command_buffer = getLastCommandBuffer(rendering_info.queue);
@@ -1458,6 +1555,34 @@ void CVkRenderContext::dispatch(uint32_t queue_type, const FDispatchInfo& dispat
 		auto& command = commands.front();
 		current.dispatch(command.x, command.y, command.z);
 	}
+}
+
+void CVkRenderContext::dispatch2(uint32_t queue_type, const FDispatch2Info& dispatch_info)
+{
+	auto& shader = m_pResources->get<FVkShader>(dispatch_info.shaderHandle);
+	auto& reflection = m_pResources->get<FVkShaderReflectionData>(shader->reflection);
+
+	vk::DispatchIndirectCommand command{};
+	command.x = dispatch_info.globalSizes.x;
+	command.y = dispatch_info.globalSizes.y;
+	command.z = dispatch_info.globalSizes.z;
+
+	if (dispatch_info.divideByLocals && !reflection->localSizes.empty())
+	{
+		auto& localSizes = reflection->localSizes.front();
+		command.x = std::max(static_cast<uint32_t>(std::ceil(static_cast<float>(command.x) / static_cast<float>(localSizes[0]))), 1u);
+		command.y = std::max(static_cast<uint32_t>(std::ceil(static_cast<float>(command.y) / static_cast<float>(localSizes[1]))), 1u);
+		command.z = std::max(static_cast<uint32_t>(std::ceil(static_cast<float>(command.z) / static_cast<float>(localSizes[2]))), 1u);
+	}
+
+	auto& command_buffer = getLastCommandBuffer(queue_type);
+	auto& current = command_buffer.get();
+	current.dispatch(command.x, command.y, command.z);
+}
+
+void CVkRenderContext::dispatch2(uint32_t queue_type, const FDispatchIndirectInfo& dispatch_info)
+{
+	
 }
 
 size_t CVkRenderContext::getTextureResource(const char* name)

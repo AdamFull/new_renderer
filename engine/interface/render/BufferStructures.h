@@ -33,6 +33,8 @@ namespace engine
 			size_t count{ 1ull };
 			size_t size{ 0ull };
 
+			std::string codeName{};
+
 			FBufferUploadInfo upload{};
 		};
 

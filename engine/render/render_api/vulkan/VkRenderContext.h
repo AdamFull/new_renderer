@@ -56,6 +56,9 @@ namespace engine
 				void beginRendering(const FBeginRenderingInfo& rendering_info) override;
 				void endRendering(const FBeginRenderingInfo& rendering_info) override;
 
+				void beginRendering2(const FBeginRendering2Info& rendering_info) override;
+				void endRendering2(uint32_t queue) override;
+
 				void beginCompute(const FBeginComputeInfo& rendering_info) override;
 				void endCompute(const FBeginComputeInfo& rendering_info) override;
 
@@ -65,6 +68,9 @@ namespace engine
 				void draw(uint32_t queue_type, const FGeometryDrawInfo& draw_info) override;
 				void draw(uint32_t queue_type, const FIndirectGeometryDrawInfo& draw_info) override;
 				void dispatch(uint32_t queue_type, const FDispatchInfo& dispatch_info) override;
+
+				void dispatch2(uint32_t queue_type, const FDispatch2Info& dispatch_group) override;
+				void dispatch2(uint32_t queue_type, const FDispatchIndirectInfo& dispatch_info) override;
 
 				size_t getTextureResource(const char* name) override;
 				size_t getShaderResource(const char* name) override;

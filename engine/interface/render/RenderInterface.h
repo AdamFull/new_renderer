@@ -165,6 +165,8 @@ namespace engine
 			virtual void flushConstants(uint32_t queue) = 0;
 			virtual void bind(uint32_t queue) = 0;
 
+			virtual size_t handle() const = 0;
+
 			virtual const FShaderReflectionData& getReflection() const = 0;
 		};
 
@@ -290,6 +292,9 @@ namespace engine
 			virtual void beginRendering(const FBeginRenderingInfo& rendering_info) = 0;
 			virtual void endRendering(const FBeginRenderingInfo& rendering_info) = 0;
 
+			virtual void beginRendering2(const FBeginRendering2Info& rendering_info) = 0;
+			virtual void endRendering2(uint32_t queue) = 0;
+
 			virtual void beginCompute(const FBeginComputeInfo& rendering_info) = 0;
 			virtual void endCompute(const FBeginComputeInfo& rendering_info) = 0;
 
@@ -299,6 +304,8 @@ namespace engine
 			virtual void draw(uint32_t queue_type, const FGeometryDrawInfo& draw_info) = 0;
 			virtual void draw(uint32_t queue_type, const FIndirectGeometryDrawInfo& draw_info) = 0;
 			virtual void dispatch(uint32_t queue_type, const FDispatchInfo& dispatch_info) = 0;
+			virtual void dispatch2(uint32_t queue_type, const FDispatch2Info& dispatch_group) = 0;
+			virtual void dispatch2(uint32_t queue_type, const FDispatchIndirectInfo& dispatch_info) = 0;
 
 			virtual size_t getTextureResource(const char* name) = 0;
 			virtual size_t getShaderResource(const char* name) = 0;
