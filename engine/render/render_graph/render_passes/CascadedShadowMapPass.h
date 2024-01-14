@@ -9,7 +9,7 @@ namespace engine
 		class CCascadedShadowMapPass : public IRenderPass
 		{
 		public:
-			CCascadedShadowMapPass(IRenderInterface* render_interface, IRenderContext* render_context);
+			CCascadedShadowMapPass(IRenderInterface* render_interface);
 
 			~CCascadedShadowMapPass() = default;
 

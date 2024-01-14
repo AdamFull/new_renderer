@@ -10,12 +10,11 @@ CGPUArrayHandle::~CGPUArrayHandle()
 	m_pBuffer->unmap();
 }
 
-CGPUArrayHandle::CGPUArrayHandle(IRenderInterface* render_interface, IRenderContext* render_context)
+CGPUArrayHandle::CGPUArrayHandle(IRenderInterface* render_interface)
 {
 	m_pRenderInterface = render_interface;
-	m_pRenderContext = render_context;
 
-	m_pBuffer = std::make_unique<CBufferObject>(m_pRenderInterface, m_pRenderContext);
+	m_pBuffer = std::make_unique<CBufferObject>(m_pRenderInterface);
 }
 
 void CGPUArrayHandle::create(const std::string& name, size_t stride, size_t count)

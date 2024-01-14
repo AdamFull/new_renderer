@@ -30,7 +30,7 @@ CRenderScriptCore::~CRenderScriptCore()
 	safe_delete(m_pLuaState);
 }
 
-void CRenderScriptCore::create(IRenderInterface* render_interface, IRenderContext* render_context)
+void CRenderScriptCore::create(IRenderInterface* render_interface)
 {
 	m_pLuaState = new sol::state();
 
@@ -75,7 +75,7 @@ void CRenderScriptCore::create(IRenderInterface* render_interface, IRenderContex
 		});
 
 	(*m_pLuaState)["render_interface"] = render_interface;
-	(*m_pLuaState)["render_context"] = render_context;
+	//(*m_pLuaState)["render_context"] = render_context;
 }
 
 std::unique_ptr<CRenderScriptExecutor> CRenderScriptCore::build(const std::string& name, const std::vector<uint8_t>& program_code)

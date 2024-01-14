@@ -9,7 +9,7 @@ namespace engine
 		class CComputeCullingPass : public IComputePass
 		{
 		public:
-			CComputeCullingPass(IRenderInterface* render_interface, IRenderContext* render_context);
+			CComputeCullingPass(IRenderInterface* render_interface);
 
 			~CComputeCullingPass() = default;
 

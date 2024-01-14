@@ -10,7 +10,7 @@ namespace engine
 		{
 		public:
 			CFullscreenRenderingStep() = default;
-			CFullscreenRenderingStep(IRenderInterface* render_interface, IRenderContext* render_context);
+			CFullscreenRenderingStep(IRenderInterface* render_interface);
 
 			~CFullscreenRenderingStep() override = default;
 

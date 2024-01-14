@@ -65,7 +65,7 @@ namespace engine
 		{
 		public:
 			~CRenderScriptCore();
-			void create(IRenderInterface* render_interface, IRenderContext* render_context);
+			void create(IRenderInterface* render_interface);
 			std::unique_ptr<CRenderScriptExecutor> build(const std::string& name, const std::vector<uint8_t>& program_code);
 		private:
 			sol::state* m_pLuaState{ nullptr };

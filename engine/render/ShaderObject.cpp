@@ -2,15 +2,15 @@
 
 using namespace engine::render;
 
-CShaderObject::CShaderObject(IRenderInterface* render_interface, IRenderContext* render_context)
+CShaderObject::CShaderObject(IRenderInterface* render_interface)
 {
 	m_pRenderInterface = render_interface;
-	m_pRenderContext = render_context;
 }
 
 CShaderObject::~CShaderObject()
 {
-	m_pRenderContext->destroyShader(m_shaderId);
+	auto& render_context = m_pRenderInterface->getRenderContext();
+	render_context->destroyShader(m_shaderId);
 }
 
 void CShaderObject::create(const std::string& name, const FGraphicsShaderCreateInfo& create_info)
@@ -59,6 +59,14 @@ void CShaderObject::bindTexture(const char* name, size_t texture_resource, uint3
 
 void CShaderObject::flushDescriptors()
 {
+	// Universal block for binding external resources
+	auto& external_resources = getUniformBlock("FExternalBindResources");
+	if (external_resources)
+	{
+		auto& render_graph = m_pRenderInterface->getRenderGraph();
+		// TODO: Required multiple changes for bindless system inside api implementation
+	}
+
 	FShaderResourceCommit update_data{};
 	update_data.shaderId = m_shaderId;
 	update_data.textures = m_bindTextures;
@@ -73,7 +81,8 @@ void CShaderObject::flushDescriptors()
 		data_view.size = block_data.size();
 	}
 
-	m_pRenderContext->updateShaderResources(update_data);
+	auto& render_context = m_pRenderInterface->getRenderContext();
+	render_context->updateShaderResources(update_data);
 }
 
 void CShaderObject::flushConstants(uint32_t queue)
@@ -88,12 +97,14 @@ void CShaderObject::flushConstants(uint32_t queue)
 		data_view.size = block_data.size();
 	}
 
-	m_pRenderContext->flushConstantRanges(m_shaderId, constants, queue);
+	auto& render_context = m_pRenderInterface->getRenderContext();
+	render_context->flushConstantRanges(m_shaderId, constants, queue);
 }
 
 void CShaderObject::bind(uint32_t queue)
 {
-	m_pRenderContext->bindShader(m_shaderId, queue);
+	auto& render_context = m_pRenderInterface->getRenderContext();
+	render_context->bindShader(m_shaderId, queue);
 }
 
 size_t CShaderObject::handle() const
@@ -108,7 +119,8 @@ const FShaderReflectionData& CShaderObject::getReflection() const
 
 void CShaderObject::buildReflection()
 {
-	m_reflection = m_pRenderContext->getShaderReflection(m_shaderId);
+	auto& render_context = m_pRenderInterface->getRenderContext();
+	m_reflection = render_context->getShaderReflection(m_shaderId);
 
 	for (auto& [id, uniform_block] : m_reflection.uniformBlocks)
 	{

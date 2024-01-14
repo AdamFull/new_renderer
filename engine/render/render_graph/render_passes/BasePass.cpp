@@ -19,10 +19,12 @@ void IRenderPass::init(const FRenderPassCreateInfo& pass_ci)
 
 void IRenderPass::bake(std::unordered_map<size_t, FRenderGraphAttachmentOperationInfo>& resource_info)
 {
+	auto& render_graph = m_pRenderInterface->getRenderGraph();
+
 	auto& output_targets = m_renderResources[RENDER_RESOURCE_GROUP_COLOR_WRITE];
 	for (size_t resource_id : output_targets)
 	{
-		auto& render_resource = m_pRenderGraph->getRenderResource(resource_id);
+		auto& render_resource = render_graph->getRenderResource(resource_id);
 
 		auto& color_attachment = m_vColorAttachments.emplace_back();
 		color_attachment.handle = render_resource.handle;
@@ -32,7 +34,7 @@ void IRenderPass::bake(std::unordered_map<size_t, FRenderGraphAttachmentOperatio
 
 	if (m_depthTarget != ~0ull)
 	{
-		auto& render_resource = m_pRenderGraph->getRenderResource(m_depthTarget);
+		auto& render_resource = render_graph->getRenderResource(m_depthTarget);
 		m_depthAttachment.handle = render_resource.handle;
 		m_depthAttachment.loadOp = resource_info[m_depthTarget].loadOp;
 		m_depthAttachment.storeOp = resource_info[m_depthTarget].storeOp;
@@ -40,7 +42,7 @@ void IRenderPass::bake(std::unordered_map<size_t, FRenderGraphAttachmentOperatio
 
 	if (m_stencilTarget != ~0ull)
 	{
-		auto& render_resource = m_pRenderGraph->getRenderResource(m_stencilTarget);
+		auto& render_resource = render_graph->getRenderResource(m_stencilTarget);
 		m_stencilAttachment.handle = render_resource.handle;
 		m_stencilAttachment.loadOp = resource_info[m_stencilTarget].loadOp;
 		m_stencilAttachment.storeOp = resource_info[m_stencilTarget].storeOp;
@@ -49,6 +51,9 @@ void IRenderPass::bake(std::unordered_map<size_t, FRenderGraphAttachmentOperatio
 
 void IRenderPass::execute(float dt)
 {
+	auto& render_context = m_pRenderInterface->getRenderContext();
+	auto& render_graph = m_pRenderInterface->getRenderGraph();
+
 	FBeginRendering2Info beginRenderingInfo{};
 	beginRenderingInfo.queue = m_queue;
 	beginRenderingInfo.flipViewport = m_bFlipViewport;
@@ -59,13 +64,13 @@ void IRenderPass::execute(float dt)
 
 	if (m_sizePolicy == RENDER_GRAPH_SIZE_POLICY_FROM_TARGET && m_sizeTarget != ~0ull)
 	{
-		auto& render_resource = m_pRenderGraph->getRenderResource(m_sizeTarget);
+		auto& render_resource = render_graph->getRenderResource(m_sizeTarget);
 		if (render_resource.type != RENDER_RESOURCE_TYPE_RENDER_TARGET)
 		{
 			throw std::runtime_error("Incorrect render resource type.");
 		}
 
-		auto& resource_sizes = m_pRenderContext->getTextureInfo(render_resource.handle);
+		auto& resource_sizes = render_context->getTextureInfo(render_resource.handle);
 		beginRenderingInfo.renderArea.size.x = resource_sizes.width;
 		beginRenderingInfo.renderArea.size.y = resource_sizes.height;
 	}
@@ -74,8 +79,8 @@ void IRenderPass::execute(float dt)
 	beginRenderingInfo.name = m_debugName;
 #endif
 
-	m_pRenderContext->beginRendering2(beginRenderingInfo);
-	m_pRenderContext->setViewport(static_cast<float>(beginRenderingInfo.renderArea.size.x), static_cast<float>(beginRenderingInfo.renderArea.size.y), beginRenderingInfo.flipViewport);
+	render_context->beginRendering2(beginRenderingInfo);
+	render_context->setViewport(static_cast<float>(beginRenderingInfo.renderArea.size.x), static_cast<float>(beginRenderingInfo.renderArea.size.y), beginRenderingInfo.flipViewport);
 
 	FRenderFrameInfo frame_info{};
 	frame_info.deltaTime = dt;
@@ -83,7 +88,7 @@ void IRenderPass::execute(float dt)
 
 	_render(frame_info);
 
-	m_pRenderContext->endRendering2(beginRenderingInfo.queue);
+	render_context->endRendering2(beginRenderingInfo.queue);
 }
 
 

@@ -9,7 +9,7 @@ namespace engine
 		class CComputeCubemapPass : public IComputePass
 		{
 		public:
-			CComputeCubemapPass(IRenderInterface* render_interface, IRenderContext* render_context, IRenderGraph* render_graph);
+			CComputeCubemapPass(IRenderInterface* render_interface);
 
 			~CComputeCubemapPass() = default;
 

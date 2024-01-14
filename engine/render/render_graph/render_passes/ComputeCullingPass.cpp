@@ -6,11 +6,9 @@
 
 using namespace engine::render;
 
-CComputeCullingPass::CComputeCullingPass(IRenderInterface* render_interface, IRenderContext* render_context, IRenderGraph* render_graph)
+CComputeCullingPass::CComputeCullingPass(IRenderInterface* render_interface)
 {
 	m_pRenderInterface = render_interface;
-	m_pRenderContext = render_context;
-	m_pRenderGraph = render_graph;
 }
 
 void CComputeCullingPass::init(const FComputePassCreateInfo& pass_ci)
@@ -31,6 +29,7 @@ void CComputeCullingPass::bake(std::unordered_map<size_t, FRenderGraphAttachment
 
 void CComputeCullingPass::_execute(const FComputeFrameInfo& frame_info)
 {
+	auto& render_context = m_pRenderInterface->getRenderContext();
 	auto& render_world = m_pRenderInterface->getRenderWorld();
 	auto& world_stats = render_world->getStats();
 
@@ -88,7 +87,7 @@ void CComputeCullingPass::_execute(const FComputeFrameInfo& frame_info)
 			dispatch_info.shaderHandle = shader->handle();
 			dispatch_info.globalSizes = m_dispatchGroup;
 
-			m_pRenderContext->dispatch2(m_queue, dispatch_info);
+			render_context->dispatch2(m_queue, dispatch_info);
 		}
 	}
 }
@@ -98,7 +97,7 @@ const std::unique_ptr<IShaderObject>& CComputeCullingPass::getShaderByVBO(const 
 	auto& shader = m_shaders[vbo->getHash()];
 	if (!shader)
 	{
-		shader = std::make_unique<CShaderObject>(m_pRenderInterface, m_pRenderContext);
+		shader = std::make_unique<CShaderObject>(m_pRenderInterface);
 
 		auto& render_packet = m_pRenderInterface->getRenderPacket();
 

@@ -9,7 +9,7 @@ namespace engine
 		class CFullscreenPass : public IRenderPass
 		{
 		public:
-			CFullscreenPass(IRenderInterface* render_interface, IRenderContext* render_context);
+			CFullscreenPass(IRenderInterface* render_interface);
 
 			~CFullscreenPass() = default;
 

@@ -10,7 +10,7 @@ namespace engine
 		{
 		public:
 			CRenderScriptRenderingStep() = default;
-			CRenderScriptRenderingStep(IRenderInterface* render_interface, IRenderContext* render_context);
+			CRenderScriptRenderingStep(IRenderInterface* render_interface);
 
 			~CRenderScriptRenderingStep() override = default;
 

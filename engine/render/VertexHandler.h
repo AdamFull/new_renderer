@@ -18,7 +18,7 @@ namespace engine
 				size_t buffer{ ~0ull };
 			};
 
-			CVertexHandler(IRenderInterface* render_interface, IRenderContext* render_context);
+			CVertexHandler(IRenderInterface* render_interface);
 			~CVertexHandler() override;
 
 			void create(const FVertexHandlerCreateInfo& create_info) override;
@@ -48,7 +48,6 @@ namespace engine
 			FVertexDeclarationInfo m_declaration{};
 
 			IRenderInterface* m_pRenderInterface{ nullptr };
-			IRenderContext* m_pRenderContext{ nullptr };
 		};
 	}
 }

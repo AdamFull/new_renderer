@@ -89,7 +89,7 @@ namespace engine
 #endif
 		};
 
-		struct FDispatchGroup
+		struct FDispatch2Group
 		{
 			uint32_t x{ 1u }, y{ 1u }, z{ 1u };
 		};
@@ -98,14 +98,14 @@ namespace engine
 		{
 			size_t shaderHandle{};
 			bool divideByLocals{ true };
-			FDispatchGroup globalSizes{};
+			FDispatch2Group globalSizes{};
 		};
 
 		struct FDispatchIndirectInfo
 		{
 			size_t shaderHandle{};
 			bool divideByLocals{ true };
-			std::vector<FDispatchGroup> groups{};
+			std::vector<FDispatch2Group> groups{};
 		};
 
 		/**
@@ -218,7 +218,9 @@ namespace engine
 			*/
 			virtual ~IRenderGraph() = default;
 
-			virtual size_t addStaticResource(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
+			virtual void create() = 0;
+
+			virtual size_t addStaticResource(const std::string& name, const std::string& path) = 0;
 			virtual size_t addRenderResource(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
 			virtual size_t addRenderResource(const std::string& name, const FBufferCreateInfo& buffer_ci) = 0;
 

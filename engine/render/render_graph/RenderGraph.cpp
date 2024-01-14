@@ -10,9 +10,15 @@
 
 using namespace engine::render;
 
+CRenderGraph::CRenderGraph(IRenderInterface* render_interface)
+{
+	m_pRenderInterface = render_interface;
+}
+
 void CRenderGraph::create()
 {
-	auto surface_resolution = m_pRenderContext->getRenderResolution();
+	auto& render_context = m_pRenderInterface->getRenderContext();
+	auto surface_resolution = render_context->getRenderResolution();
 
 	{
 		addStaticResource("CasualDay4K", "/root/CasualDay4K.ktx2");
@@ -20,102 +26,102 @@ void CRenderGraph::create()
 
 	{
 		FTextureCreateInfo texture_ci{};
-		texture_ci.format = m_pRenderContext->getApiFormat(FORMAT_RG16_SFLOAT);
+		texture_ci.format = render_context->getApiFormat(FORMAT_RG16_SFLOAT);
 		texture_ci.typeFlags = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT | TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT | TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT;
 		texture_ci.sizePolicy = TEXTURE_SIZE_POLICY_FIXED;
 		texture_ci.width = texture_ci.height = 1024;
-		m_pRenderContext->createRenderTargets("brdf_lut_target", texture_ci);
+		addRenderResource("brdf_lut_target", texture_ci);
 	}
 
 	{
 		FTextureCreateInfo texture_ci{};
-		texture_ci.format = m_pRenderContext->getApiFormat(FORMAT_RGBA32_SFLOAT);
+		texture_ci.format = render_context->getApiFormat(FORMAT_RGBA32_SFLOAT);
 		texture_ci.typeFlags = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT | TEXTURE_IMAGE_TYPE_CUBEMAP_FLAG_BIT | TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT | TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT;
 		texture_ci.sizePolicy = TEXTURE_SIZE_POLICY_FIXED;
 		texture_ci.width = texture_ci.height = 64;
-		m_pRenderContext->createRenderTargets("irradiance_cube_target", texture_ci);
+		addRenderResource("irradiance_cube_target", texture_ci);
 	}
 
 	{
 		FTextureCreateInfo texture_ci{};
-		texture_ci.format = m_pRenderContext->getApiFormat(FORMAT_RGBA16_SFLOAT);
+		texture_ci.format = render_context->getApiFormat(FORMAT_RGBA16_SFLOAT);
 		texture_ci.typeFlags = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT | TEXTURE_IMAGE_TYPE_CUBEMAP_FLAG_BIT | TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT | TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT;
 		texture_ci.sizePolicy = TEXTURE_SIZE_POLICY_FIXED;
 		texture_ci.width = texture_ci.height = 512;
 		texture_ci.mipLevels = static_cast<uint32_t>(std::floor(std::log2((std::max)(512, 512)))) + 1u;
-		m_pRenderContext->createRenderTargets("prefiltered_cube_target", texture_ci);
+		addRenderResource("prefiltered_cube_target", texture_ci);
 	}
 
 	{
 		FTextureCreateInfo texture_ci{};
-		texture_ci.format = m_pRenderContext->getDepthFormat(false);
+		texture_ci.format = render_context->getDepthFormat(false);
 		texture_ci.typeFlags = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT | TEXTURE_IMAGE_TYPE_ARRAY_FLAG_BIT | TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT;
 		texture_ci.sizePolicy = TEXTURE_SIZE_POLICY_FIXED;
 		texture_ci.width = cascade_shadow_map_resolution;
 		texture_ci.height = cascade_shadow_map_resolution;
 		texture_ci.arrayLayers = cascade_shadow_map_cascade_count * max_directional_light_shadow_count;
-		m_pRenderContext->createRenderTargets("cascaded_shadows_target", texture_ci);
+		addRenderResource("cascaded_shadows_target", texture_ci);
 	}
 
 	{
 		FTextureCreateInfo texture_ci{};
-		texture_ci.format = m_pRenderContext->getApiFormat(FORMAT_RGBA8_UNORM);
+		texture_ci.format = render_context->getApiFormat(FORMAT_RGBA8_UNORM);
 		texture_ci.typeFlags = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT | TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT;
 		texture_ci.sizePolicy = TEXTURE_SIZE_POLICY_SCALABLE;
 		texture_ci.width = surface_resolution.x;
 		texture_ci.height = surface_resolution.y;
-		m_pRenderContext->createRenderTargets("visbuffer_geometry_target", texture_ci);
+		addRenderResource("visbuffer_geometry_target", texture_ci);
 	}
 
 	{
 		FTextureCreateInfo texture_ci{};
-		texture_ci.format = m_pRenderContext->getApiFormat(FORMAT_RGBA8_UNORM);
+		texture_ci.format = render_context->getApiFormat(FORMAT_RGBA8_UNORM);
 		texture_ci.typeFlags = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT | TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT;
 		texture_ci.sizePolicy = TEXTURE_SIZE_POLICY_SCALABLE;
 		texture_ci.width = surface_resolution.x;
 		texture_ci.height = surface_resolution.y;
-		m_pRenderContext->createRenderTargets("visbuffer_matobj_target", texture_ci);
+		addRenderResource("visbuffer_matobj_target", texture_ci);
 	}
 
 	{
 		FTextureCreateInfo texture_ci{};
-		texture_ci.format = m_pRenderContext->getApiFormat(FORMAT_RGBA8_UNORM);
+		texture_ci.format = render_context->getApiFormat(FORMAT_RGBA8_UNORM);
 		texture_ci.typeFlags = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT | TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT;
 		texture_ci.sizePolicy = TEXTURE_SIZE_POLICY_SCALABLE;
 		texture_ci.width = surface_resolution.x;
 		texture_ci.height = surface_resolution.y;
-		m_pRenderContext->createRenderTargets("visbuffer_skinvbo_target", texture_ci);
+		addRenderResource("visbuffer_skinvbo_target", texture_ci);
 	}
 
 	{
 		FTextureCreateInfo texture_ci{};
-		texture_ci.format = m_pRenderContext->getDepthFormat(false);
+		texture_ci.format = render_context->getDepthFormat(false);
 		texture_ci.typeFlags = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT | TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT;
 		texture_ci.sizePolicy = TEXTURE_SIZE_POLICY_SCALABLE;
 		texture_ci.width = surface_resolution.x;
 		texture_ci.height = surface_resolution.y;
-		m_pRenderContext->createRenderTargets("zbuffer_depth_target", texture_ci);
+		addRenderResource("zbuffer_depth_target", texture_ci);
 	}
 
 	{
 		FTextureCreateInfo texture_ci{};
-		texture_ci.format = m_pRenderContext->getApiFormat(FORMAT_RGBA16_SFLOAT);
+		texture_ci.format = render_context->getApiFormat(FORMAT_RGBA16_SFLOAT);
 		texture_ci.typeFlags = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT | TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT | TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT;
 		texture_ci.sizePolicy = TEXTURE_SIZE_POLICY_SCALABLE;
 		texture_ci.width = surface_resolution.x;
 		texture_ci.height = surface_resolution.y;
-		m_pRenderContext->createRenderTargets("final_lighting_target", texture_ci);
+		addRenderResource("final_lighting_target", texture_ci);
 	}
 
 	{
 		FTextureCreateInfo texture_ci{};
-		texture_ci.format = m_pRenderContext->getPresentFormat();
+		texture_ci.format = render_context->getPresentFormat();
 		texture_ci.typeFlags = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT;
 		texture_ci.sizePolicy = TEXTURE_SIZE_POLICY_FULL;
 		texture_ci.width = surface_resolution.x;
 		texture_ci.height = surface_resolution.y;
 		texture_ci.isSwapchainTarget = true;
-		m_pRenderContext->createRenderTargets("final_lighting_target", texture_ci);
+		addRenderResource("final_lighting_target", texture_ci);
 	}
 
 
@@ -164,10 +170,14 @@ void CRenderGraph::create()
 
 	{
 		FRenderConfigComputeCreateInfo pass_ci{};
-		pass_ci.oneTime = true;
 		pass_ci.type = COMPUTE_CULLING_TYPE;
 		pass_ci.queue = QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT;
 		pass_ci.shader = "culling:cull_and_batch";
+
+		pass_ci.bindReadResource("nodeBuffer", "NodeStorage");
+		pass_ci.bindReadResource("frustumSides", "FrustumSides");
+		pass_ci.bindReadResource("cullingBuffer", "GeometryCullingInfo");
+		pass_ci.bindWriteResource("indirectCommandBuffer", "IndexedDrawIndirectBuffer");
 
 		addRenderPass("gpu_culling", pass_ci);
 	}
@@ -181,6 +191,12 @@ void CRenderGraph::create()
 		pass_ci.sizeTarget = "cascaded_shadows_target";
 		pass_ci.depthResource = "cascaded_shadows_target";
 
+		pass_ci.bindReadResource("nodeBuffer", "NodeStorage");
+		pass_ci.bindReadResource("materialBuffer", "MaterialStorage");
+		pass_ci.bindReadResource("jointsBuffer", "SkinningJoints");
+		pass_ci.bindReadResource("cascadedShadowBuffer", "CascadedShadows");
+		pass_ci.bindReadResource("batchBuffer", "GeometryBatches");
+
 		addRenderPass("cascaded_shadow_map_pass", pass_ci);
 	}
 
@@ -193,6 +209,9 @@ void CRenderGraph::create()
 		pass_ci.sizeTarget = "zbuffer_depth_target";
 		pass_ci.depthResource = "zbuffer_depth_target";
 		pass_ci.stencilResource = pass_ci.depthResource;
+
+		pass_ci.bindReadResource("nodeBuffer", "NodeStorage");
+		pass_ci.bindReadResource("jointsBuffer", "SkinningJoints");
 
 		pass_ci.addRenderTarget("visbuffer_geometry_target");
 		pass_ci.addRenderTarget("visbuffer_matobj_target");
@@ -219,6 +238,19 @@ void CRenderGraph::create()
 		pass_ci.bindReadResource("cascaded_shadowmap", "cascaded_shadows_target");
 		pass_ci.bindReadResource("depth_buffer", "zbuffer_depth_target");
 
+		pass_ci.bindReadResource("nodeBuffer", "NodeStorage");
+		pass_ci.bindReadResource("materialBuffer", "MaterialStorage");
+		pass_ci.bindReadResource("jointsBuffer", "SkinningJoints");
+		pass_ci.bindReadResource("directionalLightBuffer", "DirectionalLights");
+		pass_ci.bindReadResource("pointLightBuffer", "PointLights");
+		pass_ci.bindReadResource("spotLightBuffer", "SpotLights");
+		pass_ci.bindReadResource("cascadedShadowBuffer", "CascadedShadows");
+		pass_ci.bindReadResource("omniShadowBuffer", "OmniShadows");
+		pass_ci.bindReadResource("spotShadowBuffer", "SpotShadows");
+		pass_ci.bindReadResource("batchBuffer", "GeometryBatches");
+
+		pass_ci.bindReadResource("indirectCommandBuffer", "IndexedDrawIndirectBuffer");
+
 		addRenderPass("compute_materials_pass", pass_ci);
 	}
 
@@ -238,34 +270,31 @@ void CRenderGraph::create()
 
 size_t CRenderGraph::addStaticResource(const std::string& name, const std::string& path)
 {
+	auto& render_context = m_pRenderInterface->getRenderContext();
+
 	m_nameToResource[name] = m_vRenderResources.size();
 
 	auto& new_render_resource = m_vRenderResources.emplace_back();
 	new_render_resource.type = RENDER_RESOURCE_TYPE_STATIC_IMAGE;
-	new_render_resource.handle = m_pRenderInterface->createTexture(path);
 
-	return new_render_resource.handle;
-}
+	FTextureCreateInfo create_info{}; 
+	FTextureUploadInfo upload_info{};
+	new_render_resource.handle = m_pRenderInterface->loadTexture(path, create_info, upload_info);
 
-size_t CRenderGraph::addStaticResource(const std::string& name, const FTextureCreateInfo& texture_ci)
-{
-	m_nameToResource[name] = m_vRenderResources.size();
-
-	auto& new_render_resource = m_vRenderResources.emplace_back();
-	new_render_resource.type = RENDER_RESOURCE_TYPE_STATIC_IMAGE;
-	new_render_resource.handle = m_pRenderInterface->createTexture("");
-
-	// TODO: Load teture here
+	if (new_render_resource.handle != ~0ull)
+		new_render_resource.handle = render_context->createTexture(name, create_info, std::move(upload_info));
 
 	return new_render_resource.handle;
 }
 
 size_t CRenderGraph::addRenderResource(const std::string& name, const FTextureCreateInfo& texture_ci)
 {
+	auto& render_context = m_pRenderInterface->getRenderContext();
+
 	m_nameToResource[name] = m_vRenderResources.size();
 
 	auto& new_render_resource = m_vRenderResources.emplace_back();
-	new_render_resource.handle = m_pRenderContext->createRenderTargets(name, texture_ci);
+	new_render_resource.handle = render_context->createRenderTargets(name, texture_ci);
 	new_render_resource.type = (texture_ci.typeFlags & TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT) ? RENDER_RESOURCE_TYPE_STORAGE_TARGET : RENDER_RESOURCE_TYPE_RENDER_TARGET;
 	
 	return new_render_resource.handle;
@@ -273,10 +302,12 @@ size_t CRenderGraph::addRenderResource(const std::string& name, const FTextureCr
 
 size_t CRenderGraph::addRenderResource(const std::string& name, const FBufferCreateInfo& buffer_ci)
 {
+	auto& render_context = m_pRenderInterface->getRenderContext();
+
 	m_nameToResource[name] = m_vRenderResources.size();
 
 	auto& new_render_resource = m_vRenderResources.emplace_back();
-	new_render_resource.handle = m_pRenderContext->createBuffer(name, buffer_ci);
+	new_render_resource.handle = render_context->createBuffer(name, buffer_ci);
 	new_render_resource.type = RENDER_RESOURCE_TYPE_BUFFER;
 
 	return new_render_resource.handle;
@@ -375,11 +406,11 @@ size_t CRenderGraph::addRenderPass(const std::string& name, const FRenderConfigR
 
 	std::unique_ptr<IRenderPass> new_pass{};
 	if (render_pass_ci.type == RENDERING_FULLSCREEN_TYPE)
-		new_pass = std::make_unique<CFullscreenPass>(m_pRenderInterface, m_pRenderContext, this);
+		new_pass = std::make_unique<CFullscreenPass>(m_pRenderInterface);
 	else if (render_pass_ci.type == RENDERING_GEOMETRY_TYPE)
-		new_pass = std::make_unique<CGeometryPass>(m_pRenderInterface, m_pRenderContext, this);
+		new_pass = std::make_unique<CGeometryPass>(m_pRenderInterface);
 	else if (render_pass_ci.type == RENDERING_CSM_TYPE)
-		new_pass = std::make_unique<CCascadedShadowMapPass>(m_pRenderInterface, m_pRenderContext, this);
+		new_pass = std::make_unique<CCascadedShadowMapPass>(m_pRenderInterface);
 
 	new_pass->init(pass_ci);
 	m_vRenderPasses.emplace_back(std::move(new_pass));
@@ -436,13 +467,13 @@ size_t CRenderGraph::addRenderPass(const std::string& name, const FRenderConfigC
 
 	std::unique_ptr<IComputePass> new_pass{};
 	if (compute_pass_ci.type == COMPUTE_DEFAULT_TYPE)
-		new_pass = std::make_unique<CComputePass>(m_pRenderInterface, m_pRenderContext, this);
+		new_pass = std::make_unique<CComputePass>(m_pRenderInterface);
 	else if (compute_pass_ci.type == COMPUTE_GEOMETRY_TYPE)
-		new_pass = std::make_unique<CComputeGeometryPass>(m_pRenderInterface, m_pRenderContext, this);
+		new_pass = std::make_unique<CComputeGeometryPass>(m_pRenderInterface);
 	else if (compute_pass_ci.type == COMPUTE_CUBEMAP_TYPE)
-		new_pass = std::make_unique<CComputeCubemapPass>(m_pRenderInterface, m_pRenderContext, this);
+		new_pass = std::make_unique<CComputeCubemapPass>(m_pRenderInterface);
 	else if (compute_pass_ci.type == COMPUTE_CULLING_TYPE)
-		new_pass = std::make_unique<CComputeCullingPass>(m_pRenderInterface, m_pRenderContext, this);
+		new_pass = std::make_unique<CComputeCullingPass>(m_pRenderInterface);
 
 	new_pass->init(pass_ci);
 	m_vRenderPasses.emplace_back(std::move(new_pass));

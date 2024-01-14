@@ -118,17 +118,17 @@ std::string get_index_definition(size_t size)
 	return "";
 }
 
-CVertexHandler::CVertexHandler(IRenderInterface* render_interface, IRenderContext* render_context)
+CVertexHandler::CVertexHandler(IRenderInterface* render_interface)
 {
 	m_pRenderInterface = render_interface;
-	m_pRenderContext = render_context;
 }
 
 // TODO: destroy buffers
 CVertexHandler::~CVertexHandler()
 {
-	m_pRenderContext->destroyBuffer(m_vertexBuffer.buffer);
-	m_pRenderContext->destroyBuffer(m_indexBuffer.buffer);
+	auto& render_context = m_pRenderInterface->getRenderContext();
+	render_context->destroyBuffer(m_vertexBuffer.buffer);
+	render_context->destroyBuffer(m_indexBuffer.buffer);
 }
 
 // NOTE: current implementation work only with interleaved vertex
@@ -137,6 +137,7 @@ void CVertexHandler::create(const FVertexHandlerCreateInfo& create_info)
 	std::unordered_set<std::string> definitions{};
 
 	// Initialize attribute descriptions
+	auto& render_context = m_pRenderInterface->getRenderContext();
 	for (const auto& desc : create_info.descriptions)
 	{
 		//if (desc.type == EVertexAttributeType::eJoint)
@@ -148,7 +149,7 @@ void CVertexHandler::create(const FVertexHandlerCreateInfo& create_info)
 		attrib.location = static_cast<uint32_t>(desc.type);
 
 		auto format = get_attribute_format_by_type(desc.type, desc.size);
-		attrib.format = m_pRenderContext->getApiFormat(format);
+		attrib.format = render_context->getApiFormat(format);
 		attrib.offset = m_vertexBuffer.elementSize;
 
 		if(desc.type != EVertexAttributeType::ePosition)
@@ -179,20 +180,22 @@ void CVertexHandler::create(const FVertexHandlerCreateInfo& create_info)
 
 void CVertexHandler::allocate()
 {
+	auto& render_context = m_pRenderInterface->getRenderContext();
+
 	// Create vertex buffer
 	FBufferCreateInfo buffer_ci{};
 	buffer_ci.flags = BUFFER_TYPE_VERTEX_FLAG_BIT;
 	buffer_ci.size = m_vertexBuffer.elementSize;
 	buffer_ci.count = m_vertexBuffer.elementCount;
 	buffer_ci.upload.data = m_vertexBuffer.data;
-	m_vertexBuffer.buffer = m_pRenderContext->createBuffer(std::format("SCENE_VERTICES{}", m_definitions), buffer_ci);
+	m_vertexBuffer.buffer = render_context->createBuffer(std::format("SCENE_VERTICES{}", m_definitions), buffer_ci);
 
 	// Create index buffer
 	buffer_ci.flags = BUFFER_TYPE_INDEX_FLAG_BIT;
 	buffer_ci.size = m_indexBuffer.elementSize;
 	buffer_ci.count = m_indexBuffer.elementCount;
 	buffer_ci.upload.data = m_indexBuffer.data;
-	m_indexBuffer.buffer = m_pRenderContext->createBuffer(std::format("SCENE_INDICES{}", m_definitions), buffer_ci);
+	m_indexBuffer.buffer = render_context->createBuffer(std::format("SCENE_INDICES{}", m_definitions), buffer_ci);
 }
 
 // TODO: i can create custom bindings support here
@@ -200,11 +203,12 @@ void CVertexHandler::bind(uint32_t queue)
 {
 	if (m_vertexBuffer.elementCount)
 	{
+		auto& render_context = m_pRenderInterface->getRenderContext();
 		{
 			FVertexBufferBindingInfo binding_info{};
 			binding_info.buffers.emplace_back(m_vertexBuffer.buffer);
 			binding_info.offsets.emplace_back(0ull);
-			m_pRenderContext->bindVertexBuffers(binding_info, queue);
+			render_context->bindVertexBuffers(binding_info, queue);
 		}
 
 		if (m_indexBuffer.elementCount)
@@ -212,7 +216,7 @@ void CVertexHandler::bind(uint32_t queue)
 			FIndexBufferBindingInfo binding_info{};
 			binding_info.bufferId = m_indexBuffer.buffer;
 			binding_info.indexSize = m_indexBuffer.elementSize;
-			m_pRenderContext->bindIndexBuffer(binding_info, queue);
+			render_context->bindIndexBuffer(binding_info, queue);
 		}
 	}
 }

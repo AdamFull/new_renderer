@@ -16,6 +16,7 @@
 #include "VertexHandler.h"
 #include "BufferObject.h"
 #include "GPUArrayHandle.h"
+#include "render_graph/RenderGraph.h"
 
 #include <shader_compiler/compiler_util.h>
 
@@ -115,9 +116,9 @@ FShaderNameInfo get_shader_name_info(const std::string& shader_name)
 }
 
 template<class _Ty>
-std::unique_ptr<IGPUArrayHandle> allocateGPUArrayHandle(const std::string& name, size_t count, IRenderInterface* render_interface, IRenderContext* render_context)
+std::unique_ptr<IGPUArrayHandle> allocateGPUArrayHandle(const std::string& name, size_t count, IRenderInterface* render_interface)
 {
-	auto gpu_array = std::make_unique<CGPUArrayHandle>(render_interface, render_context);
+	auto gpu_array = std::make_unique<CGPUArrayHandle>(render_interface);
 	gpu_array->create(name, sizeof(_Ty), count);
 	return gpu_array;
 }
@@ -132,6 +133,9 @@ CRenderInterface::CRenderInterface(filesystem::IVirtualFileSystemInterface* vfs)
 
 	m_pResources = std::make_unique<CResourceContainer>();
 	m_pResources->registerResource<IVertexHandler>();
+
+	m_pRenderGraph = std::make_unique<CRenderGraph>(this);
+	m_pRenderWorld = std::make_unique<CRenderWorld>(this);
 }
 
 CRenderInterface::~CRenderInterface()
@@ -145,19 +149,19 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 
 	m_pRenderContext = make_render_context(rhi_ci);
 
-	m_pRenderWorld = std::make_unique<CRenderWorld>(this, m_pRenderContext.get());
 	m_pRenderWorld->create();
+	m_pRenderGraph->create();
 
-	m_pRenderScriptCore->create(this, m_pRenderContext.get());
+	m_pRenderScriptCore->create(this);
 
 	FGlobalUniformCreateInfo global_buffer_ci{};
 	global_buffer_ci.uniforms[utl::fnv1a_64_hash("GlobalUniformFrameData")] = sizeof(FGlobalUniformData);
 	global_buffer_ci.uniforms[utl::fnv1a_64_hash("GlobalBufferReferences")] = sizeof(FGlobalBufferReference);
 	m_pRenderContext->createGlobalDescriptor(global_buffer_ci);
 
-	std::vector<uint8_t> render_config{};
-	m_pVFS->readFile("/root/embed/rendering/test_render_config.lua", render_config);
-	m_pRenderScriptCore->build("render_config", render_config);
+	//std::vector<uint8_t> render_config{};
+	//m_pVFS->readFile("/root/embed/rendering/test_render_config.lua", render_config);
+	//m_pRenderScriptCore->build("render_config", render_config);
 }
 
 void CRenderInterface::render(float dt)
@@ -230,6 +234,12 @@ void CRenderInterface::render(float dt)
 size_t CRenderInterface::createTexture(const std::string& path)
 {
 	auto name = filesystem::fs::get_stem(path);
+	return m_pRenderGraph->addStaticResource(name, path);
+}
+
+size_t CRenderInterface::loadTexture(const std::string& path, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info)
+{
+	auto name = filesystem::fs::get_stem(path);
 	auto ext = filesystem::fs::get_ext(path);
 	auto ext_hash = utl::const_hash(ext.c_str(), ext.size());
 	auto mime = static_cast<EMimeType>(ext_hash);
@@ -241,11 +251,9 @@ size_t CRenderInterface::createTexture(const std::string& path)
 	std::vector<uint8_t> data{};
 	m_pVFS->readFile(path, data);
 
-	FTextureCreateInfo texture_ci{};
-	FTextureUploadInfo texture_ui{};
-	m_pResourceLoader->loadTexture(data, mime, texture_ci, texture_ui);
+	m_pResourceLoader->loadTexture(data, mime, create_info, upload_info);
 
-	return m_pRenderContext->createTexture(name, texture_ci, std::move(texture_ui));
+	return ~0ull;
 }
 
 size_t CRenderInterface::createShader(const std::string& name, const FGraphicsShaderCreateInfo& create_info)
@@ -262,7 +270,7 @@ size_t CRenderInterface::createShader(const std::string& name, const FComputeSha
 
 size_t CRenderInterface::createVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci)
 {
-	auto vertex_handler = std::make_unique<CVertexHandler>(this, m_pRenderContext.get());
+	auto vertex_handler = std::make_unique<CVertexHandler>(this);
 	vertex_handler->create(handler_ci);
 
 	return m_pResources->add<IVertexHandler>(name.c_str(), std::move(vertex_handler));
@@ -283,14 +291,19 @@ const std::unique_ptr<FRenderDataPacket>& CRenderInterface::getRenderPacket()
 	return m_pRenderPacket;
 }
 
+const std::unique_ptr<IRenderGraph>& CRenderInterface::getRenderGraph()
+{
+	return m_pRenderGraph;
+}
+
 const std::unique_ptr<IRenderWorld>& CRenderInterface::getRenderWorld()
 {
 	return m_pRenderWorld;
 }
 
-IRenderContext* CRenderInterface::getRenderContext()
+const std::unique_ptr<IRenderContext>& CRenderInterface::getRenderContext()
 {
-	return m_pRenderContext.get();
+	return m_pRenderContext;
 }
 
 FShaderUploadInfo CRenderInterface::getShaderNameTag(const std::string& name)
@@ -319,31 +332,31 @@ void CRenderInterface::createRendering(const FRenderingStepCreateInfo& rendering
 	if (rendering_ci.type == RENDERING_STEP_SYNCHRONIZATION_TYPE)
 	{
 		if (rendering_ci.synchronization.type == SYNCHRONIZATION_SEMAPHORE_TYPE)
-			new_step = std::make_unique<CSemaphoreRenderingStep>(this, m_pRenderContext.get());
+			new_step = std::make_unique<CSemaphoreRenderingStep>(this);
 		else if (rendering_ci.synchronization.type == SYNCHRONIZATION_BARRIER_TYPE)
-			new_step = std::make_unique<CBarrierRenderingStep>(this, m_pRenderContext.get());
+			new_step = std::make_unique<CBarrierRenderingStep>(this);
 	}
 	else if (rendering_ci.type == RENDERING_STEP_RENDERING_TYPE)
 	{
 		if(rendering_ci.rendering.type == RENDERING_FULLSCREEN_TYPE)
-			new_step = std::make_unique<CFullscreenRenderingStep>(this, m_pRenderContext.get());
+			new_step = std::make_unique<CFullscreenRenderingStep>(this);
 		else if (rendering_ci.rendering.type == RENDERING_GEOMETRY_TYPE)
-			new_step = std::make_unique<CGeometryRenderingStep>(this, m_pRenderContext.get());
+			new_step = std::make_unique<CGeometryRenderingStep>(this);
 		else if (rendering_ci.rendering.type == RENDERING_CSM_TYPE)
-			new_step = std::make_unique<CCascadedShadowMapsRenderingStep>(this, m_pRenderContext.get());
+			new_step = std::make_unique<CCascadedShadowMapsRenderingStep>(this);
 		else if(rendering_ci.rendering.type == RENDERING_RENDER_SCRIPT_TYPE)
-			new_step = std::make_unique<CRenderScriptRenderingStep>(this, m_pRenderContext.get());
+			new_step = std::make_unique<CRenderScriptRenderingStep>(this);
 	}
 	else if (rendering_ci.type == RENDERING_STEP_COMPUTE_TYPE)
 	{
 		if (rendering_ci.compute.type == COMPUTE_DEFAULT_TYPE)
-			new_step = std::make_unique<CComputeRenderingStep>(this, m_pRenderContext.get());
+			new_step = std::make_unique<CComputeRenderingStep>(this);
 		else if (rendering_ci.compute.type == COMPUTE_GEOMETRY_TYPE)
-			new_step = std::make_unique<CComputeGeometryRenderingStep>(this, m_pRenderContext.get());
+			new_step = std::make_unique<CComputeGeometryRenderingStep>(this);
 		else if (rendering_ci.compute.type == COMPUTE_CUBEMAP_TYPE)
-			new_step = std::make_unique<CComputeCubemapRenderingStep>(this, m_pRenderContext.get());
+			new_step = std::make_unique<CComputeCubemapRenderingStep>(this);
 		else if (rendering_ci.compute.type == COMPUTE_CULLING_TYPE)
-			new_step = std::make_unique<CComputeCullingRenderingStep>(this, m_pRenderContext.get());
+			new_step = std::make_unique<CComputeCullingRenderingStep>(this);
 	}
 
 	new_step->create(rendering_ci);

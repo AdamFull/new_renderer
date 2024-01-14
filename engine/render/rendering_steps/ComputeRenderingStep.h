@@ -10,7 +10,7 @@ namespace engine
 		{
 		public:
 			CComputeRenderingStep() = default;
-			CComputeRenderingStep(IRenderInterface* render_interface, IRenderContext* render_context);
+			CComputeRenderingStep(IRenderInterface* render_interface);
 
 			~CComputeRenderingStep() override = default;
 

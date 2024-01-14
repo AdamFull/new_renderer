@@ -9,7 +9,7 @@ namespace engine
 		class CGeometryPass : public IRenderPass
 		{
 		public:
-			CGeometryPass(IRenderInterface* render_interface, IRenderContext* render_context, IRenderGraph* render_graph);
+			CGeometryPass(IRenderInterface* render_interface);
 
 			~CGeometryPass() = default;
 

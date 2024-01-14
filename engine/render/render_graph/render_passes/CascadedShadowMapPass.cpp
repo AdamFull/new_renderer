@@ -6,11 +6,9 @@
 
 using namespace engine::render;
 
-CCascadedShadowMapPass::CCascadedShadowMapPass(IRenderInterface* render_interface, IRenderContext* render_context, IRenderGraph* render_graph)
+CCascadedShadowMapPass::CCascadedShadowMapPass(IRenderInterface* render_interface)
 {
 	m_pRenderInterface = render_interface;
-	m_pRenderContext = render_context;
-	m_pRenderGraph = render_graph;
 }
 
 void CCascadedShadowMapPass::init(const FRenderPassCreateInfo& pass_ci)
@@ -38,7 +36,8 @@ void CCascadedShadowMapPass::_render(const FRenderFrameInfo& frame_info)
 	if (!world_stats.cascadedShadowCount)
 		return;
 
-	m_pRenderContext->setScissorRect(0, 0, frame_info.renderRect.size.x, frame_info.renderRect.size.y);
+	auto& render_context = m_pRenderInterface->getRenderContext();
+	render_context->setScissorRect(0, 0, frame_info.renderRect.size.x, frame_info.renderRect.size.y);
 
 	auto& batch_ranges = render_world->getGeometryRanges(RENDER_GEOMETRY_CULLER_CSM_TYPE);
 
@@ -87,7 +86,7 @@ void CCascadedShadowMapPass::_render(const FRenderFrameInfo& frame_info)
 
 				shader->flushConstants(m_queue);
 
-				m_pRenderContext->draw(m_queue, batch.command);
+				render_context->draw(m_queue, batch.command);
 			}
 		}
 	}
@@ -95,11 +94,13 @@ void CCascadedShadowMapPass::_render(const FRenderFrameInfo& frame_info)
 
 const std::unique_ptr<IShaderObject>& CCascadedShadowMapPass::getShaderByVBO(const IVertexHandler* vbo)
 {
+	auto& render_graph = m_pRenderInterface->getRenderGraph();
+
 	auto vbo_hash = vbo->getHash();
 	auto& shader = m_shaders[vbo_hash];
 	if (!shader)
 	{
-		shader = std::make_unique<CShaderObject>(m_pRenderInterface, m_pRenderContext);
+		shader = std::make_unique<CShaderObject>(m_pRenderInterface);
 
 		// Generate shader name
 		auto shader_name = m_baseShaderName + vbo->getDefinitions();
@@ -112,19 +113,19 @@ const std::unique_ptr<IShaderObject>& CCascadedShadowMapPass::getShaderByVBO(con
 		auto& output_targets = m_renderResources[RENDER_RESOURCE_GROUP_COLOR_WRITE];
 		for (size_t resource_id : output_targets)
 		{
-			auto& render_resource = m_pRenderGraph->getRenderResource(resource_id);
+			auto& render_resource = render_graph->getRenderResource(resource_id);
 			shader_ci.colorAttachments.emplace_back(render_resource.handle);
 		}
 
 		if (m_depthTarget != ~0ull)
 		{
-			auto& render_resource = m_pRenderGraph->getRenderResource(m_depthTarget);
+			auto& render_resource = render_graph->getRenderResource(m_depthTarget);
 			shader_ci.depthAttachment = render_resource.handle;
 		}
 
 		if (m_stencilTarget != ~0ull)
 		{
-			auto& render_resource = m_pRenderGraph->getRenderResource(m_stencilTarget);
+			auto& render_resource = render_graph->getRenderResource(m_stencilTarget);
 			shader_ci.stencilAttachment = render_resource.handle;
 		}
 
@@ -137,7 +138,7 @@ const std::unique_ptr<IShaderObject>& CCascadedShadowMapPass::getShaderByVBO(con
 
 		for (const auto& [bind_point, resource_id] : m_bakedBindings)
 		{
-			auto& render_resource = m_pRenderGraph->getRenderResource(resource_id);
+			auto& render_resource = render_graph->getRenderResource(resource_id);
 			if (render_resource.type == RENDER_RESOURCE_TYPE_RENDER_TARGET || render_resource.type == RENDER_RESOURCE_TYPE_STATIC_IMAGE)
 				shader->bindTexture(bind_point.c_str(), render_resource.handle);
 			else if (render_resource.type == RENDER_RESOURCE_TYPE_BUFFER)

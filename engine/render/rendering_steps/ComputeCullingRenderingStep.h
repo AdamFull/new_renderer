@@ -10,7 +10,7 @@ namespace engine
 		{
 		public:
 			CComputeCullingRenderingStep() = default;
-			CComputeCullingRenderingStep(IRenderInterface* render_interface, IRenderContext* render_context);
+			CComputeCullingRenderingStep(IRenderInterface* render_interface);
 
 			~CComputeCullingRenderingStep() override = default;
 

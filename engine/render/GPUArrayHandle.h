@@ -11,7 +11,7 @@ namespace engine
 		public:
 			~CGPUArrayHandle() override;
 
-			CGPUArrayHandle(IRenderInterface* render_interface, IRenderContext* render_context);
+			CGPUArrayHandle(IRenderInterface* render_interface);
 
 			void create(const std::string& name, size_t stride, size_t count) override;
 			void flush(size_t count = ~0ull, size_t offset = 0ull) override;
@@ -44,7 +44,6 @@ namespace engine
 			std::atomic<size_t> m_currentElementCount{ 0ull };
 
 			IRenderInterface* m_pRenderInterface{ nullptr };
-			IRenderContext* m_pRenderContext{ nullptr };
 		};
 	}
 }

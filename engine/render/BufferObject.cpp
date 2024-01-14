@@ -2,22 +2,24 @@
 
 using namespace engine::render;
 
-CBufferObject::CBufferObject(IRenderInterface* render_interface, IRenderContext* render_context)
+CBufferObject::CBufferObject(IRenderInterface* render_interface)
 {
 	m_pRenderInterface = render_interface;
-	m_pRenderContext = render_context;
 }
 
 CBufferObject::~CBufferObject()
 {
-	m_pRenderContext->destroyBuffer(m_bufferId);
+	auto& render_context = m_pRenderInterface->getRenderContext();
+	render_context->destroyBuffer(m_bufferId);
 }
 
 void CBufferObject::create(const std::string& name, const FBufferCreateInfo& create_info)
 {
-	m_bufferId = m_pRenderContext->createBuffer(name, create_info);
+	auto& render_context = m_pRenderInterface->getRenderContext();
+	auto& render_graph = m_pRenderInterface->getRenderGraph();
+	m_bufferId = render_graph->addRenderResource(name, create_info);
 	
-	auto buffer_view = m_pRenderContext->getBufferView(m_bufferId);
+	auto buffer_view = render_context->getBufferView(m_bufferId);
 	m_elemCount = buffer_view.elementCount;
 	m_elemSize = buffer_view.alignedSize / buffer_view.elementCount;
 	m_virtualAddress = buffer_view.address;
@@ -25,14 +27,16 @@ void CBufferObject::create(const std::string& name, const FBufferCreateInfo& cre
 
 void CBufferObject::map()
 {
-	m_pRenderContext->mapBufferMemory(m_bufferId, m_pMapped);
+	auto& render_context = m_pRenderInterface->getRenderContext();
+	render_context->mapBufferMemory(m_bufferId, m_pMapped);
 }
 
 void CBufferObject::unmap() 
 {
 	if (m_pMapped)
 	{
-		m_pRenderContext->unmapBufferMemory(m_bufferId);
+		auto& render_context = m_pRenderInterface->getRenderContext();
+		render_context->unmapBufferMemory(m_bufferId);
 		m_pMapped = nullptr;
 	}
 }
@@ -50,7 +54,8 @@ void CBufferObject::write(const void* data, size_t size, size_t offset)
 
 void CBufferObject::flush(size_t size, size_t offset) 
 {
-	m_pRenderContext->flushBuffer(m_bufferId, size, offset);
+	auto& render_context = m_pRenderInterface->getRenderContext();
+	render_context->flushBuffer(m_bufferId, size, offset);
 }
 
 void CBufferObject::clear()

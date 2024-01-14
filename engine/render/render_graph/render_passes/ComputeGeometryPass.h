@@ -9,7 +9,7 @@ namespace engine
 		class CComputeGeometryPass : public IComputePass
 		{
 		public:
-			CComputeGeometryPass(IRenderInterface* render_interface, IRenderContext* render_context);
+			CComputeGeometryPass(IRenderInterface* render_interface);
 
 			~CComputeGeometryPass() = default;
 

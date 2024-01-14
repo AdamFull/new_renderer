@@ -10,7 +10,7 @@ namespace engine
 		{
 		public:
 			CSemaphoreRenderingStep() = default;
-			CSemaphoreRenderingStep(IRenderInterface* render_interface, IRenderContext* render_context);
+			CSemaphoreRenderingStep(IRenderInterface* render_interface);
 
 			~CSemaphoreRenderingStep() override = default;
 

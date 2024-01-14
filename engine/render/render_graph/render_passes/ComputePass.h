@@ -9,7 +9,7 @@ namespace engine
 		class CComputePass : public IComputePass
 		{
 		public:
-			CComputePass(IRenderInterface* render_interface, IRenderContext* render_context);
+			CComputePass(IRenderInterface* render_interface);
 
 			~CComputePass() = default;
 

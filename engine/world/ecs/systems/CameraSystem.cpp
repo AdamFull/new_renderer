@@ -34,7 +34,7 @@ void CCameraSystem::__update(float fDt)
 
 	auto& registry = m_pSceneGraph->getRegistry();
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
-	auto* render_context = m_pRenderInterface->getRenderContext();
+	auto& render_context = m_pRenderInterface->getRenderContext();
 	auto& render_world = m_pRenderInterface->getRenderWorld();
 
 	auto view = registry->view<FTransformComponent, FBaseComponent, FCameraComponent>();

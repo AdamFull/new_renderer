@@ -6,11 +6,9 @@
 
 using namespace engine::render;
 
-CComputeGeometryPass::CComputeGeometryPass(IRenderInterface* render_interface, IRenderContext* render_context, IRenderGraph* render_graph)
+CComputeGeometryPass::CComputeGeometryPass(IRenderInterface* render_interface)
 {
 	m_pRenderInterface = render_interface;
-	m_pRenderContext = render_context;
-	m_pRenderGraph = render_graph;
 }
 
 void CComputeGeometryPass::init(const FComputePassCreateInfo& pass_ci)
@@ -33,7 +31,9 @@ void CComputeGeometryPass::_execute(const FComputeFrameInfo& frame_info)
 {
 	std::unordered_set<size_t> vbos{};
 
+	auto& render_context = m_pRenderInterface->getRenderContext();
 	auto& render_world = m_pRenderInterface->getRenderWorld();
+
 	auto& batch_ranges = render_world->getGeometryRanges(RENDER_GEOMETRY_CULLER_SCENE_TYPE);
 	for (const auto& batch_range : batch_ranges)
 	{
@@ -88,17 +88,19 @@ void CComputeGeometryPass::_execute(const FComputeFrameInfo& frame_info)
 			dispatch_info.globalSizes = m_dispatchGroup;
 			dispatch_info.shaderHandle = shader->handle();
 
-			m_pRenderContext->dispatch2(m_queue, dispatch_info);
+			render_context->dispatch2(m_queue, dispatch_info);
 		}
 	}
 }
 
 const std::unique_ptr<IShaderObject>& CComputeGeometryPass::getShaderByVBO(const IVertexHandler* vbo)
 {
+	auto& render_graph = m_pRenderInterface->getRenderGraph();
+
 	auto& shader = m_shaders[vbo->getHash()];
 	if (!shader)
 	{
-		shader = std::make_unique<CShaderObject>(m_pRenderInterface, m_pRenderContext);
+		shader = std::make_unique<CShaderObject>(m_pRenderInterface);
 
 		// Generate shader name
 		auto shader_name = m_baseShaderName + vbo->getDefinitions();
@@ -112,7 +114,7 @@ const std::unique_ptr<IShaderObject>& CComputeGeometryPass::getShaderByVBO(const
 		// Bind default textures/buffers to shader
 		for (const auto& [bind_point, resource_id] : m_bakedBindings)
 		{
-			auto& render_resource = m_pRenderGraph->getRenderResource(resource_id);
+			auto& render_resource = render_graph->getRenderResource(resource_id);
 			if (render_resource.type == RENDER_RESOURCE_TYPE_RENDER_TARGET || render_resource.type == RENDER_RESOURCE_TYPE_STATIC_IMAGE)
 				shader->bindTexture(bind_point.c_str(), render_resource.handle);
 			else if (render_resource.type == RENDER_RESOURCE_TYPE_BUFFER)

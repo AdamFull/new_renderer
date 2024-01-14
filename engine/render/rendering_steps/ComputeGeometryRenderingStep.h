@@ -10,7 +10,7 @@ namespace engine
 		{
 		public:
 			CComputeGeometryRenderingStep() = default;
-			CComputeGeometryRenderingStep(IRenderInterface* render_interface, IRenderContext* render_context);
+			CComputeGeometryRenderingStep(IRenderInterface* render_interface);
 
 			~CComputeGeometryRenderingStep() override = default;
 

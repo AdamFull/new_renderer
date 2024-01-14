@@ -13,10 +13,12 @@ namespace engine
 		class CRenderGraph : public IRenderGraph
 		{
 		public:
-			void create();
+			CRenderGraph(IRenderInterface* render_interface);
+			~CRenderGraph() = default;
 
-			size_t addStaticResource(const std::string& name, const std::string& path);
-			size_t addStaticResource(const std::string& name, const FTextureCreateInfo& texture_ci) override;
+			void create() override;
+
+			size_t addStaticResource(const std::string& name, const std::string& path) override;
 			size_t addRenderResource(const std::string& name, const FTextureCreateInfo& texture_ci) override;
 			size_t addRenderResource(const std::string& name, const FBufferCreateInfo& buffer_ci) override;
 
@@ -35,6 +37,7 @@ namespace engine
 			void applySingleRenderResourceDependencies(size_t resource_id, uint16_t access_type, size_t pass_index, uint32_t queue_type);
 			void applyMultiRenderResourceDependencies(size_t pass_index, uint32_t queue_type, const std::unordered_map<uint32_t, std::vector<size_t>>& associated_resources);
 		protected:
+			std::vector<std::unique_ptr<IBufferObject>> m_vBufferHandlers{};
 			std::vector<FRenderResource> m_vRenderResources{};
 			std::unordered_map<std::string, size_t> m_nameToResource{};
 
@@ -42,7 +45,6 @@ namespace engine
 			std::unordered_map<std::string, size_t> m_nameToPass{};
 		private:
 			IRenderInterface* m_pRenderInterface{ nullptr };
-			IRenderContext* m_pRenderContext{ nullptr };
 		};
 	}
 }

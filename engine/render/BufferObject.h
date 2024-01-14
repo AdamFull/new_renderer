@@ -9,7 +9,7 @@ namespace engine
 		class CBufferObject : public IBufferObject
 		{
 		public:
-			CBufferObject(IRenderInterface* render_interface, IRenderContext* render_context);
+			CBufferObject(IRenderInterface* render_interface);
 			~CBufferObject() override;
 
 			void create(const std::string& name, const FBufferCreateInfo& create_info) override;
@@ -33,7 +33,6 @@ namespace engine
 			void* m_pMapped{ nullptr };
 
 			IRenderInterface* m_pRenderInterface{ nullptr };
-			IRenderContext* m_pRenderContext{ nullptr };
 		};
 	}
 }

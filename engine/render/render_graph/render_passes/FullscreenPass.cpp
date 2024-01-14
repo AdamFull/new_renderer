@@ -6,16 +6,16 @@
 
 using namespace engine::render;
 
-CFullscreenPass::CFullscreenPass(IRenderInterface* render_interface, IRenderContext* render_context, IRenderGraph* render_graph)
+CFullscreenPass::CFullscreenPass(IRenderInterface* render_interface)
 {
 	m_pRenderInterface = render_interface;
-	m_pRenderContext = render_context;
-	m_pRenderGraph = render_graph;
 }
 
 void CFullscreenPass::init(const FRenderPassCreateInfo& pass_ci)
 {
 	IRenderPass::init(pass_ci);
+
+	auto& render_graph = m_pRenderInterface->getRenderGraph();
 
 	// Create shader
 	FGraphicsShaderCreateInfo shader_ci{};
@@ -26,30 +26,30 @@ void CFullscreenPass::init(const FRenderPassCreateInfo& pass_ci)
 	auto& output_targets = m_renderResources[RENDER_RESOURCE_GROUP_COLOR_WRITE];
 	for (size_t resource_id : output_targets)
 	{
-		auto& render_resource = m_pRenderGraph->getRenderResource(resource_id);
+		auto& render_resource = render_graph->getRenderResource(resource_id);
 		shader_ci.colorAttachments.emplace_back(render_resource.handle);
 	}
 
 	if (m_depthTarget != ~0ull)
 	{
-		auto& render_resource = m_pRenderGraph->getRenderResource(m_depthTarget);
+		auto& render_resource = render_graph->getRenderResource(m_depthTarget);
 		shader_ci.depthAttachment = render_resource.handle;
 	}
 
 	if (m_stencilTarget != ~0ull)
 	{
-		auto& render_resource = m_pRenderGraph->getRenderResource(m_stencilTarget);
+		auto& render_resource = render_graph->getRenderResource(m_stencilTarget);
 		shader_ci.stencilAttachment = render_resource.handle;
 	}
 
 	// Make RHI shader object
-	m_pShader = std::make_unique<CShaderObject>(m_pRenderInterface, m_pRenderContext);
+	m_pShader = std::make_unique<CShaderObject>(m_pRenderInterface);
 	m_pShader->create(pass_ci.shader, shader_ci);
 
 	// Bind default textures/buffers to shader
 	for (const auto& [bind_point, resource_id] : m_bakedBindings)
 	{
-		auto& render_resource = m_pRenderGraph->getRenderResource(resource_id);
+		auto& render_resource = render_graph->getRenderResource(resource_id);
 		if (render_resource.type == RENDER_RESOURCE_TYPE_RENDER_TARGET || render_resource.type == RENDER_RESOURCE_TYPE_STATIC_IMAGE)
 			m_pShader->bindTexture(bind_point.c_str(), render_resource.handle);
 		else if (render_resource.type == RENDER_RESOURCE_TYPE_BUFFER)
@@ -68,7 +68,8 @@ void CFullscreenPass::bake(std::unordered_map<size_t, FRenderGraphAttachmentOper
 
 void CFullscreenPass::_render(const FRenderFrameInfo& frame_info)
 {
-	m_pRenderContext->setScissorRect(0, 0, frame_info.renderRect.size.x, frame_info.renderRect.size.y);
+	auto& render_context = m_pRenderInterface->getRenderContext();
+	render_context->setScissorRect(0, 0, frame_info.renderRect.size.x, frame_info.renderRect.size.y);
 
 	m_pShader->flushDescriptors();
 	m_pShader->flushConstants(m_queue);
@@ -81,5 +82,5 @@ void CFullscreenPass::_render(const FRenderFrameInfo& frame_info)
 	range.beginVertex = 0ull;
 	range.vertexCount = 3ull;
 
-	m_pRenderContext->draw(m_queue, draw_info);
+	render_context->draw(m_queue, draw_info);
 }

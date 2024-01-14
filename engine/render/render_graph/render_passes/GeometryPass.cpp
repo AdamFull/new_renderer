@@ -6,11 +6,9 @@
 
 using namespace engine::render;
 
-CGeometryPass::CGeometryPass(IRenderInterface* render_interface, IRenderContext* render_context, IRenderGraph* render_graph)
+CGeometryPass::CGeometryPass(IRenderInterface* render_interface)
 {
 	m_pRenderInterface = render_interface;
-	m_pRenderContext = render_context;
-	m_pRenderGraph = render_graph;
 }
 
 void CGeometryPass::init(const FRenderPassCreateInfo& pass_ci)
@@ -31,7 +29,8 @@ void CGeometryPass::bake(std::unordered_map<size_t, FRenderGraphAttachmentOperat
 
 void CGeometryPass::_render(const FRenderFrameInfo& frame_info)
 {
-	m_pRenderContext->setScissorRect(0, 0, frame_info.renderRect.size.x, frame_info.renderRect.size.y);
+	auto& render_context = m_pRenderInterface->getRenderContext();
+	render_context->setScissorRect(0, 0, frame_info.renderRect.size.x, frame_info.renderRect.size.y);
 
 	auto& render_world = m_pRenderInterface->getRenderWorld();
 
@@ -77,7 +76,7 @@ void CGeometryPass::_render(const FRenderFrameInfo& frame_info)
 
 				shader->flushConstants(m_queue);
 
-				m_pRenderContext->draw(m_queue, batch.command);
+				render_context->draw(m_queue, batch.command);
 				drawcall_id += batch.command.count;
 			}
 		}
@@ -86,11 +85,13 @@ void CGeometryPass::_render(const FRenderFrameInfo& frame_info)
 
 const std::unique_ptr<IShaderObject>& CGeometryPass::getShaderByVBO(const IVertexHandler* vbo)
 {
+	auto& render_graph = m_pRenderInterface->getRenderGraph();
+
 	auto vbo_hash = vbo->getHash();
 	auto& shader = m_shaders[vbo_hash];
 	if (!shader)
 	{
-		shader = std::make_unique<CShaderObject>(m_pRenderInterface, m_pRenderContext);
+		shader = std::make_unique<CShaderObject>(m_pRenderInterface);
 
 		// Generate shader name
 		auto shader_name = m_baseShaderName + vbo->getDefinitions();
@@ -103,19 +104,19 @@ const std::unique_ptr<IShaderObject>& CGeometryPass::getShaderByVBO(const IVerte
 		auto& output_targets = m_renderResources[RENDER_RESOURCE_GROUP_COLOR_WRITE];
 		for (size_t resource_id : output_targets)
 		{
-			auto& render_resource = m_pRenderGraph->getRenderResource(resource_id);
+			auto& render_resource = render_graph->getRenderResource(resource_id);
 			shader_ci.colorAttachments.emplace_back(render_resource.handle);
 		}
 
 		if (m_depthTarget != ~0ull)
 		{
-			auto& render_resource = m_pRenderGraph->getRenderResource(m_depthTarget);
+			auto& render_resource = render_graph->getRenderResource(m_depthTarget);
 			shader_ci.depthAttachment = render_resource.handle;
 		}
 
 		if (m_stencilTarget != ~0ull)
 		{
-			auto& render_resource = m_pRenderGraph->getRenderResource(m_stencilTarget);
+			auto& render_resource = render_graph->getRenderResource(m_stencilTarget);
 			shader_ci.stencilAttachment = render_resource.handle;
 		}
 
@@ -130,7 +131,7 @@ const std::unique_ptr<IShaderObject>& CGeometryPass::getShaderByVBO(const IVerte
 		// Bind default textures/buffers to shader
 		for (const auto& [bind_point, resource_id] : m_bakedBindings)
 		{
-			auto& render_resource = m_pRenderGraph->getRenderResource(resource_id);
+			auto& render_resource = render_graph->getRenderResource(resource_id);
 			if (render_resource.type == RENDER_RESOURCE_TYPE_RENDER_TARGET || render_resource.type == RENDER_RESOURCE_TYPE_STATIC_IMAGE)
 				shader->bindTexture(bind_point.c_str(), render_resource.handle);
 			else if (render_resource.type == RENDER_RESOURCE_TYPE_BUFFER)

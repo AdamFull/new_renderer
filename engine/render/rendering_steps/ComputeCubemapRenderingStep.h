@@ -10,7 +10,7 @@ namespace engine
 		{
 		public:
 			CComputeCubemapRenderingStep() = default;
-			CComputeCubemapRenderingStep(IRenderInterface* render_interface, IRenderContext* render_context);
+			CComputeCubemapRenderingStep(IRenderInterface* render_interface);
 
 			~CComputeCubemapRenderingStep() override = default;
 

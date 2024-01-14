@@ -9,10 +9,9 @@
 
 using namespace engine::render;
 
-CCascadedShadowMapsRenderingStep::CCascadedShadowMapsRenderingStep(IRenderInterface* render_interface, IRenderContext* render_context)
+CCascadedShadowMapsRenderingStep::CCascadedShadowMapsRenderingStep(IRenderInterface* render_interface)
 {
 	m_pRenderInterface = render_interface;
-	m_pRenderContext = render_context;
 }
 
 void CCascadedShadowMapsRenderingStep::_create(const FRenderingStepCreateInfo& create_info)
@@ -39,11 +38,12 @@ void CCascadedShadowMapsRenderingStep::_execute(float dt)
 	if (!world_stats.cascadedShadowCount)
 		return;
 
-	m_pRenderContext->beginRendering(m_beginRenderingInfo);
+	auto& render_context = m_pRenderInterface->getRenderContext();
+	render_context->beginRendering(m_beginRenderingInfo);
 
 	auto& rect = m_beginRenderingInfo.renderArea;
-	m_pRenderContext->setViewport(static_cast<float>(rect.size.x), static_cast<float>(rect.size.y), m_beginRenderingInfo.flipViewport);
-	m_pRenderContext->setScissorRect(0, 0, rect.size.x, rect.size.y);
+	render_context->setViewport(static_cast<float>(rect.size.x), static_cast<float>(rect.size.y), m_beginRenderingInfo.flipViewport);
+	render_context->setScissorRect(0, 0, rect.size.x, rect.size.y);
 	
 	auto& batch_ranges = render_world->getGeometryRanges(RENDER_GEOMETRY_CULLER_CSM_TYPE);
 	
@@ -92,12 +92,12 @@ void CCascadedShadowMapsRenderingStep::_execute(float dt)
 				
 				shader->flushConstants(m_beginRenderingInfo.queue);
 				
-				m_pRenderContext->draw(m_beginRenderingInfo.queue, batch.command);
+				render_context->draw(m_beginRenderingInfo.queue, batch.command);
 			}
 		}
 	}
 
-	m_pRenderContext->endRendering(m_beginRenderingInfo);
+	render_context->endRendering(m_beginRenderingInfo);
 }
 
 const std::unique_ptr<IShaderObject>& CCascadedShadowMapsRenderingStep::getShaderByVBO(const IVertexHandler* vbo)
@@ -106,7 +106,7 @@ const std::unique_ptr<IShaderObject>& CCascadedShadowMapsRenderingStep::getShade
 	auto& shader = m_shaders[vbo_hash];
 	if (!shader)
 	{
-		shader = std::make_unique<CShaderObject>(m_pRenderInterface, m_pRenderContext);
+		shader = std::make_unique<CShaderObject>(m_pRenderInterface);
 
 		// Generate shader name
 		auto shader_name = m_baseShaderName + vbo->getDefinitions();

@@ -4,10 +4,9 @@
 
 using namespace engine::render;
 
-CRenderScriptRenderingStep::CRenderScriptRenderingStep(IRenderInterface* render_interface, IRenderContext* render_context)
+CRenderScriptRenderingStep::CRenderScriptRenderingStep(IRenderInterface* render_interface)
 {
 	m_pRenderInterface = render_interface;
-	m_pRenderContext = render_context;
 }
 
 void CRenderScriptRenderingStep::_create(const FRenderingStepCreateInfo& create_info)

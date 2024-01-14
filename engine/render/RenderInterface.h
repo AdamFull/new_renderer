@@ -20,6 +20,7 @@ namespace engine
 			void render(float dt) override;
 
 			size_t createTexture(const std::string& path) override;
+			size_t loadTexture(const std::string& path, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info);
 			// TODO: add texture may be?
 
 			size_t createShader(const std::string& name, const FGraphicsShaderCreateInfo& create_info) override;
@@ -31,9 +32,9 @@ namespace engine
 			void updateSurfaceSize(int32_t width, int32_t height) override;
 
 			const std::unique_ptr<FRenderDataPacket>& getRenderPacket() override;
+			const std::unique_ptr<IRenderGraph>& getRenderGraph() override;
 			const std::unique_ptr<IRenderWorld>& getRenderWorld() override;
-
-			IRenderContext* getRenderContext() override;
+			const std::unique_ptr<IRenderContext>& getRenderContext() override;
 		protected:
 			template<class _Ty>
 			size_t createShader(const FShaderUploadInfo& name_info, const _Ty& create_info)
@@ -61,6 +62,7 @@ namespace engine
 
 			std::unique_ptr<FRenderDataPacket> m_pRenderPacket{};
 
+			std::unique_ptr<IRenderGraph> m_pRenderGraph{};
 			std::unique_ptr<IRenderWorld> m_pRenderWorld{};
 			std::unique_ptr<CResourceContainer> m_pResources{};
 			std::unique_ptr<IRenderContext> m_pRenderContext{};

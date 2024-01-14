@@ -22,10 +22,9 @@ std::string attr_type_to_definition(EVertexAttributeType type)
 	}
 }
 
-CGeometryRenderingStep::CGeometryRenderingStep(IRenderInterface* render_interface, IRenderContext* render_context)
+CGeometryRenderingStep::CGeometryRenderingStep(IRenderInterface* render_interface)
 {
 	m_pRenderInterface = render_interface;
-	m_pRenderContext = render_context;
 }
 
 void CGeometryRenderingStep::_create(const FRenderingStepCreateInfo& create_info)
@@ -45,11 +44,12 @@ void CGeometryRenderingStep::_execute(float dt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	m_pRenderContext->beginRendering(m_beginRenderingInfo);
+	auto& render_context = m_pRenderInterface->getRenderContext();
+	render_context->beginRendering(m_beginRenderingInfo);
 
 	auto& rect = m_beginRenderingInfo.renderArea;
-	m_pRenderContext->setViewport(static_cast<float>(rect.size.x), static_cast<float>(rect.size.y), m_beginRenderingInfo.flipViewport);
-	m_pRenderContext->setScissorRect(0, 0, rect.size.x, rect.size.y);
+	render_context->setViewport(static_cast<float>(rect.size.x), static_cast<float>(rect.size.y), m_beginRenderingInfo.flipViewport);
+	render_context->setScissorRect(0, 0, rect.size.x, rect.size.y);
 
 	auto& render_world = m_pRenderInterface->getRenderWorld();
 
@@ -95,13 +95,13 @@ void CGeometryRenderingStep::_execute(float dt)
 
 				shader->flushConstants(m_beginRenderingInfo.queue);
 
-				m_pRenderContext->draw(m_beginRenderingInfo.queue, batch.command);
+				render_context->draw(m_beginRenderingInfo.queue, batch.command);
 				drawcall_id += batch.command.count;
 			}
 		}
 	}
 
-	m_pRenderContext->endRendering(m_beginRenderingInfo);
+	render_context->endRendering(m_beginRenderingInfo);
 }
 
 const std::unique_ptr<IShaderObject>& CGeometryRenderingStep::getShaderByVBO(const IVertexHandler* vbo)
@@ -110,7 +110,7 @@ const std::unique_ptr<IShaderObject>& CGeometryRenderingStep::getShaderByVBO(con
 	auto& shader = m_shaders[vbo_hash];
 	if (!shader)
 	{
-		shader = std::make_unique<CShaderObject>(m_pRenderInterface, m_pRenderContext);
+		shader = std::make_unique<CShaderObject>(m_pRenderInterface);
 
 		// Generate shader name
 		auto shader_name = m_baseShaderName + vbo->getDefinitions();

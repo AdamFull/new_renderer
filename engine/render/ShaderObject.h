@@ -10,7 +10,7 @@ namespace engine
 		class CShaderObject : public IShaderObject
 		{
 		public:
-			CShaderObject(IRenderInterface* render_interface, IRenderContext* render_context);
+			CShaderObject(IRenderInterface* render_interface);
 			~CShaderObject() override;
 
 			void create(const std::string& name, const FGraphicsShaderCreateInfo& create_info) override;
@@ -44,7 +44,6 @@ namespace engine
 			FShaderReflectionData m_reflection{};
 
 			IRenderInterface* m_pRenderInterface{ nullptr };
-			IRenderContext* m_pRenderContext{ nullptr };
 		};
 	}
 }

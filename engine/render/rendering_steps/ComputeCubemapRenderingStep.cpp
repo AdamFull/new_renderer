@@ -9,10 +9,9 @@
 
 using namespace engine::render;
 
-CComputeCubemapRenderingStep::CComputeCubemapRenderingStep(IRenderInterface* render_interface, IRenderContext* render_context)
+CComputeCubemapRenderingStep::CComputeCubemapRenderingStep(IRenderInterface* render_interface)
 {
 	m_pRenderInterface = render_interface;
-	m_pRenderContext = render_context;
 }
 
 void CComputeCubemapRenderingStep::_create(const FRenderingStepCreateInfo& create_info)
@@ -20,12 +19,13 @@ void CComputeCubemapRenderingStep::_create(const FRenderingStepCreateInfo& creat
 	TRACY_PROFILE_FUNCTION();
 
 	auto& rendering_ci = create_info.compute;
+	auto& render_context = m_pRenderInterface->getRenderContext();
 
 	uint32_t calculated_usage{};
 
 	for (const auto& [name, target] : rendering_ci.writeTargets)
 	{
-		auto& info = m_pRenderContext->getTextureInfo(target);
+		auto& info = render_context->getTextureInfo(target);
 		calculated_usage += info.mipLevels;
 	}
 
@@ -33,7 +33,7 @@ void CComputeCubemapRenderingStep::_create(const FRenderingStepCreateInfo& creat
 	shader_ci.usageCount = (std::max)(calculated_usage, 1u);
 
 	// Make RHI shader object
-	m_pShader = std::make_unique<CShaderObject>(m_pRenderInterface, m_pRenderContext);
+	m_pShader = std::make_unique<CShaderObject>(m_pRenderInterface);
 	m_pShader->create(rendering_ci.shaderName, shader_ci);
 
 	m_shaderInputs.insert(rendering_ci.shaderInputs.begin(), rendering_ci.shaderInputs.end());
@@ -52,13 +52,14 @@ void CComputeCubemapRenderingStep::_execute(float dt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	m_pRenderContext->beginCompute(m_beginComputeInfo);
+	auto& render_context = m_pRenderInterface->getRenderContext();
+	render_context->beginCompute(m_beginComputeInfo);
 
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
 
 	for (const auto& target : m_beginComputeInfo.writeAttachments)
 	{
-		auto& info = m_pRenderContext->getTextureInfo(target);
+		auto& info = render_context->getTextureInfo(target);
 		for (uint32_t mip = 0u; mip < info.mipLevels; ++mip)
 		{
 			// Bind textures
@@ -92,9 +93,9 @@ void CComputeCubemapRenderingStep::_execute(float dt)
 			group.y = glm::max(static_cast<uint32_t>(std::ceil(static_cast<float>(info.height) / static_cast<float>(reflection.localSizes[1]))), 1u);
 			group.z = glm::max(0u, 1u);
 
-			m_pRenderContext->dispatch(m_beginComputeInfo.queue, dispatch_info);
+			render_context->dispatch(m_beginComputeInfo.queue, dispatch_info);
 		}
 	}
 
-	m_pRenderContext->endCompute(m_beginComputeInfo);
+	render_context->endCompute(m_beginComputeInfo);
 }

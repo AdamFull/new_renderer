@@ -10,7 +10,7 @@ namespace engine
 		{
 		public:
 			CCascadedShadowMapsRenderingStep() = default;
-			CCascadedShadowMapsRenderingStep(IRenderInterface* render_interface, IRenderContext* render_context);
+			CCascadedShadowMapsRenderingStep(IRenderInterface* render_interface);
 
 			~CCascadedShadowMapsRenderingStep() override = default;
 

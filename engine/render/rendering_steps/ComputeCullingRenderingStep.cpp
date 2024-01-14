@@ -9,10 +9,9 @@
 
 using namespace engine::render;
 
-CComputeCullingRenderingStep::CComputeCullingRenderingStep(IRenderInterface* render_interface, IRenderContext* render_context)
+CComputeCullingRenderingStep::CComputeCullingRenderingStep(IRenderInterface* render_interface)
 {
 	m_pRenderInterface = render_interface;
-	m_pRenderContext = render_context;
 }
 
 void CComputeCullingRenderingStep::_create(const FRenderingStepCreateInfo& create_info)
@@ -37,7 +36,8 @@ void CComputeCullingRenderingStep::_execute(float dt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	m_pRenderContext->beginCompute(m_beginComputeInfo);
+	auto& render_context = m_pRenderInterface->getRenderContext();
+	render_context->beginCompute(m_beginComputeInfo);
 
 	auto& render_world = m_pRenderInterface->getRenderWorld();
 	auto& world_stats = render_world->getStats();
@@ -96,11 +96,11 @@ void CComputeCullingRenderingStep::_execute(float dt)
 			group.y = 1u;
 			group.z = 1u;
 
-			m_pRenderContext->dispatch(m_beginComputeInfo.queue, dispatch_info);
+			render_context->dispatch(m_beginComputeInfo.queue, dispatch_info);
 		}
 	}
 
-	m_pRenderContext->endCompute(m_beginComputeInfo);
+	render_context->endCompute(m_beginComputeInfo);
 }
 
 const std::unique_ptr<IShaderObject>& CComputeCullingRenderingStep::getShaderByVBO(const IVertexHandler* vbo)
@@ -108,7 +108,7 @@ const std::unique_ptr<IShaderObject>& CComputeCullingRenderingStep::getShaderByV
 	auto& shader = m_shaders[vbo->getHash()];
 	if (!shader)
 	{
-		shader = std::make_unique<CShaderObject>(m_pRenderInterface, m_pRenderContext);
+		shader = std::make_unique<CShaderObject>(m_pRenderInterface);
 
 		// Generate shader name
 		auto shader_name = m_baseShaderName + vbo->getDefinitions();

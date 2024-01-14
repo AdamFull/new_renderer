@@ -9,10 +9,9 @@
 
 using namespace engine::render;
 
-CComputeRenderingStep::CComputeRenderingStep(IRenderInterface* render_interface, IRenderContext* render_context)
+CComputeRenderingStep::CComputeRenderingStep(IRenderInterface* render_interface)
 {
 	m_pRenderInterface = render_interface;
-	m_pRenderContext = render_context;
 }
 
 void CComputeRenderingStep::_create(const FRenderingStepCreateInfo& create_info)
@@ -24,7 +23,7 @@ void CComputeRenderingStep::_create(const FRenderingStepCreateInfo& create_info)
 	FComputeShaderCreateInfo shader_ci{};
 
 	// Make RHI shader object
-	m_pShader = std::make_unique<CShaderObject>(m_pRenderInterface, m_pRenderContext);
+	m_pShader = std::make_unique<CShaderObject>(m_pRenderInterface);
 	m_pShader->create(rendering_ci.shaderName, shader_ci);
 
 	// Bind default textures to shader
@@ -44,7 +43,8 @@ void CComputeRenderingStep::_execute(float dt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	m_pRenderContext->beginCompute(m_beginComputeInfo);
+	auto& render_context = m_pRenderInterface->getRenderContext();
+	render_context->beginCompute(m_beginComputeInfo);
 
 	auto& sizes = m_beginComputeInfo.globalSizes;
 
@@ -60,7 +60,7 @@ void CComputeRenderingStep::_execute(float dt)
 	group.y = glm::max(static_cast<uint32_t>(std::ceil(static_cast<float>(sizes.y) / static_cast<float>(reflection.localSizes[1]))), 1u);
 	group.z = glm::max(static_cast<uint32_t>(std::ceil(static_cast<float>(sizes.z) / static_cast<float>(reflection.localSizes[2]))), 1u);
 
-	m_pRenderContext->dispatch(m_beginComputeInfo.queue, dispatch_info);
+	render_context->dispatch(m_beginComputeInfo.queue, dispatch_info);
 
-	m_pRenderContext->endCompute(m_beginComputeInfo);
+	render_context->endCompute(m_beginComputeInfo);
 }

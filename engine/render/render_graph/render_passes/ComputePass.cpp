@@ -6,27 +6,27 @@
 
 using namespace engine::render;
 
-CComputePass::CComputePass(IRenderInterface* render_interface, IRenderContext* render_context, IRenderGraph* render_graph)
+CComputePass::CComputePass(IRenderInterface* render_interface)
 {
 	m_pRenderInterface = render_interface;
-	m_pRenderContext = render_context;
-	m_pRenderGraph = render_graph;
 }
 
 void CComputePass::init(const FComputePassCreateInfo& pass_ci)
 {
 	IComputePass::init(pass_ci);
 
+	auto& render_graph = m_pRenderInterface->getRenderGraph();
+
 	FComputeShaderCreateInfo shader_ci{};
 
 	// Make RHI shader object
-	m_pShader = std::make_unique<CShaderObject>(m_pRenderInterface, m_pRenderContext);
+	m_pShader = std::make_unique<CShaderObject>(m_pRenderInterface);
 	m_pShader->create(pass_ci.shader, shader_ci);
 
 	// Bind default textures/buffers to shader
 	for (const auto& [bind_point, resource_id] : m_bakedBindings)
 	{
-		auto& render_resource = m_pRenderGraph->getRenderResource(resource_id);
+		auto& render_resource = render_graph->getRenderResource(resource_id);
 		if (render_resource.type == RENDER_RESOURCE_TYPE_RENDER_TARGET || render_resource.type == RENDER_RESOURCE_TYPE_STATIC_IMAGE)
 			m_pShader->bindTexture(bind_point.c_str(), render_resource.handle);
 		else if (render_resource.type == RENDER_RESOURCE_TYPE_BUFFER)
@@ -45,6 +45,8 @@ void CComputePass::bake(std::unordered_map<size_t, FRenderGraphAttachmentOperati
 
 void CComputePass::_execute(const FComputeFrameInfo& frame_info)
 {
+	auto& render_context = m_pRenderInterface->getRenderContext();
+
 	m_pShader->flushDescriptors();
 	m_pShader->flushConstants(m_queue);
 	m_pShader->bind(m_queue);
@@ -53,5 +55,5 @@ void CComputePass::_execute(const FComputeFrameInfo& frame_info)
 	dispatch_info.globalSizes = m_dispatchGroup;
 	dispatch_info.shaderHandle = m_pShader->handle();
 
-	m_pRenderContext->dispatch2(m_queue, dispatch_info);
+	render_context->dispatch2(m_queue, dispatch_info);
 }

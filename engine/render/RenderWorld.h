@@ -9,7 +9,7 @@ namespace engine
 		class CRenderWorld : public IRenderWorld
 		{
 		public:
-			CRenderWorld(IRenderInterface* render_interface, IRenderContext* render_context);
+			CRenderWorld(IRenderInterface* render_interface);
 			~CRenderWorld() = default;
 
 			void create() override;
@@ -68,7 +68,6 @@ namespace engine
 			std::vector<std::unique_ptr<IBufferObject>> m_vBuffers{};
 		private:
 			IRenderInterface* m_pRenderInterface{ nullptr };
-			IRenderContext* m_pRenderContext{ nullptr };
 		};
 	}
 }

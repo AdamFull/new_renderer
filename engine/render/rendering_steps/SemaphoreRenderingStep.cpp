@@ -4,10 +4,9 @@
 
 using namespace engine::render;
 
-CSemaphoreRenderingStep::CSemaphoreRenderingStep(IRenderInterface* render_interface, IRenderContext* render_context)
+CSemaphoreRenderingStep::CSemaphoreRenderingStep(IRenderInterface* render_interface)
 {
 	m_pRenderInterface = render_interface;
-	m_pRenderContext = render_context;
 }
 
 void CSemaphoreRenderingStep::_create(const FRenderingStepCreateInfo& create_info)

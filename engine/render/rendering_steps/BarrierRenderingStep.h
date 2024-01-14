@@ -10,7 +10,7 @@ namespace engine
 		{
 		public:
 			CBarrierRenderingStep() = default;
-			CBarrierRenderingStep(IRenderInterface* render_interface, IRenderContext* render_context);
+			CBarrierRenderingStep(IRenderInterface* render_interface);
 
 			~CBarrierRenderingStep() override = default;
 

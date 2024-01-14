@@ -9,10 +9,9 @@
 
 using namespace engine::render;
 
-CFullscreenRenderingStep::CFullscreenRenderingStep(IRenderInterface* render_interface, IRenderContext* render_context)
+CFullscreenRenderingStep::CFullscreenRenderingStep(IRenderInterface* render_interface)
 {
 	m_pRenderInterface = render_interface;
-	m_pRenderContext = render_context;
 }
 
 void CFullscreenRenderingStep::_create(const FRenderingStepCreateInfo& create_info)
@@ -34,7 +33,7 @@ void CFullscreenRenderingStep::_create(const FRenderingStepCreateInfo& create_in
 	shader_ci.stencilAttachment = rendering_ci.stencilTarget;
 
 	// Make RHI shader object
-	m_pShader = std::make_unique<CShaderObject>(m_pRenderInterface, m_pRenderContext);
+	m_pShader = std::make_unique<CShaderObject>(m_pRenderInterface);
 	m_pShader->create(rendering_ci.shaderName, shader_ci);
 
 	// Bind default textures to shader
@@ -50,11 +49,12 @@ void CFullscreenRenderingStep::_execute(float dt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	m_pRenderContext->beginRendering(m_beginRenderingInfo);
+	auto& render_context = m_pRenderInterface->getRenderContext();
+	render_context->beginRendering(m_beginRenderingInfo);
 
 	auto& rect = m_beginRenderingInfo.renderArea;
-	m_pRenderContext->setViewport(static_cast<float>(rect.size.x), static_cast<float>(rect.size.y), m_beginRenderingInfo.flipViewport);
-	m_pRenderContext->setScissorRect(0, 0, rect.size.x, rect.size.y);
+	render_context->setViewport(static_cast<float>(rect.size.x), static_cast<float>(rect.size.y), m_beginRenderingInfo.flipViewport);
+	render_context->setScissorRect(0, 0, rect.size.x, rect.size.y);
 
 	//auto& push_block = m_pShader->getUniformBlock("FUniformData");
 	//push_block->set("color", glm::vec3(2.f, 2.f, 2.f));
@@ -75,9 +75,9 @@ void CFullscreenRenderingStep::_execute(float dt)
 	range.beginVertex = 0ull;
 	range.vertexCount = 3ull;
 
-	m_pRenderContext->draw(m_beginRenderingInfo.queue, draw_info);
+	render_context->draw(m_beginRenderingInfo.queue, draw_info);
 
 	// Here i can draw
 
-	m_pRenderContext->endRendering(m_beginRenderingInfo);
+	render_context->endRendering(m_beginRenderingInfo);
 }

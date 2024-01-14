@@ -377,6 +377,7 @@ namespace engine
 			virtual void render(float dt) = 0;
 
 			virtual size_t createTexture(const std::string& path) = 0;
+			virtual size_t loadTexture(const std::string& path, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info) = 0;
 
 			virtual size_t createShader(const std::string& name_info, const FGraphicsShaderCreateInfo& create_info) = 0;
 			virtual size_t createShader(const std::string& name_info, const FComputeShaderCreateInfo& create_info) = 0;
@@ -390,9 +391,9 @@ namespace engine
 			virtual void updateSurfaceSize(int32_t width, int32_t height) = 0;
 
 			virtual const std::unique_ptr<FRenderDataPacket>& getRenderPacket() = 0;
+			virtual const std::unique_ptr<IRenderGraph>& getRenderGraph() = 0;
 			virtual const std::unique_ptr<IRenderWorld>& getRenderWorld() = 0;
-
-			virtual IRenderContext* getRenderContext() = 0;
+			virtual const std::unique_ptr<IRenderContext>& getRenderContext() = 0;
 		};
 
 
@@ -421,7 +422,6 @@ namespace engine
 			bool m_bNeedToBeDestroyed{ false };
 
 			IRenderInterface* m_pRenderInterface{ nullptr };
-			IRenderContext* m_pRenderContext{ nullptr };
 		};
 
 		class ISynchronizationStep : public IRenderGraphStep
@@ -481,7 +481,8 @@ namespace engine
 			{
 				if (m_sizePolicyType == RENDER_SIZE_TYPE_FROM_RT)
 				{
-					auto& info = m_pRenderContext->getTextureInfo(m_target);
+					auto& render_context = m_pRenderInterface->getRenderContext();
+					auto& info = render_context->getTextureInfo(m_target);
 
 					m_beginRenderingInfo.renderArea.size.x = info.width;
 					m_beginRenderingInfo.renderArea.size.y = info.height;
@@ -534,7 +535,8 @@ namespace engine
 			{
 				if (m_groupPolicyType == RENDER_SIZE_TYPE_FROM_RT)
 				{
-					auto& info = m_pRenderContext->getTextureInfo(m_target);
+					auto& render_context = m_pRenderInterface->getRenderContext();
+					auto& info = render_context->getTextureInfo(m_target);
 
 					m_beginComputeInfo.globalSizes.x = info.width;
 					m_beginComputeInfo.globalSizes.y = info.height;

@@ -43,8 +43,6 @@ namespace engine
 #endif
 
 			IRenderInterface* m_pRenderInterface{ nullptr };
-			IRenderContext* m_pRenderContext{ nullptr };
-			IRenderGraph* m_pRenderGraph{ nullptr };
 		};
 
 		class IRenderPass : public IBasePass
@@ -82,7 +80,7 @@ namespace engine
 		protected:
 			virtual void _execute(const FComputeFrameInfo& frame_info) = 0;
 		protected:
-			FDispatchGroup m_dispatchGroup{};
+			FDispatch2Group m_dispatchGroup{};
 		};
 	}
 }
