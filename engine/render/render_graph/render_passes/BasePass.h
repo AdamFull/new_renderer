@@ -23,6 +23,7 @@ namespace engine
 		class IBasePass
 		{
 		public:
+			friend class CRenderGraph;
 			virtual ~IBasePass() = default;
 
 			virtual void bake(std::unordered_map<size_t, FRenderGraphAttachmentOperationInfo>& resource_info) = 0;
@@ -35,7 +36,7 @@ namespace engine
 			uint32_t m_sizePolicy{ 0u };
 			size_t m_sizeTarget{ ~0ull };
 
-			std::unordered_map<uint32_t, std::vector<size_t>> m_renderResources{};
+			std::unordered_map<ERenderResourceGroupType, std::vector<size_t>> m_renderResources{};
 			std::unordered_map<std::string, size_t> m_bakedBindings{};
 
 #ifndef BUILD_WITHOUT_DEBUGGIND

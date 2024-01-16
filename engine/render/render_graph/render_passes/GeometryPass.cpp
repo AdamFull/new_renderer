@@ -101,9 +101,12 @@ const std::unique_ptr<IShaderObject>& CGeometryPass::getShaderByVBO(const IVerte
 		shader_ci.frontFace = m_bFlipViewport ? SHADER_FRONT_FACE_CW : SHADER_FRONT_FACE_CCW;
 		shader_ci.primitiveTopology = SHADER_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 		
-		auto& output_targets = m_renderResources[RENDER_RESOURCE_GROUP_COLOR_WRITE];
+		auto& output_targets = m_renderResources[ERenderResourceGroupType::eColorWrite];
 		for (size_t resource_id : output_targets)
 		{
+			if (resource_id == m_depthTarget || resource_id == m_stencilTarget)
+				continue;
+
 			auto& render_resource = render_graph->getRenderResource(resource_id);
 			shader_ci.colorAttachments.emplace_back(render_resource.handle);
 		}
@@ -132,9 +135,9 @@ const std::unique_ptr<IShaderObject>& CGeometryPass::getShaderByVBO(const IVerte
 		for (const auto& [bind_point, resource_id] : m_bakedBindings)
 		{
 			auto& render_resource = render_graph->getRenderResource(resource_id);
-			if (render_resource.type == RENDER_RESOURCE_TYPE_RENDER_TARGET || render_resource.type == RENDER_RESOURCE_TYPE_STATIC_IMAGE)
+			if (render_resource.type & ERenderResourceTypeFlagBits::eAllImage)
 				shader->bindTexture(bind_point.c_str(), render_resource.handle);
-			else if (render_resource.type == RENDER_RESOURCE_TYPE_BUFFER)
+			else if (render_resource.type == ERenderResourceTypeFlagBits::eBuffer)
 				shader->bindBuffer(bind_point.c_str(), render_resource.handle);
 		}
 	}

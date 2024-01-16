@@ -20,7 +20,7 @@ void CComputeCubemapPass::init(const FComputePassCreateInfo& pass_ci)
 	auto& render_context = m_pRenderInterface->getRenderContext();
 	auto& render_graph = m_pRenderInterface->getRenderGraph();
 
-	auto& out_targets = m_renderResources[RENDER_RESOURCE_GROUP_STORAGE_TEXTURE_WRITE];
+	auto& out_targets = m_renderResources[ERenderResourceGroupType::eStorageWrite];
 	for (size_t resource_id : out_targets)
 	{
 		auto& render_resource = render_graph->getRenderResource(resource_id);
@@ -39,9 +39,9 @@ void CComputeCubemapPass::init(const FComputePassCreateInfo& pass_ci)
 	for (const auto& [bind_point, resource_id] : m_bakedBindings)
 	{
 		auto& render_resource = render_graph->getRenderResource(resource_id);
-		if (render_resource.type == RENDER_RESOURCE_TYPE_RENDER_TARGET || render_resource.type == RENDER_RESOURCE_TYPE_STATIC_IMAGE)
+		if (render_resource.type & ERenderResourceTypeFlagBits::eAllImage)
 			m_pShader->bindTexture(bind_point.c_str(), render_resource.handle);
-		else if (render_resource.type == RENDER_RESOURCE_TYPE_BUFFER)
+		else if (render_resource.type & ERenderResourceTypeFlagBits::eBuffer)
 			m_pShader->bindBuffer(bind_point.c_str(), render_resource.handle);
 	}
 
@@ -61,7 +61,7 @@ void CComputeCubemapPass::_execute(const FComputeFrameInfo& frame_info)
 	auto& render_graph = m_pRenderInterface->getRenderGraph();
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
 
-	auto& write_resources = m_renderResources[RENDER_RESOURCE_GROUP_STORAGE_TEXTURE_WRITE];
+	auto& write_resources = m_renderResources[ERenderResourceGroupType::eStorageWrite];
 	for (const auto& resource_id : write_resources)
 	{
 		auto& render_resource = render_graph->getRenderResource(resource_id);

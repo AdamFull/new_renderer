@@ -3,7 +3,7 @@
 #include <sstream>
 #include <set>
 
-#include <udetail.hpp>
+#include <utility.hpp>
 #include "VkCommon.h"
 
 #include <vulkan/vulkan.hpp>

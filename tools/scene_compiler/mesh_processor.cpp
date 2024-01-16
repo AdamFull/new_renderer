@@ -5,7 +5,7 @@
 
 #include <meshoptimizer.h>
 
-#include <udetail.hpp>
+#include <utility.hpp>
 
 using namespace mesh_compiler;
 

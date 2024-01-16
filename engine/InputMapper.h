@@ -1,8 +1,7 @@
 #pragma once
 
 #include <engine/interface/WindowInterface.h>
-#include <ufunction.hpp>
-#include <udetail.hpp>
+#include <utility.hpp>
 
 namespace engine
 {

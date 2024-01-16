@@ -3,7 +3,7 @@
 #include <spirv_cross.hpp>
 #include <spirv_glsl.hpp>
 
-#include <udetail.hpp>
+#include <utility.hpp>
 
 using namespace engine::render::vulkan;
 

@@ -1,7 +1,6 @@
 #pragma once
 
-#include <uparse.hpp>
-
+#include <utility.hpp>
 #include "compiler_structures.h"
 
 namespace shader_compiler

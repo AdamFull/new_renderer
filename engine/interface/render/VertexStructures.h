@@ -1,12 +1,13 @@
 #pragma once
 
 #include <vector>
+#include <utility.hpp>
 
 namespace engine
 {
 	namespace render
 	{
-		enum class EVertexAttributeType : uint32_t
+		enum class EVertexAttributeType : u32
 		{
 			ePosition,
 			eColor,
@@ -28,7 +29,7 @@ namespace engine
 
 		struct FVertexBufferBindingInfo
 		{
-			uint32_t firstBinding{ 0u };
+			u32 firstBinding{ 0u };
 			std::vector<size_t> buffers{};
 			std::vector<size_t> offsets{};
 		};
@@ -56,17 +57,17 @@ namespace engine
 
 		struct FVertexDeclarationBindingDescription
 		{
-			uint32_t binding{ 0u };
-			uint32_t stride{ 0u };
+			u32 binding{ 0u };
+			u32 stride{ 0u };
 		};
 
 		struct FVertexDeclarationAttributeDescription
 		{
 			EVertexAttributeType type{ EVertexAttributeType::eIndex };
-			uint32_t location{ 0u };
-			uint32_t binding{ 0u };;
-			uint32_t format{ 0u };
-			uint32_t offset{ 0u };
+			u32 location{ 0u };
+			u32 binding{ 0u };;
+			u32 format{ 0u };
+			u32 offset{ 0u };
 		};
 
 		struct FVertexDeclarationInfo
@@ -83,7 +84,7 @@ namespace engine
 			virtual void create(const FVertexHandlerCreateInfo& create_info) = 0;
 			virtual void allocate() = 0;
 
-			virtual void bind(uint32_t queue) = 0;
+			virtual void bind(u32 queue) = 0;
 
 			virtual size_t addVertices(const std::vector<FVertexAttributePointer>& attributes_data) = 0;
 			virtual size_t addIndices(const FVertexAttributePointer& indices) = 0;
@@ -109,7 +110,7 @@ namespace std
 	{
 		size_t operator()(const engine::render::FVertexDeclarationBindingDescription& desc) const
 		{
-			return hash<uint32_t>()(desc.binding) ^ (hash<uint32_t>()(desc.stride) << 1);
+			return hash<u32>()(desc.binding) ^ (hash<u32>()(desc.stride) << 1);
 		}
 	};
 
@@ -117,10 +118,10 @@ namespace std
 	struct hash<engine::render::FVertexDeclarationAttributeDescription> {
 		size_t operator()(const engine::render::FVertexDeclarationAttributeDescription& attr) const
 		{
-			return hash<uint32_t>()(attr.location) ^
-				(hash<uint32_t>()(attr.binding) << 1) ^
-				(hash<uint32_t>()(attr.format) << 2) ^
-				(hash<uint32_t>()(attr.offset) << 3);
+			return hash<u32>()(attr.location) ^
+				(hash<u32>()(attr.binding) << 1) ^
+				(hash<u32>()(attr.format) << 2) ^
+				(hash<u32>()(attr.offset) << 3);
 		}
 	};
 
@@ -129,7 +130,7 @@ namespace std
 	{
 		size_t operator()(const engine::render::FVertexDeclarationInfo& info) const
 		{
-			size_t h = 0;
+			size_t h = 0ull;
 			for (const auto& desc : info.bindingDescriptions)
 				h ^= hash<engine::render::FVertexDeclarationBindingDescription>()(desc) + 0x9e3779b9 + (h << 6) + (h >> 2);
 			for (const auto& attr : info.attributeDescriptions)

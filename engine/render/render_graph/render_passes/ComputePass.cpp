@@ -27,9 +27,9 @@ void CComputePass::init(const FComputePassCreateInfo& pass_ci)
 	for (const auto& [bind_point, resource_id] : m_bakedBindings)
 	{
 		auto& render_resource = render_graph->getRenderResource(resource_id);
-		if (render_resource.type == RENDER_RESOURCE_TYPE_RENDER_TARGET || render_resource.type == RENDER_RESOURCE_TYPE_STATIC_IMAGE)
+		if (render_resource.type & ERenderResourceTypeFlagBits::eAllImage)
 			m_pShader->bindTexture(bind_point.c_str(), render_resource.handle);
-		else if (render_resource.type == RENDER_RESOURCE_TYPE_BUFFER)
+		else if (render_resource.type == ERenderResourceTypeFlagBits::eBuffer)
 			m_pShader->bindBuffer(bind_point.c_str(), render_resource.handle);
 	}
 

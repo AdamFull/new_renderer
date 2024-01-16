@@ -149,15 +149,16 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 
 	m_pRenderContext = make_render_context(rhi_ci);
 
-	m_pRenderWorld->create();
-	m_pRenderGraph->create();
-
-	m_pRenderScriptCore->create(this);
-
 	FGlobalUniformCreateInfo global_buffer_ci{};
 	global_buffer_ci.uniforms[utl::fnv1a_64_hash("GlobalUniformFrameData")] = sizeof(FGlobalUniformData);
 	global_buffer_ci.uniforms[utl::fnv1a_64_hash("GlobalBufferReferences")] = sizeof(FGlobalBufferReference);
 	m_pRenderContext->createGlobalDescriptor(global_buffer_ci);
+
+	m_pRenderWorld->create();
+	m_pRenderGraph->create();
+	m_pRenderGraph->bake();
+
+	m_pRenderScriptCore->create(this);
 
 	//std::vector<uint8_t> render_config{};
 	//m_pVFS->readFile("/root/embed/rendering/test_render_config.lua", render_config);

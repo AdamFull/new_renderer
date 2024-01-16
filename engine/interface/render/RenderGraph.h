@@ -10,54 +10,75 @@ namespace engine
 {
 	namespace render
 	{
-		constexpr const uint32_t make_render_group_flag(uint16_t access_type, uint16_t group_type)
+		enum class ERenderResourceTypeFlagBits : uint32_t
 		{
-			return (access_type << 16) | (group_type & 0xFFFF);
-		}
-
-		enum ERenderResourceType : uint32_t
-		{
-			RENDER_RESOURCE_TYPE_RENDER_TARGET = 1 << 0,
-			RENDER_RESOURCE_TYPE_STORAGE_TARGET = 1 << 1,
-			RENDER_RESOURCE_TYPE_STATIC_IMAGE = 1 << 2,
-			RENDER_RESOURCE_TYPE_ALL_IMAGE = RENDER_RESOURCE_TYPE_RENDER_TARGET | RENDER_RESOURCE_TYPE_STORAGE_TARGET | RENDER_RESOURCE_TYPE_STATIC_IMAGE,
-			RENDER_RESOURCE_TYPE_BUFFER = 1 << 3
+			eRenderTarget = 1 << 0,
+			eStorageTarget = 1 << 1,
+			eStaticImage = 1 << 2,
+			eAllImage = eRenderTarget | eStorageTarget | eStaticImage,
+			eBuffer = 1 << 3
 		};
+		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ERenderResourceTypeFlags, ERenderResourceTypeFlagBits)
 
-		enum ERenderResourceAccessTypeBits : uint16_t
+		enum class ERenderResourceAccessFlagBits : uint16_t
 		{
-			RENDER_RESOURCE_ACCESS_READ_BIT = 1 << 0,
-			RENDER_RESOURCE_ACCESS_WRITE_BIT = 1 << 1
+			eRead = 1 << 0,
+			eWrite = 1 << 1
 		};
+		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ERenderResourceAccessFlags, ERenderResourceAccessFlagBits)
 
-		enum ERenderResourceGroupTypeBits : uint16_t
+		enum class ERenderResourceGroupFlagBits : uint16_t
 		{
-			RENDER_RESOURCE_GROUP_COLOR_BIT = 1 << 0,
-			RENDER_RESOURCE_GROUP_RESOLVE_BIT = 1 << 1,
-			RENDER_RESOURCE_GROUP_STORAGE_TEXTURE_BIT = 1 << 2,
-			RENDER_RESOURCE_GROUP_BLIT_TEXTURE_BIT = 1 << 3,
-			RENDER_RESOURCE_GROUP_STORAGE_BIT = 1 << 4,
+			eColor = 1 << 0,
+			eResolve = 1 << 1,
+			eStorageTexture = 1 << 2,
+			eBlitTexture = 1 << 3,
+			eStorage = 1 << 4
 		};
+		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ERenderResourceGroupFlags, ERenderResourceGroupFlagBits)
 
-		enum ERenderResourceGroupType : uint32_t
+		enum class ERenderResourceGroupType : uint32_t
 		{
-			RENDER_RESOURCE_GROUP_COLOR_READ					= make_render_group_flag(RENDER_RESOURCE_ACCESS_READ_BIT, RENDER_RESOURCE_GROUP_COLOR_BIT),
-			RENDER_RESOURCE_GROUP_COLOR_WRITE					= make_render_group_flag(RENDER_RESOURCE_ACCESS_WRITE_BIT, RENDER_RESOURCE_GROUP_COLOR_BIT),
-			RENDER_RESOURCE_GROUP_RESOLVE_WRITE					= make_render_group_flag(RENDER_RESOURCE_ACCESS_WRITE_BIT, RENDER_RESOURCE_GROUP_RESOLVE_BIT),
-			RENDER_RESOURCE_GROUP_STORAGE_TEXTURE_READ			= make_render_group_flag(RENDER_RESOURCE_ACCESS_READ_BIT, RENDER_RESOURCE_GROUP_STORAGE_TEXTURE_BIT),
-			RENDER_RESOURCE_GROUP_STORAGE_TEXTURE_WRITE			= make_render_group_flag(RENDER_RESOURCE_ACCESS_WRITE_BIT, RENDER_RESOURCE_GROUP_STORAGE_TEXTURE_BIT),
-			RENDER_RESOURCE_GROUP_BLIT_TEXTURE_READ				= make_render_group_flag(RENDER_RESOURCE_ACCESS_READ_BIT, RENDER_RESOURCE_GROUP_BLIT_TEXTURE_BIT),
-			RENDER_RESOURCE_GROUP_BLIT_TEXTURE_WRITE			= make_render_group_flag(RENDER_RESOURCE_ACCESS_WRITE_BIT, RENDER_RESOURCE_GROUP_BLIT_TEXTURE_BIT),
-			RENDER_RESOURCE_GROUP_STORAGE_READ					= make_render_group_flag(RENDER_RESOURCE_ACCESS_READ_BIT, RENDER_RESOURCE_GROUP_STORAGE_BIT),
-			RENDER_RESOURCE_GROUP_STORAGE_WRITE					= make_render_group_flag(RENDER_RESOURCE_ACCESS_WRITE_BIT, RENDER_RESOURCE_GROUP_STORAGE_BIT),
+			eColorRead					= packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eRead),  utl::cast<u16>(ERenderResourceGroupFlagBits::eColor)),
+			eColorWrite					= packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceGroupFlagBits::eColor)),
+			eResolveWrite				= packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceGroupFlagBits::eResolve)),
+			eStorageTextureRead			= packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eRead),  utl::cast<u16>(ERenderResourceGroupFlagBits::eStorageTexture)),
+			eStorageTextureWrite		= packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceGroupFlagBits::eStorageTexture)),
+			eBlitTextureRead			= packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eRead),  utl::cast<u16>(ERenderResourceGroupFlagBits::eBlitTexture)),
+			eBlitTextureWrite			= packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceGroupFlagBits::eBlitTexture)),
+			eStorageRead				= packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eRead),  utl::cast<u16>(ERenderResourceGroupFlagBits::eStorage)),
+			eStorageWrite				= packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceGroupFlagBits::eStorage)),
 		};
 
 		enum ERenderGraphSizePolicy
 		{
 			RENDER_GRAPH_SIZE_POLICY_MANUAL,
 			RENDER_GRAPH_SIZE_POLICY_FROM_TARGET,
-			RENDER_GRAPH_SIZE_POLICY_FROM_BUFFER_SIZE,
+			RENDER_GRAPH_SIZE_POLICY_FROM_BUFFER_SIZE
 		};
+
+		enum ERenderResourceDependencyBarrierType : uint32_t
+		{
+			eReadAfterWrite				= packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceAccessFlagBits::eRead)),
+			eWriteAfterNothing			= packUint16x2(utl::cast<u16>(0u), utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite)),
+			eWriteAfterRead				= packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eRead), utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite)),
+			eWriteAfterWrite			= packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite))
+		};
+		using ERenderResourceDependencyBarrierTypeMask = uint32_t;
+
+		inline constexpr ERenderResourceGroupType packResourceGroup(ERenderResourceAccessFlagBits access_flag, ERenderResourceGroupFlagBits group_flag)
+		{
+			return utl::cast<ERenderResourceGroupType>(packUint16x2(utl::enum_cast(access_flag), utl::enum_cast(group_flag)));
+		}
+
+		inline void unpackResourceGroup(ERenderResourceGroupType resource_group, ERenderResourceAccessFlagBits& access_flag, ERenderResourceGroupFlagBits& group_flag)
+		{
+			u16 access_mask{}, group_mask{};
+			unpackUint16x2(utl::enum_cast(resource_group), access_mask, group_mask);
+
+			access_flag = utl::cast<ERenderResourceAccessFlagBits>(access_mask);
+			group_flag = utl::cast<ERenderResourceGroupFlagBits>(group_mask);
+		}
 
 		struct FRenderGraphAttachmentInfo
 		{
@@ -116,12 +137,12 @@ namespace engine
 		*/
 		struct FRenderResource
 		{
-			uint32_t type{ 0u }; ///< Type of the render resource, defined by specific constants.
+			ERenderResourceTypeFlags type{ 0u }; ///< Type of the render resource, defined by specific constants.
 			uint32_t queuesUsed{ 0u }; ///< Bitfield representing the queues where this resource is used.
 			size_t handle{ ~0ull }; ///< Handle to the actual resource, typically a GPU resource handle.
 
 			/// Maps each resources group type to a set of resources.
-			std::unordered_map<uint16_t, std::unordered_set<size_t>> usages{};
+			std::unordered_map<ERenderResourceAccessFlagBits, std::unordered_set<size_t>> usages{};
 		};
 
 		struct FRenderConfigPassCreateInfo
@@ -134,12 +155,13 @@ namespace engine
 
 			std::string sizeTarget{};
 
-			std::unordered_map<uint16_t, std::unordered_map<std::string, std::string>> resourceBindings{};
-			std::vector<std::string> renderTargets{};
+			std::unordered_map<ERenderResourceAccessFlagBits, std::unordered_map<std::string, std::string>> resourceBindings{};
+			std::unordered_map<ERenderResourceAccessFlagBits, std::vector<std::string>> otherResources{};
 
-			void bindWriteResource(const std::string& binding_point, const std::string& resource_name) { resourceBindings[RENDER_RESOURCE_ACCESS_WRITE_BIT].emplace(binding_point, resource_name); }
-			void bindReadResource(const std::string& binding_point, const std::string& resource_name) { resourceBindings[RENDER_RESOURCE_ACCESS_READ_BIT].emplace(binding_point, resource_name); }
-			void addRenderTarget(const std::string& resource_name) { renderTargets.emplace_back(resource_name); }
+			void bindWriteResource(const std::string& binding_point, const std::string& resource_name) { resourceBindings[ERenderResourceAccessFlagBits::eWrite].emplace(binding_point, resource_name); }
+			void bindReadResource(const std::string& binding_point, const std::string& resource_name) { resourceBindings[ERenderResourceAccessFlagBits::eRead].emplace(binding_point, resource_name); }
+			void addWriteResource(const std::string& resource_name) { otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(resource_name); }
+			void addReadResource(const std::string& resource_name) { otherResources[ERenderResourceAccessFlagBits::eRead].emplace_back(resource_name); }
 		};
 
 		struct FRenderConfigRenderCreateInfo : public FRenderConfigPassCreateInfo
@@ -147,6 +169,9 @@ namespace engine
 			bool flipViewport{ false };
 			std::string depthResource{};
 			std::string stencilResource{};
+
+			void setDepthTarget(const std::string& resource_name) { depthResource = otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(resource_name); }
+			void setStencilTarget(const std::string& resource_name) { stencilResource = otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(resource_name); }
 		};
 
 		struct FRenderConfigComputeCreateInfo : public FRenderConfigPassCreateInfo
@@ -170,14 +195,8 @@ namespace engine
 			size_t sizeTarget{ ~0ull };
 
 			/// Maps resource types to a vector of resource handles used in this pass.
-			std::unordered_map<uint32_t, std::vector<size_t>> resources{};
+			std::unordered_map<ERenderResourceGroupType, std::vector<size_t>> resources{};
 			std::unordered_map<std::string, size_t> bindings{};
-
-			void bindResource(const std::string& bind_point, uint32_t type, size_t resource_id)
-			{
-				resources[type].emplace_back(resource_id);
-				bindings.emplace(bind_point, resource_id);
-			}
 		};
 
 		/**

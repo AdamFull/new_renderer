@@ -21,9 +21,12 @@ void IRenderPass::bake(std::unordered_map<size_t, FRenderGraphAttachmentOperatio
 {
 	auto& render_graph = m_pRenderInterface->getRenderGraph();
 
-	auto& output_targets = m_renderResources[RENDER_RESOURCE_GROUP_COLOR_WRITE];
+	auto& output_targets = m_renderResources[ERenderResourceGroupType::eColorWrite];
 	for (size_t resource_id : output_targets)
 	{
+		if (resource_id == m_depthTarget || resource_id == m_stencilTarget)
+			continue;
+
 		auto& render_resource = render_graph->getRenderResource(resource_id);
 
 		auto& color_attachment = m_vColorAttachments.emplace_back();
@@ -65,7 +68,7 @@ void IRenderPass::execute(float dt)
 	if (m_sizePolicy == RENDER_GRAPH_SIZE_POLICY_FROM_TARGET && m_sizeTarget != ~0ull)
 	{
 		auto& render_resource = render_graph->getRenderResource(m_sizeTarget);
-		if (render_resource.type != RENDER_RESOURCE_TYPE_RENDER_TARGET)
+		if (render_resource.type != ERenderResourceTypeFlagBits::eRenderTarget)
 		{
 			throw std::runtime_error("Incorrect render resource type.");
 		}
