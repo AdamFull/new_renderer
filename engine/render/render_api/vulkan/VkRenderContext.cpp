@@ -90,7 +90,7 @@ void CVkRenderContext::create(const FRenderContextCreateInfo& context_ci)
 
 	FVkCommandBufferCreateInfo command_buffer_ci{};
 	command_buffer_ci.count = m_pDevice->m_swapchain.framesInFlight;
-	command_buffer_ci.mask = QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT;
+	command_buffer_ci.mask = EQueueTypeFlagBits::eGraphics;
 	command_buffer_ci.level = vk::CommandBufferLevel::ePrimary;
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	command_buffer_ci.name = "Graphics";
@@ -99,7 +99,7 @@ void CVkRenderContext::create(const FRenderContextCreateInfo& context_ci)
 	createCommandBuffer(command_buffer_ci);
 
 	auto& per_thread = m_perThreadContext[std::this_thread::get_id()];
-	auto& per_queue = per_thread.perQueue[QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT];
+	auto& per_queue = per_thread.perQueue[EQueueTypeFlagBits::eGraphics];
 	m_pDevice->initProfiler(per_queue.commandPool);
 }
 
@@ -367,7 +367,7 @@ const FTextureCreateInfo& CVkRenderContext::getTextureInfo(size_t texture_id)
 
 void CVkRenderContext::destroyTexture(size_t resource_id)
 {
-	m_destroyResource.push(FAPIObjectDestroyInfo{ resource_id, RESOURCE_TYPE_TEXTURE_BIT });
+	m_destroyResource.push(FAPIObjectDestroyInfo{ resource_id, EResourceFlagBits::eTexture });
 }
 
 
@@ -618,7 +618,7 @@ FShaderReflectionData CVkRenderContext::getShaderReflection(const size_t& shader
 // TODO: I only need to write data to descriptors if I have not written anything yet for the current 
 // swapchain frame and if the previous hash sum of data does not match the current one. Otherwise, 
 // I'll just be doing unnecessary work both copying data and loading it, including loading descriptors.
-void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader_resources, uint32_t flags)
+void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader_resources, EShaderResourcesUpdateFlags flags)
 {
 	auto& thread_context = m_perThreadContext[std::this_thread::get_id()];
 
@@ -638,7 +638,7 @@ void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader
 	size_t writes_count{ 0ull };
 
 	// TODO: add something like check sum to check changed data in buffers or not
-	if (flags & SHADER_RESOURCES_UPDATE_UNIFORM_BLOCKS_FLAG_BIT)
+	if (flags & EShaderResourcesUpdateFlagBits::eUniformBlocks)
 	{
 		for (const auto& [uniform_name, uniform_data] : shader_resources.uniforms)
 		{
@@ -681,7 +681,7 @@ void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader
 	}
 
 	// Bind storage buffers
-	if (flags & SHADER_RESOURCES_UPDATE_STORAGE_BLOCKS_FLAG_BIT)
+	if (flags & EShaderResourcesUpdateFlagBits::eStorageBlocks)
 	{
 		for (const auto& [uniform_name, buffer_id] : shader_resources.buffers)
 		{
@@ -716,7 +716,7 @@ void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader
 	}
 
 	// Updating textures in shader
-	if (flags & SHADER_RESOURCES_UPDATE_TEXTURES_FLAG_BIT)
+	if (flags & EShaderResourcesUpdateFlagBits::eTextures)
 	{
 		for (const auto& [texture_name, bind_info] : shader_resources.textures)
 		{
@@ -768,7 +768,7 @@ void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader
 	}
 }
 
-void CVkRenderContext::flushConstantRanges(size_t shader_id, const std::unordered_map<size_t, FUniformDataView>& constants, uint32_t queue_type)
+void CVkRenderContext::flushConstantRanges(size_t shader_id, const std::unordered_map<size_t, FUniformDataView>& constants, EQueueTypeFlagBits queue_type)
 {
 	auto& shader = m_pResources->get<FVkShader>(shader_id);
 	auto& shader_reflection = m_pResources->get<FVkShaderReflectionData>(shader->reflection);
@@ -791,7 +791,7 @@ void CVkRenderContext::flushConstantRanges(size_t shader_id, const std::unordere
 	}
 }
 
-void CVkRenderContext::bindShader(size_t shader_id, uint32_t queue_type)
+void CVkRenderContext::bindShader(size_t shader_id, EQueueTypeFlagBits queue_type)
 {
 	auto& command_buffer = getLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
@@ -806,7 +806,7 @@ void CVkRenderContext::bindShader(size_t shader_id, uint32_t queue_type)
 
 void CVkRenderContext::destroyShader(size_t resource_id)
 {
-	m_destroyResource.push(FAPIObjectDestroyInfo{ resource_id, RESOURCE_TYPE_SHADER_BIT });
+	m_destroyResource.push(FAPIObjectDestroyInfo{ resource_id, EResourceFlagBits::eShader });
 }
 
 size_t CVkRenderContext::createBuffer(const std::string& name, const FBufferCreateInfo& buffer_ci)
@@ -823,28 +823,28 @@ size_t CVkRenderContext::createBuffer(const std::string& name, const FBufferCrea
 
 	switch (buffer_ci.flags)
 	{
-	case BUFFER_TYPE_STAGING_FLAG_BIT: {
+	case EBufferTypeFlagBits::eStaging: {
 		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuOnly;
 		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
 	} break;
-	case BUFFER_TYPE_VERTEX_FLAG_BIT: {
+	case EBufferTypeFlagBits::eVertex: {
 		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eUnknown;
 		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eShaderDeviceAddressKHR | vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eVertexBuffer;
 	} break;
-	case BUFFER_TYPE_INDEX_FLAG_BIT: {
+	case EBufferTypeFlagBits::eIndex: {
 		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eUnknown;
 		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eShaderDeviceAddressKHR | vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndexBuffer;
 	} break;
-	case BUFFER_TYPE_STORAGE_FLAG_BIT: {
+	case EBufferTypeFlagBits::eStorage: {
 		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
 		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eShaderDeviceAddressKHR | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer;
 	} break;
-	case BUFFER_TYPE_UNIFORM_FLAG_BIT: {
+	case EBufferTypeFlagBits::eUniform: {
 		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
 		vk_buffer_ci.usageFlags |= vk::BufferUsageFlagBits::eUniformBuffer;
 		vk_buffer_ci.minOffsetAlignment = std::lcm(physical.properties.limits.minUniformBufferOffsetAlignment, physical.properties.limits.nonCoherentAtomSize);
 	} break;
-	case BUFFER_TYPE_INDIRECT_FLAG_BIT: {
+	case EBufferTypeFlagBits::eIndirect: {
 		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
 		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eShaderDeviceAddressKHR | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndirectBuffer | vk::BufferUsageFlagBits::eStorageBuffer;
 	} break;
@@ -882,7 +882,7 @@ FBufferView CVkRenderContext::getBufferView(size_t buffer_id)
 	return { buffer->size, buffer->instanceCount, buffer->address };
 }
 
-void CVkRenderContext::bindVertexBuffers(const FVertexBufferBindingInfo& binding_info, uint32_t queue_type)
+void CVkRenderContext::bindVertexBuffers(const FVertexBufferBindingInfo& binding_info, EQueueTypeFlagBits queue_type)
 {
 	auto& command_buffer = getLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
@@ -894,7 +894,7 @@ void CVkRenderContext::bindVertexBuffers(const FVertexBufferBindingInfo& binding
 	current.bindVertexBuffers(binding_info.firstBinding, buffers, binding_info.offsets);
 }
 
-void CVkRenderContext::bindIndexBuffer(const FIndexBufferBindingInfo& binding_info, uint32_t queue_type)
+void CVkRenderContext::bindIndexBuffer(const FIndexBufferBindingInfo& binding_info, EQueueTypeFlagBits queue_type)
 {
 	auto& command_buffer = getLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
@@ -931,10 +931,10 @@ void CVkRenderContext::flushBuffer(size_t buffer_id, size_t size, size_t offset)
 
 void CVkRenderContext::destroyBuffer(size_t resource_id)
 {
-	m_destroyResource.push(FAPIObjectDestroyInfo{ resource_id, RESOURCE_TYPE_BUFFER_BIT });
+	m_destroyResource.push(FAPIObjectDestroyInfo{ resource_id, EResourceFlagBits::eBuffer });
 }
 
-void CVkRenderContext::pushG2CBarriers(uint32_t queue_type, const std::vector<size_t>& texture_ids)
+void CVkRenderContext::pushG2CBarriers(EQueueTypeFlagBits queue_type, const std::vector<size_t>& texture_ids)
 {
 	auto& command_buffer = getLastCommandBuffer(queue_type);
 	auto& textures = m_pResources->data<FVkTexture>();
@@ -964,7 +964,7 @@ void CVkRenderContext::pushG2CBarriers(uint32_t queue_type, const std::vector<si
 	processMemoryBarriers(command_buffer, translation_info);
 }
 
-void CVkRenderContext::pushC2CBarrier(uint32_t queue_type, const std::vector<size_t>& texture_ids)
+void CVkRenderContext::pushC2CBarrier(EQueueTypeFlagBits queue_type, const std::vector<size_t>& texture_ids)
 {
 	auto& command_buffer = getLastCommandBuffer(queue_type);
 	auto& textures = m_pResources->data<FVkTexture>();
@@ -1001,7 +1001,7 @@ void CVkRenderContext::pushC2CBarrier(uint32_t queue_type, const std::vector<siz
 	processMemoryBarriers(command_buffer, translation_info);
 }
 
-void CVkRenderContext::pushC2GBarrier(uint32_t queue_type, const std::vector<size_t>& texture_ids)
+void CVkRenderContext::pushC2GBarrier(EQueueTypeFlagBits queue_type, const std::vector<size_t>& texture_ids)
 {
 	auto& command_buffer = getLastCommandBuffer(queue_type);
 	auto& textures = m_pResources->data<FVkTexture>();
@@ -1292,7 +1292,7 @@ void CVkRenderContext::beginRendering2(const FBeginRendering2Info& rendering_inf
 	current_buffer.beginRenderingKHR(begin_rendering_info);
 }
 
-void CVkRenderContext::endRendering2(uint32_t queue)
+void CVkRenderContext::endRendering2(EQueueTypeFlagBits queue)
 {
 	auto& command_buffer = getLastCommandBuffer(queue);
 
@@ -1465,7 +1465,7 @@ void CVkRenderContext::setViewport(float width, float height, bool flip_viewport
 	}
 
 	// Because i can set family only in graphics
-	auto& command_buffer = getLastCommandBuffer(QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT);
+	auto& command_buffer = getLastCommandBuffer(EQueueTypeFlagBits::eGraphics);
 	auto& current = command_buffer.get();
 
 	current.setViewport(0, 1, &viewport);
@@ -1480,14 +1480,14 @@ void CVkRenderContext::setScissorRect(int32_t offset_x, int32_t offset_y, uint32
 	scissor_rect.extent.height = height;
 
 	// Because i can set family only in graphics
-	auto& command_buffer = getLastCommandBuffer(QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT);
+	auto& command_buffer = getLastCommandBuffer(EQueueTypeFlagBits::eGraphics);
 	auto& current = command_buffer.get();
 
 	current.setScissor(0, 1, &scissor_rect);
 }
 
 // TODO: add indirect draw support
-void CVkRenderContext::draw(uint32_t queue_type, const FGeometryDrawInfo& draw_info)
+void CVkRenderContext::draw(EQueueTypeFlagBits queue_type, const FGeometryDrawInfo& draw_info)
 {
 	auto& command_buffer = getLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
@@ -1515,7 +1515,7 @@ void CVkRenderContext::draw(uint32_t queue_type, const FGeometryDrawInfo& draw_i
 	}
 }
 
-void CVkRenderContext::draw(uint32_t queue_type, const FIndirectGeometryDrawInfo& draw_info)
+void CVkRenderContext::draw(EQueueTypeFlagBits queue_type, const FIndirectGeometryDrawInfo& draw_info)
 {
 	auto& command_buffer = getLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
@@ -1524,7 +1524,7 @@ void CVkRenderContext::draw(uint32_t queue_type, const FIndirectGeometryDrawInfo
 	current.drawIndexedIndirect(indirect_command_buffer->handle, draw_info.offset, draw_info.count, draw_info.stride);
 }
 
-void CVkRenderContext::dispatch(uint32_t queue_type, const FDispatchInfo& dispatch_info)
+void CVkRenderContext::dispatch(EQueueTypeFlagBits queue_type, const FDispatchInfo& dispatch_info)
 {
 	auto& command_buffer = getLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
@@ -1557,7 +1557,7 @@ void CVkRenderContext::dispatch(uint32_t queue_type, const FDispatchInfo& dispat
 	}
 }
 
-void CVkRenderContext::dispatch2(uint32_t queue_type, const FDispatch2Info& dispatch_info)
+void CVkRenderContext::dispatch2(EQueueTypeFlagBits queue_type, const FDispatch2Info& dispatch_info)
 {
 	auto& shader = m_pResources->get<FVkShader>(dispatch_info.shaderHandle);
 	auto& reflection = m_pResources->get<FVkShaderReflectionData>(shader->reflection);
@@ -1580,7 +1580,7 @@ void CVkRenderContext::dispatch2(uint32_t queue_type, const FDispatch2Info& disp
 	current.dispatch(command.x, command.y, command.z);
 }
 
-void CVkRenderContext::dispatch2(uint32_t queue_type, const FDispatchIndirectInfo& dispatch_info)
+void CVkRenderContext::dispatch2(EQueueTypeFlagBits queue_type, const FDispatchIndirectInfo& dispatch_info)
 {
 	
 }
@@ -1640,36 +1640,36 @@ uint32_t CVkRenderContext::getDepthFormat(bool depth_only)
 	return static_cast<uint32_t>(found_format);
 }
 
-uint32_t CVkRenderContext::getApiFormat(uint32_t global_format)
+uint32_t CVkRenderContext::getApiFormat(EApiDataFormat global_format)
 {
 	switch (global_format)
 	{
-	case FORMAT_RGBA8_SRGB: return VK_FORMAT_R8G8B8A8_SRGB; break;
+	case EApiDataFormat::eRGBA8_SRGB: return VK_FORMAT_R8G8B8A8_SRGB; break;
 
-	case FORMAT_R8_UNORM: return VK_FORMAT_R8_UNORM; break;
-	case FORMAT_RG8_UNORM: return VK_FORMAT_R8G8_UNORM; break;
-	case FORMAT_RGB8_UNORM: return VK_FORMAT_R8G8B8_UNORM; break;
-	case FORMAT_RGBA8_UNORM: return VK_FORMAT_R8G8B8A8_UNORM; break;
+	case EApiDataFormat::eR8_UNORM: return VK_FORMAT_R8_UNORM; break;
+	case EApiDataFormat::eRG8_UNORM: return VK_FORMAT_R8G8_UNORM; break;
+	case EApiDataFormat::eRGB8_UNORM: return VK_FORMAT_R8G8B8_UNORM; break;
+	case EApiDataFormat::eRGBA8_UNORM: return VK_FORMAT_R8G8B8A8_UNORM; break;
 
-	case FORMAT_R16_UNORM: return VK_FORMAT_R16_UNORM; break;
-	case FORMAT_RG16_UNORM: return VK_FORMAT_R16G16_UNORM; break;
-	case FORMAT_RGB16_UNORM: return VK_FORMAT_R16G16B16_UNORM; break;
-	case FORMAT_RGBA16_UNORM: return VK_FORMAT_R16G16B16A16_UNORM; break;
+	case EApiDataFormat::eR16_UNORM: return VK_FORMAT_R16_UNORM; break;
+	case EApiDataFormat::eRG16_UNORM: return VK_FORMAT_R16G16_UNORM; break;
+	case EApiDataFormat::eRGB16_UNORM: return VK_FORMAT_R16G16B16_UNORM; break;
+	case EApiDataFormat::eRGBA16_UNORM: return VK_FORMAT_R16G16B16A16_UNORM; break;
 
-	case FORMAT_R32_UINT: return VK_FORMAT_R32_UINT; break;
-	case FORMAT_RG32_UINT: return VK_FORMAT_R32G32_UINT; break;
-	case FORMAT_RGB32_UINT: return VK_FORMAT_R32G32B32_UINT; break;
-	case FORMAT_RGBA32_UINT: return VK_FORMAT_R32G32B32A32_UINT; break;
+	case EApiDataFormat::eR32_UINT: return VK_FORMAT_R32_UINT; break;
+	case EApiDataFormat::eRG32_UINT: return VK_FORMAT_R32G32_UINT; break;
+	case EApiDataFormat::eRGB32_UINT: return VK_FORMAT_R32G32B32_UINT; break;
+	case EApiDataFormat::eRGBA32_UINT: return VK_FORMAT_R32G32B32A32_UINT; break;
 
-	case FORMAT_R16_SFLOAT: return VK_FORMAT_R16_SFLOAT; break;
-	case FORMAT_RG16_SFLOAT: return VK_FORMAT_R16G16_SFLOAT; break;
-	case FORMAT_RGB16_SFLOAT: return VK_FORMAT_R16G16B16_SFLOAT; break;
-	case FORMAT_RGBA16_SFLOAT: return VK_FORMAT_R16G16B16A16_SFLOAT; break;
+	case EApiDataFormat::eR16_SFLOAT: return VK_FORMAT_R16_SFLOAT; break;
+	case EApiDataFormat::eRG16_SFLOAT: return VK_FORMAT_R16G16_SFLOAT; break;
+	case EApiDataFormat::eRGB16_SFLOAT: return VK_FORMAT_R16G16B16_SFLOAT; break;
+	case EApiDataFormat::eRGBA16_SFLOAT: return VK_FORMAT_R16G16B16A16_SFLOAT; break;
 
-	case FORMAT_R32_SFLOAT: return VK_FORMAT_R32_SFLOAT; break;
-	case FORMAT_RG32_SFLOAT: return VK_FORMAT_R32G32_SFLOAT; break;
-	case FORMAT_RGB32_SFLOAT: return VK_FORMAT_R32G32B32_SFLOAT; break;
-	case FORMAT_RGBA32_SFLOAT: return VK_FORMAT_R32G32B32A32_SFLOAT; break;
+	case EApiDataFormat::eR32_SFLOAT: return VK_FORMAT_R32_SFLOAT; break;
+	case EApiDataFormat::eRG32_SFLOAT: return VK_FORMAT_R32G32_SFLOAT; break;
+	case EApiDataFormat::eRGB32_SFLOAT: return VK_FORMAT_R32G32B32_SFLOAT; break;
+	case EApiDataFormat::eRGBA32_SFLOAT: return VK_FORMAT_R32G32B32A32_SFLOAT; break;
 	default: return 0; break;
 	}
 }
@@ -1704,7 +1704,7 @@ void CVkRenderContext::updateSurface(int32_t surface_width, int32_t surface_heig
 			size_t swapchainFrameIndex{ 0ull };
 			for (auto& target : textures.at(texture_id))
 			{
-				if (!target->isRenderTarget || (target->initialData.base.sizePolicy == TEXTURE_SIZE_POLICY_FIXED))
+				if (!target->isRenderTarget || (target->initialData.base.sizePolicy == ERenderTargetSizePolicy::eFixed))
 					continue;
 
 				// Update sapchain target
@@ -1737,8 +1737,8 @@ void CVkRenderContext::updateSurface(int32_t surface_width, int32_t surface_heig
 				texture_ci.base.height = surface_height;
 
 				check_api_result(createTexture(texture_ci, *target));
-
-				is_storage = texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT;
+				
+				is_storage = utl::cast<bool>(texture_ci.base.typeFlags & ETextureCreateFlagBits::eStorage);
 			}
 
 			//if (is_storage)
@@ -1766,7 +1766,7 @@ FVkCommandBuffer& CVkRenderContext::createCommandBuffer(const FVkCommandBufferCr
 	return command_buffer;
 }
 
-FVkCommandBuffer& CVkRenderContext::getLastCommandBuffer(uint32_t queue_type, std::thread::id thread_id)
+FVkCommandBuffer& CVkRenderContext::getLastCommandBuffer(EQueueTypeFlagBits queue_type, std::thread::id thread_id)
 {
 	auto& thread_context = m_perThreadContext[thread_id];
 	auto& per_queue = thread_context.perQueue[queue_type];
@@ -1774,7 +1774,7 @@ FVkCommandBuffer& CVkRenderContext::getLastCommandBuffer(uint32_t queue_type, st
 	return per_queue.commandBuffers.back();
 }
 
-FVkCommandBuffer& CVkRenderContext::getCommandBuffer(uint32_t queue_type, size_t index, std::thread::id thread_id)
+FVkCommandBuffer& CVkRenderContext::getCommandBuffer(EQueueTypeFlagBits queue_type, size_t index, std::thread::id thread_id)
 {
 	auto& thread_context = m_perThreadContext[thread_id];
 	auto& per_queue = thread_context.perQueue[queue_type];
@@ -1782,7 +1782,7 @@ FVkCommandBuffer& CVkRenderContext::getCommandBuffer(uint32_t queue_type, size_t
 	return per_queue.commandBuffers.at(index);
 }
 
-std::vector<FVkCommandBuffer>& CVkRenderContext::getCommandBuffers(uint32_t queue_type, std::thread::id thread_id)
+std::vector<FVkCommandBuffer>& CVkRenderContext::getCommandBuffers(EQueueTypeFlagBits queue_type, std::thread::id thread_id)
 {
 	auto& thread_context = m_perThreadContext[thread_id];
 	auto& per_queue = thread_context.perQueue[queue_type];
@@ -1790,7 +1790,7 @@ std::vector<FVkCommandBuffer>& CVkRenderContext::getCommandBuffers(uint32_t queu
 	return per_queue.commandBuffers;
 }
 
-void CVkRenderContext::destroyCommandBuffer(uint32_t queue_type, std::thread::id thread_id)
+void CVkRenderContext::destroyCommandBuffer(EQueueTypeFlagBits queue_type, std::thread::id thread_id)
 {
 	auto& thread_context = m_perThreadContext[thread_id];
 	auto& per_queue = thread_context.perQueue[queue_type];
@@ -1824,14 +1824,14 @@ void CVkRenderContext::beginFrameCommandBuffers()
 	m_bIsFrameStarted = true;
 
 	// TODO: here i should run only main command buffer. But for now i getting the last one
-	auto& command_buffer = getLastCommandBuffer(QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT);
+	auto& command_buffer = getLastCommandBuffer(EQueueTypeFlagBits::eGraphics);
 	m_pDevice->beginCommandBuffer(command_buffer, vk::CommandBufferUsageFlagBits::eRenderPassContinue, image_index);
 }
 
 void CVkRenderContext::endFrameCommandBuffers()
 {
 	// TODO: here i should run only main command buffer. But for now i getting the last one
-	auto& command_buffer = getLastCommandBuffer(QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT);
+	auto& command_buffer = getLastCommandBuffer(EQueueTypeFlagBits::eGraphics);
 	m_pDevice->endCommandBuffer(command_buffer);
 	m_bIsFrameStarted = false;
 
@@ -1865,7 +1865,7 @@ void CVkRenderContext::endFrameCommandBuffers()
 	{
 		for (auto& texture : texture_instances)
 		{
-			if (texture->isRenderTarget && !(texture->initialData.base.typeFlags & TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT))
+			if (texture->isRenderTarget && !(texture->initialData.base.typeFlags & ETextureCreateFlagBits::eStorage))
 				texture->layout = vk::ImageLayout::eUndefined;
 		}
 	}
@@ -1878,7 +1878,7 @@ bool CVkRenderContext::isSwapChainFinished()
 	return m_utilizationCounter % m_pDevice->m_swapchain.framesInFlight == 0;
 }
 
-void CVkRenderContext::beginDebugLabel(const std::string& label, uint32_t queue_type, uint32_t color)
+void CVkRenderContext::beginDebugLabel(const std::string& label, EQueueTypeFlagBits queue_type, uint32_t color)
 {
 	auto& command_buffer = getLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
@@ -1886,7 +1886,7 @@ void CVkRenderContext::beginDebugLabel(const std::string& label, uint32_t queue_
 	m_pDevice->debugBeginLabel(current, label, color);
 }
 
-void CVkRenderContext::insertDebugLabel(const std::string& label, uint32_t queue_type, uint32_t color)
+void CVkRenderContext::insertDebugLabel(const std::string& label, EQueueTypeFlagBits queue_type, uint32_t color)
 {
 	auto& command_buffer = getLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
@@ -1894,7 +1894,7 @@ void CVkRenderContext::insertDebugLabel(const std::string& label, uint32_t queue
 	m_pDevice->debugInsertLabel(current, label, color);
 }
 
-void CVkRenderContext::endDebugLabel(uint32_t queue_type)
+void CVkRenderContext::endDebugLabel(EQueueTypeFlagBits queue_type)
 {
 	auto& command_buffer = getLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
@@ -1929,7 +1929,7 @@ void CVkRenderContext::processResourceBarriers()
 	FVkCommandBufferCreateInfo command_buffer_ci{};
 	command_buffer_ci.count = 1u;
 	command_buffer_ci.level = vk::CommandBufferLevel::ePrimary;
-	command_buffer_ci.mask = QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT;
+	command_buffer_ci.mask = EQueueTypeFlagBits::eGraphics;
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	command_buffer_ci.name = "resource_barriers";
 #endif
@@ -1946,7 +1946,7 @@ void CVkRenderContext::processResourceBarriers()
 		auto& texture = textures.at(layout_info.textureId);
 		for (auto& current : texture)
 		{
-			if (current->initialData.base.typeFlags & TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT)
+			if (current->initialData.base.typeFlags & ETextureCreateFlagBits::eStorage)
 			{
 				auto& image_translation = translation_info.imageTranslationInfos.emplace_back();
 
@@ -1964,7 +1964,7 @@ void CVkRenderContext::processResourceBarriers()
 	m_pDevice->endCommandBuffer(command_buffer);
 	m_pDevice->submitCommandBuffer(command_buffer);
 
-	destroyCommandBuffer(QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT);
+	destroyCommandBuffer(EQueueTypeFlagBits::eGraphics);
 
 	m_textureLayoutInfos.clear();
 }
@@ -1977,7 +1977,7 @@ void CVkRenderContext::processResourceUpload()
 	FVkCommandBufferCreateInfo command_buffer_ci{};
 	command_buffer_ci.count = 1u;
 	command_buffer_ci.level = vk::CommandBufferLevel::ePrimary;
-	command_buffer_ci.mask = QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT;
+	command_buffer_ci.mask = EQueueTypeFlagBits::eGraphics;
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	command_buffer_ci.name = "resource_upload";
 #endif
@@ -2220,7 +2220,7 @@ void CVkRenderContext::processResourceUpload()
 	m_pDevice->submitCommandBuffer(command_buffer);
 
 	// TODO: submit command buffer. But with pushing semaphores for synchronize with main command buffer
-	destroyCommandBuffer(QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT);
+	destroyCommandBuffer(EQueueTypeFlagBits::eGraphics);
 
 	// destroy staging buffers
 	for (auto& staging_buffer : staging_buffers)
@@ -2236,19 +2236,19 @@ void CVkRenderContext::processResourceUtilization()
 	{
 		auto destroy_resource = m_destroyResource.front();
 
-		if (destroy_resource.mask & RESOURCE_TYPE_TEXTURE_BIT)
+		if (destroy_resource.mask & EResourceFlagBits::eTexture)
 		{
 			auto& texture = m_pResources->get<FVkTexture>(destroy_resource.id);
 			destroyTexture(*texture);
 			m_pResources->remove<FVkTexture>(destroy_resource.id);
 		}
-		else if (destroy_resource.mask & RESOURCE_TYPE_SHADER_BIT)
+		else if (destroy_resource.mask & EResourceFlagBits::eShader)
 		{
 			auto& shader = m_pResources->get<FVkShader>(destroy_resource.id);
 			destroyShader(*shader);
 			m_pResources->remove<FVkShader>(destroy_resource.id);
 		}
-		else if (destroy_resource.mask & RESOURCE_TYPE_BUFFER_BIT)
+		else if (destroy_resource.mask & EResourceFlagBits::eBuffer)
 		{
 			auto& buffer = m_pResources->get<FVkBuffer>(destroy_resource.id);
 			m_pDevice->destroyBuffer(*buffer);
@@ -2269,15 +2269,15 @@ FRenderApiErrorInfo CVkRenderContext::createTexture(const FVkTextureCreateInfo& 
 	texture.name = image_ci.name = texture_ci.name;
 #endif
 
-	if (texture_ci.base.depth > 1 || (texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_3D_FLAG_BIT))
+	if (texture_ci.base.depth > 1 || (texture_ci.base.typeFlags & ETextureCreateFlagBits::e3D))
 		image_ci.ci.imageType = vk::ImageType::e3D;
 	else
 	{
-		if (texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_1D_FLAG_BIT)
+		if (texture_ci.base.typeFlags & ETextureCreateFlagBits::e1D)
 			image_ci.ci.imageType = vk::ImageType::e1D;
-		else if (texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_2D_FLAG_BIT)
+		else if (texture_ci.base.typeFlags & ETextureCreateFlagBits::e2D)
 			image_ci.ci.imageType = vk::ImageType::e2D;
-		else if (texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_3D_FLAG_BIT)
+		else if (texture_ci.base.typeFlags & ETextureCreateFlagBits::e3D)
 			image_ci.ci.imageType = vk::ImageType::e3D;
 		else
 			image_ci.ci.imageType = vk::ImageType::e2D;
@@ -2287,19 +2287,19 @@ FRenderApiErrorInfo CVkRenderContext::createTexture(const FVkTextureCreateInfo& 
 	image_ci.ci.mipLevels = texture_ci.base.mipLevels;
 
 	image_ci.ci.arrayLayers = texture_ci.base.arrayLayers;
-	if ((texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_ARRAY_FLAG_BIT) && (texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_CUBEMAP_FLAG_BIT))
+	if ((texture_ci.base.typeFlags & ETextureCreateFlagBits::eArray) && (texture_ci.base.typeFlags & ETextureCreateFlagBits::eCubemap))
 	{
 		image_ci.ci.arrayLayers *= 6u;
 		image_view_ci.ci.viewType = vk::ImageViewType::eCubeArray;
 	}
-	else if (texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_ARRAY_FLAG_BIT)
+	else if (texture_ci.base.typeFlags & ETextureCreateFlagBits::eArray)
 		image_view_ci.ci.viewType = vk::ImageViewType::e2DArray;
-	else if (texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_CUBEMAP_FLAG_BIT)
+	else if (texture_ci.base.typeFlags & ETextureCreateFlagBits::eCubemap)
 	{
 		image_ci.ci.arrayLayers = 6u;
 		image_view_ci.ci.viewType = vk::ImageViewType::eCube;
 	}
-	else if (texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_3D_FLAG_BIT)
+	else if (texture_ci.base.typeFlags & ETextureCreateFlagBits::e3D)
 		image_view_ci.ci.viewType = vk::ImageViewType::e3D;
 	else
 	{
@@ -2317,7 +2317,7 @@ FRenderApiErrorInfo CVkRenderContext::createTexture(const FVkTextureCreateInfo& 
 	image_ci.ci.usage = usageFlags;
 	texture.initialData.sampleCount = image_ci.ci.samples = texture_ci.sampleCount;
 	image_ci.ci.sharingMode = vk::SharingMode::eExclusive;
-	image_ci.ci.flags = (texture_ci.base.typeFlags & TEXTURE_IMAGE_TYPE_CUBEMAP_FLAG_BIT) ? vk::ImageCreateFlagBits::eCubeCompatible : vk::ImageCreateFlagBits::eExtendedUsage;
+	image_ci.ci.flags = (texture_ci.base.typeFlags & ETextureCreateFlagBits::eCubemap) ? vk::ImageCreateFlagBits::eCubeCompatible : vk::ImageCreateFlagBits::eExtendedUsage;
 
 	RETURN_WHEN_FAULT(m_pDevice->createImage(image_ci, texture.image));
 

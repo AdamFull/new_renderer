@@ -59,13 +59,13 @@ namespace engine
 					usageFlags |= (is_depth_format(format) ? vk::ImageUsageFlagBits::eDepthStencilAttachment : vk::ImageUsageFlagBits::eColorAttachment);
 				}
 
-				if (texture.initialData.base.typeFlags & TEXTURE_IMAGE_TYPE_TRANSFERABLE_FLAG_BIT)
+				if (texture.initialData.base.typeFlags & ETextureCreateFlagBits::eTransferable)
 					usageFlags |= vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst;
 
-				if (texture.initialData.base.typeFlags & TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT)
+				if (texture.initialData.base.typeFlags & ETextureCreateFlagBits::eSamplable)
 					usageFlags |= vk::ImageUsageFlagBits::eSampled;
 
-				if (texture.initialData.base.typeFlags & TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT)
+				if (texture.initialData.base.typeFlags & ETextureCreateFlagBits::eStorage)
 					usageFlags |= vk::ImageUsageFlagBits::eStorage;
 
 				return usageFlags;
@@ -87,16 +87,16 @@ namespace engine
 				return aspectFlags;
 			}
 
-			inline vk::PrimitiveTopology get_primitive_topology(uint32_t mask)
+			inline vk::PrimitiveTopology get_primitive_topology(EVertexPrimitiveTopology mask)
 			{
 				switch (mask)
 				{
-				case SHADER_PRIMITIVE_TOPOLOGY_POINT_LIST: return vk::PrimitiveTopology::ePointList; break;
-				case SHADER_PRIMITIVE_TOPOLOGY_LINE_LIST: return vk::PrimitiveTopology::eLineList; break;
-				case SHADER_PRIMITIVE_TOPOLOGY_LINE_STRIP: return vk::PrimitiveTopology::eLineStrip; break;
-				case SHADER_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST: return vk::PrimitiveTopology::eTriangleList; break;
-				case SHADER_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP: return vk::PrimitiveTopology::eTriangleStrip; break;
-				case SHADER_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN: return vk::PrimitiveTopology::eTriangleFan; break;
+				case EVertexPrimitiveTopology::ePointList: return vk::PrimitiveTopology::ePointList; break;
+				case EVertexPrimitiveTopology::eLineList: return vk::PrimitiveTopology::eLineList; break;
+				case EVertexPrimitiveTopology::eLineStrip: return vk::PrimitiveTopology::eLineStrip; break;
+				case EVertexPrimitiveTopology::eTriangleList: return vk::PrimitiveTopology::eTriangleList; break;
+				case EVertexPrimitiveTopology::eTriangleStrip: return vk::PrimitiveTopology::eTriangleStrip; break;
+				case EVertexPrimitiveTopology::eTriangleFan: return vk::PrimitiveTopology::eTriangleFan; break;
 				}
 			}
 
@@ -123,23 +123,23 @@ namespace engine
 				return vk::ShaderStageFlagBits::eAll;
 			}
 
-			inline vk::CullModeFlags get_cull_mode_flags(uint32_t mask)
+			inline vk::CullModeFlags get_cull_mode_flags(EShaderCullModeFlags mask)
 			{
 				vk::CullModeFlags flags{};
 
-				if (mask & SHADER_CULL_MODE_NONE)
+				if (mask & EShaderCullModeFlagBits::eNone)
 					flags |= vk::CullModeFlagBits::eNone;
-				if (mask & SHADER_CULL_MODE_FRONT_BIT)
+				if (mask & EShaderCullModeFlagBits::eFront)
 					flags |= vk::CullModeFlagBits::eFront;
-				if (mask & SHADER_CULL_MODE_BACK_BIT)
+				if (mask & EShaderCullModeFlagBits::eBack)
 					flags |= vk::CullModeFlagBits::eBack;
 
 				return flags;
 			}
 
-			inline vk::FrontFace get_front_face(uint32_t mask)
+			inline vk::FrontFace get_front_face(EShaderFrontFace mask)
 			{
-				if (mask == SHADER_FRONT_FACE_CCW)
+				if (mask == EShaderFrontFace::eCCW)
 					return vk::FrontFace::eCounterClockwise;
 
 				return vk::FrontFace::eClockwise;
@@ -239,15 +239,15 @@ namespace engine
 				return debug_label;
 			}
 
-			inline uint32_t convert_vk_queue_flags_to_impl(vk::QueueFlags flags)
+			inline EQueueTypeFlags convert_vk_queue_flags_to_impl(vk::QueueFlags flags)
 			{
-				uint32_t mask{ 0u };
+				EQueueTypeFlags mask{ 0u };
 				if (flags & vk::QueueFlagBits::eGraphics)
-					mask |= QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT;
+					mask |= EQueueTypeFlagBits::eGraphics;
 				if (flags & vk::QueueFlagBits::eCompute)
-					mask |= QUEUE_FAMILY_USAGE_COMPUTE_FLAG_BIT;
+					mask |= EQueueTypeFlagBits::eCompute;
 				if (flags & vk::QueueFlagBits::eTransfer)
-					mask |= QUEUE_FAMILY_USAGE_TRANSFER_FLAG_BIT;
+					mask |= EQueueTypeFlagBits::eTransfer;
 
 				return mask;
 			}
@@ -362,8 +362,8 @@ namespace engine
 
 			inline vk::AttachmentStoreOp get_attachment_store_op(const FVkTexture& texture)
 			{
-				bool transferable = (texture.initialData.base.typeFlags & TEXTURE_IMAGE_TYPE_TRANSFERABLE_FLAG_BIT);
-				bool samplable = (texture.initialData.base.typeFlags & TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT);
+				bool transferable = utl::cast<bool>(texture.initialData.base.typeFlags & ETextureCreateFlagBits::eTransferable);
+				bool samplable = utl::cast<bool>(texture.initialData.base.typeFlags & ETextureCreateFlagBits::eSamplable);
 
 				if (transferable || samplable || texture.initialData.base.isSwapchainTarget)
 					return vk::AttachmentStoreOp::eStore;

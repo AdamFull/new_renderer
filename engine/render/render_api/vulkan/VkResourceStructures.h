@@ -38,8 +38,8 @@ namespace engine
 			{
 				std::vector<uint32_t> uniqueFamilies{};
 				std::unordered_map<uint32_t, uint32_t> familyUsages;
-				std::unordered_map<uint32_t, uint32_t> queueToFamily;
-				uint32_t queueMask{ 0u };
+				std::unordered_map<EQueueTypeFlagBits, uint32_t> queueToFamily;
+				EQueueTypeFlags queueMask{ 0u };
 			};
 
 			enum EPhysicalDeviceCompatibilityFlagBits
@@ -69,7 +69,7 @@ namespace engine
 			struct FVkLogicalDevice
 			{
 				vk::Device handle{ nullptr };
-				std::unordered_map<uint32_t, vk::Queue> queues{};
+				std::unordered_map<EQueueTypeFlagBits, vk::Queue> queues{};
 				void* lastExtensionFeature{ nullptr };
 				std::map<vk::StructureType, std::shared_ptr<void>> extensionFeatures{};
 			};
@@ -98,7 +98,7 @@ namespace engine
 
 			struct FVkCommandPoolCreateInfo
 			{
-				uint32_t mask{ 0u };
+				EQueueTypeFlagBits mask{};
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				std::thread::id threadId{ std::this_thread::get_id() };
 #endif
@@ -110,7 +110,7 @@ namespace engine
 			struct FVkCommandBuffer
 			{
 				std::vector<vk::CommandBuffer> handles{};
-				uint32_t mask{ 0u };
+				EQueueTypeFlagBits mask{};
 				bool isRunning{ false };
 				uint32_t commandBufferIndex{ 0u };
 
@@ -120,7 +120,7 @@ namespace engine
 
 			struct FVkCommandBufferCreateInfo
 			{
-				uint32_t mask{ 0u };
+				EQueueTypeFlagBits mask{};
 				vk::CommandBufferLevel level{};
 				uint32_t count{ 1u };
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -502,7 +502,7 @@ namespace engine
 
 				int32_t use_count() { return refCounter.load(std::memory_order_relaxed); }
 
-				std::unordered_map<uint32_t, FVkPerQueueResources> perQueue{};
+				std::unordered_map<EQueueTypeFlagBits, FVkPerQueueResources> perQueue{};
 				FVkDescriptorPool descriptorPool{};
 				std::unordered_map<size_t, FVkDescriptorSet> descriptorSets{};
 			private:

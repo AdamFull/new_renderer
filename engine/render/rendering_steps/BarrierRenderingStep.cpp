@@ -18,11 +18,11 @@ void CBarrierRenderingStep::_execute(float dt)
 {
 	auto& render_context = m_pRenderInterface->getRenderContext();
 
-	if (m_barrier.type == BARRIER_FROM_GRAPHICS_TO_COMPUTE)
+	if (m_barrier.type == EBarrierType::eG2C)
 		render_context->pushG2CBarriers(m_barrier.queue, m_barrier.targets);
-	else if (m_barrier.type == BARRIER_FROM_GRAPHICS_TO_GRAPHICS) {}
-	else if (m_barrier.type == BARRIER_FROM_COMPUTE_TO_COMPUTE)
+	else if (m_barrier.type == EBarrierType::eG2G) {}
+	else if (m_barrier.type == EBarrierType::eC2C)
 		render_context->pushC2CBarrier(m_barrier.queue, m_barrier.targets);
-	else if (m_barrier.type == BARRIER_FROM_COMPUTE_TO_GRAPHICS)
+	else if (m_barrier.type == EBarrierType::eC2G)
 		render_context->pushC2GBarrier(m_barrier.queue, m_barrier.targets);
 }

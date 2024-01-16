@@ -34,7 +34,7 @@ void CGeometryPass::_render(const FRenderFrameInfo& frame_info)
 
 	auto& render_world = m_pRenderInterface->getRenderWorld();
 
-	auto& batch_ranges = render_world->getGeometryRanges(RENDER_GEOMETRY_CULLER_SCENE_TYPE);
+	auto& batch_ranges = render_world->getGeometryRanges(ERenderGeometryCullerType::eScene);
 
 	size_t drawcall_id{ 0ull };
 	IVertexHandler* last_vbo{ nullptr };
@@ -97,9 +97,9 @@ const std::unique_ptr<IShaderObject>& CGeometryPass::getShaderByVBO(const IVerte
 		auto shader_name = m_baseShaderName + vbo->getDefinitions();
 
 		FGraphicsShaderCreateInfo shader_ci{};
-		shader_ci.cullMode = m_bFlipViewport ? SHADER_CULL_MODE_BACK_BIT : SHADER_CULL_MODE_FRONT_BIT;
-		shader_ci.frontFace = m_bFlipViewport ? SHADER_FRONT_FACE_CW : SHADER_FRONT_FACE_CCW;
-		shader_ci.primitiveTopology = SHADER_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		shader_ci.cullMode = m_bFlipViewport ? EShaderCullModeFlagBits::eBack : EShaderCullModeFlagBits::eFront;
+		shader_ci.frontFace = m_bFlipViewport ? EShaderFrontFace::eCW : EShaderFrontFace::eCCW;
+		shader_ci.primitiveTopology = EVertexPrimitiveTopology::eTriangleList;
 		
 		auto& output_targets = m_renderResources[ERenderResourceGroupType::eColorWrite];
 		for (size_t resource_id : output_targets)

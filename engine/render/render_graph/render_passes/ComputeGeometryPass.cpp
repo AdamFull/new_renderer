@@ -34,7 +34,7 @@ void CComputeGeometryPass::_execute(const FComputeFrameInfo& frame_info)
 	auto& render_context = m_pRenderInterface->getRenderContext();
 	auto& render_world = m_pRenderInterface->getRenderWorld();
 
-	auto& batch_ranges = render_world->getGeometryRanges(RENDER_GEOMETRY_CULLER_SCENE_TYPE);
+	auto& batch_ranges = render_world->getGeometryRanges(ERenderGeometryCullerType::eScene);
 	for (const auto& batch_range : batch_ranges)
 	{
 		for (size_t batch_id = batch_range.offset; batch_id < batch_range.offset + batch_range.count; ++batch_id)

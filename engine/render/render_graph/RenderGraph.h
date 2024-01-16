@@ -35,8 +35,8 @@ namespace engine
 			void execute(float dt) override;
 		private:
 			void applyRenderPassResources(u64 pass_index, const FRenderConfigPassCreateInfo* raw_pass_ci, FPassCreateInfo* pass_ci);
-			void applySingleRenderResourceDependencies(u64 resource_id, ERenderResourceAccessFlagBits access_type, u64 pass_index, uint32_t queue_type);
-			void applyMultiRenderResourceDependencies(u64 pass_index, uint32_t queue_type, const std::unordered_map<ERenderResourceGroupType, std::vector<u64>>& associated_resources);
+			void applySingleRenderResourceDependencies(u64 resource_id, ERenderResourceAccessFlagBits access_type, u64 pass_index, EQueueTypeFlagBits queue_type);
+			void applyMultiRenderResourceDependencies(u64 pass_index, EQueueTypeFlagBits queue_type, const std::unordered_map<ERenderResourceGroupType, std::vector<u64>>& associated_resources);
 		protected:
 			std::vector<std::unique_ptr<IBufferObject>> m_vBufferHandlers{};
 			std::vector<FRenderResource> m_vRenderResources{};

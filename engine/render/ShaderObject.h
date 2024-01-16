@@ -23,9 +23,9 @@ namespace engine
 			void bindTexture(const char* name, size_t texture_resource, uint32_t mip = 0u) override;
 
 			void flushDescriptors() override;
-			void flushConstants(uint32_t queue) override;
+			void flushConstants(EQueueTypeFlagBits queue) override;
 
-			void bind(uint32_t queue) override;
+			void bind(EQueueTypeFlagBits queue) override;
 
 			size_t handle() const;
 

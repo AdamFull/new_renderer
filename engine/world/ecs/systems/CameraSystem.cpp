@@ -25,7 +25,7 @@ void CCameraSystem::__create()
 
 	auto view = registry->view<FTransformComponent, FBaseComponent, FCameraComponent>();
 	for (auto [entity, transform, base, camera] : view.each())
-		camera.frustumID = render_world->registerFrustum(RENDER_GEOMETRY_CULLER_SCENE_TYPE);
+		camera.frustumID = render_world->registerFrustum(ERenderGeometryCullerType::eScene);
 }
 
 void CCameraSystem::__update(float fDt)

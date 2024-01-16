@@ -50,13 +50,6 @@ namespace engine
 			eStorageWrite				= packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceGroupFlagBits::eStorage)),
 		};
 
-		enum ERenderGraphSizePolicy
-		{
-			RENDER_GRAPH_SIZE_POLICY_MANUAL,
-			RENDER_GRAPH_SIZE_POLICY_FROM_TARGET,
-			RENDER_GRAPH_SIZE_POLICY_FROM_BUFFER_SIZE
-		};
-
 		enum ERenderResourceDependencyBarrierType : uint32_t
 		{
 			eReadAfterWrite				= packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceAccessFlagBits::eRead)),
@@ -95,7 +88,7 @@ namespace engine
 
 		struct FBeginRendering2Info
 		{
-			uint32_t queue{ 0u };
+			EQueueTypeFlagBits queue{};
 			uint32_t layerCount{ 1u };
 			FRect2D<float> renderArea{};
 			bool flipViewport{ false };
@@ -129,27 +122,18 @@ namespace engine
 			std::vector<FDispatch2Group> groups{};
 		};
 
-		/**
-		* @struct FRenderResource
-		* @brief Represents a rendering resource in the graphics engine.
-		*
-		* This structure is used to manage and track the usage of various rendering resources such as textures, buffers, etc.
-		*/
 		struct FRenderResource
 		{
-			ERenderResourceTypeFlags type{ 0u }; ///< Type of the render resource, defined by specific constants.
-			uint32_t queuesUsed{ 0u }; ///< Bitfield representing the queues where this resource is used.
-			size_t handle{ ~0ull }; ///< Handle to the actual resource, typically a GPU resource handle.
+			ERenderResourceTypeFlags type{ 0u };
+			EQueueTypeFlags queuesUsed{ 0u };
+			size_t handle{ ~0ull };
 
-			/// Maps each resources group type to a set of resources.
 			std::unordered_map<ERenderResourceAccessFlagBits, std::unordered_set<size_t>> usages{};
 		};
 
 		struct FRenderConfigPassCreateInfo
 		{
-			uint32_t type{ 0u };
-
-			uint32_t queue{ 0u };
+			EQueueTypeFlagBits queue{};
 			std::string shader{};
 			bool oneTime{ false };
 
@@ -166,6 +150,7 @@ namespace engine
 
 		struct FRenderConfigRenderCreateInfo : public FRenderConfigPassCreateInfo
 		{
+			ERenderingType type{};
 			bool flipViewport{ false };
 			std::string depthResource{};
 			std::string stencilResource{};
@@ -176,65 +161,37 @@ namespace engine
 
 		struct FRenderConfigComputeCreateInfo : public FRenderConfigPassCreateInfo
 		{
-			
+			EComputeType type{};
 		};
 
-		/**
-		* @struct FPassCreateInfo
-		* @brief Contains creation information for a general pass in the rendering pipeline.
-		*
-		* This structure is used as a base for creating different types of passes in the rendering pipeline, like render passes or compute passes.
-		*/
 		struct FPassCreateInfo
 		{
-			uint32_t queue{ 0u }; ///< The queue to which this pass belongs.
-			std::string shader{}; ///< Shader used in this pass.
-			bool oneTime{ false }; ///< Flag indicating if the pass is a one-time pass.
+			EQueueTypeFlagBits queue{};
+			std::string shader{};
+			bool oneTime{ false };
 
-			uint32_t sizePolicy{ 0u };
+			ERenderingSizeType sizePolicy{};
 			size_t sizeTarget{ ~0ull };
 
-			/// Maps resource types to a vector of resource handles used in this pass.
 			std::unordered_map<ERenderResourceGroupType, std::vector<size_t>> resources{};
 			std::unordered_map<std::string, size_t> bindings{};
 		};
 
-		/**
-		* @struct FRenderPassCreateInfo
-		* @brief Contains creation information specific to render passes.
-		*
-		* This structure extends FPassCreateInfo to include additional settings and resources specifically needed for render passes.
-		*/
 		struct FRenderPassCreateInfo : public FPassCreateInfo
 		{
-			bool flipViewport{ false }; ///< Flag to indicate if the viewport should be flipped.
+			bool flipViewport{ false };
 
-			size_t depthTarget{ ~0ull }; ///< Handle to the depth target resource.
-			size_t stencilTarget{ ~0ull }; ///< Handle to the stencil target resource.
+			size_t depthTarget{ ~0ull };
+			size_t stencilTarget{ ~0ull };
 		};
 
-		/**
-		 * @struct FComputePassCreateInfo
-		 * @brief Contains creation information specific to compute passes.
-		 *
-		 * This structure extends FPassCreateInfo to include additional settings and resources specifically needed for compute passes.
-		 */
 		struct FComputePassCreateInfo : public FPassCreateInfo
 		{
 		};
 
-		/**
-		* @class IRenderGraph
-		* @brief Interface class for the render graph in the graphics engine.
-		*
-		* This class provides an interface for managing and executing rendering operations in a structured graph. It defines methods for adding resources and executing the graph.
-		*/
 		class IRenderGraph
 		{
 		public:
-			/**
-			* @brief Virtual destructor for interface class.
-			*/
 			virtual ~IRenderGraph() = default;
 
 			virtual void create() = 0;
@@ -249,18 +206,8 @@ namespace engine
 			virtual size_t addRenderPass(const std::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci) = 0;
 			virtual size_t addRenderPass(const std::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci) = 0;
 
-			/**
-			 * @brief Finalizes the graph setup.
-			 *
-			 * This method should be called after all resources are added and before executing the graph. It performs necessary preparations for rendering.
-			 */
 			virtual void bake() = 0;
 
-			/**
-			 * @brief Executes the render graph.
-			 *
-			 * @param dt Delta time indicating the time elapsed since the last execution.
-			 */
 			virtual void execute(float dt) = 0;
 		};
 	}

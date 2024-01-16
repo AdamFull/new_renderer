@@ -24,7 +24,7 @@ namespace engine
 			void create(const FVertexHandlerCreateInfo& create_info) override;
 			void allocate() override;
 
-			void bind(uint32_t queue) override;
+			void bind(EQueueTypeFlagBits queue) override;
 
 			size_t addVertices(const std::vector<FVertexAttributePointer>& attributes_data) override;
 			size_t addIndices(const FVertexAttributePointer& indices) override;

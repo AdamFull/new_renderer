@@ -9,7 +9,7 @@ constexpr const size_t MAX_PRIMITIVE_COUNT{ 512ull };
 constexpr const size_t MAX_MATERIAL_COUNT{ 512ull };
 
 template<class _Ty>
-std::unique_ptr<IBufferObject> createDrawBuffer(const std::string& name, uint32_t type, size_t count, IRenderInterface* render_interface)
+std::unique_ptr<IBufferObject> createDrawBuffer(const std::string& name, EBufferTypeFlagBits type, size_t count, IRenderInterface* render_interface)
 {
 	FBufferCreateInfo buffer_ci{};
 	buffer_ci.flags = type;
@@ -28,25 +28,25 @@ CRenderWorld::CRenderWorld(IRenderInterface* render_interface)
 
 void CRenderWorld::create()
 {
-	m_vBuffers.emplace_back(createDrawBuffer<FSceneNode>("NodeStorage", BUFFER_TYPE_STORAGE_FLAG_BIT, MAX_PRIMITIVE_COUNT, m_pRenderInterface));
-	m_vBuffers.emplace_back(createDrawBuffer<FMaterial>("MaterialStorage", BUFFER_TYPE_STORAGE_FLAG_BIT, MAX_MATERIAL_COUNT, m_pRenderInterface));
-	m_vBuffers.emplace_back(createDrawBuffer<glm::mat4>("SkinningJoints", BUFFER_TYPE_STORAGE_FLAG_BIT, MAX_PRIMITIVE_COUNT * 128ull, m_pRenderInterface));
+	m_vBuffers.emplace_back(createDrawBuffer<FSceneNode>("NodeStorage", EBufferTypeFlagBits::eStorage, MAX_PRIMITIVE_COUNT, m_pRenderInterface));
+	m_vBuffers.emplace_back(createDrawBuffer<FMaterial>("MaterialStorage", EBufferTypeFlagBits::eStorage, MAX_MATERIAL_COUNT, m_pRenderInterface));
+	m_vBuffers.emplace_back(createDrawBuffer<glm::mat4>("SkinningJoints", EBufferTypeFlagBits::eStorage, MAX_PRIMITIVE_COUNT * 128ull, m_pRenderInterface));
 
-	m_vBuffers.emplace_back(createDrawBuffer<FDirectionalLightCommit>("DirectionalLights", BUFFER_TYPE_STORAGE_FLAG_BIT, max_directional_light_count, m_pRenderInterface));
-	m_vBuffers.emplace_back(createDrawBuffer<FPointLightCommit>("PointLights", BUFFER_TYPE_STORAGE_FLAG_BIT, max_point_light_count, m_pRenderInterface));
-	m_vBuffers.emplace_back(createDrawBuffer<FSpotLightCommit>("SpotLights", BUFFER_TYPE_STORAGE_FLAG_BIT, max_spot_light_count, m_pRenderInterface));
+	m_vBuffers.emplace_back(createDrawBuffer<FDirectionalLightCommit>("DirectionalLights", EBufferTypeFlagBits::eStorage, max_directional_light_count, m_pRenderInterface));
+	m_vBuffers.emplace_back(createDrawBuffer<FPointLightCommit>("PointLights", EBufferTypeFlagBits::eStorage, max_point_light_count, m_pRenderInterface));
+	m_vBuffers.emplace_back(createDrawBuffer<FSpotLightCommit>("SpotLights", EBufferTypeFlagBits::eStorage, max_spot_light_count, m_pRenderInterface));
 
-	m_vBuffers.emplace_back(createDrawBuffer<FCascadedShadowCommit>("CascadedShadows", BUFFER_TYPE_STORAGE_FLAG_BIT, max_directional_light_shadow_count, m_pRenderInterface));
-	m_vBuffers.emplace_back(createDrawBuffer<FOmniShadowCommit>("OmniShadows", BUFFER_TYPE_STORAGE_FLAG_BIT, max_point_light_shadow_count, m_pRenderInterface));
-	m_vBuffers.emplace_back(createDrawBuffer<FSpotShadowCommit>("SpotShadows", BUFFER_TYPE_STORAGE_FLAG_BIT, max_spot_light_shadow_count, m_pRenderInterface));
+	m_vBuffers.emplace_back(createDrawBuffer<FCascadedShadowCommit>("CascadedShadows", EBufferTypeFlagBits::eStorage, max_directional_light_shadow_count, m_pRenderInterface));
+	m_vBuffers.emplace_back(createDrawBuffer<FOmniShadowCommit>("OmniShadows", EBufferTypeFlagBits::eStorage, max_point_light_shadow_count, m_pRenderInterface));
+	m_vBuffers.emplace_back(createDrawBuffer<FSpotShadowCommit>("SpotShadows", EBufferTypeFlagBits::eStorage, max_spot_light_shadow_count, m_pRenderInterface));
 
-	m_vBuffers.emplace_back(createDrawBuffer<FGeometryGPUBatch>("GeometryBatches", BUFFER_TYPE_STORAGE_FLAG_BIT, MAX_RENDER_OBJECT_COUNT, m_pRenderInterface));
-	m_vBuffers.emplace_back(createDrawBuffer<FGeometryGPUCullInfo>("GeometryCullingInfo", BUFFER_TYPE_STORAGE_FLAG_BIT, MAX_RENDER_OBJECT_COUNT, m_pRenderInterface));
-	m_vBuffers.emplace_back(createDrawBuffer<glm::vec4>("FrustumSides", BUFFER_TYPE_STORAGE_FLAG_BIT, MAX_PRIMITIVE_COUNT * 6ull, m_pRenderInterface));
-	m_vBuffers.emplace_back(createDrawBuffer<FDrawIndexedIndirectData>("IndexedDrawIndirectBuffer", BUFFER_TYPE_INDIRECT_FLAG_BIT, max_indirect_draw_count, m_pRenderInterface));
+	m_vBuffers.emplace_back(createDrawBuffer<FGeometryGPUBatch>("GeometryBatches", EBufferTypeFlagBits::eStorage, MAX_RENDER_OBJECT_COUNT, m_pRenderInterface));
+	m_vBuffers.emplace_back(createDrawBuffer<FGeometryGPUCullInfo>("GeometryCullingInfo", EBufferTypeFlagBits::eStorage, MAX_RENDER_OBJECT_COUNT, m_pRenderInterface));
+	m_vBuffers.emplace_back(createDrawBuffer<glm::vec4>("FrustumSides", EBufferTypeFlagBits::eStorage, MAX_PRIMITIVE_COUNT * 6ull, m_pRenderInterface));
+	m_vBuffers.emplace_back(createDrawBuffer<FDrawIndexedIndirectData>("IndexedDrawIndirectBuffer", EBufferTypeFlagBits::eIndirect, max_indirect_draw_count, m_pRenderInterface));
 }
 
-size_t CRenderWorld::registerFrustum(uint32_t type)
+size_t CRenderWorld::registerFrustum(ERenderGeometryCullerType type)
 {
 	size_t frustum_id = m_vSceneFrustums.size();
 	m_vSceneFrustums.emplace_back();
@@ -332,12 +332,12 @@ const std::vector<std::unique_ptr<IBufferObject>>& CRenderWorld::getDrawBuffers(
 	return m_vBuffers;
 }
 
-const std::unordered_map<uint32_t, std::vector<FGeometryBatchRange>>& CRenderWorld::getAllGeometryRanges() const
+const std::unordered_map<ERenderGeometryCullerType, std::vector<FGeometryBatchRange>>& CRenderWorld::getAllGeometryRanges() const
 {
 	return m_mBatchRanges;
 }
 
-const std::vector<FGeometryBatchRange>& CRenderWorld::getGeometryRanges(uint32_t type) const
+const std::vector<FGeometryBatchRange>& CRenderWorld::getGeometryRanges(ERenderGeometryCullerType type) const
 {
 	return m_mBatchRanges[type];
 }

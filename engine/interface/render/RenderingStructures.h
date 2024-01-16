@@ -8,54 +8,54 @@ namespace engine
 {
 	namespace render
 	{
-		enum ERenderingStepType
+		enum class ERenderingStepType
 		{
-			RENDERING_STEP_SYNCHRONIZATION_TYPE,
-			RENDERING_STEP_RENDERING_TYPE,
-			RENDERING_STEP_COMPUTE_TYPE
+			eSynchronization,
+			eRendering,
+			eCompute
 		};
 
-		enum ERenderingType
+		enum class ERenderingType
 		{
-			RENDERING_FULLSCREEN_TYPE,
-			RENDERING_GEOMETRY_TYPE,
-			RENDERING_CSM_TYPE,
-			RENDERING_RENDER_SCRIPT_TYPE
+			eFullscreen,
+			eGeometry,
+			eCascadedShadowMap,
+			eRenderScript
 		};
 
-		enum EComputeType
+		enum class EComputeType
 		{
-			COMPUTE_DEFAULT_TYPE,
-			COMPUTE_GEOMETRY_TYPE,
-			COMPUTE_CUBEMAP_TYPE,
-			COMPUTE_CULLING_TYPE
+			eDefault,
+			eGeometry,
+			eCubemap,
+			eCulling
 		};
 
-		enum ESynchronizationType
+		enum class ESynchronizationType
 		{
-			SYNCHRONIZATION_SEMAPHORE_TYPE,
-			SYNCHRONIZATION_BARRIER_TYPE
+			eSemaphore,
+			eBarrier
 		};
 
-		enum ESemaphoreMode
+		enum class ESemaphoreMode
 		{
-			SEMAPHORE_SIGNAL_MODE,
-			SEMAPHORE_WAIT_MODE
+			eSignal,
+			eWait
 		};
 
-		enum EBarrierType
+		enum class EBarrierType
 		{
-			BARRIER_FROM_GRAPHICS_TO_COMPUTE,
-			BARRIER_FROM_GRAPHICS_TO_GRAPHICS,
-			BARRIER_FROM_COMPUTE_TO_COMPUTE,
-			BARRIER_FROM_COMPUTE_TO_GRAPHICS,
+			eG2C,
+			eG2G,
+			eC2C,
+			eC2G,
 		};
 
-		enum ERenderingSizeType
+		enum class ERenderingSizeType
 		{
-			RENDER_SIZE_TYPE_FROM_RT = 1,
-			RENDER_SIZE_TYPE_FROM_BUFFER = 2,
-			RENDER_SIZE_TYPE_MANUAL = 3
+			eFromRenderTarget = 1,
+			eFromBuffer = 2,
+			eManual = 3
 		};
 
 		struct FRenderingStepSemaphore
@@ -70,21 +70,21 @@ namespace engine
 
 		struct FRenderingStepBarrier
 		{
-			uint32_t type{};
-			uint32_t queue{};
+			EBarrierType type{};
+			EQueueTypeFlagBits queue{};
 			std::vector<size_t> targets;
 		};
 
 		struct FRenderingStepSynchronizationInfo
 		{
-			uint32_t type{};
+			ESynchronizationType type{};
 			FRenderingStepSemaphore semaphore{};
 			FRenderingStepBarrier barrier{};
 		};
 
 		struct FRenderTargetSizeInfo
 		{
-			uint32_t type{ RENDER_SIZE_TYPE_MANUAL };
+			ERenderingSizeType type{ ERenderingSizeType::eManual };
 			size_t target{ ~0ull };
 
 			uint32_t sizeX{ 1u };
@@ -94,10 +94,9 @@ namespace engine
 
 		struct FRenderingStepRenderingInfo
 		{
-			// ERenderingType
-			uint32_t type{ 0u };
+			ERenderingType type{};
 
-			uint32_t queue{ 0u };
+			EQueueTypeFlagBits queue{};
 
 			std::string renderScript{}; // Optional
 
@@ -117,8 +116,8 @@ namespace engine
 
 		struct FRenderingStepComputeInfo
 		{
-			uint32_t type{ 0u };
-			uint32_t queue{ ~0u };
+			EComputeType type{};
+			EQueueTypeFlagBits queue{};
 
 			std::string renderScript{};
 
@@ -135,7 +134,7 @@ namespace engine
 		struct FRenderingStepCreateInfo
 		{
 			// ERenderingStepType
-			uint32_t type{};
+			ERenderingStepType type{};
 			bool oneTime{ false };
 
 			FRenderingStepSynchronizationInfo synchronization{};
@@ -145,7 +144,7 @@ namespace engine
 
 		struct FBeginRenderingInfo
 		{
-			uint32_t queue{ 0u };
+			EQueueTypeFlagBits queue{};
 			FRect2D<float> renderArea{};
 			bool flipViewport{ false };
 			uint32_t layerCount{ 1u };
@@ -160,7 +159,7 @@ namespace engine
 
 		struct FBeginComputeInfo
 		{
-			uint32_t queue{ 0u };
+			EQueueTypeFlagBits queue{};
 
 			std::vector<size_t> writeAttachments{};
 			std::vector<size_t> writeBuffers{};

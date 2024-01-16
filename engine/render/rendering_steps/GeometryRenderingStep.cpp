@@ -53,7 +53,7 @@ void CGeometryRenderingStep::_execute(float dt)
 
 	auto& render_world = m_pRenderInterface->getRenderWorld();
 
-	auto& batch_ranges = render_world->getGeometryRanges(RENDER_GEOMETRY_CULLER_SCENE_TYPE);
+	auto& batch_ranges = render_world->getGeometryRanges(ERenderGeometryCullerType::eScene);
 
 	size_t drawcall_id{ 0ull };
 	IVertexHandler* last_vbo{ nullptr };
@@ -116,9 +116,9 @@ const std::unique_ptr<IShaderObject>& CGeometryRenderingStep::getShaderByVBO(con
 		auto shader_name = m_baseShaderName + vbo->getDefinitions();
 
 		FGraphicsShaderCreateInfo shader_ci{};
-		shader_ci.cullMode = m_beginRenderingInfo.flipViewport ? SHADER_CULL_MODE_BACK_BIT : SHADER_CULL_MODE_FRONT_BIT;
-		shader_ci.frontFace = m_beginRenderingInfo.flipViewport ? SHADER_FRONT_FACE_CW : SHADER_FRONT_FACE_CCW;
-		shader_ci.primitiveTopology = SHADER_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		shader_ci.cullMode = m_beginRenderingInfo.flipViewport ? EShaderCullModeFlagBits::eBack : EShaderCullModeFlagBits::eFront;
+		shader_ci.frontFace = m_beginRenderingInfo.flipViewport ? EShaderFrontFace::eCW : EShaderFrontFace::eCCW;
+		shader_ci.primitiveTopology = EVertexPrimitiveTopology::eTriangleList;
 		shader_ci.colorAttachments = m_beginRenderingInfo.colorAttachments;
 		shader_ci.depthAttachment = m_beginRenderingInfo.depthAttachment;
 		shader_ci.stencilAttachment = m_beginRenderingInfo.stencilAttachment;

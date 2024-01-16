@@ -162,8 +162,8 @@ namespace engine
 			virtual void bindTexture(const char* name, size_t texture_resource, uint32_t mip = 0u) = 0;
 
 			virtual void flushDescriptors() = 0;
-			virtual void flushConstants(uint32_t queue) = 0;
-			virtual void bind(uint32_t queue) = 0;
+			virtual void flushConstants(EQueueTypeFlagBits queue) = 0;
+			virtual void bind(EQueueTypeFlagBits queue) = 0;
 
 			virtual size_t handle() const = 0;
 
@@ -217,7 +217,7 @@ namespace engine
 		struct FCullingInfo
 		{
 			size_t cullerID{};
-			uint32_t type{ 0u };
+			ERenderGeometryCullerType type{};
 		};
 
 		struct FGeometryBatchRange
@@ -270,30 +270,30 @@ namespace engine
 			virtual size_t createShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
 			virtual size_t createShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
 			virtual FShaderReflectionData getShaderReflection(const size_t& shader_view) = 0;
-			virtual void updateShaderResources(const FShaderResourceCommit& resources, uint32_t /*EShaderResourcesUpdateFlagBits*/ flags = SHADER_RESOURCES_UPDATE_ALL_FLAG_BIT) = 0;
-			virtual void flushConstantRanges(size_t shader_id, const std::unordered_map<size_t, FUniformDataView>& constants, uint32_t queue_type) = 0;
-			virtual void bindShader(size_t shader_id, uint32_t queue_type) = 0;
+			virtual void updateShaderResources(const FShaderResourceCommit& resources, EShaderResourcesUpdateFlags flags = EShaderResourcesUpdateFlagBits::eAll) = 0;
+			virtual void flushConstantRanges(size_t shader_id, const std::unordered_map<size_t, FUniformDataView>& constants, EQueueTypeFlagBits queue_type) = 0;
+			virtual void bindShader(size_t shader_id, EQueueTypeFlagBits queue_type) = 0;
 			virtual void destroyShader(size_t resource_id) = 0;
 
 			virtual size_t createBuffer(const std::string& name, const FBufferCreateInfo& buffer_ci) = 0;
 			virtual void uploadDataToBuffer(const FBufferUploadInfo& upload_info) = 0;
 			virtual FBufferView getBufferView(size_t buffer_id) = 0;
-			virtual void bindVertexBuffers(const FVertexBufferBindingInfo& binding_info, uint32_t queue) = 0;
-			virtual void bindIndexBuffer(const FIndexBufferBindingInfo& binding_info, uint32_t queue) = 0;
+			virtual void bindVertexBuffers(const FVertexBufferBindingInfo& binding_info, EQueueTypeFlagBits queue) = 0;
+			virtual void bindIndexBuffer(const FIndexBufferBindingInfo& binding_info, EQueueTypeFlagBits queue) = 0;
 			virtual void mapBufferMemory(size_t buffer_id, void*& memory) = 0;
 			virtual void unmapBufferMemory(size_t buffer_id) = 0;
 			virtual void flushBuffer(size_t buffer_id, size_t size, size_t offset) = 0;
 			virtual void destroyBuffer(size_t resource_id) = 0;
 
-			virtual void pushG2CBarriers(uint32_t queue_type, const std::vector<size_t>& textures) = 0;
-			virtual void pushC2CBarrier(uint32_t queue_type, const std::vector<size_t>& texture_ids) = 0;
-			virtual void pushC2GBarrier(uint32_t queue_type, const std::vector<size_t>& texture_ids) = 0;
+			virtual void pushG2CBarriers(EQueueTypeFlagBits queue_type, const std::vector<size_t>& textures) = 0;
+			virtual void pushC2CBarrier(EQueueTypeFlagBits queue_type, const std::vector<size_t>& texture_ids) = 0;
+			virtual void pushC2GBarrier(EQueueTypeFlagBits queue_type, const std::vector<size_t>& texture_ids) = 0;
 
 			virtual void beginRendering(const FBeginRenderingInfo& rendering_info) = 0;
 			virtual void endRendering(const FBeginRenderingInfo& rendering_info) = 0;
 
 			virtual void beginRendering2(const FBeginRendering2Info& rendering_info) = 0;
-			virtual void endRendering2(uint32_t queue) = 0;
+			virtual void endRendering2(EQueueTypeFlagBits queue) = 0;
 
 			virtual void beginCompute(const FBeginComputeInfo& rendering_info) = 0;
 			virtual void endCompute(const FBeginComputeInfo& rendering_info) = 0;
@@ -301,11 +301,11 @@ namespace engine
 			virtual void setViewport(float width, float height, bool flip_viewport) = 0;
 			virtual void setScissorRect(int32_t offset_x, int32_t offset_y, uint32_t width, uint32_t height) = 0;
 
-			virtual void draw(uint32_t queue_type, const FGeometryDrawInfo& draw_info) = 0;
-			virtual void draw(uint32_t queue_type, const FIndirectGeometryDrawInfo& draw_info) = 0;
-			virtual void dispatch(uint32_t queue_type, const FDispatchInfo& dispatch_info) = 0;
-			virtual void dispatch2(uint32_t queue_type, const FDispatch2Info& dispatch_group) = 0;
-			virtual void dispatch2(uint32_t queue_type, const FDispatchIndirectInfo& dispatch_info) = 0;
+			virtual void draw(EQueueTypeFlagBits queue_type, const FGeometryDrawInfo& draw_info) = 0;
+			virtual void draw(EQueueTypeFlagBits queue_type, const FIndirectGeometryDrawInfo& draw_info) = 0;
+			virtual void dispatch(EQueueTypeFlagBits queue_type, const FDispatchInfo& dispatch_info) = 0;
+			virtual void dispatch2(EQueueTypeFlagBits queue_type, const FDispatch2Info& dispatch_group) = 0;
+			virtual void dispatch2(EQueueTypeFlagBits queue_type, const FDispatchIndirectInfo& dispatch_info) = 0;
 
 			virtual size_t getTextureResource(const char* name) = 0;
 			virtual size_t getShaderResource(const char* name) = 0;
@@ -315,7 +315,7 @@ namespace engine
 			virtual FRect2D<float> getScreenRenderRect() = 0;
 
 			virtual uint32_t getDepthFormat(bool depth_only) = 0;
-			virtual uint32_t getApiFormat(uint32_t global_format) = 0;
+			virtual uint32_t getApiFormat(EApiDataFormat global_format) = 0;
 			virtual uint32_t getPresentFormat() = 0;
 
 			virtual void updateSurface(int32_t surface_width, int32_t surface_height) = 0;
@@ -325,9 +325,9 @@ namespace engine
 
 			virtual bool isSwapChainFinished() = 0;
 
-			virtual void beginDebugLabel(const std::string& label, uint32_t queue_type, uint32_t color = 0xffffffff) = 0;
-			virtual void insertDebugLabel(const std::string& label, uint32_t queue_type, uint32_t color = 0xffffffff) = 0;
-			virtual void endDebugLabel(uint32_t queue_type) = 0;
+			virtual void beginDebugLabel(const std::string& label, EQueueTypeFlagBits queue_type, uint32_t color = 0xffffffff) = 0;
+			virtual void insertDebugLabel(const std::string& label, EQueueTypeFlagBits queue_type, uint32_t color = 0xffffffff) = 0;
+			virtual void endDebugLabel(EQueueTypeFlagBits queue_type) = 0;
 		};
 
 		class IRenderWorld
@@ -337,7 +337,7 @@ namespace engine
 
 			virtual void create() = 0;
 
-			virtual size_t registerFrustum(uint32_t type) = 0;
+			virtual size_t registerFrustum(ERenderGeometryCullerType type) = 0;
 			virtual void updateFrustum(size_t frustum_id, const glm::mat4& view, const glm::mat4& projection) = 0;
 
 			virtual void addDrawGeometry(const std::vector<FGeometryRawBatch>& new_geometry) = 0;
@@ -360,8 +360,8 @@ namespace engine
 
 			virtual const std::vector<std::unique_ptr<IBufferObject>>& getDrawBuffers() = 0;
 
-			virtual const std::unordered_map<uint32_t, std::vector<FGeometryBatchRange>>& getAllGeometryRanges() const = 0;
-			virtual const std::vector<FGeometryBatchRange>& getGeometryRanges(uint32_t type) const = 0;
+			virtual const std::unordered_map<ERenderGeometryCullerType, std::vector<FGeometryBatchRange>>& getAllGeometryRanges() const = 0;
+			virtual const std::vector<FGeometryBatchRange>& getGeometryRanges(ERenderGeometryCullerType type) const = 0;
 			virtual const FGeometryCPUBatch& getGeometryBatch(size_t index) const = 0;
 
 			virtual FRenderWorldStats& getStats() = 0;
@@ -467,7 +467,7 @@ namespace engine
 				m_sizePolicyType = create_info.rendering.sizeInfo.type;
 				m_target = create_info.rendering.sizeInfo.target;
 
-				if (m_sizePolicyType == RENDER_SIZE_TYPE_MANUAL)
+				if (m_sizePolicyType == ERenderingSizeType::eManual)
 				{
 					m_beginRenderingInfo.renderArea.size.x = create_info.compute.dispatchInfo.sizeX;
 					m_beginRenderingInfo.renderArea.size.y = create_info.compute.dispatchInfo.sizeY;
@@ -479,7 +479,7 @@ namespace engine
 
 			void execute(float dt) override
 			{
-				if (m_sizePolicyType == RENDER_SIZE_TYPE_FROM_RT)
+				if (m_sizePolicyType == ERenderingSizeType::eFromRenderTarget)
 				{
 					auto& render_context = m_pRenderInterface->getRenderContext();
 					auto& info = render_context->getTextureInfo(m_target);
@@ -497,7 +497,7 @@ namespace engine
 			virtual void _execute(float dt) = 0;
 		protected:
 			FBeginRenderingInfo m_beginRenderingInfo{};
-			uint32_t m_sizePolicyType{};
+			ERenderingSizeType m_sizePolicyType{};
 			size_t m_target{ ~0ull };
 		};
 
@@ -520,7 +520,7 @@ namespace engine
 				m_groupPolicyType = create_info.compute.dispatchInfo.type;
 				m_target = create_info.compute.dispatchInfo.target;
 
-				if (m_groupPolicyType == RENDER_SIZE_TYPE_MANUAL)
+				if (m_groupPolicyType == ERenderingSizeType::eManual)
 				{
 					m_beginComputeInfo.globalSizes.x = create_info.compute.dispatchInfo.sizeX;
 					m_beginComputeInfo.globalSizes.y = create_info.compute.dispatchInfo.sizeY;
@@ -533,7 +533,7 @@ namespace engine
 
 			void execute(float dt) override
 			{
-				if (m_groupPolicyType == RENDER_SIZE_TYPE_FROM_RT)
+				if (m_groupPolicyType == ERenderingSizeType::eFromRenderTarget)
 				{
 					auto& render_context = m_pRenderInterface->getRenderContext();
 					auto& info = render_context->getTextureInfo(m_target);
@@ -553,7 +553,7 @@ namespace engine
 		protected:
 			FBeginComputeInfo m_beginComputeInfo{};
 
-			uint32_t m_groupPolicyType{};
+			ERenderingSizeType m_groupPolicyType{};
 			size_t m_target{ ~0ull };
 		};
 	}

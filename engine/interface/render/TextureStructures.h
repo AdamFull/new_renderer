@@ -1,28 +1,29 @@
 #pragma once
 
-#include <vector>
+#include <utility.hpp>
 
 namespace engine
 {
 	namespace render
 	{
-		enum ETextureImageTypeFlagBits
+		enum class ETextureCreateFlagBits : uint32_t
 		{
-			TEXTURE_IMAGE_TYPE_ARRAY_FLAG_BIT = 1 << 0,
-			TEXTURE_IMAGE_TYPE_CUBEMAP_FLAG_BIT = 1 << 1,
-			TEXTURE_IMAGE_TYPE_1D_FLAG_BIT = 1 << 2,
-			TEXTURE_IMAGE_TYPE_2D_FLAG_BIT = 1 << 3,
-			TEXTURE_IMAGE_TYPE_3D_FLAG_BIT = 1 << 4,
-			TEXTURE_IMAGE_TYPE_TRANSFERABLE_FLAG_BIT = 1 << 5,
-			TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT = 1 << 6,
-			TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT = 1 << 7
+			eArray = 1 << 0,
+			eCubemap = 1 << 1,
+			e1D = 1 << 2,
+			e2D = 1 << 3,
+			e3D = 1 << 4,
+			eTransferable = 1 << 5,
+			eSamplable = 1 << 6,
+			eStorage = 1 << 7
 		};
+		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ETextureCreateFlags, ETextureCreateFlagBits)
 
-		enum ETextureSizePolicy
+		enum class ERenderTargetSizePolicy : uint32_t
 		{
-			TEXTURE_SIZE_POLICY_FULL = 1,
-			TEXTURE_SIZE_POLICY_SCALABLE = 2,
-			TEXTURE_SIZE_POLICY_FIXED = 3
+			eFull = 1,
+			eScalable = 2,
+			eFixed = 3
 		};
 
 		struct FTextureCreateInfo
@@ -31,8 +32,8 @@ namespace engine
 
 			// EApiDataFormat
 			uint32_t format{ 0u };
-			uint32_t typeFlags{ 0u };
-			uint32_t sizePolicy{ 0u };
+			ETextureCreateFlags typeFlags{ 0u };
+			ERenderTargetSizePolicy sizePolicy{};
 
 			uint32_t width{ 1u };
 			uint32_t height{ 1u };

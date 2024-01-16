@@ -4,57 +4,61 @@ namespace engine
 {
 	namespace render
 	{
-		enum EApiDataFormat
+		enum class EApiDataFormat
 		{
-			FORMAT_RGBA8_SRGB,
+			eUnknown,
 
-			FORMAT_R8_UNORM,
-			FORMAT_RG8_UNORM,
-			FORMAT_RGB8_UNORM,
-			FORMAT_RGBA8_UNORM,
+			eRGBA8_SRGB,
 
-			FORMAT_R16_UNORM,
-			FORMAT_RG16_UNORM,
-			FORMAT_RGB16_UNORM,
-			FORMAT_RGBA16_UNORM,
+			eR8_UNORM,
+			eRG8_UNORM,
+			eRGB8_UNORM,
+			eRGBA8_UNORM,
 
-			FORMAT_R32_UINT,
-			FORMAT_RG32_UINT,
-			FORMAT_RGB32_UINT,
-			FORMAT_RGBA32_UINT,
+			eR16_UNORM,
+			eRG16_UNORM,
+			eRGB16_UNORM,
+			eRGBA16_UNORM,
 
-			FORMAT_R16_SFLOAT,
-			FORMAT_RG16_SFLOAT,
-			FORMAT_RGB16_SFLOAT,
-			FORMAT_RGBA16_SFLOAT,
+			eR32_UINT,
+			eRG32_UINT,
+			eRGB32_UINT,
+			eRGBA32_UINT,
 
-			FORMAT_R32_SFLOAT,
-			FORMAT_RG32_SFLOAT,
-			FORMAT_RGB32_SFLOAT,
-			FORMAT_RGBA32_SFLOAT
+			eR16_SFLOAT,
+			eRG16_SFLOAT,
+			eRGB16_SFLOAT,
+			eRGBA16_SFLOAT,
+
+			eR32_SFLOAT,
+			eRG32_SFLOAT,
+			eRGB32_SFLOAT,
+			eRGBA32_SFLOAT
 		};
 
-		enum EResourceTypeBits
+		enum class EResourceFlagBits
 		{
-			RESOURCE_TYPE_TEXTURE_BIT = 1 << 0,
-			RESOURCE_TYPE_BUFFER_BIT = 1 << 1,
-			RESOURCE_TYPE_SHADER_BIT = 1 << 2
+			eTexture = 1 << 0,
+			eBuffer = 1 << 1,
+			eShader = 1 << 2
 		};
+		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(EResourceFlags, EResourceFlagBits)
 
-		enum EQueueFamilyUsageFlagBits
+		enum class EQueueTypeFlagBits
 		{
-			QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT = 1 << 0,
-			QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT = 1 << 1,
-			QUEUE_FAMILY_USAGE_COMPUTE_FLAG_BIT = 1 << 2,
-			QUEUE_FAMILY_USAGE_TRANSFER_FLAG_BIT = 1 << 3
+			ePresent = 1 << 0,
+			eGraphics = 1 << 1,
+			eCompute = 1 << 2,
+			eTransfer = 1 << 3
 		};
+		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(EQueueTypeFlags, EQueueTypeFlagBits)
 
-		enum ERenderQeometryCullerType
+		enum class ERenderGeometryCullerType
 		{
-			RENDER_GEOMETRY_CULLER_SCENE_TYPE,
-			RENDER_GEOMETRY_CULLER_CSM_TYPE,
-			RENDER_GEOMETRY_CULLER_OSM_TYPE,
-			RENDER_GEOMETRY_CULLER_DSM_TYPE,
+			eScene,
+			eCascadedShadow,
+			eOmniShadow,
+			eSpotShadow,
 		};
 	}
 }

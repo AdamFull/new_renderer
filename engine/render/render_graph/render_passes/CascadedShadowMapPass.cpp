@@ -39,7 +39,7 @@ void CCascadedShadowMapPass::_render(const FRenderFrameInfo& frame_info)
 	auto& render_context = m_pRenderInterface->getRenderContext();
 	render_context->setScissorRect(0, 0, frame_info.renderRect.size.x, frame_info.renderRect.size.y);
 
-	auto& batch_ranges = render_world->getGeometryRanges(RENDER_GEOMETRY_CULLER_CSM_TYPE);
+	auto& batch_ranges = render_world->getGeometryRanges(ERenderGeometryCullerType::eCascadedShadow);
 
 	IVertexHandler* last_vbo{ nullptr };
 
@@ -106,9 +106,9 @@ const std::unique_ptr<IShaderObject>& CCascadedShadowMapPass::getShaderByVBO(con
 		auto shader_name = m_baseShaderName + vbo->getDefinitions();
 
 		FGraphicsShaderCreateInfo shader_ci{};
-		shader_ci.cullMode = m_bFlipViewport ? SHADER_CULL_MODE_FRONT_BIT : SHADER_CULL_MODE_FRONT_BIT;
-		shader_ci.frontFace = m_bFlipViewport ? SHADER_FRONT_FACE_CW : SHADER_FRONT_FACE_CCW;
-		shader_ci.primitiveTopology = SHADER_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		shader_ci.cullMode = m_bFlipViewport ? EShaderCullModeFlagBits::eFront : EShaderCullModeFlagBits::eFront;
+		shader_ci.frontFace = m_bFlipViewport ? EShaderFrontFace::eCW : EShaderFrontFace::eCCW;
+		shader_ci.primitiveTopology = EVertexPrimitiveTopology::eTriangleList;
 
 		auto& output_targets = m_renderResources[ERenderResourceGroupType::eColorWrite];
 		for (size_t resource_id : output_targets)

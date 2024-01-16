@@ -130,7 +130,7 @@ namespace engine
 		struct FAPIObjectDestroyInfo
 		{
 			size_t id{ ~0ull };
-			uint32_t mask{ 0u };
+			EResourceFlagBits mask{ 0u };
 		};
 
 		struct FFrustum

@@ -8,39 +8,38 @@ namespace engine
 {
 	namespace render
 	{
-		enum EShaderResourcesUpdateFlagBits
+		enum class EShaderResourcesUpdateFlagBits
 		{
-			SHADER_RESOURCES_UPDATE_UNIFORM_BLOCKS_FLAG_BIT = 1 << 0,
-			SHADER_RESOURCES_UPDATE_STORAGE_BLOCKS_FLAG_BIT = 1 << 1,
-			SHADER_RESOURCES_UPDATE_TEXTURES_FLAG_BIT = 1 << 2,
-			SHADER_RESOURCES_UPDATE_ALL_FLAG_BIT =
-			SHADER_RESOURCES_UPDATE_UNIFORM_BLOCKS_FLAG_BIT |
-			SHADER_RESOURCES_UPDATE_STORAGE_BLOCKS_FLAG_BIT |
-			SHADER_RESOURCES_UPDATE_TEXTURES_FLAG_BIT
+			eUniformBlocks = 1 << 0,
+			eStorageBlocks = 1 << 1,
+			eTextures = 1 << 2,
+			eAll = eUniformBlocks | eStorageBlocks | eTextures
+		};
+		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(EShaderResourcesUpdateFlags, EShaderResourcesUpdateFlagBits)
+
+		enum class EVertexPrimitiveTopology : uint32_t
+		{
+			ePointList,
+			eLineList,
+			eLineStrip,
+			eTriangleList,
+			eTriangleStrip,
+			eTriangleFan
 		};
 
-		enum EShaderPrimitiveTopology : uint32_t
+		enum class EShaderCullModeFlagBits : uint32_t
 		{
-			SHADER_PRIMITIVE_TOPOLOGY_POINT_LIST,
-			SHADER_PRIMITIVE_TOPOLOGY_LINE_LIST,
-			SHADER_PRIMITIVE_TOPOLOGY_LINE_STRIP,
-			SHADER_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-			SHADER_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
-			SHADER_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN,
+			eNone = 1 << 0,
+			eFront = 1 << 1,
+			eBack = 1 << 2,
+			eFrontAndBack = eFront | eBack
 		};
+		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(EShaderCullModeFlags, EShaderCullModeFlagBits)
 
-		enum EShaderCullMode : uint32_t
+		enum class EShaderFrontFace : uint32_t
 		{
-			SHADER_CULL_MODE_NONE = 1 << 0,
-			SHADER_CULL_MODE_FRONT_BIT = 1 << 1,
-			SHADER_CULL_MODE_BACK_BIT = 1 << 2,
-			SHADER_CULL_MODE_FRONT_AND_BACK = SHADER_CULL_MODE_FRONT_BIT | SHADER_CULL_MODE_BACK_BIT
-		};
-
-		enum EShaderFrontFace : uint32_t
-		{
-			SHADER_FRONT_FACE_CCW,
-			SHADER_FRONT_FACE_CW
+			eCCW,
+			eCW
 		};
 
 		struct FReflectionUniform
@@ -92,11 +91,11 @@ namespace engine
 		struct FGraphicsShaderCreateInfo
 		{
 			// EShaderPrimitiveTopology
-			uint32_t primitiveTopology{};
+			EVertexPrimitiveTopology primitiveTopology{};
 			// EShaderCullMode
-			uint32_t cullMode{};
+			EShaderCullModeFlags cullMode{};
 			// EShaderFrontFace
-			uint32_t frontFace{};
+			EShaderFrontFace frontFace{};
 
 			uint32_t usageCount{ 1u };
 

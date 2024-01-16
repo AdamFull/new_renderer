@@ -45,7 +45,7 @@ void CCascadedShadowMapsRenderingStep::_execute(float dt)
 	render_context->setViewport(static_cast<float>(rect.size.x), static_cast<float>(rect.size.y), m_beginRenderingInfo.flipViewport);
 	render_context->setScissorRect(0, 0, rect.size.x, rect.size.y);
 	
-	auto& batch_ranges = render_world->getGeometryRanges(RENDER_GEOMETRY_CULLER_CSM_TYPE);
+	auto& batch_ranges = render_world->getGeometryRanges(ERenderGeometryCullerType::eCascadedShadow);
 	
 	IVertexHandler* last_vbo{ nullptr };
 	
@@ -112,9 +112,9 @@ const std::unique_ptr<IShaderObject>& CCascadedShadowMapsRenderingStep::getShade
 		auto shader_name = m_baseShaderName + vbo->getDefinitions();
 
 		FGraphicsShaderCreateInfo shader_ci{};
-		shader_ci.cullMode = m_beginRenderingInfo.flipViewport ? SHADER_CULL_MODE_FRONT_BIT : SHADER_CULL_MODE_FRONT_BIT;
-		shader_ci.frontFace = m_beginRenderingInfo.flipViewport ? SHADER_FRONT_FACE_CW : SHADER_FRONT_FACE_CCW;
-		shader_ci.primitiveTopology = SHADER_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		shader_ci.cullMode = m_beginRenderingInfo.flipViewport ? EShaderCullModeFlagBits::eFront : EShaderCullModeFlagBits::eFront;
+		shader_ci.frontFace = m_beginRenderingInfo.flipViewport ? EShaderFrontFace::eCW : EShaderFrontFace::eCCW;
+		shader_ci.primitiveTopology = EVertexPrimitiveTopology::eTriangleList;
 		shader_ci.colorAttachments = m_beginRenderingInfo.colorAttachments;
 		shader_ci.depthAttachment = m_beginRenderingInfo.depthAttachment;
 		shader_ci.stencilAttachment = m_beginRenderingInfo.stencilAttachment;

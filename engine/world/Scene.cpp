@@ -205,11 +205,11 @@ void CScene::load(const std::string& path)
 		material_data.baseColorFactor = glm::make_vec4(material.pbrMetallicRoughness.baseColorFactor.data());
 
 		if (material.alphaMode == easygltf::base::enumerators::alpha_mode::blend)
-			material_data.alphaMode = render::MATERIAL_APLHA_MODE_BLEND;
+			material_data.alphaMode = utl::cast<u32>(render::EAlphaMode::eBlend);
 		else if (material.alphaMode == easygltf::base::enumerators::alpha_mode::mask)
-			material_data.alphaMode = render::MATERIAL_APLHA_MODE_MASK;
+			material_data.alphaMode = utl::cast<u32>(render::EAlphaMode::eMask);
 		else
-			material_data.alphaMode = render::MATERIAL_APLHA_MODE_OPAQUE;
+			material_data.alphaMode = utl::cast<u32>(render::EAlphaMode::eOpaque);
 
 		material_data.alphaCutoff = static_cast<float>(material.alphaCutoff);
 		material_data.doubleSided = material.doubleSided;

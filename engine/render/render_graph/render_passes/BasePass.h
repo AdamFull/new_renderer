@@ -31,9 +31,9 @@ namespace engine
 			virtual void execute(float dt) = 0;
 
 		protected:
-			uint32_t m_queue{ 0u };
+			EQueueTypeFlagBits m_queue{};
 
-			uint32_t m_sizePolicy{ 0u };
+			ERenderingSizeType m_sizePolicy{};
 			size_t m_sizeTarget{ ~0ull };
 
 			std::unordered_map<ERenderResourceGroupType, std::vector<size_t>> m_renderResources{};

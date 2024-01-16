@@ -25,9 +25,9 @@ void CFullscreenRenderingStep::_create(const FRenderingStepCreateInfo& create_in
 
 	// Create shader
 	FGraphicsShaderCreateInfo shader_ci{};
-	shader_ci.cullMode = rendering_ci.flipViewport ? SHADER_CULL_MODE_BACK_BIT : SHADER_CULL_MODE_FRONT_BIT;
-	shader_ci.frontFace = SHADER_FRONT_FACE_CCW;
-	shader_ci.primitiveTopology = SHADER_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	shader_ci.cullMode = rendering_ci.flipViewport ? EShaderCullModeFlagBits::eBack : EShaderCullModeFlagBits::eFront;
+	shader_ci.frontFace = EShaderFrontFace::eCCW;
+	shader_ci.primitiveTopology = EVertexPrimitiveTopology::eTriangleList;
 	shader_ci.colorAttachments = rendering_ci.renderTargets;
 	shader_ci.depthAttachment = rendering_ci.depthTarget;
 	shader_ci.stencilAttachment = rendering_ci.stencilTarget;

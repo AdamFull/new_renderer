@@ -148,17 +148,17 @@ FRenderApiErrorInfo CVkRenderDevice::createCommandPool(const FVkCommandPoolCreat
 	const bool async_compute_support = physical_device.compatFlags & PHYSICAL_DEVICE_COMPAT_ASYNC_COMPUTE_FLAG_BIT;
 	const bool async_transfer_support = physical_device.compatFlags & PHYSICAL_DEVICE_COMPAT_ASYNC_TRANSFER_FLAG_BIT;
 
-	const bool is_compute_queue = (command_pool_ci.mask & QUEUE_FAMILY_USAGE_COMPUTE_FLAG_BIT) && async_compute_support;
-	const bool is_transfer_queue = (command_pool_ci.mask & QUEUE_FAMILY_USAGE_TRANSFER_FLAG_BIT) && async_transfer_support;
+	const bool is_compute_queue = (command_pool_ci.mask & EQueueTypeFlagBits::eCompute) && async_compute_support;
+	const bool is_transfer_queue = (command_pool_ci.mask & EQueueTypeFlagBits::eTransfer) && async_transfer_support;
 
 	vk::CommandPoolCreateInfo pool_ci{};
 	pool_ci.flags = vk::CommandPoolCreateFlagBits::eTransient | vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
 
-	uint32_t queue_family_index{ physical_device.queueFamilies.queueToFamily[QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT] };
+	uint32_t queue_family_index{ physical_device.queueFamilies.queueToFamily[EQueueTypeFlagBits::eGraphics] };
 	if (is_compute_queue)
-		queue_family_index = physical_device.queueFamilies.queueToFamily[QUEUE_FAMILY_USAGE_COMPUTE_FLAG_BIT];
+		queue_family_index = physical_device.queueFamilies.queueToFamily[EQueueTypeFlagBits::eCompute];
 	else if(is_transfer_queue)
-		queue_family_index = physical_device.queueFamilies.queueToFamily[QUEUE_FAMILY_USAGE_TRANSFER_FLAG_BIT];
+		queue_family_index = physical_device.queueFamilies.queueToFamily[EQueueTypeFlagBits::eTransfer];
 
 	pool_ci.queueFamilyIndex = queue_family_index;
 
@@ -698,7 +698,7 @@ vk::Result CVkRenderDevice::present(FVkCommandBuffer& command_buffer)
 	present_info.pSwapchains = swap_chains;
 	present_info.pImageIndices = &m_swapchain.currentFrame;
 
-	auto& present_queue = getQueue(QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT);
+	auto& present_queue = getQueue(EQueueTypeFlagBits::ePresent);
 	res = present_queue.presentKHR(present_info);
 	check_api_result(make_api_error(vk::ObjectType::eQueue, res, "Failed to present"));
 
@@ -770,8 +770,8 @@ void CVkRenderDevice::initProfiler(const FVkCommandPool& command_pool)
 
 	auto& physical_device = getPhysicalDevice();
 
-	auto& graphics = m_logicalDevice.queues[QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT];
-	auto& present = m_logicalDevice.queues[QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT];
+	auto& graphics = m_logicalDevice.queues[EQueueTypeFlagBits::eGraphics];
+	auto& present = m_logicalDevice.queues[EQueueTypeFlagBits::ePresent];
 
 	m_tracyContext.resize(m_swapchain.framesInFlight);
 	for (uint32_t idx = 0u; idx < m_swapchain.framesInFlight; ++idx)
@@ -853,25 +853,25 @@ vk::Device& CVkRenderDevice::getLogicalDevice()
 	return m_logicalDevice.handle;
 }
 
-vk::Queue& CVkRenderDevice::getQueue(uint32_t flag)
+vk::Queue& CVkRenderDevice::getQueue(EQueueTypeFlagBits flag)
 {
 	auto& physical_device = getPhysicalDevice();
 
 	const bool async_compute_support = physical_device.compatFlags & PHYSICAL_DEVICE_COMPAT_ASYNC_COMPUTE_FLAG_BIT;
 	const bool async_transfer_support = physical_device.compatFlags & PHYSICAL_DEVICE_COMPAT_ASYNC_TRANSFER_FLAG_BIT;
 
-	const bool is_present_queue = (flag & QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT);
-	const bool is_compute_queue = (flag & QUEUE_FAMILY_USAGE_COMPUTE_FLAG_BIT) && async_compute_support;
-	const bool is_transfer_queue = (flag & QUEUE_FAMILY_USAGE_TRANSFER_FLAG_BIT) && async_transfer_support;
+	const bool is_present_queue = utl::cast<bool>(flag & EQueueTypeFlagBits::ePresent);
+	const bool is_compute_queue = utl::cast<bool>(flag & EQueueTypeFlagBits::eCompute) && async_compute_support;
+	const bool is_transfer_queue = utl::cast<bool>(flag & EQueueTypeFlagBits::eTransfer) && async_transfer_support;
 
 	// Code can require compute or transfer queue, but device might not support it. It means that we will use graphics as default.
-	uint32_t selected_queue_type{ QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT };
+	EQueueTypeFlagBits selected_queue_type{ EQueueTypeFlagBits::eGraphics };
 	if (is_present_queue)
-		selected_queue_type = QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT;
+		selected_queue_type = EQueueTypeFlagBits::ePresent;
 	else if (is_compute_queue)
-		selected_queue_type = QUEUE_FAMILY_USAGE_COMPUTE_FLAG_BIT;
+		selected_queue_type = EQueueTypeFlagBits::eCompute;
 	else if (is_transfer_queue)
-		selected_queue_type = QUEUE_FAMILY_USAGE_TRANSFER_FLAG_BIT;
+		selected_queue_type = EQueueTypeFlagBits::eTransfer;
 	
 	return m_logicalDevice.queues[selected_queue_type];
 }
@@ -1023,8 +1023,8 @@ void CVkRenderDevice::selectQueueFamilies(FVkPhysicalDevice& device_info)
 	}
 
 	auto is_family_queues_enought = [&family_usages](uint32_t index, const vk::QueueFamilyProperties& prop) -> bool { return family_usages[index] < prop.queueCount; };
-	auto is_family_selected = [&families_info](uint32_t mask) -> bool { return families_info.queueMask & mask; };
-	auto apply_family_usage = [&families_info](uint32_t index, uint32_t mask) -> void { families_info.queueToFamily[mask] = index; families_info.queueMask |= mask; families_info.familyUsages[index]++; };
+	auto is_family_selected = [&families_info](EQueueTypeFlagBits mask) -> bool { return utl::cast<bool>(families_info.queueMask & mask); };
+	auto apply_family_usage = [&families_info](uint32_t index, EQueueTypeFlagBits mask) -> void { families_info.queueToFamily[mask] = index; families_info.queueMask |= mask; families_info.familyUsages[index]++; };
 	
 	for (auto& [index, prop] : family_properties)
 	{
@@ -1038,20 +1038,20 @@ void CVkRenderDevice::selectQueueFamilies(FVkPhysicalDevice& device_info)
 		const bool is_transfer_only = has_transfer_bit && !has_compute_bit && !has_graphics_bit;
 
 		// Looking for present family
-		if (is_present_only && !is_family_selected(QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT) && is_family_queues_enought(index, prop))
-			apply_family_usage(index, QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT);
+		if (is_present_only && !is_family_selected(EQueueTypeFlagBits::ePresent) && is_family_queues_enought(index, prop))
+			apply_family_usage(index, EQueueTypeFlagBits::ePresent);
 
 		// Looking for suitable graphics family
-		if (has_graphics_bit && !is_family_selected(QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT) && is_family_queues_enought(index, prop))
-			apply_family_usage(index, QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT);
+		if (has_graphics_bit && !is_family_selected(EQueueTypeFlagBits::eGraphics) && is_family_queues_enought(index, prop))
+			apply_family_usage(index, EQueueTypeFlagBits::eGraphics);
 
 		// Looking for compute only family
-		if (is_compute_compat && !is_family_selected(QUEUE_FAMILY_USAGE_COMPUTE_FLAG_BIT) && is_family_queues_enought(index, prop))
-			apply_family_usage(index, QUEUE_FAMILY_USAGE_COMPUTE_FLAG_BIT);
+		if (is_compute_compat && !is_family_selected(EQueueTypeFlagBits::eCompute) && is_family_queues_enought(index, prop))
+			apply_family_usage(index, EQueueTypeFlagBits::eCompute);
 
 		// Looking for transfer only family
-		if (is_transfer_only && !is_family_selected(QUEUE_FAMILY_USAGE_TRANSFER_FLAG_BIT) && is_family_queues_enought(index, prop))
-			apply_family_usage(index, QUEUE_FAMILY_USAGE_TRANSFER_FLAG_BIT);
+		if (is_transfer_only && !is_family_selected(EQueueTypeFlagBits::eTransfer) && is_family_queues_enought(index, prop))
+			apply_family_usage(index, EQueueTypeFlagBits::eTransfer);
 	}
 
 	// Try to find compute and transfer family if not found
@@ -1061,23 +1061,23 @@ void CVkRenderDevice::selectQueueFamilies(FVkPhysicalDevice& device_info)
 		const bool has_transfer_bit = static_cast<bool>(prop.queueFlags & vk::QueueFlagBits::eTransfer);
 		const bool has_present_bit = physical_device.getSurfaceSupportKHR(index, m_vkSurface);
 
-		if (has_present_bit && !is_family_selected(QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT) && is_family_queues_enought(index, prop))
-			apply_family_usage(index, QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT);
+		if (has_present_bit && !is_family_selected(EQueueTypeFlagBits::ePresent) && is_family_queues_enought(index, prop))
+			apply_family_usage(index, EQueueTypeFlagBits::ePresent);
 
-		if (has_compute_bit && !is_family_selected(QUEUE_FAMILY_USAGE_COMPUTE_FLAG_BIT) && is_family_queues_enought(index, prop))
-			apply_family_usage(index, QUEUE_FAMILY_USAGE_COMPUTE_FLAG_BIT);
+		if (has_compute_bit && !is_family_selected(EQueueTypeFlagBits::eCompute) && is_family_queues_enought(index, prop))
+			apply_family_usage(index, EQueueTypeFlagBits::eCompute);
 
-		if (has_transfer_bit && !is_family_selected(QUEUE_FAMILY_USAGE_TRANSFER_FLAG_BIT) && is_family_queues_enought(index, prop))
-			apply_family_usage(index, QUEUE_FAMILY_USAGE_TRANSFER_FLAG_BIT);
+		if (has_transfer_bit && !is_family_selected(EQueueTypeFlagBits::eTransfer) && is_family_queues_enought(index, prop))
+			apply_family_usage(index, EQueueTypeFlagBits::eTransfer);
 	}
 
-	if ((families_info.queueMask & QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT) && (families_info.queueMask & QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT))
+	if ((families_info.queueMask & EQueueTypeFlagBits::ePresent) && (families_info.queueMask & EQueueTypeFlagBits::eGraphics))
 		device_info.compatFlags |= PHYSICAL_DEVICE_COMPAT_BETTER_THEN_NOTHING_FLAG_BIT;
 
-	if (families_info.queueMask & QUEUE_FAMILY_USAGE_COMPUTE_FLAG_BIT)
+	if (families_info.queueMask & EQueueTypeFlagBits::eCompute)
 		device_info.compatFlags |= PHYSICAL_DEVICE_COMPAT_ASYNC_COMPUTE_FLAG_BIT;
 
-	if (families_info.queueMask & QUEUE_FAMILY_USAGE_TRANSFER_FLAG_BIT)
+	if (families_info.queueMask & EQueueTypeFlagBits::eTransfer)
 		device_info.compatFlags |= PHYSICAL_DEVICE_COMPAT_ASYNC_TRANSFER_FLAG_BIT;
 
 	std::set<uint32_t> unique_families{};
@@ -1292,7 +1292,7 @@ FRenderApiErrorInfo CVkRenderDevice::createLogicalDevice(const FRenderContextCre
 
 	auto res = make_api_error(vk::ObjectType::eDevice, physical_device.handle.createDevice(&device_ci, m_allocationCallbacks, &m_logicalDevice.handle), "Failed to create");
 
-	auto get_queue_family_index = [&physical_device](uint32_t mask) -> uint32_t { return physical_device.queueFamilies.queueToFamily.count(mask) ? physical_device.queueFamilies.queueToFamily[mask] : ~0u; };
+	auto get_queue_family_index = [&physical_device](EQueueTypeFlagBits mask) -> uint32_t { return physical_device.queueFamilies.queueToFamily.count(mask) ? physical_device.queueFamilies.queueToFamily[mask] : ~0u; };
 
 	std::unordered_map<uint32_t, uint32_t> family_usages{};
 	for (auto& [type, family] : physical_device.queueFamilies.queueToFamily)
@@ -1365,8 +1365,8 @@ FRenderApiErrorInfo CVkRenderDevice::createSwapchain(uint32_t surface_width, uin
 	if (surface_caps.supportedUsageFlags & vk::ImageUsageFlagBits::eTransferDst)
 		swapchain_ci.imageUsage |= vk::ImageUsageFlagBits::eTransferDst;
 
-	const auto graphics_family = physical_device.queueFamilies.queueToFamily[QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT];
-	const auto present_family = physical_device.queueFamilies.queueToFamily[QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT];
+	const auto graphics_family = physical_device.queueFamilies.queueToFamily[EQueueTypeFlagBits::eGraphics];
+	const auto present_family = physical_device.queueFamilies.queueToFamily[EQueueTypeFlagBits::ePresent];
 	if (graphics_family != present_family)
 	{
 		swapchain_ci.imageSharingMode = vk::SharingMode::eConcurrent;

@@ -48,154 +48,155 @@ namespace engine
 			// Register ETextureFormat
 			lua->new_enum(
 				"Format",
-				"rgba8_srgb", FORMAT_RGBA8_SRGB,
+				"rgba8_srgb", EApiDataFormat::eRGBA8_SRGB,
 
-				"r8_unorm", FORMAT_R8_UNORM,
-				"rg8_unorm", FORMAT_RG8_UNORM,
-				"rgb8_unorm", FORMAT_RGB8_UNORM,
-				"rgba8_unorm", FORMAT_RGBA8_UNORM,
+				"r8_unorm", EApiDataFormat::eR8_UNORM,
+				"rg8_unorm", EApiDataFormat::eRG8_UNORM,
+				"rgb8_unorm", EApiDataFormat::eRGB8_UNORM,
+				"rgba8_unorm", EApiDataFormat::eRGBA8_UNORM,
 
-				"r16_unorm", FORMAT_R16_UNORM,
-				"rg16_unorm", FORMAT_RG16_UNORM,
-				"rgb16_unorm", FORMAT_RGB16_UNORM,
-				"rgba16_unorm", FORMAT_RGBA16_UNORM,
+				"r16_unorm", EApiDataFormat::eR16_UNORM,
+				"rg16_unorm", EApiDataFormat::eRG16_UNORM,
+				"rgb16_unorm", EApiDataFormat::eRGB16_UNORM,
+				"rgba16_unorm", EApiDataFormat::eRGBA16_UNORM,
 
-				"r32_uint", FORMAT_R32_UINT,
-				"rg32_uint", FORMAT_RG32_UINT,
-				"rgb32_uint", FORMAT_RGB32_UINT,
-				"rgba32_uint", FORMAT_RGBA32_UINT,
+				"r32_uint", EApiDataFormat::eR32_UINT,
+				"rg32_uint", EApiDataFormat::eRG32_UINT,
+				"rgb32_uint", EApiDataFormat::eRGB32_UINT,
+				"rgba32_uint", EApiDataFormat::eRGBA32_UINT,
 
-				"r16_sfloat", FORMAT_R16_SFLOAT,
-				"rg16_sfloat", FORMAT_RG16_SFLOAT,
-				"rgb16_sfloat", FORMAT_RGB16_SFLOAT,
-				"rgba16_sfloat", FORMAT_RGBA16_SFLOAT,
+				"r16_sfloat", EApiDataFormat::eR16_SFLOAT,
+				"rg16_sfloat", EApiDataFormat::eRG16_SFLOAT,
+				"rgb16_sfloat", EApiDataFormat::eRGB16_SFLOAT,
+				"rgba16_sfloat", EApiDataFormat::eRGBA16_SFLOAT,
 
-				"r32_sfloat", FORMAT_R32_SFLOAT,
-				"rg32_sfloat", FORMAT_RG32_SFLOAT,
-				"rgb32_sfloat", FORMAT_RGB32_SFLOAT,
-				"rgba32_sfloat", FORMAT_RGBA32_SFLOAT
+				"r32_sfloat", EApiDataFormat::eR32_SFLOAT,
+				"rg32_sfloat", EApiDataFormat::eRG32_SFLOAT,
+				"rgb32_sfloat", EApiDataFormat::eRGB32_SFLOAT,
+				"rgba32_sfloat", EApiDataFormat::eRGBA32_SFLOAT
 			);
 
 			// Register ETextureImageTypeFlagBits
 			lua->new_enum(
 				"TexType",
-				"array", TEXTURE_IMAGE_TYPE_ARRAY_FLAG_BIT,
-				"cubemap", TEXTURE_IMAGE_TYPE_CUBEMAP_FLAG_BIT,
-				"one_dim", TEXTURE_IMAGE_TYPE_1D_FLAG_BIT,
-				"two_dim", TEXTURE_IMAGE_TYPE_2D_FLAG_BIT,
-				"three_dim", TEXTURE_IMAGE_TYPE_3D_FLAG_BIT,
-				"transferable", TEXTURE_IMAGE_TYPE_TRANSFERABLE_FLAG_BIT,
-				"samplable", TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT,
-				"storage", TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT
+				"array", ETextureCreateFlagBits::eArray,
+				"cubemap", ETextureCreateFlagBits::eCubemap,
+				"one_dim", ETextureCreateFlagBits::e1D,
+				"two_dim", ETextureCreateFlagBits::e2D,
+				"three_dim", ETextureCreateFlagBits::e3D,
+				"transferable", ETextureCreateFlagBits::eTransferable,
+				"samplable", ETextureCreateFlagBits::eSamplable,
+				"storage", ETextureCreateFlagBits::eStorage
 			);
 
 			// Register ETextureSizePolicy
 			lua->new_enum(
 				"SizePolicy",
-				"full", TEXTURE_SIZE_POLICY_FULL,
-				"scalable", TEXTURE_SIZE_POLICY_SCALABLE,
-				"fixed", TEXTURE_SIZE_POLICY_FIXED
+				"full", ERenderTargetSizePolicy::eFull,
+				"scalable", ERenderTargetSizePolicy::eScalable,
+				"fixed", ERenderTargetSizePolicy::eFixed
 			);
 
 			// Register EQueueFamilyUsageFlagBits
 			lua->new_enum(
 				"QueueType",
-				"present", QUEUE_FAMILY_USAGE_PRESENT_FLAG_BIT,
-				"graphics", QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT,
-				"compute", QUEUE_FAMILY_USAGE_COMPUTE_FLAG_BIT,
-				"transfer", QUEUE_FAMILY_USAGE_TRANSFER_FLAG_BIT
+				"present", EQueueTypeFlagBits::ePresent,
+				"graphics", EQueueTypeFlagBits::eGraphics,
+				"compute", EQueueTypeFlagBits::eCompute,
+				"transfer", EQueueTypeFlagBits::eTransfer
 			);
 
 			// Register EShaderPrimitiveTopology
 			lua->new_enum(
 				"PrimitiveTopology",
-				"point_list", SHADER_PRIMITIVE_TOPOLOGY_POINT_LIST,
-				"line_list", SHADER_PRIMITIVE_TOPOLOGY_LINE_LIST,
-				"line_strip", SHADER_PRIMITIVE_TOPOLOGY_LINE_STRIP,
-				"triangle_list", SHADER_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-				"triangle_strip", SHADER_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
-				"triangle_fan", SHADER_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN
+				"point_list", EVertexPrimitiveTopology::ePointList,
+				"line_list", EVertexPrimitiveTopology::eLineList,
+				"line_strip", EVertexPrimitiveTopology::eLineStrip,
+				"triangle_list", EVertexPrimitiveTopology::eTriangleList,
+				"triangle_strip", EVertexPrimitiveTopology::eTriangleStrip,
+				"triangle_fan", EVertexPrimitiveTopology::eTriangleFan
 			);
 
 			// Register EShaderCullMode
 			lua->new_enum(
 				"CullMode",
-				"none", SHADER_CULL_MODE_NONE,
-				"front", SHADER_CULL_MODE_FRONT_BIT,
-				"back", SHADER_CULL_MODE_BACK_BIT,
-				"double_sided", SHADER_CULL_MODE_FRONT_AND_BACK
+				"none", EShaderCullModeFlagBits::eNone,
+				"front", EShaderCullModeFlagBits::eFront,
+				"back", EShaderCullModeFlagBits::eBack,
+				"double_sided", EShaderCullModeFlagBits::eFrontAndBack
 			);
 
 			// Register EShaderFrontFace
 			lua->new_enum(
 				"FrontFace",
-				"ccw", SHADER_FRONT_FACE_CCW,
-				"cw", SHADER_FRONT_FACE_CW
+				"ccw", EShaderFrontFace::eCCW,
+				"cw", EShaderFrontFace::eCW
 			);
 
 			// Register EShaderResourcesUpdateFlagBits
 			lua->new_enum(
 				"ShaderUpdateFlags",
-				"uniform_blocks", SHADER_RESOURCES_UPDATE_UNIFORM_BLOCKS_FLAG_BIT,
-				"textures", SHADER_RESOURCES_UPDATE_TEXTURES_FLAG_BIT,
-				"all", SHADER_RESOURCES_UPDATE_ALL_FLAG_BIT
+				"uniform_blocks", EShaderResourcesUpdateFlagBits::eUniformBlocks,
+				"storage_blocks", EShaderResourcesUpdateFlagBits::eStorageBlocks,
+				"textures", EShaderResourcesUpdateFlagBits::eTextures,
+				"all", EShaderResourcesUpdateFlagBits::eAll
 			);
 
 			// Register ERenderingStepType
 			lua->new_enum(
 				"RenderingStepType",
-				"synchronization", RENDERING_STEP_SYNCHRONIZATION_TYPE,
-				"rendering", RENDERING_STEP_RENDERING_TYPE,
-				"compute", RENDERING_STEP_COMPUTE_TYPE
+				"synchronization", ERenderingStepType::eSynchronization,
+				"rendering", ERenderingStepType::eRendering,
+				"compute", ERenderingStepType::eCompute
 			);
 
 			// Register ERenderingType
 			lua->new_enum(
 				"RenderingType",
-				"fullscreen", RENDERING_FULLSCREEN_TYPE,
-				"geometry", RENDERING_GEOMETRY_TYPE,
-				"csm", RENDERING_CSM_TYPE,
-				"render_script", RENDERING_RENDER_SCRIPT_TYPE
+				"fullscreen", ERenderingType::eFullscreen,
+				"geometry", ERenderingType::eGeometry,
+				"csm", ERenderingType::eCascadedShadowMap,
+				"render_script", ERenderingType::eRenderScript
 			);
 
 			// Register EComputeType
 			lua->new_enum(
 				"ComputeType",
-				"default", COMPUTE_DEFAULT_TYPE,
-				"geometry", COMPUTE_GEOMETRY_TYPE,
-				"cubemap", COMPUTE_CUBEMAP_TYPE,
-				"culling", COMPUTE_CULLING_TYPE
+				"default", EComputeType::eDefault,
+				"geometry", EComputeType::eGeometry,
+				"cubemap", EComputeType::eCubemap,
+				"culling", EComputeType::eCulling
 			);
 
 			// Register ESynchronizationType
 			lua->new_enum(
 				"SyncType",
-				"semaphore", SYNCHRONIZATION_SEMAPHORE_TYPE,
-				"barrier", SYNCHRONIZATION_BARRIER_TYPE
+				"semaphore", ESynchronizationType::eSemaphore,
+				"barrier", ESynchronizationType::eBarrier
 			);
 
 			// Register ESemaphoreMode
 			lua->new_enum(
 				"SemaphoreMode",
-				"signal", SEMAPHORE_SIGNAL_MODE,
-				"wait", SEMAPHORE_WAIT_MODE
+				"signal", ESemaphoreMode::eSignal,
+				"wait", ESemaphoreMode::eWait
 			);
 
 			// Register EBarrierType
 			lua->new_enum(
 				"BarrierType",
-				"g2c", BARRIER_FROM_GRAPHICS_TO_COMPUTE,
-				"g2g", BARRIER_FROM_GRAPHICS_TO_GRAPHICS,
-				"c2c", BARRIER_FROM_COMPUTE_TO_COMPUTE,
-				"c2g", BARRIER_FROM_COMPUTE_TO_GRAPHICS
+				"g2c", EBarrierType::eG2C,
+				"g2g", EBarrierType::eG2G,
+				"c2c", EBarrierType::eC2C,
+				"c2g", EBarrierType::eC2G
 			);
 
 			// Register ERenderingSizeType
 			lua->new_enum(
 				"RenderingSizeType",
-				"from_rt", RENDER_SIZE_TYPE_FROM_RT,
-				"from_buffer", RENDER_SIZE_TYPE_FROM_BUFFER,
-				"manual", RENDER_SIZE_TYPE_MANUAL
+				"from_rt", ERenderingSizeType::eFromRenderTarget,
+				"from_buffer", ERenderingSizeType::eFromBuffer,
+				"manual", ERenderingSizeType::eManual
 			);
 		}
 

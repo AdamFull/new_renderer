@@ -28,21 +28,21 @@ size_t align_std140(size_t size)
 	return (size + maxalignment - 1ull) & ~(maxalignment - 1ull);
 }
 
-uint32_t get_attribute_format_by_type(EVertexAttributeType type, size_t size)
+EApiDataFormat get_attribute_format_by_type(EVertexAttributeType type, size_t size)
 {
 	if (size == 4ull)
 	{
 		switch (type)
 		{
-		case EVertexAttributeType::eJoint: return FORMAT_RGBA8_UNORM; break;
+		case EVertexAttributeType::eJoint: return EApiDataFormat::eRGBA8_UNORM; break;
 		}
 	}
 	else if (size == 8ull)
 	{
 		switch (type)
 		{
-		case EVertexAttributeType::eTexCoord: return FORMAT_RG32_SFLOAT; break;
-		case EVertexAttributeType::eJoint: return FORMAT_RGBA16_UNORM; break;
+		case EVertexAttributeType::eTexCoord: return EApiDataFormat::eRG32_SFLOAT; break;
+		case EVertexAttributeType::eJoint: return EApiDataFormat::eRGBA16_UNORM; break;
 		}
 	}
 	else if (size == 12ull)
@@ -52,7 +52,7 @@ uint32_t get_attribute_format_by_type(EVertexAttributeType type, size_t size)
 		case EVertexAttributeType::ePosition:
 		case EVertexAttributeType::eColor: 
 		case EVertexAttributeType::eNormal: 
-		case EVertexAttributeType::eTangent: return FORMAT_RGBA32_SFLOAT; break;
+		case EVertexAttributeType::eTangent: return EApiDataFormat::eRGBA32_SFLOAT; break;
 		}
 	}
 	else if (size == 16ull)
@@ -62,11 +62,11 @@ uint32_t get_attribute_format_by_type(EVertexAttributeType type, size_t size)
 		case EVertexAttributeType::ePosition:
 		case EVertexAttributeType::eColor:
 		case EVertexAttributeType::eTangent:
-		case EVertexAttributeType::eWeight: return FORMAT_RGBA32_SFLOAT; break;
+		case EVertexAttributeType::eWeight: return EApiDataFormat::eRGBA32_SFLOAT; break;
 		}
 	}
 
-	return 0;
+	return EApiDataFormat::eUnknown;
 }
 // HAS_TEXCOORD, HAS_NORMAL, HAS_SKIN, COLOR_VEC3, COLOR_VEC4, TANGENT_VEC3, TANGENT_VEC4, JOINTS_8BIT, JOINTS_16BIT
 std::string get_attribute_definition(EVertexAttributeType type, size_t size)
@@ -184,14 +184,14 @@ void CVertexHandler::allocate()
 
 	// Create vertex buffer
 	FBufferCreateInfo buffer_ci{};
-	buffer_ci.flags = BUFFER_TYPE_VERTEX_FLAG_BIT;
+	buffer_ci.flags = EBufferTypeFlagBits::eVertex;
 	buffer_ci.size = m_vertexBuffer.elementSize;
 	buffer_ci.count = m_vertexBuffer.elementCount;
 	buffer_ci.upload.data = m_vertexBuffer.data;
 	m_vertexBuffer.buffer = render_context->createBuffer(std::format("SCENE_VERTICES{}", m_definitions), buffer_ci);
 
 	// Create index buffer
-	buffer_ci.flags = BUFFER_TYPE_INDEX_FLAG_BIT;
+	buffer_ci.flags = EBufferTypeFlagBits::eIndex;
 	buffer_ci.size = m_indexBuffer.elementSize;
 	buffer_ci.count = m_indexBuffer.elementCount;
 	buffer_ci.upload.data = m_indexBuffer.data;
@@ -199,7 +199,7 @@ void CVertexHandler::allocate()
 }
 
 // TODO: i can create custom bindings support here
-void CVertexHandler::bind(uint32_t queue)
+void CVertexHandler::bind(EQueueTypeFlagBits queue)
 {
 	if (m_vertexBuffer.elementCount)
 	{

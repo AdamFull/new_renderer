@@ -149,7 +149,7 @@ namespace engine
 				const vk::SampleCountFlagBits getMultisamplingCount() const;
 				vk::Device& getLogicalDevice();
 
-				vk::Queue& getQueue(uint32_t flag);
+				vk::Queue& getQueue(EQueueTypeFlagBits flag);
 
 				vma::Allocator& getMemoryAllocator();
 

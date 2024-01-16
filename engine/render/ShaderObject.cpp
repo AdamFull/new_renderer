@@ -85,7 +85,7 @@ void CShaderObject::flushDescriptors()
 	render_context->updateShaderResources(update_data);
 }
 
-void CShaderObject::flushConstants(uint32_t queue)
+void CShaderObject::flushConstants(EQueueTypeFlagBits queue)
 {
 	std::unordered_map<size_t, FUniformDataView> constants{};
 
@@ -101,7 +101,7 @@ void CShaderObject::flushConstants(uint32_t queue)
 	render_context->flushConstantRanges(m_shaderId, constants, queue);
 }
 
-void CShaderObject::bind(uint32_t queue)
+void CShaderObject::bind(EQueueTypeFlagBits queue)
 {
 	auto& render_context = m_pRenderInterface->getRenderContext();
 	render_context->bindShader(m_shaderId, queue);

@@ -7,15 +7,16 @@ namespace engine
 {
 	namespace render
 	{
-		enum EBufferTypeFlagBits
+		enum class EBufferTypeFlagBits
 		{
-			BUFFER_TYPE_STAGING_FLAG_BIT = 1 << 0,
-			BUFFER_TYPE_VERTEX_FLAG_BIT = 1 << 1,
-			BUFFER_TYPE_INDEX_FLAG_BIT = 1 << 2,
-			BUFFER_TYPE_STORAGE_FLAG_BIT = 1 << 3,
-			BUFFER_TYPE_UNIFORM_FLAG_BIT = 1 << 4,
-			BUFFER_TYPE_INDIRECT_FLAG_BIT = 1 << 5,
+			eStaging = 1 << 0,
+			eVertex = 1 << 1,
+			eIndex = 1 << 2,
+			eStorage = 1 << 3,
+			eUniform = 1 << 4,
+			eIndirect = 1 << 5,
 		};
+		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(EBufferTypeFlags, EBufferTypeFlagBits)
 
 		struct FBufferUploadInfo
 		{
@@ -29,7 +30,7 @@ namespace engine
 		struct FBufferCreateInfo
 		{
 			// EBufferTypeFlagBits
-			uint32_t flags{ 0u };
+			EBufferTypeFlagBits flags{};
 			size_t count{ 1ull };
 			size_t size{ 0ull };
 

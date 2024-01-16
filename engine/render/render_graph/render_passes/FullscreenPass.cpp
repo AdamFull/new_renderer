@@ -19,9 +19,9 @@ void CFullscreenPass::init(const FRenderPassCreateInfo& pass_ci)
 
 	// Create shader
 	FGraphicsShaderCreateInfo shader_ci{};
-	shader_ci.cullMode = pass_ci.flipViewport ? SHADER_CULL_MODE_BACK_BIT : SHADER_CULL_MODE_FRONT_BIT;
-	shader_ci.frontFace = SHADER_FRONT_FACE_CCW;
-	shader_ci.primitiveTopology = SHADER_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	shader_ci.cullMode = pass_ci.flipViewport ? EShaderCullModeFlagBits::eBack : EShaderCullModeFlagBits::eFront;
+	shader_ci.frontFace = EShaderFrontFace::eCCW;
+	shader_ci.primitiveTopology = EVertexPrimitiveTopology::eTriangleList;
 
 	auto& output_targets = m_renderResources[ERenderResourceGroupType::eColorWrite];
 	for (size_t resource_id : output_targets)

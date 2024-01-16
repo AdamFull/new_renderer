@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <utility.hpp>
+#include "BaseEnumerators.h"
 
 namespace engine
 {
@@ -84,7 +85,7 @@ namespace engine
 			virtual void create(const FVertexHandlerCreateInfo& create_info) = 0;
 			virtual void allocate() = 0;
 
-			virtual void bind(u32 queue) = 0;
+			virtual void bind(EQueueTypeFlagBits queue) = 0;
 
 			virtual size_t addVertices(const std::vector<FVertexAttributePointer>& attributes_data) = 0;
 			virtual size_t addIndices(const FVertexAttributePointer& indices) = 0;

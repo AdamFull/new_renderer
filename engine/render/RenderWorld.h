@@ -14,7 +14,7 @@ namespace engine
 
 			void create() override;
 
-			size_t registerFrustum(uint32_t type) override;
+			size_t registerFrustum(ERenderGeometryCullerType type) override;
 			void updateFrustum(size_t frustum_id, const glm::mat4& view, const glm::mat4& projection) override;
 
 			void addDrawGeometry(const std::vector<FGeometryRawBatch>& new_geometry) override;
@@ -37,9 +37,9 @@ namespace engine
 
 			const std::vector<std::unique_ptr<IBufferObject>>& getDrawBuffers() override;
 
-			const std::unordered_map<uint32_t, std::vector<FGeometryBatchRange>>& getAllGeometryRanges() const;
-			const std::vector<FGeometryBatchRange>& getGeometryRanges(uint32_t type) const;
-			const FGeometryCPUBatch& getGeometryBatch(size_t index) const;
+			const std::unordered_map<ERenderGeometryCullerType, std::vector<FGeometryBatchRange>>& getAllGeometryRanges() const override;
+			const std::vector<FGeometryBatchRange>& getGeometryRanges(ERenderGeometryCullerType type) const override;
+			const FGeometryCPUBatch& getGeometryBatch(size_t index) const override;
 
 			FRenderWorldStats& getStats() override;
 			const FRenderWorldStats& getStats() const override;
@@ -49,7 +49,7 @@ namespace engine
 
 			std::vector<FGeometryRawBatch> m_vRawGeometryBatches{};
 			std::vector<FGeometryCPUBatch> m_vGeometryBatches{};
-			mutable std::unordered_map<uint32_t, std::vector<FGeometryBatchRange>> m_mBatchRanges{};
+			mutable std::unordered_map<ERenderGeometryCullerType, std::vector<FGeometryBatchRange>> m_mBatchRanges{};
 
 			std::vector<FMaterial> m_vMaterials{};
 			std::vector<FSceneNode> m_vNodes{};

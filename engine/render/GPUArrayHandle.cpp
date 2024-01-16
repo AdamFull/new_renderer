@@ -20,7 +20,7 @@ CGPUArrayHandle::CGPUArrayHandle(IRenderInterface* render_interface)
 void CGPUArrayHandle::create(const std::string& name, size_t stride, size_t count)
 {
 	FBufferCreateInfo buffer_ci{};
-	buffer_ci.flags = BUFFER_TYPE_STORAGE_FLAG_BIT;
+	buffer_ci.flags = EBufferTypeFlagBits::eStorage;
 	m_elementSize = buffer_ci.size = stride;
 	m_elementCount = buffer_ci.count = count;
 

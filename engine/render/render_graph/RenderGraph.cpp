@@ -28,27 +28,27 @@ void CRenderGraph::create()
 
 	{
 		FTextureCreateInfo texture_ci{};
-		texture_ci.format = render_context->getApiFormat(FORMAT_RG16_SFLOAT);
-		texture_ci.typeFlags = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT | TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT | TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT;
-		texture_ci.sizePolicy = TEXTURE_SIZE_POLICY_FIXED;
+		texture_ci.format = render_context->getApiFormat(EApiDataFormat::eRG16_SFLOAT);
+		texture_ci.typeFlags = ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage;
+		texture_ci.sizePolicy = ERenderTargetSizePolicy::eFixed;
 		texture_ci.width = texture_ci.height = 1024;
 		addRenderResource("brdf_lut_target", texture_ci);
 	}
 
 	{
 		FTextureCreateInfo texture_ci{};
-		texture_ci.format = render_context->getApiFormat(FORMAT_RGBA32_SFLOAT);
-		texture_ci.typeFlags = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT | TEXTURE_IMAGE_TYPE_CUBEMAP_FLAG_BIT | TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT | TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT;
-		texture_ci.sizePolicy = TEXTURE_SIZE_POLICY_FIXED;
+		texture_ci.format = render_context->getApiFormat(EApiDataFormat::eRGBA32_SFLOAT);
+		texture_ci.typeFlags = ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eCubemap | ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage;
+		texture_ci.sizePolicy = ERenderTargetSizePolicy::eFixed;
 		texture_ci.width = texture_ci.height = 64;
 		addRenderResource("irradiance_cube_target", texture_ci);
 	}
 
 	{
 		FTextureCreateInfo texture_ci{};
-		texture_ci.format = render_context->getApiFormat(FORMAT_RGBA16_SFLOAT);
-		texture_ci.typeFlags = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT | TEXTURE_IMAGE_TYPE_CUBEMAP_FLAG_BIT | TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT | TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT;
-		texture_ci.sizePolicy = TEXTURE_SIZE_POLICY_FIXED;
+		texture_ci.format = render_context->getApiFormat(EApiDataFormat::eRGBA16_SFLOAT);
+		texture_ci.typeFlags = ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eCubemap | ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage;
+		texture_ci.sizePolicy = ERenderTargetSizePolicy::eFixed;
 		texture_ci.width = texture_ci.height = 512;
 		texture_ci.mipLevels = static_cast<uint32_t>(std::floor(std::log2((std::max)(512, 512)))) + 1u;
 		addRenderResource("prefiltered_cube_target", texture_ci);
@@ -57,8 +57,8 @@ void CRenderGraph::create()
 	{
 		FTextureCreateInfo texture_ci{};
 		texture_ci.format = render_context->getDepthFormat(false);
-		texture_ci.typeFlags = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT | TEXTURE_IMAGE_TYPE_ARRAY_FLAG_BIT | TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT;
-		texture_ci.sizePolicy = TEXTURE_SIZE_POLICY_FIXED;
+		texture_ci.typeFlags = ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eArray | ETextureCreateFlagBits::eSamplable;
+		texture_ci.sizePolicy = ERenderTargetSizePolicy::eFixed;
 		texture_ci.width = cascade_shadow_map_resolution;
 		texture_ci.height = cascade_shadow_map_resolution;
 		texture_ci.arrayLayers = cascade_shadow_map_cascade_count * max_directional_light_shadow_count;
@@ -67,9 +67,9 @@ void CRenderGraph::create()
 
 	{
 		FTextureCreateInfo texture_ci{};
-		texture_ci.format = render_context->getApiFormat(FORMAT_RGBA8_UNORM);
-		texture_ci.typeFlags = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT | TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT;
-		texture_ci.sizePolicy = TEXTURE_SIZE_POLICY_SCALABLE;
+		texture_ci.format = render_context->getApiFormat(EApiDataFormat::eRGBA8_UNORM);
+		texture_ci.typeFlags = ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eSamplable;
+		texture_ci.sizePolicy = ERenderTargetSizePolicy::eScalable;
 		texture_ci.width = surface_resolution.x;
 		texture_ci.height = surface_resolution.y;
 		addRenderResource("visbuffer_geometry_target", texture_ci);
@@ -77,9 +77,9 @@ void CRenderGraph::create()
 
 	{
 		FTextureCreateInfo texture_ci{};
-		texture_ci.format = render_context->getApiFormat(FORMAT_RGBA8_UNORM);
-		texture_ci.typeFlags = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT | TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT;
-		texture_ci.sizePolicy = TEXTURE_SIZE_POLICY_SCALABLE;
+		texture_ci.format = render_context->getApiFormat(EApiDataFormat::eRGBA8_UNORM);
+		texture_ci.typeFlags = ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eSamplable;
+		texture_ci.sizePolicy = ERenderTargetSizePolicy::eScalable;
 		texture_ci.width = surface_resolution.x;
 		texture_ci.height = surface_resolution.y;
 		addRenderResource("visbuffer_matobj_target", texture_ci);
@@ -87,9 +87,9 @@ void CRenderGraph::create()
 
 	{
 		FTextureCreateInfo texture_ci{};
-		texture_ci.format = render_context->getApiFormat(FORMAT_RGBA8_UNORM);
-		texture_ci.typeFlags = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT | TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT;
-		texture_ci.sizePolicy = TEXTURE_SIZE_POLICY_SCALABLE;
+		texture_ci.format = render_context->getApiFormat(EApiDataFormat::eRGBA8_UNORM);
+		texture_ci.typeFlags = ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eSamplable;
+		texture_ci.sizePolicy = ERenderTargetSizePolicy::eScalable;
 		texture_ci.width = surface_resolution.x;
 		texture_ci.height = surface_resolution.y;
 		addRenderResource("visbuffer_skinvbo_target", texture_ci);
@@ -98,8 +98,8 @@ void CRenderGraph::create()
 	{
 		FTextureCreateInfo texture_ci{};
 		texture_ci.format = render_context->getDepthFormat(false);
-		texture_ci.typeFlags = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT | TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT;
-		texture_ci.sizePolicy = TEXTURE_SIZE_POLICY_SCALABLE;
+		texture_ci.typeFlags = ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eSamplable;
+		texture_ci.sizePolicy = ERenderTargetSizePolicy::eScalable;
 		texture_ci.width = surface_resolution.x;
 		texture_ci.height = surface_resolution.y;
 		addRenderResource("zbuffer_depth_target", texture_ci);
@@ -107,9 +107,9 @@ void CRenderGraph::create()
 
 	{
 		FTextureCreateInfo texture_ci{};
-		texture_ci.format = render_context->getApiFormat(FORMAT_RGBA16_SFLOAT);
-		texture_ci.typeFlags = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT | TEXTURE_IMAGE_TYPE_SAMPLABLE_FLAG_BIT | TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT;
-		texture_ci.sizePolicy = TEXTURE_SIZE_POLICY_SCALABLE;
+		texture_ci.format = render_context->getApiFormat(EApiDataFormat::eRGBA16_SFLOAT);
+		texture_ci.typeFlags = ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage;
+		texture_ci.sizePolicy = ERenderTargetSizePolicy::eScalable;
 		texture_ci.width = surface_resolution.x;
 		texture_ci.height = surface_resolution.y;
 		addRenderResource("final_lighting_target", texture_ci);
@@ -118,8 +118,8 @@ void CRenderGraph::create()
 	{
 		FTextureCreateInfo texture_ci{};
 		texture_ci.format = render_context->getPresentFormat();
-		texture_ci.typeFlags = TEXTURE_IMAGE_TYPE_2D_FLAG_BIT;
-		texture_ci.sizePolicy = TEXTURE_SIZE_POLICY_FULL;
+		texture_ci.typeFlags = ETextureCreateFlagBits::e2D;
+		texture_ci.sizePolicy = ERenderTargetSizePolicy::eFull;
 		texture_ci.width = surface_resolution.x;
 		texture_ci.height = surface_resolution.y;
 		texture_ci.isSwapchainTarget = true;
@@ -136,8 +136,8 @@ void CRenderGraph::create()
 	{
 		FRenderConfigComputeCreateInfo pass_ci{};
 		pass_ci.oneTime = true;
-		pass_ci.type = COMPUTE_DEFAULT_TYPE;
-		pass_ci.queue = QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT;
+		pass_ci.type = EComputeType::eDefault;
+		pass_ci.queue = EQueueTypeFlagBits::eGraphics;
 		pass_ci.shader = "lighting:brgflut_generator";
 
 		pass_ci.sizeTarget = "brdf_lut_target";
@@ -149,8 +149,8 @@ void CRenderGraph::create()
 	{
 		FRenderConfigComputeCreateInfo pass_ci{};
 		pass_ci.oneTime = true;
-		pass_ci.type = COMPUTE_DEFAULT_TYPE;
-		pass_ci.queue = QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT;
+		pass_ci.type = EComputeType::eDefault;
+		pass_ci.queue = EQueueTypeFlagBits::eGraphics;
 		pass_ci.shader = "lighting:irradiancecube_generator";
 
 		pass_ci.sizeTarget = "irradiance_cube_target";
@@ -164,8 +164,8 @@ void CRenderGraph::create()
 	{
 		FRenderConfigComputeCreateInfo pass_ci{};
 		pass_ci.oneTime = true;
-		pass_ci.type = COMPUTE_CUBEMAP_TYPE;
-		pass_ci.queue = QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT;
+		pass_ci.type = EComputeType::eCubemap;
+		pass_ci.queue = EQueueTypeFlagBits::eGraphics;
 		pass_ci.shader = "lighting:prefilteredmap_generator";
 
 		pass_ci.sizeTarget = "prefiltered_cube_target";
@@ -178,8 +178,8 @@ void CRenderGraph::create()
 
 	{
 		FRenderConfigComputeCreateInfo pass_ci{};
-		pass_ci.type = COMPUTE_CULLING_TYPE;
-		pass_ci.queue = QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT;
+		pass_ci.type = EComputeType::eCulling;
+		pass_ci.queue = EQueueTypeFlagBits::eGraphics;
 		pass_ci.shader = "culling:cull_and_batch";
 
 		pass_ci.bindReadResource("nodeBuffer", "NodeStorage");
@@ -192,8 +192,8 @@ void CRenderGraph::create()
 
 	{
 		FRenderConfigRenderCreateInfo pass_ci{};
-		pass_ci.type = RENDERING_CSM_TYPE;
-		pass_ci.queue = QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT;
+		pass_ci.type = ERenderingType::eCascadedShadowMap;
+		pass_ci.queue = EQueueTypeFlagBits::eGraphics;
 		pass_ci.shader = "lighting:unidirectional_shadow:CASCADED_SHADOW";
 
 		pass_ci.sizeTarget = "cascaded_shadows_target";
@@ -211,8 +211,8 @@ void CRenderGraph::create()
 
 	{
 		FRenderConfigRenderCreateInfo pass_ci{};
-		pass_ci.type = RENDERING_GEOMETRY_TYPE;
-		pass_ci.queue = QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT;
+		pass_ci.type = ERenderingType::eGeometry;
+		pass_ci.queue = EQueueTypeFlagBits::eGraphics;
 		pass_ci.shader = "visibilitybuffer:write";
 
 		pass_ci.sizeTarget = "zbuffer_depth_target";
@@ -232,8 +232,8 @@ void CRenderGraph::create()
 
 	{
 		FRenderConfigComputeCreateInfo pass_ci{};
-		pass_ci.type = COMPUTE_DEFAULT_TYPE;
-		pass_ci.queue = QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT;
+		pass_ci.type = EComputeType::eDefault;
+		pass_ci.queue = EQueueTypeFlagBits::eGraphics;
 		pass_ci.shader = "visibilitybuffer:shade";
 
 		pass_ci.sizeTarget = "final_lighting_target";
@@ -266,8 +266,8 @@ void CRenderGraph::create()
 
 	{
 		FRenderConfigRenderCreateInfo pass_ci{};
-		pass_ci.type = RENDERING_FULLSCREEN_TYPE;
-		pass_ci.queue = QUEUE_FAMILY_USAGE_GRAPHICS_FLAG_BIT;
+		pass_ci.type = ERenderingType::eFullscreen;
+		pass_ci.queue = EQueueTypeFlagBits::eGraphics;
 		pass_ci.shader = "testing:screenspace";
 		pass_ci.flipViewport = true;
 
@@ -305,7 +305,7 @@ u64 CRenderGraph::addRenderResource(const std::string& name, const FTextureCreat
 
 	auto& new_render_resource = m_vRenderResources.emplace_back();
 	new_render_resource.handle = render_context->createRenderTargets(name, texture_ci);
-	new_render_resource.type = (texture_ci.typeFlags & TEXTURE_IMAGE_TYPE_STORAGE_FLAG_BIT) ? ERenderResourceTypeFlagBits::eStorageTarget : ERenderResourceTypeFlagBits::eRenderTarget;
+	new_render_resource.type = (texture_ci.typeFlags & ETextureCreateFlagBits::eStorage) ? ERenderResourceTypeFlagBits::eStorageTarget : ERenderResourceTypeFlagBits::eRenderTarget;
 	
 	return new_render_resource.handle;
 }
@@ -358,11 +358,11 @@ u64 CRenderGraph::addRenderPass(const std::string& name, const FRenderConfigRend
 	applyRenderPassResources(pass_index, &render_pass_ci, &pass_ci);
 
 	std::unique_ptr<IRenderPass> new_pass{};
-	if (render_pass_ci.type == RENDERING_FULLSCREEN_TYPE)
+	if (render_pass_ci.type == ERenderingType::eFullscreen)
 		new_pass = std::make_unique<CFullscreenPass>(m_pRenderInterface);
-	else if (render_pass_ci.type == RENDERING_GEOMETRY_TYPE)
+	else if (render_pass_ci.type == ERenderingType::eGeometry)
 		new_pass = std::make_unique<CGeometryPass>(m_pRenderInterface);
-	else if (render_pass_ci.type == RENDERING_CSM_TYPE)
+	else if (render_pass_ci.type == ERenderingType::eCascadedShadowMap)
 		new_pass = std::make_unique<CCascadedShadowMapPass>(m_pRenderInterface);
 
 	new_pass->init(pass_ci);
@@ -380,13 +380,13 @@ u64 CRenderGraph::addRenderPass(const std::string& name, const FRenderConfigComp
 	applyRenderPassResources(pass_index, &compute_pass_ci, &pass_ci);
 
 	std::unique_ptr<IComputePass> new_pass{};
-	if (compute_pass_ci.type == COMPUTE_DEFAULT_TYPE)
+	if (compute_pass_ci.type == EComputeType::eDefault)
 		new_pass = std::make_unique<CComputePass>(m_pRenderInterface);
-	else if (compute_pass_ci.type == COMPUTE_GEOMETRY_TYPE)
+	else if (compute_pass_ci.type == EComputeType::eGeometry)
 		new_pass = std::make_unique<CComputeGeometryPass>(m_pRenderInterface);
-	else if (compute_pass_ci.type == COMPUTE_CUBEMAP_TYPE)
+	else if (compute_pass_ci.type == EComputeType::eCubemap)
 		new_pass = std::make_unique<CComputeCubemapPass>(m_pRenderInterface);
-	else if (compute_pass_ci.type == COMPUTE_CULLING_TYPE)
+	else if (compute_pass_ci.type == EComputeType::eCulling)
 		new_pass = std::make_unique<CComputeCullingPass>(m_pRenderInterface);
 
 	new_pass->init(pass_ci);
@@ -541,12 +541,12 @@ void CRenderGraph::applyRenderPassResources(u64 pass_index, const FRenderConfigP
 		auto& render_resource = getRenderResource(pass_ci->sizeTarget);
 
 		if (render_resource.type & ERenderResourceTypeFlagBits::eAllImage)
-			pass_ci->sizePolicy = RENDER_SIZE_TYPE_FROM_RT;
+			pass_ci->sizePolicy = ERenderingSizeType::eFromRenderTarget;
 		else if (render_resource.type & ERenderResourceTypeFlagBits::eBuffer)
-			pass_ci->sizePolicy = RENDER_SIZE_TYPE_FROM_BUFFER;
+			pass_ci->sizePolicy = ERenderingSizeType::eFromBuffer;
 	}
 	else
-		pass_ci->sizePolicy = RENDER_SIZE_TYPE_MANUAL;
+		pass_ci->sizePolicy = ERenderingSizeType::eManual;
 
 	for (const auto& [access_flag, bindings] : raw_pass_ci->resourceBindings)
 	{
@@ -596,14 +596,14 @@ void CRenderGraph::applyRenderPassResources(u64 pass_index, const FRenderConfigP
 	applyMultiRenderResourceDependencies(pass_index, pass_ci->queue, pass_ci->resources);
 }
 
-void CRenderGraph::applySingleRenderResourceDependencies(u64 resource_id, ERenderResourceAccessFlagBits access_type, u64 pass_index, uint32_t queue_type)
+void CRenderGraph::applySingleRenderResourceDependencies(u64 resource_id, ERenderResourceAccessFlagBits access_type, u64 pass_index, EQueueTypeFlagBits queue_type)
 {
 	auto& render_resource = m_vRenderResources.at(resource_id);
 	render_resource.usages[access_type].emplace(pass_index);
 	render_resource.queuesUsed |= queue_type;
 }
 
-void CRenderGraph::applyMultiRenderResourceDependencies(u64 pass_index, uint32_t queue_type, const std::unordered_map<ERenderResourceGroupType, std::vector<u64>>& associated_resources)
+void CRenderGraph::applyMultiRenderResourceDependencies(u64 pass_index, EQueueTypeFlagBits queue_type, const std::unordered_map<ERenderResourceGroupType, std::vector<u64>>& associated_resources)
 {
 	for (const auto& [type, resources] : associated_resources)
 	{

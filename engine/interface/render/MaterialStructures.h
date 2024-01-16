@@ -8,11 +8,11 @@ namespace engine
 {
 	namespace render
 	{
-		enum EAlphaMode
+		enum class EAlphaMode : uint32_t
 		{
-			MATERIAL_APLHA_MODE_OPAQUE,
-			MATERIAL_APLHA_MODE_MASK,
-			MATERIAL_APLHA_MODE_BLEND
+			eOpaque,
+			eMask,
+			eBlend
 		};
 	}
 }

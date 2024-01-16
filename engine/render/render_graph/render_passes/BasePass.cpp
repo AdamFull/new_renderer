@@ -65,7 +65,7 @@ void IRenderPass::execute(float dt)
 	beginRenderingInfo.stencilAttachment = m_stencilAttachment;
 	beginRenderingInfo.layerCount = m_layerCount;
 
-	if (m_sizePolicy == RENDER_GRAPH_SIZE_POLICY_FROM_TARGET && m_sizeTarget != ~0ull)
+	if (m_sizePolicy == ERenderingSizeType::eFromRenderTarget && m_sizeTarget != ~0ull)
 	{
 		auto& render_resource = render_graph->getRenderResource(m_sizeTarget);
 		if (render_resource.type != ERenderResourceTypeFlagBits::eRenderTarget)

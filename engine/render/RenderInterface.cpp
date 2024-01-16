@@ -330,33 +330,33 @@ void CRenderInterface::createRendering(const FRenderingStepCreateInfo& rendering
 		m_matPassStencil = rendering_ci.rendering.stencilTarget;
 	}
 
-	if (rendering_ci.type == RENDERING_STEP_SYNCHRONIZATION_TYPE)
+	if (rendering_ci.type == ERenderingStepType::eSynchronization)
 	{
-		if (rendering_ci.synchronization.type == SYNCHRONIZATION_SEMAPHORE_TYPE)
+		if (rendering_ci.synchronization.type == ESynchronizationType::eSemaphore)
 			new_step = std::make_unique<CSemaphoreRenderingStep>(this);
-		else if (rendering_ci.synchronization.type == SYNCHRONIZATION_BARRIER_TYPE)
+		else if (rendering_ci.synchronization.type == ESynchronizationType::eBarrier)
 			new_step = std::make_unique<CBarrierRenderingStep>(this);
 	}
-	else if (rendering_ci.type == RENDERING_STEP_RENDERING_TYPE)
+	else if (rendering_ci.type == ERenderingStepType::eRendering)
 	{
-		if(rendering_ci.rendering.type == RENDERING_FULLSCREEN_TYPE)
+		if(rendering_ci.rendering.type == ERenderingType::eFullscreen)
 			new_step = std::make_unique<CFullscreenRenderingStep>(this);
-		else if (rendering_ci.rendering.type == RENDERING_GEOMETRY_TYPE)
+		else if (rendering_ci.rendering.type == ERenderingType::eGeometry)
 			new_step = std::make_unique<CGeometryRenderingStep>(this);
-		else if (rendering_ci.rendering.type == RENDERING_CSM_TYPE)
+		else if (rendering_ci.rendering.type == ERenderingType::eCascadedShadowMap)
 			new_step = std::make_unique<CCascadedShadowMapsRenderingStep>(this);
-		else if(rendering_ci.rendering.type == RENDERING_RENDER_SCRIPT_TYPE)
+		else if(rendering_ci.rendering.type == ERenderingType::eRenderScript)
 			new_step = std::make_unique<CRenderScriptRenderingStep>(this);
 	}
-	else if (rendering_ci.type == RENDERING_STEP_COMPUTE_TYPE)
+	else if (rendering_ci.type == ERenderingStepType::eCompute)
 	{
-		if (rendering_ci.compute.type == COMPUTE_DEFAULT_TYPE)
+		if (rendering_ci.compute.type == EComputeType::eDefault)
 			new_step = std::make_unique<CComputeRenderingStep>(this);
-		else if (rendering_ci.compute.type == COMPUTE_GEOMETRY_TYPE)
+		else if (rendering_ci.compute.type == EComputeType::eGeometry)
 			new_step = std::make_unique<CComputeGeometryRenderingStep>(this);
-		else if (rendering_ci.compute.type == COMPUTE_CUBEMAP_TYPE)
+		else if (rendering_ci.compute.type == EComputeType::eCubemap)
 			new_step = std::make_unique<CComputeCubemapRenderingStep>(this);
-		else if (rendering_ci.compute.type == COMPUTE_CULLING_TYPE)
+		else if (rendering_ci.compute.type == EComputeType::eCulling)
 			new_step = std::make_unique<CComputeCullingRenderingStep>(this);
 	}
 

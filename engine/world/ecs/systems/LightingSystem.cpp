@@ -35,7 +35,7 @@ void CLightingSystem::__create()
 			{
 				light.frustumIDs.resize(cascade_shadow_map_cascade_count);
 				for(size_t idx = 0ull; idx < cascade_shadow_map_cascade_count; ++idx)
-					light.frustumIDs[idx] = render_world->registerFrustum(RENDER_GEOMETRY_CULLER_CSM_TYPE);
+					light.frustumIDs[idx] = render_world->registerFrustum(ERenderGeometryCullerType::eCascadedShadow);
 
 				shadow_count++;
 			}
@@ -49,7 +49,7 @@ void CLightingSystem::__create()
 		{
 			if (light.castShadows && shadow_count < max_point_light_shadow_count)
 			{
-				light.frustumID = render_world->registerFrustum(RENDER_GEOMETRY_CULLER_OSM_TYPE);
+				light.frustumID = render_world->registerFrustum(ERenderGeometryCullerType::eOmniShadow);
 				shadow_count++;
 			}
 		}
@@ -62,7 +62,7 @@ void CLightingSystem::__create()
 		{
 			if (light.castShadows && shadow_count < max_spot_light_shadow_count)
 			{
-				light.frustumID = render_world->registerFrustum(RENDER_GEOMETRY_CULLER_DSM_TYPE);
+				light.frustumID = render_world->registerFrustum(ERenderGeometryCullerType::eSpotShadow);
 				shadow_count++;
 			}
 		}
