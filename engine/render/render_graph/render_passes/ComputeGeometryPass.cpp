@@ -22,14 +22,14 @@ void CComputeGeometryPass::init(const FComputePassCreateInfo& pass_ci)
 #endif
 }
 
-void CComputeGeometryPass::bake(std::unordered_map<size_t, FRenderGraphAttachmentOperationInfo>& resource_info)
+void CComputeGeometryPass::bake(std::unordered_map<u64, FRenderGraphAttachmentOperationInfo>& resource_info)
 {
 	IComputePass::bake(resource_info);
 }
 
 void CComputeGeometryPass::_execute(const FComputeFrameInfo& frame_info)
 {
-	std::unordered_set<size_t> vbos{};
+	std::unordered_set<u64> vbos{};
 
 	auto& render_context = m_pRenderInterface->getRenderContext();
 	auto& render_world = m_pRenderInterface->getRenderWorld();
@@ -37,7 +37,7 @@ void CComputeGeometryPass::_execute(const FComputeFrameInfo& frame_info)
 	auto& batch_ranges = render_world->getGeometryRanges(ERenderGeometryCullerType::eScene);
 	for (const auto& batch_range : batch_ranges)
 	{
-		for (size_t batch_id = batch_range.offset; batch_id < batch_range.offset + batch_range.count; ++batch_id)
+		for (u64 batch_id = batch_range.offset; batch_id < batch_range.offset + batch_range.count; ++batch_id)
 		{
 			const auto& batch = render_world->getGeometryBatch(batch_id);
 			vbos.emplace(batch.vboID);
@@ -62,10 +62,10 @@ void CComputeGeometryPass::_execute(const FComputeFrameInfo& frame_info)
 
 			if (was_vbo_rebinded)
 			{
-				size_t vertex_handle = last_vbo->getVertexHandle();
+				u64 vertex_handle = last_vbo->getVertexHandle();
 				shader->bindBuffer("VertexBuffer", vertex_handle);
 
-				size_t index_buffer = last_vbo->getIndexHandle();
+				u64 index_buffer = last_vbo->getIndexHandle();
 				shader->bindBuffer("IndexBuffer", index_buffer);
 
 				shader->flushDescriptors();
@@ -75,7 +75,7 @@ void CComputeGeometryPass::_execute(const FComputeFrameInfo& frame_info)
 			auto& mesh_data = shader->getConstantBlock("meshData");
 			if (mesh_data)
 			{
-				mesh_data->set("vboId", static_cast<uint32_t>(vboId));
+				mesh_data->set("vboId", utl::cast<u32>(vboId));
 			}
 
 			shader->flushConstants(m_queue);

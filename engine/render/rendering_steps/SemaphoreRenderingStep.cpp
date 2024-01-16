@@ -15,7 +15,7 @@ void CSemaphoreRenderingStep::_create(const FRenderingStepCreateInfo& create_inf
 
 }
 
-void CSemaphoreRenderingStep::_execute(float dt)
+void CSemaphoreRenderingStep::_execute(f32 dt)
 {
 
 }

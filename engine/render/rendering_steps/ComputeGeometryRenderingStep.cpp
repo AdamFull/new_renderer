@@ -30,7 +30,7 @@ void CComputeGeometryRenderingStep::_create(const FRenderingStepCreateInfo& crea
 #endif
 }
 
-void CComputeGeometryRenderingStep::_execute(float dt)
+void CComputeGeometryRenderingStep::_execute(f32 dt)
 {
 	TRACY_PROFILE_FUNCTION();
 
@@ -39,13 +39,13 @@ void CComputeGeometryRenderingStep::_execute(float dt)
 
 	auto& sizes = m_beginComputeInfo.globalSizes;
 
-	std::unordered_set<size_t> vbos{};
+	std::unordered_set<u64> vbos{};
 
 	auto& render_world = m_pRenderInterface->getRenderWorld();
 	auto& batch_ranges = render_world->getGeometryRanges(ERenderGeometryCullerType::eScene);
 	for (const auto& batch_range : batch_ranges)
 	{
-		for (size_t batch_id = batch_range.offset; batch_id < batch_range.offset + batch_range.count; ++batch_id)
+		for (u64 batch_id = batch_range.offset; batch_id < batch_range.offset + batch_range.count; ++batch_id)
 		{
 			const auto& batch = render_world->getGeometryBatch(batch_id);
 			vbos.emplace(batch.vboID);
@@ -70,10 +70,10 @@ void CComputeGeometryRenderingStep::_execute(float dt)
 
 			if (was_vbo_rebinded)
 			{
-				size_t vertex_handle = last_vbo->getVertexHandle();
+				u64 vertex_handle = last_vbo->getVertexHandle();
 				shader->bindBuffer("VertexBuffer", vertex_handle);
 
-				size_t index_buffer = last_vbo->getIndexHandle();
+				u64 index_buffer = last_vbo->getIndexHandle();
 				shader->bindBuffer("IndexBuffer", index_buffer);
 
 				shader->flushDescriptors();
@@ -83,9 +83,9 @@ void CComputeGeometryRenderingStep::_execute(float dt)
 			auto& mesh_data = shader->getConstantBlock("meshData");
 			if (mesh_data)
 			{
-				mesh_data->set("vboId", static_cast<uint32_t>(vboId));
+				mesh_data->set("vboId", utl::cast<u32>(vboId));
 				//mesh_data->set("objectId", batch.node);
-				//mesh_data->set("materialId", static_cast<uint32_t>(batch.materialId));
+				//mesh_data->set("materialId", utl::cast<u32>(batch.materialId));
 			}
 
 			shader->flushConstants(m_beginComputeInfo.queue);
@@ -96,9 +96,9 @@ void CComputeGeometryRenderingStep::_execute(float dt)
 			
 			FDispatchInfo dispatch_info{};
 			auto& group = dispatch_info.groups.emplace_back();
-			group.x = glm::max(static_cast<uint32_t>(std::ceil(static_cast<float>(sizes.x) / static_cast<float>(reflection.localSizes[0]))), 1u);
-			group.y = glm::max(static_cast<uint32_t>(std::ceil(static_cast<float>(sizes.y) / static_cast<float>(reflection.localSizes[1]))), 1u);
-			group.z = glm::max(static_cast<uint32_t>(std::ceil(static_cast<float>(sizes.z) / static_cast<float>(reflection.localSizes[2]))), 1u);
+			group.x = glm::max(utl::cast<u32>(std::ceil(utl::cast<f32>(sizes.x) / utl::cast<f32>(reflection.localSizes[0]))), 1u);
+			group.y = glm::max(utl::cast<u32>(std::ceil(utl::cast<f32>(sizes.y) / utl::cast<f32>(reflection.localSizes[1]))), 1u);
+			group.z = glm::max(utl::cast<u32>(std::ceil(utl::cast<f32>(sizes.z) / utl::cast<f32>(reflection.localSizes[2]))), 1u);
 			
 			render_context->dispatch(m_beginComputeInfo.queue, dispatch_info);
 			//break;

@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 
 #include <sol/sol.hpp>
+#include <utility>
 
 namespace engine
 {
@@ -203,28 +204,28 @@ namespace engine
 		void bindRenderInterfaceStructures(sol::state* lua)
 		{
 			// FPoint2D<> registration
-			register_point2d<int8_t>("I8Point2D", lua);
-			register_point2d<uint8_t>("U8Point2D", lua);
-			register_point2d<int16_t>("I16Point2D", lua);
-			register_point2d<uint16_t>("U16Point2D", lua);
-			register_point2d<int32_t>("I32Point2D", lua);
-			register_point2d<uint32_t>("U32Point2D", lua);
-			register_point2d<int64_t>("I64Point2D", lua);
-			register_point2d<uint64_t>("U64Point2D", lua);
-			register_point2d<float>("F32Point2D", lua);
-			register_point2d<double>("F64Point2D", lua);
+			register_point2d<i8>("I8Point2D", lua);
+			register_point2d<u8>("U8Point2D", lua);
+			register_point2d<i16>("I16Point2D", lua);
+			register_point2d<u16>("U16Point2D", lua);
+			register_point2d<i32>("I32Point2D", lua);
+			register_point2d<u32>("U32Point2D", lua);
+			register_point2d<i64>("I64Point2D", lua);
+			register_point2d<u64>("U64Point2D", lua);
+			register_point2d<f32>("F32Point2D", lua);
+			register_point2d<f64>("F64Point2D", lua);
 
 			// FRect2D<> registration
-			register_rect2d<int8_t>("I8Rect2D", lua);
-			register_rect2d<uint8_t>("U8Rect2D", lua);
-			register_rect2d<int16_t>("I16Rect2D", lua);
-			register_rect2d<uint16_t>("U16Rect2D", lua);
-			register_rect2d<int32_t>("I32Rect2D", lua);
-			register_rect2d<uint32_t>("U32Rect2D", lua);
-			register_rect2d<int64_t>("I64Rect2D", lua);
-			register_rect2d<uint64_t>("U64Rect2D", lua);
-			register_rect2d<float>("F32Rect2D", lua);
-			register_rect2d<double>("F64Rect2D", lua);
+			register_rect2d<i8>("I8Rect2D", lua);
+			register_rect2d<u8>("U8Rect2D", lua);
+			register_rect2d<i16>("I16Rect2D", lua);
+			register_rect2d<u16>("U16Rect2D", lua);
+			register_rect2d<i32>("I32Rect2D", lua);
+			register_rect2d<u32>("U32Rect2D", lua);
+			register_rect2d<i64>("I64Rect2D", lua);
+			register_rect2d<u64>("U64Rect2D", lua);
+			register_rect2d<f32>("F32Rect2D", lua);
+			register_rect2d<f64>("F64Rect2D", lua);
 
 			// FShaderUploadInfo registration
 			lua->new_usertype<FShaderUploadInfo>(
@@ -454,8 +455,8 @@ namespace engine
 				"create_renderer", &IRenderInterface::createRendering,
 				"create_texture", &IRenderInterface::createTexture,
 				"create_shader", sol::overload(
-					static_cast<size_t(IRenderInterface::*)(const std::string&, const FGraphicsShaderCreateInfo&)>(&IRenderInterface::createShader),
-					static_cast<size_t(IRenderInterface::*)(const std::string&, const FComputeShaderCreateInfo&)>(&IRenderInterface::createShader)
+					static_cast<u64(IRenderInterface::*)(const std::string&, const FGraphicsShaderCreateInfo&)>(&IRenderInterface::createShader),
+					static_cast<u64(IRenderInterface::*)(const std::string&, const FComputeShaderCreateInfo&)>(&IRenderInterface::createShader)
 				)
 			);
 
@@ -464,8 +465,8 @@ namespace engine
 				"IRenderContext",
 				"create_render_target", &IRenderContext::createRenderTargets,
 				"create_shader", sol::overload(
-					static_cast<size_t(IRenderContext::*)(const std::string&, const FGraphicsShaderCreateInfo&, const std::vector<FShaderCreationBlockInfo>&)>(&IRenderContext::createShader),
-					static_cast<size_t(IRenderContext::*)(const std::string&, const FComputeShaderCreateInfo&, const std::vector<FShaderCreationBlockInfo>&)>(&IRenderContext::createShader)
+					static_cast<u64(IRenderContext::*)(const std::string&, const FGraphicsShaderCreateInfo&, const std::vector<FShaderCreationBlockInfo>&)>(&IRenderContext::createShader),
+					static_cast<u64(IRenderContext::*)(const std::string&, const FComputeShaderCreateInfo&, const std::vector<FShaderCreationBlockInfo>&)>(&IRenderContext::createShader)
 				),
 				"get_texture_resource", &IRenderContext::getTextureResource,
 				"get_shader_resource", &IRenderContext::getShaderResource,
@@ -486,17 +487,17 @@ namespace engine
 					&CUniformHandle::create<FReflectionPushConstantBlock<FReflectionUniform>>
 				),
 				"set", sol::overload(
-					&CUniformHandle::set<int8_t>,
-					&CUniformHandle::set<uint8_t>,
-					&CUniformHandle::set<int16_t>,
-					&CUniformHandle::set<uint16_t>,
-					&CUniformHandle::set<int32_t>,
-					&CUniformHandle::set<uint32_t>,
-					&CUniformHandle::set<int64_t>,
-					&CUniformHandle::set<uint64_t>,
-					&CUniformHandle::set<uint64_t>,
-					&CUniformHandle::set<float>,
-					&CUniformHandle::set<double>,
+					&CUniformHandle::set<i8>,
+					&CUniformHandle::set<u8>,
+					&CUniformHandle::set<i16>,
+					&CUniformHandle::set<u16>,
+					&CUniformHandle::set<i32>,
+					&CUniformHandle::set<u32>,
+					&CUniformHandle::set<i64>,
+					&CUniformHandle::set<u64>,
+					&CUniformHandle::set<u64>,
+					&CUniformHandle::set<f32>,
+					&CUniformHandle::set<f64>,
 					&CUniformHandle::set<bool>,
 					&CUniformHandle::set<glm::vec2>,
 					&CUniformHandle::set<glm::vec3>,
@@ -537,8 +538,8 @@ namespace engine
 
 		void bindGlobalFunctions(sol::state* lua)
 		{
-			lua->set_function("calculate_mip_level_count", [](uint32_t width, uint32_t height) -> uint32_t {
-				return static_cast<uint32_t>(std::floor(std::log2((std::max)(width, height)))) + 1u;
+			lua->set_function("calculate_mip_level_count", [](u32 width, u32 height) -> u32 {
+				return utl::cast<u32>(std::floor(std::log2((std::max)(width, height)))) + 1u;
 				});
 		}
 

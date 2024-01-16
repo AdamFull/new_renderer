@@ -10,7 +10,7 @@
 
 namespace engine
 {
-	using resource_handle_t = size_t;
+	using resource_handle_t = u64;
 	constexpr const resource_handle_t invalid_handle{ ~0ull };
 
 	template<class _Ty>
@@ -72,12 +72,12 @@ namespace engine
 			}
 		}
 
-		const std::unique_ptr<_Ty>& get(resource_handle_t id, size_t index = 0ull)
+		const std::unique_ptr<_Ty>& get(resource_handle_t id, u64 index = 0ull)
 		{
 			return objects.at(id).at(index);
 		}
 
-		const std::unique_ptr<_Ty>& get(const char* name, size_t index = 0ull)
+		const std::unique_ptr<_Ty>& get(const char* name, u64 index = 0ull)
 		{
 			auto id = nameToId[utl::fnv1a_64_hash(name)];
 			return get(id, index);
@@ -98,7 +98,7 @@ namespace engine
 		}
 	private:
 		std::queue<resource_handle_t> freeIds{};
-		std::unordered_map<size_t, resource_handle_t> nameToId{};
+		std::unordered_map<u64, resource_handle_t> nameToId{};
 		std::vector<std::vector<std::unique_ptr<_Ty>>> objects{};
 	};
 
@@ -165,7 +165,7 @@ namespace engine
 		CResourceHolder<_Ty>* get_container()
 		{
 			const std::type_index type_index(typeid(_Ty));
-			return static_cast<CResourceHolder<_Ty>*>(holders[type_index].get());
+			return utl::cast<CResourceHolder<_Ty>*>(holders[type_index].get());
 		}
 	private:
 		std::unordered_map<std::type_index, std::shared_ptr<void>> holders{};

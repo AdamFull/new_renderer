@@ -37,18 +37,18 @@ std::string get_definition_by_shader_type(EShaderType type)
 
 std::string emplace_data(std::string base_string, const std::string& target, const std::string& replacement)
 {
-	size_t start_pos = base_string.find(target);
+	u64 start_pos = base_string.find(target);
 	if (start_pos == std::string::npos)
 		return base_string;
 	base_string.replace(start_pos, target.length(), replacement);
 	return base_string;
 }
 
-std::vector<std::string> make_permutation(size_t mask, const std::vector<FDefinitionChain>& chains) 
+std::vector<std::string> make_permutation(u64 mask, const std::vector<FDefinitionChain>& chains) 
 {
 	std::vector<std::string> permutation;
 
-	for (size_t j = 0; j < chains.size(); ++j) 
+	for (u64 j = 0; j < chains.size(); ++j) 
 	{
 		if (mask & (1 << j)) 
 		{
@@ -62,9 +62,9 @@ std::vector<std::string> make_permutation(size_t mask, const std::vector<FDefini
 	return permutation;
 }
 
-std::string process_include(const std::string& include, const std::filesystem::path& includes_path, size_t depth);
+std::string process_include(const std::string& include, const std::filesystem::path& includes_path, u64 depth);
 
-std::string generate_shader_code(const FShaderObject& sobject, const std::filesystem::path& includes_path, size_t depth = 0)
+std::string generate_shader_code(const FShaderObject& sobject, const std::filesystem::path& includes_path, u64 depth = 0)
 {
 	std::stringstream ss{};
 
@@ -101,7 +101,7 @@ std::string generate_shader_code(const FShaderObject& sobject, const std::filesy
 	return ss.str();
 }
 
-std::string process_include(const std::string& include, const std::filesystem::path& includes_path, size_t depth)
+std::string process_include(const std::string& include, const std::filesystem::path& includes_path, u64 depth)
 {
 	std::stringstream ss{};
 	std::string guard_name{};
@@ -196,21 +196,21 @@ void CLibraryCompiler::compile(const std::filesystem::path& library_path, FShade
 
 		// Generate all shader permutations
 		bool generate_permutations = !compile.permutation_gen.definitions.empty();
-		size_t perm_n = compile.permutation_gen.definitions.size();
-		size_t total_permutations = 1 << perm_n;
+		u64 perm_n = compile.permutation_gen.definitions.size();
+		u64 total_permutations = 1 << perm_n;
 
 		std::vector<std::vector<std::string>> cached_permutations{};
 
 		if (generate_permutations)
 		{
-			for (size_t mask = 0; mask < total_permutations; ++mask)
+			for (u64 mask = 0; mask < total_permutations; ++mask)
 				cached_permutations.emplace_back(make_permutation(mask, compile.permutation_gen.definitions));
 		}
 
 		for (auto& permutation : compile.permutations)
 			cached_permutations.emplace_back(permutation.definitions);
 
-		size_t shader_index{ 0ull };
+		u64 shader_index{ 0ull };
 		// Process all shader included sources
 		for (auto& source : shader_desc.sources)
 		{
@@ -254,7 +254,7 @@ void CLibraryCompiler::compile(const std::filesystem::path& library_path, FShade
 
 				// Preprocess generated code (and remove ugly code after preprocessing)
 				std::string preprocessed_code{};
-				size_t preprocessed_hash{ 0ull };
+				u64 preprocessed_hash{ 0ull };
 				m_pShaderCompiler->preprocess(shader_code, compile_info, preprocessed_code, preprocessed_hash);
 
 				if (preprocessed_code.empty())
@@ -275,7 +275,7 @@ void CLibraryCompiler::compile(const std::filesystem::path& library_path, FShade
 
 				auto& current_module = shader_modules.at(shader_index);
 
-				bool is_code_outdated = current_module.link != static_cast<int64_t>(preprocessed_hash);
+				bool is_code_outdated = current_module.link != utl::cast<int64_t>(preprocessed_hash);
 				bool is_type_missmatch = current_module.type != source.type;
 
 				// Notify, that type was changed
@@ -304,7 +304,7 @@ void CLibraryCompiler::compile(const std::filesystem::path& library_path, FShade
 				if ((is_code_outdated || is_type_missmatch) && !is_compiling_first_time)
 					shader_pool.erase(current_module.link);
 
-				current_module.link = static_cast<int64_t>(preprocessed_hash);
+				current_module.link = utl::cast<int64_t>(preprocessed_hash);
 			}
 
 			shader_index++;

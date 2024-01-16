@@ -21,10 +21,10 @@ namespace engine
 		//{
         //    struct BatchKey
         //    {
-        //        uint32_t flags{};
-        //        size_t vboId{};
-        //        size_t materialId{};
-        //        uint32_t node{};
+        //        u32 flags{};
+        //        u64 vboId{};
+        //        u64 materialId{};
+        //        u32 node{};
         //
         //        bool operator==(const BatchKey& other) const
         //        {
@@ -35,19 +35,19 @@ namespace engine
         //
         //    struct BatchKeyHash
         //    {
-        //        size_t operator()(const BatchKey& key) const
+        //        u64 operator()(const BatchKey& key) const
         //        {
-        //            size_t hash = std::hash<size_t>()(key.vboId) ^ std::hash<uint32_t>()(key.node);
+        //            u64 hash = std::hash<u64>()(key.vboId) ^ std::hash<u32>()(key.node);
         //
         //            if (key.flags & GEOMETRY_BATCHER_COUNT_ON_MATERIAL_FLAG_BIT)
-        //                hash ^= std::hash<size_t>()(key.materialId);
+        //                hash ^= std::hash<u64>()(key.materialId);
         //
         //            return hash;
         //        }
         //    };
 		//}
         //
-        //inline void rebatchGeometry(const std::vector<FGeometryBatch>& batches, std::vector<FGeometryBatch>& rebatched, uint32_t flags = GEOMETRY_BATCHER_ALL_FLAG_BIT)
+        //inline void rebatchGeometry(const std::vector<FGeometryBatch>& batches, std::vector<FGeometryBatch>& rebatched, u32 flags = GEOMETRY_BATCHER_ALL_FLAG_BIT)
         //{
         //    std::unordered_map<batcher::BatchKey, FGeometryBatch, batcher::BatchKeyHash> batch_map;
         //
@@ -91,7 +91,7 @@ namespace engine
         //    }
         //}
         //
-		//inline void createGeometryBatches(const std::vector<FGeometryDrawData>& geometry_list, std::vector<FGeometryBatch>& batches, uint32_t flags = GEOMETRY_BATCHER_ALL_FLAG_BIT)
+		//inline void createGeometryBatches(const std::vector<FGeometryDrawData>& geometry_list, std::vector<FGeometryBatch>& batches, u32 flags = GEOMETRY_BATCHER_ALL_FLAG_BIT)
 		//{
         //    std::unordered_map<batcher::BatchKey, FGeometryBatch, batcher::BatchKeyHash> batch_map;
         //
@@ -144,7 +144,7 @@ namespace engine
         //
         //    if (flags & GEOMETRY_BATCHER_COUNT_ON_MATERIAL_FLAG_BIT)
         //    {
-        //        size_t currentMaterial{ ~0ull };
+        //        u64 currentMaterial{ ~0ull };
         //        for (auto& uni_batch : uni_batches)
         //        {
         //            if (!batches.empty() &&

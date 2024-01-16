@@ -24,7 +24,7 @@ void CFullscreenPass::init(const FRenderPassCreateInfo& pass_ci)
 	shader_ci.primitiveTopology = EVertexPrimitiveTopology::eTriangleList;
 
 	auto& output_targets = m_renderResources[ERenderResourceGroupType::eColorWrite];
-	for (size_t resource_id : output_targets)
+	for (u64 resource_id : output_targets)
 	{
 		if (resource_id == m_depthTarget || resource_id == m_stencilTarget)
 			continue;
@@ -64,7 +64,7 @@ void CFullscreenPass::init(const FRenderPassCreateInfo& pass_ci)
 #endif
 }
 
-void CFullscreenPass::bake(std::unordered_map<size_t, FRenderGraphAttachmentOperationInfo>& resource_info)
+void CFullscreenPass::bake(std::unordered_map<u64, FRenderGraphAttachmentOperationInfo>& resource_info)
 {
 	IRenderPass::bake(resource_info);
 }

@@ -28,7 +28,7 @@ void CCascadedShadowMapsRenderingStep::_create(const FRenderingStepCreateInfo& c
 #endif
 }
 
-void CCascadedShadowMapsRenderingStep::_execute(float dt)
+void CCascadedShadowMapsRenderingStep::_execute(f32 dt)
 {
 	TRACY_PROFILE_FUNCTION();
 
@@ -42,19 +42,19 @@ void CCascadedShadowMapsRenderingStep::_execute(float dt)
 	render_context->beginRendering(m_beginRenderingInfo);
 
 	auto& rect = m_beginRenderingInfo.renderArea;
-	render_context->setViewport(static_cast<float>(rect.size.x), static_cast<float>(rect.size.y), m_beginRenderingInfo.flipViewport);
+	render_context->setViewport(utl::cast<f32>(rect.size.x), utl::cast<f32>(rect.size.y), m_beginRenderingInfo.flipViewport);
 	render_context->setScissorRect(0, 0, rect.size.x, rect.size.y);
 	
 	auto& batch_ranges = render_world->getGeometryRanges(ERenderGeometryCullerType::eCascadedShadow);
 	
 	IVertexHandler* last_vbo{ nullptr };
 	
-	for (size_t range_id = 0ull; range_id < batch_ranges.size(); ++range_id)
+	for (u64 range_id = 0ull; range_id < batch_ranges.size(); ++range_id)
 	{
-		size_t shadow_index = range_id / cascade_shadow_map_cascade_count;
+		u64 shadow_index = range_id / cascade_shadow_map_cascade_count;
 
 		auto& batch_range = batch_ranges.at(range_id);
-		for (size_t batch_id = batch_range.offset; batch_id < batch_range.offset + batch_range.count; ++batch_id)
+		for (u64 batch_id = batch_range.offset; batch_id < batch_range.offset + batch_range.count; ++batch_id)
 		{
 			const auto& batch = render_world->getGeometryBatch(batch_id);
 	
@@ -74,7 +74,7 @@ void CCascadedShadowMapsRenderingStep::_execute(float dt)
 				auto& shadow_data = shader->getConstantBlock("shadowData");
 				if (shadow_data)
 				{
-					shadow_data->set("batchID", static_cast<uint32_t>(batch_id));
+					shadow_data->set("batchID", utl::cast<u32>(batch_id));
 				}
 	
 				if (was_vbo_rebinded)
@@ -86,8 +86,8 @@ void CCascadedShadowMapsRenderingStep::_execute(float dt)
 				// Draw shadfow
 				if (shadow_data)
 				{
-					shadow_data->set("shadowIndex", static_cast<uint32_t>(shadow_index));
-					shadow_data->set("layer", static_cast<int32_t>(range_id));
+					shadow_data->set("shadowIndex", utl::cast<u32>(shadow_index));
+					shadow_data->set("layer", utl::cast<i32>(range_id));
 				}
 				
 				shader->flushConstants(m_beginRenderingInfo.queue);

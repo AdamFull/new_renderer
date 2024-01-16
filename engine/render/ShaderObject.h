@@ -19,27 +19,27 @@ namespace engine
 			const std::unique_ptr<CUniformHandle>& getUniformBlock(const char* name) override;
 			const std::unique_ptr<CUniformHandle>& getConstantBlock(const char* name) override;
 
-			void bindBuffer(const char* name, size_t buffer_resource) override;
-			void bindTexture(const char* name, size_t texture_resource, uint32_t mip = 0u) override;
+			void bindBuffer(const char* name, u64 buffer_resource) override;
+			void bindTexture(const char* name, u64 texture_resource, u32 mip = 0u) override;
 
 			void flushDescriptors() override;
 			void flushConstants(EQueueTypeFlagBits queue) override;
 
 			void bind(EQueueTypeFlagBits queue) override;
 
-			size_t handle() const;
+			u64 handle() const;
 
 			const FShaderReflectionData& getReflection() const override;
 
 		protected:
 			void buildReflection();
 		private:
-			std::unordered_map<size_t, std::unique_ptr<CUniformHandle>> m_uniformBlocks{};
-			std::unordered_map<size_t, std::unique_ptr<CUniformHandle>> m_constantBlocks{};
+			std::unordered_map<u64, std::unique_ptr<CUniformHandle>> m_uniformBlocks{};
+			std::unordered_map<u64, std::unique_ptr<CUniformHandle>> m_constantBlocks{};
 
-			std::unordered_map<size_t, size_t> m_bindBuffers{};
-			std::unordered_map<size_t, FTextureBindInfo> m_bindTextures{};
-			size_t m_shaderId{ ~0ull };
+			std::unordered_map<u64, u64> m_bindBuffers{};
+			std::unordered_map<u64, FTextureBindInfo> m_bindTextures{};
+			u64 m_shaderId{ ~0ull };
 
 			FShaderReflectionData m_reflection{};
 

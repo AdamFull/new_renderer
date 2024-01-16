@@ -3,6 +3,7 @@
 #include <vma/vk_mem_alloc.hpp>
 
 #include <logger/logger.h>
+#include <utility.hpp>
 
 #include <engine/interface/render/RenderInterface.h>
 
@@ -36,9 +37,9 @@ namespace engine
 
 			struct FQueueFamilies
 			{
-				std::vector<uint32_t> uniqueFamilies{};
-				std::unordered_map<uint32_t, uint32_t> familyUsages;
-				std::unordered_map<EQueueTypeFlagBits, uint32_t> queueToFamily;
+				std::vector<u32> uniqueFamilies{};
+				std::unordered_map<u32, u32> familyUsages;
+				std::unordered_map<EQueueTypeFlagBits, u32> queueToFamily;
 				EQueueTypeFlags queueMask{ 0u };
 			};
 
@@ -62,8 +63,8 @@ namespace engine
 				vk::PhysicalDeviceProperties properties{};
 				std::vector<std::string> avaliableExtensions{};
 				FQueueFamilies queueFamilies{};
-				std::unordered_map<uint32_t, bool> supportedExtensions{};
-				uint32_t compatFlags{ 0u };
+				std::unordered_map<u32, bool> supportedExtensions{};
+				u32 compatFlags{ 0u };
 			};
 
 			struct FVkLogicalDevice
@@ -84,8 +85,8 @@ namespace engine
 				std::vector<vk::Semaphore> imageAvaliableSemaphores{};
 				std::vector<vk::Semaphore> renderFinishedSemaphores{};
 				std::vector<vk::Fence> inFlightFences{};
-				uint32_t framesInFlight{ 2u };
-				uint32_t currentFrame{ 0u };
+				u32 framesInFlight{ 2u };
+				u32 currentFrame{ 0u };
 			};
 
 			// ---------------------------------------------------------------------------------
@@ -112,7 +113,7 @@ namespace engine
 				std::vector<vk::CommandBuffer> handles{};
 				EQueueTypeFlagBits mask{};
 				bool isRunning{ false };
-				uint32_t commandBufferIndex{ 0u };
+				u32 commandBufferIndex{ 0u };
 
 				vk::CommandBuffer& get() { return handles.at(commandBufferIndex); }
 				const vk::CommandBuffer& get() const { return handles.at(commandBufferIndex); }
@@ -122,7 +123,7 @@ namespace engine
 			{
 				EQueueTypeFlagBits mask{};
 				vk::CommandBufferLevel level{};
-				uint32_t count{ 1u };
+				u32 count{ 1u };
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				std::string name{};
 #endif
@@ -167,7 +168,7 @@ namespace engine
 				vk::SamplerAddressMode addressMode{};
 				bool enableAnisotropy{ false };
 				bool enableCompareOp{ false };
-				uint32_t mipLevels{ 1u };
+				u32 mipLevels{ 1u };
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				std::string name{};
 #endif
@@ -213,7 +214,7 @@ namespace engine
 			struct FVkDescriptorPoolCreateInfo
 			{
 				std::vector<vk::DescriptorPoolSize> poolSizes{};
-				uint32_t usageCount{ 1u };
+				u32 usageCount{ 1u };
 				vk::DescriptorPoolCreateFlags flags{ vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet };
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				std::string name{};
@@ -230,7 +231,7 @@ namespace engine
 			{
 				vk::DescriptorPool pool{};
 				vk::DescriptorSetLayout layout{};
-				uint32_t descriptorCount{ 0u };
+				u32 descriptorCount{ 0u };
 				void* next{ nullptr };
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				std::string name{};
@@ -239,9 +240,9 @@ namespace engine
 
 			struct FVkGetCommandBufferInfo
 			{
-				uint32_t queueType{};
+				u32 queueType{};
 				std::thread::id threadId{ std::this_thread::get_id() };
-				size_t bufferIndex{};
+				u64 bufferIndex{};
 			};
 
 			struct FVkBindDescriptorInfo
@@ -255,7 +256,7 @@ namespace engine
 			// ---------------------------------------------------------------------------------
 			struct FVkShaderModuleCreateInfo
 			{
-				std::vector<uint32_t>* shaderCode{};
+				std::vector<u32>* shaderCode{};
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				std::string name{};
 #endif
@@ -278,7 +279,7 @@ namespace engine
 				vk::CullModeFlags cullMode{};
 				vk::FrontFace frontFace{};
 				vk::SampleCountFlagBits sampleCount{ vk::SampleCountFlagBits::e1 };
-				uint32_t patchControlPoints{ 0u };
+				u32 patchControlPoints{ 0u };
 
 				std::vector<vk::Format> colorAttachmentFormats{};
 				vk::Format depthAttachmentFormat{ vk::Format::eUndefined };
@@ -338,25 +339,25 @@ namespace engine
 				std::vector<vk::Pipeline> handles{};
 				vk::PipelineLayout layout{};
 				std::vector<vk::ShaderModule> shaderModules{};
-				std::unordered_map<uint32_t, vk::DescriptorSetLayout> descriptorSetLayouts{};
-				std::unordered_map<uint32_t, FVkDescriptorSet> descriptorSets{};
-				std::unordered_map<uint32_t, uint32_t> descriptorUsage{};
+				std::unordered_map<u32, vk::DescriptorSetLayout> descriptorSetLayouts{};
+				std::unordered_map<u32, FVkDescriptorSet> descriptorSets{};
+				std::unordered_map<u32, u32> descriptorUsage{};
 				FVkDescriptorPool descriptorPool{};
 				std::vector<vk::PushConstantRange> pushConstantRanges{};
 
-				std::unordered_map<size_t, size_t> uniformBuffers{};
-				size_t maximumDescriptorSlots{ 0ull };
+				std::unordered_map<u64, u64> uniformBuffers{};
+				u64 maximumDescriptorSlots{ 0ull };
 				
 				vk::PipelineBindPoint bindPoint{};
 
-				size_t reflection{ ~0ull };
+				u64 reflection{ ~0ull };
 
 				bool isAlive{ false };
 			};
 
 			struct FVkShaderResourcesInfo
 			{
-				uint32_t usageCount{ 1u };
+				u32 usageCount{ 1u };
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				std::string name{};
 #endif
@@ -378,7 +379,7 @@ namespace engine
 				std::vector<vk::ImageView> imageViews{};
 				vk::Sampler sampler{};
 				vk::ImageLayout layout{};
-				uint32_t totalLayers{ 1u };
+				u32 totalLayers{ 1u };
 				bool isRenderTarget{ false };
 
 				bool isAlive{ false };
@@ -412,12 +413,12 @@ namespace engine
 				vk::PipelineStageFlags2KHR srcStageMask{};
 				vk::AccessFlags2KHR srcAccessMask{};
 				vk::ImageLayout oldLayout{};
-				uint32_t srcQueueFamilyIndex{ VK_QUEUE_FAMILY_IGNORED };
+				u32 srcQueueFamilyIndex{ VK_QUEUE_FAMILY_IGNORED };
 
 				vk::PipelineStageFlags2KHR dstStageMask{};
 				vk::AccessFlags2KHR dstAccessMask{};
 				vk::ImageLayout newLayout{};
-				uint32_t dstQueueFamilyIndex{ VK_QUEUE_FAMILY_IGNORED };
+				u32 dstQueueFamilyIndex{ VK_QUEUE_FAMILY_IGNORED };
 
 				vk::ImageSubresourceRange subresourceRange{};
 			};
@@ -428,11 +429,11 @@ namespace engine
 
 				vk::PipelineStageFlags2KHR srcStageMask{};
 				vk::AccessFlags2KHR srcAccessMask{};
-				uint32_t srcQueueFamilyIndex{ VK_QUEUE_FAMILY_IGNORED };
+				u32 srcQueueFamilyIndex{ VK_QUEUE_FAMILY_IGNORED };
 
 				vk::PipelineStageFlags2KHR dstStageMask{};
 				vk::AccessFlags2KHR dstAccessMask{};
-				uint32_t dstQueueFamilyIndex{ VK_QUEUE_FAMILY_IGNORED };
+				u32 dstQueueFamilyIndex{ VK_QUEUE_FAMILY_IGNORED };
 
 				vk::DeviceSize size{};
 				vk::DeviceSize offset{};
@@ -458,13 +459,13 @@ namespace engine
 			{
 				vk::ImageLayout oldLayout{};
 				vk::ImageLayout newLayout{};
-				uint32_t baseArrayLayer{ 0u };
-				uint32_t baseMipLevel{ 0u };
+				u32 baseArrayLayer{ 0u };
+				u32 baseMipLevel{ 0u };
 			};
 
 			struct FVkTextureLayoutChangeInfo
 			{
-				size_t textureId{ ~0ull };
+				u64 textureId{ ~0ull };
 			};
 
 			struct FVkGlobalDescriptor
@@ -472,7 +473,7 @@ namespace engine
 				FVkDescriptorPool descriptorPool{};
 				vk::DescriptorSetLayout deecriptorSetLayout{};
 				FVkDescriptorSet descriptorSet{};
-				std::unordered_map<size_t, size_t> uniformBuffers{};
+				std::unordered_map<u64, u64> uniformBuffers{};
 			};
 
 			struct FVkPerQueueResources
@@ -500,15 +501,15 @@ namespace engine
 					return *this;
 				}
 
-				int32_t use_count() { return refCounter.load(std::memory_order_relaxed); }
+				i32 use_count() { return refCounter.load(std::memory_order_relaxed); }
 
 				std::unordered_map<EQueueTypeFlagBits, FVkPerQueueResources> perQueue{};
 				FVkDescriptorPool descriptorPool{};
-				std::unordered_map<size_t, FVkDescriptorSet> descriptorSets{};
+				std::unordered_map<u64, FVkDescriptorSet> descriptorSets{};
 			private:
 				void incrementUsage() { refCounter.fetch_add(1, std::memory_order_relaxed); }
 				void decrementUsage() { refCounter.fetch_sub(1, std::memory_order_relaxed); }
-				std::atomic<int32_t> refCounter{ 0 };
+				std::atomic<i32> refCounter{ 0 };
 			};
 		}
 	}

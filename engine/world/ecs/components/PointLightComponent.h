@@ -9,12 +9,12 @@ namespace engine
 			struct FPointLightComponent
 			{
 				glm::vec3 color{ 1.f };
-				float intencity{ 1.f };
-				float radius{ 1.f };
+				f32 intencity{ 1.f };
+				f32 radius{ 1.f };
 				int shadowIndex{ -1 };
 				bool castShadows{ false };
 
-				size_t frustumID{ ~0ull };
+				u64 frustumID{ ~0ull };
 			};
 		}
 	}

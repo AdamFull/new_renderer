@@ -41,7 +41,7 @@ void CBufferObject::unmap()
 	}
 }
 
-void CBufferObject::write(const void* data, size_t size, size_t offset)
+void CBufferObject::write(const void* data, u64 size, u64 offset)
 {
 	if (size == ~0ull)
 	{
@@ -49,10 +49,10 @@ void CBufferObject::write(const void* data, size_t size, size_t offset)
 		return;
 	}
 
-	std::memcpy(static_cast<char*>(m_pMapped) + offset, data, size * m_elemSize);
+	std::memcpy(utl::cast<char*>(m_pMapped) + offset, data, size * m_elemSize);
 }
 
-void CBufferObject::flush(size_t size, size_t offset) 
+void CBufferObject::flush(u64 size, u64 offset) 
 {
 	auto& render_context = m_pRenderInterface->getRenderContext();
 	render_context->flushBuffer(m_bufferId, size, offset);
@@ -63,7 +63,7 @@ void CBufferObject::clear()
 	std::memset(m_pMapped, 0, m_elemCount * m_elemSize);
 }
 
-size_t CBufferObject::handle()
+u64 CBufferObject::handle()
 {
 	return m_bufferId;
 }
@@ -73,7 +73,7 @@ uint64_t CBufferObject::address()
 	return m_virtualAddress;
 }
 
-char* CBufferObject::at(size_t index)
+char* CBufferObject::at(u64 index)
 {
-	return static_cast<char*>(m_pMapped) + (index * m_elemSize);
+	return utl::cast<char*>(m_pMapped) + (index * m_elemSize);
 }

@@ -27,7 +27,7 @@ bool check_overflow(_Ty a, _Ty b)
 	if constexpr (std::is_unsigned<_Ty>::value)
 		return a > (std::numeric_limits<_Ty>::max)() - b;
 	
-	return (b > static_cast<_Ty>(0) && a > (std::numeric_limits<_Ty>::max)() - b) || (b < static_cast<_Ty>(0) && a < (std::numeric_limits<_Ty>::min)() - b);
+	return (b > utl::cast<_Ty>(0) && a > (std::numeric_limits<_Ty>::max)() - b) || (b < utl::cast<_Ty>(0) && a < (std::numeric_limits<_Ty>::min)() - b);
 }
 
 engine::render::EVertexAttributeType get_vertex_attribute_type_by_name(const std::string& name)
@@ -69,7 +69,7 @@ public:
 		return m_pVFS->writeFile(path, data);
 	}
 
-	size_t fileSize(const std::string& path) override
+	u64 fileSize(const std::string& path) override
 	{
 		return m_pVFS->fileSize(path);
 	}
@@ -77,22 +77,22 @@ private:
 	IVirtualFileSystemInterface* m_pVFS{ nullptr };
 };
 
-void convert_indices_space(std::vector<uint8_t>& indices, size_t index_size, int32_t vertex_start)
+void convert_indices_space(std::vector<uint8_t>& indices, u64 index_size, i32 vertex_start)
 {
-	for (size_t shift = 0ull; shift < indices.size() / index_size; shift += index_size)
+	for (u64 shift = 0ull; shift < indices.size() / index_size; shift += index_size)
 	{
 		switch (index_size)
 		{
 		case 4: {
-			uint32_t index = *reinterpret_cast<uint32_t*>(&indices[shift]);
+			u32 index = *reinterpret_cast<u32*>(&indices[shift]);
 			index += vertex_start;
-			*reinterpret_cast<uint32_t*>(&indices[shift]) = index;
+			*reinterpret_cast<u32*>(&indices[shift]) = index;
 		} break;
 		case 2:
 		{
 			uint16_t index = *reinterpret_cast<uint16_t*>(&indices[shift]);
 			index += vertex_start;
-			*reinterpret_cast<uint16_t*>(&indices[shift]) = static_cast<uint16_t>(index);
+			*reinterpret_cast<uint16_t*>(&indices[shift]) = utl::cast<uint16_t>(index);
 		} break;
 		case 1:
 		{
@@ -147,7 +147,7 @@ void CScene::load(const std::string& path)
 	// Load textures
 	for (const auto& texture : root.textures)
 	{
-		int32_t texture_source{ texture.source };
+		i32 texture_source{ texture.source };
 		if (texture.source < 0)
 			texture_source = texture.khrTextureBasisU.source;
 
@@ -165,7 +165,7 @@ void CScene::load(const std::string& path)
 	auto& render_world = m_pRenderInterface->getRenderWorld();
 
 	std::vector<render::FMaterial> materials{};
-	for (size_t idx = 0ull; idx < root.materials.size(); ++idx)
+	for (u64 idx = 0ull; idx < root.materials.size(); ++idx)
 	{
 		auto& material = root.materials[idx];
 		auto& material_data = materials.emplace_back();
@@ -184,14 +184,14 @@ void CScene::load(const std::string& path)
 		// Attach normal map texture
 		if (auto& texture = material.normalTexture; texture.index >= 0)
 		{
-			material_data.normalScale = static_cast<float>(texture.scale);
+			material_data.normalScale = utl::cast<f32>(texture.scale);
 			material_data.normalTexture = m_resources.textures.at(texture.index);
 		}
 
 		// Attach baked ambient occlusion texture
 		if (auto& texture = material.occlusionTexture; texture.index >= 0)
 		{
-			material_data.occlusionStrenth = static_cast<float>(texture.strength);
+			material_data.occlusionStrenth = utl::cast<f32>(texture.strength);
 			material_data.occlusionTexture = m_resources.textures.at(texture.index);
 		}
 
@@ -200,8 +200,8 @@ void CScene::load(const std::string& path)
 			material_data.emissiveTexture = m_resources.textures.at(texture.index);
 
 		material_data.emissiveFactor = glm::make_vec3(material.emissiveFactor.data());
-		material_data.roughnessFactor = static_cast<float>(material.pbrMetallicRoughness.roughnessFactor);
-		material_data.metallicFactor = static_cast<float>(material.pbrMetallicRoughness.metallicFactor);
+		material_data.roughnessFactor = utl::cast<f32>(material.pbrMetallicRoughness.roughnessFactor);
+		material_data.metallicFactor = utl::cast<f32>(material.pbrMetallicRoughness.metallicFactor);
 		material_data.baseColorFactor = glm::make_vec4(material.pbrMetallicRoughness.baseColorFactor.data());
 
 		if (material.alphaMode == easygltf::base::enumerators::alpha_mode::blend)
@@ -211,7 +211,7 @@ void CScene::load(const std::string& path)
 		else
 			material_data.alphaMode = utl::cast<u32>(render::EAlphaMode::eOpaque);
 
-		material_data.alphaCutoff = static_cast<float>(material.alphaCutoff);
+		material_data.alphaCutoff = utl::cast<f32>(material.alphaCutoff);
 		material_data.doubleSided = material.doubleSided;
 
 		render_packet->stats.materialCount++;
@@ -244,7 +244,7 @@ void CScene::load(const std::string& path)
 	//std::vector<render::FVertexAttributePointer> attributes(terrain_attributes.size());
 	//render::FVertexAttributePointer indices{};
 	//
-	//for (size_t idx = 0ull; idx < terrain_attributes.size(); ++idx)
+	//for (u64 idx = 0ull; idx < terrain_attributes.size(); ++idx)
 	//{
 	//	const auto& tattr = terrain_attributes.at(idx);
 	//	auto& attr = attributes.at(idx);
@@ -302,7 +302,7 @@ void CScene::load(const std::string& path)
 		system->create();
 }
 
-void CScene::update(float dt)
+void CScene::update(f32 dt)
 {
 	TRACY_PROFILE_FUNCTION();
 
@@ -312,7 +312,7 @@ void CScene::update(float dt)
 		system->update(dt);
 }
 
-void CScene::loadNode(const easygltf::FGLTFRoot root, const entt::entity parent, uint32_t node_index, float global_scale)
+void CScene::loadNode(const easygltf::FGLTFRoot root, const entt::entity parent, u32 node_index, f32 global_scale)
 {
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
 
@@ -349,7 +349,7 @@ void CScene::loadNode(const easygltf::FGLTFRoot root, const entt::entity parent,
 	render_packet->stats.nodeCount++;
 }
 
-void CScene::loadMeshComponent(const easygltf::FGLTFRoot root, const entt::entity parent, uint32_t node_index)
+void CScene::loadMeshComponent(const easygltf::FGLTFRoot root, const entt::entity parent, u32 node_index)
 {
 	const auto& node = root.nodes[node_index];
 	const auto& mesh = root.meshes[node.mesh];
@@ -360,7 +360,7 @@ void CScene::loadMeshComponent(const easygltf::FGLTFRoot root, const entt::entit
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
 
 	// Load mesh primitives
-	for (size_t i = 0ull; i < mesh.primitives.size(); ++i)
+	for (u64 i = 0ull; i < mesh.primitives.size(); ++i)
 	{
 		const auto& primitive = mesh.primitives[i];
 
@@ -369,10 +369,10 @@ void CScene::loadMeshComponent(const easygltf::FGLTFRoot root, const entt::entit
 
 		// Load vertices
 		
-		std::hash<uint32_t> attribute_hasher;
+		std::hash<u32> attribute_hasher;
 		std::vector<render::FVertexAttributePointer> attributes{};
 
-		size_t attributes_hash{ 0ull };
+		u64 attributes_hash{ 0ull };
 		for (const auto& [name, accessor_idx] : primitive.attributes)
 		{
 			if (name == "TEXCOORD_1")
@@ -393,14 +393,14 @@ void CScene::loadMeshComponent(const easygltf::FGLTFRoot root, const entt::entit
 				pos_max = !accessor.max.empty() ? glm::vec3(accessor.max[0], accessor.max[1], accessor.max[2]) : glm::vec3(0.f);
 			}
 
-			attributes_hash ^= attribute_hasher(static_cast<uint32_t>(attrib.type) + 1u) << 1;
+			attributes_hash ^= attribute_hasher(utl::cast<u32>(attrib.type) + 1u) << 1;
 		}
 
 		// Attributes should be sorted by value type
-		std::sort(attributes.begin(), attributes.end(), [](const auto& lhs, const auto& rhs) { return static_cast<uint32_t>(lhs.type) < static_cast<uint32_t>(rhs.type); });
+		std::sort(attributes.begin(), attributes.end(), [](const auto& lhs, const auto& rhs) { return utl::cast<u32>(lhs.type) < utl::cast<u32>(rhs.type); });
 
 		// Load indices
-		std::vector<uint32_t> indices_tmp{};
+		std::vector<u32> indices_tmp{};
 		render::FVertexAttributePointer indices{};
 		if (primitive.indices >= 0)
 		{
@@ -410,12 +410,12 @@ void CScene::loadMeshComponent(const easygltf::FGLTFRoot root, const entt::entit
 			indices.stride = stream.stride;
 			indices.count = stream.count;
 
-			attributes_hash ^= attribute_hasher(static_cast<uint32_t>(indices.stride)) << 1;
+			attributes_hash ^= attribute_hasher(utl::cast<u32>(indices.stride)) << 1;
 		}
 
 		// Get or create vertex buffer
 		render::IVertexHandler* vertex_handler{nullptr};
-		size_t current_handler_id{ ~0ull };
+		u64 current_handler_id{ ~0ull };
 
 		if (auto found = m_resources.vertexHandlers.find(attributes_hash); found != m_resources.vertexHandlers.end())
 		{
@@ -474,7 +474,7 @@ void CScene::loadMeshComponent(const easygltf::FGLTFRoot root, const entt::entit
 	}
 }
 
-void CScene::loadCameraComponent(const easygltf::FGLTFRoot root, const entt::entity parent, uint32_t node_index)
+void CScene::loadCameraComponent(const easygltf::FGLTFRoot root, const entt::entity parent, u32 node_index)
 {
 	const auto& node = root.nodes[node_index];
 	const auto& camera = root.cameras[node.camera];
@@ -499,7 +499,7 @@ void CScene::loadCameraComponent(const easygltf::FGLTFRoot root, const entt::ent
 	m_pSceneGraph->addComponent<FCameraComponent>(parent, std::move(camera_component));
 }
 
-void CScene::loadLightComponent(const easygltf::FGLTFRoot root, const entt::entity parent, uint32_t node_index)
+void CScene::loadLightComponent(const easygltf::FGLTFRoot root, const entt::entity parent, u32 node_index)
 {
 	const auto& node = root.nodes[node_index];
 
@@ -559,9 +559,9 @@ void CScene::loadAnimations(const easygltf::FGLTFRoot root)
 				// TODO: add other type support
 				assert(accessor.componentType == easygltf::base::enumerators::component_type::float_type);
 
-				float* buf = new float[accessor.count];
-				std::memcpy(buf, stream.data, stream.count * sizeof(float));
-				for (size_t index = 0; index < stream.count; index++)
+				f32* buf = new f32[accessor.count];
+				std::memcpy(buf, stream.data, stream.count * sizeof(f32));
+				for (u64 index = 0; index < stream.count; index++)
 					sampler.inputs.push_back(buf[index]);
 
 				delete[] buf;
@@ -586,7 +586,7 @@ void CScene::loadAnimations(const easygltf::FGLTFRoot root)
 				{
 					glm::vec3* buf = new glm::vec3[stream.count];
 					std::memcpy(buf, stream.data, stream.count * sizeof(glm::vec3));
-					for (size_t index = 0; index < stream.count; index++)
+					for (u64 index = 0; index < stream.count; index++)
 						sampler.outputsVec4.push_back(glm::vec4(buf[index], 0.0f));
 
 					delete[] buf;
@@ -595,7 +595,7 @@ void CScene::loadAnimations(const easygltf::FGLTFRoot root)
 				{
 					glm::vec4* buf = new glm::vec4[stream.count];
 					memcpy(buf, stream.data, stream.count * sizeof(glm::vec4));
-					for (size_t index = 0; index < stream.count; index++)
+					for (u64 index = 0; index < stream.count; index++)
 						sampler.outputsVec4.push_back(buf[index]);
 
 					delete[] buf;

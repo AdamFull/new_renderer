@@ -22,7 +22,7 @@ void CMeshSystem::__create()
 	TRACY_PROFILE_FUNCTION();
 }
 
-void CMeshSystem::__update(float fDt)
+void CMeshSystem::__update(f32 fDt)
 {
 	TRACY_PROFILE_FUNCTION();
 
@@ -40,11 +40,11 @@ void CMeshSystem::__update(float fDt)
 		if (!base.visible)
 			continue;
 
-		auto node = static_cast<uint32_t>(entity);
+		auto node = utl::cast<u32>(entity);
 
 		FSceneNode scene_node{};
 		scene_node.model = transform.gmodel;
-		scene_node.skin = static_cast<uint32_t>(mesh.skin);
+		scene_node.skin = utl::cast<u32>(mesh.skin);
 		render_world->updateNode(node, scene_node);
 
 		for (const auto& primitive : mesh.primitives)

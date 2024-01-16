@@ -24,34 +24,34 @@ namespace engine
 		{
 			EVertexAttributeType type{ EVertexAttributeType::eIndex };
 			const uint8_t* data{ nullptr };
-			size_t stride{ 0ull };
-			size_t count{ 0ull };
+			u64 stride{ 0ull };
+			u64 count{ 0ull };
 		};
 
 		struct FVertexBufferBindingInfo
 		{
 			u32 firstBinding{ 0u };
-			std::vector<size_t> buffers{};
-			std::vector<size_t> offsets{};
+			std::vector<u64> buffers{};
+			std::vector<u64> offsets{};
 		};
 
 		struct FIndexBufferBindingInfo
 		{
-			size_t bufferId{ ~0ull };
-			size_t offset{ 0ull };
-			size_t indexSize{ 0ull };
+			u64 bufferId{ ~0ull };
+			u64 offset{ 0ull };
+			u64 indexSize{ 0ull };
 		};
 
 		struct FVertexHandlerAttributeDescription
 		{
-			size_t size{ 0ull };
+			u64 size{ 0ull };
 			EVertexAttributeType type{ EVertexAttributeType::eIndex };
 		};
 
 		struct FVertexHandlerCreateInfo
 		{
 			std::vector<FVertexHandlerAttributeDescription> descriptions{};
-			size_t indexSize{ 1ull };
+			u64 indexSize{ 1ull };
 			std::string name{};
 		};
 
@@ -87,18 +87,18 @@ namespace engine
 
 			virtual void bind(EQueueTypeFlagBits queue) = 0;
 
-			virtual size_t addVertices(const std::vector<FVertexAttributePointer>& attributes_data) = 0;
-			virtual size_t addIndices(const FVertexAttributePointer& indices) = 0;
+			virtual u64 addVertices(const std::vector<FVertexAttributePointer>& attributes_data) = 0;
+			virtual u64 addIndices(const FVertexAttributePointer& indices) = 0;
 
-			virtual size_t getLastVertex() = 0;
-			virtual size_t getLastIndex() = 0;
+			virtual u64 getLastVertex() = 0;
+			virtual u64 getLastIndex() = 0;
 
 			virtual const FVertexDeclarationInfo& getVertexDeclaration() const = 0;
-			virtual size_t getHash() const = 0;
+			virtual u64 getHash() const = 0;
 			virtual const std::string& getDefinitions() const = 0;
 
-			virtual size_t getVertexHandle() const = 0;
-			virtual size_t getIndexHandle() const = 0;
+			virtual u64 getVertexHandle() const = 0;
+			virtual u64 getIndexHandle() const = 0;
 		};
 	}
 }
@@ -109,7 +109,7 @@ namespace std
 	template<>
 	struct hash<engine::render::FVertexDeclarationBindingDescription>
 	{
-		size_t operator()(const engine::render::FVertexDeclarationBindingDescription& desc) const
+		u64 operator()(const engine::render::FVertexDeclarationBindingDescription& desc) const
 		{
 			return hash<u32>()(desc.binding) ^ (hash<u32>()(desc.stride) << 1);
 		}
@@ -117,7 +117,7 @@ namespace std
 
 	template<>
 	struct hash<engine::render::FVertexDeclarationAttributeDescription> {
-		size_t operator()(const engine::render::FVertexDeclarationAttributeDescription& attr) const
+		u64 operator()(const engine::render::FVertexDeclarationAttributeDescription& attr) const
 		{
 			return hash<u32>()(attr.location) ^
 				(hash<u32>()(attr.binding) << 1) ^
@@ -129,9 +129,9 @@ namespace std
 	template<>
 	struct hash<engine::render::FVertexDeclarationInfo>
 	{
-		size_t operator()(const engine::render::FVertexDeclarationInfo& info) const
+		u64 operator()(const engine::render::FVertexDeclarationInfo& info) const
 		{
-			size_t h = 0ull;
+			u64 h = 0ull;
 			for (const auto& desc : info.bindingDescriptions)
 				h ^= hash<engine::render::FVertexDeclarationBindingDescription>()(desc) + 0x9e3779b9 + (h << 6) + (h >> 2);
 			for (const auto& attr : info.attributeDescriptions)

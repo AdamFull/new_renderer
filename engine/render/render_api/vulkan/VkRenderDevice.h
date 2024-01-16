@@ -36,7 +36,7 @@ namespace engine
 				FRenderApiErrorInfo createCommandBuffer(const FVkCommandBufferCreateInfo& command_buffer_ci, const FVkCommandPool& command_pool, FVkCommandBuffer& command_buffer);
 				FVkCommandBuffer& getCommandBuffer(const FVkGetCommandBufferInfo& get_info);
 				void destroyCommandBuffer(const FVkCommandPool& command_pool, FVkCommandBuffer& command_buffer);
-				void beginCommandBuffer(FVkCommandBuffer& command_buffer, vk::CommandBufferUsageFlags usage, uint32_t image_index);
+				void beginCommandBuffer(FVkCommandBuffer& command_buffer, vk::CommandBufferUsageFlags usage, u32 image_index);
 				void endCommandBuffer(FVkCommandBuffer& command_buffer);
 
 				// VkImage
@@ -87,15 +87,15 @@ namespace engine
 
 				void submitCommandBuffer(const FVkCommandBuffer& command_buffer);
 				vk::Result present(FVkCommandBuffer& command_buffer);
-				vk::Result acquireNextImage(uint32_t& image_index);
+				vk::Result acquireNextImage(u32& image_index);
 
 				// Debug markers
-				void debugBeginLabel(vk::CommandBuffer& command_buffer, const std::string& name, uint32_t color);
-				void debugInsertLabel(vk::CommandBuffer& command_buffer, const std::string& name, uint32_t color);
+				void debugBeginLabel(vk::CommandBuffer& command_buffer, const std::string& name, u32 color);
+				void debugInsertLabel(vk::CommandBuffer& command_buffer, const std::string& name, u32 color);
 				void endLabel(vk::CommandBuffer& command_buffer);
 
-				void debugBeginLabel(vk::Queue& queue, const std::string& name, uint32_t color);
-				void debugInsertLabel(vk::Queue& queue, const std::string& name, uint32_t color);
+				void debugBeginLabel(vk::Queue& queue, const std::string& name, u32 color);
+				void debugInsertLabel(vk::Queue& queue, const std::string& name, u32 color);
 				void endLabel(vk::Queue& queue);
 
 				template<class _Ty>
@@ -106,7 +106,7 @@ namespace engine
 					{
 						vk::DebugUtilsObjectNameInfoEXT object_name_info{};
 						object_name_info.objectType = object.objectType;
-						object_name_info.objectHandle = reinterpret_cast<uint64_t>(static_cast<_Ty::CType>(object));
+						object_name_info.objectHandle = reinterpret_cast<u64>(static_cast<_Ty::CType>(object));
 
 						auto formatted_debug_object_name = std::format("{}:{} | {:x}", vk::to_string(object.objectType), name, object_name_info.objectHandle);
 						object_name_info.pObjectName = formatted_debug_object_name.c_str();
@@ -117,12 +117,12 @@ namespace engine
 				}
 
 				template<class _Ty>
-				void debugSetObjectTag(const _Ty& object, uint64_t name, const void* data, size_t size)
+				void debugSetObjectTag(const _Ty& object, u64 name, const void* data, u64 size)
 				{
 #ifndef BUILD_WITHOUT_DEBUGGIND
 					vk::DebugUtilsObjectTagInfoEXT object_tag_info{};
 					object_tag_info.objectType = object.objectType;
-					object_tag_info.objectHandle = reinterpret_cast<uint64_t>(static_cast<_Ty::CType>(object));
+					object_tag_info.objectHandle = reinterpret_cast<u64>(static_cast<_Ty::CType>(object));
 					object_tag_info.tagName = name;
 					object_tag_info.pTag = data;
 					object_tag_info.tagSize = size;
@@ -168,7 +168,7 @@ namespace engine
 				FRenderApiErrorInfo createLogicalDevice(const FRenderContextCreateInfo& context_ci);
 				void createMemoryAllocator(const FRenderContextCreateInfo& context_ci);
 				FRenderApiErrorInfo createPipelineCache(const FRenderContextCreateInfo& context_ci);
-				FRenderApiErrorInfo createSwapchain(uint32_t surface_width, uint32_t surface_height);
+				FRenderApiErrorInfo createSwapchain(u32 surface_width, u32 surface_height);
 
 				void cleanupSwapchain();
 
@@ -182,7 +182,7 @@ namespace engine
 
 					auto found_feature = extension_features.find(structure_type);
 					if (found_feature != extension_features.end())
-						return *static_cast<_Ty*>(found_feature->second.get());
+						return *utl::cast<_Ty*>(found_feature->second.get());
 
 					vk::PhysicalDeviceFeatures2KHR physical_device_features2{};
 					_Ty extension{};
@@ -192,7 +192,7 @@ namespace engine
 
 					extension_features.insert({ structure_type, std::make_shared<_Ty>(extension) });
 
-					auto* extension_ptr = static_cast<_Ty*>(extension_features[structure_type].get());
+					auto* extension_ptr = utl::cast<_Ty*>(extension_features[structure_type].get());
 
 					if (m_logicalDevice.lastExtensionFeature)
 						extension_ptr->pNext = m_logicalDevice.lastExtensionFeature;
@@ -210,7 +210,7 @@ namespace engine
 				vk::SurfaceKHR m_vkSurface{ nullptr };
 				std::vector<std::string> m_avaliableLayers{};
 
-				int32_t m_selectedPhysicalDevice{ -1 };
+				i32 m_selectedPhysicalDevice{ -1 };
 				std::vector<FVkPhysicalDevice> m_physicalDevices{};
 
 				vk::SampleCountFlagBits m_requiredSampleCount{ vk::SampleCountFlagBits::e1 };

@@ -20,27 +20,27 @@ namespace engine
 
 		struct FBufferUploadInfo
 		{
-			size_t bufferId{ ~0ull };
+			u64 bufferId{ ~0ull };
 			std::vector<uint8_t> data{};
-			size_t count{ 1ull };
-			size_t size{ 0ull };
-			size_t offset{ 0ull };
+			u64 count{ 1ull };
+			u64 size{ 0ull };
+			u64 offset{ 0ull };
 		};
 
 		struct FBufferCreateInfo
 		{
 			// EBufferTypeFlagBits
 			EBufferTypeFlagBits flags{};
-			size_t count{ 1ull };
-			size_t size{ 0ull };
+			u64 count{ 1ull };
+			u64 size{ 0ull };
 
 			FBufferUploadInfo upload{};
 		};
 
 		struct FBufferView
 		{
-			size_t alignedSize{ 0ull };
-			size_t elementCount{ 0ull };
+			u64 alignedSize{ 0ull };
+			u64 elementCount{ 0ull };
 			uint64_t address{ 0ull };
 		};
 
@@ -53,14 +53,14 @@ namespace engine
 
 			virtual void map() = 0;
 			virtual void unmap() = 0;
-			virtual void write(const void* data, size_t size = ~0ull, size_t offset = 0ull) = 0;
-			virtual void flush(size_t size = ~0ull, size_t offset = 0ull) = 0;
+			virtual void write(const void* data, u64 size = ~0ull, u64 offset = 0ull) = 0;
+			virtual void flush(u64 size = ~0ull, u64 offset = 0ull) = 0;
 			virtual void clear() = 0;
 
-			virtual size_t handle() = 0;
+			virtual u64 handle() = 0;
 			virtual uint64_t address() = 0;
 
-			virtual char* at(size_t index) = 0;
+			virtual char* at(u64 index) = 0;
 		};
 
 		class IGPUArrayHandle
@@ -68,14 +68,14 @@ namespace engine
 		public:
 			virtual ~IGPUArrayHandle() = default;
 
-			virtual void create(const std::string& name, size_t stride, size_t count) = 0;
-			virtual void flush(size_t count = ~0ull, size_t offset = 0ull) = 0;
-			virtual void sync(size_t count) = 0;
+			virtual void create(const std::string& name, u64 stride, u64 count) = 0;
+			virtual void flush(u64 count = ~0ull, u64 offset = 0ull) = 0;
+			virtual void sync(u64 count) = 0;
 
-			virtual uint8_t* at(size_t index) = 0;
-			virtual const uint8_t* at(size_t index) const = 0;
+			virtual uint8_t* at(u64 index) = 0;
+			virtual const uint8_t* at(u64 index) const = 0;
 
-			virtual void insert(const void* data, size_t index) = 0;
+			virtual void insert(const void* data, u64 index) = 0;
 
 			virtual uint8_t* emplace_back(const void* data) = 0;
 
@@ -87,7 +87,7 @@ namespace engine
 			virtual const std::vector<uint8_t>& getData() const = 0;
 			virtual const std::unique_ptr<IBufferObject>& getBufferObject() const = 0;
 
-			virtual size_t size() const = 0;
+			virtual u64 size() const = 0;
 		};
 	}
 }

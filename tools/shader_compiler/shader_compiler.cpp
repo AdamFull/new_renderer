@@ -18,8 +18,8 @@ using namespace shader_compiler;
 class empty_includer : public glslang::TShader::Includer
 {
 public:
-	IncludeResult* includeLocal(const char* headerName, const char* includerName, size_t inclusionDepth) override { return nullptr; }
-	IncludeResult* includeSystem(const char* headerName, const char* includerName, size_t inclusionDepth) override { return nullptr; }
+	IncludeResult* includeLocal(const char* headerName, const char* includerName, u64 inclusionDepth) override { return nullptr; }
+	IncludeResult* includeSystem(const char* headerName, const char* includerName, u64 inclusionDepth) override { return nullptr; }
 	void releaseInclude(IncludeResult* result) override {}
 };
 
@@ -209,7 +209,7 @@ std::string remove_spaces_around_dot(const std::string& line)
 		result.push_back(c);
 	}
 
-	size_t pos = result.find(" .");
+	u64 pos = result.find(" .");
 	while (pos != std::string::npos) 
 	{
 		result.erase(pos, 1);
@@ -228,14 +228,14 @@ std::string clean_code(const std::string& input)
 
 	while (std::getline(stream, line)) 
 	{
-		size_t first = line.find_first_not_of(" \t");
+		u64 first = line.find_first_not_of(" \t");
 		if (first == std::string::npos) 
 		{
 			was_empty_line = true;
 			continue;
 		}
 
-		size_t last = line.find_last_not_of(" \t");
+		u64 last = line.find_last_not_of(" \t");
 		line = line.substr(first, (last - first + 1));
 
 		line = remove_spaces_around_dot(line);
@@ -275,14 +275,14 @@ void CShaderCompiler::initialize()
 		log_error("Failed to initialize glslang processor.");
 }
 
-void CShaderCompiler::preprocess(const std::string& shader_code, const FCompileInfo& info, std::string& preprocessed_code, size_t& preprocessed_hash)
+void CShaderCompiler::preprocess(const std::string& shader_code, const FCompileInfo& info, std::string& preprocessed_code, u64& preprocessed_hash)
 {
 	auto language = get_sh_language(info.type);
 	glslang::TShader shader(language);
 
 	auto resources = get_resources();
 
-	auto messages = static_cast<EShMessages>(EShMsgSpvRules | EShMsgVulkanRules | EShMsgDefault);
+	auto messages = utl::cast<EShMessages>(EShMsgSpvRules | EShMsgVulkanRules | EShMsgDefault);
 
 	auto shader_source = shader_code.c_str();
 	auto shader_name = info.name.c_str();
@@ -305,9 +305,9 @@ void CShaderCompiler::preprocess(const std::string& shader_code, const FCompileI
 	preprocessed_hash = utl::fnv1a_64_hash(preprocessed_code.c_str());
 }
 
-std::vector<uint32_t> CShaderCompiler::compile(const std::string& shader_code, const FCompileInfo& info)
+std::vector<u32> CShaderCompiler::compile(const std::string& shader_code, const FCompileInfo& info)
 {
-	std::vector<uint32_t> spirv{};
+	std::vector<u32> spirv{};
 
 	auto language = get_sh_language(info.type);
 
@@ -316,7 +316,7 @@ std::vector<uint32_t> CShaderCompiler::compile(const std::string& shader_code, c
 
 	auto resources = get_resources();
 
-	auto messages = static_cast<EShMessages>(EShMsgSpvRules | EShMsgVulkanRules | EShMsgDefault);
+	auto messages = utl::cast<EShMessages>(EShMsgSpvRules | EShMsgVulkanRules | EShMsgDefault);
 
 	auto shader_source = shader_code.c_str();
 	auto shader_name = info.name.c_str();
@@ -396,7 +396,7 @@ std::vector<uint32_t> CShaderCompiler::compile(const std::string& shader_code, c
 	//// Copy cross compiled data
 	//if (!cross_compiled.empty())
 	//{
-	//	auto out_size = cross_compiled.size() / sizeof(uint32_t);
+	//	auto out_size = cross_compiled.size() / sizeof(u32);
 	//
 	//	spirv.resize(out_size);
 	//	std::memcpy(spirv.data(), cross_compiled.data(), cross_compiled.size());

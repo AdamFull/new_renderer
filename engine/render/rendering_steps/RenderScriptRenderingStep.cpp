@@ -14,7 +14,7 @@ void CRenderScriptRenderingStep::_create(const FRenderingStepCreateInfo& create_
 
 }
 
-void CRenderScriptRenderingStep::_execute(float dt)
+void CRenderScriptRenderingStep::_execute(f32 dt)
 {
 
 }

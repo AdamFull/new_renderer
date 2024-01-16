@@ -41,7 +41,7 @@ namespace engine
 			}
 		private:
 			sol::environment* m_pEnvironment{ nullptr };
-			std::unordered_map<size_t, sol::protected_function*> m_scriptFunctions{};
+			std::unordered_map<u64, sol::protected_function*> m_scriptFunctions{};
 		};
 
 		class CDynamicRenderStage
@@ -50,7 +50,7 @@ namespace engine
 			friend class CRenderInterface;
 
 			void create(const std::string& stage);
-			void render(float dt);
+			void render(f32 dt);
 
 			const std::unique_ptr<IShaderObject>& getShader() const;
 			FBeginRenderingInfo& getRenderingInfo();

@@ -17,7 +17,7 @@ CGPUArrayHandle::CGPUArrayHandle(IRenderInterface* render_interface)
 	m_pBuffer = std::make_unique<CBufferObject>(m_pRenderInterface);
 }
 
-void CGPUArrayHandle::create(const std::string& name, size_t stride, size_t count)
+void CGPUArrayHandle::create(const std::string& name, u64 stride, u64 count)
 {
 	FBufferCreateInfo buffer_ci{};
 	buffer_ci.flags = EBufferTypeFlagBits::eStorage;
@@ -30,9 +30,9 @@ void CGPUArrayHandle::create(const std::string& name, size_t stride, size_t coun
 	m_pBuffer->map();
 }
 
-void CGPUArrayHandle::flush(size_t count, size_t offset)
+void CGPUArrayHandle::flush(u64 count, u64 offset)
 {
-	size_t element_count = m_currentElementCount.load(std::memory_order_relaxed) + 1ull;
+	u64 element_count = m_currentElementCount.load(std::memory_order_relaxed) + 1ull;
 	if (count != ~0ull)
 		element_count = count;
 	else if (count == 0ull)
@@ -42,25 +42,25 @@ void CGPUArrayHandle::flush(size_t count, size_t offset)
 	std::memcpy(dst, &m_elements[m_elementSize * offset], m_elementSize * element_count);
 }
 
-void CGPUArrayHandle::sync(size_t count)
+void CGPUArrayHandle::sync(u64 count)
 {
 	auto* src = m_pBuffer->at(0ull);
 	std::memcpy(&m_elements[0ull], src, m_elementSize * count);
 }
 
-uint8_t* CGPUArrayHandle::at(size_t index)
+uint8_t* CGPUArrayHandle::at(u64 index)
 {
 	assert(index * m_elementSize < m_elements.size());
 	return &m_elements[index * m_elementSize];
 }
 
-const uint8_t* CGPUArrayHandle::at(size_t index) const
+const uint8_t* CGPUArrayHandle::at(u64 index) const
 {
 	assert(index * m_elementSize < m_elements.size());
 	return &m_elements[index * m_elementSize];
 }
 
-void CGPUArrayHandle::insert(const void* data, size_t index)
+void CGPUArrayHandle::insert(const void* data, u64 index)
 {
 	m_currentElementCount.store(std::max(index, m_currentElementCount.load(std::memory_order_relaxed)));
 	std::memcpy(at(index), data, m_elementSize);
@@ -68,7 +68,7 @@ void CGPUArrayHandle::insert(const void* data, size_t index)
 
 uint8_t* CGPUArrayHandle::emplace_back(const void* data)
 {
-	size_t current_index = m_currentElementCount.load(std::memory_order_relaxed);
+	u64 current_index = m_currentElementCount.load(std::memory_order_relaxed);
 	insert(data, current_index);
 	m_currentElementCount.fetch_add(1ull, std::memory_order_relaxed);
 	return at(current_index);
@@ -76,7 +76,7 @@ uint8_t* CGPUArrayHandle::emplace_back(const void* data)
 
 uint8_t* CGPUArrayHandle::back()
 {
-	size_t current_index = m_currentElementCount.load(std::memory_order_relaxed);
+	u64 current_index = m_currentElementCount.load(std::memory_order_relaxed);
 	if (current_index != 0ull)
 		return at(current_index - 1ull);
 
@@ -85,7 +85,7 @@ uint8_t* CGPUArrayHandle::back()
 
 const uint8_t* CGPUArrayHandle::back() const
 {
-	size_t current_index = m_currentElementCount.load(std::memory_order_relaxed);
+	u64 current_index = m_currentElementCount.load(std::memory_order_relaxed);
 	if (current_index != 0ull)
 		return at(current_index);
 
@@ -107,7 +107,7 @@ const std::unique_ptr<IBufferObject>& CGPUArrayHandle::getBufferObject() const
 	return m_pBuffer;
 }
 
-size_t CGPUArrayHandle::size() const
+u64 CGPUArrayHandle::size() const
 {
 	return m_currentElementCount.load(std::memory_order_relaxed);
 }

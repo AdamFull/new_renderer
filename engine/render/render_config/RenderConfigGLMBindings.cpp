@@ -6,6 +6,8 @@
 
 #include <sol/sol.hpp>
 
+#include <utility.hpp>
+
 namespace engine
 {
 	namespace render
@@ -255,47 +257,47 @@ namespace engine
 		void bindGLMVector(sol::state* lua)
 		{
             // Integer signed
-            register_vec1<int32_t>("I32Vector1", *lua);
-            register_vec2<int32_t>("I32Vector2", *lua);
-            register_vec3<int32_t>("I32Vector3", *lua);
-            register_vec4<int32_t>("I32Vector4", *lua);
+            register_vec1<i32>("I32Vector1", *lua);
+            register_vec2<i32>("I32Vector2", *lua);
+            register_vec3<i32>("I32Vector3", *lua);
+            register_vec4<i32>("I32Vector4", *lua);
 
             // UInteger unsigned
-            register_vec1<uint32_t>("U32Vector1", *lua);
-            register_vec2<uint32_t>("U32Vector2", *lua);
-            register_vec3<uint32_t>("U32Vector3", *lua);
-            register_vec4<uint32_t>("U32Vector4", *lua);
+            register_vec1<u32>("U32Vector1", *lua);
+            register_vec2<u32>("U32Vector2", *lua);
+            register_vec3<u32>("U32Vector3", *lua);
+            register_vec4<u32>("U32Vector4", *lua);
             
             // Floating point
-            register_vec1<float>("Vector1", *lua);
-            register_vec2<float>("Vector2", *lua);
-            register_vec3<float>("Vector3", *lua);
-            register_vec4<float>("Vector4", *lua);
+            register_vec1<f32>("Vector1", *lua);
+            register_vec2<f32>("Vector2", *lua);
+            register_vec3<f32>("Vector3", *lua);
+            register_vec4<f32>("Vector4", *lua);
             
             // Double
-            register_vec1<double>("F64Vector1", *lua);
-            register_vec2<double>("F64Vector2", *lua);
-            register_vec3<double>("F64Vector3", *lua);
-            register_vec4<double>("F64Vector4", *lua);
+            register_vec1<f64>("F64Vector1", *lua);
+            register_vec2<f64>("F64Vector2", *lua);
+            register_vec3<f64>("F64Vector3", *lua);
+            register_vec4<f64>("F64Vector4", *lua);
 		}
 
 		void bindGLMMatrix(sol::state* lua)
 		{
-            register_mat2<int32_t>("I32Matrix2", *lua);
-            register_mat3<int32_t>("I32Matrix3", *lua);
-            register_mat4<int32_t>("I32Matrix3", *lua);
+            register_mat2<i32>("I32Matrix2", *lua);
+            register_mat3<i32>("I32Matrix3", *lua);
+            register_mat4<i32>("I32Matrix3", *lua);
 
-            register_mat2<uint32_t>("U32Matrix2", *lua);
-            register_mat3<uint32_t>("U32Matrix2", *lua);
-            register_mat4<uint32_t>("U32Matrix2", *lua);
+            register_mat2<u32>("U32Matrix2", *lua);
+            register_mat3<u32>("U32Matrix2", *lua);
+            register_mat4<u32>("U32Matrix2", *lua);
 
-            register_mat2<float>("Matrix2", *lua);
-            register_mat3<float>("Matrix2", *lua);
-            register_mat4<float>("Matrix2", *lua);
+            register_mat2<f32>("Matrix2", *lua);
+            register_mat3<f32>("Matrix2", *lua);
+            register_mat4<f32>("Matrix2", *lua);
 
-            register_mat2<double>("F64Matrix2", *lua);
-            register_mat3<double>("F64Matrix2", *lua);
-            register_mat4<double>("F64Matrix2", *lua);
+            register_mat2<f64>("F64Matrix2", *lua);
+            register_mat3<f64>("F64Matrix2", *lua);
+            register_mat4<f64>("F64Matrix2", *lua);
 		}
 
         void bingGLMGeometricFunctions(sol::state* lua)
@@ -353,12 +355,12 @@ namespace engine
             ));
 
             lua->set_function("Refract", sol::overload(
-                [](glm::vec2& a, glm::vec2& b, float i) { return glm::refract(a, b, i); },
-                [](glm::vec3& a, glm::vec3& b, float i) { return glm::refract(a, b, i); },
-                [](glm::vec4& a, glm::vec4& b, float i) { return glm::refract(a, b, i); },
-                [](glm::dvec2& a, glm::dvec2& b, double i) { return glm::refract(a, b, i); },
-                [](glm::dvec3& a, glm::dvec3& b, double i) { return glm::refract(a, b, i); },
-                [](glm::dvec4& a, glm::dvec4& b, double i) { return glm::refract(a, b, i); }
+                [](glm::vec2& a, glm::vec2& b, f32 i) { return glm::refract(a, b, i); },
+                [](glm::vec3& a, glm::vec3& b, f32 i) { return glm::refract(a, b, i); },
+                [](glm::vec4& a, glm::vec4& b, f32 i) { return glm::refract(a, b, i); },
+                [](glm::dvec2& a, glm::dvec2& b, f64 i) { return glm::refract(a, b, i); },
+                [](glm::dvec3& a, glm::dvec3& b, f64 i) { return glm::refract(a, b, i); },
+                [](glm::dvec4& a, glm::dvec4& b, f64 i) { return glm::refract(a, b, i); }
             ));
         }
 
@@ -370,8 +372,8 @@ namespace engine
                 ));
 
             lua->set_function("RotateMatrix", sol::overload(
-                [](glm::mat4& a, float b, glm::vec3& c) { return glm::rotate(a, b, c); },
-                [](glm::dmat4& a, double b, glm::dvec3& c) { return glm::rotate(a, b, c); }
+                [](glm::mat4& a, f32 b, glm::vec3& c) { return glm::rotate(a, b, c); },
+                [](glm::dmat4& a, f64 b, glm::dvec3& c) { return glm::rotate(a, b, c); }
             ));
             
             lua->set_function("ScaleMatrix", sol::overload(
@@ -400,8 +402,8 @@ namespace engine
         
         void bindGLMQuaternion(sol::state* lua)
         {
-            register_quat<float>("Quaternion", *lua);
-            register_quat<double>("F64Quaternion", *lua);
+            register_quat<f32>("Quaternion", *lua);
+            register_quat<f64>("F64Quaternion", *lua);
 
             lua->set_function("QuatToEulerAngles", sol::overload(
                 [](glm::quat& a) { return glm::eulerAngles(a); },
@@ -444,13 +446,13 @@ namespace engine
         void bindGLMCamera(sol::state* lua)
         {
             lua->set_function("PerspectiveProjection", sol::overload(
-                [](float fov, float aspect, float znear, float zfar) { return glm::perspective(fov, aspect, znear, zfar); },
-                [](double fov, double aspect, double znear, double zfar) { return glm::perspective(fov, aspect, znear, zfar); }
+                [](f32 fov, f32 aspect, f32 znear, f32 zfar) { return glm::perspective(fov, aspect, znear, zfar); },
+                [](f64 fov, f64 aspect, f64 znear, f64 zfar) { return glm::perspective(fov, aspect, znear, zfar); }
             ));
             
             lua->set_function("PerspectiveProjection", sol::overload(
-                [](float left, float right, float bottom, float top) { return glm::ortho(left, right, bottom, top); },
-                [](double left, double right, double bottom, double top) { return glm::ortho(left, right, bottom, top); }
+                [](f32 left, f32 right, f32 bottom, f32 top) { return glm::ortho(left, right, bottom, top); },
+                [](f64 left, f64 right, f64 bottom, f64 top) { return glm::ortho(left, right, bottom, top); }
             ));
 
             lua->set_function("LookAt", sol::overload(

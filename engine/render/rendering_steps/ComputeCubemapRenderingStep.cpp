@@ -21,7 +21,7 @@ void CComputeCubemapRenderingStep::_create(const FRenderingStepCreateInfo& creat
 	auto& rendering_ci = create_info.compute;
 	auto& render_context = m_pRenderInterface->getRenderContext();
 
-	uint32_t calculated_usage{};
+	u32 calculated_usage{};
 
 	for (const auto& [name, target] : rendering_ci.writeTargets)
 	{
@@ -48,7 +48,7 @@ void CComputeCubemapRenderingStep::_create(const FRenderingStepCreateInfo& creat
 #endif
 }
 
-void CComputeCubemapRenderingStep::_execute(float dt)
+void CComputeCubemapRenderingStep::_execute(f32 dt)
 {
 	TRACY_PROFILE_FUNCTION();
 
@@ -60,12 +60,12 @@ void CComputeCubemapRenderingStep::_execute(float dt)
 	for (const auto& target : m_beginComputeInfo.writeAttachments)
 	{
 		auto& info = render_context->getTextureInfo(target);
-		for (uint32_t mip = 0u; mip < info.mipLevels; ++mip)
+		for (u32 mip = 0u; mip < info.mipLevels; ++mip)
 		{
 			// Bind textures
 			for (auto& [name, texture] : m_shaderInputs)
 			{
-				uint32_t bind_mip{ 0u };
+				u32 bind_mip{ 0u };
 
 				if (texture == target)
 					bind_mip = mip;
@@ -73,7 +73,7 @@ void CComputeCubemapRenderingStep::_execute(float dt)
 				m_pShader->bindTexture(name.c_str(), texture, bind_mip);
 			}
 
-			float layer_roughness = static_cast<float>(mip) / static_cast<float>(info.mipLevels - 1u);
+			f32 layer_roughness = utl::cast<f32>(mip) / utl::cast<f32>(info.mipLevels - 1u);
 
 			auto& uniform = m_pShader->getUniformBlock("ComputeCubemapData");
 			if (uniform)
@@ -89,8 +89,8 @@ void CComputeCubemapRenderingStep::_execute(float dt)
 
 			FDispatchInfo dispatch_info{};
 			auto& group = dispatch_info.groups.emplace_back();
-			group.x = glm::max(static_cast<uint32_t>(std::ceil(static_cast<float>(info.width) / static_cast<float>(reflection.localSizes[0]))), 1u);
-			group.y = glm::max(static_cast<uint32_t>(std::ceil(static_cast<float>(info.height) / static_cast<float>(reflection.localSizes[1]))), 1u);
+			group.x = glm::max(utl::cast<u32>(std::ceil(utl::cast<f32>(info.width) / utl::cast<f32>(reflection.localSizes[0]))), 1u);
+			group.y = glm::max(utl::cast<u32>(std::ceil(utl::cast<f32>(info.height) / utl::cast<f32>(reflection.localSizes[1]))), 1u);
 			group.z = glm::max(0u, 1u);
 
 			render_context->dispatch(m_beginComputeInfo.queue, dispatch_info);

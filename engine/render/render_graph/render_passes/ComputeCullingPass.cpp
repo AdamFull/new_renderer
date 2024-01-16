@@ -22,7 +22,7 @@ void CComputeCullingPass::init(const FComputePassCreateInfo& pass_ci)
 #endif
 }
 
-void CComputeCullingPass::bake(std::unordered_map<size_t, FRenderGraphAttachmentOperationInfo>& resource_info)
+void CComputeCullingPass::bake(std::unordered_map<u64, FRenderGraphAttachmentOperationInfo>& resource_info)
 {
 	IComputePass::bake(resource_info);
 }
@@ -33,13 +33,13 @@ void CComputeCullingPass::_execute(const FComputeFrameInfo& frame_info)
 	auto& render_world = m_pRenderInterface->getRenderWorld();
 	auto& world_stats = render_world->getStats();
 
-	std::unordered_set<size_t> vbos{};
+	std::unordered_set<u64> vbos{};
 
 	for (const auto& [type, batch_ranges] : render_world->getAllGeometryRanges())
 	{
 		for (const auto& batch_range : batch_ranges)
 		{
-			for (size_t batch_id = batch_range.offset; batch_id < batch_range.offset + batch_range.count; ++batch_id)
+			for (u64 batch_id = batch_range.offset; batch_id < batch_range.offset + batch_range.count; ++batch_id)
 			{
 				const auto& batch = render_world->getGeometryBatch(batch_id);
 				vbos.emplace(batch.vboID);

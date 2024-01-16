@@ -22,7 +22,7 @@ void CGeometryPass::init(const FRenderPassCreateInfo& pass_ci)
 #endif
 }
 
-void CGeometryPass::bake(std::unordered_map<size_t, FRenderGraphAttachmentOperationInfo>& resource_info)
+void CGeometryPass::bake(std::unordered_map<u64, FRenderGraphAttachmentOperationInfo>& resource_info)
 {
 	IRenderPass::bake(resource_info);
 }
@@ -36,11 +36,11 @@ void CGeometryPass::_render(const FRenderFrameInfo& frame_info)
 
 	auto& batch_ranges = render_world->getGeometryRanges(ERenderGeometryCullerType::eScene);
 
-	size_t drawcall_id{ 0ull };
+	u64 drawcall_id{ 0ull };
 	IVertexHandler* last_vbo{ nullptr };
 	for (const auto& batch_range : batch_ranges)
 	{
-		for (size_t batch_id = batch_range.offset; batch_id < batch_range.offset + batch_range.count; ++batch_id)
+		for (u64 batch_id = batch_range.offset; batch_id < batch_range.offset + batch_range.count; ++batch_id)
 		{
 			const auto& batch = render_world->getGeometryBatch(batch_id);
 
@@ -68,8 +68,8 @@ void CGeometryPass::_render(const FRenderFrameInfo& frame_info)
 				auto& mesh_data = shader->getConstantBlock("meshData");
 				if (mesh_data)
 				{
-					mesh_data->set("callID", static_cast<uint32_t>(drawcall_id));
-					mesh_data->set("batchID", static_cast<uint32_t>(batch_id));
+					mesh_data->set("callID", utl::cast<u32>(drawcall_id));
+					mesh_data->set("batchID", utl::cast<u32>(batch_id));
 				}
 
 				// Bind vbo and flush descriptors, then bind and draw
@@ -102,7 +102,7 @@ const std::unique_ptr<IShaderObject>& CGeometryPass::getShaderByVBO(const IVerte
 		shader_ci.primitiveTopology = EVertexPrimitiveTopology::eTriangleList;
 		
 		auto& output_targets = m_renderResources[ERenderResourceGroupType::eColorWrite];
-		for (size_t resource_id : output_targets)
+		for (u64 resource_id : output_targets)
 		{
 			if (resource_id == m_depthTarget || resource_id == m_stencilTarget)
 				continue;

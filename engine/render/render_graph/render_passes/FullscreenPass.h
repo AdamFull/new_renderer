@@ -14,7 +14,7 @@ namespace engine
 			~CFullscreenPass() = default;
 
 			void init(const FRenderPassCreateInfo& pass_ci) override;
-			void bake(std::unordered_map<size_t, FRenderGraphAttachmentOperationInfo>& resource_info) override;
+			void bake(std::unordered_map<u64, FRenderGraphAttachmentOperationInfo>& resource_info) override;
 		private:
 			void _render(const FRenderFrameInfo& frame_info) override;
 

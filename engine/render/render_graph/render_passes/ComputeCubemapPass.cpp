@@ -15,13 +15,13 @@ void CComputeCubemapPass::init(const FComputePassCreateInfo& pass_ci)
 {
 	IComputePass::init(pass_ci);
 
-	uint32_t calculated_usage{};
+	u32 calculated_usage{};
 
 	auto& render_context = m_pRenderInterface->getRenderContext();
 	auto& render_graph = m_pRenderInterface->getRenderGraph();
 
 	auto& out_targets = m_renderResources[ERenderResourceGroupType::eStorageWrite];
-	for (size_t resource_id : out_targets)
+	for (u64 resource_id : out_targets)
 	{
 		auto& render_resource = render_graph->getRenderResource(resource_id);
 		auto& info = render_context->getTextureInfo(render_resource.handle);
@@ -50,7 +50,7 @@ void CComputeCubemapPass::init(const FComputePassCreateInfo& pass_ci)
 #endif
 }
 
-void CComputeCubemapPass::bake(std::unordered_map<size_t, FRenderGraphAttachmentOperationInfo>& resource_info)
+void CComputeCubemapPass::bake(std::unordered_map<u64, FRenderGraphAttachmentOperationInfo>& resource_info)
 {
 	IComputePass::bake(resource_info);
 }
@@ -66,7 +66,7 @@ void CComputeCubemapPass::_execute(const FComputeFrameInfo& frame_info)
 	{
 		auto& render_resource = render_graph->getRenderResource(resource_id);
 		auto& info = render_context->getTextureInfo(render_resource.handle);
-		for (uint32_t mip = 0u; mip < info.mipLevels; ++mip)
+		for (u32 mip = 0u; mip < info.mipLevels; ++mip)
 		{
 			for (const auto& [binding_point, resource_id] : m_bakedBindings)
 			{
@@ -78,7 +78,7 @@ void CComputeCubemapPass::_execute(const FComputeFrameInfo& frame_info)
 					m_pShader->bindTexture(binding_point.c_str(), binding_resource.handle);
 			}
 
-			float layer_roughness = static_cast<float>(mip) / static_cast<float>(info.mipLevels - 1u);
+			f32 layer_roughness = utl::cast<f32>(mip) / utl::cast<f32>(info.mipLevels - 1u);
 
 			auto& uniform = m_pShader->getUniformBlock("ComputeCubemapData");
 			if (uniform)

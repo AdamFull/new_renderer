@@ -23,7 +23,7 @@ void CCascadedShadowMapPass::init(const FRenderPassCreateInfo& pass_ci)
 #endif
 }
 
-void CCascadedShadowMapPass::bake(std::unordered_map<size_t, FRenderGraphAttachmentOperationInfo>& resource_info)
+void CCascadedShadowMapPass::bake(std::unordered_map<u64, FRenderGraphAttachmentOperationInfo>& resource_info)
 {
 	IRenderPass::bake(resource_info);
 }
@@ -43,12 +43,12 @@ void CCascadedShadowMapPass::_render(const FRenderFrameInfo& frame_info)
 
 	IVertexHandler* last_vbo{ nullptr };
 
-	for (size_t range_id = 0ull; range_id < batch_ranges.size(); ++range_id)
+	for (u64 range_id = 0ull; range_id < batch_ranges.size(); ++range_id)
 	{
-		size_t shadow_index = range_id / cascade_shadow_map_cascade_count;
+		u64 shadow_index = range_id / cascade_shadow_map_cascade_count;
 
 		auto& batch_range = batch_ranges.at(range_id);
-		for (size_t batch_id = batch_range.offset; batch_id < batch_range.offset + batch_range.count; ++batch_id)
+		for (u64 batch_id = batch_range.offset; batch_id < batch_range.offset + batch_range.count; ++batch_id)
 		{
 			const auto& batch = render_world->getGeometryBatch(batch_id);
 
@@ -68,7 +68,7 @@ void CCascadedShadowMapPass::_render(const FRenderFrameInfo& frame_info)
 				auto& shadow_data = shader->getConstantBlock("shadowData");
 				if (shadow_data)
 				{
-					shadow_data->set("batchID", static_cast<uint32_t>(batch_id));
+					shadow_data->set("batchID", utl::cast<u32>(batch_id));
 				}
 
 				if (was_vbo_rebinded)
@@ -80,8 +80,8 @@ void CCascadedShadowMapPass::_render(const FRenderFrameInfo& frame_info)
 				// Draw shadfow
 				if (shadow_data)
 				{
-					shadow_data->set("shadowIndex", static_cast<uint32_t>(shadow_index));
-					shadow_data->set("layer", static_cast<int32_t>(range_id));
+					shadow_data->set("shadowIndex", utl::cast<u32>(shadow_index));
+					shadow_data->set("layer", utl::cast<i32>(range_id));
 				}
 
 				shader->flushConstants(m_queue);
@@ -111,7 +111,7 @@ const std::unique_ptr<IShaderObject>& CCascadedShadowMapPass::getShaderByVBO(con
 		shader_ci.primitiveTopology = EVertexPrimitiveTopology::eTriangleList;
 
 		auto& output_targets = m_renderResources[ERenderResourceGroupType::eColorWrite];
-		for (size_t resource_id : output_targets)
+		for (u64 resource_id : output_targets)
 		{
 			if (resource_id == m_depthTarget || resource_id == m_stencilTarget)
 				continue;

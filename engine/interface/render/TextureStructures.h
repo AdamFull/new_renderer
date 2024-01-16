@@ -6,7 +6,7 @@ namespace engine
 {
 	namespace render
 	{
-		enum class ETextureCreateFlagBits : uint32_t
+		enum class ETextureCreateFlagBits : u32
 		{
 			eArray = 1 << 0,
 			eCubemap = 1 << 1,
@@ -19,7 +19,7 @@ namespace engine
 		};
 		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ETextureCreateFlags, ETextureCreateFlagBits)
 
-		enum class ERenderTargetSizePolicy : uint32_t
+		enum class ERenderTargetSizePolicy : u32
 		{
 			eFull = 1,
 			eScalable = 2,
@@ -31,23 +31,23 @@ namespace engine
 			bool isSwapchainTarget{ false };
 
 			// EApiDataFormat
-			uint32_t format{ 0u };
+			u32 format{ 0u };
 			ETextureCreateFlags typeFlags{ 0u };
 			ERenderTargetSizePolicy sizePolicy{};
 
-			uint32_t width{ 1u };
-			uint32_t height{ 1u };
-			uint32_t depth{ 1u };
+			u32 width{ 1u };
+			u32 height{ 1u };
+			u32 depth{ 1u };
 
-			uint32_t mipLevels{ 1u };
-			uint32_t arrayLayers{ 1u };
+			u32 mipLevels{ 1u };
+			u32 arrayLayers{ 1u };
 		};
 
 		struct FTextureUploadInfo
 		{
-			size_t textureId{ ~0ull };
+			u64 textureId{ ~0ull };
 			std::vector<uint8_t> data{};
-			std::vector<std::vector<size_t>> mipLayerOffsets{};
+			std::vector<std::vector<u64>> mipLayerOffsets{};
 		};
 	}
 }

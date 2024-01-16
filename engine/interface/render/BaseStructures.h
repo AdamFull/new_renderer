@@ -4,10 +4,8 @@
 #include <Windows.h>
 #endif
 
-#include <string>
-#include <vector>
-
 #include <embed/shaders/includes/interop/base.h>
+#include "BaseEnumerators.h"
 
 namespace engine
 {
@@ -32,8 +30,8 @@ namespace engine
 			HWND hwnd;
 #endif
 
-			int32_t initialWidth{};
-			int32_t initialHeight{};
+			i32 initialWidth{};
+			i32 initialHeight{};
 		};
 
 		struct FRenderContextCreateInfo
@@ -50,11 +48,11 @@ namespace engine
 			std::vector<std::string> requiredDeviceExtensions{};
 			std::vector<std::string> optionalDeviceExtensions{};
 
-			uint32_t initialWidth{ 0u };
-			uint32_t initialHeight{ 0u };
+			u32 initialWidth{ 0u };
+			u32 initialHeight{ 0u };
 
 			bool validationState{ false };
-			uint32_t validationFeatures{ 0u };
+			u32 validationFeatures{ 0u };
 			std::vector<std::string> validationLayers{};
 		};
 
@@ -97,29 +95,29 @@ namespace engine
 
 		struct FGeometryDrawInfo
 		{
-			size_t lastIndex{ 0ull };
-			size_t lastVertex{ 0ull };
+			u64 lastIndex{ 0ull };
+			u64 lastVertex{ 0ull };
 			std::vector<FGeometryDrawRange> ranges{};
 		};
 
 		struct FIndirectGeometryDrawInfo
 		{
-			size_t bufferId{ ~0ull };
-			size_t offset{ 0ull };
-			size_t count{ 0ull };
+			u64 bufferId{ ~0ull };
+			u64 offset{ 0ull };
+			u64 count{ 0ull };
 
-			size_t stride{ 0ull };
+			u64 stride{ 0ull };
 		};
 
 		struct FGeometryCPUBatch
 		{
-			size_t vboID{ ~0ull };
+			u64 vboID{ ~0ull };
 			FIndirectGeometryDrawInfo command{};
 		};
 
 		struct FDispatchGroup
 		{
-			uint32_t x, y, z{};
+			u32 x, y, z{};
 		};
 
 		struct FDispatchInfo
@@ -129,8 +127,8 @@ namespace engine
 
 		struct FAPIObjectDestroyInfo
 		{
-			size_t id{ ~0ull };
-			EResourceFlagBits mask{ 0u };
+			u64 id{ ~0ull };
+			EResourceFlagBits mask{};
 		};
 
 		struct FFrustum
@@ -208,7 +206,7 @@ namespace engine
 			 */
 			bool checkPoint(const glm::vec3& pos) const
 			{
-				for (uint32_t i = 0; i < 6; i++)
+				for (u32 i = 0; i < 6; i++)
 				{
 					if (frustumSides[i].x * pos.x + frustumSides[i].y * pos.y + frustumSides[i].z * pos.z + frustumSides[i].w <= 0.0f)
 						return false;
@@ -223,9 +221,9 @@ namespace engine
 			 * @param radius Sphere radius
 			 * @return true when sphere intersects with camera frustum
 			 */
-			bool checkSphere(const glm::vec3& pos, float radius) const
+			bool checkSphere(const glm::vec3& pos, f32 radius) const
 			{
-				for (uint32_t i = 0; i < 6; i++)
+				for (u32 i = 0; i < 6; i++)
 				{
 					if (frustumSides[i].x * pos.x + frustumSides[i].y * pos.y + frustumSides[i].z * pos.z + frustumSides[i].w <= -radius)
 						return false;
@@ -242,7 +240,7 @@ namespace engine
 			 */
 			bool checkBox(const glm::vec3& start, const glm::vec3& end) const
 			{
-				for (uint32_t i = 0; i < 6; i++)
+				for (u32 i = 0; i < 6; i++)
 				{
 					if (   frustumSides[i].x * start.x + frustumSides[i].y * start.y + frustumSides[i].z * start.z + frustumSides[i].w <= 0.0f
 						&& frustumSides[i].x * end.x +   frustumSides[i].y * start.y + frustumSides[i].z * start.z + frustumSides[i].w <= 0.0f
@@ -258,9 +256,9 @@ namespace engine
 			}
 
 			std::array<glm::vec4, 6> frustumSides{};
-			std::array<float, 16> clip;
+			std::array<f32, 16> clip;
 		private:
-			void normalizeFrustumSide(size_t side)
+			void normalizeFrustumSide(u64 side)
 			{
 				auto magnitude = std::sqrt(frustumSides[side][0] * frustumSides[side][0] + frustumSides[side][1] * frustumSides[side][1] + frustumSides[side][2] * frustumSides[side][2]);
 				frustumSides[side][0] /= magnitude;

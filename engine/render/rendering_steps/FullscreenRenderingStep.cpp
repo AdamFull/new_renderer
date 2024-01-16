@@ -45,7 +45,7 @@ void CFullscreenRenderingStep::_create(const FRenderingStepCreateInfo& create_in
 #endif
 }
 
-void CFullscreenRenderingStep::_execute(float dt)
+void CFullscreenRenderingStep::_execute(f32 dt)
 {
 	TRACY_PROFILE_FUNCTION();
 
@@ -53,7 +53,7 @@ void CFullscreenRenderingStep::_execute(float dt)
 	render_context->beginRendering(m_beginRenderingInfo);
 
 	auto& rect = m_beginRenderingInfo.renderArea;
-	render_context->setViewport(static_cast<float>(rect.size.x), static_cast<float>(rect.size.y), m_beginRenderingInfo.flipViewport);
+	render_context->setViewport(utl::cast<f32>(rect.size.x), utl::cast<f32>(rect.size.y), m_beginRenderingInfo.flipViewport);
 	render_context->setScissorRect(0, 0, rect.size.x, rect.size.y);
 
 	//auto& push_block = m_pShader->getUniformBlock("FUniformData");

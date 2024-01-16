@@ -17,19 +17,19 @@ namespace engine
 			~CRenderInterface() override;
 
 			void create(const FRenderInterfaceCreateInfo& render_interface_ci) override;
-			void render(float dt) override;
+			void render(f32 dt) override;
 
-			size_t createTexture(const std::string& path) override;
-			size_t loadTexture(const std::string& path, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info);
+			u64 createTexture(const std::string& path) override;
+			u64 loadTexture(const std::string& path, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info);
 			// TODO: add texture may be?
 
-			size_t createShader(const std::string& name, const FGraphicsShaderCreateInfo& create_info) override;
-			size_t createShader(const std::string& name, const FComputeShaderCreateInfo& create_info) override;
+			u64 createShader(const std::string& name, const FGraphicsShaderCreateInfo& create_info) override;
+			u64 createShader(const std::string& name, const FComputeShaderCreateInfo& create_info) override;
 
-			size_t createVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) override;
-			const std::unique_ptr<IVertexHandler>& getVertexHandler(size_t id) override;
+			u64 createVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) override;
+			const std::unique_ptr<IVertexHandler>& getVertexHandler(u64 id) override;
 
-			void updateSurfaceSize(int32_t width, int32_t height) override;
+			void updateSurfaceSize(i32 width, i32 height) override;
 
 			const std::unique_ptr<FRenderDataPacket>& getRenderPacket() override;
 			const std::unique_ptr<IRenderGraph>& getRenderGraph() override;
@@ -37,7 +37,7 @@ namespace engine
 			const std::unique_ptr<IRenderContext>& getRenderContext() override;
 		protected:
 			template<class _Ty>
-			size_t createShader(const FShaderUploadInfo& name_info, const _Ty& create_info)
+			u64 createShader(const FShaderUploadInfo& name_info, const _Ty& create_info)
 			{
 				std::vector<FShaderCreationBlockInfo> shader_stages{};
 				if (m_pResourceLoader->loadShaderData(name_info, shader_stages))
@@ -56,9 +56,9 @@ namespace engine
 
 			// TODO: add map with entity id and mesh data
 
-			std::vector<size_t> m_matPassRTs{};
-			size_t m_matPassDepth{ ~0ull };
-			size_t m_matPassStencil{ ~0ull };
+			std::vector<u64> m_matPassRTs{};
+			u64 m_matPassDepth{ ~0ull };
+			u64 m_matPassStencil{ ~0ull };
 
 			std::unique_ptr<FRenderDataPacket> m_pRenderPacket{};
 

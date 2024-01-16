@@ -16,7 +16,7 @@ namespace engine
 				virtual ~CMeshSystem() override = default;
 
 				void __create() override;
-				void __update(float fDt) override;
+				void __update(f32 fDt) override;
 			private:
 				render::IRenderInterface* m_pRenderInterface{ nullptr };
 			};

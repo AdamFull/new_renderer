@@ -44,7 +44,7 @@ void CSkinningSystem::__create()
 	TRACY_PROFILE_FUNCTION();
 }
 
-void CSkinningSystem::__update(float fDt)
+void CSkinningSystem::__update(f32 fDt)
 {
 	TRACY_PROFILE_FUNCTION();
 
@@ -66,7 +66,7 @@ void CSkinningSystem::__update(float fDt)
 
 		// Calculate joint matrices
 		auto inv_transform = glm::inverse(transform.gmodel);
-		for (uint32_t i = 0; i < skin.joints.size(); i++)
+		for (u32 i = 0; i < skin.joints.size(); i++)
 		{
 			auto& jtransform = m_pSceneGraph->getComponent<FTransformComponent>(skin.joints[i]);
 			skin.jointMatrices[i] = jtransform.gmodel * skin.inverseBindMatrices[i];
@@ -78,7 +78,7 @@ void CSkinningSystem::__update(float fDt)
 	auto& world_stats = render_world->getStats();
 	world_stats.skinCount = 0ull;
 
-	for (size_t idx = 0ull; idx < root_component.skins.size(); ++idx)
+	for (u64 idx = 0ull; idx < root_component.skins.size(); ++idx)
 	{
 		auto& skin = root_component.skins[idx];
 		render_world->updateSkin(skin.jointMatrices);

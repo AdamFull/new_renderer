@@ -16,19 +16,19 @@ namespace engine
 
 			void map() override;
 			void unmap() override;
-			void write(const void* data, size_t size = ~0ull, size_t offset = 0ull) override;
-			void flush(size_t size = ~0ull, size_t offset = 0ull) override;
+			void write(const void* data, u64 size = ~0ull, u64 offset = 0ull) override;
+			void flush(u64 size = ~0ull, u64 offset = 0ull) override;
 			void clear() override;
 
-			size_t handle() override;
+			u64 handle() override;
 			uint64_t address() override;
 
-			char* at(size_t index) override;
+			char* at(u64 index) override;
 
 		private:
-			size_t m_bufferId{ ~0ull };
-			size_t m_elemSize{ 0ull };
-			size_t m_elemCount{ 0ull };
+			u64 m_bufferId{ ~0ull };
+			u64 m_elemSize{ 0ull };
+			u64 m_elemCount{ 0ull };
 			uint64_t m_virtualAddress{ 0ull };
 			void* m_pMapped{ nullptr };
 

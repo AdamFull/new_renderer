@@ -14,7 +14,7 @@ void CBarrierRenderingStep::_create(const FRenderingStepCreateInfo& create_info)
 	
 }
 
-void CBarrierRenderingStep::_execute(float dt)
+void CBarrierRenderingStep::_execute(f32 dt)
 {
 	auto& render_context = m_pRenderInterface->getRenderContext();
 

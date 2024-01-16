@@ -15,7 +15,7 @@ namespace engine
 			~CRenderScriptRenderingStep() override = default;
 
 			void _create(const FRenderingStepCreateInfo& create_info) override;
-			void _execute(float dt) override;
+			void _execute(f32 dt) override;
 		};
 	}
 }

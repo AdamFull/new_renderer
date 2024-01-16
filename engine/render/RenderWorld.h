@@ -14,12 +14,12 @@ namespace engine
 
 			void create() override;
 
-			size_t registerFrustum(ERenderGeometryCullerType type) override;
-			void updateFrustum(size_t frustum_id, const glm::mat4& view, const glm::mat4& projection) override;
+			u64 registerFrustum(ERenderGeometryCullerType type) override;
+			void updateFrustum(u64 frustum_id, const glm::mat4& view, const glm::mat4& projection) override;
 
 			void addDrawGeometry(const std::vector<FGeometryRawBatch>& new_geometry) override;
 
-			void render(float dt) override;
+			void render(f32 dt) override;
 
 			void addLight(const FDirectionalLightCommit& light) override;
 			void addLight(const FPointLightCommit& light) override;
@@ -29,7 +29,7 @@ namespace engine
 			void addShadow(const FOmniShadowCommit& commit) override;
 			void addShadow(const FSpotShadowCommit& commit) override;
 
-			void updateNode(uint32_t node_id, const FSceneNode& node) override;
+			void updateNode(u32 node_id, const FSceneNode& node) override;
 			void updateSkin(const std::array<glm::mat4, 128ull>& matrices) override;
 
 			void addMaterial(const FMaterial& material) override;
@@ -39,7 +39,7 @@ namespace engine
 
 			const std::unordered_map<ERenderGeometryCullerType, std::vector<FGeometryBatchRange>>& getAllGeometryRanges() const override;
 			const std::vector<FGeometryBatchRange>& getGeometryRanges(ERenderGeometryCullerType type) const override;
-			const FGeometryCPUBatch& getGeometryBatch(size_t index) const override;
+			const FGeometryCPUBatch& getGeometryBatch(u64 index) const override;
 
 			FRenderWorldStats& getStats() override;
 			const FRenderWorldStats& getStats() const override;

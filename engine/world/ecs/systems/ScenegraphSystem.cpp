@@ -21,7 +21,7 @@ void CScenegraphSystem::__create()
 	TRACY_PROFILE_FUNCTION();
 }
 
-void CScenegraphSystem::__update(float fDt)
+void CScenegraphSystem::__update(f32 fDt)
 {
 	TRACY_PROFILE_FUNCTION();
 

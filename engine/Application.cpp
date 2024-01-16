@@ -21,7 +21,7 @@ using namespace engine::render;
 void get_platform_specific_window_data(FRenderInterfaceCreateInfo& rhi_ci, const std::unique_ptr<IWindowInterface>& window)
 {
 #if defined(PLATFORM_WIN32)
-	auto platform_window = static_cast<platform::CWindowGLFW*>(window.get());
+	auto platform_window = utl::cast<platform::CWindowGLFW*>(window.get());
 	platform_window->getPlatformData(rhi_ci.hinstance, rhi_ci.hwnd);
 #endif
 }
@@ -66,7 +66,7 @@ void CApplication::create()
 void CApplication::loop()
 {
 	utl::stopwatch sw{};
-	float dt{ 0.f };
+	f32 dt{ 0.f };
 
 	while (m_pWindowHandle->process())
 	{
@@ -79,7 +79,7 @@ void CApplication::loop()
 					return;
 			}
 
-			int32_t window_width{}, window_height{};
+			i32 window_width{}, window_height{};
 			m_pWindowHandle->getWindowSize(window_width, window_height);
 			m_pRenderInterface->updateSurfaceSize(window_width, window_height);
 		}
@@ -92,6 +92,6 @@ void CApplication::loop()
 
 		TRACY_PROFILE_FRAMEMARKER();
 
-		dt = sw.stop<float>();
+		dt = sw.stop<f32>();
 	}
 }

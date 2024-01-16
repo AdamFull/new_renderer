@@ -16,19 +16,19 @@ namespace engine
 
 		struct FSceneLoadedResources
 		{
-			std::unordered_map<size_t, std::vector<size_t>> vertexHandlers{};
+			std::unordered_map<u64, std::vector<u64>> vertexHandlers{};
 
-			std::vector<size_t> textures{};
-			size_t lastTexture{ 0ull };
+			std::vector<u64> textures{};
+			u64 lastTexture{ 0ull };
 
-			std::vector<size_t> materials{};
-			size_t lastMaterial{ 0ull };
+			std::vector<u64> materials{};
+			u64 lastMaterial{ 0ull };
 		};
 
 		struct FSceneTemporaryResources
 		{
 			std::vector<std::string> materialNames{};
-			std::unordered_map<uint32_t, entt::entity> nodeToEntity{};
+			std::unordered_map<u32, entt::entity> nodeToEntity{};
 		};
 
 		class CScene
@@ -39,13 +39,13 @@ namespace engine
 
 			void load(const std::string& path);
 
-			void update(float dt);
+			void update(f32 dt);
 		protected:
-			void loadNode(const easygltf::FGLTFRoot root, const entt::entity parent, uint32_t node_index, float global_scale = 1.f);
+			void loadNode(const easygltf::FGLTFRoot root, const entt::entity parent, u32 node_index, f32 global_scale = 1.f);
 
-			void loadMeshComponent(const easygltf::FGLTFRoot root, const entt::entity parent, uint32_t node_index);
-			void loadCameraComponent(const easygltf::FGLTFRoot root, const entt::entity parent, uint32_t node_index);
-			void loadLightComponent(const easygltf::FGLTFRoot root, const entt::entity parent, uint32_t node_index);
+			void loadMeshComponent(const easygltf::FGLTFRoot root, const entt::entity parent, u32 node_index);
+			void loadCameraComponent(const easygltf::FGLTFRoot root, const entt::entity parent, u32 node_index);
+			void loadLightComponent(const easygltf::FGLTFRoot root, const entt::entity parent, u32 node_index);
 
 			void loadAnimations(const easygltf::FGLTFRoot root);
 			void loadSkins(const easygltf::FGLTFRoot root);

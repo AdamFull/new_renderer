@@ -27,14 +27,14 @@ void CLightingSystem::__create()
 	auto& render_world = m_pRenderInterface->getRenderWorld();
 
 	{
-		size_t shadow_count{ 0ull };
+		u64 shadow_count{ 0ull };
 		auto view = registry->view<FTransformComponent, FBaseComponent, FDirectionalLightComponent>();
 		for (auto [entity, transform, base, light] : view.each())
 		{
 			if (light.castShadows && shadow_count < max_directional_light_shadow_count)
 			{
 				light.frustumIDs.resize(cascade_shadow_map_cascade_count);
-				for(size_t idx = 0ull; idx < cascade_shadow_map_cascade_count; ++idx)
+				for(u64 idx = 0ull; idx < cascade_shadow_map_cascade_count; ++idx)
 					light.frustumIDs[idx] = render_world->registerFrustum(ERenderGeometryCullerType::eCascadedShadow);
 
 				shadow_count++;
@@ -43,7 +43,7 @@ void CLightingSystem::__create()
 	}
 
 	{
-		size_t shadow_count{ 0ull };
+		u64 shadow_count{ 0ull };
 		auto view = registry->view<FTransformComponent, FBaseComponent, FPointLightComponent>();
 		for (auto [entity, transform, base, light] : view.each())
 		{
@@ -56,7 +56,7 @@ void CLightingSystem::__create()
 	}
 
 	{
-		size_t shadow_count{ 0ull };
+		u64 shadow_count{ 0ull };
 		auto view = registry->view<FTransformComponent, FBaseComponent, FSpotLightComponent>();
 		for (auto [entity, transform, base, light] : view.each())
 		{
@@ -69,7 +69,7 @@ void CLightingSystem::__create()
 	}
 }
 
-void CLightingSystem::__update(float fDt)
+void CLightingSystem::__update(f32 fDt)
 {
 	TRACY_PROFILE_FUNCTION();
 
@@ -96,7 +96,7 @@ void CLightingSystem::__update(float fDt)
 			commit.color = light.color;
 			commit.intencity = light.intencity;
 			commit.shadowIndex = light.shadowIndex;
-			commit.castShadows = static_cast<int>(light.castShadows);
+			commit.castShadows = utl::cast<int>(light.castShadows);
 
 			render_world->addLight(commit);
 		}
@@ -122,7 +122,7 @@ void CLightingSystem::__update(float fDt)
 			commit.intencity = light.intencity;
 			commit.radius = light.radius;
 			commit.shadowIndex = light.shadowIndex;
-			commit.castShadows = static_cast<int>(light.castShadows);
+			commit.castShadows = utl::cast<int>(light.castShadows);
 
 			render_world->addLight(commit);
 		}
@@ -146,9 +146,9 @@ void CLightingSystem::__update(float fDt)
 			commit.intencity = light.intencity;
 			commit.lightAngleScale = 1.f / (glm::max)(0.001f, glm::cos(light.innerAngle) - glm::cos(light.outerAngle));
 			commit.lightAngleOffset = -glm::cos(light.outerAngle) * commit.lightAngleScale;
-			commit.toTarget = static_cast<int>(light.toTarget);
+			commit.toTarget = utl::cast<int>(light.toTarget);
 			commit.shadowIndex = light.shadowIndex;
-			commit.castShadows = static_cast<int>(light.castShadows);
+			commit.castShadows = utl::cast<int>(light.castShadows);
 
 			render_world->addLight(commit);
 		}

@@ -19,7 +19,7 @@ namespace engine
 
 			struct FInputAxis
 			{
-				std::vector<utl::function<void(float, float)>> listeners;
+				std::vector<utl::function<void(f32, f32)>> listeners;
 			};
 
 			class CInputSystem : public ISystem
@@ -29,7 +29,7 @@ namespace engine
 				virtual ~CInputSystem() override = default;
 
 				void __create() override;
-				void __update(float fDt) override;
+				void __update(f32 fDt) override;
 
 				//template <class... _Args>
 				//void createAction(const char* action_name, _Args &&...args)
@@ -43,14 +43,14 @@ namespace engine
 				//}
 			protected:
 				void keyInput(EKeyCode code, EKeyState state);
-				void mouseMovementInput(float x, float y, float xmax, float ymax);
-				void mouseWheelInput(float x, float y);
+				void mouseMovementInput(f32 x, f32 y, f32 xmax, f32 ymax);
+				void mouseWheelInput(f32 x, f32 y);
 			private:
 				CKeyDecoder m_keyDecoder{};
-				float m_deltaTime{ 0.f };
-				float oldX{ 0.f }, oldY{ 0.f }, curX{ 0.f }, curY{ 0.f };
+				f32 m_deltaTime{ 0.f };
+				f32 oldX{ 0.f }, oldY{ 0.f }, curX{ 0.f }, curY{ 0.f };
 
-				float movF{ 0.f }, movR{ 0.f }, movU{ 0.f };
+				f32 movF{ 0.f }, movR{ 0.f }, movU{ 0.f };
 				bool allowRotation{ false };
 			};
 		}

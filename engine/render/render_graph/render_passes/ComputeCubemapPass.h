@@ -14,7 +14,7 @@ namespace engine
 			~CComputeCubemapPass() = default;
 
 			void init(const FComputePassCreateInfo& pass_ci) override;
-			void bake(std::unordered_map<size_t, FRenderGraphAttachmentOperationInfo>& resource_info) override;
+			void bake(std::unordered_map<u64, FRenderGraphAttachmentOperationInfo>& resource_info) override;
 		private:
 			void _execute(const FComputeFrameInfo& frame_info) override;
 		private:

@@ -8,7 +8,7 @@ namespace engine
 {
 	namespace render
 	{
-		enum class EAlphaMode : uint32_t
+		enum class EAlphaMode : u32
 		{
 			eOpaque,
 			eMask,

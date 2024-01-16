@@ -12,7 +12,7 @@ bool has_substring(const std::string& str, const std::string& target)
     return std::search(str.begin(), str.end(), target.begin(), target.end(), [](char a, char b) { return std::tolower(a) == std::tolower(b); }) != str.end();
 }
 
-size_t get_basic_type_size(spirv_cross::CompilerGLSL* compiler, const spirv_cross::SPIRType& type)
+u64 get_basic_type_size(spirv_cross::CompilerGLSL* compiler, const spirv_cross::SPIRType& type)
 {
     if (type.basetype == spirv_cross::SPIRType::Struct)
         return compiler->get_declared_struct_size(type);
@@ -20,16 +20,16 @@ size_t get_basic_type_size(spirv_cross::CompilerGLSL* compiler, const spirv_cros
     return type.width / 8;
 }
 
-void parse_execution_mode(FVkShaderReflectionData& reflection_data, spirv_cross::CompilerGLSL* compiler, uint32_t index)
+void parse_execution_mode(FVkShaderReflectionData& reflection_data, spirv_cross::CompilerGLSL* compiler, u32 index)
 {
-    auto mode = static_cast<spv::ExecutionMode>(index);
+    auto mode = utl::cast<spv::ExecutionMode>(index);
     switch (mode)
     {
     case spv::ExecutionMode::ExecutionModeInvocations: reflection_data.executionModeInvocations = compiler->get_execution_mode_argument(mode, 0); break;
     case spv::ExecutionMode::ExecutionModeLocalSize:
     {
         auto& sizes = reflection_data.localSizes.emplace_back();
-        for (uint32_t dim = 0u; dim < 3u; ++dim)
+        for (u32 dim = 0u; dim < 3u; ++dim)
             sizes[dim] = compiler->get_execution_mode_argument(mode, dim);
     } break;
     case spv::ExecutionMode::ExecutionModeOutputVertices: reflection_data.executionModeOutputVertices = compiler->get_execution_mode_argument(mode, 0); break;
@@ -40,7 +40,7 @@ void build_specialization_constant_reflection(FVkShaderReflectionData& reflectio
 {
     auto name = compiler->get_name(spec_const.id);
 
-    size_t name_hash = utl::fnv1a_64_hash(name.c_str());
+    u64 name_hash = utl::fnv1a_64_hash(name.c_str());
     auto it = reflection_data.specializationConstants.find(name_hash);
     if (it != reflection_data.specializationConstants.end())
     {
@@ -51,13 +51,13 @@ void build_specialization_constant_reflection(FVkShaderReflectionData& reflectio
     auto& constant = compiler->get_constant(spec_const.id);
     auto& type = compiler->get_type(constant.constant_type);
 
-    size_t offset = reflection_data.specializationDataBuffer.size();
+    u64 offset = reflection_data.specializationDataBuffer.size();
 
     FVkReflectionSpecializationConstant specialization_constant{};
     specialization_constant.constant_id = spec_const.constant_id;
     specialization_constant.stageFlags = shaderStage;
     specialization_constant.size = get_basic_type_size(compiler, type);
-    specialization_constant.offset = static_cast<uint32_t>(offset);
+    specialization_constant.offset = utl::cast<u32>(offset);
 
     reflection_data.specializationDataBuffer.resize(offset + specialization_constant.size);
     std::memcpy(reflection_data.specializationDataBuffer.data() + offset, &constant.m.c[0].r[0], specialization_constant.size);
@@ -67,7 +67,7 @@ void build_specialization_constant_reflection(FVkShaderReflectionData& reflectio
 
 void build_uniform_block_reflection(FVkShaderReflectionData& reflection_data, spirv_cross::CompilerGLSL* compiler, const spirv_cross::Resource& res, vk::ShaderStageFlagBits shaderStage, vk::DescriptorType descriptorType)
 {
-    size_t name_hash = utl::fnv1a_64_hash(res.name.c_str());
+    u64 name_hash = utl::fnv1a_64_hash(res.name.c_str());
     auto it = reflection_data.uniformBlocks.find(name_hash);
     if (it != reflection_data.uniformBlocks.end())
     {
@@ -86,9 +86,9 @@ void build_uniform_block_reflection(FVkShaderReflectionData& reflection_data, sp
     uniform_block.set = compiler->get_decoration(res.id, spv::DecorationDescriptorSet);
     uniform_block.binding = compiler->get_decoration(res.id, spv::DecorationBinding);
 
-    for (uint32_t i = 0u; i < member_count; ++i)
+    for (u32 i = 0u; i < member_count; ++i)
     {
-        size_t array_stride{ 0ull }, matrix_stride{ 0ull };
+        u64 array_stride{ 0ull }, matrix_stride{ 0ull };
         auto& member_type = compiler->get_type(type.member_types[i]);
 
         FVkReflectionUniform uniform{};
@@ -102,7 +102,7 @@ void build_uniform_block_reflection(FVkShaderReflectionData& reflection_data, sp
 
         uniform.stageFlags = shaderStage;
 
-        size_t member_name_hash = utl::fnv1a_64_hash(compiler->get_member_name(type.self, i).c_str());
+        u64 member_name_hash = utl::fnv1a_64_hash(compiler->get_member_name(type.self, i).c_str());
         uniform_block.uniforms.emplace(member_name_hash, uniform);
     }
 
@@ -115,7 +115,7 @@ void build_uniform_block_reflection(FVkShaderReflectionData& reflection_data, sp
 
 void build_push_constants_block_reflection(FVkShaderReflectionData& reflection_data, spirv_cross::CompilerGLSL* compiler, const spirv_cross::Resource& res, vk::ShaderStageFlagBits shaderStage)
 {
-    size_t name_hash = utl::fnv1a_64_hash(res.name.c_str());
+    u64 name_hash = utl::fnv1a_64_hash(res.name.c_str());
     auto it = reflection_data.pushBlocks.find(name_hash);
     if (it != reflection_data.pushBlocks.end())
     {
@@ -127,19 +127,19 @@ void build_push_constants_block_reflection(FVkShaderReflectionData& reflection_d
     unsigned member_count = type.member_types.size();
     FVkReflectionPushConstantBlock push_block{};
 
-    for (uint32_t i = 0; i < member_count; i++)
+    for (u32 i = 0; i < member_count; i++)
     {
         auto& member_type = compiler->get_type(type.member_types[i]);
         FVkReflectionUniform uniform{};
         uniform.size = compiler->get_declared_struct_member_size(type, i);
         uniform.offset = compiler->type_struct_member_offset(type, i);
         if (!member_type.array.empty()) 
-            size_t array_stride = compiler->type_struct_member_array_stride(type, i);
+            u64 array_stride = compiler->type_struct_member_array_stride(type, i);
         if (member_type.columns > 1) 
-            size_t matrix_stride = compiler->type_struct_member_matrix_stride(type, i);
+            u64 matrix_stride = compiler->type_struct_member_matrix_stride(type, i);
         uniform.stageFlags = shaderStage;
 
-        size_t member_name_hash = utl::fnv1a_64_hash(compiler->get_member_name(type.self, i).c_str());
+        u64 member_name_hash = utl::fnv1a_64_hash(compiler->get_member_name(type.self, i).c_str());
         push_block.uniforms.emplace(member_name_hash, uniform);
     }
 
@@ -150,7 +150,7 @@ void build_push_constants_block_reflection(FVkShaderReflectionData& reflection_d
 
 void build_uniform_reflection(FVkShaderReflectionData& reflection_data, spirv_cross::CompilerGLSL* compiler, const spirv_cross::Resource& res, vk::ShaderStageFlagBits shaderStage, vk::DescriptorType descriptorType)
 {
-    size_t name_hash = utl::fnv1a_64_hash(res.name.c_str());
+    u64 name_hash = utl::fnv1a_64_hash(res.name.c_str());
     auto it = reflection_data.uniforms.find(name_hash);
     if (it != reflection_data.uniforms.end())
     {
@@ -171,7 +171,7 @@ void build_uniform_reflection(FVkShaderReflectionData& reflection_data, spirv_cr
 }
 
 
-void CVkShaderReflectionBuilder::addShaderStage(vk::ShaderStageFlagBits shaderStage, const std::vector<uint32_t>& shaderCode)
+void CVkShaderReflectionBuilder::addShaderStage(vk::ShaderStageFlagBits shaderStage, const std::vector<u32>& shaderCode)
 {
 	spirv_cross::CompilerGLSL compiler(shaderCode);
     auto active = compiler.get_active_interface_variables();
@@ -180,7 +180,7 @@ void CVkShaderReflectionBuilder::addShaderStage(vk::ShaderStageFlagBits shaderSt
 
     // Parse execution modes
     auto& execution_modes = compiler.get_execution_mode_bitset();
-    execution_modes.for_each_bit([&](uint32_t i) { parse_execution_mode(reflectionData, &compiler, i); });
+    execution_modes.for_each_bit([&](u32 i) { parse_execution_mode(reflectionData, &compiler, i); });
 
     // Parse specialization constants
     for (const auto& spec_const : compiler.get_specialization_constants())
@@ -218,7 +218,7 @@ void CVkShaderReflectionBuilder::addShaderStage(vk::ShaderStageFlagBits shaderSt
 
 FVkShaderReflectionData CVkShaderReflectionBuilder::build()
 {
-    std::unordered_map<vk::DescriptorType, uint32_t> descriptorUsageCounter{};
+    std::unordered_map<vk::DescriptorType, u32> descriptorUsageCounter{};
 
     for (const auto& [name, block] : reflectionData.uniformBlocks)
     {
@@ -275,9 +275,9 @@ FVkShaderReflectionData CVkShaderReflectionBuilder::build()
             }
         }
 
-        constants_data.info.mapEntryCount = static_cast<uint32_t>(constants_data.entries.size());
+        constants_data.info.mapEntryCount = utl::cast<u32>(constants_data.entries.size());
         constants_data.info.pMapEntries = constants_data.entries.data();
-        constants_data.info.dataSize = static_cast<uint32_t>(reflectionData.specializationDataBuffer.size());
+        constants_data.info.dataSize = utl::cast<u32>(reflectionData.specializationDataBuffer.size());
         constants_data.info.pData = reflectionData.specializationDataBuffer.data();
     }
 

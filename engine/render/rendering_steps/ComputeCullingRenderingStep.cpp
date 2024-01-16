@@ -32,7 +32,7 @@ void CComputeCullingRenderingStep::_create(const FRenderingStepCreateInfo& creat
 #endif
 }
 
-void CComputeCullingRenderingStep::_execute(float dt)
+void CComputeCullingRenderingStep::_execute(f32 dt)
 {
 	TRACY_PROFILE_FUNCTION();
 
@@ -42,13 +42,13 @@ void CComputeCullingRenderingStep::_execute(float dt)
 	auto& render_world = m_pRenderInterface->getRenderWorld();
 	auto& world_stats = render_world->getStats();
 
-	std::unordered_set<size_t> vbos{};
+	std::unordered_set<u64> vbos{};
 
 	for (const auto& [type, batch_ranges] : render_world->getAllGeometryRanges())
 	{
 		for (const auto& batch_range : batch_ranges)
 		{
-			for (size_t batch_id = batch_range.offset; batch_id < batch_range.offset + batch_range.count; ++batch_id)
+			for (u64 batch_id = batch_range.offset; batch_id < batch_range.offset + batch_range.count; ++batch_id)
 			{
 				const auto& batch = render_world->getGeometryBatch(batch_id);
 				vbos.emplace(batch.vboID);
@@ -92,7 +92,7 @@ void CComputeCullingRenderingStep::_execute(float dt)
 
 			FDispatchInfo dispatch_info{};
 			auto& group = dispatch_info.groups.emplace_back();
-			group.x = glm::max(static_cast<uint32_t>(std::ceil(static_cast<float>(world_stats.drawCommandCount) / static_cast<float>(reflection.localSizes[0]))), 1u);
+			group.x = glm::max(utl::cast<u32>(std::ceil(utl::cast<f32>(world_stats.drawCommandCount) / utl::cast<f32>(reflection.localSizes[0]))), 1u);
 			group.y = 1u;
 			group.z = 1u;
 

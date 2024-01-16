@@ -17,12 +17,12 @@ void IRenderPass::init(const FRenderPassCreateInfo& pass_ci)
 	m_stencilTarget = pass_ci.stencilTarget;
 }
 
-void IRenderPass::bake(std::unordered_map<size_t, FRenderGraphAttachmentOperationInfo>& resource_info)
+void IRenderPass::bake(std::unordered_map<u64, FRenderGraphAttachmentOperationInfo>& resource_info)
 {
 	auto& render_graph = m_pRenderInterface->getRenderGraph();
 
 	auto& output_targets = m_renderResources[ERenderResourceGroupType::eColorWrite];
-	for (size_t resource_id : output_targets)
+	for (u64 resource_id : output_targets)
 	{
 		if (resource_id == m_depthTarget || resource_id == m_stencilTarget)
 			continue;
@@ -52,7 +52,7 @@ void IRenderPass::bake(std::unordered_map<size_t, FRenderGraphAttachmentOperatio
 	}
 }
 
-void IRenderPass::execute(float dt)
+void IRenderPass::execute(f32 dt)
 {
 	auto& render_context = m_pRenderInterface->getRenderContext();
 	auto& render_graph = m_pRenderInterface->getRenderGraph();
@@ -83,7 +83,7 @@ void IRenderPass::execute(float dt)
 #endif
 
 	render_context->beginRendering2(beginRenderingInfo);
-	render_context->setViewport(static_cast<float>(beginRenderingInfo.renderArea.size.x), static_cast<float>(beginRenderingInfo.renderArea.size.y), beginRenderingInfo.flipViewport);
+	render_context->setViewport(utl::cast<f32>(beginRenderingInfo.renderArea.size.x), utl::cast<f32>(beginRenderingInfo.renderArea.size.y), beginRenderingInfo.flipViewport);
 
 	FRenderFrameInfo frame_info{};
 	frame_info.deltaTime = dt;
@@ -106,12 +106,12 @@ void IComputePass::init(const FComputePassCreateInfo& pass_ci)
 	m_bakedBindings = pass_ci.bindings;
 }
 
-void IComputePass::bake(std::unordered_map<size_t, FRenderGraphAttachmentOperationInfo>& resource_info)
+void IComputePass::bake(std::unordered_map<u64, FRenderGraphAttachmentOperationInfo>& resource_info)
 {
 
 }
 
-void IComputePass::execute(float dt)
+void IComputePass::execute(f32 dt)
 {
 	FComputeFrameInfo frame_info{};
 	frame_info.deltaTime = dt;

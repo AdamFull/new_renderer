@@ -13,9 +13,9 @@ namespace engine
 			struct FBufferInfo
 			{
 				std::vector<uint8_t> data{};
-				size_t elementCount{ 0ull };
-				size_t elementSize{ 0ull };
-				size_t buffer{ ~0ull };
+				u64 elementCount{ 0ull };
+				u64 elementSize{ 0ull };
+				u64 buffer{ ~0ull };
 			};
 
 			CVertexHandler(IRenderInterface* render_interface);
@@ -26,25 +26,25 @@ namespace engine
 
 			void bind(EQueueTypeFlagBits queue) override;
 
-			size_t addVertices(const std::vector<FVertexAttributePointer>& attributes_data) override;
-			size_t addIndices(const FVertexAttributePointer& indices) override;
+			u64 addVertices(const std::vector<FVertexAttributePointer>& attributes_data) override;
+			u64 addIndices(const FVertexAttributePointer& indices) override;
 
-			size_t getLastVertex() override;
-			size_t getLastIndex() override;
+			u64 getLastVertex() override;
+			u64 getLastIndex() override;
 
 			const FVertexDeclarationInfo& getVertexDeclaration() const override;
-			size_t getHash() const override;
+			u64 getHash() const override;
 			const std::string& getDefinitions() const override;
 
-			size_t getVertexHandle() const override;
-			size_t getIndexHandle() const override;
+			u64 getVertexHandle() const override;
+			u64 getIndexHandle() const override;
 		private:
 			FBufferInfo m_vertexBuffer{};
 			FBufferInfo m_indexBuffer{};
 
 			// For shader creation
 			std::string m_definitions{};
-			size_t m_attributeHash{ 0ull };
+			u64 m_attributeHash{ 0ull };
 			FVertexDeclarationInfo m_declaration{};
 
 			IRenderInterface* m_pRenderInterface{ nullptr };

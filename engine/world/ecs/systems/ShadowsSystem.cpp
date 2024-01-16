@@ -16,7 +16,7 @@
 using namespace engine::render;
 using namespace engine::world::ecs;
 
-constexpr const float cascade_split_lambda = 0.85f;
+constexpr const f32 cascade_split_lambda = 0.85f;
 
 CShadowsSystem::CShadowsSystem(CSceneGraph* scenegraph, IRenderInterface* render_interface)
 {
@@ -29,7 +29,7 @@ void CShadowsSystem::__create()
 	TRACY_PROFILE_FUNCTION();
 }
 
-void CShadowsSystem::__update(float fDt)
+void CShadowsSystem::__update(f32 fDt)
 {
 	TRACY_PROFILE_FUNCTION();
 
@@ -45,13 +45,13 @@ void CShadowsSystem::__update(float fDt)
 		// Begin calculating cascades
 		const auto& near_clip = render_packet->camera.nearp;
 		const auto& far_clip = render_packet->camera.farp;
-		float clip_range = far_clip - near_clip;
+		f32 clip_range = far_clip - near_clip;
 
-		float min_z = near_clip;
-		float max_z = near_clip + clip_range;
+		f32 min_z = near_clip;
+		f32 max_z = near_clip + clip_range;
 
-		float range = max_z - min_z;
-		float ratio = max_z / min_z;
+		f32 range = max_z - min_z;
+		f32 ratio = max_z / min_z;
 
 		auto view = registry->view<FTransformComponent, FBaseComponent, FDirectionalLightComponent>();
 		for (auto [entity, ltransform, base, light] : view.each())
@@ -60,25 +60,25 @@ void CShadowsSystem::__update(float fDt)
 			light.shadowIndex = -1;
 
 			// Calculate shadows
-			std::array<float, cascade_shadow_map_cascade_count> cascadeSplits;
+			std::array<f32, cascade_shadow_map_cascade_count> cascadeSplits;
 			if (light.castShadows && base.enabled && world_stats.cascadedShadowCount < max_directional_light_shadow_count)
 			{
 				FCascadedShadowCommit shadow_commit{};
 
 				// Calculate split depths based on view camera frustum
 				// Based on method presented in https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch10.html
-				for (uint32_t i = 0; i < cascade_shadow_map_cascade_count; i++)
+				for (u32 i = 0; i < cascade_shadow_map_cascade_count; i++)
 				{
-					float p = static_cast<float>(i + 1) / static_cast<float>(cascade_shadow_map_cascade_count);
-					float log = min_z * glm::pow(ratio, p);
-					float uniform = min_z + range * p;
-					float d = cascade_split_lambda * (log - uniform) + uniform;
+					f32 p = utl::cast<f32>(i + 1) / utl::cast<f32>(cascade_shadow_map_cascade_count);
+					f32 log = min_z * glm::pow(ratio, p);
+					f32 uniform = min_z + range * p;
+					f32 d = cascade_split_lambda * (log - uniform) + uniform;
 					cascadeSplits[i] = (d - near_clip) / clip_range;
 				}
 
 				// Calculate orthographic projection matrix for each cascade
-				float lastSplitDist = 0.0;
-				for (uint32_t i = 0; i < cascade_shadow_map_cascade_count; i++)
+				f32 lastSplitDist = 0.0;
+				for (u32 i = 0; i < cascade_shadow_map_cascade_count; i++)
 				{
 					auto& splitDist = cascadeSplits[i];
 
@@ -104,7 +104,7 @@ void CShadowsSystem::__update(float fDt)
 						corner = invCorner / invCorner.w;
 					}
 
-					for (uint32_t j = 0; j < 4; ++j)
+					for (u32 j = 0; j < 4; ++j)
 					{
 						glm::vec4 dist = frustumCorners[j + 4] - frustumCorners[j];
 						frustumCorners[j + 4] = frustumCorners[j] + (dist * splitDist);
@@ -117,10 +117,10 @@ void CShadowsSystem::__update(float fDt)
 						frustumCenter += glm::vec3(corner);
 					frustumCenter /= frustumCorners.size();
 
-					volatile float radius{ 0.0f };
+					volatile f32 radius{ 0.0f };
 					for (auto& corner : frustumCorners)
 					{
-						float distance = glm::length(glm::vec3(corner) - frustumCenter);
+						f32 distance = glm::length(glm::vec3(corner) - frustumCenter);
 						radius = (glm::max)(radius, distance);
 					}
 					radius = glm::ceil(radius * 16.0f) / 16.0f;
@@ -135,11 +135,11 @@ void CShadowsSystem::__update(float fDt)
 					auto shadowMatrix = lightOrthoMatrix * lightViewMatrix;
 					glm::vec4 shadowOrigin = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 					shadowOrigin = shadowMatrix * shadowOrigin;
-					float storedW = shadowOrigin.w;
-					shadowOrigin = shadowOrigin * static_cast<float>(cascade_shadow_map_resolution) / 2.0f;
+					f32 storedW = shadowOrigin.w;
+					shadowOrigin = shadowOrigin * utl::cast<f32>(cascade_shadow_map_resolution) / 2.0f;
 					glm::vec4 roundedOrigin = glm::round(shadowOrigin);
 					glm::vec4 roundOffset = roundedOrigin - shadowOrigin;
-					roundOffset = roundOffset * 2.0f / static_cast<float>(cascade_shadow_map_resolution);
+					roundOffset = roundOffset * 2.0f / utl::cast<f32>(cascade_shadow_map_resolution);
 					roundOffset.z = 0.0f;
 					roundOffset.w = 0.0f;
 					glm::mat4 lightProjectionMatrix = lightOrthoMatrix;

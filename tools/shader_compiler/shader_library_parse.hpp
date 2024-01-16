@@ -47,7 +47,7 @@ namespace shader_compiler
 
         // Key is the type of shader (EShaderType) it's like container of same shader types. 
         // Key in value it's link to shader from shader module. 
-        std::unordered_map<int64_t, std::unordered_map<int64_t, std::vector<uint32_t>>> shaders;
+        std::unordered_map<int64_t, std::unordered_map<int64_t, std::vector<u32>>> shaders;
         std::unordered_map<int64_t, std::vector<FShaderModule>> modules;
     };
 

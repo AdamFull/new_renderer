@@ -17,7 +17,7 @@ namespace engine
 		};
 		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(EShaderResourcesUpdateFlags, EShaderResourcesUpdateFlagBits)
 
-		enum class EVertexPrimitiveTopology : uint32_t
+		enum class EVertexPrimitiveTopology : u32
 		{
 			ePointList,
 			eLineList,
@@ -27,7 +27,7 @@ namespace engine
 			eTriangleFan
 		};
 
-		enum class EShaderCullModeFlagBits : uint32_t
+		enum class EShaderCullModeFlagBits : u32
 		{
 			eNone = 1 << 0,
 			eFront = 1 << 1,
@@ -36,7 +36,7 @@ namespace engine
 		};
 		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(EShaderCullModeFlags, EShaderCullModeFlagBits)
 
-		enum class EShaderFrontFace : uint32_t
+		enum class EShaderFrontFace : u32
 		{
 			eCCW,
 			eCW
@@ -44,48 +44,48 @@ namespace engine
 
 		struct FReflectionUniform
 		{
-			uint32_t set{ 0u };
-			uint32_t binding{ 0u };
-			size_t offset{ 0ull };
-			size_t size{ 0ull };
+			u32 set{ 0u };
+			u32 binding{ 0u };
+			u64 offset{ 0ull };
+			u64 size{ 0ull };
 		};
 
 		template<class _Ty>
 		struct FReflectionUniformBlock
 		{
-			uint32_t set{ 0u };
-			uint32_t binding{ 0u };
-			size_t size{ 0ull };
-			std::unordered_map<size_t, _Ty> uniforms{};
+			u32 set{ 0u };
+			u32 binding{ 0u };
+			u64 size{ 0ull };
+			std::unordered_map<u64, _Ty> uniforms{};
 		};
 
 		template<class _Ty>
 		struct FReflectionPushConstantBlock
 		{
-			size_t size{ 0ull };
-			std::unordered_map<size_t, _Ty> uniforms{};
+			u64 size{ 0ull };
+			std::unordered_map<u64, _Ty> uniforms{};
 		};
 
 		struct FShaderReflectionData
 		{
-			std::unordered_map<size_t, FReflectionUniform> uniforms{};
-			std::unordered_map<size_t, FReflectionUniformBlock<FReflectionUniform>> uniformBlocks{};
-			std::unordered_map<size_t, FReflectionPushConstantBlock<FReflectionUniform>> pushBlocks{};
+			std::unordered_map<u64, FReflectionUniform> uniforms{};
+			std::unordered_map<u64, FReflectionUniformBlock<FReflectionUniform>> uniformBlocks{};
+			std::unordered_map<u64, FReflectionPushConstantBlock<FReflectionUniform>> pushBlocks{};
 
-			std::array<uint32_t, 3ull> localSizes;
+			std::array<u32, 3ull> localSizes;
 		};
 
 		struct FShaderUploadInfo
 		{
-			int64_t libraryId{ ~0ll };
-			int64_t shaderId{ ~0ll };
+			i64 libraryId{ ~0ll };
+			i64 shaderId{ ~0ll };
 			std::string originalName{};
 		};
 
 		struct FShaderCreationBlockInfo
 		{
-			uint32_t stage{ 0u };
-			std::vector<uint32_t>* code{ nullptr };
+			u32 stage{ 0u };
+			std::vector<u32>* code{ nullptr };
 		};
 
 		struct FGraphicsShaderCreateInfo
@@ -97,39 +97,39 @@ namespace engine
 			// EShaderFrontFace
 			EShaderFrontFace frontFace{};
 
-			uint32_t usageCount{ 1u };
+			u32 usageCount{ 1u };
 
-			std::vector<size_t> colorAttachments{};
-			size_t depthAttachment{ ~0ull };
-			size_t stencilAttachment{ ~0ull };
+			std::vector<u64> colorAttachments{};
+			u64 depthAttachment{ ~0ull };
+			u64 stencilAttachment{ ~0ull };
 
 			FVertexDeclarationInfo vertexDeclaration{};
 		};
 
 		struct FComputeShaderCreateInfo
 		{
-			uint32_t usageCount{ 1u };
+			u32 usageCount{ 1u };
 		};
 
 		struct FUniformDataView
 		{
 			const void* data{ nullptr };
-			size_t size{ 0ull };
-			uint32_t binding{ 0u };
+			u64 size{ 0ull };
+			u32 binding{ 0u };
 		};
 
 		struct FTextureBindInfo
 		{
-			size_t textureId{ ~0ull };
-			uint32_t mipLevel{ 0u };
+			u64 textureId{ ~0ull };
+			u32 mipLevel{ 0u };
 		};
 
 		struct FShaderResourceCommit
 		{
-			size_t shaderId{ ~0ull };
-			std::unordered_map<size_t, FUniformDataView> uniforms{};
-			std::unordered_map<size_t, FTextureBindInfo> textures{};
-			std::unordered_map<size_t, size_t> buffers{};
+			u64 shaderId{ ~0ull };
+			std::unordered_map<u64, FUniformDataView> uniforms{};
+			std::unordered_map<u64, FTextureBindInfo> textures{};
+			std::unordered_map<u64, u64> buffers{};
 		};
 	}
 }

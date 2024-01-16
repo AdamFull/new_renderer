@@ -28,7 +28,7 @@ void CCameraSystem::__create()
 		camera.frustumID = render_world->registerFrustum(ERenderGeometryCullerType::eScene);
 }
 
-void CCameraSystem::__update(float fDt)
+void CCameraSystem::__update(f32 fDt)
 {
 	TRACY_PROFILE_FUNCTION();
 
@@ -60,7 +60,7 @@ void CCameraSystem::__update(float fDt)
 					render_camera.projection = camera.projection = glm::ortho(-1.f, 1.f, -1.f, 1.f, -1.f, 1.f);
 				else
 				{
-					auto aspect = static_cast<float>(render_resolution.x) / static_cast<float>(render_resolution.y);
+					auto aspect = utl::cast<f32>(render_resolution.x) / utl::cast<f32>(render_resolution.y);
 					render_camera.projection = camera.projection = glm::perspective(camera.fieldOfView, aspect, camera.nearPlane, camera.farPlane);
 				}
 

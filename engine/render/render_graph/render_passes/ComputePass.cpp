@@ -38,7 +38,7 @@ void CComputePass::init(const FComputePassCreateInfo& pass_ci)
 #endif
 }
 
-void CComputePass::bake(std::unordered_map<size_t, FRenderGraphAttachmentOperationInfo>& resource_info)
+void CComputePass::bake(std::unordered_map<u64, FRenderGraphAttachmentOperationInfo>& resource_info)
 {
 	IComputePass::bake(resource_info);
 }

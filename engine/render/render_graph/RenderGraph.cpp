@@ -50,7 +50,7 @@ void CRenderGraph::create()
 		texture_ci.typeFlags = ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eCubemap | ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage;
 		texture_ci.sizePolicy = ERenderTargetSizePolicy::eFixed;
 		texture_ci.width = texture_ci.height = 512;
-		texture_ci.mipLevels = static_cast<uint32_t>(std::floor(std::log2((std::max)(512, 512)))) + 1u;
+		texture_ci.mipLevels = utl::cast<u32>(std::floor(std::log2((std::max)(512, 512)))) + 1u;
 		addRenderResource("prefiltered_cube_target", texture_ci);
 	}
 
@@ -398,78 +398,77 @@ u64 CRenderGraph::addRenderPass(const std::string& name, const FRenderConfigComp
 
 void CRenderGraph::bake()
 {
-	//struct FPassResourceDependency
-	//{
-	//	u64 srcPassIndex{ ~0ull };
-	//	uint16_t srcAccessType{};
-	//
-	//	u64 dstPassIndex{ ~0ull };
-	//	uint16_t dstAccessType{};
-	//};
-	//
-	//struct FPassResourceBarrier
-	//{
-	//	uint32_t barrierType{ 0u };
-	//
-	//	uint32_t resourceType{ 0u };
-	//	u64 resourceHandle{ ~0ull };
-	//};
-	//
-	//struct FPassBarriers
-	//{
-	//	std::vector<FPassResourceBarrier> before{};
-	//	std::vector<FPassResourceBarrier> after{};
-	//};
-	//
-	//std::unordered_map<u64, std::unordered_map<uint16_t, u64>> resource_usage_counter{};
-	//std::unordered_map<u64, std::vector<FPassResourceDependency>> dependencies{};
-	//for (u64 pass_index = 0ull; pass_index < m_vRenderPasses.size(); ++pass_index)
-	//{
-	//	auto& pass = m_vRenderPasses.at(pass_index);
-	//	for (const auto& [resource_mask, resource_ids] : pass->m_renderResources)
-	//	{
-	//		uint16_t access_mask{};
-	//		uint16_t group_mask{};
-	//		unpackUint16x2(resource_mask, access_mask, group_mask);
-	//
-	//		for (u64 resource_id : resource_ids)
-	//		{
-	//			auto& resource_dependencies = dependencies[resource_id];
-	//			auto& usage_counter = resource_usage_counter[resource_id][access_mask];
-	//
-	//			if (resource_dependencies.empty())
-	//			{
-	//				auto& resource_dependency = resource_dependencies.emplace_back();
-	//				if ((access_mask & ERenderResourceAccessFlagBits::eWrite) && usage_counter == 0ull)
-	//				{
-	//					resource_dependency.dstPassIndex = pass_index;
-	//					resource_dependency.dstAccessType = access_mask;
-	//				}
-	//				else
-	//				{
-	//					resource_dependency.srcPassIndex = pass_index;
-	//					resource_dependency.srcAccessType = access_mask;
-	//				}
-	//			}
-	//			else
-	//			{
-	//				auto& last_dependency = resource_dependencies.back();
-	//				if (last_dependency.srcPassIndex != ~0ull && (last_dependency.srcAccessType != access_mask || (access_mask & ERenderResourceAccessFlagBits::eWrite)))
-	//				{
-	//					auto& resource_dependency = resource_dependencies.back();
-	//					resource_dependency.dstPassIndex = pass_index;
-	//					resource_dependency.dstAccessType = access_mask;
-	//				}
-	//				else
-	//				{
-	//					auto& resource_dependency = resource_dependencies.emplace_back();
-	//					resource_dependency.srcPassIndex = pass_index;
-	//					resource_dependency.srcAccessType = access_mask;
-	//				}
-	//			}
-	//		}
-	//	}
-	//}
+	struct FPassResourceDependency
+	{
+		u64 srcPassIndex{ ~0ull };
+		ERenderResourceAccessFlagBits srcAccessFlag{};
+	
+		u64 dstPassIndex{ ~0ull };
+		ERenderResourceAccessFlagBits dstAccessFlag{};
+	};
+	
+	struct FPassResourceBarrier
+	{
+		u32 barrierType{ 0u };
+	
+		u32 resourceType{ 0u };
+		u64 resourceHandle{ ~0ull };
+	};
+	
+	struct FPassBarriers
+	{
+		std::vector<FPassResourceBarrier> before{};
+		std::vector<FPassResourceBarrier> after{};
+	};
+	
+	std::unordered_map<u64, std::unordered_map<ERenderResourceAccessFlagBits, u64>> resource_usage_counter{};
+	std::unordered_map<u64, std::vector<FPassResourceDependency>> dependencies{};
+	for (u64 pass_index = 0ull; pass_index < m_vRenderPasses.size(); ++pass_index)
+	{
+		auto& pass = m_vRenderPasses.at(pass_index);
+		for (const auto& [resource_group, resource_ids] : pass->m_renderResources)
+		{
+			ERenderResourceAccessFlagBits access_mask{}; ERenderResourceGroupFlagBits group_mask{};
+			unpackResourceGroup(resource_group, access_mask, group_mask);
+
+			for (u64 resource_id : resource_ids)
+			{
+				auto& resource_dependencies = dependencies[resource_id];
+				auto& usage_counter = resource_usage_counter[resource_id][access_mask];
+	
+				if (resource_dependencies.empty())
+				{
+					auto& resource_dependency = resource_dependencies.emplace_back();
+					if ((access_mask & ERenderResourceAccessFlagBits::eWrite) && usage_counter == 0ull)
+					{
+						resource_dependency.dstPassIndex = pass_index;
+						resource_dependency.dstAccessFlag = access_mask;
+					}
+					else
+					{
+						resource_dependency.srcPassIndex = pass_index;
+						resource_dependency.srcAccessFlag = access_mask;
+					}
+				}
+				else
+				{
+					auto& last_dependency = resource_dependencies.back();
+					if (last_dependency.srcPassIndex != ~0ull && (last_dependency.srcAccessFlag != access_mask || (access_mask & ERenderResourceAccessFlagBits::eWrite)))
+					{
+						auto& resource_dependency = resource_dependencies.back();
+						resource_dependency.dstPassIndex = pass_index;
+						resource_dependency.dstAccessFlag = access_mask;
+					}
+					else
+					{
+						auto& resource_dependency = resource_dependencies.emplace_back();
+						resource_dependency.srcPassIndex = pass_index;
+						resource_dependency.srcAccessFlag = access_mask;
+					}
+				}
+			}
+		}
+	}
 	//
 	//// NOTE: Generating per pass barriers. 
 	//std::unordered_map<u64, std::vector<FPassResourceBarrier>> per_pass_barriers{};
@@ -497,34 +496,34 @@ void CRenderGraph::bake()
 	//	}
 	//}
 
-	std::unordered_map<u64, std::unordered_set<u64>> dependencies;
-	for (u64 pass_index = 0; pass_index < m_vRenderPasses.size(); ++pass_index)
-	{
-		auto& pass = m_vRenderPasses[pass_index];
-		for (const auto& [resource_group, resource_ids] : pass->m_renderResources)
-		{
-			ERenderResourceAccessFlagBits access_mask{}; ERenderResourceGroupFlagBits group_mask{};
-			unpackResourceGroup(resource_group, access_mask, group_mask);
-
-			for (auto resource_id : resource_ids)
-			{
-				auto& resource = m_vRenderResources[resource_id];
-				for (auto& [resource_access_mask, resource_use_passes] : resource.usages)
-				{
-					if (access_mask & ERenderResourceAccessFlagBits::eRead && resource_access_mask & ERenderResourceAccessFlagBits::eWrite)
-					{
-						for (u64 resource_write_pass : resource_use_passes)
-							dependencies[pass_index].emplace(resource_write_pass);
-					}
-				}
-			}
-		}
-	}
+	//std::unordered_map<u64, std::unordered_set<u64>> dependencies;
+	//for (u64 pass_index = 0; pass_index < m_vRenderPasses.size(); ++pass_index)
+	//{
+	//	auto& pass = m_vRenderPasses[pass_index];
+	//	for (const auto& [resource_group, resource_ids] : pass->m_renderResources)
+	//	{
+	//		ERenderResourceAccessFlagBits access_mask{}; ERenderResourceGroupFlagBits group_mask{};
+	//		unpackResourceGroup(resource_group, access_mask, group_mask);
+	//
+	//		for (auto resource_id : resource_ids)
+	//		{
+	//			auto& resource = m_vRenderResources[resource_id];
+	//			for (auto& [resource_access_mask, resource_use_passes] : resource.usages)
+	//			{
+	//				if (access_mask & ERenderResourceAccessFlagBits::eRead && resource_access_mask & ERenderResourceAccessFlagBits::eWrite)
+	//				{
+	//					for (u64 resource_write_pass : resource_use_passes)
+	//						dependencies[pass_index].emplace(resource_write_pass);
+	//				}
+	//			}
+	//		}
+	//	}
+	//}
 
 	return;
 }
 
-void CRenderGraph::execute(float dt)
+void CRenderGraph::execute(f32 dt)
 {
 
 }

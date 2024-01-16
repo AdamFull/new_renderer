@@ -4,12 +4,12 @@
 
 using namespace engine::render;
 
-constexpr const size_t MAX_RENDER_OBJECT_COUNT{ 16384ull };
-constexpr const size_t MAX_PRIMITIVE_COUNT{ 512ull };
-constexpr const size_t MAX_MATERIAL_COUNT{ 512ull };
+constexpr const u64 MAX_RENDER_OBJECT_COUNT{ 16384ull };
+constexpr const u64 MAX_PRIMITIVE_COUNT{ 512ull };
+constexpr const u64 MAX_MATERIAL_COUNT{ 512ull };
 
 template<class _Ty>
-std::unique_ptr<IBufferObject> createDrawBuffer(const std::string& name, EBufferTypeFlagBits type, size_t count, IRenderInterface* render_interface)
+std::unique_ptr<IBufferObject> createDrawBuffer(const std::string& name, EBufferTypeFlagBits type, u64 count, IRenderInterface* render_interface)
 {
 	FBufferCreateInfo buffer_ci{};
 	buffer_ci.flags = type;
@@ -46,9 +46,9 @@ void CRenderWorld::create()
 	m_vBuffers.emplace_back(createDrawBuffer<FDrawIndexedIndirectData>("IndexedDrawIndirectBuffer", EBufferTypeFlagBits::eIndirect, max_indirect_draw_count, m_pRenderInterface));
 }
 
-size_t CRenderWorld::registerFrustum(ERenderGeometryCullerType type)
+u64 CRenderWorld::registerFrustum(ERenderGeometryCullerType type)
 {
-	size_t frustum_id = m_vSceneFrustums.size();
+	u64 frustum_id = m_vSceneFrustums.size();
 	m_vSceneFrustums.emplace_back();
 
 	auto& culling_info = m_vCullingInfo.emplace_back();
@@ -58,7 +58,7 @@ size_t CRenderWorld::registerFrustum(ERenderGeometryCullerType type)
 	return frustum_id;
 }
 
-void CRenderWorld::updateFrustum(size_t frustum_id, const glm::mat4& view, const glm::mat4& projection)
+void CRenderWorld::updateFrustum(u64 frustum_id, const glm::mat4& view, const glm::mat4& projection)
 {
 	auto& frustum = m_vSceneFrustums.at(frustum_id);
 	frustum.update(view, projection);
@@ -83,7 +83,7 @@ void CRenderWorld::addDrawGeometry(const std::vector<FGeometryRawBatch>& new_geo
 		});
 }
 
-void CRenderWorld::render(float dt)
+void CRenderWorld::render(f32 dt)
 {
 	// Clear old frame data
 	m_vGeometryBatches.clear();
@@ -94,14 +94,14 @@ void CRenderWorld::render(float dt)
 	std::vector<FGeometryGPUCullInfo> gpu_culling_infos{};
 	std::vector<FDrawIndexedIndirectData> indirect_data{};
 	std::vector<FGeometryGPUBatch> gpu_batches{};
-	std::vector<uint32_t> counted{};
+	std::vector<u32> counted{};
 
-	size_t command_offset{ 0ull };
-	size_t batch_offset{ 0ull };
+	u64 command_offset{ 0ull };
+	u64 batch_offset{ 0ull };
 
 	for (const auto& cull_info : m_vCullingInfo)
 	{
-		size_t current_material{ ~0ull };
+		u64 current_material{ ~0ull };
 		for (const auto& batch : m_vRawGeometryBatches)
 		{
 			auto& gpu_culling_info = gpu_culling_infos.emplace_back();
@@ -148,7 +148,7 @@ void CRenderWorld::render(float dt)
 		batch_range.offset = m_vGeometryBatches.size();
 
 		// Prepare cpu data
-		for (size_t idx = batch_offset; idx < gpu_batches.size(); ++idx)
+		for (u64 idx = batch_offset; idx < gpu_batches.size(); ++idx)
 		{
 			auto& gpu_batch = gpu_batches.at(idx);
 
@@ -185,7 +185,7 @@ void CRenderWorld::render(float dt)
 		auto& frustum_buffer = m_vBuffers.at(frustum_buffer_index);
 		frustum_buffer->map();
 
-		size_t offset{ 0ull };
+		u64 offset{ 0ull };
 		for (const auto& frustum : m_vSceneFrustums)
 		{
 			for (const auto& side : frustum.frustumSides)
@@ -297,7 +297,7 @@ void CRenderWorld::addShadow(const FSpotShadowCommit& commit)
 	m_vSpotShadows.at(m_stats.spotShadowCount++) = commit;
 }
 
-void CRenderWorld::updateNode(uint32_t node_id, const FSceneNode& node)
+void CRenderWorld::updateNode(u32 node_id, const FSceneNode& node)
 {
 	if (m_vNodes.size() < node_id + 1ull)
 		m_vNodes.resize((node_id + 1ull) * 2ull);
@@ -311,7 +311,7 @@ void CRenderWorld::updateSkin(const std::array<glm::mat4, 128ull>& matrices)
 		m_vSkins.resize(((m_stats.skinCount * 128ull) + 1ull) * 2ull);
 
 	auto skin_begin = m_vSkins.begin() + (m_stats.skinCount * 128ull);
-	for (size_t idx = 0ull; idx < 128ull; ++idx)
+	for (u64 idx = 0ull; idx < 128ull; ++idx)
 		m_vSkins.at(m_stats.skinCount * 128ull + idx) = matrices.at(idx);
 
 	m_stats.skinCount++;
@@ -342,7 +342,7 @@ const std::vector<FGeometryBatchRange>& CRenderWorld::getGeometryRanges(ERenderG
 	return m_mBatchRanges[type];
 }
 
-const FGeometryCPUBatch& CRenderWorld::getGeometryBatch(size_t index) const
+const FGeometryCPUBatch& CRenderWorld::getGeometryBatch(u64 index) const
 {
 	return m_vGeometryBatches.at(index);
 }

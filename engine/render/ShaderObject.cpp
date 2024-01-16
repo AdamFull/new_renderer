@@ -47,12 +47,12 @@ const std::unique_ptr<CUniformHandle>& CShaderObject::getConstantBlock(const cha
 	return null;
 }
 
-void CShaderObject::bindBuffer(const char* name, size_t buffer_resource)
+void CShaderObject::bindBuffer(const char* name, u64 buffer_resource)
 {
 	m_bindBuffers[utl::fnv1a_64_hash(name)] = buffer_resource;
 }
 
-void CShaderObject::bindTexture(const char* name, size_t texture_resource, uint32_t mip)
+void CShaderObject::bindTexture(const char* name, u64 texture_resource, u32 mip)
 {
 	m_bindTextures[utl::fnv1a_64_hash(name)] = FTextureBindInfo{ texture_resource, mip };
 }
@@ -87,7 +87,7 @@ void CShaderObject::flushDescriptors()
 
 void CShaderObject::flushConstants(EQueueTypeFlagBits queue)
 {
-	std::unordered_map<size_t, FUniformDataView> constants{};
+	std::unordered_map<u64, FUniformDataView> constants{};
 
 	for (auto& [id, block] : m_constantBlocks)
 	{
@@ -107,7 +107,7 @@ void CShaderObject::bind(EQueueTypeFlagBits queue)
 	render_context->bindShader(m_shaderId, queue);
 }
 
-size_t CShaderObject::handle() const
+u64 CShaderObject::handle() const
 {
 	return m_shaderId;
 }

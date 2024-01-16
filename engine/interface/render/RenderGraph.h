@@ -10,7 +10,7 @@ namespace engine
 {
 	namespace render
 	{
-		enum class ERenderResourceTypeFlagBits : uint32_t
+		enum class ERenderResourceTypeFlagBits : u32
 		{
 			eRenderTarget = 1 << 0,
 			eStorageTarget = 1 << 1,
@@ -20,14 +20,14 @@ namespace engine
 		};
 		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ERenderResourceTypeFlags, ERenderResourceTypeFlagBits)
 
-		enum class ERenderResourceAccessFlagBits : uint16_t
+		enum class ERenderResourceAccessFlagBits : u16
 		{
 			eRead = 1 << 0,
 			eWrite = 1 << 1
 		};
 		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ERenderResourceAccessFlags, ERenderResourceAccessFlagBits)
 
-		enum class ERenderResourceGroupFlagBits : uint16_t
+		enum class ERenderResourceGroupFlagBits : u16
 		{
 			eColor = 1 << 0,
 			eResolve = 1 << 1,
@@ -37,7 +37,7 @@ namespace engine
 		};
 		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ERenderResourceGroupFlags, ERenderResourceGroupFlagBits)
 
-		enum class ERenderResourceGroupType : uint32_t
+		enum class ERenderResourceGroupType : u32
 		{
 			eColorRead					= packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eRead),  utl::cast<u16>(ERenderResourceGroupFlagBits::eColor)),
 			eColorWrite					= packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceGroupFlagBits::eColor)),
@@ -50,14 +50,14 @@ namespace engine
 			eStorageWrite				= packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceGroupFlagBits::eStorage)),
 		};
 
-		enum ERenderResourceDependencyBarrierType : uint32_t
+		enum ERenderResourceDependencyBarrierType : u32
 		{
 			eReadAfterWrite				= packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceAccessFlagBits::eRead)),
 			eWriteAfterNothing			= packUint16x2(utl::cast<u16>(0u), utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite)),
 			eWriteAfterRead				= packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eRead), utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite)),
 			eWriteAfterWrite			= packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite))
 		};
-		using ERenderResourceDependencyBarrierTypeMask = uint32_t;
+		using ERenderResourceDependencyBarrierTypeMask = u32;
 
 		inline constexpr ERenderResourceGroupType packResourceGroup(ERenderResourceAccessFlagBits access_flag, ERenderResourceGroupFlagBits group_flag)
 		{
@@ -75,22 +75,22 @@ namespace engine
 
 		struct FRenderGraphAttachmentInfo
 		{
-			size_t handle{ ~0ull };
-			uint32_t loadOp{ ~0u };
-			uint32_t storeOp{ ~0u };
+			u64 handle{ ~0ull };
+			u32 loadOp{ ~0u };
+			u32 storeOp{ ~0u };
 		};
 
 		struct FRenderGraphAttachmentOperationInfo
 		{
-			uint32_t loadOp{ ~0u };
-			uint32_t storeOp{ ~0u };
+			u32 loadOp{ ~0u };
+			u32 storeOp{ ~0u };
 		};
 
 		struct FBeginRendering2Info
 		{
 			EQueueTypeFlagBits queue{};
-			uint32_t layerCount{ 1u };
-			FRect2D<float> renderArea{};
+			u32 layerCount{ 1u };
+			FRect2D<f32> renderArea{};
 			bool flipViewport{ false };
 
 			std::vector<FRenderGraphAttachmentInfo> colorAttachments{};
@@ -105,19 +105,19 @@ namespace engine
 
 		struct FDispatch2Group
 		{
-			uint32_t x{ 1u }, y{ 1u }, z{ 1u };
+			u32 x{ 1u }, y{ 1u }, z{ 1u };
 		};
 
 		struct FDispatch2Info
 		{
-			size_t shaderHandle{};
+			u64 shaderHandle{};
 			bool divideByLocals{ true };
 			FDispatch2Group globalSizes{};
 		};
 
 		struct FDispatchIndirectInfo
 		{
-			size_t shaderHandle{};
+			u64 shaderHandle{};
 			bool divideByLocals{ true };
 			std::vector<FDispatch2Group> groups{};
 		};
@@ -126,9 +126,9 @@ namespace engine
 		{
 			ERenderResourceTypeFlags type{ 0u };
 			EQueueTypeFlags queuesUsed{ 0u };
-			size_t handle{ ~0ull };
+			u64 handle{ ~0ull };
 
-			std::unordered_map<ERenderResourceAccessFlagBits, std::unordered_set<size_t>> usages{};
+			std::unordered_map<ERenderResourceAccessFlagBits, std::unordered_set<u64>> usages{};
 		};
 
 		struct FRenderConfigPassCreateInfo
@@ -171,18 +171,18 @@ namespace engine
 			bool oneTime{ false };
 
 			ERenderingSizeType sizePolicy{};
-			size_t sizeTarget{ ~0ull };
+			u64 sizeTarget{ ~0ull };
 
-			std::unordered_map<ERenderResourceGroupType, std::vector<size_t>> resources{};
-			std::unordered_map<std::string, size_t> bindings{};
+			std::unordered_map<ERenderResourceGroupType, std::vector<u64>> resources{};
+			std::unordered_map<std::string, u64> bindings{};
 		};
 
 		struct FRenderPassCreateInfo : public FPassCreateInfo
 		{
 			bool flipViewport{ false };
 
-			size_t depthTarget{ ~0ull };
-			size_t stencilTarget{ ~0ull };
+			u64 depthTarget{ ~0ull };
+			u64 stencilTarget{ ~0ull };
 		};
 
 		struct FComputePassCreateInfo : public FPassCreateInfo
@@ -196,19 +196,19 @@ namespace engine
 
 			virtual void create() = 0;
 
-			virtual size_t addStaticResource(const std::string& name, const std::string& path) = 0;
-			virtual size_t addRenderResource(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
-			virtual size_t addRenderResource(const std::string& name, const FBufferCreateInfo& buffer_ci) = 0;
+			virtual u64 addStaticResource(const std::string& name, const std::string& path) = 0;
+			virtual u64 addRenderResource(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
+			virtual u64 addRenderResource(const std::string& name, const FBufferCreateInfo& buffer_ci) = 0;
 
 			virtual const FRenderResource& getRenderResource(const std::string& name) const = 0;
-			virtual const FRenderResource& getRenderResource(size_t resource_id) const = 0;
+			virtual const FRenderResource& getRenderResource(u64 resource_id) const = 0;
 
-			virtual size_t addRenderPass(const std::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci) = 0;
-			virtual size_t addRenderPass(const std::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci) = 0;
+			virtual u64 addRenderPass(const std::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci) = 0;
+			virtual u64 addRenderPass(const std::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci) = 0;
 
 			virtual void bake() = 0;
 
-			virtual void execute(float dt) = 0;
+			virtual void execute(f32 dt) = 0;
 		};
 	}
 }

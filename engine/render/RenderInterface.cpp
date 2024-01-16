@@ -25,9 +25,9 @@
 using namespace engine;
 using namespace engine::render;
 
-constexpr const size_t MAX_RENDER_OBJECT_COUNT{ 16384ull };
-constexpr const size_t MAX_PRIMITIVE_COUNT{ 512ull };
-constexpr const size_t MAX_MATERIAL_COUNT{ 512ull };
+constexpr const u64 MAX_RENDER_OBJECT_COUNT{ 16384ull };
+constexpr const u64 MAX_PRIMITIVE_COUNT{ 512ull };
+constexpr const u64 MAX_MATERIAL_COUNT{ 512ull };
 
 void copy_platform_specific_create_data(FRenderContextCreateInfo& context_ci, const FRenderInterfaceCreateInfo& rhi_ci)
 {
@@ -116,7 +116,7 @@ FShaderNameInfo get_shader_name_info(const std::string& shader_name)
 }
 
 template<class _Ty>
-std::unique_ptr<IGPUArrayHandle> allocateGPUArrayHandle(const std::string& name, size_t count, IRenderInterface* render_interface)
+std::unique_ptr<IGPUArrayHandle> allocateGPUArrayHandle(const std::string& name, u64 count, IRenderInterface* render_interface)
 {
 	auto gpu_array = std::make_unique<CGPUArrayHandle>(render_interface);
 	gpu_array->create(name, sizeof(_Ty), count);
@@ -165,7 +165,7 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 	//m_pRenderScriptCore->build("render_config", render_config);
 }
 
-void CRenderInterface::render(float dt)
+void CRenderInterface::render(f32 dt)
 {
 	m_pRenderWorld->render(dt);
 
@@ -184,10 +184,10 @@ void CRenderInterface::render(float dt)
 	global_uniform.invViewportDimension = 1.f / m_pRenderPacket->camera.dimensions;
 	global_uniform.nearPlane = m_pRenderPacket->camera.nearp;
 	global_uniform.farPlane = m_pRenderPacket->camera.farp;
-	global_uniform.directionalLightCount = static_cast<uint32_t>(world_stats.directionalLightCount);
-	global_uniform.pointLightCount = static_cast<uint32_t>(world_stats.pointLightCount);
-	global_uniform.spotLightCount = static_cast<uint32_t>(world_stats.spotLightCount);
-	global_uniform.rawCommandsCount = static_cast<uint32_t>(world_stats.drawCommandCount);
+	global_uniform.directionalLightCount = utl::cast<u32>(world_stats.directionalLightCount);
+	global_uniform.pointLightCount = utl::cast<u32>(world_stats.pointLightCount);
+	global_uniform.spotLightCount = utl::cast<u32>(world_stats.spotLightCount);
+	global_uniform.rawCommandsCount = utl::cast<u32>(world_stats.drawCommandCount);
 
 	FGlobalUniformUpdateInfo update_info{};
 	auto& frame_gata_uniform = update_info.uniforms[utl::fnv1a_64_hash("GlobalUniformFrameData")];
@@ -232,20 +232,20 @@ void CRenderInterface::render(float dt)
 	}
 }
 
-size_t CRenderInterface::createTexture(const std::string& path)
+u64 CRenderInterface::createTexture(const std::string& path)
 {
 	auto name = filesystem::fs::get_stem(path);
 	return m_pRenderGraph->addStaticResource(name, path);
 }
 
-size_t CRenderInterface::loadTexture(const std::string& path, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info)
+u64 CRenderInterface::loadTexture(const std::string& path, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info)
 {
 	auto name = filesystem::fs::get_stem(path);
 	auto ext = filesystem::fs::get_ext(path);
 	auto ext_hash = utl::const_hash(ext.c_str(), ext.size());
-	auto mime = static_cast<EMimeType>(ext_hash);
+	auto mime = utl::cast<EMimeType>(ext_hash);
 
-	size_t texture_id = m_pRenderContext->getTextureId(name);
+	u64 texture_id = m_pRenderContext->getTextureId(name);
 	if (texture_id != ~0ull)
 		return texture_id;
 
@@ -257,19 +257,19 @@ size_t CRenderInterface::loadTexture(const std::string& path, FTextureCreateInfo
 	return ~0ull;
 }
 
-size_t CRenderInterface::createShader(const std::string& name, const FGraphicsShaderCreateInfo& create_info)
+u64 CRenderInterface::createShader(const std::string& name, const FGraphicsShaderCreateInfo& create_info)
 {
 	auto name_info = getShaderNameTag(name);
 	return createShader<FGraphicsShaderCreateInfo>(name_info, create_info);
 }
 
-size_t CRenderInterface::createShader(const std::string& name, const FComputeShaderCreateInfo& create_info)
+u64 CRenderInterface::createShader(const std::string& name, const FComputeShaderCreateInfo& create_info)
 {
 	auto name_info = getShaderNameTag(name);
 	return createShader<FComputeShaderCreateInfo>(name_info, create_info);
 }
 
-size_t CRenderInterface::createVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci)
+u64 CRenderInterface::createVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci)
 {
 	auto vertex_handler = std::make_unique<CVertexHandler>(this);
 	vertex_handler->create(handler_ci);
@@ -277,12 +277,12 @@ size_t CRenderInterface::createVertexHandler(const std::string& name, const FVer
 	return m_pResources->add<IVertexHandler>(name.c_str(), std::move(vertex_handler));
 }
 
-const std::unique_ptr<IVertexHandler>& CRenderInterface::getVertexHandler(size_t id)
+const std::unique_ptr<IVertexHandler>& CRenderInterface::getVertexHandler(u64 id)
 {
 	return m_pResources->get<IVertexHandler>(id);
 }
 
-void CRenderInterface::updateSurfaceSize(int32_t width, int32_t height)
+void CRenderInterface::updateSurfaceSize(i32 width, i32 height)
 {
 	m_pRenderContext->updateSurface(width, height);
 }

@@ -60,19 +60,19 @@ namespace engine
 
 		struct FRenderingStepSemaphore
 		{
-			uint32_t type{};
+			u32 type{};
 
-			size_t value{};
+			u64 value{};
 
-			uint32_t srcQueue{};
-			uint32_t dstQueue{};
+			u32 srcQueue{};
+			u32 dstQueue{};
 		};
 
 		struct FRenderingStepBarrier
 		{
 			EBarrierType type{};
 			EQueueTypeFlagBits queue{};
-			std::vector<size_t> targets;
+			std::vector<u64> targets;
 		};
 
 		struct FRenderingStepSynchronizationInfo
@@ -85,11 +85,11 @@ namespace engine
 		struct FRenderTargetSizeInfo
 		{
 			ERenderingSizeType type{ ERenderingSizeType::eManual };
-			size_t target{ ~0ull };
+			u64 target{ ~0ull };
 
-			uint32_t sizeX{ 1u };
-			uint32_t sizeY{ 1u };
-			uint32_t sizeZ{ 1u };
+			u32 sizeX{ 1u };
+			u32 sizeY{ 1u };
+			u32 sizeZ{ 1u };
 		};
 
 		struct FRenderingStepRenderingInfo
@@ -105,13 +105,13 @@ namespace engine
 			bool flipViewport{ false }; // Flip viewport horizontally
 			bool materialPass{ false };
 
-			std::unordered_map<std::string, size_t> shaderInputs{};
-			std::vector<size_t> renderTargets{};
+			std::unordered_map<std::string, u64> shaderInputs{};
+			std::vector<u64> renderTargets{};
 
 			FRenderTargetSizeInfo sizeInfo{};
 
-			size_t depthTarget{ ~0ull };
-			size_t stencilTarget{ ~0ull };
+			u64 depthTarget{ ~0ull };
+			u64 stencilTarget{ ~0ull };
 		};
 
 		struct FRenderingStepComputeInfo
@@ -123,9 +123,9 @@ namespace engine
 
 			std::string shaderName{};
 
-			std::unordered_map<std::string, size_t> shaderInputs{};
-			std::unordered_map<std::string, size_t> writeTargets{};
-			std::unordered_map<std::string, size_t> writeBuffers{};
+			std::unordered_map<std::string, u64> shaderInputs{};
+			std::unordered_map<std::string, u64> writeTargets{};
+			std::unordered_map<std::string, u64> writeBuffers{};
 
 			FRenderTargetSizeInfo dispatchInfo{};
 			bool divideByLocals{ true };
@@ -145,13 +145,13 @@ namespace engine
 		struct FBeginRenderingInfo
 		{
 			EQueueTypeFlagBits queue{};
-			FRect2D<float> renderArea{};
+			FRect2D<f32> renderArea{};
 			bool flipViewport{ false };
-			uint32_t layerCount{ 1u };
+			u32 layerCount{ 1u };
 
-			std::vector<size_t> colorAttachments{};
-			size_t depthAttachment{ ~0ull };
-			size_t stencilAttachment{ ~0ull };
+			std::vector<u64> colorAttachments{};
+			u64 depthAttachment{ ~0ull };
+			u64 stencilAttachment{ ~0ull };
 #ifndef BUILD_WITHOUT_DEBUGGIND
 			std::string name{};
 #endif
@@ -161,10 +161,10 @@ namespace engine
 		{
 			EQueueTypeFlagBits queue{};
 
-			std::vector<size_t> writeAttachments{};
-			std::vector<size_t> writeBuffers{};
+			std::vector<u64> writeAttachments{};
+			std::vector<u64> writeBuffers{};
 
-			FPoint3D<uint32_t> globalSizes{};
+			FPoint3D<u32> globalSizes{};
 #ifndef BUILD_WITHOUT_DEBUGGIND
 			std::string name{};
 #endif

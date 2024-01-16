@@ -40,7 +40,7 @@ void CGeometryRenderingStep::_create(const FRenderingStepCreateInfo& create_info
 #endif
 }
 
-void CGeometryRenderingStep::_execute(float dt)
+void CGeometryRenderingStep::_execute(f32 dt)
 {
 	TRACY_PROFILE_FUNCTION();
 
@@ -48,18 +48,18 @@ void CGeometryRenderingStep::_execute(float dt)
 	render_context->beginRendering(m_beginRenderingInfo);
 
 	auto& rect = m_beginRenderingInfo.renderArea;
-	render_context->setViewport(static_cast<float>(rect.size.x), static_cast<float>(rect.size.y), m_beginRenderingInfo.flipViewport);
+	render_context->setViewport(utl::cast<f32>(rect.size.x), utl::cast<f32>(rect.size.y), m_beginRenderingInfo.flipViewport);
 	render_context->setScissorRect(0, 0, rect.size.x, rect.size.y);
 
 	auto& render_world = m_pRenderInterface->getRenderWorld();
 
 	auto& batch_ranges = render_world->getGeometryRanges(ERenderGeometryCullerType::eScene);
 
-	size_t drawcall_id{ 0ull };
+	u64 drawcall_id{ 0ull };
 	IVertexHandler* last_vbo{ nullptr };
 	for (const auto& batch_range : batch_ranges)
 	{
-		for (size_t batch_id = batch_range.offset; batch_id < batch_range.offset + batch_range.count; ++batch_id)
+		for (u64 batch_id = batch_range.offset; batch_id < batch_range.offset + batch_range.count; ++batch_id)
 		{
 			const auto& batch = render_world->getGeometryBatch(batch_id);
 
@@ -87,8 +87,8 @@ void CGeometryRenderingStep::_execute(float dt)
 				auto& mesh_data = shader->getConstantBlock("meshData");
 				if (mesh_data)
 				{
-					mesh_data->set("callID", static_cast<uint32_t>(drawcall_id));
-					mesh_data->set("batchID", static_cast<uint32_t>(batch_id));
+					mesh_data->set("callID", utl::cast<u32>(drawcall_id));
+					mesh_data->set("batchID", utl::cast<u32>(batch_id));
 				}
 
 				// Bind vbo and flush descriptors, then bind and draw

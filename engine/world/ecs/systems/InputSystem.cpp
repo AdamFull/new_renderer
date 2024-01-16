@@ -8,7 +8,7 @@
 #include <engine/platform/window/WindowCallback.h>
 #include <engine/profiler/Profiler.h>
 
-constexpr const float movement_scale{ 50.f };
+constexpr const f32 movement_scale{ 50.f };
 
 template<class _Ty>
 inline _Ty remap(_Ty input, _Ty in_min, _Ty in_max, _Ty out_min, _Ty out_max)
@@ -33,14 +33,14 @@ void CInputSystem::__create()
 	FWindowCallbackMapper::subscribeMouseButton(this, &CInputSystem::keyInput);
 }
 
-void CInputSystem::__update(float fDt)
+void CInputSystem::__update(f32 fDt)
 {
 	TRACY_PROFILE_FUNCTION();
 
 	m_deltaTime = fDt;
 
 	glm::vec3 orbitCenter{ 0.0f, 0.0f, 0.0f };
-	float orbitDistance{ 10.0f };
+	f32 orbitDistance{ 10.0f };
 
 	if (m_keyDecoder.test(EKeyCode::eKeyW)) movF = 1.f;
 	if (m_keyDecoder.test(EKeyCode::eKeyS)) movF = -1.f;
@@ -51,9 +51,9 @@ void CInputSystem::__update(float fDt)
 	if (m_keyDecoder.test(EKeyCode::eMouseMiddle))
 		allowRotation = true;
 
-	float dX = (curX - oldX) * fDt;
+	f32 dX = (curX - oldX) * fDt;
 	oldX = curX;
-	float dY = (curY - oldY) * fDt;
+	f32 dY = (curY - oldY) * fDt;
 	oldY = curY;
 
 	auto& registry = m_pSceneGraph->getRegistry();
@@ -111,13 +111,13 @@ void CInputSystem::keyInput(EKeyCode code, EKeyState state)
 	m_keyDecoder.update(code, state == EKeyState::ePress);
 }
 
-void CInputSystem::mouseMovementInput(float x, float y, float xmax, float ymax)
+void CInputSystem::mouseMovementInput(f32 x, f32 y, f32 xmax, f32 ymax)
 {
 	curX = remap(x, 0.f, xmax, -1.f, 1.f);
 	curY = remap(y, 0.f, ymax, -1.f, 1.f);
 }
 
-void CInputSystem::mouseWheelInput(float x, float y)
+void CInputSystem::mouseWheelInput(f32 x, f32 y)
 {
 
 }

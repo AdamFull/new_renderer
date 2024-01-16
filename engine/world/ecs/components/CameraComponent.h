@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility.hpp>
+
 namespace engine
 {
 	namespace world
@@ -16,12 +18,12 @@ namespace engine
 			{
 				ECameraType type{ ECameraType::ePerspective };
 
-				float fieldOfView{ 45.f };
-				float nearPlane{ 0.1f };
-				float farPlane{ 1024 };
+				f32 fieldOfView{ 45.f };
+				f32 nearPlane{ 0.1f };
+				f32 farPlane{ 1024 };
 
-				float xmag{ 0.f };
-				float ymag{ 0.f };
+				f32 xmag{ 0.f };
+				f32 ymag{ 0.f };
 
 				glm::mat4 view{ 1.f }, invView{ 1.f }, projection{ 1.f }, invProjection{ 1.f };
 				glm::uvec2 viewportExtent{};
@@ -35,7 +37,7 @@ namespace engine
 				bool controllable{ true };
 				bool orbit{ true };
 
-				size_t frustumID{ ~0ull };
+				u64 frustumID{ ~0ull };
 			};
 		}
 	}

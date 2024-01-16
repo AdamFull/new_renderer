@@ -16,20 +16,20 @@ using namespace engine;
 using namespace engine::filesystem;
 using namespace engine::render;
 
-uint32_t get_ktx_format(ktxTexture* This)
+u32 get_ktx_format(ktxTexture* This)
 {
 	if (This->classId == ktxTexture2_c)
 		return ((ktxTexture2*)This)->vkFormat;
 
 	auto* ktx1 = (ktxTexture1*)This;
-	uint32_t vk_format{};
+	u32 vk_format{};
 	vk_format = vkGetFormatFromOpenGLInternalFormat(ktx1->glInternalformat);
 	if (vk_format == 0u)
 		vk_format = vkGetFormatFromOpenGLFormat(ktx1->glFormat, ktx1->glType);
 	return vk_format;
 }
 
-uint32_t get_ktx_api_specific_format(ktxTexture* This)
+u32 get_ktx_api_specific_format(ktxTexture* This)
 {
 	return 0;
 }
@@ -101,7 +101,7 @@ bool CResourceLoader::loadShaderData(const FShaderUploadInfo& load_info, std::ve
 			continue;
 
 		auto& shader_code_info = shader_stages.emplace_back();
-		shader_code_info.stage = static_cast<uint32_t>(shader_module.type);
+		shader_code_info.stage = utl::cast<u32>(shader_module.type);
 		shader_code_info.code = &found_shader_code->second;
 	}
 
@@ -113,18 +113,18 @@ bool CResourceLoader::loadSTBFromMemory(const std::vector<uint8_t>& data, FTextu
 	int width{ 0 }, height{ 0 }, channels{ 0 };
 	auto rawdata = stbi_load_from_memory(data.data(), data.size(), &width, &height, &channels, STBI_rgb_alpha);
 
-	create_info.width = static_cast<uint32_t>(width);
-	create_info.height = static_cast<uint32_t>(height);
+	create_info.width = utl::cast<u32>(width);
+	create_info.height = utl::cast<u32>(height);
 	create_info.depth = 1u;
 	create_info.format = 37;
-	auto data_size = static_cast<uint32_t>(width * height * 4ull);
+	auto data_size = utl::cast<u32>(width * height * 4ull);
 
 	upload_info.data.resize(data_size);
 	std::memcpy(upload_info.data.data(), rawdata, data_size);
 
 	create_info.typeFlags |= ETextureCreateFlagBits::e2D;
 
-	create_info.mipLevels = static_cast<uint32_t>(std::floor(std::log2((std::max)(width, height)))) + 1u;
+	create_info.mipLevels = utl::cast<u32>(std::floor(std::log2((std::max)(width, height)))) + 1u;
 
 	stbi_image_free(rawdata);
 
@@ -164,10 +164,10 @@ bool CResourceLoader::loadKTXFromMemory(const std::vector<uint8_t>& data, FTextu
 	create_info.format = get_ktx_format(kTexture);
 
 	auto num_layers = kTexture->isCubemap ? kTexture->numFaces : kTexture->numLayers;
-	for (uint32_t layer = 0; layer < num_layers; layer++)
+	for (u32 layer = 0; layer < num_layers; layer++)
 	{
 		auto& mip_layer = upload_info.mipLayerOffsets.emplace_back();
-		for (uint32_t level = 0u; level < kTexture->numLevels; level++)
+		for (u32 level = 0u; level < kTexture->numLevels; level++)
 		{
 			auto& mip_offset = mip_layer.emplace_back();
 			ktxresult = ktxTexture_GetImageOffset(kTexture, level, 0, layer, &mip_offset);
@@ -216,10 +216,10 @@ bool CResourceLoader::loadKTX2FromMemory(const std::vector<uint8_t>& data, FText
 	create_info.format = kTexture->vkFormat;
 
 	auto num_layers = kTexture->isCubemap ? kTexture->numFaces : kTexture->numLayers;
-	for (uint32_t layer = 0; layer < num_layers; layer++)
+	for (u32 layer = 0; layer < num_layers; layer++)
 	{
 		auto& mip_layer = upload_info.mipLayerOffsets.emplace_back();
-		for (uint32_t level = 0u; level < kTexture->numLevels; level++)
+		for (u32 level = 0u; level < kTexture->numLevels; level++)
 		{
 			auto& mip_offset = mip_layer.emplace_back();
 			ktxresult = ktxTexture_GetImageOffset((ktxTexture*)kTexture, level, 0, layer, &mip_offset);

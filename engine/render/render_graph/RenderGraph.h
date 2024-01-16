@@ -32,7 +32,7 @@ namespace engine
 
 			void bake() override;
 
-			void execute(float dt) override;
+			void execute(f32 dt) override;
 		private:
 			void applyRenderPassResources(u64 pass_index, const FRenderConfigPassCreateInfo* raw_pass_ci, FPassCreateInfo* pass_ci);
 			void applySingleRenderResourceDependencies(u64 resource_id, ERenderResourceAccessFlagBits access_type, u64 pass_index, EQueueTypeFlagBits queue_type);

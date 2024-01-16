@@ -39,7 +39,7 @@ void CComputeRenderingStep::_create(const FRenderingStepCreateInfo& create_info)
 #endif
 }
 
-void CComputeRenderingStep::_execute(float dt)
+void CComputeRenderingStep::_execute(f32 dt)
 {
 	TRACY_PROFILE_FUNCTION();
 
@@ -56,9 +56,9 @@ void CComputeRenderingStep::_execute(float dt)
 
 	FDispatchInfo dispatch_info{};
 	auto& group = dispatch_info.groups.emplace_back();
-	group.x = glm::max(static_cast<uint32_t>(std::ceil(static_cast<float>(sizes.x) / static_cast<float>(reflection.localSizes[0]))), 1u);
-	group.y = glm::max(static_cast<uint32_t>(std::ceil(static_cast<float>(sizes.y) / static_cast<float>(reflection.localSizes[1]))), 1u);
-	group.z = glm::max(static_cast<uint32_t>(std::ceil(static_cast<float>(sizes.z) / static_cast<float>(reflection.localSizes[2]))), 1u);
+	group.x = glm::max(utl::cast<u32>(std::ceil(utl::cast<f32>(sizes.x) / utl::cast<f32>(reflection.localSizes[0]))), 1u);
+	group.y = glm::max(utl::cast<u32>(std::ceil(utl::cast<f32>(sizes.y) / utl::cast<f32>(reflection.localSizes[1]))), 1u);
+	group.z = glm::max(utl::cast<u32>(std::ceil(utl::cast<f32>(sizes.z) / utl::cast<f32>(reflection.localSizes[2]))), 1u);
 
 	render_context->dispatch(m_beginComputeInfo.queue, dispatch_info);
 

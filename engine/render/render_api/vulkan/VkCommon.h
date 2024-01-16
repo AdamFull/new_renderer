@@ -55,7 +55,7 @@ namespace engine
 
 				if (texture.isRenderTarget)
 				{
-					auto format = static_cast<vk::Format>(texture.initialData.base.format);
+					auto format = utl::cast<vk::Format>(texture.initialData.base.format);
 					usageFlags |= (is_depth_format(format) ? vk::ImageUsageFlagBits::eDepthStencilAttachment : vk::ImageUsageFlagBits::eColorAttachment);
 				}
 
@@ -75,7 +75,7 @@ namespace engine
 			{
 				vk::ImageAspectFlags aspectFlags{};
 
-				auto format = static_cast<vk::Format>(texture.initialData.base.format);
+				auto format = utl::cast<vk::Format>(texture.initialData.base.format);
 				if (is_depth_format(format))
 					aspectFlags |= vk::ImageAspectFlagBits::eDepth;
 				if (is_depth_stencil_format(format))
@@ -100,7 +100,7 @@ namespace engine
 				}
 			}
 
-			inline vk::ShaderStageFlagBits get_shader_stage(uint32_t mask)
+			inline vk::ShaderStageFlagBits get_shader_stage(u32 mask)
 			{
 				switch (mask)
 				{
@@ -215,9 +215,9 @@ namespace engine
 				return best_mode;
 			}
 
-			inline vk::Extent2D choice_swapchain_extent(const vk::SurfaceCapabilitiesKHR& capabilities, uint32_t width, uint32_t height)
+			inline vk::Extent2D choice_swapchain_extent(const vk::SurfaceCapabilitiesKHR& capabilities, u32 width, u32 height)
 			{
-				if (capabilities.currentExtent.width != (std::numeric_limits<uint32_t>::max)())
+				if (capabilities.currentExtent.width != (std::numeric_limits<u32>::max)())
 					return capabilities.currentExtent;
 
 				vk::Extent2D actual_extent = { width, height };
@@ -228,7 +228,7 @@ namespace engine
 				return actual_extent;
 			}
 
-			inline vk::DebugUtilsLabelEXT make_debug_label(const char* label, uint32_t color)
+			inline vk::DebugUtilsLabelEXT make_debug_label(const char* label, u32 color)
 			{
 				vk::DebugUtilsLabelEXT debug_label{};
 				debug_label.pLabelName = label;

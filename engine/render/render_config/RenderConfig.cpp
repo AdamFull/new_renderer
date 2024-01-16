@@ -110,7 +110,7 @@ void CDynamicRenderStage::create(const std::string& stage)
 	m_pScriptExecutor->run("on_create", stage);
 }
 
-void CDynamicRenderStage::render(float dt)
+void CDynamicRenderStage::render(f32 dt)
 {
 	// TODO: begin profiling scope here. Name of this scope is stage name or shader name
 	m_pScriptExecutor->run("on_render", dt);

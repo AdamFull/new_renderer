@@ -15,9 +15,9 @@ using namespace engine::render;
 //	alignas(16) glm::vec4 weights{};
 //};
 
-size_t align_std140(size_t size)
+u64 align_std140(u64 size)
 {
-	constexpr const size_t maxalignment{ 0ull };
+	constexpr const u64 maxalignment{ 0ull };
 	if (size <= 4ull)
 		return 4ull;
 	else if (size <= 8ull)
@@ -28,7 +28,7 @@ size_t align_std140(size_t size)
 	return (size + maxalignment - 1ull) & ~(maxalignment - 1ull);
 }
 
-EApiDataFormat get_attribute_format_by_type(EVertexAttributeType type, size_t size)
+EApiDataFormat get_attribute_format_by_type(EVertexAttributeType type, u64 size)
 {
 	if (size == 4ull)
 	{
@@ -69,7 +69,7 @@ EApiDataFormat get_attribute_format_by_type(EVertexAttributeType type, size_t si
 	return EApiDataFormat::eUnknown;
 }
 // HAS_TEXCOORD, HAS_NORMAL, HAS_SKIN, COLOR_VEC3, COLOR_VEC4, TANGENT_VEC3, TANGENT_VEC4, JOINTS_8BIT, JOINTS_16BIT
-std::string get_attribute_definition(EVertexAttributeType type, size_t size)
+std::string get_attribute_definition(EVertexAttributeType type, u64 size)
 {
 	if (size == 4ull)
 	{
@@ -108,7 +108,7 @@ std::string get_attribute_definition(EVertexAttributeType type, size_t size)
 	return "";
 }
 
-std::string get_index_definition(size_t size)
+std::string get_index_definition(u64 size)
 {
 	if (size == 1ull)
 		return "INDEX_8BIT";
@@ -146,7 +146,7 @@ void CVertexHandler::create(const FVertexHandlerCreateInfo& create_info)
 		auto& attrib = m_declaration.attributeDescriptions.emplace_back();
 		attrib.type = desc.type;
 		attrib.binding = 0u;
-		attrib.location = static_cast<uint32_t>(desc.type);
+		attrib.location = utl::cast<u32>(desc.type);
 
 		auto format = get_attribute_format_by_type(desc.type, desc.size);
 		attrib.format = render_context->getApiFormat(format);
@@ -221,14 +221,14 @@ void CVertexHandler::bind(EQueueTypeFlagBits queue)
 	}
 }
 
-size_t CVertexHandler::addVertices(const std::vector<FVertexAttributePointer>& attributes_data)
+u64 CVertexHandler::addVertices(const std::vector<FVertexAttributePointer>& attributes_data)
 {
 	auto vertex_count = attributes_data.front().count;
-	for (size_t v = 0ull; v < vertex_count; ++v)
+	for (u64 v = 0ull; v < vertex_count; ++v)
 	{
 		std::vector<uint8_t> temp(m_vertexBuffer.elementSize);
 
-		size_t offset{ 0ull };
+		u64 offset{ 0ull };
 		for (const auto& attrib : attributes_data)
 		{
 			std::memcpy(temp.data() + offset, &attrib.data[v * attrib.stride], attrib.stride);
@@ -242,19 +242,19 @@ size_t CVertexHandler::addVertices(const std::vector<FVertexAttributePointer>& a
 	return vertex_count;
 }
 
-size_t CVertexHandler::addIndices(const FVertexAttributePointer& indices)
+u64 CVertexHandler::addIndices(const FVertexAttributePointer& indices)
 {
 	m_indexBuffer.data.insert(m_indexBuffer.data.end(), indices.data, indices.data + (indices.count * m_indexBuffer.elementSize));
 	m_indexBuffer.elementCount += indices.count;
 	return indices.count;
 }
 
-size_t CVertexHandler::getLastVertex()
+u64 CVertexHandler::getLastVertex()
 {
 	return m_vertexBuffer.elementCount;
 }
 
-size_t CVertexHandler::getLastIndex()
+u64 CVertexHandler::getLastIndex()
 {
 	return m_indexBuffer.elementCount;
 }
@@ -264,7 +264,7 @@ const FVertexDeclarationInfo& CVertexHandler::getVertexDeclaration() const
 	return m_declaration;
 }
 
-size_t CVertexHandler::getHash() const
+u64 CVertexHandler::getHash() const
 {
 	return m_attributeHash;
 }
@@ -274,12 +274,12 @@ const std::string& CVertexHandler::getDefinitions() const
 	return m_definitions;
 }
 
-size_t CVertexHandler::getVertexHandle() const
+u64 CVertexHandler::getVertexHandle() const
 {
 	return m_vertexBuffer.buffer;
 }
 
-size_t CVertexHandler::getIndexHandle() const
+u64 CVertexHandler::getIndexHandle() const
 {
 	return m_indexBuffer.buffer;
 }
