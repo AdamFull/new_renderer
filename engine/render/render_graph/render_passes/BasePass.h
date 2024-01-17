@@ -20,6 +20,12 @@ namespace engine
 		{
 		};
 
+		enum class EPassType
+		{
+			eCompute,
+			eRender
+		};
+
 		class IBasePass
 		{
 		public:
@@ -29,6 +35,8 @@ namespace engine
 			virtual void bake(std::unordered_map<u64, FRenderGraphAttachmentOperationInfo>& resource_info) = 0;
 
 			virtual void execute(f32 dt) = 0;
+
+			virtual EPassType type() = 0;
 
 		protected:
 			EQueueTypeFlagBits m_queue{};
@@ -49,12 +57,15 @@ namespace engine
 		class IRenderPass : public IBasePass
 		{
 		public:
+			friend class CRenderGraph;
 			~IRenderPass() = default;
 
 			virtual void init(const FRenderPassCreateInfo& pass_ci);
 			virtual void bake(std::unordered_map<u64, FRenderGraphAttachmentOperationInfo>& resource_info);
 
 			void execute(f32 dt) override;
+
+			EPassType type() override { return EPassType::eRender; }
 		protected:
 			virtual void _render(const FRenderFrameInfo& frame_info) = 0;
 		protected:
@@ -71,6 +82,7 @@ namespace engine
 		class IComputePass : public IBasePass
 		{
 		public:
+			friend class CRenderGraph;
 			~IComputePass() = default;
 
 			virtual void init(const FComputePassCreateInfo& pass_ci);
@@ -78,6 +90,7 @@ namespace engine
 
 			void execute(f32 dt) override;
 
+			EPassType type() override { return EPassType::eCompute; }
 		protected:
 			virtual void _execute(const FComputeFrameInfo& frame_info) = 0;
 		protected:
