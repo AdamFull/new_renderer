@@ -12,6 +12,14 @@
 
 using namespace engine::render;
 
+struct FResourceAccessInfo
+{
+	ERenderResourceDependencyBarrierType type{};
+	u64 resource{ ~0ull };
+	u64 srcPassIndex{ ~0ull };
+	u64 dstPassIndex{ ~0ull };
+};
+
 void filter_pass_queue(std::vector<u64>& pass_list)
 {
 	std::unordered_set<u64> seen;
@@ -239,6 +247,27 @@ void CRenderGraph::create()
 		addRenderPass("visibility_buffer_write_pass", pass_ci);
 	}
 
+	//{
+	//	FRenderConfigRenderCreateInfo pass_ci{};
+	//	pass_ci.type = ERenderingType::eGeometry;
+	//	pass_ci.queue = EQueueTypeFlagBits::eGraphics;
+	//	pass_ci.shader = "visibilitybuffer:write";
+	//
+	//	pass_ci.sizeTarget = "zbuffer_depth_target";
+	//	pass_ci.setDepthTarget("zbuffer_depth_target");
+	//	pass_ci.setStencilTarget(pass_ci.depthResource);
+	//
+	//	pass_ci.bindReadResource("nodeBuffer", "NodeStorage");
+	//	pass_ci.bindReadResource("jointsBuffer", "SkinningJoints");
+	//
+	//	pass_ci.addWriteResource("visbuffer_geometry_target");
+	//	pass_ci.addWriteResource("visbuffer_matobj_target");
+	//	pass_ci.addWriteResource("visbuffer_skinvbo_target");
+	//	pass_ci.addReadResource("IndexedDrawIndirectBuffer");
+	//
+	//	addRenderPass("visibility_buffer_write_pass_2", pass_ci);
+	//}
+
 	{
 		FRenderConfigComputeCreateInfo pass_ci{};
 		pass_ci.type = EComputeType::eDefault;
@@ -364,6 +393,7 @@ u64 CRenderGraph::getRenderRersourceId(const std::string& name) const
 u64 CRenderGraph::addRenderPass(const std::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci)
 {
 	u64 pass_index = m_vRenderPasses.size();
+	m_vPassExecutionQueue.emplace_back(pass_index);
 
 	FRenderPassCreateInfo pass_ci{};
 	pass_ci.flipViewport = render_pass_ci.flipViewport;
@@ -388,6 +418,7 @@ u64 CRenderGraph::addRenderPass(const std::string& name, const FRenderConfigRend
 u64 CRenderGraph::addRenderPass(const std::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci)
 {
 	u64 pass_index = m_vRenderPasses.size();
+	m_vPassExecutionQueue.emplace_back(pass_index);
 
 	FComputePassCreateInfo pass_ci{};
 	applyRenderPassResources(pass_index, &compute_pass_ci, &pass_ci);
@@ -409,6 +440,20 @@ u64 CRenderGraph::addRenderPass(const std::string& name, const FRenderConfigComp
 	return pass_index;
 }
 
+template <class _Ty, class _KTy>
+struct counter_pair : std::pair <_Ty, _KTy>
+{
+	using std::pair<_Ty, _KTy>::pair;
+
+	bool operator== (const counter_pair& other)
+	{
+		std::pair p1 = *this;
+		std::pair p2 = other;
+
+		return p1 == p2;
+	}
+};
+
 void CRenderGraph::bake()
 {
 	if (m_backBufferResource == ~0ull)
@@ -424,18 +469,125 @@ void CRenderGraph::bake()
 		return;
 	}
 
-	m_vPassDependencies.resize(m_vRenderPasses.size());
-	m_vPassMergeDependencies.resize(m_vRenderPasses.size());
+	//m_vPassDependencies.resize(m_vRenderPasses.size());
+	//m_vPassMergeDependencies.resize(m_vRenderPasses.size());
+	//m_vPassProcessing.resize(m_vRenderPasses.size());
+	//
+	//for (u64 pass_index : backbuffer_resource.usages[ERenderResourceAccessFlagBits::eWrite])
+	//	traverseDependencies(pass_index);
+	//
+	//std::reverse(m_vPassExecutionQueue.begin(), m_vPassExecutionQueue.end());
+	//filter_pass_queue(m_vPassExecutionQueue);
+	//
+	//reorderPasses(m_vPassExecutionQueue);
+	//
+	m_vPassOrder.resize(m_vRenderPasses.size());
+	u64 pass_order{ 0ull };
+	for (u64 pass_index : m_vPassExecutionQueue)
+		m_vPassOrder.at(pass_index) = pass_order++;
 
-	for (u64 pass_index : backbuffer_resource.usages[ERenderResourceAccessFlagBits::eWrite])
-		traverseDependencies(pass_index);
+	// Generate dependency barriers
+	std::unordered_map<u64, std::vector<FResourceAccessInfo>> per_pass_resource_access{};
+	std::map<std::pair<ERenderResourceDependencyBarrierType, u64>, u64> unique_barrier_counter;
+	std::unordered_map<u64, u64> unique_resource_writes{};
 
-	std::reverse(m_vPassExecutionQueue.begin(), m_vPassExecutionQueue.end());
-	filter_pass_queue(m_vPassExecutionQueue);
+	for (u64 src_pass_index : m_vPassExecutionQueue)
+	{
+		auto src_pass_order = m_vPassOrder.at(src_pass_index);
+		auto& src_pass = m_vRenderPasses.at(src_pass_index);
+		for (const auto& [resource_group, resource_indices] : src_pass->m_renderResources)
+		{
+			ERenderResourceAccessFlagBits src_access_flag{};
+			ERenderResourceGroupFlagBits group_flag{};
+			unpackResourceGroup(resource_group, src_access_flag, group_flag);
 
+			for (u64 resource_index : resource_indices)
+			{
+				// Write first resource access barriers
+				if (src_access_flag == ERenderResourceAccessFlagBits::eWrite && !unique_resource_writes.count(resource_index))
+				{
+					auto& resource_access_infos = per_pass_resource_access[src_pass_index];
+					auto& access_info = resource_access_infos.emplace_back();
+					access_info.type = packDependencyBarrier(ERenderResourceAccessFlagBits::eNone, src_access_flag);
+					access_info.srcPassIndex = src_pass_index;
+					access_info.resource = resource_index;
+
+					unique_resource_writes[resource_index]++;
+				}
+
+				auto& render_resource = m_vRenderResources.at(resource_index);
+				for (const auto& [dst_access_flag, accessing_passes] : render_resource.usages)
+				{
+					for (u64 dst_pass_index : accessing_passes)
+					{
+						auto dst_pass_order = m_vPassOrder.at(dst_pass_index);
+						if ((src_pass_index == dst_pass_index) || (src_access_flag == ERenderResourceAccessFlagBits::eRead && dst_access_flag == ERenderResourceAccessFlagBits::eRead) || (dst_pass_order < src_pass_order))
+							continue;
+
+						auto barrier_type = packDependencyBarrier(src_access_flag, dst_access_flag);
+						
+						// Filter repeating barriers
+						auto resource_barrier_pair = std::make_pair(barrier_type, render_resource.handle);
+						if (unique_barrier_counter.count(resource_barrier_pair))
+							continue;
+
+						auto& resource_access_infos = per_pass_resource_access[dst_pass_index];
+						auto& access_info = resource_access_infos.emplace_back();
+						access_info.type = barrier_type;
+						access_info.srcPassIndex = src_pass_index;
+						access_info.dstPassIndex = dst_pass_index;
+						access_info.resource = resource_index;
+
+						unique_barrier_counter[resource_barrier_pair]++;
+					}
+				}
+			}
+		}
+	}
+
+	// Prepare resource barriers
+	for (const auto& [pass_index, access_infos] : per_pass_resource_access)
+	{
+		auto& pass_barriers = m_perPassResourceBarriers[pass_index];
+		for (const auto& access_info : access_infos)
+		{
+			auto& new_barrier = pass_barriers.emplace_back();
+			auto& render_resource = m_vRenderResources.at(access_info.resource);
+
+			if (access_info.srcPassIndex != ~0ull)
+			{
+				auto& src_pass = m_vRenderPasses.at(access_info.srcPassIndex);
+				new_barrier.srcPassType = src_pass->type();
+			}
+			
+			if (access_info.dstPassIndex != ~0ull)
+			{
+				auto& dst_pass = m_vRenderPasses.at(access_info.dstPassIndex);
+				new_barrier.dstPassType = dst_pass->type();
+			}
+
+			new_barrier.type = access_info.type;
+			new_barrier.resource.handle = render_resource.handle;
+			new_barrier.resource.type = render_resource.type;
+		}
+	}
+
+	// Build render passes
 	for (u64 pass_index : m_vPassExecutionQueue)
 	{
-		// If c
+		FPassBuildInfo build_info{};
+
+		auto& resource_barriers = per_pass_resource_access[pass_index];
+		for (const auto& access_info : resource_barriers)
+		{
+			auto& render_resource = m_vRenderResources.at(access_info.resource);
+			auto& attachment = build_info.attachments[access_info.resource];
+			attachment.loadOp = access_info.type == ERenderResourceDependencyBarrierType::eWriteAfterWrite ? ERenderResourceLoadOp::eLoad : ERenderResourceLoadOp::eDontCare;
+			attachment.storeOp = render_resource.usages.count(ERenderResourceAccessFlagBits::eRead) ? ERenderResourceStoreOp::eStore : ERenderResourceStoreOp::eDontCare;
+		}
+
+		auto& pass = m_vRenderPasses.at(pass_index);
+		pass->build(build_info);
 	}
 
 	return;
@@ -443,9 +595,15 @@ void CRenderGraph::bake()
 
 void CRenderGraph::execute(f32 dt)
 {
+	auto& render_context = m_pRenderInterface->getRenderContext();
+
 	for (u64 pass_index : m_vPassExecutionQueue)
 	{
+		auto& pass = m_vRenderPasses[pass_index];
+		auto& resource_barriers = m_perPassResourceBarriers[pass_index];
 
+		render_context->processResourceBarriers(pass->m_queue, resource_barriers);
+		pass->execute(dt);
 	}
 }
 
@@ -537,6 +695,7 @@ void CRenderGraph::applyMultiRenderResourceDependencies(u64 pass_index, EQueueTy
 void CRenderGraph::traverseDependencies(u64 current_pass_index, u64 stack_count)
 {
 	m_vPassExecutionQueue.emplace_back(current_pass_index);
+
 	auto& current_pass = m_vRenderPasses.at(current_pass_index);
 	for (const auto& [resource_group, resource_indices] : current_pass->m_renderResources)
 	{
@@ -560,124 +719,119 @@ void CRenderGraph::traverseDependencies(u64 current_pass_index, u64 stack_count)
 
 			for (u64 write_pass_index : writer_passes)
 			{
-				if (write_pass_index != current_pass_index)
-				{
-					m_vPassDependencies.at(current_pass_index).emplace(write_pass_index);
-
-					if(group_flag == ERenderResourceGroupFlagBits::eColor)
-						m_vPassMergeDependencies.at(current_pass_index).emplace(write_pass_index);
-				}
-			}
-
-			for (u64 write_pass_index : writer_passes)
-			{
 				if (write_pass_index == current_pass_index)
 					continue;
-				else if (write_pass_index == current_pass_index)
-					log_error("Pass depends on itself.");
 
+				m_vPassDependencies.at(current_pass_index).emplace(write_pass_index);
+
+				if (group_flag == ERenderResourceGroupFlagBits::eColor)
+					m_vPassMergeDependencies.at(current_pass_index).emplace(write_pass_index);
+
+				stack_count++;
 				traverseDependencies(write_pass_index, stack_count);
+				stack_count--;
+			}
+		}
+	}
+}
+
+bool CRenderGraph::checkPassDependencies(u64 dst_pass, u64 src_pass)
+{
+	if (dst_pass == src_pass)
+		return true;
+
+	for (const auto& dep : m_vPassDependencies[dst_pass])
+	{
+		if (checkPassDependencies(dep, src_pass))
+			return true;
+	}
+
+	return false;
+}
+
+void CRenderGraph::reorderPasses(std::vector<u64>& flattened_passes)
+{
+	for (const auto& pass_merge_deps : m_vPassMergeDependencies)
+	{
+		auto pass_index = u64(&pass_merge_deps - m_vPassMergeDependencies.data());
+		auto& pass_deps = m_vPassDependencies[pass_index];
+
+		for (const auto& merge_dep : pass_merge_deps)
+		{
+			for (const auto& dependee : pass_deps)
+			{
+				// Avoid cycles.
+				if (checkPassDependencies(dependee, merge_dep))
+					continue;
+
+				if (merge_dep != dependee)
+					m_vPassDependencies[merge_dep].insert(dependee);
 			}
 		}
 	}
 
-	stack_count++;
-}
+	if (flattened_passes.size() <= 2ull)
+		return;
 
-//void CRenderGraph::reorderPasses(std::vector<u64>& flattened_passes)
-//{
-//	for (auto& merge_passes : m_vPassMergeDependencies)
-//	{
-//		auto pass_index = u64(&merge_passes - m_vPassMergeDependencies.data());
-//		auto& pass_deps = m_vPassDependencies[pass_index];
-//
-//		for (auto& dependency : merge_passes)
-//		{
-//			for (auto& dependee : pass_deps)
-//			{
-//				// Avoid cycles.
-//				if (dependsOnPass(dependee, dependency))
-//					continue;
-//
-//				if (dependency != dependee)
-//					m_vPassDependencies[dependency].emplace(dependee);
-//			}
-//		}
-//	}
-//
-//	if (flattened_passes.size() <= 2)
-//		return;
-//
-//	std::vector<u64> unscheduled_passes;
-//	unscheduled_passes.reserve(m_vRenderPasses.size());
-//	std::swap(flattened_passes, unscheduled_passes);
-//
-//	const auto schedule = [&](unsigned index) 
-//		{
-//		flattened_passes.push_back(unscheduled_passes[index]);
-//		std::move(unscheduled_passes.begin() + index + 1, unscheduled_passes.end(), unscheduled_passes.begin() + index);
-//		unscheduled_passes.pop_back();
-//		};
-//
-//	schedule(0);
-//	while (!unscheduled_passes.empty())
-//	{
-//		// Find the next pass to schedule.
-//		// We can pick any pass N, if the pass does not depend on anything left in unscheduled_passes.
-//		// unscheduled_passes[0] is always okay as a fallback, so unless we find something better,
-//		// we will at least pick that.
-//
-//		// Ideally, we pick a pass which does not introduce any hard barrier.
-//		// A "hard barrier" here is where a pass depends directly on the pass before it forcing something ala vkCmdPipelineBarrier,
-//		// we would like to avoid this if possible.
-//
-//		// Find the pass which has the optimal overlap factor which means the number of passes can be scheduled in-between
-//		// the depender, and the dependee.
-//
-//		unsigned best_candidate = 0;
-//		unsigned best_overlap_factor = 0;
-//
-//		for (unsigned i = 0; i < unscheduled_passes.size(); i++)
-//		{
-//			unsigned overlap_factor = 0;
-//
-//			// Always try to merge passes if possible on tilers.
-//			// This might not make sense on desktop however,
-//			// so we can conditionally enable this path depending on our GPU.
-//			if (m_vPassMergeDependencies[unscheduled_passes[i]].count(flattened_passes.back()))
-//			{
-//				overlap_factor = ~0u;
-//			}
-//			else
-//			{
-//				for (auto itr = flattened_passes.rbegin(); itr != flattened_passes.rend(); ++itr)
-//				{
-//					if (dependsOnPass(unscheduled_passes[i], *itr))
-//						break;
-//					overlap_factor++;
-//				}
-//			}
-//
-//			if (overlap_factor <= best_overlap_factor)
-//				continue;
-//
-//			bool possible_candidate = true;
-//			for (unsigned j = 0; j < i; j++)
-//			{
-//				if (dependsOnPass(unscheduled_passes[i], unscheduled_passes[j]))
-//				{
-//					possible_candidate = false;
-//					break;
-//				}
-//			}
-//
-//			if (!possible_candidate)
-//				continue;
-//
-//			best_candidate = i;
-//			best_overlap_factor = overlap_factor;
-//		}
-//
-//		schedule(best_candidate);
-//	}
-//}
+	std::vector<u64> unscheduled_passes;
+	unscheduled_passes.reserve(m_vRenderPasses.size());
+	std::swap(flattened_passes, unscheduled_passes);
+
+	const auto schedule = [&](unsigned index) 
+		{
+		// Need to preserve the order of remaining elements.
+		flattened_passes.push_back(unscheduled_passes[index]);
+		std::move(unscheduled_passes.begin() + index + 1,
+			unscheduled_passes.end(),
+			unscheduled_passes.begin() + index);
+		unscheduled_passes.pop_back();
+		};
+
+	schedule(0);
+	while (!unscheduled_passes.empty())
+	{
+		u64 best_candidate = 0;
+		u64 best_overlap_factor = 0;
+
+		for (u64 i = 0ull; i < unscheduled_passes.size(); i++)
+		{
+			u64 overlap_factor = 0ull;
+
+			// Always try to merge passes if possible on tilers.
+			// This might not make sense on desktop however,
+			// so we can conditionally enable this path depending on our GPU.
+			if (m_vPassMergeDependencies[unscheduled_passes[i]].count(flattened_passes.back()))
+				overlap_factor = ~0ull;
+			else
+			{
+				for (auto itr = flattened_passes.rbegin(); itr != flattened_passes.rend(); ++itr)
+				{
+					if (checkPassDependencies(unscheduled_passes[i], *itr))
+						break;
+					overlap_factor++;
+				}
+			}
+
+			if (overlap_factor <= best_overlap_factor)
+				continue;
+
+			bool possible_candidate = true;
+			for (u64 j = 0; j < i; j++)
+			{
+				if (checkPassDependencies(unscheduled_passes[i], unscheduled_passes[j]))
+				{
+					possible_candidate = false;
+					break;
+				}
+			}
+
+			if (!possible_candidate)
+				continue;
+
+			best_candidate = i;
+			best_overlap_factor = overlap_factor;
+		}
+
+		schedule(best_candidate);
+	}
+}

@@ -319,6 +319,47 @@ namespace engine
 				}
 			}
 
+			inline vk::PipelineStageFlags2KHR get_translation_stage_flags(EPassType pass_type)
+			{
+				switch (pass_type)
+				{
+				case engine::render::EPassType::eCompute: return vk::PipelineStageFlagBits2KHR::eComputeShader; break;
+				case engine::render::EPassType::eRender: return vk::PipelineStageFlagBits2KHR::eFragmentShader | vk::PipelineStageFlagBits2KHR::eVertexShader; break;
+				}
+
+				return vk::PipelineStageFlagBits2KHR::eNone;
+			}
+
+			inline vk::AccessFlags2KHR get_translation_access_flags(ERenderResourceAccessFlagBits access_flag)
+			{
+				switch (access_flag)
+				{
+				case engine::render::ERenderResourceAccessFlagBits::eRead: return vk::AccessFlagBits2KHR::eMemoryWrite | vk::AccessFlagBits2KHR::eShaderWrite; break;
+				case engine::render::ERenderResourceAccessFlagBits::eWrite: return vk::AccessFlagBits2KHR::eMemoryRead | vk::AccessFlagBits2KHR::eShaderRead; break;
+				}
+
+				return vk::AccessFlagBits2KHR::eNone;
+			}
+
+			inline vk::ImageLayout get_render_target_intermediate_layout(const FVkTexture& texture)
+			{
+				auto usage_flags = get_texture_usage_flags(texture);
+				auto image_format = static_cast<vk::Format>(texture.initialData.base.format);
+				bool is_depth_stencil_attachment = is_depth_stencil_format(image_format);
+
+				if (usage_flags & vk::ImageUsageFlagBits::eStorage)
+					return vk::ImageLayout::eGeneral;
+				else if (usage_flags & vk::ImageUsageFlagBits::eColorAttachment)
+					return vk::ImageLayout::eColorAttachmentOptimal;
+				else if (usage_flags & vk::ImageUsageFlagBits::eDepthStencilAttachment)
+				{
+					// TODO: check is that stencil only target
+					return is_depth_stencil_attachment ? vk::ImageLayout::eDepthStencilAttachmentOptimal : vk::ImageLayout::eDepthAttachmentOptimal;
+				}
+				
+				return vk::ImageLayout::eUndefined;
+			}
+
 			inline vk::ImageLayout get_render_target_final_layout(const FVkTexture& texture)
 			{
 				auto usage_flags = get_texture_usage_flags(texture);
@@ -369,6 +410,29 @@ namespace engine
 					return vk::AttachmentStoreOp::eStore;
 
 				return vk::AttachmentStoreOp::eDontCare;
+			}
+
+			inline vk::AttachmentLoadOp get_attachment_load_op(const ERenderResourceLoadOp load_op)
+			{
+				switch (load_op)
+				{
+				case ERenderResourceLoadOp::eDontCare: return vk::AttachmentLoadOp::eDontCare;
+				case ERenderResourceLoadOp::eClear: return vk::AttachmentLoadOp::eClear;
+				case ERenderResourceLoadOp::eLoad: return vk::AttachmentLoadOp::eLoad;
+				}
+
+				return vk::AttachmentLoadOp::eNoneEXT;
+			}
+
+			inline vk::AttachmentStoreOp get_attachment_store_op(const ERenderResourceStoreOp store_op)
+			{
+				switch (store_op)
+				{
+				case ERenderResourceStoreOp::eDontCare: return vk::AttachmentStoreOp::eDontCare;
+				case ERenderResourceStoreOp::eStore: return vk::AttachmentStoreOp::eStore;
+				}
+
+				return vk::AttachmentStoreOp::eNone;
 			}
 
 			inline FVkImageTranslationInfo get_texture_layout_translation_info(const FVkTexture& texture, const FVkTextureTranslationInfo& translation_info)

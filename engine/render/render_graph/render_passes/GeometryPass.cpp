@@ -22,9 +22,9 @@ void CGeometryPass::init(const FRenderPassCreateInfo& pass_ci)
 #endif
 }
 
-void CGeometryPass::bake(std::unordered_map<u64, FRenderGraphAttachmentOperationInfo>& resource_info)
+void CGeometryPass::build(const FPassBuildInfo& build_info)
 {
-	IRenderPass::bake(resource_info);
+	IRenderPass::build(build_info);
 }
 
 void CGeometryPass::_render(const FRenderFrameInfo& frame_info)

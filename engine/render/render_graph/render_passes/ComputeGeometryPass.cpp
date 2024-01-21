@@ -22,9 +22,9 @@ void CComputeGeometryPass::init(const FComputePassCreateInfo& pass_ci)
 #endif
 }
 
-void CComputeGeometryPass::bake(std::unordered_map<u64, FRenderGraphAttachmentOperationInfo>& resource_info)
+void CComputeGeometryPass::build(const FPassBuildInfo& build_info)
 {
-	IComputePass::bake(resource_info);
+	IComputePass::build(build_info);
 }
 
 void CComputeGeometryPass::_execute(const FComputeFrameInfo& frame_info)

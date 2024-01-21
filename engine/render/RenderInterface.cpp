@@ -168,6 +168,7 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 void CRenderInterface::render(f32 dt)
 {
 	m_pRenderWorld->render(dt);
+	m_pRenderGraph->execute(dt);
 
 	m_pRenderContext->beginFrameCommandBuffers();
 

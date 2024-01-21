@@ -23,9 +23,9 @@ void CCascadedShadowMapPass::init(const FRenderPassCreateInfo& pass_ci)
 #endif
 }
 
-void CCascadedShadowMapPass::bake(std::unordered_map<u64, FRenderGraphAttachmentOperationInfo>& resource_info)
+void CCascadedShadowMapPass::build(const FPassBuildInfo& build_info)
 {
-	IRenderPass::bake(resource_info);
+	IRenderPass::build(build_info);
 }
 
 void CCascadedShadowMapPass::_render(const FRenderFrameInfo& frame_info)

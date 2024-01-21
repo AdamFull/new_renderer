@@ -14,7 +14,7 @@ namespace engine
 			~CComputePass() = default;
 
 			void init(const FComputePassCreateInfo& pass_ci) override;
-			void bake(std::unordered_map<u64, FRenderGraphAttachmentOperationInfo>& resource_info) override;
+			void build(const FPassBuildInfo& build_info) override;
 		private:
 			void _execute(const FComputeFrameInfo& frame_info) override;
 		private:

@@ -52,6 +52,8 @@ namespace engine
 				void pushC2CBarrier(EQueueTypeFlagBits queue_type, const std::vector<u64>& texture_ids) override;
 				void pushC2GBarrier(EQueueTypeFlagBits queue_type, const std::vector<u64>& texture_ids) override;
 
+				void processResourceBarriers(EQueueTypeFlagBits queue, const std::vector<FResourceBarrierInfo>& barriers) override;
+
 				void beginRendering(const FBeginRenderingInfo& rendering_info) override;
 				void endRendering(const FBeginRenderingInfo& rendering_info) override;
 

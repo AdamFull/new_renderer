@@ -288,6 +288,8 @@ namespace engine
 			virtual void pushC2CBarrier(EQueueTypeFlagBits queue_type, const std::vector<u64>& texture_ids) = 0;
 			virtual void pushC2GBarrier(EQueueTypeFlagBits queue_type, const std::vector<u64>& texture_ids) = 0;
 
+			virtual void processResourceBarriers(EQueueTypeFlagBits queue, const std::vector<FResourceBarrierInfo>& barriers) = 0;
+
 			virtual void beginRendering(const FBeginRenderingInfo& rendering_info) = 0;
 			virtual void endRendering(const FBeginRenderingInfo& rendering_info) = 0;
 

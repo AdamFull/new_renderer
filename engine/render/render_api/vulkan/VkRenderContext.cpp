@@ -1037,6 +1037,64 @@ void CVkRenderContext::pushC2GBarrier(EQueueTypeFlagBits queue_type, const std::
 	processMemoryBarriers(command_buffer, translation_info);
 }
 
+void CVkRenderContext::processResourceBarriers(EQueueTypeFlagBits queue, const std::vector<FResourceBarrierInfo>& barriers)
+{
+	auto& command_buffer = getLastCommandBuffer(queue);
+
+	FVkTranslationInfo translation_info{};
+
+	for (const auto& resource_barrier : barriers)
+	{
+		ERenderResourceAccessFlagBits src_resource_access{};
+		ERenderResourceAccessFlagBits dst_resource_access{};
+		unpackDependencyBarrier(resource_barrier.type, src_resource_access, dst_resource_access);
+
+		if (resource_barrier.resource.type & ERenderResourceTypeFlagBits::eAllImage)
+		{
+			auto& textures = m_pResources->data<FVkTexture>();
+			auto& texture = textures.at(resource_barrier.resource.handle).at(m_pDevice->m_swapchain.currentFrame);
+
+			vk::ImageLayout new_image_layout{ vk::ImageLayout::eUndefined };
+			if (resource_barrier.type == ERenderResourceDependencyBarrierType::eWriteAfterNothing)
+				new_image_layout = get_render_target_intermediate_layout(*texture);
+			else if (resource_barrier.type == ERenderResourceDependencyBarrierType::eWriteAfterWrite)
+				new_image_layout = texture->layout;
+			else
+				new_image_layout = get_render_target_final_layout(*texture);
+
+			auto& texture_barrier = translation_info.imageTranslationInfos.emplace_back();
+			texture_barrier.srcStageMask = get_translation_stage_flags(texture->layout);
+			texture_barrier.srcAccessMask = get_translation_access_flags(texture->layout);
+			texture_barrier.oldLayout = texture->layout;
+			texture_barrier.dstStageMask = get_translation_stage_flags(new_image_layout);
+			texture_barrier.dstAccessMask = get_translation_access_flags(new_image_layout);
+			texture->layout = texture_barrier.newLayout = new_image_layout;
+			texture_barrier.handle = texture->image.handle;
+
+			texture_barrier.subresourceRange.aspectMask = get_texture_aspect_flags(*texture);
+			texture_barrier.subresourceRange.baseArrayLayer = 0u;
+			texture_barrier.subresourceRange.layerCount = texture->totalLayers;
+			texture_barrier.subresourceRange.baseMipLevel = 0u;
+			texture_barrier.subresourceRange.levelCount = texture->initialData.base.mipLevels;
+		}
+		else
+		{
+			auto& buffers = m_pResources->data<FVkBuffer>();
+			auto& buffer = buffers.at(resource_barrier.resource.handle).at(0);
+		
+			FVkBufferTranslationInfo buffer_translation_info{};
+			buffer_translation_info.handle = buffer->handle;
+			buffer_translation_info.size = buffer->size;
+			buffer_translation_info.srcStageMask = get_translation_stage_flags(resource_barrier.srcPassType);
+			buffer_translation_info.srcAccessMask = get_translation_access_flags(src_resource_access);
+			buffer_translation_info.dstStageMask = get_translation_stage_flags(resource_barrier.dstPassType);
+			buffer_translation_info.dstAccessMask = get_translation_access_flags(dst_resource_access);
+			translation_info.bufferTranslationInfos.emplace_back(buffer_translation_info);
+		}
+	}
+
+	processMemoryBarriers(command_buffer, translation_info);
+}
 
 void CVkRenderContext::beginRendering(const FBeginRenderingInfo& rendering_info)
 {
@@ -1222,16 +1280,16 @@ void CVkRenderContext::beginRendering2(const FBeginRendering2Info& rendering_inf
 
 	// Prepare render targets
 	std::vector<vk::RenderingAttachmentInfoKHR> color_attachments{};
-	for (const auto& attachment_info : rendering_info.colorAttachments)
+	for (const auto& color_attachment_info : rendering_info.colorAttachments)
 	{
-		auto& render_target = textures.at(attachment_info.handle).at(m_pDevice->m_swapchain.currentFrame);
+		auto& render_target = textures.at(color_attachment_info.handle).at(m_pDevice->m_swapchain.currentFrame);
 
 		auto& attachment_info = color_attachments.emplace_back();
 		attachment_info.imageView = render_target->imageViews.front();
 		attachment_info.imageLayout = render_target->layout;
 		attachment_info.resolveMode = vk::ResolveModeFlagBits::eNone;
-		attachment_info.loadOp = get_attachment_load_op(*render_target);
-		attachment_info.storeOp = get_attachment_store_op(*render_target);
+		attachment_info.loadOp = get_attachment_load_op(color_attachment_info.loadOp);
+		attachment_info.storeOp = get_attachment_store_op(color_attachment_info.storeOp);
 		attachment_info.clearValue = clear_values[0];
 	}
 
@@ -1244,8 +1302,8 @@ void CVkRenderContext::beginRendering2(const FBeginRendering2Info& rendering_inf
 		depth_attachment.imageView = depth_target->imageViews.front();
 		depth_attachment.imageLayout = depth_target->layout;
 		depth_attachment.resolveMode = vk::ResolveModeFlagBits::eNone;
-		depth_attachment.loadOp = get_attachment_load_op(*depth_target);
-		depth_attachment.storeOp = get_attachment_store_op(*depth_target);
+		depth_attachment.loadOp = get_attachment_load_op(rendering_info.depthAttachment.loadOp);
+		depth_attachment.storeOp = get_attachment_store_op(rendering_info.depthAttachment.storeOp);
 		depth_attachment.clearValue = clear_values[1];
 	}
 
@@ -1257,8 +1315,8 @@ void CVkRenderContext::beginRendering2(const FBeginRendering2Info& rendering_inf
 		stencil_attachment.imageView = stencil_target->imageViews.front();
 		stencil_attachment.imageLayout = stencil_target->layout;
 		stencil_attachment.resolveMode = vk::ResolveModeFlagBits::eNone;
-		stencil_attachment.loadOp = get_attachment_load_op(*stencil_target);
-		stencil_attachment.storeOp = get_attachment_store_op(*stencil_target);
+		stencil_attachment.loadOp = get_attachment_load_op(rendering_info.stencilAttachment.loadOp);
+		stencil_attachment.storeOp = get_attachment_store_op(rendering_info.stencilAttachment.storeOp);
 		stencil_attachment.clearValue = clear_values[2];
 	}
 

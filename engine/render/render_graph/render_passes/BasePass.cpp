@@ -17,7 +17,7 @@ void IRenderPass::init(const FRenderPassCreateInfo& pass_ci)
 	m_stencilTarget = pass_ci.stencilTarget;
 }
 
-void IRenderPass::bake(std::unordered_map<u64, FRenderGraphAttachmentOperationInfo>& resource_info)
+void IRenderPass::build(const FPassBuildInfo& build_info)
 {
 	auto& render_graph = m_pRenderInterface->getRenderGraph();
 
@@ -28,27 +28,32 @@ void IRenderPass::bake(std::unordered_map<u64, FRenderGraphAttachmentOperationIn
 			continue;
 
 		auto& render_resource = render_graph->getRenderResource(resource_id);
+		auto& resource_info = build_info.getAttachmentInfo(resource_id);
 
 		auto& color_attachment = m_vColorAttachments.emplace_back();
 		color_attachment.handle = render_resource.handle;
-		color_attachment.loadOp = resource_info[resource_id].loadOp;
-		color_attachment.storeOp = resource_info[resource_id].storeOp;
+		color_attachment.loadOp = resource_info.loadOp;
+		color_attachment.storeOp = resource_info.storeOp;
 	}
 
 	if (m_depthTarget != ~0ull)
 	{
 		auto& render_resource = render_graph->getRenderResource(m_depthTarget);
+		auto& resource_info = build_info.getAttachmentInfo(m_depthTarget);
+
 		m_depthAttachment.handle = render_resource.handle;
-		m_depthAttachment.loadOp = resource_info[m_depthTarget].loadOp;
-		m_depthAttachment.storeOp = resource_info[m_depthTarget].storeOp;
+		m_depthAttachment.loadOp = resource_info.loadOp;
+		m_depthAttachment.storeOp = resource_info.storeOp;
 	}
 
 	if (m_stencilTarget != ~0ull)
 	{
 		auto& render_resource = render_graph->getRenderResource(m_stencilTarget);
+		auto& resource_info = build_info.getAttachmentInfo(m_stencilTarget);
+
 		m_stencilAttachment.handle = render_resource.handle;
-		m_stencilAttachment.loadOp = resource_info[m_stencilTarget].loadOp;
-		m_stencilAttachment.storeOp = resource_info[m_stencilTarget].storeOp;
+		m_stencilAttachment.loadOp = resource_info.loadOp;
+		m_stencilAttachment.storeOp = resource_info.storeOp;
 	}
 }
 
@@ -106,7 +111,7 @@ void IComputePass::init(const FComputePassCreateInfo& pass_ci)
 	m_bakedBindings = pass_ci.bindings;
 }
 
-void IComputePass::bake(std::unordered_map<u64, FRenderGraphAttachmentOperationInfo>& resource_info)
+void IComputePass::build(const FPassBuildInfo& build_info)
 {
 
 }

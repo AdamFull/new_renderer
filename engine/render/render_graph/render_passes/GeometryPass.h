@@ -14,7 +14,7 @@ namespace engine
 			~CGeometryPass() = default;
 
 			void init(const FRenderPassCreateInfo& pass_ci) override;
-			void bake(std::unordered_map<u64, FRenderGraphAttachmentOperationInfo>& resource_info) override;
+			void build(const FPassBuildInfo& build_info) override;
 		private:
 			void _render(const FRenderFrameInfo& frame_info) override;
 		protected:

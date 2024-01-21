@@ -44,10 +44,9 @@ namespace engine
 			void applyMultiRenderResourceDependencies(u64 pass_index, EQueueTypeFlagBits queue_type, const std::unordered_map<ERenderResourceGroupType, std::vector<u64>>& associated_resources);
 
 			void traverseDependencies(u64 current_pass_index, u64 stack_count = 0ull);
-			//void dependPassesRecursive(const std::unique_ptr<IBasePass>& pass, const std::unordered_set<u64>& write_passes, u64 stack_count, bool no_check, bool ignore_self, bool merge_dependency);
-			//void filterPasses(std::vector<u64>& pass_list);
-			//bool dependsOnPass(u64 dst_pass, u64 src_pass);
-			//void reorderPasses(std::vector<u64>& flattened_passes);
+			void traverseDependencies2(u64 current_pass_index, u64 stack_count = 0ull);
+			bool checkPassDependencies(u64 dst_pass, u64 src_pass);
+			void reorderPasses(std::vector<u64>& flattened_passes);
 		protected:
 			std::vector<std::unique_ptr<IBufferObject>> m_vBufferHandlers{};
 			std::vector<FRenderResource> m_vRenderResources{};
@@ -57,7 +56,10 @@ namespace engine
 			std::vector<std::unique_ptr<IBasePass>> m_vRenderPasses{};
 			std::unordered_map<std::string, u64> m_nameToPass{};
 		private:
+			std::unordered_map<u64, std::vector<FResourceBarrierInfo>> m_perPassResourceBarriers{};
+
 			std::vector<u64> m_vPassExecutionQueue{};
+			std::vector<u64> m_vPassOrder{};
 			std::vector<std::unordered_set<u64>> m_vPassDependencies{};
 			std::vector<std::unordered_set<u64>> m_vPassMergeDependencies{};
 			IRenderInterface* m_pRenderInterface{ nullptr };

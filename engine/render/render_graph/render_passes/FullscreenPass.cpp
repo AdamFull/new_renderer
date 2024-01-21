@@ -64,9 +64,9 @@ void CFullscreenPass::init(const FRenderPassCreateInfo& pass_ci)
 #endif
 }
 
-void CFullscreenPass::bake(std::unordered_map<u64, FRenderGraphAttachmentOperationInfo>& resource_info)
+void CFullscreenPass::build(const FPassBuildInfo& build_info)
 {
-	IRenderPass::bake(resource_info);
+	IRenderPass::build(build_info);
 }
 
 void CFullscreenPass::_render(const FRenderFrameInfo& frame_info)

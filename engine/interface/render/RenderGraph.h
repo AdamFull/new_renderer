@@ -22,6 +22,7 @@ namespace engine
 
 		enum class ERenderResourceAccessFlagBits : u16
 		{
+			eNone,
 			eRead = 1 << 0,
 			eWrite = 1 << 1
 		};
@@ -50,14 +51,34 @@ namespace engine
 			eStorageWrite				= utl::packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceGroupFlagBits::eStorage)),
 		};
 
-		enum ERenderResourceDependencyBarrierType : u32
+		enum class ERenderResourceDependencyBarrierType : u32
 		{
 			eReadAfterWrite				= utl::packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceAccessFlagBits::eRead)),
 			eWriteAfterNothing			= utl::packUint16x2(utl::cast<u16>(0u), utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite)),
 			eWriteAfterRead				= utl::packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eRead), utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite)),
 			eWriteAfterWrite			= utl::packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite))
 		};
-		using ERenderResourceDependencyBarrierTypeMask = u32;
+
+		enum class ERenderResourceLoadOp : u32
+		{
+			eDontCare,
+			eClear,
+			eLoad
+		};
+
+		enum class ERenderResourceStoreOp : u32
+		{
+			eDontCare,
+			eStore
+		};
+
+		enum class EPassType
+		{
+			eNone,
+			eCompute,
+			eRender
+		};
+
 
 		inline constexpr ERenderResourceGroupType packResourceGroup(ERenderResourceAccessFlagBits access_flag, ERenderResourceGroupFlagBits group_flag)
 		{
@@ -85,17 +106,45 @@ namespace engine
 			dst = utl::cast<ERenderResourceAccessFlagBits>(dst_mask);
 		}
 
+		struct FRenderResourceView
+		{
+			ERenderResourceTypeFlagBits type{};
+			u64 handle{ ~0ull };
+		};
+
+		struct FResourceBarrierInfo
+		{
+			ERenderResourceDependencyBarrierType type{};
+			FRenderResourceView resource{};
+			EPassType srcPassType{};
+			EPassType dstPassType{};
+		};
+
 		struct FRenderGraphAttachmentInfo
 		{
 			u64 handle{ ~0ull };
-			u32 loadOp{ ~0u };
-			u32 storeOp{ ~0u };
+			ERenderResourceLoadOp loadOp{};
+			ERenderResourceStoreOp storeOp{};
 		};
 
 		struct FRenderGraphAttachmentOperationInfo
 		{
-			u32 loadOp{ ~0u };
-			u32 storeOp{ ~0u };
+			ERenderResourceLoadOp loadOp{};
+			ERenderResourceStoreOp storeOp{};
+		};
+
+		struct FPassBuildInfo
+		{
+			std::unordered_map<u64, FRenderGraphAttachmentOperationInfo> attachments{};
+
+			const FRenderGraphAttachmentOperationInfo& getAttachmentInfo(u64 resource_index) const
+			{
+				auto found = attachments.find(resource_index);
+				if (found != attachments.end())
+					return found->second;
+
+				return {};
+			}
 		};
 
 		struct FBeginRendering2Info
@@ -136,7 +185,7 @@ namespace engine
 
 		struct FRenderResource
 		{
-			ERenderResourceTypeFlags type{ 0u };
+			ERenderResourceTypeFlagBits type{};
 			EQueueTypeFlags queuesUsed{ 0u };
 			u64 handle{ ~0ull };
 
