@@ -456,7 +456,7 @@ struct counter_pair : std::pair <_Ty, _KTy>
 	}
 };
 
-void CRenderGraph::bake()
+void CRenderGraph::build()
 {
 	if (m_backBufferResource == ~0ull)
 	{

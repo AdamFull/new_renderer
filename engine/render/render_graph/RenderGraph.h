@@ -35,7 +35,7 @@ namespace engine
 			u64 addRenderPass(const std::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci) override;
 			u64 addRenderPass(const std::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci) override;
 
-			void bake() override;
+			void build() override;
 
 			void execute(f32 dt) override;
 		private:

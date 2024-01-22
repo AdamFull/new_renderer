@@ -76,7 +76,7 @@ namespace engine
 				"rgb32_sfloat", EApiDataFormat::eRGB32_SFLOAT,
 				"rgba32_sfloat", EApiDataFormat::eRGBA32_SFLOAT
 			);
-
+			
 			// Register ETextureImageTypeFlagBits
 			lua->new_enum(
 				"TexType",
@@ -169,6 +169,12 @@ namespace engine
 			register_rect2d<f32>("F32Rect2D", lua);
 			register_rect2d<f64>("F64Rect2D", lua);
 
+			// 
+			lua->new_usertype<ETextureCreateFlags>(
+				"TextureCreateFlags",
+				sol::constructors<ETextureCreateFlags(), ETextureCreateFlags(u32), ETextureCreateFlags(ETextureCreateFlagBits), ETextureCreateFlags(const ETextureCreateFlags&)>()
+			);
+
 			// FTextureCreateInfo registration
 			lua->new_usertype<FTextureCreateInfo>(
 				"TextureCI",
@@ -187,7 +193,7 @@ namespace engine
 					static_cast<void(FTextureCreateInfo::*)(u32, u32)>(&FTextureCreateInfo::setFixedSize2D)
 				),
 				"set_size_scale", &FTextureCreateInfo::setSizeScale,
-				"use_as_back_buffer", &FTextureCreateInfo::useAsBackbuffer,
+				"use_as_backbuffer", &FTextureCreateInfo::useAsBackbuffer,
 				"enable_mip_map", &FTextureCreateInfo::enableMipMap
 			);
 

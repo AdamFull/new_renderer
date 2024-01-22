@@ -145,14 +145,15 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 	m_pRenderContext->createGlobalDescriptor(global_buffer_ci);
 
 	m_pRenderWorld->create();
-	m_pRenderGraph->create();
-	m_pRenderGraph->bake();
+	//m_pRenderGraph->create();
 
 	m_pRenderScriptCore->create(this);
 
-	//std::vector<uint8_t> render_config{};
-	//m_pVFS->readFile("/root/embed/rendering/test_render_config.lua", render_config);
-	//m_pRenderScriptCore->build("render_config", render_config);
+	std::vector<uint8_t> render_config{};
+	m_pVFS->readFile("/root/embed/rendering/test_render_config.lua", render_config);
+	m_pRenderScriptCore->build("render_config", render_config);
+
+	m_pRenderGraph->build();
 }
 
 void CRenderInterface::render(f32 dt)

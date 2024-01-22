@@ -267,7 +267,7 @@ namespace engine
 			virtual u64 addRenderPass(const std::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci) = 0;
 			virtual u64 addRenderPass(const std::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci) = 0;
 
-			virtual void bake() = 0;
+			virtual void build() = 0;
 
 			virtual void execute(f32 dt) = 0;
 		};
