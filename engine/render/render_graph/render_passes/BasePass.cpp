@@ -4,6 +4,18 @@
 
 using namespace engine::render;
 
+void IBasePass::execute(f32 dt)
+{
+	auto& render_context = m_pRenderInterface->getRenderContext();
+	if (render_context->isSwapChainFinished() && m_bOneTime && m_bCanExecute)
+		m_bCanExecute = false;
+}
+
+bool IBasePass::canExecute()
+{
+	return m_bCanExecute;
+}
+
 void IRenderPass::init(const FRenderPassCreateInfo& pass_ci)
 {
 	m_queue = pass_ci.queue;
@@ -11,6 +23,7 @@ void IRenderPass::init(const FRenderPassCreateInfo& pass_ci)
 	m_sizeTarget = pass_ci.sizeTarget;
 	m_renderResources = pass_ci.resources;
 	m_bakedBindings = pass_ci.bindings;
+	m_bOneTime = pass_ci.oneTime;
 
 	m_bFlipViewport = pass_ci.flipViewport;
 	m_depthTarget = pass_ci.depthTarget;
@@ -59,6 +72,8 @@ void IRenderPass::build(const FPassBuildInfo& build_info)
 
 void IRenderPass::execute(f32 dt)
 {
+	IBasePass::execute(dt);
+
 	auto& render_context = m_pRenderInterface->getRenderContext();
 	auto& render_graph = m_pRenderInterface->getRenderGraph();
 
@@ -79,8 +94,8 @@ void IRenderPass::execute(f32 dt)
 		}
 
 		auto& resource_sizes = render_context->getTextureInfo(render_resource.handle);
-		beginRenderingInfo.renderArea.size.x = resource_sizes.width;
-		beginRenderingInfo.renderArea.size.y = resource_sizes.height;
+		beginRenderingInfo.renderArea.size.x = resource_sizes.size.width;
+		beginRenderingInfo.renderArea.size.y = resource_sizes.size.height;
 	}
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -109,6 +124,7 @@ void IComputePass::init(const FComputePassCreateInfo& pass_ci)
 	m_sizeTarget = pass_ci.sizeTarget;
 	m_renderResources = pass_ci.resources;
 	m_bakedBindings = pass_ci.bindings;
+	m_bOneTime = pass_ci.oneTime;
 }
 
 void IComputePass::build(const FPassBuildInfo& build_info)
@@ -118,8 +134,22 @@ void IComputePass::build(const FPassBuildInfo& build_info)
 
 void IComputePass::execute(f32 dt)
 {
+	IBasePass::execute(dt);
+
+	auto& render_context = m_pRenderInterface->getRenderContext();
+	auto& render_graph = m_pRenderInterface->getRenderGraph();
+
 	FComputeFrameInfo frame_info{};
 	frame_info.deltaTime = dt;
+
+	if (m_sizePolicy == ERenderingSizeType::eFromRenderTarget && m_sizeTarget != ~0ull)
+	{
+		auto& render_resource = render_graph->getRenderResource(m_sizeTarget);
+
+		auto& resource_sizes = render_context->getTextureInfo(render_resource.handle);
+		m_dispatchGroup.x = resource_sizes.size.width;
+		m_dispatchGroup.y = resource_sizes.size.height;
+	}
 
 	_execute(frame_info);
 }

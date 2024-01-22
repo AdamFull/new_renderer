@@ -47,8 +47,7 @@ void CRenderGraph::create()
 		FTextureCreateInfo texture_ci{};
 		texture_ci.format = render_context->getApiFormat(EApiDataFormat::eRG16_SFLOAT);
 		texture_ci.typeFlags = ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage;
-		texture_ci.sizePolicy = ERenderTargetSizePolicy::eFixed;
-		texture_ci.width = texture_ci.height = 1024;
+		texture_ci.setFixedSize2D(1024);
 		addRenderResource("brdf_lut_target", texture_ci);
 	}
 
@@ -56,8 +55,7 @@ void CRenderGraph::create()
 		FTextureCreateInfo texture_ci{};
 		texture_ci.format = render_context->getApiFormat(EApiDataFormat::eRGBA32_SFLOAT);
 		texture_ci.typeFlags = ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eCubemap | ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage;
-		texture_ci.sizePolicy = ERenderTargetSizePolicy::eFixed;
-		texture_ci.width = texture_ci.height = 64;
+		texture_ci.setFixedSize2D(64);
 		addRenderResource("irradiance_cube_target", texture_ci);
 	}
 
@@ -65,9 +63,8 @@ void CRenderGraph::create()
 		FTextureCreateInfo texture_ci{};
 		texture_ci.format = render_context->getApiFormat(EApiDataFormat::eRGBA16_SFLOAT);
 		texture_ci.typeFlags = ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eCubemap | ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage;
-		texture_ci.sizePolicy = ERenderTargetSizePolicy::eFixed;
-		texture_ci.width = texture_ci.height = 512;
-		texture_ci.mipLevels = utl::cast<u32>(std::floor(std::log2((std::max)(512, 512)))) + 1u;
+		texture_ci.setFixedSize2D(512);
+		texture_ci.enableMipMap();
 		addRenderResource("prefiltered_cube_target", texture_ci);
 	}
 
@@ -75,9 +72,7 @@ void CRenderGraph::create()
 		FTextureCreateInfo texture_ci{};
 		texture_ci.format = render_context->getDepthFormat(false);
 		texture_ci.typeFlags = ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eArray | ETextureCreateFlagBits::eSamplable;
-		texture_ci.sizePolicy = ERenderTargetSizePolicy::eFixed;
-		texture_ci.width = cascade_shadow_map_resolution;
-		texture_ci.height = cascade_shadow_map_resolution;
+		texture_ci.setFixedSize2D(cascade_shadow_map_resolution);
 		texture_ci.arrayLayers = cascade_shadow_map_cascade_count * max_directional_light_shadow_count;
 		addRenderResource("cascaded_shadows_target", texture_ci);
 	}
@@ -86,9 +81,7 @@ void CRenderGraph::create()
 		FTextureCreateInfo texture_ci{};
 		texture_ci.format = render_context->getApiFormat(EApiDataFormat::eRGBA8_UNORM);
 		texture_ci.typeFlags = ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eSamplable;
-		texture_ci.sizePolicy = ERenderTargetSizePolicy::eScalable;
-		texture_ci.width = surface_resolution.x;
-		texture_ci.height = surface_resolution.y;
+		texture_ci.setSizeScale(1.f);
 		addRenderResource("visbuffer_geometry_target", texture_ci);
 	}
 
@@ -96,9 +89,7 @@ void CRenderGraph::create()
 		FTextureCreateInfo texture_ci{};
 		texture_ci.format = render_context->getApiFormat(EApiDataFormat::eRGBA8_UNORM);
 		texture_ci.typeFlags = ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eSamplable;
-		texture_ci.sizePolicy = ERenderTargetSizePolicy::eScalable;
-		texture_ci.width = surface_resolution.x;
-		texture_ci.height = surface_resolution.y;
+		texture_ci.setSizeScale(1.f);
 		addRenderResource("visbuffer_matobj_target", texture_ci);
 	}
 
@@ -106,9 +97,7 @@ void CRenderGraph::create()
 		FTextureCreateInfo texture_ci{};
 		texture_ci.format = render_context->getApiFormat(EApiDataFormat::eRGBA8_UNORM);
 		texture_ci.typeFlags = ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eSamplable;
-		texture_ci.sizePolicy = ERenderTargetSizePolicy::eScalable;
-		texture_ci.width = surface_resolution.x;
-		texture_ci.height = surface_resolution.y;
+		texture_ci.setSizeScale(1.f);
 		addRenderResource("visbuffer_skinvbo_target", texture_ci);
 	}
 
@@ -116,9 +105,7 @@ void CRenderGraph::create()
 		FTextureCreateInfo texture_ci{};
 		texture_ci.format = render_context->getDepthFormat(false);
 		texture_ci.typeFlags = ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eSamplable;
-		texture_ci.sizePolicy = ERenderTargetSizePolicy::eScalable;
-		texture_ci.width = surface_resolution.x;
-		texture_ci.height = surface_resolution.y;
+		texture_ci.setSizeScale(1.f);
 		addRenderResource("zbuffer_depth_target", texture_ci);
 	}
 
@@ -126,9 +113,7 @@ void CRenderGraph::create()
 		FTextureCreateInfo texture_ci{};
 		texture_ci.format = render_context->getApiFormat(EApiDataFormat::eRGBA16_SFLOAT);
 		texture_ci.typeFlags = ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage;
-		texture_ci.sizePolicy = ERenderTargetSizePolicy::eScalable;
-		texture_ci.width = surface_resolution.x;
-		texture_ci.height = surface_resolution.y;
+		texture_ci.setSizeScale(1.f);
 		addRenderResource("final_lighting_target", texture_ci);
 	}
 
@@ -136,10 +121,7 @@ void CRenderGraph::create()
 		FTextureCreateInfo texture_ci{};
 		texture_ci.format = render_context->getPresentFormat();
 		texture_ci.typeFlags = ETextureCreateFlagBits::e2D;
-		texture_ci.sizePolicy = ERenderTargetSizePolicy::eFull;
-		texture_ci.width = surface_resolution.x;
-		texture_ci.height = surface_resolution.y;
-		texture_ci.isSwapchainTarget = true;
+		texture_ci.useAsBackbuffer();
 		addRenderResource("present_target", texture_ci);
 	}
 
@@ -270,7 +252,7 @@ void CRenderGraph::create()
 
 	{
 		FRenderConfigComputeCreateInfo pass_ci{};
-		pass_ci.type = EComputeType::eDefault;
+		pass_ci.type = EComputeType::eGeometry;
 		pass_ci.queue = EQueueTypeFlagBits::eGraphics;
 		pass_ci.shader = "visibilitybuffer:shade";
 
@@ -309,6 +291,8 @@ void CRenderGraph::create()
 		pass_ci.shader = "testing:screenspace";
 		pass_ci.flipViewport = true;
 
+		pass_ci.sizeTarget = "present_target";
+
 		pass_ci.bindReadResource("input_image", "final_lighting_target");
 		pass_ci.addWriteResource("present_target");
 
@@ -329,7 +313,7 @@ u64 CRenderGraph::addStaticResource(const std::string& name, const std::string& 
 	FTextureUploadInfo upload_info{};
 	new_render_resource.handle = m_pRenderInterface->loadTexture(path, create_info, upload_info);
 
-	if (new_render_resource.handle != ~0ull)
+	if (new_render_resource.handle == ~0ull)
 		new_render_resource.handle = render_context->createTexture(name, create_info, std::move(upload_info));
 
 	return new_render_resource.handle;
@@ -338,14 +322,26 @@ u64 CRenderGraph::addStaticResource(const std::string& name, const std::string& 
 u64 CRenderGraph::addRenderResource(const std::string& name, const FTextureCreateInfo& texture_ci)
 {
 	auto& render_context = m_pRenderInterface->getRenderContext();
-
+	auto render_extent = render_context->getRenderResolution();
 	auto resource_index = m_vRenderResources.size();
 
+	FTextureCreateInfo texture_create_info{ texture_ci };
+	if (texture_create_info.size.policy == ERenderTargetSizePolicy::eFull)
+	{
+		texture_create_info.size.width = render_extent.x;
+		texture_create_info.size.height = render_extent.y;
+	}
+	else if (texture_create_info.size.policy == ERenderTargetSizePolicy::eScalable)
+	{
+		texture_create_info.size.width = utl::cast<u32>(utl::cast<f32>(render_extent.x) * texture_create_info.size.scale);
+		texture_create_info.size.height = utl::cast<u32>(utl::cast<f32>(render_extent.y) * texture_create_info.size.scale);
+	}
+
 	auto& new_render_resource = m_vRenderResources.emplace_back();
-	new_render_resource.handle = render_context->createRenderTargets(name, texture_ci);
+	new_render_resource.handle = render_context->createRenderTargets(name, texture_create_info);
 	new_render_resource.type = (texture_ci.typeFlags & ETextureCreateFlagBits::eStorage) ? ERenderResourceTypeFlagBits::eStorageTarget : ERenderResourceTypeFlagBits::eRenderTarget;
 
-	if (m_backBufferResource == ~0ull && texture_ci.isSwapchainTarget)
+	if (m_backBufferResource == ~0ull && texture_ci.backbuffer)
 		m_backBufferResource = resource_index;
 	
 	m_nameToResource[name] = resource_index;
@@ -407,6 +403,12 @@ u64 CRenderGraph::addRenderPass(const std::string& name, const FRenderConfigRend
 		new_pass = std::make_unique<CGeometryPass>(m_pRenderInterface);
 	else if (render_pass_ci.type == ERenderingType::eCascadedShadowMap)
 		new_pass = std::make_unique<CCascadedShadowMapPass>(m_pRenderInterface);
+
+	if (!render_pass_ci.depthResource.empty())
+		pass_ci.depthTarget = getRenderRersourceId(render_pass_ci.depthResource);
+
+	if (!render_pass_ci.stencilResource.empty())
+		pass_ci.depthTarget = getRenderRersourceId(render_pass_ci.stencilResource);
 
 	new_pass->init(pass_ci);
 	m_vRenderPasses.emplace_back(std::move(new_pass));
@@ -582,8 +584,8 @@ void CRenderGraph::bake()
 		{
 			auto& render_resource = m_vRenderResources.at(access_info.resource);
 			auto& attachment = build_info.attachments[access_info.resource];
-			attachment.loadOp = access_info.type == ERenderResourceDependencyBarrierType::eWriteAfterWrite ? ERenderResourceLoadOp::eLoad : ERenderResourceLoadOp::eDontCare;
-			attachment.storeOp = render_resource.usages.count(ERenderResourceAccessFlagBits::eRead) ? ERenderResourceStoreOp::eStore : ERenderResourceStoreOp::eDontCare;
+			attachment.loadOp = access_info.type == ERenderResourceDependencyBarrierType::eWriteAfterWrite ? ERenderResourceLoadOp::eLoad : ERenderResourceLoadOp::eClear;
+			attachment.storeOp = (render_resource.usages.count(ERenderResourceAccessFlagBits::eRead) || access_info.resource == m_backBufferResource) ? ERenderResourceStoreOp::eStore : ERenderResourceStoreOp::eDontCare;
 		}
 
 		auto& pass = m_vRenderPasses.at(pass_index);
@@ -602,9 +604,24 @@ void CRenderGraph::execute(f32 dt)
 		auto& pass = m_vRenderPasses[pass_index];
 		auto& resource_barriers = m_perPassResourceBarriers[pass_index];
 
+		if (!pass->canExecute())
+			continue;
+
 		render_context->processResourceBarriers(pass->m_queue, resource_barriers);
 		pass->execute(dt);
 	}
+
+	auto& backbuffer_resource = m_vRenderResources.at(m_backBufferResource);
+	std::vector<FResourceBarrierInfo> backbuffer_barriers{};
+
+	auto& backbuffer_barrier = backbuffer_barriers.emplace_back();
+	backbuffer_barrier.resource.handle = backbuffer_resource.handle;
+	backbuffer_barrier.resource.type = backbuffer_resource.type;
+	backbuffer_barrier.type = packDependencyBarrier(ERenderResourceAccessFlagBits::eWrite, ERenderResourceAccessFlagBits::eRead);
+	backbuffer_barrier.srcPassType = EPassType::eRender;
+	backbuffer_barrier.dstPassType = EPassType::eNone;
+
+	render_context->processResourceBarriers(EQueueTypeFlagBits::eGraphics, backbuffer_barriers);
 }
 
 void CRenderGraph::applyRenderPassResources(u64 pass_index, const FRenderConfigPassCreateInfo* raw_pass_ci, FPassCreateInfo* pass_ci)
@@ -641,11 +658,14 @@ void CRenderGraph::applyRenderPassResources(u64 pass_index, const FRenderConfigP
 				group_type = ERenderResourceGroupFlagBits::eStorageTexture;
 			else if (render_resource.type & ERenderResourceTypeFlagBits::eRenderTarget)
 				group_type = ERenderResourceGroupFlagBits::eColor;
-			else
-				continue;
 
-			auto resource_key = packResourceGroup(access_flag, group_type);
-			pass_ci->resources[resource_key].emplace_back(resource_id);
+			// Ignore static image control
+			if (!(render_resource.type & ERenderResourceTypeFlagBits::eStaticImage))
+			{
+				auto resource_key = packResourceGroup(access_flag, group_type);
+				pass_ci->resources[resource_key].emplace_back(resource_id);
+			}
+
 			pass_ci->bindings.emplace(binding_point, resource_id);
 		}
 	}

@@ -47,18 +47,9 @@ namespace engine
 			}
 
 			FShaderUploadInfo getShaderNameTag(const std::string& name) override;
-			void createRendering(const FRenderingStepCreateInfo& rendering_ci) override;
 
 		private:
 			filesystem::IVirtualFileSystemInterface* m_pVFS{ nullptr };
-
-			std::vector<std::unique_ptr<IRenderGraphStep>> m_vRenderingSteps{};
-
-			// TODO: add map with entity id and mesh data
-
-			std::vector<u64> m_matPassRTs{};
-			u64 m_matPassDepth{ ~0ull };
-			u64 m_matPassStencil{ ~0ull };
 
 			std::unique_ptr<FRenderDataPacket> m_pRenderPacket{};
 

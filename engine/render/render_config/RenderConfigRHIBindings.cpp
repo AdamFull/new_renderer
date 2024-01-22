@@ -107,50 +107,6 @@ namespace engine
 				"transfer", EQueueTypeFlagBits::eTransfer
 			);
 
-			// Register EShaderPrimitiveTopology
-			lua->new_enum(
-				"PrimitiveTopology",
-				"point_list", EVertexPrimitiveTopology::ePointList,
-				"line_list", EVertexPrimitiveTopology::eLineList,
-				"line_strip", EVertexPrimitiveTopology::eLineStrip,
-				"triangle_list", EVertexPrimitiveTopology::eTriangleList,
-				"triangle_strip", EVertexPrimitiveTopology::eTriangleStrip,
-				"triangle_fan", EVertexPrimitiveTopology::eTriangleFan
-			);
-
-			// Register EShaderCullMode
-			lua->new_enum(
-				"CullMode",
-				"none", EShaderCullModeFlagBits::eNone,
-				"front", EShaderCullModeFlagBits::eFront,
-				"back", EShaderCullModeFlagBits::eBack,
-				"double_sided", EShaderCullModeFlagBits::eFrontAndBack
-			);
-
-			// Register EShaderFrontFace
-			lua->new_enum(
-				"FrontFace",
-				"ccw", EShaderFrontFace::eCCW,
-				"cw", EShaderFrontFace::eCW
-			);
-
-			// Register EShaderResourcesUpdateFlagBits
-			lua->new_enum(
-				"ShaderUpdateFlags",
-				"uniform_blocks", EShaderResourcesUpdateFlagBits::eUniformBlocks,
-				"storage_blocks", EShaderResourcesUpdateFlagBits::eStorageBlocks,
-				"textures", EShaderResourcesUpdateFlagBits::eTextures,
-				"all", EShaderResourcesUpdateFlagBits::eAll
-			);
-
-			// Register ERenderingStepType
-			lua->new_enum(
-				"RenderingStepType",
-				"synchronization", ERenderingStepType::eSynchronization,
-				"rendering", ERenderingStepType::eRendering,
-				"compute", ERenderingStepType::eCompute
-			);
-
 			// Register ERenderingType
 			lua->new_enum(
 				"RenderingType",
@@ -169,35 +125,21 @@ namespace engine
 				"culling", EComputeType::eCulling
 			);
 
-			// Register ESynchronizationType
-			lua->new_enum(
-				"SyncType",
-				"semaphore", ESynchronizationType::eSemaphore,
-				"barrier", ESynchronizationType::eBarrier
-			);
-
-			// Register ESemaphoreMode
-			lua->new_enum(
-				"SemaphoreMode",
-				"signal", ESemaphoreMode::eSignal,
-				"wait", ESemaphoreMode::eWait
-			);
-
-			// Register EBarrierType
-			lua->new_enum(
-				"BarrierType",
-				"g2c", EBarrierType::eG2C,
-				"g2g", EBarrierType::eG2G,
-				"c2c", EBarrierType::eC2C,
-				"c2g", EBarrierType::eC2G
-			);
-
 			// Register ERenderingSizeType
 			lua->new_enum(
 				"RenderingSizeType",
 				"from_rt", ERenderingSizeType::eFromRenderTarget,
 				"from_buffer", ERenderingSizeType::eFromBuffer,
 				"manual", ERenderingSizeType::eManual
+			);
+
+			lua->new_enum(
+				"RenderResourceTypeFlagBits",
+				"render_target", ERenderResourceTypeFlagBits::eRenderTarget,
+				"storage_target", ERenderResourceTypeFlagBits::eStorageTarget,
+				"static_image", ERenderResourceTypeFlagBits::eStaticImage,
+				"all_image", ERenderResourceTypeFlagBits::eAllImage,
+				"buffer", ERenderResourceTypeFlagBits::eBuffer
 			);
 		}
 
@@ -227,56 +169,26 @@ namespace engine
 			register_rect2d<f32>("F32Rect2D", lua);
 			register_rect2d<f64>("F64Rect2D", lua);
 
-			// FShaderUploadInfo registration
-			lua->new_usertype<FShaderUploadInfo>(
-				"ShaderNameDesc",
-				sol::constructors<FShaderUploadInfo()>(),
-				"library", &FShaderUploadInfo::libraryId,
-				"shader", &FShaderUploadInfo::shaderId,
-				"name", &FShaderUploadInfo::originalName
-			);
-
 			// FTextureCreateInfo registration
 			lua->new_usertype<FTextureCreateInfo>(
 				"TextureCI",
 				sol::constructors<FTextureCreateInfo()>(),
-				"present_image", &FTextureCreateInfo::isSwapchainTarget,
+				"present_image", &FTextureCreateInfo::backbuffer,
 				"format", &FTextureCreateInfo::format,
 				"type", &FTextureCreateInfo::typeFlags,
-				"size_policy", &FTextureCreateInfo::sizePolicy,
-				"width", &FTextureCreateInfo::width,
-				"height", &FTextureCreateInfo::height,
-				"depth", &FTextureCreateInfo::depth,
 				"mip_levels", &FTextureCreateInfo::mipLevels,
-				"array_layers", &FTextureCreateInfo::arrayLayers
-			);
-
-			// FRenderingStepSemaphore registration
-			lua->new_usertype<FRenderingStepSemaphore>(
-				"SemaphoreStep",
-				sol::constructors<FRenderingStepSemaphore()>(),
-				"type", &FRenderingStepSemaphore::type,
-				"value", &FRenderingStepSemaphore::value,
-				"srcQueue", &FRenderingStepSemaphore::srcQueue,
-				"dstQueue", &FRenderingStepSemaphore::dstQueue
-			);
-
-			// FRenderingStepBarrier registration
-			lua->new_usertype<FRenderingStepBarrier>(
-				"BarrierStep",
-				sol::constructors<FRenderingStepBarrier()>(),
-				"type", &FRenderingStepBarrier::type,
-				"queue", &FRenderingStepBarrier::queue,
-				"targets", &FRenderingStepBarrier::targets
-			);
-
-			// FRenderingStepSynchronizationInfo registration
-			lua->new_usertype<FRenderingStepSynchronizationInfo>(
-				"SynchronizationStepInfo",
-				sol::constructors<FRenderingStepSynchronizationInfo()>(),
-				"type", &FRenderingStepSynchronizationInfo::type,
-				"semaphore", &FRenderingStepSynchronizationInfo::semaphore,
-				"barrier", &FRenderingStepSynchronizationInfo::barrier
+				"array_layers", &FTextureCreateInfo::arrayLayers,
+				"set_fixed_size_3d", sol::overload(
+					static_cast<void(FTextureCreateInfo::*)(u32)>(&FTextureCreateInfo::setFixedSize3D),
+					static_cast<void(FTextureCreateInfo::*)(u32, u32, u32)>(&FTextureCreateInfo::setFixedSize3D)
+				),
+				"set_fixed_size_2d", sol::overload(
+					static_cast<void(FTextureCreateInfo::*)(u32)>(&FTextureCreateInfo::setFixedSize2D),
+					static_cast<void(FTextureCreateInfo::*)(u32, u32)>(&FTextureCreateInfo::setFixedSize2D)
+				),
+				"set_size_scale", &FTextureCreateInfo::setSizeScale,
+				"use_as_back_buffer", &FTextureCreateInfo::useAsBackbuffer,
+				"enable_mip_map", &FTextureCreateInfo::enableMipMap
 			);
 
 			// FRenderTargetSizeInfo registration
@@ -292,157 +204,42 @@ namespace engine
 				"size_z", &FRenderTargetSizeInfo::sizeZ
 			);
 
-			// FRenderingStepRenderingInfo registration
-			lua->new_usertype<FRenderingStepRenderingInfo>(
-				"RenderingStepInfo",
-				sol::constructors<FRenderingStepRenderingInfo()>(),
-				"type", &FRenderingStepRenderingInfo::type,
-				"queue", &FRenderingStepRenderingInfo::queue,
-
-				"render_script", &FRenderingStepRenderingInfo::renderScript,
-				"shader_name", &FRenderingStepRenderingInfo::shaderName,
-
-				"flip_viewport", & FRenderingStepRenderingInfo::flipViewport,
-				"material_pass", & FRenderingStepRenderingInfo::materialPass,
-
-				"size_info", & FRenderingStepRenderingInfo::sizeInfo,
-
-				"input_targets", & FRenderingStepRenderingInfo::shaderInputs,
-				"output_targets", & FRenderingStepRenderingInfo::renderTargets,
-				"depth_target", & FRenderingStepRenderingInfo::depthTarget,
-				"stencil_target", & FRenderingStepRenderingInfo::stencilTarget
+			// Render graph
+			// FRenderResource registration
+			lua->new_usertype<FRenderResource>(
+				"RenderResource",
+				"type", &FRenderResource::type,
+				"handle", &FRenderResource::handle
 			);
 
-			// FRenderingStepComputeInfo registration
-			lua->new_usertype<FRenderingStepComputeInfo>(
-				"ComputeStepInfo",
-				sol::constructors<FRenderingStepComputeInfo()>(),
-				"type", &FRenderingStepComputeInfo::type,
-				"queue", &FRenderingStepComputeInfo::queue,
+			// FRenderConfigPassCreateInfo registration
+			lua->new_usertype<FRenderConfigPassCreateInfo>(
+				"PassCreateInfo",
+				"queue", &FRenderConfigPassCreateInfo::queue,
+				"shader", &FRenderConfigPassCreateInfo::shader,
+				"one_time", &FRenderConfigPassCreateInfo::oneTime,
+				"size_target", &FRenderConfigPassCreateInfo::sizeTarget,
+				"bind_write_resource", &FRenderConfigPassCreateInfo::bindWriteResource,
+				"bind_read_resource", &FRenderConfigPassCreateInfo::bindReadResource,
+				"add_write_resource", &FRenderConfigPassCreateInfo::addWriteResource,
+				"add_read_resource", &FRenderConfigPassCreateInfo::addReadResource
+				);
 
-				"render_script", & FRenderingStepComputeInfo::renderScript,
-				"shader_name", & FRenderingStepComputeInfo::shaderName,
-
-				"input_targets", & FRenderingStepComputeInfo::shaderInputs,
-				"write_targets", & FRenderingStepComputeInfo::writeTargets,
-				"write_buffers", & FRenderingStepComputeInfo::writeBuffers,
-
-				"group_info", & FRenderingStepComputeInfo::dispatchInfo,
-				"divide_by_locals", & FRenderingStepComputeInfo::divideByLocals
+			// FRenderConfigRenderCreateInfo registration
+			lua->new_usertype<FRenderConfigRenderCreateInfo>(
+				"GraphicsCreateInfo",
+				sol::base_classes, sol::bases<FRenderConfigPassCreateInfo>(),
+				"type", &FRenderConfigRenderCreateInfo::type,
+				"flip_viewport", &FRenderConfigRenderCreateInfo::flipViewport,
+				"set_depth_target", &FRenderConfigRenderCreateInfo::setDepthTarget,
+				"set_stencil_target", &FRenderConfigRenderCreateInfo::setStencilTarget
 			);
 
-			// FRenderingStepCreateInfo registration
-			lua->new_usertype<FRenderingStepCreateInfo>(
-				"RenderingStepCI",
-				sol::constructors<FRenderingStepCreateInfo()>(),
-				"type", &FRenderingStepCreateInfo::type,
-				"one_time", &FRenderingStepCreateInfo::oneTime,
-				"sync", &FRenderingStepCreateInfo::synchronization,
-				"rendering", &FRenderingStepCreateInfo::rendering,
-				"compute", &FRenderingStepCreateInfo::compute
-			);
-
-			// FVertexBindingDescription registration
-			lua->new_usertype<FVertexDeclarationBindingDescription>(
-				"VertexBindingDescription",
-				sol::constructors<FVertexDeclarationBindingDescription()>(),
-				"binding", &FVertexDeclarationBindingDescription::binding,
-				"stride", &FVertexDeclarationBindingDescription::stride
-			);
-
-			// FVertexAttributeDescription registration
-			lua->new_usertype<FVertexDeclarationAttributeDescription>(
-				"VertexAttributeDescription",
-				sol::constructors<FVertexDeclarationAttributeDescription()>(),
-				"location", &FVertexDeclarationAttributeDescription::location,
-				"binding", &FVertexDeclarationAttributeDescription::binding,
-				"format", &FVertexDeclarationAttributeDescription::format,
-				"offset", &FVertexDeclarationAttributeDescription::offset
-			);
-
-			// FVertexDeclaration registration
-			lua->new_usertype<FVertexDeclarationInfo>(
-				"VertexDeclaration",
-				sol::constructors<FVertexDeclarationInfo()>(),
-				"binding_descriptions", &FVertexDeclarationInfo::bindingDescriptions,
-				"attribute_descriptions", &FVertexDeclarationInfo::attributeDescriptions
-			);
-
-			// FGraphicsShaderCreateInfo registration
-			lua->new_usertype<FGraphicsShaderCreateInfo>(
-				"GraphicsShaderCI",
-				sol::constructors<FGraphicsShaderCreateInfo()>(),
-				"primitive_topology", &FGraphicsShaderCreateInfo::primitiveTopology,
-				"cull_mode", &FGraphicsShaderCreateInfo::cullMode,
-				"front_face", &FGraphicsShaderCreateInfo::frontFace,
-				"usage_count", &FGraphicsShaderCreateInfo::usageCount,
-				"input_attachments", &FGraphicsShaderCreateInfo::colorAttachments,
-				"depth_target", &FGraphicsShaderCreateInfo::depthAttachment,
-				"stencil_target", &FGraphicsShaderCreateInfo::stencilAttachment,
-				"vertex_declaration", &FGraphicsShaderCreateInfo::vertexDeclaration
-			);
-
-			// FComputeShaderCreateInfo registration
-			lua->new_usertype<FComputeShaderCreateInfo>(
-				"ComputeShaderCI",
-				sol::constructors<FComputeShaderCreateInfo()>(),
-				"usage_count", &FComputeShaderCreateInfo::usageCount
-			);
-
-			// FReflectionUniform registration
-			lua->new_usertype<FReflectionUniform>(
-				"ReflectionUniform",
-				sol::constructors<FReflectionUniform()>(),
-				"set", &FReflectionUniform::set,
-				"binding", &FReflectionUniform::binding,
-				"offset", &FReflectionUniform::offset,
-				"size", &FReflectionUniform::size
-			);
-
-			// FReflectionUniformBlock registration
-			lua->new_usertype<FReflectionUniformBlock<FReflectionUniform>>(
-				"ReflectionUniformBlock",
-				sol::constructors<FReflectionUniformBlock<FReflectionUniform>()>(),
-				"set", &FReflectionUniformBlock<FReflectionUniform>::set,
-				"binding", &FReflectionUniformBlock<FReflectionUniform>::binding,
-				"size", &FReflectionUniformBlock<FReflectionUniform>::size,
-				"uniforms", &FReflectionUniformBlock<FReflectionUniform>::uniforms
-			);
-
-			// FShaderCreationBlockInfo registration
-			lua->new_usertype<FShaderCreationBlockInfo>(
-				"ShaderCreationBlockInfo",
-				sol::constructors<FShaderCreationBlockInfo()>(),
-				"stage", &FShaderCreationBlockInfo::stage,
-				"code", &FShaderCreationBlockInfo::code
-			);
-
-			// FReflectionPushConstantBlock registration
-			lua->new_usertype<FReflectionPushConstantBlock<FReflectionUniform>>(
-				"ReflectionPushConstantBlock",
-				sol::constructors<FReflectionPushConstantBlock<FReflectionUniform>()>(),
-				"size", &FReflectionPushConstantBlock<FReflectionUniform>::size,
-				"uniforms", &FReflectionPushConstantBlock<FReflectionUniform>::uniforms
-			);
-
-			// FShaderReflectionData registration
-			lua->new_usertype<FShaderReflectionData>(
-				"ShaderReflectionData",
-				sol::constructors<FShaderReflectionData()>(),
-				"uniforms", &FShaderReflectionData::uniforms,
-				"uniform_blocks", &FShaderReflectionData::uniformBlocks,
-				"push_blocks", &FShaderReflectionData::pushBlocks
-			);
-
-			// FBeginRenderingInfo registration
-			lua->new_usertype<FBeginRenderingInfo>(
-				"BeginRenderingInfo",
-				"queue", &FBeginRenderingInfo::queue,
-				"render_area", &FBeginRenderingInfo::renderArea,
-				"flip_viewport", &FBeginRenderingInfo::flipViewport,
-				"color_attachments", &FBeginRenderingInfo::colorAttachments,
-				"depth_attachment", &FBeginRenderingInfo::depthAttachment,
-				"stencil_attachment", &FBeginRenderingInfo::stencilAttachment
+			// FRenderConfigComputeCreateInfo registration
+			lua->new_usertype<FRenderConfigComputeCreateInfo>(
+				"ComputeCreateInfo",
+				sol::base_classes, sol::bases<FRenderConfigPassCreateInfo>(),
+				"type", &FRenderConfigComputeCreateInfo::type
 			);
 		}
 
@@ -452,7 +249,6 @@ namespace engine
 			lua->new_usertype<IRenderInterface>(
 				"IRenderInterface",
 				"get_shader_desc", &IRenderInterface::getShaderNameTag,
-				"create_renderer", &IRenderInterface::createRendering,
 				"create_texture", &IRenderInterface::createTexture,
 				"create_shader", sol::overload(
 					static_cast<u64(IRenderInterface::*)(const std::string&, const FGraphicsShaderCreateInfo&)>(&IRenderInterface::createShader),
@@ -479,60 +275,22 @@ namespace engine
 				"get_screen_render_rect", &IRenderContext::getScreenRenderRect
 			);
 
-			// Uniform block handler registration
-			lua->new_usertype<CUniformHandle>(
-				"UniformHandle",
-				"create", sol::overload(
-					&CUniformHandle::create<FReflectionUniformBlock<FReflectionUniform>>,
-					&CUniformHandle::create<FReflectionPushConstantBlock<FReflectionUniform>>
+			// IRenderGraph registration
+			lua->new_usertype<IRenderGraph>(
+				"IRenderGraph",
+				"add_static_resource", &IRenderGraph::addStaticResource,
+				"add_render_resource", sol::overload(
+					static_cast<u64(IRenderGraph::*)(const std::string&, const FTextureCreateInfo&)>(&IRenderGraph::addRenderResource),
+					static_cast<u64(IRenderGraph::*)(const std::string&, const FBufferCreateInfo&)>(&IRenderGraph::addRenderResource)
 				),
-				"set", sol::overload(
-					&CUniformHandle::set<i8>,
-					&CUniformHandle::set<u8>,
-					&CUniformHandle::set<i16>,
-					&CUniformHandle::set<u16>,
-					&CUniformHandle::set<i32>,
-					&CUniformHandle::set<u32>,
-					&CUniformHandle::set<i64>,
-					&CUniformHandle::set<u64>,
-					&CUniformHandle::set<u64>,
-					&CUniformHandle::set<f32>,
-					&CUniformHandle::set<f64>,
-					&CUniformHandle::set<bool>,
-					&CUniformHandle::set<glm::vec2>,
-					&CUniformHandle::set<glm::vec3>,
-					&CUniformHandle::set<glm::vec4>,
-					&CUniformHandle::set<glm::dvec2>,
-					&CUniformHandle::set<glm::dvec3>,
-					&CUniformHandle::set<glm::dvec4>,
-					&CUniformHandle::set<glm::ivec2>,
-					&CUniformHandle::set<glm::ivec3>,
-					&CUniformHandle::set<glm::ivec4>,
-					&CUniformHandle::set<glm::uvec2>,
-					&CUniformHandle::set<glm::uvec3>,
-					&CUniformHandle::set<glm::uvec4>,
-					&CUniformHandle::set<glm::bvec2>,
-					&CUniformHandle::set<glm::bvec3>,
-					&CUniformHandle::set<glm::bvec4>,
-					&CUniformHandle::set<glm::mat2>,
-					&CUniformHandle::set<glm::mat3>,
-					&CUniformHandle::set<glm::mat4>,
-					&CUniformHandle::set<glm::dmat2>,
-					&CUniformHandle::set<glm::dmat3>,
-					&CUniformHandle::set<glm::dmat4>
+				"get_render_resource", sol::overload(
+					static_cast<const FRenderResource&(IRenderGraph::*)(const std::string&) const>(&IRenderGraph::getRenderResource),
+					static_cast<const FRenderResource&(IRenderGraph::*)(u64) const>(&IRenderGraph::getRenderResource)
+				),
+				"add_render_pass", sol::overload(
+					static_cast<u64(IRenderGraph::*)(const std::string&, const FRenderConfigRenderCreateInfo&)>(&IRenderGraph::addRenderPass),
+					static_cast<u64(IRenderGraph::*)(const std::string&, const FRenderConfigComputeCreateInfo&)>(&IRenderGraph::addRenderPass)
 				)
-			);
-
-			// Shader object registration
-			lua->new_usertype<IShaderObject>(
-				"ShaderObject",
-				//"new", sol::factories([]() { return std::make_unique<CShaderObject>(); }),
-				"create", sol::overload(
-					static_cast<void(IShaderObject::*)(const std::string&, const FGraphicsShaderCreateInfo&)>(&IShaderObject::create),
-					static_cast<void(IShaderObject::*)(const std::string&, const FComputeShaderCreateInfo&)>(&IShaderObject::create)
-				),
-				"get_uniform_block", [](IShaderObject& self, const std::string& name) { return self.getUniformBlock(name.c_str()).get(); },
-				"bind_texture", & IShaderObject::bindTexture
 			);
 		}
 

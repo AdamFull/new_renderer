@@ -41,7 +41,7 @@ CVkRenderContext::~CVkRenderContext()
 		auto& texture_instances = textures.at(texture_id);
 		for (auto& instance : texture_instances)
 		{
-			if (instance->initialData.base.isSwapchainTarget || !instance->isAlive)
+			if (instance->initialData.base.backbuffer || !instance->isAlive)
 				continue;
 
 			destroyTexture(*instance);
@@ -342,7 +342,7 @@ u64 CVkRenderContext::createRenderTargets(const std::string& name, const FTextur
 
 	for (u32 idx = 0u; idx < m_pDevice->m_swapchain.framesInFlight; ++idx)
 	{
-		if (texture_ci.isSwapchainTarget)
+		if (texture_ci.backbuffer)
 		{
 			auto texture = std::make_unique<FVkTexture>();
 			texture->isRenderTarget = true;
@@ -1653,7 +1653,7 @@ u64 CVkRenderContext::getShaderResource(const char* name)
 	return m_pResources->getId<FVkShader>(name);
 }
 
-FPoint2D<u32> CVkRenderContext::getRenderResolution()
+FPoint2D<u32> CVkRenderContext::getRenderResolution() const
 {
 	FPoint2D<u32> resolution{};
 	resolution.x = m_pDevice->m_swapchain.extent.width;
@@ -1667,8 +1667,8 @@ FRect2D<f32> CVkRenderContext::getRenderRectFromRT(u64 texture_id)
 	auto& texture = m_pResources->get<FVkTexture>(texture_id);
 
 	FRect2D<f32> rect{};
-	rect.size.x = utl::cast<f32>(texture->initialData.base.width);
-	rect.size.y = utl::cast<f32>(texture->initialData.base.height);
+	rect.size.x = utl::cast<f32>(texture->initialData.base.size.width);
+	rect.size.y = utl::cast<f32>(texture->initialData.base.size.height);
 
 	return rect;
 }
@@ -1762,17 +1762,17 @@ void CVkRenderContext::updateSurface(i32 surface_width, i32 surface_height)
 			u64 swapchainFrameIndex{ 0ull };
 			for (auto& target : textures.at(texture_id))
 			{
-				if (!target->isRenderTarget || (target->initialData.base.sizePolicy == ERenderTargetSizePolicy::eFixed))
+				if (!target->isRenderTarget || (target->initialData.base.size.policy == ERenderTargetSizePolicy::eFixed))
 					continue;
 
 				// Update sapchain target
-				if (target->initialData.base.isSwapchainTarget)
+				if (target->initialData.base.backbuffer)
 				{
 					target->imageViews.clear();
 					target->image.handle = m_pDevice->m_swapchain.images.at(swapchainFrameIndex);
 					target->imageViews.emplace_back(m_pDevice->m_swapchain.imageViews.at(swapchainFrameIndex));
-					target->initialData.base.width = surface_width;
-					target->initialData.base.height = surface_height;
+					target->initialData.base.size.width = surface_width;
+					target->initialData.base.size.height = surface_height;
 
 					swapchainFrameIndex++;
 					continue;
@@ -1791,8 +1791,11 @@ void CVkRenderContext::updateSurface(i32 surface_width, i32 surface_height)
 				texture_ci.name = target->name;
 #endif
 				// TODO: here i should set rendering resolution, not swapchain image size
-				texture_ci.base.width = surface_width;
-				texture_ci.base.height = surface_height;
+				if (target->initialData.base.size.policy == ERenderTargetSizePolicy::eScalable)
+				{
+					texture_ci.base.size.width = utl::cast<u32>(utl::cast<f32>(surface_width) * texture_ci.base.size.scale);
+					texture_ci.base.size.height = utl::cast<u32>(utl::cast<f32>(surface_height)* texture_ci.base.size.scale);
+				}
 
 				check_api_result(createTexture(texture_ci, *target));
 				
@@ -1933,7 +1936,7 @@ void CVkRenderContext::endFrameCommandBuffers()
 
 bool CVkRenderContext::isSwapChainFinished()
 {
-	return m_utilizationCounter % m_pDevice->m_swapchain.framesInFlight == 0;
+	return (m_utilizationCounter % m_pDevice->m_swapchain.framesInFlight == 0) && m_utilizationCounter != 0ull;
 }
 
 void CVkRenderContext::beginDebugLabel(const std::string& label, EQueueTypeFlagBits queue_type, u32 color)
@@ -2121,9 +2124,9 @@ void CVkRenderContext::processResourceUpload()
 						copy_region.imageSubresource.mipLevel = mip;
 						copy_region.imageSubresource.baseArrayLayer = layer;
 						copy_region.imageSubresource.layerCount = texture->initialData.base.arrayLayers;
-						copy_region.imageExtent.width = texture->initialData.base.width >> mip;
-						copy_region.imageExtent.height = texture->initialData.base.height >> mip;
-						copy_region.imageExtent.depth = texture->initialData.base.depth;
+						copy_region.imageExtent.width = texture->initialData.base.size.width >> mip;
+						copy_region.imageExtent.height = texture->initialData.base.size.height >> mip;
+						copy_region.imageExtent.depth = texture->initialData.base.size.depth;
 						copy_region.bufferOffset = offset;
 					}
 				}
@@ -2135,9 +2138,9 @@ void CVkRenderContext::processResourceUpload()
 				copy_region.imageSubresource.mipLevel = 0u;
 				copy_region.imageSubresource.baseArrayLayer = 0u;
 				copy_region.imageSubresource.layerCount = texture->totalLayers;
-				copy_region.imageExtent.width = texture->initialData.base.width;
-				copy_region.imageExtent.height = texture->initialData.base.height;
-				copy_region.imageExtent.depth = texture->initialData.base.depth;
+				copy_region.imageExtent.width = texture->initialData.base.size.width;
+				copy_region.imageExtent.height = texture->initialData.base.size.height;
+				copy_region.imageExtent.depth = texture->initialData.base.size.depth;
 				copy_region.bufferOffset = 0ull;
 			}
 
@@ -2150,8 +2153,8 @@ void CVkRenderContext::processResourceUpload()
 			auto& texture = textures.at(texture_id).front();
 			auto aspect_mask = get_texture_aspect_flags(*texture);
 
-			u32 mip_width{ texture->initialData.base.width };
-			u32 mip_heigth{ texture->initialData.base.height };
+			u32 mip_width{ texture->initialData.base.size.width };
+			u32 mip_heigth{ texture->initialData.base.size.height };
 
 			FVkImageTranslationInfo image_translation_info{};
 			image_translation_info.handle = texture->image.handle;
@@ -2327,7 +2330,7 @@ FRenderApiErrorInfo CVkRenderContext::createTexture(const FVkTextureCreateInfo& 
 	texture.name = image_ci.name = texture_ci.name;
 #endif
 
-	if (texture_ci.base.depth > 1 || (texture_ci.base.typeFlags & ETextureCreateFlagBits::e3D))
+	if (texture_ci.base.size.depth > 1 || (texture_ci.base.typeFlags & ETextureCreateFlagBits::e3D))
 		image_ci.ci.imageType = vk::ImageType::e3D;
 	else
 	{
@@ -2341,7 +2344,7 @@ FRenderApiErrorInfo CVkRenderContext::createTexture(const FVkTextureCreateInfo& 
 			image_ci.ci.imageType = vk::ImageType::e2D;
 	}
 
-	image_ci.ci.extent = vk::Extent3D{ texture_ci.base.width, texture_ci.base.height, texture_ci.base.depth };
+	image_ci.ci.extent = vk::Extent3D{ texture_ci.base.size.width, texture_ci.base.size.height, texture_ci.base.size.depth };
 	image_ci.ci.mipLevels = texture_ci.base.mipLevels;
 
 	image_ci.ci.arrayLayers = texture_ci.base.arrayLayers;

@@ -28,7 +28,9 @@ namespace engine
 
 			virtual void build(const FPassBuildInfo& build_info) = 0;
 
-			virtual void execute(f32 dt) = 0;
+			virtual void execute(f32 dt);
+
+			virtual bool canExecute();
 
 			virtual EPassType type() = 0;
 
@@ -40,6 +42,9 @@ namespace engine
 
 			std::unordered_map<ERenderResourceGroupType, std::vector<u64>> m_renderResources{};
 			std::unordered_map<std::string, u64> m_bakedBindings{};
+
+			bool m_bOneTime{ false };
+			bool m_bCanExecute{ true };
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
 			std::string m_debugName{};

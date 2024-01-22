@@ -2,7 +2,7 @@ surface_resolution = render_context:get_surface_resolution()
 
 -- Loading test cubemap
 do
-    render_interface:create_texture("/root/CasualDay4K.ktx2")
+    render_graph:add_static_resource("CasualDay4K", "/root/CasualDay4K.ktx2")
 end
 
 -- GI targets
@@ -10,34 +10,28 @@ do
     local target_ci = TextureCI.new()
     target_ci.format = render_context:get_api_format(Format.rg16_sfloat)
     target_ci.type = bit_or(TexType.two_dim, TexType.samplable, TexType.storage)
-    target_ci.size_policy = SizePolicy.fixed
-    target_ci.width = 1024
-    target_ci.height = 1024
+    target_ci:set_fixed_size_2d(1024)
 
-    render_context:create_render_target("brdf_lut_target", target_ci)
+    render_graph:add_render_resource("brdf_lut_target", target_ci)
 end
 
 do
     local target_ci = TextureCI.new()
     target_ci.format = render_context:get_api_format(Format.rgba32_sfloat)
     target_ci.type = bit_or(TexType.two_dim, TexType.cubemap, TexType.samplable, TexType.storage)
-    target_ci.size_policy = SizePolicy.fixed
-    target_ci.width = 64
-    target_ci.height = 64
+    target_ci:set_fixed_size_2d(64)
 
-    render_context:create_render_target("irradiance_cube_target", target_ci)
+    render_graph:add_render_resource("irradiance_cube_target", target_ci)
 end
 
 do
     local target_ci = TextureCI.new()
     target_ci.format = render_context:get_api_format(Format.rgba16_sfloat)
     target_ci.type = bit_or(TexType.two_dim, TexType.cubemap, TexType.samplable, TexType.storage)
-    target_ci.size_policy = SizePolicy.fixed
-    target_ci.width = 512
-    target_ci.height = 512
-    target_ci.mip_levels = calculate_mip_level_count(512, 512)
+    target_ci:set_fixed_size_2d(512)
+    target_ci:enable_mip_map()
     
-    render_context:create_render_target("prefiltered_cube_target", target_ci)
+   render_graph:add_render_resource("prefiltered_cube_target", target_ci)
 end
 
 -- Shadow targets
@@ -45,12 +39,10 @@ do
     local target_ci = TextureCI.new()
     target_ci.format = render_context:get_depth_format(false)
     target_ci.type = bit_or(TexType.two_dim, TexType.array, TexType.samplable)
-    target_ci.size_policy = SizePolicy.fixed
-    target_ci.width = global_settings.cascade_shadowmap_resolution
-    target_ci.height = global_settings.cascade_shadowmap_resolution
+    target_ci:set_fixed_size_2d(global_settings.cascade_shadowmap_resolution)
     target_ci.array_layers = global_settings.cascade_shadowmap_cascade_count * global_settings.max_directional_light_shadow_count
 
-    render_context:create_render_target("cascaded_shadows_target", target_ci)
+    render_graph:add_render_resource("cascaded_shadows_target", target_ci)
 end
 
 -- Visibility buffer targets
@@ -58,55 +50,45 @@ do
     local target_ci = TextureCI.new()
     target_ci.format = render_context:get_api_format(Format.rgba8_unorm)
     target_ci.type = bit_or(TexType.two_dim, TexType.samplable)
-    target_ci.size_policy = SizePolicy.scalable
-    target_ci.width = surface_resolution.x
-    target_ci.height = surface_resolution.y
+    target_ci:set_size_scale(1.0)
     
-    render_context:create_render_target("visbuffer_geometry_target", target_ci)
+    render_graph:add_render_resource("visbuffer_geometry_target", target_ci)
 end
 
 do
     local target_ci = TextureCI.new()
     target_ci.format = render_context:get_api_format(Format.rgba8_unorm)
     target_ci.type = bit_or(TexType.two_dim, TexType.samplable)
-    target_ci.size_policy = SizePolicy.scalable
-    target_ci.width = surface_resolution.x
-    target_ci.height = surface_resolution.y
+    target_ci:set_size_scale(1.0)
     
-    render_context:create_render_target("visbuffer_matobj_target", target_ci)
+    render_graph:add_render_resource("visbuffer_matobj_target", target_ci)
 end
 
 do
     local target_ci = TextureCI.new()
     target_ci.format = render_context:get_api_format(Format.rgba8_unorm)
     target_ci.type = bit_or(TexType.two_dim, TexType.samplable)
-    target_ci.size_policy = SizePolicy.scalable
-    target_ci.width = surface_resolution.x
-    target_ci.height = surface_resolution.y
+    target_ci:set_size_scale(1.0)
     
-    render_context:create_render_target("visbuffer_skinvbo_target", target_ci)
+    render_graph:add_render_resource("visbuffer_skinvbo_target", target_ci)
 end
 
 do
     local target_ci = TextureCI.new()
     target_ci.format = render_context:get_depth_format(false)
     target_ci.type = bit_or(TexType.two_dim, TexType.samplable)
-    target_ci.size_policy = SizePolicy.scalable
-    target_ci.width = surface_resolution.x
-    target_ci.height = surface_resolution.y
+    target_ci:set_size_scale(1.0)
 
-    render_context:create_render_target("zbuffer_depth_target", target_ci)
+    render_graph:add_render_resource("zbuffer_depth_target", target_ci)
 end
 
 do
     local target_ci = TextureCI.new()
     target_ci.format = render_context:get_api_format(Format.rgba16_sfloat)
     target_ci.type = bit_or(TexType.two_dim, TexType.samplable, TexType.storage)
-    target_ci.size_policy = SizePolicy.scalable
-    target_ci.width = surface_resolution.x
-    target_ci.height = surface_resolution.y
+    target_ci:set_size_scale(1.0)
 
-    render_context:create_render_target("final_lighting_target", target_ci)
+    render_graph:add_render_resource("final_lighting_target", target_ci)
 end
 
 -- Present image targets
@@ -114,12 +96,9 @@ do
     local target_ci = TextureCI.new()
     target_ci.format = render_context:get_present_format()
     target_ci.type = TexType.two_dim
-    target_ci.size_policy = SizePolicy.full
-    target_ci.width = surface_resolution.x
-    target_ci.height = surface_resolution.y
-    target_ci.present_image = true
+    target_ci:use_as_backbuffer()
 
-    render_context:create_render_target("present_target", target_ci)
+    render_graph:add_render_resource("present_target", target_ci)
 end
 
 
@@ -131,154 +110,146 @@ end
 
 -- generate brdf lut
 do
-    local step_ci = RenderingStepCI.new()
-    step_ci.type = RenderingStepType.compute
-    step_ci.one_time = true
+    local pass_ci = ComputeCreateInfo.new()
+    pass_ci.one_time = true
+    pass_ci.type = ComputeType.default
+    pass_ci.queue = QueueType.graphics
+    pass_ci.shader = "lighting:brgflut_generator";
 
-    step_ci.compute.type = ComputeType.default
-    step_ci.compute.queue = QueueType.graphics
-    step_ci.compute.shader_name = "lighting:brgflut_generator"
+    pass_ci.size_target = "brdf_lut_target";
+    pass_ci:bind_write_resource("out_color", "brdf_lut_target")
 
-    target_img = render_context:get_texture_resource("brdf_lut_target")
-
-    step_ci.compute.group_info.type = RenderingSizeType.from_rt
-    step_ci.compute.group_info.target = target_img
-
-    step_ci.compute.write_targets:set("out_color", target_img)
-
-    render_interface:create_renderer(step_ci)
+    render_graph:add_render_pass("generate_brdflut", pass_ci)
 end
 
 do
-    local step_ci = RenderingStepCI.new()
-    step_ci.type = RenderingStepType.compute
-    step_ci.one_time = true
+    local pass_ci = ComputeCreateInfo.new()
+    pass_ci.one_time = true
+    pass_ci.type = ComputeType.default
+    pass_ci.queue = QueueType.graphics
+    pass_ci.shader = "lighting:irradiancecube_generator";
 
-    step_ci.compute.type = ComputeType.default
-    step_ci.compute.queue = QueueType.graphics
-    step_ci.compute.shader_name = "lighting:irradiancecube_generator"
+    pass_ci.size_target = "irradiance_cube_target";
+    pass_ci:bind_write_resource("out_color", "irradiance_cube_target")
+    pass_ci.bind_read_resource("sampler_color", "CasualDay4K")
 
-    target_img = render_context:get_texture_resource("irradiance_cube_target")
-
-    step_ci.compute.group_info.type = RenderingSizeType.from_rt
-    step_ci.compute.group_info.target = target_img
-
-    step_ci.compute.write_targets:set("out_color", target_img)
-    step_ci.compute.input_targets:set("sampler_color", render_context:get_texture_resource("CasualDay4K"))
-
-    render_interface:create_renderer(step_ci)
+    render_graph:add_render_pass("generate_irradiance_cube", pass_ci)
 end
 
 do
-    local step_ci = RenderingStepCI.new()
-    step_ci.type = RenderingStepType.compute
-    step_ci.one_time = true
+    local pass_ci = ComputeCreateInfo.new()
+    pass_ci.one_time = true
+    pass_ci.type = ComputeType.cubemap
+    pass_ci.queue = QueueType.graphics
+    pass_ci.shader = "lighting:prefilteredmap_generator";
 
-    step_ci.compute.type = ComputeType.cubemap
-    step_ci.compute.queue = QueueType.graphics
-    step_ci.compute.shader_name = "lighting:prefilteredmap_generator"
+    pass_ci:bind_write_resource("out_color", "prefiltered_cube_target")
+    pass_ci.bind_read_resource("sampler_color", "CasualDay4K")
 
-    target_img = render_context:get_texture_resource("prefiltered_cube_target")
-
-    step_ci.compute.group_info.type = RenderingSizeType.from_rt
-    step_ci.compute.group_info.target = target_img
-
-    step_ci.compute.write_targets:set("out_color", target_img)
-    step_ci.compute.input_targets:set("sampler_color", render_context:get_texture_resource("CasualDay4K"))
-
-    render_interface:create_renderer(step_ci)
+    render_graph:add_render_pass("generate_prefiltered_cube", pass_ci)
 end
 
+
 do
-    local step_ci = RenderingStepCI.new()
-    step_ci.type = RenderingStepType.compute
+    local pass_ci = ComputeCreateInfo.new()
+    pass_ci.type = ComputeType.culling
+    pass_ci.queue = QueueType.graphics
+    pass_ci.shader = "culling:cull_and_batch"
 
-    step_ci.compute.type = ComputeType.culling
-    step_ci.compute.queue = QueueType.graphics
-    step_ci.compute.shader_name = "culling:cull_and_batch"
+    pass_ci:bind_read_resource("nodeBuffer", "NodeStorage")
+    pass_ci:bind_read_resource("frustumSides", "FrustumSides")
+    pass_ci:bind_read_resource("cullingBuffer", "GeometryCullingInfo")
+    pass_ci:bind_write_resource("indirectCommandBuffer", "IndexedDrawIndirectBuffer")
 
-    render_interface:create_renderer(step_ci)
+    render_graph:add_render_pass("gpu_culling", pass_ci)
 end
 
+
 do
-    local step_ci = RenderingStepCI.new()
-    step_ci.type = RenderingStepType.rendering
+    local pass_ci = GraphicsCreateInfo.new()
+    pass_ci.type = RenderingType.csm
+    pass_ci.queue = QueueType.graphics
+    pass_ci.shader = "lighting:unidirectional_shadow:CASCADED_SHADOW"
 
-    step_ci.rendering.type = RenderingType.csm
-    step_ci.rendering.queue = QueueType.graphics
-    step_ci.rendering.shader_name = "lighting:unidirectional_shadow:CASCADED_SHADOW"
+    pass_ci.size_target = "cascaded_shadows_target"
+    pass_ci.set_depth_target("cascaded_shadows_target")
 
-    step_ci.rendering.depth_target = render_context:get_texture_resource("cascaded_shadows_target")
+    pass_ci.bind_read_resource("nodeBuffer", "NodeStorage")
+    pass_ci.bind_read_resource("materialBuffer", "MaterialStorage")
+    pass_ci.bind_read_resource("jointsBuffer", "SkinningJoints")
+    pass_ci.bind_read_resource("cascadedShadowBuffer", "CascadedShadows")
+    pass_ci.bind_read_resource("batchBuffer", "GeometryBatches")
+    pass_ci.add_read_resource("IndexedDrawIndirectBuffer")
 
-    step_ci.rendering.size_info.type = RenderingSizeType.from_rt
-    step_ci.rendering.size_info.target = step_ci.rendering.depth_target
-
-    render_interface:create_renderer(step_ci)
+    render_graph:add_render_pass("cascaded_shadow_map_pass", pass_ci)
 end
 
 -- visibility buffer write
 do
-    local step_ci = RenderingStepCI.new()
-    step_ci.type = RenderingStepType.rendering
+    local pass_ci = GraphicsCreateInfo.new()
+    pass_ci.type = RenderingType.geometry
+    pass_ci.queue = QueueType.graphics
+    pass_ci.shader = "visibilitybuffer:write"
 
-    step_ci.rendering.type = RenderingType.geometry
-    step_ci.rendering.queue = QueueType.graphics
-    step_ci.rendering.shader_name = "visibilitybuffer:write"
+    pass_ci.size_target = "zbuffer_depth_target"
+    pass_ci.set_depth_target("zbuffer_depth_target")
+    pass_ci.set_stencil_target("zbuffer_depth_target")
 
-    step_ci.rendering.output_targets:add(render_context:get_texture_resource("visbuffer_geometry_target"))
-    step_ci.rendering.output_targets:add(render_context:get_texture_resource("visbuffer_matobj_target"))
-    step_ci.rendering.output_targets:add(render_context:get_texture_resource("visbuffer_skinvbo_target"))
-    step_ci.rendering.depth_target = render_context:get_texture_resource("zbuffer_depth_target")
-    step_ci.rendering.stencil_target = step_ci.rendering.depth_target
+    pass_ci.bind_read_resource("nodeBuffer", "NodeStorage")
+    pass_ci.bind_read_resource("jointsBuffer", "SkinningJoints")
 
-    step_ci.rendering.size_info.type = RenderingSizeType.from_rt
-    step_ci.rendering.size_info.target = render_context:get_texture_resource("visbuffer_geometry_target")
+    pass_ci.add_write_resource("visbuffer_geometry_target")
+    pass_ci.add_write_resource("visbuffer_matobj_target")
+    pass_ci.add_write_resource("visbuffer_skinvbo_target")
+    pass_ci.add_read_resource("IndexedDrawIndirectBuffer")
 
-    render_interface:create_renderer(step_ci)
+    render_graph:add_render_pass("visibility_buffer_write_pass", pass_ci)
 end
 
 -- visibility buffer material pass
 do
-    local step_ci = RenderingStepCI.new()
-    step_ci.type = RenderingStepType.compute
+    local pass_ci = ComputeCreateInfo.new()
+    pass_ci.type = ComputeType.geometry
+    pass_ci.queue = QueueType.graphics
+    pass_ci.shader = "visibilitybuffer:shade"
 
-    step_ci.compute.type = ComputeType.geometry
-    step_ci.compute.queue = QueueType.graphics
-    step_ci.compute.shader_name = "visibilitybuffer:shade"
+    pass_ci.bind_write_resource("write_color", "final_lighting_target")
+    pass_ci:bind_read_resource("visbuffer_geometry", "visbuffer_geometry_target")
+    pass_ci:bind_read_resource("visbuffer_matobj", "visbuffer_matobj_target")
+    pass_ci:bind_read_resource("visbuffer_skinvbo", "visbuffer_skinvbo_target")
+    pass_ci:bind_read_resource("brdf_lut", "brdf_lut_target")
+    pass_ci:bind_read_resource("irradiance_cube", "irradiance_cube_target")
+    pass_ci:bind_read_resource("prefiltered_cube", "prefiltered_cube_target")
+    pass_ci:bind_read_resource("cascaded_shadowmap", "cascaded_shadows_target")
+    pass_ci:bind_read_resource("depth_buffer", "zbuffer_depth_target")
 
-    target_img = render_context:get_texture_resource("final_lighting_target")
+    pass_ci:bind_read_resource("nodeBuffer", "NodeStorage")
+    pass_ci:bind_read_resource("materialBuffer", "MaterialStorage")
+    pass_ci:bind_read_resource("jointsBuffer", "SkinningJoints")
+    pass_ci:bind_read_resource("directionalLightBuffer", "DirectionalLights")
+    pass_ci:bind_read_resource("pointLightBuffer", "PointLights")
+    pass_ci:bind_read_resource("spotLightBuffer", "SpotLights")
+    pass_ci:bind_read_resource("cascadedShadowBuffer", "CascadedShadows")
+    pass_ci:bind_read_resource("omniShadowBuffer", "OmniShadows")
+    pass_ci:bind_read_resource("spotShadowBuffer", "SpotShadows")
+    pass_ci:bind_read_resource("batchBuffer", "GeometryBatches")
 
-    step_ci.compute.group_info.type = RenderingSizeType.from_rt
-    step_ci.compute.group_info.target = target_img
+    pass_ci:bind_read_resource("indirectCommandBuffer", "IndexedDrawIndirectBuffer")
 
-    step_ci.compute.write_targets:set("write_color", target_img)
-    step_ci.compute.input_targets:set("visbuffer_geometry", render_context:get_texture_resource("visbuffer_geometry_target"))
-    step_ci.compute.input_targets:set("visbuffer_matobj", render_context:get_texture_resource("visbuffer_matobj_target"))
-    step_ci.compute.input_targets:set("visbuffer_skinvbo", render_context:get_texture_resource("visbuffer_skinvbo_target"))
-    step_ci.compute.input_targets:set("brdf_lut", render_context:get_texture_resource("brdf_lut_target"))
-    step_ci.compute.input_targets:set("irradiance_cube", render_context:get_texture_resource("irradiance_cube_target"))
-    step_ci.compute.input_targets:set("prefiltered_cube", render_context:get_texture_resource("prefiltered_cube_target"))
-    step_ci.compute.input_targets:set("cascaded_shadowmap", render_context:get_texture_resource("cascaded_shadows_target"))
-    step_ci.compute.input_targets:set("depth_buffer", render_context:get_texture_resource("zbuffer_depth_target"))
-
-    render_interface:create_renderer(step_ci)
+    render_graph:add_render_pass("compute_materials_pass", pass_ci)
 end
 
 -- Present pass
 do
-    local step_ci = RenderingStepCI.new()
-    step_ci.type = RenderingStepType.rendering
+    local pass_ci = GraphicsCreateInfo.new()
+    pass_ci.type = RenderingType.fullscreen
+    pass_ci.queue = QueueType.graphics
+    pass_ci.shader = "testing:screenspace"
+    pass_ci.flip_viewport = true
 
-    step_ci.rendering.type = RenderingType.fullscreen
-    step_ci.rendering.queue = QueueType.graphics
-    step_ci.rendering.shader_name = "testing:screenspace"
-    step_ci.rendering.flip_viewport = true
-    
-    step_ci.rendering.input_targets:set("input_image", render_context:get_texture_resource("final_lighting_target"))
-    step_ci.rendering.output_targets:add(render_context:get_texture_resource("present_target"))
+    pass_ci.size_target = "present_target"
+    pass_ci.bind_read_resource("input_image", "final_lighting_target")
+    pass_ci.add_write_resource("present_target")
 
-    step_ci.rendering.size_info.type = RenderingSizeType.from_rt
-    step_ci.rendering.size_info.target = render_context:get_texture_resource("present_target")
-    
-    render_interface:create_renderer(step_ci)
+    render_graph:add_render_pass("finalize_image_pass", pass_ci)
 end

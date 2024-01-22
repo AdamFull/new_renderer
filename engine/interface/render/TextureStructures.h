@@ -26,21 +26,55 @@ namespace engine
 			eFixed = 3
 		};
 
-		struct FTextureCreateInfo
+		struct FTextureSizeInfo
 		{
-			bool isSwapchainTarget{ false };
-
-			// EApiDataFormat
-			u32 format{ 0u };
-			ETextureCreateFlags typeFlags{ 0u };
-			ERenderTargetSizePolicy sizePolicy{};
+			ERenderTargetSizePolicy policy{};
 
 			u32 width{ 1u };
 			u32 height{ 1u };
 			u32 depth{ 1u };
 
+			f32 scale{ 1.f };
+		};
+
+		struct FTextureCreateInfo
+		{
+			bool backbuffer{ false };
+
+			// EApiDataFormat
+			u32 format{ 0u };
+			ETextureCreateFlags typeFlags{ 0u };
+			FTextureSizeInfo size{};
+
 			u32 mipLevels{ 1u };
 			u32 arrayLayers{ 1u };
+
+			void setFixedSize3D(u32 n_width, u32 n_height, u32 n_depth)
+			{
+				size.width = n_width;
+				size.height = n_height;
+				size.depth = n_depth;
+
+				size.policy = ERenderTargetSizePolicy::eFixed;
+			}
+
+			void setFixedSize3D(u32 size) { setFixedSize3D(size, size, size); }
+			void setFixedSize2D(u32 n_width, u32 n_height) { setFixedSize3D(n_width, n_height, size.depth); }
+			void setFixedSize2D(u32 size) { setFixedSize2D(size, size); }
+
+			void setSizeScale(f32 scale)
+			{
+				size.scale = scale;
+				size.policy = ERenderTargetSizePolicy::eScalable;
+			}
+
+			void useAsBackbuffer()
+			{
+				backbuffer = true;
+				size.policy = ERenderTargetSizePolicy::eFull;
+			}
+
+			void enableMipMap() { mipLevels = utl::cast<u32>(std::floor(std::log2((std::max)(size.width, size.height)))) + 1u; }
 		};
 
 		struct FTextureUploadInfo

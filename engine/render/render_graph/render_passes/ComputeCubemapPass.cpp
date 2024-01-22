@@ -20,7 +20,7 @@ void CComputeCubemapPass::init(const FComputePassCreateInfo& pass_ci)
 	auto& render_context = m_pRenderInterface->getRenderContext();
 	auto& render_graph = m_pRenderInterface->getRenderGraph();
 
-	auto& out_targets = m_renderResources[ERenderResourceGroupType::eStorageWrite];
+	auto& out_targets = m_renderResources[ERenderResourceGroupType::eStorageTextureWrite];
 	for (u64 resource_id : out_targets)
 	{
 		auto& render_resource = render_graph->getRenderResource(resource_id);
@@ -61,7 +61,7 @@ void CComputeCubemapPass::_execute(const FComputeFrameInfo& frame_info)
 	auto& render_graph = m_pRenderInterface->getRenderGraph();
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
 
-	auto& write_resources = m_renderResources[ERenderResourceGroupType::eStorageWrite];
+	auto& write_resources = m_renderResources[ERenderResourceGroupType::eStorageTextureWrite];
 	for (const auto& resource_id : write_resources)
 	{
 		auto& render_resource = render_graph->getRenderResource(resource_id);
@@ -94,8 +94,8 @@ void CComputeCubemapPass::_execute(const FComputeFrameInfo& frame_info)
 
 			FDispatch2Info dispatch_info{};
 			dispatch_info.shaderHandle = m_pShader->handle();
-			dispatch_info.globalSizes.x = info.width;
-			dispatch_info.globalSizes.y = info.height;
+			dispatch_info.globalSizes.x = info.size.width;
+			dispatch_info.globalSizes.y = info.size.height;
 
 			render_context->dispatch2(m_queue, dispatch_info);
 		}

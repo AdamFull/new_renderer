@@ -323,17 +323,19 @@ namespace engine
 			{
 				switch (pass_type)
 				{
+				case engine::render::EPassType::eNone:
 				case engine::render::EPassType::eCompute: return vk::PipelineStageFlagBits2KHR::eComputeShader; break;
 				case engine::render::EPassType::eRender: return vk::PipelineStageFlagBits2KHR::eFragmentShader | vk::PipelineStageFlagBits2KHR::eVertexShader; break;
 				}
 
-				return vk::PipelineStageFlagBits2KHR::eNone;
+				return vk::PipelineStageFlagBits2KHR::eComputeShader;
 			}
 
 			inline vk::AccessFlags2KHR get_translation_access_flags(ERenderResourceAccessFlagBits access_flag)
 			{
 				switch (access_flag)
 				{
+				case engine::render::ERenderResourceAccessFlagBits::eNone:
 				case engine::render::ERenderResourceAccessFlagBits::eRead: return vk::AccessFlagBits2KHR::eMemoryWrite | vk::AccessFlagBits2KHR::eShaderWrite; break;
 				case engine::render::ERenderResourceAccessFlagBits::eWrite: return vk::AccessFlagBits2KHR::eMemoryRead | vk::AccessFlagBits2KHR::eShaderRead; break;
 				}
@@ -406,7 +408,7 @@ namespace engine
 				bool transferable = utl::cast<bool>(texture.initialData.base.typeFlags & ETextureCreateFlagBits::eTransferable);
 				bool samplable = utl::cast<bool>(texture.initialData.base.typeFlags & ETextureCreateFlagBits::eSamplable);
 
-				if (transferable || samplable || texture.initialData.base.isSwapchainTarget)
+				if (transferable || samplable || texture.initialData.base.backbuffer)
 					return vk::AttachmentStoreOp::eStore;
 
 				return vk::AttachmentStoreOp::eDontCare;

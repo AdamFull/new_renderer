@@ -113,9 +113,7 @@ bool CResourceLoader::loadSTBFromMemory(const std::vector<uint8_t>& data, FTextu
 	int width{ 0 }, height{ 0 }, channels{ 0 };
 	auto rawdata = stbi_load_from_memory(data.data(), data.size(), &width, &height, &channels, STBI_rgb_alpha);
 
-	create_info.width = utl::cast<u32>(width);
-	create_info.height = utl::cast<u32>(height);
-	create_info.depth = 1u;
+	create_info.setFixedSize2D(utl::cast<u32>(width), utl::cast<u32>(height));
 	create_info.format = 37;
 	auto data_size = utl::cast<u32>(width * height * 4ull);
 
@@ -143,9 +141,7 @@ bool CResourceLoader::loadKTXFromMemory(const std::vector<uint8_t>& data, FTextu
 	if (kTexture->isCubemap)
 		create_info.typeFlags |= ETextureCreateFlagBits::eCubemap;
 	
-	create_info.width = kTexture->baseWidth;
-	create_info.height = kTexture->baseHeight;
-	create_info.depth = kTexture->baseDepth;
+	create_info.setFixedSize3D(kTexture->baseWidth, kTexture->baseHeight, kTexture->baseDepth);
 	
 	if (kTexture->numDimensions == 1u)
 		create_info.typeFlags |= ETextureCreateFlagBits::e1D;
@@ -193,9 +189,7 @@ bool CResourceLoader::loadKTX2FromMemory(const std::vector<uint8_t>& data, FText
 	if (kTexture->isCubemap)
 		create_info.typeFlags |= ETextureCreateFlagBits::eCubemap;
 
-	create_info.width = kTexture->baseWidth;
-	create_info.height = kTexture->baseHeight;
-	create_info.depth = kTexture->baseDepth;
+	create_info.setFixedSize3D(kTexture->baseWidth, kTexture->baseHeight, kTexture->baseDepth);
 
 	if (kTexture->numDimensions == 1u)
 		create_info.typeFlags |= ETextureCreateFlagBits::e1D;

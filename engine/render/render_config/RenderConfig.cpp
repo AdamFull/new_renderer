@@ -75,7 +75,8 @@ void CRenderScriptCore::create(IRenderInterface* render_interface)
 		});
 
 	(*m_pLuaState)["render_interface"] = render_interface;
-	//(*m_pLuaState)["render_context"] = render_context;
+	(*m_pLuaState)["render_context"] = render_interface->getRenderContext().get();
+	(*m_pLuaState)["render_graph"] = render_interface->getRenderGraph().get();
 }
 
 std::unique_ptr<CRenderScriptExecutor> CRenderScriptCore::build(const std::string& name, const std::vector<uint8_t>& program_code)

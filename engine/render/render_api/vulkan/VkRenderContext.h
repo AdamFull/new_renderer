@@ -76,7 +76,7 @@ namespace engine
 				u64 getTextureResource(const char* name) override;
 				u64 getShaderResource(const char* name) override;
 
-				FPoint2D<u32> getRenderResolution() override;
+				FPoint2D<u32> getRenderResolution() const override;
 				FRect2D<f32> getRenderRectFromRT(u64 texture_id) override;
 				FRect2D<f32> getScreenRenderRect() override;
 

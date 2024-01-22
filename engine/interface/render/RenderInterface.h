@@ -311,7 +311,7 @@ namespace engine
 			virtual u64 getTextureResource(const char* name) = 0;
 			virtual u64 getShaderResource(const char* name) = 0;
 
-			virtual FPoint2D<u32> getRenderResolution() = 0;
+			virtual FPoint2D<u32> getRenderResolution() const = 0;
 			virtual FRect2D<f32> getRenderRectFromRT(u64 texture_id) = 0;
 			virtual FRect2D<f32> getScreenRenderRect() = 0;
 
@@ -387,7 +387,6 @@ namespace engine
 			virtual const std::unique_ptr<IVertexHandler>& getVertexHandler(u64 id) = 0;
 
 			virtual FShaderUploadInfo getShaderNameTag(const std::string& name) = 0;
-			virtual void createRendering(const FRenderingStepCreateInfo& rendering_ci) = 0;
 
 			virtual void updateSurfaceSize(i32 width, i32 height) = 0;
 
@@ -395,167 +394,6 @@ namespace engine
 			virtual const std::unique_ptr<IRenderGraph>& getRenderGraph() = 0;
 			virtual const std::unique_ptr<IRenderWorld>& getRenderWorld() = 0;
 			virtual const std::unique_ptr<IRenderContext>& getRenderContext() = 0;
-		};
-
-
-		class IRenderGraphStep
-		{
-		public:
-			virtual ~IRenderGraphStep() = default;
-
-			virtual void create(const FRenderingStepCreateInfo& create_info)
-			{
-				m_bOneTime = create_info.oneTime;
-			}
-
-			virtual void execute(f32 dt)
-			{
-				if (!m_bNeedToBeDestroyed && m_bOneTime)
-					m_bNeedToBeDestroyed = true;
-			}
-
-			bool expired()
-			{
-				return m_bNeedToBeDestroyed;
-			}
-		protected:
-			bool m_bOneTime{ false };
-			bool m_bNeedToBeDestroyed{ false };
-
-			IRenderInterface* m_pRenderInterface{ nullptr };
-		};
-
-		class ISynchronizationStep : public IRenderGraphStep
-		{
-		public:
-			virtual ~ISynchronizationStep() override = default;
-
-			void create(const FRenderingStepCreateInfo& create_info) override
-			{
-				m_barrier = create_info.synchronization.barrier;
-
-				_create(create_info);
-				IRenderGraphStep::create(create_info);
-			}
-
-			void execute(f32 dt) override
-			{
-				_execute(dt);
-				IRenderGraphStep::execute(dt);
-			}
-
-		protected:
-			virtual void _create(const FRenderingStepCreateInfo& create_info) = 0;
-			virtual void _execute(f32 dt) = 0;
-		protected:
-			FRenderingStepBarrier m_barrier{};
-		};
-
-		class IRenderingStep : public IRenderGraphStep
-		{
-		public:
-			virtual ~IRenderingStep() override = default;
-
-			void create(const FRenderingStepCreateInfo& create_info) override
-			{
-				// Save rendering info
-				m_beginRenderingInfo.queue = create_info.rendering.queue;
-				m_beginRenderingInfo.colorAttachments = create_info.rendering.renderTargets;
-				m_beginRenderingInfo.depthAttachment = create_info.rendering.depthTarget;
-				m_beginRenderingInfo.stencilAttachment = create_info.rendering.stencilTarget;
-				m_beginRenderingInfo.flipViewport = create_info.rendering.flipViewport;
-
-				m_sizePolicyType = create_info.rendering.sizeInfo.type;
-				m_target = create_info.rendering.sizeInfo.target;
-
-				if (m_sizePolicyType == ERenderingSizeType::eManual)
-				{
-					m_beginRenderingInfo.renderArea.size.x = create_info.compute.dispatchInfo.sizeX;
-					m_beginRenderingInfo.renderArea.size.y = create_info.compute.dispatchInfo.sizeY;
-				}
-
-				_create(create_info);
-				IRenderGraphStep::create(create_info);
-			}
-
-			void execute(f32 dt) override
-			{
-				if (m_sizePolicyType == ERenderingSizeType::eFromRenderTarget)
-				{
-					auto& render_context = m_pRenderInterface->getRenderContext();
-					auto& info = render_context->getTextureInfo(m_target);
-
-					m_beginRenderingInfo.renderArea.size.x = info.width;
-					m_beginRenderingInfo.renderArea.size.y = info.height;
-				}
-
-				_execute(dt);
-
-				IRenderGraphStep::execute(dt);
-			}
-		protected:
-			virtual void _create(const FRenderingStepCreateInfo& create_info) = 0;
-			virtual void _execute(f32 dt) = 0;
-		protected:
-			FBeginRenderingInfo m_beginRenderingInfo{};
-			ERenderingSizeType m_sizePolicyType{};
-			u64 m_target{ ~0ull };
-		};
-
-		class IComputeStep : public IRenderGraphStep
-		{
-		public:
-			virtual ~IComputeStep() override = default;
-
-			void create(const FRenderingStepCreateInfo& create_info) override
-			{
-				// Save rendering info
-				m_beginComputeInfo.queue = create_info.compute.queue;
-
-				for (const auto& [name, attachment] : create_info.compute.writeTargets)
-					m_beginComputeInfo.writeAttachments.emplace_back(attachment);
-
-				for (const auto& [name, buffer] : create_info.compute.writeBuffers)
-					m_beginComputeInfo.writeBuffers.emplace_back(buffer);
-
-				m_groupPolicyType = create_info.compute.dispatchInfo.type;
-				m_target = create_info.compute.dispatchInfo.target;
-
-				if (m_groupPolicyType == ERenderingSizeType::eManual)
-				{
-					m_beginComputeInfo.globalSizes.x = create_info.compute.dispatchInfo.sizeX;
-					m_beginComputeInfo.globalSizes.y = create_info.compute.dispatchInfo.sizeY;
-					m_beginComputeInfo.globalSizes.z = create_info.compute.dispatchInfo.sizeZ;
-				}
-
-				_create(create_info);
-				IRenderGraphStep::create(create_info);
-			}
-
-			void execute(f32 dt) override
-			{
-				if (m_groupPolicyType == ERenderingSizeType::eFromRenderTarget)
-				{
-					auto& render_context = m_pRenderInterface->getRenderContext();
-					auto& info = render_context->getTextureInfo(m_target);
-
-					m_beginComputeInfo.globalSizes.x = info.width;
-					m_beginComputeInfo.globalSizes.y = info.height;
-					m_beginComputeInfo.globalSizes.z = info.depth;
-				}
-
-				_execute(dt);
-
-				IRenderGraphStep::execute(dt);
-			}
-		protected:
-			virtual void _create(const FRenderingStepCreateInfo& create_info) = 0;
-			virtual void _execute(f32 dt) = 0;
-		protected:
-			FBeginComputeInfo m_beginComputeInfo{};
-
-			ERenderingSizeType m_groupPolicyType{};
-			u64 m_target{ ~0ull };
 		};
 	}
 }

@@ -1,16 +1,6 @@
 #include "RenderInterface.h"
 
 #include "render_api/vulkan/VkRenderContext.h"
-#include "rendering_steps/FullscreenRenderingStep.h"
-#include "rendering_steps/RenderScriptRenderingStep.h"
-#include "rendering_steps/SemaphoreRenderingStep.h"
-#include "rendering_steps/BarrierRenderingStep.h"
-#include "rendering_steps/GeometryRenderingStep.h"
-#include "rendering_steps/CSMRenderingStep.h"
-#include "rendering_steps/ComputeRenderingStep.h"
-#include "rendering_steps/ComputeCubemapRenderingStep.h"
-#include "rendering_steps/ComputeGeometryRenderingStep.h"
-#include "rendering_steps/ComputeCullingRenderingStep.h"
 
 #include "RenderWorld.h"
 #include "VertexHandler.h"
@@ -168,7 +158,6 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 void CRenderInterface::render(f32 dt)
 {
 	m_pRenderWorld->render(dt);
-	m_pRenderGraph->execute(dt);
 
 	m_pRenderContext->beginFrameCommandBuffers();
 
@@ -217,20 +206,8 @@ void CRenderInterface::render(f32 dt)
 	buffer_ref_uniform.binding = 1u;
 
 	m_pRenderContext->updateGlobalDescriptorData(update_info);
-
-	for (auto& stage : m_vRenderingSteps)
-		stage->execute(dt);
-
+	m_pRenderGraph->execute(dt);
 	m_pRenderContext->endFrameCommandBuffers();
-
-	if (m_pRenderContext->isSwapChainFinished())
-	{
-		auto to_remove = std::remove_if(m_vRenderingSteps.begin(), m_vRenderingSteps.end(),
-			[](const std::unique_ptr<IRenderGraphStep>& stage) { return stage->expired(); });
-
-		if (to_remove != m_vRenderingSteps.end())
-			m_vRenderingSteps.erase(to_remove, m_vRenderingSteps.end());
-	}
 }
 
 u64 CRenderInterface::createTexture(const std::string& path)
@@ -318,71 +295,4 @@ FShaderUploadInfo CRenderInterface::getShaderNameTag(const std::string& name)
 	load_info.originalName = name;
 
 	return load_info;
-}
-
-void CRenderInterface::createRendering(const FRenderingStepCreateInfo& rendering_ci)
-{
-	auto& new_step = m_vRenderingSteps.emplace_back();
-
-	if (rendering_ci.rendering.materialPass)
-	{
-		m_matPassRTs = rendering_ci.rendering.renderTargets;
-		m_matPassDepth = rendering_ci.rendering.depthTarget;
-		m_matPassStencil = rendering_ci.rendering.stencilTarget;
-	}
-
-	if (rendering_ci.type == ERenderingStepType::eSynchronization)
-	{
-		if (rendering_ci.synchronization.type == ESynchronizationType::eSemaphore)
-			new_step = std::make_unique<CSemaphoreRenderingStep>(this);
-		else if (rendering_ci.synchronization.type == ESynchronizationType::eBarrier)
-			new_step = std::make_unique<CBarrierRenderingStep>(this);
-	}
-	else if (rendering_ci.type == ERenderingStepType::eRendering)
-	{
-		if(rendering_ci.rendering.type == ERenderingType::eFullscreen)
-			new_step = std::make_unique<CFullscreenRenderingStep>(this);
-		else if (rendering_ci.rendering.type == ERenderingType::eGeometry)
-			new_step = std::make_unique<CGeometryRenderingStep>(this);
-		else if (rendering_ci.rendering.type == ERenderingType::eCascadedShadowMap)
-			new_step = std::make_unique<CCascadedShadowMapsRenderingStep>(this);
-		else if(rendering_ci.rendering.type == ERenderingType::eRenderScript)
-			new_step = std::make_unique<CRenderScriptRenderingStep>(this);
-	}
-	else if (rendering_ci.type == ERenderingStepType::eCompute)
-	{
-		if (rendering_ci.compute.type == EComputeType::eDefault)
-			new_step = std::make_unique<CComputeRenderingStep>(this);
-		else if (rendering_ci.compute.type == EComputeType::eGeometry)
-			new_step = std::make_unique<CComputeGeometryRenderingStep>(this);
-		else if (rendering_ci.compute.type == EComputeType::eCubemap)
-			new_step = std::make_unique<CComputeCubemapRenderingStep>(this);
-		else if (rendering_ci.compute.type == EComputeType::eCulling)
-			new_step = std::make_unique<CComputeCullingRenderingStep>(this);
-	}
-
-	new_step->create(rendering_ci);
-
-	//auto& stage = m_vRenderStages.emplace_back();
-	//stage = std::make_unique<CDynamicRenderStage>();
-	//
-	//stage->m_renderingInfo.flipViewport = rendering_ci.flipViewport;
-	//stage->m_renderingInfo.queue = rendering_ci.queue;
-	//stage->m_renderingInfo.colorAttachments = rendering_ci.renderTargets;
-	//stage->m_renderingInfo.depthAttachment = rendering_ci.depthTarget;
-	//stage->m_renderingInfo.stencilAttachment = rendering_ci.stencilTarget;
-	//
-	//// Load render script
-	//std::vector<uint8_t> render_script{};
-	//m_pVFS->readFile(rendering_ci.renderScript, render_script);
-	//stage->m_pScriptExecutor = m_pRenderScriptCore->build(filesystem::fs::get_stem(rendering_ci.renderScript), render_script);
-	//stage->m_pScriptExecutor->addToEnvironment("this", stage.get());
-	//
-	//// At first i should create shader 
-	//// After that shader object
-	//stage->create(rendering_ci.shaderName);
-	//
-	//// Apply shader inputh
-	//for (auto& [binding_point, texture] : rendering_ci.shaderInputs)
-	//	stage->m_pStageShader->bindTexture(binding_point.c_str(), texture);
 }
