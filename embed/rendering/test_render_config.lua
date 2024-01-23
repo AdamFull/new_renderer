@@ -1,5 +1,3 @@
-surface_resolution = render_context:get_surface_resolution()
-
 -- Loading test cubemap
 do
     render_graph:add_static_resource("CasualDay4K", "/root/CasualDay4K.ktx2")
@@ -9,7 +7,7 @@ end
 do
     local target_ci = TextureCI.new()
     target_ci.format = render_context:get_api_format(Format.rg16_sfloat)
-    target_ci.type = bit_or(TexType.two_dim, TexType.samplable, TexType.storage)
+    target_ci.type = texture_or(TexType.two_dim, TexType.samplable, TexType.storage)
     target_ci:set_fixed_size_2d(1024)
 
     render_graph:add_render_resource("brdf_lut_target", target_ci)
@@ -18,7 +16,7 @@ end
 do
     local target_ci = TextureCI.new()
     target_ci.format = render_context:get_api_format(Format.rgba32_sfloat)
-    target_ci.type = bit_or(TexType.two_dim, TexType.cubemap, TexType.samplable, TexType.storage)
+    target_ci.type = texture_or(TexType.two_dim, TexType.cubemap, TexType.samplable, TexType.storage)
     target_ci:set_fixed_size_2d(64)
 
     render_graph:add_render_resource("irradiance_cube_target", target_ci)
@@ -27,7 +25,7 @@ end
 do
     local target_ci = TextureCI.new()
     target_ci.format = render_context:get_api_format(Format.rgba16_sfloat)
-    target_ci.type = bit_or(TexType.two_dim, TexType.cubemap, TexType.samplable, TexType.storage)
+    target_ci.type = texture_or(TexType.two_dim, TexType.cubemap, TexType.samplable, TexType.storage)
     target_ci:set_fixed_size_2d(512)
     target_ci:enable_mip_map()
     
@@ -38,7 +36,7 @@ end
 do
     local target_ci = TextureCI.new()
     target_ci.format = render_context:get_depth_format(false)
-    target_ci.type = bit_or(TexType.two_dim, TexType.array, TexType.samplable)
+    target_ci.type = texture_or(TexType.two_dim, TexType.array, TexType.samplable)
     target_ci:set_fixed_size_2d(global_settings.cascade_shadowmap_resolution)
     target_ci.array_layers = global_settings.cascade_shadowmap_cascade_count * global_settings.max_directional_light_shadow_count
 
@@ -49,7 +47,7 @@ end
 do
     local target_ci = TextureCI.new()
     target_ci.format = render_context:get_api_format(Format.rgba8_unorm)
-    target_ci.type = bit_or(TexType.two_dim, TexType.samplable)
+    target_ci.type = texture_or(TexType.two_dim, TexType.samplable)
     target_ci:set_size_scale(1.0)
     
     render_graph:add_render_resource("visbuffer_geometry_target", target_ci)
@@ -58,7 +56,7 @@ end
 do
     local target_ci = TextureCI.new()
     target_ci.format = render_context:get_api_format(Format.rgba8_unorm)
-    target_ci.type = bit_or(TexType.two_dim, TexType.samplable)
+    target_ci.type = texture_or(TexType.two_dim, TexType.samplable)
     target_ci:set_size_scale(1.0)
     
     render_graph:add_render_resource("visbuffer_matobj_target", target_ci)
@@ -67,7 +65,7 @@ end
 do
     local target_ci = TextureCI.new()
     target_ci.format = render_context:get_api_format(Format.rgba8_unorm)
-    target_ci.type = bit_or(TexType.two_dim, TexType.samplable)
+    target_ci.type = texture_or(TexType.two_dim, TexType.samplable)
     target_ci:set_size_scale(1.0)
     
     render_graph:add_render_resource("visbuffer_skinvbo_target", target_ci)
@@ -76,7 +74,7 @@ end
 do
     local target_ci = TextureCI.new()
     target_ci.format = render_context:get_depth_format(false)
-    target_ci.type = bit_or(TexType.two_dim, TexType.samplable)
+    target_ci.type = texture_or(TexType.two_dim, TexType.samplable)
     target_ci:set_size_scale(1.0)
 
     render_graph:add_render_resource("zbuffer_depth_target", target_ci)
@@ -85,7 +83,7 @@ end
 do
     local target_ci = TextureCI.new()
     target_ci.format = render_context:get_api_format(Format.rgba16_sfloat)
-    target_ci.type = bit_or(TexType.two_dim, TexType.samplable, TexType.storage)
+    target_ci.type = texture_or(TexType.two_dim, TexType.samplable, TexType.storage)
     target_ci:set_size_scale(1.0)
 
     render_graph:add_render_resource("final_lighting_target", target_ci)
@@ -95,7 +93,7 @@ end
 do
     local target_ci = TextureCI.new()
     target_ci.format = render_context:get_present_format()
-    target_ci.type = TexType.two_dim
+    target_ci.type = texture_or(TexType.two_dim)
     target_ci:use_as_backbuffer()
 
     render_graph:add_render_resource("present_target", target_ci)
@@ -131,7 +129,7 @@ do
 
     pass_ci.size_target = "irradiance_cube_target";
     pass_ci:bind_write_resource("out_color", "irradiance_cube_target")
-    pass_ci.bind_read_resource("sampler_color", "CasualDay4K")
+    pass_ci:bind_read_resource("sampler_color", "CasualDay4K")
 
     render_graph:add_render_pass("generate_irradiance_cube", pass_ci)
 end
@@ -144,7 +142,7 @@ do
     pass_ci.shader = "lighting:prefilteredmap_generator";
 
     pass_ci:bind_write_resource("out_color", "prefiltered_cube_target")
-    pass_ci.bind_read_resource("sampler_color", "CasualDay4K")
+    pass_ci:bind_read_resource("sampler_color", "CasualDay4K")
 
     render_graph:add_render_pass("generate_prefiltered_cube", pass_ci)
 end
@@ -172,14 +170,14 @@ do
     pass_ci.shader = "lighting:unidirectional_shadow:CASCADED_SHADOW"
 
     pass_ci.size_target = "cascaded_shadows_target"
-    pass_ci.set_depth_target("cascaded_shadows_target")
+    pass_ci:set_depth_target("cascaded_shadows_target")
 
-    pass_ci.bind_read_resource("nodeBuffer", "NodeStorage")
-    pass_ci.bind_read_resource("materialBuffer", "MaterialStorage")
-    pass_ci.bind_read_resource("jointsBuffer", "SkinningJoints")
-    pass_ci.bind_read_resource("cascadedShadowBuffer", "CascadedShadows")
-    pass_ci.bind_read_resource("batchBuffer", "GeometryBatches")
-    pass_ci.add_read_resource("IndexedDrawIndirectBuffer")
+    pass_ci:bind_read_resource("nodeBuffer", "NodeStorage")
+    pass_ci:bind_read_resource("materialBuffer", "MaterialStorage")
+    pass_ci:bind_read_resource("jointsBuffer", "SkinningJoints")
+    pass_ci:bind_read_resource("cascadedShadowBuffer", "CascadedShadows")
+    pass_ci:bind_read_resource("batchBuffer", "GeometryBatches")
+    pass_ci:add_read_resource("IndexedDrawIndirectBuffer")
 
     render_graph:add_render_pass("cascaded_shadow_map_pass", pass_ci)
 end
@@ -192,16 +190,16 @@ do
     pass_ci.shader = "visibilitybuffer:write"
 
     pass_ci.size_target = "zbuffer_depth_target"
-    pass_ci.set_depth_target("zbuffer_depth_target")
-    pass_ci.set_stencil_target("zbuffer_depth_target")
+    pass_ci:set_depth_target("zbuffer_depth_target")
+    pass_ci:set_stencil_target("zbuffer_depth_target")
 
-    pass_ci.bind_read_resource("nodeBuffer", "NodeStorage")
-    pass_ci.bind_read_resource("jointsBuffer", "SkinningJoints")
+    pass_ci:bind_read_resource("nodeBuffer", "NodeStorage")
+    pass_ci:bind_read_resource("jointsBuffer", "SkinningJoints")
 
-    pass_ci.add_write_resource("visbuffer_geometry_target")
-    pass_ci.add_write_resource("visbuffer_matobj_target")
-    pass_ci.add_write_resource("visbuffer_skinvbo_target")
-    pass_ci.add_read_resource("IndexedDrawIndirectBuffer")
+    pass_ci:add_write_resource("visbuffer_geometry_target")
+    pass_ci:add_write_resource("visbuffer_matobj_target")
+    pass_ci:add_write_resource("visbuffer_skinvbo_target")
+    pass_ci:add_read_resource("IndexedDrawIndirectBuffer")
 
     render_graph:add_render_pass("visibility_buffer_write_pass", pass_ci)
 end
@@ -213,7 +211,9 @@ do
     pass_ci.queue = QueueType.graphics
     pass_ci.shader = "visibilitybuffer:shade"
 
-    pass_ci.bind_write_resource("write_color", "final_lighting_target")
+    pass_ci.size_target = "final_lighting_target"
+
+    pass_ci:bind_write_resource("write_color", "final_lighting_target")
     pass_ci:bind_read_resource("visbuffer_geometry", "visbuffer_geometry_target")
     pass_ci:bind_read_resource("visbuffer_matobj", "visbuffer_matobj_target")
     pass_ci:bind_read_resource("visbuffer_skinvbo", "visbuffer_skinvbo_target")
@@ -248,8 +248,8 @@ do
     pass_ci.flip_viewport = true
 
     pass_ci.size_target = "present_target"
-    pass_ci.bind_read_resource("input_image", "final_lighting_target")
-    pass_ci.add_write_resource("present_target")
+    pass_ci:bind_read_resource("input_image", "final_lighting_target")
+    pass_ci:add_write_resource("present_target")
 
     render_graph:add_render_pass("finalize_image_pass", pass_ci)
 end
