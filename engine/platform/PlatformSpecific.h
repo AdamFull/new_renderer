@@ -1,21 +1,21 @@
 #pragma once
 
+#include <utility.hpp>
+
 #if defined(PLATFORM_WIN32)
 #include <Windows.h>
 #include "window/WindowWin32.h"
 #include "window/WindowGLFW.h"
 #endif
 
-#include <memory>
-
 namespace engine
 {
-	inline std::unique_ptr<IWindowInterface> make_platform_window(const FWindowCreateInfo& window_ci)
+	inline stl::unique_ptr<IWindowInterface> make_platform_window(const FWindowCreateInfo& window_ci)
 	{
-		std::unique_ptr<IWindowInterface> window_handle{};
+		stl::unique_ptr<IWindowInterface> window_handle{};
 
 #if defined(PLATFORM_WIN32)
-		window_handle = std::make_unique<platform::CWindowGLFW>();
+		window_handle = stl::make_unique<platform::CWindowGLFW>();
 #endif
 		window_handle->create(window_ci);
 

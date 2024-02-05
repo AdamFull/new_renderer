@@ -10,7 +10,6 @@
 #include "VertexStructures.h"
 #include "RenderGraph.h"
 
-#include <memory>
 #include <typeindex>
 
 namespace engine
@@ -23,7 +22,7 @@ namespace engine
 #ifndef BUILD_WITHOUT_DEBUGGIND
 		namespace debug_mapping
 		{
-			inline constexpr std::pair<u64, const char*> uniform_to_name_mapping[] =
+			inline constexpr stl::pair<u64, const char*> uniform_to_name_mapping[] =
 			{
 				{ utl::fnv1a_64_hash("GlobalUniformFrameData"), "GlobalUniformFrameData" },
 				{ utl::fnv1a_64_hash("UniformMeshData"), "UniformMeshData" },
@@ -45,12 +44,12 @@ namespace engine
 
 		struct FGlobalUniformCreateInfo
 		{
-			std::unordered_map<u64, u64> uniforms{};
+			stl::unordered_map<u64, u64> uniforms{};
 		};
 
 		struct FGlobalUniformUpdateInfo
 		{
-			std::unordered_map<u64, FUniformDataView> uniforms{};
+			stl::unordered_map<u64, FUniformDataView> uniforms{};
 		};
 
 		struct FRenderCamera
@@ -104,7 +103,7 @@ namespace engine
 				if (size == 0ull)
 					size = uniform.size;
 
-				std::memcpy(m_data.data() + uniform.offset, raw_data, size);
+				stl::memcpy(m_data.data() + uniform.offset, raw_data, size);
 			}
 
 			template<class _Ty>
@@ -117,9 +116,9 @@ namespace engine
 				auto& uniform = found->second;
 
 				if (size == 0ull)
-					size = (std::min)(sizeof(_Ty), uniform.size);
+					size = (stl::min)(sizeof(_Ty), uniform.size);
 
-				std::memcpy(m_data.data() + uniform.offset, &object, size);
+				stl::memcpy(m_data.data() + uniform.offset, &object, size);
 			}
 
 			template<class _Ty>
@@ -137,13 +136,13 @@ namespace engine
 				return reinterpret_cast<_Ty*>(m_data.data() + uniform.offset);
 			}
 
-			const std::vector<char>& data() const
+			const stl::vector<char>& data() const
 			{
 				return m_data;
 			}
 		private:
-			std::unordered_map<u64, FReflectionUniform> m_uniforms{};
-			std::vector<char> m_data{};
+			stl::unordered_map<u64, FReflectionUniform> m_uniforms{};
+			stl::vector<char> m_data{};
 		};
 
 		class IShaderObject
@@ -151,11 +150,11 @@ namespace engine
 		public:
 			virtual ~IShaderObject() = default;
 
-			virtual void create(const std::string& name, const FGraphicsShaderCreateInfo& create_info) = 0;
-			virtual void create(const std::string& name, const FComputeShaderCreateInfo& create_info) = 0;
+			virtual void create(const stl::string& name, const FGraphicsShaderCreateInfo& create_info) = 0;
+			virtual void create(const stl::string& name, const FComputeShaderCreateInfo& create_info) = 0;
 
-			virtual const std::unique_ptr<CUniformHandle>& getUniformBlock(const char* name) = 0;
-			virtual const std::unique_ptr<CUniformHandle>& getConstantBlock(const char* name) = 0;
+			virtual const stl::unique_ptr<CUniformHandle>& getUniformBlock(const char* name) = 0;
+			virtual const stl::unique_ptr<CUniformHandle>& getConstantBlock(const char* name) = 0;
 
 			virtual void bindBuffer(const char* name, u64 buffer_resource) = 0;
 			virtual void bindTexture(const char* name, u64 texture_resource, u32 mip = 0u) = 0;
@@ -174,16 +173,16 @@ namespace engine
 		{
 		public:
 			template<class _Ty>
-			const std::unique_ptr<IGPUArrayHandle>& registerResource(std::unique_ptr<IGPUArrayHandle>&& new_handle)
+			const stl::unique_ptr<IGPUArrayHandle>& registerResource(stl::unique_ptr<IGPUArrayHandle>&& new_handle)
 			{
-				const std::type_index type_index(typeid(_Ty));
-				return m_handles[type_index] = std::move(new_handle);
+				const stl::type_index type_index(typeid(_Ty));
+				return m_handles[type_index] = stl::move(new_handle);
 			}
 
 			template<class _Ty>
-			const std::unique_ptr<IGPUArrayHandle>& getResource()
+			const stl::unique_ptr<IGPUArrayHandle>& getResource()
 			{
-				const std::type_index type_index(typeid(_Ty));
+				const stl::type_index type_index(typeid(_Ty));
 				return m_handles[type_index];
 			}
 
@@ -193,13 +192,13 @@ namespace engine
 					handle->flush();
 			}
 		private:
-			std::unordered_map<std::type_index, std::unique_ptr<IGPUArrayHandle>> m_handles{};
+			stl::unordered_map<stl::type_index, stl::unique_ptr<IGPUArrayHandle>> m_handles{};
 		};
 
 		struct FLightBuffer
 		{
-			std::unique_ptr<IGPUArrayHandle> lights{};
-			std::unique_ptr<IGPUArrayHandle> shadows{};
+			stl::unique_ptr<IGPUArrayHandle> lights{};
+			stl::unique_ptr<IGPUArrayHandle> shadows{};
 		};
 
 		struct FRenderSceneStats
@@ -210,7 +209,7 @@ namespace engine
 			u64 nodeCount{ 0ull };
 
 			// Type is a hash of all used attributes
-			std::unordered_map<u64, u64> perTypeVBOCount{};
+			stl::unordered_map<u64, u64> perTypeVBOCount{};
 		};
 
 		struct FCullingInfo
@@ -229,7 +228,7 @@ namespace engine
 		{
 			FRenderDataPacket()
 			{
-				//resources = std::make_unique<CGPUArrayHolder>();
+				//resources = stl::make_unique<CGPUArrayHolder>();
 			}
 
 			FRenderCamera camera{};
@@ -260,21 +259,21 @@ namespace engine
 			virtual void createGlobalDescriptor(const FGlobalUniformCreateInfo& uniform_ci) = 0;
 			virtual void updateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view) = 0;
 
-			virtual u64 createTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) = 0;
-			virtual u64 getTextureId(const std::string& name) = 0;
-			virtual u64 createRenderTargets(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
+			virtual u64 createTexture(const stl::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) = 0;
+			virtual u64 getTextureId(const stl::string& name) = 0;
+			virtual u64 createRenderTargets(const stl::string& name, const FTextureCreateInfo& texture_ci) = 0;
 			virtual const FTextureCreateInfo& getTextureInfo(u64 texture_id) = 0;
 			virtual void destroyTexture(u64 resource_id) = 0;
 
-			virtual u64 createShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
-			virtual u64 createShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
+			virtual u64 createShader(const stl::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  stl::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
+			virtual u64 createShader(const stl::string& name, const FComputeShaderCreateInfo& shader_ci, const  stl::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
 			virtual FShaderReflectionData getShaderReflection(const u64& shader_view) = 0;
 			virtual void updateShaderResources(const FShaderResourceCommit& resources, EShaderResourcesUpdateFlags flags = EShaderResourcesUpdateFlagBits::eAll) = 0;
-			virtual void flushConstantRanges(u64 shader_id, const std::unordered_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type) = 0;
+			virtual void flushConstantRanges(u64 shader_id, const stl::unordered_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type) = 0;
 			virtual void bindShader(u64 shader_id, EQueueTypeFlagBits queue_type) = 0;
 			virtual void destroyShader(u64 resource_id) = 0;
 
-			virtual u64 createBuffer(const std::string& name, const FBufferCreateInfo& buffer_ci) = 0;
+			virtual u64 createBuffer(const stl::string& name, const FBufferCreateInfo& buffer_ci) = 0;
 			virtual void uploadDataToBuffer(const FBufferUploadInfo& upload_info) = 0;
 			virtual FBufferView getBufferView(u64 buffer_id) = 0;
 			virtual void bindVertexBuffers(const FVertexBufferBindingInfo& binding_info, EQueueTypeFlagBits queue) = 0;
@@ -284,29 +283,22 @@ namespace engine
 			virtual void flushBuffer(u64 buffer_id, u64 size, u64 offset) = 0;
 			virtual void destroyBuffer(u64 resource_id) = 0;
 
-			virtual void pushG2CBarriers(EQueueTypeFlagBits queue_type, const std::vector<u64>& textures) = 0;
-			virtual void pushC2CBarrier(EQueueTypeFlagBits queue_type, const std::vector<u64>& texture_ids) = 0;
-			virtual void pushC2GBarrier(EQueueTypeFlagBits queue_type, const std::vector<u64>& texture_ids) = 0;
+			virtual void pushG2CBarriers(EQueueTypeFlagBits queue_type, const stl::vector<u64>& textures) = 0;
+			virtual void pushC2CBarrier(EQueueTypeFlagBits queue_type, const stl::vector<u64>& texture_ids) = 0;
+			virtual void pushC2GBarrier(EQueueTypeFlagBits queue_type, const stl::vector<u64>& texture_ids) = 0;
 
-			virtual void processResourceBarriers(EQueueTypeFlagBits queue, const std::vector<FResourceBarrierInfo>& barriers) = 0;
+			virtual void processResourceBarriers(EQueueTypeFlagBits queue, const stl::vector<FResourceBarrierInfo>& barriers) = 0;
 
-			virtual void beginRendering(const FBeginRenderingInfo& rendering_info) = 0;
-			virtual void endRendering(const FBeginRenderingInfo& rendering_info) = 0;
-
-			virtual void beginRendering2(const FBeginRendering2Info& rendering_info) = 0;
-			virtual void endRendering2(EQueueTypeFlagBits queue) = 0;
-
-			virtual void beginCompute(const FBeginComputeInfo& rendering_info) = 0;
-			virtual void endCompute(const FBeginComputeInfo& rendering_info) = 0;
+			virtual void beginRendering(const FBeginRendering2Info& rendering_info) = 0;
+			virtual void endRendering(EQueueTypeFlagBits queue) = 0;
 
 			virtual void setViewport(f32 width, f32 height, bool flip_viewport) = 0;
 			virtual void setScissorRect(i32 offset_x, i32 offset_y, u32 width, u32 height) = 0;
 
 			virtual void draw(EQueueTypeFlagBits queue_type, const FGeometryDrawInfo& draw_info) = 0;
 			virtual void draw(EQueueTypeFlagBits queue_type, const FIndirectGeometryDrawInfo& draw_info) = 0;
-			virtual void dispatch(EQueueTypeFlagBits queue_type, const FDispatchInfo& dispatch_info) = 0;
-			virtual void dispatch2(EQueueTypeFlagBits queue_type, const FDispatch2Info& dispatch_group) = 0;
-			virtual void dispatch2(EQueueTypeFlagBits queue_type, const FDispatchIndirectInfo& dispatch_info) = 0;
+			virtual void dispatch(EQueueTypeFlagBits queue_type, const FDispatch2Info& dispatch_group) = 0;
+			virtual void dispatch(EQueueTypeFlagBits queue_type, const FDispatchIndirectInfo& dispatch_info) = 0;
 
 			virtual u64 getTextureResource(const char* name) = 0;
 			virtual u64 getShaderResource(const char* name) = 0;
@@ -326,8 +318,8 @@ namespace engine
 
 			virtual bool isSwapChainFinished() = 0;
 
-			virtual void beginDebugLabel(const std::string& label, EQueueTypeFlagBits queue_type, u32 color = 0xffffffff) = 0;
-			virtual void insertDebugLabel(const std::string& label, EQueueTypeFlagBits queue_type, u32 color = 0xffffffff) = 0;
+			virtual void beginDebugLabel(const stl::string& label, EQueueTypeFlagBits queue_type, u32 color = 0xffffffff) = 0;
+			virtual void insertDebugLabel(const stl::string& label, EQueueTypeFlagBits queue_type, u32 color = 0xffffffff) = 0;
 			virtual void endDebugLabel(EQueueTypeFlagBits queue_type) = 0;
 		};
 
@@ -341,7 +333,7 @@ namespace engine
 			virtual u64 registerFrustum(ERenderGeometryCullerType type) = 0;
 			virtual void updateFrustum(u64 frustum_id, const glm::mat4& view, const glm::mat4& projection) = 0;
 
-			virtual void addDrawGeometry(const std::vector<FGeometryRawBatch>& new_geometry) = 0;
+			virtual void addDrawGeometry(const stl::vector<FGeometryRawBatch>& new_geometry) = 0;
 
 			virtual void render(f32 dt) = 0;
 
@@ -354,15 +346,15 @@ namespace engine
 			virtual void addShadow(const FSpotShadowCommit& commit) = 0;
 
 			virtual void updateNode(u32 node_id, const FSceneNode& node) = 0;
-			virtual void updateSkin(const std::array<glm::mat4, 128ull>& matrices) = 0;
+			virtual void updateSkin(const stl::array<glm::mat4, 128ull>& matrices) = 0;
 
 			virtual void addMaterial(const FMaterial& material) = 0;
-			virtual void addMaterials(const std::vector<FMaterial>& materials) = 0;
+			virtual void addMaterials(const stl::vector<FMaterial>& materials) = 0;
 
-			virtual const std::vector<std::unique_ptr<IBufferObject>>& getDrawBuffers() = 0;
+			virtual const stl::vector<stl::unique_ptr<IBufferObject>>& getDrawBuffers() = 0;
 
-			virtual const std::unordered_map<ERenderGeometryCullerType, std::vector<FGeometryBatchRange>>& getAllGeometryRanges() const = 0;
-			virtual const std::vector<FGeometryBatchRange>& getGeometryRanges(ERenderGeometryCullerType type) const = 0;
+			virtual const stl::unordered_map<ERenderGeometryCullerType, stl::vector<FGeometryBatchRange>>& getAllGeometryRanges() const = 0;
+			virtual const stl::vector<FGeometryBatchRange>& getGeometryRanges(ERenderGeometryCullerType type) const = 0;
 			virtual const FGeometryCPUBatch& getGeometryBatch(u64 index) const = 0;
 
 			virtual FRenderWorldStats& getStats() = 0;
@@ -377,23 +369,23 @@ namespace engine
 			virtual void create(const FRenderInterfaceCreateInfo& render_interface_ci) = 0;
 			virtual void render(f32 dt) = 0;
 
-			virtual u64 createTexture(const std::string& path) = 0;
-			virtual u64 loadTexture(const std::string& path, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info) = 0;
+			virtual u64 createTexture(const stl::string& path) = 0;
+			virtual u64 loadTexture(const stl::string& path, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info) = 0;
 
-			virtual u64 createShader(const std::string& name_info, const FGraphicsShaderCreateInfo& create_info) = 0;
-			virtual u64 createShader(const std::string& name_info, const FComputeShaderCreateInfo& create_info) = 0;
+			virtual u64 createShader(const stl::string& name_info, const FGraphicsShaderCreateInfo& create_info) = 0;
+			virtual u64 createShader(const stl::string& name_info, const FComputeShaderCreateInfo& create_info) = 0;
 
-			virtual u64 createVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) = 0;
-			virtual const std::unique_ptr<IVertexHandler>& getVertexHandler(u64 id) = 0;
+			virtual u64 createVertexHandler(const stl::string& name, const FVertexHandlerCreateInfo& handler_ci) = 0;
+			virtual const stl::unique_ptr<IVertexHandler>& getVertexHandler(u64 id) = 0;
 
-			virtual FShaderUploadInfo getShaderNameTag(const std::string& name) = 0;
+			virtual FShaderUploadInfo getShaderNameTag(const stl::string& name) = 0;
 
 			virtual void updateSurfaceSize(i32 width, i32 height) = 0;
 
-			virtual const std::unique_ptr<FRenderDataPacket>& getRenderPacket() = 0;
-			virtual const std::unique_ptr<IRenderGraph>& getRenderGraph() = 0;
-			virtual const std::unique_ptr<IRenderWorld>& getRenderWorld() = 0;
-			virtual const std::unique_ptr<IRenderContext>& getRenderContext() = 0;
+			virtual const stl::unique_ptr<FRenderDataPacket>& getRenderPacket() = 0;
+			virtual const stl::unique_ptr<IRenderGraph>& getRenderGraph() = 0;
+			virtual const stl::unique_ptr<IRenderWorld>& getRenderWorld() = 0;
+			virtual const stl::unique_ptr<IRenderContext>& getRenderContext() = 0;
 		};
 	}
 }
