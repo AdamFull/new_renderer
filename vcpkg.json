@@ -58,6 +58,8 @@
       "version>=": "1.6#1"
     },
     "meshoptimizer",
-    "nlohmann-json"
+    "nlohmann-json",
+    "mimalloc",
+    "eastl"
   ]
 }

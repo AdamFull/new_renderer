@@ -18,7 +18,7 @@ void CGeometryPass::init(const FRenderPassCreateInfo& pass_ci)
 	m_baseShaderName = pass_ci.shader;
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-	m_debugName = std::format("geometry:{}", m_baseShaderName);
+	m_debugName = stl::format("geometry:{}", m_baseShaderName);
 #endif
 }
 
@@ -83,7 +83,7 @@ void CGeometryPass::_render(const FRenderFrameInfo& frame_info)
 	}
 }
 
-const std::unique_ptr<IShaderObject>& CGeometryPass::getShaderByVBO(const IVertexHandler* vbo)
+const stl::unique_ptr<IShaderObject>& CGeometryPass::getShaderByVBO(const IVertexHandler* vbo)
 {
 	auto& render_graph = m_pRenderInterface->getRenderGraph();
 
@@ -91,7 +91,7 @@ const std::unique_ptr<IShaderObject>& CGeometryPass::getShaderByVBO(const IVerte
 	auto& shader = m_shaders[vbo_hash];
 	if (!shader)
 	{
-		shader = std::make_unique<CShaderObject>(m_pRenderInterface);
+		shader = stl::make_unique<CShaderObject>(m_pRenderInterface);
 
 		// Generate shader name
 		auto shader_name = m_baseShaderName + vbo->getDefinitions();
@@ -125,7 +125,7 @@ const std::unique_ptr<IShaderObject>& CGeometryPass::getShaderByVBO(const IVerte
 
 		auto& render_packet = m_pRenderInterface->getRenderPacket();
 		// TODO: i think i can calculate number of calls
-		//shader_ci.usageCount = std::max(render_packet->stats.materialCount, render_packet->stats.primitiveCount);
+		//shader_ci.usageCount = stl::max(render_packet->stats.materialCount, render_packet->stats.primitiveCount);
 		shader_ci.usageCount = render_packet->stats.perTypeVBOCount[vbo_hash];
 		shader_ci.vertexDeclaration = vbo->getVertexDeclaration();
 

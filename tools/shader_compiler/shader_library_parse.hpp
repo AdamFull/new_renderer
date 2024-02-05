@@ -47,13 +47,13 @@ namespace shader_compiler
 
         // Key is the type of shader (EShaderType) it's like container of same shader types. 
         // Key in value it's link to shader from shader module. 
-        std::unordered_map<int64_t, std::unordered_map<int64_t, std::vector<u32>>> shaders;
-        std::unordered_map<int64_t, std::vector<FShaderModule>> modules;
+        stl::unordered_map<int64_t, stl::unordered_map<int64_t, stl::vector<u32>>> shaders;
+        stl::unordered_map<int64_t, stl::vector<FShaderModule>> modules;
     };
 
     struct FShaderCacheData
     {
-        std::unordered_map<int64_t, FCompiledLibrary> libraries{};
+        stl::unordered_map<int64_t, FCompiledLibrary> libraries{};
     };
 
     inline void to_json(nlohmann::json& json, const FShaderModule& type)
@@ -99,19 +99,19 @@ namespace shader_compiler
 namespace nlohmann
 {
     template <typename _Ty>
-    struct adl_serializer<std::unordered_map<int64_t, _Ty>>
+    struct adl_serializer<stl::unordered_map<int64_t, _Ty>>
     {
-        static void to_json(json& j, const std::unordered_map<int64_t, _Ty>& map)
+        static void to_json(json& j, const stl::unordered_map<int64_t, _Ty>& map)
         {
             for (const auto& [key, value] : map)
-                j[std::to_string(key)] = value;
+                j[stl::to_string(key)] = value;
         }
 
-        static void from_json(const json& j, std::unordered_map<int64_t, _Ty>& map)
+        static void from_json(const json& j, stl::unordered_map<int64_t, _Ty>& map)
         {
             for (const auto& item : j.items())
             {
-                int64_t key = std::stoll(item.key());
+                int64_t key = stl::stoll(item.key());
                 map[key] = item.value().get<_Ty>();
             }
         }

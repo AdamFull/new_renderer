@@ -13,7 +13,7 @@ namespace engine
 
 			CGPUArrayHandle(IRenderInterface* render_interface);
 
-			void create(const std::string& name, u64 stride, u64 count) override;
+			void create(const stl::string& name, u64 stride, u64 count) override;
 			void flush(u64 count = ~0ull, u64 offset = 0ull) override;
 			void sync(u64 count) override;
 
@@ -29,19 +29,19 @@ namespace engine
 
 			void clear() override;
 
-			const std::vector<uint8_t>& getData() const override;
-			const std::unique_ptr<IBufferObject>& getBufferObject() const override;
+			const stl::vector<uint8_t>& getData() const override;
+			const stl::unique_ptr<IBufferObject>& getBufferObject() const override;
 
 			u64 size() const override;
 			
 		private:
-			std::vector<uint8_t> m_elements{};
-			std::unique_ptr<IBufferObject> m_pBuffer{};
+			stl::vector<uint8_t> m_elements{};
+			stl::unique_ptr<IBufferObject> m_pBuffer{};
 
 			u64 m_elementSize{ 0ull };
 			u64 m_elementCount{ 0ull };
 
-			std::atomic<u64> m_currentElementCount{ 0ull };
+			stl::atomic<u64> m_currentElementCount{ 0ull };
 
 			IRenderInterface* m_pRenderInterface{ nullptr };
 		};

@@ -9,14 +9,14 @@ constexpr const u64 MAX_PRIMITIVE_COUNT{ 512ull };
 constexpr const u64 MAX_MATERIAL_COUNT{ 512ull };
 
 template<class _Ty>
-std::unique_ptr<IBufferObject> createDrawBuffer(const std::string& name, EBufferTypeFlagBits type, u64 count, IRenderInterface* render_interface)
+stl::unique_ptr<IBufferObject> createDrawBuffer(const stl::string& name, EBufferTypeFlagBits type, u64 count, IRenderInterface* render_interface)
 {
 	FBufferCreateInfo buffer_ci{};
 	buffer_ci.flags = type;
 	buffer_ci.size = sizeof(_Ty);
 	buffer_ci.count = count;
 
-	auto new_buffer = std::make_unique<CBufferObject>(render_interface);
+	auto new_buffer = stl::make_unique<CBufferObject>(render_interface);
 	new_buffer->create(name, buffer_ci);
 	return new_buffer;
 }
@@ -64,12 +64,12 @@ void CRenderWorld::updateFrustum(u64 frustum_id, const glm::mat4& view, const gl
 	frustum.update(view, projection);
 }
 
-void CRenderWorld::addDrawGeometry(const std::vector<FGeometryRawBatch>& new_geometry)
+void CRenderWorld::addDrawGeometry(const stl::vector<FGeometryRawBatch>& new_geometry)
 {
 	m_vRawGeometryBatches.insert(m_vRawGeometryBatches.end(), new_geometry.begin(), new_geometry.end());
 
 	// Sort drawings by vbo, material and node
-	std::sort(m_vRawGeometryBatches.begin(), m_vRawGeometryBatches.end(), [](const FGeometryRawBatch& a, const FGeometryRawBatch& b)
+	stl::sort(m_vRawGeometryBatches.begin(), m_vRawGeometryBatches.end(), [](const FGeometryRawBatch& a, const FGeometryRawBatch& b)
 		{
 			if (a.callInfo.vboID == b.callInfo.vboID)
 			{
@@ -91,10 +91,10 @@ void CRenderWorld::render(f32 dt)
 	for (auto& [type, range] : m_mBatchRanges)
 		range.clear();
 
-	std::vector<FGeometryGPUCullInfo> gpu_culling_infos{};
-	std::vector<FDrawIndexedIndirectData> indirect_data{};
-	std::vector<FGeometryGPUBatch> gpu_batches{};
-	std::vector<u32> counted{};
+	stl::vector<FGeometryGPUCullInfo> gpu_culling_infos{};
+	stl::vector<FDrawIndexedIndirectData> indirect_data{};
+	stl::vector<FGeometryGPUBatch> gpu_batches{};
+	stl::vector<u32> counted{};
 
 	u64 command_offset{ 0ull };
 	u64 batch_offset{ 0ull };
@@ -305,7 +305,7 @@ void CRenderWorld::updateNode(u32 node_id, const FSceneNode& node)
 	m_vNodes.at(node_id) = node;
 }
 
-void CRenderWorld::updateSkin(const std::array<glm::mat4, 128ull>& matrices)
+void CRenderWorld::updateSkin(const stl::array<glm::mat4, 128ull>& matrices)
 {
 	if (m_vSkins.size() < (m_stats.skinCount * 128ull) + 1ull)
 		m_vSkins.resize(((m_stats.skinCount * 128ull) + 1ull) * 2ull);
@@ -322,22 +322,22 @@ void CRenderWorld::addMaterial(const FMaterial& material)
 	m_vMaterials.emplace_back(material);
 }
 
-void CRenderWorld::addMaterials(const std::vector<FMaterial>& materials)
+void CRenderWorld::addMaterials(const stl::vector<FMaterial>& materials)
 {
 	m_vMaterials.insert(m_vMaterials.end(), materials.begin(), materials.end());
 }
 
-const std::vector<std::unique_ptr<IBufferObject>>& CRenderWorld::getDrawBuffers()
+const stl::vector<stl::unique_ptr<IBufferObject>>& CRenderWorld::getDrawBuffers()
 {
 	return m_vBuffers;
 }
 
-const std::unordered_map<ERenderGeometryCullerType, std::vector<FGeometryBatchRange>>& CRenderWorld::getAllGeometryRanges() const
+const stl::unordered_map<ERenderGeometryCullerType, stl::vector<FGeometryBatchRange>>& CRenderWorld::getAllGeometryRanges() const
 {
 	return m_mBatchRanges;
 }
 
-const std::vector<FGeometryBatchRange>& CRenderWorld::getGeometryRanges(ERenderGeometryCullerType type) const
+const stl::vector<FGeometryBatchRange>& CRenderWorld::getGeometryRanges(ERenderGeometryCullerType type) const
 {
 	return m_mBatchRanges[type];
 }

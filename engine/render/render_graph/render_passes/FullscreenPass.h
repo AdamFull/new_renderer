@@ -19,7 +19,7 @@ namespace engine
 			void _render(const FRenderFrameInfo& frame_info) override;
 
 		private:
-			std::unique_ptr<IShaderObject> m_pShader{};
+			stl::unique_ptr<IShaderObject> m_pShader{};
 		};
 	}
 }

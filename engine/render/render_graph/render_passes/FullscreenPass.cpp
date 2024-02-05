@@ -46,7 +46,7 @@ void CFullscreenPass::init(const FRenderPassCreateInfo& pass_ci)
 	}
 
 	// Make RHI shader object
-	m_pShader = std::make_unique<CShaderObject>(m_pRenderInterface);
+	m_pShader = stl::make_unique<CShaderObject>(m_pRenderInterface);
 	m_pShader->create(pass_ci.shader, shader_ci);
 
 	// Bind default textures/buffers to shader
@@ -60,7 +60,7 @@ void CFullscreenPass::init(const FRenderPassCreateInfo& pass_ci)
 	}
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-	m_debugName = std::format("fullscreen:{}", pass_ci.shader);
+	m_debugName = stl::format("fullscreen:{}", pass_ci.shader);
 #endif
 }
 

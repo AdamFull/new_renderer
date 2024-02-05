@@ -1,8 +1,6 @@
 #pragma once
 
 #include "BaseStructures.h"
-#include <unordered_map>
-#include <algorithm>
 
 namespace engine
 {

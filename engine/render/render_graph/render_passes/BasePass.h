@@ -40,14 +40,14 @@ namespace engine
 			ERenderingSizeType m_sizePolicy{};
 			u64 m_sizeTarget{ ~0ull };
 
-			std::unordered_map<ERenderResourceGroupType, std::vector<u64>> m_renderResources{};
-			std::unordered_map<std::string, u64> m_bakedBindings{};
+			stl::unordered_map<ERenderResourceGroupType, stl::vector<u64>> m_renderResources{};
+			stl::unordered_map<stl::string, u64> m_bakedBindings{};
 
 			bool m_bOneTime{ false };
 			bool m_bCanExecute{ true };
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-			std::string m_debugName{};
+			stl::string m_debugName{};
 #endif
 
 			IRenderInterface* m_pRenderInterface{ nullptr };
@@ -73,7 +73,7 @@ namespace engine
 			u64 m_stencilTarget{ ~0ull };
 			u32 m_layerCount{ 1u };
 
-			std::vector<FRenderGraphAttachmentInfo> m_vColorAttachments{};
+			stl::vector<FRenderGraphAttachmentInfo> m_vColorAttachments{};
 			FRenderGraphAttachmentInfo m_depthAttachment{};
 			FRenderGraphAttachmentInfo m_stencilAttachment{};
 		};

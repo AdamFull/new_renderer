@@ -1,7 +1,6 @@
 #pragma once
 
-#include <vector>
-#include <memory>
+#include <standart_library.h>
 
 namespace engine
 {
@@ -21,7 +20,7 @@ namespace engine
 		struct FBufferUploadInfo
 		{
 			u64 bufferId{ ~0ull };
-			std::vector<uint8_t> data{};
+			stl::vector<uint8_t> data{};
 			u64 count{ 1ull };
 			u64 size{ 0ull };
 			u64 offset{ 0ull };
@@ -49,7 +48,7 @@ namespace engine
 		public:
 			virtual ~IBufferObject() = default;
 
-			virtual void create(const std::string& name, const FBufferCreateInfo& create_info) = 0;
+			virtual void create(const stl::string& name, const FBufferCreateInfo& create_info) = 0;
 
 			virtual void map() = 0;
 			virtual void unmap() = 0;
@@ -68,7 +67,7 @@ namespace engine
 		public:
 			virtual ~IGPUArrayHandle() = default;
 
-			virtual void create(const std::string& name, u64 stride, u64 count) = 0;
+			virtual void create(const stl::string& name, u64 stride, u64 count) = 0;
 			virtual void flush(u64 count = ~0ull, u64 offset = 0ull) = 0;
 			virtual void sync(u64 count) = 0;
 
@@ -84,8 +83,8 @@ namespace engine
 
 			virtual void clear() = 0;
 
-			virtual const std::vector<uint8_t>& getData() const = 0;
-			virtual const std::unique_ptr<IBufferObject>& getBufferObject() const = 0;
+			virtual const stl::vector<uint8_t>& getData() const = 0;
+			virtual const stl::unique_ptr<IBufferObject>& getBufferObject() const = 0;
 
 			virtual u64 size() const = 0;
 		};

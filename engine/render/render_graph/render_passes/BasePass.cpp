@@ -90,7 +90,7 @@ void IRenderPass::execute(f32 dt)
 		auto& render_resource = render_graph->getRenderResource(m_sizeTarget);
 		if (render_resource.type != ERenderResourceTypeFlagBits::eRenderTarget)
 		{
-			throw std::runtime_error("Incorrect render resource type.");
+			throw stl::runtime_error("Incorrect render resource type.");
 		}
 
 		auto& resource_sizes = render_context->getTextureInfo(render_resource.handle);

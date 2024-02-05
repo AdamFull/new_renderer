@@ -12,7 +12,7 @@ namespace engine
 			CBufferObject(IRenderInterface* render_interface);
 			~CBufferObject() override;
 
-			void create(const std::string& name, const FBufferCreateInfo& create_info) override;
+			void create(const stl::string& name, const FBufferCreateInfo& create_info) override;
 
 			void map() override;
 			void unmap() override;

@@ -17,7 +17,7 @@ namespace engine
 			u64 registerFrustum(ERenderGeometryCullerType type) override;
 			void updateFrustum(u64 frustum_id, const glm::mat4& view, const glm::mat4& projection) override;
 
-			void addDrawGeometry(const std::vector<FGeometryRawBatch>& new_geometry) override;
+			void addDrawGeometry(const stl::vector<FGeometryRawBatch>& new_geometry) override;
 
 			void render(f32 dt) override;
 
@@ -30,42 +30,42 @@ namespace engine
 			void addShadow(const FSpotShadowCommit& commit) override;
 
 			void updateNode(u32 node_id, const FSceneNode& node) override;
-			void updateSkin(const std::array<glm::mat4, 128ull>& matrices) override;
+			void updateSkin(const stl::array<glm::mat4, 128ull>& matrices) override;
 
 			void addMaterial(const FMaterial& material) override;
-			void addMaterials(const std::vector<FMaterial>& materials) override;
+			void addMaterials(const stl::vector<FMaterial>& materials) override;
 
-			const std::vector<std::unique_ptr<IBufferObject>>& getDrawBuffers() override;
+			const stl::vector<stl::unique_ptr<IBufferObject>>& getDrawBuffers() override;
 
-			const std::unordered_map<ERenderGeometryCullerType, std::vector<FGeometryBatchRange>>& getAllGeometryRanges() const override;
-			const std::vector<FGeometryBatchRange>& getGeometryRanges(ERenderGeometryCullerType type) const override;
+			const stl::unordered_map<ERenderGeometryCullerType, stl::vector<FGeometryBatchRange>>& getAllGeometryRanges() const override;
+			const stl::vector<FGeometryBatchRange>& getGeometryRanges(ERenderGeometryCullerType type) const override;
 			const FGeometryCPUBatch& getGeometryBatch(u64 index) const override;
 
 			FRenderWorldStats& getStats() override;
 			const FRenderWorldStats& getStats() const override;
 		protected:
-			std::vector<FFrustum> m_vSceneFrustums{};
-			std::vector<FCullingInfo> m_vCullingInfo{};
+			stl::vector<FFrustum> m_vSceneFrustums{};
+			stl::vector<FCullingInfo> m_vCullingInfo{};
 
-			std::vector<FGeometryRawBatch> m_vRawGeometryBatches{};
-			std::vector<FGeometryCPUBatch> m_vGeometryBatches{};
-			mutable std::unordered_map<ERenderGeometryCullerType, std::vector<FGeometryBatchRange>> m_mBatchRanges{};
+			stl::vector<FGeometryRawBatch> m_vRawGeometryBatches{};
+			stl::vector<FGeometryCPUBatch> m_vGeometryBatches{};
+			mutable stl::unordered_map<ERenderGeometryCullerType, stl::vector<FGeometryBatchRange>> m_mBatchRanges{};
 
-			std::vector<FMaterial> m_vMaterials{};
-			std::vector<FSceneNode> m_vNodes{};
-			std::vector<glm::mat4> m_vSkins{};
+			stl::vector<FMaterial> m_vMaterials{};
+			stl::vector<FSceneNode> m_vNodes{};
+			stl::vector<glm::mat4> m_vSkins{};
 
-			std::vector<FDirectionalLightCommit> m_vDirectionalLights{};
-			std::vector<FPointLightCommit> m_vPointLights{};
-			std::vector<FSpotLightCommit> m_vSpotLights{};
+			stl::vector<FDirectionalLightCommit> m_vDirectionalLights{};
+			stl::vector<FPointLightCommit> m_vPointLights{};
+			stl::vector<FSpotLightCommit> m_vSpotLights{};
 
-			std::vector<FCascadedShadowCommit> m_vCascadedShadows{};
-			std::vector<FOmniShadowCommit> m_vOmniShadows{};
-			std::vector<FSpotShadowCommit> m_vSpotShadows{};
+			stl::vector<FCascadedShadowCommit> m_vCascadedShadows{};
+			stl::vector<FOmniShadowCommit> m_vOmniShadows{};
+			stl::vector<FSpotShadowCommit> m_vSpotShadows{};
 
 			FRenderWorldStats m_stats{};
 		protected:
-			std::vector<std::unique_ptr<IBufferObject>> m_vBuffers{};
+			stl::vector<stl::unique_ptr<IBufferObject>> m_vBuffers{};
 		private:
 			IRenderInterface* m_pRenderInterface{ nullptr };
 		};

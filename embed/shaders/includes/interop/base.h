@@ -4,11 +4,11 @@
 #ifdef __cplusplus
 
 #include <glm/glm.hpp>
-#include <array>
+#include <standart_library.h>
 
 #define ALIGN_AS(x) alignas(x)
 
-#define ARRAY_OF(name, type, count) std::array<type, count> name
+#define ARRAY_OF(name, type, count) stl::array<type, count> name
 
 #define CONSTANT constexpr const
 

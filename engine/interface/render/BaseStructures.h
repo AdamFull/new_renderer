@@ -36,24 +36,24 @@ namespace engine
 
 		struct FRenderContextCreateInfo
 		{
-			std::string appName{ "dummy_app" };
+			stl::string appName{ "dummy_app" };
 			ERenderApi apiVersion{};
 
 #if defined( VK_USE_PLATFORM_WIN32_KHR )
 			HINSTANCE                       hinstance;
 			HWND                            hwnd;
 #endif
-			std::vector<char> pipelineCache{};
+			stl::vector<char> pipelineCache{};
 
-			std::vector<std::string> requiredDeviceExtensions{};
-			std::vector<std::string> optionalDeviceExtensions{};
+			stl::vector<stl::string> requiredDeviceExtensions{};
+			stl::vector<stl::string> optionalDeviceExtensions{};
 
 			u32 initialWidth{ 0u };
 			u32 initialHeight{ 0u };
 
 			bool validationState{ false };
 			u32 validationFeatures{ 0u };
-			std::vector<std::string> validationLayers{};
+			stl::vector<stl::string> validationLayers{};
 		};
 
 		template<class _Ty>
@@ -97,7 +97,7 @@ namespace engine
 		{
 			u64 lastIndex{ 0ull };
 			u64 lastVertex{ 0ull };
-			std::vector<FGeometryDrawRange> ranges{};
+			stl::vector<FGeometryDrawRange> ranges{};
 		};
 
 		struct FIndirectGeometryDrawInfo
@@ -118,11 +118,6 @@ namespace engine
 		struct FDispatchGroup
 		{
 			u32 x, y, z{};
-		};
-
-		struct FDispatchInfo
-		{
-			std::vector<FDispatchGroup> groups{};
 		};
 
 		struct FAPIObjectDestroyInfo
@@ -255,12 +250,12 @@ namespace engine
 				return true;
 			}
 
-			std::array<glm::vec4, 6> frustumSides{};
-			std::array<f32, 16> clip;
+			stl::array<glm::vec4, 6> frustumSides{};
+			stl::array<f32, 16> clip;
 		private:
 			void normalizeFrustumSide(u64 side)
 			{
-				auto magnitude = std::sqrt(frustumSides[side][0] * frustumSides[side][0] + frustumSides[side][1] * frustumSides[side][1] + frustumSides[side][2] * frustumSides[side][2]);
+				auto magnitude = stl::sqrt(frustumSides[side][0] * frustumSides[side][0] + frustumSides[side][1] * frustumSides[side][1] + frustumSides[side][2] * frustumSides[side][2]);
 				frustumSides[side][0] /= magnitude;
 				frustumSides[side][1] /= magnitude;
 				frustumSides[side][2] /= magnitude;

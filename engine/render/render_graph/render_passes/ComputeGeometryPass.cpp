@@ -18,7 +18,7 @@ void CComputeGeometryPass::init(const FComputePassCreateInfo& pass_ci)
 	m_baseShaderName = pass_ci.shader;
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-	m_debugName = std::format("compute_geometry:{}", m_baseShaderName);
+	m_debugName = stl::format("compute_geometry:{}", m_baseShaderName);
 #endif
 }
 
@@ -29,7 +29,7 @@ void CComputeGeometryPass::build(const FPassBuildInfo& build_info)
 
 void CComputeGeometryPass::_execute(const FComputeFrameInfo& frame_info)
 {
-	std::unordered_set<u64> vbos{};
+	stl::unordered_set<u64> vbos{};
 
 	auto& render_context = m_pRenderInterface->getRenderContext();
 	auto& render_world = m_pRenderInterface->getRenderWorld();
@@ -93,14 +93,14 @@ void CComputeGeometryPass::_execute(const FComputeFrameInfo& frame_info)
 	}
 }
 
-const std::unique_ptr<IShaderObject>& CComputeGeometryPass::getShaderByVBO(const IVertexHandler* vbo)
+const stl::unique_ptr<IShaderObject>& CComputeGeometryPass::getShaderByVBO(const IVertexHandler* vbo)
 {
 	auto& render_graph = m_pRenderInterface->getRenderGraph();
 
 	auto& shader = m_shaders[vbo->getHash()];
 	if (!shader)
 	{
-		shader = std::make_unique<CShaderObject>(m_pRenderInterface);
+		shader = stl::make_unique<CShaderObject>(m_pRenderInterface);
 
 		// Generate shader name
 		auto shader_name = m_baseShaderName + vbo->getDefinitions();
@@ -108,7 +108,7 @@ const std::unique_ptr<IShaderObject>& CComputeGeometryPass::getShaderByVBO(const
 		auto& render_packet = m_pRenderInterface->getRenderPacket();
 
 		FComputeShaderCreateInfo shader_ci{};
-		shader_ci.usageCount = std::max(render_packet->stats.materialCount, render_packet->stats.primitiveCount);
+		shader_ci.usageCount = stl::max(render_packet->stats.materialCount, render_packet->stats.primitiveCount);
 		shader->create(shader_name, shader_ci);
 
 		// Bind default textures/buffers to shader

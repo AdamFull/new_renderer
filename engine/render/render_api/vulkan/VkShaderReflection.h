@@ -2,7 +2,6 @@
 
 #include <vulkan/vulkan.hpp>
 #include <engine/interface/render/RenderInterface.h>
-#include <optional>
 
 namespace engine
 {

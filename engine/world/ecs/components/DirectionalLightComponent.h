@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vector>
+#include <utility.hpp>
 
 namespace engine
 {
@@ -15,7 +15,7 @@ namespace engine
 				int shadowIndex{ -1 };
 				bool castShadows{ true };
 
-				std::vector<u64> frustumIDs{};
+				stl::vector<u64> frustumIDs{};
 			};
 		}
 	}

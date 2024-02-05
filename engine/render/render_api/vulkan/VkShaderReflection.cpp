@@ -3,13 +3,11 @@
 #include <spirv_cross.hpp>
 #include <spirv_glsl.hpp>
 
-#include <utility.hpp>
-
 using namespace engine::render::vulkan;
 
-bool has_substring(const std::string& str, const std::string& target)
+bool has_substring(const stl::string& str, const stl::string& target)
 {
-    return std::search(str.begin(), str.end(), target.begin(), target.end(), [](char a, char b) { return std::tolower(a) == std::tolower(b); }) != str.end();
+    return stl::search(str.begin(), str.end(), target.begin(), target.end(), [](char a, char b) { return stl::tolower(a) == stl::tolower(b); }) != str.end();
 }
 
 u64 get_basic_type_size(spirv_cross::CompilerGLSL* compiler, const spirv_cross::SPIRType& type)
@@ -60,7 +58,7 @@ void build_specialization_constant_reflection(FVkShaderReflectionData& reflectio
     specialization_constant.offset = utl::cast<u32>(offset);
 
     reflection_data.specializationDataBuffer.resize(offset + specialization_constant.size);
-    std::memcpy(reflection_data.specializationDataBuffer.data() + offset, &constant.m.c[0].r[0], specialization_constant.size);
+    stl::memcpy(reflection_data.specializationDataBuffer.data() + offset, &constant.m.c[0].r[0], specialization_constant.size);
 
     reflection_data.specializationConstants.emplace(name_hash, specialization_constant);
 }
@@ -171,12 +169,12 @@ void build_uniform_reflection(FVkShaderReflectionData& reflection_data, spirv_cr
 }
 
 
-void CVkShaderReflectionBuilder::addShaderStage(vk::ShaderStageFlagBits shaderStage, const std::vector<u32>& shaderCode)
+void CVkShaderReflectionBuilder::addShaderStage(vk::ShaderStageFlagBits shaderStage, const stl::vector<u32>& shaderCode)
 {
 	spirv_cross::CompilerGLSL compiler(shaderCode);
     auto active = compiler.get_active_interface_variables();
     auto resources = compiler.get_shader_resources(active);
-    compiler.set_enabled_interface_variables(std::move(active));
+    compiler.set_enabled_interface_variables(stl::move(active));
 
     // Parse execution modes
     auto& execution_modes = compiler.get_execution_mode_bitset();
@@ -218,7 +216,7 @@ void CVkShaderReflectionBuilder::addShaderStage(vk::ShaderStageFlagBits shaderSt
 
 FVkShaderReflectionData CVkShaderReflectionBuilder::build()
 {
-    std::unordered_map<vk::DescriptorType, u32> descriptorUsageCounter{};
+    stl::unordered_map<vk::DescriptorType, u32> descriptorUsageCounter{};
 
     for (const auto& [name, block] : reflectionData.uniformBlocks)
     {
@@ -249,12 +247,12 @@ FVkShaderReflectionData CVkShaderReflectionBuilder::build()
 
     // Sort descriptors by binding.
     for (auto& [set, descriptors] : reflectionData.descriptorSetLayoutBindings)
-        std::sort(descriptors.begin(), descriptors.end(), [](const vk::DescriptorSetLayoutBinding& l, const vk::DescriptorSetLayoutBinding& r) { return l.binding < r.binding; });
+        stl::sort(descriptors.begin(), descriptors.end(), [](const vk::DescriptorSetLayoutBinding& l, const vk::DescriptorSetLayoutBinding& r) { return l.binding < r.binding; });
 
     // Remove not unique elements
     for (auto& [set, descriptors] : reflectionData.descriptorSetLayoutBindings)
     {
-        auto first = std::unique(descriptors.begin(), descriptors.end(), [](const vk::DescriptorSetLayoutBinding& l, const vk::DescriptorSetLayoutBinding& r) { return l.binding == r.binding; });
+        auto first = stl::unique(descriptors.begin(), descriptors.end(), [](const vk::DescriptorSetLayoutBinding& l, const vk::DescriptorSetLayoutBinding& r) { return l.binding == r.binding; });
 
         if(first != descriptors.end())
             descriptors.erase(first, descriptors.end());

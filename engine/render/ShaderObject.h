@@ -1,7 +1,6 @@
 #pragma once
 
 #include <engine/interface/render/RenderInterface.h>
-#include <utility.hpp>
 
 namespace engine
 {
@@ -13,11 +12,11 @@ namespace engine
 			CShaderObject(IRenderInterface* render_interface);
 			~CShaderObject() override;
 
-			void create(const std::string& name, const FGraphicsShaderCreateInfo& create_info) override;
-			void create(const std::string& name, const FComputeShaderCreateInfo& create_info) override;
+			void create(const stl::string& name, const FGraphicsShaderCreateInfo& create_info) override;
+			void create(const stl::string& name, const FComputeShaderCreateInfo& create_info) override;
 
-			const std::unique_ptr<CUniformHandle>& getUniformBlock(const char* name) override;
-			const std::unique_ptr<CUniformHandle>& getConstantBlock(const char* name) override;
+			const stl::unique_ptr<CUniformHandle>& getUniformBlock(const char* name) override;
+			const stl::unique_ptr<CUniformHandle>& getConstantBlock(const char* name) override;
 
 			void bindBuffer(const char* name, u64 buffer_resource) override;
 			void bindTexture(const char* name, u64 texture_resource, u32 mip = 0u) override;
@@ -34,11 +33,11 @@ namespace engine
 		protected:
 			void buildReflection();
 		private:
-			std::unordered_map<u64, std::unique_ptr<CUniformHandle>> m_uniformBlocks{};
-			std::unordered_map<u64, std::unique_ptr<CUniformHandle>> m_constantBlocks{};
+			stl::unordered_map<u64, stl::unique_ptr<CUniformHandle>> m_uniformBlocks{};
+			stl::unordered_map<u64, stl::unique_ptr<CUniformHandle>> m_constantBlocks{};
 
-			std::unordered_map<u64, u64> m_bindBuffers{};
-			std::unordered_map<u64, FTextureBindInfo> m_bindTextures{};
+			stl::unordered_map<u64, u64> m_bindBuffers{};
+			stl::unordered_map<u64, FTextureBindInfo> m_bindTextures{};
 			u64 m_shaderId{ ~0ull };
 
 			FShaderReflectionData m_reflection{};

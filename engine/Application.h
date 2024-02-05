@@ -1,6 +1,6 @@
 #pragma once
 
-#include <memory>
+#include <utility.hpp>
 #include <engine/interface/WindowInterface.h>
 #include <engine/interface/render/RenderInterface.h>
 #include <engine/interface/filesystem/VirtualFileSystemInterface.h>
@@ -18,11 +18,11 @@ namespace engine
 		void loop();
 
 	private:
-		std::unique_ptr<IWindowInterface> m_pWindowHandle{};
-		std::unique_ptr<CInputMapper> m_pInputMapper{};
-		std::unique_ptr<render::IRenderInterface> m_pRenderInterface{};
-		std::unique_ptr<filesystem::IVirtualFileSystemInterface> m_pVirtualFileSystem{};
-		std::unique_ptr<scripting::CScriptEngine> m_pScriptEngine{};
-		std::unique_ptr<world::CScene> m_pScene{};
+		stl::unique_ptr<IWindowInterface> m_pWindowHandle{};
+		stl::unique_ptr<CInputMapper> m_pInputMapper{};
+		stl::unique_ptr<render::IRenderInterface> m_pRenderInterface{};
+		stl::unique_ptr<filesystem::IVirtualFileSystemInterface> m_pVirtualFileSystem{};
+		stl::unique_ptr<scripting::CScriptEngine> m_pScriptEngine{};
+		stl::unique_ptr<world::CScene> m_pScene{};
 	};
 }

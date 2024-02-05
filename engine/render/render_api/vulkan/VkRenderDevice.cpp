@@ -76,7 +76,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debug_messenger_callback(VkDebugUtilsMessageSever
 VKAPI_ATTR vk::Bool32 VKAPI_CALL debug_report_callback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, u64 object, u64 location, i32 messageCode, const char* pLayerPrefix, const char* pMessage, void* pUserData)
 {
 	vk::DebugReportObjectTypeEXT object_type = utl::cast<vk::DebugReportObjectTypeEXT>(objectType);
-	auto report_text = std::format("Report[{}:{}:{}]: {}", pLayerPrefix, vk::to_string(object_type), location, pMessage);
+	auto report_text = stl::format("Report[{}:{}:{}]: {}", pLayerPrefix, vk::to_string(object_type), location, pMessage);
 
 	switch (flags)
 	{
@@ -164,9 +164,9 @@ FRenderApiErrorInfo CVkRenderDevice::createCommandPool(const FVkCommandPoolCreat
 
 	vk::Result res = m_logicalDevice.handle.createCommandPool(&pool_ci, m_allocationCallbacks, &command_pool.handle);
 #ifndef BUILD_WITHOUT_DEBUGGIND
-	std::stringstream ss{};
+	stl::stringstream ss{};
 	ss << command_pool_ci.threadId;
-	debugSetObjectName(command_pool.handle, std::format("thread_id {}", ss.str()));
+	debugSetObjectName(command_pool.handle, stl::format("thread_id {}", ss.str()));
 #endif
 
 	return make_api_error(command_pool.handle.objectType, res, "Failed to create");
@@ -189,7 +189,7 @@ FRenderApiErrorInfo CVkRenderDevice::createCommandBuffer(const FVkCommandBufferC
 	vk::Result res = m_logicalDevice.handle.allocateCommandBuffers(&command_buffer_ai, command_buffer.handles.data());
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	for(u64 idx = 0ull; idx < command_buffer.handles.size(); ++idx)
-		debugSetObjectName(command_buffer.get(), std::format("{} #{}", command_buffer_ci.name, idx));
+		debugSetObjectName(command_buffer.get(), stl::format("{} #{}", command_buffer_ci.name, idx));
 #endif
 
 	command_buffer.mask = command_buffer_ci.mask;
@@ -381,7 +381,7 @@ void CVkRenderDevice::destroyDescriptorSetLayout(vk::DescriptorSetLayout& descri
 
 FRenderApiErrorInfo CVkRenderDevice::createDescriptorPool(const FVkDescriptorPoolCreateInfo& pool_ci, FVkDescriptorPool& descriptor_pool)
 {
-	std::vector<vk::DescriptorPoolSize> pool_sizes{ pool_ci.poolSizes };
+	stl::vector<vk::DescriptorPoolSize> pool_sizes{ pool_ci.poolSizes };
 
 	// Calculate total descriptor set count in descriptor pool and update descriptor sizes
 	u32 maxSets{ 1u };
@@ -423,7 +423,7 @@ void CVkRenderDevice::destroyDescriptorPool(FVkDescriptorPool& descriptor_pool)
 
 FRenderApiErrorInfo CVkRenderDevice::createDescriptorSet(const FVkDescriptorSetCreateInfo& set_ci, FVkDescriptorSet& descriptor_set)
 {
-	std::vector<vk::DescriptorSetLayout> per_frame_layout(set_ci.descriptorCount, set_ci.layout);
+	stl::vector<vk::DescriptorSetLayout> per_frame_layout(set_ci.descriptorCount, set_ci.layout);
 
 	vk::DescriptorSetAllocateInfo descriptor_ai{};
 	descriptor_ai.descriptorPool = set_ci.pool;
@@ -436,7 +436,7 @@ FRenderApiErrorInfo CVkRenderDevice::createDescriptorSet(const FVkDescriptorSetC
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	for (u64 idx = 0ull; idx < descriptor_set.handles.size(); ++idx)
-		debugSetObjectName(descriptor_set.handles.at(idx), std::format("{} #{}", set_ci.name, idx));
+		debugSetObjectName(descriptor_set.handles.at(idx), stl::format("{} #{}", set_ci.name, idx));
 #endif
 
 	return make_api_error(vk::ObjectType::eDescriptorSet, res, "Failed to allocate");
@@ -492,7 +492,7 @@ FRenderApiErrorInfo CVkRenderDevice::createPipeline(const FVkGraphicsPipelineCre
 	vertex_input_state.vertexBindingDescriptionCount = utl::cast<u32>(pipeline_ci.vertexBindingDescriptions.size());
 	vertex_input_state.pVertexBindingDescriptions = pipeline_ci.vertexBindingDescriptions.data();
 
-	std::vector<vk::PipelineColorBlendAttachmentState> color_blend_attachment_states{};
+	stl::vector<vk::PipelineColorBlendAttachmentState> color_blend_attachment_states{};
 	for (u32 idx = 0u; idx < pipeline_ci.colorAttachmentFormats.size(); ++idx)
 	{
 		auto& state = color_blend_attachment_states.emplace_back();
@@ -540,7 +540,7 @@ FRenderApiErrorInfo CVkRenderDevice::createPipeline(const FVkGraphicsPipelineCre
 	depth_stencil_state.depthBoundsTestEnable = false;
 	depth_stencil_state.stencilTestEnable = false; // TODO: implement stencil test
 
-	std::vector<vk::DynamicState> dynamic_states{ vk::DynamicState::eViewport, vk::DynamicState::eScissor };
+	stl::vector<vk::DynamicState> dynamic_states{ vk::DynamicState::eViewport, vk::DynamicState::eScissor };
 
 	vk::PipelineDynamicStateCreateInfo dynamic_state{};
 	dynamic_state.pDynamicStates = dynamic_states.data();
@@ -645,7 +645,7 @@ void CVkRenderDevice::submitCommandBuffer(const FVkCommandBuffer& command_buffer
 
 	auto& queue = getQueue(command_buffer.mask);
 	queue.submit(submitInfo, fence);
-	m_logicalDevice.handle.waitForFences(1, &fence, VK_TRUE, (std::numeric_limits<u64>::max)());
+	m_logicalDevice.handle.waitForFences(1, &fence, VK_TRUE, (stl::numeric_limits<u64>::max)());
 	m_logicalDevice.handle.destroyFence(fence, m_allocationCallbacks);
 }
 
@@ -702,7 +702,7 @@ vk::Result CVkRenderDevice::present(FVkCommandBuffer& command_buffer)
 	res = present_queue.presentKHR(present_info);
 	check_api_result(make_api_error(vk::ObjectType::eQueue, res, "Failed to present"));
 
-	res = m_logicalDevice.handle.waitForFences(1, &m_swapchain.inFlightFences[m_swapchain.currentFrame], VK_TRUE, (std::numeric_limits<u64>::max)());
+	res = m_logicalDevice.handle.waitForFences(1, &m_swapchain.inFlightFences[m_swapchain.currentFrame], VK_TRUE, (stl::numeric_limits<u64>::max)());
 	m_swapchain.currentFrame = (m_swapchain.currentFrame + 1) % m_swapchain.framesInFlight;
 
 	return res;
@@ -710,10 +710,10 @@ vk::Result CVkRenderDevice::present(FVkCommandBuffer& command_buffer)
 
 vk::Result CVkRenderDevice::acquireNextImage(u32& image_index)
 {
-	return m_logicalDevice.handle.acquireNextImageKHR(m_swapchain.handle, (std::numeric_limits<u64>::max)(), m_swapchain.imageAvaliableSemaphores[m_swapchain.currentFrame], nullptr, &image_index);
+	return m_logicalDevice.handle.acquireNextImageKHR(m_swapchain.handle, (stl::numeric_limits<u64>::max)(), m_swapchain.imageAvaliableSemaphores[m_swapchain.currentFrame], nullptr, &image_index);
 }
 
-void CVkRenderDevice::debugBeginLabel(vk::CommandBuffer& command_buffer, const std::string& name, u32 color)
+void CVkRenderDevice::debugBeginLabel(vk::CommandBuffer& command_buffer, const stl::string& name, u32 color)
 {
 #ifndef BUILD_WITHOUT_DEBUGGIND
 #ifdef ENABLE_TRACY_PROFILING
@@ -723,7 +723,7 @@ void CVkRenderDevice::debugBeginLabel(vk::CommandBuffer& command_buffer, const s
 #endif
 }
 
-void CVkRenderDevice::debugInsertLabel(vk::CommandBuffer& command_buffer, const std::string& name, u32 color)
+void CVkRenderDevice::debugInsertLabel(vk::CommandBuffer& command_buffer, const stl::string& name, u32 color)
 {
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	command_buffer.insertDebugUtilsLabelEXT(make_debug_label(name.c_str(), color));
@@ -737,14 +737,14 @@ void CVkRenderDevice::endLabel(vk::CommandBuffer& command_buffer)
 #endif
 }
 
-void CVkRenderDevice::debugBeginLabel(vk::Queue& queue, const std::string& name, u32 color)
+void CVkRenderDevice::debugBeginLabel(vk::Queue& queue, const stl::string& name, u32 color)
 {
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	queue.beginDebugUtilsLabelEXT(make_debug_label(name.c_str(), color));
 #endif
 }
 
-void CVkRenderDevice::debugInsertLabel(vk::Queue& queue, const std::string& name, u32 color)
+void CVkRenderDevice::debugInsertLabel(vk::Queue& queue, const stl::string& name, u32 color)
 {
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	queue.insertDebugUtilsLabelEXT(make_debug_label(name.c_str(), color));
@@ -784,7 +784,7 @@ void CVkRenderDevice::initProfiler(const FVkCommandPool& command_pool)
 #endif
 }
 
-vk::Format CVkRenderDevice::findSupportedFormat(const std::vector<vk::Format>& candidates, bool depth_only)
+vk::Format CVkRenderDevice::findSupportedFormat(const stl::vector<vk::Format>& candidates, bool depth_only)
 {
 	auto& phusical_device = getPhysicalDevice();
 
@@ -886,9 +886,9 @@ const vk::PipelineCache& CVkRenderDevice::getPipelineCache() const
 	return m_pipelineCache;
 }
 
-std::vector<char> CVkRenderDevice::getPipelineCacheData() const
+stl::vector<char> CVkRenderDevice::getPipelineCacheData() const
 {
-	std::vector<char> pipeline_cache_data{};
+	stl::vector<char> pipeline_cache_data{};
 
 	u64 data_size{ 0ull };
 	void* data_ptr{ nullptr };
@@ -897,7 +897,7 @@ std::vector<char> CVkRenderDevice::getPipelineCacheData() const
 	if (res == vk::Result::eSuccess)
 	{
 		pipeline_cache_data.resize(data_size);
-		std::memcpy(pipeline_cache_data.data(), data_ptr, data_size);
+		stl::memcpy(pipeline_cache_data.data(), data_ptr, data_size);
 	}
 
 	return pipeline_cache_data;
@@ -942,7 +942,7 @@ FRenderApiErrorInfo CVkRenderDevice::createInstance(const FRenderContextCreateIn
 	instance_ci.ppEnabledExtensionNames = instance_extensions.data();
 
 	// Apply validation features
-	std::vector<vk::ValidationFeatureEnableEXT> feature_enables{};
+	stl::vector<vk::ValidationFeatureEnableEXT> feature_enables{};
 	vk::ValidationFeaturesEXT validation_features{};
 
 	if (context_ci.validationFeatures & GPU_ASSISTED_FLAG_BIT)
@@ -959,7 +959,7 @@ FRenderApiErrorInfo CVkRenderDevice::createInstance(const FRenderContextCreateIn
 	validation_features.enabledValidationFeatureCount = utl::cast<u32>(feature_enables.size());
 	validation_features.pEnabledValidationFeatures = feature_enables.data();
 
-	std::vector<const char*> layer_names{};
+	stl::vector<const char*> layer_names{};
 	for (auto& layer_name : context_ci.validationLayers)
 		layer_names.emplace_back(layer_name.c_str());
 
@@ -1010,7 +1010,7 @@ FRenderApiErrorInfo CVkRenderDevice::createSurface(const FRenderContextCreateInf
 
 void CVkRenderDevice::selectQueueFamilies(FVkPhysicalDevice& device_info)
 {
-	std::unordered_map<u32, vk::QueueFamilyProperties> family_properties{};
+	stl::unordered_map<u32, vk::QueueFamilyProperties> family_properties{};
 
 	auto& physical_device = device_info.handle;
 	auto& families_info = device_info.queueFamilies;
@@ -1080,14 +1080,14 @@ void CVkRenderDevice::selectQueueFamilies(FVkPhysicalDevice& device_info)
 	if (families_info.queueMask & EQueueTypeFlagBits::eTransfer)
 		device_info.compatFlags |= PHYSICAL_DEVICE_COMPAT_ASYNC_TRANSFER_FLAG_BIT;
 
-	std::set<u32> unique_families{};
+	stl::set<u32> unique_families{};
 	for (auto& [index, count] : family_usages)
 	{
 		if(count > 0)
 			unique_families.emplace(index);
 	}
 
-	device_info.queueFamilies.uniqueFamilies = std::vector<u32>(unique_families.begin(), unique_families.end());
+	device_info.queueFamilies.uniqueFamilies = stl::vector<u32>(unique_families.begin(), unique_families.end());
 }
 
 FRenderApiErrorInfo CVkRenderDevice::selectPhysicalDevice(const FRenderContextCreateInfo& context_ci)
@@ -1103,9 +1103,9 @@ FRenderApiErrorInfo CVkRenderDevice::selectPhysicalDevice(const FRenderContextCr
 		auto& current_device = m_physicalDevices.back();
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-		std::stringstream uuid_ss;
+		stl::stringstream uuid_ss;
 		for (uint8_t byte : current_device.properties.pipelineCacheUUID)
-			uuid_ss << std::hex << std::setfill('0') << std::setw(2) << utl::cast<int>(byte);
+			uuid_ss << stl::hex << stl::setfill('0') << stl::setw(2) << utl::cast<int>(byte);
 
 		log_debug("Physical device: \nName: {}\nID: {}\nVendor: {}\nDriver: {}\nAPI version: {}\nType: {}\nCache UUID: {}",
 			current_device.properties.deviceName.data(),
@@ -1124,7 +1124,7 @@ FRenderApiErrorInfo CVkRenderDevice::selectPhysicalDevice(const FRenderContextCr
 			continue;
 		}
 
-		std::vector<std::string> unsupported_extensions{};
+		stl::vector<stl::string> unsupported_extensions{};
 		for (const auto& req : context_ci.requiredDeviceExtensions)
 		{
 			if (!check_contains_single(req, current_device.avaliableExtensions))
@@ -1134,7 +1134,7 @@ FRenderApiErrorInfo CVkRenderDevice::selectPhysicalDevice(const FRenderContextCr
 		if (!unsupported_extensions.empty())
 		{
 #ifndef BUILD_WITHOUT_DEBUGGIND
-			std::stringstream ss{};
+			stl::stringstream ss{};
 			for (const auto& ext : unsupported_extensions)
 				ss << ext << " ";
 			log_info("Device is not supporting extensions: {}.", ss.str());
@@ -1233,8 +1233,8 @@ FRenderApiErrorInfo CVkRenderDevice::createLogicalDevice(const FRenderContextCre
 		m_requiredSampleCount = vk::SampleCountFlagBits::e1;
 
 	// Get queue create infos
-	std::vector<vk::DeviceQueueCreateInfo> queue_create_infos{};
-	std::unordered_map<u32, std::vector<f32>> queue_priorities{};
+	stl::vector<vk::DeviceQueueCreateInfo> queue_create_infos{};
+	stl::unordered_map<u32, stl::vector<f32>> queue_priorities{};
 	for (auto& [index, usages] : physical_device.queueFamilies.familyUsages)
 	{
 		for (u64 usage = 0; usage < usages; ++usage)
@@ -1269,7 +1269,7 @@ FRenderApiErrorInfo CVkRenderDevice::createLogicalDevice(const FRenderContextCre
 	device_ci.pEnabledFeatures = &vk10features;
 	device_ci.pNext = m_logicalDevice.lastExtensionFeature;
 
-	std::vector<const char*> enabled_extension_names{};
+	stl::vector<const char*> enabled_extension_names{};
 	for (auto& ext_name : physical_device.avaliableExtensions)
 	{
 		auto ext_name_c = ext_name.c_str();
@@ -1280,7 +1280,7 @@ FRenderApiErrorInfo CVkRenderDevice::createLogicalDevice(const FRenderContextCre
 	device_ci.enabledExtensionCount = utl::cast<u32>(enabled_extension_names.size());
 	device_ci.ppEnabledExtensionNames = enabled_extension_names.data();
 
-	std::vector<const char*> layer_names{};
+	stl::vector<const char*> layer_names{};
 	for (auto& layer_name : context_ci.validationLayers)
 		layer_names.emplace_back(layer_name.c_str());
 
@@ -1294,7 +1294,7 @@ FRenderApiErrorInfo CVkRenderDevice::createLogicalDevice(const FRenderContextCre
 
 	auto get_queue_family_index = [&physical_device](EQueueTypeFlagBits mask) -> u32 { return physical_device.queueFamilies.queueToFamily.count(mask) ? physical_device.queueFamilies.queueToFamily[mask] : ~0u; };
 
-	std::unordered_map<u32, u32> family_usages{};
+	stl::unordered_map<u32, u32> family_usages{};
 	for (auto& [type, family] : physical_device.queueFamilies.queueToFamily)
 		m_logicalDevice.queues[type] = m_logicalDevice.handle.getQueue(family, family_usages[family]++);
 
@@ -1412,7 +1412,7 @@ FRenderApiErrorInfo CVkRenderDevice::createSwapchain(u32 surface_width, u32 surf
 		for (u32 idx = 0u; idx < image_count; ++idx)
 		{
 #ifndef BUILD_WITHOUT_DEBUGGIND
-			image_view_ci.name = std::format("frame #{}", idx);
+			image_view_ci.name = stl::format("frame #{}", idx);
 #endif
 			image_view_ci.ci.image = m_swapchain.images.at(idx);
 			check_api_result(createImageView(image_view_ci, m_swapchain.imageViews.at(idx)));
@@ -1432,9 +1432,9 @@ FRenderApiErrorInfo CVkRenderDevice::createSwapchain(u32 surface_width, u32 surf
 		for (u64 idx = 0ull; idx < image_count; ++idx)
 		{
 #ifndef BUILD_WITHOUT_DEBUGGIND
-			ia_semaphore_ci.name = std::format("image avaliable #{}", idx);
-			rf_semaphore_ci.name = std::format("render finished #{}", idx);
-			fence_ci.name = std::format("frame #{}", idx);
+			ia_semaphore_ci.name = stl::format("image avaliable #{}", idx);
+			rf_semaphore_ci.name = stl::format("render finished #{}", idx);
+			fence_ci.name = stl::format("frame #{}", idx);
 #endif
 			check_api_result(createSemaphore(ia_semaphore_ci, m_swapchain.imageAvaliableSemaphores.at(idx)));
 			check_api_result(createSemaphore(rf_semaphore_ci, m_swapchain.renderFinishedSemaphores.at(idx)));

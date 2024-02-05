@@ -13,7 +13,7 @@ CBufferObject::~CBufferObject()
 	render_context->destroyBuffer(m_bufferId);
 }
 
-void CBufferObject::create(const std::string& name, const FBufferCreateInfo& create_info)
+void CBufferObject::create(const stl::string& name, const FBufferCreateInfo& create_info)
 {
 	auto& render_context = m_pRenderInterface->getRenderContext();
 	auto& render_graph = m_pRenderInterface->getRenderGraph();
@@ -45,11 +45,11 @@ void CBufferObject::write(const void* data, u64 size, u64 offset)
 {
 	if (size == ~0ull)
 	{
-		std::memcpy(m_pMapped, data, m_elemSize * m_elemCount);
+		stl::memcpy(m_pMapped, data, m_elemSize * m_elemCount);
 		return;
 	}
 
-	std::memcpy(utl::cast<char*>(m_pMapped) + offset, data, size * m_elemSize);
+	stl::memcpy(utl::cast<char*>(m_pMapped) + offset, data, size * m_elemSize);
 }
 
 void CBufferObject::flush(u64 size, u64 offset) 
@@ -60,7 +60,7 @@ void CBufferObject::flush(u64 size, u64 offset)
 
 void CBufferObject::clear()
 {
-	std::memset(m_pMapped, 0, m_elemCount * m_elemSize);
+	stl::memset(m_pMapped, 0, m_elemCount * m_elemSize);
 }
 
 u64 CBufferObject::handle()

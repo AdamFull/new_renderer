@@ -18,7 +18,7 @@ namespace engine
 		private:
 			void _execute(const FComputeFrameInfo& frame_info) override;
 		private:
-			std::unique_ptr<IShaderObject> m_pShader{};
+			stl::unique_ptr<IShaderObject> m_pShader{};
 		};
 	}
 }

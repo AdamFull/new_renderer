@@ -195,9 +195,9 @@ glslang::EShTargetLanguageVersion get_SPIR_version(ETargetAPIType eAPI)
 	}
 }
 
-std::string remove_spaces_around_dot(const std::string& line)
+stl::string remove_spaces_around_dot(const stl::string& line)
 {
-	std::string result;
+	stl::string result;
 	bool is_last_was_dot{ false };
 
 	for (char c : line) 
@@ -210,7 +210,7 @@ std::string remove_spaces_around_dot(const std::string& line)
 	}
 
 	u64 pos = result.find(" .");
-	while (pos != std::string::npos) 
+	while (pos != stl::string::npos) 
 	{
 		result.erase(pos, 1);
 		pos = result.find(" .", pos);
@@ -219,17 +219,17 @@ std::string remove_spaces_around_dot(const std::string& line)
 	return result;
 }
 
-std::string clean_code(const std::string& input)
+stl::string clean_code(const stl::string& input)
 {
-	std::istringstream stream(input);
-	std::string cleaned_code, line;
-	std::stack<char> block_stack;
+	stl::istringstream stream(input);
+	stl::string cleaned_code, line;
+	stl::stack<char> block_stack;
 	bool was_empty_line = false;
 
-	while (std::getline(stream, line)) 
+	while (stl::getline(stream, line)) 
 	{
 		u64 first = line.find_first_not_of(" \t");
-		if (first == std::string::npos) 
+		if (first == stl::string::npos) 
 		{
 			was_empty_line = true;
 			continue;
@@ -240,12 +240,12 @@ std::string clean_code(const std::string& input)
 
 		line = remove_spaces_around_dot(line);
 
-		if ((line.find('}') != std::string::npos) && !block_stack.empty())
+		if ((line.find('}') != stl::string::npos) && !block_stack.empty())
 			block_stack.pop();
 
-		line = std::string(block_stack.size(), '\t') + line;
+		line = stl::string(block_stack.size(), '\t') + line;
 
-		if (line.find('{') != std::string::npos)
+		if (line.find('{') != stl::string::npos)
 			block_stack.push('{');
 
 		if (was_empty_line && !cleaned_code.empty())
@@ -275,7 +275,7 @@ void CShaderCompiler::initialize()
 		log_error("Failed to initialize glslang processor.");
 }
 
-void CShaderCompiler::preprocess(const std::string& shader_code, const FCompileInfo& info, std::string& preprocessed_code, u64& preprocessed_hash)
+void CShaderCompiler::preprocess(const stl::string& shader_code, const FCompileInfo& info, stl::string& preprocessed_code, u64& preprocessed_hash)
 {
 	auto language = get_sh_language(info.type);
 	glslang::TShader shader(language);
@@ -296,7 +296,7 @@ void CShaderCompiler::preprocess(const std::string& shader_code, const FCompileI
 	shader.setEnvTarget(glslang::EShTargetSpv, spir_version);
 
 	empty_includer includer;
-	std::string preprocessed_raw;
+	stl::string preprocessed_raw;
 	if (!shader.preprocess(&resources, client_version, ENoProfile, false, false, messages, &preprocessed_raw, includer))
 		log_error("\nPreprocessing error: In shader \"{}\" \n{}\n{}\n", info.name, shader.getInfoLog(), shader.getInfoDebugLog());
 
@@ -305,9 +305,9 @@ void CShaderCompiler::preprocess(const std::string& shader_code, const FCompileI
 	preprocessed_hash = utl::fnv1a_64_hash(preprocessed_code.c_str());
 }
 
-std::vector<u32> CShaderCompiler::compile(const std::string& shader_code, const FCompileInfo& info)
+stl::vector<u32> CShaderCompiler::compile(const stl::string& shader_code, const FCompileInfo& info)
 {
-	std::vector<u32> spirv{};
+	stl::vector<u32> spirv{};
 
 	auto language = get_sh_language(info.type);
 
@@ -351,19 +351,19 @@ std::vector<u32> CShaderCompiler::compile(const std::string& shader_code, const 
 	spv::SpvBuildLogger logger;
 	GlslangToSpv(*program.getIntermediate(language), spirv, &logger, &spvOptions);
 
-	std::string error{};
+	stl::string error{};
 	logger.error(error);
 	if(!error.empty())
 		log_error("SPIRV generation error: In shader \"{}\" \n{}\n", info.name, error);
 
-	std::string warning;
+	stl::string warning;
 	logger.warning(warning);
 	if(!warning.empty())
 		log_error("SPIRV generation warnings: In shader \"{}\" \n{}\n", info.name, warning);
 
 	// TODO: i can cross compile spirv inside apis
 	//// Cross compilation
-	//std::string cross_compiled{};
+	//stl::string cross_compiled{};
 	//if (target_api == ETargetAPIType::eGL)
 	//{
 	//	spirv_cross::CompilerGLSL::Options ops;
@@ -399,7 +399,7 @@ std::vector<u32> CShaderCompiler::compile(const std::string& shader_code, const 
 	//	auto out_size = cross_compiled.size() / sizeof(u32);
 	//
 	//	spirv.resize(out_size);
-	//	std::memcpy(spirv.data(), cross_compiled.data(), cross_compiled.size());
+	//	stl::memcpy(spirv.data(), cross_compiled.data(), cross_compiled.size());
 	//}
 
 	return spirv;

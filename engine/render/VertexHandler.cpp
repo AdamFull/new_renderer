@@ -69,7 +69,7 @@ EApiDataFormat get_attribute_format_by_type(EVertexAttributeType type, u64 size)
 	return EApiDataFormat::eUnknown;
 }
 // HAS_TEXCOORD, HAS_NORMAL, HAS_SKIN, COLOR_VEC3, COLOR_VEC4, TANGENT_VEC3, TANGENT_VEC4, JOINTS_8BIT, JOINTS_16BIT
-std::string get_attribute_definition(EVertexAttributeType type, u64 size)
+stl::string get_attribute_definition(EVertexAttributeType type, u64 size)
 {
 	if (size == 4ull)
 	{
@@ -108,7 +108,7 @@ std::string get_attribute_definition(EVertexAttributeType type, u64 size)
 	return "";
 }
 
-std::string get_index_definition(u64 size)
+stl::string get_index_definition(u64 size)
 {
 	if (size == 1ull)
 		return "INDEX_8BIT";
@@ -134,7 +134,7 @@ CVertexHandler::~CVertexHandler()
 // NOTE: current implementation work only with interleaved vertex
 void CVertexHandler::create(const FVertexHandlerCreateInfo& create_info)
 {
-	std::unordered_set<std::string> definitions{};
+	stl::unordered_set<stl::string> definitions{};
 
 	// Initialize attribute descriptions
 	auto& render_context = m_pRenderInterface->getRenderContext();
@@ -168,7 +168,7 @@ void CVertexHandler::create(const FVertexHandlerCreateInfo& create_info)
 		definitions.emplace(get_index_definition(m_indexBuffer.elementSize));
 
 	// Initialize attribute definitions and hash
-	std::stringstream ss{};
+	stl::stringstream ss{};
 	for (const auto& definition : definitions)
 		ss << ":" << definition;
 	m_definitions = ss.str();
@@ -188,14 +188,14 @@ void CVertexHandler::allocate()
 	buffer_ci.size = m_vertexBuffer.elementSize;
 	buffer_ci.count = m_vertexBuffer.elementCount;
 	buffer_ci.upload.data = m_vertexBuffer.data;
-	m_vertexBuffer.buffer = render_context->createBuffer(std::format("SCENE_VERTICES{}", m_definitions), buffer_ci);
+	m_vertexBuffer.buffer = render_context->createBuffer(stl::format("SCENE_VERTICES{}", m_definitions), buffer_ci);
 
 	// Create index buffer
 	buffer_ci.flags = EBufferTypeFlagBits::eIndex;
 	buffer_ci.size = m_indexBuffer.elementSize;
 	buffer_ci.count = m_indexBuffer.elementCount;
 	buffer_ci.upload.data = m_indexBuffer.data;
-	m_indexBuffer.buffer = render_context->createBuffer(std::format("SCENE_INDICES{}", m_definitions), buffer_ci);
+	m_indexBuffer.buffer = render_context->createBuffer(stl::format("SCENE_INDICES{}", m_definitions), buffer_ci);
 }
 
 // TODO: i can create custom bindings support here
@@ -221,17 +221,17 @@ void CVertexHandler::bind(EQueueTypeFlagBits queue)
 	}
 }
 
-u64 CVertexHandler::addVertices(const std::vector<FVertexAttributePointer>& attributes_data)
+u64 CVertexHandler::addVertices(const stl::vector<FVertexAttributePointer>& attributes_data)
 {
 	auto vertex_count = attributes_data.front().count;
 	for (u64 v = 0ull; v < vertex_count; ++v)
 	{
-		std::vector<uint8_t> temp(m_vertexBuffer.elementSize);
+		stl::vector<uint8_t> temp(m_vertexBuffer.elementSize);
 
 		u64 offset{ 0ull };
 		for (const auto& attrib : attributes_data)
 		{
-			std::memcpy(temp.data() + offset, &attrib.data[v * attrib.stride], attrib.stride);
+			stl::memcpy(temp.data() + offset, &attrib.data[v * attrib.stride], attrib.stride);
 			offset += attrib.stride;
 		}
 
@@ -269,7 +269,7 @@ u64 CVertexHandler::getHash() const
 	return m_attributeHash;
 }
 
-const std::string& CVertexHandler::getDefinitions() const
+const stl::string& CVertexHandler::getDefinitions() const
 {
 	return m_definitions;
 }

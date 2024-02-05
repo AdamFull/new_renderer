@@ -1,7 +1,5 @@
 #pragma once
 
-#include <string>
-#include <unordered_map>
 #include "VertexStructures.h"
 
 namespace engine
@@ -56,36 +54,36 @@ namespace engine
 			u32 set{ 0u };
 			u32 binding{ 0u };
 			u64 size{ 0ull };
-			std::unordered_map<u64, _Ty> uniforms{};
+			stl::unordered_map<u64, _Ty> uniforms{};
 		};
 
 		template<class _Ty>
 		struct FReflectionPushConstantBlock
 		{
 			u64 size{ 0ull };
-			std::unordered_map<u64, _Ty> uniforms{};
+			stl::unordered_map<u64, _Ty> uniforms{};
 		};
 
 		struct FShaderReflectionData
 		{
-			std::unordered_map<u64, FReflectionUniform> uniforms{};
-			std::unordered_map<u64, FReflectionUniformBlock<FReflectionUniform>> uniformBlocks{};
-			std::unordered_map<u64, FReflectionPushConstantBlock<FReflectionUniform>> pushBlocks{};
+			stl::unordered_map<u64, FReflectionUniform> uniforms{};
+			stl::unordered_map<u64, FReflectionUniformBlock<FReflectionUniform>> uniformBlocks{};
+			stl::unordered_map<u64, FReflectionPushConstantBlock<FReflectionUniform>> pushBlocks{};
 
-			std::array<u32, 3ull> localSizes;
+			stl::array<u32, 3ull> localSizes;
 		};
 
 		struct FShaderUploadInfo
 		{
 			i64 libraryId{ ~0ll };
 			i64 shaderId{ ~0ll };
-			std::string originalName{};
+			stl::string originalName{};
 		};
 
 		struct FShaderCreationBlockInfo
 		{
 			u32 stage{ 0u };
-			std::vector<u32>* code{ nullptr };
+			stl::vector<u32>* code{ nullptr };
 		};
 
 		struct FGraphicsShaderCreateInfo
@@ -99,7 +97,7 @@ namespace engine
 
 			u32 usageCount{ 1u };
 
-			std::vector<u64> colorAttachments{};
+			stl::vector<u64> colorAttachments{};
 			u64 depthAttachment{ ~0ull };
 			u64 stencilAttachment{ ~0ull };
 
@@ -127,9 +125,9 @@ namespace engine
 		struct FShaderResourceCommit
 		{
 			u64 shaderId{ ~0ull };
-			std::unordered_map<u64, FUniformDataView> uniforms{};
-			std::unordered_map<u64, FTextureBindInfo> textures{};
-			std::unordered_map<u64, u64> buffers{};
+			stl::unordered_map<u64, FUniformDataView> uniforms{};
+			stl::unordered_map<u64, FTextureBindInfo> textures{};
+			stl::unordered_map<u64, u64> buffers{};
 		};
 	}
 }

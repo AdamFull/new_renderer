@@ -13,21 +13,21 @@ CShaderObject::~CShaderObject()
 	render_context->destroyShader(m_shaderId);
 }
 
-void CShaderObject::create(const std::string& name, const FGraphicsShaderCreateInfo& create_info)
+void CShaderObject::create(const stl::string& name, const FGraphicsShaderCreateInfo& create_info)
 {
 	m_shaderId = m_pRenderInterface->createShader(name, create_info);
 	buildReflection();
 }
 
-void CShaderObject::create(const std::string& name, const FComputeShaderCreateInfo& create_info)
+void CShaderObject::create(const stl::string& name, const FComputeShaderCreateInfo& create_info)
 {
 	m_shaderId = m_pRenderInterface->createShader(name, create_info);
 	buildReflection();
 }
 
-const std::unique_ptr<CUniformHandle>& CShaderObject::getUniformBlock(const char* name)
+const stl::unique_ptr<CUniformHandle>& CShaderObject::getUniformBlock(const char* name)
 {
-	static std::unique_ptr<CUniformHandle> null{ nullptr };
+	static stl::unique_ptr<CUniformHandle> null{ nullptr };
 
 	auto found = m_uniformBlocks.find(utl::fnv1a_64_hash(name));
 	if (found != m_uniformBlocks.end())
@@ -36,9 +36,9 @@ const std::unique_ptr<CUniformHandle>& CShaderObject::getUniformBlock(const char
 	return null;
 }
 
-const std::unique_ptr<CUniformHandle>& CShaderObject::getConstantBlock(const char* name)
+const stl::unique_ptr<CUniformHandle>& CShaderObject::getConstantBlock(const char* name)
 {
-	static std::unique_ptr<CUniformHandle> null{ nullptr };
+	static stl::unique_ptr<CUniformHandle> null{ nullptr };
 
 	auto found = m_constantBlocks.find(utl::fnv1a_64_hash(name));
 	if (found != m_constantBlocks.end())
@@ -87,7 +87,7 @@ void CShaderObject::flushDescriptors()
 
 void CShaderObject::flushConstants(EQueueTypeFlagBits queue)
 {
-	std::unordered_map<u64, FUniformDataView> constants{};
+	stl::unordered_map<u64, FUniformDataView> constants{};
 
 	for (auto& [id, block] : m_constantBlocks)
 	{
@@ -124,15 +124,15 @@ void CShaderObject::buildReflection()
 
 	for (auto& [id, uniform_block] : m_reflection.uniformBlocks)
 	{
-		auto uniform_handle = std::make_unique<CUniformHandle>();
+		auto uniform_handle = stl::make_unique<CUniformHandle>();
 		uniform_handle->create(uniform_block);
-		m_uniformBlocks[id] = std::move(uniform_handle);
+		m_uniformBlocks[id] = stl::move(uniform_handle);
 	}
 
 	for (auto& [id, push_block] : m_reflection.pushBlocks)
 	{
-		auto uniform_handle = std::make_unique<CUniformHandle>();
+		auto uniform_handle = stl::make_unique<CUniformHandle>();
 		uniform_handle->create(push_block);
-		m_constantBlocks[id] = std::move(uniform_handle);
+		m_constantBlocks[id] = stl::move(uniform_handle);
 	}
 }

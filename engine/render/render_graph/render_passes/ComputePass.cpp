@@ -2,8 +2,6 @@
 
 #include <engine/render/ShaderObject.h>
 
-#include <format>
-
 using namespace engine::render;
 
 CComputePass::CComputePass(IRenderInterface* render_interface)
@@ -20,7 +18,7 @@ void CComputePass::init(const FComputePassCreateInfo& pass_ci)
 	FComputeShaderCreateInfo shader_ci{};
 
 	// Make RHI shader object
-	m_pShader = std::make_unique<CShaderObject>(m_pRenderInterface);
+	m_pShader = stl::make_unique<CShaderObject>(m_pRenderInterface);
 	m_pShader->create(pass_ci.shader, shader_ci);
 
 	// Bind default textures/buffers to shader
@@ -34,7 +32,7 @@ void CComputePass::init(const FComputePassCreateInfo& pass_ci)
 	}
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-	m_debugName = std::format("compute:{}", pass_ci.shader);
+	m_debugName = stl::format("compute:{}", pass_ci.shader);
 #endif
 }
 

@@ -2,8 +2,6 @@
 
 #include "BaseFunctions.h"
 
-#include <embed/shaders/includes/interop/base.h>
-
 namespace engine
 {
 	namespace render
@@ -12,14 +10,14 @@ namespace engine
 		struct FLightCommitData
 		{
 			u32 count{ 0u };
-			std::array<_LightType, _LightCount> lights;
+			stl::array<_LightType, _LightCount> lights;
 		};
 
 		template<class _ShadowType, class _BatchType, u64 _ShadowCount>
 		struct FShadowCommitData
 		{
-			std::array<_ShadowType, _ShadowCount> commits{};
-			std::array<_BatchType, _ShadowCount> batches{};
+			stl::array<_ShadowType, _ShadowCount> commits{};
+			stl::array<_BatchType, _ShadowCount> batches{};
 		};
 	}
 }

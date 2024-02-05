@@ -27,15 +27,15 @@ void copy_platform_specific_create_data(FRenderContextCreateInfo& context_ci, co
 #endif
 }
 
-std::unique_ptr<IRenderContext> make_render_context(const FRenderInterfaceCreateInfo& rhi_ci)
+stl::unique_ptr<IRenderContext> make_render_context(const FRenderInterfaceCreateInfo& rhi_ci)
 {
 	FRenderContextCreateInfo context_ci{};
-	std::unique_ptr<IRenderContext> render_context{};
+	stl::unique_ptr<IRenderContext> render_context{};
 
 	if (rhi_ci.render_api == ERenderApi::eVulkan10 || rhi_ci.render_api == ERenderApi::eVulkan11 ||
 		rhi_ci.render_api == ERenderApi::eVulkan12 || rhi_ci.render_api == ERenderApi::eVulkan13)
 	{
-		render_context = std::make_unique<vulkan::CVkRenderContext>();
+		render_context = stl::make_unique<vulkan::CVkRenderContext>();
 
 		context_ci.apiVersion = rhi_ci.render_api;
 		context_ci.requiredDeviceExtensions = {
@@ -81,34 +81,34 @@ std::unique_ptr<IRenderContext> make_render_context(const FRenderInterfaceCreate
 
 struct FShaderNameInfo
 {
-	std::string library_name;
-	std::string shader_name;
-	std::vector<std::string> definitions;
+	stl::string library_name;
+	stl::string shader_name;
+	stl::vector<stl::string> definitions;
 };
 
-FShaderNameInfo get_shader_name_info(const std::string& shader_name)
+FShaderNameInfo get_shader_name_info(const stl::string& shader_name)
 {
 	FShaderNameInfo name_info{};
 
-	std::string token;
-	std::stringstream ss(shader_name);
+	stl::string token;
+	stl::stringstream ss(shader_name);
 
-	if (std::getline(ss, token, ':'))
+	if (stl::getline(ss, token, ':'))
 		name_info.library_name = token;
 
-	if (std::getline(ss, token, ':'))
+	if (stl::getline(ss, token, ':'))
 		name_info.shader_name = token;
 
-	while (std::getline(ss, token, ':'))
+	while (stl::getline(ss, token, ':'))
 		name_info.definitions.emplace_back(token);
 
 	return name_info;
 }
 
 template<class _Ty>
-std::unique_ptr<IGPUArrayHandle> allocateGPUArrayHandle(const std::string& name, u64 count, IRenderInterface* render_interface)
+stl::unique_ptr<IGPUArrayHandle> allocateGPUArrayHandle(const stl::string& name, u64 count, IRenderInterface* render_interface)
 {
-	auto gpu_array = std::make_unique<CGPUArrayHandle>(render_interface);
+	auto gpu_array = stl::make_unique<CGPUArrayHandle>(render_interface);
 	gpu_array->create(name, sizeof(_Ty), count);
 	return gpu_array;
 }
@@ -117,15 +117,15 @@ CRenderInterface::CRenderInterface(filesystem::IVirtualFileSystemInterface* vfs)
 {
 	m_pVFS = vfs;
 
-	m_pResourceLoader = std::make_unique<CResourceLoader>();
-	m_pRenderScriptCore = std::make_unique<CRenderScriptCore>();
-	m_pRenderPacket = std::make_unique<FRenderDataPacket>();
+	m_pResourceLoader = stl::make_unique<CResourceLoader>();
+	m_pRenderScriptCore = stl::make_unique<CRenderScriptCore>();
+	m_pRenderPacket = stl::make_unique<FRenderDataPacket>();
 
-	m_pResources = std::make_unique<CResourceContainer>();
+	m_pResources = stl::make_unique<CResourceContainer>();
 	m_pResources->registerResource<IVertexHandler>();
 
-	m_pRenderGraph = std::make_unique<CRenderGraph>(this);
-	m_pRenderWorld = std::make_unique<CRenderWorld>(this);
+	m_pRenderGraph = stl::make_unique<CRenderGraph>(this);
+	m_pRenderWorld = stl::make_unique<CRenderWorld>(this);
 }
 
 CRenderInterface::~CRenderInterface()
@@ -149,7 +149,7 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 
 	m_pRenderScriptCore->create(this);
 
-	std::vector<uint8_t> render_config{};
+	stl::vector<uint8_t> render_config{};
 	m_pVFS->readFile("/root/embed/rendering/test_render_config.lua", render_config);
 	m_pRenderScriptCore->build("render_config", render_config);
 
@@ -211,13 +211,13 @@ void CRenderInterface::render(f32 dt)
 	m_pRenderContext->endFrameCommandBuffers();
 }
 
-u64 CRenderInterface::createTexture(const std::string& path)
+u64 CRenderInterface::createTexture(const stl::string& path)
 {
 	auto name = filesystem::fs::get_stem(path);
 	return m_pRenderGraph->addStaticResource(name, path);
 }
 
-u64 CRenderInterface::loadTexture(const std::string& path, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info)
+u64 CRenderInterface::loadTexture(const stl::string& path, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info)
 {
 	auto name = filesystem::fs::get_stem(path);
 	auto ext = filesystem::fs::get_ext(path);
@@ -228,7 +228,7 @@ u64 CRenderInterface::loadTexture(const std::string& path, FTextureCreateInfo& c
 	if (texture_id != ~0ull)
 		return texture_id;
 
-	std::vector<uint8_t> data{};
+	stl::vector<uint8_t> data{};
 	m_pVFS->readFile(path, data);
 
 	m_pResourceLoader->loadTexture(data, mime, create_info, upload_info);
@@ -236,27 +236,27 @@ u64 CRenderInterface::loadTexture(const std::string& path, FTextureCreateInfo& c
 	return ~0ull;
 }
 
-u64 CRenderInterface::createShader(const std::string& name, const FGraphicsShaderCreateInfo& create_info)
+u64 CRenderInterface::createShader(const stl::string& name, const FGraphicsShaderCreateInfo& create_info)
 {
 	auto name_info = getShaderNameTag(name);
 	return createShader<FGraphicsShaderCreateInfo>(name_info, create_info);
 }
 
-u64 CRenderInterface::createShader(const std::string& name, const FComputeShaderCreateInfo& create_info)
+u64 CRenderInterface::createShader(const stl::string& name, const FComputeShaderCreateInfo& create_info)
 {
 	auto name_info = getShaderNameTag(name);
 	return createShader<FComputeShaderCreateInfo>(name_info, create_info);
 }
 
-u64 CRenderInterface::createVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci)
+u64 CRenderInterface::createVertexHandler(const stl::string& name, const FVertexHandlerCreateInfo& handler_ci)
 {
-	auto vertex_handler = std::make_unique<CVertexHandler>(this);
+	auto vertex_handler = stl::make_unique<CVertexHandler>(this);
 	vertex_handler->create(handler_ci);
 
-	return m_pResources->add<IVertexHandler>(name.c_str(), std::move(vertex_handler));
+	return m_pResources->add<IVertexHandler>(name.c_str(), stl::move(vertex_handler));
 }
 
-const std::unique_ptr<IVertexHandler>& CRenderInterface::getVertexHandler(u64 id)
+const stl::unique_ptr<IVertexHandler>& CRenderInterface::getVertexHandler(u64 id)
 {
 	return m_pResources->get<IVertexHandler>(id);
 }
@@ -266,27 +266,27 @@ void CRenderInterface::updateSurfaceSize(i32 width, i32 height)
 	m_pRenderContext->updateSurface(width, height);
 }
 
-const std::unique_ptr<FRenderDataPacket>& CRenderInterface::getRenderPacket()
+const stl::unique_ptr<FRenderDataPacket>& CRenderInterface::getRenderPacket()
 {
 	return m_pRenderPacket;
 }
 
-const std::unique_ptr<IRenderGraph>& CRenderInterface::getRenderGraph()
+const stl::unique_ptr<IRenderGraph>& CRenderInterface::getRenderGraph()
 {
 	return m_pRenderGraph;
 }
 
-const std::unique_ptr<IRenderWorld>& CRenderInterface::getRenderWorld()
+const stl::unique_ptr<IRenderWorld>& CRenderInterface::getRenderWorld()
 {
 	return m_pRenderWorld;
 }
 
-const std::unique_ptr<IRenderContext>& CRenderInterface::getRenderContext()
+const stl::unique_ptr<IRenderContext>& CRenderInterface::getRenderContext()
 {
 	return m_pRenderContext;
 }
 
-FShaderUploadInfo CRenderInterface::getShaderNameTag(const std::string& name)
+FShaderUploadInfo CRenderInterface::getShaderNameTag(const stl::string& name)
 {
 	auto name_info = get_shader_name_info(name);
 

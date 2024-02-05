@@ -9,9 +9,9 @@
 
 using namespace shader_compiler;
 
-std::string get_definition_by_shader_type(EShaderType type)
+stl::string get_definition_by_shader_type(EShaderType type)
 {
-	std::string res{};
+	stl::string res{};
 
 	switch (type)
 	{
@@ -35,18 +35,18 @@ std::string get_definition_by_shader_type(EShaderType type)
 	return res;
 }
 
-std::string emplace_data(std::string base_string, const std::string& target, const std::string& replacement)
+stl::string emplace_data(stl::string base_string, const stl::string& target, const stl::string& replacement)
 {
 	u64 start_pos = base_string.find(target);
-	if (start_pos == std::string::npos)
+	if (start_pos == stl::string::npos)
 		return base_string;
 	base_string.replace(start_pos, target.length(), replacement);
 	return base_string;
 }
 
-std::vector<std::string> make_permutation(u64 mask, const std::vector<FDefinitionChain>& chains) 
+stl::vector<stl::string> make_permutation(u64 mask, const stl::vector<FDefinitionChain>& chains) 
 {
-	std::vector<std::string> permutation;
+	stl::vector<stl::string> permutation;
 
 	for (u64 j = 0; j < chains.size(); ++j) 
 	{
@@ -62,33 +62,33 @@ std::vector<std::string> make_permutation(u64 mask, const std::vector<FDefinitio
 	return permutation;
 }
 
-std::string process_include(const std::string& include, const std::filesystem::path& includes_path, u64 depth);
+stl::string process_include(const stl::string& include, const stl::filesystem::path& includes_path, u64 depth);
 
-std::string generate_shader_code(const FShaderObject& sobject, const std::filesystem::path& includes_path, u64 depth = 0)
+stl::string generate_shader_code(const FShaderObject& sobject, const stl::filesystem::path& includes_path, u64 depth = 0)
 {
-	std::stringstream ss{};
+	stl::stringstream ss{};
 
 	if (depth == 0ull)
 	{
 		// Set language version
-		ss << std::format("#version {}", sobject.version) << std::endl << std::endl;
+		ss << stl::format("#version {}", sobject.version) << stl::endl << stl::endl;
 
 		// Apply enabled extensions
 		for (auto& extension_name : sobject.enable_extensions)
-			ss << std::format("#extension {} : enable", extension_name) << std::endl;
-		ss << std::endl;
+			ss << stl::format("#extension {} : enable", extension_name) << stl::endl;
+		ss << stl::endl;
 
 		// Apply required extensions
 		for (auto& extension_name : sobject.require_extensions)
-			ss << std::format("#extension {} : require", extension_name) << std::endl;
-		ss << std::endl;
+			ss << stl::format("#extension {} : require", extension_name) << stl::endl;
+		ss << stl::endl;
 
 		// Apply definitions (TODO: add definition values)
 		for (auto& definition : sobject.definitions)
-			ss << std::format("#define {}", definition) << std::endl;
+			ss << stl::format("#define {}", definition) << stl::endl;
 
 		if (depth == 0ull)
-			ss << "{other_definitions}" << std::endl << std::endl; // For other definitions
+			ss << "{other_definitions}" << stl::endl << stl::endl; // For other definitions
 	}
 
 	// Include 
@@ -101,48 +101,48 @@ std::string generate_shader_code(const FShaderObject& sobject, const std::filesy
 	return ss.str();
 }
 
-std::string process_include(const std::string& include, const std::filesystem::path& includes_path, u64 depth)
+stl::string process_include(const stl::string& include, const stl::filesystem::path& includes_path, u64 depth)
 {
-	std::stringstream ss{};
-	std::string guard_name{};
+	stl::stringstream ss{};
+	stl::string guard_name{};
 
 	auto base_include_path = (includes_path / include).string();
 
 	FShaderObject include_so{};
 	if (parse_file_to(base_include_path + ".shinc", include_so))
-		guard_name = std::format("{}_protector", std::filesystem::path(base_include_path).stem().string());
+		guard_name = stl::format("{}_protector", stl::filesystem::path(base_include_path).stem().string());
 	else if (parse_header(base_include_path + ".h", include_so.code))
 	{
-		std::regex guard_start_pattern("#ifndef (.+)");
-		std::regex guard_define_pattern("#define (.+)");
-		std::regex guard_end_pattern("#endif.*");
-		std::regex include_pattern("#include \"(.+)\"");
-		std::smatch matches;
+		stl::regex guard_start_pattern("#ifndef (.+)");
+		stl::regex guard_define_pattern("#define (.+)");
+		stl::regex guard_end_pattern("#endif.*");
+		stl::regex include_pattern("#include \"(.+)\"");
+		stl::smatch matches;
 
-		std::istringstream stream(include_so.code);
-		std::string line;
+		stl::istringstream stream(include_so.code);
+		stl::string line;
 		
 		bool in_guard_block{ false };
 		bool is_guard_defined{ false };
 
 		include_so.code.clear();
-		while (std::getline(stream, line)) 
+		while (stl::getline(stream, line)) 
 		{
-			if (std::regex_search(line, matches, guard_start_pattern) && !in_guard_block)
+			if (stl::regex_search(line, matches, guard_start_pattern) && !in_guard_block)
 			{
 				guard_name = matches[1].str();
 				in_guard_block = true;
 			}
-			else if (in_guard_block && !is_guard_defined && std::regex_search(line, matches, guard_define_pattern))
+			else if (in_guard_block && !is_guard_defined && stl::regex_search(line, matches, guard_define_pattern))
 				is_guard_defined = guard_name == matches[1].str();
-			else if (in_guard_block && is_guard_defined && std::regex_search(line, matches, guard_end_pattern) && stream.eof())
+			else if (in_guard_block && is_guard_defined && stl::regex_search(line, matches, guard_end_pattern) && stream.eof())
 			{
 				in_guard_block = false;
 				is_guard_defined = false;
 			}
 			else
 			{
-				if (std::regex_search(line, matches, include_pattern)) 
+				if (stl::regex_search(line, matches, include_pattern)) 
 					include_so.includes.emplace_back(matches[1].matched ? matches[1].str() : matches[2].str());
 				else
 					include_so.code += line + "\n";
@@ -152,14 +152,14 @@ std::string process_include(const std::string& include, const std::filesystem::p
 	else
 		log_error("Include {} was not found, or not supported format.", include);
 
-	ss << std::format("\n#ifndef {}\n#define {}", guard_name, guard_name) << std::endl;
+	ss << stl::format("\n#ifndef {}\n#define {}", guard_name, guard_name) << stl::endl;
 	ss << generate_shader_code(include_so, includes_path, depth + 1);
-	ss << "\n#endif" << std::endl << std::endl;
+	ss << "\n#endif" << stl::endl << stl::endl;
 
 	return ss.str();
 }
 
-CLibraryCompiler::CLibraryCompiler(const std::filesystem::path& common_path, const std::filesystem::path& includes_path)
+CLibraryCompiler::CLibraryCompiler(const stl::filesystem::path& common_path, const stl::filesystem::path& includes_path)
 {
 	m_srCommonPath = common_path;
 	m_srIncludesPath = includes_path;
@@ -168,11 +168,11 @@ CLibraryCompiler::CLibraryCompiler(const std::filesystem::path& common_path, con
 
 void CLibraryCompiler::initialize(ETargetAPIType target_api, ETargetBuildType build_type)
 {
-	m_pShaderCompiler = std::make_unique<CShaderCompiler>(target_api, build_type);
+	m_pShaderCompiler = stl::make_unique<CShaderCompiler>(target_api, build_type);
 	m_pShaderCompiler->initialize();
 }
 
-void CLibraryCompiler::compile(const std::filesystem::path& library_path, FShaderCacheData& shader_cache)
+void CLibraryCompiler::compile(const stl::filesystem::path& library_path, FShaderCacheData& shader_cache)
 {
 	FShaderLibrary shader_library_ci{};
 	if (!parse_file_to(library_path, shader_library_ci))
@@ -199,7 +199,7 @@ void CLibraryCompiler::compile(const std::filesystem::path& library_path, FShade
 		u64 perm_n = compile.permutation_gen.definitions.size();
 		u64 total_permutations = 1 << perm_n;
 
-		std::vector<std::vector<std::string>> cached_permutations{};
+		stl::vector<stl::vector<stl::string>> cached_permutations{};
 
 		if (generate_permutations)
 		{
@@ -234,7 +234,7 @@ void CLibraryCompiler::compile(const std::filesystem::path& library_path, FShade
 				FCompileInfo compile_info{ source.type, source.shader_name };
 
 				// This thing will add unique definitions by shader type. Dor example for vertex shader it will add VERTEX_SHADER definition
-				std::vector<std::string> unique_shader_definitions(definitions.begin(), definitions.end());
+				stl::vector<stl::string> unique_shader_definitions(definitions.begin(), definitions.end());
 				unique_shader_definitions.emplace_back(get_definition_by_shader_type(source.type));
 
 				// Make unique shader name(key)
@@ -242,18 +242,18 @@ void CLibraryCompiler::compile(const std::filesystem::path& library_path, FShade
 				auto unique_module_name = utl::fnv1a_64_hash(module_name_str.c_str());
 
 				// Get shader module
-				std::vector<FShaderModule>& shader_modules = compiled_library.modules[unique_module_name];
+				stl::vector<FShaderModule>& shader_modules = compiled_library.modules[unique_module_name];
 
 				// Apply definitions for current permutation
-				std::stringstream ss{""};
+				stl::stringstream ss{""};
 				for (auto& definition : unique_shader_definitions)
-					ss << std::format("#define {}", definition) << std::endl;
-				ss << std::endl;
+					ss << stl::format("#define {}", definition) << stl::endl;
+				ss << stl::endl;
 
 				auto shader_code = emplace_data(base_shader_code, "{other_definitions}", ss.str());
 
 				// Preprocess generated code (and remove ugly code after preprocessing)
-				std::string preprocessed_code{};
+				stl::string preprocessed_code{};
 				u64 preprocessed_hash{ 0ull };
 				m_pShaderCompiler->preprocess(shader_code, compile_info, preprocessed_code, preprocessed_hash);
 

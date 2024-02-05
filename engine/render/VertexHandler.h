@@ -1,7 +1,6 @@
 #pragma once
 
 #include <engine/interface/render/RenderInterface.h>
-#include <unordered_set>
 
 namespace engine
 {
@@ -12,7 +11,7 @@ namespace engine
 		public:
 			struct FBufferInfo
 			{
-				std::vector<uint8_t> data{};
+				stl::vector<uint8_t> data{};
 				u64 elementCount{ 0ull };
 				u64 elementSize{ 0ull };
 				u64 buffer{ ~0ull };
@@ -26,7 +25,7 @@ namespace engine
 
 			void bind(EQueueTypeFlagBits queue) override;
 
-			u64 addVertices(const std::vector<FVertexAttributePointer>& attributes_data) override;
+			u64 addVertices(const stl::vector<FVertexAttributePointer>& attributes_data) override;
 			u64 addIndices(const FVertexAttributePointer& indices) override;
 
 			u64 getLastVertex() override;
@@ -34,7 +33,7 @@ namespace engine
 
 			const FVertexDeclarationInfo& getVertexDeclaration() const override;
 			u64 getHash() const override;
-			const std::string& getDefinitions() const override;
+			const stl::string& getDefinitions() const override;
 
 			u64 getVertexHandle() const override;
 			u64 getIndexHandle() const override;
@@ -43,7 +42,7 @@ namespace engine
 			FBufferInfo m_indexBuffer{};
 
 			// For shader creation
-			std::string m_definitions{};
+			stl::string m_definitions{};
 			u64 m_attributeHash{ 0ull };
 			FVertexDeclarationInfo m_declaration{};
 

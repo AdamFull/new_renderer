@@ -24,13 +24,13 @@ using namespace engine::filesystem;
 template<class _Ty>
 bool check_overflow(_Ty a, _Ty b)
 {
-	if constexpr (std::is_unsigned<_Ty>::value)
-		return a > (std::numeric_limits<_Ty>::max)() - b;
+	if constexpr (stl::is_unsigned<_Ty>::value)
+		return a > (stl::numeric_limits<_Ty>::max)() - b;
 	
-	return (b > utl::cast<_Ty>(0) && a > (std::numeric_limits<_Ty>::max)() - b) || (b < utl::cast<_Ty>(0) && a < (std::numeric_limits<_Ty>::min)() - b);
+	return (b > utl::cast<_Ty>(0) && a > (stl::numeric_limits<_Ty>::max)() - b) || (b < utl::cast<_Ty>(0) && a < (stl::numeric_limits<_Ty>::min)() - b);
 }
 
-engine::render::EVertexAttributeType get_vertex_attribute_type_by_name(const std::string& name)
+engine::render::EVertexAttributeType get_vertex_attribute_type_by_name(const stl::string& name)
 {
 	using namespace engine::render;
 
@@ -49,27 +49,27 @@ public:
 	FSWrapper(IVirtualFileSystemInterface* vfs) : m_pVFS(vfs) {}
 	~FSWrapper() override = default;
 
-	bool exists(const std::string& path) override
+	bool exists(const stl::string& path) override
 	{
 		return m_pVFS->exists(path);
 	}
 
-	std::string expandFilePath(const std::string& path) override
+	stl::string expandFilePath(const stl::string& path) override
 	{
 		return fs::normalize(fs::to_posix_path(path));
 	}
 
-	bool readFile(const std::string& path, std::vector<uint8_t>& data) override
+	bool readFile(const stl::string& path, stl::vector<uint8_t>& data) override
 	{
 		return m_pVFS->readFile(path, data);
 	}
 
-	bool writeFile(const std::string& path, const std::vector<uint8_t>& data) override
+	bool writeFile(const stl::string& path, const stl::vector<uint8_t>& data) override
 	{
 		return m_pVFS->writeFile(path, data);
 	}
 
-	u64 fileSize(const std::string& path) override
+	u64 fileSize(const stl::string& path) override
 	{
 		return m_pVFS->fileSize(path);
 	}
@@ -77,7 +77,7 @@ private:
 	IVirtualFileSystemInterface* m_pVFS{ nullptr };
 };
 
-void convert_indices_space(std::vector<uint8_t>& indices, u64 index_size, i32 vertex_start)
+void convert_indices_space(stl::vector<uint8_t>& indices, u64 index_size, i32 vertex_start)
 {
 	for (u64 shift = 0ull; shift < indices.size() / index_size; shift += index_size)
 	{
@@ -101,7 +101,7 @@ void convert_indices_space(std::vector<uint8_t>& indices, u64 index_size, i32 ve
 			indices[shift] = index;
 		} break;
 		default:
-			throw std::runtime_error("Unsupported vertex size");
+			throw stl::runtime_error("Unsupported vertex size");
 		}
 	}
 }
@@ -113,15 +113,15 @@ CScene::CScene(IVirtualFileSystemInterface* vfs, render::IRenderInterface* rende
 
 	m_pSceneGraph = new CSceneGraph();
 
-	m_systems.emplace_back(std::make_unique<ecs::CInputSystem>(m_pSceneGraph));
-	m_systems.emplace_back(std::make_unique<ecs::CAnimationSystem>(m_pSceneGraph));
-	m_systems.emplace_back(std::make_unique<ecs::CScenegraphSystem>(m_pSceneGraph));
-	m_systems.emplace_back(std::make_unique<ecs::CSkinningSystem>(m_pSceneGraph, render_interface));
+	m_systems.emplace_back(stl::make_unique<ecs::CInputSystem>(m_pSceneGraph));
+	m_systems.emplace_back(stl::make_unique<ecs::CAnimationSystem>(m_pSceneGraph));
+	m_systems.emplace_back(stl::make_unique<ecs::CScenegraphSystem>(m_pSceneGraph));
+	m_systems.emplace_back(stl::make_unique<ecs::CSkinningSystem>(m_pSceneGraph, render_interface));
 
-	m_systems.emplace_back(std::make_unique<ecs::CCameraSystem>(m_pSceneGraph, render_interface));
-	m_systems.emplace_back(std::make_unique<ecs::CShadowsSystem>(m_pSceneGraph, render_interface));
-	m_systems.emplace_back(std::make_unique<ecs::CLightingSystem>(m_pSceneGraph, render_interface));
-	m_systems.emplace_back(std::make_unique<ecs::CMeshSystem>(m_pSceneGraph, render_interface));
+	m_systems.emplace_back(stl::make_unique<ecs::CCameraSystem>(m_pSceneGraph, render_interface));
+	m_systems.emplace_back(stl::make_unique<ecs::CShadowsSystem>(m_pSceneGraph, render_interface));
+	m_systems.emplace_back(stl::make_unique<ecs::CLightingSystem>(m_pSceneGraph, render_interface));
+	m_systems.emplace_back(stl::make_unique<ecs::CMeshSystem>(m_pSceneGraph, render_interface));
 }
 
 CScene::~CScene()
@@ -133,12 +133,12 @@ CScene::~CScene()
 	}
 }
 
-void CScene::load(const std::string& path)
+void CScene::load(const stl::string& path)
 {
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
 
 	easygltf::CGLTFLoader loader{};
-	loader.setFilesystemWrapper(std::make_unique<FSWrapper>(m_pVFS));
+	loader.setFilesystemWrapper(stl::make_unique<FSWrapper>(m_pVFS));
 	
 	easygltf::FGLTFRoot root{};
 	if (!loader.load(path, root))
@@ -164,7 +164,7 @@ void CScene::load(const std::string& path)
 	// Load materials
 	auto& render_world = m_pRenderInterface->getRenderWorld();
 
-	std::vector<render::FMaterial> materials{};
+	stl::vector<render::FMaterial> materials{};
 	for (u64 idx = 0ull; idx < root.materials.size(); ++idx)
 	{
 		auto& material = root.materials[idx];
@@ -235,13 +235,13 @@ void CScene::load(const std::string& path)
 	//auto& primitive = mesh_component.primitives.emplace_back();
 	//primitive.materialId = 0;
 	//
-	//std::vector<FTerrainVertexAttribute> terrain_attributes{};
+	//stl::vector<FTerrainVertexAttribute> terrain_attributes{};
 	//FTerrainVertexAttribute terrain_indices{};
 	//
 	//CTerrainGenerator gen(542, 64, 10.f);
 	//gen.generate(terrain_attributes, terrain_indices);
 	//
-	//std::vector<render::FVertexAttributePointer> attributes(terrain_attributes.size());
+	//stl::vector<render::FVertexAttributePointer> attributes(terrain_attributes.size());
 	//render::FVertexAttributePointer indices{};
 	//
 	//for (u64 idx = 0ull; idx < terrain_attributes.size(); ++idx)
@@ -272,7 +272,7 @@ void CScene::load(const std::string& path)
 	//
 	//auto& handlers = m_resources.vertexHandlers[0];
 	//
-	//auto handler_name = std::format("{}_{}_{}", "Terrain", 0, handlers.size());
+	//auto handler_name = stl::format("{}_{}_{}", "Terrain", 0, handlers.size());
 	//auto handler_id = m_pRenderInterface->createVertexHandler(handler_name, handler_ci);
 	//handlers.emplace_back(handler_id);
 	//
@@ -369,8 +369,8 @@ void CScene::loadMeshComponent(const easygltf::FGLTFRoot root, const entt::entit
 
 		// Load vertices
 		
-		std::hash<u32> attribute_hasher;
-		std::vector<render::FVertexAttributePointer> attributes{};
+		stl::hash<u32> attribute_hasher;
+		stl::vector<render::FVertexAttributePointer> attributes{};
 
 		u64 attributes_hash{ 0ull };
 		for (const auto& [name, accessor_idx] : primitive.attributes)
@@ -397,10 +397,10 @@ void CScene::loadMeshComponent(const easygltf::FGLTFRoot root, const entt::entit
 		}
 
 		// Attributes should be sorted by value type
-		std::sort(attributes.begin(), attributes.end(), [](const auto& lhs, const auto& rhs) { return utl::cast<u32>(lhs.type) < utl::cast<u32>(rhs.type); });
+		stl::sort(attributes.begin(), attributes.end(), [](const auto& lhs, const auto& rhs) { return utl::cast<u32>(lhs.type) < utl::cast<u32>(rhs.type); });
 
 		// Load indices
-		std::vector<u32> indices_tmp{};
+		stl::vector<u32> indices_tmp{};
 		render::FVertexAttributePointer indices{};
 		if (primitive.indices >= 0)
 		{
@@ -443,7 +443,7 @@ void CScene::loadMeshComponent(const easygltf::FGLTFRoot root, const entt::entit
 
 			auto& handlers = m_resources.vertexHandlers[attributes_hash];
 
-			auto handler_name = std::format("{}_{}_{}", mesh.name, attributes_hash, handlers.size());
+			auto handler_name = stl::format("{}_{}_{}", mesh.name, attributes_hash, handlers.size());
 			auto handler_id = m_pRenderInterface->createVertexHandler(handler_name, handler_ci);
 			handlers.emplace_back(handler_id);
 
@@ -496,7 +496,7 @@ void CScene::loadCameraComponent(const easygltf::FGLTFRoot root, const entt::ent
 		camera_component.farPlane = camera.perspective.zfar;
 	}
 
-	m_pSceneGraph->addComponent<FCameraComponent>(parent, std::move(camera_component));
+	m_pSceneGraph->addComponent<FCameraComponent>(parent, stl::move(camera_component));
 }
 
 void CScene::loadLightComponent(const easygltf::FGLTFRoot root, const entt::entity parent, u32 node_index)
@@ -509,7 +509,7 @@ void CScene::loadLightComponent(const easygltf::FGLTFRoot root, const entt::enti
 		FDirectionalLightComponent light_component;
 		light_component.color = glm::make_vec3(light.color.data());
 		light_component.intencity = light.intensity;
-		m_pSceneGraph->addComponent<FDirectionalLightComponent>(parent, std::move(light_component));
+		m_pSceneGraph->addComponent<FDirectionalLightComponent>(parent, stl::move(light_component));
 	}
 	else if (light.type == easygltf::extensions::KHR_lights_punctual::enumerators::light_type::spot)
 	{
@@ -518,15 +518,15 @@ void CScene::loadLightComponent(const easygltf::FGLTFRoot root, const entt::enti
 		light_component.innerAngle = light.spot.innerConeAngle;
 		light_component.outerAngle = light.spot.outerConeAngle;
 		light_component.intencity = light.intensity;
-		m_pSceneGraph->addComponent<FSpotLightComponent>(parent, std::move(light_component));
+		m_pSceneGraph->addComponent<FSpotLightComponent>(parent, stl::move(light_component));
 	}
 	else if (light.type == easygltf::extensions::KHR_lights_punctual::enumerators::light_type::point)
 	{
 		FPointLightComponent light_component;
 		light_component.color = glm::make_vec3(light.color.data());
 		light_component.intencity = light.intensity;
-		light_component.radius = (std::max)(light.range, 1.0);
-		m_pSceneGraph->addComponent<FPointLightComponent>(parent, std::move(light_component));
+		light_component.radius = (stl::max)(light.range, 1.0);
+		m_pSceneGraph->addComponent<FPointLightComponent>(parent, stl::move(light_component));
 	}
 }
 
@@ -560,7 +560,7 @@ void CScene::loadAnimations(const easygltf::FGLTFRoot root)
 				assert(accessor.componentType == easygltf::base::enumerators::component_type::float_type);
 
 				f32* buf = new f32[accessor.count];
-				std::memcpy(buf, stream.data, stream.count * sizeof(f32));
+				stl::memcpy(buf, stream.data, stream.count * sizeof(f32));
 				for (u64 index = 0; index < stream.count; index++)
 					sampler.inputs.push_back(buf[index]);
 
@@ -585,7 +585,7 @@ void CScene::loadAnimations(const easygltf::FGLTFRoot root)
 				if(accessor.type == easygltf::base::enumerators::accessor_type::vec3_type)
 				{
 					glm::vec3* buf = new glm::vec3[stream.count];
-					std::memcpy(buf, stream.data, stream.count * sizeof(glm::vec3));
+					stl::memcpy(buf, stream.data, stream.count * sizeof(glm::vec3));
 					for (u64 index = 0; index < stream.count; index++)
 						sampler.outputsVec4.push_back(glm::vec4(buf[index], 0.0f));
 
@@ -668,7 +668,7 @@ void CScene::loadSkins(const easygltf::FGLTFRoot root)
 			const easygltf::Accessor& accessor = root.accessors[source.inverseBindMatrices];
 			auto stream = root.getStream(accessor);
 			skin.inverseBindMatrices.resize(stream.count);
-			std::memcpy(skin.inverseBindMatrices.data(), stream.data, stream.count * sizeof(glm::mat4));
+			stl::memcpy(skin.inverseBindMatrices.data(), stream.data, stream.count * sizeof(glm::mat4));
 		}
 
 		root_component.skins.emplace_back(skin);
