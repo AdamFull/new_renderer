@@ -373,10 +373,25 @@ namespace engine
 				vk::SampleCountFlagBits sampleCount{ vk::SampleCountFlagBits::e1 };
 			};
 
+			struct FVkTextureMipLevel
+			{
+				vk::ImageView imageView{};
+				u32 baseMipLevel{};
+				u32 mipLevelCount{ 1u };
+			};
+
+			struct FVkTextureLayer
+			{
+				std::vector<FVkTextureMipLevel> mips{};
+				u32 baseLayer{};
+				u32 layerCount{ 1u };
+			};
+
 			struct FVkTexture
 			{
 				FVkImage image{};
-				std::vector<vk::ImageView> imageViews{};
+				std::vector<FVkTextureLayer> layers{};
+				//std::vector<vk::ImageView> imageViews{};
 				vk::Sampler sampler{};
 				vk::ImageLayout layout{};
 				u32 totalLayers{ 1u };

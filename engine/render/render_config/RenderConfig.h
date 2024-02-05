@@ -44,23 +44,6 @@ namespace engine
 			std::unordered_map<u64, sol::protected_function*> m_scriptFunctions{};
 		};
 
-		class CDynamicRenderStage
-		{
-		public:
-			friend class CRenderInterface;
-
-			void create(const std::string& stage);
-			void render(f32 dt);
-
-			const std::unique_ptr<IShaderObject>& getShader() const;
-			FBeginRenderingInfo& getRenderingInfo();
-		private:
-			std::unique_ptr<CRenderScriptExecutor> m_pScriptExecutor{};
-			std::unique_ptr<IShaderObject> m_pStageShader{};
-
-			FBeginRenderingInfo m_renderingInfo{};
-		};
-
 		class CRenderScriptCore
 		{
 		public:

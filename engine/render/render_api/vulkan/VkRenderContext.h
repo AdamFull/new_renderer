@@ -54,24 +54,17 @@ namespace engine
 
 				void processResourceBarriers(EQueueTypeFlagBits queue, const std::vector<FResourceBarrierInfo>& barriers) override;
 
-				void beginRendering(const FBeginRenderingInfo& rendering_info) override;
-				void endRendering(const FBeginRenderingInfo& rendering_info) override;
-
-				void beginRendering2(const FBeginRendering2Info& rendering_info) override;
-				void endRendering2(EQueueTypeFlagBits queue) override;
-
-				void beginCompute(const FBeginComputeInfo& rendering_info) override;
-				void endCompute(const FBeginComputeInfo& rendering_info) override;
+				void beginRendering(const FBeginRendering2Info& rendering_info) override;
+				void endRendering(EQueueTypeFlagBits queue) override;
 
 				void setViewport(f32 width, f32 height, bool flip_viewport = false) override;
 				void setScissorRect(i32 offset_x, i32 offset_y, u32 width, u32 height) override;
 
 				void draw(EQueueTypeFlagBits queue_type, const FGeometryDrawInfo& draw_info) override;
 				void draw(EQueueTypeFlagBits queue_type, const FIndirectGeometryDrawInfo& draw_info) override;
-				void dispatch(EQueueTypeFlagBits queue_type, const FDispatchInfo& dispatch_info) override;
 
-				void dispatch2(EQueueTypeFlagBits queue_type, const FDispatch2Info& dispatch_group) override;
-				void dispatch2(EQueueTypeFlagBits queue_type, const FDispatchIndirectInfo& dispatch_info) override;
+				void dispatch(EQueueTypeFlagBits queue_type, const FDispatch2Info& dispatch_group) override;
+				void dispatch(EQueueTypeFlagBits queue_type, const FDispatchIndirectInfo& dispatch_info) override;
 
 				u64 getTextureResource(const char* name) override;
 				u64 getShaderResource(const char* name) override;

@@ -102,7 +102,7 @@ void IRenderPass::execute(f32 dt)
 	beginRenderingInfo.name = m_debugName;
 #endif
 
-	render_context->beginRendering2(beginRenderingInfo);
+	render_context->beginRendering(beginRenderingInfo);
 	render_context->setViewport(utl::cast<f32>(beginRenderingInfo.renderArea.size.x), utl::cast<f32>(beginRenderingInfo.renderArea.size.y), beginRenderingInfo.flipViewport);
 
 	FRenderFrameInfo frame_info{};
@@ -111,7 +111,7 @@ void IRenderPass::execute(f32 dt)
 
 	_render(frame_info);
 
-	render_context->endRendering2(beginRenderingInfo.queue);
+	render_context->endRendering(beginRenderingInfo.queue);
 }
 
 

@@ -55,5 +55,5 @@ void CComputePass::_execute(const FComputeFrameInfo& frame_info)
 	dispatch_info.globalSizes = m_dispatchGroup;
 	dispatch_info.shaderHandle = m_pShader->handle();
 
-	render_context->dispatch2(m_queue, dispatch_info);
+	render_context->dispatch(m_queue, dispatch_info);
 }

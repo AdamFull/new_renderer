@@ -53,18 +53,6 @@ void CRenderScriptCore::create(IRenderInterface* render_interface)
 	bindGLMath(m_pLuaState);
 	bindRenderInterface(m_pLuaState);
 
-	m_pLuaState->new_usertype<CDynamicRenderStage>(
-		"DynamicRenderStage",
-		"get_shader", [](CDynamicRenderStage& self) { return self.getShader().get(); },
-		"get_rendering_info", [](CDynamicRenderStage& self) { return self.getRenderingInfo(); },
-		"get_render_targets", [](CDynamicRenderStage& self, FGraphicsShaderCreateInfo& shader_ci) {
-			auto& rendering_info = self.getRenderingInfo();
-			shader_ci.colorAttachments = rendering_info.colorAttachments;
-			shader_ci.depthAttachment = rendering_info.depthAttachment;
-			shader_ci.stencilAttachment = rendering_info.stencilAttachment;
-		}
-	);
-
 	m_pLuaState->set_function("texture_or", 
 		[](sol::variadic_args args) -> ETextureCreateFlags
 		{
@@ -102,27 +90,4 @@ std::unique_ptr<CRenderScriptExecutor> CRenderScriptCore::build(const std::strin
 	m_pLuaState->collect_garbage();
 
 	return render_script;
-}
-
-void CDynamicRenderStage::create(const std::string& stage)
-{
-	//m_pStageShader = std::make_unique<CShaderObject>();
-
-	m_pScriptExecutor->run("on_create", stage);
-}
-
-void CDynamicRenderStage::render(f32 dt)
-{
-	// TODO: begin profiling scope here. Name of this scope is stage name or shader name
-	m_pScriptExecutor->run("on_render", dt);
-}
-
-const std::unique_ptr<IShaderObject>& CDynamicRenderStage::getShader() const
-{
-	return m_pStageShader;
-}
-
-FBeginRenderingInfo& CDynamicRenderStage::getRenderingInfo()
-{
-	return m_renderingInfo;
 }

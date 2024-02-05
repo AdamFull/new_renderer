@@ -249,6 +249,7 @@ void CVkRenderContext::updateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 	{
 		auto& texture_queue = m_textureToUpdate[m_pDevice->m_swapchain.currentFrame];
 
+		// TODO: Calculate texture array index and remap it. Here i should set all image views.
 		u64 texture_count{ 0ull };
 		while (!texture_queue.empty())
 		{
@@ -259,7 +260,7 @@ void CVkRenderContext::updateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 			auto& texture = m_pResources->get<FVkTexture>(texture_id);
 
 			auto& image_descriptor = image_descriptors.at(texture_count);
-			image_descriptor.imageView = texture->imageViews.front();
+			image_descriptor.imageView = texture->layers.at(0).mips.at(0).imageView;
 			image_descriptor.sampler = texture->sampler;
 			image_descriptor.imageLayout = texture->layout;
 
@@ -348,7 +349,15 @@ u64 CVkRenderContext::createRenderTargets(const std::string& name, const FTextur
 			texture->isRenderTarget = true;
 			texture->initialData.base = texture_ci;
 			texture->image.handle = m_pDevice->m_swapchain.images.at(idx);
-			texture->imageViews.emplace_back(m_pDevice->m_swapchain.imageViews.at(idx));
+
+			auto& new_layer = texture->layers.emplace_back();
+			new_layer.baseLayer = 0;
+			new_layer.layerCount = 1;
+
+			auto& new_mip = new_layer.mips.emplace_back();
+			new_mip.baseMipLevel = 0;
+			new_mip.mipLevelCount = 1;
+			new_mip.imageView = m_pDevice->m_swapchain.imageViews.at(idx);
 
 			resource_id = m_pResources->add<FVkTexture>(name.c_str(), std::move(texture));
 		}
@@ -735,7 +744,7 @@ void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader
 
 			// TODO: add image view selection support
 			auto& image_descriptor = image_descriptors.at(texture_count);
-			image_descriptor.imageView = texture->imageViews.at(bind_info.mipLevel);
+			image_descriptor.imageView = texture->layers.at(0).mips.at(0).imageView;
 			image_descriptor.sampler = texture->sampler;
 			image_descriptor.imageLayout = texture->layout;
 			texture_count++;
@@ -1096,178 +1105,7 @@ void CVkRenderContext::processResourceBarriers(EQueueTypeFlagBits queue, const s
 	processMemoryBarriers(command_buffer, translation_info);
 }
 
-void CVkRenderContext::beginRendering(const FBeginRenderingInfo& rendering_info)
-{
-	// TODO: looks very bad. Maybe remove other method and do all work here?
-	auto& command_buffer = getLastCommandBuffer(rendering_info.queue);
-
-	auto& textures = m_pResources->data<FVkTexture>();
-
-	FVkTranslationInfo translation_info{};
-
-	std::array<vk::ClearValue, 3ull> clear_values{};
-	clear_values[0].color = vk::ClearColorValue{ 0.0f, 0.0f, 0.0f, 1.0f };
-	clear_values[1].depthStencil = vk::ClearDepthStencilValue{ 1.f, 0u };
-	clear_values[2].depthStencil = vk::ClearDepthStencilValue{ 1.f, 0u };
-
-	// Prepare render targets
-	std::vector<vk::RenderingAttachmentInfoKHR> color_attachments{};
-	for (const auto& target_view : rendering_info.colorAttachments)
-	{
-		auto& render_target = textures.at(target_view).at(m_pDevice->m_swapchain.currentFrame);
-
-		// Translating render target layout to color attachment
-		FVkTextureTranslationInfo texture_translation_info{};
-		texture_translation_info.oldLayout = vk::ImageLayout::eUndefined;
-		render_target->layout = texture_translation_info.newLayout = vk::ImageLayout::eColorAttachmentOptimal;
-		auto target_layout_translation = get_texture_layout_translation_info(*render_target, texture_translation_info);
-		translation_info.imageTranslationInfos.emplace_back(target_layout_translation);
-
-		auto& attachment_info = color_attachments.emplace_back();
-
-		// TODO: here i binding first image view to rendering, 
-		// but it is incorrect, because other image views can be 
-		// mip levels, it means that current code can't draw in mip 
-		// levels or array layers.
-		attachment_info.imageView = render_target->imageViews.front();
-		attachment_info.imageLayout = render_target->layout;
-		attachment_info.resolveMode = vk::ResolveModeFlagBits::eNone;
-		attachment_info.loadOp = get_attachment_load_op(*render_target);
-		attachment_info.storeOp = get_attachment_store_op(*render_target);
-		attachment_info.clearValue = clear_values[0];
-	}
-
-	// Prepare depth target
-	vk::RenderingAttachmentInfoKHR depth_attachment{};
-	if (rendering_info.depthAttachment != invalid_handle)
-	{
-		auto& depth_target = textures.at(rendering_info.depthAttachment).at(m_pDevice->m_swapchain.currentFrame);
-
-		bool is_depth_stencil_attachment = !is_depth_only_format(utl::cast<vk::Format>(depth_target->initialData.base.format));
-
-		FVkTextureTranslationInfo texture_translation_info{};
-		texture_translation_info.oldLayout = vk::ImageLayout::eUndefined;
-		depth_target->layout = texture_translation_info.newLayout = is_depth_stencil_attachment ? vk::ImageLayout::eDepthStencilAttachmentOptimal : vk::ImageLayout::eDepthAttachmentOptimalKHR;
-		auto target_layout_translation = get_texture_layout_translation_info(*depth_target, texture_translation_info);
-		translation_info.imageTranslationInfos.emplace_back(target_layout_translation);
-		
-		depth_attachment.imageView = depth_target->imageViews.front();
-		depth_attachment.imageLayout = depth_target->layout;
-		depth_attachment.resolveMode = vk::ResolveModeFlagBits::eNone;
-		depth_attachment.loadOp = get_attachment_load_op(*depth_target);
-		depth_attachment.storeOp = get_attachment_store_op(*depth_target);
-		depth_attachment.clearValue = clear_values[1];
-	}
-
-	vk::RenderingAttachmentInfoKHR stencil_attachment{};
-	if (rendering_info.stencilAttachment != rendering_info.depthAttachment && rendering_info.stencilAttachment != invalid_handle)
-	{
-		auto& stencil_target = textures.at(rendering_info.stencilAttachment).at(m_pDevice->m_swapchain.currentFrame);
-
-		FVkTextureTranslationInfo texture_translation_info{};
-		texture_translation_info.oldLayout = vk::ImageLayout::eUndefined;
-		stencil_target->layout = texture_translation_info.newLayout = vk::ImageLayout::eStencilAttachmentOptimalKHR;
-		auto target_layout_translation = get_texture_layout_translation_info(*stencil_target, texture_translation_info);
-		translation_info.imageTranslationInfos.emplace_back(target_layout_translation);
-
-		stencil_attachment.imageView = stencil_target->imageViews.front();
-		stencil_attachment.imageLayout = stencil_target->layout;
-		stencil_attachment.resolveMode = vk::ResolveModeFlagBits::eNone;
-		stencil_attachment.loadOp = get_attachment_load_op(*stencil_target);
-		stencil_attachment.storeOp = get_attachment_store_op(*stencil_target);
-		stencil_attachment.clearValue = clear_values[2];
-	}
-
-	// Translate all render target layouts
-	processMemoryBarriers(command_buffer, translation_info);
-	
-	vk::RenderingInfoKHR begin_rendering_info{};
-	begin_rendering_info.renderArea.offset.x = rendering_info.renderArea.offset.x;
-	begin_rendering_info.renderArea.offset.y = rendering_info.renderArea.offset.y;
-	begin_rendering_info.renderArea.extent.width = rendering_info.renderArea.size.x;
-	begin_rendering_info.renderArea.extent.height = rendering_info.renderArea.size.y;
-	begin_rendering_info.colorAttachmentCount = utl::cast<u32>(color_attachments.size());
-	begin_rendering_info.pColorAttachments = color_attachments.data();
-	begin_rendering_info.layerCount = rendering_info.layerCount;
-
-	if (rendering_info.depthAttachment != invalid_handle)
-	{
-		begin_rendering_info.pDepthAttachment = &depth_attachment;
-
-		auto& depth_target = textures.at(rendering_info.depthAttachment).at(m_pDevice->m_swapchain.currentFrame);
-		if (!is_depth_only_format(utl::cast<vk::Format>(depth_target->initialData.base.format)) && rendering_info.stencilAttachment == rendering_info.depthAttachment)
-			begin_rendering_info.pStencilAttachment = &depth_attachment;
-	}
-
-	if (rendering_info.stencilAttachment != invalid_handle && rendering_info.stencilAttachment != rendering_info.depthAttachment)
-		begin_rendering_info.pStencilAttachment = &stencil_attachment;
-
-	auto& current_buffer = command_buffer.get();
-
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	m_pDevice->debugBeginLabel(current_buffer, rendering_info.name, 0xffffffff);
-#endif
-	
-	current_buffer.beginRenderingKHR(begin_rendering_info);
-}
-
-void CVkRenderContext::endRendering(const FBeginRenderingInfo& rendering_info)
-{
-	auto& command_buffer = getLastCommandBuffer(rendering_info.queue);
-	
-	auto& textures = m_pResources->data<FVkTexture>();
-
-	auto& current_buffer = command_buffer.get();
-	current_buffer.endRenderingKHR();
-
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	m_pDevice->endLabel(current_buffer);
-#endif
-
-	FVkTranslationInfo translation_info{};
-
-	for (const auto& target_view : rendering_info.colorAttachments)
-	{
-		auto& render_target = textures.at(target_view).at(m_pDevice->m_swapchain.currentFrame);
-
-		// Translating render target layout to color attachment
-		FVkTextureTranslationInfo texture_translation_info{};
-		texture_translation_info.oldLayout = vk::ImageLayout::eColorAttachmentOptimal;
-		render_target->layout = texture_translation_info.newLayout = get_render_target_final_layout(*render_target);
-		auto target_layout_translation = get_texture_layout_translation_info(*render_target, texture_translation_info);
-		translation_info.imageTranslationInfos.emplace_back(target_layout_translation);
-	}
-
-	if (rendering_info.depthAttachment != invalid_handle)
-	{
-		auto& depth_target = textures.at(rendering_info.depthAttachment).at(m_pDevice->m_swapchain.currentFrame);
-
-		bool is_depth_stencil_attachment = !is_depth_only_format(utl::cast<vk::Format>(depth_target->initialData.base.format));
-
-		FVkTextureTranslationInfo texture_translation_info{};
-		texture_translation_info.oldLayout = is_depth_stencil_attachment ? vk::ImageLayout::eDepthStencilAttachmentOptimal : vk::ImageLayout::eDepthAttachmentOptimal;
-		depth_target->layout = texture_translation_info.newLayout = get_render_target_final_layout(*depth_target);
-		auto target_layout_translation = get_texture_layout_translation_info(*depth_target, texture_translation_info);
-		//target_layout_translation.subresourceRange.aspectMask = is_depth_stencil_attachment ? vk::ImageAspectFlagBits::eDepth : target_layout_translation.subresourceRange.aspectMask;
-		translation_info.imageTranslationInfos.emplace_back(target_layout_translation);
-	}
-
-	if (rendering_info.stencilAttachment != invalid_handle && rendering_info.depthAttachment != rendering_info.stencilAttachment)
-	{
-		auto& stencil_target = textures.at(rendering_info.stencilAttachment).at(m_pDevice->m_swapchain.currentFrame);;
-
-		FVkTextureTranslationInfo texture_translation_info{};
-		texture_translation_info.oldLayout = vk::ImageLayout::eStencilAttachmentOptimal;
-		stencil_target->layout = texture_translation_info.newLayout = get_render_target_final_layout(*stencil_target);
-		auto target_layout_translation = get_texture_layout_translation_info(*stencil_target, texture_translation_info);
-		translation_info.imageTranslationInfos.emplace_back(target_layout_translation);
-	}
-
-	// Translate all render target layouts
-	processMemoryBarriers(command_buffer, translation_info);
-}
-
-void CVkRenderContext::beginRendering2(const FBeginRendering2Info& rendering_info)
+void CVkRenderContext::beginRendering(const FBeginRendering2Info& rendering_info)
 {
 	auto& command_buffer = getLastCommandBuffer(rendering_info.queue);
 
@@ -1285,7 +1123,7 @@ void CVkRenderContext::beginRendering2(const FBeginRendering2Info& rendering_inf
 		auto& render_target = textures.at(color_attachment_info.handle).at(m_pDevice->m_swapchain.currentFrame);
 
 		auto& attachment_info = color_attachments.emplace_back();
-		attachment_info.imageView = render_target->imageViews.front();
+		attachment_info.imageView = render_target->layers.at(0).mips.at(0).imageView;
 		attachment_info.imageLayout = render_target->layout;
 		attachment_info.resolveMode = vk::ResolveModeFlagBits::eNone;
 		attachment_info.loadOp = get_attachment_load_op(color_attachment_info.loadOp);
@@ -1299,7 +1137,7 @@ void CVkRenderContext::beginRendering2(const FBeginRendering2Info& rendering_inf
 	{
 		auto& depth_target = textures.at(rendering_info.depthAttachment.handle).at(m_pDevice->m_swapchain.currentFrame);
 
-		depth_attachment.imageView = depth_target->imageViews.front();
+		depth_attachment.imageView = depth_target->layers.at(0).mips.at(0).imageView;
 		depth_attachment.imageLayout = depth_target->layout;
 		depth_attachment.resolveMode = vk::ResolveModeFlagBits::eNone;
 		depth_attachment.loadOp = get_attachment_load_op(rendering_info.depthAttachment.loadOp);
@@ -1312,7 +1150,7 @@ void CVkRenderContext::beginRendering2(const FBeginRendering2Info& rendering_inf
 	{
 		auto& stencil_target = textures.at(rendering_info.stencilAttachment.handle).at(m_pDevice->m_swapchain.currentFrame);
 
-		stencil_attachment.imageView = stencil_target->imageViews.front();
+		stencil_attachment.imageView = stencil_target->layers.at(0).mips.at(0).imageView;
 		stencil_attachment.imageLayout = stencil_target->layout;
 		stencil_attachment.resolveMode = vk::ResolveModeFlagBits::eNone;
 		stencil_attachment.loadOp = get_attachment_load_op(rendering_info.stencilAttachment.loadOp);
@@ -1350,7 +1188,7 @@ void CVkRenderContext::beginRendering2(const FBeginRendering2Info& rendering_inf
 	current_buffer.beginRenderingKHR(begin_rendering_info);
 }
 
-void CVkRenderContext::endRendering2(EQueueTypeFlagBits queue)
+void CVkRenderContext::endRendering(EQueueTypeFlagBits queue)
 {
 	auto& command_buffer = getLastCommandBuffer(queue);
 
@@ -1362,77 +1200,6 @@ void CVkRenderContext::endRendering2(EQueueTypeFlagBits queue)
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	m_pDevice->endLabel(current_buffer);
 #endif
-}
-
-void CVkRenderContext::beginCompute(const FBeginComputeInfo& rendering_info)
-{
-	auto& command_buffer = getLastCommandBuffer(rendering_info.queue);
-	auto& textures = m_pResources->data<FVkTexture>();
-	auto& buffers = m_pResources->data<FVkBuffer>();
-
-	FVkTranslationInfo translation_info{};
-
-	// Translate storage images to general layout (uav)
-	for (const auto& target_view : rendering_info.writeAttachments)
-	{
-		auto& render_target = textures.at(target_view).at(m_pDevice->m_swapchain.currentFrame);
-
-		// Translating render target layout to color attachment
-		FVkTextureTranslationInfo texture_translation_info{};
-		texture_translation_info.oldLayout = vk::ImageLayout::eUndefined;
-		render_target->layout = texture_translation_info.newLayout = vk::ImageLayout::eGeneral;
-		auto target_layout_translation = get_texture_layout_translation_info(*render_target, texture_translation_info);
-		translation_info.imageTranslationInfos.emplace_back(target_layout_translation);
-	}
-
-	for (const auto& target_view : rendering_info.writeBuffers)
-	{
-		auto& buffer = buffers.at(target_view).at(0);
-
-		FVkBufferTranslationInfo buffer_translation_info{};
-		buffer_translation_info.handle = buffer->handle;
-		buffer_translation_info.size = buffer->size;
-		buffer_translation_info.srcStageMask = vk::PipelineStageFlagBits2KHR::eComputeShader;
-		buffer_translation_info.srcAccessMask = vk::AccessFlagBits2KHR::eMemoryWrite | vk::AccessFlagBits2KHR::eShaderWrite;
-		buffer_translation_info.dstStageMask = vk::PipelineStageFlagBits2KHR::eComputeShader | vk::PipelineStageFlagBits2KHR::eVertexShader | vk::PipelineStageFlagBits2KHR::eFragmentShader;
-		buffer_translation_info.dstAccessMask = vk::AccessFlagBits2KHR::eMemoryRead | vk::AccessFlagBits2KHR::eShaderRead;
-		translation_info.bufferTranslationInfos.emplace_back(buffer_translation_info);
-	}
-
-	processMemoryBarriers(command_buffer, translation_info);
-
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	auto& current_buffer = command_buffer.get();
-	m_pDevice->debugBeginLabel(current_buffer, rendering_info.name, 0x888888ff);
-#endif
-}
-
-void CVkRenderContext::endCompute(const FBeginComputeInfo& rendering_info)
-{
-	auto& command_buffer = getLastCommandBuffer(rendering_info.queue);
-	auto& textures = m_pResources->data<FVkTexture>();
-
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	auto& current_buffer = command_buffer.get();
-	m_pDevice->endLabel(current_buffer);
-#endif
-
-	FVkTranslationInfo translation_info{};
-
-	// Translate storage images to general layout (uav)
-	for (const auto& target_view : rendering_info.writeAttachments)
-	{
-		auto& render_target = textures.at(target_view).at(m_pDevice->m_swapchain.currentFrame);
-
-		// Translating render target layout to color attachment
-		FVkTextureTranslationInfo texture_translation_info{};
-		texture_translation_info.oldLayout = vk::ImageLayout::eGeneral;
-		render_target->layout = texture_translation_info.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-		auto target_layout_translation = get_texture_layout_translation_info(*render_target, texture_translation_info);
-		translation_info.imageTranslationInfos.emplace_back(target_layout_translation);
-	}
-
-	processMemoryBarriers(command_buffer, translation_info);
 }
 
 void CVkRenderContext::processMemoryBarriers(const FVkCommandBuffer& command_buffer, const FVkTranslationInfo& translation_info)
@@ -1582,40 +1349,7 @@ void CVkRenderContext::draw(EQueueTypeFlagBits queue_type, const FIndirectGeomet
 	current.drawIndexedIndirect(indirect_command_buffer->handle, draw_info.offset, draw_info.count, draw_info.stride);
 }
 
-void CVkRenderContext::dispatch(EQueueTypeFlagBits queue_type, const FDispatchInfo& dispatch_info)
-{
-	auto& command_buffer = getLastCommandBuffer(queue_type);
-	auto& current = command_buffer.get();
-
-	bool use_indirect_dispatch{ dispatch_info.groups.size() > 1ull };
-
-	std::vector<vk::DispatchIndirectCommand> commands{};
-	for (const auto& group : dispatch_info.groups)
-	{
-		auto& command = commands.emplace_back();
-		command.x = group.x;
-		command.y = group.y;
-		command.z = group.z;
-	}
-
-	if (use_indirect_dispatch)
-	{
-		void* memory{ nullptr };
-
-		auto& buffer = m_pResources->get<FVkBuffer>(m_indirectDispatchBuffer);
-		m_pDevice->mapBufferMemory(*buffer, &memory);
-		std::memcpy(utl::cast<char*>(memory) + m_dispatchBufferOffset, commands.data(), commands.size() * sizeof(vk::DispatchIndirectCommand));
-		m_pDevice->unmapBufferMemory(*buffer);
-		current.dispatchIndirect(buffer->handle, m_dispatchBufferOffset);
-	}
-	else
-	{
-		auto& command = commands.front();
-		current.dispatch(command.x, command.y, command.z);
-	}
-}
-
-void CVkRenderContext::dispatch2(EQueueTypeFlagBits queue_type, const FDispatch2Info& dispatch_info)
+void CVkRenderContext::dispatch(EQueueTypeFlagBits queue_type, const FDispatch2Info& dispatch_info)
 {
 	auto& shader = m_pResources->get<FVkShader>(dispatch_info.shaderHandle);
 	auto& reflection = m_pResources->get<FVkShaderReflectionData>(shader->reflection);
@@ -1638,7 +1372,7 @@ void CVkRenderContext::dispatch2(EQueueTypeFlagBits queue_type, const FDispatch2
 	current.dispatch(command.x, command.y, command.z);
 }
 
-void CVkRenderContext::dispatch2(EQueueTypeFlagBits queue_type, const FDispatchIndirectInfo& dispatch_info)
+void CVkRenderContext::dispatch(EQueueTypeFlagBits queue_type, const FDispatchIndirectInfo& dispatch_info)
 {
 	
 }
@@ -1768,9 +1502,17 @@ void CVkRenderContext::updateSurface(i32 surface_width, i32 surface_height)
 				// Update sapchain target
 				if (target->initialData.base.backbuffer)
 				{
-					target->imageViews.clear();
+					for (auto& layer : target->layers)
+					{
+						layer.mips.clear();
+
+						auto& new_mip = layer.mips.emplace_back();
+						new_mip.baseMipLevel = 0;
+						new_mip.mipLevelCount = 1;
+						new_mip.imageView = m_pDevice->m_swapchain.imageViews.at(swapchainFrameIndex);
+					}
+
 					target->image.handle = m_pDevice->m_swapchain.images.at(swapchainFrameIndex);
-					target->imageViews.emplace_back(m_pDevice->m_swapchain.imageViews.at(swapchainFrameIndex));
 					target->initialData.base.size.width = surface_width;
 					target->initialData.base.size.height = surface_height;
 
@@ -1778,9 +1520,13 @@ void CVkRenderContext::updateSurface(i32 surface_width, i32 surface_height)
 					continue;
 				}
 
-				for (auto& image_view : target->imageViews)
-					m_pDevice->destroyImageView(image_view);
-				target->imageViews.clear();
+				for (auto& layer : target->layers)
+				{
+					for (auto& mip : layer.mips)
+						m_pDevice->destroyImageView(mip.imageView);
+					layer.mips.clear();
+				}
+				target->layers.clear();
 
 				m_pDevice->destroyImage(target->image);
 
@@ -2388,19 +2134,29 @@ FRenderApiErrorInfo CVkRenderContext::createTexture(const FVkTextureCreateInfo& 
 
 	image_view_ci.ci.components = { vk::ComponentSwizzle::eR, vk::ComponentSwizzle::eG, vk::ComponentSwizzle::eB, vk::ComponentSwizzle::eA };
 	image_view_ci.ci.subresourceRange.aspectMask = image_aspect;
-	image_view_ci.ci.subresourceRange.baseArrayLayer = 0u;
-	image_view_ci.ci.subresourceRange.layerCount = texture.totalLayers;
 	image_view_ci.ci.image = texture.image.handle;
 
-	texture.imageViews.resize(texture_ci.base.mipLevels);
-	for (u32 mip = 0u; mip < texture_ci.base.mipLevels; ++mip)
+	auto layer_count = (texture_ci.base.typeFlags & ETextureCreateFlagBits::eCubemap) ? 1u : texture.totalLayers;
+	
+	texture.layers.resize(layer_count);
+	for (u32 layer_index = 0u; layer_index < layer_count; ++layer_index)
 	{
-		image_view_ci.ci.subresourceRange.baseMipLevel = mip;
-		image_view_ci.ci.subresourceRange.levelCount = mip == 0u ? texture_ci.base.mipLevels : 1u;
+		auto& current_layer = texture.layers.at(layer_index);
+		image_view_ci.ci.subresourceRange.baseArrayLayer = current_layer.baseLayer = layer_index;
+		image_view_ci.ci.subresourceRange.layerCount = current_layer.layerCount = layer_index == 0u ? texture.totalLayers : 1u;
+
+		current_layer.mips.resize(texture_ci.base.mipLevels);
+		for (u32 mip_index = 0u; mip_index < texture_ci.base.mipLevels; ++mip_index)
+		{
+			auto& current_mip = current_layer.mips.at(mip_index);
+			image_view_ci.ci.subresourceRange.baseMipLevel = current_mip.baseMipLevel = mip_index;
+			image_view_ci.ci.subresourceRange.levelCount = current_mip.mipLevelCount = mip_index == 0u ? texture_ci.base.mipLevels : 1u;
+
 #ifndef BUILD_WITHOUT_DEBUGGIND
-		image_view_ci.name = std::format("{} mip #{}", texture_ci.name, mip);
+			image_view_ci.name = std::format("{}[L:{},M:{}]", texture_ci.name, layer_index, mip_index);
 #endif
-		RETURN_WHEN_FAULT(m_pDevice->createImageView(image_view_ci, texture.imageViews.at(mip)))
+			RETURN_WHEN_FAULT(m_pDevice->createImageView(image_view_ci, current_mip.imageView));
+		}
 	}
 
 	FVkSamplerCreateInfo sampler_ci{};
@@ -2426,9 +2182,13 @@ void CVkRenderContext::destroyTexture(FVkTexture& texture)
 {
 	m_pDevice->destroySampler(texture.sampler);
 	
-	for (auto& image_view : texture.imageViews)
-		m_pDevice->destroyImageView(image_view);
-	texture.imageViews.clear();
+	for (auto& layer : texture.layers)
+	{
+		for(auto& mip : layer.mips)
+			m_pDevice->destroyImageView(mip.imageView);
+		layer.mips.clear();
+	}
+	texture.layers.clear();
 
 	m_pDevice->destroyImage(texture.image);
 
