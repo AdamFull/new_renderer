@@ -52,9 +52,9 @@ void CShaderObject::bindBuffer(const char* name, u64 buffer_resource)
 	m_bindBuffers[utl::fnv1a_64_hash(name)] = buffer_resource;
 }
 
-void CShaderObject::bindTexture(const char* name, u64 texture_resource, u32 mip)
+void CShaderObject::bindTexture(const char* name, u64 texture_resource, u32 layer, u32 mip)
 {
-	m_bindTextures[utl::fnv1a_64_hash(name)] = FTextureBindInfo{ texture_resource, mip };
+	m_bindTextures[utl::fnv1a_64_hash(name)] = FTextureBindInfo{ texture_resource, layer, mip };
 }
 
 void CShaderObject::flushDescriptors()
@@ -65,6 +65,7 @@ void CShaderObject::flushDescriptors()
 	{
 		auto& render_graph = m_pRenderInterface->getRenderGraph();
 		// TODO: Required multiple changes for bindless system inside api implementation
+		// start_element_index + (layer_index * layer.mips.size()) + mip_index;
 	}
 
 	FShaderResourceCommit update_data{};

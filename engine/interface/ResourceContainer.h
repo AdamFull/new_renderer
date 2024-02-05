@@ -115,17 +115,17 @@ namespace engine
 		}
 
 		template<class _Ty>
-		const stl::unique_ptr<_Ty>& get(resource_handle_t id)
+		const stl::unique_ptr<_Ty>& get(resource_handle_t id, u64 resource_index = 0ull)
 		{
 			auto container = get_container<_Ty>();
-			return container->get(id);
+			return container->get(id, resource_index);
 		}
 
 		template<class _Ty>
-		const stl::unique_ptr<_Ty>& get(const char* name)
+		const stl::unique_ptr<_Ty>& get(const char* name, u64 resource_index = 0ull)
 		{
 			auto container = get_container<_Ty>();
-			return container->get(name);
+			return container->get(name, resource_index);
 		}
 
 		template<class _Ty>

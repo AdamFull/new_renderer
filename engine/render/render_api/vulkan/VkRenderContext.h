@@ -23,6 +23,7 @@ namespace engine
 				u64 getTextureId(const stl::string& name) override;
 				u64 createRenderTarget(const stl::string& name, const FTextureCreateInfo& texture_ci);
 				u64 createRenderTargets(const stl::string& name, const FTextureCreateInfo& texture_ci) override;
+				u64 getTextureIndex(u64 texture_id, u32 layer = 0u, u32 mip = 0u) override;
 				const FTextureCreateInfo& getTextureInfo(u64 texture_id) override;
 				void destroyTexture(u64 resource_id) override;
 
@@ -119,6 +120,8 @@ namespace engine
 				stl::vector<FTextureUploadInfo> m_textureUploadInfos{};
 				stl::vector<FBufferUploadInfo> m_bufferUploadInfos{};
 				stl::vector<FVkTextureLayoutChangeInfo> m_textureLayoutInfos{};
+
+				stl::vector<u64> m_textureIndexRemap{};
 
 				stl::queue<FAPIObjectDestroyInfo> m_destroyResource{};
 
