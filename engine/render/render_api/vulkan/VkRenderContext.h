@@ -3,6 +3,7 @@
 #include "VkRenderDevice.h"
 #include <engine/interface/ResourceContainer.h>
 #include <engine/interface/render/RenderInterface.h>
+#include <container/unique_queue.h>
 
 namespace engine
 {
@@ -130,7 +131,7 @@ namespace engine
 
 				// NOTE: global descriptor uses set 0 and binding 0 and 1 (0 is for global uniform, 1 is for texture array)
 				FVkGlobalDescriptor m_globalDescriptor{};
-				stl::unordered_map<u32, utl::unique_queue<u64>> m_textureToUpdate{};
+				stl::unordered_map<u32, utl::container::unique_queue<u64>> m_textureToUpdate{};
 
 				stl::unordered_map<stl::thread::id, FVkThreadContext> m_perThreadContext{};
 				bool m_bIsFrameStarted{ false };

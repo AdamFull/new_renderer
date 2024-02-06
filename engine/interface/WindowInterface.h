@@ -1,6 +1,6 @@
 #pragma once
 
-#include <utility.hpp>
+#include <standart_library.h>
 
 namespace engine
 {
@@ -20,13 +20,13 @@ namespace engine
 
 	struct FWindowCreateInfo
 	{
-		std::string name{};
-		uint32_t flags{ 0u };
+		stl::string name{};
+		u32 flags{ 0u };
 
-		int32_t position_x{ 0 };
-		int32_t position_y{ 0 };
-		int32_t width{ 0 };
-		int32_t height{ 0 };
+		i32 position_x{ 0 };
+		i32 position_y{ 0 };
+		i32 width{ 0 };
+		i32 height{ 0 };
 	};
 
     enum class EKeyState
@@ -37,7 +37,7 @@ namespace engine
         eReleased
     };
 
-    enum class EKeyCode : size_t
+    enum class EKeyCode : u64
     {
         eUnknown,
 
@@ -157,21 +157,21 @@ namespace engine
         eCount
     };
 
-    using keystate = std::bitset<static_cast<size_t>(EKeyCode::eCount)>;
+    using keystate = stl::bitset<static_cast<u64>(EKeyCode::eCount)>;
 
     class CKeyDecoder
     {
     public:
         bool update(EKeyCode eCode, bool bPressed)
         {
-            auto code = static_cast<size_t>(eCode);
+            auto code = static_cast<u64>(eCode);
 
             if (bPressed != mStates.test(code))
             {
                 if (bPressed)
-                    mStates.set(static_cast<size_t>(eCode));
+                    mStates.set(static_cast<u64>(eCode));
                 else
-                    mStates.reset(static_cast<size_t>(eCode));
+                    mStates.reset(static_cast<u64>(eCode));
 
                 return true;
             }
@@ -181,7 +181,7 @@ namespace engine
 
         bool test(EKeyCode eCode)
         {
-            return mStates.test(static_cast<size_t>(eCode));
+            return mStates.test(static_cast<u64>(eCode));
         }
     private:
         keystate mStates;
@@ -197,7 +197,7 @@ namespace engine
 
 		virtual bool process() = 0;
 
-		virtual void getWindowSize(int32_t& width, int32_t& height) = 0;
+		virtual void getWindowSize(i32& width, i32& height) = 0;
 		virtual bool isResized() = 0;
 		virtual bool isMinimized() = 0;
 	};

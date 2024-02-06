@@ -178,7 +178,7 @@ void CLibraryCompiler::compile(const stl::filesystem::path& library_path, FShade
 	if (!parse_file_to(library_path, shader_library_ci))
 		return;
 
-	FCompiledLibrary& compiled_library = shader_cache.libraries[utl::fnv1a_64_hash(shader_library_ci.name.c_str())];
+	FCompiledLibrary& compiled_library = shader_cache.libraries[utl::utils::fnv1a_64_hash(shader_library_ci.name.c_str())];
 
 	auto parent_path = library_path.parent_path();
 
@@ -239,7 +239,7 @@ void CLibraryCompiler::compile(const stl::filesystem::path& library_path, FShade
 
 				// Make unique shader name(key)
 				auto module_name_str = make_module_unique_name_str(compile.name, definitions);
-				auto unique_module_name = utl::fnv1a_64_hash(module_name_str.c_str());
+				auto unique_module_name = utl::utils::fnv1a_64_hash(module_name_str.c_str());
 
 				// Get shader module
 				stl::vector<FShaderModule>& shader_modules = compiled_library.modules[unique_module_name];

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <typeindex>
-#include <utility.hpp>
+#include <utils/hash.h>
 
 namespace engine
 {
@@ -16,7 +16,7 @@ namespace engine
 		{
 			static stl::atomic<resource_handle_t> uid{ 0ull };
 
-			auto name_hash = utl::fnv1a_64_hash(name);
+			auto name_hash = utl::utils::fnv1a_64_hash(name);
 			auto found_association = nameToId.find(name_hash);
 			if (found_association != nameToId.end())
 			{
@@ -38,7 +38,7 @@ namespace engine
 			resource_handle_t current_id = uid.load(stl::memory_order_relaxed);
 			uid.fetch_add(1ull, stl::memory_order_relaxed);
 
-			nameToId.emplace(utl::fnv1a_64_hash(name), current_id);
+			nameToId.emplace(utl::utils::fnv1a_64_hash(name), current_id);
 			auto& instances = objects.emplace_back();
 			instances.emplace_back(stl::move(object));
 
@@ -58,7 +58,7 @@ namespace engine
 
 		void remove(const char* name)
 		{
-			auto it = nameToId.find(utl::fnv1a_64_hash(name));
+			auto it = nameToId.find(utl::utils::fnv1a_64_hash(name));
 			if (it != nameToId.end())
 			{
 				freeIds.push(it->second);
@@ -74,7 +74,7 @@ namespace engine
 
 		const stl::unique_ptr<_Ty>& get(const char* name, u64 index = 0ull)
 		{
-			auto id = nameToId[utl::fnv1a_64_hash(name)];
+			auto id = nameToId[utl::utils::fnv1a_64_hash(name)];
 			return get(id, index);
 		}
 
@@ -85,7 +85,7 @@ namespace engine
 
 		resource_handle_t getId(const char* name)
 		{
-			auto it = nameToId.find(utl::fnv1a_64_hash(name));
+			auto it = nameToId.find(utl::utils::fnv1a_64_hash(name));
 			if (it != nameToId.end())
 				return it->second;
 

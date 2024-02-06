@@ -130,67 +130,67 @@ std::string fs::normalize(const std::string& path)
 bool fs::is_scene_format(const std::string& path)
 {
 	auto ext = get_ext(path);
-	return is_scene_format(utl::const_hash(ext.c_str(), ext.size()));
+	return is_scene_format(utl::utils::const_hash(ext.c_str(), ext.size()));
 }
 
 bool fs::is_image_format(const std::string& path)
 {
 	auto ext = get_ext(path);
-	return is_image_format(utl::const_hash(ext.c_str(), ext.size()));
+	return is_image_format(utl::utils::const_hash(ext.c_str(), ext.size()));
 }
 
 bool fs::is_ktx_format(const std::string& path)
 {
 	auto ext = get_ext(path);
-	return is_ktx_format(utl::const_hash(ext.c_str(), ext.size()));
+	return is_ktx_format(utl::utils::const_hash(ext.c_str(), ext.size()));
 }
 
 bool fs::is_mesh_format(const std::string& path)
 {
 	auto ext = get_ext(path);
-	return is_mesh_format(utl::const_hash(ext.c_str(), ext.size()));
+	return is_mesh_format(utl::utils::const_hash(ext.c_str(), ext.size()));
 }
 
 bool fs::is_gltf_format(const std::string& path)
 {
 	auto ext = get_ext(path);
-	return is_gltf_format(utl::const_hash(ext.c_str(), ext.size()));
+	return is_gltf_format(utl::utils::const_hash(ext.c_str(), ext.size()));
 }
 
 bool fs::is_obj_format(const std::string& path)
 {
 	auto ext = get_ext(path);
-	return is_obj_format(utl::const_hash(ext.c_str(), ext.size()));
+	return is_obj_format(utl::utils::const_hash(ext.c_str(), ext.size()));
 }
 
 bool fs::is_fbx_format(const std::string& path)
 {
 	auto ext = get_ext(path);
-	return is_fbx_format(utl::const_hash(ext.c_str(), ext.size()));
+	return is_fbx_format(utl::utils::const_hash(ext.c_str(), ext.size()));
 }
 
 bool fs::is_skybox_format(const std::string& path)
 {
 	auto ext = get_ext(path);
-	return is_skybox_format(utl::const_hash(ext.c_str(), ext.size()));
+	return is_skybox_format(utl::utils::const_hash(ext.c_str(), ext.size()));
 }
 
 bool fs::is_script_format(const std::string& path)
 {
 	auto ext = get_ext(path);
-	return is_script_format(utl::const_hash(ext.c_str(), ext.size()));
+	return is_script_format(utl::utils::const_hash(ext.c_str(), ext.size()));
 }
 
 bool fs::is_audio_format(const std::string& path)
 {
 	auto ext = get_ext(path);
-	return is_audio_format(utl::const_hash(ext.c_str(), ext.size()));
+	return is_audio_format(utl::utils::const_hash(ext.c_str(), ext.size()));
 }
 
 bool fs::is_particle_format(const std::string& path)
 {
 	auto ext = get_ext(path);
-	return is_particle_format(utl::const_hash(ext.c_str(), ext.size()));
+	return is_particle_format(utl::utils::const_hash(ext.c_str(), ext.size()));
 }
 
 // Private

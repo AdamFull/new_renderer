@@ -1,6 +1,6 @@
 #pragma once
 
-#include <utility.hpp>
+#include <parsing/json_parser.h>
 #include "compiler_structures.h"
 
 namespace shader_compiler
@@ -59,40 +59,40 @@ namespace shader_compiler
     inline void to_json(nlohmann::json& json, const FShaderModule& type)
     {
         json = nlohmann::json();
-        utl::serialize_from("type", json, type.type, true);
-        utl::serialize_from("link", json, type.link, true);
+        utl::parsing::serialize_from("type", json, type.type, true);
+        utl::parsing::serialize_from("link", json, type.link, true);
     }
 
     inline void from_json(const nlohmann::json& json, FShaderModule& type)
     {
-        utl::parse_to("type", json, type.type);
-        utl::parse_to("link", json, type.link);
+        utl::parsing::parse_to("type", json, type.type);
+        utl::parsing::parse_to("link", json, type.link);
     }
 
 
     inline void to_json(nlohmann::json& json, const FCompiledLibrary& type)
     {
         json = nlohmann::json();
-        utl::serialize_from("shaders", json, type.shaders, true);
-        utl::serialize_from("modules", json, type.modules, true);
+        utl::parsing::serialize_from("shaders", json, type.shaders, true);
+        utl::parsing::serialize_from("modules", json, type.modules, true);
     }
 
     inline void from_json(const nlohmann::json& json, FCompiledLibrary& type)
     {
-        utl::parse_to("shaders", json, type.shaders);
-        utl::parse_to("modules", json, type.modules);
+        utl::parsing::parse_to("shaders", json, type.shaders);
+        utl::parsing::parse_to("modules", json, type.modules);
     }
 
 
     inline void to_json(nlohmann::json& json, const FShaderCacheData& type)
     {
         json = nlohmann::json();
-        utl::serialize_from("libraries", json, type.libraries, true);
+        utl::parsing::serialize_from("libraries", json, type.libraries, true);
     }
 
     inline void from_json(const nlohmann::json& json, FShaderCacheData& type)
     {
-        utl::parse_to("libraries", json, type.libraries);
+        utl::parsing::parse_to("libraries", json, type.libraries);
     }
 }
 

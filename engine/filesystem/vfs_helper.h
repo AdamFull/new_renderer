@@ -1,7 +1,7 @@
 #pragma once
 
 #include <ie_vfs_exports.h>
-#include <utility.hpp>
+#include <utils/hash.h>
 
 namespace engine
 {
@@ -9,7 +9,7 @@ namespace engine
 	{
         namespace format
         {
-            using namespace utl;
+            using namespace utl::utils;
             // images
             constexpr inline u32 ktx = ".ktx"_utl_hash;
             constexpr inline u32 ktx2 = ".ktx2"_utl_hash;

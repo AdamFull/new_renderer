@@ -25,7 +25,7 @@ namespace engine
 			template<class... _Args>
 			int run(const char* function, _Args&&... args)
 			{
-				auto found_function = m_scriptFunctions.find(utl::fnv1a_64_hash(function));
+				auto found_function = m_scriptFunctions.find(utl::utils::fnv1a_64_hash(function));
 				if (found_function != m_scriptFunctions.end())
 				{
 					auto result = found_function->second->call(stl::forward<_Args>(args)...);

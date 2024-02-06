@@ -65,7 +65,7 @@ void CApplication::create()
 
 void CApplication::loop()
 {
-	utl::stopwatch sw{};
+	utl::utils::stopwatch sw{};
 	f32 dt{ 0.f };
 
 	while (m_pWindowHandle->process())

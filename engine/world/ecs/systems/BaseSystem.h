@@ -1,6 +1,6 @@
 #pragma once
 
-#include <utility.hpp>
+#include <utils/stopwatch.h>
 
 namespace engine
 {
@@ -23,7 +23,7 @@ namespace engine
 				virtual void __update(f32 fDf) = 0;
 
 				CSceneGraph* m_pSceneGraph{ nullptr };
-				utl::stopwatch m_stopWatch;
+				utl::utils::stopwatch m_stopWatch;
 				f32 m_createTime{ 0.f }, m_updateTime{ 0.f };
 			};
 		}

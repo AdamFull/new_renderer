@@ -3,7 +3,7 @@
 #include <engine/interface/WindowInterface.h>
 #include <engine/world/ecs/systems/BaseSystem.h>
 
-#include <utility.hpp>
+#include <reactive/function.h>
 
 namespace engine
 {
@@ -14,12 +14,12 @@ namespace engine
 			struct FInputAction
 			{
 				EKeyState state;
-				stl::vector<utl::function<void(EKeyCode, EKeyState)>> listeners;
+				stl::vector<utl::reactive::function<void(EKeyCode, EKeyState)>> listeners;
 			};
 
 			struct FInputAxis
 			{
-				stl::vector<utl::function<void(f32, f32)>> listeners;
+				stl::vector<utl::reactive::function<void(f32, f32)>> listeners;
 			};
 
 			class CInputSystem : public ISystem

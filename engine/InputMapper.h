@@ -1,7 +1,8 @@
 #pragma once
 
 #include <engine/interface/WindowInterface.h>
-#include <utility.hpp>
+#include <reactive/function.h>
+#include <utils/hash.h>
 
 namespace engine
 {
@@ -22,14 +23,14 @@ namespace engine
 	{
 		EAxisType type{};
 		stl::unordered_map<EKeyCode, f32> keyValue{};
-		stl::vector<utl::function<void(f32)>> callbacks{};
+		stl::vector<utl::reactive::function<void(f32)>> callbacks{};
 	};
 
 	struct FInputAction
 	{
 		stl::vector<EKeyCode> keys{};
 		EKeyState state{ EKeyState::eReleased };
-		stl::vector<utl::function<void(EKeyState)>> callbacks{};
+		stl::vector<utl::reactive::function<void(EKeyState)>> callbacks{};
 	};
 
 	class CInputMapper
@@ -43,18 +44,18 @@ namespace engine
 		{
 			stl::array<EKeyCode, sizeof...(_Args)> keys{ {args...} };
 			
-			auto& action = m_inputActions[utl::fnv1a_64_hash(action_name)];
+			auto& action = m_inputActions[utl::utils::fnv1a_64_hash(action_name)];
 			action.keys.insert(action.keys.end(), keys.begin(), keys.end());
 		}
 
 		template<class... _Args>
 		void bindAction(const char* action_name, _Args&& ...args)
 		{
-			auto found = m_inputActions.find(utl::fnv1a_64_hash(action_name));
+			auto found = m_inputActions.find(utl::utils::fnv1a_64_hash(action_name));
 			if (found != m_inputActions.end())
 			{
 				auto& input_action = found->second;
-				input_action.callbacks.emplace_back(utl::function<void(EKeyState)>(stl::forward<_Args>(args)...));
+				input_action.callbacks.emplace_back(utl::reactive::function<void(EKeyState)>(stl::forward<_Args>(args)...));
 			}
 		}
 
@@ -63,7 +64,7 @@ namespace engine
 		{
 			static_assert(sizeof...(_Args) % 2ull == 0, "Incorrect argument count, it should be even.");
 
-			auto& new_axis = m_inputAxis[utl::fnv1a_64_hash(axis_name)];
+			auto& new_axis = m_inputAxis[utl::utils::fnv1a_64_hash(axis_name)];
 			new_axis.type = type;
 
 			unpackAxisValues(new_axis.keyValue, stl::forward<_Args>(args)...);
@@ -72,11 +73,11 @@ namespace engine
 		template<class... _Args>
 		void bindAxis(const char* axis_name, _Args& ...args)
 		{
-			auto found = m_inputAxis.find(utl::fnv1a_64_hash(axis_name));
+			auto found = m_inputAxis.find(utl::utils::fnv1a_64_hash(axis_name));
 			if (found != m_inputAxis.end())
 			{
 				auto& found_axis = found->second;
-				found_axis.callbacks.emplace_back(utl::function<void(f32)>(stl::forward<_Args>(args)...));
+				found_axis.callbacks.emplace_back(utl::reactive::function<void(f32)>(stl::forward<_Args>(args)...));
 			}
 		}
 

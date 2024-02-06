@@ -1,12 +1,12 @@
 #pragma once
 
-#include <utility.hpp>
+#include <utils/hash.h>
 
 namespace engine
 {
 	//namespace
 	//{
-		using namespace utl;
+		using namespace utl::utils;
 		enum class EMimeType : u32
 		{
 			eJPG = ".jpg"_utl_hash,

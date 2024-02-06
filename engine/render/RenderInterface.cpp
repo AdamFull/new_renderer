@@ -140,8 +140,8 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 	m_pRenderContext = make_render_context(rhi_ci);
 
 	FGlobalUniformCreateInfo global_buffer_ci{};
-	global_buffer_ci.uniforms[utl::fnv1a_64_hash("GlobalUniformFrameData")] = sizeof(FGlobalUniformData);
-	global_buffer_ci.uniforms[utl::fnv1a_64_hash("GlobalBufferReferences")] = sizeof(FGlobalBufferReference);
+	global_buffer_ci.uniforms[utl::utils::fnv1a_64_hash("GlobalUniformFrameData")] = sizeof(FGlobalUniformData);
+	global_buffer_ci.uniforms[utl::utils::fnv1a_64_hash("GlobalBufferReferences")] = sizeof(FGlobalBufferReference);
 	m_pRenderContext->createGlobalDescriptor(global_buffer_ci);
 
 	m_pRenderWorld->create();
@@ -181,7 +181,7 @@ void CRenderInterface::render(f32 dt)
 	global_uniform.rawCommandsCount = utl::cast<u32>(world_stats.drawCommandCount);
 
 	FGlobalUniformUpdateInfo update_info{};
-	auto& frame_gata_uniform = update_info.uniforms[utl::fnv1a_64_hash("GlobalUniformFrameData")];
+	auto& frame_gata_uniform = update_info.uniforms[utl::utils::fnv1a_64_hash("GlobalUniformFrameData")];
 	frame_gata_uniform.data = &global_uniform;
 	frame_gata_uniform.size = sizeof(FGlobalUniformData);
 	frame_gata_uniform.binding = 0u;
@@ -201,7 +201,7 @@ void CRenderInterface::render(f32 dt)
 	global_references.batchBuffer = buffer_mappings[draw_batch_buffer_index]->address();
 	global_references.indirectCommandBuffer = buffer_mappings[draw_command_buffer_index]->address();
 
-	auto& buffer_ref_uniform = update_info.uniforms[utl::fnv1a_64_hash("GlobalBufferReferences")];
+	auto& buffer_ref_uniform = update_info.uniforms[utl::utils::fnv1a_64_hash("GlobalBufferReferences")];
 	buffer_ref_uniform.data = &global_references;
 	buffer_ref_uniform.size = sizeof(FGlobalBufferReference);
 	buffer_ref_uniform.binding = 1u;
@@ -221,7 +221,7 @@ u64 CRenderInterface::loadTexture(const stl::string& path, FTextureCreateInfo& c
 {
 	auto name = filesystem::fs::get_stem(path);
 	auto ext = filesystem::fs::get_ext(path);
-	auto ext_hash = utl::const_hash(ext.c_str(), ext.size());
+	auto ext_hash = utl::utils::const_hash(ext.c_str(), ext.size());
 	auto mime = utl::cast<EMimeType>(ext_hash);
 
 	u64 texture_id = m_pRenderContext->getTextureId(name);
@@ -291,7 +291,7 @@ FShaderUploadInfo CRenderInterface::getShaderNameTag(const stl::string& name)
 	auto name_info = get_shader_name_info(name);
 
 	FShaderUploadInfo load_info{};
-	load_info.libraryId = utl::fnv1a_64_hash(name_info.library_name.c_str());
+	load_info.libraryId = utl::utils::fnv1a_64_hash(name_info.library_name.c_str());
 	load_info.shaderId = shader_compiler::make_module_unique_name(name_info.shader_name, name_info.definitions);
 	load_info.originalName = name;
 

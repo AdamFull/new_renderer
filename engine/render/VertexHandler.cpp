@@ -173,7 +173,7 @@ void CVertexHandler::create(const FVertexHandlerCreateInfo& create_info)
 		ss << ":" << definition;
 	m_definitions = ss.str();
 
-	m_attributeHash = utl::fnv1a_64_hash(m_definitions.c_str());
+	m_attributeHash = utl::utils::fnv1a_64_hash(m_definitions.c_str());
 
 	return;
 }

@@ -38,7 +38,7 @@ void build_specialization_constant_reflection(FVkShaderReflectionData& reflectio
 {
     auto name = compiler->get_name(spec_const.id);
 
-    u64 name_hash = utl::fnv1a_64_hash(name.c_str());
+    u64 name_hash = utl::utils::fnv1a_64_hash(name.c_str());
     auto it = reflection_data.specializationConstants.find(name_hash);
     if (it != reflection_data.specializationConstants.end())
     {
@@ -65,7 +65,7 @@ void build_specialization_constant_reflection(FVkShaderReflectionData& reflectio
 
 void build_uniform_block_reflection(FVkShaderReflectionData& reflection_data, spirv_cross::CompilerGLSL* compiler, const spirv_cross::Resource& res, vk::ShaderStageFlagBits shaderStage, vk::DescriptorType descriptorType)
 {
-    u64 name_hash = utl::fnv1a_64_hash(res.name.c_str());
+    u64 name_hash = utl::utils::fnv1a_64_hash(res.name.c_str());
     auto it = reflection_data.uniformBlocks.find(name_hash);
     if (it != reflection_data.uniformBlocks.end())
     {
@@ -100,7 +100,7 @@ void build_uniform_block_reflection(FVkShaderReflectionData& reflection_data, sp
 
         uniform.stageFlags = shaderStage;
 
-        u64 member_name_hash = utl::fnv1a_64_hash(compiler->get_member_name(type.self, i).c_str());
+        u64 member_name_hash = utl::utils::fnv1a_64_hash(compiler->get_member_name(type.self, i).c_str());
         uniform_block.uniforms.emplace(member_name_hash, uniform);
     }
 
@@ -113,7 +113,7 @@ void build_uniform_block_reflection(FVkShaderReflectionData& reflection_data, sp
 
 void build_push_constants_block_reflection(FVkShaderReflectionData& reflection_data, spirv_cross::CompilerGLSL* compiler, const spirv_cross::Resource& res, vk::ShaderStageFlagBits shaderStage)
 {
-    u64 name_hash = utl::fnv1a_64_hash(res.name.c_str());
+    u64 name_hash = utl::utils::fnv1a_64_hash(res.name.c_str());
     auto it = reflection_data.pushBlocks.find(name_hash);
     if (it != reflection_data.pushBlocks.end())
     {
@@ -137,7 +137,7 @@ void build_push_constants_block_reflection(FVkShaderReflectionData& reflection_d
             u64 matrix_stride = compiler->type_struct_member_matrix_stride(type, i);
         uniform.stageFlags = shaderStage;
 
-        u64 member_name_hash = utl::fnv1a_64_hash(compiler->get_member_name(type.self, i).c_str());
+        u64 member_name_hash = utl::utils::fnv1a_64_hash(compiler->get_member_name(type.self, i).c_str());
         push_block.uniforms.emplace(member_name_hash, uniform);
     }
 
@@ -148,7 +148,7 @@ void build_push_constants_block_reflection(FVkShaderReflectionData& reflection_d
 
 void build_uniform_reflection(FVkShaderReflectionData& reflection_data, spirv_cross::CompilerGLSL* compiler, const spirv_cross::Resource& res, vk::ShaderStageFlagBits shaderStage, vk::DescriptorType descriptorType)
 {
-    u64 name_hash = utl::fnv1a_64_hash(res.name.c_str());
+    u64 name_hash = utl::utils::fnv1a_64_hash(res.name.c_str());
     auto it = reflection_data.uniforms.find(name_hash);
     if (it != reflection_data.uniforms.end())
     {

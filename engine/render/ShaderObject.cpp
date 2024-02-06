@@ -29,7 +29,7 @@ const stl::unique_ptr<CUniformHandle>& CShaderObject::getUniformBlock(const char
 {
 	static stl::unique_ptr<CUniformHandle> null{ nullptr };
 
-	auto found = m_uniformBlocks.find(utl::fnv1a_64_hash(name));
+	auto found = m_uniformBlocks.find(utl::utils::fnv1a_64_hash(name));
 	if (found != m_uniformBlocks.end())
 		return found->second;
 
@@ -40,7 +40,7 @@ const stl::unique_ptr<CUniformHandle>& CShaderObject::getConstantBlock(const cha
 {
 	static stl::unique_ptr<CUniformHandle> null{ nullptr };
 
-	auto found = m_constantBlocks.find(utl::fnv1a_64_hash(name));
+	auto found = m_constantBlocks.find(utl::utils::fnv1a_64_hash(name));
 	if (found != m_constantBlocks.end())
 		return found->second;
 
@@ -49,12 +49,12 @@ const stl::unique_ptr<CUniformHandle>& CShaderObject::getConstantBlock(const cha
 
 void CShaderObject::bindBuffer(const char* name, u64 buffer_resource)
 {
-	m_bindBuffers[utl::fnv1a_64_hash(name)] = buffer_resource;
+	m_bindBuffers[utl::utils::fnv1a_64_hash(name)] = buffer_resource;
 }
 
 void CShaderObject::bindTexture(const char* name, u64 texture_resource, u32 layer, u32 mip)
 {
-	m_bindTextures[utl::fnv1a_64_hash(name)] = FTextureBindInfo{ texture_resource, layer, mip };
+	m_bindTextures[utl::utils::fnv1a_64_hash(name)] = FTextureBindInfo{ texture_resource, layer, mip };
 }
 
 void CShaderObject::flushDescriptors()

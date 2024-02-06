@@ -4,7 +4,7 @@
 #include "VFSInputFileInterface.h"
 #include "VFSOutputFileInterface.h"
 #include "DirectoryIteratorInterface.h"
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 
 namespace engine
 {

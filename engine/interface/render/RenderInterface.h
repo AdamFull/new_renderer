@@ -24,9 +24,9 @@ namespace engine
 		{
 			inline constexpr stl::pair<u64, const char*> uniform_to_name_mapping[] =
 			{
-				{ utl::fnv1a_64_hash("GlobalUniformFrameData"), "GlobalUniformFrameData" },
-				{ utl::fnv1a_64_hash("UniformMeshData"), "UniformMeshData" },
-				{ utl::fnv1a_64_hash("UniformSkinningJoints"), "UniformSkinningJoints" },
+				{ utl::utils::fnv1a_64_hash("GlobalUniformFrameData"), "GlobalUniformFrameData" },
+				{ utl::utils::fnv1a_64_hash("UniformMeshData"), "UniformMeshData" },
+				{ utl::utils::fnv1a_64_hash("UniformSkinningJoints"), "UniformSkinningJoints" },
 			};
 
 			constexpr const char* find(u64 key) 
@@ -94,7 +94,7 @@ namespace engine
 			// For render script
 			void set(const char* name, const void* raw_data, u64 size)
 			{
-				auto found = m_uniforms.find(utl::fnv1a_64_hash(name));
+				auto found = m_uniforms.find(utl::utils::fnv1a_64_hash(name));
 				if (found == m_uniforms.end() || !raw_data)
 					return;
 
@@ -109,7 +109,7 @@ namespace engine
 			template<class _Ty>
 			void set(const char* name, const _Ty& object, u64 size = 0ull)
 			{
-				auto found = m_uniforms.find(utl::fnv1a_64_hash(name));
+				auto found = m_uniforms.find(utl::utils::fnv1a_64_hash(name));
 				if (found == m_uniforms.end())
 					return;
 
@@ -124,7 +124,7 @@ namespace engine
 			template<class _Ty>
 			_Ty* get(const char* name)
 			{
-				auto found = m_uniforms.find(utl::fnv1a_64_hash(name));
+				auto found = m_uniforms.find(utl::utils::fnv1a_64_hash(name));
 				if (found == m_uniforms.end())
 					return nullptr;
 

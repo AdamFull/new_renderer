@@ -4,7 +4,7 @@
 #include <glslang/Public/ShaderLang.h>
 
 #include <logger/logger.h>
-#include <utility.hpp>
+#include <utils/hash.h>
 
 #include <stack>
 
@@ -302,7 +302,7 @@ void CShaderCompiler::preprocess(const stl::string& shader_code, const FCompileI
 
 	preprocessed_code = clean_code(preprocessed_raw);
 
-	preprocessed_hash = utl::fnv1a_64_hash(preprocessed_code.c_str());
+	preprocessed_hash = utl::utils::fnv1a_64_hash(preprocessed_code.c_str());
 }
 
 stl::vector<u32> CShaderCompiler::compile(const stl::string& shader_code, const FCompileInfo& info)

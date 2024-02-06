@@ -1,14 +1,12 @@
 #pragma once
 
-#include <string>
 #include <sstream>
-#include <vector>
 #include <filesystem>
 
-#include <json.hpp>
-#include <utility.hpp>
+#include <nlohmann/json.hpp>
+#include <utils/hash.h>
 #include "compiler_structures.h"
-#include <sjson_parser.h>
+#include <parsing/sjson_parser.h>
 
 #include <logger/logger.h>
 
@@ -20,7 +18,7 @@ namespace shader_compiler
 	{
 		uint64_t result_hash{ 0ull };
 		for (auto& token : tokens)
-			result_hash = (result_hash + utl::fnv1a_64_hash(token.c_str())) % MOD;
+			result_hash = (result_hash + utl::utils::fnv1a_64_hash(token.c_str())) % MOD;
 
 		std::stringstream ss;
 		ss << std::hex << result_hash;
@@ -32,20 +30,20 @@ namespace shader_compiler
 		switch (type)
 		{
 		case EShaderType::eUnknown: return 0ull; break;
-		case EShaderType::eVertex: return utl::fnv1a_64_hash("vertex"); break;
-		case EShaderType::eControl: return utl::fnv1a_64_hash("control"); break;
-		case EShaderType::eEvaluation: return utl::fnv1a_64_hash("evaluation"); break;
-		case EShaderType::eGeometry: return utl::fnv1a_64_hash("geometry"); break;
-		case EShaderType::eFragment: return utl::fnv1a_64_hash("fragment"); break;
-		case EShaderType::eCompute: return utl::fnv1a_64_hash("compute"); break;
-		case EShaderType::eRayGen: return utl::fnv1a_64_hash("raygen"); break;
-		case EShaderType::eIntersection: return utl::fnv1a_64_hash("intersection"); break;
-		case EShaderType::eAnyHit: return utl::fnv1a_64_hash("anyhit"); break;
-		case EShaderType::eClosestHit: return utl::fnv1a_64_hash("closesthit"); break;
-		case EShaderType::eMiss: return utl::fnv1a_64_hash("miss"); break;
-		case EShaderType::eCallable: return utl::fnv1a_64_hash("callable"); break;
-		case EShaderType::eTask: return utl::fnv1a_64_hash("task"); break;
-		case EShaderType::eMesh: return utl::fnv1a_64_hash("mesh"); break;
+		case EShaderType::eVertex: return utl::utils::fnv1a_64_hash("vertex"); break;
+		case EShaderType::eControl: return utl::utils::fnv1a_64_hash("control"); break;
+		case EShaderType::eEvaluation: return utl::utils::fnv1a_64_hash("evaluation"); break;
+		case EShaderType::eGeometry: return utl::utils::fnv1a_64_hash("geometry"); break;
+		case EShaderType::eFragment: return utl::utils::fnv1a_64_hash("fragment"); break;
+		case EShaderType::eCompute: return utl::utils::fnv1a_64_hash("compute"); break;
+		case EShaderType::eRayGen: return utl::utils::fnv1a_64_hash("raygen"); break;
+		case EShaderType::eIntersection: return utl::utils::fnv1a_64_hash("intersection"); break;
+		case EShaderType::eAnyHit: return utl::utils::fnv1a_64_hash("anyhit"); break;
+		case EShaderType::eClosestHit: return utl::utils::fnv1a_64_hash("closesthit"); break;
+		case EShaderType::eMiss: return utl::utils::fnv1a_64_hash("miss"); break;
+		case EShaderType::eCallable: return utl::utils::fnv1a_64_hash("callable"); break;
+		case EShaderType::eTask: return utl::utils::fnv1a_64_hash("task"); break;
+		case EShaderType::eMesh: return utl::utils::fnv1a_64_hash("mesh"); break;
 		}
 
 		return 0ull;
@@ -84,7 +82,7 @@ namespace shader_compiler
 
 	inline size_t make_module_unique_name(const std::string& shader_name, const std::vector<std::string>& definitions)
 	{
-		return utl::fnv1a_64_hash(make_module_unique_name_str(shader_name, definitions).c_str());
+		return utl::utils::fnv1a_64_hash(make_module_unique_name_str(shader_name, definitions).c_str());
 	}
 
 	inline std::string make_shader_unique_name(size_t value)

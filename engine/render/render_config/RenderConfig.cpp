@@ -85,7 +85,7 @@ stl::unique_ptr<CRenderScriptExecutor> CRenderScriptCore::build(const stl::strin
 	render_script->m_pEnvironment->for_each([&function_names](sol::object const& key, sol::object const& value) { if (value.is<sol::function>()) function_names.emplace_back(key.as<stl::string>()); });
 
 	for (const auto& func : function_names)
-		render_script->m_scriptFunctions[utl::fnv1a_64_hash(func.c_str())] = new sol::protected_function(render_script->m_pEnvironment->get<sol::protected_function>(func));
+		render_script->m_scriptFunctions[utl::utils::fnv1a_64_hash(func.c_str())] = new sol::protected_function(render_script->m_pEnvironment->get<sol::protected_function>(func));
 
 	m_pLuaState->collect_garbage();
 
