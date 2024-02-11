@@ -28,22 +28,26 @@ CRenderWorld::CRenderWorld(IRenderInterface* render_interface)
 
 void CRenderWorld::create()
 {
-	m_vBuffers.emplace_back(createDrawBuffer<FSceneNode>("NodeStorage", EBufferTypeFlagBits::eStorage, MAX_PRIMITIVE_COUNT, m_pRenderInterface));
-	m_vBuffers.emplace_back(createDrawBuffer<FMaterial>("MaterialStorage", EBufferTypeFlagBits::eStorage, MAX_MATERIAL_COUNT, m_pRenderInterface));
-	m_vBuffers.emplace_back(createDrawBuffer<glm::mat4>("SkinningJoints", EBufferTypeFlagBits::eStorage, MAX_PRIMITIVE_COUNT * 128ull, m_pRenderInterface));
+	m_vBuffers.resize(utl::enum_cast(ERenderBufferIndices::eLastIndex));
 
-	m_vBuffers.emplace_back(createDrawBuffer<FDirectionalLightCommit>("DirectionalLights", EBufferTypeFlagBits::eStorage, max_directional_light_count, m_pRenderInterface));
-	m_vBuffers.emplace_back(createDrawBuffer<FPointLightCommit>("PointLights", EBufferTypeFlagBits::eStorage, max_point_light_count, m_pRenderInterface));
-	m_vBuffers.emplace_back(createDrawBuffer<FSpotLightCommit>("SpotLights", EBufferTypeFlagBits::eStorage, max_spot_light_count, m_pRenderInterface));
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eNodeBuffer)) = createDrawBuffer<FSceneNode>("NodeStorage", EBufferTypeFlagBits::eStorage, MAX_PRIMITIVE_COUNT, m_pRenderInterface);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eMaterialBuffer)) = createDrawBuffer<FMaterial>("MaterialStorage", EBufferTypeFlagBits::eStorage, MAX_MATERIAL_COUNT, m_pRenderInterface);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eSkinBuffer)) = createDrawBuffer<glm::mat4>("SkinningJoints", EBufferTypeFlagBits::eStorage, MAX_PRIMITIVE_COUNT * 128ull, m_pRenderInterface);
 
-	m_vBuffers.emplace_back(createDrawBuffer<FCascadedShadowCommit>("CascadedShadows", EBufferTypeFlagBits::eStorage, max_directional_light_shadow_count, m_pRenderInterface));
-	m_vBuffers.emplace_back(createDrawBuffer<FOmniShadowCommit>("OmniShadows", EBufferTypeFlagBits::eStorage, max_point_light_shadow_count, m_pRenderInterface));
-	m_vBuffers.emplace_back(createDrawBuffer<FSpotShadowCommit>("SpotShadows", EBufferTypeFlagBits::eStorage, max_spot_light_shadow_count, m_pRenderInterface));
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eDirectionalLightBuffer)) = createDrawBuffer<FDirectionalLightCommit>("DirectionalLights", EBufferTypeFlagBits::eStorage, max_directional_light_count, m_pRenderInterface);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::ePointLightBuffer)) = createDrawBuffer<FPointLightCommit>("PointLights", EBufferTypeFlagBits::eStorage, max_point_light_count, m_pRenderInterface);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eSpotLightBuffer)) = createDrawBuffer<FSpotLightCommit>("SpotLights", EBufferTypeFlagBits::eStorage, max_spot_light_count, m_pRenderInterface);
 
-	m_vBuffers.emplace_back(createDrawBuffer<FGeometryGPUBatch>("GeometryBatches", EBufferTypeFlagBits::eStorage, MAX_RENDER_OBJECT_COUNT, m_pRenderInterface));
-	m_vBuffers.emplace_back(createDrawBuffer<FGeometryGPUCullInfo>("GeometryCullingInfo", EBufferTypeFlagBits::eStorage, MAX_RENDER_OBJECT_COUNT, m_pRenderInterface));
-	m_vBuffers.emplace_back(createDrawBuffer<glm::vec4>("FrustumSides", EBufferTypeFlagBits::eStorage, MAX_PRIMITIVE_COUNT * 6ull, m_pRenderInterface));
-	m_vBuffers.emplace_back(createDrawBuffer<FDrawIndexedIndirectData>("IndexedDrawIndirectBuffer", EBufferTypeFlagBits::eIndirect, max_indirect_draw_count, m_pRenderInterface));
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eCascadedShadowBuffer)) = createDrawBuffer<FCascadedShadowCommit>("CascadedShadows", EBufferTypeFlagBits::eStorage, max_directional_light_shadow_count, m_pRenderInterface);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eOmniShadowBuffer)) = createDrawBuffer<FOmniShadowCommit>("OmniShadows", EBufferTypeFlagBits::eStorage, max_point_light_shadow_count, m_pRenderInterface);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eSpotShadowBuffer)) = createDrawBuffer<FSpotShadowCommit>("SpotShadows", EBufferTypeFlagBits::eStorage, max_spot_light_shadow_count, m_pRenderInterface);
+
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eDrawBatchBuffer)) = createDrawBuffer<FGeometryGPUBatch>("GeometryBatches", EBufferTypeFlagBits::eStorage, MAX_RENDER_OBJECT_COUNT, m_pRenderInterface);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eCullingInfoBuffer)) = createDrawBuffer<FGeometryGPUCullInfo>("GeometryCullingInfo", EBufferTypeFlagBits::eStorage, MAX_RENDER_OBJECT_COUNT, m_pRenderInterface);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eFrustumBuffer)) = createDrawBuffer<glm::vec4>("FrustumSides", EBufferTypeFlagBits::eStorage, MAX_PRIMITIVE_COUNT * 6ull, m_pRenderInterface);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eDrawCommandBuffer)) = createDrawBuffer<FDrawIndexedIndirectData>("IndexedDrawIndirectBuffer", EBufferTypeFlagBits::eIndirect, max_indirect_draw_count, m_pRenderInterface);
+
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eTextureRemapBuffer)) = createDrawBuffer<uint32_t>("TextureBindingRemap", EBufferTypeFlagBits::eStorage, 16384u, m_pRenderInterface);
 }
 
 u64 CRenderWorld::registerFrustum(ERenderGeometryCullerType type)
@@ -154,7 +158,7 @@ void CRenderWorld::render(f32 dt)
 
 			auto& new_cpu_batch = m_vGeometryBatches.emplace_back();
 			new_cpu_batch.vboID = gpu_batch.vboID;
-			new_cpu_batch.command.bufferId = m_vBuffers.at(draw_command_buffer_index)->handle();
+			new_cpu_batch.command.bufferId = getDrawBuffer(ERenderBufferIndices::eDrawCommandBuffer)->handle();
 			new_cpu_batch.command.offset = command_offset * sizeof(FDrawIndexedIndirectData);
 			new_cpu_batch.command.count = counted.at(idx);
 			new_cpu_batch.command.stride = sizeof(FDrawIndexedIndirectData);
@@ -170,19 +174,19 @@ void CRenderWorld::render(f32 dt)
 	m_vRawGeometryBatches.clear();
 	m_stats.drawCommandCount = command_offset;
 
-	auto& batch_buffer = m_vBuffers.at(draw_batch_buffer_index);
+	auto& batch_buffer = getDrawBuffer(ERenderBufferIndices::eDrawBatchBuffer);
 	batch_buffer->map();
 	batch_buffer->write(gpu_batches.data(), gpu_batches.size());
 	batch_buffer->unmap();
 
-	auto& culling_buffer = m_vBuffers.at(culling_info_buffer_index);
+	auto& culling_buffer = getDrawBuffer(ERenderBufferIndices::eCullingInfoBuffer);
 	culling_buffer->map();
 	culling_buffer->write(gpu_culling_infos.data(), gpu_culling_infos.size());
 	culling_buffer->unmap();
 
 	// Copy frustum sides to gpu buffer
 	{
-		auto& frustum_buffer = m_vBuffers.at(frustum_buffer_index);
+		auto& frustum_buffer = getDrawBuffer(ERenderBufferIndices::eFrustumBuffer);
 		frustum_buffer->map();
 
 		u64 offset{ 0ull };
@@ -198,55 +202,60 @@ void CRenderWorld::render(f32 dt)
 		frustum_buffer->unmap();
 	}
 
-	auto& material_buffer = m_vBuffers.at(material_buffer_index);
+	auto& material_buffer = getDrawBuffer(ERenderBufferIndices::eMaterialBuffer);
 	material_buffer->map();
 	material_buffer->write(m_vMaterials.data(), m_vMaterials.size());
 	material_buffer->unmap();
 
-	auto& node_buffer = m_vBuffers.at(node_buffer_index);
+	auto& node_buffer = getDrawBuffer(ERenderBufferIndices::eNodeBuffer);
 	node_buffer->map();
 	node_buffer->write(m_vNodes.data(), m_vNodes.size());
 	node_buffer->unmap();
 
-	auto& skin_buffer = m_vBuffers.at(skin_buffer_index);
+	auto& skin_buffer = getDrawBuffer(ERenderBufferIndices::eSkinBuffer);
 	skin_buffer->map();
 	skin_buffer->write(m_vSkins.data(), m_vSkins.size());
 	skin_buffer->unmap();
 
-	auto& directional_light_buffer = m_vBuffers.at(directional_light_buffer_index);
+	auto& directional_light_buffer = getDrawBuffer(ERenderBufferIndices::eDirectionalLightBuffer);
 	directional_light_buffer->map();
 	directional_light_buffer->write(m_vDirectionalLights.data(), m_vDirectionalLights.size());
 	directional_light_buffer->unmap();
 
-	auto& point_light_buffer = m_vBuffers.at(point_light_buffer_index);
+	auto& point_light_buffer = getDrawBuffer(ERenderBufferIndices::ePointLightBuffer);
 	point_light_buffer->map();
 	point_light_buffer->write(m_vPointLights.data(), m_vPointLights.size());
 	point_light_buffer->unmap();
 
-	auto& spot_light_buffer = m_vBuffers.at(spot_light_buffer_index);
+	auto& spot_light_buffer = getDrawBuffer(ERenderBufferIndices::eSpotLightBuffer);
 	spot_light_buffer->map();
 	spot_light_buffer->write(m_vSpotLights.data(), m_vSpotLights.size());
 	spot_light_buffer->unmap();
 
-	auto& cascaded_shadow_buffer = m_vBuffers.at(cascaded_shadow_buffer_index);
+	auto& cascaded_shadow_buffer = getDrawBuffer(ERenderBufferIndices::eCascadedShadowBuffer);
 	cascaded_shadow_buffer->map();
 	cascaded_shadow_buffer->write(m_vCascadedShadows.data(), m_vCascadedShadows.size());
 	cascaded_shadow_buffer->unmap();
 
-	auto& omni_shadow_buffer = m_vBuffers.at(omni_shadow_buffer_index);
+	auto& omni_shadow_buffer = getDrawBuffer(ERenderBufferIndices::eOmniShadowBuffer);
 	omni_shadow_buffer->map();
 	omni_shadow_buffer->write(m_vOmniShadows.data(), m_vOmniShadows.size());
 	omni_shadow_buffer->unmap();
 
-	auto& spot_shadow_buffer = m_vBuffers.at(spot_shadow_buffer_index);
+	auto& spot_shadow_buffer = getDrawBuffer(ERenderBufferIndices::eSpotShadowBuffer);
 	spot_shadow_buffer->map();
 	spot_shadow_buffer->write(m_vSpotShadows.data(), m_vSpotShadows.size());
 	spot_shadow_buffer->unmap();
 
-	auto& draw_command_buffer = m_vBuffers.at(draw_command_buffer_index);
+	auto& draw_command_buffer = getDrawBuffer(ERenderBufferIndices::eDrawCommandBuffer);
 	draw_command_buffer->map();
 	draw_command_buffer->write(indirect_data.data(), indirect_data.size());
 	draw_command_buffer->unmap();
+
+	auto& texture_remap_buffer = getDrawBuffer(ERenderBufferIndices::eTextureRemapBuffer);
+	texture_remap_buffer->map();
+	// TODO get array and copy
+	texture_remap_buffer->unmap();
 }
 
 void CRenderWorld::addLight(const FDirectionalLightCommit& light)
@@ -327,10 +336,15 @@ void CRenderWorld::addMaterials(const stl::vector<FMaterial>& materials)
 	m_vMaterials.insert(m_vMaterials.end(), materials.begin(), materials.end());
 }
 
-const stl::vector<stl::unique_ptr<IBufferObject>>& CRenderWorld::getDrawBuffers()
+const stl::unique_ptr<IBufferObject>& CRenderWorld::getDrawBuffer(ERenderBufferIndices buffer_index)
 {
-	return m_vBuffers;
+	return m_vBuffers.at(utl::enum_cast(buffer_index));
 }
+
+//const stl::vector<stl::unique_ptr<IBufferObject>>& CRenderWorld::getDrawBuffers()
+//{
+//	return m_vBuffers;
+//}
 
 const stl::unordered_map<ERenderGeometryCullerType, stl::vector<FGeometryBatchRange>>& CRenderWorld::getAllGeometryRanges() const
 {

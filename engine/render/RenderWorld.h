@@ -35,7 +35,8 @@ namespace engine
 			void addMaterial(const FMaterial& material) override;
 			void addMaterials(const stl::vector<FMaterial>& materials) override;
 
-			const stl::vector<stl::unique_ptr<IBufferObject>>& getDrawBuffers() override;
+			const stl::unique_ptr<IBufferObject>& getDrawBuffer(ERenderBufferIndices buffer_index) override;
+			//const stl::vector<stl::unique_ptr<IBufferObject>>& getDrawBuffers() override;
 
 			const stl::unordered_map<ERenderGeometryCullerType, stl::vector<FGeometryBatchRange>>& getAllGeometryRanges() const override;
 			const stl::vector<FGeometryBatchRange>& getGeometryRanges(ERenderGeometryCullerType type) const override;

@@ -119,7 +119,6 @@ namespace engine
 		struct FTextureBindInfo
 		{
 			u64 textureId{ ~0ull };
-			u32 layer{ 0u };
 			u32 mipLevel{ 0u };
 		};
 

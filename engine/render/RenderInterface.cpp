@@ -186,20 +186,23 @@ void CRenderInterface::render(f32 dt)
 	frame_gata_uniform.size = sizeof(FGlobalUniformData);
 	frame_gata_uniform.binding = 0u;
 
-
-	auto& buffer_mappings = m_pRenderWorld->getDrawBuffers();
 	FGlobalBufferReference global_references{};
-	global_references.nodeBuffer = buffer_mappings[node_buffer_index]->address();
-	global_references.materialBuffer = buffer_mappings[material_buffer_index]->address();
-	global_references.jointsBuffer = buffer_mappings[skin_buffer_index]->address();
-	global_references.directionalLightBuffer = buffer_mappings[directional_light_buffer_index]->address();
-	global_references.pointLightBuffer = buffer_mappings[point_light_buffer_index]->address();
-	global_references.spotLightBuffer = buffer_mappings[spot_light_buffer_index]->address();
-	global_references.cascadedShadowBuffer = buffer_mappings[cascaded_shadow_buffer_index]->address();
-	global_references.omniShadowBuffer = buffer_mappings[omni_shadow_buffer_index]->address();
-	global_references.spotShadowBuffer = buffer_mappings[spot_shadow_buffer_index]->address();
-	global_references.batchBuffer = buffer_mappings[draw_batch_buffer_index]->address();
-	global_references.indirectCommandBuffer = buffer_mappings[draw_command_buffer_index]->address();
+	global_references.nodeBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eNodeBuffer)->address();
+	global_references.materialBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eMaterialBuffer)->address();
+	global_references.jointsBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eSkinBuffer)->address();
+
+	global_references.directionalLightBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eDirectionalLightBuffer)->address();
+	global_references.pointLightBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::ePointLightBuffer)->address();
+	global_references.spotLightBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eSpotLightBuffer)->address();
+
+	global_references.cascadedShadowBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eCascadedShadowBuffer)->address();
+	global_references.omniShadowBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eOmniShadowBuffer)->address();
+	global_references.spotShadowBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eSpotShadowBuffer)->address();
+
+	global_references.batchBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eDrawBatchBuffer)->address();
+	global_references.indirectCommandBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eDrawCommandBuffer)->address();
+
+	global_references.textureRemapBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eTextureRemapBuffer)->address();
 
 	auto& buffer_ref_uniform = update_info.uniforms[utl::utils::fnv1a_64_hash("GlobalBufferReferences")];
 	buffer_ref_uniform.data = &global_references;

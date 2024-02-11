@@ -37,28 +37,6 @@
 namespace engine { 
 	namespace render {
 #endif
-
-		// Default geometry buffers
-		CONSTANT uint32_t node_buffer_index = 0u;
-		CONSTANT uint32_t material_buffer_index = 1u;
-		CONSTANT uint32_t skin_buffer_index = 2u;
-
-		// Light source buffers
-		CONSTANT uint32_t directional_light_buffer_index = 3u;
-		CONSTANT uint32_t point_light_buffer_index = 4u;
-		CONSTANT uint32_t spot_light_buffer_index = 5u;
-
-		// Shadow buffers
-		CONSTANT uint32_t cascaded_shadow_buffer_index = 6u;
-		CONSTANT uint32_t omni_shadow_buffer_index = 7u;
-		CONSTANT uint32_t spot_shadow_buffer_index = 8u;
-
-		// Culling and draw buffers
-		CONSTANT uint32_t draw_batch_buffer_index = 9u;
-		CONSTANT uint32_t culling_info_buffer_index = 10u;
-		CONSTANT uint32_t frustum_buffer_index = 11u;
-		CONSTANT uint32_t draw_command_buffer_index = 12u;
-
 		CONSTANT uint32_t max_indirect_draw_count = 512u;
 
 		// Directional light
@@ -325,6 +303,7 @@ namespace engine {
 		typedef uint64_t CascadedShadows;
 		typedef uint64_t OmniShadows;
 		typedef uint64_t SpotShadows;
+		typedef uint64_t TextureBindingRemap;
 #else
 		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer NodeStorage { FSceneNode nodes[]; };
 		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer MaterialStorage { FMaterial materials[]; };
@@ -337,6 +316,7 @@ namespace engine {
 		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer CascadedShadows { FCascadedShadowCommit cascaded_shadows[]; };
 		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer OmniShadows { FOmniShadowCommit omni_shadows[]; };
 		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer SpotShadows { FSpotShadowCommit spot_shadows[]; };
+		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer TextureBindingRemap { uint32_t texture_remap[]; };
 #endif
 
 #ifdef __cplusplus
@@ -359,6 +339,7 @@ namespace engine {
 		
 			GeometryBatches batchBuffer;
 			IndirectIndexedComands indirectCommandBuffer;
+			TextureBindingRemap textureRemapBuffer;
 		};
 
 #ifdef __cplusplus

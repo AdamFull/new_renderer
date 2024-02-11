@@ -371,18 +371,10 @@ namespace engine
 				u32 mipLevelCount{ 1u };
 			};
 
-			struct FVkTextureLayer
-			{
-				stl::vector<FVkTextureMipLevel> mips{};
-				u32 baseLayer{};
-				u32 layerCount{ 1u };
-			};
-
 			struct FVkTexture
 			{
 				FVkImage image{};
-				stl::vector<FVkTextureLayer> layers{};
-				//stl::vector<vk::ImageView> imageViews{};
+				stl::vector<FVkTextureMipLevel> mips{};
 				vk::Sampler sampler{};
 				vk::ImageLayout layout{};
 				u32 totalLayers{ 1u };

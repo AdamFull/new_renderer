@@ -120,6 +120,7 @@ namespace engine
 		struct FRenderGraphAttachmentInfo
 		{
 			u64 handle{ ~0ull };
+			u32 mipLevel{ 0u };
 			ERenderResourceLoadOp loadOp{};
 			ERenderResourceStoreOp storeOp{};
 		};

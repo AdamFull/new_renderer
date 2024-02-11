@@ -42,6 +42,31 @@ namespace engine
 		}
 #endif
 
+		enum class ERenderBufferIndices : u32
+		{
+			// Default geometry buffers
+			eNodeBuffer = 0u,
+			eMaterialBuffer = 1u,
+			eSkinBuffer = 2u,
+			// Light source buffers
+			eDirectionalLightBuffer = 3u,
+			ePointLightBuffer = 4u,
+			eSpotLightBuffer = 5u,
+			// Shadow buffers
+			eCascadedShadowBuffer = 6u,
+			eOmniShadowBuffer = 7u,
+			eSpotShadowBuffer = 8u,
+			// Culling and draw buffers
+			eDrawBatchBuffer = 9u,
+			eCullingInfoBuffer = 10u,
+			eFrustumBuffer = 11u,
+			eDrawCommandBuffer = 12u,
+			// Other
+			eTextureRemapBuffer = 13u,
+
+			eLastIndex
+		};
+
 		struct FGlobalUniformCreateInfo
 		{
 			stl::unordered_map<u64, u64> uniforms{};
@@ -157,7 +182,7 @@ namespace engine
 			virtual const stl::unique_ptr<CUniformHandle>& getConstantBlock(const char* name) = 0;
 
 			virtual void bindBuffer(const char* name, u64 buffer_resource) = 0;
-			virtual void bindTexture(const char* name, u64 texture_resource, u32 layer = 0u, u32 mip = 0u) = 0;
+			virtual void bindTexture(const char* name, u64 texture_resource, u32 mip = 0u) = 0;
 
 			virtual void flushDescriptors() = 0;
 			virtual void flushConstants(EQueueTypeFlagBits queue) = 0;
@@ -262,7 +287,6 @@ namespace engine
 			virtual u64 createTexture(const stl::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) = 0;
 			virtual u64 getTextureId(const stl::string& name) = 0;
 			virtual u64 createRenderTargets(const stl::string& name, const FTextureCreateInfo& texture_ci) = 0;
-			virtual u64 getTextureIndex(u64 texture_id, u32 layer = 0u, u32 mip = 0u) = 0;
 			virtual const FTextureCreateInfo& getTextureInfo(u64 texture_id) = 0;
 			virtual void destroyTexture(u64 resource_id) = 0;
 
@@ -352,7 +376,8 @@ namespace engine
 			virtual void addMaterial(const FMaterial& material) = 0;
 			virtual void addMaterials(const stl::vector<FMaterial>& materials) = 0;
 
-			virtual const stl::vector<stl::unique_ptr<IBufferObject>>& getDrawBuffers() = 0;
+			virtual const stl::unique_ptr<IBufferObject>& getDrawBuffer(ERenderBufferIndices buffer_index) = 0;
+			//virtual const stl::vector<stl::unique_ptr<IBufferObject>>& getDrawBuffers() = 0;
 
 			virtual const stl::unordered_map<ERenderGeometryCullerType, stl::vector<FGeometryBatchRange>>& getAllGeometryRanges() const = 0;
 			virtual const stl::vector<FGeometryBatchRange>& getGeometryRanges(ERenderGeometryCullerType type) const = 0;

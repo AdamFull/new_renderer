@@ -52,9 +52,9 @@ void CShaderObject::bindBuffer(const char* name, u64 buffer_resource)
 	m_bindBuffers[utl::utils::fnv1a_64_hash(name)] = buffer_resource;
 }
 
-void CShaderObject::bindTexture(const char* name, u64 texture_resource, u32 layer, u32 mip)
+void CShaderObject::bindTexture(const char* name, u64 texture_resource, u32 mip)
 {
-	m_bindTextures[utl::utils::fnv1a_64_hash(name)] = FTextureBindInfo{ texture_resource, layer, mip };
+	m_bindTextures[utl::utils::fnv1a_64_hash(name)] = FTextureBindInfo{ texture_resource, mip };
 }
 
 void CShaderObject::flushDescriptors()
