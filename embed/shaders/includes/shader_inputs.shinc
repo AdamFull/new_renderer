@@ -31,6 +31,18 @@
 	// Bindless texture
 	layout(set = 0, binding = 2) uniform sampler2D globalTextures[];
 
+	#define GET_SAMPLER_2D(texture_index, mip_level) globalTextures[textureRemapBuffer.texture_remap[texture_index] + mip_level]
+
+	vec4 sampleTexture2D(uint32_t texture_index, uint32_t mip_level, vec2 uv)
+	{
+		return texture(GET_SAMPLER_2D(texture_index, mip_level), uv);
+	}
+
+	vec4 sampleTexture2DGrad(uint32_t texture_index, uint32_t mip_level, vec2 uv, vec2 uv_dx, vec2 uv_dy)
+	{
+		return textureGrad(GET_SAMPLER_2D(texture_index, mip_level), uv, uv_dx, uv_dy);
+	}
+
 
 #if defined(INDEX_8BIT)
 	#define Index uint8_t

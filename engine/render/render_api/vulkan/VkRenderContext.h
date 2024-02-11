@@ -19,6 +19,7 @@ namespace engine
 				void create(const FRenderContextCreateInfo& context_ci) override;
 				void createGlobalDescriptor(const FGlobalUniformCreateInfo& uniform_ci) override;
 				void updateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view) override;
+				const stl::vector<uint32_t>& getGlobalTextureRemap() override;
 
 				u64 createTexture(const stl::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) override;
 				u64 getTextureId(const stl::string& name) override;
@@ -85,8 +86,8 @@ namespace engine
 				stl::vector<FVkCommandBuffer>& getCommandBuffers(EQueueTypeFlagBits queue_type, stl::thread::id thread_id = stl::this_thread::get_id());
 				void destroyCommandBuffer(EQueueTypeFlagBits queue_type, stl::thread::id thread_id = stl::this_thread::get_id());
 
-				void beginFrameCommandBuffers() override;
-				void endFrameCommandBuffers() override;
+				void beginFrame() override;
+				void endFrame() override;
 				
 				bool isSwapChainFinished() override;
 

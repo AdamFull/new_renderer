@@ -258,30 +258,6 @@ void CVkRenderContext::updateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 	// Process bindless textures
 	{
 		auto& textures = m_pResources->data<FVkTexture>();
-
-		if (m_textureIndexRemap.empty())
-		{
-			// Resizing remap vector
-			m_textureIndexRemap.resize(textures.size());
-
-			u64 image_offset{ 0ull };
-			for (u64 texture_index = 0ull; texture_index < textures.size(); ++texture_index)
-			{
-				auto& texture = textures.at(texture_index).front();
-				if (texture->initialData.base.backbuffer)
-					continue;
-
-				if (!((texture->initialData.base.typeFlags & ETextureCreateFlagBits::eStorage) || (texture->initialData.base.typeFlags & ETextureCreateFlagBits::eSamplable)))
-					continue;
-
-				m_textureIndexRemap.at(texture_index) = image_offset;
-				image_offset += texture->initialData.base.mipLevels;
-
-				for (u32 frame_index = 0u; frame_index < m_pDevice->m_swapchain.framesInFlight; ++frame_index)
-					m_textureToUpdate[frame_index].push(texture_index);
-			}
-		}
-
 		auto& texture_queue = m_textureToUpdate[m_pDevice->m_swapchain.currentFrame];
 
 		u64 texture_count{ 0ull };
@@ -306,10 +282,12 @@ void CVkRenderContext::updateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 				auto& image_descriptor = image_descriptors.at(texture_count);
 				image_descriptor.imageView = mip_level.imageView;
 				image_descriptor.sampler = texture->sampler;
-				image_descriptor.imageLayout = get_render_target_final_layout(*texture);
 
 				if (texture->initialData.base.typeFlags & ETextureCreateFlagBits::eSamplable)
 				{
+					auto usage_flags = get_texture_usage_flags(*texture);
+					image_descriptor.imageLayout = (usage_flags & vk::ImageUsageFlagBits::eDepthStencilAttachment) ? vk::ImageLayout::eDepthStencilReadOnlyOptimal : vk::ImageLayout::eShaderReadOnlyOptimal;
+
 					auto& write_descriptor_set = write_descriptor_sets.emplace_back();
 					write_descriptor_set.dstArrayElement = start_element_index + mip_index;
 					write_descriptor_set.descriptorType = vk::DescriptorType::eCombinedImageSampler;
@@ -321,6 +299,8 @@ void CVkRenderContext::updateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 
 				if (texture->initialData.base.typeFlags & ETextureCreateFlagBits::eStorage)
 				{
+					image_descriptor.imageLayout = vk::ImageLayout::eGeneral;
+
 					auto& write_descriptor_set = write_descriptor_sets.emplace_back();
 					write_descriptor_set.dstArrayElement = start_element_index + mip_index;
 					write_descriptor_set.descriptorType = vk::DescriptorType::eStorageImage;
@@ -344,6 +324,11 @@ void CVkRenderContext::updateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 		auto& logical = m_pDevice->getLogicalDevice();
 		logical.updateDescriptorSets(utl::cast<u32>(write_descriptor_sets.size()), write_descriptor_sets.data(), 0, nullptr);
 	}
+}
+
+const stl::vector<uint32_t>& CVkRenderContext::getGlobalTextureRemap()
+{
+	return m_textureIndexRemap;
 }
 
 u64 CVkRenderContext::createTexture(const stl::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info)
@@ -1650,7 +1635,7 @@ void CVkRenderContext::destroyCommandBuffer(EQueueTypeFlagBits queue_type, stl::
 	per_queue.commandBuffers.pop_back();
 }
 
-void CVkRenderContext::beginFrameCommandBuffers()
+void CVkRenderContext::beginFrame()
 {
 	u32 image_index{ 0u };
 
@@ -1676,9 +1661,35 @@ void CVkRenderContext::beginFrameCommandBuffers()
 	// TODO: here i should run only main command buffer. But for now i getting the last one
 	auto& command_buffer = getLastCommandBuffer(EQueueTypeFlagBits::eGraphics);
 	m_pDevice->beginCommandBuffer(command_buffer, vk::CommandBufferUsageFlagBits::eRenderPassContinue, image_index);
+
+	// Update bindless textures
+	auto& textures = m_pResources->data<FVkTexture>();
+
+	if (m_textureIndexRemap.empty())
+	{
+		// Resizing remap vector
+		m_textureIndexRemap.resize(textures.size());
+
+		u64 image_offset{ 0ull };
+		for (u64 texture_index = 0ull; texture_index < textures.size(); ++texture_index)
+		{
+			auto& texture = textures.at(texture_index).front();
+			if (texture->initialData.base.backbuffer)
+				continue;
+
+			if (!((texture->initialData.base.typeFlags & ETextureCreateFlagBits::eStorage) || (texture->initialData.base.typeFlags & ETextureCreateFlagBits::eSamplable)))
+				continue;
+
+			m_textureIndexRemap.at(texture_index) = image_offset;
+			image_offset += texture->initialData.base.mipLevels;
+
+			for (u32 frame_index = 0u; frame_index < m_pDevice->m_swapchain.framesInFlight; ++frame_index)
+				m_textureToUpdate[frame_index].push(texture_index);
+		}
+	}
 }
 
-void CVkRenderContext::endFrameCommandBuffers()
+void CVkRenderContext::endFrame()
 {
 	// TODO: here i should run only main command buffer. But for now i getting the last one
 	auto& command_buffer = getLastCommandBuffer(EQueueTypeFlagBits::eGraphics);

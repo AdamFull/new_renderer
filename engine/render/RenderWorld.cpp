@@ -252,9 +252,11 @@ void CRenderWorld::render(f32 dt)
 	draw_command_buffer->write(indirect_data.data(), indirect_data.size());
 	draw_command_buffer->unmap();
 
+	auto& render_context = m_pRenderInterface->getRenderContext();
+	auto& texture_remap_data = render_context->getGlobalTextureRemap();
 	auto& texture_remap_buffer = getDrawBuffer(ERenderBufferIndices::eTextureRemapBuffer);
 	texture_remap_buffer->map();
-	// TODO get array and copy
+	texture_remap_buffer->write(texture_remap_data.data(), texture_remap_data.size());
 	texture_remap_buffer->unmap();
 }
 

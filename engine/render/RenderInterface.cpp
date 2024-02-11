@@ -158,9 +158,9 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 
 void CRenderInterface::render(f32 dt)
 {
-	m_pRenderWorld->render(dt);
+	m_pRenderContext->beginFrame();
 
-	m_pRenderContext->beginFrameCommandBuffers();
+	m_pRenderWorld->render(dt);
 
 	const auto& world_stats = m_pRenderWorld->getStats();
 
@@ -211,7 +211,8 @@ void CRenderInterface::render(f32 dt)
 
 	m_pRenderContext->updateGlobalDescriptorData(update_info);
 	m_pRenderGraph->execute(dt);
-	m_pRenderContext->endFrameCommandBuffers();
+
+	m_pRenderContext->endFrame();
 }
 
 u64 CRenderInterface::createTexture(const stl::string& path)

@@ -283,6 +283,7 @@ namespace engine
 			virtual void create(const FRenderContextCreateInfo& context_ci) = 0;
 			virtual void createGlobalDescriptor(const FGlobalUniformCreateInfo& uniform_ci) = 0;
 			virtual void updateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view) = 0;
+			virtual const stl::vector<uint32_t>& getGlobalTextureRemap() = 0;
 
 			virtual u64 createTexture(const stl::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) = 0;
 			virtual u64 getTextureId(const stl::string& name) = 0;
@@ -338,8 +339,8 @@ namespace engine
 
 			virtual void updateSurface(i32 surface_width, i32 surface_height) = 0;
 
-			virtual void beginFrameCommandBuffers() = 0;
-			virtual void endFrameCommandBuffers() = 0;
+			virtual void beginFrame() = 0;
+			virtual void endFrame() = 0;
 
 			virtual bool isSwapChainFinished() = 0;
 

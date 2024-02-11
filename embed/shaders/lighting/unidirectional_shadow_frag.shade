@@ -29,7 +29,7 @@
 				FMaterial mat = materialBuffer.materials[materialID];
 				if(mat.baseColorTexture != ~0u)
 				{
-					float smaple = texture(globalTextures[mat.baseColorTexture], inUV).a;
+					float smaple = sampleTexture2D(mat.baseColorTexture, 0, inUV).a;
 					if(smaple < 1.f)
 						discard;
 				}
