@@ -15,8 +15,8 @@ using namespace engine::render::vulkan;
 static const u32 k_max_bindless_buffers{ 256u };
 
 static const u32 k_max_bindless_resources{ 16384u };
-static const u64 k_max_texture_update_per_frame{ 256ull };
-static const u64 k_max_buffer_update_per_frame{ 256ull };
+static const u64 k_max_texture_update_per_frame{ 4096ll };
+static const u64 k_max_buffer_update_per_frame{ 4096ull };
 
 template<class _Ty, class ..._Args>
 stl::string create_object_unique_name(const char* fmt, const _Ty& handle, _Args&&... args)
@@ -142,17 +142,8 @@ void CVkRenderContext::createGlobalDescriptor(const FGlobalUniformCreateInfo& un
 	global_textures_binding.stageFlags = vk::ShaderStageFlagBits::eAllGraphics | vk::ShaderStageFlagBits::eCompute;
 	global_textures_binding.pImmutableSamplers = nullptr;
 
-	// Bindless storage textures
-	auto& global_storage_textures_binding = set_layout_ci.layoutBindings.emplace_back();
-	global_storage_textures_binding.descriptorType = vk::DescriptorType::eStorageImage;
-	global_storage_textures_binding.descriptorCount = k_max_bindless_resources;
-	global_storage_textures_binding.binding = 3u;
-	global_storage_textures_binding.stageFlags = vk::ShaderStageFlagBits::eAllGraphics | vk::ShaderStageFlagBits::eCompute;
-	global_storage_textures_binding.pImmutableSamplers = nullptr;
-
 	// Descriptor binding extension
 	stl::vector<vk::DescriptorBindingFlags> bindingFlags{};
-	bindingFlags.emplace_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
 	bindingFlags.emplace_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
 	bindingFlags.emplace_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
 	bindingFlags.emplace_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
@@ -275,44 +266,24 @@ void CVkRenderContext::updateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 			auto& start_element_index = m_textureIndexRemap.at(texture_id);
 			bool is_storage_image = utl::cast<bool>(texture->initialData.base.typeFlags & ETextureCreateFlagBits::eStorage);
 
-			// Add all layers and mip layers
-			for (u64 mip_index = 0ull; mip_index < texture->mips.size(); ++mip_index)
+			auto& mip_level = texture->mips.front();
+			auto& image_descriptor = image_descriptors.at(texture_count);
+			image_descriptor.imageView = mip_level.imageView;
+			image_descriptor.sampler = texture->sampler;
+			image_descriptor.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+
+			if (texture->initialData.base.typeFlags & ETextureCreateFlagBits::eSamplable)
 			{
-				auto& mip_level = texture->mips.at(mip_index);
-				auto& image_descriptor = image_descriptors.at(texture_count);
-				image_descriptor.imageView = mip_level.imageView;
-				image_descriptor.sampler = texture->sampler;
-
-				if (texture->initialData.base.typeFlags & ETextureCreateFlagBits::eSamplable)
-				{
-					auto usage_flags = get_texture_usage_flags(*texture);
-					image_descriptor.imageLayout = (usage_flags & vk::ImageUsageFlagBits::eDepthStencilAttachment) ? vk::ImageLayout::eDepthStencilReadOnlyOptimal : vk::ImageLayout::eShaderReadOnlyOptimal;
-
-					auto& write_descriptor_set = write_descriptor_sets.emplace_back();
-					write_descriptor_set.dstArrayElement = start_element_index + mip_index;
-					write_descriptor_set.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-					write_descriptor_set.dstSet = dest_set;
-					write_descriptor_set.dstBinding = 2u;
-					write_descriptor_set.descriptorCount = 1u;
-					write_descriptor_set.pImageInfo = &image_descriptor;
-				}
-
-				if (texture->initialData.base.typeFlags & ETextureCreateFlagBits::eStorage)
-				{
-					image_descriptor.imageLayout = vk::ImageLayout::eGeneral;
-
-					auto& write_descriptor_set = write_descriptor_sets.emplace_back();
-					write_descriptor_set.dstArrayElement = start_element_index + mip_index;
-					write_descriptor_set.descriptorType = vk::DescriptorType::eStorageImage;
-					write_descriptor_set.dstSet = dest_set;
-					write_descriptor_set.dstBinding = 3u;
-					write_descriptor_set.descriptorCount = 1u;
-					write_descriptor_set.pImageInfo = &image_descriptor;
-				}
-
-				texture_count++;
-				break;
+				auto& write_descriptor_set = write_descriptor_sets.emplace_back();
+				write_descriptor_set.dstArrayElement = start_element_index;
+				write_descriptor_set.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+				write_descriptor_set.dstSet = dest_set;
+				write_descriptor_set.dstBinding = 2u;
+				write_descriptor_set.descriptorCount = 1u;
+				write_descriptor_set.pImageInfo = &image_descriptor;
 			}
+
+			texture_count++;
 
 			texture_queue.pop();
 		}
@@ -1674,14 +1645,10 @@ void CVkRenderContext::beginFrame()
 		for (u64 texture_index = 0ull; texture_index < textures.size(); ++texture_index)
 		{
 			auto& texture = textures.at(texture_index).front();
-			if (texture->initialData.base.backbuffer)
+			if (texture->isRenderTarget)
 				continue;
 
-			if (!((texture->initialData.base.typeFlags & ETextureCreateFlagBits::eStorage) || (texture->initialData.base.typeFlags & ETextureCreateFlagBits::eSamplable)))
-				continue;
-
-			m_textureIndexRemap.at(texture_index) = image_offset;
-			image_offset += texture->initialData.base.mipLevels;
+			m_textureIndexRemap.at(texture_index) = image_offset++;
 
 			for (u32 frame_index = 0u; frame_index < m_pDevice->m_swapchain.framesInFlight; ++frame_index)
 				m_textureToUpdate[frame_index].push(texture_index);
