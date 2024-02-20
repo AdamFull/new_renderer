@@ -5,8 +5,8 @@
 using namespace engine::render;
 
 constexpr const u64 MAX_RENDER_OBJECT_COUNT{ 16384ull };
-constexpr const u64 MAX_PRIMITIVE_COUNT{ 512ull };
-constexpr const u64 MAX_MATERIAL_COUNT{ 512ull };
+constexpr const u64 MAX_PRIMITIVE_COUNT{ 16384ull };
+constexpr const u64 MAX_MATERIAL_COUNT{ 16384ull };
 
 template<class _Ty>
 stl::unique_ptr<IBufferObject> createDrawBuffer(const stl::string& name, EBufferTypeFlagBits type, u64 count, IRenderInterface* render_interface)
@@ -103,8 +103,10 @@ void CRenderWorld::render(f32 dt)
 	u64 command_offset{ 0ull };
 	u64 batch_offset{ 0ull };
 
+	// Iterate whole cullers
 	for (const auto& cull_info : m_vCullingInfo)
 	{
+		// Generate raw batches by material chain
 		u64 current_material{ ~0ull };
 		for (const auto& batch : m_vRawGeometryBatches)
 		{
@@ -147,6 +149,7 @@ void CRenderWorld::render(f32 dt)
 			}
 		}
 
+		// Create new batch ranges for current culler type
 		auto& batch_ranges = m_mBatchRanges[cull_info.type];
 		auto& batch_range = batch_ranges.emplace_back();
 		batch_range.offset = m_vGeometryBatches.size();

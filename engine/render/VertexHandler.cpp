@@ -221,6 +221,25 @@ void CVertexHandler::bind(EQueueTypeFlagBits queue)
 	}
 }
 
+const FVertexRange& CVertexHandler::addMeshData(const stl::vector<FVertexAttributePointer>& attributes_data, const FVertexAttributePointer& indices)
+{
+	u64 input_hash{ 0ull };
+	for (const auto& attribute : attributes_data)
+		input_hash += utl::utils::murmur_hash_64(attribute.data, attribute.stride * attribute.count, 0);
+	input_hash += utl::utils::murmur_hash_64(indices.data, indices.stride * indices.count, 0);
+
+	if (auto found = m_cachedRanges.find(input_hash); found != m_cachedRanges.end())
+		return found->second;
+
+	auto& new_range = m_cachedRanges[input_hash];
+	new_range.firstIndex = m_indexBuffer.elementCount;
+	new_range.indexCount = addIndices(indices);
+	new_range.firstVertex = m_vertexBuffer.elementCount;
+	new_range.vertexCount = addVertices(attributes_data);
+
+	return new_range;
+}
+
 u64 CVertexHandler::addVertices(const stl::vector<FVertexAttributePointer>& attributes_data)
 {
 	auto vertex_count = attributes_data.front().count;

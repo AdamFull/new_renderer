@@ -25,6 +25,8 @@ namespace engine
 
 			void bind(EQueueTypeFlagBits queue) override;
 
+			const FVertexRange& addMeshData(const stl::vector<FVertexAttributePointer>& attributes_data, const FVertexAttributePointer& indices) override;
+
 			u64 addVertices(const stl::vector<FVertexAttributePointer>& attributes_data) override;
 			u64 addIndices(const FVertexAttributePointer& indices) override;
 
@@ -40,6 +42,9 @@ namespace engine
 		private:
 			FBufferInfo m_vertexBuffer{};
 			FBufferInfo m_indexBuffer{};
+
+			// Vertex cache
+			stl::unordered_map<u64, FVertexRange> m_cachedRanges{};
 
 			// For shader creation
 			stl::string m_definitions{};

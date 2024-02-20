@@ -21,13 +21,16 @@ using namespace engine::world;
 using namespace engine::world::ecs;
 using namespace engine::filesystem;
 
-template<class _Ty>
-bool check_overflow(_Ty a, _Ty b)
+// Random fill
+template<class _Ty, size_t _Size>
+void random_fill(std::array<_Ty, _Size>& out, const _Ty& min, const _Ty& max)
 {
-	if constexpr (stl::is_unsigned<_Ty>::value)
-		return a > (stl::numeric_limits<_Ty>::max)() - b;
-	
-	return (b > utl::cast<_Ty>(0) && a > (stl::numeric_limits<_Ty>::max)() - b) || (b < utl::cast<_Ty>(0) && a < (stl::numeric_limits<_Ty>::min)() - b);
+	static std::random_device rd;
+	static std::mt19937 gen(rd());
+	std::uniform_real_distribution<_Ty> dis(min, max);
+
+	for (auto& element : out)
+		element = dis(gen);
 }
 
 engine::render::EVertexAttributeType get_vertex_attribute_type_by_name(const stl::string& name)
@@ -135,8 +138,6 @@ CScene::~CScene()
 
 void CScene::load(const stl::string& path)
 {
-	auto& render_packet = m_pRenderInterface->getRenderPacket();
-
 	easygltf::CGLTFLoader loader{};
 	loader.setFilesystemWrapper(stl::make_unique<FSWrapper>(m_pVFS));
 	
@@ -144,6 +145,113 @@ void CScene::load(const stl::string& path)
 	if (!loader.load(path, root))
 		return;
 
+	loadGLTF(root);
+
+	//auto new_node = m_pSceneGraph->createNode("Terrain");
+	//m_pSceneGraph->attachChild(root_node, new_node);
+	//
+	//auto& mesh_component = m_pSceneGraph->addComponent<FMeshComponent>(new_node, FMeshComponent{});
+	//auto& primitive = mesh_component.primitives.emplace_back();
+	//primitive.materialId = 0;
+	//
+	//stl::vector<FTerrainVertexAttribute> terrain_attributes{};
+	//FTerrainVertexAttribute terrain_indices{};
+	//
+	//CTerrainGenerator gen(542, 64, 10.f);
+	//gen.generate(terrain_attributes, terrain_indices);
+	//
+	//stl::vector<render::FVertexAttributePointer> attributes(terrain_attributes.size());
+	//render::FVertexAttributePointer indices{};
+	//
+	//for (u64 idx = 0ull; idx < terrain_attributes.size(); ++idx)
+	//{
+	//	const auto& tattr = terrain_attributes.at(idx);
+	//	auto& attr = attributes.at(idx);
+	//
+	//	attr.type = tattr.type;
+	//	attr.stride = tattr.stride;
+	//	attr.count = tattr.count;
+	//	attr.data = &tattr.data[0];
+	//}
+	//
+	//indices.stride = terrain_indices.stride;
+	//indices.count = terrain_indices.count;
+	//indices.data = &terrain_indices.data[0];
+	//
+	//render::FVertexHandlerCreateInfo handler_ci{};
+	//handler_ci.indexSize = indices.stride;
+	//handler_ci.name = "Terrain";
+	//
+	//for (const auto& attrib : attributes)
+	//{
+	//	auto& desc = handler_ci.descriptions.emplace_back();
+	//	desc.type = attrib.type;
+	//	desc.size = attrib.stride;
+	//}
+	//
+	//auto& handlers = m_resources.vertexHandlers[0];
+	//
+	//auto handler_name = stl::format("{}_{}_{}", "Terrain", 0, handlers.size());
+	//auto handler_id = m_pRenderInterface->createVertexHandler(handler_name, handler_ci);
+	//handlers.emplace_back(handler_id);
+	//
+	//primitive.vboId = handler_id;
+	//
+	//auto& handler = m_pRenderInterface->getVertexHandler(handler_id);
+	//primitive.lods[0].beginVertex = handler->getLastVertex();
+	//primitive.lods[0].vertexCount = handler->addVertices(attributes);
+	//primitive.lods[0].beginIndex = handler->getLastIndex();
+	//primitive.lods[0].indexCount = handler->addIndices(indices, primitive.lods[0].beginVertex);
+	//
+	//m_resources.primitiveCount++;
+}
+
+void CScene::makeGenerateScene(const stl::string& path)
+{
+	easygltf::CGLTFLoader loader{};
+	loader.setFilesystemWrapper(stl::make_unique<FSWrapper>(m_pVFS));
+
+	easygltf::FGLTFRoot root{};
+	if (!loader.load(path, root))
+		return;
+
+	if (root.meshes.empty())
+	{
+		log_error("No meshes to duplicate found.");
+		return;
+	}
+
+	auto& current_scene = root.scenes.at(root.scene < 0 ? 0 : root.scene);
+
+	constexpr const u64 duplicate_count = 500;
+	for (u64 idx = 0ull; idx < duplicate_count; ++idx)
+	{
+		// Add new node to scene
+		current_scene.nodes.emplace_back(root.nodes.size());
+
+		auto& new_node = root.nodes.emplace_back();
+		new_node.name = std::format("Node {}", idx);
+		new_node.mesh = root.meshes.size() - 1ull;
+		random_fill(new_node.translation, -30.0, 30.0);
+		random_fill(new_node.rotation, 0.0, 1.0);
+		random_fill(new_node.scale, 0.5, 9.0);
+	}
+
+	loadGLTF(root);
+}
+
+void CScene::update(f32 dt)
+{
+	TRACY_PROFILE_FUNCTION();
+
+	TRACY_PROFILE_SCOPE("Scene update")
+
+	for (auto& system : m_systems)
+		system->update(dt);
+}
+
+void CScene::loadGLTF(easygltf::FGLTFRoot& root)
+{
 	// Load textures
 	for (const auto& texture : root.textures)
 	{
@@ -163,6 +271,7 @@ void CScene::load(const stl::string& path)
 
 	// Load materials
 	auto& render_world = m_pRenderInterface->getRenderWorld();
+	auto& render_packet = m_pRenderInterface->getRenderPacket();
 
 	stl::vector<render::FMaterial> materials{};
 	for (u64 idx = 0ull; idx < root.materials.size(); ++idx)
@@ -226,66 +335,6 @@ void CScene::load(const stl::string& path)
 	for (const auto& node_index : scene.nodes)
 		loadNode(root, root_node, node_index);
 
-
-
-	//auto new_node = m_pSceneGraph->createNode("Terrain");
-	//m_pSceneGraph->attachChild(root_node, new_node);
-	//
-	//auto& mesh_component = m_pSceneGraph->addComponent<FMeshComponent>(new_node, FMeshComponent{});
-	//auto& primitive = mesh_component.primitives.emplace_back();
-	//primitive.materialId = 0;
-	//
-	//stl::vector<FTerrainVertexAttribute> terrain_attributes{};
-	//FTerrainVertexAttribute terrain_indices{};
-	//
-	//CTerrainGenerator gen(542, 64, 10.f);
-	//gen.generate(terrain_attributes, terrain_indices);
-	//
-	//stl::vector<render::FVertexAttributePointer> attributes(terrain_attributes.size());
-	//render::FVertexAttributePointer indices{};
-	//
-	//for (u64 idx = 0ull; idx < terrain_attributes.size(); ++idx)
-	//{
-	//	const auto& tattr = terrain_attributes.at(idx);
-	//	auto& attr = attributes.at(idx);
-	//
-	//	attr.type = tattr.type;
-	//	attr.stride = tattr.stride;
-	//	attr.count = tattr.count;
-	//	attr.data = &tattr.data[0];
-	//}
-	//
-	//indices.stride = terrain_indices.stride;
-	//indices.count = terrain_indices.count;
-	//indices.data = &terrain_indices.data[0];
-	//
-	//render::FVertexHandlerCreateInfo handler_ci{};
-	//handler_ci.indexSize = indices.stride;
-	//handler_ci.name = "Terrain";
-	//
-	//for (const auto& attrib : attributes)
-	//{
-	//	auto& desc = handler_ci.descriptions.emplace_back();
-	//	desc.type = attrib.type;
-	//	desc.size = attrib.stride;
-	//}
-	//
-	//auto& handlers = m_resources.vertexHandlers[0];
-	//
-	//auto handler_name = stl::format("{}_{}_{}", "Terrain", 0, handlers.size());
-	//auto handler_id = m_pRenderInterface->createVertexHandler(handler_name, handler_ci);
-	//handlers.emplace_back(handler_id);
-	//
-	//primitive.vboId = handler_id;
-	//
-	//auto& handler = m_pRenderInterface->getVertexHandler(handler_id);
-	//primitive.lods[0].beginVertex = handler->getLastVertex();
-	//primitive.lods[0].vertexCount = handler->addVertices(attributes);
-	//primitive.lods[0].beginIndex = handler->getLastIndex();
-	//primitive.lods[0].indexCount = handler->addIndices(indices, primitive.lods[0].beginVertex);
-	//
-	//m_resources.primitiveCount++;
-
 	loadAnimations(root);
 	loadSkins(root);
 
@@ -300,16 +349,6 @@ void CScene::load(const stl::string& path)
 
 	for (auto& system : m_systems)
 		system->create();
-}
-
-void CScene::update(f32 dt)
-{
-	TRACY_PROFILE_FUNCTION();
-
-	TRACY_PROFILE_SCOPE("Scene update")
-
-	for (auto& system : m_systems)
-		system->update(dt);
 }
 
 void CScene::loadNode(const easygltf::FGLTFRoot root, const entt::entity parent, u32 node_index, f32 global_scale)
@@ -459,11 +498,7 @@ void CScene::loadMeshComponent(const easygltf::FGLTFRoot root, const entt::entit
 		FMeshPrimitive mesh_primitive{};
 		mesh_primitive.vboId = current_handler_id;
 		mesh_primitive.setDimensions(pos_min, pos_max);
-
-		mesh_primitive.lods[0].beginVertex = vertex_handler->getLastVertex();
-		mesh_primitive.lods[0].vertexCount = vertex_handler->addVertices(attributes);
-		mesh_primitive.lods[0].beginIndex = vertex_handler->getLastIndex();
-		mesh_primitive.lods[0].indexCount = vertex_handler->addIndices(indices);
+		mesh_primitive.lods[0] = vertex_handler->addMeshData(attributes, indices);
 
 		// NOTE: Updating material create info for future shader creation
 		if (primitive.material >= 0)

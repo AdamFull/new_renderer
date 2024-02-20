@@ -56,9 +56,9 @@ void CMeshSystem::__update(f32 fDt)
 			draw_command.callInfo.materialID = primitive.materialId;
 			draw_command.callInfo.instanceID = node;
 			
-			draw_command.range.beginIndex = lod.beginIndex;
+			draw_command.range.beginIndex = lod.firstIndex;
 			draw_command.range.indexCount = lod.indexCount;
-			draw_command.range.beginVertex = lod.beginVertex;
+			draw_command.range.beginVertex = lod.firstVertex;
 			draw_command.range.vertexCount = lod.indexCount;
 
 			draw_command.range.bounds.min = primitive.dims.min;

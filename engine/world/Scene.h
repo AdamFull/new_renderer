@@ -38,9 +38,11 @@ namespace engine
 			~CScene();
 
 			void load(const stl::string& path);
+			void makeGenerateScene(const stl::string& path);
 
 			void update(f32 dt);
 		protected:
+			void loadGLTF(easygltf::FGLTFRoot& root);
 			void loadNode(const easygltf::FGLTFRoot root, const entt::entity parent, u32 node_index, f32 global_scale = 1.f);
 
 			void loadMeshComponent(const easygltf::FGLTFRoot root, const entt::entity parent, u32 node_index);

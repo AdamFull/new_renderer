@@ -75,6 +75,12 @@ namespace engine
 			stl::vector<FVertexDeclarationAttributeDescription> attributeDescriptions{};
 		};
 
+		struct FVertexRange
+		{
+			u64 firstIndex, indexCount;
+			u64 firstVertex, vertexCount;
+		};
+
 		class IVertexHandler
 		{
 		public:
@@ -84,6 +90,8 @@ namespace engine
 			virtual void allocate() = 0;
 
 			virtual void bind(EQueueTypeFlagBits queue) = 0;
+
+			virtual const FVertexRange& addMeshData(const stl::vector<FVertexAttributePointer>& attributes_data, const FVertexAttributePointer& indices) = 0;
 
 			virtual u64 addVertices(const stl::vector<FVertexAttributePointer>& attributes_data) = 0;
 			virtual u64 addIndices(const FVertexAttributePointer& indices) = 0;
