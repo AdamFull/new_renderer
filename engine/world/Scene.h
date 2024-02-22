@@ -43,14 +43,14 @@ namespace engine
 			void update(f32 dt);
 		protected:
 			void loadGLTF(easygltf::FGLTFRoot& root);
-			void loadNode(const easygltf::FGLTFRoot root, const entt::entity parent, u32 node_index, f32 global_scale = 1.f);
+			void loadNode(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index, f32 global_scale = 1.f);
 
-			void loadMeshComponent(const easygltf::FGLTFRoot root, const entt::entity parent, u32 node_index);
-			void loadCameraComponent(const easygltf::FGLTFRoot root, const entt::entity parent, u32 node_index);
-			void loadLightComponent(const easygltf::FGLTFRoot root, const entt::entity parent, u32 node_index);
+			void loadMeshComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index);
+			void loadCameraComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index);
+			void loadLightComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index);
 
-			void loadAnimations(const easygltf::FGLTFRoot root);
-			void loadSkins(const easygltf::FGLTFRoot root);
+			void loadAnimations(const easygltf::FGLTFRoot& root);
+			void loadSkins(const easygltf::FGLTFRoot& root);
 		private:
 			CSceneGraph* m_pSceneGraph{ nullptr };
 

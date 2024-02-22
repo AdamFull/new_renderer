@@ -117,8 +117,8 @@ CScene::CScene(IVirtualFileSystemInterface* vfs, render::IRenderInterface* rende
 	m_pSceneGraph = new CSceneGraph();
 
 	m_systems.emplace_back(stl::make_unique<ecs::CInputSystem>(m_pSceneGraph));
-	m_systems.emplace_back(stl::make_unique<ecs::CAnimationSystem>(m_pSceneGraph));
 	m_systems.emplace_back(stl::make_unique<ecs::CScenegraphSystem>(m_pSceneGraph));
+	m_systems.emplace_back(stl::make_unique<ecs::CAnimationSystem>(m_pSceneGraph));
 	m_systems.emplace_back(stl::make_unique<ecs::CSkinningSystem>(m_pSceneGraph, render_interface));
 
 	m_systems.emplace_back(stl::make_unique<ecs::CCameraSystem>(m_pSceneGraph, render_interface));
@@ -223,18 +223,24 @@ void CScene::makeGenerateScene(const stl::string& path)
 
 	auto& current_scene = root.scenes.at(root.scene < 0 ? 0 : root.scene);
 
-	constexpr const u64 duplicate_count = 500;
+	constexpr const u64 duplicate_count = 16000;
 	for (u64 idx = 0ull; idx < duplicate_count; ++idx)
 	{
 		// Add new node to scene
 		current_scene.nodes.emplace_back(root.nodes.size());
-
+	
 		auto& new_node = root.nodes.emplace_back();
 		new_node.name = std::format("Node {}", idx);
 		new_node.mesh = root.meshes.size() - 1ull;
-		random_fill(new_node.translation, -30.0, 30.0);
+		random_fill(new_node.translation, -35.0, 35.0);
 		random_fill(new_node.rotation, 0.0, 1.0);
-		random_fill(new_node.scale, 0.5, 9.0);
+		random_fill(new_node.scale, 0.1, 0.5);
+	
+		auto& new_animation = root.animations.emplace_back();
+		new_animation = root.animations.at(0);
+		
+		for (auto& channel : new_animation.channels)
+			channel.target.node = current_scene.nodes.back();
 	}
 
 	loadGLTF(root);
@@ -351,7 +357,7 @@ void CScene::loadGLTF(easygltf::FGLTFRoot& root)
 		system->create();
 }
 
-void CScene::loadNode(const easygltf::FGLTFRoot root, const entt::entity parent, u32 node_index, f32 global_scale)
+void CScene::loadNode(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index, f32 global_scale)
 {
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
 
@@ -388,7 +394,7 @@ void CScene::loadNode(const easygltf::FGLTFRoot root, const entt::entity parent,
 	render_packet->stats.nodeCount++;
 }
 
-void CScene::loadMeshComponent(const easygltf::FGLTFRoot root, const entt::entity parent, u32 node_index)
+void CScene::loadMeshComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index)
 {
 	const auto& node = root.nodes[node_index];
 	const auto& mesh = root.meshes[node.mesh];
@@ -509,7 +515,7 @@ void CScene::loadMeshComponent(const easygltf::FGLTFRoot root, const entt::entit
 	}
 }
 
-void CScene::loadCameraComponent(const easygltf::FGLTFRoot root, const entt::entity parent, u32 node_index)
+void CScene::loadCameraComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index)
 {
 	const auto& node = root.nodes[node_index];
 	const auto& camera = root.cameras[node.camera];
@@ -534,7 +540,7 @@ void CScene::loadCameraComponent(const easygltf::FGLTFRoot root, const entt::ent
 	m_pSceneGraph->addComponent<FCameraComponent>(parent, stl::move(camera_component));
 }
 
-void CScene::loadLightComponent(const easygltf::FGLTFRoot root, const entt::entity parent, u32 node_index)
+void CScene::loadLightComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index)
 {
 	const auto& node = root.nodes[node_index];
 
@@ -565,7 +571,7 @@ void CScene::loadLightComponent(const easygltf::FGLTFRoot root, const entt::enti
 	}
 }
 
-void CScene::loadAnimations(const easygltf::FGLTFRoot root)
+void CScene::loadAnimations(const easygltf::FGLTFRoot& root)
 {
 	auto scene_root = m_pSceneGraph->getRoot();
 	auto& root_component = m_pSceneGraph->getComponent<FRootComponent>(scene_root);
@@ -671,7 +677,7 @@ void CScene::loadAnimations(const easygltf::FGLTFRoot root)
 	}
 }
 
-void CScene::loadSkins(const easygltf::FGLTFRoot root)
+void CScene::loadSkins(const easygltf::FGLTFRoot& root)
 {
 	auto scene_root = m_pSceneGraph->getRoot();
 	auto& root_component = m_pSceneGraph->getComponent<FRootComponent>(scene_root);
