@@ -23,11 +23,25 @@ void CBufferObject::create(const stl::string& name, const FBufferCreateInfo& cre
 	m_elemCount = buffer_view.elementCount;
 	m_elemSize = buffer_view.alignedSize / buffer_view.elementCount;
 	m_virtualAddress = buffer_view.address;
+
+	m_srName = name;
+	m_bufferType = create_info.flags;
 }
 
 void CBufferObject::resize(u64 size)
 {
-	 
+	FBufferCreateInfo buffer_ci{};
+	buffer_ci.size = m_elemSize;
+	buffer_ci.count = size;
+	buffer_ci.flags = m_bufferType;
+
+	auto& render_context = m_pRenderInterface->getRenderContext();
+	render_context->updateBuffer(m_srName, m_bufferId, buffer_ci);
+
+	auto buffer_view = render_context->getBufferView(m_bufferId);
+	m_elemCount = buffer_view.elementCount;
+	m_elemSize = buffer_view.alignedSize / buffer_view.elementCount;
+	m_virtualAddress = buffer_view.address;
 }
 
 void CBufferObject::map()
@@ -66,6 +80,16 @@ void CBufferObject::flush(u64 size, u64 offset)
 void CBufferObject::clear()
 {
 	stl::memset(m_pMapped, 0, m_elemCount * m_elemSize);
+}
+
+u64 CBufferObject::size()
+{
+	return m_elemSize * m_elemCount;
+}
+
+u64 CBufferObject::count()
+{
+	return m_elemCount;
 }
 
 u64 CBufferObject::handle()

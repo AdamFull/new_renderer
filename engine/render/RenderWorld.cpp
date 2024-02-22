@@ -4,12 +4,12 @@
 
 using namespace engine::render;
 
-constexpr const u64 MAX_RENDER_OBJECT_COUNT{ 65536ull * 3ull };
+constexpr const u64 MAX_RENDER_OBJECT_COUNT{ 1024ull };
 constexpr const u64 MAX_SKINNED_OBJECT_COUNT{ 2048ull };
 constexpr const u64 MAT_FRUSTUM_COUNT{ 128ull };
-constexpr const u64 MAX_PRIMITIVE_COUNT{ MAX_RENDER_OBJECT_COUNT };
-constexpr const u64 MAX_MATERIAL_COUNT{ 32768ull };
-constexpr const u64 MAX_INDIRECT_DRAW_COUNT{ 32768ull };
+constexpr const u64 MAX_PRIMITIVE_COUNT{ 1024ull };
+constexpr const u64 MAX_MATERIAL_COUNT{ 1024ull };
+constexpr const u64 MAX_INDIRECT_DRAW_COUNT{ 1024ull };
 
 template<class _Ty>
 stl::unique_ptr<IBufferObject> createDrawBuffer(const stl::string& name, EBufferTypeFlagBits type, u64 count, IRenderInterface* render_interface)
@@ -22,6 +22,18 @@ stl::unique_ptr<IBufferObject> createDrawBuffer(const stl::string& name, EBuffer
 	auto new_buffer = stl::make_unique<CBufferObject>(render_interface);
 	new_buffer->create(name, buffer_ci);
 	return new_buffer;
+}
+
+template<class _Ty>
+void writeBuffer(CRenderWorld* self, ERenderBufferIndices type, const stl::vector<_Ty>& data)
+{
+	auto& buffer = self->getDrawBuffer(type);
+	if (buffer->count() < data.size())
+		buffer->resize(data.size());
+
+	buffer->map();
+	buffer->write(data.data(), data.size());
+	buffer->unmap();
 }
 
 CRenderWorld::CRenderWorld(IRenderInterface* render_interface)
@@ -155,85 +167,43 @@ void CRenderWorld::render(f32 dt)
 	m_vRawGeometryBatches.clear();
 	m_stats.drawCommandCount = indirect_data.size();
 
-	auto& batch_buffer = getDrawBuffer(ERenderBufferIndices::eDrawBatchBuffer);
-	batch_buffer->map();
-	batch_buffer->write(gpu_batches.data(), gpu_batches.size());
-	batch_buffer->unmap();
+	writeBuffer(this, ERenderBufferIndices::eDrawBatchBuffer, gpu_batches);
 
 	// Copy frustum sides to gpu buffer
-	{
-		auto& frustum_buffer = getDrawBuffer(ERenderBufferIndices::eFrustumBuffer);
-		frustum_buffer->map();
+	//{
+	//	auto& frustum_buffer = getDrawBuffer(ERenderBufferIndices::eFrustumBuffer);
+	//	frustum_buffer->map();
+	//
+	//	u64 offset{ 0ull };
+	//	for (const auto& frustum : m_vSceneFrustums)
+	//	{
+	//		for (const auto& side : frustum.frustumSides)
+	//		{
+	//			frustum_buffer->write(&side, sizeof(glm::vec4), offset);
+	//			offset += sizeof(glm::vec4);
+	//		}
+	//	}
+	//
+	//	frustum_buffer->unmap();
+	//}
 
-		u64 offset{ 0ull };
-		for (const auto& frustum : m_vSceneFrustums)
-		{
-			for (const auto& side : frustum.frustumSides)
-			{
-				frustum_buffer->write(&side, sizeof(glm::vec4), offset);
-				offset += sizeof(glm::vec4);
-			}
-		}
+	writeBuffer(this, ERenderBufferIndices::eMaterialBuffer, m_vMaterials);
+	writeBuffer(this, ERenderBufferIndices::eNodeBuffer, m_vNodes);
+	writeBuffer(this, ERenderBufferIndices::eSkinBuffer, m_vSkins);
 
-		frustum_buffer->unmap();
-	}
+	writeBuffer(this, ERenderBufferIndices::eDirectionalLightBuffer, m_vDirectionalLights);
+	writeBuffer(this, ERenderBufferIndices::ePointLightBuffer, m_vPointLights);
+	writeBuffer(this, ERenderBufferIndices::eSpotLightBuffer, m_vSpotLights);
 
-	auto& material_buffer = getDrawBuffer(ERenderBufferIndices::eMaterialBuffer);
-	material_buffer->map();
-	material_buffer->write(m_vMaterials.data(), m_vMaterials.size());
-	material_buffer->unmap();
+	writeBuffer(this, ERenderBufferIndices::eCascadedShadowBuffer, m_vCascadedShadows);
+	writeBuffer(this, ERenderBufferIndices::eOmniShadowBuffer, m_vOmniShadows);
+	writeBuffer(this, ERenderBufferIndices::eSpotShadowBuffer, m_vSpotShadows);
 
-	auto& node_buffer = getDrawBuffer(ERenderBufferIndices::eNodeBuffer);
-	node_buffer->map();
-	node_buffer->write(m_vNodes.data(), m_vNodes.size());
-	node_buffer->unmap();
-
-	auto& skin_buffer = getDrawBuffer(ERenderBufferIndices::eSkinBuffer);
-	skin_buffer->map();
-	skin_buffer->write(m_vSkins.data(), m_vSkins.size());
-	skin_buffer->unmap();
-
-	auto& directional_light_buffer = getDrawBuffer(ERenderBufferIndices::eDirectionalLightBuffer);
-	directional_light_buffer->map();
-	directional_light_buffer->write(m_vDirectionalLights.data(), m_vDirectionalLights.size());
-	directional_light_buffer->unmap();
-
-	auto& point_light_buffer = getDrawBuffer(ERenderBufferIndices::ePointLightBuffer);
-	point_light_buffer->map();
-	point_light_buffer->write(m_vPointLights.data(), m_vPointLights.size());
-	point_light_buffer->unmap();
-
-	auto& spot_light_buffer = getDrawBuffer(ERenderBufferIndices::eSpotLightBuffer);
-	spot_light_buffer->map();
-	spot_light_buffer->write(m_vSpotLights.data(), m_vSpotLights.size());
-	spot_light_buffer->unmap();
-
-	auto& cascaded_shadow_buffer = getDrawBuffer(ERenderBufferIndices::eCascadedShadowBuffer);
-	cascaded_shadow_buffer->map();
-	cascaded_shadow_buffer->write(m_vCascadedShadows.data(), m_vCascadedShadows.size());
-	cascaded_shadow_buffer->unmap();
-
-	auto& omni_shadow_buffer = getDrawBuffer(ERenderBufferIndices::eOmniShadowBuffer);
-	omni_shadow_buffer->map();
-	omni_shadow_buffer->write(m_vOmniShadows.data(), m_vOmniShadows.size());
-	omni_shadow_buffer->unmap();
-
-	auto& spot_shadow_buffer = getDrawBuffer(ERenderBufferIndices::eSpotShadowBuffer);
-	spot_shadow_buffer->map();
-	spot_shadow_buffer->write(m_vSpotShadows.data(), m_vSpotShadows.size());
-	spot_shadow_buffer->unmap();
-
-	auto& draw_command_buffer = getDrawBuffer(ERenderBufferIndices::eDrawCommandBuffer);
-	draw_command_buffer->map();
-	draw_command_buffer->write(indirect_data.data(), indirect_data.size());
-	draw_command_buffer->unmap();
+	writeBuffer(this, ERenderBufferIndices::eDrawCommandBuffer, indirect_data);
 
 	auto& render_context = m_pRenderInterface->getRenderContext();
 	auto& texture_remap_data = render_context->getGlobalTextureRemap();
-	auto& texture_remap_buffer = getDrawBuffer(ERenderBufferIndices::eTextureRemapBuffer);
-	texture_remap_buffer->map();
-	texture_remap_buffer->write(texture_remap_data.data(), texture_remap_data.size());
-	texture_remap_buffer->unmap();
+	writeBuffer(this, ERenderBufferIndices::eTextureRemapBuffer, texture_remap_data);
 }
 
 void CRenderWorld::addLight(const FDirectionalLightCommit& light)

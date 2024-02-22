@@ -21,6 +21,9 @@ namespace engine
 			void flush(u64 size = ~0ull, u64 offset = 0ull) override;
 			void clear() override;
 
+			u64 size() override;
+			u64 count() override;
+
 			u64 handle() override;
 			uint64_t address() override;
 
@@ -33,7 +36,8 @@ namespace engine
 			uint64_t m_virtualAddress{ 0ull };
 			void* m_pMapped{ nullptr };
 
-			stl::string m_Name{};
+			stl::string m_srName{};
+			EBufferTypeFlagBits m_bufferType{};
 
 			IRenderInterface* m_pRenderInterface{ nullptr };
 		};

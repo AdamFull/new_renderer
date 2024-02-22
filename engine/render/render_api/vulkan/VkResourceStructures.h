@@ -307,6 +307,8 @@ namespace engine
 				vk::BufferUsageFlags usageFlags{};
 				uint64_t address{};
 
+				std::string name{};
+
 				bool isMapped{ false };
 				bool isAlive{ false };
 			};

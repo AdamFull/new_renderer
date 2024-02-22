@@ -298,6 +298,7 @@ namespace engine
 			virtual void destroyShader(u64 resource_id) = 0;
 
 			virtual u64 createBuffer(const stl::string& name, const FBufferCreateInfo& buffer_ci) = 0;
+			virtual void updateBuffer(const stl::string& name, u64 buffer_id, const FBufferCreateInfo& buffer_ci) = 0;
 			virtual void uploadDataToBuffer(const FBufferUploadInfo& upload_info) = 0;
 			virtual FBufferView getBufferView(u64 buffer_id) = 0;
 			virtual void bindVertexBuffers(const FVertexBufferBindingInfo& binding_info, EQueueTypeFlagBits queue) = 0;

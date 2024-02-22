@@ -58,6 +58,9 @@ namespace engine
 			virtual void flush(u64 size = ~0ull, u64 offset = 0ull) = 0;
 			virtual void clear() = 0;
 
+			virtual u64 size() = 0;
+			virtual u64 count() = 0;
+
 			virtual u64 handle() = 0;
 			virtual uint64_t address() = 0;
 
