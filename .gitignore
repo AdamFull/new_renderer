@@ -4,3 +4,4 @@ bin/
 .vs/
 .vscode/
 __pycache__/
+*.iin~
