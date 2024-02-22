@@ -57,7 +57,7 @@ void CApplication::create()
 	m_pScene = stl::make_unique<world::CScene>(m_pVirtualFileSystem.get(), m_pRenderInterface.get());
 	//m_pScene->load("/root/reflections/reflections.gltf");
 	//m_pScene->load("/root/helmet/DamagedHelmet.gltf");
-	//m_pScene->load("/root/sponza/Sponza.gltf");
+	//m_pScene->load("/root/meshes/sponza/Sponza.gltf");
 	m_pScene->makeGenerateScene("/root/meshes/cube/cube.gltf");
 	//m_pScene->makeTestScene();
 	//m_pScene->load("/root/chess/chess.gltf");

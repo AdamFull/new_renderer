@@ -37,8 +37,6 @@
 namespace engine { 
 	namespace render {
 #endif
-		CONSTANT uint32_t max_indirect_draw_count = 512u;
-
 		// Directional light
 		CONSTANT uint32_t max_directional_light_count = 3u;
 		CONSTANT uint32_t max_directional_light_shadow_count = 1u;

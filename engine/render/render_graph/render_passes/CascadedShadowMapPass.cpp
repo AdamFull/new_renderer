@@ -39,56 +39,45 @@ void CCascadedShadowMapPass::_render(const FRenderFrameInfo& frame_info)
 	auto& render_context = m_pRenderInterface->getRenderContext();
 	render_context->setScissorRect(0, 0, frame_info.renderRect.size.x, frame_info.renderRect.size.y);
 
-	auto& batch_ranges = render_world->getGeometryRanges(ERenderGeometryCullerType::eCascadedShadow);
-
 	IVertexHandler* last_vbo{ nullptr };
 
-	for (u64 range_id = 0ull; range_id < batch_ranges.size(); ++range_id)
+	const auto& geometry_batches = render_world->getGeometryBatches();
+	u64 drawcall_id{ 0ull };
+	for (const auto& batch : geometry_batches)
 	{
-		u64 shadow_index = range_id / cascade_shadow_map_cascade_count;
-
-		auto& batch_range = batch_ranges.at(range_id);
-		for (u64 batch_id = batch_range.offset; batch_id < batch_range.offset + batch_range.count; ++batch_id)
+		bool was_vbo_rebinded{ false };
+		auto& vbo = m_pRenderInterface->getVertexHandler(batch.vboID);
+		if (!last_vbo || vbo.get() != last_vbo)
 		{
-			const auto& batch = render_world->getGeometryBatch(batch_id);
+			last_vbo = vbo.get();
+			last_vbo->bind(m_queue);
+			was_vbo_rebinded = true;
+		}
 
-			bool was_vbo_rebinded{ false };
-			auto& vbo = m_pRenderInterface->getVertexHandler(batch.vboID);
-			if (!last_vbo || vbo.get() != last_vbo)
+		if (last_vbo)
+		{
+			auto& shader = getShaderByVBO(last_vbo);
+			if (was_vbo_rebinded)
 			{
-				last_vbo = vbo.get();
-				last_vbo->bind(m_queue);
-				was_vbo_rebinded = true;
+				shader->flushDescriptors();
+				shader->bind(m_queue);
 			}
 
-			if (last_vbo)
+			auto& shadow_data = shader->getConstantBlock("shadowData");
+			shadow_data->set("callID", utl::cast<u32>(drawcall_id));
+			for (u64 shadow_index = 0ull; shadow_index < world_stats.cascadedShadowCount; ++shadow_index)
 			{
-				auto& shader = getShaderByVBO(last_vbo);
-
-				auto& shadow_data = shader->getConstantBlock("shadowData");
-				if (shadow_data)
+				shadow_data->set("shadowIndex", utl::cast<u32>(shadow_index));
+				for (u64 layer_index = 0ull; layer_index < cascade_shadow_map_cascade_count; ++layer_index)
 				{
-					shadow_data->set("batchID", utl::cast<u32>(batch_id));
+					shadow_data->set("layer", utl::cast<i32>(layer_index));
+					shader->flushConstants(m_queue);
+					render_context->draw(m_queue, batch.command);
 				}
-
-				if (was_vbo_rebinded)
-				{
-					shader->flushDescriptors();
-					shader->bind(m_queue);
-				}
-
-				// Draw shadfow
-				if (shadow_data)
-				{
-					shadow_data->set("shadowIndex", utl::cast<u32>(shadow_index));
-					shadow_data->set("layer", utl::cast<i32>(range_id));
-				}
-
-				shader->flushConstants(m_queue);
-
-				render_context->draw(m_queue, batch.command);
 			}
 		}
+
+		drawcall_id += batch.command.count;
 	}
 }
 

@@ -39,7 +39,8 @@
 
 		void main() 
 		{
-			FGeometryGPUBatch batch = batchBuffer.geometry_batches[meshData.batchID];
+			uint32_t batch_index = meshData.callID + gl_DrawIDARB + gl_InstanceIndex;
+			FGeometryGPUBatch batch = batchBuffer.geometry_batches[batch_index];
 
 			// Calculate skinned matrix from weights and joint indices of the current vertex
 			FSceneNode node = nodeBuffer.nodes[batch.instanceID];
@@ -69,7 +70,7 @@
 			localPos = vec4(localPos.xyz / localPos.w, 1.0);
 
 			drawID = meshData.callID + gl_DrawIDARB;
-			matID = batch.materialID + gl_DrawIDARB;
+			matID = batch.materialID;
 			objID = batch.instanceID;
 			vboID = batch.vboID;
 			gl_Position = frameData.projection * frameData.view * localPos;

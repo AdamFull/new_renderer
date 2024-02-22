@@ -34,51 +34,46 @@ void CGeometryPass::_render(const FRenderFrameInfo& frame_info)
 
 	auto& render_world = m_pRenderInterface->getRenderWorld();
 
-	auto& batch_ranges = render_world->getGeometryRanges(ERenderGeometryCullerType::eScene);
+	const auto& geometry_batches = render_world->getGeometryBatches();
 
 	u64 drawcall_id{ 0ull };
 	IVertexHandler* last_vbo{ nullptr };
-	for (const auto& batch_range : batch_ranges)
+	for (const auto& batch : geometry_batches)
 	{
-		for (u64 batch_id = batch_range.offset; batch_id < batch_range.offset + batch_range.count; ++batch_id)
+		bool was_vbo_rebinded{ false };
+		auto& vbo = m_pRenderInterface->getVertexHandler(batch.vboID);
+		if (!last_vbo || vbo.get() != last_vbo)
 		{
-			const auto& batch = render_world->getGeometryBatch(batch_id);
+			last_vbo = vbo.get();
+			last_vbo->bind(m_queue);
+			was_vbo_rebinded = true;
+		}
 
-			bool was_vbo_rebinded{ false };
-			auto& vbo = m_pRenderInterface->getVertexHandler(batch.vboID);
-			if (!last_vbo || vbo.get() != last_vbo)
+		if (last_vbo)
+		{
+			// TODO: this code looks very ugly as i think
+			// Create shader for vertex declaration if not exists
+			auto& shader = getShaderByVBO(last_vbo);
+
+			if (was_vbo_rebinded)
 			{
-				last_vbo = vbo.get();
-				last_vbo->bind(m_queue);
-				was_vbo_rebinded = true;
+				shader->flushDescriptors();
+				shader->bind(m_queue);
 			}
 
-			if (last_vbo)
+			auto& mesh_data = shader->getConstantBlock("meshData");
+			if (mesh_data)
 			{
-				// TODO: this code looks very ugly as i think
-				// Create shader for vertex declaration if not exists
-				auto& shader = getShaderByVBO(last_vbo);
-
-				if (was_vbo_rebinded)
-				{
-					shader->flushDescriptors();
-					shader->bind(m_queue);
-				}
-
-				auto& mesh_data = shader->getConstantBlock("meshData");
-				if (mesh_data)
-				{
-					mesh_data->set("callID", utl::cast<u32>(drawcall_id));
-					mesh_data->set("batchID", utl::cast<u32>(batch_id));
-				}
-
-				// Bind vbo and flush descriptors, then bind and draw
-
-				shader->flushConstants(m_queue);
-
-				render_context->draw(m_queue, batch.command);
-				drawcall_id += batch.command.count;
+				mesh_data->set("callID", utl::cast<u32>(drawcall_id));
+				mesh_data->set("batchID", utl::cast<u32>(0));
 			}
+
+			// Bind vbo and flush descriptors, then bind and draw
+
+			shader->flushConstants(m_queue);
+
+			render_context->draw(m_queue, batch.command);
+			drawcall_id += batch.command.count;
 		}
 	}
 }

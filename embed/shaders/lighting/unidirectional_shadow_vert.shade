@@ -27,14 +27,14 @@
 		layout(push_constant) uniform ShadowmapData
 		{
 			uint32_t callID;
-			uint batchID;
 			uint32_t shadowIndex;
 			int32_t layer;
 		} shadowData;
 		
 		void main()
 		{
-			FGeometryGPUBatch batch = batchBuffer.geometry_batches[shadowData.batchID];
+			uint32_t batch_index = shadowData.callID + gl_DrawIDARB + gl_InstanceIndex;
+			FGeometryGPUBatch batch = batchBuffer.geometry_batches[batch_index];
 
 			FSceneNode node = nodeBuffer.nodes[batch.instanceID];
 			mat4 modelMatrix = node.model;
@@ -77,7 +77,7 @@
 			materialID = ~0u;
 			if(batch.materialID != ~0u)
 			{
-				materialID = batch.materialID + gl_DrawIDARB;
+				materialID = batch.materialID;
 			}
 
 			gl_Layer = shadowData.layer;

@@ -27,6 +27,8 @@ namespace engine
 			u64 addRenderResource(const stl::string& name, const FTextureCreateInfo& texture_ci) override;
 			u64 addRenderResource(const stl::string& name, const FBufferCreateInfo& buffer_ci) override;
 
+			void destroyResource(u64 buffer_id);
+
 			const FRenderResource& getRenderResource(const stl::string& name) const override;
 			const FRenderResource& getRenderResource(u64 resource_id) const override;
 

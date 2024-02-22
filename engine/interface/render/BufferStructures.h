@@ -50,6 +50,7 @@ namespace engine
 			virtual ~IBufferObject() = default;
 
 			virtual void create(const stl::string& name, const FBufferCreateInfo& create_info) = 0;
+			virtual void resize(u64 size) = 0;
 
 			virtual void map() = 0;
 			virtual void unmap() = 0;

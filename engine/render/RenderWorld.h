@@ -36,11 +36,7 @@ namespace engine
 			void addMaterials(const stl::vector<FMaterial>& materials) override;
 
 			const stl::unique_ptr<IBufferObject>& getDrawBuffer(ERenderBufferIndices buffer_index) override;
-			//const stl::vector<stl::unique_ptr<IBufferObject>>& getDrawBuffers() override;
-
-			const stl::unordered_map<ERenderGeometryCullerType, stl::vector<FGeometryBatchRange>>& getAllGeometryRanges() const override;
-			const stl::vector<FGeometryBatchRange>& getGeometryRanges(ERenderGeometryCullerType type) const override;
-			const FGeometryCPUBatch& getGeometryBatch(u64 index) const override;
+			const stl::vector<FGeometryCPUBatch>& getGeometryBatches() const override;
 
 			FRenderWorldStats& getStats() override;
 			const FRenderWorldStats& getStats() const override;
@@ -50,7 +46,6 @@ namespace engine
 
 			stl::vector<FGeometryRawBatch> m_vRawGeometryBatches{};
 			stl::vector<FGeometryCPUBatch> m_vGeometryBatches{};
-			mutable stl::unordered_map<ERenderGeometryCullerType, stl::vector<FGeometryBatchRange>> m_mBatchRanges{};
 
 			stl::vector<FMaterial> m_vMaterials{};
 			stl::vector<FSceneNode> m_vNodes{};

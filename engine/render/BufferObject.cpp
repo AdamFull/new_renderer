@@ -25,6 +25,11 @@ void CBufferObject::create(const stl::string& name, const FBufferCreateInfo& cre
 	m_virtualAddress = buffer_view.address;
 }
 
+void CBufferObject::resize(u64 size)
+{
+	 
+}
+
 void CBufferObject::map()
 {
 	auto& render_context = m_pRenderInterface->getRenderContext();

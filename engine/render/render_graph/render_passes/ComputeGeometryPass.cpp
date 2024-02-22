@@ -34,15 +34,10 @@ void CComputeGeometryPass::_execute(const FComputeFrameInfo& frame_info)
 	auto& render_context = m_pRenderInterface->getRenderContext();
 	auto& render_world = m_pRenderInterface->getRenderWorld();
 
-	auto& batch_ranges = render_world->getGeometryRanges(ERenderGeometryCullerType::eScene);
-	for (const auto& batch_range : batch_ranges)
-	{
-		for (u64 batch_id = batch_range.offset; batch_id < batch_range.offset + batch_range.count; ++batch_id)
-		{
-			const auto& batch = render_world->getGeometryBatch(batch_id);
-			vbos.emplace(batch.vboID);
-		}
-	}
+
+	const auto& geometry_batches = render_world->getGeometryBatches();
+	for (const auto& batch : geometry_batches)
+		vbos.emplace(batch.vboID);
 
 	IVertexHandler* last_vbo{ nullptr };
 	for (auto& vboId : vbos)

@@ -35,17 +35,9 @@ void CComputeCullingPass::_execute(const FComputeFrameInfo& frame_info)
 
 	stl::unordered_set<u64> vbos{};
 
-	for (const auto& [type, batch_ranges] : render_world->getAllGeometryRanges())
-	{
-		for (const auto& batch_range : batch_ranges)
-		{
-			for (u64 batch_id = batch_range.offset; batch_id < batch_range.offset + batch_range.count; ++batch_id)
-			{
-				const auto& batch = render_world->getGeometryBatch(batch_id);
-				vbos.emplace(batch.vboID);
-			}
-		}
-	}
+	const auto& geometry_batches = render_world->getGeometryBatches();
+	for (const auto& batch : geometry_batches)
+		vbos.emplace(batch.vboID);
 
 	IVertexHandler* last_vbo{ nullptr };
 	for (auto& vboId : vbos)
@@ -72,7 +64,7 @@ void CComputeCullingPass::_execute(const FComputeFrameInfo& frame_info)
 			auto& references = shader->getConstantBlock("references");
 			if (references)
 			{
-				references->set("culling", render_world->getDrawBuffer(ERenderBufferIndices::eCullingInfoBuffer)->address());
+				//references->set("culling", render_world->getDrawBuffer(ERenderBufferIndices::eCullingInfoBuffer)->address());
 				references->set("frustum", render_world->getDrawBuffer(ERenderBufferIndices::eFrustumBuffer)->address());
 			}
 

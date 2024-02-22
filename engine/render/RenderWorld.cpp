@@ -4,15 +4,12 @@
 
 using namespace engine::render;
 
-constexpr const u64 MAX_BATCH_RANGE_SIZE{ 1024ull };
-constexpr const u64 MAX_RENDER_OBJECT_COUNT{ 32768ull };
-constexpr const u64 MAX_PRIMITIVE_COUNT{ 32768ull };
+constexpr const u64 MAX_RENDER_OBJECT_COUNT{ 65536ull * 3ull };
+constexpr const u64 MAX_SKINNED_OBJECT_COUNT{ 2048ull };
+constexpr const u64 MAT_FRUSTUM_COUNT{ 128ull };
+constexpr const u64 MAX_PRIMITIVE_COUNT{ MAX_RENDER_OBJECT_COUNT };
 constexpr const u64 MAX_MATERIAL_COUNT{ 32768ull };
-constexpr const u64 MAX_INDIRECT_DRAW_COUNT = 
-					MAX_PRIMITIVE_COUNT + 
-					MAX_PRIMITIVE_COUNT * max_directional_light_shadow_count * cascade_shadow_map_cascade_count +
-					MAX_PRIMITIVE_COUNT * max_spot_light_shadow_count +
-					MAX_PRIMITIVE_COUNT * max_point_light_shadow_count;
+constexpr const u64 MAX_INDIRECT_DRAW_COUNT{ 32768ull };
 
 template<class _Ty>
 stl::unique_ptr<IBufferObject> createDrawBuffer(const stl::string& name, EBufferTypeFlagBits type, u64 count, IRenderInterface* render_interface)
@@ -38,7 +35,7 @@ void CRenderWorld::create()
 
 	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eNodeBuffer)) = createDrawBuffer<FSceneNode>("NodeStorage", EBufferTypeFlagBits::eStorage, MAX_PRIMITIVE_COUNT, m_pRenderInterface);
 	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eMaterialBuffer)) = createDrawBuffer<FMaterial>("MaterialStorage", EBufferTypeFlagBits::eStorage, MAX_MATERIAL_COUNT, m_pRenderInterface);
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eSkinBuffer)) = createDrawBuffer<glm::mat4>("SkinningJoints", EBufferTypeFlagBits::eStorage, MAX_PRIMITIVE_COUNT * 128ull, m_pRenderInterface);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eSkinBuffer)) = createDrawBuffer<glm::mat4>("SkinningJoints", EBufferTypeFlagBits::eStorage, MAX_SKINNED_OBJECT_COUNT * 128ull, m_pRenderInterface);
 
 	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eDirectionalLightBuffer)) = createDrawBuffer<FDirectionalLightCommit>("DirectionalLights", EBufferTypeFlagBits::eStorage, max_directional_light_count, m_pRenderInterface);
 	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::ePointLightBuffer)) = createDrawBuffer<FPointLightCommit>("PointLights", EBufferTypeFlagBits::eStorage, max_point_light_count, m_pRenderInterface);
@@ -49,8 +46,7 @@ void CRenderWorld::create()
 	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eSpotShadowBuffer)) = createDrawBuffer<FSpotShadowCommit>("SpotShadows", EBufferTypeFlagBits::eStorage, max_spot_light_shadow_count, m_pRenderInterface);
 
 	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eDrawBatchBuffer)) = createDrawBuffer<FGeometryGPUBatch>("GeometryBatches", EBufferTypeFlagBits::eStorage, MAX_RENDER_OBJECT_COUNT, m_pRenderInterface);
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eCullingInfoBuffer)) = createDrawBuffer<FGeometryGPUCullInfo>("GeometryCullingInfo", EBufferTypeFlagBits::eStorage, MAX_RENDER_OBJECT_COUNT, m_pRenderInterface);
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eFrustumBuffer)) = createDrawBuffer<glm::vec4>("FrustumSides", EBufferTypeFlagBits::eStorage, MAX_PRIMITIVE_COUNT * 6ull, m_pRenderInterface);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eFrustumBuffer)) = createDrawBuffer<glm::vec4>("FrustumSides", EBufferTypeFlagBits::eStorage, MAT_FRUSTUM_COUNT * 6ull, m_pRenderInterface);
 	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eDrawCommandBuffer)) = createDrawBuffer<FDrawIndexedIndirectData>("IndexedDrawIndirectBuffer", EBufferTypeFlagBits::eIndirect, MAX_INDIRECT_DRAW_COUNT, m_pRenderInterface);
 
 	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eTextureRemapBuffer)) = createDrawBuffer<uint32_t>("TextureBindingRemap", EBufferTypeFlagBits::eStorage, 16384u, m_pRenderInterface);
@@ -98,34 +94,46 @@ void CRenderWorld::render(f32 dt)
 	// Clear old frame data
 	m_vGeometryBatches.clear();
 
-	for (auto& [type, range] : m_mBatchRanges)
-		range.clear();
-
-	stl::vector<FGeometryGPUCullInfo> gpu_culling_infos{};
 	stl::vector<FDrawIndexedIndirectData> indirect_data{};
 	stl::vector<FGeometryGPUBatch> gpu_batches{};
-	stl::vector<u32> counted{};
+	stl::unordered_map<u64, u64> indirect_command_cache{};
 
-	u64 command_offset{ 0ull };
-	u64 batch_offset{ 0ull };
-
-	// Iterate whole cullers
-	for (const auto& cull_info : m_vCullingInfo)
+	for (const auto& batch : m_vRawGeometryBatches)
 	{
-		// Generate raw batches by material chain
-		u64 current_material{ ~0ull };
-		u64 current_node{ ~0ull };
-		for (const auto& batch : m_vRawGeometryBatches)
+		// Create batch or get already existing
+		FGeometryCPUBatch* current_batch{ nullptr };
+		if (!m_vGeometryBatches.empty() && m_vGeometryBatches.back().vboID == batch.callInfo.vboID)
+			current_batch = &m_vGeometryBatches.back();
+		else
 		{
-			auto& gpu_culling_info = gpu_culling_infos.emplace_back();
-			gpu_culling_info.frustumID = cull_info.cullerID;
-			gpu_culling_info.instanceID = batch.callInfo.instanceID;
+			auto& new_batch = m_vGeometryBatches.emplace_back();
+			new_batch.vboID = batch.callInfo.vboID;
+			new_batch.command.bufferId = getDrawBuffer(ERenderBufferIndices::eDrawCommandBuffer)->handle();
+			new_batch.command.offset = indirect_data.size() * sizeof(FDrawIndexedIndirectData);
+			new_batch.command.count = 0;
+			new_batch.command.stride = sizeof(FDrawIndexedIndirectData);
+
+			current_batch = &new_batch;
+		}
+
+		// Check for range is already exists in command list
+		u64 range_hash = utl::utils::murmur_hash_64(&batch.range, sizeof(FGeometryDrawRange), 0ull);
+		if (auto found = indirect_command_cache.find(range_hash); found != indirect_command_cache.end())
+		{
+			auto& indirect_command = indirect_data.at(found->second);
+			indirect_command.instanceCount++;
+		}
+		else
+		{
+			// Cache current command
+			indirect_command_cache.emplace(range_hash, indirect_data.size());
 
 			auto& vbo = m_pRenderInterface->getVertexHandler(batch.callInfo.vboID);
 
 			auto last_index = vbo->getLastIndex();
 			auto last_vertex = vbo->getLastVertex();
 
+			// Create new draw command
 			auto& indirect_command = indirect_data.emplace_back();
 			indirect_command.indexCount = batch.range.indexCount == 0ull ? last_index : batch.range.indexCount;;
 			indirect_command.instanceCount = 1u;
@@ -137,63 +145,20 @@ void CRenderWorld::render(f32 dt)
 			indirect_command.aabb.min = batch.range.bounds.min;
 			indirect_command.aabb.max = batch.range.bounds.max;
 
-			// Make compact batches by material chain
-			if (!gpu_batches.empty() &&
-				gpu_batches.back().vboID == batch.callInfo.vboID &&
-				//gpu_batches.back().instanceID == batch.callInfo.instanceID &&
-				//(current_material + 1 == batch.callInfo.materialID || batch.callInfo.materialID == current_material) &&
-				batch.callInfo.materialID == current_material &&
-				current_node + 1 == batch.callInfo.instanceID)
-			{
-				counted.back()++;
-			}
-			else
-			{
-				auto& new_gpu_batch = gpu_batches.emplace_back();
-				new_gpu_batch = batch.callInfo;
-				counted.emplace_back(1ull);
-			}
-
-			current_material = batch.callInfo.materialID;
-			current_node = batch.callInfo.instanceID;
+			current_batch->command.count++;
 		}
 
-		// Create new batch ranges for current culler type
-		auto& batch_ranges = m_mBatchRanges[cull_info.type];
-		auto& batch_range = batch_ranges.emplace_back();
-		batch_range.offset = m_vGeometryBatches.size();
-		
-		// Prepare cpu data
-		for (u64 idx = batch_offset; idx < gpu_batches.size(); ++idx)
-		{
-			auto& gpu_batch = gpu_batches.at(idx);
-		
-			auto& new_cpu_batch = m_vGeometryBatches.emplace_back();
-			new_cpu_batch.vboID = gpu_batch.vboID;
-			new_cpu_batch.command.bufferId = getDrawBuffer(ERenderBufferIndices::eDrawCommandBuffer)->handle();
-			new_cpu_batch.command.offset = command_offset * sizeof(FDrawIndexedIndirectData);
-			new_cpu_batch.command.count = counted.at(idx);
-			new_cpu_batch.command.stride = sizeof(FDrawIndexedIndirectData);
-		
-			command_offset += new_cpu_batch.command.count;
-		}
-		
-		batch_offset += gpu_batches.size() - batch_offset;
-		batch_range.count = m_vGeometryBatches.size() - batch_range.offset;
+		// Save draw order in all draw array
+		gpu_batches.emplace_back(batch.callInfo);
 	}
 
 	m_vRawGeometryBatches.clear();
-	m_stats.drawCommandCount = command_offset;
+	m_stats.drawCommandCount = indirect_data.size();
 
 	auto& batch_buffer = getDrawBuffer(ERenderBufferIndices::eDrawBatchBuffer);
 	batch_buffer->map();
 	batch_buffer->write(gpu_batches.data(), gpu_batches.size());
 	batch_buffer->unmap();
-
-	auto& culling_buffer = getDrawBuffer(ERenderBufferIndices::eCullingInfoBuffer);
-	culling_buffer->map();
-	culling_buffer->write(gpu_culling_infos.data(), gpu_culling_infos.size());
-	culling_buffer->unmap();
 
 	// Copy frustum sides to gpu buffer
 	{
@@ -322,7 +287,7 @@ void CRenderWorld::addShadow(const FSpotShadowCommit& commit)
 void CRenderWorld::updateNode(u32 node_id, const FSceneNode& node)
 {
 	if (m_vNodes.size() < node_id + 1ull)
-		m_vNodes.resize((node_id + 1ull) * 2ull);
+		m_vNodes.resize((node_id + 1ull));
 
 	m_vNodes.at(node_id) = node;
 }
@@ -354,24 +319,9 @@ const stl::unique_ptr<IBufferObject>& CRenderWorld::getDrawBuffer(ERenderBufferI
 	return m_vBuffers.at(utl::enum_cast(buffer_index));
 }
 
-//const stl::vector<stl::unique_ptr<IBufferObject>>& CRenderWorld::getDrawBuffers()
-//{
-//	return m_vBuffers;
-//}
-
-const stl::unordered_map<ERenderGeometryCullerType, stl::vector<FGeometryBatchRange>>& CRenderWorld::getAllGeometryRanges() const
+const stl::vector<FGeometryCPUBatch>& CRenderWorld::getGeometryBatches() const
 {
-	return m_mBatchRanges;
-}
-
-const stl::vector<FGeometryBatchRange>& CRenderWorld::getGeometryRanges(ERenderGeometryCullerType type) const
-{
-	return m_mBatchRanges[type];
-}
-
-const FGeometryCPUBatch& CRenderWorld::getGeometryBatch(u64 index) const
-{
-	return m_vGeometryBatches.at(index);
+	return m_vGeometryBatches;
 }
 
 FRenderWorldStats& CRenderWorld::getStats()

@@ -146,64 +146,6 @@ void CScene::load(const stl::string& path)
 		return;
 
 	loadGLTF(root);
-
-	//auto new_node = m_pSceneGraph->createNode("Terrain");
-	//m_pSceneGraph->attachChild(root_node, new_node);
-	//
-	//auto& mesh_component = m_pSceneGraph->addComponent<FMeshComponent>(new_node, FMeshComponent{});
-	//auto& primitive = mesh_component.primitives.emplace_back();
-	//primitive.materialId = 0;
-	//
-	//stl::vector<FTerrainVertexAttribute> terrain_attributes{};
-	//FTerrainVertexAttribute terrain_indices{};
-	//
-	//CTerrainGenerator gen(542, 64, 10.f);
-	//gen.generate(terrain_attributes, terrain_indices);
-	//
-	//stl::vector<render::FVertexAttributePointer> attributes(terrain_attributes.size());
-	//render::FVertexAttributePointer indices{};
-	//
-	//for (u64 idx = 0ull; idx < terrain_attributes.size(); ++idx)
-	//{
-	//	const auto& tattr = terrain_attributes.at(idx);
-	//	auto& attr = attributes.at(idx);
-	//
-	//	attr.type = tattr.type;
-	//	attr.stride = tattr.stride;
-	//	attr.count = tattr.count;
-	//	attr.data = &tattr.data[0];
-	//}
-	//
-	//indices.stride = terrain_indices.stride;
-	//indices.count = terrain_indices.count;
-	//indices.data = &terrain_indices.data[0];
-	//
-	//render::FVertexHandlerCreateInfo handler_ci{};
-	//handler_ci.indexSize = indices.stride;
-	//handler_ci.name = "Terrain";
-	//
-	//for (const auto& attrib : attributes)
-	//{
-	//	auto& desc = handler_ci.descriptions.emplace_back();
-	//	desc.type = attrib.type;
-	//	desc.size = attrib.stride;
-	//}
-	//
-	//auto& handlers = m_resources.vertexHandlers[0];
-	//
-	//auto handler_name = stl::format("{}_{}_{}", "Terrain", 0, handlers.size());
-	//auto handler_id = m_pRenderInterface->createVertexHandler(handler_name, handler_ci);
-	//handlers.emplace_back(handler_id);
-	//
-	//primitive.vboId = handler_id;
-	//
-	//auto& handler = m_pRenderInterface->getVertexHandler(handler_id);
-	//primitive.lods[0].beginVertex = handler->getLastVertex();
-	//primitive.lods[0].vertexCount = handler->addVertices(attributes);
-	//primitive.lods[0].beginIndex = handler->getLastIndex();
-	//primitive.lods[0].indexCount = handler->addIndices(indices, primitive.lods[0].beginVertex);
-	//
-	//m_resources.primitiveCount++;
 }
 
 void CScene::makeGenerateScene(const stl::string& path)
@@ -223,7 +165,7 @@ void CScene::makeGenerateScene(const stl::string& path)
 
 	auto& current_scene = root.scenes.at(root.scene < 0 ? 0 : root.scene);
 
-	constexpr const u64 duplicate_count = 16000;
+	constexpr const u64 duplicate_count = 10000;
 	for (u64 idx = 0ull; idx < duplicate_count; ++idx)
 	{
 		// Add new node to scene
