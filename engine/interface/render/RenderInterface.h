@@ -46,23 +46,22 @@ namespace engine
 		{
 			// Default geometry buffers
 			eNodeBuffer = 0u,
-			eMaterialBuffer = 1u,
-			eSkinBuffer = 2u,
+			eMaterialBuffer,
+			eSkinBuffer,
 			// Light source buffers
-			eDirectionalLightBuffer = 3u,
-			ePointLightBuffer = 4u,
-			eSpotLightBuffer = 5u,
+			eDirectionalLightBuffer,
+			ePointLightBuffer,
+			eSpotLightBuffer,
 			// Shadow buffers
-			eCascadedShadowBuffer = 6u,
-			eOmniShadowBuffer = 7u,
-			eSpotShadowBuffer = 8u,
+			eCascadedShadowBuffer,
+			eOmniShadowBuffer,
+			eSpotShadowBuffer,
 			// Culling and draw buffers
-			eDrawBatchBuffer = 9u,
-			eCullingInfoBuffer = 10u,
-			eFrustumBuffer = 11u,
-			eDrawCommandBuffer = 12u,
+			eDrawBatchBuffer,
+			eFrustumBuffer,
+			eDrawCommandBuffer,
 			// Other
-			eTextureRemapBuffer = 13u,
+			eTextureRemapBuffer,
 
 			eLastIndex
 		};
@@ -243,12 +242,6 @@ namespace engine
 			ERenderGeometryCullerType type{};
 		};
 
-		struct FGeometryBatchRange
-		{
-			u64 offset{ 0ull };
-			u64 count{ 0ull };
-		};
-
 		struct FRenderDataPacket
 		{
 			FRenderDataPacket()
@@ -273,6 +266,11 @@ namespace engine
 			u64 skinCount{ 0ull };
 
 			u64 drawCommandCount{ 0ull };
+		};
+
+		struct FDeviceLimitations
+		{
+			u64 maxBatchSize{ 1ull };
 		};
 
 		class IRenderContext
@@ -325,6 +323,8 @@ namespace engine
 			virtual void draw(EQueueTypeFlagBits queue_type, const FIndirectGeometryDrawInfo& draw_info) = 0;
 			virtual void dispatch(EQueueTypeFlagBits queue_type, const FDispatch2Info& dispatch_group) = 0;
 			virtual void dispatch(EQueueTypeFlagBits queue_type, const FDispatchIndirectInfo& dispatch_info) = 0;
+
+			virtual FDeviceLimitations getDeviceLimitations() = 0;
 
 			virtual u64 getTextureResource(const char* name) = 0;
 			virtual u64 getShaderResource(const char* name) = 0;
@@ -380,9 +380,7 @@ namespace engine
 			virtual const stl::unique_ptr<IBufferObject>& getDrawBuffer(ERenderBufferIndices buffer_index) = 0;
 			//virtual const stl::vector<stl::unique_ptr<IBufferObject>>& getDrawBuffers() = 0;
 
-			virtual const stl::unordered_map<ERenderGeometryCullerType, stl::vector<FGeometryBatchRange>>& getAllGeometryRanges() const = 0;
-			virtual const stl::vector<FGeometryBatchRange>& getGeometryRanges(ERenderGeometryCullerType type) const = 0;
-			virtual const FGeometryCPUBatch& getGeometryBatch(u64 index) const = 0;
+			virtual const stl::vector<FGeometryCPUBatch>& getGeometryBatches() const = 0;
 
 			virtual FRenderWorldStats& getStats() = 0;
 			virtual const FRenderWorldStats& getStats() const = 0;
