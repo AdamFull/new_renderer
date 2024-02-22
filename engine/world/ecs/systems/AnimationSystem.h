@@ -17,7 +17,8 @@ namespace engine
 				void __create() override;
 				void __update(float fDt) override;
 			private:
-				std::unordered_map<uint32_t, float> m_timers{};
+				std::vector<float> m_timers{};
+				std::vector<u64> m_animationIndeces{};
 			};
 		}
 	}

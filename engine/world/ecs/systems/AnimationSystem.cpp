@@ -4,6 +4,7 @@
 #include <engine/world/SceneGraph.h>
 
 #include <engine/profiler/Profiler.h>
+#include <execution>
 
 using namespace engine::world::ecs;
 
@@ -116,11 +117,25 @@ void CAnimationSystem::__update(float fDt)
 
 	auto& root_component = m_pSceneGraph->getComponent<FRootComponent>(root);
 
-	// TODO: update here only enabled animattions
-	uint32_t timer_index{ 0u };
-	for (const auto& animation : root_component.animations)
+	if (m_animationIndeces.size() != root_component.animations.size())
 	{
-		auto& time = m_timers[timer_index];
+		m_timers.resize(root_component.animations.size());
+
+		m_animationIndeces.resize(root_component.animations.size());
+		std::iota(m_animationIndeces.begin(), m_animationIndeces.end(), 0ull);
+	}
+
+#define USE_STD_MULTITHREADING
+
+#ifdef USE_STD_MULTITHREADING
+	std::for_each(std::execution::par, m_animationIndeces.begin(), m_animationIndeces.end(),
+		[&](const auto& idx)
+#else
+	for (const auto& idx : m_animationIndeces)
+#endif
+	{
+		auto& animation = root_component.animations.at(idx);
+		auto& time = m_timers[idx];
 
 		time += fDt;
 		if (time > animation.end)
@@ -141,24 +156,26 @@ void CAnimationSystem::__update(float fDt)
 
 					if (u <= 1.0f)
 					{
-						auto& transform = registry->get<FTransformComponent>(channel.node);
+						glm::vec3 position{ 1.f }, scale{ 1.f };
+						glm::quat rotation{ 1.f, 0.f, 0.f, 0.f };
+
 						switch (channel.path)
 						{
-						case EPathType::eTranslation: {
-							transform.lposition = v_interpolate(sampler.interpolation, sampler.outputsVec4, i, u);
-						} break;
-						case EPathType::eScale: {
-							transform.lscale = v_interpolate(sampler.interpolation, sampler.outputsVec4, i, u);
-						} break;
-						case EPathType::eRotation: {
-							transform.lrotation = q_interpolate(sampler.interpolation, sampler.outputsVec4, i, u);
-						} break;
+						case EPathType::eTranslation: { position = v_interpolate(sampler.interpolation, sampler.outputsVec4, i, u); } break;
+						case EPathType::eScale: { scale = v_interpolate(sampler.interpolation, sampler.outputsVec4, i, u); } break;
+						case EPathType::eRotation: { rotation = q_interpolate(sampler.interpolation, sampler.outputsVec4, i, u); } break;
 						}
+
+						glm::mat4 model = glm::translate(glm::mat4(1.0f), position) * glm::mat4(rotation) * glm::scale(glm::mat4(1.0f), scale);
+
+						auto& transform = registry->get<FTransformComponent>(channel.node);
+						transform.gmodel = transform.gmodel * model;
 					}
 				}
 			}
 		}
-
-		timer_index++;
 	}
+#ifdef USE_STD_MULTITHREADING
+	);
+#endif
 }
