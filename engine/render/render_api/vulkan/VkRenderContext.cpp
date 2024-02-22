@@ -826,46 +826,7 @@ void CVkRenderContext::destroyShader(u64 resource_id)
 
 u64 CVkRenderContext::createBuffer(const stl::string& name, const FBufferCreateInfo& buffer_ci)
 {
-	auto& physical = m_pDevice->getPhysicalDevice();
-
-	FVkBufferCreateInfo vk_buffer_ci{};
-	vk_buffer_ci.instanceCount = buffer_ci.count;
-	vk_buffer_ci.instanceSize = buffer_ci.size;
-	
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	vk_buffer_ci.name = name;
-#endif
-
-	switch (buffer_ci.flags)
-	{
-	case EBufferTypeFlagBits::eStaging: {
-		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuOnly;
-		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
-	} break;
-	case EBufferTypeFlagBits::eVertex: {
-		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eUnknown;
-		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eShaderDeviceAddressKHR | vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eVertexBuffer;
-	} break;
-	case EBufferTypeFlagBits::eIndex: {
-		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eUnknown;
-		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eShaderDeviceAddressKHR | vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndexBuffer;
-	} break;
-	case EBufferTypeFlagBits::eStorage: {
-		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
-		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eShaderDeviceAddressKHR | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer;
-	} break;
-	case EBufferTypeFlagBits::eUniform: {
-		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
-		vk_buffer_ci.usageFlags |= vk::BufferUsageFlagBits::eUniformBuffer;
-		vk_buffer_ci.minOffsetAlignment = stl::lcm(physical.properties.limits.minUniformBufferOffsetAlignment, physical.properties.limits.nonCoherentAtomSize);
-	} break;
-	case EBufferTypeFlagBits::eIndirect: {
-		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
-		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eShaderDeviceAddressKHR | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndirectBuffer | vk::BufferUsageFlagBits::eStorageBuffer;
-	} break;
-	default:
-		break;
-	}
+	auto vk_buffer_ci = makeBufferCreateInfo(name, buffer_ci);
 
 	auto buffer = stl::make_unique<FVkBuffer>();
 	m_pDevice->createBuffer(vk_buffer_ci, *buffer);
@@ -884,6 +845,15 @@ u64 CVkRenderContext::createBuffer(const stl::string& name, const FBufferCreateI
 	}
 
 	return buffer_id;
+}
+
+void CVkRenderContext::updateBuffer(const stl::string& name, u64 buffer_id, const FBufferCreateInfo& buffer_ci)
+{
+	auto& buffer = m_pResources->get<FVkBuffer>(buffer_id);
+	m_pDevice->destroyBuffer(*buffer);
+
+	auto vk_buffer_ci = makeBufferCreateInfo(name, buffer_ci);
+	m_pDevice->createBuffer(vk_buffer_ci, *buffer);
 }
 
 void CVkRenderContext::uploadDataToBuffer(const FBufferUploadInfo& upload_info)
@@ -1381,6 +1351,15 @@ void CVkRenderContext::dispatch(EQueueTypeFlagBits queue_type, const FDispatch2I
 void CVkRenderContext::dispatch(EQueueTypeFlagBits queue_type, const FDispatchIndirectInfo& dispatch_info)
 {
 	
+}
+
+FDeviceLimitations CVkRenderContext::getDeviceLimitations()
+{
+	FDeviceLimitations limits{};
+
+	auto& logical = m_pDevice->m_logicalDevice.handle;
+
+	return limits;
 }
 
 u64 CVkRenderContext::getTextureResource(const char* name)
@@ -2085,6 +2064,52 @@ void CVkRenderContext::processResourceUtilization()
 
 		m_destroyResource.pop();
 	}
+}
+
+FVkBufferCreateInfo CVkRenderContext::makeBufferCreateInfo(const stl::string& name, const FBufferCreateInfo& buffer_ci)
+{
+	auto& physical = m_pDevice->getPhysicalDevice();
+
+	FVkBufferCreateInfo vk_buffer_ci{};
+	vk_buffer_ci.instanceCount = buffer_ci.count;
+	vk_buffer_ci.instanceSize = buffer_ci.size;
+
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	vk_buffer_ci.name = name;
+#endif
+
+	switch (buffer_ci.flags)
+	{
+	case EBufferTypeFlagBits::eStaging: {
+		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuOnly;
+		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
+	} break;
+	case EBufferTypeFlagBits::eVertex: {
+		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eUnknown;
+		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eShaderDeviceAddressKHR | vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eVertexBuffer;
+	} break;
+	case EBufferTypeFlagBits::eIndex: {
+		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eUnknown;
+		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eShaderDeviceAddressKHR | vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndexBuffer;
+	} break;
+	case EBufferTypeFlagBits::eStorage: {
+		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
+		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eShaderDeviceAddressKHR | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer;
+	} break;
+	case EBufferTypeFlagBits::eUniform: {
+		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
+		vk_buffer_ci.usageFlags |= vk::BufferUsageFlagBits::eUniformBuffer;
+		vk_buffer_ci.minOffsetAlignment = stl::lcm(physical.properties.limits.minUniformBufferOffsetAlignment, physical.properties.limits.nonCoherentAtomSize);
+	} break;
+	case EBufferTypeFlagBits::eIndirect: {
+		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
+		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eShaderDeviceAddressKHR | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndirectBuffer | vk::BufferUsageFlagBits::eStorageBuffer;
+	} break;
+	default:
+		break;
+	}
+
+	return vk_buffer_ci;
 }
 
 FRenderApiErrorInfo CVkRenderContext::createTexture(const FVkTextureCreateInfo& texture_ci, FVkTexture& texture)

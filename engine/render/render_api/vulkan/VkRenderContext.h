@@ -39,6 +39,7 @@ namespace engine
 
 
 				u64 createBuffer(const stl::string& name, const FBufferCreateInfo& buffer_ci) override;
+				void updateBuffer(const stl::string& name, u64 buffer_id, const FBufferCreateInfo& buffer_ci) override;
 				void uploadDataToBuffer(const FBufferUploadInfo& upload_info) override;
 				FBufferView getBufferView(u64 buffer_id) override;
 				void bindVertexBuffers(const FVertexBufferBindingInfo& binding_info, EQueueTypeFlagBits queue_type) override;
@@ -66,6 +67,8 @@ namespace engine
 
 				void dispatch(EQueueTypeFlagBits queue_type, const FDispatch2Info& dispatch_group) override;
 				void dispatch(EQueueTypeFlagBits queue_type, const FDispatchIndirectInfo& dispatch_info) override;
+
+				FDeviceLimitations getDeviceLimitations() override;
 
 				u64 getTextureResource(const char* name) override;
 				u64 getShaderResource(const char* name) override;
@@ -99,6 +102,8 @@ namespace engine
 				void processResourceBarriers();
 				void processResourceUpload();
 				void processResourceUtilization();
+
+				FVkBufferCreateInfo makeBufferCreateInfo(const stl::string& name, const FBufferCreateInfo& buffer_ci);
 
 				FRenderApiErrorInfo createTexture(const FVkTextureCreateInfo& texture_ci, FVkTexture& texture);
 				void destroyTexture(FVkTexture& texture);
