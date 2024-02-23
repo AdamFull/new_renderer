@@ -13,7 +13,7 @@ namespace engine
 			~CBufferObject() override;
 
 			void create(const stl::string& name, const FBufferCreateInfo& create_info) override;
-			void resize(u64 size) override;
+			void resize(const stl::string& name, const FBufferCreateInfo& create_info) override;
 
 			void map() override;
 			void unmap() override;
@@ -35,9 +35,6 @@ namespace engine
 			u64 m_elemCount{ 0ull };
 			uint64_t m_virtualAddress{ 0ull };
 			void* m_pMapped{ nullptr };
-
-			stl::string m_srName{};
-			EBufferTypeFlagBits m_bufferType{};
 
 			IRenderInterface* m_pRenderInterface{ nullptr };
 		};

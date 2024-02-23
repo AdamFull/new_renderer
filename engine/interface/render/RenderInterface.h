@@ -378,7 +378,7 @@ namespace engine
 			virtual void addMaterial(const FMaterial& material) = 0;
 			virtual void addMaterials(const stl::vector<FMaterial>& materials) = 0;
 
-			virtual const stl::unique_ptr<IBufferObject>& getDrawBuffer(ERenderBufferIndices buffer_index) = 0;
+			virtual const stl::unique_ptr<IGPUVector>& getDrawBuffer(ERenderBufferIndices buffer_index) = 0;
 			//virtual const stl::vector<stl::unique_ptr<IBufferObject>>& getDrawBuffers() = 0;
 
 			virtual const stl::vector<FGeometryCPUBatch>& getGeometryBatches() const = 0;

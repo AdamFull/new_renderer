@@ -65,7 +65,7 @@ void CComputeCullingPass::_execute(const FComputeFrameInfo& frame_info)
 			if (references)
 			{
 				//references->set("culling", render_world->getDrawBuffer(ERenderBufferIndices::eCullingInfoBuffer)->address());
-				references->set("frustum", render_world->getDrawBuffer(ERenderBufferIndices::eFrustumBuffer)->address());
+				references->set("frustum", render_world->getDrawBuffer(ERenderBufferIndices::eFrustumBuffer)->buffer()->address());
 			}
 
 			shader->flushConstants(m_queue);

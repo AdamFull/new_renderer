@@ -35,7 +35,7 @@ namespace engine
 			void addMaterial(const FMaterial& material) override;
 			void addMaterials(const stl::vector<FMaterial>& materials) override;
 
-			const stl::unique_ptr<IBufferObject>& getDrawBuffer(ERenderBufferIndices buffer_index) override;
+			const stl::unique_ptr<IGPUVector>& getDrawBuffer(ERenderBufferIndices buffer_index) override;
 			const stl::vector<FGeometryCPUBatch>& getGeometryBatches() const override;
 
 			FRenderWorldStats& getStats() override;
@@ -47,21 +47,12 @@ namespace engine
 			stl::vector<FGeometryRawBatch> m_vRawGeometryBatches{};
 			stl::vector<FGeometryCPUBatch> m_vGeometryBatches{};
 
-			stl::vector<FMaterial> m_vMaterials{};
-			stl::vector<FSceneNode> m_vNodes{};
+			//stl::vector<FMaterial> m_vMaterials{};
 			stl::vector<glm::mat4> m_vSkins{};
-
-			stl::vector<FDirectionalLightCommit> m_vDirectionalLights{};
-			stl::vector<FPointLightCommit> m_vPointLights{};
-			stl::vector<FSpotLightCommit> m_vSpotLights{};
-
-			stl::vector<FCascadedShadowCommit> m_vCascadedShadows{};
-			stl::vector<FOmniShadowCommit> m_vOmniShadows{};
-			stl::vector<FSpotShadowCommit> m_vSpotShadows{};
 
 			FRenderWorldStats m_stats{};
 		protected:
-			stl::vector<stl::unique_ptr<IBufferObject>> m_vBuffers{};
+			stl::vector<stl::unique_ptr<IGPUVector>> m_vBuffers{};
 		private:
 			IRenderInterface* m_pRenderInterface{ nullptr };
 		};

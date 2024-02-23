@@ -63,7 +63,7 @@ stl::unique_ptr<IRenderContext> make_render_context(const FRenderInterfaceCreate
 		};
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-		context_ci.validationState = true;
+		context_ci.validationState = false;
 		context_ci.validationLayers = { "VK_LAYER_KHRONOS_validation", "VK_LAYER_KHRONOS_synchronization2" };
 		context_ci.validationFeatures = vulkan::SYNCHRONIZATION_VALIDATION_FLAG_BIT;
 #endif
@@ -187,22 +187,22 @@ void CRenderInterface::render(f32 dt)
 	frame_gata_uniform.binding = 0u;
 
 	FGlobalBufferReference global_references{};
-	global_references.nodeBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eNodeBuffer)->address();
-	global_references.materialBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eMaterialBuffer)->address();
-	global_references.jointsBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eSkinBuffer)->address();
+	global_references.nodeBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eNodeBuffer)->buffer()->address();
+	global_references.materialBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eMaterialBuffer)->buffer()->address();
+	global_references.jointsBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eSkinBuffer)->buffer()->address();
 
-	global_references.directionalLightBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eDirectionalLightBuffer)->address();
-	global_references.pointLightBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::ePointLightBuffer)->address();
-	global_references.spotLightBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eSpotLightBuffer)->address();
+	global_references.directionalLightBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eDirectionalLightBuffer)->buffer()->address();
+	global_references.pointLightBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::ePointLightBuffer)->buffer()->address();
+	global_references.spotLightBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eSpotLightBuffer)->buffer()->address();
 
-	global_references.cascadedShadowBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eCascadedShadowBuffer)->address();
-	global_references.omniShadowBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eOmniShadowBuffer)->address();
-	global_references.spotShadowBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eSpotShadowBuffer)->address();
+	global_references.cascadedShadowBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eCascadedShadowBuffer)->buffer()->address();
+	global_references.omniShadowBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eOmniShadowBuffer)->buffer()->address();
+	global_references.spotShadowBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eSpotShadowBuffer)->buffer()->address();
 
-	global_references.batchBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eDrawBatchBuffer)->address();
-	global_references.indirectCommandBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eDrawCommandBuffer)->address();
+	global_references.batchBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eDrawBatchBuffer)->buffer()->address();
+	global_references.indirectCommandBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eDrawCommandBuffer)->buffer()->address();
 
-	global_references.textureRemapBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eTextureRemapBuffer)->address();
+	global_references.textureRemapBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eTextureRemapBuffer)->buffer()->address();
 
 	auto& buffer_ref_uniform = update_info.uniforms[utl::utils::fnv1a_64_hash("GlobalBufferReferences")];
 	buffer_ref_uniform.data = &global_references;

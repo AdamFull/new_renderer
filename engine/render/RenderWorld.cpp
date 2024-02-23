@@ -1,6 +1,6 @@
 #include "RenderWorld.h"
 
-#include "BufferObject.h"
+#include "GPUVector.h"
 
 using namespace engine::render;
 
@@ -12,28 +12,11 @@ constexpr const u64 MAX_MATERIAL_COUNT{ 1024ull };
 constexpr const u64 MAX_INDIRECT_DRAW_COUNT{ 1024ull };
 
 template<class _Ty>
-stl::unique_ptr<IBufferObject> createDrawBuffer(const stl::string& name, EBufferTypeFlagBits type, u64 count, IRenderInterface* render_interface)
+stl::unique_ptr<IGPUVector> createDrawBuffer(const stl::string& name, EBufferTypeFlagBits type, u64 count, IRenderInterface* render_interface)
 {
-	FBufferCreateInfo buffer_ci{};
-	buffer_ci.flags = type;
-	buffer_ci.size = sizeof(_Ty);
-	buffer_ci.count = count;
-
-	auto new_buffer = stl::make_unique<CBufferObject>(render_interface);
-	new_buffer->create(name, buffer_ci);
+	auto new_buffer = stl::make_unique<CGPUVector>(render_interface);
+	new_buffer->create<_Ty>(name, type, count);
 	return new_buffer;
-}
-
-template<class _Ty>
-void writeBuffer(CRenderWorld* self, ERenderBufferIndices type, const stl::vector<_Ty>& data)
-{
-	auto& buffer = self->getDrawBuffer(type);
-	if (buffer->count() < data.size())
-		buffer->resize(data.size());
-
-	buffer->map();
-	buffer->write(data.data(), data.size());
-	buffer->unmap();
 }
 
 CRenderWorld::CRenderWorld(IRenderInterface* render_interface)
@@ -106,8 +89,15 @@ void CRenderWorld::render(f32 dt)
 	// Clear old frame data
 	m_vGeometryBatches.clear();
 
-	stl::vector<FDrawIndexedIndirectData> indirect_data{};
-	stl::vector<FGeometryGPUBatch> gpu_batches{};
+	auto& indirect_data_buffer = getDrawBuffer(ERenderBufferIndices::eDrawCommandBuffer);
+	indirect_data_buffer->clear();
+	
+	auto& gpu_batches_buffer = getDrawBuffer(ERenderBufferIndices::eDrawBatchBuffer);
+	gpu_batches_buffer->clear();
+
+	std::vector<FDrawIndexedIndirectData> indirect_data{};
+	std::vector<FGeometryGPUBatch> gpu_batches{};
+
 	stl::unordered_map<u64, u64> indirect_command_cache{};
 
 	for (const auto& batch : m_vRawGeometryBatches)
@@ -120,7 +110,7 @@ void CRenderWorld::render(f32 dt)
 		{
 			auto& new_batch = m_vGeometryBatches.emplace_back();
 			new_batch.vboID = batch.callInfo.vboID;
-			new_batch.command.bufferId = getDrawBuffer(ERenderBufferIndices::eDrawCommandBuffer)->handle();
+			new_batch.command.bufferId = indirect_data_buffer->buffer()->handle();
 			new_batch.command.offset = indirect_data.size() * sizeof(FDrawIndexedIndirectData);
 			new_batch.command.count = 0;
 			new_batch.command.stride = sizeof(FDrawIndexedIndirectData);
@@ -167,7 +157,8 @@ void CRenderWorld::render(f32 dt)
 	m_vRawGeometryBatches.clear();
 	m_stats.drawCommandCount = indirect_data.size();
 
-	writeBuffer(this, ERenderBufferIndices::eDrawBatchBuffer, gpu_batches);
+	indirect_data_buffer->copy(indirect_data);
+	gpu_batches_buffer->copy(gpu_batches);
 
 	// Copy frustum sides to gpu buffer
 	//{
@@ -187,104 +178,111 @@ void CRenderWorld::render(f32 dt)
 	//	frustum_buffer->unmap();
 	//}
 
-	writeBuffer(this, ERenderBufferIndices::eMaterialBuffer, m_vMaterials);
-	writeBuffer(this, ERenderBufferIndices::eNodeBuffer, m_vNodes);
-	writeBuffer(this, ERenderBufferIndices::eSkinBuffer, m_vSkins);
-
-	writeBuffer(this, ERenderBufferIndices::eDirectionalLightBuffer, m_vDirectionalLights);
-	writeBuffer(this, ERenderBufferIndices::ePointLightBuffer, m_vPointLights);
-	writeBuffer(this, ERenderBufferIndices::eSpotLightBuffer, m_vSpotLights);
-
-	writeBuffer(this, ERenderBufferIndices::eCascadedShadowBuffer, m_vCascadedShadows);
-	writeBuffer(this, ERenderBufferIndices::eOmniShadowBuffer, m_vOmniShadows);
-	writeBuffer(this, ERenderBufferIndices::eSpotShadowBuffer, m_vSpotShadows);
-
-	writeBuffer(this, ERenderBufferIndices::eDrawCommandBuffer, indirect_data);
-
 	auto& render_context = m_pRenderInterface->getRenderContext();
 	auto& texture_remap_data = render_context->getGlobalTextureRemap();
-	writeBuffer(this, ERenderBufferIndices::eTextureRemapBuffer, texture_remap_data);
+
+	auto& texture_remap_buffer = getDrawBuffer(ERenderBufferIndices::eTextureRemapBuffer);
+	texture_remap_buffer->clear();
+	texture_remap_buffer->copy(texture_remap_data);
 }
 
 void CRenderWorld::addLight(const FDirectionalLightCommit& light)
 {
-	if (m_vDirectionalLights.size() < m_stats.directionalLightCount + 1ull)
-		m_vDirectionalLights.resize((m_stats.directionalLightCount + 1ull) * 2ull);
+	auto& lights_buffer = getDrawBuffer(ERenderBufferIndices::eDirectionalLightBuffer);
+	if (lights_buffer->size() < m_stats.directionalLightCount + 1ull)
+		lights_buffer->resize((m_stats.directionalLightCount + 1ull) * 2ull);
 
-	m_vDirectionalLights.at(m_stats.directionalLightCount++) = light;
+	lights_buffer->get<FDirectionalLightCommit>(m_stats.directionalLightCount++) = light;
 }
 
 void CRenderWorld::addLight(const FPointLightCommit& light)
 {
-	if (m_vPointLights.size() < m_stats.pointLightCount + 1ull)
-		m_vPointLights.resize((m_stats.pointLightCount + 1ull) * 2ull);
+	auto& lights_buffer = getDrawBuffer(ERenderBufferIndices::ePointLightBuffer);
 
-	m_vPointLights.at(m_stats.pointLightCount++) = light;
+	if (lights_buffer->size() < m_stats.pointLightCount + 1ull)
+		lights_buffer->resize((m_stats.pointLightCount + 1ull) * 2ull);
+
+	lights_buffer->get<FPointLightCommit>(m_stats.pointLightCount++) = light;
 }
 
 void CRenderWorld::addLight(const FSpotLightCommit& light)
 {
-	if (m_vSpotLights.size() < m_stats.spotLightCount + 1ull)
-		m_vSpotLights.resize((m_stats.spotLightCount + 1ull) * 2ull);
+	auto& lights_buffer = getDrawBuffer(ERenderBufferIndices::eSpotLightBuffer);
 
-	m_vSpotLights.at(m_stats.spotLightCount++) = light;
+	if (lights_buffer->size() < m_stats.spotLightCount + 1ull)
+		lights_buffer->resize((m_stats.spotLightCount + 1ull) * 2ull);
+
+	lights_buffer->get<FSpotLightCommit>(m_stats.spotLightCount++) = light;
 }
 
 void CRenderWorld::addShadow(const FCascadedShadowCommit& commit)
 {
-	if (m_vCascadedShadows.size() < m_stats.cascadedShadowCount + 1ull)
-		m_vCascadedShadows.resize((m_stats.cascadedShadowCount + 1ull) * 2ull);
+	auto& shadows_buffer = getDrawBuffer(ERenderBufferIndices::eCascadedShadowBuffer);
 
-	m_vCascadedShadows.at(m_stats.cascadedShadowCount++) = commit;
+	if (shadows_buffer->size() < m_stats.cascadedShadowCount + 1ull)
+		shadows_buffer->resize((m_stats.cascadedShadowCount + 1ull) * 2ull);
+
+	shadows_buffer->get<FCascadedShadowCommit>(m_stats.cascadedShadowCount++) = commit;
 }
 
 void CRenderWorld::addShadow(const FOmniShadowCommit& commit)
 {
-	if (m_vOmniShadows.size() < m_stats.omniShadowCount + 1ull)
-		m_vOmniShadows.resize((m_stats.omniShadowCount + 1ull) * 2ull);
+	auto& shadows_buffer = getDrawBuffer(ERenderBufferIndices::eOmniShadowBuffer);
 
-	m_vOmniShadows.at(m_stats.omniShadowCount++) = commit;
+	if (shadows_buffer->size() < m_stats.omniShadowCount + 1ull)
+		shadows_buffer->resize((m_stats.omniShadowCount + 1ull) * 2ull);
+
+	shadows_buffer->get<FOmniShadowCommit>(m_stats.omniShadowCount++) = commit;
 }
 
 void CRenderWorld::addShadow(const FSpotShadowCommit& commit)
 {
-	if (m_vSpotShadows.size() < m_stats.spotShadowCount + 1ull)
-		m_vSpotShadows.resize((m_stats.spotShadowCount + 1ull) * 2ull);
+	auto& shadows_buffer = getDrawBuffer(ERenderBufferIndices::eSpotShadowBuffer);
 
-	m_vSpotShadows.at(m_stats.spotShadowCount++) = commit;
+	if (shadows_buffer->size() < m_stats.spotShadowCount + 1ull)
+		shadows_buffer->resize((m_stats.spotShadowCount + 1ull) * 2ull);
+
+	shadows_buffer->get<FSpotShadowCommit>(m_stats.spotShadowCount++) = commit;
 }
 
 void CRenderWorld::updateNode(u32 node_id, const FSceneNode& node)
 {
-	if (m_vNodes.size() < node_id + 1ull)
-		m_vNodes.resize((node_id + 1ull));
+	auto& nodes_buffer = getDrawBuffer(ERenderBufferIndices::eNodeBuffer);
 
-	m_vNodes.at(node_id) = node;
+	if (nodes_buffer->size() < node_id + 1ull)
+		nodes_buffer->resize((node_id + 1ull));
+
+	nodes_buffer->get<FSceneNode>(node_id) = node;
 }
 
 void CRenderWorld::updateSkin(const stl::array<glm::mat4, 128ull>& matrices)
 {
-	if (m_vSkins.size() < (m_stats.skinCount * 128ull) + 1ull)
-		m_vSkins.resize(((m_stats.skinCount * 128ull) + 1ull) * 2ull);
+	auto& skin_buffer = getDrawBuffer(ERenderBufferIndices::eSkinBuffer);
 
-	auto skin_begin = m_vSkins.begin() + (m_stats.skinCount * 128ull);
+	if (skin_buffer->size() < (m_stats.skinCount * 128ull) + 1ull)
+		skin_buffer->resize(((m_stats.skinCount * 128ull) + 1ull) * 2ull);
+
 	for (u64 idx = 0ull; idx < 128ull; ++idx)
-		m_vSkins.at(m_stats.skinCount * 128ull + idx) = matrices.at(idx);
+		skin_buffer->get<glm::mat4>(m_stats.skinCount * 128ull + idx) = matrices.at(idx);
 
 	m_stats.skinCount++;
 }
 
 void CRenderWorld::addMaterial(const FMaterial& material)
 {
-	m_vMaterials.emplace_back(material);
+	auto& materials_buffer = getDrawBuffer(ERenderBufferIndices::eMaterialBuffer);
+	materials_buffer->emplace_back(material);
 }
 
 void CRenderWorld::addMaterials(const stl::vector<FMaterial>& materials)
 {
-	m_vMaterials.insert(m_vMaterials.end(), materials.begin(), materials.end());
+	auto& materials_buffer = getDrawBuffer(ERenderBufferIndices::eMaterialBuffer);
+
+	for (auto& material : materials)
+		materials_buffer->emplace_back(material);
 }
 
-const stl::unique_ptr<IBufferObject>& CRenderWorld::getDrawBuffer(ERenderBufferIndices buffer_index)
+const stl::unique_ptr<IGPUVector>& CRenderWorld::getDrawBuffer(ERenderBufferIndices buffer_index)
 {
 	return m_vBuffers.at(utl::enum_cast(buffer_index));
 }

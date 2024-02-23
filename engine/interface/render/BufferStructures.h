@@ -50,7 +50,7 @@ namespace engine
 			virtual ~IBufferObject() = default;
 
 			virtual void create(const stl::string& name, const FBufferCreateInfo& create_info) = 0;
-			virtual void resize(u64 size) = 0;
+			virtual void resize(const stl::string& name, const FBufferCreateInfo& create_info) = 0;
 
 			virtual void map() = 0;
 			virtual void unmap() = 0;
@@ -65,6 +65,115 @@ namespace engine
 			virtual uint64_t address() = 0;
 
 			virtual char* at(u64 index) = 0;
+		};
+
+		class IGPUVector
+		{
+		public:
+			virtual ~IGPUVector() = default;
+
+			template<class _Ty>
+			void create(const std::string& name, EBufferTypeFlagBits flag = EBufferTypeFlagBits::eStorage, u64 capacity = 64ull)
+			{
+				//m_elementType = typeid(_Ty);
+				alloc(name, flag, sizeof(_Ty), capacity);
+			}
+
+			template<class _Ty>
+			void copy(const stl::vector<_Ty>& data)
+			{
+				if (m_size + data.size() > capacity())
+				{
+					u64 new_capacity = (m_size + data.size()) * 2ull;
+					realloc(new_capacity);
+				}
+
+				auto* memory_block = at(m_size);
+				std::memcpy(memory_block, data.data(), sizeof(_Ty) * data.size());
+				m_size += data.size();
+			}
+
+			template<class _Ty>
+			_Ty* emplace_back(const _Ty& new_element = _Ty())
+			{
+				//assert(std::type_index(typeid(_Ty)) == m_elementType);
+
+				if (m_size + 1ull > capacity())
+				{
+					u64 new_capacity = m_size == 0ull ? 1ull : m_size * 2ull;
+					realloc(new_capacity);
+				}
+
+				auto* memory_block = at(m_size);
+				std::memcpy(memory_block, &new_element, sizeof(_Ty));
+				++m_size;
+
+				return static_cast<_Ty*>(memory_block);
+			}
+
+			void clear()
+			{
+				m_size = 0ull;
+			}
+
+			template<class _Ty>
+			_Ty& get(u64 index)
+			{
+				//assert(std::type_index(typeid(_Ty)) == m_elementType);
+				return *static_cast<_Ty*>(at(index));
+			}
+
+			template<class _Ty>
+			const _Ty& get(u64 index) const
+			{
+				//assert(std::type_index(typeid(_Ty)) == m_elementType);
+				return *static_cast<const _Ty*>(at(index));
+			}
+
+			template<class _Ty>
+			_Ty& front()
+			{
+				assert(m_size > 0ull);
+				return get<_Ty>(0ull);
+			}
+
+			template<class _Ty>
+			const _Ty& front() const
+			{
+				assert(m_size > 0ull);
+				return get<_Ty>(0ull);
+			}
+
+			template<class _Ty>
+			_Ty& back()
+			{
+				assert(m_size > 0ull);
+				return get<_Ty>(m_size - 1ull);
+			}
+
+			template<class _Ty>
+			const _Ty& back() const
+			{
+				assert(m_size > 0ull);
+				return get<_Ty>(m_size - 1ull);
+			}
+
+			virtual void resize(u64 new_size) = 0;
+
+			u64 size() { return m_size; }
+
+			virtual u64 capacity() = 0;
+
+			virtual const stl::unique_ptr<IBufferObject>& buffer() = 0;
+
+		protected:
+			virtual void alloc(const std::string& name, EBufferTypeFlagBits flag, u64 stride, u64 capacity) = 0;
+			virtual void realloc(u64 capacity) = 0;
+
+			virtual void* at(u64 index) = 0;
+			virtual const void* at(u64 index) const = 0;
+		protected:
+			u64 m_size{};
 		};
 
 		class IGPUArrayHandle
