@@ -52,12 +52,12 @@ void CGPUVector::realloc(u64 capacity)
 	std::vector<char> temporary{};
 	temporary.resize(m_pBuffer->size());
 
-	const char* mem_begin = m_pBuffer->at(0);
+	const void* mem_begin = m_pBuffer->data();
 	std::memcpy(temporary.data(), mem_begin, temporary.size());
 
 	FBufferCreateInfo buffer_ci{};
 	buffer_ci.count = capacity;
-	buffer_ci.size = m_pBuffer->size() / m_pBuffer->count();
+	buffer_ci.size = m_pBuffer->instanceSize();
 	buffer_ci.flags = m_bufferFlag;
 
 	m_pBuffer->resize(m_srOriginalName, buffer_ci);
@@ -66,10 +66,12 @@ void CGPUVector::realloc(u64 capacity)
 
 void* CGPUVector::at(u64 index)
 {
-	return m_pBuffer->at(index);
+	auto* mapped = m_pBuffer->data();
+	return utl::cast<char*>(mapped) + (index * m_pBuffer->instanceSize());
 }
 
 const void* CGPUVector::at(u64 index) const
 {
-	return m_pBuffer->at(index);
+	auto* mapped = m_pBuffer->data();
+	return utl::cast<char*>(mapped) + (index * m_pBuffer->instanceSize());
 }

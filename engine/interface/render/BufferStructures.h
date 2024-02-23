@@ -59,12 +59,13 @@ namespace engine
 			virtual void clear() = 0;
 
 			virtual u64 size() = 0;
+			virtual u64 instanceSize() = 0;
 			virtual u64 count() = 0;
 
 			virtual u64 handle() = 0;
 			virtual uint64_t address() = 0;
 
-			virtual char* at(u64 index) = 0;
+			virtual void* data() = 0;
 		};
 
 		class IGPUVector

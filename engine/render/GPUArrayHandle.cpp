@@ -38,14 +38,14 @@ void CGPUArrayHandle::flush(u64 count, u64 offset)
 	else if (count == 0ull)
 		return;
 
-	auto* dst = m_pBuffer->at(m_elementSize * offset);
-	stl::memcpy(dst, &m_elements[m_elementSize * offset], m_elementSize * element_count);
+	//auto* dst = m_pBuffer->at(m_elementSize * offset);
+	//stl::memcpy(dst, &m_elements[m_elementSize * offset], m_elementSize * element_count);
 }
 
 void CGPUArrayHandle::sync(u64 count)
 {
-	auto* src = m_pBuffer->at(0ull);
-	stl::memcpy(&m_elements[0ull], src, m_elementSize * count);
+	//auto* src = m_pBuffer->at(0ull);
+	//stl::memcpy(&m_elements[0ull], src, m_elementSize * count);
 }
 
 uint8_t* CGPUArrayHandle::at(u64 index)

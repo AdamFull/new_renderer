@@ -22,12 +22,13 @@ namespace engine
 			void clear() override;
 
 			u64 size() override;
+			u64 instanceSize() override;
 			u64 count() override;
 
 			u64 handle() override;
 			uint64_t address() override;
 
-			char* at(u64 index) override;
+			void* data() override;
 
 		private:
 			u64 m_bufferId{ ~0ull };

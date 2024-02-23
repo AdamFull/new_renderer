@@ -83,6 +83,11 @@ u64 CBufferObject::size()
 	return m_elemSize * m_elemCount;
 }
 
+u64 CBufferObject::instanceSize()
+{
+	return m_elemSize;
+}
+
 u64 CBufferObject::count()
 {
 	return m_elemCount;
@@ -98,7 +103,7 @@ uint64_t CBufferObject::address()
 	return m_virtualAddress;
 }
 
-char* CBufferObject::at(u64 index)
+void* CBufferObject::data()
 {
-	return utl::cast<char*>(m_pMapped) + (index * m_elemSize);
+	return m_pMapped;
 }
