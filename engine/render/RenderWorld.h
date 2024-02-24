@@ -30,7 +30,7 @@ namespace engine
 			void addShadow(const FSpotShadowCommit& commit) override;
 
 			void updateNode(u32 node_id, const FSceneNode& node) override;
-			void updateSkin(const stl::array<glm::mat4, 128ull>& matrices) override;
+			void updateSkin(const stl::vector<glm::mat4>& matrices) override;
 
 			void addMaterial(const FMaterial& material) override;
 			void addMaterials(const stl::vector<FMaterial>& materials) override;

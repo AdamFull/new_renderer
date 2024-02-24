@@ -125,6 +125,7 @@ void CAnimationSystem::__update(float fDt)
 		std::iota(m_animationIndeces.begin(), m_animationIndeces.end(), 0ull);
 	}
 
+#define USE_OLD_ANIMATION_SYSTEM
 #define USE_STD_MULTITHREADING
 
 #ifdef USE_STD_MULTITHREADING
@@ -156,20 +157,29 @@ void CAnimationSystem::__update(float fDt)
 
 					if (u <= 1.0f)
 					{
+						auto& transform = registry->get<FTransformComponent>(channel.node);
+#ifdef USE_OLD_ANIMATION_SYSTEM
+						switch (channel.path)
+						{
+						case EPathType::eTranslation: { transform.lposition = v_interpolate(sampler.interpolation, sampler.outputsVec4, i, u); } break;
+						case EPathType::eScale: { transform.lscale = v_interpolate(sampler.interpolation, sampler.outputsVec4, i, u); } break;
+						case EPathType::eRotation: { transform.lrotation = q_interpolate(sampler.interpolation, sampler.outputsVec4, i, u); } break;
+						}
+#else
 						glm::vec3 position{ 1.f }, scale{ 1.f };
 						glm::quat rotation{ 1.f, 0.f, 0.f, 0.f };
-
+						
 						switch (channel.path)
 						{
 						case EPathType::eTranslation: { position = v_interpolate(sampler.interpolation, sampler.outputsVec4, i, u); } break;
 						case EPathType::eScale: { scale = v_interpolate(sampler.interpolation, sampler.outputsVec4, i, u); } break;
 						case EPathType::eRotation: { rotation = q_interpolate(sampler.interpolation, sampler.outputsVec4, i, u); } break;
 						}
-
+						
 						glm::mat4 model = glm::translate(glm::mat4(1.0f), position) * glm::mat4(rotation) * glm::scale(glm::mat4(1.0f), scale);
-
-						auto& transform = registry->get<FTransformComponent>(channel.node);
-						transform.gmodel = transform.gmodel * model;
+						
+						transform.gmodel = model * transform.gmodel;
+#endif // USE_OLD_ANIMATION_SYSTEM
 					}
 				}
 			}

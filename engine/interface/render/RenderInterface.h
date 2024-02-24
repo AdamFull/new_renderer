@@ -373,7 +373,7 @@ namespace engine
 			virtual void addShadow(const FSpotShadowCommit& commit) = 0;
 
 			virtual void updateNode(u32 node_id, const FSceneNode& node) = 0;
-			virtual void updateSkin(const stl::array<glm::mat4, 128ull>& matrices) = 0;
+			virtual void updateSkin(const stl::vector<glm::mat4>& matrices) = 0;
 
 			virtual void addMaterial(const FMaterial& material) = 0;
 			virtual void addMaterials(const stl::vector<FMaterial>& materials) = 0;

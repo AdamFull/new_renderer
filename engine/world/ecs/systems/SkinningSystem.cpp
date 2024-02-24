@@ -64,6 +64,9 @@ void CSkinningSystem::__update(f32 fDt)
 		debug_draw_skeleton(registry.get(), skin.root);
 #endif
 
+		if (skin.jointMatrices.size() != skin.joints.size())
+			skin.jointMatrices.resize(skin.joints.size());
+
 		// Calculate joint matrices
 		auto inv_transform = glm::inverse(transform.gmodel);
 		for (u32 i = 0; i < skin.joints.size(); i++)
@@ -81,6 +84,7 @@ void CSkinningSystem::__update(f32 fDt)
 	for (u64 idx = 0ull; idx < root_component.skins.size(); ++idx)
 	{
 		auto& skin = root_component.skins[idx];
+		root_component.skinRemap[idx] = world_stats.skinCount;
 		render_world->updateSkin(skin.jointMatrices);
 	}
 }

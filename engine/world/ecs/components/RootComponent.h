@@ -49,13 +49,14 @@ namespace engine
 				entt::entity root{ entt::null };
 				std::vector<glm::mat4> inverseBindMatrices;
 				std::vector<entt::entity> joints;
-				std::array<glm::mat4, 128> jointMatrices;
+				std::vector<glm::mat4> jointMatrices;
 			};
 
 			struct FRootComponent
 			{
 				std::vector<FMeshAnimation> animations;
 				std::vector<FMeshSkin> skins;
+				std::unordered_map<uint32_t, uint32_t> skinRemap{};
 			};
 		}
 	}

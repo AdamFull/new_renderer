@@ -185,13 +185,11 @@
 #elif defined(JOINTS_16BIT)
 				u16vec4 joints;
 #endif
-
-				uint begin_pos = node.skin * 128;
 				mat4 skinMat = 
-					vertices[0].wx * jointsBuffer.matrices[begin_pos + joints.x] +
-					vertices[0].wy * jointsBuffer.matrices[begin_pos + joints.y] +
-					vertices[0].wz * jointsBuffer.matrices[begin_pos + joints.z] +
-					vertices[0].ww * jointsBuffer.matrices[begin_pos + joints.w];
+					vertices[0].wx * jointsBuffer.matrices[node.skin + joints.x] +
+					vertices[0].wy * jointsBuffer.matrices[node.skin + joints.y] +
+					vertices[0].wz * jointsBuffer.matrices[node.skin + joints.z] +
+					vertices[0].ww * jointsBuffer.matrices[node.skin + joints.w];
 		
 				model = model * skinMat;
 			}

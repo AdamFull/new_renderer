@@ -5,9 +5,7 @@
 using namespace engine::render;
 
 constexpr const u64 MAX_RENDER_OBJECT_COUNT{ 1024ull };
-constexpr const u64 MAX_SKINNED_OBJECT_COUNT{ 2048ull };
 constexpr const u64 MAT_FRUSTUM_COUNT{ 128ull };
-constexpr const u64 MAX_PRIMITIVE_COUNT{ 1024ull };
 constexpr const u64 MAX_MATERIAL_COUNT{ 1024ull };
 constexpr const u64 MAX_INDIRECT_DRAW_COUNT{ 1024ull };
 
@@ -28,9 +26,9 @@ void CRenderWorld::create()
 {
 	m_vBuffers.resize(utl::enum_cast(ERenderBufferIndices::eLastIndex));
 
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eNodeBuffer)) = createDrawBuffer<FSceneNode>("NodeStorage", EBufferTypeFlagBits::eStorage, MAX_PRIMITIVE_COUNT, m_pRenderInterface);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eNodeBuffer)) = createDrawBuffer<FSceneNode>("NodeStorage", EBufferTypeFlagBits::eStorage, MAX_RENDER_OBJECT_COUNT, m_pRenderInterface);
 	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eMaterialBuffer)) = createDrawBuffer<FMaterial>("MaterialStorage", EBufferTypeFlagBits::eStorage, MAX_MATERIAL_COUNT, m_pRenderInterface);
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eSkinBuffer)) = createDrawBuffer<glm::mat4>("SkinningJoints", EBufferTypeFlagBits::eStorage, MAX_SKINNED_OBJECT_COUNT * 128ull, m_pRenderInterface);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eSkinBuffer)) = createDrawBuffer<glm::mat4>("SkinningJoints", EBufferTypeFlagBits::eStorage, MAX_RENDER_OBJECT_COUNT, m_pRenderInterface);
 
 	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eDirectionalLightBuffer)) = createDrawBuffer<FDirectionalLightCommit>("DirectionalLights", EBufferTypeFlagBits::eStorage, max_directional_light_count, m_pRenderInterface);
 	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::ePointLightBuffer)) = createDrawBuffer<FPointLightCommit>("PointLights", EBufferTypeFlagBits::eStorage, max_point_light_count, m_pRenderInterface);
@@ -184,6 +182,9 @@ void CRenderWorld::render(f32 dt)
 	auto& texture_remap_buffer = getDrawBuffer(ERenderBufferIndices::eTextureRemapBuffer);
 	texture_remap_buffer->clear();
 	texture_remap_buffer->copy(texture_remap_data);
+
+	auto& skin_buffer = getDrawBuffer(ERenderBufferIndices::eSkinBuffer);
+	skin_buffer->clear();
 }
 
 void CRenderWorld::addLight(const FDirectionalLightCommit& light)
@@ -255,17 +256,11 @@ void CRenderWorld::updateNode(u32 node_id, const FSceneNode& node)
 	nodes_buffer->get<FSceneNode>(node_id) = node;
 }
 
-void CRenderWorld::updateSkin(const stl::array<glm::mat4, 128ull>& matrices)
+void CRenderWorld::updateSkin(const stl::vector<glm::mat4>& matrices)
 {
 	auto& skin_buffer = getDrawBuffer(ERenderBufferIndices::eSkinBuffer);
-
-	if (skin_buffer->size() < (m_stats.skinCount * 128ull) + 1ull)
-		skin_buffer->resize(((m_stats.skinCount * 128ull) + 1ull) * 2ull);
-
-	for (u64 idx = 0ull; idx < 128ull; ++idx)
-		skin_buffer->get<glm::mat4>(m_stats.skinCount * 128ull + idx) = matrices.at(idx);
-
-	m_stats.skinCount++;
+	skin_buffer->copy(matrices);
+	m_stats.skinCount += matrices.size();
 }
 
 void CRenderWorld::addMaterial(const FMaterial& material)

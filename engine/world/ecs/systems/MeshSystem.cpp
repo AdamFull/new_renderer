@@ -44,7 +44,8 @@ void CMeshSystem::__update(f32 fDt)
 
 		FSceneNode scene_node{};
 		scene_node.model = transform.gmodel;
-		scene_node.skin = utl::cast<u32>(mesh.skin);
+		if(auto found = root_component.skinRemap.find(utl::cast<u32>(mesh.skin)); found != root_component.skinRemap.end())
+			scene_node.skin = found->second;
 		render_world->updateNode(node, scene_node);
 
 		for (const auto& primitive : mesh.primitives)
