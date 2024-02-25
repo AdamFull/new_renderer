@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BaseEnumerators.h"
+#include "BufferStructures.h"
 
 namespace engine
 {
@@ -106,6 +107,11 @@ namespace engine
 
 			virtual u64 getVertexHandle() const = 0;
 			virtual u64 getIndexHandle() const = 0;
+
+			virtual const std::unique_ptr<IGPUVector>& getMeshletBuffer() const = 0;
+			virtual const std::unique_ptr<IGPUVector>& getVertexRemapBuffer() const = 0;
+			virtual const std::unique_ptr<IGPUVector>& getBoundsBuffer() const = 0;
+			virtual const std::unique_ptr<IGPUVector>& getTriangleBuffer() const = 0;
 		};
 	}
 }

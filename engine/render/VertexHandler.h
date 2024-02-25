@@ -41,6 +41,11 @@ namespace engine
 
 			u64 getVertexHandle() const override;
 			u64 getIndexHandle() const override;
+
+			const std::unique_ptr<IGPUVector>& getMeshletBuffer() const override;
+			const std::unique_ptr<IGPUVector>& getVertexRemapBuffer() const override;
+			const std::unique_ptr<IGPUVector>& getBoundsBuffer() const override;
+			const std::unique_ptr<IGPUVector>& getTriangleBuffer() const override;
 		private:
 			FBufferInfo<u8> m_vertexBuffer{};
 			FBufferInfo<u8> m_indexBuffer{};

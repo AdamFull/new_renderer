@@ -53,6 +53,64 @@ namespace engine {
 		CONSTANT uint32_t max_point_light_shadow_count = 1u;
 		CONSTANT uint32_t point_light_shadow_map_resolution = 512u;
 
+#if defined(INDEX_8BIT)
+#define Index uint8_t
+#elif defined(INDEX_16BIT)
+#define Index uint16_t
+#else
+#define Index uint
+#endif
+
+		struct FRawVertex
+		{
+			float px;
+			float py;
+			float pz;
+
+#if defined(COLOR_VEC3) || defined(COLOR_VEC4)
+			float cr;
+			float cg;
+			float cb;
+#endif // COLOR_VEC3
+#if defined(COLOR_VEC4)
+			float ca;
+#endif // COLOR_VEC4
+
+#ifdef HAS_TEXCOORD
+			float u;
+			float v;
+#endif // HAS_TEXCOORD
+
+#ifdef HAS_NORMAL
+			float nx;
+			float ny;
+			float nz;
+#endif // HAS_NORMAL
+
+#if defined(TANGENT_VEC3) || defined(TANGENT_VEC4)
+			float tx;
+			float ty;
+			float tz;
+#endif // TANGENT_VEC3
+#if defined(TANGENT_VEC4)
+			float tw;
+#endif // TANGENT_VEC4
+
+#ifdef HAS_SKIN
+#if defined(JOINTS_8BIT) || defined(JOINTS_16BIT)
+			uint8_t joints_8;
+#endif // JOINTS_8BIT
+#if defined(JOINTS_16BIT)
+			uint16_t joints_16;
+#endif // JOINTS_16BIT
+
+			float wx;
+			float wy;
+			float wz;
+			float ww;
+#endif // HAS_SKIN
+		};
+
 		struct FGeometryGPUCullInfo
 		{
 			uint32_t instanceID;
@@ -321,6 +379,13 @@ namespace engine {
 		typedef uint64_t OmniShadows;
 		typedef uint64_t SpotShadows;
 		typedef uint64_t TextureBindingRemap;
+
+		typedef uint64_t RawVertexBuffer;
+		typedef uint64_t RawIndexBuffer;
+		typedef uint64_t MeshletBuffer;
+		typedef uint64_t MeshletVertexRemapBuffer;
+		typedef uint64_t MeshletBoundsBuffer;
+		typedef uint64_t MeshletTriangleBuffer;
 #else
 		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer NodeStorage { FSceneNode nodes[]; };
 		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer MaterialStorage { FMaterial materials[]; };
@@ -334,6 +399,14 @@ namespace engine {
 		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer OmniShadows { FOmniShadowCommit omni_shadows[]; };
 		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer SpotShadows { FSpotShadowCommit spot_shadows[]; };
 		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer TextureBindingRemap { uint32_t texture_remap[]; };
+
+
+		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer RawVertexBuffer { FRawVertex vertices[]; };
+		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer RawIndexBuffer { Index indices[]; };
+		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer MeshletBuffer { FMeshlet meshlets[]; };
+		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer MeshletVertexRemapBuffer { uint32_t vertices[]; };
+		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer MeshletBoundsBuffer { FGeometryDrawBounds bounds[]; };
+		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer MeshletTriangleBuffer { FTriangle triangles[]; };
 #endif
 
 #ifdef __cplusplus

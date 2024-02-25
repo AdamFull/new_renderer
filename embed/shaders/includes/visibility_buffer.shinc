@@ -8,15 +8,15 @@
 		layout(set = 1, binding = 1) uniform sampler2D visbuffer_matobj;
 		layout(set = 1, binding = 2) uniform sampler2D visbuffer_skinvbo;
 
-		layout(std430, set = 1, binding = 3) readonly buffer VertexBuffer
+		layout(std140, set = 1, binding = 3) uniform GeometryBuffers
 		{
-			RawVertex vertices[];
-		} vb;
-
-		layout(std430, set = 1, binding = 4) readonly buffer IndexBuffer
-		{
-			Index indices[];
-		} ib;
+			RawVertexBuffer vb;
+			RawIndexBuffer ib;
+			MeshletBuffer mb; 
+			MeshletVertexRemapBuffer vrb;
+			MeshletBoundsBuffer bb;
+			MeshletTriangleBuffer tb;
+		} gb;
 
 		// Visbuffer structures
 		struct VertexAttribute
@@ -74,9 +74,9 @@
 			return (res.triangleID != 0xFFFFFFFFu);
 		}
 
-		RawVertex[3] loadTriangle(in uint drawID, in uint primID)
+		FRawVertex[3] loadTriangle(in uint drawID, in uint primID)
 		{
-			RawVertex[3] vertices;
+			FRawVertex[3] vertices;
 
 			FDrawIndexedIndirectData draw_command = indirectCommandBuffer.indexed_draw_commands[drawID];
 
@@ -89,14 +89,14 @@
 			uint triVert3IndexBufferPosition = (primID * 3 + 2) + startIndex;	
 
 			// Now get vertex index from index buffer (eg, 17, 41, 32)
-			Index triVert0Index = ib.indices[triVert1IndexBufferPosition];
-			Index triVert1Index = ib.indices[triVert2IndexBufferPosition];
-			Index triVert2Index = ib.indices[triVert3IndexBufferPosition];
+			Index triVert0Index = gb.ib.indices[triVert1IndexBufferPosition];
+			Index triVert1Index = gb.ib.indices[triVert2IndexBufferPosition];
+			Index triVert2Index = gb.ib.indices[triVert3IndexBufferPosition];
 
 			// Load vertex data of the 3 control points
-			vertices[0] = vb.vertices[draw_command.vertexOffset + triVert0Index];
-			vertices[1] = vb.vertices[draw_command.vertexOffset + triVert1Index];
-			vertices[2] = vb.vertices[draw_command.vertexOffset + triVert2Index];
+			vertices[0] = gb.vb.vertices[draw_command.vertexOffset + triVert0Index];
+			vertices[1] = gb.vb.vertices[draw_command.vertexOffset + triVert1Index];
+			vertices[2] = gb.vb.vertices[draw_command.vertexOffset + triVert2Index];
 
 			return vertices;
 		}
@@ -162,7 +162,7 @@
 
 		VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 		{
-			RawVertex[3] vertices = loadTriangle(visbuffer.drawID, visbuffer.triangleID);
+			FRawVertex[3] vertices = loadTriangle(visbuffer.drawID, visbuffer.triangleID);
 
 			// Load vertex data of the 3 vertices
 			vec3 position0 = vec3(vertices[0].px, vertices[0].py, vertices[0].pz);

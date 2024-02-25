@@ -57,11 +57,20 @@ void CComputeGeometryPass::_execute(const FComputeFrameInfo& frame_info)
 
 			if (was_vbo_rebinded)
 			{
+				auto& buffers = shader->getUniformBlock("GeometryBuffers");
+
 				u64 vertex_handle = last_vbo->getVertexHandle();
-				shader->bindBuffer("VertexBuffer", vertex_handle);
+				auto vb_view = render_context->getBufferView(vertex_handle);
+				buffers->set("vb", vb_view.address);
 
 				u64 index_buffer = last_vbo->getIndexHandle();
-				shader->bindBuffer("IndexBuffer", index_buffer);
+				auto ib_view = render_context->getBufferView(index_buffer);
+				buffers->set("ib", ib_view.address);
+
+				buffers->set("mb", last_vbo->getMeshletBuffer()->buffer()->address());
+				buffers->set("vrb", last_vbo->getVertexRemapBuffer()->buffer()->address());
+				buffers->set("bb", last_vbo->getBoundsBuffer()->buffer()->address());
+				buffers->set("tb", last_vbo->getTriangleBuffer()->buffer()->address());
 
 				shader->flushDescriptors();
 				shader->bind(m_queue);

@@ -419,3 +419,23 @@ u64 CVertexHandler::getIndexHandle() const
 {
 	return m_indexBuffer.buffer;
 }
+
+const std::unique_ptr<IGPUVector>& CVertexHandler::getMeshletBuffer() const
+{
+	return m_pMeshletsBuffer;
+}
+
+const std::unique_ptr<IGPUVector>& CVertexHandler::getVertexRemapBuffer() const
+{
+	return m_pVerticesBuffer;
+}
+
+const std::unique_ptr<IGPUVector>& CVertexHandler::getBoundsBuffer() const
+{
+	return m_pBoundsBuffer;
+}
+
+const std::unique_ptr<IGPUVector>& CVertexHandler::getTriangleBuffer() const
+{
+	return m_pTrianglesBuffer;
+}
