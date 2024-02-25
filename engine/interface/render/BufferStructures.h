@@ -105,11 +105,12 @@ namespace engine
 					realloc(new_capacity);
 				}
 
-				auto* memory_block = at(m_size);
-				std::memcpy(memory_block, &new_element, sizeof(_Ty));
+				auto* memory_block = static_cast<_Ty*>(at(m_size));
+				*memory_block = new_element;
+				//std::memcpy(memory_block, &new_element, sizeof(_Ty));
 				++m_size;
 
-				return static_cast<_Ty*>(memory_block);
+				return memory_block;
 			}
 
 			void clear()

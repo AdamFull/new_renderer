@@ -1335,6 +1335,7 @@ void CVkRenderContext::draw(EQueueTypeFlagBits queue_type, const FIndirectGeomet
 {
 	auto& command_buffer = getLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
+	//current.drawMeshTasksIndirectEXT()
 
 	auto& indirect_command_buffer = m_pResources->get<FVkBuffer>(draw_info.bufferId);
 	current.drawIndexedIndirect(indirect_command_buffer->handle, draw_info.offset, draw_info.count, draw_info.stride);

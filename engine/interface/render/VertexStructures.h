@@ -79,6 +79,7 @@ namespace engine
 		{
 			u64 firstIndex, indexCount;
 			u64 firstVertex, vertexCount;
+			u64 firstMeshlet, meshletCount;
 		};
 
 		class IVertexHandler

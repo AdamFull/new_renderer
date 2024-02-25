@@ -1,6 +1,7 @@
 #pragma once
 
 #include <engine/interface/render/VertexStructures.h>
+#include <embed/shaders/includes/interop/base.h>
 
 #define MAX_LEVEL_OF_DETAIL 4
 
@@ -34,6 +35,11 @@ namespace engine
 
 				size_t materialId{ ~0ull };
 				size_t vboId{ ~0ull };
+
+				std::vector<render::FMeshlet> meshlets{};
+				std::vector<u32> vertices{};
+				std::vector<render::FGeometryDrawBounds> bounds{};
+				std::vector<render::FTriangle> triangles{};
 			};
 
 			struct FMeshComponent

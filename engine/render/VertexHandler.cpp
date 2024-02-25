@@ -1,6 +1,10 @@
 #include "VertexHandler.h"
 
+#include "GPUVector.h"
+
 #include <logger/logger.h>
+#include <meshoptimizer.h>
+#include <glm/gtc/type_ptr.hpp>
 
 using namespace engine::render;
 
@@ -14,6 +18,9 @@ using namespace engine::render;
 //	alignas(4) glm::u8vec4 joints{};
 //	alignas(16) glm::vec4 weights{};
 //};
+
+constexpr const u32 k_max_vertices_per_meshlet{ 255u };
+constexpr const u32 k_max_triangles_per_meshlet{ 512u };
 
 u64 align_std140(u64 size)
 {
@@ -121,6 +128,11 @@ stl::string get_index_definition(u64 size)
 CVertexHandler::CVertexHandler(IRenderInterface* render_interface)
 {
 	m_pRenderInterface = render_interface;
+
+	m_pMeshletsBuffer = std::make_unique<CGPUVector>(render_interface);
+	m_pVerticesBuffer = std::make_unique<CGPUVector>(render_interface);
+	m_pBoundsBuffer = std::make_unique<CGPUVector>(render_interface);
+	m_pTrianglesBuffer = std::make_unique<CGPUVector>(render_interface);
 }
 
 // TODO: destroy buffers
@@ -175,6 +187,11 @@ void CVertexHandler::create(const FVertexHandlerCreateInfo& create_info)
 
 	m_attributeHash = utl::utils::fnv1a_64_hash(m_definitions.c_str());
 
+	m_pMeshletsBuffer->create<FMeshlet>("MeshletBuffer" + m_definitions, EBufferTypeFlagBits::eStorage);
+	m_pVerticesBuffer->create<u32>("MeshletVerticesBuffer" + m_definitions, EBufferTypeFlagBits::eStorage);
+	m_pBoundsBuffer->create<FGeometryDrawBounds>("MeshletBoundsBuffer" + m_definitions, EBufferTypeFlagBits::eStorage);
+	m_pTrianglesBuffer->create<FTriangle>("MeshletTriangleBuffer" + m_definitions, EBufferTypeFlagBits::eStorage);
+
 	return;
 }
 
@@ -223,15 +240,16 @@ void CVertexHandler::bind(EQueueTypeFlagBits queue)
 
 const FVertexRange& CVertexHandler::addMeshData(const stl::vector<FVertexAttributePointer>& attributes_data, const FVertexAttributePointer& indices)
 {
-	u64 input_hash{ 0ull };
+	u64 input_hash = utl::utils::murmur_hash_64(indices.data, indices.stride * indices.count, 0);
 	for (const auto& attribute : attributes_data)
-		input_hash += utl::utils::murmur_hash_64(attribute.data, attribute.stride * attribute.count, 0);
-	input_hash += utl::utils::murmur_hash_64(indices.data, indices.stride * indices.count, 0);
+		input_hash = utl::utils::murmur_hash_64(attribute.data, attribute.stride * attribute.count, input_hash);
 
 	if (auto found = m_cachedRanges.find(input_hash); found != m_cachedRanges.end())
 		return found->second;
 
 	auto& new_range = m_cachedRanges[input_hash];
+	new_range.firstMeshlet = m_pMeshletsBuffer->size();
+	new_range.meshletCount = addMeshlets(attributes_data, indices);
 	new_range.firstIndex = m_indexBuffer.elementCount;
 	new_range.indexCount = addIndices(indices);
 	new_range.firstVertex = m_vertexBuffer.elementCount;
@@ -266,6 +284,105 @@ u64 CVertexHandler::addIndices(const FVertexAttributePointer& indices)
 	m_indexBuffer.data.insert(m_indexBuffer.data.end(), indices.data, indices.data + (indices.count * m_indexBuffer.elementSize));
 	m_indexBuffer.elementCount += indices.count;
 	return indices.count;
+}
+
+u64 CVertexHandler::addMeshlets(const stl::vector<FVertexAttributePointer>& attributes, const FVertexAttributePointer& indices)
+{
+	// Find positions attribute
+	const float* positions{ nullptr };
+	auto found_position_attrib = std::find_if(attributes.begin(), attributes.end(), [](const FVertexAttributePointer& attribute) { return attribute.type == EVertexAttributeType::ePosition; });
+	if (found_position_attrib != attributes.end())
+		positions = (const float*)found_position_attrib->data;
+
+	// Convert indices to u32 format
+	stl::vector<u32> indices_tmp{};
+	// convert to 32 bit uint
+	for (u64 idx = 0ull; idx < indices.count; ++idx)
+	{
+		if (indices.stride == 2)
+		{
+			const u16* indices16 = (const u16*)indices.data;
+			indices_tmp.emplace_back(indices16[idx]);
+		}
+		else
+		{
+			const u32* indices32 = (const u32*)indices.data;
+			indices_tmp.emplace_back(indices32[idx]);
+		}
+	}
+
+	// Start generation meshlets
+	auto max_meshlets = meshopt_buildMeshletsBound(indices.count, k_max_vertices_per_meshlet, k_max_triangles_per_meshlet);
+
+	std::vector<FMeshlet> temp_meshlets(max_meshlets);
+	std::vector<FGeometryDrawBounds> temp_bounds{};
+	std::vector<FTriangle> temp_triangles{};
+	std::vector<u32> temp_vertices(max_meshlets * k_max_vertices_per_meshlet);
+
+	std::vector<meshopt_Meshlet> raw_meshlets(max_meshlets);
+	std::vector<u8> raw_meshlet_triangles(max_meshlets * k_max_triangles_per_meshlet * 3u);
+
+	size_t meshlet_count = meshopt_buildMeshlets(
+		&raw_meshlets[0],
+		&temp_vertices[0],
+		&raw_meshlet_triangles[0],
+		&indices_tmp[0],
+		indices.count,
+		positions,
+		found_position_attrib->count,
+		found_position_attrib->stride,
+		k_max_vertices_per_meshlet,
+		k_max_triangles_per_meshlet,
+		/*cone_weight*/ 0);
+
+	meshopt_Meshlet& last_meshlet = raw_meshlets[meshlet_count - 1];
+	raw_meshlet_triangles.resize(last_meshlet.triangle_offset + ((last_meshlet.triangle_count * 3 + 3) & ~3));
+	raw_meshlets.resize(meshlet_count);
+
+	temp_vertices.resize(last_meshlet.vertex_offset + size_t(last_meshlet.vertex_count));
+	temp_meshlets.resize(meshlet_count);
+	temp_bounds.resize(meshlet_count);
+	temp_triangles.resize(raw_meshlet_triangles.size() / 3);
+
+	u32 triangle_offset{ 0u };
+	for (u32 idx = 0u; idx < meshlet_count; ++idx)
+	{
+		const auto& raw_meshlet = raw_meshlets[idx];
+
+		auto& bounds = temp_bounds[idx];
+		for (u32 tri = 0u; tri < raw_meshlet.triangle_count * 3u; ++tri)
+		{
+			u32 tri_idx =temp_vertices[raw_meshlet.vertex_offset + raw_meshlet_triangles[raw_meshlet.triangle_offset + tri]];
+			glm::vec3 p = glm::make_vec3(positions + tri_idx);
+			bounds.max = (glm::max)(bounds.max, p);
+			bounds.min = (glm::min)(bounds.min, p);
+		}
+
+		u8* triangles_indices = raw_meshlet_triangles.data() + raw_meshlet.triangle_offset;
+		for (u32 tri_idx = 0; tri_idx < raw_meshlet.triangle_count; ++tri_idx)
+		{
+			auto& tri = temp_triangles[tri_idx + triangle_offset];
+			tri.V0 = *triangles_indices++;
+			tri.V1 = *triangles_indices++;
+			tri.V2 = *triangles_indices++;
+		}
+
+		auto& meshlet = temp_meshlets[idx];
+		meshlet.triangleCount = raw_meshlet.triangle_count;
+		meshlet.triangleOffset = triangle_offset + m_pTrianglesBuffer->size();
+		meshlet.vertexCount = raw_meshlet.vertex_count;
+		meshlet.vertexOffset = raw_meshlet.vertex_offset + m_pVerticesBuffer->size(); // set from first vertex
+
+		triangle_offset += raw_meshlet.triangle_count;
+	}
+	temp_triangles.resize(triangle_offset);
+
+	m_pMeshletsBuffer->copy(temp_meshlets);
+	m_pVerticesBuffer->copy(temp_vertices);
+	m_pBoundsBuffer->copy(temp_bounds);
+	m_pTrianglesBuffer->copy(temp_triangles);
+
+	return meshlet_count;
 }
 
 u64 CVertexHandler::getLastVertex()

@@ -61,11 +61,30 @@ namespace engine {
 
 		struct FGeometryDrawBounds
 		{
+#ifdef __cplusplus
+			FGeometryDrawBounds() : min{ (std::numeric_limits<float>::max)() }, max{ -(std::numeric_limits<float>::max)() } {}
+#endif
 			VECTOR3 min;
 			uint32_t pad0;
 			VECTOR3 max;
 			uint32_t pad1;
 		};
+
+		struct FMeshlet
+		{
+			uint32_t vertexOffset;
+			uint32_t triangleOffset;
+			uint32_t vertexCount;
+			uint32_t triangleCount;
+		};
+
+		struct FTriangle
+		{
+			uint32_t V0;
+			uint32_t V1;
+			uint32_t V2;
+			uint32_t pad;
+		}; 
 
 		// Verticea range
 		struct FGeometryDrawRange

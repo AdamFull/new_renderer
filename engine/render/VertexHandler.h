@@ -9,9 +9,10 @@ namespace engine
 		class CVertexHandler : public IVertexHandler
 		{
 		public:
+			template<class _Ty>
 			struct FBufferInfo
 			{
-				stl::vector<uint8_t> data{};
+				stl::vector<_Ty> data{};
 				u64 elementCount{ 0ull };
 				u64 elementSize{ 0ull };
 				u64 buffer{ ~0ull };
@@ -29,6 +30,7 @@ namespace engine
 
 			u64 addVertices(const stl::vector<FVertexAttributePointer>& attributes_data) override;
 			u64 addIndices(const FVertexAttributePointer& indices) override;
+			u64 addMeshlets(const stl::vector<FVertexAttributePointer>& attributes_data, const FVertexAttributePointer& indices);
 
 			u64 getLastVertex() override;
 			u64 getLastIndex() override;
@@ -40,8 +42,13 @@ namespace engine
 			u64 getVertexHandle() const override;
 			u64 getIndexHandle() const override;
 		private:
-			FBufferInfo m_vertexBuffer{};
-			FBufferInfo m_indexBuffer{};
+			FBufferInfo<u8> m_vertexBuffer{};
+			FBufferInfo<u8> m_indexBuffer{};
+
+			std::unique_ptr<IGPUVector> m_pMeshletsBuffer{};
+			std::unique_ptr<IGPUVector> m_pVerticesBuffer{};
+			std::unique_ptr<IGPUVector> m_pBoundsBuffer{};
+			std::unique_ptr<IGPUVector> m_pTrianglesBuffer{};
 
 			// Vertex cache
 			stl::unordered_map<u64, FVertexRange> m_cachedRanges{};

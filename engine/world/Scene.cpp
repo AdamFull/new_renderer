@@ -359,6 +359,7 @@ void CScene::loadMeshComponent(const easygltf::FGLTFRoot& root, const entt::enti
 		
 		stl::hash<u32> attribute_hasher;
 		stl::vector<render::FVertexAttributePointer> attributes{};
+		u64 position_index{ 0ull };
 
 		u64 attributes_hash{ 0ull };
 		for (const auto& [name, accessor_idx] : primitive.attributes)
@@ -379,6 +380,7 @@ void CScene::loadMeshComponent(const easygltf::FGLTFRoot& root, const entt::enti
 			{
 				pos_min = !accessor.min.empty() ? glm::vec3(accessor.min[0], accessor.min[1], accessor.min[2]) : glm::vec3(0.f);
 				pos_max = !accessor.max.empty() ? glm::vec3(accessor.max[0], accessor.max[1], accessor.max[2]) : glm::vec3(0.f);
+				position_index = attributes.size() - 1ull;
 			}
 
 			attributes_hash ^= attribute_hasher(utl::cast<u32>(attrib.type) + 1u) << 1;
@@ -388,7 +390,6 @@ void CScene::loadMeshComponent(const easygltf::FGLTFRoot& root, const entt::enti
 		stl::sort(attributes.begin(), attributes.end(), [](const auto& lhs, const auto& rhs) { return utl::cast<u32>(lhs.type) < utl::cast<u32>(rhs.type); });
 
 		// Load indices
-		stl::vector<u32> indices_tmp{};
 		render::FVertexAttributePointer indices{};
 		if (primitive.indices >= 0)
 		{
