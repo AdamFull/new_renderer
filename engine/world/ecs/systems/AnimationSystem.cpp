@@ -178,7 +178,7 @@ void CAnimationSystem::__update(float fDt)
 						
 						glm::mat4 model = glm::translate(glm::mat4(1.0f), position) * glm::mat4(rotation) * glm::scale(glm::mat4(1.0f), scale);
 						
-						transform.gmodel = model * transform.gmodel;
+						transform.gmodel = transform.gmodel * model;
 #endif // USE_OLD_ANIMATION_SYSTEM
 					}
 				}

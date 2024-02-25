@@ -85,6 +85,13 @@ namespace engine
 				FRenderApiErrorInfo createSemaphore(const FVkSemaphoreCreateInfo& semaphore_ci, vk::Semaphore& semaphore);
 				FRenderApiErrorInfo createFence(const FVkFenceCreateInfo& fence_ci, vk::Fence& fence);
 
+				FRenderApiErrorInfo createTimestampQuery(u32 count, FVkTimestampQuery& timestamp_query);
+				void resetTimestampQuery(FVkTimestampQuery& timestamp_query);
+				void resetTimestampQuery(FVkCommandBuffer& command_buffer, FVkTimestampQuery& timestamp_query);
+				void writeTimestampQuery(FVkCommandBuffer& command_buffer, vk::PipelineStageFlagBits pipeline_state, FVkTimestampQuery& timestamp_query);
+				FRenderApiErrorInfo getTimestampQueryResults(FVkTimestampQuery& timestamp_query, std::vector<f32>& results);
+				void destroyTimestampQuery(FVkTimestampQuery& timestamp_query);
+
 				void submitCommandBuffer(const FVkCommandBuffer& command_buffer);
 				vk::Result present(FVkCommandBuffer& command_buffer);
 				vk::Result acquireNextImage(u32& image_index);

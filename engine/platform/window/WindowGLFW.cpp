@@ -281,6 +281,11 @@ bool CWindowGLFW::process()
 	return should_close;
 }
 
+void CWindowGLFW::setTitle(const std::string& title)
+{
+    glfwSetWindowTitle(m_pWindowHandle, title.c_str());
+}
+
 void CWindowGLFW::getWindowSize(int32_t& width, int32_t& height)
 {
 	glfwGetWindowSize(m_pWindowHandle, &width, &height);

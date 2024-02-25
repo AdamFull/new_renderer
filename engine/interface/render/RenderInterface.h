@@ -192,39 +192,6 @@ namespace engine
 			virtual const FShaderReflectionData& getReflection() const = 0;
 		};
 
-
-		class CGPUArrayHolder
-		{
-		public:
-			template<class _Ty>
-			const stl::unique_ptr<IGPUArrayHandle>& registerResource(stl::unique_ptr<IGPUArrayHandle>&& new_handle)
-			{
-				const stl::type_index type_index(typeid(_Ty));
-				return m_handles[type_index] = stl::move(new_handle);
-			}
-
-			template<class _Ty>
-			const stl::unique_ptr<IGPUArrayHandle>& getResource()
-			{
-				const stl::type_index type_index(typeid(_Ty));
-				return m_handles[type_index];
-			}
-
-			void flush()
-			{
-				for (const auto& [id, handle] : m_handles)
-					handle->flush();
-			}
-		private:
-			stl::unordered_map<stl::type_index, stl::unique_ptr<IGPUArrayHandle>> m_handles{};
-		};
-
-		struct FLightBuffer
-		{
-			stl::unique_ptr<IGPUArrayHandle> lights{};
-			stl::unique_ptr<IGPUArrayHandle> shadows{};
-		};
-
 		struct FRenderSceneStats
 		{
 			u64 vboCount{ 0ull };
@@ -273,6 +240,12 @@ namespace engine
 			u64 maxBatchSize{ 1ull };
 		};
 
+		struct FRenderFrameStats
+		{
+			std::vector<f32> timestampResults{};
+			f32 gpuFrameTime{};
+		};
+
 		class IRenderContext
 		{
 		public:
@@ -314,6 +287,9 @@ namespace engine
 
 			virtual void processResourceBarriers(EQueueTypeFlagBits queue, const stl::vector<FResourceBarrierInfo>& barriers) = 0;
 
+			virtual void beginTimestampZone(EQueueTypeFlagBits queue) = 0;
+			virtual void endTimestampZone(EQueueTypeFlagBits queue) = 0;
+
 			virtual void beginRendering(const FBeginRendering2Info& rendering_info) = 0;
 			virtual void endRendering(EQueueTypeFlagBits queue) = 0;
 
@@ -326,6 +302,7 @@ namespace engine
 			virtual void dispatch(EQueueTypeFlagBits queue_type, const FDispatchIndirectInfo& dispatch_info) = 0;
 
 			virtual FDeviceLimitations getDeviceLimitations() = 0;
+			virtual const FRenderFrameStats& getRenderFrameStats() const = 0;
 
 			virtual u64 getTextureResource(const char* name) = 0;
 			virtual u64 getShaderResource(const char* name) = 0;

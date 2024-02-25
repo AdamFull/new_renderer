@@ -5,7 +5,6 @@
 #include "RenderWorld.h"
 #include "VertexHandler.h"
 #include "BufferObject.h"
-#include "GPUArrayHandle.h"
 #include "render_graph/RenderGraph.h"
 
 #include <shader_compiler/compiler_util.h>
@@ -54,6 +53,7 @@ stl::unique_ptr<IRenderContext> make_render_context(const FRenderInterfaceCreate
 			VK_KHR_16BIT_STORAGE_EXTENSION_NAME,
 			VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME,
 			VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+			VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME,
 			//VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME,
 			VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME
 		};
@@ -103,14 +103,6 @@ FShaderNameInfo get_shader_name_info(const stl::string& shader_name)
 		name_info.definitions.emplace_back(token);
 
 	return name_info;
-}
-
-template<class _Ty>
-stl::unique_ptr<IGPUArrayHandle> allocateGPUArrayHandle(const stl::string& name, u64 count, IRenderInterface* render_interface)
-{
-	auto gpu_array = stl::make_unique<CGPUArrayHandle>(render_interface);
-	gpu_array->create(name, sizeof(_Ty), count);
-	return gpu_array;
 }
 
 CRenderInterface::CRenderInterface(filesystem::IVirtualFileSystemInterface* vfs)

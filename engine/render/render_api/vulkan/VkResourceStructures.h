@@ -482,6 +482,13 @@ namespace engine
 				stl::vector<FVkCommandBuffer> commandBuffers{};
 			};
 
+			struct FVkTimestampQuery
+			{
+				vk::QueryPool handle{};
+				std::vector<u64> values{};
+				u32 queryIndex{ 0ull };
+			};
+
 			struct FVkThreadContext
 			{
 				FVkThreadContext() { incrementUsage(); }

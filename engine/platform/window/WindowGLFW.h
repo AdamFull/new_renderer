@@ -22,6 +22,8 @@ namespace engine
 
 			bool process() override;
 
+			void setTitle(const std::string& title) override;
+
 			void getWindowSize(int32_t& width, int32_t& height) override;
 			bool isResized() override;
 			bool isMinimized() override;

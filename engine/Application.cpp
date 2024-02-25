@@ -57,8 +57,8 @@ void CApplication::create()
 	m_pScene = stl::make_unique<world::CScene>(m_pVirtualFileSystem.get(), m_pRenderInterface.get());
 	//m_pScene->load("/root/reflections/reflections.gltf");
 	//m_pScene->load("/root/helmet/DamagedHelmet.gltf");
-	//m_pScene->load("/root/meshes/sponza/Sponza.gltf");
-	m_pScene->makeGenerateScene("/root/meshes/cube/cube.gltf");
+	m_pScene->load("/root/meshes/sponza/Sponza.gltf");
+	//m_pScene->makeGenerateScene("/root/meshes/cube/cube.gltf");
 	//m_pScene->makeTestScene();
 	//m_pScene->load("/root/chess/chess.gltf");
 	//m_pScene->load("/root/toadman/round1.gltf");
@@ -95,5 +95,19 @@ void CApplication::loop()
 		TRACY_PROFILE_FRAMEMARKER();
 
 		dt = sw.stop<f32>();
+
+		auto& render_context = m_pRenderInterface->getRenderContext();
+		auto& render_stats = render_context->getRenderFrameStats();
+
+		cpuCounter.update(dt);
+		gpuCounter.update(render_stats.gpuFrameTime);
+
+		updateTitle();
 	}
+}
+
+void CApplication::updateTitle()
+{
+	auto winname = std::format("Vulkan App {} fps ({:.2f} ms); {} gpu fps ({:.2f} ms)", cpuCounter.fps(), cpuCounter.delta_time() * 1000.f, gpuCounter.fps(), gpuCounter.delta_time() * 1000.f);
+	m_pWindowHandle->setTitle(winname);
 }

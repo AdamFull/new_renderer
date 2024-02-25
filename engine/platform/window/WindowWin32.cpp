@@ -148,6 +148,11 @@ bool CWindowWin32::process()
     return true;
 }
 
+void CWindowWin32::setTitle(const std::string& title)
+{
+    SetWindowTextA(hwnd, title.c_str());
+}
+
 void CWindowWin32::getWindowSize(int32_t& width, int32_t& height)
 {
     width = window_width;

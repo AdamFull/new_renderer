@@ -56,6 +56,9 @@ namespace engine
 
 				void processResourceBarriers(EQueueTypeFlagBits queue, const stl::vector<FResourceBarrierInfo>& barriers) override;
 
+				void beginTimestampZone(EQueueTypeFlagBits queue) override;
+				void endTimestampZone(EQueueTypeFlagBits queue) override;
+
 				void beginRendering(const FBeginRendering2Info& rendering_info) override;
 				void endRendering(EQueueTypeFlagBits queue) override;
 
@@ -69,6 +72,8 @@ namespace engine
 				void dispatch(EQueueTypeFlagBits queue_type, const FDispatchIndirectInfo& dispatch_info) override;
 
 				FDeviceLimitations getDeviceLimitations() override;
+
+				const FRenderFrameStats& getRenderFrameStats() const override;
 
 				u64 getTextureResource(const char* name) override;
 				u64 getShaderResource(const char* name) override;
@@ -140,6 +145,10 @@ namespace engine
 
 				stl::unordered_map<stl::thread::id, FVkThreadContext> m_perThreadContext{};
 				bool m_bIsFrameStarted{ false };
+
+				FRenderFrameStats m_renderStats{};
+				std::unordered_map<EQueueTypeFlagBits, u32> m_zoneEntries{};
+				FVkTimestampQuery m_timestampQuery{};
 
 				u64 m_utilizationCounter{ 0ull };
 

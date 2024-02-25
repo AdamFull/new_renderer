@@ -98,6 +98,8 @@ void CVkRenderContext::create(const FRenderContextCreateInfo& context_ci)
 
 	createCommandBuffer(command_buffer_ci);
 
+	auto res = m_pDevice->createTimestampQuery(256, m_timestampQuery);
+
 	auto& per_thread = m_perThreadContext[stl::this_thread::get_id()];
 	auto& per_queue = per_thread.perQueue[EQueueTypeFlagBits::eGraphics];
 	m_pDevice->initProfiler(per_queue.commandPool);
@@ -1081,6 +1083,19 @@ void CVkRenderContext::processResourceBarriers(EQueueTypeFlagBits queue, const s
 	processMemoryBarriers(command_buffer, translation_info);
 }
 
+void CVkRenderContext::beginTimestampZone(EQueueTypeFlagBits queue)
+{
+	//assert(m_zoneEntries[queue] == 0 && "Previous zone was not ended.");
+	auto& command_buffer = getLastCommandBuffer(queue);
+	m_pDevice->writeTimestampQuery(command_buffer, vk::PipelineStageFlagBits::eTopOfPipe, m_timestampQuery);
+}
+
+void CVkRenderContext::endTimestampZone(EQueueTypeFlagBits queue)
+{
+	auto& command_buffer = getLastCommandBuffer(queue);
+	m_pDevice->writeTimestampQuery(command_buffer, vk::PipelineStageFlagBits::eBottomOfPipe, m_timestampQuery);
+}
+
 void CVkRenderContext::beginRendering(const FBeginRendering2Info& rendering_info)
 {
 	auto& command_buffer = getLastCommandBuffer(rendering_info.queue);
@@ -1362,6 +1377,11 @@ FDeviceLimitations CVkRenderContext::getDeviceLimitations()
 	return limits;
 }
 
+const FRenderFrameStats& CVkRenderContext::getRenderFrameStats() const
+{
+	return m_renderStats;
+}
+
 u64 CVkRenderContext::getTextureResource(const char* name)
 {
 	return m_pResources->getId<FVkTexture>(name);
@@ -1611,6 +1631,8 @@ void CVkRenderContext::beginFrame()
 	// TODO: here i should run only main command buffer. But for now i getting the last one
 	auto& command_buffer = getLastCommandBuffer(EQueueTypeFlagBits::eGraphics);
 	m_pDevice->beginCommandBuffer(command_buffer, vk::CommandBufferUsageFlagBits::eRenderPassContinue, image_index);
+	m_pDevice->resetTimestampQuery(m_timestampQuery);
+	//m_pDevice->writeTimestampQuery(command_buffer, vk::PipelineStageFlagBits::eTopOfPipe, m_timestampQuery);
 
 	// Update bindless textures
 	auto& textures = m_pResources->data<FVkTexture>();
@@ -1639,6 +1661,8 @@ void CVkRenderContext::endFrame()
 {
 	// TODO: here i should run only main command buffer. But for now i getting the last one
 	auto& command_buffer = getLastCommandBuffer(EQueueTypeFlagBits::eGraphics);
+	//m_pDevice->writeTimestampQuery(command_buffer, vk::PipelineStageFlagBits::eBottomOfPipe, m_timestampQuery);
+
 	m_pDevice->endCommandBuffer(command_buffer);
 	m_bIsFrameStarted = false;
 
@@ -1646,6 +1670,15 @@ void CVkRenderContext::endFrame()
 	try { presentResult = m_pDevice->present(command_buffer); }
 	catch (vk::OutOfDateKHRError err) { presentResult = vk::Result::eErrorOutOfDateKHR; }
 	catch (vk::SystemError err) { log_error("failed to present swap chain image!"); }
+
+	std::vector<f32> results{};
+	auto timestamp_result = m_pDevice->getTimestampQueryResults(m_timestampQuery, m_renderStats.timestampResults);
+	if (!timestamp_result.fault)
+	{
+		m_renderStats.gpuFrameTime = 0.f;
+		for (const auto& time : m_renderStats.timestampResults)
+			m_renderStats.gpuFrameTime += time;
+	}
 
 	if (presentResult == vk::Result::eSuboptimalKHR || presentResult == vk::Result::eErrorOutOfDateKHR)
 		updateSurface(m_iSurfaceWidth, m_iSurfaceHeight);

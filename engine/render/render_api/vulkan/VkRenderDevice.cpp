@@ -631,6 +631,71 @@ FRenderApiErrorInfo CVkRenderDevice::createFence(const FVkFenceCreateInfo& fence
 	return make_api_error(fence.objectType, res, "Failed to create");
 }
 
+FRenderApiErrorInfo CVkRenderDevice::createTimestampQuery(u32 count, FVkTimestampQuery& timestamp_query)
+{
+	vk::QueryPoolCreateInfo query_pool_ci{};
+	query_pool_ci.queryType = vk::QueryType::eTimestamp;
+	query_pool_ci.queryCount = count;
+
+	timestamp_query.values.resize(count);
+
+	vk::Result res = m_logicalDevice.handle.createQueryPool(&query_pool_ci, m_allocationCallbacks, &timestamp_query.handle);
+	m_logicalDevice.handle.resetQueryPool(timestamp_query.handle, 0u, count);
+
+	return make_api_error(timestamp_query.handle.objectType, res, "Failed to create");
+}
+
+void CVkRenderDevice::resetTimestampQuery(FVkTimestampQuery& timestamp_query)
+{
+	m_logicalDevice.handle.resetQueryPool(timestamp_query.handle, 0u, static_cast<u32>(timestamp_query.values.size()));
+	timestamp_query.queryIndex = 0u;
+}
+
+void CVkRenderDevice::resetTimestampQuery(FVkCommandBuffer& command_buffer, FVkTimestampQuery& timestamp_query)
+{
+	auto& current_buffer = command_buffer.get();
+	current_buffer.resetQueryPool(timestamp_query.handle, 0u, static_cast<u32>(timestamp_query.values.size()));
+	timestamp_query.queryIndex = 0u;
+}
+
+void CVkRenderDevice::writeTimestampQuery(FVkCommandBuffer& command_buffer, vk::PipelineStageFlagBits pipeline_state, FVkTimestampQuery& timestamp_query)
+{
+	auto& current_buffer = command_buffer.get();
+	current_buffer.writeTimestamp(pipeline_state, timestamp_query.handle, timestamp_query.queryIndex++);
+}
+
+FRenderApiErrorInfo CVkRenderDevice::getTimestampQueryResults(FVkTimestampQuery& timestamp_query, std::vector<f32>& results)
+{
+	vk::Result res = m_logicalDevice.handle.getQueryPoolResults(
+		timestamp_query.handle,
+		0u,
+		timestamp_query.queryIndex,
+		timestamp_query.values.size() * sizeof(u64),
+		timestamp_query.values.data(),
+		sizeof(u64),
+		vk::QueryResultFlagBits::e64 | vk::QueryResultFlagBits::eWait);
+
+	auto& physical = getPhysicalDevice();
+	auto& timestamp_frequency = physical.properties.limits.timestampPeriod;
+
+	if(results.size() != timestamp_query.queryIndex / 2ull)
+		results.resize(timestamp_query.queryIndex / 2);
+
+	for (u64 idx = 0ull; idx < timestamp_query.queryIndex; idx += 2ull)
+	{
+		f32 diff = static_cast<f32>(timestamp_query.values.at(idx + 1) - timestamp_query.values.at(idx));
+		results.at(idx / 2ull) = diff * timestamp_frequency / 1000000000.f;
+	}
+
+	return make_api_error(timestamp_query.handle.objectType, res, "Failed to get.");
+}
+
+void CVkRenderDevice::destroyTimestampQuery(FVkTimestampQuery& timestamp_query)
+{
+	m_logicalDevice.handle.destroyQueryPool(timestamp_query.handle);
+	timestamp_query.values.clear();
+}
+
 void CVkRenderDevice::submitCommandBuffer(const FVkCommandBuffer& command_buffer)
 {
 	vk::SubmitInfo submitInfo{};
@@ -1216,6 +1281,8 @@ void CVkRenderDevice::prepareRequestedLogicalDeviceFeatures()
 				requestExtensionFeatures<vk::PhysicalDeviceMeshShaderPropertiesEXT>();
 			else if (extension_name == VK_EXT_MULTI_DRAW_EXTENSION_NAME)
 				requestExtensionFeatures<vk::PhysicalDeviceMultiDrawFeaturesEXT>();
+			else if (extension_name == VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME)
+				requestExtensionFeatures<vk::PhysicalDeviceHostQueryResetFeaturesEXT>();
 			//else if(extension_name == VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME)
 			//	requestExtensionFeatures(vk::PhysicalDeviceIndirect)
 		}

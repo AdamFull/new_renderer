@@ -176,32 +176,5 @@ namespace engine
 		protected:
 			u64 m_size{};
 		};
-
-		class IGPUArrayHandle
-		{
-		public:
-			virtual ~IGPUArrayHandle() = default;
-
-			virtual void create(const stl::string& name, u64 stride, u64 count) = 0;
-			virtual void flush(u64 count = ~0ull, u64 offset = 0ull) = 0;
-			virtual void sync(u64 count) = 0;
-
-			virtual uint8_t* at(u64 index) = 0;
-			virtual const uint8_t* at(u64 index) const = 0;
-
-			virtual void insert(const void* data, u64 index) = 0;
-
-			virtual uint8_t* emplace_back(const void* data) = 0;
-
-			virtual uint8_t* back() = 0;
-			virtual const uint8_t* back() const = 0;
-
-			virtual void clear() = 0;
-
-			virtual const stl::vector<uint8_t>& getData() const = 0;
-			virtual const stl::unique_ptr<IBufferObject>& getBufferObject() const = 0;
-
-			virtual u64 size() const = 0;
-		};
 	}
 }

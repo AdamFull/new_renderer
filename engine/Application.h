@@ -7,6 +7,8 @@
 #include <engine/scripting/ScriptEngine.h>
 #include <engine/world/Scene.h>
 
+#include <utils/stopwatch.h>
+
 #include "InputMapper.h"
 
 namespace engine
@@ -16,7 +18,8 @@ namespace engine
 	public:
 		void create();
 		void loop();
-
+	private:
+		void updateTitle();
 	private:
 		stl::unique_ptr<IWindowInterface> m_pWindowHandle{};
 		stl::unique_ptr<CInputMapper> m_pInputMapper{};
@@ -24,5 +27,8 @@ namespace engine
 		stl::unique_ptr<filesystem::IVirtualFileSystemInterface> m_pVirtualFileSystem{};
 		stl::unique_ptr<scripting::CScriptEngine> m_pScriptEngine{};
 		stl::unique_ptr<world::CScene> m_pScene{};
+
+		utl::utils::fps_counter32 cpuCounter{};
+		utl::utils::fps_counter32 gpuCounter{};
 	};
 }

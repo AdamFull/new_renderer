@@ -197,6 +197,8 @@ namespace engine
 
 		virtual bool process() = 0;
 
+        virtual void setTitle(const std::string& title) = 0;
+
 		virtual void getWindowSize(i32& width, i32& height) = 0;
 		virtual bool isResized() = 0;
 		virtual bool isMinimized() = 0;
