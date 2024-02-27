@@ -35,11 +35,17 @@ namespace engine
 			void addMaterial(const FMaterial& material) override;
 			void addMaterials(const stl::vector<FMaterial>& materials) override;
 
+			void addMesh(const FMesh& mesh) override;
+			void addMeshes(const std::vector<FMesh>& meshes) override;
+
 			const stl::unique_ptr<IGPUVector>& getDrawBuffer(ERenderBufferIndices buffer_index) override;
 			const stl::vector<FGeometryCPUBatch>& getGeometryBatches() const override;
 
 			FRenderWorldStats& getStats() override;
 			const FRenderWorldStats& getStats() const override;
+		private:
+			void prepareIndirectCommands();
+			void prepareMeshletCommands();
 		protected:
 			stl::vector<FFrustum> m_vSceneFrustums{};
 			stl::vector<FCullingInfo> m_vCullingInfo{};
@@ -51,7 +57,7 @@ namespace engine
 			stl::vector<glm::mat4> m_vSkins{};
 
 			FRenderWorldStats m_stats{};
-		protected:
+
 			stl::vector<stl::unique_ptr<IGPUVector>> m_vBuffers{};
 		private:
 			IRenderInterface* m_pRenderInterface{ nullptr };

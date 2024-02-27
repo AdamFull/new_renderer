@@ -16,7 +16,7 @@
 			MeshletVertexRemapBuffer vrb;
 			MeshletBoundsBuffer bb;
 			MeshletTriangleBuffer tb;
-		} gb;
+		};
 
 		// Visbuffer structures
 		struct VertexAttribute
@@ -78,7 +78,7 @@
 		{
 			FRawVertex[3] vertices;
 
-			FDrawIndexedIndirectData draw_command = indirectCommandBuffer.indexed_draw_commands[drawID];
+			FDrawIndexedIndirectData draw_command = indirectCommandBuffer.commands[drawID];
 
 			// Index of the first vertex of this draw call's geometry
 			uint startIndex = draw_command.firstIndex;
@@ -89,14 +89,14 @@
 			uint triVert3IndexBufferPosition = (primID * 3 + 2) + startIndex;	
 
 			// Now get vertex index from index buffer (eg, 17, 41, 32)
-			Index triVert0Index = gb.ib.indices[triVert1IndexBufferPosition];
-			Index triVert1Index = gb.ib.indices[triVert2IndexBufferPosition];
-			Index triVert2Index = gb.ib.indices[triVert3IndexBufferPosition];
+			Index triVert0Index = ib.indices[triVert1IndexBufferPosition];
+			Index triVert1Index = ib.indices[triVert2IndexBufferPosition];
+			Index triVert2Index = ib.indices[triVert3IndexBufferPosition];
 
 			// Load vertex data of the 3 control points
-			vertices[0] = gb.vb.vertices[draw_command.vertexOffset + triVert0Index];
-			vertices[1] = gb.vb.vertices[draw_command.vertexOffset + triVert1Index];
-			vertices[2] = gb.vb.vertices[draw_command.vertexOffset + triVert2Index];
+			vertices[0] = vb.vertices[draw_command.vertexOffset + triVert0Index];
+			vertices[1] = vb.vertices[draw_command.vertexOffset + triVert1Index];
+			vertices[2] = vb.vertices[draw_command.vertexOffset + triVert2Index];
 
 			return vertices;
 		}
@@ -174,7 +174,7 @@
 			mat4 model = node.model;
 			
 #ifdef HAS_SKIN
-			if(node.skin != ~0u)
+			if(node.skeletonID != ~0u)
 			{
 #if defined(JOINTS_8BIT)
 				u8vec4 joints;
@@ -186,10 +186,10 @@
 				u16vec4 joints;
 #endif
 				mat4 skinMat = 
-					vertices[0].wx * jointsBuffer.matrices[node.skin + joints.x] +
-					vertices[0].wy * jointsBuffer.matrices[node.skin + joints.y] +
-					vertices[0].wz * jointsBuffer.matrices[node.skin + joints.z] +
-					vertices[0].ww * jointsBuffer.matrices[node.skin + joints.w];
+					vertices[0].wx * jointsBuffer.matrices[node.skeletonID + joints.x] +
+					vertices[0].wy * jointsBuffer.matrices[node.skeletonID + joints.y] +
+					vertices[0].wz * jointsBuffer.matrices[node.skeletonID + joints.z] +
+					vertices[0].ww * jointsBuffer.matrices[node.skeletonID + joints.w];
 		
 				model = model * skinMat;
 			}

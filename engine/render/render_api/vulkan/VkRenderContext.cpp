@@ -1307,7 +1307,7 @@ void CVkRenderContext::draw(EQueueTypeFlagBits queue_type, const FGeometryDrawIn
 {
 	auto& command_buffer = getLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
-
+	
 	if (draw_info.lastIndex == 0ull && draw_info.lastVertex == 0ull)
 	{
 		auto& range = draw_info.ranges.front();

@@ -70,17 +70,17 @@
 			if (gID >= frameData.rawCommandsCount) 
 				return;
 
-			FGeometryGPUCullInfo cull_info = references.culling.culling_infos[gID];
-			FSceneNode node = nodeBuffer.nodes[cull_info.instanceID];
-			FDrawIndexedIndirectData command = indirectCommandBuffer.indexed_draw_commands[gID];
-
-			vec4 minExtents = node.model * vec4(command.aabb.min, 1.f);
-			minExtents = vec4(minExtents.xyz / minExtents.w, 1.0);
-
-			vec4 maxExtents = node.model * vec4(command.aabb.max, 1.f);
-			maxExtents = vec4(maxExtents.xyz / maxExtents.w, 1.0);
-
-			indirectCommandBuffer.indexed_draw_commands[gID].instanceCount = int(checkObjectInFrustum(minExtents.xyz, maxExtents.xyz, cull_info.frustumID));
+			//FGeometryGPUCullInfo cull_info = references.culling.culling_infos[gID];
+			//FSceneNode node = nodeBuffer.nodes[cull_info.instanceID];
+			//FDrawIndexedIndirectData command = indirectCommandBuffer.indexed_draw_commands[gID];
+			//
+			//vec4 minExtents = node.model * vec4(command.aabb.min, 1.f);
+			//minExtents = vec4(minExtents.xyz / minExtents.w, 1.0);
+			//
+			//vec4 maxExtents = node.model * vec4(command.aabb.max, 1.f);
+			//maxExtents = vec4(maxExtents.xyz / maxExtents.w, 1.0);
+			//
+			//indirectCommandBuffer.indexed_draw_commands[gID].instanceCount = int(checkObjectInFrustum(minExtents.xyz, maxExtents.xyz, cull_info.frustumID));
 		}
 	""";
 }

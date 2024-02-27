@@ -33,14 +33,14 @@
 		
 		void main()
 		{
-			uint32_t batch_index = shadowData.callID + gl_DrawIDARB + gl_InstanceIndex;
-			FGeometryGPUBatch batch = batchBuffer.geometry_batches[batch_index];
+			uint32_t draw_index = shadowData.callID + gl_DrawIDARB + gl_InstanceIndex;
+			FDrawMeshinfo draw_info = drawInfoBuffer.infos[draw_index];
 
-			FSceneNode node = nodeBuffer.nodes[batch.instanceID];
+			FSceneNode node = nodeBuffer.nodes[draw_info.nodeID];
 			mat4 modelMatrix = node.model;
 
 #ifdef HAS_SKIN
-			if(node.skin != ~0u)
+			if(node.skeletonID != ~0u)
 			{
 #if defined(JOINTS_8BIT)
 				u8vec4 joints = u8vec4(uint8_t(inJoints.x * 255.0), uint8_t(inJoints.y * 255.0), uint8_t(inJoints.z * 255.0), uint8_t(inJoints.w * 255.0));
@@ -48,10 +48,10 @@
 				u16vec4 joints = u16vec4(uint16_t(inJoints.x * 65535.0), uint16_t(inJoints.y * 65535.0), uint16_t(inJoints.z * 65535.0), uint16_t(inJoints.w * 65535.0));
 #endif
 				mat4 skinMat = 
-					inWeights.x * jointsBuffer.matrices[node.skin + joints.x] +
-					inWeights.y * jointsBuffer.matrices[node.skin + joints.y] +
-					inWeights.z * jointsBuffer.matrices[node.skin + joints.z] +
-					inWeights.w * jointsBuffer.matrices[node.skin + joints.w];
+					inWeights.x * jointsBuffer.matrices[node.skeletonID + joints.x] +
+					inWeights.y * jointsBuffer.matrices[node.skeletonID + joints.y] +
+					inWeights.z * jointsBuffer.matrices[node.skeletonID + joints.z] +
+					inWeights.w * jointsBuffer.matrices[node.skeletonID + joints.w];
 					
 				modelMatrix = modelMatrix * skinMat;
 			}
@@ -66,17 +66,19 @@
 
 			mat4 viewProj;
 #if defined(CASCADED_SHADOW)
-			FCascadedShadowCommit shadow = cascadedShadowBuffer.cascaded_shadows[shadowData.shadowIndex];
+			FCascadedShadowCommit shadow = cascadedShadowBuffer.shadows[shadowData.shadowIndex];
 			viewProj = shadow.cascadeViewProj[shadowData.layer];
 #else
-			FSpotShadowCommit shadow = spotShadowBuffer.spot_shadows[shadowData.shadowIndex];
+			FSpotShadowCommit shadow = spotShadowBuffer.shadows[shadowData.shadowIndex];
 			viewProj = shadow.viewProj;
 #endif
-			
+
 			materialID = ~0u;
-			if(batch.materialID != ~0u)
+
+			FMesh mesh = meshBuffer.meshes[draw_info.meshID];
+			if(mesh.materialID != ~0u)
 			{
-				materialID = batch.materialID;
+				materialID = mesh.materialID;
 			}
 
 			gl_Layer = shadowData.layer;

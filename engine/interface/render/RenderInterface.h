@@ -46,8 +46,9 @@ namespace engine
 		{
 			// Default geometry buffers
 			eNodeBuffer = 0u,
-			eMaterialBuffer,
 			eSkinBuffer,
+
+			eMaterialBuffer,
 			// Light source buffers
 			eDirectionalLightBuffer,
 			ePointLightBuffer,
@@ -57,9 +58,12 @@ namespace engine
 			eOmniShadowBuffer,
 			eSpotShadowBuffer,
 			// Culling and draw buffers
-			eDrawBatchBuffer,
+			eMeshBuffer,
+			eDrawMeshInfoBuffer,
 			eFrustumBuffer,
 			eDrawCommandBuffer,
+			eMeshCommandBuffer,
+			eClusterInfoBuffer,
 			// Other
 			eTextureRemapBuffer,
 
@@ -230,6 +234,7 @@ namespace engine
 			u64 omniShadowCount{ 0ull };
 			u64 spotShadowCount{ 0ull };
 
+			u64 meshCount{ 0ull };
 			u64 skinCount{ 0ull };
 
 			u64 drawCommandCount{ 0ull };
@@ -354,6 +359,9 @@ namespace engine
 
 			virtual void addMaterial(const FMaterial& material) = 0;
 			virtual void addMaterials(const stl::vector<FMaterial>& materials) = 0;
+
+			virtual void addMesh(const FMesh& mesh) = 0;
+			virtual void addMeshes(const std::vector<FMesh>& meshes) = 0;
 
 			virtual const stl::unique_ptr<IGPUVector>& getDrawBuffer(ERenderBufferIndices buffer_index) = 0;
 			//virtual const stl::vector<stl::unique_ptr<IBufferObject>>& getDrawBuffers() = 0;

@@ -29,7 +29,6 @@
 		layout(push_constant) uniform UniformMeshData
 		{
 			uint32_t callID;
-			uint32_t batchID;
 		} meshData;
 
 		out gl_PerVertex
@@ -39,15 +38,15 @@
 
 		void main() 
 		{
-			uint32_t batch_index = meshData.callID + gl_DrawIDARB + gl_InstanceIndex;
-			FGeometryGPUBatch batch = batchBuffer.geometry_batches[batch_index];
+			uint32_t draw_index = meshData.callID + gl_DrawIDARB + gl_InstanceIndex;
+			FDrawMeshinfo draw_info = drawInfoBuffer.infos[draw_index];
 
 			// Calculate skinned matrix from weights and joint indices of the current vertex
-			FSceneNode node = nodeBuffer.nodes[batch.instanceID];
+			FSceneNode node = nodeBuffer.nodes[draw_info.nodeID];
 			mat4 modelMatrix = node.model;
 
 #ifdef HAS_SKIN
-			if(node.skin != ~0u)
+			if(node.skeletonID != ~0u)
 			{
 #if defined(JOINTS_8BIT)
 				u8vec4 joints = u8vec4(uint8_t(inJoints.x * 255.0), uint8_t(inJoints.y * 255.0), uint8_t(inJoints.z * 255.0), uint8_t(inJoints.w * 255.0));
@@ -55,10 +54,10 @@
 				u16vec4 joints = u16vec4(uint16_t(inJoints.x * 65535.0), uint16_t(inJoints.y * 65535.0), uint16_t(inJoints.z * 65535.0), uint16_t(inJoints.w * 65535.0));
 #endif
 				mat4 skinMat = 
-					inWeights.x * jointsBuffer.matrices[node.skin + joints.x] +
-					inWeights.y * jointsBuffer.matrices[node.skin + joints.y] +
-					inWeights.z * jointsBuffer.matrices[node.skin + joints.z] +
-					inWeights.w * jointsBuffer.matrices[node.skin + joints.w];
+					inWeights.x * jointsBuffer.matrices[node.skeletonID + joints.x] +
+					inWeights.y * jointsBuffer.matrices[node.skeletonID + joints.y] +
+					inWeights.z * jointsBuffer.matrices[node.skeletonID + joints.z] +
+					inWeights.w * jointsBuffer.matrices[node.skeletonID + joints.w];
 		
 				modelMatrix = modelMatrix * skinMat;
 			}
@@ -68,10 +67,12 @@
 			vec4 localPos = modelMatrix * vec4(inPosition, 1.0);
 			localPos = vec4(localPos.xyz / localPos.w, 1.0);
 
+			FMesh mesh = meshBuffer.meshes[draw_info.meshID];
+
 			drawID = meshData.callID + gl_DrawIDARB;
-			matID = batch.materialID;
-			objID = batch.instanceID;
-			vboID = batch.vboID;
+			matID = mesh.materialID;
+			objID = draw_info.nodeID;
+			vboID = draw_info.vboID;
 			gl_Position = frameData.projection * frameData.view * localPos;
 		}
 	""";

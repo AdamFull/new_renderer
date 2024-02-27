@@ -1189,6 +1189,12 @@ FRenderApiErrorInfo CVkRenderDevice::selectPhysicalDevice(const FRenderContextCr
 			continue;
 		}
 
+		vk::PhysicalDeviceMeshShaderPropertiesEXT meshShaderProperties;
+		vk::StructureChain<vk::PhysicalDeviceProperties2, vk::PhysicalDeviceMeshShaderPropertiesEXT> propertiesChain;
+		
+		current_device.handle.getProperties2(&propertiesChain.get<vk::PhysicalDeviceProperties2>());
+		meshShaderProperties = propertiesChain.get<vk::PhysicalDeviceMeshShaderPropertiesEXT>();
+
 		stl::vector<stl::string> unsupported_extensions{};
 		for (const auto& req : context_ci.requiredDeviceExtensions)
 		{
@@ -1283,6 +1289,8 @@ void CVkRenderDevice::prepareRequestedLogicalDeviceFeatures()
 				requestExtensionFeatures<vk::PhysicalDeviceMultiDrawFeaturesEXT>();
 			else if (extension_name == VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME)
 				requestExtensionFeatures<vk::PhysicalDeviceHostQueryResetFeaturesEXT>();
+			else if (extension_name == VK_EXT_MESH_SHADER_EXTENSION_NAME)
+				requestExtensionFeatures<vk::PhysicalDeviceMeshShaderFeaturesEXT>();
 			//else if(extension_name == VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME)
 			//	requestExtensionFeatures(vk::PhysicalDeviceIndirect)
 		}

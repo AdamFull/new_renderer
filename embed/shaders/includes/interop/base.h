@@ -37,6 +37,11 @@
 namespace engine { 
 	namespace render {
 #endif
+		CONSTANT uint32_t kShaderGroupSize = 32u;
+		CONSTANT uint32_t kMaxVerticesPerMeshlet = 64u;
+		CONSTANT uint32_t kMaxTrianglesPerMeshlet = 124u;
+		CONSTANT uint32_t kMaxMeshLodCount = 4u;
+
 		// Directional light
 		CONSTANT uint32_t max_directional_light_count = 3u;
 		CONSTANT uint32_t max_directional_light_shadow_count = 1u;
@@ -128,6 +133,23 @@ namespace engine {
 			uint32_t pad1;
 		};
 
+		struct FMeshLod
+		{
+			uint32_t meshletOffset;
+			uint32_t meshletVertexOffset;
+			uint32_t meshletTriangleOffset;
+			uint32_t meshletBoundsOffset;
+			uint32_t meshletCount;
+		}; // For lod buffer
+
+		struct FMesh
+		{
+			uint32_t materialID;
+
+			uint32_t lodOffset;
+			uint32_t lodCount;
+		};
+
 		struct FMeshlet
 		{
 			uint32_t vertexOffset;
@@ -152,18 +174,33 @@ namespace engine {
 			uint32_t beginVertex;
 			uint32_t vertexCount;
 
-			FGeometryDrawBounds bounds;
+			uint32_t meshletCount;
+			uint32_t firstMeshlet;
 		};
 
-		struct FGeometryGPUBatch
+		struct FSceneNode
+		{
+			MATRIX4 model;
+			uint32_t skeletonID;
+			uint32_t pad[3];
+		};
+
+		struct FDrawMeshinfo
 		{
 			uint32_t vboID;
-			uint32_t materialID;
-			uint32_t instanceID;
+			uint32_t meshID;
+			uint32_t nodeID;
+		};
+
+		struct FClusterInfo
+		{
+			uint32_t drawID; // Index of FDrawMeshinfo
+			uint32_t firstMeshlet;
+			uint32_t meshletCount;
 			uint32_t pad;
 		};
 
-		struct FDrawIndirectData
+		struct FVertexRangeData
 		{
 			uint32_t vertexCount;
 			uint32_t instanceCount;
@@ -178,9 +215,12 @@ namespace engine {
 			uint32_t firstIndex;
 			int32_t  vertexOffset;
 			uint32_t firstInstance;
-			uint32_t pad[3];
+		};
 
-			FGeometryDrawBounds aabb;
+		struct FDrawMeshIndirectData
+		{
+			uint32_t taskCount;
+			uint32_t firstTask;
 		};
 
 		// Lights and shadows
@@ -237,18 +277,6 @@ namespace engine {
 			int toTarget;
 			int shadowIndex;
 			int castShadows;
-		};
-
-		struct FSceneNode
-		{
-#ifdef __cplusplus
-			FSceneNode() : model{ 1.f }, skin{ ~0u }, instances{ ~0u }, instanceCount{ 0u } {}
-#endif
-			MATRIX4 model;
-			uint32_t skin;
-			uint32_t instances;
-			uint32_t instanceCount;
-			uint32_t pad;
 		};
 
 		// Material
@@ -365,49 +393,50 @@ namespace engine {
 		} frameData;
 #endif
 
-// Global bindless buffers
 #ifdef __cplusplus
-		typedef uint64_t NodeStorage;
-		typedef uint64_t MaterialStorage;
-		typedef uint64_t SkinningJoints;
-		typedef uint64_t GeometryBatches;
-		typedef uint64_t IndirectIndexedComands;
-		typedef uint64_t DirectionalLights;
-		typedef uint64_t PointLights;
-		typedef uint64_t SpotLights;
-		typedef uint64_t CascadedShadows;
-		typedef uint64_t OmniShadows;
-		typedef uint64_t SpotShadows;
-		typedef uint64_t TextureBindingRemap;
-
-		typedef uint64_t RawVertexBuffer;
-		typedef uint64_t RawIndexBuffer;
-		typedef uint64_t MeshletBuffer;
-		typedef uint64_t MeshletVertexRemapBuffer;
-		typedef uint64_t MeshletBoundsBuffer;
-		typedef uint64_t MeshletTriangleBuffer;
+#define REGISTER_OBJECT_ARRAY_BUFFER(BufferTypeName, DataType, ArrayName) typedef uint64_t BufferTypeName
 #else
-		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer NodeStorage { FSceneNode nodes[]; };
-		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer MaterialStorage { FMaterial materials[]; };
-		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer SkinningJoints { mat4 matrices[]; };
-		layout(std430, buffer_reference, buffer_reference_align = 8) buffer GeometryBatches { FGeometryGPUBatch geometry_batches[]; };
-		layout(std430, buffer_reference, buffer_reference_align = 8) buffer IndirectIndexedComands { FDrawIndexedIndirectData indexed_draw_commands[]; };
-		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer DirectionalLights { FDirectionalLightCommit directional_lights[]; };
-		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer PointLights { FPointLightCommit point_lights[]; };
-		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer SpotLights { FSpotLightCommit spot_lights[]; };
-		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer CascadedShadows { FCascadedShadowCommit cascaded_shadows[]; };
-		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer OmniShadows { FOmniShadowCommit omni_shadows[]; };
-		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer SpotShadows { FSpotShadowCommit spot_shadows[]; };
-		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer TextureBindingRemap { uint32_t texture_remap[]; };
-
-
-		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer RawVertexBuffer { FRawVertex vertices[]; };
-		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer RawIndexBuffer { Index indices[]; };
-		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer MeshletBuffer { FMeshlet meshlets[]; };
-		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer MeshletVertexRemapBuffer { uint32_t vertices[]; };
-		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer MeshletBoundsBuffer { FGeometryDrawBounds bounds[]; };
-		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer MeshletTriangleBuffer { FTriangle triangles[]; };
+#define REGISTER_OBJECT_ARRAY_BUFFER(BufferTypeName, DataType, ArrayName) layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer BufferTypeName { DataType ArrayName[]; };
 #endif
+
+
+
+
+		// Base buffers
+		REGISTER_OBJECT_ARRAY_BUFFER(NodeBuffer, FSceneNode, nodes);
+		REGISTER_OBJECT_ARRAY_BUFFER(SkinBuffer, MATRIX4, matrices);
+		REGISTER_OBJECT_ARRAY_BUFFER(MeshBuffer, FMesh, meshes);
+		REGISTER_OBJECT_ARRAY_BUFFER(MaterialBuffer, FMaterial, materials);
+
+		// Light buffers
+		REGISTER_OBJECT_ARRAY_BUFFER(DirectionalLights, FDirectionalLightCommit, lights);
+		REGISTER_OBJECT_ARRAY_BUFFER(PointLights, FPointLightCommit, lights);
+		REGISTER_OBJECT_ARRAY_BUFFER(SpotLights, FSpotLightCommit, lights);
+
+		// Shadow buffers
+		REGISTER_OBJECT_ARRAY_BUFFER(CascadedShadows, FCascadedShadowCommit, shadows);
+		REGISTER_OBJECT_ARRAY_BUFFER(OmniShadows, FOmniShadowCommit, shadows);
+		REGISTER_OBJECT_ARRAY_BUFFER(SpotShadows, FSpotShadowCommit, shadows);
+
+		// Vertex buffer specific data
+		REGISTER_OBJECT_ARRAY_BUFFER(RawVertexBuffer, FRawVertex, vertices);
+		REGISTER_OBJECT_ARRAY_BUFFER(RawIndexBuffer, Index, indices);
+		REGISTER_OBJECT_ARRAY_BUFFER(MeshletBuffer, FMeshlet, meshlets);
+		REGISTER_OBJECT_ARRAY_BUFFER(MeshletVertexRemapBuffer, uint32_t, vertices);
+		REGISTER_OBJECT_ARRAY_BUFFER(MeshletBoundsBuffer, FGeometryDrawBounds, bounds);
+		REGISTER_OBJECT_ARRAY_BUFFER(MeshletTriangleBuffer, FTriangle, triangles);
+		REGISTER_OBJECT_ARRAY_BUFFER(MeshLodBuffer, FMeshLod, lods);
+
+		// GPU object representation
+		REGISTER_OBJECT_ARRAY_BUFFER(DrawInfoBuffer, FDrawMeshinfo, infos);
+		REGISTER_OBJECT_ARRAY_BUFFER(ClusterInfoBuffer, FClusterInfo, clusters);
+
+		// Indirect data
+		REGISTER_OBJECT_ARRAY_BUFFER(IndirectTaskCommands, FDrawMeshIndirectData, commands);
+		REGISTER_OBJECT_ARRAY_BUFFER(IndirectIndexedComands, FDrawIndexedIndirectData, commands);
+
+		// Other
+		REGISTER_OBJECT_ARRAY_BUFFER(TextureBindingRemap, uint32_t, remap);
 
 #ifdef __cplusplus
 		struct FGlobalBufferReference
@@ -415,9 +444,11 @@ namespace engine {
 		layout(std140, set = 0, binding = 1) uniform GlobalBufferReferences
 #endif
 		{
-			NodeStorage nodeBuffer;
-			MaterialStorage materialBuffer;
-			SkinningJoints jointsBuffer;
+			NodeBuffer nodeBuffer;
+			SkinBuffer jointsBuffer;
+			MeshBuffer meshBuffer;
+
+			MaterialBuffer materialBuffer;
 		
 			DirectionalLights directionalLightBuffer;
 			PointLights pointLightBuffer;
@@ -427,8 +458,12 @@ namespace engine {
 			OmniShadows omniShadowBuffer;
 			SpotShadows spotShadowBuffer;
 		
-			GeometryBatches batchBuffer;
+			DrawInfoBuffer drawInfoBuffer;
+			ClusterInfoBuffer clusterBuffer;
+
 			IndirectIndexedComands indirectCommandBuffer;
+			IndirectTaskCommands indirectTaskCommandBuffer;
+
 			TextureBindingRemap textureRemapBuffer;
 		};
 

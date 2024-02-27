@@ -23,6 +23,19 @@
 					shader_name: "visbuffershade_comp";
 				}
 			];
+		},
+		{
+			name: "write_mesh";
+			sources: [
+				{
+					type: "task";
+					shader_name: "visbufferwrite_task";
+				},
+				{
+					type: "mesh";
+					shader_name: "visbufferwrite_mesh";
+				}
+			];
 		}
 	];
 
@@ -45,6 +58,22 @@
 		},
 		{
 			shader_name: "shade";
+			permutation_generator: {
+				definitions: [
+					{ base: "HAS_TEXCOORD" },
+					{ base: "HAS_NORMAL" },
+					{ base: "HAS_SKIN", var:[{ base: "JOINTS_8BIT" }, { base: "JOINTS_16BIT" }] },
+					{ base: "COLOR_VEC3" },
+					{ base: "COLOR_VEC4" },
+					{ base: "TANGENT_VEC3" },
+					{ base: "TANGENT_VEC4" },
+					{ base: "INDEX_8BIT" },
+					{ base: "INDEX_16BIT" }
+				];
+			};
+		},
+		{
+			shader_name: "write_mesh";
 			permutation_generator: {
 				definitions: [
 					{ base: "HAS_TEXCOORD" },

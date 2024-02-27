@@ -147,7 +147,7 @@
 			float shadow_factor = 1.0;
 			if(light.castShadows > 0 && light.shadowIndex > -1)
 			{
-				FCascadedShadowCommit shadow = cascadedShadowBuffer.cascaded_shadows[light.shadowIndex];
+				FCascadedShadowCommit shadow = cascadedShadowBuffer.shadows[light.shadowIndex];
 				shadow_factor = getCascadeShadow(cascaded_shadowmap, shadow, va, ms, dither);
 			}
 
@@ -193,21 +193,21 @@
 			//Directional light
 			for(uint i = 0u; i < frameData.directionalLightCount; i++)
 			{
-				FDirectionalLightCommit light = directionalLightBuffer.directional_lights[i];
+				FDirectionalLightCommit light = directionalLightBuffer.lights[i];
 				Lo += calculateDirectionalLight(light, va, ms, V, F0, dither);
 			}
 
 			//Point light
 			for(uint i = 0u; i < frameData.pointLightCount; i++) 
 			{
-				FPointLightCommit light = pointLightBuffer.point_lights[i];
+				FPointLightCommit light = pointLightBuffer.lights[i];
 				Lo += calculatePointLight(light, va, ms, V, F0, dither);
 			}
 			
 			//Spot light
 			for(uint i = 0u; i < frameData.spotLightCount; i++)
 			{
-				FSpotLightCommit light = spotLightBuffer.spot_lights[i];
+				FSpotLightCommit light = spotLightBuffer.lights[i];
 				Lo += calculateSpotlight(light, va, ms, V, F0, dither);
 			}
 
@@ -219,7 +219,7 @@
 			//vec3 view_space_pos = (frameData.view * vec4(pos, 1.0)).xyz;
 			//float view_depth = view_space_pos.z * -1.0;
 
-			FCascadedShadowCommit shadow = cascadedShadowBuffer.cascaded_shadows[0];
+			FCascadedShadowCommit shadow = cascadedShadowBuffer.shadows[0];
 			uint cascade_index = getScadowCascadeSplit(shadow, view_depth, dither);
 
 			switch(cascade_index) 

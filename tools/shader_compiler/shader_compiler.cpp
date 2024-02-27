@@ -133,15 +133,15 @@ TBuiltInResource get_resources()
 	resources.maxCullDistances = 8;
 	resources.maxCombinedClipAndCullDistances = 8;
 	resources.maxSamples = 4;
-	resources.maxMeshOutputVerticesNV = 256;
-	resources.maxMeshOutputPrimitivesNV = 512;
-	resources.maxMeshWorkGroupSizeX_NV = 32;
-	resources.maxMeshWorkGroupSizeY_NV = 1;
-	resources.maxMeshWorkGroupSizeZ_NV = 1;
-	resources.maxTaskWorkGroupSizeX_NV = 32;
-	resources.maxTaskWorkGroupSizeY_NV = 1;
-	resources.maxTaskWorkGroupSizeZ_NV = 1;
-	resources.maxMeshViewCountNV = 4;
+	resources.maxMeshOutputVerticesEXT = resources.maxMeshOutputVerticesNV = 256;
+	resources.maxMeshOutputPrimitivesEXT = resources.maxMeshOutputPrimitivesNV = 512;
+	resources.maxMeshWorkGroupSizeX_EXT = resources.maxMeshWorkGroupSizeX_NV = 32;
+	resources.maxMeshWorkGroupSizeY_EXT = resources.maxMeshWorkGroupSizeY_NV = 1;
+	resources.maxMeshWorkGroupSizeZ_EXT = resources.maxMeshWorkGroupSizeZ_NV = 1;
+	resources.maxTaskWorkGroupSizeX_EXT = resources.maxTaskWorkGroupSizeX_NV = 32;
+	resources.maxTaskWorkGroupSizeY_EXT = resources.maxTaskWorkGroupSizeY_NV = 1;
+	resources.maxTaskWorkGroupSizeZ_EXT = resources.maxTaskWorkGroupSizeZ_NV = 1;
+	resources.maxMeshViewCountEXT = resources.maxMeshViewCountNV = 4;
 
 	resources.limits.nonInductiveForLoops = true;
 	resources.limits.whileLoops = true;
@@ -187,7 +187,7 @@ glslang::EShTargetLanguageVersion get_SPIR_version(ETargetAPIType eAPI)
 	switch (eAPI)
 	{
 	case ETargetAPIType::eVK10: return glslang::EShTargetSpv_1_0; break;
-	case ETargetAPIType::eVK11: return glslang::EShTargetSpv_1_3; break;
+	case ETargetAPIType::eVK11: return glslang::EShTargetSpv_1_4; break;
 	case ETargetAPIType::eVK12: return glslang::EShTargetSpv_1_5; break;
 	case ETargetAPIType::eVK13: return glslang::EShTargetSpv_1_6; break;
 	default:

@@ -19,9 +19,6 @@ using namespace engine::render;
 //	alignas(16) glm::vec4 weights{};
 //};
 
-constexpr const u32 k_max_vertices_per_meshlet{ 255u };
-constexpr const u32 k_max_triangles_per_meshlet{ 512u };
-
 u64 align_std140(u64 size)
 {
 	constexpr const u64 maxalignment{ 0ull };
@@ -312,15 +309,15 @@ u64 CVertexHandler::addMeshlets(const stl::vector<FVertexAttributePointer>& attr
 	}
 
 	// Start generation meshlets
-	auto max_meshlets = meshopt_buildMeshletsBound(indices.count, k_max_vertices_per_meshlet, k_max_triangles_per_meshlet);
+	auto max_meshlets = meshopt_buildMeshletsBound(indices.count, kMaxVerticesPerMeshlet, kMaxTrianglesPerMeshlet);
 
 	std::vector<FMeshlet> temp_meshlets(max_meshlets);
 	std::vector<FGeometryDrawBounds> temp_bounds{};
 	std::vector<FTriangle> temp_triangles{};
-	std::vector<u32> temp_vertices(max_meshlets * k_max_vertices_per_meshlet);
+	std::vector<u32> temp_vertices(max_meshlets * kMaxVerticesPerMeshlet);
 
 	std::vector<meshopt_Meshlet> raw_meshlets(max_meshlets);
-	std::vector<u8> raw_meshlet_triangles(max_meshlets * k_max_triangles_per_meshlet * 3u);
+	std::vector<u8> raw_meshlet_triangles(max_meshlets * kMaxTrianglesPerMeshlet * 3u);
 
 	size_t meshlet_count = meshopt_buildMeshlets(
 		&raw_meshlets[0],
@@ -331,8 +328,8 @@ u64 CVertexHandler::addMeshlets(const stl::vector<FVertexAttributePointer>& attr
 		positions,
 		found_position_attrib->count,
 		found_position_attrib->stride,
-		k_max_vertices_per_meshlet,
-		k_max_triangles_per_meshlet,
+		kMaxVerticesPerMeshlet,
+		kMaxTrianglesPerMeshlet,
 		/*cone_weight*/ 0);
 
 	meshopt_Meshlet& last_meshlet = raw_meshlets[meshlet_count - 1];

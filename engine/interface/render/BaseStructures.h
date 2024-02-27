@@ -89,7 +89,7 @@ namespace engine
 
 		struct FGeometryRawBatch
 		{
-			FGeometryGPUBatch callInfo;
+			FDrawMeshinfo drawInfo;
 			FGeometryDrawRange range;
 		};
 

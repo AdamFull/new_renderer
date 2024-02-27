@@ -54,6 +54,9 @@ stl::unique_ptr<IRenderContext> make_render_context(const FRenderInterfaceCreate
 			VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME,
 			VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
 			VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME,
+			VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,
+			VK_KHR_SPIRV_1_4_EXTENSION_NAME,
+			VK_EXT_MESH_SHADER_EXTENSION_NAME,
 			//VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME,
 			VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME
 		};
@@ -63,7 +66,7 @@ stl::unique_ptr<IRenderContext> make_render_context(const FRenderInterfaceCreate
 		};
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-		context_ci.validationState = false;
+		context_ci.validationState = true;
 		context_ci.validationLayers = { "VK_LAYER_KHRONOS_validation", "VK_LAYER_KHRONOS_synchronization2" };
 		context_ci.validationFeatures = vulkan::SYNCHRONIZATION_VALIDATION_FLAG_BIT;
 #endif
@@ -180,8 +183,9 @@ void CRenderInterface::render(f32 dt)
 
 	FGlobalBufferReference global_references{};
 	global_references.nodeBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eNodeBuffer)->buffer()->address();
-	global_references.materialBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eMaterialBuffer)->buffer()->address();
 	global_references.jointsBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eSkinBuffer)->buffer()->address();
+	global_references.materialBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eMaterialBuffer)->buffer()->address();
+	global_references.meshBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eMeshBuffer)->buffer()->address();
 
 	global_references.directionalLightBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eDirectionalLightBuffer)->buffer()->address();
 	global_references.pointLightBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::ePointLightBuffer)->buffer()->address();
@@ -191,8 +195,11 @@ void CRenderInterface::render(f32 dt)
 	global_references.omniShadowBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eOmniShadowBuffer)->buffer()->address();
 	global_references.spotShadowBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eSpotShadowBuffer)->buffer()->address();
 
-	global_references.batchBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eDrawBatchBuffer)->buffer()->address();
+	global_references.drawInfoBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eDrawMeshInfoBuffer)->buffer()->address();
+	global_references.clusterBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eClusterInfoBuffer)->buffer()->address();
+
 	global_references.indirectCommandBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eDrawCommandBuffer)->buffer()->address();
+	global_references.indirectTaskCommandBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eMeshCommandBuffer)->buffer()->address();
 
 	global_references.textureRemapBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eTextureRemapBuffer)->buffer()->address();
 

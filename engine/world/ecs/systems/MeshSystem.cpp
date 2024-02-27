@@ -32,10 +32,13 @@ void CMeshSystem::__update(f32 fDt)
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
 	auto& render_world = m_pRenderInterface->getRenderWorld();
 
+	auto& world_stats = render_world->getStats();
+	world_stats.meshCount = 0u;
+
 	stl::vector<FGeometryRawBatch> draw_commands{};
 
 	auto view = registry->view<FTransformComponent, FBaseComponent, FMeshComponent>();
-	for (auto [entity, transform, base, mesh] : view.each())
+	for (auto [entity, transform, base, mesh_component] : view.each())
 	{
 		if (!base.visible)
 			continue;
@@ -44,27 +47,32 @@ void CMeshSystem::__update(f32 fDt)
 
 		FSceneNode scene_node{};
 		scene_node.model = transform.gmodel;
-		if(auto found = root_component.skinRemap.find(utl::cast<u32>(mesh.skin)); found != root_component.skinRemap.end())
-			scene_node.skin = found->second;
+
+		if (auto found = root_component.skinRemap.find(utl::cast<u32>(mesh_component.skin)); found != root_component.skinRemap.end())
+			scene_node.skeletonID = found->second;
+		
 		render_world->updateNode(node, scene_node);
 
-		for (const auto& primitive : mesh.primitives)
+		std::vector<FMesh> meshes;
+		for (const auto& primitive : mesh_component.primitives)
 		{
 			auto& lod = primitive.lods[0ull];
 
 			auto& draw_command = draw_commands.emplace_back();
-			draw_command.callInfo.vboID = primitive.vboId;
-			draw_command.callInfo.materialID = primitive.materialId;
-			draw_command.callInfo.instanceID = node;
-			
+			draw_command.drawInfo.vboID = primitive.vboId;
+			draw_command.drawInfo.meshID = world_stats.meshCount + meshes.size();
+			draw_command.drawInfo.nodeID = node;
+
 			draw_command.range.beginIndex = lod.firstIndex;
 			draw_command.range.indexCount = lod.indexCount;
 			draw_command.range.beginVertex = lod.firstVertex;
 			draw_command.range.vertexCount = lod.indexCount;
 
-			draw_command.range.bounds.min = primitive.dims.min;
-			draw_command.range.bounds.max = primitive.dims.max;
+			auto& mesh = meshes.emplace_back();
+			mesh.materialID = primitive.materialId;
 		}
+
+		render_world->addMeshes(meshes);
 	}
 
 	render_world->addDrawGeometry(draw_commands);
