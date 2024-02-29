@@ -16,6 +16,7 @@
 			MeshletVertexRemapBuffer vrb;
 			MeshletBoundsBuffer bb;
 			MeshletTriangleBuffer tb;
+			MeshLodBuffer lb;
 		};
 
 		// Visbuffer structures

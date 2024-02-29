@@ -19,6 +19,19 @@ namespace engine
 			eIndex
 		};
 
+		enum class EGeometryBufferIndices
+		{
+			eVertexBuffer,
+			eIndexBuffer,
+			eMeshletBuffer,
+			eVertexRemapBuffer,
+			eBoundsBuffer,
+			eTriangleBuffer,
+			eLodBuffer,
+
+			eLastIndex
+		};
+
 		struct FVertexAttributePointer
 		{
 			EVertexAttributeType type{ EVertexAttributeType::eIndex };
@@ -80,7 +93,7 @@ namespace engine
 		{
 			u64 firstIndex, indexCount;
 			u64 firstVertex, vertexCount;
-			u64 firstMeshlet, meshletCount;
+			u64 firstLod, lodCount;
 		};
 
 		class IVertexHandler
@@ -105,13 +118,10 @@ namespace engine
 			virtual u64 getHash() const = 0;
 			virtual const stl::string& getDefinitions() const = 0;
 
+			virtual const std::unique_ptr<IGPUVector>& getGeometryBuffer(EGeometryBufferIndices buffer_index) = 0;
+
 			virtual u64 getVertexHandle() const = 0;
 			virtual u64 getIndexHandle() const = 0;
-
-			virtual const std::unique_ptr<IGPUVector>& getMeshletBuffer() const = 0;
-			virtual const std::unique_ptr<IGPUVector>& getVertexRemapBuffer() const = 0;
-			virtual const std::unique_ptr<IGPUVector>& getBoundsBuffer() const = 0;
-			virtual const std::unique_ptr<IGPUVector>& getTriangleBuffer() const = 0;
 		};
 	}
 }

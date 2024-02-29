@@ -39,21 +39,15 @@ namespace engine
 			u64 getHash() const override;
 			const stl::string& getDefinitions() const override;
 
+			const std::unique_ptr<IGPUVector>& getGeometryBuffer(EGeometryBufferIndices buffer_index) override;
+
 			u64 getVertexHandle() const override;
 			u64 getIndexHandle() const override;
-
-			const std::unique_ptr<IGPUVector>& getMeshletBuffer() const override;
-			const std::unique_ptr<IGPUVector>& getVertexRemapBuffer() const override;
-			const std::unique_ptr<IGPUVector>& getBoundsBuffer() const override;
-			const std::unique_ptr<IGPUVector>& getTriangleBuffer() const override;
 		private:
 			FBufferInfo<u8> m_vertexBuffer{};
 			FBufferInfo<u8> m_indexBuffer{};
 
-			std::unique_ptr<IGPUVector> m_pMeshletsBuffer{};
-			std::unique_ptr<IGPUVector> m_pVerticesBuffer{};
-			std::unique_ptr<IGPUVector> m_pBoundsBuffer{};
-			std::unique_ptr<IGPUVector> m_pTrianglesBuffer{};
+			std::vector<std::unique_ptr<IGPUVector>> m_vGeometryBuffers{};
 
 			// Vertex cache
 			stl::unordered_map<u64, FVertexRange> m_cachedRanges{};

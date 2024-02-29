@@ -125,11 +125,10 @@ stl::string get_index_definition(u64 size)
 CVertexHandler::CVertexHandler(IRenderInterface* render_interface)
 {
 	m_pRenderInterface = render_interface;
+	m_vGeometryBuffers.resize(utl::enum_cast(EGeometryBufferIndices::eLastIndex));
 
-	m_pMeshletsBuffer = std::make_unique<CGPUVector>(render_interface);
-	m_pVerticesBuffer = std::make_unique<CGPUVector>(render_interface);
-	m_pBoundsBuffer = std::make_unique<CGPUVector>(render_interface);
-	m_pTrianglesBuffer = std::make_unique<CGPUVector>(render_interface);
+	for(auto& buffer : m_vGeometryBuffers)
+		buffer = std::make_unique<CGPUVector>(render_interface);
 }
 
 // TODO: destroy buffers
@@ -184,10 +183,11 @@ void CVertexHandler::create(const FVertexHandlerCreateInfo& create_info)
 
 	m_attributeHash = utl::utils::fnv1a_64_hash(m_definitions.c_str());
 
-	m_pMeshletsBuffer->create<FMeshlet>("MeshletBuffer" + m_definitions, EBufferTypeFlagBits::eStorage);
-	m_pVerticesBuffer->create<u32>("MeshletVerticesBuffer" + m_definitions, EBufferTypeFlagBits::eStorage);
-	m_pBoundsBuffer->create<FGeometryDrawBounds>("MeshletBoundsBuffer" + m_definitions, EBufferTypeFlagBits::eStorage);
-	m_pTrianglesBuffer->create<FTriangle>("MeshletTriangleBuffer" + m_definitions, EBufferTypeFlagBits::eStorage);
+	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eMeshletBuffer))->create<FMeshlet>("MeshletBuffer" + m_definitions, EBufferTypeFlagBits::eStorage);
+	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eVertexRemapBuffer))->create<u32>("MeshletVerticesBuffer" + m_definitions, EBufferTypeFlagBits::eStorage);
+	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eBoundsBuffer))->create<FGeometryDrawBounds>("MeshletBoundsBuffer" + m_definitions, EBufferTypeFlagBits::eStorage);
+	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eTriangleBuffer))->create<FTriangle>("MeshletTriangleBuffer" + m_definitions, EBufferTypeFlagBits::eStorage);
+	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eLodBuffer))->create<FMeshLod>("MeshLodBuffer" + m_definitions, EBufferTypeFlagBits::eStorage);
 
 	return;
 }
@@ -244,13 +244,28 @@ const FVertexRange& CVertexHandler::addMeshData(const stl::vector<FVertexAttribu
 	if (auto found = m_cachedRanges.find(input_hash); found != m_cachedRanges.end())
 		return found->second;
 
+	auto& meshlet_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eMeshletBuffer));
+	auto& vertices_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eVertexRemapBuffer));
+	auto& triangle_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eTriangleBuffer));
+	auto& bounds_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eBoundsBuffer));
+	auto& lod_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eLodBuffer));
+
+	FMeshLod lod{};
+	lod.meshletOffset = meshlet_buffer->size();
+	lod.meshletVertexOffset = vertices_buffer->size();
+	lod.meshletTriangleOffset = triangle_buffer->size();
+	lod.meshletBoundsOffset = bounds_buffer->size();
+	lod.meshletCount = addMeshlets(attributes_data, indices);
+
 	auto& new_range = m_cachedRanges[input_hash];
-	new_range.firstMeshlet = m_pMeshletsBuffer->size();
-	new_range.meshletCount = addMeshlets(attributes_data, indices);
+	new_range.firstLod = lod_buffer->size();
+	new_range.lodCount = 1;
 	new_range.firstIndex = m_indexBuffer.elementCount;
 	new_range.indexCount = addIndices(indices);
 	new_range.firstVertex = m_vertexBuffer.elementCount;
 	new_range.vertexCount = addVertices(attributes_data);
+
+	lod_buffer->emplace_back(lod);
 
 	return new_range;
 }
@@ -341,6 +356,9 @@ u64 CVertexHandler::addMeshlets(const stl::vector<FVertexAttributePointer>& attr
 	temp_bounds.resize(meshlet_count);
 	temp_triangles.resize(raw_meshlet_triangles.size() / 3);
 
+	auto& triangle_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eTriangleBuffer));
+	auto& vertices_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eVertexRemapBuffer));
+
 	u32 triangle_offset{ 0u };
 	for (u32 idx = 0u; idx < meshlet_count; ++idx)
 	{
@@ -366,18 +384,22 @@ u64 CVertexHandler::addMeshlets(const stl::vector<FVertexAttributePointer>& attr
 
 		auto& meshlet = temp_meshlets[idx];
 		meshlet.triangleCount = raw_meshlet.triangle_count;
-		meshlet.triangleOffset = triangle_offset + m_pTrianglesBuffer->size();
+		meshlet.triangleOffset = triangle_offset + triangle_buffer->size();
 		meshlet.vertexCount = raw_meshlet.vertex_count;
-		meshlet.vertexOffset = raw_meshlet.vertex_offset + m_pVerticesBuffer->size(); // set from first vertex
+		meshlet.vertexOffset = raw_meshlet.vertex_offset + vertices_buffer->size(); // set from first vertex
 
 		triangle_offset += raw_meshlet.triangle_count;
 	}
 	temp_triangles.resize(triangle_offset);
 
-	m_pMeshletsBuffer->copy(temp_meshlets);
-	m_pVerticesBuffer->copy(temp_vertices);
-	m_pBoundsBuffer->copy(temp_bounds);
-	m_pTrianglesBuffer->copy(temp_triangles);
+	auto& meshlet_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eMeshletBuffer));
+	meshlet_buffer->copy(temp_meshlets);
+
+	auto& bounds_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eBoundsBuffer));
+	bounds_buffer->copy(temp_bounds);
+
+	vertices_buffer->copy(temp_vertices);
+	triangle_buffer->copy(temp_triangles);
 
 	return meshlet_count;
 }
@@ -407,6 +429,11 @@ const stl::string& CVertexHandler::getDefinitions() const
 	return m_definitions;
 }
 
+const std::unique_ptr<IGPUVector>& CVertexHandler::getGeometryBuffer(EGeometryBufferIndices buffer_index)
+{
+	return m_vGeometryBuffers.at(utl::enum_cast(buffer_index));
+}
+
 u64 CVertexHandler::getVertexHandle() const
 {
 	return m_vertexBuffer.buffer;
@@ -415,24 +442,4 @@ u64 CVertexHandler::getVertexHandle() const
 u64 CVertexHandler::getIndexHandle() const
 {
 	return m_indexBuffer.buffer;
-}
-
-const std::unique_ptr<IGPUVector>& CVertexHandler::getMeshletBuffer() const
-{
-	return m_pMeshletsBuffer;
-}
-
-const std::unique_ptr<IGPUVector>& CVertexHandler::getVertexRemapBuffer() const
-{
-	return m_pVerticesBuffer;
-}
-
-const std::unique_ptr<IGPUVector>& CVertexHandler::getBoundsBuffer() const
-{
-	return m_pBoundsBuffer;
-}
-
-const std::unique_ptr<IGPUVector>& CVertexHandler::getTriangleBuffer() const
-{
-	return m_pTrianglesBuffer;
 }

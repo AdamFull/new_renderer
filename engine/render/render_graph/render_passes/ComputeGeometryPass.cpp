@@ -67,10 +67,11 @@ void CComputeGeometryPass::_execute(const FComputeFrameInfo& frame_info)
 				auto ib_view = render_context->getBufferView(index_buffer);
 				buffers->set("ib", ib_view.address);
 
-				buffers->set("mb", last_vbo->getMeshletBuffer()->buffer()->address());
-				buffers->set("vrb", last_vbo->getVertexRemapBuffer()->buffer()->address());
-				buffers->set("bb", last_vbo->getBoundsBuffer()->buffer()->address());
-				buffers->set("tb", last_vbo->getTriangleBuffer()->buffer()->address());
+				buffers->set("mb", last_vbo->getGeometryBuffer(EGeometryBufferIndices::eMeshletBuffer)->buffer()->address());
+				buffers->set("vrb", last_vbo->getGeometryBuffer(EGeometryBufferIndices::eVertexRemapBuffer)->buffer()->address());
+				buffers->set("bb", last_vbo->getGeometryBuffer(EGeometryBufferIndices::eBoundsBuffer)->buffer()->address());
+				buffers->set("tb", last_vbo->getGeometryBuffer(EGeometryBufferIndices::eTriangleBuffer)->buffer()->address());
+				buffers->set("lb", last_vbo->getGeometryBuffer(EGeometryBufferIndices::eLodBuffer)->buffer()->address());
 
 				shader->flushDescriptors();
 				shader->bind(m_queue);
