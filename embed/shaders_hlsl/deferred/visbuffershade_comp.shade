@@ -1,0 +1,324 @@
+{
+	version: 460;
+
+	enable_extensions: [
+		"GL_ARB_separate_shader_objects",
+		"GL_ARB_shading_language_420pack",
+		"GL_ARB_shader_draw_parameters",
+		"GL_EXT_nonuniform_qualifier",
+		"GL_EXT_shader_8bit_storage",
+		"GL_EXT_shader_16bit_storage"
+	];
+
+	definitions: ["MESH_DATA", "LIGHT_DATA", "SHADOW_DATA"];
+
+	require_extensions: [
+		"GL_EXT_buffer_reference",
+		"GL_EXT_shader_explicit_arithmetic_types",
+		"GL_EXT_shader_explicit_arithmetic_types_int8"
+	];
+	includes: ["visibility_buffer", "compute_common", "lighting_model", "shadow_sampling", "util", "noise", "atmosphere/scattering"];
+
+	code: 
+	"""
+		[[vk::binding(2, 0)]] RWTexture2D<float4> write_color : register(u0);
+		REGISTER_TEXTURE_SLOT(2, 1, Texture2D, SamplerState, brdf_lut, 1)
+		REGISTER_TEXTURE_SLOT(2, 2, TextureCube, SamplerState, irradiance_cube, 2)
+		REGISTER_TEXTURE_SLOT(2, 3, TextureCube, SamplerState, prefiltered_cube, 3)
+		REGISTER_TEXTURE_SLOT(2, 4, Texture2D, SamplerState, depth_buffer, 4)
+		REGISTER_TEXTURE_SLOT(2, 5, Texture2DArray, SamplerComparisonState, cascaded_shadowmap, 5)
+
+		struct FUniformMeshData
+		{
+			uint32_t vboId;
+			uint32_t objectId;
+			uint32_t materialId;
+		};
+
+		[[vk::push_constant]] FUniformMeshData meshData;
+
+		float4 sampleTexture(in uint32_t s, in VertexAttribute va)
+		{
+			//return SAMPLE_TEXTURE2D_GRAD_SLOT(s, va.uv, va.uv_dx, va.uv_dy);
+			return SAMPLE_TEXTURE2D_GRAD(s, va.uv);
+		}
+
+		MaterialSample sampleMaterial(in FMaterial mat, in VertexAttribute va)
+		{
+			MaterialSample res;
+
+			// Sample albedo
+			float4 base_color = mat.baseColorFactor * va.color;
+			if(mat.baseColorTexture != ~0u)
+				base_color *= sampleTexture(mat.baseColorTexture, va);
+
+			res.albedo = base_color.rgb;
+			res.opacity = base_color.a;
+
+			// Sample emission
+			res.emission = mat.emissiveFactor;
+			if(mat.emissiveTexture != ~0u)
+				res.emission *= sampleTexture(mat.emissiveTexture, va).rgb;
+			res.emission *= mat.emissiveStrength;
+
+			// Sample metallic roughness
+			res.metallic = mat.metallicFactor;
+			res.roughness = mat.roughnessFactor;
+			if(mat.metallicRoughnessTexture != ~0u)
+			{
+				float4 mr = sampleTexture(mat.metallicRoughnessTexture, va);
+				res.metallic *= mr.b;
+				res.roughness *= mr.g;
+			}
+			res.roughness = clamp(res.roughness, 0.04, 1.0);
+
+			// Sample normals
+			res.normal = va.normal;
+			if(mat.normalTexture != ~0u)
+			{
+				float3 ts_normal = sampleTexture(mat.normalTexture, va).rgb;
+
+				float3 b = cross(va.normal, va.tangent.xyz) * va.tangent.w;
+				float3x3 tbn = float3x3(va.tangent.xyz, b, va.normal);
+
+				res.normal = normalize(tbn * ((2.0 * ts_normal - 1.0) * float3(mat.normalScale, mat.normalScale, 1.0)));
+			}
+
+			// Sample AO
+			res.ao = 1.0;
+			if(mat.occlusionTexture != ~0u)
+				res.ao = sampleTexture(mat.occlusionTexture, va).r;
+
+			res.ior = mat.ior;
+
+			return res;
+		}
+
+		uint32_t getScadowCascadeSplit(in FCascadedShadowCommit shadow, in float view_depth, in float dither)
+		{
+			float cascade = 0.0;
+			for(uint32_t i = 0u; i < cascade_shadow_map_cascade_count; ++i)
+			{
+				float split = shadow.splitDepths[i];
+				cascade += float(view_depth > split) * float(split > 0.0);
+			}
+
+			uint32_t cascade_index = uint32_t(min(cascade, float(cascade_shadow_map_cascade_count - 1)));
+
+			//const float cascade_fade_theshold = 0.1f;
+			//float next_split = shadow.splitDepths[cascade_index];
+			//float split_range = cascade_index == 0 ? next_split : next_split - shadow.splitDepths[cascade_index - 1];
+			//float fade_factor = (next_split - view_depth) / split_range;
+			//
+			//if(fade_factor <= cascade_fade_theshold && cascade_index < cascade_shadow_map_cascade_count - 1)
+			//{
+			//	float lerp_amount = smoothstep(0.0f, cascade_fade_theshold, fade_factor);
+			//	if(lerp_amount < dither)
+			//		cascade_index++;
+			//}
+
+			return cascade_index;
+		}
+
+		float getCascadeShadow(sampler2DArrayShadow shadowmap_tex, in FCascadedShadowCommit shadow, in VertexAttribute va, in MaterialSample ms, in float dither)
+		{
+			uint32_t cascadeIndex = getScadowCascadeSplit(shadow, va.linearZ, dither);
+		
+			float4 offsetPos = float4(va.pos + 0.05 * ms.normal, 1.0);
+			float4 shadowCoord = (biasMat * shadow.cascadeViewProj[cascadeIndex]) * float4(va.pos, 1.0);
+			shadowCoord = shadowCoord / shadowCoord.w;
+		
+			float shadow_sample = 1.f;
+			if (enableCascadedPCF)
+				shadow_sample = cascadeShadowFilterPCF(shadowmap_tex, shadowCoord, cascadeIndex, 0.005);
+			else
+				shadow_sample = cascadeShadowProjection(shadowmap_tex, shadowCoord, float2(0.0), cascadeIndex, 0.005);
+		
+			return shadow_sample;
+		}
+
+		float3 calculateDirectionalLight(in FDirectionalLightCommit light, in VertexAttribute va, in MaterialSample ms, in float3 V, in float3 F0, in float dither)
+		{
+			float3 L = normalize(-light.direction);
+		
+			float3 color = specularContribution(ms.albedo, L, V, ms.normal, F0, ms.metallic, ms.roughness);
+		
+			float shadow_factor = 1.0;
+			if(light.castShadows > 0 && light.shadowIndex > -1)
+			{
+				FCascadedShadowCommit shadow = cascadedShadowBuffer.shadows[light.shadowIndex];
+				shadow_factor = getCascadeShadow(cascaded_shadowmap, shadow, va, ms, dither);
+			}
+
+			return light.color * light.intencity * color * shadow_factor;
+		}
+
+		float3 calculatePointLight(in FPointLightCommit light, in VertexAttribute va, in MaterialSample ms, in float3 V, in float3 F0, in float dither)
+		{
+			float3 L = normalize(light.position - va.pos);
+			float dist = distance(va.pos, light.position);
+			
+			float atten = clamp(1.0 - pow(dist, 2.0f)/pow(light.radius, 2.0f), 0.0f, 1.0f); atten *= atten;
+			float3 color = specularContribution(ms.albedo, L, V, ms.normal, F0, ms.metallic, ms.roughness);
+		
+			float shadow_factor = 1.0;
+			return light.color * atten * color * light.intencity * shadow_factor;
+		}
+
+		float3 calculateSpotlight(in FSpotLightCommit light, in VertexAttribute va, in MaterialSample ms, in float3 V, in float3 F0, in float dither)
+		{
+			float3 L = normalize(light.position - va.pos);
+		
+			// Direction vector from source to target
+			float3 dir = float3(normalize(light.direction));
+			if(light.toTarget > 0)
+				dir = normalize(light.position - light.direction);
+		
+			float3 color = specularContribution(ms.albedo, L, V, ms.normal, F0, ms.metallic, ms.roughness);
+		
+			// https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_lights_punctual/README.md
+			float cd = dot(light.toTarget > 0 ? L : -L, dir);
+			float angularAttenuation = clamp(cd * light.lightAngleScale + light.lightAngleOffset, 0.0, 1.0);
+			angularAttenuation *= angularAttenuation;	
+			
+			float shadow_factor = 1.0;
+			return light.color * light.intencity * color * angularAttenuation * shadow_factor;
+		}
+
+		float3 calculateLights(in VertexAttribute va, in MaterialSample ms, in float3 V, in float3 F0, in float dither)
+		{
+			float3 Lo =  float3(0.0);
+
+			//Directional light
+			for(uint32_t i = 0u; i < frameData.directionalLightCount; i++)
+			{
+				FDirectionalLightCommit light = directionalLightBuffer.lights[i];
+				Lo += calculateDirectionalLight(light, va, ms, V, F0, dither);
+			}
+
+			//Point light
+			for(uint32_t i = 0u; i < frameData.pointLightCount; i++) 
+			{
+				FPointLightCommit light = pointLightBuffer.lights[i];
+				Lo += calculatePointLight(light, va, ms, V, F0, dither);
+			}
+			
+			//Spot light
+			for(uint32_t i = 0u; i < frameData.spotLightCount; i++)
+			{
+				FSpotLightCommit light = spotLightBuffer.lights[i];
+				Lo += calculateSpotlight(light, va, ms, V, F0, dither);
+			}
+
+			return Lo;
+		}
+
+		float3 debug_visualize_cascades(in float view_depth, float dither)
+		{
+			//float3 view_space_pos = (frameData.view * float4(pos, 1.0)).xyz;
+			//float view_depth = view_space_pos.z * -1.0;
+
+			FCascadedShadowCommit shadow = cascadedShadowBuffer.shadows[0];
+			uint32_t cascade_index = getScadowCascadeSplit(shadow, view_depth, dither);
+
+			switch(cascade_index) 
+			{
+			case 0 : return float3(1.0f, 0.25f, 0.25f); break;
+			case 1 : return float3(0.25f, 1.0f, 0.25f); break;
+			case 2 : return float3(0.25f, 0.25f, 1.0f); break;
+			case 3 : return float3(1.0f, 1.0f, 0.25f); break;
+			case 4 : return float3(0.25f, 1.0f, 1.0f); break;
+			case 5 : return float3(1.0f, 0.25f, 1.0f); break;
+			case 6 : return float3(1.0f, 0.5f, 0.5f); break;
+			case 7 : return float3(0.5f, 1.0f, 0.5f); break;
+			}
+
+			return float3(1.0f, 1.0f, 1.0f);
+		}
+
+		[numthreads(8, 8, 1)]
+		void main(uint3 globalInvocationID : SV_DispatchThreadID, uint3 localInvocationID : SV_GroupThreadID) 
+		{
+			uint2 image_size = write_color.GetDimensions();
+
+			uint2 px = uint2(0, 0);
+			float2 uv = float2(0, 0);
+			if(swizzle_compute_workgroups_8x8(globalInvocationID.xy, localInvocationID.xy, image_size, uv, px))
+				return;
+
+			float3 camera_pos = float3(frameData.invView[3]);
+
+			//float4 pixel_color = float4(0.35f, 0.55f, 0.7f, 1.0f);
+			float4 pixel_color = float4(0.0f, 0.0f, 0.0f, 1.0f);
+
+			VisibilityBuffer visbuffer;
+			if(!loadVisBuffer(uv, visbuffer))
+			{
+				float4 dir_world_space = float4(0.0);
+				//const float3 origin = float3(0, atmosphere_planet_radius, 0) + camera_pos;
+				//
+				float depth = texture(depth_buffer, uv).r;
+				dir_world_space.xyz = getPositionFromDepth(uv, 1.0f, frameData.invViewProjection);
+				//
+				//for(uint32_t i = 0u; i < frameData.directionalLightCount; i++)
+				//{
+				//	const FDirectionalLightCommit light = directionalLightBuffer.directional_lights[i];
+				//	const float3 dir_to_sun = normalize(-light.direction);
+				//	pixel_color.rgb += atmosphere(origin, dir_world_space.xyz, -dir_to_sun, light.intencity);
+				//}
+				//
+				//pixel_color.rgb /= float(frameData.directionalLightCount);
+				//pixel_color.rgb = 1.0 - exp(-1.0 * pixel_color.rgb);
+
+				write_color[uint2(px.x, px.y)] = pixel_color;
+				return;
+			}
+
+			if(visbuffer.vboID != meshData.vboId)
+			{
+				//imageStore(write_color, int2(px), pixel_color);
+				return;
+			}
+
+			float dither = interleavedGradientNoise(uv);
+
+			VertexAttribute va = getVertexData(uv, visbuffer);
+			FMaterial material = materialBuffer.materials[visbuffer.matID];
+			MaterialSample ms = sampleMaterial(material, va);
+
+			// Calculate direction from fragment to viewPosition
+			float3 V = normalize(camera_pos - va.pos);
+
+			float3 F0 = F0FromIOR(ms.ior);
+			F0 = mix(F0, ms.albedo, ms.metallic);
+
+			float3 Lo = calculateLights(va, ms, V, F0, dither);
+
+			// Reflection vector
+			float3 R = -normalize(reflect(V, ms.normal));
+
+			float NdotV = dot(ms.normal, V);
+			float2 brdf = SAMPLE_TEXTURE2D(brdf_lut, float2(max(NdotV, 0.0f), ms.roughness)).rg;
+			float3 reflection = prefilteredReflection(R, ms.roughness, prefiltered_cube, prefiltered_cube_sampler);
+			float3 irradiance = texture(irradiance_cube, ms.normal).rgb;(irradiance_cube, ms.normal).rgb;
+
+			// Diffuse based on irradiance
+			float3 diffuse = ms.albedo * irradiance;
+
+			float3 F = F_SchlickR(max(NdotV, 0.0f), F0, ms.roughness);
+
+			// Specular reflectance
+			float3 specular = reflection * (F * brdf.x + brdf.y);
+
+			float3 kD = (1.0 - F) * (1.0 - ms.metallic);
+			float3 ambient = kD * diffuse + specular;
+
+			ambient = mix(ambient, ambient * ms.ao, material.occlusionStrenth);
+
+			float3 res = ambient + ms.emission + Lo;
+			//res *= debug_visualize_cascades(va.linearZ, dither);
+
+			write_color[uint2(px.x, px.y)] = float4(res, 1.0);
+		}
+	""";
+}

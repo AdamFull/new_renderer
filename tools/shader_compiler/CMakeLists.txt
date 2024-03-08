@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.18.0)
 project(shader_compiler)
 
+find_package(directx-dxc CONFIG REQUIRED)
 find_package(glslang CONFIG REQUIRED)
 find_package(spirv_cross_core CONFIG REQUIRED)
 find_package(spirv_cross_glsl CONFIG REQUIRED)
@@ -27,6 +28,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 )
 
 target_link_libraries(${PROJECT_NAME} 
+    PRIVATE Microsoft::DirectXShaderCompiler
 	PRIVATE glslang::glslang
 	PRIVATE glslang::SPIRV
 	PRIVATE utility_lib

@@ -5,6 +5,9 @@
 
 namespace shader_compiler
 {
+	void deserialize(const sjson::sjson_object& sjson, ETargetAPIType& value);
+	void deserialize(const sjson::sjson_object& sjson, EShaderLang& value);
+	void deserialize(const sjson::sjson_object& sjson, FShaderMakeInfo& value);
 	void deserialize(const sjson::sjson_object& sjson, FShaderObject& value);
 	void deserialize(const sjson::sjson_object& sjson, FShaderSource& value);
 	void deserialize(const sjson::sjson_object& sjson, FShaderDescription& value);

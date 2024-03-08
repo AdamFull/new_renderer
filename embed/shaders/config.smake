@@ -1,0 +1,15 @@
+{
+	lang: "glsl";
+	target_api: "vk11";
+
+	include_directories: [ "includes" ];
+	common_directories: [ "common" ];
+
+	build_modules: [
+		"culling/culling.shlib",
+		"deferred/visibilitybuffer.shlib",
+		"lighting/lighting.shlib",
+		"testing/testing.shlib",
+		"utility/utility.shlib"
+	];
+}

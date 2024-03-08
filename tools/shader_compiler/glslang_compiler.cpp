@@ -1,4 +1,4 @@
-#include "shader_compiler.h"
+#include "glslang_compiler.h"
 
 #include <glslang/SPIRV/GlslangToSpv.h>
 #include <glslang/Public/ShaderLang.h>
@@ -22,6 +22,69 @@ public:
 	IncludeResult* includeSystem(const char* headerName, const char* includerName, u64 inclusionDepth) override { return nullptr; }
 	void releaseInclude(IncludeResult* result) override {}
 };
+
+stl::string remove_spaces_around_dot(const stl::string& line)
+{
+	stl::string result;
+	bool is_last_was_dot{ false };
+
+	for (char c : line)
+	{
+		if (c == ' ' && is_last_was_dot)
+			continue;
+
+		is_last_was_dot = (c == '.');
+		result.push_back(c);
+	}
+
+	u64 pos = result.find(" .");
+	while (pos != stl::string::npos)
+	{
+		result.erase(pos, 1);
+		pos = result.find(" .", pos);
+	}
+
+	return result;
+}
+
+stl::string clean_code(const stl::string& input)
+{
+	stl::istringstream stream(input);
+	stl::string cleaned_code, line;
+	stl::stack<char> block_stack;
+	bool was_empty_line = false;
+
+	while (stl::getline(stream, line))
+	{
+		u64 first = line.find_first_not_of(" \t");
+		if (first == stl::string::npos)
+		{
+			was_empty_line = true;
+			continue;
+		}
+
+		u64 last = line.find_last_not_of(" \t");
+		line = line.substr(first, (last - first + 1));
+
+		line = remove_spaces_around_dot(line);
+
+		if ((line.find('}') != stl::string::npos) && !block_stack.empty())
+			block_stack.pop();
+
+		line = stl::string(block_stack.size(), '\t') + line;
+
+		if (line.find('{') != stl::string::npos)
+			block_stack.push('{');
+
+		if (was_empty_line && !cleaned_code.empty())
+			cleaned_code += '\n';
+		cleaned_code += line + '\n';
+
+		was_empty_line = false;
+	}
+
+	return cleaned_code;
+}
 
 EShLanguage get_sh_language(EShaderType type)
 {
@@ -195,87 +258,29 @@ glslang::EShTargetLanguageVersion get_SPIR_version(ETargetAPIType eAPI)
 	}
 }
 
-stl::string remove_spaces_around_dot(const stl::string& line)
-{
-	stl::string result;
-	bool is_last_was_dot{ false };
-
-	for (char c : line) 
-	{
-		if (c == ' ' && is_last_was_dot)
-			continue;
-
-		is_last_was_dot = (c == '.');
-		result.push_back(c);
-	}
-
-	u64 pos = result.find(" .");
-	while (pos != stl::string::npos) 
-	{
-		result.erase(pos, 1);
-		pos = result.find(" .", pos);
-	}
-
-	return result;
-}
-
-stl::string clean_code(const stl::string& input)
-{
-	stl::istringstream stream(input);
-	stl::string cleaned_code, line;
-	stl::stack<char> block_stack;
-	bool was_empty_line = false;
-
-	while (stl::getline(stream, line)) 
-	{
-		u64 first = line.find_first_not_of(" \t");
-		if (first == stl::string::npos) 
-		{
-			was_empty_line = true;
-			continue;
-		}
-
-		u64 last = line.find_last_not_of(" \t");
-		line = line.substr(first, (last - first + 1));
-
-		line = remove_spaces_around_dot(line);
-
-		if ((line.find('}') != stl::string::npos) && !block_stack.empty())
-			block_stack.pop();
-
-		line = stl::string(block_stack.size(), '\t') + line;
-
-		if (line.find('{') != stl::string::npos)
-			block_stack.push('{');
-
-		if (was_empty_line && !cleaned_code.empty())
-			cleaned_code += '\n';
-		cleaned_code += line + '\n';
-
-		was_empty_line = false;
-	}
-
-	return cleaned_code;
-}
-
-CShaderCompiler::CShaderCompiler(ETargetAPIType target_api, ETargetBuildType build_type)
+CGLSLANGCompiler::CGLSLANGCompiler(ETargetAPIType target_api, ETargetBuildType build_type)
 {
 	this->target_api = target_api;
 	this->build_type = build_type;
 }
 
-CShaderCompiler::~CShaderCompiler()
+CGLSLANGCompiler::~CGLSLANGCompiler()
 {
 	glslang::FinalizeProcess();
 }
 
-void CShaderCompiler::initialize()
+bool CGLSLANGCompiler::initialize()
 {
 	if (!glslang::InitializeProcess())
+	{
 		log_error("Failed to initialize glslang processor.");
+		return false;
+	}
+
+	return true;
 }
 
-void CShaderCompiler::preprocess(const stl::string& shader_code, const FCompileInfo& info, stl::string& preprocessed_code, u64& preprocessed_hash)
+bool CGLSLANGCompiler::preprocess(const stl::string& shader_code, const FCompileInfo& info, stl::string& preprocessed_code, u64& preprocessed_hash)
 {
 	auto language = get_sh_language(info.type);
 	glslang::TShader shader(language);
@@ -298,14 +303,19 @@ void CShaderCompiler::preprocess(const stl::string& shader_code, const FCompileI
 	empty_includer includer;
 	stl::string preprocessed_raw;
 	if (!shader.preprocess(&resources, client_version, ENoProfile, false, false, messages, &preprocessed_raw, includer))
+	{
 		log_error("\nPreprocessing error: In shader \"{}\" \n{}\n{}\n", info.name, shader.getInfoLog(), shader.getInfoDebugLog());
+		return false;
+	}
 
 	preprocessed_code = clean_code(preprocessed_raw);
 
 	preprocessed_hash = utl::utils::fnv1a_64_hash(preprocessed_code.c_str());
+
+	return true;
 }
 
-stl::vector<u32> CShaderCompiler::compile(const stl::string& shader_code, const FCompileInfo& info)
+stl::vector<u32> CGLSLANGCompiler::compile(const stl::string& shader_code, const FCompileInfo& info)
 {
 	stl::vector<u32> spirv{};
 
@@ -353,12 +363,12 @@ stl::vector<u32> CShaderCompiler::compile(const stl::string& shader_code, const 
 
 	stl::string error{};
 	logger.error(error);
-	if(!error.empty())
+	if (!error.empty())
 		log_error("SPIRV generation error: In shader \"{}\" \n{}\n", info.name, error);
 
 	stl::string warning;
 	logger.warning(warning);
-	if(!warning.empty())
+	if (!warning.empty())
 		log_error("SPIRV generation warnings: In shader \"{}\" \n{}\n", info.name, warning);
 
 	// TODO: i can cross compile spirv inside apis

@@ -1,5 +1,8 @@
 #include "library_compiler.h"
 
+#include "glslang_compiler.h"
+#include "dxc_compiler.h"
+
 #include "compiler_util.h"
 #include "compiler_parse.h"
 #include "shader_library_parse.hpp"
@@ -62,26 +65,29 @@ stl::vector<stl::string> make_permutation(u64 mask, const stl::vector<FDefinitio
 	return permutation;
 }
 
-stl::string process_include(const stl::string& include, const stl::filesystem::path& includes_path, u64 depth);
+stl::string process_include(const stl::string& include, const stl::filesystem::path& includes_path, EShaderLang lang, u64 depth);
 
-stl::string generate_shader_code(const FShaderObject& sobject, const stl::filesystem::path& includes_path, u64 depth = 0)
+stl::string generate_shader_code(const FShaderObject& sobject, const stl::filesystem::path& includes_path, EShaderLang lang, u64 depth = 0)
 {
 	stl::stringstream ss{};
 
 	if (depth == 0ull)
 	{
-		// Set language version
-		ss << stl::format("#version {}", sobject.version) << stl::endl << stl::endl;
+		if (lang == EShaderLang::eGLSL)
+		{
+			// Set language version
+			ss << stl::format("#version {}", sobject.version) << stl::endl << stl::endl;
 
-		// Apply enabled extensions
-		for (auto& extension_name : sobject.enable_extensions)
-			ss << stl::format("#extension {} : enable", extension_name) << stl::endl;
-		ss << stl::endl;
+			// Apply enabled extensions
+			for (auto& extension_name : sobject.enable_extensions)
+				ss << stl::format("#extension {} : enable", extension_name) << stl::endl;
+			ss << stl::endl;
 
-		// Apply required extensions
-		for (auto& extension_name : sobject.require_extensions)
-			ss << stl::format("#extension {} : require", extension_name) << stl::endl;
-		ss << stl::endl;
+			// Apply required extensions
+			for (auto& extension_name : sobject.require_extensions)
+				ss << stl::format("#extension {} : require", extension_name) << stl::endl;
+			ss << stl::endl;
+		}
 
 		// Apply definitions (TODO: add definition values)
 		for (auto& definition : sobject.definitions)
@@ -93,7 +99,7 @@ stl::string generate_shader_code(const FShaderObject& sobject, const stl::filesy
 
 	// Include 
 	for (auto& sinclude : sobject.includes)
-		ss << process_include(sinclude, includes_path, depth);
+		ss << process_include(sinclude, includes_path, lang, depth);
 
 	// Apply code
 	ss << sobject.code;
@@ -101,7 +107,7 @@ stl::string generate_shader_code(const FShaderObject& sobject, const stl::filesy
 	return ss.str();
 }
 
-stl::string process_include(const stl::string& include, const stl::filesystem::path& includes_path, u64 depth)
+stl::string process_include(const stl::string& include, const stl::filesystem::path& includes_path, EShaderLang lang, u64 depth)
 {
 	stl::stringstream ss{};
 	stl::string guard_name{};
@@ -153,7 +159,7 @@ stl::string process_include(const stl::string& include, const stl::filesystem::p
 		log_error("Include {} was not found, or not supported format.", include);
 
 	ss << stl::format("\n#ifndef {}\n#define {}", guard_name, guard_name) << stl::endl;
-	ss << generate_shader_code(include_so, includes_path, depth + 1);
+	ss << generate_shader_code(include_so, includes_path, lang, depth + 1);
 	ss << "\n#endif" << stl::endl << stl::endl;
 
 	return ss.str();
@@ -166,9 +172,15 @@ CLibraryCompiler::CLibraryCompiler(const stl::filesystem::path& common_path, con
 }
 
 
-void CLibraryCompiler::initialize(ETargetAPIType target_api, ETargetBuildType build_type)
+void CLibraryCompiler::initialize(ETargetAPIType target_api, EShaderLang shader_lang, ETargetBuildType build_type)
 {
-	m_pShaderCompiler = stl::make_unique<CShaderCompiler>(target_api, build_type);
+	switch (shader_lang)
+	{
+	case shader_compiler::EShaderLang::eUnknown: break;
+	case shader_compiler::EShaderLang::eGLSL: { m_pShaderCompiler = stl::make_unique<CGLSLANGCompiler>(target_api, build_type); } break;
+	case shader_compiler::EShaderLang::eHLSL: { m_pShaderCompiler = stl::make_unique<CDXCCompiler>(target_api, build_type); } break;
+	}
+
 	m_pShaderCompiler->initialize();
 }
 
@@ -223,7 +235,7 @@ void CLibraryCompiler::compile(const stl::filesystem::path& library_path, FShade
 				continue;
 
 			// Generate shader code (apply extensions, process includes and definitions)
-			auto base_shader_code = generate_shader_code(shader_object, m_srIncludesPath);
+			auto base_shader_code = generate_shader_code(shader_object, m_srIncludesPath, EShaderLang::eGLSL);
 			auto name_type_hash = get_shader_type(source.type);
 			auto& shader_pool = compiled_library.shaders[name_type_hash];
 			

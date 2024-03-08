@@ -2,38 +2,90 @@
 
 namespace shader_compiler
 {
-	EShaderType parse_shader_type(const std::string& shader_type_str)
+	void deserialize(const sjson::sjson_object& sjson, ETargetAPIType& value)
 	{
-		if (shader_type_str == "vertex")
-			return EShaderType::eVertex;
-		else if (shader_type_str == "control")
-			return EShaderType::eControl;
-		else if (shader_type_str == "evaluation")
-			return EShaderType::eEvaluation;
-		else if (shader_type_str == "geometry")
-			return EShaderType::eGeometry;
-		else if (shader_type_str == "fragment")
-			return EShaderType::eFragment;
-		else if (shader_type_str == "compute")
-			return EShaderType::eCompute;
-		else if (shader_type_str == "raygen")
-			return EShaderType::eRayGen;
-		else if (shader_type_str == "intersection")
-			return EShaderType::eIntersection;
-		else if (shader_type_str == "anyhit")
-			return EShaderType::eAnyHit;
-		else if (shader_type_str == "closesthit")
-			return EShaderType::eClosestHit;
-		else if (shader_type_str == "miss")
-			return EShaderType::eMiss;
-		else if (shader_type_str == "callable")
-			return EShaderType::eCallable;
-		else if (shader_type_str == "task")
-			return EShaderType::eTask;
-		else if (shader_type_str == "mesh")
-			return EShaderType::eMesh;
+		std::string temp{};
+		sjson.parse_to(temp);
 
-		return EShaderType::eUnknown;
+		if (temp == "vk10")
+			value = ETargetAPIType::eVK10;
+		else if (temp == "vk11")
+			value = ETargetAPIType::eVK11;
+		else if (temp == "vk12")
+			value = ETargetAPIType::eVK12;
+		else if (temp == "vk13")
+			value = ETargetAPIType::eVK13;
+		else if (temp == "gl")
+			value = ETargetAPIType::eGL;
+		else if (temp == "dx11")
+			value = ETargetAPIType::eDX11;
+		else if (temp == "dx12")
+			value = ETargetAPIType::eDX12;
+		else if (temp == "mtl")
+			value = ETargetAPIType::eMTL;
+		else
+			value = ETargetAPIType::eUnknown;
+	}
+
+	void deserialize(const sjson::sjson_object& sjson, EShaderLang& value)
+	{
+		std::string temp{};
+		sjson.parse_to(temp);
+
+		if (temp == "glsl")
+			value = EShaderLang::eGLSL;
+		else if (temp == "hlsl")
+			value = EShaderLang::eHLSL;
+		else
+			value = EShaderLang::eUnknown;
+	}
+
+	void deserialize(const sjson::sjson_object& sjson, EShaderType& value)
+	{
+		std::string temp{};
+		sjson.parse_to(temp);
+
+		if (temp == "vertex")
+			value = EShaderType::eVertex;
+		else if (temp == "control")
+			value = EShaderType::eControl;
+		else if (temp == "evaluation")
+			value = EShaderType::eEvaluation;
+		else if (temp == "geometry")
+			value = EShaderType::eGeometry;
+		else if (temp == "fragment")
+			value = EShaderType::eFragment;
+		else if (temp == "compute")
+			value = EShaderType::eCompute;
+		else if (temp == "raygen")
+			value = EShaderType::eRayGen;
+		else if (temp == "intersection")
+			value = EShaderType::eIntersection;
+		else if (temp == "anyhit")
+			value = EShaderType::eAnyHit;
+		else if (temp == "closesthit")
+			value = EShaderType::eClosestHit;
+		else if (temp == "miss")
+			value = EShaderType::eMiss;
+		else if (temp == "callable")
+			value = EShaderType::eCallable;
+		else if (temp == "task")
+			value = EShaderType::eTask;
+		else if (temp == "mesh")
+			value = EShaderType::eMesh;
+		else
+			value = EShaderType::eUnknown;
+	}
+
+	void deserialize(const sjson::sjson_object& sjson, FShaderMakeInfo& value)
+	{
+		sjson.try_parse_to("lang", value.lang, true);
+		sjson.try_parse_to("target_api", value.targetApi, true);
+
+		sjson.try_parse_to("include_directories", value.includeDirectories);
+		sjson.try_parse_to("common_directories", value.commonDirectories);
+
+		sjson.try_parse_to("build_modules", value.buildModules);
 	}
 
 	void deserialize(const sjson::sjson_object& sjson, FShaderObject& value)
@@ -51,9 +103,7 @@ namespace shader_compiler
 
 	void deserialize(const sjson::sjson_object& sjson, FShaderSource& value)
 	{
-		std::string type{};
-		sjson.try_parse_to("type", type, true);
-		value.type = parse_shader_type(type);
+		sjson.try_parse_to("type", value.type, true);
 		sjson.try_parse_to("common", value.common);
 		sjson.try_parse_to("shader_name", value.shader_name, true);
 	}

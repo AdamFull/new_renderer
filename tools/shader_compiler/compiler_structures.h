@@ -8,6 +8,7 @@ namespace shader_compiler
 {
 	enum class ETargetAPIType
 	{
+		eUnknown,
 		eVK10,
 		eVK11,
 		eVK12,
@@ -22,6 +23,13 @@ namespace shader_compiler
 	{
 		eRelease,
 		eDebug
+	};
+
+	enum class EShaderLang
+	{
+		eUnknown,
+		eGLSL,
+		eHLSL
 	};
 
 	enum class EShaderType
@@ -41,6 +49,17 @@ namespace shader_compiler
 		eCallable,
 		eTask,
 		eMesh
+	};
+
+	struct FShaderMakeInfo
+	{
+		EShaderLang lang;
+		ETargetAPIType targetApi;
+
+		std::vector<std::string> includeDirectories;
+		std::vector<std::string> commonDirectories;
+
+		std::vector<std::string> buildModules;
 	};
 
 	struct FShaderObject

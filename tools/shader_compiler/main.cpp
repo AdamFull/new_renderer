@@ -2,32 +2,19 @@
 #include <fstream>
 #include <optional>
 #include <sstream>
+#include <regex>
 
 #include <logger/logger.h>
 
 #include "library_compiler.h"
+#include "shader_preprocessor.h"
 
+#include "compiler_parse.h"
 #include "shader_library_parse.hpp"
 #include "compiler_util.h"
 
 namespace fs = std::filesystem;
 using namespace shader_compiler;
-
-ETargetAPIType parse_api_type(const std::string& api_type_str)
-{
-	if (api_type_str == "vk10")
-		return ETargetAPIType::eVK10;
-	else if (api_type_str == "vk11")
-		return ETargetAPIType::eVK11;
-	else if (api_type_str == "vk12")
-		return ETargetAPIType::eVK12;
-	else if (api_type_str == "vk13")
-		return ETargetAPIType::eVK13;
-	else if (api_type_str == "gl")
-		return ETargetAPIType::eGL;
-
-	return ETargetAPIType::eVK10;
-}
 
 ETargetBuildType parse_build_type(const std::string& build_type_str)
 {
@@ -100,20 +87,41 @@ int main(int argc, char** argv)
 	log_add_cout_output();
 	log_init("shader_compiler", "1.0.0");
 
+	//std::string code = R"(
+	//	template<class T>
+	//	T MyFunc(in T o)
+	//	{
+	//		T value = static_cast<T>(0);
+	//		return value;
+	//	}
+	//
+	//	template<>
+	//	uint32_t MyFunc(in uint32_t o)
+	//	{
+	//		return static_cast<int32_t>(o) - 1;
+	//	}
+	//
+	//	MyFunc<uint32_t>(2u);
+	//	MyFunc<int32_t>(2);
+	//	)";
+	//
+	//CShaderPreprocessor preprocessor{};
+	//preprocessor.preprocess(code);
+
 	CArgumentParser argparse(argc, argv);
 
 	fs::path input_path{};
 	fs::path compiled_libraries_output{};
-	fs::path shaders_common{};
-	fs::path shaders_include{};
 
-	input_path = "D:\\GitHub\\new_renderer\\embed\\shaders";
+	input_path = "D:\\GitHub\\new_renderer\\embed\\shaders\\config.smake";
 	compiled_libraries_output = "D:\\GitHub\\new_renderer\\bin\\Debug\\engine\\embed\\rendering\\shader_cache.shc";
-	shaders_common = "D:\\GitHub\\new_renderer\\embed\\shaders\\common";
-	shaders_include = "D:\\GitHub\\new_renderer\\embed\\shaders\\includes";
 
-	ETargetAPIType target_api{ ETargetAPIType::eVK11 };
-	ETargetBuildType build_type{ ETargetBuildType::eRelease };
+	FShaderMakeInfo make_info{};
+	if (!parse_file_to(input_path, make_info))
+	{
+		log_error("Failed to open shader make file.");
+		return -1;
+	}
 
 	input_path = argparse.try_get("-in", input_path);
 	if (input_path.empty())
@@ -129,65 +137,29 @@ int main(int argc, char** argv)
 		return -1;
 	}
 
-	shaders_common = argparse.try_get("-common", shaders_common);
-	if (shaders_common.empty())
-	{
-		log_error("Common shaders path is not set.");
-		return -1;
-	}
-
-	shaders_include = argparse.try_get("-includes", shaders_include);
-	if (shaders_common.empty())
-	{
-		log_error("Common shaders path is not set.");
-		return -1;
-	}
-	
-	std::string target_api_str{ "vk11" };
-	target_api_str = argparse.try_get("-api", target_api_str);
-	target_api = parse_api_type(target_api_str);
-
 	std::string build_type_str{ "release" };
 	build_type_str = argparse.try_get("-build_type", build_type_str);
-	build_type = parse_build_type(build_type_str);
+	ETargetBuildType build_type = parse_build_type(build_type_str);
+
+	auto make_file_dir = input_path.parent_path();
+	fs::path shaders_common = make_file_dir / make_info.commonDirectories.front();
+	fs::path shaders_include = make_file_dir / make_info.includeDirectories.front();
 
 	// Initialize library compiler
 	auto library_compiler = std::make_unique<CLibraryCompiler>(shaders_common, shaders_include);
-	library_compiler->initialize(target_api, build_type);
+	library_compiler->initialize(make_info.targetApi, make_info.lang, build_type);
 
 	FShaderCacheData shader_cahce{};
 
 	if (!parse_json_to(compiled_libraries_output, shader_cahce))
 		log_info("No shader cache found.");
 
-	// Start compilation process
-	if (std::filesystem::is_regular_file(input_path))
+	// Compile all modules
+	for (const auto& module_local_path : make_info.buildModules)
 	{
-		auto file_extension = input_path.extension();
-		bool is_library_file = file_extension == ".shlib";
-
-		if (file_extension != ".shlib")
-		{
-			log_error("Trying to compile file with unsupported extension. File extension is \"{}\".", file_extension.string());
-			return -1;
-		}
-
-		library_compiler->compile(input_path, shader_cahce);
-	}
-	else
-	{
-		for (const auto& dir_entry : fs::recursive_directory_iterator(input_path))
-		{
-			if (dir_entry.is_directory())
-				continue;
-
-			auto& current_path = dir_entry.path();
-			auto file_extension = current_path.extension();
-			if (file_extension != ".shlib")
-				continue;
-
-			library_compiler->compile(current_path, shader_cahce);
-		}
+		log_info("Building module: {}", module_local_path);
+		fs::path module_path = make_file_dir / module_local_path;
+		library_compiler->compile(module_path, shader_cahce);
 	}
 
 	dump_json_from(compiled_libraries_output, shader_cahce);

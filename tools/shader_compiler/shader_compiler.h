@@ -1,6 +1,7 @@
 #pragma once
 
 #include "compiler_structures.h"
+#include <utils/hash.h>
 
 namespace shader_compiler
 {
@@ -10,18 +11,13 @@ namespace shader_compiler
 		std::string name;
 	};
 
-	class CShaderCompiler
+	class IShaderCompiler
 	{
 	public:
-		CShaderCompiler(ETargetAPIType target_api, ETargetBuildType build_type);
-		~CShaderCompiler();
+		virtual ~IShaderCompiler() = default;
 
-		void initialize();
-
-		void preprocess(const std::string& shader_code, const FCompileInfo& info, std::string& preprocessed_code, size_t& preprocessed_hash);
-		std::vector<uint32_t> compile(const std::string& shader_code, const FCompileInfo& info);
-	private:
-		ETargetBuildType build_type{ ETargetBuildType::eRelease };
-		ETargetAPIType target_api{ ETargetAPIType::eVK13 };
+		virtual bool initialize() = 0;
+		virtual bool preprocess(const std::string& shader_code, const FCompileInfo& info, std::string& preprocessed_code, size_t& preprocessed_hash) = 0;
+		virtual std::vector<uint32_t> compile(const std::string& shader_code, const FCompileInfo& info) = 0;
 	};
 }
