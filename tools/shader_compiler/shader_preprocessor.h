@@ -1,9 +1,12 @@
 #pragma once
 
+#include "compiler_structures.h"
+
 #include <regex>
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <filesystem>
 
 namespace shader_compiler
 {
@@ -40,12 +43,22 @@ namespace shader_compiler
 	class CShaderPreprocessor
 	{
 	public:
+		CShaderPreprocessor(const std::filesystem::path& common_path, const std::vector<std::filesystem::path>& include_directories);
+
+		void initialize(EShaderLang lang);
+
+		std::string generate(const std::filesystem::path& path, const FShaderSource& shader_source);
+
 		std::string preprocess(const std::string& code);
 	protected:
 		std::vector<FTemplateFunction> parseTemplateFunctions(const std::string& code);
 		std::vector<FTemplateFunctionCall> parseTemplateFunctionCalls(const std::string& code);
 		std::unordered_map<std::string, std::string> generateTemplateFunctionCode(const std::vector<FTemplateFunction>& functions, std::vector<FTemplateFunctionCall>& calls);
 	private:
+		EShaderLang m_shaderLang;
+		std::vector<std::filesystem::path> m_includeDirectories;
+		std::filesystem::path m_commonDirectory;
+
 		std::regex m_templateFuncRegex{ R"(template<(.+?)>\s*(\w+)\s+(\w+)\((.*?)\)\s*\{([\s\S]*?)\})" };
 		std::regex m_templateArgumentRegex{ R"((?:typename|class)\s+(\w+)(?:\s*=\s*(\w+))?)" };
 		std::regex m_functionArgumentRegex{ R"(([\w\s]*?)\s+([\w\s]+?)\s+(\w+)(?:\s*=\s*(\w+))?(?:\s*([\w\s]+))?)" };

@@ -170,7 +170,7 @@ void CScene::makeGenerateScene(const stl::string& path)
 	for (u64 idx = 0ull; idx < duplicate_count; ++idx)
 	{
 		// Add new node to scene
-		current_scene.nodes.emplace_back(root.nodes.size());
+		current_scene.nodes.emplace_back(static_cast<int32_t>(root.nodes.size()));
 	
 		auto& new_node = root.nodes.emplace_back();
 		new_node.name = std::format("Node {}", idx);

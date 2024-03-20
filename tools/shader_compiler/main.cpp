@@ -5,6 +5,7 @@
 #include <regex>
 
 #include <logger/logger.h>
+#include <parsing/argparse.h>
 
 #include "library_compiler.h"
 #include "shader_preprocessor.h"
@@ -26,51 +27,6 @@ ETargetBuildType parse_build_type(const std::string& build_type_str)
 	return ETargetBuildType::eRelease;
 }
 
-class CArgumentParser
-{
-public:
-	CArgumentParser(int& argc, char** argv)
-	{
-		for (int i = 1; i < argc; ++i)
-			this->tokens.push_back(std::string(argv[i]));
-	}
-
-	template<class _Ty>
-	_Ty try_get(const std::string& option, _Ty default_value)
-	{
-		if (!exists(option))
-			return default_value;
-
-		auto svalue = get(option).value();
-
-		if constexpr (std::is_same_v<_Ty, std::string>)
-			return svalue;
-
-		_Ty value;
-		std::stringstream ss;
-		ss << svalue;
-		ss >> value;
-
-		return value;
-	}
-
-	std::optional<std::string> get(const std::string& option) const
-	{
-		std::vector<std::string>::const_iterator itr;
-		itr = std::find(this->tokens.begin(), this->tokens.end(), option);
-		if (itr != this->tokens.end() && ++itr != this->tokens.end())
-			return *itr;
-		return std::nullopt;
-	}
-
-	bool exists(const std::string& option) const
-	{
-		return std::find(this->tokens.begin(), this->tokens.end(), option) != this->tokens.end();
-	}
-private:
-	std::vector<std::string> tokens;
-};
-
 fs::path make_current_library_output_path(const fs::path& base_path, const fs::path& base_out_path, const fs::path& current_path)
 {
 	fs::path out_path{};
@@ -83,32 +39,16 @@ fs::path make_current_library_output_path(const fs::path& base_path, const fs::p
 
 int main(int argc, char** argv)
 {
+	utl::parsing::argument_parser argparse{};
+	argparse.register_arg("-in", "-input").set_help("Path to shader make file.").require_value();
+	argparse.register_arg("-out", "-output").set_help("Path to output directory to save shader cache.").require_value();
+	argparse.register_arg("-bt", "-build_type").set_help("Path to output directory to save shader cache.").require_value();
+
+	argparse.parse_arguments(argc, argv);
+
 	log_add_file_output("shader_compiler.log");
 	log_add_cout_output();
 	log_init("shader_compiler", "1.0.0");
-
-	//std::string code = R"(
-	//	template<class T>
-	//	T MyFunc(in T o)
-	//	{
-	//		T value = static_cast<T>(0);
-	//		return value;
-	//	}
-	//
-	//	template<>
-	//	uint32_t MyFunc(in uint32_t o)
-	//	{
-	//		return static_cast<int32_t>(o) - 1;
-	//	}
-	//
-	//	MyFunc<uint32_t>(2u);
-	//	MyFunc<int32_t>(2);
-	//	)";
-	//
-	//CShaderPreprocessor preprocessor{};
-	//preprocessor.preprocess(code);
-
-	CArgumentParser argparse(argc, argv);
 
 	fs::path input_path{};
 	fs::path compiled_libraries_output{};
@@ -143,10 +83,13 @@ int main(int argc, char** argv)
 
 	auto make_file_dir = input_path.parent_path();
 	fs::path shaders_common = make_file_dir / make_info.commonDirectories.front();
-	fs::path shaders_include = make_file_dir / make_info.includeDirectories.front();
+
+	std::vector<std::filesystem::path> include_directories{};
+	for (const auto& include_path : make_info.includeDirectories)
+		include_directories.emplace_back(make_file_dir / include_path);
 
 	// Initialize library compiler
-	auto library_compiler = std::make_unique<CLibraryCompiler>(shaders_common, shaders_include);
+	auto library_compiler = std::make_unique<CLibraryCompiler>(shaders_common, include_directories);
 	library_compiler->initialize(make_info.targetApi, make_info.lang, build_type);
 
 	FShaderCacheData shader_cahce{};

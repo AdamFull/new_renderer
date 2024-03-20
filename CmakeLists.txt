@@ -73,7 +73,9 @@ add_subdirectory(tools/scene_compiler)
 
 add_subdirectory(engine)
 
-add_executable(${PROJECT_NAME} main.cpp)
+add_subdirectory(editor)
+
+add_executable(${PROJECT_NAME} main.cpp "libraries/utllib/source/reactive/command_processor.h")
 
 target_link_libraries(${PROJECT_NAME} 
 	PRIVATE application

@@ -65,110 +65,9 @@ stl::vector<stl::string> make_permutation(u64 mask, const stl::vector<FDefinitio
 	return permutation;
 }
 
-stl::string process_include(const stl::string& include, const stl::filesystem::path& includes_path, EShaderLang lang, u64 depth);
-
-stl::string generate_shader_code(const FShaderObject& sobject, const stl::filesystem::path& includes_path, EShaderLang lang, u64 depth = 0)
+CLibraryCompiler::CLibraryCompiler(const std::filesystem::path& common_path, const std::vector<std::filesystem::path>& includes_path)
 {
-	stl::stringstream ss{};
-
-	if (depth == 0ull)
-	{
-		if (lang == EShaderLang::eGLSL)
-		{
-			// Set language version
-			ss << stl::format("#version {}", sobject.version) << stl::endl << stl::endl;
-
-			// Apply enabled extensions
-			for (auto& extension_name : sobject.enable_extensions)
-				ss << stl::format("#extension {} : enable", extension_name) << stl::endl;
-			ss << stl::endl;
-
-			// Apply required extensions
-			for (auto& extension_name : sobject.require_extensions)
-				ss << stl::format("#extension {} : require", extension_name) << stl::endl;
-			ss << stl::endl;
-		}
-
-		// Apply definitions (TODO: add definition values)
-		for (auto& definition : sobject.definitions)
-			ss << stl::format("#define {}", definition) << stl::endl;
-
-		if (depth == 0ull)
-			ss << "{other_definitions}" << stl::endl << stl::endl; // For other definitions
-	}
-
-	// Include 
-	for (auto& sinclude : sobject.includes)
-		ss << process_include(sinclude, includes_path, lang, depth);
-
-	// Apply code
-	ss << sobject.code;
-
-	return ss.str();
-}
-
-stl::string process_include(const stl::string& include, const stl::filesystem::path& includes_path, EShaderLang lang, u64 depth)
-{
-	stl::stringstream ss{};
-	stl::string guard_name{};
-
-	auto base_include_path = (includes_path / include).string();
-
-	FShaderObject include_so{};
-	if (parse_file_to(base_include_path + ".shinc", include_so))
-		guard_name = stl::format("{}_protector", stl::filesystem::path(base_include_path).stem().string());
-	else if (parse_header(base_include_path + ".h", include_so.code))
-	{
-		stl::regex guard_start_pattern("#ifndef (.+)");
-		stl::regex guard_define_pattern("#define (.+)");
-		stl::regex guard_end_pattern("#endif.*");
-		stl::regex include_pattern("#include \"(.+)\"");
-		stl::smatch matches;
-
-		stl::istringstream stream(include_so.code);
-		stl::string line;
-		
-		bool in_guard_block{ false };
-		bool is_guard_defined{ false };
-
-		include_so.code.clear();
-		while (stl::getline(stream, line)) 
-		{
-			if (stl::regex_search(line, matches, guard_start_pattern) && !in_guard_block)
-			{
-				guard_name = matches[1].str();
-				in_guard_block = true;
-			}
-			else if (in_guard_block && !is_guard_defined && stl::regex_search(line, matches, guard_define_pattern))
-				is_guard_defined = guard_name == matches[1].str();
-			else if (in_guard_block && is_guard_defined && stl::regex_search(line, matches, guard_end_pattern) && stream.eof())
-			{
-				in_guard_block = false;
-				is_guard_defined = false;
-			}
-			else
-			{
-				if (stl::regex_search(line, matches, include_pattern)) 
-					include_so.includes.emplace_back(matches[1].matched ? matches[1].str() : matches[2].str());
-				else
-					include_so.code += line + "\n";
-			}
-		}
-	}
-	else
-		log_error("Include {} was not found, or not supported format.", include);
-
-	ss << stl::format("\n#ifndef {}\n#define {}", guard_name, guard_name) << stl::endl;
-	ss << generate_shader_code(include_so, includes_path, lang, depth + 1);
-	ss << "\n#endif" << stl::endl << stl::endl;
-
-	return ss.str();
-}
-
-CLibraryCompiler::CLibraryCompiler(const stl::filesystem::path& common_path, const stl::filesystem::path& includes_path)
-{
-	m_srCommonPath = common_path;
-	m_srIncludesPath = includes_path;
+	m_pPreprocessor = std::make_unique<CShaderPreprocessor>(common_path, includes_path);
 }
 
 
@@ -181,6 +80,7 @@ void CLibraryCompiler::initialize(ETargetAPIType target_api, EShaderLang shader_
 	case shader_compiler::EShaderLang::eHLSL: { m_pShaderCompiler = stl::make_unique<CDXCCompiler>(target_api, build_type); } break;
 	}
 
+	m_pPreprocessor->initialize(shader_lang);
 	m_pShaderCompiler->initialize();
 }
 
@@ -226,16 +126,8 @@ void CLibraryCompiler::compile(const stl::filesystem::path& library_path, FShade
 		// Process all shader included sources
 		for (auto& source : shader_desc.sources)
 		{
-			// TODO: i think i should create common library that will contatin common sources
-			auto shader_path = (source.common ? m_srCommonPath : parent_path) / (source.shader_name + ".shade");
-
-			// Parse shader file
-			FShaderObject shader_object{};
-			if (!parse_file_to(shader_path, shader_object))
-				continue;
-
 			// Generate shader code (apply extensions, process includes and definitions)
-			auto base_shader_code = generate_shader_code(shader_object, m_srIncludesPath, EShaderLang::eGLSL);
+			auto base_shader_code = m_pPreprocessor->generate(parent_path, source);
 			auto name_type_hash = get_shader_type(source.type);
 			auto& shader_pool = compiled_library.shaders[name_type_hash];
 			

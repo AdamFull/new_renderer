@@ -1,4 +1,7 @@
 #include "shader_preprocessor.h"
+#include "compiler_parse.h"
+
+#include "compiler_util.h"
 
 #include <format>
 
@@ -9,6 +12,148 @@ using namespace shader_compiler;
 // Add support for default template type (for example template<uint32_t _count>)
 // Add template function specialization support
 // Add template support for struct
+
+std::string process_include(const std::string& include, const std::vector<std::filesystem::path>& includes_path, EShaderLang lang, u64 depth);
+
+std::string generate_shader_code(const FShaderObject& sobject, const std::vector < std::filesystem::path>& includes_path, EShaderLang lang, u64 depth = 0)
+{
+	std::stringstream ss{};
+
+	if (depth == 0ull)
+	{
+		if (lang == EShaderLang::eGLSL)
+		{
+			// Set language version
+			ss << std::format("#version {}", sobject.version) << std::endl << std::endl;
+
+			// Apply enabled extensions
+			for (auto& extension_name : sobject.enable_extensions)
+				ss << std::format("#extension {} : enable", extension_name) << std::endl;
+			ss << std::endl;
+
+			// Apply required extensions
+			for (auto& extension_name : sobject.require_extensions)
+				ss << std::format("#extension {} : require", extension_name) << std::endl;
+			ss << std::endl;
+		}
+
+		// Apply definitions (TODO: add definition values)
+		for (auto& definition : sobject.definitions)
+			ss << std::format("#define {}", definition) << std::endl;
+
+		if (depth == 0ull)
+			ss << "{other_definitions}" << std::endl << std::endl; // For other definitions
+	}
+
+	// Include 
+	for (auto& sinclude : sobject.includes)
+		ss << process_include(sinclude, includes_path, lang, depth);
+
+	// Apply code
+	ss << sobject.code;
+
+	return ss.str();
+}
+
+std::filesystem::path find_include_path(const std::string& include, const std::vector<std::filesystem::path>& includes_path)
+{
+	for (const auto& include_path : includes_path)
+	{
+		auto base_includes_path = (include_path / include).string();
+		if (std::filesystem::exists(base_includes_path + ".shinc"))
+			return std::filesystem::weakly_canonical(std::filesystem::path(base_includes_path + ".shinc"));
+		else if (std::filesystem::exists(base_includes_path + ".h"))
+			return std::filesystem::weakly_canonical(std::filesystem::path(base_includes_path + ".h"));
+	}
+
+	return {};
+}
+
+std::string process_include(const std::string& include, const std::vector<std::filesystem::path>& includes_path, EShaderLang lang, u64 depth)
+{
+	std::stringstream ss{};
+	std::string guard_name{};
+
+	auto include_file_path = find_include_path(include, includes_path);
+	auto file_ext = include_file_path.extension().string();
+
+	FShaderObject include_so{};
+	if (file_ext == ".shinc" && parse_file_to(include_file_path, include_so))
+		guard_name = std::format("{}_protector", include_file_path.stem().string());
+	else if (file_ext == ".h" && parse_header(include_file_path, include_so.code))
+	{
+		std::regex guard_start_pattern("#ifndef (.+)");
+		std::regex guard_define_pattern("#define (.+)");
+		std::regex guard_end_pattern("#endif.*");
+		std::regex include_pattern("#include \"(.+)\"");
+		std::smatch matches;
+
+		std::istringstream stream(include_so.code);
+		std::string line;
+
+		bool in_guard_block{ false };
+		bool is_guard_defined{ false };
+
+		include_so.code.clear();
+		while (std::getline(stream, line))
+		{
+			if (std::regex_search(line, matches, guard_start_pattern) && !in_guard_block)
+			{
+				guard_name = matches[1].str();
+				in_guard_block = true;
+			}
+			else if (in_guard_block && !is_guard_defined && std::regex_search(line, matches, guard_define_pattern))
+				is_guard_defined = guard_name == matches[1].str();
+			else if (in_guard_block && is_guard_defined && std::regex_search(line, matches, guard_end_pattern) && stream.eof())
+			{
+				in_guard_block = false;
+				is_guard_defined = false;
+			}
+			else
+			{
+				if (std::regex_search(line, matches, include_pattern))
+					include_so.includes.emplace_back(matches[1].matched ? matches[1].str() : matches[2].str());
+				else
+					include_so.code += line + "\n";
+			}
+		}
+	}
+	else
+		log_error("Include {} was not found, or not supported format.", include);
+
+	ss << std::format("\n#ifndef {}\n#define {}", guard_name, guard_name) << std::endl;
+	ss << generate_shader_code(include_so, includes_path, lang, depth + 1);
+	ss << "\n#endif" << std::endl << std::endl;
+
+	return ss.str();
+}
+
+CShaderPreprocessor::CShaderPreprocessor(const std::filesystem::path& common_directory, const std::vector<std::filesystem::path>& include_directories)
+{
+	m_includeDirectories = include_directories;
+	m_commonDirectory = common_directory;
+}
+
+void CShaderPreprocessor::initialize(EShaderLang lang)
+{
+	m_shaderLang = lang;
+}
+
+std::string CShaderPreprocessor::generate(const std::filesystem::path& path, const FShaderSource& source)
+{
+	// TODO: i think i should create common library that will contatin common sources
+	auto shader_path = (source.common ? m_commonDirectory : path) / (source.shader_name + ".shade");
+
+	// Parse shader file
+	FShaderObject shader_object{};
+	if (!parse_file_to(shader_path, shader_object))
+	{
+		log_error("Failed to parse shader: {}.", source.shader_name);
+		return {};
+	}
+
+	return generate_shader_code(shader_object, m_includeDirectories, m_shaderLang);
+}
 
 std::string CShaderPreprocessor::preprocess(const std::string& code)
 {

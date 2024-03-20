@@ -160,6 +160,9 @@ namespace engine
 				return get<_Ty>(m_size - 1ull);
 			}
 
+			//virtual void map() = 0;
+			//virtual void unmap() = 0;
+
 			virtual void resize(u64 new_size) = 0;
 
 			u64 size() { return m_size; }
