@@ -9,9 +9,14 @@
 #include <reactive/command_processor.h>
 #include <plugin/plugin_manager.h>
 
+#include <networking/socket.h>
+
 #include <DbgHelp.h>
 #include <tlhelp32.h>
 #include <psapi.h>
+
+//#include <winsock2.h>
+//#include <ws2tcpip.h>
 
 #pragma comment(lib, "Dbghelp.lib")
 #pragma comment(lib, "Psapi.lib")
@@ -315,6 +320,8 @@ int main(int argc, char** argv)
         .register_command("terminate").set_executor(&on_terminate)
         .end();
 
+    constexpr utl::networking::ipv4_address addr("127.0.0.1"); // valid
+    
     processor.execute("system.io.print(t:\"sosu pizdu\")");
     processor.execute("system.terminate()");
 
