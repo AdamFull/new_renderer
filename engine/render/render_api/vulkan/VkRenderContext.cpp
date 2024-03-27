@@ -375,7 +375,10 @@ u64 CVkRenderContext::createRenderTargets(const stl::string& name, const FTextur
 			resource_id = m_pResources->add<FVkTexture>(name.c_str(), stl::move(texture));
 		}
 		else
+		{
 			resource_id = createRenderTarget(name, texture_ci);
+			break;
+		}
 	}
 
 	return resource_id;
