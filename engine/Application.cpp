@@ -108,6 +108,12 @@ void CApplication::loop()
 
 void CApplication::updateTitle()
 {
-	auto winname = std::format("Vulkan App {} fps ({:.2f} ms); {} gpu fps ({:.2f} ms)", cpuCounter.fps(), cpuCounter.delta_time() * 1000.f, gpuCounter.fps(), gpuCounter.delta_time() * 1000.f);
+	auto& render_context = m_pRenderInterface->getRenderContext();
+	auto& render_stats = render_context->getRenderFrameStats();
+
+	float used_gpu_memory = utl::cast<float>(render_stats.usedGPUMemory) / 1024.f / 1024.f / 1024.f;
+	float total_gpu_memory = utl::cast<float>(render_stats.totalGPUMemory) / 1024.f / 1024.f / 1024.f;
+
+	auto winname = std::format("Vulkan App {} fps ({:.2f} ms); {} gpu fps ({:.2f} ms); gpu memory ({:.2f}/{:.2f} Gb)", cpuCounter.fps(), cpuCounter.delta_time() * 1000.f, gpuCounter.fps(), gpuCounter.delta_time() * 1000.f, used_gpu_memory, total_gpu_memory);
 	m_pWindowHandle->setTitle(winname);
 }

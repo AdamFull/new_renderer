@@ -696,6 +696,29 @@ void CVkRenderDevice::destroyTimestampQuery(FVkTimestampQuery& timestamp_query)
 	timestamp_query.values.clear();
 }
 
+void CVkRenderDevice::getOccupedDeviceMemory(vk::MemoryHeapFlags memory_flags, u64& total_memory, u64& used_memory)
+{
+	vk::PhysicalDeviceMemoryBudgetPropertiesEXT memory_budget_props{};
+	vk::PhysicalDeviceMemoryProperties2 memory_props{};
+	memory_props.pNext = &memory_budget_props;
+
+	auto& physical_device = getPhysicalDevice();
+	physical_device.handle.getMemoryProperties2(&memory_props);
+
+	total_memory = used_memory = 0ull;
+
+	auto heaps_count = static_cast<u64>(memory_props.memoryProperties.memoryHeapCount);
+	for (u64 i = 0ull; i < heaps_count; ++i)
+	{
+		auto heapFlags = memory_props.memoryProperties.memoryHeaps[i].flags;
+		if (heapFlags & memory_flags)
+		{
+			total_memory += memory_budget_props.heapBudget[i];
+			used_memory += memory_budget_props.heapUsage[i];
+		}
+	}
+}
+
 void CVkRenderDevice::submitCommandBuffer(const FVkCommandBuffer& command_buffer)
 {
 	vk::SubmitInfo submitInfo{};

@@ -25,6 +25,15 @@ stl::string create_object_unique_name(const char* fmt, const _Ty& handle, _Args&
 	return stl::vformat(fmt, stl::make_format_args(object_handle, stl::forward<_Args>(args)...));
 }
 
+const std::unique_ptr<FVkTexture>& select_texture(const std::vector<std::vector<std::unique_ptr<FVkTexture>>>& textures, u64 texture_id, const FSwapchain& swapchain)
+{
+	auto& texture_set = textures.at(texture_id);
+	if (texture_set.size() == swapchain.framesInFlight)
+		return texture_set.at(swapchain.currentFrame);
+
+	return texture_set.front();
+}
+
 CVkRenderContext::~CVkRenderContext()
 {
 	auto& logical_device = m_pDevice->getLogicalDevice();
@@ -218,6 +227,8 @@ void CVkRenderContext::updateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 	stl::array<vk::DescriptorBufferInfo, k_max_buffer_update_per_frame> buffer_descriptors{};
 	stl::vector<vk::WriteDescriptorSet> write_descriptor_sets{};
 
+	auto& textures = m_pResources->data<FVkTexture>();
+
 	// Bind and update global uniform
 	u64 buffer_count{ 0ull };
 	for (const auto& [uniform_name, uniform_data] : data_view.uniforms)
@@ -250,21 +261,14 @@ void CVkRenderContext::updateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 
 	// Process bindless textures
 	{
-		auto& textures = m_pResources->data<FVkTexture>();
 		auto& texture_queue = m_textureToUpdate[m_pDevice->m_swapchain.currentFrame];
 
 		u64 texture_count{ 0ull };
 		while (!texture_queue.empty() && texture_count < k_max_texture_update_per_frame)
 		{
 			auto texture_id = texture_queue.front();
+			auto& texture = select_texture(textures, texture_id, m_pDevice->m_swapchain);
 
-			auto& textures_block = textures.at(texture_id);
-			
-			u64 frame_index{ 0u };
-			if (textures_block.size() == m_pDevice->m_swapchain.framesInFlight)
-				frame_index = m_pDevice->m_swapchain.currentFrame;
-
-			auto& texture = textures_block.at(frame_index);
 			auto& start_element_index = m_textureIndexRemap.at(texture_id);
 			bool is_storage_image = utl::cast<bool>(texture->initialData.base.typeFlags & ETextureCreateFlagBits::eStorage);
 
@@ -738,11 +742,7 @@ void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader
 	{
 		for (const auto& [texture_name, bind_info] : shader_resources.textures)
 		{
-			u64 texture_index{ 0ull };
-			if (textures.at(bind_info.textureId).size() == m_pDevice->m_swapchain.framesInFlight)
-				texture_index = m_pDevice->m_swapchain.currentFrame;
-
-			auto& texture = textures.at(bind_info.textureId).at(texture_index);
+			auto& texture = select_texture(textures, bind_info.textureId, m_pDevice->m_swapchain);
 
 			auto found_reflection = shader_reflection->uniforms.find(texture_name);
 			if (found_reflection == shader_reflection->uniforms.end())
@@ -929,8 +929,7 @@ void CVkRenderContext::pushG2CBarriers(EQueueTypeFlagBits queue_type, const stl:
 	FVkTranslationInfo translation_info{};
 	for (auto texture_id : texture_ids)
 	{
-		auto& texture = textures.at(texture_id);
-		auto& current = texture.at(m_pDevice->m_swapchain.currentFrame);
+		auto& texture = select_texture(textures, texture_id, m_pDevice->m_swapchain);
 
 		auto& image_trans_info = translation_info.imageTranslationInfos.emplace_back();
 		image_trans_info.srcStageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
@@ -938,14 +937,14 @@ void CVkRenderContext::pushG2CBarriers(EQueueTypeFlagBits queue_type, const stl:
 		image_trans_info.oldLayout = vk::ImageLayout::eUndefined;
 		image_trans_info.dstStageMask = vk::PipelineStageFlagBits2::eComputeShader;
 		image_trans_info.dstAccessMask = vk::AccessFlagBits2::eShaderRead;
-		image_trans_info.newLayout = get_render_target_final_layout(*current);
-		image_trans_info.handle = current->image.handle;
+		image_trans_info.newLayout = get_render_target_final_layout(*texture);
+		image_trans_info.handle = texture->image.handle;
 
-		image_trans_info.subresourceRange.aspectMask = get_texture_aspect_flags(*current);
+		image_trans_info.subresourceRange.aspectMask = get_texture_aspect_flags(*texture);
 		image_trans_info.subresourceRange.baseArrayLayer = 0;
-		image_trans_info.subresourceRange.layerCount = current->totalLayers;
+		image_trans_info.subresourceRange.layerCount = texture->totalLayers;
 		image_trans_info.subresourceRange.baseMipLevel = 0;
-		image_trans_info.subresourceRange.levelCount = current->initialData.base.mipLevels;
+		image_trans_info.subresourceRange.levelCount = texture->initialData.base.mipLevels;
 	}
 
 	processMemoryBarriers(command_buffer, translation_info);
@@ -959,23 +958,22 @@ void CVkRenderContext::pushC2CBarrier(EQueueTypeFlagBits queue_type, const stl::
 	FVkTranslationInfo translation_info{};
 	for (auto texture_id : texture_ids)
 	{
-		auto& texture = textures.at(texture_id);
-		auto& current = texture.at(m_pDevice->m_swapchain.currentFrame);
+		auto& texture = select_texture(textures, texture_id, m_pDevice->m_swapchain);
 	
 		auto& image_trans_info = translation_info.imageTranslationInfos.emplace_back();
 		image_trans_info.srcStageMask = vk::PipelineStageFlagBits2::eComputeShader;
 		image_trans_info.srcAccessMask = vk::AccessFlagBits2::eShaderWrite | vk::AccessFlagBits2::eShaderStorageWrite | vk::AccessFlagBits2::eMemoryWrite;
-		image_trans_info.oldLayout = get_render_target_final_layout(*current);
+		image_trans_info.oldLayout = get_render_target_final_layout(*texture);
 		image_trans_info.dstStageMask = vk::PipelineStageFlagBits2::eComputeShader;
 		image_trans_info.dstAccessMask = vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderStorageRead | vk::AccessFlagBits2::eShaderSampledRead | vk::AccessFlagBits2::eMemoryRead;
-		image_trans_info.newLayout = get_render_target_final_layout(*current);
-		image_trans_info.handle = current->image.handle;
+		image_trans_info.newLayout = get_render_target_final_layout(*texture);
+		image_trans_info.handle = texture->image.handle;
 	
-		image_trans_info.subresourceRange.aspectMask = get_texture_aspect_flags(*current);
+		image_trans_info.subresourceRange.aspectMask = get_texture_aspect_flags(*texture);
 		image_trans_info.subresourceRange.baseArrayLayer = 0;
-		image_trans_info.subresourceRange.layerCount = current->totalLayers;
+		image_trans_info.subresourceRange.layerCount = texture->totalLayers;
 		image_trans_info.subresourceRange.baseMipLevel = 0;
-		image_trans_info.subresourceRange.levelCount = current->initialData.base.mipLevels;
+		image_trans_info.subresourceRange.levelCount = texture->initialData.base.mipLevels;
 	}
 
 	//FVkTranslationInfo translation_info{};
@@ -996,23 +994,22 @@ void CVkRenderContext::pushC2GBarrier(EQueueTypeFlagBits queue_type, const stl::
 	FVkTranslationInfo translation_info{};
 	for (auto texture_id : texture_ids)
 	{
-		auto& texture = textures.at(texture_id);
-		auto& current = texture.at(m_pDevice->m_swapchain.currentFrame);
+		auto& texture = select_texture(textures, texture_id, m_pDevice->m_swapchain);
 	
 		auto& image_trans_info = translation_info.imageTranslationInfos.emplace_back();
 		image_trans_info.srcStageMask = vk::PipelineStageFlagBits2::eComputeShader;
 		image_trans_info.srcAccessMask = vk::AccessFlagBits2::eShaderWrite | vk::AccessFlagBits2::eShaderStorageWrite | vk::AccessFlagBits2::eMemoryWrite;
-		image_trans_info.oldLayout = get_render_target_final_layout(*current);
+		image_trans_info.oldLayout = get_render_target_final_layout(*texture);
 		image_trans_info.dstStageMask = vk::PipelineStageFlagBits2::eFragmentShader;
 		image_trans_info.dstAccessMask = vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderStorageRead | vk::AccessFlagBits2::eShaderSampledRead;
-		image_trans_info.newLayout = get_render_target_final_layout(*current);
-		image_trans_info.handle = current->image.handle;
+		image_trans_info.newLayout = get_render_target_final_layout(*texture);
+		image_trans_info.handle = texture->image.handle;
 	
-		image_trans_info.subresourceRange.aspectMask = get_texture_aspect_flags(*current);
+		image_trans_info.subresourceRange.aspectMask = get_texture_aspect_flags(*texture);
 		image_trans_info.subresourceRange.baseArrayLayer = 0;
-		image_trans_info.subresourceRange.layerCount = current->totalLayers;
+		image_trans_info.subresourceRange.layerCount = texture->totalLayers;
 		image_trans_info.subresourceRange.baseMipLevel = 0;
-		image_trans_info.subresourceRange.levelCount = current->initialData.base.mipLevels;
+		image_trans_info.subresourceRange.levelCount = texture->initialData.base.mipLevels;
 	}
 
 	//auto& barrier = translation_info.memoryTranslationInfos.emplace_back();
@@ -1028,6 +1025,9 @@ void CVkRenderContext::processResourceBarriers(EQueueTypeFlagBits queue, const s
 {
 	auto& command_buffer = getLastCommandBuffer(queue);
 
+	auto& textures = m_pResources->data<FVkTexture>();
+	auto& buffers = m_pResources->data<FVkBuffer>();
+
 	FVkTranslationInfo translation_info{};
 
 	for (const auto& resource_barrier : barriers)
@@ -1038,8 +1038,7 @@ void CVkRenderContext::processResourceBarriers(EQueueTypeFlagBits queue, const s
 
 		if (resource_barrier.resource.type & ERenderResourceTypeFlagBits::eAllImage)
 		{
-			auto& textures = m_pResources->data<FVkTexture>();
-			auto& texture = textures.at(resource_barrier.resource.handle).at(m_pDevice->m_swapchain.currentFrame);
+			auto& texture = select_texture(textures, resource_barrier.resource.handle, m_pDevice->m_swapchain);
 
 			vk::ImageLayout new_image_layout{ vk::ImageLayout::eUndefined };
 			if (resource_barrier.type == ERenderResourceDependencyBarrierType::eWriteAfterNothing)
@@ -1066,8 +1065,7 @@ void CVkRenderContext::processResourceBarriers(EQueueTypeFlagBits queue, const s
 		}
 		else
 		{
-			auto& buffers = m_pResources->data<FVkBuffer>();
-			auto& buffer = buffers.at(resource_barrier.resource.handle).at(0);
+			auto& buffer = buffers.at(resource_barrier.resource.handle).front();
 		
 			FVkBufferTranslationInfo buffer_translation_info{};
 			buffer_translation_info.handle = buffer->handle;
@@ -1111,7 +1109,7 @@ void CVkRenderContext::beginRendering(const FBeginRendering2Info& rendering_info
 	stl::vector<vk::RenderingAttachmentInfoKHR> color_attachments{};
 	for (const auto& color_attachment_info : rendering_info.colorAttachments)
 	{
-		auto& render_target = textures.at(color_attachment_info.handle).at(m_pDevice->m_swapchain.currentFrame);
+		auto& render_target = select_texture(textures, color_attachment_info.handle, m_pDevice->m_swapchain);
 
 		auto& attachment_info = color_attachments.emplace_back();
 		attachment_info.imageView = render_target->mips.at(color_attachment_info.mipLevel).imageView;
@@ -1126,7 +1124,7 @@ void CVkRenderContext::beginRendering(const FBeginRendering2Info& rendering_info
 	vk::RenderingAttachmentInfoKHR depth_attachment{};
 	if (rendering_info.depthAttachment.handle != invalid_handle)
 	{
-		auto& depth_target = textures.at(rendering_info.depthAttachment.handle).at(m_pDevice->m_swapchain.currentFrame);
+		auto& depth_target = select_texture(textures, rendering_info.depthAttachment.handle, m_pDevice->m_swapchain);
 
 		depth_attachment.imageView = depth_target->mips.at(rendering_info.depthAttachment.mipLevel).imageView;
 		depth_attachment.imageLayout = depth_target->layout;
@@ -1139,7 +1137,7 @@ void CVkRenderContext::beginRendering(const FBeginRendering2Info& rendering_info
 	vk::RenderingAttachmentInfoKHR stencil_attachment{};
 	if (rendering_info.stencilAttachment.handle != rendering_info.depthAttachment.handle && rendering_info.stencilAttachment.handle != invalid_handle)
 	{
-		auto& stencil_target = textures.at(rendering_info.stencilAttachment.handle).at(m_pDevice->m_swapchain.currentFrame);
+		auto& stencil_target = select_texture(textures, rendering_info.stencilAttachment.handle, m_pDevice->m_swapchain);
 
 		stencil_attachment.imageView = stencil_target->mips.at(rendering_info.stencilAttachment.mipLevel).imageView;
 		stencil_attachment.imageLayout = stencil_target->layout;
@@ -1162,7 +1160,7 @@ void CVkRenderContext::beginRendering(const FBeginRendering2Info& rendering_info
 	{
 		begin_rendering_info.pDepthAttachment = &depth_attachment;
 
-		auto& depth_target = textures.at(rendering_info.depthAttachment.handle).at(m_pDevice->m_swapchain.currentFrame);
+		auto& depth_target = select_texture(textures, rendering_info.depthAttachment.handle, m_pDevice->m_swapchain);
 		if (!is_depth_only_format(utl::cast<vk::Format>(depth_target->initialData.base.format)) && rendering_info.stencilAttachment.handle == rendering_info.depthAttachment.handle)
 			begin_rendering_info.pStencilAttachment = &depth_attachment;
 	}
@@ -1182,8 +1180,6 @@ void CVkRenderContext::beginRendering(const FBeginRendering2Info& rendering_info
 void CVkRenderContext::endRendering(EQueueTypeFlagBits queue)
 {
 	auto& command_buffer = getLastCommandBuffer(queue);
-
-	auto& textures = m_pResources->data<FVkTexture>();
 
 	auto& current_buffer = command_buffer.get();
 	current_buffer.endRenderingKHR();
@@ -1680,6 +1676,9 @@ void CVkRenderContext::endFrame()
 		for (const auto& time : m_renderStats.timestampResults)
 			m_renderStats.gpuFrameTime += time;
 	}
+
+	// Get gpu memory usage info
+	m_pDevice->getOccupedDeviceMemory(vk::MemoryHeapFlagBits::eDeviceLocal, m_renderStats.totalGPUMemory, m_renderStats.usedGPUMemory);
 
 	if (presentResult == vk::Result::eSuboptimalKHR || presentResult == vk::Result::eErrorOutOfDateKHR)
 		updateSurface(m_iSurfaceWidth, m_iSurfaceHeight);

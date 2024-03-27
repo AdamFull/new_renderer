@@ -249,6 +249,9 @@ namespace engine
 		{
 			std::vector<f32> timestampResults{};
 			f32 gpuFrameTime{};
+
+			u64 totalGPUMemory{};
+			u64 usedGPUMemory{};
 		};
 
 		class IRenderContext

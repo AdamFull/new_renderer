@@ -92,6 +92,8 @@ namespace engine
 				FRenderApiErrorInfo getTimestampQueryResults(FVkTimestampQuery& timestamp_query, std::vector<f32>& results);
 				void destroyTimestampQuery(FVkTimestampQuery& timestamp_query);
 
+				void getOccupedDeviceMemory(vk::MemoryHeapFlags memory_flags, u64& total_memory, u64& used_memory);
+
 				void submitCommandBuffer(const FVkCommandBuffer& command_buffer);
 				vk::Result present(FVkCommandBuffer& command_buffer);
 				vk::Result acquireNextImage(u32& image_index);

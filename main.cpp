@@ -9,8 +9,6 @@
 #include <reactive/command_processor.h>
 #include <plugin/plugin_manager.h>
 
-#include <networking/socket.h>
-
 #include <DbgHelp.h>
 #include <tlhelp32.h>
 #include <psapi.h>
@@ -319,11 +317,9 @@ int main(int argc, char** argv)
             .end()
         .register_command("terminate").set_executor(&on_terminate)
         .end();
-
-    constexpr utl::networking::ipv4_address addr("127.0.0.1"); // valid
     
-    processor.execute("system.io.print(t:\"sosu pizdu\")");
-    processor.execute("system.terminate()");
+    //processor.execute("system.io.print(t:\"sosu pizdu\")");
+    //processor.execute("system.terminate()");
 
     log_add_file_output("engine_log.log");
     log_add_cout_output();
