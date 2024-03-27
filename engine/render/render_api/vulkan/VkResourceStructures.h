@@ -390,11 +390,6 @@ namespace engine
 #endif
 			};
 
-			struct FVkBackBuffer
-			{
-
-			};
-
 			struct FVkTextureCreateInfo
 			{
 				FTextureCreateInfo base{};

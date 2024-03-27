@@ -26,6 +26,7 @@ namespace engine
 			u64 addStaticResource(const stl::string& name, const stl::string& path) override;
 			u64 addRenderResource(const stl::string& name, const FTextureCreateInfo& texture_ci) override;
 			u64 addRenderResource(const stl::string& name, const FBufferCreateInfo& buffer_ci) override;
+			i64 setBackbufferResourceName(const stl::string& name) override;
 
 			void destroyResource(u64 buffer_id);
 

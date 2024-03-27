@@ -179,7 +179,6 @@ namespace engine
 			lua->new_usertype<FTextureCreateInfo>(
 				"TextureCI",
 				sol::constructors<FTextureCreateInfo()>(),
-				"present_image", &FTextureCreateInfo::backbuffer,
 				"format", &FTextureCreateInfo::format,
 				"type", &FTextureCreateInfo::typeFlags,
 				"mip_levels", &FTextureCreateInfo::mipLevels,
@@ -193,7 +192,6 @@ namespace engine
 					static_cast<void(FTextureCreateInfo::*)(u32, u32)>(&FTextureCreateInfo::setFixedSize2D)
 				),
 				"set_size_scale", &FTextureCreateInfo::setSizeScale,
-				"use_as_backbuffer", &FTextureCreateInfo::useAsBackbuffer,
 				"enable_mip_map", &FTextureCreateInfo::enableMipMap
 			);
 
@@ -265,7 +263,7 @@ namespace engine
 			// IRenderContext registration
 			lua->new_usertype<IRenderContext>(
 				"IRenderContext",
-				"create_render_target", &IRenderContext::createRenderTargets,
+				"create_render_target", &IRenderContext::createRenderTarget,
 				"create_shader", sol::overload(
 					static_cast<u64(IRenderContext::*)(const stl::string&, const FGraphicsShaderCreateInfo&, const stl::vector<FShaderCreationBlockInfo>&)>(&IRenderContext::createShader),
 					static_cast<u64(IRenderContext::*)(const stl::string&, const FComputeShaderCreateInfo&, const stl::vector<FShaderCreationBlockInfo>&)>(&IRenderContext::createShader)
@@ -289,6 +287,7 @@ namespace engine
 					static_cast<u64(IRenderGraph::*)(const stl::string&, const FTextureCreateInfo&)>(&IRenderGraph::addRenderResource),
 					static_cast<u64(IRenderGraph::*)(const stl::string&, const FBufferCreateInfo&)>(&IRenderGraph::addRenderResource)
 				),
+				"set_backbuffer_resource_name", &IRenderGraph::setBackbufferResourceName,
 				"get_render_resource", sol::overload(
 					static_cast<const FRenderResource&(IRenderGraph::*)(const stl::string&) const>(&IRenderGraph::getRenderResource),
 					static_cast<const FRenderResource&(IRenderGraph::*)(u64) const>(&IRenderGraph::getRenderResource)

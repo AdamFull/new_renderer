@@ -19,18 +19,14 @@ namespace engine
 			auto name_hash = utl::utils::fnv1a_64_hash(name);
 			auto found_association = nameToId.find(name_hash);
 			if (found_association != nameToId.end())
-			{
-				auto& current_id = found_association->second;
-				objects.at(current_id).emplace_back(stl::move(object));
-				return current_id;
-			}
+				return found_association->second;
 			
 			if (!freeIds.empty())
 			{
 				resource_handle_t current_id = freeIds.front();
 				freeIds.pop();
 
-				objects.at(current_id).emplace_back(stl::move(object));
+				objects.at(current_id) = stl::move(object);
 
 				return current_id;
 			}
@@ -39,8 +35,7 @@ namespace engine
 			uid.fetch_add(1ull, stl::memory_order_relaxed);
 
 			nameToId.emplace(utl::utils::fnv1a_64_hash(name), current_id);
-			auto& instances = objects.emplace_back();
-			instances.emplace_back(stl::move(object));
+			objects.emplace_back(stl::move(object));
 
 			return current_id;
 		}
@@ -52,7 +47,7 @@ namespace engine
 			{
 				freeIds.push(id);
 				nameToId.erase(it);
-				objects.at(id).clear();
+				objects.at(id) = nullptr;
 			}
 		}
 
@@ -63,22 +58,22 @@ namespace engine
 			{
 				freeIds.push(it->second);
 				nameToId.erase(it);
-				objects.at(it->second).clear();
+				objects.at(it->second) = nullptr;
 			}
 		}
 
-		const stl::unique_ptr<_Ty>& get(resource_handle_t id, u64 index = 0ull)
+		const stl::unique_ptr<_Ty>& get(resource_handle_t id)
 		{
-			return objects.at(id).at(index);
+			return objects.at(id);
 		}
 
-		const stl::unique_ptr<_Ty>& get(const char* name, u64 index = 0ull)
+		const stl::unique_ptr<_Ty>& get(const char* name)
 		{
 			auto id = nameToId[utl::utils::fnv1a_64_hash(name)];
-			return get(id, index);
+			return get(id);
 		}
 
-		stl::vector<stl::vector<stl::unique_ptr<_Ty>>>& data()
+		stl::vector<stl::unique_ptr<_Ty>>& data()
 		{
 			return objects;
 		}
@@ -94,7 +89,7 @@ namespace engine
 	private:
 		stl::queue<resource_handle_t> freeIds{};
 		stl::unordered_map<u64, resource_handle_t> nameToId{};
-		stl::vector<stl::vector<stl::unique_ptr<_Ty>>> objects{};
+		stl::vector<stl::unique_ptr<_Ty>> objects{};
 	};
 
 	class CResourceContainer
@@ -115,17 +110,17 @@ namespace engine
 		}
 
 		template<class _Ty>
-		const stl::unique_ptr<_Ty>& get(resource_handle_t id, u64 resource_index = 0ull)
+		const stl::unique_ptr<_Ty>& get(resource_handle_t id)
 		{
 			auto container = get_container<_Ty>();
-			return container->get(id, resource_index);
+			return container->get(id);
 		}
 
 		template<class _Ty>
-		const stl::unique_ptr<_Ty>& get(const char* name, u64 resource_index = 0ull)
+		const stl::unique_ptr<_Ty>& get(const char* name)
 		{
 			auto container = get_container<_Ty>();
-			return container->get(name, resource_index);
+			return container->get(name);
 		}
 
 		template<class _Ty>
@@ -143,7 +138,7 @@ namespace engine
 		}
 
 		template<class _Ty>
-		stl::vector<stl::vector<stl::unique_ptr<_Ty>>>& data()
+		stl::vector<stl::unique_ptr<_Ty>>& data()
 		{
 			auto container = get_container<_Ty>();
 			return container->data();

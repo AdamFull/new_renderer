@@ -6,8 +6,7 @@ using namespace engine::render;
 
 void IBasePass::execute(f32 dt)
 {
-	auto& render_context = m_pRenderInterface->getRenderContext();
-	if (render_context->isSwapChainFinished() && m_bOneTime && m_bCanExecute)
+	if (m_bOneTime && m_bCanExecute)
 		m_bCanExecute = false;
 }
 
@@ -34,40 +33,29 @@ void IRenderPass::build(const FPassBuildInfo& build_info)
 {
 	auto& render_graph = m_pRenderInterface->getRenderGraph();
 
+	auto& backbuffer_target = m_renderResources[ERenderResourceGroupType::eBackbufferWrite];
+	for (u64 resource_id : backbuffer_target)
+	{
+		auto& color_attachment = m_vColorAttachments.emplace_back();
+		buildAttachment(resource_id, build_info, color_attachment);
+		color_attachment.backbuffer = true;
+	}
+
 	auto& output_targets = m_renderResources[ERenderResourceGroupType::eColorWrite];
 	for (u64 resource_id : output_targets)
 	{
 		if (resource_id == m_depthTarget || resource_id == m_stencilTarget)
 			continue;
 
-		auto& render_resource = render_graph->getRenderResource(resource_id);
-		auto& resource_info = build_info.getAttachmentInfo(resource_id);
-
 		auto& color_attachment = m_vColorAttachments.emplace_back();
-		color_attachment.handle = render_resource.handle;
-		color_attachment.loadOp = resource_info.loadOp;
-		color_attachment.storeOp = resource_info.storeOp;
+		buildAttachment(resource_id, build_info, color_attachment);
 	}
 
 	if (m_depthTarget != ~0ull)
-	{
-		auto& render_resource = render_graph->getRenderResource(m_depthTarget);
-		auto& resource_info = build_info.getAttachmentInfo(m_depthTarget);
-
-		m_depthAttachment.handle = render_resource.handle;
-		m_depthAttachment.loadOp = resource_info.loadOp;
-		m_depthAttachment.storeOp = resource_info.storeOp;
-	}
+		buildAttachment(m_depthTarget, build_info, m_depthAttachment);
 
 	if (m_stencilTarget != ~0ull)
-	{
-		auto& render_resource = render_graph->getRenderResource(m_stencilTarget);
-		auto& resource_info = build_info.getAttachmentInfo(m_stencilTarget);
-
-		m_stencilAttachment.handle = render_resource.handle;
-		m_stencilAttachment.loadOp = resource_info.loadOp;
-		m_stencilAttachment.storeOp = resource_info.storeOp;
-	}
+		buildAttachment(m_stencilTarget, build_info, m_stencilAttachment);
 }
 
 void IRenderPass::execute(f32 dt)
@@ -88,14 +76,21 @@ void IRenderPass::execute(f32 dt)
 	if (m_sizePolicy == ERenderingSizeType::eFromRenderTarget && m_sizeTarget != ~0ull)
 	{
 		auto& render_resource = render_graph->getRenderResource(m_sizeTarget);
-		if (render_resource.type != ERenderResourceTypeFlagBits::eRenderTarget)
-		{
+		if (render_resource.type != ERenderResourceTypeFlagBits::eRenderTarget && render_resource.type != ERenderResourceTypeFlagBits::eBackbuffer)
 			throw stl::runtime_error("Incorrect render resource type.");
-		}
 
-		auto& resource_sizes = render_context->getTextureInfo(render_resource.handle);
-		beginRenderingInfo.renderArea.size.x = resource_sizes.size.width;
-		beginRenderingInfo.renderArea.size.y = resource_sizes.size.height;
+		if (render_resource.type == ERenderResourceTypeFlagBits::eRenderTarget)
+		{
+			auto& resource_sizes = render_context->getTextureInfo(render_resource.handle);
+			beginRenderingInfo.renderArea.size.x = resource_sizes.size.width;
+			beginRenderingInfo.renderArea.size.y = resource_sizes.size.height;
+		}
+		else
+		{
+			auto backbuffer_size = render_context->getScreenRenderRect();
+			beginRenderingInfo.renderArea.size.x = backbuffer_size.size.x;
+			beginRenderingInfo.renderArea.size.y = backbuffer_size.size.y;
+		}
 	}
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -114,6 +109,18 @@ void IRenderPass::execute(f32 dt)
 
 	render_context->endRendering(beginRenderingInfo.queue);
 	render_context->endTimestampZone(m_queue);
+}
+
+void IRenderPass::buildAttachment(u64 resource_id, const FPassBuildInfo& build_info, FRenderGraphAttachmentInfo& attachment_info)
+{
+	auto& render_graph = m_pRenderInterface->getRenderGraph();
+
+	auto& render_resource = render_graph->getRenderResource(resource_id);
+	auto& resource_info = build_info.getAttachmentInfo(resource_id);
+
+	attachment_info.handle = render_resource.handle;
+	attachment_info.loadOp = resource_info.loadOp;
+	attachment_info.storeOp = resource_info.storeOp;
 }
 
 

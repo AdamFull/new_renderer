@@ -408,7 +408,7 @@ namespace engine
 				bool transferable = utl::cast<bool>(texture.initialData.base.typeFlags & ETextureCreateFlagBits::eTransferable);
 				bool samplable = utl::cast<bool>(texture.initialData.base.typeFlags & ETextureCreateFlagBits::eSamplable);
 
-				if (transferable || samplable || texture.initialData.base.backbuffer)
+				if (transferable || samplable)
 					return vk::AttachmentStoreOp::eStore;
 
 				return vk::AttachmentStoreOp::eDontCare;

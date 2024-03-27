@@ -66,6 +66,7 @@ namespace engine
 
 			EPassType type() override { return EPassType::eRender; }
 		protected:
+			void buildAttachment(u64 resource_id, const FPassBuildInfo& build_info, FRenderGraphAttachmentInfo& attachment_info);
 			virtual void _render(const FRenderFrameInfo& frame_info) = 0;
 		protected:
 			bool m_bFlipViewport{ false };

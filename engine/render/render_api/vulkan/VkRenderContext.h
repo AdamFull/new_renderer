@@ -23,8 +23,7 @@ namespace engine
 
 				u64 createTexture(const stl::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) override;
 				u64 getTextureId(const stl::string& name) override;
-				u64 createRenderTarget(const stl::string& name, const FTextureCreateInfo& texture_ci);
-				u64 createRenderTargets(const stl::string& name, const FTextureCreateInfo& texture_ci) override;
+				u64 createRenderTarget(const stl::string& name, const FTextureCreateInfo& texture_ci) override;
 				const FTextureCreateInfo& getTextureInfo(u64 texture_id) override;
 				void destroyTexture(u64 resource_id) override;
 
@@ -149,6 +148,8 @@ namespace engine
 				FRenderFrameStats m_renderStats{};
 				std::unordered_map<EQueueTypeFlagBits, u32> m_zoneEntries{};
 				FVkTimestampQuery m_timestampQuery{};
+
+				vk::ImageLayout m_backbufferLayout{ vk::ImageLayout::eUndefined };
 
 				u64 m_utilizationCounter{ 0ull };
 

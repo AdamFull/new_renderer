@@ -39,8 +39,6 @@ namespace engine
 
 		struct FTextureCreateInfo
 		{
-			bool backbuffer{ false };
-
 			// EApiDataFormat
 			u32 format{ 0u };
 			ETextureCreateFlags typeFlags{ 0u };
@@ -66,12 +64,6 @@ namespace engine
 			{
 				size.scale = scale;
 				size.policy = ERenderTargetSizePolicy::eScalable;
-			}
-
-			void useAsBackbuffer()
-			{
-				backbuffer = true;
-				size.policy = ERenderTargetSizePolicy::eFull;
 			}
 
 			void enableMipMap() { mipLevels = utl::cast<u32>(stl::floor(stl::log2((stl::max)(size.width, size.height)))) + 1u; }

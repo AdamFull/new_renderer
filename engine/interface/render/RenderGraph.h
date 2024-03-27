@@ -12,8 +12,9 @@ namespace engine
 			eRenderTarget = 1 << 0,
 			eStorageTarget = 1 << 1,
 			eStaticImage = 1 << 2,
-			eAllImage = eRenderTarget | eStorageTarget | eStaticImage,
-			eBuffer = 1 << 3
+			eBackbuffer = 1 << 3,
+			eAllImage = eRenderTarget | eStorageTarget | eStaticImage | eBackbuffer,
+			eBuffer = 1 << 4,
 		};
 		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ERenderResourceTypeFlags, ERenderResourceTypeFlagBits)
 
@@ -31,7 +32,8 @@ namespace engine
 			eResolve = 1 << 1,
 			eStorageTexture = 1 << 2,
 			eBlitTexture = 1 << 3,
-			eStorage = 1 << 4
+			eStorage = 1 << 4,
+			eBackbuffer = 1 << 5
 		};
 		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ERenderResourceGroupFlags, ERenderResourceGroupFlagBits)
 
@@ -46,6 +48,8 @@ namespace engine
 			eBlitTextureWrite			= utl::packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceGroupFlagBits::eBlitTexture)),
 			eStorageRead				= utl::packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eRead),  utl::cast<u16>(ERenderResourceGroupFlagBits::eStorage)),
 			eStorageWrite				= utl::packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceGroupFlagBits::eStorage)),
+			eBackbufferRead				= utl::packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eRead), utl::cast<u16>(ERenderResourceGroupFlagBits::eBackbuffer)),
+			eBackbufferWrite			= utl::packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceGroupFlagBits::eBackbuffer)),
 		};
 
 		enum class ERenderResourceDependencyBarrierType : u32
@@ -123,6 +127,7 @@ namespace engine
 			u32 mipLevel{ 0u };
 			ERenderResourceLoadOp loadOp{};
 			ERenderResourceStoreOp storeOp{};
+			bool backbuffer{ false };
 		};
 
 		struct FRenderGraphAttachmentOperationInfo
@@ -258,6 +263,7 @@ namespace engine
 			virtual u64 addStaticResource(const stl::string& name, const stl::string& path) = 0;
 			virtual u64 addRenderResource(const stl::string& name, const FTextureCreateInfo& texture_ci) = 0;
 			virtual u64 addRenderResource(const stl::string& name, const FBufferCreateInfo& buffer_ci) = 0;
+			virtual i64 setBackbufferResourceName(const stl::string& name) = 0;
 
 			virtual const FRenderResource& getRenderResource(const stl::string& name) const = 0;
 			virtual const FRenderResource& getRenderResource(u64 resource_id) const = 0;

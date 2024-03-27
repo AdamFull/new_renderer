@@ -91,12 +91,7 @@ end
 
 -- Present image targets
 do
-    local target_ci = TextureCI.new()
-    target_ci.format = render_context:get_present_format()
-    target_ci.type = texture_or(TexType.two_dim)
-    target_ci:use_as_backbuffer()
-
-    render_graph:add_render_resource("present_target", target_ci)
+    render_graph:set_backbuffer_resource_name("present_target")
 end
 
 

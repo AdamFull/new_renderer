@@ -118,11 +118,7 @@ void CRenderGraph::create()
 	}
 
 	{
-		FTextureCreateInfo texture_ci{};
-		texture_ci.format = render_context->getPresentFormat();
-		texture_ci.typeFlags = ETextureCreateFlagBits::e2D;
-		texture_ci.useAsBackbuffer();
-		addRenderResource("present_target", texture_ci);
+		setBackbufferResourceName("present_target");
 	}
 
 
@@ -338,11 +334,8 @@ u64 CRenderGraph::addRenderResource(const stl::string& name, const FTextureCreat
 	}
 
 	auto& new_render_resource = m_vRenderResources.emplace_back();
-	new_render_resource.handle = render_context->createRenderTargets(name, texture_create_info);
+	new_render_resource.handle = render_context->createRenderTarget(name, texture_create_info);
 	new_render_resource.type = (texture_ci.typeFlags & ETextureCreateFlagBits::eStorage) ? ERenderResourceTypeFlagBits::eStorageTarget : ERenderResourceTypeFlagBits::eRenderTarget;
-
-	if (m_backBufferResource == ~0ull && texture_ci.backbuffer)
-		m_backBufferResource = resource_index;
 	
 	m_nameToResource[name] = resource_index;
 	return new_render_resource.handle;
@@ -359,6 +352,26 @@ u64 CRenderGraph::addRenderResource(const stl::string& name, const FBufferCreate
 	new_render_resource.type = ERenderResourceTypeFlagBits::eBuffer;
 
 	return new_render_resource.handle;
+}
+
+i64 CRenderGraph::setBackbufferResourceName(const stl::string& name)
+{
+	if (m_backBufferResource != ~0ull)
+	{
+		log_warning("Backbuffer name is already set. Adding new name association: {}.", name);
+		m_nameToResource[name] = m_backBufferResource;
+		return 0ull;
+	}
+
+	auto resource_index = m_vRenderResources.size();
+
+	auto& new_render_resource = m_vRenderResources.emplace_back();
+	new_render_resource.type = ERenderResourceTypeFlagBits::eBackbuffer;
+
+	m_backBufferResource = resource_index;
+	m_nameToResource[name] = m_backBufferResource;
+
+	return 0ull;
 }
 
 const FRenderResource& CRenderGraph::getRenderResource(const stl::string& name) const
@@ -644,6 +657,7 @@ void CRenderGraph::applyRenderPassResources(u64 pass_index, const FRenderConfigP
 	else
 		pass_ci->sizePolicy = ERenderingSizeType::eManual;
 
+	// Binded resources for using as input
 	for (const auto& [access_flag, bindings] : raw_pass_ci->resourceBindings)
 	{
 		for (const auto& [binding_point, resource_name] : bindings)
@@ -658,6 +672,8 @@ void CRenderGraph::applyRenderPassResources(u64 pass_index, const FRenderConfigP
 				group_type = ERenderResourceGroupFlagBits::eStorageTexture;
 			else if (render_resource.type & ERenderResourceTypeFlagBits::eRenderTarget)
 				group_type = ERenderResourceGroupFlagBits::eColor;
+			else if (render_resource.type & ERenderResourceTypeFlagBits::eBackbuffer)
+				group_type = ERenderResourceGroupFlagBits::eBackbuffer;
 
 			// Ignore static image control
 			if (!(render_resource.type & ERenderResourceTypeFlagBits::eStaticImage))
@@ -684,6 +700,8 @@ void CRenderGraph::applyRenderPassResources(u64 pass_index, const FRenderConfigP
 				group_type = ERenderResourceGroupFlagBits::eStorageTexture;
 			else if (render_resource.type & ERenderResourceTypeFlagBits::eBuffer)
 				group_type = ERenderResourceGroupFlagBits::eStorage;
+			else if (render_resource.type & ERenderResourceTypeFlagBits::eBackbuffer)
+				group_type = ERenderResourceGroupFlagBits::eBackbuffer;
 			else
 				continue;
 

@@ -266,7 +266,7 @@ namespace engine
 
 			virtual u64 createTexture(const stl::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) = 0;
 			virtual u64 getTextureId(const stl::string& name) = 0;
-			virtual u64 createRenderTargets(const stl::string& name, const FTextureCreateInfo& texture_ci) = 0;
+			virtual u64 createRenderTarget(const stl::string& name, const FTextureCreateInfo& texture_ci) = 0;
 			virtual const FTextureCreateInfo& getTextureInfo(u64 texture_id) = 0;
 			virtual void destroyTexture(u64 resource_id) = 0;
 
