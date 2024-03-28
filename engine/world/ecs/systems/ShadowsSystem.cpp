@@ -36,7 +36,10 @@ void CShadowsSystem::__update(f32 fDt)
 	auto& registry = m_pSceneGraph->getRegistry();
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
 	auto& render_world = m_pRenderInterface->getRenderWorld();
+	auto& render_graph = m_pRenderInterface->getRenderGraph();
 	auto& world_stats = render_world->getStats();
+
+	auto& viewport = render_graph->getDefaultViewport();
 
 	// Calculate cascades shadow data
 	{
@@ -100,7 +103,7 @@ void CShadowsSystem::__update(f32 fDt)
 					// Project frustum corners into world space
 					for (auto& corner : frustumCorners)
 					{
-						glm::vec4 invCorner = render_packet->camera.invViewProjection * corner;
+						glm::vec4 invCorner = viewport.invViewProjection * corner;
 						corner = invCorner / invCorner.w;
 					}
 

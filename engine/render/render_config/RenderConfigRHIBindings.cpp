@@ -249,9 +249,14 @@ namespace engine
 			// FViewportCreateInfo registration
 			lua->new_usertype<FViewportCreateInfo>(
 				"ViewportCI",
+				"set_fixed_size_2d", sol::overload(
+					static_cast<void(FViewportCreateInfo::*)(u32)>(&FViewportCreateInfo::setFixedSize2D),
+					static_cast<void(FViewportCreateInfo::*)(u32, u32)>(&FViewportCreateInfo::setFixedSize2D)
+				),
 				"depend_on_target", &FViewportCreateInfo::dependOnTarget,
 				"depend_on_viewport", &FViewportCreateInfo::dependOnViewport,
-				"set_scale", &FViewportCreateInfo::setScale
+				"set_scale", &FViewportCreateInfo::setScale,
+				"toggle_flip", &FViewportCreateInfo::toggleFlip
 				);
 		}
 

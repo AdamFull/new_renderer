@@ -292,6 +292,7 @@ bool CGLSLANGCompiler::preprocess(const stl::string& shader_code, const FCompile
 	auto shader_source = shader_code.c_str();
 	auto shader_name = info.name.c_str();
 	shader.setStringsWithLengthsAndNames(&shader_source, nullptr, &shader_name, 1);
+	//shader.setPreamble("#define __glslang");
 
 	auto client_version = get_client_version(target_api);
 	auto compile_client = get_compile_client(target_api);

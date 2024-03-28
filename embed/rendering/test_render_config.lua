@@ -107,7 +107,7 @@ end
 do
     local viewport_ci = ViewportCI.new()
     viewport_ci:depend_on_target("present_target")
-    viewport_ci::toggle_flip()
+    viewport_ci:toggle_flip()
 
     render_graph:add_viewport("default_viewport_flipped", viewport_ci)
 end

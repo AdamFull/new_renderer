@@ -196,8 +196,10 @@
 			}
 #endif // HAS_SKIN
 
+			FViewport viewport = viewportBuffer.viewports[frameData.defaultViewport];
+
 			// Transform positions to clip space
-			mat4 mvp = frameData.projection * frameData.view * model;
+			mat4 mvp = viewport.projection * frameData.view * model;
 			vec4 clipPos0 = mvp * vec4(position0, 1.0);
 			vec4 clipPos1 = mvp * vec4(position1, 1.0);
 			vec4 clipPos2 = mvp * vec4(position2, 1.0);

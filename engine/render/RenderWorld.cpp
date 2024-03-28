@@ -44,6 +44,7 @@ void CRenderWorld::create()
 	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eMeshCommandBuffer))->create<FDrawMeshIndirectData>("MeshIndirectBuffer", EBufferTypeFlagBits::eIndirect);
 
 	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eTextureRemapBuffer))->create<uint32_t>("TextureBindingRemap", EBufferTypeFlagBits::eStorage);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eViewportBuffer))->create<FViewport>("ViewportBuffer", EBufferTypeFlagBits::eStorage);
 }
 
 u64 CRenderWorld::registerFrustum(ERenderGeometryCullerType type)

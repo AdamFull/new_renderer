@@ -9,6 +9,7 @@
 #include "render_passes/GeometryPass.h"
 
 #include <logger/logger.h>
+#include <glm/gtc/matrix_transform.hpp>
 
 using namespace engine::render;
 
@@ -311,11 +312,17 @@ i64 CRenderGraph::addViewport(const std::string& name, const FViewportCreateInfo
 			if(resource.type & ERenderResourceTypeFlagBits::eAllImage)
 				new_viewport.dependencyResource = found->second;
 		}
-		else if (create_info.dependencyType == EViewportDependencyType::eOnViewport)
-		{
-			if (auto found = m_nameToViewport.find(create_info.dependsOn); found != m_nameToViewport.end())
-				new_viewport.dependencyResource = found->second;
-		}
+	}
+	else if (create_info.dependencyType == EViewportDependencyType::eOnViewport)
+	{
+		if (auto found = m_nameToViewport.find(create_info.dependsOn); found != m_nameToViewport.end())
+			new_viewport.dependencyResource = found->second;
+	}
+	else
+	{
+		new_viewport.width = create_info.width;
+		new_viewport.height = create_info.height;
+		new_viewport.depth = create_info.depth;
 	}
 
 	m_nameToViewport[name] = viewport_index;
@@ -336,7 +343,7 @@ void CRenderGraph::setDefaultViewport(const std::string& name)
 	log_error("No viewport found with name: {}.", name);
 }
 
-const FViewportView& CRenderGraph::getViewport(const std::string& name) const
+const FViewportView& CRenderGraph::getViewportView(const std::string& name) const
 {
 	static FViewportView invalid{};
 
@@ -346,9 +353,38 @@ const FViewportView& CRenderGraph::getViewport(const std::string& name) const
 	return invalid;
 }
 
-const FViewportView& CRenderGraph::getViewport(u64 idx) const
+const FViewportView& CRenderGraph::getViewportView(u64 idx) const
 {
 	return m_vViewports.at(idx);
+}
+
+const FViewportView& CRenderGraph::getDefaultViewportView() const
+{
+	return m_vViewports.at(m_defaultViewport);
+}
+const FViewport& CRenderGraph::getViewport(const std::string& name) const
+{
+	static FViewport invalid{};
+
+	if (auto found = m_nameToViewport.find(name); found != m_nameToViewport.end())
+		return m_vViewportBuffer.at(found->second);
+
+	return invalid;
+}
+
+const FViewport& CRenderGraph::getViewport(u64 idx) const
+{
+	return m_vViewportBuffer.at(idx);
+}
+
+const FViewport& CRenderGraph::getDefaultViewport() const
+{
+	return m_vViewportBuffer.at(m_defaultViewport);
+}
+
+u64 CRenderGraph::getDefaultViewportIndex() const
+{
+	return m_defaultViewport;
 }
 
 u64 CRenderGraph::addStaticResource(const stl::string& name, const stl::string& path)
@@ -661,21 +697,69 @@ void CRenderGraph::build()
 		pass->build(build_info);
 	}
 
+	//  Prepare viewports
+	m_vViewportBuffer.resize(m_vViewports.size());
+
 	return;
 }
 
 void CRenderGraph::update(f32 dt)
 {
-	std::vector<FViewport> viewports{};
+	auto& render_context = m_pRenderInterface->getRenderContext();
+	auto& render_packet = m_pRenderInterface->getRenderPacket();
+
+	// TODO: traverse dependencies before updating
 	for (u64 idx = 0ull; idx < m_vViewports.size(); ++idx)
 	{
 		auto& viewport_view = m_vViewports.at(idx);
-		auto& viewport = viewports.emplace_back();
+		auto& viewport = m_vViewportBuffer.at(idx);
 
-		// TODO: Calculate size
-		// TODO: Calculate matrices
+		if (viewport_view.dependencyType == EViewportDependencyType::eOnRenderTarget)
+		{
+			auto& render_resource = getRenderResource(viewport_view.dependencyResource);
+			if (render_resource.type == ERenderResourceTypeFlagBits::eRenderTarget)
+			{
+				auto& resource_sizes = render_context->getTextureInfo(render_resource.handle);
+				viewport.size.x = resource_sizes.size.width;
+				viewport.size.y = resource_sizes.size.height;
+			}
+			else if(render_resource.type == ERenderResourceTypeFlagBits::eBackbuffer)
+			{
+				auto backbuffer_size = render_context->getScreenRenderRect();
+				viewport.size.x = backbuffer_size.size.x;
+				viewport.size.y = backbuffer_size.size.y;
+			}
+		}
+		else if (viewport_view.dependencyType == EViewportDependencyType::eOnViewport)
+		{
+			auto& depend_viewport_view = m_vViewports.at(viewport_view.dependencyResource);
+			auto& depend_viewport = m_vViewportBuffer.at(viewport_view.dependencyResource);
+
+			viewport.size.x = depend_viewport.size.x;
+			viewport.size.y = depend_viewport.size.y;
+		}
+		else
+		{
+			viewport.size.x = utl::cast<f32>(viewport_view.width);
+			viewport.size.y = utl::cast<f32>(viewport_view.height);
+		}
+
+		viewport.size.x *= viewport_view.scale;
+		viewport.size.y *= viewport_view.scale;
+
+		viewport.invSize.x = 1.f / viewport.size.x;
+		viewport.invSize.y = 1.f / viewport.size.y;
+
+		auto aspect = viewport.size.x / viewport.size.y;
+		viewport.projection = glm::perspective(render_packet->camera.fov, aspect, render_packet->camera.nearp, render_packet->camera.farp);
+		viewport.invProjection = glm::inverse(viewport.projection);
+		viewport.viewProjection = viewport.projection * render_packet->camera.view;
+		viewport.invViewProjection = glm::inverse(viewport.viewProjection);
 	}
-	// TODO: Upload to gpu
+
+	auto& render_world = m_pRenderInterface->getRenderWorld();
+	auto& viewport_buffer = render_world->getDrawBuffer(ERenderBufferIndices::eViewportBuffer);
+	viewport_buffer->copy(m_vViewportBuffer);
 }
 
 void CRenderGraph::execute(f32 dt)

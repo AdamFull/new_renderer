@@ -25,8 +25,13 @@ namespace engine
 
 			i64 addViewport(const std::string& name, const FViewportCreateInfo& create_info) override;
 			void setDefaultViewport(const std::string& name) override;
-			const FViewportView& getViewport(const std::string& name) const override;
-			const FViewportView& getViewport(u64 idx) const override;
+			const FViewportView& getViewportView(const std::string& name) const override;
+			const FViewportView& getViewportView(u64 idx) const override;
+			const FViewportView& getDefaultViewportView() const override;
+			const FViewport& getViewport(const std::string& name) const override;
+			const FViewport& getViewport(u64 idx) const override;
+			const FViewport& getDefaultViewport() const override;
+			u64 getDefaultViewportIndex() const override;
 
 			u64 addStaticResource(const stl::string& name, const stl::string& path) override;
 			u64 addRenderResource(const stl::string& name, const FTextureCreateInfo& texture_ci) override;
@@ -64,6 +69,8 @@ namespace engine
 			std::vector<FViewportView> m_vViewports{};
 			stl::unordered_map<stl::string, u64> m_nameToViewport{};
 			u64 m_defaultViewport{ ~0ull };
+
+			std::vector<FViewport> m_vViewportBuffer{};
 
 			stl::vector<stl::unique_ptr<IBasePass>> m_vRenderPasses{};
 			stl::unordered_map<stl::string, u64> m_nameToPass{};

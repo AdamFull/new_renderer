@@ -66,6 +66,7 @@ namespace engine
 			eClusterInfoBuffer,
 			// Other
 			eTextureRemapBuffer,
+			eViewportBuffer,
 
 			eLastIndex
 		};
@@ -88,12 +89,6 @@ namespace engine
 
 			glm::mat4 view{ 1.f };
 			glm::mat4 invView{ 1.f };
-
-			glm::mat4 projection{ 1.f };
-			glm::mat4 invProjection{ 1.f };
-
-			glm::mat4 viewProjection{ 1.f };
-			glm::mat4 invViewProjection{ 1.f };
 
 			glm::vec3 up{ 0.f };
 			glm::vec3 forward{ 0.f };

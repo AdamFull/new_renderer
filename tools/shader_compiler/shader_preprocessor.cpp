@@ -41,6 +41,11 @@ std::string generate_shader_code(const FShaderObject& sobject, const std::vector
 		for (auto& definition : sobject.definitions)
 			ss << std::format("#define {}", definition) << std::endl;
 
+		if (lang == EShaderLang::eGLSL)
+			ss << "#define __glslang" << std::endl;
+		else if(lang == EShaderLang::eHLSL)
+			ss << "#define __hlslang" << std::endl;
+
 		if (depth == 0ull)
 			ss << "{other_definitions}" << std::endl << std::endl; // For other definitions
 	}

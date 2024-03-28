@@ -251,6 +251,8 @@
 			//vec4 pixel_color = vec4(0.35f, 0.55f, 0.7f, 1.0f);
 			vec4 pixel_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
+			FViewport viewport = viewportBuffer.viewports[frameData.defaultViewport];
+
 			VisibilityBuffer visbuffer;
 			if(!loadVisBuffer(uv, visbuffer))
 			{
@@ -258,7 +260,7 @@
 				//const vec3 origin = vec3(0, atmosphere_planet_radius, 0) + camera_pos;
 				//
 				float depth = texture(depth_buffer, uv).r;
-				dir_world_space.xyz = getPositionFromDepth(uv, 1.0f, frameData.invViewProjection);
+				dir_world_space.xyz = getPositionFromDepth(uv, 1.0f, viewport.invViewProjection);
 				//
 				//for(uint i = 0u; i < frameData.directionalLightCount; i++)
 				//{

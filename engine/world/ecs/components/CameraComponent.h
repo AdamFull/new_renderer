@@ -25,8 +25,7 @@ namespace engine
 				f32 xmag{ 0.f };
 				f32 ymag{ 0.f };
 
-				glm::mat4 view{ 1.f }, invView{ 1.f }, projection{ 1.f }, invProjection{ 1.f };
-				glm::uvec2 viewportExtent{};
+				glm::mat4 view{ 1.f }, invView{ 1.f };
 
 				glm::vec3 up{ 0.f };
 				glm::vec3 forward{ 0.f };

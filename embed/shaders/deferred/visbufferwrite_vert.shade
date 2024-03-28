@@ -63,6 +63,7 @@
 			}
 #endif // HAS_SKIN
 
+			FViewport viewport = viewportBuffer.viewports[frameData.defaultViewport];
 
 			vec4 localPos = modelMatrix * vec4(inPosition, 1.0);
 			localPos = vec4(localPos.xyz / localPos.w, 1.0);
@@ -73,7 +74,7 @@
 			matID = mesh.materialID;
 			objID = draw_info.nodeID;
 			vboID = draw_info.vboID;
-			gl_Position = frameData.projection * frameData.view * localPos;
+			gl_Position = viewport.projection * frameData.view * localPos;
 		}
 	""";
 }

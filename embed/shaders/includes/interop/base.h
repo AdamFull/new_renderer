@@ -18,12 +18,15 @@
 #define MATRIX2 glm::mat2
 #define MATRIX3 glm::mat3
 #define MATRIX4 glm::mat4
-#else
+
+#define REGISTER_OBJECT_ARRAY_BUFFER(BufferTypeName, DataType, ArrayName) typedef uint64_t BufferTypeName
+#else // __cplusplus
 #define ALIGN_AS(x)
 
-#define CONSTANT const
-
 #define ARRAY_OF(name, type, count) type name[count]
+
+#ifdef __glslang
+#define CONSTANT const
 
 #define VECTOR2 vec2
 #define VECTOR3 vec3
@@ -31,7 +34,23 @@
 #define MATRIX2 mat2
 #define MATRIX3 mat3
 #define MATRIX4 mat4
-#endif
+
+#define REGISTER_OBJECT_ARRAY_BUFFER(BufferTypeName, DataType, ArrayName) layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer BufferTypeName { DataType ArrayName[]; };
+#else // __glslang
+#define CONSTANT static const
+
+#define VECTOR2 float2
+#define VECTOR3 float3
+#define VECTOR4 float4
+#define MATRIX2 float2x2
+#define MATRIX3 float3x3
+#define MATRIX4 float4x4
+
+#define REGISTER_OBJECT_ARRAY_BUFFER(BufferTypeName, DataType, ArrayName) \
+		struct F##BufferTypeName##_Array{ DataType ArrayName[]; }; \
+		typedef vk::BufferPointer<F##BufferTypeName##_Array> BufferTypeName
+#endif // __glslang
+#endif // __cplusplus
 
 #ifdef __cplusplus
 namespace engine { 
@@ -120,6 +139,8 @@ namespace engine {
 		{
 			MATRIX4 projection;
 			MATRIX4 invProjection;
+			MATRIX4 viewProjection;
+			MATRIX4 invViewProjection;
 			VECTOR2 size;
 			VECTOR2 invSize;
 		};
@@ -383,10 +404,6 @@ namespace engine {
 		{
 			MATRIX4 view;
 			MATRIX4 invView;
-			MATRIX4 projection;
-			MATRIX4 invProjection;
-			MATRIX4 viewProjection;
-			MATRIX4 invViewProjection;
 			VECTOR2 viewportDimension;
 			VECTOR2 invViewportDimension;
 			float nearPlane;
@@ -395,20 +412,12 @@ namespace engine {
 			uint32_t pointLightCount;
 			uint32_t spotLightCount;
 			uint32_t rawCommandsCount;
+			uint32_t defaultViewport;
 #ifdef __cplusplus
 		};
 #else
 		} frameData;
 #endif
-
-#ifdef __cplusplus
-#define REGISTER_OBJECT_ARRAY_BUFFER(BufferTypeName, DataType, ArrayName) typedef uint64_t BufferTypeName
-#else
-#define REGISTER_OBJECT_ARRAY_BUFFER(BufferTypeName, DataType, ArrayName) layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer BufferTypeName { DataType ArrayName[]; };
-#endif
-
-
-
 
 		// Base buffers
 		REGISTER_OBJECT_ARRAY_BUFFER(NodeBuffer, FSceneNode, nodes);
@@ -445,6 +454,7 @@ namespace engine {
 
 		// Other
 		REGISTER_OBJECT_ARRAY_BUFFER(TextureBindingRemap, uint32_t, remap);
+		REGISTER_OBJECT_ARRAY_BUFFER(ViewportBuffer, FViewport, viewports);
 
 #ifdef __cplusplus
 		struct FGlobalBufferReference
@@ -473,6 +483,7 @@ namespace engine {
 			IndirectTaskCommands indirectTaskCommandBuffer;
 
 			TextureBindingRemap textureRemapBuffer;
+			ViewportBuffer viewportBuffer;
 		};
 
 #ifdef __cplusplus

@@ -34,9 +34,6 @@ class ShaderCompiler:
             shader_compiler_exec, 
             "-in", shader_input_directory,
             "-out", shader_output_directory,
-            "-common", shader_common_directory,
-            "-includes", shader_includes_directory,
-            "-api", shader_compiler_api,
             "-build_type", shader_compile_type
         ]
 	

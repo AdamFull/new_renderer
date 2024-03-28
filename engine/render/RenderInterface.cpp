@@ -155,6 +155,7 @@ void CRenderInterface::render(f32 dt)
 {
 	m_pRenderContext->beginFrame();
 
+	m_pRenderGraph->update(dt);
 	m_pRenderWorld->render(dt);
 
 	const auto& world_stats = m_pRenderWorld->getStats();
@@ -162,10 +163,6 @@ void CRenderInterface::render(f32 dt)
 	FGlobalUniformData global_uniform{};
 	global_uniform.view = m_pRenderPacket->camera.view;
 	global_uniform.invView = m_pRenderPacket->camera.invView;
-	global_uniform.projection = m_pRenderPacket->camera.projection;
-	global_uniform.invProjection = m_pRenderPacket->camera.invProjection;
-	global_uniform.viewProjection = m_pRenderPacket->camera.viewProjection;
-	global_uniform.invViewProjection = m_pRenderPacket->camera.invViewProjection;
 	global_uniform.viewportDimension = m_pRenderPacket->camera.dimensions;
 	global_uniform.invViewportDimension = 1.f / m_pRenderPacket->camera.dimensions;
 	global_uniform.nearPlane = m_pRenderPacket->camera.nearp;
@@ -174,6 +171,7 @@ void CRenderInterface::render(f32 dt)
 	global_uniform.pointLightCount = utl::cast<u32>(world_stats.pointLightCount);
 	global_uniform.spotLightCount = utl::cast<u32>(world_stats.spotLightCount);
 	global_uniform.rawCommandsCount = utl::cast<u32>(world_stats.drawCommandCount);
+	global_uniform.defaultViewport = utl::cast<u32>(m_pRenderGraph->getDefaultViewportIndex());
 
 	FGlobalUniformUpdateInfo update_info{};
 	auto& frame_gata_uniform = update_info.uniforms[utl::utils::fnv1a_64_hash("GlobalUniformFrameData")];
@@ -202,6 +200,7 @@ void CRenderInterface::render(f32 dt)
 	global_references.indirectTaskCommandBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eMeshCommandBuffer)->buffer()->address();
 
 	global_references.textureRemapBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eTextureRemapBuffer)->buffer()->address();
+	global_references.viewportBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eViewportBuffer)->buffer()->address();
 
 	auto& buffer_ref_uniform = update_info.uniforms[utl::utils::fnv1a_64_hash("GlobalBufferReferences")];
 	buffer_ref_uniform.data = &global_references;

@@ -116,6 +116,19 @@ namespace engine
 
 		struct FViewportCreateInfo
 		{
+			void setFixedSize2D(u32 size)
+			{
+				width = height = size;
+				dependencyType = EViewportDependencyType::eManual;
+			}
+
+			void setFixedSize2D(u32 w, u32 h)
+			{
+				width = w;
+				height = h;
+				dependencyType = EViewportDependencyType::eManual;
+			}
+
 			void dependOnTarget(const std::string& name)
 			{
 				dependsOn = name;
@@ -132,6 +145,7 @@ namespace engine
 			void toggleFlip() { flip = !flip; }
 
 			std::string dependsOn;
+			u32 width{ 0u }, height{ 0u }, depth{ 1u };
 			EViewportDependencyType dependencyType;
 			float scale{ 1.f };
 			bool flip{ false };
@@ -140,6 +154,7 @@ namespace engine
 		struct FViewportView
 		{
 			u64 dependencyResource{ ~0ull };
+			u32 width{ 0u }, height{ 0u }, depth{ 1u };
 			EViewportDependencyType dependencyType;
 			float scale{ 1.f };
 			bool flip{ false };
@@ -301,8 +316,13 @@ namespace engine
 
 			virtual i64 addViewport(const std::string& name, const FViewportCreateInfo& create_info) = 0;
 			virtual void setDefaultViewport(const std::string& name) = 0;
-			virtual const FViewportView& getViewport(const std::string& name) const = 0;
-			virtual const FViewportView& getViewport(u64 idx) const = 0;
+			virtual const FViewportView& getViewportView(const std::string& name) const = 0;
+			virtual const FViewportView& getViewportView(u64 idx) const = 0;
+			virtual const FViewportView& getDefaultViewportView() const = 0;
+			virtual const FViewport& getViewport(const std::string& name) const = 0;
+			virtual const FViewport& getViewport(u64 idx) const = 0;
+			virtual const FViewport& getDefaultViewport() const = 0;
+			virtual u64 getDefaultViewportIndex() const = 0;
 
 			virtual u64 addStaticResource(const stl::string& name, const stl::string& path) = 0;
 			virtual u64 addRenderResource(const stl::string& name, const FTextureCreateInfo& texture_ci) = 0;

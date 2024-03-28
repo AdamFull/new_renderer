@@ -67,6 +67,7 @@ void IRenderPass::execute(f32 dt)
 	auto& render_graph = m_pRenderInterface->getRenderGraph();
 
 	auto& viewport = render_graph->getViewport(m_viewportIndex);
+	auto& viewport_view = render_graph->getViewportView(m_viewportIndex);
 
 	FBeginRendering2Info beginRenderingInfo{};
 	beginRenderingInfo.queue = m_queue;
@@ -74,29 +75,8 @@ void IRenderPass::execute(f32 dt)
 	beginRenderingInfo.depthAttachment = m_depthAttachment;
 	beginRenderingInfo.stencilAttachment = m_stencilAttachment;
 	beginRenderingInfo.layerCount = m_layerCount;
-
-	if (viewport.dependencyType == EViewportDependencyType::eOnRenderTarget)
-	{
-		auto& render_resource = render_graph->getRenderResource(viewport.dependencyResource);
-		if (render_resource.type != ERenderResourceTypeFlagBits::eRenderTarget && render_resource.type != ERenderResourceTypeFlagBits::eBackbuffer)
-			throw stl::runtime_error("Incorrect render resource type.");
-
-		if (render_resource.type == ERenderResourceTypeFlagBits::eRenderTarget)
-		{
-			auto& resource_sizes = render_context->getTextureInfo(render_resource.handle);
-			beginRenderingInfo.renderArea.size.x = resource_sizes.size.width;
-			beginRenderingInfo.renderArea.size.y = resource_sizes.size.height;
-		}
-		else
-		{
-			auto backbuffer_size = render_context->getScreenRenderRect();
-			beginRenderingInfo.renderArea.size.x = backbuffer_size.size.x;
-			beginRenderingInfo.renderArea.size.y = backbuffer_size.size.y;
-		}
-	}
-
-	beginRenderingInfo.renderArea.size.x *= viewport.scale;
-	beginRenderingInfo.renderArea.size.y *= viewport.scale;
+	beginRenderingInfo.renderArea.size.x = viewport.size.x;
+	beginRenderingInfo.renderArea.size.y = viewport.size.y;
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	beginRenderingInfo.name = m_debugName;
@@ -104,7 +84,7 @@ void IRenderPass::execute(f32 dt)
 
 	render_context->beginTimestampZone(m_queue);
 	render_context->beginRendering(beginRenderingInfo);
-	render_context->setViewport(utl::cast<f32>(beginRenderingInfo.renderArea.size.x), utl::cast<f32>(beginRenderingInfo.renderArea.size.y), viewport.flip);
+	render_context->setViewport(utl::cast<f32>(beginRenderingInfo.renderArea.size.x), utl::cast<f32>(beginRenderingInfo.renderArea.size.y), viewport_view.flip);
 
 	FRenderFrameInfo frame_info{};
 	frame_info.deltaTime = dt;
