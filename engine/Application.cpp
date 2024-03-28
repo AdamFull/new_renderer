@@ -32,8 +32,8 @@ void CApplication::create()
 
 	m_pVirtualFileSystem->mount("/root", stl::make_unique<filesystem::CNativeFileSystem>("./"));
 
-	m_pScriptEngine = stl::make_unique<scripting::CScriptEngine>();
-	m_pScriptEngine->initialize();
+	//m_pScriptEngine = stl::make_unique<scripting::CScriptEngine>();
+	//m_pScriptEngine->initialize();
 
 	FWindowCreateInfo window_ci{};
 	window_ci.name = "Vulkan App";

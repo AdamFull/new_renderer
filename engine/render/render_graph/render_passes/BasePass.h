@@ -70,6 +70,8 @@ namespace engine
 			virtual void _render(const FRenderFrameInfo& frame_info) = 0;
 		protected:
 			bool m_bFlipViewport{ false };
+
+			u64 m_viewportIndex{ ~0ull };
 			u64 m_depthTarget{ ~0ull };
 			u64 m_stencilTarget{ ~0ull };
 			u32 m_layerCount{ 1u };

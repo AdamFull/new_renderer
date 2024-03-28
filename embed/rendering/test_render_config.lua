@@ -96,29 +96,37 @@ end
 
 
 -- Register viewports
--- do
---     local viewport_ci = ViewportCI.new()
---     viewport_ci:depend_on_target("present_target")
--- 
---     render_graph:add_viewport("default_viewport", viewport_ci)
---     render_graph:set_default_viewport("default_viewport")
--- end
--- 
--- do 
---     local viewport_ci = ViewportCI.new()
---     viewport_ci:depend_on_viewport("default_viewport")
---     viewport_ci:set_scale(0.5)
--- 
---     render_graph:add_viewport("half_resolution_viewport", viewport_ci)
--- end
--- 
--- do 
---     local viewport_ci = ViewportCI.new()
---     -- viewport_ci:depend_on_target("cascaded_shadows_target")
---     viewport_ci:set_fixed_size_2d(global_settings.cascade_shadowmap_resolution)
--- 
---     render_graph:add_viewport("cascaded_shadows_viewport", viewport_ci)
--- end
+do
+    local viewport_ci = ViewportCI.new()
+    viewport_ci:depend_on_target("present_target")
+
+    render_graph:add_viewport("default_viewport", viewport_ci)
+    render_graph:set_default_viewport("default_viewport")
+end
+
+do
+    local viewport_ci = ViewportCI.new()
+    viewport_ci:depend_on_target("present_target")
+    viewport_ci::toggle_flip()
+
+    render_graph:add_viewport("default_viewport_flipped", viewport_ci)
+end
+
+do 
+    local viewport_ci = ViewportCI.new()
+    viewport_ci:depend_on_viewport("default_viewport")
+    viewport_ci:set_scale(0.5)
+
+    render_graph:add_viewport("half_resolution_viewport", viewport_ci)
+end
+
+do 
+    local viewport_ci = ViewportCI.new()
+    -- viewport_ci:depend_on_target("cascaded_shadows_target")
+    viewport_ci:set_fixed_size_2d(global_settings.cascade_shadowmap_resolution)
+
+    render_graph:add_viewport("cascaded_shadows_viewport", viewport_ci)
+end
 
 
 
@@ -187,7 +195,7 @@ do
     pass_ci.shader = "lighting:unidirectional_shadow:CASCADED_SHADOW"
 
     pass_ci.size_target = "cascaded_shadows_target"
-    -- pass_ci:set_viewport("cascaded_shadows_viewport")
+    pass_ci:set_viewport("cascaded_shadows_viewport")
     pass_ci:set_depth_target("cascaded_shadows_target")
 
     pass_ci:bind_read_resource("nodeBuffer", "NodeStorage")
@@ -263,7 +271,7 @@ do
     pass_ci.type = RenderingType.fullscreen
     pass_ci.queue = QueueType.graphics
     pass_ci.shader = "testing:screenspace"
-    pass_ci.flip_viewport = true
+    pass_ci:set_viewport("default_viewport_flipped")
 
     pass_ci.size_target = "present_target"
     pass_ci:bind_read_resource("input_image", "final_lighting_target")

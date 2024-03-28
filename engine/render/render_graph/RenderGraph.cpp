@@ -285,7 +285,6 @@ void CRenderGraph::create()
 		pass_ci.type = ERenderingType::eFullscreen;
 		pass_ci.queue = EQueueTypeFlagBits::eGraphics;
 		pass_ci.shader = "testing:screenspace";
-		pass_ci.flipViewport = true;
 
 		pass_ci.sizeTarget = "present_target";
 
@@ -294,6 +293,62 @@ void CRenderGraph::create()
 
 		addRenderPass("finalize_image_pass", pass_ci);
 	}
+}
+
+i64 CRenderGraph::addViewport(const std::string& name, const FViewportCreateInfo& create_info)
+{
+	auto viewport_index = m_vViewports.size();
+	auto& new_viewport = m_vViewports.emplace_back();
+	new_viewport.scale = create_info.scale;
+	new_viewport.dependencyType = create_info.dependencyType;
+	new_viewport.flip = create_info.flip;
+
+	if (create_info.dependencyType == EViewportDependencyType::eOnRenderTarget)
+	{
+		if (auto found = m_nameToResource.find(create_info.dependsOn); found != m_nameToResource.end())
+		{
+			auto& resource = m_vRenderResources.at(found->second);
+			if(resource.type & ERenderResourceTypeFlagBits::eAllImage)
+				new_viewport.dependencyResource = found->second;
+		}
+		else if (create_info.dependencyType == EViewportDependencyType::eOnViewport)
+		{
+			if (auto found = m_nameToViewport.find(create_info.dependsOn); found != m_nameToViewport.end())
+				new_viewport.dependencyResource = found->second;
+		}
+	}
+
+	m_nameToViewport[name] = viewport_index;
+	return viewport_index;
+}
+
+void CRenderGraph::setDefaultViewport(const std::string& name)
+{
+	if (m_defaultViewport != ~0ull)
+		log_warning("Default viewport was already set. Setting new one. New default viewport is: {}", name);
+
+	if (auto found = m_nameToViewport.find(name); found != m_nameToViewport.end())
+	{
+		m_defaultViewport = found->second;
+		return;
+	}
+
+	log_error("No viewport found with name: {}.", name);
+}
+
+const FViewportView& CRenderGraph::getViewport(const std::string& name) const
+{
+	static FViewportView invalid{};
+
+	if (auto found = m_nameToViewport.find(name); found != m_nameToViewport.end())
+		return m_vViewports.at(found->second);
+
+	return invalid;
+}
+
+const FViewportView& CRenderGraph::getViewport(u64 idx) const
+{
+	return m_vViewports.at(idx);
 }
 
 u64 CRenderGraph::addStaticResource(const stl::string& name, const stl::string& path)
@@ -354,13 +409,13 @@ u64 CRenderGraph::addRenderResource(const stl::string& name, const FBufferCreate
 	return new_render_resource.handle;
 }
 
-i64 CRenderGraph::setBackbufferResourceName(const stl::string& name)
+void CRenderGraph::setBackbufferResourceName(const stl::string& name)
 {
 	if (m_backBufferResource != ~0ull)
 	{
 		log_warning("Backbuffer name is already set. Adding new name association: {}.", name);
 		m_nameToResource[name] = m_backBufferResource;
-		return 0ull;
+		return;
 	}
 
 	auto resource_index = m_vRenderResources.size();
@@ -370,8 +425,6 @@ i64 CRenderGraph::setBackbufferResourceName(const stl::string& name)
 
 	m_backBufferResource = resource_index;
 	m_nameToResource[name] = m_backBufferResource;
-
-	return 0ull;
 }
 
 const FRenderResource& CRenderGraph::getRenderResource(const stl::string& name) const
@@ -405,7 +458,10 @@ u64 CRenderGraph::addRenderPass(const stl::string& name, const FRenderConfigRend
 	m_vPassExecutionQueue.emplace_back(pass_index);
 
 	FRenderPassCreateInfo pass_ci{};
-	pass_ci.flipViewport = render_pass_ci.flipViewport;
+	if (auto found_viewport = m_nameToViewport.find(render_pass_ci.viewport); found_viewport != m_nameToViewport.end())
+		pass_ci.viewportIndex = found_viewport->second;
+	else
+		pass_ci.viewportIndex = m_defaultViewport;
 
 	applyRenderPassResources(pass_index, &render_pass_ci, &pass_ci);
 
@@ -606,6 +662,20 @@ void CRenderGraph::build()
 	}
 
 	return;
+}
+
+void CRenderGraph::update(f32 dt)
+{
+	std::vector<FViewport> viewports{};
+	for (u64 idx = 0ull; idx < m_vViewports.size(); ++idx)
+	{
+		auto& viewport_view = m_vViewports.at(idx);
+		auto& viewport = viewports.emplace_back();
+
+		// TODO: Calculate size
+		// TODO: Calculate matrices
+	}
+	// TODO: Upload to gpu
 }
 
 void CRenderGraph::execute(f32 dt)

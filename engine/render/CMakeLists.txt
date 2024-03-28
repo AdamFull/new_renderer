@@ -5,8 +5,8 @@ find_package(Ktx CONFIG REQUIRED)
 
 find_package(Lua REQUIRED)
 
-find_package(PkgConfig REQUIRED)  
-pkg_check_modules(LuaJIT REQUIRED IMPORTED_TARGET luajit)
+#find_package(PkgConfig REQUIRED)  
+#pkg_check_modules(LuaJIT REQUIRED IMPORTED_TARGET luajit)
 
 find_package(sol2 CONFIG REQUIRED)
 
@@ -52,7 +52,7 @@ target_include_directories(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
 	PUBLIC vulkan_renderer
     PRIVATE ${LUA_LIBRARIES}
-    PRIVATE PkgConfig::LuaJIT
+    #PRIVATE PkgConfig::LuaJIT
     PRIVATE sol2
     PRIVATE KTX::ktx
 )

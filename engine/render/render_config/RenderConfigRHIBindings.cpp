@@ -234,7 +234,7 @@ namespace engine
 				"GraphicsCreateInfo",
 				sol::base_classes, sol::bases<FRenderConfigPassCreateInfo>(),
 				"type", &FRenderConfigRenderCreateInfo::type,
-				"flip_viewport", &FRenderConfigRenderCreateInfo::flipViewport,
+				"set_viewport", &FRenderConfigRenderCreateInfo::setViewport,
 				"set_depth_target", &FRenderConfigRenderCreateInfo::setDepthTarget,
 				"set_stencil_target", &FRenderConfigRenderCreateInfo::setStencilTarget
 			);
@@ -245,6 +245,14 @@ namespace engine
 				sol::base_classes, sol::bases<FRenderConfigPassCreateInfo>(),
 				"type", &FRenderConfigComputeCreateInfo::type
 			);
+
+			// FViewportCreateInfo registration
+			lua->new_usertype<FViewportCreateInfo>(
+				"ViewportCI",
+				"depend_on_target", &FViewportCreateInfo::dependOnTarget,
+				"depend_on_viewport", &FViewportCreateInfo::dependOnViewport,
+				"set_scale", &FViewportCreateInfo::setScale
+				);
 		}
 
 		void bindRenderInterfaceObjects(sol::state* lua)
@@ -282,6 +290,8 @@ namespace engine
 			// IRenderGraph registration
 			lua->new_usertype<IRenderGraph>(
 				"IRenderGraph",
+				"add_viewport", &IRenderGraph::addViewport,
+				"set_default_viewport", &IRenderGraph::setDefaultViewport,
 				"add_static_resource", &IRenderGraph::addStaticResource,
 				"add_render_resource", sol::overload(
 					static_cast<u64(IRenderGraph::*)(const stl::string&, const FTextureCreateInfo&)>(&IRenderGraph::addRenderResource),

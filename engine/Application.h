@@ -25,7 +25,7 @@ namespace engine
 		stl::unique_ptr<CInputMapper> m_pInputMapper{};
 		stl::unique_ptr<render::IRenderInterface> m_pRenderInterface{};
 		stl::unique_ptr<filesystem::IVirtualFileSystemInterface> m_pVirtualFileSystem{};
-		stl::unique_ptr<scripting::CScriptEngine> m_pScriptEngine{};
+		//stl::unique_ptr<scripting::CScriptEngine> m_pScriptEngine{};
 		stl::unique_ptr<world::CScene> m_pScene{};
 
 		utl::utils::fps_counter32 cpuCounter{};

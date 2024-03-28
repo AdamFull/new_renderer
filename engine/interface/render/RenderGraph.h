@@ -80,6 +80,13 @@ namespace engine
 			eRender
 		};
 
+		enum class EViewportDependencyType
+		{
+			eManual,
+			eOnViewport,
+			eOnRenderTarget
+		};
+
 
 		inline constexpr ERenderResourceGroupType packResourceGroup(ERenderResourceAccessFlagBits access_flag, ERenderResourceGroupFlagBits group_flag)
 		{
@@ -106,6 +113,37 @@ namespace engine
 			src = utl::cast<ERenderResourceAccessFlagBits>(src_mask);
 			dst = utl::cast<ERenderResourceAccessFlagBits>(dst_mask);
 		}
+
+		struct FViewportCreateInfo
+		{
+			void dependOnTarget(const std::string& name)
+			{
+				dependsOn = name;
+				dependencyType = EViewportDependencyType::eOnRenderTarget;
+			}
+
+			void dependOnViewport(const std::string& name)
+			{
+				dependsOn = name;
+				dependencyType = EViewportDependencyType::eOnViewport;
+			}
+
+			void setScale(float new_scale) { scale = new_scale; }
+			void toggleFlip() { flip = !flip; }
+
+			std::string dependsOn;
+			EViewportDependencyType dependencyType;
+			float scale{ 1.f };
+			bool flip{ false };
+		};
+
+		struct FViewportView
+		{
+			u64 dependencyResource{ ~0ull };
+			EViewportDependencyType dependencyType;
+			float scale{ 1.f };
+			bool flip{ false };
+		};
 
 		struct FRenderResourceView
 		{
@@ -155,7 +193,6 @@ namespace engine
 			EQueueTypeFlagBits queue{};
 			u32 layerCount{ 1u };
 			FRect2D<f32> renderArea{};
-			bool flipViewport{ false };
 
 			stl::vector<FRenderGraphAttachmentInfo> colorAttachments{};
 
@@ -215,10 +252,11 @@ namespace engine
 		struct FRenderConfigRenderCreateInfo : public FRenderConfigPassCreateInfo
 		{
 			ERenderingType type{};
-			bool flipViewport{ false };
+			std::string viewport{};
 			stl::string depthResource{};
 			stl::string stencilResource{};
 
+			void setViewport(const std::string& name) { viewport = name; }
 			void setDepthTarget(const stl::string& resource_name) { depthResource = otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(resource_name); }
 			void setStencilTarget(const stl::string& resource_name) { stencilResource = otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(resource_name); }
 		};
@@ -245,6 +283,7 @@ namespace engine
 		{
 			bool flipViewport{ false };
 
+			u64 viewportIndex{ ~0ull };
 			u64 depthTarget{ ~0ull };
 			u64 stencilTarget{ ~0ull };
 		};
@@ -260,10 +299,15 @@ namespace engine
 
 			virtual void create() = 0;
 
+			virtual i64 addViewport(const std::string& name, const FViewportCreateInfo& create_info) = 0;
+			virtual void setDefaultViewport(const std::string& name) = 0;
+			virtual const FViewportView& getViewport(const std::string& name) const = 0;
+			virtual const FViewportView& getViewport(u64 idx) const = 0;
+
 			virtual u64 addStaticResource(const stl::string& name, const stl::string& path) = 0;
 			virtual u64 addRenderResource(const stl::string& name, const FTextureCreateInfo& texture_ci) = 0;
 			virtual u64 addRenderResource(const stl::string& name, const FBufferCreateInfo& buffer_ci) = 0;
-			virtual i64 setBackbufferResourceName(const stl::string& name) = 0;
+			virtual void setBackbufferResourceName(const stl::string& name) = 0;
 
 			virtual const FRenderResource& getRenderResource(const stl::string& name) const = 0;
 			virtual const FRenderResource& getRenderResource(u64 resource_id) const = 0;
@@ -272,7 +316,7 @@ namespace engine
 			virtual u64 addRenderPass(const stl::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci) = 0;
 
 			virtual void build() = 0;
-
+			virtual void update(f32 dt) = 0;
 			virtual void execute(f32 dt) = 0;
 		};
 	}

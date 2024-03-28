@@ -116,6 +116,14 @@ namespace engine {
 #endif // HAS_SKIN
 		};
 
+		struct FViewport
+		{
+			MATRIX4 projection;
+			MATRIX4 invProjection;
+			VECTOR2 size;
+			VECTOR2 invSize;
+		};
+
 		struct FGeometryGPUCullInfo
 		{
 			uint32_t instanceID;

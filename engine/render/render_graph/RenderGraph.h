@@ -23,10 +23,15 @@ namespace engine
 
 			void create() override;
 
+			i64 addViewport(const std::string& name, const FViewportCreateInfo& create_info) override;
+			void setDefaultViewport(const std::string& name) override;
+			const FViewportView& getViewport(const std::string& name) const override;
+			const FViewportView& getViewport(u64 idx) const override;
+
 			u64 addStaticResource(const stl::string& name, const stl::string& path) override;
 			u64 addRenderResource(const stl::string& name, const FTextureCreateInfo& texture_ci) override;
 			u64 addRenderResource(const stl::string& name, const FBufferCreateInfo& buffer_ci) override;
-			i64 setBackbufferResourceName(const stl::string& name) override;
+			void setBackbufferResourceName(const stl::string& name) override;
 
 			void destroyResource(u64 buffer_id);
 
@@ -39,7 +44,7 @@ namespace engine
 			u64 addRenderPass(const stl::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci) override;
 
 			void build() override;
-
+			void update(f32 dt) override;
 			void execute(f32 dt) override;
 		private:
 			void applyRenderPassResources(u64 pass_index, const FRenderConfigPassCreateInfo* raw_pass_ci, FPassCreateInfo* pass_ci);
@@ -55,6 +60,10 @@ namespace engine
 			stl::vector<FRenderResource> m_vRenderResources{};
 			stl::unordered_map<stl::string, u64> m_nameToResource{};
 			u64 m_backBufferResource{ ~0ull };
+
+			std::vector<FViewportView> m_vViewports{};
+			stl::unordered_map<stl::string, u64> m_nameToViewport{};
+			u64 m_defaultViewport{ ~0ull };
 
 			stl::vector<stl::unique_ptr<IBasePass>> m_vRenderPasses{};
 			stl::unordered_map<stl::string, u64> m_nameToPass{};
