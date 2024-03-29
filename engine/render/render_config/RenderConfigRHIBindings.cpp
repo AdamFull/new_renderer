@@ -236,7 +236,8 @@ namespace engine
 				"type", &FRenderConfigRenderCreateInfo::type,
 				"set_viewport", &FRenderConfigRenderCreateInfo::setViewport,
 				"set_depth_target", &FRenderConfigRenderCreateInfo::setDepthTarget,
-				"set_stencil_target", &FRenderConfigRenderCreateInfo::setStencilTarget
+				"set_stencil_target", &FRenderConfigRenderCreateInfo::setStencilTarget,
+				"flip_viewport", &FRenderConfigRenderCreateInfo::flipFiewport
 			);
 
 			// FRenderConfigComputeCreateInfo registration
@@ -255,8 +256,7 @@ namespace engine
 				),
 				"depend_on_target", &FViewportCreateInfo::dependOnTarget,
 				"depend_on_viewport", &FViewportCreateInfo::dependOnViewport,
-				"set_scale", &FViewportCreateInfo::setScale,
-				"toggle_flip", &FViewportCreateInfo::toggleFlip
+				"set_scale", &FViewportCreateInfo::setScale
 				);
 		}
 

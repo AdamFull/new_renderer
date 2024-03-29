@@ -302,7 +302,6 @@ i64 CRenderGraph::addViewport(const std::string& name, const FViewportCreateInfo
 	auto& new_viewport = m_vViewports.emplace_back();
 	new_viewport.scale = create_info.scale;
 	new_viewport.dependencyType = create_info.dependencyType;
-	new_viewport.flip = create_info.flip;
 
 	if (create_info.dependencyType == EViewportDependencyType::eOnRenderTarget)
 	{
@@ -498,6 +497,7 @@ u64 CRenderGraph::addRenderPass(const stl::string& name, const FRenderConfigRend
 		pass_ci.viewportIndex = found_viewport->second;
 	else
 		pass_ci.viewportIndex = m_defaultViewport;
+	pass_ci.flipViewport = render_pass_ci.flipViewportState;
 
 	applyRenderPassResources(pass_index, &render_pass_ci, &pass_ci);
 
@@ -759,7 +759,8 @@ void CRenderGraph::update(f32 dt)
 
 	auto& render_world = m_pRenderInterface->getRenderWorld();
 	auto& viewport_buffer = render_world->getDrawBuffer(ERenderBufferIndices::eViewportBuffer);
-	viewport_buffer->copy(m_vViewportBuffer);
+	viewport_buffer->clear();
+ 	viewport_buffer->copy(m_vViewportBuffer);
 }
 
 void CRenderGraph::execute(f32 dt)

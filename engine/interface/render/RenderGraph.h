@@ -142,13 +142,11 @@ namespace engine
 			}
 
 			void setScale(float new_scale) { scale = new_scale; }
-			void toggleFlip() { flip = !flip; }
 
 			std::string dependsOn;
 			u32 width{ 0u }, height{ 0u }, depth{ 1u };
 			EViewportDependencyType dependencyType;
 			float scale{ 1.f };
-			bool flip{ false };
 		};
 
 		struct FViewportView
@@ -157,7 +155,6 @@ namespace engine
 			u32 width{ 0u }, height{ 0u }, depth{ 1u };
 			EViewportDependencyType dependencyType;
 			float scale{ 1.f };
-			bool flip{ false };
 		};
 
 		struct FRenderResourceView
@@ -270,7 +267,10 @@ namespace engine
 			std::string viewport{};
 			stl::string depthResource{};
 			stl::string stencilResource{};
+			bool flipViewportState{ false };
 
+
+			void flipFiewport() { flipViewportState = true; }
 			void setViewport(const std::string& name) { viewport = name; }
 			void setDepthTarget(const stl::string& resource_name) { depthResource = otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(resource_name); }
 			void setStencilTarget(const stl::string& resource_name) { stencilResource = otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(resource_name); }
