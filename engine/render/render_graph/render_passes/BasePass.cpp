@@ -71,9 +71,9 @@ void IRenderPass::execute(f32 dt)
 
 	FBeginRendering2Info beginRenderingInfo{};
 	beginRenderingInfo.queue = m_queue;
-	beginRenderingInfo.colorAttachments = m_vColorAttachments;
-	beginRenderingInfo.depthAttachment = m_depthAttachment;
-	beginRenderingInfo.stencilAttachment = m_stencilAttachment;
+	beginRenderingInfo.colorAttachments = &m_vColorAttachments;
+	beginRenderingInfo.depthAttachment = &m_depthAttachment;
+	beginRenderingInfo.stencilAttachment = &m_stencilAttachment;
 	beginRenderingInfo.layerCount = m_layerCount;
 	beginRenderingInfo.renderArea.size.x = viewport.size.x;
 	beginRenderingInfo.renderArea.size.y = viewport.size.y;

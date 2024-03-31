@@ -106,19 +106,20 @@ const std::unique_ptr<IShaderObject>& CCascadedShadowMapPass::getShaderByVBO(con
 				continue;
 
 			auto& render_resource = render_graph->getRenderResource(resource_id);
-			shader_ci.colorAttachments.emplace_back(render_resource.handle);
+			auto& new_attachment = shader_ci.colorAttachments.emplace_back();
+			new_attachment.source = render_resource.handle;
 		}
 
 		if (m_depthTarget != ~0ull)
 		{
 			auto& render_resource = render_graph->getRenderResource(m_depthTarget);
-			shader_ci.depthAttachment = render_resource.handle;
+			shader_ci.depthAttachment.source = render_resource.handle;
 		}
 
 		if (m_stencilTarget != ~0ull)
 		{
 			auto& render_resource = render_graph->getRenderResource(m_stencilTarget);
-			shader_ci.stencilAttachment = render_resource.handle;
+			shader_ci.stencilAttachment.source = render_resource.handle;
 		}
 
 		auto& render_packet = m_pRenderInterface->getRenderPacket();

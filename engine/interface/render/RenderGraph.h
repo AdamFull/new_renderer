@@ -206,10 +206,10 @@ namespace engine
 			u32 layerCount{ 1u };
 			FRect2D<f32> renderArea{};
 
-			stl::vector<FRenderGraphAttachmentInfo> colorAttachments{};
+			stl::vector<FRenderGraphAttachmentInfo>* colorAttachments{ nullptr };
 
-			FRenderGraphAttachmentInfo depthAttachment{};
-			FRenderGraphAttachmentInfo stencilAttachment{};
+			FRenderGraphAttachmentInfo* depthAttachment{ nullptr };
+			FRenderGraphAttachmentInfo* stencilAttachment{ nullptr };
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
 			stl::string name{};

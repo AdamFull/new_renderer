@@ -13,6 +13,8 @@
 #include <spirv_hlsl.hpp>
 #include <spirv_msl.hpp>
 
+#include "compiler_util.h"
+
 using namespace shader_compiler;
 
 class empty_includer : public glslang::TShader::Includer
@@ -305,7 +307,7 @@ bool CGLSLANGCompiler::preprocess(const stl::string& shader_code, const FCompile
 	stl::string preprocessed_raw;
 	if (!shader.preprocess(&resources, client_version, ENoProfile, false, false, messages, &preprocessed_raw, includer))
 	{
-		log_error("\nPreprocessing error: In shader \"{}\" \n{}\n{}\n", info.name, shader.getInfoLog(), shader.getInfoDebugLog());
+		make_shader_compiler_fatal_error(info.name, shader_code, std::format("Preprocessing error: In shader \"{}\" \n{}\n{}\n", info.name, shader.getInfoLog(), shader.getInfoDebugLog()));
 		return false;
 	}
 
@@ -350,7 +352,7 @@ stl::vector<u32> CGLSLANGCompiler::compile(const stl::string& shader_code, const
 	program.addShader(&shader);
 
 	if (!program.link(messages) || !program.mapIO())
-		log_error("\nLinking error: In shader \"{}\" \n{}\n{}\n", info.name, shader.getInfoLog(), shader.getInfoDebugLog());
+		make_shader_compiler_fatal_error(info.name, shader_code, std::format("Linking error: In shader \"{}\" \n{}\n{}\n", info.name, shader.getInfoLog(), shader.getInfoDebugLog()));
 
 	bool building_release = build_type == ETargetBuildType::eRelease;
 
@@ -365,12 +367,12 @@ stl::vector<u32> CGLSLANGCompiler::compile(const stl::string& shader_code, const
 	stl::string error{};
 	logger.error(error);
 	if (!error.empty())
-		log_error("SPIRV generation error: In shader \"{}\" \n{}\n", info.name, error);
+		make_shader_compiler_fatal_error(info.name, shader_code, std::format("SPIRV generation error: In shader \"{}\" \n{}\n", info.name, error));
 
 	stl::string warning;
 	logger.warning(warning);
 	if (!warning.empty())
-		log_error("SPIRV generation warnings: In shader \"{}\" \n{}\n", info.name, warning);
+		make_shader_compiler_fatal_error(info.name, shader_code, std::format("SPIRV generation warnings: In shader \"{}\" \n{}\n", info.name, warning));
 
 	// TODO: i can cross compile spirv inside apis
 	//// Cross compilation

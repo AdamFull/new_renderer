@@ -36,7 +36,7 @@
 
 		taskPayloadSharedEXT Task inTask;
 
-		layout(std140, set = 1, binding = 0) uniform GeometryBuffers
+		layout(std140, set = 1, binding = 1) uniform GeometryBuffers
 		{
 			RawVertexBuffer vb;
 			RawIndexBuffer ib;

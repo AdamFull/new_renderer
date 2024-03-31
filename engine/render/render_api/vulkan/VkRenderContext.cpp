@@ -367,21 +367,26 @@ u64 CVkRenderContext::createShader(const stl::string& name, const FGraphicsShade
 	auto& textures = m_pResources->data<FVkTexture>();
 	for (auto& attachment : shader_ci.colorAttachments)
 	{
-		auto& texture = textures.at(attachment);
-		pipeline_ci.colorAttachmentFormats.emplace_back(utl::cast<vk::Format>(texture->initialData.base.format));
+		if (attachment.backbuffer)
+			pipeline_ci.colorAttachmentFormats.emplace_back(m_pDevice->m_swapchain.format);
+		else
+		{
+			auto& texture = textures.at(attachment.source);
+			pipeline_ci.colorAttachmentFormats.emplace_back(utl::cast<vk::Format>(texture->initialData.base.format));
+		}
 	}
 
 	// Get depth format
-	if(shader_ci.depthAttachment != invalid_handle)
+	if(shader_ci.depthAttachment.source != invalid_handle)
 	{
-		auto& texture = textures.at(shader_ci.depthAttachment);
+		auto& texture = textures.at(shader_ci.depthAttachment.source);
 		pipeline_ci.depthAttachmentFormat = utl::cast<vk::Format>(texture->initialData.base.format);
 	}
 
 	// Get stencil format
-	if (shader_ci.stencilAttachment != invalid_handle)
+	if (shader_ci.stencilAttachment.source != invalid_handle)
 	{
-		auto& texture = textures.at(shader_ci.stencilAttachment);
+		auto& texture = textures.at(shader_ci.stencilAttachment.source);
 		pipeline_ci.stencilAttachmentFormat = utl::cast<vk::Format>(texture->initialData.base.format);
 	}
 
@@ -1090,52 +1095,55 @@ void CVkRenderContext::beginRendering(const FBeginRendering2Info& rendering_info
 
 	// Prepare render targets
 	stl::vector<vk::RenderingAttachmentInfoKHR> color_attachments{};
-	for (const auto& color_attachment_info : rendering_info.colorAttachments)
+	if (rendering_info.colorAttachments)
 	{
-		auto& attachment_info = color_attachments.emplace_back();
-
-		if (color_attachment_info.backbuffer)
+		for (const auto& color_attachment_info : *rendering_info.colorAttachments)
 		{
-			attachment_info.imageView = m_pDevice->m_swapchain.imageViews[m_pDevice->m_swapchain.currentFrame];
-			attachment_info.imageLayout = m_backbufferLayout;
-		}
-		else
-		{
-			auto& render_target = textures.at(color_attachment_info.handle);
-			attachment_info.imageView = render_target->mips.at(color_attachment_info.mipLevel).imageView;
-			attachment_info.imageLayout = render_target->layout;
-		}
+			auto& attachment_info = color_attachments.emplace_back();
 
-		attachment_info.resolveMode = vk::ResolveModeFlagBits::eNone;
-		attachment_info.loadOp = get_attachment_load_op(color_attachment_info.loadOp);
-		attachment_info.storeOp = get_attachment_store_op(color_attachment_info.storeOp);
-		attachment_info.clearValue = clear_values[0];
+			if (color_attachment_info.backbuffer)
+			{
+				attachment_info.imageView = m_pDevice->m_swapchain.imageViews[m_pDevice->m_swapchain.currentFrame];
+				attachment_info.imageLayout = m_backbufferLayout;
+			}
+			else
+			{
+				auto& render_target = textures.at(color_attachment_info.handle);
+				attachment_info.imageView = render_target->mips.at(color_attachment_info.mipLevel).imageView;
+				attachment_info.imageLayout = render_target->layout;
+			}
+
+			attachment_info.resolveMode = vk::ResolveModeFlagBits::eNone;
+			attachment_info.loadOp = get_attachment_load_op(color_attachment_info.loadOp);
+			attachment_info.storeOp = get_attachment_store_op(color_attachment_info.storeOp);
+			attachment_info.clearValue = clear_values[0];
+		}
 	}
 
 	// Prepare depth target
 	vk::RenderingAttachmentInfoKHR depth_attachment{};
-	if (rendering_info.depthAttachment.handle != invalid_handle)
+	if (rendering_info.depthAttachment && rendering_info.depthAttachment->handle != invalid_handle)
 	{
-		auto& depth_target = textures.at(rendering_info.depthAttachment.handle);
+		auto& depth_target = textures.at(rendering_info.depthAttachment->handle);
 
-		depth_attachment.imageView = depth_target->mips.at(rendering_info.depthAttachment.mipLevel).imageView;
+		depth_attachment.imageView = depth_target->mips.at(rendering_info.depthAttachment->mipLevel).imageView;
 		depth_attachment.imageLayout = depth_target->layout;
 		depth_attachment.resolveMode = vk::ResolveModeFlagBits::eNone;
-		depth_attachment.loadOp = get_attachment_load_op(rendering_info.depthAttachment.loadOp);
-		depth_attachment.storeOp = get_attachment_store_op(rendering_info.depthAttachment.storeOp);
+		depth_attachment.loadOp = get_attachment_load_op(rendering_info.depthAttachment->loadOp);
+		depth_attachment.storeOp = get_attachment_store_op(rendering_info.depthAttachment->storeOp);
 		depth_attachment.clearValue = clear_values[1];
 	}
 
 	vk::RenderingAttachmentInfoKHR stencil_attachment{};
-	if (rendering_info.stencilAttachment.handle != rendering_info.depthAttachment.handle && rendering_info.stencilAttachment.handle != invalid_handle)
+	if (rendering_info.stencilAttachment && rendering_info.stencilAttachment->handle != rendering_info.depthAttachment->handle && rendering_info.stencilAttachment->handle != invalid_handle)
 	{
-		auto& stencil_target = textures.at(rendering_info.stencilAttachment.handle);
+		auto& stencil_target = textures.at(rendering_info.stencilAttachment->handle);
 
-		stencil_attachment.imageView = stencil_target->mips.at(rendering_info.stencilAttachment.mipLevel).imageView;
+		stencil_attachment.imageView = stencil_target->mips.at(rendering_info.stencilAttachment->mipLevel).imageView;
 		stencil_attachment.imageLayout = stencil_target->layout;
 		stencil_attachment.resolveMode = vk::ResolveModeFlagBits::eNone;
-		stencil_attachment.loadOp = get_attachment_load_op(rendering_info.stencilAttachment.loadOp);
-		stencil_attachment.storeOp = get_attachment_store_op(rendering_info.stencilAttachment.storeOp);
+		stencil_attachment.loadOp = get_attachment_load_op(rendering_info.stencilAttachment->loadOp);
+		stencil_attachment.storeOp = get_attachment_store_op(rendering_info.stencilAttachment->storeOp);
 		stencil_attachment.clearValue = clear_values[2];
 	}
 
@@ -1148,16 +1156,16 @@ void CVkRenderContext::beginRendering(const FBeginRendering2Info& rendering_info
 	begin_rendering_info.pColorAttachments = color_attachments.data();
 	begin_rendering_info.layerCount = rendering_info.layerCount;
 
-	if (rendering_info.depthAttachment.handle != invalid_handle)
+	if (rendering_info.depthAttachment && rendering_info.depthAttachment->handle != invalid_handle)
 	{
 		begin_rendering_info.pDepthAttachment = &depth_attachment;
 
-		auto& depth_target = textures.at(rendering_info.depthAttachment.handle);
-		if (!is_depth_only_format(utl::cast<vk::Format>(depth_target->initialData.base.format)) && rendering_info.stencilAttachment.handle == rendering_info.depthAttachment.handle)
+		auto& depth_target = textures.at(rendering_info.depthAttachment->handle);
+		if (!is_depth_only_format(utl::cast<vk::Format>(depth_target->initialData.base.format)) && rendering_info.stencilAttachment->handle == rendering_info.depthAttachment->handle)
 			begin_rendering_info.pStencilAttachment = &depth_attachment;
 	}
 
-	if (rendering_info.stencilAttachment.handle != invalid_handle && rendering_info.stencilAttachment.handle != rendering_info.depthAttachment.handle)
+	if (rendering_info.stencilAttachment->handle != invalid_handle && rendering_info.stencilAttachment->handle != rendering_info.depthAttachment->handle)
 		begin_rendering_info.pStencilAttachment = &stencil_attachment;
 
 	auto& current_buffer = command_buffer.get();

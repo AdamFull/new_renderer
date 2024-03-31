@@ -174,4 +174,27 @@ namespace shader_compiler
 
 		return true;
 	}
+
+	inline void make_shader_compiler_fatal_error(const std::string& name, const std::string& code, const std::string& error)
+	{
+		auto current_path = std::filesystem::current_path();
+		log_error(error);
+
+		auto output_directory = current_path / "error_dumps";
+		if (!std::filesystem::exists(output_directory))
+			std::filesystem::create_directories(output_directory);
+
+		auto path_string = (output_directory / (name + ".glsl")).string();
+
+		FILE* file = fopen(path_string.c_str(), "wb");
+		if (!file)
+			return;
+
+		fwrite(error.data(), 1, error.size(), file);
+		fwrite(code.data(), 1, code.size(), file);
+		fclose(file);
+
+		log_info("Shader file was saved in: {}", path_string);
+		terminate();
+	}
 }

@@ -86,6 +86,12 @@ namespace engine
 			stl::vector<u32>* code{ nullptr };
 		};
 
+		struct FAttachment
+		{
+			u64 source{ ~0ull };
+			bool backbuffer{ false };
+		};
+
 		struct FGraphicsShaderCreateInfo
 		{
 			// EShaderPrimitiveTopology
@@ -97,9 +103,9 @@ namespace engine
 
 			u32 usageCount{ 1u };
 
-			stl::vector<u64> colorAttachments{};
-			u64 depthAttachment{ ~0ull };
-			u64 stencilAttachment{ ~0ull };
+			stl::vector<FAttachment> colorAttachments{};
+			FAttachment depthAttachment{};
+			FAttachment stencilAttachment{};
 
 			FVertexDeclarationInfo vertexDeclaration{};
 		};

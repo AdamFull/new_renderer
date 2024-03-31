@@ -30,19 +30,32 @@ void CFullscreenPass::init(const FRenderPassCreateInfo& pass_ci)
 			continue;
 
 		auto& render_resource = render_graph->getRenderResource(resource_id);
-		shader_ci.colorAttachments.emplace_back(render_resource.handle);
+		auto& new_attachment = shader_ci.colorAttachments.emplace_back();
+		new_attachment.source = render_resource.handle;
+	}
+
+	auto& backbuffer_targer = m_renderResources[ERenderResourceGroupType::eBackbufferWrite];
+	for (u64 resource_id : backbuffer_targer)
+	{
+		if (resource_id == m_depthTarget || resource_id == m_stencilTarget)
+			continue;
+
+		auto& render_resource = render_graph->getRenderResource(resource_id);
+		auto& new_attachment = shader_ci.colorAttachments.emplace_back();
+		new_attachment.source = render_resource.handle;
+		new_attachment.backbuffer = true;
 	}
 
 	if (m_depthTarget != ~0ull)
 	{
 		auto& render_resource = render_graph->getRenderResource(m_depthTarget);
-		shader_ci.depthAttachment = render_resource.handle;
+		shader_ci.depthAttachment.source = render_resource.handle;
 	}
 
 	if (m_stencilTarget != ~0ull)
 	{
 		auto& render_resource = render_graph->getRenderResource(m_stencilTarget);
-		shader_ci.stencilAttachment = render_resource.handle;
+		shader_ci.stencilAttachment.source = render_resource.handle;
 	}
 
 	// Make RHI shader object

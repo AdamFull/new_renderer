@@ -42,5 +42,17 @@
 	{
 		return textureGrad(GET_SAMPLER_2D(texture_index, mip_level), uv, uv_dx, uv_dy);
 	}
+
+//#if defined(COMPUTE_SHADER)
+//		layout(std140, set = 1, binding = 0) uniform ComputePassCommonData
+//		{
+//			vec2 dispatchGridDim; 
+//		};
+//#elif defined(VERTEX_SHADER) || defined(TESS_CONTROL_SHADER) || defined(TESS_EVAL_SHADER) || defined(GEOMETRY_SHADER) || defined(FRAGMENT_SHADER)
+//		layout(std140, set = 1, binding = 0) uniform GraphicsPassCommonData
+//		{
+//			uint32_t viewportIndex;
+//		};
+//#endif
 	""";
 }
