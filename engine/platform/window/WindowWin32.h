@@ -1,7 +1,10 @@
 #pragma once
 
 #include <engine/interface/WindowInterface.h>
+#define NOMINMAX
 #include <Windows.h>
+#undef min
+#undef max
 
 namespace engine
 {

@@ -27,7 +27,10 @@
 
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
+#define NOMINMAX
+#include <windows.h>
+#undef min
+#undef max
 #if !defined(VK_USE_PLATFORM_WIN32_KHR)
     #define VK_USE_PLATFORM_WIN32_KHR
 #endif // #if !defined(VK_USE_PLATFORM_WIN32_KHR)
@@ -88,7 +91,7 @@ include all public interface declarations. Example:
     #pragma clang diagnostic ignored "-Wnullability-completeness"
 #endif
 
-#include "../include/vk_mem_alloc.h"
+#include "vk_mem_alloc.h"
 
 #ifdef __clang__
     #pragma clang diagnostic pop

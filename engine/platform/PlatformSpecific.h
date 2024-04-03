@@ -3,7 +3,11 @@
 #include <standart_library.h>
 
 #if defined(PLATFORM_WIN32)
+#define NOMINMAX
 #include <Windows.h>
+#undef min
+#undef max
+
 #include "window/WindowWin32.h"
 #include "window/WindowGLFW.h"
 #endif

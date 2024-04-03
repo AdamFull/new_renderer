@@ -4,7 +4,10 @@
 #include <codecvt>
 #include <iostream>
 
-#include <Windows.h>
+#define NOMINMAX
+#include <windows.h>
+#undef min
+#undef max
 
 #include <logger/logger.h>
 

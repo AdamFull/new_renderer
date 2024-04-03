@@ -2,7 +2,10 @@
 
 #include <engine/interface/WindowInterface.h>
 #if defined(PLATFORM_WIN32)
+#define NOMINMAX
 #include <Windows.h>
+#undef min
+#undef max
 #endif
 
 class GLFWwindow;
