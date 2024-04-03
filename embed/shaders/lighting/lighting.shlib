@@ -47,38 +47,19 @@
 	compile: [
 		{ 
 			shader_name: "brgflut_generator";
-			permutations: [
-				{ definitions: [] }
-			];
+			pattern: "empty_pattern";
 		},
 		{ 
 			shader_name: "irradiancecube_generator";
-			permutations: [
-				{ definitions: [] }
-			];
+			pattern: "empty_pattern";
 		},
 		{ 
 			shader_name: "prefilteredmap_generator";
-			permutations: [
-				{ definitions: [] }
-			];
+			pattern: "empty_pattern";
 		},
 		{ 
 			shader_name: "unidirectional_shadow";
-			permutation_generator: {
-				definitions: [
-					{ base: "HAS_TEXCOORD" },
-					{ base: "HAS_NORMAL" },
-					{ base: "HAS_SKIN", var:[{ base: "JOINTS_8BIT" }, { base: "JOINTS_16BIT" }] },
-					{ base: "COLOR_VEC3" },
-					{ base: "COLOR_VEC4" },
-					{ base: "TANGENT_VEC3" },
-					{ base: "TANGENT_VEC4" },
-					{ base: "INDEX_8BIT" },
-					{ base: "INDEX_16BIT" },
-					{ base: "CASCADED_SHADOW" }
-				];
-			};
+			pattern: "geometry_pattern";
 		}
 	];
 }

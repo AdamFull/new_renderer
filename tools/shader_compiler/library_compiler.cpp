@@ -47,22 +47,47 @@ stl::string emplace_data(stl::string base_string, const stl::string& target, con
 	return base_string;
 }
 
-stl::vector<stl::string> make_permutation(u64 mask, const stl::vector<FDefinitionChain>& chains) 
+//stl::vector<stl::string> make_permutation(u64 mask, const stl::vector<FDefinitionChain>& chains) 
+//{
+//	stl::vector<stl::string> permutation;
+//
+//	for (u64 j = 0; j < chains.size(); ++j) 
+//	{
+//		if (mask & (1 << j)) 
+//		{
+//			permutation.emplace_back(chains[j].base);
+//
+//			if (!chains[j].var.empty())
+//				permutation.emplace_back(chains[j].var[0].base);
+//		}
+//	}
+//
+//	return permutation;
+//}
+
+void generate_permutations(const std::vector<std::string>& base, const std::vector<FDefinitionVariant>& variants, std::vector<std::vector<std::string>>& result, std::vector<std::string> current, size_t variant_index)
 {
-	stl::vector<stl::string> permutation;
-
-	for (u64 j = 0; j < chains.size(); ++j) 
+	if (variant_index == variants.size()) 
 	{
-		if (mask & (1 << j)) 
-		{
-			permutation.emplace_back(chains[j].base);
-
-			if (!chains[j].var.empty())
-				permutation.emplace_back(chains[j].var[0].base);
-		}
+		result.emplace_back(current);
+		return;
 	}
 
-	return permutation;
+	const auto& variant = variants[variant_index];
+	if (variant.type == EPermutationVariantCombineType::eAND)
+	{
+		current.insert(current.end(), variant.definitions.begin(), variant.definitions.end());
+		generate_permutations(base, variants, result, current, variant_index + 1);
+	}
+	else if (variant.type == EPermutationVariantCombineType::eOR) 
+	{
+		for (const auto& definition : variant.definitions) 
+		{
+			std::vector<std::string> new_current = current;
+			new_current.emplace_back(definition);
+			generate_permutations(base, variants, result, new_current, variant_index + 1);
+		}
+	}
 }
 
 CLibraryCompiler::CLibraryCompiler(const std::filesystem::path& common_path, const std::vector<std::filesystem::path>& includes_path)
@@ -82,6 +107,32 @@ void CLibraryCompiler::initialize(ETargetAPIType target_api, EShaderLang shader_
 
 	m_pPreprocessor->initialize(shader_lang);
 	m_pShaderCompiler->initialize();
+}
+
+void CLibraryCompiler::generatePermutations(const std::unordered_map<std::string, FPermutationPattern>& permutation_patterns)
+{
+	for (const auto& [name, pattern] : permutation_patterns)
+	{
+		auto& new_permutations = m_permutations[name];
+
+		// At first copy default permutations
+		for (const auto& def_list : pattern.permutations)
+			new_permutations.emplace_back(def_list.definitions);
+
+		// Generate another permutations
+		for (const auto& rule : pattern.generator.rules)
+		{
+			// If we don't have any variants, just create with base
+			if (rule.variants.empty())
+			{
+				auto& new_permutation = new_permutations.emplace_back();
+				new_permutation.insert(new_permutation.end(), rule.base.begin(), rule.base.end());
+				continue;
+			}
+
+			generate_permutations(rule.base, rule.variants, new_permutations, rule.base, 0);
+		}
+	}
 }
 
 void CLibraryCompiler::compile(const stl::filesystem::path& library_path, FShaderCacheData& shader_cache)
@@ -106,21 +157,8 @@ void CLibraryCompiler::compile(const stl::filesystem::path& library_path, FShade
 
 		FShaderDescription& shader_desc = found_shader_desc->second;
 
-		// Generate all shader permutations
-		bool generate_permutations = !compile.permutation_gen.definitions.empty();
-		u64 perm_n = compile.permutation_gen.definitions.size();
-		u64 total_permutations = 1 << perm_n;
-
-		stl::vector<stl::vector<stl::string>> cached_permutations{};
-
-		if (generate_permutations)
-		{
-			for (u64 mask = 0; mask < total_permutations; ++mask)
-				cached_permutations.emplace_back(make_permutation(mask, compile.permutation_gen.definitions));
-		}
-
-		for (auto& permutation : compile.permutations)
-			cached_permutations.emplace_back(permutation.definitions);
+		// Get cached permutations
+		const auto& cached_permutations = m_permutations[compile.pattern];
 
 		u64 shader_index{ 0ull };
 		// Process all shader included sources

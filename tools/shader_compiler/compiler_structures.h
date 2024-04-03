@@ -51,10 +51,51 @@ namespace shader_compiler
 		eMesh
 	};
 
+	enum class EPermutationVariantCombineType
+	{
+		eOR,
+		eAND
+	};
+
+	// List of definitions
+	struct FDefinitionList
+	{
+		std::vector<std::string> definitions;
+	};
+
+	// Definition combine rule description
+	struct FDefinitionVariant
+	{
+		std::vector<std::string> definitions;
+		EPermutationVariantCombineType type;
+	};
+
+	// Rule describes how to generate permutation
+	struct FPermutationRule
+	{
+		std::vector<std::string> base;
+		std::vector<FDefinitionVariant> variants;
+	};
+
+	// Describes how to generate shader permutations
+	struct FShaderPermutationGenerator
+	{
+		std::vector<FPermutationRule> rules;
+	};
+
+	// Pattern for generate permutation
+	struct FPermutationPattern
+	{
+		FShaderPermutationGenerator generator;
+		std::vector<FDefinitionList> permutations;
+	};
+
 	struct FShaderMakeInfo
 	{
 		EShaderLang lang;
 		ETargetAPIType targetApi;
+
+		std::unordered_map<std::string, FPermutationPattern> permutationPatterns;
 
 		std::vector<std::string> includeDirectories;
 		std::vector<std::string> commonDirectories;
@@ -74,6 +115,14 @@ namespace shader_compiler
 		std::string code;
 	};
 
+	// Description about HOW to compile shader
+	struct FShaderCompile
+	{
+		std::string name;
+		std::string pattern; // Build pattern with permutations
+	};
+
+	// Description about how to find shader source file
 	struct FShaderSource
 	{
 		EShaderType type{ EShaderType::eUnknown };
@@ -81,35 +130,14 @@ namespace shader_compiler
 		std::string shader_name;
 	};
 
+	// Shader sources description (used sources)
 	struct FShaderDescription
 	{
 		std::string name;
 		std::vector<FShaderSource> sources;
 	};
 
-	struct FShaderPermutation
-	{
-		std::vector<std::string> definitions;
-	};
-
-	struct FDefinitionChain
-	{
-		std::string base{};
-		std::vector<FDefinitionChain> var{};
-	};
-
-	struct FShaderPermutationGenerator
-	{
-		std::vector<FDefinitionChain> definitions;
-	};
-
-	struct FShaderCompile
-	{
-		std::string name;
-		FShaderPermutationGenerator permutation_gen;
-		std::vector<FShaderPermutation> permutations;
-	};
-
+	// Describes shader library
 	struct FShaderLibrary
 	{
 		std::string name;

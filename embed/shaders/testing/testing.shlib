@@ -21,10 +21,7 @@
 	compile: [
 		{ 
 			shader_name: "screenspace";
-			permutations: [
-				{ definitions: [] },
-				{ definitions: ["EDITOR_MODE"] }
-			];
+			pattern: "default_pattern";
 		}
 	];
 }

@@ -21,9 +21,7 @@
 	compile: [
 		{ 
 			shader_name: "copy";
-			permutations: [
-				{ definitions: [] }
-			];
+			pattern: "default_pattern";
 		}
 	];
 }

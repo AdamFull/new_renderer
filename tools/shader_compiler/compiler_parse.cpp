@@ -40,6 +40,17 @@ namespace shader_compiler
 			value = EShaderLang::eUnknown;
 	}
 
+	void deserialize(const sjson::sjson_object& sjson, EPermutationVariantCombineType& value)
+	{
+		std::string temp{};
+		sjson.parse_to(temp);
+
+		if (temp == "or")
+			value = EPermutationVariantCombineType::eOR;
+		else if (temp == "and")
+			value = EPermutationVariantCombineType::eAND;
+	}
+
 	void deserialize(const sjson::sjson_object& sjson, EShaderType& value)
 	{
 		std::string temp{};
@@ -77,10 +88,40 @@ namespace shader_compiler
 			value = EShaderType::eUnknown;
 	}
 
+	void deserialize(const sjson::sjson_object& sjson, FDefinitionList& value)
+	{
+		sjson.try_parse_to("defines", value.definitions, true);
+	}
+
+	void deserialize(const sjson::sjson_object& sjson, FDefinitionVariant& value)
+	{
+		sjson.try_parse_to("defines", value.definitions, true);
+		sjson.try_parse_to("type", value.type, true);
+	}
+
+	void deserialize(const sjson::sjson_object& sjson, FPermutationRule& value)
+	{
+		sjson.try_parse_to("base", value.base, true);
+		sjson.try_parse_to("variants", value.variants, true);
+	}
+
+	void deserialize(const sjson::sjson_object& sjson, FShaderPermutationGenerator& value)
+	{
+		sjson.try_parse_to("rules", value.rules, true);
+	}
+
+	void deserialize(const sjson::sjson_object& sjson, FPermutationPattern& value)
+	{
+		sjson.try_parse_to("permutation_generator", value.generator);
+		sjson.try_parse_to("permutations", value.permutations);
+	}
+
 	void deserialize(const sjson::sjson_object& sjson, FShaderMakeInfo& value)
 	{
 		sjson.try_parse_to("lang", value.lang, true);
 		sjson.try_parse_to("target_api", value.targetApi, true);
+
+		sjson.try_parse_to("permutation_patterns", value.permutationPatterns);
 
 		sjson.try_parse_to("include_directories", value.includeDirectories);
 		sjson.try_parse_to("common_directories", value.commonDirectories);
@@ -115,28 +156,10 @@ namespace shader_compiler
 		sjson.try_parse_to("sources", value.sources, true);
 	}
 
-
-	void deserialize(const sjson::sjson_object& sjson, FShaderPermutation& value)
-	{
-		sjson.try_parse_to("definitions", value.definitions);
-	}
-
-	void deserialize(const sjson::sjson_object& sjson, FDefinitionChain& value)
-	{
-		sjson.try_parse_to("base", value.base);
-		sjson.try_parse_to("var", value.var);
-	}
-
-	void deserialize(const sjson::sjson_object& sjson, FShaderPermutationGenerator& value)
-	{
-		sjson.try_parse_to("definitions", value.definitions);
-	}
-
 	void deserialize(const sjson::sjson_object& sjson, FShaderCompile& value)
 	{
 		sjson.try_parse_to("shader_name", value.name, true);
-		sjson.try_parse_to("permutations", value.permutations);
-		sjson.try_parse_to("permutation_generator", value.permutation_gen);
+		sjson.try_parse_to("pattern", value.pattern, true);
 	}
 
 

@@ -54,7 +54,7 @@ int main(int argc, char** argv)
 	fs::path compiled_libraries_output{};
 
 	input_path = "D:\\GitHub\\new_renderer\\embed\\shaders\\config.smake";
-	compiled_libraries_output = "D:\\GitHub\\new_renderer\\bin\\RelWithDebInfo\\engine\\embed\\rendering\\shader_cache.shc";
+	compiled_libraries_output = "D:\\GitHub\\new_renderer\\bin\\Debug\\engine\\embed\\rendering\\shader_cache.shc";
 
 	FShaderMakeInfo make_info{};
 	if (!parse_file_to(input_path, make_info))
@@ -91,6 +91,7 @@ int main(int argc, char** argv)
 	// Initialize library compiler
 	auto library_compiler = std::make_unique<CLibraryCompiler>(shaders_common, include_directories);
 	library_compiler->initialize(make_info.targetApi, make_info.lang, build_type);
+	library_compiler->generatePermutations(make_info.permutationPatterns);
 
 	FShaderCacheData shader_cahce{};
 
