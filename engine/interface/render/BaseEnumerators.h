@@ -35,7 +35,10 @@ namespace engine
 			eR32_SFLOAT,
 			eRG32_SFLOAT,
 			eRGB32_SFLOAT,
-			eRGBA32_SFLOAT
+			eRGBA32_SFLOAT,
+
+			// Special formats
+			eR11G11B10_UFLOAT,
 		};
 
 		enum class EResourceFlagBits

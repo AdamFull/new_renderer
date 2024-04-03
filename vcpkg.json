@@ -11,7 +11,7 @@
     "zlib",
     {
       "name": "vulkan-headers",
-      "version>=": "1.3.268.0"
+      "version>=": "1.3.280.0"
     },
     {
       "name": "ktx",

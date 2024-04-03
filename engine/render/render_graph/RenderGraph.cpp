@@ -112,7 +112,7 @@ void CRenderGraph::create()
 
 	{
 		FTextureCreateInfo texture_ci{};
-		texture_ci.format = render_context->getApiFormat(EApiDataFormat::eRGBA16_SFLOAT);
+		texture_ci.format = render_context->getApiFormat(EApiDataFormat::eR11G11B10_UFLOAT);
 		texture_ci.typeFlags = ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage;
 		texture_ci.setSizeScale(1.f);
 		addRenderResource("final_lighting_target", texture_ci);

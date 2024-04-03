@@ -82,7 +82,7 @@ end
 
 do
     local target_ci = TextureCI.new()
-    target_ci.format = render_context:get_api_format(Format.rgba16_sfloat)
+    target_ci.format = render_context:get_api_format(Format.r11g11b10_ufloat)
     target_ci.type = texture_or(TexType.two_dim, TexType.samplable, TexType.storage)
     target_ci:set_size_scale(1.0)
 

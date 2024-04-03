@@ -294,6 +294,15 @@ namespace engine
 #endif
 			};
 
+			struct FVkRayTracingPipelineCreateInfo
+			{
+				vk::PipelineLayout layout{};
+				vk::PipelineShaderStageCreateInfo shaderStage{};
+#ifndef BUILD_WITHOUT_DEBUGGIND
+				stl::string name{};
+#endif
+			};
+
 
 			// ---------------------------------------------------------------------------------
 			// ====================================| BUFFER |===================================

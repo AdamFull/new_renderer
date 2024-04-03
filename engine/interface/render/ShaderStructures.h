@@ -115,6 +115,11 @@ namespace engine
 			u32 usageCount{ 1u };
 		};
 
+		struct FReyTracingShaderCreateInfo
+		{
+			u32 usageCount{ 1u };
+		};
+
 		struct FUniformDataView
 		{
 			const void* data{ nullptr };

@@ -608,6 +608,17 @@ FRenderApiErrorInfo CVkRenderDevice::createPipeline(const FVkComputePipelineCrea
 	return make_api_error(pipeline.objectType, res, "Failed to create");
 }
 
+FRenderApiErrorInfo CVkRenderDevice::createPipeline(const FVkRayTracingPipelineCreateInfo& pipeline_ci, vk::Pipeline& pipeline)
+{
+	vk::RayTracingPipelineCreateInfoKHR rtx_pipeline_ci{};
+	//m_logicalDevice.handle.createRayTracingPipelinesKHR()
+	vk::Result res;// = m_logicalDevice.handle.createRayTracingPipelinesKHR(m_pipelineCache, 1u, &rtx_pipeline_ci, m_allocationCallbacks, &pipeline);
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	debugSetObjectName(pipeline, pipeline_ci.name);
+#endif
+	return make_api_error(pipeline.objectType, res, "Failed to create");
+}
+
 void CVkRenderDevice::destroyPipeline(vk::Pipeline& pipeline)
 {
 	m_logicalDevice.handle.destroyPipeline(pipeline, m_allocationCallbacks);
@@ -1313,7 +1324,11 @@ void CVkRenderDevice::prepareRequestedLogicalDeviceFeatures()
 			else if (extension_name == VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME)
 				requestExtensionFeatures<vk::PhysicalDeviceHostQueryResetFeaturesEXT>();
 			else if (extension_name == VK_EXT_MESH_SHADER_EXTENSION_NAME)
-				requestExtensionFeatures<vk::PhysicalDeviceMeshShaderFeaturesEXT>();
+			{
+				auto& ext = requestExtensionFeatures<vk::PhysicalDeviceMeshShaderFeaturesEXT>();
+				ext.multiviewMeshShader = VK_FALSE;
+				ext.primitiveFragmentShadingRateMeshShader = VK_FALSE;
+			}
 			//else if(extension_name == VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME)
 			//	requestExtensionFeatures(vk::PhysicalDeviceIndirect)
 		}

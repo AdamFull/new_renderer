@@ -267,6 +267,7 @@ namespace engine
 
 			virtual u64 createShader(const stl::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  stl::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
 			virtual u64 createShader(const stl::string& name, const FComputeShaderCreateInfo& shader_ci, const  stl::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
+			virtual u64 createShader(const stl::string& name, const FReyTracingShaderCreateInfo& shader_ci, const  stl::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
 			virtual FShaderReflectionData getShaderReflection(const u64& shader_view) = 0;
 			virtual void updateShaderResources(const FShaderResourceCommit& resources, EShaderResourcesUpdateFlags flags = EShaderResourcesUpdateFlagBits::eAll) = 0;
 			virtual void flushConstantRanges(u64 shader_id, const stl::unordered_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type) = 0;

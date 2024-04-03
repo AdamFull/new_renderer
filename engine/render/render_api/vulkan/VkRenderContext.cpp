@@ -541,6 +541,26 @@ u64 CVkRenderContext::createShader(const stl::string& name, const FComputeShader
 	return m_pResources->add<FVkShader>(shader_unique_name.c_str(), stl::move(shader));
 }
 
+u64 CVkRenderContext::createShader(const stl::string& name, const FReyTracingShaderCreateInfo& shader_ci, const  stl::vector<FShaderCreationBlockInfo>& shader_stages)
+{
+	const char* shaderEntryPoint{ "main" };
+
+	auto shader = stl::make_unique<FVkShader>();
+
+
+
+
+	shader->bindPoint = vk::PipelineBindPoint::eRayTracingKHR;
+
+	stl::stringstream ss{};
+	ss << name;
+	for (const auto& handle : shader->handles)
+		ss << ":" << stl::hex << reinterpret_cast<u64>(utl::cast<vk::Pipeline::CType>(handle));
+
+	auto shader_unique_name = ss.str();
+	return m_pResources->add<FVkShader>(shader_unique_name.c_str(), stl::move(shader));
+}
+
 FShaderReflectionData CVkRenderContext::getShaderReflection(const u64& shader_view)
 {
 	auto& shader = m_pResources->get<FVkShader>(shader_view);
@@ -1464,6 +1484,9 @@ u32 CVkRenderContext::getApiFormat(EApiDataFormat global_format)
 	case EApiDataFormat::eRG32_SFLOAT: return VK_FORMAT_R32G32_SFLOAT; break;
 	case EApiDataFormat::eRGB32_SFLOAT: return VK_FORMAT_R32G32B32_SFLOAT; break;
 	case EApiDataFormat::eRGBA32_SFLOAT: return VK_FORMAT_R32G32B32A32_SFLOAT; break;
+
+	// Special formats
+	case EApiDataFormat::eR11G11B10_UFLOAT: return VK_FORMAT_B10G11R11_UFLOAT_PACK32; break;
 	default: return 0; break;
 	}
 }

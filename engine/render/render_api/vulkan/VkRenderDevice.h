@@ -80,6 +80,7 @@ namespace engine
 				// VkPipeline
 				FRenderApiErrorInfo createPipeline(const FVkGraphicsPipelineCreateInfo& pipeline_ci, vk::Pipeline& pipeline);
 				FRenderApiErrorInfo createPipeline(const FVkComputePipelineCreateInfo& pipeline_ci, vk::Pipeline& pipeline);
+				FRenderApiErrorInfo createPipeline(const FVkRayTracingPipelineCreateInfo& pipeline_ci, vk::Pipeline& pipeline);
 				void destroyPipeline(vk::Pipeline& shader_object);
 
 				FRenderApiErrorInfo createSemaphore(const FVkSemaphoreCreateInfo& semaphore_ci, vk::Semaphore& semaphore);
