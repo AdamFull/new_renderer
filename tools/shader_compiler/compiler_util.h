@@ -14,15 +14,12 @@ namespace shader_compiler
 {
 	constexpr const uint64_t MOD = static_cast<uint64_t>(-1);
 
-	inline std::string make_shader_hashname(const std::vector<std::string>& tokens)
+	inline i64 make_shader_hashname(const std::vector<std::string>& tokens)
 	{
-		uint64_t result_hash{ 0ull };
+		i64 result_hash{ 0ll };
 		for (auto& token : tokens)
 			result_hash = (result_hash + utl::utils::fnv1a_64_hash(token.c_str())) % MOD;
-
-		std::stringstream ss;
-		ss << std::hex << result_hash;
-		return ss.str();
+		return result_hash;
 	}
 
 	inline size_t get_shader_type(EShaderType type)
@@ -73,16 +70,16 @@ namespace shader_compiler
 		return "";
 	}
 
-	inline std::string make_module_unique_name_str(const std::string& shader_name, const std::vector<std::string>& definitions)
+	inline i64 make_module_unique_name_str(const std::string& shader_name, const std::vector<std::string>& definitions)
 	{
 		std::vector<std::string> shader_name_tokens{ shader_name };
 		shader_name_tokens.insert(shader_name_tokens.end(), definitions.begin(), definitions.end());
 		return make_shader_hashname(shader_name_tokens);
 	}
 
-	inline size_t make_module_unique_name(const std::string& shader_name, const std::vector<std::string>& definitions)
+	inline i64 make_module_unique_name(const std::string& shader_name, const std::vector<std::string>& definitions)
 	{
-		return utl::utils::fnv1a_64_hash(make_module_unique_name_str(shader_name, definitions).c_str());
+		return make_module_unique_name_str(shader_name, definitions);
 	}
 
 	inline std::string make_shader_unique_name(size_t value)

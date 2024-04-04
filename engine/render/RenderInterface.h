@@ -43,6 +43,8 @@ namespace engine
 				if (m_pResourceLoader->loadShaderData(name_info, shader_stages))
 					return m_pRenderContext->createShader(name_info.originalName, create_info, shader_stages);
 
+				log_error("Shader with name: \"{}\" was not found.", name_info.originalName);
+
 				return ~0ull;
 			}
 

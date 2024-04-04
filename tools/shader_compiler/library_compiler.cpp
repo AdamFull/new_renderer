@@ -85,7 +85,10 @@ void generate_permutations(const std::vector<std::string>& base, const std::vect
 		for (const auto& definition : variant.definitions) 
 		{
 			std::vector<std::string> new_current = current;
-			new_current.emplace_back(definition);
+
+			if(!definition.empty())
+				new_current.emplace_back(definition);
+
 			generate_permutations(base, variants, result, new_current, variant_index + 1);
 		}
 	}
@@ -171,8 +174,11 @@ void CLibraryCompiler::compile(const stl::filesystem::path& library_path, FShade
 			auto& shader_pool = compiled_library.shaders[name_type_hash];
 			
 			// Process and compile all definition combinations
+#ifdef NDEBUG
 			std::for_each(std::execution::par, cached_permutations.begin(), cached_permutations.end(),
-				//for (auto& definitions : cached_permutations)
+#else
+			std::for_each(cached_permutations.begin(), cached_permutations.end(),
+#endif
 				[&](const std::vector<std::string>& definitions)
 				{
 					bool is_compiling_first_time{ false };
@@ -183,8 +189,7 @@ void CLibraryCompiler::compile(const stl::filesystem::path& library_path, FShade
 					unique_shader_definitions.emplace_back(get_definition_by_shader_type(source.type));
 
 					// Make unique shader name(key)
-					auto module_name_str = make_module_unique_name_str(compile.name, definitions);
-					auto unique_module_name = utl::utils::fnv1a_64_hash(module_name_str.c_str());
+					auto unique_module_name = make_module_unique_name_str(compile.name, definitions);
 
 					// Get shader module
 					m_locks[0].lock();
@@ -206,7 +211,7 @@ void CLibraryCompiler::compile(const stl::filesystem::path& library_path, FShade
 
 					if (preprocessed_code.empty())
 					{
-						log_error("Something went wrong while preprocessing code for module: \"{}\". Empty string after preprocessing.", module_name_str);
+						log_error("Something went wrong while preprocessing code for module: \"{}\". Empty string after preprocessing.", unique_module_name);
 						return; // throw error here
 					}
 
@@ -233,7 +238,7 @@ void CLibraryCompiler::compile(const stl::filesystem::path& library_path, FShade
 					{
 						m_locks[3].lock();
 						log_warning("Type mismatch for shader module named: \"{}\". Previous type: \"{}\" new type: \"{}\". Old shaders will be removed.",
-							module_name_str, get_shader_type_str(current_module.type), get_shader_type_str(source.type));
+							unique_module_name, get_shader_type_str(current_module.type), get_shader_type_str(source.type));
 						m_locks[3].unlock();
 
 						// Removing old shaders

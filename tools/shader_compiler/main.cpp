@@ -55,7 +55,7 @@ int main(int argc, char** argv)
 	fs::path compiled_libraries_output{};
 
 	input_path = "C:\\Users\\ilia.baranov\\Documents\\GitHub\\new_renderer\\embed\\shaders\\config.smake";
-	compiled_libraries_output = "C:\\Users\\ilia.baranov\\Documents\\GitHub\\new_renderer\\bin\\RelWithDebInfo\\engine\\embed\\rendering\\shader_cache.shc";
+	compiled_libraries_output = "C:\\Users\\ilia.baranov\\Documents\\GitHub\\new_renderer\\bin\\Debug\\engine\\embed\\rendering\\shader_cache.shc";
 
 	FShaderMakeInfo make_info{};
 	if (!parse_file_to(input_path, make_info))

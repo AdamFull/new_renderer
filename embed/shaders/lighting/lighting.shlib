@@ -59,7 +59,7 @@
 		},
 		{ 
 			shader_name: "unidirectional_shadow";
-			pattern: "geometry_pattern";
+			pattern: "shadows_pattern";
 		}
 	];
 }
