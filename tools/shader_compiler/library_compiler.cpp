@@ -9,6 +9,7 @@
 
 #include <fstream>
 #include <regex>
+#include <execution>
 
 using namespace shader_compiler;
 
@@ -170,84 +171,103 @@ void CLibraryCompiler::compile(const stl::filesystem::path& library_path, FShade
 			auto& shader_pool = compiled_library.shaders[name_type_hash];
 			
 			// Process and compile all definition combinations
-			for (auto& definitions : cached_permutations)
-			{
-				bool is_compiling_first_time{ false };
-				FCompileInfo compile_info{ source.type, source.shader_name };
-
-				// This thing will add unique definitions by shader type. Dor example for vertex shader it will add VERTEX_SHADER definition
-				stl::vector<stl::string> unique_shader_definitions(definitions.begin(), definitions.end());
-				unique_shader_definitions.emplace_back(get_definition_by_shader_type(source.type));
-
-				// Make unique shader name(key)
-				auto module_name_str = make_module_unique_name_str(compile.name, definitions);
-				auto unique_module_name = utl::utils::fnv1a_64_hash(module_name_str.c_str());
-
-				// Get shader module
-				stl::vector<FShaderModule>& shader_modules = compiled_library.modules[unique_module_name];
-
-				// Apply definitions for current permutation
-				stl::stringstream ss{""};
-				for (auto& definition : unique_shader_definitions)
-					ss << stl::format("#define {}", definition) << stl::endl;
-				ss << stl::endl;
-
-				auto shader_code = emplace_data(base_shader_code, "{other_definitions}", ss.str());
-
-				// Preprocess generated code (and remove ugly code after preprocessing)
-				stl::string preprocessed_code{};
-				u64 preprocessed_hash{ 0ull };
-				m_pShaderCompiler->preprocess(shader_code, compile_info, preprocessed_code, preprocessed_hash);
-
-				if (preprocessed_code.empty())
+			std::for_each(std::execution::par, cached_permutations.begin(), cached_permutations.end(),
+				//for (auto& definitions : cached_permutations)
+				[&](const std::vector<std::string>& definitions)
 				{
-					log_error("Something went wrong while preprocessing code for module: \"{}\". Empty string after preprocessing.", module_name_str);
-					return; // throw error here
+					bool is_compiling_first_time{ false };
+					FCompileInfo compile_info{ source.type, source.shader_name };
+
+					// This thing will add unique definitions by shader type. Dor example for vertex shader it will add VERTEX_SHADER definition
+					stl::vector<stl::string> unique_shader_definitions(definitions.begin(), definitions.end());
+					unique_shader_definitions.emplace_back(get_definition_by_shader_type(source.type));
+
+					// Make unique shader name(key)
+					auto module_name_str = make_module_unique_name_str(compile.name, definitions);
+					auto unique_module_name = utl::utils::fnv1a_64_hash(module_name_str.c_str());
+
+					// Get shader module
+					m_locks[0].lock();
+					stl::vector<FShaderModule>& shader_modules = compiled_library.modules[unique_module_name];
+					m_locks[0].unlock();
+
+					// Apply definitions for current permutation
+					stl::stringstream ss{ "" };
+					for (auto& definition : unique_shader_definitions)
+						ss << stl::format("#define {}", definition) << stl::endl;
+					ss << stl::endl;
+
+					auto shader_code = emplace_data(base_shader_code, "{other_definitions}", ss.str());
+
+					// Preprocess generated code (and remove ugly code after preprocessing)
+					stl::string preprocessed_code{};
+					u64 preprocessed_hash{ 0ull };
+					m_pShaderCompiler->preprocess(shader_code, compile_info, preprocessed_code, preprocessed_hash);
+
+					if (preprocessed_code.empty())
+					{
+						log_error("Something went wrong while preprocessing code for module: \"{}\". Empty string after preprocessing.", module_name_str);
+						return; // throw error here
+					}
+
+					// Make hash for preprocessed data
+					m_locks[1].lock();
+					auto& compiled_spirv = shader_pool[preprocessed_hash];
+					m_locks[1].unlock();
+
+					m_locks[2].lock();
+					if (shader_modules.empty() || (shader_modules.size() <= shader_index))
+					{
+						shader_modules.emplace_back(source.type, 0ull);
+						is_compiling_first_time = true;
+					}
+					m_locks[2].unlock();
+
+					auto& current_module = shader_modules.at(shader_index);
+
+					bool is_code_outdated = current_module.link != utl::cast<int64_t>(preprocessed_hash);
+					bool is_type_missmatch = current_module.type != source.type;
+
+					// Notify, that type was changed
+					if (is_type_missmatch)
+					{
+						m_locks[3].lock();
+						log_warning("Type mismatch for shader module named: \"{}\". Previous type: \"{}\" new type: \"{}\". Old shaders will be removed.",
+							module_name_str, get_shader_type_str(current_module.type), get_shader_type_str(source.type));
+						m_locks[3].unlock();
+
+						// Removing old shaders
+						m_locks[1].lock();
+						for (auto& shmodule : shader_modules)
+							shader_pool.erase(shmodule.link);
+						m_locks[1].unlock();
+
+						// Cleaning links
+						m_locks[2].lock();
+						shader_modules.clear();
+						current_module = shader_modules.emplace_back(source.type, 0ull);
+						m_locks[2].unlock();
+					}
+
+					// Compile shader if we need
+					if (is_code_outdated || is_type_missmatch || is_compiling_first_time)
+					{
+						compiled_spirv = m_pShaderCompiler->compile(preprocessed_code, compile_info);
+
+						m_locks[3].lock();
+						log_info("{} shader {}[{}] was {}.", name_type_hash, source.shader_name, preprocessed_hash, is_compiling_first_time ? "compiled" : "recompiled");
+						m_locks[3].unlock();
+					}
+
+					// Removing old shader data
+					m_locks[1].lock();
+					if ((is_code_outdated || is_type_missmatch) && !is_compiling_first_time)
+						shader_pool.erase(current_module.link);
+					m_locks[1].unlock();
+
+					current_module.link = utl::cast<int64_t>(preprocessed_hash);
 				}
-
-				// Make hash for preprocessed data
-				auto& compiled_spirv = shader_pool[preprocessed_hash];
-
-				// Create new shader module
-				if (shader_modules.empty() || (shader_modules.size() <= shader_index))
-				{
-					shader_modules.emplace_back(source.type, 0ull);
-					is_compiling_first_time = true;
-				}
-
-				auto& current_module = shader_modules.at(shader_index);
-
-				bool is_code_outdated = current_module.link != utl::cast<int64_t>(preprocessed_hash);
-				bool is_type_missmatch = current_module.type != source.type;
-
-				// Notify, that type was changed
-				if (is_type_missmatch)
-				{
-					log_warning("Type mismatch for shader module named: \"{}\". Previous type: \"{}\" new type: \"{}\". Old shaders will be removed.", 
-						module_name_str, get_shader_type_str(current_module.type), get_shader_type_str(source.type));
-
-					// Removing old shaders
-					for (auto& shmodule : shader_modules)
-						shader_pool.erase(shmodule.link);
-
-					// Cleaning links
-					shader_modules.clear();
-					current_module = shader_modules.emplace_back(source.type, 0ull);
-				}
-
-				// Compile shader if we need
-				if (is_code_outdated || is_type_missmatch || is_compiling_first_time)
-				{
-					compiled_spirv = m_pShaderCompiler->compile(preprocessed_code, compile_info);
-					log_info("{} shader {}[{}] was {}.", name_type_hash, source.shader_name, preprocessed_hash, is_compiling_first_time ? "compiled" : "recompiled");
-				}
-
-				// Removing old shader data
-				if ((is_code_outdated || is_type_missmatch) && !is_compiling_first_time)
-					shader_pool.erase(current_module.link);
-
-				current_module.link = utl::cast<int64_t>(preprocessed_hash);
-			}
+			);
 
 			shader_index++;
 		}

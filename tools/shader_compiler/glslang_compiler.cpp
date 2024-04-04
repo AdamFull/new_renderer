@@ -307,6 +307,7 @@ bool CGLSLANGCompiler::preprocess(const stl::string& shader_code, const FCompile
 	stl::string preprocessed_raw;
 	if (!shader.preprocess(&resources, client_version, ENoProfile, false, false, messages, &preprocessed_raw, includer))
 	{
+		std::lock_guard<std::mutex> lock(m_terminationLock);
 		make_shader_compiler_fatal_error(info.name, shader_code, std::format("Preprocessing error: In shader \"{}\" \n{}\n{}\n", info.name, shader.getInfoLog(), shader.getInfoDebugLog()));
 		return false;
 	}
@@ -347,12 +348,21 @@ stl::vector<u32> CGLSLANGCompiler::compile(const stl::string& shader_code, const
 
 	empty_includer includer;
 
-	if (!shader.parse(&resources, client_version, true, messages, includer))		log_error("\nParsing error: In shader \"{}\" \n{}\n{}\n", info.name, shader.getInfoLog(), shader.getInfoDebugLog());
+	if (!shader.parse(&resources, client_version, true, messages, includer))
+	{
+		std::lock_guard<std::mutex> lock(m_terminationLock);
+		log_error("\nParsing error: In shader \"{}\" \n{}\n{}\n", info.name, shader.getInfoLog(), shader.getInfoDebugLog());
+		return {};
+	} 
 
 	program.addShader(&shader);
 
 	if (!program.link(messages) || !program.mapIO())
+	{
+		std::lock_guard<std::mutex> lock(m_terminationLock);
 		make_shader_compiler_fatal_error(info.name, shader_code, std::format("Linking error: In shader \"{}\" \n{}\n{}\n", info.name, shader.getInfoLog(), shader.getInfoDebugLog()));
+		return {};
+	}
 
 	bool building_release = build_type == ETargetBuildType::eRelease;
 
@@ -367,12 +377,18 @@ stl::vector<u32> CGLSLANGCompiler::compile(const stl::string& shader_code, const
 	stl::string error{};
 	logger.error(error);
 	if (!error.empty())
+	{
+		std::lock_guard<std::mutex> lock(m_terminationLock);
 		make_shader_compiler_fatal_error(info.name, shader_code, std::format("SPIRV generation error: In shader \"{}\" \n{}\n", info.name, error));
+		return {};
+	}
 
 	stl::string warning;
 	logger.warning(warning);
 	if (!warning.empty())
-		make_shader_compiler_fatal_error(info.name, shader_code, std::format("SPIRV generation warnings: In shader \"{}\" \n{}\n", info.name, warning));
+	{
+		log_warning("SPIRV generation warnings: In shader \"{}\" \n{}\n", info.name, warning);
+	}
 
 	// TODO: i can cross compile spirv inside apis
 	//// Cross compilation

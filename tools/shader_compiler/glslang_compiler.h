@@ -1,6 +1,7 @@
 #pragma once
 
 #include "shader_compiler.h"
+#include <mutex>
 
 namespace shader_compiler
 {
@@ -17,5 +18,6 @@ namespace shader_compiler
 	private:
 		ETargetBuildType build_type{ ETargetBuildType::eRelease };
 		ETargetAPIType target_api{ ETargetAPIType::eVK13 };
+		std::mutex m_terminationLock{};
 	};
 }

@@ -5,6 +5,7 @@
 #include <regex>
 
 #include <logger/logger.h>
+#include <utils/stopwatch.h>
 #include <parsing/argparse.h>
 
 #include "library_compiler.h"
@@ -53,8 +54,8 @@ int main(int argc, char** argv)
 	fs::path input_path{};
 	fs::path compiled_libraries_output{};
 
-	input_path = "D:\\GitHub\\new_renderer\\embed\\shaders\\config.smake";
-	compiled_libraries_output = "D:\\GitHub\\new_renderer\\bin\\Debug\\engine\\embed\\rendering\\shader_cache.shc";
+	input_path = "C:\\Users\\ilia.baranov\\Documents\\GitHub\\new_renderer\\embed\\shaders\\config.smake";
+	compiled_libraries_output = "C:\\Users\\ilia.baranov\\Documents\\GitHub\\new_renderer\\bin\\RelWithDebInfo\\engine\\embed\\rendering\\shader_cache.shc";
 
 	FShaderMakeInfo make_info{};
 	if (!parse_file_to(input_path, make_info))
@@ -93,8 +94,8 @@ int main(int argc, char** argv)
 	library_compiler->initialize(make_info.targetApi, make_info.lang, build_type);
 	library_compiler->generatePermutations(make_info.permutationPatterns);
 
+	utl::utils::stopwatch stopwatch{};
 	FShaderCacheData shader_cahce{};
-
 	if (!parse_json_to(compiled_libraries_output, shader_cahce))
 		log_info("No shader cache found.");
 
@@ -109,6 +110,7 @@ int main(int argc, char** argv)
 	dump_json_from(compiled_libraries_output, shader_cahce);
 
 	log_info("Cache saved to: {}", compiled_libraries_output.string());
+	log_info("Compilation finished with: {:.2f}s", stopwatch.stop<float>());
 
 	return 0;
 }

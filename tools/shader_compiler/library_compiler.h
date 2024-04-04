@@ -24,5 +24,6 @@ namespace shader_compiler
 		std::unordered_map<std::string, std::vector<std::vector<std::string>>> m_permutations;
 		std::unique_ptr<CShaderPreprocessor> m_pPreprocessor{};
 		std::unique_ptr<IShaderCompiler> m_pShaderCompiler{};
+		std::array<std::mutex, 4> m_locks{};
 	};
 }
