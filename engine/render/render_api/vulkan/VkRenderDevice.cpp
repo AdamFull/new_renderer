@@ -66,7 +66,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debug_messenger_callback(VkDebugUtilsMessageSever
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT: log_verbose(pCallbackData->pMessage); break;
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT: log_info(pCallbackData->pMessage); break;
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT: log_warning(pCallbackData->pMessage); break;
-	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:  log_error(pCallbackData->pMessage); break;
+	//case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:  log_error(pCallbackData->pMessage); break;
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT: break;
 	}
 
@@ -83,7 +83,7 @@ VKAPI_ATTR vk::Bool32 VKAPI_CALL debug_report_callback(VkDebugReportFlagsEXT fla
 	case VK_DEBUG_REPORT_INFORMATION_BIT_EXT: log_info(report_text); break;
 	case VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT: log_warning(report_text); break;
 	case VK_DEBUG_REPORT_WARNING_BIT_EXT: log_warning(report_text); break;
-	case VK_DEBUG_REPORT_ERROR_BIT_EXT: log_error(report_text); break;
+	//case VK_DEBUG_REPORT_ERROR_BIT_EXT: log_error(report_text); break;
 	case VK_DEBUG_REPORT_DEBUG_BIT_EXT: log_debug(report_text); break;
 	}
 	
