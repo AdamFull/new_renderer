@@ -36,6 +36,7 @@
 {
 						base: ["HAS_TEXCOORD", "HAS_NORMAL"];
 						variants: [
+							{ defines: ["", "CASCADED_SHADOW"]; type: "or"; },
 							{ defines: ["INDEX_8BIT", "INDEX_16BIT"]; type: "or"; },
 							{ defines: ["", "COLOR_VEC3", "COLOR_VEC4"]; type: "or"; },
 							{ defines: ["TANGENT_VEC3", "TANGENT_VEC4"]; type: "or"; }
@@ -44,23 +45,7 @@
 					{
 						base: ["HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL"];
 						variants: [
-							{ defines: ["INDEX_8BIT", "INDEX_16BIT"]; type: "or"; },
-							{ defines: ["", "COLOR_VEC3", "COLOR_VEC4"]; type: "or"; },
-							{ defines: ["TANGENT_VEC3", "TANGENT_VEC4"]; type: "or"; },
-							{ defines: ["JOINTS_8BIT", "JOINTS_16BIT"]; type: "or"; }
-						];
-					},
-					{
-						base: ["CASCADED_SHADOW", "HAS_TEXCOORD", "HAS_NORMAL"];
-						variants: [
-							{ defines: ["INDEX_8BIT", "INDEX_16BIT"]; type: "or"; },
-							{ defines: ["", "COLOR_VEC3", "COLOR_VEC4"]; type: "or"; },
-							{ defines: ["TANGENT_VEC3", "TANGENT_VEC4"]; type: "or"; }
-						];
-					},
-					{
-						base: ["CASCADED_SHADOW", "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL"];
-						variants: [
+							{ defines: ["", "CASCADED_SHADOW"]; type: "or"; },
 							{ defines: ["INDEX_8BIT", "INDEX_16BIT"]; type: "or"; },
 							{ defines: ["", "COLOR_VEC3", "COLOR_VEC4"]; type: "or"; },
 							{ defines: ["TANGENT_VEC3", "TANGENT_VEC4"]; type: "or"; },
