@@ -358,6 +358,7 @@ namespace engine
 
 			virtual void addMaterial(const FMaterial& material) = 0;
 			virtual void addMaterials(const stl::vector<FMaterial>& materials) = 0;
+			virtual const FMaterial& getMaterial(u64 index) const = 0;
 
 			virtual void addMesh(const FMesh& mesh) = 0;
 			virtual void addMeshes(const std::vector<FMesh>& meshes) = 0;

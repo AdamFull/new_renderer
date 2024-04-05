@@ -34,6 +34,7 @@ namespace engine
 
 			void addMaterial(const FMaterial& material) override;
 			void addMaterials(const stl::vector<FMaterial>& materials) override;
+			const FMaterial& getMaterial(u64 index) const override;
 
 			void addMesh(const FMesh& mesh) override;
 			void addMeshes(const std::vector<FMesh>& meshes) override;
@@ -52,6 +53,8 @@ namespace engine
 
 			stl::vector<FGeometryRawBatch> m_vRawGeometryBatches{};
 			stl::vector<FGeometryCPUBatch> m_vGeometryBatches{};
+			std::vector<FMaterial> m_vMaterials{};
+			bool m_bMaterialsChanged{ true };
 
 			//stl::vector<FMaterial> m_vMaterials{};
 			stl::vector<glm::mat4> m_vSkins{};

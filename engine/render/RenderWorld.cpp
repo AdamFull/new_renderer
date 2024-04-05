@@ -75,6 +75,17 @@ void CRenderWorld::addDrawGeometry(const stl::vector<FGeometryRawBatch>& new_geo
 
 void CRenderWorld::render(f32 dt)
 {
+	// Update materials if needed
+	if (m_bMaterialsChanged)
+	{
+		auto& materials_buffer = getDrawBuffer(ERenderBufferIndices::eMaterialBuffer);
+		materials_buffer->clear();
+		materials_buffer->copy(m_vMaterials);
+
+		m_bMaterialsChanged = false;
+	}
+
+
 	// Clear old frame data
 	m_vGeometryBatches.clear();
 
@@ -192,16 +203,19 @@ void CRenderWorld::updateSkin(const stl::vector<glm::mat4>& matrices)
 
 void CRenderWorld::addMaterial(const FMaterial& material)
 {
-	auto& materials_buffer = getDrawBuffer(ERenderBufferIndices::eMaterialBuffer);
-	materials_buffer->emplace_back(material);
+	m_bMaterialsChanged = true;
+	m_vMaterials.emplace_back(material);
 }
 
 void CRenderWorld::addMaterials(const stl::vector<FMaterial>& materials)
 {
-	auto& materials_buffer = getDrawBuffer(ERenderBufferIndices::eMaterialBuffer);
+	m_bMaterialsChanged = true;
+	m_vMaterials.insert(m_vMaterials.end(), materials.begin(), materials.end());
+}
 
-	for (auto& material : materials)
-		materials_buffer->emplace_back(material);
+const FMaterial& CRenderWorld::getMaterial(u64 index) const
+{
+	return m_vMaterials.at(index);
 }
 
 void CRenderWorld::addMesh(const FMesh& mesh)

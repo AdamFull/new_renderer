@@ -3,13 +3,19 @@
 
 	enable_extensions: [
 		"GL_ARB_separate_shader_objects",
-		"GL_ARB_shading_language_420pack"
+		"GL_ARB_shading_language_420pack",
+		"GL_EXT_nonuniform_qualifier"
 	];
 
 	definitions: [];
 
-	require_extensions: [];
-	includes: [];
+	require_extensions: [
+		"GL_EXT_buffer_reference",
+		"GL_EXT_shader_explicit_arithmetic_types",
+		"GL_EXT_shader_explicit_arithmetic_types_int8"
+	];
+
+	includes: ["shader_inputs"];
 
 	code: 
 	"""
@@ -20,6 +26,7 @@
 		layout(location = 1) in flat uint matID;
 		layout(location = 2) in flat uint objID;
 		layout(location = 3) in flat uint vboID;
+		layout(location = 4) in vec2 texCoord;
 		
 		layout(location = 0) out vec4 vbid;
 		layout(location = 1) out vec4 moid;
@@ -39,6 +46,15 @@
 
 		void main() 
 		{
+			FMaterial material = materialBuffer.materials[matID];
+			
+			float opacity = material.baseColorFactor.a;
+			if(material.baseColorTexture != INVALID_HANDLE)
+				opacity = sampleTexture2D(material.baseColorTexture, 0, texCoord).a;
+			
+			if(material.alphaMode == 1u && opacity < material.alphaCutoff)
+				discard;
+
 			vbid = unpackUnorm4x8(packVBID(true, drawID, gl_PrimitiveID + 1u));
 			moid = unpackUnorm4x8(packMOID(matID, objID));
 			svid = unpackUnorm4x8(vboID);

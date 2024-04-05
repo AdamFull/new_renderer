@@ -25,6 +25,7 @@
 		layout(location = 1) flat out uint matID;
 		layout(location = 2) flat out uint objID;
 		layout(location = 3) flat out uint vboID;
+		layout(location = 4) out vec2 texCoord;
 
 		layout(push_constant) uniform UniformMeshData
 		{
@@ -74,6 +75,8 @@
 			matID = mesh.materialID;
 			objID = draw_info.nodeID;
 			vboID = draw_info.vboID;
+			texCoord = inTexCoord;
+
 			gl_Position = viewport.projection * frameData.view * localPos;
 		}
 	""";

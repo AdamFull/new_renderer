@@ -6,6 +6,8 @@
 #include <glm/glm.hpp>
 #include <standart_library.h>
 
+#define INVALID_HANDLE ~0ull
+
 #define ALIGN_AS(x) alignas(x)
 
 #define ARRAY_OF(name, type, count) stl::array<type, count> name
@@ -21,6 +23,9 @@
 
 #define REGISTER_OBJECT_ARRAY_BUFFER(BufferTypeName, DataType, ArrayName) typedef uint64_t BufferTypeName
 #else // __cplusplus
+
+#define INVALID_HANDLE ~0u
+
 #define ALIGN_AS(x)
 
 #define ARRAY_OF(name, type, count) type name[count]
