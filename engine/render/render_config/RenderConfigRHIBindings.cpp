@@ -92,6 +92,17 @@ namespace engine
 				"storage", ETextureCreateFlagBits::eStorage
 			);
 
+			// Register EBufferTypeFlagBits
+			lua->new_enum(
+				"BufferType",
+				"staging", EBufferTypeFlagBits::eStaging,
+				"vertex", EBufferTypeFlagBits::eVertex,
+				"index", EBufferTypeFlagBits::eIndex,
+				"storage", EBufferTypeFlagBits::eStorage,
+				"uniform", EBufferTypeFlagBits::eUniform,
+				"indirect", EBufferTypeFlagBits::eIndirect
+			);
+
 			// Register ETextureSizePolicy
 			lua->new_enum(
 				"SizePolicy",
@@ -196,6 +207,15 @@ namespace engine
 				),
 				"set_size_scale", &FTextureCreateInfo::setSizeScale,
 				"enable_mip_map", &FTextureCreateInfo::enableMipMap
+			);
+			
+			// FBufferCreateInfo registration
+			lua->new_usertype<FBufferCreateInfo>(
+				"BufferCI",
+				sol::constructors<FBufferCreateInfo()>(),
+				"type", &FBufferCreateInfo::flags,
+				"count", &FBufferCreateInfo::count,
+				"size", &FBufferCreateInfo::size
 			);
 
 			// FRenderTargetSizeInfo registration

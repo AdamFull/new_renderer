@@ -89,6 +89,25 @@ do
     render_graph:add_render_resource("final_lighting_target", target_ci)
 end
 
+-- eye adaptation targets
+do
+    local target_ci = TextureCI.new()
+    target_ci.format = render_context:get_api_format(Format.r32_sfloat)
+    target_ci.type = texture_or(TexType.two_dim, TexType.samplable, TexType.storage)
+    target_ci:set_fixed_size_2d(1)
+
+    render_graph:add_render_resource("avg_brightness_target", target_ci)
+end
+
+do 
+    local buffer_ci = BufferCI.new();
+    buffer_ci.type = BufferType.storage
+    buffer_ci.size = 1u
+    buffer_ci.count = 256u
+
+    render_graph:add_render_resource("histogram_buffer", buffer_ci)
+end
+
 -- Present image targets
 do
     render_graph:set_backbuffer_resource_name("present_target")
@@ -220,6 +239,15 @@ do
 
     render_graph:add_render_pass("visibility_buffer_write_pass", pass_ci)
 end
+
+--do
+--    local pass_ci = GraphicsCreateInfo.new()
+--    pass_ci.type = RenderingType.clear
+--    pass_ci.queue = QueueType.graphics
+--
+--    pass_ci:add_write_resource("final_lighting_target")
+--    render_graph:add_render_pass("finalize_image_pass", pass_ci)
+--end
 
 -- visibility buffer material pass
 do
