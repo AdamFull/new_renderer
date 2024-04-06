@@ -159,7 +159,8 @@ namespace shader_compiler
 	void deserialize(const sjson::sjson_object& sjson, FShaderCompile& value)
 	{
 		sjson.try_parse_to("shader_name", value.name, true);
-		sjson.try_parse_to("pattern", value.pattern, true);
+		sjson.try_parse_to("pattern", value.pattern);
+		sjson.try_parse_to("permutations", value.permutations);
 	}
 
 

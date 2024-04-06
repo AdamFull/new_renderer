@@ -162,121 +162,134 @@ void CLibraryCompiler::compile(const stl::filesystem::path& library_path, FShade
 		FShaderDescription& shader_desc = found_shader_desc->second;
 
 		// Get cached permutations
-		const auto& cached_permutations = m_permutations[compile.pattern];
-
-		u64 shader_index{ 0ull };
-		// Process all shader included sources
-		for (auto& source : shader_desc.sources)
+		if (!compile.pattern.empty())
 		{
-			// Generate shader code (apply extensions, process includes and definitions)
-			auto base_shader_code = m_pPreprocessor->generate(parent_path, source);
-			auto name_type_hash = get_shader_type(source.type);
-			auto& shader_pool = compiled_library.shaders[name_type_hash];
-			
-			// Process and compile all definition combinations
-#ifdef NDEBUG
-			std::for_each(std::execution::par, cached_permutations.begin(), cached_permutations.end(),
-#else
-			std::for_each(cached_permutations.begin(), cached_permutations.end(),
-#endif
-				[&](const std::vector<std::string>& definitions)
-				{
-					bool is_compiling_first_time{ false };
-					FCompileInfo compile_info{ source.type, source.shader_name };
+			const auto& cached_permutations = m_permutations[compile.pattern];
+			compilePermutations(parent_path, compile.name, shader_desc.sources, cached_permutations, compiled_library);
+		}
+		else
+		{
+			std::vector<std::vector<std::string>> cached_permutations{};
+			for (const auto& permutation : compile.permutations)
+				cached_permutations.emplace_back(permutation.definitions.begin(), permutation.definitions.end());
 
-					// This thing will add unique definitions by shader type. Dor example for vertex shader it will add VERTEX_SHADER definition
-					stl::vector<stl::string> unique_shader_definitions(definitions.begin(), definitions.end());
-					unique_shader_definitions.emplace_back(get_definition_by_shader_type(source.type));
-
-					// Make unique shader name(key)
-					auto unique_module_name = make_module_unique_name_str(compile.name, definitions);
-
-					// Get shader module
-					m_locks[0].lock();
-					stl::vector<FShaderModule>& shader_modules = compiled_library.modules[unique_module_name];
-					m_locks[0].unlock();
-
-					// Apply definitions for current permutation
-					stl::stringstream ss{ "" };
-					for (auto& definition : unique_shader_definitions)
-						ss << stl::format("#define {}", definition) << stl::endl;
-					ss << stl::endl;
-
-					auto shader_code = emplace_data(base_shader_code, "{other_definitions}", ss.str());
-
-					// Preprocess generated code (and remove ugly code after preprocessing)
-					stl::string preprocessed_code{};
-					u64 preprocessed_hash{ 0ull };
-					m_pShaderCompiler->preprocess(shader_code, compile_info, preprocessed_code, preprocessed_hash);
-
-					if (preprocessed_code.empty())
-					{
-						log_error("Something went wrong while preprocessing code for module: \"{}\". Empty string after preprocessing.", unique_module_name);
-						return; // throw error here
-					}
-
-					// Make hash for preprocessed data
-					m_locks[1].lock();
-					auto& compiled_spirv = shader_pool[preprocessed_hash];
-					m_locks[1].unlock();
-
-					m_locks[2].lock();
-					if (shader_modules.empty() || (shader_modules.size() <= shader_index))
-					{
-						shader_modules.emplace_back(source.type, 0ull);
-						is_compiling_first_time = true;
-					}
-					m_locks[2].unlock();
-
-					auto& current_module = shader_modules.at(shader_index);
-
-					bool is_code_outdated = current_module.link != utl::cast<int64_t>(preprocessed_hash);
-					bool is_type_missmatch = current_module.type != source.type;
-
-					// Notify, that type was changed
-					if (is_type_missmatch)
-					{
-						m_locks[3].lock();
-						log_warning("Type mismatch for shader module named: \"{}\". Previous type: \"{}\" new type: \"{}\". Old shaders will be removed.",
-							unique_module_name, get_shader_type_str(current_module.type), get_shader_type_str(source.type));
-						m_locks[3].unlock();
-
-						// Removing old shaders
-						m_locks[1].lock();
-						for (auto& shmodule : shader_modules)
-							shader_pool.erase(shmodule.link);
-						m_locks[1].unlock();
-
-						// Cleaning links
-						m_locks[2].lock();
-						shader_modules.clear();
-						current_module = shader_modules.emplace_back(source.type, 0ull);
-						m_locks[2].unlock();
-					}
-
-					// Compile shader if we need
-					if (is_code_outdated || is_type_missmatch || is_compiling_first_time)
-					{
-						compiled_spirv = m_pShaderCompiler->compile(preprocessed_code, compile_info);
-
-						m_locks[3].lock();
-						log_info("{} shader {}[{}] was {}.", name_type_hash, source.shader_name, preprocessed_hash, is_compiling_first_time ? "compiled" : "recompiled");
-						m_locks[3].unlock();
-					}
-
-					// Removing old shader data
-					m_locks[1].lock();
-					if ((is_code_outdated || is_type_missmatch) && !is_compiling_first_time)
-						shader_pool.erase(current_module.link);
-					m_locks[1].unlock();
-
-					current_module.link = utl::cast<int64_t>(preprocessed_hash);
-				}
-			);
-
-			shader_index++;
+			compilePermutations(parent_path, compile.name, shader_desc.sources, cached_permutations, compiled_library);
 		}
 	}
+}
 
-	//dump_json_from(out_library_path, compiled_library);
+void CLibraryCompiler::compilePermutations(const std::filesystem::path parent_path, const std::string& name, const std::vector<FShaderSource>& sources, const std::vector<std::vector<std::string>>& cached_permutations, FCompiledLibrary& compiled_library)
+{
+	u64 shader_index{ 0ull };
+	// Process all shader included sources
+	for (auto& source : sources)
+	{
+		// Generate shader code (apply extensions, process includes and definitions)
+		auto base_shader_code = m_pPreprocessor->generate(parent_path, source);
+		auto name_type_hash = get_shader_type(source.type);
+		auto& shader_pool = compiled_library.shaders[name_type_hash];
+
+		// Process and compile all definition combinations
+#ifdef NDEBUG
+		std::for_each(std::execution::par, cached_permutations.begin(), cached_permutations.end(),
+#else
+		std::for_each(cached_permutations.begin(), cached_permutations.end(),
+#endif
+			[&](const std::vector<std::string>& definitions)
+			{
+				bool is_compiling_first_time{ false };
+				FCompileInfo compile_info{ source.type, source.shader_name };
+
+				// This thing will add unique definitions by shader type. Dor example for vertex shader it will add VERTEX_SHADER definition
+				stl::vector<stl::string> unique_shader_definitions(definitions.begin(), definitions.end());
+				unique_shader_definitions.emplace_back(get_definition_by_shader_type(source.type));
+
+				// Make unique shader name(key)
+				auto unique_module_name = make_module_unique_name_str(name, definitions);
+
+				// Get shader module
+				m_locks[0].lock();
+				stl::vector<FShaderModule>& shader_modules = compiled_library.modules[unique_module_name];
+				m_locks[0].unlock();
+
+				// Apply definitions for current permutation
+				stl::stringstream ss{ "" };
+				for (auto& definition : unique_shader_definitions)
+					ss << stl::format("#define {}", definition) << stl::endl;
+				ss << stl::endl;
+
+				auto shader_code = emplace_data(base_shader_code, "{other_definitions}", ss.str());
+
+				// Preprocess generated code (and remove ugly code after preprocessing)
+				stl::string preprocessed_code{};
+				u64 preprocessed_hash{ 0ull };
+				m_pShaderCompiler->preprocess(shader_code, compile_info, preprocessed_code, preprocessed_hash);
+
+				if (preprocessed_code.empty())
+				{
+					log_error("Something went wrong while preprocessing code for module: \"{}\". Empty string after preprocessing.", unique_module_name);
+					return; // throw error here
+				}
+
+				// Make hash for preprocessed data
+				m_locks[1].lock();
+				auto& compiled_spirv = shader_pool[preprocessed_hash];
+				m_locks[1].unlock();
+
+				m_locks[2].lock();
+				if (shader_modules.empty() || (shader_modules.size() <= shader_index))
+				{
+					shader_modules.emplace_back(source.type, 0ull);
+					is_compiling_first_time = true;
+				}
+				m_locks[2].unlock();
+
+				auto& current_module = shader_modules.at(shader_index);
+
+				bool is_code_outdated = current_module.link != utl::cast<int64_t>(preprocessed_hash);
+				bool is_type_missmatch = current_module.type != source.type;
+
+				// Notify, that type was changed
+				if (is_type_missmatch)
+				{
+					m_locks[3].lock();
+					log_warning("Type mismatch for shader module named: \"{}\". Previous type: \"{}\" new type: \"{}\". Old shaders will be removed.",
+						unique_module_name, get_shader_type_str(current_module.type), get_shader_type_str(source.type));
+					m_locks[3].unlock();
+
+					// Removing old shaders
+					m_locks[1].lock();
+					for (auto& shmodule : shader_modules)
+						shader_pool.erase(shmodule.link);
+					m_locks[1].unlock();
+
+					// Cleaning links
+					m_locks[2].lock();
+					shader_modules.clear();
+					current_module = shader_modules.emplace_back(source.type, 0ull);
+					m_locks[2].unlock();
+				}
+
+				// Compile shader if we need
+				if (is_code_outdated || is_type_missmatch || is_compiling_first_time)
+				{
+					compiled_spirv = m_pShaderCompiler->compile(preprocessed_code, compile_info);
+
+					m_locks[3].lock();
+					log_info("{} shader {}[{}] was {}.", name_type_hash, source.shader_name, preprocessed_hash, is_compiling_first_time ? "compiled" : "recompiled");
+					m_locks[3].unlock();
+				}
+
+				// Removing old shader data
+				m_locks[1].lock();
+				if ((is_code_outdated || is_type_missmatch) && !is_compiling_first_time)
+					shader_pool.erase(current_module.link);
+				m_locks[1].unlock();
+
+				current_module.link = utl::cast<int64_t>(preprocessed_hash);
+			}
+		);
+
+		shader_index++;
+	}
 }

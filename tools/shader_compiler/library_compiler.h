@@ -20,6 +20,8 @@ namespace shader_compiler
 		void initialize(ETargetAPIType target_api, EShaderLang shader_lang, ETargetBuildType build_type);
 		void generatePermutations(const std::unordered_map<std::string, FPermutationPattern>& permutation_patterns);
 		void compile(const std::filesystem::path& library_path, FShaderCacheData& shader_cache);
+	protected:
+		void compilePermutations(const std::filesystem::path parent_path, const std::string& name, const std::vector<FShaderSource>& sources, const std::vector<std::vector<std::string>>& cached_permutations, FCompiledLibrary& compiled_library);
 	private:
 		std::unordered_map<std::string, std::vector<std::vector<std::string>>> m_permutations;
 		std::unique_ptr<CShaderPreprocessor> m_pPreprocessor{};

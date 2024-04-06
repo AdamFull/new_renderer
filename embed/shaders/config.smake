@@ -73,6 +73,7 @@
 		"deferred/visibilitybuffer.shlib",
 		"lighting/lighting.shlib",
 		"testing/testing.shlib",
-		"utility/utility.shlib"
+		"utility/utility.shlib",
+		"postprocess/postprocess.shlib"
 	];
 }

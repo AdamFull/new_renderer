@@ -1,0 +1,117 @@
+{
+	name: "postprocess";
+
+	shaders: [
+		{
+			name: "ao_blur";
+			sources: [
+				{
+					type: "compute";
+					shader_name: "ao_blur_comp";
+				}
+			];
+		},
+		{
+			name: "bokeh";
+			sources: [
+				{
+					type: "compute";
+					shader_name: "bokeh_comp";
+				}
+			];
+		},
+		{
+			name: "downsample";
+			sources: [
+				{
+					type: "compute";
+					shader_name: "downsample_comp";
+				}
+			];
+		},
+		{
+			name: "emptypass";
+			sources: [
+				{
+					type: "compute";
+					shader_name: "emptypass_comp";
+				}
+			];
+		},
+		{
+			name: "gaussianblur";
+			sources: [
+				{
+					type: "compute";
+					shader_name: "gaussianblur_comp";
+				}
+			];
+		},
+		{
+			name: "high_pass";
+			sources: [
+				{
+					type: "compute";
+					shader_name: "high_pass_comp";
+				}
+			];
+		},
+		{
+			name: "avg_brightness";
+			sources: [
+				{
+					type: "compute";
+					shader_name: "comp_histogram_comp";
+				},
+				{
+					type: "compute";
+					shader_name: "comp_average_brightness_comp";
+				}
+			];
+		},
+		{
+			name: "upsample";
+			sources: [
+				{
+					type: "compute";
+					shader_name: "upsample_comp";
+				}
+			];
+		}
+	];
+
+	compile: [
+		{ 
+			shader_name: "ao_blur";
+			pattern: "default_pattern";
+		},
+		{ 
+			shader_name: "bokeh";
+			pattern: "default_pattern";
+		},
+		{ 
+			shader_name: "downsample";
+			pattern: "default_pattern";
+		},
+		{ 
+			shader_name: "emptypass";
+			pattern: "default_pattern";
+		},
+		{
+			shader_name: "gaussianblur";
+			pattern: "default_pattern";
+		},
+		{
+			shader_name: "high_pass";
+			pattern: "default_pattern";
+		},
+		{ 
+			shader_name: "avg_brightness";
+			pattern: "default_pattern";
+		},
+		{ 
+			shader_name: "upsample";
+			pattern: "default_pattern";
+		}
+	];
+}

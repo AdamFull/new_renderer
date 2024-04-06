@@ -120,6 +120,7 @@ namespace shader_compiler
 	{
 		std::string name;
 		std::string pattern; // Build pattern with permutations
+		std::vector<FDefinitionList> permutations;
 	};
 
 	// Description about how to find shader source file

@@ -1,0 +1,51 @@
+{
+	version: 460;
+
+	enable_extensions: [
+		"GL_ARB_separate_shader_objects",
+		"GL_ARB_shading_language_420pack"
+	];
+
+	definitions: [];
+	require_extensions: [];
+	includes: ["compute_common", "postprocess_common"];
+
+	code: 
+	"""
+		layout(local_size_x = 8, local_size_y = 8) in;
+
+		layout(set = 1, binding = 0) uniform writeonly image2D writeColor;
+		layout(set = 1, binding = 1) uniform sampler2D samplerColor;
+		
+		void main()
+		{
+			uvec2 image_size = imageSize(writeColor);
+		
+			uvec2 px = uvec2(0, 0);
+			vec2 uv = vec2(0.0, 0.0);
+			if(swizzle_compute_workgroups_8x8_nv(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, image_size, uv, px))
+				return;
+			
+			vec2 texelSize = 1.0 / vec2(textureSize(samplerColor, 0));
+		
+			vec2 colorSize = textureSize(samplerColor, 0);
+			vec4 color = vec4(0.0f);
+		
+			int n = 0;
+			float result = 0.0;
+			for (int x = -ubo.blur_range; x < ubo.blur_range; x++) 
+			{
+				for (int y = -ubo.blur_range; y < ubo.blur_range; y++) 
+				{
+					vec2 offset = vec2(float(x), float(y)) * texelSize;
+					result += texture(samplerColor, uv + offset).r;
+					n++;
+				}
+			}
+		
+			color = vec4(result / (float(n)));
+		
+			imageStore(writeColor, ivec2(px), color);
+		}
+	""";
+}
