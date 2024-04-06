@@ -13,7 +13,8 @@ namespace engine
 			eFullscreen,
 			eGeometry,
 			eCascadedShadowMap,
-			eRenderScript
+			eRenderScript,
+			eClear
 		};
 
 		enum class EComputeType
@@ -21,7 +22,8 @@ namespace engine
 			eDefault,
 			eGeometry,
 			eCubemap,
-			eCulling
+			eCulling,
+			ePostProcess
 		};
 
 		enum class ERenderingSizeType

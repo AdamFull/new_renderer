@@ -115,7 +115,8 @@ namespace engine
 				"fullscreen", ERenderingType::eFullscreen,
 				"geometry", ERenderingType::eGeometry,
 				"csm", ERenderingType::eCascadedShadowMap,
-				"render_script", ERenderingType::eRenderScript
+				"render_script", ERenderingType::eRenderScript,
+				"clear", ERenderingType::eClear
 			);
 
 			// Register EComputeType
