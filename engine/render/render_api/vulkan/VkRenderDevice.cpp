@@ -66,7 +66,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debug_messenger_callback(VkDebugUtilsMessageSever
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT: log_verbose(pCallbackData->pMessage); break;
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT: log_info(pCallbackData->pMessage); break;
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT: log_warning(pCallbackData->pMessage); break;
-	//case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:  log_error(pCallbackData->pMessage); break;
+	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:  log_error(pCallbackData->pMessage); break;
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT: break;
 	}
 
@@ -83,7 +83,7 @@ VKAPI_ATTR vk::Bool32 VKAPI_CALL debug_report_callback(VkDebugReportFlagsEXT fla
 	case VK_DEBUG_REPORT_INFORMATION_BIT_EXT: log_info(report_text); break;
 	case VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT: log_warning(report_text); break;
 	case VK_DEBUG_REPORT_WARNING_BIT_EXT: log_warning(report_text); break;
-	//case VK_DEBUG_REPORT_ERROR_BIT_EXT: log_error(report_text); break;
+	case VK_DEBUG_REPORT_ERROR_BIT_EXT: log_error(report_text); break;
 	case VK_DEBUG_REPORT_DEBUG_BIT_EXT: log_debug(report_text); break;
 	}
 	
@@ -610,6 +610,9 @@ FRenderApiErrorInfo CVkRenderDevice::createPipeline(const FVkComputePipelineCrea
 
 FRenderApiErrorInfo CVkRenderDevice::createPipeline(const FVkRayTracingPipelineCreateInfo& pipeline_ci, vk::Pipeline& pipeline)
 {
+	vk::RayTracingShaderGroupCreateInfoKHR shader_group_ci{};
+	vk::RayTracingShaderGroupTypeKHR;
+
 	vk::RayTracingPipelineCreateInfoKHR rtx_pipeline_ci{};
 	//m_logicalDevice.handle.createRayTracingPipelinesKHR()
 	vk::Result res;// = m_logicalDevice.handle.createRayTracingPipelinesKHR(m_pipelineCache, 1u, &rtx_pipeline_ci, m_allocationCallbacks, &pipeline);
@@ -1375,6 +1378,8 @@ FRenderApiErrorInfo CVkRenderDevice::createLogicalDevice(const FRenderContextCre
 	vk10features.independentBlend = true;
 	vk10features.multiDrawIndirect = true;
 	vk10features.shaderInt16 = true;
+	vk10features.shaderStorageImageReadWithoutFormat = true;
+	vk10features.shaderStorageImageWriteWithoutFormat = true;
 
 	vk::DeviceCreateInfo device_ci{};
 	device_ci.queueCreateInfoCount = utl::cast<u32>(queue_create_infos.size());
