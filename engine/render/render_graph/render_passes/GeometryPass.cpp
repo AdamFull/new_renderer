@@ -91,51 +91,11 @@ const stl::unique_ptr<IShaderObject>& CGeometryPass::getShaderByVBO(const IVerte
 		// Generate shader name
 		auto shader_name = m_baseShaderName + vbo->getDefinitions();
 
-		FGraphicsShaderCreateInfo shader_ci{};
-		shader_ci.cullMode = m_bFlipViewport ? EShaderCullModeFlagBits::eBack : EShaderCullModeFlagBits::eFront;
-		shader_ci.frontFace = m_bFlipViewport ? EShaderFrontFace::eCW : EShaderFrontFace::eCCW;
-		shader_ci.primitiveTopology = EVertexPrimitiveTopology::eTriangleList;
-		
-		auto& output_targets = m_renderResources[ERenderResourceGroupType::eColorWrite];
-		for (u64 resource_id : output_targets)
-		{
-			if (resource_id == m_depthTarget || resource_id == m_stencilTarget)
-				continue;
+		auto cull_mode = m_bFlipViewport ? EShaderCullModeFlagBits::eBack : EShaderCullModeFlagBits::eFront;
+		auto front_face = m_bFlipViewport ? EShaderFrontFace::eCW : EShaderFrontFace::eCCW;
 
-			auto& render_resource = render_graph->getRenderResource(resource_id);
-			auto& new_attachment = shader_ci.colorAttachments.emplace_back();
-			new_attachment.source = render_resource.handle;
-		}
-
-		if (m_depthTarget != ~0ull)
-		{
-			auto& render_resource = render_graph->getRenderResource(m_depthTarget);
-			shader_ci.depthAttachment.source = render_resource.handle;
-		}
-
-		if (m_stencilTarget != ~0ull)
-		{
-			auto& render_resource = render_graph->getRenderResource(m_stencilTarget);
-			shader_ci.stencilAttachment.source = render_resource.handle;
-		}
-
-		auto& render_packet = m_pRenderInterface->getRenderPacket();
-		// TODO: i think i can calculate number of calls
-		//shader_ci.usageCount = stl::max(render_packet->stats.materialCount, render_packet->stats.primitiveCount);
-		shader_ci.usageCount = render_packet->stats.perTypeVBOCount[vbo_hash];
-		shader_ci.vertexDeclaration = vbo->getVertexDeclaration();
-
-		shader->create(shader_name, shader_ci);
-
-		// Bind default textures/buffers to shader
-		for (const auto& [bind_point, resource_id] : m_bakedBindings)
-		{
-			auto& render_resource = render_graph->getRenderResource(resource_id);
-			if (render_resource.type & ERenderResourceTypeFlagBits::eAllImage)
-				shader->bindTexture(bind_point.c_str(), render_resource.handle);
-			else if (render_resource.type == ERenderResourceTypeFlagBits::eBuffer)
-				shader->bindBuffer(bind_point.c_str(), render_resource.handle);
-		}
+		makeShader(shader_name, shader, cull_mode, front_face, vbo);
+		initShaderResources(shader);
 	}
 
 	return shader;

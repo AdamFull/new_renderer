@@ -35,6 +35,9 @@ namespace engine
 			virtual EPassType type() = 0;
 
 		protected:
+			virtual void initShaderResources(const std::unique_ptr<IShaderObject>& shader);
+			virtual void bindShaderResources(const std::unique_ptr<IShaderObject>& shader);
+
 			EQueueTypeFlagBits m_queue{};
 
 			ERenderingSizeType m_sizePolicy{};
@@ -68,6 +71,10 @@ namespace engine
 		protected:
 			void buildAttachment(u64 resource_id, const FPassBuildInfo& build_info, FRenderGraphAttachmentInfo& attachment_info);
 			virtual void _render(const FRenderFrameInfo& frame_info) = 0;
+
+			virtual void makeShader(const std::string& name, std::unique_ptr<IShaderObject>& shader, EShaderCullModeFlagBits cull_mode, EShaderFrontFace front_face, const IVertexHandler* vbo = nullptr);
+			virtual void initShaderResources(const std::unique_ptr<IShaderObject>& shader) override;
+			virtual void bindShaderResources(const std::unique_ptr<IShaderObject>& shader) override;
 		protected:
 			bool m_bFlipViewport{ false };
 
@@ -95,6 +102,9 @@ namespace engine
 			EPassType type() override { return EPassType::eCompute; }
 		protected:
 			virtual void _execute(const FComputeFrameInfo& frame_info) = 0;
+
+			virtual void initShaderResources(const std::unique_ptr<IShaderObject>& shader) override;
+			virtual void bindShaderResources(const std::unique_ptr<IShaderObject>& shader) override;
 		protected:
 			FDispatch2Group m_dispatchGroup{};
 		};

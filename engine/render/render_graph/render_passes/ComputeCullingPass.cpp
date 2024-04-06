@@ -97,6 +97,8 @@ const stl::unique_ptr<IShaderObject>& CComputeCullingPass::getShaderByVBO(const 
 
 		auto shader_name = m_baseShaderName + vbo->getDefinitions();
 		shader->create(shader_name, shader_ci);
+
+		initShaderResources(shader);
 	}
 
 	return shader;

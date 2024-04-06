@@ -15,6 +15,26 @@ bool IBasePass::canExecute()
 	return m_bCanExecute;
 }
 
+void IBasePass::initShaderResources(const std::unique_ptr<IShaderObject>& shader)
+{
+	auto& render_graph = m_pRenderInterface->getRenderGraph();
+
+	// Bind default textures/buffers to shader
+	for (const auto& [bind_point, resource_id] : m_bakedBindings)
+	{
+		auto& render_resource = render_graph->getRenderResource(resource_id);
+		if (render_resource.type & ERenderResourceTypeFlagBits::eAllImage)
+			shader->bindTexture(bind_point.c_str(), render_resource.handle);
+		else if (render_resource.type == ERenderResourceTypeFlagBits::eBuffer)
+			shader->bindBuffer(bind_point.c_str(), render_resource.handle);
+	}
+}
+
+void IBasePass::bindShaderResources(const std::unique_ptr<IShaderObject>& shader)
+{
+
+}
+
 void IRenderPass::init(const FRenderPassCreateInfo& pass_ci)
 {
 	m_queue = pass_ci.queue;
@@ -108,6 +128,71 @@ void IRenderPass::buildAttachment(u64 resource_id, const FPassBuildInfo& build_i
 	attachment_info.storeOp = resource_info.storeOp;
 }
 
+void IRenderPass::makeShader(const std::string& name, std::unique_ptr<IShaderObject>& shader, EShaderCullModeFlagBits cull_mode, EShaderFrontFace front_face, const IVertexHandler* vbo)
+{
+	auto& render_graph = m_pRenderInterface->getRenderGraph();
+
+	FGraphicsShaderCreateInfo shader_ci{};
+	shader_ci.cullMode = cull_mode;
+	shader_ci.frontFace = front_face;
+	shader_ci.primitiveTopology = EVertexPrimitiveTopology::eTriangleList;
+
+	auto& output_targets = m_renderResources[ERenderResourceGroupType::eColorWrite];
+	for (u64 resource_id : output_targets)
+	{
+		if (resource_id == m_depthTarget || resource_id == m_stencilTarget)
+			continue;
+
+		auto& render_resource = render_graph->getRenderResource(resource_id);
+		auto& new_attachment = shader_ci.colorAttachments.emplace_back();
+		new_attachment.source = render_resource.handle;
+	}
+
+	auto& backbuffer_targer = m_renderResources[ERenderResourceGroupType::eBackbufferWrite];
+	for (u64 resource_id : backbuffer_targer)
+	{
+		if (resource_id == m_depthTarget || resource_id == m_stencilTarget)
+			continue;
+
+		auto& render_resource = render_graph->getRenderResource(resource_id);
+		auto& new_attachment = shader_ci.colorAttachments.emplace_back();
+		new_attachment.source = render_resource.handle;
+		new_attachment.backbuffer = true;
+	}
+
+	if (m_depthTarget != ~0ull)
+	{
+		auto& render_resource = render_graph->getRenderResource(m_depthTarget);
+		shader_ci.depthAttachment.source = render_resource.handle;
+	}
+
+	if (m_stencilTarget != ~0ull)
+	{
+		auto& render_resource = render_graph->getRenderResource(m_stencilTarget);
+		shader_ci.stencilAttachment.source = render_resource.handle;
+	}
+
+	if (vbo)
+	{
+		auto& render_packet = m_pRenderInterface->getRenderPacket();
+
+		auto vbo_hash = vbo->getHash();
+		shader_ci.usageCount = render_packet->stats.perTypeVBOCount[vbo_hash];
+		shader_ci.vertexDeclaration = vbo->getVertexDeclaration();
+	}
+
+	shader->create(name, shader_ci);
+}
+
+void IRenderPass::initShaderResources(const std::unique_ptr<IShaderObject>& shader)
+{
+	IBasePass::initShaderResources(shader);
+}
+
+void IRenderPass::bindShaderResources(const std::unique_ptr<IShaderObject>& shader)
+{
+	IBasePass::bindShaderResources(shader);
+}
 
 
 
@@ -150,4 +235,14 @@ void IComputePass::execute(f32 dt)
 	_execute(frame_info);
 
 	render_context->endTimestampZone(m_queue);
+}
+
+void IComputePass::initShaderResources(const std::unique_ptr<IShaderObject>& shader)
+{
+	IBasePass::initShaderResources(shader);
+}
+
+void IComputePass::bindShaderResources(const std::unique_ptr<IShaderObject>& shader)
+{
+	IBasePass::bindShaderResources(shader);
 }

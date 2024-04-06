@@ -21,15 +21,7 @@ void CComputePass::init(const FComputePassCreateInfo& pass_ci)
 	m_pShader = stl::make_unique<CShaderObject>(m_pRenderInterface);
 	m_pShader->create(pass_ci.shader, shader_ci);
 
-	// Bind default textures/buffers to shader
-	for (const auto& [bind_point, resource_id] : m_bakedBindings)
-	{
-		auto& render_resource = render_graph->getRenderResource(resource_id);
-		if (render_resource.type & ERenderResourceTypeFlagBits::eAllImage)
-			m_pShader->bindTexture(bind_point.c_str(), render_resource.handle);
-		else if (render_resource.type == ERenderResourceTypeFlagBits::eBuffer)
-			m_pShader->bindBuffer(bind_point.c_str(), render_resource.handle);
-	}
+	initShaderResources(m_pShader);
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	m_debugName = stl::format("compute:{}", pass_ci.shader);

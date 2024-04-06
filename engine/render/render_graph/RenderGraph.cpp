@@ -7,6 +7,8 @@
 #include "render_passes/ComputePass.h"
 #include "render_passes/FullscreenPass.h"
 #include "render_passes/GeometryPass.h"
+#include "render_passes/ClearPass.h"
+#include "render_passes/PostProcessPass.h"
 
 #include <logger/logger.h>
 #include <glm/gtc/matrix_transform.hpp>
@@ -508,6 +510,8 @@ u64 CRenderGraph::addRenderPass(const stl::string& name, const FRenderConfigRend
 		new_pass = stl::make_unique<CGeometryPass>(m_pRenderInterface);
 	else if (render_pass_ci.type == ERenderingType::eCascadedShadowMap)
 		new_pass = stl::make_unique<CCascadedShadowMapPass>(m_pRenderInterface);
+	else if(render_pass_ci.type == ERenderingType::eClear)
+		new_pass = stl::make_unique<CClearPass>(m_pRenderInterface);
 
 	if (!render_pass_ci.depthResource.empty())
 		pass_ci.depthTarget = getRenderRersourceId(render_pass_ci.depthResource);
@@ -539,6 +543,8 @@ u64 CRenderGraph::addRenderPass(const stl::string& name, const FRenderConfigComp
 		new_pass = stl::make_unique<CComputeCubemapPass>(m_pRenderInterface);
 	else if (compute_pass_ci.type == EComputeType::eCulling)
 		new_pass = stl::make_unique<CComputeCullingPass>(m_pRenderInterface);
+	else if (compute_pass_ci.type == EComputeType::ePostProcess)
+		new_pass = stl::make_unique<CPostProcessPass>(m_pRenderInterface);
 
 	new_pass->init(pass_ci);
 	m_vRenderPasses.emplace_back(stl::move(new_pass));

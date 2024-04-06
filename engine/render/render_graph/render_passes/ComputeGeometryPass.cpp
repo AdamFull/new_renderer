@@ -57,6 +57,7 @@ void CComputeGeometryPass::_execute(const FComputeFrameInfo& frame_info)
 
 			if (was_vbo_rebinded)
 			{
+				bindShaderResources(shader);
 				auto& buffers = shader->getUniformBlock("GeometryBuffers");
 
 				u64 vertex_handle = last_vbo->getVertexHandle();
@@ -116,15 +117,7 @@ const stl::unique_ptr<IShaderObject>& CComputeGeometryPass::getShaderByVBO(const
 		shader_ci.usageCount = stl::max(render_packet->stats.materialCount, render_packet->stats.primitiveCount);
 		shader->create(shader_name, shader_ci);
 
-		// Bind default textures/buffers to shader
-		for (const auto& [bind_point, resource_id] : m_bakedBindings)
-		{
-			auto& render_resource = render_graph->getRenderResource(resource_id);
-			if (render_resource.type & ERenderResourceTypeFlagBits::eAllImage)
-				shader->bindTexture(bind_point.c_str(), render_resource.handle);
-			else if (render_resource.type == ERenderResourceTypeFlagBits::eBuffer)
-				shader->bindBuffer(bind_point.c_str(), render_resource.handle);
-		}
+		initShaderResources(shader);
 	}
 
 	return shader;
