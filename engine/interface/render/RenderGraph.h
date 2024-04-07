@@ -151,7 +151,7 @@ namespace engine
 
 		struct FViewportView
 		{
-			u64 dependencyResource{ ~0ull };
+			u64 dependencyResource{ INVALID_HANDLE };
 			u32 width{ 0u }, height{ 0u }, depth{ 1u };
 			EViewportDependencyType dependencyType;
 			float scale{ 1.f };
@@ -160,7 +160,7 @@ namespace engine
 		struct FRenderResourceView
 		{
 			ERenderResourceTypeFlagBits type{};
-			u64 handle{ ~0ull };
+			u64 handle{ INVALID_HANDLE };
 		};
 
 		struct FResourceBarrierInfo
@@ -173,7 +173,7 @@ namespace engine
 
 		struct FRenderGraphAttachmentInfo
 		{
-			u64 handle{ ~0ull };
+			u64 handle{ INVALID_HANDLE };
 			u32 mipLevel{ 0u };
 			ERenderResourceLoadOp loadOp{};
 			ERenderResourceStoreOp storeOp{};
@@ -239,7 +239,7 @@ namespace engine
 		{
 			ERenderResourceTypeFlagBits type{};
 			EQueueTypeFlags queuesUsed{ 0u };
-			u64 handle{ ~0ull };
+			u64 handle{ INVALID_HANDLE };
 
 			stl::unordered_map<ERenderResourceAccessFlagBits, stl::unordered_set<u64>> usages{};
 		};
@@ -276,9 +276,44 @@ namespace engine
 			void setStencilTarget(const stl::string& resource_name) { stencilResource = otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(resource_name); }
 		};
 
+		struct FRenderConfigComputeDispatchGroupInfo
+		{
+			ERenderingSizeType type{};
+			bool divideByLocals{ true };
+			std::string target{};
+			u32 width{ 1u }, height{ 1u }, depth{ 1u };
+		};
+
+		struct FComputeDispatchGroupInfo
+		{
+			ERenderingSizeType type{};
+			bool divideByLocals{ true };
+			u64 target{ INVALID_HANDLE };
+			u32 width{ 1u }, height{ 1u }, depth{ 1u };
+		};
+
 		struct FRenderConfigComputeCreateInfo : public FRenderConfigPassCreateInfo
 		{
 			EComputeType type{};
+			std::vector<FRenderConfigComputeDispatchGroupInfo> groupInfos{};
+
+			void addDispatchGroupInfo(const std::string& target, bool divide_by_locals)
+			{
+				auto& group_info = groupInfos.emplace_back();
+				group_info.type = ERenderingSizeType::eFromRenderTarget;
+				group_info.target = target;
+				group_info.divideByLocals = divide_by_locals;
+			}
+
+			void addDispatchGroupInfo(u32 width, u32 height, u32 depth, bool divide_by_locals)
+			{
+				auto& group_info = groupInfos.emplace_back();
+				group_info.type = ERenderingSizeType::eManual;
+				group_info.width = width;
+				group_info.height = height;
+				group_info.depth = depth;
+				group_info.divideByLocals = divide_by_locals;
+			}
 		};
 
 		struct FPassCreateInfo
@@ -286,9 +321,6 @@ namespace engine
 			EQueueTypeFlagBits queue{};
 			stl::string shader{};
 			bool oneTime{ false };
-
-			ERenderingSizeType sizePolicy{};
-			u64 sizeTarget{ ~0ull };
 
 			stl::unordered_map<ERenderResourceGroupType, stl::vector<u64>> resources{};
 			stl::unordered_map<stl::string, u64> bindings{};
@@ -298,13 +330,14 @@ namespace engine
 		{
 			bool flipViewport{ false };
 
-			u64 viewportIndex{ ~0ull };
-			u64 depthTarget{ ~0ull };
-			u64 stencilTarget{ ~0ull };
+			u64 viewportIndex{ INVALID_HANDLE };
+			u64 depthTarget{ INVALID_HANDLE };
+			u64 stencilTarget{ INVALID_HANDLE };
 		};
 
 		struct FComputePassCreateInfo : public FPassCreateInfo
 		{
+			std::vector<FComputeDispatchGroupInfo> groupInfos{};
 		};
 
 		class IRenderGraph

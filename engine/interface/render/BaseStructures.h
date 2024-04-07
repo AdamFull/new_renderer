@@ -102,7 +102,7 @@ namespace engine
 
 		struct FIndirectGeometryDrawInfo
 		{
-			u64 bufferId{ ~0ull };
+			u64 bufferId{ INVALID_HANDLE };
 			u64 offset{ 0ull };
 			u64 count{ 0ull };
 
@@ -111,7 +111,7 @@ namespace engine
 
 		struct FGeometryCPUBatch
 		{
-			u64 vboID{ ~0ull };
+			u64 vboID{ INVALID_HANDLE };
 			FIndirectGeometryDrawInfo command{};
 		};
 
@@ -122,7 +122,7 @@ namespace engine
 
 		struct FAPIObjectDestroyInfo
 		{
-			u64 id{ ~0ull };
+			u64 id{ INVALID_HANDLE };
 			EResourceFlagBits mask{};
 		};
 

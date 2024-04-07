@@ -267,7 +267,11 @@ namespace engine
 			lua->new_usertype<FRenderConfigComputeCreateInfo>(
 				"ComputeCreateInfo",
 				sol::base_classes, sol::bases<FRenderConfigPassCreateInfo>(),
-				"type", &FRenderConfigComputeCreateInfo::type
+				"type", &FRenderConfigComputeCreateInfo::type,
+				"add_workgroup_size_info", sol::overload(
+					static_cast<void(FRenderConfigComputeCreateInfo::*)(const std::string&, bool)>(&FRenderConfigComputeCreateInfo::addDispatchGroupInfo),
+					static_cast<void(FRenderConfigComputeCreateInfo::*)(u32, u32, u32, bool)>(&FRenderConfigComputeCreateInfo::addDispatchGroupInfo)
+				)
 			);
 
 			// FViewportCreateInfo registration

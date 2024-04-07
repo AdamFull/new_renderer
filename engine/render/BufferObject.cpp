@@ -58,7 +58,7 @@ void CBufferObject::unmap()
 
 void CBufferObject::write(const void* data, u64 size, u64 offset)
 {
-	if (size == ~0ull)
+	if (size == INVALID_HANDLE)
 	{
 		stl::memcpy(m_pMapped, data, m_elemSize * m_elemCount);
 		return;

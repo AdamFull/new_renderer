@@ -22,7 +22,7 @@
 		layout (set = 1, binding = 3, r32f) uniform image2D target;
 		layout (set = 1, binding = 1) buffer Histogram { uint histogram[GROUP_SIZE]; };
 
-		layout (std140, set = 1, binding = 2) uniform UBOParams 
+		layout (std140, set = 1, binding = 2) uniform FHistogramComputeParams 
 		{ 
 			float minLogLum;
 			float logLumRange;

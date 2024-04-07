@@ -102,8 +102,8 @@ end
 do 
     local buffer_ci = BufferCI.new();
     buffer_ci.type = BufferType.storage
-    buffer_ci.size = 1u
-    buffer_ci.count = 256u
+    buffer_ci.size = 4
+    buffer_ci.count = 256
 
     render_graph:add_render_resource("histogram_buffer", buffer_ci)
 end
@@ -150,7 +150,7 @@ do
     pass_ci.queue = QueueType.graphics
     pass_ci.shader = "lighting:brgflut_generator";
 
-    pass_ci.size_target = "brdf_lut_target";
+    pass_ci:add_workgroup_size_info("brdf_lut_target", true)
     pass_ci:bind_write_resource("out_color", "brdf_lut_target")
 
     render_graph:add_render_pass("generate_brdflut", pass_ci)
@@ -163,7 +163,7 @@ do
     pass_ci.queue = QueueType.graphics
     pass_ci.shader = "lighting:irradiancecube_generator";
 
-    pass_ci.size_target = "irradiance_cube_target";
+    pass_ci:add_workgroup_size_info("irradiance_cube_target", true)
     pass_ci:bind_write_resource("out_color", "irradiance_cube_target")
     pass_ci:bind_read_resource("sampler_color", "CasualDay4K")
 
@@ -177,6 +177,7 @@ do
     pass_ci.queue = QueueType.graphics
     pass_ci.shader = "lighting:prefilteredmap_generator";
 
+    pass_ci:add_workgroup_size_info("prefiltered_cube_target", true)
     pass_ci:bind_write_resource("out_color", "prefiltered_cube_target")
     pass_ci:bind_read_resource("sampler_color", "CasualDay4K")
 
@@ -225,7 +226,6 @@ do
     pass_ci.queue = QueueType.graphics
     pass_ci.shader = "visibilitybuffer:write"
 
-    pass_ci.size_target = "zbuffer_depth_target"
     pass_ci:set_depth_target("zbuffer_depth_target")
     pass_ci:set_stencil_target("zbuffer_depth_target")
 
@@ -256,7 +256,7 @@ do
     pass_ci.queue = QueueType.graphics
     pass_ci.shader = "visibilitybuffer:shade"
 
-    pass_ci.size_target = "final_lighting_target"
+    pass_ci:add_workgroup_size_info("final_lighting_target", true)
 
     pass_ci:bind_write_resource("write_color", "final_lighting_target")
     pass_ci:bind_read_resource("visbuffer_geometry", "visbuffer_geometry_target")
@@ -284,6 +284,22 @@ do
     render_graph:add_render_pass("compute_materials_pass", pass_ci)
 end
 
+do
+    local pass_ci = ComputeCreateInfo.new()
+    pass_ci.type = ComputeType.default
+    pass_ci.queue = QueueType.graphics
+    pass_ci.shader = "postprocess:avg_brightness"
+
+    pass_ci:add_workgroup_size_info("final_lighting_target", true)
+    pass_ci:add_workgroup_size_info(1, 1, 1, false)
+
+    pass_ci:bind_write_resource("target", "avg_brightness_target")
+    pass_ci:bind_write_resource("Histogram", "histogram_buffer")
+    pass_ci:bind_read_resource("samplerColor", "final_lighting_target")
+
+    render_graph:add_render_pass("compute_histogram", pass_ci)
+end
+
 -- Present pass
 do
     local pass_ci = GraphicsCreateInfo.new()
@@ -293,6 +309,7 @@ do
     pass_ci:flip_viewport()
 
     pass_ci:bind_read_resource("input_image", "final_lighting_target")
+    pass_ci:bind_read_resource("avg_luminosity", "avg_brightness_target")
     pass_ci:add_write_resource("present_target")
 
     render_graph:add_render_pass("finalize_image_pass", pass_ci)

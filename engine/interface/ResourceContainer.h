@@ -84,7 +84,7 @@ namespace engine
 			if (it != nameToId.end())
 				return it->second;
 
-			return ~0ull;
+			return invalid_handle;
 		}
 	private:
 		stl::queue<resource_handle_t> freeIds{};

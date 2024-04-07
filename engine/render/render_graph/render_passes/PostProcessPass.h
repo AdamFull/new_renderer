@@ -17,7 +17,6 @@ namespace engine
 			void build(const FPassBuildInfo& build_info) override;
 		private:
 			void _execute(const FComputeFrameInfo& frame_info) override;
-			void bindShaderResources(const std::unique_ptr<IShaderObject>& shader) override;
 		private:
 			stl::unique_ptr<IShaderObject> m_pShader{};
 		};

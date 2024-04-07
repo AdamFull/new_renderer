@@ -24,7 +24,8 @@
         
         layout(set = 1, binding = 0) uniform sampler2D samplerColor;
         layout (set = 1, binding = 1) buffer Histogram { uint histogram[GROUP_SIZE]; };
-        layout (std140, set = 1, binding = 2) uniform UBOParams 
+
+        layout (std140, set = 1, binding = 2) uniform FHistogramComputeParams 
         { 
             float minLogLum;
         	float logLumRange;

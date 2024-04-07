@@ -33,9 +33,9 @@
 		
 			int n = 0;
 			float result = 0.0;
-			for (int x = -ubo.blur_range; x < ubo.blur_range; x++) 
+			for (int x = -postprocess.blur_range; x < postprocess.blur_range; x++) 
 			{
-				for (int y = -ubo.blur_range; y < ubo.blur_range; y++) 
+				for (int y = -postprocess.blur_range; y < postprocess.blur_range; y++) 
 				{
 					vec2 offset = vec2(float(x), float(y)) * texelSize;
 					result += texture(samplerColor, uv + offset).r;

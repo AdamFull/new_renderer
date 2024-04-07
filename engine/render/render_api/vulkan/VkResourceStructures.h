@@ -352,7 +352,7 @@ namespace engine
 				
 				vk::PipelineBindPoint bindPoint{};
 
-				u64 reflection{ ~0ull };
+				u64 reflection{ INVALID_HANDLE };
 
 				bool isAlive{ false };
 			};
@@ -474,7 +474,7 @@ namespace engine
 
 			struct FVkTextureLayoutChangeInfo
 			{
-				u64 textureId{ ~0ull };
+				u64 textureId{ INVALID_HANDLE };
 			};
 
 			struct FVkGlobalDescriptor

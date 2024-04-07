@@ -2,6 +2,7 @@
 
 #include "BaseEnumerators.h"
 #include "BufferStructures.h"
+#include <embed/shaders/includes/interop/base.h>
 
 namespace engine
 {
@@ -49,7 +50,7 @@ namespace engine
 
 		struct FIndexBufferBindingInfo
 		{
-			u64 bufferId{ ~0ull };
+			u64 bufferId{ INVALID_HANDLE };
 			u64 offset{ 0ull };
 			u64 indexSize{ 0ull };
 		};

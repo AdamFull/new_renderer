@@ -42,6 +42,8 @@ namespace engine
 			const stl::unique_ptr<IGPUVector>& getDrawBuffer(ERenderBufferIndices buffer_index) override;
 			const stl::vector<FGeometryCPUBatch>& getGeometryBatches() const override;
 
+			FPostProcess& getPostProcessingData() override;
+
 			FRenderWorldStats& getStats() override;
 			const FRenderWorldStats& getStats() const override;
 		private:
@@ -59,6 +61,7 @@ namespace engine
 			//stl::vector<FMaterial> m_vMaterials{};
 			stl::vector<glm::mat4> m_vSkins{};
 
+			FPostProcess m_postprocess{};
 			FRenderWorldStats m_stats{};
 
 			stl::vector<stl::unique_ptr<IGPUVector>> m_vBuffers{};

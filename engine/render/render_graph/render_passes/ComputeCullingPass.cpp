@@ -72,13 +72,13 @@ void CComputeCullingPass::_execute(const FComputeFrameInfo& frame_info)
 
 			auto& reflection = shader->getReflection();
 
-			m_dispatchGroup.x = world_stats.drawCommandCount;
-
-			FDispatch2Info dispatch_info{};
-			dispatch_info.shaderHandle = shader->handle();
-			dispatch_info.globalSizes = m_dispatchGroup;
-
-			render_context->dispatch(m_queue, dispatch_info);
+			//m_dispatchGroup.x = world_stats.drawCommandCount;
+			//
+			//FDispatch2Info dispatch_info{};
+			//dispatch_info.shaderHandle = shader->handle();
+			//dispatch_info.globalSizes = m_dispatchGroup;
+			//
+			//render_context->dispatch(m_queue, dispatch_info);
 		}
 	}
 }

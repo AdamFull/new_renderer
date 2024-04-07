@@ -37,13 +37,20 @@ void CComputePass::_execute(const FComputeFrameInfo& frame_info)
 {
 	auto& render_context = m_pRenderInterface->getRenderContext();
 
+	bindShaderResources(m_pShader, frame_info.deltaTime);
+
 	m_pShader->flushDescriptors();
 	m_pShader->flushConstants(m_queue);
 	m_pShader->bind(m_queue);
 
-	FDispatch2Info dispatch_info{};
-	dispatch_info.globalSizes = m_dispatchGroup;
-	dispatch_info.shaderHandle = m_pShader->handle();
+	for (u64 dispatch_idx = 0ull; dispatch_idx < m_vDispatchGroups.size(); ++dispatch_idx)
+	{
+		auto& dispatch_info = m_vDispatchGroups[dispatch_idx];
+		dispatch_info.shaderHandle = m_pShader->handle();
 
-	render_context->dispatch(m_queue, dispatch_info);
+		render_context->dispatch(m_queue, dispatch_info, dispatch_idx);
+
+		if (m_vDispatchGroups.size() > 0 && dispatch_idx < m_vDispatchGroups.size() - 1)
+			render_context->pushC2CBarrier(m_queue);
+	}
 }

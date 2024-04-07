@@ -40,6 +40,7 @@ void CComputeGeometryPass::_execute(const FComputeFrameInfo& frame_info)
 		vbos.emplace(batch.vboID);
 
 	IVertexHandler* last_vbo{ nullptr };
+
 	for (auto& vboId : vbos)
 	{
 		bool was_vbo_rebinded{ false };
@@ -57,7 +58,7 @@ void CComputeGeometryPass::_execute(const FComputeFrameInfo& frame_info)
 
 			if (was_vbo_rebinded)
 			{
-				bindShaderResources(shader);
+				bindShaderResources(shader, frame_info.deltaTime);
 				auto& buffers = shader->getUniformBlock("GeometryBuffers");
 
 				u64 vertex_handle = last_vbo->getVertexHandle();
@@ -86,15 +87,10 @@ void CComputeGeometryPass::_execute(const FComputeFrameInfo& frame_info)
 
 			shader->flushConstants(m_queue);
 
-			auto& reflection = shader->getReflection();
-
-			glm::vec3 global_size{};
-
-			FDispatch2Info dispatch_info{};
-			dispatch_info.globalSizes = m_dispatchGroup;
+			auto& dispatch_info = m_vDispatchGroups.front();
 			dispatch_info.shaderHandle = shader->handle();
 
-			render_context->dispatch(m_queue, dispatch_info);
+			render_context->dispatch(m_queue, dispatch_info, 0);
 		}
 	}
 }

@@ -36,12 +36,9 @@ namespace engine
 
 		protected:
 			virtual void initShaderResources(const std::unique_ptr<IShaderObject>& shader);
-			virtual void bindShaderResources(const std::unique_ptr<IShaderObject>& shader);
+			virtual void bindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt);
 
 			EQueueTypeFlagBits m_queue{};
-
-			ERenderingSizeType m_sizePolicy{};
-			u64 m_sizeTarget{ ~0ull };
 
 			stl::unordered_map<ERenderResourceGroupType, stl::vector<u64>> m_renderResources{};
 			stl::unordered_map<stl::string, u64> m_bakedBindings{};
@@ -74,7 +71,7 @@ namespace engine
 
 			virtual void makeShader(const std::string& name, std::unique_ptr<IShaderObject>& shader, EShaderCullModeFlagBits cull_mode, EShaderFrontFace front_face, const IVertexHandler* vbo = nullptr);
 			virtual void initShaderResources(const std::unique_ptr<IShaderObject>& shader) override;
-			virtual void bindShaderResources(const std::unique_ptr<IShaderObject>& shader) override;
+			virtual void bindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt) override;
 		protected:
 			bool m_bFlipViewport{ false };
 
@@ -104,9 +101,10 @@ namespace engine
 			virtual void _execute(const FComputeFrameInfo& frame_info) = 0;
 
 			virtual void initShaderResources(const std::unique_ptr<IShaderObject>& shader) override;
-			virtual void bindShaderResources(const std::unique_ptr<IShaderObject>& shader) override;
+			virtual void bindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt) override;
 		protected:
-			FDispatch2Group m_dispatchGroup{};
+			std::vector<FDispatch2Info> m_vDispatchGroups{};
+			std::vector<FComputeDispatchGroupInfo> m_vDispatchInfos{};
 		};
 	}
 }

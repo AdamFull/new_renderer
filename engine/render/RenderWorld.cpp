@@ -242,6 +242,11 @@ const stl::vector<FGeometryCPUBatch>& CRenderWorld::getGeometryBatches() const
 	return m_vGeometryBatches;
 }
 
+FPostProcess& CRenderWorld::getPostProcessingData()
+{
+	return m_postprocess;
+}
+
 FRenderWorldStats& CRenderWorld::getStats()
 {
 	return m_stats;

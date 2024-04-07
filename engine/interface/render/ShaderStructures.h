@@ -88,7 +88,7 @@ namespace engine
 
 		struct FAttachment
 		{
-			u64 source{ ~0ull };
+			u64 source{ INVALID_HANDLE };
 			bool backbuffer{ false };
 		};
 
@@ -129,13 +129,13 @@ namespace engine
 
 		struct FTextureBindInfo
 		{
-			u64 textureId{ ~0ull };
+			u64 textureId{ INVALID_HANDLE };
 			u32 mipLevel{ 0u };
 		};
 
 		struct FShaderResourceCommit
 		{
-			u64 shaderId{ ~0ull };
+			u64 shaderId{ INVALID_HANDLE };
 			stl::unordered_map<u64, FUniformDataView> uniforms{};
 			stl::unordered_map<u64, FTextureBindInfo> textures{};
 			stl::unordered_map<u64, u64> buffers{};

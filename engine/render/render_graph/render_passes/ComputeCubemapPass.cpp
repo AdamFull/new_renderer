@@ -52,6 +52,7 @@ void CComputeCubemapPass::_execute(const FComputeFrameInfo& frame_info)
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
 
 	auto& write_resources = m_renderResources[ERenderResourceGroupType::eStorageTextureWrite];
+
 	for (const auto& resource_id : write_resources)
 	{
 		auto& render_resource = render_graph->getRenderResource(resource_id);
@@ -62,7 +63,7 @@ void CComputeCubemapPass::_execute(const FComputeFrameInfo& frame_info)
 			{
 				auto& binding_resource = render_graph->getRenderResource(resource_id);
 
-				if(binding_resource.handle == render_resource.handle)
+				if (binding_resource.handle == render_resource.handle)
 					m_pShader->bindTexture(binding_point.c_str(), binding_resource.handle, mip);
 				else
 					m_pShader->bindTexture(binding_point.c_str(), binding_resource.handle);
@@ -80,14 +81,12 @@ void CComputeCubemapPass::_execute(const FComputeFrameInfo& frame_info)
 			m_pShader->flushConstants(m_queue);
 			m_pShader->bind(m_queue);
 
-			auto& reflection = m_pShader->getReflection();
-
-			FDispatch2Info dispatch_info{};
-			dispatch_info.shaderHandle = m_pShader->handle();
+			auto& dispatch_info = m_vDispatchGroups[0];
 			dispatch_info.globalSizes.x = info.size.width;
 			dispatch_info.globalSizes.y = info.size.height;
-
-			render_context->dispatch(m_queue, dispatch_info);
+			dispatch_info.shaderHandle = m_pShader->handle();
+			
+			render_context->dispatch(m_queue, dispatch_info, 0);
 		}
 	}
 }

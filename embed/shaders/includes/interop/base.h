@@ -413,6 +413,7 @@ namespace engine {
 			VECTOR2 invViewportDimension;
 			float nearPlane;
 			float farPlane;
+			float dt;
 			uint32_t directionalLightCount;
 			uint32_t pointLightCount;
 			uint32_t spotLightCount;

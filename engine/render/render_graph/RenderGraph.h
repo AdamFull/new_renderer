@@ -64,11 +64,11 @@ namespace engine
 			stl::vector<stl::unique_ptr<IBufferObject>> m_vBufferHandlers{};
 			stl::vector<FRenderResource> m_vRenderResources{};
 			stl::unordered_map<stl::string, u64> m_nameToResource{};
-			u64 m_backBufferResource{ ~0ull };
+			u64 m_backBufferResource{ INVALID_HANDLE };
 
 			std::vector<FViewportView> m_vViewports{};
 			stl::unordered_map<stl::string, u64> m_nameToViewport{};
-			u64 m_defaultViewport{ ~0ull };
+			u64 m_defaultViewport{ INVALID_HANDLE };
 
 			std::vector<FViewport> m_vViewportBuffer{};
 

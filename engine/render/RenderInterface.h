@@ -45,7 +45,7 @@ namespace engine
 
 				log_error("Shader with name: \"{}\" was not found.", name_info.originalName);
 
-				return ~0ull;
+				return INVALID_HANDLE;
 			}
 
 			FShaderUploadInfo getShaderNameTag(const stl::string& name) override;

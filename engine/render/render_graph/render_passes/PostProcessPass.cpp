@@ -36,8 +36,3 @@ void CPostProcessPass::build(const FPassBuildInfo& build_info)
 void CPostProcessPass::_execute(const FComputeFrameInfo& frame_info)
 {
 }
-
-void CPostProcessPass::bindShaderResources(const std::unique_ptr<IShaderObject>& shader)
-{
-	IComputePass::bindShaderResources(shader);
-}

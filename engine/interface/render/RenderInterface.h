@@ -9,6 +9,7 @@
 #include "TextureStructures.h"
 #include "VertexStructures.h"
 #include "RenderGraph.h"
+#include "PostProcessStructures.h"
 
 #include <typeindex>
 
@@ -286,7 +287,7 @@ namespace engine
 			virtual void destroyBuffer(u64 resource_id) = 0;
 
 			virtual void pushG2CBarriers(EQueueTypeFlagBits queue_type, const stl::vector<u64>& textures) = 0;
-			virtual void pushC2CBarrier(EQueueTypeFlagBits queue_type, const stl::vector<u64>& texture_ids) = 0;
+			virtual void pushC2CBarrier(EQueueTypeFlagBits queue_type) = 0;
 			virtual void pushC2GBarrier(EQueueTypeFlagBits queue_type, const stl::vector<u64>& texture_ids) = 0;
 
 			virtual void processResourceBarriers(EQueueTypeFlagBits queue, const stl::vector<FResourceBarrierInfo>& barriers) = 0;
@@ -302,7 +303,7 @@ namespace engine
 
 			virtual void draw(EQueueTypeFlagBits queue_type, const FGeometryDrawInfo& draw_info) = 0;
 			virtual void draw(EQueueTypeFlagBits queue_type, const FIndirectGeometryDrawInfo& draw_info) = 0;
-			virtual void dispatch(EQueueTypeFlagBits queue_type, const FDispatch2Info& dispatch_group) = 0;
+			virtual void dispatch(EQueueTypeFlagBits queue_type, const FDispatch2Info& dispatch_group, u64 subgroup_index) = 0;
 			virtual void dispatch(EQueueTypeFlagBits queue_type, const FDispatchIndirectInfo& dispatch_info) = 0;
 
 			virtual FDeviceLimitations getDeviceLimitations() = 0;
@@ -367,6 +368,8 @@ namespace engine
 			//virtual const stl::vector<stl::unique_ptr<IBufferObject>>& getDrawBuffers() = 0;
 
 			virtual const stl::vector<FGeometryCPUBatch>& getGeometryBatches() const = 0;
+
+			virtual FPostProcess& getPostProcessingData() = 0;
 
 			virtual FRenderWorldStats& getStats() = 0;
 			virtual const FRenderWorldStats& getStats() const = 0;

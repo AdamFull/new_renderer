@@ -930,38 +930,17 @@ void CVkRenderContext::pushG2CBarriers(EQueueTypeFlagBits queue_type, const stl:
 	processMemoryBarriers(command_buffer, translation_info);
 }
 
-void CVkRenderContext::pushC2CBarrier(EQueueTypeFlagBits queue_type, const stl::vector<u64>& texture_ids)
+void CVkRenderContext::pushC2CBarrier(EQueueTypeFlagBits queue_type)
 {
 	auto& command_buffer = getLastCommandBuffer(queue_type);
 	auto& textures = m_pResources->data<FVkTexture>();
 
 	FVkTranslationInfo translation_info{};
-	for (auto texture_id : texture_ids)
-	{
-		auto& texture = textures.at(texture_id);
-	
-		auto& image_trans_info = translation_info.imageTranslationInfos.emplace_back();
-		image_trans_info.srcStageMask = vk::PipelineStageFlagBits2::eComputeShader;
-		image_trans_info.srcAccessMask = vk::AccessFlagBits2::eShaderWrite | vk::AccessFlagBits2::eShaderStorageWrite | vk::AccessFlagBits2::eMemoryWrite;
-		image_trans_info.oldLayout = get_render_target_final_layout(*texture);
-		image_trans_info.dstStageMask = vk::PipelineStageFlagBits2::eComputeShader;
-		image_trans_info.dstAccessMask = vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderStorageRead | vk::AccessFlagBits2::eShaderSampledRead | vk::AccessFlagBits2::eMemoryRead;
-		image_trans_info.newLayout = get_render_target_final_layout(*texture);
-		image_trans_info.handle = texture->image.handle;
-	
-		image_trans_info.subresourceRange.aspectMask = get_texture_aspect_flags(*texture);
-		image_trans_info.subresourceRange.baseArrayLayer = 0;
-		image_trans_info.subresourceRange.layerCount = texture->totalLayers;
-		image_trans_info.subresourceRange.baseMipLevel = 0;
-		image_trans_info.subresourceRange.levelCount = texture->initialData.base.mipLevels;
-	}
-
-	//FVkTranslationInfo translation_info{};
-	//auto& barrier = translation_info.memoryTranslationInfos.emplace_back();
-	//barrier.srcStageMask = vk::PipelineStageFlagBits2::eComputeShader;
-	//barrier.srcAccessMask = vk::AccessFlagBits2::eShaderWrite;
-	//barrier.dstStageMask = vk::PipelineStageFlagBits2::eComputeShader;
-	//barrier.dstAccessMask = vk::AccessFlagBits2::eShaderRead;
+	auto& barrier = translation_info.memoryTranslationInfos.emplace_back();
+	barrier.srcStageMask = vk::PipelineStageFlagBits2::eComputeShader;
+	barrier.srcAccessMask = vk::AccessFlagBits2::eShaderWrite;
+	barrier.dstStageMask = vk::PipelineStageFlagBits2::eComputeShader;
+	barrier.dstAccessMask = vk::AccessFlagBits2::eShaderRead;
 
 	processMemoryBarriers(command_buffer, translation_info);
 }
@@ -1041,6 +1020,33 @@ void CVkRenderContext::processResourceBarriers(EQueueTypeFlagBits queue, const s
 			texture_barrier.subresourceRange.layerCount = 1;
 			texture_barrier.subresourceRange.baseMipLevel = 0u;
 			texture_barrier.subresourceRange.levelCount = 1;
+		}
+		else if (resource_barrier.resource.type & ERenderResourceTypeFlagBits::eStorageTarget)
+		{
+			auto& texture = textures.at(resource_barrier.resource.handle);
+
+			vk::ImageLayout new_image_layout{ vk::ImageLayout::eUndefined };
+			if (resource_barrier.type == ERenderResourceDependencyBarrierType::eWriteAfterNothing)
+				new_image_layout = get_render_target_intermediate_layout(*texture);
+			else if (resource_barrier.type == ERenderResourceDependencyBarrierType::eWriteAfterWrite)
+				new_image_layout = texture->layout;
+			else
+				new_image_layout = get_render_target_intermediate_layout(*texture);
+
+			auto& texture_barrier = translation_info.imageTranslationInfos.emplace_back();
+			texture_barrier.srcStageMask = get_translation_stage_flags(texture->layout);
+			texture_barrier.srcAccessMask = get_translation_access_flags(texture->layout);
+			texture_barrier.oldLayout = texture->layout;
+			texture_barrier.dstStageMask = get_translation_stage_flags(new_image_layout);
+			texture_barrier.dstAccessMask = get_translation_access_flags(new_image_layout);
+			texture->layout = texture_barrier.newLayout = new_image_layout;
+			texture_barrier.handle = texture->image.handle;
+
+			texture_barrier.subresourceRange.aspectMask = get_texture_aspect_flags(*texture);
+			texture_barrier.subresourceRange.baseArrayLayer = 0u;
+			texture_barrier.subresourceRange.layerCount = texture->totalLayers;
+			texture_barrier.subresourceRange.baseMipLevel = 0u;
+			texture_barrier.subresourceRange.levelCount = texture->initialData.base.mipLevels;
 		}
 		// For other images
 		else if (resource_barrier.resource.type & ERenderResourceTypeFlagBits::eAllImage)
@@ -1357,19 +1363,19 @@ void CVkRenderContext::draw(EQueueTypeFlagBits queue_type, const FIndirectGeomet
 	current.drawIndexedIndirect(indirect_command_buffer->handle, draw_info.offset, draw_info.count, draw_info.stride);
 }
 
-void CVkRenderContext::dispatch(EQueueTypeFlagBits queue_type, const FDispatch2Info& dispatch_info)
+void CVkRenderContext::dispatch(EQueueTypeFlagBits queue_type, const FDispatch2Info& dispatch_info, u64 subgroup_index)
 {
-	auto& shader = m_pResources->get<FVkShader>(dispatch_info.shaderHandle);
-	auto& reflection = m_pResources->get<FVkShaderReflectionData>(shader->reflection);
-
 	vk::DispatchIndirectCommand command{};
 	command.x = dispatch_info.globalSizes.x;
 	command.y = dispatch_info.globalSizes.y;
 	command.z = dispatch_info.globalSizes.z;
 
-	if (dispatch_info.divideByLocals && !reflection->localSizes.empty())
+	if (dispatch_info.divideByLocals)
 	{
-		auto& localSizes = reflection->localSizes.front();
+		auto& shader = m_pResources->get<FVkShader>(dispatch_info.shaderHandle);
+		auto& reflection = m_pResources->get<FVkShaderReflectionData>(shader->reflection);
+
+		auto& localSizes = reflection->localSizes[subgroup_index];
 		command.x = stl::max(utl::cast<u32>(stl::ceil(utl::cast<f32>(command.x) / utl::cast<f32>(localSizes[0]))), 1u);
 		command.y = stl::max(utl::cast<u32>(stl::ceil(utl::cast<f32>(command.y) / utl::cast<f32>(localSizes[1]))), 1u);
 		command.z = stl::max(utl::cast<u32>(stl::ceil(utl::cast<f32>(command.z) / utl::cast<f32>(localSizes[2]))), 1u);

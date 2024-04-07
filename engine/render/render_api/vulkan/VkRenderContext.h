@@ -51,7 +51,7 @@ namespace engine
 			
 
 				void pushG2CBarriers(EQueueTypeFlagBits queue_type, const stl::vector<u64>& texture_ids) override;
-				void pushC2CBarrier(EQueueTypeFlagBits queue_type, const stl::vector<u64>& texture_ids) override;
+				void pushC2CBarrier(EQueueTypeFlagBits queue_type) override;
 				void pushC2GBarrier(EQueueTypeFlagBits queue_type, const stl::vector<u64>& texture_ids) override;
 
 				void processResourceBarriers(EQueueTypeFlagBits queue, const stl::vector<FResourceBarrierInfo>& barriers) override;
@@ -68,7 +68,7 @@ namespace engine
 				void draw(EQueueTypeFlagBits queue_type, const FGeometryDrawInfo& draw_info) override;
 				void draw(EQueueTypeFlagBits queue_type, const FIndirectGeometryDrawInfo& draw_info) override;
 
-				void dispatch(EQueueTypeFlagBits queue_type, const FDispatch2Info& dispatch_group) override;
+				void dispatch(EQueueTypeFlagBits queue_type, const FDispatch2Info& dispatch_group, u64 subgroup_index) override;
 				void dispatch(EQueueTypeFlagBits queue_type, const FDispatchIndirectInfo& dispatch_info) override;
 
 				FDeviceLimitations getDeviceLimitations() override;
@@ -136,7 +136,7 @@ namespace engine
 
 				stl::queue<FAPIObjectDestroyInfo> m_destroyResource{};
 
-				u64 m_indirectDispatchBuffer{ ~0ull };
+				u64 m_indirectDispatchBuffer{ INVALID_HANDLE };
 				u64 m_dispatchBufferOffset{ 0ull };
 
 				// NOTE: global descriptor uses set 0 and binding 0 and 1 (0 is for global uniform, 1 is for texture array)

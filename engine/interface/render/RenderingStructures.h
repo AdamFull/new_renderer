@@ -36,7 +36,7 @@ namespace engine
 		struct FRenderTargetSizeInfo
 		{
 			ERenderingSizeType type{ ERenderingSizeType::eManual };
-			u64 target{ ~0ull };
+			u64 target{ INVALID_HANDLE };
 
 			u32 sizeX{ 1u };
 			u32 sizeY{ 1u };

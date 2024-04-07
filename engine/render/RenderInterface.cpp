@@ -167,6 +167,7 @@ void CRenderInterface::render(f32 dt)
 	global_uniform.invViewportDimension = 1.f / m_pRenderPacket->camera.dimensions;
 	global_uniform.nearPlane = m_pRenderPacket->camera.nearp;
 	global_uniform.farPlane = m_pRenderPacket->camera.farp;
+	global_uniform.dt = dt;
 	global_uniform.directionalLightCount = utl::cast<u32>(world_stats.directionalLightCount);
 	global_uniform.pointLightCount = utl::cast<u32>(world_stats.pointLightCount);
 	global_uniform.spotLightCount = utl::cast<u32>(world_stats.spotLightCount);
@@ -227,7 +228,7 @@ u64 CRenderInterface::loadTexture(const stl::string& path, FTextureCreateInfo& c
 	auto mime = utl::cast<EMimeType>(ext_hash);
 
 	u64 texture_id = m_pRenderContext->getTextureId(name);
-	if (texture_id != ~0ull)
+	if (texture_id != INVALID_HANDLE)
 		return texture_id;
 
 	stl::vector<uint8_t> data{};
@@ -235,7 +236,7 @@ u64 CRenderInterface::loadTexture(const stl::string& path, FTextureCreateInfo& c
 
 	m_pResourceLoader->loadTexture(data, mime, create_info, upload_info);
 
-	return ~0ull;
+	return INVALID_HANDLE;
 }
 
 u64 CRenderInterface::createShader(const stl::string& name, const FGraphicsShaderCreateInfo& create_info)

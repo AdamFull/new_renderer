@@ -18,9 +18,9 @@ using namespace engine::render;
 struct FResourceAccessInfo
 {
 	ERenderResourceDependencyBarrierType type{};
-	u64 resource{ ~0ull };
-	u64 srcPassIndex{ ~0ull };
-	u64 dstPassIndex{ ~0ull };
+	u64 resource{ INVALID_HANDLE };
+	u64 srcPassIndex{ INVALID_HANDLE };
+	u64 dstPassIndex{ INVALID_HANDLE };
 };
 
 void filter_pass_queue(stl::vector<u64>& pass_list)
@@ -332,7 +332,7 @@ i64 CRenderGraph::addViewport(const std::string& name, const FViewportCreateInfo
 
 void CRenderGraph::setDefaultViewport(const std::string& name)
 {
-	if (m_defaultViewport != ~0ull)
+	if (m_defaultViewport != INVALID_HANDLE)
 		log_warning("Default viewport was already set. Setting new one. New default viewport is: {}", name);
 
 	if (auto found = m_nameToViewport.find(name); found != m_nameToViewport.end())
@@ -401,7 +401,7 @@ u64 CRenderGraph::addStaticResource(const stl::string& name, const stl::string& 
 	FTextureUploadInfo upload_info{};
 	new_render_resource.handle = m_pRenderInterface->loadTexture(path, create_info, upload_info);
 
-	if (new_render_resource.handle == ~0ull)
+	if (new_render_resource.handle == INVALID_HANDLE)
 		new_render_resource.handle = render_context->createTexture(name, create_info, stl::move(upload_info));
 
 	return new_render_resource.handle;
@@ -448,7 +448,7 @@ u64 CRenderGraph::addRenderResource(const stl::string& name, const FBufferCreate
 
 void CRenderGraph::setBackbufferResourceName(const stl::string& name)
 {
-	if (m_backBufferResource != ~0ull)
+	if (m_backBufferResource != INVALID_HANDLE)
 	{
 		log_warning("Backbuffer name is already set. Adding new name association: {}.", name);
 		m_nameToResource[name] = m_backBufferResource;
@@ -486,7 +486,7 @@ u64 CRenderGraph::getRenderRersourceId(const stl::string& name) const
 	if (found != m_nameToResource.end())
 		return found->second;
 
-	return ~0ull;
+	return INVALID_HANDLE;
 }
 
 u64 CRenderGraph::addRenderPass(const stl::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci)
@@ -546,6 +546,17 @@ u64 CRenderGraph::addRenderPass(const stl::string& name, const FRenderConfigComp
 	else if (compute_pass_ci.type == EComputeType::ePostProcess)
 		new_pass = stl::make_unique<CPostProcessPass>(m_pRenderInterface);
 
+	for (const auto& group_info : compute_pass_ci.groupInfos)
+	{
+		auto& new_group_info = pass_ci.groupInfos.emplace_back();
+		new_group_info.type = group_info.type;
+		new_group_info.divideByLocals = group_info.divideByLocals;
+		new_group_info.target = getRenderRersourceId(group_info.target);
+		new_group_info.width = group_info.width;
+		new_group_info.height = group_info.height;
+		new_group_info.depth = group_info.depth;
+	}
+
 	new_pass->init(pass_ci);
 	m_vRenderPasses.emplace_back(stl::move(new_pass));
 	m_nameToPass[name] = pass_index;
@@ -569,7 +580,7 @@ struct counter_pair : stl::pair <_Ty, _KTy>
 
 void CRenderGraph::build()
 {
-	if (m_backBufferResource == ~0ull)
+	if (m_backBufferResource == INVALID_HANDLE)
 	{
 		log_error("Failed to build render graph. Reason: back buffer resource is not set.");
 		return;
@@ -667,13 +678,13 @@ void CRenderGraph::build()
 			auto& new_barrier = pass_barriers.emplace_back();
 			auto& render_resource = m_vRenderResources.at(access_info.resource);
 
-			if (access_info.srcPassIndex != ~0ull)
+			if (access_info.srcPassIndex != INVALID_HANDLE)
 			{
 				auto& src_pass = m_vRenderPasses.at(access_info.srcPassIndex);
 				new_barrier.srcPassType = src_pass->type();
 			}
 			
-			if (access_info.dstPassIndex != ~0ull)
+			if (access_info.dstPassIndex != INVALID_HANDLE)
 			{
 				auto& dst_pass = m_vRenderPasses.at(access_info.dstPassIndex);
 				new_barrier.dstPassType = dst_pass->type();
@@ -805,18 +816,18 @@ void CRenderGraph::applyRenderPassResources(u64 pass_index, const FRenderConfigP
 	pass_ci->oneTime = raw_pass_ci->oneTime;
 
 	// Detecting size policy for pass
-	if (!raw_pass_ci->sizeTarget.empty())
-	{
-		pass_ci->sizeTarget = getRenderRersourceId(raw_pass_ci->sizeTarget);
-		auto& render_resource = getRenderResource(pass_ci->sizeTarget);
-
-		if (render_resource.type & ERenderResourceTypeFlagBits::eAllImage)
-			pass_ci->sizePolicy = ERenderingSizeType::eFromRenderTarget;
-		else if (render_resource.type & ERenderResourceTypeFlagBits::eBuffer)
-			pass_ci->sizePolicy = ERenderingSizeType::eFromBuffer;
-	}
-	else
-		pass_ci->sizePolicy = ERenderingSizeType::eManual;
+	//if (!raw_pass_ci->sizeTarget.empty())
+	//{
+	//	pass_ci->sizeTarget = getRenderRersourceId(raw_pass_ci->sizeTarget);
+	//	auto& render_resource = getRenderResource(pass_ci->sizeTarget);
+	//
+	//	if (render_resource.type & ERenderResourceTypeFlagBits::eAllImage)
+	//		pass_ci->sizePolicy = ERenderingSizeType::eFromRenderTarget;
+	//	else if (render_resource.type & ERenderResourceTypeFlagBits::eBuffer)
+	//		pass_ci->sizePolicy = ERenderingSizeType::eFromBuffer;
+	//}
+	//else
+	//	pass_ci->sizePolicy = ERenderingSizeType::eManual;
 
 	// Binded resources for using as input
 	for (const auto& [access_flag, bindings] : raw_pass_ci->resourceBindings)
@@ -1000,7 +1011,7 @@ void CRenderGraph::reorderPasses(stl::vector<u64>& flattened_passes)
 			// This might not make sense on desktop however,
 			// so we can conditionally enable this path depending on our GPU.
 			if (m_vPassMergeDependencies[unscheduled_passes[i]].count(flattened_passes.back()))
-				overlap_factor = ~0ull;
+				overlap_factor = INVALID_HANDLE;
 			else
 			{
 				for (auto itr = flattened_passes.rbegin(); itr != flattened_passes.rend(); ++itr)

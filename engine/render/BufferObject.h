@@ -17,8 +17,8 @@ namespace engine
 
 			void map() override;
 			void unmap() override;
-			void write(const void* data, u64 size = ~0ull, u64 offset = 0ull) override;
-			void flush(u64 size = ~0ull, u64 offset = 0ull) override;
+			void write(const void* data, u64 size = INVALID_HANDLE, u64 offset = 0ull) override;
+			void flush(u64 size = INVALID_HANDLE, u64 offset = 0ull) override;
 			void clear() override;
 
 			u64 size() override;
@@ -31,7 +31,7 @@ namespace engine
 			void* data() override;
 
 		private:
-			u64 m_bufferId{ ~0ull };
+			u64 m_bufferId{ INVALID_HANDLE };
 			u64 m_elemSize{ 0ull };
 			u64 m_elemCount{ 0ull };
 			uint64_t m_virtualAddress{ 0ull };

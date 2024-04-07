@@ -3,7 +3,7 @@
 
 	code: 
 	"""
-		layout(std140, set = 2, binding = 0) uniform FPostProcessEffects
+		layout(std140, set = 1, binding = 10) uniform FPostProcessEffects
 		{
 			// tonemap
 			int enable_tonemap;
@@ -44,7 +44,6 @@
 			// film grain
 			int enable_film_grain;
 			float fg_amount;
-		    float fg_time;
 			// film grain
 
 			// vignette
@@ -58,6 +57,6 @@
 			int blur_range;
 			// ao blur
 
-		} ubo;
+		} postprocess;
 	""";
 }
