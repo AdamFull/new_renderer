@@ -183,6 +183,8 @@ void CVertexHandler::create(const FVertexHandlerCreateInfo& create_info)
 
 	m_attributeHash = utl::utils::fnv1a_64_hash(m_definitions.c_str());
 
+	log_info("[Vertex Handler] Created vertex handler: {}:{}.", create_info.name, m_definitions);
+
 	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eMeshletBuffer))->create<FMeshlet>("MeshletBuffer" + m_definitions, EBufferTypeFlagBits::eStorage);
 	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eVertexRemapBuffer))->create<u32>("MeshletVerticesBuffer" + m_definitions, EBufferTypeFlagBits::eStorage);
 	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eBoundsBuffer))->create<FGeometryDrawBounds>("MeshletBoundsBuffer" + m_definitions, EBufferTypeFlagBits::eStorage);

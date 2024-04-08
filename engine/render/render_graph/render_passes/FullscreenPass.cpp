@@ -40,6 +40,8 @@ void CFullscreenPass::_render(const FRenderFrameInfo& frame_info)
 	auto& render_context = m_pRenderInterface->getRenderContext();
 	render_context->setScissorRect(0, 0, frame_info.renderRect.size.x, frame_info.renderRect.size.y);
 
+	bindShaderResources(m_pShader, frame_info.deltaTime);
+
 	m_pShader->flushDescriptors();
 	m_pShader->flushConstants(m_queue);
 	m_pShader->bind(m_queue);

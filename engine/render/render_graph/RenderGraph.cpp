@@ -333,7 +333,7 @@ i64 CRenderGraph::addViewport(const std::string& name, const FViewportCreateInfo
 void CRenderGraph::setDefaultViewport(const std::string& name)
 {
 	if (m_defaultViewport != INVALID_HANDLE)
-		log_warning("Default viewport was already set. Setting new one. New default viewport is: {}", name);
+		log_warning("[Render Graph] Default viewport was already set. Setting new one. New default viewport is: {}", name);
 
 	if (auto found = m_nameToViewport.find(name); found != m_nameToViewport.end())
 	{
@@ -341,7 +341,7 @@ void CRenderGraph::setDefaultViewport(const std::string& name)
 		return;
 	}
 
-	log_error("No viewport found with name: {}.", name);
+	log_error("[Render Graph] No viewport found with name: {}.", name);
 }
 
 const FViewportView& CRenderGraph::getViewportView(const std::string& name) const
@@ -390,6 +390,8 @@ u64 CRenderGraph::getDefaultViewportIndex() const
 
 u64 CRenderGraph::addStaticResource(const stl::string& name, const stl::string& path)
 {
+	log_debug("[Render Graph] Loading static resource: {}, path: {}.", name, path);
+
 	auto& render_context = m_pRenderInterface->getRenderContext();
 
 	m_nameToResource[name] = m_vRenderResources.size();
@@ -409,6 +411,10 @@ u64 CRenderGraph::addStaticResource(const stl::string& name, const stl::string& 
 
 u64 CRenderGraph::addRenderResource(const stl::string& name, const FTextureCreateInfo& texture_ci)
 {
+	log_debug("[Render Graph] Allocating render target: {}, size({}x{}x{}) * {}, mips: {}, layers: {}, format: {}.", name, 
+		texture_ci.size.width, texture_ci.size.height, texture_ci.size.depth, texture_ci.size.scale,
+		texture_ci.mipLevels, texture_ci.arrayLayers, texture_ci.format);
+
 	auto& render_context = m_pRenderInterface->getRenderContext();
 	auto render_extent = render_context->getRenderResolution();
 	auto resource_index = m_vRenderResources.size();
@@ -435,6 +441,9 @@ u64 CRenderGraph::addRenderResource(const stl::string& name, const FTextureCreat
 
 u64 CRenderGraph::addRenderResource(const stl::string& name, const FBufferCreateInfo& buffer_ci)
 {
+	log_debug("[Render Graph] Allocating buffer: {}, size: {}b, flags: {}.", name,
+		buffer_ci.size * buffer_ci.count, utl::enum_cast(buffer_ci.flags));
+
 	auto& render_context = m_pRenderInterface->getRenderContext();
 
 	m_nameToResource[name] = m_vRenderResources.size();
@@ -450,7 +459,7 @@ void CRenderGraph::setBackbufferResourceName(const stl::string& name)
 {
 	if (m_backBufferResource != INVALID_HANDLE)
 	{
-		log_warning("Backbuffer name is already set. Adding new name association: {}.", name);
+		log_warning("[Render Graph] Backbuffer name is already set. Adding new name association: {}.", name);
 		m_nameToResource[name] = m_backBufferResource;
 		return;
 	}
@@ -491,6 +500,8 @@ u64 CRenderGraph::getRenderRersourceId(const stl::string& name) const
 
 u64 CRenderGraph::addRenderPass(const stl::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci)
 {
+	log_info("[Render Graph] Add render pass: {}", name);
+
 	u64 pass_index = m_vRenderPasses.size();
 	m_vPassExecutionQueue.emplace_back(pass_index);
 
@@ -528,6 +539,8 @@ u64 CRenderGraph::addRenderPass(const stl::string& name, const FRenderConfigRend
 
 u64 CRenderGraph::addRenderPass(const stl::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci)
 {
+	log_info("[Render Graph] Add compute pass: {}", name);
+
 	u64 pass_index = m_vRenderPasses.size();
 	m_vPassExecutionQueue.emplace_back(pass_index);
 
@@ -582,14 +595,14 @@ void CRenderGraph::build()
 {
 	if (m_backBufferResource == INVALID_HANDLE)
 	{
-		log_error("Failed to build render graph. Reason: back buffer resource is not set.");
+		log_error("[Render Graph] Failed to build render graph. Reason: back buffer resource is not set.");
 		return;
 	}
 
 	auto& backbuffer_resource = m_vRenderResources.at(m_backBufferResource);
 	if (!backbuffer_resource.usages.count(ERenderResourceAccessFlagBits::eWrite))
 	{
-		log_error("Failed to build render graph. Reason: No one writes to back buffer resource.");
+		log_error("[Render Graph] Failed to build render graph. Reason: No one writes to back buffer resource.");
 		return;
 	}
 
@@ -792,6 +805,11 @@ void CRenderGraph::execute(f32 dt)
 		if (!pass->canExecute())
 			continue;
 
+		if (pass->m_debugName == "fullscreen:testing:screenspace")
+		{
+			int iiiiiiiiiii{};
+		}
+
 		render_context->processResourceBarriers(pass->m_queue, resource_barriers);
 		pass->execute(dt);
 	}
@@ -925,7 +943,7 @@ void CRenderGraph::traverseDependencies(u64 current_pass_index, u64 stack_count)
 			auto& writer_passes = render_resource.usages[ERenderResourceAccessFlagBits::eWrite];
 
 			if (stack_count > m_vRenderPasses.size())
-				log_error("Cycle detected.");
+				log_error("[Render Graph] Cycle detected.");
 
 			for (u64 write_pass_index : writer_passes)
 			{

@@ -216,6 +216,15 @@ namespace engine
 #endif
 		};
 
+		struct FBeginComputeInfo
+		{
+			EQueueTypeFlagBits queue{};
+
+#ifndef BUILD_WITHOUT_DEBUGGIND
+			stl::string name{};
+#endif
+		};
+
 		struct FDispatch2Group
 		{
 			u32 x{ 1u }, y{ 1u }, z{ 1u };

@@ -366,7 +366,9 @@ namespace engine
 			{
 				auto usage_flags = get_texture_usage_flags(texture);
 
-				if (usage_flags & vk::ImageUsageFlagBits::eColorAttachment)
+				if (usage_flags & vk::ImageUsageFlagBits::eStorage)
+					return vk::ImageLayout::eGeneral; // vk::ImageLayout::eShaderReadOnlyOptimal
+				else if (usage_flags & vk::ImageUsageFlagBits::eColorAttachment)
 				{
 					if (usage_flags & vk::ImageUsageFlagBits::eTransferSrc)
 						return vk::ImageLayout::eTransferSrcOptimal;
@@ -387,8 +389,6 @@ namespace engine
 					else
 						return vk::ImageLayout::eDepthStencilAttachmentOptimal;
 				}
-				else if (usage_flags & vk::ImageUsageFlagBits::eStorage)
-					return vk::ImageLayout::eShaderReadOnlyOptimal;
 				else
 				{
 					if (usage_flags & vk::ImageUsageFlagBits::eSampled && usage_flags & vk::ImageUsageFlagBits::eTransferDst)

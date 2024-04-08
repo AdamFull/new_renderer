@@ -62,6 +62,9 @@ namespace engine
 				void beginRendering(const FBeginRendering2Info& rendering_info) override;
 				void endRendering(EQueueTypeFlagBits queue) override;
 
+				void beginCompute(const FBeginComputeInfo& compute_info) override;
+				void endCompute(EQueueTypeFlagBits queue) override;
+
 				void setViewport(f32 width, f32 height, bool flip_viewport = false) override;
 				void setScissorRect(i32 offset_x, i32 offset_y, u32 width, u32 height) override;
 

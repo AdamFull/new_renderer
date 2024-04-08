@@ -286,10 +286,19 @@ void IComputePass::execute(f32 dt)
 		dispatch_info.divideByLocals = group_info.divideByLocals;
 	}
 
+	FBeginComputeInfo compute_begin_info{};
+	compute_begin_info.queue = m_queue;
+
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	compute_begin_info.name = m_debugName;
+#endif
+
 	render_context->beginTimestampZone(m_queue);
+	render_context->beginCompute(compute_begin_info);
 
 	_execute(frame_info);
 
+	render_context->endCompute(m_queue);
 	render_context->endTimestampZone(m_queue);
 }
 

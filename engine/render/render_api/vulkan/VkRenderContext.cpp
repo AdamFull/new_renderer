@@ -995,86 +995,56 @@ void CVkRenderContext::processResourceBarriers(EQueueTypeFlagBits queue, const s
 		ERenderResourceAccessFlagBits dst_resource_access{};
 		unpackDependencyBarrier(resource_barrier.type, src_resource_access, dst_resource_access);
 
-		// Only for backbuffer
-		if (resource_barrier.resource.type & ERenderResourceTypeFlagBits::eBackbuffer)
+		if (resource_barrier.resource.type & ERenderResourceTypeFlagBits::eAllImage)
 		{
-			vk::ImageLayout new_image_layout{ vk::ImageLayout::eUndefined };
-			if (resource_barrier.type == ERenderResourceDependencyBarrierType::eWriteAfterNothing)
-				new_image_layout = vk::ImageLayout::eColorAttachmentOptimal;
-			else if (resource_barrier.type == ERenderResourceDependencyBarrierType::eWriteAfterWrite)
-				new_image_layout = m_backbufferLayout;
-			else
-				new_image_layout = vk::ImageLayout::ePresentSrcKHR;
-
 			auto& texture_barrier = translation_info.imageTranslationInfos.emplace_back();
-			texture_barrier.srcStageMask = get_translation_stage_flags(m_backbufferLayout);
-			texture_barrier.srcAccessMask = get_translation_access_flags(m_backbufferLayout);
-			texture_barrier.oldLayout = m_backbufferLayout;
+			texture_barrier.subresourceRange.baseArrayLayer = 0u;
+			texture_barrier.subresourceRange.baseMipLevel = 0u;
+
+			vk::ImageLayout old_image_layout{ vk::ImageLayout::eUndefined }, new_image_layout{ vk::ImageLayout::eUndefined };
+			vk::ImageAspectFlags aspect_flags{};
+			if (resource_barrier.resource.type & ERenderResourceTypeFlagBits::eBackbuffer)
+			{
+				if (resource_barrier.type == ERenderResourceDependencyBarrierType::eWriteAfterNothing)
+					new_image_layout = vk::ImageLayout::eColorAttachmentOptimal;
+				else if (resource_barrier.type == ERenderResourceDependencyBarrierType::eWriteAfterWrite)
+					new_image_layout = m_backbufferLayout;
+				else
+					new_image_layout = vk::ImageLayout::ePresentSrcKHR;
+
+				old_image_layout = m_backbufferLayout;
+				m_backbufferLayout = new_image_layout;
+				texture_barrier.handle = m_pDevice->m_swapchain.images[m_pDevice->m_swapchain.currentFrame];
+				texture_barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+				texture_barrier.subresourceRange.layerCount = 1u;
+				texture_barrier.subresourceRange.levelCount = 1u;
+			}
+			else
+			{
+				auto& texture = textures.at(resource_barrier.resource.handle);
+
+				if (resource_barrier.type == ERenderResourceDependencyBarrierType::eWriteAfterNothing)
+					new_image_layout = get_render_target_intermediate_layout(*texture);
+				else if (resource_barrier.type == ERenderResourceDependencyBarrierType::eWriteAfterWrite)
+					new_image_layout = texture->layout;
+				else
+					new_image_layout = get_render_target_final_layout(*texture);
+
+				old_image_layout = texture->layout;
+				texture->layout = new_image_layout;
+				texture_barrier.handle = texture->image.handle;
+				texture_barrier.subresourceRange.aspectMask = get_texture_aspect_flags(*texture);
+
+				texture_barrier.subresourceRange.layerCount = texture->totalLayers;
+				texture_barrier.subresourceRange.levelCount = texture->initialData.base.mipLevels;
+			}
+			
+			texture_barrier.srcStageMask = get_translation_stage_flags(old_image_layout);
+			texture_barrier.srcAccessMask = get_translation_access_flags(old_image_layout);
+			texture_barrier.oldLayout = old_image_layout;
 			texture_barrier.dstStageMask = get_translation_stage_flags(new_image_layout);
 			texture_barrier.dstAccessMask = get_translation_access_flags(new_image_layout);
-			m_backbufferLayout = texture_barrier.newLayout = new_image_layout;
-			texture_barrier.handle = m_pDevice->m_swapchain.images[m_pDevice->m_swapchain.currentFrame];
-
-			texture_barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-			texture_barrier.subresourceRange.baseArrayLayer = 0u;
-			texture_barrier.subresourceRange.layerCount = 1;
-			texture_barrier.subresourceRange.baseMipLevel = 0u;
-			texture_barrier.subresourceRange.levelCount = 1;
-		}
-		else if (resource_barrier.resource.type & ERenderResourceTypeFlagBits::eStorageTarget)
-		{
-			auto& texture = textures.at(resource_barrier.resource.handle);
-
-			vk::ImageLayout new_image_layout{ vk::ImageLayout::eUndefined };
-			if (resource_barrier.type == ERenderResourceDependencyBarrierType::eWriteAfterNothing)
-				new_image_layout = get_render_target_intermediate_layout(*texture);
-			else if (resource_barrier.type == ERenderResourceDependencyBarrierType::eWriteAfterWrite)
-				new_image_layout = texture->layout;
-			else
-				new_image_layout = get_render_target_intermediate_layout(*texture);
-
-			auto& texture_barrier = translation_info.imageTranslationInfos.emplace_back();
-			texture_barrier.srcStageMask = get_translation_stage_flags(texture->layout);
-			texture_barrier.srcAccessMask = get_translation_access_flags(texture->layout);
-			texture_barrier.oldLayout = texture->layout;
-			texture_barrier.dstStageMask = get_translation_stage_flags(new_image_layout);
-			texture_barrier.dstAccessMask = get_translation_access_flags(new_image_layout);
-			texture->layout = texture_barrier.newLayout = new_image_layout;
-			texture_barrier.handle = texture->image.handle;
-
-			texture_barrier.subresourceRange.aspectMask = get_texture_aspect_flags(*texture);
-			texture_barrier.subresourceRange.baseArrayLayer = 0u;
-			texture_barrier.subresourceRange.layerCount = texture->totalLayers;
-			texture_barrier.subresourceRange.baseMipLevel = 0u;
-			texture_barrier.subresourceRange.levelCount = texture->initialData.base.mipLevels;
-		}
-		// For other images
-		else if (resource_barrier.resource.type & ERenderResourceTypeFlagBits::eAllImage)
-		{
-			auto& texture = textures.at(resource_barrier.resource.handle); 
-
-			vk::ImageLayout new_image_layout{ vk::ImageLayout::eUndefined };
-			if (resource_barrier.type == ERenderResourceDependencyBarrierType::eWriteAfterNothing)
-				new_image_layout = get_render_target_intermediate_layout(*texture);
-			else if (resource_barrier.type == ERenderResourceDependencyBarrierType::eWriteAfterWrite)
-				new_image_layout = texture->layout;
-			else
-				new_image_layout = get_render_target_final_layout(*texture);
-
-			auto& texture_barrier = translation_info.imageTranslationInfos.emplace_back();
-			texture_barrier.srcStageMask = get_translation_stage_flags(texture->layout);
-			texture_barrier.srcAccessMask = get_translation_access_flags(texture->layout);
-			texture_barrier.oldLayout = texture->layout;
-			texture_barrier.dstStageMask = get_translation_stage_flags(new_image_layout);
-			texture_barrier.dstAccessMask = get_translation_access_flags(new_image_layout);
-			texture->layout = texture_barrier.newLayout = new_image_layout;
-			texture_barrier.handle = texture->image.handle;
-
-			texture_barrier.subresourceRange.aspectMask = get_texture_aspect_flags(*texture);
-			texture_barrier.subresourceRange.baseArrayLayer = 0u;
-			texture_barrier.subresourceRange.layerCount = texture->totalLayers;
-			texture_barrier.subresourceRange.baseMipLevel = 0u;
-			texture_barrier.subresourceRange.levelCount = texture->initialData.base.mipLevels;
+			texture_barrier.newLayout = new_image_layout;
 		}
 		// For buffers
 		else
@@ -1197,7 +1167,7 @@ void CVkRenderContext::beginRendering(const FBeginRendering2Info& rendering_info
 	auto& current_buffer = command_buffer.get();
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-	m_pDevice->debugBeginLabel(current_buffer, rendering_info.name, 0xffffffff);
+	m_pDevice->debugBeginLabel(current_buffer, rendering_info.name, 0x5555ffff);
 #endif
 
 	current_buffer.beginRenderingKHR(begin_rendering_info);
@@ -1209,6 +1179,26 @@ void CVkRenderContext::endRendering(EQueueTypeFlagBits queue)
 
 	auto& current_buffer = command_buffer.get();
 	current_buffer.endRenderingKHR();
+
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	m_pDevice->endLabel(current_buffer);
+#endif
+}
+
+void CVkRenderContext::beginCompute(const FBeginComputeInfo& compute_info)
+{
+	auto& command_buffer = getLastCommandBuffer(compute_info.queue);
+	auto& current_buffer = command_buffer.get();
+
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	m_pDevice->debugBeginLabel(current_buffer, compute_info.name, 0x55ff55ff);
+#endif
+}
+
+void CVkRenderContext::endCompute(EQueueTypeFlagBits queue)
+{
+	auto& command_buffer = getLastCommandBuffer(queue);
+	auto& current_buffer = command_buffer.get();
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	m_pDevice->endLabel(current_buffer);

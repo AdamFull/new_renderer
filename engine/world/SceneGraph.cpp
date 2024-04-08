@@ -27,7 +27,7 @@ entt::entity CSceneGraph::createNode(const std::string& name)
 	m_pRegistry->emplace<FBaseComponent>(entity, FBaseComponent{name});
 	m_pRegistry->emplace<FTransformComponent>(entity, FTransformComponent{});
 	m_pRegistry->emplace<FHierarchyComponent>(entity, FHierarchyComponent{});
-	log_debug("Entity with id {} was created", static_cast<uint32_t>(entity));
+	log_debug("[Scene Graph] Entity with id {} was created", static_cast<uint32_t>(entity));
 	return entity;
 }
 
@@ -35,14 +35,14 @@ void CSceneGraph::destroyNode(entt::entity node)
 {
 	detachChild(node);
 	m_pRegistry->destroy(node);
-	log_debug("Entity with id {} was destroyed", static_cast<uint32_t>(node));
+	log_debug("[Scene Graph] Entity with id {} was destroyed", static_cast<uint32_t>(node));
 }
 
 void CSceneGraph::attachChild(entt::entity parent, entt::entity child)
 {
 	if (parent == child)
 	{
-		log_warning("Trying to add parent to parent. Parent entity {}, child entity {}.", static_cast<uint32_t>(parent), static_cast<uint32_t>(child));
+		log_warning("[Scene Graph] Trying to add parent to parent. Parent entity {}, child entity {}.", static_cast<uint32_t>(parent), static_cast<uint32_t>(child));
 		return;
 	}
 
@@ -64,7 +64,7 @@ void CSceneGraph::detachChild(entt::entity parent, entt::entity child)
 	if (cit != phierarchy.children.end())
 		phierarchy.children.erase(cit);
 	else
-		log_error("Entity with is {} is not child of {}", static_cast<uint32_t>(child), static_cast<uint32_t>(parent));
+		log_error("[Scene Graph] Entity with is {} is not child of {}", static_cast<uint32_t>(child), static_cast<uint32_t>(parent));
 
 	auto& chierarchy = m_pRegistry->get<FHierarchyComponent>(child);
 	chierarchy.parent = entt::null;

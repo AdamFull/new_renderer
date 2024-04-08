@@ -57,12 +57,17 @@
 			];
 		},
 		{
-			name: "avg_brightness";
+			name: "compute_histogram";
 			sources: [
 				{
 					type: "compute";
 					shader_name: "comp_histogram_comp";
-				},
+				}
+			];
+		},
+		{
+			name: "compute_brightness";
+			sources: [
 				{
 					type: "compute";
 					shader_name: "comp_average_brightness_comp";
@@ -106,7 +111,11 @@
 			pattern: "default_pattern";
 		},
 		{ 
-			shader_name: "avg_brightness";
+			shader_name: "compute_histogram";
+			pattern: "default_pattern";
+		},
+		{ 
+			shader_name: "compute_brightness";
 			pattern: "default_pattern";
 		},
 		{ 

@@ -160,7 +160,7 @@ void CScene::makeGenerateScene(const stl::string& path)
 
 	if (root.meshes.empty())
 	{
-		log_error("No meshes to duplicate found.");
+		log_error("[Scene] No meshes to duplicate found.");
 		return;
 	}
 
@@ -307,6 +307,8 @@ void CScene::loadNode(const easygltf::FGLTFRoot& root, const entt::entity parent
 	const auto& node = root.nodes[node_index];
 
 	auto new_node = m_pSceneGraph->createNode(node.name);
+
+	log_info("[Scene] Loadind node: {}:{}.", node.name, node_index);
 
 	m_temporary.nodeToEntity[node_index] = new_node;
 
@@ -603,7 +605,7 @@ void CScene::loadAnimations(const easygltf::FGLTFRoot& root)
 				channel.path = EPathType::eScale;
 
 			if (source.target.path == "weights") {
-				log_warning("Weights channel is not yet supported. Skipping.");
+				log_warning("[Scene] Weights channel is not yet supported. Skipping.");
 				continue;
 			}
 			channel.samplerIndex = source.sampler;
@@ -619,6 +621,8 @@ void CScene::loadAnimations(const easygltf::FGLTFRoot& root)
 
 		root_component.animations.emplace_back(animation);
 	}
+
+	log_info("[Scene] Loaded {} animations.", root_component.animations.size());
 }
 
 void CScene::loadSkins(const easygltf::FGLTFRoot& root)
@@ -658,4 +662,6 @@ void CScene::loadSkins(const easygltf::FGLTFRoot& root)
 
 		root_component.skins.emplace_back(skin);
 	}
+
+	log_info("[Scene] Loaded {} skins (skeletons).", root_component.skins.size());
 }

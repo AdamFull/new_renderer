@@ -284,20 +284,34 @@ do
     render_graph:add_render_pass("compute_materials_pass", pass_ci)
 end
 
+-- Compute histogram
 do
     local pass_ci = ComputeCreateInfo.new()
     pass_ci.type = ComputeType.default
     pass_ci.queue = QueueType.graphics
-    pass_ci.shader = "postprocess:avg_brightness"
+    pass_ci.shader = "postprocess:compute_histogram"
 
     pass_ci:add_workgroup_size_info("final_lighting_target", true)
+
+    pass_ci:bind_read_resource("sampler_color", "final_lighting_target")
+    pass_ci:bind_write_resource("Histogram", "histogram_buffer")
+
+    render_graph:add_render_pass("compute_histogram_pass", pass_ci)
+end
+
+-- Compute avg screen space brightness
+do
+    local pass_ci = ComputeCreateInfo.new()
+    pass_ci.type = ComputeType.default
+    pass_ci.queue = QueueType.graphics
+    pass_ci.shader = "postprocess:compute_brightness"
+
     pass_ci:add_workgroup_size_info(1, 1, 1, false)
 
     pass_ci:bind_write_resource("target", "avg_brightness_target")
     pass_ci:bind_write_resource("Histogram", "histogram_buffer")
-    pass_ci:bind_read_resource("samplerColor", "final_lighting_target")
 
-    render_graph:add_render_pass("compute_histogram", pass_ci)
+    render_graph:add_render_pass("compute_brightness_pass", pass_ci)
 end
 
 -- Present pass

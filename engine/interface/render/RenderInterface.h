@@ -298,6 +298,9 @@ namespace engine
 			virtual void beginRendering(const FBeginRendering2Info& rendering_info) = 0;
 			virtual void endRendering(EQueueTypeFlagBits queue) = 0;
 
+			virtual void beginCompute(const FBeginComputeInfo& compute_info) = 0;
+			virtual void endCompute(EQueueTypeFlagBits queue) = 0;
+
 			virtual void setViewport(f32 width, f32 height, bool flip_viewport) = 0;
 			virtual void setScissorRect(i32 offset_x, i32 offset_y, u32 width, u32 height) = 0;
 
