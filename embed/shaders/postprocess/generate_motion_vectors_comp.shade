@@ -1,0 +1,58 @@
+{
+	version: 460;
+
+	enable_extensions: [
+		"GL_ARB_separate_shader_objects",
+		"GL_ARB_shading_language_420pack",
+		"GL_EXT_nonuniform_qualifier"
+	];
+
+	definitions: [];
+
+	require_extensions: [
+		"GL_EXT_buffer_reference",
+		"GL_EXT_shader_explicit_arithmetic_types",
+		"GL_EXT_shader_explicit_arithmetic_types_int8"
+	];
+
+	includes: ["shader_inputs", "compute_common", "util", "postprocess_common"];
+
+	code: 
+	"""
+		layout(local_size_x = 8, local_size_y = 8) in;
+
+		layout(set = 1, binding = 0) uniform writeonly image2D write_color;
+		layout(set = 1, binding = 1) uniform sampler2D depth_texture;
+		
+		void main()
+		{
+			uvec2 image_size = imageSize(write_color);
+		
+			uvec2 px = uvec2(0, 0);
+			vec2 uv = vec2(0.0, 0.0);
+			if(swizzle_compute_workgroups_8x8_nv(gl_LocalInvocationID.xy, gl_LocalInvocationID.xy, image_size, uv, px))
+				return;
+
+			FViewport viewport = viewportBuffer.viewports[frameData.defaultViewport];
+
+			float depth = texture(depth_texture, uv).r;
+
+			vec4 clipSpaceLocation;
+			clipSpaceLocation.xy = uv * 2.0 - 1.0;
+			clipSpaceLocation.zw = vec2(depth, 1.0);
+            vec4 homogenousLocation = viewport.invViewProjection * clipSpaceLocation;
+            vec4 worldPos = homogenousLocation / homogenousLocation.w;
+
+			vec4 prevClipSpaceLocation = viewport.prevViewProjection * worldPos;
+			prevClipSpaceLocation /= prevClipSpaceLocation.w;
+
+			// Use this frame's position and last frame's to compute the pixel velocity.    
+			vec2 velocity = (clipSpaceLocation.xy - prevClipSpaceLocation.xy) / 2.f;
+
+			// Encode velocity
+			velocity = encodeVelocity(velocity);
+		
+			imageStore(write_color, ivec2(px), vec4(velocity, 0.0, 0.0));
+		}
+	""";
+}

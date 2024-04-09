@@ -53,6 +53,12 @@
 		    float v_opacity;
 			// vignette
 
+			// per object motion blur
+			int enable_motion_blur;
+			float mb_scale;
+			int mb_max_samples;
+			// per object motion blur
+
 			// ao blur
 			int blur_range;
 			// ao blur

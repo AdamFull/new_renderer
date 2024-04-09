@@ -15,7 +15,7 @@
 		"GL_EXT_shader_explicit_arithmetic_types_int8"
 	];
 
-	includes: ["shader_inputs"];
+	includes: ["shader_inputs", "util"];
 
 	code: 
 	"""
@@ -27,13 +27,13 @@
 		layout(location = 2) in flat uint objID;
 		layout(location = 3) in flat uint vboID;
 		layout(location = 4) in vec2 texCoord;
-		layout(location = 5) smooth in vec4 currentPos;
-		layout(location = 6) smooth in vec4 oldPos;
+		//layout(location = 5) smooth in vec4 currentPos;
+		//layout(location = 6) smooth in vec4 oldPos;
 		
 		layout(location = 0) out vec4 vbid;
 		layout(location = 1) out vec4 moid;
 		layout(location = 2) out vec4 svid;
-		layout(location = 3) out vec2 mv;
+		//layout(location = 3) out vec2 mv;
 
 		// Engel's packing function (without alpha bit)
 		uint packVBID(bool opaque, uint drawID, uint primitiveID)
@@ -63,7 +63,7 @@
 			svid = unpackUnorm4x8(vboID);
 
 			// Caclulate motion vectors
-			mv = (currentPos.xy) - (oldPos.xy  * 0.5 + 0.5);
+			//mv = encodeVelocity(currentPos.xy - oldPos.xy);
 		}
 	""";
 }

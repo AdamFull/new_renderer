@@ -7,56 +7,63 @@ namespace engine
 		struct FPostProcessDOF
 		{
 			bool enable{ false };
-			float blur_scale{ 1.f };
-			float blur_strength{ 1.f };
-			int bokeh_samples{ 5 };
-			float bokeh_poly{ 8.f };
-			float focus_point{ 8.24f };
-			float near_field{ 0.3f };
-			float near_transition{ 0.125f };
-			float far_field{ 8.f };
-			float far_transition{ 3.f };
+			f32 blur_scale{ 1.f };
+			f32 blur_strength{ 1.f };
+			i32 bokeh_samples{ 5 };
+			f32 bokeh_poly{ 8.f };
+			f32 focus_point{ 8.24f };
+			f32 near_field{ 0.3f };
+			f32 near_transition{ 0.125f };
+			f32 far_field{ 8.f };
+			f32 far_transition{ 3.f };
 		};
 
 		struct FPostProcessBloom
 		{
 			bool enable{ false };
-			float threshold{ 1.f };
-			float filter_radius{ 0.005f };
-			float strength{ 0.04f };
+			f32 threshold{ 1.f };
+			f32 filter_radius{ 0.005f };
+			f32 strength{ 0.04f };
 		};
 
 		struct FPostProcessCA
 		{
 			bool enable{ false };
-			float distortion{ 2.2f };
-			int iterations{ 12 };
+			f32 distortion{ 2.2f };
+			i32 iterations{ 12 };
 		};
 
 		struct FPostProcessVignette
 		{
-			bool enable{ false };
-			float inner{ 0.15f };
-			float outer{ 1.35f };
-			float opacity{ 0.85f };
+			bool enable{ true };
+			f32 inner{ 0.15f };
+			f32 outer{ 1.35f };
+			f32 opacity{ 0.85f };
 		};
 
 		struct FPostProcessTonemap
 		{
 			bool enable{ true };
 			bool adaptive{ true };
-			float gamma{ 2.2f };
-			float exposure{ 4.5f };
-			float whitePoint{ 4.f };
-			float lumMin{ -5.f };
-			float lumMax{ 3.f };
-			float tau{ 1.1f };
+			f32 gamma{ 2.2f };
+			f32 exposure{ 4.5f };
+			f32 whitePoint{ 4.f };
+			f32 lumMin{ -5.f };
+			f32 lumMax{ 3.f };
+			f32 tau{ 1.1f };
 		};
 
 		struct FPostProcessFilmGrain
 		{
 			bool enable{ false };
-			float amount{ 0.01f };
+			f32 amount{ 0.01f };
+		};
+
+		struct FPostProcessMotionBlur
+		{
+			bool enable{ true };
+			f32 scele{ 1.f };
+			i32 max_samples{ 32 };
 		};
 
 		struct FPostProcess
@@ -73,6 +80,8 @@ namespace engine
 			FPostProcessFilmGrain filmgrain;
 			// Tonemapping
 			FPostProcessTonemap tonemap;
+			// Motion blur
+			FPostProcessMotionBlur motionblur;
 		};
 	}
 }

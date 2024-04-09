@@ -83,7 +83,7 @@ end
 do
     local target_ci = TextureCI.new()
     target_ci.format = render_context:get_api_format(Format.rg16_sfloat)
-    target_ci.type = texture_or(TexType.two_dim, TexType.samplable)
+    target_ci.type = texture_or(TexType.two_dim, TexType.samplable, TexType.storage)
     target_ci:set_size_scale(1.0)
 
     render_graph:add_render_resource("motion_vectors_target", target_ci)
@@ -244,7 +244,7 @@ do
     pass_ci:add_write_resource("visbuffer_geometry_target")
     pass_ci:add_write_resource("visbuffer_matobj_target")
     pass_ci:add_write_resource("visbuffer_skinvbo_target")
-    pass_ci:add_write_resource("motion_vectors_target")
+    --pass_ci:add_write_resource("motion_vectors_target")
     pass_ci:add_read_resource("IndexedDrawIndirectBuffer")
 
     render_graph:add_render_pass("visibility_buffer_write_pass", pass_ci)
@@ -324,6 +324,22 @@ do
     render_graph:add_render_pass("compute_brightness_pass", pass_ci)
 end
 
+-- Compute static motion vectors
+do
+    local pass_ci = ComputeCreateInfo.new()
+    pass_ci.type = ComputeType.default
+    pass_ci.queue = QueueType.graphics
+    pass_ci.shader = "postprocess:generate_motion_vectors"
+
+    pass_ci:add_workgroup_size_info("zbuffer_depth_target", true)
+
+    pass_ci:bind_write_resource("write_color", "motion_vectors_target")
+    pass_ci:bind_write_resource("depth_texture", "zbuffer_depth_target")
+
+    render_graph:add_render_pass("generate_motion_vectors_pass", pass_ci)
+    
+end
+
 -- Present pass
 do
     local pass_ci = GraphicsCreateInfo.new()
@@ -334,6 +350,7 @@ do
 
     pass_ci:bind_read_resource("input_image", "final_lighting_target")
     pass_ci:bind_read_resource("avg_luminosity", "avg_brightness_target")
+    pass_ci:bind_read_resource("motion_vectors", "motion_vectors_target")
     pass_ci:add_write_resource("present_target")
 
     render_graph:add_render_pass("finalize_image_pass", pass_ci)

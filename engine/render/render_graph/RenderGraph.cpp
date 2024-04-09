@@ -783,7 +783,9 @@ void CRenderGraph::update(f32 dt)
 		auto aspect = viewport.size.x / viewport.size.y;
 		viewport.projection = glm::perspective(render_packet->camera.fov, aspect, render_packet->camera.nearp, render_packet->camera.farp);
 		viewport.invProjection = glm::inverse(viewport.projection);
+		viewport.prevViewProjection = viewport.viewProjection;
 		viewport.viewProjection = viewport.projection * render_packet->camera.view;
+		viewport.prevInvViewProjection = viewport.invViewProjection;
 		viewport.invViewProjection = glm::inverse(viewport.viewProjection);
 	}
 

@@ -145,7 +145,9 @@ namespace engine {
 			MATRIX4 projection;
 			MATRIX4 invProjection;
 			MATRIX4 viewProjection;
+			MATRIX4 prevViewProjection;
 			MATRIX4 invViewProjection;
+			MATRIX4 prevInvViewProjection;
 			VECTOR2 size;
 			VECTOR2 invSize;
 		};
