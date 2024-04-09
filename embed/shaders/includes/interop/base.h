@@ -215,6 +215,7 @@ namespace engine {
 		struct FSceneNode
 		{
 			MATRIX4 model;
+			MATRIX4 oldModel;
 			uint32_t skeletonID;
 			uint32_t pad[3];
 		};

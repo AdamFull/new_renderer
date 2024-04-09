@@ -26,6 +26,8 @@
 		layout(location = 2) flat out uint objID;
 		layout(location = 3) flat out uint vboID;
 		layout(location = 4) out vec2 texCoord;
+		layout(location = 5) smooth out vec4 currentPos;
+		layout(location = 6) smooth out vec4 oldPos;
 
 		layout(push_constant) uniform UniformMeshData
 		{
@@ -45,6 +47,7 @@
 			// Calculate skinned matrix from weights and joint indices of the current vertex
 			FSceneNode node = nodeBuffer.nodes[draw_info.nodeID];
 			mat4 modelMatrix = node.model;
+			mat4 oldModelMatrix = node.oldModel;
 
 #ifdef HAS_SKIN
 			if(node.skeletonID != ~0u)
@@ -61,6 +64,7 @@
 					inWeights.w * jointsBuffer.matrices[node.skeletonID + joints.w];
 		
 				modelMatrix = modelMatrix * skinMat;
+				// oldModelMatrix = oldModelMatrix * skinMat; // TODO: should keep skinMat from prev frame
 			}
 #endif // HAS_SKIN
 
@@ -68,6 +72,13 @@
 
 			vec4 localPos = modelMatrix * vec4(inPosition, 1.0);
 			localPos = vec4(localPos.xyz / localPos.w, 1.0);
+
+			currentPos = viewport.projection * frameData.view * localPos;
+
+			vec4 oldLocalPos = oldModelMatrix * vec4(inPosition, 1.0);
+			oldLocalPos = vec4(oldLocalPos.xyz / oldLocalPos.w, 1.0);
+			
+			oldPos = viewport.projection * frameData.view * oldLocalPos;
 
 			FMesh mesh = meshBuffer.meshes[draw_info.meshID];
 
@@ -77,7 +88,7 @@
 			vboID = draw_info.vboID;
 			texCoord = inTexCoord;
 
-			gl_Position = viewport.projection * frameData.view * localPos;
+			gl_Position =currentPos;
 		}
 	""";
 }

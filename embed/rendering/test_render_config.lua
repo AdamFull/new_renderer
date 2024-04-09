@@ -82,6 +82,15 @@ end
 
 do
     local target_ci = TextureCI.new()
+    target_ci.format = render_context:get_api_format(Format.rg16_sfloat)
+    target_ci.type = texture_or(TexType.two_dim, TexType.samplable)
+    target_ci:set_size_scale(1.0)
+
+    render_graph:add_render_resource("motion_vectors_target", target_ci)
+end
+
+do
+    local target_ci = TextureCI.new()
     target_ci.format = render_context:get_api_format(Format.r11g11b10_ufloat)
     target_ci.type = texture_or(TexType.two_dim, TexType.samplable, TexType.storage)
     target_ci:set_size_scale(1.0)
@@ -235,6 +244,7 @@ do
     pass_ci:add_write_resource("visbuffer_geometry_target")
     pass_ci:add_write_resource("visbuffer_matobj_target")
     pass_ci:add_write_resource("visbuffer_skinvbo_target")
+    pass_ci:add_write_resource("motion_vectors_target")
     pass_ci:add_read_resource("IndexedDrawIndirectBuffer")
 
     render_graph:add_render_pass("visibility_buffer_write_pass", pass_ci)

@@ -57,6 +57,7 @@ void prepare_draw_commands(const std::unique_ptr<IRenderWorld>& render_world, en
 
 		FSceneNode scene_node{};
 		scene_node.model = transform.gmodel;
+		scene_node.oldModel = transform.oldmodel;
 
 		if (auto found = root_component.skinRemap.find(utl::cast<u32>(mesh_component.skin)); found != root_component.skinRemap.end())
 			scene_node.skeletonID = found->second;
