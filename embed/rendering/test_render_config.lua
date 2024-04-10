@@ -332,7 +332,7 @@ do
     local pass_ci = ComputeCreateInfo.new()
     pass_ci.type = ComputeType.default
     pass_ci.queue = QueueType.graphics
-    pass_ci.shader = "postprocess:generate_motion_vectors:LOW_PRECISION_VELOCITY"
+    pass_ci.shader = use_low_precision_velocity and "postprocess:generate_motion_vectors:LOW_PRECISION_VELOCITY" or "postprocess:generate_motion_vectors"
 
     pass_ci:add_workgroup_size_info("zbuffer_depth_target", true)
 
@@ -348,7 +348,7 @@ do
     local pass_ci = GraphicsCreateInfo.new()
     pass_ci.type = RenderingType.fullscreen
     pass_ci.queue = QueueType.graphics
-    pass_ci.shader = "testing:screenspace"
+    pass_ci.shader = use_low_precision_velocity and "testing:screenspace:LOW_PRECISION_VELOCITY" or "testing:screenspace"
     pass_ci:flip_viewport()
 
     pass_ci:bind_read_resource("input_image", "final_lighting_target")
