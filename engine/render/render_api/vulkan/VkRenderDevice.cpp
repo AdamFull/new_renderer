@@ -1507,6 +1507,15 @@ FRenderApiErrorInfo CVkRenderDevice::createSwapchain(u32 surface_width, u32 surf
 	res = m_logicalDevice.handle.getSwapchainImagesKHR(m_swapchain.handle, &image_count, m_swapchain.images.data());
 	check_api_result(make_api_error(vk::ObjectType::eSwapchainKHR, res, "Failed to create images"));
 
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	for (u64 idx = 0ull; idx < m_swapchain.images.size(); ++idx)
+	{
+		const auto& image = m_swapchain.images[idx];
+		auto name = std::format("swapchain_image_{}", idx);
+		debugSetObjectName(image, name);
+	}
+#endif
+
 	if (old_swapchain)
 		m_logicalDevice.handle.destroySwapchainKHR(old_swapchain, m_allocationCallbacks);
 
