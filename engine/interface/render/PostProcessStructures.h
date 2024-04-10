@@ -63,7 +63,9 @@ namespace engine
 		{
 			bool enable{ true };
 			f32 scele{ 1.f };
-			i32 max_samples{ 32 };
+			i32 max_samples{ 16 };
+			f32 max_velocity{ 30.f };
+			f32 threshold{ 0.0001f };
 		};
 
 		struct FPostProcess

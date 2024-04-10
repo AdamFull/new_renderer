@@ -136,16 +136,20 @@
 
         vec2 encodeVelocity(in vec2 velocity)
         {
-            //return pow(velocity * 0.5 + 0.5, vec2(3.0));
-            //return velocity * 0.5 + 0.5;
-            return velocity;
+#ifdef LOW_PRECISION_VELOCITY
+            return pow(velocity * 0.5 + 0.5, vec2(3.0));
+#else
+            return velocity * 0.5 + 0.5;
+#endif
         }
         
         vec2 decodeVelocity(in vec2 velocity)
         {
-            //return pow(velocity, vec2(1.0 / 3.0)) * 2.0 - 1.0;
-            //return velocity * 2.0 - 1.0;
-            return velocity;
+#ifdef LOW_PRECISION_VELOCITY
+            return pow(velocity, vec2(1.0 / 3.0)) * 2.0 - 1.0;
+#else
+            return velocity * 2.0 - 1.0;
+#endif
         }
 	""";
 }

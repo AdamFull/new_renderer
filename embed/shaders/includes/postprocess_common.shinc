@@ -57,6 +57,8 @@
 			int enable_motion_blur;
 			float mb_scale;
 			int mb_max_samples;
+			float mb_max_velocity;
+			float mb_threshold;
 			// per object motion blur
 
 			// ao blur

@@ -1,3 +1,5 @@
+use_low_precision_velocity = true
+
 -- Loading test cubemap
 do
     render_graph:add_static_resource("CasualDay4K", "/root/CasualDay4K.ktx2")
@@ -82,7 +84,8 @@ end
 
 do
     local target_ci = TextureCI.new()
-    target_ci.format = render_context:get_api_format(Format.rg16_sfloat)
+
+    target_ci.format = render_context:get_api_format(use_low_precision_velocity and Format.rg8_unorm or Format.rg16_sfloat)
     target_ci.type = texture_or(TexType.two_dim, TexType.samplable, TexType.storage)
     target_ci:set_size_scale(1.0)
 
@@ -319,7 +322,7 @@ do
     pass_ci:add_workgroup_size_info(1, 1, 1, false)
 
     pass_ci:bind_write_resource("target", "avg_brightness_target")
-    pass_ci:bind_write_resource("Histogram", "histogram_buffer")
+    pass_ci:bind_read_resource("Histogram", "histogram_buffer")
 
     render_graph:add_render_pass("compute_brightness_pass", pass_ci)
 end
@@ -329,7 +332,7 @@ do
     local pass_ci = ComputeCreateInfo.new()
     pass_ci.type = ComputeType.default
     pass_ci.queue = QueueType.graphics
-    pass_ci.shader = "postprocess:generate_motion_vectors"
+    pass_ci.shader = "postprocess:generate_motion_vectors:LOW_PRECISION_VELOCITY"
 
     pass_ci:add_workgroup_size_info("zbuffer_depth_target", true)
 

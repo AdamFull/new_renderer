@@ -75,6 +75,8 @@ void IBasePass::bindShaderResources(const std::unique_ptr<IShaderObject>& shader
 		uniform->set("enable_motion_blur", utl::cast<i32>(post_process.motionblur.enable));
 		uniform->set("mb_scale", (dt / 0.01666666f) * post_process.motionblur.scele);
 		uniform->set("mb_max_samples", post_process.motionblur.max_samples);
+		uniform->set("mb_max_velocity", post_process.motionblur.max_velocity);
+		uniform->set("mb_threshold", post_process.motionblur.threshold);
 	}
 }
 

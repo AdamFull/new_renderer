@@ -117,7 +117,10 @@
 		},
 		{
 			shader_name: "generate_motion_vectors";
-			pattern: "default_pattern";
+			permutations: [
+				{ defines: [] },
+				{ defines: ["LOW_PRECISION_VELOCITY"] }
+			];
 		},
 		{
 			shader_name: "high_pass";

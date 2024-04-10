@@ -97,24 +97,21 @@
 			if(postprocess.enable_motion_blur > 0)
 			{
 				vec2 velocity = texture(motion_vectors, inUV).rg;
-				velocity = decodeVelocity(velocity);// * postprocess.mb_scale;
-				
-				float speed = length(velocity / texel_size);
-				int n_samples = clamp(int(speed), 1, postprocess.mb_max_samples);
+				velocity = decodeVelocity(velocity) * postprocess.mb_scale;
+				velocity = min(vec2(1.0), velocity);
 
-				vec2 texcoord = inUV + velocity;
-				for (int i = 1; i < n_samples; ++i) 
-				{	
-					color += texture(input_image, texcoord);
-					texcoord += velocity;
+				if(length(velocity) >= postprocess.mb_threshold)
+				{
+					float speed = length(velocity / texel_size);
+					int n_samples = clamp(int(speed), 1, postprocess.mb_max_samples);
+
+					for (int i = 1; i < n_samples; ++i) 
+					{
+						vec2 offset = velocity * (float(i) / float(n_samples - 1) - 0.5);
+						color += texture(input_image, inUV + offset);
+					}
+					color /= float(n_samples);
 				}
-
-				//for (int i = 1; i < n_samples; ++i) 
-				//{
-				//	vec2 offset = velocity * (float(i) / float(n_samples - 1) - 0.5);
-				//	color += texture(input_image, inUV + offset);
-				//}
-				color /= float(n_samples);
 			}
 
 			if(postprocess.enable_tonemap > 0)

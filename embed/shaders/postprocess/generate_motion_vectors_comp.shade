@@ -15,7 +15,7 @@
 		"GL_EXT_shader_explicit_arithmetic_types_int8"
 	];
 
-	includes: ["shader_inputs", "compute_common", "util", "postprocess_common"];
+	includes: ["shader_inputs", "compute_common", "util"];
 
 	code: 
 	"""
@@ -28,10 +28,10 @@
 		{
 			uvec2 image_size = imageSize(write_color);
 		
-			uvec2 px = uvec2(0, 0);
-			vec2 uv = vec2(0.0, 0.0);
-			if(swizzle_compute_workgroups_8x8_nv(gl_LocalInvocationID.xy, gl_LocalInvocationID.xy, image_size, uv, px))
-				return;
+			uvec2 px = uvec2(gl_GlobalInvocationID.xy);
+			vec2 uv = vec2(px) / vec2(image_size);;
+			//if(swizzle_compute_workgroups_8x8_nv(gl_LocalInvocationID.xy, gl_LocalInvocationID.xy, image_size, uv, px))
+			//	return;
 
 			FViewport viewport = viewportBuffer.viewports[frameData.defaultViewport];
 
@@ -51,8 +51,8 @@
 
 			// Encode velocity
 			velocity = encodeVelocity(velocity);
-		
-			imageStore(write_color, ivec2(px), vec4(velocity, 0.0, 0.0));
+
+			imageStore(write_color, ivec2(px), vec4(velocity, 1.0, 1.0));
 		}
 	""";
 }
