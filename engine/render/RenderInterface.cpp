@@ -68,7 +68,7 @@ stl::unique_ptr<IRenderContext> make_render_context(const FRenderInterfaceCreate
 #ifndef BUILD_WITHOUT_DEBUGGIND
 		context_ci.validationState = true;
 		context_ci.validationLayers = { "VK_LAYER_KHRONOS_validation", "VK_LAYER_KHRONOS_synchronization2" };
-		//context_ci.validationFeatures = vulkan::SYNCHRONIZATION_VALIDATION_FLAG_BIT;
+		context_ci.validationFeatures = vulkan::SYNCHRONIZATION_VALIDATION_FLAG_BIT;
 #endif
 
 		context_ci.initialWidth = rhi_ci.initialWidth;

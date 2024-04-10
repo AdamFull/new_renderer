@@ -288,13 +288,14 @@ namespace engine
 				case vk::ImageLayout::eTransferDstOptimal:
 				case vk::ImageLayout::eTransferSrcOptimal: return vk::PipelineStageFlagBits2KHR::eTransfer;
 				case vk::ImageLayout::eColorAttachmentOptimal: return vk::PipelineStageFlagBits2KHR::eColorAttachmentOutput;
+				case vk::ImageLayout::eDepthStencilAttachmentOptimal:
 				case vk::ImageLayout::eDepthAttachmentOptimal: return vk::PipelineStageFlagBits2KHR::eEarlyFragmentTests | vk::PipelineStageFlagBits2KHR::eLateFragmentTests;
 				case vk::ImageLayout::eDepthReadOnlyOptimal:
 				case vk::ImageLayout::eDepthStencilReadOnlyOptimal: return vk::PipelineStageFlagBits2KHR::eFragmentShader | vk::PipelineStageFlagBits2KHR::eVertexShader | vk::PipelineStageFlagBits2KHR::eComputeShader;
 				case vk::ImageLayout::eFragmentShadingRateAttachmentOptimalKHR: return vk::PipelineStageFlagBits2KHR::eFragmentShadingRateAttachmentKHR;
 				case vk::ImageLayout::eShaderReadOnlyOptimal: return vk::PipelineStageFlagBits2KHR::eFragmentShader | vk::PipelineStageFlagBits2KHR::eVertexShader | vk::PipelineStageFlagBits2KHR::eComputeShader;
 				case vk::ImageLayout::ePresentSrcKHR: return vk::PipelineStageFlagBits2KHR::eBottomOfPipe;
-				case vk::ImageLayout::eGeneral: return vk::PipelineStageFlagBits2KHR::eComputeShader;
+				case vk::ImageLayout::eGeneral: return vk::PipelineStageFlagBits2KHR::eVertexShader | vk::PipelineStageFlagBits2KHR::eGeometryShader | vk::PipelineStageFlagBits2KHR::eFragmentShader | vk::PipelineStageFlagBits2KHR::eComputeShader;
 				default: return vk::PipelineStageFlagBits2KHR::eNone;
 				}
 			}
@@ -307,6 +308,7 @@ namespace engine
 				case vk::ImageLayout::ePresentSrcKHR: return vk::AccessFlagBits2KHR::eNone;
 				case vk::ImageLayout::ePreinitialized: return vk::AccessFlagBits2KHR::eHostWrite;
 				case vk::ImageLayout::eColorAttachmentOptimal: return vk::AccessFlagBits2KHR::eColorAttachmentRead | vk::AccessFlagBits2KHR::eColorAttachmentWrite;
+				case vk::ImageLayout::eDepthStencilAttachmentOptimal:
 				case vk::ImageLayout::eDepthAttachmentOptimal: return vk::AccessFlagBits2KHR::eDepthStencilAttachmentRead | vk::AccessFlagBits2KHR::eDepthStencilAttachmentWrite;
 				case vk::ImageLayout::eDepthReadOnlyOptimal:
 				case vk::ImageLayout::eDepthStencilReadOnlyOptimal: return vk::AccessFlagBits2KHR::eShaderRead | vk::AccessFlagBits2KHR::eDepthStencilAttachmentRead;
@@ -314,7 +316,7 @@ namespace engine
 				case vk::ImageLayout::eShaderReadOnlyOptimal: return vk::AccessFlagBits2KHR::eShaderRead | vk::AccessFlagBits2KHR::eInputAttachmentRead;
 				case vk::ImageLayout::eTransferSrcOptimal: return vk::AccessFlagBits2KHR::eTransferRead;
 				case vk::ImageLayout::eTransferDstOptimal: return vk::AccessFlagBits2KHR::eTransferWrite;
-				case vk::ImageLayout::eGeneral: return vk::AccessFlagBits2KHR::eShaderRead | vk::AccessFlagBits2KHR::eShaderWrite;
+				case vk::ImageLayout::eGeneral: return vk::AccessFlagBits2KHR::eShaderRead | vk::AccessFlagBits2KHR::eShaderWrite | vk::AccessFlagBits2KHR::eShaderSampledRead;
 				default: return vk::AccessFlagBits2KHR::eNone;
 				}
 			}
