@@ -207,7 +207,7 @@ void CVertexHandler::allocate()
 	m_vertexBuffer.buffer = render_context->createBuffer(stl::format("SCENE_VERTICES{}", m_definitions), buffer_ci);
 
 	// Create index buffer
-	buffer_ci.flags = EBufferUsageFlagBits::eVertexBuffer;
+	buffer_ci.flags = EBufferUsageFlagBits::eIndexBuffer;
 	buffer_ci.size = m_indexBuffer.elementSize;
 	buffer_ci.count = m_indexBuffer.elementCount;
 	buffer_ci.upload.data = m_indexBuffer.data;

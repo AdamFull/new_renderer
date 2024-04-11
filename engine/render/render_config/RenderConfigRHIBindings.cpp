@@ -216,8 +216,11 @@ namespace engine
 					EBufferUsageFlags(),
 					EBufferUsageFlags(EBufferUsageFlagBits),
 					EBufferUsageFlags(EBufferUsageFlags const&),
-					EBufferUsageFlags(std::underlying_type<EBufferUsageFlagBits>::type)>()
-				);
+					EBufferUsageFlags(std::underlying_type<EBufferUsageFlagBits>::type)>(),
+				"add", [](EBufferUsageFlags& self, sol::variadic_args args) -> void {
+					for (auto arg : args)
+						self |= arg.as<EBufferUsageFlagBits>();
+				});
 			
 			// FBufferCreateInfo registration
 			lua->new_usertype<FBufferCreateInfo>(

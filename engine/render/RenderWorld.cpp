@@ -22,29 +22,29 @@ void CRenderWorld::create()
 {
 	m_vBuffers.resize(utl::enum_cast(ERenderBufferIndices::eLastIndex));
 
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eNodeBuffer))->create<FSceneNode>("NodeStorage", EBufferUsageFlagBits::eStagingBuffer);
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eSkinBuffer))->create<glm::mat4>("SkinningJoints", EBufferUsageFlagBits::eStagingBuffer);
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eMeshBuffer))->create<FMesh>("MeshBuffer", EBufferUsageFlagBits::eStagingBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eNodeBuffer))->create<FSceneNode>("NodeStorage", EBufferUsageFlagBits::eStorageBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eSkinBuffer))->create<glm::mat4>("SkinningJoints", EBufferUsageFlagBits::eStorageBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eMeshBuffer))->create<FMesh>("MeshBuffer", EBufferUsageFlagBits::eStorageBuffer);
 
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eMaterialBuffer))->create<FMaterial>("MaterialStorage", EBufferUsageFlagBits::eStagingBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eMaterialBuffer))->create<FMaterial>("MaterialStorage", EBufferUsageFlagBits::eStorageBuffer);
 
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eDirectionalLightBuffer))->create<FDirectionalLightCommit>("DirectionalLights", EBufferUsageFlagBits::eStagingBuffer);
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::ePointLightBuffer))->create<FPointLightCommit>("PointLights", EBufferUsageFlagBits::eStagingBuffer);
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eSpotLightBuffer))->create<FSpotLightCommit>("SpotLights", EBufferUsageFlagBits::eStagingBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eDirectionalLightBuffer))->create<FDirectionalLightCommit>("DirectionalLights", EBufferUsageFlagBits::eStorageBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::ePointLightBuffer))->create<FPointLightCommit>("PointLights", EBufferUsageFlagBits::eStorageBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eSpotLightBuffer))->create<FSpotLightCommit>("SpotLights", EBufferUsageFlagBits::eStorageBuffer);
 
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eCascadedShadowBuffer))->create<FCascadedShadowCommit>("CascadedShadows", EBufferUsageFlagBits::eStagingBuffer);
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eOmniShadowBuffer))->create<FOmniShadowCommit>("OmniShadows", EBufferUsageFlagBits::eStagingBuffer);
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eSpotShadowBuffer))->create<FSpotShadowCommit>("SpotShadows", EBufferUsageFlagBits::eStagingBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eCascadedShadowBuffer))->create<FCascadedShadowCommit>("CascadedShadows", EBufferUsageFlagBits::eStorageBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eOmniShadowBuffer))->create<FOmniShadowCommit>("OmniShadows", EBufferUsageFlagBits::eStorageBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eSpotShadowBuffer))->create<FSpotShadowCommit>("SpotShadows", EBufferUsageFlagBits::eStorageBuffer);
 
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eDrawMeshInfoBuffer))->create<FDrawMeshinfo>("GeometryBatches", EBufferUsageFlagBits::eStagingBuffer);
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eClusterInfoBuffer))->create<FClusterInfo>("ClusterInfoBuffer", EBufferUsageFlagBits::eStagingBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eDrawMeshInfoBuffer))->create<FDrawMeshinfo>("GeometryBatches", EBufferUsageFlagBits::eStorageBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eClusterInfoBuffer))->create<FClusterInfo>("ClusterInfoBuffer", EBufferUsageFlagBits::eStorageBuffer);
 
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eFrustumBuffer))->create<glm::vec4>("FrustumSides", EBufferUsageFlagBits::eStagingBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eFrustumBuffer))->create<glm::vec4>("FrustumSides", EBufferUsageFlagBits::eStorageBuffer);
 	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eDrawCommandBuffer))->create<FDrawIndexedIndirectData>("IndexedDrawIndirectBuffer", EBufferUsageFlagBits::eIndirectBuffer);
 	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eMeshCommandBuffer))->create<FDrawMeshIndirectData>("MeshIndirectBuffer", EBufferUsageFlagBits::eIndirectBuffer);
 
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eTextureRemapBuffer))->create<uint32_t>("TextureBindingRemap", EBufferUsageFlagBits::eStagingBuffer);
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eViewportBuffer))->create<FViewport>("ViewportBuffer", EBufferUsageFlagBits::eStagingBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eTextureRemapBuffer))->create<uint32_t>("TextureBindingRemap", EBufferUsageFlagBits::eStorageBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eViewportBuffer))->create<FViewport>("ViewportBuffer", EBufferUsageFlagBits::eStorageBuffer);
 }
 
 u64 CRenderWorld::registerFrustum(ERenderGeometryCullerType type)

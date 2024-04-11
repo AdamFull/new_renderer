@@ -113,7 +113,7 @@ end
 
 do 
     local buffer_ci = BufferCI.new();
-    buffer_ci.type = BufferType.storage
+    buffer_ci.type:add(BufferType.storage)
     buffer_ci.size = 4
     buffer_ci.count = 256
 
