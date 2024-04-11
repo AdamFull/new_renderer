@@ -197,21 +197,6 @@ do
 end
 
 
---do
---    local pass_ci = ComputeCreateInfo.new()
---    pass_ci.type = ComputeType.culling
---    pass_ci.queue = QueueType.graphics
---    pass_ci.shader = "culling:cull_and_batch"
---
---    pass_ci:bind_read_resource("nodeBuffer", "NodeStorage")
---    pass_ci:bind_read_resource("frustumSides", "FrustumSides")
---    pass_ci:bind_read_resource("cullingBuffer", "GeometryCullingInfo")
---    pass_ci:bind_write_resource("indirectCommandBuffer", "IndexedDrawIndirectBuffer")
---
---    render_graph:add_render_pass("gpu_culling", pass_ci)
---end
-
-
 do
     local pass_ci = GraphicsCreateInfo.new()
     pass_ci.type = RenderingType.csm
@@ -252,15 +237,6 @@ do
 
     render_graph:add_render_pass("visibility_buffer_write_pass", pass_ci)
 end
-
---do
---    local pass_ci = GraphicsCreateInfo.new()
---    pass_ci.type = RenderingType.clear
---    pass_ci.queue = QueueType.graphics
---
---    pass_ci:add_write_resource("final_lighting_target")
---    render_graph:add_render_pass("finalize_image_pass", pass_ci)
---end
 
 -- visibility buffer material pass
 do
@@ -327,7 +303,7 @@ do
     render_graph:add_render_pass("compute_brightness_pass", pass_ci)
 end
 
--- Compute static motion vectors
+-- Compute static motion vectors (can be started in another queue)
 do
     local pass_ci = ComputeCreateInfo.new()
     pass_ci.type = ComputeType.default
