@@ -7,16 +7,27 @@ namespace engine
 {
 	namespace render
 	{
-		enum class EBufferTypeFlagBits
+		enum class EBufferUsageFlagBits
 		{
-			eStaging = 1 << 0,
-			eVertex = 1 << 1,
-			eIndex = 1 << 2,
-			eStorage = 1 << 3,
+			eTransfer = 1 << 0,
+			eStorage = 1 << 1,
+			eVertex = 1 << 2,
+			eIndex = 1 << 3,
 			eUniform = 1 << 4,
 			eIndirect = 1 << 5,
+			eGpuOnly = eVertex | eIndex,
+			eAlignmentRequired = eVertex | eIndex | eUniform,
+			eHasDeviceAddress = eStorage | eVertex | eIndex | eIndirect,
+			eCpuToGpu = eStorage | eUniform | eIndirect,
+
+			eStagingBuffer = eTransfer,
+			eStorageBuffer = eTransfer | eStorage,
+			eVertexBuffer = eTransfer | eVertex,
+			eIndexBuffer = eTransfer | eIndex,
+			eUniformBuffer = eTransfer | eUniform,
+			eIndirectBuffer = eTransfer | eStorage | eIndirect
 		};
-		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(EBufferTypeFlags, EBufferTypeFlagBits)
+		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(EBufferUsageFlags, EBufferUsageFlagBits)
 
 		struct FBufferUploadInfo
 		{
@@ -30,7 +41,7 @@ namespace engine
 		struct FBufferCreateInfo
 		{
 			// EBufferTypeFlagBits
-			EBufferTypeFlagBits flags{};
+			EBufferUsageFlags flags{};
 			u64 count{ 1ull };
 			u64 size{ 0ull };
 
@@ -74,7 +85,7 @@ namespace engine
 			virtual ~IGPUVector() = default;
 
 			template<class _Ty>
-			void create(const std::string& name, EBufferTypeFlagBits flag = EBufferTypeFlagBits::eStorage, u64 capacity = 64ull)
+			void create(const std::string& name, EBufferUsageFlags flag = EBufferUsageFlagBits::eStorageBuffer, u64 capacity = 64ull)
 			{
 				//m_elementType = typeid(_Ty);
 				alloc(name, flag, sizeof(_Ty), capacity);
@@ -172,7 +183,7 @@ namespace engine
 			virtual const stl::unique_ptr<IBufferObject>& buffer() = 0;
 
 		protected:
-			virtual void alloc(const std::string& name, EBufferTypeFlagBits flag, u64 stride, u64 capacity) = 0;
+			virtual void alloc(const std::string& name, EBufferUsageFlags flag, u64 stride, u64 capacity) = 0;
 			virtual void realloc(u64 capacity) = 0;
 
 			virtual void* at(u64 index) = 0;

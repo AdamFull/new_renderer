@@ -441,8 +441,8 @@ u64 CRenderGraph::addRenderResource(const stl::string& name, const FTextureCreat
 
 u64 CRenderGraph::addRenderResource(const stl::string& name, const FBufferCreateInfo& buffer_ci)
 {
-	log_debug("[Render Graph] Allocating buffer: {}, size: {}b, flags: {}.", name,
-		buffer_ci.size * buffer_ci.count, utl::enum_cast(buffer_ci.flags));
+	log_debug("[Render Graph] Allocating buffer: {}, size: {}b.", name,
+		buffer_ci.size * buffer_ci.count);
 
 	auto& render_context = m_pRenderInterface->getRenderContext();
 

@@ -95,12 +95,12 @@ namespace engine
 			// Register EBufferTypeFlagBits
 			lua->new_enum(
 				"BufferType",
-				"staging", EBufferTypeFlagBits::eStaging,
-				"vertex", EBufferTypeFlagBits::eVertex,
-				"index", EBufferTypeFlagBits::eIndex,
-				"storage", EBufferTypeFlagBits::eStorage,
-				"uniform", EBufferTypeFlagBits::eUniform,
-				"indirect", EBufferTypeFlagBits::eIndirect
+				"staging", EBufferUsageFlagBits::eStagingBuffer,
+				"vertex", EBufferUsageFlagBits::eVertexBuffer,
+				"index", EBufferUsageFlagBits::eIndexBuffer,
+				"storage", EBufferUsageFlagBits::eStorageBuffer,
+				"uniform", EBufferUsageFlagBits::eUniformBuffer,
+				"indirect", EBufferUsageFlagBits::eIndirectBuffer
 			);
 
 			// Register ETextureSizePolicy
@@ -208,6 +208,16 @@ namespace engine
 				"set_size_scale", &FTextureCreateInfo::setSizeScale,
 				"enable_mip_map", &FTextureCreateInfo::enableMipMap
 			);
+
+			// EBufferUsageFlags registration
+			lua->new_usertype<EBufferUsageFlags>(
+				"EBufferUsageFlags",
+				sol::constructors<
+					EBufferUsageFlags(),
+					EBufferUsageFlags(EBufferUsageFlagBits),
+					EBufferUsageFlags(EBufferUsageFlags const&),
+					EBufferUsageFlags(std::underlying_type<EBufferUsageFlagBits>::type)>()
+				);
 			
 			// FBufferCreateInfo registration
 			lua->new_usertype<FBufferCreateInfo>(

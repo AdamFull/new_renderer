@@ -59,21 +59,22 @@ void CComputeGeometryPass::_execute(const FComputeFrameInfo& frame_info)
 			if (was_vbo_rebinded)
 			{
 				bindShaderResources(shader, frame_info.deltaTime);
-				auto& buffers = shader->getUniformBlock("GeometryBuffers");
+				if (auto& buffers = shader->getUniformBlock("GeometryBuffers"); buffers)
+				{
+					u64 vertex_handle = last_vbo->getVertexHandle();
+					auto vb_view = render_context->getBufferView(vertex_handle);
+					buffers->set("vb", vb_view.address);
 
-				u64 vertex_handle = last_vbo->getVertexHandle();
-				auto vb_view = render_context->getBufferView(vertex_handle);
-				buffers->set("vb", vb_view.address);
+					u64 index_buffer = last_vbo->getIndexHandle();
+					auto ib_view = render_context->getBufferView(index_buffer);
+					buffers->set("ib", ib_view.address);
 
-				u64 index_buffer = last_vbo->getIndexHandle();
-				auto ib_view = render_context->getBufferView(index_buffer);
-				buffers->set("ib", ib_view.address);
-
-				buffers->set("mb", last_vbo->getGeometryBuffer(EGeometryBufferIndices::eMeshletBuffer)->buffer()->address());
-				buffers->set("vrb", last_vbo->getGeometryBuffer(EGeometryBufferIndices::eVertexRemapBuffer)->buffer()->address());
-				buffers->set("bb", last_vbo->getGeometryBuffer(EGeometryBufferIndices::eBoundsBuffer)->buffer()->address());
-				buffers->set("tb", last_vbo->getGeometryBuffer(EGeometryBufferIndices::eTriangleBuffer)->buffer()->address());
-				buffers->set("lb", last_vbo->getGeometryBuffer(EGeometryBufferIndices::eLodBuffer)->buffer()->address());
+					buffers->set("mb", last_vbo->getGeometryBuffer(EGeometryBufferIndices::eMeshletBuffer)->buffer()->address());
+					buffers->set("vrb", last_vbo->getGeometryBuffer(EGeometryBufferIndices::eVertexRemapBuffer)->buffer()->address());
+					buffers->set("bb", last_vbo->getGeometryBuffer(EGeometryBufferIndices::eBoundsBuffer)->buffer()->address());
+					buffers->set("tb", last_vbo->getGeometryBuffer(EGeometryBufferIndices::eTriangleBuffer)->buffer()->address());
+					buffers->set("lb", last_vbo->getGeometryBuffer(EGeometryBufferIndices::eLodBuffer)->buffer()->address());
+				}
 
 				shader->flushDescriptors();
 				shader->bind(m_queue);

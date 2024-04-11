@@ -185,11 +185,11 @@ void CVertexHandler::create(const FVertexHandlerCreateInfo& create_info)
 
 	log_info("[Vertex Handler] Created vertex handler: {}:{}.", create_info.name, m_definitions);
 
-	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eMeshletBuffer))->create<FMeshlet>("MeshletBuffer" + m_definitions, EBufferTypeFlagBits::eStorage);
-	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eVertexRemapBuffer))->create<u32>("MeshletVerticesBuffer" + m_definitions, EBufferTypeFlagBits::eStorage);
-	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eBoundsBuffer))->create<FGeometryDrawBounds>("MeshletBoundsBuffer" + m_definitions, EBufferTypeFlagBits::eStorage);
-	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eTriangleBuffer))->create<FTriangle>("MeshletTriangleBuffer" + m_definitions, EBufferTypeFlagBits::eStorage);
-	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eLodBuffer))->create<FMeshLod>("MeshLodBuffer" + m_definitions, EBufferTypeFlagBits::eStorage);
+	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eMeshletBuffer))->create<FMeshlet>("MeshletBuffer" + m_definitions, EBufferUsageFlagBits::eStorageBuffer);
+	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eVertexRemapBuffer))->create<u32>("MeshletVerticesBuffer" + m_definitions, EBufferUsageFlagBits::eStagingBuffer);
+	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eBoundsBuffer))->create<FGeometryDrawBounds>("MeshletBoundsBuffer" + m_definitions, EBufferUsageFlagBits::eStagingBuffer);
+	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eTriangleBuffer))->create<FTriangle>("MeshletTriangleBuffer" + m_definitions, EBufferUsageFlagBits::eStagingBuffer);
+	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eLodBuffer))->create<FMeshLod>("MeshLodBuffer" + m_definitions, EBufferUsageFlagBits::eStagingBuffer);
 
 	return;
 }
@@ -200,14 +200,14 @@ void CVertexHandler::allocate()
 
 	// Create vertex buffer
 	FBufferCreateInfo buffer_ci{};
-	buffer_ci.flags = EBufferTypeFlagBits::eVertex;
+	buffer_ci.flags = EBufferUsageFlagBits::eVertexBuffer;
 	buffer_ci.size = m_vertexBuffer.elementSize;
 	buffer_ci.count = m_vertexBuffer.elementCount;
 	buffer_ci.upload.data = m_vertexBuffer.data;
 	m_vertexBuffer.buffer = render_context->createBuffer(stl::format("SCENE_VERTICES{}", m_definitions), buffer_ci);
 
 	// Create index buffer
-	buffer_ci.flags = EBufferTypeFlagBits::eIndex;
+	buffer_ci.flags = EBufferUsageFlagBits::eVertexBuffer;
 	buffer_ci.size = m_indexBuffer.elementSize;
 	buffer_ci.count = m_indexBuffer.elementCount;
 	buffer_ci.upload.data = m_indexBuffer.data;

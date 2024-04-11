@@ -2109,36 +2109,42 @@ FVkBufferCreateInfo CVkRenderContext::makeBufferCreateInfo(const stl::string& na
 	vk_buffer_ci.name = name;
 #endif
 
-	switch (buffer_ci.flags)
-	{
-	case EBufferTypeFlagBits::eStaging: {
+	// Build buffer usage flags
+	if (buffer_ci.flags & EBufferUsageFlagBits::eTransfer)
+		vk_buffer_ci.usageFlags |= vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
+
+	if (buffer_ci.flags & EBufferUsageFlagBits::eVertex)
+		vk_buffer_ci.usageFlags |= vk::BufferUsageFlagBits::eVertexBuffer;
+
+	if (buffer_ci.flags & EBufferUsageFlagBits::eIndex)
+		vk_buffer_ci.usageFlags |= vk::BufferUsageFlagBits::eIndexBuffer;
+
+	if (buffer_ci.flags & EBufferUsageFlagBits::eStorage)
+		vk_buffer_ci.usageFlags |= vk::BufferUsageFlagBits::eStorageBuffer;
+
+	if (buffer_ci.flags & EBufferUsageFlagBits::eIndirect)
+		vk_buffer_ci.usageFlags |= vk::BufferUsageFlagBits::eIndirectBuffer;
+
+	if (buffer_ci.flags & EBufferUsageFlagBits::eHasDeviceAddress)
+		vk_buffer_ci.usageFlags |= vk::BufferUsageFlagBits::eShaderDeviceAddressKHR;
+
+	// Determine memory type
+	if (buffer_ci.flags & EBufferUsageFlagBits::eGpuOnly)
+		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eUnknown;
+	else if (buffer_ci.flags & EBufferUsageFlagBits::eCpuToGpu)
+		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
+	else
 		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuOnly;
-		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
-	} break;
-	case EBufferTypeFlagBits::eVertex: {
-		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eUnknown;
-		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eShaderDeviceAddressKHR | vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eVertexBuffer;
-	} break;
-	case EBufferTypeFlagBits::eIndex: {
-		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eUnknown;
-		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eShaderDeviceAddressKHR | vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndexBuffer;
-	} break;
-	case EBufferTypeFlagBits::eStorage: {
-		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
-		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eShaderDeviceAddressKHR | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer;
-	} break;
-	case EBufferTypeFlagBits::eUniform: {
-		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
-		vk_buffer_ci.usageFlags |= vk::BufferUsageFlagBits::eUniformBuffer;
+
+	// Add buffer alignment
+	if (buffer_ci.flags & EBufferUsageFlagBits::eAlignmentRequired)
 		vk_buffer_ci.minOffsetAlignment = stl::lcm(physical.properties.limits.minUniformBufferOffsetAlignment, physical.properties.limits.nonCoherentAtomSize);
-	} break;
-	case EBufferTypeFlagBits::eIndirect: {
-		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
-		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eShaderDeviceAddressKHR | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndirectBuffer | vk::BufferUsageFlagBits::eStorageBuffer;
-	} break;
-	default:
-		break;
-	}
+
+	//EBufferTypeFlagBits::eStaging = EBufferUsageFlagBits::eTransfer
+	//EBufferTypeFlagBits::eVertex = EBufferUsageFlagBits::eTransfer | EBufferUsageFlagBits::eVertex
+	//EBufferTypeFlagBits::eIndex = EBufferUsageFlagBits::eTransfer | EBufferUsageFlagBits::eIndex
+	//EBufferTypeFlagBits::eStorage = EBufferUsageFlagBits::eTransfer | EBufferUsageFlagBits::eStorage
+	//EBufferTypeFlagBits::eIndirect = EBufferUsageFlagBits::eTransfer | EBufferUsageFlagBits::eStorage | EBufferUsageFlagBits::eIndirect
 
 	return vk_buffer_ci;
 }

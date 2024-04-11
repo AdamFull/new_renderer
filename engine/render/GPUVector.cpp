@@ -34,7 +34,7 @@ const stl::unique_ptr<IBufferObject>& CGPUVector::buffer()
 	return m_pBuffer;
 }
 
-void CGPUVector::alloc(const std::string& name, EBufferTypeFlagBits flag, u64 stride, u64 capacity)
+void CGPUVector::alloc(const std::string& name, EBufferUsageFlags flag, u64 stride, u64 capacity)
 {
 	FBufferCreateInfo buffer_ci{};
 	buffer_ci.size = stride;
