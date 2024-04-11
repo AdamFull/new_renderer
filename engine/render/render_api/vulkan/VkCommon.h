@@ -283,7 +283,7 @@ namespace engine
 			{
 				switch (layout)
 				{
-				case vk::ImageLayout::eUndefined: return vk::PipelineStageFlagBits2KHR::eTopOfPipe;
+				case vk::ImageLayout::eUndefined: return vk::PipelineStageFlagBits2KHR::eAllCommands;
 				case vk::ImageLayout::ePreinitialized: return vk::PipelineStageFlagBits2KHR::eHost;
 				case vk::ImageLayout::eTransferDstOptimal:
 				case vk::ImageLayout::eTransferSrcOptimal: return vk::PipelineStageFlagBits2KHR::eTransfer;
@@ -294,7 +294,7 @@ namespace engine
 				case vk::ImageLayout::eDepthStencilReadOnlyOptimal: return vk::PipelineStageFlagBits2KHR::eFragmentShader | vk::PipelineStageFlagBits2KHR::eVertexShader | vk::PipelineStageFlagBits2KHR::eComputeShader;
 				case vk::ImageLayout::eFragmentShadingRateAttachmentOptimalKHR: return vk::PipelineStageFlagBits2KHR::eFragmentShadingRateAttachmentKHR;
 				case vk::ImageLayout::eShaderReadOnlyOptimal: return vk::PipelineStageFlagBits2KHR::eFragmentShader | vk::PipelineStageFlagBits2KHR::eVertexShader | vk::PipelineStageFlagBits2KHR::eComputeShader;
-				case vk::ImageLayout::ePresentSrcKHR: return vk::PipelineStageFlagBits2KHR::eBottomOfPipe;
+				case vk::ImageLayout::ePresentSrcKHR: return vk::PipelineStageFlagBits2KHR::eAllCommands;
 				case vk::ImageLayout::eGeneral: return vk::PipelineStageFlagBits2KHR::eVertexShader | vk::PipelineStageFlagBits2KHR::eGeometryShader | vk::PipelineStageFlagBits2KHR::eFragmentShader | vk::PipelineStageFlagBits2KHR::eComputeShader;
 				default: return vk::PipelineStageFlagBits2KHR::eNone;
 				}
