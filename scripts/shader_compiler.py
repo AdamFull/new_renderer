@@ -25,10 +25,8 @@ class ShaderCompiler:
         shader_compile_type = self.build_type.lower()
         shader_compile_type = "debug"
 
-        shader_input_directory = os.path.join(embed_path, "shaders")
+        shader_input_directory = os.path.join(embed_path, "shaders/config.smake")
         shader_output_directory = os.path.join(rendering_path, "shader_cache.shc")
-        shader_common_directory = os.path.join(shader_input_directory, "common")
-        shader_includes_directory = os.path.join(shader_input_directory, "includes")
         
         shader_compiler_comand = [
             shader_compiler_exec, 

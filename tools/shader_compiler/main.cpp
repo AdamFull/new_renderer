@@ -54,15 +54,8 @@ int main(int argc, char** argv)
 	fs::path input_path{};
 	fs::path compiled_libraries_output{};
 
-	input_path = "C:\\Users\\ilia.baranov\\Documents\\GitHub\\new_renderer\\embed\\shaders\\config.smake";
-	compiled_libraries_output = "C:\\Users\\ilia.baranov\\Documents\\GitHub\\new_renderer\\bin\\Debug\\engine\\embed\\rendering\\shader_cache.shc";
-
-	FShaderMakeInfo make_info{};
-	if (!parse_file_to(input_path, make_info))
-	{
-		log_error("Failed to open shader make file.");
-		return -1;
-	}
+	input_path = "D:\\GitHub\\new_renderer\\embed\\shaders\\config.smake";
+	compiled_libraries_output = "D:\\GitHub\\new_renderer\\bin\\Debug\\engine\\embed\\rendering\\shader_cache.shc";
 
 	input_path = argparse.try_get("-in", input_path);
 	if (input_path.empty())
@@ -81,6 +74,13 @@ int main(int argc, char** argv)
 	std::string build_type_str{ "release" };
 	build_type_str = argparse.try_get("-build_type", build_type_str);
 	ETargetBuildType build_type = parse_build_type(build_type_str);
+
+	FShaderMakeInfo make_info{};
+	if (!parse_file_to(input_path, make_info))
+	{
+		log_error("Failed to open shader make file.");
+		return -1;
+	}
 
 	auto make_file_dir = input_path.parent_path();
 	fs::path shaders_common = make_file_dir / make_info.commonDirectories.front();
@@ -105,6 +105,7 @@ int main(int argc, char** argv)
 		log_info("Building module: {}", module_local_path);
 		fs::path module_path = make_file_dir / module_local_path;
 		library_compiler->compile(module_path, shader_cahce);
+			//dump_json_from(compiled_libraries_output, shader_cahce);
 	}
 
 	dump_json_from(compiled_libraries_output, shader_cahce);
