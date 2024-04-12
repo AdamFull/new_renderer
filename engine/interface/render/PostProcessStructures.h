@@ -20,7 +20,7 @@ namespace engine
 
 		struct FPostProcessBloom
 		{
-			bool enable{ false };
+			bool enable{ true };
 			f32 threshold{ 1.f };
 			f32 filter_radius{ 0.005f };
 			f32 strength{ 0.04f };

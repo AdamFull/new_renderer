@@ -21,6 +21,15 @@
 			];
 		},
 		{
+			name: "brightdetect";
+			sources: [
+				{
+					type: "compute";
+					shader_name: "brightdetect_comp";
+				}
+			];
+		},
+		{
 			name: "downsample";
 			sources: [
 				{
@@ -101,6 +110,10 @@
 		},
 		{ 
 			shader_name: "bokeh";
+			pattern: "default_pattern";
+		},
+		{
+			shader_name: "brightdetect";
 			pattern: "default_pattern";
 		},
 		{ 

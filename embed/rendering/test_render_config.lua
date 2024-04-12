@@ -125,7 +125,16 @@ end
 -- Bloom targets
 do
     local target_ci = TextureCI.new()
-    target_ci.format = render_context:get_api_format(Format.rgba16_sfloat)
+    target_ci.format = render_context:get_api_format(Format.r11g11b10_ufloat)
+    target_ci.type:set(TexType.two_dim, TexType.samplable, TexType.storage)
+    target_ci:set_size_scale(0.5)
+
+    render_graph:add_render_resource("brightness_target", target_ci)
+end
+
+do
+    local target_ci = TextureCI.new()
+    target_ci.format = render_context:get_api_format(Format.r11g11b10_ufloat)
     target_ci.type:set(TexType.two_dim, TexType.samplable, TexType.storage)
     target_ci:set_size_scale(0.5)
     target_ci.mip_levels = bloom_blur_depth
@@ -164,7 +173,71 @@ do
     render_graph:add_viewport("cascaded_shadows_viewport", viewport_ci)
 end
 
+-- Some functions
+function make_compute_pass(type, queue, shader)
+    local pass_ci = ComputeCreateInfo.new()
+    pass_ci.type = type
+    pass_ci.queue = queue
+    pass_ci.shader = shader
 
+    return pass_ci
+end
+
+function make_graphics_pass(type, queue, shader)
+    local pass_ci = GraphicsCreateInfo.new()
+    pass_ci.type = type
+    pass_ci.queue = queue
+    pass_ci.shader = shader
+
+    return pass_ci
+end
+
+function compute_bloom()
+    -- Starting from brightness detection pass
+    do
+        local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:brightdetect")
+
+        pass_ci:add_workgroup_size_info("bloom_target", true)
+
+        pass_ci:bind_read_resource("sampler_color", "final_lighting_target")
+        pass_ci:bind_write_resource("write_color", "brightness_target")
+
+        render_graph:add_render_pass("brightdetect_pass", pass_ci)
+    end
+
+    -- Begin downsampling
+    for idx = 0, bloom_blur_depth - 1 do
+        local pass_ci = ComputeCreateInfo.new()
+        pass_ci.type = ComputeType.default
+        pass_ci.queue = QueueType.graphics
+        pass_ci.shader = (idx == 0) and "postprocess:downsample:FIRST_PASS" or "postprocess:downsample"
+
+        current_target = (idx == 0) and "brightness_target" or "bloom_target"
+        current_target_idx = (idx == 0) and 0 or (idx - 1)
+
+        pass_ci:add_workgroup_size_info("bloom_target", idx, true)
+        
+        pass_ci:bind_read_resource("sampler_color", current_target, current_target_idx)
+        pass_ci:bind_write_resource("write_color", "bloom_target", idx)
+        
+        render_graph:add_render_pass("downsample_pass_" .. idx, pass_ci)
+    end
+
+    -- And upsampling
+    for idx = bloom_blur_depth - 1, 1, -1 do
+        local pass_ci = ComputeCreateInfo.new()
+        pass_ci.type = ComputeType.default
+        pass_ci.queue = QueueType.graphics
+        pass_ci.shader = "postprocess:upsample"
+    
+        pass_ci:add_workgroup_size_info("bloom_target", idx - 1, true)
+    
+        pass_ci:bind_read_resource("sampler_color", "bloom_target", idx)
+        pass_ci:bind_write_resource("write_color", "bloom_target", idx - 1)
+    
+        render_graph:add_render_pass("upnsample_pass_" .. idx, pass_ci)
+    end
+end
 
 
 -- generate brdf lut
@@ -333,19 +406,63 @@ do
 end
 
 -- Compute bloom
-do
-    local pass_ci = ComputeCreateInfo.new()
-    pass_ci.type = ComputeType.default
-    pass_ci.queue = QueueType.graphics
-    pass_ci.shader = "postprocess:downsample:FIRST_PASS"
+compute_bloom()
 
-    pass_ci:add_workgroup_size_info("bloom_target", true)
-
-    pass_ci:bind_read_resource("sampler_color", "final_lighting_target")
-    pass_ci:bind_write_resource("write_color", "bloom_target")
-
-    render_graph:add_render_pass("downsample_pass_0", pass_ci)
-end
+--do
+--    local pass_ci = ComputeCreateInfo.new()
+--    pass_ci.type = ComputeType.default
+--    pass_ci.queue = QueueType.graphics
+--    pass_ci.shader = "postprocess:upsample"
+--
+--    pass_ci:add_workgroup_size_info("bloom_target", 3, true)
+--
+--    pass_ci:bind_read_resource("sampler_color", "bloom_target", 4)
+--    pass_ci:bind_write_resource("write_color", "bloom_target", 3)
+--
+--    render_graph:add_render_pass("upnsample_pass_4", pass_ci)
+--end
+--
+--do
+--    local pass_ci = ComputeCreateInfo.new()
+--    pass_ci.type = ComputeType.default
+--    pass_ci.queue = QueueType.graphics
+--    pass_ci.shader = "postprocess:upsample"
+--
+--    pass_ci:add_workgroup_size_info("bloom_target", 2, true)
+--
+--    pass_ci:bind_read_resource("sampler_color", "bloom_target", 3)
+--    pass_ci:bind_write_resource("write_color", "bloom_target", 2)
+--
+--    render_graph:add_render_pass("upnsample_pass_3", pass_ci)
+--end
+--
+--do
+--    local pass_ci = ComputeCreateInfo.new()
+--    pass_ci.type = ComputeType.default
+--    pass_ci.queue = QueueType.graphics
+--    pass_ci.shader = "postprocess:upsample"
+--
+--    pass_ci:add_workgroup_size_info("bloom_target", 1, true)
+--
+--    pass_ci:bind_read_resource("sampler_color", "bloom_target", 2)
+--    pass_ci:bind_write_resource("write_color", "bloom_target", 1)
+--
+--    render_graph:add_render_pass("upnsample_pass_2", pass_ci)
+--end
+--
+--do
+--    local pass_ci = ComputeCreateInfo.new()
+--    pass_ci.type = ComputeType.default
+--    pass_ci.queue = QueueType.graphics
+--    pass_ci.shader = "postprocess:upsample"
+--
+--    pass_ci:add_workgroup_size_info("bloom_target", 0, true)
+--
+--    pass_ci:bind_read_resource("sampler_color", "bloom_target", 1)
+--    pass_ci:bind_write_resource("write_color", "bloom_target", 0)
+--
+--    render_graph:add_render_pass("upnsample_pass_1", pass_ci)
+--end
 
 -- Present pass
 do
@@ -358,6 +475,7 @@ do
     pass_ci:bind_read_resource("input_image", "final_lighting_target")
     pass_ci:bind_read_resource("avg_luminosity", "avg_brightness_target")
     pass_ci:bind_read_resource("motion_vectors", "motion_vectors_target")
+    pass_ci:bind_read_resource("bloom_blur", "bloom_target")
     pass_ci:add_write_resource("present_target")
 
     render_graph:add_render_pass("finalize_image_pass", pass_ci)

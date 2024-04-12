@@ -16,6 +16,8 @@
 			// bloom
 			int enable_bloom;
 			float b_bloom_strength;
+			float b_threshold;
+			float b_filter_radius;
 			// bloom
 
 			// dof
