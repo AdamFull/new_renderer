@@ -4,6 +4,12 @@
 
 using namespace engine::render;
 
+void caclulate_size_for_mip_level(u32& width, u32& height, u32 mip_level)
+{
+	width = std::max(1u, width >> mip_level);
+	height = std::max(1u, height >> mip_level);
+}
+
 void IBasePass::execute(f32 dt)
 {
 	if (m_bOneTime && m_bCanExecute)
@@ -20,11 +26,11 @@ void IBasePass::initShaderResources(const std::unique_ptr<IShaderObject>& shader
 	auto& render_graph = m_pRenderInterface->getRenderGraph();
 
 	// Bind default textures/buffers to shader
-	for (const auto& [bind_point, resource_id] : m_bakedBindings)
+	for (const auto& [bind_point, resource_binding] : m_bakedBindings)
 	{
-		auto& render_resource = render_graph->getRenderResource(resource_id);
+		auto& render_resource = render_graph->getRenderResource(resource_binding.resource);
 		if (render_resource.type & ERenderResourceTypeFlagBits::eAllImage)
-			shader->bindTexture(bind_point.c_str(), render_resource.handle);
+			shader->bindTexture(bind_point.c_str(), render_resource.handle, resource_binding.subresource);
 		else if (render_resource.type == ERenderResourceTypeFlagBits::eBuffer)
 			shader->bindBuffer(bind_point.c_str(), render_resource.handle);
 	}
@@ -46,6 +52,8 @@ void IBasePass::bindShaderResources(const std::unique_ptr<IShaderObject>& shader
 		// bloom uniforms
 		uniform->set("enable_bloom", utl::cast<i32>(post_process.bloom.enable));
 		uniform->set("b_bloom_strength", post_process.bloom.strength);
+		uniform->set("b_threshold", post_process.bloom.threshold);
+		uniform->set("b_filter_radius", post_process.bloom.filter_radius);
 
 		// Depth of field uniforms
 		uniform->set("enable_dof", utl::cast<i32>(post_process.dof.enable));
@@ -289,6 +297,8 @@ void IComputePass::execute(f32 dt)
 			dispatch_info.globalSizes.y = group_info.height;
 			dispatch_info.globalSizes.z = group_info.depth;
 		}
+
+		caclulate_size_for_mip_level(dispatch_info.globalSizes.x, dispatch_info.globalSizes.y, group_info.subresource);
 
 		dispatch_info.divideByLocals = group_info.divideByLocals;
 	}

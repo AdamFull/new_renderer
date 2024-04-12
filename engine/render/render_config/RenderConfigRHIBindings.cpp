@@ -271,8 +271,14 @@ namespace engine
 				"shader", &FRenderConfigPassCreateInfo::shader,
 				"one_time", &FRenderConfigPassCreateInfo::oneTime,
 				"size_target", &FRenderConfigPassCreateInfo::sizeTarget,
-				"bind_write_resource", &FRenderConfigPassCreateInfo::bindWriteResource,
-				"bind_read_resource", &FRenderConfigPassCreateInfo::bindReadResource,
+				"bind_write_resource", sol::overload(
+					static_cast<void(FRenderConfigPassCreateInfo::*)(const std::string&, const std::string&)>(&FRenderConfigPassCreateInfo::bindWriteResource),
+					static_cast<void(FRenderConfigPassCreateInfo::*)(const std::string&, const std::string&, u32)>(&FRenderConfigPassCreateInfo::bindWriteResource)
+				),
+				"bind_read_resource", sol::overload(
+					static_cast<void(FRenderConfigPassCreateInfo::*)(const std::string&, const std::string&)>(&FRenderConfigPassCreateInfo::bindReadResource),
+					static_cast<void(FRenderConfigPassCreateInfo::*)(const std::string&, const std::string&, u32)>(&FRenderConfigPassCreateInfo::bindReadResource)
+				),
 				"add_write_resource", &FRenderConfigPassCreateInfo::addWriteResource,
 				"add_read_resource", &FRenderConfigPassCreateInfo::addReadResource
 				);
@@ -295,7 +301,9 @@ namespace engine
 				"type", &FRenderConfigComputeCreateInfo::type,
 				"add_workgroup_size_info", sol::overload(
 					static_cast<void(FRenderConfigComputeCreateInfo::*)(const std::string&, bool)>(&FRenderConfigComputeCreateInfo::addDispatchGroupInfo),
-					static_cast<void(FRenderConfigComputeCreateInfo::*)(u32, u32, u32, bool)>(&FRenderConfigComputeCreateInfo::addDispatchGroupInfo)
+					static_cast<void(FRenderConfigComputeCreateInfo::*)(const std::string&, u32, bool)>(&FRenderConfigComputeCreateInfo::addDispatchGroupInfo),
+					static_cast<void(FRenderConfigComputeCreateInfo::*)(u32, u32, u32, bool)>(&FRenderConfigComputeCreateInfo::addDispatchGroupInfo),
+					static_cast<void(FRenderConfigComputeCreateInfo::*)(u32, u32, u32, u32, bool)>(&FRenderConfigComputeCreateInfo::addDispatchGroupInfo)
 				)
 			);
 

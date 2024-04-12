@@ -568,6 +568,7 @@ u64 CRenderGraph::addRenderPass(const stl::string& name, const FRenderConfigComp
 		new_group_info.width = group_info.width;
 		new_group_info.height = group_info.height;
 		new_group_info.depth = group_info.depth;
+		new_group_info.subresource = group_info.subresource;
 	}
 
 	new_pass->init(pass_ci);
@@ -807,11 +808,6 @@ void CRenderGraph::execute(f32 dt)
 		if (!pass->canExecute())
 			continue;
 
-		if (pass->m_debugName == "fullscreen:testing:screenspace")
-		{
-			int iiiiiiiiiii{};
-		}
-
 		render_context->processResourceBarriers(pass->m_queue, resource_barriers);
 		pass->execute(dt);
 	}
@@ -852,9 +848,9 @@ void CRenderGraph::applyRenderPassResources(u64 pass_index, const FRenderConfigP
 	// Binded resources for using as input
 	for (const auto& [access_flag, bindings] : raw_pass_ci->resourceBindings)
 	{
-		for (const auto& [binding_point, resource_name] : bindings)
+		for (const auto& [binding_point, resource_binding] : bindings)
 		{
-			auto resource_id = getRenderRersourceId(resource_name);
+			auto resource_id = getRenderRersourceId(resource_binding.name);
 			auto& render_resource = getRenderResource(resource_id);
 
 			ERenderResourceGroupFlagBits group_type{};
@@ -874,7 +870,7 @@ void CRenderGraph::applyRenderPassResources(u64 pass_index, const FRenderConfigP
 				pass_ci->resources[resource_key].emplace_back(resource_id);
 			}
 
-			pass_ci->bindings.emplace(binding_point, resource_id);
+			pass_ci->bindings.emplace(binding_point, FRenderResourceBinding{ resource_id, resource_binding.subresource });
 		}
 	}
 

@@ -253,6 +253,12 @@ namespace engine
 			stl::unordered_map<ERenderResourceAccessFlagBits, stl::unordered_set<u64>> usages{};
 		};
 
+		struct FRenderConfigResourceBindingDescription
+		{
+			std::string name{};
+			u32 subresource{ 0u };
+		};
+
 		struct FRenderConfigPassCreateInfo
 		{
 			EQueueTypeFlagBits queue{};
@@ -261,11 +267,13 @@ namespace engine
 
 			stl::string sizeTarget{};
 
-			stl::unordered_map<ERenderResourceAccessFlagBits, stl::unordered_map<stl::string, stl::string>> resourceBindings{};
+			stl::unordered_map<ERenderResourceAccessFlagBits, stl::unordered_map<stl::string, FRenderConfigResourceBindingDescription>> resourceBindings{};
 			stl::unordered_map<ERenderResourceAccessFlagBits, stl::vector<stl::string>> otherResources{};
 
-			void bindWriteResource(const stl::string& binding_point, const stl::string& resource_name) { resourceBindings[ERenderResourceAccessFlagBits::eWrite].emplace(binding_point, resource_name); }
-			void bindReadResource(const stl::string& binding_point, const stl::string& resource_name) { resourceBindings[ERenderResourceAccessFlagBits::eRead].emplace(binding_point, resource_name); }
+			void bindWriteResource(const stl::string& binding_point, const stl::string& resource_name) { resourceBindings[ERenderResourceAccessFlagBits::eWrite].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, 0u }); }
+			void bindWriteResource(const stl::string& binding_point, const stl::string& resource_name, u32 subresource) { resourceBindings[ERenderResourceAccessFlagBits::eWrite].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, subresource }); }
+			void bindReadResource(const stl::string& binding_point, const stl::string& resource_name) { resourceBindings[ERenderResourceAccessFlagBits::eRead].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, 0u }); }
+			void bindReadResource(const stl::string& binding_point, const stl::string& resource_name, u32 subresource) { resourceBindings[ERenderResourceAccessFlagBits::eRead].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, subresource }); }
 			void addWriteResource(const stl::string& resource_name) { otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(resource_name); }
 			void addReadResource(const stl::string& resource_name) { otherResources[ERenderResourceAccessFlagBits::eRead].emplace_back(resource_name); }
 		};
@@ -291,6 +299,7 @@ namespace engine
 			bool divideByLocals{ true };
 			std::string target{};
 			u32 width{ 1u }, height{ 1u }, depth{ 1u };
+			u32 subresource{ 0u };
 		};
 
 		struct FComputeDispatchGroupInfo
@@ -299,6 +308,7 @@ namespace engine
 			bool divideByLocals{ true };
 			u64 target{ INVALID_HANDLE };
 			u32 width{ 1u }, height{ 1u }, depth{ 1u };
+			u32 subresource{ 0u };
 		};
 
 		struct FRenderConfigComputeCreateInfo : public FRenderConfigPassCreateInfo
@@ -306,15 +316,18 @@ namespace engine
 			EComputeType type{};
 			std::vector<FRenderConfigComputeDispatchGroupInfo> groupInfos{};
 
-			void addDispatchGroupInfo(const std::string& target, bool divide_by_locals)
+			void addDispatchGroupInfo(const std::string& target, u32 subresource, bool divide_by_locals)
 			{
 				auto& group_info = groupInfos.emplace_back();
 				group_info.type = ERenderingSizeType::eFromRenderTarget;
 				group_info.target = target;
 				group_info.divideByLocals = divide_by_locals;
+				group_info.subresource = subresource;
 			}
 
-			void addDispatchGroupInfo(u32 width, u32 height, u32 depth, bool divide_by_locals)
+			void addDispatchGroupInfo(const std::string& target, bool divide_by_locals) { addDispatchGroupInfo(target, 0u, divide_by_locals); }
+
+			void addDispatchGroupInfo(u32 width, u32 height, u32 depth, u32 subresource, bool divide_by_locals)
 			{
 				auto& group_info = groupInfos.emplace_back();
 				group_info.type = ERenderingSizeType::eManual;
@@ -322,7 +335,16 @@ namespace engine
 				group_info.height = height;
 				group_info.depth = depth;
 				group_info.divideByLocals = divide_by_locals;
+				group_info.subresource = subresource;
 			}
+
+			void addDispatchGroupInfo(u32 width, u32 height, u32 depth, bool divide_by_locals) { addDispatchGroupInfo(width, height, depth, 0u, divide_by_locals); }
+		};
+
+		struct FRenderResourceBinding
+		{
+			u64 resource{ INVALID_HANDLE };
+			u32 subresource{ 0u };
 		};
 
 		struct FPassCreateInfo
@@ -332,7 +354,7 @@ namespace engine
 			bool oneTime{ false };
 
 			stl::unordered_map<ERenderResourceGroupType, stl::vector<u64>> resources{};
-			stl::unordered_map<stl::string, u64> bindings{};
+			stl::unordered_map<stl::string, FRenderResourceBinding> bindings{};
 		};
 
 		struct FRenderPassCreateInfo : public FPassCreateInfo
