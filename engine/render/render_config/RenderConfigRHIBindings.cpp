@@ -44,6 +44,25 @@ namespace engine
 			);
 		}
 
+		template<class EnumType>
+		void register_flags_type(const char* name, sol::state* lua)
+		{
+			using EnumFlagsType = utl::container::flags<EnumType>;
+			using BitType = std::underlying_type<EnumType>::type;
+
+			lua->new_usertype<EnumFlagsType>(
+				name,
+				sol::constructors<
+				EnumFlagsType(),
+				EnumFlagsType(EnumType),
+				EnumFlagsType(EnumFlagsType const&),
+				EnumFlagsType(BitType)>(),
+				"set", [](EnumFlagsType& self, sol::variadic_args args) -> void {
+					for (auto arg : args)
+						self |= arg.as<EnumType>();
+				});
+		}
+
 		void bindRenderInterfaceEnums(sol::state* lua)
 		{
 			// Register ETextureFormat
@@ -210,17 +229,10 @@ namespace engine
 			);
 
 			// EBufferUsageFlags registration
-			lua->new_usertype<EBufferUsageFlags>(
-				"EBufferUsageFlags",
-				sol::constructors<
-					EBufferUsageFlags(),
-					EBufferUsageFlags(EBufferUsageFlagBits),
-					EBufferUsageFlags(EBufferUsageFlags const&),
-					EBufferUsageFlags(std::underlying_type<EBufferUsageFlagBits>::type)>(),
-				"add", [](EBufferUsageFlags& self, sol::variadic_args args) -> void {
-					for (auto arg : args)
-						self |= arg.as<EBufferUsageFlagBits>();
-				});
+			register_flags_type<EBufferUsageFlagBits>("EBufferUsageFlags", lua);
+
+			// ETextureCreateFlags registration
+			register_flags_type<ETextureCreateFlagBits>("ETextureCreateFlags", lua);
 			
 			// FBufferCreateInfo registration
 			lua->new_usertype<FBufferCreateInfo>(

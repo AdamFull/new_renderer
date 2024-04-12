@@ -53,15 +53,6 @@ void CRenderScriptCore::create(IRenderInterface* render_interface)
 	bindGLMath(m_pLuaState);
 	bindRenderInterface(m_pLuaState);
 
-	m_pLuaState->set_function("texture_or", 
-		[](sol::variadic_args args) -> ETextureCreateFlags
-		{
-			ETextureCreateFlags result{ 0u };
-			for (auto arg : args)
-				result |= arg.as<u32>();
-			return result;
-		});
-
 	(*m_pLuaState)["render_interface"] = render_interface;
 	(*m_pLuaState)["render_context"] = render_interface->getRenderContext().get();
 	(*m_pLuaState)["render_graph"] = render_interface->getRenderGraph().get();
