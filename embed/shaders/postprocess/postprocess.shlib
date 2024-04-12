@@ -105,7 +105,10 @@
 		},
 		{ 
 			shader_name: "downsample";
-			pattern: "default_pattern";
+			permutations: [
+				{ defines: [] },
+				{ defines: ["FIRST_PASS"] }
+			];
 		},
 		{ 
 			shader_name: "emptypass";
