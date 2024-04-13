@@ -54,7 +54,7 @@ namespace engine
 		private:
 			void applyRenderPassResources(u64 pass_index, const FRenderConfigPassCreateInfo* raw_pass_ci, FPassCreateInfo* pass_ci);
 			void applySingleRenderResourceDependencies(u64 resource_id, ERenderResourceAccessFlagBits access_type, u64 pass_index, EQueueTypeFlagBits queue_type);
-			void applyMultiRenderResourceDependencies(u64 pass_index, EQueueTypeFlagBits queue_type, const stl::unordered_map<ERenderResourceGroupType, stl::vector<u64>>& associated_resources);
+			void applyMultiRenderResourceDependencies(u64 pass_index, EQueueTypeFlagBits queue_type, const stl::unordered_map<ERenderResourceGroupType, stl::vector<FRenderResourceBinding>>& associated_resources);
 
 			void traverseDependencies(u64 current_pass_index, u64 stack_count = 0ull);
 			void traverseDependencies2(u64 current_pass_index, u64 stack_count = 0ull);

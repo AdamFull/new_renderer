@@ -1035,15 +1035,26 @@ void CVkRenderContext::processResourceBarriers(EQueueTypeFlagBits queue, const s
 				texture_barrier.handle = texture->image.handle;
 				texture_barrier.subresourceRange.aspectMask = get_texture_aspect_flags(*texture);
 
-				texture_barrier.subresourceRange.layerCount = texture->totalLayers;
-				texture_barrier.subresourceRange.levelCount = texture->initialData.base.mipLevels;
+				// TODO: Check here. If image is array with mip maps, i should calculate array index and mip index from subresource
+				texture_barrier.subresourceRange.baseMipLevel = resource_barrier.subresourceIndex;
+
+				if (resource_barrier.subresourceIndex != 0u)
+				{
+					texture_barrier.subresourceRange.layerCount = 1u;
+					texture_barrier.subresourceRange.levelCount = 1u;
+				}
+				else
+				{
+					texture_barrier.subresourceRange.layerCount = texture->totalLayers;
+					texture_barrier.subresourceRange.levelCount = texture->initialData.base.mipLevels;
+				}
 			}
 			
 			texture_barrier.srcStageMask = get_translation_stage_flags(old_image_layout);
-			texture_barrier.srcAccessMask = get_translation_access_flags(old_image_layout);
+			texture_barrier.srcAccessMask = get_translation_access_flags(old_image_layout, src_resource_access);
 			texture_barrier.oldLayout = old_image_layout;
 			texture_barrier.dstStageMask = get_translation_stage_flags(new_image_layout);
-			texture_barrier.dstAccessMask = get_translation_access_flags(new_image_layout);
+			texture_barrier.dstAccessMask = get_translation_access_flags(new_image_layout, dst_resource_access);
 			texture_barrier.newLayout = new_image_layout;
 		}
 		// For buffers

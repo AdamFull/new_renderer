@@ -40,7 +40,7 @@ namespace engine
 
 			EQueueTypeFlagBits m_queue{};
 
-			stl::unordered_map<ERenderResourceGroupType, stl::vector<u64>> m_renderResources{};
+			stl::unordered_map<ERenderResourceGroupType, stl::vector<FRenderResourceBinding>> m_renderResources{};
 			stl::unordered_map<stl::string, FRenderResourceBinding> m_bakedBindings{};
 
 			bool m_bOneTime{ false };

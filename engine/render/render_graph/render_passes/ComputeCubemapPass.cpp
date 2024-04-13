@@ -19,9 +19,9 @@ void CComputeCubemapPass::init(const FComputePassCreateInfo& pass_ci)
 	auto& render_graph = m_pRenderInterface->getRenderGraph();
 
 	auto& out_targets = m_renderResources[ERenderResourceGroupType::eStorageTextureWrite];
-	for (u64 resource_id : out_targets)
+	for (const auto& resource_binding : out_targets)
 	{
-		auto& render_resource = render_graph->getRenderResource(resource_id);
+		auto& render_resource = render_graph->getRenderResource(resource_binding.resource);
 		auto& info = render_context->getTextureInfo(render_resource.handle);
 		calculated_usage += info.mipLevels;
 	}
@@ -53,9 +53,9 @@ void CComputeCubemapPass::_execute(const FComputeFrameInfo& frame_info)
 
 	auto& write_resources = m_renderResources[ERenderResourceGroupType::eStorageTextureWrite];
 
-	for (const auto& resource_id : write_resources)
+	for (const auto& resource_binding : write_resources)
 	{
-		auto& render_resource = render_graph->getRenderResource(resource_id);
+		auto& render_resource = render_graph->getRenderResource(resource_binding.resource);
 		auto& info = render_context->getTextureInfo(render_resource.handle);
 		for (u32 mip = 0u; mip < info.mipLevels; ++mip)
 		{

@@ -106,21 +106,21 @@ void IRenderPass::build(const FPassBuildInfo& build_info)
 	auto& render_graph = m_pRenderInterface->getRenderGraph();
 
 	auto& backbuffer_target = m_renderResources[ERenderResourceGroupType::eBackbufferWrite];
-	for (u64 resource_id : backbuffer_target)
+	for (const auto& resource_binding : backbuffer_target)
 	{
 		auto& color_attachment = m_vColorAttachments.emplace_back();
-		buildAttachment(resource_id, build_info, color_attachment);
+		buildAttachment(resource_binding.resource, build_info, color_attachment);
 		color_attachment.backbuffer = true;
 	}
 
 	auto& output_targets = m_renderResources[ERenderResourceGroupType::eColorWrite];
-	for (u64 resource_id : output_targets)
+	for (const auto& resource_binding : output_targets)
 	{
-		if (resource_id == m_depthTarget || resource_id == m_stencilTarget)
+		if (resource_binding.resource == m_depthTarget || resource_binding.resource == m_stencilTarget)
 			continue;
 
 		auto& color_attachment = m_vColorAttachments.emplace_back();
-		buildAttachment(resource_id, build_info, color_attachment);
+		buildAttachment(resource_binding.resource, build_info, color_attachment);
 	}
 
 	if (m_depthTarget != INVALID_HANDLE)
@@ -189,23 +189,23 @@ void IRenderPass::makeShader(const std::string& name, std::unique_ptr<IShaderObj
 	shader_ci.primitiveTopology = EVertexPrimitiveTopology::eTriangleList;
 
 	auto& output_targets = m_renderResources[ERenderResourceGroupType::eColorWrite];
-	for (u64 resource_id : output_targets)
+	for (const auto& resource_binding : output_targets)
 	{
-		if (resource_id == m_depthTarget || resource_id == m_stencilTarget)
+		if (resource_binding.resource == m_depthTarget || resource_binding.resource == m_stencilTarget)
 			continue;
 
-		auto& render_resource = render_graph->getRenderResource(resource_id);
+		auto& render_resource = render_graph->getRenderResource(resource_binding.resource);
 		auto& new_attachment = shader_ci.colorAttachments.emplace_back();
 		new_attachment.source = render_resource.handle;
 	}
 
 	auto& backbuffer_targer = m_renderResources[ERenderResourceGroupType::eBackbufferWrite];
-	for (u64 resource_id : backbuffer_targer)
+	for (const auto& resource_binding : backbuffer_targer)
 	{
-		if (resource_id == m_depthTarget || resource_id == m_stencilTarget)
+		if (resource_binding.resource == m_depthTarget || resource_binding.resource == m_stencilTarget)
 			continue;
 
-		auto& render_resource = render_graph->getRenderResource(resource_id);
+		auto& render_resource = render_graph->getRenderResource(resource_binding.resource);
 		auto& new_attachment = shader_ci.colorAttachments.emplace_back();
 		new_attachment.source = render_resource.handle;
 		new_attachment.backbuffer = true;

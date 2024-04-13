@@ -19,6 +19,7 @@ struct FResourceAccessInfo
 {
 	ERenderResourceDependencyBarrierType type{};
 	u64 resource{ INVALID_HANDLE };
+	u32 subresource{ 0u };
 	u64 srcPassIndex{ INVALID_HANDLE };
 	u64 dstPassIndex{ INVALID_HANDLE };
 };
@@ -626,47 +627,63 @@ void CRenderGraph::build()
 
 	// Generate dependency barriers
 	stl::unordered_map<u64, stl::vector<FResourceAccessInfo>> per_pass_resource_access{};
-	stl::map<stl::pair<ERenderResourceDependencyBarrierType, u64>, u64> unique_barrier_counter;
-	stl::unordered_map<u64, u64> unique_resource_writes{};
+	stl::unordered_map<FRenderResourceBindingKey, u64> unique_barrier_counter;
+	stl::unordered_map<FRenderResourceBinding, u64> unique_resource_writes{};
 
+	// For all passes
 	for (u64 src_pass_index : m_vPassExecutionQueue)
 	{
 		auto src_pass_order = m_vPassOrder.at(src_pass_index);
 		auto& src_pass = m_vRenderPasses.at(src_pass_index);
+
+		// For all src pass resources
 		for (const auto& [resource_group, resource_indices] : src_pass->m_renderResources)
 		{
 			ERenderResourceAccessFlagBits src_access_flag{};
 			ERenderResourceGroupFlagBits group_flag{};
 			unpackResourceGroup(resource_group, src_access_flag, group_flag);
 
-			for (u64 resource_index : resource_indices)
+			for (u64 resource_index = 0ull; resource_index < resource_indices.size(); ++resource_index)
 			{
+				const auto& resource_access = resource_indices[resource_index];
+
 				// Write first resource access barriers
-				if (src_access_flag == ERenderResourceAccessFlagBits::eWrite && !unique_resource_writes.count(resource_index))
+				if (src_access_flag == ERenderResourceAccessFlagBits::eWrite && !unique_resource_writes.count(resource_access))
 				{
 					auto& resource_access_infos = per_pass_resource_access[src_pass_index];
 					auto& access_info = resource_access_infos.emplace_back();
 					access_info.type = packDependencyBarrier(ERenderResourceAccessFlagBits::eNone, src_access_flag);
 					access_info.srcPassIndex = src_pass_index;
-					access_info.resource = resource_index;
+					access_info.resource = resource_access.resource;
+					access_info.subresource = resource_access.subresource;
 
-					unique_resource_writes[resource_index]++;
+					// TODO: add hash function for resource access structure
+					unique_resource_writes[resource_access]++;
 				}
 
-				auto& render_resource = m_vRenderResources.at(resource_index);
+				auto& render_resource = m_vRenderResources.at(resource_access.resource);
 				for (const auto& [dst_access_flag, accessing_passes] : render_resource.usages)
 				{
 					for (u64 dst_pass_index : accessing_passes)
 					{
 						auto dst_pass_order = m_vPassOrder.at(dst_pass_index);
-						if ((src_pass_index == dst_pass_index) || (src_access_flag == ERenderResourceAccessFlagBits::eRead && dst_access_flag == ERenderResourceAccessFlagBits::eRead) || (dst_pass_order < src_pass_order))
+						// One shader can write after write in the same pass to same resource, but different subresource
+						bool is_same_pass = src_pass_index == dst_pass_index;
+						bool is_ro_access = (src_access_flag == ERenderResourceAccessFlagBits::eRead && dst_access_flag == ERenderResourceAccessFlagBits::eRead);
+						bool is_invalid_order = dst_pass_order < src_pass_order;
+						bool is_same_access = src_access_flag == dst_access_flag;
+
+						// For situation where we using subresource
+						if (is_same_pass && is_same_access)
+							continue;
+						else if (is_same_pass || is_ro_access || is_invalid_order)
 							continue;
 
 						auto barrier_type = packDependencyBarrier(src_access_flag, dst_access_flag);
 						
 						// Filter repeating barriers
-						auto resource_barrier_pair = stl::make_pair(barrier_type, render_resource.handle);
-						if (unique_barrier_counter.count(resource_barrier_pair))
+						auto resource_barrier_key = FRenderResourceBindingKey{ resource_access, barrier_type };
+						if (unique_barrier_counter.count(resource_barrier_key))
 							continue;
 
 						auto& resource_access_infos = per_pass_resource_access[dst_pass_index];
@@ -674,9 +691,14 @@ void CRenderGraph::build()
 						access_info.type = barrier_type;
 						access_info.srcPassIndex = src_pass_index;
 						access_info.dstPassIndex = dst_pass_index;
-						access_info.resource = resource_index;
+						access_info.resource = resource_access.resource;
+						access_info.subresource = resource_access.subresource;
 
-						unique_barrier_counter[resource_barrier_pair]++;
+						auto& render_resource = m_vRenderResources.at(access_info.resource);
+						if (access_info.type == ERenderResourceDependencyBarrierType::eWriteAfterWrite && render_resource.handle == 13 && resource_access.subresource == 0u)
+							int iiii = 0;
+
+						unique_barrier_counter[resource_barrier_key]++;
 					}
 				}
 			}
@@ -707,6 +729,7 @@ void CRenderGraph::build()
 			new_barrier.type = access_info.type;
 			new_barrier.resource.handle = render_resource.handle;
 			new_barrier.resource.type = render_resource.type;
+			new_barrier.subresourceIndex = access_info.subresource;
 		}
 	}
 
@@ -808,6 +831,9 @@ void CRenderGraph::execute(f32 dt)
 		if (!pass->canExecute())
 			continue;
 
+		if (pass->m_debugName == "compute:postprocess:downsample:FIRST_PASS")
+			int iiii = 0;
+
 		render_context->processResourceBarriers(pass->m_queue, resource_barriers);
 		pass->execute(dt);
 	}
@@ -867,7 +893,7 @@ void CRenderGraph::applyRenderPassResources(u64 pass_index, const FRenderConfigP
 			if (!(render_resource.type & ERenderResourceTypeFlagBits::eStaticImage))
 			{
 				auto resource_key = packResourceGroup(access_flag, group_type);
-				pass_ci->resources[resource_key].emplace_back(resource_id);
+				pass_ci->resources[resource_key].emplace_back(FRenderResourceBinding{ resource_id, resource_binding.subresource });
 			}
 
 			pass_ci->bindings.emplace(binding_point, FRenderResourceBinding{ resource_id, resource_binding.subresource });
@@ -893,8 +919,9 @@ void CRenderGraph::applyRenderPassResources(u64 pass_index, const FRenderConfigP
 			else
 				continue;
 
-			auto resource_key = packResourceGroup(access_flag, group_type);
-			pass_ci->resources[resource_key].emplace_back(resource_id);
+			// TODO: Don't know is subresource needed for writing
+			auto resource_key = packResourceGroup(access_flag, group_type);	
+			pass_ci->resources[resource_key].emplace_back(FRenderResourceBinding{ resource_id, 0u });
 		}
 	}
 
@@ -908,13 +935,13 @@ void CRenderGraph::applySingleRenderResourceDependencies(u64 resource_id, ERende
 	render_resource.queuesUsed |= queue_type;
 }
 
-void CRenderGraph::applyMultiRenderResourceDependencies(u64 pass_index, EQueueTypeFlagBits queue_type, const stl::unordered_map<ERenderResourceGroupType, stl::vector<u64>>& associated_resources)
+void CRenderGraph::applyMultiRenderResourceDependencies(u64 pass_index, EQueueTypeFlagBits queue_type, const stl::unordered_map<ERenderResourceGroupType, stl::vector<FRenderResourceBinding>>& associated_resources)
 {
-	for (const auto& [type, resources] : associated_resources)
+	for (const auto& [type, resource_bindings] : associated_resources)
 	{
 		auto access_type = utl::cast<ERenderResourceAccessFlagBits>(utl::enum_cast(type) & 0xFFFF);
-		for (u64 resource_id : resources)
-			applySingleRenderResourceDependencies(resource_id, access_type, pass_index, queue_type);
+		for (const auto& resource_binding : resource_bindings)
+			applySingleRenderResourceDependencies(resource_binding.resource, access_type, pass_index, queue_type);
 	}
 }
 
@@ -932,9 +959,9 @@ void CRenderGraph::traverseDependencies(u64 current_pass_index, u64 stack_count)
 		if (access_flag != ERenderResourceAccessFlagBits::eRead)
 			continue;
 
-		for (u64 resource_index : resource_indices)
+		for (const auto& resource_access : resource_indices)
 		{
-			auto& render_resource = m_vRenderResources.at(resource_index);
+			auto& render_resource = m_vRenderResources.at(resource_access.resource);
 			if (!render_resource.usages.count(ERenderResourceAccessFlagBits::eWrite))
 				continue;
 

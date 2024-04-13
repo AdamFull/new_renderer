@@ -169,6 +169,7 @@ namespace engine
 			FRenderResourceView resource{};
 			EPassType srcPassType{};
 			EPassType dstPassType{};
+			u32 subresourceIndex{ 0u };
 		};
 
 		struct FRenderGraphAttachmentInfo
@@ -345,6 +346,18 @@ namespace engine
 		{
 			u64 resource{ INVALID_HANDLE };
 			u32 subresource{ 0u };
+
+			bool operator==(const FRenderResourceBinding& other) const
+			{ return (resource == other.resource && subresource == other.subresource); }
+		};
+
+		struct FRenderResourceBindingKey
+		{
+			FRenderResourceBinding binding;
+			ERenderResourceDependencyBarrierType type;
+
+			bool operator==(const FRenderResourceBindingKey& other) const
+			{ return (binding == other.binding && type == other.type); }
 		};
 
 		struct FPassCreateInfo
@@ -353,7 +366,7 @@ namespace engine
 			stl::string shader{};
 			bool oneTime{ false };
 
-			stl::unordered_map<ERenderResourceGroupType, stl::vector<u64>> resources{};
+			stl::unordered_map<ERenderResourceGroupType, stl::vector<FRenderResourceBinding>> resources{};
 			stl::unordered_map<stl::string, FRenderResourceBinding> bindings{};
 		};
 
@@ -405,3 +418,21 @@ namespace engine
 		};
 	}
 }
+
+template <>
+struct std::hash<engine::render::FRenderResourceBinding>
+{
+	std::size_t operator()(const engine::render::FRenderResourceBinding& k) const
+	{
+		return ((std::hash<u64>()(k.resource) ^ (std::hash<u32>()(k.subresource) << 1)) >> 1);
+	}
+};
+
+template <>
+struct std::hash<engine::render::FRenderResourceBindingKey>
+{
+	std::size_t operator()(const engine::render::FRenderResourceBindingKey& k) const
+	{
+		return ((std::hash<engine::render::FRenderResourceBinding>()(k.binding) ^ (std::hash<u32>()(utl::enum_cast(k.type)) << 1)) >> 1);
+	}
+};

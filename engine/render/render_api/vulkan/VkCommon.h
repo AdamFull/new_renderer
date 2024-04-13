@@ -300,7 +300,7 @@ namespace engine
 				}
 			}
 
-			inline vk::AccessFlags2KHR get_translation_access_flags(vk::ImageLayout layout)
+			inline vk::AccessFlags2KHR get_translation_access_flags(vk::ImageLayout layout, ERenderResourceAccessFlagBits access_type = ERenderResourceAccessFlagBits::eNone)
 			{
 				switch (layout)
 				{
@@ -316,7 +316,18 @@ namespace engine
 				case vk::ImageLayout::eShaderReadOnlyOptimal: return vk::AccessFlagBits2KHR::eShaderRead | vk::AccessFlagBits2KHR::eInputAttachmentRead;
 				case vk::ImageLayout::eTransferSrcOptimal: return vk::AccessFlagBits2KHR::eTransferRead;
 				case vk::ImageLayout::eTransferDstOptimal: return vk::AccessFlagBits2KHR::eTransferWrite;
-				case vk::ImageLayout::eGeneral: return vk::AccessFlagBits2KHR::eShaderRead | vk::AccessFlagBits2KHR::eShaderWrite | vk::AccessFlagBits2KHR::eShaderSampledRead;
+				case vk::ImageLayout::eGeneral: {
+					constexpr const vk::AccessFlags2KHR read_flags = vk::AccessFlagBits2KHR::eShaderRead | vk::AccessFlagBits2KHR::eShaderStorageRead | vk::AccessFlagBits2KHR::eShaderSampledRead;
+					constexpr const vk::AccessFlags2KHR write_flags = vk::AccessFlagBits2KHR::eShaderWrite | vk::AccessFlagBits2KHR::eShaderStorageWrite;
+
+					if (access_type == ERenderResourceAccessFlagBits::eRead)
+						return read_flags;
+					else if (access_type == ERenderResourceAccessFlagBits::eWrite)
+						return write_flags;
+
+					return read_flags | write_flags;
+
+				} break; 
 				default: return vk::AccessFlagBits2KHR::eNone;
 				}
 			}
