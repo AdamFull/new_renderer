@@ -10,6 +10,9 @@
 #include "render_passes/ClearPass.h"
 #include "render_passes/PostProcessPass.h"
 
+#include "render_passes/BeginDebugMarker.h"
+#include "render_passes/EndDebugMarker.h"
+
 #include <logger/logger.h>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -474,6 +477,30 @@ void CRenderGraph::setBackbufferResourceName(const stl::string& name)
 	m_nameToResource[name] = m_backBufferResource;
 }
 
+void CRenderGraph::pushDebugMarker(const std::string& name, u32 color, EQueueTypeFlagBits queue)
+{
+	auto new_marker = std::make_unique<CBeginDebugMarker>(m_pRenderInterface);
+	new_marker->init(name, color, queue);
+
+	auto marker_index = m_vRenderPasses.size();
+	m_vPassExecutionQueue.emplace_back(marker_index);
+
+	m_vRenderPasses.emplace_back(std::move(new_marker));
+	m_nameToPass[name + "_begin"] = marker_index;
+}
+
+void CRenderGraph::popDebugMarker(const std::string& name, EQueueTypeFlagBits queue)
+{
+	auto new_marker = std::make_unique<CEndDebugMarker>(m_pRenderInterface);
+	new_marker->init(queue);
+
+	auto marker_index = m_vRenderPasses.size();
+	m_vPassExecutionQueue.emplace_back(marker_index);
+
+	m_vRenderPasses.emplace_back(std::move(new_marker));
+	m_nameToPass[name + "_end"] = marker_index;
+}
+
 const FRenderResource& CRenderGraph::getRenderResource(const stl::string& name) const
 {
 	static FRenderResource empty_resource{};
@@ -626,9 +653,11 @@ void CRenderGraph::build()
 		m_vPassOrder.at(pass_index) = pass_order++;
 
 	// Generate dependency barriers
-	stl::unordered_map<u64, stl::vector<FResourceAccessInfo>> per_pass_resource_access{};
+	stl::vector<stl::vector<FResourceAccessInfo>> per_pass_resource_access{};
 	stl::unordered_map<FRenderResourceBindingKey, u64> unique_barrier_counter;
 	stl::unordered_map<FRenderResourceBinding, u64> unique_resource_writes{};
+
+	per_pass_resource_access.resize(m_vRenderPasses.size());
 
 	// For all passes
 	for (u64 src_pass_index : m_vPassExecutionQueue)
@@ -637,32 +666,32 @@ void CRenderGraph::build()
 		auto& src_pass = m_vRenderPasses.at(src_pass_index);
 
 		// For all src pass resources
-		for (const auto& [resource_group, resource_indices] : src_pass->m_renderResources)
+		for (const auto& [src_resource_group, src_resource_bindings] : src_pass->m_renderResources)
 		{
 			ERenderResourceAccessFlagBits src_access_flag{};
-			ERenderResourceGroupFlagBits group_flag{};
-			unpackResourceGroup(resource_group, src_access_flag, group_flag);
+			ERenderResourceGroupFlagBits src_group_flag{};
+			unpackResourceGroup(src_resource_group, src_access_flag, src_group_flag);
 
-			for (u64 resource_index = 0ull; resource_index < resource_indices.size(); ++resource_index)
+			for (u64 src_resource_index = 0ull; src_resource_index < src_resource_bindings.size(); ++src_resource_index)
 			{
-				const auto& resource_access = resource_indices[resource_index];
+				const auto& src_resource_access = src_resource_bindings[src_resource_index];
 
 				// Write first resource access barriers
-				if (src_access_flag == ERenderResourceAccessFlagBits::eWrite && !unique_resource_writes.count(resource_access))
+				if (src_access_flag == ERenderResourceAccessFlagBits::eWrite && !unique_resource_writes.count(src_resource_access))
 				{
 					auto& resource_access_infos = per_pass_resource_access[src_pass_index];
 					auto& access_info = resource_access_infos.emplace_back();
 					access_info.type = packDependencyBarrier(ERenderResourceAccessFlagBits::eNone, src_access_flag);
 					access_info.srcPassIndex = src_pass_index;
-					access_info.resource = resource_access.resource;
-					access_info.subresource = resource_access.subresource;
+					access_info.resource = src_resource_access.resource;
+					access_info.subresource = src_resource_access.subresource;
 
 					// TODO: add hash function for resource access structure
-					unique_resource_writes[resource_access]++;
+					unique_resource_writes[src_resource_access]++;
 				}
 
-				auto& render_resource = m_vRenderResources.at(resource_access.resource);
-				for (const auto& [dst_access_flag, accessing_passes] : render_resource.usages)
+				auto& src_render_resource = m_vRenderResources.at(src_resource_access.resource);
+				for (const auto& [dst_access_flag, accessing_passes] : src_render_resource.usages)
 				{
 					for (u64 dst_pass_index : accessing_passes)
 					{
@@ -679,10 +708,28 @@ void CRenderGraph::build()
 						else if (is_same_pass || is_ro_access || is_invalid_order)
 							continue;
 
+						auto& dst_pass = m_vRenderPasses[dst_pass_index];
+
+						// If destination access is write, and src and destination resource is same, than check for subresources, it should be different
+						//if (dst_access_flag == ERenderResourceAccessFlagBits::eWrite)
+						//{
+						//	// Make destination resource usage group and find all resources by this key
+						//	auto dst_resource_group = packResourceGroup(dst_access_flag, src_group_flag);
+						//	if (auto found_bindings = dst_pass->m_renderResources.find(dst_resource_group); found_bindings != dst_pass->m_renderResources.end())
+						//	{
+						//		// Reject barrier candidate if it's another subresource
+						//		auto& dst_resource_bindings = found_bindings->second;
+						//		if (auto found_resource = std::find_if(dst_resource_bindings.begin(), dst_resource_bindings.end(), [&src_resource_access](const FRenderResourceBinding& binding) {
+						//			return binding.resource == src_resource_access.resource && binding.subresource != src_resource_access.subresource;
+						//			}); found_resource != dst_resource_bindings.end())
+						//		{ continue; }
+						//	}
+						//}
+
 						auto barrier_type = packDependencyBarrier(src_access_flag, dst_access_flag);
 						
 						// Filter repeating barriers
-						auto resource_barrier_key = FRenderResourceBindingKey{ resource_access, barrier_type };
+						auto resource_barrier_key = FRenderResourceBindingKey{ src_resource_access, barrier_type };
 						if (unique_barrier_counter.count(resource_barrier_key))
 							continue;
 
@@ -691,12 +738,8 @@ void CRenderGraph::build()
 						access_info.type = barrier_type;
 						access_info.srcPassIndex = src_pass_index;
 						access_info.dstPassIndex = dst_pass_index;
-						access_info.resource = resource_access.resource;
-						access_info.subresource = resource_access.subresource;
-
-						auto& render_resource = m_vRenderResources.at(access_info.resource);
-						if (access_info.type == ERenderResourceDependencyBarrierType::eWriteAfterWrite && render_resource.handle == 13 && resource_access.subresource == 0u)
-							int iiii = 0;
+						access_info.resource = src_resource_access.resource;
+						access_info.subresource = src_resource_access.subresource;
 
 						unique_barrier_counter[resource_barrier_key]++;
 					}
@@ -706,8 +749,9 @@ void CRenderGraph::build()
 	}
 
 	// Prepare resource barriers
-	for (const auto& [pass_index, access_infos] : per_pass_resource_access)
+	for (u64 pass_index = 0ull; pass_index < per_pass_resource_access.size(); ++pass_index)
 	{
+		auto& access_infos = per_pass_resource_access[pass_index];
 		auto& pass_barriers = m_perPassResourceBarriers[pass_index];
 		for (const auto& access_info : access_infos)
 		{
@@ -730,6 +774,9 @@ void CRenderGraph::build()
 			new_barrier.resource.handle = render_resource.handle;
 			new_barrier.resource.type = render_resource.type;
 			new_barrier.subresourceIndex = access_info.subresource;
+
+			if (access_info.type == ERenderResourceDependencyBarrierType::eWriteAfterWrite && render_resource.handle == 13 && new_barrier.subresourceIndex == 0u)
+				int iiii = 0;
 		}
 	}
 
@@ -831,7 +878,7 @@ void CRenderGraph::execute(f32 dt)
 		if (!pass->canExecute())
 			continue;
 
-		if (pass->m_debugName == "compute:postprocess:downsample:FIRST_PASS")
+		if (pass->m_debugName == "compute:postprocess:downsample")
 			int iiii = 0;
 
 		render_context->processResourceBarriers(pass->m_queue, resource_barriers);

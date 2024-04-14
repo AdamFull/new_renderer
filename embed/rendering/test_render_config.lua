@@ -193,6 +193,8 @@ function make_graphics_pass(type, queue, shader)
 end
 
 function compute_bloom()
+    render_graph:push_debug_marker("Compute bloom", 0xffff33ff, QueueType.graphics)
+
     -- Starting from brightness detection pass
     do
         local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:brightdetect")
@@ -206,6 +208,7 @@ function compute_bloom()
     end
 
     -- Begin downsampling
+    render_graph:push_debug_marker("Downsample", 0xffff33ff, QueueType.graphics)
     for idx = 0, bloom_blur_depth - 1 do
         local pass_ci = ComputeCreateInfo.new()
         pass_ci.type = ComputeType.default
@@ -222,8 +225,10 @@ function compute_bloom()
         
         render_graph:add_render_pass("downsample_pass_" .. idx, pass_ci)
     end
+    render_graph:pop_debug_marker("Downsample", QueueType.graphics)
 
     -- And upsampling
+    render_graph:push_debug_marker("Upsample", 0xffff33ff, QueueType.graphics)
     for idx = bloom_blur_depth - 1, 1, -1 do
         local pass_ci = ComputeCreateInfo.new()
         pass_ci.type = ComputeType.default
@@ -237,6 +242,9 @@ function compute_bloom()
     
         render_graph:add_render_pass("upnsample_pass_" .. idx, pass_ci)
     end
+    render_graph:pop_debug_marker("Upsample", QueueType.graphics)
+
+    render_graph:pop_debug_marker("Compute bloom", QueueType.graphics)
 end
 
 
@@ -406,63 +414,7 @@ do
 end
 
 -- Compute bloom
-compute_bloom()
-
---do
---    local pass_ci = ComputeCreateInfo.new()
---    pass_ci.type = ComputeType.default
---    pass_ci.queue = QueueType.graphics
---    pass_ci.shader = "postprocess:upsample"
---
---    pass_ci:add_workgroup_size_info("bloom_target", 3, true)
---
---    pass_ci:bind_read_resource("sampler_color", "bloom_target", 4)
---    pass_ci:bind_write_resource("write_color", "bloom_target", 3)
---
---    render_graph:add_render_pass("upnsample_pass_4", pass_ci)
---end
---
---do
---    local pass_ci = ComputeCreateInfo.new()
---    pass_ci.type = ComputeType.default
---    pass_ci.queue = QueueType.graphics
---    pass_ci.shader = "postprocess:upsample"
---
---    pass_ci:add_workgroup_size_info("bloom_target", 2, true)
---
---    pass_ci:bind_read_resource("sampler_color", "bloom_target", 3)
---    pass_ci:bind_write_resource("write_color", "bloom_target", 2)
---
---    render_graph:add_render_pass("upnsample_pass_3", pass_ci)
---end
---
---do
---    local pass_ci = ComputeCreateInfo.new()
---    pass_ci.type = ComputeType.default
---    pass_ci.queue = QueueType.graphics
---    pass_ci.shader = "postprocess:upsample"
---
---    pass_ci:add_workgroup_size_info("bloom_target", 1, true)
---
---    pass_ci:bind_read_resource("sampler_color", "bloom_target", 2)
---    pass_ci:bind_write_resource("write_color", "bloom_target", 1)
---
---    render_graph:add_render_pass("upnsample_pass_2", pass_ci)
---end
---
---do
---    local pass_ci = ComputeCreateInfo.new()
---    pass_ci.type = ComputeType.default
---    pass_ci.queue = QueueType.graphics
---    pass_ci.shader = "postprocess:upsample"
---
---    pass_ci:add_workgroup_size_info("bloom_target", 0, true)
---
---    pass_ci:bind_read_resource("sampler_color", "bloom_target", 1)
---    pass_ci:bind_write_resource("write_color", "bloom_target", 0)
---
---    render_graph:add_render_pass("upnsample_pass_1", pass_ci)
---end
+--compute_bloom()
 
 -- Present pass
 do

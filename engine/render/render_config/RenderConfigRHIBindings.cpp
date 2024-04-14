@@ -362,6 +362,8 @@ namespace engine
 					static_cast<u64(IRenderGraph::*)(const stl::string&, const FTextureCreateInfo&)>(&IRenderGraph::addRenderResource),
 					static_cast<u64(IRenderGraph::*)(const stl::string&, const FBufferCreateInfo&)>(&IRenderGraph::addRenderResource)
 				),
+				"push_debug_marker", &IRenderGraph::pushDebugMarker,
+				"pop_debug_marker", &IRenderGraph::popDebugMarker,
 				"set_backbuffer_resource_name", &IRenderGraph::setBackbufferResourceName,
 				"get_render_resource", sol::overload(
 					static_cast<const FRenderResource&(IRenderGraph::*)(const stl::string&) const>(&IRenderGraph::getRenderResource),

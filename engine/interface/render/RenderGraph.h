@@ -77,7 +77,8 @@ namespace engine
 		{
 			eNone,
 			eCompute,
-			eRender
+			eRender,
+			eDebug
 		};
 
 		enum class EViewportDependencyType
@@ -405,6 +406,9 @@ namespace engine
 			virtual u64 addRenderResource(const stl::string& name, const FTextureCreateInfo& texture_ci) = 0;
 			virtual u64 addRenderResource(const stl::string& name, const FBufferCreateInfo& buffer_ci) = 0;
 			virtual void setBackbufferResourceName(const stl::string& name) = 0;
+
+			virtual void pushDebugMarker(const std::string& name, u32 color, EQueueTypeFlagBits queue) = 0;
+			virtual void popDebugMarker(const std::string& name, EQueueTypeFlagBits queue) = 0;
 
 			virtual const FRenderResource& getRenderResource(const stl::string& name) const = 0;
 			virtual const FRenderResource& getRenderResource(u64 resource_id) const = 0;

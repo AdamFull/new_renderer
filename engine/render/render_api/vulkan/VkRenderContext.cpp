@@ -723,6 +723,7 @@ void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader
 		for (const auto& [texture_name, bind_info] : shader_resources.textures)
 		{
 			auto& texture = textures.at(bind_info.textureId);
+			auto& texture_subresource = texture->mips[bind_info.mipLevel];
 
 			auto found_reflection = shader_reflection->uniforms.find(texture_name);
 			if (found_reflection == shader_reflection->uniforms.end())
@@ -732,9 +733,9 @@ void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader
 			updated_descriptor_sets.emplace(uniform.set);
 
 			auto& image_descriptor = image_descriptors.at(texture_count);
-			image_descriptor.imageView = texture->mips.at(bind_info.mipLevel).imageView;
+			image_descriptor.imageView = texture_subresource.imageView;
 			image_descriptor.sampler = texture->sampler;
-			image_descriptor.imageLayout = texture->layout;
+			image_descriptor.imageLayout = texture_subresource.layout;
 			texture_count++;
 
 			auto descriptor_index = shader->descriptorUsage[uniform.set];
@@ -1022,31 +1023,38 @@ void CVkRenderContext::processResourceBarriers(EQueueTypeFlagBits queue, const s
 			else
 			{
 				auto& texture = textures.at(resource_barrier.resource.handle);
+				auto& texture_subresource = texture->mips[resource_barrier.subresourceIndex];
 
 				if (resource_barrier.type == ERenderResourceDependencyBarrierType::eWriteAfterNothing)
 					new_image_layout = get_render_target_intermediate_layout(*texture);
 				else if (resource_barrier.type == ERenderResourceDependencyBarrierType::eWriteAfterWrite)
-					new_image_layout = texture->layout;
+					new_image_layout = texture_subresource.layout;
 				else
 					new_image_layout = get_render_target_final_layout(*texture);
 
-				old_image_layout = texture->layout;
-				texture->layout = new_image_layout;
+				old_image_layout = texture_subresource.layout;
+				texture_subresource.layout = new_image_layout;
 				texture_barrier.handle = texture->image.handle;
 				texture_barrier.subresourceRange.aspectMask = get_texture_aspect_flags(*texture);
 
-				// TODO: Check here. If image is array with mip maps, i should calculate array index and mip index from subresource
-				texture_barrier.subresourceRange.baseMipLevel = resource_barrier.subresourceIndex;
-
-				if (resource_barrier.subresourceIndex != 0u)
-				{
-					texture_barrier.subresourceRange.layerCount = 1u;
-					texture_barrier.subresourceRange.levelCount = 1u;
-				}
-				else
+				// TODO: Fix here required. Sometimes i need to process all layers and levels
+				if (resource_barrier.subresourceIndex == 0u)
 				{
 					texture_barrier.subresourceRange.layerCount = texture->totalLayers;
 					texture_barrier.subresourceRange.levelCount = texture->initialData.base.mipLevels;
+
+					// TODO: it's incorrect solution
+					if (texture->name == "prefiltered_cube_target")
+					{
+						for (auto& mip : texture->mips)
+							mip.layout = new_image_layout;
+					}
+				}
+				else
+				{
+					texture_barrier.subresourceRange.baseMipLevel = texture_subresource.baseMipLevel;
+					texture_barrier.subresourceRange.levelCount = texture_subresource.mipLevelCount;
+					texture_barrier.subresourceRange.layerCount = 1u;
 				}
 			}
 			
@@ -1116,8 +1124,10 @@ void CVkRenderContext::beginRendering(const FBeginRendering2Info& rendering_info
 			else
 			{
 				auto& render_target = textures.at(color_attachment_info.handle);
-				attachment_info.imageView = render_target->mips.at(color_attachment_info.mipLevel).imageView;
-				attachment_info.imageLayout = render_target->layout;
+				auto& target_subresource = render_target->mips[color_attachment_info.mipLevel];
+
+				attachment_info.imageView = target_subresource.imageView;
+				attachment_info.imageLayout = target_subresource.layout;
 			}
 
 			attachment_info.resolveMode = vk::ResolveModeFlagBits::eNone;
@@ -1132,9 +1142,10 @@ void CVkRenderContext::beginRendering(const FBeginRendering2Info& rendering_info
 	if (rendering_info.depthAttachment && rendering_info.depthAttachment->handle != invalid_handle)
 	{
 		auto& depth_target = textures.at(rendering_info.depthAttachment->handle);
+		auto& target_subresource = depth_target->mips[rendering_info.depthAttachment->mipLevel];
 
-		depth_attachment.imageView = depth_target->mips.at(rendering_info.depthAttachment->mipLevel).imageView;
-		depth_attachment.imageLayout = depth_target->layout;
+		depth_attachment.imageView = target_subresource.imageView;
+		depth_attachment.imageLayout = target_subresource.layout;
 		depth_attachment.resolveMode = vk::ResolveModeFlagBits::eNone;
 		depth_attachment.loadOp = get_attachment_load_op(rendering_info.depthAttachment->loadOp);
 		depth_attachment.storeOp = get_attachment_store_op(rendering_info.depthAttachment->storeOp);
@@ -1145,9 +1156,10 @@ void CVkRenderContext::beginRendering(const FBeginRendering2Info& rendering_info
 	if (rendering_info.stencilAttachment && rendering_info.stencilAttachment->handle != rendering_info.depthAttachment->handle && rendering_info.stencilAttachment->handle != invalid_handle)
 	{
 		auto& stencil_target = textures.at(rendering_info.stencilAttachment->handle);
+		auto& target_subresource = stencil_target->mips[rendering_info.stencilAttachment->mipLevel];
 
-		stencil_attachment.imageView = stencil_target->mips.at(rendering_info.stencilAttachment->mipLevel).imageView;
-		stencil_attachment.imageLayout = stencil_target->layout;
+		stencil_attachment.imageView = target_subresource.imageView;
+		stencil_attachment.imageLayout = target_subresource.layout;
 		stencil_attachment.resolveMode = vk::ResolveModeFlagBits::eNone;
 		stencil_attachment.loadOp = get_attachment_load_op(rendering_info.stencilAttachment->loadOp);
 		stencil_attachment.storeOp = get_attachment_store_op(rendering_info.stencilAttachment->storeOp);
@@ -1717,7 +1729,11 @@ void CVkRenderContext::endFrame()
 	for (auto& texture : textures)
 	{
 		if (texture->isRenderTarget && !(texture->initialData.base.typeFlags & ETextureCreateFlagBits::eStorage))
-			texture->layout = vk::ImageLayout::eUndefined;
+		{
+			// Reset layout for all mip level
+			for(auto& mip : texture->mips)
+				mip.layout = vk::ImageLayout::eUndefined;
+		}
 	}
 
 	m_backbufferLayout = vk::ImageLayout::eUndefined;
@@ -1775,6 +1791,7 @@ void CVkRenderContext::destroyThreadContext(FVkThreadContext& context)
 
 void CVkRenderContext::processResourceBarriers()
 {
+	// TODO: add mip level and array layer support
 	if (m_textureLayoutInfos.empty())
 		return;
 
@@ -1796,13 +1813,15 @@ void CVkRenderContext::processResourceBarriers()
 	for (const auto& layout_info : m_textureLayoutInfos)
 	{
 		auto& texture = textures.at(layout_info.textureId);
+		auto& target_subresource = texture->mips[0];
+
 		if (texture->initialData.base.typeFlags & ETextureCreateFlagBits::eStorage)
 		{
 			auto& image_translation = translation_info.imageTranslationInfos.emplace_back();
 
 			FVkTextureTranslationInfo texture_translation_info{};
 			texture_translation_info.oldLayout = vk::ImageLayout::eUndefined;
-			texture->layout = texture_translation_info.newLayout = vk::ImageLayout::eGeneral;
+			target_subresource.layout = texture_translation_info.newLayout = vk::ImageLayout::eGeneral;
 
 			image_translation = get_texture_layout_translation_info(*texture, texture_translation_info);
 		}
@@ -1872,12 +1891,13 @@ void CVkRenderContext::processResourceUpload()
 		for (const auto& texture_upload : m_textureUploadInfos)
 		{
 			auto& texture = textures.at(texture_upload.textureId);
+			auto& target_subresource = texture->mips[0];
 
 			auto& image_translation = translation_info.imageTranslationInfos.emplace_back();
 
 			FVkTextureTranslationInfo texture_translation_info{};
 			texture_translation_info.oldLayout = vk::ImageLayout::eUndefined;
-			texture->layout = texture_translation_info.newLayout = vk::ImageLayout::eTransferDstOptimal;
+			target_subresource.layout = texture_translation_info.newLayout = vk::ImageLayout::eTransferDstOptimal;
 
 			image_translation = get_texture_layout_translation_info(*texture, texture_translation_info);
 
@@ -2007,12 +2027,13 @@ void CVkRenderContext::processResourceUpload()
 		for (const auto& texture_upload : m_textureUploadInfos)
 		{
 			auto& texture = textures.at(texture_upload.textureId);
+			auto& target_subresource = texture->mips[0];
 
 			auto& image_translation = translation_info.imageTranslationInfos.emplace_back();
 
 			FVkTextureTranslationInfo texture_translation_info{};
 			texture_translation_info.oldLayout = vk::ImageLayout::eTransferDstOptimal;
-			texture->layout = texture_translation_info.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+			target_subresource.layout = texture_translation_info.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
 			image_translation = get_texture_layout_translation_info(*texture, texture_translation_info);
 		}
@@ -2467,11 +2488,12 @@ void CVkRenderContext::textureLayoutTranslation(const FVkCommandBuffer& command_
 void CVkRenderContext::copyBufferToTexture(const FVkCommandBuffer& command_buffer, const FVkBuffer& buffer, const FVkTexture& texture, const stl::vector<vk::BufferImageCopy2KHR>& copy_regions)
 {
 	auto& current_buffer = command_buffer.get();
+	auto& target_subresource = texture.mips[0];
 
 	vk::CopyBufferToImageInfo2KHR copy_info{};
 	copy_info.srcBuffer = buffer.handle;
 	copy_info.dstImage = texture.image.handle;
-	copy_info.dstImageLayout = texture.layout;
+	copy_info.dstImageLayout = target_subresource.layout;
 	copy_info.regionCount = utl::cast<u32>(copy_regions.size());
 	copy_info.pRegions = copy_regions.data();
 

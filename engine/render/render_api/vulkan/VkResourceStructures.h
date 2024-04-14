@@ -380,6 +380,7 @@ namespace engine
 				vk::ImageView imageView{};
 				u32 baseMipLevel{};
 				u32 mipLevelCount{ 1u };
+				vk::ImageLayout layout{};
 			};
 
 			struct FVkTexture
@@ -387,7 +388,6 @@ namespace engine
 				FVkImage image{};
 				stl::vector<FVkTextureMipLevel> mips{};
 				vk::Sampler sampler{};
-				vk::ImageLayout layout{};
 				u32 totalLayers{ 1u };
 				bool isRenderTarget{ false };
 

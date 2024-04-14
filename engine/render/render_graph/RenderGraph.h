@@ -38,6 +38,9 @@ namespace engine
 			u64 addRenderResource(const stl::string& name, const FBufferCreateInfo& buffer_ci) override;
 			void setBackbufferResourceName(const stl::string& name) override;
 
+			void pushDebugMarker(const std::string& name, u32 color, EQueueTypeFlagBits queue) override;
+			void popDebugMarker(const std::string& name, EQueueTypeFlagBits queue) override;
+
 			void destroyResource(u64 buffer_id);
 
 			const FRenderResource& getRenderResource(const stl::string& name) const override;
