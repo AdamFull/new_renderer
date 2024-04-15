@@ -55,11 +55,11 @@ const char* get_data_name(u32 type)
 
 size_t get_index_stream_optimal_size(size_t size)
 {
-	if (size < stl::numeric_limits<uint8_t>::max())
+	if (size < std::numeric_limits<uint8_t>::max())
 		return 1ull;
-	else if (size < stl::numeric_limits<uint16_t>::max())
+	else if (size < std::numeric_limits<uint16_t>::max())
 		return 2ull;
-	else if (size < stl::numeric_limits<u32>::max())
+	else if (size < std::numeric_limits<u32>::max())
 		return 4ull;
 
 	return 0ull;
@@ -139,12 +139,12 @@ int32_t get_view_target_by_data_type(u32 type)
 template<class _Ty>
 void copy_element(const uint8_t* src, double& dst)
 {
-	if constexpr(stl::is_same_v<_Ty, double>)
-		stl::memcpy(&dst, src, sizeof(_Ty));
+	if constexpr(std::is_same_v<_Ty, double>)
+		std::memcpy(&dst, src, sizeof(_Ty));
 	else
 	{
 		_Ty temp{};
-		stl::memcpy(&temp, src, sizeof(_Ty));
+		std::memcpy(&temp, src, sizeof(_Ty));
 		dst = static_cast<double>(temp);
 	}
 }
@@ -154,8 +154,8 @@ void calculate_accessor_min_and_max(easygltf::Accessor& accessor, const FStream&
 	auto component_size = easygltf::get_size_by_component_type(accessor.componentType);
 	auto element_count = easygltf::get_element_count_by_accessor_type(accessor.type.c_str());
 
-	accessor.min.assign(element_count, stl::numeric_limits<double>::max());
-	accessor.max.assign(element_count, stl::numeric_limits<double>::lowest());
+	accessor.min.assign(element_count, std::numeric_limits<double>::max());
+	accessor.max.assign(element_count, std::numeric_limits<double>::lowest());
 
 	for (size_t idx = 0ull; idx < stream.count; ++idx)
 	{
@@ -181,13 +181,13 @@ void calculate_accessor_min_and_max(easygltf::Accessor& accessor, const FStream&
 			auto& min_value = accessor.min[element];
 			auto& max_value = accessor.max[element];
 			
-			min_value = stl::min(min_value, value);
-			max_value = stl::max(max_value, value);
+			min_value = std::min(min_value, value);
+			max_value = std::max(max_value, value);
 		}
 	}
 }
 
-void init_accessor_and_copy_data(easygltf::Accessor& accessor, const FStream& buffer, u32 type, stl::vector<uint8_t>& out)
+void init_accessor_and_copy_data(easygltf::Accessor& accessor, const FStream& buffer, u32 type, std::vector<uint8_t>& out)
 {
 	accessor.byteOffset = out.size();
 	accessor.count = buffer.count;
@@ -198,7 +198,7 @@ void init_accessor_and_copy_data(easygltf::Accessor& accessor, const FStream& bu
 	out.insert(out.end(), buffer.data.begin(), buffer.data.end());
 }
 
-void read_vertex_stream(const stl::string& name, const easygltf::Stream& stream, stl::vector<FVertexStream>& vstreams)
+void read_vertex_stream(const std::string& name, const easygltf::Stream& stream, std::vector<FVertexStream>& vstreams)
 {
 	auto& vertex_stream = vstreams.emplace_back();
 	vertex_stream.type = get_data_type(name.c_str());
@@ -209,27 +209,27 @@ void read_vertex_stream(const stl::string& name, const easygltf::Stream& stream,
 	buffer.data.insert(buffer.data.end(), stream.data, stream.data + (stream.stride * stream.count));
 }
 
-void read_index_stream(const easygltf::Stream& stream, stl::vector<u32>& indices)
+void read_index_stream(const easygltf::Stream& stream, std::vector<u32>& indices)
 {
 	if (stream.stride == 4ull)
 	{
 		// 32bit index
-		stl::vector<u32> temp(stream.count);
-		stl::memcpy(temp.data(), stream.data, stream.stride * stream.count);
+		std::vector<u32> temp(stream.count);
+		std::memcpy(temp.data(), stream.data, stream.stride * stream.count);
 		indices.insert(indices.end(), temp.begin(), temp.end());
 	}
 	else if (stream.stride == 2ull)
 	{
 		// 16bit index
-		stl::vector<uint16_t> temp(stream.count);
-		stl::memcpy(temp.data(), stream.data, stream.stride * stream.count);
+		std::vector<uint16_t> temp(stream.count);
+		std::memcpy(temp.data(), stream.data, stream.stride * stream.count);
 		indices.insert(indices.end(), temp.begin(), temp.end());
 	}
 	else if (stream.stride == 1ull)
 	{
 		// 8bit index
-		stl::vector<uint8_t> temp(stream.count);
-		stl::memcpy(temp.data(), stream.data, stream.stride * stream.count);
+		std::vector<uint8_t> temp(stream.count);
+		std::memcpy(temp.data(), stream.data, stream.stride * stream.count);
 		indices.insert(indices.end(), temp.begin(), temp.end());
 	}
 }
@@ -244,7 +244,7 @@ CGLTFEditor::CGLTFEditor()
 	meshopt_encodeIndexVersion(1);
 }
 
-bool CGLTFEditor::load(const stl::string& path)
+bool CGLTFEditor::load(const std::string& path)
 {
 	easygltf::CGLTFLoader loader{};
 
@@ -256,7 +256,7 @@ bool CGLTFEditor::load(const stl::string& path)
 	return true;
 }
 
-bool CGLTFEditor::save(const stl::string& path)
+bool CGLTFEditor::save(const std::string& path)
 {
 	//apply();
 	//
@@ -371,8 +371,8 @@ void CGLTFEditor::prepare()
 
 void CGLTFEditor::apply()
 {
-	stl::unordered_map<u32, stl::vector<uint8_t>> buffer_map{};
-	stl::unordered_map<u32, int32_t> buffer_view_map{};
+	std::unordered_map<u32, std::vector<uint8_t>> buffer_map{};
+	std::unordered_map<u32, int32_t> buffer_view_map{};
 
 	// Helper functions
 	auto add_buffer_view = [this, &buffer_view_map](u32 type)
@@ -443,15 +443,15 @@ void CGLTFEditor::apply()
 					buffer.data.insert(buffer.data.end(), primitive.indices.begin(), primitive.indices.end());
 				} break;
 				case 2ull: {
-					stl::vector<uint16_t> temp{};
+					std::vector<uint16_t> temp{};
 					temp.insert(temp.end(), primitive.indices.begin(), primitive.indices.end());
 
 					buffer.data.resize(buffer.count * buffer.stride);
-					stl::memcpy(&buffer.data[0], &temp[0], buffer.data.size());
+					std::memcpy(&buffer.data[0], &temp[0], buffer.data.size());
 				} break;
 				case 4ull: {
 					buffer.data.resize(buffer.count * buffer.stride);
-					stl::memcpy(&buffer.data[0], &primitive.indices[0], buffer.data.size());
+					std::memcpy(&buffer.data[0], &primitive.indices[0], buffer.data.size());
 				} break;
 				}
 
@@ -509,7 +509,7 @@ void CGLTFEditor::apply()
 
 void CGLTFEditor::mergeMaterials()
 {
-	stl::vector<int32_t> remapped(m_root.materials.size());
+	std::vector<int32_t> remapped(m_root.materials.size());
 	for (size_t idx = 0ull; idx < m_root.materials.size(); ++idx)
 	{
 		remapped[idx] = idx;
@@ -552,7 +552,7 @@ void CGLTFEditor::mergeMaterials()
 	}
 }
 
-void CGLTFEditor::filterEmptyMeshes(int32_t mesh_id, stl::vector<FMesh>& meshes)
+void CGLTFEditor::filterEmptyMeshes(int32_t mesh_id, std::vector<FMesh>& meshes)
 {
 	auto& nmesh = m_root.meshes[mesh_id];
 
@@ -570,10 +570,10 @@ void CGLTFEditor::filterEmptyMeshes(int32_t mesh_id, stl::vector<FMesh>& meshes)
 		if (mesh.indices.empty())
 			continue;
 
-		stl::vector<FVertexStream> streams{};
+		std::vector<FVertexStream> streams{};
 		streams.swap(mesh.streams);
 
-		stl::vector<u32> indices{};
+		std::vector<u32> indices{};
 		indices.swap(mesh.indices);
 
 		meshes[writen] = mesh;
@@ -583,7 +583,7 @@ void CGLTFEditor::filterEmptyMeshes(int32_t mesh_id, stl::vector<FMesh>& meshes)
 		// Same thing for mesh primitive
 		auto& primitive = nmesh.primitives[idx];
 
-		stl::unordered_map<stl::string, int32_t> attributes;
+		std::unordered_map<std::string, int32_t> attributes;
 		attributes.swap(primitive.attributes);
 
 		int32_t index{ primitive.indices };
@@ -601,7 +601,7 @@ void CGLTFEditor::filterEmptyMeshes(int32_t mesh_id, stl::vector<FMesh>& meshes)
 void CGLTFEditor::reindexMesh(FMesh& mesh)
 {
 	size_t total_vertices{ 0ull };
-	stl::vector<meshopt_Stream> streams{};
+	std::vector<meshopt_Stream> streams{};
 
 	for (auto& stream : mesh.streams)
 	{
@@ -613,7 +613,7 @@ void CGLTFEditor::reindexMesh(FMesh& mesh)
 	if (streams.empty())
 		return;
 
-	stl::vector<u32> remapped(total_vertices);
+	std::vector<u32> remapped(total_vertices);
 	size_t unique_vertices = meshopt_generateVertexRemapMulti(&remapped[0], &mesh.indices[0], mesh.indices.size(), total_vertices, &streams[0], streams.size());
 	assert(unique_vertices <= total_vertices);
 
@@ -655,7 +655,7 @@ void CGLTFEditor::simplifyMesh(FMesh& mesh, float threshold, bool agressive, boo
 	if (mesh.indices.empty())
 		return;
 
-	auto positions = stl::find_if(mesh.streams.begin(), mesh.streams.end(), [](const FVertexStream& stream) { return stream.type == data_type::vertex_position; });
+	auto positions = std::find_if(mesh.streams.begin(), mesh.streams.end(), [](const FVertexStream& stream) { return stream.type == data_type::vertex_position; });
 	if (positions == mesh.streams.end())
 		return;
 
@@ -671,7 +671,7 @@ void CGLTFEditor::simplifyMesh(FMesh& mesh, float threshold, bool agressive, boo
 
 	float* vertices = reinterpret_cast<float*>(positions->buffer.get());
 
-	stl::vector<u32> new_indices(mesh.indices.size());
+	std::vector<u32> new_indices(mesh.indices.size());
 	new_indices.resize(meshopt_simplify(&new_indices[0], &mesh.indices[0], mesh.indices.size(), vertices, positions->buffer.count, positions->buffer.stride, target_index_count, target_error, options));
 	mesh.indices.swap(new_indices);
 
@@ -694,7 +694,7 @@ void CGLTFEditor::optimizeMesh(FMesh& mesh, bool compressmore)
 	else
 		meshopt_optimizeVertexCache(&mesh.indices[0], &mesh.indices[0], mesh.indices.size(), vertex_count);
 
-	stl::vector<u32> remapped(vertex_count);
+	std::vector<u32> remapped(vertex_count);
 	size_t unique_vertices = meshopt_optimizeVertexFetchRemap(&remapped[0], &mesh.indices[0], mesh.indices.size(), vertex_count);
 	assert(unique_vertices <= vertex_count);
 
@@ -740,7 +740,7 @@ void CGLTFEditor::mergeMeshes(FMesh& target, const FMesh& mesh)
 		target.indices[index_offset + idx] = static_cast<u32>(vertex_offset + mesh.indices[idx]);
 }
 
-void CGLTFEditor::mergeMeshes(int32_t mesh_id, stl::vector<FMesh>& meshes)
+void CGLTFEditor::mergeMeshes(int32_t mesh_id, std::vector<FMesh>& meshes)
 {
 	for (size_t idx = 0ull; idx < meshes.size(); ++idx)
 	{

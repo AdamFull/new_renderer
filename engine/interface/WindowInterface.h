@@ -20,7 +20,7 @@ namespace engine
 
 	struct FWindowCreateInfo
 	{
-		stl::string name{};
+		std::string name{};
 		u32 flags{ 0u };
 
 		i32 position_x{ 0 };
@@ -157,7 +157,7 @@ namespace engine
         eCount
     };
 
-    using keystate = stl::bitset<static_cast<u64>(EKeyCode::eCount)>;
+    using keystate = std::bitset<static_cast<u64>(EKeyCode::eCount)>;
 
     class CKeyDecoder
     {

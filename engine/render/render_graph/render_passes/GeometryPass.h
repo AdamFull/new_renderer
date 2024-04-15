@@ -18,10 +18,10 @@ namespace engine
 		private:
 			void _render(const FRenderFrameInfo& frame_info) override;
 		protected:
-			const stl::unique_ptr<IShaderObject>& getShaderByVBO(const IVertexHandler* vbo);
+			const std::unique_ptr<IShaderObject>& getShaderByVBO(const IVertexHandler* vbo);
 		private:
-			stl::unordered_map<u64, stl::unique_ptr<IShaderObject>> m_shaders{};
-			stl::string m_baseShaderName{};
+			std::unordered_map<u64, std::unique_ptr<IShaderObject>> m_shaders{};
+			std::string m_baseShaderName{};
 		};
 	}
 }

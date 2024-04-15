@@ -190,7 +190,7 @@ namespace engine
 
 		struct FPassBuildInfo
 		{
-			stl::unordered_map<u64, FRenderGraphAttachmentOperationInfo> attachments{};
+			std::unordered_map<u64, FRenderGraphAttachmentOperationInfo> attachments{};
 
 			const FRenderGraphAttachmentOperationInfo& getAttachmentInfo(u64 resource_index) const
 			{
@@ -208,13 +208,13 @@ namespace engine
 			u32 layerCount{ 1u };
 			FRect2D<f32> renderArea{};
 
-			stl::vector<FRenderGraphAttachmentInfo>* colorAttachments{ nullptr };
+			std::vector<FRenderGraphAttachmentInfo>* colorAttachments{ nullptr };
 
 			FRenderGraphAttachmentInfo* depthAttachment{ nullptr };
 			FRenderGraphAttachmentInfo* stencilAttachment{ nullptr };
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-			stl::string name{};
+			std::string name{};
 #endif
 		};
 
@@ -223,7 +223,7 @@ namespace engine
 			EQueueTypeFlagBits queue{};
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-			stl::string name{};
+			std::string name{};
 #endif
 		};
 
@@ -243,7 +243,7 @@ namespace engine
 		{
 			u64 shaderHandle{};
 			bool divideByLocals{ true };
-			stl::vector<FDispatch2Group> groups{};
+			std::vector<FDispatch2Group> groups{};
 		};
 
 		struct FRenderResource
@@ -252,7 +252,7 @@ namespace engine
 			EQueueTypeFlags queuesUsed{ 0u };
 			u64 handle{ INVALID_HANDLE };
 
-			stl::unordered_map<ERenderResourceAccessFlagBits, stl::unordered_set<u64>> usages{};
+			std::unordered_map<ERenderResourceAccessFlagBits, std::unordered_set<u64>> usages{};
 		};
 
 		struct FRenderConfigResourceBindingDescription
@@ -264,35 +264,35 @@ namespace engine
 		struct FRenderConfigPassCreateInfo
 		{
 			EQueueTypeFlagBits queue{};
-			stl::string shader{};
+			std::string shader{};
 			bool oneTime{ false };
 
-			stl::string sizeTarget{};
+			std::string sizeTarget{};
 
-			stl::unordered_map<ERenderResourceAccessFlagBits, stl::unordered_map<stl::string, FRenderConfigResourceBindingDescription>> resourceBindings{};
-			stl::unordered_map<ERenderResourceAccessFlagBits, stl::vector<stl::string>> otherResources{};
+			std::unordered_map<ERenderResourceAccessFlagBits, std::unordered_map<std::string, FRenderConfigResourceBindingDescription>> resourceBindings{};
+			std::unordered_map<ERenderResourceAccessFlagBits, std::vector<std::string>> otherResources{};
 
-			void bindWriteResource(const stl::string& binding_point, const stl::string& resource_name) { resourceBindings[ERenderResourceAccessFlagBits::eWrite].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, 0u }); }
-			void bindWriteResource(const stl::string& binding_point, const stl::string& resource_name, u32 subresource) { resourceBindings[ERenderResourceAccessFlagBits::eWrite].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, subresource }); }
-			void bindReadResource(const stl::string& binding_point, const stl::string& resource_name) { resourceBindings[ERenderResourceAccessFlagBits::eRead].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, 0u }); }
-			void bindReadResource(const stl::string& binding_point, const stl::string& resource_name, u32 subresource) { resourceBindings[ERenderResourceAccessFlagBits::eRead].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, subresource }); }
-			void addWriteResource(const stl::string& resource_name) { otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(resource_name); }
-			void addReadResource(const stl::string& resource_name) { otherResources[ERenderResourceAccessFlagBits::eRead].emplace_back(resource_name); }
+			void bindWriteResource(const std::string& binding_point, const std::string& resource_name) { resourceBindings[ERenderResourceAccessFlagBits::eWrite].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, 0u }); }
+			void bindWriteResource(const std::string& binding_point, const std::string& resource_name, u32 subresource) { resourceBindings[ERenderResourceAccessFlagBits::eWrite].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, subresource }); }
+			void bindReadResource(const std::string& binding_point, const std::string& resource_name) { resourceBindings[ERenderResourceAccessFlagBits::eRead].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, 0u }); }
+			void bindReadResource(const std::string& binding_point, const std::string& resource_name, u32 subresource) { resourceBindings[ERenderResourceAccessFlagBits::eRead].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, subresource }); }
+			void addWriteResource(const std::string& resource_name) { otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(resource_name); }
+			void addReadResource(const std::string& resource_name) { otherResources[ERenderResourceAccessFlagBits::eRead].emplace_back(resource_name); }
 		};
 
 		struct FRenderConfigRenderCreateInfo : public FRenderConfigPassCreateInfo
 		{
 			ERenderingType type{};
 			std::string viewport{};
-			stl::string depthResource{};
-			stl::string stencilResource{};
+			std::string depthResource{};
+			std::string stencilResource{};
 			bool flipViewportState{ false };
 
 
 			void flipFiewport() { flipViewportState = true; }
 			void setViewport(const std::string& name) { viewport = name; }
-			void setDepthTarget(const stl::string& resource_name) { depthResource = otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(resource_name); }
-			void setStencilTarget(const stl::string& resource_name) { stencilResource = otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(resource_name); }
+			void setDepthTarget(const std::string& resource_name) { depthResource = otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(resource_name); }
+			void setStencilTarget(const std::string& resource_name) { stencilResource = otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(resource_name); }
 		};
 
 		struct FRenderConfigComputeDispatchGroupInfo
@@ -364,11 +364,11 @@ namespace engine
 		struct FPassCreateInfo
 		{
 			EQueueTypeFlagBits queue{};
-			stl::string shader{};
+			std::string shader{};
 			bool oneTime{ false };
 
-			stl::unordered_map<ERenderResourceGroupType, stl::vector<FRenderResourceBinding>> resources{};
-			stl::unordered_map<stl::string, FRenderResourceBinding> bindings{};
+			std::unordered_map<ERenderResourceGroupType, std::vector<FRenderResourceBinding>> resources{};
+			std::unordered_map<std::string, FRenderResourceBinding> bindings{};
 		};
 
 		struct FRenderPassCreateInfo : public FPassCreateInfo
@@ -402,19 +402,19 @@ namespace engine
 			virtual const FViewport& getDefaultViewport() const = 0;
 			virtual u64 getDefaultViewportIndex() const = 0;
 
-			virtual u64 addStaticResource(const stl::string& name, const stl::string& path) = 0;
-			virtual u64 addRenderResource(const stl::string& name, const FTextureCreateInfo& texture_ci) = 0;
-			virtual u64 addRenderResource(const stl::string& name, const FBufferCreateInfo& buffer_ci) = 0;
-			virtual void setBackbufferResourceName(const stl::string& name) = 0;
+			virtual u64 addStaticResource(const std::string& name, const std::string& path) = 0;
+			virtual u64 addRenderResource(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
+			virtual u64 addRenderResource(const std::string& name, const FBufferCreateInfo& buffer_ci) = 0;
+			virtual void setBackbufferResourceName(const std::string& name) = 0;
 
 			virtual void pushDebugMarker(const std::string& name, u32 color, EQueueTypeFlagBits queue) = 0;
 			virtual void popDebugMarker(const std::string& name, EQueueTypeFlagBits queue) = 0;
 
-			virtual const FRenderResource& getRenderResource(const stl::string& name) const = 0;
+			virtual const FRenderResource& getRenderResource(const std::string& name) const = 0;
 			virtual const FRenderResource& getRenderResource(u64 resource_id) const = 0;
 
-			virtual u64 addRenderPass(const stl::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci) = 0;
-			virtual u64 addRenderPass(const stl::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci) = 0;
+			virtual u64 addRenderPass(const std::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci) = 0;
+			virtual u64 addRenderPass(const std::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci) = 0;
 
 			virtual void build() = 0;
 			virtual void update(f32 dt) = 0;

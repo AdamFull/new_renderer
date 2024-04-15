@@ -100,16 +100,16 @@ namespace engine
 				vk::Result acquireNextImage(u32& image_index);
 
 				// Debug markers
-				void debugBeginLabel(vk::CommandBuffer& command_buffer, const stl::string& name, u32 color);
-				void debugInsertLabel(vk::CommandBuffer& command_buffer, const stl::string& name, u32 color);
+				void debugBeginLabel(vk::CommandBuffer& command_buffer, const std::string& name, u32 color);
+				void debugInsertLabel(vk::CommandBuffer& command_buffer, const std::string& name, u32 color);
 				void endLabel(vk::CommandBuffer& command_buffer);
 
-				void debugBeginLabel(vk::Queue& queue, const stl::string& name, u32 color);
-				void debugInsertLabel(vk::Queue& queue, const stl::string& name, u32 color);
+				void debugBeginLabel(vk::Queue& queue, const std::string& name, u32 color);
+				void debugInsertLabel(vk::Queue& queue, const std::string& name, u32 color);
 				void endLabel(vk::Queue& queue);
 
 				template<class _Ty>
-				void debugSetObjectName(const _Ty& object, const stl::string& name)
+				void debugSetObjectName(const _Ty& object, const std::string& name)
 				{
 #ifndef BUILD_WITHOUT_DEBUGGIND
 					if (!name.empty())
@@ -118,7 +118,7 @@ namespace engine
 						object_name_info.objectType = object.objectType;
 						object_name_info.objectHandle = reinterpret_cast<u64>(static_cast<_Ty::CType>(object));
 
-						auto formatted_debug_object_name = stl::format("{}:{} | {:x}", vk::to_string(object.objectType), name, object_name_info.objectHandle);
+						auto formatted_debug_object_name = std::format("{}:{} | {:x}", vk::to_string(object.objectType), name, object_name_info.objectHandle);
 						object_name_info.pObjectName = formatted_debug_object_name.c_str();
 
 						m_logicalDevice.handle.setDebugUtilsObjectNameEXT(object_name_info);
@@ -144,7 +144,7 @@ namespace engine
 				void initProfiler(const FVkCommandPool& command_pool);
 
 				// Getters
-				vk::Format findSupportedFormat(const stl::vector<vk::Format>& candidates, bool depth_only);
+				vk::Format findSupportedFormat(const std::vector<vk::Format>& candidates, bool depth_only);
 
 				const vk::DynamicLoader& getDynamicLoader() const;
 				const vk::AllocationCallbacks* getAllocationCallbacks() const;
@@ -164,7 +164,7 @@ namespace engine
 				vma::Allocator& getMemoryAllocator();
 
 				const vk::PipelineCache& getPipelineCache() const;
-				stl::vector<char> getPipelineCacheData() const;
+				std::vector<char> getPipelineCacheData() const;
 
 				const FSwapchain& getSwapchain() const;
 			protected:
@@ -200,7 +200,7 @@ namespace engine
 
 					physical_device.handle.getFeatures2KHR(&physical_device_features2);
 
-					extension_features.insert({ structure_type, stl::make_shared<_Ty>(extension) });
+					extension_features.insert({ structure_type, std::make_shared<_Ty>(extension) });
 
 					auto* extension_ptr = utl::cast<_Ty*>(extension_features[structure_type].get());
 
@@ -218,10 +218,10 @@ namespace engine
 				vk::DebugUtilsMessengerEXT m_debugMessenger{ nullptr };
 				vk::DebugReportCallbackEXT m_debugReport{ nullptr };
 				vk::SurfaceKHR m_vkSurface{ nullptr };
-				stl::vector<stl::string> m_avaliableLayers{};
+				std::vector<std::string> m_avaliableLayers{};
 
 				i32 m_selectedPhysicalDevice{ -1 };
-				stl::vector<FVkPhysicalDevice> m_physicalDevices{};
+				std::vector<FVkPhysicalDevice> m_physicalDevices{};
 
 				vk::SampleCountFlagBits m_requiredSampleCount{ vk::SampleCountFlagBits::e1 };
 				FVkLogicalDevice m_logicalDevice{};
@@ -232,7 +232,7 @@ namespace engine
 				FSwapchain m_swapchain{};
 
 #ifdef ENABLE_TRACY_PROFILING
-				stl::vector<tracy::VkCtx*> m_tracyContext;
+				std::vector<tracy::VkCtx*> m_tracyContext;
 				tracy::VkCtx* m_presentTracyContext;
 #endif
 			};

@@ -25,9 +25,9 @@ public:
 	void releaseInclude(IncludeResult* result) override {}
 };
 
-stl::string remove_spaces_around_dot(const stl::string& line)
+std::string remove_spaces_around_dot(const std::string& line)
 {
-	stl::string result;
+	std::string result;
 	bool is_last_was_dot{ false };
 
 	for (char c : line)
@@ -40,7 +40,7 @@ stl::string remove_spaces_around_dot(const stl::string& line)
 	}
 
 	u64 pos = result.find(" .");
-	while (pos != stl::string::npos)
+	while (pos != std::string::npos)
 	{
 		result.erase(pos, 1);
 		pos = result.find(" .", pos);
@@ -49,17 +49,17 @@ stl::string remove_spaces_around_dot(const stl::string& line)
 	return result;
 }
 
-stl::string clean_code(const stl::string& input)
+std::string clean_code(const std::string& input)
 {
-	stl::istringstream stream(input);
-	stl::string cleaned_code, line;
-	stl::stack<char> block_stack;
+	std::istringstream stream(input);
+	std::string cleaned_code, line;
+	std::stack<char> block_stack;
 	bool was_empty_line = false;
 
-	while (stl::getline(stream, line))
+	while (std::getline(stream, line))
 	{
 		u64 first = line.find_first_not_of(" \t");
-		if (first == stl::string::npos)
+		if (first == std::string::npos)
 		{
 			was_empty_line = true;
 			continue;
@@ -70,12 +70,12 @@ stl::string clean_code(const stl::string& input)
 
 		line = remove_spaces_around_dot(line);
 
-		if ((line.find('}') != stl::string::npos) && !block_stack.empty())
+		if ((line.find('}') != std::string::npos) && !block_stack.empty())
 			block_stack.pop();
 
-		line = stl::string(block_stack.size(), '\t') + line;
+		line = std::string(block_stack.size(), '\t') + line;
 
-		if (line.find('{') != stl::string::npos)
+		if (line.find('{') != std::string::npos)
 			block_stack.push('{');
 
 		if (was_empty_line && !cleaned_code.empty())
@@ -282,7 +282,7 @@ bool CGLSLANGCompiler::initialize()
 	return true;
 }
 
-bool CGLSLANGCompiler::preprocess(const stl::string& shader_code, const FCompileInfo& info, stl::string& preprocessed_code, u64& preprocessed_hash)
+bool CGLSLANGCompiler::preprocess(const std::string& shader_code, const FCompileInfo& info, std::string& preprocessed_code, u64& preprocessed_hash)
 {
 	auto language = get_sh_language(info.type);
 	glslang::TShader shader(language);
@@ -304,7 +304,7 @@ bool CGLSLANGCompiler::preprocess(const stl::string& shader_code, const FCompile
 	shader.setEnvTarget(glslang::EShTargetSpv, spir_version);
 
 	empty_includer includer;
-	stl::string preprocessed_raw;
+	std::string preprocessed_raw;
 	if (!shader.preprocess(&resources, client_version, ENoProfile, false, false, messages, &preprocessed_raw, includer))
 	{
 		std::lock_guard<std::mutex> lock(m_terminationLock);
@@ -319,9 +319,9 @@ bool CGLSLANGCompiler::preprocess(const stl::string& shader_code, const FCompile
 	return true;
 }
 
-stl::vector<u32> CGLSLANGCompiler::compile(const stl::string& shader_code, const FCompileInfo& info)
+std::vector<u32> CGLSLANGCompiler::compile(const std::string& shader_code, const FCompileInfo& info)
 {
-	stl::vector<u32> spirv{};
+	std::vector<u32> spirv{};
 
 	auto language = get_sh_language(info.type);
 
@@ -374,7 +374,7 @@ stl::vector<u32> CGLSLANGCompiler::compile(const stl::string& shader_code, const
 	spv::SpvBuildLogger logger;
 	GlslangToSpv(*program.getIntermediate(language), spirv, &logger, &spvOptions);
 
-	stl::string error{};
+	std::string error{};
 	logger.error(error);
 	if (!error.empty())
 	{
@@ -383,7 +383,7 @@ stl::vector<u32> CGLSLANGCompiler::compile(const stl::string& shader_code, const
 		return {};
 	}
 
-	stl::string warning;
+	std::string warning;
 	logger.warning(warning);
 	if (!warning.empty())
 	{
@@ -392,7 +392,7 @@ stl::vector<u32> CGLSLANGCompiler::compile(const stl::string& shader_code, const
 
 	// TODO: i can cross compile spirv inside apis
 	//// Cross compilation
-	//stl::string cross_compiled{};
+	//std::string cross_compiled{};
 	//if (target_api == ETargetAPIType::eGL)
 	//{
 	//	spirv_cross::CompilerGLSL::Options ops;
@@ -428,7 +428,7 @@ stl::vector<u32> CGLSLANGCompiler::compile(const stl::string& shader_code, const
 	//	auto out_size = cross_compiled.size() / sizeof(u32);
 	//
 	//	spirv.resize(out_size);
-	//	stl::memcpy(spirv.data(), cross_compiled.data(), cross_compiled.size());
+	//	std::memcpy(spirv.data(), cross_compiled.data(), cross_compiled.size());
 	//}
 
 	return spirv;

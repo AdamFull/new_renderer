@@ -13,9 +13,9 @@
 
 using namespace shader_compiler;
 
-stl::string get_definition_by_shader_type(EShaderType type)
+std::string get_definition_by_shader_type(EShaderType type)
 {
-	stl::string res{};
+	std::string res{};
 
 	switch (type)
 	{
@@ -39,18 +39,18 @@ stl::string get_definition_by_shader_type(EShaderType type)
 	return res;
 }
 
-stl::string emplace_data(stl::string base_string, const stl::string& target, const stl::string& replacement)
+std::string emplace_data(std::string base_string, const std::string& target, const std::string& replacement)
 {
 	u64 start_pos = base_string.find(target);
-	if (start_pos == stl::string::npos)
+	if (start_pos == std::string::npos)
 		return base_string;
 	base_string.replace(start_pos, target.length(), replacement);
 	return base_string;
 }
 
-//stl::vector<stl::string> make_permutation(u64 mask, const stl::vector<FDefinitionChain>& chains) 
+//std::vector<std::string> make_permutation(u64 mask, const std::vector<FDefinitionChain>& chains) 
 //{
-//	stl::vector<stl::string> permutation;
+//	std::vector<std::string> permutation;
 //
 //	for (u64 j = 0; j < chains.size(); ++j) 
 //	{
@@ -105,8 +105,8 @@ void CLibraryCompiler::initialize(ETargetAPIType target_api, EShaderLang shader_
 	switch (shader_lang)
 	{
 	case shader_compiler::EShaderLang::eUnknown: break;
-	case shader_compiler::EShaderLang::eGLSL: { m_pShaderCompiler = stl::make_unique<CGLSLANGCompiler>(target_api, build_type); } break;
-	case shader_compiler::EShaderLang::eHLSL: { m_pShaderCompiler = stl::make_unique<CDXCCompiler>(target_api, build_type); } break;
+	case shader_compiler::EShaderLang::eGLSL: { m_pShaderCompiler = std::make_unique<CGLSLANGCompiler>(target_api, build_type); } break;
+	case shader_compiler::EShaderLang::eHLSL: { m_pShaderCompiler = std::make_unique<CDXCCompiler>(target_api, build_type); } break;
 	}
 
 	m_pPreprocessor->initialize(shader_lang);
@@ -139,7 +139,7 @@ void CLibraryCompiler::generatePermutations(const std::unordered_map<std::string
 	}
 }
 
-void CLibraryCompiler::compile(const stl::filesystem::path& library_path, FShaderCacheData& shader_cache)
+void CLibraryCompiler::compile(const std::filesystem::path& library_path, FShaderCacheData& shader_cache)
 {
 	FShaderLibrary shader_library_ci{};
 	if (!parse_file_to(library_path, shader_library_ci))
@@ -201,7 +201,7 @@ void CLibraryCompiler::compilePermutations(const std::filesystem::path parent_pa
 				FCompileInfo compile_info{ source.type, source.shader_name };
 
 				// This thing will add unique definitions by shader type. Dor example for vertex shader it will add VERTEX_SHADER definition
-				stl::vector<stl::string> unique_shader_definitions(definitions.begin(), definitions.end());
+				std::vector<std::string> unique_shader_definitions(definitions.begin(), definitions.end());
 				unique_shader_definitions.emplace_back(get_definition_by_shader_type(source.type));
 
 				// Make unique shader name(key)
@@ -209,19 +209,19 @@ void CLibraryCompiler::compilePermutations(const std::filesystem::path parent_pa
 
 				// Get shader module
 				m_locks[0].lock();
-				stl::vector<FShaderModule>& shader_modules = compiled_library.modules[unique_module_name];
+				std::vector<FShaderModule>& shader_modules = compiled_library.modules[unique_module_name];
 				m_locks[0].unlock();
 
 				// Apply definitions for current permutation
-				stl::stringstream ss{ "" };
+				std::stringstream ss{ "" };
 				for (auto& definition : unique_shader_definitions)
-					ss << stl::format("#define {}", definition) << stl::endl;
-				ss << stl::endl;
+					ss << std::format("#define {}", definition) << std::endl;
+				ss << std::endl;
 
 				auto shader_code = emplace_data(base_shader_code, "{other_definitions}", ss.str());
 
 				// Preprocess generated code (and remove ugly code after preprocessing)
-				stl::string preprocessed_code{};
+				std::string preprocessed_code{};
 				u64 preprocessed_hash{ 0ull };
 				m_pShaderCompiler->preprocess(shader_code, compile_info, preprocessed_code, preprocessed_hash);
 

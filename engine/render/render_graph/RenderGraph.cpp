@@ -27,11 +27,11 @@ struct FResourceAccessInfo
 	u64 dstPassIndex{ INVALID_HANDLE };
 };
 
-void filter_pass_queue(stl::vector<u64>& pass_list)
+void filter_pass_queue(std::vector<u64>& pass_list)
 {
-	stl::unordered_set<u64> seen;
+	std::unordered_set<u64> seen;
 
-	pass_list.erase(stl::remove_if(pass_list.begin(), pass_list.end(),
+	pass_list.erase(std::remove_if(pass_list.begin(), pass_list.end(),
 		[&seen](const auto& item) { return !seen.insert(item).second; }),
 		pass_list.end());
 }
@@ -392,7 +392,7 @@ u64 CRenderGraph::getDefaultViewportIndex() const
 	return m_defaultViewport;
 }
 
-u64 CRenderGraph::addStaticResource(const stl::string& name, const stl::string& path)
+u64 CRenderGraph::addStaticResource(const std::string& name, const std::string& path)
 {
 	log_debug("[Render Graph] Loading static resource: {}, path: {}.", name, path);
 
@@ -408,12 +408,12 @@ u64 CRenderGraph::addStaticResource(const stl::string& name, const stl::string& 
 	new_render_resource.handle = m_pRenderInterface->loadTexture(path, create_info, upload_info);
 
 	if (new_render_resource.handle == INVALID_HANDLE)
-		new_render_resource.handle = render_context->createTexture(name, create_info, stl::move(upload_info));
+		new_render_resource.handle = render_context->createTexture(name, create_info, std::move(upload_info));
 
 	return new_render_resource.handle;
 }
 
-u64 CRenderGraph::addRenderResource(const stl::string& name, const FTextureCreateInfo& texture_ci)
+u64 CRenderGraph::addRenderResource(const std::string& name, const FTextureCreateInfo& texture_ci)
 {
 	log_debug("[Render Graph] Allocating render target: {}, size({}x{}x{}) * {}, mips: {}, layers: {}, format: {}.", name, 
 		texture_ci.size.width, texture_ci.size.height, texture_ci.size.depth, texture_ci.size.scale,
@@ -443,7 +443,7 @@ u64 CRenderGraph::addRenderResource(const stl::string& name, const FTextureCreat
 	return new_render_resource.handle;
 }
 
-u64 CRenderGraph::addRenderResource(const stl::string& name, const FBufferCreateInfo& buffer_ci)
+u64 CRenderGraph::addRenderResource(const std::string& name, const FBufferCreateInfo& buffer_ci)
 {
 	log_debug("[Render Graph] Allocating buffer: {}, size: {}b.", name,
 		buffer_ci.size * buffer_ci.count);
@@ -459,7 +459,7 @@ u64 CRenderGraph::addRenderResource(const stl::string& name, const FBufferCreate
 	return new_render_resource.handle;
 }
 
-void CRenderGraph::setBackbufferResourceName(const stl::string& name)
+void CRenderGraph::setBackbufferResourceName(const std::string& name)
 {
 	if (m_backBufferResource != INVALID_HANDLE)
 	{
@@ -501,7 +501,7 @@ void CRenderGraph::popDebugMarker(const std::string& name, EQueueTypeFlagBits qu
 	m_nameToPass[name + "_end"] = marker_index;
 }
 
-const FRenderResource& CRenderGraph::getRenderResource(const stl::string& name) const
+const FRenderResource& CRenderGraph::getRenderResource(const std::string& name) const
 {
 	static FRenderResource empty_resource{};
 	
@@ -517,7 +517,7 @@ const FRenderResource& CRenderGraph::getRenderResource(u64 resource_id) const
 	return m_vRenderResources.at(resource_id);
 }
 
-u64 CRenderGraph::getRenderRersourceId(const stl::string& name) const
+u64 CRenderGraph::getRenderRersourceId(const std::string& name) const
 {
 	auto found = m_nameToResource.find(name);
 	if (found != m_nameToResource.end())
@@ -526,7 +526,7 @@ u64 CRenderGraph::getRenderRersourceId(const stl::string& name) const
 	return INVALID_HANDLE;
 }
 
-u64 CRenderGraph::addRenderPass(const stl::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci)
+u64 CRenderGraph::addRenderPass(const std::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci)
 {
 	log_info("[Render Graph] Add render pass: {}", name);
 
@@ -542,15 +542,15 @@ u64 CRenderGraph::addRenderPass(const stl::string& name, const FRenderConfigRend
 
 	applyRenderPassResources(pass_index, &render_pass_ci, &pass_ci);
 
-	stl::unique_ptr<IRenderPass> new_pass{};
+	std::unique_ptr<IRenderPass> new_pass{};
 	if (render_pass_ci.type == ERenderingType::eFullscreen)
-		new_pass = stl::make_unique<CFullscreenPass>(m_pRenderInterface);
+		new_pass = std::make_unique<CFullscreenPass>(m_pRenderInterface);
 	else if (render_pass_ci.type == ERenderingType::eGeometry)
-		new_pass = stl::make_unique<CGeometryPass>(m_pRenderInterface);
+		new_pass = std::make_unique<CGeometryPass>(m_pRenderInterface);
 	else if (render_pass_ci.type == ERenderingType::eCascadedShadowMap)
-		new_pass = stl::make_unique<CCascadedShadowMapPass>(m_pRenderInterface);
+		new_pass = std::make_unique<CCascadedShadowMapPass>(m_pRenderInterface);
 	else if(render_pass_ci.type == ERenderingType::eClear)
-		new_pass = stl::make_unique<CClearPass>(m_pRenderInterface);
+		new_pass = std::make_unique<CClearPass>(m_pRenderInterface);
 
 	if (!render_pass_ci.depthResource.empty())
 		pass_ci.depthTarget = getRenderRersourceId(render_pass_ci.depthResource);
@@ -559,13 +559,13 @@ u64 CRenderGraph::addRenderPass(const stl::string& name, const FRenderConfigRend
 		pass_ci.depthTarget = getRenderRersourceId(render_pass_ci.stencilResource);
 
 	new_pass->init(pass_ci);
-	m_vRenderPasses.emplace_back(stl::move(new_pass));
+	m_vRenderPasses.emplace_back(std::move(new_pass));
 	m_nameToPass[name] = pass_index;
 
 	return pass_index;
 }
 
-u64 CRenderGraph::addRenderPass(const stl::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci)
+u64 CRenderGraph::addRenderPass(const std::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci)
 {
 	log_info("[Render Graph] Add compute pass: {}", name);
 
@@ -575,17 +575,17 @@ u64 CRenderGraph::addRenderPass(const stl::string& name, const FRenderConfigComp
 	FComputePassCreateInfo pass_ci{};
 	applyRenderPassResources(pass_index, &compute_pass_ci, &pass_ci);
 
-	stl::unique_ptr<IComputePass> new_pass{};
+	std::unique_ptr<IComputePass> new_pass{};
 	if (compute_pass_ci.type == EComputeType::eDefault)
-		new_pass = stl::make_unique<CComputePass>(m_pRenderInterface);
+		new_pass = std::make_unique<CComputePass>(m_pRenderInterface);
 	else if (compute_pass_ci.type == EComputeType::eGeometry)
-		new_pass = stl::make_unique<CComputeGeometryPass>(m_pRenderInterface);
+		new_pass = std::make_unique<CComputeGeometryPass>(m_pRenderInterface);
 	else if (compute_pass_ci.type == EComputeType::eCubemap)
-		new_pass = stl::make_unique<CComputeCubemapPass>(m_pRenderInterface);
+		new_pass = std::make_unique<CComputeCubemapPass>(m_pRenderInterface);
 	else if (compute_pass_ci.type == EComputeType::eCulling)
-		new_pass = stl::make_unique<CComputeCullingPass>(m_pRenderInterface);
+		new_pass = std::make_unique<CComputeCullingPass>(m_pRenderInterface);
 	else if (compute_pass_ci.type == EComputeType::ePostProcess)
-		new_pass = stl::make_unique<CPostProcessPass>(m_pRenderInterface);
+		new_pass = std::make_unique<CPostProcessPass>(m_pRenderInterface);
 
 	for (const auto& group_info : compute_pass_ci.groupInfos)
 	{
@@ -600,21 +600,21 @@ u64 CRenderGraph::addRenderPass(const stl::string& name, const FRenderConfigComp
 	}
 
 	new_pass->init(pass_ci);
-	m_vRenderPasses.emplace_back(stl::move(new_pass));
+	m_vRenderPasses.emplace_back(std::move(new_pass));
 	m_nameToPass[name] = pass_index;
 
 	return pass_index;
 }
 
 template <class _Ty, class _KTy>
-struct counter_pair : stl::pair <_Ty, _KTy>
+struct counter_pair : std::pair <_Ty, _KTy>
 {
-	using stl::pair<_Ty, _KTy>::pair;
+	using std::pair<_Ty, _KTy>::pair;
 
 	bool operator== (const counter_pair& other)
 	{
-		stl::pair p1 = *this;
-		stl::pair p2 = other;
+		std::pair p1 = *this;
+		std::pair p2 = other;
 
 		return p1 == p2;
 	}
@@ -642,7 +642,7 @@ void CRenderGraph::build()
 	//for (u64 pass_index : backbuffer_resource.usages[ERenderResourceAccessFlagBits::eWrite])
 	//	traverseDependencies(pass_index);
 	//
-	//stl::reverse(m_vPassExecutionQueue.begin(), m_vPassExecutionQueue.end());
+	//std::reverse(m_vPassExecutionQueue.begin(), m_vPassExecutionQueue.end());
 	//filter_pass_queue(m_vPassExecutionQueue);
 	//
 	//reorderPasses(m_vPassExecutionQueue);
@@ -653,9 +653,9 @@ void CRenderGraph::build()
 		m_vPassOrder.at(pass_index) = pass_order++;
 
 	// Generate dependency barriers
-	stl::vector<stl::vector<FResourceAccessInfo>> per_pass_resource_access{};
-	stl::unordered_map<FRenderResourceBindingKey, u64> unique_barrier_counter;
-	stl::unordered_map<FRenderResourceBinding, u64> unique_resource_writes{};
+	std::vector<std::vector<FResourceAccessInfo>> per_pass_resource_access{};
+	std::unordered_map<FRenderResourceBindingKey, u64> unique_barrier_counter;
+	std::unordered_map<FRenderResourceBinding, u64> unique_resource_writes{};
 
 	per_pass_resource_access.resize(m_vRenderPasses.size());
 
@@ -886,7 +886,7 @@ void CRenderGraph::execute(f32 dt)
 	}
 
 	auto& backbuffer_resource = m_vRenderResources.at(m_backBufferResource);
-	stl::vector<FResourceBarrierInfo> backbuffer_barriers{};
+	std::vector<FResourceBarrierInfo> backbuffer_barriers{};
 
 	auto& backbuffer_barrier = backbuffer_barriers.emplace_back();
 	backbuffer_barrier.resource.handle = backbuffer_resource.handle;
@@ -982,7 +982,7 @@ void CRenderGraph::applySingleRenderResourceDependencies(u64 resource_id, ERende
 	render_resource.queuesUsed |= queue_type;
 }
 
-void CRenderGraph::applyMultiRenderResourceDependencies(u64 pass_index, EQueueTypeFlagBits queue_type, const stl::unordered_map<ERenderResourceGroupType, stl::vector<FRenderResourceBinding>>& associated_resources)
+void CRenderGraph::applyMultiRenderResourceDependencies(u64 pass_index, EQueueTypeFlagBits queue_type, const std::unordered_map<ERenderResourceGroupType, std::vector<FRenderResourceBinding>>& associated_resources)
 {
 	for (const auto& [type, resource_bindings] : associated_resources)
 	{
@@ -1049,7 +1049,7 @@ bool CRenderGraph::checkPassDependencies(u64 dst_pass, u64 src_pass)
 	return false;
 }
 
-void CRenderGraph::reorderPasses(stl::vector<u64>& flattened_passes)
+void CRenderGraph::reorderPasses(std::vector<u64>& flattened_passes)
 {
 	for (const auto& pass_merge_deps : m_vPassMergeDependencies)
 	{
@@ -1073,15 +1073,15 @@ void CRenderGraph::reorderPasses(stl::vector<u64>& flattened_passes)
 	if (flattened_passes.size() <= 2ull)
 		return;
 
-	stl::vector<u64> unscheduled_passes;
+	std::vector<u64> unscheduled_passes;
 	unscheduled_passes.reserve(m_vRenderPasses.size());
-	stl::swap(flattened_passes, unscheduled_passes);
+	std::swap(flattened_passes, unscheduled_passes);
 
 	const auto schedule = [&](unsigned index) 
 		{
 		// Need to preserve the order of remaining elements.
 		flattened_passes.push_back(unscheduled_passes[index]);
-		stl::move(unscheduled_passes.begin() + index + 1,
+		std::move(unscheduled_passes.begin() + index + 1,
 			unscheduled_passes.end(),
 			unscheduled_passes.begin() + index);
 		unscheduled_passes.pop_back();

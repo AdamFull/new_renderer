@@ -23,7 +23,7 @@ namespace engine
 #ifndef BUILD_WITHOUT_DEBUGGIND
 		namespace debug_mapping
 		{
-			inline constexpr stl::pair<u64, const char*> uniform_to_name_mapping[] =
+			inline constexpr std::pair<u64, const char*> uniform_to_name_mapping[] =
 			{
 				{ utl::utils::fnv1a_64_hash("GlobalUniformFrameData"), "GlobalUniformFrameData" },
 				{ utl::utils::fnv1a_64_hash("UniformMeshData"), "UniformMeshData" },
@@ -74,12 +74,12 @@ namespace engine
 
 		struct FGlobalUniformCreateInfo
 		{
-			stl::unordered_map<u64, u64> uniforms{};
+			std::unordered_map<u64, u64> uniforms{};
 		};
 
 		struct FGlobalUniformUpdateInfo
 		{
-			stl::unordered_map<u64, FUniformDataView> uniforms{};
+			std::unordered_map<u64, FUniformDataView> uniforms{};
 		};
 
 		struct FRenderCamera
@@ -127,7 +127,7 @@ namespace engine
 				if (size == 0ull)
 					size = uniform.size;
 
-				stl::memcpy(m_data.data() + uniform.offset, raw_data, size);
+				std::memcpy(m_data.data() + uniform.offset, raw_data, size);
 			}
 
 			template<class _Ty>
@@ -140,9 +140,9 @@ namespace engine
 				auto& uniform = found->second;
 
 				if (size == 0ull)
-					size = (stl::min)(sizeof(_Ty), uniform.size);
+					size = (std::min)(sizeof(_Ty), uniform.size);
 
-				stl::memcpy(m_data.data() + uniform.offset, &object, size);
+				std::memcpy(m_data.data() + uniform.offset, &object, size);
 			}
 
 			template<class _Ty>
@@ -160,13 +160,13 @@ namespace engine
 				return reinterpret_cast<_Ty*>(m_data.data() + uniform.offset);
 			}
 
-			const stl::vector<char>& data() const
+			const std::vector<char>& data() const
 			{
 				return m_data;
 			}
 		private:
-			stl::unordered_map<u64, FReflectionUniform> m_uniforms{};
-			stl::vector<char> m_data{};
+			std::unordered_map<u64, FReflectionUniform> m_uniforms{};
+			std::vector<char> m_data{};
 		};
 
 		class IShaderObject
@@ -174,11 +174,11 @@ namespace engine
 		public:
 			virtual ~IShaderObject() = default;
 
-			virtual void create(const stl::string& name, const FGraphicsShaderCreateInfo& create_info) = 0;
-			virtual void create(const stl::string& name, const FComputeShaderCreateInfo& create_info) = 0;
+			virtual void create(const std::string& name, const FGraphicsShaderCreateInfo& create_info) = 0;
+			virtual void create(const std::string& name, const FComputeShaderCreateInfo& create_info) = 0;
 
-			virtual const stl::unique_ptr<CUniformHandle>& getUniformBlock(const char* name) = 0;
-			virtual const stl::unique_ptr<CUniformHandle>& getConstantBlock(const char* name) = 0;
+			virtual const std::unique_ptr<CUniformHandle>& getUniformBlock(const char* name) = 0;
+			virtual const std::unique_ptr<CUniformHandle>& getConstantBlock(const char* name) = 0;
 
 			virtual void bindBuffer(const char* name, u64 buffer_resource) = 0;
 			virtual void bindTexture(const char* name, u64 texture_resource, u32 mip = 0u) = 0;
@@ -200,7 +200,7 @@ namespace engine
 			u64 nodeCount{ 0ull };
 
 			// Type is a hash of all used attributes
-			stl::unordered_map<u64, u64> perTypeVBOCount{};
+			std::unordered_map<u64, u64> perTypeVBOCount{};
 		};
 
 		struct FCullingInfo
@@ -213,7 +213,7 @@ namespace engine
 		{
 			FRenderDataPacket()
 			{
-				//resources = stl::make_unique<CGPUArrayHolder>();
+				//resources = std::make_unique<CGPUArrayHolder>();
 			}
 
 			FRenderCamera camera{};
@@ -258,25 +258,25 @@ namespace engine
 			virtual void create(const FRenderContextCreateInfo& context_ci) = 0;
 			virtual void createGlobalDescriptor(const FGlobalUniformCreateInfo& uniform_ci) = 0;
 			virtual void updateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view) = 0;
-			virtual const stl::vector<uint32_t>& getGlobalTextureRemap() = 0;
+			virtual const std::vector<uint32_t>& getGlobalTextureRemap() = 0;
 
-			virtual u64 createTexture(const stl::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) = 0;
-			virtual u64 getTextureId(const stl::string& name) = 0;
-			virtual u64 createRenderTarget(const stl::string& name, const FTextureCreateInfo& texture_ci) = 0;
+			virtual u64 createTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) = 0;
+			virtual u64 getTextureId(const std::string& name) = 0;
+			virtual u64 createRenderTarget(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
 			virtual const FTextureCreateInfo& getTextureInfo(u64 texture_id) = 0;
 			virtual void destroyTexture(u64 resource_id) = 0;
 
-			virtual u64 createShader(const stl::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  stl::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
-			virtual u64 createShader(const stl::string& name, const FComputeShaderCreateInfo& shader_ci, const  stl::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
-			virtual u64 createShader(const stl::string& name, const FReyTracingShaderCreateInfo& shader_ci, const  stl::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
+			virtual u64 createShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
+			virtual u64 createShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
+			virtual u64 createShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
 			virtual FShaderReflectionData getShaderReflection(const u64& shader_view) = 0;
 			virtual void updateShaderResources(const FShaderResourceCommit& resources, EShaderResourcesUpdateFlags flags = EShaderResourcesUpdateFlagBits::eAll) = 0;
-			virtual void flushConstantRanges(u64 shader_id, const stl::unordered_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type) = 0;
+			virtual void flushConstantRanges(u64 shader_id, const std::unordered_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type) = 0;
 			virtual void bindShader(u64 shader_id, EQueueTypeFlagBits queue_type) = 0;
 			virtual void destroyShader(u64 resource_id) = 0;
 
-			virtual u64 createBuffer(const stl::string& name, const FBufferCreateInfo& buffer_ci) = 0;
-			virtual void updateBuffer(const stl::string& name, u64 buffer_id, const FBufferCreateInfo& buffer_ci) = 0;
+			virtual u64 createBuffer(const std::string& name, const FBufferCreateInfo& buffer_ci) = 0;
+			virtual void updateBuffer(const std::string& name, u64 buffer_id, const FBufferCreateInfo& buffer_ci) = 0;
 			virtual void uploadDataToBuffer(const FBufferUploadInfo& upload_info) = 0;
 			virtual FBufferView getBufferView(u64 buffer_id) = 0;
 			virtual void bindVertexBuffers(const FVertexBufferBindingInfo& binding_info, EQueueTypeFlagBits queue) = 0;
@@ -286,11 +286,11 @@ namespace engine
 			virtual void flushBuffer(u64 buffer_id, u64 size, u64 offset) = 0;
 			virtual void destroyBuffer(u64 resource_id) = 0;
 
-			virtual void pushG2CBarriers(EQueueTypeFlagBits queue_type, const stl::vector<u64>& textures) = 0;
+			virtual void pushG2CBarriers(EQueueTypeFlagBits queue_type, const std::vector<u64>& textures) = 0;
 			virtual void pushC2CBarrier(EQueueTypeFlagBits queue_type) = 0;
-			virtual void pushC2GBarrier(EQueueTypeFlagBits queue_type, const stl::vector<u64>& texture_ids) = 0;
+			virtual void pushC2GBarrier(EQueueTypeFlagBits queue_type, const std::vector<u64>& texture_ids) = 0;
 
-			virtual void processResourceBarriers(EQueueTypeFlagBits queue, const stl::vector<FResourceBarrierInfo>& barriers) = 0;
+			virtual void processResourceBarriers(EQueueTypeFlagBits queue, const std::vector<FResourceBarrierInfo>& barriers) = 0;
 
 			virtual void beginTimestampZone(EQueueTypeFlagBits queue) = 0;
 			virtual void endTimestampZone(EQueueTypeFlagBits queue) = 0;
@@ -330,8 +330,8 @@ namespace engine
 
 			virtual bool isSwapChainFinished() = 0;
 
-			virtual void beginDebugLabel(const stl::string& label, EQueueTypeFlagBits queue_type, u32 color = 0xffffffff) = 0;
-			virtual void insertDebugLabel(const stl::string& label, EQueueTypeFlagBits queue_type, u32 color = 0xffffffff) = 0;
+			virtual void beginDebugLabel(const std::string& label, EQueueTypeFlagBits queue_type, u32 color = 0xffffffff) = 0;
+			virtual void insertDebugLabel(const std::string& label, EQueueTypeFlagBits queue_type, u32 color = 0xffffffff) = 0;
 			virtual void endDebugLabel(EQueueTypeFlagBits queue_type) = 0;
 		};
 
@@ -345,7 +345,7 @@ namespace engine
 			virtual u64 registerFrustum(ERenderGeometryCullerType type) = 0;
 			virtual void updateFrustum(u64 frustum_id, const glm::mat4& view, const glm::mat4& projection) = 0;
 
-			virtual void addDrawGeometry(const stl::vector<FGeometryRawBatch>& new_geometry) = 0;
+			virtual void addDrawGeometry(const std::vector<FGeometryRawBatch>& new_geometry) = 0;
 
 			virtual void render(f32 dt) = 0;
 
@@ -358,19 +358,19 @@ namespace engine
 			virtual void addShadow(const FSpotShadowCommit& commit) = 0;
 
 			virtual void updateNode(u32 node_id, const FSceneNode& node) = 0;
-			virtual void updateSkin(const stl::vector<glm::mat4>& matrices) = 0;
+			virtual void updateSkin(const std::vector<glm::mat4>& matrices) = 0;
 
 			virtual void addMaterial(const FMaterial& material) = 0;
-			virtual void addMaterials(const stl::vector<FMaterial>& materials) = 0;
+			virtual void addMaterials(const std::vector<FMaterial>& materials) = 0;
 			virtual const FMaterial& getMaterial(u64 index) const = 0;
 
 			virtual void addMesh(const FMesh& mesh) = 0;
 			virtual void addMeshes(const std::vector<FMesh>& meshes) = 0;
 
-			virtual const stl::unique_ptr<IGPUVector>& getDrawBuffer(ERenderBufferIndices buffer_index) = 0;
-			//virtual const stl::vector<stl::unique_ptr<IBufferObject>>& getDrawBuffers() = 0;
+			virtual const std::unique_ptr<IGPUVector>& getDrawBuffer(ERenderBufferIndices buffer_index) = 0;
+			//virtual const std::vector<std::unique_ptr<IBufferObject>>& getDrawBuffers() = 0;
 
-			virtual const stl::vector<FGeometryCPUBatch>& getGeometryBatches() const = 0;
+			virtual const std::vector<FGeometryCPUBatch>& getGeometryBatches() const = 0;
 
 			virtual FPostProcess& getPostProcessingData() = 0;
 
@@ -386,23 +386,23 @@ namespace engine
 			virtual void create(const FRenderInterfaceCreateInfo& render_interface_ci) = 0;
 			virtual void render(f32 dt) = 0;
 
-			virtual u64 createTexture(const stl::string& path) = 0;
-			virtual u64 loadTexture(const stl::string& path, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info) = 0;
+			virtual u64 createTexture(const std::string& path) = 0;
+			virtual u64 loadTexture(const std::string& path, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info) = 0;
 
-			virtual u64 createShader(const stl::string& name_info, const FGraphicsShaderCreateInfo& create_info) = 0;
-			virtual u64 createShader(const stl::string& name_info, const FComputeShaderCreateInfo& create_info) = 0;
+			virtual u64 createShader(const std::string& name_info, const FGraphicsShaderCreateInfo& create_info) = 0;
+			virtual u64 createShader(const std::string& name_info, const FComputeShaderCreateInfo& create_info) = 0;
 
-			virtual u64 createVertexHandler(const stl::string& name, const FVertexHandlerCreateInfo& handler_ci) = 0;
-			virtual const stl::unique_ptr<IVertexHandler>& getVertexHandler(u64 id) = 0;
+			virtual u64 createVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) = 0;
+			virtual const std::unique_ptr<IVertexHandler>& getVertexHandler(u64 id) = 0;
 
-			virtual FShaderUploadInfo getShaderNameTag(const stl::string& name) = 0;
+			virtual FShaderUploadInfo getShaderNameTag(const std::string& name) = 0;
 
 			virtual void updateSurfaceSize(i32 width, i32 height) = 0;
 
-			virtual const stl::unique_ptr<FRenderDataPacket>& getRenderPacket() = 0;
-			virtual const stl::unique_ptr<IRenderGraph>& getRenderGraph() = 0;
-			virtual const stl::unique_ptr<IRenderWorld>& getRenderWorld() = 0;
-			virtual const stl::unique_ptr<IRenderContext>& getRenderContext() = 0;
+			virtual const std::unique_ptr<FRenderDataPacket>& getRenderPacket() = 0;
+			virtual const std::unique_ptr<IRenderGraph>& getRenderGraph() = 0;
+			virtual const std::unique_ptr<IRenderWorld>& getRenderWorld() = 0;
+			virtual const std::unique_ptr<IRenderContext>& getRenderContext() = 0;
 		};
 	}
 }

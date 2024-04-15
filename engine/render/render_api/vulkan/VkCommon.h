@@ -27,25 +27,25 @@ namespace engine
 			}
 
 			// Helper functions
-			inline bool check_contains_single(const stl::string& s1, const stl::vector<stl::string>& rhs)
+			inline bool check_contains_single(const std::string& s1, const std::vector<std::string>& rhs)
 			{
-				return stl::find_if(rhs.begin(), rhs.end(),
-					[s1](const stl::string& s2) { return s1 == s2; }) != rhs.end();
+				return std::find_if(rhs.begin(), rhs.end(),
+					[s1](const std::string& s2) { return s1 == s2; }) != rhs.end();
 			}
 
 			// Check that second vector contains all items from first one
-			inline bool check_contains_all(const stl::vector<stl::string>& lhs, const stl::vector<stl::string>& rhs)
+			inline bool check_contains_all(const std::vector<std::string>& lhs, const std::vector<std::string>& rhs)
 			{
-				return stl::all_of(lhs.begin(), lhs.end(),
-					[&rhs](const stl::string& s1) { return check_contains_single(s1, rhs); });
+				return std::all_of(lhs.begin(), lhs.end(),
+					[&rhs](const std::string& s1) { return check_contains_single(s1, rhs); });
 			}
 
-			inline stl::vector<const char*> get_instance_extension_names()
+			inline std::vector<const char*> get_instance_extension_names()
 			{
 #if defined( VK_USE_PLATFORM_WIN32_KHR )
-				return stl::vector<const char*>{ VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_WIN32_SURFACE_EXTENSION_NAME, VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_EXT_DEBUG_REPORT_EXTENSION_NAME, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME };
+				return std::vector<const char*>{ VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_WIN32_SURFACE_EXTENSION_NAME, VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_EXT_DEBUG_REPORT_EXTENSION_NAME, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME };
 #else
-				return stl::vector<const char*>{};
+				return std::vector<const char*>{};
 #endif
 			}
 
@@ -158,9 +158,9 @@ namespace engine
 				return current_device;
 			}
 
-			inline stl::vector<vk::SampleCountFlagBits> get_avaliable_sample_count(const FVkPhysicalDevice& device)
+			inline std::vector<vk::SampleCountFlagBits> get_avaliable_sample_count(const FVkPhysicalDevice& device)
 			{
-				stl::vector<vk::SampleCountFlagBits> avaliable_samples{ vk::SampleCountFlagBits::e1 };
+				std::vector<vk::SampleCountFlagBits> avaliable_samples{ vk::SampleCountFlagBits::e1 };
 
 				auto sample_count_flags = device.properties.limits.framebufferColorSampleCounts & device.properties.limits.framebufferDepthSampleCounts;
 				if (sample_count_flags & vk::SampleCountFlagBits::e64)
@@ -182,11 +182,11 @@ namespace engine
 			inline bool is_sample_count_supported(const FVkPhysicalDevice& device, vk::SampleCountFlagBits sample_count)
 			{
 				auto avaliable_samples = get_avaliable_sample_count(device);
-				auto found = stl::find(avaliable_samples.begin(), avaliable_samples.end(), sample_count);
+				auto found = std::find(avaliable_samples.begin(), avaliable_samples.end(), sample_count);
 				return found != avaliable_samples.end();
 			}
 
-			inline vk::SurfaceFormatKHR choice_surface_format(const stl::vector<vk::SurfaceFormatKHR>& available_formats)
+			inline vk::SurfaceFormatKHR choice_surface_format(const std::vector<vk::SurfaceFormatKHR>& available_formats)
 			{
 				if (available_formats.size() == 1 && available_formats[0].format == vk::Format::eUndefined)
 					return { vk::Format::eB8G8R8A8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear };
@@ -200,7 +200,7 @@ namespace engine
 				return available_formats[0];
 			}
 
-			inline vk::PresentModeKHR choice_surface_present_mode(const stl::vector<vk::PresentModeKHR>& present_modes)
+			inline vk::PresentModeKHR choice_surface_present_mode(const std::vector<vk::PresentModeKHR>& present_modes)
 			{
 				vk::PresentModeKHR best_mode = vk::PresentModeKHR::eFifo;
 
@@ -217,13 +217,13 @@ namespace engine
 
 			inline vk::Extent2D choice_swapchain_extent(const vk::SurfaceCapabilitiesKHR& capabilities, u32 width, u32 height)
 			{
-				if (capabilities.currentExtent.width != (stl::numeric_limits<u32>::max)())
+				if (capabilities.currentExtent.width != (std::numeric_limits<u32>::max)())
 					return capabilities.currentExtent;
 
 				vk::Extent2D actual_extent = { width, height };
 
-				actual_extent.width = (stl::max)(capabilities.minImageExtent.width, (stl::min)(capabilities.maxImageExtent.width, actual_extent.width));
-				actual_extent.height = (stl::max)(capabilities.minImageExtent.height, (stl::min)(capabilities.maxImageExtent.height, actual_extent.height));
+				actual_extent.width = (std::max)(capabilities.minImageExtent.width, (std::min)(capabilities.maxImageExtent.width, actual_extent.width));
+				actual_extent.height = (std::max)(capabilities.minImageExtent.height, (std::min)(capabilities.maxImageExtent.height, actual_extent.height));
 
 				return actual_extent;
 			}
@@ -252,13 +252,13 @@ namespace engine
 				return mask;
 			}
 
-			inline FRenderApiErrorInfo make_api_error(vk::ObjectType type, vk::Result result, const stl::string& error_text = "")
+			inline FRenderApiErrorInfo make_api_error(vk::ObjectType type, vk::Result result, const std::string& error_text = "")
 			{
 				FRenderApiErrorInfo error_info{};
 				error_info.fault = result != vk::Result::eSuccess;
 
 				if (error_info.fault)
-					error_info.description = stl::format("\"{}\": {}. Reason: {}.", vk::to_string(type), error_text, vk::to_string(result));
+					error_info.description = std::format("\"{}\": {}. Reason: {}.", vk::to_string(type), error_text, vk::to_string(result));
 
 				return error_info;
 			}
@@ -268,7 +268,7 @@ namespace engine
 				if (result.fault)
 				{
 					log_error(result.description);
-					throw stl::runtime_error(result.description);
+					throw std::runtime_error(result.description);
 				}
 			}
 

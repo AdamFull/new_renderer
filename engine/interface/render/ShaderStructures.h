@@ -54,36 +54,36 @@ namespace engine
 			u32 set{ 0u };
 			u32 binding{ 0u };
 			u64 size{ 0ull };
-			stl::unordered_map<u64, _Ty> uniforms{};
+			std::unordered_map<u64, _Ty> uniforms{};
 		};
 
 		template<class _Ty>
 		struct FReflectionPushConstantBlock
 		{
 			u64 size{ 0ull };
-			stl::unordered_map<u64, _Ty> uniforms{};
+			std::unordered_map<u64, _Ty> uniforms{};
 		};
 
 		struct FShaderReflectionData
 		{
-			stl::unordered_map<u64, FReflectionUniform> uniforms{};
-			stl::unordered_map<u64, FReflectionUniformBlock<FReflectionUniform>> uniformBlocks{};
-			stl::unordered_map<u64, FReflectionPushConstantBlock<FReflectionUniform>> pushBlocks{};
+			std::unordered_map<u64, FReflectionUniform> uniforms{};
+			std::unordered_map<u64, FReflectionUniformBlock<FReflectionUniform>> uniformBlocks{};
+			std::unordered_map<u64, FReflectionPushConstantBlock<FReflectionUniform>> pushBlocks{};
 
-			stl::array<u32, 3ull> localSizes;
+			std::array<u32, 3ull> localSizes;
 		};
 
 		struct FShaderUploadInfo
 		{
 			i64 libraryId{ ~0ll };
 			i64 shaderId{ ~0ll };
-			stl::string originalName{};
+			std::string originalName{};
 		};
 
 		struct FShaderCreationBlockInfo
 		{
 			u32 stage{ 0u };
-			stl::vector<u32>* code{ nullptr };
+			std::vector<u32>* code{ nullptr };
 		};
 
 		struct FAttachment
@@ -103,7 +103,7 @@ namespace engine
 
 			u32 usageCount{ 1u };
 
-			stl::vector<FAttachment> colorAttachments{};
+			std::vector<FAttachment> colorAttachments{};
 			FAttachment depthAttachment{};
 			FAttachment stencilAttachment{};
 
@@ -136,9 +136,9 @@ namespace engine
 		struct FShaderResourceCommit
 		{
 			u64 shaderId{ INVALID_HANDLE };
-			stl::unordered_map<u64, FUniformDataView> uniforms{};
-			stl::unordered_map<u64, FTextureBindInfo> textures{};
-			stl::unordered_map<u64, u64> buffers{};
+			std::unordered_map<u64, FUniformDataView> uniforms{};
+			std::unordered_map<u64, FTextureBindInfo> textures{};
+			std::unordered_map<u64, u64> buffers{};
 		};
 	}
 }

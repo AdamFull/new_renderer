@@ -18,7 +18,7 @@ void CGeometryPass::init(const FRenderPassCreateInfo& pass_ci)
 	m_baseShaderName = pass_ci.shader;
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-	m_debugName = stl::format("geometry:{}", m_baseShaderName);
+	m_debugName = std::format("geometry:{}", m_baseShaderName);
 #endif
 }
 
@@ -78,7 +78,7 @@ void CGeometryPass::_render(const FRenderFrameInfo& frame_info)
 	}
 }
 
-const stl::unique_ptr<IShaderObject>& CGeometryPass::getShaderByVBO(const IVertexHandler* vbo)
+const std::unique_ptr<IShaderObject>& CGeometryPass::getShaderByVBO(const IVertexHandler* vbo)
 {
 	auto& render_graph = m_pRenderInterface->getRenderGraph();
 
@@ -86,7 +86,7 @@ const stl::unique_ptr<IShaderObject>& CGeometryPass::getShaderByVBO(const IVerte
 	auto& shader = m_shaders[vbo_hash];
 	if (!shader)
 	{
-		shader = stl::make_unique<CShaderObject>(m_pRenderInterface);
+		shader = std::make_unique<CShaderObject>(m_pRenderInterface);
 
 		// Generate shader name
 		auto shader_name = m_baseShaderName + vbo->getDefinitions();

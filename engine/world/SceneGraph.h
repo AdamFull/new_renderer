@@ -11,8 +11,8 @@ namespace engine
 		public:
 			CSceneGraph();
 
-			entt::entity createRoot(const stl::string& name);
-			entt::entity createNode(const stl::string& name);
+			entt::entity createRoot(const std::string& name);
+			entt::entity createNode(const std::string& name);
 			void destroyNode(entt::entity node);
 			void attachChild(entt::entity parent, entt::entity child);
 			void detachChild(entt::entity parent, entt::entity child);
@@ -20,13 +20,13 @@ namespace engine
 			entt::entity duplicateNode(entt::entity child);
 			void parentExchange(entt::entity new_parent, entt::entity child);
 
-			const stl::unique_ptr<entt::registry>& getRegistry() const;
+			const std::unique_ptr<entt::registry>& getRegistry() const;
 			entt::entity getRoot() const;
 
 			template<class _Ty>
 			_Ty& addComponent(entt::entity entity, _Ty&& component)
 			{
-				return m_pRegistry->emplace<_Ty>(entity, stl::forward<_Ty>(component));
+				return m_pRegistry->emplace<_Ty>(entity, std::forward<_Ty>(component));
 			}
 
 			template<class _Ty>
@@ -35,7 +35,7 @@ namespace engine
 				return m_pRegistry->get<_Ty>(entity);
 			}
 		private:
-			stl::unique_ptr<entt::registry> m_pRegistry{};
+			std::unique_ptr<entt::registry> m_pRegistry{};
 			entt::entity m_root{};
 		};
 	}

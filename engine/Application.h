@@ -21,12 +21,12 @@ namespace engine
 	private:
 		void updateTitle();
 	private:
-		stl::unique_ptr<IWindowInterface> m_pWindowHandle{};
-		stl::unique_ptr<CInputMapper> m_pInputMapper{};
-		stl::unique_ptr<render::IRenderInterface> m_pRenderInterface{};
-		stl::unique_ptr<filesystem::IVirtualFileSystemInterface> m_pVirtualFileSystem{};
-		//stl::unique_ptr<scripting::CScriptEngine> m_pScriptEngine{};
-		stl::unique_ptr<world::CScene> m_pScene{};
+		std::unique_ptr<IWindowInterface> m_pWindowHandle{};
+		std::unique_ptr<CInputMapper> m_pInputMapper{};
+		std::unique_ptr<render::IRenderInterface> m_pRenderInterface{};
+		std::unique_ptr<filesystem::IVirtualFileSystemInterface> m_pVirtualFileSystem{};
+		//std::unique_ptr<scripting::CScriptEngine> m_pScriptEngine{};
+		std::unique_ptr<world::CScene> m_pScene{};
 
 		utl::utils::fps_counter32 cpuCounter{};
 		utl::utils::fps_counter32 gpuCounter{};

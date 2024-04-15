@@ -12,7 +12,7 @@ namespace engine
 			template<class _Ty>
 			struct FBufferInfo
 			{
-				stl::vector<_Ty> data{};
+				std::vector<_Ty> data{};
 				u64 elementCount{ 0ull };
 				u64 elementSize{ 0ull };
 				u64 buffer{ ~0ull };
@@ -26,18 +26,18 @@ namespace engine
 
 			void bind(EQueueTypeFlagBits queue) override;
 
-			const FVertexRange& addMeshData(const stl::vector<FVertexAttributePointer>& attributes_data, const FVertexAttributePointer& indices) override;
+			const FVertexRange& addMeshData(const std::vector<FVertexAttributePointer>& attributes_data, const FVertexAttributePointer& indices) override;
 
-			u64 addVertices(const stl::vector<FVertexAttributePointer>& attributes_data) override;
+			u64 addVertices(const std::vector<FVertexAttributePointer>& attributes_data) override;
 			u64 addIndices(const FVertexAttributePointer& indices) override;
-			u64 addMeshlets(const stl::vector<FVertexAttributePointer>& attributes_data, const FVertexAttributePointer& indices);
+			u64 addMeshlets(const std::vector<FVertexAttributePointer>& attributes_data, const FVertexAttributePointer& indices);
 
 			u64 getLastVertex() override;
 			u64 getLastIndex() override;
 
 			const FVertexDeclarationInfo& getVertexDeclaration() const override;
 			u64 getHash() const override;
-			const stl::string& getDefinitions() const override;
+			const std::string& getDefinitions() const override;
 
 			const std::unique_ptr<IGPUVector>& getGeometryBuffer(EGeometryBufferIndices buffer_index) override;
 
@@ -50,10 +50,10 @@ namespace engine
 			std::vector<std::unique_ptr<IGPUVector>> m_vGeometryBuffers{};
 
 			// Vertex cache
-			stl::unordered_map<u64, FVertexRange> m_cachedRanges{};
+			std::unordered_map<u64, FVertexRange> m_cachedRanges{};
 
 			// For shader creation
-			stl::string m_definitions{};
+			std::string m_definitions{};
 			u64 m_attributeHash{ 0ull };
 			FVertexDeclarationInfo m_declaration{};
 

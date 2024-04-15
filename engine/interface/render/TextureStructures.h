@@ -66,14 +66,14 @@ namespace engine
 				size.policy = ERenderTargetSizePolicy::eScalable;
 			}
 
-			void enableMipMap() { mipLevels = utl::cast<u32>(stl::floor(stl::log2((stl::max)(size.width, size.height)))) + 1u; }
+			void enableMipMap() { mipLevels = utl::cast<u32>(std::floor(std::log2((std::max)(size.width, size.height)))) + 1u; }
 		};
 
 		struct FTextureUploadInfo
 		{
 			u64 textureId{ INVALID_HANDLE };
-			stl::vector<uint8_t> data{};
-			stl::vector<stl::vector<u64>> mipLayerOffsets{};
+			std::vector<uint8_t> data{};
+			std::vector<std::vector<u64>> mipLayerOffsets{};
 		};
 	}
 }

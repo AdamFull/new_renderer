@@ -14,7 +14,7 @@ namespace engine
 			struct FRenderApiErrorInfo
 			{
 				bool fault{ false };
-				stl::string description{};
+				std::string description{};
 			};
 
 			enum EnableValidationFeatureFlagBits
@@ -28,9 +28,9 @@ namespace engine
 
 			struct FQueueFamilies
 			{
-				stl::vector<u32> uniqueFamilies{};
-				stl::unordered_map<u32, u32> familyUsages;
-				stl::unordered_map<EQueueTypeFlagBits, u32> queueToFamily;
+				std::vector<u32> uniqueFamilies{};
+				std::unordered_map<u32, u32> familyUsages;
+				std::unordered_map<EQueueTypeFlagBits, u32> queueToFamily;
 				EQueueTypeFlags queueMask{ 0u };
 			};
 
@@ -52,18 +52,18 @@ namespace engine
 			{
 				vk::PhysicalDevice handle{ nullptr };
 				vk::PhysicalDeviceProperties properties{};
-				stl::vector<stl::string> avaliableExtensions{};
+				std::vector<std::string> avaliableExtensions{};
 				FQueueFamilies queueFamilies{};
-				stl::unordered_map<u32, bool> supportedExtensions{};
+				std::unordered_map<u32, bool> supportedExtensions{};
 				u32 compatFlags{ 0u };
 			};
 
 			struct FVkLogicalDevice
 			{
 				vk::Device handle{ nullptr };
-				stl::unordered_map<EQueueTypeFlagBits, vk::Queue> queues{};
+				std::unordered_map<EQueueTypeFlagBits, vk::Queue> queues{};
 				void* lastExtensionFeature{ nullptr };
-				stl::map<vk::StructureType, stl::shared_ptr<void>> extensionFeatures{};
+				std::map<vk::StructureType, std::shared_ptr<void>> extensionFeatures{};
 			};
 
 			struct FSwapchain
@@ -71,11 +71,11 @@ namespace engine
 				vk::SwapchainKHR handle{ nullptr };
 				vk::Format format{};
 				vk::Extent2D extent{};
-				stl::vector<vk::Image> images{};
-				stl::vector<vk::ImageView> imageViews{};
-				stl::vector<vk::Semaphore> imageAvaliableSemaphores{};
-				stl::vector<vk::Semaphore> renderFinishedSemaphores{};
-				stl::vector<vk::Fence> inFlightFences{};
+				std::vector<vk::Image> images{};
+				std::vector<vk::ImageView> imageViews{};
+				std::vector<vk::Semaphore> imageAvaliableSemaphores{};
+				std::vector<vk::Semaphore> renderFinishedSemaphores{};
+				std::vector<vk::Fence> inFlightFences{};
 				u32 framesInFlight{ 2u };
 				u32 currentFrame{ 0u };
 			};
@@ -92,7 +92,7 @@ namespace engine
 			{
 				EQueueTypeFlagBits mask{};
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				stl::thread::id threadId{ stl::this_thread::get_id() };
+				std::thread::id threadId{ std::this_thread::get_id() };
 #endif
 			};
 
@@ -101,7 +101,7 @@ namespace engine
 			// ---------------------------------------------------------------------------------
 			struct FVkCommandBuffer
 			{
-				stl::vector<vk::CommandBuffer> handles{};
+				std::vector<vk::CommandBuffer> handles{};
 				EQueueTypeFlagBits mask{};
 				bool isRunning{ false };
 				u32 commandBufferIndex{ 0u };
@@ -116,7 +116,7 @@ namespace engine
 				vk::CommandBufferLevel level{};
 				u32 count{ 1u };
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				stl::string name{};
+				std::string name{};
 #endif
 			};
 
@@ -134,7 +134,7 @@ namespace engine
 				vk::ImageCreateInfo ci{};
 				vma::MemoryUsage memoryUsage{};
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				stl::string name{};
+				std::string name{};
 #endif
 			};
 
@@ -145,7 +145,7 @@ namespace engine
 			{
 				vk::ImageViewCreateInfo ci{};
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				stl::string name{};
+				std::string name{};
 #endif
 			};
 
@@ -161,7 +161,7 @@ namespace engine
 				bool enableCompareOp{ false };
 				u32 mipLevels{ 1u };
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				stl::string name{};
+				std::string name{};
 #endif
 			};
 
@@ -172,7 +172,7 @@ namespace engine
 			{
 				vk::SemaphoreCreateInfo ci{};
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				stl::string name{};
+				std::string name{};
 #endif
 			};
 
@@ -183,17 +183,17 @@ namespace engine
 			{
 				vk::FenceCreateInfo ci{};
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				stl::string name{};
+				std::string name{};
 #endif
 			};
 
 			struct FVkDescriptorSetLayoutCreateInfo
 			{
-				stl::vector<vk::DescriptorSetLayoutBinding> layoutBindings{};
+				std::vector<vk::DescriptorSetLayoutBinding> layoutBindings{};
 				vk::DescriptorSetLayoutCreateFlags flags{};
 				void* next{ nullptr };
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				stl::string name{};
+				std::string name{};
 #endif
 			};
 
@@ -204,18 +204,18 @@ namespace engine
 
 			struct FVkDescriptorPoolCreateInfo
 			{
-				stl::vector<vk::DescriptorPoolSize> poolSizes{};
+				std::vector<vk::DescriptorPoolSize> poolSizes{};
 				u32 usageCount{ 1u };
 				vk::DescriptorPoolCreateFlags flags{ vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet };
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				stl::string name{};
+				std::string name{};
 #endif
 			};
 
 			struct FVkDescriptorSet
 			{
 				// Per frame descriptor sets
-				stl::vector<vk::DescriptorSet> handles{};
+				std::vector<vk::DescriptorSet> handles{};
 			};
 
 			struct FVkDescriptorSetCreateInfo
@@ -225,14 +225,14 @@ namespace engine
 				u32 descriptorCount{ 0u };
 				void* next{ nullptr };
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				stl::string name{};
+				std::string name{};
 #endif
 			};
 
 			struct FVkGetCommandBufferInfo
 			{
 				u32 queueType{};
-				stl::thread::id threadId{ stl::this_thread::get_id() };
+				std::thread::id threadId{ std::this_thread::get_id() };
 				u64 bufferIndex{};
 			};
 
@@ -247,18 +247,18 @@ namespace engine
 			// ---------------------------------------------------------------------------------
 			struct FVkShaderModuleCreateInfo
 			{
-				stl::vector<u32>* shaderCode{};
+				std::vector<u32>* shaderCode{};
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				stl::string name{};
+				std::string name{};
 #endif
 			};
 
 			struct FVkPipelineLayoutCreateInfo
 			{
-				stl::vector<vk::DescriptorSetLayout> descriptorSetLayouts{};
-				stl::vector<vk::PushConstantRange> pushConstantRanges{};
+				std::vector<vk::DescriptorSetLayout> descriptorSetLayouts{};
+				std::vector<vk::PushConstantRange> pushConstantRanges{};
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				stl::string name{};
+				std::string name{};
 #endif
 			};
 
@@ -272,16 +272,16 @@ namespace engine
 				vk::SampleCountFlagBits sampleCount{ vk::SampleCountFlagBits::e1 };
 				u32 patchControlPoints{ 0u };
 
-				stl::vector<vk::Format> colorAttachmentFormats{};
+				std::vector<vk::Format> colorAttachmentFormats{};
 				vk::Format depthAttachmentFormat{ vk::Format::eUndefined };
 				vk::Format stencilAttachmentFormat{ vk::Format::eUndefined };
 
-				stl::vector<vk::VertexInputBindingDescription> vertexBindingDescriptions{};
-				stl::vector<vk::VertexInputAttributeDescription> vertexAttributeDescriptions{};
+				std::vector<vk::VertexInputBindingDescription> vertexBindingDescriptions{};
+				std::vector<vk::VertexInputAttributeDescription> vertexAttributeDescriptions{};
 
-				stl::vector<vk::PipelineShaderStageCreateInfo> shaderStages{};
+				std::vector<vk::PipelineShaderStageCreateInfo> shaderStages{};
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				stl::string name{};
+				std::string name{};
 #endif
 			};
 
@@ -290,7 +290,7 @@ namespace engine
 				vk::PipelineLayout layout{};
 				vk::PipelineShaderStageCreateInfo shaderStage{};
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				stl::string name{};
+				std::string name{};
 #endif
 			};
 
@@ -299,7 +299,7 @@ namespace engine
 				vk::PipelineLayout layout{};
 				vk::PipelineShaderStageCreateInfo shaderStage{};
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				stl::string name{};
+				std::string name{};
 #endif
 			};
 
@@ -330,7 +330,7 @@ namespace engine
 				vk::BufferUsageFlags usageFlags{};
 				vma::MemoryUsage memoryUsage{};
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				stl::string name{};
+				std::string name{};
 #endif
 			};
 
@@ -338,16 +338,16 @@ namespace engine
 
 			struct FVkShader
 			{
-				stl::vector<vk::Pipeline> handles{};
+				std::vector<vk::Pipeline> handles{};
 				vk::PipelineLayout layout{};
-				stl::vector<vk::ShaderModule> shaderModules{};
-				stl::unordered_map<u32, vk::DescriptorSetLayout> descriptorSetLayouts{};
-				stl::unordered_map<u32, FVkDescriptorSet> descriptorSets{};
-				stl::unordered_map<u32, u32> descriptorUsage{};
+				std::vector<vk::ShaderModule> shaderModules{};
+				std::unordered_map<u32, vk::DescriptorSetLayout> descriptorSetLayouts{};
+				std::unordered_map<u32, FVkDescriptorSet> descriptorSets{};
+				std::unordered_map<u32, u32> descriptorUsage{};
 				FVkDescriptorPool descriptorPool{};
-				stl::vector<vk::PushConstantRange> pushConstantRanges{};
+				std::vector<vk::PushConstantRange> pushConstantRanges{};
 
-				stl::unordered_map<u64, u64> uniformBuffers{};
+				std::unordered_map<u64, u64> uniformBuffers{};
 				u64 maximumDescriptorSlots{ 0ull };
 				
 				vk::PipelineBindPoint bindPoint{};
@@ -361,7 +361,7 @@ namespace engine
 			{
 				u32 usageCount{ 1u };
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				stl::string name{};
+				std::string name{};
 #endif
 			};
 
@@ -386,7 +386,7 @@ namespace engine
 			struct FVkTexture
 			{
 				FVkImage image{};
-				stl::vector<FVkTextureMipLevel> mips{};
+				std::vector<FVkTextureMipLevel> mips{};
 				vk::Sampler sampler{};
 				u32 totalLayers{ 1u };
 				bool isRenderTarget{ false };
@@ -395,7 +395,7 @@ namespace engine
 
 				FVkTextureInitialData initialData;
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				stl::string name{};
+				std::string name{};
 #endif
 			};
 
@@ -411,7 +411,7 @@ namespace engine
 				bool enableAnisotropy{ false };
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				stl::string name{};
+				std::string name{};
 #endif
 			};
 
@@ -459,9 +459,9 @@ namespace engine
 
 			struct FVkTranslationInfo
 			{
-				stl::vector<FVkImageTranslationInfo> imageTranslationInfos{};
-				stl::vector<FVkBufferTranslationInfo> bufferTranslationInfos{};
-				stl::vector<FVkMemoryTranslationInfo> memoryTranslationInfos{};
+				std::vector<FVkImageTranslationInfo> imageTranslationInfos{};
+				std::vector<FVkBufferTranslationInfo> bufferTranslationInfos{};
+				std::vector<FVkMemoryTranslationInfo> memoryTranslationInfos{};
 			};
 
 			struct FVkTextureTranslationInfo
@@ -482,13 +482,13 @@ namespace engine
 				FVkDescriptorPool descriptorPool{};
 				vk::DescriptorSetLayout deecriptorSetLayout{};
 				FVkDescriptorSet descriptorSet{};
-				stl::unordered_map<u64, u64> uniformBuffers{};
+				std::unordered_map<u64, u64> uniformBuffers{};
 			};
 
 			struct FVkPerQueueResources
 			{
 				FVkCommandPool commandPool{};
-				stl::vector<FVkCommandBuffer> commandBuffers{};
+				std::vector<FVkCommandBuffer> commandBuffers{};
 			};
 
 			struct FVkTimestampQuery
@@ -517,15 +517,15 @@ namespace engine
 					return *this;
 				}
 
-				i32 use_count() { return refCounter.load(stl::memory_order_relaxed); }
+				i32 use_count() { return refCounter.load(std::memory_order_relaxed); }
 
-				stl::unordered_map<EQueueTypeFlagBits, FVkPerQueueResources> perQueue{};
+				std::unordered_map<EQueueTypeFlagBits, FVkPerQueueResources> perQueue{};
 				FVkDescriptorPool descriptorPool{};
-				stl::unordered_map<u64, FVkDescriptorSet> descriptorSets{};
+				std::unordered_map<u64, FVkDescriptorSet> descriptorSets{};
 			private:
-				void incrementUsage() { refCounter.fetch_add(1, stl::memory_order_relaxed); }
-				void decrementUsage() { refCounter.fetch_sub(1, stl::memory_order_relaxed); }
-				stl::atomic<i32> refCounter{ 0 };
+				void incrementUsage() { refCounter.fetch_add(1, std::memory_order_relaxed); }
+				void decrementUsage() { refCounter.fetch_sub(1, std::memory_order_relaxed); }
+				std::atomic<i32> refCounter{ 0 };
 			};
 		}
 	}

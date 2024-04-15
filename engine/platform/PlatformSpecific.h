@@ -11,12 +11,12 @@
 
 namespace engine
 {
-	inline stl::unique_ptr<IWindowInterface> make_platform_window(const FWindowCreateInfo& window_ci)
+	inline std::unique_ptr<IWindowInterface> make_platform_window(const FWindowCreateInfo& window_ci)
 	{
-		stl::unique_ptr<IWindowInterface> window_handle{};
+		std::unique_ptr<IWindowInterface> window_handle{};
 
 #if defined(PLATFORM_WIN32)
-		window_handle = stl::make_unique<platform::CWindowGLFW>();
+		window_handle = std::make_unique<platform::CWindowGLFW>();
 #endif
 		window_handle->create(window_ci);
 

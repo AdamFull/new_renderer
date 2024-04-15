@@ -328,8 +328,8 @@ namespace engine
 				"get_shader_desc", &IRenderInterface::getShaderNameTag,
 				"create_texture", &IRenderInterface::createTexture,
 				"create_shader", sol::overload(
-					static_cast<u64(IRenderInterface::*)(const stl::string&, const FGraphicsShaderCreateInfo&)>(&IRenderInterface::createShader),
-					static_cast<u64(IRenderInterface::*)(const stl::string&, const FComputeShaderCreateInfo&)>(&IRenderInterface::createShader)
+					static_cast<u64(IRenderInterface::*)(const std::string&, const FGraphicsShaderCreateInfo&)>(&IRenderInterface::createShader),
+					static_cast<u64(IRenderInterface::*)(const std::string&, const FComputeShaderCreateInfo&)>(&IRenderInterface::createShader)
 				)
 			);
 
@@ -338,8 +338,8 @@ namespace engine
 				"IRenderContext",
 				"create_render_target", &IRenderContext::createRenderTarget,
 				"create_shader", sol::overload(
-					static_cast<u64(IRenderContext::*)(const stl::string&, const FGraphicsShaderCreateInfo&, const stl::vector<FShaderCreationBlockInfo>&)>(&IRenderContext::createShader),
-					static_cast<u64(IRenderContext::*)(const stl::string&, const FComputeShaderCreateInfo&, const stl::vector<FShaderCreationBlockInfo>&)>(&IRenderContext::createShader)
+					static_cast<u64(IRenderContext::*)(const std::string&, const FGraphicsShaderCreateInfo&, const std::vector<FShaderCreationBlockInfo>&)>(&IRenderContext::createShader),
+					static_cast<u64(IRenderContext::*)(const std::string&, const FComputeShaderCreateInfo&, const std::vector<FShaderCreationBlockInfo>&)>(&IRenderContext::createShader)
 				),
 				"get_texture_resource", &IRenderContext::getTextureResource,
 				"get_shader_resource", &IRenderContext::getShaderResource,
@@ -359,19 +359,19 @@ namespace engine
 				"set_default_viewport", &IRenderGraph::setDefaultViewport,
 				"add_static_resource", &IRenderGraph::addStaticResource,
 				"add_render_resource", sol::overload(
-					static_cast<u64(IRenderGraph::*)(const stl::string&, const FTextureCreateInfo&)>(&IRenderGraph::addRenderResource),
-					static_cast<u64(IRenderGraph::*)(const stl::string&, const FBufferCreateInfo&)>(&IRenderGraph::addRenderResource)
+					static_cast<u64(IRenderGraph::*)(const std::string&, const FTextureCreateInfo&)>(&IRenderGraph::addRenderResource),
+					static_cast<u64(IRenderGraph::*)(const std::string&, const FBufferCreateInfo&)>(&IRenderGraph::addRenderResource)
 				),
 				"push_debug_marker", &IRenderGraph::pushDebugMarker,
 				"pop_debug_marker", &IRenderGraph::popDebugMarker,
 				"set_backbuffer_resource_name", &IRenderGraph::setBackbufferResourceName,
 				"get_render_resource", sol::overload(
-					static_cast<const FRenderResource&(IRenderGraph::*)(const stl::string&) const>(&IRenderGraph::getRenderResource),
+					static_cast<const FRenderResource&(IRenderGraph::*)(const std::string&) const>(&IRenderGraph::getRenderResource),
 					static_cast<const FRenderResource&(IRenderGraph::*)(u64) const>(&IRenderGraph::getRenderResource)
 				),
 				"add_render_pass", sol::overload(
-					static_cast<u64(IRenderGraph::*)(const stl::string&, const FRenderConfigRenderCreateInfo&)>(&IRenderGraph::addRenderPass),
-					static_cast<u64(IRenderGraph::*)(const stl::string&, const FRenderConfigComputeCreateInfo&)>(&IRenderGraph::addRenderPass)
+					static_cast<u64(IRenderGraph::*)(const std::string&, const FRenderConfigRenderCreateInfo&)>(&IRenderGraph::addRenderPass),
+					static_cast<u64(IRenderGraph::*)(const std::string&, const FRenderConfigComputeCreateInfo&)>(&IRenderGraph::addRenderPass)
 				)
 			);
 		}
@@ -379,7 +379,7 @@ namespace engine
 		void bindGlobalFunctions(sol::state* lua)
 		{
 			lua->set_function("calculate_mip_level_count", [](u32 width, u32 height) -> u32 {
-				return utl::cast<u32>(stl::floor(stl::log2((stl::max)(width, height)))) + 1u;
+				return utl::cast<u32>(std::floor(std::log2((std::max)(width, height)))) + 1u;
 				});
 		}
 

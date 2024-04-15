@@ -73,7 +73,7 @@ EApiDataFormat get_attribute_format_by_type(EVertexAttributeType type, u64 size)
 	return EApiDataFormat::eUnknown;
 }
 // HAS_TEXCOORD, HAS_NORMAL, HAS_SKIN, COLOR_VEC3, COLOR_VEC4, TANGENT_VEC3, TANGENT_VEC4, JOINTS_8BIT, JOINTS_16BIT
-stl::string get_attribute_definition(EVertexAttributeType type, u64 size)
+std::string get_attribute_definition(EVertexAttributeType type, u64 size)
 {
 	if (size == 4ull)
 	{
@@ -112,7 +112,7 @@ stl::string get_attribute_definition(EVertexAttributeType type, u64 size)
 	return "";
 }
 
-stl::string get_index_definition(u64 size)
+std::string get_index_definition(u64 size)
 {
 	if (size == 1ull)
 		return "INDEX_8BIT";
@@ -142,7 +142,7 @@ CVertexHandler::~CVertexHandler()
 // NOTE: current implementation work only with interleaved vertex
 void CVertexHandler::create(const FVertexHandlerCreateInfo& create_info)
 {
-	stl::unordered_set<stl::string> definitions{};
+	std::unordered_set<std::string> definitions{};
 
 	// Initialize attribute descriptions
 	auto& render_context = m_pRenderInterface->getRenderContext();
@@ -176,7 +176,7 @@ void CVertexHandler::create(const FVertexHandlerCreateInfo& create_info)
 		definitions.emplace(get_index_definition(m_indexBuffer.elementSize));
 
 	// Initialize attribute definitions and hash
-	stl::stringstream ss{};
+	std::stringstream ss{};
 	for (const auto& definition : definitions)
 		ss << ":" << definition;
 	m_definitions = ss.str();
@@ -204,14 +204,14 @@ void CVertexHandler::allocate()
 	buffer_ci.size = m_vertexBuffer.elementSize;
 	buffer_ci.count = m_vertexBuffer.elementCount;
 	buffer_ci.upload.data = m_vertexBuffer.data;
-	m_vertexBuffer.buffer = render_context->createBuffer(stl::format("SCENE_VERTICES{}", m_definitions), buffer_ci);
+	m_vertexBuffer.buffer = render_context->createBuffer(std::format("SCENE_VERTICES{}", m_definitions), buffer_ci);
 
 	// Create index buffer
 	buffer_ci.flags = EBufferUsageFlagBits::eIndexBuffer;
 	buffer_ci.size = m_indexBuffer.elementSize;
 	buffer_ci.count = m_indexBuffer.elementCount;
 	buffer_ci.upload.data = m_indexBuffer.data;
-	m_indexBuffer.buffer = render_context->createBuffer(stl::format("SCENE_INDICES{}", m_definitions), buffer_ci);
+	m_indexBuffer.buffer = render_context->createBuffer(std::format("SCENE_INDICES{}", m_definitions), buffer_ci);
 }
 
 // TODO: i can create custom bindings support here
@@ -237,7 +237,7 @@ void CVertexHandler::bind(EQueueTypeFlagBits queue)
 	}
 }
 
-const FVertexRange& CVertexHandler::addMeshData(const stl::vector<FVertexAttributePointer>& attributes_data, const FVertexAttributePointer& indices)
+const FVertexRange& CVertexHandler::addMeshData(const std::vector<FVertexAttributePointer>& attributes_data, const FVertexAttributePointer& indices)
 {
 	u64 input_hash = utl::utils::murmur_hash_64(indices.data, indices.stride * indices.count, 0);
 	for (const auto& attribute : attributes_data)
@@ -272,17 +272,17 @@ const FVertexRange& CVertexHandler::addMeshData(const stl::vector<FVertexAttribu
 	return new_range;
 }
 
-u64 CVertexHandler::addVertices(const stl::vector<FVertexAttributePointer>& attributes_data)
+u64 CVertexHandler::addVertices(const std::vector<FVertexAttributePointer>& attributes_data)
 {
 	auto vertex_count = attributes_data.front().count;
 	for (u64 v = 0ull; v < vertex_count; ++v)
 	{
-		stl::vector<uint8_t> temp(m_vertexBuffer.elementSize);
+		std::vector<uint8_t> temp(m_vertexBuffer.elementSize);
 
 		u64 offset{ 0ull };
 		for (const auto& attrib : attributes_data)
 		{
-			stl::memcpy(temp.data() + offset, &attrib.data[v * attrib.stride], attrib.stride);
+			std::memcpy(temp.data() + offset, &attrib.data[v * attrib.stride], attrib.stride);
 			offset += attrib.stride;
 		}
 
@@ -300,7 +300,7 @@ u64 CVertexHandler::addIndices(const FVertexAttributePointer& indices)
 	return indices.count;
 }
 
-u64 CVertexHandler::addMeshlets(const stl::vector<FVertexAttributePointer>& attributes, const FVertexAttributePointer& indices)
+u64 CVertexHandler::addMeshlets(const std::vector<FVertexAttributePointer>& attributes, const FVertexAttributePointer& indices)
 {
 	// Find positions attribute
 	const float* positions{ nullptr };
@@ -309,7 +309,7 @@ u64 CVertexHandler::addMeshlets(const stl::vector<FVertexAttributePointer>& attr
 		positions = (const float*)found_position_attrib->data;
 
 	// Convert indices to u32 format
-	stl::vector<u32> indices_tmp{};
+	std::vector<u32> indices_tmp{};
 	// convert to 32 bit uint
 	for (u64 idx = 0ull; idx < indices.count; ++idx)
 	{
@@ -426,7 +426,7 @@ u64 CVertexHandler::getHash() const
 	return m_attributeHash;
 }
 
-const stl::string& CVertexHandler::getDefinitions() const
+const std::string& CVertexHandler::getDefinitions() const
 {
 	return m_definitions;
 }

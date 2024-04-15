@@ -40,14 +40,14 @@ namespace engine
 
 			EQueueTypeFlagBits m_queue{};
 
-			stl::unordered_map<ERenderResourceGroupType, stl::vector<FRenderResourceBinding>> m_renderResources{};
-			stl::unordered_map<stl::string, FRenderResourceBinding> m_bakedBindings{};
+			std::unordered_map<ERenderResourceGroupType, std::vector<FRenderResourceBinding>> m_renderResources{};
+			std::unordered_map<std::string, FRenderResourceBinding> m_bakedBindings{};
 
 			bool m_bOneTime{ false };
 			bool m_bCanExecute{ true };
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-			stl::string m_debugName{};
+			std::string m_debugName{};
 #endif
 
 			IRenderInterface* m_pRenderInterface{ nullptr };
@@ -80,7 +80,7 @@ namespace engine
 			u64 m_stencilTarget{ ~0ull };
 			u32 m_layerCount{ 1u };
 
-			stl::vector<FRenderGraphAttachmentInfo> m_vColorAttachments{};
+			std::vector<FRenderGraphAttachmentInfo> m_vColorAttachments{};
 			FRenderGraphAttachmentInfo m_depthAttachment{};
 			FRenderGraphAttachmentInfo m_stencilAttachment{};
 		};

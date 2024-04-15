@@ -18,7 +18,7 @@ void CFullscreenPass::init(const FRenderPassCreateInfo& pass_ci)
 	auto& render_graph = m_pRenderInterface->getRenderGraph();
 
 	// Make RHI shader object
-	m_pShader = stl::make_unique<CShaderObject>(m_pRenderInterface);
+	m_pShader = std::make_unique<CShaderObject>(m_pRenderInterface);
 
 	auto cull_mode = pass_ci.flipViewport ? EShaderCullModeFlagBits::eBack : EShaderCullModeFlagBits::eFront;
 
@@ -26,7 +26,7 @@ void CFullscreenPass::init(const FRenderPassCreateInfo& pass_ci)
 	initShaderResources(m_pShader);
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-	m_debugName = stl::format("fullscreen:{}", pass_ci.shader);
+	m_debugName = std::format("fullscreen:{}", pass_ci.shader);
 #endif
 }
 

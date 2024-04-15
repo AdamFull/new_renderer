@@ -12,9 +12,9 @@ namespace engine
 	class CResourceHolder
 	{
 	public:
-		resource_handle_t add(const char* name, stl::unique_ptr<_Ty>&& object)
+		resource_handle_t add(const char* name, std::unique_ptr<_Ty>&& object)
 		{
-			static stl::atomic<resource_handle_t> uid{ 0ull };
+			static std::atomic<resource_handle_t> uid{ 0ull };
 
 			auto name_hash = utl::utils::fnv1a_64_hash(name);
 			auto found_association = nameToId.find(name_hash);
@@ -26,23 +26,23 @@ namespace engine
 				resource_handle_t current_id = freeIds.front();
 				freeIds.pop();
 
-				objects.at(current_id) = stl::move(object);
+				objects.at(current_id) = std::move(object);
 
 				return current_id;
 			}
 
-			resource_handle_t current_id = uid.load(stl::memory_order_relaxed);
-			uid.fetch_add(1ull, stl::memory_order_relaxed);
+			resource_handle_t current_id = uid.load(std::memory_order_relaxed);
+			uid.fetch_add(1ull, std::memory_order_relaxed);
 
 			nameToId.emplace(utl::utils::fnv1a_64_hash(name), current_id);
-			objects.emplace_back(stl::move(object));
+			objects.emplace_back(std::move(object));
 
 			return current_id;
 		}
 
 		void remove(resource_handle_t id)
 		{
-			auto it = stl::find_if(nameToId.begin(), nameToId.end(), [id](const auto& pair) { return pair.second == id; });
+			auto it = std::find_if(nameToId.begin(), nameToId.end(), [id](const auto& pair) { return pair.second == id; });
 			if (it != nameToId.end())
 			{
 				freeIds.push(id);
@@ -62,18 +62,18 @@ namespace engine
 			}
 		}
 
-		const stl::unique_ptr<_Ty>& get(resource_handle_t id)
+		const std::unique_ptr<_Ty>& get(resource_handle_t id)
 		{
 			return objects.at(id);
 		}
 
-		const stl::unique_ptr<_Ty>& get(const char* name)
+		const std::unique_ptr<_Ty>& get(const char* name)
 		{
 			auto id = nameToId[utl::utils::fnv1a_64_hash(name)];
 			return get(id);
 		}
 
-		stl::vector<stl::unique_ptr<_Ty>>& data()
+		std::vector<std::unique_ptr<_Ty>>& data()
 		{
 			return objects;
 		}
@@ -87,9 +87,9 @@ namespace engine
 			return invalid_handle;
 		}
 	private:
-		stl::queue<resource_handle_t> freeIds{};
-		stl::unordered_map<u64, resource_handle_t> nameToId{};
-		stl::vector<stl::unique_ptr<_Ty>> objects{};
+		std::queue<resource_handle_t> freeIds{};
+		std::unordered_map<u64, resource_handle_t> nameToId{};
+		std::vector<std::unique_ptr<_Ty>> objects{};
 	};
 
 	class CResourceContainer
@@ -98,26 +98,26 @@ namespace engine
 		template<class _Ty>
 		void registerResource()
 		{
-			const stl::type_index type_index(typeid(_Ty));
-			holders[type_index] = stl::make_shared<CResourceHolder<_Ty>>();
+			const std::type_index type_index(typeid(_Ty));
+			holders[type_index] = std::make_shared<CResourceHolder<_Ty>>();
 		}
 
 		template<class _Ty>
-		resource_handle_t add(const char* name, stl::unique_ptr<_Ty>&& object)
+		resource_handle_t add(const char* name, std::unique_ptr<_Ty>&& object)
 		{
 			auto container = get_container<_Ty>();
-			return container->add(name, stl::move(object));
+			return container->add(name, std::move(object));
 		}
 
 		template<class _Ty>
-		const stl::unique_ptr<_Ty>& get(resource_handle_t id)
+		const std::unique_ptr<_Ty>& get(resource_handle_t id)
 		{
 			auto container = get_container<_Ty>();
 			return container->get(id);
 		}
 
 		template<class _Ty>
-		const stl::unique_ptr<_Ty>& get(const char* name)
+		const std::unique_ptr<_Ty>& get(const char* name)
 		{
 			auto container = get_container<_Ty>();
 			return container->get(name);
@@ -138,7 +138,7 @@ namespace engine
 		}
 
 		template<class _Ty>
-		stl::vector<stl::unique_ptr<_Ty>>& data()
+		std::vector<std::unique_ptr<_Ty>>& data()
 		{
 			auto container = get_container<_Ty>();
 			return container->data();
@@ -154,10 +154,10 @@ namespace engine
 		template<class _Ty>
 		CResourceHolder<_Ty>* get_container()
 		{
-			const stl::type_index type_index(typeid(_Ty));
+			const std::type_index type_index(typeid(_Ty));
 			return utl::cast<CResourceHolder<_Ty>*>(holders[type_index].get());
 		}
 	private:
-		stl::unordered_map<stl::type_index, stl::shared_ptr<void>> holders{};
+		std::unordered_map<std::type_index, std::shared_ptr<void>> holders{};
 	};
 }

@@ -11,7 +11,7 @@
 using namespace engine::render;
 using namespace engine::world::ecs;
 
-void prepare_meshes_to_draw(const std::unique_ptr<IRenderWorld>& render_world, const std::vector<FMeshPrimitive>& primitives, stl::vector<FGeometryRawBatch>& draw_commands, u32 node, u32 alpha_mode)
+void prepare_meshes_to_draw(const std::unique_ptr<IRenderWorld>& render_world, const std::vector<FMeshPrimitive>& primitives, std::vector<FGeometryRawBatch>& draw_commands, u32 node, u32 alpha_mode)
 {
 	auto& world_stats = render_world->getStats();
 

@@ -328,7 +328,7 @@ int main(int argc, char** argv)
     utl::plugin_system::uplugin_manager manager;
     auto& plugin = manager.load("virtual_filesystem", "D:\\GitHub\\new_renderer\\bin\\Debug\\engine\\virtual_filesystem.dll");
 
-    auto app = stl::make_unique<CApplication>();
+    auto app = std::make_unique<CApplication>();
     app->create();
     app->loop();
 

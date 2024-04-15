@@ -32,7 +32,7 @@ namespace engine
 		struct FBufferUploadInfo
 		{
 			u64 bufferId{ ~0ull };
-			stl::vector<uint8_t> data{};
+			std::vector<uint8_t> data{};
 			u64 count{ 1ull };
 			u64 size{ 0ull };
 			u64 offset{ 0ull };
@@ -60,8 +60,8 @@ namespace engine
 		public:
 			virtual ~IBufferObject() = default;
 
-			virtual void create(const stl::string& name, const FBufferCreateInfo& create_info) = 0;
-			virtual void resize(const stl::string& name, const FBufferCreateInfo& create_info) = 0;
+			virtual void create(const std::string& name, const FBufferCreateInfo& create_info) = 0;
+			virtual void resize(const std::string& name, const FBufferCreateInfo& create_info) = 0;
 
 			virtual void map() = 0;
 			virtual void unmap() = 0;
@@ -92,7 +92,7 @@ namespace engine
 			}
 
 			template<class _Ty>
-			void copy(const stl::vector<_Ty>& data)
+			void copy(const std::vector<_Ty>& data)
 			{
 				if (m_size + data.size() > capacity())
 				{
@@ -180,7 +180,7 @@ namespace engine
 
 			virtual u64 capacity() = 0;
 
-			virtual const stl::unique_ptr<IBufferObject>& buffer() = 0;
+			virtual const std::unique_ptr<IBufferObject>& buffer() = 0;
 
 		protected:
 			virtual void alloc(const std::string& name, EBufferUsageFlags flag, u64 stride, u64 capacity) = 0;

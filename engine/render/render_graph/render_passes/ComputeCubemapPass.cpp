@@ -27,16 +27,16 @@ void CComputeCubemapPass::init(const FComputePassCreateInfo& pass_ci)
 	}
 
 	FComputeShaderCreateInfo shader_ci{};
-	shader_ci.usageCount = (stl::max)(calculated_usage, 1u);
+	shader_ci.usageCount = (std::max)(calculated_usage, 1u);
 
 	// Make RHI shader object
-	m_pShader = stl::make_unique<CShaderObject>(m_pRenderInterface);
+	m_pShader = std::make_unique<CShaderObject>(m_pRenderInterface);
 	m_pShader->create(pass_ci.shader, shader_ci);
 
 	initShaderResources(m_pShader);
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-	m_debugName = stl::format("compute_cubemap:{}", pass_ci.shader);
+	m_debugName = std::format("compute_cubemap:{}", pass_ci.shader);
 #endif
 }
 

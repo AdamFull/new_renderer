@@ -63,7 +63,7 @@ void CShadowsSystem::__update(f32 fDt)
 			light.shadowIndex = -1;
 
 			// Calculate shadows
-			stl::array<f32, cascade_shadow_map_cascade_count> cascadeSplits;
+			std::array<f32, cascade_shadow_map_cascade_count> cascadeSplits;
 			if (light.castShadows && base.enabled && world_stats.cascadedShadowCount < max_directional_light_shadow_count)
 			{
 				FCascadedShadowCommit shadow_commit{};
@@ -85,7 +85,7 @@ void CShadowsSystem::__update(f32 fDt)
 				{
 					auto& splitDist = cascadeSplits[i];
 
-					stl::array<glm::vec4, 8> frustumCorners =
+					std::array<glm::vec4, 8> frustumCorners =
 					{
 						// Near face
 						glm::vec4(-1.0f, -1.0f, 0.0f, 1.0f),

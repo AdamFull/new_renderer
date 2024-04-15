@@ -29,7 +29,7 @@ u64 CGPUVector::capacity()
 	return m_pBuffer->count();
 }
 
-const stl::unique_ptr<IBufferObject>& CGPUVector::buffer()
+const std::unique_ptr<IBufferObject>& CGPUVector::buffer()
 {
 	return m_pBuffer;
 }

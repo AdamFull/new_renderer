@@ -18,7 +18,7 @@
 using namespace engine;
 using namespace engine::render;
 
-void get_platform_specific_window_data(FRenderInterfaceCreateInfo& rhi_ci, const stl::unique_ptr<IWindowInterface>& window)
+void get_platform_specific_window_data(FRenderInterfaceCreateInfo& rhi_ci, const std::unique_ptr<IWindowInterface>& window)
 {
 #if defined(PLATFORM_WIN32)
 	auto platform_window = utl::cast<platform::CWindowGLFW*>(window.get());
@@ -28,11 +28,11 @@ void get_platform_specific_window_data(FRenderInterfaceCreateInfo& rhi_ci, const
 
 void CApplication::create()
 {
-	m_pVirtualFileSystem = stl::make_unique<filesystem::CVirtualFileSystemManager>();
+	m_pVirtualFileSystem = std::make_unique<filesystem::CVirtualFileSystemManager>();
 
-	m_pVirtualFileSystem->mount("/root", stl::make_unique<filesystem::CNativeFileSystem>("./"));
+	m_pVirtualFileSystem->mount("/root", std::make_unique<filesystem::CNativeFileSystem>("./"));
 
-	//m_pScriptEngine = stl::make_unique<scripting::CScriptEngine>();
+	//m_pScriptEngine = std::make_unique<scripting::CScriptEngine>();
 	//m_pScriptEngine->initialize();
 
 	FWindowCreateInfo window_ci{};
@@ -43,7 +43,7 @@ void CApplication::create()
 
 	m_pWindowHandle = make_platform_window(window_ci);
 
-	m_pInputMapper = stl::make_unique<CInputMapper>();
+	m_pInputMapper = std::make_unique<CInputMapper>();
 	m_pInputMapper->create();
 
 	FRenderInterfaceCreateInfo rhi_ci{};
@@ -51,10 +51,10 @@ void CApplication::create()
 	m_pWindowHandle->getWindowSize(rhi_ci.initialWidth, rhi_ci.initialHeight);
 	get_platform_specific_window_data(rhi_ci, m_pWindowHandle);
 
-	m_pRenderInterface = stl::make_unique<render::CRenderInterface>(m_pVirtualFileSystem.get());
+	m_pRenderInterface = std::make_unique<render::CRenderInterface>(m_pVirtualFileSystem.get());
 	m_pRenderInterface->create(rhi_ci);
 
-	m_pScene = stl::make_unique<world::CScene>(m_pVirtualFileSystem.get(), m_pRenderInterface.get());
+	m_pScene = std::make_unique<world::CScene>(m_pVirtualFileSystem.get(), m_pRenderInterface.get());
 	//m_pScene->load("/root/reflections/reflections.gltf");
 	//m_pScene->load("/root/helmet/DamagedHelmet.gltf");
 	m_pScene->load("/root/meshes/sponza/Sponza.gltf");

@@ -15,7 +15,7 @@ CRenderWorld::CRenderWorld(IRenderInterface* render_interface)
 	m_vBuffers.resize(utl::enum_cast(ERenderBufferIndices::eLastIndex));
 
 	for (auto& buffer : m_vBuffers)
-		buffer = stl::make_unique<CGPUVector>(render_interface);
+		buffer = std::make_unique<CGPUVector>(render_interface);
 }
 
 void CRenderWorld::create()
@@ -65,12 +65,12 @@ void CRenderWorld::updateFrustum(u64 frustum_id, const glm::mat4& view, const gl
 	frustum.update(view, projection);
 }
 
-void CRenderWorld::addDrawGeometry(const stl::vector<FGeometryRawBatch>& new_geometry)
+void CRenderWorld::addDrawGeometry(const std::vector<FGeometryRawBatch>& new_geometry)
 {
 	m_vRawGeometryBatches.insert(m_vRawGeometryBatches.end(), new_geometry.begin(), new_geometry.end());
 
 	// Sort drawings by vbo, material and node
-	stl::sort(m_vRawGeometryBatches.begin(), m_vRawGeometryBatches.end(), [](const FGeometryRawBatch& a, const FGeometryRawBatch& b) { return a.drawInfo.vboID < b.drawInfo.vboID; });
+	std::sort(m_vRawGeometryBatches.begin(), m_vRawGeometryBatches.end(), [](const FGeometryRawBatch& a, const FGeometryRawBatch& b) { return a.drawInfo.vboID < b.drawInfo.vboID; });
 }
 
 void CRenderWorld::render(f32 dt)
@@ -194,7 +194,7 @@ void CRenderWorld::updateNode(u32 node_id, const FSceneNode& node)
 	nodes_buffer->get<FSceneNode>(node_id) = node;
 }
 
-void CRenderWorld::updateSkin(const stl::vector<glm::mat4>& matrices)
+void CRenderWorld::updateSkin(const std::vector<glm::mat4>& matrices)
 {
 	auto& skin_buffer = getDrawBuffer(ERenderBufferIndices::eSkinBuffer);
 	skin_buffer->copy(matrices);
@@ -207,7 +207,7 @@ void CRenderWorld::addMaterial(const FMaterial& material)
 	m_vMaterials.emplace_back(material);
 }
 
-void CRenderWorld::addMaterials(const stl::vector<FMaterial>& materials)
+void CRenderWorld::addMaterials(const std::vector<FMaterial>& materials)
 {
 	m_bMaterialsChanged = true;
 	m_vMaterials.insert(m_vMaterials.end(), materials.begin(), materials.end());
@@ -232,12 +232,12 @@ void CRenderWorld::addMeshes(const std::vector<FMesh>& meshes)
 	m_stats.meshCount += meshes.size();
 }
 
-const stl::unique_ptr<IGPUVector>& CRenderWorld::getDrawBuffer(ERenderBufferIndices buffer_index)
+const std::unique_ptr<IGPUVector>& CRenderWorld::getDrawBuffer(ERenderBufferIndices buffer_index)
 {
 	return m_vBuffers.at(utl::enum_cast(buffer_index));
 }
 
-const stl::vector<FGeometryCPUBatch>& CRenderWorld::getGeometryBatches() const
+const std::vector<FGeometryCPUBatch>& CRenderWorld::getGeometryBatches() const
 {
 	return m_vGeometryBatches;
 }
@@ -268,7 +268,7 @@ void CRenderWorld::prepareIndirectCommands()
 	std::vector<FDrawIndexedIndirectData> indirect_data{};
 	std::vector<FDrawMeshinfo> gpu_batches{};
 
-	stl::unordered_map<u64, u64> indirect_command_cache{};
+	std::unordered_map<u64, u64> indirect_command_cache{};
 
 	for (const auto& batch : m_vRawGeometryBatches)
 	{
@@ -342,7 +342,7 @@ void CRenderWorld::prepareMeshletCommands()
 	std::vector<FDrawMeshinfo> gpu_batches{};
 	std::vector<FClusterInfo> gpu_clusters{};
 
-	stl::unordered_map<u64, u64> indirect_command_cache{};
+	std::unordered_map<u64, u64> indirect_command_cache{};
 
 	for (const auto& batch : m_vRawGeometryBatches)
 	{

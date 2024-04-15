@@ -28,7 +28,7 @@ namespace engine
 				auto found_function = m_scriptFunctions.find(utl::utils::fnv1a_64_hash(function));
 				if (found_function != m_scriptFunctions.end())
 				{
-					auto result = found_function->second->call(stl::forward<_Args>(args)...);
+					auto result = found_function->second->call(std::forward<_Args>(args)...);
 					if (!result.valid())
 					{
 						auto err = result.get<sol::error>();
@@ -41,7 +41,7 @@ namespace engine
 			}
 		private:
 			sol::environment* m_pEnvironment{ nullptr };
-			stl::unordered_map<u64, sol::protected_function*> m_scriptFunctions{};
+			std::unordered_map<u64, sol::protected_function*> m_scriptFunctions{};
 		};
 
 		class CRenderScriptCore
@@ -49,7 +49,7 @@ namespace engine
 		public:
 			~CRenderScriptCore();
 			void create(IRenderInterface* render_interface);
-			stl::unique_ptr<CRenderScriptExecutor> build(const stl::string& name, const stl::vector<uint8_t>& program_code);
+			std::unique_ptr<CRenderScriptExecutor> build(const std::string& name, const std::vector<uint8_t>& program_code);
 		private:
 			sol::state* m_pLuaState{ nullptr };
 		};

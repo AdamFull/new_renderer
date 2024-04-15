@@ -22,15 +22,15 @@ namespace engine
 	struct FInputAxis
 	{
 		EAxisType type{};
-		stl::unordered_map<EKeyCode, f32> keyValue{};
-		stl::vector<utl::reactive::function<void(f32)>> callbacks{};
+		std::unordered_map<EKeyCode, f32> keyValue{};
+		std::vector<utl::reactive::function<void(f32)>> callbacks{};
 	};
 
 	struct FInputAction
 	{
-		stl::vector<EKeyCode> keys{};
+		std::vector<EKeyCode> keys{};
 		EKeyState state{ EKeyState::eReleased };
-		stl::vector<utl::reactive::function<void(EKeyState)>> callbacks{};
+		std::vector<utl::reactive::function<void(EKeyState)>> callbacks{};
 	};
 
 	class CInputMapper
@@ -42,7 +42,7 @@ namespace engine
 		template<class... _Args>
 		void registerAction(const char* action_name, _Args&& ...args)
 		{
-			stl::array<EKeyCode, sizeof...(_Args)> keys{ {args...} };
+			std::array<EKeyCode, sizeof...(_Args)> keys{ {args...} };
 			
 			auto& action = m_inputActions[utl::utils::fnv1a_64_hash(action_name)];
 			action.keys.insert(action.keys.end(), keys.begin(), keys.end());
@@ -55,7 +55,7 @@ namespace engine
 			if (found != m_inputActions.end())
 			{
 				auto& input_action = found->second;
-				input_action.callbacks.emplace_back(utl::reactive::function<void(EKeyState)>(stl::forward<_Args>(args)...));
+				input_action.callbacks.emplace_back(utl::reactive::function<void(EKeyState)>(std::forward<_Args>(args)...));
 			}
 		}
 
@@ -67,7 +67,7 @@ namespace engine
 			auto& new_axis = m_inputAxis[utl::utils::fnv1a_64_hash(axis_name)];
 			new_axis.type = type;
 
-			unpackAxisValues(new_axis.keyValue, stl::forward<_Args>(args)...);
+			unpackAxisValues(new_axis.keyValue, std::forward<_Args>(args)...);
 		}
 
 		template<class... _Args>
@@ -77,7 +77,7 @@ namespace engine
 			if (found != m_inputAxis.end())
 			{
 				auto& found_axis = found->second;
-				found_axis.callbacks.emplace_back(utl::reactive::function<void(f32)>(stl::forward<_Args>(args)...));
+				found_axis.callbacks.emplace_back(utl::reactive::function<void(f32)>(std::forward<_Args>(args)...));
 			}
 		}
 
@@ -86,23 +86,23 @@ namespace engine
 		void handleKeyInput(EKeyCode code, EKeyState state);
 		void handleAxisInput(f32 x, f32 y, f32 xmax, f32 ymax);
 
-		void unpackAxisValues(stl::unordered_map<EKeyCode, f32>& map) {}
+		void unpackAxisValues(std::unordered_map<EKeyCode, f32>& map) {}
 
 		template<class... _Args>
-		void unpackAxisValues(stl::unordered_map<EKeyCode, f32>& map, EKeyCode key, f32 value, _Args&&... args) 
+		void unpackAxisValues(std::unordered_map<EKeyCode, f32>& map, EKeyCode key, f32 value, _Args&&... args) 
 		{ 
 			map[key] = value; 
-			unpackAxisValues(map, stl::forward<_Args>(args)...);
+			unpackAxisValues(map, std::forward<_Args>(args)...);
 		}
 
 		template<class... _Args>
-		void unpackAxisValues(stl::unordered_map<EKeyCode, f32>& map, _Args&&... args) { static_assert(true, "Incorrect argument types. Should be EKeyCode:f32."); }
+		void unpackAxisValues(std::unordered_map<EKeyCode, f32>& map, _Args&&... args) { static_assert(true, "Incorrect argument types. Should be EKeyCode:f32."); }
 	private:
 		CKeyDecoder m_keyDecoder{};
 
-		stl::unordered_map<u64, FInputAction> m_inputActions{};
-		stl::unordered_map<u64, FInputAxis> m_inputAxis{};
+		std::unordered_map<u64, FInputAction> m_inputActions{};
+		std::unordered_map<u64, FInputAxis> m_inputAxis{};
 
-		stl::unordered_map<EAxisType, f32> m_hwAxis{};
+		std::unordered_map<EAxisType, f32> m_hwAxis{};
 	};
 }

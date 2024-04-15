@@ -36,24 +36,24 @@ namespace engine
 
 		struct FRenderContextCreateInfo
 		{
-			stl::string appName{ "dummy_app" };
+			std::string appName{ "dummy_app" };
 			ERenderApi apiVersion{};
 
 #if defined( VK_USE_PLATFORM_WIN32_KHR )
 			HINSTANCE                       hinstance;
 			HWND                            hwnd;
 #endif
-			stl::vector<char> pipelineCache{};
+			std::vector<char> pipelineCache{};
 
-			stl::vector<stl::string> requiredDeviceExtensions{};
-			stl::vector<stl::string> optionalDeviceExtensions{};
+			std::vector<std::string> requiredDeviceExtensions{};
+			std::vector<std::string> optionalDeviceExtensions{};
 
 			u32 initialWidth{ 0u };
 			u32 initialHeight{ 0u };
 
 			bool validationState{ false };
 			u32 validationFeatures{ 0u };
-			stl::vector<stl::string> validationLayers{};
+			std::vector<std::string> validationLayers{};
 		};
 
 		template<class _Ty>
@@ -97,7 +97,7 @@ namespace engine
 		{
 			u64 lastIndex{ 0ull };
 			u64 lastVertex{ 0ull };
-			stl::vector<FGeometryDrawRange> ranges{};
+			std::vector<FGeometryDrawRange> ranges{};
 		};
 
 		struct FIndirectGeometryDrawInfo
@@ -250,12 +250,12 @@ namespace engine
 				return true;
 			}
 
-			stl::array<glm::vec4, 6> frustumSides{};
-			stl::array<f32, 16> clip;
+			std::array<glm::vec4, 6> frustumSides{};
+			std::array<f32, 16> clip;
 		private:
 			void normalizeFrustumSide(u64 side)
 			{
-				auto magnitude = stl::sqrt(frustumSides[side][0] * frustumSides[side][0] + frustumSides[side][1] * frustumSides[side][1] + frustumSides[side][2] * frustumSides[side][2]);
+				auto magnitude = std::sqrt(frustumSides[side][0] * frustumSides[side][0] + frustumSides[side][1] * frustumSides[side][1] + frustumSides[side][2] * frustumSides[side][2]);
 				frustumSides[side][0] /= magnitude;
 				frustumSides[side][1] /= magnitude;
 				frustumSides[side][2] /= magnitude;

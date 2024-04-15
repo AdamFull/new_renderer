@@ -18,7 +18,7 @@ void CComputeCullingPass::init(const FComputePassCreateInfo& pass_ci)
 	m_baseShaderName = pass_ci.shader;
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-	m_debugName = stl::format("compute_geometry:{}", m_baseShaderName);
+	m_debugName = std::format("compute_geometry:{}", m_baseShaderName);
 #endif
 }
 
@@ -33,7 +33,7 @@ void CComputeCullingPass::_execute(const FComputeFrameInfo& frame_info)
 	auto& render_world = m_pRenderInterface->getRenderWorld();
 	auto& world_stats = render_world->getStats();
 
-	stl::unordered_set<u64> vbos{};
+	std::unordered_set<u64> vbos{};
 
 	const auto& geometry_batches = render_world->getGeometryBatches();
 	for (const auto& batch : geometry_batches)
@@ -83,17 +83,17 @@ void CComputeCullingPass::_execute(const FComputeFrameInfo& frame_info)
 	}
 }
 
-const stl::unique_ptr<IShaderObject>& CComputeCullingPass::getShaderByVBO(const IVertexHandler* vbo)
+const std::unique_ptr<IShaderObject>& CComputeCullingPass::getShaderByVBO(const IVertexHandler* vbo)
 {
 	auto& shader = m_shaders[vbo->getHash()];
 	if (!shader)
 	{
-		shader = stl::make_unique<CShaderObject>(m_pRenderInterface);
+		shader = std::make_unique<CShaderObject>(m_pRenderInterface);
 
 		auto& render_packet = m_pRenderInterface->getRenderPacket();
 
 		FComputeShaderCreateInfo shader_ci{};
-		shader_ci.usageCount = stl::max(render_packet->stats.materialCount, render_packet->stats.primitiveCount);
+		shader_ci.usageCount = std::max(render_packet->stats.materialCount, render_packet->stats.primitiveCount);
 
 		auto shader_name = m_baseShaderName + vbo->getDefinitions();
 		shader->create(shader_name, shader_ci);

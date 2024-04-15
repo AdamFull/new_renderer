@@ -44,8 +44,8 @@ namespace engine
 		struct FVertexBufferBindingInfo
 		{
 			u32 firstBinding{ 0u };
-			stl::vector<u64> buffers{};
-			stl::vector<u64> offsets{};
+			std::vector<u64> buffers{};
+			std::vector<u64> offsets{};
 		};
 
 		struct FIndexBufferBindingInfo
@@ -63,9 +63,9 @@ namespace engine
 
 		struct FVertexHandlerCreateInfo
 		{
-			stl::vector<FVertexHandlerAttributeDescription> descriptions{};
+			std::vector<FVertexHandlerAttributeDescription> descriptions{};
 			u64 indexSize{ 1ull };
-			stl::string name{};
+			std::string name{};
 		};
 
 
@@ -86,8 +86,8 @@ namespace engine
 
 		struct FVertexDeclarationInfo
 		{
-			stl::vector<FVertexDeclarationBindingDescription> bindingDescriptions{};
-			stl::vector<FVertexDeclarationAttributeDescription> attributeDescriptions{};
+			std::vector<FVertexDeclarationBindingDescription> bindingDescriptions{};
+			std::vector<FVertexDeclarationAttributeDescription> attributeDescriptions{};
 		};
 
 		struct FVertexRange
@@ -107,9 +107,9 @@ namespace engine
 
 			virtual void bind(EQueueTypeFlagBits queue) = 0;
 
-			virtual const FVertexRange& addMeshData(const stl::vector<FVertexAttributePointer>& attributes_data, const FVertexAttributePointer& indices) = 0;
+			virtual const FVertexRange& addMeshData(const std::vector<FVertexAttributePointer>& attributes_data, const FVertexAttributePointer& indices) = 0;
 
-			virtual u64 addVertices(const stl::vector<FVertexAttributePointer>& attributes_data) = 0;
+			virtual u64 addVertices(const std::vector<FVertexAttributePointer>& attributes_data) = 0;
 			virtual u64 addIndices(const FVertexAttributePointer& indices) = 0;
 
 			virtual u64 getLastVertex() = 0;
@@ -117,7 +117,7 @@ namespace engine
 
 			virtual const FVertexDeclarationInfo& getVertexDeclaration() const = 0;
 			virtual u64 getHash() const = 0;
-			virtual const stl::string& getDefinitions() const = 0;
+			virtual const std::string& getDefinitions() const = 0;
 
 			virtual const std::unique_ptr<IGPUVector>& getGeometryBuffer(EGeometryBufferIndices buffer_index) = 0;
 

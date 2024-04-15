@@ -16,7 +16,7 @@ namespace engine
 
 			u64 capacity() override;
 
-			const stl::unique_ptr<IBufferObject>& buffer() override;
+			const std::unique_ptr<IBufferObject>& buffer() override;
 		protected:
 			void alloc(const std::string& name, EBufferUsageFlags flag, u64 stride, u64 capacity) override;
 			void realloc(u64 capacity) override;
@@ -28,7 +28,7 @@ namespace engine
 			std::string m_srOriginalName{};
 			EBufferUsageFlags m_bufferFlag{};
 
-			stl::unique_ptr<IBufferObject> m_pBuffer{};
+			std::unique_ptr<IBufferObject> m_pBuffer{};
 		};
 	}
 }
