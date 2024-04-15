@@ -47,7 +47,7 @@ namespace engine
 		template<class EnumType>
 		void register_flags_type(const char* name, sol::state* lua)
 		{
-			using EnumFlagsType = utl::container::flags<EnumType>;
+			using EnumFlagsType = utl::flags<EnumType>;
 			using BitType = std::underlying_type<EnumType>::type;
 
 			lua->new_usertype<EnumFlagsType>(
