@@ -88,7 +88,7 @@ void CShaderObject::flushDescriptors()
 
 void CShaderObject::flushConstants(EQueueTypeFlagBits queue)
 {
-	std::unordered_map<u64, FUniformDataView> constants{};
+	utl::hash_map<u64, FUniformDataView> constants{};
 
 	for (auto& [id, block] : m_constantBlocks)
 	{

@@ -3,6 +3,7 @@
 #include <engine/interface/WindowInterface.h>
 #include <reactive/function.h>
 #include <utils/hash.h>
+#include <container/hash_map.h>
 
 namespace engine
 {
@@ -22,7 +23,7 @@ namespace engine
 	struct FInputAxis
 	{
 		EAxisType type{};
-		std::unordered_map<EKeyCode, f32> keyValue{};
+		utl::hash_map<EKeyCode, f32> keyValue{};
 		std::vector<utl::reactive::function<void(f32)>> callbacks{};
 	};
 
@@ -86,23 +87,23 @@ namespace engine
 		void handleKeyInput(EKeyCode code, EKeyState state);
 		void handleAxisInput(f32 x, f32 y, f32 xmax, f32 ymax);
 
-		void unpackAxisValues(std::unordered_map<EKeyCode, f32>& map) {}
+		void unpackAxisValues(utl::hash_map<EKeyCode, f32>& map) {}
 
 		template<class... _Args>
-		void unpackAxisValues(std::unordered_map<EKeyCode, f32>& map, EKeyCode key, f32 value, _Args&&... args) 
+		void unpackAxisValues(utl::hash_map<EKeyCode, f32>& map, EKeyCode key, f32 value, _Args&&... args) 
 		{ 
 			map[key] = value; 
 			unpackAxisValues(map, std::forward<_Args>(args)...);
 		}
 
 		template<class... _Args>
-		void unpackAxisValues(std::unordered_map<EKeyCode, f32>& map, _Args&&... args) { static_assert(true, "Incorrect argument types. Should be EKeyCode:f32."); }
+		void unpackAxisValues(utl::hash_map<EKeyCode, f32>& map, _Args&&... args) { static_assert(true, "Incorrect argument types. Should be EKeyCode:f32."); }
 	private:
 		CKeyDecoder m_keyDecoder{};
 
-		std::unordered_map<u64, FInputAction> m_inputActions{};
-		std::unordered_map<u64, FInputAxis> m_inputAxis{};
+		utl::hash_map<u64, FInputAction> m_inputActions{};
+		utl::hash_map<u64, FInputAxis> m_inputAxis{};
 
-		std::unordered_map<EAxisType, f32> m_hwAxis{};
+		utl::hash_map<EAxisType, f32> m_hwAxis{};
 	};
 }

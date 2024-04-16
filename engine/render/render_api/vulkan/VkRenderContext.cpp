@@ -766,7 +766,7 @@ void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader
 	}
 }
 
-void CVkRenderContext::flushConstantRanges(u64 shader_id, const std::unordered_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type)
+void CVkRenderContext::flushConstantRanges(u64 shader_id, const utl::hash_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type)
 {
 	auto& shader = m_pResources->get<FVkShader>(shader_id);
 	auto& shader_reflection = m_pResources->get<FVkShaderReflectionData>(shader->reflection);

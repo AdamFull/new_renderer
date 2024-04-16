@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VertexStructures.h"
+#include <container/hash_map.h>
 
 namespace engine
 {
@@ -54,21 +55,21 @@ namespace engine
 			u32 set{ 0u };
 			u32 binding{ 0u };
 			u64 size{ 0ull };
-			std::unordered_map<u64, _Ty> uniforms{};
+			utl::hash_map<u64, _Ty> uniforms{};
 		};
 
 		template<class _Ty>
 		struct FReflectionPushConstantBlock
 		{
 			u64 size{ 0ull };
-			std::unordered_map<u64, _Ty> uniforms{};
+			utl::hash_map<u64, _Ty> uniforms{};
 		};
 
 		struct FShaderReflectionData
 		{
-			std::unordered_map<u64, FReflectionUniform> uniforms{};
-			std::unordered_map<u64, FReflectionUniformBlock<FReflectionUniform>> uniformBlocks{};
-			std::unordered_map<u64, FReflectionPushConstantBlock<FReflectionUniform>> pushBlocks{};
+			utl::hash_map<u64, FReflectionUniform> uniforms{};
+			utl::hash_map<u64, FReflectionUniformBlock<FReflectionUniform>> uniformBlocks{};
+			utl::hash_map<u64, FReflectionPushConstantBlock<FReflectionUniform>> pushBlocks{};
 
 			std::array<u32, 3ull> localSizes;
 		};
@@ -136,9 +137,9 @@ namespace engine
 		struct FShaderResourceCommit
 		{
 			u64 shaderId{ INVALID_HANDLE };
-			std::unordered_map<u64, FUniformDataView> uniforms{};
-			std::unordered_map<u64, FTextureBindInfo> textures{};
-			std::unordered_map<u64, u64> buffers{};
+			utl::hash_map<u64, FUniformDataView> uniforms{};
+			utl::hash_map<u64, FTextureBindInfo> textures{};
+			utl::hash_map<u64, u64> buffers{};
 		};
 	}
 }

@@ -11,6 +11,8 @@
 #include "RenderGraph.h"
 #include "PostProcessStructures.h"
 
+#include <container/hash_map.h>
+
 #include <typeindex>
 
 namespace engine
@@ -74,12 +76,12 @@ namespace engine
 
 		struct FGlobalUniformCreateInfo
 		{
-			std::unordered_map<u64, u64> uniforms{};
+			utl::hash_map<u64, u64> uniforms{};
 		};
 
 		struct FGlobalUniformUpdateInfo
 		{
-			std::unordered_map<u64, FUniformDataView> uniforms{};
+			utl::hash_map<u64, FUniformDataView> uniforms{};
 		};
 
 		struct FRenderCamera
@@ -165,7 +167,7 @@ namespace engine
 				return m_data;
 			}
 		private:
-			std::unordered_map<u64, FReflectionUniform> m_uniforms{};
+			utl::hash_map<u64, FReflectionUniform> m_uniforms{};
 			std::vector<char> m_data{};
 		};
 
@@ -200,7 +202,7 @@ namespace engine
 			u64 nodeCount{ 0ull };
 
 			// Type is a hash of all used attributes
-			std::unordered_map<u64, u64> perTypeVBOCount{};
+			utl::hash_map<u64, u64> perTypeVBOCount{};
 		};
 
 		struct FCullingInfo
@@ -271,7 +273,7 @@ namespace engine
 			virtual u64 createShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
 			virtual FShaderReflectionData getShaderReflection(const u64& shader_view) = 0;
 			virtual void updateShaderResources(const FShaderResourceCommit& resources, EShaderResourcesUpdateFlags flags = EShaderResourcesUpdateFlagBits::eAll) = 0;
-			virtual void flushConstantRanges(u64 shader_id, const std::unordered_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type) = 0;
+			virtual void flushConstantRanges(u64 shader_id, const utl::hash_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type) = 0;
 			virtual void bindShader(u64 shader_id, EQueueTypeFlagBits queue_type) = 0;
 			virtual void destroyShader(u64 resource_id) = 0;
 

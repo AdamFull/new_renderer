@@ -36,8 +36,8 @@ namespace engine
 			std::unordered_map<u64, std::unique_ptr<CUniformHandle>> m_uniformBlocks{};
 			std::unordered_map<u64, std::unique_ptr<CUniformHandle>> m_constantBlocks{};
 
-			std::unordered_map<u64, u64> m_bindBuffers{};
-			std::unordered_map<u64, FTextureBindInfo> m_bindTextures{};
+			utl::hash_map<u64, u64> m_bindBuffers{};
+			utl::hash_map<u64, FTextureBindInfo> m_bindTextures{};
 			u64 m_shaderId{ ~0ull };
 
 			FShaderReflectionData m_reflection{};

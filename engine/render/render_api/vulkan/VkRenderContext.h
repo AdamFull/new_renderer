@@ -33,7 +33,7 @@ namespace engine
 				u64 createShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) override;
 				FShaderReflectionData getShaderReflection(const u64& shader_view) override;
 				void updateShaderResources(const FShaderResourceCommit& shader_resources, EShaderResourcesUpdateFlags flags = EShaderResourcesUpdateFlagBits::eAll) override;
-				void flushConstantRanges(u64 shader_id, const std::unordered_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type) override;
+				void flushConstantRanges(u64 shader_id, const utl::hash_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type) override;
 				void bindShader(u64 shader_id, EQueueTypeFlagBits queue_type) override;
 				void destroyShader(u64 resource_id) override;
 
