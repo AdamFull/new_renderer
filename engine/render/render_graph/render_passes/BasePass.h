@@ -40,8 +40,8 @@ namespace engine
 
 			EQueueTypeFlagBits m_queue{};
 
-			std::unordered_map<ERenderResourceGroupType, std::vector<FRenderResourceBinding>> m_renderResources{};
-			std::unordered_map<std::string, FRenderResourceBinding> m_bakedBindings{};
+			utl::hash_map<ERenderResourceGroupType, std::vector<FRenderResourceBinding>> m_renderResources{};
+			utl::hash_map<std::string, FRenderResourceBinding> m_bakedBindings{};
 
 			bool m_bOneTime{ false };
 			bool m_bCanExecute{ true };

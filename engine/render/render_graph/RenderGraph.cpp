@@ -982,7 +982,7 @@ void CRenderGraph::applySingleRenderResourceDependencies(u64 resource_id, ERende
 	render_resource.queuesUsed |= queue_type;
 }
 
-void CRenderGraph::applyMultiRenderResourceDependencies(u64 pass_index, EQueueTypeFlagBits queue_type, const std::unordered_map<ERenderResourceGroupType, std::vector<FRenderResourceBinding>>& associated_resources)
+void CRenderGraph::applyMultiRenderResourceDependencies(u64 pass_index, EQueueTypeFlagBits queue_type, const utl::hash_map<ERenderResourceGroupType, std::vector<FRenderResourceBinding>>& associated_resources)
 {
 	for (const auto& [type, resource_bindings] : associated_resources)
 	{

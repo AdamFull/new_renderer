@@ -1,6 +1,6 @@
 #pragma once 
 
-#include <standart_library.h>
+#include <container/hash_map.h>
 #include "TextureStructures.h"
 
 namespace engine
@@ -190,7 +190,7 @@ namespace engine
 
 		struct FPassBuildInfo
 		{
-			std::unordered_map<u64, FRenderGraphAttachmentOperationInfo> attachments{};
+			utl::hash_map<u64, FRenderGraphAttachmentOperationInfo> attachments{};
 
 			const FRenderGraphAttachmentOperationInfo& getAttachmentInfo(u64 resource_index) const
 			{
@@ -252,7 +252,7 @@ namespace engine
 			EQueueTypeFlags queuesUsed{ 0u };
 			u64 handle{ INVALID_HANDLE };
 
-			std::unordered_map<ERenderResourceAccessFlagBits, std::unordered_set<u64>> usages{};
+			utl::hash_map<ERenderResourceAccessFlagBits, std::unordered_set<u64>> usages{};
 		};
 
 		struct FRenderConfigResourceBindingDescription
@@ -269,8 +269,8 @@ namespace engine
 
 			std::string sizeTarget{};
 
-			std::unordered_map<ERenderResourceAccessFlagBits, std::unordered_map<std::string, FRenderConfigResourceBindingDescription>> resourceBindings{};
-			std::unordered_map<ERenderResourceAccessFlagBits, std::vector<std::string>> otherResources{};
+			utl::hash_map<ERenderResourceAccessFlagBits, utl::hash_map<std::string, FRenderConfigResourceBindingDescription>> resourceBindings{};
+			utl::hash_map<ERenderResourceAccessFlagBits, std::vector<std::string>> otherResources{};
 
 			void bindWriteResource(const std::string& binding_point, const std::string& resource_name) { resourceBindings[ERenderResourceAccessFlagBits::eWrite].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, 0u }); }
 			void bindWriteResource(const std::string& binding_point, const std::string& resource_name, u32 subresource) { resourceBindings[ERenderResourceAccessFlagBits::eWrite].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, subresource }); }
@@ -367,8 +367,8 @@ namespace engine
 			std::string shader{};
 			bool oneTime{ false };
 
-			std::unordered_map<ERenderResourceGroupType, std::vector<FRenderResourceBinding>> resources{};
-			std::unordered_map<std::string, FRenderResourceBinding> bindings{};
+			utl::hash_map<ERenderResourceGroupType, std::vector<FRenderResourceBinding>> resources{};
+			utl::hash_map<std::string, FRenderResourceBinding> bindings{};
 		};
 
 		struct FRenderPassCreateInfo : public FPassCreateInfo
