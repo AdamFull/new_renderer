@@ -2,7 +2,7 @@
 
 #include <string>
 #include <vector>
-#include <unordered_map>
+#include <container/hash_map.h>
 
 namespace shader_compiler
 {
@@ -95,7 +95,7 @@ namespace shader_compiler
 		EShaderLang lang;
 		ETargetAPIType targetApi;
 
-		std::unordered_map<std::string, FPermutationPattern> permutationPatterns;
+		utl::hash_map<std::string, FPermutationPattern> permutationPatterns;
 
 		std::vector<std::string> includeDirectories;
 		std::vector<std::string> commonDirectories;
@@ -142,7 +142,7 @@ namespace shader_compiler
 	struct FShaderLibrary
 	{
 		std::string name;
-		std::unordered_map<std::string, FShaderDescription> shaders;
+		utl::hash_map<std::string, FShaderDescription> shaders;
 		std::vector<FShaderCompile> compiles;
 	};
 }

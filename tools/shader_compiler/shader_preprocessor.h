@@ -53,7 +53,7 @@ namespace shader_compiler
 	protected:
 		std::vector<FTemplateFunction> parseTemplateFunctions(const std::string& code);
 		std::vector<FTemplateFunctionCall> parseTemplateFunctionCalls(const std::string& code);
-		std::unordered_map<std::string, std::string> generateTemplateFunctionCode(const std::vector<FTemplateFunction>& functions, std::vector<FTemplateFunctionCall>& calls);
+		utl::hash_map<std::string, std::string> generateTemplateFunctionCode(const std::vector<FTemplateFunction>& functions, std::vector<FTemplateFunctionCall>& calls);
 	private:
 		EShaderLang m_shaderLang;
 		std::vector<std::filesystem::path> m_includeDirectories;

@@ -113,7 +113,7 @@ void CLibraryCompiler::initialize(ETargetAPIType target_api, EShaderLang shader_
 	m_pShaderCompiler->initialize();
 }
 
-void CLibraryCompiler::generatePermutations(const std::unordered_map<std::string, FPermutationPattern>& permutation_patterns)
+void CLibraryCompiler::generatePermutations(const utl::hash_map<std::string, FPermutationPattern>& permutation_patterns)
 {
 	for (const auto& [name, pattern] : permutation_patterns)
 	{

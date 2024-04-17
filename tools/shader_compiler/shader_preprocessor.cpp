@@ -250,9 +250,9 @@ std::vector<FTemplateFunctionCall> CShaderPreprocessor::parseTemplateFunctionCal
 	return calls;
 }
 
-std::unordered_map<std::string, std::string> CShaderPreprocessor::generateTemplateFunctionCode(const std::vector<FTemplateFunction>& functions, std::vector<FTemplateFunctionCall>& calls)
+utl::hash_map<std::string, std::string> CShaderPreprocessor::generateTemplateFunctionCode(const std::vector<FTemplateFunction>& functions, std::vector<FTemplateFunctionCall>& calls)
 {
-	std::unordered_map<std::string, std::string> generated_functions;
+	utl::hash_map<std::string, std::string> generated_functions;
 
 	for (const auto& function_call : calls)
 	{
@@ -268,7 +268,7 @@ std::unordered_map<std::string, std::string> CShaderPreprocessor::generateTempla
 
 		// TODO: type count in function can be more then in call
 		// Generate type associations
-		std::unordered_map<std::string, std::string> type_association{};
+		utl::hash_map<std::string, std::string> type_association{};
 		for (size_t type_idx = 0ull; type_idx < function_call.templateArguments.size(); ++type_idx)
 			type_association[template_function.templateArguments.at(type_idx).name] = function_call.templateArguments.at(type_idx);
 
