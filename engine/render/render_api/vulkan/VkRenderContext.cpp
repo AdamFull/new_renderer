@@ -1706,7 +1706,8 @@ void CVkRenderContext::endFrame()
 
 	if (presentResult == vk::Result::eSuboptimalKHR || presentResult == vk::Result::eErrorOutOfDateKHR)
 		updateSurface(m_iSurfaceWidth, m_iSurfaceHeight);
-
+	utl::hash_map<std::string, std::string> kk;
+	
 	// Destroy unused contexts
 	for (auto it = m_perThreadContext.begin(); it != m_perThreadContext.end();)
 	{

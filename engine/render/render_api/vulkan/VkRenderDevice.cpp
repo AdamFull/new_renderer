@@ -1112,7 +1112,7 @@ FRenderApiErrorInfo CVkRenderDevice::createSurface(const FRenderContextCreateInf
 
 void CVkRenderDevice::selectQueueFamilies(FVkPhysicalDevice& device_info)
 {
-	std::unordered_map<u32, vk::QueueFamilyProperties> family_properties{};
+	utl::hash_map<u32, vk::QueueFamilyProperties> family_properties{};
 
 	auto& physical_device = device_info.handle;
 	auto& families_info = device_info.queueFamilies;
@@ -1350,7 +1350,7 @@ FRenderApiErrorInfo CVkRenderDevice::createLogicalDevice(const FRenderContextCre
 
 	// Get queue create infos
 	std::vector<vk::DeviceQueueCreateInfo> queue_create_infos{};
-	std::unordered_map<u32, std::vector<f32>> queue_priorities{};
+	utl::hash_map<u32, std::vector<f32>> queue_priorities{};
 	for (auto& [index, usages] : physical_device.queueFamilies.familyUsages)
 	{
 		for (u64 usage = 0; usage < usages; ++usage)
@@ -1412,7 +1412,7 @@ FRenderApiErrorInfo CVkRenderDevice::createLogicalDevice(const FRenderContextCre
 
 	auto get_queue_family_index = [&physical_device](EQueueTypeFlagBits mask) -> u32 { return physical_device.queueFamilies.queueToFamily.count(mask) ? physical_device.queueFamilies.queueToFamily[mask] : ~0u; };
 
-	std::unordered_map<u32, u32> family_usages{};
+	utl::hash_map<u32, u32> family_usages{};
 	for (auto& [type, family] : physical_device.queueFamilies.queueToFamily)
 		m_logicalDevice.queues[type] = m_logicalDevice.handle.getQueue(family, family_usages[family]++);
 

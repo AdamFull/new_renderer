@@ -39,25 +39,25 @@ namespace engine
 
 		enum class ERenderResourceGroupType : u32
 		{
-			eColorRead					= utl::packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eRead),  utl::cast<u16>(ERenderResourceGroupFlagBits::eColor)),
-			eColorWrite					= utl::packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceGroupFlagBits::eColor)),
-			eResolveWrite				= utl::packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceGroupFlagBits::eResolve)),
-			eStorageTextureRead			= utl::packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eRead),  utl::cast<u16>(ERenderResourceGroupFlagBits::eStorageTexture)),
-			eStorageTextureWrite		= utl::packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceGroupFlagBits::eStorageTexture)),
-			eBlitTextureRead			= utl::packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eRead),  utl::cast<u16>(ERenderResourceGroupFlagBits::eBlitTexture)),
-			eBlitTextureWrite			= utl::packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceGroupFlagBits::eBlitTexture)),
-			eStorageRead				= utl::packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eRead),  utl::cast<u16>(ERenderResourceGroupFlagBits::eStorage)),
-			eStorageWrite				= utl::packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceGroupFlagBits::eStorage)),
-			eBackbufferRead				= utl::packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eRead), utl::cast<u16>(ERenderResourceGroupFlagBits::eBackbuffer)),
-			eBackbufferWrite			= utl::packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceGroupFlagBits::eBackbuffer)),
+			eColorRead					= utl::pack_u32_16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eRead),  utl::cast<u16>(ERenderResourceGroupFlagBits::eColor)),
+			eColorWrite					= utl::pack_u32_16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceGroupFlagBits::eColor)),
+			eResolveWrite				= utl::pack_u32_16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceGroupFlagBits::eResolve)),
+			eStorageTextureRead			= utl::pack_u32_16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eRead),  utl::cast<u16>(ERenderResourceGroupFlagBits::eStorageTexture)),
+			eStorageTextureWrite		= utl::pack_u32_16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceGroupFlagBits::eStorageTexture)),
+			eBlitTextureRead			= utl::pack_u32_16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eRead),  utl::cast<u16>(ERenderResourceGroupFlagBits::eBlitTexture)),
+			eBlitTextureWrite			= utl::pack_u32_16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceGroupFlagBits::eBlitTexture)),
+			eStorageRead				= utl::pack_u32_16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eRead),  utl::cast<u16>(ERenderResourceGroupFlagBits::eStorage)),
+			eStorageWrite				= utl::pack_u32_16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceGroupFlagBits::eStorage)),
+			eBackbufferRead				= utl::pack_u32_16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eRead), utl::cast<u16>(ERenderResourceGroupFlagBits::eBackbuffer)),
+			eBackbufferWrite			= utl::pack_u32_16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceGroupFlagBits::eBackbuffer)),
 		};
 
 		enum class ERenderResourceDependencyBarrierType : u32
 		{
-			eReadAfterWrite				= utl::packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceAccessFlagBits::eRead)),
-			eWriteAfterNothing			= utl::packUint16x2(utl::cast<u16>(0u), utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite)),
-			eWriteAfterRead				= utl::packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eRead), utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite)),
-			eWriteAfterWrite			= utl::packUint16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite))
+			eReadAfterWrite				= utl::pack_u32_16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceAccessFlagBits::eRead)),
+			eWriteAfterNothing			= utl::pack_u32_16x2(utl::cast<u16>(0u), utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite)),
+			eWriteAfterRead				= utl::pack_u32_16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eRead), utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite)),
+			eWriteAfterWrite			= utl::pack_u32_16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite))
 		};
 
 		enum class ERenderResourceLoadOp : u32
@@ -91,26 +91,26 @@ namespace engine
 
 		inline constexpr ERenderResourceGroupType packResourceGroup(ERenderResourceAccessFlagBits access_flag, ERenderResourceGroupFlagBits group_flag)
 		{
-			return utl::cast<ERenderResourceGroupType>(utl::packUint16x2(utl::enum_cast(access_flag), utl::enum_cast(group_flag)));
+			return utl::cast<ERenderResourceGroupType>(utl::pack_u32_16x2(utl::enum_cast(access_flag), utl::enum_cast(group_flag)));
 		}
 
 		inline void unpackResourceGroup(ERenderResourceGroupType resource_group, ERenderResourceAccessFlagBits& access_flag, ERenderResourceGroupFlagBits& group_flag)
 		{
 			u16 access_mask{}, group_mask{};
-			utl::unpackUint16x2(utl::enum_cast(resource_group), access_mask, group_mask);
+			utl::unpack_u32_16x2(utl::enum_cast(resource_group), access_mask, group_mask);
 			access_flag = utl::cast<ERenderResourceAccessFlagBits>(access_mask);
 			group_flag = utl::cast<ERenderResourceGroupFlagBits>(group_mask);
 		}
 
 		inline constexpr ERenderResourceDependencyBarrierType packDependencyBarrier(ERenderResourceAccessFlagBits src, ERenderResourceAccessFlagBits dst)
 		{
-			return utl::cast<ERenderResourceDependencyBarrierType>(utl::packUint16x2(utl::enum_cast(src), utl::enum_cast(dst)));
+			return utl::cast<ERenderResourceDependencyBarrierType>(utl::pack_u32_16x2(utl::enum_cast(src), utl::enum_cast(dst)));
 		}
 
 		inline void unpackDependencyBarrier(ERenderResourceDependencyBarrierType dependency_barrier, ERenderResourceAccessFlagBits& src, ERenderResourceAccessFlagBits& dst)
 		{
 			u16 src_mask{}, dst_mask{};
-			utl::unpackUint16x2(utl::enum_cast(dependency_barrier), src_mask, dst_mask);
+			utl::unpack_u32_16x2(utl::enum_cast(dependency_barrier), src_mask, dst_mask);
 			src = utl::cast<ERenderResourceAccessFlagBits>(src_mask);
 			dst = utl::cast<ERenderResourceAccessFlagBits>(dst_mask);
 		}

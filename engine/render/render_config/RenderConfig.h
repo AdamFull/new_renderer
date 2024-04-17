@@ -41,7 +41,7 @@ namespace engine
 			}
 		private:
 			sol::environment* m_pEnvironment{ nullptr };
-			std::unordered_map<u64, sol::protected_function*> m_scriptFunctions{};
+			utl::hash_map<u64, sol::protected_function*> m_scriptFunctions{};
 		};
 
 		class CRenderScriptCore

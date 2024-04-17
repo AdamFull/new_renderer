@@ -29,8 +29,8 @@ namespace engine
 			struct FQueueFamilies
 			{
 				std::vector<u32> uniqueFamilies{};
-				std::unordered_map<u32, u32> familyUsages;
-				std::unordered_map<EQueueTypeFlagBits, u32> queueToFamily;
+				utl::hash_map<u32, u32> familyUsages;
+				utl::hash_map<EQueueTypeFlagBits, u32> queueToFamily;
 				EQueueTypeFlags queueMask{ 0u };
 			};
 
@@ -54,14 +54,14 @@ namespace engine
 				vk::PhysicalDeviceProperties properties{};
 				std::vector<std::string> avaliableExtensions{};
 				FQueueFamilies queueFamilies{};
-				std::unordered_map<u32, bool> supportedExtensions{};
+				utl::hash_map<u32, bool> supportedExtensions{};
 				u32 compatFlags{ 0u };
 			};
 
 			struct FVkLogicalDevice
 			{
 				vk::Device handle{ nullptr };
-				std::unordered_map<EQueueTypeFlagBits, vk::Queue> queues{};
+				utl::hash_map<EQueueTypeFlagBits, vk::Queue> queues{};
 				void* lastExtensionFeature{ nullptr };
 				std::map<vk::StructureType, std::shared_ptr<void>> extensionFeatures{};
 			};
@@ -341,13 +341,13 @@ namespace engine
 				std::vector<vk::Pipeline> handles{};
 				vk::PipelineLayout layout{};
 				std::vector<vk::ShaderModule> shaderModules{};
-				std::unordered_map<u32, vk::DescriptorSetLayout> descriptorSetLayouts{};
-				std::unordered_map<u32, FVkDescriptorSet> descriptorSets{};
-				std::unordered_map<u32, u32> descriptorUsage{};
+				utl::hash_map<u32, vk::DescriptorSetLayout> descriptorSetLayouts{};
+				utl::hash_map<u32, FVkDescriptorSet> descriptorSets{};
+				utl::hash_map<u32, u32> descriptorUsage{};
 				FVkDescriptorPool descriptorPool{};
 				std::vector<vk::PushConstantRange> pushConstantRanges{};
 
-				std::unordered_map<u64, u64> uniformBuffers{};
+				utl::hash_map<u64, u64> uniformBuffers{};
 				u64 maximumDescriptorSlots{ 0ull };
 				
 				vk::PipelineBindPoint bindPoint{};
@@ -482,7 +482,7 @@ namespace engine
 				FVkDescriptorPool descriptorPool{};
 				vk::DescriptorSetLayout deecriptorSetLayout{};
 				FVkDescriptorSet descriptorSet{};
-				std::unordered_map<u64, u64> uniformBuffers{};
+				utl::hash_map<u64, u64> uniformBuffers{};
 			};
 
 			struct FVkPerQueueResources
@@ -519,9 +519,9 @@ namespace engine
 
 				i32 use_count() { return refCounter.load(std::memory_order_relaxed); }
 
-				std::unordered_map<EQueueTypeFlagBits, FVkPerQueueResources> perQueue{};
+				utl::hash_map<EQueueTypeFlagBits, FVkPerQueueResources> perQueue{};
 				FVkDescriptorPool descriptorPool{};
-				std::unordered_map<u64, FVkDescriptorSet> descriptorSets{};
+				utl::hash_map<u64, FVkDescriptorSet> descriptorSets{};
 			private:
 				void incrementUsage() { refCounter.fetch_add(1, std::memory_order_relaxed); }
 				void decrementUsage() { refCounter.fetch_sub(1, std::memory_order_relaxed); }

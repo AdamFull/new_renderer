@@ -4,6 +4,8 @@
 
 #include <engine/interface/filesystem/VirtualFileSystemInterface.h>
 
+#include <container/hash_map.h>
+
 namespace engine
 {
 	namespace filesystem

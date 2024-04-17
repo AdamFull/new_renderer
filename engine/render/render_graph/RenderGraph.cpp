@@ -654,8 +654,8 @@ void CRenderGraph::build()
 
 	// Generate dependency barriers
 	std::vector<std::vector<FResourceAccessInfo>> per_pass_resource_access{};
-	std::unordered_map<FRenderResourceBindingKey, u64> unique_barrier_counter;
-	std::unordered_map<FRenderResourceBinding, u64> unique_resource_writes{};
+	utl::hash_map<FRenderResourceBindingKey, u64> unique_barrier_counter;
+	utl::hash_map<FRenderResourceBinding, u64> unique_resource_writes{};
 
 	per_pass_resource_access.resize(m_vRenderPasses.size());
 

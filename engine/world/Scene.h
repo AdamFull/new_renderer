@@ -16,7 +16,7 @@ namespace engine
 
 		struct FSceneLoadedResources
 		{
-			std::unordered_map<u64, std::vector<u64>> vertexHandlers{};
+			utl::hash_map<u64, std::vector<u64>> vertexHandlers{};
 
 			std::vector<u64> textures{};
 			u64 lastTexture{ 0ull };
@@ -28,7 +28,7 @@ namespace engine
 		struct FSceneTemporaryResources
 		{
 			std::vector<std::string> materialNames{};
-			std::unordered_map<u32, entt::entity> nodeToEntity{};
+			utl::hash_map<u32, entt::entity> nodeToEntity{};
 		};
 
 		class CScene

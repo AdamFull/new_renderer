@@ -46,16 +46,16 @@ namespace engine
 				uint32_t executionModeInvocations{ 0 };
 				uint32_t executionModeOutputVertices{ 0 };
 
-				std::unordered_map<size_t, FVkReflectionUniform> uniforms;
-				std::unordered_map<size_t, FVkReflectionUniformBlock> uniformBlocks;
-				std::unordered_map<size_t, FVkReflectionPushConstantBlock> pushBlocks;
-				std::unordered_map<size_t, FVkReflectionSpecializationConstant> specializationConstants;
+				utl::hash_map<size_t, FVkReflectionUniform> uniforms;
+				utl::hash_map<size_t, FVkReflectionUniformBlock> uniformBlocks;
+				utl::hash_map<size_t, FVkReflectionPushConstantBlock> pushBlocks;
+				utl::hash_map<size_t, FVkReflectionSpecializationConstant> specializationConstants;
 
 				std::vector<char> specializationDataBuffer{};
 
-				std::unordered_map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>> descriptorSetLayoutBindings;
+				utl::hash_map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>> descriptorSetLayoutBindings;
 				std::vector<vk::DescriptorPoolSize> descriptorPoolSizes;
-				std::unordered_map<vk::ShaderStageFlagBits, FVkSpecializationConstantData> specializationConstantStages{};
+				utl::hash_map<vk::ShaderStageFlagBits, FVkSpecializationConstantData> specializationConstantStages{};
 			};
 
 			class CVkShaderReflectionBuilder

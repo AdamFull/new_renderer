@@ -268,7 +268,7 @@ void CRenderWorld::prepareIndirectCommands()
 	std::vector<FDrawIndexedIndirectData> indirect_data{};
 	std::vector<FDrawMeshinfo> gpu_batches{};
 
-	std::unordered_map<u64, u64> indirect_command_cache{};
+	utl::hash_map<u64, u64> indirect_command_cache{};
 
 	for (const auto& batch : m_vRawGeometryBatches)
 	{
@@ -342,7 +342,7 @@ void CRenderWorld::prepareMeshletCommands()
 	std::vector<FDrawMeshinfo> gpu_batches{};
 	std::vector<FClusterInfo> gpu_clusters{};
 
-	std::unordered_map<u64, u64> indirect_command_cache{};
+	utl::hash_map<u64, u64> indirect_command_cache{};
 
 	for (const auto& batch : m_vRawGeometryBatches)
 	{

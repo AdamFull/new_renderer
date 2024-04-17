@@ -50,7 +50,7 @@ namespace engine
 			std::vector<std::unique_ptr<IGPUVector>> m_vGeometryBuffers{};
 
 			// Vertex cache
-			std::unordered_map<u64, FVertexRange> m_cachedRanges{};
+			utl::hash_map<u64, FVertexRange> m_cachedRanges{};
 
 			// For shader creation
 			std::string m_definitions{};

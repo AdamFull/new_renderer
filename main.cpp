@@ -8,6 +8,7 @@
 #include <parsing/argparse.h>
 #include <reactive/command_processor.h>
 #include <plugin/plugin_manager.h>
+#include <container/hash_map.h>
 
 #include <DbgHelp.h>
 #include <tlhelp32.h>
@@ -324,6 +325,11 @@ int main(int argc, char** argv)
     log_add_file_output("engine_log.log");
     log_add_cout_output();
     log_init("engine_app", "1.0.0");
+
+    utl::hash_map<std::string, u32> my_map{};
+    auto& new_val = my_map["hello"];
+    my_map.emplace("bla bla", 10);
+    //my_map.emplace();
 
     utl::plugin_system::uplugin_manager manager;
     auto& plugin = manager.load("virtual_filesystem", "D:\\GitHub\\new_renderer\\bin\\Debug\\engine\\virtual_filesystem.dll");

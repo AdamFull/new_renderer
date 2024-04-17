@@ -144,13 +144,13 @@ namespace engine
 
 				// NOTE: global descriptor uses set 0 and binding 0 and 1 (0 is for global uniform, 1 is for texture array)
 				FVkGlobalDescriptor m_globalDescriptor{};
-				std::unordered_map<u32, utl::unique_queue<u64>> m_textureToUpdate{};
+				utl::hash_map<u32, utl::unique_queue<u64>> m_textureToUpdate{};
 
-				std::unordered_map<std::thread::id, FVkThreadContext> m_perThreadContext{};
+				utl::hash_map<std::thread::id, FVkThreadContext> m_perThreadContext{};
 				bool m_bIsFrameStarted{ false };
 
 				FRenderFrameStats m_renderStats{};
-				std::unordered_map<EQueueTypeFlagBits, u32> m_zoneEntries{};
+				utl::hash_map<EQueueTypeFlagBits, u32> m_zoneEntries{};
 				FVkTimestampQuery m_timestampQuery{};
 
 				vk::ImageLayout m_backbufferLayout{ vk::ImageLayout::eUndefined };

@@ -216,7 +216,7 @@ void CVkShaderReflectionBuilder::addShaderStage(vk::ShaderStageFlagBits shaderSt
 
 FVkShaderReflectionData CVkShaderReflectionBuilder::build()
 {
-    std::unordered_map<vk::DescriptorType, u32> descriptorUsageCounter{};
+    utl::hash_map<vk::DescriptorType, u32> descriptorUsageCounter{};
 
     for (const auto& [name, block] : reflectionData.uniformBlocks)
     {

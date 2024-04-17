@@ -2,6 +2,7 @@
 
 #include <typeindex>
 #include <utils/hash.h>
+#include <container/hash_map.h>
 
 namespace engine
 {
@@ -88,7 +89,7 @@ namespace engine
 		}
 	private:
 		std::queue<resource_handle_t> freeIds{};
-		std::unordered_map<u64, resource_handle_t> nameToId{};
+		utl::hash_map<u64, resource_handle_t> nameToId{};
 		std::vector<std::unique_ptr<_Ty>> objects{};
 	};
 
@@ -158,6 +159,6 @@ namespace engine
 			return utl::cast<CResourceHolder<_Ty>*>(holders[type_index].get());
 		}
 	private:
-		std::unordered_map<std::type_index, std::shared_ptr<void>> holders{};
+		utl::hash_map<std::type_index, std::shared_ptr<void>> holders{};
 	};
 }

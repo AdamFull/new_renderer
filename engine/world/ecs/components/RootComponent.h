@@ -1,5 +1,7 @@
 #pragma once
 
+#include <container/hash_map.h>
+
 namespace engine
 {
 	namespace world
@@ -56,7 +58,7 @@ namespace engine
 			{
 				std::vector<FMeshAnimation> animations;
 				std::vector<FMeshSkin> skins;
-				std::unordered_map<uint32_t, uint32_t> skinRemap{};
+				utl::hash_map<uint32_t, uint32_t> skinRemap{};
 			};
 		}
 	}
