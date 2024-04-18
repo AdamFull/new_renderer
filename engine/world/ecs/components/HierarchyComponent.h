@@ -9,7 +9,7 @@ namespace engine
 			struct FHierarchyComponent
 			{
 				entt::entity parent{ entt::null };
-				std::vector<entt::entity> children{};
+				utl::vector<entt::entity> children{};
 			};
 		}
 	}

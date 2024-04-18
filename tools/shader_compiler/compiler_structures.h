@@ -60,34 +60,34 @@ namespace shader_compiler
 	// List of definitions
 	struct FDefinitionList
 	{
-		std::vector<std::string> definitions;
+		utl::vector<std::string> definitions;
 	};
 
 	// Definition combine rule description
 	struct FDefinitionVariant
 	{
-		std::vector<std::string> definitions;
+		utl::vector<std::string> definitions;
 		EPermutationVariantCombineType type;
 	};
 
 	// Rule describes how to generate permutation
 	struct FPermutationRule
 	{
-		std::vector<std::string> base;
-		std::vector<FDefinitionVariant> variants;
+		utl::vector<std::string> base;
+		utl::vector<FDefinitionVariant> variants;
 	};
 
 	// Describes how to generate shader permutations
 	struct FShaderPermutationGenerator
 	{
-		std::vector<FPermutationRule> rules;
+		utl::vector<FPermutationRule> rules;
 	};
 
 	// Pattern for generate permutation
 	struct FPermutationPattern
 	{
 		FShaderPermutationGenerator generator;
-		std::vector<FDefinitionList> permutations;
+		utl::vector<FDefinitionList> permutations;
 	};
 
 	struct FShaderMakeInfo
@@ -97,20 +97,20 @@ namespace shader_compiler
 
 		utl::hash_map<std::string, FPermutationPattern> permutationPatterns;
 
-		std::vector<std::string> includeDirectories;
-		std::vector<std::string> commonDirectories;
+		utl::vector<std::string> includeDirectories;
+		utl::vector<std::string> commonDirectories;
 
-		std::vector<std::string> buildModules;
+		utl::vector<std::string> buildModules;
 	};
 
 	struct FShaderObject
 	{
 		uint32_t version;
 
-		std::vector<std::string> enable_extensions;
-		std::vector<std::string> require_extensions;
-		std::vector<std::string> definitions;
-		std::vector<std::string> includes;
+		utl::vector<std::string> enable_extensions;
+		utl::vector<std::string> require_extensions;
+		utl::vector<std::string> definitions;
+		utl::vector<std::string> includes;
 
 		std::string code;
 	};
@@ -120,7 +120,7 @@ namespace shader_compiler
 	{
 		std::string name;
 		std::string pattern; // Build pattern with permutations
-		std::vector<FDefinitionList> permutations;
+		utl::vector<FDefinitionList> permutations;
 	};
 
 	// Description about how to find shader source file
@@ -135,7 +135,7 @@ namespace shader_compiler
 	struct FShaderDescription
 	{
 		std::string name;
-		std::vector<FShaderSource> sources;
+		utl::vector<FShaderSource> sources;
 	};
 
 	// Describes shader library
@@ -143,6 +143,6 @@ namespace shader_compiler
 	{
 		std::string name;
 		utl::hash_map<std::string, FShaderDescription> shaders;
-		std::vector<FShaderCompile> compiles;
+		utl::vector<FShaderCompile> compiles;
 	};
 }

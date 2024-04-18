@@ -15,7 +15,7 @@ namespace engine
 				int shadowIndex{ -1 };
 				bool castShadows{ true };
 
-				std::vector<u64> frustumIDs{};
+				utl::vector<u64> frustumIDs{};
 			};
 		}
 	}

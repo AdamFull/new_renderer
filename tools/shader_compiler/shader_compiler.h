@@ -18,6 +18,6 @@ namespace shader_compiler
 
 		virtual bool initialize() = 0;
 		virtual bool preprocess(const std::string& shader_code, const FCompileInfo& info, std::string& preprocessed_code, size_t& preprocessed_hash) = 0;
-		virtual std::vector<uint32_t> compile(const std::string& shader_code, const FCompileInfo& info) = 0;
+		virtual utl::vector<uint32_t> compile(const std::string& shader_code, const FCompileInfo& info) = 0;
 	};
 }

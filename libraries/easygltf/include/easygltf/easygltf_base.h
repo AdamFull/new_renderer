@@ -1,12 +1,11 @@
 #pragma once
 
+#include <standart_library.h>
 #include <nlohmann/json.hpp>
 
 #include <string>
-#include <vector>
 #include <array>
 #include <unordered_map>
-#include <unordered_set>
 
 #include <limits>
 
@@ -47,7 +46,7 @@ namespace easygltf
 			compare_double(lhs[12], rhs[12]) && compare_double(lhs[13], rhs[13]) && compare_double(lhs[14], rhs[14]) && compare_double(lhs[15], rhs[15]);
 	}
 
-	static bool compare_dvector(const std::vector<double>& lhs, const std::vector<double>& rhs)
+	static bool compare_dvector(const utl::vector<double>& lhs, const utl::vector<double>& rhs)
 	{
 		return (lhs.size() == rhs.size() && std::equal(lhs.begin(), lhs.end(), rhs.begin(), compare_double));
 	}
@@ -369,7 +368,7 @@ namespace easygltf
 			struct IBLEnvironments : Default
 			{
 				int32_t index{ base::constants::not_set };
-				std::vector<IBLEnvironmentDesc> environments{};
+				utl::vector<IBLEnvironmentDesc> environments{};
 
 				bool operator==(const IBLEnvironments& other) const
 				{
@@ -458,7 +457,7 @@ namespace easygltf
 
 			struct AudioScene : Default
 			{
-				std::vector<int32_t> emitters{}; // (required)
+				utl::vector<int32_t> emitters{}; // (required)
 
 				bool operator==(const AudioScene& other) const
 				{
@@ -526,8 +525,8 @@ namespace easygltf
 
 			struct Audio : Default
 			{
-				std::vector<AudioEmitter> emitters{};
-				std::vector<AudioSource> sources{};
+				utl::vector<AudioEmitter> emitters{};
+				utl::vector<AudioSource> sources{};
 
 				bool operator==(const Audio& other) const
 				{
@@ -809,7 +808,7 @@ namespace easygltf
 			// https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_materials_variants/schema/glTF.KHR_materials_variants.schema.json
 			struct MaterialVariants : Default
 			{
-				std::vector<Variant> variants{}; // (required)
+				utl::vector<Variant> variants{}; // (required)
 
 				bool operator==(const MaterialVariants& other) const
 				{
@@ -822,7 +821,7 @@ namespace easygltf
 			struct Mapping : Default
 			{
 				std::string name{};
-				std::vector<int32_t> variants{}; // (required)
+				utl::vector<int32_t> variants{}; // (required)
 				int32_t material{ base::constants::not_set }; // (required)
 
 				bool operator==(const Mapping& other) const
@@ -836,7 +835,7 @@ namespace easygltf
 			// https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_materials_variants/schema/mesh.primitive.KHR_materials_variants.schema.json
 			struct MaretialVariant : Default
 			{
-				std::vector<Mapping> mappings{}; // (required)
+				utl::vector<Mapping> mappings{}; // (required)
 
 				bool operator==(const MaretialVariant& other) const
 				{
@@ -930,7 +929,7 @@ namespace easygltf
 
 			struct LightsPunctual : Default
 			{
-				std::vector<Light> lights{}; // (required)
+				utl::vector<Light> lights{}; // (required)
 
 				bool operator==(const LightsPunctual& other) const
 				{
@@ -1055,8 +1054,8 @@ namespace easygltf
 		int32_t componentType{ base::constants::not_set }; // (required)
 		std::string type{ }; // (required)
 
-		std::vector<double> min{};
-		std::vector<double> max{};
+		utl::vector<double> min{};
+		utl::vector<double> max{};
 
 		SparseAccessor sparse{};
 
@@ -1119,8 +1118,8 @@ namespace easygltf
 	struct Animation : public Default
 	{
 		std::string name{};
-		std::vector<AnimationChannel> channels; // (required)
-		std::vector<AnimationSampler> samplers; // (required)
+		utl::vector<AnimationChannel> channels; // (required)
+		utl::vector<AnimationSampler> samplers; // (required)
 
 		bool operator==(const Animation& other) const
 		{
@@ -1154,7 +1153,7 @@ namespace easygltf
 		std::string uri{};
 		size_t byteLength{ 0ull }; // (required)
 
-		std::vector<uint8_t> data{};
+		utl::vector<uint8_t> data{};
 
 		bool operator==(const Buffer& other) const
 		{
@@ -1324,7 +1323,7 @@ namespace easygltf
 	struct Primitive : public Default
 	{
 		std::unordered_map<std::string, int32_t> attributes; // (required)
-		std::vector<std::unordered_map<std::string, int32_t>> targets;
+		utl::vector<std::unordered_map<std::string, int32_t>> targets;
 
 		int32_t material{ base::constants::not_set };
 		int32_t indices{ base::constants::not_set };
@@ -1350,8 +1349,8 @@ namespace easygltf
 	struct Mesh : public Default
 	{
 		std::string name;
-		std::vector<Primitive> primitives; // (required)
-		std::vector<double> weights;
+		utl::vector<Primitive> primitives; // (required)
+		utl::vector<double> weights;
 
 		extensions::EXT_lights_shadows::CastShadows extLightShadows{};
 
@@ -1373,12 +1372,12 @@ namespace easygltf
 		int32_t skin{ base::constants::not_set };
 		int32_t mesh{ base::constants::not_set };
 
-		std::vector<int32_t> children;
+		utl::vector<int32_t> children;
 		dvec3 translation{ base::constants::dvec3zeros }; // (required)
 		dvec4 rotation{ base::constants::dvec4quat_default }; // (required)
 		dvec3 scale{ base::constants::dvec3ones }; // (required)
 		dmat4 matrix{ base::constants::dmat4identity }; // (required)
-		std::vector<double> weights{};
+		utl::vector<double> weights{};
 
 		// Extensions
 		extensions::KHR_audio::AudioNode khrAudio{};
@@ -1419,7 +1418,7 @@ namespace easygltf
 	struct Scene : public Default
 	{
 		std::string name;
-		std::vector<int32_t> nodes;
+		utl::vector<int32_t> nodes;
 
 		extensions::KHR_audio::AudioScene khrAudio{};
 
@@ -1437,7 +1436,7 @@ namespace easygltf
 		std::string name{};
 		int32_t inverseBindMatrices{ base::constants::not_set };
 		int32_t skeleton{ base::constants::not_set };
-		std::vector<int32_t> joints{}; // (required)
+		utl::vector<int32_t> joints{}; // (required)
 
 		bool operator==(const Skin& other) const
 		{
@@ -1482,20 +1481,20 @@ namespace easygltf
 		Stream getStream(const Accessor& accessor) const;
 		Stream getStream(int32_t accessor_id) const;
 
-		std::vector<Accessor> accessors{};
-		std::vector<Animation> animations{};
+		utl::vector<Accessor> accessors{};
+		utl::vector<Animation> animations{};
 		Asset asset{};
-		std::vector<Buffer> buffers{};
-		std::vector<BufferView> bufferViews{};
-		std::vector<Camera> cameras{};
-		std::vector<Image> images{};
-		std::vector<Material> materials{};
-		std::vector<Mesh> meshes{};
-		std::vector<Node> nodes{};
-		std::vector<Sampler> samplers{};
-		std::vector<Scene> scenes{};
-		std::vector<Skin> skins{};
-		std::vector<Texture> textures{};
+		utl::vector<Buffer> buffers{};
+		utl::vector<BufferView> bufferViews{};
+		utl::vector<Camera> cameras{};
+		utl::vector<Image> images{};
+		utl::vector<Material> materials{};
+		utl::vector<Mesh> meshes{};
+		utl::vector<Node> nodes{};
+		utl::vector<Sampler> samplers{};
+		utl::vector<Scene> scenes{};
+		utl::vector<Skin> skins{};
+		utl::vector<Texture> textures{};
 
 		// Extensions
 		extensions::KHR_audio::Audio khrAudio{};
@@ -1527,8 +1526,8 @@ namespace easygltf
 
 		virtual bool exists(const std::string& path) = 0;
 		virtual std::string expandFilePath(const std::string& path) = 0;
-		virtual bool readFile(const std::string& path, std::vector<uint8_t>& data) = 0;
-		virtual bool writeFile(const std::string& path, const std::vector<uint8_t>& data) = 0;
+		virtual bool readFile(const std::string& path, utl::vector<uint8_t>& data) = 0;
+		virtual bool writeFile(const std::string& path, const utl::vector<uint8_t>& data) = 0;
 		virtual size_t fileSize(const std::string& path) = 0;
 	};
 

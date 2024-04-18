@@ -1,8 +1,6 @@
 #pragma once
 
-#include <string>
-#include <vector>
-#include <ostream>
+#include <standart_library.h>
 
 namespace engine
 {
@@ -71,7 +69,7 @@ namespace engine
 			 * @param buffer The buffer to store the characters read.
 			 * @return A reference to the IVFSInputFileInterface object.
 			 */
-			virtual IVFSInputFileInterface& read(std::vector<uint8_t>& buffer) = 0;
+			virtual IVFSInputFileInterface& read(utl::vector<uint8_t>& buffer) = 0;
 
 			/**
 			 * @brief Puts the last character read back into the input file.

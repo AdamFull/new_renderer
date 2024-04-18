@@ -12,7 +12,7 @@ namespace engine
 	{
 		struct FDependencyTree
 		{
-			std::vector<std::unordered_set<u64>> passDependencies{};
+			utl::vector<std::unordered_set<u64>> passDependencies{};
 		};
 
 		class CRenderGraph : public IRenderGraph
@@ -57,33 +57,33 @@ namespace engine
 		private:
 			void applyRenderPassResources(u64 pass_index, const FRenderConfigPassCreateInfo* raw_pass_ci, FPassCreateInfo* pass_ci);
 			void applySingleRenderResourceDependencies(u64 resource_id, ERenderResourceAccessFlagBits access_type, u64 pass_index, EQueueTypeFlagBits queue_type);
-			void applyMultiRenderResourceDependencies(u64 pass_index, EQueueTypeFlagBits queue_type, const utl::hash_map<ERenderResourceGroupType, std::vector<FRenderResourceBinding>>& associated_resources);
+			void applyMultiRenderResourceDependencies(u64 pass_index, EQueueTypeFlagBits queue_type, const utl::hash_map<ERenderResourceGroupType, utl::vector<FRenderResourceBinding>>& associated_resources);
 
 			void traverseDependencies(u64 current_pass_index, u64 stack_count = 0ull);
 			void traverseDependencies2(u64 current_pass_index, u64 stack_count = 0ull);
 			bool checkPassDependencies(u64 dst_pass, u64 src_pass);
-			void reorderPasses(std::vector<u64>& flattened_passes);
+			void reorderPasses(utl::vector<u64>& flattened_passes);
 		protected:
-			std::vector<std::unique_ptr<IBufferObject>> m_vBufferHandlers{};
-			std::vector<FRenderResource> m_vRenderResources{};
+			utl::vector<std::unique_ptr<IBufferObject>> m_vBufferHandlers{};
+			utl::vector<FRenderResource> m_vRenderResources{};
 			utl::hash_map<std::string, u64> m_nameToResource{};
 			u64 m_backBufferResource{ INVALID_HANDLE };
 
-			std::vector<FViewportView> m_vViewports{};
+			utl::vector<FViewportView> m_vViewports{};
 			utl::hash_map<std::string, u64> m_nameToViewport{};
 			u64 m_defaultViewport{ INVALID_HANDLE };
 
-			std::vector<FViewport> m_vViewportBuffer{};
+			utl::vector<FViewport> m_vViewportBuffer{};
 
-			std::vector<std::unique_ptr<IBasePass>> m_vRenderPasses{};
+			utl::vector<std::unique_ptr<IBasePass>> m_vRenderPasses{};
 			utl::hash_map<std::string, u64> m_nameToPass{};
 		private:
-			utl::hash_map<u64, std::vector<FResourceBarrierInfo>> m_perPassResourceBarriers{};
+			utl::hash_map<u64, utl::vector<FResourceBarrierInfo>> m_perPassResourceBarriers{};
 
-			std::vector<u64> m_vPassExecutionQueue{};
-			std::vector<u64> m_vPassOrder{};
-			std::vector<std::unordered_set<u64>> m_vPassDependencies{};
-			std::vector<std::unordered_set<u64>> m_vPassMergeDependencies{};
+			utl::vector<u64> m_vPassExecutionQueue{};
+			utl::vector<u64> m_vPassOrder{};
+			utl::vector<std::unordered_set<u64>> m_vPassDependencies{};
+			utl::vector<std::unordered_set<u64>> m_vPassMergeDependencies{};
 			IRenderInterface* m_pRenderInterface{ nullptr };
 		};
 	}

@@ -86,7 +86,7 @@ struct FShaderNameInfo
 {
 	std::string library_name;
 	std::string shader_name;
-	std::vector<std::string> definitions;
+	utl::vector<std::string> definitions;
 };
 
 FShaderNameInfo get_shader_name_info(const std::string& shader_name)
@@ -144,7 +144,7 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 
 	m_pRenderScriptCore->create(this);
 
-	std::vector<uint8_t> render_config{};
+	utl::vector<uint8_t> render_config{};
 	m_pVFS->readFile("/root/embed/rendering/test_render_config.lua", render_config);
 	m_pRenderScriptCore->build("render_config", render_config);
 
@@ -231,7 +231,7 @@ u64 CRenderInterface::loadTexture(const std::string& path, FTextureCreateInfo& c
 	if (texture_id != INVALID_HANDLE)
 		return texture_id;
 
-	std::vector<uint8_t> data{};
+	utl::vector<uint8_t> data{};
 	m_pVFS->readFile(path, data);
 
 	m_pResourceLoader->loadTexture(data, mime, create_info, upload_info);

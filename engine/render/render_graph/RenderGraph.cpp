@@ -27,7 +27,7 @@ struct FResourceAccessInfo
 	u64 dstPassIndex{ INVALID_HANDLE };
 };
 
-void filter_pass_queue(std::vector<u64>& pass_list)
+void filter_pass_queue(utl::vector<u64>& pass_list)
 {
 	std::unordered_set<u64> seen;
 
@@ -653,7 +653,7 @@ void CRenderGraph::build()
 		m_vPassOrder.at(pass_index) = pass_order++;
 
 	// Generate dependency barriers
-	std::vector<std::vector<FResourceAccessInfo>> per_pass_resource_access{};
+	utl::vector<utl::vector<FResourceAccessInfo>> per_pass_resource_access{};
 	utl::hash_map<FRenderResourceBindingKey, u64> unique_barrier_counter;
 	utl::hash_map<FRenderResourceBinding, u64> unique_resource_writes{};
 
@@ -886,7 +886,7 @@ void CRenderGraph::execute(f32 dt)
 	}
 
 	auto& backbuffer_resource = m_vRenderResources.at(m_backBufferResource);
-	std::vector<FResourceBarrierInfo> backbuffer_barriers{};
+	utl::vector<FResourceBarrierInfo> backbuffer_barriers{};
 
 	auto& backbuffer_barrier = backbuffer_barriers.emplace_back();
 	backbuffer_barrier.resource.handle = backbuffer_resource.handle;
@@ -982,7 +982,7 @@ void CRenderGraph::applySingleRenderResourceDependencies(u64 resource_id, ERende
 	render_resource.queuesUsed |= queue_type;
 }
 
-void CRenderGraph::applyMultiRenderResourceDependencies(u64 pass_index, EQueueTypeFlagBits queue_type, const utl::hash_map<ERenderResourceGroupType, std::vector<FRenderResourceBinding>>& associated_resources)
+void CRenderGraph::applyMultiRenderResourceDependencies(u64 pass_index, EQueueTypeFlagBits queue_type, const utl::hash_map<ERenderResourceGroupType, utl::vector<FRenderResourceBinding>>& associated_resources)
 {
 	for (const auto& [type, resource_bindings] : associated_resources)
 	{
@@ -1049,7 +1049,7 @@ bool CRenderGraph::checkPassDependencies(u64 dst_pass, u64 src_pass)
 	return false;
 }
 
-void CRenderGraph::reorderPasses(std::vector<u64>& flattened_passes)
+void CRenderGraph::reorderPasses(utl::vector<u64>& flattened_passes)
 {
 	for (const auto& pass_merge_deps : m_vPassMergeDependencies)
 	{
@@ -1073,7 +1073,7 @@ void CRenderGraph::reorderPasses(std::vector<u64>& flattened_passes)
 	if (flattened_passes.size() <= 2ull)
 		return;
 
-	std::vector<u64> unscheduled_passes;
+	utl::vector<u64> unscheduled_passes;
 	unscheduled_passes.reserve(m_vRenderPasses.size());
 	std::swap(flattened_passes, unscheduled_passes);
 

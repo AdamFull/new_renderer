@@ -26,7 +26,7 @@
 		layout(set = 1, binding = 0) uniform sampler2D input_image;
 		layout(set = 1, binding = 1, r32f) uniform image2D avg_luminosity;
 		layout(set = 1, binding = 2) uniform sampler2D motion_vectors;
-		layout(set = 1, binding = 3) uniform sampler2D bloom_blur;
+		//layout(set = 1, binding = 3) uniform sampler2D bloom_blur;
 
 		vec2 barrelDistortion(vec2 coord, float amt) {
 			vec2 cc = coord - 0.5;
@@ -126,7 +126,7 @@
 
 			if(postprocess.enable_bloom > 0)
 			{
-				color.rgb = mix(color.rgb, texture(bloom_blur, inUV).rgb, vec3(postprocess.b_bloom_strength));
+				//color.rgb = mix(color.rgb, texture(bloom_blur, inUV).rgb, vec3(postprocess.b_bloom_strength));
 			}
 
 			if(postprocess.enable_motion_blur > 0)

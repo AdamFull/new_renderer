@@ -76,7 +76,7 @@ namespace engine
             /**
              * @brief A vector of strings representing the entries in the archive.
              */
-            std::vector<std::string> entries_;
+            utl::vector<std::string> entries_;
         };
     }
 }

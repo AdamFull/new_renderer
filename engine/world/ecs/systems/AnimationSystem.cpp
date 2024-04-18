@@ -8,7 +8,7 @@
 
 using namespace engine::world::ecs;
 
-glm::quat q_linear(const std::vector<glm::vec4>& positions, uint32_t index, const float interp)
+glm::quat q_linear(const utl::vector<glm::vec4>& positions, uint32_t index, const float interp)
 {
 	auto& prev = positions[index];
 	auto& next = positions[index + 1];
@@ -28,14 +28,14 @@ glm::quat q_linear(const std::vector<glm::vec4>& positions, uint32_t index, cons
 	return glm::normalize(glm::slerp(prevq, nextq, interp));
 }
 
-glm::vec3 v_linear(const std::vector<glm::vec4>& positions, uint32_t index, const float interp)
+glm::vec3 v_linear(const utl::vector<glm::vec4>& positions, uint32_t index, const float interp)
 {
 	auto& prev = positions[index];
 	auto& next = positions[index + 1];
 	return glm::mix(prev, next, interp);
 }
 
-glm::quat q_step(const std::vector<glm::vec4>& positions, uint32_t index, const float interp)
+glm::quat q_step(const utl::vector<glm::vec4>& positions, uint32_t index, const float interp)
 {
 	auto& pos = positions[index + 1];
 	glm::quat q;
@@ -47,12 +47,12 @@ glm::quat q_step(const std::vector<glm::vec4>& positions, uint32_t index, const 
 	return glm::normalize(q);
 }
 
-glm::vec3 v_step(const std::vector<glm::vec4>& positions, uint32_t index, const float interp)
+glm::vec3 v_step(const utl::vector<glm::vec4>& positions, uint32_t index, const float interp)
 {
 	return positions[index + 1];
 }
 
-glm::vec4 cubicspline(const std::vector<glm::vec4>& positions, uint32_t index, const float interp)
+glm::vec4 cubicspline(const utl::vector<glm::vec4>& positions, uint32_t index, const float interp)
 {
 	auto t = interp;
 	auto t2 = t * t;
@@ -69,7 +69,7 @@ glm::vec4 cubicspline(const std::vector<glm::vec4>& positions, uint32_t index, c
 	return (2 * t3 - 3 * t2 + 1) * prev + (t3 - 2 * t2 + t) * prevTangent + (-2 * t3 + 3 * t2) * next + (t3 - t2) * nextTangent;
 }
 
-glm::vec3 v_interpolate(EInterpolationType interpolation, const std::vector<glm::vec4>& positions, uint32_t index, const float interp)
+glm::vec3 v_interpolate(EInterpolationType interpolation, const utl::vector<glm::vec4>& positions, uint32_t index, const float interp)
 {
 	if (interpolation == EInterpolationType::eLinear)
 		return v_linear(positions, index, interp);
@@ -79,7 +79,7 @@ glm::vec3 v_interpolate(EInterpolationType interpolation, const std::vector<glm:
 		return cubicspline(positions, index, interp);
 }
 
-glm::quat q_interpolate(EInterpolationType interpolation, const std::vector<glm::vec4>& positions, uint32_t index, const float interp)
+glm::quat q_interpolate(EInterpolationType interpolation, const utl::vector<glm::vec4>& positions, uint32_t index, const float interp)
 {
 	if (interpolation == EInterpolationType::eLinear)
 		return q_linear(positions, index, interp);

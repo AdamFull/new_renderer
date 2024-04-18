@@ -136,7 +136,7 @@ void CVkRenderContext::createGlobalDescriptor(const FGlobalUniformCreateInfo& un
 	global_textures_binding.pImmutableSamplers = nullptr;
 
 	// Descriptor binding extension
-	std::vector<vk::DescriptorBindingFlags> bindingFlags{};
+	utl::vector<vk::DescriptorBindingFlags> bindingFlags{};
 	bindingFlags.emplace_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
 	bindingFlags.emplace_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
 	bindingFlags.emplace_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
@@ -160,7 +160,7 @@ void CVkRenderContext::createGlobalDescriptor(const FGlobalUniformCreateInfo& un
 	set_ci.pool = m_globalDescriptor.descriptorPool.handle;
 
 	// TODO: Potential problems here in future. I think that max_sets array is incorrect
-	std::vector<u32> max_sets(m_pDevice->m_swapchain.framesInFlight, k_max_bindless_resources - 1);
+	utl::vector<u32> max_sets(m_pDevice->m_swapchain.framesInFlight, k_max_bindless_resources - 1);
 	vk::DescriptorSetVariableDescriptorCountAllocateInfoEXT descriptor_set_variable_descriptor_count_AIEXT{};
 	descriptor_set_variable_descriptor_count_AIEXT.descriptorSetCount = m_pDevice->m_swapchain.framesInFlight;
 	descriptor_set_variable_descriptor_count_AIEXT.pDescriptorCounts = max_sets.data();
@@ -207,7 +207,7 @@ void CVkRenderContext::updateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 
 	std::array<vk::DescriptorImageInfo, k_max_texture_update_per_frame> image_descriptors{};
 	std::array<vk::DescriptorBufferInfo, k_max_buffer_update_per_frame> buffer_descriptors{};
-	std::vector<vk::WriteDescriptorSet> write_descriptor_sets{};
+	utl::vector<vk::WriteDescriptorSet> write_descriptor_sets{};
 
 	auto& textures = m_pResources->data<FVkTexture>();
 
@@ -285,7 +285,7 @@ void CVkRenderContext::updateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 	}
 }
 
-const std::vector<uint32_t>& CVkRenderContext::getGlobalTextureRemap()
+const utl::vector<uint32_t>& CVkRenderContext::getGlobalTextureRemap()
 {
 	return m_textureIndexRemap;
 }
@@ -348,7 +348,7 @@ void CVkRenderContext::destroyTexture(u64 resource_id)
 }
 
 
-u64 CVkRenderContext::createShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages)
+u64 CVkRenderContext::createShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages)
 {
 	const char* shaderEntryPoint{ "main" };
 
@@ -466,13 +466,13 @@ u64 CVkRenderContext::createShader(const std::string& name, const FGraphicsShade
 	return m_pResources->add<FVkShader>(shader_unique_name.c_str(), std::move(shader));
 }
 
-u64 CVkRenderContext::createShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages)
+u64 CVkRenderContext::createShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages)
 {
 	const char* shaderEntryPoint{ "main" };
 
 	auto shader = std::make_unique<FVkShader>();
 	CVkShaderReflectionBuilder reflection_builder{};
-	std::vector<vk::PipelineShaderStageCreateInfo> pipeline_stages{};
+	utl::vector<vk::PipelineShaderStageCreateInfo> pipeline_stages{};
 
 	// Create shader modules and collect reflection data
 	for (u64 idx = 0ull; idx < shader_stages.size(); ++idx)
@@ -541,7 +541,7 @@ u64 CVkRenderContext::createShader(const std::string& name, const FComputeShader
 	return m_pResources->add<FVkShader>(shader_unique_name.c_str(), std::move(shader));
 }
 
-u64 CVkRenderContext::createShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages)
+u64 CVkRenderContext::createShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages)
 {
 	const char* shaderEntryPoint{ "main" };
 
@@ -855,7 +855,7 @@ void CVkRenderContext::bindVertexBuffers(const FVertexBufferBindingInfo& binding
 	auto& command_buffer = getLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
 
-	std::vector<vk::Buffer> buffers{};
+	utl::vector<vk::Buffer> buffers{};
 	for (const auto& buffer_id : binding_info.buffers)
 		buffers.emplace_back(m_pResources->get<FVkBuffer>(buffer_id)->handle);
 
@@ -902,7 +902,7 @@ void CVkRenderContext::destroyBuffer(u64 resource_id)
 	m_destroyResource.push(FAPIObjectDestroyInfo{ resource_id, EResourceFlagBits::eBuffer });
 }
 
-void CVkRenderContext::pushG2CBarriers(EQueueTypeFlagBits queue_type, const std::vector<u64>& texture_ids)
+void CVkRenderContext::pushG2CBarriers(EQueueTypeFlagBits queue_type, const utl::vector<u64>& texture_ids)
 {
 	auto& command_buffer = getLastCommandBuffer(queue_type);
 	auto& textures = m_pResources->data<FVkTexture>();
@@ -946,7 +946,7 @@ void CVkRenderContext::pushC2CBarrier(EQueueTypeFlagBits queue_type)
 	processMemoryBarriers(command_buffer, translation_info);
 }
 
-void CVkRenderContext::pushC2GBarrier(EQueueTypeFlagBits queue_type, const std::vector<u64>& texture_ids)
+void CVkRenderContext::pushC2GBarrier(EQueueTypeFlagBits queue_type, const utl::vector<u64>& texture_ids)
 {
 	auto& command_buffer = getLastCommandBuffer(queue_type);
 	auto& textures = m_pResources->data<FVkTexture>();
@@ -981,7 +981,7 @@ void CVkRenderContext::pushC2GBarrier(EQueueTypeFlagBits queue_type, const std::
 	processMemoryBarriers(command_buffer, translation_info);
 }
 
-void CVkRenderContext::processResourceBarriers(EQueueTypeFlagBits queue, const std::vector<FResourceBarrierInfo>& barriers)
+void CVkRenderContext::processResourceBarriers(EQueueTypeFlagBits queue, const utl::vector<FResourceBarrierInfo>& barriers)
 {
 	auto& command_buffer = getLastCommandBuffer(queue);
 
@@ -1109,7 +1109,7 @@ void CVkRenderContext::beginRendering(const FBeginRendering2Info& rendering_info
 	clear_values[2].depthStencil = vk::ClearDepthStencilValue{ 1.f, 0u };
 
 	// Prepare render targets
-	std::vector<vk::RenderingAttachmentInfoKHR> color_attachments{};
+	utl::vector<vk::RenderingAttachmentInfoKHR> color_attachments{};
 	if (rendering_info.colorAttachments)
 	{
 		for (const auto& color_attachment_info : *rendering_info.colorAttachments)
@@ -1230,7 +1230,7 @@ void CVkRenderContext::endCompute(EQueueTypeFlagBits queue)
 
 void CVkRenderContext::processMemoryBarriers(const FVkCommandBuffer& command_buffer, const FVkTranslationInfo& translation_info)
 {
-	std::vector<vk::ImageMemoryBarrier2KHR> image_barriers{};
+	utl::vector<vk::ImageMemoryBarrier2KHR> image_barriers{};
 	for (const auto& image_info : translation_info.imageTranslationInfos)
 	{
 		auto& image_barrier = image_barriers.emplace_back();
@@ -1251,7 +1251,7 @@ void CVkRenderContext::processMemoryBarriers(const FVkCommandBuffer& command_buf
 		image_barrier.subresourceRange = image_info.subresourceRange;
 	}
 
-	std::vector<vk::BufferMemoryBarrier2KHR> buffer_barriers{};
+	utl::vector<vk::BufferMemoryBarrier2KHR> buffer_barriers{};
 	for (const auto& buffer_info : translation_info.bufferTranslationInfos)
 	{
 		auto& buffer_barrier = buffer_barriers.emplace_back();
@@ -1269,7 +1269,7 @@ void CVkRenderContext::processMemoryBarriers(const FVkCommandBuffer& command_buf
 		buffer_barrier.offset = buffer_info.offset;
 	}
 
-	std::vector<vk::MemoryBarrier2KHR> memory_barriers{};
+	utl::vector<vk::MemoryBarrier2KHR> memory_barriers{};
 	for (const auto& memory_info : translation_info.memoryTranslationInfos)
 	{
 		auto& memory_barrier = memory_barriers.emplace_back();
@@ -1608,7 +1608,7 @@ FVkCommandBuffer& CVkRenderContext::getCommandBuffer(EQueueTypeFlagBits queue_ty
 	return per_queue.commandBuffers.at(index);
 }
 
-std::vector<FVkCommandBuffer>& CVkRenderContext::getCommandBuffers(EQueueTypeFlagBits queue_type, std::thread::id thread_id)
+utl::vector<FVkCommandBuffer>& CVkRenderContext::getCommandBuffers(EQueueTypeFlagBits queue_type, std::thread::id thread_id)
 {
 	auto& thread_context = m_perThreadContext[thread_id];
 	auto& per_queue = thread_context.perQueue[queue_type];
@@ -1692,7 +1692,7 @@ void CVkRenderContext::endFrame()
 	catch (vk::OutOfDateKHRError err) { presentResult = vk::Result::eErrorOutOfDateKHR; }
 	catch (vk::SystemError err) { log_error("failed to present swap chain image!"); }
 
-	std::vector<f32> results{};
+	utl::vector<f32> results{};
 	auto timestamp_result = m_pDevice->getTimestampQueryResults(m_timestampQuery, m_renderStats.timestampResults);
 	if (!timestamp_result.fault)
 	{
@@ -1857,7 +1857,7 @@ void CVkRenderContext::processResourceUpload()
 
 	m_pDevice->beginCommandBuffer(command_buffer, vk::CommandBufferUsageFlagBits::eOneTimeSubmit, 0u);
 
-	std::vector<FVkBuffer> staging_buffers{};
+	utl::vector<FVkBuffer> staging_buffers{};
 
 	// Upload textures
 	{
@@ -1887,7 +1887,7 @@ void CVkRenderContext::processResourceUpload()
 		}
 
 		// Translate all images to transfer dst stage
-		std::vector<u64> generate_mip_textures{};
+		utl::vector<u64> generate_mip_textures{};
 		FVkTranslationInfo translation_info{};
 		for (const auto& texture_upload : m_textureUploadInfos)
 		{
@@ -1919,7 +1919,7 @@ void CVkRenderContext::processResourceUpload()
 
 			auto aspect_mask = get_texture_aspect_flags(*texture);
 
-			std::vector<vk::BufferImageCopy2KHR> copy_regions{};
+			utl::vector<vk::BufferImageCopy2KHR> copy_regions{};
 			if (!texture_upload.mipLayerOffsets.empty())
 			{
 				for (u32 layer = 0u; layer < texture->totalLayers; ++layer)
@@ -2446,7 +2446,7 @@ void CVkRenderContext::destroyShader(FVkShader& shader)
 
 void CVkRenderContext::bindShaderDescriptors(const FVkCommandBuffer& command_buffer, const FVkShader& shader)
 {
-	std::vector<vk::DescriptorSet> bindDescriptorSets{};
+	utl::vector<vk::DescriptorSet> bindDescriptorSets{};
 
 	// NOTE: bind global descriptor set
 	bindDescriptorSets.emplace_back(m_globalDescriptor.descriptorSet.handles.at(m_pDevice->m_swapchain.currentFrame));
@@ -2486,7 +2486,7 @@ void CVkRenderContext::textureLayoutTranslation(const FVkCommandBuffer& command_
 	processImageLayoutTranslation(command_buffer, image_layout_translation);
 }
 
-void CVkRenderContext::copyBufferToTexture(const FVkCommandBuffer& command_buffer, const FVkBuffer& buffer, const FVkTexture& texture, const std::vector<vk::BufferImageCopy2KHR>& copy_regions)
+void CVkRenderContext::copyBufferToTexture(const FVkCommandBuffer& command_buffer, const FVkBuffer& buffer, const FVkTexture& texture, const utl::vector<vk::BufferImageCopy2KHR>& copy_regions)
 {
 	auto& current_buffer = command_buffer.get();
 	auto& target_subresource = texture.mips[0];

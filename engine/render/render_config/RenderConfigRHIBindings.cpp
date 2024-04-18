@@ -338,8 +338,8 @@ namespace engine
 				"IRenderContext",
 				"create_render_target", &IRenderContext::createRenderTarget,
 				"create_shader", sol::overload(
-					static_cast<u64(IRenderContext::*)(const std::string&, const FGraphicsShaderCreateInfo&, const std::vector<FShaderCreationBlockInfo>&)>(&IRenderContext::createShader),
-					static_cast<u64(IRenderContext::*)(const std::string&, const FComputeShaderCreateInfo&, const std::vector<FShaderCreationBlockInfo>&)>(&IRenderContext::createShader)
+					static_cast<u64(IRenderContext::*)(const std::string&, const FGraphicsShaderCreateInfo&, const utl::vector<FShaderCreationBlockInfo>&)>(&IRenderContext::createShader),
+					static_cast<u64(IRenderContext::*)(const std::string&, const FComputeShaderCreateInfo&, const utl::vector<FShaderCreationBlockInfo>&)>(&IRenderContext::createShader)
 				),
 				"get_texture_resource", &IRenderContext::getTextureResource,
 				"get_shader_resource", &IRenderContext::getShaderResource,

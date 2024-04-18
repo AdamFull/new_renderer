@@ -74,7 +74,7 @@ namespace engine
 			return get(id);
 		}
 
-		std::vector<std::unique_ptr<_Ty>>& data()
+		utl::vector<std::unique_ptr<_Ty>>& data()
 		{
 			return objects;
 		}
@@ -90,7 +90,7 @@ namespace engine
 	private:
 		std::queue<resource_handle_t> freeIds{};
 		utl::hash_map<u64, resource_handle_t> nameToId{};
-		std::vector<std::unique_ptr<_Ty>> objects{};
+		utl::vector<std::unique_ptr<_Ty>> objects{};
 	};
 
 	class CResourceContainer
@@ -139,7 +139,7 @@ namespace engine
 		}
 
 		template<class _Ty>
-		std::vector<std::unique_ptr<_Ty>>& data()
+		utl::vector<std::unique_ptr<_Ty>>& data()
 		{
 			auto container = get_container<_Ty>();
 			return container->data();

@@ -18,19 +18,19 @@ using namespace engine::render::vulkan;
 
 void* vk_malloc(void* pUserData, u64 size, u64 alignment, VkSystemAllocationScope allocationScope)
 {
-	void* ptr = malloc(size);
+	void* ptr = mi_malloc(size);
 	memset(ptr, 0, size);
 	return ptr;
 }
 
 void vk_free(void* pUserData, void* pMemory)
 {
-	free(pMemory);
+	mi_free(pMemory);
 }
 
 void* vk_realloc(void* pUserData, void* pOriginal, u64 size, u64 alignment, VkSystemAllocationScope allocationScope)
 {
-	return realloc(pOriginal, size);
+	return mi_realloc(pOriginal, size);
 }
 
 void vk_malloc_notification(void* pUserData, u64  size, VkInternalAllocationType allocationType, VkSystemAllocationScope allocationScope)
@@ -381,7 +381,7 @@ void CVkRenderDevice::destroyDescriptorSetLayout(vk::DescriptorSetLayout& descri
 
 FRenderApiErrorInfo CVkRenderDevice::createDescriptorPool(const FVkDescriptorPoolCreateInfo& pool_ci, FVkDescriptorPool& descriptor_pool)
 {
-	std::vector<vk::DescriptorPoolSize> pool_sizes{ pool_ci.poolSizes };
+	utl::vector<vk::DescriptorPoolSize> pool_sizes{ pool_ci.poolSizes };
 
 	// Calculate total descriptor set count in descriptor pool and update descriptor sizes
 	u32 maxSets{ 1u };
@@ -423,7 +423,7 @@ void CVkRenderDevice::destroyDescriptorPool(FVkDescriptorPool& descriptor_pool)
 
 FRenderApiErrorInfo CVkRenderDevice::createDescriptorSet(const FVkDescriptorSetCreateInfo& set_ci, FVkDescriptorSet& descriptor_set)
 {
-	std::vector<vk::DescriptorSetLayout> per_frame_layout(set_ci.descriptorCount, set_ci.layout);
+	utl::vector<vk::DescriptorSetLayout> per_frame_layout(set_ci.descriptorCount, set_ci.layout);
 
 	vk::DescriptorSetAllocateInfo descriptor_ai{};
 	descriptor_ai.descriptorPool = set_ci.pool;
@@ -492,7 +492,7 @@ FRenderApiErrorInfo CVkRenderDevice::createPipeline(const FVkGraphicsPipelineCre
 	vertex_input_state.vertexBindingDescriptionCount = utl::cast<u32>(pipeline_ci.vertexBindingDescriptions.size());
 	vertex_input_state.pVertexBindingDescriptions = pipeline_ci.vertexBindingDescriptions.data();
 
-	std::vector<vk::PipelineColorBlendAttachmentState> color_blend_attachment_states{};
+	utl::vector<vk::PipelineColorBlendAttachmentState> color_blend_attachment_states{};
 	for (u32 idx = 0u; idx < pipeline_ci.colorAttachmentFormats.size(); ++idx)
 	{
 		auto& state = color_blend_attachment_states.emplace_back();
@@ -540,7 +540,7 @@ FRenderApiErrorInfo CVkRenderDevice::createPipeline(const FVkGraphicsPipelineCre
 	depth_stencil_state.depthBoundsTestEnable = false;
 	depth_stencil_state.stencilTestEnable = false; // TODO: implement stencil test
 
-	std::vector<vk::DynamicState> dynamic_states{ vk::DynamicState::eViewport, vk::DynamicState::eScissor };
+	utl::vector<vk::DynamicState> dynamic_states{ vk::DynamicState::eViewport, vk::DynamicState::eScissor };
 
 	vk::PipelineDynamicStateCreateInfo dynamic_state{};
 	dynamic_state.pDynamicStates = dynamic_states.data();
@@ -678,7 +678,7 @@ void CVkRenderDevice::writeTimestampQuery(FVkCommandBuffer& command_buffer, vk::
 	current_buffer.writeTimestamp(pipeline_state, timestamp_query.handle, timestamp_query.queryIndex++);
 }
 
-FRenderApiErrorInfo CVkRenderDevice::getTimestampQueryResults(FVkTimestampQuery& timestamp_query, std::vector<f32>& results)
+FRenderApiErrorInfo CVkRenderDevice::getTimestampQueryResults(FVkTimestampQuery& timestamp_query, utl::vector<f32>& results)
 {
 	vk::Result res = m_logicalDevice.handle.getQueryPoolResults(
 		timestamp_query.handle,
@@ -886,7 +886,7 @@ void CVkRenderDevice::initProfiler(const FVkCommandPool& command_pool)
 #endif
 }
 
-vk::Format CVkRenderDevice::findSupportedFormat(const std::vector<vk::Format>& candidates, bool depth_only)
+vk::Format CVkRenderDevice::findSupportedFormat(const utl::vector<vk::Format>& candidates, bool depth_only)
 {
 	auto& phusical_device = getPhysicalDevice();
 
@@ -988,9 +988,9 @@ const vk::PipelineCache& CVkRenderDevice::getPipelineCache() const
 	return m_pipelineCache;
 }
 
-std::vector<char> CVkRenderDevice::getPipelineCacheData() const
+utl::vector<char> CVkRenderDevice::getPipelineCacheData() const
 {
-	std::vector<char> pipeline_cache_data{};
+	utl::vector<char> pipeline_cache_data{};
 
 	u64 data_size{ 0ull };
 	void* data_ptr{ nullptr };
@@ -1044,7 +1044,7 @@ FRenderApiErrorInfo CVkRenderDevice::createInstance(const FRenderContextCreateIn
 	instance_ci.ppEnabledExtensionNames = instance_extensions.data();
 
 	// Apply validation features
-	std::vector<vk::ValidationFeatureEnableEXT> feature_enables{};
+	utl::vector<vk::ValidationFeatureEnableEXT> feature_enables{};
 	vk::ValidationFeaturesEXT validation_features{};
 
 	if (context_ci.validationFeatures & GPU_ASSISTED_FLAG_BIT)
@@ -1061,7 +1061,7 @@ FRenderApiErrorInfo CVkRenderDevice::createInstance(const FRenderContextCreateIn
 	validation_features.enabledValidationFeatureCount = utl::cast<u32>(feature_enables.size());
 	validation_features.pEnabledValidationFeatures = feature_enables.data();
 
-	std::vector<const char*> layer_names{};
+	utl::vector<const char*> layer_names{};
 	for (auto& layer_name : context_ci.validationLayers)
 		layer_names.emplace_back(layer_name.c_str());
 
@@ -1189,7 +1189,7 @@ void CVkRenderDevice::selectQueueFamilies(FVkPhysicalDevice& device_info)
 			unique_families.emplace(index);
 	}
 
-	device_info.queueFamilies.uniqueFamilies = std::vector<u32>(unique_families.begin(), unique_families.end());
+	device_info.queueFamilies.uniqueFamilies = utl::vector<u32>(unique_families.begin(), unique_families.end());
 }
 
 FRenderApiErrorInfo CVkRenderDevice::selectPhysicalDevice(const FRenderContextCreateInfo& context_ci)
@@ -1232,7 +1232,7 @@ FRenderApiErrorInfo CVkRenderDevice::selectPhysicalDevice(const FRenderContextCr
 		current_device.handle.getProperties2(&propertiesChain.get<vk::PhysicalDeviceProperties2>());
 		meshShaderProperties = propertiesChain.get<vk::PhysicalDeviceMeshShaderPropertiesEXT>();
 
-		std::vector<std::string> unsupported_extensions{};
+		utl::vector<std::string> unsupported_extensions{};
 		for (const auto& req : context_ci.requiredDeviceExtensions)
 		{
 			if (!check_contains_single(req, current_device.avaliableExtensions))
@@ -1349,8 +1349,8 @@ FRenderApiErrorInfo CVkRenderDevice::createLogicalDevice(const FRenderContextCre
 		m_requiredSampleCount = vk::SampleCountFlagBits::e1;
 
 	// Get queue create infos
-	std::vector<vk::DeviceQueueCreateInfo> queue_create_infos{};
-	utl::hash_map<u32, std::vector<f32>> queue_priorities{};
+	utl::vector<vk::DeviceQueueCreateInfo> queue_create_infos{};
+	utl::hash_map<u32, utl::vector<f32>> queue_priorities{};
 	for (auto& [index, usages] : physical_device.queueFamilies.familyUsages)
 	{
 		for (u64 usage = 0; usage < usages; ++usage)
@@ -1387,7 +1387,7 @@ FRenderApiErrorInfo CVkRenderDevice::createLogicalDevice(const FRenderContextCre
 	device_ci.pEnabledFeatures = &vk10features;
 	device_ci.pNext = m_logicalDevice.lastExtensionFeature;
 
-	std::vector<const char*> enabled_extension_names{};
+	utl::vector<const char*> enabled_extension_names{};
 	for (auto& ext_name : physical_device.avaliableExtensions)
 	{
 		auto ext_name_c = ext_name.c_str();
@@ -1398,7 +1398,7 @@ FRenderApiErrorInfo CVkRenderDevice::createLogicalDevice(const FRenderContextCre
 	device_ci.enabledExtensionCount = utl::cast<u32>(enabled_extension_names.size());
 	device_ci.ppEnabledExtensionNames = enabled_extension_names.data();
 
-	std::vector<const char*> layer_names{};
+	utl::vector<const char*> layer_names{};
 	for (auto& layer_name : context_ci.validationLayers)
 		layer_names.emplace_back(layer_name.c_str());
 

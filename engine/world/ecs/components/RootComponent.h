@@ -32,15 +32,15 @@ namespace engine
 			struct FAnimationSampler
 			{
 				EInterpolationType interpolation;
-				std::vector<float> inputs;
-				std::vector<glm::vec4> outputsVec4;
+				utl::vector<float> inputs;
+				utl::vector<glm::vec4> outputsVec4;
 			};
 
 			struct FMeshAnimation
 			{
 				std::string name;
-				std::vector<FAnimationSampler> samplers;
-				std::vector<FAnimationChannel> channels;
+				utl::vector<FAnimationSampler> samplers;
+				utl::vector<FAnimationChannel> channels;
 				float start = (std::numeric_limits<float>::max)();
 				float end = (std::numeric_limits<float>::min)();
 			};
@@ -49,15 +49,15 @@ namespace engine
 			{
 				std::string name;
 				entt::entity root{ entt::null };
-				std::vector<glm::mat4> inverseBindMatrices;
-				std::vector<entt::entity> joints;
-				std::vector<glm::mat4> jointMatrices;
+				utl::vector<glm::mat4> inverseBindMatrices;
+				utl::vector<entt::entity> joints;
+				utl::vector<glm::mat4> jointMatrices;
 			};
 
 			struct FRootComponent
 			{
-				std::vector<FMeshAnimation> animations;
-				std::vector<FMeshSkin> skins;
+				utl::vector<FMeshAnimation> animations;
+				utl::vector<FMeshSkin> skins;
 				utl::hash_map<uint32_t, uint32_t> skinRemap{};
 			};
 		}

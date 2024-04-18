@@ -60,7 +60,7 @@
     "meshoptimizer",
     "nlohmann-json",
     "mimalloc",
-    "eastl",
+    "benchmark",
     "directx-dxc"
   ]
 }

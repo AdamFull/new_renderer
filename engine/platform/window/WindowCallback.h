@@ -72,14 +72,14 @@ namespace engine
         }
 
     private:
-        static std::vector<utl::reactive::function<void(i32, i32)>> sizeChangeCallbacks;
-        static std::vector<utl::reactive::function<void(i32)>> focusChangeCallbacks;
-        static std::vector<utl::reactive::function<void(i32)>> cursorEnterCallbacks;
-        static std::vector<utl::reactive::function<void(EKeyCode, EKeyState)>> mouseButtonCallbacks;
-        static std::vector<utl::reactive::function<void(f32, f32, f32, f32)>> mousePositionCallbacks;
-        static std::vector<utl::reactive::function<void(f32, f32)>> scrollCallbacks;
-        static std::vector<utl::reactive::function<void(EKeyCode, EKeyState)>> keyCallbacks;
-        static std::vector<utl::reactive::function<void(u32)>> charCallbacks;
-        static std::vector<utl::reactive::function<void(i32)>> monitorCallbacks;
+        static utl::vector<utl::reactive::function<void(i32, i32)>> sizeChangeCallbacks;
+        static utl::vector<utl::reactive::function<void(i32)>> focusChangeCallbacks;
+        static utl::vector<utl::reactive::function<void(i32)>> cursorEnterCallbacks;
+        static utl::vector<utl::reactive::function<void(EKeyCode, EKeyState)>> mouseButtonCallbacks;
+        static utl::vector<utl::reactive::function<void(f32, f32, f32, f32)>> mousePositionCallbacks;
+        static utl::vector<utl::reactive::function<void(f32, f32)>> scrollCallbacks;
+        static utl::vector<utl::reactive::function<void(EKeyCode, EKeyState)>> keyCallbacks;
+        static utl::vector<utl::reactive::function<void(u32)>> charCallbacks;
+        static utl::vector<utl::reactive::function<void(i32)>> monitorCallbacks;
 	};
 }

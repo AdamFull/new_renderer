@@ -24,14 +24,14 @@ namespace engine
 	{
 		EAxisType type{};
 		utl::hash_map<EKeyCode, f32> keyValue{};
-		std::vector<utl::reactive::function<void(f32)>> callbacks{};
+		utl::vector<utl::reactive::function<void(f32)>> callbacks{};
 	};
 
 	struct FInputAction
 	{
-		std::vector<EKeyCode> keys{};
+		utl::vector<EKeyCode> keys{};
 		EKeyState state{ EKeyState::eReleased };
-		std::vector<utl::reactive::function<void(EKeyState)>> callbacks{};
+		utl::vector<utl::reactive::function<void(EKeyState)>> callbacks{};
 	};
 
 	class CInputMapper

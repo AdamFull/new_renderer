@@ -319,7 +319,7 @@ bool CGLSLANGCompiler::preprocess(const std::string& shader_code, const FCompile
 	return true;
 }
 
-std::vector<u32> CGLSLANGCompiler::compile(const std::string& shader_code, const FCompileInfo& info)
+utl::vector<u32> CGLSLANGCompiler::compile(const std::string& shader_code, const FCompileInfo& info)
 {
 	std::vector<u32> spirv{};
 
@@ -431,5 +431,5 @@ std::vector<u32> CGLSLANGCompiler::compile(const std::string& shader_code, const
 	//	std::memcpy(spirv.data(), cross_compiled.data(), cross_compiled.size());
 	//}
 
-	return spirv;
+	return utl::vector<u32>(spirv.begin(), spirv.end());
 }

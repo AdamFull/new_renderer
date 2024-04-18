@@ -36,13 +36,13 @@ namespace engine
 
 			struct FVkSpecializationConstantData
 			{
-				std::vector<vk::SpecializationMapEntry> entries{};
+				utl::vector<vk::SpecializationMapEntry> entries{};
 				vk::SpecializationInfo info{};
 			};
 
 			struct FVkShaderReflectionData
 			{
-				std::vector<std::array<uint32_t, 3ull>> localSizes;
+				utl::vector<std::array<uint32_t, 3ull>> localSizes;
 				uint32_t executionModeInvocations{ 0 };
 				uint32_t executionModeOutputVertices{ 0 };
 
@@ -51,21 +51,21 @@ namespace engine
 				utl::hash_map<size_t, FVkReflectionPushConstantBlock> pushBlocks;
 				utl::hash_map<size_t, FVkReflectionSpecializationConstant> specializationConstants;
 
-				std::vector<char> specializationDataBuffer{};
+				utl::vector<char> specializationDataBuffer{};
 
-				utl::hash_map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>> descriptorSetLayoutBindings;
-				std::vector<vk::DescriptorPoolSize> descriptorPoolSizes;
+				utl::hash_map<uint32_t, utl::vector<vk::DescriptorSetLayoutBinding>> descriptorSetLayoutBindings;
+				utl::vector<vk::DescriptorPoolSize> descriptorPoolSizes;
 				utl::hash_map<vk::ShaderStageFlagBits, FVkSpecializationConstantData> specializationConstantStages{};
 			};
 
 			class CVkShaderReflectionBuilder
 			{
 			public:
-				void addShaderStage(vk::ShaderStageFlagBits shaderStage, const std::vector<uint32_t>& shaderCode);
+				void addShaderStage(vk::ShaderStageFlagBits shaderStage, const utl::vector<uint32_t>& shaderCode);
 				FVkShaderReflectionData build();
 			private:
 				FVkShaderReflectionData reflectionData{};
-				std::vector<vk::ShaderStageFlagBits> shaderStages{};
+				utl::vector<vk::ShaderStageFlagBits> shaderStages{};
 			};
 		}
 	}

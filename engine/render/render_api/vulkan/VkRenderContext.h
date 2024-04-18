@@ -19,7 +19,7 @@ namespace engine
 				void create(const FRenderContextCreateInfo& context_ci) override;
 				void createGlobalDescriptor(const FGlobalUniformCreateInfo& uniform_ci) override;
 				void updateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view) override;
-				const std::vector<uint32_t>& getGlobalTextureRemap() override;
+				const utl::vector<uint32_t>& getGlobalTextureRemap() override;
 
 				u64 createTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) override;
 				u64 getTextureId(const std::string& name) override;
@@ -28,9 +28,9 @@ namespace engine
 				void destroyTexture(u64 resource_id) override;
 
 
-				u64 createShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) override;
-				u64 createShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) override;
-				u64 createShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) override;
+				u64 createShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages) override;
+				u64 createShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages) override;
+				u64 createShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages) override;
 				FShaderReflectionData getShaderReflection(const u64& shader_view) override;
 				void updateShaderResources(const FShaderResourceCommit& shader_resources, EShaderResourcesUpdateFlags flags = EShaderResourcesUpdateFlagBits::eAll) override;
 				void flushConstantRanges(u64 shader_id, const utl::hash_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type) override;
@@ -50,11 +50,11 @@ namespace engine
 				void destroyBuffer(u64 resource_id) override;
 			
 
-				void pushG2CBarriers(EQueueTypeFlagBits queue_type, const std::vector<u64>& texture_ids) override;
+				void pushG2CBarriers(EQueueTypeFlagBits queue_type, const utl::vector<u64>& texture_ids) override;
 				void pushC2CBarrier(EQueueTypeFlagBits queue_type) override;
-				void pushC2GBarrier(EQueueTypeFlagBits queue_type, const std::vector<u64>& texture_ids) override;
+				void pushC2GBarrier(EQueueTypeFlagBits queue_type, const utl::vector<u64>& texture_ids) override;
 
-				void processResourceBarriers(EQueueTypeFlagBits queue, const std::vector<FResourceBarrierInfo>& barriers) override;
+				void processResourceBarriers(EQueueTypeFlagBits queue, const utl::vector<FResourceBarrierInfo>& barriers) override;
 
 				void beginTimestampZone(EQueueTypeFlagBits queue) override;
 				void endTimestampZone(EQueueTypeFlagBits queue) override;
@@ -94,7 +94,7 @@ namespace engine
 				FVkCommandBuffer& createCommandBuffer(const FVkCommandBufferCreateInfo& command_buffer_ci, std::thread::id thread_id = std::this_thread::get_id());
 				FVkCommandBuffer& getLastCommandBuffer(EQueueTypeFlagBits queue_type, std::thread::id thread_id = std::this_thread::get_id());
 				FVkCommandBuffer& getCommandBuffer(EQueueTypeFlagBits queue_type, u64 index, std::thread::id thread_id = std::this_thread::get_id());
-				std::vector<FVkCommandBuffer>& getCommandBuffers(EQueueTypeFlagBits queue_type, std::thread::id thread_id = std::this_thread::get_id());
+				utl::vector<FVkCommandBuffer>& getCommandBuffers(EQueueTypeFlagBits queue_type, std::thread::id thread_id = std::this_thread::get_id());
 				void destroyCommandBuffer(EQueueTypeFlagBits queue_type, std::thread::id thread_id = std::this_thread::get_id());
 
 				void beginFrame() override;
@@ -125,17 +125,17 @@ namespace engine
 				void processImageLayoutTranslation(const FVkCommandBuffer& command_buffer, const FVkImageTranslationInfo& image_translation_info);
 				void textureLayoutTranslation(const FVkCommandBuffer& command_buffer, FVkTexture& texture, const FVkTextureTranslationInfo& translation_info);
 
-				void copyBufferToTexture(const FVkCommandBuffer& command_buffer, const FVkBuffer& buffer, const FVkTexture& texture, const std::vector<vk::BufferImageCopy2KHR>& copy_regions);
+				void copyBufferToTexture(const FVkCommandBuffer& command_buffer, const FVkBuffer& buffer, const FVkTexture& texture, const utl::vector<vk::BufferImageCopy2KHR>& copy_regions);
 				//void blitImage(const FVkCommandBuffer& command_buffer, );
 			private:
 				std::unique_ptr<CVkRenderDevice> m_pDevice{};
 				std::unique_ptr<CResourceContainer> m_pResources{};
 
-				std::vector<FTextureUploadInfo> m_textureUploadInfos{};
-				std::vector<FBufferUploadInfo> m_bufferUploadInfos{};
-				std::vector<FVkTextureLayoutChangeInfo> m_textureLayoutInfos{};
+				utl::vector<FTextureUploadInfo> m_textureUploadInfos{};
+				utl::vector<FBufferUploadInfo> m_bufferUploadInfos{};
+				utl::vector<FVkTextureLayoutChangeInfo> m_textureLayoutInfos{};
 
-				std::vector<uint32_t> m_textureIndexRemap{};
+				utl::vector<uint32_t> m_textureIndexRemap{};
 
 				std::queue<FAPIObjectDestroyInfo> m_destroyResource{};
 

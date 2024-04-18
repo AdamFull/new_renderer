@@ -27,25 +27,25 @@ namespace engine
 			}
 
 			// Helper functions
-			inline bool check_contains_single(const std::string& s1, const std::vector<std::string>& rhs)
+			inline bool check_contains_single(const std::string& s1, const utl::vector<std::string>& rhs)
 			{
 				return std::find_if(rhs.begin(), rhs.end(),
 					[s1](const std::string& s2) { return s1 == s2; }) != rhs.end();
 			}
 
 			// Check that second vector contains all items from first one
-			inline bool check_contains_all(const std::vector<std::string>& lhs, const std::vector<std::string>& rhs)
+			inline bool check_contains_all(const utl::vector<std::string>& lhs, const utl::vector<std::string>& rhs)
 			{
 				return std::all_of(lhs.begin(), lhs.end(),
 					[&rhs](const std::string& s1) { return check_contains_single(s1, rhs); });
 			}
 
-			inline std::vector<const char*> get_instance_extension_names()
+			inline utl::vector<const char*> get_instance_extension_names()
 			{
 #if defined( VK_USE_PLATFORM_WIN32_KHR )
-				return std::vector<const char*>{ VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_WIN32_SURFACE_EXTENSION_NAME, VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_EXT_DEBUG_REPORT_EXTENSION_NAME, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME };
+				return utl::vector<const char*>{ VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_WIN32_SURFACE_EXTENSION_NAME, VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_EXT_DEBUG_REPORT_EXTENSION_NAME, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME };
 #else
-				return std::vector<const char*>{};
+				return utl::vector<const char*>{};
 #endif
 			}
 
@@ -158,9 +158,9 @@ namespace engine
 				return current_device;
 			}
 
-			inline std::vector<vk::SampleCountFlagBits> get_avaliable_sample_count(const FVkPhysicalDevice& device)
+			inline utl::vector<vk::SampleCountFlagBits> get_avaliable_sample_count(const FVkPhysicalDevice& device)
 			{
-				std::vector<vk::SampleCountFlagBits> avaliable_samples{ vk::SampleCountFlagBits::e1 };
+				utl::vector<vk::SampleCountFlagBits> avaliable_samples{ vk::SampleCountFlagBits::e1 };
 
 				auto sample_count_flags = device.properties.limits.framebufferColorSampleCounts & device.properties.limits.framebufferDepthSampleCounts;
 				if (sample_count_flags & vk::SampleCountFlagBits::e64)

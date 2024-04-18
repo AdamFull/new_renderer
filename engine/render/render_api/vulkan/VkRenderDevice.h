@@ -90,7 +90,7 @@ namespace engine
 				void resetTimestampQuery(FVkTimestampQuery& timestamp_query);
 				void resetTimestampQuery(FVkCommandBuffer& command_buffer, FVkTimestampQuery& timestamp_query);
 				void writeTimestampQuery(FVkCommandBuffer& command_buffer, vk::PipelineStageFlagBits pipeline_state, FVkTimestampQuery& timestamp_query);
-				FRenderApiErrorInfo getTimestampQueryResults(FVkTimestampQuery& timestamp_query, std::vector<f32>& results);
+				FRenderApiErrorInfo getTimestampQueryResults(FVkTimestampQuery& timestamp_query, utl::vector<f32>& results);
 				void destroyTimestampQuery(FVkTimestampQuery& timestamp_query);
 
 				void getOccupedDeviceMemory(vk::MemoryHeapFlags memory_flags, u64& total_memory, u64& used_memory);
@@ -144,7 +144,7 @@ namespace engine
 				void initProfiler(const FVkCommandPool& command_pool);
 
 				// Getters
-				vk::Format findSupportedFormat(const std::vector<vk::Format>& candidates, bool depth_only);
+				vk::Format findSupportedFormat(const utl::vector<vk::Format>& candidates, bool depth_only);
 
 				const vk::DynamicLoader& getDynamicLoader() const;
 				const vk::AllocationCallbacks* getAllocationCallbacks() const;
@@ -164,7 +164,7 @@ namespace engine
 				vma::Allocator& getMemoryAllocator();
 
 				const vk::PipelineCache& getPipelineCache() const;
-				std::vector<char> getPipelineCacheData() const;
+				utl::vector<char> getPipelineCacheData() const;
 
 				const FSwapchain& getSwapchain() const;
 			protected:
@@ -218,10 +218,10 @@ namespace engine
 				vk::DebugUtilsMessengerEXT m_debugMessenger{ nullptr };
 				vk::DebugReportCallbackEXT m_debugReport{ nullptr };
 				vk::SurfaceKHR m_vkSurface{ nullptr };
-				std::vector<std::string> m_avaliableLayers{};
+				utl::vector<std::string> m_avaliableLayers{};
 
 				i32 m_selectedPhysicalDevice{ -1 };
-				std::vector<FVkPhysicalDevice> m_physicalDevices{};
+				utl::vector<FVkPhysicalDevice> m_physicalDevices{};
 
 				vk::SampleCountFlagBits m_requiredSampleCount{ vk::SampleCountFlagBits::e1 };
 				FVkLogicalDevice m_logicalDevice{};
@@ -232,7 +232,7 @@ namespace engine
 				FSwapchain m_swapchain{};
 
 #ifdef ENABLE_TRACY_PROFILING
-				std::vector<tracy::VkCtx*> m_tracyContext;
+				utl::vector<tracy::VkCtx*> m_tracyContext;
 				tracy::VkCtx* m_presentTracyContext;
 #endif
 			};

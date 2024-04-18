@@ -11,7 +11,7 @@ namespace mesh_compiler
 
 		size_t stride{ 0ull };
 		size_t count{ 0ull };
-		std::vector<uint8_t> data{};
+		utl::vector<uint8_t> data{};
 	};
 
 	struct FVertexStream
@@ -22,9 +22,9 @@ namespace mesh_compiler
 
 	struct FMesh
 	{
-		std::vector<FVertexStream> streams{};
-		std::vector<std::vector<FVertexStream>> morphs{};
-		std::vector<uint32_t> indices{};
+		utl::vector<FVertexStream> streams{};
+		utl::vector<utl::vector<FVertexStream>> morphs{};
+		utl::vector<uint32_t> indices{};
 	};
 
 	struct FSkin
@@ -52,7 +52,7 @@ namespace mesh_compiler
 		void apply();
 
 		void mergeMaterials();
-		void filterEmptyMeshes(int32_t mesh_id, std::vector<FMesh>& meshes);
+		void filterEmptyMeshes(int32_t mesh_id, utl::vector<FMesh>& meshes);
 		void reindexMesh(FMesh& mesh);
 		void filterTriangles(FMesh& mesh);
 		void simplifyMesh(FMesh& mesh, float threshold = 1.f, bool agressive = false, bool lock_borders = false);
@@ -60,12 +60,12 @@ namespace mesh_compiler
 
 		bool checkMergeAbility(int32_t mesh_id, FMesh& lhs, FMesh& rhs);
 		void mergeMeshes(FMesh& target, const FMesh& mesh);
-		void mergeMeshes(int32_t mesh_id, std::vector<FMesh>& meshes);
+		void mergeMeshes(int32_t mesh_id, utl::vector<FMesh>& meshes);
 	private:
 		easygltf::FGLTFRoot m_root{};
 
-		std::unordered_map<int32_t, std::vector<FMesh>> m_meshes{};
+		std::unordered_map<int32_t, utl::vector<FMesh>> m_meshes{};
 		std::unordered_map<int32_t, FSkin> m_skins{};
-		std::unordered_map<int32_t, std::vector<FAnimationSampler>> m_samplers{};
+		std::unordered_map<int32_t, utl::vector<FAnimationSampler>> m_samplers{};
 	};
 }

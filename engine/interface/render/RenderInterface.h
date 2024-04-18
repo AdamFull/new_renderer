@@ -162,13 +162,13 @@ namespace engine
 				return reinterpret_cast<_Ty*>(m_data.data() + uniform.offset);
 			}
 
-			const std::vector<char>& data() const
+			const utl::vector<char>& data() const
 			{
 				return m_data;
 			}
 		private:
 			utl::hash_map<u64, FReflectionUniform> m_uniforms{};
-			std::vector<char> m_data{};
+			utl::vector<char> m_data{};
 		};
 
 		class IShaderObject
@@ -245,7 +245,7 @@ namespace engine
 
 		struct FRenderFrameStats
 		{
-			std::vector<f32> timestampResults{};
+			utl::vector<f32> timestampResults{};
 			f32 gpuFrameTime{};
 
 			u64 totalGPUMemory{};
@@ -260,7 +260,7 @@ namespace engine
 			virtual void create(const FRenderContextCreateInfo& context_ci) = 0;
 			virtual void createGlobalDescriptor(const FGlobalUniformCreateInfo& uniform_ci) = 0;
 			virtual void updateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view) = 0;
-			virtual const std::vector<uint32_t>& getGlobalTextureRemap() = 0;
+			virtual const utl::vector<uint32_t>& getGlobalTextureRemap() = 0;
 
 			virtual u64 createTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) = 0;
 			virtual u64 getTextureId(const std::string& name) = 0;
@@ -268,9 +268,9 @@ namespace engine
 			virtual const FTextureCreateInfo& getTextureInfo(u64 texture_id) = 0;
 			virtual void destroyTexture(u64 resource_id) = 0;
 
-			virtual u64 createShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
-			virtual u64 createShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
-			virtual u64 createShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci, const  std::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
+			virtual u64 createShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
+			virtual u64 createShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
+			virtual u64 createShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
 			virtual FShaderReflectionData getShaderReflection(const u64& shader_view) = 0;
 			virtual void updateShaderResources(const FShaderResourceCommit& resources, EShaderResourcesUpdateFlags flags = EShaderResourcesUpdateFlagBits::eAll) = 0;
 			virtual void flushConstantRanges(u64 shader_id, const utl::hash_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type) = 0;
@@ -288,11 +288,11 @@ namespace engine
 			virtual void flushBuffer(u64 buffer_id, u64 size, u64 offset) = 0;
 			virtual void destroyBuffer(u64 resource_id) = 0;
 
-			virtual void pushG2CBarriers(EQueueTypeFlagBits queue_type, const std::vector<u64>& textures) = 0;
+			virtual void pushG2CBarriers(EQueueTypeFlagBits queue_type, const utl::vector<u64>& textures) = 0;
 			virtual void pushC2CBarrier(EQueueTypeFlagBits queue_type) = 0;
-			virtual void pushC2GBarrier(EQueueTypeFlagBits queue_type, const std::vector<u64>& texture_ids) = 0;
+			virtual void pushC2GBarrier(EQueueTypeFlagBits queue_type, const utl::vector<u64>& texture_ids) = 0;
 
-			virtual void processResourceBarriers(EQueueTypeFlagBits queue, const std::vector<FResourceBarrierInfo>& barriers) = 0;
+			virtual void processResourceBarriers(EQueueTypeFlagBits queue, const utl::vector<FResourceBarrierInfo>& barriers) = 0;
 
 			virtual void beginTimestampZone(EQueueTypeFlagBits queue) = 0;
 			virtual void endTimestampZone(EQueueTypeFlagBits queue) = 0;
@@ -347,7 +347,7 @@ namespace engine
 			virtual u64 registerFrustum(ERenderGeometryCullerType type) = 0;
 			virtual void updateFrustum(u64 frustum_id, const glm::mat4& view, const glm::mat4& projection) = 0;
 
-			virtual void addDrawGeometry(const std::vector<FGeometryRawBatch>& new_geometry) = 0;
+			virtual void addDrawGeometry(const utl::vector<FGeometryRawBatch>& new_geometry) = 0;
 
 			virtual void render(f32 dt) = 0;
 
@@ -360,19 +360,19 @@ namespace engine
 			virtual void addShadow(const FSpotShadowCommit& commit) = 0;
 
 			virtual void updateNode(u32 node_id, const FSceneNode& node) = 0;
-			virtual void updateSkin(const std::vector<glm::mat4>& matrices) = 0;
+			virtual void updateSkin(const utl::vector<glm::mat4>& matrices) = 0;
 
 			virtual void addMaterial(const FMaterial& material) = 0;
-			virtual void addMaterials(const std::vector<FMaterial>& materials) = 0;
+			virtual void addMaterials(const utl::vector<FMaterial>& materials) = 0;
 			virtual const FMaterial& getMaterial(u64 index) const = 0;
 
 			virtual void addMesh(const FMesh& mesh) = 0;
-			virtual void addMeshes(const std::vector<FMesh>& meshes) = 0;
+			virtual void addMeshes(const utl::vector<FMesh>& meshes) = 0;
 
 			virtual const std::unique_ptr<IGPUVector>& getDrawBuffer(ERenderBufferIndices buffer_index) = 0;
-			//virtual const std::vector<std::unique_ptr<IBufferObject>>& getDrawBuffers() = 0;
+			//virtual const utl::vector<std::unique_ptr<IBufferObject>>& getDrawBuffers() = 0;
 
-			virtual const std::vector<FGeometryCPUBatch>& getGeometryBatches() const = 0;
+			virtual const utl::vector<FGeometryCPUBatch>& getGeometryBatches() const = 0;
 
 			virtual FPostProcess& getPostProcessingData() = 0;
 

@@ -122,7 +122,7 @@ namespace easygltf
 			EGLTFComponentType componentType{};
 			EGLTFElementType elementType{};
 
-			std::vector<uint8_t> data{};
+			utl::vector<uint8_t> data{};
 			size_t count{ 0ull };
 		};
 
@@ -140,10 +140,10 @@ namespace easygltf
 
 			GLTFMaterial* material{ nullptr };
 
-			std::vector<GLTFVertexStream> attributes{};
-			std::vector<std::vector<GLTFVertexStream>> targets{};
+			utl::vector<GLTFVertexStream> attributes{};
+			utl::vector<utl::vector<GLTFVertexStream>> targets{};
 
-			std::vector<uint32_t> indices{};
+			utl::vector<uint32_t> indices{};
 
 			EGLTFPrimitiveTopology mode{};
 		};
@@ -170,9 +170,9 @@ namespace easygltf
 			glm::vec3 scale{};
 			glm::mat4 matrix{};
 
-			std::vector<double> weights{};
+			utl::vector<double> weights{};
 
-			std::vector<GLTFNode*> children{};
+			utl::vector<GLTFNode*> children{};
 		};
 
 		struct GLTFSkin : public IGLTFObject
@@ -188,7 +188,7 @@ namespace easygltf
 
 			nlohmann::json serialize() override;
 
-			std::vector<GLTFNode*> nodes{};
+			utl::vector<GLTFNode*> nodes{};
 		};
 
 		struct GLTFSampler : public IGLTFObject

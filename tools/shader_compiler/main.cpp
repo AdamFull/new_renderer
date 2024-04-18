@@ -15,6 +15,8 @@
 #include "shader_library_parse.hpp"
 #include "compiler_util.h"
 
+static int allocator_version = mi_version();
+
 namespace fs = std::filesystem;
 using namespace shader_compiler;
 
@@ -85,7 +87,7 @@ int main(int argc, char** argv)
 	auto make_file_dir = input_path.parent_path();
 	fs::path shaders_common = make_file_dir / make_info.commonDirectories.front();
 
-	std::vector<std::filesystem::path> include_directories{};
+	utl::vector<std::filesystem::path> include_directories{};
 	for (const auto& include_path : make_info.includeDirectories)
 		include_directories.emplace_back(make_file_dir / include_path);
 

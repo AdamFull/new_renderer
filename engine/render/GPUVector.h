@@ -18,8 +18,8 @@ namespace engine
 
 			const std::unique_ptr<IBufferObject>& buffer() override;
 		protected:
-			void alloc(const std::string& name, EBufferUsageFlags flag, u64 stride, u64 capacity) override;
-			void realloc(u64 capacity) override;
+			void allocate(const std::string& name, EBufferUsageFlags flag, u64 stride, u64 capacity) override;
+			void reallocate(u64 capacity) override;
 
 			void* at(u64 index) override;
 			const void* at(u64 index) const override;

@@ -208,7 +208,7 @@ namespace engine
 			u32 layerCount{ 1u };
 			FRect2D<f32> renderArea{};
 
-			std::vector<FRenderGraphAttachmentInfo>* colorAttachments{ nullptr };
+			utl::vector<FRenderGraphAttachmentInfo>* colorAttachments{ nullptr };
 
 			FRenderGraphAttachmentInfo* depthAttachment{ nullptr };
 			FRenderGraphAttachmentInfo* stencilAttachment{ nullptr };
@@ -243,7 +243,7 @@ namespace engine
 		{
 			u64 shaderHandle{};
 			bool divideByLocals{ true };
-			std::vector<FDispatch2Group> groups{};
+			utl::vector<FDispatch2Group> groups{};
 		};
 
 		struct FRenderResource
@@ -270,7 +270,7 @@ namespace engine
 			std::string sizeTarget{};
 
 			utl::hash_map<ERenderResourceAccessFlagBits, utl::hash_map<std::string, FRenderConfigResourceBindingDescription>> resourceBindings{};
-			utl::hash_map<ERenderResourceAccessFlagBits, std::vector<std::string>> otherResources{};
+			utl::hash_map<ERenderResourceAccessFlagBits, utl::vector<std::string>> otherResources{};
 
 			void bindWriteResource(const std::string& binding_point, const std::string& resource_name) { resourceBindings[ERenderResourceAccessFlagBits::eWrite].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, 0u }); }
 			void bindWriteResource(const std::string& binding_point, const std::string& resource_name, u32 subresource) { resourceBindings[ERenderResourceAccessFlagBits::eWrite].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, subresource }); }
@@ -316,7 +316,7 @@ namespace engine
 		struct FRenderConfigComputeCreateInfo : public FRenderConfigPassCreateInfo
 		{
 			EComputeType type{};
-			std::vector<FRenderConfigComputeDispatchGroupInfo> groupInfos{};
+			utl::vector<FRenderConfigComputeDispatchGroupInfo> groupInfos{};
 
 			void addDispatchGroupInfo(const std::string& target, u32 subresource, bool divide_by_locals)
 			{
@@ -367,7 +367,7 @@ namespace engine
 			std::string shader{};
 			bool oneTime{ false };
 
-			utl::hash_map<ERenderResourceGroupType, std::vector<FRenderResourceBinding>> resources{};
+			utl::hash_map<ERenderResourceGroupType, utl::vector<FRenderResourceBinding>> resources{};
 			utl::hash_map<std::string, FRenderResourceBinding> bindings{};
 		};
 
@@ -382,7 +382,7 @@ namespace engine
 
 		struct FComputePassCreateInfo : public FPassCreateInfo
 		{
-			std::vector<FComputeDispatchGroupInfo> groupInfos{};
+			utl::vector<FComputeDispatchGroupInfo> groupInfos{};
 		};
 
 		class IRenderGraph

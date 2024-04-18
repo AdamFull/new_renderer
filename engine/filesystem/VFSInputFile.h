@@ -93,7 +93,7 @@ namespace engine
 			 * @param buffer The buffer to store the characters read.
 			 * @return A reference to the CVFSInFile object.
 			 */
-			CVFSInFile& read(std::vector<uint8_t>& buffer) override;
+			CVFSInFile& read(utl::vector<uint8_t>& buffer) override;
 
 			/**
 			 * @brief Puts the last character read back into the input file.

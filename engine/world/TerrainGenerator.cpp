@@ -18,13 +18,13 @@ CTerrainGenerator::CTerrainGenerator(uint32_t vertices_per_edge, uint32_t width,
 	m_uvScale = uv_scale;
 }
 
-bool CTerrainGenerator::generate(std::vector<FTerrainVertexAttribute>& out_attributes, FTerrainVertexAttribute& out_indices)
+bool CTerrainGenerator::generate(utl::vector<FTerrainVertexAttribute>& out_attributes, FTerrainVertexAttribute& out_indices)
 {
 	const uint32_t triangle_count = m_quadCount * 2u;
 
 	const float vert_per_edge = static_cast<float>(m_verticesPerEdge);
 
-	std::vector<FTerrainVertex> vertices{};
+	utl::vector<FTerrainVertex> vertices{};
 	for (uint32_t x = 0u; x < m_verticesPerEdge; ++x)
 	{
 		for (uint32_t z = 0u; z < m_verticesPerEdge; ++z)
@@ -39,7 +39,7 @@ bool CTerrainGenerator::generate(std::vector<FTerrainVertexAttribute>& out_attri
 		}
 	}
 
-	std::vector<uint32_t> indices(m_quadCount * 6u);
+	utl::vector<uint32_t> indices(m_quadCount * 6u);
 	for (uint32_t x = 0ull; x < m_quadsPerSide; ++x)
 	{
 		for (uint32_t y = 0ull; y < m_quadsPerSide; ++y)
@@ -104,7 +104,7 @@ bool CTerrainGenerator::generate(std::vector<FTerrainVertexAttribute>& out_attri
 	{
 		out_indices.stride = sizeof(uint16_t);
 
-		std::vector<uint16_t> temp{};
+		utl::vector<uint16_t> temp{};
 		temp.insert(temp.end(), indices.begin(), indices.end());
 		out_indices.data.resize(out_indices.count * out_indices.stride);
 		std::memcpy(&out_indices.data[0], &temp[0], out_indices.data.size());

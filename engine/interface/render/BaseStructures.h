@@ -43,17 +43,17 @@ namespace engine
 			HINSTANCE                       hinstance;
 			HWND                            hwnd;
 #endif
-			std::vector<char> pipelineCache{};
+			utl::vector<char> pipelineCache{};
 
-			std::vector<std::string> requiredDeviceExtensions{};
-			std::vector<std::string> optionalDeviceExtensions{};
+			utl::vector<std::string> requiredDeviceExtensions{};
+			utl::vector<std::string> optionalDeviceExtensions{};
 
 			u32 initialWidth{ 0u };
 			u32 initialHeight{ 0u };
 
 			bool validationState{ false };
 			u32 validationFeatures{ 0u };
-			std::vector<std::string> validationLayers{};
+			utl::vector<std::string> validationLayers{};
 		};
 
 		template<class _Ty>
@@ -97,7 +97,7 @@ namespace engine
 		{
 			u64 lastIndex{ 0ull };
 			u64 lastVertex{ 0ull };
-			std::vector<FGeometryDrawRange> ranges{};
+			utl::vector<FGeometryDrawRange> ranges{};
 		};
 
 		struct FIndirectGeometryDrawInfo

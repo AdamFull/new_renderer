@@ -11,11 +11,11 @@
 using namespace engine::render;
 using namespace engine::world::ecs;
 
-void prepare_meshes_to_draw(const std::unique_ptr<IRenderWorld>& render_world, const std::vector<FMeshPrimitive>& primitives, std::vector<FGeometryRawBatch>& draw_commands, u32 node, u32 alpha_mode)
+void prepare_meshes_to_draw(const std::unique_ptr<IRenderWorld>& render_world, const utl::vector<FMeshPrimitive>& primitives, utl::vector<FGeometryRawBatch>& draw_commands, u32 node, u32 alpha_mode)
 {
 	auto& world_stats = render_world->getStats();
 
-	std::vector<FMesh> meshes{};
+	utl::vector<FMesh> meshes{};
 	for (const auto& primitive : primitives)
 	{
 		const auto& material = render_world->getMaterial(primitive.materialId);
@@ -41,7 +41,7 @@ void prepare_meshes_to_draw(const std::unique_ptr<IRenderWorld>& render_world, c
 	render_world->addMeshes(meshes);
 }
 
-void prepare_draw_commands(const std::unique_ptr<IRenderWorld>& render_world, engine::world::CSceneGraph* scene_graph, std::vector<FGeometryRawBatch>& draw_commands, u32 alpha_mode)
+void prepare_draw_commands(const std::unique_ptr<IRenderWorld>& render_world, engine::world::CSceneGraph* scene_graph, utl::vector<FGeometryRawBatch>& draw_commands, u32 alpha_mode)
 {
 	auto& registry = scene_graph->getRegistry();
 	auto root = scene_graph->getRoot();
@@ -88,7 +88,7 @@ void CMeshSystem::__update(f32 fDt)
 	auto& world_stats = render_world->getStats();
 	world_stats.meshCount = 0u;
 
-	std::vector<FGeometryRawBatch> draw_commands{};
+	utl::vector<FGeometryRawBatch> draw_commands{};
 	prepare_draw_commands(render_world, m_pSceneGraph, draw_commands, utl::enum_cast(EAlphaMode::eOpaque));
 	prepare_draw_commands(render_world, m_pSceneGraph, draw_commands, utl::enum_cast(EAlphaMode::eMask));
 	prepare_draw_commands(render_world, m_pSceneGraph, draw_commands, utl::enum_cast(EAlphaMode::eBlend));

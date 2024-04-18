@@ -44,8 +44,8 @@ namespace engine
 		struct FVertexBufferBindingInfo
 		{
 			u32 firstBinding{ 0u };
-			std::vector<u64> buffers{};
-			std::vector<u64> offsets{};
+			utl::vector<u64> buffers{};
+			utl::vector<u64> offsets{};
 		};
 
 		struct FIndexBufferBindingInfo
@@ -63,7 +63,7 @@ namespace engine
 
 		struct FVertexHandlerCreateInfo
 		{
-			std::vector<FVertexHandlerAttributeDescription> descriptions{};
+			utl::vector<FVertexHandlerAttributeDescription> descriptions{};
 			u64 indexSize{ 1ull };
 			std::string name{};
 		};
@@ -86,8 +86,8 @@ namespace engine
 
 		struct FVertexDeclarationInfo
 		{
-			std::vector<FVertexDeclarationBindingDescription> bindingDescriptions{};
-			std::vector<FVertexDeclarationAttributeDescription> attributeDescriptions{};
+			utl::vector<FVertexDeclarationBindingDescription> bindingDescriptions{};
+			utl::vector<FVertexDeclarationAttributeDescription> attributeDescriptions{};
 		};
 
 		struct FVertexRange
@@ -107,9 +107,9 @@ namespace engine
 
 			virtual void bind(EQueueTypeFlagBits queue) = 0;
 
-			virtual const FVertexRange& addMeshData(const std::vector<FVertexAttributePointer>& attributes_data, const FVertexAttributePointer& indices) = 0;
+			virtual const FVertexRange& addMeshData(const utl::vector<FVertexAttributePointer>& attributes_data, const FVertexAttributePointer& indices) = 0;
 
-			virtual u64 addVertices(const std::vector<FVertexAttributePointer>& attributes_data) = 0;
+			virtual u64 addVertices(const utl::vector<FVertexAttributePointer>& attributes_data) = 0;
 			virtual u64 addIndices(const FVertexAttributePointer& indices) = 0;
 
 			virtual u64 getLastVertex() = 0;

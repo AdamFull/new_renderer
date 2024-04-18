@@ -60,7 +60,7 @@ namespace engine
 			 * @param data The data vector to be written.
 			 * @return A reference to the CVFSOutFile object.
 			 */
-			CVFSOutFile& write(const std::vector<uint8_t>& data) override;
+			CVFSOutFile& write(const utl::vector<uint8_t>& data) override;
 
 			/**
 			 * @brief Writes a buffer of characters to the output file.

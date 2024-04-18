@@ -47,8 +47,8 @@ namespace shader_compiler
 
         // Key is the type of shader (EShaderType) it's like container of same shader types. 
         // Key in value it's link to shader from shader module. 
-        utl::hash_map<int64_t, utl::hash_map<int64_t, std::vector<u32>>> shaders;
-        utl::hash_map<int64_t, std::vector<FShaderModule>> modules;
+        utl::hash_map<int64_t, utl::hash_map<int64_t, utl::vector<u32>>> shaders;
+        utl::hash_map<int64_t, utl::vector<FShaderModule>> modules;
     };
 
     struct FShaderCacheData

@@ -40,7 +40,7 @@ void CResourceLoader::initialize(IVirtualFileSystemInterface* vfs)
 		log_error("Failed to load shader cache. ")
 }
 
-bool CResourceLoader::loadTexture(const std::vector<uint8_t>& data, EMimeType mime, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info)
+bool CResourceLoader::loadTexture(const utl::vector<uint8_t>& data, EMimeType mime, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info)
 {
 	create_info.typeFlags = ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eTransferable;
 
@@ -68,7 +68,7 @@ bool CResourceLoader::loadTexture(const std::vector<uint8_t>& data, EMimeType mi
 	return false;
 }
 
-bool CResourceLoader::loadShaderData(const FShaderUploadInfo& load_info, std::vector<FShaderCreationBlockInfo>& shader_stages)
+bool CResourceLoader::loadShaderData(const FShaderUploadInfo& load_info, utl::vector<FShaderCreationBlockInfo>& shader_stages)
 {
 	// Looking for shader library (container with shader code and with shader modules)
 	auto found_library = m_shaderCache.libraries.find(load_info.libraryId);
@@ -82,7 +82,7 @@ bool CResourceLoader::loadShaderData(const FShaderUploadInfo& load_info, std::ve
 	if (found_shader_module == shader_library.modules.end())
 		return false;
 
-	const std::vector<shader_compiler::FShaderModule>& shader_modules = found_shader_module->second;
+	const utl::vector<shader_compiler::FShaderModule>& shader_modules = found_shader_module->second;
 
 	for (const auto& shader_module : shader_modules)
 	{
@@ -108,7 +108,7 @@ bool CResourceLoader::loadShaderData(const FShaderUploadInfo& load_info, std::ve
 	return true;
 }
 
-bool CResourceLoader::loadSTBFromMemory(const std::vector<uint8_t>& data, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info)
+bool CResourceLoader::loadSTBFromMemory(const utl::vector<uint8_t>& data, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info)
 {
 	int width{ 0 }, height{ 0 }, channels{ 0 };
 	auto rawdata = stbi_load_from_memory(data.data(), data.size(), &width, &height, &channels, STBI_rgb_alpha);
@@ -129,7 +129,7 @@ bool CResourceLoader::loadSTBFromMemory(const std::vector<uint8_t>& data, FTextu
 	return true;
 }
 
-bool CResourceLoader::loadKTXFromMemory(const std::vector<uint8_t>& data, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info)
+bool CResourceLoader::loadKTXFromMemory(const utl::vector<uint8_t>& data, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info)
 {
 	ktxTexture* kTexture{ nullptr };
 	auto ktxresult = ktxTexture_CreateFromMemory(data.data(), data.size(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &kTexture);
@@ -175,7 +175,7 @@ bool CResourceLoader::loadKTXFromMemory(const std::vector<uint8_t>& data, FTextu
 	return true;
 }
 
-bool CResourceLoader::loadKTX2FromMemory(const std::vector<uint8_t>& data, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info)
+bool CResourceLoader::loadKTX2FromMemory(const utl::vector<uint8_t>& data, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info)
 {
 	ktxTexture2* kTexture{ nullptr };
 	auto ktxresult = ktxTexture_CreateFromMemory(data.data(), data.size(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, (ktxTexture**)&kTexture);
@@ -225,7 +225,7 @@ bool CResourceLoader::loadKTX2FromMemory(const std::vector<uint8_t>& data, FText
 	return true;
 }
 
-bool CResourceLoader::loadDDSFromMemory(const std::vector<uint8_t>& data, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info)
+bool CResourceLoader::loadDDSFromMemory(const utl::vector<uint8_t>& data, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info)
 {
 	return false;
 }

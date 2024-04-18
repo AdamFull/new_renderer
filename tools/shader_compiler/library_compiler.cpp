@@ -48,9 +48,9 @@ std::string emplace_data(std::string base_string, const std::string& target, con
 	return base_string;
 }
 
-//std::vector<std::string> make_permutation(u64 mask, const std::vector<FDefinitionChain>& chains) 
+//utl::vector<std::string> make_permutation(u64 mask, const utl::vector<FDefinitionChain>& chains) 
 //{
-//	std::vector<std::string> permutation;
+//	utl::vector<std::string> permutation;
 //
 //	for (u64 j = 0; j < chains.size(); ++j) 
 //	{
@@ -66,7 +66,7 @@ std::string emplace_data(std::string base_string, const std::string& target, con
 //	return permutation;
 //}
 
-void generate_permutations(const std::vector<std::string>& base, const std::vector<FDefinitionVariant>& variants, std::vector<std::vector<std::string>>& result, std::vector<std::string> current, size_t variant_index)
+void generate_permutations(const utl::vector<std::string>& base, const utl::vector<FDefinitionVariant>& variants, utl::vector<utl::vector<std::string>>& result, utl::vector<std::string> current, size_t variant_index)
 {
 	if (variant_index == variants.size()) 
 	{
@@ -84,7 +84,7 @@ void generate_permutations(const std::vector<std::string>& base, const std::vect
 	{
 		for (const auto& definition : variant.definitions) 
 		{
-			std::vector<std::string> new_current = current;
+			utl::vector<std::string> new_current = current;
 
 			if(!definition.empty())
 				new_current.emplace_back(definition);
@@ -94,7 +94,7 @@ void generate_permutations(const std::vector<std::string>& base, const std::vect
 	}
 }
 
-CLibraryCompiler::CLibraryCompiler(const std::filesystem::path& common_path, const std::vector<std::filesystem::path>& includes_path)
+CLibraryCompiler::CLibraryCompiler(const std::filesystem::path& common_path, const utl::vector<std::filesystem::path>& includes_path)
 {
 	m_pPreprocessor = std::make_unique<CShaderPreprocessor>(common_path, includes_path);
 }
@@ -169,7 +169,7 @@ void CLibraryCompiler::compile(const std::filesystem::path& library_path, FShade
 		}
 		else
 		{
-			std::vector<std::vector<std::string>> cached_permutations{};
+			utl::vector<utl::vector<std::string>> cached_permutations{};
 			for (const auto& permutation : compile.permutations)
 				cached_permutations.emplace_back(permutation.definitions.begin(), permutation.definitions.end());
 
@@ -178,7 +178,7 @@ void CLibraryCompiler::compile(const std::filesystem::path& library_path, FShade
 	}
 }
 
-void CLibraryCompiler::compilePermutations(const std::filesystem::path parent_path, const std::string& name, const std::vector<FShaderSource>& sources, const std::vector<std::vector<std::string>>& cached_permutations, FCompiledLibrary& compiled_library)
+void CLibraryCompiler::compilePermutations(const std::filesystem::path parent_path, const std::string& name, const utl::vector<FShaderSource>& sources, const utl::vector<utl::vector<std::string>>& cached_permutations, FCompiledLibrary& compiled_library)
 {
 	u64 shader_index{ 0ull };
 	// Process all shader included sources
@@ -195,13 +195,13 @@ void CLibraryCompiler::compilePermutations(const std::filesystem::path parent_pa
 #else
 		std::for_each(cached_permutations.begin(), cached_permutations.end(),
 #endif
-			[&](const std::vector<std::string>& definitions)
+			[&](const utl::vector<std::string>& definitions)
 			{
 				bool is_compiling_first_time{ false };
 				FCompileInfo compile_info{ source.type, source.shader_name };
 
 				// This thing will add unique definitions by shader type. Dor example for vertex shader it will add VERTEX_SHADER definition
-				std::vector<std::string> unique_shader_definitions(definitions.begin(), definitions.end());
+				utl::vector<std::string> unique_shader_definitions(definitions.begin(), definitions.end());
 				unique_shader_definitions.emplace_back(get_definition_by_shader_type(source.type));
 
 				// Make unique shader name(key)
@@ -209,7 +209,7 @@ void CLibraryCompiler::compilePermutations(const std::filesystem::path parent_pa
 
 				// Get shader module
 				m_locks[0].lock();
-				std::vector<FShaderModule>& shader_modules = compiled_library.modules[unique_module_name];
+				utl::vector<FShaderModule>& shader_modules = compiled_library.modules[unique_module_name];
 				m_locks[0].unlock();
 
 				// Apply definitions for current permutation

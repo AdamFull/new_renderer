@@ -62,12 +62,12 @@ public:
 		return fs::normalize(fs::to_posix_path(path));
 	}
 
-	bool readFile(const std::string& path, std::vector<uint8_t>& data) override
+	bool readFile(const std::string& path, utl::vector<uint8_t>& data) override
 	{
 		return m_pVFS->readFile(path, data);
 	}
 
-	bool writeFile(const std::string& path, const std::vector<uint8_t>& data) override
+	bool writeFile(const std::string& path, const utl::vector<uint8_t>& data) override
 	{
 		return m_pVFS->writeFile(path, data);
 	}
@@ -80,7 +80,7 @@ private:
 	IVirtualFileSystemInterface* m_pVFS{ nullptr };
 };
 
-void convert_indices_space(std::vector<uint8_t>& indices, u64 index_size, i32 vertex_start)
+void convert_indices_space(utl::vector<uint8_t>& indices, u64 index_size, i32 vertex_start)
 {
 	for (u64 shift = 0ull; shift < indices.size() / index_size; shift += index_size)
 	{
@@ -222,7 +222,7 @@ void CScene::loadGLTF(easygltf::FGLTFRoot& root)
 	auto& render_world = m_pRenderInterface->getRenderWorld();
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
 
-	std::vector<render::FMaterial> materials{};
+	utl::vector<render::FMaterial> materials{};
 	for (u64 idx = 0ull; idx < root.materials.size(); ++idx)
 	{
 		auto& material = root.materials[idx];
@@ -360,7 +360,7 @@ void CScene::loadMeshComponent(const easygltf::FGLTFRoot& root, const entt::enti
 		// Load vertices
 		
 		std::hash<u32> attribute_hasher;
-		std::vector<render::FVertexAttributePointer> attributes{};
+		utl::vector<render::FVertexAttributePointer> attributes{};
 		u64 position_index{ 0ull };
 
 		u64 attributes_hash{ 0ull };

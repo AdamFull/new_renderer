@@ -32,7 +32,7 @@ public:
 
 	std::optional<std::string> get(const std::string& option) const
 	{
-		std::vector<std::string>::const_iterator itr;
+		utl::vector<std::string>::const_iterator itr;
 		itr = std::find(this->tokens.begin(), this->tokens.end(), option);
 		if (itr != this->tokens.end() && ++itr != this->tokens.end())
 			return *itr;
@@ -44,7 +44,7 @@ public:
 		return std::find(this->tokens.begin(), this->tokens.end(), option) != this->tokens.end();
 	}
 private:
-	std::vector<std::string> tokens;
+	utl::vector<std::string> tokens;
 };
 
 int main(int argc, char** argv)

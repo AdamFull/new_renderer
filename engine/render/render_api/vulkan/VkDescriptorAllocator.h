@@ -29,9 +29,9 @@
 //				FVkDescriptorPool grab();
 //
 //				FVkDescriptorPool m_current{};
-//				std::vector<FVkDescriptorPool> m_used{};
-//				std::vector<FVkDescriptorPool> m_free{};
-//				std::unordered_map<vk::DescriptorType, float> m_sizes{};
+//				utl::vector<FVkDescriptorPool> m_used{};
+//				utl::vector<FVkDescriptorPool> m_free{};
+//				utl::hash_map<vk::DescriptorType, f32> m_sizes{};
 //
 //				CVkRenderDevice* m_pDevice{ nullptr };
 //			};

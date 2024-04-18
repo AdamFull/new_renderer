@@ -237,7 +237,7 @@ void CVertexHandler::bind(EQueueTypeFlagBits queue)
 	}
 }
 
-const FVertexRange& CVertexHandler::addMeshData(const std::vector<FVertexAttributePointer>& attributes_data, const FVertexAttributePointer& indices)
+const FVertexRange& CVertexHandler::addMeshData(const utl::vector<FVertexAttributePointer>& attributes_data, const FVertexAttributePointer& indices)
 {
 	u64 input_hash = utl::utils::murmur_hash_64(indices.data, indices.stride * indices.count, 0);
 	for (const auto& attribute : attributes_data)
@@ -272,12 +272,12 @@ const FVertexRange& CVertexHandler::addMeshData(const std::vector<FVertexAttribu
 	return new_range;
 }
 
-u64 CVertexHandler::addVertices(const std::vector<FVertexAttributePointer>& attributes_data)
+u64 CVertexHandler::addVertices(const utl::vector<FVertexAttributePointer>& attributes_data)
 {
 	auto vertex_count = attributes_data.front().count;
 	for (u64 v = 0ull; v < vertex_count; ++v)
 	{
-		std::vector<uint8_t> temp(m_vertexBuffer.elementSize);
+		utl::vector<uint8_t> temp(m_vertexBuffer.elementSize);
 
 		u64 offset{ 0ull };
 		for (const auto& attrib : attributes_data)
@@ -300,7 +300,7 @@ u64 CVertexHandler::addIndices(const FVertexAttributePointer& indices)
 	return indices.count;
 }
 
-u64 CVertexHandler::addMeshlets(const std::vector<FVertexAttributePointer>& attributes, const FVertexAttributePointer& indices)
+u64 CVertexHandler::addMeshlets(const utl::vector<FVertexAttributePointer>& attributes, const FVertexAttributePointer& indices)
 {
 	// Find positions attribute
 	const float* positions{ nullptr };
@@ -309,7 +309,7 @@ u64 CVertexHandler::addMeshlets(const std::vector<FVertexAttributePointer>& attr
 		positions = (const float*)found_position_attrib->data;
 
 	// Convert indices to u32 format
-	std::vector<u32> indices_tmp{};
+	utl::vector<u32> indices_tmp{};
 	// convert to 32 bit uint
 	for (u64 idx = 0ull; idx < indices.count; ++idx)
 	{
@@ -328,13 +328,13 @@ u64 CVertexHandler::addMeshlets(const std::vector<FVertexAttributePointer>& attr
 	// Start generation meshlets
 	auto max_meshlets = meshopt_buildMeshletsBound(indices.count, kMaxVerticesPerMeshlet, kMaxTrianglesPerMeshlet);
 
-	std::vector<FMeshlet> temp_meshlets(max_meshlets);
-	std::vector<FGeometryDrawBounds> temp_bounds{};
-	std::vector<FTriangle> temp_triangles{};
-	std::vector<u32> temp_vertices(max_meshlets * kMaxVerticesPerMeshlet);
+	utl::vector<FMeshlet> temp_meshlets(max_meshlets);
+	utl::vector<FGeometryDrawBounds> temp_bounds{};
+	utl::vector<FTriangle> temp_triangles{};
+	utl::vector<u32> temp_vertices(max_meshlets * kMaxVerticesPerMeshlet);
 
-	std::vector<meshopt_Meshlet> raw_meshlets(max_meshlets);
-	std::vector<u8> raw_meshlet_triangles(max_meshlets * kMaxTrianglesPerMeshlet * 3u);
+	utl::vector<meshopt_Meshlet> raw_meshlets(max_meshlets);
+	utl::vector<u8> raw_meshlet_triangles(max_meshlets * kMaxTrianglesPerMeshlet * 3u);
 
 	size_t meshlet_count = meshopt_buildMeshlets(
 		&raw_meshlets[0],

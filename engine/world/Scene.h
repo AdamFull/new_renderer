@@ -16,18 +16,18 @@ namespace engine
 
 		struct FSceneLoadedResources
 		{
-			utl::hash_map<u64, std::vector<u64>> vertexHandlers{};
+			utl::hash_map<u64, utl::vector<u64>> vertexHandlers{};
 
-			std::vector<u64> textures{};
+			utl::vector<u64> textures{};
 			u64 lastTexture{ 0ull };
 
-			std::vector<u64> materials{};
+			utl::vector<u64> materials{};
 			u64 lastMaterial{ 0ull };
 		};
 
 		struct FSceneTemporaryResources
 		{
-			std::vector<std::string> materialNames{};
+			utl::vector<std::string> materialNames{};
 			utl::hash_map<u32, entt::entity> nodeToEntity{};
 		};
 
@@ -54,7 +54,7 @@ namespace engine
 		private:
 			CSceneGraph* m_pSceneGraph{ nullptr };
 
-			std::vector<std::unique_ptr<ecs::ISystem>> m_systems{};
+			utl::vector<std::unique_ptr<ecs::ISystem>> m_systems{};
 
 			FSceneLoadedResources m_resources{};
 			FSceneTemporaryResources m_temporary{};

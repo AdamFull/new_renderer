@@ -33,8 +33,8 @@ namespace engine
 		protected:
 			void buildReflection();
 		private:
-			std::unordered_map<u64, std::unique_ptr<CUniformHandle>> m_uniformBlocks{};
-			std::unordered_map<u64, std::unique_ptr<CUniformHandle>> m_constantBlocks{};
+			utl::hash_map<u64, std::unique_ptr<CUniformHandle>> m_uniformBlocks{};
+			utl::hash_map<u64, std::unique_ptr<CUniformHandle>> m_constantBlocks{};
 
 			utl::hash_map<u64, u64> m_bindBuffers{};
 			utl::hash_map<u64, FTextureBindInfo> m_bindTextures{};

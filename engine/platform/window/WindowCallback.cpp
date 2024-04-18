@@ -2,15 +2,15 @@
 
 using namespace engine;
 
-std::vector<utl::reactive::function<void(int32_t, int32_t)>> FWindowCallbackMapper::sizeChangeCallbacks;
-std::vector<utl::reactive::function<void(int32_t)>> FWindowCallbackMapper::focusChangeCallbacks;
-std::vector<utl::reactive::function<void(int32_t)>> FWindowCallbackMapper::cursorEnterCallbacks;
-std::vector<utl::reactive::function<void(EKeyCode, EKeyState)>> FWindowCallbackMapper::mouseButtonCallbacks;
-std::vector<utl::reactive::function<void(float, float, float, float)>> FWindowCallbackMapper::mousePositionCallbacks;
-std::vector<utl::reactive::function<void(float, float)>> FWindowCallbackMapper::scrollCallbacks;
-std::vector<utl::reactive::function<void(EKeyCode, EKeyState)>> FWindowCallbackMapper::keyCallbacks;
-std::vector<utl::reactive::function<void(uint32_t)>> FWindowCallbackMapper::charCallbacks;
-std::vector<utl::reactive::function<void(int32_t)>> FWindowCallbackMapper::monitorCallbacks;
+utl::vector<utl::reactive::function<void(int32_t, int32_t)>> FWindowCallbackMapper::sizeChangeCallbacks;
+utl::vector<utl::reactive::function<void(int32_t)>> FWindowCallbackMapper::focusChangeCallbacks;
+utl::vector<utl::reactive::function<void(int32_t)>> FWindowCallbackMapper::cursorEnterCallbacks;
+utl::vector<utl::reactive::function<void(EKeyCode, EKeyState)>> FWindowCallbackMapper::mouseButtonCallbacks;
+utl::vector<utl::reactive::function<void(float, float, float, float)>> FWindowCallbackMapper::mousePositionCallbacks;
+utl::vector<utl::reactive::function<void(float, float)>> FWindowCallbackMapper::scrollCallbacks;
+utl::vector<utl::reactive::function<void(EKeyCode, EKeyState)>> FWindowCallbackMapper::keyCallbacks;
+utl::vector<utl::reactive::function<void(uint32_t)>> FWindowCallbackMapper::charCallbacks;
+utl::vector<utl::reactive::function<void(int32_t)>> FWindowCallbackMapper::monitorCallbacks;
 
 void FWindowCallbackMapper::windowSizeChanged(int32_t width, int32_t height)
 {

@@ -27,23 +27,23 @@ namespace shader_compiler
 	struct FTemplateFunction
 	{
 		std::string name;
-		std::vector<FTemplateArgumentType> templateArguments;
+		utl::vector<FTemplateArgumentType> templateArguments;
 		std::string returnType;
-		std::vector<FArgumentType> inputArguments;
+		utl::vector<FArgumentType> inputArguments;
 		std::string code;
 	};
 
 	struct FTemplateFunctionCall
 	{
 		std::string name; // function name
-		std::vector<std::string> templateArguments; // Should be parsed from <> or by input type
-		std::vector<std::string> inputArguments;
+		utl::vector<std::string> templateArguments; // Should be parsed from <> or by input type
+		utl::vector<std::string> inputArguments;
 	};
 
 	class CShaderPreprocessor
 	{
 	public:
-		CShaderPreprocessor(const std::filesystem::path& common_path, const std::vector<std::filesystem::path>& include_directories);
+		CShaderPreprocessor(const std::filesystem::path& common_path, const utl::vector<std::filesystem::path>& include_directories);
 
 		void initialize(EShaderLang lang);
 
@@ -51,12 +51,12 @@ namespace shader_compiler
 
 		std::string preprocess(const std::string& code);
 	protected:
-		std::vector<FTemplateFunction> parseTemplateFunctions(const std::string& code);
-		std::vector<FTemplateFunctionCall> parseTemplateFunctionCalls(const std::string& code);
-		utl::hash_map<std::string, std::string> generateTemplateFunctionCode(const std::vector<FTemplateFunction>& functions, std::vector<FTemplateFunctionCall>& calls);
+		utl::vector<FTemplateFunction> parseTemplateFunctions(const std::string& code);
+		utl::vector<FTemplateFunctionCall> parseTemplateFunctionCalls(const std::string& code);
+		utl::hash_map<std::string, std::string> generateTemplateFunctionCode(const utl::vector<FTemplateFunction>& functions, utl::vector<FTemplateFunctionCall>& calls);
 	private:
 		EShaderLang m_shaderLang;
-		std::vector<std::filesystem::path> m_includeDirectories;
+		utl::vector<std::filesystem::path> m_includeDirectories;
 		std::filesystem::path m_commonDirectory;
 
 		std::regex m_templateFuncRegex{ R"(template<(.+?)>\s*(\w+)\s+(\w+)\((.*?)\)\s*\{([\s\S]*?)\})" };

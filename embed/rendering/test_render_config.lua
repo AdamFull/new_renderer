@@ -192,6 +192,14 @@ function make_graphics_pass(type, queue, shader)
     return pass_ci
 end
 
+function generate_prefiltered_cube()
+    render_graph:push_debug_marker("Prefiltered cubemap generator", 0xffff33ff, QueueType.graphics)
+
+
+
+    render_graph:pop_debug_marker("Prefiltered cubemap generator", QueueType.graphics)
+end
+
 function compute_bloom()
     render_graph:push_debug_marker("Compute bloom", 0xffff33ff, QueueType.graphics)
 

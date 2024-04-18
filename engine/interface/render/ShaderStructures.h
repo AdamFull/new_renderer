@@ -84,7 +84,7 @@ namespace engine
 		struct FShaderCreationBlockInfo
 		{
 			u32 stage{ 0u };
-			std::vector<u32>* code{ nullptr };
+			utl::vector<u32>* code{ nullptr };
 		};
 
 		struct FAttachment
@@ -104,7 +104,7 @@ namespace engine
 
 			u32 usageCount{ 1u };
 
-			std::vector<FAttachment> colorAttachments{};
+			utl::vector<FAttachment> colorAttachments{};
 			FAttachment depthAttachment{};
 			FAttachment stencilAttachment{};
 

@@ -40,7 +40,7 @@ namespace engine
 
 			EQueueTypeFlagBits m_queue{};
 
-			utl::hash_map<ERenderResourceGroupType, std::vector<FRenderResourceBinding>> m_renderResources{};
+			utl::hash_map<ERenderResourceGroupType, utl::vector<FRenderResourceBinding>> m_renderResources{};
 			utl::hash_map<std::string, FRenderResourceBinding> m_bakedBindings{};
 
 			bool m_bOneTime{ false };
@@ -80,7 +80,7 @@ namespace engine
 			u64 m_stencilTarget{ ~0ull };
 			u32 m_layerCount{ 1u };
 
-			std::vector<FRenderGraphAttachmentInfo> m_vColorAttachments{};
+			utl::vector<FRenderGraphAttachmentInfo> m_vColorAttachments{};
 			FRenderGraphAttachmentInfo m_depthAttachment{};
 			FRenderGraphAttachmentInfo m_stencilAttachment{};
 		};
@@ -103,8 +103,8 @@ namespace engine
 			virtual void initShaderResources(const std::unique_ptr<IShaderObject>& shader) override;
 			virtual void bindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt) override;
 		protected:
-			std::vector<FDispatch2Info> m_vDispatchGroups{};
-			std::vector<FComputeDispatchGroupInfo> m_vDispatchInfos{};
+			utl::vector<FDispatch2Info> m_vDispatchGroups{};
+			utl::vector<FComputeDispatchGroupInfo> m_vDispatchInfos{};
 		};
 	}
 }

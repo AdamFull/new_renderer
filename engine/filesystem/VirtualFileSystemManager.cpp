@@ -197,7 +197,7 @@ bool CVirtualFileSystemManager::readFile(const std::string& path, std::string& d
 	return false;
 }
 
-bool CVirtualFileSystemManager::readFile(const std::string& path, std::vector<uint8_t>& data)
+bool CVirtualFileSystemManager::readFile(const std::string& path, utl::vector<uint8_t>& data)
 {
 	auto pFile = openFile(path);
 	if (pFile && pFile->is_open())
@@ -221,7 +221,7 @@ bool CVirtualFileSystemManager::writeFile(const std::string& path, const std::st
 	return false;
 }
 
-bool CVirtualFileSystemManager::writeFile(const std::string& path, const std::vector<uint8_t>& binary)
+bool CVirtualFileSystemManager::writeFile(const std::string& path, const utl::vector<uint8_t>& binary)
 {
 	auto pFile = createFile(path);
 	if (pFile && pFile->is_open())

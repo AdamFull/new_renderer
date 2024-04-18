@@ -1,8 +1,6 @@
 #pragma once
 
-#include <string>
-#include <vector>
-#include <istream>
+#include <standart_library.h>
 
 namespace engine
 {
@@ -37,7 +35,7 @@ namespace engine
 			 * @param data The data vector to be written.
 			 * @return A reference to the IVFSOutputFileInterface object.
 			 */
-			virtual IVFSOutputFileInterface& write(const std::vector<uint8_t>& data) = 0;
+			virtual IVFSOutputFileInterface& write(const utl::vector<uint8_t>& data) = 0;
 
 			/**
 			 * @brief Writes a buffer of characters to the output file.

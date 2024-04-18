@@ -14,12 +14,12 @@ namespace engine
 			struct FInputAction
 			{
 				EKeyState state;
-				std::vector<utl::reactive::function<void(EKeyCode, EKeyState)>> listeners;
+				utl::vector<utl::reactive::function<void(EKeyCode, EKeyState)>> listeners;
 			};
 
 			struct FInputAxis
 			{
-				std::vector<utl::reactive::function<void(f32, f32)>> listeners;
+				utl::vector<utl::reactive::function<void(f32, f32)>> listeners;
 			};
 
 			class CInputSystem : public ISystem

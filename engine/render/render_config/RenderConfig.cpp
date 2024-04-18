@@ -58,7 +58,7 @@ void CRenderScriptCore::create(IRenderInterface* render_interface)
 	(*m_pLuaState)["render_graph"] = render_interface->getRenderGraph().get();
 }
 
-std::unique_ptr<CRenderScriptExecutor> CRenderScriptCore::build(const std::string& name, const std::vector<uint8_t>& program_code)
+std::unique_ptr<CRenderScriptExecutor> CRenderScriptCore::build(const std::string& name, const utl::vector<uint8_t>& program_code)
 {
 	auto render_script = std::make_unique<CRenderScriptExecutor>();
 	render_script->m_pEnvironment = new sol::environment(*m_pLuaState, sol::create, m_pLuaState->globals());
@@ -72,7 +72,7 @@ std::unique_ptr<CRenderScriptExecutor> CRenderScriptCore::build(const std::strin
 		return nullptr;
 	}
 
-	std::vector<std::string> function_names{};
+	utl::vector<std::string> function_names{};
 	render_script->m_pEnvironment->for_each([&function_names](sol::object const& key, sol::object const& value) { if (value.is<sol::function>()) function_names.emplace_back(key.as<std::string>()); });
 
 	for (const auto& func : function_names)

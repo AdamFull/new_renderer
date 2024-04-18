@@ -100,7 +100,7 @@ CVFSInFile& CVFSInFile::read(std::string& buffer)
 	return *this;
 }
 
-CVFSInFile& CVFSInFile::read(std::vector<uint8_t>& buffer)
+CVFSInFile& CVFSInFile::read(utl::vector<uint8_t>& buffer)
 {
 	seekg(0, SEEK_END);
 	auto filesize = tellg();

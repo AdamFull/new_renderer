@@ -32,7 +32,7 @@ namespace engine
 		struct FBufferUploadInfo
 		{
 			u64 bufferId{ ~0ull };
-			std::vector<uint8_t> data{};
+			utl::vector<uint8_t> data{};
 			u64 count{ 1ull };
 			u64 size{ 0ull };
 			u64 offset{ 0ull };
@@ -88,16 +88,16 @@ namespace engine
 			void create(const std::string& name, EBufferUsageFlags flag = EBufferUsageFlagBits::eStorageBuffer, u64 capacity = 64ull)
 			{
 				//m_elementType = typeid(_Ty);
-				alloc(name, flag, sizeof(_Ty), capacity);
+				allocate(name, flag, sizeof(_Ty), capacity);
 			}
 
 			template<class _Ty>
-			void copy(const std::vector<_Ty>& data)
+			void copy(const utl::vector<_Ty>& data)
 			{
 				if (m_size + data.size() > capacity())
 				{
 					u64 new_capacity = (m_size + data.size()) * 2ull;
-					realloc(new_capacity);
+					reallocate(new_capacity);
 				}
 
 				auto* memory_block = at(m_size);
@@ -113,7 +113,7 @@ namespace engine
 				if (m_size + 1ull > capacity())
 				{
 					u64 new_capacity = m_size == 0ull ? 1ull : m_size * 2ull;
-					realloc(new_capacity);
+					reallocate(new_capacity);
 				}
 
 				auto* memory_block = static_cast<_Ty*>(at(m_size));
@@ -183,8 +183,8 @@ namespace engine
 			virtual const std::unique_ptr<IBufferObject>& buffer() = 0;
 
 		protected:
-			virtual void alloc(const std::string& name, EBufferUsageFlags flag, u64 stride, u64 capacity) = 0;
-			virtual void realloc(u64 capacity) = 0;
+			virtual void allocate(const std::string& name, EBufferUsageFlags flag, u64 stride, u64 capacity) = 0;
+			virtual void reallocate(u64 capacity) = 0;
 
 			virtual void* at(u64 index) = 0;
 			virtual const void* at(u64 index) const = 0;

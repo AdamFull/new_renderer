@@ -13,9 +13,9 @@ using namespace shader_compiler;
 // Add template function specialization support
 // Add template support for struct
 
-std::string process_include(const std::string& include, const std::vector<std::filesystem::path>& includes_path, EShaderLang lang, u64 depth);
+std::string process_include(const std::string& include, const utl::vector<std::filesystem::path>& includes_path, EShaderLang lang, u64 depth);
 
-std::string generate_shader_code(const FShaderObject& sobject, const std::vector < std::filesystem::path>& includes_path, EShaderLang lang, u64 depth = 0)
+std::string generate_shader_code(const FShaderObject& sobject, const utl::vector < std::filesystem::path>& includes_path, EShaderLang lang, u64 depth = 0)
 {
 	std::stringstream ss{};
 
@@ -60,7 +60,7 @@ std::string generate_shader_code(const FShaderObject& sobject, const std::vector
 	return ss.str();
 }
 
-std::filesystem::path find_include_path(const std::string& include, const std::vector<std::filesystem::path>& includes_path)
+std::filesystem::path find_include_path(const std::string& include, const utl::vector<std::filesystem::path>& includes_path)
 {
 	for (const auto& include_path : includes_path)
 	{
@@ -74,7 +74,7 @@ std::filesystem::path find_include_path(const std::string& include, const std::v
 	return {};
 }
 
-std::string process_include(const std::string& include, const std::vector<std::filesystem::path>& includes_path, EShaderLang lang, u64 depth)
+std::string process_include(const std::string& include, const utl::vector<std::filesystem::path>& includes_path, EShaderLang lang, u64 depth)
 {
 	std::stringstream ss{};
 	std::string guard_name{};
@@ -133,7 +133,7 @@ std::string process_include(const std::string& include, const std::vector<std::f
 	return ss.str();
 }
 
-CShaderPreprocessor::CShaderPreprocessor(const std::filesystem::path& common_directory, const std::vector<std::filesystem::path>& include_directories)
+CShaderPreprocessor::CShaderPreprocessor(const std::filesystem::path& common_directory, const utl::vector<std::filesystem::path>& include_directories)
 {
 	m_includeDirectories = include_directories;
 	m_commonDirectory = common_directory;
@@ -170,9 +170,9 @@ std::string CShaderPreprocessor::preprocess(const std::string& code)
 	return "";
 }
 
-std::vector<FTemplateFunction> CShaderPreprocessor::parseTemplateFunctions(const std::string& code)
+utl::vector<FTemplateFunction> CShaderPreprocessor::parseTemplateFunctions(const std::string& code)
 {
-	std::vector<FTemplateFunction> templates;
+	utl::vector<FTemplateFunction> templates;
 	
 	for (std::sregex_iterator i = std::sregex_iterator(code.begin(), code.end(), m_templateFuncRegex); i != std::sregex_iterator(); ++i)
 	{
@@ -222,9 +222,9 @@ std::vector<FTemplateFunction> CShaderPreprocessor::parseTemplateFunctions(const
 	return templates;
 }
 
-std::vector<FTemplateFunctionCall> CShaderPreprocessor::parseTemplateFunctionCalls(const std::string& code)
+utl::vector<FTemplateFunctionCall> CShaderPreprocessor::parseTemplateFunctionCalls(const std::string& code)
 {
-	std::vector<FTemplateFunctionCall> calls;
+	utl::vector<FTemplateFunctionCall> calls;
 
 	for (std::sregex_iterator i = std::sregex_iterator(code.begin(), code.end(), m_templateFunctionCallRegex); i != std::sregex_iterator(); ++i)
 	{
@@ -250,7 +250,7 @@ std::vector<FTemplateFunctionCall> CShaderPreprocessor::parseTemplateFunctionCal
 	return calls;
 }
 
-utl::hash_map<std::string, std::string> CShaderPreprocessor::generateTemplateFunctionCode(const std::vector<FTemplateFunction>& functions, std::vector<FTemplateFunctionCall>& calls)
+utl::hash_map<std::string, std::string> CShaderPreprocessor::generateTemplateFunctionCode(const utl::vector<FTemplateFunction>& functions, utl::vector<FTemplateFunctionCall>& calls)
 {
 	utl::hash_map<std::string, std::string> generated_functions;
 

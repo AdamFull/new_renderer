@@ -13,16 +13,16 @@ namespace easygltf
 
 			nlohmann::json serialize() override;
 		private:
-			std::vector<GLTFAnimation*> animations{};
-			std::vector<GLTFCamera*> cameras{};
-			std::vector<GLTFImage*> images{};
-			std::vector<GLTFMaterial*> materials{};
-			std::vector<GLTFMesh*> meshes{};
-			std::vector<GLTFNode*> nodes{};
-			std::vector<GLTFSkin*> skins{};
-			std::vector<GLTFScene*> scenes{};
-			std::vector<GLTFSampler*> samplers{};
-			std::vector<GLTFTexture*> textures{};
+			utl::vector<GLTFAnimation*> animations{};
+			utl::vector<GLTFCamera*> cameras{};
+			utl::vector<GLTFImage*> images{};
+			utl::vector<GLTFMaterial*> materials{};
+			utl::vector<GLTFMesh*> meshes{};
+			utl::vector<GLTFNode*> nodes{};
+			utl::vector<GLTFSkin*> skins{};
+			utl::vector<GLTFScene*> scenes{};
+			utl::vector<GLTFSampler*> samplers{};
+			utl::vector<GLTFTexture*> textures{};
 
 			GLTFScene* currentScene{ nullptr };
 		};

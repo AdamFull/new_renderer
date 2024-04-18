@@ -39,7 +39,7 @@ namespace engine
 			template<class _Ty>
 			u64 createShader(const FShaderUploadInfo& name_info, const _Ty& create_info)
 			{
-				std::vector<FShaderCreationBlockInfo> shader_stages{};
+				utl::vector<FShaderCreationBlockInfo> shader_stages{};
 				if (m_pResourceLoader->loadShaderData(name_info, shader_stages))
 					return m_pRenderContext->createShader(name_info.originalName, create_info, shader_stages);
 

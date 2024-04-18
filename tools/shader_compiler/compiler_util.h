@@ -14,7 +14,7 @@ namespace shader_compiler
 {
 	constexpr const uint64_t MOD = static_cast<uint64_t>(-1);
 
-	inline i64 make_shader_hashname(const std::vector<std::string>& tokens)
+	inline i64 make_shader_hashname(const utl::vector<std::string>& tokens)
 	{
 		i64 result_hash{ 0ll };
 		for (auto& token : tokens)
@@ -70,14 +70,14 @@ namespace shader_compiler
 		return "";
 	}
 
-	inline i64 make_module_unique_name_str(const std::string& shader_name, const std::vector<std::string>& definitions)
+	inline i64 make_module_unique_name_str(const std::string& shader_name, const utl::vector<std::string>& definitions)
 	{
-		std::vector<std::string> shader_name_tokens{ shader_name };
+		utl::vector<std::string> shader_name_tokens{ shader_name };
 		shader_name_tokens.insert(shader_name_tokens.end(), definitions.begin(), definitions.end());
 		return make_shader_hashname(shader_name_tokens);
 	}
 
-	inline i64 make_module_unique_name(const std::string& shader_name, const std::vector<std::string>& definitions)
+	inline i64 make_module_unique_name(const std::string& shader_name, const utl::vector<std::string>& definitions)
 	{
 		return make_module_unique_name_str(shader_name, definitions);
 	}
@@ -89,7 +89,7 @@ namespace shader_compiler
 		return stream.str();
 	}
 
-	inline bool read_file(const std::filesystem::path& file_path, std::vector<char>& buffer)
+	inline bool read_file(const std::filesystem::path& file_path, utl::vector<char>& buffer)
 	{
 		if (!std::filesystem::exists(file_path))
 			return false;
@@ -122,7 +122,7 @@ namespace shader_compiler
 	template<class _Ty>
 	inline bool parse_file_to(const std::filesystem::path& file_path, _Ty& output)
 	{
-		std::vector<char> buffer{};
+		utl::vector<char> buffer{};
 		if (!read_file(file_path, buffer))
 			return false;
 
@@ -134,18 +134,18 @@ namespace shader_compiler
 	template<class _Ty>
 	inline bool parse_json_to(const std::filesystem::path& file_path, _Ty& output)
 	{
-		std::vector<char> buffer{};
+		utl::vector<char> buffer{};
 		if (!read_file(file_path, buffer))
 			return false;
 
-		nlohmann::json::from_bson(buffer).get_to(output);
+		nlohmann::json::from_bson(buffer.begin(), buffer.end()).get_to(output);
 
 		return true;
 	}
 
 	inline bool parse_header(const std::filesystem::path& file_path, std::string& data)
 	{
-		std::vector<char> buffer{};
+		utl::vector<char> buffer{};
 		if (!read_file(file_path, buffer))
 			return false;
 

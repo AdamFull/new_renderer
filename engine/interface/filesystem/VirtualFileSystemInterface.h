@@ -39,10 +39,10 @@ namespace engine
             virtual std::unique_ptr<IDirectoryIteratorInterface> walk(const std::string& path, bool recursive) = 0;
 
             virtual bool readFile(const std::string& path, std::string& data) = 0;
-            virtual bool readFile(const std::string& path, std::vector<uint8_t>& data) = 0;
+            virtual bool readFile(const std::string& path, utl::vector<uint8_t>& data) = 0;
 
             virtual bool writeFile(const std::string& path, const std::string& data) = 0;
-            virtual bool writeFile(const std::string& path, const std::vector<uint8_t>& binary) = 0;
+            virtual bool writeFile(const std::string& path, const utl::vector<uint8_t>& binary) = 0;
 
             template<class _Ty>
             bool readJson(const std::string& path, _Ty& type)

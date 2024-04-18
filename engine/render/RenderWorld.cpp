@@ -65,7 +65,7 @@ void CRenderWorld::updateFrustum(u64 frustum_id, const glm::mat4& view, const gl
 	frustum.update(view, projection);
 }
 
-void CRenderWorld::addDrawGeometry(const std::vector<FGeometryRawBatch>& new_geometry)
+void CRenderWorld::addDrawGeometry(const utl::vector<FGeometryRawBatch>& new_geometry)
 {
 	m_vRawGeometryBatches.insert(m_vRawGeometryBatches.end(), new_geometry.begin(), new_geometry.end());
 
@@ -194,7 +194,7 @@ void CRenderWorld::updateNode(u32 node_id, const FSceneNode& node)
 	nodes_buffer->get<FSceneNode>(node_id) = node;
 }
 
-void CRenderWorld::updateSkin(const std::vector<glm::mat4>& matrices)
+void CRenderWorld::updateSkin(const utl::vector<glm::mat4>& matrices)
 {
 	auto& skin_buffer = getDrawBuffer(ERenderBufferIndices::eSkinBuffer);
 	skin_buffer->copy(matrices);
@@ -207,7 +207,7 @@ void CRenderWorld::addMaterial(const FMaterial& material)
 	m_vMaterials.emplace_back(material);
 }
 
-void CRenderWorld::addMaterials(const std::vector<FMaterial>& materials)
+void CRenderWorld::addMaterials(const utl::vector<FMaterial>& materials)
 {
 	m_bMaterialsChanged = true;
 	m_vMaterials.insert(m_vMaterials.end(), materials.begin(), materials.end());
@@ -225,7 +225,7 @@ void CRenderWorld::addMesh(const FMesh& mesh)
 	m_stats.meshCount++;
 }
 
-void CRenderWorld::addMeshes(const std::vector<FMesh>& meshes)
+void CRenderWorld::addMeshes(const utl::vector<FMesh>& meshes)
 {
 	auto& mesh_buffer = getDrawBuffer(ERenderBufferIndices::eMeshBuffer);
 	mesh_buffer->copy(meshes);
@@ -237,7 +237,7 @@ const std::unique_ptr<IGPUVector>& CRenderWorld::getDrawBuffer(ERenderBufferIndi
 	return m_vBuffers.at(utl::enum_cast(buffer_index));
 }
 
-const std::vector<FGeometryCPUBatch>& CRenderWorld::getGeometryBatches() const
+const utl::vector<FGeometryCPUBatch>& CRenderWorld::getGeometryBatches() const
 {
 	return m_vGeometryBatches;
 }
@@ -265,8 +265,8 @@ void CRenderWorld::prepareIndirectCommands()
 	auto& gpu_batches_buffer = getDrawBuffer(ERenderBufferIndices::eDrawMeshInfoBuffer);
 	gpu_batches_buffer->clear();
 
-	std::vector<FDrawIndexedIndirectData> indirect_data{};
-	std::vector<FDrawMeshinfo> gpu_batches{};
+	utl::vector<FDrawIndexedIndirectData> indirect_data{};
+	utl::vector<FDrawMeshinfo> gpu_batches{};
 
 	utl::hash_map<u64, u64> indirect_command_cache{};
 
@@ -338,9 +338,9 @@ void CRenderWorld::prepareMeshletCommands()
 	auto& gpu_batches_buffer = getDrawBuffer(ERenderBufferIndices::eDrawMeshInfoBuffer);
 	gpu_batches_buffer->clear();
 
-	std::vector<FDrawMeshIndirectData> indirect_data{};
-	std::vector<FDrawMeshinfo> gpu_batches{};
-	std::vector<FClusterInfo> gpu_clusters{};
+	utl::vector<FDrawMeshIndirectData> indirect_data{};
+	utl::vector<FDrawMeshinfo> gpu_batches{};
+	utl::vector<FClusterInfo> gpu_clusters{};
 
 	utl::hash_map<u64, u64> indirect_command_cache{};
 

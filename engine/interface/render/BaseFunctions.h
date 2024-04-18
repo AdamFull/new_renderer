@@ -45,7 +45,7 @@ namespace engine
         //    };
 		//}
         //
-        //inline void rebatchGeometry(const std::vector<FGeometryBatch>& batches, std::vector<FGeometryBatch>& rebatched, u32 flags = GEOMETRY_BATCHER_ALL_FLAG_BIT)
+        //inline void rebatchGeometry(const utl::vector<FGeometryBatch>& batches, utl::vector<FGeometryBatch>& rebatched, u32 flags = GEOMETRY_BATCHER_ALL_FLAG_BIT)
         //{
         //    std::unordered_map<batcher::BatchKey, FGeometryBatch, batcher::BatchKeyHash> batch_map;
         //
@@ -69,7 +69,7 @@ namespace engine
         //        {
         //            std::sort(batch.ranges.begin(), batch.ranges.end(), [](const FGeometryRanges& a, const FGeometryRanges& b) { return a.beginIndex < b.beginIndex; });
         //
-        //            std::vector<FGeometryRanges> combinedRanges;
+        //            utl::vector<FGeometryRanges> combinedRanges;
         //            for (const auto& range : batch.ranges)
         //            {
         //                if (!combinedRanges.empty())
@@ -89,7 +89,7 @@ namespace engine
         //    }
         //}
         //
-		//inline void createGeometryBatches(const std::vector<FGeometryDrawData>& geometry_list, std::vector<FGeometryBatch>& batches, u32 flags = GEOMETRY_BATCHER_ALL_FLAG_BIT)
+		//inline void createGeometryBatches(const utl::vector<FGeometryDrawData>& geometry_list, utl::vector<FGeometryBatch>& batches, u32 flags = GEOMETRY_BATCHER_ALL_FLAG_BIT)
 		//{
         //    std::unordered_map<batcher::BatchKey, FGeometryBatch, batcher::BatchKeyHash> batch_map;
         //
@@ -105,14 +105,14 @@ namespace engine
         //    }
         //
         //    // Apply geometry batches
-        //    std::vector<FGeometryBatch> uni_batches{};
+        //    utl::vector<FGeometryBatch> uni_batches{};
         //    for (auto& [key, batch] : batch_map)
         //    {
         //        if (flags & GEOMETRY_BATCHER_MERGE_DRAWCALLS_FLAG_BIT)
         //        {
         //            std::sort(batch.ranges.begin(), batch.ranges.end(), [](const FGeometryRanges& a, const FGeometryRanges& b) { return a.beginIndex < b.beginIndex; });
         //        
-        //            std::vector<FGeometryRanges> combinedRanges;
+        //            utl::vector<FGeometryRanges> combinedRanges;
         //            for (const auto& range : batch.ranges)
         //            {
         //                if (!combinedRanges.empty())

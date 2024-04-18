@@ -17,7 +17,7 @@ namespace shader_compiler
 		bool initialize() override;
 
 		bool preprocess(const std::string& shader_code, const FCompileInfo& info, std::string& preprocessed_code, size_t& preprocessed_hash) override;
-		std::vector<uint32_t> compile(const std::string& shader_code, const FCompileInfo& info) override;
+		utl::vector<uint32_t> compile(const std::string& shader_code, const FCompileInfo& info) override;
 	private:
 		CComPtr<IDxcCompiler> m_pCompiler;
 		CComPtr<IDxcLibrary> m_pLibrary;

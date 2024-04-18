@@ -17,7 +17,7 @@ namespace engine
 			u64 registerFrustum(ERenderGeometryCullerType type) override;
 			void updateFrustum(u64 frustum_id, const glm::mat4& view, const glm::mat4& projection) override;
 
-			void addDrawGeometry(const std::vector<FGeometryRawBatch>& new_geometry) override;
+			void addDrawGeometry(const utl::vector<FGeometryRawBatch>& new_geometry) override;
 
 			void render(f32 dt) override;
 
@@ -30,17 +30,17 @@ namespace engine
 			void addShadow(const FSpotShadowCommit& commit) override;
 
 			void updateNode(u32 node_id, const FSceneNode& node) override;
-			void updateSkin(const std::vector<glm::mat4>& matrices) override;
+			void updateSkin(const utl::vector<glm::mat4>& matrices) override;
 
 			void addMaterial(const FMaterial& material) override;
-			void addMaterials(const std::vector<FMaterial>& materials) override;
+			void addMaterials(const utl::vector<FMaterial>& materials) override;
 			const FMaterial& getMaterial(u64 index) const override;
 
 			void addMesh(const FMesh& mesh) override;
-			void addMeshes(const std::vector<FMesh>& meshes) override;
+			void addMeshes(const utl::vector<FMesh>& meshes) override;
 
 			const std::unique_ptr<IGPUVector>& getDrawBuffer(ERenderBufferIndices buffer_index) override;
-			const std::vector<FGeometryCPUBatch>& getGeometryBatches() const override;
+			const utl::vector<FGeometryCPUBatch>& getGeometryBatches() const override;
 
 			FPostProcess& getPostProcessingData() override;
 
@@ -50,21 +50,21 @@ namespace engine
 			void prepareIndirectCommands();
 			void prepareMeshletCommands();
 		protected:
-			std::vector<FFrustum> m_vSceneFrustums{};
-			std::vector<FCullingInfo> m_vCullingInfo{};
+			utl::vector<FFrustum> m_vSceneFrustums{};
+			utl::vector<FCullingInfo> m_vCullingInfo{};
 
-			std::vector<FGeometryRawBatch> m_vRawGeometryBatches{};
-			std::vector<FGeometryCPUBatch> m_vGeometryBatches{};
-			std::vector<FMaterial> m_vMaterials{};
+			utl::vector<FGeometryRawBatch> m_vRawGeometryBatches{};
+			utl::vector<FGeometryCPUBatch> m_vGeometryBatches{};
+			utl::vector<FMaterial> m_vMaterials{};
 			bool m_bMaterialsChanged{ true };
 
-			//std::vector<FMaterial> m_vMaterials{};
-			std::vector<glm::mat4> m_vSkins{};
+			//utl::vector<FMaterial> m_vMaterials{};
+			utl::vector<glm::mat4> m_vSkins{};
 
 			FPostProcess m_postprocess{};
 			FRenderWorldStats m_stats{};
 
-			std::vector<std::unique_ptr<IGPUVector>> m_vBuffers{};
+			utl::vector<std::unique_ptr<IGPUVector>> m_vBuffers{};
 		private:
 			IRenderInterface* m_pRenderInterface{ nullptr };
 		};

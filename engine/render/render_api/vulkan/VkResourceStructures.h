@@ -28,7 +28,7 @@ namespace engine
 
 			struct FQueueFamilies
 			{
-				std::vector<u32> uniqueFamilies{};
+				utl::vector<u32> uniqueFamilies{};
 				utl::hash_map<u32, u32> familyUsages;
 				utl::hash_map<EQueueTypeFlagBits, u32> queueToFamily;
 				EQueueTypeFlags queueMask{ 0u };
@@ -52,7 +52,7 @@ namespace engine
 			{
 				vk::PhysicalDevice handle{ nullptr };
 				vk::PhysicalDeviceProperties properties{};
-				std::vector<std::string> avaliableExtensions{};
+				utl::vector<std::string> avaliableExtensions{};
 				FQueueFamilies queueFamilies{};
 				utl::hash_map<u32, bool> supportedExtensions{};
 				u32 compatFlags{ 0u };
@@ -71,11 +71,11 @@ namespace engine
 				vk::SwapchainKHR handle{ nullptr };
 				vk::Format format{};
 				vk::Extent2D extent{};
-				std::vector<vk::Image> images{};
-				std::vector<vk::ImageView> imageViews{};
-				std::vector<vk::Semaphore> imageAvaliableSemaphores{};
-				std::vector<vk::Semaphore> renderFinishedSemaphores{};
-				std::vector<vk::Fence> inFlightFences{};
+				utl::vector<vk::Image> images{};
+				utl::vector<vk::ImageView> imageViews{};
+				utl::vector<vk::Semaphore> imageAvaliableSemaphores{};
+				utl::vector<vk::Semaphore> renderFinishedSemaphores{};
+				utl::vector<vk::Fence> inFlightFences{};
 				u32 framesInFlight{ 2u };
 				u32 currentFrame{ 0u };
 			};
@@ -101,7 +101,7 @@ namespace engine
 			// ---------------------------------------------------------------------------------
 			struct FVkCommandBuffer
 			{
-				std::vector<vk::CommandBuffer> handles{};
+				utl::vector<vk::CommandBuffer> handles{};
 				EQueueTypeFlagBits mask{};
 				bool isRunning{ false };
 				u32 commandBufferIndex{ 0u };
@@ -189,7 +189,7 @@ namespace engine
 
 			struct FVkDescriptorSetLayoutCreateInfo
 			{
-				std::vector<vk::DescriptorSetLayoutBinding> layoutBindings{};
+				utl::vector<vk::DescriptorSetLayoutBinding> layoutBindings{};
 				vk::DescriptorSetLayoutCreateFlags flags{};
 				void* next{ nullptr };
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -204,7 +204,7 @@ namespace engine
 
 			struct FVkDescriptorPoolCreateInfo
 			{
-				std::vector<vk::DescriptorPoolSize> poolSizes{};
+				utl::vector<vk::DescriptorPoolSize> poolSizes{};
 				u32 usageCount{ 1u };
 				vk::DescriptorPoolCreateFlags flags{ vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet };
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -215,7 +215,7 @@ namespace engine
 			struct FVkDescriptorSet
 			{
 				// Per frame descriptor sets
-				std::vector<vk::DescriptorSet> handles{};
+				utl::vector<vk::DescriptorSet> handles{};
 			};
 
 			struct FVkDescriptorSetCreateInfo
@@ -247,7 +247,7 @@ namespace engine
 			// ---------------------------------------------------------------------------------
 			struct FVkShaderModuleCreateInfo
 			{
-				std::vector<u32>* shaderCode{};
+				utl::vector<u32>* shaderCode{};
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				std::string name{};
 #endif
@@ -255,8 +255,8 @@ namespace engine
 
 			struct FVkPipelineLayoutCreateInfo
 			{
-				std::vector<vk::DescriptorSetLayout> descriptorSetLayouts{};
-				std::vector<vk::PushConstantRange> pushConstantRanges{};
+				utl::vector<vk::DescriptorSetLayout> descriptorSetLayouts{};
+				utl::vector<vk::PushConstantRange> pushConstantRanges{};
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				std::string name{};
 #endif
@@ -272,14 +272,14 @@ namespace engine
 				vk::SampleCountFlagBits sampleCount{ vk::SampleCountFlagBits::e1 };
 				u32 patchControlPoints{ 0u };
 
-				std::vector<vk::Format> colorAttachmentFormats{};
+				utl::vector<vk::Format> colorAttachmentFormats{};
 				vk::Format depthAttachmentFormat{ vk::Format::eUndefined };
 				vk::Format stencilAttachmentFormat{ vk::Format::eUndefined };
 
-				std::vector<vk::VertexInputBindingDescription> vertexBindingDescriptions{};
-				std::vector<vk::VertexInputAttributeDescription> vertexAttributeDescriptions{};
+				utl::vector<vk::VertexInputBindingDescription> vertexBindingDescriptions{};
+				utl::vector<vk::VertexInputAttributeDescription> vertexAttributeDescriptions{};
 
-				std::vector<vk::PipelineShaderStageCreateInfo> shaderStages{};
+				utl::vector<vk::PipelineShaderStageCreateInfo> shaderStages{};
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				std::string name{};
 #endif
@@ -338,14 +338,14 @@ namespace engine
 
 			struct FVkShader
 			{
-				std::vector<vk::Pipeline> handles{};
+				utl::vector<vk::Pipeline> handles{};
 				vk::PipelineLayout layout{};
-				std::vector<vk::ShaderModule> shaderModules{};
+				utl::vector<vk::ShaderModule> shaderModules{};
 				utl::hash_map<u32, vk::DescriptorSetLayout> descriptorSetLayouts{};
 				utl::hash_map<u32, FVkDescriptorSet> descriptorSets{};
 				utl::hash_map<u32, u32> descriptorUsage{};
 				FVkDescriptorPool descriptorPool{};
-				std::vector<vk::PushConstantRange> pushConstantRanges{};
+				utl::vector<vk::PushConstantRange> pushConstantRanges{};
 
 				utl::hash_map<u64, u64> uniformBuffers{};
 				u64 maximumDescriptorSlots{ 0ull };
@@ -386,7 +386,7 @@ namespace engine
 			struct FVkTexture
 			{
 				FVkImage image{};
-				std::vector<FVkTextureMipLevel> mips{};
+				utl::vector<FVkTextureMipLevel> mips{};
 				vk::Sampler sampler{};
 				u32 totalLayers{ 1u };
 				bool isRenderTarget{ false };
@@ -459,9 +459,9 @@ namespace engine
 
 			struct FVkTranslationInfo
 			{
-				std::vector<FVkImageTranslationInfo> imageTranslationInfos{};
-				std::vector<FVkBufferTranslationInfo> bufferTranslationInfos{};
-				std::vector<FVkMemoryTranslationInfo> memoryTranslationInfos{};
+				utl::vector<FVkImageTranslationInfo> imageTranslationInfos{};
+				utl::vector<FVkBufferTranslationInfo> bufferTranslationInfos{};
+				utl::vector<FVkMemoryTranslationInfo> memoryTranslationInfos{};
 			};
 
 			struct FVkTextureTranslationInfo
@@ -488,13 +488,13 @@ namespace engine
 			struct FVkPerQueueResources
 			{
 				FVkCommandPool commandPool{};
-				std::vector<FVkCommandBuffer> commandBuffers{};
+				utl::vector<FVkCommandBuffer> commandBuffers{};
 			};
 
 			struct FVkTimestampQuery
 			{
 				vk::QueryPool handle{};
-				std::vector<u64> values{};
+				utl::vector<u64> values{};
 				u32 queryIndex{ 0ull };
 			};
 

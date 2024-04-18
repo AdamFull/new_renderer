@@ -17,7 +17,7 @@ void CGPUVector::resize(u64 new_size)
 {
 	if (m_pBuffer->count() < new_size)
 	{
-		realloc(new_size);
+		reallocate(new_size);
 		m_size = new_size;
 	}
 	else
@@ -34,7 +34,7 @@ const std::unique_ptr<IBufferObject>& CGPUVector::buffer()
 	return m_pBuffer;
 }
 
-void CGPUVector::alloc(const std::string& name, EBufferUsageFlags flag, u64 stride, u64 capacity)
+void CGPUVector::allocate(const std::string& name, EBufferUsageFlags flag, u64 stride, u64 capacity)
 {
 	FBufferCreateInfo buffer_ci{};
 	buffer_ci.size = stride;
@@ -47,9 +47,9 @@ void CGPUVector::alloc(const std::string& name, EBufferUsageFlags flag, u64 stri
 	m_pBuffer->map();
 }
 
-void CGPUVector::realloc(u64 capacity)
+void CGPUVector::reallocate(u64 capacity)
 {
-	std::vector<char> temporary{};
+	utl::vector<char> temporary{};
 	temporary.resize(m_pBuffer->size());
 
 	const void* mem_begin = m_pBuffer->data();

@@ -36,15 +36,15 @@ namespace engine
 				size_t materialId{ ~0ull };
 				size_t vboId{ ~0ull };
 
-				std::vector<render::FMeshlet> meshlets{};
-				std::vector<u32> vertices{};
-				std::vector<render::FGeometryDrawBounds> bounds{};
-				std::vector<render::FTriangle> triangles{};
+				utl::vector<render::FMeshlet> meshlets{};
+				utl::vector<u32> vertices{};
+				utl::vector<render::FGeometryDrawBounds> bounds{};
+				utl::vector<render::FTriangle> triangles{};
 			};
 
 			struct FMeshComponent
 			{
-				std::vector<FMeshPrimitive> primitives{};
+				utl::vector<FMeshPrimitive> primitives{};
 				int32_t skin{ -1 };
 				bool castShadows{ true };
 			};

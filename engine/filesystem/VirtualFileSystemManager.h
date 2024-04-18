@@ -124,10 +124,10 @@ namespace engine
 			std::unique_ptr<IDirectoryIteratorInterface> walk(const std::string& path, bool recursive = true);
 
 			bool readFile(const std::string& path, std::string& data) override;
-			bool readFile(const std::string& path, std::vector<uint8_t>& data) override;
+			bool readFile(const std::string& path, utl::vector<uint8_t>& data) override;
 
 			bool writeFile(const std::string& path, const std::string& data) override;
-			bool writeFile(const std::string& path, const std::vector<uint8_t>& binary) override;
+			bool writeFile(const std::string& path, const utl::vector<uint8_t>& binary) override;
 		private:
 			/**
 			 * @brief Retrieves the filesystem implementation for the given path.
@@ -144,7 +144,7 @@ namespace engine
 			 */
 			static void processCopyFile(const std::unique_ptr<IVFSInterface>& pFSFrom, const std::unique_ptr<IVFSInterface>& pFSTo, const std::string& path);
 		private:
-			std::unordered_map<std::string, std::unique_ptr<IVFSInterface>> m_vMountedFS{};
+			utl::hash_map<std::string, std::unique_ptr<IVFSInterface>> m_vMountedFS{};
 			std::mutex m_SynchronizationMutex;
 		};
 	}

@@ -17,8 +17,8 @@ namespace engine
 				void __create() override;
 				void __update(float fDt) override;
 			private:
-				std::vector<float> m_timers{};
-				std::vector<u64> m_animationIndeces{};
+				utl::vector<float> m_timers{};
+				utl::vector<u64> m_animationIndeces{};
 			};
 		}
 	}

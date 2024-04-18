@@ -112,7 +112,7 @@ bool CDXCCompiler::preprocess(const std::string& shader_code, const FCompileInfo
 	return true;
 }
 
-std::vector<uint32_t> CDXCCompiler::compile(const std::string& shader_code, const FCompileInfo& info)
+utl::vector<uint32_t> CDXCCompiler::compile(const std::string& shader_code, const FCompileInfo& info)
 {
 	CComPtr<IDxcBlobEncoding> pSourceBlob;
 	HRESULT hr = m_pLibrary->CreateBlobWithEncodingFromPinned(shader_code.c_str(), shader_code.size(), CP_UTF8, &pSourceBlob);
@@ -166,7 +166,7 @@ std::vector<uint32_t> CDXCCompiler::compile(const std::string& shader_code, cons
 		return {};
 	}
 
-	std::vector<uint32_t> result;
+	utl::vector<uint32_t> result;
 
 	IDxcBlob* pBlob;
 	hr = pResult->GetResult(&pBlob);
@@ -177,7 +177,7 @@ std::vector<uint32_t> CDXCCompiler::compile(const std::string& shader_code, cons
 			const uint32_t* pData = reinterpret_cast<const uint32_t*>(pBlob->GetBufferPointer());
 			size_t numElements = pBlob->GetBufferSize() / sizeof(uint32_t);
 
-			result = std::vector<uint32_t>(pData, pData + numElements);
+			result = utl::vector<uint32_t>(pData, pData + numElements);
 		}
 	}
 	pBlob->Release();

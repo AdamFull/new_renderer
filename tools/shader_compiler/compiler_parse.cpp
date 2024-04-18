@@ -168,7 +168,7 @@ namespace shader_compiler
 	{
 		sjson.try_parse_to("name", value.name, true);
 
-		std::vector<FShaderDescription> descriptions;
+		utl::vector<FShaderDescription> descriptions;
 		sjson.try_parse_to("shaders", descriptions);
 
 		for (auto& description : descriptions)
