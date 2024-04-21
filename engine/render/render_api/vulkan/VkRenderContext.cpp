@@ -996,114 +996,116 @@ void CVkRenderContext::processResourceBarriers(EQueueTypeFlagBits queue, const u
 		ERenderResourceAccessFlagBits dst_resource_access{};
 		unpackDependencyBarrier(resource_barrier.type, src_resource_access, dst_resource_access);
 
-		// Memory barrier
-		if (resource_barrier.type == ERenderResourceDependencyBarrierType::eWriteAfterWrite)
+		if (resource_barrier.translationBarrier)
 		{
-			auto& memory_barrier = translation_info.memoryTranslationInfos.emplace_back();
-		
 			if (resource_barrier.resource.type & ERenderResourceTypeFlagBits::eAllImage)
 			{
-				auto& texture = textures.at(resource_barrier.resource.handle);
-				auto& texture_subresource = texture->mips[resource_barrier.subresourceIndex];
-		
-				memory_barrier.srcStageMask = get_translation_stage_flags(texture_subresource.layout, resource_barrier.srcPassType);
-				memory_barrier.srcAccessMask = get_translation_access_flags(texture_subresource.layout, resource_barrier.srcPassType, src_resource_access);
-				memory_barrier.dstStageMask = get_translation_stage_flags(texture_subresource.layout, resource_barrier.dstPassType);
-				memory_barrier.dstAccessMask = get_translation_access_flags(texture_subresource.layout, resource_barrier.dstPassType, dst_resource_access);
-			}
-			else
-			{
-				memory_barrier.srcStageMask = get_translation_stage_flags(resource_barrier.srcPassType);
-				memory_barrier.srcAccessMask = get_translation_access_flags(src_resource_access);
-				memory_barrier.dstStageMask = get_translation_stage_flags(resource_barrier.dstPassType);
-				memory_barrier.dstAccessMask = get_translation_access_flags(dst_resource_access);
-			}
-		
-			continue;
-		}
+				auto& texture_barrier = translation_info.imageTranslationInfos.emplace_back();
+				texture_barrier.subresourceRange.baseArrayLayer = 0u;
+				texture_barrier.subresourceRange.baseMipLevel = 0u;
 
-		if (resource_barrier.resource.type & ERenderResourceTypeFlagBits::eAllImage)
-		{
-			auto& texture_barrier = translation_info.imageTranslationInfos.emplace_back();
-			texture_barrier.subresourceRange.baseArrayLayer = 0u;
-			texture_barrier.subresourceRange.baseMipLevel = 0u;
-
-			vk::ImageLayout old_image_layout{ vk::ImageLayout::eUndefined }, new_image_layout{ vk::ImageLayout::eUndefined };
-			vk::ImageAspectFlags aspect_flags{};
-			if (resource_barrier.resource.type & ERenderResourceTypeFlagBits::eBackbuffer)
-			{
-				if (resource_barrier.type == ERenderResourceDependencyBarrierType::eWriteAfterNothing)
-					new_image_layout = vk::ImageLayout::eColorAttachmentOptimal;
-				else if (resource_barrier.type == ERenderResourceDependencyBarrierType::eWriteAfterWrite)
-					new_image_layout = m_backbufferLayout;
-				else
-					new_image_layout = vk::ImageLayout::ePresentSrcKHR;
-
-				old_image_layout = m_backbufferLayout;
-				m_backbufferLayout = new_image_layout;
-				texture_barrier.handle = m_pDevice->m_swapchain.images[m_pDevice->m_swapchain.currentFrame];
-				texture_barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-				texture_barrier.subresourceRange.layerCount = 1u;
-				texture_barrier.subresourceRange.levelCount = 1u;
-			}
-			else
-			{
-				auto& texture = textures.at(resource_barrier.resource.handle);
-				auto& texture_subresource = texture->mips[resource_barrier.subresourceIndex];
-
-				if (resource_barrier.type == ERenderResourceDependencyBarrierType::eWriteAfterNothing)
-					new_image_layout = get_render_target_intermediate_layout(*texture);
-				else if (resource_barrier.type == ERenderResourceDependencyBarrierType::eWriteAfterWrite)
-					new_image_layout = texture_subresource.layout;
-				else
-					new_image_layout = get_render_target_final_layout(*texture);
-
-				old_image_layout = texture_subresource.layout;
-				texture_subresource.layout = new_image_layout;
-				texture_barrier.handle = texture->image.handle;
-				texture_barrier.subresourceRange.aspectMask = get_texture_aspect_flags(*texture);
-
-				// TODO: Fix here required. Sometimes i need to process all layers and levels
-				if (resource_barrier.subresourceIndex == 0u)
+				vk::ImageLayout old_image_layout{ vk::ImageLayout::eUndefined }, new_image_layout{ vk::ImageLayout::eUndefined };
+				vk::ImageAspectFlags aspect_flags{};
+				if (resource_barrier.resource.type & ERenderResourceTypeFlagBits::eBackbuffer)
 				{
-					texture_barrier.subresourceRange.layerCount = texture->totalLayers;
-					texture_barrier.subresourceRange.levelCount = texture->initialData.base.mipLevels;
+					if (resource_barrier.type == ERenderResourceDependencyBarrierType::eWriteAfterNothing)
+						new_image_layout = vk::ImageLayout::eColorAttachmentOptimal;
+					else if (resource_barrier.type == ERenderResourceDependencyBarrierType::eWriteAfterWrite)
+						new_image_layout = m_backbufferLayout;
+					else
+						new_image_layout = vk::ImageLayout::ePresentSrcKHR;
 
-					// TODO: it's incorrect solution
-					if (texture->name == "prefiltered_cube_target")
+					old_image_layout = m_backbufferLayout;
+					m_backbufferLayout = new_image_layout;
+					texture_barrier.handle = m_pDevice->m_swapchain.images[m_pDevice->m_swapchain.currentFrame];
+					texture_barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+					texture_barrier.subresourceRange.layerCount = 1u;
+					texture_barrier.subresourceRange.levelCount = 1u;
+				}
+				else
+				{
+					auto& texture = textures.at(resource_barrier.resource.handle);
+					auto& texture_subresource = texture->mips[resource_barrier.subresourceIndex];
+
+					if (resource_barrier.type == ERenderResourceDependencyBarrierType::eWriteAfterNothing)
+						new_image_layout = get_render_target_intermediate_layout(*texture);
+					else if (resource_barrier.type == ERenderResourceDependencyBarrierType::eWriteAfterWrite)
+						new_image_layout = texture_subresource.layout;
+					else
+						new_image_layout = get_render_target_final_layout(*texture);
+
+					old_image_layout = texture_subresource.layout;
+					texture_subresource.layout = new_image_layout;
+					texture_barrier.handle = texture->image.handle;
+					texture_barrier.subresourceRange.aspectMask = get_texture_aspect_flags(*texture);
+
+					// TODO: Fix here required. Sometimes i need to process all layers and levels
+					if (resource_barrier.subresourceIndex == 0u)
 					{
-						for (auto& mip : texture->mips)
-							mip.layout = new_image_layout;
+						texture_barrier.subresourceRange.layerCount = texture->totalLayers;
+						texture_barrier.subresourceRange.levelCount = texture->initialData.base.mipLevels;
+
+						// TODO: it's incorrect solution
+						if (texture->name == "prefiltered_cube_target")
+						{
+							for (auto& mip : texture->mips)
+								mip.layout = new_image_layout;
+						}
+					}
+					else
+					{
+						texture_barrier.subresourceRange.baseMipLevel = texture_subresource.baseMipLevel;
+						texture_barrier.subresourceRange.levelCount = texture_subresource.mipLevelCount;
+						texture_barrier.subresourceRange.layerCount = 1u;
 					}
 				}
-				else
-				{
-					texture_barrier.subresourceRange.baseMipLevel = texture_subresource.baseMipLevel;
-					texture_barrier.subresourceRange.levelCount = texture_subresource.mipLevelCount;
-					texture_barrier.subresourceRange.layerCount = 1u;
-				}
+
+				texture_barrier.srcStageMask = get_translation_stage_flags(old_image_layout, resource_barrier.srcPassType);
+				texture_barrier.srcAccessMask = get_translation_access_flags(old_image_layout, resource_barrier.srcPassType, src_resource_access);
+				texture_barrier.oldLayout = old_image_layout;
+				texture_barrier.dstStageMask = get_translation_stage_flags(new_image_layout, resource_barrier.dstPassType);
+				texture_barrier.dstAccessMask = get_translation_access_flags(new_image_layout, resource_barrier.dstPassType, dst_resource_access);
+				texture_barrier.newLayout = new_image_layout;
 			}
-			
-			texture_barrier.srcStageMask = get_translation_stage_flags(old_image_layout, resource_barrier.srcPassType);
-			texture_barrier.srcAccessMask = get_translation_access_flags(old_image_layout, resource_barrier.srcPassType, src_resource_access);
-			texture_barrier.oldLayout = old_image_layout;
-			texture_barrier.dstStageMask = get_translation_stage_flags(new_image_layout, resource_barrier.dstPassType);
-			texture_barrier.dstAccessMask = get_translation_access_flags(new_image_layout, resource_barrier.dstPassType, dst_resource_access);
-			texture_barrier.newLayout = new_image_layout;
+			// For buffers
+			else
+			{
+				auto& buffer = buffers.at(resource_barrier.resource.handle);
+
+				FVkBufferTranslationInfo buffer_translation_info{};
+				buffer_translation_info.handle = buffer->handle;
+				buffer_translation_info.size = buffer->size;
+				buffer_translation_info.srcStageMask = get_translation_stage_flags(resource_barrier.srcPassType);
+				buffer_translation_info.srcAccessMask = get_translation_access_flags(src_resource_access);
+				buffer_translation_info.dstStageMask = get_translation_stage_flags(resource_barrier.dstPassType);
+				buffer_translation_info.dstAccessMask = get_translation_access_flags(dst_resource_access);
+				translation_info.bufferTranslationInfos.emplace_back(buffer_translation_info);
+			}
 		}
-		// For buffers
 		else
 		{
-			auto& buffer = buffers.at(resource_barrier.resource.handle);
-		
-			FVkBufferTranslationInfo buffer_translation_info{};
-			buffer_translation_info.handle = buffer->handle;
-			buffer_translation_info.size = buffer->size;
-			buffer_translation_info.srcStageMask = get_translation_stage_flags(resource_barrier.srcPassType);
-			buffer_translation_info.srcAccessMask = get_translation_access_flags(src_resource_access);
-			buffer_translation_info.dstStageMask = get_translation_stage_flags(resource_barrier.dstPassType);
-			buffer_translation_info.dstAccessMask = get_translation_access_flags(dst_resource_access);
-			translation_info.bufferTranslationInfos.emplace_back(buffer_translation_info);
+			if (resource_barrier.type == ERenderResourceDependencyBarrierType::eWriteAfterWrite)
+			{
+				auto& memory_barrier = translation_info.memoryTranslationInfos.emplace_back();
+
+				if (resource_barrier.resource.type & ERenderResourceTypeFlagBits::eAllImage)
+				{
+					auto& texture = textures.at(resource_barrier.resource.handle);
+					auto& texture_subresource = texture->mips[resource_barrier.subresourceIndex];
+
+					memory_barrier.srcStageMask = get_translation_stage_flags(texture_subresource.layout, resource_barrier.srcPassType);
+					memory_barrier.srcAccessMask = get_translation_access_flags(texture_subresource.layout, resource_barrier.srcPassType, src_resource_access);
+					memory_barrier.dstStageMask = get_translation_stage_flags(texture_subresource.layout, resource_barrier.dstPassType);
+					memory_barrier.dstAccessMask = get_translation_access_flags(texture_subresource.layout, resource_barrier.dstPassType, dst_resource_access);
+				}
+				else
+				{
+					memory_barrier.srcStageMask = get_translation_stage_flags(resource_barrier.srcPassType);
+					memory_barrier.srcAccessMask = get_translation_access_flags(src_resource_access);
+					memory_barrier.dstStageMask = get_translation_stage_flags(resource_barrier.dstPassType);
+					memory_barrier.dstAccessMask = get_translation_access_flags(dst_resource_access);
+				}
+			}
 		}
 	}
 

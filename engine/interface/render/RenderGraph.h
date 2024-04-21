@@ -171,6 +171,7 @@ namespace engine
 			EPassType srcPassType{};
 			EPassType dstPassType{};
 			u32 subresourceIndex{ 0u };
+			bool translationBarrier{ false };
 		};
 
 		struct FRenderGraphAttachmentInfo

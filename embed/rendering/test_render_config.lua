@@ -203,8 +203,9 @@ end
 function compute_bloom()
     render_graph:push_debug_marker("Compute bloom", 0xffff33ff, QueueType.graphics)
 
+    -- index 10
     -- Starting from brightness detection pass
-    do
+    do 
         local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:brightdetect")
 
         pass_ci:add_workgroup_size_info("bloom_target", true)

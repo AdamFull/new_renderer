@@ -662,6 +662,21 @@ void CRenderGraph::build()
 			return true;
 		};
 
+	auto is_last_pass_access = [](const FRenderResource& resource, const std::unordered_set<u64>& accessed_passes)
+		{
+			for (const auto& [access_flag, accessing_passes] : resource.usages)
+			{
+				for (const auto& pass_index : accessing_passes)
+				{
+					if (auto found = accessed_passes.find(pass_index); found == accessed_passes.end())
+						return false;
+					
+				}
+			}
+
+			return true;
+		};
+
 	struct tmp_access_info
 	{
 		ERenderResourceAccessFlagBits access{};
@@ -680,6 +695,7 @@ void CRenderGraph::build()
 
 	utl::hash_map<std::pair<u64, u32>, tmp_access_info, pair_hash> resource_access_map{};
 	utl::hash_map<u64, FPassBuildInfo> build_infos{ m_vPassExecutionQueue.size() };
+	utl::hash_map<u64, std::unordered_set<u64>> per_res_accessed_passes{};
 
 	for (u64 pass_index : m_vPassExecutionQueue)
 	{
@@ -694,6 +710,10 @@ void CRenderGraph::build()
 			{
 				const auto& resource_binding = resource_bindings[resource_index];
 				const auto& render_resource = m_vRenderResources[resource_binding.resource];
+
+				// Save all accessed passes for check is this last access
+				auto& accessed_passes = per_res_accessed_passes[resource_binding.resource];
+				accessed_passes.emplace(pass_index);
 
 				// Barriers is not needed for static resource (Loaded from file). 
 				if (render_resource.type & ERenderResourceTypeFlagBits::eStaticImage)
@@ -710,13 +730,11 @@ void CRenderGraph::build()
 				if (last_resource_access.access == access_flag && access_flag == ERenderResourceAccessFlagBits::eRead)
 					continue;
 
-				auto new_resource_access = access_flag;
+				//auto was_any_time_writen = was_accessed(last_resource_access, ERenderResourceAccessFlagBits::eWrite);
+				//if (was_any_time_writen && access_flag == ERenderResourceAccessFlagBits::eWrite)
+				//	last_resource_access.access = ERenderResourceAccessFlagBits::eWrite;
 
-				auto was_any_time_writen = was_accessed(last_resource_access, ERenderResourceAccessFlagBits::eWrite);
-				if (was_any_time_writen)
-					int iii = 0;
-
-				auto barrier_type = packDependencyBarrier(last_resource_access.access, new_resource_access);
+				auto barrier_type = packDependencyBarrier(last_resource_access.access, access_flag);
 
 				// Check for last access duplicating
 				if (last_resource_access.last_barrier)
@@ -743,6 +761,10 @@ void CRenderGraph::build()
 				auto& pass_barriers = m_perPassResourceBarriers[pass_index];
 				auto& new_barrier = pass_barriers.emplace_back();
 
+				// First time barrier should be translation barrier
+				if (last_resource_access.access == ERenderResourceAccessFlagBits::eNone || barrier_type != ERenderResourceDependencyBarrierType::eWriteAfterWrite)
+					new_barrier.translationBarrier = true;
+
 				new_barrier.type = barrier_type;
 				new_barrier.resource.handle = render_resource.handle;
 				new_barrier.resource.type = render_resource.type;
@@ -750,13 +772,15 @@ void CRenderGraph::build()
 				new_barrier.srcPassType = last_resource_access.pass_type;
 				new_barrier.dstPassType = pass->type();
 
-				last_resource_access.access = new_resource_access;
-				last_resource_access.all_time_access.emplace_back(new_resource_access);
+				last_resource_access.access = access_flag;
+				last_resource_access.all_time_access.emplace_back(access_flag);
 				last_resource_access.pass_type = new_barrier.dstPassType;
 				last_resource_access.last_barrier = &new_barrier;
 			}
 		}
 	}
+
+	// Barriers post process
 
 	//m_vPassDependencies.resize(m_vRenderPasses.size());
 	//m_vPassMergeDependencies.resize(m_vRenderPasses.size());
@@ -875,6 +899,7 @@ void CRenderGraph::execute(f32 dt)
 	backbuffer_barrier.type = packDependencyBarrier(ERenderResourceAccessFlagBits::eWrite, ERenderResourceAccessFlagBits::eRead);
 	backbuffer_barrier.srcPassType = EPassType::eRender;
 	backbuffer_barrier.dstPassType = EPassType::eNone;
+	backbuffer_barrier.translationBarrier = true;
 
 	render_context->processResourceBarriers(EQueueTypeFlagBits::eGraphics, backbuffer_barriers);
 }
