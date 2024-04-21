@@ -271,6 +271,7 @@ namespace engine
 				"shader", &FRenderConfigPassCreateInfo::shader,
 				"one_time", &FRenderConfigPassCreateInfo::oneTime,
 				"size_target", &FRenderConfigPassCreateInfo::sizeTarget,
+				"clear_resources", &FRenderConfigPassCreateInfo::clearResource,
 				"bind_write_resource", sol::overload(
 					static_cast<void(FRenderConfigPassCreateInfo::*)(const std::string&, const std::string&)>(&FRenderConfigPassCreateInfo::bindWriteResource),
 					static_cast<void(FRenderConfigPassCreateInfo::*)(const std::string&, const std::string&, u32)>(&FRenderConfigPassCreateInfo::bindWriteResource)

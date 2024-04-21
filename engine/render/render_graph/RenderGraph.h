@@ -81,7 +81,6 @@ namespace engine
 			utl::hash_map<u64, utl::vector<FResourceBarrierInfo>> m_perPassResourceBarriers{};
 
 			utl::vector<u64> m_vPassExecutionQueue{};
-			utl::vector<u64> m_vPassOrder{};
 			utl::vector<std::unordered_set<u64>> m_vPassDependencies{};
 			utl::vector<std::unordered_set<u64>> m_vPassMergeDependencies{};
 			IRenderInterface* m_pRenderInterface{ nullptr };

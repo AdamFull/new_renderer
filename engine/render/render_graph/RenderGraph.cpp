@@ -18,6 +18,18 @@
 
 using namespace engine::render;
 
+struct pair_hash
+{
+	template <class _T1, class _T2>
+	std::size_t operator()(const std::pair<_T1, _T2>& pair) const 
+	{
+		std::size_t hash1 = std::hash<_T1>{}(pair.first);
+		std::size_t hash2 = std::hash<_T2>{}(pair.second);
+		return hash1 ^ hash2;
+	}
+};
+
+
 struct FResourceAccessInfo
 {
 	ERenderResourceDependencyBarrierType type{};
@@ -569,6 +581,9 @@ u64 CRenderGraph::addRenderPass(const std::string& name, const FRenderConfigComp
 {
 	log_info("[Render Graph] Add compute pass: {}", name);
 
+	if (name == "downsample_pass_0")
+		int iiii = 0;
+
 	u64 pass_index = m_vRenderPasses.size();
 	m_vPassExecutionQueue.emplace_back(pass_index);
 
@@ -635,6 +650,114 @@ void CRenderGraph::build()
 		return;
 	}
 
+
+	auto is_x_only_access = [](const FRenderResource& resource, ERenderResourceAccessFlagBits required_access)
+		{
+			for (const auto& [access_flag, accessing_passes] : resource.usages)
+			{
+				if (access_flag != required_access)
+					return false;
+			}
+
+			return true;
+		};
+
+	struct tmp_access_info
+	{
+		ERenderResourceAccessFlagBits access{};
+		utl::vector<ERenderResourceAccessFlagBits> all_time_access{};
+		EPassType pass_type{};
+		FResourceBarrierInfo* last_barrier{ nullptr };
+	};
+
+	auto was_accessed = [](const tmp_access_info& access_info, ERenderResourceAccessFlagBits access_flag)
+		{
+			auto found = std::find_if(access_info.all_time_access.begin(), access_info.all_time_access.end(),
+				[access_flag](const ERenderResourceAccessFlagBits& access) {return access == access_flag; });
+
+			return found != access_info.all_time_access.end();
+		};
+
+	utl::hash_map<std::pair<u64, u32>, tmp_access_info, pair_hash> resource_access_map{};
+	utl::hash_map<u64, FPassBuildInfo> build_infos{ m_vPassExecutionQueue.size() };
+
+	for (u64 pass_index : m_vPassExecutionQueue)
+	{
+		auto& pass = m_vRenderPasses.at(pass_index);
+		for (const auto& [resource_group, resource_bindings] : pass->m_renderResources)
+		{
+			ERenderResourceAccessFlagBits access_flag{};
+			ERenderResourceGroupFlagBits group_flag{};
+			unpackResourceGroup(resource_group, access_flag, group_flag);
+
+			for (u64 resource_index = 0ull; resource_index < resource_bindings.size(); ++resource_index)
+			{
+				const auto& resource_binding = resource_bindings[resource_index];
+				const auto& render_resource = m_vRenderResources[resource_binding.resource];
+
+				// Barriers is not needed for static resource (Loaded from file). 
+				if (render_resource.type & ERenderResourceTypeFlagBits::eStaticImage)
+					continue;
+
+				// Check will this resource even be writen by any pass
+				if (is_x_only_access(render_resource, ERenderResourceAccessFlagBits::eRead))
+					continue;
+				
+				auto resource_key = std::make_pair(resource_binding.resource, resource_binding.subresource);
+				auto& last_resource_access = resource_access_map[resource_key];
+
+				// Ignoring read after read barriers
+				if (last_resource_access.access == access_flag && access_flag == ERenderResourceAccessFlagBits::eRead)
+					continue;
+
+				auto new_resource_access = access_flag;
+
+				auto was_any_time_writen = was_accessed(last_resource_access, ERenderResourceAccessFlagBits::eWrite);
+				if (was_any_time_writen)
+					int iii = 0;
+
+				auto barrier_type = packDependencyBarrier(last_resource_access.access, new_resource_access);
+
+				// Check for last access duplicating
+				if (last_resource_access.last_barrier)
+				{
+					auto& last_barrier = *last_resource_access.last_barrier;
+					if (
+						last_barrier.type == barrier_type &&
+						last_barrier.resource.handle == render_resource.handle &&
+						last_barrier.resource.type == render_resource.type &&
+						last_barrier.subresourceIndex == resource_binding.subresource &&
+						last_barrier.srcPassType == last_resource_access.pass_type &&
+						last_barrier.dstPassType == pass->type()
+						)
+						continue;
+				}
+				
+				// Prepare infos for render pipeline
+				auto& build_info = build_infos[pass_index];
+				auto& attachment = build_info.attachments[resource_binding.resource];
+				attachment.loadOp = barrier_type == ERenderResourceDependencyBarrierType::eWriteAfterWrite ? ERenderResourceLoadOp::eLoad : ERenderResourceLoadOp::eClear;
+				attachment.storeOp = (render_resource.usages.count(ERenderResourceAccessFlagBits::eRead) || resource_binding.resource == m_backBufferResource) ? ERenderResourceStoreOp::eStore : ERenderResourceStoreOp::eDontCare;
+
+				// TODO: Ignore duplicate barriers
+				auto& pass_barriers = m_perPassResourceBarriers[pass_index];
+				auto& new_barrier = pass_barriers.emplace_back();
+
+				new_barrier.type = barrier_type;
+				new_barrier.resource.handle = render_resource.handle;
+				new_barrier.resource.type = render_resource.type;
+				new_barrier.subresourceIndex = resource_binding.subresource;
+				new_barrier.srcPassType = last_resource_access.pass_type;
+				new_barrier.dstPassType = pass->type();
+
+				last_resource_access.access = new_resource_access;
+				last_resource_access.all_time_access.emplace_back(new_resource_access);
+				last_resource_access.pass_type = new_barrier.dstPassType;
+				last_resource_access.last_barrier = &new_barrier;
+			}
+		}
+	}
+
 	//m_vPassDependencies.resize(m_vRenderPasses.size());
 	//m_vPassMergeDependencies.resize(m_vRenderPasses.size());
 	//m_vPassProcessing.resize(m_vRenderPasses.size());
@@ -647,153 +770,11 @@ void CRenderGraph::build()
 	//
 	//reorderPasses(m_vPassExecutionQueue);
 	//
-	m_vPassOrder.resize(m_vRenderPasses.size());
-	u64 pass_order{ 0ull };
-	for (u64 pass_index : m_vPassExecutionQueue)
-		m_vPassOrder.at(pass_index) = pass_order++;
-
-	// Generate dependency barriers
-	utl::vector<utl::vector<FResourceAccessInfo>> per_pass_resource_access{};
-	utl::hash_map<FRenderResourceBindingKey, u64> unique_barrier_counter;
-	utl::hash_map<FRenderResourceBinding, u64> unique_resource_writes{};
-
-	per_pass_resource_access.resize(m_vRenderPasses.size());
-
-	// For all passes
-	for (u64 src_pass_index : m_vPassExecutionQueue)
-	{
-		auto src_pass_order = m_vPassOrder.at(src_pass_index);
-		auto& src_pass = m_vRenderPasses.at(src_pass_index);
-
-		// For all src pass resources
-		for (const auto& [src_resource_group, src_resource_bindings] : src_pass->m_renderResources)
-		{
-			ERenderResourceAccessFlagBits src_access_flag{};
-			ERenderResourceGroupFlagBits src_group_flag{};
-			unpackResourceGroup(src_resource_group, src_access_flag, src_group_flag);
-
-			for (u64 src_resource_index = 0ull; src_resource_index < src_resource_bindings.size(); ++src_resource_index)
-			{
-				const auto& src_resource_access = src_resource_bindings[src_resource_index];
-
-				// Write first resource access barriers
-				if (src_access_flag == ERenderResourceAccessFlagBits::eWrite && !unique_resource_writes.count(src_resource_access))
-				{
-					auto& resource_access_infos = per_pass_resource_access[src_pass_index];
-					auto& access_info = resource_access_infos.emplace_back();
-					access_info.type = packDependencyBarrier(ERenderResourceAccessFlagBits::eNone, src_access_flag);
-					access_info.srcPassIndex = src_pass_index;
-					access_info.resource = src_resource_access.resource;
-					access_info.subresource = src_resource_access.subresource;
-
-					// TODO: add hash function for resource access structure
-					unique_resource_writes[src_resource_access]++;
-				}
-
-				auto& src_render_resource = m_vRenderResources.at(src_resource_access.resource);
-				for (const auto& [dst_access_flag, accessing_passes] : src_render_resource.usages)
-				{
-					for (u64 dst_pass_index : accessing_passes)
-					{
-						auto dst_pass_order = m_vPassOrder.at(dst_pass_index);
-						// One shader can write after write in the same pass to same resource, but different subresource
-						bool is_same_pass = src_pass_index == dst_pass_index;
-						bool is_ro_access = (src_access_flag == ERenderResourceAccessFlagBits::eRead && dst_access_flag == ERenderResourceAccessFlagBits::eRead);
-						bool is_invalid_order = dst_pass_order < src_pass_order;
-						bool is_same_access = src_access_flag == dst_access_flag;
-
-						// For situation where we using subresource
-						if (is_same_pass && is_same_access)
-							continue;
-						else if (is_same_pass || is_ro_access || is_invalid_order)
-							continue;
-
-						auto& dst_pass = m_vRenderPasses[dst_pass_index];
-
-						// If destination access is write, and src and destination resource is same, than check for subresources, it should be different
-						//if (dst_access_flag == ERenderResourceAccessFlagBits::eWrite)
-						//{
-						//	// Make destination resource usage group and find all resources by this key
-						//	auto dst_resource_group = packResourceGroup(dst_access_flag, src_group_flag);
-						//	if (auto found_bindings = dst_pass->m_renderResources.find(dst_resource_group); found_bindings != dst_pass->m_renderResources.end())
-						//	{
-						//		// Reject barrier candidate if it's another subresource
-						//		auto& dst_resource_bindings = found_bindings->second;
-						//		if (auto found_resource = std::find_if(dst_resource_bindings.begin(), dst_resource_bindings.end(), [&src_resource_access](const FRenderResourceBinding& binding) {
-						//			return binding.resource == src_resource_access.resource && binding.subresource != src_resource_access.subresource;
-						//			}); found_resource != dst_resource_bindings.end())
-						//		{ continue; }
-						//	}
-						//}
-
-						auto barrier_type = packDependencyBarrier(src_access_flag, dst_access_flag);
-						
-						// Filter repeating barriers
-						auto resource_barrier_key = FRenderResourceBindingKey{ src_resource_access, barrier_type };
-						if (unique_barrier_counter.count(resource_barrier_key))
-							continue;
-
-						auto& resource_access_infos = per_pass_resource_access[dst_pass_index];
-						auto& access_info = resource_access_infos.emplace_back();
-						access_info.type = barrier_type;
-						access_info.srcPassIndex = src_pass_index;
-						access_info.dstPassIndex = dst_pass_index;
-						access_info.resource = src_resource_access.resource;
-						access_info.subresource = src_resource_access.subresource;
-
-						unique_barrier_counter[resource_barrier_key]++;
-					}
-				}
-			}
-		}
-	}
-
-	// Prepare resource barriers
-	for (u64 pass_index = 0ull; pass_index < per_pass_resource_access.size(); ++pass_index)
-	{
-		auto& access_infos = per_pass_resource_access[pass_index];
-		auto& pass_barriers = m_perPassResourceBarriers[pass_index];
-		for (const auto& access_info : access_infos)
-		{
-			auto& new_barrier = pass_barriers.emplace_back();
-			auto& render_resource = m_vRenderResources.at(access_info.resource);
-
-			if (access_info.srcPassIndex != INVALID_HANDLE)
-			{
-				auto& src_pass = m_vRenderPasses.at(access_info.srcPassIndex);
-				new_barrier.srcPassType = src_pass->type();
-			}
-			
-			if (access_info.dstPassIndex != INVALID_HANDLE)
-			{
-				auto& dst_pass = m_vRenderPasses.at(access_info.dstPassIndex);
-				new_barrier.dstPassType = dst_pass->type();
-			}
-
-			new_barrier.type = access_info.type;
-			new_barrier.resource.handle = render_resource.handle;
-			new_barrier.resource.type = render_resource.type;
-			new_barrier.subresourceIndex = access_info.subresource;
-
-			if (access_info.type == ERenderResourceDependencyBarrierType::eWriteAfterWrite && render_resource.handle == 13 && new_barrier.subresourceIndex == 0u)
-				int iiii = 0;
-		}
-	}
 
 	// Build render passes
 	for (u64 pass_index : m_vPassExecutionQueue)
 	{
-		FPassBuildInfo build_info{};
-
-		auto& resource_barriers = per_pass_resource_access[pass_index];
-		for (const auto& access_info : resource_barriers)
-		{
-			auto& render_resource = m_vRenderResources.at(access_info.resource);
-			auto& attachment = build_info.attachments[access_info.resource];
-			attachment.loadOp = access_info.type == ERenderResourceDependencyBarrierType::eWriteAfterWrite ? ERenderResourceLoadOp::eLoad : ERenderResourceLoadOp::eClear;
-			attachment.storeOp = (render_resource.usages.count(ERenderResourceAccessFlagBits::eRead) || access_info.resource == m_backBufferResource) ? ERenderResourceStoreOp::eStore : ERenderResourceStoreOp::eDontCare;
-		}
-
+		auto& build_info = build_infos[pass_index];
 		auto& pass = m_vRenderPasses.at(pass_index);
 		pass->build(build_info);
 	}

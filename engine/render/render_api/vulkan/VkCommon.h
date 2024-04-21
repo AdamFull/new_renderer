@@ -26,6 +26,11 @@ namespace engine
 				return is_depth_only_format(format) || is_depth_stencil_format(format);
 			}
 
+			inline bool is_stencil_format(vk::Format format)
+			{
+				return !is_depth_only_format(format) || !is_depth_stencil_format(format);
+			}
+
 			// Helper functions
 			inline bool check_contains_single(const std::string& s1, const utl::vector<std::string>& rhs)
 			{
@@ -56,7 +61,7 @@ namespace engine
 				if (texture.isRenderTarget)
 				{
 					auto format = utl::cast<vk::Format>(texture.initialData.base.format);
-					usageFlags |= (is_depth_format(format) ? vk::ImageUsageFlagBits::eDepthStencilAttachment : vk::ImageUsageFlagBits::eColorAttachment);
+					usageFlags |= ((is_depth_stencil_format(format) || is_depth_only_format(format)) ? vk::ImageUsageFlagBits::eDepthStencilAttachment : vk::ImageUsageFlagBits::eColorAttachment);
 				}
 
 				if (texture.initialData.base.typeFlags & ETextureCreateFlagBits::eTransferable)
@@ -279,8 +284,18 @@ namespace engine
 				return instanceSize;
 			}
 
-			inline vk::PipelineStageFlags2KHR get_translation_stage_flags(vk::ImageLayout layout)
+			inline vk::PipelineStageFlags2KHR get_translation_stage_flags(vk::ImageLayout layout, EPassType pass_type = EPassType::eNone)
 			{
+				auto get_stages_by_pass_type = [](EPassType type) -> vk::PipelineStageFlags2KHR
+					{
+						//if (type == EPassType::eCompute)
+						//	return vk::PipelineStageFlagBits2KHR::eComputeShader;
+						//else if (type == EPassType::eRender)
+						//	return vk::PipelineStageFlagBits2KHR::eAllGraphics;
+						//else
+							return vk::PipelineStageFlagBits2KHR::eAllGraphics | vk::PipelineStageFlagBits2KHR::eComputeShader;
+					};
+
 				switch (layout)
 				{
 				case vk::ImageLayout::eUndefined: return vk::PipelineStageFlagBits2KHR::eAllCommands;
@@ -291,16 +306,16 @@ namespace engine
 				case vk::ImageLayout::eDepthStencilAttachmentOptimal:
 				case vk::ImageLayout::eDepthAttachmentOptimal: return vk::PipelineStageFlagBits2KHR::eEarlyFragmentTests | vk::PipelineStageFlagBits2KHR::eLateFragmentTests;
 				case vk::ImageLayout::eDepthReadOnlyOptimal:
-				case vk::ImageLayout::eDepthStencilReadOnlyOptimal: return vk::PipelineStageFlagBits2KHR::eFragmentShader | vk::PipelineStageFlagBits2KHR::eVertexShader | vk::PipelineStageFlagBits2KHR::eComputeShader;
+				case vk::ImageLayout::eDepthStencilReadOnlyOptimal: return get_stages_by_pass_type(pass_type);
 				case vk::ImageLayout::eFragmentShadingRateAttachmentOptimalKHR: return vk::PipelineStageFlagBits2KHR::eFragmentShadingRateAttachmentKHR;
-				case vk::ImageLayout::eShaderReadOnlyOptimal: return vk::PipelineStageFlagBits2KHR::eFragmentShader | vk::PipelineStageFlagBits2KHR::eVertexShader | vk::PipelineStageFlagBits2KHR::eComputeShader;
+				case vk::ImageLayout::eShaderReadOnlyOptimal: return get_stages_by_pass_type(pass_type);
 				case vk::ImageLayout::ePresentSrcKHR: return vk::PipelineStageFlagBits2KHR::eAllCommands;
-				case vk::ImageLayout::eGeneral: return vk::PipelineStageFlagBits2KHR::eVertexShader | vk::PipelineStageFlagBits2KHR::eGeometryShader | vk::PipelineStageFlagBits2KHR::eFragmentShader | vk::PipelineStageFlagBits2KHR::eComputeShader;
+				case vk::ImageLayout::eGeneral: return get_stages_by_pass_type(pass_type);
 				default: return vk::PipelineStageFlagBits2KHR::eNone;
 				}
 			}
 
-			inline vk::AccessFlags2KHR get_translation_access_flags(vk::ImageLayout layout, ERenderResourceAccessFlagBits access_type = ERenderResourceAccessFlagBits::eNone)
+			inline vk::AccessFlags2KHR get_translation_access_flags(vk::ImageLayout layout, EPassType pass_type = EPassType::eNone, ERenderResourceAccessFlagBits access_type = ERenderResourceAccessFlagBits::eNone)
 			{
 				switch (layout)
 				{
@@ -311,7 +326,12 @@ namespace engine
 				case vk::ImageLayout::eDepthStencilAttachmentOptimal:
 				case vk::ImageLayout::eDepthAttachmentOptimal: return vk::AccessFlagBits2KHR::eDepthStencilAttachmentRead | vk::AccessFlagBits2KHR::eDepthStencilAttachmentWrite;
 				case vk::ImageLayout::eDepthReadOnlyOptimal:
-				case vk::ImageLayout::eDepthStencilReadOnlyOptimal: return vk::AccessFlagBits2KHR::eShaderRead | vk::AccessFlagBits2KHR::eDepthStencilAttachmentRead;
+				case vk::ImageLayout::eDepthStencilReadOnlyOptimal: {
+					if (pass_type == EPassType::eCompute)
+						return vk::AccessFlagBits2KHR::eShaderRead; 
+
+					return vk::AccessFlagBits2KHR::eShaderRead | vk::AccessFlagBits2KHR::eDepthStencilAttachmentRead;
+				} 
 				case vk::ImageLayout::eFragmentShadingRateAttachmentOptimalKHR: return vk::AccessFlagBits2KHR::eFragmentShadingRateAttachmentReadKHR;
 				case vk::ImageLayout::eShaderReadOnlyOptimal: return vk::AccessFlagBits2KHR::eShaderRead | vk::AccessFlagBits2KHR::eInputAttachmentRead;
 				case vk::ImageLayout::eTransferSrcOptimal: return vk::AccessFlagBits2KHR::eTransferRead;
@@ -360,7 +380,6 @@ namespace engine
 			{
 				auto usage_flags = get_texture_usage_flags(texture);
 				auto image_format = static_cast<vk::Format>(texture.initialData.base.format);
-				bool is_depth_stencil_attachment = is_depth_stencil_format(image_format);
 
 				if (usage_flags & vk::ImageUsageFlagBits::eStorage)
 					return vk::ImageLayout::eGeneral;
@@ -369,7 +388,9 @@ namespace engine
 				else if (usage_flags & vk::ImageUsageFlagBits::eDepthStencilAttachment)
 				{
 					// TODO: check is that stencil only target
-					return is_depth_stencil_attachment ? vk::ImageLayout::eDepthStencilAttachmentOptimal : vk::ImageLayout::eDepthAttachmentOptimal;
+					bool is_depth_stencil_attachment = is_depth_stencil_format(image_format);
+					bool is_stencil_only_format = is_stencil_format(image_format);
+					return is_depth_stencil_attachment ? vk::ImageLayout::eDepthStencilAttachmentOptimal : is_stencil_only_format ? vk::ImageLayout::eStencilAttachmentOptimal : vk::ImageLayout::eDepthAttachmentOptimal;
 				}
 				
 				return vk::ImageLayout::eUndefined;

@@ -272,6 +272,12 @@ namespace engine
 			utl::hash_map<ERenderResourceAccessFlagBits, utl::hash_map<std::string, FRenderConfigResourceBindingDescription>> resourceBindings{};
 			utl::hash_map<ERenderResourceAccessFlagBits, utl::vector<std::string>> otherResources{};
 
+			virtual void clearResource() 
+			{ 
+				resourceBindings.clear(); 
+				otherResources.clear();
+			}
+
 			void bindWriteResource(const std::string& binding_point, const std::string& resource_name) { resourceBindings[ERenderResourceAccessFlagBits::eWrite].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, 0u }); }
 			void bindWriteResource(const std::string& binding_point, const std::string& resource_name, u32 subresource) { resourceBindings[ERenderResourceAccessFlagBits::eWrite].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, subresource }); }
 			void bindReadResource(const std::string& binding_point, const std::string& resource_name) { resourceBindings[ERenderResourceAccessFlagBits::eRead].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, 0u }); }
@@ -291,8 +297,26 @@ namespace engine
 
 			void flipFiewport() { flipViewportState = true; }
 			void setViewport(const std::string& name) { viewport = name; }
-			void setDepthTarget(const std::string& resource_name) { depthResource = otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(resource_name); }
-			void setStencilTarget(const std::string& resource_name) { stencilResource = otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(resource_name); }
+			void setDepthTarget(const std::string& resource_name) 
+			{ 
+				if (stencilResource == resource_name)
+				{
+					depthResource = resource_name;
+					return;
+				}
+
+				depthResource = otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(resource_name); 
+			}
+			void setStencilTarget(const std::string& resource_name) 
+			{ 
+				if (depthResource == resource_name)
+				{
+					stencilResource = resource_name;
+					return;
+				}
+
+				stencilResource = otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(resource_name); 
+			}
 		};
 
 		struct FRenderConfigComputeDispatchGroupInfo
@@ -317,6 +341,12 @@ namespace engine
 		{
 			EComputeType type{};
 			utl::vector<FRenderConfigComputeDispatchGroupInfo> groupInfos{};
+
+			void clearResource() override
+			{
+				FRenderConfigPassCreateInfo::clearResource();
+				groupInfos.clear();
+			}
 
 			void addDispatchGroupInfo(const std::string& target, u32 subresource, bool divide_by_locals)
 			{
