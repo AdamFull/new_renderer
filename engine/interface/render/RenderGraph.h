@@ -279,9 +279,9 @@ namespace engine
 				otherResources.clear();
 			}
 
-			void bindWriteResource(const std::string& binding_point, const std::string& resource_name) { resourceBindings[ERenderResourceAccessFlagBits::eWrite].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, 0u }); }
+			void bindWriteResource(const std::string& binding_point, const std::string& resource_name) { resourceBindings[ERenderResourceAccessFlagBits::eWrite].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, ~0u }); }
 			void bindWriteResource(const std::string& binding_point, const std::string& resource_name, u32 subresource) { resourceBindings[ERenderResourceAccessFlagBits::eWrite].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, subresource }); }
-			void bindReadResource(const std::string& binding_point, const std::string& resource_name) { resourceBindings[ERenderResourceAccessFlagBits::eRead].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, 0u }); }
+			void bindReadResource(const std::string& binding_point, const std::string& resource_name) { resourceBindings[ERenderResourceAccessFlagBits::eRead].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, ~0u }); }
 			void bindReadResource(const std::string& binding_point, const std::string& resource_name, u32 subresource) { resourceBindings[ERenderResourceAccessFlagBits::eRead].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, subresource }); }
 			void addWriteResource(const std::string& resource_name) { otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(resource_name); }
 			void addReadResource(const std::string& resource_name) { otherResources[ERenderResourceAccessFlagBits::eRead].emplace_back(resource_name); }
@@ -358,7 +358,7 @@ namespace engine
 				group_info.subresource = subresource;
 			}
 
-			void addDispatchGroupInfo(const std::string& target, bool divide_by_locals) { addDispatchGroupInfo(target, 0u, divide_by_locals); }
+			void addDispatchGroupInfo(const std::string& target, bool divide_by_locals) { addDispatchGroupInfo(target, ~0u, divide_by_locals); }
 
 			void addDispatchGroupInfo(u32 width, u32 height, u32 depth, u32 subresource, bool divide_by_locals)
 			{
@@ -371,7 +371,7 @@ namespace engine
 				group_info.subresource = subresource;
 			}
 
-			void addDispatchGroupInfo(u32 width, u32 height, u32 depth, bool divide_by_locals) { addDispatchGroupInfo(width, height, depth, 0u, divide_by_locals); }
+			void addDispatchGroupInfo(u32 width, u32 height, u32 depth, bool divide_by_locals) { addDispatchGroupInfo(width, height, depth, ~0u, divide_by_locals); }
 		};
 
 		struct FRenderResourceBinding
