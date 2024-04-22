@@ -131,7 +131,7 @@ namespace engine
 		struct FTextureBindInfo
 		{
 			u64 textureId{ INVALID_HANDLE };
-			u32 mipLevel{ ~0u };
+			u32 mipLevel{ 0u };
 		};
 
 		struct FShaderResourceCommit
