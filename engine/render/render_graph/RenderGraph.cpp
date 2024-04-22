@@ -677,6 +677,24 @@ void CRenderGraph::build()
 			return true;
 		};
 
+	// Checks is all next passes is read only
+	auto is_ro_access_only_remain = [](const FRenderResource& resource, u64 current_pass)
+		{
+			for (const auto& [access_flag, accessing_passes] : resource.usages)
+			{
+				if (access_flag == ERenderResourceAccessFlagBits::eRead)
+					continue;
+
+				for (const auto& pass_index : accessing_passes)
+				{
+					if (pass_index > current_pass)
+						return false;
+				}
+			}
+
+			return true;
+		};
+
 	struct tmp_access_info
 	{
 		ERenderResourceAccessFlagBits access{};
@@ -761,8 +779,9 @@ void CRenderGraph::build()
 				auto& pass_barriers = m_perPassResourceBarriers[pass_index];
 				auto& new_barrier = pass_barriers.emplace_back();
 
-				// First time barrier should be translation barrier
-				if (last_resource_access.access == ERenderResourceAccessFlagBits::eNone || barrier_type != ERenderResourceDependencyBarrierType::eWriteAfterWrite)
+				// First time barrier should be translation barrier and last barrier should be if resource is read only
+				bool is_change_pipeline_ownership = last_resource_access.pass_type == pass->type() && barrier_type == ERenderResourceDependencyBarrierType::eWriteAfterWrite;
+				if (last_resource_access.access == ERenderResourceAccessFlagBits::eNone || is_ro_access_only_remain(render_resource, pass_index))
 					new_barrier.translationBarrier = true;
 
 				new_barrier.type = barrier_type;
