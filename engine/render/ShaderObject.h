@@ -19,7 +19,7 @@ namespace engine
 			const std::unique_ptr<CUniformHandle>& getConstantBlock(const char* name) override;
 
 			void bindBuffer(const char* name, u64 buffer_resource) override;
-			void bindTexture(const char* name, u64 texture_resource, u32 mip = ~0u) override;
+			void bindTexture(const char* name, u64 texture_resource, u32 mip = 0u) override;
 
 			void flushDescriptors() override;
 			void flushConstants(EQueueTypeFlagBits queue) override;

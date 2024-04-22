@@ -183,7 +183,7 @@ namespace engine
 			virtual const std::unique_ptr<CUniformHandle>& getConstantBlock(const char* name) = 0;
 
 			virtual void bindBuffer(const char* name, u64 buffer_resource) = 0;
-			virtual void bindTexture(const char* name, u64 texture_resource, u32 mip = ~0u) = 0;
+			virtual void bindTexture(const char* name, u64 texture_resource, u32 mip = 0u) = 0;
 
 			virtual void flushDescriptors() = 0;
 			virtual void flushConstants(EQueueTypeFlagBits queue) = 0;

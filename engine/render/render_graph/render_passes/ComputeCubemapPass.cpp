@@ -87,8 +87,6 @@ void CComputeCubemapPass::_execute(const FComputeFrameInfo& frame_info)
 			dispatch_info.shaderHandle = m_pShader->handle();
 			
 			render_context->dispatch(m_queue, dispatch_info, 0);
-
-			render_context->pushC2CBarrier(m_queue);
 		}
 	}
 }
