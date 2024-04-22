@@ -386,12 +386,29 @@ namespace engine
 			struct FVkTexture
 			{
 				FVkImage image{};
+				FVkTextureMipLevel base{};
 				utl::vector<FVkTextureMipLevel> mips{};
 				vk::Sampler sampler{};
 				u32 totalLayers{ 1u };
 				bool isRenderTarget{ false };
 
 				bool isAlive{ false };
+
+				FVkTextureMipLevel& getSubresource(u32 index = ~0u)
+				{
+					if (index == ~0u)
+						return base;
+
+					return mips[index];
+				}
+
+				const FVkTextureMipLevel& getSubresource(u32 index = ~0u) const 
+				{ 
+					if (index == ~0u)
+						return base;
+
+					return mips[index];
+				}
 
 				FVkTextureInitialData initialData;
 #ifndef BUILD_WITHOUT_DEBUGGIND

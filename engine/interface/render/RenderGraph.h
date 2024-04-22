@@ -170,14 +170,14 @@ namespace engine
 			FRenderResourceView resource{};
 			EPassType srcPassType{};
 			EPassType dstPassType{};
-			u32 subresourceIndex{ 0u };
+			u32 subresourceIndex{ ~0u };
 			bool translationBarrier{ false };
 		};
 
 		struct FRenderGraphAttachmentInfo
 		{
 			u64 handle{ INVALID_HANDLE };
-			u32 mipLevel{ 0u };
+			u32 mipLevel{ ~0u };
 			ERenderResourceLoadOp loadOp{};
 			ERenderResourceStoreOp storeOp{};
 			bool backbuffer{ false };
@@ -259,7 +259,7 @@ namespace engine
 		struct FRenderConfigResourceBindingDescription
 		{
 			std::string name{};
-			u32 subresource{ 0u };
+			u32 subresource{ ~0u };
 		};
 
 		struct FRenderConfigPassCreateInfo
@@ -326,7 +326,7 @@ namespace engine
 			bool divideByLocals{ true };
 			std::string target{};
 			u32 width{ 1u }, height{ 1u }, depth{ 1u };
-			u32 subresource{ 0u };
+			u32 subresource{ ~0u };
 		};
 
 		struct FComputeDispatchGroupInfo
@@ -335,7 +335,7 @@ namespace engine
 			bool divideByLocals{ true };
 			u64 target{ INVALID_HANDLE };
 			u32 width{ 1u }, height{ 1u }, depth{ 1u };
-			u32 subresource{ 0u };
+			u32 subresource{ ~0u };
 		};
 
 		struct FRenderConfigComputeCreateInfo : public FRenderConfigPassCreateInfo
@@ -377,7 +377,7 @@ namespace engine
 		struct FRenderResourceBinding
 		{
 			u64 resource{ INVALID_HANDLE };
-			u32 subresource{ 0u };
+			u32 subresource{ ~0u };
 
 			bool operator==(const FRenderResourceBinding& other) const
 			{ return (resource == other.resource && subresource == other.subresource); }
