@@ -778,6 +778,9 @@ void CRenderGraph::build()
 				new_barrier.srcPassType = last_resource_access.pass_type;
 				new_barrier.dstPassType = pass->type();
 
+				if (utl::enum_cast(barrier_type) == 65536)
+					int iiiiii = 0;
+
 				last_resource_access.access = access_flag;
 				last_resource_access.all_time_access.emplace_back(access_flag);
 				last_resource_access.pass_type = new_barrier.dstPassType;
@@ -888,6 +891,9 @@ void CRenderGraph::execute(f32 dt)
 
 		if (!pass->canExecute())
 			continue;
+
+		if (pass_index == 12ull)
+			int iiiii = 0;
 
 		render_context->processResourceBarriers(pass->m_queue, resource_barriers);
 		pass->execute(dt);

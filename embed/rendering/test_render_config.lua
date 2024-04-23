@@ -222,7 +222,7 @@ function compute_bloom()
 
         pass_ci:add_workgroup_size_info("bloom_target", 0, true)
 
-        pass_ci:bind_read_resource("sampler_color", "brightness_target", 0)
+        pass_ci:bind_read_resource("sampler_color", "brightness_target")
         pass_ci:bind_write_resource("write_color", "bloom_target", 0)
 
         render_graph:add_render_pass("downsample_pass_0", pass_ci)
@@ -539,7 +539,7 @@ do
     pass_ci:bind_read_resource("input_image", "final_lighting_target")
     pass_ci:bind_read_resource("avg_luminosity", "avg_brightness_target")
     pass_ci:bind_read_resource("motion_vectors", "motion_vectors_target")
-    pass_ci:bind_read_resource("bloom_blur", "bloom_target")
+    pass_ci:bind_read_resource("bloom_blur", "bloom_target", 0)
     pass_ci:add_write_resource("present_target")
 
     render_graph:add_render_pass("finalize_image_pass", pass_ci)

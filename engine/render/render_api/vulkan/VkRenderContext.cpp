@@ -1075,27 +1075,24 @@ void CVkRenderContext::processResourceBarriers(EQueueTypeFlagBits queue, const u
 		}
 		else
 		{
-			if (resource_barrier.type == ERenderResourceDependencyBarrierType::eWriteAfterWrite)
+			auto& memory_barrier = translation_info.memoryTranslationInfos.emplace_back();
+
+			if (resource_barrier.resource.type & ERenderResourceTypeFlagBits::eAllImage)
 			{
-				auto& memory_barrier = translation_info.memoryTranslationInfos.emplace_back();
+				auto& texture = textures.at(resource_barrier.resource.handle);
+				auto& texture_subresource = texture->getSubresource(resource_barrier.subresourceIndex);
 
-				if (resource_barrier.resource.type & ERenderResourceTypeFlagBits::eAllImage)
-				{
-					auto& texture = textures.at(resource_barrier.resource.handle);
-					auto& texture_subresource = texture->getSubresource(resource_barrier.subresourceIndex);
-
-					memory_barrier.srcStageMask = get_translation_stage_flags(texture_subresource.layout, resource_barrier.srcPassType);
-					memory_barrier.srcAccessMask = get_translation_access_flags(texture_subresource.layout, resource_barrier.srcPassType, src_resource_access);
-					memory_barrier.dstStageMask = get_translation_stage_flags(texture_subresource.layout, resource_barrier.dstPassType);
-					memory_barrier.dstAccessMask = get_translation_access_flags(texture_subresource.layout, resource_barrier.dstPassType, dst_resource_access);
-				}
-				else
-				{
-					memory_barrier.srcStageMask = get_translation_stage_flags(resource_barrier.srcPassType);
-					memory_barrier.srcAccessMask = get_translation_access_flags(src_resource_access);
-					memory_barrier.dstStageMask = get_translation_stage_flags(resource_barrier.dstPassType);
-					memory_barrier.dstAccessMask = get_translation_access_flags(dst_resource_access);
-				}
+				memory_barrier.srcStageMask = get_translation_stage_flags(texture_subresource.layout, resource_barrier.srcPassType);
+				memory_barrier.srcAccessMask = get_translation_access_flags(texture_subresource.layout, resource_barrier.srcPassType, src_resource_access);
+				memory_barrier.dstStageMask = get_translation_stage_flags(texture_subresource.layout, resource_barrier.dstPassType);
+				memory_barrier.dstAccessMask = get_translation_access_flags(texture_subresource.layout, resource_barrier.dstPassType, dst_resource_access);
+			}
+			else
+			{
+				memory_barrier.srcStageMask = get_translation_stage_flags(resource_barrier.srcPassType);
+				memory_barrier.srcAccessMask = get_translation_access_flags(src_resource_access);
+				memory_barrier.dstStageMask = get_translation_stage_flags(resource_barrier.dstPassType);
+				memory_barrier.dstAccessMask = get_translation_access_flags(dst_resource_access);
 			}
 		}
 	}
