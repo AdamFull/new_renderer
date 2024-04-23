@@ -397,7 +397,7 @@ namespace engine
 				FVkTextureMipLevel& getSubresource(u32 idx = ~0u)
 				{
 					if (idx == ~0u)
-						idx = 0u;
+						return base;
 
 					return mips[idx];
 				}
@@ -405,7 +405,7 @@ namespace engine
 				const FVkTextureMipLevel& getSubresource(u32 idx = ~0u) const
 				{
 					if (idx == ~0u)
-						idx = 0u;
+						return base;
 
 					return mips[idx];
 				}

@@ -571,9 +571,6 @@ u64 CRenderGraph::addRenderPass(const std::string& name, const FRenderConfigComp
 {
 	log_info("[Render Graph] Add compute pass: {}", name);
 
-	if (name == "downsample_pass_0")
-		int iiii = 0;
-
 	u64 pass_index = m_vRenderPasses.size();
 	m_vPassExecutionQueue.emplace_back(pass_index);
 
@@ -891,9 +888,6 @@ void CRenderGraph::execute(f32 dt)
 
 		if (!pass->canExecute())
 			continue;
-
-		if (pass->m_debugName == "compute:postprocess:downsample")
-			int iiii = 0;
 
 		render_context->processResourceBarriers(pass->m_queue, resource_barriers);
 		pass->execute(dt);

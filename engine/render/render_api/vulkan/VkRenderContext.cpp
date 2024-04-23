@@ -1567,7 +1567,7 @@ void CVkRenderContext::updateSurface(i32 surface_width, i32 surface_height)
 				m_pDevice->destroyImageView(mip.imageView);
 			texture->mips.clear();
 
-			//m_pDevice->destroyImageView(texture->base.imageView);
+			m_pDevice->destroyImageView(texture->base.imageView);
 			m_pDevice->destroyImage(texture->image);
 
 			FVkTextureCreateInfo texture_ci{};
@@ -2276,13 +2276,23 @@ FRenderApiErrorInfo CVkRenderContext::createTexture(const FVkTextureCreateInfo& 
 	image_view_ci.ci.image = texture.image.handle;
 	image_view_ci.ci.subresourceRange.baseArrayLayer = 0u;
 	image_view_ci.ci.subresourceRange.layerCount = texture.totalLayers;
+
+	// At first create default view that contain all subresources
+	image_view_ci.ci.subresourceRange.baseMipLevel = 0u;
+	image_view_ci.ci.subresourceRange.levelCount = texture.base.mipLevelCount = texture_ci.base.mipLevels;
+
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	image_view_ci.name = std::format("{}_main", texture_ci.name);
+#endif
+
+	RETURN_WHEN_FAULT(m_pDevice->createImageView(image_view_ci, texture.base.imageView));
 	
 	texture.mips.resize(texture_ci.base.mipLevels);
 	for (u32 mip_index = 0u; mip_index < texture_ci.base.mipLevels; ++mip_index)
 	{
 		auto& current_mip = texture.mips.at(mip_index);
 		image_view_ci.ci.subresourceRange.baseMipLevel = current_mip.baseMipLevel = mip_index;
-		image_view_ci.ci.subresourceRange.levelCount = current_mip.mipLevelCount = mip_index == 0u ? texture_ci.base.mipLevels : 1u;
+		image_view_ci.ci.subresourceRange.levelCount = current_mip.mipLevelCount = 1u;
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
 		image_view_ci.name = std::format("{}[{}]", texture_ci.name, mip_index);
@@ -2317,7 +2327,7 @@ void CVkRenderContext::destroyTexture(FVkTexture& texture)
 		m_pDevice->destroyImageView(mip.imageView);
 	texture.mips.clear();
 
-	//m_pDevice->destroyImageView(texture.base.imageView);
+	m_pDevice->destroyImageView(texture.base.imageView);
 	m_pDevice->destroyImage(texture.image);
 
 	texture.isAlive = false;

@@ -64,7 +64,7 @@ void CComputeCubemapPass::_execute(const FComputeFrameInfo& frame_info)
 				auto& binding_resource = render_graph->getRenderResource(sesource_binding.resource);
 
 				if (binding_resource.handle == render_resource.handle)
-					m_pShader->bindTexture(binding_point.c_str(), binding_resource.handle, mip);
+					m_pShader->bindTexture(binding_point.c_str(), binding_resource.handle, mip == 0u ? ~0u : mip);
 				else
 					m_pShader->bindTexture(binding_point.c_str(), binding_resource.handle);
 			}
