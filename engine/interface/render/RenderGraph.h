@@ -177,7 +177,7 @@ namespace engine
 		struct FRenderGraphAttachmentInfo
 		{
 			u64 handle{ INVALID_HANDLE };
-			u32 mipLevel{ 0u };
+			u32 mipLevel{ ~0u };
 			ERenderResourceLoadOp loadOp{};
 			ERenderResourceStoreOp storeOp{};
 			bool backbuffer{ false };

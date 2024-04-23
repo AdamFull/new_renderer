@@ -6,6 +6,9 @@ using namespace engine::render;
 
 void caclulate_size_for_mip_level(u32& width, u32& height, u32 mip_level)
 {
+	if (mip_level == ~0u)
+		mip_level = 0u;
+
 	width = std::max(1u, width >> mip_level);
 	height = std::max(1u, height >> mip_level);
 }
