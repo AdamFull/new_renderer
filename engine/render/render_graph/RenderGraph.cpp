@@ -727,19 +727,20 @@ void CRenderGraph::build()
 				// Check will this resource even be writen by any pass
 				if (is_x_only_access(render_resource, ERenderResourceAccessFlagBits::eRead))
 					continue;
+
+				u32 subresource_key = resource_binding.subresource == ~0ull ? 0u : resource_binding.subresource;
 				
-				auto resource_key = std::make_pair(resource_binding.resource, resource_binding.subresource);
+				auto resource_key = std::make_pair(resource_binding.resource, subresource_key);
 				auto& last_resource_access = resource_access_map[resource_key];
 
 				// Ignoring read after read barriers
 				if (last_resource_access.access == access_flag && access_flag == ERenderResourceAccessFlagBits::eRead)
 					continue;
 
-				//auto was_any_time_writen = was_accessed(last_resource_access, ERenderResourceAccessFlagBits::eWrite);
-				//if (was_any_time_writen && access_flag == ERenderResourceAccessFlagBits::eWrite)
-				//	last_resource_access.access = ERenderResourceAccessFlagBits::eWrite;
-
 				auto barrier_type = packDependencyBarrier(last_resource_access.access, access_flag);
+
+				if (utl::enum_cast(barrier_type) == 65536)
+					log_warning("[Render Graph] looks like access type is invalid or not supported");
 
 				// Check for last access duplicating
 				if (last_resource_access.last_barrier)
@@ -767,8 +768,9 @@ void CRenderGraph::build()
 				auto& new_barrier = pass_barriers.emplace_back();
 
 				// First time barrier should be translation barrier and last barrier should be if resource is read only
+				// TODO: Add special enum class for it
 				bool is_change_pipeline_ownership = last_resource_access.pass_type == pass->type() && barrier_type == ERenderResourceDependencyBarrierType::eWriteAfterWrite;
-				if (last_resource_access.access == ERenderResourceAccessFlagBits::eNone || is_ro_access_only_remain(render_resource, pass_index))
+				if (last_resource_access.access == ERenderResourceAccessFlagBits::eNone || is_change_pipeline_ownership || is_ro_access_only_remain(render_resource, pass_index))
 					new_barrier.translationBarrier = true;
 
 				new_barrier.type = barrier_type;
@@ -777,9 +779,6 @@ void CRenderGraph::build()
 				new_barrier.subresourceIndex = resource_binding.subresource;
 				new_barrier.srcPassType = last_resource_access.pass_type;
 				new_barrier.dstPassType = pass->type();
-
-				if (utl::enum_cast(barrier_type) == 65536)
-					int iiiiii = 0;
 
 				last_resource_access.access = access_flag;
 				last_resource_access.all_time_access.emplace_back(access_flag);
@@ -892,9 +891,6 @@ void CRenderGraph::execute(f32 dt)
 		if (!pass->canExecute())
 			continue;
 
-		if (pass_index == 12ull)
-			int iiiii = 0;
-
 		render_context->processResourceBarriers(pass->m_queue, resource_barriers);
 		pass->execute(dt);
 	}
@@ -918,20 +914,6 @@ void CRenderGraph::applyRenderPassResources(u64 pass_index, const FRenderConfigP
 	pass_ci->queue = raw_pass_ci->queue;
 	pass_ci->shader = raw_pass_ci->shader;
 	pass_ci->oneTime = raw_pass_ci->oneTime;
-
-	// Detecting size policy for pass
-	//if (!raw_pass_ci->sizeTarget.empty())
-	//{
-	//	pass_ci->sizeTarget = getRenderRersourceId(raw_pass_ci->sizeTarget);
-	//	auto& render_resource = getRenderResource(pass_ci->sizeTarget);
-	//
-	//	if (render_resource.type & ERenderResourceTypeFlagBits::eAllImage)
-	//		pass_ci->sizePolicy = ERenderingSizeType::eFromRenderTarget;
-	//	else if (render_resource.type & ERenderResourceTypeFlagBits::eBuffer)
-	//		pass_ci->sizePolicy = ERenderingSizeType::eFromBuffer;
-	//}
-	//else
-	//	pass_ci->sizePolicy = ERenderingSizeType::eManual;
 
 	// Binded resources for using as input
 	for (const auto& [access_flag, bindings] : raw_pass_ci->resourceBindings)
