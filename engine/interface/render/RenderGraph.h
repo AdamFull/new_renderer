@@ -170,7 +170,7 @@ namespace engine
 			FRenderResourceView resource{};
 			EPassType srcPassType{};
 			EPassType dstPassType{};
-			u32 subresourceIndex{ 0u };
+			u32 subresourceIndex{ ~0u };
 			bool translationBarrier{ false };
 		};
 
@@ -259,7 +259,7 @@ namespace engine
 		struct FRenderConfigResourceBindingDescription
 		{
 			std::string name{};
-			u32 subresource{ 0u };
+			u32 subresource{ ~0u };
 		};
 
 		struct FRenderConfigPassCreateInfo
@@ -279,9 +279,9 @@ namespace engine
 				otherResources.clear();
 			}
 
-			void bindWriteResource(const std::string& binding_point, const std::string& resource_name) { resourceBindings[ERenderResourceAccessFlagBits::eWrite].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, 0u }); }
+			void bindWriteResource(const std::string& binding_point, const std::string& resource_name) { resourceBindings[ERenderResourceAccessFlagBits::eWrite].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, ~0u }); }
 			void bindWriteResource(const std::string& binding_point, const std::string& resource_name, u32 subresource) { resourceBindings[ERenderResourceAccessFlagBits::eWrite].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, subresource }); }
-			void bindReadResource(const std::string& binding_point, const std::string& resource_name) { resourceBindings[ERenderResourceAccessFlagBits::eRead].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, 0u }); }
+			void bindReadResource(const std::string& binding_point, const std::string& resource_name) { resourceBindings[ERenderResourceAccessFlagBits::eRead].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, ~0u }); }
 			void bindReadResource(const std::string& binding_point, const std::string& resource_name, u32 subresource) { resourceBindings[ERenderResourceAccessFlagBits::eRead].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, subresource }); }
 			void addWriteResource(const std::string& resource_name) { otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(resource_name); }
 			void addReadResource(const std::string& resource_name) { otherResources[ERenderResourceAccessFlagBits::eRead].emplace_back(resource_name); }
@@ -326,7 +326,7 @@ namespace engine
 			bool divideByLocals{ true };
 			std::string target{};
 			u32 width{ 1u }, height{ 1u }, depth{ 1u };
-			u32 subresource{ 0u };
+			u32 subresource{ ~0u };
 		};
 
 		struct FComputeDispatchGroupInfo
@@ -335,7 +335,7 @@ namespace engine
 			bool divideByLocals{ true };
 			u64 target{ INVALID_HANDLE };
 			u32 width{ 1u }, height{ 1u }, depth{ 1u };
-			u32 subresource{ 0u };
+			u32 subresource{ ~0u };
 		};
 
 		struct FRenderConfigComputeCreateInfo : public FRenderConfigPassCreateInfo
@@ -358,7 +358,7 @@ namespace engine
 				group_info.subresource = subresource;
 			}
 
-			void addDispatchGroupInfo(const std::string& target, bool divide_by_locals) { addDispatchGroupInfo(target, 0u, divide_by_locals); }
+			void addDispatchGroupInfo(const std::string& target, bool divide_by_locals) { addDispatchGroupInfo(target, ~0u, divide_by_locals); }
 
 			void addDispatchGroupInfo(u32 width, u32 height, u32 depth, u32 subresource, bool divide_by_locals)
 			{
@@ -371,13 +371,13 @@ namespace engine
 				group_info.subresource = subresource;
 			}
 
-			void addDispatchGroupInfo(u32 width, u32 height, u32 depth, bool divide_by_locals) { addDispatchGroupInfo(width, height, depth, 0u, divide_by_locals); }
+			void addDispatchGroupInfo(u32 width, u32 height, u32 depth, bool divide_by_locals) { addDispatchGroupInfo(width, height, depth, ~0u, divide_by_locals); }
 		};
 
 		struct FRenderResourceBinding
 		{
 			u64 resource{ INVALID_HANDLE };
-			u32 subresource{ 0u };
+			u32 subresource{ ~0u };
 
 			bool operator==(const FRenderResourceBinding& other) const
 			{ return (resource == other.resource && subresource == other.subresource); }

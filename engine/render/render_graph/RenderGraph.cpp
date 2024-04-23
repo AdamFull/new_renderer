@@ -29,16 +29,6 @@ struct pair_hash
 	}
 };
 
-
-struct FResourceAccessInfo
-{
-	ERenderResourceDependencyBarrierType type{};
-	u64 resource{ INVALID_HANDLE };
-	u32 subresource{ 0u };
-	u64 srcPassIndex{ INVALID_HANDLE };
-	u64 dstPassIndex{ INVALID_HANDLE };
-};
-
 void filter_pass_queue(utl::vector<u64>& pass_list)
 {
 	std::unordered_set<u64> seen;
@@ -993,7 +983,7 @@ void CRenderGraph::applyRenderPassResources(u64 pass_index, const FRenderConfigP
 
 			// TODO: Don't know is subresource needed for writing
 			auto resource_key = packResourceGroup(access_flag, group_type);	
-			pass_ci->resources[resource_key].emplace_back(FRenderResourceBinding{ resource_id, 0u });
+			pass_ci->resources[resource_key].emplace_back(FRenderResourceBinding{ resource_id, ~0u });
 		}
 	}
 
