@@ -137,6 +137,7 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 	FGlobalUniformCreateInfo global_buffer_ci{};
 	global_buffer_ci.uniforms[utl::utils::fnv1a_64_hash("GlobalUniformFrameData")] = sizeof(FGlobalUniformData);
 	global_buffer_ci.uniforms[utl::utils::fnv1a_64_hash("GlobalBufferReferences")] = sizeof(FGlobalBufferReference);
+	global_buffer_ci.uniforms[utl::utils::fnv1a_64_hash("GlobalPostProcessingData")] = sizeof(FGlobalPostProcessingData);
 	m_pRenderContext->createGlobalDescriptor(global_buffer_ci);
 
 	m_pRenderWorld->create();
@@ -207,6 +208,51 @@ void CRenderInterface::render(f32 dt)
 	buffer_ref_uniform.data = &global_references;
 	buffer_ref_uniform.size = sizeof(FGlobalBufferReference);
 	buffer_ref_uniform.binding = 1u;
+
+	auto& post_process = m_pRenderWorld->getPostProcessingData();
+
+	FGlobalPostProcessingData postprocessing{};
+	// Tonemapping
+	postprocessing.enable_tonemap = utl::cast<i32>(post_process.tonemap.enable);
+	postprocessing.tm_gamma = post_process.tonemap.gamma;
+	postprocessing.tm_exposure = post_process.tonemap.exposure;
+	postprocessing.tm_white_point = post_process.tonemap.whitePoint;
+	postprocessing.tm_adaptive = utl::cast<i32>(post_process.tonemap.adaptive);
+	// Bloom
+	postprocessing.enable_bloom = utl::cast<i32>(post_process.bloom.enable);
+	postprocessing.b_bloom_strength = post_process.bloom.strength;
+	postprocessing.b_threshold = post_process.bloom.threshold;
+	postprocessing.b_filter_radius = post_process.bloom.filter_radius;
+	// Dof
+	postprocessing.enable_dof = utl::cast<i32>(post_process.dof.enable);
+	postprocessing.df_focus_point = post_process.dof.focus_point;
+	postprocessing.df_near_field = post_process.dof.near_field;
+	postprocessing.df_near_transition = post_process.dof.near_transition;
+	postprocessing.df_far_field = post_process.dof.far_field;
+	postprocessing.df_far_transition = post_process.dof.far_transition;
+	// Chromatic aberration
+	postprocessing.enable_chromatic_aberration = utl::cast<i32>(post_process.aberration.enable);
+	postprocessing.ca_distortion = post_process.aberration.distortion;
+	postprocessing.ca_iterations = post_process.aberration.iterations;
+	// Film grain
+	postprocessing.enable_film_grain = utl::cast<i32>(post_process.filmgrain.enable);
+	postprocessing.fg_amount = post_process.filmgrain.amount;
+	// Vignette
+	postprocessing.enable_vignette = utl::cast<i32>(post_process.vignette.enable);
+	postprocessing.v_inner_radius = post_process.vignette.inner;
+	postprocessing.v_outer_radius = post_process.vignette.outer;
+	postprocessing.v_opacity = post_process.vignette.opacity;
+	// Motion blur
+	postprocessing.enable_motion_blur = utl::cast<i32>(post_process.motionblur.enable);
+	postprocessing.mb_scale = (dt / 0.01666666f) * post_process.motionblur.scele;
+	postprocessing.mb_max_samples = post_process.motionblur.max_samples;
+	postprocessing.mb_max_velocity = post_process.motionblur.max_velocity;
+	postprocessing.mb_threshold = post_process.motionblur.threshold;
+
+	auto& postprocessing_uniform = update_info.uniforms[utl::utils::fnv1a_64_hash("GlobalPostProcessingData")];
+	postprocessing_uniform.data = &postprocessing;
+	postprocessing_uniform.size = sizeof(FGlobalPostProcessingData);
+	postprocessing_uniform.binding = 2u;
 
 	m_pRenderContext->updateGlobalDescriptorData(update_info);
 	m_pRenderGraph->execute(dt);

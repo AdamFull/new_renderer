@@ -8,7 +8,7 @@
 
 	definitions: [];
 	require_extensions: [];
-	includes: ["compute_common", "postprocess_common"];
+	includes: ["compute_common"];
 
 	code: 
 	"""

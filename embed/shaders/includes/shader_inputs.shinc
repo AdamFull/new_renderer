@@ -29,7 +29,7 @@
 #endif // VERTEX_SHADER
 
 	// Bindless texture
-	layout(set = 0, binding = 2) uniform sampler2D globalTextures[];
+	layout(set = 0, binding = 3) uniform sampler2D globalTextures[];
 
 	#define GET_SAMPLER_2D(texture_index, mip_level) globalTextures[textureRemapBuffer.remap[texture_index] + mip_level]
 

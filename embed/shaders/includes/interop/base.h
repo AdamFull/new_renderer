@@ -496,6 +496,75 @@ namespace engine {
 		};
 
 #ifdef __cplusplus
+		struct FGlobalPostProcessingData
+#else
+		layout(std140, set = 0, binding = 2) uniform GlobalPostProcessingData
+#endif
+		{
+			// tonemap
+			int enable_tonemap;
+			float tm_gamma;
+			float tm_exposure;
+			float tm_white_point;
+			int tm_adaptive;
+			// tonemap
+
+			// bloom
+			int enable_bloom;
+			float b_bloom_strength;
+			float b_threshold;
+			float b_filter_radius;
+			// bloom
+
+			// dof
+			int enable_dof;
+
+			float df_focus_point;
+			float df_near_field;
+			float df_near_transition;
+			float df_far_field;
+			float df_far_transition;
+			// dof
+
+			// chromatic aberration
+			int enable_chromatic_aberration;
+			float ca_distortion;
+			int ca_iterations;
+			// chromatic aberration
+
+			// fog
+			int enable_fog;
+			VECTOR3 fog_color;
+			float fog_density;
+			float fog_max;
+			// fog
+
+			// film grain
+			int enable_film_grain;
+			float fg_amount;
+			// film grain
+
+			// vignette
+			int enable_vignette;
+			float v_inner_radius;
+			float v_outer_radius;
+			float v_opacity;
+			// vignette
+
+			// per object motion blur
+			int enable_motion_blur;
+			float mb_scale;
+			int mb_max_samples;
+			float mb_max_velocity;
+			float mb_threshold;
+			// per object motion blur
+
+			// ao blur
+			int blur_range;
+			// ao blur
+		} postprocess;
+
+#ifdef __cplusplus
 	}
 }
 #endif

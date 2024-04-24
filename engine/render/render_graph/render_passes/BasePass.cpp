@@ -42,53 +42,6 @@ void IBasePass::initShaderResources(const std::unique_ptr<IShaderObject>& shader
 void IBasePass::bindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt)
 {
 	auto& render_world = m_pRenderInterface->getRenderWorld();
-	auto& post_process = render_world->getPostProcessingData();
-
-	if (auto& uniform = shader->getUniformBlock("FPostProcessEffects"); uniform)
-	{
-		uniform->set("enable_tonemap", utl::cast<i32>(post_process.tonemap.enable));
-		uniform->set("tm_gamma", post_process.tonemap.gamma);
-		uniform->set("tm_exposure", post_process.tonemap.exposure);
-		uniform->set("tm_white_point", post_process.tonemap.whitePoint);
-		uniform->set("tm_adaptive", utl::cast<i32>(post_process.tonemap.adaptive));
-
-		// bloom uniforms
-		uniform->set("enable_bloom", utl::cast<i32>(post_process.bloom.enable));
-		uniform->set("b_bloom_strength", post_process.bloom.strength);
-		uniform->set("b_threshold", post_process.bloom.threshold);
-		uniform->set("b_filter_radius", post_process.bloom.filter_radius);
-
-		// Depth of field uniforms
-		uniform->set("enable_dof", utl::cast<i32>(post_process.dof.enable));
-
-		uniform->set("df_focus_point", post_process.dof.focus_point);
-		uniform->set("df_near_field", post_process.dof.near_field);
-		uniform->set("df_near_transition", post_process.dof.near_transition);
-		uniform->set("df_far_field", post_process.dof.far_field);
-		uniform->set("df_far_transition", post_process.dof.far_transition);
-
-		// Chromatic aberration uniforms
-		uniform->set("enable_chromatic_aberration", utl::cast<i32>(post_process.aberration.enable));
-		uniform->set("ca_distortion", post_process.aberration.distortion);
-		uniform->set("ca_iterations", post_process.aberration.iterations);
-
-		// Finm grain uniforms
-		uniform->set("enable_film_grain", utl::cast<i32>(post_process.filmgrain.enable));
-		uniform->set("fg_amount", post_process.filmgrain.amount);
-
-		// Vignette uniforms
-		uniform->set("enable_vignette", utl::cast<i32>(post_process.vignette.enable));
-		uniform->set("v_inner_radius", post_process.vignette.inner);
-		uniform->set("v_outer_radius", post_process.vignette.outer);
-		uniform->set("v_opacity", post_process.vignette.opacity);
-
-		// Motion blur
-		uniform->set("enable_motion_blur", utl::cast<i32>(post_process.motionblur.enable));
-		uniform->set("mb_scale", (dt / 0.01666666f) * post_process.motionblur.scele);
-		uniform->set("mb_max_samples", post_process.motionblur.max_samples);
-		uniform->set("mb_max_velocity", post_process.motionblur.max_velocity);
-		uniform->set("mb_threshold", post_process.motionblur.threshold);
-	}
 }
 
 void IRenderPass::init(const FRenderPassCreateInfo& pass_ci)

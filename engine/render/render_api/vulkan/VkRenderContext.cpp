@@ -102,7 +102,7 @@ void CVkRenderContext::createGlobalDescriptor(const FGlobalUniformCreateInfo& un
 {
 	// Create descriptor pool
 	FVkDescriptorPoolCreateInfo pool_ci{};
-	pool_ci.poolSizes = { { vk::DescriptorType::eCombinedImageSampler, k_max_bindless_resources }, {vk::DescriptorType::eUniformBuffer, 2u} };
+	pool_ci.poolSizes = { { vk::DescriptorType::eCombinedImageSampler, k_max_bindless_resources }, {vk::DescriptorType::eUniformBuffer, 3u} };
 	pool_ci.usageCount = 1u * m_pDevice->m_swapchain.framesInFlight;
 	pool_ci.flags |= vk::DescriptorPoolCreateFlagBits::eUpdateAfterBindEXT;
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -129,16 +129,24 @@ void CVkRenderContext::createGlobalDescriptor(const FGlobalUniformCreateInfo& un
 	global_buffer_references_binding.binding = 1u;
 	global_buffer_references_binding.stageFlags = vk::ShaderStageFlagBits::eAllGraphics | vk::ShaderStageFlagBits::eCompute;
 
+	// Uniform buffer with post processing data
+	auto& global_postprocess_binding = set_layout_ci.layoutBindings.emplace_back();
+	global_postprocess_binding.descriptorType = vk::DescriptorType::eUniformBuffer;
+	global_postprocess_binding.descriptorCount = 1u;
+	global_postprocess_binding.binding = 2u;
+	global_postprocess_binding.stageFlags = vk::ShaderStageFlagBits::eAllGraphics | vk::ShaderStageFlagBits::eCompute;
+
 	// Bindles textures
 	auto& global_textures_binding = set_layout_ci.layoutBindings.emplace_back();
 	global_textures_binding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
 	global_textures_binding.descriptorCount = k_max_bindless_resources;
-	global_textures_binding.binding = 2u;
+	global_textures_binding.binding = 3u;
 	global_textures_binding.stageFlags = vk::ShaderStageFlagBits::eAllGraphics | vk::ShaderStageFlagBits::eCompute;
 	global_textures_binding.pImmutableSamplers = nullptr;
 
 	// Descriptor binding extension
 	utl::vector<vk::DescriptorBindingFlags> bindingFlags{};
+	bindingFlags.emplace_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
 	bindingFlags.emplace_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
 	bindingFlags.emplace_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
 	bindingFlags.emplace_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
@@ -268,7 +276,7 @@ void CVkRenderContext::updateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 				write_descriptor_set.dstArrayElement = start_element_index;
 				write_descriptor_set.descriptorType = vk::DescriptorType::eCombinedImageSampler;
 				write_descriptor_set.dstSet = dest_set;
-				write_descriptor_set.dstBinding = 2u;
+				write_descriptor_set.dstBinding = 3u;
 				write_descriptor_set.descriptorCount = 1u;
 				write_descriptor_set.pImageInfo = &image_descriptor;
 			}
