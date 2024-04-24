@@ -1,0 +1,129 @@
+{
+	version: 460;
+
+	enable_extensions: [
+		"GL_ARB_separate_shader_objects",
+		"GL_ARB_shading_language_420pack",
+		"GL_EXT_shader_8bit_storage",
+		"GL_EXT_shader_16bit_storage"
+	];
+
+	definitions: [];
+	require_extensions: [
+		"GL_EXT_buffer_reference",
+		"GL_EXT_shader_explicit_arithmetic_types",
+		"GL_EXT_shader_explicit_arithmetic_types_int8"
+	];
+	includes: ["compute_common", "interop/base", "util"];
+
+	code: 
+	"""
+		layout(local_size_x = 8, local_size_y = 8) in;
+
+		layout(set = 1, binding = 0) uniform writeonly image2D write_color;
+		layout(set = 1, binding = 1) uniform sampler2D sampler_color;
+
+#if defined(MOTION_BLUR)
+		layout(set = 1, binding = 2) uniform sampler2D motion_vectors;
+#elif defined(BLOOM)
+		layout(set = 1, binding = 2) uniform sampler2D bloom_color;
+#elif defined(DOF)
+		layout(set = 1, binding = 2) uniform sampler2D bokeh_color;
+		layout(set = 1, binding = 3) uniform sampler2D depth_image;
+#elif defined(TONEMAP)
+		layout(set = 1, binding = 2, r32f) uniform image2D avg_luminosity;
+#endif
+		
+		void main()
+		{
+			uvec2 image_size = imageSize(write_color);
+		
+			uvec2 px = uvec2(0, 0);
+			vec2 uv = vec2(0.0, 0.0);
+			if(swizzle_compute_workgroups_8x8_nv(gl_LocalInvocationID.xy, gl_WorkGroupID.xy, image_size, uv, px))
+				return;
+			
+			vec4 color = texture(sampler_color, uv);
+			vec2 texel_size = 1.0 / vec2(textureSize(sampler_color, 0));
+#if defined(MOTION_BLUR)
+			if(postprocess.enable_motion_blur > 0)
+			{
+				vec2 velocity = texture(motion_vectors, uv).rg;
+				velocity = decodeVelocity(velocity) * postprocess.mb_scale;
+				velocity = min(vec2(1.0), velocity);
+
+				if(length(velocity) >= postprocess.mb_threshold)
+				{
+					float speed = length(velocity / texel_size);
+					int n_samples = clamp(int(speed), 1, postprocess.mb_max_samples);
+
+					for (int i = 1; i < n_samples; ++i) 
+					{
+						vec2 offset = velocity * (float(i) / float(n_samples - 1) - 0.5);
+						color += texture(sampler_color, uv + offset);
+					}
+					color /= float(n_samples);
+				}
+			}
+#elif defined(BLOOM)
+			if(postprocess.enable_bloom > 0)
+			{
+				color.rgb = mix(color.rgb, texture(bloom_color, uv).rgb, vec3(postprocess.b_bloom_strength));
+			}
+#elif defined(DOF)
+			if(postprocess.enable_dof > 0)
+			{
+				float depth = texture(depth_image, uv).r;
+				float linear_depth = linearizeDepth(depth, frameData.nearPlane, frameData.farPlane);
+
+				vec3 texture_blured = texture(bokeh_color, uv).rgb;
+
+				float near_end = postprocess.df_near_field + postprocess.df_near_transition;
+				float far_start = postprocess.df_far_field - postprocess.df_far_transition;
+		
+				float near_visibility = smoothstep(postprocess.df_near_field * postprocess.df_focus_point, near_end * postprocess.df_focus_point, linear_depth);
+				float far_visibility = 1.0f - smoothstep(far_start * postprocess.df_focus_point, postprocess.df_far_field * postprocess.df_focus_point, linear_depth);
+		
+				vec3 temp = mix(texture_blured, color.rgb, near_visibility);
+				color.rgb = mix(texture_blured, temp, far_visibility);
+			}
+#elif defined(CHROMATIC_ABERRATION)
+			if(postprocess.enable_chromatic_aberration > 0)
+			{
+				const float reci_num_iter_f = 1.0 / float(postprocess.ca_iterations);
+		
+				vec4 sumcol = vec4(0.0);
+				vec4 sumw = vec4(0.0);	
+				for ( int i= 0; i < postprocess.ca_iterations; ++i )
+				{
+					float t = float(i) * reci_num_iter_f;
+					vec4 w = spectrum_offset( t );
+					sumw += w;
+					sumcol += w * texture( sampler_color, barrelDistortion(uv, 0.6 * postprocess.ca_distortion * t ) );
+				}
+
+				color.rgb = (sumcol / sumw).rgb;
+			}
+#elif defined(TONEMAP)
+			if(postprocess.enable_tonemap > 0)
+			{
+				float avgLum = imageLoad(avg_luminosity, ivec2(0, 0)).x;
+		
+				vec3 Yxy = convertRGB2Yxy(color.rgb);
+		
+				float lp = Yxy.x / (9.6 * avgLum + 0.0001);
+		
+				if(postprocess.tm_adaptive > 0)
+					Yxy.x = reinhard2(lp, postprocess.tm_white_point);
+				else
+					Yxy.x = Yxy.x * pow(2.0, postprocess.tm_exposure);
+		
+				color.rgb = convertYxy2RGB(Yxy);
+				color.rgb = toGamma(color.rgb, postprocess.tm_gamma);
+			}
+#endif
+		
+			imageStore(write_color, ivec2(px), color);
+		}
+	""";
+}

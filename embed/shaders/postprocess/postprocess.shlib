@@ -12,6 +12,15 @@
 			];
 		},
 		{
+			name: "apply_effect";
+			sources: [
+				{
+					type: "compute";
+					shader_name: "apply_effect_comp";
+				}
+			];
+		},
+		{
 			name: "bokeh";
 			sources: [
 				{
@@ -66,15 +75,6 @@
 			];
 		},
 		{
-			name: "high_pass";
-			sources: [
-				{
-					type: "compute";
-					shader_name: "high_pass_comp";
-				}
-			];
-		},
-		{
 			name: "compute_histogram";
 			sources: [
 				{
@@ -109,6 +109,18 @@
 			pattern: "default_pattern";
 		},
 		{ 
+			shader_name: "apply_effect";
+			permutations: [
+				{ defines: [] },
+				{ defines: ["MOTION_BLUR"] },
+				{ defines: ["MOTION_BLUR", "LOW_PRECISION_VELOCITY"] },
+				{ defines: ["BLOOM"] },
+				{ defines: ["DOF"] },
+				{ defines: ["CHROMATIC_ABERRATION"] },
+				{ defines: ["TONEMAP"] }
+			];
+		},
+		{ 
 			shader_name: "bokeh";
 			pattern: "default_pattern";
 		},
@@ -137,10 +149,6 @@
 				{ defines: [] },
 				{ defines: ["LOW_PRECISION_VELOCITY"] }
 			];
-		},
-		{
-			shader_name: "high_pass";
-			pattern: "default_pattern";
 		},
 		{ 
 			shader_name: "compute_histogram";

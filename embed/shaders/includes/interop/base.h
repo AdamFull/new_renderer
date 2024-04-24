@@ -518,7 +518,8 @@ namespace engine {
 
 			// dof
 			int enable_dof;
-
+			int df_sample_count;
+			float df_poly;
 			float df_focus_point;
 			float df_near_field;
 			float df_near_transition;
@@ -534,7 +535,7 @@ namespace engine {
 
 			// fog
 			int enable_fog;
-			VECTOR3 fog_color;
+			ALIGN_AS(16) VECTOR3 fog_color;
 			float fog_density;
 			float fog_max;
 			// fog
@@ -562,7 +563,11 @@ namespace engine {
 			// ao blur
 			int blur_range;
 			// ao blur
+#ifdef __cplusplus
+		};
+#else
 		} postprocess;
+#endif
 
 #ifdef __cplusplus
 	}

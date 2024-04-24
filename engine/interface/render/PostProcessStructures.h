@@ -6,7 +6,7 @@ namespace engine
 	{
 		struct FPostProcessDOF
 		{
-			bool enable{ false };
+			bool enable{ true };
 			f32 blur_scale{ 1.f };
 			f32 blur_strength{ 1.f };
 			i32 bokeh_samples{ 5 };

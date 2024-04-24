@@ -225,6 +225,8 @@ void CRenderInterface::render(f32 dt)
 	postprocessing.b_filter_radius = post_process.bloom.filter_radius;
 	// Dof
 	postprocessing.enable_dof = utl::cast<i32>(post_process.dof.enable);
+	postprocessing.df_sample_count = post_process.dof.bokeh_samples;
+	postprocessing.df_poly = post_process.dof.bokeh_poly;
 	postprocessing.df_focus_point = post_process.dof.focus_point;
 	postprocessing.df_near_field = post_process.dof.near_field;
 	postprocessing.df_near_transition = post_process.dof.near_transition;

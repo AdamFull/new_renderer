@@ -1,5 +1,10 @@
 use_low_precision_velocity = true
 
+motion_blur_enabled = true
+depth_of_field_enabled = false
+chromatic_aberration_enabled = true
+bloom_enabled = true
+
 bloom_blur_depth = 5
 
 -- Loading test cubemap
@@ -103,6 +108,15 @@ do
     render_graph:add_render_resource("final_lighting_target", target_ci)
 end
 
+do
+    local target_ci = TextureCI.new()
+    target_ci.format = render_context:get_api_format(Format.r11g11b10_ufloat)
+    target_ci.type:set(TexType.two_dim, TexType.samplable, TexType.storage)
+    target_ci:set_size_scale(1.0)
+
+    render_graph:add_render_resource("intermediate_final_target", target_ci)
+end
+
 -- eye adaptation targets
 do
     local target_ci = TextureCI.new()
@@ -120,6 +134,15 @@ do
     buffer_ci.count = 256
 
     render_graph:add_render_resource("histogram_buffer", buffer_ci)
+end
+
+do
+    local target_ci = TextureCI.new()
+    target_ci.format = render_context:get_api_format(Format.r11g11b10_ufloat)
+    target_ci.type:set(TexType.two_dim, TexType.samplable, TexType.storage)
+    target_ci:set_size_scale(1.0)
+
+    render_graph:add_render_resource("bokeh_target", target_ci)
 end
 
 -- Bloom targets
@@ -192,6 +215,10 @@ function make_graphics_pass(type, queue, shader)
     return pass_ci
 end
 
+function swap(a, b)
+    return b, a
+end
+
 function generate_prefiltered_cube()
     render_graph:push_debug_marker("Prefiltered cubemap generator", 0xffff33ff, QueueType.graphics)
 
@@ -200,7 +227,65 @@ function generate_prefiltered_cube()
     render_graph:pop_debug_marker("Prefiltered cubemap generator", QueueType.graphics)
 end
 
-function compute_bloom()
+function compute_motion_blur(input_target, output_target)
+    render_graph:push_debug_marker("Compute motion blur", 0xffff33ff, QueueType.graphics)
+	-- Compute static motion vectors (can be started in another queue)
+    do
+        local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, use_low_precision_velocity and "postprocess:generate_motion_vectors:LOW_PRECISION_VELOCITY" or "postprocess:generate_motion_vectors")
+        pass_ci:add_workgroup_size_info("zbuffer_depth_target", true)
+    
+        pass_ci:bind_write_resource("write_color", "motion_vectors_target")
+        pass_ci:bind_read_resource("depth_texture", "zbuffer_depth_target")
+    
+        render_graph:add_render_pass("generate_motion_vectors_pass", pass_ci)
+    end
+    
+    -- Apply motion blur
+    do
+        local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, use_low_precision_velocity and "postprocess:apply_effect:MOTION_BLUR:LOW_PRECISION_VELOCITY" or "postprocess:apply_effect:MOTION_BLUR")
+        pass_ci:add_workgroup_size_info(input_target, true)
+    
+        pass_ci:bind_read_resource("sampler_color", input_target)
+        pass_ci:bind_read_resource("motion_vectors", "motion_vectors_target")
+        pass_ci:bind_write_resource("write_color", output_target)
+    
+        render_graph:add_render_pass("apply_motion_blur", pass_ci)
+    end
+
+    render_graph:pop_debug_marker("Compute motion blur", QueueType.graphics)
+end
+
+function compute_dof(input_target, output_target)
+    render_graph:push_debug_marker("Compute depth of field", 0xffff33ff, QueueType.graphics)
+
+	do
+        local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:bokeh")
+        pass_ci:add_workgroup_size_info(input_target, true)
+    
+        pass_ci:bind_write_resource("write_color", "bokeh_target")
+        pass_ci:bind_read_resource("sampler_color", input_target)
+    
+        render_graph:add_render_pass("compute_bokeh_blur_pass", pass_ci)
+    end
+    
+    -- Apply dof
+    do
+        local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:apply_effect:DOF")
+        pass_ci:add_workgroup_size_info(input_target, true)
+    
+        pass_ci:bind_write_resource("write_color", output_target)
+        pass_ci:bind_read_resource("sampler_color", input_target)
+        pass_ci:bind_read_resource("depth_image", "zbuffer_depth_target")
+        pass_ci:bind_read_resource("bokeh_color", "bokeh_target")
+    
+        render_graph:add_render_pass("compute_bokeh_blur_pass", pass_ci)
+    end
+
+    render_graph:pop_debug_marker("Compute depth of field", QueueType.graphics)
+end
+
+
+function compute_bloom(input_target, output_target)
     render_graph:push_debug_marker("Compute bloom", 0xffff33ff, QueueType.graphics)
 
     -- index 10
@@ -210,163 +295,151 @@ function compute_bloom()
 
         pass_ci:add_workgroup_size_info("bloom_target", true)
 
-        pass_ci:bind_read_resource("sampler_color", "final_lighting_target")
+        pass_ci:bind_read_resource("sampler_color", input_target)
         pass_ci:bind_write_resource("write_color", "brightness_target")
 
         render_graph:add_render_pass("brightdetect_pass", pass_ci)
     end
 
-    render_graph:push_debug_marker("Downsample", 0xffff33ff, QueueType.graphics)
+    -- Begin downsampling
     do
         local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:downsample:FIRST_PASS")
-
-        pass_ci:add_workgroup_size_info("bloom_target", 0, true)
-
         pass_ci:bind_read_resource("sampler_color", "brightness_target")
-        pass_ci:bind_write_resource("write_color", "bloom_target", 0)
 
-        render_graph:add_render_pass("downsample_pass_0", pass_ci)
+        render_graph:push_debug_marker("Downsample", 0xffff33ff, QueueType.graphics)
+        for idx = 0, bloom_blur_depth - 1 do
+            pass_ci:add_workgroup_size_info("bloom_target", idx, true)
+            pass_ci:bind_write_resource("write_color", "bloom_target", idx)
+            
+            render_graph:add_render_pass("downsample_pass_" .. idx, pass_ci)
+
+            pass_ci:clear_resources()
+            pass_ci:bind_read_resource("sampler_color", "bloom_target", idx)
+            pass_ci.shader = "postprocess:downsample"
+        end
+        render_graph:pop_debug_marker("Downsample", QueueType.graphics)
     end
 
-    do
-        local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:downsample")
-
-        pass_ci:add_workgroup_size_info("bloom_target", 1, true)
-
-        pass_ci:bind_read_resource("sampler_color", "bloom_target", 0)
-        pass_ci:bind_write_resource("write_color", "bloom_target", 1)
-
-        render_graph:add_render_pass("downsample_pass_1", pass_ci)
-    end
-
-    do
-        local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:downsample")
-
-        pass_ci:add_workgroup_size_info("bloom_target", 2, true)
-
-        pass_ci:bind_read_resource("sampler_color", "bloom_target", 1)
-        pass_ci:bind_write_resource("write_color", "bloom_target", 2)
-
-        render_graph:add_render_pass("downsample_pass_2", pass_ci)
-    end
-
-    do
-        local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:downsample")
-
-        pass_ci:add_workgroup_size_info("bloom_target", 3, true)
-
-        pass_ci:bind_read_resource("sampler_color", "bloom_target", 2)
-        pass_ci:bind_write_resource("write_color", "bloom_target", 3)
-
-        render_graph:add_render_pass("downsample_pass_3", pass_ci)
-    end
-
-    do
-        local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:downsample")
-
-        pass_ci:add_workgroup_size_info("bloom_target", 4, true)
-
-        pass_ci:bind_read_resource("sampler_color", "bloom_target", 3)
-        pass_ci:bind_write_resource("write_color", "bloom_target", 4)
-
-        render_graph:add_render_pass("downsample_pass_4", pass_ci)
-    end
-    render_graph:pop_debug_marker("Downsample", QueueType.graphics)
-
+    -- And upsampling
     render_graph:push_debug_marker("Upsample", 0xffff33ff, QueueType.graphics)
-    do
+    for idx = bloom_blur_depth - 1, 1, -1 do
         local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:upsample")
     
-        pass_ci:add_workgroup_size_info("bloom_target", 3, true)
+        pass_ci:add_workgroup_size_info("bloom_target", idx - 1, true)
     
-        pass_ci:bind_read_resource("sampler_color", "bloom_target", 4)
-        pass_ci:bind_write_resource("write_color", "bloom_target", 3)
+        pass_ci:bind_read_resource("sampler_color", "bloom_target", idx)
+        pass_ci:bind_write_resource("write_color", "bloom_target", idx - 1)
     
-        render_graph:add_render_pass("upsample_pass_4", pass_ci)
-    end
-    
-    do
-        local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:upsample")
-    
-        pass_ci:add_workgroup_size_info("bloom_target", 2, true)
-    
-        pass_ci:bind_read_resource("sampler_color", "bloom_target", 3)
-        pass_ci:bind_write_resource("write_color", "bloom_target", 2)
-    
-        render_graph:add_render_pass("upsample_pass_3", pass_ci)
-    end
-    
-    do
-        local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:upsample")
-    
-        pass_ci:add_workgroup_size_info("bloom_target", 1, true)
-    
-        pass_ci:bind_read_resource("sampler_color", "bloom_target", 2)
-        pass_ci:bind_write_resource("write_color", "bloom_target", 1)
-    
-        render_graph:add_render_pass("upsample_pass_2", pass_ci)
-    end
-    
-    do
-        local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:upsample")
-    
-        pass_ci:add_workgroup_size_info("bloom_target", 0, true)
-    
-        pass_ci:bind_read_resource("sampler_color", "bloom_target", 2)
-        pass_ci:bind_write_resource("write_color", "bloom_target", 0)
-    
-        render_graph:add_render_pass("upsample_pass_2", pass_ci)
+        render_graph:add_render_pass("upnsample_pass_" .. idx, pass_ci)
     end
     render_graph:pop_debug_marker("Upsample", QueueType.graphics)
 
-    ---- Begin downsampling
-    --render_graph:push_debug_marker("Downsample", 0xffff33ff, QueueType.graphics)
-    --for idx = 0, bloom_blur_depth - 1 do
-    --    local pass_ci = ComputeCreateInfo.new()
-    --    pass_ci.type = ComputeType.default
-    --    pass_ci.queue = QueueType.graphics
-    --    pass_ci.shader = (idx == 0) and "postprocess:downsample:FIRST_PASS" or "postprocess:downsample"
-    --
-    --    current_target = (idx == 0) and "brightness_target" or "bloom_target"
-    --    current_target_idx = (idx == 0) and 0 or (idx - 1)
-    --
-    --    pass_ci:add_workgroup_size_info("bloom_target", idx, true)
-    --    
-    --    pass_ci:bind_read_resource("sampler_color", current_target, current_target_idx)
-    --    pass_ci:bind_write_resource("write_color", "bloom_target", idx)
-    --    
-    --    render_graph:add_render_pass("downsample_pass_" .. idx, pass_ci)
-    --end
-    --render_graph:pop_debug_marker("Downsample", QueueType.graphics)
-    --
-    ---- And upsampling
-    --render_graph:push_debug_marker("Upsample", 0xffff33ff, QueueType.graphics)
-    --for idx = bloom_blur_depth - 1, 1, -1 do
-    --    local pass_ci = ComputeCreateInfo.new()
-    --    pass_ci.type = ComputeType.default
-    --    pass_ci.queue = QueueType.graphics
-    --    pass_ci.shader = "postprocess:upsample"
-    --
-    --    pass_ci:add_workgroup_size_info("bloom_target", idx - 1, true)
-    --
-    --    pass_ci:bind_read_resource("sampler_color", "bloom_target", idx)
-    --    pass_ci:bind_write_resource("write_color", "bloom_target", idx - 1)
-    --
-    --    render_graph:add_render_pass("upnsample_pass_" .. idx, pass_ci)
-    --end
-    --render_graph:pop_debug_marker("Upsample", QueueType.graphics)
+    -- Apply bloom
+    do
+        local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:apply_effect:BLOOM")
+        pass_ci:add_workgroup_size_info(output_target, true)
+
+        pass_ci:bind_write_resource("write_color", output_target)
+        pass_ci:bind_read_resource("sampler_color", input_target)
+        pass_ci:bind_read_resource("bloom_color", "bloom_target", 0)
+
+        render_graph:add_render_pass("apply_bloom", pass_ci)
+    end
 
     render_graph:pop_debug_marker("Compute bloom", QueueType.graphics)
 end
 
+function compute_tonemap(input_target, output_target)
+    render_graph:push_debug_marker("Compute tonemap", 0xffff33ff, QueueType.graphics)
+
+    -- Compute histogram
+    do
+        local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:compute_histogram")
+        pass_ci:add_workgroup_size_info(input_target, true)
+    
+        pass_ci:bind_read_resource("sampler_color", input_target)
+        pass_ci:bind_write_resource("Histogram", "histogram_buffer")
+    
+        render_graph:add_render_pass("compute_histogram_pass", pass_ci)
+    end
+    
+    -- Compute avg screen space brightness
+    do
+        local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:compute_brightness")
+        pass_ci:add_workgroup_size_info(1, 1, 1, false)
+    
+        pass_ci:bind_write_resource("target", "avg_brightness_target")
+        pass_ci:bind_read_resource("Histogram", "histogram_buffer")
+    
+        render_graph:add_render_pass("compute_brightness_pass", pass_ci)
+    end
+
+    -- Apply tonemapping
+    do
+        local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:apply_effect:TONEMAP")
+        pass_ci:add_workgroup_size_info(input_target, true)
+
+        pass_ci:bind_write_resource("write_color", output_target)
+        pass_ci:bind_read_resource("sampler_color", input_target)
+        pass_ci:bind_read_resource("avg_luminosity", "avg_brightness_target")
+
+        render_graph:add_render_pass("apply_bloom", pass_ci)
+    end
+
+    render_graph:pop_debug_marker("Compute tonemap", QueueType.graphics)
+end
+
+function postprocess(target_1, target_2)
+	local input_target = target_1
+    local output_target = target_2
+
+    render_graph:push_debug_marker("Postprocess", 0xffff33ff, QueueType.graphics)
+    -- Compute motion blur
+    if motion_blur_enabled then
+        compute_motion_blur(input_target, output_target)
+        input_target, output_target = swap(input_target, output_target)
+    end
+
+    if depth_of_field_enabled then
+        -- Compute bokeh
+        compute_dof(input_target, output_target)
+        input_target, output_target = swap(input_target, output_target)
+    end
+
+    -- Compute bloom
+    if bloom_enabled then
+        compute_bloom(input_target, output_target)
+        input_target, output_target = swap(input_target, output_target)
+    end
+
+    -- Compute chromatic aberration
+    if chromatic_aberration_enabled then
+        local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:apply_effect:CHROMATIC_ABERRATION")
+        pass_ci:add_workgroup_size_info(input_target, true)
+
+        pass_ci:bind_write_resource("write_color", output_target)
+        pass_ci:bind_read_resource("sampler_color", input_target)
+
+        render_graph:add_render_pass("apply_chromatic_aberration_pass", pass_ci)
+        input_target, output_target = swap(input_target, output_target)
+    end
+
+    do
+        compute_tonemap(input_target, output_target)
+        input_target, output_target = swap(input_target, output_target)
+    end
+
+    render_graph:pop_debug_marker("Postprocess", QueueType.graphics)
+
+    return input_target
+end
+
+
 
 -- generate brdf lut
 do
-    local pass_ci = ComputeCreateInfo.new()
+    local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "lighting:brgflut_generator")
     pass_ci.one_time = true
-    pass_ci.type = ComputeType.default
-    pass_ci.queue = QueueType.graphics
-    pass_ci.shader = "lighting:brgflut_generator";
 
     pass_ci:add_workgroup_size_info("brdf_lut_target", true)
     pass_ci:bind_write_resource("out_color", "brdf_lut_target")
@@ -375,11 +448,8 @@ do
 end
 
 do
-    local pass_ci = ComputeCreateInfo.new()
+    local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "lighting:irradiancecube_generator")
     pass_ci.one_time = true
-    pass_ci.type = ComputeType.default
-    pass_ci.queue = QueueType.graphics
-    pass_ci.shader = "lighting:irradiancecube_generator";
 
     pass_ci:add_workgroup_size_info("irradiance_cube_target", true)
     pass_ci:bind_write_resource("out_color", "irradiance_cube_target")
@@ -389,11 +459,8 @@ do
 end
 
 do
-    local pass_ci = ComputeCreateInfo.new()
+    local pass_ci = make_compute_pass(ComputeType.cubemap, QueueType.graphics, "lighting:prefilteredmap_generator")
     pass_ci.one_time = true
-    pass_ci.type = ComputeType.cubemap
-    pass_ci.queue = QueueType.graphics
-    pass_ci.shader = "lighting:prefilteredmap_generator";
 
     pass_ci:add_workgroup_size_info("prefiltered_cube_target", true)
     pass_ci:bind_write_resource("out_color", "prefiltered_cube_target")
@@ -404,11 +471,7 @@ end
 
 
 do
-    local pass_ci = GraphicsCreateInfo.new()
-    pass_ci.type = RenderingType.csm
-    pass_ci.queue = QueueType.graphics
-    pass_ci.shader = "lighting:unidirectional_shadow:CASCADED_SHADOW"
-    
+    local pass_ci = make_graphics_pass(RenderingType.csm, QueueType.graphics, "lighting:unidirectional_shadow:CASCADED_SHADOW")
     pass_ci:set_viewport("cascaded_shadows_viewport")
     pass_ci:set_depth_target("cascaded_shadows_target")
 
@@ -424,11 +487,7 @@ end
 
 -- visibility buffer write
 do
-    local pass_ci = GraphicsCreateInfo.new()
-    pass_ci.type = RenderingType.geometry
-    pass_ci.queue = QueueType.graphics
-    pass_ci.shader = "visibilitybuffer:write"
-
+    local pass_ci = make_graphics_pass(RenderingType.geometry, QueueType.graphics, "visibilitybuffer:write")
     pass_ci:set_depth_target("zbuffer_depth_target")
     pass_ci:set_stencil_target("zbuffer_depth_target")
 
@@ -446,11 +505,7 @@ end
 
 -- visibility buffer material pass
 do
-    local pass_ci = ComputeCreateInfo.new()
-    pass_ci.type = ComputeType.geometry
-    pass_ci.queue = QueueType.graphics
-    pass_ci.shader = "visibilitybuffer:shade"
-
+    local pass_ci = make_compute_pass(ComputeType.geometry, QueueType.graphics, "visibilitybuffer:shade")
     pass_ci:add_workgroup_size_info("final_lighting_target", true)
 
     pass_ci:bind_write_resource("write_color", "final_lighting_target")
@@ -479,67 +534,14 @@ do
     render_graph:add_render_pass("compute_materials_pass", pass_ci)
 end
 
--- Compute histogram
-do
-    local pass_ci = ComputeCreateInfo.new()
-    pass_ci.type = ComputeType.default
-    pass_ci.queue = QueueType.graphics
-    pass_ci.shader = "postprocess:compute_histogram"
-
-    pass_ci:add_workgroup_size_info("final_lighting_target", true)
-
-    pass_ci:bind_read_resource("sampler_color", "final_lighting_target")
-    pass_ci:bind_write_resource("Histogram", "histogram_buffer")
-
-    render_graph:add_render_pass("compute_histogram_pass", pass_ci)
-end
-
--- Compute avg screen space brightness
-do
-    local pass_ci = ComputeCreateInfo.new()
-    pass_ci.type = ComputeType.default
-    pass_ci.queue = QueueType.graphics
-    pass_ci.shader = "postprocess:compute_brightness"
-
-    pass_ci:add_workgroup_size_info(1, 1, 1, false)
-
-    pass_ci:bind_write_resource("target", "avg_brightness_target")
-    pass_ci:bind_read_resource("Histogram", "histogram_buffer")
-
-    render_graph:add_render_pass("compute_brightness_pass", pass_ci)
-end
-
--- Compute static motion vectors (can be started in another queue)
-do
-    local pass_ci = ComputeCreateInfo.new()
-    pass_ci.type = ComputeType.default
-    pass_ci.queue = QueueType.graphics
-    pass_ci.shader = use_low_precision_velocity and "postprocess:generate_motion_vectors:LOW_PRECISION_VELOCITY" or "postprocess:generate_motion_vectors"
-
-    pass_ci:add_workgroup_size_info("zbuffer_depth_target", true)
-
-    pass_ci:bind_write_resource("write_color", "motion_vectors_target")
-    pass_ci:bind_read_resource("depth_texture", "zbuffer_depth_target")
-
-    render_graph:add_render_pass("generate_motion_vectors_pass", pass_ci)
-    
-end
-
--- Compute bloom
-compute_bloom()
+final_target = postprocess("final_lighting_target", "intermediate_final_target")
 
 -- Present pass
 do
-    local pass_ci = GraphicsCreateInfo.new()
-    pass_ci.type = RenderingType.fullscreen
-    pass_ci.queue = QueueType.graphics
-    pass_ci.shader = use_low_precision_velocity and "testing:screenspace:LOW_PRECISION_VELOCITY" or "testing:screenspace"
+    local pass_ci = make_graphics_pass(RenderingType.fullscreen, QueueType.graphics, use_low_precision_velocity and "testing:screenspace:LOW_PRECISION_VELOCITY" or "testing:screenspace")
     pass_ci:flip_viewport()
 
-    pass_ci:bind_read_resource("input_image", "final_lighting_target")
-    pass_ci:bind_read_resource("avg_luminosity", "avg_brightness_target")
-    pass_ci:bind_read_resource("motion_vectors", "motion_vectors_target")
-    pass_ci:bind_read_resource("bloom_blur", "bloom_target", 0)
+    pass_ci:bind_read_resource("input_image", final_target)
     pass_ci:add_write_resource("present_target")
 
     render_graph:add_render_pass("finalize_image_pass", pass_ci)
