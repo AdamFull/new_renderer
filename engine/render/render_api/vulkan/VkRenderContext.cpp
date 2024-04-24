@@ -2160,6 +2160,7 @@ void CVkRenderContext::updateBackbuffer()
 		auto& mip = current.mips.emplace_back();
 		mip.imageView = current.base.imageView = swapchain.imageViews[frame];
 
+		current.initialData.base.typeFlags = ETextureCreateFlagBits::e2D;
 		current.initialData.base.format = utl::cast<u32>(swapchain.format);
 		current.initialData.base.size.width = swapchain.extent.width;
 		current.initialData.base.size.height = swapchain.extent.height;
