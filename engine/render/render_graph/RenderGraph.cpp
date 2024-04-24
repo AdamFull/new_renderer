@@ -747,7 +747,7 @@ void CRenderGraph::build()
 				{
 					auto& last_barrier = *last_resource_access.last_barrier;
 					if (
-						last_barrier.type == barrier_type &&
+						last_barrier.dependencyType == barrier_type &&
 						last_barrier.resource.handle == render_resource.handle &&
 						last_barrier.resource.type == render_resource.type &&
 						last_barrier.subresourceIndex == resource_binding.subresource &&
@@ -770,10 +770,15 @@ void CRenderGraph::build()
 				// First time barrier should be translation barrier and last barrier should be if resource is read only
 				// TODO: Add special enum class for it
 				bool is_change_pipeline_ownership = last_resource_access.pass_type == pass->type() && barrier_type == ERenderResourceDependencyBarrierType::eWriteAfterWrite;
-				if (last_resource_access.access == ERenderResourceAccessFlagBits::eNone || is_change_pipeline_ownership || is_ro_access_only_remain(render_resource, pass_index))
-					new_barrier.translationBarrier = true;
 
-				new_barrier.type = barrier_type;
+				if (last_resource_access.access == ERenderResourceAccessFlagBits::eNone)
+					new_barrier.barrierType = access_flag == ERenderResourceAccessFlagBits::eRead ? new_barrier.barrierType = ERenderResourceBarrierType::eFinal : ERenderResourceBarrierType::eIntermediate;
+				else if (is_ro_access_only_remain(render_resource, pass_index))
+					new_barrier.barrierType = ERenderResourceBarrierType::eFinal;
+				else if(is_change_pipeline_ownership)
+					new_barrier.barrierType = ERenderResourceBarrierType::eIntermediate;
+
+				new_barrier.dependencyType = barrier_type;
 				new_barrier.resource.handle = render_resource.handle;
 				new_barrier.resource.type = render_resource.type;
 				new_barrier.subresourceIndex = resource_binding.subresource;
@@ -901,10 +906,10 @@ void CRenderGraph::execute(f32 dt)
 	auto& backbuffer_barrier = backbuffer_barriers.emplace_back();
 	backbuffer_barrier.resource.handle = backbuffer_resource.handle;
 	backbuffer_barrier.resource.type = backbuffer_resource.type;
-	backbuffer_barrier.type = packDependencyBarrier(ERenderResourceAccessFlagBits::eWrite, ERenderResourceAccessFlagBits::eRead);
+	backbuffer_barrier.dependencyType = packDependencyBarrier(ERenderResourceAccessFlagBits::eWrite, ERenderResourceAccessFlagBits::eRead);
 	backbuffer_barrier.srcPassType = EPassType::eRender;
 	backbuffer_barrier.dstPassType = EPassType::eNone;
-	backbuffer_barrier.translationBarrier = true;
+	backbuffer_barrier.barrierType = ERenderResourceBarrierType::eFinal;
 
 	render_context->processResourceBarriers(EQueueTypeFlagBits::eGraphics, backbuffer_barriers);
 }

@@ -54,10 +54,18 @@ namespace engine
 
 		enum class ERenderResourceDependencyBarrierType : u32
 		{
+			eReadAfterNone				= utl::pack_u32_16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eNone), utl::cast<u16>(ERenderResourceAccessFlagBits::eRead)),
 			eReadAfterWrite				= utl::pack_u32_16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceAccessFlagBits::eRead)),
-			eWriteAfterNothing			= utl::pack_u32_16x2(utl::cast<u16>(0u), utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite)),
+			eWriteAfterNone				= utl::pack_u32_16x2(utl::cast<u16>(0u), utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite)),
 			eWriteAfterRead				= utl::pack_u32_16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eRead), utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite)),
 			eWriteAfterWrite			= utl::pack_u32_16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite))
+		};
+
+		enum class ERenderResourceBarrierType
+		{
+			eMemory,
+			eIntermediate,
+			eFinal
 		};
 
 		enum class ERenderResourceLoadOp : u32
@@ -166,12 +174,12 @@ namespace engine
 
 		struct FResourceBarrierInfo
 		{
-			ERenderResourceDependencyBarrierType type{};
+			ERenderResourceBarrierType barrierType{};
+			ERenderResourceDependencyBarrierType dependencyType{};
 			FRenderResourceView resource{};
 			EPassType srcPassType{};
 			EPassType dstPassType{};
 			u32 subresourceIndex{ ~0u };
-			bool translationBarrier{ false };
 		};
 
 		struct FRenderGraphAttachmentInfo

@@ -110,6 +110,7 @@ namespace engine
 				void processResourceBarriers();
 				void processResourceUpload();
 				void processResourceUtilization();
+				void updateBackbuffer();
 
 				FVkBufferCreateInfo makeBufferCreateInfo(const std::string& name, const FBufferCreateInfo& buffer_ci);
 
@@ -153,7 +154,7 @@ namespace engine
 				utl::hash_map<EQueueTypeFlagBits, u32> m_zoneEntries{};
 				FVkTimestampQuery m_timestampQuery{};
 
-				vk::ImageLayout m_backbufferLayout{ vk::ImageLayout::eUndefined };
+				utl::vector<FVkTexture> m_backbuffer{};
 
 				u64 m_utilizationCounter{ 0ull };
 
