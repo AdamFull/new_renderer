@@ -111,6 +111,24 @@ namespace engine
 				"storage", ETextureCreateFlagBits::eStorage
 			);
 
+			//// Register ESamplerFilterType
+			//lua->new_enum(
+			//	"FilterType",
+			//	"nearest", ESamplerFilterType::eNearest,
+			//	"linear", ESamplerFilterType::eLinear,
+			//	"cubic", ESamplerFilterType::eCubic
+			//);
+			//
+			//// Register ESamplerAddressMode
+			//lua->new_enum(
+			//	"AddressMode",
+			//	"repeat", ESamplerAddressMode::eRepeat,
+			//	"mirrored_repeat", ESamplerAddressMode::eMirroredRepeat,
+			//	"clamp_to_edge", ESamplerAddressMode::eClampToEdge,
+			//	"clamp_to_border", ESamplerAddressMode::eClampToBorder,
+			//	"mirror_clamp_to_edge", ESamplerAddressMode::eMirrorClampToEdge
+			//);
+
 			// Register EBufferTypeFlagBits
 			lua->new_enum(
 				"BufferType",
@@ -227,6 +245,15 @@ namespace engine
 				"set_size_scale", &FTextureCreateInfo::setSizeScale,
 				"enable_mip_map", &FTextureCreateInfo::enableMipMap
 			);
+
+			//// FSamplerCreateInfo registration
+			//lua->new_usertype<FSamplerCreateInfo>(
+			//	"SamplerCI",
+			//	sol::constructors<FSamplerCreateInfo()>(),
+			//	"filter", &FSamplerCreateInfo::filter,
+			//	"addres_mode", &FSamplerCreateInfo::addressMode,
+			//	"mip_levels", &FSamplerCreateInfo::mipLevels
+			//);
 
 			// EBufferUsageFlags registration
 			register_flags_type<EBufferUsageFlagBits>("EBufferUsageFlags", lua);

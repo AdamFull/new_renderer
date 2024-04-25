@@ -19,6 +19,22 @@ namespace engine
 		};
 		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ETextureCreateFlags, ETextureCreateFlagBits)
 
+		enum class ESamplerFilterType
+		{
+			eNearest,
+			eLinear,
+			eCubic
+		};
+
+		enum class ESamplerAddressMode
+		{
+			eRepeat,
+			eMirroredRepeat,
+			eClampToEdge,
+			eClampToBorder,
+			eMirrorClampToEdge
+		};
+
 		enum class ERenderTargetSizePolicy : u32
 		{
 			eFull = 1,
@@ -74,6 +90,13 @@ namespace engine
 			u64 textureId{ INVALID_HANDLE };
 			utl::vector<uint8_t> data{};
 			utl::vector<utl::vector<u64>> mipLayerOffsets{};
+		};
+
+		struct FSamplerCreateInfo
+		{
+			ESamplerFilterType filter{};
+			ESamplerAddressMode addressMode{};
+			u32 mipLevels{ 1u };
 		};
 	}
 }
