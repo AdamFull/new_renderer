@@ -388,7 +388,7 @@ namespace engine
 				FVkImage image{};
 				FVkTextureMipLevel base{};
 				utl::vector<FVkTextureMipLevel> mips{};
-				vk::Sampler sampler{};
+				u64 sampler{ ~0ull };
 				u32 totalLayers{ 1u };
 				bool isRenderTarget{ false };
 

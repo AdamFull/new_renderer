@@ -18,6 +18,21 @@ static const u32 k_max_bindless_resources{ 16384u };
 static const u64 k_max_texture_update_per_frame{ 4096ll };
 static const u64 k_max_buffer_update_per_frame{ 4096ull };
 
+u64 calculate_sampler_hash(const FVkSamplerCreateInfo& sampler_ci)
+{
+	static std::hash<u32> hasher;
+	u64 hash{ 0ull };
+
+	hash ^= hasher(utl::enum_cast(sampler_ci.magFilter));
+	hash ^= hasher(utl::enum_cast(sampler_ci.minFilter));
+	hash ^= hasher(utl::enum_cast(sampler_ci.addressMode));
+	hash ^= hasher(utl::cast<u32>(sampler_ci.enableAnisotropy));
+	hash ^= hasher(utl::cast<u32>(sampler_ci.enableCompareOp));
+	hash ^= hasher(sampler_ci.mipLevels);
+
+	return hash;
+}
+
 template<class _Ty, class ..._Args>
 std::string create_object_unique_name(const char* fmt, const _Ty& handle, _Args&&... args)
 {
@@ -66,6 +81,11 @@ CVkRenderContext::~CVkRenderContext()
 
 		m_pDevice->destroyBuffer(*buffer);
 	}
+
+	m_pDevice->destroySampler(m_defaultSampler);
+
+	for(auto& [uid, sampler] : m_samplerCache)
+		m_pDevice->destroySampler(sampler);
 }
 
 void CVkRenderContext::create(const FRenderContextCreateInfo& context_ci)
@@ -96,6 +116,19 @@ void CVkRenderContext::create(const FRenderContextCreateInfo& context_ci)
 	m_pDevice->initProfiler(per_queue.commandPool);
 
 	updateBackbuffer();
+
+	// Create default sampler
+	FVkSamplerCreateInfo sampler_ci{};
+	sampler_ci.addressMode = vk::SamplerAddressMode::eClampToEdge;
+	sampler_ci.enableAnisotropy = false;
+	sampler_ci.enableCompareOp = false;
+	sampler_ci.minFilter = sampler_ci.magFilter = vk::Filter::eLinear;
+	sampler_ci.mipLevels = 1u;
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	sampler_ci.name = "default";
+#endif
+
+	m_pDevice->createSampler(sampler_ci, m_defaultSampler);
 }
 
 void CVkRenderContext::createGlobalDescriptor(const FGlobalUniformCreateInfo& uniform_ci)
@@ -267,7 +300,7 @@ void CVkRenderContext::updateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 			auto& mip_level = texture->getSubresource();
 			auto& image_descriptor = image_descriptors.at(texture_count);
 			image_descriptor.imageView = mip_level.imageView;
-			image_descriptor.sampler = texture->sampler;
+			image_descriptor.sampler = texture->sampler != ~0ull ? m_samplerCache[texture->sampler] : m_defaultSampler;
 			image_descriptor.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
 			if (texture->initialData.base.typeFlags & ETextureCreateFlagBits::eSamplable)
@@ -744,7 +777,7 @@ void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader
 
 			auto& image_descriptor = image_descriptors.at(texture_count);
 			image_descriptor.imageView = texture_subresource.imageView;
-			image_descriptor.sampler = texture->sampler;
+			image_descriptor.sampler = texture->sampler != ~0ull ? m_samplerCache[texture->sampler] : m_defaultSampler;
 			image_descriptor.imageLayout = texture_subresource.layout;
 			texture_count++;
 
@@ -2322,19 +2355,26 @@ FRenderApiErrorInfo CVkRenderContext::createTexture(const FVkTextureCreateInfo& 
 		RETURN_WHEN_FAULT(m_pDevice->createImageView(image_view_ci, current_mip.imageView));
 	}
 
-	FVkSamplerCreateInfo sampler_ci{};
-	sampler_ci.addressMode = texture_ci.addressMode;
-	sampler_ci.enableAnisotropy = texture_ci.enableAnisotropy;
-	sampler_ci.enableCompareOp = is_depth_format(image_ci.ci.format);
-	sampler_ci.minFilter = sampler_ci.magFilter = texture_ci.filter;
-	sampler_ci.mipLevels = texture_ci.base.mipLevels;
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	sampler_ci.name = texture_ci.name;
-#endif
-
 	FRenderApiErrorInfo res = make_api_error(vk::ObjectType::eSampler, vk::Result::eSuccess);
-	if(texture_ci.createSampler)
-		res = m_pDevice->createSampler(sampler_ci, texture.sampler);
+	if (texture_ci.createSampler)
+	{
+		FVkSamplerCreateInfo sampler_ci{};
+		sampler_ci.addressMode = texture_ci.addressMode;
+		sampler_ci.enableAnisotropy = texture_ci.enableAnisotropy;
+		sampler_ci.enableCompareOp = is_depth_format(image_ci.ci.format);
+		sampler_ci.minFilter = sampler_ci.magFilter = texture_ci.filter;
+		sampler_ci.mipLevels = texture_ci.base.mipLevels;
+#ifndef BUILD_WITHOUT_DEBUGGIND
+		sampler_ci.name = texture_ci.name;
+#endif
+		u64 key = calculate_sampler_hash(sampler_ci);
+		auto& sampler = m_samplerCache[key];
+		
+		if(!sampler)
+			res = m_pDevice->createSampler(sampler_ci, sampler);
+
+		texture.sampler = key;
+	}
 
 	texture.isAlive = true;
 
@@ -2342,9 +2382,7 @@ FRenderApiErrorInfo CVkRenderContext::createTexture(const FVkTextureCreateInfo& 
 }
 
 void CVkRenderContext::destroyTexture(FVkTexture& texture)
-{
-	m_pDevice->destroySampler(texture.sampler);
-	
+{	
 	for(auto& mip : texture.mips)
 		m_pDevice->destroyImageView(mip.imageView);
 	texture.mips.clear();

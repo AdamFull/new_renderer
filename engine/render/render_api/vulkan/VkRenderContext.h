@@ -156,6 +156,9 @@ namespace engine
 
 				utl::vector<FVkTexture> m_backbuffer{};
 
+				utl::hash_map<u64, vk::Sampler> m_samplerCache{};
+				vk::Sampler m_defaultSampler{};
+
 				u64 m_utilizationCounter{ 0ull };
 
 				i32 m_iSurfaceWidth{}, m_iSurfaceHeight{};
