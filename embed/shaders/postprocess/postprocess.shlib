@@ -48,24 +48,6 @@
 			];
 		},
 		{
-			name: "emptypass";
-			sources: [
-				{
-					type: "compute";
-					shader_name: "emptypass_comp";
-				}
-			];
-		},
-		{
-			name: "gaussianblur";
-			sources: [
-				{
-					type: "compute";
-					shader_name: "gaussianblur_comp";
-				}
-			];
-		},
-		{
 			name: "generate_motion_vectors";
 			sources: [
 				{
@@ -117,6 +99,12 @@
 				{ defines: ["BLOOM"] },
 				{ defines: ["DOF"] },
 				{ defines: ["CHROMATIC_ABERRATION"] },
+				{ defines: ["GAUSSIAN_BLUR", "BLUR_TYPE_5"] },
+				{ defines: ["GAUSSIAN_BLUR", "BLUR_TYPE_9"] },
+				{ defines: ["GAUSSIAN_BLUR", "BLUR_TYPE_13"] },
+				{ defines: ["GAUSSIAN_BLUR", "HORIZONTAL", "BLUR_TYPE_5"] },
+				{ defines: ["GAUSSIAN_BLUR", "HORIZONTAL", "BLUR_TYPE_9"] },
+				{ defines: ["GAUSSIAN_BLUR", "HORIZONTAL", "BLUR_TYPE_13"] },
 				{ defines: ["TONEMAP"] }
 			];
 		},
@@ -134,14 +122,6 @@
 				{ defines: [] },
 				{ defines: ["FIRST_PASS"] }
 			];
-		},
-		{ 
-			shader_name: "emptypass";
-			pattern: "default_pattern";
-		},
-		{
-			shader_name: "gaussianblur";
-			pattern: "default_pattern";
 		},
 		{
 			shader_name: "generate_motion_vectors";
