@@ -114,6 +114,15 @@ do
     target_ci.type:set(TexType.two_dim, TexType.samplable, TexType.storage)
     target_ci:set_size_scale(1.0)
 
+    render_graph:add_render_resource("prev_final_lighting_target", target_ci)
+end
+
+do
+    local target_ci = TextureCI.new()
+    target_ci.format = render_context:get_api_format(Format.r11g11b10_ufloat)
+    target_ci.type:set(TexType.two_dim, TexType.samplable, TexType.storage)
+    target_ci:set_size_scale(1.0)
+
     render_graph:add_render_resource("intermediate_final_target", target_ci)
 end
 
@@ -509,6 +518,7 @@ do
     pass_ci:add_workgroup_size_info("final_lighting_target", true)
 
     pass_ci:bind_write_resource("write_color", "final_lighting_target")
+    pass_ci:bind_read_resource("prev_frame_color", "prev_final_lighting_target")
     pass_ci:bind_read_resource("visbuffer_geometry", "visbuffer_geometry_target")
     pass_ci:bind_read_resource("visbuffer_matobj", "visbuffer_matobj_target")
     pass_ci:bind_read_resource("visbuffer_skinvbo", "visbuffer_skinvbo_target")
@@ -532,6 +542,16 @@ do
     pass_ci:bind_read_resource("indirectCommandBuffer", "IndexedDrawIndirectBuffer")
 
     render_graph:add_render_pass("compute_materials_pass", pass_ci)
+end
+
+do
+    local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "utility:copy_compute")
+    pass_ci:add_workgroup_size_info("final_lighting_target", true)
+
+    pass_ci:bind_read_resource("sampler_color", "final_lighting_target")
+    pass_ci:bind_write_resource("write_color", "prev_final_lighting_target")
+
+    render_graph:add_render_pass("copy_final_color_pass", pass_ci)
 end
 
 final_target = postprocess("final_lighting_target", "intermediate_final_target")

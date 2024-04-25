@@ -105,6 +105,7 @@
 				{ defines: ["GAUSSIAN_BLUR", "HORIZONTAL", "BLUR_TYPE_5"] },
 				{ defines: ["GAUSSIAN_BLUR", "HORIZONTAL", "BLUR_TYPE_9"] },
 				{ defines: ["GAUSSIAN_BLUR", "HORIZONTAL", "BLUR_TYPE_13"] },
+				{ defines: ["LENS_FLARES"] },
 				{ defines: ["TONEMAP"] }
 			];
 		},

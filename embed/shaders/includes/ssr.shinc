@@ -17,15 +17,19 @@
 
 		vec3 generatePositionFromDepth(vec2 texturePos, float depth) 
 		{
+			FViewport viewport = viewportBuffer.viewports[frameData.defaultViewport];
+
 			vec4 ndc = vec4((texturePos - 0.5) * 2, depth, 1.f);
-			vec4 inversed = frameData.invProjection * ndc;
+			vec4 inversed = viewport.invProjection * ndc;
 			inversed /= inversed.w;
 			return inversed.xyz;
 		}
 		
 		vec2 generateProjectedPosition(vec3 pos)
 		{
-			vec4 samplePosition = frameData.projection * vec4(pos, 1.f);
+			FViewport viewport = viewportBuffer.viewports[frameData.defaultViewport];
+
+			vec4 samplePosition = viewport.projection * vec4(pos, 1.f);
 			samplePosition.xy = (samplePosition.xy / samplePosition.w) * 0.5 + 0.5;
 			return samplePosition.xy;
 		}

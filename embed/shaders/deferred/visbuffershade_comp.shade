@@ -17,7 +17,7 @@
 		"GL_EXT_shader_explicit_arithmetic_types",
 		"GL_EXT_shader_explicit_arithmetic_types_int8"
 	];
-	includes: ["visibility_buffer", "compute_common", "lighting_model", "shadow_sampling", "util", "noise", "atmosphere/scattering"];
+	includes: ["visibility_buffer", "compute_common", "lighting_model", "shadow_sampling", "util", "noise", "atmosphere/scattering", "ssr"];
 
 	code: 
 	"""
@@ -28,8 +28,9 @@
 		layout(set = 2, binding = 2) uniform samplerCube irradiance_cube;
 		layout(set = 2, binding = 3) uniform samplerCube prefiltered_cube;
 		layout(set = 2, binding = 4) uniform sampler2D depth_buffer;
+		layout(set = 2, binding = 5) uniform sampler2D prev_frame_color;
 
-		layout (set = 2, binding = 5) uniform sampler2DArrayShadow cascaded_shadowmap;
+		layout (set = 2, binding = 6) uniform sampler2DArrayShadow cascaded_shadowmap;
 
 		layout(push_constant) uniform UniformMeshData
 		{
@@ -322,6 +323,7 @@
 			//res *= debug_visualize_cascades(va.linearZ, dither);
 
 			pixel_color = vec4(res, 1.0);
+			pixel_color.rgb += computeSSR(uv, va.pos, va.normal, ms.metallic, ms.roughness, depth_buffer, prev_frame_color);
 
 			imageStore(write_color, ivec2(px), pixel_color);
 		}

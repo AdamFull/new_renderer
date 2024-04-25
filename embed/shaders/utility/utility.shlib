@@ -15,12 +15,25 @@
 					shader_name: "copy_frag";
 				}
 			];
+		},
+		{
+			name: "copy_compute";
+			sources: [
+				{
+					type: "compute";
+					shader_name: "copy_comp";
+				}
+			];
 		}
 	];
 
 	compile: [
 		{ 
 			shader_name: "copy";
+			pattern: "default_pattern";
+		},
+		{ 
+			shader_name: "copy_compute";
 			pattern: "default_pattern";
 		}
 	];
