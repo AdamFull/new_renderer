@@ -34,13 +34,13 @@
 		layout(set = 1, binding = 2, r32f) uniform image2D avg_luminosity;
 #endif
 
+#if defined(GAUSSIAN_BLUR)
 		layout(push_constant) uniform FConstantBlock
 		{
-#if defined(GAUSSIAN_BLUR)
 			float blur_scale;
 		    float blur_strength;
-#endif
 		} constants;
+#endif
 		
 		void main()
 		{
@@ -140,18 +140,18 @@
 			{
 				vec2 off1 = vec2(1.3333333333333333f) * direction;
 				color += texture(sampler_color, uv) * 0.29411764705882354 * constants.blur_scale;
-				color += texture(sampler_color, uv + (off1 / colorSize)) * 0.35294117647058826f * constants.blur_scale;
-				color += texture(sampler_color, uv - (off1 / colorSize)) * 0.35294117647058826f * constants.blur_scale;
+				color += texture(sampler_color, uv + (off1 / image_size)) * 0.35294117647058826f * constants.blur_scale;
+				color += texture(sampler_color, uv - (off1 / image_size)) * 0.35294117647058826f * constants.blur_scale;
 			}
 #elif defined(BLUR_TYPE_9)
 			{
 				vec2 off1 = vec2(1.3846153846f) * direction;
 				vec2 off2 = vec2(3.2307692308f) * direction;
 				color += texture(sampler_color, uv) * 0.2270270270f * constants.blur_scale;
-				color += texture(sampler_color, uv + (off1 / colorSize)) * 0.3162162162f * constants.blur_scale;
-				color += texture(sampler_color, uv - (off1 / colorSize)) * 0.3162162162f * constants.blur_scale;
-				color += texture(sampler_color, uv + (off2 / colorSize)) * 0.0702702703f * constants.blur_scale;
-				color += texture(sampler_color, uv - (off2 / colorSize)) * 0.0702702703f * constants.blur_scale;
+				color += texture(sampler_color, uv + (off1 / image_size)) * 0.3162162162f * constants.blur_scale;
+				color += texture(sampler_color, uv - (off1 / image_size)) * 0.3162162162f * constants.blur_scale;
+				color += texture(sampler_color, uv + (off2 / image_size)) * 0.0702702703f * constants.blur_scale;
+				color += texture(sampler_color, uv - (off2 / image_size)) * 0.0702702703f * constants.blur_scale;
 			}
 #elif defined(BLUR_TYPE_13)
 			{
@@ -159,12 +159,12 @@
 				vec2 off2 = vec2(3.2941176470588234f) * direction;
 				vec2 off3 = vec2(5.176470588235294f) * direction;
 				color += texture(sampler_color, uv) * 0.1964825501511404f * constants.blur_scale;
-				color += texture(sampler_color, uv + (off1 / colorSize)) * 0.2969069646728344f * constants.blur_scale;
-				color += texture(sampler_color, uv - (off1 / colorSize)) * 0.2969069646728344f * constants.blur_scale;
-				color += texture(sampler_color, uv + (off2 / colorSize)) * 0.09447039785044732f * constants.blur_scale;
-				color += texture(sampler_color, uv - (off2 / colorSize)) * 0.09447039785044732f * constants.blur_scale;
-				color += texture(sampler_color, uv + (off3 / colorSize)) * 0.010381362401148057f * constants.blur_scale;
-				color += texture(sampler_color, uv - (off3 / colorSize)) * 0.010381362401148057f * constants.blur_scale;
+				color += texture(sampler_color, uv + (off1 / image_size)) * 0.2969069646728344f * constants.blur_scale;
+				color += texture(sampler_color, uv - (off1 / image_size)) * 0.2969069646728344f * constants.blur_scale;
+				color += texture(sampler_color, uv + (off2 / image_size)) * 0.09447039785044732f * constants.blur_scale;
+				color += texture(sampler_color, uv - (off2 / image_size)) * 0.09447039785044732f * constants.blur_scale;
+				color += texture(sampler_color, uv + (off3 / image_size)) * 0.010381362401148057f * constants.blur_scale;
+				color += texture(sampler_color, uv - (off3 / image_size)) * 0.010381362401148057f * constants.blur_scale;
 			}
 #endif // BLUR_TYPE
 #endif

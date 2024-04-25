@@ -332,7 +332,7 @@ u64 CVkRenderContext::createRenderTarget(const std::string& name, const FTexture
 	FVkTextureCreateInfo vk_texture_ci{};
 	vk_texture_ci.base = texture_ci;
 	vk_texture_ci.sampleCount = vk::SampleCountFlagBits::e1;
-	vk_texture_ci.addressMode = vk::SamplerAddressMode::eRepeat;
+	vk_texture_ci.addressMode = vk::SamplerAddressMode::eClampToEdge;
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	vk_texture_ci.name = name;

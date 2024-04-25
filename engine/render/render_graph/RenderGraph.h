@@ -59,6 +59,8 @@ namespace engine
 			void applySingleRenderResourceDependencies(u64 resource_id, ERenderResourceAccessFlagBits access_type, u64 pass_index, EQueueTypeFlagBits queue_type);
 			void applyMultiRenderResourceDependencies(u64 pass_index, EQueueTypeFlagBits queue_type, const utl::hash_map<ERenderResourceGroupType, utl::vector<FRenderResourceBinding>>& associated_resources);
 
+			bool wasGraphChanged();
+			void generateResourceBarriers(utl::hash_map<u64, FPassBuildInfo>& build_infos, bool generate_build_infos);
 			void traverseDependencies(u64 current_pass_index, u64 stack_count = 0ull);
 			void traverseDependencies2(u64 current_pass_index, u64 stack_count = 0ull);
 			bool checkPassDependencies(u64 dst_pass, u64 src_pass);
@@ -75,6 +77,7 @@ namespace engine
 
 			utl::vector<FViewport> m_vViewportBuffer{};
 
+			u64 m_executionHash{ 0ull };
 			utl::vector<std::unique_ptr<IBasePass>> m_vRenderPasses{};
 			utl::hash_map<std::string, u64> m_nameToPass{};
 		private:

@@ -29,6 +29,66 @@ struct pair_hash
 	}
 };
 
+struct tmp_access_info
+{
+	ERenderResourceAccessFlagBits access{};
+	utl::vector<ERenderResourceAccessFlagBits> all_time_access{};
+	EPassType pass_type{};
+	FResourceBarrierInfo* last_barrier{ nullptr };
+};
+
+bool is_x_only_access(const FRenderResource& resource, ERenderResourceAccessFlagBits required_access)
+{
+	for (const auto& [access_flag, accessing_passes] : resource.usages)
+	{
+		if (access_flag != required_access)
+			return false;
+	}
+
+	return true;
+}
+
+bool is_last_pass_access(const FRenderResource& resource, const std::unordered_set<u64>& accessed_passes)
+{
+	for (const auto& [access_flag, accessing_passes] : resource.usages)
+	{
+		for (const auto& pass_index : accessing_passes)
+		{
+			if (auto found = accessed_passes.find(pass_index); found == accessed_passes.end())
+				return false;
+
+		}
+	}
+
+	return true;
+}
+
+// Checks is all next passes is read only
+bool is_ro_access_only_remain(const FRenderResource& resource, u64 current_pass)
+{
+	for (const auto& [access_flag, accessing_passes] : resource.usages)
+	{
+		if (access_flag == ERenderResourceAccessFlagBits::eRead)
+			continue;
+
+		for (const auto& pass_index : accessing_passes)
+		{
+			if (pass_index > current_pass)
+				return false;
+		}
+	}
+
+	return true;
+}
+
+bool was_accessed(const tmp_access_info& access_info, ERenderResourceAccessFlagBits access_flag)
+{
+	auto found = std::find_if(access_info.all_time_access.begin(), access_info.all_time_access.end(),
+		[access_flag](const ERenderResourceAccessFlagBits& access) {return access == access_flag; });
+
+	return found != access_info.all_time_access.end();
+}
+
 void filter_pass_queue(utl::vector<u64>& pass_list)
 {
 	std::unordered_set<u64> seen;
@@ -638,160 +698,8 @@ void CRenderGraph::build()
 	}
 
 
-	auto is_x_only_access = [](const FRenderResource& resource, ERenderResourceAccessFlagBits required_access)
-		{
-			for (const auto& [access_flag, accessing_passes] : resource.usages)
-			{
-				if (access_flag != required_access)
-					return false;
-			}
-
-			return true;
-		};
-
-	auto is_last_pass_access = [](const FRenderResource& resource, const std::unordered_set<u64>& accessed_passes)
-		{
-			for (const auto& [access_flag, accessing_passes] : resource.usages)
-			{
-				for (const auto& pass_index : accessing_passes)
-				{
-					if (auto found = accessed_passes.find(pass_index); found == accessed_passes.end())
-						return false;
-					
-				}
-			}
-
-			return true;
-		};
-
-	// Checks is all next passes is read only
-	auto is_ro_access_only_remain = [](const FRenderResource& resource, u64 current_pass)
-		{
-			for (const auto& [access_flag, accessing_passes] : resource.usages)
-			{
-				if (access_flag == ERenderResourceAccessFlagBits::eRead)
-					continue;
-
-				for (const auto& pass_index : accessing_passes)
-				{
-					if (pass_index > current_pass)
-						return false;
-				}
-			}
-
-			return true;
-		};
-
-	struct tmp_access_info
-	{
-		ERenderResourceAccessFlagBits access{};
-		utl::vector<ERenderResourceAccessFlagBits> all_time_access{};
-		EPassType pass_type{};
-		FResourceBarrierInfo* last_barrier{ nullptr };
-	};
-
-	auto was_accessed = [](const tmp_access_info& access_info, ERenderResourceAccessFlagBits access_flag)
-		{
-			auto found = std::find_if(access_info.all_time_access.begin(), access_info.all_time_access.end(),
-				[access_flag](const ERenderResourceAccessFlagBits& access) {return access == access_flag; });
-
-			return found != access_info.all_time_access.end();
-		};
-
-	utl::hash_map<std::pair<u64, u32>, tmp_access_info, pair_hash> resource_access_map{};
-	utl::hash_map<u64, FPassBuildInfo> build_infos{ m_vPassExecutionQueue.size() };
-	utl::hash_map<u64, std::unordered_set<u64>> per_res_accessed_passes{};
-
-	for (u64 pass_index : m_vPassExecutionQueue)
-	{
-		auto& pass = m_vRenderPasses.at(pass_index);
-		for (const auto& [resource_group, resource_bindings] : pass->m_renderResources)
-		{
-			ERenderResourceAccessFlagBits access_flag{};
-			ERenderResourceGroupFlagBits group_flag{};
-			unpackResourceGroup(resource_group, access_flag, group_flag);
-
-			for (u64 resource_index = 0ull; resource_index < resource_bindings.size(); ++resource_index)
-			{
-				const auto& resource_binding = resource_bindings[resource_index];
-				const auto& render_resource = m_vRenderResources[resource_binding.resource];
-
-				// Save all accessed passes for check is this last access
-				auto& accessed_passes = per_res_accessed_passes[resource_binding.resource];
-				accessed_passes.emplace(pass_index);
-
-				// Barriers is not needed for static resource (Loaded from file). 
-				if (render_resource.type & ERenderResourceTypeFlagBits::eStaticImage)
-					continue;
-
-				// Check will this resource even be writen by any pass
-				if (is_x_only_access(render_resource, ERenderResourceAccessFlagBits::eRead))
-					continue;
-
-				u32 subresource_key = resource_binding.subresource == ~0ull ? 0u : resource_binding.subresource;
-				
-				auto resource_key = std::make_pair(resource_binding.resource, subresource_key);
-				auto& last_resource_access = resource_access_map[resource_key];
-
-				// Ignoring read after read barriers
-				if (last_resource_access.access == access_flag && access_flag == ERenderResourceAccessFlagBits::eRead)
-					continue;
-
-				auto barrier_type = packDependencyBarrier(last_resource_access.access, access_flag);
-
-				if (utl::enum_cast(barrier_type) == 65536)
-					log_warning("[Render Graph] looks like access type is invalid or not supported");
-
-				// Check for last access duplicating
-				if (last_resource_access.last_barrier)
-				{
-					auto& last_barrier = *last_resource_access.last_barrier;
-					if (
-						last_barrier.dependencyType == barrier_type &&
-						last_barrier.resource.handle == render_resource.handle &&
-						last_barrier.resource.type == render_resource.type &&
-						last_barrier.subresourceIndex == resource_binding.subresource &&
-						last_barrier.srcPassType == last_resource_access.pass_type &&
-						last_barrier.dstPassType == pass->type()
-						)
-						continue;
-				}
-				
-				// Prepare infos for render pipeline
-				auto& build_info = build_infos[pass_index];
-				auto& attachment = build_info.attachments[resource_binding.resource];
-				attachment.loadOp = barrier_type == ERenderResourceDependencyBarrierType::eWriteAfterWrite ? ERenderResourceLoadOp::eLoad : ERenderResourceLoadOp::eClear;
-				attachment.storeOp = (render_resource.usages.count(ERenderResourceAccessFlagBits::eRead) || resource_binding.resource == m_backBufferResource) ? ERenderResourceStoreOp::eStore : ERenderResourceStoreOp::eDontCare;
-
-				// TODO: Ignore duplicate barriers
-				auto& pass_barriers = m_perPassResourceBarriers[pass_index];
-				auto& new_barrier = pass_barriers.emplace_back();
-
-				// First time barrier should be translation barrier and last barrier should be if resource is read only
-				// TODO: Add special enum class for it
-				bool is_change_pipeline_ownership = last_resource_access.pass_type == pass->type() && barrier_type == ERenderResourceDependencyBarrierType::eWriteAfterWrite;
-
-				if (last_resource_access.access == ERenderResourceAccessFlagBits::eNone)
-					new_barrier.barrierType = access_flag == ERenderResourceAccessFlagBits::eRead ? new_barrier.barrierType = ERenderResourceBarrierType::eFinal : ERenderResourceBarrierType::eIntermediate;
-				else if (is_ro_access_only_remain(render_resource, pass_index))
-					new_barrier.barrierType = ERenderResourceBarrierType::eFinal;
-				else if(is_change_pipeline_ownership)
-					new_barrier.barrierType = ERenderResourceBarrierType::eIntermediate;
-
-				new_barrier.dependencyType = barrier_type;
-				new_barrier.resource.handle = render_resource.handle;
-				new_barrier.resource.type = render_resource.type;
-				new_barrier.subresourceIndex = resource_binding.subresource;
-				new_barrier.srcPassType = last_resource_access.pass_type;
-				new_barrier.dstPassType = pass->type();
-
-				last_resource_access.access = access_flag;
-				last_resource_access.all_time_access.emplace_back(access_flag);
-				last_resource_access.pass_type = new_barrier.dstPassType;
-				last_resource_access.last_barrier = &new_barrier;
-			}
-		}
-	}
+	utl::hash_map<u64, FPassBuildInfo> build_infos;
+	generateResourceBarriers(build_infos, true);
 
 	// Barriers post process
 
@@ -826,6 +734,14 @@ void CRenderGraph::update(f32 dt)
 {
 	auto& render_context = m_pRenderInterface->getRenderContext();
 	auto& render_packet = m_pRenderInterface->getRenderPacket();
+
+	if (wasGraphChanged())
+	{
+		m_perPassResourceBarriers.clear();
+
+		utl::hash_map<u64, FPassBuildInfo> build_infos;
+		generateResourceBarriers(build_infos, false);
+	}
 
 	// TODO: traverse dependencies before updating
 	for (u64 idx = 0ull; idx < m_vViewports.size(); ++idx)
@@ -991,6 +907,117 @@ void CRenderGraph::applyMultiRenderResourceDependencies(u64 pass_index, EQueueTy
 		auto access_type = utl::cast<ERenderResourceAccessFlagBits>(utl::enum_cast(type) & 0xFFFF);
 		for (const auto& resource_binding : resource_bindings)
 			applySingleRenderResourceDependencies(resource_binding.resource, access_type, pass_index, queue_type);
+	}
+}
+
+bool CRenderGraph::wasGraphChanged()
+{
+	static std::hash<u64> hasher;
+	u64 new_hash{ 0ull };
+	for (u64 pass_index : m_vPassExecutionQueue)
+	{
+		auto& pass = m_vRenderPasses[pass_index];
+
+		if (pass->canExecute())
+			new_hash ^= hasher(pass_index);
+	}
+
+	bool res{ new_hash != m_executionHash };
+	m_executionHash = new_hash;
+	return res;
+}
+
+void CRenderGraph::generateResourceBarriers(utl::hash_map<u64, FPassBuildInfo>& build_infos, bool generate_build_infos)
+{
+	utl::hash_map<std::pair<u64, u32>, tmp_access_info, pair_hash> resource_access_map{};
+	utl::hash_map<u64, std::unordered_set<u64>> per_res_accessed_passes{};
+
+	for (u64 pass_index : m_vPassExecutionQueue)
+	{
+		auto& pass = m_vRenderPasses.at(pass_index);
+		for (const auto& [resource_group, resource_bindings] : pass->m_renderResources)
+		{
+			ERenderResourceAccessFlagBits access_flag{};
+			ERenderResourceGroupFlagBits group_flag{};
+			unpackResourceGroup(resource_group, access_flag, group_flag);
+
+			for (u64 resource_index = 0ull; resource_index < resource_bindings.size(); ++resource_index)
+			{
+				const auto& resource_binding = resource_bindings[resource_index];
+				const auto& render_resource = m_vRenderResources[resource_binding.resource];
+
+				// Save all accessed passes for check is this last access
+				auto& accessed_passes = per_res_accessed_passes[resource_binding.resource];
+				accessed_passes.emplace(pass_index);
+
+				// Barriers is not needed for static resource (Loaded from file). 
+				if (render_resource.type & ERenderResourceTypeFlagBits::eStaticImage)
+					continue;
+
+				// Check will this resource even be writen by any pass
+				if (is_x_only_access(render_resource, ERenderResourceAccessFlagBits::eRead))
+					continue;
+
+				u32 subresource_key = resource_binding.subresource == ~0ull ? 0u : resource_binding.subresource;
+
+				auto resource_key = std::make_pair(resource_binding.resource, subresource_key);
+				auto& last_resource_access = resource_access_map[resource_key];
+
+				// Ignoring read after read barriers
+				if (last_resource_access.access == access_flag && access_flag == ERenderResourceAccessFlagBits::eRead)
+					continue;
+
+				auto barrier_type = packDependencyBarrier(last_resource_access.access, access_flag);
+
+				// Check for last access duplicating
+				if (last_resource_access.last_barrier)
+				{
+					auto& last_barrier = *last_resource_access.last_barrier;
+					if (
+						last_barrier.dependencyType == barrier_type &&
+						last_barrier.resource.handle == render_resource.handle &&
+						last_barrier.resource.type == render_resource.type &&
+						last_barrier.subresourceIndex == resource_binding.subresource &&
+						last_barrier.srcPassType == last_resource_access.pass_type &&
+						last_barrier.dstPassType == pass->type()
+						)
+						continue;
+				}
+
+				// Prepare infos for render pipeline
+				auto& build_info = build_infos[pass_index];
+				auto& attachment = build_info.attachments[resource_binding.resource];
+				attachment.loadOp = barrier_type == ERenderResourceDependencyBarrierType::eWriteAfterWrite ? ERenderResourceLoadOp::eLoad : ERenderResourceLoadOp::eClear;
+				attachment.storeOp = (render_resource.usages.count(ERenderResourceAccessFlagBits::eRead) || resource_binding.resource == m_backBufferResource) ? ERenderResourceStoreOp::eStore : ERenderResourceStoreOp::eDontCare;
+
+				// TODO: Ignore duplicate barriers
+				auto& pass_barriers = m_perPassResourceBarriers[pass_index];
+				auto& new_barrier = pass_barriers.emplace_back();
+
+				// First time barrier should be translation barrier and last barrier should be if resource is read only
+				// TODO: Add special enum class for it
+				bool is_change_pipeline_ownership = last_resource_access.pass_type == pass->type() && barrier_type == ERenderResourceDependencyBarrierType::eWriteAfterWrite;
+
+				if (last_resource_access.access == ERenderResourceAccessFlagBits::eNone)
+					new_barrier.barrierType = access_flag == ERenderResourceAccessFlagBits::eRead ? new_barrier.barrierType = ERenderResourceBarrierType::eFinal : ERenderResourceBarrierType::eIntermediate;
+				else if (is_ro_access_only_remain(render_resource, pass_index))
+					new_barrier.barrierType = ERenderResourceBarrierType::eFinal;
+				else if (is_change_pipeline_ownership)
+					new_barrier.barrierType = ERenderResourceBarrierType::eIntermediate;
+
+				new_barrier.dependencyType = barrier_type;
+				new_barrier.resource.handle = render_resource.handle;
+				new_barrier.resource.type = render_resource.type;
+				new_barrier.subresourceIndex = resource_binding.subresource;
+				new_barrier.srcPassType = last_resource_access.pass_type;
+				new_barrier.dstPassType = pass->type();
+
+				last_resource_access.access = access_flag;
+				last_resource_access.all_time_access.emplace_back(access_flag);
+				last_resource_access.pass_type = new_barrier.dstPassType;
+				last_resource_access.last_barrier = &new_barrier;
+			}
+		}
 	}
 }
 
