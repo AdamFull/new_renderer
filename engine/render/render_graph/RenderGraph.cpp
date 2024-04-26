@@ -792,6 +792,26 @@ void CRenderGraph::update(f32 dt)
 		viewport.viewProjection = viewport.projection * render_packet->camera.view;
 		viewport.prevInvViewProjection = viewport.invViewProjection;
 		viewport.invViewProjection = glm::inverse(viewport.viewProjection);
+
+		viewport.reprojectionMatrix = viewport.invViewProjection * viewport.prevInvViewProjection;
+
+		// Transform from uv to clip space: texcoord * 2 - 1
+		static glm::mat4 to_clip_space = 
+		{
+			2.0f, 0, 0, 0,
+			0, -2.0f, 0, 0,
+			0, 0, 1, 0,
+			-1, 1, 0, 1
+		};
+		// Transform from clip to uv space: texcoord * 0.5 + 0.5
+		static glm::mat4 to_uv_space = 
+		{
+			0.5f, 0, 0, 0,
+			0, -0.5f, 0, 0,
+			0, 0, 1, 0,
+			0.5f, 0.5f, 0, 1
+		};
+		viewport.reprojectionMatrix = to_clip_space * viewport.reprojectionMatrix * to_uv_space;
 	}
 
 	auto& render_world = m_pRenderInterface->getRenderWorld();
