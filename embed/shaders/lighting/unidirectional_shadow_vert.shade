@@ -22,12 +22,14 @@
 	code: 
 	"""
 		layout(location = 0) out vec2 outTexcoord;
-		layout(location = 1) flat out uint materialID;
+		layout(location = 1) out vec4 outPos;
+		layout(location = 2) flat out uint materialID;
 		
 		layout(push_constant) uniform ShadowmapData
 		{
 			uint32_t callID;
-			uint32_t shadowIndex;
+			int32_t shadowIndex;
+			int32_t lightIndex;
 			int32_t layer;
 		} shadowData;
 		
@@ -57,8 +59,8 @@
 			}
 #endif // HAS_SKIN
 		
-			vec4 localPos = modelMatrix * vec4(inPosition, 1.0);
-			localPos = vec4(localPos.xyz / localPos.w, 1.0);
+			outPos = modelMatrix * vec4(inPosition, 1.0);
+			outPos = vec4(outPos.xyz / outPos.w, 1.0);
 
 #ifdef HAS_TEXCOORD
 			outTexcoord = inTexCoord;
@@ -68,9 +70,15 @@
 #if defined(CASCADED_SHADOW)
 			FCascadedShadowCommit shadow = cascadedShadowBuffer.shadows[shadowData.shadowIndex];
 			viewProj = shadow.cascadeViewProj[shadowData.layer];
+			gl_Layer = shadowData.layer;
+#elif defined(OMNI_SHADOW)
+			FOmniShadowCommit shadow = omniShadowBuffer.shadows[shadowData.shadowIndex];
+			viewProj = shadow.viewProj[shadowData.layer];
+			gl_Layer = shadowData.layer;
 #else
 			FSpotShadowCommit shadow = spotShadowBuffer.shadows[shadowData.shadowIndex];
 			viewProj = shadow.viewProj;
+			gl_Layer = shadowData.shadowIndex * 6 + shadowData.layer;
 #endif
 
 			materialID = ~0u;
@@ -81,8 +89,8 @@
 				materialID = mesh.materialID;
 			}
 
-			gl_Layer = shadowData.layer;
-			gl_Position = viewProj * localPos;
+			
+			gl_Position = viewProj * outPos;
 		}
 	""";
 }

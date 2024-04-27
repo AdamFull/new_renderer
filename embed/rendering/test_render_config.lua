@@ -1,9 +1,9 @@
 use_low_precision_velocity = true
 
-motion_blur_enabled = true
+motion_blur_enabled = false
 depth_of_field_enabled = false
-chromatic_aberration_enabled = true
-bloom_enabled = true
+chromatic_aberration_enabled = false
+bloom_enabled = false
 
 bloom_blur_depth = 5
 
@@ -50,6 +50,26 @@ do
     target_ci.array_layers = global_settings.cascade_shadowmap_cascade_count * global_settings.max_directional_light_shadow_count
 
     render_graph:add_render_resource("cascaded_shadows_target", target_ci)
+end
+
+do
+    local target_ci = TextureCI.new()
+    target_ci.format = render_context:get_depth_format(false)
+    target_ci.type:set(TexType.two_dim, TexType.array, TexType.samplable)
+    target_ci:set_fixed_size_2d(global_settings.spotlight_shadowmap_resolution)
+    target_ci.array_layers = global_settings.max_spot_light_shadow_count
+
+    render_graph:add_render_resource("directional_shadows_target", target_ci) 
+end
+
+do
+    local target_ci = TextureCI.new()
+    target_ci.format = render_context:get_depth_format(false)
+    target_ci.type:set(TexType.two_dim, TexType.cubemap, TexType.array, TexType.samplable)
+    target_ci:set_fixed_size_2d(global_settings.point_light_shadowmap_resolution)
+    target_ci.array_layers = global_settings.max_point_light_shadow_count
+
+    render_graph:add_render_resource("omni_shadows_target", target_ci)
 end
 
 -- Visibility buffer targets
@@ -105,7 +125,7 @@ do
     target_ci.type:set(TexType.two_dim, TexType.samplable, TexType.storage)
     target_ci:set_size_scale(1.0)
 
-    render_graph:add_render_resource("final_lighting_target", target_ci)
+    render_graph:add_render_resource("hdr0", target_ci)
 end
 
 do
@@ -114,7 +134,7 @@ do
     target_ci.type:set(TexType.two_dim, TexType.samplable, TexType.storage)
     target_ci:set_size_scale(1.0)
 
-    render_graph:add_render_resource("prev_final_lighting_target", target_ci)
+    render_graph:add_render_resource("hdr1", target_ci)
 end
 
 do
@@ -123,7 +143,7 @@ do
     target_ci.type:set(TexType.two_dim, TexType.samplable, TexType.storage)
     target_ci:set_size_scale(1.0)
 
-    render_graph:add_render_resource("intermediate_final_target", target_ci)
+    render_graph:add_render_resource("hdr0_history", target_ci)
 end
 
 -- eye adaptation targets
@@ -184,7 +204,6 @@ end
 do
     local viewport_ci = ViewportCI.new()
     viewport_ci:depend_on_target("present_target")
-
     render_graph:add_viewport("default_viewport", viewport_ci)
     render_graph:set_default_viewport("default_viewport")
 end
@@ -193,16 +212,25 @@ do
     local viewport_ci = ViewportCI.new()
     viewport_ci:depend_on_viewport("default_viewport")
     viewport_ci:set_scale(0.5)
-
     render_graph:add_viewport("half_resolution_viewport", viewport_ci)
 end
 
 do 
     local viewport_ci = ViewportCI.new()
-    -- viewport_ci:depend_on_target("cascaded_shadows_target")
     viewport_ci:set_fixed_size_2d(global_settings.cascade_shadowmap_resolution)
-
     render_graph:add_viewport("cascaded_shadows_viewport", viewport_ci)
+end
+
+do 
+    local viewport_ci = ViewportCI.new()
+    viewport_ci:set_fixed_size_2d(global_settings.spotlight_shadowmap_resolution)
+    render_graph:add_viewport("spot_shadows_viewport", viewport_ci)
+end
+
+do 
+    local viewport_ci = ViewportCI.new()
+    viewport_ci:set_fixed_size_2d(global_settings.point_light_shadowmap_resolution)
+    render_graph:add_viewport("omni_shadows_viewport", viewport_ci)
 end
 
 -- Some functions
@@ -478,20 +506,35 @@ do
     render_graph:add_render_pass("generate_prefiltered_cube", pass_ci)
 end
 
-
+-- Shadow passes
 do
     local pass_ci = make_graphics_pass(RenderingType.csm, QueueType.graphics, "lighting:unidirectional_shadow:CASCADED_SHADOW")
     pass_ci:set_viewport("cascaded_shadows_viewport")
     pass_ci:set_depth_target("cascaded_shadows_target")
 
-    pass_ci:bind_read_resource("nodeBuffer", "NodeStorage")
-    pass_ci:bind_read_resource("materialBuffer", "MaterialStorage")
-    pass_ci:bind_read_resource("jointsBuffer", "SkinningJoints")
-    pass_ci:bind_read_resource("cascadedShadowBuffer", "CascadedShadows")
-    pass_ci:bind_read_resource("batchBuffer", "GeometryBatches")
     pass_ci:add_read_resource("IndexedDrawIndirectBuffer")
 
     render_graph:add_render_pass("cascaded_shadow_map_pass", pass_ci)
+end
+
+do
+    local pass_ci = make_graphics_pass(RenderingType.dsm, QueueType.graphics, "lighting:unidirectional_shadow")
+    pass_ci:set_viewport("spot_shadows_viewport")
+    pass_ci:set_depth_target("directional_shadows_target")
+
+    pass_ci:add_read_resource("IndexedDrawIndirectBuffer")
+
+    render_graph:add_render_pass("spot_shadow_map_pass", pass_ci)
+end
+
+do
+    local pass_ci = make_graphics_pass(RenderingType.osm, QueueType.graphics, "lighting:unidirectional_shadow:OMNI_SHADOW")
+    pass_ci:set_viewport("omni_shadows_viewport")
+    pass_ci:set_depth_target("omni_shadows_target")
+
+    pass_ci:add_read_resource("IndexedDrawIndirectBuffer")
+
+    render_graph:add_render_pass("omni_shadow_map_pass", pass_ci)
 end
 
 -- visibility buffer write
@@ -515,10 +558,10 @@ end
 -- visibility buffer material pass
 do
     local pass_ci = make_compute_pass(ComputeType.geometry, QueueType.graphics, "visibilitybuffer:shade")
-    pass_ci:add_workgroup_size_info("final_lighting_target", true)
+    pass_ci:add_workgroup_size_info("hdr0", true)
 
-    pass_ci:bind_write_resource("write_color", "final_lighting_target")
-    pass_ci:bind_read_resource("prev_frame_color", "prev_final_lighting_target")
+    pass_ci:bind_write_resource("write_color", "hdr0")
+    pass_ci:bind_read_resource("prev_frame_color", "hdr0_history")
     pass_ci:bind_read_resource("visbuffer_geometry", "visbuffer_geometry_target")
     pass_ci:bind_read_resource("visbuffer_matobj", "visbuffer_matobj_target")
     pass_ci:bind_read_resource("visbuffer_skinvbo", "visbuffer_skinvbo_target")
@@ -526,35 +569,24 @@ do
     pass_ci:bind_read_resource("irradiance_cube", "irradiance_cube_target")
     pass_ci:bind_read_resource("prefiltered_cube", "prefiltered_cube_target")
     pass_ci:bind_read_resource("cascaded_shadowmap", "cascaded_shadows_target")
+    pass_ci:bind_read_resource("direct_shadowmap", "directional_shadows_target")
+    pass_ci:bind_read_resource("omni_shadowmap", "omni_shadows_target")
     pass_ci:bind_read_resource("depth_buffer", "zbuffer_depth_target")
-
-    pass_ci:bind_read_resource("nodeBuffer", "NodeStorage")
-    pass_ci:bind_read_resource("materialBuffer", "MaterialStorage")
-    pass_ci:bind_read_resource("jointsBuffer", "SkinningJoints")
-    pass_ci:bind_read_resource("directionalLightBuffer", "DirectionalLights")
-    pass_ci:bind_read_resource("pointLightBuffer", "PointLights")
-    pass_ci:bind_read_resource("spotLightBuffer", "SpotLights")
-    pass_ci:bind_read_resource("cascadedShadowBuffer", "CascadedShadows")
-    pass_ci:bind_read_resource("omniShadowBuffer", "OmniShadows")
-    pass_ci:bind_read_resource("spotShadowBuffer", "SpotShadows")
-    pass_ci:bind_read_resource("batchBuffer", "GeometryBatches")
-
-    pass_ci:bind_read_resource("indirectCommandBuffer", "IndexedDrawIndirectBuffer")
 
     render_graph:add_render_pass("compute_materials_pass", pass_ci)
 end
 
 do
     local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "utility:copy_compute")
-    pass_ci:add_workgroup_size_info("final_lighting_target", true)
+    pass_ci:add_workgroup_size_info("hdr0", true)
 
-    pass_ci:bind_read_resource("sampler_color", "final_lighting_target")
-    pass_ci:bind_write_resource("write_color", "prev_final_lighting_target")
+    pass_ci:bind_read_resource("sampler_color", "hdr0")
+    pass_ci:bind_write_resource("write_color", "hdr0_history")
 
     render_graph:add_render_pass("copy_final_color_pass", pass_ci)
 end
 
-final_target = postprocess("final_lighting_target", "intermediate_final_target")
+final_target = postprocess("hdr0", "hdr1")
 
 -- Present pass
 do

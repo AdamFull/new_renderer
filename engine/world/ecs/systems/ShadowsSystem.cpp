@@ -177,6 +177,7 @@ void CShadowsSystem::__update(f32 fDt)
 
 			if (light.castShadows && base.enabled && world_stats.omniShadowCount < max_point_light_shadow_count)
 			{
+				light.radius = 32.f;
 				glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, light.radius);
 
 				FOmniShadowCommit shadow_commit{};
@@ -186,6 +187,9 @@ void CShadowsSystem::__update(f32 fDt)
 				shadow_commit.viewProj[3ull] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 0.0, -1.0));	// NEGATIVE_Y
 				shadow_commit.viewProj[4ull] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0));	// POSITIVE_Z
 				shadow_commit.viewProj[5ull] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0));	// NEGATIVE_Z
+
+				shadow_commit.index = world_stats.omniShadowCount;
+				shadow_commit.farPlane = light.radius;
 
 				light.shadowIndex = world_stats.omniShadowCount;
 
@@ -218,6 +222,7 @@ void CShadowsSystem::__update(f32 fDt)
 				glm::mat4 shadowProj = glm::perspective(light.outerAngle * 2.f, 1.0f, 0.1f, 64.f);
 				glm::mat4 shadowView = glm::lookAt(ltransform.gposition, ltransform.gposition + light_dir, glm::vec3(0.0f, 1.0f, 0.0f));
 				shadow_commit.viewProj = shadowProj * shadowView;
+				shadow_commit.index = world_stats.spotShadowCount;
 
 				light.shadowIndex = world_stats.spotShadowCount;
 				render_world->addShadow(shadow_commit);

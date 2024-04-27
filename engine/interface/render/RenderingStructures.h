@@ -13,6 +13,8 @@ namespace engine
 			eFullscreen,
 			eGeometry,
 			eCascadedShadowMap,
+			eDirectionalShadowMap,
+			eOmniShadowMap,
 			eRenderScript,
 			eClear
 		};

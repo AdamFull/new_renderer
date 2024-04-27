@@ -20,10 +20,20 @@
 	code: 
 	"""
 		layout(location = 0) in vec2 inUV;
-		layout(location = 1) flat in uint materialID;
+		layout(location = 1) in vec4 inPos;
+		layout(location = 2) flat in uint materialID;
+
+		layout(push_constant) uniform ShadowmapData
+		{
+			uint32_t callID;
+			int32_t shadowIndex;
+			int32_t lightIndex;
+			int32_t layer;
+		} shadowData;
 		
 		void main() 
 		{
+
 			if(materialID != ~0u)
 			{
 				FMaterial mat = materialBuffer.materials[materialID];
@@ -34,6 +44,20 @@
 						discard;
 				}
 			}
+
+#if defined(OMNI_SHADOW)
+		FOmniShadowCommit shadow = omniShadowBuffer.shadows[shadowData.shadowIndex];
+		FPointLightCommit light = pointLightBuffer.lights[shadowData.lightIndex];
+
+		// get distance between fragment and light source
+		float lightDistance = length(inPos.xyz - light.position);
+		
+		// map to [0;1] range by dividing by far_plane
+		lightDistance = lightDistance / 32.f;//shadow.farPlane;
+		
+		// write this as modified depth
+		gl_FragDepth = lightDistance;
+#endif
 		}
 	""";
 }

@@ -163,6 +163,8 @@ namespace engine
 				"fullscreen", ERenderingType::eFullscreen,
 				"geometry", ERenderingType::eGeometry,
 				"csm", ERenderingType::eCascadedShadowMap,
+				"dsm", ERenderingType::eDirectionalShadowMap,
+				"osm", ERenderingType::eOmniShadowMap,
 				"render_script", ERenderingType::eRenderScript,
 				"clear", ERenderingType::eClear
 			);

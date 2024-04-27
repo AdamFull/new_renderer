@@ -12,7 +12,7 @@ namespace engine
 				f32 intencity{ 1.f };
 				f32 radius{ 1.f };
 				int shadowIndex{ -1 };
-				bool castShadows{ false };
+				bool castShadows{ true };
 
 				u64 frustumID{ ~0ull };
 			};

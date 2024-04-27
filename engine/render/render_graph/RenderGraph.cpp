@@ -1,6 +1,8 @@
 #include "RenderGraph.h"
 
 #include "render_passes/CascadedShadowMapPass.h"
+#include "render_passes/DirectionalShadowMapPass.h"
+#include "render_passes/OmniShadowMapPass.h"
 #include "render_passes/ComputeCubemapPass.h"
 #include "render_passes/ComputeCullingPass.h"
 #include "render_passes/ComputeGeometryPass.h"
@@ -611,6 +613,10 @@ u64 CRenderGraph::addRenderPass(const std::string& name, const FRenderConfigRend
 		new_pass = std::make_unique<CGeometryPass>(m_pRenderInterface);
 	else if (render_pass_ci.type == ERenderingType::eCascadedShadowMap)
 		new_pass = std::make_unique<CCascadedShadowMapPass>(m_pRenderInterface);
+	else if (render_pass_ci.type == ERenderingType::eDirectionalShadowMap)
+		new_pass = std::make_unique<CDirectionalShadowMapPass>(m_pRenderInterface);
+	else if (render_pass_ci.type == ERenderingType::eOmniShadowMap)
+		new_pass = std::make_unique<COmnilShadowMapPass>(m_pRenderInterface);
 	else if(render_pass_ci.type == ERenderingType::eClear)
 		new_pass = std::make_unique<CClearPass>(m_pRenderInterface);
 

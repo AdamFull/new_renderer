@@ -26,10 +26,12 @@
 		
 			float shadowFactor = 0.0;
 			int count = 0;
-			int range = 1;
+			const int range = 1;
 			
+			[[unroll]]
 			for (int x = -range; x <= range; x++) 
 			{
+				[[unroll]]
 				for (int y = -range; y <= range; y++) 
 				{
 					shadowFactor += cascadeShadowProjection(shadowmap_tex, sc, vec2(dx*x, dy*y), cascadeIndex, bias);
@@ -56,10 +58,12 @@
 		
 			float shadowFactor = 0.0;
 			int count = 0;
-			int range = 1;
+			const int range = 1;
 			
+			[[unroll]]
 			for (int x = -range; x <= range; x++)
 			{
+				[[unroll]]
 				for (int y = -range; y <= range; y++)
 				{
 					shadowFactor += directionalShadowProjection(shadowmap_tex, sc, vec2(dx*x, dy*y), bias, layer);
@@ -92,9 +96,12 @@
 		{
 			float shadowFactor = 0.0;
 			float samples = 4.0;
-			float offset  = 0.1;
+			const float offset  = 0.1;
+
+			[[unroll]]
 			for(float x = -offset; x < offset; x += offset / (samples * 0.5))
 			{
+				[[unroll]]
 				for(float y = -offset; y < offset; y += offset / (samples * 0.5))
 				{
 					for(float z = -offset; z < offset; z += offset / (samples * 0.5))

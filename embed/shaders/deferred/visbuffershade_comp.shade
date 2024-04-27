@@ -7,7 +7,8 @@
 		"GL_ARB_shader_draw_parameters",
 		"GL_EXT_nonuniform_qualifier",
 		"GL_EXT_shader_8bit_storage",
-		"GL_EXT_shader_16bit_storage"
+		"GL_EXT_shader_16bit_storage",
+		"GL_EXT_control_flow_attributes"
 	];
 
 	definitions: ["MESH_DATA", "LIGHT_DATA", "SHADOW_DATA"];
@@ -31,6 +32,8 @@
 		layout(set = 2, binding = 5) uniform sampler2D prev_frame_color;
 
 		layout (set = 2, binding = 6) uniform sampler2DArrayShadow cascaded_shadowmap;
+		layout (set = 2, binding = 7) uniform sampler2DArrayShadow direct_shadowmap;
+		layout (set = 2, binding = 8) uniform samplerCubeArrayShadow omni_shadowmap;
 
 		layout(push_constant) uniform UniformMeshData
 		{
@@ -150,9 +153,31 @@
 			{
 				FCascadedShadowCommit shadow = cascadedShadowBuffer.shadows[light.shadowIndex];
 				shadow_factor = getCascadeShadow(cascaded_shadowmap, shadow, va, ms, dither);
+				//shadow_factor = ScreenSpaceShadows(va.pos, light.direction, depth_buffer, 32, 0.02f, dither);
 			}
 
 			return light.color * light.intencity * color * shadow_factor;
+		}
+
+
+
+
+		float getOmniShadow(samplerCubeArrayShadow shadowmap_tex, in FOmniShadowCommit commit, in VertexAttribute va, in MaterialSample ms, vec3 lightPos, in float dither)
+		{
+			float shadow = 1.0;
+			vec3 shadowClip = va.pos - lightPos;
+		
+			float cosTheta = dot(va.normal, normalize(lightPos - va.pos));
+			float bias = 0.1 * tan(acos(cosTheta));
+			bias = clamp(bias, 0.0, 0.003);
+		
+			bool enablePCF = true;
+			if (enablePCF)
+				shadow = omniShadowFilterPCF(shadowmap_tex, shadowClip, bias, 32.f, commit.index);
+			else
+				shadow = omniShadowProjection(shadowmap_tex, shadowClip, vec3(0.0), bias, 32.f, commit.index);
+		
+			return shadow;
 		}
 
 		vec3 calculatePointLight(in FPointLightCommit light, in VertexAttribute va, in MaterialSample ms, in vec3 V, in vec3 F0, in float dither)
@@ -162,9 +187,35 @@
 			
 			float atten = clamp(1.0 - pow(dist, 2.0f)/pow(light.radius, 2.0f), 0.0f, 1.0f); atten *= atten;
 			vec3 color = specularContribution(ms.albedo, L, V, ms.normal, F0, ms.metallic, ms.roughness);
-		
+
 			float shadow_factor = 1.0;
+			if(light.castShadows > 0 && light.shadowIndex > -1)
+			{
+				FOmniShadowCommit shadow = omniShadowBuffer.shadows[light.shadowIndex];
+				shadow_factor = getOmniShadow(omni_shadowmap, shadow, va, ms, light.position, dither);
+				//shadow_factor = ScreenSpaceShadows(va.pos, light.direction, depth_buffer, 32, 0.02f, dither);
+			}
+		
 			return light.color * atten * color * light.intencity * shadow_factor;
+		}
+
+
+		float getDirectionalShadow(sampler2DArrayShadow shadomwap_tex, in FSpotShadowCommit commit, in VertexAttribute va, in MaterialSample ms, vec3 dir, in float dither)
+		{
+		    float shadow = 1.0;
+			vec4 shadowClip	= commit.viewProj * vec4(va.pos, 1.0);
+		
+			float cosTheta = dot(va.normal, dir);
+			const float max_bias = 0.005f;
+			const float min_bias = 0.001f;
+			float bias = max(max_bias * (1.0 - cosTheta), min_bias);
+		
+			bool enablePCF = true;
+			if (enablePCF)
+				shadow = directionalShadowFilterPCF(shadomwap_tex, shadowClip, bias, commit.index);
+			else
+				shadow = directionalShadowProjection(shadomwap_tex, shadowClip, vec2(0.0), bias, commit.index);
+			return shadow;
 		}
 
 		vec3 calculateSpotlight(in FSpotLightCommit light, in VertexAttribute va, in MaterialSample ms, in vec3 V, in vec3 F0, in float dither)
@@ -182,8 +233,15 @@
 			float cd = dot(light.toTarget > 0 ? L : -L, dir);
 			float angularAttenuation = clamp(cd * light.lightAngleScale + light.lightAngleOffset, 0.0, 1.0);
 			angularAttenuation *= angularAttenuation;	
-			
+
 			float shadow_factor = 1.0;
+			if(light.castShadows > 0 && light.shadowIndex > -1)
+			{
+				FSpotShadowCommit shadow = spotShadowBuffer.shadows[light.shadowIndex];
+				shadow_factor = getDirectionalShadow(direct_shadowmap, shadow, va, ms, normalize(light.direction), dither);
+				//shadow_factor = ScreenSpaceShadows(va.pos, light.direction, depth_buffer, 32, 0.02f, dither);
+			}
+
 			return light.color * light.intencity * color * angularAttenuation * shadow_factor;
 		}
 
@@ -256,6 +314,8 @@
 			FViewport viewport = viewportBuffer.viewports[frameData.defaultViewport];
 
 			VisibilityBuffer visbuffer;
+
+			[[branch]]
 			if(!loadVisBuffer(uv, visbuffer))
 			{
 				vec4 dir_world_space = vec4(0.0);
@@ -278,6 +338,7 @@
 				return;
 			}
 
+			[[branch]]
 			if(visbuffer.vboID != meshData.vboId)
 			{
 				//imageStore(write_color, ivec2(px), pixel_color);
@@ -323,7 +384,9 @@
 			//res *= debug_visualize_cascades(va.linearZ, dither);
 
 			pixel_color = vec4(res, 1.0);
-			pixel_color.rgb += computeSSR(uv, va.pos, va.normal, ms.metallic, ms.roughness, depth_buffer, prev_frame_color);
+			//pixel_color.rgb += computeSSR(uv, va.pos, va.normal, ms.metallic, ms.roughness, depth_buffer, prev_frame_color);
+			float ssr_weight = 0.f;
+			//pixel_color.rgb += ScreenSpaceReflections(va.pos, ms.normal, V, ms.roughness, depth_buffer, prev_frame_color, dither, ssr_weight);
 
 			imageStore(write_color, ivec2(px), pixel_color);
 		}

@@ -15,7 +15,7 @@ namespace engine
 				f32 outerAngle{ 0.78f };
 				bool toTarget{ false };
 				int shadowIndex{ -1 };
-				bool castShadows{ false };
+				bool castShadows{ true };
 
 				u64 frustumID{ ~0ull };
 			};
