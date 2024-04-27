@@ -173,9 +173,9 @@
 		
 			bool enablePCF = true;
 			if (enablePCF)
-				shadow = omniShadowFilterPCF(shadowmap_tex, shadowClip, bias, 32.f, commit.index);
+				shadow = omniShadowFilterPCF(shadowmap_tex, shadowClip, bias, commit.farPlane, commit.index);
 			else
-				shadow = omniShadowProjection(shadowmap_tex, shadowClip, vec3(0.0), bias, 32.f, commit.index);
+				shadow = omniShadowProjection(shadowmap_tex, shadowClip, vec3(0.0), bias, commit.farPlane, commit.index);
 		
 			return shadow;
 		}
