@@ -44,7 +44,7 @@ end
 -- Shadow targets
 do
     local target_ci = TextureCI.new()
-    target_ci.format = render_context:get_depth_format(false)
+    target_ci.format = render_context:get_api_format(Format.d32_sfloat)
     target_ci.type:set(TexType.two_dim, TexType.array, TexType.samplable)
     target_ci:set_fixed_size_2d(global_settings.cascade_shadowmap_resolution)
     target_ci.array_layers = global_settings.cascade_shadowmap_cascade_count * global_settings.max_directional_light_shadow_count
@@ -54,7 +54,7 @@ end
 
 do
     local target_ci = TextureCI.new()
-    target_ci.format = render_context:get_depth_format(false)
+    target_ci.format = render_context:get_api_format(Format.d16_unorm)
     target_ci.type:set(TexType.two_dim, TexType.array, TexType.samplable)
     target_ci:set_fixed_size_2d(global_settings.spotlight_shadowmap_resolution)
     target_ci.array_layers = global_settings.max_spot_light_shadow_count
@@ -64,7 +64,7 @@ end
 
 do
     local target_ci = TextureCI.new()
-    target_ci.format = render_context:get_depth_format(false)
+    target_ci.format = render_context:get_api_format(Format.d16_unorm)
     target_ci.type:set(TexType.two_dim, TexType.cubemap, TexType.array, TexType.samplable)
     target_ci:set_fixed_size_2d(global_settings.point_light_shadowmap_resolution)
     target_ci.array_layers = global_settings.max_point_light_shadow_count

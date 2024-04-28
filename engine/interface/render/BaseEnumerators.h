@@ -10,6 +10,12 @@ namespace engine
 		{
 			eUnknown,
 
+			eD32SFLOAT_8UINT,
+			eD24UNORM_8UINT,
+			eD16UNORM_8UINT,
+			eD32SFLOAT,
+			eD16UNORM,
+
 			eRGBA8_SRGB,
 
 			eR8_UNORM,

@@ -68,6 +68,12 @@ namespace engine
 			// Register ETextureFormat
 			lua->new_enum(
 				"Format",
+				"d32_sfloat_8_uint", EApiDataFormat::eD32SFLOAT_8UINT,
+				"d24_unorm_8_uint", EApiDataFormat::eD24UNORM_8UINT,
+				"d16_unorm_8_uint", EApiDataFormat::eD16UNORM_8UINT,
+				"d32_sfloat", EApiDataFormat::eD32SFLOAT,
+				"d16_unorm", EApiDataFormat::eD16UNORM,
+
 				"rgba8_srgb", EApiDataFormat::eRGBA8_SRGB,
 
 				"r8_unorm", EApiDataFormat::eR8_UNORM,

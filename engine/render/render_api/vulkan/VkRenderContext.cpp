@@ -1517,6 +1517,12 @@ u32 CVkRenderContext::getApiFormat(EApiDataFormat global_format)
 {
 	switch (global_format)
 	{
+	case EApiDataFormat::eD32SFLOAT_8UINT: return VK_FORMAT_D32_SFLOAT_S8_UINT; break;
+	case EApiDataFormat::eD24UNORM_8UINT: return VK_FORMAT_D24_UNORM_S8_UINT; break;
+	case EApiDataFormat::eD16UNORM_8UINT: return VK_FORMAT_D16_UNORM_S8_UINT; break;
+	case EApiDataFormat::eD32SFLOAT: return VK_FORMAT_D32_SFLOAT; break;
+	case EApiDataFormat::eD16UNORM: return VK_FORMAT_D16_UNORM; break;
+
 	case EApiDataFormat::eRGBA8_SRGB: return VK_FORMAT_R8G8B8A8_SRGB; break;
 
 	case EApiDataFormat::eR8_UNORM: return VK_FORMAT_R8_UNORM; break;

@@ -389,8 +389,7 @@ namespace engine
 				{
 					// TODO: check is that stencil only target
 					bool is_depth_stencil_attachment = is_depth_stencil_format(image_format);
-					bool is_stencil_only_format = is_stencil_format(image_format);
-					return is_depth_stencil_attachment ? vk::ImageLayout::eDepthStencilAttachmentOptimal : is_stencil_only_format ? vk::ImageLayout::eStencilAttachmentOptimal : vk::ImageLayout::eDepthAttachmentOptimal;
+					return is_depth_stencil_attachment ? vk::ImageLayout::eDepthStencilAttachmentOptimal : is_depth_only_format(image_format) ? vk::ImageLayout::eDepthAttachmentOptimal : vk::ImageLayout::eStencilAttachmentOptimal;
 				}
 				
 				return vk::ImageLayout::eUndefined;
