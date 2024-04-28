@@ -79,7 +79,7 @@ namespace engine {
 
 		// Point light
 		CONSTANT uint32_t max_point_light_count = 64u;
-		CONSTANT uint32_t max_point_light_shadow_count = 1u;
+		CONSTANT uint32_t max_point_light_shadow_count = 2u;
 		CONSTANT uint32_t point_light_shadow_map_resolution = 512u;
 
 #if defined(INDEX_8BIT)
@@ -265,8 +265,9 @@ namespace engine {
 		struct FCascadedShadowCommit
 		{
 			ARRAY_OF(splitDepths, float, cascade_shadow_map_cascade_count);
-			ARRAY_OF(cascadeViewProj, MATRIX4, cascade_shadow_map_cascade_count);
+			uint32_t firstMatrix;
 			float farClip;
+			int index;
 			uint32_t pad;
 		};
 
@@ -282,9 +283,10 @@ namespace engine {
 
 		struct FOmniShadowCommit
 		{
-			ARRAY_OF(viewProj, MATRIX4, 6u);
+			uint32_t firstMatrix;
 			float farPlane;
 			int index;
+			uint32_t pad;
 		};
 
 		struct FPointLightCommit
@@ -299,9 +301,8 @@ namespace engine {
 
 		struct FSpotShadowCommit
 		{
-			MATRIX4 viewProj;
+			uint32_t firstMatrix;
 			int index;
-			uint32_t pad;
 		};
 
 		struct FSpotLightCommit
@@ -444,6 +445,7 @@ namespace engine {
 		REGISTER_OBJECT_ARRAY_BUFFER(CascadedShadows, FCascadedShadowCommit, shadows);
 		REGISTER_OBJECT_ARRAY_BUFFER(OmniShadows, FOmniShadowCommit, shadows);
 		REGISTER_OBJECT_ARRAY_BUFFER(SpotShadows, FSpotShadowCommit, shadows);
+		REGISTER_OBJECT_ARRAY_BUFFER(ShadowMatrices, MATRIX4, viewProj);
 
 		// Vertex buffer specific data
 		REGISTER_OBJECT_ARRAY_BUFFER(RawVertexBuffer, FRawVertex, vertices);
@@ -485,6 +487,7 @@ namespace engine {
 			CascadedShadows cascadedShadowBuffer;
 			OmniShadows omniShadowBuffer;
 			SpotShadows spotShadowBuffer;
+			ShadowMatrices shadowMatricesBuffer;
 		
 			DrawInfoBuffer drawInfoBuffer;
 			ClusterInfoBuffer clusterBuffer;

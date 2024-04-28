@@ -41,8 +41,11 @@ void CShadowsSystem::__update(f32 fDt)
 
 	auto& viewport = render_graph->getDefaultViewport();
 
+	utl::vector<glm::mat4> shadow_matrices{};
+
 	// Calculate cascades shadow data
 	{
+		u64 light_count{ 0ull };
 		world_stats.cascadedShadowCount = 0ull;
 
 		// Begin calculating cascades
@@ -67,6 +70,9 @@ void CShadowsSystem::__update(f32 fDt)
 			if (light.castShadows && base.enabled && world_stats.cascadedShadowCount < max_directional_light_shadow_count)
 			{
 				FCascadedShadowCommit shadow_commit{};
+
+				// Apply shadow matrices range start
+				shadow_commit.firstMatrix = shadow_matrices.size();
 
 				// Calculate split depths based on view camera frustum
 				// Based on method presented in https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch10.html
@@ -151,17 +157,21 @@ void CShadowsSystem::__update(f32 fDt)
 					// Store split distance and matrix in cascade
 					shadow_commit.farClip = far_clip;
 					shadow_commit.splitDepths[i] = (near_clip + splitDist * clip_range);
-					shadow_commit.cascadeViewProj[i] = lightProjectionMatrix * lightViewMatrix;
+					shadow_matrices.emplace_back(lightProjectionMatrix * lightViewMatrix);
 
 					lastSplitDist = cascadeSplits[i];
 
 					render_world->updateFrustum(light.frustumIDs[i], lightViewMatrix, lightProjectionMatrix);
 				}
 
+				shadow_commit.index = light_count;
+
 				// Set shadow index and increment it
 				light.shadowIndex = world_stats.cascadedShadowCount;
 				render_world->addShadow(shadow_commit);
 			}
+
+			++light_count;
 		}
 	}
 
@@ -169,38 +179,44 @@ void CShadowsSystem::__update(f32 fDt)
 
 	// Calculate omni shadows
 	{
+		u64 light_count{ 0ull };
 		world_stats.omniShadowCount = 0ull;
 		auto view = registry->view<FTransformComponent, FBaseComponent, FPointLightComponent>();
 		for (auto [entity, ltransform, base, light] : view.each())
 		{
 			light.shadowIndex = -1;
 
+			//light.castShadows = light_count % 2;
 			if (light.castShadows && base.enabled && world_stats.omniShadowCount < max_point_light_shadow_count)
 			{
-				light.radius = 32.f;
 				glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, light.radius);
 
 				FOmniShadowCommit shadow_commit{};
-				shadow_commit.viewProj[0ull] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)); // POSITIVE_X
-				shadow_commit.viewProj[1ull] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)); // NEGATIVE_X
-				shadow_commit.viewProj[2ull] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0)); // POSITIVE_Y
-				shadow_commit.viewProj[3ull] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 0.0, -1.0));	// NEGATIVE_Y
-				shadow_commit.viewProj[4ull] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0));	// POSITIVE_Z
-				shadow_commit.viewProj[5ull] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0));	// NEGATIVE_Z
+				shadow_commit.firstMatrix = shadow_matrices.size();
 
-				shadow_commit.index = world_stats.omniShadowCount;
+				shadow_matrices.emplace_back(glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0))); // POSITIVE_X
+				shadow_matrices.emplace_back(glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0))); // NEGATIVE_X
+				shadow_matrices.emplace_back(glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0))); // POSITIVE_Y
+				shadow_matrices.emplace_back(glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 0.0, -1.0)));	// NEGATIVE_Y
+				shadow_matrices.emplace_back(glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0)));	// POSITIVE_Z
+				shadow_matrices.emplace_back(glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0)));	// NEGATIVE_Z
+
 				shadow_commit.farPlane = light.radius;
+				shadow_commit.index = light_count;
 
 				light.shadowIndex = world_stats.omniShadowCount;
 
-				for (auto& view : shadow_commit.viewProj)
+				for (auto it = shadow_matrices.begin() + shadow_commit.firstMatrix; it != shadow_matrices.end(); ++it)
 				{
-					render_world->updateFrustum(light.frustumID, view, shadowProj);
+					auto& view = *it;
+					//render_world->updateFrustum(light.frustumID, view, shadowProj);
 					view = shadowProj * view;
 				}
 
 				render_world->addShadow(shadow_commit);
 			}
+
+			++light_count;
 		}
 	}
 
@@ -208,6 +224,7 @@ void CShadowsSystem::__update(f32 fDt)
 
 	// Calculate spot shadows
 	{
+		u64 light_count{ 0ull };
 		world_stats.spotShadowCount = 0ull;
 		auto view = registry->view<FTransformComponent, FBaseComponent, FSpotLightComponent>();
 		for (auto [entity, ltransform, base, light] : view.each())
@@ -217,18 +234,23 @@ void CShadowsSystem::__update(f32 fDt)
 			if (light.castShadows && base.enabled && world_stats.spotShadowCount < max_spot_light_count)
 			{
 				FSpotShadowCommit shadow_commit{};
+				shadow_commit.firstMatrix = shadow_matrices.size();
 
 				auto light_dir = light.toTarget ? light.target : glm::normalize(ltransform.grotation * glm::vec3(0.f, 0.f, -1.f));
 				glm::mat4 shadowProj = glm::perspective(light.outerAngle * 2.f, 1.0f, 0.1f, 64.f);
 				glm::mat4 shadowView = glm::lookAt(ltransform.gposition, ltransform.gposition + light_dir, glm::vec3(0.0f, 1.0f, 0.0f));
-				shadow_commit.viewProj = shadowProj * shadowView;
-				shadow_commit.index = world_stats.spotShadowCount;
+				shadow_matrices.emplace_back(shadowProj * shadowView);
+				shadow_commit.index = light_count;
 
 				light.shadowIndex = world_stats.spotShadowCount;
 				render_world->addShadow(shadow_commit);
 
 				render_world->updateFrustum(light.frustumID, shadowView, shadowProj);
 			}
+
+			++light_count;
 		}
 	}
+
+	render_world->updateShadowMatrices(shadow_matrices);
 }

@@ -125,12 +125,14 @@
 			return cascade_index;
 		}
 
-		float getCascadeShadow(sampler2DArrayShadow shadowmap_tex, in FCascadedShadowCommit shadow, in VertexAttribute va, in MaterialSample ms, in float dither)
+		float getCascadeShadow(sampler2DArrayShadow shadowmap_tex, in FDirectionalLightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
 		{
-			uint cascadeIndex = getScadowCascadeSplit(shadow, va.linearZ, dither);
+			FCascadedShadowCommit commit = cascadedShadowBuffer.shadows[light.shadowIndex];
+
+			uint cascadeIndex = getScadowCascadeSplit(commit, va.linearZ, dither);
 		
 			vec4 offsetPos = vec4(va.pos + 0.05 * ms.normal, 1.0);
-			vec4 shadowCoord = (biasMat * shadow.cascadeViewProj[cascadeIndex]) * vec4(va.pos, 1.0);
+			vec4 shadowCoord = (biasMat * shadowMatricesBuffer.viewProj[commit.firstMatrix + cascadeIndex]) * vec4(va.pos, 1.0);
 			shadowCoord = shadowCoord / shadowCoord.w;
 		
 			float shadow_sample = 1.f;
@@ -151,8 +153,7 @@
 			float shadow_factor = 1.0;
 			if(light.castShadows > 0 && light.shadowIndex > -1)
 			{
-				FCascadedShadowCommit shadow = cascadedShadowBuffer.shadows[light.shadowIndex];
-				shadow_factor = getCascadeShadow(cascaded_shadowmap, shadow, va, ms, dither);
+				shadow_factor = getCascadeShadow(cascaded_shadowmap, light, va, ms, dither);
 				//shadow_factor = ScreenSpaceShadows(va.pos, light.direction, depth_buffer, 32, 0.02f, dither);
 			}
 
@@ -162,20 +163,23 @@
 
 
 
-		float getOmniShadow(samplerCubeArrayShadow shadowmap_tex, in FOmniShadowCommit commit, in VertexAttribute va, in MaterialSample ms, vec3 lightPos, in float dither)
+		float getOmniShadow(samplerCubeArrayShadow shadowmap_tex, in FPointLightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
 		{
+			FOmniShadowCommit commit = omniShadowBuffer.shadows[light.shadowIndex];
+
 			float shadow = 1.0;
-			vec3 shadowClip = va.pos - lightPos;
-		
-			float cosTheta = dot(va.normal, normalize(lightPos - va.pos));
-			float bias = 0.1 * tan(acos(cosTheta));
-			bias = clamp(bias, 0.0, 0.003);
+			vec3 shadowClip = va.pos - light.position;
+
+			vec3 L = normalize(light.position - va.pos);
+
+			//float bias = max(0.02 * (1.0 - dot(va.normal, L)), 0.001);
+			float bias = 0.00000001;
 		
 			bool enablePCF = true;
 			if (enablePCF)
-				shadow = omniShadowFilterPCF(shadowmap_tex, shadowClip, bias, commit.farPlane, commit.index);
+				shadow = omniShadowFilterPCF(shadowmap_tex, shadowClip, bias, commit.farPlane, light.shadowIndex);
 			else
-				shadow = omniShadowProjection(shadowmap_tex, shadowClip, vec3(0.0), bias, commit.farPlane, commit.index);
+				shadow = omniShadowProjection(shadowmap_tex, shadowClip, vec3(0.0), bias, commit.farPlane, light.shadowIndex);
 		
 			return shadow;
 		}
@@ -191,8 +195,7 @@
 			float shadow_factor = 1.0;
 			if(light.castShadows > 0 && light.shadowIndex > -1)
 			{
-				FOmniShadowCommit shadow = omniShadowBuffer.shadows[light.shadowIndex];
-				shadow_factor = getOmniShadow(omni_shadowmap, shadow, va, ms, light.position, dither);
+				shadow_factor = getOmniShadow(omni_shadowmap, light, va, ms, dither);
 				//shadow_factor = ScreenSpaceShadows(va.pos, light.direction, depth_buffer, 32, 0.02f, dither);
 			}
 		
@@ -200,21 +203,23 @@
 		}
 
 
-		float getDirectionalShadow(sampler2DArrayShadow shadomwap_tex, in FSpotShadowCommit commit, in VertexAttribute va, in MaterialSample ms, vec3 dir, in float dither)
+		float getDirectionalShadow(sampler2DArrayShadow shadomwap_tex, in FSpotLightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
 		{
+			FSpotShadowCommit commit = spotShadowBuffer.shadows[light.shadowIndex];
+
 		    float shadow = 1.0;
-			vec4 shadowClip	= commit.viewProj * vec4(va.pos, 1.0);
+			vec4 shadowClip	= shadowMatricesBuffer.viewProj[commit.firstMatrix] * vec4(va.pos, 1.0);
 		
-			float cosTheta = dot(va.normal, dir);
+			float cosTheta = dot(va.normal, light.direction);
 			const float max_bias = 0.005f;
 			const float min_bias = 0.001f;
 			float bias = max(max_bias * (1.0 - cosTheta), min_bias);
 		
 			bool enablePCF = true;
 			if (enablePCF)
-				shadow = directionalShadowFilterPCF(shadomwap_tex, shadowClip, bias, commit.index);
+				shadow = directionalShadowFilterPCF(shadomwap_tex, shadowClip, bias, light.shadowIndex);
 			else
-				shadow = directionalShadowProjection(shadomwap_tex, shadowClip, vec2(0.0), bias, commit.index);
+				shadow = directionalShadowProjection(shadomwap_tex, shadowClip, vec2(0.0), bias, light.shadowIndex);
 			return shadow;
 		}
 
@@ -237,8 +242,7 @@
 			float shadow_factor = 1.0;
 			if(light.castShadows > 0 && light.shadowIndex > -1)
 			{
-				FSpotShadowCommit shadow = spotShadowBuffer.shadows[light.shadowIndex];
-				shadow_factor = getDirectionalShadow(direct_shadowmap, shadow, va, ms, normalize(light.direction), dither);
+				shadow_factor = getDirectionalShadow(direct_shadowmap, light, va, ms, dither);
 				//shadow_factor = ScreenSpaceShadows(va.pos, light.direction, depth_buffer, 32, 0.02f, dither);
 			}
 

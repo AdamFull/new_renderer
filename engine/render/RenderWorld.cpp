@@ -35,6 +35,7 @@ void CRenderWorld::create()
 	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eCascadedShadowBuffer))->create<FCascadedShadowCommit>("CascadedShadows", EBufferUsageFlagBits::eStorageBuffer);
 	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eOmniShadowBuffer))->create<FOmniShadowCommit>("OmniShadows", EBufferUsageFlagBits::eStorageBuffer);
 	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eSpotShadowBuffer))->create<FSpotShadowCommit>("SpotShadows", EBufferUsageFlagBits::eStorageBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eShadowMatricesBuffer))->create<glm::mat4>("ShadowMatrices", EBufferUsageFlagBits::eStorageBuffer);
 
 	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eDrawMeshInfoBuffer))->create<FDrawMeshinfo>("GeometryBatches", EBufferUsageFlagBits::eStorageBuffer);
 	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eClusterInfoBuffer))->create<FClusterInfo>("ClusterInfoBuffer", EBufferUsageFlagBits::eStorageBuffer);
@@ -182,6 +183,13 @@ void CRenderWorld::addShadow(const FSpotShadowCommit& commit)
 		shadows_buffer->resize((m_stats.spotShadowCount + 1ull) * 2ull);
 
 	shadows_buffer->get<FSpotShadowCommit>(m_stats.spotShadowCount++) = commit;
+}
+
+void CRenderWorld::updateShadowMatrices(const utl::vector<glm::mat4>& matrices)
+{
+	auto& matrices_buffer = getDrawBuffer(ERenderBufferIndices::eShadowMatricesBuffer);
+	matrices_buffer->clear();
+	matrices_buffer->copy(matrices);
 }
 
 void CRenderWorld::updateNode(u32 node_id, const FSceneNode& node)

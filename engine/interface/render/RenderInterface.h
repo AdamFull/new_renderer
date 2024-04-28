@@ -60,6 +60,7 @@ namespace engine
 			eCascadedShadowBuffer,
 			eOmniShadowBuffer,
 			eSpotShadowBuffer,
+			eShadowMatricesBuffer,
 			// Culling and draw buffers
 			eMeshBuffer,
 			eDrawMeshInfoBuffer,
@@ -358,6 +359,8 @@ namespace engine
 			virtual void addShadow(const FCascadedShadowCommit& commit) = 0;
 			virtual void addShadow(const FOmniShadowCommit& commit) = 0;
 			virtual void addShadow(const FSpotShadowCommit& commit) = 0;
+
+			virtual void updateShadowMatrices(const utl::vector<glm::mat4>& matrices) = 0;
 
 			virtual void updateNode(u32 node_id, const FSceneNode& node) = 0;
 			virtual void updateSkin(const utl::vector<glm::mat4>& matrices) = 0;

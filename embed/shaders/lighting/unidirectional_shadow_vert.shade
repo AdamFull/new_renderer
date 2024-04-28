@@ -29,7 +29,6 @@
 		{
 			uint32_t callID;
 			int32_t shadowIndex;
-			int32_t lightIndex;
 			int32_t layer;
 		} shadowData;
 		
@@ -69,16 +68,16 @@
 			mat4 viewProj;
 #if defined(CASCADED_SHADOW)
 			FCascadedShadowCommit shadow = cascadedShadowBuffer.shadows[shadowData.shadowIndex];
-			viewProj = shadow.cascadeViewProj[shadowData.layer];
+			viewProj = shadowMatricesBuffer.viewProj[shadow.firstMatrix + shadowData.layer];
 			gl_Layer = shadowData.layer;
 #elif defined(OMNI_SHADOW)
 			FOmniShadowCommit shadow = omniShadowBuffer.shadows[shadowData.shadowIndex];
-			viewProj = shadow.viewProj[shadowData.layer];
-			gl_Layer = shadowData.layer;
+			viewProj = shadowMatricesBuffer.viewProj[shadow.firstMatrix + shadowData.layer];
+			gl_Layer = shadowData.shadowIndex * 6 + shadowData.layer;
 #else
 			FSpotShadowCommit shadow = spotShadowBuffer.shadows[shadowData.shadowIndex];
-			viewProj = shadow.viewProj;
-			gl_Layer = shadowData.shadowIndex * 6 + shadowData.layer;
+			viewProj = shadowMatricesBuffer.viewProj[shadow.firstMatrix + shadowData.layer];
+			gl_Layer = shadowData.layer;
 #endif
 
 			materialID = ~0u;

@@ -68,7 +68,6 @@ void COmnilShadowMapPass::_render(const FRenderFrameInfo& frame_info)
 			for (u64 shadow_index = 0ull; shadow_index < world_stats.omniShadowCount; ++shadow_index)
 			{
 				shadow_data->set("shadowIndex", utl::cast<u32>(shadow_index));
-				shadow_data->set("lightIndex", utl::cast<u32>(0));
 				for (u64 layer_index = 0ull; layer_index < 6ull; ++layer_index)
 				{
 					shadow_data->set("layer", utl::cast<i32>(layer_index));

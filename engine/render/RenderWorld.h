@@ -29,6 +29,8 @@ namespace engine
 			void addShadow(const FOmniShadowCommit& commit) override;
 			void addShadow(const FSpotShadowCommit& commit) override;
 
+			void updateShadowMatrices(const utl::vector<glm::mat4>& matrices) override;
+
 			void updateNode(u32 node_id, const FSceneNode& node) override;
 			void updateSkin(const utl::vector<glm::mat4>& matrices) override;
 

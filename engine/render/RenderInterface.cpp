@@ -194,6 +194,7 @@ void CRenderInterface::render(f32 dt)
 	global_references.cascadedShadowBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eCascadedShadowBuffer)->buffer()->address();
 	global_references.omniShadowBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eOmniShadowBuffer)->buffer()->address();
 	global_references.spotShadowBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eSpotShadowBuffer)->buffer()->address();
+	global_references.shadowMatricesBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eShadowMatricesBuffer)->buffer()->address();
 
 	global_references.drawInfoBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eDrawMeshInfoBuffer)->buffer()->address();
 	global_references.clusterBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eClusterInfoBuffer)->buffer()->address();
