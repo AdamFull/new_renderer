@@ -22,14 +22,77 @@ namespace engine
 		class IRenderContext;
 		class IRenderInterface;
 
+		namespace shader_bindings
+		{
+			constexpr const u64 global_uniform_frame_data = utl::utils::fnv1a_64_hash("GlobalUniformFrameData");
+			constexpr const u64 global_buffer_references = utl::utils::fnv1a_64_hash("GlobalBufferReferences");
+			constexpr const u64 global_post_process_data = utl::utils::fnv1a_64_hash("GlobalPostProcessingData");
+			constexpr const u64 uniform_mesh_data = utl::utils::fnv1a_64_hash("UniformMeshData");
+			constexpr const u64 uniform_skinning_joints = utl::utils::fnv1a_64_hash("UniformSkinningJoints");
+			constexpr const u64 external_bind_resources = utl::utils::fnv1a_64_hash("FExternalBindResources");
+			constexpr const u64 histogram_compute_params = utl::utils::fnv1a_64_hash("FHistogramComputeParams");
+			constexpr const u64 min_log_lum_label = utl::utils::fnv1a_64_hash("minLogLum");
+			constexpr const u64 log_lum_range_label = utl::utils::fnv1a_64_hash("logLumRange");
+			constexpr const u64 time_coeff_label = utl::utils::fnv1a_64_hash("timeCoeff");
+			constexpr const u64 time_num_pixels_x_label = utl::utils::fnv1a_64_hash("numPixelsX");
+			constexpr const u64 time_num_pixels_y_label = utl::utils::fnv1a_64_hash("numPixelsY");
+			constexpr const u64 references = utl::utils::fnv1a_64_hash("references");
+			constexpr const u64 frustum_label = utl::utils::fnv1a_64_hash("frustum");
+			constexpr const u64 shader_data = utl::utils::fnv1a_64_hash("shadowData");
+			constexpr const u64 call_id_label = utl::utils::fnv1a_64_hash("callID");
+			constexpr const u64 shadow_index_label = utl::utils::fnv1a_64_hash("shadowIndex");
+			constexpr const u64 layer_label = utl::utils::fnv1a_64_hash("layer");
+			constexpr const u64 compute_cubemap_data = utl::utils::fnv1a_64_hash("ComputeCubemapData");
+			constexpr const u64 roughness_label = utl::utils::fnv1a_64_hash("roughness");
+			constexpr const u64 mesh_data = utl::utils::fnv1a_64_hash("meshData");
+			constexpr const u64 batch_id_label = utl::utils::fnv1a_64_hash("batchID");
+			constexpr const u64 vbo_id_label = utl::utils::fnv1a_64_hash("vboId");
+			constexpr const u64 geometry_buffers = utl::utils::fnv1a_64_hash("GeometryBuffers");
+			constexpr const u64 vb_label = utl::utils::fnv1a_64_hash("vb");
+			constexpr const u64 ib_label = utl::utils::fnv1a_64_hash("ib");
+			constexpr const u64 mb_label = utl::utils::fnv1a_64_hash("mb");
+			constexpr const u64 vrb_label = utl::utils::fnv1a_64_hash("vrb");
+			constexpr const u64 bb_label = utl::utils::fnv1a_64_hash("bb");
+			constexpr const u64 tb_label = utl::utils::fnv1a_64_hash("tb");
+			constexpr const u64 lb_label = utl::utils::fnv1a_64_hash("lb");
+		}
+			
 #ifndef BUILD_WITHOUT_DEBUGGIND
 		namespace debug_mapping
 		{
 			inline constexpr std::pair<u64, const char*> uniform_to_name_mapping[] =
 			{
-				{ utl::utils::fnv1a_64_hash("GlobalUniformFrameData"), "GlobalUniformFrameData" },
-				{ utl::utils::fnv1a_64_hash("UniformMeshData"), "UniformMeshData" },
-				{ utl::utils::fnv1a_64_hash("UniformSkinningJoints"), "UniformSkinningJoints" },
+				{ shader_bindings::global_uniform_frame_data, "GlobalUniformFrameData" },
+				{ shader_bindings::global_buffer_references, "GlobalBufferReferences" },
+				{ shader_bindings::global_post_process_data, "GlobalPostProcessingData" },
+				{ shader_bindings::uniform_mesh_data, "UniformMeshData" },
+				{ shader_bindings::uniform_skinning_joints, "UniformSkinningJoints" },
+				{ shader_bindings::external_bind_resources, "FExternalBindResources" },
+				{ shader_bindings::histogram_compute_params, "FHistogramComputeParams" },
+				{ shader_bindings::min_log_lum_label, "minLogLum" },
+				{ shader_bindings::log_lum_range_label, "logLumRange" },
+				{ shader_bindings::time_coeff_label, "timeCoeff" },
+				{ shader_bindings::time_num_pixels_x_label, "numPixelsX" },
+				{ shader_bindings::time_num_pixels_y_label, "numPixelsY" },
+				{ shader_bindings::references, "references" },
+				{ shader_bindings::frustum_label, "frustum" },
+				{ shader_bindings::shader_data, "shadowData" },
+				{ shader_bindings::call_id_label, "callID" },
+				{ shader_bindings::shadow_index_label, "shadowIndex" },
+				{ shader_bindings::layer_label, "layer" },
+				{ shader_bindings::compute_cubemap_data, "ComputeCubemapData" },
+				{ shader_bindings::roughness_label, "roughness" },
+				{ shader_bindings::mesh_data, "meshData" },
+				{ shader_bindings::batch_id_label, "batchID" },
+				{ shader_bindings::vbo_id_label, "vboId" },
+				{ shader_bindings::geometry_buffers, "GeometryBuffers" },
+				{ shader_bindings::vb_label , "vb" },
+				{ shader_bindings::ib_label , "ib" },
+				{ shader_bindings::mb_label , "mb" },
+				{ shader_bindings::vrb_label, "vrb" },
+				{ shader_bindings::bb_label , "bb" },
+				{ shader_bindings::tb_label , "tb" },
+				{ shader_bindings::lb_label , "lb" },
 			};
 
 			constexpr const char* find(u64 key) 
@@ -49,7 +112,7 @@ namespace engine
 		{
 			// Default geometry buffers
 			eNodeBuffer = 0u,
-			eSkinBuffer,
+			eMatricesBuffer,
 
 			eMaterialBuffer,
 			// Light source buffers
@@ -60,7 +123,6 @@ namespace engine
 			eCascadedShadowBuffer,
 			eOmniShadowBuffer,
 			eSpotShadowBuffer,
-			eShadowMatricesBuffer,
 			// Culling and draw buffers
 			eMeshBuffer,
 			eDrawMeshInfoBuffer,
@@ -119,9 +181,9 @@ namespace engine
 			}
 
 			// For render script
-			void set(const char* name, const void* raw_data, u64 size)
+			void set(u64 name, const void* raw_data, u64 size)
 			{
-				auto found = m_uniforms.find(utl::utils::fnv1a_64_hash(name));
+				auto found = m_uniforms.find(name);
 				if (found == m_uniforms.end() || !raw_data)
 					return;
 
@@ -134,9 +196,9 @@ namespace engine
 			}
 
 			template<class _Ty>
-			void set(const char* name, const _Ty& object, u64 size = 0ull)
+			void set(u64 name, const _Ty& object, u64 size = 0ull)
 			{
-				auto found = m_uniforms.find(utl::utils::fnv1a_64_hash(name));
+				auto found = m_uniforms.find(name);
 				if (found == m_uniforms.end())
 					return;
 
@@ -149,9 +211,9 @@ namespace engine
 			}
 
 			template<class _Ty>
-			_Ty* get(const char* name)
+			_Ty* get(u64 name)
 			{
-				auto found = m_uniforms.find(utl::utils::fnv1a_64_hash(name));
+				auto found = m_uniforms.find(name);
 				if (found == m_uniforms.end())
 					return nullptr;
 
@@ -180,11 +242,11 @@ namespace engine
 			virtual void create(const std::string& name, const FGraphicsShaderCreateInfo& create_info) = 0;
 			virtual void create(const std::string& name, const FComputeShaderCreateInfo& create_info) = 0;
 
-			virtual const std::unique_ptr<CUniformHandle>& getUniformBlock(const char* name) = 0;
-			virtual const std::unique_ptr<CUniformHandle>& getConstantBlock(const char* name) = 0;
+			virtual const std::unique_ptr<CUniformHandle>& getUniformBlock(u64 name) = 0;
+			virtual const std::unique_ptr<CUniformHandle>& getConstantBlock(u64 name) = 0;
 
-			virtual void bindBuffer(const char* name, u64 buffer_resource) = 0;
-			virtual void bindTexture(const char* name, u64 texture_resource, u32 mip = ~0u) = 0;
+			virtual void bindBuffer(u64 name, u64 buffer_resource) = 0;
+			virtual void bindTexture(u64 name, u64 texture_resource, u32 mip = ~0u) = 0;
 
 			virtual void flushDescriptors() = 0;
 			virtual void flushConstants(EQueueTypeFlagBits queue) = 0;
@@ -234,7 +296,7 @@ namespace engine
 			u64 spotShadowCount{ 0ull };
 
 			u64 meshCount{ 0ull };
-			u64 skinCount{ 0ull };
+			u64 matricesCount{ 0ull };
 
 			u64 drawCommandCount{ 0ull };
 		};
@@ -350,7 +412,8 @@ namespace engine
 
 			virtual void addDrawGeometry(const utl::vector<FGeometryRawBatch>& new_geometry) = 0;
 
-			virtual void render(f32 dt) = 0;
+			virtual void begin(f32 dt) = 0;
+			virtual void end() = 0;
 
 			virtual void addLight(const FDirectionalLightCommit& light) = 0;
 			virtual void addLight(const FPointLightCommit& light) = 0;
@@ -360,10 +423,9 @@ namespace engine
 			virtual void addShadow(const FOmniShadowCommit& commit) = 0;
 			virtual void addShadow(const FSpotShadowCommit& commit) = 0;
 
-			virtual void updateShadowMatrices(const utl::vector<glm::mat4>& matrices) = 0;
+			virtual void addMatrices(const utl::vector<glm::mat4>& matrices) = 0;
 
 			virtual void updateNode(u32 node_id, const FSceneNode& node) = 0;
-			virtual void updateSkin(const utl::vector<glm::mat4>& matrices) = 0;
 
 			virtual void addMaterial(const FMaterial& material) = 0;
 			virtual void addMaterials(const utl::vector<FMaterial>& materials) = 0;

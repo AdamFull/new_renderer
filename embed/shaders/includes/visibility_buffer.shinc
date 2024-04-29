@@ -187,10 +187,10 @@
 				u16vec4 joints;
 #endif
 				mat4 skinMat = 
-					vertices[0].wx * jointsBuffer.matrices[node.skeletonID + joints.x] +
-					vertices[0].wy * jointsBuffer.matrices[node.skeletonID + joints.y] +
-					vertices[0].wz * jointsBuffer.matrices[node.skeletonID + joints.z] +
-					vertices[0].ww * jointsBuffer.matrices[node.skeletonID + joints.w];
+					vertices[0].wx * matrixBuffer.matrices[node.skeletonID + joints.x] +
+					vertices[0].wy * matrixBuffer.matrices[node.skeletonID + joints.y] +
+					vertices[0].wz * matrixBuffer.matrices[node.skeletonID + joints.z] +
+					vertices[0].ww * matrixBuffer.matrices[node.skeletonID + joints.w];
 		
 				model = model * skinMat;
 			}

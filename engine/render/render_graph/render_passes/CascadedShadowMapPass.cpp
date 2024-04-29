@@ -63,14 +63,14 @@ void CCascadedShadowMapPass::_render(const FRenderFrameInfo& frame_info)
 				shader->bind(m_queue);
 			}
 
-			auto& shadow_data = shader->getConstantBlock("shadowData");
-			shadow_data->set("callID", utl::cast<u32>(drawcall_id));
+			auto& shadow_data = shader->getConstantBlock(shader_bindings::shader_data);
+			shadow_data->set(shader_bindings::call_id_label, utl::cast<u32>(drawcall_id));
 			for (u64 shadow_index = 0ull; shadow_index < world_stats.cascadedShadowCount; ++shadow_index)
 			{
-				shadow_data->set("shadowIndex", utl::cast<u32>(shadow_index));
+				shadow_data->set(shader_bindings::shadow_index_label, utl::cast<u32>(shadow_index));
 				for (u64 layer_index = 0ull; layer_index < cascade_shadow_map_cascade_count; ++layer_index)
 				{
-					shadow_data->set("layer", utl::cast<i32>(layer_index));
+					shadow_data->set(shader_bindings::layer_label, utl::cast<i32>(layer_index));
 					shader->flushConstants(m_queue);
 					render_context->draw(m_queue, batch.command);
 				}

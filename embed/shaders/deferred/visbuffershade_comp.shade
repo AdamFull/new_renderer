@@ -132,7 +132,7 @@
 			uint cascadeIndex = getScadowCascadeSplit(commit, va.linearZ, dither);
 		
 			vec4 offsetPos = vec4(va.pos + 0.05 * ms.normal, 1.0);
-			vec4 shadowCoord = (biasMat * shadowMatricesBuffer.viewProj[commit.firstMatrix + cascadeIndex]) * vec4(va.pos, 1.0);
+			vec4 shadowCoord = (biasMat * matrixBuffer.matrices[commit.firstMatrix + cascadeIndex]) * vec4(va.pos, 1.0);
 			shadowCoord = shadowCoord / shadowCoord.w;
 		
 			float shadow_sample = 1.f;
@@ -208,7 +208,7 @@
 			FSpotShadowCommit commit = spotShadowBuffer.shadows[light.shadowIndex];
 
 		    float shadow = 1.0;
-			vec4 shadowClip	= shadowMatricesBuffer.viewProj[commit.firstMatrix] * vec4(va.pos, 1.0);
+			vec4 shadowClip	= matrixBuffer.matrices[commit.firstMatrix] * vec4(va.pos, 1.0);
 		
 			float cosTheta = dot(va.normal, light.direction);
 			const float max_bias = 0.005f;

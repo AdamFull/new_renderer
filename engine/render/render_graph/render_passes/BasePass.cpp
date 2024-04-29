@@ -33,9 +33,9 @@ void IBasePass::initShaderResources(const std::unique_ptr<IShaderObject>& shader
 	{
 		auto& render_resource = render_graph->getRenderResource(resource_binding.resource);
 		if (render_resource.type & ERenderResourceTypeFlagBits::eAllImage)
-			shader->bindTexture(bind_point.c_str(), render_resource.handle, resource_binding.subresource);
+			shader->bindTexture(utl::utils::fnv1a_64_hash(bind_point.c_str()), render_resource.handle, resource_binding.subresource);
 		else if (render_resource.type == ERenderResourceTypeFlagBits::eBuffer)
-			shader->bindBuffer(bind_point.c_str(), render_resource.handle);
+			shader->bindBuffer(utl::utils::fnv1a_64_hash(bind_point.c_str()), render_resource.handle);
 	}
 }
 
@@ -289,7 +289,7 @@ void IComputePass::bindShaderResources(const std::unique_ptr<IShaderObject>& sha
 	auto& post_process = render_world->getPostProcessingData();
 
 	// For histogram calculation
-	if (auto& uniform = shader->getUniformBlock("FHistogramComputeParams"); uniform)
+	if (auto& uniform = shader->getUniformBlock(shader_bindings::histogram_compute_params); uniform)
 	{
 		float log_lum_range = post_process.tonemap.lumMax - post_process.tonemap.lumMin;
 		float time_coeff = glm::clamp<float>(1.0f - glm::exp(-dt * post_process.tonemap.tau), 0.0, 1.0);
@@ -297,10 +297,10 @@ void IComputePass::bindShaderResources(const std::unique_ptr<IShaderObject>& sha
 		// TODO: it's incorrect now. I should get size from input target
 		auto render_size = render_context->getRenderResolution();
 
-		uniform->set("minLogLum", post_process.tonemap.lumMin);
-		uniform->set("logLumRange", log_lum_range);
-		uniform->set("timeCoeff", time_coeff);
-		uniform->set("numPixelsX", utl::cast<f32>(render_size.x));
-		uniform->set("numPixelsY", utl::cast<f32>(render_size.y));
+		uniform->set(shader_bindings::min_log_lum_label, post_process.tonemap.lumMin);
+		uniform->set(shader_bindings::log_lum_range_label, log_lum_range);
+		uniform->set(shader_bindings::time_coeff_label, time_coeff);
+		uniform->set(shader_bindings::time_num_pixels_x_label, utl::cast<f32>(render_size.x));
+		uniform->set(shader_bindings::time_num_pixels_y_label, utl::cast<f32>(render_size.y));
 	}
 }

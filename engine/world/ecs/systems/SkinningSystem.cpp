@@ -79,12 +79,11 @@ void CSkinningSystem::__update(f32 fDt)
 
 	auto& render_world = m_pRenderInterface->getRenderWorld();
 	auto& world_stats = render_world->getStats();
-	world_stats.skinCount = 0ull;
 
 	for (u64 idx = 0ull; idx < root_component.skins.size(); ++idx)
 	{
 		auto& skin = root_component.skins[idx];
-		root_component.skinRemap[idx] = world_stats.skinCount;
-		render_world->updateSkin(skin.jointMatrices);
+		root_component.skinRemap[idx] = world_stats.matricesCount;
+		render_world->addMatrices(skin.jointMatrices);
 	}
 }

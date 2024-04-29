@@ -432,7 +432,7 @@ namespace engine {
 
 		// Base buffers
 		REGISTER_OBJECT_ARRAY_BUFFER(NodeBuffer, FSceneNode, nodes);
-		REGISTER_OBJECT_ARRAY_BUFFER(SkinBuffer, MATRIX4, matrices);
+		REGISTER_OBJECT_ARRAY_BUFFER(MatrixBuffer, MATRIX4, matrices);
 		REGISTER_OBJECT_ARRAY_BUFFER(MeshBuffer, FMesh, meshes);
 		REGISTER_OBJECT_ARRAY_BUFFER(MaterialBuffer, FMaterial, materials);
 
@@ -445,7 +445,6 @@ namespace engine {
 		REGISTER_OBJECT_ARRAY_BUFFER(CascadedShadows, FCascadedShadowCommit, shadows);
 		REGISTER_OBJECT_ARRAY_BUFFER(OmniShadows, FOmniShadowCommit, shadows);
 		REGISTER_OBJECT_ARRAY_BUFFER(SpotShadows, FSpotShadowCommit, shadows);
-		REGISTER_OBJECT_ARRAY_BUFFER(ShadowMatrices, MATRIX4, viewProj);
 
 		// Vertex buffer specific data
 		REGISTER_OBJECT_ARRAY_BUFFER(RawVertexBuffer, FRawVertex, vertices);
@@ -475,7 +474,7 @@ namespace engine {
 #endif
 		{
 			NodeBuffer nodeBuffer;
-			SkinBuffer jointsBuffer;
+			MatrixBuffer matrixBuffer;
 			MeshBuffer meshBuffer;
 
 			MaterialBuffer materialBuffer;
@@ -487,7 +486,6 @@ namespace engine {
 			CascadedShadows cascadedShadowBuffer;
 			OmniShadows omniShadowBuffer;
 			SpotShadows spotShadowBuffer;
-			ShadowMatrices shadowMatricesBuffer;
 		
 			DrawInfoBuffer drawInfoBuffer;
 			ClusterInfoBuffer clusterBuffer;

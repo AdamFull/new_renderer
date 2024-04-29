@@ -136,9 +136,9 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 	m_pRenderContext = make_render_context(rhi_ci);
 
 	FGlobalUniformCreateInfo global_buffer_ci{};
-	global_buffer_ci.uniforms[utl::utils::fnv1a_64_hash("GlobalUniformFrameData")] = sizeof(FGlobalUniformData);
-	global_buffer_ci.uniforms[utl::utils::fnv1a_64_hash("GlobalBufferReferences")] = sizeof(FGlobalBufferReference);
-	global_buffer_ci.uniforms[utl::utils::fnv1a_64_hash("GlobalPostProcessingData")] = sizeof(FGlobalPostProcessingData);
+	global_buffer_ci.uniforms[shader_bindings::global_uniform_frame_data] = sizeof(FGlobalUniformData);
+	global_buffer_ci.uniforms[shader_bindings::global_buffer_references] = sizeof(FGlobalBufferReference);
+	global_buffer_ci.uniforms[shader_bindings::global_post_process_data] = sizeof(FGlobalPostProcessingData);
 	m_pRenderContext->createGlobalDescriptor(global_buffer_ci);
 
 	m_pRenderWorld->create();
@@ -158,7 +158,7 @@ void CRenderInterface::render(f32 dt)
 	m_pRenderContext->beginFrame();
 
 	m_pRenderGraph->update(dt);
-	m_pRenderWorld->render(dt);
+	m_pRenderWorld->begin(dt);
 
 	const auto& world_stats = m_pRenderWorld->getStats();
 
@@ -177,14 +177,14 @@ void CRenderInterface::render(f32 dt)
 	global_uniform.defaultViewport = utl::cast<u32>(m_pRenderGraph->getDefaultViewportIndex());
 
 	FGlobalUniformUpdateInfo update_info{};
-	auto& frame_gata_uniform = update_info.uniforms[utl::utils::fnv1a_64_hash("GlobalUniformFrameData")];
+	auto& frame_gata_uniform = update_info.uniforms[shader_bindings::global_uniform_frame_data];
 	frame_gata_uniform.data = &global_uniform;
 	frame_gata_uniform.size = sizeof(FGlobalUniformData);
 	frame_gata_uniform.binding = 0u;
 
 	FGlobalBufferReference global_references{};
 	global_references.nodeBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eNodeBuffer)->buffer()->address();
-	global_references.jointsBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eSkinBuffer)->buffer()->address();
+	global_references.matrixBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eMatricesBuffer)->buffer()->address();
 	global_references.materialBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eMaterialBuffer)->buffer()->address();
 	global_references.meshBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eMeshBuffer)->buffer()->address();
 
@@ -195,7 +195,6 @@ void CRenderInterface::render(f32 dt)
 	global_references.cascadedShadowBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eCascadedShadowBuffer)->buffer()->address();
 	global_references.omniShadowBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eOmniShadowBuffer)->buffer()->address();
 	global_references.spotShadowBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eSpotShadowBuffer)->buffer()->address();
-	global_references.shadowMatricesBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eShadowMatricesBuffer)->buffer()->address();
 
 	global_references.drawInfoBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eDrawMeshInfoBuffer)->buffer()->address();
 	global_references.clusterBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eClusterInfoBuffer)->buffer()->address();
@@ -206,7 +205,7 @@ void CRenderInterface::render(f32 dt)
 	global_references.textureRemapBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eTextureRemapBuffer)->buffer()->address();
 	global_references.viewportBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eViewportBuffer)->buffer()->address();
 
-	auto& buffer_ref_uniform = update_info.uniforms[utl::utils::fnv1a_64_hash("GlobalBufferReferences")];
+	auto& buffer_ref_uniform = update_info.uniforms[shader_bindings::global_buffer_references];
 	buffer_ref_uniform.data = &global_references;
 	buffer_ref_uniform.size = sizeof(FGlobalBufferReference);
 	buffer_ref_uniform.binding = 1u;
@@ -253,7 +252,7 @@ void CRenderInterface::render(f32 dt)
 	postprocessing.mb_max_velocity = post_process.motionblur.max_velocity;
 	postprocessing.mb_threshold = post_process.motionblur.threshold;
 
-	auto& postprocessing_uniform = update_info.uniforms[utl::utils::fnv1a_64_hash("GlobalPostProcessingData")];
+	auto& postprocessing_uniform = update_info.uniforms[shader_bindings::global_post_process_data];
 	postprocessing_uniform.data = &postprocessing;
 	postprocessing_uniform.size = sizeof(FGlobalPostProcessingData);
 	postprocessing_uniform.binding = 2u;
@@ -262,6 +261,8 @@ void CRenderInterface::render(f32 dt)
 	m_pRenderGraph->execute(dt);
 
 	m_pRenderContext->endFrame();
+
+	m_pRenderWorld->end();
 }
 
 u64 CRenderInterface::createTexture(const std::string& path)

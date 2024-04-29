@@ -46,7 +46,6 @@ void CShadowsSystem::__update(f32 fDt)
 	// Calculate cascades shadow data
 	{
 		u64 light_count{ 0ull };
-		world_stats.cascadedShadowCount = 0ull;
 
 		// Begin calculating cascades
 		const auto& near_clip = render_packet->camera.nearp;
@@ -72,7 +71,7 @@ void CShadowsSystem::__update(f32 fDt)
 				FCascadedShadowCommit shadow_commit{};
 
 				// Apply shadow matrices range start
-				shadow_commit.firstMatrix = shadow_matrices.size();
+				shadow_commit.firstMatrix = world_stats.matricesCount + shadow_matrices.size();
 
 				// Calculate split depths based on view camera frustum
 				// Based on method presented in https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch10.html
@@ -180,7 +179,6 @@ void CShadowsSystem::__update(f32 fDt)
 	// Calculate omni shadows
 	{
 		u64 light_count{ 0ull };
-		world_stats.omniShadowCount = 0ull;
 		auto view = registry->view<FTransformComponent, FBaseComponent, FPointLightComponent>();
 		for (auto [entity, ltransform, base, light] : view.each())
 		{
@@ -192,7 +190,7 @@ void CShadowsSystem::__update(f32 fDt)
 				glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, light.radius);
 
 				FOmniShadowCommit shadow_commit{};
-				shadow_commit.firstMatrix = shadow_matrices.size();
+				shadow_commit.firstMatrix = world_stats.matricesCount + shadow_matrices.size();
 
 				shadow_matrices.emplace_back(glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0))); // POSITIVE_X
 				shadow_matrices.emplace_back(glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0))); // NEGATIVE_X
@@ -225,7 +223,6 @@ void CShadowsSystem::__update(f32 fDt)
 	// Calculate spot shadows
 	{
 		u64 light_count{ 0ull };
-		world_stats.spotShadowCount = 0ull;
 		auto view = registry->view<FTransformComponent, FBaseComponent, FSpotLightComponent>();
 		for (auto [entity, ltransform, base, light] : view.each())
 		{
@@ -234,7 +231,7 @@ void CShadowsSystem::__update(f32 fDt)
 			if (light.castShadows && base.enabled && world_stats.spotShadowCount < max_spot_light_count)
 			{
 				FSpotShadowCommit shadow_commit{};
-				shadow_commit.firstMatrix = shadow_matrices.size();
+				shadow_commit.firstMatrix = world_stats.matricesCount + shadow_matrices.size();
 
 				auto light_dir = light.toTarget ? light.target : glm::normalize(ltransform.grotation * glm::vec3(0.f, 0.f, -1.f));
 				glm::mat4 shadowProj = glm::perspective(light.outerAngle * 2.f, 1.0f, 0.1f, 64.f);
@@ -252,5 +249,5 @@ void CShadowsSystem::__update(f32 fDt)
 		}
 	}
 
-	render_world->updateShadowMatrices(shadow_matrices);
+	render_world->addMatrices(shadow_matrices);
 }

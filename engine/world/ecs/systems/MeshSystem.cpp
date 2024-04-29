@@ -85,9 +85,6 @@ void CMeshSystem::__update(f32 fDt)
 
 	auto& render_world = m_pRenderInterface->getRenderWorld();
 
-	auto& world_stats = render_world->getStats();
-	world_stats.meshCount = 0u;
-
 	utl::vector<FGeometryRawBatch> draw_commands{};
 	prepare_draw_commands(render_world, m_pSceneGraph, draw_commands, utl::enum_cast(EAlphaMode::eOpaque));
 	prepare_draw_commands(render_world, m_pSceneGraph, draw_commands, utl::enum_cast(EAlphaMode::eMask));

@@ -15,11 +15,11 @@ namespace engine
 			void create(const std::string& name, const FGraphicsShaderCreateInfo& create_info) override;
 			void create(const std::string& name, const FComputeShaderCreateInfo& create_info) override;
 
-			const std::unique_ptr<CUniformHandle>& getUniformBlock(const char* name) override;
-			const std::unique_ptr<CUniformHandle>& getConstantBlock(const char* name) override;
+			const std::unique_ptr<CUniformHandle>& getUniformBlock(u64 name) override;
+			const std::unique_ptr<CUniformHandle>& getConstantBlock(u64 name) override;
 
-			void bindBuffer(const char* name, u64 buffer_resource) override;
-			void bindTexture(const char* name, u64 texture_resource, u32 mip = ~0u) override;
+			void bindBuffer(u64 name, u64 buffer_resource) override;
+			void bindTexture(u64 name, u64 texture_resource, u32 mip = ~0u) override;
 
 			void flushDescriptors() override;
 			void flushConstants(EQueueTypeFlagBits queue) override;

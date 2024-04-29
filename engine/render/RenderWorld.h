@@ -19,7 +19,8 @@ namespace engine
 
 			void addDrawGeometry(const utl::vector<FGeometryRawBatch>& new_geometry) override;
 
-			void render(f32 dt) override;
+			void begin(f32 dt) override;
+			void end() override;
 
 			void addLight(const FDirectionalLightCommit& light) override;
 			void addLight(const FPointLightCommit& light) override;
@@ -29,10 +30,9 @@ namespace engine
 			void addShadow(const FOmniShadowCommit& commit) override;
 			void addShadow(const FSpotShadowCommit& commit) override;
 
-			void updateShadowMatrices(const utl::vector<glm::mat4>& matrices) override;
+			void addMatrices(const utl::vector<glm::mat4>& matrices) override;
 
 			void updateNode(u32 node_id, const FSceneNode& node) override;
-			void updateSkin(const utl::vector<glm::mat4>& matrices) override;
 
 			void addMaterial(const FMaterial& material) override;
 			void addMaterials(const utl::vector<FMaterial>& materials) override;

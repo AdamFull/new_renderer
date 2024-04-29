@@ -59,31 +59,31 @@ void CComputeGeometryPass::_execute(const FComputeFrameInfo& frame_info)
 			if (was_vbo_rebinded)
 			{
 				bindShaderResources(shader, frame_info.deltaTime);
-				if (auto& buffers = shader->getUniformBlock("GeometryBuffers"); buffers)
+				if (auto& buffers = shader->getUniformBlock(shader_bindings::geometry_buffers); buffers)
 				{
 					u64 vertex_handle = last_vbo->getVertexHandle();
 					auto vb_view = render_context->getBufferView(vertex_handle);
-					buffers->set("vb", vb_view.address);
+					buffers->set(shader_bindings::vb_label, vb_view.address);
 
 					u64 index_buffer = last_vbo->getIndexHandle();
 					auto ib_view = render_context->getBufferView(index_buffer);
-					buffers->set("ib", ib_view.address);
+					buffers->set(shader_bindings::ib_label, ib_view.address);
 
-					buffers->set("mb", last_vbo->getGeometryBuffer(EGeometryBufferIndices::eMeshletBuffer)->buffer()->address());
-					buffers->set("vrb", last_vbo->getGeometryBuffer(EGeometryBufferIndices::eVertexRemapBuffer)->buffer()->address());
-					buffers->set("bb", last_vbo->getGeometryBuffer(EGeometryBufferIndices::eBoundsBuffer)->buffer()->address());
-					buffers->set("tb", last_vbo->getGeometryBuffer(EGeometryBufferIndices::eTriangleBuffer)->buffer()->address());
-					buffers->set("lb", last_vbo->getGeometryBuffer(EGeometryBufferIndices::eLodBuffer)->buffer()->address());
+					buffers->set(shader_bindings::mb_label, last_vbo->getGeometryBuffer(EGeometryBufferIndices::eMeshletBuffer)->buffer()->address());
+					buffers->set(shader_bindings::vrb_label, last_vbo->getGeometryBuffer(EGeometryBufferIndices::eVertexRemapBuffer)->buffer()->address());
+					buffers->set(shader_bindings::bb_label, last_vbo->getGeometryBuffer(EGeometryBufferIndices::eBoundsBuffer)->buffer()->address());
+					buffers->set(shader_bindings::tb_label, last_vbo->getGeometryBuffer(EGeometryBufferIndices::eTriangleBuffer)->buffer()->address());
+					buffers->set(shader_bindings::lb_label, last_vbo->getGeometryBuffer(EGeometryBufferIndices::eLodBuffer)->buffer()->address());
 				}
 
 				shader->flushDescriptors();
 				shader->bind(m_queue);
 			}
 
-			auto& mesh_data = shader->getConstantBlock("meshData");
+			auto& mesh_data = shader->getConstantBlock(shader_bindings::mesh_data);
 			if (mesh_data)
 			{
-				mesh_data->set("vboId", utl::cast<u32>(vboId));
+				mesh_data->set(shader_bindings::vbo_id_label, utl::cast<u32>(vboId));
 			}
 
 			shader->flushConstants(m_queue);

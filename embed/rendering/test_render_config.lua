@@ -543,9 +543,6 @@ do
     pass_ci:set_depth_target("zbuffer_depth_target")
     pass_ci:set_stencil_target("zbuffer_depth_target")
 
-    pass_ci:bind_read_resource("nodeBuffer", "NodeStorage")
-    pass_ci:bind_read_resource("jointsBuffer", "SkinningJoints")
-
     pass_ci:add_write_resource("visbuffer_geometry_target")
     pass_ci:add_write_resource("visbuffer_matobj_target")
     pass_ci:add_write_resource("visbuffer_skinvbo_target")

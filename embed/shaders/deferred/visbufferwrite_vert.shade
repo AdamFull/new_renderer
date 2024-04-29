@@ -58,10 +58,10 @@
 				u16vec4 joints = u16vec4(uint16_t(inJoints.x * 65535.0), uint16_t(inJoints.y * 65535.0), uint16_t(inJoints.z * 65535.0), uint16_t(inJoints.w * 65535.0));
 #endif
 				mat4 skinMat = 
-					inWeights.x * jointsBuffer.matrices[node.skeletonID + joints.x] +
-					inWeights.y * jointsBuffer.matrices[node.skeletonID + joints.y] +
-					inWeights.z * jointsBuffer.matrices[node.skeletonID + joints.z] +
-					inWeights.w * jointsBuffer.matrices[node.skeletonID + joints.w];
+					inWeights.x * matrixBuffer.matrices[node.skeletonID + joints.x] +
+					inWeights.y * matrixBuffer.matrices[node.skeletonID + joints.y] +
+					inWeights.z * matrixBuffer.matrices[node.skeletonID + joints.z] +
+					inWeights.w * matrixBuffer.matrices[node.skeletonID + joints.w];
 		
 				modelMatrix = modelMatrix * skinMat;
 				// oldModelMatrix = oldModelMatrix * skinMat; // TODO: should keep skinMat from prev frame

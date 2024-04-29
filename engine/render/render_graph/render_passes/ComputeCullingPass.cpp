@@ -61,11 +61,11 @@ void CComputeCullingPass::_execute(const FComputeFrameInfo& frame_info)
 				shader->bind(m_queue);
 			}
 
-			auto& references = shader->getConstantBlock("references");
+			auto& references = shader->getConstantBlock(shader_bindings::references);
 			if (references)
 			{
 				//references->set("culling", render_world->getDrawBuffer(ERenderBufferIndices::eCullingInfoBuffer)->address());
-				references->set("frustum", render_world->getDrawBuffer(ERenderBufferIndices::eFrustumBuffer)->buffer()->address());
+				references->set(shader_bindings::frustum_label, render_world->getDrawBuffer(ERenderBufferIndices::eFrustumBuffer)->buffer()->address());
 			}
 
 			shader->flushConstants(m_queue);

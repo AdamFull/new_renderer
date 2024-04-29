@@ -25,42 +25,42 @@ void CShaderObject::create(const std::string& name, const FComputeShaderCreateIn
 	buildReflection();
 }
 
-const std::unique_ptr<CUniformHandle>& CShaderObject::getUniformBlock(const char* name)
+const std::unique_ptr<CUniformHandle>& CShaderObject::getUniformBlock(u64 name)
 {
 	static std::unique_ptr<CUniformHandle> null{ nullptr };
 
-	auto found = m_uniformBlocks.find(utl::utils::fnv1a_64_hash(name));
+	auto found = m_uniformBlocks.find(name);
 	if (found != m_uniformBlocks.end())
 		return found->second;
 
 	return null;
 }
 
-const std::unique_ptr<CUniformHandle>& CShaderObject::getConstantBlock(const char* name)
+const std::unique_ptr<CUniformHandle>& CShaderObject::getConstantBlock(u64 name)
 {
 	static std::unique_ptr<CUniformHandle> null{ nullptr };
 
-	auto found = m_constantBlocks.find(utl::utils::fnv1a_64_hash(name));
+	auto found = m_constantBlocks.find(name);
 	if (found != m_constantBlocks.end())
 		return found->second;
 
 	return null;
 }
 
-void CShaderObject::bindBuffer(const char* name, u64 buffer_resource)
+void CShaderObject::bindBuffer(u64 name, u64 buffer_resource)
 {
-	m_bindBuffers[utl::utils::fnv1a_64_hash(name)] = buffer_resource;
+	m_bindBuffers[name] = buffer_resource;
 }
 
-void CShaderObject::bindTexture(const char* name, u64 texture_resource, u32 mip)
+void CShaderObject::bindTexture(u64 name, u64 texture_resource, u32 mip)
 {
-	m_bindTextures[utl::utils::fnv1a_64_hash(name)] = FTextureBindInfo{ texture_resource, mip };
+	m_bindTextures[name] = FTextureBindInfo{ texture_resource, mip };
 }
 
 void CShaderObject::flushDescriptors()
 {
 	// Universal block for binding external resources
-	auto& external_resources = getUniformBlock("FExternalBindResources");
+	auto& external_resources = getUniformBlock(shader_bindings::external_bind_resources);
 	if (external_resources)
 	{
 		auto& render_graph = m_pRenderInterface->getRenderGraph();

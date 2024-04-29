@@ -61,11 +61,11 @@ void CGeometryPass::_render(const FRenderFrameInfo& frame_info)
 				shader->bind(m_queue);
 			}
 
-			auto& mesh_data = shader->getConstantBlock("meshData");
+			auto& mesh_data = shader->getConstantBlock(shader_bindings::mesh_data);
 			if (mesh_data)
 			{
-				mesh_data->set("callID", utl::cast<u32>(drawcall_id));
-				mesh_data->set("batchID", utl::cast<u32>(0));
+				mesh_data->set(shader_bindings::call_id_label, utl::cast<u32>(drawcall_id));
+				mesh_data->set(shader_bindings::batch_id_label, utl::cast<u32>(0));
 			}
 
 			// Bind vbo and flush descriptors, then bind and draw
