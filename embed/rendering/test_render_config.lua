@@ -88,16 +88,7 @@ do
     target_ci.type:set(TexType.two_dim, TexType.samplable)
     target_ci:set_size_scale(1.0)
     
-    render_graph:add_render_resource("visbuffer_matobj_target", target_ci)
-end
-
-do
-    local target_ci = TextureCI.new()
-    target_ci.format = render_context:get_api_format(Format.rgba8_unorm)
-    target_ci.type:set(TexType.two_dim, TexType.samplable)
-    target_ci:set_size_scale(1.0)
-    
-    render_graph:add_render_resource("visbuffer_skinvbo_target", target_ci)
+    render_graph:add_render_resource("visbuffer_vboinst_target", target_ci)
 end
 
 do
@@ -544,8 +535,7 @@ do
     pass_ci:set_stencil_target("zbuffer_depth_target")
 
     pass_ci:add_write_resource("visbuffer_geometry_target")
-    pass_ci:add_write_resource("visbuffer_matobj_target")
-    pass_ci:add_write_resource("visbuffer_skinvbo_target")
+    pass_ci:add_write_resource("visbuffer_vboinst_target")
     --pass_ci:add_write_resource("motion_vectors_target")
     pass_ci:add_read_resource("IndexedDrawIndirectBuffer")
 
@@ -560,8 +550,7 @@ do
     pass_ci:bind_write_resource("write_color", "hdr0")
     pass_ci:bind_read_resource("prev_frame_color", "hdr0_history")
     pass_ci:bind_read_resource("visbuffer_geometry", "visbuffer_geometry_target")
-    pass_ci:bind_read_resource("visbuffer_matobj", "visbuffer_matobj_target")
-    pass_ci:bind_read_resource("visbuffer_skinvbo", "visbuffer_skinvbo_target")
+    pass_ci:bind_read_resource("visbuffer_vboinst", "visbuffer_vboinst_target")
     pass_ci:bind_read_resource("brdf_lut", "brdf_lut_target")
     pass_ci:bind_read_resource("irradiance_cube", "irradiance_cube_target")
     pass_ci:bind_read_resource("prefiltered_cube", "prefiltered_cube_target")

@@ -5,8 +5,7 @@
 	"""
 		// Input buffers
 		layout(set = 1, binding = 1) uniform sampler2D visbuffer_geometry;
-		layout(set = 1, binding = 2) uniform sampler2D visbuffer_matobj;
-		layout(set = 1, binding = 3) uniform sampler2D visbuffer_skinvbo;
+		layout(set = 1, binding = 2) uniform sampler2D visbuffer_vboinst;
 
 		layout(std140, set = 1, binding = 4) uniform GeometryBuffers
 		{
@@ -53,6 +52,7 @@
 			uint transparent;
 
 			uint matID;
+			uint instID;
 			uint objID;
 
 			uint vboID;
@@ -64,13 +64,18 @@
 			res.drawID = (geometryData >> 23) & 0x000000FF;
 			res.triangleID = (geometryData & 0x007FFFFF);
 			res.transparent = (geometryData >> 31);
-			res.triangleID -= 1u;
+			res.  -= 1u;
 
-			uint matobjData = packUnorm4x8(texture(visbuffer_matobj, uv));
-			res.matID = matobjData & 0xFFFF;
-			res.objID = matobjData >> 16;
+			uint vboinstData = packUnorm4x8(texture(visbuffer_vboinst, uv));
+			res.vboID = matobjData & 0xFFFF;
+			res.instID = matobjData >> 16;
 
-			res.vboID = packUnorm4x8(texture(visbuffer_skinvbo, uv));
+			uint32_t draw_index = res.drawID + res.instID;
+			FDrawMeshinfo draw_info = drawInfoBuffer.infos[draw_index];
+			FMesh mesh = meshBuffer.meshes[draw_info.meshID];
+
+			res.objID = draw_info.nodeID;
+			res.matID = mesh.materialID;
 
 			return (res.triangleID != 0xFFFFFFFFu);
 		}

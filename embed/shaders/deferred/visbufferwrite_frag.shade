@@ -23,16 +23,14 @@
 		layout(early_fragment_tests) in;
 
 		layout(location = 0) in flat uint drawID;
-		layout(location = 1) in flat uint matID;
-		layout(location = 2) in flat uint objID;
-		layout(location = 3) in flat uint vboID;
-		layout(location = 4) in vec2 texCoord;
+		layout(location = 1) in flat uint instanceID;
+		layout(location = 2) in flat uint vboID;
+		layout(location = 3) in vec2 texCoord;
 		//layout(location = 5) smooth in vec4 currentPos;
 		//layout(location = 6) smooth in vec4 oldPos;
 		
 		layout(location = 0) out vec4 vbid;
-		layout(location = 1) out vec4 moid;
-		layout(location = 2) out vec4 svid;
+		layout(location = 1) out vec4 vbinst;
 		//layout(location = 3) out vec2 mv;
 
 		// Engel's packing function (without alpha bit)
@@ -49,7 +47,10 @@
 
 		void main() 
 		{
-			FMaterial material = materialBuffer.materials[matID];
+			uint32_t draw_index = drawID + instanceID;
+			FDrawMeshinfo draw_info = drawInfoBuffer.infos[draw_index];
+			FMesh mesh = meshBuffer.meshes[draw_info.meshID];
+			FMaterial material = materialBuffer.materials[mesh.materialID];
 			
 			float opacity = material.baseColorFactor.a;
 			if(material.baseColorTexture != INVALID_HANDLE)
@@ -59,8 +60,7 @@
 				discard;
 
 			vbid = unpackUnorm4x8(packVBID(true, drawID, gl_PrimitiveID + 1u));
-			moid = unpackUnorm4x8(packMOID(matID, objID));
-			svid = unpackUnorm4x8(vboID);
+			vbinst = unpackUnorm4x8(packMOID(vboID, instanceID));
 
 			// Caclulate motion vectors
 			//mv = encodeVelocity(currentPos.xy - oldPos.xy);
