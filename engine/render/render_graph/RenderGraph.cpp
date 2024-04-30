@@ -755,6 +755,9 @@ void CRenderGraph::update(f32 dt)
 		auto& viewport_view = m_vViewports.at(idx);
 		auto& viewport = m_vViewportBuffer.at(idx);
 
+		if (!render_packet->camera.wasUpdated)
+			continue;
+
 		if (viewport_view.dependencyType == EViewportDependencyType::eOnRenderTarget)
 		{
 			auto& render_resource = getRenderResource(viewport_view.dependencyResource);
@@ -820,10 +823,14 @@ void CRenderGraph::update(f32 dt)
 		viewport.reprojectionMatrix = to_clip_space * viewport.reprojectionMatrix * to_uv_space;
 	}
 
-	auto& render_world = m_pRenderInterface->getRenderWorld();
-	auto& viewport_buffer = render_world->getDrawBuffer(ERenderBufferIndices::eViewportBuffer);
-	viewport_buffer->clear();
- 	viewport_buffer->copy(m_vViewportBuffer);
+	if (render_packet->camera.wasUpdated)
+	{
+		auto& render_world = m_pRenderInterface->getRenderWorld();
+		auto& viewport_buffer = render_world->getDrawBuffer(ERenderBufferIndices::eViewportBuffer);
+		viewport_buffer->clear();
+		viewport_buffer->copy(m_vViewportBuffer);
+		render_packet->camera.wasUpdated = false;
+	}
 }
 
 void CRenderGraph::execute(f32 dt)

@@ -53,6 +53,7 @@ void CCameraSystem::__update(f32 fDt)
 			{
 				render_camera.view = camera.view = glm::lookAt(transform.gposition, transform.gposition + camera.forward, camera.up);
 				render_camera.invView = camera.invView = glm::inverse(camera.view);
+				render_packet->camera.wasUpdated = true;
 
 				camera.moved = false;
 			}

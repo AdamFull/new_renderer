@@ -163,6 +163,7 @@ namespace engine
 			glm::vec2 dimensions{};
 
 			FFrustum frustum{};
+			bool wasUpdated{ true };
 		};
 
 		struct FRenderNode
