@@ -64,11 +64,11 @@
 			res.drawID = (geometryData >> 23) & 0x000000FF;
 			res.triangleID = (geometryData & 0x007FFFFF);
 			res.transparent = (geometryData >> 31);
-			res.  -= 1u;
+			res.triangleID -= 1u;
 
 			uint vboinstData = packUnorm4x8(texture(visbuffer_vboinst, uv));
-			res.vboID = matobjData & 0xFFFF;
-			res.instID = matobjData >> 16;
+			res.vboID = vboinstData & 0xFFFF;
+			res.instID = vboinstData >> 16;
 
 			uint32_t draw_index = res.drawID + res.instID;
 			FDrawMeshinfo draw_info = drawInfoBuffer.infos[draw_index];
