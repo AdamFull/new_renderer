@@ -469,6 +469,10 @@ namespace engine
             bindGLMMatrixTransformation(lua);
             bindGLMQuaternion(lua);
             bindGLMCamera(lua);
+
+            lua->set_function("make_vec2", [](float x, float y) { return glm::vec2(x, y); });
+            lua->set_function("make_vec3", [](float x, float y, float z) { return glm::vec3(x, y, z); });
+            lua->set_function("make_vec4", [](float x, float y, float z, float w) { return glm::vec4(x, y, z, w); });
 		}
 	}
 }

@@ -1147,10 +1147,24 @@ void CVkRenderContext::beginRendering(const FBeginRendering2Info& rendering_info
 
 	auto& textures = m_pResources->data<FVkTexture>();
 
-	std::array<vk::ClearValue, 3ull> clear_values{};
-	clear_values[0].color = vk::ClearColorValue{ 0.0f, 0.0f, 0.0f, 1.0f };
-	clear_values[1].depthStencil = vk::ClearDepthStencilValue{ 1.f, 0u };
-	clear_values[2].depthStencil = vk::ClearDepthStencilValue{ 1.f, 0u };
+	utl::hash_map<u64, vk::ClearValue> clear_values{};
+	for (const auto& [handle, clear_value] : rendering_info.clearValues)
+	{
+		auto& new_value = clear_values[handle];
+
+		if (handle != INVALID_HANDLE)
+		{
+			auto& texture = textures[handle];
+
+			auto aspect = get_texture_aspect_flags(*texture);
+			if(aspect & vk::ImageAspectFlagBits::eColor)
+				new_value.color = vk::ClearColorValue(clear_value.color.x, clear_value.color.y, clear_value.color.z, clear_value.color.w);
+			else
+				new_value.depthStencil = vk::ClearDepthStencilValue{ clear_value.depth, clear_value.stencil };
+		}
+		else
+			new_value.color = vk::ClearColorValue(clear_value.color.x, clear_value.color.y, clear_value.color.z, clear_value.color.w);
+	}
 
 	// Prepare render targets
 	utl::vector<vk::RenderingAttachmentInfoKHR> color_attachments{};
@@ -1173,7 +1187,7 @@ void CVkRenderContext::beginRendering(const FBeginRendering2Info& rendering_info
 			attachment_info.resolveMode = vk::ResolveModeFlagBits::eNone;
 			attachment_info.loadOp = get_attachment_load_op(color_attachment_info.loadOp);
 			attachment_info.storeOp = get_attachment_store_op(color_attachment_info.storeOp);
-			attachment_info.clearValue = clear_values[0];
+			attachment_info.clearValue = clear_values[color_attachment_info.handle];
 		}
 	}
 
@@ -1189,7 +1203,7 @@ void CVkRenderContext::beginRendering(const FBeginRendering2Info& rendering_info
 		depth_attachment.resolveMode = vk::ResolveModeFlagBits::eNone;
 		depth_attachment.loadOp = get_attachment_load_op(rendering_info.depthAttachment->loadOp);
 		depth_attachment.storeOp = get_attachment_store_op(rendering_info.depthAttachment->storeOp);
-		depth_attachment.clearValue = clear_values[1];
+		depth_attachment.clearValue = clear_values[rendering_info.depthAttachment->handle];
 	}
 
 	vk::RenderingAttachmentInfoKHR stencil_attachment{};
@@ -1203,7 +1217,7 @@ void CVkRenderContext::beginRendering(const FBeginRendering2Info& rendering_info
 		stencil_attachment.resolveMode = vk::ResolveModeFlagBits::eNone;
 		stencil_attachment.loadOp = get_attachment_load_op(rendering_info.stencilAttachment->loadOp);
 		stencil_attachment.storeOp = get_attachment_store_op(rendering_info.stencilAttachment->storeOp);
-		stencil_attachment.clearValue = clear_values[2];
+		stencil_attachment.clearValue = clear_values[rendering_info.stencilAttachment->handle];
 	}
 
 	vk::RenderingInfoKHR begin_rendering_info{};

@@ -81,6 +81,7 @@ namespace engine
 			u32 m_layerCount{ 1u };
 
 			utl::vector<FRenderGraphAttachmentInfo> m_vColorAttachments{};
+			utl::hash_map<u64, FClearValues> m_clearValues;
 			FRenderGraphAttachmentInfo m_depthAttachment{};
 			FRenderGraphAttachmentInfo m_stencilAttachment{};
 		};

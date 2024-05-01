@@ -51,6 +51,7 @@ void IRenderPass::init(const FRenderPassCreateInfo& pass_ci)
 	m_bakedBindings = pass_ci.bindings;
 	m_bOneTime = pass_ci.oneTime;
 
+	m_clearValues = pass_ci.clearValues;
 	m_bFlipViewport = pass_ci.flipViewport;
 	m_viewportIndex = pass_ci.viewportIndex;
 	m_depthTarget = pass_ci.depthTarget;
@@ -104,6 +105,7 @@ void IRenderPass::execute(f32 dt)
 	beginRenderingInfo.layerCount = m_layerCount;
 	beginRenderingInfo.renderArea.size.x = viewport.size.x;
 	beginRenderingInfo.renderArea.size.y = viewport.size.y;
+	beginRenderingInfo.clearValues = m_clearValues;
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	beginRenderingInfo.name = m_debugName;

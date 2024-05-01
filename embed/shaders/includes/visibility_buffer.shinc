@@ -52,7 +52,6 @@
 			uint transparent;
 
 			uint matID;
-			uint instID;
 			uint objID;
 
 			uint vboID;
@@ -61,23 +60,25 @@
 		bool loadVisBuffer(in vec2 uv, out VisibilityBuffer res)
 		{
 			uint geometryData = packUnorm4x8(texture(visbuffer_geometry, uv));
+			if(geometryData == ~0u || geometryData == 0u)
+				return false;
+
 			res.drawID = (geometryData >> 23) & 0x000000FF;
 			res.triangleID = (geometryData & 0x007FFFFF);
 			res.transparent = (geometryData >> 31);
-			res.triangleID -= 1u;
 
 			uint vboinstData = packUnorm4x8(texture(visbuffer_vboinst, uv));
 			res.vboID = vboinstData & 0xFFFF;
-			res.instID = vboinstData >> 16;
+			uint instID = vboinstData >> 16;
 
-			uint32_t draw_index = res.drawID + res.instID;
+			uint32_t draw_index = res.drawID + instID;
 			FDrawMeshinfo draw_info = drawInfoBuffer.infos[draw_index];
 			FMesh mesh = meshBuffer.meshes[draw_info.meshID];
-
+			
 			res.objID = draw_info.nodeID;
 			res.matID = mesh.materialID;
 
-			return (res.triangleID != 0xFFFFFFFFu);
+			return true;
 		}
 
 		FRawVertex[3] loadTriangle(in uint drawID, in uint primID)

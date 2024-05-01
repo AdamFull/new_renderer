@@ -59,7 +59,7 @@
 			if(material.alphaMode == 1u && opacity < material.alphaCutoff)
 				discard;
 
-			vbid = unpackUnorm4x8(packVBID(true, drawID, gl_PrimitiveID + 1u));
+			vbid = unpackUnorm4x8(packVBID(true, drawID, gl_PrimitiveID));
 			vbinst = unpackUnorm4x8(packMOID(vboID, instanceID));
 
 			// Caclulate motion vectors

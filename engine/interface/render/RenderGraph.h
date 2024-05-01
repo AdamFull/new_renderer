@@ -123,6 +123,17 @@ namespace engine
 			dst = utl::cast<ERenderResourceAccessFlagBits>(dst_mask);
 		}
 
+		struct FClearValues
+		{
+			FClearValues(const glm::vec4& c) : color(c) {}
+			FClearValues(f32 d) : depth(d) {}
+			FClearValues(u32 s) : stencil(s) {}
+
+			glm::vec4 color{ 0.f, 0.f, 0.f, 1.f };
+			f32 depth{ 1.f };
+			u32 stencil{ 0u };
+		};
+
 		struct FViewportCreateInfo
 		{
 			void setFixedSize2D(u32 size)
@@ -216,6 +227,7 @@ namespace engine
 			EQueueTypeFlagBits queue{};
 			u32 layerCount{ 1u };
 			FRect2D<f32> renderArea{};
+			utl::hash_map<u64, FClearValues> clearValues;
 
 			utl::vector<FRenderGraphAttachmentInfo>* colorAttachments{ nullptr };
 
@@ -279,7 +291,7 @@ namespace engine
 			std::string sizeTarget{};
 
 			utl::hash_map<ERenderResourceAccessFlagBits, utl::hash_map<std::string, FRenderConfigResourceBindingDescription>> resourceBindings{};
-			utl::hash_map<ERenderResourceAccessFlagBits, utl::vector<std::string>> otherResources{};
+			utl::hash_map<ERenderResourceAccessFlagBits, utl::vector<std::pair<std::string, FClearValues>>> otherResources{};
 
 			virtual void clearResource() 
 			{ 
@@ -291,8 +303,8 @@ namespace engine
 			void bindWriteResource(const std::string& binding_point, const std::string& resource_name, u32 subresource) { resourceBindings[ERenderResourceAccessFlagBits::eWrite].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, subresource }); }
 			void bindReadResource(const std::string& binding_point, const std::string& resource_name) { resourceBindings[ERenderResourceAccessFlagBits::eRead].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, ~0u }); }
 			void bindReadResource(const std::string& binding_point, const std::string& resource_name, u32 subresource) { resourceBindings[ERenderResourceAccessFlagBits::eRead].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, subresource }); }
-			void addWriteResource(const std::string& resource_name) { otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(resource_name); }
-			void addReadResource(const std::string& resource_name) { otherResources[ERenderResourceAccessFlagBits::eRead].emplace_back(resource_name); }
+			void addWriteResource(const std::string& resource_name, const glm::vec4 clear_color = glm::vec4(0.f, 0.f, 0.f, 1.f)) { otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(std::make_pair(resource_name, clear_color)); }
+			void addReadResource(const std::string& resource_name) { otherResources[ERenderResourceAccessFlagBits::eRead].emplace_back(resource_name, glm::vec4(0.f, 0.f, 0.f, 1.f)); }
 		};
 
 		struct FRenderConfigRenderCreateInfo : public FRenderConfigPassCreateInfo
@@ -306,7 +318,7 @@ namespace engine
 
 			void flipFiewport() { flipViewportState = true; }
 			void setViewport(const std::string& name) { viewport = name; }
-			void setDepthTarget(const std::string& resource_name) 
+			void setDepthTarget(const std::string& resource_name, f32 clear_color = 1.f) 
 			{ 
 				if (stencilResource == resource_name)
 				{
@@ -314,9 +326,9 @@ namespace engine
 					return;
 				}
 
-				depthResource = otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(resource_name); 
+				depthResource = otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(std::make_pair(resource_name, clear_color)).first;
 			}
-			void setStencilTarget(const std::string& resource_name) 
+			void setStencilTarget(const std::string& resource_name, u32 clear_color = 0u) 
 			{ 
 				if (depthResource == resource_name)
 				{
@@ -324,7 +336,7 @@ namespace engine
 					return;
 				}
 
-				stencilResource = otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(resource_name); 
+				stencilResource = otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(std::make_pair(resource_name, clear_color)).first;
 			}
 		};
 
@@ -391,21 +403,13 @@ namespace engine
 			{ return (resource == other.resource && subresource == other.subresource); }
 		};
 
-		struct FRenderResourceBindingKey
-		{
-			FRenderResourceBinding binding;
-			ERenderResourceDependencyBarrierType type;
-
-			bool operator==(const FRenderResourceBindingKey& other) const
-			{ return (binding == other.binding && type == other.type); }
-		};
-
 		struct FPassCreateInfo
 		{
 			EQueueTypeFlagBits queue{};
 			std::string shader{};
 			bool oneTime{ false };
 
+			utl::hash_map<u64, FClearValues> clearValues;
 			utl::hash_map<ERenderResourceGroupType, utl::vector<FRenderResourceBinding>> resources{};
 			utl::hash_map<std::string, FRenderResourceBinding> bindings{};
 		};
@@ -468,14 +472,5 @@ struct std::hash<engine::render::FRenderResourceBinding>
 	std::size_t operator()(const engine::render::FRenderResourceBinding& k) const
 	{
 		return ((std::hash<u64>()(k.resource) ^ (std::hash<u32>()(k.subresource) << 1)) >> 1);
-	}
-};
-
-template <>
-struct std::hash<engine::render::FRenderResourceBindingKey>
-{
-	std::size_t operator()(const engine::render::FRenderResourceBindingKey& k) const
-	{
-		return ((std::hash<engine::render::FRenderResourceBinding>()(k.binding) ^ (std::hash<u32>()(utl::enum_cast(k.type)) << 1)) >> 1);
 	}
 };

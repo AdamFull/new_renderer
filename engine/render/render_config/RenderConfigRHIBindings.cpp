@@ -315,7 +315,10 @@ namespace engine
 					static_cast<void(FRenderConfigPassCreateInfo::*)(const std::string&, const std::string&)>(&FRenderConfigPassCreateInfo::bindReadResource),
 					static_cast<void(FRenderConfigPassCreateInfo::*)(const std::string&, const std::string&, u32)>(&FRenderConfigPassCreateInfo::bindReadResource)
 				),
-				"add_write_resource", &FRenderConfigPassCreateInfo::addWriteResource,
+				"add_write_resource", sol::overload(
+					[](FRenderConfigPassCreateInfo& self, const std::string& resource_name) { self.addWriteResource(resource_name); },
+					[](FRenderConfigPassCreateInfo& self, const std::string& resource_name, const glm::vec4 clear_color) { self.addWriteResource(resource_name, clear_color); }
+					),
 				"add_read_resource", &FRenderConfigPassCreateInfo::addReadResource
 				);
 
@@ -325,8 +328,14 @@ namespace engine
 				sol::base_classes, sol::bases<FRenderConfigPassCreateInfo>(),
 				"type", &FRenderConfigRenderCreateInfo::type,
 				"set_viewport", &FRenderConfigRenderCreateInfo::setViewport,
-				"set_depth_target", &FRenderConfigRenderCreateInfo::setDepthTarget,
-				"set_stencil_target", &FRenderConfigRenderCreateInfo::setStencilTarget,
+				"set_depth_target", sol::overload(
+					[](FRenderConfigRenderCreateInfo& self, const std::string& resource_name) { self.setDepthTarget(resource_name); },
+					[](FRenderConfigRenderCreateInfo& self, const std::string& resource_name, f32 clear_value) { self.setDepthTarget(resource_name, clear_value); }
+					),
+				"set_stencil_target", sol::overload(
+					[](FRenderConfigRenderCreateInfo& self, const std::string& resource_name) { self.setStencilTarget(resource_name); },
+					[](FRenderConfigRenderCreateInfo& self, const std::string& resource_name, u32 clear_value) { self.setStencilTarget(resource_name, clear_value); }
+					),
 				"flip_viewport", &FRenderConfigRenderCreateInfo::flipFiewport
 			);
 

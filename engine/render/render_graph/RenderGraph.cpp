@@ -900,7 +900,7 @@ void CRenderGraph::applyRenderPassResources(u64 pass_index, const FRenderConfigP
 
 	for (const auto& [access_flag, resources] : raw_pass_ci->otherResources)
 	{
-		for (const auto& resource_name : resources)
+		for (const auto& [resource_name, clear_values] : resources)
 		{
 			auto resource_id = getRenderRersourceId(resource_name);
 			auto& render_resource = getRenderResource(resource_id);
@@ -920,6 +920,7 @@ void CRenderGraph::applyRenderPassResources(u64 pass_index, const FRenderConfigP
 			// TODO: Don't know is subresource needed for writing
 			auto resource_key = packResourceGroup(access_flag, group_type);	
 			pass_ci->resources[resource_key].emplace_back(FRenderResourceBinding{ resource_id, ~0u });
+			pass_ci->clearValues.emplace(render_resource.handle, clear_values);
 		}
 	}
 

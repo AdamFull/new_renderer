@@ -21,9 +21,9 @@
 
 	code: 
 	"""
-		layout(location = 0) flat out uint drawID;
-		layout(location = 1) flat out uint instanceID;
-		layout(location = 2) flat out uint vboID;
+		layout(location = 0) out flat uint drawID;
+		layout(location = 1) out flat uint instanceID;
+		layout(location = 2) out flat uint vboID;
 		layout(location = 3) out vec2 texCoord;
 		//layout(location = 5) smooth out vec4 currentPos;
 		//layout(location = 6) smooth out vec4 oldPos;
@@ -78,8 +78,6 @@
 			//oldLocalPos = vec4(oldLocalPos.xyz / oldLocalPos.w, 1.0);
 			
 			//oldPos = viewport.projection * frameData.view * oldLocalPos;
-
-			FMesh mesh = meshBuffer.meshes[draw_info.meshID];
 
 			drawID = meshData.callID + gl_DrawIDARB;
 			instanceID = gl_InstanceIndex;
