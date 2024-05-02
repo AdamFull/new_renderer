@@ -44,8 +44,8 @@
 
 		vec4 sampleTexture(in uint s, in VertexAttribute va)
 		{
-			//return sampleTexture2DGrad(s, 0, va.uv, va.uv_dx, va.uv_dy);
-			return sampleTexture2D(s, 0, va.uv);
+			return sampleTexture2DGrad(s, 0, va.uv, va.uv_dx, va.uv_dy);
+			//return sampleTexture2D(s, 0, va.uv);
 		}
 
 		MaterialSample sampleMaterial(in FMaterial mat, in VertexAttribute va)
@@ -54,7 +54,7 @@
 
 			// Sample albedo
 			vec4 base_color = mat.baseColorFactor * va.color;
-			if(mat.baseColorTexture != ~0u)
+			if(mat.baseColorTexture != INVALID_HANDLE)
 				base_color *= sampleTexture(mat.baseColorTexture, va);
 
 			res.albedo = base_color.rgb;
@@ -62,14 +62,14 @@
 
 			// Sample emission
 			res.emission = mat.emissiveFactor;
-			if(mat.emissiveTexture != ~0u)
+			if(mat.emissiveTexture != INVALID_HANDLE)
 				res.emission *= sampleTexture(mat.emissiveTexture, va).rgb;
 			res.emission *= mat.emissiveStrength;
 
 			// Sample metallic roughness
 			res.metallic = mat.metallicFactor;
 			res.roughness = mat.roughnessFactor;
-			if(mat.metallicRoughnessTexture != ~0u)
+			if(mat.metallicRoughnessTexture != INVALID_HANDLE)
 			{
 				vec4 mr = sampleTexture(mat.metallicRoughnessTexture, va);
 				res.metallic *= mr.b;
@@ -79,7 +79,7 @@
 
 			// Sample normals
 			res.normal = va.normal;
-			if(mat.normalTexture != ~0u)
+			if(mat.normalTexture != INVALID_HANDLE)
 			{
 				vec3 ts_normal = sampleTexture(mat.normalTexture, va).rgb;
 
@@ -91,7 +91,7 @@
 
 			// Sample AO
 			res.ao = 1.0;
-			if(mat.occlusionTexture != ~0u)
+			if(mat.occlusionTexture != INVALID_HANDLE)
 				res.ao = sampleTexture(mat.occlusionTexture, va).r;
 
 			res.ior = mat.ior;

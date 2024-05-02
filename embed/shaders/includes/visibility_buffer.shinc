@@ -60,12 +60,14 @@
 		bool loadVisBuffer(in vec2 uv, out VisibilityBuffer res)
 		{
 			uint geometryData = packUnorm4x8(texture(visbuffer_geometry, uv));
-			if(geometryData == ~0u || geometryData == 0u)
-				return false;
 
 			res.drawID = (geometryData >> 23) & 0x000000FF;
 			res.triangleID = (geometryData & 0x007FFFFF);
 			res.transparent = (geometryData >> 31);
+			res.triangleID -= 1u;
+
+			if(res.triangleID == 0xFFFFFFFFu)
+				return false;
 
 			uint vboinstData = packUnorm4x8(texture(visbuffer_vboinst, uv));
 			res.vboID = vboinstData & 0xFFFF;
