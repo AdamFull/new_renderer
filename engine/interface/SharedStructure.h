@@ -6,7 +6,7 @@ namespace engine
 {
 	//namespace
 	//{
-		using namespace utl::utils;
+		using namespace utl;
 		enum class EMimeType : u32
 		{
 			eJPG = ".jpg"_utl_hash,

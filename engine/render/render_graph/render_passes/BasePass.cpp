@@ -33,9 +33,9 @@ void IBasePass::initShaderResources(const std::unique_ptr<IShaderObject>& shader
 	{
 		auto& render_resource = render_graph->getRenderResource(resource_binding.resource);
 		if (render_resource.type & ERenderResourceTypeFlagBits::eAllImage)
-			shader->bindTexture(utl::utils::fnv1a_64_hash(bind_point.c_str()), render_resource.handle, resource_binding.subresource);
+			shader->bindTexture(utl::fnv1a_64_hash_cstr(bind_point.c_str()), render_resource.handle, resource_binding.subresource);
 		else if (render_resource.type == ERenderResourceTypeFlagBits::eBuffer)
-			shader->bindBuffer(utl::utils::fnv1a_64_hash(bind_point.c_str()), render_resource.handle);
+			shader->bindBuffer(utl::fnv1a_64_hash_cstr(bind_point.c_str()), render_resource.handle);
 	}
 }
 

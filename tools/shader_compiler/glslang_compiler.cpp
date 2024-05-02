@@ -282,7 +282,7 @@ bool CGLSLANGCompiler::initialize()
 	return true;
 }
 
-bool CGLSLANGCompiler::preprocess(const std::string& shader_code, const FCompileInfo& info, std::string& preprocessed_code, u64& preprocessed_hash)
+bool CGLSLANGCompiler::preprocess(const std::string& shader_code, const FCompileInfo& info, std::string& preprocessed_code, u32& preprocessed_hash)
 {
 	auto language = get_sh_language(info.type);
 	glslang::TShader shader(language);
@@ -314,7 +314,7 @@ bool CGLSLANGCompiler::preprocess(const std::string& shader_code, const FCompile
 
 	preprocessed_code = clean_code(preprocessed_raw);
 
-	preprocessed_hash = utl::utils::fnv1a_64_hash(preprocessed_code.c_str());
+	preprocessed_hash = utl::fnv1a_32_hash_cstr(preprocessed_code.c_str());
 
 	return true;
 }

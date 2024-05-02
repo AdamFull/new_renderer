@@ -145,7 +145,7 @@ void CLibraryCompiler::compile(const std::filesystem::path& library_path, FShade
 	if (!parse_file_to(library_path, shader_library_ci))
 		return;
 
-	FCompiledLibrary& compiled_library = shader_cache.libraries[utl::utils::fnv1a_64_hash(shader_library_ci.name.c_str())];
+	FCompiledLibrary& compiled_library = shader_cache.libraries[utl::fnv1a_32_hash_cstr(shader_library_ci.name.c_str())];
 
 	auto parent_path = library_path.parent_path();
 
@@ -222,7 +222,7 @@ void CLibraryCompiler::compilePermutations(const std::filesystem::path parent_pa
 
 				// Preprocess generated code (and remove ugly code after preprocessing)
 				std::string preprocessed_code{};
-				u64 preprocessed_hash{ 0ull };
+				u32 preprocessed_hash{ 0ull };
 				m_pShaderCompiler->preprocess(shader_code, compile_info, preprocessed_code, preprocessed_hash);
 
 				if (preprocessed_code.empty())

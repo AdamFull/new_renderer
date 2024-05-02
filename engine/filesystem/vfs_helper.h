@@ -9,7 +9,7 @@ namespace engine
 	{
         namespace format
         {
-            using namespace utl::utils;
+            using namespace utl;
             // images
             constexpr inline u32 ktx = ".ktx"_utl_hash;
             constexpr inline u32 ktx2 = ".ktx2"_utl_hash;

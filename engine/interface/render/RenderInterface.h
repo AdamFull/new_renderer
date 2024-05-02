@@ -24,37 +24,37 @@ namespace engine
 
 		namespace shader_bindings
 		{
-			constexpr const u64 global_uniform_frame_data = utl::utils::fnv1a_64_hash("GlobalUniformFrameData");
-			constexpr const u64 global_buffer_references = utl::utils::fnv1a_64_hash("GlobalBufferReferences");
-			constexpr const u64 global_post_process_data = utl::utils::fnv1a_64_hash("GlobalPostProcessingData");
-			constexpr const u64 uniform_mesh_data = utl::utils::fnv1a_64_hash("UniformMeshData");
-			constexpr const u64 uniform_skinning_joints = utl::utils::fnv1a_64_hash("UniformSkinningJoints");
-			constexpr const u64 external_bind_resources = utl::utils::fnv1a_64_hash("FExternalBindResources");
-			constexpr const u64 histogram_compute_params = utl::utils::fnv1a_64_hash("FHistogramComputeParams");
-			constexpr const u64 min_log_lum_label = utl::utils::fnv1a_64_hash("minLogLum");
-			constexpr const u64 log_lum_range_label = utl::utils::fnv1a_64_hash("logLumRange");
-			constexpr const u64 time_coeff_label = utl::utils::fnv1a_64_hash("timeCoeff");
-			constexpr const u64 time_num_pixels_x_label = utl::utils::fnv1a_64_hash("numPixelsX");
-			constexpr const u64 time_num_pixels_y_label = utl::utils::fnv1a_64_hash("numPixelsY");
-			constexpr const u64 references = utl::utils::fnv1a_64_hash("references");
-			constexpr const u64 frustum_label = utl::utils::fnv1a_64_hash("frustum");
-			constexpr const u64 shader_data = utl::utils::fnv1a_64_hash("shadowData");
-			constexpr const u64 call_id_label = utl::utils::fnv1a_64_hash("callID");
-			constexpr const u64 shadow_index_label = utl::utils::fnv1a_64_hash("shadowIndex");
-			constexpr const u64 layer_label = utl::utils::fnv1a_64_hash("layer");
-			constexpr const u64 compute_cubemap_data = utl::utils::fnv1a_64_hash("ComputeCubemapData");
-			constexpr const u64 roughness_label = utl::utils::fnv1a_64_hash("roughness");
-			constexpr const u64 mesh_data = utl::utils::fnv1a_64_hash("meshData");
-			constexpr const u64 batch_id_label = utl::utils::fnv1a_64_hash("batchID");
-			constexpr const u64 vbo_id_label = utl::utils::fnv1a_64_hash("vboId");
-			constexpr const u64 geometry_buffers = utl::utils::fnv1a_64_hash("GeometryBuffers");
-			constexpr const u64 vb_label = utl::utils::fnv1a_64_hash("vb");
-			constexpr const u64 ib_label = utl::utils::fnv1a_64_hash("ib");
-			constexpr const u64 mb_label = utl::utils::fnv1a_64_hash("mb");
-			constexpr const u64 vrb_label = utl::utils::fnv1a_64_hash("vrb");
-			constexpr const u64 bb_label = utl::utils::fnv1a_64_hash("bb");
-			constexpr const u64 tb_label = utl::utils::fnv1a_64_hash("tb");
-			constexpr const u64 lb_label = utl::utils::fnv1a_64_hash("lb");
+			constexpr const u64 global_uniform_frame_data = utl::fnv1a_64_hash_cstr("GlobalUniformFrameData");
+			constexpr const u64 global_buffer_references = utl::fnv1a_64_hash_cstr("GlobalBufferReferences");
+			constexpr const u64 global_post_process_data = utl::fnv1a_64_hash_cstr("GlobalPostProcessingData");
+			constexpr const u64 uniform_mesh_data = utl::fnv1a_64_hash_cstr("UniformMeshData");
+			constexpr const u64 uniform_skinning_joints = utl::fnv1a_64_hash_cstr("UniformSkinningJoints");
+			constexpr const u64 external_bind_resources = utl::fnv1a_64_hash_cstr("FExternalBindResources");
+			constexpr const u64 histogram_compute_params = utl::fnv1a_64_hash_cstr("FHistogramComputeParams");
+			constexpr const u64 min_log_lum_label = utl::fnv1a_64_hash_cstr("minLogLum");
+			constexpr const u64 log_lum_range_label = utl::fnv1a_64_hash_cstr("logLumRange");
+			constexpr const u64 time_coeff_label = utl::fnv1a_64_hash_cstr("timeCoeff");
+			constexpr const u64 time_num_pixels_x_label = utl::fnv1a_64_hash_cstr("numPixelsX");
+			constexpr const u64 time_num_pixels_y_label = utl::fnv1a_64_hash_cstr("numPixelsY");
+			constexpr const u64 references = utl::fnv1a_64_hash_cstr("references");
+			constexpr const u64 frustum_label = utl::fnv1a_64_hash_cstr("frustum");
+			constexpr const u64 shader_data = utl::fnv1a_64_hash_cstr("shadowData");
+			constexpr const u64 call_id_label = utl::fnv1a_64_hash_cstr("callID");
+			constexpr const u64 shadow_index_label = utl::fnv1a_64_hash_cstr("shadowIndex");
+			constexpr const u64 layer_label = utl::fnv1a_64_hash_cstr("layer");
+			constexpr const u64 compute_cubemap_data = utl::fnv1a_64_hash_cstr("ComputeCubemapData");
+			constexpr const u64 roughness_label = utl::fnv1a_64_hash_cstr("roughness");
+			constexpr const u64 mesh_data = utl::fnv1a_64_hash_cstr("meshData");
+			constexpr const u64 batch_id_label = utl::fnv1a_64_hash_cstr("batchID");
+			constexpr const u64 vbo_id_label = utl::fnv1a_64_hash_cstr("vboId");
+			constexpr const u64 geometry_buffers = utl::fnv1a_64_hash_cstr("GeometryBuffers");
+			constexpr const u64 vb_label = utl::fnv1a_64_hash_cstr("vb");
+			constexpr const u64 ib_label = utl::fnv1a_64_hash_cstr("ib");
+			constexpr const u64 mb_label = utl::fnv1a_64_hash_cstr("mb");
+			constexpr const u64 vrb_label = utl::fnv1a_64_hash_cstr("vrb");
+			constexpr const u64 bb_label = utl::fnv1a_64_hash_cstr("bb");
+			constexpr const u64 tb_label = utl::fnv1a_64_hash_cstr("tb");
+			constexpr const u64 lb_label = utl::fnv1a_64_hash_cstr("lb");
 		}
 			
 #ifndef BUILD_WITHOUT_DEBUGGIND

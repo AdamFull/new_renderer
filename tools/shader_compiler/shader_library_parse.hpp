@@ -28,7 +28,7 @@ namespace shader_compiler
     struct FShaderModule
     {
         EShaderType type{ EShaderType::eUnknown };
-        int64_t link{ 0ll };
+        u32 link{ 0ll };
     };
 
     // Contains associative maps for cantaining compiled shader code
@@ -47,13 +47,13 @@ namespace shader_compiler
 
         // Key is the type of shader (EShaderType) it's like container of same shader types. 
         // Key in value it's link to shader from shader module. 
-        utl::hash_map<int64_t, utl::hash_map<int64_t, utl::vector<u32>>> shaders;
-        utl::hash_map<int64_t, utl::vector<FShaderModule>> modules;
+        utl::hash_map<u32, utl::hash_map<u32, utl::vector<u32>>> shaders;
+        utl::hash_map<u32, utl::vector<FShaderModule>> modules;
     };
 
     struct FShaderCacheData
     {
-        utl::hash_map<int64_t, FCompiledLibrary> libraries{};
+        utl::hash_map<u32, FCompiledLibrary> libraries{};
     };
 
     inline void to_json(nlohmann::json& json, const FShaderModule& type)
@@ -99,19 +99,19 @@ namespace shader_compiler
 namespace nlohmann
 {
     template <typename _Ty>
-    struct adl_serializer<utl::hash_map<int64_t, _Ty>>
+    struct adl_serializer<utl::hash_map<u32, _Ty>>
     {
-        static void to_json(json& j, const utl::hash_map<int64_t, _Ty>& map)
+        static void to_json(json& j, const utl::hash_map<u32, _Ty>& map)
         {
             for (const auto& [key, value] : map)
                 j[std::to_string(key)] = value;
         }
 
-        static void from_json(const json& j, utl::hash_map<int64_t, _Ty>& map)
+        static void from_json(const json& j, utl::hash_map<u32, _Ty>& map)
         {
             for (const auto& item : j.items())
             {
-                int64_t key = std::stoll(item.key());
+                u32 key = std::stoul(item.key());
                 map[key] = item.value().get<_Ty>();
             }
         }

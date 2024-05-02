@@ -314,7 +314,7 @@ void CRenderWorld::prepareIndirectCommands()
 		}
 
 		// Check for range is already exists in command list
-		u64 range_hash = utl::utils::murmur_hash_64(&batch.range, sizeof(FGeometryDrawRange), 0ull);
+		u64 range_hash = utl::murmur_hash_64(&batch.range, sizeof(FGeometryDrawRange), 0ull);
 		if (auto found = indirect_command_cache.find(range_hash); found != indirect_command_cache.end())
 		{
 			auto& indirect_command = indirect_data.at(found->second);

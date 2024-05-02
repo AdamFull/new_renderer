@@ -76,8 +76,8 @@ namespace engine
 
 		struct FShaderUploadInfo
 		{
-			i64 libraryId{ ~0ll };
-			i64 shaderId{ ~0ll };
+			u32 libraryId{ ~0u };
+			u32 shaderId{ ~0u };
 			std::string originalName{};
 		};
 

@@ -11,25 +11,25 @@ using namespace mesh_compiler;
 
 namespace data_type
 {
-	constexpr const u32 vertex_position = utl::utils::const_hash(easygltf::base::enumerators::vertex_attribute_type::position);
-	constexpr const u32 vertex_normal = utl::utils::const_hash(easygltf::base::enumerators::vertex_attribute_type::normal);
-	constexpr const u32 vertex_texcoord_0 = utl::utils::const_hash(easygltf::base::enumerators::vertex_attribute_type::texcoord_0);
-	constexpr const u32 vertex_texcoord_1 = utl::utils::const_hash(easygltf::base::enumerators::vertex_attribute_type::texcoord_1);
-	constexpr const u32 vertex_color_0 = utl::utils::const_hash(easygltf::base::enumerators::vertex_attribute_type::color_0);
-	constexpr const u32 vertex_color_1 = utl::utils::const_hash(easygltf::base::enumerators::vertex_attribute_type::color_1);
-	constexpr const u32 vertex_tangent = utl::utils::const_hash(easygltf::base::enumerators::vertex_attribute_type::tangent);
-	constexpr const u32 vertex_joints_0 = utl::utils::const_hash(easygltf::base::enumerators::vertex_attribute_type::joints_0);
-	constexpr const u32 vertex_weights_0 = utl::utils::const_hash(easygltf::base::enumerators::vertex_attribute_type::weights_0);
-	constexpr const u32 vertex_custom = utl::utils::const_hash(easygltf::base::enumerators::vertex_attribute_type::custom);
-	constexpr const u32 indices = utl::utils::const_hash("INDICES");
-	constexpr const u32 skin = utl::utils::const_hash("SKIN");
-	constexpr const u32 animation_input = utl::utils::const_hash("ANIMATION_INPUT");
-	constexpr const u32 animation_output = utl::utils::const_hash("ANIMATION_OUTPUT");
+	constexpr const u32 vertex_position = utl::const_hash(easygltf::base::enumerators::vertex_attribute_type::position);
+	constexpr const u32 vertex_normal = utl::const_hash(easygltf::base::enumerators::vertex_attribute_type::normal);
+	constexpr const u32 vertex_texcoord_0 = utl::const_hash(easygltf::base::enumerators::vertex_attribute_type::texcoord_0);
+	constexpr const u32 vertex_texcoord_1 = utl::const_hash(easygltf::base::enumerators::vertex_attribute_type::texcoord_1);
+	constexpr const u32 vertex_color_0 = utl::const_hash(easygltf::base::enumerators::vertex_attribute_type::color_0);
+	constexpr const u32 vertex_color_1 = utl::const_hash(easygltf::base::enumerators::vertex_attribute_type::color_1);
+	constexpr const u32 vertex_tangent = utl::const_hash(easygltf::base::enumerators::vertex_attribute_type::tangent);
+	constexpr const u32 vertex_joints_0 = utl::const_hash(easygltf::base::enumerators::vertex_attribute_type::joints_0);
+	constexpr const u32 vertex_weights_0 = utl::const_hash(easygltf::base::enumerators::vertex_attribute_type::weights_0);
+	constexpr const u32 vertex_custom = utl::const_hash(easygltf::base::enumerators::vertex_attribute_type::custom);
+	constexpr const u32 indices = utl::const_hash("INDICES");
+	constexpr const u32 skin = utl::const_hash("SKIN");
+	constexpr const u32 animation_input = utl::const_hash("ANIMATION_INPUT");
+	constexpr const u32 animation_output = utl::const_hash("ANIMATION_OUTPUT");
 }
 
 u32 get_data_type(const char* name)
 {
-	return utl::utils::const_hash(name);
+	return utl::const_hash(name);
 }
 
 const char* get_data_name(u32 type)
