@@ -7,6 +7,43 @@ bloom_enabled = false
 
 bloom_blur_depth = 5
 
+-- Some functions
+function make_compute_pass(type, queue, shader)
+    local pass_ci = ComputeCreateInfo.new()
+    pass_ci.type = type
+    pass_ci.queue = queue
+    pass_ci.shader = shader
+
+    return pass_ci
+end
+
+function make_graphics_pass(type, queue, shader)
+    local pass_ci = GraphicsCreateInfo.new()
+    pass_ci.type = type
+    pass_ci.queue = queue
+    pass_ci.shader = shader
+
+    return pass_ci
+end
+
+function swap(a, b)
+    return b, a
+end
+
+function make_target(format, flags)
+    local target_ci = TextureCI.new()
+    target_ci.format = render_context:get_api_format(format)
+    target_ci.type = ETextureCreateFlags.new(flags)
+    return target_ci
+end
+
+function make_depth_target(depth_only, flags)
+    local target_ci = TextureCI.new()
+    target_ci.format = render_context:get_depth_format(depth_only)
+    target_ci.type = ETextureCreateFlags.new(flags)
+    return target_ci
+end
+
 -- Loading test cubemap
 do
     render_graph:add_static_resource("CasualDay4K", "/root/CasualDay4K.ktx2")
@@ -14,27 +51,21 @@ end
 
 -- GI targets
 do
-    local target_ci = TextureCI.new()
-    target_ci.format = render_context:get_api_format(Format.rg16_sfloat)
-    target_ci.type:set(TexType.two_dim, TexType.samplable, TexType.storage)
+    local target_ci = make_target(Format.rg16_sfloat, TexType.two_dim | TexType.samplable | TexType.storage)
     target_ci:set_fixed_size_2d(1024)
 
     render_graph:add_render_resource("brdf_lut_target", target_ci)
 end
 
 do
-    local target_ci = TextureCI.new()
-    target_ci.format = render_context:get_api_format(Format.rgba32_sfloat)
-    target_ci.type:set(TexType.two_dim, TexType.cubemap, TexType.samplable, TexType.storage)
+    local target_ci = make_target(Format.rgba32_sfloat, TexType.two_dim | TexType.cubemap | TexType.samplable | TexType.storage)
     target_ci:set_fixed_size_2d(64)
 
     render_graph:add_render_resource("irradiance_cube_target", target_ci)
 end
 
 do
-    local target_ci = TextureCI.new()
-    target_ci.format = render_context:get_api_format(Format.rgba16_sfloat)
-    target_ci.type:set(TexType.two_dim, TexType.cubemap, TexType.samplable, TexType.storage)
+    local target_ci = make_target(Format.rgba16_sfloat, TexType.two_dim | TexType.cubemap | TexType.samplable | TexType.storage)
     target_ci:set_fixed_size_2d(512)
     target_ci:enable_mip_map()
     
@@ -43,9 +74,7 @@ end
 
 -- Shadow targets
 do
-    local target_ci = TextureCI.new()
-    target_ci.format = render_context:get_api_format(Format.d32_sfloat)
-    target_ci.type:set(TexType.two_dim, TexType.array, TexType.samplable)
+    local target_ci = make_target(Format.d32_sfloat, TexType.two_dim | TexType.array | TexType.samplable)
     target_ci:set_fixed_size_2d(global_settings.cascade_shadowmap_resolution)
     target_ci.array_layers = global_settings.cascade_shadowmap_cascade_count * global_settings.max_directional_light_shadow_count
 
@@ -53,9 +82,7 @@ do
 end
 
 do
-    local target_ci = TextureCI.new()
-    target_ci.format = render_context:get_api_format(Format.d16_unorm)
-    target_ci.type:set(TexType.two_dim, TexType.array, TexType.samplable)
+    local target_ci = make_target(Format.d16_unorm, TexType.two_dim | TexType.array | TexType.samplable)
     target_ci:set_fixed_size_2d(global_settings.spotlight_shadowmap_resolution)
     target_ci.array_layers = global_settings.max_spot_light_shadow_count
 
@@ -63,9 +90,7 @@ do
 end
 
 do
-    local target_ci = TextureCI.new()
-    target_ci.format = render_context:get_api_format(Format.d16_unorm)
-    target_ci.type:set(TexType.two_dim, TexType.cubemap, TexType.array, TexType.samplable)
+    local target_ci = make_target(Format.d16_unorm, TexType.two_dim | TexType.cubemap | TexType.array | TexType.samplable)
     target_ci:set_fixed_size_2d(global_settings.point_light_shadowmap_resolution)
     target_ci.array_layers = global_settings.max_point_light_shadow_count
 
@@ -74,64 +99,49 @@ end
 
 -- Visibility buffer targets
 do
-    local target_ci = TextureCI.new()
-    target_ci.format = render_context:get_api_format(Format.rgba8_unorm)
-    target_ci.type:set(TexType.two_dim, TexType.samplable)
+    local target_ci = make_target(Format.rgba8_unorm, TexType.two_dim | TexType.samplable)
     target_ci:set_size_scale(1.0)
     
     render_graph:add_render_resource("visbuffer_geometry_target", target_ci)
 end
 
 do
-    local target_ci = TextureCI.new()
-    target_ci.format = render_context:get_api_format(Format.rgba8_unorm)
-    target_ci.type:set(TexType.two_dim, TexType.samplable)
+    local target_ci = make_target(Format.rgba8_unorm, TexType.two_dim | TexType.samplable)
     target_ci:set_size_scale(1.0)
     
     render_graph:add_render_resource("visbuffer_vboinst_target", target_ci)
 end
 
 do
-    local target_ci = TextureCI.new()
-    target_ci.format = render_context:get_depth_format(false)
-    target_ci.type:set(TexType.two_dim, TexType.samplable)
+    local target_ci = make_depth_target(false, TexType.two_dim | TexType.samplable)
     target_ci:set_size_scale(1.0)
 
     render_graph:add_render_resource("zbuffer_depth_target", target_ci)
 end
 
 do
-    local target_ci = TextureCI.new()
-
-    target_ci.format = render_context:get_api_format(use_low_precision_velocity and Format.rg8_unorm or Format.rg16_sfloat)
-    target_ci.type:set(TexType.two_dim, TexType.samplable, TexType.storage)
+    local target_ci = make_target(use_low_precision_velocity and Format.rg8_unorm or Format.rg16_sfloat, TexType.two_dim | TexType.samplable | TexType.storage)
     target_ci:set_size_scale(1.0)
 
     render_graph:add_render_resource("motion_vectors_target", target_ci)
 end
 
 do
-    local target_ci = TextureCI.new()
-    target_ci.format = render_context:get_api_format(Format.r11g11b10_ufloat)
-    target_ci.type:set(TexType.two_dim, TexType.samplable, TexType.storage)
+    local target_ci = make_target(Format.r11g11b10_ufloat, TexType.two_dim | TexType.samplable | TexType.storage)
     target_ci:set_size_scale(1.0)
 
     render_graph:add_render_resource("hdr0", target_ci)
 end
 
 do
-    local target_ci = TextureCI.new()
-    target_ci.format = render_context:get_api_format(Format.r11g11b10_ufloat)
-    target_ci.type:set(TexType.two_dim, TexType.samplable, TexType.storage)
+    local target_ci = make_target(Format.r11g11b10_ufloat, TexType.two_dim | TexType.samplable | TexType.storage)
     target_ci:set_size_scale(1.0)
 
     render_graph:add_render_resource("hdr1", target_ci)
 end
 
 do
-    local target_ci = TextureCI.new()
-    target_ci.format = render_context:get_api_format(Format.r11g11b10_ufloat)
-    target_ci.type:set(TexType.two_dim, TexType.samplable, TexType.storage)
+    local target_ci = make_target(Format.r11g11b10_ufloat, TexType.two_dim | TexType.samplable | TexType.storage)
     target_ci:set_size_scale(1.0)
 
     render_graph:add_render_resource("hdr0_history", target_ci)
@@ -139,9 +149,7 @@ end
 
 -- eye adaptation targets
 do
-    local target_ci = TextureCI.new()
-    target_ci.format = render_context:get_api_format(Format.r32_sfloat)
-    target_ci.type:set(TexType.two_dim, TexType.samplable, TexType.storage)
+    local target_ci = make_target(Format.r32_sfloat, TexType.two_dim | TexType.samplable | TexType.storage)
     target_ci:set_fixed_size_2d(1)
 
     render_graph:add_render_resource("avg_brightness_target", target_ci)
@@ -149,7 +157,7 @@ end
 
 do 
     local buffer_ci = BufferCI.new();
-    buffer_ci.type:set(BufferType.storage)
+    buffer_ci.type = EBufferUsageFlags.new(BufferType.storage)
     buffer_ci.size = 4
     buffer_ci.count = 256
 
@@ -157,9 +165,7 @@ do
 end
 
 do
-    local target_ci = TextureCI.new()
-    target_ci.format = render_context:get_api_format(Format.r11g11b10_ufloat)
-    target_ci.type:set(TexType.two_dim, TexType.samplable, TexType.storage)
+    local target_ci = make_target(Format.r11g11b10_ufloat, TexType.two_dim | TexType.samplable | TexType.storage)
     target_ci:set_size_scale(1.0)
 
     render_graph:add_render_resource("bokeh_target", target_ci)
@@ -167,18 +173,14 @@ end
 
 -- Bloom targets
 do
-    local target_ci = TextureCI.new()
-    target_ci.format = render_context:get_api_format(Format.r11g11b10_ufloat)
-    target_ci.type:set(TexType.two_dim, TexType.samplable, TexType.storage)
+    local target_ci = make_target(Format.r11g11b10_ufloat, TexType.two_dim | TexType.samplable | TexType.storage)
     target_ci:set_size_scale(0.5)
 
     render_graph:add_render_resource("brightness_target", target_ci)
 end
 
 do
-    local target_ci = TextureCI.new()
-    target_ci.format = render_context:get_api_format(Format.r11g11b10_ufloat)
-    target_ci.type:set(TexType.two_dim, TexType.samplable, TexType.storage)
+    local target_ci = make_target(Format.r11g11b10_ufloat, TexType.two_dim | TexType.samplable | TexType.storage)
     target_ci:set_size_scale(0.5)
     target_ci.mip_levels = bloom_blur_depth
 
@@ -224,28 +226,6 @@ do
     render_graph:add_viewport("omni_shadows_viewport", viewport_ci)
 end
 
--- Some functions
-function make_compute_pass(type, queue, shader)
-    local pass_ci = ComputeCreateInfo.new()
-    pass_ci.type = type
-    pass_ci.queue = queue
-    pass_ci.shader = shader
-
-    return pass_ci
-end
-
-function make_graphics_pass(type, queue, shader)
-    local pass_ci = GraphicsCreateInfo.new()
-    pass_ci.type = type
-    pass_ci.queue = queue
-    pass_ci.shader = shader
-
-    return pass_ci
-end
-
-function swap(a, b)
-    return b, a
-end
 
 function generate_prefiltered_cube()
     render_graph:push_debug_marker("Prefiltered cubemap generator", 0xffff33ff, QueueType.graphics)
