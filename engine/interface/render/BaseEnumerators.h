@@ -71,5 +71,13 @@ namespace engine
 			eOmniShadow,
 			eSpotShadow,
 		};
+
+		enum class EAdapterVendor
+		{
+			eNone,
+			eNVidia,
+			eAMD,
+			eIntel
+		};
 	}
 }

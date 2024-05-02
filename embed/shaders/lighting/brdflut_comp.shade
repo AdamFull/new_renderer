@@ -55,7 +55,7 @@
 
 			uvec2 px = uvec2(0, 0);
 			vec2 uv = vec2(0, 0);
-			if(swizzle_compute_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, image_size, uv, px))
+			if(swizzle_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, gl_WorkGroupID.xy, image_size, uv, px))
 				return;
 
 			imageStore(out_color, ivec2(px), vec4(BRDF(uv.x, 1.0f - uv.y), 0.0f, 1.0f));

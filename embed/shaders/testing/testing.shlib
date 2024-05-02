@@ -21,10 +21,7 @@
 	compile: [
 		{ 
 			shader_name: "screenspace";
-			permutations: [
-				{ defines: [] },
-				{ defines: ["LOW_PRECISION_VELOCITY"] }
-			];
+			pattern: "default_pattern";
 		}
 	];
 }

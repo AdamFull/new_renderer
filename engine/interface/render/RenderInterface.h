@@ -377,6 +377,7 @@ namespace engine
 
 			virtual FDeviceLimitations getDeviceLimitations() = 0;
 			virtual const FRenderFrameStats& getRenderFrameStats() const = 0;
+			virtual EAdapterVendor getDeviceVendor() const = 0;
 
 			virtual u64 getTextureResource(const char* name) = 0;
 			virtual u64 getShaderResource(const char* name) = 0;

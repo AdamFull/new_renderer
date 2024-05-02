@@ -36,7 +36,7 @@
         
         	uvec2 px = uvec2(0, 0);
         	vec2 uv = vec2(0.0, 0.0);
-        	if(swizzle_compute_workgroups_8x8_nv(gl_LocalInvocationID.xy, gl_WorkGroupID.xy, image_size, uv, px))
+        	if(swizzle_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, gl_WorkGroupID.xy, image_size, uv, px))
                 return;
         
             // The filter kernel is applied with a radius, specified in texture

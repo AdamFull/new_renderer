@@ -75,8 +75,8 @@ namespace engine
 				void dispatch(EQueueTypeFlagBits queue_type, const FDispatchIndirectInfo& dispatch_info) override;
 
 				FDeviceLimitations getDeviceLimitations() override;
-
 				const FRenderFrameStats& getRenderFrameStats() const override;
+				EAdapterVendor getDeviceVendor() const override;
 
 				u64 getTextureResource(const char* name) override;
 				u64 getShaderResource(const char* name) override;

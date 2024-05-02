@@ -92,22 +92,7 @@
 		},
 		{ 
 			shader_name: "apply_effect";
-			permutations: [
-				{ defines: [] },
-				{ defines: ["MOTION_BLUR"] },
-				{ defines: ["MOTION_BLUR", "LOW_PRECISION_VELOCITY"] },
-				{ defines: ["BLOOM"] },
-				{ defines: ["DOF"] },
-				{ defines: ["CHROMATIC_ABERRATION"] },
-				{ defines: ["GAUSSIAN_BLUR", "BLUR_TYPE_5"] },
-				{ defines: ["GAUSSIAN_BLUR", "BLUR_TYPE_9"] },
-				{ defines: ["GAUSSIAN_BLUR", "BLUR_TYPE_13"] },
-				{ defines: ["GAUSSIAN_BLUR", "HORIZONTAL", "BLUR_TYPE_5"] },
-				{ defines: ["GAUSSIAN_BLUR", "HORIZONTAL", "BLUR_TYPE_9"] },
-				{ defines: ["GAUSSIAN_BLUR", "HORIZONTAL", "BLUR_TYPE_13"] },
-				{ defines: ["LENS_FLARES"] },
-				{ defines: ["TONEMAP"] }
-			];
+			pattern: "apply_effect_pattern";
 		},
 		{ 
 			shader_name: "bokeh";
@@ -119,17 +104,11 @@
 		},
 		{ 
 			shader_name: "downsample";
-			permutations: [
-				{ defines: [] },
-				{ defines: ["FIRST_PASS"] }
-			];
+			pattern: "downsample_pattern";
 		},
 		{
 			shader_name: "generate_motion_vectors";
-			permutations: [
-				{ defines: [] },
-				{ defines: ["LOW_PRECISION_VELOCITY"] }
-			];
+			pattern: "mv_pattern";
 		},
 		{ 
 			shader_name: "compute_histogram";

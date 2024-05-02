@@ -30,7 +30,7 @@
 		
 			uvec2 px = uvec2(gl_GlobalInvocationID.xy);
 			vec2 uv = vec2(px) / vec2(image_size);;
-			if(swizzle_compute_workgroups_8x8_nv(gl_LocalInvocationID.xy, gl_WorkGroupID.xy, image_size, uv, px))
+			if(swizzle_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, gl_WorkGroupID.xy, image_size, uv, px))
 				return;
 
 			FViewport viewport = viewportBuffer.viewports[frameData.defaultViewport];

@@ -556,7 +556,7 @@ final_target = postprocess("hdr0", "hdr1")
 
 -- Present pass
 do
-    local pass_ci = make_graphics_pass(RenderingType.fullscreen, QueueType.graphics, use_low_precision_velocity and "testing:screenspace:LOW_PRECISION_VELOCITY" or "testing:screenspace")
+    local pass_ci = make_graphics_pass(RenderingType.fullscreen, QueueType.graphics, "testing:screenspace")
     pass_ci:flip_viewport()
 
     pass_ci:bind_read_resource("input_image", final_target)

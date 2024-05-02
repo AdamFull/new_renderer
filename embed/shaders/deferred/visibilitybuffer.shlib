@@ -42,62 +42,6 @@
 	compile: [
 		{ 
 			shader_name: "write";
-			//permutations: [
-			//	// STATIC MESH 8BIT INDEX
-			//	{ definitions: ["INDEX_8BIT", "HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC3", "TANGENT_VEC3"] },
-			//	{ definitions: ["INDEX_8BIT", "HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC4", "TANGENT_VEC3"] },
-			//	{ definitions: ["INDEX_8BIT", "HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC3", "TANGENT_VEC4"] },
-			//	{ definitions: ["INDEX_8BIT", "HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC4", "TANGENT_VEC4"] },
-			//
-			//	// STATIC MESH 16BIT INDEX
-			//	{ definitions: ["INDEX_16BIT", "HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC3", "TANGENT_VEC3"] },
-			//	{ definitions: ["INDEX_16BIT", "HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC4", "TANGENT_VEC3"] },
-			//	{ definitions: ["INDEX_16BIT", "HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC3", "TANGENT_VEC4"] },
-			//	{ definitions: ["INDEX_16BIT", "HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC4", "TANGENT_VEC4"] },
-			//
-			//	// STATIC MESH 32BIT INDEX
-			//	{ definitions: ["HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC3", "TANGENT_VEC3"] },
-			//	{ definitions: ["HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC4", "TANGENT_VEC3"] },
-			//	{ definitions: ["HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC3", "TANGENT_VEC4"] },
-			//	{ definitions: ["HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC4", "TANGENT_VEC4"] },
-			//
-			//
-			//	// SKINNED MESH 8BIT INDEX, 8BIT JOINTS
-			//	{ definitions: ["HAS_SKIN", "INDEX_8BIT", "HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC3", "TANGENT_VEC3", "JOINTS_8BIT"] },
-			//	{ definitions: ["HAS_SKIN", "INDEX_8BIT", "HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC4", "TANGENT_VEC3", "JOINTS_8BIT"] },
-			//	{ definitions: ["HAS_SKIN", "INDEX_8BIT", "HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC3", "TANGENT_VEC4", "JOINTS_8BIT"] },
-			//	{ definitions: ["HAS_SKIN", "INDEX_8BIT", "HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC4", "TANGENT_VEC4", "JOINTS_8BIT"] },
-			//
-			//	// SKINNED MESH 16BIT INDEX 8BIT JOINTS
-			//	{ definitions: ["HAS_SKIN", "INDEX_16BIT", "HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC3", "TANGENT_VEC3", "JOINTS_8BIT"] },
-			//	{ definitions: ["HAS_SKIN", "INDEX_16BIT", "HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC4", "TANGENT_VEC3", "JOINTS_8BIT"] },
-			//	{ definitions: ["HAS_SKIN", "INDEX_16BIT", "HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC3", "TANGENT_VEC4", "JOINTS_8BIT"] },
-			//	{ definitions: ["HAS_SKIN", "INDEX_16BIT", "HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC4", "TANGENT_VEC4", "JOINTS_8BIT"] },
-			//
-			//	// SKINNED MESH 32BIT INDEX 8BIT JOINTS
-			//	{ definitions: ["HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC3", "TANGENT_VEC3", "JOINTS_8BIT"] },
-			//	{ definitions: ["HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC4", "TANGENT_VEC3", "JOINTS_8BIT"] },
-			//	{ definitions: ["HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC3", "TANGENT_VEC4", "JOINTS_8BIT"] },
-			//	{ definitions: ["HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC4", "TANGENT_VEC4", "JOINTS_8BIT"] },
-			//
-			//	// SKINNED MESH 8BIT INDEX, 16BIT JOINTS
-			//	{ definitions: ["HAS_SKIN", "INDEX_8BIT", "HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC3", "TANGENT_VEC3", "JOINTS_16BIT"] },
-			//	{ definitions: ["HAS_SKIN", "INDEX_8BIT", "HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC4", "TANGENT_VEC3", "JOINTS_16BIT"] },
-			//	{ definitions: ["HAS_SKIN", "INDEX_8BIT", "HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC3", "TANGENT_VEC4", "JOINTS_16BIT"] },
-			//	{ definitions: ["HAS_SKIN", "INDEX_8BIT", "HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC4", "TANGENT_VEC4", "JOINTS_16BIT"] },
-			//
-			//	// SKINNED MESH 16BIT INDEX 16BIT JOINTS
-			//	{ definitions: ["HAS_SKIN", "INDEX_16BIT", "HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC3", "TANGENT_VEC3", "JOINTS_16BIT"] },
-			//	{ definitions: ["HAS_SKIN", "INDEX_16BIT", "HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC4", "TANGENT_VEC3", "JOINTS_16BIT"] },
-			//	{ definitions: ["HAS_SKIN", "INDEX_16BIT", "HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC3", "TANGENT_VEC4", "JOINTS_16BIT"] },
-			//	{ definitions: ["HAS_SKIN", "INDEX_16BIT", "HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC4", "TANGENT_VEC4", "JOINTS_16BIT"] },
-			//
-			//	// SKINNED MESH 32BIT INDEX 16BIT JOINTS
-			//	{ definitions: ["HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC3", "TANGENT_VEC3", "JOINTS_16BIT"] },
-			//	{ definitions: ["HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC4", "TANGENT_VEC3", "JOINTS_16BIT"] },
-			//	{ definitions: ["HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC3", "TANGENT_VEC4", "JOINTS_16BIT"] },
-			//	{ definitions: ["HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "COLOR_VEC4", "TANGENT_VEC4", "JOINTS_16BIT"] },
-			//];
 			pattern: "geometry_pattern";
 		},
 		{
