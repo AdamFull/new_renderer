@@ -356,9 +356,9 @@ namespace engine
 			{
 				switch (pass_type)
 				{
-				case engine::render::EPassType::eNone:
+				case engine::render::EPassType::eNone: return vk::PipelineStageFlagBits2KHR::eAllCommands; break;
 				case engine::render::EPassType::eCompute: return vk::PipelineStageFlagBits2KHR::eComputeShader; break;
-				case engine::render::EPassType::eRender: return vk::PipelineStageFlagBits2KHR::eFragmentShader | vk::PipelineStageFlagBits2KHR::eVertexShader; break;
+				case engine::render::EPassType::eRender: return vk::PipelineStageFlagBits2KHR::eAllGraphics; break;
 				}
 
 				return vk::PipelineStageFlagBits2KHR::eComputeShader;
@@ -366,11 +366,14 @@ namespace engine
 
 			inline vk::AccessFlags2KHR get_translation_access_flags(ERenderResourceAccessFlagBits access_flag)
 			{
+				constexpr const vk::AccessFlags2KHR read_flags = vk::AccessFlagBits2KHR::eShaderRead | vk::AccessFlagBits2KHR::eShaderStorageRead | vk::AccessFlagBits2KHR::eShaderSampledRead;
+				constexpr const vk::AccessFlags2KHR write_flags = vk::AccessFlagBits2KHR::eShaderWrite | vk::AccessFlagBits2KHR::eShaderStorageWrite;
+
 				switch (access_flag)
 				{
-				case engine::render::ERenderResourceAccessFlagBits::eNone:
-				case engine::render::ERenderResourceAccessFlagBits::eRead: return vk::AccessFlagBits2KHR::eMemoryWrite | vk::AccessFlagBits2KHR::eShaderWrite; break;
-				case engine::render::ERenderResourceAccessFlagBits::eWrite: return vk::AccessFlagBits2KHR::eMemoryRead | vk::AccessFlagBits2KHR::eShaderRead; break;
+				case engine::render::ERenderResourceAccessFlagBits::eNone: return vk::AccessFlagBits2KHR::eNone; break;
+				case engine::render::ERenderResourceAccessFlagBits::eRead: return read_flags | vk::AccessFlagBits2KHR::eIndirectCommandRead; break;
+				case engine::render::ERenderResourceAccessFlagBits::eWrite: return write_flags; break;
 				}
 
 				return vk::AccessFlagBits2KHR::eNone;
