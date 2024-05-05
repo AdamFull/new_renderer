@@ -291,5 +291,40 @@
 
 			return res;
 		}
+
+		#define SAMPLE_COUNT 8
+
+		//void resolveVisBuffer(in vec2 uv, out VisibilityBuffer vb)
+		//{	
+		//	ivec2 dim = textureSize(visbuffer_geometry);
+		//	ivec2 px = ivec2(uv * dim);
+		//
+		//	[[unroll]]
+		//	for(int i = 0; i < NUM_SAMPLES; i++)
+		//	{
+		//		vec4 vgeom = texelFetch(visbuffer_geometry, px, i); 
+		//
+		//		vb.drawID = (geometryData >> 23) & 0x000000FF;
+		//		vb.triangleID = (geometryData & 0x007FFFFF);
+		//		vb.transparent = (geometryData >> 31);
+		//		vb.triangleID -= 1u;
+		//
+		//		if(vb.triangleID == 0xFFFFFFFFu)
+		//			continue;
+		//
+		//		uint vboinstData = packUnorm4x8(texelFetch(visbuffer_vboinst, px, i));
+		//		vb.vboID = vboinstData & 0xFFFF;
+		//		uint instID = vboinstData >> 16;
+		//
+		//		uint32_t draw_index = vb.drawID + instID;
+		//		FDrawMeshinfo draw_info = drawInfoBuffer.infos[draw_index];
+		//		FMesh mesh = meshBuffer.meshes[draw_info.meshID];
+		//		
+		//		vb.objID = draw_info.nodeID;
+		//		vb.matID = mesh.materialID;
+		//
+		//		VertexAttribute va = getVertexData(uv, vb);
+		//	}
+		//}
 	""";
 }

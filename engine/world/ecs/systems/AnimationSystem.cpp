@@ -126,7 +126,7 @@ void CAnimationSystem::__update(float fDt)
 	}
 
 #define USE_OLD_ANIMATION_SYSTEM
-#define USE_STD_MULTITHREADING
+//#define USE_STD_MULTITHREADING
 
 #ifdef USE_STD_MULTITHREADING
 	std::for_each(std::execution::par, m_animationIndeces.begin(), m_animationIndeces.end(),

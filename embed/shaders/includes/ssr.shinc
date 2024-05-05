@@ -109,62 +109,41 @@
 			if(ssrEnabled)
 			{
 				vec3 reflectionDirection = normalize(reflect(position, normalize(normal)));
-				if (isSamplingEnabled > 0)
+				vec3 firstBasis = normalize(cross(vec3(0.f, 0.f, 1.f), reflectionDirection));
+				vec3 secondBasis = normalize(cross(reflectionDirection, firstBasis));
+				vec4 resultingColor = vec4(0.f);
+		
+				for (int i = 0; i < sampleCount; i++) 
 				{
-					vec3 firstBasis = normalize(cross(vec3(0.f, 0.f, 1.f), reflectionDirection));
-					vec3 secondBasis = normalize(cross(reflectionDirection, firstBasis));
-					vec4 resultingColor = vec4(0.f);
-		
-					for (int i = 0; i < sampleCount; i++) 
-					{
-						vec2 coeffs = vec2(random(uv + vec2(0, i)) + random(uv + vec2(i, 0))) * samplingCoefficient * roughness;
-						vec3 reflectionDirectionRandomized = reflectionDirection + firstBasis * coeffs.x + secondBasis * coeffs.y;
-		
-						vec3 debugColor;
-						vec2 coords = SSRRaycast(position, normalize(reflectionDirectionRandomized), depth_sampler, debugColor);
-						if (coords != vec2(0.0f))
-						{
-							vec4 reflColor = texture(color_sampler, coords);
-							reflColor.rgb *= debugColor;
-		
-							vec2 dCoords = smoothstep(0.2, 0.6, abs(vec2(0.5, 0.5) - coords.xy));
-							float screenEdgefactor = clamp(1.0 - (dCoords.x + dCoords.y), 0.0, 1.0);
-							float reflectionMultiplier = pow(metallic, reflectionSpecularFalloffExponent) * screenEdgefactor * -reflectionDirection.z;
-		
-							reflColor.rgb *= clamp(reflectionMultiplier, 0.0, 0.9);
-		
-							resultingColor += reflColor;
-						}
-					}
-		
-					if (resultingColor.w != 0)
-					{
-						resultingColor /= resultingColor.w;
-						ssr = resultingColor.rgb;
-					}
-				}
-				else
-				{
-					// Applying roughness to resulting reflection vertor
-					vec2 coeffs = vec2(random(uv)) * roughness;
-					vec3 firstBasis = normalize(cross(vec3(0.f, 0.f, 1.f), reflectionDirection));
-					vec3 secondBasis = normalize(cross(reflectionDirection, firstBasis));
-					reflectionDirection += firstBasis * coeffs.x + secondBasis * coeffs.y;
+					vec2 coeffs = vec2(random(uv + vec2(0, i)) + random(uv + vec2(i, 0))) * samplingCoefficient;
+					vec3 reflectionDirectionRandomized = reflectionDirection + firstBasis * coeffs.x + secondBasis * coeffs.y;
 		
 					vec3 debugColor;
-					vec2 coords = SSRRaycast(position, normalize(reflectionDirection), depth_sampler, debugColor);
-					if (coords != vec2(0.f))
+					vec2 coords = SSRRaycast(position, normalize(reflectionDirectionRandomized), depth_sampler, debugColor);
+					if (coords != vec2(0.0f))
 					{
-						ssr = texture(color_sampler, coords).rgb;
-						ssr *= debugColor;
+						vec4 reflColor = textureLod(color_sampler, coords, 0);
+						reflColor.rgb *= debugColor;
 		
 						vec2 dCoords = smoothstep(0.2, 0.6, abs(vec2(0.5, 0.5) - coords.xy));
 						float screenEdgefactor = clamp(1.0 - (dCoords.x + dCoords.y), 0.0, 1.0);
 						float reflectionMultiplier = pow(metallic, reflectionSpecularFalloffExponent) * screenEdgefactor * -reflectionDirection.z;
 		
-						ssr *= clamp(reflectionMultiplier, 0.0, 0.9);
-					}	
+						reflColor.rgb *= clamp(reflectionMultiplier, 0.0, 0.9);
+		
+						resultingColor += reflColor;
+					}
 				}
+		
+				if (resultingColor.w != 0)
+				{
+					resultingColor /= resultingColor.w;
+					ssr = resultingColor.rgb;
+				}
+
+				//float roughnessMask = saturate(1.0f - (roughness / roughnessThreshold));
+				//float ssrWeight = (resultingColor.w * roughnessMask);
+				//ssr = clamp(resultingColor.xyz * ssrWeight, 0.0, 1.0);
 			}
 
 			return ssr;
@@ -176,7 +155,8 @@
 			vec4 proj = projection * vec4(view, 1.0);
 			proj.xyz /= proj.w;
 			proj.x = (proj.x + 1.0) / 2.0;
-			proj.y = 1.0 - (proj.y + 1.0) / 2.0;
+			proj.y = (proj.y + 1.0) / 2.0;
+			//proj.y = 1.0 - (proj.y + 1.0) / 2.0;
 			return proj.xyz;
 		}
 		
@@ -184,7 +164,8 @@
 		{
 			FViewport viewport = viewportBuffer.viewports[frameData.defaultViewport];
 			vec3 ssr = vec3(0.0);
-			const float roughnessThreshold = 0.7f;
+			vec3 debug = vec3(0.0);
+			const float roughnessThreshold = 0.75f;
 			bool ssrEnabled = R < roughnessThreshold;
 			if(ssrEnabled)
 			{
@@ -194,20 +175,20 @@
 				{
 					float jitter = dither - 1.0f;
 					uint maxSteps = 8;
-		
+				
 					vec3 rayStartVS = vec3(frameData.view * vec4(worldPosition, 1.0));
 					float linearDepth = rayStartVS.z;
-					vec3 reflectionVs = mat3(frameData.view) * reflectionWs;
+					vec3 reflectionVs = vec3(frameData.view * vec4(reflectionWs, 1.0));
 					vec3 rayEndVS = rayStartVS + (reflectionVs * linearDepth);
-		
+				
 					vec3 rayStart = ViewPositionToUV(rayStartVS, viewport.projection);
 					vec3 rayEnd = ViewPositionToUV(rayEndVS, viewport.projection);
-		
+				
 					vec3 rayStep = ((rayEnd - rayStart) / float(maxSteps));
 					rayStep = rayStep / length(rayEnd.xy - rayStart.xy);
 					vec3 rayPos = rayStart + (rayStep * jitter);
 					float zThickness = abs(rayStep.z);
-		
+				
 					uint hitIndex = 0;
 					vec3 bestHit = rayPos;
 					float prevSceneZ = rayStart.z;
@@ -230,7 +211,7 @@
 							uint firstHit = findLSB(zMask);
 							if(firstHit > 0)
 								prevSceneZ = sceneZ[firstHit - 1];
-		
+				
 							bestHit = rayPos + (rayStep * float(currStep + firstHit + 1));
 							float zAfter = sceneZ[firstHit] - bestHit.z;
 							float zBefore = (prevSceneZ - bestHit.z) + rayStep.z;
@@ -246,9 +227,10 @@
 					vec4 hitColor = vec4(0.0);
 					if (hitIndex > 0)
 					{
+						debug += vec3(0.0, 0.5, 0.0);
 						vec4 uv = vec4(bestHit.xy, 0.0, 1.0);
 						uv = viewport.reprojectionMatrix * uv;
-		
+				
 						vec2 distanceFromCenter = (vec2(uv.x, uv.y) * 2.0f) - vec2(1.0f, 1.0f);
 						float edgeAttenuation = clamp((1.0 - (float(hitIndex / maxSteps))) * 4.0f, 0.0, 1.0);
 						edgeAttenuation *= smoothstep(0.0f, 0.5f, clamp(1.0 - dot(distanceFromCenter, distanceFromCenter), 0.0, 1.0));
@@ -257,10 +239,11 @@
 					}
 					float roughnessMask = saturate(1.0f - (R / roughnessThreshold));
 					ssrWeight = (hitColor.w * roughnessMask);
-					ssr = clamp(hitColor.xyz * ssrWeight, 0.0, 1.0);
+					ssr = clamp(hitColor.xyz, 0.0, 1.0);
 				}
 			}
 			return ssr;
+			//return debug;
 		}
 
 		float screen_fade(vec2 uv)
@@ -274,8 +257,8 @@
 		{
 			FViewport viewport = viewportBuffer.viewports[frameData.defaultViewport];
 		
-			vec4 rayStartPS = frameData.view * vec4(worldPosition, 1.0);
-			vec4 rayDirPS = frameData.view * vec4(-lightDirection * rayLength, 0.0);
+			vec4 rayStartPS = viewport.viewProjection * vec4(worldPosition, 1.0);
+			vec4 rayDirPS = viewport.viewProjection * vec4(-lightDirection * rayLength, 0.0);
 			vec4 rayEndPS = rayStartPS + rayDirPS;
 			rayStartPS.xyz /= rayStartPS.w;
 			rayEndPS.xyz /= rayEndPS.w;
@@ -296,7 +279,7 @@
 			for(uint i = 0; i < stepCount; ++i)
 			{
 				vec3 rayPos = rayStartPS.xyz + n * rayStep;
-				float depth = textureLod(depthTexture, rayPos.xy * vec2(0.5f, 0.5f) + vec2(0.5f, 0.5f), 0).r;
+				float depth = textureLod(depthTexture, rayPos.xy * vec2(0.5f, -0.5f) + vec2(0.5f, 0.5f), 0).r;
 				float diff = rayPos.z - depth;
 		
 				bool hit = abs(diff + tolerance) < tolerance;
@@ -307,7 +290,7 @@
 			if(hitStep > 0.0f)
 			{
 				vec2 hitUV = rayStartPS.xy + n * rayStep.xy;
-				hitUV = hitUV * vec2(0.5f, 0.5f) + vec2(0.5f, 0.5f);
+				hitUV = hitUV * vec2(0.5f, -0.5f) + vec2(0.5f, 0.5f);
 				occlusion = screen_fade(hitUV);
 			}
 			return 1.0f - occlusion;
@@ -334,7 +317,7 @@
 
 			// Compute ray step
 			vec3 ray_step = ray_dir * g_sss_step_length;
-			ray_pos += ray_step * ditherOffset;
+			ray_pos += ray_step;
 
 			// Save the original depth
 			float depth_original = ray_pos.z;
