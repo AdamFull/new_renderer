@@ -91,6 +91,20 @@ namespace engine
 				allocate(name, flag, sizeof(_Ty), capacity);
 			}
 
+			template<class _Ty, size_t _Size>
+			void copy(const std::array<_Ty, _Size>& data)
+			{
+				if (m_size + _Size > capacity())
+				{
+					u64 new_capacity = (m_size + _Size) * 2ull;
+					reallocate(new_capacity);
+				}
+
+				auto* memory_block = at(m_size);
+				std::memcpy(memory_block, data.data(), sizeof(_Ty) * _Size);
+				m_size += _Size;
+			}
+
 			template<class _Ty>
 			void copy(const utl::vector<_Ty>& data)
 			{
