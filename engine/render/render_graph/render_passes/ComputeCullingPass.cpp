@@ -18,7 +18,7 @@ void CComputeCullingPass::init(const FComputePassCreateInfo& pass_ci)
 	m_baseShaderName = pass_ci.shader;
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-	m_debugName = std::format("compute_geometry:{}", m_baseShaderName);
+	m_debugName = std::format("culling:{}", m_baseShaderName);
 #endif
 }
 
@@ -57,28 +57,40 @@ void CComputeCullingPass::_execute(const FComputeFrameInfo& frame_info)
 
 			if (was_vbo_rebinded)
 			{
+				bindShaderResources(shader, frame_info.deltaTime);
+				if (auto& buffers = shader->getUniformBlock(shader_bindings::geometry_buffers); buffers)
+				{
+					u64 vertex_handle = last_vbo->getVertexHandle();
+					auto vb_view = render_context->getBufferView(vertex_handle);
+					buffers->set(shader_bindings::vb_label, vb_view.address);
+
+					u64 index_buffer = last_vbo->getIndexHandle();
+					auto ib_view = render_context->getBufferView(index_buffer);
+					buffers->set(shader_bindings::ib_label, ib_view.address);
+
+					buffers->set(shader_bindings::mb_label, last_vbo->getGeometryBuffer(EGeometryBufferIndices::eMeshletBuffer)->buffer()->address());
+					buffers->set(shader_bindings::vrb_label, last_vbo->getGeometryBuffer(EGeometryBufferIndices::eVertexRemapBuffer)->buffer()->address());
+					buffers->set(shader_bindings::bb_label, last_vbo->getGeometryBuffer(EGeometryBufferIndices::eBoundsBuffer)->buffer()->address());
+					buffers->set(shader_bindings::tb_label, last_vbo->getGeometryBuffer(EGeometryBufferIndices::eTriangleBuffer)->buffer()->address());
+					buffers->set(shader_bindings::lb_label, last_vbo->getGeometryBuffer(EGeometryBufferIndices::eLodBuffer)->buffer()->address());
+					buffers->set(shader_bindings::last_index_label, utl::cast<u32>(last_vbo->getLastIndex()));
+					buffers->set(shader_bindings::last_vertex_label, utl::cast<u32>(last_vbo->getLastVertex()));
+				}
+
 				shader->flushDescriptors();
 				shader->bind(m_queue);
 			}
 
-			auto& references = shader->getConstantBlock(shader_bindings::references);
-			if (references)
-			{
-				//references->set("culling", render_world->getDrawBuffer(ERenderBufferIndices::eCullingInfoBuffer)->address());
-				references->set(shader_bindings::frustum_label, render_world->getDrawBuffer(ERenderBufferIndices::eFrustumBuffer)->buffer()->address());
-			}
-
 			shader->flushConstants(m_queue);
 
-			auto& reflection = shader->getReflection();
+			FDispatch2Info dispatch_info{};
+			dispatch_info.divideByLocals = false;
+			dispatch_info.globalSizes.x = world_stats.drawCommandCount;
+			dispatch_info.globalSizes.y = 1;
+			dispatch_info.globalSizes.z = 1;
+			dispatch_info.shaderHandle = shader->handle();
 
-			//m_dispatchGroup.x = world_stats.drawCommandCount;
-			//
-			//FDispatch2Info dispatch_info{};
-			//dispatch_info.shaderHandle = shader->handle();
-			//dispatch_info.globalSizes = m_dispatchGroup;
-			//
-			//render_context->dispatch(m_queue, dispatch_info);
+			render_context->dispatch(m_queue, dispatch_info, 0);
 		}
 	}
 }

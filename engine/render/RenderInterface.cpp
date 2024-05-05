@@ -173,6 +173,8 @@ void CRenderInterface::render(f32 dt)
 	global_uniform.directionalLightCount = utl::cast<u32>(world_stats.directionalLightCount);
 	global_uniform.pointLightCount = utl::cast<u32>(world_stats.pointLightCount);
 	global_uniform.spotLightCount = utl::cast<u32>(world_stats.spotLightCount);
+	global_uniform.cullerCount = utl::cast<u32>(world_stats.cullerCount);
+	global_uniform.maxCommandsCount = utl::cast<u32>(world_stats.maxDrawCommands);
 	global_uniform.rawCommandsCount = utl::cast<u32>(world_stats.drawCommandCount);
 	global_uniform.defaultViewport = utl::cast<u32>(m_pRenderGraph->getDefaultViewportIndex());
 
@@ -197,9 +199,12 @@ void CRenderInterface::render(f32 dt)
 	global_references.spotShadowBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eSpotShadowBuffer)->buffer()->address();
 
 	global_references.drawInfoBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eDrawMeshInfoBuffer)->buffer()->address();
+	global_references.rawDrawInfoBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eRawDrawMeshInfoBuffer)->buffer()->address();
 	global_references.clusterBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eClusterInfoBuffer)->buffer()->address();
+	global_references.frustumSidesBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eFrustumBuffer)->buffer()->address();
 
 	global_references.indirectCommandBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eDrawCommandBuffer)->buffer()->address();
+	global_references.indirectCountBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eCountBuffer)->buffer()->address();
 	global_references.indirectTaskCommandBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eMeshCommandBuffer)->buffer()->address();
 
 	global_references.textureRemapBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eTextureRemapBuffer)->buffer()->address();

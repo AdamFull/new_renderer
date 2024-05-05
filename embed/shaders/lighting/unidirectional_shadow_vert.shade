@@ -35,7 +35,7 @@
 		void main()
 		{
 			uint32_t draw_index = shadowData.callID + gl_DrawIDARB + gl_InstanceIndex;
-			FDrawMeshinfo draw_info = drawInfoBuffer.infos[draw_index];
+			FGeometryBatch draw_info = drawInfoBuffer.infos[draw_index];
 
 			FSceneNode node = nodeBuffer.nodes[draw_info.nodeID];
 			mat4 modelMatrix = node.model;

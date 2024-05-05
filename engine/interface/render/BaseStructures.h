@@ -87,12 +87,6 @@ namespace engine
 			FPoint2D<_Ty> size{};
 		};
 
-		struct FGeometryRawBatch
-		{
-			FDrawMeshinfo drawInfo;
-			FGeometryDrawRange range;
-		};
-
 		struct FGeometryDrawInfo
 		{
 			u64 lastIndex{ 0ull };
@@ -104,8 +98,11 @@ namespace engine
 		{
 			u64 bufferId{ INVALID_HANDLE };
 			u64 offset{ 0ull };
-			u64 count{ 0ull };
 
+			u64 countBufferId{ INVALID_HANDLE };
+			u64 countOffset{ 0ull };
+
+			u64 maxDrawCount{ 0ull };
 			u64 stride{ 0ull };
 		};
 

@@ -186,10 +186,10 @@ void CVertexHandler::create(const FVertexHandlerCreateInfo& create_info)
 	log_info("[Vertex Handler] Created vertex handler: {}:{}.", create_info.name, m_definitions);
 
 	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eMeshletBuffer))->create<FMeshlet>("MeshletBuffer" + m_definitions, EBufferUsageFlagBits::eStorageBuffer);
-	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eVertexRemapBuffer))->create<u32>("MeshletVerticesBuffer" + m_definitions, EBufferUsageFlagBits::eStagingBuffer);
-	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eBoundsBuffer))->create<FGeometryDrawBounds>("MeshletBoundsBuffer" + m_definitions, EBufferUsageFlagBits::eStagingBuffer);
-	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eTriangleBuffer))->create<FTriangle>("MeshletTriangleBuffer" + m_definitions, EBufferUsageFlagBits::eStagingBuffer);
-	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eLodBuffer))->create<FMeshLod>("MeshLodBuffer" + m_definitions, EBufferUsageFlagBits::eStagingBuffer);
+	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eVertexRemapBuffer))->create<u32>("MeshletVerticesBuffer" + m_definitions, EBufferUsageFlagBits::eStorageBuffer);
+	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eBoundsBuffer))->create<FGeometryDrawBounds>("MeshletBoundsBuffer" + m_definitions, EBufferUsageFlagBits::eStorageBuffer);
+	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eTriangleBuffer))->create<FTriangle>("MeshletTriangleBuffer" + m_definitions, EBufferUsageFlagBits::eStorageBuffer);
+	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eLodBuffer))->create<FMeshLod>("MeshLodBuffer" + m_definitions, EBufferUsageFlagBits::eStorageBuffer);
 
 	return;
 }
@@ -259,13 +259,16 @@ const FVertexRange& CVertexHandler::addMeshData(const utl::vector<FVertexAttribu
 	lod.meshletBoundsOffset = bounds_buffer->size();
 	lod.meshletCount = addMeshlets(attributes_data, indices);
 
+	lod.firstIndex = m_indexBuffer.elementCount;
+	lod.indexCount = addIndices(indices);
+	lod.firstVertex = m_vertexBuffer.elementCount;
+	lod.vertexCount = addVertices(attributes_data);
+
+
 	auto& new_range = m_cachedRanges[input_hash];
 	new_range.firstLod = lod_buffer->size();
 	new_range.lodCount = 1;
-	new_range.firstIndex = m_indexBuffer.elementCount;
-	new_range.indexCount = addIndices(indices);
-	new_range.firstVertex = m_vertexBuffer.elementCount;
-	new_range.vertexCount = addVertices(attributes_data);
+	
 
 	lod_buffer->emplace_back(lod);
 

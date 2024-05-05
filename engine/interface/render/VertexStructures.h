@@ -92,8 +92,6 @@ namespace engine
 
 		struct FVertexRange
 		{
-			u64 firstIndex, indexCount;
-			u64 firstVertex, vertexCount;
 			u64 firstLod, lodCount;
 		};
 

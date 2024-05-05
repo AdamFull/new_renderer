@@ -17,7 +17,7 @@ namespace engine
 			u64 registerFrustum(ERenderGeometryCullerType type) override;
 			void updateFrustum(u64 frustum_id, const glm::mat4& view, const glm::mat4& projection) override;
 
-			void addDrawGeometry(const utl::vector<FGeometryRawBatch>& new_geometry) override;
+			void addDrawGeometry(const utl::vector<FGeometryBatch>& new_geometry) override;
 
 			void begin(f32 dt) override;
 			void end() override;
@@ -36,6 +36,7 @@ namespace engine
 
 			void addMaterial(const FMaterial& material) override;
 			void addMaterials(const utl::vector<FMaterial>& materials) override;
+			FMaterial& getMaterial(u64 index) override;
 			const FMaterial& getMaterial(u64 index) const override;
 
 			void addMesh(const FMesh& mesh) override;
@@ -43,6 +44,7 @@ namespace engine
 
 			const std::unique_ptr<IGPUVector>& getDrawBuffer(ERenderBufferIndices buffer_index) override;
 			const utl::vector<FGeometryCPUBatch>& getGeometryBatches() const override;
+			const utl::vector<FDrawInfo>& getDrawCommandByType(ERenderGeometryCullerType type) const override;
 
 			FPostProcess& getPostProcessingData() override;
 
@@ -52,10 +54,11 @@ namespace engine
 			void prepareIndirectCommands();
 			void prepareMeshletCommands();
 		protected:
+			utl::hash_map<ERenderGeometryCullerType, utl::vector<FDrawInfo>> m_perCullerDrawCommands{};
 			utl::vector<FFrustum> m_vSceneFrustums{};
 			utl::vector<FCullingInfo> m_vCullingInfo{};
 
-			utl::vector<FGeometryRawBatch> m_vRawGeometryBatches{};
+			utl::vector<FGeometryBatch> m_vRawGeometryBatches{};
 			utl::vector<FGeometryCPUBatch> m_vGeometryBatches{};
 			utl::vector<FMaterial> m_vMaterials{};
 			bool m_bMaterialsChanged{ true };

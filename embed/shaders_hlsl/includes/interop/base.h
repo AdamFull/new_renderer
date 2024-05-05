@@ -136,12 +136,6 @@ namespace engine {
 #endif // HAS_SKIN
 		};
 
-		struct FGeometryGPUCullInfo
-		{
-			uint32_t instanceID;
-			uint32_t frustumID;
-		};
-
 		struct FGeometryDrawBounds
 		{
 #ifdef __cplusplus

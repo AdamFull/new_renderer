@@ -22,34 +22,29 @@
 
 	code: 
 	"""
-		#define GROUP_SIZE 256
+		#define GROUP_SIZE 1
 
 		layout(local_size_x = GROUP_SIZE) in;
 
-		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer CullingInfo { FGeometryGPUCullInfo culling_infos[]; };
-		layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer SceneFrustum { vec4 scene_frustums[]; };
-
-		//layout(std430, set = 2, binding = 0) readonly buffer VertexBuffer
-		//{
-		//	RawVertex vertex_buffer[];
-		//};
-		//
-		//layout(std430, set = 2, binding = 1) readonly buffer IndexBuffer
-		//{
-		//	Index index_buffer[];
-		//};
-
-		layout(push_constant) uniform References
+		layout(std140, set = 1, binding = 0) uniform GeometryBuffers
 		{
-			CullingInfo culling;
-			SceneFrustum frustum;
-		} references;
+			RawVertexBuffer vb;
+			RawIndexBuffer ib;
+			MeshletBuffer mb; 
+			MeshletVertexRemapBuffer vrb;
+			MeshletBoundsBuffer bb;
+			MeshletTriangleBuffer tb;
+			MeshLodBuffer lb;
+
+			uint32_t lastIndex;
+			uint32_t lastVertex;
+		};
 
 		bool checkObjectInFrustum(in vec3 minExtents, in vec3 maxExtents, in uint32_t frustumID)
 		{
 			for (uint32_t i = 0; i < 6; i++)
 			{
-				vec4 edge = references.frustum.scene_frustums[frustumID * 6u + i];
+				vec4 edge = frustumSidesBuffer.sides[frustumID * 6u + i];
 				if (   edge.x * minExtents.x + edge.y * minExtents.y + edge.z * minExtents.z + edge.w <= 0.0f
 					&& edge.x * maxExtents.x + edge.y * minExtents.y + edge.z * minExtents.z + edge.w <= 0.0f
 					&& edge.x * minExtents.x + edge.y * maxExtents.y + edge.z * minExtents.z + edge.w <= 0.0f
@@ -65,22 +60,58 @@
 
 		void main() 
 		{
-			uint gID = gl_GlobalInvocationID.x;
+			uint global_draw_index = gl_GlobalInvocationID.x;
 
-			if (gID >= frameData.rawCommandsCount) 
+			// Clear count data from prev frame
+			if(global_draw_index == 0)
+			{
+				for(int i = 0; i < frameData.cullerCount; ++i)
+					indirectCountBuffer.indices[i] = 0;
+			}
+
+			groupMemoryBarrier();
+
+			if (global_draw_index >= frameData.rawCommandsCount) 
 				return;
 
-			//FGeometryGPUCullInfo cull_info = references.culling.culling_infos[gID];
-			//FSceneNode node = nodeBuffer.nodes[cull_info.instanceID];
-			//FDrawIndexedIndirectData command = indirectCommandBuffer.indexed_draw_commands[gID];
-			//
-			//vec4 minExtents = node.model * vec4(command.aabb.min, 1.f);
-			//minExtents = vec4(minExtents.xyz / minExtents.w, 1.0);
-			//
-			//vec4 maxExtents = node.model * vec4(command.aabb.max, 1.f);
-			//maxExtents = vec4(maxExtents.xyz / maxExtents.w, 1.0);
-			//
-			//indirectCommandBuffer.indexed_draw_commands[gID].instanceCount = int(checkObjectInFrustum(minExtents.xyz, maxExtents.xyz, cull_info.frustumID));
+			// Sample info about current draw comand
+			FGeometryBatch draw_info = rawDrawInfoBuffer.infos[global_draw_index];
+			FSceneNode node = nodeBuffer.nodes[draw_info.nodeID];
+			FMesh mesh = meshBuffer.meshes[draw_info.meshID];
+			
+			// output_index = culler_counter + draw_offset;
+			uint draw_offset = frameData.maxCommandsCount * draw_info.cullerID;
+			uint culler_counter = indirectCountBuffer.indices[draw_info.cullerID];
+			
+			// Calculate bounding box
+			vec4 minExtents = node.model * vec4(mesh.bounds.min, 1.f);
+			minExtents = vec4(minExtents.xyz / minExtents.w, 1.0);
+			
+			vec4 maxExtents = node.model * vec4(mesh.bounds.max, 1.f);
+			maxExtents = vec4(maxExtents.xyz / maxExtents.w, 1.0);
+			
+			// Do frustum culling
+			//if(checkObjectInFrustum(minExtents.xyz, maxExtents.xyz, draw_info.cullerID))
+			{	
+				//uint output_index = draw_offset + culler_counter;
+				uint output_index = global_draw_index;
+				drawInfoBuffer.infos[output_index] = draw_info;
+			
+				// Construct  indirect draw command
+				// TODO: In future thing about how to implement instancing here
+				
+				uint selected_lod = 0;
+				FMeshLod lod = lb.lods[mesh.lodOffset + selected_lod];
+				
+				indirectCommandBuffer.commands[output_index].indexCount = lod.indexCount == 0 ? lastIndex : lod.indexCount;
+				indirectCommandBuffer.commands[output_index].instanceCount = 1;
+				indirectCommandBuffer.commands[output_index].firstIndex = lod.firstIndex;
+				indirectCommandBuffer.commands[output_index].vertexOffset = int(lod.firstVertex);
+				indirectCommandBuffer.commands[output_index].firstInstance = 0;
+			
+				// Increment counter for this draw
+				atomicAdd(indirectCountBuffer.indices[draw_info.cullerID], 1);
+			}
 		}
 	""";
 }

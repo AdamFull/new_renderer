@@ -41,41 +41,49 @@ void CDirectionalShadowMapPass::_render(const FRenderFrameInfo& frame_info)
 
 	IVertexHandler* last_vbo{ nullptr };
 
+	const auto& draw_infos = render_world->getDrawCommandByType(ERenderGeometryCullerType::eSpotShadow);
 	const auto& geometry_batches = render_world->getGeometryBatches();
-	u64 drawcall_id{ 0ull };
-	for (const auto& batch : geometry_batches)
-	{
-		bool was_vbo_rebinded{ false };
-		auto& vbo = m_pRenderInterface->getVertexHandler(batch.vboID);
-		if (!last_vbo || vbo.get() != last_vbo)
-		{
-			last_vbo = vbo.get();
-			last_vbo->bind(m_queue);
-			was_vbo_rebinded = true;
-		}
 
-		if (last_vbo)
+	for (u64 idx = 0ull; idx < draw_infos.size(); ++idx)
+	{
+		const auto& draw_info = draw_infos[idx];
+		auto begin_range = geometry_batches.begin() + draw_info.first;
+		auto end_range = begin_range + draw_info.count;
+
+		u64 drawcall_id{ 0ull };
+		for (auto it = begin_range; it != end_range; ++it)
 		{
-			auto& shader = getShaderByVBO(last_vbo);
-			if (was_vbo_rebinded)
+			const auto& batch = *it;
+
+			bool was_vbo_rebinded{ false };
+			auto& vbo = m_pRenderInterface->getVertexHandler(batch.vboID);
+			if (!last_vbo || vbo.get() != last_vbo)
 			{
-				shader->flushDescriptors();
-				shader->bind(m_queue);
+				last_vbo = vbo.get();
+				last_vbo->bind(m_queue);
+				was_vbo_rebinded = true;
 			}
 
-			auto& shadow_data = shader->getConstantBlock(shader_bindings::shader_data);
-			shadow_data->set(shader_bindings::call_id_label, utl::cast<u32>(drawcall_id));
-			for (u64 shadow_index = 0ull; shadow_index < world_stats.spotShadowCount; ++shadow_index)
+			if (last_vbo)
 			{
-				shadow_data->set(shader_bindings::shadow_index_label, utl::cast<u32>(shadow_index));
-				shadow_data->set(shader_bindings::layer_label, utl::cast<i32>(shadow_index));
+				auto& shader = getShaderByVBO(last_vbo);
+				if (was_vbo_rebinded)
+				{
+					shader->flushDescriptors();
+					shader->bind(m_queue);
+				}
+
+				auto& shadow_data = shader->getConstantBlock(shader_bindings::shader_data);
+				shadow_data->set(shader_bindings::call_id_label, utl::cast<u32>(drawcall_id));
+				shadow_data->set(shader_bindings::shadow_index_label, utl::cast<u32>(idx));
+				shadow_data->set(shader_bindings::layer_label, utl::cast<i32>(idx));
 
 				shader->flushConstants(m_queue);
 				render_context->draw(m_queue, batch.command);
 			}
-		}
 
-		drawcall_id += batch.command.count;
+			drawcall_id += draw_info.drawCount;
+		}
 	}
 }
 

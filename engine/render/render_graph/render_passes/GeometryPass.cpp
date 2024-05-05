@@ -34,12 +34,18 @@ void CGeometryPass::_render(const FRenderFrameInfo& frame_info)
 
 	auto& render_world = m_pRenderInterface->getRenderWorld();
 
+	const auto& draw_info = render_world->getDrawCommandByType(ERenderGeometryCullerType::eScene).front();
 	const auto& geometry_batches = render_world->getGeometryBatches();
+
+	auto begin_range = geometry_batches.begin() + draw_info.first;
+	auto end_range = begin_range + draw_info.count;
 
 	u64 drawcall_id{ 0ull };
 	IVertexHandler* last_vbo{ nullptr };
-	for (const auto& batch : geometry_batches)
+	for (auto it = begin_range; it != end_range; ++it)
 	{
+		const auto& batch = *it;
+
 		bool was_vbo_rebinded{ false };
 		auto& vbo = m_pRenderInterface->getVertexHandler(batch.vboID);
 		if (!last_vbo || vbo.get() != last_vbo)
@@ -73,7 +79,7 @@ void CGeometryPass::_render(const FRenderFrameInfo& frame_info)
 			shader->flushConstants(m_queue);
 
 			render_context->draw(m_queue, batch.command);
-			drawcall_id += batch.command.count;
+			drawcall_id += draw_info.drawCount;
 		}
 	}
 }

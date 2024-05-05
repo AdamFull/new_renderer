@@ -3,8 +3,6 @@
 #include <engine/interface/render/VertexStructures.h>
 #include <embed/shaders/includes/interop/base.h>
 
-#define MAX_LEVEL_OF_DETAIL 4
-
 namespace engine
 {
 	namespace world
@@ -31,7 +29,7 @@ namespace engine
 					dims.radius = glm::distance(min, max) / 2.0f;
 				}
 
-				std::array<render::FVertexRange, MAX_LEVEL_OF_DETAIL> lods{};
+				render::FVertexRange vertexRange{};
 
 				size_t materialId{ ~0ull };
 				size_t vboId{ ~0ull };

@@ -48,7 +48,7 @@
 		void main() 
 		{
 			uint32_t draw_index = drawID + instanceID;
-			FDrawMeshinfo draw_info = drawInfoBuffer.infos[draw_index];
+			FGeometryBatch draw_info = drawInfoBuffer.infos[draw_index];
 			FMesh mesh = meshBuffer.meshes[draw_info.meshID];
 			FMaterial material = materialBuffer.materials[mesh.materialID];
 			

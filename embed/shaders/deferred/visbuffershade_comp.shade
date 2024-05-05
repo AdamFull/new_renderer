@@ -24,6 +24,8 @@
 	"""
 		layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
+		#define DISABLE_SHADOWS
+
 		layout(set = 2, binding = 0) uniform writeonly image2D write_color;
 		layout(set = 2, binding = 1) uniform sampler2D brdf_lut;
 		layout(set = 2, binding = 2) uniform samplerCube irradiance_cube;
@@ -31,9 +33,11 @@
 		layout(set = 2, binding = 4) uniform sampler2D depth_buffer;
 		layout(set = 2, binding = 5) uniform sampler2D prev_frame_color;
 
+#if !defined(DISABLE_SHADOWS)
 		layout (set = 2, binding = 6) uniform sampler2DArrayShadow cascaded_shadowmap;
 		layout (set = 2, binding = 7) uniform sampler2DArrayShadow direct_shadowmap;
 		layout (set = 2, binding = 8) uniform samplerCubeArrayShadow omni_shadowmap;
+#endif
 
 		layout(push_constant) uniform UniformMeshData
 		{
@@ -150,11 +154,13 @@
 			vec3 color = specularContribution(ms.albedo, L, V, ms.normal, F0, ms.metallic, ms.roughness);
 		
 			float shadow_factor = 1.0;
+#if !defined(DISABLE_SHADOWS)
 			if(light.castShadows > 0 && light.shadowIndex > -1)
 			{
 				shadow_factor = getCascadeShadow(cascaded_shadowmap, light, va, ms, dither);
 				//shadow_factor = ScreenSpaceShadows(va.pos, light.direction, depth_buffer, 32, 0.02f, dither);
 			}
+#endif
 
 			return light.color * light.intencity * color * shadow_factor;
 		}
@@ -192,11 +198,13 @@
 			vec3 color = specularContribution(ms.albedo, L, V, ms.normal, F0, ms.metallic, ms.roughness);
 
 			float shadow_factor = 1.0;
+#if !defined(DISABLE_SHADOWS)
 			if(light.castShadows > 0 && light.shadowIndex > -1)
 			{
 				shadow_factor = getOmniShadow(omni_shadowmap, light, va, ms, dither);
 				//shadow_factor = ScreenSpaceShadows(va.pos, light.direction, depth_buffer, 32, 0.02f, dither);
 			}
+#endif
 		
 			return light.color * atten * color * light.intencity * shadow_factor;
 		}
@@ -239,11 +247,13 @@
 			angularAttenuation *= angularAttenuation;	
 
 			float shadow_factor = 1.0;
+#if !defined(DISABLE_SHADOWS)
 			if(light.castShadows > 0 && light.shadowIndex > -1)
 			{
 				shadow_factor = getDirectionalShadow(direct_shadowmap, light, va, ms, dither);
 				//shadow_factor = ScreenSpaceShadows(va.pos, light.direction, depth_buffer, 32, 0.02f, dither);
 			}
+#endif
 
 			return light.color * light.intencity * color * angularAttenuation * shadow_factor;
 		}

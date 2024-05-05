@@ -74,7 +74,7 @@
 			uint instID = vboinstData >> 16;
 
 			uint32_t draw_index = res.drawID + instID;
-			FDrawMeshinfo draw_info = drawInfoBuffer.infos[draw_index];
+			FGeometryBatch draw_info = drawInfoBuffer.infos[draw_index];
 			FMesh mesh = meshBuffer.meshes[draw_info.meshID];
 			
 			res.objID = draw_info.nodeID;

@@ -153,12 +153,6 @@ namespace engine {
 			VECTOR2 invSize;
 		};
 
-		struct FGeometryGPUCullInfo
-		{
-			uint32_t instanceID;
-			uint32_t frustumID;
-		};
-
 		struct FGeometryDrawBounds
 		{
 #ifdef __cplusplus
@@ -172,11 +166,20 @@ namespace engine {
 
 		struct FMeshLod
 		{
+			// Meshlet data
 			uint32_t meshletOffset;
 			uint32_t meshletVertexOffset;
 			uint32_t meshletTriangleOffset;
 			uint32_t meshletBoundsOffset;
 			uint32_t meshletCount;
+
+			// Default data
+			uint32_t firstIndex;
+			uint32_t indexCount;
+			uint32_t firstVertex; 
+			uint32_t vertexCount;
+
+			uint32_t pad;
 		}; // For lod buffer
 
 		struct FMesh
@@ -185,6 +188,10 @@ namespace engine {
 
 			uint32_t lodOffset;
 			uint32_t lodCount;
+
+			uint32_t pad;
+
+			FGeometryDrawBounds bounds;
 		};
 
 		struct FMeshlet
@@ -223,13 +230,6 @@ namespace engine {
 			uint32_t pad[3];
 		};
 
-		struct FDrawMeshinfo
-		{
-			uint32_t vboID;
-			uint32_t meshID;
-			uint32_t nodeID;
-		};
-
 		struct FClusterInfo
 		{
 			uint32_t drawID; // Index of FDrawMeshinfo
@@ -259,6 +259,14 @@ namespace engine {
 		{
 			uint32_t taskCount;
 			uint32_t firstTask;
+		};
+
+		struct FGeometryBatch
+		{
+			uint32_t vboID;
+			uint32_t meshID;
+			uint32_t nodeID;
+			uint32_t cullerID;
 		};
 
 		// Lights and shadows
@@ -422,6 +430,8 @@ namespace engine {
 			uint32_t directionalLightCount;
 			uint32_t pointLightCount;
 			uint32_t spotLightCount;
+			uint32_t cullerCount;
+			uint32_t maxCommandsCount;
 			uint32_t rawCommandsCount;
 			uint32_t defaultViewport;
 #ifdef __cplusplus
@@ -456,12 +466,14 @@ namespace engine {
 		REGISTER_OBJECT_ARRAY_BUFFER(MeshLodBuffer, FMeshLod, lods);
 
 		// GPU object representation
-		REGISTER_OBJECT_ARRAY_BUFFER(DrawInfoBuffer, FDrawMeshinfo, infos);
+		REGISTER_OBJECT_ARRAY_BUFFER(DrawInfoBuffer, FGeometryBatch, infos);
 		REGISTER_OBJECT_ARRAY_BUFFER(ClusterInfoBuffer, FClusterInfo, clusters);
+		REGISTER_OBJECT_ARRAY_BUFFER(FrustumSidesBuffer, VECTOR4, sides);
 
 		// Indirect data
 		REGISTER_OBJECT_ARRAY_BUFFER(IndirectTaskCommands, FDrawMeshIndirectData, commands);
 		REGISTER_OBJECT_ARRAY_BUFFER(IndirectIndexedComands, FDrawIndexedIndirectData, commands);
+		REGISTER_OBJECT_ARRAY_BUFFER(IndirectCountBuffer, uint32_t, indices);
 
 		// Other
 		REGISTER_OBJECT_ARRAY_BUFFER(TextureBindingRemap, uint32_t, remap);
@@ -488,9 +500,13 @@ namespace engine {
 			SpotShadows spotShadowBuffer;
 		
 			DrawInfoBuffer drawInfoBuffer;
+			DrawInfoBuffer rawDrawInfoBuffer;
+
 			ClusterInfoBuffer clusterBuffer;
+			FrustumSidesBuffer frustumSidesBuffer;
 
 			IndirectIndexedComands indirectCommandBuffer;
+			IndirectCountBuffer indirectCountBuffer;
 			IndirectTaskCommands indirectTaskCommandBuffer;
 
 			TextureBindingRemap textureRemapBuffer;

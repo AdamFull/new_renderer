@@ -144,6 +144,12 @@ namespace engine
 			}
 
 			template<class _Ty>
+			void erase(u64 count)
+			{
+				std::memset(at(0), 0, sizeof(_Ty) * count);
+			}
+
+			template<class _Ty>
 			_Ty& get(u64 index)
 			{
 				//assert(std::type_index(typeid(_Ty)) == m_elementType);

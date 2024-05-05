@@ -370,6 +370,7 @@ utl::vector<u32> CGLSLANGCompiler::compile(const std::string& shader_code, const
 	spvOptions.generateDebugInfo = !building_release;
 	spvOptions.disableOptimizer = !building_release;
 	spvOptions.optimizeSize = building_release;
+	spvOptions.disassemble = true;
 
 	spv::SpvBuildLogger logger;
 	GlslangToSpv(*program.getIntermediate(language), spirv, &logger, &spvOptions);

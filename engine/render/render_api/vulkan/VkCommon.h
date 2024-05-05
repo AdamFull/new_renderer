@@ -364,7 +364,7 @@ namespace engine
 				return vk::PipelineStageFlagBits2KHR::eComputeShader;
 			}
 
-			inline vk::AccessFlags2KHR get_translation_access_flags(ERenderResourceAccessFlagBits access_flag)
+			inline vk::AccessFlags2KHR get_translation_access_flags(EPassType pass_type, ERenderResourceAccessFlagBits access_flag)
 			{
 				constexpr const vk::AccessFlags2KHR read_flags = vk::AccessFlagBits2KHR::eShaderRead | vk::AccessFlagBits2KHR::eShaderStorageRead | vk::AccessFlagBits2KHR::eShaderSampledRead;
 				constexpr const vk::AccessFlags2KHR write_flags = vk::AccessFlagBits2KHR::eShaderWrite | vk::AccessFlagBits2KHR::eShaderStorageWrite;
@@ -372,7 +372,7 @@ namespace engine
 				switch (access_flag)
 				{
 				case engine::render::ERenderResourceAccessFlagBits::eNone: return vk::AccessFlagBits2KHR::eNone; break;
-				case engine::render::ERenderResourceAccessFlagBits::eRead: return read_flags | vk::AccessFlagBits2KHR::eIndirectCommandRead; break;
+				case engine::render::ERenderResourceAccessFlagBits::eRead: return read_flags | (pass_type != EPassType::eCompute ? vk::AccessFlagBits2KHR::eIndirectCommandRead : vk::AccessFlagBits2KHR::eNone); break;
 				case engine::render::ERenderResourceAccessFlagBits::eWrite: return write_flags; break;
 				}
 

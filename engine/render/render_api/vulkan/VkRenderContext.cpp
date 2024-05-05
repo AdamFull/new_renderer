@@ -1039,6 +1039,9 @@ void CVkRenderContext::processResourceBarriers(EQueueTypeFlagBits queue, const u
 		ERenderResourceAccessFlagBits dst_resource_access{};
 		unpackDependencyBarrier(resource_barrier.dependencyType, src_resource_access, dst_resource_access);
 
+		if (resource_barrier.resource.handle == 13)
+			int iiiii = 0;
+
 		if (resource_barrier.barrierType == ERenderResourceBarrierType::eMemory)
 		{
 			auto& memory_barrier = translation_info.memoryTranslationInfos.emplace_back();
@@ -1056,9 +1059,9 @@ void CVkRenderContext::processResourceBarriers(EQueueTypeFlagBits queue, const u
 			else
 			{
 				memory_barrier.srcStageMask = get_translation_stage_flags(resource_barrier.srcPassType);
-				memory_barrier.srcAccessMask = get_translation_access_flags(src_resource_access);
+				memory_barrier.srcAccessMask = get_translation_access_flags(resource_barrier.srcPassType, src_resource_access);
 				memory_barrier.dstStageMask = get_translation_stage_flags(resource_barrier.dstPassType);
-				memory_barrier.dstAccessMask = get_translation_access_flags(dst_resource_access);
+				memory_barrier.dstAccessMask = get_translation_access_flags(resource_barrier.dstPassType, dst_resource_access);
 			}
 		}
 		else
@@ -1117,9 +1120,9 @@ void CVkRenderContext::processResourceBarriers(EQueueTypeFlagBits queue, const u
 				buffer_translation_info.handle = buffer->handle;
 				buffer_translation_info.size = buffer->size;
 				buffer_translation_info.srcStageMask = get_translation_stage_flags(resource_barrier.srcPassType);
-				buffer_translation_info.srcAccessMask = get_translation_access_flags(src_resource_access);
+				buffer_translation_info.srcAccessMask = get_translation_access_flags(resource_barrier.srcPassType, src_resource_access);
 				buffer_translation_info.dstStageMask = get_translation_stage_flags(resource_barrier.dstPassType);
-				buffer_translation_info.dstAccessMask = get_translation_access_flags(dst_resource_access);
+				buffer_translation_info.dstAccessMask = get_translation_access_flags(resource_barrier.dstPassType, dst_resource_access);
 				translation_info.bufferTranslationInfos.emplace_back(buffer_translation_info);
 			}
 		}
@@ -1427,7 +1430,9 @@ void CVkRenderContext::draw(EQueueTypeFlagBits queue_type, const FIndirectGeomet
 	//current.drawMeshTasksIndirectEXT()
 
 	auto& indirect_command_buffer = m_pResources->get<FVkBuffer>(draw_info.bufferId);
-	current.drawIndexedIndirect(indirect_command_buffer->handle, draw_info.offset, draw_info.count, draw_info.stride);
+	auto& indirect_count_buffer = m_pResources->get<FVkBuffer>(draw_info.countBufferId);
+	current.drawIndexedIndirectCount(indirect_command_buffer->handle, draw_info.offset, indirect_count_buffer->handle, draw_info.countOffset, draw_info.maxDrawCount, draw_info.stride);
+	//current.drawIndexedIndirect(indirect_command_buffer->handle, draw_info.offset, draw_info.count, draw_info.stride);
 }
 
 void CVkRenderContext::dispatch(EQueueTypeFlagBits queue_type, const FDispatch2Info& dispatch_info, u64 subgroup_index)

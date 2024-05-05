@@ -41,7 +41,7 @@
 		void main() 
 		{
 			uint32_t draw_index = meshData.callID + gl_DrawIDARB + gl_InstanceIndex;
-			FDrawMeshinfo draw_info = drawInfoBuffer.infos[draw_index];
+			FGeometryBatch draw_info = drawInfoBuffer.infos[draw_index];
 
 			// Calculate skinned matrix from weights and joint indices of the current vertex
 			FSceneNode node = nodeBuffer.nodes[draw_info.nodeID];

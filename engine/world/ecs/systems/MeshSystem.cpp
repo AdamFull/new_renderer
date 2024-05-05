@@ -11,7 +11,7 @@
 using namespace engine::render;
 using namespace engine::world::ecs;
 
-void prepare_meshes_to_draw(const std::unique_ptr<IRenderWorld>& render_world, const utl::vector<FMeshPrimitive>& primitives, utl::vector<FGeometryRawBatch>& draw_commands, u32 node, u32 alpha_mode)
+void prepare_meshes_to_draw(const std::unique_ptr<IRenderWorld>& render_world, const utl::vector<FMeshPrimitive>& primitives, utl::vector<FGeometryBatch>& draw_commands, u32 node, u32 alpha_mode)
 {
 	auto& world_stats = render_world->getStats();
 
@@ -22,26 +22,23 @@ void prepare_meshes_to_draw(const std::unique_ptr<IRenderWorld>& render_world, c
 		if (material.alphaMode != alpha_mode)
 			continue;
 
-		auto& lod = primitive.lods[0ull];
-
 		auto& draw_command = draw_commands.emplace_back();
-		draw_command.drawInfo.vboID = primitive.vboId;
-		draw_command.drawInfo.meshID = world_stats.meshCount + meshes.size();
-		draw_command.drawInfo.nodeID = node;
-
-		draw_command.range.beginIndex = lod.firstIndex;
-		draw_command.range.indexCount = lod.indexCount;
-		draw_command.range.beginVertex = lod.firstVertex;
-		draw_command.range.vertexCount = lod.indexCount;
+		draw_command.vboID = primitive.vboId;
+		draw_command.meshID = world_stats.meshCount + meshes.size();
+		draw_command.nodeID = node;
 
 		auto& mesh = meshes.emplace_back();
 		mesh.materialID = primitive.materialId;
+		mesh.lodOffset = primitive.vertexRange.firstLod;
+		mesh.lodCount = primitive.vertexRange.lodCount;
+		mesh.bounds.min = primitive.dims.min;
+		mesh.bounds.max = primitive.dims.max;
 	}
 
 	render_world->addMeshes(meshes);
 }
 
-void prepare_draw_commands(const std::unique_ptr<IRenderWorld>& render_world, engine::world::CSceneGraph* scene_graph, utl::vector<FGeometryRawBatch>& draw_commands, u32 alpha_mode)
+void prepare_draw_commands(const std::unique_ptr<IRenderWorld>& render_world, engine::world::CSceneGraph* scene_graph, utl::vector<FGeometryBatch>& draw_commands, u32 alpha_mode)
 {
 	auto& registry = scene_graph->getRegistry();
 	auto root = scene_graph->getRoot();
@@ -85,7 +82,7 @@ void CMeshSystem::__update(f32 fDt)
 
 	auto& render_world = m_pRenderInterface->getRenderWorld();
 
-	utl::vector<FGeometryRawBatch> draw_commands{};
+	utl::vector<FGeometryBatch> draw_commands{};
 	prepare_draw_commands(render_world, m_pSceneGraph, draw_commands, utl::enum_cast(EAlphaMode::eOpaque));
 	prepare_draw_commands(render_world, m_pSceneGraph, draw_commands, utl::enum_cast(EAlphaMode::eMask));
 	prepare_draw_commands(render_world, m_pSceneGraph, draw_commands, utl::enum_cast(EAlphaMode::eBlend));

@@ -55,6 +55,8 @@ namespace engine
 			constexpr const u64 bb_label = utl::fnv1a_64_hash_cstr("bb");
 			constexpr const u64 tb_label = utl::fnv1a_64_hash_cstr("tb");
 			constexpr const u64 lb_label = utl::fnv1a_64_hash_cstr("lb");
+			constexpr const u64 last_index_label = utl::fnv1a_64_hash_cstr("lastIndex");
+			constexpr const u64 last_vertex_label = utl::fnv1a_64_hash_cstr("lastVertex");
 		}
 			
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -93,6 +95,8 @@ namespace engine
 				{ shader_bindings::bb_label , "bb" },
 				{ shader_bindings::tb_label , "tb" },
 				{ shader_bindings::lb_label , "lb" },
+				{ shader_bindings::last_index_label , "lastIndex" },
+				{ shader_bindings::last_vertex_label , "lastVertex" },
 			};
 
 			constexpr const char* find(u64 key) 
@@ -126,8 +130,10 @@ namespace engine
 			// Culling and draw buffers
 			eMeshBuffer,
 			eDrawMeshInfoBuffer,
+			eRawDrawMeshInfoBuffer,
 			eFrustumBuffer,
 			eDrawCommandBuffer,
+			eCountBuffer,
 			eMeshCommandBuffer,
 			eClusterInfoBuffer,
 			// Other
@@ -275,6 +281,13 @@ namespace engine
 			ERenderGeometryCullerType type{};
 		};
 
+		struct FDrawInfo
+		{
+			u64 first{ 0ull };
+			u64 count{ 0ull };
+			u64 drawCount{ 0ull };
+		};
+
 		struct FRenderDataPacket
 		{
 			FRenderDataPacket()
@@ -299,6 +312,8 @@ namespace engine
 			u64 meshCount{ 0ull };
 			u64 matricesCount{ 0ull };
 
+			u64 cullerCount{ 0ull };
+			u64 maxDrawCommands{ 0ull };
 			u64 drawCommandCount{ 0ull };
 		};
 
@@ -412,7 +427,7 @@ namespace engine
 			virtual u64 registerFrustum(ERenderGeometryCullerType type) = 0;
 			virtual void updateFrustum(u64 frustum_id, const glm::mat4& view, const glm::mat4& projection) = 0;
 
-			virtual void addDrawGeometry(const utl::vector<FGeometryRawBatch>& new_geometry) = 0;
+			virtual void addDrawGeometry(const utl::vector<FGeometryBatch>& new_geometry) = 0;
 
 			virtual void begin(f32 dt) = 0;
 			virtual void end() = 0;
@@ -431,6 +446,7 @@ namespace engine
 
 			virtual void addMaterial(const FMaterial& material) = 0;
 			virtual void addMaterials(const utl::vector<FMaterial>& materials) = 0;
+			virtual FMaterial& getMaterial(u64 index) = 0;
 			virtual const FMaterial& getMaterial(u64 index) const = 0;
 
 			virtual void addMesh(const FMesh& mesh) = 0;
@@ -440,6 +456,7 @@ namespace engine
 			//virtual const utl::vector<std::unique_ptr<IBufferObject>>& getDrawBuffers() = 0;
 
 			virtual const utl::vector<FGeometryCPUBatch>& getGeometryBatches() const = 0;
+			virtual const utl::vector<FDrawInfo>& getDrawCommandByType(ERenderGeometryCullerType type) const = 0;
 
 			virtual FPostProcess& getPostProcessingData() = 0;
 
