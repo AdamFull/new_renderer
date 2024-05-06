@@ -22,7 +22,7 @@
 
 	code: 
 	"""
-		#define GROUP_SIZE 1
+		#define GROUP_SIZE 64
 
 		layout(local_size_x = GROUP_SIZE) in;
 
@@ -80,8 +80,6 @@
 			FMesh mesh = meshBuffer.meshes[draw_info.meshID];
 			
 			// output_index = culler_counter + draw_offset;
-			uint draw_offset = frameData.maxCommandsCount * draw_info.cullerID;
-			uint culler_counter = indirectCountBuffer.indices[draw_info.cullerID];
 			
 			// Calculate bounding box
 			vec4 minExtents = node.model * vec4(mesh.bounds.min, 1.f);
@@ -91,10 +89,13 @@
 			maxExtents = vec4(maxExtents.xyz / maxExtents.w, 1.0);
 			
 			// Do frustum culling
-			//if(checkObjectInFrustum(minExtents.xyz, maxExtents.xyz, draw_info.cullerID))
+			if(checkObjectInFrustum(minExtents.xyz, maxExtents.xyz, draw_info.cullerID))
 			{	
-				//uint output_index = draw_offset + culler_counter;
-				uint output_index = global_draw_index;
+				uint draw_offset = frameData.maxCommandsCount * draw_info.cullerID;
+				uint culler_counter = atomicAdd(indirectCountBuffer.indices[draw_info.cullerID], 1);
+
+				uint output_index = draw_offset + culler_counter;
+				//uint output_index = global_draw_index;
 				drawInfoBuffer.infos[output_index] = draw_info;
 			
 				// Construct  indirect draw command
@@ -108,9 +109,6 @@
 				indirectCommandBuffer.commands[output_index].firstIndex = lod.firstIndex;
 				indirectCommandBuffer.commands[output_index].vertexOffset = int(lod.firstVertex);
 				indirectCommandBuffer.commands[output_index].firstInstance = 0;
-			
-				// Increment counter for this draw
-				atomicAdd(indirectCountBuffer.indices[draw_info.cullerID], 1);
 			}
 		}
 	""";

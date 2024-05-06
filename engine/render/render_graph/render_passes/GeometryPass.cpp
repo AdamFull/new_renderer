@@ -33,6 +33,7 @@ void CGeometryPass::_render(const FRenderFrameInfo& frame_info)
 	render_context->setScissorRect(0, 0, frame_info.renderRect.size.x, frame_info.renderRect.size.y);
 
 	auto& render_world = m_pRenderInterface->getRenderWorld();
+	const auto& world_stats = render_world->getStats();
 
 	const auto& draw_info = render_world->getDrawCommandByType(ERenderGeometryCullerType::eScene).front();
 	const auto& geometry_batches = render_world->getGeometryBatches();
@@ -40,7 +41,7 @@ void CGeometryPass::_render(const FRenderFrameInfo& frame_info)
 	auto begin_range = geometry_batches.begin() + draw_info.first;
 	auto end_range = begin_range + draw_info.count;
 
-	u64 drawcall_id{ 0ull };
+	u64 drawcall_id{ draw_info.cullerID * world_stats.maxDrawCommands };
 	IVertexHandler* last_vbo{ nullptr };
 	for (auto it = begin_range; it != end_range; ++it)
 	{

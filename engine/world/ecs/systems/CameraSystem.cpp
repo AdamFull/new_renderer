@@ -63,7 +63,12 @@ void CCameraSystem::__update(f32 fDt)
 			render_packet->camera.nearp = camera.nearPlane;
 			render_packet->camera.farp = camera.farPlane;
 
-			//render_world->updateFrustum(camera.frustumID, camera.view, camera.projection);
+			auto& render_graph = m_pRenderInterface->getRenderGraph();
+			const auto& viewport = render_graph->getDefaultViewport();
+
+			//glm::perspective(render_packet->camera.fov, aspect, render_packet->camera.nearp, render_packet->camera.farp);
+
+			render_world->updateFrustum(camera.frustumID, camera.view, viewport.projection);
 			break;
 		}
 	}

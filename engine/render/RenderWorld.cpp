@@ -314,6 +314,7 @@ void CRenderWorld::prepareIndirectCommands()
 		auto& draw_info = draw_infos.emplace_back();
 		draw_info.first = m_vGeometryBatches.size();
 		draw_info.drawCount = m_vRawGeometryBatches.size();
+		draw_info.cullerID = culler.cullerID;
 
 		utl::vector<FGeometryCPUBatch> batches{};
 		for (const auto& batch : m_vRawGeometryBatches)

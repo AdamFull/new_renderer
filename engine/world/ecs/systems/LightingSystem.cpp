@@ -49,7 +49,9 @@ void CLightingSystem::__create()
 		{
 			if (light.castShadows && shadow_count < max_point_light_shadow_count)
 			{
-				light.frustumID = render_world->registerFrustum(ERenderGeometryCullerType::eOmniShadow);
+				light.frustumIDs.resize(6ull);
+				for(u64 idx = 0ull; idx < 6ull; ++idx)
+					light.frustumIDs[idx] = render_world->registerFrustum(ERenderGeometryCullerType::eOmniShadow);
 				shadow_count++;
 			}
 		}

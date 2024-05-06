@@ -50,7 +50,7 @@ void COmnilShadowMapPass::_render(const FRenderFrameInfo& frame_info)
 		auto begin_range = geometry_batches.begin() + draw_info.first;
 		auto end_range = begin_range + draw_info.count;
 
-		u64 drawcall_id{ 0ull };
+		u64 drawcall_id{ draw_info.cullerID * world_stats.maxDrawCommands };
 		for (auto it = begin_range; it != end_range; ++it)
 		{
 			const auto& batch = *it;

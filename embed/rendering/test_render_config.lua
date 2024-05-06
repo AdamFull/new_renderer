@@ -489,41 +489,41 @@ do
 end
 
 -- Shadow passes
---do
---    local pass_ci = make_graphics_pass(RenderingType.csm, QueueType.graphics, "lighting:unidirectional_shadow:CASCADED_SHADOW")
---    pass_ci:set_viewport("cascaded_shadows_viewport")
---    pass_ci:set_depth_target("cascaded_shadows_target")
---
---    pass_ci:add_read_resource("GeometryBatches")
---    pass_ci:add_read_resource("IndexedDrawIndirectBuffer")
---    pass_ci:add_read_resource("IndirectCountBuffer") 
---
---    render_graph:add_render_pass("cascaded_shadow_map_pass", pass_ci)
---end
---
---do
---    local pass_ci = make_graphics_pass(RenderingType.dsm, QueueType.graphics, "lighting:unidirectional_shadow")
---    pass_ci:set_viewport("spot_shadows_viewport")
---    pass_ci:set_depth_target("directional_shadows_target")
---
---    pass_ci:add_read_resource("GeometryBatches")
---    pass_ci:add_read_resource("IndexedDrawIndirectBuffer")
---    pass_ci:add_read_resource("IndirectCountBuffer")
---
---    render_graph:add_render_pass("spot_shadow_map_pass", pass_ci)
---end
---
---do
---    local pass_ci = make_graphics_pass(RenderingType.osm, QueueType.graphics, "lighting:unidirectional_shadow:OMNI_SHADOW")
---    pass_ci:set_viewport("omni_shadows_viewport")
---    pass_ci:set_depth_target("omni_shadows_target")
---
---    pass_ci:add_read_resource("GeometryBatches")
---    pass_ci:add_read_resource("IndexedDrawIndirectBuffer")
---    pass_ci:add_read_resource("IndirectCountBuffer")
---
---    render_graph:add_render_pass("omni_shadow_map_pass", pass_ci)
---end
+do
+    local pass_ci = make_graphics_pass(RenderingType.csm, QueueType.graphics, "lighting:unidirectional_shadow:CASCADED_SHADOW")
+    pass_ci:set_viewport("cascaded_shadows_viewport")
+    pass_ci:set_depth_target("cascaded_shadows_target")
+
+    pass_ci:add_read_resource("GeometryBatches")
+    pass_ci:add_read_resource("IndexedDrawIndirectBuffer")
+    pass_ci:add_read_resource("IndirectCountBuffer") 
+
+    render_graph:add_render_pass("cascaded_shadow_map_pass", pass_ci)
+end
+
+do
+    local pass_ci = make_graphics_pass(RenderingType.dsm, QueueType.graphics, "lighting:unidirectional_shadow")
+    pass_ci:set_viewport("spot_shadows_viewport")
+    pass_ci:set_depth_target("directional_shadows_target")
+
+    pass_ci:add_read_resource("GeometryBatches")
+    pass_ci:add_read_resource("IndexedDrawIndirectBuffer")
+    pass_ci:add_read_resource("IndirectCountBuffer")
+
+    render_graph:add_render_pass("spot_shadow_map_pass", pass_ci)
+end
+
+do
+    local pass_ci = make_graphics_pass(RenderingType.osm, QueueType.graphics, "lighting:unidirectional_shadow:OMNI_SHADOW")
+    pass_ci:set_viewport("omni_shadows_viewport")
+    pass_ci:set_depth_target("omni_shadows_target")
+
+    pass_ci:add_read_resource("GeometryBatches")
+    pass_ci:add_read_resource("IndexedDrawIndirectBuffer")
+    pass_ci:add_read_resource("IndirectCountBuffer")
+
+    render_graph:add_render_pass("omni_shadow_map_pass", pass_ci)
+end
 
 -- visibility buffer write
 do
@@ -553,9 +553,9 @@ do
     pass_ci:bind_read_resource("brdf_lut", "brdf_lut_target")
     pass_ci:bind_read_resource("irradiance_cube", "irradiance_cube_target")
     pass_ci:bind_read_resource("prefiltered_cube", "prefiltered_cube_target")
-    --pass_ci:bind_read_resource("cascaded_shadowmap", "cascaded_shadows_target")
-    --pass_ci:bind_read_resource("direct_shadowmap", "directional_shadows_target")
-    --pass_ci:bind_read_resource("omni_shadowmap", "omni_shadows_target")
+    pass_ci:bind_read_resource("cascaded_shadowmap", "cascaded_shadows_target")
+    pass_ci:bind_read_resource("direct_shadowmap", "directional_shadows_target")
+    pass_ci:bind_read_resource("omni_shadowmap", "omni_shadows_target")
     pass_ci:bind_read_resource("depth_buffer", "zbuffer_depth_target")
 
     pass_ci:add_read_resource("GeometryBatches")

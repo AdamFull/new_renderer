@@ -286,6 +286,7 @@ namespace engine
 			u64 first{ 0ull };
 			u64 count{ 0ull };
 			u64 drawCount{ 0ull };
+			u64 cullerID{ 0ull };
 		};
 
 		struct FRenderDataPacket

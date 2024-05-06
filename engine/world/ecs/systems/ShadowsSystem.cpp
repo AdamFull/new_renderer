@@ -206,8 +206,9 @@ void CShadowsSystem::__update(f32 fDt)
 
 				for (auto it = shadow_matrices.begin() + shadow_commit.firstMatrix; it != shadow_matrices.end(); ++it)
 				{
+					u64 idx = std::distance(shadow_matrices.begin(), it) - shadow_commit.firstMatrix;
 					auto& view = *it;
-					//render_world->updateFrustum(light.frustumID, view, shadowProj);
+					render_world->updateFrustum(light.frustumIDs[idx], view, shadowProj);
 					view = shadowProj * view;
 				}
 

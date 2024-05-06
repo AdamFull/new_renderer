@@ -84,7 +84,7 @@ void CComputeCullingPass::_execute(const FComputeFrameInfo& frame_info)
 			shader->flushConstants(m_queue);
 
 			FDispatch2Info dispatch_info{};
-			dispatch_info.divideByLocals = false;
+			dispatch_info.divideByLocals = true;
 			dispatch_info.globalSizes.x = world_stats.drawCommandCount;
 			dispatch_info.globalSizes.y = 1;
 			dispatch_info.globalSizes.z = 1;
