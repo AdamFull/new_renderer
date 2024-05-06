@@ -18,6 +18,7 @@ namespace engine
 				void __create() override;
 				void __update(float fDt) override;
 			private:
+				utl::hash_map<render::ERenderGeometryCullerType, utl::vector<utl::vector<u64>>> m_shadowCullers{};
 				render::IRenderInterface* m_pRenderInterface{ nullptr };
 			};
 		}

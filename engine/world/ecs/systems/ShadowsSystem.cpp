@@ -26,7 +26,36 @@ CShadowsSystem::CShadowsSystem(CSceneGraph* scenegraph, IRenderInterface* render
 
 void CShadowsSystem::__create()
 {
-	TRACY_PROFILE_FUNCTION();
+	auto& render_world = m_pRenderInterface->getRenderWorld();
+
+	{
+		auto& culler_group = m_shadowCullers[ERenderGeometryCullerType::eCascadedShadow];
+		for (u64 caster_id = 0ull; caster_id < max_directional_light_shadow_count; ++caster_id)
+		{
+			auto& culler_list = culler_group.emplace_back();
+			for (u64 frustum_id = 0ull; frustum_id < cascade_shadow_map_cascade_count; ++frustum_id)
+				culler_list.emplace_back(render_world->registerFrustum(ERenderGeometryCullerType::eCascadedShadow));
+		}
+	}
+
+	{
+		auto& culler_group = m_shadowCullers[ERenderGeometryCullerType::eOmniShadow];
+		for (u64 caster_id = 0ull; caster_id < max_point_light_shadow_count; ++caster_id)
+		{
+			auto& culler_list = culler_group.emplace_back();
+			for (u64 frustum_id = 0ull; frustum_id < 6u; ++frustum_id)
+				culler_list.emplace_back(render_world->registerFrustum(ERenderGeometryCullerType::eOmniShadow));
+		}
+	}
+
+	{
+		auto& culler_group = m_shadowCullers[ERenderGeometryCullerType::eSpotShadow];
+		for (u64 caster_id = 0ull; caster_id < max_spot_light_shadow_count; ++caster_id)
+		{
+			auto& culler_list = culler_group.emplace_back();
+			culler_list.emplace_back(render_world->registerFrustum(ERenderGeometryCullerType::eSpotShadow));
+		}
+	}
 }
 
 void CShadowsSystem::__update(f32 fDt)
@@ -58,6 +87,8 @@ void CShadowsSystem::__update(f32 fDt)
 		f32 range = max_z - min_z;
 		f32 ratio = max_z / min_z;
 
+		auto& culler_group = m_shadowCullers[ERenderGeometryCullerType::eCascadedShadow];
+
 		auto view = registry->view<FTransformComponent, FBaseComponent, FDirectionalLightComponent>();
 		for (auto [entity, ltransform, base, light] : view.each())
 		{
@@ -69,6 +100,8 @@ void CShadowsSystem::__update(f32 fDt)
 			if (light.castShadows && base.enabled && world_stats.cascadedShadowCount < max_directional_light_shadow_count)
 			{
 				FCascadedShadowCommit shadow_commit{};
+
+				auto& culler_list = culler_group[world_stats.cascadedShadowCount];;
 
 				// Apply shadow matrices range start
 				shadow_commit.firstMatrix = world_stats.matricesCount + shadow_matrices.size();
@@ -160,7 +193,7 @@ void CShadowsSystem::__update(f32 fDt)
 
 					lastSplitDist = cascadeSplits[i];
 
-					render_world->updateFrustum(light.frustumIDs[i], lightViewMatrix, lightProjectionMatrix);
+					render_world->updateFrustum(culler_list[i], lightViewMatrix, lightProjectionMatrix);
 				}
 
 				shadow_commit.index = light_count;
@@ -178,6 +211,8 @@ void CShadowsSystem::__update(f32 fDt)
 
 	// Calculate omni shadows
 	{
+		auto& culler_group = m_shadowCullers[ERenderGeometryCullerType::eOmniShadow];
+
 		u64 light_count{ 0ull };
 		auto view = registry->view<FTransformComponent, FBaseComponent, FPointLightComponent>();
 		for (auto [entity, ltransform, base, light] : view.each())
@@ -187,6 +222,8 @@ void CShadowsSystem::__update(f32 fDt)
 			//light.castShadows = light_count % 2;
 			if (light.castShadows && base.enabled && world_stats.omniShadowCount < max_point_light_shadow_count)
 			{
+				auto& culler_list = culler_group[world_stats.omniShadowCount];
+
 				glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, light.radius);
 
 				FOmniShadowCommit shadow_commit{};
@@ -208,7 +245,7 @@ void CShadowsSystem::__update(f32 fDt)
 				{
 					u64 idx = std::distance(shadow_matrices.begin(), it) - shadow_commit.firstMatrix;
 					auto& view = *it;
-					render_world->updateFrustum(light.frustumIDs[idx], view, shadowProj);
+					render_world->updateFrustum(culler_list[idx], view, shadowProj);
 					view = shadowProj * view;
 				}
 
@@ -223,6 +260,8 @@ void CShadowsSystem::__update(f32 fDt)
 
 	// Calculate spot shadows
 	{
+		auto& culler_group = m_shadowCullers[ERenderGeometryCullerType::eSpotShadow];
+
 		u64 light_count{ 0ull };
 		auto view = registry->view<FTransformComponent, FBaseComponent, FSpotLightComponent>();
 		for (auto [entity, ltransform, base, light] : view.each())
@@ -231,6 +270,8 @@ void CShadowsSystem::__update(f32 fDt)
 
 			if (light.castShadows && base.enabled && world_stats.spotShadowCount < max_spot_light_count)
 			{
+				auto& culler_list = culler_group[world_stats.spotShadowCount];
+
 				FSpotShadowCommit shadow_commit{};
 				shadow_commit.firstMatrix = world_stats.matricesCount + shadow_matrices.size();
 
@@ -243,7 +284,7 @@ void CShadowsSystem::__update(f32 fDt)
 				light.shadowIndex = world_stats.spotShadowCount;
 				render_world->addShadow(shadow_commit);
 
-				render_world->updateFrustum(light.frustumID, shadowView, shadowProj);
+				render_world->updateFrustum(culler_list.front(), shadowView, shadowProj);
 			}
 
 			++light_count;

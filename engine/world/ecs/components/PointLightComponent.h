@@ -13,8 +13,6 @@ namespace engine
 				f32 radius{ 1.f };
 				int shadowIndex{ -1 };
 				bool castShadows{ true };
-
-				utl::vector<u64> frustumIDs{};
 			};
 		}
 	}

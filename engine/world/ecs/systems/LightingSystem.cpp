@@ -21,54 +21,6 @@ CLightingSystem::CLightingSystem(CSceneGraph* scenegraph, IRenderInterface* rend
 
 void CLightingSystem::__create()
 {
-	TRACY_PROFILE_FUNCTION();
-
-	auto& registry = m_pSceneGraph->getRegistry();
-	auto& render_world = m_pRenderInterface->getRenderWorld();
-
-	{
-		u64 shadow_count{ 0ull };
-		auto view = registry->view<FTransformComponent, FBaseComponent, FDirectionalLightComponent>();
-		for (auto [entity, transform, base, light] : view.each())
-		{
-			if (light.castShadows && shadow_count < max_directional_light_shadow_count)
-			{
-				light.frustumIDs.resize(cascade_shadow_map_cascade_count);
-				for(u64 idx = 0ull; idx < cascade_shadow_map_cascade_count; ++idx)
-					light.frustumIDs[idx] = render_world->registerFrustum(ERenderGeometryCullerType::eCascadedShadow);
-
-				shadow_count++;
-			}
-		}
-	}
-
-	{
-		u64 shadow_count{ 0ull };
-		auto view = registry->view<FTransformComponent, FBaseComponent, FPointLightComponent>();
-		for (auto [entity, transform, base, light] : view.each())
-		{
-			if (light.castShadows && shadow_count < max_point_light_shadow_count)
-			{
-				light.frustumIDs.resize(6ull);
-				for(u64 idx = 0ull; idx < 6ull; ++idx)
-					light.frustumIDs[idx] = render_world->registerFrustum(ERenderGeometryCullerType::eOmniShadow);
-				shadow_count++;
-			}
-		}
-	}
-
-	{
-		u64 shadow_count{ 0ull };
-		auto view = registry->view<FTransformComponent, FBaseComponent, FSpotLightComponent>();
-		for (auto [entity, transform, base, light] : view.each())
-		{
-			if (light.castShadows && shadow_count < max_spot_light_shadow_count)
-			{
-				light.frustumID = render_world->registerFrustum(ERenderGeometryCullerType::eSpotShadow);
-				shadow_count++;
-			}
-		}
-	}
 }
 
 void CLightingSystem::__update(f32 fDt)
