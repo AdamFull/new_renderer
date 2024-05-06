@@ -41,11 +41,12 @@ void COmnilShadowMapPass::_render(const FRenderFrameInfo& frame_info)
 
 	IVertexHandler* last_vbo{ nullptr };
 
-	const auto& draw_infos = render_world->getDrawCommandByType(ERenderGeometryCullerType::eSpotShadow);
+	const auto& draw_infos = render_world->getDrawCommandByType(ERenderGeometryCullerType::eOmniShadow);
 	const auto& geometry_batches = render_world->getGeometryBatches();
 
 	for (u64 idx = 0ull; idx < draw_infos.size(); ++idx)
 	{
+		u64 current_layer = idx % 6ull;
 		const auto& draw_info = draw_infos[idx];
 		auto begin_range = geometry_batches.begin() + draw_info.first;
 		auto end_range = begin_range + draw_info.count;
@@ -78,7 +79,7 @@ void COmnilShadowMapPass::_render(const FRenderFrameInfo& frame_info)
 				for (u64 shadow_index = 0ull; shadow_index < world_stats.omniShadowCount; ++shadow_index)
 				{
 					shadow_data->set(shader_bindings::shadow_index_label, utl::cast<u32>(shadow_index));
-					shadow_data->set(shader_bindings::layer_label, utl::cast<i32>(idx));
+					shadow_data->set(shader_bindings::layer_label, utl::cast<i32>(current_layer));
 					shader->flushConstants(m_queue);
 					render_context->draw(m_queue, batch.command);
 				}

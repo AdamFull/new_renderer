@@ -62,15 +62,6 @@
 		{
 			uint global_draw_index = gl_GlobalInvocationID.x;
 
-			// Clear count data from prev frame
-			if(global_draw_index == 0)
-			{
-				for(int i = 0; i < frameData.cullerCount; ++i)
-					indirectCountBuffer.indices[i] = 0;
-			}
-
-			groupMemoryBarrier();
-
 			if (global_draw_index >= frameData.rawCommandsCount) 
 				return;
 
