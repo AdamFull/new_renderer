@@ -224,7 +224,7 @@ void CShadowsSystem::__update(f32 fDt)
 			{
 				auto& culler_list = culler_group[world_stats.omniShadowCount];
 
-				glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, light.radius);
+				glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, light.radius / 2.f);
 
 				FOmniShadowCommit shadow_commit{};
 				shadow_commit.firstMatrix = world_stats.matricesCount + shadow_matrices.size();
