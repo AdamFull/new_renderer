@@ -32,6 +32,38 @@ u64 align_std140(u64 size)
 	return (size + maxalignment - 1ull) & ~(maxalignment - 1ull);
 }
 
+utl::vector<u32> convert_to_u32_indices(const FVertexAttributePointer& indices)
+{
+	// Convert indices to u32 format
+	utl::vector<u32> indices_tmp{};
+	for (u64 idx = 0ull; idx < indices.count; ++idx)
+	{
+		if (indices.stride == 2)
+		{
+			const u16* indices16 = (const u16*)indices.data;
+			indices_tmp.emplace_back(indices16[idx]);
+		}
+		else
+		{
+			const u32* indices32 = (const u32*)indices.data;
+			indices_tmp.emplace_back(indices32[idx]);
+		}
+	}
+
+	return indices_tmp;
+}
+
+utl::vector<u16> convert_u32_indices_to_u16(const utl::vector<u32>& indices)
+{
+	utl::vector<u16> new_indices{};
+
+	new_indices.reserve(indices.size());
+	for (const u32& index : indices)
+		new_indices.emplace_back(utl::cast<u16>(index));
+
+	return new_indices;
+}
+
 EApiDataFormat get_attribute_format_by_type(EVertexAttributeType type, u64 size)
 {
 	if (size == 4ull)
@@ -246,31 +278,97 @@ const FVertexRange& CVertexHandler::addMeshData(const utl::vector<FVertexAttribu
 	if (auto found = m_cachedRanges.find(input_hash); found != m_cachedRanges.end())
 		return found->second;
 
+	auto position_attrib = std::find_if(attributes_data.begin(), attributes_data.end(), [](const FVertexAttributePointer& attribute) { return attribute.type == EVertexAttributeType::ePosition; });
+	if (position_attrib == attributes_data.end())
+		log_error("[Vertex Handler] Invalid mesh type: No vertex position found. Vertex position is required.");
+
 	auto& meshlet_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eMeshletBuffer));
 	auto& vertices_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eVertexRemapBuffer));
 	auto& triangle_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eTriangleBuffer));
 	auto& bounds_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eBoundsBuffer));
 	auto& lod_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eLodBuffer));
 
-	FMeshLod lod{};
-	lod.meshletOffset = meshlet_buffer->size();
-	lod.meshletVertexOffset = vertices_buffer->size();
-	lod.meshletTriangleOffset = triangle_buffer->size();
-	lod.meshletBoundsOffset = bounds_buffer->size();
-	lod.meshletCount = addMeshlets(attributes_data, indices);
+	// Calculate number of lods
+	//f32 triangle_count = utl::cast<f32>(position_attrib->count / 3u) / 3u;
+	//u32 lod_count = utl::cast<u32>(glm::floor(glm::log2(triangle_count)));
 
-	lod.firstIndex = m_indexBuffer.elementCount;
-	lod.indexCount = addIndices(indices);
-	lod.firstVertex = m_vertexBuffer.elementCount;
-	lod.vertexCount = addVertices(attributes_data);
+	u32 lod_count = 3u;
 
-
+	// Create new vertex range
 	auto& new_range = m_cachedRanges[input_hash];
 	new_range.firstLod = lod_buffer->size();
-	new_range.lodCount = 1;
-	
+	new_range.lodCount = lod_count;
 
-	lod_buffer->emplace_back(lod);
+	auto orig_indices = convert_to_u32_indices(indices);
+	const f32* positions = reinterpret_cast<const f32*>(position_attrib->data);
+
+	//meshopt_optimizeVertexFetch((void*)position_attrib->data, orig_indices.data(), orig_indices.size(), position_attrib->data, position_attrib->count, position_attrib->stride);
+	//meshopt_optimizeVertexCache(orig_indices.data(), orig_indices.data(), orig_indices.size(), position_attrib->count);
+
+	for (u64 lod_idx = 0ull; lod_idx < lod_count; ++lod_idx)
+	{
+		utl::vector<u32> u32_indices{};
+		utl::vector<u16> u16_indices{};
+
+		FVertexAttributePointer new_index_ptr{};
+		new_index_ptr.type = indices.type;
+		new_index_ptr.stride = indices.stride;
+
+		// Create new index buffer for current lod
+		if (lod_idx == 0ull)
+		{
+			u32_indices = orig_indices;
+
+			if (indices.stride == 2ull)
+			{
+				u16_indices = convert_u32_indices_to_u16(u32_indices);
+				new_index_ptr.data = reinterpret_cast<const u8*>(u16_indices.data());
+			}
+			else
+				new_index_ptr.data = reinterpret_cast<const u8*>(u32_indices.data());
+
+			new_index_ptr.count = orig_indices.size();
+		}
+		else
+		{
+			const f32 target_error = 1e-2f;
+			bool lock_borders = false;
+			u32 options = lock_borders ? meshopt_SimplifyLockBorder : 0;
+
+			f32 lod_quality = 1.f / utl::cast<f32>(1 << lod_idx);
+
+			u64 target_index_count = utl::cast<u64>(utl::cast<f64>(orig_indices.size() / 3ull) * lod_quality) * 3ull;
+			u32_indices.resize(orig_indices.size());
+
+			float lod_error = 0.f;
+			u32_indices.resize(meshopt_simplify<u32>(u32_indices.data(), orig_indices.data(), orig_indices.size(), positions, position_attrib->count, position_attrib->stride, target_index_count, target_error, options, &lod_error));
+
+			// Converting back
+			if (indices.stride == 2ull)
+			{
+				u16_indices = convert_u32_indices_to_u16(u32_indices);
+				new_index_ptr.data = reinterpret_cast<const u8*>(u16_indices.data());
+			}
+			else
+				new_index_ptr.data = reinterpret_cast<const u8*>(u32_indices.data());
+
+			new_index_ptr.count = u32_indices.size();
+		}
+
+		FMeshLod lod{};
+		lod.meshletOffset = meshlet_buffer->size();
+		lod.meshletVertexOffset = vertices_buffer->size();
+		lod.meshletTriangleOffset = triangle_buffer->size();
+		lod.meshletBoundsOffset = bounds_buffer->size();
+		lod.meshletCount = addMeshlets(attributes_data, u32_indices);
+
+		lod.firstIndex = m_indexBuffer.elementCount;
+		lod.indexCount = addIndices(new_index_ptr);
+		lod.firstVertex = m_vertexBuffer.elementCount;
+		lod.vertexCount = addVertices(attributes_data);
+
+		lod_buffer->emplace_back(lod);
+	}
 
 	return new_range;
 }
@@ -303,7 +401,7 @@ u64 CVertexHandler::addIndices(const FVertexAttributePointer& indices)
 	return indices.count;
 }
 
-u64 CVertexHandler::addMeshlets(const utl::vector<FVertexAttributePointer>& attributes, const FVertexAttributePointer& indices)
+u64 CVertexHandler::addMeshlets(const utl::vector<FVertexAttributePointer>& attributes, const utl::vector<u32>& indices)
 {
 	// Find positions attribute
 	const float* positions{ nullptr };
@@ -311,25 +409,8 @@ u64 CVertexHandler::addMeshlets(const utl::vector<FVertexAttributePointer>& attr
 	if (found_position_attrib != attributes.end())
 		positions = (const float*)found_position_attrib->data;
 
-	// Convert indices to u32 format
-	utl::vector<u32> indices_tmp{};
-	// convert to 32 bit uint
-	for (u64 idx = 0ull; idx < indices.count; ++idx)
-	{
-		if (indices.stride == 2)
-		{
-			const u16* indices16 = (const u16*)indices.data;
-			indices_tmp.emplace_back(indices16[idx]);
-		}
-		else
-		{
-			const u32* indices32 = (const u32*)indices.data;
-			indices_tmp.emplace_back(indices32[idx]);
-		}
-	}
-
 	// Start generation meshlets
-	auto max_meshlets = meshopt_buildMeshletsBound(indices.count, kMaxVerticesPerMeshlet, kMaxTrianglesPerMeshlet);
+	auto max_meshlets = meshopt_buildMeshletsBound(indices.size(), kMaxVerticesPerMeshlet, kMaxTrianglesPerMeshlet);
 
 	utl::vector<FMeshlet> temp_meshlets(max_meshlets);
 	utl::vector<FGeometryDrawBounds> temp_bounds{};
@@ -343,8 +424,8 @@ u64 CVertexHandler::addMeshlets(const utl::vector<FVertexAttributePointer>& attr
 		&raw_meshlets[0],
 		&temp_vertices[0],
 		&raw_meshlet_triangles[0],
-		&indices_tmp[0],
-		indices.count,
+		&indices[0],
+		indices.size(),
 		positions,
 		found_position_attrib->count,
 		found_position_attrib->stride,

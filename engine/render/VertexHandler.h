@@ -30,7 +30,7 @@ namespace engine
 
 			u64 addVertices(const utl::vector<FVertexAttributePointer>& attributes_data) override;
 			u64 addIndices(const FVertexAttributePointer& indices) override;
-			u64 addMeshlets(const utl::vector<FVertexAttributePointer>& attributes_data, const FVertexAttributePointer& indices);
+			u64 addMeshlets(const utl::vector<FVertexAttributePointer>& attributes_data, const utl::vector<u32>& indices);
 
 			u64 getLastVertex() override;
 			u64 getLastIndex() override;
