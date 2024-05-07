@@ -52,8 +52,11 @@ void CGPUVector::reallocate(u64 capacity)
 	utl::vector<char> temporary{};
 	temporary.resize(m_pBuffer->size());
 
-	const void* mem_begin = m_pBuffer->data();
-	std::memcpy(temporary.data(), mem_begin, temporary.size());
+	// Copy old data
+	{
+		const void* mem_begin = m_pBuffer->data();
+		std::memcpy(temporary.data(), mem_begin, temporary.size());
+	}
 
 	FBufferCreateInfo buffer_ci{};
 	buffer_ci.count = capacity;
@@ -62,6 +65,12 @@ void CGPUVector::reallocate(u64 capacity)
 
 	m_pBuffer->resize(m_srOriginalName, buffer_ci);
 	m_pBuffer->map();
+
+	// Copy data back
+	{
+		void* mem_begin = m_pBuffer->data();
+		std::memcpy(mem_begin, temporary.data(), temporary.size());
+	}
 }
 
 void* CGPUVector::at(u64 index)
