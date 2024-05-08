@@ -91,8 +91,17 @@
 			
 				// Construct  indirect draw command
 				// TODO: In future thing about how to implement instancing here
-				
-				uint selected_lod = 0;
+
+				vec3 camera_pos = vec3(frameData.invView[3]);
+				vec3 extents = (maxExtents.xyz - minExtents.xyz) * 0.5f;
+				vec3 center = minExtents.xyz + extents;
+
+				const float lod_transition_base = 4.0f;
+				const float lod_transition_step = 1.25f;
+				float obj_dist = distance(center, camera_pos);
+				uint selected_lod = uint(max(1.0 + log(obj_dist / lod_transition_base) / log(lod_transition_step), 0.0));
+				selected_lod = min(selected_lod, mesh.lodCount - 1);
+
 				FMeshLod lod = lb.lods[mesh.lodOffset + selected_lod];
 				
 				indirectCommandBuffer.commands[output_index].indexCount = lod.indexCount == 0 ? lastIndex : lod.indexCount;

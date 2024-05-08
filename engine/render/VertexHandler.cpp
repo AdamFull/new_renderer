@@ -289,10 +289,10 @@ const FVertexRange& CVertexHandler::addMeshData(const utl::vector<FVertexAttribu
 	auto& lod_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eLodBuffer));
 
 	// Calculate number of lods
-	//f32 triangle_count = utl::cast<f32>(position_attrib->count / 3u) / 3u;
-	//u32 lod_count = utl::cast<u32>(glm::floor(glm::log2(triangle_count)));
+	f32 triangle_count = utl::cast<f32>(position_attrib->count / 3u);
+	u32 lod_count = utl::cast<u32>(glm::floor(glm::log2(triangle_count)));
 
-	u32 lod_count = 3u;
+	//u32 lod_count = 1u;
 
 	// Create new vertex range
 	auto& new_range = m_cachedRanges[input_hash];
@@ -303,8 +303,9 @@ const FVertexRange& CVertexHandler::addMeshData(const utl::vector<FVertexAttribu
 	const f32* positions = reinterpret_cast<const f32*>(position_attrib->data);
 
 	//meshopt_optimizeVertexFetch((void*)position_attrib->data, orig_indices.data(), orig_indices.size(), position_attrib->data, position_attrib->count, position_attrib->stride);
-	//meshopt_optimizeVertexCache(orig_indices.data(), orig_indices.data(), orig_indices.size(), position_attrib->count);
+	meshopt_optimizeVertexCache(orig_indices.data(), orig_indices.data(), orig_indices.size(), position_attrib->count);
 
+	u32 last_lod_count{ 0ull };
 	for (u64 lod_idx = 0ull; lod_idx < lod_count; ++lod_idx)
 	{
 		utl::vector<u32> u32_indices{};
@@ -335,13 +336,23 @@ const FVertexRange& CVertexHandler::addMeshData(const utl::vector<FVertexAttribu
 			bool lock_borders = false;
 			u32 options = lock_borders ? meshopt_SimplifyLockBorder : 0;
 
-			f32 lod_quality = 1.f / utl::cast<f32>(1 << lod_idx);
+			//f32 lod_quality = 1.f / utl::cast<f32>(1 << lod_idx);
+			f32 lod_quality = 1.f - (utl::cast<f32>(lod_idx) / utl::cast<f32>(lod_count));
+			lod_quality *= lod_quality;
 
 			u64 target_index_count = utl::cast<u64>(utl::cast<f64>(orig_indices.size() / 3ull) * lod_quality) * 3ull;
 			u32_indices.resize(orig_indices.size());
 
 			float lod_error = 0.f;
 			u32_indices.resize(meshopt_simplify<u32>(u32_indices.data(), orig_indices.data(), orig_indices.size(), positions, position_attrib->count, position_attrib->stride, target_index_count, target_error, options, &lod_error));
+
+			if (last_lod_count == u32_indices.size())
+			{
+				--new_range.lodCount;
+				continue;
+			}
+
+			last_lod_count = u32_indices.size();
 
 			// Converting back
 			if (indices.stride == 2ull)
