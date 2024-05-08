@@ -40,19 +40,19 @@
 			uint32_t lastVertex;
 		};
 
-		bool checkObjectInFrustum(in vec3 minExtents, in vec3 maxExtents, in uint32_t frustumID)
+		bool checkObjectInFrustum(in vec3 min_extents, in vec3 min_extents, in uint32_t frustumID)
 		{
 			for (uint32_t i = 0; i < 6; i++)
 			{
 				vec4 edge = frustumSidesBuffer.sides[frustumID * 6u + i];
-				if (   edge.x * minExtents.x + edge.y * minExtents.y + edge.z * minExtents.z + edge.w <= 0.0f
-					&& edge.x * maxExtents.x + edge.y * minExtents.y + edge.z * minExtents.z + edge.w <= 0.0f
-					&& edge.x * minExtents.x + edge.y * maxExtents.y + edge.z * minExtents.z + edge.w <= 0.0f
-					&& edge.x * maxExtents.x + edge.y * maxExtents.y + edge.z * minExtents.z + edge.w <= 0.0f
-					&& edge.x * minExtents.x + edge.y * minExtents.y + edge.z * maxExtents.z + edge.w <= 0.0f
-					&& edge.x * maxExtents.x + edge.y * minExtents.y + edge.z * maxExtents.z + edge.w <= 0.0f
-					&& edge.x * minExtents.x + edge.y * maxExtents.y + edge.z * maxExtents.z + edge.w <= 0.0f
-					&& edge.x * maxExtents.x + edge.y * maxExtents.y + edge.z * maxExtents.z + edge.w <= 0.0f)
+				if (   edge.x * min_extents.x + edge.y * min_extents.y + edge.z * min_extents.z + edge.w <= 0.0f
+					&& edge.x * min_extents.x + edge.y * min_extents.y + edge.z * min_extents.z + edge.w <= 0.0f
+					&& edge.x * min_extents.x + edge.y * min_extents.y + edge.z * min_extents.z + edge.w <= 0.0f
+					&& edge.x * min_extents.x + edge.y * min_extents.y + edge.z * min_extents.z + edge.w <= 0.0f
+					&& edge.x * min_extents.x + edge.y * min_extents.y + edge.z * min_extents.z + edge.w <= 0.0f
+					&& edge.x * min_extents.x + edge.y * min_extents.y + edge.z * min_extents.z + edge.w <= 0.0f
+					&& edge.x * min_extents.x + edge.y * min_extents.y + edge.z * min_extents.z + edge.w <= 0.0f
+					&& edge.x * min_extents.x + edge.y * min_extents.y + edge.z * min_extents.z + edge.w <= 0.0f)
 					return false;
 			}
 			return true;
@@ -73,14 +73,11 @@
 			// output_index = culler_counter + draw_offset;
 			
 			// Calculate bounding box
-			vec4 minExtents = node.model * vec4(mesh.bounds.min, 1.f);
-			minExtents = vec4(minExtents.xyz / minExtents.w, 1.0);
-			
-			vec4 maxExtents = node.model * vec4(mesh.bounds.max, 1.f);
-			maxExtents = vec4(maxExtents.xyz / maxExtents.w, 1.0);
+			vec4 min_extents = node.model * vec4(mesh.bounds.min, 1.f);
+			vec4 max_extents = node.model * vec4(mesh.bounds.max, 1.f);
 			
 			// Do frustum culling
-			if(checkObjectInFrustum(minExtents.xyz, maxExtents.xyz, draw_info.cullerID))
+			if(checkObjectInFrustum(min_extents.xyz, min_extents.xyz, draw_info.cullerID))
 			{	
 				uint draw_offset = frameData.maxCommandsCount * draw_info.cullerID;
 				uint culler_counter = atomicAdd(indirectCountBuffer.indices[draw_info.cullerID], 1);
@@ -92,9 +89,25 @@
 				// Construct  indirect draw command
 				// TODO: In future thing about how to implement instancing here
 
+				//vec4 min_clip = viewport.viewProjection * min_extents;
+				//vec4 max_clip = viewport.viewProjection * max_extents;
+				//
+				//vec3 ndc_min = (min_clip / min_clip.w + 1.0f) * 0.5f;
+				//vec3 ndc_max = (max_clip / max_clip.w + 1.0f) * 0.5f;
+				//
+				//vec2 min_pos = ndc_min.xy * viewport.size;
+				//vec2 max_pos = ndc_max.xy * viewport.size;
+				//
+				//vec2 quad_size = glm::abs(max_pos - min_pos);
+				//
+				//float quad_area = quad_size.x * quad_size.y;
+				//float screen_area = viewport.size.x * viewport.size.y;
+				//float lod_ratio = sqrt(screen_area / quad_area);
+				//uint lod_level = log2(max(1.0f, lod_ratio * mesh.lodCount));
+
 				vec3 camera_pos = vec3(frameData.invView[3]);
-				vec3 extents = (maxExtents.xyz - minExtents.xyz) * 0.5f;
-				vec3 center = minExtents.xyz + extents;
+				vec3 extents = (min_extents.xyz - min_extents.xyz) * 0.5f;
+				vec3 center = min_extents.xyz + extents;
 
 				const float lod_transition_base = 4.0f;
 				const float lod_transition_step = 1.25f;
