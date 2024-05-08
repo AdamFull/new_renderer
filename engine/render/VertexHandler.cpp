@@ -289,10 +289,10 @@ const FVertexRange& CVertexHandler::addMeshData(const utl::vector<FVertexAttribu
 	auto& lod_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eLodBuffer));
 
 	// Calculate number of lods
-	f32 triangle_count = utl::cast<f32>(position_attrib->count / 3u);
+	f32 triangle_count = utl::cast<f32>(indices.count / 3u);
 	u32 lod_count = utl::cast<u32>(glm::floor(glm::log2(triangle_count)));
 
-	//u32 lod_count = 1u;
+	lod_count = 1u;
 
 	// Create new vertex range
 	auto& new_range = m_cachedRanges[input_hash];
