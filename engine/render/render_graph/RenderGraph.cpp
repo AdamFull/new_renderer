@@ -738,99 +738,99 @@ void CRenderGraph::build()
 
 void CRenderGraph::update(f32 dt)
 {
-	auto& render_context = m_pRenderInterface->getRenderContext();
-	auto& render_packet = m_pRenderInterface->getRenderPacket();
-
-	if (wasGraphChanged())
-	{
-		m_perPassResourceBarriers.clear();
-
-		utl::hash_map<u64, FPassBuildInfo> build_infos;
-		generateResourceBarriers(build_infos, false);
-	}
-
-	// TODO: traverse dependencies before updating
-	for (u64 idx = 0ull; idx < m_vViewports.size(); ++idx)
-	{
-		auto& viewport_view = m_vViewports.at(idx);
-		auto& viewport = m_vViewportBuffer.at(idx);
-
-		if (!render_packet->camera.wasUpdated)
-			continue;
-
-		if (viewport_view.dependencyType == EViewportDependencyType::eOnRenderTarget)
-		{
-			auto& render_resource = getRenderResource(viewport_view.dependencyResource);
-			if (render_resource.type == ERenderResourceTypeFlagBits::eRenderTarget)
-			{
-				auto& resource_sizes = render_context->getTextureInfo(render_resource.handle);
-				viewport.size.x = resource_sizes.size.width;
-				viewport.size.y = resource_sizes.size.height;
-			}
-			else if(render_resource.type == ERenderResourceTypeFlagBits::eBackbuffer)
-			{
-				auto backbuffer_size = render_context->getScreenRenderRect();
-				viewport.size.x = backbuffer_size.size.x;
-				viewport.size.y = backbuffer_size.size.y;
-			}
-		}
-		else if (viewport_view.dependencyType == EViewportDependencyType::eOnViewport)
-		{
-			auto& depend_viewport_view = m_vViewports.at(viewport_view.dependencyResource);
-			auto& depend_viewport = m_vViewportBuffer.at(viewport_view.dependencyResource);
-
-			viewport.size.x = depend_viewport.size.x;
-			viewport.size.y = depend_viewport.size.y;
-		}
-		else
-		{
-			viewport.size.x = utl::cast<f32>(viewport_view.width);
-			viewport.size.y = utl::cast<f32>(viewport_view.height);
-		}
-
-		viewport.size.x *= viewport_view.scale;
-		viewport.size.y *= viewport_view.scale;
-
-		viewport.invSize.x = 1.f / viewport.size.x;
-		viewport.invSize.y = 1.f / viewport.size.y;
-
-		auto aspect = viewport.size.x / viewport.size.y;
-		viewport.projection = glm::perspective(render_packet->camera.fov, aspect, render_packet->camera.nearp, render_packet->camera.farp);
-		viewport.invProjection = glm::inverse(viewport.projection);
-		viewport.prevViewProjection = viewport.viewProjection;
-		viewport.viewProjection = viewport.projection * render_packet->camera.view;
-		viewport.prevInvViewProjection = viewport.invViewProjection;
-		viewport.invViewProjection = glm::inverse(viewport.viewProjection);
-
-		viewport.reprojectionMatrix = viewport.invViewProjection * viewport.prevInvViewProjection;
-
-		// Transform from uv to clip space: texcoord * 2 - 1
-		static glm::mat4 to_clip_space = 
-		{
-			2.0f, 0, 0, 0,
-			0, -2.0f, 0, 0,
-			0, 0, 1, 0,
-			-1, 1, 0, 1
-		};
-		// Transform from clip to uv space: texcoord * 0.5 + 0.5
-		static glm::mat4 to_uv_space = 
-		{
-			0.5f, 0, 0, 0,
-			0, -0.5f, 0, 0,
-			0, 0, 1, 0,
-			0.5f, 0.5f, 0, 1
-		};
-		viewport.reprojectionMatrix = to_clip_space * viewport.reprojectionMatrix * to_uv_space;
-	}
-
-	if (render_packet->camera.wasUpdated)
-	{
-		auto& render_world = m_pRenderInterface->getRenderWorld();
-		auto& viewport_buffer = render_world->getDrawBuffer(ERenderBufferIndices::eViewportBuffer);
-		viewport_buffer->clear();
-		viewport_buffer->copy(m_vViewportBuffer);
-		render_packet->camera.wasUpdated = false;
-	}
+	//auto& render_context = m_pRenderInterface->getRenderContext();
+	//auto& render_packet = m_pRenderInterface->getRenderPacket();
+	//
+	//if (wasGraphChanged())
+	//{
+	//	m_perPassResourceBarriers.clear();
+	//
+	//	utl::hash_map<u64, FPassBuildInfo> build_infos;
+	//	generateResourceBarriers(build_infos, false);
+	//}
+	//
+	//// TODO: traverse dependencies before updating
+	//for (u64 idx = 0ull; idx < m_vViewports.size(); ++idx)
+	//{
+	//	auto& viewport_view = m_vViewports.at(idx);
+	//	auto& viewport = m_vViewportBuffer.at(idx);
+	//
+	//	if (!render_packet->camera.wasUpdated)
+	//		continue;
+	//
+	//	if (viewport_view.dependencyType == EViewportDependencyType::eOnRenderTarget)
+	//	{
+	//		auto& render_resource = getRenderResource(viewport_view.dependencyResource);
+	//		if (render_resource.type == ERenderResourceTypeFlagBits::eRenderTarget)
+	//		{
+	//			auto& resource_sizes = render_context->getTextureInfo(render_resource.handle);
+	//			viewport.size.x = resource_sizes.size.width;
+	//			viewport.size.y = resource_sizes.size.height;
+	//		}
+	//		else if(render_resource.type == ERenderResourceTypeFlagBits::eBackbuffer)
+	//		{
+	//			auto backbuffer_size = render_context->getScreenRenderRect();
+	//			viewport.size.x = backbuffer_size.size.x;
+	//			viewport.size.y = backbuffer_size.size.y;
+	//		}
+	//	}
+	//	else if (viewport_view.dependencyType == EViewportDependencyType::eOnViewport)
+	//	{
+	//		auto& depend_viewport_view = m_vViewports.at(viewport_view.dependencyResource);
+	//		auto& depend_viewport = m_vViewportBuffer.at(viewport_view.dependencyResource);
+	//
+	//		viewport.size.x = depend_viewport.size.x;
+	//		viewport.size.y = depend_viewport.size.y;
+	//	}
+	//	else
+	//	{
+	//		viewport.size.x = utl::cast<f32>(viewport_view.width);
+	//		viewport.size.y = utl::cast<f32>(viewport_view.height);
+	//	}
+	//
+	//	viewport.size.x *= viewport_view.scale;
+	//	viewport.size.y *= viewport_view.scale;
+	//
+	//	viewport.invSize.x = 1.f / viewport.size.x;
+	//	viewport.invSize.y = 1.f / viewport.size.y;
+	//
+	//	auto aspect = viewport.size.x / viewport.size.y;
+	//	viewport.projection = glm::perspective(render_packet->camera.fov, aspect, render_packet->camera.nearp, render_packet->camera.farp);
+	//	viewport.invProjection = glm::inverse(viewport.projection);
+	//	viewport.prevViewProjection = viewport.viewProjection;
+	//	viewport.viewProjection = viewport.projection * render_packet->camera.view;
+	//	viewport.prevInvViewProjection = viewport.invViewProjection;
+	//	viewport.invViewProjection = glm::inverse(viewport.viewProjection);
+	//
+	//	viewport.reprojectionMatrix = viewport.invViewProjection * viewport.prevInvViewProjection;
+	//
+	//	// Transform from uv to clip space: texcoord * 2 - 1
+	//	static glm::mat4 to_clip_space = 
+	//	{
+	//		2.0f, 0, 0, 0,
+	//		0, -2.0f, 0, 0,
+	//		0, 0, 1, 0,
+	//		-1, 1, 0, 1
+	//	};
+	//	// Transform from clip to uv space: texcoord * 0.5 + 0.5
+	//	static glm::mat4 to_uv_space = 
+	//	{
+	//		0.5f, 0, 0, 0,
+	//		0, -0.5f, 0, 0,
+	//		0, 0, 1, 0,
+	//		0.5f, 0.5f, 0, 1
+	//	};
+	//	viewport.reprojectionMatrix = to_clip_space * viewport.reprojectionMatrix * to_uv_space;
+	//}
+	//
+	//if (render_packet->camera.wasUpdated)
+	//{
+	//	auto& render_world = m_pRenderInterface->getRenderWorld();
+	//	auto& viewport_buffer = render_world->getDrawBuffer(ERenderBufferIndices::eViewportBuffer);
+	//	viewport_buffer->clear();
+	//	viewport_buffer->copy(m_vViewportBuffer);
+	//	render_packet->camera.wasUpdated = false;
+	//}
 }
 
 void CRenderGraph::execute(f32 dt)

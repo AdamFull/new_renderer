@@ -49,23 +49,16 @@ void CCameraSystem::__update(f32 fDt)
 
 			if (camera.moved)
 			{
+				auto screen_size = render_context->getScreenRenderRect();
 				glm::mat4 prev_view = camera.view;
 				glm::mat4 prev_projection = camera.projection;
 				camera.view = glm::lookAt(transform.gposition, transform.gposition + camera.forward, camera.up);
-				camera.projection = glm::perspective(camera.fieldOfView, aspect, camera.nearPlane, camera.farPlane);
+				camera.projection = glm::perspective(camera.fieldOfView, screen_size.size.x / screen_size.size.y, camera.nearPlane, camera.farPlane);
 
-				if(camera.active)
-					render_packet->camera.wasUpdated = true;
-
-				render_world->updateCamera(camera.frustumID, camera.view, viewport.projection);
+				render_world->updateCamera(camera.frustumID, camera.view, prev_view, camera.projection, prev_projection, glm::vec2(screen_size.size.x, screen_size.size.y), camera.nearPlane, camera.farPlane);
 
 				camera.moved = false;
 			}
-
-			render_packet->camera.nearp = camera.nearPlane;
-			render_packet->camera.farp = camera.farPlane;
-
-			//glm::perspective(render_packet->camera.fov, aspect, render_packet->camera.nearp, render_packet->camera.farp);
 			break;
 		}
 	}

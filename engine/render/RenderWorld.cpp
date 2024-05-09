@@ -69,34 +69,46 @@ void CRenderWorld::updateCamera(u64 camera_id, const glm::mat4& view, const glm:
 	auto& frustum = m_vSceneFrustums.at(camera_id);
 	frustum.update(view, projection);
 
-	utl::vector<glm::mat4> camera_matrices{};
-	camera_matrices.emplace_back(view);
-	camera_matrices.emplace_back(prev_view);
-	camera_matrices.emplace_back(glm::inverse(view));
-	camera_matrices.emplace_back(glm::inverse(prev_view));
-	camera_matrices.emplace_back(projection);
-	camera_matrices.emplace_back(prev_projection);
-	camera_matrices.emplace_back(glm::inverse(projection));
-	camera_matrices.emplace_back(glm::inverse(prev_projection));
-	camera_matrices.emplace_back(projection * view);
-	camera_matrices.emplace_back(prev_projection * prev_view);
-	camera_matrices.emplace_back(glm::inverse(projection * view));
-	camera_matrices.emplace_back(glm::inverse(prev_projection * prev_view));
-	auto& camera = m_vCameras.at(camera_id);
+	utl::vector<glm::mat4> matrices{};
+	auto& camera_view = matrices.emplace_back(view);
+	auto& camera_prev_view = matrices.emplace_back(prev_view);
+	auto& camera_inv_view = matrices.emplace_back(glm::inverse(view));
+	auto& camera_int_prev_view = matrices.emplace_back(glm::inverse(prev_view));
+	auto& camera_projection = matrices.emplace_back(projection);
+	auto& camera_prev_projection = matrices.emplace_back(prev_projection);
+	auto& camera_inv_projection = matrices.emplace_back(glm::inverse(projection));
+	auto& camera_inv_prev_projection = matrices.emplace_back(glm::inverse(prev_projection));
+	auto& camera_view_projection = matrices.emplace_back(projection * view);
+	auto& camera_prev_view_projection = matrices.emplace_back(prev_projection * prev_view);
+	auto& camera_inv_view_projection = matrices.emplace_back(glm::inverse(camera_view_projection));
+	auto& camera_inv_prev_view_projection =  matrices.emplace_back(glm::inverse(camera_prev_view_projection));
+	auto& camera_reprojection = matrices.emplace_back();
 
-	CONSTANT uint32_t view_matrix_offset = 0u;
-	CONSTANT uint32_t prev_view_matrix_offset = 1u;
-	CONSTANT uint32_t inv_view_matrix_offset = 2u;
-	CONSTANT uint32_t prev_inv_view_matrix_offset = 3u;
-	CONSTANT uint32_t projection_matrix_offset = 4u;
-	CONSTANT uint32_t prev_projection_matrix_offset = 5u;
-	CONSTANT uint32_t inv_projection_matrix_offset = 6u;
-	CONSTANT uint32_t prev_inv_projection_matrix_offset = 7u;
-	CONSTANT uint32_t view_projection_matrix_offset = 8u;
-	CONSTANT uint32_t prev_view_projection_matrix_offset = 9u;
-	CONSTANT uint32_t inv_view_projection_matrix_offset = 10u;
-	CONSTANT uint32_t prev_inv_view_projection_matrix_offset = 11u;
-	CONSTANT uint32_t reprojection_matrix_offset = 12u;
+	camera_reprojection = camera_inv_view_projection * camera_inv_prev_view_projection;
+
+	// Transform from uv to clip space: texcoord * 2 - 1
+	static glm::mat4 to_clip_space =
+	{
+		2.0f, 0, 0, 0,
+		0, -2.0f, 0, 0,
+		0, 0, 1, 0,
+		-1, 1, 0, 1
+	};
+	// Transform from clip to uv space: texcoord * 0.5 + 0.5
+	static glm::mat4 to_uv_space =
+	{
+		0.5f, 0, 0, 0,
+		0, -0.5f, 0, 0,
+		0, 0, 1, 0,
+		0.5f, 0.5f, 0, 1
+	};
+	camera_reprojection = to_clip_space * camera_reprojection * to_uv_space;
+	auto& camera = m_vCameras.at(camera_id);
+	camera.matricesOffset = m_stats.matricesCount;
+	camera.size = size;
+	camera.invSize = 1.f / size;
+	camera.zNear = znear;
+	camera.zFar = zfar;
 }
 
 void CRenderWorld::addDrawGeometry(const utl::vector<FGeometryBatch>& new_geometry)
@@ -402,7 +414,7 @@ void CRenderWorld::prepareIndirectCommands()
 			gpu_batch.vboID = batch.vboID;
 			gpu_batch.meshID = batch.meshID;
 			gpu_batch.nodeID = batch.nodeID;
-			gpu_batch.cullerID = culler.cullerID;
+			gpu_batch.cameraID = culler.cullerID;
 		}
 
 		draw_info.count = batches.size();

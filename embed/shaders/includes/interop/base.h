@@ -95,6 +95,7 @@ namespace engine {
 		CONSTANT uint32_t inv_view_projection_matrix_offset = 10u;
 		CONSTANT uint32_t prev_inv_view_projection_matrix_offset = 11u;
 		CONSTANT uint32_t reprojection_matrix_offset = 12u;
+		CONSTANT uint32_t matrix_offset_count = 13u;
 
 #if defined(INDEX_8BIT)
 #define Index uint8_t
