@@ -67,24 +67,26 @@
 			}
 #endif // HAS_SKIN
 
-			FViewport viewport = viewportBuffer.viewports[frameData.defaultViewport];
+			FCamera camera = cameraBuffer.cameras[draw_index.cameraID];
 
 			vec4 localPos = modelMatrix * vec4(inPosition, 1.0);
 			localPos = vec4(localPos.xyz / localPos.w, 1.0);
 
-			//currentPos = viewport.projection * frameData.view * localPos;
+			mat4 viewProjection = matrixBuffer.matrices[camera.matricesOffset + view_projection_matrix_offset];
+
+			//currentPos = viewProjection * localPos;
 
 			//vec4 oldLocalPos = oldModelMatrix * vec4(inPosition, 1.0);
 			//oldLocalPos = vec4(oldLocalPos.xyz / oldLocalPos.w, 1.0);
 			
-			//oldPos = viewport.projection * frameData.view * oldLocalPos;
+			//oldPos = viewProjection * oldLocalPos;
 
 			drawID = meshData.callID + gl_DrawIDARB;
 			instanceID = gl_InstanceIndex;
 			vboID = draw_info.vboID;
 			texCoord = inTexCoord;
 
-			gl_Position = viewport.projection * frameData.view * localPos;
+			gl_Position = viewProjection * localPos;
 		}
 	""";
 }

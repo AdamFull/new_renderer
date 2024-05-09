@@ -33,17 +33,19 @@
 			if(swizzle_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, gl_WorkGroupID.xy, image_size, uv, px))
 				return;
 
-			FViewport viewport = viewportBuffer.viewports[frameData.defaultViewport];
+			FCamera camera = cameraBuffer.cameras[frameData.default—ameraID];
+			mat4 inv_view_projection = matrixBuffer.matrices[camera.matricesOffset + inv_view_projection_matrix_offset];
+			mat4 prev_view_projection = matrixBuffer.matrices[camera.matricesOffset + prev_view_projection_matrix_offset];
 
 			float depth = texture(depth_texture, uv).r;
 
 			vec4 clipSpaceLocation;
 			clipSpaceLocation.xy = uv * 2.0 - 1.0;
 			clipSpaceLocation.zw = vec2(depth, 1.0);
-            vec4 homogenousLocation = viewport.invViewProjection * clipSpaceLocation;
+            vec4 homogenousLocation = inv_view_projection * clipSpaceLocation;
             vec4 worldPos = homogenousLocation / homogenousLocation.w;
 
-			vec4 prevClipSpaceLocation = viewport.prevViewProjection * worldPos;
+			vec4 prevClipSpaceLocation = prev_view_projection * worldPos;
 			prevClipSpaceLocation /= prevClipSpaceLocation.w;
 
 			// Use this frame's position and last frame's to compute the pixel velocity.    

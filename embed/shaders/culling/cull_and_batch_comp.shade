@@ -77,10 +77,10 @@
 			vec4 max_extents = node.model * vec4(mesh.bounds.max, 1.f);
 			
 			// Do frustum culling
-			if(checkObjectInFrustum(min_extents.xyz, min_extents.xyz, draw_info.cullerID))
+			if(checkObjectInFrustum(min_extents.xyz, min_extents.xyz, draw_info.cameraID))
 			{	
-				uint draw_offset = frameData.maxCommandsCount * draw_info.cullerID;
-				uint culler_counter = atomicAdd(indirectCountBuffer.indices[draw_info.cullerID], 1);
+				uint draw_offset = frameData.maxCommandsCount * draw_info.cameraID;
+				uint culler_counter = atomicAdd(indirectCountBuffer.indices[draw_info.cameraID], 1);
 
 				uint output_index = draw_offset + culler_counter;
 				//uint output_index = global_draw_index;
@@ -89,33 +89,36 @@
 				// Construct  indirect draw command
 				// TODO: In future thing about how to implement instancing here
 
-				//vec4 min_clip = viewport.viewProjection * min_extents;
-				//vec4 max_clip = viewport.viewProjection * max_extents;
-				//
-				//vec3 ndc_min = (min_clip / min_clip.w + 1.0f) * 0.5f;
-				//vec3 ndc_max = (max_clip / max_clip.w + 1.0f) * 0.5f;
-				//
-				//vec2 min_pos = ndc_min.xy * viewport.size;
-				//vec2 max_pos = ndc_max.xy * viewport.size;
-				//
-				//vec2 quad_size = glm::abs(max_pos - min_pos);
-				//
-				//float quad_area = quad_size.x * quad_size.y;
-				//float screen_area = viewport.size.x * viewport.size.y;
-				//float lod_ratio = sqrt(screen_area / quad_area);
-				//uint lod_level = log2(max(1.0f, lod_ratio * mesh.lodCount));
+				FCamera camera = cameraBuffer.cameras[draw_info.cameraID];
+				mat4 view_projection = matrixBuffer.matrices[camera.matricesOffset + view_projection_matrix_offset];
+			
+				vec4 min_clip = view_projection * min_extents;
+				vec4 max_clip = view_projection * max_extents;
+				
+				vec3 ndc_min = (min_clip / min_clip.w + 1.0f) * 0.5f;
+				vec3 ndc_max = (max_clip / max_clip.w + 1.0f) * 0.5f;
+				
+				vec2 min_pos = ndc_min.xy * camera.size;
+				vec2 max_pos = ndc_max.xy * camera.size;
+				
+				vec2 quad_size = abs(max_pos - min_pos);
+				
+				float quad_area = quad_size.x * quad_size.y;
+				float screen_area = camera.size.x * camera.size.y;
+				float lod_ratio = sqrt(screen_area / quad_area);
+				uint lod_level = log2(max(1.0f, lod_ratio * mesh.lodCount));
 
-				vec3 camera_pos = vec3(frameData.invView[3]);
-				vec3 extents = (min_extents.xyz - min_extents.xyz) * 0.5f;
-				vec3 center = min_extents.xyz + extents;
+				//vec3 camera_pos = vec3(frameData.invView[3]);
+				//vec3 extents = (min_extents.xyz - min_extents.xyz) * 0.5f;
+				//vec3 center = min_extents.xyz + extents;
+				//
+				//const float lod_transition_base = 4.0f;
+				//const float lod_transition_step = 1.25f;
+				//float obj_dist = distance(center, camera_pos);
+				//uint selected_lod = uint(max(1.0 + log(obj_dist / lod_transition_base) / log(lod_transition_step), 0.0));
+				//selected_lod = min(selected_lod, mesh.lodCount - 1);
 
-				const float lod_transition_base = 4.0f;
-				const float lod_transition_step = 1.25f;
-				float obj_dist = distance(center, camera_pos);
-				uint selected_lod = uint(max(1.0 + log(obj_dist / lod_transition_base) / log(lod_transition_step), 0.0));
-				selected_lod = min(selected_lod, mesh.lodCount - 1);
-
-				FMeshLod lod = lb.lods[mesh.lodOffset + selected_lod];
+				FMeshLod lod = lb.lods[mesh.lodOffset + lod_level];
 				
 				indirectCommandBuffer.commands[output_index].indexCount = lod.indexCount == 0 ? lastIndex : lod.indexCount;
 				indirectCommandBuffer.commands[output_index].instanceCount = 1;

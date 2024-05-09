@@ -82,6 +82,20 @@ namespace engine {
 		CONSTANT uint32_t max_point_light_shadow_count = 2u;
 		CONSTANT uint32_t point_light_shadow_map_resolution = 512u;
 
+		CONSTANT uint32_t view_matrix_offset = 0u;
+		CONSTANT uint32_t prev_view_matrix_offset = 1u;
+		CONSTANT uint32_t inv_view_matrix_offset = 2u;
+		CONSTANT uint32_t prev_inv_view_matrix_offset = 3u;
+		CONSTANT uint32_t projection_matrix_offset = 4u;
+		CONSTANT uint32_t prev_projection_matrix_offset = 5u;
+		CONSTANT uint32_t inv_projection_matrix_offset = 6u;
+		CONSTANT uint32_t prev_inv_projection_matrix_offset = 7u;
+		CONSTANT uint32_t view_projection_matrix_offset = 8u;
+		CONSTANT uint32_t prev_view_projection_matrix_offset = 9u;
+		CONSTANT uint32_t inv_view_projection_matrix_offset = 10u;
+		CONSTANT uint32_t prev_inv_view_projection_matrix_offset = 11u;
+		CONSTANT uint32_t reprojection_matrix_offset = 12u;
+
 #if defined(INDEX_8BIT)
 #define Index uint8_t
 #elif defined(INDEX_16BIT)
@@ -149,6 +163,18 @@ namespace engine {
 			MATRIX4 invViewProjection;
 			MATRIX4 prevInvViewProjection;
 			MATRIX4 reprojectionMatrix;
+			VECTOR2 size;
+			VECTOR2 invSize;
+		};
+
+		struct FCamera
+		{
+			uint32_t matricesOffset;
+			uint32_t type;
+			
+			float zNear;
+			float zFar;
+
 			VECTOR2 size;
 			VECTOR2 invSize;
 		};
@@ -266,14 +292,14 @@ namespace engine {
 			uint32_t vboID;
 			uint32_t meshID;
 			uint32_t nodeID;
-			uint32_t cullerID;
+			uint32_t cameraID;
 		};
 
 		// Lights and shadows
 		struct FCascadedShadowCommit
 		{
 			ARRAY_OF(splitDepths, float, cascade_shadow_map_cascade_count);
-			uint32_t firstMatrix;
+			uint32_t cameraID;
 			float farClip;
 			int index;
 			uint32_t pad;
@@ -291,7 +317,7 @@ namespace engine {
 
 		struct FOmniShadowCommit
 		{
-			uint32_t firstMatrix;
+			uint32_t cameraID;
 			float farPlane;
 			int index;
 			uint32_t pad;
@@ -309,7 +335,7 @@ namespace engine {
 
 		struct FSpotShadowCommit
 		{
-			uint32_t firstMatrix;
+			uint32_t cameraID;
 			int index;
 		};
 
@@ -420,20 +446,15 @@ namespace engine {
 		layout(std140, set = 0, binding = 0) uniform GlobalUniformFrameData
 #endif
 		{
-			MATRIX4 view;
-			MATRIX4 invView;
-			VECTOR2 viewportDimension;
-			VECTOR2 invViewportDimension;
-			float nearPlane;
-			float farPlane;
 			float dt;
 			uint32_t directionalLightCount;
 			uint32_t pointLightCount;
 			uint32_t spotLightCount;
 			uint32_t cullerCount;
+			uint32_t cameraCount;
 			uint32_t maxCommandsCount;
 			uint32_t rawCommandsCount;
-			uint32_t defaultViewport;
+			uint32_t defaultCameraID;
 #ifdef __cplusplus
 		};
 #else
@@ -477,7 +498,8 @@ namespace engine {
 
 		// Other
 		REGISTER_OBJECT_ARRAY_BUFFER(TextureBindingRemap, uint32_t, remap);
-		REGISTER_OBJECT_ARRAY_BUFFER(ViewportBuffer, FViewport, viewports);
+		REGISTER_OBJECT_ARRAY_BUFFER(CameraBuffer, FCamera, cameras);
+		//REGISTER_OBJECT_ARRAY_BUFFER(ViewportBuffer, FViewport, viewports);
 
 #ifdef __cplusplus
 		struct FGlobalBufferReference
@@ -510,7 +532,8 @@ namespace engine {
 			IndirectTaskCommands indirectTaskCommandBuffer;
 
 			TextureBindingRemap textureRemapBuffer;
-			ViewportBuffer viewportBuffer;
+			CameraBuffer cameraBuffer;
+			//ViewportBuffer viewportBuffer;
 		};
 
 #ifdef __cplusplus

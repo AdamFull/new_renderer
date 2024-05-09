@@ -17,19 +17,19 @@
 
 		vec3 generatePositionFromDepth(vec2 texturePos, float depth) 
 		{
-			FViewport viewport = viewportBuffer.viewports[frameData.defaultViewport];
+			FCamera camera = cameraBuffer.cameras[frameData.defaultÑameraID];
 
 			vec4 ndc = vec4((texturePos - 0.5) * 2, depth, 1.f);
-			vec4 inversed = viewport.invProjection * ndc;
+			vec4 inversed = matrixBuffer.matrices[camera.matricesOffset + inv_projection_matrix_offset] * ndc;
 			inversed /= inversed.w;
 			return inversed.xyz;
 		}
 		
 		vec2 generateProjectedPosition(vec3 pos)
 		{
-			FViewport viewport = viewportBuffer.viewports[frameData.defaultViewport];
+			FCamera camera = cameraBuffer.cameras[frameData.defaultÑameraID];
 
-			vec4 samplePosition = viewport.projection * vec4(pos, 1.f);
+			vec4 samplePosition = matrixBuffer.matrices[camera.matricesOffset + projection_matrix_offset] * vec4(pos, 1.f);
 			samplePosition.xy = (samplePosition.xy / samplePosition.w) * 0.5 + 0.5;
 			return samplePosition.xy;
 		}
@@ -162,7 +162,8 @@
 		
 		vec3 ScreenSpaceReflections(in vec3 worldPosition, in vec3 N, in vec3 V, in float R, in sampler2D depthTexture, in sampler2D previousSceneColor, float dither, inout float ssrWeight)
 		{
-			FViewport viewport = viewportBuffer.viewports[frameData.defaultViewport];
+			FCamera camera = cameraBuffer.cameras[frameData.defaultÑameraID];
+
 			vec3 ssr = vec3(0.0);
 			vec3 debug = vec3(0.0);
 			const float roughnessThreshold = 0.75f;
@@ -181,8 +182,9 @@
 					vec3 reflectionVs = vec3(frameData.view * vec4(reflectionWs, 1.0));
 					vec3 rayEndVS = rayStartVS + (reflectionVs * linearDepth);
 				
-					vec3 rayStart = ViewPositionToUV(rayStartVS, viewport.projection);
-					vec3 rayEnd = ViewPositionToUV(rayEndVS, viewport.projection);
+					mat4 projection = matrixBuffer.matrices[camera.matricesOffset + projection_matrix_offset];
+					vec3 rayStart = ViewPositionToUV(rayStartVS, projection);
+					vec3 rayEnd = ViewPositionToUV(rayEndVS, projection);
 				
 					vec3 rayStep = ((rayEnd - rayStart) / float(maxSteps));
 					rayStep = rayStep / length(rayEnd.xy - rayStart.xy);
@@ -227,9 +229,11 @@
 					vec4 hitColor = vec4(0.0);
 					if (hitIndex > 0)
 					{
+						mat4 reprojection = matrixBuffer.matrices[camera.matricesOffset + reprojection_matrix_offset];
+
 						debug += vec3(0.0, 0.5, 0.0);
 						vec4 uv = vec4(bestHit.xy, 0.0, 1.0);
-						uv = viewport.reprojectionMatrix * uv;
+						uv = reprojection * uv;
 				
 						vec2 distanceFromCenter = (vec2(uv.x, uv.y) * 2.0f) - vec2(1.0f, 1.0f);
 						float edgeAttenuation = clamp((1.0 - (float(hitIndex / maxSteps))) * 4.0f, 0.0, 1.0);
@@ -255,10 +259,12 @@
 #if 1
 		float ScreenSpaceShadows(vec3 worldPosition, vec3 lightDirection, in sampler2D depthTexture, int stepCount, float rayLength, float ditherOffset)
 		{
-			FViewport viewport = viewportBuffer.viewports[frameData.defaultViewport];
+			FCamera camera = cameraBuffer.cameras[frameData.defaultÑameraID];
+			mat4 projection = matrixBuffer.matrices[camera.matricesOffset + projection_matrix_offset];
+			mat4 view_projection = matrixBuffer.matrices[camera.matricesOffset + view_projection_matrix_offset];
 		
-			vec4 rayStartPS = viewport.viewProjection * vec4(worldPosition, 1.0);
-			vec4 rayDirPS = viewport.viewProjection * vec4(-lightDirection * rayLength, 0.0);
+			vec4 rayStartPS = view_projection * vec4(worldPosition, 1.0);
+			vec4 rayDirPS = view_projection * vec4(-lightDirection * rayLength, 0.0);
 			vec4 rayEndPS = rayStartPS + rayDirPS;
 			rayStartPS.xyz /= rayStartPS.w;
 			rayEndPS.xyz /= rayEndPS.w;
@@ -266,7 +272,7 @@
 			vec3 rayStep = rayEndPS.xyz - rayStartPS.xyz;
 			float stepSize = 1.0f / stepCount;
 		
-			vec4 rayDepthClip = rayStartPS + viewport.projection * vec4(0.0, 0.0, rayLength, 0.0);
+			vec4 rayDepthClip = rayStartPS + projection * vec4(0.0, 0.0, rayLength, 0.0);
 			rayDepthClip.xyz /= rayDepthClip.w;
 			float tolerance = abs(rayDepthClip.z - rayStartPS.z) * stepSize * 2.0;
 		
@@ -307,13 +313,15 @@
 
 		float ScreenSpaceShadows(vec3 worldPosition, vec3 lightDirection, in sampler2D depthTexture, int stepCount, float rayLength, float ditherOffset)
 		{
-			FViewport viewport = viewportBuffer.viewports[frameData.defaultViewport];
+			FCamera camera = cameraBuffer.cameras[frameData.defaultÑameraID];
+			mat4 projection = matrixBuffer.matrices[camera.matricesOffset + projection_matrix_offset];
+			mat4 view = matrixBuffer.matrices[camera.matricesOffset + view_matrix_offset];
 
 			worldPosition.y *= -1.f;
 
 			// Compute ray position and direction (in view-space)
-			vec3 ray_pos = vec3(frameData.view * vec4(worldPosition, 1.0));
-			vec3 ray_dir = vec3(frameData.view * vec4(-lightDirection, 0.0));
+			vec3 ray_pos = vec3(view * vec4(worldPosition, 1.0));
+			vec3 ray_dir = vec3(view * vec4(-lightDirection, 0.0));
 
 			// Compute ray step
 			vec3 ray_step = ray_dir * g_sss_step_length;
@@ -332,7 +340,7 @@
 				// Step the ray
 				ray_pos += ray_step;
 
-				vec4 uv = viewport.projection * vec4(ray_pos, 1.0);
+				vec4 uv = projection * vec4(ray_pos, 1.0);
 				ray_uv =  (uv.xy / uv.w) * vec2(0.5f, -0.5f) + 0.5f;
 
 				// Ensure the UV coordinates are inside the screen

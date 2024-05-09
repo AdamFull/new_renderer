@@ -55,6 +55,7 @@
 			uint objID;
 
 			uint vboID;
+			uint cameraID;
 		};
 
 		bool loadVisBuffer(in vec2 uv, out VisibilityBuffer res)
@@ -79,6 +80,7 @@
 			
 			res.objID = draw_info.nodeID;
 			res.matID = mesh.materialID;
+			res.cameraID = draw_info.cameraID;
 
 			return true;
 		}
@@ -205,10 +207,12 @@
 			}
 #endif // HAS_SKIN
 
-			FViewport viewport = viewportBuffer.viewports[frameData.defaultViewport];
+			FCamera camera = cameraBuffer.cameras[visbuffer.cameraID];
+			mat4 view = matricesBuffer.marices[camera.matricesOffset + view_matrix_offset];
+			mat4 projection = matricesBuffer.marices[camera.matricesOffset + projection_matrix_offset];
 
 			// Transform positions to clip space
-			mat4 mvp = viewport.projection * frameData.view * model;
+			mat4 mvp = projection * view * model;
 			vec4 clipPos0 = mvp * vec4(position0, 1.0);
 			vec4 clipPos1 = mvp * vec4(position1, 1.0);
 			vec4 clipPos2 = mvp * vec4(position2, 1.0);
@@ -216,7 +220,7 @@
 			//uv.y = 1.0 - uv.y;
 			vec2 ndcClip = uv * 2.0 - 1.0;
 
-			BarycentricDeriv bary = computeBarycentrics(clipPos0, clipPos1, clipPos2, ndcClip, frameData.invViewportDimension);
+			BarycentricDeriv bary = computeBarycentrics(clipPos0, clipPos1, clipPos2, ndcClip, camera.invSize);
 
 			VertexAttribute res;
 
