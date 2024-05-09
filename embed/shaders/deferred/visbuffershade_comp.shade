@@ -129,11 +129,12 @@
 		float getCascadeShadow(sampler2DArrayShadow shadowmap_tex, in FDirectionalLightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
 		{
 			FCascadedShadowCommit commit = cascadedShadowBuffer.shadows[light.shadowIndex];
+			FCamera camera = cameraBuffer.cameras[commit.cameraID];
 
 			uint cascadeIndex = getScadowCascadeSplit(commit, va.linearZ, dither);
 		
 			vec4 offsetPos = vec4(va.pos + 0.05 * ms.normal, 1.0);
-			vec4 shadowCoord = (biasMat * matrixBuffer.matrices[commit.firstMatrix + cascadeIndex]) * vec4(va.pos, 1.0);
+			vec4 shadowCoord = (biasMat * matrixBuffer.matrices[camera.matricesOffset + cascadeIndex * matrix_offset_count + view_projection_matrix_offset]) * vec4(va.pos, 1.0);
 			shadowCoord = shadowCoord / shadowCoord.w;
 		
 			float shadow_sample = 1.f;
@@ -207,9 +208,10 @@
 		float getDirectionalShadow(sampler2DArrayShadow shadomwap_tex, in FSpotLightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
 		{
 			FSpotShadowCommit commit = spotShadowBuffer.shadows[light.shadowIndex];
+			FCamera camera = cameraBuffer.cameras[commit.cameraID];
 
 		    float shadow = 1.0;
-			vec4 shadowClip	= matrixBuffer.matrices[commit.firstMatrix] * vec4(va.pos, 1.0);
+			vec4 shadowClip	= matrixBuffer.matrices[camera.matricesOffset + view_projection_matrix_offset] * vec4(va.pos, 1.0);
 		
 			float cosTheta = dot(va.normal, light.direction);
 			const float max_bias = 0.005f;
