@@ -14,8 +14,8 @@ namespace engine
 
 			void create() override;
 
-			u64 registerFrustum(ERenderGeometryCullerType type) override;
-			void updateFrustum(u64 frustum_id, const glm::mat4& view, const glm::mat4& projection) override;
+			u64 registerCamera(ERenderGeometryCullerType type) override;
+			void updateCamera(u64 camera_id, const glm::mat4& view, const glm::mat4& prev_view, const glm::mat4& projection, const glm::mat4& prev_projection, const glm::vec2& size, float znear = 0.f, float zfar = 1.f) override;
 
 			void addDrawGeometry(const utl::vector<FGeometryBatch>& new_geometry) override;
 
@@ -57,6 +57,7 @@ namespace engine
 			utl::hash_map<ERenderGeometryCullerType, utl::vector<FDrawInfo>> m_perCullerDrawCommands{};
 			utl::vector<FFrustum> m_vSceneFrustums{};
 			utl::vector<FCullingInfo> m_vCullingInfo{};
+			utl::vector<FCamera> m_vCameras{};
 
 			utl::vector<FGeometryBatch> m_vRawGeometryBatches{};
 			utl::vector<FGeometryCPUBatch> m_vGeometryBatches{};

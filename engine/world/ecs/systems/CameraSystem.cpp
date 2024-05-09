@@ -25,7 +25,7 @@ void CCameraSystem::__create()
 
 	auto view = registry->view<FTransformComponent, FBaseComponent, FCameraComponent>();
 	for (auto [entity, transform, base, camera] : view.each())
-		camera.frustumID = render_world->registerFrustum(ERenderGeometryCullerType::eScene);
+		camera.frustumID = render_world->registerCamera(ERenderGeometryCullerType::eScene);
 }
 
 void CCameraSystem::__update(f32 fDt)
@@ -43,19 +43,21 @@ void CCameraSystem::__update(f32 fDt)
 		// TODO: add something like active camera tag
 		if (base.enabled)
 		{
-			auto& render_camera = render_packet->camera;
-
-			render_camera.forward = camera.forward = glm::normalize(glm::rotate(transform.grotation, glm::vec3(0.f, 0.f, -1.f)));
-			render_camera.right = camera.right = glm::normalize(glm::cross(camera.forward, glm::vec3{ 0.f, 1.f, 0.f }));
-			render_camera.up = camera.up = glm::normalize(glm::cross(camera.right, camera.forward));
+			camera.forward = glm::normalize(glm::rotate(transform.grotation, glm::vec3(0.f, 0.f, -1.f)));
+			camera.right = glm::normalize(glm::cross(camera.forward, glm::vec3{ 0.f, 1.f, 0.f }));
+			camera.up = glm::normalize(glm::cross(camera.right, camera.forward));
 
 			if (camera.moved)
 			{
-				render_camera.view = camera.view = glm::lookAt(transform.gposition, transform.gposition + camera.forward, camera.up);
-				render_camera.invView = camera.invView = glm::inverse(camera.view);
+				glm::mat4 prev_view = camera.view;
+				glm::mat4 prev_projection = camera.projection;
+				camera.view = glm::lookAt(transform.gposition, transform.gposition + camera.forward, camera.up);
+				camera.projection = glm::perspective(camera.fieldOfView, aspect, camera.nearPlane, camera.farPlane);
 
 				if(camera.active)
 					render_packet->camera.wasUpdated = true;
+
+				render_world->updateCamera(camera.frustumID, camera.view, viewport.projection);
 
 				camera.moved = false;
 			}
@@ -63,12 +65,7 @@ void CCameraSystem::__update(f32 fDt)
 			render_packet->camera.nearp = camera.nearPlane;
 			render_packet->camera.farp = camera.farPlane;
 
-			auto& render_graph = m_pRenderInterface->getRenderGraph();
-			const auto& viewport = render_graph->getDefaultViewport();
-
 			//glm::perspective(render_packet->camera.fov, aspect, render_packet->camera.nearp, render_packet->camera.farp);
-
-			render_world->updateFrustum(camera.frustumID, camera.view, viewport.projection);
 			break;
 		}
 	}

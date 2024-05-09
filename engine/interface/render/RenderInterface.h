@@ -139,6 +139,7 @@ namespace engine
 			// Other
 			eTextureRemapBuffer,
 			eViewportBuffer,
+			eCameraBuffer,
 
 			eLastIndex
 		};
@@ -151,25 +152,6 @@ namespace engine
 		struct FGlobalUniformUpdateInfo
 		{
 			utl::hash_map<u64, FUniformDataView> uniforms{};
-		};
-
-		struct FRenderCamera
-		{
-			f32 fov{ 45.f };
-			f32 nearp{ 0.1f };
-			f32 farp{ 512.f };
-
-			glm::mat4 view{ 1.f };
-			glm::mat4 invView{ 1.f };
-
-			glm::vec3 up{ 0.f };
-			glm::vec3 forward{ 0.f };
-			glm::vec3 right{ 0.f };
-
-			glm::vec2 dimensions{};
-
-			FFrustum frustum{};
-			bool wasUpdated{ true };
 		};
 
 		struct FRenderNode
@@ -296,7 +278,6 @@ namespace engine
 				//resources = std::make_unique<CGPUArrayHolder>();
 			}
 
-			FRenderCamera camera{};
 			FRenderSceneStats stats{};
 		};
 
@@ -425,8 +406,8 @@ namespace engine
 
 			virtual void create() = 0;
 
-			virtual u64 registerFrustum(ERenderGeometryCullerType type) = 0;
-			virtual void updateFrustum(u64 frustum_id, const glm::mat4& view, const glm::mat4& projection) = 0;
+			virtual u64 registerCamera(ERenderGeometryCullerType type) = 0;
+			virtual void updateCamera(u64 camera_id, const glm::mat4& view, const glm::mat4& prev_view, const glm::mat4& projection, const glm::mat4& prev_projection, const glm::vec2& size, float znear = 0.f, float zfar = 1.f) = 0;
 
 			virtual void addDrawGeometry(const utl::vector<FGeometryBatch>& new_geometry) = 0;
 

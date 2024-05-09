@@ -47,24 +47,56 @@ void CRenderWorld::create()
 
 	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eTextureRemapBuffer))->create<uint32_t>("TextureBindingRemap", EBufferUsageFlagBits::eStorageBuffer);
 	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eViewportBuffer))->create<FViewport>("ViewportBuffer", EBufferUsageFlagBits::eStorageBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eCameraBuffer))->create<FCamera>("CameraBuffer", EBufferUsageFlagBits::eStorageBuffer);
 }
 
-u64 CRenderWorld::registerFrustum(ERenderGeometryCullerType type)
+u64 CRenderWorld::registerCamera(ERenderGeometryCullerType type)
 {
-	u64 frustum_id = m_vSceneFrustums.size();
+	u64 camera_id = m_vSceneFrustums.size();
 	m_vSceneFrustums.emplace_back();
+	auto& camera = m_vCameras.emplace_back();
+	camera.type = type == ERenderGeometryCullerType::eCascadedShadow;
 
 	auto& culling_info = m_vCullingInfo.emplace_back();
-	culling_info.cullerID = frustum_id;
+	culling_info.cullerID = camera_id;
 	culling_info.type = type;
 
-	return frustum_id;
+	return camera_id;
 }
 
-void CRenderWorld::updateFrustum(u64 frustum_id, const glm::mat4& view, const glm::mat4& projection)
+void CRenderWorld::updateCamera(u64 camera_id, const glm::mat4& view, const glm::mat4& prev_view, const glm::mat4& projection, const glm::mat4& prev_projection, const glm::vec2& size, float znear, float zfar)
 {
-	auto& frustum = m_vSceneFrustums.at(frustum_id);
+	auto& frustum = m_vSceneFrustums.at(camera_id);
 	frustum.update(view, projection);
+
+	utl::vector<glm::mat4> camera_matrices{};
+	camera_matrices.emplace_back(view);
+	camera_matrices.emplace_back(prev_view);
+	camera_matrices.emplace_back(glm::inverse(view));
+	camera_matrices.emplace_back(glm::inverse(prev_view));
+	camera_matrices.emplace_back(projection);
+	camera_matrices.emplace_back(prev_projection);
+	camera_matrices.emplace_back(glm::inverse(projection));
+	camera_matrices.emplace_back(glm::inverse(prev_projection));
+	camera_matrices.emplace_back(projection * view);
+	camera_matrices.emplace_back(prev_projection * prev_view);
+	camera_matrices.emplace_back(glm::inverse(projection * view));
+	camera_matrices.emplace_back(glm::inverse(prev_projection * prev_view));
+	auto& camera = m_vCameras.at(camera_id);
+
+	CONSTANT uint32_t view_matrix_offset = 0u;
+	CONSTANT uint32_t prev_view_matrix_offset = 1u;
+	CONSTANT uint32_t inv_view_matrix_offset = 2u;
+	CONSTANT uint32_t prev_inv_view_matrix_offset = 3u;
+	CONSTANT uint32_t projection_matrix_offset = 4u;
+	CONSTANT uint32_t prev_projection_matrix_offset = 5u;
+	CONSTANT uint32_t inv_projection_matrix_offset = 6u;
+	CONSTANT uint32_t prev_inv_projection_matrix_offset = 7u;
+	CONSTANT uint32_t view_projection_matrix_offset = 8u;
+	CONSTANT uint32_t prev_view_projection_matrix_offset = 9u;
+	CONSTANT uint32_t inv_view_projection_matrix_offset = 10u;
+	CONSTANT uint32_t prev_inv_view_projection_matrix_offset = 11u;
+	CONSTANT uint32_t reprojection_matrix_offset = 12u;
 }
 
 void CRenderWorld::addDrawGeometry(const utl::vector<FGeometryBatch>& new_geometry)
