@@ -123,7 +123,7 @@ namespace engine
 
 			bool operator==(const FAudioEmitterComponent& other) const
 			{
-				return this->name == other.name && this->uri == other.uri;
+				return this->src == other.src;
 			}
 		};
 
@@ -170,7 +170,7 @@ namespace engine
 
 			bool operator==(const FMeshComponent& other) const
 			{
-				return this->uri == other.uri && this->primitives == other.primitives && 
+				return this->src == other.src && this->primitives == other.primitives &&
 					this->weights == other.weights;
 			}
 		};
@@ -201,7 +201,7 @@ namespace engine
 
 			light_flags_t flags{};
 
-			bool operator==(const FTransformComponent& other) const
+			bool operator==(const FLightComponent& other) const
 			{
 				return this->color == other.color && this->intensity == other.intensity &&
 					this->range == other.range && this->innerAngle == other.innerAngle &&
@@ -271,7 +271,7 @@ namespace engine
 			u64 byte_offset{ 0ull };
 			u64 count{ 0ull }; // (required)
 			bool normalized{ false };
-			component_type_t component_type{ base::constants::not_set }; // (required)
+			component_type_t component_type{ component_type::invalid }; // (required)
 			std::string type{ }; // (required)
 
 			utl::vector<double> min{};
@@ -283,7 +283,7 @@ namespace engine
 					this->buffer_view == other.buffer_view && this->byte_offset == other.byte_offset && 
 					this->count == other.count && this->normalized == other.normalized && 
 					this->component_type == other.component_type && this->type == other.type &&
-					this->min == ther.min && this->max == other.max;
+					this->min == other.min && this->max == other.max;
 			}
 		};
 
