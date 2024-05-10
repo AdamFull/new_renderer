@@ -53,7 +53,6 @@ void IRenderPass::init(const FRenderPassCreateInfo& pass_ci)
 
 	m_clearValues = pass_ci.clearValues;
 	m_bFlipViewport = pass_ci.flipViewport;
-	m_viewportIndex = pass_ci.viewportIndex;
 	m_depthTarget = pass_ci.depthTarget;
 	m_stencilTarget = pass_ci.stencilTarget;
 }
@@ -92,10 +91,7 @@ void IRenderPass::execute(f32 dt)
 	IBasePass::execute(dt);
 
 	auto& render_context = m_pRenderInterface->getRenderContext();
-	auto& render_graph = m_pRenderInterface->getRenderGraph();
-
-	auto& viewport = render_graph->getViewport(m_viewportIndex);
-	auto& viewport_view = render_graph->getViewportView(m_viewportIndex);
+	auto& render_world = m_pRenderInterface->getRenderWorld();
 
 	FBeginRendering2Info beginRenderingInfo{};
 	beginRenderingInfo.queue = m_queue;
@@ -103,8 +99,8 @@ void IRenderPass::execute(f32 dt)
 	beginRenderingInfo.depthAttachment = &m_depthAttachment;
 	beginRenderingInfo.stencilAttachment = &m_stencilAttachment;
 	beginRenderingInfo.layerCount = m_layerCount;
-	beginRenderingInfo.renderArea.size.x = viewport.size.x;
-	beginRenderingInfo.renderArea.size.y = viewport.size.y;
+	beginRenderingInfo.renderArea.size.x = 0;
+	beginRenderingInfo.renderArea.size.y = 0;
 	beginRenderingInfo.clearValues = m_clearValues;
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -113,7 +109,7 @@ void IRenderPass::execute(f32 dt)
 
 	render_context->beginTimestampZone(m_queue);
 	render_context->beginRendering(beginRenderingInfo);
-	render_context->setViewport(utl::cast<f32>(beginRenderingInfo.renderArea.size.x), utl::cast<f32>(beginRenderingInfo.renderArea.size.y), m_bFlipViewport);
+	//render_context->setViewport(utl::cast<f32>(beginRenderingInfo.renderArea.size.x), utl::cast<f32>(beginRenderingInfo.renderArea.size.y), m_bFlipViewport);
 
 	FRenderFrameInfo frame_info{};
 	frame_info.deltaTime = dt;

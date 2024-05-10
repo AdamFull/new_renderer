@@ -33,7 +33,7 @@
 			if(swizzle_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, gl_WorkGroupID.xy, image_size, uv, px))
 				return;
 
-			FCamera camera = cameraBuffer.cameras[frameData.default—ameraID];
+			FCamera camera = cameraBuffer.cameras[frameData.defaultCameraID];
 			mat4 inv_view_projection = matrixBuffer.matrices[camera.matricesOffset + inv_view_projection_matrix_offset];
 			mat4 prev_view_projection = matrixBuffer.matrices[camera.matricesOffset + prev_view_projection_matrix_offset];
 

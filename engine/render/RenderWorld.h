@@ -16,6 +16,9 @@ namespace engine
 
 			u64 registerCamera(ERenderGeometryCullerType type) override;
 			void updateCamera(u64 camera_id, const glm::mat4& view, const glm::mat4& prev_view, const glm::mat4& projection, const glm::mat4& prev_projection, const glm::vec2& size, float znear = 0.f, float zfar = 1.f) override;
+			const FCamera& getCamera(u64 index) const override;
+			const FCamera& getDefaultCamera() const override;
+			const u64 getDefaultCameraID() const override;
 
 			void addDrawGeometry(const utl::vector<FGeometryBatch>& new_geometry) override;
 
@@ -31,6 +34,8 @@ namespace engine
 			void addShadow(const FSpotShadowCommit& commit) override;
 
 			void addMatrices(const utl::vector<glm::mat4>& matrices) override;
+			const glm::mat4& getMatrix(u64 index) const override;
+			const glm::mat4& getPrevMatrix(u64 index) const override;
 
 			void updateNode(u32 node_id, const FSceneNode& node) override;
 
@@ -58,11 +63,15 @@ namespace engine
 			utl::vector<FFrustum> m_vSceneFrustums{};
 			utl::vector<FCullingInfo> m_vCullingInfo{};
 			utl::vector<FCamera> m_vCameras{};
+			u64 m_defaultCameraID{ 0ull };
 
 			utl::vector<FGeometryBatch> m_vRawGeometryBatches{};
 			utl::vector<FGeometryCPUBatch> m_vGeometryBatches{};
 			utl::vector<FMaterial> m_vMaterials{};
 			bool m_bMaterialsChanged{ true };
+
+			utl::vector<glm::mat4> m_vMatrices{};
+			utl::vector<glm::mat4> m_vOldMatrices{};
 
 			//utl::vector<FMaterial> m_vMaterials{};
 			utl::vector<glm::mat4> m_vSkins{};

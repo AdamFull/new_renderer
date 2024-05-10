@@ -208,8 +208,8 @@
 #endif // HAS_SKIN
 
 			FCamera camera = cameraBuffer.cameras[visbuffer.cameraID];
-			mat4 view = matricesBuffer.marices[camera.matricesOffset + view_matrix_offset];
-			mat4 projection = matricesBuffer.marices[camera.matricesOffset + projection_matrix_offset];
+			mat4 view = matrixBuffer.matrices[camera.matricesOffset + view_matrix_offset];
+			mat4 projection = matrixBuffer.matrices[camera.matricesOffset + projection_matrix_offset];
 
 			// Transform positions to clip space
 			mat4 mvp = projection * view * model;

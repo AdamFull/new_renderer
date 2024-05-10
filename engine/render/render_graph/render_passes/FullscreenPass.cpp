@@ -38,9 +38,12 @@ void CFullscreenPass::build(const FPassBuildInfo& build_info)
 void CFullscreenPass::_render(const FRenderFrameInfo& frame_info)
 {
 	auto& render_context = m_pRenderInterface->getRenderContext();
-	render_context->setScissorRect(0, 0, frame_info.renderRect.size.x, frame_info.renderRect.size.y);
 
 	bindShaderResources(m_pShader, frame_info.deltaTime);
+
+	auto resolution = render_context->getScreenRenderRect();
+	render_context->setViewport(resolution.size.x, resolution.size.y, m_bFlipViewport);
+	render_context->setScissorRect(0, 0, resolution.size.x, resolution.size.y);
 
 	m_pShader->flushDescriptors();
 	m_pShader->flushConstants(m_queue);

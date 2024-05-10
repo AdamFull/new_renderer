@@ -35,7 +35,7 @@
 		shadows_pattern: {
 			permutation_generator: {
 				rules: [
-{
+					{
 						base: ["HAS_TEXCOORD", "HAS_NORMAL"];
 						variants: [
 							{ defines: ["", "CASCADED_SHADOW", "OMNI_SHADOW"]; type: "or"; },

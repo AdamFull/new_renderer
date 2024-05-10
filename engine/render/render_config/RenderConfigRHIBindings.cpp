@@ -327,7 +327,6 @@ namespace engine
 				"GraphicsCreateInfo",
 				sol::base_classes, sol::bases<FRenderConfigPassCreateInfo>(),
 				"type", &FRenderConfigRenderCreateInfo::type,
-				"set_viewport", &FRenderConfigRenderCreateInfo::setViewport,
 				"set_depth_target", sol::overload(
 					[](FRenderConfigRenderCreateInfo& self, const std::string& resource_name) { self.setDepthTarget(resource_name); },
 					[](FRenderConfigRenderCreateInfo& self, const std::string& resource_name, f32 clear_value) { self.setDepthTarget(resource_name, clear_value); }
@@ -351,18 +350,6 @@ namespace engine
 					static_cast<void(FRenderConfigComputeCreateInfo::*)(u32, u32, u32, u32, bool)>(&FRenderConfigComputeCreateInfo::addDispatchGroupInfo)
 				)
 			);
-
-			// FViewportCreateInfo registration
-			lua->new_usertype<FViewportCreateInfo>(
-				"ViewportCI",
-				"set_fixed_size_2d", sol::overload(
-					static_cast<void(FViewportCreateInfo::*)(u32)>(&FViewportCreateInfo::setFixedSize2D),
-					static_cast<void(FViewportCreateInfo::*)(u32, u32)>(&FViewportCreateInfo::setFixedSize2D)
-				),
-				"depend_on_target", &FViewportCreateInfo::dependOnTarget,
-				"depend_on_viewport", &FViewportCreateInfo::dependOnViewport,
-				"set_scale", &FViewportCreateInfo::setScale
-				);
 		}
 
 		void bindRenderInterfaceObjects(sol::state* lua)
@@ -400,8 +387,6 @@ namespace engine
 			// IRenderGraph registration
 			lua->new_usertype<IRenderGraph>(
 				"IRenderGraph",
-				"add_viewport", &IRenderGraph::addViewport,
-				"set_default_viewport", &IRenderGraph::setDefaultViewport,
 				"add_static_resource", &IRenderGraph::addStaticResource,
 				"add_render_resource", sol::overload(
 					static_cast<u64(IRenderGraph::*)(const std::string&, const FTextureCreateInfo&)>(&IRenderGraph::addRenderResource),

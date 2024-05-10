@@ -193,40 +193,6 @@ do
 end
 
 
--- Register viewports
-do
-    local viewport_ci = ViewportCI.new()
-    viewport_ci:depend_on_target("present_target")
-    render_graph:add_viewport("default_viewport", viewport_ci)
-    render_graph:set_default_viewport("default_viewport")
-end
-
-do 
-    local viewport_ci = ViewportCI.new()
-    viewport_ci:depend_on_viewport("default_viewport")
-    viewport_ci:set_scale(0.5)
-    render_graph:add_viewport("half_resolution_viewport", viewport_ci)
-end
-
-do 
-    local viewport_ci = ViewportCI.new()
-    viewport_ci:set_fixed_size_2d(global_settings.cascade_shadowmap_resolution)
-    render_graph:add_viewport("cascaded_shadows_viewport", viewport_ci)
-end
-
-do 
-    local viewport_ci = ViewportCI.new()
-    viewport_ci:set_fixed_size_2d(global_settings.spotlight_shadowmap_resolution)
-    render_graph:add_viewport("spot_shadows_viewport", viewport_ci)
-end
-
-do 
-    local viewport_ci = ViewportCI.new()
-    viewport_ci:set_fixed_size_2d(global_settings.point_light_shadowmap_resolution)
-    render_graph:add_viewport("omni_shadows_viewport", viewport_ci)
-end
-
-
 function generate_prefiltered_cube()
     render_graph:push_debug_marker("Prefiltered cubemap generator", 0xffff33ff, QueueType.graphics)
 
@@ -491,7 +457,6 @@ end
 -- Shadow passes
 do
     local pass_ci = make_graphics_pass(RenderingType.csm, QueueType.graphics, "lighting:unidirectional_shadow:CASCADED_SHADOW")
-    pass_ci:set_viewport("cascaded_shadows_viewport")
     pass_ci:set_depth_target("cascaded_shadows_target")
 
     pass_ci:add_read_resource("GeometryBatches")
@@ -503,7 +468,6 @@ end
 
 do
     local pass_ci = make_graphics_pass(RenderingType.dsm, QueueType.graphics, "lighting:unidirectional_shadow")
-    pass_ci:set_viewport("spot_shadows_viewport")
     pass_ci:set_depth_target("directional_shadows_target")
 
     pass_ci:add_read_resource("GeometryBatches")
@@ -515,7 +479,7 @@ end
 
 do
     local pass_ci = make_graphics_pass(RenderingType.osm, QueueType.graphics, "lighting:unidirectional_shadow:OMNI_SHADOW")
-    pass_ci:set_viewport("omni_shadows_viewport")
+    local pass_ci = make_graphics_pass(RenderingType.osm, QueueType.graphics, "lighting:unidirectional_shadow:OMNI_SHADOW")
     pass_ci:set_depth_target("omni_shadows_target")
 
     pass_ci:add_read_resource("GeometryBatches")

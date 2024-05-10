@@ -87,37 +87,5 @@ void CMeshSystem::__update(f32 fDt)
 	prepare_draw_commands(render_world, m_pSceneGraph, draw_commands, utl::enum_cast(EAlphaMode::eMask));
 	prepare_draw_commands(render_world, m_pSceneGraph, draw_commands, utl::enum_cast(EAlphaMode::eBlend));
 
-	auto& render_graph = m_pRenderInterface->getRenderGraph();
-	auto& viewport = render_graph->getDefaultViewport();
-
-	auto& registry = m_pSceneGraph->getRegistry();
-	auto view = registry->view<FTransformComponent, FBaseComponent, FMeshComponent>();
-	for (auto [entity, transform, base, mesh_component] : view.each())
-	{
-		if (!base.visible)
-			continue;
-
-		for (const auto& primitive : mesh_component.primitives)
-		{
-			glm::vec4 min_clip = viewport.viewProjection * transform.gmodel * glm::vec4(primitive.dims.min, 1.0f);
-			glm::vec4 max_clip = viewport.viewProjection * transform.gmodel * glm::vec4(primitive.dims.max, 1.0f);
-
-			glm::vec3 ndc_min = (min_clip / min_clip.w + 1.0f) * 0.5f;
-			glm::vec3 ndc_max = (max_clip / max_clip.w + 1.0f) * 0.5f;
-
-			glm::vec2 min_pos = glm::vec2(ndc_min) * viewport.size;
-			glm::vec2 max_pos = glm::vec2(ndc_max) * viewport.size;
-
-			glm::vec2 quad_size = glm::abs(max_pos - min_pos);
-
-			f32 quad_area = quad_size.x * quad_size.y;
-			f32 screen_area = viewport.size.x * viewport.size.y;
-			float lod_ratio = glm::sqrt(screen_area / quad_area);
-			u32 lod_level = glm::log2(glm::max(1.0f, lod_ratio * 12.f));
-
-			lod_level++;
-		}
-	}
-
 	render_world->addDrawGeometry(draw_commands);
 }

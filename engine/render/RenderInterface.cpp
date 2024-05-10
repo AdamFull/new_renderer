@@ -163,20 +163,15 @@ void CRenderInterface::render(f32 dt)
 	const auto& world_stats = m_pRenderWorld->getStats();
 
 	FGlobalUniformData global_uniform{};
-	global_uniform.view = m_pRenderPacket->camera.view;
-	global_uniform.invView = m_pRenderPacket->camera.invView;
-	global_uniform.viewportDimension = m_pRenderPacket->camera.dimensions;
-	global_uniform.invViewportDimension = 1.f / m_pRenderPacket->camera.dimensions;
-	global_uniform.nearPlane = m_pRenderPacket->camera.nearp;
-	global_uniform.farPlane = m_pRenderPacket->camera.farp;
 	global_uniform.dt = dt;
 	global_uniform.directionalLightCount = utl::cast<u32>(world_stats.directionalLightCount);
 	global_uniform.pointLightCount = utl::cast<u32>(world_stats.pointLightCount);
 	global_uniform.spotLightCount = utl::cast<u32>(world_stats.spotLightCount);
 	global_uniform.cullerCount = utl::cast<u32>(world_stats.cullerCount);
+	global_uniform.cameraCount = utl::cast<u32>(world_stats.cullerCount);
 	global_uniform.maxCommandsCount = utl::cast<u32>(world_stats.maxDrawCommands);
 	global_uniform.rawCommandsCount = utl::cast<u32>(world_stats.drawCommandCount);
-	global_uniform.defaultViewport = utl::cast<u32>(m_pRenderGraph->getDefaultViewportIndex());
+	global_uniform.defaultCameraID = utl::cast<u32>(m_pRenderWorld->getDefaultCameraID());
 
 	FGlobalUniformUpdateInfo update_info{};
 	auto& frame_gata_uniform = update_info.uniforms[shader_bindings::global_uniform_frame_data];
@@ -208,7 +203,7 @@ void CRenderInterface::render(f32 dt)
 	global_references.indirectTaskCommandBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eMeshCommandBuffer)->buffer()->address();
 
 	global_references.textureRemapBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eTextureRemapBuffer)->buffer()->address();
-	global_references.viewportBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eViewportBuffer)->buffer()->address();
+	global_references.cameraBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eCameraBuffer)->buffer()->address();
 
 	auto& buffer_ref_uniform = update_info.uniforms[shader_bindings::global_buffer_references];
 	buffer_ref_uniform.data = &global_references;

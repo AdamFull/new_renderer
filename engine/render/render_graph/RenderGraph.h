@@ -23,16 +23,6 @@ namespace engine
 
 			void create() override;
 
-			i64 addViewport(const std::string& name, const FViewportCreateInfo& create_info) override;
-			void setDefaultViewport(const std::string& name) override;
-			const FViewportView& getViewportView(const std::string& name) const override;
-			const FViewportView& getViewportView(u64 idx) const override;
-			const FViewportView& getDefaultViewportView() const override;
-			const FViewport& getViewport(const std::string& name) const override;
-			const FViewport& getViewport(u64 idx) const override;
-			const FViewport& getDefaultViewport() const override;
-			u64 getDefaultViewportIndex() const override;
-
 			u64 addStaticResource(const std::string& name, const std::string& path) override;
 			u64 addRenderResource(const std::string& name, const FTextureCreateInfo& texture_ci) override;
 			u64 addRenderResource(const std::string& name, const FBufferCreateInfo& buffer_ci) override;
@@ -72,12 +62,6 @@ namespace engine
 			utl::vector<FRenderResource> m_vRenderResources{};
 			utl::hash_map<std::string, u64> m_nameToResource{};
 			u64 m_backBufferResource{ INVALID_HANDLE };
-
-			utl::vector<FViewportView> m_vViewports{};
-			utl::hash_map<std::string, u64> m_nameToViewport{};
-			u64 m_defaultViewport{ INVALID_HANDLE };
-
-			utl::vector<FViewport> m_vViewportBuffer{};
 
 			u64 m_executionHash{ 0ull };
 			utl::vector<std::unique_ptr<IBasePass>> m_vRenderPasses{};

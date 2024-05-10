@@ -89,13 +89,6 @@ namespace engine
 			eDebug
 		};
 
-		enum class EViewportDependencyType
-		{
-			eManual,
-			eOnViewport,
-			eOnRenderTarget
-		};
-
 
 		inline constexpr ERenderResourceGroupType packResourceGroup(ERenderResourceAccessFlagBits access_flag, ERenderResourceGroupFlagBits group_flag)
 		{
@@ -132,49 +125,6 @@ namespace engine
 			glm::vec4 color{ 0.f, 0.f, 0.f, 1.f };
 			f32 depth{ 1.f };
 			u32 stencil{ 0u };
-		};
-
-		struct FViewportCreateInfo
-		{
-			void setFixedSize2D(u32 size)
-			{
-				width = height = size;
-				dependencyType = EViewportDependencyType::eManual;
-			}
-
-			void setFixedSize2D(u32 w, u32 h)
-			{
-				width = w;
-				height = h;
-				dependencyType = EViewportDependencyType::eManual;
-			}
-
-			void dependOnTarget(const std::string& name)
-			{
-				dependsOn = name;
-				dependencyType = EViewportDependencyType::eOnRenderTarget;
-			}
-
-			void dependOnViewport(const std::string& name)
-			{
-				dependsOn = name;
-				dependencyType = EViewportDependencyType::eOnViewport;
-			}
-
-			void setScale(float new_scale) { scale = new_scale; }
-
-			std::string dependsOn;
-			u32 width{ 0u }, height{ 0u }, depth{ 1u };
-			EViewportDependencyType dependencyType;
-			float scale{ 1.f };
-		};
-
-		struct FViewportView
-		{
-			u64 dependencyResource{ INVALID_HANDLE };
-			u32 width{ 0u }, height{ 0u }, depth{ 1u };
-			EViewportDependencyType dependencyType;
-			float scale{ 1.f };
 		};
 
 		struct FRenderResourceView
@@ -310,14 +260,12 @@ namespace engine
 		struct FRenderConfigRenderCreateInfo : public FRenderConfigPassCreateInfo
 		{
 			ERenderingType type{};
-			std::string viewport{};
 			std::string depthResource{};
 			std::string stencilResource{};
 			bool flipViewportState{ false };
 
 
 			void flipFiewport() { flipViewportState = true; }
-			void setViewport(const std::string& name) { viewport = name; }
 			void setDepthTarget(const std::string& resource_name, f32 clear_color = 1.f) 
 			{ 
 				if (stencilResource == resource_name)
@@ -418,7 +366,6 @@ namespace engine
 		{
 			bool flipViewport{ false };
 
-			u64 viewportIndex{ INVALID_HANDLE };
 			u64 depthTarget{ INVALID_HANDLE };
 			u64 stencilTarget{ INVALID_HANDLE };
 		};
@@ -434,16 +381,6 @@ namespace engine
 			virtual ~IRenderGraph() = default;
 
 			virtual void create() = 0;
-
-			virtual i64 addViewport(const std::string& name, const FViewportCreateInfo& create_info) = 0;
-			virtual void setDefaultViewport(const std::string& name) = 0;
-			virtual const FViewportView& getViewportView(const std::string& name) const = 0;
-			virtual const FViewportView& getViewportView(u64 idx) const = 0;
-			virtual const FViewportView& getDefaultViewportView() const = 0;
-			virtual const FViewport& getViewport(const std::string& name) const = 0;
-			virtual const FViewport& getViewport(u64 idx) const = 0;
-			virtual const FViewport& getDefaultViewport() const = 0;
-			virtual u64 getDefaultViewportIndex() const = 0;
 
 			virtual u64 addStaticResource(const std::string& name, const std::string& path) = 0;
 			virtual u64 addRenderResource(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;

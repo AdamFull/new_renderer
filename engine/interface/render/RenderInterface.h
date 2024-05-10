@@ -138,7 +138,6 @@ namespace engine
 			eClusterInfoBuffer,
 			// Other
 			eTextureRemapBuffer,
-			eViewportBuffer,
 			eCameraBuffer,
 
 			eLastIndex
@@ -408,6 +407,9 @@ namespace engine
 
 			virtual u64 registerCamera(ERenderGeometryCullerType type) = 0;
 			virtual void updateCamera(u64 camera_id, const glm::mat4& view, const glm::mat4& prev_view, const glm::mat4& projection, const glm::mat4& prev_projection, const glm::vec2& size, float znear = 0.f, float zfar = 1.f) = 0;
+			virtual const FCamera& getCamera(u64 index) const = 0;
+			virtual const FCamera& getDefaultCamera() const = 0;
+			virtual const u64 getDefaultCameraID() const = 0;
 
 			virtual void addDrawGeometry(const utl::vector<FGeometryBatch>& new_geometry) = 0;
 
@@ -423,6 +425,8 @@ namespace engine
 			virtual void addShadow(const FSpotShadowCommit& commit) = 0;
 
 			virtual void addMatrices(const utl::vector<glm::mat4>& matrices) = 0;
+			virtual const glm::mat4& getMatrix(u64 index) const = 0;
+			virtual const glm::mat4& getPrevMatrix(u64 index) const = 0;
 
 			virtual void updateNode(u32 node_id, const FSceneNode& node) = 0;
 

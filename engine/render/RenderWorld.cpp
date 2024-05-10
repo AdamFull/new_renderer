@@ -46,7 +46,6 @@ void CRenderWorld::create()
 	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eMeshCommandBuffer))->create<FDrawMeshIndirectData>("MeshIndirectBuffer", EBufferUsageFlagBits::eIndirectBuffer);
 
 	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eTextureRemapBuffer))->create<uint32_t>("TextureBindingRemap", EBufferUsageFlagBits::eStorageBuffer);
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eViewportBuffer))->create<FViewport>("ViewportBuffer", EBufferUsageFlagBits::eStorageBuffer);
 	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eCameraBuffer))->create<FCamera>("CameraBuffer", EBufferUsageFlagBits::eStorageBuffer);
 }
 
@@ -109,6 +108,23 @@ void CRenderWorld::updateCamera(u64 camera_id, const glm::mat4& view, const glm:
 	camera.invSize = 1.f / size;
 	camera.zNear = znear;
 	camera.zFar = zfar;
+
+	addMatrices(matrices);
+}
+
+const FCamera& CRenderWorld::getCamera(u64 index) const
+{
+	return m_vCameras[index];
+}
+
+const FCamera& CRenderWorld::getDefaultCamera() const
+{
+	return m_vCameras[m_defaultCameraID];
+}
+
+const u64 CRenderWorld::getDefaultCameraID() const
+{
+	return m_defaultCameraID;
 }
 
 void CRenderWorld::addDrawGeometry(const utl::vector<FGeometryBatch>& new_geometry)
@@ -139,6 +155,11 @@ void CRenderWorld::begin(f32 dt)
 	//prepareMeshletCommands();
 	m_vRawGeometryBatches.clear();
 
+	{
+		auto& matrices_buffer = getDrawBuffer(ERenderBufferIndices::eMatricesBuffer);
+		matrices_buffer->copy(m_vMaterials);
+	}
+
 	// Copy frustum sides to gpu buffer
 	{
 		auto& frustum_buffer = getDrawBuffer(ERenderBufferIndices::eFrustumBuffer);
@@ -168,6 +189,10 @@ void CRenderWorld::end()
 	m_stats.matricesCount = 0ull;
 
 	m_stats.drawCommandCount = 0ull;
+
+	m_vOldMatrices.clear();
+	m_vOldMatrices = std::move(m_vMatrices);
+	m_vMatrices.clear();
 
 	auto& skin_buffer = getDrawBuffer(ERenderBufferIndices::eMatricesBuffer);
 	skin_buffer->clear();
@@ -252,9 +277,18 @@ void CRenderWorld::addShadow(const FSpotShadowCommit& commit)
 
 void CRenderWorld::addMatrices(const utl::vector<glm::mat4>& matrices)
 {
-	auto& matrices_buffer = getDrawBuffer(ERenderBufferIndices::eMatricesBuffer);
-	matrices_buffer->copy(matrices);
+	m_vMatrices.insert(m_vMatrices.end(), matrices.begin(), matrices.end());
 	m_stats.matricesCount += matrices.size();
+}
+
+const glm::mat4& CRenderWorld::getMatrix(u64 index) const
+{
+	return m_vMatrices[index];
+}
+
+const glm::mat4& CRenderWorld::getPrevMatrix(u64 index) const
+{
+	return m_vOldMatrices[index];
 }
 
 void CRenderWorld::updateNode(u32 node_id, const FSceneNode& node)

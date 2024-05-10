@@ -40,19 +40,19 @@
 			uint32_t lastVertex;
 		};
 
-		bool checkObjectInFrustum(in vec3 min_extents, in vec3 min_extents, in uint32_t frustumID)
+		bool checkObjectInFrustum(in vec3 min_extents, in vec3 max_extents, in uint32_t frustumID)
 		{
 			for (uint32_t i = 0; i < 6; i++)
 			{
 				vec4 edge = frustumSidesBuffer.sides[frustumID * 6u + i];
 				if (   edge.x * min_extents.x + edge.y * min_extents.y + edge.z * min_extents.z + edge.w <= 0.0f
-					&& edge.x * min_extents.x + edge.y * min_extents.y + edge.z * min_extents.z + edge.w <= 0.0f
-					&& edge.x * min_extents.x + edge.y * min_extents.y + edge.z * min_extents.z + edge.w <= 0.0f
-					&& edge.x * min_extents.x + edge.y * min_extents.y + edge.z * min_extents.z + edge.w <= 0.0f
-					&& edge.x * min_extents.x + edge.y * min_extents.y + edge.z * min_extents.z + edge.w <= 0.0f
-					&& edge.x * min_extents.x + edge.y * min_extents.y + edge.z * min_extents.z + edge.w <= 0.0f
-					&& edge.x * min_extents.x + edge.y * min_extents.y + edge.z * min_extents.z + edge.w <= 0.0f
-					&& edge.x * min_extents.x + edge.y * min_extents.y + edge.z * min_extents.z + edge.w <= 0.0f)
+					&& edge.x * max_extents.x + edge.y * min_extents.y + edge.z * min_extents.z + edge.w <= 0.0f
+					&& edge.x * min_extents.x + edge.y * max_extents.y + edge.z * min_extents.z + edge.w <= 0.0f
+					&& edge.x * max_extents.x + edge.y * max_extents.y + edge.z * min_extents.z + edge.w <= 0.0f
+					&& edge.x * min_extents.x + edge.y * min_extents.y + edge.z * max_extents.z + edge.w <= 0.0f
+					&& edge.x * max_extents.x + edge.y * min_extents.y + edge.z * max_extents.z + edge.w <= 0.0f
+					&& edge.x * min_extents.x + edge.y * max_extents.y + edge.z * max_extents.z + edge.w <= 0.0f
+					&& edge.x * max_extents.x + edge.y * max_extents.y + edge.z * max_extents.z + edge.w <= 0.0f)
 					return false;
 			}
 			return true;
@@ -95,8 +95,8 @@
 				vec4 min_clip = view_projection * min_extents;
 				vec4 max_clip = view_projection * max_extents;
 				
-				vec3 ndc_min = (min_clip / min_clip.w + 1.0f) * 0.5f;
-				vec3 ndc_max = (max_clip / max_clip.w + 1.0f) * 0.5f;
+				vec3 ndc_min = (min_clip.xyz / min_clip.w + 1.0f) * 0.5f;
+				vec3 ndc_max = (max_clip.xyz / max_clip.w + 1.0f) * 0.5f;
 				
 				vec2 min_pos = ndc_min.xy * camera.size;
 				vec2 max_pos = ndc_max.xy * camera.size;
@@ -106,7 +106,7 @@
 				float quad_area = quad_size.x * quad_size.y;
 				float screen_area = camera.size.x * camera.size.y;
 				float lod_ratio = sqrt(screen_area / quad_area);
-				uint lod_level = log2(max(1.0f, lod_ratio * mesh.lodCount));
+				uint lod_level = uint(log2(max(1.0f, lod_ratio * mesh.lodCount)));
 
 				//vec3 camera_pos = vec3(frameData.invView[3]);
 				//vec3 extents = (min_extents.xyz - min_extents.xyz) * 0.5f;

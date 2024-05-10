@@ -52,6 +52,8 @@
 			vec2 uv = vec2(0.0, 0.0);
 			if(swizzle_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, gl_WorkGroupID.xy, image_size, uv, px))
 				return;
+
+			FCamera camera = cameraBuffer.cameras[frameData.defaultCameraID];
 			
 			vec4 color = texture(sampler_color, uv);
 			vec2 texel_size = 1.0 / vec2(textureSize(sampler_color, 0));
@@ -84,7 +86,7 @@
 			if(postprocess.enable_dof > 0)
 			{
 				float depth = texture(depth_image, uv).r;
-				float linear_depth = linearizeDepth(depth, frameData.nearPlane, frameData.farPlane);
+				float linear_depth = linearizeDepth(depth, camera.zNear, camera.zFar);
 
 				vec3 texture_blured = texture(bokeh_color, uv).rgb;
 

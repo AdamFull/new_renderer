@@ -155,19 +155,6 @@ namespace engine {
 #endif // HAS_SKIN
 		};
 
-		struct FViewport
-		{
-			MATRIX4 projection;
-			MATRIX4 invProjection;
-			MATRIX4 viewProjection;
-			MATRIX4 prevViewProjection;
-			MATRIX4 invViewProjection;
-			MATRIX4 prevInvViewProjection;
-			MATRIX4 reprojectionMatrix;
-			VECTOR2 size;
-			VECTOR2 invSize;
-		};
-
 #ifdef __cplusplus
 		struct FFrustum
 		{
@@ -639,7 +626,6 @@ namespace engine {
 		// Other
 		REGISTER_OBJECT_ARRAY_BUFFER(TextureBindingRemap, uint32_t, remap);
 		REGISTER_OBJECT_ARRAY_BUFFER(CameraBuffer, FCamera, cameras);
-		//REGISTER_OBJECT_ARRAY_BUFFER(ViewportBuffer, FViewport, viewports);
 
 #ifdef __cplusplus
 		struct FGlobalBufferReference
@@ -673,7 +659,6 @@ namespace engine {
 
 			TextureBindingRemap textureRemapBuffer;
 			CameraBuffer cameraBuffer;
-			//ViewportBuffer viewportBuffer;
 		};
 
 #ifdef __cplusplus

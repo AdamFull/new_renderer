@@ -366,96 +366,6 @@ void CRenderGraph::create()
 	}
 }
 
-i64 CRenderGraph::addViewport(const std::string& name, const FViewportCreateInfo& create_info)
-{
-	auto viewport_index = m_vViewports.size();
-	auto& new_viewport = m_vViewports.emplace_back();
-	new_viewport.scale = create_info.scale;
-	new_viewport.dependencyType = create_info.dependencyType;
-
-	if (create_info.dependencyType == EViewportDependencyType::eOnRenderTarget)
-	{
-		if (auto found = m_nameToResource.find(create_info.dependsOn); found != m_nameToResource.end())
-		{
-			auto& resource = m_vRenderResources.at(found->second);
-			if(resource.type & ERenderResourceTypeFlagBits::eAllImage)
-				new_viewport.dependencyResource = found->second;
-		}
-	}
-	else if (create_info.dependencyType == EViewportDependencyType::eOnViewport)
-	{
-		if (auto found = m_nameToViewport.find(create_info.dependsOn); found != m_nameToViewport.end())
-			new_viewport.dependencyResource = found->second;
-	}
-	else
-	{
-		new_viewport.width = create_info.width;
-		new_viewport.height = create_info.height;
-		new_viewport.depth = create_info.depth;
-	}
-
-	m_nameToViewport[name] = viewport_index;
-	return viewport_index;
-}
-
-void CRenderGraph::setDefaultViewport(const std::string& name)
-{
-	if (m_defaultViewport != INVALID_HANDLE)
-		log_warning("[Render Graph] Default viewport was already set. Setting new one. New default viewport is: {}", name);
-
-	if (auto found = m_nameToViewport.find(name); found != m_nameToViewport.end())
-	{
-		m_defaultViewport = found->second;
-		return;
-	}
-
-	log_error("[Render Graph] No viewport found with name: {}.", name);
-}
-
-const FViewportView& CRenderGraph::getViewportView(const std::string& name) const
-{
-	static FViewportView invalid{};
-
-	if (auto found = m_nameToViewport.find(name); found != m_nameToViewport.end())
-		return m_vViewports.at(found->second);
-
-	return invalid;
-}
-
-const FViewportView& CRenderGraph::getViewportView(u64 idx) const
-{
-	return m_vViewports.at(idx);
-}
-
-const FViewportView& CRenderGraph::getDefaultViewportView() const
-{
-	return m_vViewports.at(m_defaultViewport);
-}
-const FViewport& CRenderGraph::getViewport(const std::string& name) const
-{
-	static FViewport invalid{};
-
-	if (auto found = m_nameToViewport.find(name); found != m_nameToViewport.end())
-		return m_vViewportBuffer.at(found->second);
-
-	return invalid;
-}
-
-const FViewport& CRenderGraph::getViewport(u64 idx) const
-{
-	return m_vViewportBuffer.at(idx);
-}
-
-const FViewport& CRenderGraph::getDefaultViewport() const
-{
-	return m_vViewportBuffer.at(m_defaultViewport);
-}
-
-u64 CRenderGraph::getDefaultViewportIndex() const
-{
-	return m_defaultViewport;
-}
-
 u64 CRenderGraph::addStaticResource(const std::string& name, const std::string& path)
 {
 	log_debug("[Render Graph] Loading static resource: {}, path: {}.", name, path);
@@ -598,10 +508,6 @@ u64 CRenderGraph::addRenderPass(const std::string& name, const FRenderConfigRend
 	m_vPassExecutionQueue.emplace_back(pass_index);
 
 	FRenderPassCreateInfo pass_ci{};
-	if (auto found_viewport = m_nameToViewport.find(render_pass_ci.viewport); found_viewport != m_nameToViewport.end())
-		pass_ci.viewportIndex = found_viewport->second;
-	else
-		pass_ci.viewportIndex = m_defaultViewport;
 	pass_ci.flipViewport = render_pass_ci.flipViewportState;
 
 	applyRenderPassResources(pass_index, &render_pass_ci, &pass_ci);
@@ -730,107 +636,12 @@ void CRenderGraph::build()
 		pass->build(build_info);
 	}
 
-	//  Prepare viewports
-	m_vViewportBuffer.resize(m_vViewports.size());
-
 	return;
 }
 
 void CRenderGraph::update(f32 dt)
 {
-	//auto& render_context = m_pRenderInterface->getRenderContext();
-	//auto& render_packet = m_pRenderInterface->getRenderPacket();
-	//
-	//if (wasGraphChanged())
-	//{
-	//	m_perPassResourceBarriers.clear();
-	//
-	//	utl::hash_map<u64, FPassBuildInfo> build_infos;
-	//	generateResourceBarriers(build_infos, false);
-	//}
-	//
-	//// TODO: traverse dependencies before updating
-	//for (u64 idx = 0ull; idx < m_vViewports.size(); ++idx)
-	//{
-	//	auto& viewport_view = m_vViewports.at(idx);
-	//	auto& viewport = m_vViewportBuffer.at(idx);
-	//
-	//	if (!render_packet->camera.wasUpdated)
-	//		continue;
-	//
-	//	if (viewport_view.dependencyType == EViewportDependencyType::eOnRenderTarget)
-	//	{
-	//		auto& render_resource = getRenderResource(viewport_view.dependencyResource);
-	//		if (render_resource.type == ERenderResourceTypeFlagBits::eRenderTarget)
-	//		{
-	//			auto& resource_sizes = render_context->getTextureInfo(render_resource.handle);
-	//			viewport.size.x = resource_sizes.size.width;
-	//			viewport.size.y = resource_sizes.size.height;
-	//		}
-	//		else if(render_resource.type == ERenderResourceTypeFlagBits::eBackbuffer)
-	//		{
-	//			auto backbuffer_size = render_context->getScreenRenderRect();
-	//			viewport.size.x = backbuffer_size.size.x;
-	//			viewport.size.y = backbuffer_size.size.y;
-	//		}
-	//	}
-	//	else if (viewport_view.dependencyType == EViewportDependencyType::eOnViewport)
-	//	{
-	//		auto& depend_viewport_view = m_vViewports.at(viewport_view.dependencyResource);
-	//		auto& depend_viewport = m_vViewportBuffer.at(viewport_view.dependencyResource);
-	//
-	//		viewport.size.x = depend_viewport.size.x;
-	//		viewport.size.y = depend_viewport.size.y;
-	//	}
-	//	else
-	//	{
-	//		viewport.size.x = utl::cast<f32>(viewport_view.width);
-	//		viewport.size.y = utl::cast<f32>(viewport_view.height);
-	//	}
-	//
-	//	viewport.size.x *= viewport_view.scale;
-	//	viewport.size.y *= viewport_view.scale;
-	//
-	//	viewport.invSize.x = 1.f / viewport.size.x;
-	//	viewport.invSize.y = 1.f / viewport.size.y;
-	//
-	//	auto aspect = viewport.size.x / viewport.size.y;
-	//	viewport.projection = glm::perspective(render_packet->camera.fov, aspect, render_packet->camera.nearp, render_packet->camera.farp);
-	//	viewport.invProjection = glm::inverse(viewport.projection);
-	//	viewport.prevViewProjection = viewport.viewProjection;
-	//	viewport.viewProjection = viewport.projection * render_packet->camera.view;
-	//	viewport.prevInvViewProjection = viewport.invViewProjection;
-	//	viewport.invViewProjection = glm::inverse(viewport.viewProjection);
-	//
-	//	viewport.reprojectionMatrix = viewport.invViewProjection * viewport.prevInvViewProjection;
-	//
-	//	// Transform from uv to clip space: texcoord * 2 - 1
-	//	static glm::mat4 to_clip_space = 
-	//	{
-	//		2.0f, 0, 0, 0,
-	//		0, -2.0f, 0, 0,
-	//		0, 0, 1, 0,
-	//		-1, 1, 0, 1
-	//	};
-	//	// Transform from clip to uv space: texcoord * 0.5 + 0.5
-	//	static glm::mat4 to_uv_space = 
-	//	{
-	//		0.5f, 0, 0, 0,
-	//		0, -0.5f, 0, 0,
-	//		0, 0, 1, 0,
-	//		0.5f, 0.5f, 0, 1
-	//	};
-	//	viewport.reprojectionMatrix = to_clip_space * viewport.reprojectionMatrix * to_uv_space;
-	//}
-	//
-	//if (render_packet->camera.wasUpdated)
-	//{
-	//	auto& render_world = m_pRenderInterface->getRenderWorld();
-	//	auto& viewport_buffer = render_world->getDrawBuffer(ERenderBufferIndices::eViewportBuffer);
-	//	viewport_buffer->clear();
-	//	viewport_buffer->copy(m_vViewportBuffer);
-	//	render_packet->camera.wasUpdated = false;
-	//}
+
 }
 
 void CRenderGraph::execute(f32 dt)

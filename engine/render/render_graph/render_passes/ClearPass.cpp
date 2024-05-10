@@ -10,6 +10,8 @@ CClearPass::CClearPass(IRenderInterface* render_interface)
 void CClearPass::init(const FRenderPassCreateInfo& pass_ci)
 {
 	IRenderPass::init(pass_ci);
+
+	m_cameraIndex = 0ull;
 }
 
 void CClearPass::build(const FPassBuildInfo& build_info)

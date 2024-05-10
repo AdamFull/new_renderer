@@ -282,9 +282,6 @@
 
 		vec3 debug_visualize_cascades(in float view_depth, float dither)
 		{
-			//vec3 view_space_pos = (frameData.view * vec4(pos, 1.0)).xyz;
-			//float view_depth = view_space_pos.z * -1.0;
-
 			FCascadedShadowCommit shadow = cascadedShadowBuffer.shadows[0];
 			uint cascade_index = getScadowCascadeSplit(shadow, view_depth, dither);
 
@@ -313,12 +310,13 @@
 			if(swizzle_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, gl_WorkGroupID.xy, image_size, uv, px))
 				return;
 
-			vec3 camera_pos = vec3(frameData.invView[3]);
+			FCamera camera = cameraBuffer.cameras[frameData.defaultCameraID];
+			mat4 inv_view = matrixBuffer.matrices[camera.matricesOffset + inv_view_matrix_offset];
+
+			vec3 camera_pos = vec3(inv_view[3]);
 
 			//vec4 pixel_color = vec4(0.35f, 0.55f, 0.7f, 1.0f);
 			vec4 pixel_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-
-			FCamera camera = cameraBuffer.cameras[frameData.defaultCameraID];
 
 			VisibilityBuffer visbuffer;
 
@@ -329,7 +327,7 @@
 				const vec3 origin = vec3(0, atmosphere_planet_radius, 0) + camera_pos;
 				
 				float depth = texture(depth_buffer, uv).r;
-				dir_world_space.xyz = getPositionFromDepth(uv, 1.0f, matricesBuffer.marices[camera.matricesOffset + inv_view_projection_matrix_offset]);
+				dir_world_space.xyz = getPositionFromDepth(uv, 1.0f, matrixBuffer.matrices[camera.matricesOffset + inv_view_projection_matrix_offset]);
 				
 				for(uint i = 0u; i < frameData.directionalLightCount; i++)
 				{

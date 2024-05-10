@@ -67,7 +67,7 @@
 			}
 #endif // HAS_SKIN
 
-			FCamera camera = cameraBuffer.cameras[draw_index.cameraID];
+			FCamera camera = cameraBuffer.cameras[draw_info.cameraID];
 
 			vec4 localPos = modelMatrix * vec4(inPosition, 1.0);
 			localPos = vec4(localPos.xyz / localPos.w, 1.0);
