@@ -122,6 +122,17 @@ const FCamera& CRenderWorld::getDefaultCamera() const
 	return m_vCameras[m_defaultCameraID];
 }
 
+const u64 CRenderWorld::getCameraID(ERenderGeometryCullerType type) const
+{
+	for (const auto& camera_info : m_vCullingInfo)
+	{
+		if (camera_info.type == type)
+			return camera_info.cullerID;
+	}
+
+	return m_defaultCameraID;
+}
+
 const u64 CRenderWorld::getDefaultCameraID() const
 {
 	return m_defaultCameraID;
@@ -157,7 +168,7 @@ void CRenderWorld::begin(f32 dt)
 
 	{
 		auto& matrices_buffer = getDrawBuffer(ERenderBufferIndices::eMatricesBuffer);
-		matrices_buffer->copy(m_vMaterials);
+		matrices_buffer->copy(m_vMatrices);
 	}
 
 	// Copy frustum sides to gpu buffer
@@ -288,6 +299,10 @@ const glm::mat4& CRenderWorld::getMatrix(u64 index) const
 
 const glm::mat4& CRenderWorld::getPrevMatrix(u64 index) const
 {
+	static glm::mat4 invalid{1.f};
+	if (m_vOldMatrices.size() < index)
+		return invalid;
+
 	return m_vOldMatrices[index];
 }
 

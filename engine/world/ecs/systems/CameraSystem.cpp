@@ -47,7 +47,7 @@ void CCameraSystem::__update(f32 fDt)
 			camera.right = glm::normalize(glm::cross(camera.forward, glm::vec3{ 0.f, 1.f, 0.f }));
 			camera.up = glm::normalize(glm::cross(camera.right, camera.forward));
 
-			if (camera.moved)
+			//if (camera.moved)
 			{
 				auto screen_size = render_context->getScreenRenderRect();
 				glm::mat4 prev_view = camera.view;

@@ -92,6 +92,9 @@ void IRenderPass::execute(f32 dt)
 
 	auto& render_context = m_pRenderInterface->getRenderContext();
 	auto& render_world = m_pRenderInterface->getRenderWorld();
+	auto render_size = render_context->getScreenRenderRect();
+
+	auto& camera = render_world->getCamera(m_cameraIndex);
 
 	FBeginRendering2Info beginRenderingInfo{};
 	beginRenderingInfo.queue = m_queue;
@@ -99,8 +102,8 @@ void IRenderPass::execute(f32 dt)
 	beginRenderingInfo.depthAttachment = &m_depthAttachment;
 	beginRenderingInfo.stencilAttachment = &m_stencilAttachment;
 	beginRenderingInfo.layerCount = m_layerCount;
-	beginRenderingInfo.renderArea.size.x = 0;
-	beginRenderingInfo.renderArea.size.y = 0;
+	beginRenderingInfo.renderArea.size.x = camera.size.x;
+	beginRenderingInfo.renderArea.size.y = camera.size.y;
 	beginRenderingInfo.clearValues = m_clearValues;
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -109,7 +112,7 @@ void IRenderPass::execute(f32 dt)
 
 	render_context->beginTimestampZone(m_queue);
 	render_context->beginRendering(beginRenderingInfo);
-	//render_context->setViewport(utl::cast<f32>(beginRenderingInfo.renderArea.size.x), utl::cast<f32>(beginRenderingInfo.renderArea.size.y), m_bFlipViewport);
+	render_context->setViewport(utl::cast<f32>(beginRenderingInfo.renderArea.size.x), utl::cast<f32>(beginRenderingInfo.renderArea.size.y), m_bFlipViewport);
 
 	FRenderFrameInfo frame_info{};
 	frame_info.deltaTime = dt;

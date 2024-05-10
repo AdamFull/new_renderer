@@ -15,6 +15,9 @@ void COmnilShadowMapPass::init(const FRenderPassCreateInfo& pass_ci)
 {
 	IRenderPass::init(pass_ci);
 
+	auto& render_world = m_pRenderInterface->getRenderWorld();
+	m_cameraIndex = render_world->getCameraID(ERenderGeometryCullerType::eOmniShadow);
+
 	m_baseShaderName = pass_ci.shader;
 	m_layerCount = max_point_light_shadow_count * 6u;
 

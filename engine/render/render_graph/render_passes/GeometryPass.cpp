@@ -15,6 +15,9 @@ void CGeometryPass::init(const FRenderPassCreateInfo& pass_ci)
 {
 	IRenderPass::init(pass_ci);
 
+	auto& render_world = m_pRenderInterface->getRenderWorld();
+	m_cameraIndex = render_world->getDefaultCameraID();
+
 	m_baseShaderName = pass_ci.shader;
 
 #ifndef BUILD_WITHOUT_DEBUGGIND

@@ -15,6 +15,9 @@ void CDirectionalShadowMapPass::init(const FRenderPassCreateInfo& pass_ci)
 {
 	IRenderPass::init(pass_ci);
 
+	auto& render_world = m_pRenderInterface->getRenderWorld();
+	m_cameraIndex = render_world->getCameraID(ERenderGeometryCullerType::eSpotShadow);
+
 	m_baseShaderName = pass_ci.shader;
 	m_layerCount = max_point_light_shadow_count;
 
@@ -37,6 +40,7 @@ void CDirectionalShadowMapPass::_render(const FRenderFrameInfo& frame_info)
 		return;
 
 	auto& render_context = m_pRenderInterface->getRenderContext();
+	render_context->setScissorRect(0, 0, frame_info.renderRect.size.x, frame_info.renderRect.size.y);
 
 	IVertexHandler* last_vbo{ nullptr };
 
@@ -48,10 +52,6 @@ void CDirectionalShadowMapPass::_render(const FRenderFrameInfo& frame_info)
 		const auto& draw_info = draw_infos[idx];
 		auto begin_range = geometry_batches.begin() + draw_info.first;
 		auto end_range = begin_range + draw_info.count;
-
-		auto& camera = render_world->getCamera(draw_info.cullerID);
-		render_context->setViewport(camera.size.x, camera.size.y, m_bFlipViewport);
-		render_context->setScissorRect(0, 0, camera.size.x, camera.size.y);
 
 		u64 drawcall_id{ draw_info.cullerID * world_stats.maxDrawCommands };
 		for (auto it = begin_range; it != end_range; ++it)
