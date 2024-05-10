@@ -17,6 +17,7 @@ namespace engine
 			~CRenderInterface() override;
 
 			void create(const FRenderInterfaceCreateInfo& render_interface_ci) override;
+			void postLoad() override;
 			void render(f32 dt) override;
 
 			u64 createTexture(const std::string& path) override;

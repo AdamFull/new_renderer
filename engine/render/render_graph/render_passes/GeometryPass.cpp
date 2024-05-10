@@ -15,9 +15,6 @@ void CGeometryPass::init(const FRenderPassCreateInfo& pass_ci)
 {
 	IRenderPass::init(pass_ci);
 
-	auto& render_world = m_pRenderInterface->getRenderWorld();
-	m_cameraIndex = render_world->getDefaultCameraID();
-
 	m_baseShaderName = pass_ci.shader;
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -28,6 +25,12 @@ void CGeometryPass::init(const FRenderPassCreateInfo& pass_ci)
 void CGeometryPass::build(const FPassBuildInfo& build_info)
 {
 	IRenderPass::build(build_info);
+}
+
+void CGeometryPass::postLoad()
+{
+	auto& render_world = m_pRenderInterface->getRenderWorld();
+	m_cameraIndex = render_world->getDefaultCameraID();
 }
 
 void CGeometryPass::_render(const FRenderFrameInfo& frame_info)

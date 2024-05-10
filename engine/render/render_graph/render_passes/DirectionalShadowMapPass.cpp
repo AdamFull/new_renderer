@@ -15,9 +15,6 @@ void CDirectionalShadowMapPass::init(const FRenderPassCreateInfo& pass_ci)
 {
 	IRenderPass::init(pass_ci);
 
-	auto& render_world = m_pRenderInterface->getRenderWorld();
-	m_cameraIndex = render_world->getCameraID(ERenderGeometryCullerType::eSpotShadow);
-
 	m_baseShaderName = pass_ci.shader;
 	m_layerCount = max_point_light_shadow_count;
 
@@ -29,6 +26,12 @@ void CDirectionalShadowMapPass::init(const FRenderPassCreateInfo& pass_ci)
 void CDirectionalShadowMapPass::build(const FPassBuildInfo& build_info)
 {
 	IRenderPass::build(build_info);
+}
+
+void CDirectionalShadowMapPass::postLoad()
+{
+	auto& render_world = m_pRenderInterface->getRenderWorld();
+	m_cameraIndex = render_world->getCameraID(ERenderGeometryCullerType::eSpotShadow);
 }
 
 void CDirectionalShadowMapPass::_render(const FRenderFrameInfo& frame_info)

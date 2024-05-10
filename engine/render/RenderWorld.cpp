@@ -171,6 +171,11 @@ void CRenderWorld::begin(f32 dt)
 		matrices_buffer->copy(m_vMatrices);
 	}
 
+	{
+		auto& camera_buffer = getDrawBuffer(ERenderBufferIndices::eCameraBuffer);
+		camera_buffer->copy(m_vCameras);
+	}
+
 	// Copy frustum sides to gpu buffer
 	{
 		auto& frustum_buffer = getDrawBuffer(ERenderBufferIndices::eFrustumBuffer);
@@ -222,6 +227,9 @@ void CRenderWorld::end()
 
 	auto& gpu_batches_buffer = getDrawBuffer(ERenderBufferIndices::eRawDrawMeshInfoBuffer);
 	gpu_batches_buffer->clear();
+
+	auto& camera_buffer = getDrawBuffer(ERenderBufferIndices::eCameraBuffer);
+	camera_buffer->clear();
 
 	auto& frustum_buffer = getDrawBuffer(ERenderBufferIndices::eFrustumBuffer);
 	frustum_buffer->clear();

@@ -26,11 +26,12 @@ void CCascadedShadowMapPass::init(const FRenderPassCreateInfo& pass_ci)
 void CCascadedShadowMapPass::build(const FPassBuildInfo& build_info)
 {
 	IRenderPass::build(build_info);
+}
 
+void CCascadedShadowMapPass::postLoad()
+{
 	auto& render_world = m_pRenderInterface->getRenderWorld();
 	m_cameraIndex = render_world->getCameraID(ERenderGeometryCullerType::eCascadedShadow);
-
-	return;
 }
 
 void CCascadedShadowMapPass::_render(const FRenderFrameInfo& frame_info)

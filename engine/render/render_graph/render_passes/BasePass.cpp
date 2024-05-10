@@ -94,17 +94,27 @@ void IRenderPass::execute(f32 dt)
 	auto& render_world = m_pRenderInterface->getRenderWorld();
 	auto render_size = render_context->getScreenRenderRect();
 
-	auto& camera = render_world->getCamera(m_cameraIndex);
-
 	FBeginRendering2Info beginRenderingInfo{};
 	beginRenderingInfo.queue = m_queue;
 	beginRenderingInfo.colorAttachments = &m_vColorAttachments;
 	beginRenderingInfo.depthAttachment = &m_depthAttachment;
 	beginRenderingInfo.stencilAttachment = &m_stencilAttachment;
 	beginRenderingInfo.layerCount = m_layerCount;
-	beginRenderingInfo.renderArea.size.x = camera.size.x;
-	beginRenderingInfo.renderArea.size.y = camera.size.y;
 	beginRenderingInfo.clearValues = m_clearValues;
+
+	if (m_cameraIndex != ~0ull)
+	{
+		auto& camera = render_world->getCamera(m_cameraIndex);
+		beginRenderingInfo.renderArea.size.x = camera.size.x;
+		beginRenderingInfo.renderArea.size.y = camera.size.y;
+	}
+	else
+	{
+		auto screen_rect = render_context->getScreenRenderRect();
+		beginRenderingInfo.renderArea.size.x = screen_rect.size.x;
+		beginRenderingInfo.renderArea.size.y = screen_rect.size.y;
+	}
+	
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	beginRenderingInfo.name = m_debugName;

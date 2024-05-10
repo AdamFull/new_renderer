@@ -64,6 +64,8 @@ void CApplication::create()
 	//m_pScene->load("/root/chess/chess.gltf");
 	//m_pScene->load("/root/toadman/round1.gltf");
 	//m_pScene->load("/root/Landscape/landscape.gltf");
+
+	m_pRenderInterface->postLoad();
 }
 
 void CApplication::loop()

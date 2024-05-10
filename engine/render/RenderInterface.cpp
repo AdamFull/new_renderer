@@ -153,6 +153,11 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 	m_pRenderGraph->build();
 }
 
+void CRenderInterface::postLoad()
+{
+	m_pRenderGraph->postLoad();
+}
+
 void CRenderInterface::render(f32 dt)
 {
 	m_pRenderContext->beginFrame();

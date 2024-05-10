@@ -639,6 +639,15 @@ void CRenderGraph::build()
 	return;
 }
 
+void CRenderGraph::postLoad()
+{
+	for (u64 pass_index : m_vPassExecutionQueue)
+	{
+		auto& pass = m_vRenderPasses.at(pass_index);
+		pass->postLoad();
+	}
+}
+
 void CRenderGraph::update(f32 dt)
 {
 

@@ -22,6 +22,7 @@ namespace engine
 			~CRenderGraph() = default;
 
 			void create() override;
+			void postLoad() override;
 
 			u64 addStaticResource(const std::string& name, const std::string& path) override;
 			u64 addRenderResource(const std::string& name, const FTextureCreateInfo& texture_ci) override;

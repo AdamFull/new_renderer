@@ -457,6 +457,7 @@ namespace engine
 			virtual ~IRenderInterface() = default;
 
 			virtual void create(const FRenderInterfaceCreateInfo& render_interface_ci) = 0;
+			virtual void postLoad() = 0;
 			virtual void render(f32 dt) = 0;
 
 			virtual u64 createTexture(const std::string& path) = 0;

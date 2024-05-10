@@ -27,6 +27,7 @@ namespace engine
 			virtual ~IBasePass() = default;
 
 			virtual void build(const FPassBuildInfo& build_info) = 0;
+			virtual void postLoad() {}
 
 			virtual void execute(f32 dt);
 

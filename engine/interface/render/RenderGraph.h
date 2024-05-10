@@ -381,6 +381,7 @@ namespace engine
 			virtual ~IRenderGraph() = default;
 
 			virtual void create() = 0;
+			virtual void postLoad() = 0;
 
 			virtual u64 addStaticResource(const std::string& name, const std::string& path) = 0;
 			virtual u64 addRenderResource(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
