@@ -99,7 +99,8 @@ void CShadowsSystem::__update(f32 fDt)
 			{
 				FCascadedShadowCommit shadow_commit{};
 
-				auto& culler_list = culler_group[world_stats.cascadedShadowCount];;
+				auto& culler_list = culler_group[world_stats.cascadedShadowCount];
+				shadow_commit.cameraID = culler_list.front(); // Adding first camera id
 
 				// Calculate split depths based on view camera frustum
 				// Based on method presented in https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch10.html
@@ -187,10 +188,9 @@ void CShadowsSystem::__update(f32 fDt)
 
 					lastSplitDist = cascadeSplits[i];
 
-					shadow_commit.cameraID = culler_list[i]; 
-					auto& prev_view = render_world->getPrevMatrix(shadow_commit.cameraID + render::view_matrix_offset);
+					auto& prev_view = render_world->getPrevMatrix(culler_list[i] + render::view_matrix_offset);
 					auto& prev_projection = render_world->getPrevMatrix(shadow_commit.cameraID + render::projection_matrix_offset);
-					render_world->updateCamera(shadow_commit.cameraID, lightViewMatrix, prev_view, lightProjectionMatrix, prev_projection, glm::vec2(cascade_shadow_map_resolution, cascade_shadow_map_resolution));
+					render_world->updateCamera(culler_list[i], lightViewMatrix, prev_view, lightProjectionMatrix, prev_projection, glm::vec2(cascade_shadow_map_resolution, cascade_shadow_map_resolution));
 				}
 
 				shadow_commit.index = light_count;
@@ -220,7 +220,10 @@ void CShadowsSystem::__update(f32 fDt)
 			//light.castShadows = light_count % 2;
 			if (light.castShadows && base.enabled && world_stats.omniShadowCount < max_point_light_shadow_count)
 			{
+				FOmniShadowCommit shadow_commit{};
+
 				auto& culler_list = culler_group[world_stats.omniShadowCount];
+				shadow_commit.cameraID = culler_list.front();
 
 				glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, light.radius / 2.f);
 
@@ -231,7 +234,6 @@ void CShadowsSystem::__update(f32 fDt)
 				matrices[4] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0));	// POSITIVE_Z
 				matrices[5] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0));	// NEGATIVE_Z
 
-				FOmniShadowCommit shadow_commit{};
 				shadow_commit.farPlane = light.radius;
 				shadow_commit.index = light_count;
 
@@ -239,8 +241,6 @@ void CShadowsSystem::__update(f32 fDt)
 
 				for (u64 idx = 0ull; idx < matrices.size(); ++idx)
 				{
-					shadow_commit.cameraID = culler_list[idx];
-
 					auto& view = matrices[idx];
 					auto& prev_view = render_world->getPrevMatrix(shadow_commit.cameraID + render::view_matrix_offset);
 					auto& prev_projection = render_world->getPrevMatrix(shadow_commit.cameraID + render::projection_matrix_offset);
