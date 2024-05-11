@@ -271,6 +271,7 @@ void CShadowsSystem::__update(f32 fDt)
 				auto& culler_list = culler_group[world_stats.spotShadowCount];
 
 				FSpotShadowCommit shadow_commit{};
+				shadow_commit.cameraID = culler_list.front();
 
 				auto light_dir = light.toTarget ? light.target : glm::normalize(ltransform.grotation * glm::vec3(0.f, 0.f, -1.f));
 				glm::mat4 shadowProj = glm::perspective(light.outerAngle * 2.f, 1.0f, 0.1f, 64.f);
@@ -279,8 +280,7 @@ void CShadowsSystem::__update(f32 fDt)
 
 				light.shadowIndex = world_stats.spotShadowCount;
 				render_world->addShadow(shadow_commit);
-
-				shadow_commit.cameraID = culler_list.front();
+				
 				auto& prev_view = render_world->getPrevMatrix(shadow_commit.cameraID + render::view_matrix_offset);
 				auto& prev_projection = render_world->getPrevMatrix(shadow_commit.cameraID + render::projection_matrix_offset);
 				render_world->updateCamera(shadow_commit.cameraID, shadowView, prev_view, shadowProj, prev_projection, glm::vec2(spot_light_shadow_map_resolution, spot_light_shadow_map_resolution), 0.f, 64.f);
