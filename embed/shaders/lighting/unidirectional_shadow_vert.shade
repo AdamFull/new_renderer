@@ -49,10 +49,10 @@
 				u16vec4 joints = u16vec4(uint16_t(inJoints.x * 65535.0), uint16_t(inJoints.y * 65535.0), uint16_t(inJoints.z * 65535.0), uint16_t(inJoints.w * 65535.0));
 #endif
 				mat4 skinMat = 
-					inWeights.x * matrixBuffer.matrices[node.skeletonID + joints.x] +
-					inWeights.y * matrixBuffer.matrices[node.skeletonID + joints.y] +
-					inWeights.z * matrixBuffer.matrices[node.skeletonID + joints.z] +
-					inWeights.w * matrixBuffer.matrices[node.skeletonID + joints.w];
+					inWeights.x * getMatrixById(node.skeletonID, joints.x) +
+					inWeights.y * getMatrixById(node.skeletonID, joints.y) +
+					inWeights.z * getMatrixById(node.skeletonID, joints.z) +
+					inWeights.w * getMatrixById(node.skeletonID, joints.w);
 					
 				modelMatrix = modelMatrix * skinMat;
 			}
@@ -69,17 +69,17 @@
 #if defined(CASCADED_SHADOW)
 			FCascadedShadowCommit shadow = cascadedShadowBuffer.shadows[shadowData.shadowIndex];
 			FCamera camera = cameraBuffer.cameras[shadow.cameraID];
-			viewProj = matrixBuffer.matrices[camera.matricesOffset + shadowData.layer * matrix_offset_count + view_projection_matrix_offset];
+			viewProj = getViewProjectionMatrix(camera.matricesOffset + shadowData.layer * matrix_offset_count);
 			gl_Layer = shadowData.layer;
 #elif defined(OMNI_SHADOW)
 			FOmniShadowCommit shadow = omniShadowBuffer.shadows[shadowData.shadowIndex];
 			FCamera camera = cameraBuffer.cameras[shadow.cameraID];
-			viewProj = matrixBuffer.matrices[camera.matricesOffset + shadowData.layer * matrix_offset_count + view_projection_matrix_offset];
+			viewProj = getViewProjectionMatrix(camera.matricesOffset + shadowData.layer * matrix_offset_count);
 			gl_Layer = shadowData.shadowIndex * 6 + shadowData.layer;
 #else
 			FSpotShadowCommit shadow = spotShadowBuffer.shadows[shadowData.shadowIndex];
 			FCamera camera = cameraBuffer.cameras[shadow.cameraID];
-			viewProj = matrixBuffer.matrices[camera.matricesOffset + view_projection_matrix_offset];
+			viewProj = getViewProjectionMatrix(camera.matricesOffset);
 			gl_Layer = shadowData.layer;
 #endif
 

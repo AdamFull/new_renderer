@@ -77,7 +77,7 @@
 			vec4 max_extents = node.model * vec4(mesh.bounds.max, 1.f);
 			
 			// Do frustum culling
-			if(checkObjectInFrustum(min_extents.xyz, min_extents.xyz, draw_info.cameraID))
+			//if(checkObjectInFrustum(min_extents.xyz, min_extents.xyz, draw_info.cameraID))
 			{	
 				uint draw_offset = frameData.maxCommandsCount * draw_info.cameraID;
 				uint culler_counter = atomicAdd(indirectCountBuffer.indices[draw_info.cameraID], 1);
@@ -90,7 +90,7 @@
 				// TODO: In future thing about how to implement instancing here
 
 				FCamera camera = cameraBuffer.cameras[draw_info.cameraID];
-				mat4 view_projection = matrixBuffer.matrices[camera.matricesOffset + view_projection_matrix_offset];
+				mat4 view_projection = getViewProjectionMatrix(camera.matricesOffset);
 			
 				vec4 min_clip = view_projection * min_extents;
 				vec4 max_clip = view_projection * max_extents;
@@ -106,7 +106,8 @@
 				float quad_area = quad_size.x * quad_size.y;
 				float screen_area = camera.size.x * camera.size.y;
 				float lod_ratio = sqrt(screen_area / quad_area);
-				uint lod_level = uint(log2(max(1.0f, lod_ratio * mesh.lodCount)));
+				uint lod_level = uint(log2(max(1.0f, lod_ratio * (mesh.lodCount - 1))));
+				lod_level = clamp(lod_level, 0, mesh.lodCount - 1);
 
 				//vec3 camera_pos = vec3(frameData.invView[3]);
 				//vec3 extents = (min_extents.xyz - min_extents.xyz) * 0.5f;

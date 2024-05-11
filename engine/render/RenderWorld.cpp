@@ -69,19 +69,19 @@ void CRenderWorld::updateCamera(u64 camera_id, const glm::mat4& view, const glm:
 	frustum.update(view, projection);
 
 	utl::vector<glm::mat4> matrices{};
-	auto& camera_view = matrices.emplace_back(view);
-	auto& camera_prev_view = matrices.emplace_back(prev_view);
-	auto& camera_inv_view = matrices.emplace_back(glm::inverse(view));
-	auto& camera_int_prev_view = matrices.emplace_back(glm::inverse(prev_view));
-	auto& camera_projection = matrices.emplace_back(projection);
-	auto& camera_prev_projection = matrices.emplace_back(prev_projection);
-	auto& camera_inv_projection = matrices.emplace_back(glm::inverse(projection));
-	auto& camera_inv_prev_projection = matrices.emplace_back(glm::inverse(prev_projection));
-	auto& camera_view_projection = matrices.emplace_back(projection * view);
-	auto& camera_prev_view_projection = matrices.emplace_back(prev_projection * prev_view);
-	auto& camera_inv_view_projection = matrices.emplace_back(glm::inverse(camera_view_projection));
-	auto& camera_inv_prev_view_projection =  matrices.emplace_back(glm::inverse(camera_prev_view_projection));
-	auto& camera_reprojection = matrices.emplace_back();
+	auto& camera_view = matrices.emplace_back(view);																	// view_matrix_offset
+	auto& camera_prev_view = matrices.emplace_back(prev_view);															// prev_view_matrix_offset
+	auto& camera_inv_view = matrices.emplace_back(glm::inverse(view));													// inv_view_matrix_offset
+	auto& camera_int_prev_view = matrices.emplace_back(glm::inverse(prev_view));										// prev_inv_view_matrix_offset
+	auto& camera_projection = matrices.emplace_back(projection);														// projection_matrix_offset
+	auto& camera_prev_projection = matrices.emplace_back(prev_projection);												// prev_projection_matrix_offset
+	auto& camera_inv_projection = matrices.emplace_back(glm::inverse(projection));										// inv_projection_matrix_offset
+	auto& camera_inv_prev_projection = matrices.emplace_back(glm::inverse(prev_projection));							// prev_inv_projection_matrix_offset
+	auto& camera_view_projection = matrices.emplace_back(projection * view);											// view_projection_matrix_offset
+	auto& camera_prev_view_projection = matrices.emplace_back(prev_projection * prev_view);								// prev_view_projection_matrix_offset
+	auto& camera_inv_view_projection = matrices.emplace_back(glm::inverse(camera_view_projection));						// inv_view_projection_matrix_offset
+	auto& camera_inv_prev_view_projection =  matrices.emplace_back(glm::inverse(camera_prev_view_projection));			// prev_inv_view_projection_matrix_offset
+	auto& camera_reprojection = matrices.emplace_back();																// reprojection_matrix_offset
 
 	camera_reprojection = camera_inv_view_projection * camera_inv_prev_view_projection;
 

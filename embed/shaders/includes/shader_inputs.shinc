@@ -54,5 +54,21 @@
 //			uint32_t viewportIndex;
 //		};
 //#endif
+
+	mat4 getMatrixById(uint global_offset, uint local_offset) { return matrixBuffer.matrices[global_offset + local_offset]; }
+
+	mat4 getViewMatrix(uint global_offset) { return getMatrixById(global_offset, view_matrix_offset); }
+	mat4 getPrevViewMatrix(uint global_offset) { return getMatrixById(global_offset, prev_view_matrix_offset); }
+	mat4 getInvViewMatrix(uint global_offset) { return getMatrixById(global_offset, inv_view_matrix_offset); }
+	mat4 getInvPrevViewMatrix(uint global_offset) { return getMatrixById(global_offset, prev_inv_view_matrix_offset); }
+	mat4 getProjectionMatrix(uint global_offset) { return getMatrixById(global_offset, projection_matrix_offset); }
+	mat4 getPrevProjectionMatrix(uint global_offset) { return getMatrixById(global_offset, prev_projection_matrix_offset); }
+	mat4 getInvProjectionMatrix(uint global_offset) { return getMatrixById(global_offset, inv_projection_matrix_offset); }
+	mat4 getInvPrevProjectionMatrix(uint global_offset) { return getMatrixById(global_offset, prev_inv_projection_matrix_offset); }
+	mat4 getViewProjectionMatrix(uint global_offset) { return getMatrixById(global_offset, view_projection_matrix_offset); }
+	mat4 getPrevViewProjectionMatrix(uint global_offset) { return getMatrixById(global_offset, prev_view_projection_matrix_offset); }
+	mat4 getInvViewProjectionMatrix(uint global_offset) { return getMatrixById(global_offset, inv_view_projection_matrix_offset); }
+	mat4 getInvPrevViewProjectionMatrix(uint global_offset) { return getMatrixById(global_offset, prev_inv_view_projection_matrix_offset); }
+	mat4 getReprojectionMatrix(uint global_offset) { return getMatrixById(global_offset, reprojection_matrix_offset); }
 	""";
 }

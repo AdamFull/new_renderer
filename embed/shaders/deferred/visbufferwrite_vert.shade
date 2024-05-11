@@ -57,10 +57,10 @@
 				u16vec4 joints = u16vec4(uint16_t(inJoints.x * 65535.0), uint16_t(inJoints.y * 65535.0), uint16_t(inJoints.z * 65535.0), uint16_t(inJoints.w * 65535.0));
 #endif
 				mat4 skinMat = 
-					inWeights.x * matrixBuffer.matrices[node.skeletonID + joints.x] +
-					inWeights.y * matrixBuffer.matrices[node.skeletonID + joints.y] +
-					inWeights.z * matrixBuffer.matrices[node.skeletonID + joints.z] +
-					inWeights.w * matrixBuffer.matrices[node.skeletonID + joints.w];
+					inWeights.x * getMatrixById(node.skeletonID, joints.x) +
+					inWeights.y * getMatrixById(node.skeletonID, joints.y) +
+					inWeights.z * getMatrixById(node.skeletonID, joints.z) +
+					inWeights.w * getMatrixById(node.skeletonID, joints.w);
 		
 				modelMatrix = modelMatrix * skinMat;
 				// oldModelMatrix = oldModelMatrix * skinMat; // TODO: should keep skinMat from prev frame
@@ -72,7 +72,7 @@
 			vec4 localPos = modelMatrix * vec4(inPosition, 1.0);
 			localPos = vec4(localPos.xyz / localPos.w, 1.0);
 
-			mat4 viewProjection = matrixBuffer.matrices[camera.matricesOffset + view_projection_matrix_offset];
+			mat4 viewProjection = getViewProjectionMatrix(camera.matricesOffset);
 
 			//currentPos = viewProjection * localPos;
 
