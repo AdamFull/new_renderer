@@ -84,20 +84,15 @@ void CRenderWorld::updateCamera(u64 camera_id, const glm::mat4& view, const glm:
 
 	std::array<glm::mat4, matrix_offset_count> matrices{};
 	matrices[view_matrix_offset] = view;																							// view_matrix_offset
-	matrices[prev_view_matrix_offset] = prev_view;																					// prev_view_matrix_offset
 	matrices[inv_view_matrix_offset] = glm::inverse(matrices[view_matrix_offset]);													// inv_view_matrix_offset
-	matrices[prev_inv_view_matrix_offset] = glm::inverse(matrices[prev_view_matrix_offset]);										// prev_inv_view_matrix_offset
 	matrices[projection_matrix_offset] = projection;																				// projection_matrix_offset
-	matrices[prev_projection_matrix_offset] = prev_projection;																		// prev_projection_matrix_offset
 	matrices[inv_projection_matrix_offset] = glm::inverse(matrices[projection_matrix_offset]);										// inv_projection_matrix_offset
-	matrices[prev_inv_projection_matrix_offset] = glm::inverse(matrices[prev_projection_matrix_offset]);							// prev_inv_projection_matrix_offset
 	matrices[view_projection_matrix_offset] = matrices[projection_matrix_offset] * matrices[view_matrix_offset];					// view_projection_matrix_offset
-	matrices[prev_view_projection_matrix_offset] = matrices[prev_projection_matrix_offset] * matrices[prev_view_matrix_offset];		// prev_view_projection_matrix_offset
+	matrices[prev_view_projection_matrix_offset] = prev_projection * prev_view;		// prev_view_projection_matrix_offset
 	matrices[inv_view_projection_matrix_offset] = glm::inverse(matrices[view_projection_matrix_offset]);							// inv_view_projection_matrix_offset
-	matrices[prev_inv_view_projection_matrix_offset] = glm::inverse(matrices[prev_view_projection_matrix_offset]);					// prev_inv_view_projection_matrix_offset
 	auto& camera_reprojection = matrices[reprojection_matrix_offset];																// reprojection_matrix_offset
 
-	camera_reprojection = matrices[inv_view_projection_matrix_offset] * matrices[prev_inv_view_projection_matrix_offset];
+	camera_reprojection = matrices[inv_view_projection_matrix_offset] * matrices[prev_view_projection_matrix_offset];
 	
 	// Transform from uv to clip space: texcoord * 2 - 1
 	static glm::mat4 to_clip_space =

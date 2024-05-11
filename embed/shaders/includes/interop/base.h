@@ -83,19 +83,14 @@ namespace engine {
 		CONSTANT uint32_t point_light_shadow_map_resolution = 512u;
 
 		CONSTANT uint32_t view_matrix_offset = 0u;
-		CONSTANT uint32_t prev_view_matrix_offset = 1u;
-		CONSTANT uint32_t inv_view_matrix_offset = 2u;
-		CONSTANT uint32_t prev_inv_view_matrix_offset = 3u;
-		CONSTANT uint32_t projection_matrix_offset = 4u;
-		CONSTANT uint32_t prev_projection_matrix_offset = 5u;
-		CONSTANT uint32_t inv_projection_matrix_offset = 6u;
-		CONSTANT uint32_t prev_inv_projection_matrix_offset = 7u;
-		CONSTANT uint32_t view_projection_matrix_offset = 8u;
-		CONSTANT uint32_t prev_view_projection_matrix_offset = 9u;
-		CONSTANT uint32_t inv_view_projection_matrix_offset = 10u;
-		CONSTANT uint32_t prev_inv_view_projection_matrix_offset = 11u;
-		CONSTANT uint32_t reprojection_matrix_offset = 12u;
-		CONSTANT uint32_t matrix_offset_count = 13u;
+		CONSTANT uint32_t inv_view_matrix_offset = 1u;
+		CONSTANT uint32_t projection_matrix_offset = 2u;
+		CONSTANT uint32_t inv_projection_matrix_offset = 3u;
+		CONSTANT uint32_t view_projection_matrix_offset = 4u;
+		CONSTANT uint32_t prev_view_projection_matrix_offset = 5u;
+		CONSTANT uint32_t inv_view_projection_matrix_offset = 6u;
+		CONSTANT uint32_t reprojection_matrix_offset = 7u;
+		CONSTANT uint32_t matrix_offset_count = 8u;
 
 #if defined(INDEX_8BIT)
 #define Index uint8_t
