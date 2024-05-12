@@ -2,6 +2,7 @@
 
 #include <standart_library.h>
 #include <container/flags.h>
+#include <utils/hash.h>
 
 namespace engine
 {
@@ -29,13 +30,20 @@ namespace engine
 		};
 		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(EBufferUsageFlags, EBufferUsageFlagBits)
 
+		struct FBufferUploadRegion
+		{
+			u64 count{ 1ull };
+			u64 size{ 0ull };
+
+			u64 srcOffset{ 0ull };
+			u64 dstOffset{ 0ull };
+		};
+
 		struct FBufferUploadInfo
 		{
 			u64 bufferId{ ~0ull };
-			utl::vector<uint8_t> data{};
-			u64 count{ 1ull };
-			u64 size{ 0ull };
-			u64 offset{ 0ull };
+			utl::vector<u8> data{};
+			utl::vector<FBufferUploadRegion> regions{};
 		};
 
 		struct FBufferCreateInfo
@@ -44,8 +52,6 @@ namespace engine
 			EBufferUsageFlags flags{};
 			u64 count{ 1ull };
 			u64 size{ 0ull };
-
-			FBufferUploadInfo upload{};
 		};
 
 		struct FBufferView
@@ -62,6 +68,7 @@ namespace engine
 
 			virtual void create(const std::string& name, const FBufferCreateInfo& create_info) = 0;
 			virtual void resize(const std::string& name, const FBufferCreateInfo& create_info) = 0;
+			virtual void upload(utl::vector<u8>&& data, const utl::vector<FBufferUploadRegion>& regions) = 0;
 
 			virtual void map() = 0;
 			virtual void unmap() = 0;
@@ -77,6 +84,136 @@ namespace engine
 			virtual uint64_t address() = 0;
 
 			virtual void* data() = 0;
+		};
+
+		class IGPUVector2
+		{
+		public:
+			struct upload_range
+			{
+				u64 offset{ 0ull };
+				u64 size{ 0ull };
+			};
+
+			virtual ~IGPUVector2() = default;
+
+			template<class _Ty>
+			void create(const std::string& name, EBufferUsageFlags flag = EBufferUsageFlagBits::eStorageBuffer, u64 capacity = 64ull)
+			{
+				// Init intermediate data buffer
+				m_vData.resize(sizeof(_Ty) * capacity);
+				// Allocate buffer
+				allocate(name, flag, sizeof(_Ty), capacity);
+			}
+
+			template<class _Ty, size_t _Size>
+			void copy(const std::array<_Ty, _Size>& data)
+			{
+				assert(m_elemSize == sizeof(_Ty) && "Invalid element size.");
+
+				u64 size = to_bytes(_Size);
+				try_grow(size);
+				do_copy(&data[0], size);
+			}
+
+			template<class _Ty>
+			void copy(const utl::vector<_Ty>& data)
+			{
+				assert(m_elemSize == sizeof(_Ty) && "Invalid element size.");
+
+				if (data.empty())
+					return;
+
+				u64 size = to_bytes(data.size());
+				try_grow(size);
+				do_copy(&data[0], size);
+			}
+
+			template<class _Ty>
+			_Ty* emplace_back(const _Ty& new_element = _Ty())
+			{
+				assert(m_elemSize == sizeof(_Ty) && "Invalid element size.");
+
+				u64 size = sizeof(_Ty);
+				try_grow(size);
+				do_copy(&new_element, size);
+
+				return (_Ty*)(&m_vData[m_cursor - size]);
+			}
+
+			template<class _Ty>
+			void set(u64 index, _Ty&& data)
+			{
+				assert(m_elemSize == sizeof(_Ty) && "Invalid element size.");
+				do_insert(&data, m_elemSize, to_bytes(index));
+			}
+
+			template<class _Ty>
+			void erase(u64 count)
+			{
+				std::memset(&m_vData[0], 0, sizeof(_Ty) * count);
+			}
+
+			u64 count()
+			{
+				return m_vData.size() / m_elemSize;
+			}
+
+			//template<class _Ty>
+			//_Ty* at(u64 index)
+			//{
+			//	m_vUploadRanges.emplace_back(to_bytes(index), m_elemSize);
+			//	return (_Ty*)(&m_vData[to_bytes(index)]);
+			//}
+
+			template<class _Ty>
+			const _Ty* at(u64 index) const
+			{
+				return (const _Ty*)(&m_vData[to_bytes(index)]);
+			}
+
+			virtual void upload() = 0;
+			virtual void resize(u64 new_size) = 0;
+			virtual const std::unique_ptr<IBufferObject>& buffer() = 0;
+		protected:
+			inline u64 to_bytes(u64 size) const { return size * m_elemSize; }
+
+			// Try to grow temporary array
+			void try_grow(u64 size)
+			{
+				if (m_cursor + size > m_vData.size())
+				{
+					u64 new_size = (m_cursor + size) * 1.5f;
+					m_vData.resize(new_size);
+				}
+			}
+
+			void do_insert(const void* data, u64 size, u64 offset)
+			{
+				auto new_hash = utl::murmur_hash_64(data, size, 0);
+				auto old_hash = utl::murmur_hash_64(&m_vData[offset], size, 0);
+
+				if (new_hash != old_hash)
+				{
+					std::memcpy(&m_vData[offset], data, size);
+					m_vUploadRanges.emplace_back(upload_range{ offset, size }); 
+				}
+			}
+
+			// Copy data only when it changed ans det dirty flag
+			void do_copy(const void* data, u64 size)
+			{
+				do_insert(data, size, m_cursor);
+				m_cursor += size;
+			}
+
+			// Allocates buffer
+			virtual void allocate(const std::string& name, EBufferUsageFlags flag, u64 stride, u64 capacity) = 0;
+
+			utl::vector<upload_range> m_vUploadRanges{};
+			utl::vector<u8> m_vData{};
+			u64 m_cursor{ 0ull };	// Something like cursor in bytes
+			u64 m_elemSize{ 0ull };
 		};
 
 		class IGPUVector

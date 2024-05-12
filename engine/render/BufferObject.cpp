@@ -19,7 +19,7 @@ void CBufferObject::create(const std::string& name, const FBufferCreateInfo& cre
 	auto& render_graph = m_pRenderInterface->getRenderGraph();
 	m_bufferId = render_graph->addRenderResource(name, create_info);
 	
-	auto buffer_view = render_context->getBufferView(m_bufferId);
+	auto buffer_view = render_context->getBufferView(m_bufferId); 
 	m_elemCount = buffer_view.elementCount;
 	m_elemSize = buffer_view.alignedSize / buffer_view.elementCount;
 	m_virtualAddress = buffer_view.address;
@@ -38,6 +38,18 @@ void CBufferObject::resize(const std::string& name, const FBufferCreateInfo& cre
 	m_elemCount = buffer_view.elementCount;
 	m_elemSize = buffer_view.alignedSize / buffer_view.elementCount;
 	m_virtualAddress = buffer_view.address;
+}
+
+void CBufferObject::upload(utl::vector<u8>&& data, const utl::vector<FBufferUploadRegion>& regions)
+{
+	auto& render_context = m_pRenderInterface->getRenderContext();
+
+	FBufferUploadInfo upload_info{};
+	upload_info.bufferId = m_bufferId;
+	upload_info.data = std::move(data);
+	upload_info.regions = regions;
+
+	render_context->uploadDataToBuffer(upload_info);
 }
 
 void CBufferObject::map()

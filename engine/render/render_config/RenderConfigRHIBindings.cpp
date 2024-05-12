@@ -343,12 +343,12 @@ namespace engine
 				"ComputeCreateInfo",
 				sol::base_classes, sol::bases<FRenderConfigPassCreateInfo>(),
 				"type", &FRenderConfigComputeCreateInfo::type,
-				"add_workgroup_size_info", sol::overload(
-					static_cast<void(FRenderConfigComputeCreateInfo::*)(const std::string&, bool)>(&FRenderConfigComputeCreateInfo::addDispatchGroupInfo),
-					static_cast<void(FRenderConfigComputeCreateInfo::*)(const std::string&, u32, bool)>(&FRenderConfigComputeCreateInfo::addDispatchGroupInfo),
-					static_cast<void(FRenderConfigComputeCreateInfo::*)(u32, u32, u32, bool)>(&FRenderConfigComputeCreateInfo::addDispatchGroupInfo),
-					static_cast<void(FRenderConfigComputeCreateInfo::*)(u32, u32, u32, u32, bool)>(&FRenderConfigComputeCreateInfo::addDispatchGroupInfo)
-				)
+				"add_workgroup_size_by_buffer", &FRenderConfigComputeCreateInfo::addWorkgroupSizeByBuffer,
+				"add_workgroup_size_by_rt", sol::overload(
+					static_cast<void(FRenderConfigComputeCreateInfo::*)(const std::string&, u32, bool)>(&FRenderConfigComputeCreateInfo::addWorkgroupSizeByRT),
+					static_cast<void(FRenderConfigComputeCreateInfo::*)(const std::string&, bool)>(&FRenderConfigComputeCreateInfo::addWorkgroupSizeByRT)
+				),
+				"add_workgroup_size_manual", &FRenderConfigComputeCreateInfo::addWorkgroupSizeManual
 			);
 		}
 

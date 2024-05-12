@@ -347,6 +347,7 @@ namespace engine
 			virtual void unmapBufferMemory(u64 buffer_id) = 0;
 			virtual void flushBuffer(u64 buffer_id, u64 size, u64 offset) = 0;
 			virtual void destroyBuffer(u64 resource_id) = 0;
+			virtual void uploadBuffers() = 0;
 
 			virtual void pushG2CBarriers(EQueueTypeFlagBits queue_type, const utl::vector<u64>& textures) = 0;
 			virtual void pushC2CBarrier(EQueueTypeFlagBits queue_type) = 0;
@@ -427,19 +428,17 @@ namespace engine
 
 			virtual void addMatrices(const utl::vector<glm::mat4>& matrices) = 0;
 			virtual const glm::mat4& getMatrix(u64 index) const = 0;
-			virtual const glm::mat4& getPrevMatrix(u64 index) const = 0;
 
 			virtual void updateNode(u32 node_id, const FSceneNode& node) = 0;
 
 			virtual void addMaterial(const FMaterial& material) = 0;
 			virtual void addMaterials(const utl::vector<FMaterial>& materials) = 0;
-			virtual FMaterial& getMaterial(u64 index) = 0;
 			virtual const FMaterial& getMaterial(u64 index) const = 0;
 
 			virtual void addMesh(const FMesh& mesh) = 0;
 			virtual void addMeshes(const utl::vector<FMesh>& meshes) = 0;
 
-			virtual const std::unique_ptr<IGPUVector>& getDrawBuffer(ERenderBufferIndices buffer_index) = 0;
+			virtual const std::unique_ptr<IGPUVector2>& getDrawBuffer(ERenderBufferIndices buffer_index) const = 0;
 			//virtual const utl::vector<std::unique_ptr<IBufferObject>>& getDrawBuffers() = 0;
 
 			virtual const utl::vector<FGeometryCPUBatch>& getGeometryBatches() const = 0;

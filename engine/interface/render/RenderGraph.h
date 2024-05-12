@@ -317,7 +317,15 @@ namespace engine
 				groupInfos.clear();
 			}
 
-			void addDispatchGroupInfo(const std::string& target, u32 subresource, bool divide_by_locals)
+			void addWorkgroupSizeByBuffer(const std::string& target, bool divide_by_locals)
+			{
+				auto& group_info = groupInfos.emplace_back();
+				group_info.type = ERenderingSizeType::eFromBuffer;
+				group_info.target = target;
+				group_info.divideByLocals = divide_by_locals;
+			}
+
+			void addWorkgroupSizeByRT(const std::string& target, u32 subresource, bool divide_by_locals)
 			{
 				auto& group_info = groupInfos.emplace_back();
 				group_info.type = ERenderingSizeType::eFromRenderTarget;
@@ -326,9 +334,9 @@ namespace engine
 				group_info.subresource = subresource;
 			}
 
-			void addDispatchGroupInfo(const std::string& target, bool divide_by_locals) { addDispatchGroupInfo(target, ~0u, divide_by_locals); }
+			void addWorkgroupSizeByRT(const std::string& target, bool divide_by_locals) { addWorkgroupSizeByRT(target, ~0u, divide_by_locals); }
 
-			void addDispatchGroupInfo(u32 width, u32 height, u32 depth, u32 subresource, bool divide_by_locals)
+			void addWorkgroupSizeManual(u32 width, u32 height, u32 depth, bool divide_by_locals)
 			{
 				auto& group_info = groupInfos.emplace_back();
 				group_info.type = ERenderingSizeType::eManual;
@@ -336,10 +344,7 @@ namespace engine
 				group_info.height = height;
 				group_info.depth = depth;
 				group_info.divideByLocals = divide_by_locals;
-				group_info.subresource = subresource;
 			}
-
-			void addDispatchGroupInfo(u32 width, u32 height, u32 depth, bool divide_by_locals) { addDispatchGroupInfo(width, height, depth, ~0u, divide_by_locals); }
 		};
 
 		struct FRenderResourceBinding

@@ -160,10 +160,10 @@ void CRenderInterface::postLoad()
 
 void CRenderInterface::render(f32 dt)
 {
-	m_pRenderContext->beginFrame();
-
 	m_pRenderGraph->update(dt);
 	m_pRenderWorld->begin(dt);
+
+	m_pRenderContext->beginFrame();
 
 	const auto& world_stats = m_pRenderWorld->getStats();
 

@@ -188,9 +188,7 @@ void CShadowsSystem::__update(f32 fDt)
 
 					lastSplitDist = cascadeSplits[i];
 
-					auto& prev_view = render_world->getPrevMatrix(culler_list[i] + render::view_matrix_offset);
-					auto& prev_projection = render_world->getPrevMatrix(shadow_commit.cameraID + render::projection_matrix_offset);
-					render_world->updateCamera(culler_list[i], lightViewMatrix, prev_view, lightProjectionMatrix, prev_projection, glm::vec2(cascade_shadow_map_resolution, cascade_shadow_map_resolution));
+					render_world->updateCamera(culler_list[i], lightViewMatrix, glm::mat4(1.f), lightProjectionMatrix, glm::mat4(1.f), glm::vec2(cascade_shadow_map_resolution, cascade_shadow_map_resolution));
 				}
 
 				shadow_commit.index = light_count;
@@ -242,9 +240,7 @@ void CShadowsSystem::__update(f32 fDt)
 				for (u64 idx = 0ull; idx < matrices.size(); ++idx)
 				{
 					auto& view = matrices[idx];
-					auto& prev_view = render_world->getPrevMatrix(shadow_commit.cameraID + render::view_matrix_offset);
-					auto& prev_projection = render_world->getPrevMatrix(shadow_commit.cameraID + render::projection_matrix_offset);
-					render_world->updateCamera(culler_list[idx], view, prev_view, shadowProj, prev_projection, glm::vec2(point_light_shadow_map_resolution, point_light_shadow_map_resolution), 0.f, light.radius / 2.f);
+					render_world->updateCamera(culler_list[idx], view, glm::mat4(1.f), shadowProj, glm::mat4(1.f), glm::vec2(point_light_shadow_map_resolution, point_light_shadow_map_resolution), 0.f, light.radius / 2.f);
 				}
 
 				render_world->addShadow(shadow_commit);
@@ -281,9 +277,7 @@ void CShadowsSystem::__update(f32 fDt)
 				light.shadowIndex = world_stats.spotShadowCount;
 				render_world->addShadow(shadow_commit);
 				
-				auto& prev_view = render_world->getPrevMatrix(shadow_commit.cameraID + render::view_matrix_offset);
-				auto& prev_projection = render_world->getPrevMatrix(shadow_commit.cameraID + render::projection_matrix_offset);
-				render_world->updateCamera(shadow_commit.cameraID, shadowView, prev_view, shadowProj, prev_projection, glm::vec2(spot_light_shadow_map_resolution, spot_light_shadow_map_resolution), 0.f, 64.f);
+				render_world->updateCamera(shadow_commit.cameraID, shadowView, glm::mat4(1.f), shadowProj, glm::mat4(1.f), glm::vec2(spot_light_shadow_map_resolution, spot_light_shadow_map_resolution), 0.f, 64.f);
 			}
 
 			++light_count;

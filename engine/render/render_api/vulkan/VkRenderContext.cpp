@@ -858,19 +858,7 @@ u64 CVkRenderContext::createBuffer(const std::string& name, const FBufferCreateI
 	m_pDevice->createBuffer(vk_buffer_ci, *buffer);
 
 	auto buffer_unique_name = create_object_unique_name("buffer:{:x}:{}", buffer->handle, name);
-	auto buffer_id = m_pResources->add<FVkBuffer>(buffer_unique_name.c_str(), std::move(buffer));
-
-	if (!buffer_ci.upload.data.empty())
-	{
-		auto& upload_info = m_bufferUploadInfos.emplace_back();
-		upload_info.bufferId = buffer_id;
-		upload_info.count = buffer_ci.count;
-		upload_info.size = buffer_ci.size;
-		upload_info.offset = buffer_ci.upload.offset;
-		upload_info.data = buffer_ci.upload.data;
-	}
-
-	return buffer_id;
+	return m_pResources->add<FVkBuffer>(buffer_unique_name.c_str(), std::move(buffer));
 }
 
 void CVkRenderContext::updateBuffer(const std::string& name, u64 buffer_id, const FBufferCreateInfo& buffer_ci)
@@ -943,6 +931,11 @@ void CVkRenderContext::flushBuffer(u64 buffer_id, u64 size, u64 offset)
 void CVkRenderContext::destroyBuffer(u64 resource_id)
 {
 	m_destroyResource.push(FAPIObjectDestroyInfo{ resource_id, EResourceFlagBits::eBuffer });
+}
+
+void CVkRenderContext::uploadBuffers()
+{
+	processResourceUpload();
 }
 
 void CVkRenderContext::pushG2CBarriers(EQueueTypeFlagBits queue_type, const utl::vector<u64>& texture_ids)
@@ -2141,10 +2134,28 @@ void CVkRenderContext::processResourceUpload()
 	for(const auto& upload_info : m_bufferUploadInfos)
 	{
 		auto& physical = m_pDevice->getPhysicalDevice();
+		utl::vector<vk::BufferCopy2KHR> copy_regions(upload_info.regions.size());
 
+		auto& dst_buffer = m_pResources->get<FVkBuffer>(upload_info.bufferId);
+		
+		// Calculate elements to copy count
+		u64 staging_count{ 0ull };
+		for (u64 idx = 0ull; idx < copy_regions.size(); ++idx)
+		{
+			auto& region_info = upload_info.regions[idx];
+
+			auto& copy_region = copy_regions[idx];
+			copy_region.srcOffset = region_info.srcOffset;
+			copy_region.dstOffset = region_info.dstOffset;
+			copy_region.size = region_info.size;
+
+			staging_count += region_info.count;
+		}
+
+		// Create new staging buffer
 		FVkBufferCreateInfo vk_buffer_ci{};
-		vk_buffer_ci.instanceCount = upload_info.count;
-		vk_buffer_ci.instanceSize = upload_info.size;
+		vk_buffer_ci.instanceCount = staging_count;
+		vk_buffer_ci.instanceSize = dst_buffer->size / dst_buffer->instanceCount;
 		vk_buffer_ci.minOffsetAlignment = std::lcm(physical.properties.limits.minUniformBufferOffsetAlignment, physical.properties.limits.nonCoherentAtomSize);
 		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuOnly;
 		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
@@ -2159,22 +2170,16 @@ void CVkRenderContext::processResourceUpload()
 		void* mapped_memory{ nullptr };
 		m_pDevice->mapBufferMemory(src_buffer, &mapped_memory);
 
-		char* dst_memory = utl::cast<char*>(mapped_memory) + upload_info.offset;
+		// Copy upload data to buffer
+		char* dst_memory = utl::cast<char*>(mapped_memory);
 		std::memcpy(dst_memory, upload_info.data.data(), upload_info.data.size());
 		m_pDevice->unmapBufferMemory(src_buffer);
-
-		auto& dst_buffer = m_pResources->get<FVkBuffer>(upload_info.bufferId);
-
-		vk::BufferCopy2KHR copy_region{};
-		copy_region.srcOffset = 0ull;
-		copy_region.dstOffset = 0ull;
-		copy_region.size = upload_info.data.size();
 
 		vk::CopyBufferInfo2KHR copy_buffer{};
 		copy_buffer.srcBuffer = src_buffer.handle;
 		copy_buffer.dstBuffer = dst_buffer->handle;
-		copy_buffer.regionCount = 1u;
-		copy_buffer.pRegions = &copy_region;
+		copy_buffer.regionCount = utl::cast<u32>(copy_regions.size());
+		copy_buffer.pRegions = &copy_regions[0];
 		
 		auto& current = command_buffer.get();
 		current.copyBuffer2KHR(copy_buffer);

@@ -48,6 +48,7 @@ namespace engine
 				void unmapBufferMemory(u64 buffer_id) override;
 				void flushBuffer(u64 buffer_id, u64 size, u64 offset) override;
 				void destroyBuffer(u64 resource_id) override;
+				void uploadBuffers() override;
 			
 
 				void pushG2CBarriers(EQueueTypeFlagBits queue_type, const utl::vector<u64>& texture_ids) override;

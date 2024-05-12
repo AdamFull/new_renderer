@@ -74,10 +74,13 @@
 			
 			// Calculate bounding box
 			vec4 min_extents = node.model * vec4(mesh.bounds.min, 1.f);
+			min_extents.xyz /= min_extents.w;
+
 			vec4 max_extents = node.model * vec4(mesh.bounds.max, 1.f);
+			max_extents.xyz /= max_extents.w;
 			
 			// Do frustum culling
-			//if(checkObjectInFrustum(min_extents.xyz, min_extents.xyz, draw_info.cameraID))
+			//if(checkObjectInFrustum(min_extents.xyz * 1.1, min_extents.xyz * 1.1, draw_info.cameraID))
 			{	
 				uint draw_offset = frameData.maxCommandsCount * draw_info.cameraID;
 				uint culler_counter = atomicAdd(indirectCountBuffer.indices[draw_info.cameraID], 1);
@@ -108,16 +111,6 @@
 				float lod_ratio = sqrt(screen_area / quad_area);
 				uint lod_level = uint(log2(max(1.0f, lod_ratio * (mesh.lodCount - 1))));
 				lod_level = clamp(lod_level, 0, mesh.lodCount - 1);
-
-				//vec3 camera_pos = vec3(frameData.invView[3]);
-				//vec3 extents = (min_extents.xyz - min_extents.xyz) * 0.5f;
-				//vec3 center = min_extents.xyz + extents;
-				//
-				//const float lod_transition_base = 4.0f;
-				//const float lod_transition_step = 1.25f;
-				//float obj_dist = distance(center, camera_pos);
-				//uint selected_lod = uint(max(1.0 + log(obj_dist / lod_transition_base) / log(lod_transition_step), 0.0));
-				//selected_lod = min(selected_lod, mesh.lodCount - 1);
 
 				FMeshLod lod = lb.lods[mesh.lodOffset + lod_level];
 				

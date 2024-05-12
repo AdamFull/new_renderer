@@ -36,19 +36,17 @@ namespace engine
 
 			void addMatrices(const utl::vector<glm::mat4>& matrices) override;
 			const glm::mat4& getMatrix(u64 index) const override;
-			const glm::mat4& getPrevMatrix(u64 index) const override;
 
 			void updateNode(u32 node_id, const FSceneNode& node) override;
 
 			void addMaterial(const FMaterial& material) override;
 			void addMaterials(const utl::vector<FMaterial>& materials) override;
-			FMaterial& getMaterial(u64 index) override;
 			const FMaterial& getMaterial(u64 index) const override;
 
 			void addMesh(const FMesh& mesh) override;
 			void addMeshes(const utl::vector<FMesh>& meshes) override;
 
-			const std::unique_ptr<IGPUVector>& getDrawBuffer(ERenderBufferIndices buffer_index) override;
+			const std::unique_ptr<IGPUVector2>& getDrawBuffer(ERenderBufferIndices buffer_index) const override;
 			const utl::vector<FGeometryCPUBatch>& getGeometryBatches() const override;
 			const utl::vector<FDrawInfo>& getDrawCommandByType(ERenderGeometryCullerType type) const override;
 
@@ -63,24 +61,17 @@ namespace engine
 			utl::hash_map<ERenderGeometryCullerType, utl::vector<FDrawInfo>> m_perCullerDrawCommands{};
 			utl::vector<FFrustum> m_vSceneFrustums{};
 			utl::vector<FCullingInfo> m_vCullingInfo{};
-			utl::vector<FCamera> m_vCameras{};
 			u64 m_defaultCameraID{ 0ull };
 
 			utl::vector<FGeometryBatch> m_vRawGeometryBatches{};
 			utl::vector<FGeometryCPUBatch> m_vGeometryBatches{};
-			utl::vector<FMaterial> m_vMaterials{};
-			bool m_bMaterialsChanged{ true };
 
-			utl::vector<glm::mat4> m_vMatrices{};
-			utl::vector<glm::mat4> m_vOldMatrices{};
-
-			//utl::vector<FMaterial> m_vMaterials{};
 			utl::vector<glm::mat4> m_vSkins{};
 
 			FPostProcess m_postprocess{};
 			FRenderWorldStats m_stats{};
 
-			utl::vector<std::unique_ptr<IGPUVector>> m_vBuffers{};
+			utl::vector<std::unique_ptr<IGPUVector2>> m_vBuffers{};
 		private:
 			IRenderInterface* m_pRenderInterface{ nullptr };
 		};

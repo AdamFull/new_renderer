@@ -258,6 +258,15 @@ void IComputePass::execute(f32 dt)
 				dispatch_info.globalSizes.z = 1u;
 			}
 		}
+		else if (group_info.type == ERenderingSizeType::eFromBuffer)
+		{
+			auto& render_resource = render_graph->getRenderResource(group_info.target);
+			auto buffer_view = render_context->getBufferView(render_resource.handle);
+
+			dispatch_info.globalSizes.x = buffer_view.alignedSize / buffer_view.elementCount;
+			dispatch_info.globalSizes.y = 1u;
+			dispatch_info.globalSizes.z = 1u;
+		}
 		else if (group_info.type == ERenderingSizeType::eManual)
 		{
 			dispatch_info.globalSizes.x = group_info.width;

@@ -1,6 +1,6 @@
 #include "RenderWorld.h"
 
-#include "GPUVector.h"
+#include "GPUVector2.h"
 
 using namespace engine::render;
 
@@ -29,7 +29,7 @@ CRenderWorld::CRenderWorld(IRenderInterface* render_interface)
 	m_vBuffers.resize(utl::enum_cast(ERenderBufferIndices::eLastIndex));
 
 	for (auto& buffer : m_vBuffers)
-		buffer = std::make_unique<CGPUVector>(render_interface);
+		buffer = std::make_unique<CGPUVector2>(render_interface);
 }
 
 void CRenderWorld::create()
@@ -67,7 +67,9 @@ u64 CRenderWorld::registerCamera(ERenderGeometryCullerType type)
 {
 	u64 camera_id = m_vSceneFrustums.size();
 	m_vSceneFrustums.emplace_back();
-	auto& camera = m_vCameras.emplace_back();
+
+	auto& camera_buffer = getDrawBuffer(ERenderBufferIndices::eCameraBuffer);
+	auto& camera = *(camera_buffer->emplace_back<FCamera>());
 	camera.type = type == ERenderGeometryCullerType::eCascadedShadow;
 
 	auto& culling_info = m_vCullingInfo.emplace_back();
@@ -111,25 +113,36 @@ void CRenderWorld::updateCamera(u64 camera_id, const glm::mat4& view, const glm:
 		0.5f, 0.5f, 0, 1
 	};
 	camera_reprojection = to_clip_space * camera_reprojection * to_uv_space;
-	auto& camera = m_vCameras.at(camera_id);
-	camera.matricesOffset = m_stats.matricesCount;
-	camera.size = size;
-	camera.invSize = 1.f / size;
-	camera.zNear = znear;
-	camera.zFar = zfar;
 
-	m_vMatrices.insert(m_vMatrices.end(), matrices.begin(), matrices.end());
+	auto& camera_buffer = getDrawBuffer(ERenderBufferIndices::eCameraBuffer);
+	camera_buffer->set(camera_id, FCamera{ utl::cast<u32>(m_stats.matricesCount), camera_buffer->at<FCamera>(camera_id)->type, znear, zfar, size, 1.f / size });
+
+	auto& matrices_buffer = getDrawBuffer(ERenderBufferIndices::eMatricesBuffer);
+	matrices_buffer->copy(matrices);
 	m_stats.matricesCount += matrices.size();
+
+	struct FCamera
+	{
+		uint32_t matricesOffset;
+		uint32_t type;
+
+		float zNear;
+		float zFar;
+
+		VECTOR2 size;
+		VECTOR2 invSize;
+	};
 }
 
 const FCamera& CRenderWorld::getCamera(u64 index) const
 {
-	return m_vCameras[index];
+	auto& camera_buffer = getDrawBuffer(ERenderBufferIndices::eCameraBuffer);
+	return *(camera_buffer->at<FCamera>(index));
 }
 
 const FCamera& CRenderWorld::getDefaultCamera() const
 {
-	return m_vCameras[m_defaultCameraID];
+	return getCamera(m_defaultCameraID);
 }
 
 const u64 CRenderWorld::getCameraID(ERenderGeometryCullerType type) const
@@ -158,33 +171,12 @@ void CRenderWorld::addDrawGeometry(const utl::vector<FGeometryBatch>& new_geomet
 
 void CRenderWorld::begin(f32 dt)
 {
-	// Update materials if needed
-	if (m_bMaterialsChanged)
-	{
-		auto& materials_buffer = getDrawBuffer(ERenderBufferIndices::eMaterialBuffer);
-		materials_buffer->clear();
-		materials_buffer->copy(m_vMaterials);
-
-		m_bMaterialsChanged = false;
-	}
-
-
 	// Clear old frame data
 	m_vGeometryBatches.clear();
 
 	prepareIndirectCommands();
 	//prepareMeshletCommands();
 	m_vRawGeometryBatches.clear();
-
-	{
-		auto& matrices_buffer = getDrawBuffer(ERenderBufferIndices::eMatricesBuffer);
-		matrices_buffer->copy(m_vMatrices);
-	}
-
-	{
-		auto& camera_buffer = getDrawBuffer(ERenderBufferIndices::eCameraBuffer);
-		camera_buffer->copy(m_vCameras);
-	}
 
 	// Copy frustum sides to gpu buffer
 	{
@@ -197,8 +189,10 @@ void CRenderWorld::begin(f32 dt)
 	auto& texture_remap_data = render_context->getGlobalTextureRemap();
 
 	auto& texture_remap_buffer = getDrawBuffer(ERenderBufferIndices::eTextureRemapBuffer);
-	texture_remap_buffer->clear();
 	texture_remap_buffer->copy(texture_remap_data);
+
+	for (auto& buffer : m_vBuffers)
+		buffer->upload();
 }
 
 void CRenderWorld::end()
@@ -215,146 +209,106 @@ void CRenderWorld::end()
 	m_stats.matricesCount = 0ull;
 
 	m_stats.drawCommandCount = 0ull;
-
-	m_vOldMatrices.clear();
-	m_vOldMatrices = std::move(m_vMatrices);
-	m_vMatrices.clear();
-
-	auto& skin_buffer = getDrawBuffer(ERenderBufferIndices::eMatricesBuffer);
-	skin_buffer->clear();
-
-	auto& mesh_buffer = getDrawBuffer(ERenderBufferIndices::eMeshBuffer);
-	mesh_buffer->clear();
-
-	auto& indirect_data_buffer = getDrawBuffer(ERenderBufferIndices::eDrawCommandBuffer);
-	indirect_data_buffer->clear();
-
-	auto& mesh_command_buffer = getDrawBuffer(ERenderBufferIndices::eMeshCommandBuffer);
-	mesh_command_buffer->clear();
-
-	auto& cluster_info_buffer = getDrawBuffer(ERenderBufferIndices::eClusterInfoBuffer);
-	cluster_info_buffer->clear();
-
-	auto& gpu_batches_buffer = getDrawBuffer(ERenderBufferIndices::eRawDrawMeshInfoBuffer);
-	gpu_batches_buffer->clear();
-
-	auto& camera_buffer = getDrawBuffer(ERenderBufferIndices::eCameraBuffer);
-	camera_buffer->clear();
-
-	auto& frustum_buffer = getDrawBuffer(ERenderBufferIndices::eFrustumBuffer);
-	frustum_buffer->clear();
 }
 
 void CRenderWorld::addLight(const FDirectionalLightCommit& light)
 {
 	auto& lights_buffer = getDrawBuffer(ERenderBufferIndices::eDirectionalLightBuffer);
-	if (lights_buffer->size() < m_stats.directionalLightCount + 1ull)
+	if (lights_buffer->count() < m_stats.directionalLightCount + 1ull)
 		lights_buffer->resize((m_stats.directionalLightCount + 1ull) * 2ull);
 
-	lights_buffer->get<FDirectionalLightCommit>(m_stats.directionalLightCount++) = light;
+	lights_buffer->set(m_stats.directionalLightCount++, light);
 }
 
 void CRenderWorld::addLight(const FPointLightCommit& light)
 {
 	auto& lights_buffer = getDrawBuffer(ERenderBufferIndices::ePointLightBuffer);
 
-	if (lights_buffer->size() < m_stats.pointLightCount + 1ull)
+	if (lights_buffer->count() < m_stats.pointLightCount + 1ull)
 		lights_buffer->resize((m_stats.pointLightCount + 1ull) * 2ull);
 
-	lights_buffer->get<FPointLightCommit>(m_stats.pointLightCount++) = light;
+	lights_buffer->set(m_stats.pointLightCount++, light);
 }
 
 void CRenderWorld::addLight(const FSpotLightCommit& light)
 {
 	auto& lights_buffer = getDrawBuffer(ERenderBufferIndices::eSpotLightBuffer);
 
-	if (lights_buffer->size() < m_stats.spotLightCount + 1ull)
+	if (lights_buffer->count() < m_stats.spotLightCount + 1ull)
 		lights_buffer->resize((m_stats.spotLightCount + 1ull) * 2ull);
 
-	lights_buffer->get<FSpotLightCommit>(m_stats.spotLightCount++) = light;
+	lights_buffer->set(m_stats.spotLightCount++, light);
 }
 
 void CRenderWorld::addShadow(const FCascadedShadowCommit& commit)
 {
 	auto& shadows_buffer = getDrawBuffer(ERenderBufferIndices::eCascadedShadowBuffer);
 
-	if (shadows_buffer->size() < m_stats.cascadedShadowCount + 1ull)
+	if (shadows_buffer->count() < m_stats.cascadedShadowCount + 1ull)
 		shadows_buffer->resize((m_stats.cascadedShadowCount + 1ull) * 2ull);
 
-	shadows_buffer->get<FCascadedShadowCommit>(m_stats.cascadedShadowCount++) = commit;
+	shadows_buffer->set(m_stats.cascadedShadowCount++, commit);
 }
 
 void CRenderWorld::addShadow(const FOmniShadowCommit& commit)
 {
 	auto& shadows_buffer = getDrawBuffer(ERenderBufferIndices::eOmniShadowBuffer);
 
-	if (shadows_buffer->size() < m_stats.omniShadowCount + 1ull)
+	if (shadows_buffer->count() < m_stats.omniShadowCount + 1ull)
 		shadows_buffer->resize((m_stats.omniShadowCount + 1ull) * 2ull);
 
-	shadows_buffer->get<FOmniShadowCommit>(m_stats.omniShadowCount++) = commit;
+	shadows_buffer->set(m_stats.omniShadowCount++, commit);
 }
 
 void CRenderWorld::addShadow(const FSpotShadowCommit& commit)
 {
 	auto& shadows_buffer = getDrawBuffer(ERenderBufferIndices::eSpotShadowBuffer);
 
-	if (shadows_buffer->size() < m_stats.spotShadowCount + 1ull)
+	if (shadows_buffer->count() < m_stats.spotShadowCount + 1ull)
 		shadows_buffer->resize((m_stats.spotShadowCount + 1ull) * 2ull);
 
-	shadows_buffer->get<FSpotShadowCommit>(m_stats.spotShadowCount++) = commit;
+	shadows_buffer->set(m_stats.spotShadowCount++, commit);
 }
 
 void CRenderWorld::addMatrices(const utl::vector<glm::mat4>& matrices)
 {
-	m_vMatrices.insert(m_vMatrices.end(), matrices.begin(), matrices.end());
+	auto& matrices_buffer = getDrawBuffer(ERenderBufferIndices::eMatricesBuffer);
+	matrices_buffer->copy(matrices);
 	m_stats.matricesCount += matrices.size();
 }
 
 const glm::mat4& CRenderWorld::getMatrix(u64 index) const
 {
-	return m_vMatrices[index];
-}
-
-const glm::mat4& CRenderWorld::getPrevMatrix(u64 index) const
-{
-	static glm::mat4 invalid{1.f};
-	if (m_vOldMatrices.size() < index)
-		return invalid;
-
-	return m_vOldMatrices[index];
+	auto& matrices_buffer = getDrawBuffer(ERenderBufferIndices::eMatricesBuffer);
+	return *(matrices_buffer->at<glm::mat4>(index));
 }
 
 void CRenderWorld::updateNode(u32 node_id, const FSceneNode& node)
 {
 	auto& nodes_buffer = getDrawBuffer(ERenderBufferIndices::eNodeBuffer);
 
-	if (nodes_buffer->size() < node_id + 1ull)
+	if (nodes_buffer->count() < node_id + 1ull)
 		nodes_buffer->resize((node_id + 1ull));
 
-	nodes_buffer->get<FSceneNode>(node_id) = node;
+	nodes_buffer->set(node_id, node);
 }
 
 void CRenderWorld::addMaterial(const FMaterial& material)
 {
-	m_bMaterialsChanged = true;
-	m_vMaterials.emplace_back(material);
+	auto& materials_buffer = getDrawBuffer(ERenderBufferIndices::eMaterialBuffer);
+	materials_buffer->emplace_back(material);
 }
 
 void CRenderWorld::addMaterials(const utl::vector<FMaterial>& materials)
 {
-	m_bMaterialsChanged = true;
-	m_vMaterials.insert(m_vMaterials.end(), materials.begin(), materials.end());
-}
-
-FMaterial& CRenderWorld::getMaterial(u64 index)
-{
-	m_bMaterialsChanged = true;
-	return m_vMaterials.at(index);
+	auto& materials_buffer = getDrawBuffer(ERenderBufferIndices::eMaterialBuffer);
+	materials_buffer->copy(materials);
 }
 
 const FMaterial& CRenderWorld::getMaterial(u64 index) const
 {
-	return m_vMaterials.at(index);
+	auto& materials_buffer = getDrawBuffer(ERenderBufferIndices::eMaterialBuffer);
+	return *materials_buffer->at<FMaterial>(index);
 }
 
 void CRenderWorld::addMesh(const FMesh& mesh)
@@ -371,7 +325,7 @@ void CRenderWorld::addMeshes(const utl::vector<FMesh>& meshes)
 	m_stats.meshCount += meshes.size();
 }
 
-const std::unique_ptr<IGPUVector>& CRenderWorld::getDrawBuffer(ERenderBufferIndices buffer_index)
+const std::unique_ptr<IGPUVector2>& CRenderWorld::getDrawBuffer(ERenderBufferIndices buffer_index) const
 {
 	return m_vBuffers.at(utl::enum_cast(buffer_index));
 }
@@ -495,20 +449,18 @@ void CRenderWorld::prepareIndirectCommands()
 	m_stats.maxDrawCommands = m_vRawGeometryBatches.size();
 	m_stats.drawCommandCount = m_stats.maxDrawCommands * m_vCullingInfo.size();
 	//m_stats.drawCommandCount = m_stats.maxDrawCommands * (1 + max_directional_light_shadow_count * cascade_shadow_map_cascade_count + max_spot_light_shadow_count + max_point_light_shadow_count * 6);
-	if (indirect_data_buffer->capacity() < m_stats.drawCommandCount)
+	if (indirect_data_buffer->count() < m_stats.drawCommandCount)
 		indirect_data_buffer->resize(m_stats.drawCommandCount * 1.1f);
 
 	raw_gpu_batches_buffer->copy(gpu_batches);
 
 	// Resize output buffer
 	auto& gpu_batches_buffer = getDrawBuffer(ERenderBufferIndices::eDrawMeshInfoBuffer);
-	if (raw_gpu_batches_buffer->capacity() > gpu_batches_buffer->capacity())
-		gpu_batches_buffer->resize(raw_gpu_batches_buffer->capacity());
+	if (raw_gpu_batches_buffer->count() > gpu_batches_buffer->count())
+		gpu_batches_buffer->resize(raw_gpu_batches_buffer->count());
 
-	if (indirect_count_buffer->capacity() < m_stats.cullerCount)
+	if (indirect_count_buffer->count() < m_stats.cullerCount)
 		indirect_count_buffer->resize(m_stats.cullerCount * 1.1f);
-
-	indirect_count_buffer->erase<u32>(m_stats.cullerCount);
 }
 
 void CRenderWorld::prepareMeshletCommands()

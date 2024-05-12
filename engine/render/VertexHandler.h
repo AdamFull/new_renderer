@@ -39,7 +39,7 @@ namespace engine
 			u64 getHash() const override;
 			const std::string& getDefinitions() const override;
 
-			const std::unique_ptr<IGPUVector>& getGeometryBuffer(EGeometryBufferIndices buffer_index) override;
+			const std::unique_ptr<IGPUVector2>& getGeometryBuffer(EGeometryBufferIndices buffer_index) override;
 
 			u64 getVertexHandle() const override;
 			u64 getIndexHandle() const override;
@@ -47,7 +47,7 @@ namespace engine
 			FBufferInfo<u8> m_vertexBuffer{};
 			FBufferInfo<u8> m_indexBuffer{};
 
-			utl::vector<std::unique_ptr<IGPUVector>> m_vGeometryBuffers{};
+			utl::vector<std::unique_ptr<IGPUVector2>> m_vGeometryBuffers{};
 
 			// Vertex cache
 			utl::hash_map<u64, FVertexRange> m_cachedRanges{};

@@ -10,6 +10,15 @@
 					shader_name: "cull_and_batch_comp";
 				}
 			];
+		},
+		{
+			name: "clear_counters";
+			sources: [
+				{
+					type: "compute";
+					shader_name: "clear_counters_comp";
+				}
+			];
 		}
 	];
 
@@ -17,6 +26,10 @@
 		{ 
 			shader_name: "cull_and_batch";
 			pattern: "geometry_pattern";
+		},
+		{ 
+			shader_name: "clear_counters";
+			pattern: "empty_pattern";
 		}
 	];
 }

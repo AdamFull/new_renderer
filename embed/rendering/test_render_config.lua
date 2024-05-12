@@ -1,6 +1,6 @@
 use_low_precision_velocity = true
 
-motion_blur_enabled = false
+motion_blur_enabled = true
 depth_of_field_enabled = false
 chromatic_aberration_enabled = false
 bloom_enabled = false
@@ -206,7 +206,7 @@ function compute_motion_blur(input_target, output_target)
 	-- Compute static motion vectors (can be started in another queue)
     do
         local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, use_low_precision_velocity and "postprocess:generate_motion_vectors:LOW_PRECISION_VELOCITY" or "postprocess:generate_motion_vectors")
-        pass_ci:add_workgroup_size_info("zbuffer_depth_target", true)
+        pass_ci:add_workgroup_size_by_rt("zbuffer_depth_target", true)
     
         pass_ci:bind_write_resource("write_color", "motion_vectors_target")
         pass_ci:bind_read_resource("depth_texture", "zbuffer_depth_target")
@@ -217,7 +217,7 @@ function compute_motion_blur(input_target, output_target)
     -- Apply motion blur
     do
         local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, use_low_precision_velocity and "postprocess:apply_effect:MOTION_BLUR:LOW_PRECISION_VELOCITY" or "postprocess:apply_effect:MOTION_BLUR")
-        pass_ci:add_workgroup_size_info(input_target, true)
+        pass_ci:add_workgroup_size_by_rt(input_target, true)
     
         pass_ci:bind_read_resource("sampler_color", input_target)
         pass_ci:bind_read_resource("motion_vectors", "motion_vectors_target")
@@ -234,7 +234,7 @@ function compute_dof(input_target, output_target)
 
 	do
         local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:bokeh")
-        pass_ci:add_workgroup_size_info(input_target, true)
+        pass_ci:add_workgroup_size_by_rt(input_target, true)
     
         pass_ci:bind_write_resource("write_color", "bokeh_target")
         pass_ci:bind_read_resource("sampler_color", input_target)
@@ -245,7 +245,7 @@ function compute_dof(input_target, output_target)
     -- Apply dof
     do
         local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:apply_effect:DOF")
-        pass_ci:add_workgroup_size_info(input_target, true)
+        pass_ci:add_workgroup_size_by_rt(input_target, true)
     
         pass_ci:bind_write_resource("write_color", output_target)
         pass_ci:bind_read_resource("sampler_color", input_target)
@@ -267,7 +267,7 @@ function compute_bloom(input_target, output_target)
     do 
         local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:brightdetect")
 
-        pass_ci:add_workgroup_size_info("bloom_target", true)
+        pass_ci:add_workgroup_size_by_rt("bloom_target", true)
 
         pass_ci:bind_read_resource("sampler_color", input_target)
         pass_ci:bind_write_resource("write_color", "brightness_target")
@@ -282,7 +282,7 @@ function compute_bloom(input_target, output_target)
 
         render_graph:push_debug_marker("Downsample", 0xffff33ff, QueueType.graphics)
         for idx = 0, bloom_blur_depth - 1 do
-            pass_ci:add_workgroup_size_info("bloom_target", idx, true)
+            pass_ci:add_workgroup_size_by_rt("bloom_target", idx, true)
             pass_ci:bind_write_resource("write_color", "bloom_target", idx)
             
             render_graph:add_render_pass("downsample_pass_" .. idx, pass_ci)
@@ -299,7 +299,7 @@ function compute_bloom(input_target, output_target)
     for idx = bloom_blur_depth - 1, 1, -1 do
         local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:upsample")
     
-        pass_ci:add_workgroup_size_info("bloom_target", idx - 1, true)
+        pass_ci:add_workgroup_size_by_rt("bloom_target", idx - 1, true)
     
         pass_ci:bind_read_resource("sampler_color", "bloom_target", idx)
         pass_ci:bind_write_resource("write_color", "bloom_target", idx - 1)
@@ -311,7 +311,7 @@ function compute_bloom(input_target, output_target)
     -- Apply bloom
     do
         local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:apply_effect:BLOOM")
-        pass_ci:add_workgroup_size_info(output_target, true)
+        pass_ci:add_workgroup_size_by_rt(output_target, true)
 
         pass_ci:bind_write_resource("write_color", output_target)
         pass_ci:bind_read_resource("sampler_color", input_target)
@@ -329,7 +329,7 @@ function compute_tonemap(input_target, output_target)
     -- Compute histogram
     do
         local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:compute_histogram")
-        pass_ci:add_workgroup_size_info(input_target, true)
+        pass_ci:add_workgroup_size_by_rt(input_target, true)
     
         pass_ci:bind_read_resource("sampler_color", input_target)
         pass_ci:bind_write_resource("Histogram", "histogram_buffer")
@@ -340,7 +340,7 @@ function compute_tonemap(input_target, output_target)
     -- Compute avg screen space brightness
     do
         local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:compute_brightness")
-        pass_ci:add_workgroup_size_info(1, 1, 1, false)
+        pass_ci:add_workgroup_size_manual(1, 1, 1, false)
     
         pass_ci:bind_write_resource("target", "avg_brightness_target")
         pass_ci:bind_read_resource("Histogram", "histogram_buffer")
@@ -351,7 +351,7 @@ function compute_tonemap(input_target, output_target)
     -- Apply tonemapping
     do
         local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:apply_effect:TONEMAP")
-        pass_ci:add_workgroup_size_info(input_target, true)
+        pass_ci:add_workgroup_size_by_rt(input_target, true)
 
         pass_ci:bind_write_resource("write_color", output_target)
         pass_ci:bind_read_resource("sampler_color", input_target)
@@ -389,7 +389,7 @@ function postprocess(target_1, target_2)
     -- Compute chromatic aberration
     if chromatic_aberration_enabled then
         local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:apply_effect:CHROMATIC_ABERRATION")
-        pass_ci:add_workgroup_size_info(input_target, true)
+        pass_ci:add_workgroup_size_by_rt(input_target, true)
 
         pass_ci:bind_write_resource("write_color", output_target)
         pass_ci:bind_read_resource("sampler_color", input_target)
@@ -415,7 +415,7 @@ do
     local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "lighting:brgflut_generator")
     pass_ci.one_time = true
 
-    pass_ci:add_workgroup_size_info("brdf_lut_target", true)
+    pass_ci:add_workgroup_size_by_rt("brdf_lut_target", true)
     pass_ci:bind_write_resource("out_color", "brdf_lut_target")
 
     render_graph:add_render_pass("generate_brdflut", pass_ci)
@@ -425,7 +425,7 @@ do
     local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "lighting:irradiancecube_generator")
     pass_ci.one_time = true
 
-    pass_ci:add_workgroup_size_info("irradiance_cube_target", true)
+    pass_ci:add_workgroup_size_by_rt("irradiance_cube_target", true)
     pass_ci:bind_write_resource("out_color", "irradiance_cube_target")
     pass_ci:bind_read_resource("sampler_color", "CasualDay4K")
 
@@ -436,7 +436,7 @@ do
     local pass_ci = make_compute_pass(ComputeType.cubemap, QueueType.graphics, "lighting:prefilteredmap_generator")
     pass_ci.one_time = true
 
-    pass_ci:add_workgroup_size_info("prefiltered_cube_target", true)
+    pass_ci:add_workgroup_size_by_rt("prefiltered_cube_target", true)
     pass_ci:bind_write_resource("out_color", "prefiltered_cube_target")
     pass_ci:bind_read_resource("sampler_color", "CasualDay4K")
 
@@ -444,6 +444,14 @@ do
 end
 
 -- Culling (culling is temporary)
+do
+    local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "culling:clear_counters")
+    pass_ci:add_workgroup_size_by_buffer("IndirectCountBuffer", true)
+    pass_ci:add_write_resource("IndirectCountBuffer")
+
+    render_graph:add_render_pass("clear_counters_pass", pass_ci)
+end
+
 do
     local pass_ci = make_compute_pass(ComputeType.culling, QueueType.graphics, "culling:cull_and_batch")
 
@@ -508,7 +516,7 @@ end
 -- visibility buffer material pass
 do
     local pass_ci = make_compute_pass(ComputeType.geometry, QueueType.graphics, "visibilitybuffer:shade")
-    pass_ci:add_workgroup_size_info("hdr0", true)
+    pass_ci:add_workgroup_size_by_rt("hdr0", true)
 
     pass_ci:bind_write_resource("write_color", "hdr0")
     pass_ci:bind_read_resource("prev_frame_color", "hdr0_history")
@@ -530,7 +538,7 @@ end
 
 do
     local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "utility:copy_compute")
-    pass_ci:add_workgroup_size_info("hdr0", true)
+    pass_ci:add_workgroup_size_by_rt("hdr0", true)
 
     pass_ci:bind_read_resource("sampler_color", "hdr0")
     pass_ci:bind_write_resource("write_color", "hdr0_history")
