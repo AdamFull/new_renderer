@@ -70,7 +70,7 @@
 			FCascadedShadowCommit shadow = cascadedShadowBuffer.shadows[shadowData.shadowIndex];
 			FCamera camera = cameraBuffer.cameras[draw_info.cameraID];
 			viewProj = getViewProjectionMatrix(camera.matricesOffset);
-			gl_Layer = shadowData.layer; // TODO: shadowData.shadowIndex * cascade_count + shadowData.layer
+			gl_Layer = shadowData.shadowIndex * int(cascade_shadow_map_cascade_count) + shadowData.layer;
 #elif defined(OMNI_SHADOW)
 			FOmniShadowCommit shadow = omniShadowBuffer.shadows[shadowData.shadowIndex];
 			FCamera camera = cameraBuffer.cameras[draw_info.cameraID];
