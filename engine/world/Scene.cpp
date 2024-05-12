@@ -478,7 +478,8 @@ void CScene::loadCameraComponent(const easygltf::FGLTFRoot& root, const entt::en
 	else if (camera.type == easygltf::base::enumerators::camera_type::perspective)
 	{
 		camera_component.type = ECameraType::ePerspective;
-		camera_component.fieldOfView = camera.perspective.yfov;
+		camera_component.aspectRatio = camera.perspective.aspectRatio;
+		camera_component.fieldOfView = glm::degrees(2.0f * glm::atan(glm::tan(camera.perspective.yfov * 0.5f) * camera.perspective.aspectRatio));
 		camera_component.nearPlane = camera.perspective.znear;
 		camera_component.farPlane = camera.perspective.zfar;
 	}
