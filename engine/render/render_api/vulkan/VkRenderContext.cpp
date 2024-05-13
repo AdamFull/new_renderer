@@ -2158,7 +2158,7 @@ void CVkRenderContext::processResourceUpload()
 		FVkBufferCreateInfo vk_buffer_ci{};
 		vk_buffer_ci.instanceCount = staging_count;
 		vk_buffer_ci.instanceSize = bytes_count / staging_count;
-		vk_buffer_ci.minOffsetAlignment = 0;
+		vk_buffer_ci.minOffsetAlignment = 0; //std::lcm(physical.properties.limits.minStorageBufferOffsetAlignment, physical.properties.limits.nonCoherentAtomSize);
 		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuOnly;
 		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -2297,13 +2297,7 @@ FVkBufferCreateInfo CVkRenderContext::makeBufferCreateInfo(const std::string& na
 
 	// Add buffer alignment
 	if (buffer_ci.flags & EBufferUsageFlagBits::eAlignmentRequired)
-		vk_buffer_ci.minOffsetAlignment = std::lcm(physical.properties.limits.minUniformBufferOffsetAlignment, physical.properties.limits.nonCoherentAtomSize);
-
-	//EBufferTypeFlagBits::eStaging = EBufferUsageFlagBits::eTransfer
-	//EBufferTypeFlagBits::eVertex = EBufferUsageFlagBits::eTransfer | EBufferUsageFlagBits::eVertex
-	//EBufferTypeFlagBits::eIndex = EBufferUsageFlagBits::eTransfer | EBufferUsageFlagBits::eIndex
-	//EBufferTypeFlagBits::eStorage = EBufferUsageFlagBits::eTransfer | EBufferUsageFlagBits::eStorage
-	//EBufferTypeFlagBits::eIndirect = EBufferUsageFlagBits::eTransfer | EBufferUsageFlagBits::eStorage | EBufferUsageFlagBits::eIndirect
+		vk_buffer_ci.minOffsetAlignment = std::lcm(physical.properties.limits.minStorageBufferOffsetAlignment, physical.properties.limits.nonCoherentAtomSize);
 
 	return vk_buffer_ci;
 }
