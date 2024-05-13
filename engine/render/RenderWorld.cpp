@@ -176,7 +176,6 @@ void CRenderWorld::begin(f32 dt)
 
 	prepareIndirectCommands();
 	//prepareMeshletCommands();
-	m_vRawGeometryBatches.clear();
 
 	// Copy frustum sides to gpu buffer
 	{
@@ -209,6 +208,8 @@ void CRenderWorld::end()
 	m_stats.matricesCount = 0ull;
 
 	m_stats.drawCommandCount = 0ull;
+
+	m_vRawGeometryBatches.clear();
 }
 
 void CRenderWorld::addLight(const FDirectionalLightCommit& light)

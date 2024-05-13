@@ -2140,6 +2140,7 @@ void CVkRenderContext::processResourceUpload()
 		
 		// Calculate elements to copy count
 		u64 staging_count{ 0ull };
+		u64 bytes_count{ 0ull };
 		for (u64 idx = 0ull; idx < copy_regions.size(); ++idx)
 		{
 			auto& region_info = upload_info.regions[idx];
@@ -2150,13 +2151,14 @@ void CVkRenderContext::processResourceUpload()
 			copy_region.size = region_info.size;
 
 			staging_count += region_info.count;
+			bytes_count += region_info.size;
 		}
 
 		// Create new staging buffer
 		FVkBufferCreateInfo vk_buffer_ci{};
 		vk_buffer_ci.instanceCount = staging_count;
-		vk_buffer_ci.instanceSize = dst_buffer->size / dst_buffer->instanceCount;
-		vk_buffer_ci.minOffsetAlignment = std::lcm(physical.properties.limits.minUniformBufferOffsetAlignment, physical.properties.limits.nonCoherentAtomSize);
+		vk_buffer_ci.instanceSize = bytes_count / staging_count;
+		vk_buffer_ci.minOffsetAlignment = 0;
 		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuOnly;
 		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
 #ifndef BUILD_WITHOUT_DEBUGGIND

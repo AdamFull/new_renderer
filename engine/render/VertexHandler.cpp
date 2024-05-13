@@ -241,7 +241,7 @@ void CVertexHandler::allocate()
 		FBufferUploadInfo upload_info{};
 		upload_info.bufferId = m_vertexBuffer.buffer;
 		upload_info.data = m_vertexBuffer.data;
-		upload_info.regions.emplace_back(FBufferUploadRegion{ m_vertexBuffer.elementCount, m_vertexBuffer.elementSize, 0ull });
+		upload_info.regions.emplace_back(FBufferUploadRegion{ m_vertexBuffer.elementCount, m_vertexBuffer.data.size(), 0ull, 0ull});
 		render_context->uploadDataToBuffer(upload_info);
 	}
 
@@ -256,7 +256,7 @@ void CVertexHandler::allocate()
 		FBufferUploadInfo upload_info{};
 		upload_info.bufferId = m_indexBuffer.buffer;
 		upload_info.data = m_indexBuffer.data;
-		upload_info.regions.emplace_back(FBufferUploadRegion{ m_indexBuffer.elementCount, m_indexBuffer.elementSize, 0ull });
+		upload_info.regions.emplace_back(FBufferUploadRegion{ m_indexBuffer.elementCount, m_indexBuffer.data.size(), 0ull, 0ull});
 		render_context->uploadDataToBuffer(upload_info);
 	}
 
