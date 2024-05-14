@@ -97,23 +97,37 @@ namespace engine
 
 			virtual ~IGPUVector2() = default;
 
-			template<class _Ty>
-			void create(const std::string& name, EBufferUsageFlags flag = EBufferUsageFlagBits::eStorageBuffer, u64 capacity = 64ull)
+			inline void create_raw(const std::string& name, u64 instance_size, u64 capacity = 64ull, EBufferUsageFlags flag = EBufferUsageFlagBits::eStorageBuffer)
 			{
 				// Init intermediate data buffer
-				m_vData.resize(sizeof(_Ty) * capacity);
+				m_vData.resize(instance_size * capacity);
 				// Allocate buffer
-				allocate(name, flag, sizeof(_Ty), capacity);
+				allocate(name, flag, instance_size, capacity);
+			}
+
+			template<class _Ty>
+			void create(const std::string& name, u64 capacity = 64ull, EBufferUsageFlags flag = EBufferUsageFlagBits::eStorageBuffer)
+			{
+				create_raw(name, sizeof(_Ty), capacity, flag);
+			}
+
+			inline void copy_bytes(const void* data, u64 byte_count)
+			{
+				try_grow(byte_count);
+				do_copy(data, byte_count);
+			}
+
+			inline void copy_raw(const void* data, u64 count)
+			{
+				u64 size = to_bytes(count);
+				copy_bytes(data, size);
 			}
 
 			template<class _Ty, size_t _Size>
 			void copy(const std::array<_Ty, _Size>& data)
 			{
 				assert(m_elemSize == sizeof(_Ty) && "Invalid element size.");
-
-				u64 size = to_bytes(_Size);
-				try_grow(size);
-				do_copy(&data[0], size);
+				copy_raw(&data[0], _Size);
 			}
 
 			template<class _Ty>
@@ -124,9 +138,7 @@ namespace engine
 				if (data.empty())
 					return;
 
-				u64 size = to_bytes(data.size());
-				try_grow(size);
-				do_copy(&data[0], size);
+				copy_raw(&data[0], data.size());
 			}
 
 			template<class _Ty>
@@ -141,30 +153,32 @@ namespace engine
 				return (_Ty*)(&m_vData[m_cursor - size]);
 			}
 
-			template<class _Ty>
-			void set(u64 index, _Ty&& data)
+			inline void set_raw(u64 index, const void* data)
 			{
-				assert(m_elemSize == sizeof(_Ty) && "Invalid element size.");
 				do_insert(&data, m_elemSize, to_bytes(index));
 			}
 
 			template<class _Ty>
-			void erase(u64 count)
+			void set(u64 index, _Ty&& data)
 			{
-				std::memset(&m_vData[0], 0, sizeof(_Ty) * count);
+				assert(m_elemSize == sizeof(_Ty) && "Invalid element size.");
+				set_raw(to_bytes(index), &data);
 			}
 
-			u64 count()
+			u64 count() const
 			{
 				return m_vData.size() / m_elemSize;
 			}
 
-			//template<class _Ty>
-			//_Ty* at(u64 index)
-			//{
-			//	m_vUploadRanges.emplace_back(to_bytes(index), m_elemSize);
-			//	return (_Ty*)(&m_vData[to_bytes(index)]);
-			//}
+			u64 stride() const 
+			{
+				return m_elemSize;
+			}
+
+			u64 size() const
+			{
+				return m_vData.size();
+			}
 
 			template<class _Ty>
 			const _Ty* at(u64 index) const
@@ -179,7 +193,7 @@ namespace engine
 			inline u64 to_bytes(u64 size) const { return size * m_elemSize; }
 
 			// Try to grow temporary array
-			void try_grow(u64 size)
+			inline void try_grow(u64 size)
 			{
 				if (m_cursor + size > m_vData.size())
 				{
@@ -188,7 +202,7 @@ namespace engine
 				}
 			}
 
-			void do_insert(const void* data, u64 size, u64 offset)
+			inline void do_insert(const void* data, u64 size, u64 offset)
 			{
 				auto new_hash = utl::murmur_hash_64(data, size, 0);
 				auto old_hash = utl::murmur_hash_64(&m_vData[offset], size, 0);
@@ -201,7 +215,7 @@ namespace engine
 			}
 
 			// Copy data only when it changed ans det dirty flag
-			void do_copy(const void* data, u64 size)
+			inline void do_copy(const void* data, u64 size)
 			{
 				do_insert(data, size, m_cursor);
 				m_cursor += size;

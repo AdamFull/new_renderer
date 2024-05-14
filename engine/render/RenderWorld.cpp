@@ -36,31 +36,31 @@ void CRenderWorld::create()
 {
 	m_vBuffers.resize(utl::enum_cast(ERenderBufferIndices::eLastIndex));
 
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eNodeBuffer))->create<FSceneNode>("NodeStorage", EBufferUsageFlagBits::eStorageBuffer);
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eMatricesBuffer))->create<glm::mat4>("MatricesBuffer", EBufferUsageFlagBits::eStorageBuffer);
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eMeshBuffer))->create<FMesh>("MeshBuffer", EBufferUsageFlagBits::eStorageBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eNodeBuffer))->create<FSceneNode>("NodeStorage", 16ull, EBufferUsageFlagBits::eStorageBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eMatricesBuffer))->create<glm::mat4>("MatricesBuffer", 16ull, EBufferUsageFlagBits::eStorageBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eMeshBuffer))->create<FMesh>("MeshBuffer", 16ull, EBufferUsageFlagBits::eStorageBuffer);
 
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eMaterialBuffer))->create<FMaterial>("MaterialStorage", EBufferUsageFlagBits::eStorageBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eMaterialBuffer))->create<FMaterial>("MaterialStorage", 16ull, EBufferUsageFlagBits::eStorageBuffer);
 
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eDirectionalLightBuffer))->create<FDirectionalLightCommit>("DirectionalLights", EBufferUsageFlagBits::eStorageBuffer);
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::ePointLightBuffer))->create<FPointLightCommit>("PointLights", EBufferUsageFlagBits::eStorageBuffer);
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eSpotLightBuffer))->create<FSpotLightCommit>("SpotLights", EBufferUsageFlagBits::eStorageBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eDirectionalLightBuffer))->create<FDirectionalLightCommit>("DirectionalLights", max_directional_light_count, EBufferUsageFlagBits::eStorageBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::ePointLightBuffer))->create<FPointLightCommit>("PointLights", max_point_light_count, EBufferUsageFlagBits::eStorageBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eSpotLightBuffer))->create<FSpotLightCommit>("SpotLights", max_spot_light_count, EBufferUsageFlagBits::eStorageBuffer);
 
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eCascadedShadowBuffer))->create<FCascadedShadowCommit>("CascadedShadows", EBufferUsageFlagBits::eStorageBuffer);
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eOmniShadowBuffer))->create<FOmniShadowCommit>("OmniShadows", EBufferUsageFlagBits::eStorageBuffer);
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eSpotShadowBuffer))->create<FSpotShadowCommit>("SpotShadows", EBufferUsageFlagBits::eStorageBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eCascadedShadowBuffer))->create<FCascadedShadowCommit>("CascadedShadows", max_directional_light_shadow_count, EBufferUsageFlagBits::eStorageBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eOmniShadowBuffer))->create<FOmniShadowCommit>("OmniShadows", max_point_light_shadow_count, EBufferUsageFlagBits::eStorageBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eSpotShadowBuffer))->create<FSpotShadowCommit>("SpotShadows", max_spot_light_shadow_count, EBufferUsageFlagBits::eStorageBuffer);
 
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eDrawMeshInfoBuffer))->create<FGeometryBatch>("GeometryBatches", EBufferUsageFlagBits::eStorageBuffer);
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eRawDrawMeshInfoBuffer))->create<FGeometryBatch>("RawGeometryBatches", EBufferUsageFlagBits::eStorageBuffer);
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eClusterInfoBuffer))->create<FClusterInfo>("ClusterInfoBuffer", EBufferUsageFlagBits::eStorageBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eDrawMeshInfoBuffer))->create<FGeometryBatch>("GeometryBatches", 16ull, EBufferUsageFlagBits::eStorageBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eRawDrawMeshInfoBuffer))->create<FGeometryBatch>("RawGeometryBatches", 16ull, EBufferUsageFlagBits::eStorageBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eClusterInfoBuffer))->create<FClusterInfo>("ClusterInfoBuffer", 16ull, EBufferUsageFlagBits::eStorageBuffer);
 
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eFrustumBuffer))->create<glm::vec4>("FrustumSides", EBufferUsageFlagBits::eStorageBuffer);
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eDrawCommandBuffer))->create<FDrawIndexedIndirectData>("IndexedDrawIndirectBuffer", EBufferUsageFlagBits::eIndirectBuffer);
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eCountBuffer))->create<FDrawIndexedIndirectData>("IndirectCountBuffer", EBufferUsageFlagBits::eIndirectBuffer);
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eMeshCommandBuffer))->create<FDrawMeshIndirectData>("MeshIndirectBuffer", EBufferUsageFlagBits::eIndirectBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eFrustumBuffer))->create<glm::vec4>("FrustumSides", 16ull, EBufferUsageFlagBits::eStorageBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eDrawCommandBuffer))->create<FDrawIndexedIndirectData>("IndexedDrawIndirectBuffer", 16ull, EBufferUsageFlagBits::eIndirectBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eCountBuffer))->create<FDrawIndexedIndirectData>("IndirectCountBuffer", 16ull, EBufferUsageFlagBits::eIndirectBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eMeshCommandBuffer))->create<FDrawMeshIndirectData>("MeshIndirectBuffer", 16ull, EBufferUsageFlagBits::eIndirectBuffer);
 
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eTextureRemapBuffer))->create<uint32_t>("TextureBindingRemap", EBufferUsageFlagBits::eStorageBuffer);
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eCameraBuffer))->create<FCamera>("CameraBuffer", EBufferUsageFlagBits::eStorageBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eTextureRemapBuffer))->create<uint32_t>("TextureBindingRemap", 16ull, EBufferUsageFlagBits::eStorageBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eCameraBuffer))->create<FCamera>("CameraBuffer", 16ull, EBufferUsageFlagBits::eStorageBuffer);
 }
 
 u64 CRenderWorld::registerCamera(ERenderGeometryCullerType type)
@@ -120,18 +120,6 @@ void CRenderWorld::updateCamera(u64 camera_id, const glm::mat4& view, const glm:
 	auto& matrices_buffer = getDrawBuffer(ERenderBufferIndices::eMatricesBuffer);
 	matrices_buffer->copy(matrices);
 	m_stats.matricesCount += matrices.size();
-
-	struct FCamera
-	{
-		uint32_t matricesOffset;
-		uint32_t type;
-
-		float zNear;
-		float zFar;
-
-		VECTOR2 size;
-		VECTOR2 invSize;
-	};
 }
 
 const FCamera& CRenderWorld::getCamera(u64 index) const

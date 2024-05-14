@@ -9,13 +9,10 @@ namespace engine
 		class CVertexHandler : public IVertexHandler
 		{
 		public:
-			template<class _Ty>
 			struct FBufferInfo
 			{
-				utl::vector<_Ty> data{};
 				u64 elementCount{ 0ull };
 				u64 elementSize{ 0ull };
-				u64 buffer{ ~0ull };
 			};
 
 			CVertexHandler(IRenderInterface* render_interface);
@@ -32,21 +29,12 @@ namespace engine
 			u64 addIndices(const FVertexAttributePointer& indices) override;
 			u64 addMeshlets(const utl::vector<FVertexAttributePointer>& attributes_data, const utl::vector<u32>& indices);
 
-			u64 getLastVertex() override;
-			u64 getLastIndex() override;
-
 			const FVertexDeclarationInfo& getVertexDeclaration() const override;
 			u64 getHash() const override;
 			const std::string& getDefinitions() const override;
 
 			const std::unique_ptr<IGPUVector2>& getGeometryBuffer(EGeometryBufferIndices buffer_index) override;
-
-			u64 getVertexHandle() const override;
-			u64 getIndexHandle() const override;
 		private:
-			FBufferInfo<u8> m_vertexBuffer{};
-			FBufferInfo<u8> m_indexBuffer{};
-
 			utl::vector<std::unique_ptr<IGPUVector2>> m_vGeometryBuffers{};
 
 			// Vertex cache

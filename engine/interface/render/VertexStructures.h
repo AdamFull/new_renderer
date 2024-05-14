@@ -110,17 +110,11 @@ namespace engine
 			virtual u64 addVertices(const utl::vector<FVertexAttributePointer>& attributes_data) = 0;
 			virtual u64 addIndices(const FVertexAttributePointer& indices) = 0;
 
-			virtual u64 getLastVertex() = 0;
-			virtual u64 getLastIndex() = 0;
-
 			virtual const FVertexDeclarationInfo& getVertexDeclaration() const = 0;
 			virtual u64 getHash() const = 0;
 			virtual const std::string& getDefinitions() const = 0;
 
 			virtual const std::unique_ptr<IGPUVector2>& getGeometryBuffer(EGeometryBufferIndices buffer_index) = 0;
-
-			virtual u64 getVertexHandle() const = 0;
-			virtual u64 getIndexHandle() const = 0;
 		};
 	}
 }
