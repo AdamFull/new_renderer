@@ -21,6 +21,10 @@ void CGPUVector2::upload()
 			buffer_ci.flags = m_bufferFlag;
 
 			m_pBuffer->resize(m_srOriginalName, buffer_ci);
+
+			// Buffer was resized. We should upload whole data
+			m_vUploadRanges.clear();
+			m_vUploadRanges.emplace_back(upload_range{ 0ull, m_vData.size() });;
 		}
 
 		// Sort upload ranges
@@ -60,8 +64,9 @@ void CGPUVector2::upload()
 		m_pBuffer->upload(std::move(upload_data), upload_regions);
 
 		m_vUploadRanges.clear();
-		m_cursor = 0u;
 	}
+
+	m_cursor = 0u;
 }
 
 void CGPUVector2::resize(u64 new_size)
