@@ -46,7 +46,7 @@ namespace engine
 			void addMesh(const FMesh& mesh) override;
 			void addMeshes(const utl::vector<FMesh>& meshes) override;
 
-			const std::unique_ptr<IGPUVector2>& getDrawBuffer(ERenderBufferIndices buffer_index) const override;
+			const std::unique_ptr<IGPUVector>& getDrawBuffer(ERenderBufferIndices buffer_index) const override;
 			const utl::vector<FGeometryCPUBatch>& getGeometryBatches() const override;
 			const utl::vector<FDrawInfo>& getDrawCommandByType(ERenderGeometryCullerType type) const override;
 
@@ -71,7 +71,7 @@ namespace engine
 			FPostProcess m_postprocess{};
 			FRenderWorldStats m_stats{};
 
-			utl::vector<std::unique_ptr<IGPUVector2>> m_vBuffers{};
+			utl::vector<std::unique_ptr<IGPUVector>> m_vBuffers{};
 		private:
 			IRenderInterface* m_pRenderInterface{ nullptr };
 		};

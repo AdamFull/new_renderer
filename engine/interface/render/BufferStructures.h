@@ -24,8 +24,8 @@ namespace engine
 			eStagingBuffer = eTransfer,
 			eStorageBufferCPU = eTransfer | eStorage | eCpuToGpu,
 			eStorageBuffer = eTransfer | eStorage | eGpuOnly,
-			eVertexBuffer = eTransfer | eVertex | eStorage | eGpuOnly,
-			eIndexBuffer = eTransfer | eIndex | eStorage | eGpuOnly,
+			eVertexBuffer = eTransfer | eVertex | eGpuOnly,
+			eIndexBuffer = eTransfer | eIndex | eGpuOnly,
 			eUniformBuffer = eTransfer | eUniform | eCpuToGpu,
 			eIndirectBuffer = eTransfer | eStorage | eIndirect | eGpuOnly
 		};
@@ -87,7 +87,7 @@ namespace engine
 			virtual void* data() = 0;
 		};
 
-		class IGPUVector2
+		class IGPUVector
 		{
 		public:
 			struct upload_range
@@ -96,7 +96,7 @@ namespace engine
 				u64 size{ 0ull };
 			};
 
-			virtual ~IGPUVector2() = default;
+			virtual ~IGPUVector() = default;
 
 			inline void create_raw(const std::string& name, u64 instance_size, u64 capacity = 64ull, EBufferUsageFlags flag = EBufferUsageFlagBits::eStorageBuffer)
 			{
@@ -168,17 +168,17 @@ namespace engine
 
 			u64 count() const
 			{
+				return m_lastCursor / m_elemSize;
+			}
+
+			u64 capacity() const
+			{
 				return m_vData.size() / m_elemSize;
 			}
 
-			u64 stride() const 
+			u64 stride() const
 			{
 				return m_elemSize;
-			}
-
-			u64 size() const
-			{
-				return m_vData.size();
 			}
 
 			template<class _Ty>
@@ -198,7 +198,7 @@ namespace engine
 			{
 				if (m_cursor + size > m_vData.size())
 				{
-					u64 new_size = (m_cursor + size) * 1.5f;
+					u64 new_size = (m_cursor + size) * 2.f;
 					m_vData.resize(new_size);
 				}
 			}
@@ -211,7 +211,7 @@ namespace engine
 				if (new_hash != old_hash)
 				{
 					std::memcpy(&m_vData[offset], data, size);
-					m_vUploadRanges.emplace_back(upload_range{ offset, size }); 
+					m_vUploadRanges.emplace_back(upload_range{ offset, size });
 				}
 			}
 
@@ -220,6 +220,7 @@ namespace engine
 			{
 				do_insert(data, size, m_cursor);
 				m_cursor += size;
+				m_lastCursor = m_cursor;
 			}
 
 			// Allocates buffer
@@ -228,140 +229,8 @@ namespace engine
 			utl::vector<upload_range> m_vUploadRanges{};
 			utl::vector<u8> m_vData{};
 			u64 m_cursor{ 0ull };	// Something like cursor in bytes
+			u64 m_lastCursor{ 0ull };
 			u64 m_elemSize{ 0ull };
-		};
-
-		class IGPUVector
-		{
-		public:
-			virtual ~IGPUVector() = default;
-
-			template<class _Ty>
-			void create(const std::string& name, EBufferUsageFlags flag = EBufferUsageFlagBits::eStorageBuffer, u64 capacity = 64ull)
-			{
-				//m_elementType = typeid(_Ty);
-				allocate(name, flag, sizeof(_Ty), capacity);
-			}
-
-			template<class _Ty, size_t _Size>
-			void copy(const std::array<_Ty, _Size>& data)
-			{
-				if (m_size + _Size > capacity())
-				{
-					u64 new_capacity = (m_size + _Size) * 2ull;
-					reallocate(new_capacity);
-				}
-
-				auto* memory_block = at(m_size);
-				std::memcpy(memory_block, data.data(), sizeof(_Ty) * _Size);
-				m_size += _Size;
-			}
-
-			template<class _Ty>
-			void copy(const utl::vector<_Ty>& data)
-			{
-				if (m_size + data.size() > capacity())
-				{
-					u64 new_capacity = (m_size + data.size()) * 2ull;
-					reallocate(new_capacity);
-				}
-
-				auto* memory_block = at(m_size);
-				std::memcpy(memory_block, data.data(), sizeof(_Ty) * data.size());
-				m_size += data.size();
-			}
-
-			template<class _Ty>
-			_Ty* emplace_back(const _Ty& new_element = _Ty())
-			{
-				//assert(std::type_index(typeid(_Ty)) == m_elementType);
-
-				if (m_size + 1ull > capacity())
-				{
-					u64 new_capacity = m_size == 0ull ? 1ull : m_size * 2ull;
-					reallocate(new_capacity);
-				}
-
-				auto* memory_block = static_cast<_Ty*>(at(m_size));
-				*memory_block = new_element;
-				//std::memcpy(memory_block, &new_element, sizeof(_Ty));
-				++m_size;
-
-				return memory_block;
-			}
-
-			void clear()
-			{
-				m_size = 0ull;
-			}
-
-			template<class _Ty>
-			void erase(u64 count)
-			{
-				std::memset(at(0), 0, sizeof(_Ty) * count);
-			}
-
-			template<class _Ty>
-			_Ty& get(u64 index)
-			{
-				//assert(std::type_index(typeid(_Ty)) == m_elementType);
-				return *static_cast<_Ty*>(at(index));
-			}
-
-			template<class _Ty>
-			const _Ty& get(u64 index) const
-			{
-				//assert(std::type_index(typeid(_Ty)) == m_elementType);
-				return *static_cast<const _Ty*>(at(index));
-			}
-
-			template<class _Ty>
-			_Ty& front()
-			{
-				assert(m_size > 0ull);
-				return get<_Ty>(0ull);
-			}
-
-			template<class _Ty>
-			const _Ty& front() const
-			{
-				assert(m_size > 0ull);
-				return get<_Ty>(0ull);
-			}
-
-			template<class _Ty>
-			_Ty& back()
-			{
-				assert(m_size > 0ull);
-				return get<_Ty>(m_size - 1ull);
-			}
-
-			template<class _Ty>
-			const _Ty& back() const
-			{
-				assert(m_size > 0ull);
-				return get<_Ty>(m_size - 1ull);
-			}
-
-			//virtual void map() = 0;
-			//virtual void unmap() = 0;
-
-			virtual void resize(u64 new_size) = 0;
-
-			u64 size() { return m_size; }
-
-			virtual u64 capacity() = 0;
-
-			virtual const std::unique_ptr<IBufferObject>& buffer() = 0;
-
-		protected:
-			virtual void allocate(const std::string& name, EBufferUsageFlags flag, u64 stride, u64 capacity) = 0;
-			virtual void reallocate(u64 capacity) = 0;
-
-			virtual void* at(u64 index) = 0;
-			virtual const void* at(u64 index) const = 0;
-		protected:
-			u64 m_size{};
 		};
 	}
 }

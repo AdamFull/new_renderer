@@ -438,7 +438,7 @@ namespace engine
 			virtual void addMesh(const FMesh& mesh) = 0;
 			virtual void addMeshes(const utl::vector<FMesh>& meshes) = 0;
 
-			virtual const std::unique_ptr<IGPUVector2>& getDrawBuffer(ERenderBufferIndices buffer_index) const = 0;
+			virtual const std::unique_ptr<IGPUVector>& getDrawBuffer(ERenderBufferIndices buffer_index) const = 0;
 			//virtual const utl::vector<std::unique_ptr<IBufferObject>>& getDrawBuffers() = 0;
 
 			virtual const utl::vector<FGeometryCPUBatch>& getGeometryBatches() const = 0;

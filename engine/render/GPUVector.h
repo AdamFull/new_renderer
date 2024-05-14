@@ -10,20 +10,13 @@ namespace engine
 		{
 		public:
 			CGPUVector(IRenderInterface* render_interface);
-			~CGPUVector();
+			~CGPUVector() = default;
 
+			void upload() override;
 			void resize(u64 new_size) override;
-
-			u64 capacity() override;
-
 			const std::unique_ptr<IBufferObject>& buffer() override;
 		protected:
 			void allocate(const std::string& name, EBufferUsageFlags flag, u64 stride, u64 capacity) override;
-			void reallocate(u64 capacity) override;
-
-			void* at(u64 index) override;
-			const void* at(u64 index) const override;
-			
 		private:
 			std::string m_srOriginalName{};
 			EBufferUsageFlags m_bufferFlag{};

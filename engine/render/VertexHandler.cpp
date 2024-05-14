@@ -1,6 +1,6 @@
 #include "VertexHandler.h"
 
-#include "GPUVector2.h"
+#include "GPUVector.h"
 
 #include <logger/logger.h>
 #include <meshoptimizer.h>
@@ -160,7 +160,7 @@ CVertexHandler::CVertexHandler(IRenderInterface* render_interface)
 	m_vGeometryBuffers.resize(utl::enum_cast(EGeometryBufferIndices::eLastIndex));
 
 	for(auto& buffer : m_vGeometryBuffers)
-		buffer = std::make_unique<CGPUVector2>(render_interface);
+		buffer = std::make_unique<CGPUVector>(render_interface);
 }
 
 // TODO: destroy buffers
@@ -514,7 +514,7 @@ const std::string& CVertexHandler::getDefinitions() const
 	return m_definitions;
 }
 
-const std::unique_ptr<IGPUVector2>& CVertexHandler::getGeometryBuffer(EGeometryBufferIndices buffer_index)
+const std::unique_ptr<IGPUVector>& CVertexHandler::getGeometryBuffer(EGeometryBufferIndices buffer_index)
 {
 	return m_vGeometryBuffers.at(utl::enum_cast(buffer_index));
 }

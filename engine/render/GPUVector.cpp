@@ -8,25 +8,82 @@ CGPUVector::CGPUVector(IRenderInterface* render_interface)
 	m_pBuffer = std::make_unique<CBufferObject>(render_interface);
 }
 
-CGPUVector::~CGPUVector()
+void CGPUVector::upload()
 {
-	m_pBuffer->unmap();
+	if (!m_vUploadRanges.empty())
+	{
+		// Buffer size is too small, need to resize it
+		if (m_pBuffer->size() < m_vData.size())
+		{
+			FBufferCreateInfo buffer_ci{};
+			buffer_ci.count = m_vData.size() / m_elemSize;
+			buffer_ci.size = m_elemSize;
+			buffer_ci.flags = m_bufferFlag;
+
+			m_pBuffer->resize(m_srOriginalName, buffer_ci);
+
+			// Buffer was resized. We should upload whole data
+			m_vUploadRanges.clear();
+			m_vUploadRanges.emplace_back(upload_range{ 0ull, m_lastCursor });;
+		}
+
+		// Sort upload ranges
+		std::sort(m_vUploadRanges.begin(), m_vUploadRanges.end(), [](const upload_range& a, const upload_range& b) { return a.offset < b.offset; });
+
+		// Merge upload ranges
+		utl::vector<upload_range> merged_ranges{};
+		merged_ranges.emplace_back(m_vUploadRanges.front());
+
+		for (u64 i = 1ull; i < m_vUploadRanges.size(); ++i)
+		{
+			auto& last_range = merged_ranges.back();
+			if (m_vUploadRanges[i].offset == last_range.offset + last_range.size)
+				last_range.size = std::max(last_range.size, m_vUploadRanges[i].offset + m_vUploadRanges[i].size - last_range.offset);
+			else
+				merged_ranges.emplace_back(m_vUploadRanges[i]);
+		}
+
+		// Create upload infos
+		u64 src_offset{ 0ull };
+		utl::vector<u8> upload_data{};
+		utl::vector<FBufferUploadRegion> upload_regions{};
+		for (const auto& range : merged_ranges)
+		{
+			auto& region = upload_regions.emplace_back();
+			region.srcOffset = src_offset;
+			region.dstOffset = range.offset;
+			region.count = range.size / m_elemSize;
+			region.size = range.size;
+
+			auto range_start = m_vData.begin() + range.offset;
+			upload_data.insert(upload_data.end(), range_start, range_start + range.size);
+
+			src_offset += range.size;
+		}
+
+		m_pBuffer->upload(std::move(upload_data), upload_regions);
+
+		m_vUploadRanges.clear();
+	}
+
+	m_cursor = 0u;
 }
 
 void CGPUVector::resize(u64 new_size)
 {
-	if (m_pBuffer->count() < new_size)
-	{
-		reallocate(new_size);
-		m_size = new_size;
-	}
-	else
-		m_size = m_pBuffer->count();
-}
+	u64 size = to_bytes(new_size);
 
-u64 CGPUVector::capacity()
-{
-	return m_pBuffer->count();
+	if (m_pBuffer->size() < size)
+	{
+		FBufferCreateInfo buffer_ci{};
+		buffer_ci.count = new_size;
+		buffer_ci.size = m_elemSize;
+		buffer_ci.flags = m_bufferFlag;
+
+		m_pBuffer->resize(m_srOriginalName, buffer_ci);
+	}
+
+	m_vData.resize(size);
 }
 
 const std::unique_ptr<IBufferObject>& CGPUVector::buffer()
@@ -44,43 +101,5 @@ void CGPUVector::allocate(const std::string& name, EBufferUsageFlags flag, u64 s
 	m_srOriginalName = name;
 
 	m_pBuffer->create(name, buffer_ci);
-	m_pBuffer->map();
-}
-
-void CGPUVector::reallocate(u64 capacity)
-{
-	utl::vector<char> temporary{};
-	temporary.resize(m_pBuffer->size());
-
-	// Copy old data
-	{
-		const void* mem_begin = m_pBuffer->data();
-		std::memcpy(temporary.data(), mem_begin, temporary.size());
-	}
-
-	FBufferCreateInfo buffer_ci{};
-	buffer_ci.count = capacity;
-	buffer_ci.size = m_pBuffer->instanceSize();
-	buffer_ci.flags = m_bufferFlag;
-
-	m_pBuffer->resize(m_srOriginalName, buffer_ci);
-	m_pBuffer->map();
-
-	// Copy data back
-	{
-		void* mem_begin = m_pBuffer->data();
-		std::memcpy(mem_begin, temporary.data(), temporary.size());
-	}
-}
-
-void* CGPUVector::at(u64 index)
-{
-	auto* mapped = m_pBuffer->data();
-	return utl::cast<char*>(mapped) + (index * m_pBuffer->instanceSize());
-}
-
-const void* CGPUVector::at(u64 index) const
-{
-	auto* mapped = m_pBuffer->data();
-	return utl::cast<char*>(mapped) + (index * m_pBuffer->instanceSize());
+	m_elemSize = stride;//m_pBuffer->instanceSize();
 }

@@ -1,6 +1,6 @@
 #include "RenderWorld.h"
 
-#include "GPUVector2.h"
+#include "GPUVector.h"
 
 using namespace engine::render;
 
@@ -29,7 +29,7 @@ CRenderWorld::CRenderWorld(IRenderInterface* render_interface)
 	m_vBuffers.resize(utl::enum_cast(ERenderBufferIndices::eLastIndex));
 
 	for (auto& buffer : m_vBuffers)
-		buffer = std::make_unique<CGPUVector2>(render_interface);
+		buffer = std::make_unique<CGPUVector>(render_interface);
 }
 
 void CRenderWorld::create()
@@ -204,7 +204,7 @@ void CRenderWorld::end()
 void CRenderWorld::addLight(const FDirectionalLightCommit& light)
 {
 	auto& lights_buffer = getDrawBuffer(ERenderBufferIndices::eDirectionalLightBuffer);
-	if (lights_buffer->count() < m_stats.directionalLightCount + 1ull)
+	if (lights_buffer->capacity() < m_stats.directionalLightCount + 1ull)
 		lights_buffer->resize((m_stats.directionalLightCount + 1ull) * 2ull);
 
 	lights_buffer->set(m_stats.directionalLightCount++, light);
@@ -214,7 +214,7 @@ void CRenderWorld::addLight(const FPointLightCommit& light)
 {
 	auto& lights_buffer = getDrawBuffer(ERenderBufferIndices::ePointLightBuffer);
 
-	if (lights_buffer->count() < m_stats.pointLightCount + 1ull)
+	if (lights_buffer->capacity() < m_stats.pointLightCount + 1ull)
 		lights_buffer->resize((m_stats.pointLightCount + 1ull) * 2ull);
 
 	lights_buffer->set(m_stats.pointLightCount++, light);
@@ -224,7 +224,7 @@ void CRenderWorld::addLight(const FSpotLightCommit& light)
 {
 	auto& lights_buffer = getDrawBuffer(ERenderBufferIndices::eSpotLightBuffer);
 
-	if (lights_buffer->count() < m_stats.spotLightCount + 1ull)
+	if (lights_buffer->capacity() < m_stats.spotLightCount + 1ull)
 		lights_buffer->resize((m_stats.spotLightCount + 1ull) * 2ull);
 
 	lights_buffer->set(m_stats.spotLightCount++, light);
@@ -234,7 +234,7 @@ void CRenderWorld::addShadow(const FCascadedShadowCommit& commit)
 {
 	auto& shadows_buffer = getDrawBuffer(ERenderBufferIndices::eCascadedShadowBuffer);
 
-	if (shadows_buffer->count() < m_stats.cascadedShadowCount + 1ull)
+	if (shadows_buffer->capacity() < m_stats.cascadedShadowCount + 1ull)
 		shadows_buffer->resize((m_stats.cascadedShadowCount + 1ull) * 2ull);
 
 	shadows_buffer->set(m_stats.cascadedShadowCount++, commit);
@@ -244,7 +244,7 @@ void CRenderWorld::addShadow(const FOmniShadowCommit& commit)
 {
 	auto& shadows_buffer = getDrawBuffer(ERenderBufferIndices::eOmniShadowBuffer);
 
-	if (shadows_buffer->count() < m_stats.omniShadowCount + 1ull)
+	if (shadows_buffer->capacity() < m_stats.omniShadowCount + 1ull)
 		shadows_buffer->resize((m_stats.omniShadowCount + 1ull) * 2ull);
 
 	shadows_buffer->set(m_stats.omniShadowCount++, commit);
@@ -254,7 +254,7 @@ void CRenderWorld::addShadow(const FSpotShadowCommit& commit)
 {
 	auto& shadows_buffer = getDrawBuffer(ERenderBufferIndices::eSpotShadowBuffer);
 
-	if (shadows_buffer->count() < m_stats.spotShadowCount + 1ull)
+	if (shadows_buffer->capacity() < m_stats.spotShadowCount + 1ull)
 		shadows_buffer->resize((m_stats.spotShadowCount + 1ull) * 2ull);
 
 	shadows_buffer->set(m_stats.spotShadowCount++, commit);
@@ -277,7 +277,7 @@ void CRenderWorld::updateNode(u32 node_id, const FSceneNode& node)
 {
 	auto& nodes_buffer = getDrawBuffer(ERenderBufferIndices::eNodeBuffer);
 
-	if (nodes_buffer->count() < node_id + 1ull)
+	if (nodes_buffer->capacity() < node_id + 1ull)
 		nodes_buffer->resize((node_id + 1ull));
 
 	nodes_buffer->set(node_id, node);
@@ -315,7 +315,7 @@ void CRenderWorld::addMeshes(const utl::vector<FMesh>& meshes)
 	m_stats.meshCount += meshes.size();
 }
 
-const std::unique_ptr<IGPUVector2>& CRenderWorld::getDrawBuffer(ERenderBufferIndices buffer_index) const
+const std::unique_ptr<IGPUVector>& CRenderWorld::getDrawBuffer(ERenderBufferIndices buffer_index) const
 {
 	return m_vBuffers.at(utl::enum_cast(buffer_index));
 }
@@ -439,17 +439,17 @@ void CRenderWorld::prepareIndirectCommands()
 	m_stats.maxDrawCommands = m_vRawGeometryBatches.size();
 	m_stats.drawCommandCount = m_stats.maxDrawCommands * m_vCullingInfo.size();
 	//m_stats.drawCommandCount = m_stats.maxDrawCommands * (1 + max_directional_light_shadow_count * cascade_shadow_map_cascade_count + max_spot_light_shadow_count + max_point_light_shadow_count * 6);
-	if (indirect_data_buffer->count() < m_stats.drawCommandCount)
+	if (indirect_data_buffer->capacity() < m_stats.drawCommandCount)
 		indirect_data_buffer->resize(m_stats.drawCommandCount * 1.1f);
 
 	raw_gpu_batches_buffer->copy(gpu_batches);
 
 	// Resize output buffer
 	auto& gpu_batches_buffer = getDrawBuffer(ERenderBufferIndices::eDrawMeshInfoBuffer);
-	if (raw_gpu_batches_buffer->count() > gpu_batches_buffer->count())
-		gpu_batches_buffer->resize(raw_gpu_batches_buffer->count());
+	if (raw_gpu_batches_buffer->capacity() > gpu_batches_buffer->capacity())
+		gpu_batches_buffer->resize(raw_gpu_batches_buffer->capacity());
 
-	if (indirect_count_buffer->count() < m_stats.cullerCount)
+	if (indirect_count_buffer->capacity() < m_stats.cullerCount)
 		indirect_count_buffer->resize(m_stats.cullerCount * 1.1f);
 }
 

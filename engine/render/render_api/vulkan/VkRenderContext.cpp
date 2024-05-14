@@ -2158,7 +2158,7 @@ void CVkRenderContext::processResourceUpload()
 		FVkBufferCreateInfo vk_buffer_ci{};
 		vk_buffer_ci.instanceCount = staging_count;
 		vk_buffer_ci.instanceSize = bytes_count / staging_count;
-		vk_buffer_ci.minOffsetAlignment = 0; //std::lcm(physical.properties.limits.minStorageBufferOffsetAlignment, physical.properties.limits.nonCoherentAtomSize);
+		vk_buffer_ci.minOffsetAlignment = 1; //std::lcm(physical.properties.limits.minStorageBufferOffsetAlignment, physical.properties.limits.nonCoherentAtomSize);
 		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuOnly;
 		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
 #ifndef BUILD_WITHOUT_DEBUGGIND
