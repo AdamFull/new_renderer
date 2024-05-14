@@ -332,6 +332,13 @@ utl::vector<u32> CGLSLANGCompiler::compile(const std::string& shader_code, const
 
 	auto messages = utl::cast<EShMessages>(EShMsgSpvRules | EShMsgVulkanRules | EShMsgDefault);
 
+	bool building_release = build_type == ETargetBuildType::eRelease;
+	if (!building_release)
+	{
+		messages = utl::cast<EShMessages>(messages | EShMsgDebugInfo);
+		shader.setDebugInfo(true);
+	}
+
 	auto shader_source = shader_code.c_str();
 	auto shader_name = info.name.c_str();
 	shader.setStringsWithLengthsAndNames(&shader_source, nullptr, &shader_name, 1);
@@ -364,13 +371,12 @@ utl::vector<u32> CGLSLANGCompiler::compile(const std::string& shader_code, const
 		return {};
 	}
 
-	bool building_release = build_type == ETargetBuildType::eRelease;
-
 	glslang::SpvOptions spvOptions;
 	spvOptions.generateDebugInfo = !building_release;
 	spvOptions.disableOptimizer = !building_release;
+	spvOptions.emitNonSemanticShaderDebugInfo = !building_release;
+	spvOptions.emitNonSemanticShaderDebugSource = !building_release;
 	spvOptions.optimizeSize = building_release;
-	spvOptions.disassemble = true;
 
 	spv::SpvBuildLogger logger;
 	GlslangToSpv(*program.getIntermediate(language), spirv, &logger, &spvOptions);
