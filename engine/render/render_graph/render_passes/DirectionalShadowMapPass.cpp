@@ -28,6 +28,13 @@ void CDirectionalShadowMapPass::build(const FPassBuildInfo& build_info)
 	IRenderPass::build(build_info);
 }
 
+bool CDirectionalShadowMapPass::canRender() const
+{
+	auto& render_world = m_pRenderInterface->getRenderWorld();
+	auto& world_stats = render_world->getStats();
+	return world_stats.spotShadowCount != 0;
+}
+
 void CDirectionalShadowMapPass::postLoad()
 {
 	auto& render_world = m_pRenderInterface->getRenderWorld();
@@ -38,9 +45,6 @@ void CDirectionalShadowMapPass::_render(const FRenderFrameInfo& frame_info)
 {
 	auto& render_world = m_pRenderInterface->getRenderWorld();
 	auto& world_stats = render_world->getStats();
-
-	if (!world_stats.spotShadowCount)
-		return;
 
 	auto& render_context = m_pRenderInterface->getRenderContext();
 	render_context->setScissorRect(0, 0, frame_info.renderRect.size.x, frame_info.renderRect.size.y);

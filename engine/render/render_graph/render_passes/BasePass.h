@@ -62,6 +62,7 @@ namespace engine
 
 			virtual void init(const FRenderPassCreateInfo& pass_ci);
 			virtual void build(const FPassBuildInfo& build_info) override;
+			virtual bool canRender() const { return true; }
 
 			void execute(f32 dt) override;
 

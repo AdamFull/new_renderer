@@ -28,6 +28,13 @@ void CCascadedShadowMapPass::build(const FPassBuildInfo& build_info)
 	IRenderPass::build(build_info);
 }
 
+bool CCascadedShadowMapPass::canRender() const
+{
+	auto& render_world = m_pRenderInterface->getRenderWorld();
+	auto& world_stats = render_world->getStats();
+	return world_stats.cascadedShadowCount != 0;
+}
+
 void CCascadedShadowMapPass::postLoad()
 {
 	auto& render_world = m_pRenderInterface->getRenderWorld();
@@ -38,9 +45,6 @@ void CCascadedShadowMapPass::_render(const FRenderFrameInfo& frame_info)
 {
 	auto& render_world = m_pRenderInterface->getRenderWorld();
 	auto& world_stats = render_world->getStats();
-
-	if (!world_stats.cascadedShadowCount)
-		return;
 
 	auto& render_context = m_pRenderInterface->getRenderContext();
 	render_context->setScissorRect(0, 0, frame_info.renderRect.size.x, frame_info.renderRect.size.y);

@@ -115,7 +115,8 @@ void CRenderWorld::updateCamera(u64 camera_id, const glm::mat4& view, const glm:
 	camera_reprojection = to_clip_space * camera_reprojection * to_uv_space;
 
 	auto& camera_buffer = getDrawBuffer(ERenderBufferIndices::eCameraBuffer);
-	camera_buffer->set(camera_id, FCamera{ utl::cast<u32>(m_stats.matricesCount), camera_buffer->at<FCamera>(camera_id)->type, znear, zfar, size, 1.f / size });
+	const FCamera* camera = camera_buffer->at<FCamera>(camera_id);
+	camera_buffer->set(camera_id, FCamera{ utl::cast<u32>(m_stats.matricesCount), camera->type, znear, zfar, size, 1.f / size });
 
 	auto& matrices_buffer = getDrawBuffer(ERenderBufferIndices::eMatricesBuffer);
 	matrices_buffer->copy(matrices);

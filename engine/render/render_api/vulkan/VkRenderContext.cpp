@@ -2269,7 +2269,7 @@ FVkBufferCreateInfo CVkRenderContext::makeBufferCreateInfo(const std::string& na
 #endif
 
 	// Build buffer usage flags
-	u64 minimal_alignment{ 0ull };
+	u64 minimal_alignment{ 1ull };
 	if (buffer_ci.flags & EBufferUsageFlagBits::eTransfer)
 		vk_buffer_ci.usageFlags |= vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
 
@@ -2285,7 +2285,7 @@ FVkBufferCreateInfo CVkRenderContext::makeBufferCreateInfo(const std::string& na
 		minimal_alignment = std::max(minimal_alignment, 4ull);
 	}
 
-	if (buffer_ci.flags & EBufferUsageFlagBits::eStorage)
+	if (buffer_ci.flags & EBufferUsageFlagBits::eUniform)
 	{
 		vk_buffer_ci.usageFlags |= vk::BufferUsageFlagBits::eUniformBuffer;
 		minimal_alignment = std::max(minimal_alignment, physical.properties.limits.minUniformBufferOffsetAlignment);

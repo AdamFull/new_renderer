@@ -121,16 +121,21 @@ void IRenderPass::execute(f32 dt)
 #endif
 
 	render_context->beginTimestampZone(m_queue);
-	render_context->beginRendering(beginRenderingInfo);
-	render_context->setViewport(utl::cast<f32>(beginRenderingInfo.renderArea.size.x), utl::cast<f32>(beginRenderingInfo.renderArea.size.y), m_bFlipViewport);
 
-	FRenderFrameInfo frame_info{};
-	frame_info.deltaTime = dt;
-	frame_info.renderRect = beginRenderingInfo.renderArea;
+	if (canRender())
+	{
+		render_context->beginRendering(beginRenderingInfo);
+		render_context->setViewport(utl::cast<f32>(beginRenderingInfo.renderArea.size.x), utl::cast<f32>(beginRenderingInfo.renderArea.size.y), m_bFlipViewport);
 
-	_render(frame_info);
+		FRenderFrameInfo frame_info{};
+		frame_info.deltaTime = dt;
+		frame_info.renderRect = beginRenderingInfo.renderArea;
 
-	render_context->endRendering(beginRenderingInfo.queue);
+		_render(frame_info);
+
+		render_context->endRendering(beginRenderingInfo.queue);
+	}
+	
 	render_context->endTimestampZone(m_queue);
 }
 

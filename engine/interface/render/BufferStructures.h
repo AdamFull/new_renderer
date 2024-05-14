@@ -156,14 +156,14 @@ namespace engine
 
 			inline void set_raw(u64 index, const void* data)
 			{
-				do_insert(&data, m_elemSize, to_bytes(index));
+				do_insert(data, m_elemSize, to_bytes(index));
 			}
 
 			template<class _Ty>
 			void set(u64 index, _Ty&& data)
 			{
 				assert(m_elemSize == sizeof(_Ty) && "Invalid element size.");
-				set_raw(to_bytes(index), &data);
+				set_raw(index, &data);
 			}
 
 			u64 count() const
