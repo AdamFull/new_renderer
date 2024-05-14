@@ -96,5 +96,5 @@ void CGPUVector2::allocate(const std::string& name, EBufferUsageFlags flag, u64 
 	m_srOriginalName = name;
 
 	m_pBuffer->create(name, buffer_ci);
-	m_elemSize = m_pBuffer->instanceSize();
+	m_elemSize = stride;//m_pBuffer->instanceSize();
 }

@@ -16,17 +16,18 @@ namespace engine
 			eIndex = 1 << 3,
 			eUniform = 1 << 4,
 			eIndirect = 1 << 5,
-			eGpuOnly = eVertex | eIndex,
-			eAlignmentRequired = eVertex | eIndex | eUniform,
-			eHasDeviceAddress = eStorage | eVertex | eIndex | eIndirect,
-			eCpuToGpu = eStorage | eUniform | eIndirect,
+			eGpuOnly = 1 << 6,
+			eCpuToGpu = 1 << 7,
+
+			eHasDeviceAddress = eVertex | eIndex | eStorage | eIndirect,
 
 			eStagingBuffer = eTransfer,
-			eStorageBuffer = eTransfer | eStorage,
-			eVertexBuffer = eTransfer | eVertex,
-			eIndexBuffer = eTransfer | eIndex,
-			eUniformBuffer = eTransfer | eUniform,
-			eIndirectBuffer = eTransfer | eStorage | eIndirect
+			eStorageBufferCPU = eTransfer | eStorage | eCpuToGpu,
+			eStorageBuffer = eTransfer | eStorage | eGpuOnly,
+			eVertexBuffer = eTransfer | eVertex | eStorage | eGpuOnly,
+			eIndexBuffer = eTransfer | eIndex | eStorage | eGpuOnly,
+			eUniformBuffer = eTransfer | eUniform | eCpuToGpu,
+			eIndirectBuffer = eTransfer | eStorage | eIndirect | eGpuOnly
 		};
 		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(EBufferUsageFlags, EBufferUsageFlagBits)
 
