@@ -357,11 +357,11 @@ const FVertexRange& CVertexHandler::addMeshData(const utl::vector<FVertexAttribu
 		}
 
 		FMeshLod lod{};
-		lod.meshletOffset = meshlet_buffer->count();
-		lod.meshletVertexOffset = vertices_buffer->count();
-		lod.meshletTriangleOffset = triangle_buffer->count();
-		lod.meshletBoundsOffset = bounds_buffer->count();
-		lod.meshletCount = addMeshlets(attributes_data, u32_indices);
+		//lod.meshletOffset = meshlet_buffer->count();
+		//lod.meshletVertexOffset = vertices_buffer->count();
+		//lod.meshletTriangleOffset = triangle_buffer->count();
+		//lod.meshletBoundsOffset = bounds_buffer->count();
+		//lod.meshletCount = addMeshlets(attributes_data, u32_indices);
 
 		auto& vertex_buffer = getGeometryBuffer(EGeometryBufferIndices::eVertexBuffer);
 		auto& index_buffer = getGeometryBuffer(EGeometryBufferIndices::eIndexBuffer);

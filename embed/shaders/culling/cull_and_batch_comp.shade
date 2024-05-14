@@ -86,7 +86,6 @@
 				uint culler_counter = atomicAdd(indirectCountBuffer.indices[draw_info.cameraID], 1);
 
 				uint output_index = draw_offset + culler_counter;
-				//uint output_index = global_draw_index;
 				drawInfoBuffer.infos[output_index] = draw_info;
 			
 				// Construct  indirect draw command
@@ -94,7 +93,7 @@
 
 				FCamera camera = cameraBuffer.cameras[draw_info.cameraID];
 				mat4 view_projection = getViewProjectionMatrix(camera.matricesOffset);
-			
+				
 				vec4 min_clip = view_projection * min_extents;
 				vec4 max_clip = view_projection * max_extents;
 				
@@ -114,11 +113,14 @@
 
 				FMeshLod lod = lb.lods[mesh.lodOffset + lod_level];
 				
-				indirectCommandBuffer.commands[output_index].indexCount = lod.indexCount == 0 ? lastIndex : lod.indexCount;
-				indirectCommandBuffer.commands[output_index].instanceCount = 1;
-				indirectCommandBuffer.commands[output_index].firstIndex = lod.firstIndex;
-				indirectCommandBuffer.commands[output_index].vertexOffset = int(lod.firstVertex);
-				indirectCommandBuffer.commands[output_index].firstInstance = 0;
+				FDrawIndexedIndirectData indirect_command;
+				indirect_command.indexCount = lod.indexCount == 0 ? lastIndex : lod.indexCount;
+				indirect_command.instanceCount = 1;
+				indirect_command.firstIndex = lod.firstIndex;
+				indirect_command.vertexOffset = int(lod.firstVertex);
+				indirect_command.firstInstance = 0;
+
+				indirectCommandBuffer.commands[output_index] = indirect_command;
 			}
 		}
 	""";

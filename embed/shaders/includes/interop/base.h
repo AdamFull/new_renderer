@@ -315,11 +315,11 @@ namespace engine {
 		struct FMeshLod
 		{
 			// Meshlet data
-			uint32_t meshletOffset;
-			uint32_t meshletVertexOffset;
-			uint32_t meshletTriangleOffset;
-			uint32_t meshletBoundsOffset;
-			uint32_t meshletCount;
+			//uint32_t meshletOffset;
+			//uint32_t meshletVertexOffset;
+			//uint32_t meshletTriangleOffset;
+			//uint32_t meshletBoundsOffset;
+			//uint32_t meshletCount;
 
 			// Default data
 			uint32_t firstIndex;
@@ -327,7 +327,7 @@ namespace engine {
 			uint32_t firstVertex; 
 			uint32_t vertexCount;
 
-			uint32_t pad;
+			//uint32_t pad[7];
 		}; // For lod buffer
 
 		struct FMesh

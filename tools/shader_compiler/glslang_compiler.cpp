@@ -291,6 +291,13 @@ bool CGLSLANGCompiler::preprocess(const std::string& shader_code, const FCompile
 
 	auto messages = utl::cast<EShMessages>(EShMsgSpvRules | EShMsgVulkanRules | EShMsgDefault);
 
+	bool building_release = build_type == ETargetBuildType::eRelease;
+	if (!building_release)
+	{
+		messages = utl::cast<EShMessages>(messages | EShMsgDebugInfo);
+		shader.setDebugInfo(true);
+	}
+
 	auto shader_source = shader_code.c_str();
 	auto shader_name = info.name.c_str();
 	shader.setStringsWithLengthsAndNames(&shader_source, nullptr, &shader_name, 1);
@@ -336,7 +343,7 @@ utl::vector<u32> CGLSLANGCompiler::compile(const std::string& shader_code, const
 	if (!building_release)
 	{
 		messages = utl::cast<EShMessages>(messages | EShMsgDebugInfo);
-		shader.setDebugInfo(true);
+		//shader.setDebugInfo(true);
 	}
 
 	auto shader_source = shader_code.c_str();
@@ -349,13 +356,11 @@ utl::vector<u32> CGLSLANGCompiler::compile(const std::string& shader_code, const
 	auto client_version = get_client_version(target_api);
 	auto compile_client = get_compile_client(target_api);
 	auto spir_version = get_SPIR_version(target_api);
-	shader.setEnvInput(glslang::EShSourceGlsl, language, compile_client, 110);
+	shader.setEnvInput(glslang::EShSourceGlsl, language, compile_client, 100);
 	shader.setEnvClient(compile_client, client_version);
 	shader.setEnvTarget(glslang::EShTargetSpv, spir_version);
 
-	empty_includer includer;
-
-	if (!shader.parse(&resources, client_version, true, messages, includer))
+	if (!shader.parse(&resources, client_version, false, messages))
 	{
 		std::lock_guard<std::mutex> lock(m_terminationLock);
 		log_error("\nParsing error: In shader \"{}\" \n{}\n{}\n", info.name, shader.getInfoLog(), shader.getInfoDebugLog());
@@ -374,8 +379,8 @@ utl::vector<u32> CGLSLANGCompiler::compile(const std::string& shader_code, const
 	glslang::SpvOptions spvOptions;
 	spvOptions.generateDebugInfo = !building_release;
 	spvOptions.disableOptimizer = !building_release;
-	spvOptions.emitNonSemanticShaderDebugInfo = !building_release;
-	spvOptions.emitNonSemanticShaderDebugSource = !building_release;
+	//spvOptions.emitNonSemanticShaderDebugInfo = !building_release;
+	//spvOptions.emitNonSemanticShaderDebugSource = !building_release;
 	spvOptions.optimizeSize = building_release;
 
 	spv::SpvBuildLogger logger;

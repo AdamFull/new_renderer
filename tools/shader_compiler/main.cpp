@@ -73,7 +73,7 @@ int main(int argc, char** argv)
 		return -1;
 	}
 
-	std::string build_type_str{ "release" };
+	std::string build_type_str{ "debug" };
 	build_type_str = argparse.try_get("-build_type", build_type_str);
 	ETargetBuildType build_type = parse_build_type(build_type_str);
 
