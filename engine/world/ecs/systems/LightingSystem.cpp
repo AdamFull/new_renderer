@@ -45,14 +45,15 @@ void CLightingSystem::__update(f32 fDt)
 			if (world_stats.directionalLightCount > max_directional_light_count)
 				break;
 
-			FDirectionalLightCommit commit;
+			FLightCommit commit;
+			commit.type = light_type_directional;
 			commit.direction = glm::normalize(transform.grotation * glm::vec3(0.f, 0.f, -1.f));
 			commit.color = light.color;
 			commit.intencity = light.intencity;
 			commit.shadowIndex = light.shadowIndex;
 			commit.castShadows = utl::cast<int>(light.castShadows);
 
-			render_world->addLight(commit);
+			render_world->updateLight(commit);
 		}
 	}
 
@@ -70,7 +71,8 @@ void CLightingSystem::__update(f32 fDt)
 				break;
 
 			// Calculate light data
-			FPointLightCommit commit;
+			FLightCommit commit;
+			commit.type = light_type_point;
 			commit.position = transform.gposition;
 			commit.color = light.color;
 			commit.intencity = light.intencity;
@@ -78,7 +80,7 @@ void CLightingSystem::__update(f32 fDt)
 			commit.shadowIndex = light.shadowIndex;
 			commit.castShadows = utl::cast<int>(light.castShadows);
 
-			render_world->addLight(commit);
+			render_world->updateLight(commit);
 		}
 	}
 
@@ -93,7 +95,8 @@ void CLightingSystem::__update(f32 fDt)
 			if (world_stats.spotLightCount > max_spot_light_count)
 				break;
 
-			FSpotLightCommit commit;
+			FLightCommit commit;
+			commit.type = light_type_spot;
 			commit.position = transform.gposition;
 			commit.direction = light.toTarget ? light.target : glm::normalize(transform.grotation * glm::vec3(0.f, 0.f, -1.f));
 			commit.color = light.color;
@@ -104,7 +107,7 @@ void CLightingSystem::__update(f32 fDt)
 			commit.shadowIndex = light.shadowIndex;
 			commit.castShadows = utl::cast<int>(light.castShadows);
 
-			render_world->addLight(commit);
+			render_world->updateLight(commit);
 		}
 	}
 }

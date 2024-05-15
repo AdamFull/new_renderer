@@ -42,9 +42,7 @@ void CRenderWorld::create()
 
 	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eMaterialBuffer))->create<FMaterial>("MaterialStorage", 16ull, EBufferUsageFlagBits::eStorageBuffer);
 
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eDirectionalLightBuffer))->create<FDirectionalLightCommit>("DirectionalLights", max_directional_light_count, EBufferUsageFlagBits::eStorageBuffer);
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::ePointLightBuffer))->create<FPointLightCommit>("PointLights", max_point_light_count, EBufferUsageFlagBits::eStorageBuffer);
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eSpotLightBuffer))->create<FSpotLightCommit>("SpotLights", max_spot_light_count, EBufferUsageFlagBits::eStorageBuffer);
+	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eLightBuffer))->create<FLightCommit>("LightsBuffer", max_directional_light_count, EBufferUsageFlagBits::eStorageBuffer);
 
 	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eCascadedShadowBuffer))->create<FCascadedShadowCommit>("CascadedShadows", max_directional_light_shadow_count, EBufferUsageFlagBits::eStorageBuffer);
 	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eOmniShadowBuffer))->create<FOmniShadowCommit>("OmniShadows", max_point_light_shadow_count, EBufferUsageFlagBits::eStorageBuffer);
@@ -188,6 +186,7 @@ void CRenderWorld::end()
 	m_stats.directionalLightCount = 0ull;
 	m_stats.pointLightCount = 0ull;
 	m_stats.spotLightCount = 0ull;
+	m_stats.lightCount = 0ull;
 
 	m_stats.cascadedShadowCount = 0ull;
 	m_stats.omniShadowCount = 0ull;
@@ -201,33 +200,20 @@ void CRenderWorld::end()
 	m_vRawGeometryBatches.clear();
 }
 
-void CRenderWorld::addLight(const FDirectionalLightCommit& light)
+u64 CRenderWorld::updateLight(const FLightCommit& light)
 {
-	auto& lights_buffer = getDrawBuffer(ERenderBufferIndices::eDirectionalLightBuffer);
-	if (lights_buffer->capacity() < m_stats.directionalLightCount + 1ull)
-		lights_buffer->resize((m_stats.directionalLightCount + 1ull) * 2ull);
+	auto& lights_buffer = getDrawBuffer(ERenderBufferIndices::eLightBuffer);
 
-	lights_buffer->set(m_stats.directionalLightCount++, light);
-}
+	if (light.type == light_type_directional)
+		++m_stats.directionalLightCount;
+	else if (light.type == light_type_point)
+		++m_stats.pointLightCount;
+	else if (light.type == light_type_spot)
+		++m_stats.spotLightCount;
 
-void CRenderWorld::addLight(const FPointLightCommit& light)
-{
-	auto& lights_buffer = getDrawBuffer(ERenderBufferIndices::ePointLightBuffer);
+	lights_buffer->emplace_back(light);
 
-	if (lights_buffer->capacity() < m_stats.pointLightCount + 1ull)
-		lights_buffer->resize((m_stats.pointLightCount + 1ull) * 2ull);
-
-	lights_buffer->set(m_stats.pointLightCount++, light);
-}
-
-void CRenderWorld::addLight(const FSpotLightCommit& light)
-{
-	auto& lights_buffer = getDrawBuffer(ERenderBufferIndices::eSpotLightBuffer);
-
-	if (lights_buffer->capacity() < m_stats.spotLightCount + 1ull)
-		lights_buffer->resize((m_stats.spotLightCount + 1ull) * 2ull);
-
-	lights_buffer->set(m_stats.spotLightCount++, light);
+	return m_stats.lightCount++;
 }
 
 void CRenderWorld::addShadow(const FCascadedShadowCommit& commit)
@@ -273,14 +259,16 @@ const glm::mat4& CRenderWorld::getMatrix(u64 index) const
 	return *(matrices_buffer->at<glm::mat4>(index));
 }
 
-void CRenderWorld::updateNode(u32 node_id, const FSceneNode& node)
+u64 CRenderWorld::updateNode(u32 node_id, const FSceneNode& node)
 {
 	auto& nodes_buffer = getDrawBuffer(ERenderBufferIndices::eNodeBuffer);
 
-	if (nodes_buffer->capacity() < node_id + 1ull)
-		nodes_buffer->resize((node_id + 1ull));
+	if (m_nodeRemap.find(node_id) == m_nodeRemap.end())
+		m_nodeRemap[node_id] = nodes_buffer->pos();
 
-	nodes_buffer->set(node_id, node);
+	nodes_buffer->emplace_back(node);
+
+	return m_nodeRemap[node_id];
 }
 
 void CRenderWorld::addMaterial(const FMaterial& material)

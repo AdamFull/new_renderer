@@ -59,9 +59,8 @@ void prepare_draw_commands(const std::unique_ptr<IRenderWorld>& render_world, en
 		if (auto found = root_component.skinRemap.find(utl::cast<u32>(mesh_component.skin)); found != root_component.skinRemap.end())
 			scene_node.skeletonID = found->second;
 
-		render_world->updateNode(node, scene_node);
-
-		prepare_meshes_to_draw(render_world, mesh_component.primitives, draw_commands, node, alpha_mode);
+		auto remapped_idx = render_world->updateNode(node, scene_node);
+		prepare_meshes_to_draw(render_world, mesh_component.primitives, draw_commands, remapped_idx, alpha_mode);
 	}
 }
 

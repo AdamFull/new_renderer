@@ -166,6 +166,11 @@ namespace engine
 				set_raw(index, &data);
 			}
 
+			u64 pos() const
+			{
+				return m_cursor / m_elemSize;
+			}
+
 			u64 count() const
 			{
 				return m_lastCursor / m_elemSize;

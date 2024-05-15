@@ -246,7 +246,7 @@ namespace engine {
 			uint32_t pad;
 		};
 
-		struct FDirectionalLightCommit
+		struct 
 		{
 			ALIGN_AS(16) VECTOR3 direction;
 			ALIGN_AS(16) VECTOR3 color;
@@ -414,7 +414,7 @@ namespace engine {
 		REGISTER_OBJECT_ARRAY_BUFFER(MaterialBuffer, FMaterial, materials);
 
 		// Light buffers
-		REGISTER_OBJECT_ARRAY_BUFFER(DirectionalLights, FDirectionalLightCommit, lights);
+		REGISTER_OBJECT_ARRAY_BUFFER(DirectionalLights, , lights);
 		REGISTER_OBJECT_ARRAY_BUFFER(PointLights, FPointLightCommit, lights);
 		REGISTER_OBJECT_ARRAY_BUFFER(SpotLights, FSpotLightCommit, lights);
 

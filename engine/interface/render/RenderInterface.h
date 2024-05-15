@@ -120,9 +120,7 @@ namespace engine
 
 			eMaterialBuffer,
 			// Light source buffers
-			eDirectionalLightBuffer,
-			ePointLightBuffer,
-			eSpotLightBuffer,
+			eLightBuffer,
 			// Shadow buffers
 			eCascadedShadowBuffer,
 			eOmniShadowBuffer,
@@ -285,6 +283,7 @@ namespace engine
 			u64 directionalLightCount{ 0ull };
 			u64 pointLightCount{ 0ull };
 			u64 spotLightCount{ 0ull };
+			u64 lightCount{ 0ull };
 
 			u64 cascadedShadowCount{ 0ull };
 			u64 omniShadowCount{ 0ull };
@@ -418,9 +417,7 @@ namespace engine
 			virtual void begin(f32 dt) = 0;
 			virtual void end() = 0;
 
-			virtual void addLight(const FDirectionalLightCommit& light) = 0;
-			virtual void addLight(const FPointLightCommit& light) = 0;
-			virtual void addLight(const FSpotLightCommit& light) = 0;
+			virtual u64 updateLight(const FLightCommit& light) = 0;
 
 			virtual void addShadow(const FCascadedShadowCommit& commit) = 0;
 			virtual void addShadow(const FOmniShadowCommit& commit) = 0;
@@ -429,7 +426,7 @@ namespace engine
 			virtual void addMatrices(const utl::vector<glm::mat4>& matrices) = 0;
 			virtual const glm::mat4& getMatrix(u64 index) const = 0;
 
-			virtual void updateNode(u32 node_id, const FSceneNode& node) = 0;
+			virtual u64 updateNode(u32 node_id, const FSceneNode& node) = 0;
 
 			virtual void addMaterial(const FMaterial& material) = 0;
 			virtual void addMaterials(const utl::vector<FMaterial>& materials) = 0;

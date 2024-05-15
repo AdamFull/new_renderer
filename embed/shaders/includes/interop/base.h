@@ -92,6 +92,12 @@ namespace engine {
 		CONSTANT uint32_t reprojection_matrix_offset = 7u;
 		CONSTANT uint32_t matrix_offset_count = 8u;
 
+
+		CONSTANT uint32_t light_type_directional = 1u;
+		CONSTANT uint32_t light_type_point = 2u;
+		CONSTANT uint32_t light_type_spot = 3u;
+		CONSTANT uint32_t light_type_invalid = 0u;
+
 #if defined(INDEX_8BIT)
 #define Index uint8_t
 #elif defined(INDEX_16BIT)
@@ -427,14 +433,19 @@ namespace engine {
 			uint32_t pad;
 		};
 
-		struct FDirectionalLightCommit
+		struct FLightCommit
 		{
+			ALIGN_AS(16) VECTOR3 position;
 			ALIGN_AS(16) VECTOR3 direction;
 			ALIGN_AS(16) VECTOR3 color;
 			float intencity;
+			float lightAngleScale;
+			float lightAngleOffset;
+			int toTarget;
+			float radius;
 			int shadowIndex;
 			int castShadows;
-			uint32_t pad;
+			int type;
 		};
 
 		struct FOmniShadowCommit
@@ -445,33 +456,10 @@ namespace engine {
 			uint32_t pad;
 		};
 
-		struct FPointLightCommit
-		{
-			ALIGN_AS(16) VECTOR3 position;
-			ALIGN_AS(16) VECTOR3 color;
-			float intencity;
-			float radius;
-			int shadowIndex;
-			int castShadows;
-		};
-
 		struct FSpotShadowCommit
 		{
 			uint32_t cameraID;
 			int index;
-		};
-
-		struct FSpotLightCommit
-		{
-			ALIGN_AS(16) VECTOR3 position;
-			ALIGN_AS(16) VECTOR3 direction;
-			ALIGN_AS(16) VECTOR3 color;
-			float intencity;
-			float lightAngleScale;
-			float lightAngleOffset;
-			int toTarget;
-			int shadowIndex;
-			int castShadows;
 		};
 
 		// Material
@@ -572,6 +560,7 @@ namespace engine {
 			uint32_t directionalLightCount;
 			uint32_t pointLightCount;
 			uint32_t spotLightCount;
+			uint32_t lightCount;
 			uint32_t cullerCount;
 			uint32_t cameraCount;
 			uint32_t maxCommandsCount;
@@ -590,9 +579,7 @@ namespace engine {
 		REGISTER_OBJECT_ARRAY_BUFFER(MaterialBuffer, FMaterial, materials);
 
 		// Light buffers
-		REGISTER_OBJECT_ARRAY_BUFFER(DirectionalLights, FDirectionalLightCommit, lights);
-		REGISTER_OBJECT_ARRAY_BUFFER(PointLights, FPointLightCommit, lights);
-		REGISTER_OBJECT_ARRAY_BUFFER(SpotLights, FSpotLightCommit, lights);
+		REGISTER_OBJECT_ARRAY_BUFFER(Lights, FLightCommit, lights);
 
 		// Shadow buffers
 		REGISTER_OBJECT_ARRAY_BUFFER(CascadedShadows, FCascadedShadowCommit, shadows);
@@ -634,9 +621,7 @@ namespace engine {
 
 			MaterialBuffer materialBuffer;
 		
-			DirectionalLights directionalLightBuffer;
-			PointLights pointLightBuffer;
-			SpotLights spotLightBuffer;
+			Lights lightsBuffer;
 		
 			CascadedShadows cascadedShadowBuffer;
 			OmniShadows omniShadowBuffer;

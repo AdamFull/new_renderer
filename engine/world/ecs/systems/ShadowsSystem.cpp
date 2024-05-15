@@ -70,10 +70,10 @@ void CShadowsSystem::__update(f32 fDt)
 
 	auto& camera = render_world->getDefaultCamera();
 
+	u64 light_count{ 0ull };
+
 	// Calculate cascades shadow data
 	{
-		u64 light_count{ 0ull };
-
 		// Begin calculating cascades
 		const auto& near_clip = camera.zNear;
 		const auto& far_clip = camera.zFar;
@@ -209,7 +209,6 @@ void CShadowsSystem::__update(f32 fDt)
 		std::array<glm::mat4, 6u> matrices{};
 		auto& culler_group = m_shadowCullers[ERenderGeometryCullerType::eOmniShadow];
 
-		u64 light_count{ 0ull };
 		auto view = registry->view<FTransformComponent, FBaseComponent, FPointLightComponent>();
 		for (auto [entity, ltransform, base, light] : view.each())
 		{
@@ -256,7 +255,6 @@ void CShadowsSystem::__update(f32 fDt)
 	{
 		auto& culler_group = m_shadowCullers[ERenderGeometryCullerType::eSpotShadow];
 
-		u64 light_count{ 0ull };
 		auto view = registry->view<FTransformComponent, FBaseComponent, FSpotLightComponent>();
 		for (auto [entity, ltransform, base, light] : view.each())
 		{

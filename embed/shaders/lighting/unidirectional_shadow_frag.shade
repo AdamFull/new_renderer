@@ -46,7 +46,7 @@
 
 #if defined(OMNI_SHADOW)
 		FOmniShadowCommit shadow = omniShadowBuffer.shadows[shadowData.shadowIndex];
-		FPointLightCommit light = pointLightBuffer.lights[shadow.index];
+		FLightCommit light = lightsBuffer.lights[shadow.index];
 
 		// get distance between fragment and light source
 		float lightDistance = length(inPos.xyz - light.position);

@@ -126,7 +126,7 @@
 			return cascade_index;
 		}
 
-		float getCascadeShadow(sampler2DArrayShadow shadowmap_tex, in FDirectionalLightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
+		float getCascadeShadow(sampler2DArrayShadow shadowmap_tex, in FLightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
 		{
 			FCascadedShadowCommit commit = cascadedShadowBuffer.shadows[light.shadowIndex];
 			FCamera camera = cameraBuffer.cameras[commit.cameraID];
@@ -146,7 +146,7 @@
 			return shadow_sample;
 		}
 
-		vec3 calculateDirectionalLight(in FDirectionalLightCommit light, in VertexAttribute va, in MaterialSample ms, in vec3 V, in vec3 F0, in float dither)
+		vec3 calculateDirectionalLight(in FLightCommit light, in VertexAttribute va, in MaterialSample ms, in vec3 V, in vec3 F0, in float dither)
 		{
 			vec3 L = normalize(-light.direction);
 		
@@ -165,7 +165,7 @@
 
 
 
-		float getOmniShadow(samplerCubeArrayShadow shadowmap_tex, in FPointLightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
+		float getOmniShadow(samplerCubeArrayShadow shadowmap_tex, in FLightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
 		{
 			FOmniShadowCommit commit = omniShadowBuffer.shadows[light.shadowIndex];
 
@@ -186,7 +186,7 @@
 			return shadow;
 		}
 
-		vec3 calculatePointLight(in FPointLightCommit light, in VertexAttribute va, in MaterialSample ms, in vec3 V, in vec3 F0, in float dither)
+		vec3 calculatePointLight(in FLightCommit light, in VertexAttribute va, in MaterialSample ms, in vec3 V, in vec3 F0, in float dither)
 		{
 			vec3 L = normalize(light.position - va.pos);
 			float dist = distance(va.pos, light.position);
@@ -205,7 +205,7 @@
 		}
 
 
-		float getDirectionalShadow(sampler2DArrayShadow shadomwap_tex, in FSpotLightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
+		float getDirectionalShadow(sampler2DArrayShadow shadomwap_tex, in FLightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
 		{
 			FSpotShadowCommit commit = spotShadowBuffer.shadows[light.shadowIndex];
 			FCamera camera = cameraBuffer.cameras[commit.cameraID];
@@ -226,7 +226,7 @@
 			return shadow;
 		}
 
-		vec3 calculateSpotlight(in FSpotLightCommit light, in VertexAttribute va, in MaterialSample ms, in vec3 V, in vec3 F0, in float dither)
+		vec3 calculateSpotlight(in FLightCommit light, in VertexAttribute va, in MaterialSample ms, in vec3 V, in vec3 F0, in float dither)
 		{
 			vec3 L = normalize(light.position - va.pos);
 		
@@ -256,25 +256,16 @@
 		{
 			vec3 Lo =  vec3(0.0);
 
-			//Directional light
-			for(uint i = 0u; i < frameData.directionalLightCount; i++)
+			for(uint i = 0u; i < frameData.lightCount; i++)
 			{
-				FDirectionalLightCommit light = directionalLightBuffer.lights[i];
-				Lo += calculateDirectionalLight(light, va, ms, V, F0, dither);
-			}
+				FLightCommit light = lightsBuffer.lights[i];
 
-			//Point light
-			for(uint i = 0u; i < frameData.pointLightCount; i++) 
-			{
-				FPointLightCommit light = pointLightBuffer.lights[i];
-				Lo += calculatePointLight(light, va, ms, V, F0, dither);
-			}
-			
-			//Spot light
-			for(uint i = 0u; i < frameData.spotLightCount; i++)
-			{
-				FSpotLightCommit light = spotLightBuffer.lights[i];
-				Lo += calculateSpotlight(light, va, ms, V, F0, dither);
+				if(light.type == light_type_directional)
+					Lo += calculateDirectionalLight(light, va, ms, V, F0, dither);
+				else if(light.type == light_type_point)
+					Lo += calculatePointLight(light, va, ms, V, F0, dither);
+				else if(light.type == light_type_spot)
+					Lo += calculateSpotlight(light, va, ms, V, F0, dither);
 			}
 
 			return Lo;
@@ -329,14 +320,19 @@
 				float depth = texture(depth_buffer, uv).r;
 				dir_world_space.xyz = getPositionFromDepth(uv, 1.0f, getInvViewProjectionMatrix(camera.matricesOffset));
 				
-				for(uint i = 0u; i < frameData.directionalLightCount; i++)
+				uint sun_count = 0;
+				for(uint i = 0u; i < frameData.lightCount; i++)
 				{
-					const FDirectionalLightCommit light = directionalLightBuffer.lights[i];
-					const vec3 dir_to_sun = normalize(-light.direction);
-					pixel_color.rgb += atmosphere(origin, dir_world_space.xyz, -dir_to_sun, light.intencity);
+					const FLightCommit light = lightsBuffer.lights[i];
+					if(light.type == light_type_directional)
+					{
+						const vec3 dir_to_sun = normalize(-light.direction);
+						pixel_color.rgb += atmosphere(origin, dir_world_space.xyz, -dir_to_sun, light.intencity);
+						sun_count++;
+					}
 				}
 				
-				pixel_color.rgb /= float(frameData.directionalLightCount);
+				pixel_color.rgb /= float(sun_count);
 				pixel_color.rgb = 1.0 - exp(-1.0 * pixel_color.rgb);
 
 				imageStore(write_color, ivec2(px), pixel_color);

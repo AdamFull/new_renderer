@@ -137,7 +137,7 @@
 			return shadow_sample;
 		}
 
-		float3 calculateDirectionalLight(in FDirectionalLightCommit light, in VertexAttribute va, in MaterialSample ms, in float3 V, in float3 F0, in float dither)
+		float3 calculateDirectionalLight(in  light, in VertexAttribute va, in MaterialSample ms, in float3 V, in float3 F0, in float dither)
 		{
 			float3 L = normalize(-light.direction);
 		
@@ -192,7 +192,7 @@
 			//Directional light
 			for(uint32_t i = 0u; i < frameData.directionalLightCount; i++)
 			{
-				FDirectionalLightCommit light = directionalLightBuffer.lights[i];
+				 light = directionalLightBuffer.lights[i];
 				Lo += calculateDirectionalLight(light, va, ms, V, F0, dither);
 			}
 
@@ -262,7 +262,7 @@
 				//
 				//for(uint32_t i = 0u; i < frameData.directionalLightCount; i++)
 				//{
-				//	const FDirectionalLightCommit light = directionalLightBuffer.directional_lights[i];
+				//	const  light = directionalLightBuffer.directional_lights[i];
 				//	const float3 dir_to_sun = normalize(-light.direction);
 				//	pixel_color.rgb += atmosphere(origin, dir_world_space.xyz, -dir_to_sun, light.intencity);
 				//}

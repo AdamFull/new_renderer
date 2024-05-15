@@ -26,9 +26,7 @@ namespace engine
 			void begin(f32 dt) override;
 			void end() override;
 
-			void addLight(const FDirectionalLightCommit& light) override;
-			void addLight(const FPointLightCommit& light) override;
-			void addLight(const FSpotLightCommit& light) override;
+			u64 updateLight(const FLightCommit& light) override;
 
 			void addShadow(const FCascadedShadowCommit& commit) override;
 			void addShadow(const FOmniShadowCommit& commit) override;
@@ -37,7 +35,7 @@ namespace engine
 			void addMatrices(const utl::vector<glm::mat4>& matrices) override;
 			const glm::mat4& getMatrix(u64 index) const override;
 
-			void updateNode(u32 node_id, const FSceneNode& node) override;
+			u64 updateNode(u32 node_id, const FSceneNode& node) override;
 
 			void addMaterial(const FMaterial& material) override;
 			void addMaterials(const utl::vector<FMaterial>& materials) override;
@@ -62,6 +60,8 @@ namespace engine
 			utl::vector<FFrustum> m_vSceneFrustums{};
 			utl::vector<FCullingInfo> m_vCullingInfo{};
 			u64 m_defaultCameraID{ 0ull };
+
+			utl::hash_map<u32, u64> m_nodeRemap{};
 
 			utl::vector<FGeometryBatch> m_vRawGeometryBatches{};
 			utl::vector<FGeometryCPUBatch> m_vGeometryBatches{};

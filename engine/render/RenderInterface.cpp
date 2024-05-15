@@ -67,7 +67,7 @@ std::unique_ptr<IRenderContext> make_render_context(const FRenderInterfaceCreate
 		};
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-		context_ci.validationState = true;
+		//context_ci.validationState = true;
 		context_ci.validationLayers = { "VK_LAYER_KHRONOS_validation", "VK_LAYER_KHRONOS_synchronization2" };
 		context_ci.validationFeatures = vulkan::SYNCHRONIZATION_VALIDATION_FLAG_BIT;
 #endif
@@ -172,6 +172,7 @@ void CRenderInterface::render(f32 dt)
 	global_uniform.directionalLightCount = utl::cast<u32>(world_stats.directionalLightCount);
 	global_uniform.pointLightCount = utl::cast<u32>(world_stats.pointLightCount);
 	global_uniform.spotLightCount = utl::cast<u32>(world_stats.spotLightCount);
+	global_uniform.lightCount = utl::cast<u32>(world_stats.lightCount);
 	global_uniform.cullerCount = utl::cast<u32>(world_stats.cullerCount);
 	global_uniform.cameraCount = utl::cast<u32>(world_stats.cullerCount);
 	global_uniform.maxCommandsCount = utl::cast<u32>(world_stats.maxDrawCommands);
@@ -190,9 +191,7 @@ void CRenderInterface::render(f32 dt)
 	global_references.materialBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eMaterialBuffer)->buffer()->address();
 	global_references.meshBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eMeshBuffer)->buffer()->address();
 
-	global_references.directionalLightBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eDirectionalLightBuffer)->buffer()->address();
-	global_references.pointLightBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::ePointLightBuffer)->buffer()->address();
-	global_references.spotLightBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eSpotLightBuffer)->buffer()->address();
+	global_references.lightsBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eLightBuffer)->buffer()->address();
 
 	global_references.cascadedShadowBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eCascadedShadowBuffer)->buffer()->address();
 	global_references.omniShadowBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eOmniShadowBuffer)->buffer()->address();
