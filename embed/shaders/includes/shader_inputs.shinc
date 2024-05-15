@@ -57,6 +57,9 @@
 
 	mat4 getMatrixById(uint global_offset, uint local_offset) { return matrixBuffer.matrices[global_offset + local_offset]; }
 
+	mat4 getModelMatrix(uint global_offset) { return getMatrixById(global_offset, model_matrix_offset); }
+	mat4 getOldModelMatrix(uint global_offset) { return getMatrixById(global_offset, old_model_matrix_offset); }
+
 	mat4 getViewMatrix(uint global_offset) { return getMatrixById(global_offset, view_matrix_offset); }
 	mat4 getInvViewMatrix(uint global_offset) { return getMatrixById(global_offset, inv_view_matrix_offset); }
 	mat4 getProjectionMatrix(uint global_offset) { return getMatrixById(global_offset, projection_matrix_offset); }

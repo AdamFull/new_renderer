@@ -45,8 +45,8 @@
 
 			// Calculate skinned matrix from weights and joint indices of the current vertex
 			FSceneNode node = nodeBuffer.nodes[draw_info.nodeID];
-			mat4 modelMatrix = node.model;
-			//mat4 oldModelMatrix = node.oldModel;
+			mat4 modelMatrix = getModelMatrix(node.matrixOffset);
+			//mat4 oldModelMatrix = getOldModelMatrix(node.matrixOffset)
 
 #ifdef HAS_SKIN
 			if(node.skeletonID != ~0u)

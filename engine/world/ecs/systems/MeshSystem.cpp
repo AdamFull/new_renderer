@@ -43,6 +43,7 @@ void prepare_draw_commands(const std::unique_ptr<IRenderWorld>& render_world, en
 	auto& registry = scene_graph->getRegistry();
 	auto root = scene_graph->getRoot();
 	auto& root_component = scene_graph->getComponent<FRootComponent>(root);
+	auto& world_stats = render_world->getStats();
 
 	auto view = registry->view<FTransformComponent, FBaseComponent, FMeshComponent>();
 	for (auto [entity, transform, base, mesh_component] : view.each())
@@ -52,9 +53,10 @@ void prepare_draw_commands(const std::unique_ptr<IRenderWorld>& render_world, en
 
 		auto node = utl::cast<u32>(entity);
 
+		utl::vector<glm::mat4> matrices{ transform.gmodel, transform.oldmodel };
 		FSceneNode scene_node{};
-		scene_node.model = transform.gmodel;
-		scene_node.oldModel = transform.oldmodel;
+		scene_node.matrixOffset = world_stats.matricesCount;
+		render_world->addMatrices(matrices);
 
 		if (auto found = root_component.skinRemap.find(utl::cast<u32>(mesh_component.skin)); found != root_component.skinRemap.end())
 			scene_node.skeletonID = found->second;

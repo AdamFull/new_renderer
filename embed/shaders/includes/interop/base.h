@@ -82,6 +82,9 @@ namespace engine {
 		CONSTANT uint32_t max_point_light_shadow_count = 2u;
 		CONSTANT uint32_t point_light_shadow_map_resolution = 512u;
 
+		CONSTANT uint32_t model_matrix_offset = 0u;
+		CONSTANT uint32_t old_model_matrix_offset = 1u;
+
 		CONSTANT uint32_t view_matrix_offset = 0u;
 		CONSTANT uint32_t inv_view_matrix_offset = 1u;
 		CONSTANT uint32_t projection_matrix_offset = 2u;
@@ -378,10 +381,8 @@ namespace engine {
 
 		struct FSceneNode
 		{
-			MATRIX4 model;
-			MATRIX4 oldModel;
+			uint32_t matrixOffset;
 			uint32_t skeletonID;
-			uint32_t pad[3];
 		};
 
 		struct FClusterInfo

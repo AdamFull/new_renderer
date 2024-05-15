@@ -69,14 +69,15 @@
 			FGeometryBatch draw_info = rawDrawInfoBuffer.infos[global_draw_index];
 			FSceneNode node = nodeBuffer.nodes[draw_info.nodeID];
 			FMesh mesh = meshBuffer.meshes[draw_info.meshID];
-			
+			mat4 model = getModelMatrix(node.matrixOffset);			
+
 			// output_index = culler_counter + draw_offset;
 			
 			// Calculate bounding box
-			vec4 min_extents = node.model * vec4(mesh.bounds.min, 1.f);
+			vec4 min_extents = model * vec4(mesh.bounds.min, 1.f);
 			min_extents.xyz /= min_extents.w;
 
-			vec4 max_extents = node.model * vec4(mesh.bounds.max, 1.f);
+			vec4 max_extents = model * vec4(mesh.bounds.max, 1.f);
 			max_extents.xyz /= max_extents.w;
 			
 			// Do frustum culling

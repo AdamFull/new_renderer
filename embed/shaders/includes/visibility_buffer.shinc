@@ -183,7 +183,7 @@
 
 			// Load mesh model matrix
 			FSceneNode node = nodeBuffer.nodes[visbuffer.objID];
-			mat4 model = node.model;
+			mat4 model = getModelMatrix(node.matrixOffset);
 			
 #ifdef HAS_SKIN
 			if(node.skeletonID != ~0u)

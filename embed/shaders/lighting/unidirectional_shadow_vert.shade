@@ -38,7 +38,7 @@
 			FGeometryBatch draw_info = drawInfoBuffer.infos[draw_index];
 
 			FSceneNode node = nodeBuffer.nodes[draw_info.nodeID];
-			mat4 modelMatrix = node.model;
+			mat4 modelMatrix = getModelMatrix(node.matrixOffset);
 
 #ifdef HAS_SKIN
 			if(node.skeletonID != ~0u)
