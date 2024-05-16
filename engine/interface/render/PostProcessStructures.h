@@ -4,6 +4,18 @@ namespace engine
 {
 	namespace render
 	{
+		const std::array<float, 5> fxaa_quality_variant{ 1.0f, 0.75f, 0.5f, 0.25f, 0.0f };
+		const std::array<float, 5> fxaa_threshold_variant{ 0.333f, 0.250f, 0.166f, 0.125f, 0.063f };
+		const std::array<float, 3> fxaa_threshold_min_variant{ 0.0833f, 0.0625f, 0.0312f };
+
+		struct FPostProcessFXAA
+		{
+			bool enable{ true };
+			i32 quality{ 0 };
+			i32 threshold{ 0 };
+			i32 threshold_min{ 0 };
+		};
+
 		struct FPostProcessDOF
 		{
 			bool enable{ true };
@@ -70,6 +82,8 @@ namespace engine
 
 		struct FPostProcess
 		{
+			// fxaa
+			FPostProcessFXAA fxaa;
 			// DOF
 			FPostProcessDOF dof;
 			// Bloom

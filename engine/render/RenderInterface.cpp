@@ -218,6 +218,11 @@ void CRenderInterface::render(f32 dt)
 	auto& post_process = m_pRenderWorld->getPostProcessingData();
 
 	FGlobalPostProcessingData postprocessing{};
+	// FXAA
+	postprocessing.enable_fxaa = utl::cast<i32>(post_process.fxaa.enable);
+	postprocessing.fxaa_quality = fxaa_quality_variant[post_process.fxaa.quality];
+	postprocessing.fxaa_threshold = fxaa_threshold_variant[post_process.fxaa.threshold];
+	postprocessing.fxaa_threshold_min = fxaa_threshold_min_variant[post_process.fxaa.threshold_min];
 	// Tonemapping
 	postprocessing.enable_tonemap = utl::cast<i32>(post_process.tonemap.enable);
 	postprocessing.tm_gamma = post_process.tonemap.gamma;
@@ -349,17 +354,17 @@ const std::unique_ptr<IRenderContext>& CRenderInterface::getRenderContext()
 
 FShaderUploadInfo CRenderInterface::getShaderNameTag(const std::string& name)
 {
-	auto vendor = m_pRenderContext->getDeviceVendor();
+	//auto vendor = m_pRenderContext->getDeviceVendor();
 	auto name_info = get_shader_name_info(name);
 
-	switch (vendor)
-	{
-	case engine::render::EAdapterVendor::eNone: break;
-	case engine::render::EAdapterVendor::eNVidia: name_info.definitions.emplace_back("VENDOR_NVIDIA"); break;
-	case engine::render::EAdapterVendor::eAMD: name_info.definitions.emplace_back("VENDOR_AMD"); break;
-	case engine::render::EAdapterVendor::eIntel: name_info.definitions.emplace_back("VENDOR_INTEL"); break;
-	default: break;
-	}
+	//switch (vendor)
+	//{
+	//case engine::render::EAdapterVendor::eNone: break;
+	//case engine::render::EAdapterVendor::eNVidia: name_info.definitions.emplace_back("VENDOR_NVIDIA"); break;
+	//case engine::render::EAdapterVendor::eAMD: name_info.definitions.emplace_back("VENDOR_AMD"); break;
+	//case engine::render::EAdapterVendor::eIntel: name_info.definitions.emplace_back("VENDOR_INTEL"); break;
+	//default: break;
+	//}
 
 	FShaderUploadInfo load_info{};
 	load_info.libraryId = utl::fnv1a_32_hash_cstr(name_info.library_name.c_str());
