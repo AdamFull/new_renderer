@@ -54,6 +54,8 @@ namespace engine
 		private:
 			filesystem::IVirtualFileSystemInterface* m_pVFS{ nullptr };
 
+			u32 m_frameCounter{ 0u };
+
 			std::unique_ptr<FRenderDataPacket> m_pRenderPacket{};
 
 			std::unique_ptr<IRenderGraph> m_pRenderGraph{};

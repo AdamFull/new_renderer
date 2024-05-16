@@ -178,6 +178,7 @@ void CRenderInterface::render(f32 dt)
 	global_uniform.maxCommandsCount = utl::cast<u32>(world_stats.maxDrawCommands);
 	global_uniform.rawCommandsCount = utl::cast<u32>(world_stats.drawCommandCount);
 	global_uniform.defaultCameraID = utl::cast<u32>(m_pRenderWorld->getDefaultCameraID());
+	global_uniform.frameNumber = m_frameCounter;
 
 	FGlobalUniformUpdateInfo update_info{};
 	auto& frame_gata_uniform = update_info.uniforms[shader_bindings::global_uniform_frame_data];
@@ -267,6 +268,8 @@ void CRenderInterface::render(f32 dt)
 	m_pRenderContext->endFrame();
 
 	m_pRenderWorld->end();
+
+	++m_frameCounter;
 }
 
 u64 CRenderInterface::createTexture(const std::string& path)

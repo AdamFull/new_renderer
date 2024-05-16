@@ -69,7 +69,7 @@
 
 			FCamera camera = cameraBuffer.cameras[draw_info.cameraID];
 
-			vec4 localPos = modelMatrix * vec4(inPosition, 1.0);
+			vec4 localPos = modelMatrix * (vec4(inPosition, 1.0));
 			localPos = vec4(localPos.xyz / localPos.w, 1.0);
 
 			mat4 viewProjection = getViewProjectionMatrix(camera.matricesOffset);
@@ -81,12 +81,21 @@
 			
 			//oldPos = viewProjection * oldLocalPos;
 
+			uint subsampleIndex = frameData.frameNumber % 2;
+			vec2 texelSize = 1.0f / camera.size;
+
+			vec4 clipSpacePos = viewProjection * localPos;
+
+			vec4 viewSpace = clipSpacePos / clipSpacePos.w;
+			viewSpace.x += ((subsampleIndex == 0) ? -texelSize.x : texelSize.x) * 0.5;
+			clipSpacePos = viewSpace * clipSpacePos.w;
+
 			drawID = meshData.callID + gl_DrawIDARB;
 			instanceID = gl_InstanceIndex;
 			vboID = draw_info.vboID;
 			texCoord = inTexCoord;
 
-			gl_Position = viewProjection * localPos;
+			gl_Position = clipSpacePos;
 		}
 	""";
 }

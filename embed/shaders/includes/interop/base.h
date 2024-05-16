@@ -567,6 +567,7 @@ namespace engine {
 			uint32_t maxCommandsCount;
 			uint32_t rawCommandsCount;
 			uint32_t defaultCameraID;
+			uint32_t frameNumber;
 #ifdef __cplusplus
 		};
 #else

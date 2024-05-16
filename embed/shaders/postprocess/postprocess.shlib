@@ -48,6 +48,15 @@
 			];
 		},
 		{
+			name: "filmic_smaa_tu2x";
+			sources: [
+				{
+					type: "compute";
+					shader_name: "filmic_smaa_tu2x_comp";
+				}
+			];
+		},
+		{
 			name: "generate_motion_vectors";
 			sources: [
 				{
@@ -105,6 +114,10 @@
 		{ 
 			shader_name: "downsample";
 			pattern: "downsample_pattern";
+		},
+		{
+			shader_name: "filmic_smaa_tu2x";
+			pattern: "default_pattern";
 		},
 		{
 			shader_name: "generate_motion_vectors";

@@ -545,6 +545,18 @@ do
     render_graph:add_render_pass("compute_materials_pass", pass_ci)
 end
 
+-- Anti-alias step
+do
+    local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:filmic_smaa_tu2x")
+    pass_ci:add_workgroup_size_by_rt("hdr1", true)
+
+    pass_ci:bind_write_resource("write_color", "hdr1")
+    pass_ci:bind_write_resource("current_frame", "hdr0")
+    pass_ci:bind_write_resource("prev_frame", "hdr0_history")
+
+    render_graph:add_render_pass("compute_smaa_pass", pass_ci)
+end
+
 do
     local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "utility:copy_compute")
     pass_ci:add_workgroup_size_by_rt("hdr0", true)
@@ -555,7 +567,7 @@ do
     render_graph:add_render_pass("copy_final_color_pass", pass_ci)
 end
 
-final_target = postprocess("hdr0", "hdr1")
+final_target = postprocess("hdr1", "hdr0")
 
 -- Present pass
 do
