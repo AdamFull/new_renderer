@@ -1474,16 +1474,16 @@ EAdapterVendor CVkRenderContext::getDeviceVendor() const
 {
 	auto& physical = m_pDevice->getPhysicalDevice();
 
-	switch (physical.properties.vendorID)
-	{
-	case 0x10DE: return EAdapterVendor::eNVidia;
-	case 0x1002: return EAdapterVendor::eAMD;
-	case 0x8086: return EAdapterVendor::eIntel;
-	case 0x13B5: 
-	default: break;
-	}
+	//switch (physical.properties.vendorID)
+	//{
+	//case 0x10DE: return EAdapterVendor::eNVidia;
+	//case 0x1002: return EAdapterVendor::eAMD;
+	//case 0x8086: return EAdapterVendor::eIntel;
+	//case 0x13B5: 
+	//default: break;
+	//}
 	
-	return EAdapterVendor::eNone;
+	return EAdapterVendor::eNVidia;
 }
 
 u64 CVkRenderContext::getTextureResource(const char* name)

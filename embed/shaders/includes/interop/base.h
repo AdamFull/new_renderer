@@ -649,6 +649,13 @@ namespace engine {
 		layout(std140, set = 0, binding = 2) uniform GlobalPostProcessingData
 #endif
 		{
+			// fxaa
+			int enable_fxaa;
+			float fxaa_quality;
+			float fxaa_threshold;
+			float fxaa_threshold_min;
+			// fxaa
+			
 			// tonemap
 			int enable_tonemap;
 			float tm_gamma;

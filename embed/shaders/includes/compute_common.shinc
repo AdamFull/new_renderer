@@ -81,19 +81,19 @@
 
 		bool swizzle_workgroups_8x8(in uvec2 gid, in uvec2 lid, in uvec2 wid, in uvec2 face_size, out vec2 uv, out ivec2 px)
 		{
-#if defined(VENDOR_NVIDIA)
-			const uvec2 cta = uvec2(8, 8);
-			const uvec2 grid_dim = face_size / cta;
-			px = ivec2(ThreadGroupTilingX(grid_dim, cta, 16, lid, wid));
-#elif defined(VENDOR_AMD)
+//#if defined(VENDOR_NVIDIA)
+//			const uvec2 cta = uvec2(8, 8);
+//			const uvec2 grid_dim = face_size / cta;
+//			px = ivec2(ThreadGroupTilingX(grid_dim, cta, 8, lid, wid));
+//#elif defined(VENDOR_AMD)
 			uvec2 base_tx = gid - lid;
 			uint lid1d = lid.y * 8 + lid.x;
 			uvec2 sub_xy = ARmp8x8(lid1d);
 			uvec2 tx = uvec2(sub_xy.x + 8 * ((lid1d >> 6) % 2), sub_xy.y + 8 * ((lid1d >> 7)));
 			px = ivec2(base_tx + tx);
-#else
-			px = ivec2(gid);
-#endif
+//#else
+//			px = ivec2(gid);
+//#endif
 			
 			uv = (vec2(px) + vec2(0.5, 0.5)) / vec2(face_size);
 			if (px.x > face_size.x || px.y > face_size.y)

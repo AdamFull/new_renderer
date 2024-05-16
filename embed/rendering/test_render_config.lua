@@ -1,10 +1,13 @@
 use_low_precision_velocity = true
 
+enable_fxaa = true
 motion_blur_enabled = false
 depth_of_field_enabled = false
 chromatic_aberration_enabled = false
-bloom_enabled = true
 
+-- Bloom settings
+bloom_enabled = true
+bloom_use_brightness = false
 bloom_blur_depth = 7
 
 -- Some functions
@@ -177,7 +180,7 @@ do
     local target_ci = make_target(Format.r11g11b10_ufloat, TexType.two_dim | TexType.samplable | TexType.storage)
     target_ci:set_size_scale(0.5)
 
-    render_graph:add_render_resource("brightness_target", target_ci)
+    render_graph:add_render_resource("hdr0_div2", target_ci)
 end
 
 do
@@ -263,23 +266,22 @@ end
 function compute_bloom(input_target, output_target)
     render_graph:push_debug_marker("Compute bloom", 0xffff33ff, QueueType.graphics)
 
-    -- index 10
     -- Starting from brightness detection pass
-    --do 
-    --    local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:brightdetect")
-    --
-    --    pass_ci:add_workgroup_size_by_rt("bloom_target", true)
-    --
-    --    pass_ci:bind_read_resource("sampler_color", input_target)
-    --    pass_ci:bind_write_resource("write_color", "brightness_target")
-    --
-    --    render_graph:add_render_pass("brightdetect_pass", pass_ci)
-    --end
+    do
+        local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, bloom_use_brightness and "postprocess:brightdetect" or "utility:copy_compute")
+    
+        pass_ci:add_workgroup_size_by_rt("bloom_target", true)
+    
+        pass_ci:bind_read_resource("sampler_color", input_target)
+        pass_ci:bind_write_resource("write_color", "hdr0_div2")
+    
+        render_graph:add_render_pass("brightdetect_pass", pass_ci)
+    end
 
     -- Begin downsampling
     do
         local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:downsample:FIRST_PASS")
-        pass_ci:bind_read_resource("sampler_color", input_target)
+        pass_ci:bind_read_resource("sampler_color", "hdr0_div2")
 
         render_graph:push_debug_marker("Downsample", 0xffff33ff, QueueType.graphics)
         for idx = 0, bloom_blur_depth - 1 do
@@ -372,6 +374,20 @@ function postprocess(target_1, target_2)
     local count = 0
 
     render_graph:push_debug_marker("Postprocess", 0xffff33ff, QueueType.graphics)
+
+    if enable_fxaa then
+        local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:apply_effect:FXAA")
+        pass_ci:add_workgroup_size_by_rt(input_target, true)
+
+        pass_ci:bind_write_resource("write_color", output_target)
+        pass_ci:bind_read_resource("sampler_color", input_target)
+
+        render_graph:add_render_pass("apply_fxaa", pass_ci)
+
+        input_target, output_target = swap(input_target, output_target)
+        count = count + 1
+    end
+
     -- Compute motion blur
     if motion_blur_enabled then
         compute_motion_blur(input_target, output_target)
@@ -546,16 +562,16 @@ do
 end
 
 -- Anti-alias step
-do
-    local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:filmic_smaa_tu2x")
-    pass_ci:add_workgroup_size_by_rt("hdr1", true)
-
-    pass_ci:bind_write_resource("write_color", "hdr1")
-    pass_ci:bind_write_resource("current_frame", "hdr0")
-    pass_ci:bind_write_resource("prev_frame", "hdr0_history")
-
-    render_graph:add_render_pass("compute_smaa_pass", pass_ci)
-end
+--do
+--    local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:filmic_smaa_tu2x")
+--    pass_ci:add_workgroup_size_by_rt("hdr1", true)
+--
+--    pass_ci:bind_write_resource("write_color", "hdr1")
+--    pass_ci:bind_write_resource("current_frame", "hdr0")
+--    pass_ci:bind_write_resource("prev_frame", "hdr0_history")
+--
+--    render_graph:add_render_pass("compute_smaa_pass", pass_ci)
+--end
 
 do
     local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "utility:copy_compute")
@@ -567,7 +583,7 @@ do
     render_graph:add_render_pass("copy_final_color_pass", pass_ci)
 end
 
-final_target = postprocess("hdr1", "hdr0")
+final_target = postprocess("hdr0", "hdr1")
 
 -- Present pass
 do

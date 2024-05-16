@@ -16,7 +16,7 @@
 							{ defines: ["", "INDEX_8BIT", "INDEX_16BIT"]; type: "or"; },
 							{ defines: ["", "COLOR_VEC3", "COLOR_VEC4"]; type: "or"; },
 							{ defines: ["TANGENT_VEC3", "TANGENT_VEC4"]; type: "or"; },
-							{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
+							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
 						];
 					},
 					{
@@ -26,7 +26,7 @@
 							{ defines: ["", "COLOR_VEC3", "COLOR_VEC4"]; type: "or"; },
 							{ defines: ["TANGENT_VEC3", "TANGENT_VEC4"]; type: "or"; },
 							{ defines: ["JOINTS_8BIT", "JOINTS_16BIT"]; type: "or"; },
-							{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
+							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
 						];
 					}
 				];
@@ -42,7 +42,7 @@
 							{ defines: ["", "INDEX_8BIT", "INDEX_16BIT"]; type: "or"; },
 							{ defines: ["", "COLOR_VEC3", "COLOR_VEC4"]; type: "or"; },
 							{ defines: ["TANGENT_VEC3", "TANGENT_VEC4"]; type: "or"; },
-							{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
+							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
 						];
 					},
 					{
@@ -53,7 +53,7 @@
 							{ defines: ["", "COLOR_VEC3", "COLOR_VEC4"]; type: "or"; },
 							{ defines: ["TANGENT_VEC3", "TANGENT_VEC4"]; type: "or"; },
 							{ defines: ["JOINTS_8BIT", "JOINTS_16BIT"]; type: "or"; },
-							{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
+							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
 						];
 					}
 				];
@@ -65,7 +65,7 @@
 					{
 						base: [];
 						variants: [
-							{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
+							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
 						];
 					}
 				];
@@ -77,7 +77,7 @@
 					{
 						base: [];
 						variants: [
-							{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
+							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
 						];
 					}
 				];
@@ -89,13 +89,13 @@
 					{
 						base: [];
 						variants: [
-							{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
+							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
 						];
 					},
 					{
 						base: ["FIRST_PASS"];
 						variants: [
-							{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
+							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
 						];
 					}
 				];
@@ -107,13 +107,13 @@
 					{
 						base: [];
 						variants: [
-							{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
+							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
 						];
 					},
 					{
 						base: ["LOW_PRECISION_VELOCITY"];
 						variants: [
-							{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
+							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
 						];
 					}
 				];
@@ -125,44 +125,50 @@
 					{
 						base: [];
 						variants: [
-							{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
+							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
+						];
+					},
+					{
+						base: ["FXAA"];
+						variants: [
+							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
 						];
 					},
 					{
 						base: ["BLOOM"];
 						variants: [
-							{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
+							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
 						];
 					},
 					{
 						base: ["DOF"];
 						variants: [
-							{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
+							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
 						];
 					},
 					{
 						base: ["CHROMATIC_ABERRATION"];
 						variants: [
-							{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
+							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
 						];
 					},
 					{
 						base: ["LENS_FLARES"];
 						variants: [
-							{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
+							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
 						];
 					},
 					{
 						base: ["TONEMAP"];
 						variants: [
-							{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
+							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
 						];
 					},
 					{
 						base: ["MOTION_BLUR"];
 						variants: [
 							{ defines: ["", "LOW_PRECISION_VELOCITY"]; type: "or"; },
-							{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
+							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
 						];
 					},
 					{
@@ -170,7 +176,7 @@
 						variants: [
 							{ defines: ["", "HORIZONTAL"]; type: "or"; },
 							{ defines: ["", "BLUR_TYPE_5", "BLUR_TYPE_9", "BLUR_TYPE_13"]; type: "or"; },
-							{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
+							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
 						];
 					}
 				];
