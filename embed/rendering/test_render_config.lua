@@ -1,11 +1,11 @@
 use_low_precision_velocity = true
 
-motion_blur_enabled = true
+motion_blur_enabled = false
 depth_of_field_enabled = false
 chromatic_aberration_enabled = false
-bloom_enabled = false
+bloom_enabled = true
 
-bloom_blur_depth = 5
+bloom_blur_depth = 7
 
 -- Some functions
 function make_compute_pass(type, queue, shader)
@@ -46,7 +46,8 @@ end
 
 -- Loading test cubemap
 do
-    render_graph:add_static_resource("CasualDay4K", "/root/CasualDay4K.ktx2")
+    render_graph:add_static_resource("CasualDay4K", "/root/embed/rendering/textures/CasualDay4K.ktx2")
+    render_graph:add_static_resource("LensDirtMask", "/root/embed/rendering/textures/DirtMaskTextureExample.png")
 end
 
 -- GI targets
@@ -264,21 +265,21 @@ function compute_bloom(input_target, output_target)
 
     -- index 10
     -- Starting from brightness detection pass
-    do 
-        local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:brightdetect")
-
-        pass_ci:add_workgroup_size_by_rt("bloom_target", true)
-
-        pass_ci:bind_read_resource("sampler_color", input_target)
-        pass_ci:bind_write_resource("write_color", "brightness_target")
-
-        render_graph:add_render_pass("brightdetect_pass", pass_ci)
-    end
+    --do 
+    --    local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:brightdetect")
+    --
+    --    pass_ci:add_workgroup_size_by_rt("bloom_target", true)
+    --
+    --    pass_ci:bind_read_resource("sampler_color", input_target)
+    --    pass_ci:bind_write_resource("write_color", "brightness_target")
+    --
+    --    render_graph:add_render_pass("brightdetect_pass", pass_ci)
+    --end
 
     -- Begin downsampling
     do
         local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:downsample:FIRST_PASS")
-        pass_ci:bind_read_resource("sampler_color", "brightness_target")
+        pass_ci:bind_read_resource("sampler_color", input_target)
 
         render_graph:push_debug_marker("Downsample", 0xffff33ff, QueueType.graphics)
         for idx = 0, bloom_blur_depth - 1 do
@@ -316,6 +317,7 @@ function compute_bloom(input_target, output_target)
         pass_ci:bind_write_resource("write_color", output_target)
         pass_ci:bind_read_resource("sampler_color", input_target)
         pass_ci:bind_read_resource("bloom_color", "bloom_target", 0)
+        pass_ci:bind_read_resource("dirt_mask", "LensDirtMask")
 
         render_graph:add_render_pass("apply_bloom", pass_ci)
     end
@@ -367,23 +369,28 @@ function postprocess(target_1, target_2)
 	local input_target = target_1
     local output_target = target_2
 
+    local count = 0
+
     render_graph:push_debug_marker("Postprocess", 0xffff33ff, QueueType.graphics)
     -- Compute motion blur
     if motion_blur_enabled then
         compute_motion_blur(input_target, output_target)
         input_target, output_target = swap(input_target, output_target)
+        count = count + 1
     end
 
     if depth_of_field_enabled then
         -- Compute bokeh
         compute_dof(input_target, output_target)
         input_target, output_target = swap(input_target, output_target)
+        count = count + 1
     end
 
     -- Compute bloom
     if bloom_enabled then
         compute_bloom(input_target, output_target)
         input_target, output_target = swap(input_target, output_target)
+        count = count + 1
     end
 
     -- Compute chromatic aberration
@@ -396,16 +403,18 @@ function postprocess(target_1, target_2)
 
         render_graph:add_render_pass("apply_chromatic_aberration_pass", pass_ci)
         input_target, output_target = swap(input_target, output_target)
+        count = count + 1
     end
 
     do
         compute_tonemap(input_target, output_target)
         input_target, output_target = swap(input_target, output_target)
+        count = count + 1
     end
 
     render_graph:pop_debug_marker("Postprocess", QueueType.graphics)
 
-    return input_target
+    return count % 2 and input_target or output_target
 end
 
 

@@ -29,6 +29,7 @@
 		layout(set = 1, binding = 2) uniform sampler2D motion_vectors;
 #elif defined(BLOOM)
 		layout(set = 1, binding = 2) uniform sampler2D bloom_color;
+		layout(set = 1, binding = 3) uniform sampler2D dirt_mask;
 #elif defined(DOF)
 		layout(set = 1, binding = 2) uniform sampler2D bokeh_color;
 		layout(set = 1, binding = 3) uniform sampler2D depth_image;
@@ -80,7 +81,10 @@
 #elif defined(BLOOM)
 			if(postprocess.enable_bloom > 0)
 			{
-				color.rgb = mix(color.rgb, texture(bloom_color, uv).rgb, vec3(postprocess.b_bloom_strength));
+				const float dirtMaskIntensity = 1.0f;
+				vec3 dirt = texture(dirt_mask, vec2(uv.x, 1.f - uv.y)).rgb * dirtMaskIntensity;
+				vec3 bloom = texture(bloom_color, uv).rgb;
+				color.rgb = mix(color.rgb, bloom + bloom * dirt, vec3(postprocess.b_bloom_strength));
 			}
 #elif defined(DOF)
 			if(postprocess.enable_dof > 0)
