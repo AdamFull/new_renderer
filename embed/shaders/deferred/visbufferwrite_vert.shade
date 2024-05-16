@@ -86,9 +86,9 @@
 
 			vec4 clipSpacePos = viewProjection * localPos;
 
-			vec4 viewSpace = clipSpacePos / clipSpacePos.w;
-			viewSpace.x += ((subsampleIndex == 0) ? -texelSize.x : texelSize.x) * 0.5;
-			clipSpacePos = viewSpace * clipSpacePos.w;
+			//vec4 viewSpace = clipSpacePos / clipSpacePos.w;
+			//viewSpace.x += ((subsampleIndex == 0) ? -texelSize.x : texelSize.x) * 0.5;
+			//clipSpacePos = viewSpace * clipSpacePos.w;
 
 			drawID = meshData.callID + gl_DrawIDARB;
 			instanceID = gl_InstanceIndex;
