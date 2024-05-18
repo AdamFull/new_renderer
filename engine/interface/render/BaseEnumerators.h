@@ -45,6 +45,7 @@ namespace engine
 
 			// Special formats
 			eR11G11B10_UFLOAT,
+			eR10G10B10A2_UNORM,
 		};
 
 		enum class EResourceFlagBits

@@ -101,7 +101,8 @@ namespace engine
 				"rgb32_sfloat", EApiDataFormat::eRGB32_SFLOAT,
 				"rgba32_sfloat", EApiDataFormat::eRGBA32_SFLOAT,
 
-				"r11g11b10_ufloat", EApiDataFormat::eR11G11B10_UFLOAT
+				"r11g11b10_ufloat", EApiDataFormat::eR11G11B10_UFLOAT,
+				"rgb10a2_unorm", EApiDataFormat::eR10G10B10A2_UNORM
 			);
 			
 			// Register ETextureImageTypeFlagBits

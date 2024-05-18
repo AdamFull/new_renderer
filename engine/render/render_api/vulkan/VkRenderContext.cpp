@@ -1580,6 +1580,7 @@ u32 CVkRenderContext::getApiFormat(EApiDataFormat global_format)
 
 	// Special formats
 	case EApiDataFormat::eR11G11B10_UFLOAT: return VK_FORMAT_B10G11R11_UFLOAT_PACK32; break;
+	case EApiDataFormat::eR10G10B10A2_UNORM: return VK_FORMAT_A2B10G10R10_UNORM_PACK32; break;
 	default: return 0; break;
 	}
 }
