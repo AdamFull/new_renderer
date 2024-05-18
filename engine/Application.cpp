@@ -38,8 +38,8 @@ void CApplication::create()
 	FWindowCreateInfo window_ci{};
 	window_ci.name = "Vulkan App";
 	window_ci.flags = WINDOW_RESIZABLE_FLAG_BIT;
-	window_ci.width = 1920;
-	window_ci.height = 1080;
+	window_ci.width = 2560;
+	window_ci.height = 1600;
 
 	m_pWindowHandle = make_platform_window(window_ci);
 
