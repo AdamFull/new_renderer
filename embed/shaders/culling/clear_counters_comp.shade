@@ -33,7 +33,7 @@
 			if (global_draw_index >= frameData.cullerCount) 
 				return;
 
-			indirectCountBuffer.indices[global_draw_index] = 0;
+			setIndirectCount(global_draw_index, 0);
 		}
 	""";
 }

@@ -44,7 +44,7 @@
 
 			// First step
 			float upsampled_position = 2.0f * float(image_size.x) * uv.x - 0.5f;
-			float weight = fract(upsampled_position);
+			float weight = frac(upsampled_position);
 
 			// Second step
 			int mod2 = SMAAMod2(upsampled_position);

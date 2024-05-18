@@ -21,23 +21,32 @@
 
 	code: 
 	"""
-		layout(location = 0) out vec2 outTexcoord;
-		layout(location = 1) out vec4 outPos;
-		layout(location = 2) flat out uint materialID;
-		
-		layout(push_constant) uniform ShadowmapData
+		struct VSOutput 
+		{
+		    [[vk::location(0)]] float2 texcoord : TEXCOORD0;
+		    [[vk::location(1)]] nointerpolation uint materialID : TEXCOORD1;
+			[[vk::location(2)]] float4 pos : TEXCOORD2;
+		    float4 position : SV_Position;
+			uint layer : SV_RenderTargetArrayIndex;
+		};
+
+		struct FPushConstant
 		{
 			uint32_t callID;
 			int32_t shadowIndex;
 			int32_t layer;
-		} shadowData;
-		
-		void main()
-		{
-			uint32_t draw_index = shadowData.callID + gl_DrawIDARB + gl_InstanceIndex;
-			FGeometryBatch draw_info = drawInfoBuffer.infos[draw_index];
+		};
 
-			FSceneNode node = nodeBuffer.nodes[draw_info.nodeID];
+		[[vk::push_constant]]
+		FPushConstant shadowData;
+		
+		VSOutput main(VSMeshInput input, uint vertexID : SV_VertexID, uint instanceID : SV_InstanceID, uint drawID : SV_StartInstanceLocation) 
+		{
+			VSOutput output;
+			uint32_t draw_index = shadowData.callID + drawID + instanceID;
+			FGeometryBatch draw_info = getDrawInfo(draw_index);
+
+			FSceneNode node = getSceneNode(draw_info.nodeID);
 			mat4 modelMatrix = getModelMatrix(node.matrixOffset);
 
 #ifdef HAS_SKIN
@@ -49,50 +58,50 @@
 				u16vec4 joints = u16vec4(uint16_t(inJoints.x * 65535.0), uint16_t(inJoints.y * 65535.0), uint16_t(inJoints.z * 65535.0), uint16_t(inJoints.w * 65535.0));
 #endif
 				mat4 skinMat = 
-					inWeights.x * getMatrixById(node.skeletonID, joints.x) +
-					inWeights.y * getMatrixById(node.skeletonID, joints.y) +
-					inWeights.z * getMatrixById(node.skeletonID, joints.z) +
-					inWeights.w * getMatrixById(node.skeletonID, joints.w);
+					getMatrixById(node.skeletonID, joints.x) * input.Weights.x +
+					getMatrixById(node.skeletonID, joints.y) * input.Weights.y +
+					getMatrixById(node.skeletonID, joints.z) * input.Weights.z +
+					getMatrixById(node.skeletonID, joints.w) * input.Weights.w;
 					
-				modelMatrix = modelMatrix * skinMat;
+				modelMatrix = mul(skinMat, modelMatrix);
 			}
 #endif // HAS_SKIN
 		
-			outPos = modelMatrix * vec4(inPosition, 1.0);
-			outPos = vec4(outPos.xyz / outPos.w, 1.0);
+			output.pos = mul(float4(inPosition, 1.0), modelMatrix);
+			output.pos = float4(output.pos.xyz / output.pos.w, 1.0);
 
 #ifdef HAS_TEXCOORD
-			outTexcoord = inTexCoord;
+			output.texcoord = inTexCoord;
 #endif
 
 			mat4 viewProj;
 #if defined(CASCADED_SHADOW)
-			FCascadedShadowCommit shadow = cascadedShadowBuffer.shadows[shadowData.shadowIndex];
-			FCamera camera = cameraBuffer.cameras[draw_info.cameraID];
+			FCascadedShadowCommit shadow = getCascadedShadowCommit(shadowData.shadowIndex);
+			FCamera camera = getCamera(draw_info.cameraID);
 			viewProj = getViewProjectionMatrix(camera.matricesOffset);
-			gl_Layer = shadowData.shadowIndex * int(cascade_shadow_map_cascade_count) + shadowData.layer;
+			output.layer = shadowData.shadowIndex * int(cascade_shadow_map_cascade_count) + shadowData.layer;
 #elif defined(OMNI_SHADOW)
-			FOmniShadowCommit shadow = omniShadowBuffer.shadows[shadowData.shadowIndex];
-			FCamera camera = cameraBuffer.cameras[draw_info.cameraID];
+			FOmniShadowCommit shadow = getOmniShadowCommit(shadowData.shadowIndex);
+			FCamera camera = getCamera(draw_info.cameraID);
 			viewProj = getViewProjectionMatrix(camera.matricesOffset);
-			gl_Layer = shadowData.shadowIndex * 6 + shadowData.layer;
+			output.layer = shadowData.shadowIndex * 6 + shadowData.layer;
 #else
-			FSpotShadowCommit shadow = spotShadowBuffer.shadows[shadowData.shadowIndex];
-			FCamera camera = cameraBuffer.cameras[draw_info.cameraID];
+			FSpotShadowCommit shadow = getSpotShadowCommit(shadowData.shadowIndex);
+			FCamera camera = getCamera(draw_info.cameraID);
 			viewProj = getViewProjectionMatrix(camera.matricesOffset);
-			gl_Layer = shadowData.layer;
+			output.layer = shadowData.layer;
 #endif
 
-			materialID = ~0u;
+			output.materialID = ~0u;
 
-			FMesh mesh = meshBuffer.meshes[draw_info.meshID];
+			FMesh mesh = getMesh(draw_info.meshID);
 			if(mesh.materialID != ~0u)
 			{
-				materialID = mesh.materialID;
+				output.materialID = mesh.materialID;
 			}
 
 			
-			gl_Position = viewProj * outPos;
+			output.position = viewProj * output.pos;
 		}
 	""";
 }

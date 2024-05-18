@@ -21,58 +21,67 @@
 
 	code: 
 	"""
-		layout(location = 0) out flat uint drawID;
-		layout(location = 1) out flat uint instanceID;
-		layout(location = 2) out flat uint vboID;
-		layout(location = 3) out vec2 texCoord;
-		//layout(location = 5) smooth out vec4 currentPos;
-		//layout(location = 6) smooth out vec4 oldPos;
+		struct VSOutput 
+		{
+		    nointerpolation uint drawID : TEXCOORD0;
+		    nointerpolation uint instanceID : TEXCOORD1;
+		    nointerpolation uint vboID : TEXCOORD2;
+		    float2 texCoord : TEXCOORD3;
+		    // float4 currentPos : TEXCOORD5; // Uncomment if needed
+		    // float4 oldPos : TEXCOORD6; // Uncomment if needed
+		    float4 position : SV_Position;
+		};
 
-		layout(push_constant) uniform UniformMeshData
+		struct FPushConstant
 		{
 			uint32_t callID;
-		} meshData;
+		};
+
+		[[vk::push_constant]]
+		FPushConstant meshData;
 
 		out gl_PerVertex
 		{
 			vec4 gl_Position;
 		};
 
-		void main() 
+		VSOutput main(VSMeshInput input, uint vertexID : SV_VertexID, uint instanceID : SV_InstanceID, uint drawID : SV_StartInstanceLocation) 
 		{
-			uint32_t draw_index = meshData.callID + gl_DrawIDARB + gl_InstanceIndex;
-			FGeometryBatch draw_info = drawInfoBuffer.infos[draw_index];
+			VSOutput output;
+
+			uint32_t draw_index = meshData.callID + drawID + gl_InstanceIndex;
+			FGeometryBatch draw_info = getDrawInfo(draw_index);
 
 			// Calculate skinned matrix from weights and joint indices of the current vertex
-			FSceneNode node = nodeBuffer.nodes[draw_info.nodeID];
-			mat4 modelMatrix = getModelMatrix(node.matrixOffset);
-			//mat4 oldModelMatrix = getOldModelMatrix(node.matrixOffset)
+			FSceneNode node = getSceneNode(draw_info.nodeID);
+			float4x4 modelMatrix = getModelMatrix(node.matrixOffset);
+			//float4x4 oldModelMatrix = getOldModelMatrix(node.matrixOffset)
 
 #ifdef HAS_SKIN
 			if(node.skeletonID != ~0u)
 			{
 #if defined(JOINTS_8BIT)
-				u8vec4 joints = u8vec4(uint8_t(inJoints.x * 255.0), uint8_t(inJoints.y * 255.0), uint8_t(inJoints.z * 255.0), uint8_t(inJoints.w * 255.0));
+				u8vec4 joints = u8vec4(uint8_t(input.Joints.x * 255.0), uint8_t(input.Joints.y * 255.0), uint8_t(input.Joints.z * 255.0), uint8_t(input.Joints.w * 255.0));
 #elif defined(JOINTS_16BIT)
-				u16vec4 joints = u16vec4(uint16_t(inJoints.x * 65535.0), uint16_t(inJoints.y * 65535.0), uint16_t(inJoints.z * 65535.0), uint16_t(inJoints.w * 65535.0));
+				u16vec4 joints = u16vec4(uint16_t(input.Joints.x * 65535.0), uint16_t(input.Joints.y * 65535.0), uint16_t(input.Joints.z * 65535.0), uint16_t(input.Joints.w * 65535.0));
 #endif
-				mat4 skinMat = 
-					inWeights.x * getMatrixById(node.skeletonID, joints.x) +
-					inWeights.y * getMatrixById(node.skeletonID, joints.y) +
-					inWeights.z * getMatrixById(node.skeletonID, joints.z) +
-					inWeights.w * getMatrixById(node.skeletonID, joints.w);
+				float4x4 skinMat = 
+					mul(getMatrixById(node.skeletonID, joints.x), input.Weights.x) +
+					mul(getMatrixById(node.skeletonID, joints.y), input.Weights.y) +
+					mul(getMatrixById(node.skeletonID, joints.z), input.Weights.z) +
+					mul(getMatrixById(node.skeletonID, joints.w), input.Weights.w);
 		
-				modelMatrix = modelMatrix * skinMat;
+				modelMatrix = mul(skinMat, modelMatrix);
 				// oldModelMatrix = oldModelMatrix * skinMat; // TODO: should keep skinMat from prev frame
 			}
 #endif // HAS_SKIN
 
-			FCamera camera = cameraBuffer.cameras[draw_info.cameraID];
+			FCamera camera = getCamera(draw_info.cameraID);
 
 			vec4 localPos = modelMatrix * (vec4(inPosition, 1.0));
 			localPos = vec4(localPos.xyz / localPos.w, 1.0);
 
-			mat4 viewProjection = getViewProjectionMatrix(camera.matricesOffset);
+			float4x4 viewProjection = getViewProjectionMatrix(camera.matricesOffset);
 
 			//currentPos = viewProjection * localPos;
 
@@ -90,10 +99,10 @@
 			//viewSpace.x += ((subsampleIndex == 0) ? -texelSize.x : texelSize.x);
 			//clipSpacePos = viewSpace * clipSpacePos.w;
 
-			drawID = meshData.callID + gl_DrawIDARB;
-			instanceID = gl_InstanceIndex;
-			vboID = draw_info.vboID;
-			texCoord = inTexCoord;
+			output.drawID = meshData.callID + gl_DrawIDARB;
+			output.instanceID = gl_InstanceIndex;
+			output.vboID = draw_info.vboID;
+			output.texCoord = inTexCoord;
 
 			gl_Position = clipSpacePos;
 		}

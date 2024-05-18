@@ -35,18 +35,18 @@
 
 			if(materialID != ~0u)
 			{
-				FMaterial mat = materialBuffer.materials[materialID];
+				FMaterial mat = getMaterial(materialID);
 				if(mat.baseColorTexture != ~0u)
 				{
-					float smaple = sampleTexture2D(mat.baseColorTexture, 0, inUV).a;
+					float smaple = GlobSample2D(mat.baseColorTexture, inUV).a;
 					if(smaple < 1.f)
 						discard;
 				}
 			}
 
 #if defined(OMNI_SHADOW)
-		FOmniShadowCommit shadow = omniShadowBuffer.shadows[shadowData.shadowIndex];
-		FLightCommit light = lightsBuffer.lights[shadow.index];
+		FOmniShadowCommit shadow = getOmniShadowCommit(shadowData.shadowIndex);
+		FLightCommit light = getLight(shadow.index);
 
 		// get distance between fragment and light source
 		float lightDistance = length(inPos.xyz - light.position);

@@ -68,7 +68,7 @@
 			//vec3 meshletColor = getRandomColor(meshletIndex);
 			//FMeshlet meshlet = gb.mb.meshlets[meshletIndex];
 			//
-			//[[unroll]]
+			//[unroll]
 			//for (uint loopIndex = 0; loopIndex < kVertexLoops; ++loopIndex)
 			//{
 			//

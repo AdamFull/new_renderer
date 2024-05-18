@@ -48,13 +48,13 @@
 		void main() 
 		{
 			uint32_t draw_index = drawID + instanceID;
-			FGeometryBatch draw_info = drawInfoBuffer.infos[draw_index];
-			FMesh mesh = meshBuffer.meshes[draw_info.meshID];
-			FMaterial material = materialBuffer.materials[mesh.materialID];
+			FGeometryBatch draw_info = getDrawInfo(draw_index);
+			FMesh mesh = getMesh(draw_info.meshID);
+			FMaterial material = getMaterial(mesh.materialID);
 			
 			float opacity = material.baseColorFactor.a;
 			if(material.baseColorTexture != INVALID_HANDLE)
-				opacity = sampleTexture2D(material.baseColorTexture, 0, texCoord).a;
+				opacity = GlobSample2D(material.baseColorTexture, texCoord).a;
 			
 			if(material.alphaMode == 1u && opacity < material.alphaCutoff)
 				discard;

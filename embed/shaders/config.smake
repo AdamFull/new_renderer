@@ -1,5 +1,5 @@
 {
-	lang: "glsl";
+	lang: "hlsl";
 	target_api: "vk11";
 
 	include_directories: [ "includes" ];

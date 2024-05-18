@@ -101,6 +101,43 @@ namespace engine {
 		CONSTANT uint32_t light_type_spot = 3u;
 		CONSTANT uint32_t light_type_invalid = 0u;
 
+		// Base buffers
+		REGISTER_OBJECT_ARRAY_BUFFER(NodeBuffer, FSceneNode, nodes);
+		REGISTER_OBJECT_ARRAY_BUFFER(MatrixBuffer, MATRIX4, matrices);
+		REGISTER_OBJECT_ARRAY_BUFFER(MeshBuffer, FMesh, meshes);
+		REGISTER_OBJECT_ARRAY_BUFFER(MaterialBuffer, FMaterial, materials);
+
+		// Light buffers
+		REGISTER_OBJECT_ARRAY_BUFFER(Lights, FLightCommit, lights);
+
+		// Shadow buffers
+		REGISTER_OBJECT_ARRAY_BUFFER(CascadedShadows, FCascadedShadowCommit, shadows);
+		REGISTER_OBJECT_ARRAY_BUFFER(OmniShadows, FOmniShadowCommit, shadows);
+		REGISTER_OBJECT_ARRAY_BUFFER(SpotShadows, FSpotShadowCommit, shadows);
+
+		// Vertex buffer specific data
+		REGISTER_OBJECT_ARRAY_BUFFER(RawVertexBuffer, FRawVertex, vertices);
+		REGISTER_OBJECT_ARRAY_BUFFER(RawIndexBuffer, Index, indices);
+		REGISTER_OBJECT_ARRAY_BUFFER(MeshletBuffer, FMeshlet, meshlets);
+		REGISTER_OBJECT_ARRAY_BUFFER(MeshletVertexRemapBuffer, uint32_t, vertices);
+		REGISTER_OBJECT_ARRAY_BUFFER(MeshletBoundsBuffer, FGeometryDrawBounds, bounds);
+		REGISTER_OBJECT_ARRAY_BUFFER(MeshletTriangleBuffer, FTriangle, triangles);
+		REGISTER_OBJECT_ARRAY_BUFFER(MeshLodBuffer, FMeshLod, lods);
+
+		// GPU object representation
+		REGISTER_OBJECT_ARRAY_BUFFER(DrawInfoBuffer, FGeometryBatch, infos);
+		REGISTER_OBJECT_ARRAY_BUFFER(ClusterInfoBuffer, FClusterInfo, clusters);
+		REGISTER_OBJECT_ARRAY_BUFFER(FrustumSidesBuffer, VECTOR4, sides);
+
+		// Indirect data
+		REGISTER_OBJECT_ARRAY_BUFFER(IndirectTaskCommands, FDrawMeshIndirectData, commands);
+		REGISTER_OBJECT_ARRAY_BUFFER(IndirectIndexedComands, FDrawIndexedIndirectData, commands);
+		REGISTER_OBJECT_ARRAY_BUFFER(IndirectCountBuffer, uint32_t, indices);
+
+		// Other
+		REGISTER_OBJECT_ARRAY_BUFFER(TextureBindingRemap, uint32_t, remap);
+		REGISTER_OBJECT_ARRAY_BUFFER(CameraBuffer, FCamera, cameras);
+
 #if defined(INDEX_8BIT)
 #define Index uint8_t
 #elif defined(INDEX_16BIT)
@@ -551,11 +588,7 @@ namespace engine {
 		};
 
 
-#ifdef __cplusplus
 		struct FGlobalUniformData
-#else
-		layout(std140, set = 0, binding = 0) uniform GlobalUniformFrameData
-#endif
 		{
 			float dt;
 			uint32_t directionalLightCount;
@@ -568,53 +601,24 @@ namespace engine {
 			uint32_t rawCommandsCount;
 			uint32_t defaultCameraID;
 			uint32_t frameNumber;
-#ifdef __cplusplus
 		};
-#else
-		} frameData;
-#endif
 
-		// Base buffers
-		REGISTER_OBJECT_ARRAY_BUFFER(NodeBuffer, FSceneNode, nodes);
-		REGISTER_OBJECT_ARRAY_BUFFER(MatrixBuffer, MATRIX4, matrices);
-		REGISTER_OBJECT_ARRAY_BUFFER(MeshBuffer, FMesh, meshes);
-		REGISTER_OBJECT_ARRAY_BUFFER(MaterialBuffer, FMaterial, materials);
-
-		// Light buffers
-		REGISTER_OBJECT_ARRAY_BUFFER(Lights, FLightCommit, lights);
-
-		// Shadow buffers
-		REGISTER_OBJECT_ARRAY_BUFFER(CascadedShadows, FCascadedShadowCommit, shadows);
-		REGISTER_OBJECT_ARRAY_BUFFER(OmniShadows, FOmniShadowCommit, shadows);
-		REGISTER_OBJECT_ARRAY_BUFFER(SpotShadows, FSpotShadowCommit, shadows);
-
-		// Vertex buffer specific data
-		REGISTER_OBJECT_ARRAY_BUFFER(RawVertexBuffer, FRawVertex, vertices);
-		REGISTER_OBJECT_ARRAY_BUFFER(RawIndexBuffer, Index, indices);
-		REGISTER_OBJECT_ARRAY_BUFFER(MeshletBuffer, FMeshlet, meshlets);
-		REGISTER_OBJECT_ARRAY_BUFFER(MeshletVertexRemapBuffer, uint32_t, vertices);
-		REGISTER_OBJECT_ARRAY_BUFFER(MeshletBoundsBuffer, FGeometryDrawBounds, bounds);
-		REGISTER_OBJECT_ARRAY_BUFFER(MeshletTriangleBuffer, FTriangle, triangles);
-		REGISTER_OBJECT_ARRAY_BUFFER(MeshLodBuffer, FMeshLod, lods);
-
-		// GPU object representation
-		REGISTER_OBJECT_ARRAY_BUFFER(DrawInfoBuffer, FGeometryBatch, infos);
-		REGISTER_OBJECT_ARRAY_BUFFER(ClusterInfoBuffer, FClusterInfo, clusters);
-		REGISTER_OBJECT_ARRAY_BUFFER(FrustumSidesBuffer, VECTOR4, sides);
-
-		// Indirect data
-		REGISTER_OBJECT_ARRAY_BUFFER(IndirectTaskCommands, FDrawMeshIndirectData, commands);
-		REGISTER_OBJECT_ARRAY_BUFFER(IndirectIndexedComands, FDrawIndexedIndirectData, commands);
-		REGISTER_OBJECT_ARRAY_BUFFER(IndirectCountBuffer, uint32_t, indices);
-
-		// Other
-		REGISTER_OBJECT_ARRAY_BUFFER(TextureBindingRemap, uint32_t, remap);
-		REGISTER_OBJECT_ARRAY_BUFFER(CameraBuffer, FCamera, cameras);
+#ifndef __cplusplus
+#ifdef __glslang
+		layout(std140, set = 0, binding = 0) uniform GlobalUniformFrameData { FGlobalUniformData frameData; };
+#else // __glslang
+		[[vk::binding(0, 0)]]
+		cbuffer GlobalUniformFrameData : register(b0) { FGlobalUniformData frameData; };
+#endif // __glslang
+#endif // __cplusplus
 
 #ifdef __cplusplus
 		struct FGlobalBufferReference
-#else
+#elif defined(__glslang)
 		layout(std140, set = 0, binding = 1) uniform GlobalBufferReferences
+#else
+		[[vk::binding(0, 1)]]
+		cbuffer GlobalBufferReferences : register(b1)
 #endif
 		{
 			NodeBuffer nodeBuffer;
@@ -643,11 +647,7 @@ namespace engine {
 			CameraBuffer cameraBuffer;
 		};
 
-#ifdef __cplusplus
 		struct FGlobalPostProcessingData
-#else
-		layout(std140, set = 0, binding = 2) uniform GlobalPostProcessingData
-#endif
 		{
 			// fxaa
 			int enable_fxaa;
@@ -718,11 +718,16 @@ namespace engine {
 			// ao blur
 			int blur_range;
 			// ao blur
-#ifdef __cplusplus
 		};
-#else
-		} postprocess;
-#endif
+
+#ifndef __cplusplus
+#ifdef __glslang
+		layout(std140, set = 0, binding = 2) uniform GlobalPostProcessingData { FGlobalPostProcessingData postprocess; };
+#else // __glslang
+		[[vk::binding(0, 2)]]
+		cbuffer GlobalPostProcessingData : register(b2) { FGlobalPostProcessingData postprocess; };
+#endif // __glslang
+#endif // __cplusplus
 
 #ifdef __cplusplus
 	}

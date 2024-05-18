@@ -32,7 +32,7 @@
 
 			//if(postprocess.enable_film_grain > 0)
 			//{
-			//	float randomIntensity = fract(10000 * sin((gl_GlobalInvocationID.x + gl_GlobalInvocationID.y * frameData.dt) * 3.14));
+			//	float randomIntensity = frac(10000 * sin((gl_GlobalInvocationID.x + gl_GlobalInvocationID.y * frameData.dt) * 3.14));
 			//	color.rgb += postprocess.fg_amount * randomIntensity;
 			//}
 

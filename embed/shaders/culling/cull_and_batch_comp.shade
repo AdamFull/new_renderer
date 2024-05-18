@@ -24,10 +24,9 @@
 	"""
 		#define GROUP_SIZE 64
 
-		layout(local_size_x = GROUP_SIZE) in;
-
-		layout(std140, set = 1, binding = 0) uniform GeometryBuffers
-		{
+		[[vk::binding(1, 0)]]
+		cbuffer GeometryBuffers : register(b4) 
+		{ 
 			RawVertexBuffer vb;
 			RawIndexBuffer ib;
 			MeshletBuffer mb; 
@@ -40,11 +39,11 @@
 			uint32_t lastVertex;
 		};
 
-		bool checkObjectInFrustum(in vec3 min_extents, in vec3 max_extents, in uint32_t frustumID)
+		bool checkObjectInFrustum(in float3 min_extents, in float3 max_extents, in uint32_t frustumID)
 		{
 			for (uint32_t i = 0; i < 6; i++)
 			{
-				vec4 edge = frustumSidesBuffer.sides[frustumID * 6u + i];
+				float4 edge = getFrustumSides(frustumID * 6u + i);
 				if (   edge.x * min_extents.x + edge.y * min_extents.y + edge.z * min_extents.z + edge.w <= 0.0f
 					&& edge.x * max_extents.x + edge.y * min_extents.y + edge.z * min_extents.z + edge.w <= 0.0f
 					&& edge.x * min_extents.x + edge.y * max_extents.y + edge.z * min_extents.z + edge.w <= 0.0f
@@ -58,48 +57,49 @@
 			return true;
 		}
 
-		void main() 
+		[numthreads(GROUP_SIZE, 1, 1)]
+		void main(uint3 globalInvocationID : SV_DispatchThreadID)
 		{
-			uint global_draw_index = gl_GlobalInvocationID.x;
+			uint global_draw_index = globalInvocationID.x;
 
 			if (global_draw_index >= frameData.rawCommandsCount) 
 				return;
 
 			// Sample info about current draw comand
-			FGeometryBatch draw_info = rawDrawInfoBuffer.infos[global_draw_index];
-			FSceneNode node = nodeBuffer.nodes[draw_info.nodeID];
-			FMesh mesh = meshBuffer.meshes[draw_info.meshID];
-			mat4 model = getModelMatrix(node.matrixOffset);			
+			FGeometryBatch draw_info = getRawDrawInfo(global_draw_index);
+			FSceneNode node = getSceneNode(draw_info.nodeID);
+			FMesh mesh = getMesh(draw_info.meshID);
+			float4x4 model = getModelMatrix(node.matrixOffset);			
 
 			// output_index = culler_counter + draw_offset;
 			
 			// Calculate bounding box
-			vec4 min_extents = model * vec4(mesh.bounds.min, 1.f);
+			float4 min_extents = model * float4(mesh.bounds.min, 1.f);
 			min_extents.xyz /= min_extents.w;
 
-			vec4 max_extents = model * vec4(mesh.bounds.max, 1.f);
+			float4 max_extents = model * float4(mesh.bounds.max, 1.f);
 			max_extents.xyz /= max_extents.w;
 			
 			// Do frustum culling
 			//if(checkObjectInFrustum(min_extents.xyz * 1.1, min_extents.xyz * 1.1, draw_info.cameraID))
 			{	
 				uint draw_offset = frameData.maxCommandsCount * draw_info.cameraID;
-				uint culler_counter = atomicAdd(indirectCountBuffer.indices[draw_info.cameraID], 1);
+				uint culler_counter = IncrementIndirectCount(draw_info.cameraID);
 
 				uint output_index = draw_offset + culler_counter;
-				drawInfoBuffer.infos[output_index] = draw_info;
+				setDrawInfo(output_index, draw_info);
 			
 				// Construct  indirect draw command
 				// TODO: In future thing about how to implement instancing here
 
-				FCamera camera = cameraBuffer.cameras[draw_info.cameraID];
-				mat4 view_projection = getViewProjectionMatrix(camera.matricesOffset);
+				FCamera camera = getCamera(draw_info.cameraID);
+				float4x4 view_projection = getViewProjectionMatrix(camera.matricesOffset);
 				
-				vec4 min_clip = view_projection * min_extents;
-				vec4 max_clip = view_projection * max_extents;
+				float4 min_clip = view_projection * min_extents;
+				float4 max_clip = view_projection * max_extents;
 				
-				vec3 ndc_min = (min_clip.xyz / min_clip.w + 1.0f) * 0.5f;
-				vec3 ndc_max = (max_clip.xyz / max_clip.w + 1.0f) * 0.5f;
+				float3 ndc_min = (min_clip.xyz / min_clip.w + 1.0f) * 0.5f;
+				float3 ndc_max = (max_clip.xyz / max_clip.w + 1.0f) * 0.5f;
 				
 				vec2 min_pos = ndc_min.xy * camera.size;
 				vec2 max_pos = ndc_max.xy * camera.size;
@@ -112,7 +112,7 @@
 				uint lod_level = uint(log2(max(1.0f, lod_ratio * (mesh.lodCount - 1))));
 				lod_level = clamp(lod_level, 0, mesh.lodCount - 1);
 
-				FMeshLod lod = lb.lods[mesh.lodOffset + lod_level];
+				FMeshLod lod = lb.Get().lods[NonUniformResourceIndex(mesh.lodOffset + lod_level)];
 				
 				FDrawIndexedIndirectData indirect_command;
 				indirect_command.indexCount = lod.indexCount == 0 ? lastIndex : lod.indexCount;
@@ -121,7 +121,7 @@
 				indirect_command.vertexOffset = int(lod.firstVertex);
 				indirect_command.firstInstance = 0;
 
-				indirectCommandBuffer.commands[output_index] = indirect_command;
+				setDrawIndexedIndirectData(output_index, indirect_command);
 			}
 		}
 	""";

@@ -56,7 +56,7 @@
 			float c = 43758.5453f;
 			float dt= dot(co.xy ,vec2(a,b));
 			float sn= mod(dt,3.14f);
-			return fract(sin(sn) * c);
+			return frac(sin(sn) * c);
 		}
 
 		vec3 getPositionFromDepth(vec2 texcoord, float depth, mat4 invViewProjection)
