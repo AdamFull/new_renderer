@@ -92,23 +92,30 @@ void CRenderWorld::updateCamera(u64 camera_id, const glm::mat4& view, const glm:
 	matrices[inv_view_projection_matrix_offset] = glm::inverse(matrices[view_projection_matrix_offset]);							// inv_view_projection_matrix_offset
 	auto& camera_reprojection = matrices[reprojection_matrix_offset];																// reprojection_matrix_offset
 
-	camera_reprojection = matrices[inv_view_projection_matrix_offset] * matrices[prev_view_projection_matrix_offset];
+	camera_reprojection = matrices[prev_view_projection_matrix_offset] *  matrices[inv_view_projection_matrix_offset];
+	//camera_reprojection = matrices[inv_view_projection_matrix_offset] * matrices[prev_view_projection_matrix_offset];
+
+	float rcp_half_dimx = 2.0f / size.x;
+	float rcp_half_dimy = 2.0f / size.y;
+	float rcp_z_magic = znear / (zfar - znear);
+
+	bool linear_z = false;
 	
 	// Transform from uv to clip space: texcoord * 2 - 1
 	static glm::mat4 to_clip_space =
 	{
-		2.0f, 0, 0, 0,
-		0, -2.0f, 0, 0,
-		0, 0, 1, 0,
-		-1, 1, 0, 1
+		rcp_half_dimx, 0.0f, 0.0f, 0.0f,
+		0.0f, -rcp_half_dimy, 0.0f, 0.0f,
+		0.0f, 0.0f, linear_z ? rcp_z_magic : 1.0f, 0.0f,
+		- 1.0f, 1.0f, linear_z ? -rcp_z_magic : 0.0f, 1.0f
 	};
 	// Transform from clip to uv space: texcoord * 0.5 + 0.5
 	static glm::mat4 to_uv_space =
 	{
-		0.5f, 0, 0, 0,
-		0, -0.5f, 0, 0,
-		0, 0, 1, 0,
-		0.5f, 0.5f, 0, 1
+		1.0f / rcp_half_dimx, 0.0f, 0.0f, 0.0f,
+		0.0f, -1.0f / rcp_half_dimy, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f,
+		1.0f / rcp_half_dimx, 1.0f / rcp_half_dimy, 0.0f, 1.0f
 	};
 	camera_reprojection = to_clip_space * camera_reprojection * to_uv_space;
 
