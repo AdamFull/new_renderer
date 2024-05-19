@@ -125,7 +125,7 @@ utl::vector<uint32_t> CDXCCompiler::compile(const std::string& shader_code, cons
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 	std::wstring shader_name = converter.from_bytes(info.name);
 
-	std::vector<LPCWSTR> arguments = { L"-spirv" };
+	std::vector<LPCWSTR> arguments = { L"-spirv", L"-HV 2021" };
 
 	auto shader_lang = get_sh_language(info.type);
 	shader_lang = shader_lang + "_6_0";

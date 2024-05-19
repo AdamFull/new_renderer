@@ -559,6 +559,20 @@ namespace engine {
 			uint32_t frameNumber;
 		};
 
+		struct FDeviceBufferAddress
+		{
+			uint64_t stride;
+			uint64_t address;
+		};
+
+#ifdef __hlslang
+		template<typename _Ty>
+		_Ty LoadBuffer(in FDeviceBufferAddress buffer, uint64_t index) { return vk::RawBufferLoad<_Ty>(buffer.address + buffer.stride * index); }
+
+		template<typename _Ty>
+		void StoreBuffer(in FDeviceBufferAddress buffer, uint64_t index, in _Ty value) { return vk::RawBufferStore<_Ty>(buffer.address + buffer.stride * index, value); }
+#endif
+
 #ifndef __cplusplus
 #ifdef __glslang
 		layout(std140, set = 0, binding = 0) uniform GlobalUniformFrameData { FGlobalUniformData frameData; };
@@ -577,30 +591,30 @@ namespace engine {
 		cbuffer GlobalBufferReferences : register(b1)
 #endif
 		{
-			uint64_t nodeBuffer;
-			uint64_t matrixBuffer;
-			uint64_t meshBuffer;
+			FDeviceBufferAddress nodeBuffer;
+			FDeviceBufferAddress matrixBuffer;
+			FDeviceBufferAddress meshBuffer;
 
-			uint64_t materialBuffer;
+			FDeviceBufferAddress materialBuffer;
 		
-			uint64_t lightsBuffer;
+			FDeviceBufferAddress lightsBuffer;
 		
-			uint64_t cascadedShadowBuffer;
-			uint64_t omniShadowBuffer;
-			uint64_t spotShadowBuffer;
+			FDeviceBufferAddress cascadedShadowBuffer;
+			FDeviceBufferAddress omniShadowBuffer;
+			FDeviceBufferAddress spotShadowBuffer;
 		
-			uint64_t drawInfoBuffer;
-			uint64_t rawDrawInfoBuffer;
+			FDeviceBufferAddress drawInfoBuffer;
+			FDeviceBufferAddress rawDrawInfoBuffer;
 
-			uint64_t clusterBuffer;
-			uint64_t frustumSidesBuffer;
+			FDeviceBufferAddress clusterBuffer;
+			FDeviceBufferAddress frustumSidesBuffer;
 
-			uint64_t indirectCommandBuffer;
-			uint64_t indirectCountBuffer;
-			uint64_t indirectTaskCommandBuffer;
+			FDeviceBufferAddress indirectCommandBuffer;
+			FDeviceBufferAddress indirectCountBuffer;
+			FDeviceBufferAddress indirectTaskCommandBuffer;
 
-			uint64_t textureRemapBuffer;
-			uint64_t cameraBuffer;
+			FDeviceBufferAddress textureRemapBuffer;
+			FDeviceBufferAddress cameraBuffer;
 		};
 
 		struct FGlobalPostProcessingData

@@ -47,11 +47,11 @@
 #endif // VERTEX_SHADER
 
 	// Bindless texture
-	[[vk::combinedImageSampler]][[vk::binding(0, 3)]] Texture2D globalTextures[] : register(t0);
-	[[vk::combinedImageSampler]][[vk::binding(0, 3)]] SamplerState globalTextures_sampler[] : register(s0);
+	[[vk::combinedImageSampler]][[vk::binding(0, 3)]] Texture2D globalTextures[];
+	[[vk::combinedImageSampler]][[vk::binding(0, 3)]] SamplerState globalTextures_sampler[];
 
-	#define GET_GLOB_TEXTURE_2D(texture_index) globalTextures[NonUniformResourceIndex(textureRemapBuffer.Get().remap[texture_index])]
-	#define GET_GLOB_SAMPLER_2D(texture_index) globalTextures_sampler[NonUniformResourceIndex(textureRemapBuffer.Get().remap[texture_index])]
+	#define GET_GLOB_TEXTURE_2D(texture_index) globalTextures[NonUniformResourceIndex(LoadBuffer<uint32_t>(textureRemapBuffer, texture_index))]
+	#define GET_GLOB_SAMPLER_2D(texture_index) globalTextures_sampler[NonUniformResourceIndex(LoadBuffer<uint32_t>(textureRemapBuffer, texture_index))]
 
 	inline float4 GlobSample2D(uint texture_index, float2 texcoord, uint2 offset = 0) { return GET_GLOB_TEXTURE_2D(texture_index).Sample(GET_GLOB_SAMPLER_2D(texture_index), texcoord, offset); }
 	inline float4 GlobSampleLod2D(uint texture_index, float2 texcoord, float level, uint2 offset = 0) { return GET_GLOB_TEXTURE_2D(texture_index).SampleLevel(GET_GLOB_SAMPLER_2D(texture_index), texcoord, level, offset); }
@@ -65,12 +65,12 @@
 	#define TEX2DGRADOFFSET(TextureName, texcoord, ddx, ddy, offset) TextureName.SampleGrad(TextureName##_sampler, texcoord, ddx, ddy, offset)
 
 	// Base global object getters
-	inline FSceneNode GetSceneNode(in uint32_t index) { return nodeBuffer.get().nodes[NonUniformResourceIndex(index)]; }
-	inline void SetSceneNode(in uint32_t index, in FSceneNode node) { nodeBuffer.get().nodes[NonUniformResourceIndex(index)] = node; }
+	inline FSceneNode GetSceneNode(in uint32_t index) { return LoadBuffer<FSceneNode>(nodeBuffer, index); }
+	inline void SetSceneNode(in uint32_t index, in FSceneNode node) { StoreBuffer<FSceneNode>(nodeBuffer, index, node); }
 
 	// Matrix getters
-	inline float4x4 GetMatrixById(uint global_offset, uint local_offset) { return vk::RawBufferLoad<float4x4>(matrixBuffer + 64 * (global_offset + local_offset)); }
-	inline void SetMatrixById(uint global_offset, uint local_offset, in float4x4 matrix) { vk::RawBufferStore(matrixBuffer + 64 * (global_offset + local_offset), matrix); }
+	inline float4x4 GetMatrixById(uint global_offset, uint local_offset) { return LoadBuffer<float4x4>(matrixBuffer, global_offset + local_offset); }
+	inline void SetMatrixById(uint global_offset, uint local_offset, in float4x4 matrix) { StoreBuffer<float4x4>(matrixBuffer, global_offset + local_offset, matrix); }
 
 	inline float4x4 GetModelMatrix(uint global_offset) { return GetMatrixById(global_offset, model_matrix_offset); }
 	inline float4x4 GetOldModelMatrix(uint global_offset) { return GetMatrixById(global_offset, old_model_matrix_offset); }
@@ -83,46 +83,46 @@
 	inline float4x4 GetInvViewProjectionMatrix(uint global_offset) { return GetMatrixById(global_offset, inv_view_projection_matrix_offset); }
 	inline float4x4 GetReprojectionMatrix(uint global_offset) { return GetMatrixById(global_offset, reprojection_matrix_offset); }
 
-	inline FMesh GetMesh(uint index) { return meshBuffer.Get().meshes[NonUniformResourceIndex(index)]; }
-	inline void SetMesh(uint index, in FMesh mesh) { meshBuffer.Get().meshes[NonUniformResourceIndex(index)] = mesh; }
+	inline FMesh GetMesh(uint index) { return LoadBuffer<FMesh>(meshBuffer, index); }
+	inline void SetMesh(uint index, in FMesh mesh) { StoreBuffer<FMesh>(meshBuffer, index, mesh); }
 
-	inline FMaterial GetMaterial(uint index) { return materialBuffer.Get().materials[NonUniformResourceIndex(index)]; }
-	inline void SetMaterial(uint index, in FMaterial material) { return materialBuffer.Get().materials[NonUniformResourceIndex(index)] = material; }
+	inline FMaterial GetMaterial(uint index) { return LoadBuffer<FMaterial>(materialBuffer, index); }
+	inline void SetMaterial(uint index, in FMaterial material) { return StoreBuffer<FMaterial>(materialBuffer, index, material); }
 
-	inline FLightCommit GetLight(uint index) { return lightsBuffer.Get().lights[NonUniformResourceIndex(index)]; }
-	inline void SetLight(uint index, in FLightCommit light) { lightsBuffer.Get().lights[NonUniformResourceIndex(index)] = light; }
+	inline FLightCommit GetLight(uint index) { return LoadBuffer<FLightCommit>(lightsBuffer, index); }
+	inline void SetLight(uint index, in FLightCommit light) { StoreBuffer<FLightCommit>(lightsBuffer, index, light); }
 	
 	// Shadow getters
-	inline FCascadedShadowCommit GetCascadedShadowCommit(uint index) { return cascadedShadowBuffer.Get().shadows[NonUniformResourceIndex(index)]; }
-	inline void SetCascadedShadowCommit(uint index, in FCascadedShadowCommit commit) { cascadedShadowBuffer.Get().shadows[NonUniformResourceIndex(index)] = commit; }
+	inline FCascadedShadowCommit GetCascadedShadowCommit(uint index) { return LoadBuffer<FCascadedShadowCommit>(cascadedShadowBuffer, index); }
+	inline void SetCascadedShadowCommit(uint index, in FCascadedShadowCommit commit) { StoreBuffer<FCascadedShadowCommit>(cascadedShadowBuffer, index, commit); }
 
-	inline FOmniShadowCommit GetOmniShadowCommit(uint index) { return omniShadowBuffer.Get().shadows[NonUniformResourceIndex(index)]; }
-	inline void SetOmniShadowCommit(uint index, in FOmniShadowCommit commit) { omniShadowBuffer.Get().shadows[NonUniformResourceIndex(index)] = commit; }
+	inline FOmniShadowCommit GetOmniShadowCommit(uint index) { return LoadBuffer<FOmniShadowCommit>(omniShadowBuffer, index); }
+	inline void SetOmniShadowCommit(uint index, in FOmniShadowCommit commit) { StoreBuffer<FOmniShadowCommit>(omniShadowBuffer, index, commit); }
 
-	inline FSpotShadowCommit GetSpotShadowCommit(uint index) { return spotShadowBuffer.Get().shadows[NonUniformResourceIndex(index)]; }
-	inline void SetSpotShadowCommit(uint index, in FSpotShadowCommit commit) { spotShadowBuffer.Get().shadows[NonUniformResourceIndex(index)] = commit; }
+	inline FSpotShadowCommit GetSpotShadowCommit(uint index) { return LoadBuffer<FSpotShadowCommit>(spotShadowBuffer, index); }
+	inline void SetSpotShadowCommit(uint index, in FSpotShadowCommit commit) { StoreBuffer<FSpotShadowCommit>(spotShadowBuffer, index, commit); }
 
-	inline FGeometryBatch GetDrawInfo(uint index) { return drawInfoBuffer.Get().infos[NonUniformResourceIndex(index)]; }
-	inline void SetDrawInfo(uint index, in FGeometryBatch batch) { drawInfoBuffer.Get().infos[NonUniformResourceIndex(index)] = batch; }
+	inline FGeometryBatch GetDrawInfo(uint index) { return LoadBuffer<FGeometryBatch>(drawInfoBuffer, index); }
+	inline void SetDrawInfo(uint index, in FGeometryBatch batch) { StoreBuffer<FGeometryBatch>(drawInfoBuffer, index, batch); }
 
-	inline FGeometryBatch GetRawDrawInfo(uint index) { return rawDrawInfoBuffer.Get().infos[NonUniformResourceIndex(index)]; }
-	inline void SetRawDrawInfo(uint index, in FGeometryBatch batch) { rawDrawInfoBuffer.Get().infos[NonUniformResourceIndex(index)] = batch; }
+	inline FGeometryBatch GetRawDrawInfo(uint index) { return LoadBuffer<FGeometryBatch>(rawDrawInfoBuffer, index); }
+	inline void SetRawDrawInfo(uint index, in FGeometryBatch batch) { StoreBuffer<FGeometryBatch>(rawDrawInfoBuffer, index, batch); }
 
-	inline float4 GetFrustumSides(uint index) { return frustumSidesBuffer.Get().sides[NonUniformResourceIndex(index)]; }
-	inline void SetFrustumSides(uint index, in float4 side) { frustumSidesBuffer.Get().sides[NonUniformResourceIndex(index)] = side; }
+	inline float4 GetFrustumSides(uint index) { return LoadBuffer<float4>(frustumSidesBuffer, index); }
+	inline void SetFrustumSides(uint index, in float4 side) { StoreBuffer<float4>(frustumSidesBuffer, index, side); }
 
-	inline FDrawIndexedIndirectData GetDrawIndexedIndirectData(uint index) { return indirectCommandBuffer.Get().commands[NonUniformResourceIndex(index)]; }
-	inline void SetDrawIndexedIndirectData(uint index, in FDrawIndexedIndirectData indirect_data) { indirectCommandBuffer.Get().commands[NonUniformResourceIndex(index)] = indirect_data; }
+	inline FDrawIndexedIndirectData GetDrawIndexedIndirectData(uint index) { return LoadBuffer<FDrawIndexedIndirectData>(indirectCommandBuffer, index); }
+	inline void SetDrawIndexedIndirectData(uint index, in FDrawIndexedIndirectData indirect_data) { StoreBuffer<FDrawIndexedIndirectData>(indirectCommandBuffer, index, indirect_data); }
 
-	inline uint32_t getIndirectCount(uint index) { return indirectCountBuffer.Get().indices[NonUniformResourceIndex(index)]; }
-	inline void SetIndirectCount(uint index, in uint32_t value) { indirectCountBuffer.Get().indices[NonUniformResourceIndex(index)] = value; }
-	inline uint32_t IncrementIndirectCount(uint index) { uint32_t output; InterlockedAdd(indirectCountBuffer.Get().indices[NonUniformResourceIndex(index)], 1, output); return output; }
+	inline uint32_t getIndirectCount(uint index) { return LoadBuffer<uint32_t>(indirectCountBuffer, index); }
+	inline void SetIndirectCount(uint index, in uint32_t value) { StoreBuffer<uint32_t>(indirectCountBuffer, index, value); }
+	inline uint32_t IncrementIndirectCount(uint index) { uint32_t output; InterlockedAdd(LoadBuffer<uint32_t>(indirectCountBuffer, index), 1, output); return output; }
 
-	inline uint32_t GetTextureRemapIndex(uint index) { return textureRemapBuffer.Get().remap[NonUniformResourceIndex(index)]; } 
-	inline void SetTextureRemapIndex(uint index, in uint32_t value) { textureRemapBuffer.Get().remap[NonUniformResourceIndex(index)] = value; } 
+	inline uint32_t GetTextureRemapIndex(uint index) { return LoadBuffer<uint32_t>(textureRemapBuffer, index); } 
+	inline void SetTextureRemapIndex(uint index, in uint32_t value) { StoreBuffer<uint32_t>(textureRemapBuffer, index, value); } 
 	
-	inline FCamera GetCamera(uint index) { return cameraBuffer.Get().cameras[NonUniformResourceIndex(index)]; }
-	inline void SetCamera(uint index, in FCamera camera) { cameraBuffer.Get().cameras[NonUniformResourceIndex(index)] = camera; }
+	inline FCamera GetCamera(uint index) { return LoadBuffer<FCamera>(cameraBuffer, index); }
+	inline void SetCamera(uint index, in FCamera camera) { StoreBuffer<FCamera>(cameraBuffer, index, camera); }
 
 	inline float3 GetCameraPosition(uint matricesOffset)
 	{

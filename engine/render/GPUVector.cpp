@@ -91,6 +91,11 @@ const std::unique_ptr<IBufferObject>& CGPUVector::buffer()
 	return m_pBuffer;
 }
 
+FDeviceBufferAddress CGPUVector::addressInfo()
+{
+	return { m_pBuffer->instanceSize(), m_pBuffer->address() };
+}
+
 void CGPUVector::allocate(const std::string& name, EBufferUsageFlags flag, u64 stride, u64 capacity)
 {
 	FBufferCreateInfo buffer_ci{};

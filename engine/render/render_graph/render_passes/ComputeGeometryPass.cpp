@@ -64,13 +64,13 @@ void CComputeGeometryPass::_execute(const FComputeFrameInfo& frame_info)
 					auto& vertex_buffer = last_vbo->getGeometryBuffer(EGeometryBufferIndices::eVertexBuffer);
 					auto& index_buffer = last_vbo->getGeometryBuffer(EGeometryBufferIndices::eIndexBuffer);
 
-					buffers->set(shader_bindings::vb_label, vertex_buffer->buffer()->address());
-					buffers->set(shader_bindings::ib_label, index_buffer->buffer()->address());
-					buffers->set(shader_bindings::mb_label, last_vbo->getGeometryBuffer(EGeometryBufferIndices::eMeshletBuffer)->buffer()->address());
-					buffers->set(shader_bindings::vrb_label, last_vbo->getGeometryBuffer(EGeometryBufferIndices::eVertexRemapBuffer)->buffer()->address());
-					buffers->set(shader_bindings::bb_label, last_vbo->getGeometryBuffer(EGeometryBufferIndices::eBoundsBuffer)->buffer()->address());
-					buffers->set(shader_bindings::tb_label, last_vbo->getGeometryBuffer(EGeometryBufferIndices::eTriangleBuffer)->buffer()->address());
-					buffers->set(shader_bindings::lb_label, last_vbo->getGeometryBuffer(EGeometryBufferIndices::eLodBuffer)->buffer()->address());
+					buffers->set(shader_bindings::vb_label, vertex_buffer->addressInfo());
+					buffers->set(shader_bindings::ib_label, index_buffer->addressInfo());
+					buffers->set(shader_bindings::mb_label, last_vbo->getGeometryBuffer(EGeometryBufferIndices::eMeshletBuffer)->addressInfo());
+					buffers->set(shader_bindings::vrb_label, last_vbo->getGeometryBuffer(EGeometryBufferIndices::eVertexRemapBuffer)->addressInfo());
+					buffers->set(shader_bindings::bb_label, last_vbo->getGeometryBuffer(EGeometryBufferIndices::eBoundsBuffer)->addressInfo());
+					buffers->set(shader_bindings::tb_label, last_vbo->getGeometryBuffer(EGeometryBufferIndices::eTriangleBuffer)->addressInfo());
+					buffers->set(shader_bindings::lb_label, last_vbo->getGeometryBuffer(EGeometryBufferIndices::eLodBuffer)->addressInfo());
 				}
 
 				shader->flushDescriptors();

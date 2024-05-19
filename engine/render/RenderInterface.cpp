@@ -187,28 +187,28 @@ void CRenderInterface::render(f32 dt)
 	frame_gata_uniform.binding = 0u;
 
 	FGlobalBufferReference global_references{};
-	global_references.nodeBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eNodeBuffer)->buffer()->address();
-	global_references.matrixBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eMatricesBuffer)->buffer()->address();
-	global_references.materialBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eMaterialBuffer)->buffer()->address();
-	global_references.meshBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eMeshBuffer)->buffer()->address();
+	global_references.nodeBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eNodeBuffer)->addressInfo();
+	global_references.matrixBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eMatricesBuffer)->addressInfo();
+	global_references.materialBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eMaterialBuffer)->addressInfo();
+	global_references.meshBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eMeshBuffer)->addressInfo();
 
-	global_references.lightsBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eLightBuffer)->buffer()->address();
+	global_references.lightsBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eLightBuffer)->addressInfo();
 
-	global_references.cascadedShadowBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eCascadedShadowBuffer)->buffer()->address();
-	global_references.omniShadowBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eOmniShadowBuffer)->buffer()->address();
-	global_references.spotShadowBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eSpotShadowBuffer)->buffer()->address();
+	global_references.cascadedShadowBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eCascadedShadowBuffer)->addressInfo();
+	global_references.omniShadowBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eOmniShadowBuffer)->addressInfo();
+	global_references.spotShadowBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eSpotShadowBuffer)->addressInfo();
 
-	global_references.drawInfoBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eDrawMeshInfoBuffer)->buffer()->address();
-	global_references.rawDrawInfoBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eRawDrawMeshInfoBuffer)->buffer()->address();
-	global_references.clusterBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eClusterInfoBuffer)->buffer()->address();
-	global_references.frustumSidesBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eFrustumBuffer)->buffer()->address();
+	global_references.drawInfoBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eDrawMeshInfoBuffer)->addressInfo();
+	global_references.rawDrawInfoBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eRawDrawMeshInfoBuffer)->addressInfo();
+	global_references.clusterBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eClusterInfoBuffer)->addressInfo();
+	global_references.frustumSidesBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eFrustumBuffer)->addressInfo();
 
-	global_references.indirectCommandBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eDrawCommandBuffer)->buffer()->address();
-	global_references.indirectCountBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eCountBuffer)->buffer()->address();
-	global_references.indirectTaskCommandBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eMeshCommandBuffer)->buffer()->address();
+	global_references.indirectCommandBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eDrawCommandBuffer)->addressInfo();
+	global_references.indirectCountBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eCountBuffer)->addressInfo();
+	global_references.indirectTaskCommandBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eMeshCommandBuffer)->addressInfo();
 
-	global_references.textureRemapBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eTextureRemapBuffer)->buffer()->address();
-	global_references.cameraBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eCameraBuffer)->buffer()->address();
+	global_references.textureRemapBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eTextureRemapBuffer)->addressInfo();
+	global_references.cameraBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eCameraBuffer)->addressInfo();
 
 	auto& buffer_ref_uniform = update_info.uniforms[shader_bindings::global_buffer_references];
 	buffer_ref_uniform.data = &global_references;

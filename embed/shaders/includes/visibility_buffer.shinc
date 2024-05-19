@@ -10,13 +10,13 @@
 		[[vk::binding(1, 4)]]
 		cbuffer GeometryBuffers : register(b4) 
 		{
-			RawVertexBuffer vb;
-			RawIndexBuffer ib;
-			MeshletBuffer mb; 
-			MeshletVertexRemapBuffer vrb;
-			MeshletBoundsBuffer bb;
-			MeshletTriangleBuffer tb;
-			MeshLodBuffer lb;
+			FDeviceBufferAddress vb;
+			FDeviceBufferAddress ib;
+			FDeviceBufferAddress mb; 
+			FDeviceBufferAddress vrb;
+			FDeviceBufferAddress bb;
+			FDeviceBufferAddress tb;
+			FDeviceBufferAddress lb;
 		};
 
 		// Visbuffer structures
@@ -101,14 +101,14 @@
 			uint triVert3IndexBufferPosition = (primID * 3 + 2) + startIndex;	
 
 			// Now get vertex index from index buffer (eg, 17, 41, 32)
-			Index triVert0Index = ib.Get().indices[NonUniformResourceIndex(triVert1IndexBufferPosition)];
-			Index triVert1Index = ib.Get().indices[NonUniformResourceIndex(triVert2IndexBufferPosition)];
-			Index triVert2Index = ib.Get().indices[NonUniformResourceIndex(triVert3IndexBufferPosition)];
+			Index triVert0Index = ib.Get<Index>(triVert1IndexBufferPosition);
+			Index triVert1Index = ib.Get<Index>(triVert2IndexBufferPosition);
+			Index triVert2Index = ib.Get<Index>(triVert3IndexBufferPosition);
 
 			// Load vertex data of the 3 control points
-			vertices[0] = vb.Get().vertices[NonUniformResourceIndex(draw_command.vertexOffset + triVert0Index)];
-			vertices[1] = vb.Get().vertices[NonUniformResourceIndex(draw_command.vertexOffset + triVert1Index)];
-			vertices[2] = vb.Get().vertices[NonUniformResourceIndex(draw_command.vertexOffset + triVert2Index)];
+			vertices[0] = vb.Get<FRawVertex>(draw_command.vertexOffset + triVert0Index);
+			vertices[1] = vb.Get<FRawVertex>(draw_command.vertexOffset + triVert1Index);
+			vertices[2] = vb.Get<FRawVertex>(draw_command.vertexOffset + triVert2Index);
 
 			return vertices;
 		}

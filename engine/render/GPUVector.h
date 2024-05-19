@@ -15,6 +15,7 @@ namespace engine
 			void upload() override;
 			void resize(u64 new_size) override;
 			const std::unique_ptr<IBufferObject>& buffer() override;
+			FDeviceBufferAddress addressInfo() override;
 		protected:
 			void allocate(const std::string& name, EBufferUsageFlags flag, u64 stride, u64 capacity) override;
 		private:

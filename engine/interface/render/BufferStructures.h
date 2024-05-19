@@ -195,6 +195,7 @@ namespace engine
 			virtual void upload() = 0;
 			virtual void resize(u64 new_size) = 0;
 			virtual const std::unique_ptr<IBufferObject>& buffer() = 0;
+			virtual FDeviceBufferAddress addressInfo() = 0;
 		protected:
 			inline u64 to_bytes(u64 size) const { return size * m_elemSize; }
 
