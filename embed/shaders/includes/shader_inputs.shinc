@@ -3,12 +3,15 @@
 
 	code: 
 	"""
-	#define REGISTER_TEXTURE_SLOT(SetIndex, BindingIndex, TextureType, SamplerType, TextureName, RegisterIndex) \
-	[[vk::combinedImageSampler]][[vk::binding(SetIndex, BindingIndex)]] TextureType TextureName : register(t##RegisterIndex); \
-	[[vk::combinedImageSampler]][[vk::binding(SetIndex, BindingIndex)]] SamplerType TextureName##_sampler : register(s##RegisterIndex);
+	#define REGISTER_IMAGE_SLOT(SetIndex, BindingIndex, TextureType, TextureName) \
+	[[vk::binding(SetIndex, BindingIndex)]] TextureType TextureName;
 
-	#define REGISTER_UAV_SLOT(SetIndex, BindingIndex, TextureType, TextureName, RegisterIndex) \
-	[[vk::binding(SetIndex, BindingIndex)]] TextureType TextureName : register(u##RegisterIndex);
+	#define REGISTER_TEXTURE_SLOT(SetIndex, BindingIndex, TextureType, SamplerType, TextureName) \
+	[[vk::combinedImageSampler]][[vk::binding(SetIndex, BindingIndex)]] TextureType TextureName; \
+	[[vk::combinedImageSampler]][[vk::binding(SetIndex, BindingIndex)]] SamplerType TextureName##_sampler;
+
+	#define REGISTER_UAV_SLOT(SetIndex, BindingIndex, TextureType, TextureName) \
+	[[vk::binding(SetIndex, BindingIndex)]] TextureType TextureName;
 
 	// Vertex inputs
 #ifdef VERTEX_SHADER
@@ -50,9 +53,9 @@
 	#define GET_GLOB_TEXTURE_2D(texture_index) globalTextures[NonUniformResourceIndex(textureRemapBuffer.Get().remap[texture_index])]
 	#define GET_GLOB_SAMPLER_2D(texture_index) globalTextures_sampler[NonUniformResourceIndex(textureRemapBuffer.Get().remap[texture_index])]
 
-	float4 GlobSample2D(uint texture_index, float2 texcoord, uint2 offset = 0) { return GET_GLOB_TEXTURE_2D(texture_index).Sample(GET_GLOB_SAMPLER_2D(texture_index), texcoord, offset); }
-	float4 GlobSampleLod2D(uint texture_index, float2 texcoord, float level, uint2 offset = 0) { return GET_GLOB_TEXTURE_2D(texture_index).SampleLevel(GET_GLOB_SAMPLER_2D(texture_index), texcoord, level, offset); }
-	float4 GlobSampleGrad2D(uint texture_index, float2 texcoord, float2 ddx, float2 ddy, uint2 offset = 0) { return GET_GLOB_TEXTURE_2D(texture_index).SampleGrad(GET_GLOB_SAMPLER_2D(texture_index), texcoord, ddx, ddy, offset); }
+	inline float4 GlobSample2D(uint texture_index, float2 texcoord, uint2 offset = 0) { return GET_GLOB_TEXTURE_2D(texture_index).Sample(GET_GLOB_SAMPLER_2D(texture_index), texcoord, offset); }
+	inline float4 GlobSampleLod2D(uint texture_index, float2 texcoord, float level, uint2 offset = 0) { return GET_GLOB_TEXTURE_2D(texture_index).SampleLevel(GET_GLOB_SAMPLER_2D(texture_index), texcoord, level, offset); }
+	inline float4 GlobSampleGrad2D(uint texture_index, float2 texcoord, float2 ddx, float2 ddy, uint2 offset = 0) { return GET_GLOB_TEXTURE_2D(texture_index).SampleGrad(GET_GLOB_SAMPLER_2D(texture_index), texcoord, ddx, ddy, offset); }
 
 	#define TEX2D(TextureName, texcoord) TextureName.Sample(TextureName##_sampler, texcoord)
 	#define TEX2DOFFSET(TextureName, texcoord, offset) TextureName.Sample(TextureName##_sampler, texcoord, offset)
@@ -62,63 +65,70 @@
 	#define TEX2DGRADOFFSET(TextureName, texcoord, ddx, ddy, offset) TextureName.SampleGrad(TextureName##_sampler, texcoord, ddx, ddy, offset)
 
 	// Base global object getters
-	FSceneNode getSceneNode(in uint32_t index) { return nodeBuffer.get().nodes[NonUniformResourceIndex(index)]; }
-	void setSceneNode(in uint32_t index, in FSceneNode node) { nodeBuffer.get().nodes[NonUniformResourceIndex(index)] = node; }
+	inline FSceneNode GetSceneNode(in uint32_t index) { return nodeBuffer.get().nodes[NonUniformResourceIndex(index)]; }
+	inline void SetSceneNode(in uint32_t index, in FSceneNode node) { nodeBuffer.get().nodes[NonUniformResourceIndex(index)] = node; }
 
 	// Matrix getters
-	float4x4 getMatrixById(uint global_offset, uint local_offset) { return matrixBuffer.matrices[NonUniformResourceIndex(global_offset + local_offset)]; }
-	void setMatrixById(uint global_offset, uint local_offset, in float4x4 matrix) { matrixBuffer.matrices[NonUniformResourceIndex(global_offset + local_offset)] = matrix; }
+	inline float4x4 GetMatrixById(uint global_offset, uint local_offset) { return vk::RawBufferLoad<float4x4>(matrixBuffer + 64 * (global_offset + local_offset)); }
+	inline void SetMatrixById(uint global_offset, uint local_offset, in float4x4 matrix) { vk::RawBufferStore(matrixBuffer + 64 * (global_offset + local_offset), matrix); }
 
-	float4x4 getModelMatrix(uint global_offset) { return getMatrixById(global_offset, model_matrix_offset); }
-	float4x4 getOldModelMatrix(uint global_offset) { return getMatrixById(global_offset, old_model_matrix_offset); }
-	float4x4 getViewMatrix(uint global_offset) { return getMatrixById(global_offset, view_matrix_offset); }
-	float4x4 getInvViewMatrix(uint global_offset) { return getMatrixById(global_offset, inv_view_matrix_offset); }
-	float4x4 getProjectionMatrix(uint global_offset) { return getMatrixById(global_offset, projection_matrix_offset); }
-	float4x4 getInvProjectionMatrix(uint global_offset) { return getMatrixById(global_offset, inv_projection_matrix_offset); }
-	float4x4 getViewProjectionMatrix(uint global_offset) { return getMatrixById(global_offset, view_projection_matrix_offset); }
-	float4x4 getPrevViewProjectionMatrix(uint global_offset) { return getMatrixById(global_offset, prev_view_projection_matrix_offset); }
-	float4x4 getInvViewProjectionMatrix(uint global_offset) { return getMatrixById(global_offset, inv_view_projection_matrix_offset); }
-	float4x4 getReprojectionMatrix(uint global_offset) { return getMatrixById(global_offset, reprojection_matrix_offset); }
+	inline float4x4 GetModelMatrix(uint global_offset) { return GetMatrixById(global_offset, model_matrix_offset); }
+	inline float4x4 GetOldModelMatrix(uint global_offset) { return GetMatrixById(global_offset, old_model_matrix_offset); }
+	inline float4x4 GetViewMatrix(uint global_offset) { return GetMatrixById(global_offset, view_matrix_offset); }
+	inline float4x4 GetInvViewMatrix(uint global_offset) { return GetMatrixById(global_offset, inv_view_matrix_offset); }
+	inline float4x4 GetProjectionMatrix(uint global_offset) { return GetMatrixById(global_offset, projection_matrix_offset); }
+	inline float4x4 GetInvProjectionMatrix(uint global_offset) { return GetMatrixById(global_offset, inv_projection_matrix_offset); }
+	inline float4x4 GetViewProjectionMatrix(uint global_offset) { return GetMatrixById(global_offset, view_projection_matrix_offset); }
+	inline float4x4 GetPrevViewProjectionMatrix(uint global_offset) { return GetMatrixById(global_offset, prev_view_projection_matrix_offset); }
+	inline float4x4 GetInvViewProjectionMatrix(uint global_offset) { return GetMatrixById(global_offset, inv_view_projection_matrix_offset); }
+	inline float4x4 GetReprojectionMatrix(uint global_offset) { return GetMatrixById(global_offset, reprojection_matrix_offset); }
 
-	FMesh getMesh(uint index) { return meshBuffer.Get().meshes[NonUniformResourceIndex(index)]; }
-	void setMesh(uint index, in FMesh mesh) { meshBuffer.Get().meshes[NonUniformResourceIndex(index)] = mesh; }
+	inline FMesh GetMesh(uint index) { return meshBuffer.Get().meshes[NonUniformResourceIndex(index)]; }
+	inline void SetMesh(uint index, in FMesh mesh) { meshBuffer.Get().meshes[NonUniformResourceIndex(index)] = mesh; }
 
-	FMaterial getMaterial(uint index) { return materialBuffer.Get().materials[NonUniformResourceIndex(index)]; }
-	void setMaterial(uint index, in FMaterial material) { return materialBuffer.Get().materials[NonUniformResourceIndex(index)] = material; }
+	inline FMaterial GetMaterial(uint index) { return materialBuffer.Get().materials[NonUniformResourceIndex(index)]; }
+	inline void SetMaterial(uint index, in FMaterial material) { return materialBuffer.Get().materials[NonUniformResourceIndex(index)] = material; }
 
-	FLightCommit getLight(uint index) { return lightsBuffer.Get().lights[NonUniformResourceIndex(index)]; }
-	void setLight(uint index, in FLightCommit light) { lightsBuffer.Get().lights[NonUniformResourceIndex(index)] = light; }
+	inline FLightCommit GetLight(uint index) { return lightsBuffer.Get().lights[NonUniformResourceIndex(index)]; }
+	inline void SetLight(uint index, in FLightCommit light) { lightsBuffer.Get().lights[NonUniformResourceIndex(index)] = light; }
 	
 	// Shadow getters
-	FCascadedShadowCommit getCascadedShadowCommit(uint index) { return cascadedShadowBuffer.Get().shadows[NonUniformResourceIndex(index)]; }
-	void setCascadedShadowCommit(uint index, in FCascadedShadowCommit commit) { cascadedShadowBuffer.Get().shadows[NonUniformResourceIndex(index)] = commit; }
+	inline FCascadedShadowCommit GetCascadedShadowCommit(uint index) { return cascadedShadowBuffer.Get().shadows[NonUniformResourceIndex(index)]; }
+	inline void SetCascadedShadowCommit(uint index, in FCascadedShadowCommit commit) { cascadedShadowBuffer.Get().shadows[NonUniformResourceIndex(index)] = commit; }
 
-	FOmniShadowCommit getOmniShadowCommit(uint index) { return omniShadowBuffer.Get().shadows[NonUniformResourceIndex(index)]; }
-	void setOmniShadowCommit(uint index, in FOmniShadowCommit commit) { omniShadowBuffer.Get().shadows[NonUniformResourceIndex(index)] = commit; }
+	inline FOmniShadowCommit GetOmniShadowCommit(uint index) { return omniShadowBuffer.Get().shadows[NonUniformResourceIndex(index)]; }
+	inline void SetOmniShadowCommit(uint index, in FOmniShadowCommit commit) { omniShadowBuffer.Get().shadows[NonUniformResourceIndex(index)] = commit; }
 
-	FSpotShadowCommit getSpotShadowCommit(uint index) { return spotShadowBuffer.Get().shadows[NonUniformResourceIndex(index)]; }
-	void setSpotShadowCommit(uint index, in FSpotShadowCommit commit) { spotShadowBuffer.Get().shadows[NonUniformResourceIndex(index)] = commit; }
+	inline FSpotShadowCommit GetSpotShadowCommit(uint index) { return spotShadowBuffer.Get().shadows[NonUniformResourceIndex(index)]; }
+	inline void SetSpotShadowCommit(uint index, in FSpotShadowCommit commit) { spotShadowBuffer.Get().shadows[NonUniformResourceIndex(index)] = commit; }
 
-	FGeometryBatch getDrawInfo(uint index) { return drawInfoBuffer.Get().infos[NonUniformResourceIndex(index)]; }
-	void setDrawInfo(uint index, in FGeometryBatch batch) { drawInfoBuffer.Get().infos[NonUniformResourceIndex(index)] = batch; }
+	inline FGeometryBatch GetDrawInfo(uint index) { return drawInfoBuffer.Get().infos[NonUniformResourceIndex(index)]; }
+	inline void SetDrawInfo(uint index, in FGeometryBatch batch) { drawInfoBuffer.Get().infos[NonUniformResourceIndex(index)] = batch; }
 
-	FGeometryBatch getRawDrawInfo(uint index) { return rawDrawInfoBuffer.Get().infos[NonUniformResourceIndex(index)]; }
-	void setRawDrawInfo(uint index, in FGeometryBatch batch) { rawDrawInfoBuffer.Get().infos[NonUniformResourceIndex(index)] = batch; }
+	inline FGeometryBatch GetRawDrawInfo(uint index) { return rawDrawInfoBuffer.Get().infos[NonUniformResourceIndex(index)]; }
+	inline void SetRawDrawInfo(uint index, in FGeometryBatch batch) { rawDrawInfoBuffer.Get().infos[NonUniformResourceIndex(index)] = batch; }
 
-	float4 getFrustumSides(uint index) { return frustumSidesBuffer.Get().sides[NonUniformResourceIndex(index)]; }
-	void setFrustumSides(uint index, in float4 side) { frustumSidesBuffer.Get().sides[NonUniformResourceIndex(index)] = side; }
+	inline float4 GetFrustumSides(uint index) { return frustumSidesBuffer.Get().sides[NonUniformResourceIndex(index)]; }
+	inline void SetFrustumSides(uint index, in float4 side) { frustumSidesBuffer.Get().sides[NonUniformResourceIndex(index)] = side; }
 
-	FDrawIndexedIndirectData getDrawIndexedIndirectData(uint index) { return indirectCommandBuffer.Get().commands[NonUniformResourceIndex(index)]; }
-	void setDrawIndexedIndirectData(uint index, in FDrawIndexedIndirectData indirect_data) { indirectCommandBuffer.Get().commands[NonUniformResourceIndex(index)] = indirect_data; }
+	inline FDrawIndexedIndirectData GetDrawIndexedIndirectData(uint index) { return indirectCommandBuffer.Get().commands[NonUniformResourceIndex(index)]; }
+	inline void SetDrawIndexedIndirectData(uint index, in FDrawIndexedIndirectData indirect_data) { indirectCommandBuffer.Get().commands[NonUniformResourceIndex(index)] = indirect_data; }
 
-	uint32_t getIndirectCount(uint index) { return indirectCountBuffer.Get().indices[NonUniformResourceIndex(index)]; }
-	void setIndirectCount(uint index, in uint32_t value) { indirectCountBuffer.Get().indices[NonUniformResourceIndex(index)] = value; }
-	uint32_t IncrementIndirectCount(uint index) { uint32_t output; InterlockedAdd(indirectCountBuffer.Get().indices[NonUniformResourceIndex(index)], 1, output); return output; }
+	inline uint32_t getIndirectCount(uint index) { return indirectCountBuffer.Get().indices[NonUniformResourceIndex(index)]; }
+	inline void SetIndirectCount(uint index, in uint32_t value) { indirectCountBuffer.Get().indices[NonUniformResourceIndex(index)] = value; }
+	inline uint32_t IncrementIndirectCount(uint index) { uint32_t output; InterlockedAdd(indirectCountBuffer.Get().indices[NonUniformResourceIndex(index)], 1, output); return output; }
 
-	uint32_t getTextureRemapIndex(uint index) { return textureRemapBuffer.Get().remap[NonUniformResourceIndex(index)]; } 
-	void setTextureRemapIndex(uint index, in uint32_t value) { textureRemapBuffer.Get().remap[NonUniformResourceIndex(index)] = value; } 
+	inline uint32_t GetTextureRemapIndex(uint index) { return textureRemapBuffer.Get().remap[NonUniformResourceIndex(index)]; } 
+	inline void SetTextureRemapIndex(uint index, in uint32_t value) { textureRemapBuffer.Get().remap[NonUniformResourceIndex(index)] = value; } 
 	
-	FCamera getCamera(uint index) { return cameraBuffer.Get().cameras[NonUniformResourceIndex(index)]; }
-	void setCamera(uint index, in FCamera camera) { cameraBuffer.Get().cameras[NonUniformResourceIndex(index)] = camera; }
+	inline FCamera GetCamera(uint index) { return cameraBuffer.Get().cameras[NonUniformResourceIndex(index)]; }
+	inline void SetCamera(uint index, in FCamera camera) { cameraBuffer.Get().cameras[NonUniformResourceIndex(index)] = camera; }
+
+	inline float3 GetCameraPosition(uint matricesOffset)
+	{
+	    float4x4 inv_view = GetInvViewMatrix(matricesOffset);
+	    float3 camera_pos = float3(inv_view._m30, inv_view._m31, inv_view._m32);
+	    return camera_pos;
+	}
 	""";
 }

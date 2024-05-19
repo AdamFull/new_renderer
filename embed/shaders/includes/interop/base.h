@@ -1,6 +1,7 @@
 #ifndef INTEROP_BASE_H
 #define INTEROP_BASE_H
 
+#define REGISTER_OBJECT_ARRAY_BUFFER(BufferTypeName, DataType, ArrayName) typedef uint64_t BufferTypeName
 #ifdef __cplusplus
 
 #include <glm/glm.hpp>
@@ -20,8 +21,6 @@
 #define MATRIX2 glm::mat2
 #define MATRIX3 glm::mat3
 #define MATRIX4 glm::mat4
-
-#define REGISTER_OBJECT_ARRAY_BUFFER(BufferTypeName, DataType, ArrayName) typedef uint64_t BufferTypeName
 #else // __cplusplus
 
 #define INVALID_HANDLE ~0u
@@ -39,8 +38,6 @@
 #define MATRIX2 mat2
 #define MATRIX3 mat3
 #define MATRIX4 mat4
-
-#define REGISTER_OBJECT_ARRAY_BUFFER(BufferTypeName, DataType, ArrayName) layout(std430, buffer_reference, buffer_reference_align = 8) readonly buffer BufferTypeName { DataType ArrayName[]; };
 #else // __glslang
 #define CONSTANT static const
 
@@ -50,10 +47,6 @@
 #define MATRIX2 float2x2
 #define MATRIX3 float3x3
 #define MATRIX4 float4x4
-
-#define REGISTER_OBJECT_ARRAY_BUFFER(BufferTypeName, DataType, ArrayName) \
-		struct F##BufferTypeName##_Array{ DataType ArrayName[]; }; \
-		typedef vk::BufferPointer<F##BufferTypeName##_Array> BufferTypeName
 #endif // __glslang
 #endif // __cplusplus
 
@@ -100,43 +93,6 @@ namespace engine {
 		CONSTANT uint32_t light_type_point = 2u;
 		CONSTANT uint32_t light_type_spot = 3u;
 		CONSTANT uint32_t light_type_invalid = 0u;
-
-		// Base buffers
-		REGISTER_OBJECT_ARRAY_BUFFER(NodeBuffer, FSceneNode, nodes);
-		REGISTER_OBJECT_ARRAY_BUFFER(MatrixBuffer, MATRIX4, matrices);
-		REGISTER_OBJECT_ARRAY_BUFFER(MeshBuffer, FMesh, meshes);
-		REGISTER_OBJECT_ARRAY_BUFFER(MaterialBuffer, FMaterial, materials);
-
-		// Light buffers
-		REGISTER_OBJECT_ARRAY_BUFFER(Lights, FLightCommit, lights);
-
-		// Shadow buffers
-		REGISTER_OBJECT_ARRAY_BUFFER(CascadedShadows, FCascadedShadowCommit, shadows);
-		REGISTER_OBJECT_ARRAY_BUFFER(OmniShadows, FOmniShadowCommit, shadows);
-		REGISTER_OBJECT_ARRAY_BUFFER(SpotShadows, FSpotShadowCommit, shadows);
-
-		// Vertex buffer specific data
-		REGISTER_OBJECT_ARRAY_BUFFER(RawVertexBuffer, FRawVertex, vertices);
-		REGISTER_OBJECT_ARRAY_BUFFER(RawIndexBuffer, Index, indices);
-		REGISTER_OBJECT_ARRAY_BUFFER(MeshletBuffer, FMeshlet, meshlets);
-		REGISTER_OBJECT_ARRAY_BUFFER(MeshletVertexRemapBuffer, uint32_t, vertices);
-		REGISTER_OBJECT_ARRAY_BUFFER(MeshletBoundsBuffer, FGeometryDrawBounds, bounds);
-		REGISTER_OBJECT_ARRAY_BUFFER(MeshletTriangleBuffer, FTriangle, triangles);
-		REGISTER_OBJECT_ARRAY_BUFFER(MeshLodBuffer, FMeshLod, lods);
-
-		// GPU object representation
-		REGISTER_OBJECT_ARRAY_BUFFER(DrawInfoBuffer, FGeometryBatch, infos);
-		REGISTER_OBJECT_ARRAY_BUFFER(ClusterInfoBuffer, FClusterInfo, clusters);
-		REGISTER_OBJECT_ARRAY_BUFFER(FrustumSidesBuffer, VECTOR4, sides);
-
-		// Indirect data
-		REGISTER_OBJECT_ARRAY_BUFFER(IndirectTaskCommands, FDrawMeshIndirectData, commands);
-		REGISTER_OBJECT_ARRAY_BUFFER(IndirectIndexedComands, FDrawIndexedIndirectData, commands);
-		REGISTER_OBJECT_ARRAY_BUFFER(IndirectCountBuffer, uint32_t, indices);
-
-		// Other
-		REGISTER_OBJECT_ARRAY_BUFFER(TextureBindingRemap, uint32_t, remap);
-		REGISTER_OBJECT_ARRAY_BUFFER(CameraBuffer, FCamera, cameras);
 
 #if defined(INDEX_8BIT)
 #define Index uint8_t
@@ -621,30 +577,30 @@ namespace engine {
 		cbuffer GlobalBufferReferences : register(b1)
 #endif
 		{
-			NodeBuffer nodeBuffer;
-			MatrixBuffer matrixBuffer;
-			MeshBuffer meshBuffer;
+			uint64_t nodeBuffer;
+			uint64_t matrixBuffer;
+			uint64_t meshBuffer;
 
-			MaterialBuffer materialBuffer;
+			uint64_t materialBuffer;
 		
-			Lights lightsBuffer;
+			uint64_t lightsBuffer;
 		
-			CascadedShadows cascadedShadowBuffer;
-			OmniShadows omniShadowBuffer;
-			SpotShadows spotShadowBuffer;
+			uint64_t cascadedShadowBuffer;
+			uint64_t omniShadowBuffer;
+			uint64_t spotShadowBuffer;
 		
-			DrawInfoBuffer drawInfoBuffer;
-			DrawInfoBuffer rawDrawInfoBuffer;
+			uint64_t drawInfoBuffer;
+			uint64_t rawDrawInfoBuffer;
 
-			ClusterInfoBuffer clusterBuffer;
-			FrustumSidesBuffer frustumSidesBuffer;
+			uint64_t clusterBuffer;
+			uint64_t frustumSidesBuffer;
 
-			IndirectIndexedComands indirectCommandBuffer;
-			IndirectCountBuffer indirectCountBuffer;
-			IndirectTaskCommands indirectTaskCommandBuffer;
+			uint64_t indirectCommandBuffer;
+			uint64_t indirectCountBuffer;
+			uint64_t indirectTaskCommandBuffer;
 
-			TextureBindingRemap textureRemapBuffer;
-			CameraBuffer cameraBuffer;
+			uint64_t textureRemapBuffer;
+			uint64_t cameraBuffer;
 		};
 
 		struct FGlobalPostProcessingData

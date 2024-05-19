@@ -23,19 +23,6 @@
 					shader_name: "visbuffershade_comp";
 				}
 			];
-		},
-		{
-			name: "write_mesh";
-			sources: [
-				{
-					type: "task";
-					shader_name: "visbufferwrite_task";
-				},
-				{
-					type: "mesh";
-					shader_name: "visbufferwrite_mesh";
-				}
-			];
 		}
 	];
 

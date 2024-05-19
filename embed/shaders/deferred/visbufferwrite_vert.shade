@@ -23,10 +23,10 @@
 	"""
 		struct VSOutput 
 		{
-		    nointerpolation uint drawID : TEXCOORD0;
-		    nointerpolation uint instanceID : TEXCOORD1;
-		    nointerpolation uint vboID : TEXCOORD2;
-		    float2 texCoord : TEXCOORD3;
+		    [[vk::location(0)]] nointerpolation uint drawID : TEXCOORD0;
+		    [[vk::location(1)]] nointerpolation uint instanceID : TEXCOORD1;
+		    [[vk::location(2)]] nointerpolation uint vboID : TEXCOORD2;
+		    [[vk::location(3)]] float2 texCoord : TEXCOORD3;
 		    // float4 currentPos : TEXCOORD5; // Uncomment if needed
 		    // float4 oldPos : TEXCOORD6; // Uncomment if needed
 		    float4 position : SV_Position;
@@ -42,7 +42,7 @@
 
 		out gl_PerVertex
 		{
-			vec4 gl_Position;
+			float4 gl_Position;
 		};
 
 		VSOutput main(VSMeshInput input, uint vertexID : SV_VertexID, uint instanceID : SV_InstanceID, uint drawID : SV_StartInstanceLocation) 
@@ -50,12 +50,12 @@
 			VSOutput output;
 
 			uint32_t draw_index = meshData.callID + drawID + gl_InstanceIndex;
-			FGeometryBatch draw_info = getDrawInfo(draw_index);
+			FGeometryBatch draw_info = GetDrawInfo(draw_index);
 
 			// Calculate skinned matrix from weights and joint indices of the current vertex
-			FSceneNode node = getSceneNode(draw_info.nodeID);
-			float4x4 modelMatrix = getModelMatrix(node.matrixOffset);
-			//float4x4 oldModelMatrix = getOldModelMatrix(node.matrixOffset)
+			FSceneNode node = GetSceneNode(draw_info.nodeID);
+			float4x4 modelMatrix = GetModelMatrix(node.matrixOffset);
+			//float4x4 oldModelMatrix = GetOldModelMatrix(node.matrixOffset)
 
 #ifdef HAS_SKIN
 			if(node.skeletonID != ~0u)
@@ -66,36 +66,36 @@
 				u16vec4 joints = u16vec4(uint16_t(input.Joints.x * 65535.0), uint16_t(input.Joints.y * 65535.0), uint16_t(input.Joints.z * 65535.0), uint16_t(input.Joints.w * 65535.0));
 #endif
 				float4x4 skinMat = 
-					mul(getMatrixById(node.skeletonID, joints.x), input.Weights.x) +
-					mul(getMatrixById(node.skeletonID, joints.y), input.Weights.y) +
-					mul(getMatrixById(node.skeletonID, joints.z), input.Weights.z) +
-					mul(getMatrixById(node.skeletonID, joints.w), input.Weights.w);
+					GetMatrixById(node.skeletonID, joints.x) * input.Weights.x +
+					GetMatrixById(node.skeletonID, joints.y) * input.Weights.y +
+					GetMatrixById(node.skeletonID, joints.z) * input.Weights.z +
+					GetMatrixById(node.skeletonID, joints.w) * input.Weights.w;
 		
 				modelMatrix = mul(skinMat, modelMatrix);
 				// oldModelMatrix = oldModelMatrix * skinMat; // TODO: should keep skinMat from prev frame
 			}
 #endif // HAS_SKIN
 
-			FCamera camera = getCamera(draw_info.cameraID);
+			FCamera camera = GetCamera(draw_info.cameraID);
 
-			vec4 localPos = modelMatrix * (vec4(inPosition, 1.0));
-			localPos = vec4(localPos.xyz / localPos.w, 1.0);
+			float4 localPos = modelMatrix * (float4(input.Pos, 1.0));
+			localPos = float4(localPos.xyz / localPos.w, 1.0);
 
-			float4x4 viewProjection = getViewProjectionMatrix(camera.matricesOffset);
+			float4x4 viewProjection = GetViewProjectionMatrix(camera.matricesOffset);
 
 			//currentPos = viewProjection * localPos;
 
-			//vec4 oldLocalPos = oldModelMatrix * vec4(inPosition, 1.0);
-			//oldLocalPos = vec4(oldLocalPos.xyz / oldLocalPos.w, 1.0);
+			//float4 oldLocalPos = oldModelMatrix * float4(input.Pos, 1.0);
+			//oldLocalPos = float4(oldLocalPos.xyz / oldLocalPos.w, 1.0);
 			
 			//oldPos = viewProjection * oldLocalPos;
 
 			uint subsampleIndex = frameData.frameNumber % 2;
-			vec2 texelSize = 0.25f / camera.size;
+			float2 texelSize = 0.25f / camera.size;
 
-			vec4 clipSpacePos = viewProjection * localPos;
+			float4 clipSpacePos = mul(localPos, viewProjection);
 
-			//vec4 viewSpace = clipSpacePos / clipSpacePos.w;
+			//float4 viewSpace = clipSpacePos / clipSpacePos.w;
 			//viewSpace.x += ((subsampleIndex == 0) ? -texelSize.x : texelSize.x);
 			//clipSpacePos = viewSpace * clipSpacePos.w;
 
@@ -104,7 +104,9 @@
 			output.vboID = draw_info.vboID;
 			output.texCoord = inTexCoord;
 
-			gl_Position = clipSpacePos;
+			output.position = clipSpacePos;
+
+			return output;
 		}
 	""";
 }

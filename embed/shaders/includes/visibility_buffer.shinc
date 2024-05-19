@@ -4,8 +4,8 @@
 	code: 
 	"""
 		// Input buffers
-		REGISTER_TEXTURE_SLOT(1, 1, Texture2D<uint>, SamplerState, visbuffer_geometry, 4);
-		REGISTER_TEXTURE_SLOT(1, 2, Texture2D<uint>, SamplerState, visbuffer_vboinst, 5);
+		REGISTER_TEXTURE_SLOT(1, 1, Texture2D<uint>, SamplerState, visbuffer_geometry);
+		REGISTER_TEXTURE_SLOT(1, 2, Texture2D<uint>, SamplerState, visbuffer_vboinst);
 
 		[[vk::binding(1, 4)]]
 		cbuffer GeometryBuffers : register(b4) 
@@ -76,8 +76,8 @@
 			uint32_t instID = vboinstData >> 16;
 
 			uint32_t draw_index = res.drawID + instID;
-			FGeometryBatch draw_info = getDrawInfo(draw_index);
-			FMesh mesh = getMesh(draw_info.meshID);
+			FGeometryBatch draw_info = GetDrawInfo(draw_index);
+			FMesh mesh = GetMesh(draw_info.meshID);
 			
 			res.objID = draw_info.nodeID;
 			res.matID = mesh.materialID;
@@ -90,7 +90,7 @@
 		{
 			FRawVertex[3] vertices;
 
-			FDrawIndexedIndirectData draw_command = getDrawIndexedIndirectData(drawID);
+			FDrawIndexedIndirectData draw_command = GetDrawIndexedIndirectData(drawID);
 
 			// Index of the first vertex of this draw call's geometry
 			uint startIndex = draw_command.firstIndex;
@@ -183,8 +183,8 @@
 			float3 position2 = float3(vertices[2].px, vertices[2].py, vertices[2].pz);
 
 			// Load mesh model matrix
-			FSceneNode node = getSceneNode(visbuffer.objID);
-			float4x4 model = getModelMatrix(node.matrixOffset);
+			FSceneNode node = GetSceneNode(visbuffer.objID);
+			float4x4 model = GetModelMatrix(node.matrixOffset);
 			
 #ifdef HAS_SKIN
 			if(node.skeletonID != ~0u)
@@ -199,17 +199,17 @@
 				u16vec4 joints;
 #endif
 				float4x4 skinMat = 
-					mul(getMatrixById(node.skeletonID, joints.x), vertices[0].wx) +
-					mul(getMatrixById(node.skeletonID, joints.y), vertices[0].wy) +
-					mul(getMatrixById(node.skeletonID, joints.z), vertices[0].wz) +
-					mul(getMatrixById(node.skeletonID, joints.w), vertices[0].ww);
+					GetMatrixById(node.skeletonID, joints.x) * vertices[0].wx +
+					GetMatrixById(node.skeletonID, joints.y) * vertices[0].wy +
+					GetMatrixById(node.skeletonID, joints.z) * vertices[0].wz +
+					GetMatrixById(node.skeletonID, joints.w) * vertices[0].ww;
 		
 				model = mul(skinMat, model);
 			}
 #endif // HAS_SKIN
 
-			FCamera camera = getCamera(visbuffer.cameraID);
-			float4x4 view_projection = getViewProjectionMatrix(camera.matricesOffset);
+			FCamera camera = GetCamera(visbuffer.cameraID);
+			float4x4 view_projection = GetViewProjectionMatrix(camera.matricesOffset);
 
 			// Transform positions to clip space
 			float4x4 mvp = mul(model, view_projection);
@@ -321,8 +321,8 @@
 		//		uint instID = vboinstData >> 16;
 		//
 		//		uint32_t draw_index = vb.drawID + instID;
-		//		FDrawMeshinfo draw_info = getDrawInfo(draw_index);
-		//		FMesh mesh = getMesh(draw_info.meshID);
+		//		FDrawMeshinfo draw_info = GetDrawInfo(draw_index);
+		//		FMesh mesh = GetMesh(draw_info.meshID);
 		//		
 		//		vb.objID = draw_info.nodeID;
 		//		vb.matID = mesh.materialID;

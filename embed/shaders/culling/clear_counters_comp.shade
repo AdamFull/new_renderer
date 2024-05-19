@@ -24,16 +24,15 @@
 	"""
 		#define GROUP_SIZE 1
 
-		layout(local_size_x = GROUP_SIZE) in;
-
-		void main() 
+		[numthreads(GROUP_SIZE, 1, 1)]
+		void main(uint3 dispatchThreadID : SV_DispatchThreadID) 
 		{
-			uint global_draw_index = gl_GlobalInvocationID.x;
+			uint global_draw_index = dispatchThreadID.x;
 
 			if (global_draw_index >= frameData.cullerCount) 
 				return;
 
-			setIndirectCount(global_draw_index, 0);
+			SetIndirectCount(global_draw_index, 0);
 		}
 	""";
 }

@@ -13,45 +13,46 @@
 	// TODO: add permute reject
 	code: 
 	"""
-		layout(local_size_x = 8, local_size_y = 8) in;
-		
-		layout(set = 1, binding = 0, rgba32f) uniform writeonly imageCube out_color;
-		layout(set = 1, binding = 1) uniform samplerCube sampler_color;
+		REGISTER_UAV_SLOT(1, 0, RWTexture2DArray<float4>, out_color);
+		REGISTER_TEXTURE_SLOT(1, 1, TextureCube<float4>, SamplerState, sampler_color);
 		
 		const float deltaPhi = (2.0f * PI) / 180.0f;
 		const float deltaTheta = (0.5f * PI) / 64.0f;
 		
-		void main() 
+		[numthreads(8, 8, 1)]
+		void main(uint3 dispatchThreadID : SV_DispatchThreadID, uint3 groupThreadID : SV_GroupThreadID, uint3 groupID : SV_GroupID) 
 		{
-			uvec2 image_size = imageSize(out_color);
+			uint2 image_size;
+			out_color.GetDimensions(image_size.x, image_size.y);
 
-			uvec2 px = uvec2(0, 0);
-			vec2 uv = vec2(0, 0);
-			if(swizzle_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, gl_WorkGroupID.xy, image_size, uv, px))
+			uint2 px = uint2(0, 0);
+			float2 uv = float2(0, 0);
+			if(swizzle_workgroups_8x8(dispatchThreadID.xy, groupThreadID.xy, groupID.xy, image_size, uv, px))
 				return;
 		
+			[unroll]
 			for (uint i = 0; i != 6; ++i) 
 			{
-				vec3 N = normalize(cubeDir(uv, i));
-				vec3 up = vec3(0.0f, 1.0f, 0.0f);
-				vec3 right = normalize(cross(up, N));
+				float3 N = normalize(cubeDir(uv, i));
+				float3 up = float3(0.0f, 1.0f, 0.0f);
+				float3 right = normalize(cross(up, N));
 				up = cross(N, right);
 		
-				vec3 colour = vec3(0.0f);
+				float3 colour = float3(0.0f);
 				uint sampleCount = 0u;
 		
 				for (float phi = 0.0f; phi < TWO_PI; phi += deltaPhi) 
 				{
 					for (float theta = 0.0f; theta < HALF_PI; theta += deltaTheta) 
 					{
-						vec3 tempVec = cos(phi) * right + sin(phi) * up;
-						vec3 sampleVector = cos(theta) * N + sin(theta) * tempVec;
-						colour += texture(sampler_color, sampleVector).rgb * cos(theta) * sin(theta);
+						float3 tempVec = cos(phi) * right + sin(phi) * up;
+						float3 sampleVector = cos(theta) * N + sin(theta) * tempVec;
+						colour += TEX2D(sampler_color, sampleVector).rgb * cos(theta) * sin(theta);
 						sampleCount++;
 					}
 				}
 		
-				imageStore(out_color, ivec3(px, i), vec4(PI * colour / float(sampleCount), 1.0f));
+				out_color[uint2(px, i)] = float4(PI * colour / float(sampleCount), 1.0f);
 			}
 		}
 	""";

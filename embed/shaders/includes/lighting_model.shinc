@@ -122,14 +122,15 @@
 			return normalize(tangentX * H.x + tangentY * H.y + normal * H.z);
 		}
 		
-		float3 prefilteredReflection(float3 R, float roughness, samplerCube prefiltered) 
+		float3 prefilteredReflection(float3 R, float roughness, TextureCube<float4> prefiltered, SamplerState sampler) 
 		{
-			float lod = roughness * float(textureQueryLevels(prefiltered));
-			float lodf = floor(lod);
-			float lodc = ceil(lod);
-			float3 a = pow(textureLod(prefiltered, R, lodf).rgb, float3(2.2f));
-			float3 b = pow(textureLod(prefiltered, R, lodc).rgb, float3(2.2f));
-			return lerp(a, b, lod - lodf);
+			float mipLevels = (float)prefiltered.GetMipLevels();
+    		float lod = roughness * mipLevels;
+    		float lodf = floor(lod);
+    		float lodc = ceil(lod);
+    		float3 a = pow(prefiltered.SampleLevel(sampler, R, lodf).rgb, float3(2.2f, 2.2f, 2.2f));
+    		float3 b = pow(prefiltered.SampleLevel(sampler, R, lodc).rgb, float3(2.2f, 2.2f, 2.2f));
+    		return lerp(a, b, lod - lodf);
 		}
 		
 		

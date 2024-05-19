@@ -19,42 +19,42 @@
 
 	code: 
 	"""
-		layout(local_size_x = 8, local_size_y = 8) in;
-
-		layout(set = 1, binding = 0) uniform writeonly image2D write_color;
-		layout(set = 1, binding = 1) uniform sampler2D depth_texture;
+		REGISTER_UAV_SLOT(1, 0, RWTexture2D<float2>, write_color);
+		REGISTER_TEXTURE_SLOT(1, 1, Texture2D<float>, SamplerState, depth_texture);
 		
-		void main()
+		[numthreads(8, 8, 1)]
+		void main(uint3 dispatchThreadID : SV_DispatchThreadID, uint3 groupThreadID : SV_GroupThreadID, uint3 groupID : SV_GroupID) 
 		{
-			uvec2 image_size = imageSize(write_color);
+			uint2 image_size;
+			write_color.GetDimensions(image_size.x, image_size.y);
 		
-			uvec2 px = uvec2(gl_GlobalInvocationID.xy);
-			vec2 uv = vec2(px) / vec2(image_size);;
-			if(swizzle_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, gl_WorkGroupID.xy, image_size, uv, px))
+			uint2 px = uint2(gl_GlobalInvocationID.xy);
+			float2 uv = float2(px) / float2(image_size);;
+			if(swizzle_workgroups_8x8(dispatchThreadID.xy, groupThreadID.xy, groupID.xy, image_size, uv, px))
 				return;
 
 			FCamera camera = cameraBuffer.cameras[frameData.defaultCameraID];
-			mat4 inv_view_projection = getInvViewProjectionMatrix(camera.matricesOffset);
-			mat4 prev_view_projection = getPrevViewProjectionMatrix(camera.matricesOffset);
+			float4x4 inv_view_projection = GetInvViewProjectionMatrix(camera.matricesOffset);
+			float4x4 prev_view_projection = GetPrevViewProjectionMatrix(camera.matricesOffset);
 
-			float depth = texture(depth_texture, uv).r;
+			float depth = TEX2D(depth_texture, uv).r;
 
-			vec4 clipSpaceLocation;
+			float4 clipSpaceLocation;
 			clipSpaceLocation.xy = uv * 2.0 - 1.0;
-			clipSpaceLocation.zw = vec2(depth, 1.0);
-            vec4 homogenousLocation = inv_view_projection * clipSpaceLocation;
-            vec4 worldPos = homogenousLocation / homogenousLocation.w;
+			clipSpaceLocation.zw = float2(depth, 1.0);
+            float4 homogenousLocation = mul(clipSpaceLocation, inv_view_projection);
+            float4 worldPos = homogenousLocation / homogenousLocation.w;
 
-			vec4 prevClipSpaceLocation = prev_view_projection * worldPos;
+			float4 prevClipSpaceLocation = mul(worldPos, prev_view_projection);
 			prevClipSpaceLocation /= prevClipSpaceLocation.w;
 
 			// Use this frame's position and last frame's to compute the pixel velocity.    
-			vec2 velocity = (clipSpaceLocation.xy - prevClipSpaceLocation.xy) / 2.f;
+			float2 velocity = (clipSpaceLocation.xy - prevClipSpaceLocation.xy) / 2.f;
 
 			// Encode velocity
-			velocity = encodeVelocity(velocity);
+			velocity = EncodeVelocity(velocity);
 
-			imageStore(write_color, ivec2(px), vec4(velocity, 1.0, 1.0));
+			write_color[px] = velocity;
 		}
 	""";
 }

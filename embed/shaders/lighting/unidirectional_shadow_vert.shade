@@ -44,24 +44,24 @@
 		{
 			VSOutput output;
 			uint32_t draw_index = shadowData.callID + drawID + instanceID;
-			FGeometryBatch draw_info = getDrawInfo(draw_index);
+			FGeometryBatch draw_info = GetDrawInfo(draw_index);
 
-			FSceneNode node = getSceneNode(draw_info.nodeID);
-			mat4 modelMatrix = getModelMatrix(node.matrixOffset);
+			FSceneNode node = GetSceneNode(draw_info.nodeID);
+			float4x4 modelMatrix = GetModelMatrix(node.matrixOffset);
 
 #ifdef HAS_SKIN
 			if(node.skeletonID != ~0u)
 			{
 #if defined(JOINTS_8BIT)
-				u8vec4 joints = u8vec4(uint8_t(inJoints.x * 255.0), uint8_t(inJoints.y * 255.0), uint8_t(inJoints.z * 255.0), uint8_t(inJoints.w * 255.0));
+				u8vec4 joints = u8vec4(uint8_t(input.Joints.x * 255.0), uint8_t(input.Joints.y * 255.0), uint8_t(input.Joints.z * 255.0), uint8_t(input.Joints.w * 255.0));
 #elif defined(JOINTS_16BIT)
-				u16vec4 joints = u16vec4(uint16_t(inJoints.x * 65535.0), uint16_t(inJoints.y * 65535.0), uint16_t(inJoints.z * 65535.0), uint16_t(inJoints.w * 65535.0));
+				u16vec4 joints = u16vec4(uint16_t(input.Joints.x * 65535.0), uint16_t(input.Joints.y * 65535.0), uint16_t(input.Joints.z * 65535.0), uint16_t(input.Joints.w * 65535.0));
 #endif
-				mat4 skinMat = 
-					getMatrixById(node.skeletonID, joints.x) * input.Weights.x +
-					getMatrixById(node.skeletonID, joints.y) * input.Weights.y +
-					getMatrixById(node.skeletonID, joints.z) * input.Weights.z +
-					getMatrixById(node.skeletonID, joints.w) * input.Weights.w;
+				float4x4 skinMat = 
+					GetMatrixById(node.skeletonID, joints.x) * input.Weights.x +
+					GetMatrixById(node.skeletonID, joints.y) * input.Weights.y +
+					GetMatrixById(node.skeletonID, joints.z) * input.Weights.z +
+					GetMatrixById(node.skeletonID, joints.w) * input.Weights.w;
 					
 				modelMatrix = mul(skinMat, modelMatrix);
 			}
@@ -74,34 +74,36 @@
 			output.texcoord = inTexCoord;
 #endif
 
-			mat4 viewProj;
+			float4x4 viewProj;
 #if defined(CASCADED_SHADOW)
-			FCascadedShadowCommit shadow = getCascadedShadowCommit(shadowData.shadowIndex);
-			FCamera camera = getCamera(draw_info.cameraID);
-			viewProj = getViewProjectionMatrix(camera.matricesOffset);
+			FCascadedShadowCommit shadow = GetCascadedShadowCommit(shadowData.shadowIndex);
+			FCamera camera = GetCamera(draw_info.cameraID);
+			viewProj = GetViewProjectionMatrix(camera.matricesOffset);
 			output.layer = shadowData.shadowIndex * int(cascade_shadow_map_cascade_count) + shadowData.layer;
 #elif defined(OMNI_SHADOW)
-			FOmniShadowCommit shadow = getOmniShadowCommit(shadowData.shadowIndex);
-			FCamera camera = getCamera(draw_info.cameraID);
-			viewProj = getViewProjectionMatrix(camera.matricesOffset);
+			FOmniShadowCommit shadow = GetOmniShadowCommit(shadowData.shadowIndex);
+			FCamera camera = GetCamera(draw_info.cameraID);
+			viewProj = GetViewProjectionMatrix(camera.matricesOffset);
 			output.layer = shadowData.shadowIndex * 6 + shadowData.layer;
 #else
-			FSpotShadowCommit shadow = getSpotShadowCommit(shadowData.shadowIndex);
-			FCamera camera = getCamera(draw_info.cameraID);
-			viewProj = getViewProjectionMatrix(camera.matricesOffset);
+			FSpotShadowCommit shadow = GetSpotShadowCommit(shadowData.shadowIndex);
+			FCamera camera = GetCamera(draw_info.cameraID);
+			viewProj = GetViewProjectionMatrix(camera.matricesOffset);
 			output.layer = shadowData.layer;
 #endif
 
 			output.materialID = ~0u;
 
-			FMesh mesh = getMesh(draw_info.meshID);
+			FMesh mesh = GetMesh(draw_info.meshID);
 			if(mesh.materialID != ~0u)
 			{
 				output.materialID = mesh.materialID;
 			}
 
 			
-			output.position = viewProj * output.pos;
+			output.position = mul(output.pos, viewProj);
+
+			return output;
 		}
 	""";
 }

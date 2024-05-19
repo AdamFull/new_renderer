@@ -19,44 +19,54 @@
 
 	code: 
 	"""
-		layout(location = 0) in vec2 inUV;
-		layout(location = 1) in vec4 inPos;
-		layout(location = 2) flat in uint materialID;
+		struct PSInput 
+		{
+		    [[vk::location(0)]] float2 texcoord : TEXCOORD0;
+		    [[vk::location(1)]] nointerpolation uint materialID : TEXCOORD1;
+			[[vk::location(2)]] float4 pos : TEXCOORD2;
+			float4 position : SV_Position;
+		};
 
-		layout(push_constant) uniform ShadowmapData
+		struct FPushConstant
 		{
 			uint32_t callID;
 			int32_t shadowIndex;
 			int32_t layer;
-		} shadowData;
-		
-		void main() 
-		{
+		};
 
-			if(materialID != ~0u)
+		[[vk::push_constant]]
+		FPushConstant shadowData;
+		
+		float main(PSInput input) : SV_Depth
+		{
+			float depth = input.position.z;
+
+			if(input.materialID != ~0u)
 			{
-				FMaterial mat = getMaterial(materialID);
+				FMaterial mat = GetMaterial(input.materialID);
 				if(mat.baseColorTexture != ~0u)
 				{
-					float smaple = GlobSample2D(mat.baseColorTexture, inUV).a;
+					float smaple = GlobSample2D(mat.baseColorTexture, input.texcoord).a;
 					if(smaple < 1.f)
 						discard;
 				}
 			}
 
 #if defined(OMNI_SHADOW)
-		FOmniShadowCommit shadow = getOmniShadowCommit(shadowData.shadowIndex);
-		FLightCommit light = getLight(shadow.index);
+			FOmniShadowCommit shadow = GetOmniShadowCommit(shadowData.shadowIndex);
+			FLightCommit light = GetLight(shadow.index);
 
-		// get distance between fragment and light source
-		float lightDistance = length(inPos.xyz - light.position);
-		
-		// map to [0;1] range by dividing by far_plane
-		lightDistance = lightDistance / shadow.farPlane;
-		
-		// write this as modified depth
-		gl_FragDepth = lightDistance;
+			// get distance between fragment and light source
+			float lightDistance = length(input.pos.xyz - light.position);
+
+			// map to [0;1] range by dividing by far_plane
+			lightDistance = lightDistance / shadow.farPlane;
+
+			// write this as modified depth
+			depth = lightDistance;
 #endif
+
+			return depth;
 		}
 	""";
 }

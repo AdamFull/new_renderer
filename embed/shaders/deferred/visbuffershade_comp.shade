@@ -18,22 +18,22 @@
 		"GL_EXT_shader_explicit_arithmetic_types",
 		"GL_EXT_shader_explicit_arithmetic_types_int8"
 	];
-	includes: ["visibility_buffer", "compute_common", "lighting_model", "shadow_sampling", "util", "noise", "atmosphere/scattering", "ssr"];
+	includes: ["visibility_buffer", "compute_common", "lighting_model", "shadow_sampling", "util", "noise", "atmosphere/scattering"];
 
 	code: 
 	"""
 		#define DISABLE_SHADOWS
 
-		REGISTER_UAV_SLOT(2, 0, RWTexture2D<float4>, write_color, 0);
-		REGISTER_TEXTURE_SLOT(2, 1, Texture2D<float2>, SamplerState, brdf_lut, 6);
-		REGISTER_TEXTURE_SLOT(2, 2, TextureCube<float4>, SamplerState, irradiance_cube, 7);
-		REGISTER_TEXTURE_SLOT(2, 3, TextureCube<float4>, SamplerState, prefiltered_cube, 8);
-		REGISTER_TEXTURE_SLOT(2, 4, Texture2D<float>, SamplerState, depth_buffer, 9);
-		REGISTER_TEXTURE_SLOT(2, 5, Texture2D<float4>, SamplerState, prev_frame_color, 10);
+		REGISTER_UAV_SLOT(2, 0, RWTexture2D<float4>, write_color);
+		REGISTER_TEXTURE_SLOT(2, 1, Texture2D<float2>, SamplerState, brdf_lut);
+		REGISTER_TEXTURE_SLOT(2, 2, TextureCube<float4>, SamplerState, irradiance_cube);
+		REGISTER_TEXTURE_SLOT(2, 3, TextureCube<float4>, SamplerState, prefiltered_cube);
+		REGISTER_TEXTURE_SLOT(2, 4, Texture2D<float>, SamplerState, depth_buffer);
+		REGISTER_TEXTURE_SLOT(2, 5, Texture2D<float4>, SamplerState, prev_frame_color);
 
-		REGISTER_TEXTURE_SLOT(2, 6, Texture2DArray<float>, SamplerComparisonState, cascaded_shadowmap, 11);
-		REGISTER_TEXTURE_SLOT(2, 7, Texture2DArray<float>, SamplerComparisonState, direct_shadowmap, 12);
-		REGISTER_TEXTURE_SLOT(2, 8, TextureCubeArray<float>, SamplerComparisonState, omni_shadowmap, 13);
+		REGISTER_TEXTURE_SLOT(2, 6, Texture2DArray<float>, SamplerComparisonState, cascaded_shadowmap);
+		REGISTER_TEXTURE_SLOT(2, 7, Texture2DArray<float>, SamplerComparisonState, direct_shadowmap);
+		REGISTER_TEXTURE_SLOT(2, 8, TextureCubeArray<float>, SamplerComparisonState, omni_shadowmap);
 
 		struct FPushConstant
 		{
@@ -129,13 +129,13 @@
 
 		float getCascadeShadow(sampler2DArrayShadow shadowmap_tex, in FLightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
 		{
-			FCascadedShadowCommit commit = getCascadedShadowCommit(light.shadowIndex);
-			FCamera camera = getCamera(commit.cameraID);
+			FCascadedShadowCommit commit = GetCascadedShadowCommit(light.shadowIndex);
+			FCamera camera = GetCamera(commit.cameraID);
 
 			uint cascadeIndex = getScadowCascadeSplit(commit, va.linearZ, dither);
 		
 			float4 offsetPos = float4(va.pos + 0.05 * ms.normal, 1.0);
-			float4 shadowCoord = (biasMat * getViewProjectionMatrix(camera.matricesOffset + cascadeIndex * matrix_offset_count)) * float4(va.pos, 1.0);
+			float4 shadowCoord = (biasMat * GetViewProjectionMatrix(camera.matricesOffset + cascadeIndex * matrix_offset_count)) * float4(va.pos, 1.0);
 			shadowCoord = shadowCoord / shadowCoord.w;
 		
 			float shadow_sample = 1.f;
@@ -168,7 +168,7 @@
 
 		float getOmniShadow(samplerCubeArrayShadow shadowmap_tex, in FLightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
 		{
-			FOmniShadowCommit commit = getOmniShadowCommit(light.shadowIndex);
+			FOmniShadowCommit commit = GetOmniShadowCommit(light.shadowIndex);
 
 			float shadow = 1.0;
 			float3 shadowClip = va.pos - light.position;
@@ -208,11 +208,11 @@
 
 		float getDirectionalShadow(sampler2DArrayShadow shadomwap_tex, in FLightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
 		{
-			FSpotShadowCommit commit = getSpotShadowCommit(light.shadowIndex);
-			FCamera camera = getCamera(commit.cameraID);
+			FSpotShadowCommit commit = GetSpotShadowCommit(light.shadowIndex);
+			FCamera camera = GetCamera(commit.cameraID);
 
 		    float shadow = 1.0;
-			float4 shadowClip	= getViewProjectionMatrix(camera.matricesOffset) * float4(va.pos, 1.0);
+			float4 shadowClip	= GetViewProjectionMatrix(camera.matricesOffset) * float4(va.pos, 1.0);
 		
 			float cosTheta = dot(va.normal, light.direction);
 			const float max_bias = 0.005f;
@@ -259,7 +259,7 @@
 
 			for(uint i = 0u; i < frameData.lightCount; i++)
 			{
-				FLightCommit light = getLight(i);
+				FLightCommit light = GetLight(i);
 
 				if(light.type == light_type_directional)
 					Lo += calculateDirectionalLight(light, va, ms, V, F0, dither);
@@ -274,7 +274,7 @@
 
 		float3 debug_visualize_cascades(in float view_depth, float dither)
 		{
-			FCascadedShadowCommit shadow = getCascadedShadowCommit(0);
+			FCascadedShadowCommit shadow = GetCascadedShadowCommit(0);
 			uint cascade_index = getScadowCascadeSplit(shadow, view_depth, dither);
 
 			switch(cascade_index) 
@@ -295,19 +295,17 @@
 		[numthreads(8, 8, 1)]
 		void main(uint3 dispatchThreadID : SV_DispatchThreadID, uint3 groupThreadID : SV_GroupThreadID, uint3 groupID : SV_GroupID) 
 		{
-			uvec2 image_size;
+			uint2 image_size;
 			write_color.GetDimensions(image_size.x, image_size.y);
 
-			uvec2 px;
+			uint2 px;
 			float2 uv;
 
 			if(swizzle_workgroups_8x8(dispatchThreadID.xy, groupThreadID.xy, groupID.xy, image_size, uv, px))
 				return;
 
-			FCamera camera = getCamera(frameData.defaultCameraID);
-			float4x4 inv_view = getInvViewMatrix(camera.matricesOffset);
-
-			float3 camera_pos = float3(inv_view[3]);
+			FCamera camera = GetCamera(frameData.defaultCameraID);
+			float3 camera_pos = GetCameraPosition(camera.matricesOffset);
 
 			//float4 pixel_color = float4(0.35f, 0.55f, 0.7f, 1.0f);
 			float4 pixel_color = float4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -320,13 +318,13 @@
 				float4 dir_world_space = float4(0.0);
 				const float3 origin = float3(0, atmosphere_planet_radius, 0) + camera_pos;
 				
-				float depth = texture(depth_buffer, uv).r;
-				dir_world_space.xyz = getPositionFromDepth(uv, 1.0f, getInvViewProjectionMatrix(camera.matricesOffset));
+				float depth = TEX2D(depth_buffer, uv).r;
+				dir_world_space.xyz = GetPositionFromDepth(uv, 1.0f, GetInvViewProjectionMatrix(camera.matricesOffset));
 				
 				uint sun_count = 0;
 				for(uint i = 0u; i < frameData.lightCount; i++)
 				{
-					const FLightCommit light = getLight(i);
+					const FLightCommit light = GetLight(i);
 					if(light.type == light_type_directional)
 					{
 						const float3 dir_to_sun = normalize(-light.direction);
@@ -351,14 +349,14 @@
 			float dither = interleavedGradientNoise(uv);
 
 			VertexAttribute va = getVertexData(uv, visbuffer);
-			FMaterial material = getMaterial(visbuffer.matID);
+			FMaterial material = GetMaterial(visbuffer.matID);
 			MaterialSample ms = sampleMaterial(material, va);
 
 			// Calculate direction from fragment to viewPosition
 			float3 V = normalize(camera_pos - va.pos);
 
 			float3 F0 = F0FromIOR(ms.ior);
-			F0 = mix(F0, ms.albedo, ms.metallic);
+			F0 = lerp(F0, ms.albedo, ms.metallic);
 
 			float3 Lo = calculateLights(va, ms, V, F0, dither);
 
@@ -367,8 +365,8 @@
 
 			float NdotV = dot(ms.normal, V);
 			float2 brdf = TEX2D(brdf_lut, float2(max(NdotV, 0.0f), ms.roughness)).rg;
-			float3 reflection = prefilteredReflection(R, ms.roughness, prefiltered_cube);
-			float3 irradiance = texture(irradiance_cube, ms.normal).rgb;
+			float3 reflection = prefilteredReflection(R, ms.roughness, prefiltered_cube, prefiltered_cube_sampler);
+			float3 irradiance = TEX2D(irradiance_cube, ms.normal).rgb;
 
 			// Diffuse based on irradiance
 			float3 diffuse = ms.albedo * irradiance;
@@ -381,7 +379,7 @@
 			float3 kD = (1.0 - F) * (1.0 - ms.metallic);
 			float3 ambient = kD * diffuse + specular;
 
-			ambient = mix(ambient, ambient * ms.ao, material.occlusionStrenth);
+			ambient = lerp(ambient, ambient * ms.ao, material.occlusionStrenth);
 
 			float3 res = ambient + ms.emission + Lo;
 			//res *= debug_visualize_cascades(va.linearZ, dither);

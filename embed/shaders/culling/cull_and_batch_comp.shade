@@ -43,7 +43,7 @@
 		{
 			for (uint32_t i = 0; i < 6; i++)
 			{
-				float4 edge = getFrustumSides(frustumID * 6u + i);
+				float4 edge = GetFrustumSides(frustumID * 6u + i);
 				if (   edge.x * min_extents.x + edge.y * min_extents.y + edge.z * min_extents.z + edge.w <= 0.0f
 					&& edge.x * max_extents.x + edge.y * min_extents.y + edge.z * min_extents.z + edge.w <= 0.0f
 					&& edge.x * min_extents.x + edge.y * max_extents.y + edge.z * min_extents.z + edge.w <= 0.0f
@@ -66,18 +66,18 @@
 				return;
 
 			// Sample info about current draw comand
-			FGeometryBatch draw_info = getRawDrawInfo(global_draw_index);
-			FSceneNode node = getSceneNode(draw_info.nodeID);
-			FMesh mesh = getMesh(draw_info.meshID);
-			float4x4 model = getModelMatrix(node.matrixOffset);			
+			FGeometryBatch draw_info = GetRawDrawInfo(global_draw_index);
+			FSceneNode node = GetSceneNode(draw_info.nodeID);
+			FMesh mesh = GetMesh(draw_info.meshID);
+			float4x4 model = GetModelMatrix(node.matrixOffset);			
 
 			// output_index = culler_counter + draw_offset;
 			
 			// Calculate bounding box
-			float4 min_extents = model * float4(mesh.bounds.min, 1.f);
+			float4 min_extents = mul(float4(mesh.bounds.min, 1.f), model);
 			min_extents.xyz /= min_extents.w;
 
-			float4 max_extents = model * float4(mesh.bounds.max, 1.f);
+			float4 max_extents = mul(float4(mesh.bounds.max, 1.f), model);
 			max_extents.xyz /= max_extents.w;
 			
 			// Do frustum culling
@@ -87,24 +87,24 @@
 				uint culler_counter = IncrementIndirectCount(draw_info.cameraID);
 
 				uint output_index = draw_offset + culler_counter;
-				setDrawInfo(output_index, draw_info);
+				SetDrawInfo(output_index, draw_info);
 			
 				// Construct  indirect draw command
 				// TODO: In future thing about how to implement instancing here
 
-				FCamera camera = getCamera(draw_info.cameraID);
-				float4x4 view_projection = getViewProjectionMatrix(camera.matricesOffset);
+				FCamera camera = GetCamera(draw_info.cameraID);
+				float4x4 view_projection = GetViewProjectionMatrix(camera.matricesOffset);
 				
-				float4 min_clip = view_projection * min_extents;
-				float4 max_clip = view_projection * max_extents;
+				float4 min_clip = mul(min_extents, view_projection);
+				float4 max_clip = mul(max_extents, view_projection);
 				
 				float3 ndc_min = (min_clip.xyz / min_clip.w + 1.0f) * 0.5f;
 				float3 ndc_max = (max_clip.xyz / max_clip.w + 1.0f) * 0.5f;
 				
-				vec2 min_pos = ndc_min.xy * camera.size;
-				vec2 max_pos = ndc_max.xy * camera.size;
+				float2 min_pos = ndc_min.xy * camera.size;
+				float2 max_pos = ndc_max.xy * camera.size;
 				
-				vec2 quad_size = abs(max_pos - min_pos);
+				float2 quad_size = abs(max_pos - min_pos);
 				
 				float quad_area = quad_size.x * quad_size.y;
 				float screen_area = camera.size.x * camera.size.y;
@@ -121,7 +121,7 @@
 				indirect_command.vertexOffset = int(lod.firstVertex);
 				indirect_command.firstInstance = 0;
 
-				setDrawIndexedIndirectData(output_index, indirect_command);
+				SetDrawIndexedIndirectData(output_index, indirect_command);
 			}
 		}
 	""";

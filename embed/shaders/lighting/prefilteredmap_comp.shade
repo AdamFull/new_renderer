@@ -12,31 +12,31 @@
 
 	code: 
 	"""
-		layout(local_size_x = 8, local_size_y = 8) in;
-		
-		layout(set = 1, binding = 0, rgba32f) uniform writeonly imageCube out_color;
-		layout(set = 1, binding = 1) uniform samplerCube sampler_color;
+		REGISTER_UAV_SLOT(1, 0, RWTexture2DArray<float4>, out_color);
+		REGISTER_TEXTURE_SLOT(1, 1, TextureCube<float4>, SamplerState, sampler_color);
 
-		layout(std140, set = 1, binding = 2) uniform ComputeCubemapData
+		[[vk::binding(1, 2)]]
+		cbuffer ComputeCubemapData : register(b4)
 		{
 			float roughness;
 		} data;
 
 		const uint samples = 32u;
 
-		vec3 prefilterEnvMap(samplerCube envmap, vec3 R, float roughness) 
+		float3 prefilterEnvMap(samplerCube envmap, float3 R, float roughness) 
 		{
-			vec3 N = R;
-			vec3 V = R;
-			vec3 colour = vec3(0.0f);
+			float3 N = R;
+			float3 V = R;
+			float3 colour = float3(0.0f);
 			float totalWeight = 0.0f;
 			float envMapDim = float(textureSize(envmap, 0).s);
 		
+			[unroll]
 			for (uint i = 0u; i < samples; i++) 
 		    {
-				vec2 Xi = hammersley2d(i, samples);
-				vec3 H = importanceSample_GGX(Xi, roughness, N);
-				vec3 L = 2.0f * dot(V, H) * H - V;
+				float2 Xi = hammersley2d(i, samples);
+				float3 H = importanceSample_GGX(Xi, roughness, N);
+				float3 L = 2.0f * dot(V, H) * H - V;
 				float dotNL = clamp(dot(N, L), 0.0f, 1.0f);
 		
 				if (dotNL > 0.0f) 
@@ -63,19 +63,22 @@
 			return (colour / totalWeight);
 		}
 		
-		void main() 
+		[numthreads(8, 8, 1)]
+		void main(uint3 dispatchThreadID : SV_DispatchThreadID, uint3 groupThreadID : SV_GroupThreadID, uint3 groupID : SV_GroupID) 
 		{
-			uvec2 image_size = imageSize(out_color);
+			uint2 image_size;
+			out_color.GetDimensions(image_size.x, image_size.y);
 
-			uvec2 px = uvec2(0, 0);
-			vec2 uv = vec2(0, 0);
-			if(swizzle_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, gl_WorkGroupID.xy, image_size, uv, px))
+			uint2 px = uint2(0, 0);
+			float2 uv = float2(0, 0);
+			if(swizzle_workgroups_8x8(dispatchThreadID.xy, groupThreadID.xy, groupID.xy, image_size, uv, px))
 				return;
 		
+			[unroll]
 			for (uint i = 0; i != 6; ++i) 
 		    {
-				vec3 R = normalize(cubeDir(uv, i));
-				imageStore(out_color, ivec3(px, i), vec4(prefilterEnvMap(sampler_color, R, data.roughness), 1.0f));
+				float3 R = normalize(cubeDir(uv, i));
+				out_color[uint2(px, i)] = float4(prefilterEnvMap(sampler_color, R, data.roughness), 1.0f);
 			}
 		}
 	""";

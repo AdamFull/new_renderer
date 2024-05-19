@@ -11,7 +11,7 @@
 	"""
 		struct VSOutput
 		{
-		    float2 outUV : TEXCOORD0;
+		    [[vk::location(0)]] float2 outUV : TEXCOORD0;
 		    float4 position : SV_Position;
 		};
 		

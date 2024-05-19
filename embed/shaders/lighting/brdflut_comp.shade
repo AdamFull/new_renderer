@@ -12,25 +12,24 @@
 
 	code: 
 	"""
-		layout(local_size_x = 8, local_size_y = 8) in;
-
-		layout(set = 1, binding = 0, rg16f) uniform writeonly image2D out_color;
+		REGISTER_UAV_SLOT(1, 0, RWTexture2D<float2>, out_color);
 
 		const uint NUM_SAMPLES = 1024u;
 
-		vec2 BRDF(float NoV, float roughness) 
+		float2 BRDF(float NoV, float roughness) 
 		{
 			// Normal always points along z-axis for the 2D lookup 
-			const vec3 N = vec3(0.0f, 0.0f, 1.0f);
-			vec3 V = vec3(sqrt(1.0f - NoV * NoV), 0.0f, NoV);
+			const float3 N = float3(0.0f, 0.0f, 1.0f);
+			float3 V = float3(sqrt(1.0f - NoV * NoV), 0.0f, NoV);
 		
-			vec2 LUT = vec2(0.0f);
+			float2 LUT = float2(0.0f);
 		
+			[unroll]
 			for (uint i = 0u; i < NUM_SAMPLES; i++) 
 		    {
-				vec2 Xi = hammersley2d(i, NUM_SAMPLES);
-				vec3 H = importanceSample_GGX(Xi, roughness, N);
-				vec3 L = 2.0f * dot(V, H) * H - V;
+				float2 Xi = hammersley2d(i, NUM_SAMPLES);
+				float3 H = importanceSample_GGX(Xi, roughness, N);
+				float3 L = 2.0f * dot(V, H) * H - V;
 		
 				float dotNL = max(dot(N, L), 0.0f);
 				float dotNV = max(dot(N, V), 0.0f);
@@ -42,23 +41,25 @@
 					float G = G_SchlicksmithGGX(dotNL, dotNV, roughness);
 					float G_Vis = (G * dotVH) / (dotNH * dotNV);
 					float Fc = pow(1.0f - dotVH, 5.0f);
-					LUT += vec2((1.0f - Fc) * G_Vis, Fc * G_Vis);
+					LUT += float2((1.0f - Fc) * G_Vis, Fc * G_Vis);
 				}
 			}
 		
 			return LUT / float(NUM_SAMPLES);
 		}
 		
-		void main() 
+		[numthreads(8, 8, 1)]
+		void main(uint3 dispatchThreadID : SV_DispatchThreadID, uint3 groupThreadID : SV_GroupThreadID, uint3 groupID : SV_GroupID) 
 		{
-			uvec2 image_size = imageSize(out_color);
+			uint2 image_size;
+			out_color.GetDimensions(image_size.x, image_size.y);
 
-			uvec2 px = uvec2(0, 0);
-			vec2 uv = vec2(0, 0);
-			if(swizzle_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, gl_WorkGroupID.xy, image_size, uv, px))
+			uint2 px = uint2(0, 0);
+			float2 uv = float2(0, 0);
+			if(swizzle_workgroups_8x8(dispatchThreadID.xy, groupThreadID.xy, groupID.xy, image_size, uv, px))
 				return;
 
-			imageStore(out_color, ivec2(px), vec4(BRDF(uv.x, 1.0f - uv.y), 0.0f, 1.0f));
+			out_color[px] = BRDF(uv.x, 1.0f - uv.y);
 		}
 	""";
 }

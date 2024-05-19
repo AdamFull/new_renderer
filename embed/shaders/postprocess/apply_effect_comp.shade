@@ -20,44 +20,47 @@
 
 	code: 
 	"""
-		layout(local_size_x = 8, local_size_y = 8) in;
-
-		layout(set = 1, binding = 0) uniform writeonly image2D write_color;
-		layout(set = 1, binding = 1) uniform sampler2D sampler_color;
+		REGISTER_UAV_SLOT(1, 0, RWTexture2D<float4>, write_color);
+		REGISTER_TEXTURE_SLOT(1, 1, Texture2D<float4>, SamplerState, sampler_color);
 
 #if defined(MOTION_BLUR)
-		layout(set = 1, binding = 2) uniform sampler2D motion_vectors;
+		REGISTER_TEXTURE_SLOT(1, 2, Texture2D<float4>, SamplerState, motion_vectors);
 #elif defined(BLOOM)
-		layout(set = 1, binding = 2) uniform sampler2D bloom_color;
-		layout(set = 1, binding = 3) uniform sampler2D dirt_mask;
+		REGISTER_TEXTURE_SLOT(1, 2, Texture2D<float4>, SamplerState, bloom_color);
+		REGISTER_TEXTURE_SLOT(1, 3, Texture2D<float4>, SamplerState, dirt_mask);
 #elif defined(DOF)
-		layout(set = 1, binding = 2) uniform sampler2D bokeh_color;
-		layout(set = 1, binding = 3) uniform sampler2D depth_image;
+		REGISTER_TEXTURE_SLOT(1, 2, Texture2D<float4>, SamplerState, bokeh_color);
+		REGISTER_TEXTURE_SLOT(1, 3, Texture2D<float>, SamplerState, depth_image);
 #elif defined(TONEMAP)
-		layout(set = 1, binding = 2, r32f) uniform image2D avg_luminosity;
+		REGISTER_IMAGE_SLOT(1, 2, Texture2D<float>, avg_luminosity);
 #endif
 
 #if defined(GAUSSIAN_BLUR)
-		layout(push_constant) uniform FConstantBlock
+		struct FPushConstant
 		{
 			float blur_scale;
 		    float blur_strength;
-		} constants;
+		};
+
+		[[vk::push_constant]]
+		FPushConstant constants;
 #endif
 		
-		void main()
+		[numthreads(8, 8, 1)]
+		void main(uint3 dispatchThreadID : SV_DispatchThreadID, uint3 groupThreadID : SV_GroupThreadID, uint3 groupID : SV_GroupID) 
 		{
-			uvec2 image_size = imageSize(write_color);
+			uint2 image_size;
+			write_color.GetDimensions(image_size.x, image_size.y);
 		
-			uvec2 px = uvec2(0, 0);
-			vec2 uv = vec2(0.0, 0.0);
-			if(swizzle_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, gl_WorkGroupID.xy, image_size, uv, px))
+			uint2 px = uint2(0, 0);
+			float2 uv = float2(0.0, 0.0);
+			if(swizzle_workgroups_8x8(dispatchThreadID.xy, groupThreadID.xy, groupID.xy, image_size, uv, px))
 				return;
 
-			FCamera camera = cameraBuffer.cameras[frameData.defaultCameraID];
+			FCamera camera = GetCamera(frameData.defaultCameraID);
 			
-			vec4 color = texture(sampler_color, uv);
-			vec2 texel_size = 1.0 / vec2(textureSize(sampler_color, 0));
+			float4 color = TEX2D(sampler_color, uv);
+			float2 texel_size = 1.0 / float2(textureSize(sampler_color, 0));
 #if defined(FXAA)
 			if(postprocess.enable_fxaa > 0)
 			{
@@ -66,9 +69,9 @@
 #elif defined(MOTION_BLUR)
 			if(postprocess.enable_motion_blur > 0)
 			{
-				vec2 velocity = texture(motion_vectors, uv).rg;
-				velocity = decodeVelocity(velocity) * postprocess.mb_scale;
-				velocity = min(vec2(1.0), velocity);
+				float2 velocity = TEX2D(motion_vectors, uv).rg;
+				velocity = DecodeVelocity(velocity) * postprocess.mb_scale;
+				velocity = min(float2(1.0), velocity);
 
 				if(length(velocity) >= postprocess.mb_threshold)
 				{
@@ -77,8 +80,8 @@
 
 					for (int i = 1; i < n_samples; ++i) 
 					{
-						vec2 offset = velocity * (float(i) / float(n_samples - 1) - 0.5);
-						color += texture(sampler_color, uv + offset);
+						float2 offset = velocity * (float(i) / float(n_samples - 1) - 0.5);
+						color += TEX2D(sampler_color, uv + offset);
 					}
 					color /= float(n_samples);
 				}
@@ -87,17 +90,17 @@
 			if(postprocess.enable_bloom > 0)
 			{
 				const float dirtMaskIntensity = 1.0f;
-				vec3 dirt = texture(dirt_mask, vec2(uv.x, 1.f - uv.y)).rgb * dirtMaskIntensity;
-				vec3 bloom = texture(bloom_color, uv).rgb;
-				color.rgb = mix(color.rgb, bloom + bloom * dirt, vec3(postprocess.b_bloom_strength));
+				float3 dirt = TEX2D(dirt_mask, float2(uv.x, 1.f - uv.y)).rgb * dirtMaskIntensity;
+				float3 bloom = TEX2D(bloom_color, uv).rgb;
+				color.rgb = lerp(color.rgb, bloom + bloom * dirt, float3(postprocess.b_bloom_strength));
 			}
 #elif defined(DOF)
 			if(postprocess.enable_dof > 0)
 			{
-				float depth = texture(depth_image, uv).r;
-				float linear_depth = linearizeDepth(depth, camera.zNear, camera.zFar);
+				float depth = TEX2D(depth_image, uv).r;
+				float linear_depth = LinearizeDepth(depth, camera.zNear, camera.zFar);
 
-				vec3 texture_blured = texture(bokeh_color, uv).rgb;
+				float3 texture_blured = TEX2D(bokeh_color, uv).rgb;
 
 				float near_end = postprocess.df_near_field + postprocess.df_near_transition;
 				float far_start = postprocess.df_far_field - postprocess.df_far_transition;
@@ -105,22 +108,22 @@
 				float near_visibility = smoothstep(postprocess.df_near_field * postprocess.df_focus_point, near_end * postprocess.df_focus_point, linear_depth);
 				float far_visibility = 1.0f - smoothstep(far_start * postprocess.df_focus_point, postprocess.df_far_field * postprocess.df_focus_point, linear_depth);
 		
-				vec3 temp = mix(texture_blured, color.rgb, near_visibility);
-				color.rgb = mix(texture_blured, temp, far_visibility);
+				float3 temp = lerp(texture_blured, color.rgb, near_visibility);
+				color.rgb = lerp(texture_blured, temp, far_visibility);
 			}
 #elif defined(CHROMATIC_ABERRATION)
 			if(postprocess.enable_chromatic_aberration > 0)
 			{
 				const float reci_num_iter_f = 1.0 / float(postprocess.ca_iterations);
 		
-				vec4 sumcol = vec4(0.0);
-				vec4 sumw = vec4(0.0);	
+				float4 sumcol = float4(0.0);
+				float4 sumw = float4(0.0);	
 				for ( int i= 0; i < postprocess.ca_iterations; ++i )
 				{
 					float t = float(i) * reci_num_iter_f;
-					vec4 w = spectrum_offset( t );
+					float4 w = spectrum_offset( t );
 					sumw += w;
-					sumcol += w * texture( sampler_color, barrelDistortion(uv, 0.6 * postprocess.ca_distortion * t ) );
+					sumcol += w * TEX2D( sampler_color, BarrelDistortion(uv, 0.6 * postprocess.ca_distortion * t ) );
 				}
 
 				color.rgb = (sumcol / sumw).rgb;
@@ -128,9 +131,9 @@
 #elif defined(TONEMAP)
 			if(postprocess.enable_tonemap > 0)
 			{
-				float avgLum = imageLoad(avg_luminosity, ivec2(0, 0)).x;
+				float avgLum = avg_luminosity[uint2(0, 0)].x;
 		
-				vec3 Yxy = convertRGB2Yxy(color.rgb);
+				float3 Yxy = convertRGB2Yxy(color.rgb);
 		
 				float lp = Yxy.x / (9.6 * avgLum + 0.0001);
 		
@@ -144,50 +147,50 @@
 			}
 #elif defined(GAUSSIAN_BLUR)
 #ifdef HORIZONTAL
-				vec2 direction = vec2(constants.blur_strength, 0.0);
+				float2 direction = float2(constants.blur_strength, 0.0);
 #else
-				vec2 direction = vec2(0.0, constants.blur_strength);
+				float2 direction = float2(0.0, constants.blur_strength);
 #endif // HORIZONTAL
 
 #if defined(BLUR_TYPE_5)
 			{
-				vec2 off1 = vec2(1.3333333333333333f) * direction;
-				color += texture(sampler_color, uv) * 0.29411764705882354 * constants.blur_scale;
-				color += texture(sampler_color, uv + (off1 / image_size)) * 0.35294117647058826f * constants.blur_scale;
-				color += texture(sampler_color, uv - (off1 / image_size)) * 0.35294117647058826f * constants.blur_scale;
+				float2 off1 = float2(1.3333333333333333f) * direction;
+				color += TEX2D(sampler_color, uv) * 0.29411764705882354 * constants.blur_scale;
+				color += TEX2D(sampler_color, uv + (off1 / image_size)) * 0.35294117647058826f * constants.blur_scale;
+				color += TEX2D(sampler_color, uv - (off1 / image_size)) * 0.35294117647058826f * constants.blur_scale;
 			}
 #elif defined(BLUR_TYPE_9)
 			{
-				vec2 off1 = vec2(1.3846153846f) * direction;
-				vec2 off2 = vec2(3.2307692308f) * direction;
-				color += texture(sampler_color, uv) * 0.2270270270f * constants.blur_scale;
-				color += texture(sampler_color, uv + (off1 / image_size)) * 0.3162162162f * constants.blur_scale;
-				color += texture(sampler_color, uv - (off1 / image_size)) * 0.3162162162f * constants.blur_scale;
-				color += texture(sampler_color, uv + (off2 / image_size)) * 0.0702702703f * constants.blur_scale;
-				color += texture(sampler_color, uv - (off2 / image_size)) * 0.0702702703f * constants.blur_scale;
+				float2 off1 = float2(1.3846153846f) * direction;
+				float2 off2 = float2(3.2307692308f) * direction;
+				color += TEX2D(sampler_color, uv) * 0.2270270270f * constants.blur_scale;
+				color += TEX2D(sampler_color, uv + (off1 / image_size)) * 0.3162162162f * constants.blur_scale;
+				color += TEX2D(sampler_color, uv - (off1 / image_size)) * 0.3162162162f * constants.blur_scale;
+				color += TEX2D(sampler_color, uv + (off2 / image_size)) * 0.0702702703f * constants.blur_scale;
+				color += TEX2D(sampler_color, uv - (off2 / image_size)) * 0.0702702703f * constants.blur_scale;
 			}
 #elif defined(BLUR_TYPE_13)
 			{
-				vec2 off1 = vec2(1.411764705882353f) * direction;
-				vec2 off2 = vec2(3.2941176470588234f) * direction;
-				vec2 off3 = vec2(5.176470588235294f) * direction;
-				color += texture(sampler_color, uv) * 0.1964825501511404f * constants.blur_scale;
-				color += texture(sampler_color, uv + (off1 / image_size)) * 0.2969069646728344f * constants.blur_scale;
-				color += texture(sampler_color, uv - (off1 / image_size)) * 0.2969069646728344f * constants.blur_scale;
-				color += texture(sampler_color, uv + (off2 / image_size)) * 0.09447039785044732f * constants.blur_scale;
-				color += texture(sampler_color, uv - (off2 / image_size)) * 0.09447039785044732f * constants.blur_scale;
-				color += texture(sampler_color, uv + (off3 / image_size)) * 0.010381362401148057f * constants.blur_scale;
-				color += texture(sampler_color, uv - (off3 / image_size)) * 0.010381362401148057f * constants.blur_scale;
+				float2 off1 = float2(1.411764705882353f) * direction;
+				float2 off2 = float2(3.2941176470588234f) * direction;
+				float2 off3 = float2(5.176470588235294f) * direction;
+				color += TEX2D(sampler_color, uv) * 0.1964825501511404f * constants.blur_scale;
+				color += TEX2D(sampler_color, uv + (off1 / image_size)) * 0.2969069646728344f * constants.blur_scale;
+				color += TEX2D(sampler_color, uv - (off1 / image_size)) * 0.2969069646728344f * constants.blur_scale;
+				color += TEX2D(sampler_color, uv + (off2 / image_size)) * 0.09447039785044732f * constants.blur_scale;
+				color += TEX2D(sampler_color, uv - (off2 / image_size)) * 0.09447039785044732f * constants.blur_scale;
+				color += TEX2D(sampler_color, uv + (off3 / image_size)) * 0.010381362401148057f * constants.blur_scale;
+				color += TEX2D(sampler_color, uv - (off3 / image_size)) * 0.010381362401148057f * constants.blur_scale;
 			}
 #endif // BLUR_TYPE
 #elif defined(LENSFLARE)
 
-			//vec2 main = uv-pos;
-			//vec2 uvd = uv*(length(uv));
+			//float2 main = uv-pos;
+			//float2 uvd = uv*(length(uv));
 			//
 			//float ang = atan(main.x,main.y);
 			//float dist=length(main); dist = pow(dist,.1);
-			//float n = noise(vec2(ang*16.0,dist*32.0));
+			//float n = noise(float2(ang*16.0,dist*32.0));
 			//
 			//float f0 = 1.0/(length(uv-pos)*16.0+1.0);
 			//
@@ -199,34 +202,34 @@
 			//float f22 = max(1.0/(1.0+32.0*pow(length(uvd+0.85*pos),2.0)),.0)*00.23;
 			//float f23 = max(1.0/(1.0+32.0*pow(length(uvd+0.9*pos),2.0)),.0)*00.21;
 			//
-			//vec2 uvx = mix(uv,uvd,-0.5);
+			//float2 uvx = lerp(uv,uvd,-0.5);
 			//
 			//float f4 = max(0.01-pow(length(uvx+0.4*pos),2.4),.0)*6.0;
 			//float f42 = max(0.01-pow(length(uvx+0.45*pos),2.4),.0)*5.0;
 			//float f43 = max(0.01-pow(length(uvx+0.5*pos),2.4),.0)*3.0;
 			//
-			//uvx = mix(uv,uvd,-.4);
+			//uvx = lerp(uv,uvd,-.4);
 			//
 			//float f5 = max(0.01-pow(length(uvx+0.2*pos),5.5),.0)*2.0;
 			//float f52 = max(0.01-pow(length(uvx+0.4*pos),5.5),.0)*2.0;
 			//float f53 = max(0.01-pow(length(uvx+0.6*pos),5.5),.0)*2.0;
 			//
-			//uvx = mix(uv,uvd,-0.5);
+			//uvx = lerp(uv,uvd,-0.5);
 			//
 			//float f6 = max(0.01-pow(length(uvx-0.3*pos),1.6),.0)*6.0;
 			//float f62 = max(0.01-pow(length(uvx-0.325*pos),1.6),.0)*3.0;
 			//float f63 = max(0.01-pow(length(uvx-0.35*pos),1.6),.0)*5.0;
 			//
-			//vec3 c = vec3(.0);
+			//float3 c = float3(.0);
 			//
 			//c.r+=f2+f4+f5+f6; c.g+=f22+f42+f52+f62; c.b+=f23+f43+f53+f63;
-			//c = c*1.3 - vec3(length(uvd)*.05);
-			//c+=vec3(f0);
+			//c = c*1.3 - float3(length(uvd)*.05);
+			//c+=float3(f0);
 			//
 			//color.rgb *= c;
 #endif
 		
-			imageStore(write_color, ivec2(px), color);
+			write_color[px] = color;
 		}
 	""";
 }

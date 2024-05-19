@@ -13,14 +13,18 @@
 
 	code: 
 	"""
-		layout (location = 0) in vec2 inUV;
-		layout (location = 0) out vec4 outFragcolor;
+		struct VS_INPUT { [[vk::location(0)]] float2 inUV : TEXCOORD0; };
+		struct PS_OUTPUT { [[vk::location(0)]] float4 outFragcolor : SV_Target; };
 
-		layout(set = 1, binding = 0) uniform sampler2D copy_target;
+		REGISTER_TEXTURE_SLOT(1, 0, Texture2D<float4>, SamplerState, copy_target);
 
-		void main() 
+		PS_OUTPUT main(VS_INPUT input) 
 		{
-			outFragcolor = texture(copy_target, inUV);
+			PS_OUTPUT output;
+
+			output.outFragcolor = TEX2D(copy_target, input.inUV);
+
+			return output;
 		}
 	""";
 }

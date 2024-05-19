@@ -46,14 +46,14 @@
 			MeshletTriangleBuffer tb;
 		} gb;
 
-		vec3 getRandomColor(uint32_t _seed)
+		float3 getRandomColor(uint32_t _seed)
 		{
 			uint hash = (_seed ^ 61) ^ (_seed >> 16);
 			hash = hash + (hash << 3);
 			hash = hash ^ (hash >> 4);
 			hash = hash * 0x27d4eb2d;
 			hash = hash ^ (hash >> 15);
-			return vec3(float(hash & 255), float((hash >> 8) & 255), float((hash >> 16) & 255)) / 255.0;
+			return float3(float(hash & 255), float((hash >> 8) & 255), float((hash >> 16) & 255)) / 255.0;
 		}
 
 		void main()
@@ -65,7 +65,7 @@
 			//FClusterInfo cluster = clusterBuffer.clusters[gl_DrawID];
 			//FGeometryGPUBatch batch = batchBuffer.geometry_batches[cluster.drawID];
 			//
-			//vec3 meshletColor = getRandomColor(meshletIndex);
+			//float3 meshletColor = getRandomColor(meshletIndex);
 			//FMeshlet meshlet = gb.mb.meshlets[meshletIndex];
 			//
 			//[unroll]
