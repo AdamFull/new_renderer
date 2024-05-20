@@ -75,8 +75,8 @@
 			uint instID = vboinstData >> 16;
 
 			uint32_t draw_index = res.drawID + instID;
-			FGeometryBatch draw_info = drawInfoBuffer.infos[draw_index];
-			FMesh mesh = meshBuffer.meshes[draw_info.meshID];
+			FGeometryBatch draw_info = getDrawInfo(draw_index);
+			FMesh mesh = getMesh(draw_info.meshID);
 			
 			res.objID = draw_info.nodeID;
 			res.matID = mesh.materialID;
@@ -89,7 +89,7 @@
 		{
 			FRawVertex[3] vertices;
 
-			FDrawIndexedIndirectData draw_command = indirectCommandBuffer.commands[drawID];
+			FDrawIndexedIndirectData draw_command = getDrawIndexedCommand(drawID);
 
 			// Index of the first vertex of this draw call's geometry
 			uint startIndex = draw_command.firstIndex;
@@ -100,14 +100,14 @@
 			uint triVert3IndexBufferPosition = (primID * 3 + 2) + startIndex;	
 
 			// Now get vertex index from index buffer (eg, 17, 41, 32)
-			Index triVert0Index = ib.indices[triVert1IndexBufferPosition];
-			Index triVert1Index = ib.indices[triVert2IndexBufferPosition];
-			Index triVert2Index = ib.indices[triVert3IndexBufferPosition];
+			Index triVert0Index = GET_VALUE_PTR_BY_ADDRESS(ib, triVert1IndexBufferPosition);
+			Index triVert1Index = GET_VALUE_PTR_BY_ADDRESS(ib, triVert2IndexBufferPosition);
+			Index triVert2Index = GET_VALUE_PTR_BY_ADDRESS(ib, triVert3IndexBufferPosition);
 
 			// Load vertex data of the 3 control points
-			vertices[0] = vb.vertices[draw_command.vertexOffset + triVert0Index];
-			vertices[1] = vb.vertices[draw_command.vertexOffset + triVert1Index];
-			vertices[2] = vb.vertices[draw_command.vertexOffset + triVert2Index];
+			vertices[0] = GET_VALUE_PTR_BY_ADDRESS(vb, draw_command.vertexOffset + triVert0Index);
+			vertices[1] = GET_VALUE_PTR_BY_ADDRESS(vb, draw_command.vertexOffset + triVert1Index);
+			vertices[2] = GET_VALUE_PTR_BY_ADDRESS(vb, draw_command.vertexOffset + triVert2Index);
 
 			return vertices;
 		}
@@ -182,7 +182,7 @@
 			vec3 position2 = vec3(vertices[2].px, vertices[2].py, vertices[2].pz);
 
 			// Load mesh model matrix
-			FSceneNode node = nodeBuffer.nodes[visbuffer.objID];
+			FSceneNode node = getSceneNode(visbuffer.objID);
 			mat4 model = getModelMatrix(node.matrixOffset);
 			
 #ifdef HAS_SKIN
@@ -207,7 +207,7 @@
 			}
 #endif // HAS_SKIN
 
-			FCamera camera = cameraBuffer.cameras[visbuffer.cameraID];
+			FCamera camera = getCamera(visbuffer.cameraID);
 			mat4 view = getViewMatrix(camera.matricesOffset);
 			mat4 projection = getProjectionMatrix(camera.matricesOffset);
 
@@ -321,8 +321,8 @@
 		//		uint instID = vboinstData >> 16;
 		//
 		//		uint32_t draw_index = vb.drawID + instID;
-		//		FDrawMeshinfo draw_info = drawInfoBuffer.infos[draw_index];
-		//		FMesh mesh = meshBuffer.meshes[draw_info.meshID];
+		//		FDrawMeshinfo draw_info = getDrawInfo(draw_index);
+		//		FMesh mesh = getMesh(draw_info.meshID);
 		//		
 		//		vb.objID = draw_info.nodeID;
 		//		vb.matID = mesh.materialID;

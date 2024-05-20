@@ -31,7 +31,43 @@
 	// Bindless texture
 	layout(set = 0, binding = 3) uniform sampler2D globalTextures[];
 
-	#define GET_SAMPLER_2D(texture_index, mip_level) globalTextures[textureRemapBuffer.remap[texture_index] + mip_level]
+	#define GET_VALUE_PTR_BY_ADDRESS(buffer_address, index) buffer_address.data[nonuniformEXT(index)]
+
+	FSceneNode getSceneNode(uint index) { return GET_VALUE_PTR_BY_ADDRESS(nodeBuffer, index); }
+	FMesh getMesh(uint index) { return GET_VALUE_PTR_BY_ADDRESS(meshBuffer, index); }
+	FMaterial getMaterial(uint index) { return GET_VALUE_PTR_BY_ADDRESS(materialBuffer, index); }
+	FLightCommit getLight(uint index) { return GET_VALUE_PTR_BY_ADDRESS(lightsBuffer, index); }
+
+	FCascadedShadowCommit getCascadedShadowCommit(uint index) { return GET_VALUE_PTR_BY_ADDRESS(cascadedShadowBuffer, index); }
+	FOmniShadowCommit getOmniShadowCommit(uint index) { return GET_VALUE_PTR_BY_ADDRESS(omniShadowBuffer, index); }
+	FSpotShadowCommit getSpotShadowCommit(uint index) { return GET_VALUE_PTR_BY_ADDRESS(spotShadowBuffer, index); }
+
+	FGeometryBatch getDrawInfo(uint index) { return GET_VALUE_PTR_BY_ADDRESS(drawInfoBuffer, index); }
+	FGeometryBatch getRawDrawInfo(uint index) { return GET_VALUE_PTR_BY_ADDRESS(rawDrawInfoBuffer, index); }
+
+	vec4 getFrustumSide(uint index) { return GET_VALUE_PTR_BY_ADDRESS(frustumSidesBuffer, index); }
+
+	FDrawIndexedIndirectData getDrawIndexedCommand(uint index) { return GET_VALUE_PTR_BY_ADDRESS(indirectCommandBuffer, index); }
+	uint32_t getDrawCount(uint index) { return GET_VALUE_PTR_BY_ADDRESS(indirectCountBuffer, index); }
+
+	uint32_t getTextureRemapIndex(uint index) { return GET_VALUE_PTR_BY_ADDRESS(textureRemapBuffer, index); }
+	FCamera getCamera(uint index) { return GET_VALUE_PTR_BY_ADDRESS(cameraBuffer, index); }
+
+	mat4 getMatrixById(uint global_offset, uint local_offset) { return GET_VALUE_PTR_BY_ADDRESS(matrixBuffer, global_offset + local_offset); }
+
+	mat4 getModelMatrix(uint global_offset) { return getMatrixById(global_offset, model_matrix_offset); }
+	mat4 getOldModelMatrix(uint global_offset) { return getMatrixById(global_offset, old_model_matrix_offset); }
+
+	mat4 getViewMatrix(uint global_offset) { return getMatrixById(global_offset, view_matrix_offset); }
+	mat4 getInvViewMatrix(uint global_offset) { return getMatrixById(global_offset, inv_view_matrix_offset); }
+	mat4 getProjectionMatrix(uint global_offset) { return getMatrixById(global_offset, projection_matrix_offset); }
+	mat4 getInvProjectionMatrix(uint global_offset) { return getMatrixById(global_offset, inv_projection_matrix_offset); }
+	mat4 getViewProjectionMatrix(uint global_offset) { return getMatrixById(global_offset, view_projection_matrix_offset); }
+	mat4 getPrevViewProjectionMatrix(uint global_offset) { return getMatrixById(global_offset, prev_view_projection_matrix_offset); }
+	mat4 getInvViewProjectionMatrix(uint global_offset) { return getMatrixById(global_offset, inv_view_projection_matrix_offset); }
+	mat4 getReprojectionMatrix(uint global_offset) { return getMatrixById(global_offset, reprojection_matrix_offset); }
+
+	#define GET_SAMPLER_2D(texture_index, mip_level) globalTextures[getTextureRemapIndex(texture_index) + mip_level]
 
 	vec4 sampleTexture2D(uint32_t texture_index, uint32_t mip_level, vec2 uv)
 	{
@@ -54,19 +90,5 @@
 //			uint32_t viewportIndex;
 //		};
 //#endif
-
-	mat4 getMatrixById(uint global_offset, uint local_offset) { return matrixBuffer.matrices[global_offset + local_offset]; }
-
-	mat4 getModelMatrix(uint global_offset) { return getMatrixById(global_offset, model_matrix_offset); }
-	mat4 getOldModelMatrix(uint global_offset) { return getMatrixById(global_offset, old_model_matrix_offset); }
-
-	mat4 getViewMatrix(uint global_offset) { return getMatrixById(global_offset, view_matrix_offset); }
-	mat4 getInvViewMatrix(uint global_offset) { return getMatrixById(global_offset, inv_view_matrix_offset); }
-	mat4 getProjectionMatrix(uint global_offset) { return getMatrixById(global_offset, projection_matrix_offset); }
-	mat4 getInvProjectionMatrix(uint global_offset) { return getMatrixById(global_offset, inv_projection_matrix_offset); }
-	mat4 getViewProjectionMatrix(uint global_offset) { return getMatrixById(global_offset, view_projection_matrix_offset); }
-	mat4 getPrevViewProjectionMatrix(uint global_offset) { return getMatrixById(global_offset, prev_view_projection_matrix_offset); }
-	mat4 getInvViewProjectionMatrix(uint global_offset) { return getMatrixById(global_offset, inv_view_projection_matrix_offset); }
-	mat4 getReprojectionMatrix(uint global_offset) { return getMatrixById(global_offset, reprojection_matrix_offset); }
 	""";
 }

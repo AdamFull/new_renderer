@@ -17,7 +17,7 @@
 
 		vec3 generatePositionFromDepth(vec2 texturePos, float depth) 
 		{
-			FCamera camera = cameraBuffer.cameras[frameData.defaultCameraID];
+			FCamera camera = getCamera(frameData.defaultCameraID);
 
 			vec4 ndc = vec4((texturePos - 0.5) * 2, depth, 1.f);
 			vec4 inversed = getInvProjectionMatrix(camera.matricesOffset) * ndc;
@@ -27,7 +27,7 @@
 		
 		vec2 generateProjectedPosition(vec3 pos)
 		{
-			FCamera camera = cameraBuffer.cameras[frameData.defaultCameraID];
+			FCamera camera = getCamera(frameData.defaultCameraID);
 
 			vec4 samplePosition = getProjectionMatrix(camera.matricesOffset) * vec4(pos, 1.f);
 			samplePosition.xy = (samplePosition.xy / samplePosition.w) * 0.5 + 0.5;
@@ -162,7 +162,7 @@
 		
 		vec3 ScreenSpaceReflections(in vec3 worldPosition, in vec3 N, in vec3 V, in float R, in sampler2D depthTexture, in sampler2D previousSceneColor, float dither, inout float ssrWeight)
 		{
-			FCamera camera = cameraBuffer.cameras[frameData.defaultCameraID];
+			FCamera camera = getCamera(frameData.defaultCameraID);
 			mat4 view = getViewMatrix(camera.matricesOffset);
 
 			vec3 ssr = vec3(0.0);
@@ -260,7 +260,7 @@
 #if 1
 		float ScreenSpaceShadows(vec3 worldPosition, vec3 lightDirection, in sampler2D depthTexture, int stepCount, float rayLength, float ditherOffset)
 		{
-			FCamera camera = cameraBuffer.cameras[frameData.defaultCameraID];
+			FCamera camera = getCamera(frameData.defaultCameraID);
 			mat4 projection = getProjectionMatrix(camera.matricesOffset);
 			mat4 view_projection = getViewProjectionMatrix(camera.matricesOffset);
 		
@@ -314,7 +314,7 @@
 
 		float ScreenSpaceShadows(vec3 worldPosition, vec3 lightDirection, in sampler2D depthTexture, int stepCount, float rayLength, float ditherOffset)
 		{
-			FCamera camera = cameraBuffer.cameras[frameData.defaultCameraID];
+			FCamera camera = getCamera(frameData.defaultCameraID);
 			mat4 projection = getProjectionMatrix(camera.matricesOffset);
 			mat4 view = getViewMatrix(camera.matricesOffset);
 

@@ -44,7 +44,7 @@
 		{
 			for (uint32_t i = 0; i < 6; i++)
 			{
-				vec4 edge = frustumSidesBuffer.sides[frustumID * 6u + i];
+				vec4 edge = getFrustumSide(frustumID * 6u + i);
 				if (   edge.x * min_extents.x + edge.y * min_extents.y + edge.z * min_extents.z + edge.w <= 0.0f
 					&& edge.x * max_extents.x + edge.y * min_extents.y + edge.z * min_extents.z + edge.w <= 0.0f
 					&& edge.x * min_extents.x + edge.y * max_extents.y + edge.z * min_extents.z + edge.w <= 0.0f
@@ -66,9 +66,9 @@
 				return;
 
 			// Sample info about current draw comand
-			FGeometryBatch draw_info = rawDrawInfoBuffer.infos[global_draw_index];
-			FSceneNode node = nodeBuffer.nodes[draw_info.nodeID];
-			FMesh mesh = meshBuffer.meshes[draw_info.meshID];
+			FGeometryBatch draw_info = getRawDrawInfo(global_draw_index);
+			FSceneNode node = getSceneNode(draw_info.nodeID);
+			FMesh mesh = getMesh(draw_info.meshID);
 			mat4 model = getModelMatrix(node.matrixOffset);			
 
 			// output_index = culler_counter + draw_offset;
@@ -84,15 +84,15 @@
 			//if(checkObjectInFrustum(min_extents.xyz * 1.1, min_extents.xyz * 1.1, draw_info.cameraID))
 			{	
 				uint draw_offset = frameData.maxCommandsCount * draw_info.cameraID;
-				uint culler_counter = atomicAdd(indirectCountBuffer.indices[draw_info.cameraID], 1);
+				uint culler_counter = atomicAdd(GET_VALUE_PTR_BY_ADDRESS(indirectCountBuffer, draw_info.cameraID), 1);
 
 				uint output_index = draw_offset + culler_counter;
-				drawInfoBuffer.infos[output_index] = draw_info;
+				GET_VALUE_PTR_BY_ADDRESS(drawInfoBuffer, output_index) = draw_info;
 			
 				// Construct  indirect draw command
 				// TODO: In future thing about how to implement instancing here
 
-				FCamera camera = cameraBuffer.cameras[draw_info.cameraID];
+				FCamera camera = getCamera(draw_info.cameraID);
 				mat4 view_projection = getViewProjectionMatrix(camera.matricesOffset);
 				
 				vec4 min_clip = view_projection * min_extents;
@@ -112,7 +112,7 @@
 				uint lod_level = uint(log2(max(1.0f, lod_ratio * (mesh.lodCount - 1))));
 				lod_level = clamp(lod_level, 0, mesh.lodCount - 1);
 
-				FMeshLod lod = lb.lods[mesh.lodOffset + lod_level];
+				FMeshLod lod = GET_VALUE_PTR_BY_ADDRESS(lb, mesh.lodOffset + lod_level);
 				
 				FDrawIndexedIndirectData indirect_command;
 				indirect_command.indexCount = lod.indexCount == 0 ? lastIndex : lod.indexCount;
@@ -121,7 +121,7 @@
 				indirect_command.vertexOffset = int(lod.firstVertex);
 				indirect_command.firstInstance = 0;
 
-				indirectCommandBuffer.commands[output_index] = indirect_command;
+				GET_VALUE_PTR_BY_ADDRESS(indirectCommandBuffer, output_index) = indirect_command;
 			}
 		}
 	""";

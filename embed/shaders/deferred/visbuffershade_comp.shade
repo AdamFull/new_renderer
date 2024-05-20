@@ -128,8 +128,8 @@
 
 		float getCascadeShadow(sampler2DArrayShadow shadowmap_tex, in FLightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
 		{
-			FCascadedShadowCommit commit = cascadedShadowBuffer.shadows[light.shadowIndex];
-			FCamera camera = cameraBuffer.cameras[commit.cameraID];
+			FCascadedShadowCommit commit = getCascadedShadowCommit(light.shadowIndex);
+			FCamera camera = getCamera(commit.cameraID);
 
 			uint cascadeIndex = getScadowCascadeSplit(commit, va.linearZ, dither);
 		
@@ -167,7 +167,7 @@
 
 		float getOmniShadow(samplerCubeArrayShadow shadowmap_tex, in FLightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
 		{
-			FOmniShadowCommit commit = omniShadowBuffer.shadows[light.shadowIndex];
+			FOmniShadowCommit commit = getOmniShadowCommit(light.shadowIndex);
 
 			float shadow = 1.0;
 			vec3 shadowClip = va.pos - light.position;
@@ -207,8 +207,8 @@
 
 		float getDirectionalShadow(sampler2DArrayShadow shadomwap_tex, in FLightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
 		{
-			FSpotShadowCommit commit = spotShadowBuffer.shadows[light.shadowIndex];
-			FCamera camera = cameraBuffer.cameras[commit.cameraID];
+			FSpotShadowCommit commit = getSpotShadowCommit(light.shadowIndex);
+			FCamera camera = getCamera(commit.cameraID);
 
 		    float shadow = 1.0;
 			vec4 shadowClip	= getViewProjectionMatrix(camera.matricesOffset) * vec4(va.pos, 1.0);
@@ -258,7 +258,7 @@
 
 			for(uint i = 0u; i < frameData.lightCount; i++)
 			{
-				FLightCommit light = lightsBuffer.lights[i];
+				FLightCommit light = getLight(i);
 
 				if(light.type == light_type_directional)
 					Lo += calculateDirectionalLight(light, va, ms, V, F0, dither);
@@ -273,7 +273,7 @@
 
 		vec3 debug_visualize_cascades(in float view_depth, float dither)
 		{
-			FCascadedShadowCommit shadow = cascadedShadowBuffer.shadows[0];
+			FCascadedShadowCommit shadow = getCascadedShadowCommit(0);
 			uint cascade_index = getScadowCascadeSplit(shadow, view_depth, dither);
 
 			switch(cascade_index) 
@@ -301,7 +301,7 @@
 			if(swizzle_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, gl_WorkGroupID.xy, image_size, uv, px))
 				return;
 
-			FCamera camera = cameraBuffer.cameras[frameData.defaultCameraID];
+			FCamera camera = getCamera(frameData.defaultCameraID);
 			mat4 inv_view = getInvViewMatrix(camera.matricesOffset);
 
 			vec3 camera_pos = vec3(inv_view[3]);
@@ -323,7 +323,7 @@
 				uint sun_count = 0;
 				for(uint i = 0u; i < frameData.lightCount; i++)
 				{
-					const FLightCommit light = lightsBuffer.lights[i];
+					const FLightCommit light = getLight(i);
 					if(light.type == light_type_directional)
 					{
 						const vec3 dir_to_sun = normalize(-light.direction);
@@ -349,7 +349,7 @@
 			float dither = interleavedGradientNoise(uv);
 
 			VertexAttribute va = getVertexData(uv, visbuffer);
-			FMaterial material = materialBuffer.materials[visbuffer.matID];
+			FMaterial material = getMaterial(visbuffer.matID);
 			MaterialSample ms = sampleMaterial(material, va);
 
 			// Calculate direction from fragment to viewPosition
