@@ -115,7 +115,7 @@ const std::unique_ptr<IShaderObject>& CCascadedShadowMapPass::getShaderByVBO(con
 
 		auto front_face = m_bFlipViewport ? EShaderFrontFace::eCW : EShaderFrontFace::eCCW;
 
-		makeShader(shader_name, shader, EShaderCullModeFlagBits::eFront, front_face, vbo);
+		makeShader(shader_name, shader, EShaderCullModeFlagBits::eFront, front_face, EDepthCompareOp::eLessOrEqual, vbo);
 		initShaderResources(shader);
 	}
 

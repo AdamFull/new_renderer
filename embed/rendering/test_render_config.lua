@@ -526,7 +526,7 @@ end
 do
     local pass_ci = make_graphics_pass(RenderingType.geometry, QueueType.graphics, "visibilitybuffer:write")
     pass_ci:set_depth_target("zbuffer_depth_target")
-    pass_ci:set_stencil_target("zbuffer_depth_target")
+    --pass_ci:set_stencil_target("zbuffer_depth_target")
 
     pass_ci:add_write_resource("visbuffer_geometry_target", make_vec4(0.0, 0.0, 0.0, 0.0))
     pass_ci:add_write_resource("visbuffer_vboinst_target", make_vec4(0.0, 0.0, 0.0, 0.0))

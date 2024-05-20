@@ -402,6 +402,7 @@ u64 CVkRenderContext::createShader(const std::string& name, const FGraphicsShade
 	pipeline_ci.primitiveTopology = get_primitive_topology(shader_ci.primitiveTopology);
 	pipeline_ci.cullMode = get_cull_mode_flags(shader_ci.cullMode);
 	pipeline_ci.frontFace = get_front_face(shader_ci.frontFace);
+	pipeline_ci.depthCompareOp = get_compare_op(shader_ci.depthCompareOp);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	pipeline_ci.name = name;
 #endif

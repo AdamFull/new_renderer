@@ -71,7 +71,7 @@ namespace engine
 			void buildAttachment(u64 resource_id, const FPassBuildInfo& build_info, FRenderGraphAttachmentInfo& attachment_info);
 			virtual void _render(const FRenderFrameInfo& frame_info) = 0;
 
-			virtual void makeShader(const std::string& name, std::unique_ptr<IShaderObject>& shader, EShaderCullModeFlagBits cull_mode, EShaderFrontFace front_face, const IVertexHandler* vbo = nullptr);
+			virtual void makeShader(const std::string& name, std::unique_ptr<IShaderObject>& shader, EShaderCullModeFlagBits cull_mode, EShaderFrontFace front_face, EDepthCompareOp depthOp = EDepthCompareOp::eLessOrEqual, const IVertexHandler* vbo = nullptr);
 			virtual void initShaderResources(const std::unique_ptr<IShaderObject>& shader) override;
 			virtual void bindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt) override;
 		protected:

@@ -535,7 +535,8 @@ FRenderApiErrorInfo CVkRenderDevice::createPipeline(const FVkGraphicsPipelineCre
 	vk::PipelineDepthStencilStateCreateInfo depth_stencil_state{};
 	depth_stencil_state.depthTestEnable = enable_depth;
 	depth_stencil_state.depthWriteEnable = enable_depth; // TODO: depth write should be set by texture state
-	depth_stencil_state.depthCompareOp = vk::CompareOp::eLessOrEqual;
+
+	depth_stencil_state.depthCompareOp = pipeline_ci.depthCompareOp;
 	depth_stencil_state.back.compareOp = vk::CompareOp::eAlways;
 	depth_stencil_state.depthBoundsTestEnable = false;
 	depth_stencil_state.stencilTestEnable = false; // TODO: implement stencil test

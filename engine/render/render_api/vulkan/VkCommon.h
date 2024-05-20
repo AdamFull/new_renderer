@@ -492,6 +492,21 @@ namespace engine
 
 				return image_layout_translation;
 			}
+
+			inline vk::CompareOp get_compare_op(EDepthCompareOp op)
+			{
+				switch (op)
+				{
+				case EDepthCompareOp::eNever: return vk::CompareOp::eNever; break;
+				case EDepthCompareOp::eLess: return vk::CompareOp::eLess; break;
+				case EDepthCompareOp::eEqual: return vk::CompareOp::eEqual; break;
+				case EDepthCompareOp::eLessOrEqual: return vk::CompareOp::eLessOrEqual; break;
+				case EDepthCompareOp::eGreater: return vk::CompareOp::eGreater; break;
+				case EDepthCompareOp::eNotEqual: return vk::CompareOp::eNotEqual; break;
+				case EDepthCompareOp::eGreaterOrEqual: return vk::CompareOp::eGreaterOrEqual; break;
+				case EDepthCompareOp::eAlways: return vk::CompareOp::eAlways; break;
+				}
+			}
 		}
 	}
 }

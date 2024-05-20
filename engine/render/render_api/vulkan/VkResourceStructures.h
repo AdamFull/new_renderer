@@ -276,6 +276,8 @@ namespace engine
 				vk::Format depthAttachmentFormat{ vk::Format::eUndefined };
 				vk::Format stencilAttachmentFormat{ vk::Format::eUndefined };
 
+				vk::CompareOp depthCompareOp{ vk::CompareOp::eLessOrEqual };
+
 				utl::vector<vk::VertexInputBindingDescription> vertexBindingDescriptions{};
 				utl::vector<vk::VertexInputAttributeDescription> vertexAttributeDescriptions{};
 

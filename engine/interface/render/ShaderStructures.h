@@ -41,6 +41,18 @@ namespace engine
 			eCW
 		};
 
+		enum class EDepthCompareOp
+		{
+			eNever,
+			eLess,
+			eEqual,
+			eLessOrEqual,
+			eGreater,
+			eNotEqual,
+			eGreaterOrEqual,
+			eAlways
+		};
+
 		struct FReflectionUniform
 		{
 			u32 set{ 0u };
@@ -101,6 +113,8 @@ namespace engine
 			EShaderCullModeFlags cullMode{};
 			// EShaderFrontFace
 			EShaderFrontFace frontFace{};
+
+			EDepthCompareOp depthCompareOp{ EDepthCompareOp::eLessOrEqual };
 
 			u32 usageCount{ 1u };
 
