@@ -223,7 +223,7 @@ void CVkRenderContext::createGlobalDescriptor(const FGlobalUniformCreateInfo& un
 		FVkBufferCreateInfo buffer_ci{};
 		buffer_ci.instanceCount = m_pDevice->m_swapchain.framesInFlight;
 		buffer_ci.instanceSize = size;
-		buffer_ci.minOffsetAlignment = physical.properties.limits.minUniformBufferOffsetAlignment;// std::lcm(physical.properties.limits.minUniformBufferOffsetAlignment, physical.properties.limits.nonCoherentAtomSize);
+		buffer_ci.minOffsetAlignment = std::lcm(physical.properties.limits.minUniformBufferOffsetAlignment, physical.properties.limits.nonCoherentAtomSize);
 		buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
 		buffer_ci.usageFlags = vk::BufferUsageFlagBits::eUniformBuffer;
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -2290,7 +2290,7 @@ FVkBufferCreateInfo CVkRenderContext::makeBufferCreateInfo(const std::string& na
 	if (buffer_ci.flags & EBufferUsageFlagBits::eUniform)
 	{
 		vk_buffer_ci.usageFlags |= vk::BufferUsageFlagBits::eUniformBuffer;
-		minimal_alignment = std::max(minimal_alignment, physical.properties.limits.minUniformBufferOffsetAlignment);
+		minimal_alignment = std::lcm(physical.properties.limits.minUniformBufferOffsetAlignment, physical.properties.limits.nonCoherentAtomSize);
 	}
 
 	if (buffer_ci.flags & EBufferUsageFlagBits::eStorage)
@@ -2500,7 +2500,7 @@ FRenderApiErrorInfo CVkRenderContext::createShaderResources(const FVkShaderResou
 
 	// Minimal buffer offset
 	auto& physical = m_pDevice->getPhysicalDevice();
-	auto minOffsetAllignment = physical.properties.limits.minUniformBufferOffsetAlignment;// std::lcm(physical.properties.limits.minUniformBufferOffsetAlignment, physical.properties.limits.nonCoherentAtomSize);
+	auto minOffsetAllignment = std::lcm(physical.properties.limits.minUniformBufferOffsetAlignment, physical.properties.limits.nonCoherentAtomSize);
 
 	// Create uniform buffers
 	for (const auto& [id, uniform_block] : reflection->uniformBlocks)
