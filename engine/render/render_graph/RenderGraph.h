@@ -48,6 +48,14 @@ namespace engine
 			void update(f32 dt) override;
 			void execute(f32 dt) override;
 		private:
+			FTextureCreateInfo makeTextureCI(EApiDataFormat format, ETextureCreateFlags flags);
+			FTextureCreateInfo makeTexture2DCI(EApiDataFormat format, ETextureCreateFlags flags);
+			FTextureCreateInfo makeTexture2DArrayCI(EApiDataFormat format, ETextureCreateFlags flags);
+			FTextureCreateInfo makeTexture3DCI(EApiDataFormat format, ETextureCreateFlags flags);
+			FTextureCreateInfo makeTexture3DArrayCI(EApiDataFormat format, ETextureCreateFlags flags);
+			FTextureCreateInfo makeTextureCubeCI(EApiDataFormat format, ETextureCreateFlags flags);
+			FTextureCreateInfo makeTextureCubeArrayCI(EApiDataFormat format, ETextureCreateFlags flags);
+
 			void applyRenderPassResources(u64 pass_index, const FRenderConfigPassCreateInfo* raw_pass_ci, FPassCreateInfo* pass_ci);
 			void applySingleRenderResourceDependencies(u64 resource_id, ERenderResourceAccessFlagBits access_type, u64 pass_index, EQueueTypeFlagBits queue_type);
 			void applyMultiRenderResourceDependencies(u64 pass_index, EQueueTypeFlagBits queue_type, const utl::hash_map<ERenderResourceGroupType, utl::vector<FRenderResourceBinding>>& associated_resources);

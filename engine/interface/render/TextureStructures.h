@@ -44,7 +44,7 @@ namespace engine
 
 		struct FTextureSizeInfo
 		{
-			ERenderTargetSizePolicy policy{};
+			ERenderTargetSizePolicy policy{ ERenderTargetSizePolicy::eScalable };
 
 			u32 width{ 1u };
 			u32 height{ 1u };

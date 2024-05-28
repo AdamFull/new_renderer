@@ -67,7 +67,7 @@ std::unique_ptr<IRenderContext> make_render_context(const FRenderInterfaceCreate
 		};
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-		//context_ci.validationState = true;
+		context_ci.validationState = true;
 		context_ci.validationLayers = { "VK_LAYER_KHRONOS_validation", "VK_LAYER_KHRONOS_synchronization2" };
 		context_ci.validationFeatures = vulkan::SYNCHRONIZATION_VALIDATION_FLAG_BIT;
 #endif
@@ -142,13 +142,13 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 	m_pRenderContext->createGlobalDescriptor(global_buffer_ci);
 
 	m_pRenderWorld->create();
-	//m_pRenderGraph->create();
+	m_pRenderGraph->create();
 
 	m_pRenderScriptCore->create(this);
 
 	utl::vector<uint8_t> render_config{};
 	m_pVFS->readFile("/root/embed/rendering/test_render_config.lua", render_config);
-	m_pRenderScriptCore->build("render_config", render_config);
+	//m_pRenderScriptCore->build("render_config", render_config);
 
 	m_pRenderGraph->build();
 }

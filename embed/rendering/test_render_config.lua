@@ -1,13 +1,14 @@
 use_low_precision_velocity = true
 
-enable_fxaa = true
+enable_fxaa = false
+enable_taa = true
 motion_blur_enabled = false
-depth_of_field_enabled = false
+depth_of_field_enabled = true
 chromatic_aberration_enabled = false
 
 -- Bloom settings
 bloom_enabled = true
-bloom_use_brightness = false
+bloom_use_brightness = true
 bloom_blur_depth = 7
 
 -- Some functions
@@ -170,7 +171,7 @@ end
 
 do
     local target_ci = make_target(Format.r11g11b10_ufloat, TexType.two_dim | TexType.samplable | TexType.storage)
-    target_ci:set_size_scale(1.0)
+    target_ci:set_size_scale(0.5)
 
     render_graph:add_render_resource("bokeh_target", target_ci)
 end
@@ -207,18 +208,7 @@ end
 
 function compute_motion_blur(input_target, output_target)
     render_graph:push_debug_marker("Compute motion blur", 0xffff33ff, QueueType.graphics)
-	-- Compute static motion vectors (can be started in another queue)
-    do
-        local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, use_low_precision_velocity and "postprocess:generate_motion_vectors:LOW_PRECISION_VELOCITY" or "postprocess:generate_motion_vectors")
-        pass_ci:add_workgroup_size_by_rt("zbuffer_depth_target", true)
-    
-        pass_ci:bind_write_resource("write_color", "motion_vectors_target")
-        pass_ci:bind_read_resource("depth_texture", "zbuffer_depth_target")
-    
-        render_graph:add_render_pass("generate_motion_vectors_pass", pass_ci)
-    end
-    
-    -- Apply motion blur
+	-- Apply motion blur
     do
         local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, use_low_precision_velocity and "postprocess:apply_effect:MOTION_BLUR:LOW_PRECISION_VELOCITY" or "postprocess:apply_effect:MOTION_BLUR")
         pass_ci:add_workgroup_size_by_rt(input_target, true)
@@ -256,7 +246,7 @@ function compute_dof(input_target, output_target)
         pass_ci:bind_read_resource("depth_image", "zbuffer_depth_target")
         pass_ci:bind_read_resource("bokeh_color", "bokeh_target")
     
-        render_graph:add_render_pass("compute_bokeh_blur_pass", pass_ci)
+        render_graph:add_render_pass("apply_bokeh_blur_pass", pass_ci)
     end
 
     render_graph:pop_debug_marker("Compute depth of field", QueueType.graphics)
@@ -512,7 +502,6 @@ end
 
 do
     local pass_ci = make_graphics_pass(RenderingType.osm, QueueType.graphics, "lighting:unidirectional_shadow:OMNI_SHADOW")
-    local pass_ci = make_graphics_pass(RenderingType.osm, QueueType.graphics, "lighting:unidirectional_shadow:OMNI_SHADOW")
     pass_ci:set_depth_target("omni_shadows_target")
 
     pass_ci:add_read_resource("GeometryBatches")
@@ -561,6 +550,17 @@ do
     render_graph:add_render_pass("compute_materials_pass", pass_ci)
 end
 
+-- Compute static motion vectors (can be started in another queue)
+do
+    local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, use_low_precision_velocity and "postprocess:generate_motion_vectors:LOW_PRECISION_VELOCITY" or "postprocess:generate_motion_vectors")
+    pass_ci:add_workgroup_size_by_rt("zbuffer_depth_target", true)
+
+    pass_ci:bind_write_resource("write_color", "motion_vectors_target")
+    pass_ci:bind_read_resource("depth_texture", "zbuffer_depth_target")
+
+    render_graph:add_render_pass("generate_motion_vectors_pass", pass_ci)
+end
+
 -- Anti-alias step
 --do
 --    local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:filmic_smaa_tu2x")
@@ -573,17 +573,36 @@ end
 --    render_graph:add_render_pass("compute_smaa_pass", pass_ci)
 --end
 
+local last_target = "hdr0"
+local next_target = "hdr1"
+
+-- TemporalAA
+if enable_taa then
+    local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "postprocess:compute_temporal_aa")
+    pass_ci:add_workgroup_size_by_rt(next_target, true)
+
+    pass_ci:bind_write_resource("write_color", next_target)
+    pass_ci:bind_write_resource("current_color", last_target)
+    pass_ci:bind_write_resource("prev_color", "hdr0_history")
+    pass_ci:bind_write_resource("motion_vectors", "motion_vectors_target")
+    pass_ci:bind_write_resource("depth_image", "zbuffer_depth_target")
+
+    render_graph:add_render_pass("resolve_temporal_aa_pass", pass_ci)
+
+    last_target, next_target = swap(last_target, next_target)
+end
+
 do
     local pass_ci = make_compute_pass(ComputeType.default, QueueType.graphics, "utility:copy_compute")
-    pass_ci:add_workgroup_size_by_rt("hdr0", true)
+    pass_ci:add_workgroup_size_by_rt(last_target, true)
 
-    pass_ci:bind_read_resource("sampler_color", "hdr0")
+    pass_ci:bind_read_resource("sampler_color", last_target)
     pass_ci:bind_write_resource("write_color", "hdr0_history")
 
     render_graph:add_render_pass("copy_final_color_pass", pass_ci)
 end
 
-final_target = postprocess("hdr0", "hdr1")
+final_target = postprocess(last_target, next_target)
 
 -- Present pass
 do
