@@ -289,7 +289,7 @@ void CRenderGraph::create()
 
 	{
 		FBufferCreateInfo buffer_ci{};
-		buffer_ci.flags = EBufferUsageFlagBits::eStagingBuffer;
+		buffer_ci.flags = EBufferUsageFlagBits::eStorageBuffer;
 		buffer_ci.size = 4;
 		buffer_ci.count = 256;
 		addRenderResource("histogram_buffer", buffer_ci);
@@ -619,7 +619,7 @@ void CRenderGraph::create()
 
 				pass_ci.bindWriteResource("write_color", output_target);
 				pass_ci.bindReadResource("sampler_color", input_target);
-				pass_ci.bindReadResource("bloom_color", "hdr0_div2", 0);
+				pass_ci.bindReadResource("bloom_color", "bloom_target", 0);
 				pass_ci.bindReadResource("dirt_mask", "LensDirtMask");
 
 				addRenderPass("apply_bloom", pass_ci);
