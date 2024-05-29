@@ -546,19 +546,6 @@ namespace engine
 				void decrementUsage() { refCounter.fetch_sub(1, std::memory_order_relaxed); }
 				std::atomic<i32> refCounter{ 0 };
 			};
-
-			class IVKIntegration
-			{
-			public:
-				virtual ~IVKIntegration() = default;
-
-				virtual void init() = 0;
-				virtual void destroy() = 0;
-
-				virtual void preRender() {}
-				virtual void render(f32 dt) {}
-				virtual void postRender() {}
-			};
 		}
 	}
 }

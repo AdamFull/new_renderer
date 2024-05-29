@@ -15,7 +15,7 @@ void check_vk_result(vk::Result err)
     log_error("[ImGui Integration] Error: vk::Result = %d\n", err);
 }
 
-void CImGuiIntegration::init()
+void CVkImGuiIntegration::init()
 {
     auto& device = m_pRenderContext->getDevice();
 
@@ -52,7 +52,7 @@ void CImGuiIntegration::init()
     ImGui_ImplVulkan_Init(&init_info);
 }
 
-void CImGuiIntegration::destroy()
+void CVkImGuiIntegration::destroy()
 {
     auto& device = m_pRenderContext->getDevice();
 
@@ -61,12 +61,12 @@ void CImGuiIntegration::destroy()
     device->destroyDescriptorPool(m_descriptorPool);
 }
 
-void CImGuiIntegration::preRender()
+void CVkImGuiIntegration::preRender()
 {
     ImGui_ImplVulkan_NewFrame();
 }
 
-void CImGuiIntegration::render(f32 dt)
+void CVkImGuiIntegration::postRender()
 {
     auto& command_buffer = m_pRenderContext->getLastCommandBuffer(EQueueTypeFlagBits::eGraphics);
 

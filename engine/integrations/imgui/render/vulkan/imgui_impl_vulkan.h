@@ -90,7 +90,7 @@ struct ImGui_ImplVulkan_InitInfo
     // Need to explicitly enable VK_KHR_dynamic_rendering extension to use this, even for Vulkan 1.3.
     bool                            UseDynamicRendering;
 #ifdef IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING
-    VkPipelineRenderingCreateInfoKHR PipelineRenderingCreateInfo;
+    vk::PipelineRenderingCreateInfoKHR PipelineRenderingCreateInfo;
 #endif
 
     // (Optional) Allocation, Debugging

@@ -10,16 +10,16 @@ namespace engine
 	{
 		namespace vulkan
 		{
-			class CImGuiIntegration : public IVKIntegration
+			class CVkImGuiIntegration
 			{
 			public:
-				~CImGuiIntegration() = default;
+				~CVkImGuiIntegration() = default;
 
-				void init() override;
-				void destroy() override;
+				void init();
+				void destroy();
 
-				void preRender() override;
-				void render(f32 dt) override;
+				void preRender();
+				void postRender();
 			private:
 				class CVkRenderContext* m_pRenderContext{ nullptr };
 				FVkDescriptorPool m_descriptorPool{};
