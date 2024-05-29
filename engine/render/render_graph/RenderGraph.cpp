@@ -15,10 +15,14 @@
 #include "render_passes/BeginDebugMarker.h"
 #include "render_passes/EndDebugMarker.h"
 
+#include "ScopedDebugMarker.h"
+
 #include <logger/logger.h>
 #include <glm/gtc/matrix_transform.hpp>
 
 using namespace engine::render;
+
+#define SWAP_COUNT(in, out) std::swap(in, out); ++pass_count;
 
 struct pair_hash
 {
@@ -483,7 +487,7 @@ void CRenderGraph::create()
 	{
 		u32 pass_count{ 0u };
 
-		pushDebugMarker("Postprocess", 0xffff33ff, EQueueTypeFlagBits::eGraphics);
+		RENDER_DEBUG_MARKER_ZONE(postprocess, 0xffff33ff);
 
 		// FXAA 
 		if (enable_fxaa)
@@ -496,14 +500,13 @@ void CRenderGraph::create()
 
 			addRenderPass("apply_fxaa", pass_ci);
 
-			std::swap(input_target, output_target);
-			++pass_count;
+			SWAP_COUNT(input_target, output_target);
 		}
 
 		// Compute motion blur
 		if (motion_blur_enabled)
 		{
-			pushDebugMarker("Compute motion blur", 0xffff33ff, EQueueTypeFlagBits::eGraphics);
+			RENDER_DEBUG_MARKER_ZONE(compute_motion_blur, 0xffff33ff);
 
 			// Apply motion blur
 			{
@@ -517,16 +520,13 @@ void CRenderGraph::create()
 				addRenderPass("apply_motion_blur", pass_ci);
 			}
 
-			std::swap(input_target, output_target);
-			++pass_count;
-			
-			popDebugMarker("Compute motion blur", EQueueTypeFlagBits::eGraphics);
+			SWAP_COUNT(input_target, output_target);
 		}
 
 		// Compute dof
 		if (depth_of_field_enabled)
 		{
-			pushDebugMarker("Compute depth of field", 0xffff33ff, EQueueTypeFlagBits::eGraphics);
+			RENDER_DEBUG_MARKER_ZONE(compute_depth_of_field, 0xffff33ff);
 
 			// Compute bokeh
 			{
@@ -552,15 +552,12 @@ void CRenderGraph::create()
 				addRenderPass("apply_bokeh_blur_pass", pass_ci);
 			}
 
-			std::swap(input_target, output_target);
-			++pass_count;
-
-			popDebugMarker("Compute depth of field", EQueueTypeFlagBits::eGraphics);
+			SWAP_COUNT(input_target, output_target);
 		}
 
 		// Compute bloom
 		{
-			pushDebugMarker("Compute bloom", 0xffff33ff, EQueueTypeFlagBits::eGraphics);
+			RENDER_DEBUG_MARKER_ZONE(compute_bloom, 0xffff33ff);
 
 			// Starting from brightness detection pass
 			{
@@ -579,7 +576,7 @@ void CRenderGraph::create()
 				
 				pass_ci.bindReadResource("sampler_color", "hdr0_div2");
 
-				pushDebugMarker("Downsample", 0xffff33ff, EQueueTypeFlagBits::eGraphics);
+				RENDER_DEBUG_MARKER_ZONE(downsample, 0xffff33ff);
 				for (u32 idx = 0; idx < bloom_blur_depth; ++idx)
 				{
 					pass_ci.addWorkgroupSizeByRT("bloom_target", idx, true);
@@ -593,12 +590,11 @@ void CRenderGraph::create()
 					if(idx == 0u)
 						pass_ci.shader = "postprocess:downsample";
 				}
-				popDebugMarker("Downsample", EQueueTypeFlagBits::eGraphics);
 			}
 
 			// And upsampling
 			{
-				pushDebugMarker("Upsample", 0xffff33ff, EQueueTypeFlagBits::eGraphics);
+				RENDER_DEBUG_MARKER_ZONE(upsample, 0xffff33ff);
 				for (u32 idx = bloom_blur_depth - 1; idx > 0; --idx)
 				{
 					FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:upsample");
@@ -609,7 +605,6 @@ void CRenderGraph::create()
 
 					addRenderPass(std::format("upnsample_pass_{}", idx), pass_ci);
 				}
-				popDebugMarker("Upsample", EQueueTypeFlagBits::eGraphics);
 			}
 
 			// Apply bloom
@@ -625,10 +620,7 @@ void CRenderGraph::create()
 				addRenderPass("apply_bloom", pass_ci);
 			}
 
-			std::swap(input_target, output_target);
-			++pass_count;
-								
-			popDebugMarker("Compute bloom", EQueueTypeFlagBits::eGraphics);
+			SWAP_COUNT(input_target, output_target);
 		}
 
 		// Compute chromatic aberration
@@ -642,13 +634,12 @@ void CRenderGraph::create()
 
 			addRenderPass("apply_chromatic_aberration_pass", pass_ci);
 		
-			std::swap(input_target, output_target);
-			++pass_count;
+			SWAP_COUNT(input_target, output_target);
 		}
 
 		// Tonemap pass
 		{
-			pushDebugMarker("Compute tonemap", 0xffff33ff, EQueueTypeFlagBits::eGraphics);
+			RENDER_DEBUG_MARKER_ZONE(compute_tonemap, 0xffff33ff);
 
 			// Compute histogram
 			{
@@ -684,13 +675,8 @@ void CRenderGraph::create()
 				addRenderPass("apply_tonemap_pass", pass_ci);
 			}
 
-			std::swap(input_target, output_target);
-			++pass_count;
-
-			popDebugMarker("Compute tonemap", EQueueTypeFlagBits::eGraphics);
+			SWAP_COUNT(input_target, output_target);
 		}
-
-		popDebugMarker("Postprocess", EQueueTypeFlagBits::eGraphics);
 
 		final_target = pass_count % 2 ? input_target : output_target;
 	}
