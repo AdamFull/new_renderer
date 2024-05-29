@@ -43,7 +43,7 @@ std::string create_object_unique_name(const char* fmt, const _Ty& handle, _Args&
 CVkRenderContext::~CVkRenderContext()
 {
 	auto& logical_device = m_pDevice->getLogicalDevice();
-	logical_device.waitIdle();
+	logical_device.handle.waitIdle();
 
 	// Destroy thread contexts
 	for (auto& [thread_id, context] : m_perThreadContext)
@@ -324,7 +324,7 @@ void CVkRenderContext::updateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 	if (!write_descriptor_sets.empty())
 	{
 		auto& logical = m_pDevice->getLogicalDevice();
-		logical.updateDescriptorSets(utl::cast<u32>(write_descriptor_sets.size()), write_descriptor_sets.data(), 0, nullptr);
+		logical.handle.updateDescriptorSets(utl::cast<u32>(write_descriptor_sets.size()), write_descriptor_sets.data(), 0, nullptr);
 	}
 }
 
@@ -806,7 +806,7 @@ void CVkRenderContext::updateShaderResources(const FShaderResourceCommit& shader
 	if (!write_descriptor_sets.empty())
 	{
 		auto& logical = m_pDevice->getLogicalDevice();
-		logical.updateDescriptorSets(utl::cast<u32>(writes_count), write_descriptor_sets.data(), 0, nullptr);
+		logical.handle.updateDescriptorSets(utl::cast<u32>(writes_count), write_descriptor_sets.data(), 0, nullptr);
 	}
 }
 
@@ -1600,7 +1600,7 @@ void CVkRenderContext::updateSurface(i32 surface_width, i32 surface_height)
 		this->m_iSurfaceHeight = surface_height;
 
 		auto& logical_device = m_pDevice->getLogicalDevice();
-		logical_device.waitIdle();
+		logical_device.handle.waitIdle();
 
 		m_pDevice->cleanupSwapchain();
 		m_pDevice->createSwapchain(surface_width, surface_height);
@@ -1703,6 +1703,11 @@ void CVkRenderContext::destroyCommandBuffer(EQueueTypeFlagBits queue_type, std::
 	auto& command_buffer = per_queue.commandBuffers.back();
 	m_pDevice->destroyCommandBuffer(per_queue.commandPool, command_buffer);
 	per_queue.commandBuffers.pop_back();
+}
+
+const std::unique_ptr<CVkRenderDevice>& CVkRenderContext::getDevice() const
+{
+	return m_pDevice;
 }
 
 void CVkRenderContext::beginFrame()

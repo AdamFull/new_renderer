@@ -157,7 +157,7 @@ namespace engine
 				FVkPhysicalDevice& getPhysicalDevice();
 
 				const vk::SampleCountFlagBits getMultisamplingCount() const;
-				vk::Device& getLogicalDevice();
+				const FVkLogicalDevice& getLogicalDevice() const;
 
 				vk::Queue& getQueue(EQueueTypeFlagBits flag);
 

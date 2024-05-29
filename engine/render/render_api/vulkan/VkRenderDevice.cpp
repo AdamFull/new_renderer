@@ -951,9 +951,9 @@ const vk::SampleCountFlagBits CVkRenderDevice::getMultisamplingCount() const
 	return m_requiredSampleCount;
 }
 
-vk::Device& CVkRenderDevice::getLogicalDevice()
+const FVkLogicalDevice& CVkRenderDevice::getLogicalDevice() const
 {
-	return m_logicalDevice.handle;
+	return m_logicalDevice;
 }
 
 vk::Queue& CVkRenderDevice::getQueue(EQueueTypeFlagBits flag)

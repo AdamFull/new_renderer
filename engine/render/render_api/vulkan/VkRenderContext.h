@@ -98,6 +98,8 @@ namespace engine
 				utl::vector<FVkCommandBuffer>& getCommandBuffers(EQueueTypeFlagBits queue_type, std::thread::id thread_id = std::this_thread::get_id());
 				void destroyCommandBuffer(EQueueTypeFlagBits queue_type, std::thread::id thread_id = std::this_thread::get_id());
 
+				const std::unique_ptr<CVkRenderDevice>& getDevice() const;
+
 				void beginFrame() override;
 				void endFrame() override;
 				
