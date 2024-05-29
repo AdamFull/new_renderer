@@ -3,13 +3,14 @@
 #include <engine/render/render_api/vulkan/VkRenderDevice.h>
 #include <engine/render/render_api/vulkan/VkRenderContext.h>
 
+#include <vulkan/vulkan.hpp>
 #include "imgui_impl_vulkan.h"
 
 using namespace engine::render::vulkan;
 
 void check_vk_result(vk::Result err)
 {
-    if (err == 0)
+    if (err == vk::Result::eSuccess)
         return;
 
     log_error("[ImGui Integration] Error: vk::Result = %d\n", err);
@@ -27,7 +28,7 @@ void CVkImGuiIntegration::init()
 #endif
 
     // TODO: add error logging
-    auto err = device->createDescriptorPool(pool_ci, m_descriptorPool);
+    //auto err = device->createDescriptorPool(pool_ci, m_descriptorPool);
 
     auto& physical_device = device->getPhysicalDevice();
     auto& logical_device = device->getLogicalDevice();
@@ -38,15 +39,15 @@ void CVkImGuiIntegration::init()
     init_info.PhysicalDevice = physical_device.handle;
     init_info.Device = logical_device.handle;
     init_info.QueueFamily = physical_device.queueFamilies.queueToFamily[EQueueTypeFlagBits::ePresent];
-    init_info.Queue = logical_device.queues[EQueueTypeFlagBits::ePresent];
+    //init_info.Queue = logical_device.queues[EQueueTypeFlagBits::ePresent];
     init_info.PipelineCache = device->getPipelineCache();
-    init_info.DescriptorPool = m_descriptorPool.handle;
+    //init_info.DescriptorPool = m_descriptorPool.handle;
     //init_info.RenderPass = wd->RenderPass;
     //init_info.Subpass = 0;
     init_info.UseDynamicRendering = true;
     init_info.MinImageCount = swapchain.framesInFlight;
     init_info.ImageCount = init_info.MinImageCount;
-    init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+    init_info.MSAASamples = vk::SampleCountFlagBits::e1;
     init_info.Allocator = device->getAllocationCallbacks();
     init_info.CheckVkResultFn = check_vk_result;
     ImGui_ImplVulkan_Init(&init_info);
@@ -58,7 +59,7 @@ void CVkImGuiIntegration::destroy()
 
     ImGui_ImplVulkan_Shutdown();
 
-    device->destroyDescriptorPool(m_descriptorPool);
+    //device->destroyDescriptorPool(m_descriptorPool);
 }
 
 void CVkImGuiIntegration::preRender()

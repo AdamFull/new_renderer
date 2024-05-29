@@ -1,8 +1,7 @@
 #pragma once
 
-#include <vulkan/vulkan.hpp>
 #include <engine/interface/render/RenderInterface.h>
-#include <engine/render/render_api/vulkan/VkResourceStructures.h>
+//#include <engine/render/render_api/vulkan/VkResourceStructures.h>
 
 namespace engine
 {
@@ -22,7 +21,7 @@ namespace engine
 				void postRender();
 			private:
 				class CVkRenderContext* m_pRenderContext{ nullptr };
-				FVkDescriptorPool m_descriptorPool{};
+				//FVkDescriptorPool m_descriptorPool{};
 			};
 		}
 	}
