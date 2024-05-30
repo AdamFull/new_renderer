@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 3.18.0)
 project(render_interface)
 
 find_package(Ktx CONFIG REQUIRED)
-
+find_package(tinyxml2 CONFIG REQUIRED)
+find_package(XercesC CONFIG REQUIRED)
 find_package(Lua REQUIRED)
 
 #find_package(PkgConfig REQUIRED)  
@@ -55,6 +56,8 @@ target_link_libraries(${PROJECT_NAME}
     #PRIVATE PkgConfig::LuaJIT
     PRIVATE sol2
     PRIVATE KTX::ktx
+    PRIVATE tinyxml2::tinyxml2
+    PRIVATE XercesC::XercesC
 )
 
 target_compile_definitions(${PROJECT_NAME} 

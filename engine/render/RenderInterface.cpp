@@ -142,12 +142,17 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 	m_pRenderContext->createGlobalDescriptor(global_buffer_ci);
 
 	m_pRenderWorld->create();
-	m_pRenderGraph->create();
+
+	utl::vector<uint8_t> render_config{};
+	m_pVFS->readFile("/root/embed/rendering/render_config.xml", render_config);
+	utl::vector<uint8_t> render_config_schema{};
+	m_pVFS->readFile("/root/embed/rendering/render_config.xsd", render_config_schema);
+	m_pRenderGraph->create(render_config, render_config_schema);
 
 	m_pRenderScriptCore->create(this);
 
-	utl::vector<uint8_t> render_config{};
-	m_pVFS->readFile("/root/embed/rendering/test_render_config.lua", render_config);
+	//utl::vector<uint8_t> render_config{};
+	//m_pVFS->readFile("/root/embed/rendering/test_render_config.lua", render_config);
 	//m_pRenderScriptCore->build("render_config", render_config);
 
 	m_pRenderGraph->build();

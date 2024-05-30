@@ -67,6 +67,8 @@
     "nlohmann-json",
     "mimalloc",
     "benchmark",
-    "directx-dxc"
+    "directx-dxc",
+    "tinyxml2",
+    "xerces-c"
   ]
 }

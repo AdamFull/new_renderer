@@ -3,6 +3,7 @@
 #include <unordered_set>
 
 #include <engine/interface/render/RenderInterface.h>
+#include <engine/interface/EngineVariable.h>
 
 #include "render_passes/BasePass.h"
 
@@ -21,7 +22,7 @@ namespace engine
 			CRenderGraph(IRenderInterface* render_interface);
 			~CRenderGraph() = default;
 
-			void create() override;
+			void create(const utl::vector<u8>& config, const utl::vector<u8>& schema) override;
 			void postLoad() override;
 
 			u64 addStaticResource(const std::string& name, const std::string& path) override;
@@ -76,6 +77,7 @@ namespace engine
 			utl::vector<std::unique_ptr<IBasePass>> m_vRenderPasses{};
 			utl::hash_map<std::string, u64> m_nameToPass{};
 		private:
+			std::unique_ptr<IVariableBlock> m_pVariableBlock{};
 			utl::hash_map<u64, utl::vector<FResourceBarrierInfo>> m_perPassResourceBarriers{};
 
 			utl::vector<u64> m_vPassExecutionQueue{};

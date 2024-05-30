@@ -385,7 +385,7 @@ namespace engine
 		public:
 			virtual ~IRenderGraph() = default;
 
-			virtual void create() = 0;
+			virtual void create(const utl::vector<u8>& config, const utl::vector<u8>& schema) = 0;
 			virtual void postLoad() = 0;
 
 			virtual u64 addStaticResource(const std::string& name, const std::string& path) = 0;
