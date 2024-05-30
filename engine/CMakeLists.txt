@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.18.0)
 project(application)
 
-add_subdirectory(integrations)
 add_subdirectory(platform)
 add_subdirectory(render)
+add_subdirectory(integrations)
 add_subdirectory(filesystem)
 #add_subdirectory(scripting)
 add_subdirectory(profiler)
@@ -25,11 +25,11 @@ target_include_directories(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-	PUBLIC integrations
 	PUBLIC platform_specific
 	PUBLIC virtual_filesystem
 	PRIVATE engine_profiler
 	PRIVATE render_interface
+	PRIVATE integrations
 	#PRIVATE script_engine
 	PRIVATE engine_world
 )

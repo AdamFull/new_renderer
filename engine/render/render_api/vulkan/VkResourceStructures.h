@@ -546,6 +546,26 @@ namespace engine
 				void decrementUsage() { refCounter.fetch_sub(1, std::memory_order_relaxed); }
 				std::atomic<i32> refCounter{ 0 };
 			};
+
+			struct FVkNativeContext
+			{
+				vk::Instance instance{};
+				vk::PhysicalDevice physicalDevice{};
+				vk::Device device{};
+
+				uint32_t presentQueueFamily{};
+				vk::Queue presentQueue{};
+
+				vk::PipelineCache pipelineCache{};
+				vk::Format backbufferFormat{};
+				uint32_t backbufferFrames{};
+				vk::SampleCountFlagBits samples{};
+
+				const vk::AllocationCallbacks* allocationCallbacks{};
+
+				vma::Allocator memoryAllocator{};
+
+			};
 		}
 	}
 }

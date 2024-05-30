@@ -1,28 +1,28 @@
 #pragma once
 
 #include <engine/interface/render/RenderInterface.h>
-//#include <engine/render/render_api/vulkan/VkResourceStructures.h>
+#include <engine/interface/IntegrationInterface.h>
+#include <vulkan/vulkan.hpp>
 
 namespace engine
 {
-	namespace render
+	namespace integration
 	{
-		namespace vulkan
+		class CVkImGuiIntegration : public IRenderIntegration
 		{
-			class CVkImGuiIntegration
-			{
-			public:
-				~CVkImGuiIntegration() = default;
+		public:
+			~CVkImGuiIntegration() = default;
 
-				void init();
-				void destroy();
+			void init() override;
+			void destroy() override;
 
-				void preRender();
-				void postRender();
-			private:
-				class CVkRenderContext* m_pRenderContext{ nullptr };
-				//FVkDescriptorPool m_descriptorPool{};
-			};
-		}
+			void preRender() override;
+			void postRender() override;
+		private:
+			render::IRenderInterface* m_pRenderInterface{ nullptr };
+			vk::DescriptorPool m_descriptorPool{};
+			vk::Device m_device{};
+			const vk::AllocationCallbacks* m_allocationCallbacks{ nullptr };
+		};
 	}
 }

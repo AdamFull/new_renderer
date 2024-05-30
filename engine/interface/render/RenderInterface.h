@@ -388,6 +388,8 @@ namespace engine
 
 			virtual void updateSurface(i32 surface_width, i32 surface_height) = 0;
 
+			virtual void getNativeContext(void* context) = 0;
+
 			virtual void beginFrame() = 0;
 			virtual void endFrame() = 0;
 

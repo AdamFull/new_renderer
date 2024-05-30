@@ -1652,6 +1652,30 @@ void CVkRenderContext::updateSurface(i32 surface_width, i32 surface_height)
 	}
 }
 
+void CVkRenderContext::getNativeContext(void* context)
+{
+	auto* native_context = static_cast<FVkNativeContext*>(context);
+	auto& physical_device = m_pDevice->getPhysicalDevice();
+	auto& logical_device = m_pDevice->getLogicalDevice();
+	auto& swapchain = m_pDevice->getSwapchain();
+
+	native_context->instance = m_pDevice->getInstance();
+	native_context->physicalDevice = physical_device.handle;
+	native_context->device = logical_device.handle;
+
+	if(auto found = physical_device.queueFamilies.queueToFamily.find(EQueueTypeFlagBits::ePresent); found != physical_device.queueFamilies.queueToFamily.end())
+		native_context->presentQueueFamily = found->second;
+	if(auto found = logical_device.queues.find(EQueueTypeFlagBits::ePresent); found != logical_device.queues.end())
+	native_context->presentQueue = found->second;
+
+	native_context->pipelineCache = m_pDevice->getPipelineCache();
+	native_context->backbufferFormat = swapchain.format;
+	native_context->backbufferFrames = swapchain.framesInFlight;
+	native_context->samples = m_pDevice->getMultisamplingCount();
+	native_context->allocationCallbacks = m_pDevice->getAllocationCallbacks();
+	native_context->memoryAllocator = m_pDevice->getMemoryAllocator();
+}
+
 FVkCommandBuffer& CVkRenderContext::createCommandBuffer(const FVkCommandBufferCreateInfo& command_buffer_ci, std::thread::id thread_id)
 {
 	auto& thread_context = m_perThreadContext[thread_id];
