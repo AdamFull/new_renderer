@@ -1,204 +1,427 @@
 <RenderConfig>
-    <!-- Render Variables Section -->
-    <RenderVars>
-        <!-- Individual Variables -->
-        <Var name="low_precision_velocity" dtype="bool">true</Var>
+  <!-- Render Variables Section -->
+  <RenderVars>
+    <!-- Individual Variables -->
+    <Var name="low_precision_velocity" dtype="bool">true</Var>
 
-        <Var name="max_sun_count" dtype="u32">3</Var>
-        <Var name="max_sun_cast_shadow_count" dtype="u32">3</Var>
-        <Var name="cascade_shadow_resolution" dtype="u32">2048</Var>
-        <Var name="cascade_count" dtype="u32">4</Var>
+    <Var name="max_sun_count" dtype="u32">3</Var>
+    <Var name="max_sun_cast_shadow_count" dtype="u32">3</Var>
+    <Var name="cascade_shadow_resolution" dtype="u32">2048</Var>
+    <Var name="cascade_count" dtype="u32">4</Var>
 
-        <Var name="max_spot_count" dtype="u32">64</Var>
-        <Var name="max_spot_shadow_count" dtype="u32">16</Var>
-        <Var name="spot_shadow_resolution" dtype="u32">1024</Var>
+    <Var name="max_spot_count" dtype="u32">64</Var>
+    <Var name="max_spot_shadow_count" dtype="u32">16</Var>
+    <Var name="spot_shadow_resolution" dtype="u32">1024</Var>
 
-        <Var name="max_point_count" dtype="u32">64</Var>
-        <Var name="max_point_shadow_count" dtype="u32">8</Var>
-        <Var name="point_shadow_resolution" dtype="u32">512</Var>
+    <Var name="max_point_count" dtype="u32">64</Var>
+    <Var name="max_point_shadow_count" dtype="u32">8</Var>
+    <Var name="point_shadow_resolution" dtype="u32">512</Var>
 
-        <VarBlock name="post_process">
-            <VarBlock name="fxaa">
-                <Var name="enable" dtype="bool">false</Var>
-                <Var name="quality" type="list" dtype="f32">
-                    <Val>1.0</Val> <Val>0.75</Val> <Val>0.5</Val> <Val>0.25</Val> <Val>0.0</Val>
-                </Var>
-                <Var name="threshold" type="list" dtype="f32">
-                    <Val>0.333</Val> <Val>0.250</Val> <Val>0.166</Val> <Val>0.125</Val> <Val>0.063</Val>
-                </Var>
-                <Var name="threshold_min" type="list" dtype="f32">
-                    <Val>0.0833</Val> <Val>0.0625</Val> <Val>0.0312</Val>
-                </Var>
-            </VarBlock>
+    <VarBlock name="post_process">
+      <VarBlock name="fxaa">
+        <Var name="enable" dtype="bool">false</Var>
+        <Var name="quality" type="list" dtype="f32">
+          <Val>1.0</Val>
+          <Val>0.75</Val>
+          <Val>0.5</Val>
+          <Val>0.25</Val>
+          <Val>0.0</Val>
+        </Var>
+        <Var name="threshold" type="list" dtype="f32">
+          <Val>0.333</Val>
+          <Val>0.250</Val>
+          <Val>0.166</Val>
+          <Val>0.125</Val>
+          <Val>0.063</Val>
+        </Var>
+        <Var name="threshold_min" type="list" dtype="f32">
+          <Val>0.0833</Val>
+          <Val>0.0625</Val>
+          <Val>0.0312</Val>
+        </Var>
+      </VarBlock>
 
-            <VarBlock name="dof">
-                <Var name="enable" dtype="bool">false</Var>
-                <Var name="blur_scale" dtype="f32">1.0</Var>
-                <Var name="blur_strength" dtype="f32">1.0</Var>
-                <Var name="bokeh_samples" dtype="i32">5</Var>
-                <Var name="bokeh_poly" dtype="f32">8.0</Var>
-                <Var name="focus_point" dtype="f32">8.24</Var>
-                <Var name="near_field" dtype="f32">0.3</Var>
-                <Var name="near_transition" dtype="f32">0.125</Var>
-                <Var name="far_field" dtype="f32">8.0</Var>
-                <Var name="far_transition" dtype="f32">3.0</Var>
-            </VarBlock>
+      <VarBlock name="dof">
+        <Var name="enable" dtype="bool">false</Var>
+        <Var name="blur_scale" dtype="f32">1.0</Var>
+        <Var name="blur_strength" dtype="f32">1.0</Var>
+        <Var name="bokeh_samples" dtype="i32">5</Var>
+        <Var name="bokeh_poly" dtype="f32">8.0</Var>
+        <Var name="focus_point" dtype="f32">8.24</Var>
+        <Var name="near_field" dtype="f32">0.3</Var>
+        <Var name="near_transition" dtype="f32">0.125</Var>
+        <Var name="far_field" dtype="f32">8.0</Var>
+        <Var name="far_transition" dtype="f32">3.0</Var>
+      </VarBlock>
 
-            <VarBlock name="bloom">
-                <Var name="enable" dtype="bool">false</Var>
-                <Var name="threshold" dtype="f32">1.0</Var>
-                <Var name="filter_radius" dtype="f32">0.005</Var>
-                <Var name="strength" dtype="f32">0.3</Var>
-                <Var name="layer_count" dtype="i32" flags="invisible">7</Var>
-                <Var name="use_brightness" dtype="bool" flags="invisible">true</Var>
-            </VarBlock>
+      <VarBlock name="bloom">
+        <Var name="enable" dtype="bool">false</Var>
+        <Var name="threshold" dtype="f32">1.0</Var>
+        <Var name="filter_radius" dtype="f32">0.005</Var>
+        <Var name="strength" dtype="f32">0.3</Var>
+        <Var name="layer_count" dtype="i32" flags="invisible">7</Var>
+        <Var name="use_brightness" dtype="bool" flags="invisible">true</Var>
+      </VarBlock>
 
-            <VarBlock name="chromatic_aberration">
-                <Var name="enable" dtype="bool">false</Var>
-                <Var name="distortion" dtype="f32">2.2</Var>
-                <Var name="iterations" dtype="i32">12</Var>
-            </VarBlock>
+      <VarBlock name="chromatic_aberration">
+        <Var name="enable" dtype="bool">false</Var>
+        <Var name="distortion" dtype="f32">2.2</Var>
+        <Var name="iterations" dtype="i32">12</Var>
+      </VarBlock>
 
-            <VarBlock name="vignette">
-                <Var name="enable" dtype="bool">false</Var>
-                <Var name="inner" dtype="f32">0.15</Var>
-                <Var name="outer" dtype="f32">1.35</Var>
-                <Var name="opacity" dtype="f32">0.85</Var>
-            </VarBlock>
+      <VarBlock name="vignette">
+        <Var name="enable" dtype="bool">false</Var>
+        <Var name="inner" dtype="f32">0.15</Var>
+        <Var name="outer" dtype="f32">1.35</Var>
+        <Var name="opacity" dtype="f32">0.85</Var>
+      </VarBlock>
 
-            <VarBlock name="tonemap">
-                <Var name="enable" dtype="bool">false</Var>
-                <Var name="adaptive" dtype="bool">true</Var>
-                <Var name="gamma" dtype="f32">2.2</Var>
-                <Var name="exposure" dtype="f32">4.5</Var>
-                <Var name="whitePoint" dtype="f32">4.0</Var>
-                <Var name="lumMin" dtype="f32">-5.0</Var>
-                <Var name="lumMax" dtype="f32">3.0</Var>
-                <Var name="tau" dtype="f32">1.1</Var>
-            </VarBlock>
+      <VarBlock name="tonemap">
+        <Var name="enable" dtype="bool">false</Var>
+        <Var name="adaptive" dtype="bool">true</Var>
+        <Var name="gamma" dtype="f32">2.2</Var>
+        <Var name="exposure" dtype="f32">4.5</Var>
+        <Var name="whitePoint" dtype="f32">4.0</Var>
+        <Var name="lumMin" dtype="f32">-5.0</Var>
+        <Var name="lumMax" dtype="f32">3.0</Var>
+        <Var name="tau" dtype="f32">1.1</Var>
+      </VarBlock>
 
-            <VarBlock name="film_grain">
-                <Var name="enable" dtype="bool">false</Var>
-                <Var name="amount" dtype="f32">0.01</Var>
-            </VarBlock>
+      <VarBlock name="film_grain">
+        <Var name="enable" dtype="bool">false</Var>
+        <Var name="amount" dtype="f32">0.01</Var>
+      </VarBlock>
 
-            <VarBlock name="motion_blur">
-                <Var name="enable" dtype="bool">false</Var>
-                <Var name="low_precision" dtype="bool">true</Var>
-                <Var name="scele" dtype="f32">1.0</Var>
-                <Var name="max_samples" dtype="i32">16</Var>
-                <Var name="max_velocity" dtype="f32">30.0</Var>
-                <Var name="threshold" dtype="f32">0.0001</Var>
-            </VarBlock>
-        </VarBlock>
-    </RenderVars>
+      <VarBlock name="motion_blur">
+        <Var name="enable" dtype="bool">false</Var>
+        <Var name="low_precision" dtype="bool">true</Var>
+        <Var name="scele" dtype="f32">1.0</Var>
+        <Var name="max_samples" dtype="i32">16</Var>
+        <Var name="max_velocity" dtype="f32">30.0</Var>
+        <Var name="threshold" dtype="f32">0.0001</Var>
+      </VarBlock>
+    </VarBlock>
+  </RenderVars>
 
-    <!-- Render Resources Section -->
-    <RenderResources>
-        <!-- Load Default Images -->
-        <TextureCube name="CasualDay4K" file="/root/embed/rendering/textures/CasualDay4K.ktx2"/>
-        <Texture2D name="LensDirtMask" file="/root/embed/rendering/textures/DirtMaskTextureExample.png"/>
+  <!-- Render Resources Section -->
+  <RenderResources>
+    <!-- Load Default Images -->
+    <Image name="CasualDay4K" file="/root/embed/rendering/textures/CasualDay4K.ktx2"/>
+    <Image name="LensDirtMask" file="/root/embed/rendering/textures/DirtMaskTextureExample.png"/>
 
-        <!-- Other Targets -->
-        <!-- Image size can be set by width/height, size_2d, scale-->
-        <Texture2D name="brdf_lut_target" size_2d="1024" format="rg16_sfloat" usage="sample|storage" />
-        <TextureCube name="irradiance_cube_target" size_2d="64" format="rgba32_sfloat" usage="sample|storage" />
-        <TextureCube name="prefiltered_cube_target" size_2d="512" format="rgba16_sfloat" usage="sample|storage" />
+    <!-- Other Targets -->
+    <!-- Image size can be set by width/height, size_2d, scale-->
+    <Texture2D name="brdf_lut_target" size_2d="1024" format="rg16_sfloat" usage="sample|storage" />
+    <TextureCube name="irradiance_cube_target" size_2d="64" format="rgba32_sfloat" usage="sample|storage" />
+    <TextureCube name="prefiltered_cube_target" size_2d="512" format="rgba16_sfloat" usage="sample|storage" />
 
-        <!-- Shadow Targets -->
-        <Texture2DArray name="cascaded_shadows_target" size_2d="{cascade_shadow_resolution}" layers="{max_sun_cast_shadow_count * cascade_count}" format="d32_sfloat" usage="sample" />
-        <Texture2DArray name="directional_shadows_target" size_2d="{spot_shadow_resolution}" layers="{max_spot_shadow_count}" format="d16_unorm" usage="sample" />
-        <Texture2DArray name="omni_shadows_target" size_2d="{point_shadow_resolution}" layers="{max_point_shadow_count}" format="d16_unorm" usage="sample" />
+    <!-- Shadow Targets -->
+    <Texture2DArray name="cascaded_shadows_target" size_2d="{cascade_shadow_resolution}" layers="{max_sun_cast_shadow_count * cascade_count}" format="d32_sfloat" usage="sample" />
+    <Texture2DArray name="directional_shadows_target" size_2d="{spot_shadow_resolution}" layers="{max_spot_shadow_count}" format="d16_unorm" usage="sample" />
+    <Texture2DArray name="omni_shadows_target" size_2d="{point_shadow_resolution}" layers="{max_point_shadow_count}" format="d16_unorm" usage="sample" />
 
-        <!-- Visibility Buffer Targets -->
-        <Texture2D name="visbuffer_geometry_target" format="rgba8_unorm" usage="sample" />
-        <Texture2D name="visbuffer_vboinst_target" format="rgba8_unorm" usage="sample" />
-        <Texture2D name="zbuffer_depth_target" format="d32_sfloat" usage="sample" />
+    <!-- Visibility Buffer Targets -->
+    <Texture2D name="visbuffer_geometry_target" format="rgba8_unorm" usage="sample" />
+    <Texture2D name="visbuffer_vboinst_target" format="rgba8_unorm" usage="sample" />
+    <Texture2D name="zbuffer_depth_target" format="d32_sfloat" usage="sample" />
 
-        <If cond="{use_low_precision_velocity}">
-            <Texture2D name="motion_vectors_target" format="rg8_unorm" usage="sample|storage" />
-        </If>
-        <Else>
-            <Texture2D name="motion_vectors_target" format="rg16_sfloat" usage="sample|storage" />
-        </Else>
+    <If cond="{use_low_precision_velocity}">
+      <Texture2D name="motion_vectors_target" format="rg8_unorm" usage="sample|storage" />
+    </If>
+    <Else>
+      <Texture2D name="motion_vectors_target" format="rg16_sfloat" usage="sample|storage" />
+    </Else>
 
-        <!-- hdr Targets -->
-        <Texture2D name="hdr0" format="r11g11b10_ufloat" usage="sample|storage" />
-        <Texture2D name="hdr0_div2" scale="0.5" format="r11g11b10_ufloat" usage="sample|storage" />
-        <Texture2D name="hdr1" format="r11g11b10_ufloat" usage="sample|storage" />
-        <Texture2D name="hdr0_history" format="r11g11b10_ufloat" usage="sample|storage" />
-        <Texture2D name="bokeh_target" scale="0.5" format="r11g11b10_ufloat" usage="sample|storage" />
-        <Texture2D name="bloom_chain" scale="0.5" mip_levels="{post_process:bloom:layer_count}" format="r11g11b10_ufloat" usage="sample|storage" />
+    <!-- hdr Targets -->
+    <Texture2D name="hdr0" format="r11g11b10_ufloat" usage="sample|storage" />
+    <Texture2D name="hdr0_div2" scale="0.5" format="r11g11b10_ufloat" usage="sample|storage" />
+    <Texture2D name="hdr1" format="r11g11b10_ufloat" usage="sample|storage" />
+    <Texture2D name="hdr0_history" format="r11g11b10_ufloat" usage="sample|storage" />
+    <Texture2D name="bokeh_target" scale="0.5" format="r11g11b10_ufloat" usage="sample|storage" />
+    <Texture2D name="bloom_chain" scale="0.5" mip_levels="{post_process:bloom:layer_count}" format="r11g11b10_ufloat" usage="sample|storage" />
 
-        <!-- Eye Adaptation Targets -->
-        <Texture2D name="avg_brightness_target" size_2d="1" format="r32_sfloat" usage="sample|storage" />
-        <Buffer name="histogram_buffer" size="4" count="256" type="storage" />
+    <!-- Eye Adaptation Targets -->
+    <Texture2D name="avg_brightness_target" size_2d="1" format="r32_sfloat" usage="sample|storage" />
+    <Buffer name="histogram_buffer" size="4" count="256" type="storage" />
 
-        <Backbuffer name="present_target" />
-    </RenderResources>
+    <Backbuffer name="present_target" />
+  </RenderResources>
 
-    <!-- Render Nodes Section -->
-    <RenderNodes>
-        <!-- generate brdf lut -->
-        <Node name="generate_brdflut" type="compute" pass_type="default" shader="lighting:brgflut_generator" threads_by="brdf_lut_target" flags="one_time|divide_by_locals">
-            <Out slot="out_color" target="brdf_lut_target"/>
+  <!-- Render Nodes Section -->
+  <RenderGraph>
+    <!-- generate brdf lut -->
+    <Node name="generate_brdflut" type="compute" pass_type="default" shader="lighting:brgflut_generator" threads_by="brdf_lut_target" flags="one_time|divide_by_locals">
+      <Out slot="out_color" target="brdf_lut_target"/>
+    </Node>
+
+    <!-- Workgroups can be set by target or manual. threads_by and threads_x, threads_y, threads_z-->
+    <Node name="generate_irradiance_cube" type="compute" pass_type="default" shader="lighting:irradiancecube_generator" threads_by="irradiance_cube_target" flags="one_time|divide_by_locals">
+      <Out slot="out_color" target="irradiance_cube_target"/>
+      <In slot="sampler_color" target="CasualDay4K"/>
+    </Node>
+
+    <Node name="generate_prefiltered_cube" type="compute" pass_type="cubemap" shader="lighting:prefilteredmap_generator" threads_by="prefiltered_cube_target" flags="one_time|divide_by_locals">
+      <Out slot="out_color" target="prefiltered_cube_target"/>
+      <In slot="sampler_color" target="CasualDay4K"/>
+    </Node>
+
+    <!-- Culling -->
+    <Node name="clear_counters_pass" type="compute" pass_type="default" shader="culling:clear_counters" threads_by="IndirectCountBuffer" flags="divide_by_locals">
+      <Out target="IndirectCountBuffer"/>
+    </Node>
+
+    <Node name="gpu_culling_pass" type="compute" pass_type="culling" shader="culling:cull_and_batch">
+      <Out target="GeometryBatches"/>
+      <Out target="IndexedDrawIndirectBuffer"/>
+      <Out target="IndirectCountBuffer"/>
+    </Node>
+
+    <!-- Shadow Passes -->
+    <Node name="cascaded_shadow_map_pass" type="graphics" pass_type="csm" shader="lighting:unidirectional_shadow:CASCADED_SHADOW">
+      <Depth target="cascaded_shadows_target"/>
+      <In target="GeometryBatches"/>
+      <In target="IndexedDrawIndirectBuffer"/>
+      <In target="IndirectCountBuffer"/>
+    </Node>
+
+    <Node name="spot_shadow_map_pass" type="graphics" pass_type="dsm" shader="lighting:unidirectional_shadow">
+      <Depth target="directional_shadows_target"/>
+      <In target="GeometryBatches"/>
+      <In target="IndexedDrawIndirectBuffer"/>
+      <In target="IndirectCountBuffer"/>
+    </Node>
+
+    <Node name="omni_shadow_map_pass" type="graphics" pass_type="osm" shader="lighting:unidirectional_shadow:OMNI_SHADOW">
+      <Depth target="omni_shadows_target"/>
+      <In target="GeometryBatches"/>
+      <In target="IndexedDrawIndirectBuffer"/>
+      <In target="IndirectCountBuffer"/>
+    </Node>
+
+    <!-- Visibility Buffer Write -->
+    <Node name="visibility_buffer_write_pass" type="graphics" pass_type="geometry" shader="visibilitybuffer:write">
+      <Depth target="zbuffer_depth_target"/>
+      <!-- <Stencil target="zbuffer_depth_target"/> -->
+
+      <Out target="visbuffer_geometry_target" clear="zeros"/>
+      <Out target="visbuffer_vboinst_target" clear="zeros"/>
+
+      <In target="GeometryBatches"/>
+      <In target="IndexedDrawIndirectBuffer"/>
+      <In target="IndirectCountBuffer"/>
+    </Node>
+
+    <!-- Visibility Buffer Material Pass -->
+    <Node name="compute_materials_pass" type="compute" pass_type="geometry" shader="visibilitybuffer:shade" threads_by="hdr0" flags="divide_by_locals">
+      <Out slot="write_color" target="hdr0"/>
+      <In slot="prev_frame_color" target="hdr0_history"/>
+      <In slot="visbuffer_geometry" target="visbuffer_geometry_target"/>
+      <In slot="visbuffer_vboinst" target="visbuffer_vboinst_target"/>
+      <In slot="brdf_lut" target="brdf_lut_target"/>
+      <In slot="irradiance_cube" target="irradiance_cube_target"/>
+      <In slot="prefiltered_cube" target="prefiltered_cube_target"/>
+      <In slot="cascaded_shadowmap" target="cascaded_shadows_target"/>
+      <In slot="direct_shadowmap" target="directional_shadows_target"/>
+      <In slot="omni_shadowmap" target="omni_shadows_target"/>
+      <In slot="depth_buffer" target="zbuffer_depth_target"/>
+
+      <In target="GeometryBatches"/>
+      <In target="IndexedDrawIndirectBuffer"/>
+    </Node>
+
+    <!-- Compute static motion vectors (can be started in another queue) -->
+    <Node type="branch" pass_type="dynamic" cond="{use_low_precision_velocity}">
+      <Pass>
+        <Node name="generate_motion_vectors_pass" type="compute" pass_type="default" shader="postprocess:generate_motion_vectors:LOW_PRECISION_VELOCITY" threads_by="zbuffer_depth_target" flags="divide_by_locals">
+          <Out slot="write_color" target="motion_vectors_target"/>
+          <In slot="depth_texture" target="zbuffer_depth_target"/>
         </Node>
-
-        <!-- Workgroups can be set by target or manual. threads_by and threads_x, threads_y, threads_z-->
-        <Node name="generate_irradiance_cube" type="compute" pass_type="default" shader="lighting:irradiancecube_generator" threads_by="irradiance_cube_target" flags="one_time|divide_by_locals">
-            <Out slot="out_color" target="irradiance_cube_target"/>
-            <In slot="sampler_color" target="CasualDay4K"/>
+      </Pass>
+      <Fail>
+        <Node name="generate_motion_vectors_pass" type="compute" pass_type="default" shader="postprocess:generate_motion_vectors" threads_by="zbuffer_depth_target" flags="divide_by_locals">
+          <Out slot="write_color" target="motion_vectors_target"/>
+          <In slot="depth_texture" target="zbuffer_depth_target"/>
         </Node>
+      </Fail>
+    </Node>
 
-        <Node name="generate_prefiltered_cube" type="compute" pass_type="cubemap" shader="lighting:prefilteredmap_generator" threads_by="prefiltered_cube_target" flags="one_time|divide_by_locals">
-            <Out slot="out_color" target="prefiltered_cube_target"/>
-            <In slot="sampler_color" target="CasualDay4K"/>
-        </Node>
+    <Pass>
+      <Node name="copy_final_color_pass" type="compute" pass_type="default" shader="utility:copy_compute" threads_by="hdr0" flags="divide_by_locals">
+        <Out slot="write_color" target="hdr0_history"/>
+        <In slot="sampler_color" target="hdr0"/>
+      </Node>
+    </Pass>
 
-        <!-- Culling -->
-        <Node name="clear_counters_pass" type="compute" pass_type="default" shader="culling:clear_counters" threads_by="IndirectCountBuffer" flags="divide_by_locals">
-            <Out target="IndirectCountBuffer"/>
-        </Node>
+    <!-- Post processing -->
+    <Group debug_scope="Post processing">
+      <!-- FXAA pass -->
+      <Node type="branch" pass_type="dynamic" cond="{post_process:fxaa:enable}">
+        <Pass>
+          <Node name="apply_fxaa" type="compute" pass_type="default" shader="postprocess:apply_effect:FXAA" threads_by="hdr1" flags="divide_by_locals">
+            <Out slot="write_color" target="hdr1"/>
+            <In slot="sampler_color" target="hdr0"/>
+          </Node>
+          <Exchange in="hdr0" out="hdr1"/>
+        </Pass>
+      </Node>
 
-        <Node name="gpu_culling_pass" type="compute" pass_type="culling" shader="culling:cull_and_batch">
-            <Out target="GeometryBatches"/>
-            <Out target="IndexedDrawIndirectBuffer"/>
-            <Out target="IndirectCountBuffer"/>
-        </Node>
+      <!-- Compute motion blur -->
+      <Node type="branch" pass_type="dynamic" cond="{post_process:motion_blur:enable}">
+        <Pass>
+          <Node type="branch" pass_type="static" cond="{use_low_precision_velocity}">
+            <Pass>
+              <Node name="apply_motion_blur" type="compute" pass_type="default" shader="postprocess:apply_effect:MOTION_BLUR:LOW_PRECISION_VELOCITY" threads_by="hdr1" flags="divide_by_locals">
+                <Out slot="write_color" target="hdr1"/>
+                <In slot="motion_vectors" target="motion_vectors_target"/>
+                <In slot="sampler_color" target="hdr0"/>
+              </Node>
+            </Pass>
+            <Fail>
+              <Node name="apply_motion_blur" type="compute" pass_type="default" shader="postprocess:apply_effect:MOTION_BLUR" threads_by="hdr1" flags="divide_by_locals">
+                <Out slot="write_color" target="hdr1"/>
+                <In slot="motion_vectors" target="motion_vectors_target"/>
+                <In slot="sampler_color" target="hdr0"/>
+              </Node>
+            </Fail>
+          </Node>
 
-        <!-- Shadow Passes -->
-        <Node name="cascaded_shadow_map_pass" type="graphics" pass_type="csm" shader="lighting:unidirectional_shadow:CASCADED_SHADOW">
-            <Depth target="cascaded_shadows_target"/>
-            <In target="GeometryBatches"/>
-            <In target="IndexedDrawIndirectBuffer"/>
-            <In target="IndirectCountBuffer"/>
-        </Node>
+          <Exchange in="hdr0" out="hdr1"/>
+        </Pass>
+      </Node>
 
-        <Node name="spot_shadow_map_pass" type="graphics" pass_type="dsm" shader="lighting:unidirectional_shadow">
-            <Depth target="directional_shadows_target"/>
-            <In target="GeometryBatches"/>
-            <In target="IndexedDrawIndirectBuffer"/>
-            <In target="IndirectCountBuffer"/>
-        </Node>
+      <!-- Compute motion blur -->
+      <Node type="branch" pass_type="dynamic" cond="{post_process:dof:enable}">
+        <Pass>
+          <Group debug_scope="Depth Of Field">
+            <Node name="compute_bokeh_blur_pass" type="compute" pass_type="default" shader="postprocess:bokeh" threads_by="bokeh_target" flags="divide_by_locals">
+              <Out slot="write_color" target="bokeh_target"/>
+              <In slot="sampler_color" target="hdr0"/>
+            </Node>
 
-        <Node name="omni_shadow_map_pass" type="graphics" pass_type="osm" shader="lighting:unidirectional_shadow:OMNI_SHADOW">
-            <Depth target="omni_shadows_target"/>
-            <In target="GeometryBatches"/>
-            <In target="IndexedDrawIndirectBuffer"/>
-            <In target="IndirectCountBuffer"/>
-        </Node>
+            <!-- Apply dof -->
+            <Node name="apply_bokeh_blur_pass" type="compute" pass_type="default" shader="postprocess:apply_effect:DOF" threads_by="hdr1" flags="divide_by_locals">
+              <Out slot="write_color" target="hdr1"/>
+              <In slot="sampler_color" target="hdr0"/>
+              <In slot="depth_image" target="zbuffer_depth_target"/>
+              <In slot="bokeh_color" target="bokeh_target"/>
+            </Node>
 
-        <!-- Visibility Buffer Write -->
-        <Node name="visibility_buffer_write_pass" type="graphics" pass_type="geometry" shader="visibilitybuffer:write">
-            <Depth target="zbuffer_depth_target"/>
+            <Exchange in="hdr0" out="hdr1"/>
+          </Group>
+        </Pass>
+      </Node>
 
-            <Out target="visbuffer_geometry_target" clear="zeros"/>
-            <Out target="visbuffer_vboinst_target" clear="zeros"/>
+      <!-- Compute bloom -->
+      <Node type="branch" pass_type="dynamic" cond="{post_process:bloom:enable}">
+        <Pass>
+          <Group debug_scope="Bloom">
+            <!-- Starting from brightness detection pass -->
+            <Node type="branch" pass_type="dynamic" cond="{post_process:bloom:use_brightness}">
+              <Pass>
+                <Node name="brightdetect_pass" type="compute" pass_type="default" shader="postprocess:brightdetect" threads_by="hdr0_div2" flags="divide_by_locals">
+                  <Out slot="write_color" target="hdr0_div2"/>
+                  <In slot="sampler_color" target="hdr0"/>
+                </Node>
+              </Pass>
+              <Fail>
+                <Node name="bloom_copy_pass" type="compute" pass_type="default" shader="utility:copy_compute" threads_by="hdr0_div2" flags="divide_by_locals">
+                  <Out slot="write_color" target="hdr0_div2"/>
+                  <In slot="sampler_color" target="hdr0"/>
+                </Node>
+              </Fail>
+            </Node>
 
-            <In target="GeometryBatches"/>
-            <In target="IndexedDrawIndirectBuffer"/>
-            <In target="IndirectCountBuffer"/>
-        </Node>
+            <!-- Begin downsampling -->
+            <Group debug_scope="Downsampling">
+              <Node name="downsample_pass_first" type="compute" pass_type="default" shader="postprocess:downsample:FIRST_PASS" threads_by="bloom_target" flags="divide_by_locals">
+                <Out slot="write_color" target="bloom_target" mip="0"/>
+                <In slot="sampler_color" target="hdr0_div2"/>
+              </Node>
 
-    </RenderNodes>
+              <For var="i" from="0" to="{post_process:bloom:layer_count} - 1">
+                <Node name="downsample_pass_$i" type="compute" pass_type="default" shader="postprocess:downsample" threads_by="bloom_target" mip="$i" flags="divide_by_locals">
+                  <Out slot="write_color" target="bloom_target" mip="$i"/>
+                  <In slot="sampler_color" target="bloom_target" mip="$i - 1"/>
+                </Node>
+              </For>
+            </Group>
+
+            <!-- And upsampling -->
+            <Group debug_scope="Upsampling">
+              <For var="i" from="{post_process:bloom:layer_count} - 1" to="1" step="-1">
+                <Node name="upsample_pass_$i" type="compute" pass_type="default" shader="postprocess:apply_effect:BLOOM" threads_by="bloom_target" flags="divide_by_locals">
+                  <Out slot="write_color" target="bloom_target" mip="$i - 1"/>
+                  <In slot="sampler_color" target="bloom_target" mip="$i"/>
+                </Node>
+              </For>
+            </Group>
+
+            <!-- Apply bloom -->
+            <Node name="apply_bloom" type="compute" pass_type="default" shader="postprocess:upsample" threads_by="hdr1" flags="divide_by_locals">
+              <Out slot="write_color" target="hdr1"/>
+              <In slot="sampler_color" target="hdr0"/>
+              <In slot="bloom_color" target="bloom_target" mip="0"/>
+              <In slot="dirt_mask" target="LensDirtMask"/>
+            </Node>
+
+            <Exchange in="hdr0" out="hdr1"/>
+          </Group>
+        </Pass>
+      </Node>
+
+      <!-- Compute chromatic aberration -->
+      <Node type="branch" pass_type="dynamic" cond="{post_process:chromatic_aberration:enable}">
+        <Pass>
+          <Node name="apply_chromatic_aberration_pass" type="compute" pass_type="default" shader="postprocess:apply_effect:CHROMATIC_ABERRATION" threads_by="hdr1" flags="divide_by_locals">
+            <Out slot="write_color" target="hdr1"/>
+            <In slot="sampler_color" target="hdr0"/>
+            <In slot="depth_image" target="zbuffer_depth_target"/>
+            <In slot="bokeh_color" target="bokeh_target"/>
+          </Node>
+
+          <Exchange in="hdr0" out="hdr1"/>
+        </Pass>
+      </Node>
+      
+      <!-- Compute tonemap -->
+      <Node type="branch" pass_type="dynamic" cond="{post_process:tonemap:enable}">
+        <Pass>
+          <Group debug_scope="Tonemap">
+            <Node type="branch" pass_type="dynamic" cond="{post_process:tonemap:adaptive}">
+              <!-- Eye adaptation enabled -->
+              <Pass>
+                <!-- Compute histogram -->
+                <Node name="compute_histogram_pass" type="compute" pass_type="default" shader="postprocess:compute_histogram" threads_by="hdr0" flags="divide_by_locals">
+                  <Out slot="Histogram" target="histogram_buffer"/>
+                  <In slot="sampler_color" target="hdr0"/>
+                </Node>
+
+                <!-- Compute avg screen space brightness -->
+                <Node name="compute_brightness_pass" type="compute" pass_type="default" shader="postprocess:compute_brightness" threads_x="1" thread_y="1" thread_z="1">
+                  <Out slot="target" target="avg_brightness_target"/>
+                  <In slot="Histogram" target="histogram_buffer"/>
+                </Node>
+              </Pass>
+            </Node>
+            
+            <!-- Apply tonemapping -->
+            <Node name="apply_bloom" type="compute" pass_type="default" shader="postprocess:apply_effect:TONEMAP" threads_by="hdr1" flags="divide_by_locals">
+              <Out slot="write_color" target="hdr1"/>
+              <In slot="sampler_color" target="hdr0"/>
+              <In slot="avg_luminosity" target="avg_brightness_target"/>
+            </Node>
+
+            <Exchange in="hdr0" out="hdr1"/>
+          </Group>
+        </Pass>
+      </Node>
+    </Group> <!-- Post process group -->
+
+    <!-- Finalize to screen -->
+    <Node name="finalize_image_pass" type="graphics" pass_type="geometry" shader="testing:screenspace">
+      <Out target="present_target"/>
+      <In slot="input_image" target="hdr0"/>
+    </Node>
+
+  </RenderGraph>
 </RenderConfig>
