@@ -12,6 +12,47 @@ namespace engine
 	};
 	UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ERenderVariableFlags, ERenderVariableFlagBits)
 
+	enum class EVariableType
+	{
+		eScalar,
+		eVector
+	};
+
+	enum EVariableDataType
+	{
+		eBool,
+		eInt,
+		eUInt,
+		eInt64,
+		eUInt64,
+		eFloat,
+		eDouble,
+		eString
+	};
+
+	template<class _Ty>
+	struct FNumericScalarInitialData
+	{
+		_Ty value{};
+		_Ty min{std::numeric_limits<_Ty>::min()};
+		_Ty max{std::numeric_limits<_Ty>::max()};
+	};
+
+	template<class _Ty>
+	struct FNumericVectorInitialData
+	{
+		utl::vector<_Ty> values{};
+		Ty min{ std::numeric_limits<_Ty>::min() };
+		_Ty max{ std::numeric_limits<_Ty>::max() };
+	};
+
+	struct FVariableCreateInfo
+	{
+		EVariableType type{ EVariableType::eScalar };
+		EVariableDataType dtype{};
+		void* initial{};
+	};
+
 	class IVariable
 	{
 	public:
@@ -51,5 +92,14 @@ namespace engine
 	protected:
 		utl::hash_map<u64, std::unique_ptr<IVariable>> m_variables{};
 		utl::hash_map<u64, std::unique_ptr<IVariableBlock>> m_blocks{};
+	};
+
+	class IVariableManager 
+	{
+	public:
+		virtual ~IVariableManager() = default;
+
+		virtual std::unique_ptr<IVariable> makeVariable(const char* name, const FVariableCreateInfo& create_info) = 0;
+		virtual std::unique_ptr<IVariableBlock> makeVariableBlock(const char* name) = 0;
 	};
 }
