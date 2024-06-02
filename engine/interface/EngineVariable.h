@@ -26,8 +26,7 @@ namespace engine
 		eInt64,
 		eUInt64,
 		eFloat,
-		eDouble,
-		eString
+		eDouble
 	};
 
 	template<class _Ty>
@@ -98,6 +97,8 @@ namespace engine
 	{
 	public:
 		virtual ~IVariableManager() = default;
+
+		virtual void display() = 0;
 
 		virtual std::unique_ptr<IVariable> makeVariable(const char* name, const FVariableCreateInfo& create_info) = 0;
 		virtual std::unique_ptr<IVariableBlock> makeVariableBlock(const char* name) = 0;
