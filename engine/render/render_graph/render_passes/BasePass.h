@@ -26,18 +26,18 @@ namespace engine
 			friend class CRenderGraph;
 			virtual ~IBasePass() = default;
 
-			virtual void build(const FPassBuildInfo& build_info) = 0;
-			virtual void postLoad() {}
+			virtual void Build(const FPassBuildInfo& build_info) = 0;
+			virtual void PostLoad() {}
 
-			virtual void execute(f32 dt);
+			virtual void Execute(f32 dt);
 
-			virtual bool canExecute();
+			virtual bool CanExecute();
 
-			virtual EPassType type() = 0;
+			virtual EPassType Type() = 0;
 
 		protected:
-			virtual void initShaderResources(const std::unique_ptr<IShaderObject>& shader);
-			virtual void bindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt);
+			virtual void InitShaderResources(const std::unique_ptr<IShaderObject>& shader);
+			virtual void BindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt);
 
 			EQueueTypeFlagBits m_queue{};
 
@@ -60,20 +60,20 @@ namespace engine
 			friend class CRenderGraph;
 			~IRenderPass() = default;
 
-			virtual void init(const FRenderPassCreateInfo& pass_ci);
-			virtual void build(const FPassBuildInfo& build_info) override;
-			virtual bool canRender() const { return true; }
+			virtual void Init(const FRenderPassCreateInfo& pass_ci);
+			virtual void Build(const FPassBuildInfo& build_info) override;
+			virtual bool CanRender() const { return true; }
 
-			void execute(f32 dt) override;
+			void Execute(f32 dt) override;
 
-			EPassType type() override { return EPassType::eRender; }
+			EPassType Type() override { return EPassType::eRender; }
 		protected:
-			void buildAttachment(u64 resource_id, const FPassBuildInfo& build_info, FRenderGraphAttachmentInfo& attachment_info);
-			virtual void _render(const FRenderFrameInfo& frame_info) = 0;
+			void BuildAttachment(u64 resource_id, const FPassBuildInfo& build_info, FRenderGraphAttachmentInfo& attachment_info);
+			virtual void _Render(const FRenderFrameInfo& frame_info) = 0;
 
-			virtual void makeShader(const std::string& name, std::unique_ptr<IShaderObject>& shader, EShaderCullModeFlagBits cull_mode, EShaderFrontFace front_face, EDepthCompareOp depthOp = EDepthCompareOp::eLessOrEqual, const IVertexHandler* vbo = nullptr);
-			virtual void initShaderResources(const std::unique_ptr<IShaderObject>& shader) override;
-			virtual void bindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt) override;
+			virtual void MakeShader(const std::string& name, std::unique_ptr<IShaderObject>& shader, EShaderCullModeFlagBits cull_mode, EShaderFrontFace front_face, EDepthCompareOp depthOp = EDepthCompareOp::eLessOrEqual, const IVertexHandler* vbo = nullptr);
+			virtual void InitShaderResources(const std::unique_ptr<IShaderObject>& shader) override;
+			virtual void BindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt) override;
 		protected:
 			bool m_bFlipViewport{ false };
 
@@ -94,17 +94,17 @@ namespace engine
 			friend class CRenderGraph;
 			~IComputePass() = default;
 
-			virtual void init(const FComputePassCreateInfo& pass_ci);
-			virtual void build(const FPassBuildInfo& build_info) override;
+			virtual void Init(const FComputePassCreateInfo& pass_ci);
+			virtual void Build(const FPassBuildInfo& build_info) override;
 
-			void execute(f32 dt) override;
+			void Execute(f32 dt) override;
 
-			EPassType type() override { return EPassType::eCompute; }
+			EPassType Type() override { return EPassType::eCompute; }
 		protected:
-			virtual void _execute(const FComputeFrameInfo& frame_info) = 0;
+			virtual void _Execute(const FComputeFrameInfo& frame_info) = 0;
 
-			virtual void initShaderResources(const std::unique_ptr<IShaderObject>& shader) override;
-			virtual void bindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt) override;
+			virtual void InitShaderResources(const std::unique_ptr<IShaderObject>& shader) override;
+			virtual void BindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt) override;
 		protected:
 			utl::vector<FDispatch2Info> m_vDispatchGroups{};
 			utl::vector<FComputeDispatchGroupInfo> m_vDispatchInfos{};

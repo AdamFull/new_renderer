@@ -39,22 +39,22 @@ namespace engine
 			 * @param fspath A string representing the file system path of the new ZIP archive.
 			 * @return True if the archive is successfully created, false otherwise.
 			 */
-			bool create(const std::string& fspath) override;
+			bool Create(const std::string& fspath) override;
 
 			/**
 			 * @brief This function is not supported by the CZipFileSystem.
 			 */
-			void copy(const std::string& from, const std::string& to) override {}
+			void Copy(const std::string& from, const std::string& to) override {}
 
 			/**
 			 * @brief This function is not supported by the CZipFileSystem.
 			 */
-			bool createDirectories(const std::string& path) override { return false; }
+			bool CreateDirectories(const std::string& path) override { return false; }
 
 			/**
 			 * @brief This function is not supported by the CZipFileSystem.
 			 */
-			bool createDirectory(const std::string& path) override { return false; }
+			bool CreateDirectory(const std::string& path) override { return false; }
 
 			/**
 		 * @brief Check if an entry exists at the specified path within the ZIP archive.
@@ -62,7 +62,7 @@ namespace engine
 		 * @param path A string representing the path of the entry.
 		 * @return True if the entry exists, false otherwise.
 		 */
-			bool exists(const std::string& path) override;
+			bool Exists(const std::string& path) override;
 
 			/**
 			 * @brief Get the size of a file at the specified path within the ZIP archive.
@@ -70,7 +70,7 @@ namespace engine
 			 * @param path A string representing the path of the file.
 			 * @return The size of the file in bytes.
 			 */
-			size_t fileSize(const std::string& path) override;
+			size_t FileSize(const std::string& path) override;
 
 			/**
 			 * @brief Check if a directory exists at the specified path within the ZIP archive.
@@ -78,7 +78,7 @@ namespace engine
 			 * @param path A string representing the path of the directory.
 			 * @return True if the directory exists, false otherwise.
 			 */
-			bool isDirectory(const std::string& path) override;
+			bool IsDirectory(const std::string& path) override;
 
 			/**
 			 * @brief Check if a file exists at the specified path within the ZIP archive.
@@ -86,22 +86,22 @@ namespace engine
 			 * @param path A string representing the path of the file.
 			 * @return True if the file exists, false otherwise.
 			 */
-			bool isFile(const std::string& path) override;
+			bool IsFile(const std::string& path) override;
 
 			/**
 			 * @brief This function is not supported by the CZipFileSystem.
 			 */
-			bool remove(const std::string& path) override { return false; }
+			bool Remove(const std::string& path) override { return false; }
 
 			/**
 			 * @brief This function is not supported by the CZipFileSystem.
 			 */
-			void rename(const std::string& original, const std::string& newfile) override { }
+			void Rename(const std::string& original, const std::string& newfile) override { }
 
 			/**
 			 * @brief This function is not supported by the CZipFileSystem.
 			 */
-			std::unique_ptr<IOutputFileInterface> createFile(const std::string& path) override { return nullptr; }
+			std::unique_ptr<IOutputFileInterface> CreateFile(const std::string& path) override { return nullptr; }
 
 			/**
 			 * @brief Open a file at the specified path within the ZIP archive.
@@ -109,7 +109,7 @@ namespace engine
 			 * @param path A string representing the path of the file.
 			 * @return A unique_ptr to an IInputFileInterface if the file is successfully opened, nullptr otherwise.
 			 */
-			std::unique_ptr<IInputFileInterface> openFile(const std::string& path) override;
+			std::unique_ptr<IInputFileInterface> OpenFile(const std::string& path) override;
 
 			/**
 			 * @brief Create a directory iterator for the specified path within the ZIP archive.
@@ -122,7 +122,7 @@ namespace engine
 			 * @param recursive A boolean flag indicating whether to traverse subdirectories.
 			 * @return A unique_ptr to an IDirectoryIterator for the specified path.
 			 */
-			std::unique_ptr<IDirectoryIterator> walk(const std::string& path, bool recursive) override;
+			std::unique_ptr<IDirectoryIterator> Walk(const std::string& path, bool recursive) override;
 
 		protected:
 			/**
@@ -130,7 +130,7 @@ namespace engine
 			 *
 			 * @return The file system mode flags.
 			 */
-			EFilesystemModeFlags getFilesystemMode() const override;
+			EFilesystemModeFlags GetFilesystemMode() const override;
 
 		private:
 			/**

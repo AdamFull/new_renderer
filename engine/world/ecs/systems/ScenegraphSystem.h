@@ -15,8 +15,8 @@ namespace engine
 				CScenegraphSystem(CSceneGraph* scenegraph);
 				virtual ~CScenegraphSystem() override = default;
 
-				void __create() override;
-				void __update(float fDt) override;
+				void __Create() override;
+				void __Update(float fDt) override;
 			private:
 				static void buildHierarchy(entt::registry* registry, entt::entity node);
 				static void initMatrix(FTransformComponent* transform);

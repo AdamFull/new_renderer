@@ -18,22 +18,22 @@ namespace engine
 			CVertexHandler(IRenderInterface* render_interface);
 			~CVertexHandler() override;
 
-			void create(const FVertexHandlerCreateInfo& create_info) override;
-			void allocate() override;
+			void Create(const FVertexHandlerCreateInfo& create_info) override;
+			void Allocate() override;
 
-			void bind(EQueueTypeFlagBits queue) override;
+			void Bind(EQueueTypeFlagBits queue) override;
 
-			const FVertexRange& addMeshData(const utl::vector<FVertexAttributePointer>& attributes_data, const FVertexAttributePointer& indices) override;
+			const FVertexRange& AddMeshData(const utl::vector<FVertexAttributePointer>& attributes_data, const FVertexAttributePointer& indices) override;
 
-			u64 addVertices(const utl::vector<FVertexAttributePointer>& attributes_data) override;
-			u64 addIndices(const FVertexAttributePointer& indices) override;
+			u64 AddVertices(const utl::vector<FVertexAttributePointer>& attributes_data) override;
+			u64 AddIndices(const FVertexAttributePointer& indices) override;
 			u64 addMeshlets(const utl::vector<FVertexAttributePointer>& attributes_data, const utl::vector<u32>& indices);
 
-			const FVertexDeclarationInfo& getVertexDeclaration() const override;
-			u64 getHash() const override;
-			const std::string& getDefinitions() const override;
+			const FVertexDeclarationInfo& GetVertexDeclaration() const override;
+			u64 GetHash() const override;
+			const std::string& GetDefinitions() const override;
 
-			const std::unique_ptr<IGPUVector>& getGeometryBuffer(EGeometryBufferIndices buffer_index) override;
+			const std::unique_ptr<IGPUVector>& GetGeometryBuffer(EGeometryBufferIndices buffer_index) override;
 		private:
 			utl::vector<std::unique_ptr<IGPUVector>> m_vGeometryBuffers{};
 

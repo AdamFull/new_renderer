@@ -162,7 +162,7 @@ namespace engine
     class CKeyDecoder
     {
     public:
-        bool update(EKeyCode eCode, bool bPressed)
+        bool Update(EKeyCode eCode, bool bPressed)
         {
             auto code = static_cast<u64>(eCode);
 
@@ -179,7 +179,7 @@ namespace engine
             return false;
         }
 
-        bool test(EKeyCode eCode)
+        bool Test(EKeyCode eCode)
         {
             return mStates.test(static_cast<u64>(eCode));
         }
@@ -192,15 +192,15 @@ namespace engine
 	public:
 		virtual ~IWindowInterface() = default;
 
-		virtual void create(const FWindowCreateInfo& window_ci) = 0;
-		virtual void destroy() = 0;
+		virtual void Create(const FWindowCreateInfo& window_ci) = 0;
+		virtual void Destroy() = 0;
 
-		virtual bool process() = 0;
+		virtual bool Process() = 0;
 
-        virtual void setTitle(const std::string& title) = 0;
+        virtual void SetTitle(const std::string& title) = 0;
 
-		virtual void getWindowSize(i32& width, i32& height) = 0;
-		virtual bool isResized() = 0;
-		virtual bool isMinimized() = 0;
+		virtual void GetWindowSize(i32& width, i32& height) = 0;
+		virtual bool IsResized() = 0;
+		virtual bool IsMinimized() = 0;
 	};
 }

@@ -129,7 +129,7 @@
 		float getCascadeShadow(sampler2DArrayShadow shadowmap_tex, in FLightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
 		{
 			FCascadedShadowCommit commit = getCascadedShadowCommit(light.shadowIndex);
-			FCamera camera = getCamera(commit.cameraID);
+			FCamera camera = GetCamera(commit.cameraID);
 
 			uint cascadeIndex = getScadowCascadeSplit(commit, va.linearZ, dither);
 		
@@ -208,7 +208,7 @@
 		float getDirectionalShadow(sampler2DArrayShadow shadomwap_tex, in FLightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
 		{
 			FSpotShadowCommit commit = getSpotShadowCommit(light.shadowIndex);
-			FCamera camera = getCamera(commit.cameraID);
+			FCamera camera = GetCamera(commit.cameraID);
 
 		    float shadow = 1.0;
 			vec4 shadowClip	= getViewProjectionMatrix(camera.matricesOffset) * vec4(va.pos, 1.0);
@@ -301,7 +301,7 @@
 			if(swizzle_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, gl_WorkGroupID.xy, image_size, uv, px))
 				return;
 
-			FCamera camera = getCamera(frameData.defaultCameraID);
+			FCamera camera = GetCamera(frameData.defaultCameraID);
 			mat4 inv_view = getInvViewMatrix(camera.matricesOffset);
 
 			vec3 camera_pos = vec3(inv_view[3]);
@@ -349,7 +349,7 @@
 			float dither = interleavedGradientNoise(uv);
 
 			VertexAttribute va = getVertexData(uv, visbuffer);
-			FMaterial material = getMaterial(visbuffer.matID);
+			FMaterial material = GetMaterial(visbuffer.matID);
 			MaterialSample ms = sampleMaterial(material, va);
 
 			// Calculate direction from fragment to viewPosition

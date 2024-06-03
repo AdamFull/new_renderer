@@ -14,10 +14,10 @@ CNativeInputFile::CNativeInputFile(const std::string& filename)
 
 CNativeInputFile::~CNativeInputFile()
 {
-	close();
+	Close();
 }
 
-void CNativeInputFile::close()
+void CNativeInputFile::Close()
 {
 	if (m_pFilePtr)
 	{
@@ -26,37 +26,37 @@ void CNativeInputFile::close()
 	}
 }
 
-bool CNativeInputFile::is_open() const
+bool CNativeInputFile::IsOpen() const
 {
 	return m_pFilePtr;
 }
 
-int32_t CNativeInputFile::getc()
+int32_t CNativeInputFile::Getc()
 {
 	return m_pFilePtr ? std::fgetc(m_pFilePtr) : -1;
 }
 
-std::size_t CNativeInputFile::read(void* buffer, std::size_t elemSize, std::size_t elemCount)
+std::size_t CNativeInputFile::Read(void* buffer, std::size_t elemSize, std::size_t elemCount)
 {
 	return m_pFilePtr ? std::fread(buffer, elemSize, elemCount, m_pFilePtr) : 0ull;
 }
 
-int32_t CNativeInputFile::ungetc(int32_t character)
+int32_t CNativeInputFile::Ungetc(int32_t character)
 {
 	return m_pFilePtr ? std::ungetc(character, m_pFilePtr) : -1;
 }
 
-long CNativeInputFile::tell()
+long CNativeInputFile::Tell()
 {
 	return m_pFilePtr ? std::ftell(m_pFilePtr) : -1;
 }
 
-int32_t CNativeInputFile::seek(long offset, int32_t origin)
+int32_t CNativeInputFile::Seek(long offset, int32_t origin)
 {
 	return m_pFilePtr ? std::fseek(m_pFilePtr, offset, origin) : -1;
 }
 
-int32_t CNativeInputFile::eof() const
+int32_t CNativeInputFile::Eof() const
 {
 	return m_pFilePtr ? std::feof(m_pFilePtr) : 1;
 }

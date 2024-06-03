@@ -50,7 +50,7 @@
 			uint32_t draw_index = drawID + instanceID;
 			FGeometryBatch draw_info = getDrawInfo(draw_index);
 			FMesh mesh = getMesh(draw_info.meshID);
-			FMaterial material = getMaterial(mesh.materialID);
+			FMaterial material = GetMaterial(mesh.materialID);
 			
 			float opacity = material.baseColorFactor.a;
 			if(material.baseColorTexture != INVALID_HANDLE)

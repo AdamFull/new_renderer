@@ -6,7 +6,7 @@ CAAMDirectoryIterator::CAAMDirectoryIterator(AAssetManager* handle, const std::s
 	m_pAssetMgr(handle)
 {
 	m_pCurrentDir = AAssetManager_openDir(handle, start_path.c_str());
-	_operator_increment();
+	_OperatorIncrement();
 }
 
 CAAMDirectoryIterator::~CAAMDirectoryIterator()
@@ -15,7 +15,7 @@ CAAMDirectoryIterator::~CAAMDirectoryIterator()
 		AAssetDir_close(m_pCurrentDir);
 }
 
-void CAAMDirectoryIterator::_operator_increment()
+void CAAMDirectoryIterator::_OperatorIncrement()
 {
 	const char* filename = AAssetDir_getNextFileName(m_pCurrentDir);
 	if (filename)
@@ -28,12 +28,12 @@ void CAAMDirectoryIterator::_operator_increment()
 	}
 }
 
-const std::string& CAAMDirectoryIterator::_operator_dereferencing() const
+const std::string& CAAMDirectoryIterator::_OperatorDereferencing() const
 {
 	return m_srCurrentPath;
 }
 
-bool CAAMDirectoryIterator::_operator_not_equal(const CDirectoryIterator* other) const
+bool CAAMDirectoryIterator::_OperatorNotEqual(const CDirectoryIterator* other) const
 {
 	if (!other->it_)
 		return m_pCurrentDir != nullptr;
@@ -47,7 +47,7 @@ CAAMRecursiveDirectoryIterator::CAAMRecursiveDirectoryIterator(AAssetManager* ha
 	m_pAssetMgr(handle)
 {
 	//m_iterStack.emplace(CAAMDirectoryIterator(handle, start_path));
-	_operator_increment();
+	_OperatorIncrement();
 }
 
 CAAMRecursiveDirectoryIterator::~CAAMRecursiveDirectoryIterator()
@@ -55,15 +55,15 @@ CAAMRecursiveDirectoryIterator::~CAAMRecursiveDirectoryIterator()
 
 }
 
-void CAAMRecursiveDirectoryIterator::_operator_increment()
+void CAAMRecursiveDirectoryIterator::_OperatorIncrement()
 {
 	/*while (!m_iterStack.empty())
 	{
 		auto& iter = m_iterStack.top();
-		if (iter._operator_dereferencing() != "")
+		if (iter._OperatorDereferencing() != "")
 		{
-			m_srCurrentPath = iter._operator_dereferencing();
-			iter._operator_increment();
+			m_srCurrentPath = iter._OperatorDereferencing();
+			iter._OperatorIncrement();
 
 			AAsset* asset = AAssetManager_open(m_pAssetMgr, m_srCurrentPath.c_str(), AASSET_MODE_UNKNOWN);
 			if (asset) 
@@ -83,12 +83,12 @@ void CAAMRecursiveDirectoryIterator::_operator_increment()
 	m_srCurrentPath.clear();
 }
 
-const std::string& CAAMRecursiveDirectoryIterator::_operator_dereferencing() const
+const std::string& CAAMRecursiveDirectoryIterator::_OperatorDereferencing() const
 {
 	return m_srCurrentPath;
 }
 
-bool CAAMRecursiveDirectoryIterator::_operator_not_equal(const CDirectoryIterator* other) const
+bool CAAMRecursiveDirectoryIterator::_OperatorNotEqual(const CDirectoryIterator* other) const
 {
 	if (!other->it_)
 		return !m_iterStack.empty();

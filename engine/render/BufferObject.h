@@ -12,24 +12,24 @@ namespace engine
 			CBufferObject(IRenderInterface* render_interface);
 			~CBufferObject() override;
 
-			void create(const std::string& name, const FBufferCreateInfo& create_info) override;
-			void resize(const std::string& name, const FBufferCreateInfo& create_info) override;
-			void upload(utl::vector<u8>&& data, const utl::vector<FBufferUploadRegion>& regions) override;
+			void Create(const std::string& name, const FBufferCreateInfo& create_info) override;
+			void Resize(const std::string& name, const FBufferCreateInfo& create_info) override;
+			void Upload(utl::vector<u8>&& data, const utl::vector<FBufferUploadRegion>& regions) override;
 
-			void map() override;
-			void unmap() override;
-			void write(const void* data, u64 size = INVALID_HANDLE, u64 offset = 0ull) override;
-			void flush(u64 size = INVALID_HANDLE, u64 offset = 0ull) override;
-			void clear() override;
+			void Map() override;
+			void Unmap() override;
+			void Write(const void* data, u64 size = INVALID_HANDLE, u64 offset = 0ull) override;
+			void Flush(u64 size = INVALID_HANDLE, u64 offset = 0ull) override;
+			void Clear() override;
 
-			u64 size() override;
-			u64 instanceSize() override;
-			u64 count() override;
+			u64 Size() override;
+			u64 InstanceSize() override;
+			u64 Count() override;
 
-			u64 handle() override;
-			uint64_t address() override;
+			u64 Handle() override;
+			uint64_t Address() override;
 
-			void* data() override;
+			void* Data() override;
 
 		private:
 			u64 m_bufferId{ INVALID_HANDLE };

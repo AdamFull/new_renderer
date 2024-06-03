@@ -13,11 +13,11 @@ namespace engine
 
 			~CComputeGeometryPass() = default;
 
-			void init(const FComputePassCreateInfo& pass_ci) override;
-			void build(const FPassBuildInfo& build_info) override;
+			void Init(const FComputePassCreateInfo& pass_ci) override;
+			void Build(const FPassBuildInfo& build_info) override;
 		private:
-			void _execute(const FComputeFrameInfo& frame_info) override;
-			const std::unique_ptr<IShaderObject>& getShaderByVBO(const IVertexHandler* vbo);
+			void _Execute(const FComputeFrameInfo& frame_info) override;
+			const std::unique_ptr<IShaderObject>& GetShaderByVBO(const IVertexHandler* vbo);
 		private:
 			utl::hash_map<u64, std::unique_ptr<IShaderObject>> m_shaders{};
 			std::string m_baseShaderName{};

@@ -91,7 +91,7 @@
 
 			FDrawIndexedIndirectData draw_command = getDrawIndexedCommand(drawID);
 
-			// Index of the first vertex of this draw call's geometry
+			// Index of the first vertex of this Draw call's geometry
 			uint startIndex = draw_command.firstIndex;
 
 			// Get position in the Index Buffer of each vertex in this triangle (eg 31, 32, 33)
@@ -207,7 +207,7 @@
 			}
 #endif // HAS_SKIN
 
-			FCamera camera = getCamera(visbuffer.cameraID);
+			FCamera camera = GetCamera(visbuffer.cameraID);
 			mat4 view = getViewMatrix(camera.matricesOffset);
 			mat4 projection = getProjectionMatrix(camera.matricesOffset);
 

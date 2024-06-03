@@ -8,10 +8,10 @@ CScopedDebugMarker::CScopedDebugMarker(IRenderGraph* render_graph, const std::st
 	m_srName = name;
 	m_queue = queue;
 
-	m_pRenderGraph->pushDebugMarker(name, color, queue);
+	m_pRenderGraph->PushDebugMarker(name, color, queue);
 }
 
 CScopedDebugMarker::~CScopedDebugMarker()
 {
-	m_pRenderGraph->popDebugMarker(m_srName, m_queue);
+	m_pRenderGraph->PopDebugMarker(m_srName, m_queue);
 }

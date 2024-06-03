@@ -9,7 +9,7 @@ namespace engine
 		public:
 			virtual ~IRenderIntegration() = default;
 
-			virtual void init() = 0;
+			virtual void Init() = 0;
 			virtual void destroy() = 0;
 
 			virtual void preRender() = 0;

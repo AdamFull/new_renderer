@@ -2,8 +2,8 @@
 
 #include <engine/interface/filesystem/VirtualFileSystemInterface.h>
 #include <engine/interface/ResourceContainer.h>
-#include "render_config/RenderConfig.h"
 #include "ResourceLoader.h"
+#include <logger/logger.h>
 #include <memory>
 
 namespace engine
@@ -16,40 +16,40 @@ namespace engine
 			CRenderInterface(filesystem::IVirtualFileSystemInterface* vfs);
 			~CRenderInterface() override;
 
-			void create(const FRenderInterfaceCreateInfo& render_interface_ci) override;
-			void postLoad() override;
-			void render(f32 dt) override;
+			void Create(const FRenderInterfaceCreateInfo& render_interface_ci) override;
+			void PostLoad() override;
+			void Render(f32 dt) override;
 
-			u64 createTexture(const std::string& path) override;
-			u64 loadTexture(const std::string& path, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info);
+			u64 CreateTexture(const std::string& path) override;
+			u64 LoadTexture(const std::string& path, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info);
 			// TODO: add texture may be?
 
-			u64 createShader(const std::string& name, const FGraphicsShaderCreateInfo& create_info) override;
-			u64 createShader(const std::string& name, const FComputeShaderCreateInfo& create_info) override;
+			u64 CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& create_info) override;
+			u64 CreateShader(const std::string& name, const FComputeShaderCreateInfo& create_info) override;
 
-			u64 createVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) override;
-			const std::unique_ptr<IVertexHandler>& getVertexHandler(u64 id) override;
+			u64 CreateVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) override;
+			const std::unique_ptr<IVertexHandler>& GetVertexHandler(u64 id) override;
 
-			void updateSurfaceSize(i32 width, i32 height) override;
+			void UpdateSurfaceSize(i32 width, i32 height) override;
 
-			const std::unique_ptr<FRenderDataPacket>& getRenderPacket() override;
-			const std::unique_ptr<IRenderGraph>& getRenderGraph() override;
-			const std::unique_ptr<IRenderWorld>& getRenderWorld() override;
-			const std::unique_ptr<IRenderContext>& getRenderContext() override;
+			const std::unique_ptr<FRenderDataPacket>& GetRenderPacket() override;
+			const std::unique_ptr<IRenderGraph>& GetRenderGraph() override;
+			const std::unique_ptr<IRenderWorld>& GetRenderWorld() override;
+			const std::unique_ptr<IRenderContext>& GetRenderContext() override;
 		protected:
 			template<class _Ty>
-			u64 createShader(const FShaderUploadInfo& name_info, const _Ty& create_info)
+			u64 CreateShader(const FShaderUploadInfo& name_info, const _Ty& create_info)
 			{
 				utl::vector<FShaderCreationBlockInfo> shader_stages{};
-				if (m_pResourceLoader->loadShaderData(name_info, shader_stages))
-					return m_pRenderContext->createShader(name_info.originalName, create_info, shader_stages);
+				if (m_pResourceLoader->LoadShaderData(name_info, shader_stages))
+					return m_pRenderContext->CreateShader(name_info.originalName, create_info, shader_stages);
 
 				log_error("Shader with name: \"{}\" was not found.", name_info.originalName);
 
 				return INVALID_HANDLE;
 			}
 
-			FShaderUploadInfo getShaderNameTag(const std::string& name) override;
+			FShaderUploadInfo GetShaderNameTag(const std::string& name) override;
 
 		private:
 			filesystem::IVirtualFileSystemInterface* m_pVFS{ nullptr };
@@ -63,7 +63,6 @@ namespace engine
 			std::unique_ptr<CResourceContainer> m_pResources{};
 			std::unique_ptr<IRenderContext> m_pRenderContext{};
 			std::unique_ptr<CResourceLoader> m_pResourceLoader{};
-			std::unique_ptr<CRenderScriptCore> m_pRenderScriptCore{};
 		};
 	}
 }

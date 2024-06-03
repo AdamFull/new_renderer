@@ -64,10 +64,10 @@ CWindowWin32::CWindowWin32()
 
 CWindowWin32::~CWindowWin32()
 {
-    destroy();
+    Destroy();
 }
 
-void CWindowWin32::create(const FWindowCreateInfo& window_ci)
+void CWindowWin32::Create(const FWindowCreateInfo& window_ci)
 {
     hinstance = GetModuleHandle(NULL);
 
@@ -121,7 +121,7 @@ void CWindowWin32::create(const FWindowCreateInfo& window_ci)
     ShowWindow(hwnd, show_window_mode);
 }
 
-void CWindowWin32::destroy()
+void CWindowWin32::Destroy()
 {
     if (hwnd)
     {
@@ -130,7 +130,7 @@ void CWindowWin32::destroy()
     }
 }
 
-bool CWindowWin32::process()
+bool CWindowWin32::Process()
 {
     if (window_state & WINDOW_STATE_RESIZED_FLAG_BIT)
         window_state &= ~WINDOW_STATE_RESIZED_FLAG_BIT;
@@ -148,28 +148,28 @@ bool CWindowWin32::process()
     return true;
 }
 
-void CWindowWin32::setTitle(const std::string& title)
+void CWindowWin32::SetTitle(const std::string& title)
 {
     SetWindowTextA(hwnd, title.c_str());
 }
 
-void CWindowWin32::getWindowSize(int32_t& width, int32_t& height)
+void CWindowWin32::GetWindowSize(int32_t& width, int32_t& height)
 {
     width = window_width;
     height = window_height;
 }
 
-bool CWindowWin32::isResized()
+bool CWindowWin32::IsResized()
 {
     return window_state & WINDOW_STATE_RESIZED_FLAG_BIT;
 }
 
-bool CWindowWin32::isMinimized()
+bool CWindowWin32::IsMinimized()
 {
     return window_state & WINDOW_STATE_MINIMIZED_FLAG_BIT;
 }
 
-void CWindowWin32::getPlatformData(HINSTANCE& hinst, HWND& hwnd)
+void CWindowWin32::GetPlatformData(HINSTANCE& hinst, HWND& hwnd)
 {
     hinst = this->hinstance;
     hwnd = this->hwnd;

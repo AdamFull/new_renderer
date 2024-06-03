@@ -41,7 +41,7 @@ namespace engine
 	struct FNumericVectorInitialData
 	{
 		utl::vector<_Ty> values{};
-		Ty min{ std::numeric_limits<_Ty>::min() };
+		_Ty min{ std::numeric_limits<_Ty>::min() };
 		_Ty max{ std::numeric_limits<_Ty>::max() };
 	};
 
@@ -57,10 +57,10 @@ namespace engine
 	public:
 		virtual ~IVariable() = default;
 
-		virtual void display() = 0;
+		virtual void Display() = 0;
 
-		void setFlag(ERenderVariableFlagBits flag) { m_flags |= flag; }
-		void resetFlag(ERenderVariableFlagBits flag) { m_flags &= ~flag; }
+		void SetFlag(ERenderVariableFlagBits flag) { m_flags |= flag; }
+		void ResetFlag(ERenderVariableFlagBits flag) { m_flags &= ~flag; }
 
 		const ERenderVariableFlags& getFlags() const { return m_flags; }
 
@@ -74,15 +74,15 @@ namespace engine
 	public:
 		virtual ~IVariableBlock() = default;
 
-		virtual void display() = 0;
+		virtual void Display() = 0;
 
-		void addVariable(const char* name, std::unique_ptr<IVariable>&& var)
+		void AddVariable(const char* name, std::unique_ptr<IVariable>&& var)
 		{
 			// TODO: check for collisions
 			m_variables.emplace(utl::fnv1a_32_hash_cstr(name), std::move(var));
 		}
 
-		void addBlock(const char* name, std::unique_ptr<IVariableBlock>&& block)
+		void AddBlock(const char* name, std::unique_ptr<IVariableBlock>&& block)
 		{
 			// TODO: check for collisions
 			m_blocks.emplace(utl::fnv1a_32_hash_cstr(name), std::move(block));
@@ -98,9 +98,9 @@ namespace engine
 	public:
 		virtual ~IVariableManager() = default;
 
-		virtual void display() = 0;
+		virtual void Display() = 0;
 
-		virtual std::unique_ptr<IVariable> makeVariable(const char* name, const FVariableCreateInfo& create_info) = 0;
-		virtual std::unique_ptr<IVariableBlock> makeVariableBlock(const char* name) = 0;
+		virtual std::unique_ptr<IVariable> MakeVariable(const char* name, const FVariableCreateInfo& create_info) = 0;
+		virtual std::unique_ptr<IVariableBlock> MakeVariableBlock(const char* name) = 0;
 	};
 }

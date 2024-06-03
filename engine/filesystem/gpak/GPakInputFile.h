@@ -40,21 +40,21 @@ namespace engine
 			/**
 			 * @brief Close the currently opened file.
 			 */
-			void close() override;
+			void Close() override;
 
 			/**
 			 * @brief Check if the file is open.
 			 *
 			 * @return True if the file is open, false otherwise.
 			 */
-			bool is_open() const override;
+			bool IsOpen() const override;
 
 			/**
 			 * @brief Read a single character from the file.
 			 *
 			 * @return The character read or EOF on end of file or error.
 			 */
-			int32_t getc() override;
+			int32_t Getc() override;
 
 			/**
 			 * @brief Read a specified number of elements of a specified size from the file.
@@ -64,7 +64,7 @@ namespace engine
 			 * @param elemCount The number of elements to read.
 			 * @return The number of elements successfully read.
 			 */
-			std::size_t read(void* buffer, std::size_t elemSize, std::size_t elemCount) override;
+			std::size_t Read(void* buffer, std::size_t elemSize, std::size_t elemCount) override;
 
 			/**
 			 * @brief Unget a character, pushing it back onto the input stream.
@@ -72,14 +72,14 @@ namespace engine
 			 * @param character The character to push back.
 			 * @return The character pushed back or EOF on error.
 			 */
-			int32_t ungetc(int32_t character) override;
+			int32_t Ungetc(int32_t character) override;
 
 			/**
 			 * @brief Get the current position in the file.
 			 *
 			 * @return The current position in the file or -1L on error.
 			 */
-			long tell() override;
+			long Tell() override;
 
 			/**
 			 * @brief Set the file position indicator to a new position.
@@ -88,14 +88,14 @@ namespace engine
 			 * @param origin The position used as a reference for the offset (SEEK_SET, SEEK_CUR, or SEEK_END).
 			 * @return Zero on success, nonzero on error.
 			 */
-			int32_t seek(long offset, int32_t origin) override;
+			int32_t Seek(long offset, int32_t origin) override;
 
 			/**
 			 * @brief Check if the end of file has been reached.
 			 *
 			 * @return Nonzero if the end of file has been reached, zero otherwise.
 			 */
-			int32_t eof() const override;
+			int32_t Eof() const override;
 		private:
 			gpak_file* m_pFilePtr{ nullptr };
 		};

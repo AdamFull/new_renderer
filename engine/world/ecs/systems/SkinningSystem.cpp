@@ -39,18 +39,18 @@ CSkinningSystem::CSkinningSystem(CSceneGraph* scenegraph, render::IRenderInterfa
 	m_pRenderInterface = render_interface;
 }
 
-void CSkinningSystem::__create()
+void CSkinningSystem::__Create()
 {
 	TRACY_PROFILE_FUNCTION();
 }
 
-void CSkinningSystem::__update(f32 fDt)
+void CSkinningSystem::__Update(f32 fDt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto& registry = m_pSceneGraph->getRegistry();
-	auto root = m_pSceneGraph->getRoot();
-	auto& root_component = m_pSceneGraph->getComponent<FRootComponent>(root);
+	auto& registry = m_pSceneGraph->GetRegistry();
+	auto root = m_pSceneGraph->GetRoot();
+	auto& root_component = m_pSceneGraph->GetComponent<FRootComponent>(root);
 
 	auto view = registry->view<FTransformComponent, FBaseComponent, FMeshComponent>();
 	for (auto [entity, transform, base, mesh] : view.each())
@@ -71,19 +71,19 @@ void CSkinningSystem::__update(f32 fDt)
 		auto inv_transform = glm::inverse(transform.gmodel);
 		for (u32 i = 0; i < skin.joints.size(); i++)
 		{
-			auto& jtransform = m_pSceneGraph->getComponent<FTransformComponent>(skin.joints[i]);
+			auto& jtransform = m_pSceneGraph->GetComponent<FTransformComponent>(skin.joints[i]);
 			skin.jointMatrices[i] = jtransform.gmodel * skin.inverseBindMatrices[i];
 			skin.jointMatrices[i] = inv_transform * skin.jointMatrices[i];
 		}
 	}
 
-	auto& render_world = m_pRenderInterface->getRenderWorld();
-	auto& world_stats = render_world->getStats();
+	auto& render_world = m_pRenderInterface->GetRenderWorld();
+	auto& world_stats = render_world->GetStats();
 
 	for (u64 idx = 0ull; idx < root_component.skins.size(); ++idx)
 	{
 		auto& skin = root_component.skins[idx];
 		root_component.skinRemap[idx] = world_stats.matricesCount;
-		render_world->addMatrices(skin.jointMatrices);
+		render_world->AddMatrices(skin.jointMatrices);
 	}
 }

@@ -583,7 +583,7 @@ static bool ImGui_ImplGlfw_Init(GLFWwindow* window, bool install_callbacks, Glfw
     io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;         // We can honor GetMouseCursor() values (optional)
     io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;          // We can honor io.WantSetMousePos requests (optional, rarely used)
 #ifndef __EMSCRIPTEN__
-    io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports;    // We can create multi-viewports on the Platform side (optional)
+    io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports;    // We can Create multi-viewports on the Platform side (optional)
 #endif
 #if GLFW_HAS_MOUSE_PASSTHROUGH || GLFW_HAS_WINDOW_HOVERED
     io.BackendFlags |= ImGuiBackendFlags_HasMouseHoveredViewport; // We can call io.AddMouseViewportEvent() with correct data (optional)
@@ -970,7 +970,7 @@ void ImGui_ImplGlfw_InstallEmscriptenCanvasResizeCallback(const char* canvas_sel
 
 //--------------------------------------------------------------------------------------------------------
 // MULTI-VIEWPORT / PLATFORM INTERFACE SUPPORT
-// This is an _advanced_ and _optional_ feature, allowing the backend to create and handle multiple viewports simultaneously.
+// This is an _advanced_ and _optional_ feature, allowing the backend to Create and handle multiple viewports simultaneously.
 // If you are new to dear imgui or creating a new binding for dear imgui, it is recommended that you completely ignore this section first..
 //--------------------------------------------------------------------------------------------------------
 
@@ -995,7 +995,7 @@ static void ImGui_ImplGlfw_WindowCloseCallback(GLFWwindow* window)
         viewport->PlatformRequestClose = true;
 }
 
-// GLFW may dispatch window pos/size events after calling glfwSetWindowPos()/glfwSetWindowSize().
+// GLFW may Dispatch window pos/size events after calling glfwSetWindowPos()/glfwSetWindowSize().
 // However: depending on the platform the callback may be invoked at different time:
 // - on Windows it appears to be called within the glfwSetWindowPos()/glfwSetWindowSize() call
 // - on Linux it is queued and invoked during glfwPollEvents()
@@ -1238,7 +1238,7 @@ static void ImGui_ImplGlfw_SwapBuffers(ImGuiViewport* viewport, void*)
 }
 
 //--------------------------------------------------------------------------------------------------------
-// Vulkan support (the Vulkan renderer needs to call a platform-side support function to create the surface)
+// Vulkan support (the Vulkan renderer needs to call a platform-side support function to Create the surface)
 //--------------------------------------------------------------------------------------------------------
 
 // Avoid including <vulkan.h> so we can build without it

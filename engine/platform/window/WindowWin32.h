@@ -20,18 +20,18 @@ namespace engine
 			CWindowWin32();
 			~CWindowWin32() override;
 
-			void create(const FWindowCreateInfo& window_ci) override;
-			void destroy() override;
+			void Create(const FWindowCreateInfo& window_ci) override;
+			void Destroy() override;
 
-			bool process() override;
+			bool Process() override;
 
-			void setTitle(const std::string& title) override;
+			void SetTitle(const std::string& title) override;
 
-			void getWindowSize(int32_t& width, int32_t& height) override;
-			bool isResized() override;
-			bool isMinimized() override;
+			void GetWindowSize(int32_t& width, int32_t& height) override;
+			bool IsResized() override;
+			bool IsMinimized() override;
 
-			void getPlatformData(HINSTANCE& hinst, HWND& hwnd);
+			void GetPlatformData(HINSTANCE& hinst, HWND& hwnd);
 		protected:
 			static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 		private:

@@ -109,46 +109,46 @@ CAAMInputFile::CAAMInputFile(AAssetManager* handle, const std::string& filename)
 
 CAAMInputFile::~CAAMInputFile()
 {
-	close();
+	Close();
 }
 
-void CAAMInputFile::close()
+void CAAMInputFile::Close()
 {
 	if (m_pFilePtr)
 		aasset_fclose(m_pFilePtr);
 }
 
-bool CAAMInputFile::is_open() const
+bool CAAMInputFile::IsOpen() const
 {
 	return m_pFilePtr && m_pFilePtr->asset;
 }
 
-int32_t CAAMInputFile::getc()
+int32_t CAAMInputFile::Getc()
 {
 	return m_pFilePtr ? aasset_fgetc(m_pFilePtr) : -1;
 }
 
-std::size_t CAAMInputFile::read(char* buffer, std::size_t elemSize, std::size_t elemCount)
+std::size_t CAAMInputFile::Read(char* buffer, std::size_t elemSize, std::size_t elemCount)
 {
 	return m_pFilePtr ? aasset_fread(buffer, elemSize, elemCount, m_pFilePtr) : 0ull;
 }
 
-int32_t CAAMInputFile::ungetc(int32_t character)
+int32_t CAAMInputFile::Ungetc(int32_t character)
 {
 	return m_pFilePtr ? aasset_ungetc(character, m_pFilePtr) : -1;
 }
 
-long CAAMInputFile::tell()
+long CAAMInputFile::Tell()
 {
 	return m_pFilePtr ? aasset_ftell(m_pFilePtr) : -1;
 }
 
-int32_t CAAMInputFile::seek(long offset, int32_t origin)
+int32_t CAAMInputFile::Seek(long offset, int32_t origin)
 {
 	return m_pFilePtr ? aasset_fseek(m_pFilePtr, offset, origin) : -1;
 }
 
-int32_t CAAMInputFile::eof() const
+int32_t CAAMInputFile::Eof() const
 {
 	return m_pFilePtr ? aasset_feof(m_pFilePtr) : 1;
 }

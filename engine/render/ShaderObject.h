@@ -12,26 +12,26 @@ namespace engine
 			CShaderObject(IRenderInterface* render_interface);
 			~CShaderObject() override;
 
-			void create(const std::string& name, const FGraphicsShaderCreateInfo& create_info) override;
-			void create(const std::string& name, const FComputeShaderCreateInfo& create_info) override;
+			void Create(const std::string& name, const FGraphicsShaderCreateInfo& create_info) override;
+			void Create(const std::string& name, const FComputeShaderCreateInfo& create_info) override;
 
-			const std::unique_ptr<CUniformHandle>& getUniformBlock(u64 name) override;
-			const std::unique_ptr<CUniformHandle>& getConstantBlock(u64 name) override;
+			const std::unique_ptr<CUniformHandle>& GetUniformBlock(u64 name) override;
+			const std::unique_ptr<CUniformHandle>& GetConstantBlock(u64 name) override;
 
-			void bindBuffer(u64 name, u64 buffer_resource) override;
-			void bindTexture(u64 name, u64 texture_resource, u32 mip = ~0u) override;
+			void BindBuffer(u64 name, u64 buffer_resource) override;
+			void BindTexture(u64 name, u64 texture_resource, u32 mip = ~0u) override;
 
-			void flushDescriptors() override;
-			void flushConstants(EQueueTypeFlagBits queue) override;
+			void FlushDescriptors() override;
+			void FlushConstants(EQueueTypeFlagBits queue) override;
 
-			void bind(EQueueTypeFlagBits queue) override;
+			void Bind(EQueueTypeFlagBits queue) override;
 
-			u64 handle() const;
+			u64 Handle() const override;
 
-			const FShaderReflectionData& getReflection() const override;
+			const FShaderReflectionData& GetReflection() const override;
 
 		protected:
-			void buildReflection();
+			void BuildReflection();
 		private:
 			utl::hash_map<u64, std::unique_ptr<CUniformHandle>> m_uniformBlocks{};
 			utl::hash_map<u64, std::unique_ptr<CUniformHandle>> m_constantBlocks{};

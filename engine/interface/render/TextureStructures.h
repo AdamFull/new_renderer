@@ -63,7 +63,7 @@ namespace engine
 			u32 mipLevels{ 1u };
 			u32 arrayLayers{ 1u };
 
-			void setFixedSize3D(u32 n_width, u32 n_height, u32 n_depth)
+			void SetFixedSize3D(u32 n_width, u32 n_height, u32 n_depth)
 			{
 				size.width = n_width;
 				size.height = n_height;
@@ -72,17 +72,17 @@ namespace engine
 				size.policy = ERenderTargetSizePolicy::eFixed;
 			}
 
-			void setFixedSize3D(u32 size) { setFixedSize3D(size, size, size); }
-			void setFixedSize2D(u32 n_width, u32 n_height) { setFixedSize3D(n_width, n_height, size.depth); }
-			void setFixedSize2D(u32 size) { setFixedSize2D(size, size); }
+			void SetFixedSize3D(u32 size) { SetFixedSize3D(size, size, size); }
+			void SetFixedSize2D(u32 n_width, u32 n_height) { SetFixedSize3D(n_width, n_height, size.depth); }
+			void SetFixedSize2D(u32 size) { SetFixedSize2D(size, size); }
 
-			void setSizeScale(f32 scale)
+			void SetSizeScale(f32 scale)
 			{
 				size.scale = scale;
 				size.policy = ERenderTargetSizePolicy::eScalable;
 			}
 
-			void enableMipMap() { mipLevels = utl::cast<u32>(std::floor(std::log2((std::max)(size.width, size.height)))) + 1u; }
+			void EnableMipMap() { mipLevels = utl::cast<u32>(std::floor(std::log2((std::max)(size.width, size.height)))) + 1u; }
 		};
 
 		struct FTextureUploadInfo

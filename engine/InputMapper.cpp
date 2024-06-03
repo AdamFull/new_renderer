@@ -10,15 +10,15 @@ inline _Ty remap(_Ty input, _Ty in_min, _Ty in_max, _Ty out_min, _Ty out_max)
 	return (input - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
-void CInputMapper::create()
+void CInputMapper::Create()
 {
-	FWindowCallbackMapper::subscribeKeyInput(this, &CInputMapper::handleKeyInput);
-	FWindowCallbackMapper::subscribeMousePosition(this, &CInputMapper::handleAxisInput);
-	//FWindowCallbackMapper::subscribeMouseScroll(this, &CInputMapper::handleMovementInput);
-	FWindowCallbackMapper::subscribeMouseButton(this, &CInputMapper::handleKeyInput);
+	FWindowCallbackMapper::SubscribeKeyInput(this, &CInputMapper::HandleKeyInput);
+	FWindowCallbackMapper::SubscribeMousePosition(this, &CInputMapper::HandleAxisInput);
+	//FWindowCallbackMapper::SubscribeMouseScroll(this, &CInputMapper::handleMovementInput);
+	FWindowCallbackMapper::SubscribeMouseButton(this, &CInputMapper::HandleKeyInput);
 }
 
-void CInputMapper::update(float dt)
+void CInputMapper::Update(float dt)
 {
 	{
 		auto& mouse_old_x = m_hwAxis[EAxisType::eMouseOldX];
@@ -41,7 +41,7 @@ void CInputMapper::update(float dt)
 		// Test for pressed keys
 		bool is_passes{ true };
 		for (const auto& key : action.keys)
-			is_passes = is_passes && m_keyDecoder.test(key);
+			is_passes = is_passes && m_keyDecoder.Test(key);
 
 		if (is_passes)
 		{
@@ -75,7 +75,7 @@ void CInputMapper::update(float dt)
 			for (auto& [key, value] : axis.keyValue)
 			{
 				float axis_value{ 0.f };
-				if (m_keyDecoder.test(key))
+				if (m_keyDecoder.Test(key))
 					axis_value = value;
 
 				for (auto& callback : axis.callbacks)
@@ -102,12 +102,12 @@ void CInputMapper::update(float dt)
 	}
 }
 
-void CInputMapper::handleKeyInput(EKeyCode code, EKeyState state)
+void CInputMapper::HandleKeyInput(EKeyCode code, EKeyState state)
 {
-	m_keyDecoder.update(code, state == EKeyState::ePress);
+	m_keyDecoder.Update(code, state == EKeyState::ePress);
 }
 
-void CInputMapper::handleAxisInput(float x, float y, float xmax, float ymax)
+void CInputMapper::HandleAxisInput(float x, float y, float xmax, float ymax)
 {
 	m_hwAxis[EAxisType::eMouseX] = remap(x, 0.f, xmax, -1.f, 1.f);
 	m_hwAxis[EAxisType::eMouseY] = remap(y, 0.f, ymax, -1.f, 1.f);

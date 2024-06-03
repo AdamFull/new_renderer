@@ -54,7 +54,7 @@ public:
 
 	bool exists(const std::string& path) override
 	{
-		return m_pVFS->exists(path);
+		return m_pVFS->Exists(path);
 	}
 
 	std::string expandFilePath(const std::string& path) override
@@ -64,17 +64,17 @@ public:
 
 	bool readFile(const std::string& path, utl::vector<uint8_t>& data) override
 	{
-		return m_pVFS->readFile(path, data);
+		return m_pVFS->ReadFile(path, data);
 	}
 
 	bool writeFile(const std::string& path, const utl::vector<uint8_t>& data) override
 	{
-		return m_pVFS->writeFile(path, data);
+		return m_pVFS->WriteFile(path, data);
 	}
 
 	u64 fileSize(const std::string& path) override
 	{
-		return m_pVFS->fileSize(path);
+		return m_pVFS->FileSize(path);
 	}
 private:
 	IVirtualFileSystemInterface* m_pVFS{ nullptr };
@@ -137,7 +137,7 @@ CScene::~CScene()
 	}
 }
 
-void CScene::load(const std::string& path)
+void CScene::Load(const std::string& path)
 {
 	easygltf::CGLTFLoader loader{};
 	loader.setFilesystemWrapper(std::make_unique<FSWrapper>(m_pVFS));
@@ -146,10 +146,10 @@ void CScene::load(const std::string& path)
 	if (!loader.load(path, root))
 		return;
 
-	loadGLTF(root);
+	LoadGLTF(root);
 }
 
-void CScene::makeGenerateScene(const std::string& path)
+void CScene::MakeGenerateScene(const std::string& path)
 {
 	easygltf::CGLTFLoader loader{};
 	loader.setFilesystemWrapper(std::make_unique<FSWrapper>(m_pVFS));
@@ -186,20 +186,20 @@ void CScene::makeGenerateScene(const std::string& path)
 			channel.target.node = current_scene.nodes.back();
 	}
 
-	loadGLTF(root);
+	LoadGLTF(root);
 }
 
-void CScene::update(f32 dt)
+void CScene::Update(f32 dt)
 {
 	TRACY_PROFILE_FUNCTION();
 
 	TRACY_PROFILE_SCOPE("Scene update")
 
 	for (auto& system : m_systems)
-		system->update(dt);
+		system->Update(dt);
 }
 
-void CScene::loadGLTF(easygltf::FGLTFRoot& root)
+void CScene::LoadGLTF(easygltf::FGLTFRoot& root)
 {
 	// Load textures
 	for (const auto& texture : root.textures)
@@ -214,13 +214,13 @@ void CScene::loadGLTF(easygltf::FGLTFRoot& root)
 		// TODO: add ability to override format and sampler params
 		// TODO: find format from materials
 		auto image_path = fs::path_append(root.rootDirectory, easygltf::url_decode(image.uri));
-		m_resources.textures.emplace_back(m_pRenderInterface->createTexture(image_path));
+		m_resources.textures.emplace_back(m_pRenderInterface->CreateTexture(image_path));
 		m_resources.lastTexture++;
 	}
 
 	// Load materials
-	auto& render_world = m_pRenderInterface->getRenderWorld();
-	auto& render_packet = m_pRenderInterface->getRenderPacket();
+	auto& render_world = m_pRenderInterface->GetRenderWorld();
+	auto& render_packet = m_pRenderInterface->GetRenderPacket();
 
 	utl::vector<render::FMaterial> materials{};
 	for (u64 idx = 0ull; idx < root.materials.size(); ++idx)
@@ -275,45 +275,45 @@ void CScene::loadGLTF(easygltf::FGLTFRoot& root)
 		render_packet->stats.materialCount++;
 	}
 
-	render_world->addMaterials(materials);
+	render_world->AddMaterials(materials);
 
 	// Loading nodes
 	const easygltf::Scene& scene = root.scenes[root.scene > -1 ? root.scene : 0];
-	auto root_node = m_pSceneGraph->createRoot(scene.name);
+	auto root_node = m_pSceneGraph->CreateRoot(scene.name);
 
 	for (const auto& node_index : scene.nodes)
-		loadNode(root, root_node, node_index);
+		LoadNode(root, root_node, node_index);
 
-	loadAnimations(root);
-	loadSkins(root);
+	LoadAnimations(root);
+	LoadSkins(root);
 
 	for (const auto& [hash, handler_ids] : m_resources.vertexHandlers)
 	{
 		for (const auto& id : handler_ids)
 		{
-			auto& handler = m_pRenderInterface->getVertexHandler(id);
-			handler->allocate();
+			auto& handler = m_pRenderInterface->GetVertexHandler(id);
+			handler->Allocate();
 		}
 	}
 
 	for (auto& system : m_systems)
-		system->create();
+		system->Create();
 }
 
-void CScene::loadNode(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index, f32 global_scale)
+void CScene::LoadNode(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index, f32 global_scale)
 {
-	auto& render_packet = m_pRenderInterface->getRenderPacket();
+	auto& render_packet = m_pRenderInterface->GetRenderPacket();
 
 	const auto& node = root.nodes[node_index];
 
-	auto new_node = m_pSceneGraph->createNode(node.name);
+	auto new_node = m_pSceneGraph->CreateNode(node.name);
 
 	log_info("[Scene] Loadind node: {}:{}.", node.name, node_index);
 
 	m_temporary.nodeToEntity[node_index] = new_node;
 
 	// Parse node local transform
-	auto& transform = m_pSceneGraph->getComponent<FTransformComponent>(new_node);
+	auto& transform = m_pSceneGraph->GetComponent<FTransformComponent>(new_node);
 	transform.lposition = glm::make_vec3(node.translation.data());
 	transform.lrotation = glm::make_quat(node.rotation.data());
 	transform.lscale = glm::make_vec3(node.scale.data());
@@ -323,31 +323,31 @@ void CScene::loadNode(const easygltf::FGLTFRoot& root, const entt::entity parent
 	if (!node.children.empty())
 	{
 		for (const auto& child_node_index : node.children)
-			loadNode(root, m_temporary.nodeToEntity[node_index], child_node_index);
+			LoadNode(root, m_temporary.nodeToEntity[node_index], child_node_index);
 	}
 
 	if(node.mesh >= 0)
-		loadMeshComponent(root, m_temporary.nodeToEntity[node_index], node_index);
+		LoadMeshComponent(root, m_temporary.nodeToEntity[node_index], node_index);
 
 	if (node.camera >= 0)
-		loadCameraComponent(root, m_temporary.nodeToEntity[node_index], node_index);
+		LoadCameraComponent(root, m_temporary.nodeToEntity[node_index], node_index);
 
 	if(node.hasExtension<easygltf::extensions::KHR_lights_punctual>())
-		loadLightComponent(root, m_temporary.nodeToEntity[node_index], node_index);
+		LoadLightComponent(root, m_temporary.nodeToEntity[node_index], node_index);
 
-	m_pSceneGraph->attachChild(parent, new_node);
+	m_pSceneGraph->AttachChild(parent, new_node);
 	render_packet->stats.nodeCount++;
 }
 
-void CScene::loadMeshComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index)
+void CScene::LoadMeshComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index)
 {
 	const auto& node = root.nodes[node_index];
 	const auto& mesh = root.meshes[node.mesh];
 
-	auto& mesh_component = m_pSceneGraph->addComponent<FMeshComponent>(parent, FMeshComponent{});
+	auto& mesh_component = m_pSceneGraph->AddComponent<FMeshComponent>(parent, FMeshComponent{});
 	mesh_component.skin = node.skin;
 
-	auto& render_packet = m_pRenderInterface->getRenderPacket();
+	auto& render_packet = m_pRenderInterface->GetRenderPacket();
 
 	// Load mesh primitives
 	for (u64 i = 0ull; i < mesh.primitives.size(); ++i)
@@ -404,7 +404,7 @@ void CScene::loadMeshComponent(const easygltf::FGLTFRoot& root, const entt::enti
 			attributes_hash ^= attribute_hasher(utl::cast<u32>(indices.stride)) << 1;
 		}
 
-		// Get or create vertex buffer
+		// Get or Create vertex buffer
 		render::IVertexHandler* vertex_handler{nullptr};
 		u64 current_handler_id{ ~0ull };
 
@@ -412,7 +412,7 @@ void CScene::loadMeshComponent(const easygltf::FGLTFRoot& root, const entt::enti
 		{
 			for (const auto& handler_id : found->second)
 			{
-				auto& handler = m_pRenderInterface->getVertexHandler(handler_id);
+				auto& handler = m_pRenderInterface->GetVertexHandler(handler_id);
 
 				vertex_handler = handler.get();
 				current_handler_id = handler_id;
@@ -435,14 +435,14 @@ void CScene::loadMeshComponent(const easygltf::FGLTFRoot& root, const entt::enti
 			auto& handlers = m_resources.vertexHandlers[attributes_hash];
 
 			auto handler_name = std::format("{}_{}_{}", mesh.name, attributes_hash, handlers.size());
-			auto handler_id = m_pRenderInterface->createVertexHandler(handler_name, handler_ci);
+			auto handler_id = m_pRenderInterface->CreateVertexHandler(handler_name, handler_ci);
 			handlers.emplace_back(handler_id);
 
-			auto& handler = m_pRenderInterface->getVertexHandler(handler_id);
+			auto& handler = m_pRenderInterface->GetVertexHandler(handler_id);
 			vertex_handler = handler.get();
 			current_handler_id = handler_id;
 
-			render_packet->stats.perTypeVBOCount[handler->getHash()]++;
+			render_packet->stats.perTypeVBOCount[handler->GetHash()]++;
 			render_packet->stats.vboCount++;
 		}
 
@@ -450,9 +450,9 @@ void CScene::loadMeshComponent(const easygltf::FGLTFRoot& root, const entt::enti
 		FMeshPrimitive mesh_primitive{};
 		mesh_primitive.vboId = current_handler_id;
 		mesh_primitive.setDimensions(pos_min, pos_max);
-		mesh_primitive.vertexRange = vertex_handler->addMeshData(attributes, indices);
+		mesh_primitive.vertexRange = vertex_handler->AddMeshData(attributes, indices);
 
-		// NOTE: Updating material create info for future shader creation
+		// NOTE: Updating material Create info for future shader creation
 		if (primitive.material >= 0)
 			mesh_primitive.materialId = primitive.material;
 
@@ -461,7 +461,7 @@ void CScene::loadMeshComponent(const easygltf::FGLTFRoot& root, const entt::enti
 	}
 }
 
-void CScene::loadCameraComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index)
+void CScene::LoadCameraComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index)
 {
 	const auto& node = root.nodes[node_index];
 	const auto& camera = root.cameras[node.camera];
@@ -484,10 +484,10 @@ void CScene::loadCameraComponent(const easygltf::FGLTFRoot& root, const entt::en
 		camera_component.farPlane = camera.perspective.zfar;
 	}
 
-	m_pSceneGraph->addComponent<FCameraComponent>(parent, std::move(camera_component));
+	m_pSceneGraph->AddComponent<FCameraComponent>(parent, std::move(camera_component));
 }
 
-void CScene::loadLightComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index)
+void CScene::LoadLightComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index)
 {
 	const auto& node = root.nodes[node_index];
 
@@ -497,7 +497,7 @@ void CScene::loadLightComponent(const easygltf::FGLTFRoot& root, const entt::ent
 		FDirectionalLightComponent light_component;
 		light_component.color = glm::make_vec3(light.color.data());
 		light_component.intencity = light.intensity;
-		m_pSceneGraph->addComponent<FDirectionalLightComponent>(parent, std::move(light_component));
+		m_pSceneGraph->AddComponent<FDirectionalLightComponent>(parent, std::move(light_component));
 	}
 	else if (light.type == easygltf::extensions::KHR_lights_punctual::enumerators::light_type::spot)
 	{
@@ -506,7 +506,7 @@ void CScene::loadLightComponent(const easygltf::FGLTFRoot& root, const entt::ent
 		light_component.innerAngle = light.spot.innerConeAngle;
 		light_component.outerAngle = light.spot.outerConeAngle;
 		light_component.intencity = light.intensity;
-		m_pSceneGraph->addComponent<FSpotLightComponent>(parent, std::move(light_component));
+		m_pSceneGraph->AddComponent<FSpotLightComponent>(parent, std::move(light_component));
 	}
 	else if (light.type == easygltf::extensions::KHR_lights_punctual::enumerators::light_type::point)
 	{
@@ -514,14 +514,14 @@ void CScene::loadLightComponent(const easygltf::FGLTFRoot& root, const entt::ent
 		light_component.color = glm::make_vec3(light.color.data());
 		light_component.intencity = light.intensity;
 		light_component.radius = (std::max)(light.range, 1.0);
-		m_pSceneGraph->addComponent<FPointLightComponent>(parent, std::move(light_component));
+		m_pSceneGraph->AddComponent<FPointLightComponent>(parent, std::move(light_component));
 	}
 }
 
-void CScene::loadAnimations(const easygltf::FGLTFRoot& root)
+void CScene::LoadAnimations(const easygltf::FGLTFRoot& root)
 {
-	auto scene_root = m_pSceneGraph->getRoot();
-	auto& root_component = m_pSceneGraph->getComponent<FRootComponent>(scene_root);
+	auto scene_root = m_pSceneGraph->GetRoot();
+	auto& root_component = m_pSceneGraph->GetComponent<FRootComponent>(scene_root);
 
 	for (auto& anim : root.animations)
 	{
@@ -626,10 +626,10 @@ void CScene::loadAnimations(const easygltf::FGLTFRoot& root)
 	log_info("[Scene] Loaded {} animations.", root_component.animations.size());
 }
 
-void CScene::loadSkins(const easygltf::FGLTFRoot& root)
+void CScene::LoadSkins(const easygltf::FGLTFRoot& root)
 {
-	auto scene_root = m_pSceneGraph->getRoot();
-	auto& root_component = m_pSceneGraph->getComponent<FRootComponent>(scene_root);
+	auto scene_root = m_pSceneGraph->GetRoot();
+	auto& root_component = m_pSceneGraph->GetComponent<FRootComponent>(scene_root);
 
 	for (auto& source : root.skins)
 	{

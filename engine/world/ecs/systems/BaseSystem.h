@@ -15,12 +15,12 @@ namespace engine
 			public:
 				virtual ~ISystem() = default;
 
-				virtual void create();
-				void update(f32 dt);
+				virtual void Create();
+				void Update(f32 dt);
 
 			protected:
-				virtual void __create() = 0;
-				virtual void __update(f32 fDf) = 0;
+				virtual void __Create() = 0;
+				virtual void __Update(f32 fDf) = 0;
 
 				CSceneGraph* m_pSceneGraph{ nullptr };
 				utl::utils::stopwatch m_stopWatch;

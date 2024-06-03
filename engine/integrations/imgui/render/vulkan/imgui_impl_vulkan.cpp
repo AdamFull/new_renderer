@@ -11,7 +11,7 @@
 // To build this on 32-bit systems and support texture changes:
 // - [Solution 1] IDE/msbuild: in "Properties/C++/Preprocessor Definitions" add 'ImTextureID=ImU64' (this is what we do in our .vcxproj files)
 // - [Solution 2] IDE/msbuild: in "Properties/C++/Preprocessor Definitions" add 'IMGUI_USER_CONFIG="my_imgui_config.h"' and inside 'my_imgui_config.h' add '#define ImTextureID ImU64' and as many other options as you like.
-// - [Solution 3] IDE/msbuild: edit imconfig.h and add '#define ImTextureID ImU64' (prefer solution 2 to create your own config file!)
+// - [Solution 3] IDE/msbuild: edit imconfig.h and add '#define ImTextureID ImU64' (prefer solution 2 to Create your own config file!)
 // - [Solution 4] command-line: add '/D ImTextureID=ImU64' to your cl.exe command-line (this is what we do in our batch files)
 
 // The aim of imgui_impl_vulkan.h/.cpp is to be usable in your engine without any modification.
@@ -44,7 +44,7 @@
 //  2024-01-03: Vulkan: Stopped creating command pools with VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT as we don't reset them.
 //  2023-11-29: Vulkan: Fixed mismatching allocator passed to vkCreateCommandPool() vs vkDestroyCommandPool(). (#7075)
 //  2023-11-10: *BREAKING CHANGE*: Removed parameter from ImGui_ImplVulkan_CreateFontsTexture(): backend now creates its own command-buffer to upload fonts.
-//              *BREAKING CHANGE*: Removed ImGui_ImplVulkan_DestroyFontUploadObjects() which is now unnecessary as we create and destroy those objects in the backend.
+//              *BREAKING CHANGE*: Removed ImGui_ImplVulkan_DestroyFontUploadObjects() which is now unnecessary as we Create and destroy those objects in the backend.
 //              ImGui_ImplVulkan_CreateFontsTexture() is automatically called by NewFrame() the first time.
 //              You can call ImGui_ImplVulkan_CreateFontsTexture() again to recreate the font atlas texture.
 //              Added ImGui_ImplVulkan_DestroyFontsTexture() but you probably never need to call this.
@@ -955,7 +955,7 @@ bool    ImGui_ImplVulkan_Init(ImGui_ImplVulkan_InitInfo* info)
     io.BackendRendererUserData = (void*)bd;
     io.BackendRendererName = "imgui_impl_vulkan";
     io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;  // We can honor the ImDrawCmd::VtxOffset field, allowing for large meshes.
-    io.BackendFlags |= ImGuiBackendFlags_RendererHasViewports;  // We can create multi-viewports on the Renderer side (optional)
+    io.BackendFlags |= ImGuiBackendFlags_RendererHasViewports;  // We can Create multi-viewports on the Renderer side (optional)
 
     IM_ASSERT(info->Instance != VK_NULL_HANDLE);
     IM_ASSERT(info->PhysicalDevice != VK_NULL_HANDLE);
@@ -1237,7 +1237,7 @@ void ImGui_ImplVulkanH_CreateWindowSwapChain(vk::PhysicalDevice physical_device,
     wd->Swapchain = VK_NULL_HANDLE;
     device.waitIdle();
 
-    // We don't use ImGui_ImplVulkanH_DestroyWindow() because we want to preserve the old swapchain to create the new one.
+    // We don't use ImGui_ImplVulkanH_DestroyWindow() because we want to preserve the old swapchain to Create the new one.
     // Destroy old Framebuffer
     for (uint32_t i = 0; i < wd->ImageCount; i++)
         ImGui_ImplVulkanH_DestroyFrame(device, &wd->Frames[i], allocator);
@@ -1346,8 +1346,8 @@ void ImGui_ImplVulkanH_CreateWindowSwapChain(vk::PhysicalDevice physical_device,
         err = device.createRenderPass(&info, allocator, &wd->RenderPass);
         check_vk_result(err);
 
-        // We do not create a pipeline by default as this is also used by examples' main.cpp,
-        // but secondary viewport in multi-viewport mode may want to create one with:
+        // We do not Create a pipeline by default as this is also used by examples' main.cpp,
+        // but secondary viewport in multi-viewport mode may want to Create one with:
         //ImGui_ImplVulkan_CreatePipeline(device, allocator, VK_NULL_HANDLE, wd->RenderPass, vk::SampleCountFlagBits::e1, &wd->Pipeline, v->Subpass);
     }
 
@@ -1451,7 +1451,7 @@ void ImGui_ImplVulkanH_DestroyAllViewportsRenderBuffers(vk::Device device, const
 
 //--------------------------------------------------------------------------------------------------------
 // MULTI-VIEWPORT / PLATFORM INTERFACE SUPPORT
-// This is an _advanced_ and _optional_ feature, allowing the backend to create and handle multiple viewports simultaneously.
+// This is an _advanced_ and _optional_ feature, allowing the backend to Create and handle multiple viewports simultaneously.
 // If you are new to dear imgui or creating a new binding for dear imgui, it is recommended that you completely ignore this section first..
 //--------------------------------------------------------------------------------------------------------
 
@@ -1509,7 +1509,7 @@ static void ImGui_ImplVulkan_CreateWindow(ImGuiViewport* viewport)
 
 static void ImGui_ImplVulkan_DestroyWindow(ImGuiViewport* viewport)
 {
-    // The main viewport (owned by the application) will always have RendererUserData == 0 since we didn't create the data for it.
+    // The main viewport (owned by the application) will always have RendererUserData == 0 since we didn't Create the data for it.
     ImGui_ImplVulkan_Data* bd = ImGui_ImplVulkan_GetBackendData();
     if (ImGui_ImplVulkan_ViewportData* vd = (ImGui_ImplVulkan_ViewportData*)viewport->RendererUserData)
     {

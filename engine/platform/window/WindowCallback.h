@@ -7,66 +7,66 @@ namespace engine
 {
 	struct FWindowCallbackMapper
 	{
-        static void windowSizeChanged(i32 width, i32 height);
-        static void windowInputFocusChanged(i32 focused);
-        static void windowInputCursorEnter(i32 entered);
-        static void windowInputMouseButton(EKeyCode button, EKeyState action);
-        static void windowInputCursorPosition(f64 xpos, f64 ypos, f64 xmax, f64 ymax);
-        static void windowInputScroll(f64 xoffset, f64 yoffset);
-        static void windowInputKey(EKeyCode key, EKeyState action);
-        static void windowInputChar(u32 c);
-        static void windowInputMonitor(i32 monitor);
+        static void WindowSizeChanged(i32 width, i32 height);
+        static void WindowInputFocusChanged(i32 focused);
+        static void WindowInputCursorEnter(i32 entered);
+        static void WindowInputMouseButton(EKeyCode button, EKeyState action);
+        static void WindowInputCursorPosition(f64 xpos, f64 ypos, f64 xmax, f64 ymax);
+        static void WindowInputScroll(f64 xoffset, f64 yoffset);
+        static void WindowInputKey(EKeyCode key, EKeyState action);
+        static void WindowInputChar(u32 c);
+        static void WindowInputMonitor(i32 monitor);
 
         template <class... Args>
-        static void subscribeSizeChange(Args... args)
+        static void WubscribeSizeChange(Args... args)
         {
             sizeChangeCallbacks.emplace_back(utl::reactive::function<void(i32, i32)>(std::forward<Args>(args)...));
         }
 
         template <class... Args>
-        static void subscribeFocusChange(Args... args)
+        static void SubscribeFocusChange(Args... args)
         {
             focusChangeCallbacks.emplace_back(utl::reactive::function<void(i32)>(std::forward<Args>(args)...));
         }
 
         template <class... Args>
-        static void subscribeCursorEnter(Args... args)
+        static void SubscribeCursorEnter(Args... args)
         {
             cursorEnterCallbacks.emplace_back(utl::reactive::function<void(i32)>(std::forward<Args>(args)...));
         }
 
         template <class... Args>
-        static void subscribeMouseButton(Args... args)
+        static void SubscribeMouseButton(Args... args)
         {
             mouseButtonCallbacks.emplace_back(utl::reactive::function<void(EKeyCode, EKeyState)>(std::forward<Args>(args)...));
         }
 
         template <class... Args>
-        static void subscribeMousePosition(Args... args)
+        static void SubscribeMousePosition(Args... args)
         {
             mousePositionCallbacks.emplace_back(utl::reactive::function<void(f32, f32, f32, f32)>(std::forward<Args>(args)...));
         }
 
         template <class... Args>
-        static void subscribeMouseScroll(Args... args)
+        static void SubscribeMouseScroll(Args... args)
         {
             scrollCallbacks.emplace_back(utl::reactive::function<void(f32, f32)>(std::forward<Args>(args)...));
         }
 
         template <class... Args>
-        static void subscribeKeyInput(Args... args)
+        static void SubscribeKeyInput(Args... args)
         {
             keyCallbacks.emplace_back(utl::reactive::function<void(EKeyCode, EKeyState)>(std::forward<Args>(args)...));
         }
 
         template <class... Args>
-        static void subscribeCharInput(Args... args)
+        static void SubscribeCharInput(Args... args)
         {
             charCallbacks.emplace_back(utl::reactive::function<void(u32)>(std::forward<Args>(args)...));
         }
 
         template <class... Args>
-        static void subscribeMonitor(Args... args)
+        static void SubscribeMonitor(Args... args)
         {
             monitorCallbacks.emplace_back(utl::reactive::function<void(i32)>(std::forward<Args>(args)...));
         }

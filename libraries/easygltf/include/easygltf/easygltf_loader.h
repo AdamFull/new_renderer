@@ -16,7 +16,7 @@ namespace easygltf
 		bool load(const std::string& fsPath, FGLTFRoot& root);
 	protected:
 		bool _load(const std::string& fsPath, FGLTFRoot& root);
-		bool _loadGLTFFromMemory(const utl::vector<uint8_t>& data, FGLTFRoot& root);
+		bool _LoadGLTFFromMemory(const utl::vector<uint8_t>& data, FGLTFRoot& root);
 		bool _loadGLBFromMemory(const utl::vector<uint8_t>& data, FGLTFRoot& root);
 	private:
 		std::unique_ptr<IFilesystemWrapper> m_pFS{};

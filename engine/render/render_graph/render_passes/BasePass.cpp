@@ -13,38 +13,38 @@ void caclulate_size_for_mip_level(u32& width, u32& height, u32 mip_level)
 	height = std::max(1u, height >> mip_level);
 }
 
-void IBasePass::execute(f32 dt)
+void IBasePass::Execute(f32 dt)
 {
 	if (m_bOneTime && m_bCanExecute)
 		m_bCanExecute = false;
 }
 
-bool IBasePass::canExecute()
+bool IBasePass::CanExecute()
 {
 	return m_bCanExecute;
 }
 
-void IBasePass::initShaderResources(const std::unique_ptr<IShaderObject>& shader)
+void IBasePass::InitShaderResources(const std::unique_ptr<IShaderObject>& shader)
 {
-	auto& render_graph = m_pRenderInterface->getRenderGraph();
+	auto& render_graph = m_pRenderInterface->GetRenderGraph();
 
 	// Bind default textures/buffers to shader
 	for (const auto& [bind_point, resource_binding] : m_bakedBindings)
 	{
-		auto& render_resource = render_graph->getRenderResource(resource_binding.resource);
+		auto& render_resource = render_graph->GetRenderResource(resource_binding.resource);
 		if (render_resource.type & ERenderResourceTypeFlagBits::eAllImage)
-			shader->bindTexture(utl::fnv1a_64_hash_cstr(bind_point.c_str()), render_resource.handle, resource_binding.subresource);
+			shader->BindTexture(utl::fnv1a_64_hash_cstr(bind_point.c_str()), render_resource.handle, resource_binding.subresource);
 		else if (render_resource.type == ERenderResourceTypeFlagBits::eBuffer)
-			shader->bindBuffer(utl::fnv1a_64_hash_cstr(bind_point.c_str()), render_resource.handle);
+			shader->BindBuffer(utl::fnv1a_64_hash_cstr(bind_point.c_str()), render_resource.handle);
 	}
 }
 
-void IBasePass::bindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt)
+void IBasePass::BindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt)
 {
-	auto& render_world = m_pRenderInterface->getRenderWorld();
+	auto& render_world = m_pRenderInterface->GetRenderWorld();
 }
 
-void IRenderPass::init(const FRenderPassCreateInfo& pass_ci)
+void IRenderPass::Init(const FRenderPassCreateInfo& pass_ci)
 {
 	m_queue = pass_ci.queue;
 	m_renderResources = pass_ci.resources;
@@ -57,15 +57,15 @@ void IRenderPass::init(const FRenderPassCreateInfo& pass_ci)
 	m_stencilTarget = pass_ci.stencilTarget;
 }
 
-void IRenderPass::build(const FPassBuildInfo& build_info)
+void IRenderPass::Build(const FPassBuildInfo& build_info)
 {
-	auto& render_graph = m_pRenderInterface->getRenderGraph();
+	auto& render_graph = m_pRenderInterface->GetRenderGraph();
 
 	auto& backbuffer_target = m_renderResources[ERenderResourceGroupType::eBackbufferWrite];
 	for (const auto& resource_binding : backbuffer_target)
 	{
 		auto& color_attachment = m_vColorAttachments.emplace_back();
-		buildAttachment(resource_binding.resource, build_info, color_attachment);
+		BuildAttachment(resource_binding.resource, build_info, color_attachment);
 		color_attachment.backbuffer = true;
 	}
 
@@ -76,23 +76,23 @@ void IRenderPass::build(const FPassBuildInfo& build_info)
 			continue;
 
 		auto& color_attachment = m_vColorAttachments.emplace_back();
-		buildAttachment(resource_binding.resource, build_info, color_attachment);
+		BuildAttachment(resource_binding.resource, build_info, color_attachment);
 	}
 
 	if (m_depthTarget != INVALID_HANDLE)
-		buildAttachment(m_depthTarget, build_info, m_depthAttachment);
+		BuildAttachment(m_depthTarget, build_info, m_depthAttachment);
 
 	if (m_stencilTarget != INVALID_HANDLE)
-		buildAttachment(m_stencilTarget, build_info, m_stencilAttachment);
+		BuildAttachment(m_stencilTarget, build_info, m_stencilAttachment);
 }
 
-void IRenderPass::execute(f32 dt)
+void IRenderPass::Execute(f32 dt)
 {
-	IBasePass::execute(dt);
+	IBasePass::Execute(dt);
 
-	auto& render_context = m_pRenderInterface->getRenderContext();
-	auto& render_world = m_pRenderInterface->getRenderWorld();
-	auto render_size = render_context->getScreenRenderRect();
+	auto& render_context = m_pRenderInterface->GetRenderContext();
+	auto& render_world = m_pRenderInterface->GetRenderWorld();
+	auto render_size = render_context->GetScreenRenderRect();
 
 	FBeginRendering2Info beginRenderingInfo{};
 	beginRenderingInfo.queue = m_queue;
@@ -104,13 +104,13 @@ void IRenderPass::execute(f32 dt)
 
 	if (m_cameraIndex != ~0ull)
 	{
-		auto& camera = render_world->getCamera(m_cameraIndex);
+		auto& camera = render_world->GetCamera(m_cameraIndex);
 		beginRenderingInfo.renderArea.size.x = camera.size.x;
 		beginRenderingInfo.renderArea.size.y = camera.size.y;
 	}
 	else
 	{
-		auto screen_rect = render_context->getScreenRenderRect();
+		auto screen_rect = render_context->GetScreenRenderRect();
 		beginRenderingInfo.renderArea.size.x = screen_rect.size.x;
 		beginRenderingInfo.renderArea.size.y = screen_rect.size.y;
 	}
@@ -120,30 +120,30 @@ void IRenderPass::execute(f32 dt)
 	beginRenderingInfo.name = m_debugName;
 #endif
 
-	render_context->beginTimestampZone(m_queue);
+	render_context->BeginTimestampZone(m_queue);
 
-	if (canRender())
+	if (CanRender())
 	{
-		render_context->beginRendering(beginRenderingInfo);
-		render_context->setViewport(utl::cast<f32>(beginRenderingInfo.renderArea.size.x), utl::cast<f32>(beginRenderingInfo.renderArea.size.y), m_bFlipViewport);
+		render_context->BeginRendering(beginRenderingInfo);
+		render_context->SetViewport(utl::cast<f32>(beginRenderingInfo.renderArea.size.x), utl::cast<f32>(beginRenderingInfo.renderArea.size.y), m_bFlipViewport);
 
 		FRenderFrameInfo frame_info{};
 		frame_info.deltaTime = dt;
 		frame_info.renderRect = beginRenderingInfo.renderArea;
 
-		_render(frame_info);
+		_Render(frame_info);
 
-		render_context->endRendering(beginRenderingInfo.queue);
+		render_context->EndRendering(beginRenderingInfo.queue);
 	}
 	
-	render_context->endTimestampZone(m_queue);
+	render_context->EndTimestampZone(m_queue);
 }
 
-void IRenderPass::buildAttachment(u64 resource_id, const FPassBuildInfo& build_info, FRenderGraphAttachmentInfo& attachment_info)
+void IRenderPass::BuildAttachment(u64 resource_id, const FPassBuildInfo& build_info, FRenderGraphAttachmentInfo& attachment_info)
 {
-	auto& render_graph = m_pRenderInterface->getRenderGraph();
+	auto& render_graph = m_pRenderInterface->GetRenderGraph();
 
-	auto& render_resource = render_graph->getRenderResource(resource_id);
+	auto& render_resource = render_graph->GetRenderResource(resource_id);
 	auto& resource_info = build_info.getAttachmentInfo(resource_id);
 
 	attachment_info.handle = render_resource.handle;
@@ -151,9 +151,9 @@ void IRenderPass::buildAttachment(u64 resource_id, const FPassBuildInfo& build_i
 	attachment_info.storeOp = resource_info.storeOp;
 }
 
-void IRenderPass::makeShader(const std::string& name, std::unique_ptr<IShaderObject>& shader, EShaderCullModeFlagBits cull_mode, EShaderFrontFace front_face, EDepthCompareOp depthOp, const IVertexHandler* vbo)
+void IRenderPass::MakeShader(const std::string& name, std::unique_ptr<IShaderObject>& shader, EShaderCullModeFlagBits cull_mode, EShaderFrontFace front_face, EDepthCompareOp depthOp, const IVertexHandler* vbo)
 {
-	auto& render_graph = m_pRenderInterface->getRenderGraph();
+	auto& render_graph = m_pRenderInterface->GetRenderGraph();
 
 	FGraphicsShaderCreateInfo shader_ci{};
 	shader_ci.cullMode = cull_mode;
@@ -167,7 +167,7 @@ void IRenderPass::makeShader(const std::string& name, std::unique_ptr<IShaderObj
 		if (resource_binding.resource == m_depthTarget || resource_binding.resource == m_stencilTarget)
 			continue;
 
-		auto& render_resource = render_graph->getRenderResource(resource_binding.resource);
+		auto& render_resource = render_graph->GetRenderResource(resource_binding.resource);
 		auto& new_attachment = shader_ci.colorAttachments.emplace_back();
 		new_attachment.source = render_resource.handle;
 	}
@@ -178,7 +178,7 @@ void IRenderPass::makeShader(const std::string& name, std::unique_ptr<IShaderObj
 		if (resource_binding.resource == m_depthTarget || resource_binding.resource == m_stencilTarget)
 			continue;
 
-		auto& render_resource = render_graph->getRenderResource(resource_binding.resource);
+		auto& render_resource = render_graph->GetRenderResource(resource_binding.resource);
 		auto& new_attachment = shader_ci.colorAttachments.emplace_back();
 		new_attachment.source = render_resource.handle;
 		new_attachment.backbuffer = true;
@@ -186,41 +186,41 @@ void IRenderPass::makeShader(const std::string& name, std::unique_ptr<IShaderObj
 
 	if (m_depthTarget != INVALID_HANDLE)
 	{
-		auto& render_resource = render_graph->getRenderResource(m_depthTarget);
+		auto& render_resource = render_graph->GetRenderResource(m_depthTarget);
 		shader_ci.depthAttachment.source = render_resource.handle;
 	}
 
 	if (m_stencilTarget != INVALID_HANDLE)
 	{
-		auto& render_resource = render_graph->getRenderResource(m_stencilTarget);
+		auto& render_resource = render_graph->GetRenderResource(m_stencilTarget);
 		shader_ci.stencilAttachment.source = render_resource.handle;
 	}
 
 	if (vbo)
 	{
-		auto& render_packet = m_pRenderInterface->getRenderPacket();
+		auto& render_packet = m_pRenderInterface->GetRenderPacket();
 
-		auto vbo_hash = vbo->getHash();
+		auto vbo_hash = vbo->GetHash();
 		shader_ci.usageCount = render_packet->stats.perTypeVBOCount[vbo_hash];
-		shader_ci.vertexDeclaration = vbo->getVertexDeclaration();
+		shader_ci.vertexDeclaration = vbo->GetVertexDeclaration();
 	}
 
-	shader->create(name, shader_ci);
+	shader->Create(name, shader_ci);
 }
 
-void IRenderPass::initShaderResources(const std::unique_ptr<IShaderObject>& shader)
+void IRenderPass::InitShaderResources(const std::unique_ptr<IShaderObject>& shader)
 {
-	IBasePass::initShaderResources(shader);
+	IBasePass::InitShaderResources(shader);
 }
 
-void IRenderPass::bindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt)
+void IRenderPass::BindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt)
 {
-	IBasePass::bindShaderResources(shader, dt);
+	IBasePass::BindShaderResources(shader, dt);
 }
 
 
 
-void IComputePass::init(const FComputePassCreateInfo& pass_ci)
+void IComputePass::Init(const FComputePassCreateInfo& pass_ci)
 {
 	m_queue = pass_ci.queue;
 	m_vDispatchInfos = pass_ci.groupInfos;
@@ -229,17 +229,17 @@ void IComputePass::init(const FComputePassCreateInfo& pass_ci)
 	m_bOneTime = pass_ci.oneTime;
 }
 
-void IComputePass::build(const FPassBuildInfo& build_info)
+void IComputePass::Build(const FPassBuildInfo& build_info)
 {
 
 }
 
-void IComputePass::execute(f32 dt)
+void IComputePass::Execute(f32 dt)
 {
-	IBasePass::execute(dt);
+	IBasePass::Execute(dt);
 
-	auto& render_context = m_pRenderInterface->getRenderContext();
-	auto& render_graph = m_pRenderInterface->getRenderGraph();
+	auto& render_context = m_pRenderInterface->GetRenderContext();
+	auto& render_graph = m_pRenderInterface->GetRenderGraph();
 
 	FComputeFrameInfo frame_info{};
 	frame_info.deltaTime = dt;
@@ -256,9 +256,9 @@ void IComputePass::execute(f32 dt)
 		{
 			if (group_info.target != INVALID_HANDLE)
 			{
-				auto& render_resource = render_graph->getRenderResource(group_info.target);
+				auto& render_resource = render_graph->GetRenderResource(group_info.target);
 
-				auto& resource_sizes = render_context->getTextureInfo(render_resource.handle);
+				auto& resource_sizes = render_context->GetTextureInfo(render_resource.handle);
 				dispatch_info.globalSizes.x = resource_sizes.size.width;
 				dispatch_info.globalSizes.y = resource_sizes.size.height;
 				dispatch_info.globalSizes.z = 1u;
@@ -266,8 +266,8 @@ void IComputePass::execute(f32 dt)
 		}
 		else if (group_info.type == ERenderingSizeType::eFromBuffer)
 		{
-			auto& render_resource = render_graph->getRenderResource(group_info.target);
-			auto buffer_view = render_context->getBufferView(render_resource.handle);
+			auto& render_resource = render_graph->GetRenderResource(group_info.target);
+			auto buffer_view = render_context->GetBufferView(render_resource.handle);
 
 			dispatch_info.globalSizes.x = buffer_view.alignedSize / buffer_view.elementCount;
 			dispatch_info.globalSizes.y = 1u;
@@ -292,41 +292,41 @@ void IComputePass::execute(f32 dt)
 	compute_begin_info.name = m_debugName;
 #endif
 
-	render_context->beginTimestampZone(m_queue);
-	render_context->beginCompute(compute_begin_info);
+	render_context->BeginTimestampZone(m_queue);
+	render_context->BeginCompute(compute_begin_info);
 
-	_execute(frame_info);
+	_Execute(frame_info);
 
-	render_context->endCompute(m_queue);
-	render_context->endTimestampZone(m_queue);
+	render_context->EndCompute(m_queue);
+	render_context->EndTimestampZone(m_queue);
 }
 
-void IComputePass::initShaderResources(const std::unique_ptr<IShaderObject>& shader)
+void IComputePass::InitShaderResources(const std::unique_ptr<IShaderObject>& shader)
 {
-	IBasePass::initShaderResources(shader);
+	IBasePass::InitShaderResources(shader);
 }
 
-void IComputePass::bindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt)
+void IComputePass::BindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt)
 {
-	IBasePass::bindShaderResources(shader, dt);
+	IBasePass::BindShaderResources(shader, dt);
 
-	auto& render_context = m_pRenderInterface->getRenderContext();
-	auto& render_world = m_pRenderInterface->getRenderWorld();
-	auto& post_process = render_world->getPostProcessingData();
+	auto& render_context = m_pRenderInterface->GetRenderContext();
+	auto& render_world = m_pRenderInterface->GetRenderWorld();
+	auto& post_process = render_world->GetPostProcessingData();
 
 	// For histogram calculation
-	if (auto& uniform = shader->getUniformBlock(shader_bindings::histogram_compute_params); uniform)
+	if (auto& uniform = shader->GetUniformBlock(shader_bindings::histogram_compute_params); uniform)
 	{
 		float log_lum_range = post_process.tonemap.lumMax - post_process.tonemap.lumMin;
-		float time_coeff = glm::clamp<float>(1.0f - glm::exp(-dt * post_process.tonemap.tau), 0.0, 1.0);
+		float time_coeff = glm::clamp<f32>(1.0f - glm::exp(-dt * post_process.tonemap.tau), 0.0, 1.0);
 
 		// TODO: it's incorrect now. I should get size from input target
-		auto render_size = render_context->getRenderResolution();
+		auto render_size = render_context->GetRenderResolution();
 
-		uniform->set(shader_bindings::min_log_lum_label, post_process.tonemap.lumMin);
-		uniform->set(shader_bindings::log_lum_range_label, log_lum_range);
-		uniform->set(shader_bindings::time_coeff_label, time_coeff);
-		uniform->set(shader_bindings::time_num_pixels_x_label, utl::cast<f32>(render_size.x));
-		uniform->set(shader_bindings::time_num_pixels_y_label, utl::cast<f32>(render_size.y));
+		uniform->Set(shader_bindings::min_log_lum_label, post_process.tonemap.lumMin);
+		uniform->Set(shader_bindings::log_lum_range_label, log_lum_range);
+		uniform->Set(shader_bindings::time_coeff_label, time_coeff);
+		uniform->Set(shader_bindings::time_num_pixels_x_label, utl::cast<f32>(render_size.x));
+		uniform->Set(shader_bindings::time_num_pixels_y_label, utl::cast<f32>(render_size.y));
 	}
 }

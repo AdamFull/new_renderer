@@ -10,7 +10,7 @@ namespace engine
 		CBoolVariable(const FNumericScalarInitialData<bool>& initial) : m_value{ initial.value } {}
 		~CBoolVariable() = default;
 
-		void display() override;
+		void Display() override;
 	private:
 		bool m_value{ false };
 	};
@@ -21,7 +21,7 @@ namespace engine
 		CIntVariable(const FNumericScalarInitialData<i32>& initial) : m_value{ initial.value } {}
 		~CIntVariable() = default;
 
-		void display() override;
+		void Display() override;
 	private:
 		i32 m_value{ 0 };
 		i32 m_min{ 0 };

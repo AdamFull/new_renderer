@@ -46,7 +46,7 @@ namespace engine
             /**
              * @brief Increment the iterator to the next entry in the directory.
              */
-            void _operator_increment() override
+            void _OperatorIncrement() override
             {
                 ++it_;
                 if (it_ != _Ty())
@@ -58,7 +58,7 @@ namespace engine
              *
              * @return A reference to a string representing the current entry's relative path.
              */
-            const std::string& _operator_dereferencing() const override { return path_; }
+            const std::string& _OperatorDereferencing() const override { return path_; }
 
             /**
              * @brief Compare this iterator with another IDirectoryIteratorInterface.
@@ -66,7 +66,7 @@ namespace engine
              * @param other A pointer to the IDirectoryIteratorInterface to be compared with.
              * @return True if the iterators are not equal, false otherwise.
              */
-            bool _operator_not_equal(const IDirectoryIteratorInterface* other) const override
+            bool _OperatorNotEqual(const IDirectoryIteratorInterface* other) const override
             {
                 if (!other->it_)
                     return it_ != _Ty();

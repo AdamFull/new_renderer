@@ -13,7 +13,7 @@ namespace engine
 		public:
 			~CVkImGuiIntegration() = default;
 
-			void init() override;
+			void Init() override;
 			void destroy() override;
 
 			void preRender() override;

@@ -16,14 +16,14 @@ void check_vk_result(vk::Result err)
     log_error("[ImGui Integration] Error: vk::Result = %d\n", (u32)err);
 }
 
-void CVkImGuiIntegration::init()
+void CVkImGuiIntegration::Init()
 {
-    // TODO: init m_pRenderInterface
+    // TODO: Init m_pRenderInterface
 
-    auto& render_context = m_pRenderInterface->getRenderContext();
+    auto& render_context = m_pRenderInterface->GetRenderContext();
 
     FVkNativeContext native_context{};
-    render_context->getNativeContext(&native_context);
+    render_context->GetNativeContext(&native_context);
 
     m_device = native_context.device;
     m_allocationCallbacks = native_context.allocationCallbacks;

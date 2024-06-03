@@ -11,43 +11,43 @@ CFullscreenPass::CFullscreenPass(IRenderInterface* render_interface)
 	m_pRenderInterface = render_interface;
 }
 
-void CFullscreenPass::init(const FRenderPassCreateInfo& pass_ci)
+void CFullscreenPass::Init(const FRenderPassCreateInfo& pass_ci)
 {
-	IRenderPass::init(pass_ci);
+	IRenderPass::Init(pass_ci);
 
-	auto& render_graph = m_pRenderInterface->getRenderGraph();
+	auto& render_graph = m_pRenderInterface->GetRenderGraph();
 
 	// Make RHI shader object
 	m_pShader = std::make_unique<CShaderObject>(m_pRenderInterface);
 
 	auto cull_mode = pass_ci.flipViewport ? EShaderCullModeFlagBits::eBack : EShaderCullModeFlagBits::eFront;
 
-	makeShader(pass_ci.shader, m_pShader, cull_mode, EShaderFrontFace::eCCW);
-	initShaderResources(m_pShader);
+	MakeShader(pass_ci.shader, m_pShader, cull_mode, EShaderFrontFace::eCCW);
+	InitShaderResources(m_pShader);
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	m_debugName = std::format("fullscreen:{}", pass_ci.shader);
 #endif
 }
 
-void CFullscreenPass::build(const FPassBuildInfo& build_info)
+void CFullscreenPass::Build(const FPassBuildInfo& build_info)
 {
-	IRenderPass::build(build_info);
+	IRenderPass::Build(build_info);
 }
 
-void CFullscreenPass::_render(const FRenderFrameInfo& frame_info)
+void CFullscreenPass::_Render(const FRenderFrameInfo& frame_info)
 {
-	auto& render_context = m_pRenderInterface->getRenderContext();
+	auto& render_context = m_pRenderInterface->GetRenderContext();
 
-	bindShaderResources(m_pShader, frame_info.deltaTime);
+	BindShaderResources(m_pShader, frame_info.deltaTime);
 
-	auto resolution = render_context->getScreenRenderRect();
-	render_context->setViewport(resolution.size.x, resolution.size.y, m_bFlipViewport);
-	render_context->setScissorRect(0, 0, resolution.size.x, resolution.size.y);
+	auto resolution = render_context->GetScreenRenderRect();
+	render_context->SetViewport(resolution.size.x, resolution.size.y, m_bFlipViewport);
+	render_context->SetScissorRect(0, 0, resolution.size.x, resolution.size.y);
 
-	m_pShader->flushDescriptors();
-	m_pShader->flushConstants(m_queue);
-	m_pShader->bind(m_queue);
+	m_pShader->FlushDescriptors();
+	m_pShader->FlushConstants(m_queue);
+	m_pShader->Bind(m_queue);
 
 	FGeometryDrawInfo draw_info{};
 	auto& range = draw_info.ranges.emplace_back();
@@ -56,5 +56,5 @@ void CFullscreenPass::_render(const FRenderFrameInfo& frame_info)
 	range.beginVertex = 0ull;
 	range.vertexCount = 3ull;
 
-	render_context->draw(m_queue, draw_info);
+	render_context->Draw(m_queue, draw_info);
 }

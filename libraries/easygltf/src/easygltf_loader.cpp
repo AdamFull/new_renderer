@@ -175,10 +175,10 @@ bool CGLTFLoader::_load(const std::string& fsPath, FGLTFRoot& root)
 	if (ext == ".glb")
 		return _loadGLBFromMemory(rdata, root);
 
-	return _loadGLTFFromMemory(rdata, root);
+	return _LoadGLTFFromMemory(rdata, root);
 }
 
-bool CGLTFLoader::_loadGLTFFromMemory(const utl::vector<uint8_t>& data, FGLTFRoot& root)
+bool CGLTFLoader::_LoadGLTFFromMemory(const utl::vector<uint8_t>& data, FGLTFRoot& root)
 {
 	auto json = nlohmann::json::parse(data);
 	json.get_to(root);

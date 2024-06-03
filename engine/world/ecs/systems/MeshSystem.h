@@ -15,8 +15,8 @@ namespace engine
 				CMeshSystem(CSceneGraph* scenegraph, render::IRenderInterface* render_interface);
 				virtual ~CMeshSystem() override = default;
 
-				void __create() override;
-				void __update(f32 fDt) override;
+				void __Create() override;
+				void __Update(f32 fDt) override;
 			private:
 				render::IRenderInterface* m_pRenderInterface{ nullptr };
 			};

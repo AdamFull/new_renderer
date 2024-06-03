@@ -163,24 +163,24 @@ namespace window_callbacks
 	void window_size_changed_cb(GLFWwindow* window, int32_t width, int32_t height)
 	{
 		auto* handle = static_cast<CWindowGLFW*>(glfwGetWindowUserPointer(window));
-        handle->windowSizeChanged();
+        handle->WindowSizeChanged();
 
-        FWindowCallbackMapper::windowSizeChanged(width, height);
+        FWindowCallbackMapper::WindowSizeChanged(width, height);
 	}
 
 	void window_input_focus_changed_cb(GLFWwindow* window, int32_t focused)
 	{
-        FWindowCallbackMapper::windowInputFocusChanged(focused);
+        FWindowCallbackMapper::WindowInputFocusChanged(focused);
 	}
 
 	void window_input_cursor_enter_cb(GLFWwindow* window, int32_t entered)
 	{
-        FWindowCallbackMapper::windowInputCursorEnter(entered);
+        FWindowCallbackMapper::WindowInputCursorEnter(entered);
 	}
 
 	void window_input_mouse_button_cb(GLFWwindow* window, int32_t button, int32_t action, int32_t mods)
 	{
-        FWindowCallbackMapper::windowInputMouseButton(key_converter::glfw_mouse_key_to_engine_code(button), key_converter::glfw_key_state_to_engine_code(action));
+        FWindowCallbackMapper::WindowInputMouseButton(key_converter::glfw_mouse_key_to_engine_code(button), key_converter::glfw_key_state_to_engine_code(action));
 	}
 
 	void window_input_cursor_position_cb(GLFWwindow* window, double xpos, double ypos)
@@ -188,22 +188,22 @@ namespace window_callbacks
         int32_t width{}, height{};
         glfwGetWindowSize(window, &width, &height);
 
-        FWindowCallbackMapper::windowInputCursorPosition(xpos, ypos, static_cast<double>(width), static_cast<double>(height));
+        FWindowCallbackMapper::WindowInputCursorPosition(xpos, ypos, static_cast<double>(width), static_cast<double>(height));
 	}
 
 	void window_input_scroll_cb(GLFWwindow* window, double xoffset, double yoffset)
 	{
-        FWindowCallbackMapper::windowInputScroll(xoffset, yoffset);
+        FWindowCallbackMapper::WindowInputScroll(xoffset, yoffset);
 	}
 
 	void window_input_key_cb(GLFWwindow* window, int32_t key, int32_t scancode, int32_t action, int32_t mods)
 	{
-        FWindowCallbackMapper::windowInputKey(key_converter::glfw_key_to_engine_code(key), key_converter::glfw_key_state_to_engine_code(action));
+        FWindowCallbackMapper::WindowInputKey(key_converter::glfw_key_to_engine_code(key), key_converter::glfw_key_state_to_engine_code(action));
 	}
 
 	void window_input_char_cb(GLFWwindow* window, uint32_t c)
 	{
-        FWindowCallbackMapper::windowInputChar(c);
+        FWindowCallbackMapper::WindowInputChar(c);
 	}
 
 	void window_input_monitor_callback(GLFWmonitor* window, int32_t monitor)
@@ -221,10 +221,10 @@ CWindowGLFW::CWindowGLFW()
 
 CWindowGLFW::~CWindowGLFW()
 {
-	destroy();
+	Destroy();
 }
 
-void CWindowGLFW::create(const FWindowCreateInfo& window_ci)
+void CWindowGLFW::Create(const FWindowCreateInfo& window_ci)
 {
 	auto* monitor = glfwGetPrimaryMonitor();
 
@@ -266,14 +266,14 @@ void CWindowGLFW::create(const FWindowCreateInfo& window_ci)
 	glfwSetMonitorCallback(&window_callbacks::window_input_monitor_callback);
 }
 
-void CWindowGLFW::destroy()
+void CWindowGLFW::Destroy()
 {
 	if(m_pWindowHandle)
 		glfwDestroyWindow(m_pWindowHandle);
 	glfwTerminate();
 }
 
-bool CWindowGLFW::process()
+bool CWindowGLFW::Process()
 {
     m_sizeChanged = false;
 	bool should_close = !glfwWindowShouldClose(m_pWindowHandle);
@@ -281,33 +281,33 @@ bool CWindowGLFW::process()
 	return should_close;
 }
 
-void CWindowGLFW::setTitle(const std::string& title)
+void CWindowGLFW::SetTitle(const std::string& title)
 {
     glfwSetWindowTitle(m_pWindowHandle, title.c_str());
 }
 
-void CWindowGLFW::getWindowSize(int32_t& width, int32_t& height)
+void CWindowGLFW::GetWindowSize(int32_t& width, int32_t& height)
 {
 	glfwGetWindowSize(m_pWindowHandle, &width, &height);
 }
 
-bool CWindowGLFW::isResized()
+bool CWindowGLFW::IsResized()
 {
     return m_sizeChanged;
 }
 
-bool CWindowGLFW::isMinimized()
+bool CWindowGLFW::IsMinimized()
 {
 	return glfwGetWindowAttrib(m_pWindowHandle, GLFW_ICONIFIED);
 }
 
-void CWindowGLFW::windowSizeChanged()
+void CWindowGLFW::WindowSizeChanged()
 {
     m_sizeChanged = true;
 }
 
 #if defined(PLATFORM_WIN32)
-void CWindowGLFW::getPlatformData(HINSTANCE& hinst, HWND& hwnd)
+void CWindowGLFW::GetPlatformData(HINSTANCE& hinst, HWND& hwnd)
 {
 	hwnd = glfwGetWin32Window(m_pWindowHandle);
 	hinst = (HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE);

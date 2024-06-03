@@ -13,11 +13,11 @@ namespace engine
 
 			~CEndDebugMarker() = default;
 
-			void init(EQueueTypeFlagBits queue);
-			void build(const FPassBuildInfo& build_info) override;
-			void execute(f32 dt) override;
+			void Init(EQueueTypeFlagBits queue);
+			void Build(const FPassBuildInfo& build_info) override;
+			void Execute(f32 dt) override;
 
-			EPassType type() override { return EPassType::eDebug; }
+			EPassType Type() override { return EPassType::eDebug; }
 		};
 	}
 }

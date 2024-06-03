@@ -8,19 +8,19 @@ CGPUVector::CGPUVector(IRenderInterface* render_interface)
 	m_pBuffer = std::make_unique<CBufferObject>(render_interface);
 }
 
-void CGPUVector::upload()
+void CGPUVector::Upload()
 {
 	if (!m_vUploadRanges.empty())
 	{
 		// Buffer size is too small, need to resize it
-		if (m_pBuffer->size() < m_vData.size())
+		if (m_pBuffer->Size() < m_vData.size())
 		{
 			FBufferCreateInfo buffer_ci{};
 			buffer_ci.count = m_vData.size() / m_elemSize;
 			buffer_ci.size = m_elemSize;
 			buffer_ci.flags = m_bufferFlag;
 
-			m_pBuffer->resize(m_srOriginalName, buffer_ci);
+			m_pBuffer->Resize(m_srOriginalName, buffer_ci);
 
 			// Buffer was resized. We should upload whole data
 			m_vUploadRanges.clear();
@@ -61,7 +61,7 @@ void CGPUVector::upload()
 			src_offset += range.size;
 		}
 
-		m_pBuffer->upload(std::move(upload_data), upload_regions);
+		m_pBuffer->Upload(std::move(upload_data), upload_regions);
 
 		m_vUploadRanges.clear();
 	}
@@ -69,29 +69,29 @@ void CGPUVector::upload()
 	m_cursor = 0u;
 }
 
-void CGPUVector::resize(u64 new_size)
+void CGPUVector::Resize(u64 new_size)
 {
-	u64 size = to_bytes(new_size);
+	u64 size = ToBytes(new_size);
 
-	if (m_pBuffer->size() < size)
+	if (m_pBuffer->Size() < size)
 	{
 		FBufferCreateInfo buffer_ci{};
 		buffer_ci.count = new_size;
 		buffer_ci.size = m_elemSize;
 		buffer_ci.flags = m_bufferFlag;
 
-		m_pBuffer->resize(m_srOriginalName, buffer_ci);
+		m_pBuffer->Resize(m_srOriginalName, buffer_ci);
 	}
 
 	m_vData.resize(size);
 }
 
-const std::unique_ptr<IBufferObject>& CGPUVector::buffer()
+const std::unique_ptr<IBufferObject>& CGPUVector::Buffer()
 {
 	return m_pBuffer;
 }
 
-void CGPUVector::allocate(const std::string& name, EBufferUsageFlags flag, u64 stride, u64 capacity)
+void CGPUVector::Allocate(const std::string& name, EBufferUsageFlags flag, u64 stride, u64 capacity)
 {
 	FBufferCreateInfo buffer_ci{};
 	buffer_ci.size = stride;
@@ -100,6 +100,6 @@ void CGPUVector::allocate(const std::string& name, EBufferUsageFlags flag, u64 s
 
 	m_srOriginalName = name;
 
-	m_pBuffer->create(name, buffer_ci);
+	m_pBuffer->Create(name, buffer_ci);
 	m_elemSize = stride;//m_pBuffer->instanceSize();
 }

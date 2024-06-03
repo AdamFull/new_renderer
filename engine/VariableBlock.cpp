@@ -2,18 +2,18 @@
 
 using namespace engine;
 
-void CVariableBlock::display()
+void CVariableBlock::Display()
 {
     // Draw variables
     for (auto& [name, var] : m_variables)
-        var->display();
+        var->Display();
  
     // Draw blocks
     for (auto& [name, blk] : m_blocks) 
     {
         //if (ImGui::TreeNode(name.c_str())) 
         {
-            blk->display();
+            blk->Display();
             //ImGui::TreePop();
         }
     }

@@ -12,46 +12,46 @@ namespace engine
 			CRenderWorld(IRenderInterface* render_interface);
 			~CRenderWorld() = default;
 
-			void create() override;
+			void Create() override;
 
-			u64 registerCamera(ERenderGeometryCullerType type) override;
-			void updateCamera(u64 camera_id, const glm::mat4& view, const glm::mat4& prev_view, const glm::mat4& projection, const glm::mat4& prev_projection, const glm::vec2& size, float znear = 0.f, float zfar = 1.f) override;
-			const FCamera& getCamera(u64 index) const override;
-			const FCamera& getDefaultCamera() const override;
-			const u64 getCameraID(ERenderGeometryCullerType type) const override;
-			const u64 getDefaultCameraID() const override;
+			u64 RegisterCamera(ERenderGeometryCullerType type) override;
+			void UpdateCamera(u64 camera_id, const glm::mat4& view, const glm::mat4& prev_view, const glm::mat4& projection, const glm::mat4& prev_projection, const glm::vec2& size, float znear = 0.f, float zfar = 1.f) override;
+			const FCamera& GetCamera(u64 index) const override;
+			const FCamera& GetDefaultCamera() const override;
+			const u64 GetCameraID(ERenderGeometryCullerType type) const override;
+			const u64 GetDefaultCameraID() const override;
 
-			void addDrawGeometry(const utl::vector<FGeometryBatch>& new_geometry) override;
+			void AddDrawGeometry(const utl::vector<FGeometryBatch>& new_geometry) override;
 
-			void begin(f32 dt) override;
-			void end() override;
+			void Begin(f32 dt) override;
+			void End() override;
 
-			u64 updateLight(const FLightCommit& light) override;
+			u64 UpdateLight(const FLightCommit& light) override;
 
-			void addShadow(const FCascadedShadowCommit& commit) override;
-			void addShadow(const FOmniShadowCommit& commit) override;
-			void addShadow(const FSpotShadowCommit& commit) override;
+			void AddShadow(const FCascadedShadowCommit& commit) override;
+			void AddShadow(const FOmniShadowCommit& commit) override;
+			void AddShadow(const FSpotShadowCommit& commit) override;
 
-			void addMatrices(const utl::vector<glm::mat4>& matrices) override;
-			const glm::mat4& getMatrix(u64 index) const override;
+			void AddMatrices(const utl::vector<glm::mat4>& matrices) override;
+			const glm::mat4& GetMatrix(u64 index) const override;
 
-			u64 updateNode(u32 node_id, const FSceneNode& node) override;
+			u64 UpdateNode(u32 node_id, const FSceneNode& node) override;
 
-			void addMaterial(const FMaterial& material) override;
-			void addMaterials(const utl::vector<FMaterial>& materials) override;
-			const FMaterial& getMaterial(u64 index) const override;
+			void AddMaterial(const FMaterial& material) override;
+			void AddMaterials(const utl::vector<FMaterial>& materials) override;
+			const FMaterial& GetMaterial(u64 index) const override;
 
-			void addMesh(const FMesh& mesh) override;
-			void addMeshes(const utl::vector<FMesh>& meshes) override;
+			void AddMesh(const FMesh& mesh) override;
+			void AddMeshes(const utl::vector<FMesh>& meshes) override;
 
-			const std::unique_ptr<IGPUVector>& getDrawBuffer(ERenderBufferIndices buffer_index) const override;
-			const utl::vector<FGeometryCPUBatch>& getGeometryBatches() const override;
-			const utl::vector<FDrawInfo>& getDrawCommandByType(ERenderGeometryCullerType type) const override;
+			const std::unique_ptr<IGPUVector>& GetDrawBuffer(ERenderBufferIndices buffer_index) const override;
+			const utl::vector<FGeometryCPUBatch>& GetGeometryBatches() const override;
+			const utl::vector<FDrawInfo>& GetDrawCommandByType(ERenderGeometryCullerType type) const override;
 
-			FPostProcess& getPostProcessingData() override;
+			FPostProcess& GetPostProcessingData() override;
 
-			FRenderWorldStats& getStats() override;
-			const FRenderWorldStats& getStats() const override;
+			FRenderWorldStats& GetStats() override;
+			const FRenderWorldStats& GetStats() const override;
 		private:
 			void prepareIndirectCommands();
 			void prepareMeshletCommands();

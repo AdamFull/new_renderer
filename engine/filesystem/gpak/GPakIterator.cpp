@@ -25,7 +25,7 @@ CGPakIterator::~CGPakIterator()
 		filesystem_iterator_free(m_pIterator);
 }
 
-void CGPakIterator::_operator_increment()
+void CGPakIterator::_OperatorIncrement()
 {
 	char* pathBuf{ nullptr };
 
@@ -44,12 +44,12 @@ void CGPakIterator::_operator_increment()
 	}
 }
 
-const std::string& CGPakIterator::_operator_dereferencing() const
+const std::string& CGPakIterator::_OperatorDereferencing() const
 {
 	return m_srCurrentPath;
 }
 
-bool CGPakIterator::_operator_not_equal(const IDirectoryIteratorInterface* other) const
+bool CGPakIterator::_OperatorNotEqual(const IDirectoryIteratorInterface* other) const
 {
 	if (!other->it_)
 		return m_pCurrentDir != nullptr;

@@ -24,9 +24,9 @@ CShadowsSystem::CShadowsSystem(CSceneGraph* scenegraph, IRenderInterface* render
 	m_pRenderInterface = render_interface;
 }
 
-void CShadowsSystem::__create()
+void CShadowsSystem::__Create()
 {
-	auto& render_world = m_pRenderInterface->getRenderWorld();
+	auto& render_world = m_pRenderInterface->GetRenderWorld();
 
 	{
 		auto& culler_group = m_shadowCullers[ERenderGeometryCullerType::eCascadedShadow];
@@ -34,7 +34,7 @@ void CShadowsSystem::__create()
 		{
 			auto& culler_list = culler_group.emplace_back();
 			for (u64 frustum_id = 0ull; frustum_id < cascade_shadow_map_cascade_count; ++frustum_id)
-				culler_list.emplace_back(render_world->registerCamera(ERenderGeometryCullerType::eCascadedShadow));
+				culler_list.emplace_back(render_world->RegisterCamera(ERenderGeometryCullerType::eCascadedShadow));
 		}
 	}
 
@@ -44,7 +44,7 @@ void CShadowsSystem::__create()
 		{
 			auto& culler_list = culler_group.emplace_back();
 			for (u64 frustum_id = 0ull; frustum_id < 6u; ++frustum_id)
-				culler_list.emplace_back(render_world->registerCamera(ERenderGeometryCullerType::eOmniShadow));
+				culler_list.emplace_back(render_world->RegisterCamera(ERenderGeometryCullerType::eOmniShadow));
 		}
 	}
 
@@ -53,22 +53,22 @@ void CShadowsSystem::__create()
 		for (u64 caster_id = 0ull; caster_id < max_spot_light_shadow_count; ++caster_id)
 		{
 			auto& culler_list = culler_group.emplace_back();
-			culler_list.emplace_back(render_world->registerCamera(ERenderGeometryCullerType::eSpotShadow));
+			culler_list.emplace_back(render_world->RegisterCamera(ERenderGeometryCullerType::eSpotShadow));
 		}
 	}
 }
 
-void CShadowsSystem::__update(f32 fDt)
+void CShadowsSystem::__Update(f32 fDt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto& registry = m_pSceneGraph->getRegistry();
-	auto& render_packet = m_pRenderInterface->getRenderPacket();
-	auto& render_world = m_pRenderInterface->getRenderWorld();
-	auto& render_graph = m_pRenderInterface->getRenderGraph();
-	auto& world_stats = render_world->getStats();
+	auto& registry = m_pSceneGraph->GetRegistry();
+	auto& render_packet = m_pRenderInterface->GetRenderPacket();
+	auto& render_world = m_pRenderInterface->GetRenderWorld();
+	auto& render_graph = m_pRenderInterface->GetRenderGraph();
+	auto& world_stats = render_world->GetStats();
 
-	auto& camera = render_world->getDefaultCamera();
+	auto& camera = render_world->GetDefaultCamera();
 
 	u64 light_count{ 0ull };
 
@@ -137,7 +137,7 @@ void CShadowsSystem::__update(f32 fDt)
 					// Project frustum corners into world space
 					for (auto& corner : frustumCorners)
 					{
-						glm::vec4 invCorner = render_world->getMatrix(camera.matricesOffset + render::inv_view_projection_matrix_offset) * corner;
+						glm::vec4 invCorner = render_world->GetMatrix(camera.matricesOffset + render::inv_view_projection_matrix_offset) * corner;
 						corner = invCorner / invCorner.w;
 					}
 
@@ -188,14 +188,14 @@ void CShadowsSystem::__update(f32 fDt)
 
 					lastSplitDist = cascadeSplits[i];
 
-					render_world->updateCamera(culler_list[i], lightViewMatrix, glm::mat4(1.f), lightProjectionMatrix, glm::mat4(1.f), glm::vec2(cascade_shadow_map_resolution, cascade_shadow_map_resolution));
+					render_world->UpdateCamera(culler_list[i], lightViewMatrix, glm::mat4(1.f), lightProjectionMatrix, glm::mat4(1.f), glm::vec2(cascade_shadow_map_resolution, cascade_shadow_map_resolution));
 				}
 
 				shadow_commit.index = light_count;
 
 				// Set shadow index and increment it
 				light.shadowIndex = world_stats.cascadedShadowCount;
-				render_world->addShadow(shadow_commit);
+				render_world->AddShadow(shadow_commit);
 			}
 
 			++light_count;
@@ -239,10 +239,10 @@ void CShadowsSystem::__update(f32 fDt)
 				for (u64 idx = 0ull; idx < matrices.size(); ++idx)
 				{
 					auto& view = matrices[idx];
-					render_world->updateCamera(culler_list[idx], view, glm::mat4(1.f), shadowProj, glm::mat4(1.f), glm::vec2(point_light_shadow_map_resolution, point_light_shadow_map_resolution), 0.f, light.radius / 2.f);
+					render_world->UpdateCamera(culler_list[idx], view, glm::mat4(1.f), shadowProj, glm::mat4(1.f), glm::vec2(point_light_shadow_map_resolution, point_light_shadow_map_resolution), 0.f, light.radius / 2.f);
 				}
 
-				render_world->addShadow(shadow_commit);
+				render_world->AddShadow(shadow_commit);
 			}
 
 			++light_count;
@@ -273,9 +273,9 @@ void CShadowsSystem::__update(f32 fDt)
 				shadow_commit.index = light_count;
 
 				light.shadowIndex = world_stats.spotShadowCount;
-				render_world->addShadow(shadow_commit);
+				render_world->AddShadow(shadow_commit);
 				
-				render_world->updateCamera(shadow_commit.cameraID, shadowView, glm::mat4(1.f), shadowProj, glm::mat4(1.f), glm::vec2(spot_light_shadow_map_resolution, spot_light_shadow_map_resolution), 0.f, 64.f);
+				render_world->UpdateCamera(shadow_commit.cameraID, shadowView, glm::mat4(1.f), shadowProj, glm::mat4(1.f), glm::vec2(spot_light_shadow_map_resolution, spot_light_shadow_map_resolution), 0.f, 64.f);
 			}
 
 			++light_count;

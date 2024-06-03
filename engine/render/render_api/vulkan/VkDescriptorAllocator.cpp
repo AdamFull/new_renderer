@@ -30,7 +30,7 @@
 //void CVkDescriptorAllocator::reset()
 //{
 //	for (auto& pool : m_used)
-//		m_pDevice->resetDescriptorPool(pool);
+//		m_pDevice->ResetDescriptorPool(pool);
 //
 //	m_free = m_used;
 //	m_used.clear();
@@ -40,10 +40,10 @@
 //void CVkDescriptorAllocator::cleanup()
 //{
 //	for (auto& pool : m_free)
-//		m_pDevice->destroyDescriptorPool(pool);
+//		m_pDevice->DestroyDescriptorPool(pool);
 //
 //	for (auto& pool : m_used)
-//		m_pDevice->destroyDescriptorPool(pool);
+//		m_pDevice->DestroyDescriptorPool(pool);
 //}
 //
 //void CVkDescriptorAllocator::initialize()
@@ -76,6 +76,6 @@
 //	FVkDescriptorPoolCreateInfo pool_ci{};
 //	// TODO: handle flags
 //
-//		//check_api_result(m_pDevice->createDescriptorPool());
+//		//check_api_result(m_pDevice->CreateDescriptorPool());
 //	return new_pool;
 //}

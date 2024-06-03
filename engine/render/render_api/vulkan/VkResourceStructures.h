@@ -424,7 +424,7 @@ namespace engine
 
 				vk::SampleCountFlagBits sampleCount{ vk::SampleCountFlagBits::e1 };
 
-				bool createSampler{ true };
+				bool CreateSampler{ true };
 				vk::Filter filter{ vk::Filter::eLinear };
 				vk::SamplerAddressMode addressMode{ vk::SamplerAddressMode::eClampToEdge };
 				bool enableAnisotropy{ false };

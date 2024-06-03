@@ -9,6 +9,6 @@ namespace engine
 	public:
 		~CVariableBlock() = default;
 
-		void display() override;
+		void Display() override;
 	};
 }

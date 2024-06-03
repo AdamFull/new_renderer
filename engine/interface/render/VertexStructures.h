@@ -100,21 +100,21 @@ namespace engine
 		public:
 			virtual ~IVertexHandler() = default;
 
-			virtual void create(const FVertexHandlerCreateInfo& create_info) = 0;
-			virtual void allocate() = 0;
+			virtual void Create(const FVertexHandlerCreateInfo& create_info) = 0;
+			virtual void Allocate() = 0;
 
-			virtual void bind(EQueueTypeFlagBits queue) = 0;
+			virtual void Bind(EQueueTypeFlagBits queue) = 0;
 
-			virtual const FVertexRange& addMeshData(const utl::vector<FVertexAttributePointer>& attributes_data, const FVertexAttributePointer& indices) = 0;
+			virtual const FVertexRange& AddMeshData(const utl::vector<FVertexAttributePointer>& attributes_data, const FVertexAttributePointer& indices) = 0;
 
-			virtual u64 addVertices(const utl::vector<FVertexAttributePointer>& attributes_data) = 0;
-			virtual u64 addIndices(const FVertexAttributePointer& indices) = 0;
+			virtual u64 AddVertices(const utl::vector<FVertexAttributePointer>& attributes_data) = 0;
+			virtual u64 AddIndices(const FVertexAttributePointer& indices) = 0;
 
-			virtual const FVertexDeclarationInfo& getVertexDeclaration() const = 0;
-			virtual u64 getHash() const = 0;
-			virtual const std::string& getDefinitions() const = 0;
+			virtual const FVertexDeclarationInfo& GetVertexDeclaration() const = 0;
+			virtual u64 GetHash() const = 0;
+			virtual const std::string& GetDefinitions() const = 0;
 
-			virtual const std::unique_ptr<IGPUVector>& getGeometryBuffer(EGeometryBufferIndices buffer_index) = 0;
+			virtual const std::unique_ptr<IGPUVector>& GetGeometryBuffer(EGeometryBufferIndices buffer_index) = 0;
 		};
 	}
 }

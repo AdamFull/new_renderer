@@ -9,7 +9,7 @@ using namespace engine::filesystem;
 
 CGPakFileSystem::CGPakFileSystem(const std::string& fspath)
 {
-	create(fspath);
+	Create(fspath);
 }
 
 CGPakFileSystem::~CGPakFileSystem()
@@ -18,14 +18,14 @@ CGPakFileSystem::~CGPakFileSystem()
 		gpak_close(m_pHandle);
 }
 
-bool CGPakFileSystem::create(const std::string& fspath)
+bool CGPakFileSystem::Create(const std::string& fspath)
 {
 	m_pHandle = gpak_open(fspath.c_str(), GPAK_MODE_READ_ONLY);
 
 	return m_pHandle;
 }
 
-bool CGPakFileSystem::exists(const std::string& path)
+bool CGPakFileSystem::Exists(const std::string& path)
 {
 	if (auto* _entry = gpak_get_root(m_pHandle))
 	{
@@ -37,7 +37,7 @@ bool CGPakFileSystem::exists(const std::string& path)
 	return false;
 }
 
-size_t CGPakFileSystem::fileSize(const std::string& path)
+size_t CGPakFileSystem::FileSize(const std::string& path)
 {
 	if (auto* _entry = gpak_get_root(m_pHandle))
 	{
@@ -48,7 +48,7 @@ size_t CGPakFileSystem::fileSize(const std::string& path)
 	return 0ull;
 }
 
-bool CGPakFileSystem::isDirectory(const std::string& path)
+bool CGPakFileSystem::IsDirectory(const std::string& path)
 {
 	if (auto* _entry = gpak_get_root(m_pHandle))
 		return filesystem_tree_find_directory(_entry, path.c_str());
@@ -56,7 +56,7 @@ bool CGPakFileSystem::isDirectory(const std::string& path)
 	return false;
 }
 
-bool CGPakFileSystem::isFile(const std::string& path)
+bool CGPakFileSystem::IsFile(const std::string& path)
 {
 	if (auto* _entry = gpak_get_root(m_pHandle))
 		return filesystem_tree_find_file(_entry, path.c_str());
@@ -64,20 +64,20 @@ bool CGPakFileSystem::isFile(const std::string& path)
 	return false;
 }
 
-std::unique_ptr<IInputFileInterface> CGPakFileSystem::openFile(const std::string& path)
+std::unique_ptr<IInputFileInterface> CGPakFileSystem::OpenFile(const std::string& path)
 {
-	if (!isFile(path))
+	if (!IsFile(path))
 		return nullptr;
 
 	return std::make_unique<CGPakInputFile>(m_pHandle, path);
 }
 
-std::unique_ptr<IDirectoryIterator> CGPakFileSystem::walk(const std::string& path, bool recursive)
+std::unique_ptr<IDirectoryIterator> CGPakFileSystem::Walk(const std::string& path, bool recursive)
 {
 	return std::make_unique<CGPakIterator>(m_pHandle, path, recursive);
 }
 
-EFilesystemModeFlags CGPakFileSystem::getFilesystemMode() const
+EFilesystemModeFlags CGPakFileSystem::GetFilesystemMode() const
 {
 	return static_cast<uint32_t>(EFilesystemModeFlagBits::eRead);
 }

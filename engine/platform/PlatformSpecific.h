@@ -18,7 +18,7 @@ namespace engine
 #if defined(PLATFORM_WIN32)
 		window_handle = std::make_unique<platform::CWindowGLFW>();
 #endif
-		window_handle->create(window_ci);
+		window_handle->Create(window_ci);
 
 		return window_handle;
 	}

@@ -243,18 +243,18 @@ namespace engine
 			utl::hash_map<ERenderResourceAccessFlagBits, utl::hash_map<std::string, FRenderConfigResourceBindingDescription>> resourceBindings{};
 			utl::hash_map<ERenderResourceAccessFlagBits, utl::vector<std::pair<std::string, FClearValues>>> otherResources{};
 
-			virtual void clearResource() 
+			virtual void ClearResource() 
 			{ 
 				resourceBindings.clear(); 
 				otherResources.clear();
 			}
 
-			void bindWriteResource(const std::string& binding_point, const std::string& resource_name) { resourceBindings[ERenderResourceAccessFlagBits::eWrite].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, ~0u }); }
-			void bindWriteResource(const std::string& binding_point, const std::string& resource_name, u32 subresource) { resourceBindings[ERenderResourceAccessFlagBits::eWrite].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, subresource }); }
-			void bindReadResource(const std::string& binding_point, const std::string& resource_name) { resourceBindings[ERenderResourceAccessFlagBits::eRead].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, ~0u }); }
-			void bindReadResource(const std::string& binding_point, const std::string& resource_name, u32 subresource) { resourceBindings[ERenderResourceAccessFlagBits::eRead].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, subresource }); }
-			void addWriteResource(const std::string& resource_name, const glm::vec4 clear_color = glm::vec4(0.f, 0.f, 0.f, 1.f)) { otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(std::make_pair(resource_name, clear_color)); }
-			void addReadResource(const std::string& resource_name) { otherResources[ERenderResourceAccessFlagBits::eRead].emplace_back(resource_name, glm::vec4(0.f, 0.f, 0.f, 1.f)); }
+			void BindWriteResource(const std::string& binding_point, const std::string& resource_name) { resourceBindings[ERenderResourceAccessFlagBits::eWrite].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, ~0u }); }
+			void BindWriteResource(const std::string& binding_point, const std::string& resource_name, u32 subresource) { resourceBindings[ERenderResourceAccessFlagBits::eWrite].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, subresource }); }
+			void BindReadResource(const std::string& binding_point, const std::string& resource_name) { resourceBindings[ERenderResourceAccessFlagBits::eRead].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, ~0u }); }
+			void BindReadResource(const std::string& binding_point, const std::string& resource_name, u32 subresource) { resourceBindings[ERenderResourceAccessFlagBits::eRead].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, subresource }); }
+			void AddWriteResource(const std::string& resource_name, const glm::vec4 clear_color = glm::vec4(0.f, 0.f, 0.f, 1.f)) { otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(std::make_pair(resource_name, clear_color)); }
+			void AddReadResource(const std::string& resource_name) { otherResources[ERenderResourceAccessFlagBits::eRead].emplace_back(resource_name, glm::vec4(0.f, 0.f, 0.f, 1.f)); }
 		};
 
 		struct FRenderConfigRenderCreateInfo : public FRenderConfigPassCreateInfo
@@ -265,8 +265,8 @@ namespace engine
 			bool flipViewportState{ false };
 
 
-			void flipFiewport() { flipViewportState = true; }
-			void setDepthTarget(const std::string& resource_name, f32 clear_color = 1.f) 
+			void FlipFiewport() { flipViewportState = true; }
+			void SetDepthTarget(const std::string& resource_name, f32 clear_color = 1.f) 
 			{ 
 				if (stencilResource == resource_name)
 				{
@@ -276,7 +276,7 @@ namespace engine
 
 				depthResource = otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(std::make_pair(resource_name, clear_color)).first;
 			}
-			void setStencilTarget(const std::string& resource_name, u32 clear_color = 0u) 
+			void SetStencilTarget(const std::string& resource_name, u32 clear_color = 0u) 
 			{ 
 				if (depthResource == resource_name)
 				{
@@ -311,13 +311,13 @@ namespace engine
 			EComputeType type{};
 			utl::vector<FRenderConfigComputeDispatchGroupInfo> groupInfos{};
 
-			void clearResource() override
+			void ClearResource() override
 			{
-				FRenderConfigPassCreateInfo::clearResource();
+				FRenderConfigPassCreateInfo::ClearResource();
 				groupInfos.clear();
 			}
 
-			void addWorkgroupSizeByBuffer(const std::string& target, bool divide_by_locals)
+			void AddWorkgroupSizeByBuffer(const std::string& target, bool divide_by_locals)
 			{
 				auto& group_info = groupInfos.emplace_back();
 				group_info.type = ERenderingSizeType::eFromBuffer;
@@ -325,7 +325,7 @@ namespace engine
 				group_info.divideByLocals = divide_by_locals;
 			}
 
-			void addWorkgroupSizeByRT(const std::string& target, u32 subresource, bool divide_by_locals)
+			void AddWorkgroupSizeByRT(const std::string& target, u32 subresource, bool divide_by_locals)
 			{
 				auto& group_info = groupInfos.emplace_back();
 				group_info.type = ERenderingSizeType::eFromRenderTarget;
@@ -334,9 +334,9 @@ namespace engine
 				group_info.subresource = subresource;
 			}
 
-			void addWorkgroupSizeByRT(const std::string& target, bool divide_by_locals) { addWorkgroupSizeByRT(target, ~0u, divide_by_locals); }
+			void AddWorkgroupSizeByRT(const std::string& target, bool divide_by_locals) { AddWorkgroupSizeByRT(target, ~0u, divide_by_locals); }
 
-			void addWorkgroupSizeManual(u32 width, u32 height, u32 depth, bool divide_by_locals)
+			void AddWorkgroupSizeManual(u32 width, u32 height, u32 depth, bool divide_by_locals)
 			{
 				auto& group_info = groupInfos.emplace_back();
 				group_info.type = ERenderingSizeType::eManual;
@@ -385,26 +385,26 @@ namespace engine
 		public:
 			virtual ~IRenderGraph() = default;
 
-			virtual void create(const utl::vector<u8>& config, const utl::vector<u8>& schema) = 0;
-			virtual void postLoad() = 0;
+			virtual void Create(const utl::vector<u8>& config, const utl::vector<u8>& schema) = 0;
+			virtual void PostLoad() = 0;
 
-			virtual u64 addStaticResource(const std::string& name, const std::string& path) = 0;
-			virtual u64 addRenderResource(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
-			virtual u64 addRenderResource(const std::string& name, const FBufferCreateInfo& buffer_ci) = 0;
-			virtual void setBackbufferResourceName(const std::string& name) = 0;
+			virtual u64 AddStaticResource(const std::string& name, const std::string& path) = 0;
+			virtual u64 AddRenderResource(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
+			virtual u64 AddRenderResource(const std::string& name, const FBufferCreateInfo& buffer_ci) = 0;
+			virtual void SetBackbufferResourceName(const std::string& name) = 0;
 
-			virtual void pushDebugMarker(const std::string& name, u32 color, EQueueTypeFlagBits queue) = 0;
-			virtual void popDebugMarker(const std::string& name, EQueueTypeFlagBits queue) = 0;
+			virtual void PushDebugMarker(const std::string& name, u32 color, EQueueTypeFlagBits queue) = 0;
+			virtual void PopDebugMarker(const std::string& name, EQueueTypeFlagBits queue) = 0;
 
-			virtual const FRenderResource& getRenderResource(const std::string& name) const = 0;
-			virtual const FRenderResource& getRenderResource(u64 resource_id) const = 0;
+			virtual const FRenderResource& GetRenderResource(const std::string& name) const = 0;
+			virtual const FRenderResource& GetRenderResource(u64 resource_id) const = 0;
 
-			virtual u64 addRenderPass(const std::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci) = 0;
-			virtual u64 addRenderPass(const std::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci) = 0;
+			virtual u64 AddRenderPass(const std::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci) = 0;
+			virtual u64 AddRenderPass(const std::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci) = 0;
 
-			virtual void build() = 0;
-			virtual void update(f32 dt) = 0;
-			virtual void execute(f32 dt) = 0;
+			virtual void Build() = 0;
+			virtual void Update(f32 dt) = 0;
+			virtual void Execute(f32 dt) = 0;
 		};
 	}
 }

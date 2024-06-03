@@ -11,17 +11,17 @@ CSceneGraph::CSceneGraph()
 	m_pRegistry = std::make_unique<entt::registry>();
 }
 
-entt::entity CSceneGraph::createRoot(const std::string& name)
+entt::entity CSceneGraph::CreateRoot(const std::string& name)
 {
 	if (m_pRegistry->valid(m_root))
 		return m_root;
 
-	m_root = createNode(name);
+	m_root = CreateNode(name);
 	m_pRegistry->emplace<FRootComponent>(m_root, FRootComponent{});
 	return m_root;
 }
 
-entt::entity CSceneGraph::createNode(const std::string& name)
+entt::entity CSceneGraph::CreateNode(const std::string& name)
 {
 	auto entity = m_pRegistry->create();
 	m_pRegistry->emplace<FBaseComponent>(entity, FBaseComponent{name});
@@ -31,14 +31,14 @@ entt::entity CSceneGraph::createNode(const std::string& name)
 	return entity;
 }
 
-void CSceneGraph::destroyNode(entt::entity node)
+void CSceneGraph::DestroyNode(entt::entity node)
 {
-	detachChild(node);
+	DetachChild(node);
 	m_pRegistry->destroy(node);
 	log_debug("[Scene Graph] Entity with id {} was destroyed", static_cast<uint32_t>(node));
 }
 
-void CSceneGraph::attachChild(entt::entity parent, entt::entity child)
+void CSceneGraph::AttachChild(entt::entity parent, entt::entity child)
 {
 	if (parent == child)
 	{
@@ -53,7 +53,7 @@ void CSceneGraph::attachChild(entt::entity parent, entt::entity child)
 	chierarchy.parent = parent;
 }
 
-void CSceneGraph::detachChild(entt::entity parent, entt::entity child)
+void CSceneGraph::DetachChild(entt::entity parent, entt::entity child)
 {
 	if (parent == entt::null)
 		return;
@@ -70,10 +70,10 @@ void CSceneGraph::detachChild(entt::entity parent, entt::entity child)
 	chierarchy.parent = entt::null;
 }
 
-void CSceneGraph::detachChild(entt::entity child)
+void CSceneGraph::DetachChild(entt::entity child)
 {
 	auto& chierarchy = m_pRegistry->get<FHierarchyComponent>(child);
-	detachChild(chierarchy.parent, child);
+	DetachChild(chierarchy.parent, child);
 }
 
 entt::entity CSceneGraph::duplicateNode(entt::entity entity)
@@ -127,16 +127,16 @@ entt::entity CSceneGraph::duplicateNode(entt::entity entity)
 void CSceneGraph::parentExchange(entt::entity new_parent, entt::entity child)
 {
 	auto& chierarchy = m_pRegistry->get<FHierarchyComponent>(child);
-	detachChild(chierarchy.parent, child);
-	attachChild(new_parent, child);
+	DetachChild(chierarchy.parent, child);
+	AttachChild(new_parent, child);
 }
 
-const std::unique_ptr<entt::registry>& CSceneGraph::getRegistry() const
+const std::unique_ptr<entt::registry>& CSceneGraph::GetRegistry() const
 {
 	return m_pRegistry;
 }
 
-entt::entity CSceneGraph::getRoot() const
+entt::entity CSceneGraph::GetRoot() const
 {
 	return m_root;
 }

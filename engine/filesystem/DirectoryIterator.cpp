@@ -8,12 +8,12 @@ CDirectoryIterator::CDirectoryIterator(std::unique_ptr<IDirectoryIterator>&& it,
     it_ = std::move(it);
 }
 
-CDirectoryIterator& CDirectoryIterator::begin()
+CDirectoryIterator& CDirectoryIterator::Begin()
 { 
     return *this; 
 }
 
-CDirectoryIterator& CDirectoryIterator::end()
+CDirectoryIterator& CDirectoryIterator::End()
 {
     static CDirectoryIterator end_{};
     return end_;
@@ -21,17 +21,17 @@ CDirectoryIterator& CDirectoryIterator::end()
 
 CDirectoryIterator& CDirectoryIterator::operator++()
 {
-    it_->_operator_increment();
+    it_->_OperatorIncrement();
     return *this;
 }
 
 const std::string& CDirectoryIterator::operator*()
 {
-    m_srCurrent = m_srMountPoint + "/" + it_->_operator_dereferencing();
+    m_srCurrent = m_srMountPoint + "/" + it_->_OperatorDereferencing();
     return m_srCurrent;
 }
 
 bool CDirectoryIterator::operator!=(const IDirectoryIteratorInterface& other) const
 {
-    return it_->_operator_not_equal(&other); 
+    return it_->_OperatorNotEqual(&other); 
 }

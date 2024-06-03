@@ -38,14 +38,14 @@ namespace engine
              *
              * @return A reference to the iterator pointing to the beginning of the directory.
              */
-            CDirectoryIterator& begin() override;
+            CDirectoryIterator& Begin() override;
 
             /**
              * @brief Get the iterator pointing to the end of the directory.
              *
              * @return A reference to the iterator pointing to the end of the directory.
              */
-            CDirectoryIterator& end() override;
+            CDirectoryIterator& End() override;
 
             /**
              * @brief Move to the next item in the directory.

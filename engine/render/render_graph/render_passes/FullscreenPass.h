@@ -13,10 +13,10 @@ namespace engine
 
 			~CFullscreenPass() = default;
 
-			void init(const FRenderPassCreateInfo& pass_ci) override;
-			void build(const FPassBuildInfo& build_info) override;
+			void Init(const FRenderPassCreateInfo& pass_ci) override;
+			void Build(const FPassBuildInfo& build_info) override;
 		private:
-			void _render(const FRenderFrameInfo& frame_info) override;
+			void _Render(const FRenderFrameInfo& frame_info) override;
 
 		private:
 			std::unique_ptr<IShaderObject> m_pShader{};

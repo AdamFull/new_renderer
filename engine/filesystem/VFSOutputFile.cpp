@@ -12,66 +12,66 @@ CVFSOutFile::CVFSOutFile(std::unique_ptr<IOutputFileInterface>&& pFile) :
 CVFSOutFile::~CVFSOutFile()
 {
 	if (m_pFileInterface)
-		m_pFileInterface->close();
+		m_pFileInterface->Close();
 }
 
-bool CVFSOutFile::is_open()
+bool CVFSOutFile::IsOpen()
 {
 	if (m_pFileInterface)
-		return m_pFileInterface->is_open();
+		return m_pFileInterface->IsOpen();
 
 	return false;
 }
 
-CVFSOutFile& CVFSOutFile::put(char ch)
+CVFSOutFile& CVFSOutFile::Put(char ch)
 {
 	if (m_pFileInterface)
-		m_pFileInterface->putc(ch);
+		m_pFileInterface->Putc(ch);
 
 	return *this;
 }
 
-CVFSOutFile& CVFSOutFile::write(const std::string& str)
+CVFSOutFile& CVFSOutFile::Write(const std::string& str)
 {
 	if (m_pFileInterface)
-		m_pFileInterface->write(str.c_str(), sizeof(char), str.size());
+		m_pFileInterface->Write(str.c_str(), sizeof(char), str.size());
 
 	return *this;
 }
 
-CVFSOutFile& CVFSOutFile::write(const utl::vector<uint8_t>& data)
+CVFSOutFile& CVFSOutFile::Write(const utl::vector<uint8_t>& data)
 {
 	if (m_pFileInterface)
-		m_pFileInterface->write(data.data(), sizeof(uint8_t), data.size());
+		m_pFileInterface->Write(data.data(), sizeof(uint8_t), data.size());
 
 	return *this;
 }
 
-CVFSOutFile& CVFSOutFile::write(const char* buffer, std::size_t count)
+CVFSOutFile& CVFSOutFile::Write(const char* buffer, std::size_t count)
 {
 	if (m_pFileInterface)
-		m_pFileInterface->write(buffer, sizeof(char), count);
+		m_pFileInterface->Write(buffer, sizeof(char), count);
 
 	return *this;
 }
 
-std::streampos CVFSOutFile::tellp()
+std::streampos CVFSOutFile::Tellp()
 {
-	return m_pFileInterface ? m_pFileInterface->tell() : -1;
+	return m_pFileInterface ? m_pFileInterface->Tell() : -1;
 }
 
-CVFSOutFile& CVFSOutFile::seekp(std::streampos pos)
+CVFSOutFile& CVFSOutFile::Seekp(std::streampos pos)
 {
 	if (m_pFileInterface)
-		m_pFileInterface->seek(pos, SEEK_SET);
+		m_pFileInterface->Seek(pos, SEEK_SET);
 
 	return *this;
 }
 
-CVFSOutFile& CVFSOutFile::flush()
+CVFSOutFile& CVFSOutFile::Flush()
 {
 	if (m_pFileInterface)
-		m_pFileInterface->flush();
+		m_pFileInterface->Flush();
 
 	return *this;
 }

@@ -40,17 +40,17 @@ CZipIterator::CZipIterator(zip* archive, const std::string& start_path, bool rec
     get_entries(archive, entries_, start_path, recursive);
 }
 
-void CZipIterator::_operator_increment()
+void CZipIterator::_OperatorIncrement()
 {
     ++index_;
 }
 
-const std::string& CZipIterator::_operator_dereferencing() const
+const std::string& CZipIterator::_OperatorDereferencing() const
 {
     return entries_.at(index_);
 }
 
-bool CZipIterator::_operator_not_equal(const IDirectoryIteratorInterface* other) const
+bool CZipIterator::_OperatorNotEqual(const IDirectoryIteratorInterface* other) const
 {
     if (!other->it_)
         return index_ != entries_.size();

@@ -23,17 +23,17 @@ CInputSystem::CInputSystem(CSceneGraph* scenegraph)
 	m_pSceneGraph = scenegraph;
 }
 
-void CInputSystem::__create()
+void CInputSystem::__Create()
 {
 	TRACY_PROFILE_FUNCTION();
 
-	FWindowCallbackMapper::subscribeKeyInput(this, &CInputSystem::keyInput);
-	FWindowCallbackMapper::subscribeMousePosition(this, &CInputSystem::mouseMovementInput);
-	FWindowCallbackMapper::subscribeMouseScroll(this, &CInputSystem::mouseWheelInput);
-	FWindowCallbackMapper::subscribeMouseButton(this, &CInputSystem::keyInput);
+	FWindowCallbackMapper::SubscribeKeyInput(this, &CInputSystem::keyInput);
+	FWindowCallbackMapper::SubscribeMousePosition(this, &CInputSystem::mouseMovementInput);
+	FWindowCallbackMapper::SubscribeMouseScroll(this, &CInputSystem::mouseWheelInput);
+	FWindowCallbackMapper::SubscribeMouseButton(this, &CInputSystem::keyInput);
 }
 
-void CInputSystem::__update(f32 fDt)
+void CInputSystem::__Update(f32 fDt)
 {
 	TRACY_PROFILE_FUNCTION();
 
@@ -42,13 +42,13 @@ void CInputSystem::__update(f32 fDt)
 	glm::vec3 orbitCenter{ 0.0f, 0.0f, 0.0f };
 	f32 orbitDistance{ 10.0f };
 
-	if (m_keyDecoder.test(EKeyCode::eKeyW)) movF = 1.f;
-	if (m_keyDecoder.test(EKeyCode::eKeyS)) movF = -1.f;
-	if (m_keyDecoder.test(EKeyCode::eKeyA)) movR = -1.f;
-	if (m_keyDecoder.test(EKeyCode::eKeyD)) movR = 1.f;
-	if (m_keyDecoder.test(EKeyCode::eKeySpace)) movU = 1.f;
-	if (m_keyDecoder.test(EKeyCode::eKeyLCtrl)) movU = -1.f;
-	if (m_keyDecoder.test(EKeyCode::eMouseMiddle))
+	if (m_keyDecoder.Test(EKeyCode::eKeyW)) movF = 1.f;
+	if (m_keyDecoder.Test(EKeyCode::eKeyS)) movF = -1.f;
+	if (m_keyDecoder.Test(EKeyCode::eKeyA)) movR = -1.f;
+	if (m_keyDecoder.Test(EKeyCode::eKeyD)) movR = 1.f;
+	if (m_keyDecoder.Test(EKeyCode::eKeySpace)) movU = 1.f;
+	if (m_keyDecoder.Test(EKeyCode::eKeyLCtrl)) movU = -1.f;
+	if (m_keyDecoder.Test(EKeyCode::eMouseMiddle))
 		allowRotation = true;
 
 	f32 dX = (curX - oldX) * fDt;
@@ -56,7 +56,7 @@ void CInputSystem::__update(f32 fDt)
 	f32 dY = (curY - oldY) * fDt;
 	oldY = curY;
 
-	auto& registry = m_pSceneGraph->getRegistry();
+	auto& registry = m_pSceneGraph->GetRegistry();
 	auto view = registry->view<FTransformComponent, FBaseComponent, FCameraComponent>();
 	for (auto [entity, transform, base, camera] : view.each())
 	{
@@ -108,7 +108,7 @@ void CInputSystem::__update(f32 fDt)
 
 void CInputSystem::keyInput(EKeyCode code, EKeyState state)
 {
-	m_keyDecoder.update(code, state == EKeyState::ePress);
+	m_keyDecoder.Update(code, state == EKeyState::ePress);
 }
 
 void CInputSystem::mouseMovementInput(f32 x, f32 y, f32 xmax, f32 ymax)

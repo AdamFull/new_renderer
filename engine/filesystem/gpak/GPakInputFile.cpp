@@ -19,10 +19,10 @@ CGPakInputFile::CGPakInputFile(gpak* handle, const std::string& filename)
 
 CGPakInputFile::~CGPakInputFile()
 {
-	close();
+	Close();
 }
 
-void CGPakInputFile::close()
+void CGPakInputFile::Close()
 {
 	if (m_pFilePtr)
 	{
@@ -31,37 +31,37 @@ void CGPakInputFile::close()
 	}
 }
 
-bool CGPakInputFile::is_open() const
+bool CGPakInputFile::IsOpen() const
 {
 	return m_pFilePtr;
 }
 
-int32_t CGPakInputFile::getc()
+int32_t CGPakInputFile::Getc()
 {
 	return m_pFilePtr ? gpak_fgetc(m_pFilePtr) : -1;
 }
 
-std::size_t CGPakInputFile::read(void* buffer, std::size_t elemSize, std::size_t elemCount)
+std::size_t CGPakInputFile::Read(void* buffer, std::size_t elemSize, std::size_t elemCount)
 {
 	return m_pFilePtr ? gpak_fread(buffer, elemSize, elemCount, m_pFilePtr) : 0ull;
 }
 
-int32_t CGPakInputFile::ungetc(int32_t character)
+int32_t CGPakInputFile::Ungetc(int32_t character)
 {
 	return m_pFilePtr ? gpak_ungetc(m_pFilePtr, character) : -1;
 }
 
-long CGPakInputFile::tell()
+long CGPakInputFile::Tell()
 {
 	return m_pFilePtr ? gpak_ftell(m_pFilePtr) : -1;
 }
 
-int32_t CGPakInputFile::seek(long offset, int32_t origin)
+int32_t CGPakInputFile::Seek(long offset, int32_t origin)
 {
 	return m_pFilePtr ? gpak_fseek(m_pFilePtr, offset, origin) : -1;
 }
 
-int32_t CGPakInputFile::eof() const
+int32_t CGPakInputFile::Eof() const
 {
 	return m_pFilePtr ? std::feof(m_pFilePtr->stream_) : 1;
 }

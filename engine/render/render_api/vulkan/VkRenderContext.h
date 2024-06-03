@@ -16,114 +16,114 @@ namespace engine
 			public:
 				~CVkRenderContext() override;
 
-				void create(const FRenderContextCreateInfo& context_ci) override;
-				void createGlobalDescriptor(const FGlobalUniformCreateInfo& uniform_ci) override;
-				void updateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view) override;
-				const utl::vector<uint32_t>& getGlobalTextureRemap() override;
+				void Create(const FRenderContextCreateInfo& context_ci) override;
+				void CreateGlobalDescriptor(const FGlobalUniformCreateInfo& uniform_ci) override;
+				void UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view) override;
+				const utl::vector<uint32_t>& GetGlobalTextureRemap() override;
 
-				u64 createTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) override;
-				u64 getTextureId(const std::string& name) override;
-				u64 createRenderTarget(const std::string& name, const FTextureCreateInfo& texture_ci) override;
-				const FTextureCreateInfo& getTextureInfo(u64 texture_id) override;
-				void destroyTexture(u64 resource_id) override;
-
-
-				u64 createShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages) override;
-				u64 createShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages) override;
-				u64 createShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages) override;
-				FShaderReflectionData getShaderReflection(const u64& shader_view) override;
-				void updateShaderResources(const FShaderResourceCommit& shader_resources, EShaderResourcesUpdateFlags flags = EShaderResourcesUpdateFlagBits::eAll) override;
-				void flushConstantRanges(u64 shader_id, const utl::hash_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type) override;
-				void bindShader(u64 shader_id, EQueueTypeFlagBits queue_type) override;
-				void destroyShader(u64 resource_id) override;
+				u64 CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) override;
+				u64 GetTextureId(const std::string& name) override;
+				u64 CreateRenderTarget(const std::string& name, const FTextureCreateInfo& texture_ci) override;
+				const FTextureCreateInfo& GetTextureInfo(u64 texture_id) override;
+				void DestroyTexture(u64 resource_id) override;
 
 
-				u64 createBuffer(const std::string& name, const FBufferCreateInfo& buffer_ci) override;
-				void updateBuffer(const std::string& name, u64 buffer_id, const FBufferCreateInfo& buffer_ci) override;
-				void uploadDataToBuffer(const FBufferUploadInfo& upload_info) override;
-				FBufferView getBufferView(u64 buffer_id) override;
-				void bindVertexBuffers(const FVertexBufferBindingInfo& binding_info, EQueueTypeFlagBits queue_type) override;
-				void bindIndexBuffer(const FIndexBufferBindingInfo& binding_info, EQueueTypeFlagBits queue_type) override;
-				void mapBufferMemory(u64 buffer_id, void*& memory) override;
-				void unmapBufferMemory(u64 buffer_id) override;
-				void flushBuffer(u64 buffer_id, u64 size, u64 offset) override;
-				void destroyBuffer(u64 resource_id) override;
-				void uploadBuffers() override;
+				u64 CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages) override;
+				u64 CreateShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages) override;
+				u64 CreateShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages) override;
+				FShaderReflectionData GetShaderReflection(const u64& shader_view) override;
+				void UpdateShaderResources(const FShaderResourceCommit& shader_resources, EShaderResourcesUpdateFlags flags = EShaderResourcesUpdateFlagBits::eAll) override;
+				void FlushConstantRanges(u64 shader_id, const utl::hash_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type) override;
+				void BindShader(u64 shader_id, EQueueTypeFlagBits queue_type) override;
+				void DestroyShader(u64 resource_id) override;
+
+
+				u64 CreateBuffer(const std::string& name, const FBufferCreateInfo& buffer_ci) override;
+				void UpdateBuffer(const std::string& name, u64 buffer_id, const FBufferCreateInfo& buffer_ci) override;
+				void UploadDataToBuffer(const FBufferUploadInfo& upload_info) override;
+				FBufferView GetBufferView(u64 buffer_id) override;
+				void BindVertexBuffers(const FVertexBufferBindingInfo& binding_info, EQueueTypeFlagBits queue_type) override;
+				void BindIndexBuffer(const FIndexBufferBindingInfo& binding_info, EQueueTypeFlagBits queue_type) override;
+				void MapBufferMemory(u64 buffer_id, void*& memory) override;
+				void UnmapBufferMemory(u64 buffer_id) override;
+				void FlushBuffer(u64 buffer_id, u64 size, u64 offset) override;
+				void DestroyBuffer(u64 resource_id) override;
+				void UploadBuffers() override;
 			
 
-				void pushG2CBarriers(EQueueTypeFlagBits queue_type, const utl::vector<u64>& texture_ids) override;
-				void pushC2CBarrier(EQueueTypeFlagBits queue_type) override;
-				void pushC2GBarrier(EQueueTypeFlagBits queue_type, const utl::vector<u64>& texture_ids) override;
+				void PushG2CBarriers(EQueueTypeFlagBits queue_type, const utl::vector<u64>& texture_ids) override;
+				void PushC2CBarrier(EQueueTypeFlagBits queue_type) override;
+				void PushC2GBarrier(EQueueTypeFlagBits queue_type, const utl::vector<u64>& texture_ids) override;
 
-				void processResourceBarriers(EQueueTypeFlagBits queue, const utl::vector<FResourceBarrierInfo>& barriers) override;
+				void ProcessResourceBarriers(EQueueTypeFlagBits queue, const utl::vector<FResourceBarrierInfo>& barriers) override;
 
-				void beginTimestampZone(EQueueTypeFlagBits queue) override;
-				void endTimestampZone(EQueueTypeFlagBits queue) override;
+				void BeginTimestampZone(EQueueTypeFlagBits queue) override;
+				void EndTimestampZone(EQueueTypeFlagBits queue) override;
 
-				void beginRendering(const FBeginRendering2Info& rendering_info) override;
-				void endRendering(EQueueTypeFlagBits queue) override;
+				void BeginRendering(const FBeginRendering2Info& rendering_info) override;
+				void EndRendering(EQueueTypeFlagBits queue) override;
 
-				void beginCompute(const FBeginComputeInfo& compute_info) override;
-				void endCompute(EQueueTypeFlagBits queue) override;
+				void BeginCompute(const FBeginComputeInfo& compute_info) override;
+				void EndCompute(EQueueTypeFlagBits queue) override;
 
-				void setViewport(f32 width, f32 height, bool flip_viewport = false) override;
-				void setScissorRect(i32 offset_x, i32 offset_y, u32 width, u32 height) override;
+				void SetViewport(f32 width, f32 height, bool flip_viewport = false) override;
+				void SetScissorRect(i32 offset_x, i32 offset_y, u32 width, u32 height) override;
 
-				void draw(EQueueTypeFlagBits queue_type, const FGeometryDrawInfo& draw_info) override;
-				void draw(EQueueTypeFlagBits queue_type, const FIndirectGeometryDrawInfo& draw_info) override;
+				void Draw(EQueueTypeFlagBits queue_type, const FGeometryDrawInfo& draw_info) override;
+				void Draw(EQueueTypeFlagBits queue_type, const FIndirectGeometryDrawInfo& draw_info) override;
 
-				void dispatch(EQueueTypeFlagBits queue_type, const FDispatch2Info& dispatch_group, u64 subgroup_index) override;
-				void dispatch(EQueueTypeFlagBits queue_type, const FDispatchIndirectInfo& dispatch_info) override;
+				void Dispatch(EQueueTypeFlagBits queue_type, const FDispatch2Info& dispatch_group, u64 subgroup_index) override;
+				void Dispatch(EQueueTypeFlagBits queue_type, const FDispatchIndirectInfo& dispatch_info) override;
 
-				FDeviceLimitations getDeviceLimitations() override;
-				const FRenderFrameStats& getRenderFrameStats() const override;
-				EAdapterVendor getDeviceVendor() const override;
+				FDeviceLimitations GetDeviceLimitations() override;
+				const FRenderFrameStats& GetRenderFrameStats() const override;
+				EAdapterVendor GetDeviceVendor() const override;
 
-				u64 getTextureResource(const char* name) override;
-				u64 getShaderResource(const char* name) override;
+				u64 GetTextureResource(const char* name) override;
+				u64 GetShaderResource(const char* name) override;
 
-				FPoint2D<u32> getRenderResolution() const override;
-				FRect2D<f32> getRenderRectFromRT(u64 texture_id) override;
-				FRect2D<f32> getScreenRenderRect() override;
+				FPoint2D<u32> GetRenderResolution() const override;
+				FRect2D<f32> GetRenderRectFromRT(u64 texture_id) override;
+				FRect2D<f32> GetScreenRenderRect() override;
 
-				u32 getDepthFormat(bool depth_only = false) override;
-				u32 getApiFormat(EApiDataFormat global_format) override;
-				u32 getPresentFormat() override;
+				u32 GetDepthFormat(bool depth_only = false) override;
+				u32 GetApiFormat(EApiDataFormat global_format) override;
+				u32 GetPresentFormat() override;
 
-				void updateSurface(i32 surface_width, i32 surface_height) override;
+				void UpdateSurface(i32 surface_width, i32 surface_height) override;
 
-				void getNativeContext(void* context) override;
+				void GetNativeContext(void* context) override;
 
-				FVkCommandBuffer& createCommandBuffer(const FVkCommandBufferCreateInfo& command_buffer_ci, std::thread::id thread_id = std::this_thread::get_id());
+				FVkCommandBuffer& CreateCommandBuffer(const FVkCommandBufferCreateInfo& command_buffer_ci, std::thread::id thread_id = std::this_thread::get_id());
 				FVkCommandBuffer& getLastCommandBuffer(EQueueTypeFlagBits queue_type, std::thread::id thread_id = std::this_thread::get_id());
-				FVkCommandBuffer& getCommandBuffer(EQueueTypeFlagBits queue_type, u64 index, std::thread::id thread_id = std::this_thread::get_id());
+				FVkCommandBuffer& GetCommandBuffer(EQueueTypeFlagBits queue_type, u64 index, std::thread::id thread_id = std::this_thread::get_id());
 				utl::vector<FVkCommandBuffer>& getCommandBuffers(EQueueTypeFlagBits queue_type, std::thread::id thread_id = std::this_thread::get_id());
-				void destroyCommandBuffer(EQueueTypeFlagBits queue_type, std::thread::id thread_id = std::this_thread::get_id());
+				void DestroyCommandBuffer(EQueueTypeFlagBits queue_type, std::thread::id thread_id = std::this_thread::get_id());
 
 				const std::unique_ptr<CVkRenderDevice>& getDevice() const;
 
-				void beginFrame() override;
-				void endFrame() override;
+				void BeginFrame() override;
+				void EndFrame() override;
 				
-				bool isSwapChainFinished() override;
+				bool IsSwapChainFinished() override;
 
-				void beginDebugLabel(const std::string& label, EQueueTypeFlagBits queue_type, u32 color = 0xffffffff) override;
-				void insertDebugLabel(const std::string& label, EQueueTypeFlagBits queue_type, u32 color = 0xffffffff) override;
-				void endDebugLabel(EQueueTypeFlagBits queue_type) override;
+				void BeginDebugLabel(const std::string& label, EQueueTypeFlagBits queue_type, u32 color = 0xffffffff) override;
+				void InsertDebugLabel(const std::string& label, EQueueTypeFlagBits queue_type, u32 color = 0xffffffff) override;
+				void EndDebugLabel(EQueueTypeFlagBits queue_type) override;
 			protected:
 				void destroyThreadContext(FVkThreadContext& context);
-				void processResourceBarriers();
+				void ProcessResourceBarriers();
 				void processResourceUpload();
 				void processResourceUtilization();
 				void updateBackbuffer();
 
 				FVkBufferCreateInfo makeBufferCreateInfo(const std::string& name, const FBufferCreateInfo& buffer_ci);
 
-				FRenderApiErrorInfo createTexture(const FVkTextureCreateInfo& texture_ci, FVkTexture& texture);
-				void destroyTexture(FVkTexture& texture);
+				FRenderApiErrorInfo CreateTexture(const FVkTextureCreateInfo& texture_ci, FVkTexture& texture);
+				void DestroyTexture(FVkTexture& texture);
 
 				FRenderApiErrorInfo createShaderResources(const FVkShaderResourcesInfo& resources_info, FVkShader& shader);
-				void destroyShader(FVkShader& shader);
+				void DestroyShader(FVkShader& shader);
 
 				void bindShaderDescriptors(const FVkCommandBuffer& command_buffer, const FVkShader& shader);
 

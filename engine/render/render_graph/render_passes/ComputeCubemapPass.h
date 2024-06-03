@@ -13,10 +13,10 @@ namespace engine
 
 			~CComputeCubemapPass() = default;
 
-			void init(const FComputePassCreateInfo& pass_ci) override;
-			void build(const FPassBuildInfo& build_info) override;
+			void Init(const FComputePassCreateInfo& pass_ci) override;
+			void Build(const FPassBuildInfo& build_info) override;
 		private:
-			void _execute(const FComputeFrameInfo& frame_info) override;
+			void _Execute(const FComputeFrameInfo& frame_info) override;
 		private:
 			std::unique_ptr<IShaderObject> m_pShader{};
 		};

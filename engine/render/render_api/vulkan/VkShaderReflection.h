@@ -61,8 +61,8 @@ namespace engine
 			class CVkShaderReflectionBuilder
 			{
 			public:
-				void addShaderStage(vk::ShaderStageFlagBits shaderStage, const utl::vector<uint32_t>& shaderCode);
-				FVkShaderReflectionData build();
+				void AddShaderStage(vk::ShaderStageFlagBits shaderStage, const utl::vector<uint32_t>& shaderCode);
+				FVkShaderReflectionData Build();
 			private:
 				FVkShaderReflectionData reflectionData{};
 				utl::vector<vk::ShaderStageFlagBits> shaderStages{};

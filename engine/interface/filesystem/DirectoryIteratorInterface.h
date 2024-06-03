@@ -23,14 +23,14 @@ namespace engine
             /**
              * @brief Move to the next item in the directory.
              */
-            virtual void _operator_increment() = 0;
+            virtual void _OperatorIncrement() = 0;
 
             /**
              * @brief Get the current item in the directory.
              *
              * @return A constant reference to the item's string representation.
              */
-            virtual const std::string& _operator_dereferencing() const = 0;
+            virtual const std::string& _OperatorDereferencing() const = 0;
 
             /**
              * @brief Compare the directory iterators for inequality.
@@ -38,7 +38,7 @@ namespace engine
              * @param other A pointer to the IDirectoryIteratorInterface to compare.
              * @return True if the iterators are not equal, false otherwise.
              */
-            virtual bool _operator_not_equal(const IDirectoryIteratorInterface*) const = 0;
+            virtual bool _OperatorNotEqual(const IDirectoryIteratorInterface*) const = 0;
         };
 
 
@@ -52,14 +52,14 @@ namespace engine
             *
             * @return A reference to the iterator pointing to the beginning of the directory.
             */
-            virtual IDirectoryIteratorInterface& begin() = 0;
+            virtual IDirectoryIteratorInterface& Begin() = 0;
 
             /**
              * @brief Get the iterator pointing to the end of the directory.
              *
              * @return A reference to the iterator pointing to the end of the directory.
              */
-            virtual IDirectoryIteratorInterface& end() = 0;
+            virtual IDirectoryIteratorInterface& End() = 0;
 
             /**
              * @brief Move to the next item in the directory.

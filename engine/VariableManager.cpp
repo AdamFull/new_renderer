@@ -5,13 +5,13 @@
 
 using namespace engine;
 
-void CVariableManager::display()
+void CVariableManager::Display()
 {
 
 }
 
 
-std::unique_ptr<IVariable> CVariableManager::makeVariable(const char* name, const FVariableCreateInfo& create_info)
+std::unique_ptr<IVariable> CVariableManager::MakeVariable(const char* name, const FVariableCreateInfo& create_info)
 {
 	std::unique_ptr<IVariable> variable{};
 
@@ -76,7 +76,7 @@ std::unique_ptr<IVariable> CVariableManager::makeVariable(const char* name, cons
 	}
 }
 
-std::unique_ptr<IVariableBlock> CVariableManager::makeVariableBlock(const char* name)
+std::unique_ptr<IVariableBlock> CVariableManager::MakeVariableBlock(const char* name)
 {
 	return std::make_unique<CVariableBlock>();
 }

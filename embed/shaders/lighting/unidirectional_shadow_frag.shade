@@ -35,7 +35,7 @@
 
 			if(materialID != ~0u)
 			{
-				FMaterial mat = getMaterial(materialID);
+				FMaterial mat = GetMaterial(materialID);
 				if(mat.baseColorTexture != ~0u)
 				{
 					float smaple = sampleTexture2D(mat.baseColorTexture, 0, inUV).a;

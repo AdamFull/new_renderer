@@ -7,10 +7,10 @@ using namespace engine::filesystem;
 
 CNativeFileSystem::CNativeFileSystem(const std::string& fspath)
 {
-	create(fspath);
+	Create(fspath);
 }
 
-bool CNativeFileSystem::create(const std::string& fspath)
+bool CNativeFileSystem::Create(const std::string& fspath)
 {
 	if (fspath.empty())
 		throw std::runtime_error("Invalid path for native fs.");
@@ -19,7 +19,7 @@ bool CNativeFileSystem::create(const std::string& fspath)
 	return true;
 }
 
-void CNativeFileSystem::copy(const std::string& from, const std::string& to)
+void CNativeFileSystem::Copy(const std::string& from, const std::string& to)
 {
 	auto fromp = std::filesystem::weakly_canonical(m_fsRoot / from);
 	auto top = std::filesystem::weakly_canonical(m_fsRoot / to);
@@ -27,72 +27,72 @@ void CNativeFileSystem::copy(const std::string& from, const std::string& to)
 	std::filesystem::copy(fromp, top);
 }
 
-bool CNativeFileSystem::createDirectories(const std::string& path)
+bool CNativeFileSystem::CreateDirectories(const std::string& path)
 {
 	auto pathp = std::filesystem::weakly_canonical(m_fsRoot / path);
 	return std::filesystem::create_directories(pathp);
 }
 
-bool CNativeFileSystem::createDirectory(const std::string& path)
+bool CNativeFileSystem::CreateDirectory(const std::string& path)
 {
 	auto pathp = std::filesystem::weakly_canonical(m_fsRoot / path);
 	return std::filesystem::create_directory(pathp);
 }
 
-bool CNativeFileSystem::exists(const std::string& path)
+bool CNativeFileSystem::Exists(const std::string& path)
 {
 	auto pathp = std::filesystem::weakly_canonical(m_fsRoot / path);
 	return std::filesystem::exists(pathp);
 }
 
-size_t CNativeFileSystem::fileSize(const std::string& path)
+size_t CNativeFileSystem::FileSize(const std::string& path)
 {
 	auto pathp = std::filesystem::weakly_canonical(m_fsRoot / path);
 	return std::filesystem::file_size(pathp);
 }
 
-bool CNativeFileSystem::isDirectory(const std::string& path)
+bool CNativeFileSystem::IsDirectory(const std::string& path)
 {
 	auto pathp = std::filesystem::weakly_canonical(m_fsRoot / path);
 	return std::filesystem::is_directory(pathp);
 }
 
-bool CNativeFileSystem::isFile(const std::string& path)
+bool CNativeFileSystem::IsFile(const std::string& path)
 {
 	auto pathp = std::filesystem::weakly_canonical(m_fsRoot / path);
 	return std::filesystem::is_regular_file(pathp);
 }
 
-bool CNativeFileSystem::remove(const std::string& path)
+bool CNativeFileSystem::Remove(const std::string& path)
 {
 	auto pathp = std::filesystem::weakly_canonical(m_fsRoot / path);
 	return std::filesystem::remove(pathp);
 }
 
-void CNativeFileSystem::rename(const std::string& original, const std::string& newfile)
+void CNativeFileSystem::Rename(const std::string& original, const std::string& newfile)
 {
 	auto fromp = std::filesystem::weakly_canonical(m_fsRoot / original);
 	auto top = std::filesystem::weakly_canonical(m_fsRoot / newfile);
 	std::filesystem::rename(fromp, top);
 }
 
-std::unique_ptr<IOutputFileInterface> CNativeFileSystem::createFile(const std::string& path)
+std::unique_ptr<IOutputFileInterface> CNativeFileSystem::CreateFile(const std::string& path)
 {
 	auto pathp = std::filesystem::weakly_canonical(m_fsRoot / path);
 	return std::make_unique<CNativeOutputFile>(pathp.string());
 }
 
-std::unique_ptr<IInputFileInterface> CNativeFileSystem::openFile(const std::string& path)
+std::unique_ptr<IInputFileInterface> CNativeFileSystem::OpenFile(const std::string& path)
 {
 	auto pathp = std::filesystem::weakly_canonical(m_fsRoot / path);
 
-	if (!isFile(pathp.string()))
+	if (!IsFile(pathp.string()))
 		return nullptr;
 
 	return std::make_unique<CNativeInputFile>(pathp.string());
 }
 
-std::unique_ptr<IDirectoryIterator> CNativeFileSystem::walk(const std::string& path, bool recursive)
+std::unique_ptr<IDirectoryIterator> CNativeFileSystem::Walk(const std::string& path, bool recursive)
 {
 	std::unique_ptr<IDirectoryIterator> iterator{ nullptr };
 
@@ -105,7 +105,7 @@ std::unique_ptr<IDirectoryIterator> CNativeFileSystem::walk(const std::string& p
 	return iterator;
 }
 
-EFilesystemModeFlags CNativeFileSystem::getFilesystemMode() const
+EFilesystemModeFlags CNativeFileSystem::GetFilesystemMode() const
 {
 	return static_cast<uint32_t>(EFilesystemModeFlagBits::eRead) | static_cast<uint32_t>(EFilesystemModeFlagBits::eWrite);
 }

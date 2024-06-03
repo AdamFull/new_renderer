@@ -45,14 +45,14 @@ namespace engine
             /**
              * @brief Move to the next item in the archive.
              */
-            void _operator_increment() override;
+            void _OperatorIncrement() override;
 
             /**
              * @brief Get the current item in the archive.
              *
              * @return A constant reference to the item's string representation.
              */
-            const std::string& _operator_dereferencing() const override;
+            const std::string& _OperatorDereferencing() const override;
 
             /**
              * @brief Compare the directory iterators for inequality.
@@ -60,7 +60,7 @@ namespace engine
              * @param other A pointer to the IDirectoryIteratorInterface to compare.
              * @return True if the iterators are not equal, false otherwise.
              */
-            bool _operator_not_equal(const IDirectoryIteratorInterface*) const override;
+            bool _OperatorNotEqual(const IDirectoryIteratorInterface*) const override;
 
         protected:
             /**

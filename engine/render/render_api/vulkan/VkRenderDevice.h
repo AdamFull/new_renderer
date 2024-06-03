@@ -5,6 +5,10 @@
 
 #include <format>
 
+#ifdef CreateSemaphore
+#undef CreateSemaphore
+#endif
+
 namespace tracy
 {
 	class VkCtx;
@@ -26,90 +30,90 @@ namespace engine
 
 				~CVkRenderDevice();
 
-				void create(const FRenderContextCreateInfo& context_ci);
+				void Create(const FRenderContextCreateInfo& context_ci);
 
 				// VkCommandPool
-				FRenderApiErrorInfo createCommandPool(const FVkCommandPoolCreateInfo& command_pool_ci, FVkCommandPool& command_pool);
-				void destroyCommandPool(FVkCommandPool& command_pool);
+				FRenderApiErrorInfo CreateCommandPool(const FVkCommandPoolCreateInfo& command_pool_ci, FVkCommandPool& command_pool);
+				void DestroyCommandPool(FVkCommandPool& command_pool);
 
 				// VkCommandBuffer
-				FRenderApiErrorInfo createCommandBuffer(const FVkCommandBufferCreateInfo& command_buffer_ci, const FVkCommandPool& command_pool, FVkCommandBuffer& command_buffer);
-				FVkCommandBuffer& getCommandBuffer(const FVkGetCommandBufferInfo& get_info);
-				void destroyCommandBuffer(const FVkCommandPool& command_pool, FVkCommandBuffer& command_buffer);
-				void beginCommandBuffer(FVkCommandBuffer& command_buffer, vk::CommandBufferUsageFlags usage, u32 image_index);
-				void endCommandBuffer(FVkCommandBuffer& command_buffer);
+				FRenderApiErrorInfo CreateCommandBuffer(const FVkCommandBufferCreateInfo& command_buffer_ci, const FVkCommandPool& command_pool, FVkCommandBuffer& command_buffer);
+				FVkCommandBuffer& GetCommandBuffer(const FVkGetCommandBufferInfo& get_info);
+				void DestroyCommandBuffer(const FVkCommandPool& command_pool, FVkCommandBuffer& command_buffer);
+				void BeginCommandBuffer(FVkCommandBuffer& command_buffer, vk::CommandBufferUsageFlags usage, u32 image_index);
+				void EndCommandBuffer(FVkCommandBuffer& command_buffer);
 
 				// VkImage
-				FRenderApiErrorInfo createImage(const FVkImageCreateInfo& image_ci, FVkImage& image);
-				void destroyImage(FVkImage& image);
+				FRenderApiErrorInfo CreateImage(const FVkImageCreateInfo& image_ci, FVkImage& image);
+				void DestroyImage(FVkImage& image);
 
 				// VkImageView
-				FRenderApiErrorInfo createImageView(const FVkImageViewCreateInfo& image_view_ci, vk::ImageView& image_view);
-				void destroyImageView(vk::ImageView& image_view);
+				FRenderApiErrorInfo CreateImageView(const FVkImageViewCreateInfo& image_view_ci, vk::ImageView& image_view);
+				void DestroyImageView(vk::ImageView& image_view);
 
-				FRenderApiErrorInfo createSampler(const FVkSamplerCreateInfo& sampler_ci, vk::Sampler& sampler);
-				void destroySampler(vk::Sampler& sampler);
+				FRenderApiErrorInfo CreateSampler(const FVkSamplerCreateInfo& sampler_ci, vk::Sampler& sampler);
+				void DestroySampler(vk::Sampler& sampler);
 
 				// VkBuffer
-				FRenderApiErrorInfo createBuffer(const FVkBufferCreateInfo& buffer_ci, FVkBuffer& buffer);
-				void destroyBuffer(FVkBuffer& buffer);
-				FRenderApiErrorInfo mapBufferMemory(FVkBuffer& buffer, void** mappedMemory);
-				void unmapBufferMemory(FVkBuffer& buffer);
+				FRenderApiErrorInfo CreateBuffer(const FVkBufferCreateInfo& buffer_ci, FVkBuffer& buffer);
+				void DestroyBuffer(FVkBuffer& buffer);
+				FRenderApiErrorInfo MapBufferMemory(FVkBuffer& buffer, void** mappedMemory);
+				void UnmapBufferMemory(FVkBuffer& buffer);
 				void flushBufferMemory(const FVkBuffer& buffer, vk::DeviceSize size, vk::DeviceSize offset);
 
 				// VkDescriptorSetLayout
-				FRenderApiErrorInfo createDescriptorSetLayout(const FVkDescriptorSetLayoutCreateInfo& layout_ci, vk::DescriptorSetLayout& descriptor_set_layout);
-				void destroyDescriptorSetLayout(vk::DescriptorSetLayout& descriptor_set_layout);
+				FRenderApiErrorInfo CreateDescriptorSetLayout(const FVkDescriptorSetLayoutCreateInfo& layout_ci, vk::DescriptorSetLayout& descriptor_set_layout);
+				void DestroyDescriptorSetLayout(vk::DescriptorSetLayout& descriptor_set_layout);
 
-				FRenderApiErrorInfo createDescriptorPool(const FVkDescriptorPoolCreateInfo& pool_ci, FVkDescriptorPool& descriptor_pool);
-				FRenderApiErrorInfo growDescriptorPool(const FVkDescriptorPoolCreateInfo& pool_ci, FVkDescriptorPool& descriptor_pool);
-				void resetDescriptorPool(FVkDescriptorPool& descriptor_pool);
-				void destroyDescriptorPool(FVkDescriptorPool& descriptor_pool);
+				FRenderApiErrorInfo CreateDescriptorPool(const FVkDescriptorPoolCreateInfo& pool_ci, FVkDescriptorPool& descriptor_pool);
+				FRenderApiErrorInfo GrowDescriptorPool(const FVkDescriptorPoolCreateInfo& pool_ci, FVkDescriptorPool& descriptor_pool);
+				void ResetDescriptorPool(FVkDescriptorPool& descriptor_pool);
+				void DestroyDescriptorPool(FVkDescriptorPool& descriptor_pool);
 
-				FRenderApiErrorInfo createDescriptorSet(const FVkDescriptorSetCreateInfo& set_ci, FVkDescriptorSet& descriptor_set);
-				void destroyDescriptorSet(const FVkDescriptorPool& descriptor_pool, FVkDescriptorSet& descriptor_set);
+				FRenderApiErrorInfo CreateDescriptorSet(const FVkDescriptorSetCreateInfo& set_ci, FVkDescriptorSet& descriptor_set);
+				void DestroyDescriptorSet(const FVkDescriptorPool& descriptor_pool, FVkDescriptorSet& descriptor_set);
 
 				// VkShaderModule
-				FRenderApiErrorInfo createShaderModule(const FVkShaderModuleCreateInfo& shader_module_ci, vk::ShaderModule& shader_module);
-				void destroyShaderModule(vk::ShaderModule& shader_module);
+				FRenderApiErrorInfo CreateShaderModule(const FVkShaderModuleCreateInfo& shader_module_ci, vk::ShaderModule& shader_module);
+				void DestroyShaderModule(vk::ShaderModule& shader_module);
 
 				// VkPipelineLayout
-				FRenderApiErrorInfo createPipelineLayout(const FVkPipelineLayoutCreateInfo& pipeline_layout_ci, vk::PipelineLayout& pipeline_layout);
-				void destroyPipelineLayout(vk::PipelineLayout& pipeline_layout);
+				FRenderApiErrorInfo CreatePipelineLayout(const FVkPipelineLayoutCreateInfo& pipeline_layout_ci, vk::PipelineLayout& pipeline_layout);
+				void DestroyPipelineLayout(vk::PipelineLayout& pipeline_layout);
 
 				// VkPipeline
-				FRenderApiErrorInfo createPipeline(const FVkGraphicsPipelineCreateInfo& pipeline_ci, vk::Pipeline& pipeline);
-				FRenderApiErrorInfo createPipeline(const FVkComputePipelineCreateInfo& pipeline_ci, vk::Pipeline& pipeline);
-				FRenderApiErrorInfo createPipeline(const FVkRayTracingPipelineCreateInfo& pipeline_ci, vk::Pipeline& pipeline);
-				void destroyPipeline(vk::Pipeline& shader_object);
+				FRenderApiErrorInfo CreatePipeline(const FVkGraphicsPipelineCreateInfo& pipeline_ci, vk::Pipeline& pipeline);
+				FRenderApiErrorInfo CreatePipeline(const FVkComputePipelineCreateInfo& pipeline_ci, vk::Pipeline& pipeline);
+				FRenderApiErrorInfo CreatePipeline(const FVkRayTracingPipelineCreateInfo& pipeline_ci, vk::Pipeline& pipeline);
+				void DestroyPipeline(vk::Pipeline& shader_object);
 
-				FRenderApiErrorInfo createSemaphore(const FVkSemaphoreCreateInfo& semaphore_ci, vk::Semaphore& semaphore);
-				FRenderApiErrorInfo createFence(const FVkFenceCreateInfo& fence_ci, vk::Fence& fence);
+				FRenderApiErrorInfo CreateSemaphore(const FVkSemaphoreCreateInfo& semaphore_ci, vk::Semaphore& semaphore);
+				FRenderApiErrorInfo CreateFence(const FVkFenceCreateInfo& fence_ci, vk::Fence& fence);
 
-				FRenderApiErrorInfo createTimestampQuery(u32 count, FVkTimestampQuery& timestamp_query);
-				void resetTimestampQuery(FVkTimestampQuery& timestamp_query);
-				void resetTimestampQuery(FVkCommandBuffer& command_buffer, FVkTimestampQuery& timestamp_query);
-				void writeTimestampQuery(FVkCommandBuffer& command_buffer, vk::PipelineStageFlagBits pipeline_state, FVkTimestampQuery& timestamp_query);
-				FRenderApiErrorInfo getTimestampQueryResults(FVkTimestampQuery& timestamp_query, utl::vector<f32>& results);
-				void destroyTimestampQuery(FVkTimestampQuery& timestamp_query);
+				FRenderApiErrorInfo CreateTimestampQuery(u32 count, FVkTimestampQuery& timestamp_query);
+				void ResetTimestampQuery(FVkTimestampQuery& timestamp_query);
+				void ResetTimestampQuery(FVkCommandBuffer& command_buffer, FVkTimestampQuery& timestamp_query);
+				void WriteTimestampQuery(FVkCommandBuffer& command_buffer, vk::PipelineStageFlagBits pipeline_state, FVkTimestampQuery& timestamp_query);
+				FRenderApiErrorInfo GetTimestampQueryResults(FVkTimestampQuery& timestamp_query, utl::vector<f32>& results);
+				void DestroyTimestampQuery(FVkTimestampQuery& timestamp_query);
 
-				void getOccupedDeviceMemory(vk::MemoryHeapFlags memory_flags, u64& total_memory, u64& used_memory);
+				void GetOccupedDeviceMemory(vk::MemoryHeapFlags memory_flags, u64& total_memory, u64& used_memory);
 
-				void submitCommandBuffer(const FVkCommandBuffer& command_buffer);
-				vk::Result present(FVkCommandBuffer& command_buffer);
-				vk::Result acquireNextImage(u32& image_index);
+				void SubmitCommandBuffer(const FVkCommandBuffer& command_buffer);
+				vk::Result Present(FVkCommandBuffer& command_buffer);
+				vk::Result AcquireNextImage(u32& image_index);
 
 				// Debug markers
-				void debugBeginLabel(vk::CommandBuffer& command_buffer, const std::string& name, u32 color);
-				void debugInsertLabel(vk::CommandBuffer& command_buffer, const std::string& name, u32 color);
-				void endLabel(vk::CommandBuffer& command_buffer);
+				void DebugBeginLabel(vk::CommandBuffer& command_buffer, const std::string& name, u32 color);
+				void DebugInsertLabel(vk::CommandBuffer& command_buffer, const std::string& name, u32 color);
+				void EndLabel(vk::CommandBuffer& command_buffer);
 
-				void debugBeginLabel(vk::Queue& queue, const std::string& name, u32 color);
-				void debugInsertLabel(vk::Queue& queue, const std::string& name, u32 color);
-				void endLabel(vk::Queue& queue);
+				void DebugBeginLabel(vk::Queue& queue, const std::string& name, u32 color);
+				void DebugInsertLabel(vk::Queue& queue, const std::string& name, u32 color);
+				void EndLabel(vk::Queue& queue);
 
 				template<class _Ty>
-				void debugSetObjectName(const _Ty& object, const std::string& name)
+				void DebugSetObjectName(const _Ty& object, const std::string& name)
 				{
 #ifndef BUILD_WITHOUT_DEBUGGIND
 					if (!name.empty())
@@ -127,7 +131,7 @@ namespace engine
 				}
 
 				template<class _Ty>
-				void debugSetObjectTag(const _Ty& object, u64 name, const void* data, u64 size)
+				void DebugSetObjectTag(const _Ty& object, u64 name, const void* data, u64 size)
 				{
 #ifndef BUILD_WITHOUT_DEBUGGIND
 					vk::DebugUtilsObjectTagInfoEXT object_tag_info{};
@@ -141,53 +145,53 @@ namespace engine
 #endif
 				}
 
-				void initProfiler(const FVkCommandPool& command_pool);
+				void InitProfiler(const FVkCommandPool& command_pool);
 
 				// Getters
-				vk::Format findSupportedFormat(const utl::vector<vk::Format>& candidates, bool depth_only);
+				vk::Format FindSupportedFormat(const utl::vector<vk::Format>& candidates, bool depth_only);
 
-				const vk::DynamicLoader& getDynamicLoader() const;
-				const vk::AllocationCallbacks* getAllocationCallbacks() const;
+				const vk::DynamicLoader& GetDynamicLoader() const;
+				const vk::AllocationCallbacks* GetAllocationCallbacks() const;
 
-				const vk::Instance& getInstance() const;
-				const vk::DebugUtilsMessengerEXT& getDebugMessanger() const;
-				const vk::DebugReportCallbackEXT& getDebugReport() const;
-				const vk::SurfaceKHR& getSurface() const;
+				const vk::Instance& GetInstance() const;
+				const vk::DebugUtilsMessengerEXT& GetDebugMessanger() const;
+				const vk::DebugReportCallbackEXT& GetDebugReport() const;
+				const vk::SurfaceKHR& GetSurface() const;
 				
-				FVkPhysicalDevice& getPhysicalDevice();
+				FVkPhysicalDevice& GetPhysicalDevice();
 
-				const vk::SampleCountFlagBits getMultisamplingCount() const;
-				const FVkLogicalDevice& getLogicalDevice() const;
+				const vk::SampleCountFlagBits GetMultisamplingCount() const;
+				const FVkLogicalDevice& GetLogicalDevice() const;
 
-				vk::Queue& getQueue(EQueueTypeFlagBits flag);
+				vk::Queue& GetQueue(EQueueTypeFlagBits flag);
 
-				vma::Allocator& getMemoryAllocator();
+				vma::Allocator& GetMemoryAllocator();
 
-				const vk::PipelineCache& getPipelineCache() const;
-				utl::vector<char> getPipelineCacheData() const;
+				const vk::PipelineCache& GetPipelineCache() const;
+				utl::vector<char> GetPipelineCacheData() const;
 
 				const FSwapchain& getSwapchain() const;
 			protected:
-				void registerAllocationCallbacks();
-				FRenderApiErrorInfo createInstance(const FRenderContextCreateInfo& context_ci);
-				void createDebugMessanger(const FRenderContextCreateInfo& context_ci);
-				FRenderApiErrorInfo createSurface(const FRenderContextCreateInfo& context_ci);
-				void selectQueueFamilies(FVkPhysicalDevice& device_info);
-				FRenderApiErrorInfo selectPhysicalDevice(const FRenderContextCreateInfo& context_ci);
-				void prepareRequestedLogicalDeviceFeatures();
-				FRenderApiErrorInfo createLogicalDevice(const FRenderContextCreateInfo& context_ci);
-				void createMemoryAllocator(const FRenderContextCreateInfo& context_ci);
-				FRenderApiErrorInfo createPipelineCache(const FRenderContextCreateInfo& context_ci);
-				FRenderApiErrorInfo createSwapchain(u32 surface_width, u32 surface_height);
+				void RegisterAllocationCallbacks();
+				FRenderApiErrorInfo CreateInstance(const FRenderContextCreateInfo& context_ci);
+				void CreateDebugMessanger(const FRenderContextCreateInfo& context_ci);
+				FRenderApiErrorInfo CreateSurface(const FRenderContextCreateInfo& context_ci);
+				void SelectQueueFamilies(FVkPhysicalDevice& device_info);
+				FRenderApiErrorInfo SelectPhysicalDevice(const FRenderContextCreateInfo& context_ci);
+				void PrepareRequestedLogicalDeviceFeatures();
+				FRenderApiErrorInfo CreateLogicalDevice(const FRenderContextCreateInfo& context_ci);
+				void CreateMemoryAllocator(const FRenderContextCreateInfo& context_ci);
+				FRenderApiErrorInfo CreatePipelineCache(const FRenderContextCreateInfo& context_ci);
+				FRenderApiErrorInfo CreateSwapchain(u32 surface_width, u32 surface_height);
 
-				void cleanupSwapchain();
+				void CleanupSwapchain();
 
 				template<class _Ty>
-				_Ty& requestExtensionFeatures()
+				_Ty& RequestExtensionFeatures()
 				{
 					auto structure_type = _Ty::structureType;
 
-					auto& physical_device = getPhysicalDevice();
+					auto& physical_device = GetPhysicalDevice();
 					auto& extension_features = m_logicalDevice.extensionFeatures;
 
 					auto found_feature = extension_features.find(structure_type);

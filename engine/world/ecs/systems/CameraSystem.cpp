@@ -16,26 +16,26 @@ CCameraSystem::CCameraSystem(CSceneGraph* scenegraph, IRenderInterface* render_i
 	m_pRenderInterface = render_interface;
 }
 
-void CCameraSystem::__create()
+void CCameraSystem::__Create()
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto& registry = m_pSceneGraph->getRegistry();
-	auto& render_world = m_pRenderInterface->getRenderWorld();
+	auto& registry = m_pSceneGraph->GetRegistry();
+	auto& render_world = m_pRenderInterface->GetRenderWorld();
 
 	auto view = registry->view<FTransformComponent, FBaseComponent, FCameraComponent>();
 	for (auto [entity, transform, base, camera] : view.each())
-		camera.frustumID = render_world->registerCamera(ERenderGeometryCullerType::eScene);
+		camera.frustumID = render_world->RegisterCamera(ERenderGeometryCullerType::eScene);
 }
 
-void CCameraSystem::__update(f32 fDt)
+void CCameraSystem::__Update(f32 fDt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto& registry = m_pSceneGraph->getRegistry();
-	auto& render_packet = m_pRenderInterface->getRenderPacket();
-	auto& render_context = m_pRenderInterface->getRenderContext();
-	auto& render_world = m_pRenderInterface->getRenderWorld();
+	auto& registry = m_pSceneGraph->GetRegistry();
+	auto& render_packet = m_pRenderInterface->GetRenderPacket();
+	auto& render_context = m_pRenderInterface->GetRenderContext();
+	auto& render_world = m_pRenderInterface->GetRenderWorld();
 
 	auto view = registry->view<FTransformComponent, FBaseComponent, FCameraComponent>();
 	for (auto [entity, transform, base, camera] : view.each())
@@ -49,13 +49,13 @@ void CCameraSystem::__update(f32 fDt)
 
 			//if (camera.moved)
 			{
-				auto screen_size = render_context->getScreenRenderRect();
+				auto screen_size = render_context->GetScreenRenderRect();
 				glm::mat4 prev_view = camera.view;
 				glm::mat4 prev_projection = camera.projection;
 				camera.view = glm::lookAt(transform.gposition, transform.gposition + camera.forward, camera.up);
 				camera.projection = glm::perspective(camera.fieldOfView, screen_size.size.x / screen_size.size.y, camera.nearPlane, camera.farPlane);
 
-				render_world->updateCamera(camera.frustumID, camera.view, prev_view, camera.projection, prev_projection, glm::vec2(screen_size.size.x, screen_size.size.y), camera.nearPlane, camera.farPlane);
+				render_world->UpdateCamera(camera.frustumID, camera.view, prev_view, camera.projection, prev_projection, glm::vec2(screen_size.size.x, screen_size.size.y), camera.nearPlane, camera.farPlane);
 
 				camera.moved = false;
 			}

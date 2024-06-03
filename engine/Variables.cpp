@@ -2,7 +2,7 @@
 
 using namespace engine;
 
-void CBoolVariable::display()
+void CBoolVariable::Display()
 {
 
 }

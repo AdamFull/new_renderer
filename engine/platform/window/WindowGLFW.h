@@ -17,21 +17,21 @@ namespace engine
 			CWindowGLFW();
 			~CWindowGLFW() override;
 
-			void create(const FWindowCreateInfo& window_ci) override;
-			void destroy() override;
+			void Create(const FWindowCreateInfo& window_ci) override;
+			void Destroy() override;
 
-			bool process() override;
+			bool Process() override;
 
-			void setTitle(const std::string& title) override;
+			void SetTitle(const std::string& title) override;
 
-			void getWindowSize(int32_t& width, int32_t& height) override;
-			bool isResized() override;
-			bool isMinimized() override;
+			void GetWindowSize(int32_t& width, int32_t& height) override;
+			bool IsResized() override;
+			bool IsMinimized() override;
 
-			void windowSizeChanged();
+			void WindowSizeChanged();
 
 #if defined(PLATFORM_WIN32)
-			void getPlatformData(HINSTANCE& hinst, HWND& hwnd);
+			void GetPlatformData(HINSTANCE& hinst, HWND& hwnd);
 #endif
 		private:
 			bool m_sizeChanged{ false };

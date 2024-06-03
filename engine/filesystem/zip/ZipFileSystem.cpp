@@ -8,7 +8,7 @@ using namespace engine::filesystem;
 
 CZipFileSystem::CZipFileSystem(const std::string& fspath, const std::string& password)
 {
-	create(fspath);
+	Create(fspath);
 	m_srPassword = password;
 }
 
@@ -19,7 +19,7 @@ CZipFileSystem::~CZipFileSystem()
 }
 
 
-bool CZipFileSystem::create(const std::string& fspath)
+bool CZipFileSystem::Create(const std::string& fspath)
 {
 	if (m_pArchive)
 		return false;
@@ -37,7 +37,7 @@ bool CZipFileSystem::create(const std::string& fspath)
 	return true;
 }
 
-bool CZipFileSystem::exists(const std::string& path)
+bool CZipFileSystem::Exists(const std::string& path)
 {
 	if (!m_pArchive)
 		return false;
@@ -49,7 +49,7 @@ bool CZipFileSystem::exists(const std::string& path)
 	return false;
 }
 
-size_t CZipFileSystem::fileSize(const std::string& path)
+size_t CZipFileSystem::FileSize(const std::string& path)
 {
 	if (!m_pArchive)
 		return 0;
@@ -61,7 +61,7 @@ size_t CZipFileSystem::fileSize(const std::string& path)
 	return 0ull;
 }
 
-bool CZipFileSystem::isDirectory(const std::string& path)
+bool CZipFileSystem::IsDirectory(const std::string& path)
 {
 	if (!m_pArchive)
 		return false;
@@ -73,7 +73,7 @@ bool CZipFileSystem::isDirectory(const std::string& path)
 	return false;
 }
 
-bool CZipFileSystem::isFile(const std::string& path)
+bool CZipFileSystem::IsFile(const std::string& path)
 {
 	if (!m_pArchive)
 		return false;
@@ -85,20 +85,20 @@ bool CZipFileSystem::isFile(const std::string& path)
 	return false;
 }
 
-std::unique_ptr<IInputFileInterface> CZipFileSystem::openFile(const std::string& path)
+std::unique_ptr<IInputFileInterface> CZipFileSystem::OpenFile(const std::string& path)
 {
-	if (!isFile(path))
+	if (!IsFile(path))
 		return nullptr;
 
 	return std::make_unique<CZipInputFile>(m_pArchive, path, m_srPassword);
 }
 
-std::unique_ptr<IDirectoryIterator>  CZipFileSystem::walk(const std::string& path, bool recursive)
+std::unique_ptr<IDirectoryIterator>  CZipFileSystem::Walk(const std::string& path, bool recursive)
  {
 	return std::make_unique<CZipIterator>(m_pArchive, path, recursive);;
  }
 
-EFilesystemModeFlags CZipFileSystem::getFilesystemMode() const
+EFilesystemModeFlags CZipFileSystem::GetFilesystemMode() const
 {
 	return static_cast<uint32_t>(EFilesystemModeFlagBits::eRead);
 }

@@ -65,7 +65,7 @@
 			if (global_draw_index >= frameData.rawCommandsCount) 
 				return;
 
-			// Sample info about current draw comand
+			// Sample info about current Draw comand
 			FGeometryBatch draw_info = getRawDrawInfo(global_draw_index);
 			FSceneNode node = getSceneNode(draw_info.nodeID);
 			FMesh mesh = getMesh(draw_info.meshID);
@@ -89,10 +89,10 @@
 				uint output_index = draw_offset + culler_counter;
 				GET_VALUE_PTR_BY_ADDRESS(drawInfoBuffer, output_index) = draw_info;
 			
-				// Construct  indirect draw command
+				// Construct  indirect Draw command
 				// TODO: In future thing about how to implement instancing here
 
-				FCamera camera = getCamera(draw_info.cameraID);
+				FCamera camera = GetCamera(draw_info.cameraID);
 				mat4 view_projection = getViewProjectionMatrix(camera.matricesOffset);
 				
 				vec4 min_clip = view_projection * min_extents;

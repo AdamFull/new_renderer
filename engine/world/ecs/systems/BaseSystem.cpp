@@ -2,16 +2,16 @@
 
 using namespace engine::world::ecs;
 
-void ISystem::create()
+void ISystem::Create()
 {
 	m_stopWatch.stop<float>();
-	__create();
+	__Create();
 	m_createTime = m_stopWatch.stop<float>();
 }
 
-void ISystem::update(float dt)
+void ISystem::Update(float dt)
 {
 	m_stopWatch.stop<float>();
-	__update(dt);
+	__Update(dt);
 	m_updateTime = m_stopWatch.stop<float>();
 }

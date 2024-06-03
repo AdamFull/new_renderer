@@ -15,8 +15,8 @@ namespace engine
 				CSkinningSystem(CSceneGraph* scenegraph, render::IRenderInterface* render_interface);
 				virtual ~CSkinningSystem() override = default;
 
-				void __create() override;
-				void __update(float fDt) override;
+				void __Create() override;
+				void __Update(float fDt) override;
 			private:
 				render::IRenderInterface* m_pRenderInterface{ nullptr };
 			};

@@ -169,7 +169,7 @@ void build_uniform_reflection(FVkShaderReflectionData& reflection_data, spirv_cr
 }
 
 
-void CVkShaderReflectionBuilder::addShaderStage(vk::ShaderStageFlagBits shaderStage, const utl::vector<u32>& shaderCode)
+void CVkShaderReflectionBuilder::AddShaderStage(vk::ShaderStageFlagBits shaderStage, const utl::vector<u32>& shaderCode)
 {
 	spirv_cross::CompilerGLSL compiler(shaderCode.data(), shaderCode.size());
     auto active = compiler.get_active_interface_variables();
@@ -214,7 +214,7 @@ void CVkShaderReflectionBuilder::addShaderStage(vk::ShaderStageFlagBits shaderSt
     shaderStages.emplace_back(shaderStage);
 }
 
-FVkShaderReflectionData CVkShaderReflectionBuilder::build()
+FVkShaderReflectionData CVkShaderReflectionBuilder::Build()
 {
     utl::hash_map<vk::DescriptorType, u32> descriptorUsageCounter{};
 

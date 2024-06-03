@@ -14,28 +14,28 @@ namespace engine
 			 * @brief Checks if the output file is open.
 			 * @return true if the output file is open, false otherwise.
 			 */
-			virtual bool is_open() = 0;
+			virtual bool IsOpen() = 0;
 
 			/**
 			 * @brief Puts a single character into the output file.
 			 * @param ch The character to be written.
 			 * @return A reference to the IVFSOutputFileInterface object.
 			 */
-			virtual IVFSOutputFileInterface& put(char ch) = 0;
+			virtual IVFSOutputFileInterface& Put(char ch) = 0;
 
 			/**
 			 * @brief Writes a string to the output file.
 			 * @param data The string to be written.
 			 * @return A reference to the IVFSOutputFileInterface object.
 			 */
-			virtual IVFSOutputFileInterface& write(const std::string& data) = 0;
+			virtual IVFSOutputFileInterface& Write(const std::string& data) = 0;
 
 			/**
 			 * @brief Writes a string to the output file.
 			 * @param data The data vector to be written.
 			 * @return A reference to the IVFSOutputFileInterface object.
 			 */
-			virtual IVFSOutputFileInterface& write(const utl::vector<uint8_t>& data) = 0;
+			virtual IVFSOutputFileInterface& Write(const utl::vector<uint8_t>& data) = 0;
 
 			/**
 			 * @brief Writes a buffer of characters to the output file.
@@ -43,26 +43,26 @@ namespace engine
 			 * @param count The number of characters to write from the buffer.
 			 * @return A reference to the IVFSOutputFileInterface object.
 			 */
-			virtual IVFSOutputFileInterface& write(const char* buffer, std::size_t count) = 0;
+			virtual IVFSOutputFileInterface& Write(const char* buffer, std::size_t count) = 0;
 
 			/**
 			 * @brief Retrieves the current output position indicator.
 			 * @return The current position in the output file as a std::streampos.
 			 */
-			virtual std::streampos tellp() = 0;
+			virtual std::streampos Tellp() = 0;
 
 			/**
 			 * @brief Sets the output position indicator to the specified position.
 			 * @param pos The new position in the output file as a std::streampos.
 			 * @return A reference to the IVFSOutputFileInterface object.
 			 */
-			virtual IVFSOutputFileInterface& seekp(std::streampos pos) = 0;
+			virtual IVFSOutputFileInterface& Seekp(std::streampos pos) = 0;
 
 			/**
 			 * @brief Flushes the output buffer.
 			 * @return A reference to the IVFSOutputFileInterface object.
 			 */
-			virtual IVFSOutputFileInterface& flush() = 0;
+			virtual IVFSOutputFileInterface& Flush() = 0;
 
 			/**
 			 * @brief Stream output operator for writing from an input stream to a IVFSOutputFileInterface.
@@ -79,7 +79,7 @@ namespace engine
 				{
 					is.read(buffer.data(), buffer.size());
 					std::streamsize read_count = is.gcount();
-					cfs.write(buffer);
+					cfs.Write(buffer);
 				}
 
 				return cfs;

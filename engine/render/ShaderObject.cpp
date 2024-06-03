@@ -9,23 +9,23 @@ CShaderObject::CShaderObject(IRenderInterface* render_interface)
 
 CShaderObject::~CShaderObject()
 {
-	auto& render_context = m_pRenderInterface->getRenderContext();
-	render_context->destroyShader(m_shaderId);
+	auto& render_context = m_pRenderInterface->GetRenderContext();
+	render_context->DestroyShader(m_shaderId);
 }
 
-void CShaderObject::create(const std::string& name, const FGraphicsShaderCreateInfo& create_info)
+void CShaderObject::Create(const std::string& name, const FGraphicsShaderCreateInfo& create_info)
 {
-	m_shaderId = m_pRenderInterface->createShader(name, create_info);
-	buildReflection();
+	m_shaderId = m_pRenderInterface->CreateShader(name, create_info);
+	BuildReflection();
 }
 
-void CShaderObject::create(const std::string& name, const FComputeShaderCreateInfo& create_info)
+void CShaderObject::Create(const std::string& name, const FComputeShaderCreateInfo& create_info)
 {
-	m_shaderId = m_pRenderInterface->createShader(name, create_info);
-	buildReflection();
+	m_shaderId = m_pRenderInterface->CreateShader(name, create_info);
+	BuildReflection();
 }
 
-const std::unique_ptr<CUniformHandle>& CShaderObject::getUniformBlock(u64 name)
+const std::unique_ptr<CUniformHandle>& CShaderObject::GetUniformBlock(u64 name)
 {
 	static std::unique_ptr<CUniformHandle> null{ nullptr };
 
@@ -36,7 +36,7 @@ const std::unique_ptr<CUniformHandle>& CShaderObject::getUniformBlock(u64 name)
 	return null;
 }
 
-const std::unique_ptr<CUniformHandle>& CShaderObject::getConstantBlock(u64 name)
+const std::unique_ptr<CUniformHandle>& CShaderObject::GetConstantBlock(u64 name)
 {
 	static std::unique_ptr<CUniformHandle> null{ nullptr };
 
@@ -47,23 +47,23 @@ const std::unique_ptr<CUniformHandle>& CShaderObject::getConstantBlock(u64 name)
 	return null;
 }
 
-void CShaderObject::bindBuffer(u64 name, u64 buffer_resource)
+void CShaderObject::BindBuffer(u64 name, u64 buffer_resource)
 {
 	m_bindBuffers[name] = buffer_resource;
 }
 
-void CShaderObject::bindTexture(u64 name, u64 texture_resource, u32 mip)
+void CShaderObject::BindTexture(u64 name, u64 texture_resource, u32 mip)
 {
 	m_bindTextures[name] = FTextureBindInfo{ texture_resource, mip };
 }
 
-void CShaderObject::flushDescriptors()
+void CShaderObject::FlushDescriptors()
 {
 	// Universal block for binding external resources
-	auto& external_resources = getUniformBlock(shader_bindings::external_bind_resources);
+	auto& external_resources = GetUniformBlock(shader_bindings::external_bind_resources);
 	if (external_resources)
 	{
-		auto& render_graph = m_pRenderInterface->getRenderGraph();
+		auto& render_graph = m_pRenderInterface->GetRenderGraph();
 		// TODO: Required multiple changes for bindless system inside api implementation
 		// start_element_index + (layer_index * layer.mips.size()) + mip_index;
 	}
@@ -77,63 +77,63 @@ void CShaderObject::flushDescriptors()
 	for (auto& [id, block] : m_uniformBlocks)
 	{
 		auto& data_view = update_data.uniforms[id];
-		auto& block_data = block->data();
+		auto& block_data = block->Data();
 		data_view.data = block_data.data();
 		data_view.size = block_data.size();
 	}
 
-	auto& render_context = m_pRenderInterface->getRenderContext();
-	render_context->updateShaderResources(update_data);
+	auto& render_context = m_pRenderInterface->GetRenderContext();
+	render_context->UpdateShaderResources(update_data);
 }
 
-void CShaderObject::flushConstants(EQueueTypeFlagBits queue)
+void CShaderObject::FlushConstants(EQueueTypeFlagBits queue)
 {
 	utl::hash_map<u64, FUniformDataView> constants{};
 
 	for (auto& [id, block] : m_constantBlocks)
 	{
 		auto& data_view = constants[id];
-		auto& block_data = block->data();
+		auto& block_data = block->Data();
 		data_view.data = block_data.data();
 		data_view.size = block_data.size();
 	}
 
-	auto& render_context = m_pRenderInterface->getRenderContext();
-	render_context->flushConstantRanges(m_shaderId, constants, queue);
+	auto& render_context = m_pRenderInterface->GetRenderContext();
+	render_context->FlushConstantRanges(m_shaderId, constants, queue);
 }
 
-void CShaderObject::bind(EQueueTypeFlagBits queue)
+void CShaderObject::Bind(EQueueTypeFlagBits queue)
 {
-	auto& render_context = m_pRenderInterface->getRenderContext();
-	render_context->bindShader(m_shaderId, queue);
+	auto& render_context = m_pRenderInterface->GetRenderContext();
+	render_context->BindShader(m_shaderId, queue);
 }
 
-u64 CShaderObject::handle() const
+u64 CShaderObject::Handle() const
 {
 	return m_shaderId;
 }
 
-const FShaderReflectionData& CShaderObject::getReflection() const
+const FShaderReflectionData& CShaderObject::GetReflection() const
 {
 	return m_reflection;
 }
 
-void CShaderObject::buildReflection()
+void CShaderObject::BuildReflection()
 {
-	auto& render_context = m_pRenderInterface->getRenderContext();
-	m_reflection = render_context->getShaderReflection(m_shaderId);
+	auto& render_context = m_pRenderInterface->GetRenderContext();
+	m_reflection = render_context->GetShaderReflection(m_shaderId);
 
 	for (auto& [id, uniform_block] : m_reflection.uniformBlocks)
 	{
 		auto uniform_handle = std::make_unique<CUniformHandle>();
-		uniform_handle->create(uniform_block);
+		uniform_handle->Create(uniform_block);
 		m_uniformBlocks[id] = std::move(uniform_handle);
 	}
 
 	for (auto& [id, push_block] : m_reflection.pushBlocks)
 	{
 		auto uniform_handle = std::make_unique<CUniformHandle>();
-		uniform_handle->create(push_block);
+		uniform_handle->Create(push_block);
 		m_constantBlocks[id] = std::move(uniform_handle);
 	}
 }

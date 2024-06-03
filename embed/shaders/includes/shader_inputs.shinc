@@ -35,7 +35,7 @@
 
 	FSceneNode getSceneNode(uint index) { return GET_VALUE_PTR_BY_ADDRESS(nodeBuffer, index); }
 	FMesh getMesh(uint index) { return GET_VALUE_PTR_BY_ADDRESS(meshBuffer, index); }
-	FMaterial getMaterial(uint index) { return GET_VALUE_PTR_BY_ADDRESS(materialBuffer, index); }
+	FMaterial GetMaterial(uint index) { return GET_VALUE_PTR_BY_ADDRESS(materialBuffer, index); }
 	FLightCommit getLight(uint index) { return GET_VALUE_PTR_BY_ADDRESS(lightsBuffer, index); }
 
 	FCascadedShadowCommit getCascadedShadowCommit(uint index) { return GET_VALUE_PTR_BY_ADDRESS(cascadedShadowBuffer, index); }
@@ -51,7 +51,7 @@
 	uint32_t getDrawCount(uint index) { return GET_VALUE_PTR_BY_ADDRESS(indirectCountBuffer, index); }
 
 	uint32_t getTextureRemapIndex(uint index) { return GET_VALUE_PTR_BY_ADDRESS(textureRemapBuffer, index); }
-	FCamera getCamera(uint index) { return GET_VALUE_PTR_BY_ADDRESS(cameraBuffer, index); }
+	FCamera GetCamera(uint index) { return GET_VALUE_PTR_BY_ADDRESS(cameraBuffer, index); }
 
 	mat4 getMatrixById(uint global_offset, uint local_offset) { return GET_VALUE_PTR_BY_ADDRESS(matrixBuffer, global_offset + local_offset); }
 

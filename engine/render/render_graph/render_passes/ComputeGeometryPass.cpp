@@ -11,9 +11,9 @@ CComputeGeometryPass::CComputeGeometryPass(IRenderInterface* render_interface)
 	m_pRenderInterface = render_interface;
 }
 
-void CComputeGeometryPass::init(const FComputePassCreateInfo& pass_ci)
+void CComputeGeometryPass::Init(const FComputePassCreateInfo& pass_ci)
 {
-	IComputePass::init(pass_ci);
+	IComputePass::Init(pass_ci);
 
 	m_baseShaderName = pass_ci.shader;
 
@@ -22,20 +22,20 @@ void CComputeGeometryPass::init(const FComputePassCreateInfo& pass_ci)
 #endif
 }
 
-void CComputeGeometryPass::build(const FPassBuildInfo& build_info)
+void CComputeGeometryPass::Build(const FPassBuildInfo& build_info)
 {
-	IComputePass::build(build_info);
+	IComputePass::Build(build_info);
 }
 
-void CComputeGeometryPass::_execute(const FComputeFrameInfo& frame_info)
+void CComputeGeometryPass::_Execute(const FComputeFrameInfo& frame_info)
 {
 	std::unordered_set<u64> vbos{};
 
-	auto& render_context = m_pRenderInterface->getRenderContext();
-	auto& render_world = m_pRenderInterface->getRenderWorld();
+	auto& render_context = m_pRenderInterface->GetRenderContext();
+	auto& render_world = m_pRenderInterface->GetRenderWorld();
 
 
-	const auto& geometry_batches = render_world->getGeometryBatches();
+	const auto& geometry_batches = render_world->GetGeometryBatches();
 	for (const auto& batch : geometry_batches)
 		vbos.emplace(batch.vboID);
 
@@ -44,74 +44,74 @@ void CComputeGeometryPass::_execute(const FComputeFrameInfo& frame_info)
 	for (auto& vboId : vbos)
 	{
 		bool was_vbo_rebinded{ false };
-		auto& vbo = m_pRenderInterface->getVertexHandler(vboId);
+		auto& vbo = m_pRenderInterface->GetVertexHandler(vboId);
 		if (!last_vbo || vbo.get() != last_vbo)
 		{
 			last_vbo = vbo.get();
-			last_vbo->bind(m_queue);
+			last_vbo->Bind(m_queue);
 			was_vbo_rebinded = true;
 		}
 
 		if (last_vbo)
 		{
-			auto& shader = getShaderByVBO(last_vbo);
+			auto& shader = GetShaderByVBO(last_vbo);
 
 			if (was_vbo_rebinded)
 			{
-				bindShaderResources(shader, frame_info.deltaTime);
-				if (auto& buffers = shader->getUniformBlock(shader_bindings::geometry_buffers); buffers)
+				BindShaderResources(shader, frame_info.deltaTime);
+				if (auto& buffers = shader->GetUniformBlock(shader_bindings::geometry_buffers); buffers)
 				{
-					auto& vertex_buffer = last_vbo->getGeometryBuffer(EGeometryBufferIndices::eVertexBuffer);
-					auto& index_buffer = last_vbo->getGeometryBuffer(EGeometryBufferIndices::eIndexBuffer);
+					auto& vertex_buffer = last_vbo->GetGeometryBuffer(EGeometryBufferIndices::eVertexBuffer);
+					auto& index_buffer = last_vbo->GetGeometryBuffer(EGeometryBufferIndices::eIndexBuffer);
 
-					buffers->set(shader_bindings::vb_label, vertex_buffer->buffer()->address());
-					buffers->set(shader_bindings::ib_label, index_buffer->buffer()->address());
-					buffers->set(shader_bindings::mb_label, last_vbo->getGeometryBuffer(EGeometryBufferIndices::eMeshletBuffer)->buffer()->address());
-					buffers->set(shader_bindings::vrb_label, last_vbo->getGeometryBuffer(EGeometryBufferIndices::eVertexRemapBuffer)->buffer()->address());
-					buffers->set(shader_bindings::bb_label, last_vbo->getGeometryBuffer(EGeometryBufferIndices::eBoundsBuffer)->buffer()->address());
-					buffers->set(shader_bindings::tb_label, last_vbo->getGeometryBuffer(EGeometryBufferIndices::eTriangleBuffer)->buffer()->address());
-					buffers->set(shader_bindings::lb_label, last_vbo->getGeometryBuffer(EGeometryBufferIndices::eLodBuffer)->buffer()->address());
+					buffers->Set(shader_bindings::vb_label, vertex_buffer->Buffer()->Address());
+					buffers->Set(shader_bindings::ib_label, index_buffer->Buffer()->Address());
+					buffers->Set(shader_bindings::mb_label, last_vbo->GetGeometryBuffer(EGeometryBufferIndices::eMeshletBuffer)->Buffer()->Address());
+					buffers->Set(shader_bindings::vrb_label, last_vbo->GetGeometryBuffer(EGeometryBufferIndices::eVertexRemapBuffer)->Buffer()->Address());
+					buffers->Set(shader_bindings::bb_label, last_vbo->GetGeometryBuffer(EGeometryBufferIndices::eBoundsBuffer)->Buffer()->Address());
+					buffers->Set(shader_bindings::tb_label, last_vbo->GetGeometryBuffer(EGeometryBufferIndices::eTriangleBuffer)->Buffer()->Address());
+					buffers->Set(shader_bindings::lb_label, last_vbo->GetGeometryBuffer(EGeometryBufferIndices::eLodBuffer)->Buffer()->Address());
 				}
 
-				shader->flushDescriptors();
-				shader->bind(m_queue);
+				shader->FlushDescriptors();
+				shader->Bind(m_queue);
 			}
 
-			auto& mesh_data = shader->getConstantBlock(shader_bindings::mesh_data);
+			auto& mesh_data = shader->GetConstantBlock(shader_bindings::mesh_data);
 			if (mesh_data)
 			{
-				mesh_data->set(shader_bindings::vbo_id_label, utl::cast<u32>(vboId));
+				mesh_data->Set(shader_bindings::vbo_id_label, utl::cast<u32>(vboId));
 			}
 
-			shader->flushConstants(m_queue);
+			shader->FlushConstants(m_queue);
 
 			auto& dispatch_info = m_vDispatchGroups.front();
-			dispatch_info.shaderHandle = shader->handle();
+			dispatch_info.shaderHandle = shader->Handle();
 
-			render_context->dispatch(m_queue, dispatch_info, 0);
+			render_context->Dispatch(m_queue, dispatch_info, 0);
 		}
 	}
 }
 
-const std::unique_ptr<IShaderObject>& CComputeGeometryPass::getShaderByVBO(const IVertexHandler* vbo)
+const std::unique_ptr<IShaderObject>& CComputeGeometryPass::GetShaderByVBO(const IVertexHandler* vbo)
 {
-	auto& render_graph = m_pRenderInterface->getRenderGraph();
+	auto& render_graph = m_pRenderInterface->GetRenderGraph();
 
-	auto& shader = m_shaders[vbo->getHash()];
+	auto& shader = m_shaders[vbo->GetHash()];
 	if (!shader)
 	{
 		shader = std::make_unique<CShaderObject>(m_pRenderInterface);
 
 		// Generate shader name
-		auto shader_name = m_baseShaderName + vbo->getDefinitions();
+		auto shader_name = m_baseShaderName + vbo->GetDefinitions();
 
-		auto& render_packet = m_pRenderInterface->getRenderPacket();
+		auto& render_packet = m_pRenderInterface->GetRenderPacket();
 
 		FComputeShaderCreateInfo shader_ci{};
 		shader_ci.usageCount = std::max(render_packet->stats.materialCount, render_packet->stats.primitiveCount);
-		shader->create(shader_name, shader_ci);
+		shader->Create(shader_name, shader_ci);
 
-		initShaderResources(shader);
+		InitShaderResources(shader);
 	}
 
 	return shader;

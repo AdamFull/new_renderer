@@ -120,44 +120,44 @@ CRenderGraph::CRenderGraph(IRenderInterface* render_interface)
 	m_pRenderInterface = render_interface;
 }
 
-FTextureCreateInfo CRenderGraph::makeTextureCI(EApiDataFormat format, ETextureCreateFlags flags)
+FTextureCreateInfo CRenderGraph::MakeTextureCI(EApiDataFormat format, ETextureCreateFlags flags)
 {
-	auto& render_context = m_pRenderInterface->getRenderContext();
+	auto& render_context = m_pRenderInterface->GetRenderContext();
 
 	FTextureCreateInfo target_ci{};
-	target_ci.format = render_context->getApiFormat(format);
+	target_ci.format = render_context->GetApiFormat(format);
 	target_ci.typeFlags = flags;
 	return target_ci;
 }
 
-FTextureCreateInfo CRenderGraph::makeTexture2DCI(EApiDataFormat format, ETextureCreateFlags flags)
+FTextureCreateInfo CRenderGraph::MakeTexture2DCI(EApiDataFormat format, ETextureCreateFlags flags)
 {
-	return makeTextureCI(format, flags | ETextureCreateFlagBits::e2D);
+	return MakeTextureCI(format, flags | ETextureCreateFlagBits::e2D);
 }
 
-FTextureCreateInfo CRenderGraph::makeTexture2DArrayCI(EApiDataFormat format, ETextureCreateFlags flags)
+FTextureCreateInfo CRenderGraph::MakeTexture2DArrayCI(EApiDataFormat format, ETextureCreateFlags flags)
 {
-	return makeTextureCI(format, flags | ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eArray);
+	return MakeTextureCI(format, flags | ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eArray);
 }
 
-FTextureCreateInfo CRenderGraph::makeTexture3DCI(EApiDataFormat format, ETextureCreateFlags flags)
+FTextureCreateInfo CRenderGraph::MakeTexture3DCI(EApiDataFormat format, ETextureCreateFlags flags)
 {
-	return makeTextureCI(format, flags | ETextureCreateFlagBits::e3D);
+	return MakeTextureCI(format, flags | ETextureCreateFlagBits::e3D);
 }
 
-FTextureCreateInfo CRenderGraph::makeTexture3DArrayCI(EApiDataFormat format, ETextureCreateFlags flags)
+FTextureCreateInfo CRenderGraph::MakeTexture3DArrayCI(EApiDataFormat format, ETextureCreateFlags flags)
 {
-	return makeTextureCI(format, flags | ETextureCreateFlagBits::e3D | ETextureCreateFlagBits::eArray);
+	return MakeTextureCI(format, flags | ETextureCreateFlagBits::e3D | ETextureCreateFlagBits::eArray);
 }
 
-FTextureCreateInfo CRenderGraph::makeTextureCubeCI(EApiDataFormat format, ETextureCreateFlags flags)
+FTextureCreateInfo CRenderGraph::MakeTextureCubeCI(EApiDataFormat format, ETextureCreateFlags flags)
 {
-	return makeTextureCI(format, flags | ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eCubemap);
+	return MakeTextureCI(format, flags | ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eCubemap);
 }
 
-FTextureCreateInfo CRenderGraph::makeTextureCubeArrayCI(EApiDataFormat format, ETextureCreateFlags flags)
+FTextureCreateInfo CRenderGraph::MakeTextureCubeArrayCI(EApiDataFormat format, ETextureCreateFlags flags)
 {
-	return makeTextureCI(format, flags | ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eCubemap | ETextureCreateFlagBits::eArray);
+	return MakeTextureCI(format, flags | ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eCubemap | ETextureCreateFlagBits::eArray);
 }
 
 FRenderConfigComputeCreateInfo makeComputePassCI(EComputeType type, EQueueTypeFlagBits queue, const std::string& shader)
@@ -214,7 +214,7 @@ std::unique_ptr<IVariable> parseVariable(const char* name, xercesc::DOMElement* 
 
 	if (!strcmp(dtype, "bool"))
 	{
-		variable = std::make_unique<CBoolVariable>(false);
+		variable = std::make_unique<CBoolVariable>(FNumericScalarInitialData<bool>{});
 	}
 
 	xercesc::XMLString::release(&value);
@@ -232,13 +232,13 @@ std::unique_ptr<IVariableBlock> parseVariableBlock(const char* name, xercesc::DO
 		if (xercesc::XMLString::compareString(child->getTagName(), xercesc::XMLString::transcode("Var")) == 0)
 		{
 			char* name = xercesc::XMLString::transcode(child->getAttribute(xercesc::XMLString::transcode("name")));
-			block->addVariable(name, parseVariable(name, child));
+			block->AddVariable(name, parseVariable(name, child));
 			xercesc::XMLString::release(&name);
 		}
 		else if (xercesc::XMLString::compareString(child->getTagName(), xercesc::XMLString::transcode("VarBlock")) == 0)
 		{
 			char* name = xercesc::XMLString::transcode(child->getAttribute(xercesc::XMLString::transcode("name")));
-			block->addBlock(name, parseVariableBlock(name, child));
+			block->AddBlock(name, parseVariableBlock(name, child));
 			xercesc::XMLString::release(&name);
 		}
 	}
@@ -247,602 +247,602 @@ std::unique_ptr<IVariableBlock> parseVariableBlock(const char* name, xercesc::DO
 }
 
 
-void CRenderGraph::create(const utl::vector<u8>& config, const utl::vector<u8>& schema)
+void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& schema)
 {
-	m_pVariableBlock = std::make_unique<CVariableBlock>();
+	//m_pVariableBlock = std::make_unique<CVariableBlock>();
+	//
+	//xercesc::XMLPlatformUtils::Initialize();
+	//
+	//xercesc::MemBufInputSource xmlMemBuf(config.data(), config.size(), "xmlBuffer", false);
+	//xercesc::MemBufInputSource xsdMemBuf(schema.data(), schema.size(), "xsdBuffer", false);
+	//
+	//xercesc::XercesDOMParser* parser = new xercesc::XercesDOMParser();
+	//
+	//xercesc::ErrorHandler* errHandler = (xercesc::ErrorHandler*) new xercesc::HandlerBase();
+	//parser->setErrorHandler(errHandler);
+	//
+	//parser->loadGrammar(xsdMemBuf, xercesc::Grammar::SchemaGrammarType, true);
+	//parser->setValidationScheme(xercesc::XercesDOMParser::Val_Always);
+	//parser->setDoNamespaces(true);
+	//parser->setDoSchema(true);
+	//parser->setValidationSchemaFullChecking(true);
+	//parser->useCachedGrammarInParse(true);
+	//
+	//// Parse document with validation
+	//if (!parseRenderConfig(parser, xmlMemBuf))
+	//{
+	//	delete parser;
+	//	delete errHandler;
+	//	xercesc::XMLPlatformUtils::Terminate();
+	//	log_error("[Render Graph] Failed to parse render config.");
+	//	return;
+	//}
+	//
+	//// Begin parsing
+	//xercesc::DOMDocument* doc = parser->getDocument();
+	//
+	//xercesc::DOMElement* renderConfig = doc->getDocumentElement();
+	//if (!renderConfig || xercesc::XMLString::compareString(renderConfig->getTagName(), xercesc::XMLString::transcode("RenderConfig")) != 0) 
+	//{
+	//	log_error("[Render Graph] Failed to parse render config. Invalid dom element.");
+	//	return;
+	//}
+	//
+	//xercesc::DOMElement* renderVars = renderConfig->getFirstElementChild();
+	//while (renderVars) 
+	//{
+	//	if (xercesc::XMLString::compareString(renderVars->getTagName(), xercesc::XMLString::transcode("RenderVars")) == 0)
+	//	{
+	//		for (xercesc::DOMElement* child = renderVars->getFirstElementChild(); child != nullptr; child = child->getNextElementSibling())
+	//		{
+	//			if (xercesc::XMLString::compareString(child->getTagName(), xercesc::XMLString::transcode("Var")) == 0)
+	//			{
+	//				char* name = xercesc::XMLString::transcode(child->getAttribute(xercesc::XMLString::transcode("name")));
+	//				m_pVariableBlock->AddVariable(name, parseVariable(name, child));
+	//				xercesc::XMLString::release(&name);
+	//			}
+	//			else if (xercesc::XMLString::compareString(child->getTagName(), xercesc::XMLString::transcode("VarBlock")) == 0)
+	//			{
+	//				char* name = xercesc::XMLString::transcode(child->getAttribute(xercesc::XMLString::transcode("name")));
+	//				m_pVariableBlock->AddBlock(name, parseVariableBlock(name, child));
+	//				xercesc::XMLString::release(&name);
+	//			}
+	//		}
+	//	}
+	//	renderVars = renderVars->getNextElementSibling();
+	//}
+	//
+	//delete parser;
+	//delete errHandler;
+	//xercesc::XMLPlatformUtils::Terminate();
 
-	xercesc::XMLPlatformUtils::Initialize();
-
-	xercesc::MemBufInputSource xmlMemBuf(config.data(), config.size(), "xmlBuffer", false);
-	xercesc::MemBufInputSource xsdMemBuf(schema.data(), schema.size(), "xsdBuffer", false);
-
-	xercesc::XercesDOMParser* parser = new xercesc::XercesDOMParser();
-
-	xercesc::ErrorHandler* errHandler = (xercesc::ErrorHandler*) new xercesc::HandlerBase();
-	parser->setErrorHandler(errHandler);
-
-	parser->loadGrammar(xsdMemBuf, xercesc::Grammar::SchemaGrammarType, true);
-	parser->setValidationScheme(xercesc::XercesDOMParser::Val_Always);
-	parser->setDoNamespaces(true);
-	parser->setDoSchema(true);
-	parser->setValidationSchemaFullChecking(true);
-	parser->useCachedGrammarInParse(true);
-
-	// Parse document with validation
-	if (!parseRenderConfig(parser, xmlMemBuf))
-	{
-		delete parser;
-		delete errHandler;
-		xercesc::XMLPlatformUtils::Terminate();
-		log_error("[Render Graph] Failed to parse render config.");
-		return;
-	}
-
-	// Begin parsing
-	xercesc::DOMDocument* doc = parser->getDocument();
+	auto& render_context = m_pRenderInterface->GetRenderContext();
+	auto surface_resolution = render_context->GetRenderResolution();
 	
-	xercesc::DOMElement* renderConfig = doc->getDocumentElement();
-	if (!renderConfig || xercesc::XMLString::compareString(renderConfig->getTagName(), xercesc::XMLString::transcode("RenderConfig")) != 0) 
+	bool use_low_precision_velocity{ true };
+	
+	bool enable_fxaa{ false };
+	bool enable_taa{ true };
+	bool motion_blur_enabled{ false };
+	bool depth_of_field_enabled{ true };
+	bool chromatic_aberration_enabled{ false };
+	
+	//Bloom settings
+	bool bloom_enabled{ true };
+	bool bloom_use_brightness{ true };
+	int bloom_blur_depth{ 7 };
+	
+	// Loading test cubemap
 	{
-		log_error("[Render Graph] Failed to parse render config. Invalid dom element.");
-		return;
+		AddStaticResource("CasualDay4K", "/root/embed/rendering/textures/CasualDay4K.ktx2");
+		AddStaticResource("LensDirtMask", "/root/embed/rendering/textures/DirtMaskTextureExample.png");
 	}
-
-	xercesc::DOMElement* renderVars = renderConfig->getFirstElementChild();
-	while (renderVars) 
+	
+	// GI targets
 	{
-		if (xercesc::XMLString::compareString(renderVars->getTagName(), xercesc::XMLString::transcode("RenderVars")) == 0)
+		FTextureCreateInfo texture_ci = MakeTexture2DCI(EApiDataFormat::eRG16_SFLOAT, ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage);
+		texture_ci.SetFixedSize2D(1024);
+		AddRenderResource("brdf_lut_target", texture_ci);
+	}
+	
+	{
+		FTextureCreateInfo texture_ci = MakeTextureCubeCI(EApiDataFormat::eRGBA32_SFLOAT, ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage);
+		texture_ci.SetFixedSize2D(64);
+		AddRenderResource("irradiance_cube_target", texture_ci);
+	}
+	
+	{
+		FTextureCreateInfo texture_ci = MakeTextureCubeCI(EApiDataFormat::eRGBA16_SFLOAT, ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage);
+		texture_ci.SetFixedSize2D(512);
+		texture_ci.EnableMipMap();
+		AddRenderResource("prefiltered_cube_target", texture_ci);
+	}
+	
+	// Shadow targets
+	{
+		FTextureCreateInfo texture_ci = MakeTexture2DArrayCI(EApiDataFormat::eD32SFLOAT, ETextureCreateFlagBits::eSamplable);
+		texture_ci.SetFixedSize2D(cascade_shadow_map_resolution);
+		texture_ci.arrayLayers = cascade_shadow_map_cascade_count * max_directional_light_shadow_count;
+		AddRenderResource("cascaded_shadows_target", texture_ci);
+	}
+	
+	{
+		FTextureCreateInfo texture_ci = MakeTexture2DArrayCI(EApiDataFormat::eD16UNORM, ETextureCreateFlagBits::eSamplable);
+		texture_ci.SetFixedSize2D(spot_light_shadow_map_resolution);
+		texture_ci.arrayLayers = max_spot_light_shadow_count;
+		AddRenderResource("directional_shadows_target", texture_ci);
+	}
+	
+	{
+		FTextureCreateInfo texture_ci = MakeTextureCubeArrayCI(EApiDataFormat::eD16UNORM, ETextureCreateFlagBits::eSamplable);
+		texture_ci.SetFixedSize2D(point_light_shadow_map_resolution);
+		texture_ci.arrayLayers = max_point_light_shadow_count;
+		AddRenderResource("omni_shadows_target", texture_ci);
+	}
+	
+	// Visibility buffer targets
+	{
+		FTextureCreateInfo texture_ci = MakeTexture2DCI(EApiDataFormat::eRGBA8_UNORM, ETextureCreateFlagBits::eSamplable);
+		AddRenderResource("visbuffer_geometry_target", texture_ci);
+	}
+	
+	{
+		FTextureCreateInfo texture_ci = MakeTexture2DCI(EApiDataFormat::eRGBA8_UNORM, ETextureCreateFlagBits::eSamplable);
+		AddRenderResource("visbuffer_vboinst_target", texture_ci);
+	}
+	
+	{
+		FTextureCreateInfo texture_ci = MakeTexture2DCI(EApiDataFormat::eD32SFLOAT, ETextureCreateFlagBits::eSamplable);
+		AddRenderResource("zbuffer_depth_target", texture_ci);
+	}
+	
+	{
+		FTextureCreateInfo texture_ci = MakeTexture2DCI(use_low_precision_velocity ? EApiDataFormat::eRG8_UNORM : EApiDataFormat::eRG16_SFLOAT, ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage);
+		AddRenderResource("motion_vectors_target", texture_ci);
+	}
+	
+	{
+		FTextureCreateInfo texture_ci = MakeTexture2DCI(EApiDataFormat::eR11G11B10_UFLOAT, ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage);
+		AddRenderResource("hdr0", texture_ci);
+	}
+	
+	{
+		FTextureCreateInfo texture_ci = MakeTexture2DCI(EApiDataFormat::eR11G11B10_UFLOAT, ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage);
+		AddRenderResource("hdr1", texture_ci);
+	}
+	
+	{
+		FTextureCreateInfo texture_ci = MakeTexture2DCI(EApiDataFormat::eR11G11B10_UFLOAT, ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage);
+		AddRenderResource("hdr0_history", texture_ci);
+	}
+	
+	{
+		FTextureCreateInfo texture_ci = MakeTexture2DCI(EApiDataFormat::eR11G11B10_UFLOAT, ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage);
+		texture_ci.SetSizeScale(0.5f);
+		AddRenderResource("hdr0_div2", texture_ci);
+	}
+	
+	{
+		FTextureCreateInfo texture_ci = MakeTexture2DCI(EApiDataFormat::eR11G11B10_UFLOAT, ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage);
+		texture_ci.SetSizeScale(0.5f);
+		texture_ci.mipLevels = bloom_blur_depth;
+		AddRenderResource("bloom_target", texture_ci);
+	}
+	
+	// Eye adaptation targets
+	{
+		FTextureCreateInfo texture_ci = MakeTexture2DCI(EApiDataFormat::eR32_SFLOAT, ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage);
+		texture_ci.SetFixedSize2D(1);
+		AddRenderResource("avg_brightness_target", texture_ci);
+	}
+	
+	{
+		FBufferCreateInfo buffer_ci{};
+		buffer_ci.flags = EBufferUsageFlagBits::eStorageBuffer;
+		buffer_ci.size = 4;
+		buffer_ci.count = 256;
+		AddRenderResource("histogram_buffer", buffer_ci);
+	}
+	
+	// Present image targets
+	SetBackbufferResourceName("present_target");
+	
+	
+	{
+		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "lighting:brgflut_generator");
+		pass_ci.oneTime = true;
+	
+		pass_ci.AddWorkgroupSizeByRT("brdf_lut_target", true);
+		pass_ci.BindWriteResource("out_color", "brdf_lut_target");
+	
+		AddRenderPass("generate_brdflut", pass_ci);
+	}
+	
+	{
+		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "lighting:irradiancecube_generator");
+		pass_ci.oneTime = true;
+	
+		pass_ci.AddWorkgroupSizeByRT("irradiance_cube_target", true);
+		pass_ci.BindWriteResource("out_color", "irradiance_cube_target");
+		pass_ci.BindReadResource("sampler_color", "CasualDay4K");
+	
+		AddRenderPass("generate_irradiance_cube", pass_ci);
+	}
+	
+	{
+		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eCubemap, EQueueTypeFlagBits::eGraphics, "lighting:prefilteredmap_generator");
+		pass_ci.oneTime = true;
+	
+		pass_ci.AddWorkgroupSizeByRT("prefiltered_cube_target", true);
+		pass_ci.BindWriteResource("out_color", "prefiltered_cube_target");
+		pass_ci.BindReadResource("sampler_color", "CasualDay4K");
+	
+		AddRenderPass("generate_prefiltered_cube", pass_ci);
+	}
+	
+	// Culling(culling is temporary)
+	{
+		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "culling:clear_counters");
+	
+		pass_ci.AddWorkgroupSizeByRT("IndirectCountBuffer", true);
+		pass_ci.AddWriteResource("IndirectCountBuffer");
+	
+		AddRenderPass("clear_counters_pass", pass_ci);
+	}
+	
+	{
+		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eCulling, EQueueTypeFlagBits::eGraphics, "culling:cull_and_batch");
+	
+		pass_ci.AddWriteResource("GeometryBatches");
+		pass_ci.AddWriteResource("IndexedDrawIndirectBuffer");
+		pass_ci.AddWriteResource("IndirectCountBuffer");
+	
+		AddRenderPass("gpu_culling_pass", pass_ci);
+	}
+	
+	// Shadow passes
+	{
+		FRenderConfigRenderCreateInfo pass_ci = makeGraphicsPassCI(ERenderingType::eCascadedShadowMap, EQueueTypeFlagBits::eGraphics, "lighting:unidirectional_shadow:CASCADED_SHADOW");
+		pass_ci.SetDepthTarget("cascaded_shadows_target");
+	
+		pass_ci.AddReadResource("GeometryBatches");
+		pass_ci.AddReadResource("IndexedDrawIndirectBuffer");
+		pass_ci.AddReadResource("IndirectCountBuffer");
+	
+		AddRenderPass("cascaded_shadow_map_pass", pass_ci);
+	}
+	
+	{
+		FRenderConfigRenderCreateInfo pass_ci = makeGraphicsPassCI(ERenderingType::eDirectionalShadowMap, EQueueTypeFlagBits::eGraphics, "lighting:unidirectional_shadow");
+		pass_ci.SetDepthTarget("directional_shadows_target");
+	
+		pass_ci.AddReadResource("GeometryBatches");
+		pass_ci.AddReadResource("IndexedDrawIndirectBuffer");
+		pass_ci.AddReadResource("IndirectCountBuffer");
+	
+		AddRenderPass("spot_shadow_map_pass", pass_ci);
+	}
+	
+	{
+		FRenderConfigRenderCreateInfo pass_ci = makeGraphicsPassCI(ERenderingType::eOmniShadowMap, EQueueTypeFlagBits::eGraphics, "lighting:unidirectional_shadow:OMNI_SHADOW");
+		pass_ci.SetDepthTarget("omni_shadows_target");
+	
+		pass_ci.AddReadResource("GeometryBatches");
+		pass_ci.AddReadResource("IndexedDrawIndirectBuffer");
+		pass_ci.AddReadResource("IndirectCountBuffer");
+	
+		AddRenderPass("omni_shadow_map_pass", pass_ci);
+	}
+	
+	// visibility buffer write
+	{
+		FRenderConfigRenderCreateInfo pass_ci = makeGraphicsPassCI(ERenderingType::eGeometry, EQueueTypeFlagBits::eGraphics, "visibilitybuffer:write");
+		pass_ci.SetDepthTarget("zbuffer_depth_target");
+		//pass_ci.SetStencilTarget("zbuffer_depth_target");
+	
+		pass_ci.AddWriteResource("visbuffer_geometry_target", glm::vec4(0.f, 0.f, 0.f, 0.f));
+		pass_ci.AddWriteResource("visbuffer_vboinst_target", glm::vec4(0.f, 0.f, 0.f, 0.f));
+		//pass_ci.AddWriteResource("motion_vectors_target");
+		pass_ci.AddReadResource("GeometryBatches");
+		pass_ci.AddReadResource("IndexedDrawIndirectBuffer");
+		pass_ci.AddReadResource("IndirectCountBuffer");
+	
+		AddRenderPass("visibility_buffer_write_pass", pass_ci);
+	}
+	
+	{
+		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eGeometry, EQueueTypeFlagBits::eGraphics, "visibilitybuffer:shade");
+		pass_ci.AddWorkgroupSizeByRT("hdr0", true);
+	
+		pass_ci.BindWriteResource("write_color", "hdr0");
+		pass_ci.BindReadResource("prev_frame_color", "hdr0_history");
+		pass_ci.BindReadResource("visbuffer_geometry", "visbuffer_geometry_target");
+		pass_ci.BindReadResource("visbuffer_vboinst", "visbuffer_vboinst_target");
+		pass_ci.BindReadResource("brdf_lut", "brdf_lut_target");
+		pass_ci.BindReadResource("irradiance_cube", "irradiance_cube_target");
+		pass_ci.BindReadResource("prefiltered_cube", "prefiltered_cube_target");
+		pass_ci.BindReadResource("cascaded_shadowmap", "cascaded_shadows_target");
+		pass_ci.BindReadResource("direct_shadowmap", "directional_shadows_target");
+		pass_ci.BindReadResource("omni_shadowmap", "omni_shadows_target");
+		pass_ci.BindReadResource("depth_buffer", "zbuffer_depth_target");
+	
+		pass_ci.AddReadResource("GeometryBatches");
+		pass_ci.AddReadResource("IndexedDrawIndirectBuffer");
+	
+		AddRenderPass("compute_materials_pass", pass_ci);
+	}
+	
+	// Compute static motion vectors (can be started in another queue)
+	{
+		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, use_low_precision_velocity ? "postprocess:generate_motion_vectors:LOW_PRECISION_VELOCITY" : "postprocess:generate_motion_vectors");
+		pass_ci.AddWorkgroupSizeByRT("zbuffer_depth_target", true);
+	
+		pass_ci.BindWriteResource("write_color", "motion_vectors_target");
+		pass_ci.BindReadResource("depth_texture", "zbuffer_depth_target");
+	
+		AddRenderPass("generate_motion_vectors_pass", pass_ci);
+	}
+	
+	// Anti - alias step
+	//{
+	//	FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:filmic_smaa_tu2x");
+	//	pass_ci.AddWorkgroupSizeByRT("hdr1", true);
+	//
+	//	pass_ci.BindWriteResource("write_color", "hdr1");
+	//	pass_ci.BindWriteResource("current_frame", "hdr0");
+	//	pass_ci.BindWriteResource("prev_frame", "hdr0_history");
+	//
+	//	AddRenderPass("compute_smaa_pass", pass_ci);
+	//}
+	
+	auto input_target = "hdr0";
+	auto output_target = "hdr1";
+	
+	// TemporalAA
+	//if (enable_taa)
+	//{
+	//	FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:compute_temporal_aa");
+	//	pass_ci.AddWorkgroupSizeByRT(next_target, true);
+	//
+	//	pass_ci.BindWriteResource("write_color", next_target);
+	//	pass_ci.BindWriteResource("current_color", last_target);
+	//	pass_ci.BindWriteResource("prev_color", "hdr0_history");
+	//	pass_ci.BindWriteResource("motion_vectors", "motion_vectors_target");
+	//	pass_ci.BindWriteResource("depth_image", "zbuffer_depth_target");
+	//
+	//	AddRenderPass("resolve_temporal_aa_pass", pass_ci);
+	//
+	//	std::swap(input_target, output_target);
+	//}
+	
+	// Copy history
+	{
+		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "utility:copy_compute");
+		pass_ci.AddWorkgroupSizeByRT(input_target, true);
+	
+		pass_ci.BindReadResource("sampler_color", input_target);
+		pass_ci.BindWriteResource("write_color", "hdr0_history");
+	
+		AddRenderPass("copy_final_color_pass", pass_ci);
+	}
+	
+	std::string final_target = input_target;
+	
+	// Post processing
+	{
+		u32 pass_count{ 0u };
+	
+		RENDER_DEBUG_MARKER_ZONE(postprocess, 0xffff33ff);
+	
+		// FXAA 
+		if (enable_fxaa)
 		{
-			for (xercesc::DOMElement* child = renderVars->getFirstElementChild(); child != nullptr; child = child->getNextElementSibling())
+			FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:apply_effect:FXAA");
+			pass_ci.AddWorkgroupSizeByRT(input_target, true);
+	
+			pass_ci.BindWriteResource("write_color", output_target);
+			pass_ci.BindReadResource("sampler_color", input_target);
+	
+			AddRenderPass("apply_fxaa", pass_ci);
+	
+			SWAP_COUNT(input_target, output_target);
+		}
+	
+		// Compute motion blur
+		if (motion_blur_enabled)
+		{
+			RENDER_DEBUG_MARKER_ZONE(compute_motion_blur, 0xffff33ff);
+	
+			// Apply motion blur
 			{
-				if (xercesc::XMLString::compareString(child->getTagName(), xercesc::XMLString::transcode("Var")) == 0)
+				FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, use_low_precision_velocity ? "postprocess:apply_effect:MOTION_BLUR:LOW_PRECISION_VELOCITY" : "postprocess:apply_effect:MOTION_BLUR");
+				pass_ci.AddWorkgroupSizeByRT(input_target, true);
+	
+				pass_ci.BindReadResource("sampler_color", input_target);
+				pass_ci.BindReadResource("motion_vectors", "motion_vectors_target");
+				pass_ci.BindWriteResource("write_color", output_target);
+	
+				AddRenderPass("apply_motion_blur", pass_ci);
+			}
+	
+			SWAP_COUNT(input_target, output_target);
+		}
+	
+		// Compute dof
+		if (depth_of_field_enabled)
+		{
+			RENDER_DEBUG_MARKER_ZONE(compute_depth_of_field, 0xffff33ff);
+	
+			// Compute bokeh
+			{
+				FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:bokeh");
+				pass_ci.AddWorkgroupSizeByRT(input_target, true);
+	
+				pass_ci.BindWriteResource("write_color", "hdr0_div2");
+				pass_ci.BindReadResource("sampler_color", input_target);
+	
+				AddRenderPass("compute_bokeh_blur_pass", pass_ci);
+			}
+	
+			// Apply dof
+			{
+				FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:apply_effect:DOF");
+				pass_ci.AddWorkgroupSizeByRT(input_target, true);
+	
+				pass_ci.BindWriteResource("write_color", output_target);
+				pass_ci.BindReadResource("sampler_color", input_target);
+				pass_ci.BindReadResource("depth_image", "zbuffer_depth_target");
+				pass_ci.BindReadResource("bokeh_color", "hdr0_div2");
+	
+				AddRenderPass("apply_bokeh_blur_pass", pass_ci);
+			}
+	
+			SWAP_COUNT(input_target, output_target);
+		}
+	
+		// Compute bloom
+		{
+			RENDER_DEBUG_MARKER_ZONE(compute_bloom, 0xffff33ff);
+	
+			// Starting from brightness detection pass
+			{
+				FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, bloom_use_brightness ? "postprocess:brightdetect" : "utility:copy_compute");
+				pass_ci.AddWorkgroupSizeByRT("hdr0_div2", true);
+	
+				pass_ci.BindReadResource("sampler_color", input_target);
+				pass_ci.BindWriteResource("write_color", "hdr0_div2");
+	
+				AddRenderPass("brightdetect_pass", pass_ci);
+			}
+	
+			// Begin downsampling
+			{
+				FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:downsample:FIRST_PASS");
+				
+				pass_ci.BindReadResource("sampler_color", "hdr0_div2");
+	
+				RENDER_DEBUG_MARKER_ZONE(downsample, 0xffff33ff);
+				for (u32 idx = 0; idx < bloom_blur_depth; ++idx)
 				{
-					char* name = xercesc::XMLString::transcode(child->getAttribute(xercesc::XMLString::transcode("name")));
-					m_pVariableBlock->addVariable(name, parseVariable(name, child));
-					xercesc::XMLString::release(&name);
-				}
-				else if (xercesc::XMLString::compareString(child->getTagName(), xercesc::XMLString::transcode("VarBlock")) == 0)
-				{
-					char* name = xercesc::XMLString::transcode(child->getAttribute(xercesc::XMLString::transcode("name")));
-					m_pVariableBlock->addBlock(name, parseVariableBlock(name, child));
-					xercesc::XMLString::release(&name);
+					pass_ci.AddWorkgroupSizeByRT("bloom_target", idx, true);
+					pass_ci.BindWriteResource("write_color", "bloom_target", idx);
+	
+					AddRenderPass(std::format("downsample_pass_{}", idx), pass_ci);
+	
+					pass_ci.ClearResource();
+					pass_ci.BindReadResource("sampler_color", "bloom_target", idx);
+	
+					if(idx == 0u)
+						pass_ci.shader = "postprocess:downsample";
 				}
 			}
+	
+			// And upsampling
+			{
+				RENDER_DEBUG_MARKER_ZONE(upsample, 0xffff33ff);
+				for (u32 idx = bloom_blur_depth - 1; idx > 0; --idx)
+				{
+					FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:upsample");
+					pass_ci.AddWorkgroupSizeByRT("bloom_target", idx - 1, true);
+	
+					pass_ci.BindReadResource("sampler_color", "bloom_target", idx);
+					pass_ci.BindWriteResource("write_color", "bloom_target", idx - 1);
+	
+					AddRenderPass(std::format("upnsample_pass_{}", idx), pass_ci);
+				}
+			}
+	
+			// Apply bloom
+			{
+				FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:apply_effect:BLOOM");
+				pass_ci.AddWorkgroupSizeByRT(output_target, true);
+	
+				pass_ci.BindWriteResource("write_color", output_target);
+				pass_ci.BindReadResource("sampler_color", input_target);
+				pass_ci.BindReadResource("bloom_color", "bloom_target", 0);
+				pass_ci.BindReadResource("dirt_mask", "LensDirtMask");
+	
+				AddRenderPass("apply_bloom", pass_ci);
+			}
+	
+			SWAP_COUNT(input_target, output_target);
 		}
-		renderVars = renderVars->getNextElementSibling();
+	
+		// Compute chromatic aberration
+		if (chromatic_aberration_enabled)
+		{
+			FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:apply_effect:CHROMATIC_ABERRATION");
+			pass_ci.AddWorkgroupSizeByRT(input_target, true);
+	
+			pass_ci.BindWriteResource("write_color", output_target);
+			pass_ci.BindReadResource("sampler_color", input_target);
+	
+			AddRenderPass("apply_chromatic_aberration_pass", pass_ci);
+		
+			SWAP_COUNT(input_target, output_target);
+		}
+	
+		// Tonemap pass
+		{
+			RENDER_DEBUG_MARKER_ZONE(compute_tonemap, 0xffff33ff);
+	
+			// Compute histogram
+			{
+				FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:compute_histogram");
+				pass_ci.AddWorkgroupSizeByRT(input_target, true);
+	
+				pass_ci.BindReadResource("sampler_color", input_target);
+				pass_ci.BindWriteResource("Histogram", "histogram_buffer");
+	
+				AddRenderPass("compute_histogram_pass", pass_ci);
+			}
+	
+			// Compute avg screen space brightness
+			{
+				FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:compute_brightness");
+				pass_ci.AddWorkgroupSizeManual(1, 1, 1, false);
+	
+				pass_ci .BindWriteResource("target", "avg_brightness_target");
+				pass_ci .BindReadResource("Histogram", "histogram_buffer");
+	
+				AddRenderPass("compute_brightness_pass", pass_ci);
+			}
+	
+			// Apply tonemapping
+			{
+				FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:apply_effect:TONEMAP");
+				pass_ci.AddWorkgroupSizeByRT(input_target, true);
+	
+				pass_ci.BindWriteResource("write_color", output_target);
+				pass_ci.BindReadResource("sampler_color", input_target);
+				pass_ci.BindReadResource("avg_luminosity", "avg_brightness_target");
+	
+				AddRenderPass("apply_tonemap_pass", pass_ci);
+			}
+	
+			SWAP_COUNT(input_target, output_target);
+		}
+	
+		final_target = pass_count % 2 ? input_target : output_target;
 	}
-
-	delete parser;
-	delete errHandler;
-	xercesc::XMLPlatformUtils::Terminate();
-
-	//auto& render_context = m_pRenderInterface->getRenderContext();
-	//auto surface_resolution = render_context->getRenderResolution();
-	//
-	//bool use_low_precision_velocity{ true };
-	//
-	//bool enable_fxaa{ false };
-	//bool enable_taa{ true };
-	//bool motion_blur_enabled{ false };
-	//bool depth_of_field_enabled{ true };
-	//bool chromatic_aberration_enabled{ false };
-	//
-	////Bloom settings
-	//bool bloom_enabled{ true };
-	//bool bloom_use_brightness{ true };
-	//int bloom_blur_depth{ 7 };
-	//
-	//// Loading test cubemap
-	//{
-	//	addStaticResource("CasualDay4K", "/root/embed/rendering/textures/CasualDay4K.ktx2");
-	//	addStaticResource("LensDirtMask", "/root/embed/rendering/textures/DirtMaskTextureExample.png");
-	//}
-	//
-	//// GI targets
-	//{
-	//	FTextureCreateInfo texture_ci = makeTexture2DCI(EApiDataFormat::eRG16_SFLOAT, ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage);
-	//	texture_ci.setFixedSize2D(1024);
-	//	addRenderResource("brdf_lut_target", texture_ci);
-	//}
-	//
-	//{
-	//	FTextureCreateInfo texture_ci = makeTextureCubeCI(EApiDataFormat::eRGBA32_SFLOAT, ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage);
-	//	texture_ci.setFixedSize2D(64);
-	//	addRenderResource("irradiance_cube_target", texture_ci);
-	//}
-	//
-	//{
-	//	FTextureCreateInfo texture_ci = makeTextureCubeCI(EApiDataFormat::eRGBA16_SFLOAT, ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage);
-	//	texture_ci.setFixedSize2D(512);
-	//	texture_ci.enableMipMap();
-	//	addRenderResource("prefiltered_cube_target", texture_ci);
-	//}
-	//
-	//// Shadow targets
-	//{
-	//	FTextureCreateInfo texture_ci = makeTexture2DArrayCI(EApiDataFormat::eD32SFLOAT, ETextureCreateFlagBits::eSamplable);
-	//	texture_ci.setFixedSize2D(cascade_shadow_map_resolution);
-	//	texture_ci.arrayLayers = cascade_shadow_map_cascade_count * max_directional_light_shadow_count;
-	//	addRenderResource("cascaded_shadows_target", texture_ci);
-	//}
-	//
-	//{
-	//	FTextureCreateInfo texture_ci = makeTexture2DArrayCI(EApiDataFormat::eD16UNORM, ETextureCreateFlagBits::eSamplable);
-	//	texture_ci.setFixedSize2D(spot_light_shadow_map_resolution);
-	//	texture_ci.arrayLayers = max_spot_light_shadow_count;
-	//	addRenderResource("directional_shadows_target", texture_ci);
-	//}
-	//
-	//{
-	//	FTextureCreateInfo texture_ci = makeTextureCubeArrayCI(EApiDataFormat::eD16UNORM, ETextureCreateFlagBits::eSamplable);
-	//	texture_ci.setFixedSize2D(point_light_shadow_map_resolution);
-	//	texture_ci.arrayLayers = max_point_light_shadow_count;
-	//	addRenderResource("omni_shadows_target", texture_ci);
-	//}
-	//
-	//// Visibility buffer targets
-	//{
-	//	FTextureCreateInfo texture_ci = makeTexture2DCI(EApiDataFormat::eRGBA8_UNORM, ETextureCreateFlagBits::eSamplable);
-	//	addRenderResource("visbuffer_geometry_target", texture_ci);
-	//}
-	//
-	//{
-	//	FTextureCreateInfo texture_ci = makeTexture2DCI(EApiDataFormat::eRGBA8_UNORM, ETextureCreateFlagBits::eSamplable);
-	//	addRenderResource("visbuffer_vboinst_target", texture_ci);
-	//}
-	//
-	//{
-	//	FTextureCreateInfo texture_ci = makeTexture2DCI(EApiDataFormat::eD32SFLOAT, ETextureCreateFlagBits::eSamplable);
-	//	addRenderResource("zbuffer_depth_target", texture_ci);
-	//}
-	//
-	//{
-	//	FTextureCreateInfo texture_ci = makeTexture2DCI(use_low_precision_velocity ? EApiDataFormat::eRG8_UNORM : EApiDataFormat::eRG16_SFLOAT, ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage);
-	//	addRenderResource("motion_vectors_target", texture_ci);
-	//}
-	//
-	//{
-	//	FTextureCreateInfo texture_ci = makeTexture2DCI(EApiDataFormat::eR11G11B10_UFLOAT, ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage);
-	//	addRenderResource("hdr0", texture_ci);
-	//}
-	//
-	//{
-	//	FTextureCreateInfo texture_ci = makeTexture2DCI(EApiDataFormat::eR11G11B10_UFLOAT, ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage);
-	//	addRenderResource("hdr1", texture_ci);
-	//}
-	//
-	//{
-	//	FTextureCreateInfo texture_ci = makeTexture2DCI(EApiDataFormat::eR11G11B10_UFLOAT, ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage);
-	//	addRenderResource("hdr0_history", texture_ci);
-	//}
-	//
-	//{
-	//	FTextureCreateInfo texture_ci = makeTexture2DCI(EApiDataFormat::eR11G11B10_UFLOAT, ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage);
-	//	texture_ci.setSizeScale(0.5f);
-	//	addRenderResource("hdr0_div2", texture_ci);
-	//}
-	//
-	//{
-	//	FTextureCreateInfo texture_ci = makeTexture2DCI(EApiDataFormat::eR11G11B10_UFLOAT, ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage);
-	//	texture_ci.setSizeScale(0.5f);
-	//	texture_ci.mipLevels = bloom_blur_depth;
-	//	addRenderResource("bloom_target", texture_ci);
-	//}
-	//
-	//// Eye adaptation targets
-	//{
-	//	FTextureCreateInfo texture_ci = makeTexture2DCI(EApiDataFormat::eR32_SFLOAT, ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage);
-	//	texture_ci.setFixedSize2D(1);
-	//	addRenderResource("avg_brightness_target", texture_ci);
-	//}
-	//
-	//{
-	//	FBufferCreateInfo buffer_ci{};
-	//	buffer_ci.flags = EBufferUsageFlagBits::eStorageBuffer;
-	//	buffer_ci.size = 4;
-	//	buffer_ci.count = 256;
-	//	addRenderResource("histogram_buffer", buffer_ci);
-	//}
-	//
-	//// Present image targets
-	//setBackbufferResourceName("present_target");
-	//
-	//
-	//{
-	//	FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "lighting:brgflut_generator");
-	//	pass_ci.oneTime = true;
-	//
-	//	pass_ci.addWorkgroupSizeByRT("brdf_lut_target", true);
-	//	pass_ci.bindWriteResource("out_color", "brdf_lut_target");
-	//
-	//	addRenderPass("generate_brdflut", pass_ci);
-	//}
-	//
-	//{
-	//	FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "lighting:irradiancecube_generator");
-	//	pass_ci.oneTime = true;
-	//
-	//	pass_ci.addWorkgroupSizeByRT("irradiance_cube_target", true);
-	//	pass_ci.bindWriteResource("out_color", "irradiance_cube_target");
-	//	pass_ci.bindReadResource("sampler_color", "CasualDay4K");
-	//
-	//	addRenderPass("generate_irradiance_cube", pass_ci);
-	//}
-	//
-	//{
-	//	FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eCubemap, EQueueTypeFlagBits::eGraphics, "lighting:prefilteredmap_generator");
-	//	pass_ci.oneTime = true;
-	//
-	//	pass_ci.addWorkgroupSizeByRT("prefiltered_cube_target", true);
-	//	pass_ci.bindWriteResource("out_color", "prefiltered_cube_target");
-	//	pass_ci.bindReadResource("sampler_color", "CasualDay4K");
-	//
-	//	addRenderPass("generate_prefiltered_cube", pass_ci);
-	//}
-	//
-	//// Culling(culling is temporary)
-	//{
-	//	FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "culling:clear_counters");
-	//
-	//	pass_ci.addWorkgroupSizeByRT("IndirectCountBuffer", true);
-	//	pass_ci.addWriteResource("IndirectCountBuffer");
-	//
-	//	addRenderPass("clear_counters_pass", pass_ci);
-	//}
-	//
-	//{
-	//	FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eCulling, EQueueTypeFlagBits::eGraphics, "culling:cull_and_batch");
-	//
-	//	pass_ci.addWriteResource("GeometryBatches");
-	//	pass_ci.addWriteResource("IndexedDrawIndirectBuffer");
-	//	pass_ci.addWriteResource("IndirectCountBuffer");
-	//
-	//	addRenderPass("gpu_culling_pass", pass_ci);
-	//}
-	//
-	//// Shadow passes
-	//{
-	//	FRenderConfigRenderCreateInfo pass_ci = makeGraphicsPassCI(ERenderingType::eCascadedShadowMap, EQueueTypeFlagBits::eGraphics, "lighting:unidirectional_shadow:CASCADED_SHADOW");
-	//	pass_ci.setDepthTarget("cascaded_shadows_target");
-	//
-	//	pass_ci.addReadResource("GeometryBatches");
-	//	pass_ci.addReadResource("IndexedDrawIndirectBuffer");
-	//	pass_ci.addReadResource("IndirectCountBuffer");
-	//
-	//	addRenderPass("cascaded_shadow_map_pass", pass_ci);
-	//}
-	//
-	//{
-	//	FRenderConfigRenderCreateInfo pass_ci = makeGraphicsPassCI(ERenderingType::eDirectionalShadowMap, EQueueTypeFlagBits::eGraphics, "lighting:unidirectional_shadow");
-	//	pass_ci.setDepthTarget("directional_shadows_target");
-	//
-	//	pass_ci.addReadResource("GeometryBatches");
-	//	pass_ci.addReadResource("IndexedDrawIndirectBuffer");
-	//	pass_ci.addReadResource("IndirectCountBuffer");
-	//
-	//	addRenderPass("spot_shadow_map_pass", pass_ci);
-	//}
-	//
-	//{
-	//	FRenderConfigRenderCreateInfo pass_ci = makeGraphicsPassCI(ERenderingType::eOmniShadowMap, EQueueTypeFlagBits::eGraphics, "lighting:unidirectional_shadow:OMNI_SHADOW");
-	//	pass_ci.setDepthTarget("omni_shadows_target");
-	//
-	//	pass_ci.addReadResource("GeometryBatches");
-	//	pass_ci.addReadResource("IndexedDrawIndirectBuffer");
-	//	pass_ci.addReadResource("IndirectCountBuffer");
-	//
-	//	addRenderPass("omni_shadow_map_pass", pass_ci);
-	//}
-	//
-	//// visibility buffer write
-	//{
-	//	FRenderConfigRenderCreateInfo pass_ci = makeGraphicsPassCI(ERenderingType::eGeometry, EQueueTypeFlagBits::eGraphics, "visibilitybuffer:write");
-	//	pass_ci.setDepthTarget("zbuffer_depth_target");
-	//	//pass_ci.setStencilTarget("zbuffer_depth_target");
-	//
-	//	pass_ci.addWriteResource("visbuffer_geometry_target", glm::vec4(0.f, 0.f, 0.f, 0.f));
-	//	pass_ci.addWriteResource("visbuffer_vboinst_target", glm::vec4(0.f, 0.f, 0.f, 0.f));
-	//	//pass_ci.addWriteResource("motion_vectors_target");
-	//	pass_ci.addReadResource("GeometryBatches");
-	//	pass_ci.addReadResource("IndexedDrawIndirectBuffer");
-	//	pass_ci.addReadResource("IndirectCountBuffer");
-	//
-	//	addRenderPass("visibility_buffer_write_pass", pass_ci);
-	//}
-	//
-	//{
-	//	FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eGeometry, EQueueTypeFlagBits::eGraphics, "visibilitybuffer:shade");
-	//	pass_ci.addWorkgroupSizeByRT("hdr0", true);
-	//
-	//	pass_ci.bindWriteResource("write_color", "hdr0");
-	//	pass_ci.bindReadResource("prev_frame_color", "hdr0_history");
-	//	pass_ci.bindReadResource("visbuffer_geometry", "visbuffer_geometry_target");
-	//	pass_ci.bindReadResource("visbuffer_vboinst", "visbuffer_vboinst_target");
-	//	pass_ci.bindReadResource("brdf_lut", "brdf_lut_target");
-	//	pass_ci.bindReadResource("irradiance_cube", "irradiance_cube_target");
-	//	pass_ci.bindReadResource("prefiltered_cube", "prefiltered_cube_target");
-	//	pass_ci.bindReadResource("cascaded_shadowmap", "cascaded_shadows_target");
-	//	pass_ci.bindReadResource("direct_shadowmap", "directional_shadows_target");
-	//	pass_ci.bindReadResource("omni_shadowmap", "omni_shadows_target");
-	//	pass_ci.bindReadResource("depth_buffer", "zbuffer_depth_target");
-	//
-	//	pass_ci.addReadResource("GeometryBatches");
-	//	pass_ci.addReadResource("IndexedDrawIndirectBuffer");
-	//
-	//	addRenderPass("compute_materials_pass", pass_ci);
-	//}
-	//
-	//// Compute static motion vectors (can be started in another queue)
-	//{
-	//	FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, use_low_precision_velocity ? "postprocess:generate_motion_vectors:LOW_PRECISION_VELOCITY" : "postprocess:generate_motion_vectors");
-	//	pass_ci.addWorkgroupSizeByRT("zbuffer_depth_target", true);
-	//
-	//	pass_ci.bindWriteResource("write_color", "motion_vectors_target");
-	//	pass_ci.bindReadResource("depth_texture", "zbuffer_depth_target");
-	//
-	//	addRenderPass("generate_motion_vectors_pass", pass_ci);
-	//}
-	//
-	//// Anti - alias step
-	////{
-	////	FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:filmic_smaa_tu2x");
-	////	pass_ci.addWorkgroupSizeByRT("hdr1", true);
-	////
-	////	pass_ci.bindWriteResource("write_color", "hdr1");
-	////	pass_ci.bindWriteResource("current_frame", "hdr0");
-	////	pass_ci.bindWriteResource("prev_frame", "hdr0_history");
-	////
-	////	addRenderPass("compute_smaa_pass", pass_ci);
-	////}
-	//
-	//auto input_target = "hdr0";
-	//auto output_target = "hdr1";
-	//
-	//// TemporalAA
-	////if (enable_taa)
-	////{
-	////	FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:compute_temporal_aa");
-	////	pass_ci.addWorkgroupSizeByRT(next_target, true);
-	////
-	////	pass_ci.bindWriteResource("write_color", next_target);
-	////	pass_ci.bindWriteResource("current_color", last_target);
-	////	pass_ci.bindWriteResource("prev_color", "hdr0_history");
-	////	pass_ci.bindWriteResource("motion_vectors", "motion_vectors_target");
-	////	pass_ci.bindWriteResource("depth_image", "zbuffer_depth_target");
-	////
-	////	addRenderPass("resolve_temporal_aa_pass", pass_ci);
-	////
-	////	std::swap(input_target, output_target);
-	////}
-	//
-	//// Copy history
-	//{
-	//	FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "utility:copy_compute");
-	//	pass_ci.addWorkgroupSizeByRT(input_target, true);
-	//
-	//	pass_ci.bindReadResource("sampler_color", input_target);
-	//	pass_ci.bindWriteResource("write_color", "hdr0_history");
-	//
-	//	addRenderPass("copy_final_color_pass", pass_ci);
-	//}
-	//
-	//std::string final_target = input_target;
-	//
-	//// Post processing
-	//{
-	//	u32 pass_count{ 0u };
-	//
-	//	RENDER_DEBUG_MARKER_ZONE(postprocess, 0xffff33ff);
-	//
-	//	// FXAA 
-	//	if (enable_fxaa)
-	//	{
-	//		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:apply_effect:FXAA");
-	//		pass_ci.addWorkgroupSizeByRT(input_target, true);
-	//
-	//		pass_ci.bindWriteResource("write_color", output_target);
-	//		pass_ci.bindReadResource("sampler_color", input_target);
-	//
-	//		addRenderPass("apply_fxaa", pass_ci);
-	//
-	//		SWAP_COUNT(input_target, output_target);
-	//	}
-	//
-	//	// Compute motion blur
-	//	if (motion_blur_enabled)
-	//	{
-	//		RENDER_DEBUG_MARKER_ZONE(compute_motion_blur, 0xffff33ff);
-	//
-	//		// Apply motion blur
-	//		{
-	//			FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, use_low_precision_velocity ? "postprocess:apply_effect:MOTION_BLUR:LOW_PRECISION_VELOCITY" : "postprocess:apply_effect:MOTION_BLUR");
-	//			pass_ci.addWorkgroupSizeByRT(input_target, true);
-	//
-	//			pass_ci.bindReadResource("sampler_color", input_target);
-	//			pass_ci.bindReadResource("motion_vectors", "motion_vectors_target");
-	//			pass_ci.bindWriteResource("write_color", output_target);
-	//
-	//			addRenderPass("apply_motion_blur", pass_ci);
-	//		}
-	//
-	//		SWAP_COUNT(input_target, output_target);
-	//	}
-	//
-	//	// Compute dof
-	//	if (depth_of_field_enabled)
-	//	{
-	//		RENDER_DEBUG_MARKER_ZONE(compute_depth_of_field, 0xffff33ff);
-	//
-	//		// Compute bokeh
-	//		{
-	//			FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:bokeh");
-	//			pass_ci.addWorkgroupSizeByRT(input_target, true);
-	//
-	//			pass_ci.bindWriteResource("write_color", "hdr0_div2");
-	//			pass_ci.bindReadResource("sampler_color", input_target);
-	//
-	//			addRenderPass("compute_bokeh_blur_pass", pass_ci);
-	//		}
-	//
-	//		// Apply dof
-	//		{
-	//			FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:apply_effect:DOF");
-	//			pass_ci.addWorkgroupSizeByRT(input_target, true);
-	//
-	//			pass_ci.bindWriteResource("write_color", output_target);
-	//			pass_ci.bindReadResource("sampler_color", input_target);
-	//			pass_ci.bindReadResource("depth_image", "zbuffer_depth_target");
-	//			pass_ci.bindReadResource("bokeh_color", "hdr0_div2");
-	//
-	//			addRenderPass("apply_bokeh_blur_pass", pass_ci);
-	//		}
-	//
-	//		SWAP_COUNT(input_target, output_target);
-	//	}
-	//
-	//	// Compute bloom
-	//	{
-	//		RENDER_DEBUG_MARKER_ZONE(compute_bloom, 0xffff33ff);
-	//
-	//		// Starting from brightness detection pass
-	//		{
-	//			FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, bloom_use_brightness ? "postprocess:brightdetect" : "utility:copy_compute");
-	//			pass_ci.addWorkgroupSizeByRT("hdr0_div2", true);
-	//
-	//			pass_ci.bindReadResource("sampler_color", input_target);
-	//			pass_ci.bindWriteResource("write_color", "hdr0_div2");
-	//
-	//			addRenderPass("brightdetect_pass", pass_ci);
-	//		}
-	//
-	//		// Begin downsampling
-	//		{
-	//			FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:downsample:FIRST_PASS");
-	//			
-	//			pass_ci.bindReadResource("sampler_color", "hdr0_div2");
-	//
-	//			RENDER_DEBUG_MARKER_ZONE(downsample, 0xffff33ff);
-	//			for (u32 idx = 0; idx < bloom_blur_depth; ++idx)
-	//			{
-	//				pass_ci.addWorkgroupSizeByRT("bloom_target", idx, true);
-	//				pass_ci.bindWriteResource("write_color", "bloom_target", idx);
-	//
-	//				addRenderPass(std::format("downsample_pass_{}", idx), pass_ci);
-	//
-	//				pass_ci.clearResource();
-	//				pass_ci.bindReadResource("sampler_color", "bloom_target", idx);
-	//
-	//				if(idx == 0u)
-	//					pass_ci.shader = "postprocess:downsample";
-	//			}
-	//		}
-	//
-	//		// And upsampling
-	//		{
-	//			RENDER_DEBUG_MARKER_ZONE(upsample, 0xffff33ff);
-	//			for (u32 idx = bloom_blur_depth - 1; idx > 0; --idx)
-	//			{
-	//				FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:upsample");
-	//				pass_ci.addWorkgroupSizeByRT("bloom_target", idx - 1, true);
-	//
-	//				pass_ci.bindReadResource("sampler_color", "bloom_target", idx);
-	//				pass_ci.bindWriteResource("write_color", "bloom_target", idx - 1);
-	//
-	//				addRenderPass(std::format("upnsample_pass_{}", idx), pass_ci);
-	//			}
-	//		}
-	//
-	//		// Apply bloom
-	//		{
-	//			FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:apply_effect:BLOOM");
-	//			pass_ci.addWorkgroupSizeByRT(output_target, true);
-	//
-	//			pass_ci.bindWriteResource("write_color", output_target);
-	//			pass_ci.bindReadResource("sampler_color", input_target);
-	//			pass_ci.bindReadResource("bloom_color", "bloom_target", 0);
-	//			pass_ci.bindReadResource("dirt_mask", "LensDirtMask");
-	//
-	//			addRenderPass("apply_bloom", pass_ci);
-	//		}
-	//
-	//		SWAP_COUNT(input_target, output_target);
-	//	}
-	//
-	//	// Compute chromatic aberration
-	//	if (chromatic_aberration_enabled)
-	//	{
-	//		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:apply_effect:CHROMATIC_ABERRATION");
-	//		pass_ci.addWorkgroupSizeByRT(input_target, true);
-	//
-	//		pass_ci.bindWriteResource("write_color", output_target);
-	//		pass_ci.bindReadResource("sampler_color", input_target);
-	//
-	//		addRenderPass("apply_chromatic_aberration_pass", pass_ci);
-	//	
-	//		SWAP_COUNT(input_target, output_target);
-	//	}
-	//
-	//	// Tonemap pass
-	//	{
-	//		RENDER_DEBUG_MARKER_ZONE(compute_tonemap, 0xffff33ff);
-	//
-	//		// Compute histogram
-	//		{
-	//			FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:compute_histogram");
-	//			pass_ci.addWorkgroupSizeByRT(input_target, true);
-	//
-	//			pass_ci.bindReadResource("sampler_color", input_target);
-	//			pass_ci.bindWriteResource("Histogram", "histogram_buffer");
-	//
-	//			addRenderPass("compute_histogram_pass", pass_ci);
-	//		}
-	//
-	//		// Compute avg screen space brightness
-	//		{
-	//			FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:compute_brightness");
-	//			pass_ci.addWorkgroupSizeManual(1, 1, 1, false);
-	//
-	//			pass_ci .bindWriteResource("target", "avg_brightness_target");
-	//			pass_ci .bindReadResource("Histogram", "histogram_buffer");
-	//
-	//			addRenderPass("compute_brightness_pass", pass_ci);
-	//		}
-	//
-	//		// Apply tonemapping
-	//		{
-	//			FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:apply_effect:TONEMAP");
-	//			pass_ci.addWorkgroupSizeByRT(input_target, true);
-	//
-	//			pass_ci.bindWriteResource("write_color", output_target);
-	//			pass_ci.bindReadResource("sampler_color", input_target);
-	//			pass_ci.bindReadResource("avg_luminosity", "avg_brightness_target");
-	//
-	//			addRenderPass("apply_tonemap_pass", pass_ci);
-	//		}
-	//
-	//		SWAP_COUNT(input_target, output_target);
-	//	}
-	//
-	//	final_target = pass_count % 2 ? input_target : output_target;
-	//}
-	//
-	//// Present pass
-	//{
-	//	FRenderConfigRenderCreateInfo pass_ci = makeGraphicsPassCI(ERenderingType::eFullscreen, EQueueTypeFlagBits::eGraphics, "testing:screenspace");
-	//	pass_ci.flipFiewport();
-	//
-	//	pass_ci.bindReadResource("input_image", final_target);
-	//	pass_ci.addWriteResource("present_target");
-	//
-	//	addRenderPass("finalize_image_pass", pass_ci);
-	//}
+	
+	// Present pass
+	{
+		FRenderConfigRenderCreateInfo pass_ci = makeGraphicsPassCI(ERenderingType::eFullscreen, EQueueTypeFlagBits::eGraphics, "testing:screenspace");
+		pass_ci.FlipFiewport();
+	
+		pass_ci.BindReadResource("input_image", final_target);
+		pass_ci.AddWriteResource("present_target");
+	
+		AddRenderPass("finalize_image_pass", pass_ci);
+	}
 }
 
-u64 CRenderGraph::addStaticResource(const std::string& name, const std::string& path)
+u64 CRenderGraph::AddStaticResource(const std::string& name, const std::string& path)
 {
 	log_debug("[Render Graph] Loading static resource: {}, path: {}.", name, path);
 
-	auto& render_context = m_pRenderInterface->getRenderContext();
+	auto& render_context = m_pRenderInterface->GetRenderContext();
 
 	m_nameToResource[name] = m_vRenderResources.size();
 
@@ -851,22 +851,22 @@ u64 CRenderGraph::addStaticResource(const std::string& name, const std::string& 
 
 	FTextureCreateInfo create_info{}; 
 	FTextureUploadInfo upload_info{};
-	new_render_resource.handle = m_pRenderInterface->loadTexture(path, create_info, upload_info);
+	new_render_resource.handle = m_pRenderInterface->LoadTexture(path, create_info, upload_info);
 
 	if (new_render_resource.handle == INVALID_HANDLE)
-		new_render_resource.handle = render_context->createTexture(name, create_info, std::move(upload_info));
+		new_render_resource.handle = render_context->CreateTexture(name, create_info, std::move(upload_info));
 
 	return new_render_resource.handle;
 }
 
-u64 CRenderGraph::addRenderResource(const std::string& name, const FTextureCreateInfo& texture_ci)
+u64 CRenderGraph::AddRenderResource(const std::string& name, const FTextureCreateInfo& texture_ci)
 {
 	log_debug("[Render Graph] Allocating render target: {}, size({}x{}x{}) * {}, mips: {}, layers: {}, format: {}.", name, 
 		texture_ci.size.width, texture_ci.size.height, texture_ci.size.depth, texture_ci.size.scale,
 		texture_ci.mipLevels, texture_ci.arrayLayers, texture_ci.format);
 
-	auto& render_context = m_pRenderInterface->getRenderContext();
-	auto render_extent = render_context->getRenderResolution();
+	auto& render_context = m_pRenderInterface->GetRenderContext();
+	auto render_extent = render_context->GetRenderResolution();
 	auto resource_index = m_vRenderResources.size();
 
 	FTextureCreateInfo texture_create_info{ texture_ci };
@@ -882,30 +882,30 @@ u64 CRenderGraph::addRenderResource(const std::string& name, const FTextureCreat
 	}
 
 	auto& new_render_resource = m_vRenderResources.emplace_back();
-	new_render_resource.handle = render_context->createRenderTarget(name, texture_create_info);
+	new_render_resource.handle = render_context->CreateRenderTarget(name, texture_create_info);
 	new_render_resource.type = (texture_ci.typeFlags & ETextureCreateFlagBits::eStorage) ? ERenderResourceTypeFlagBits::eStorageTarget : ERenderResourceTypeFlagBits::eRenderTarget;
 	
 	m_nameToResource[name] = resource_index;
 	return new_render_resource.handle;
 }
 
-u64 CRenderGraph::addRenderResource(const std::string& name, const FBufferCreateInfo& buffer_ci)
+u64 CRenderGraph::AddRenderResource(const std::string& name, const FBufferCreateInfo& buffer_ci)
 {
 	log_debug("[Render Graph] Allocating buffer: {}, size: {}b.", name,
 		buffer_ci.size * buffer_ci.count);
 
-	auto& render_context = m_pRenderInterface->getRenderContext();
+	auto& render_context = m_pRenderInterface->GetRenderContext();
 
 	m_nameToResource[name] = m_vRenderResources.size();
 
 	auto& new_render_resource = m_vRenderResources.emplace_back();
-	new_render_resource.handle = render_context->createBuffer(name, buffer_ci);
+	new_render_resource.handle = render_context->CreateBuffer(name, buffer_ci);
 	new_render_resource.type = ERenderResourceTypeFlagBits::eBuffer;
 
 	return new_render_resource.handle;
 }
 
-void CRenderGraph::setBackbufferResourceName(const std::string& name)
+void CRenderGraph::SetBackbufferResourceName(const std::string& name)
 {
 	if (m_backBufferResource != INVALID_HANDLE)
 	{
@@ -923,10 +923,10 @@ void CRenderGraph::setBackbufferResourceName(const std::string& name)
 	m_nameToResource[name] = m_backBufferResource;
 }
 
-void CRenderGraph::pushDebugMarker(const std::string& name, u32 color, EQueueTypeFlagBits queue)
+void CRenderGraph::PushDebugMarker(const std::string& name, u32 color, EQueueTypeFlagBits queue)
 {
 	auto new_marker = std::make_unique<CBeginDebugMarker>(m_pRenderInterface);
-	new_marker->init(name, color, queue);
+	new_marker->Init(name, color, queue);
 
 	auto marker_index = m_vRenderPasses.size();
 	m_vPassExecutionQueue.emplace_back(marker_index);
@@ -935,10 +935,10 @@ void CRenderGraph::pushDebugMarker(const std::string& name, u32 color, EQueueTyp
 	m_nameToPass[name + "_begin"] = marker_index;
 }
 
-void CRenderGraph::popDebugMarker(const std::string& name, EQueueTypeFlagBits queue)
+void CRenderGraph::PopDebugMarker(const std::string& name, EQueueTypeFlagBits queue)
 {
 	auto new_marker = std::make_unique<CEndDebugMarker>(m_pRenderInterface);
-	new_marker->init(queue);
+	new_marker->Init(queue);
 
 	auto marker_index = m_vRenderPasses.size();
 	m_vPassExecutionQueue.emplace_back(marker_index);
@@ -947,7 +947,7 @@ void CRenderGraph::popDebugMarker(const std::string& name, EQueueTypeFlagBits qu
 	m_nameToPass[name + "_end"] = marker_index;
 }
 
-const FRenderResource& CRenderGraph::getRenderResource(const std::string& name) const
+const FRenderResource& CRenderGraph::GetRenderResource(const std::string& name) const
 {
 	static FRenderResource empty_resource{};
 	
@@ -958,12 +958,12 @@ const FRenderResource& CRenderGraph::getRenderResource(const std::string& name) 
 	return empty_resource;
 }
 
-const FRenderResource& CRenderGraph::getRenderResource(u64 resource_id) const
+const FRenderResource& CRenderGraph::GetRenderResource(u64 resource_id) const
 {
 	return m_vRenderResources.at(resource_id);
 }
 
-u64 CRenderGraph::getRenderRersourceId(const std::string& name) const
+u64 CRenderGraph::GetRenderRersourceId(const std::string& name) const
 {
 	auto found = m_nameToResource.find(name);
 	if (found != m_nameToResource.end())
@@ -972,7 +972,7 @@ u64 CRenderGraph::getRenderRersourceId(const std::string& name) const
 	return INVALID_HANDLE;
 }
 
-u64 CRenderGraph::addRenderPass(const std::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci)
+u64 CRenderGraph::AddRenderPass(const std::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci)
 {
 	log_info("[Render Graph] Add render pass: {}", name);
 
@@ -982,7 +982,7 @@ u64 CRenderGraph::addRenderPass(const std::string& name, const FRenderConfigRend
 	FRenderPassCreateInfo pass_ci{};
 	pass_ci.flipViewport = render_pass_ci.flipViewportState;
 
-	applyRenderPassResources(pass_index, &render_pass_ci, &pass_ci);
+	ApplyRenderPassResources(pass_index, &render_pass_ci, &pass_ci);
 
 	std::unique_ptr<IRenderPass> new_pass{};
 	if (render_pass_ci.type == ERenderingType::eFullscreen)
@@ -999,19 +999,19 @@ u64 CRenderGraph::addRenderPass(const std::string& name, const FRenderConfigRend
 		new_pass = std::make_unique<CClearPass>(m_pRenderInterface);
 
 	if (!render_pass_ci.depthResource.empty())
-		pass_ci.depthTarget = getRenderRersourceId(render_pass_ci.depthResource);
+		pass_ci.depthTarget = GetRenderRersourceId(render_pass_ci.depthResource);
 
 	if (!render_pass_ci.stencilResource.empty())
-		pass_ci.depthTarget = getRenderRersourceId(render_pass_ci.stencilResource);
+		pass_ci.depthTarget = GetRenderRersourceId(render_pass_ci.stencilResource);
 
-	new_pass->init(pass_ci);
+	new_pass->Init(pass_ci);
 	m_vRenderPasses.emplace_back(std::move(new_pass));
 	m_nameToPass[name] = pass_index;
 
 	return pass_index;
 }
 
-u64 CRenderGraph::addRenderPass(const std::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci)
+u64 CRenderGraph::AddRenderPass(const std::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci)
 {
 	log_info("[Render Graph] Add compute pass: {}", name);
 
@@ -1019,7 +1019,7 @@ u64 CRenderGraph::addRenderPass(const std::string& name, const FRenderConfigComp
 	m_vPassExecutionQueue.emplace_back(pass_index);
 
 	FComputePassCreateInfo pass_ci{};
-	applyRenderPassResources(pass_index, &compute_pass_ci, &pass_ci);
+	ApplyRenderPassResources(pass_index, &compute_pass_ci, &pass_ci);
 
 	std::unique_ptr<IComputePass> new_pass{};
 	if (compute_pass_ci.type == EComputeType::eDefault)
@@ -1038,14 +1038,14 @@ u64 CRenderGraph::addRenderPass(const std::string& name, const FRenderConfigComp
 		auto& new_group_info = pass_ci.groupInfos.emplace_back();
 		new_group_info.type = group_info.type;
 		new_group_info.divideByLocals = group_info.divideByLocals;
-		new_group_info.target = getRenderRersourceId(group_info.target);
+		new_group_info.target = GetRenderRersourceId(group_info.target);
 		new_group_info.width = group_info.width;
 		new_group_info.height = group_info.height;
 		new_group_info.depth = group_info.depth;
 		new_group_info.subresource = group_info.subresource;
 	}
 
-	new_pass->init(pass_ci);
+	new_pass->Init(pass_ci);
 	m_vRenderPasses.emplace_back(std::move(new_pass));
 	m_nameToPass[name] = pass_index;
 
@@ -1066,24 +1066,24 @@ struct counter_pair : std::pair <_Ty, _KTy>
 	}
 };
 
-void CRenderGraph::build()
+void CRenderGraph::Build()
 {
 	if (m_backBufferResource == INVALID_HANDLE)
 	{
-		log_error("[Render Graph] Failed to build render graph. Reason: back buffer resource is not set.");
+		log_error("[Render Graph] Failed to Build render graph. Reason: back buffer resource is not set.");
 		return;
 	}
 
 	auto& backbuffer_resource = m_vRenderResources.at(m_backBufferResource);
 	if (!backbuffer_resource.usages.count(ERenderResourceAccessFlagBits::eWrite))
 	{
-		log_error("[Render Graph] Failed to build render graph. Reason: No one writes to back buffer resource.");
+		log_error("[Render Graph] Failed to Build render graph. Reason: No one writes to back buffer resource.");
 		return;
 	}
 
 
 	utl::hash_map<u64, FPassBuildInfo> build_infos;
-	generateResourceBarriers(build_infos, true);
+	GenerateResourceBarriers(build_infos, true);
 
 	// Barriers post process
 
@@ -1092,12 +1092,12 @@ void CRenderGraph::build()
 	//m_vPassProcessing.resize(m_vRenderPasses.size());
 	//
 	//for (u64 pass_index : backbuffer_resource.usages[ERenderResourceAccessFlagBits::eWrite])
-	//	traverseDependencies(pass_index);
+	//	TraverseDependencies(pass_index);
 	//
 	//std::reverse(m_vPassExecutionQueue.begin(), m_vPassExecutionQueue.end());
 	//filter_pass_queue(m_vPassExecutionQueue);
 	//
-	//reorderPasses(m_vPassExecutionQueue);
+	//ReorderPasses(m_vPassExecutionQueue);
 	//
 
 	// Build render passes
@@ -1105,40 +1105,40 @@ void CRenderGraph::build()
 	{
 		auto& build_info = build_infos[pass_index];
 		auto& pass = m_vRenderPasses.at(pass_index);
-		pass->build(build_info);
+		pass->Build(build_info);
 	}
 
 	return;
 }
 
-void CRenderGraph::postLoad()
+void CRenderGraph::PostLoad()
 {
 	for (u64 pass_index : m_vPassExecutionQueue)
 	{
 		auto& pass = m_vRenderPasses.at(pass_index);
-		pass->postLoad();
+		pass->PostLoad();
 	}
 }
 
-void CRenderGraph::update(f32 dt)
+void CRenderGraph::Update(f32 dt)
 {
 
 }
 
-void CRenderGraph::execute(f32 dt)
+void CRenderGraph::Execute(f32 dt)
 {
-	auto& render_context = m_pRenderInterface->getRenderContext();
+	auto& render_context = m_pRenderInterface->GetRenderContext();
 
 	for (u64 pass_index : m_vPassExecutionQueue)
 	{
 		auto& pass = m_vRenderPasses[pass_index];
 		auto& resource_barriers = m_perPassResourceBarriers[pass_index];
 
-		if (!pass->canExecute())
+		if (!pass->CanExecute())
 			continue;
 
-		render_context->processResourceBarriers(pass->m_queue, resource_barriers);
-		pass->execute(dt);
+		render_context->ProcessResourceBarriers(pass->m_queue, resource_barriers);
+		pass->Execute(dt);
 	}
 
 	auto& backbuffer_resource = m_vRenderResources.at(m_backBufferResource);
@@ -1152,10 +1152,10 @@ void CRenderGraph::execute(f32 dt)
 	backbuffer_barrier.dstPassType = EPassType::eNone;
 	backbuffer_barrier.barrierType = ERenderResourceBarrierType::eFinal;
 
-	render_context->processResourceBarriers(EQueueTypeFlagBits::eGraphics, backbuffer_barriers);
+	render_context->ProcessResourceBarriers(EQueueTypeFlagBits::eGraphics, backbuffer_barriers);
 }
 
-void CRenderGraph::applyRenderPassResources(u64 pass_index, const FRenderConfigPassCreateInfo* raw_pass_ci, FPassCreateInfo* pass_ci)
+void CRenderGraph::ApplyRenderPassResources(u64 pass_index, const FRenderConfigPassCreateInfo* raw_pass_ci, FPassCreateInfo* pass_ci)
 {
 	pass_ci->queue = raw_pass_ci->queue;
 	pass_ci->shader = raw_pass_ci->shader;
@@ -1166,8 +1166,8 @@ void CRenderGraph::applyRenderPassResources(u64 pass_index, const FRenderConfigP
 	{
 		for (const auto& [binding_point, resource_binding] : bindings)
 		{
-			auto resource_id = getRenderRersourceId(resource_binding.name);
-			auto& render_resource = getRenderResource(resource_id);
+			auto resource_id = GetRenderRersourceId(resource_binding.name);
+			auto& render_resource = GetRenderResource(resource_id);
 
 			ERenderResourceGroupFlagBits group_type{};
 			if (render_resource.type & ERenderResourceTypeFlagBits::eBuffer)
@@ -1194,8 +1194,8 @@ void CRenderGraph::applyRenderPassResources(u64 pass_index, const FRenderConfigP
 	{
 		for (const auto& [resource_name, clear_values] : resources)
 		{
-			auto resource_id = getRenderRersourceId(resource_name);
-			auto& render_resource = getRenderResource(resource_id);
+			auto resource_id = GetRenderRersourceId(resource_name);
+			auto& render_resource = GetRenderResource(resource_id);
 
 			ERenderResourceGroupFlagBits group_type{ 0u };
 			if (render_resource.type & ERenderResourceTypeFlagBits::eRenderTarget)
@@ -1216,27 +1216,27 @@ void CRenderGraph::applyRenderPassResources(u64 pass_index, const FRenderConfigP
 		}
 	}
 
-	applyMultiRenderResourceDependencies(pass_index, pass_ci->queue, pass_ci->resources);
+	ApplyMultiRenderResourceDependencies(pass_index, pass_ci->queue, pass_ci->resources);
 }
 
-void CRenderGraph::applySingleRenderResourceDependencies(u64 resource_id, ERenderResourceAccessFlagBits access_type, u64 pass_index, EQueueTypeFlagBits queue_type)
+void CRenderGraph::AapplySingleRenderResourceDependencies(u64 resource_id, ERenderResourceAccessFlagBits access_type, u64 pass_index, EQueueTypeFlagBits queue_type)
 {
 	auto& render_resource = m_vRenderResources.at(resource_id);
 	render_resource.usages[access_type].emplace(pass_index);
 	render_resource.queuesUsed |= queue_type;
 }
 
-void CRenderGraph::applyMultiRenderResourceDependencies(u64 pass_index, EQueueTypeFlagBits queue_type, const utl::hash_map<ERenderResourceGroupType, utl::vector<FRenderResourceBinding>>& associated_resources)
+void CRenderGraph::ApplyMultiRenderResourceDependencies(u64 pass_index, EQueueTypeFlagBits queue_type, const utl::hash_map<ERenderResourceGroupType, utl::vector<FRenderResourceBinding>>& associated_resources)
 {
-	for (const auto& [type, resource_bindings] : associated_resources)
+	for (const auto& [Type, resource_bindings] : associated_resources)
 	{
-		auto access_type = utl::cast<ERenderResourceAccessFlagBits>(utl::enum_cast(type) & 0xFFFF);
+		auto access_type = utl::cast<ERenderResourceAccessFlagBits>(utl::enum_cast(Type) & 0xFFFF);
 		for (const auto& resource_binding : resource_bindings)
-			applySingleRenderResourceDependencies(resource_binding.resource, access_type, pass_index, queue_type);
+			AapplySingleRenderResourceDependencies(resource_binding.resource, access_type, pass_index, queue_type);
 	}
 }
 
-bool CRenderGraph::wasGraphChanged()
+bool CRenderGraph::WasGraphChanged()
 {
 	static std::hash<u64> hasher;
 	u64 new_hash{ 0ull };
@@ -1244,7 +1244,7 @@ bool CRenderGraph::wasGraphChanged()
 	{
 		auto& pass = m_vRenderPasses[pass_index];
 
-		if (pass->canExecute())
+		if (pass->CanExecute())
 			new_hash ^= hasher(pass_index);
 	}
 
@@ -1253,7 +1253,7 @@ bool CRenderGraph::wasGraphChanged()
 	return res;
 }
 
-void CRenderGraph::generateResourceBarriers(utl::hash_map<u64, FPassBuildInfo>& build_infos, bool generate_build_infos)
+void CRenderGraph::GenerateResourceBarriers(utl::hash_map<u64, FPassBuildInfo>& build_infos, bool generate_build_infos)
 {
 	utl::hash_map<std::pair<u64, u32>, tmp_access_info, pair_hash> resource_access_map{};
 	utl::hash_map<u64, std::unordered_set<u64>> per_res_accessed_passes{};
@@ -1305,7 +1305,7 @@ void CRenderGraph::generateResourceBarriers(utl::hash_map<u64, FPassBuildInfo>& 
 						last_barrier.resource.type == render_resource.type &&
 						last_barrier.subresourceIndex == resource_binding.subresource &&
 						last_barrier.srcPassType == last_resource_access.pass_type &&
-						last_barrier.dstPassType == pass->type()
+						last_barrier.dstPassType == pass->Type()
 						)
 						continue;
 				}
@@ -1322,7 +1322,7 @@ void CRenderGraph::generateResourceBarriers(utl::hash_map<u64, FPassBuildInfo>& 
 
 				// First time barrier should be translation barrier and last barrier should be if resource is read only
 				// TODO: Add special enum class for it
-				bool is_change_pipeline_ownership = last_resource_access.pass_type == pass->type() && barrier_type == ERenderResourceDependencyBarrierType::eWriteAfterWrite;
+				bool is_change_pipeline_ownership = last_resource_access.pass_type == pass->Type() && barrier_type == ERenderResourceDependencyBarrierType::eWriteAfterWrite;
 
 				if (last_resource_access.access == ERenderResourceAccessFlagBits::eNone)
 					new_barrier.barrierType = access_flag == ERenderResourceAccessFlagBits::eRead ? new_barrier.barrierType = ERenderResourceBarrierType::eFinal : ERenderResourceBarrierType::eIntermediate;
@@ -1336,7 +1336,7 @@ void CRenderGraph::generateResourceBarriers(utl::hash_map<u64, FPassBuildInfo>& 
 				new_barrier.resource.type = render_resource.type;
 				new_barrier.subresourceIndex = resource_binding.subresource;
 				new_barrier.srcPassType = last_resource_access.pass_type;
-				new_barrier.dstPassType = pass->type();
+				new_barrier.dstPassType = pass->Type();
 
 				last_resource_access.access = access_flag;
 				last_resource_access.all_time_access.emplace_back(access_flag);
@@ -1347,7 +1347,7 @@ void CRenderGraph::generateResourceBarriers(utl::hash_map<u64, FPassBuildInfo>& 
 	}
 }
 
-void CRenderGraph::traverseDependencies(u64 current_pass_index, u64 stack_count)
+void CRenderGraph::TraverseDependencies(u64 current_pass_index, u64 stack_count)
 {
 	m_vPassExecutionQueue.emplace_back(current_pass_index);
 
@@ -1383,28 +1383,28 @@ void CRenderGraph::traverseDependencies(u64 current_pass_index, u64 stack_count)
 					m_vPassMergeDependencies.at(current_pass_index).emplace(write_pass_index);
 
 				stack_count++;
-				traverseDependencies(write_pass_index, stack_count);
+				TraverseDependencies(write_pass_index, stack_count);
 				stack_count--;
 			}
 		}
 	}
 }
 
-bool CRenderGraph::checkPassDependencies(u64 dst_pass, u64 src_pass)
+bool CRenderGraph::CheckPassDependencies(u64 dst_pass, u64 src_pass)
 {
 	if (dst_pass == src_pass)
 		return true;
 
 	for (const auto& dep : m_vPassDependencies[dst_pass])
 	{
-		if (checkPassDependencies(dep, src_pass))
+		if (CheckPassDependencies(dep, src_pass))
 			return true;
 	}
 
 	return false;
 }
 
-void CRenderGraph::reorderPasses(utl::vector<u64>& flattened_passes)
+void CRenderGraph::ReorderPasses(utl::vector<u64>& flattened_passes)
 {
 	for (const auto& pass_merge_deps : m_vPassMergeDependencies)
 	{
@@ -1416,7 +1416,7 @@ void CRenderGraph::reorderPasses(utl::vector<u64>& flattened_passes)
 			for (const auto& dependee : pass_deps)
 			{
 				// Avoid cycles.
-				if (checkPassDependencies(dependee, merge_dep))
+				if (CheckPassDependencies(dependee, merge_dep))
 					continue;
 
 				if (merge_dep != dependee)
@@ -1461,7 +1461,7 @@ void CRenderGraph::reorderPasses(utl::vector<u64>& flattened_passes)
 			{
 				for (auto itr = flattened_passes.rbegin(); itr != flattened_passes.rend(); ++itr)
 				{
-					if (checkPassDependencies(unscheduled_passes[i], *itr))
+					if (CheckPassDependencies(unscheduled_passes[i], *itr))
 						break;
 					overlap_factor++;
 				}
@@ -1473,7 +1473,7 @@ void CRenderGraph::reorderPasses(utl::vector<u64>& flattened_passes)
 			bool possible_candidate = true;
 			for (u64 j = 0; j < i; j++)
 			{
-				if (checkPassDependencies(unscheduled_passes[i], unscheduled_passes[j]))
+				if (CheckPassDependencies(unscheduled_passes[i], unscheduled_passes[j]))
 				{
 					possible_candidate = false;
 					break;

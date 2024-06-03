@@ -47,21 +47,21 @@ namespace engine
             /**
              * @brief Close the current open file.
              */
-            void close() override;
+            void Close() override;
 
             /**
              * @brief Check if a file is currently open.
              *
              * @return True if a file is open, false otherwise.
              */
-            bool is_open() const override;
+            bool IsOpen() const override;
 
             /**
              * @brief Read a character from the file.
              *
              * @return The character read cast to an int, or EOF if the end of the file is reached.
              */
-            int32_t getc() override;
+            int32_t Getc() override;
 
             /**
              * @brief Read a sequence of elements from the file into a buffer.
@@ -71,7 +71,7 @@ namespace engine
              * @param elemCount The number of elements to read.
              * @return The total number of elements successfully read.
              */
-            std::size_t read(void* buffer, std::size_t elemSize, std::size_t elemCount) override;
+            std::size_t Read(void* buffer, std::size_t elemSize, std::size_t elemCount) override;
 
             /**
              * @brief Unget a character from the file.
@@ -79,14 +79,14 @@ namespace engine
              * @param character The character to unget.
              * @return The ungotten character cast to an int, or EOF on error.
              */
-            int32_t ungetc(int32_t character) override;
+            int32_t Ungetc(int32_t character) override;
 
             /**
              * @brief Get the current position of the file pointer.
              *
              * @return The current position of the file pointer.
              */
-            long tell() override;
+            long Tell() override;
 
             /**
              * @brief Set the position of the file pointer.
@@ -95,14 +95,14 @@ namespace engine
              * @param origin The position from where offset is added.
              * @return 0 if successful, otherwise a non-zero value.
              */
-            int32_t seek(long offset, int32_t origin) override;
+            int32_t Seek(long offset, int32_t origin) override;
 
             /**
              * @brief Check if the end of the file has been reached.
              *
              * @return A non-zero value if the end of the file has been reached, otherwise 0.
              */
-            int32_t eof() const override;
+            int32_t Eof() const override;
 
         private:
             /**

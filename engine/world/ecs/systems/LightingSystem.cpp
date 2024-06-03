@@ -19,18 +19,18 @@ CLightingSystem::CLightingSystem(CSceneGraph* scenegraph, IRenderInterface* rend
 	m_pRenderInterface = render_interface;
 }
 
-void CLightingSystem::__create()
+void CLightingSystem::__Create()
 {
 }
 
-void CLightingSystem::__update(f32 fDt)
+void CLightingSystem::__Update(f32 fDt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto& registry = m_pSceneGraph->getRegistry();
-	auto& render_packet = m_pRenderInterface->getRenderPacket();
-	auto& render_world = m_pRenderInterface->getRenderWorld();
-	auto& world_stats = render_world->getStats();
+	auto& registry = m_pSceneGraph->GetRegistry();
+	auto& render_packet = m_pRenderInterface->GetRenderPacket();
+	auto& render_world = m_pRenderInterface->GetRenderWorld();
+	auto& world_stats = render_world->GetStats();
 	
 	// Collecting directional lights
 	{
@@ -53,7 +53,7 @@ void CLightingSystem::__update(f32 fDt)
 			commit.shadowIndex = light.shadowIndex;
 			commit.castShadows = utl::cast<int>(light.castShadows);
 
-			render_world->updateLight(commit);
+			render_world->UpdateLight(commit);
 		}
 	}
 
@@ -80,7 +80,7 @@ void CLightingSystem::__update(f32 fDt)
 			commit.shadowIndex = light.shadowIndex;
 			commit.castShadows = utl::cast<int>(light.castShadows);
 
-			render_world->updateLight(commit);
+			render_world->UpdateLight(commit);
 		}
 	}
 
@@ -107,7 +107,7 @@ void CLightingSystem::__update(f32 fDt)
 			commit.shadowIndex = light.shadowIndex;
 			commit.castShadows = utl::cast<int>(light.castShadows);
 
-			render_world->updateLight(commit);
+			render_world->UpdateLight(commit);
 		}
 	}
 }

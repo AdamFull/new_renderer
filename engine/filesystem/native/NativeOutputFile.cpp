@@ -14,10 +14,10 @@ CNativeOutputFile::CNativeOutputFile(const std::string& filename)
 
 CNativeOutputFile::~CNativeOutputFile()
 {
-	close();
+	Close();
 }
 
-void CNativeOutputFile::close()
+void CNativeOutputFile::Close()
 {
 	if (m_pFilePtr)
 	{
@@ -26,32 +26,32 @@ void CNativeOutputFile::close()
 	}
 }
 
-bool CNativeOutputFile::is_open() const
+bool CNativeOutputFile::IsOpen() const
 {
 	return m_pFilePtr;
 }
 
-int32_t CNativeOutputFile::putc(int32_t character)
+int32_t CNativeOutputFile::Putc(int32_t character)
 {
 	return m_pFilePtr ? std::fputc(character, m_pFilePtr) : -1;
 }
 
-std::size_t CNativeOutputFile::write(const void* buffer, std::size_t elemSize, std::size_t elemCount)
+std::size_t CNativeOutputFile::Write(const void* buffer, std::size_t elemSize, std::size_t elemCount)
 {
 	return m_pFilePtr ? std::fwrite(buffer, elemSize, elemCount, m_pFilePtr) : 0ull;
 }
 
-long CNativeOutputFile::tell()
+long CNativeOutputFile::Tell()
 {
 	return m_pFilePtr ? std::ftell(m_pFilePtr) : -1;
 }
 
-int32_t CNativeOutputFile::seek(long offset, int32_t origin)
+int32_t CNativeOutputFile::Seek(long offset, int32_t origin)
 {
 	return m_pFilePtr ? std::fseek(m_pFilePtr, offset, origin) : -1;
 }
 
-int32_t CNativeOutputFile::flush()
+int32_t CNativeOutputFile::Flush()
 {
 	return m_pFilePtr ? std::fflush(m_pFilePtr) : -1;
 }

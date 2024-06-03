@@ -96,10 +96,10 @@ CZipInputFile::CZipInputFile(zip_t* handle, const std::string& filename, const s
 
 CZipInputFile::~CZipInputFile()
 {
-	close();
+	Close();
 }
 
-void CZipInputFile::close()
+void CZipInputFile::Close()
 {
 	if (m_pFilePtr)
 	{
@@ -108,37 +108,37 @@ void CZipInputFile::close()
 	}
 }
 
-bool CZipInputFile::is_open() const
+bool CZipInputFile::IsOpen() const
 {
 	return m_pFilePtr && m_pFilePtr->file;
 }
 
-int32_t CZipInputFile::getc()
+int32_t CZipInputFile::Getc()
 {
 	return m_pFilePtr ? lzip_fgetc(m_pFilePtr) : -1;
 }
 
-std::size_t CZipInputFile::read(void* buffer, std::size_t elemSize, std::size_t elemCount)
+std::size_t CZipInputFile::Read(void* buffer, std::size_t elemSize, std::size_t elemCount)
 {
 	return m_pFilePtr ? lzip_fread(buffer, elemSize, elemCount, m_pFilePtr) : 0ull;
 }
 
-int32_t CZipInputFile::ungetc(int32_t character)
+int32_t CZipInputFile::Ungetc(int32_t character)
 {
 	return m_pFilePtr ? lzip_ungetc(character, m_pFilePtr) : -1;
 }
 
-long CZipInputFile::tell()
+long CZipInputFile::Tell()
 {
 	return m_pFilePtr ? lzip_ftell(m_pFilePtr) : -1;
 }
 
-int32_t CZipInputFile::seek(long offset, int32_t origin)
+int32_t CZipInputFile::Seek(long offset, int32_t origin)
 {
 	return m_pFilePtr ? lzip_fseek(m_pFilePtr, offset, origin) : -1;
 }
 
-int32_t CZipInputFile::eof() const
+int32_t CZipInputFile::Eof() const
 {
 	return m_pFilePtr ? lzip_feof(m_pFilePtr) : 1;
 }

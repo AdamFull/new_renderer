@@ -16,10 +16,10 @@ namespace engine
 	class CApplication
 	{
 	public:
-		void create();
-		void loop();
+		void Create();
+		void Loop();
 	private:
-		void updateTitle();
+		void UpdateTitle();
 	private:
 		std::unique_ptr<IWindowInterface> m_pWindowHandle{};
 		std::unique_ptr<CInputMapper> m_pInputMapper{};

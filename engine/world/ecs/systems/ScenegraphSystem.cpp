@@ -16,17 +16,17 @@ CScenegraphSystem::CScenegraphSystem(CSceneGraph* scenegraph)
 	m_pSceneGraph = scenegraph;
 }
 
-void CScenegraphSystem::__create()
+void CScenegraphSystem::__Create()
 {
 	TRACY_PROFILE_FUNCTION();
 }
 
-void CScenegraphSystem::__update(f32 fDt)
+void CScenegraphSystem::__Update(f32 fDt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto& registry = m_pSceneGraph->getRegistry();
-	auto root = m_pSceneGraph->getRoot();
+	auto& registry = m_pSceneGraph->GetRegistry();
+	auto root = m_pSceneGraph->GetRoot();
 	if (!registry->valid(root))
 		return;
 

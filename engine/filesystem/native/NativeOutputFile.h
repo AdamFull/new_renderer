@@ -35,14 +35,14 @@ namespace engine
             /**
              * @brief Close the file.
              */
-            void close() override;
+            void Close() override;
 
             /**
              * @brief Check if the file is open.
              *
              * @return True if the file is open, false otherwise.
              */
-            bool is_open() const override;
+            bool IsOpen() const override;
 
             /**
              * @brief Write a character to the file.
@@ -50,7 +50,7 @@ namespace engine
              * @param character The character to be written.
              * @return The character written or EOF if an error occurs.
              */
-            int32_t putc(int32_t character) override;
+            int32_t Putc(int32_t character) override;
 
             /**
              * @brief Write data from the buffer to the file.
@@ -60,14 +60,14 @@ namespace engine
              * @param elemCount The number of elements to be written.
              * @return The number of elements successfully written.
              */
-            std::size_t write(const void* buffer, std::size_t elemSize, std::size_t elemCount) override;
+            std::size_t Write(const void* buffer, std::size_t elemSize, std::size_t elemCount) override;
 
             /**
              * @brief Get the current file position indicator.
              *
              * @return The current file position indicator, or -1L if an error occurs.
              */
-            long tell() override;
+            long Tell() override;
 
             /**
              * @brief Set the file position indicator to the specified offset relative to the given origin.
@@ -76,14 +76,14 @@ namespace engine
              * @param origin The position used as a reference for the offset. It can be SEEK_SET, SEEK_CUR, or SEEK_END.
              * @return Zero if successful, or a non-zero value if an error occurs.
              */
-            int32_t seek(long offset, int32_t origin) override;
+            int32_t Seek(long offset, int32_t origin) override;
 
             /**
              * @brief Flush the output buffer to the file.
              *
              * @return Zero if the buffer is successfully flushed, or EOF if an error occurs.
              */
-            int32_t flush() override;
+            int32_t Flush() override;
         private:
             /**
              * @brief A pointer to the FILE structure.

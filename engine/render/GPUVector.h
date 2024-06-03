@@ -12,11 +12,11 @@ namespace engine
 			CGPUVector(IRenderInterface* render_interface);
 			~CGPUVector() = default;
 
-			void upload() override;
-			void resize(u64 new_size) override;
-			const std::unique_ptr<IBufferObject>& buffer() override;
+			void Upload() override;
+			void Resize(u64 new_size) override;
+			const std::unique_ptr<IBufferObject>& Buffer() override;
 		protected:
-			void allocate(const std::string& name, EBufferUsageFlags flag, u64 stride, u64 capacity) override;
+			void Allocate(const std::string& name, EBufferUsageFlags flag, u64 stride, u64 capacity) override;
 		private:
 			std::string m_srOriginalName{};
 			EBufferUsageFlags m_bufferFlag{};

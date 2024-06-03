@@ -166,17 +166,17 @@ CVertexHandler::CVertexHandler(IRenderInterface* render_interface)
 // TODO: destroy buffers
 CVertexHandler::~CVertexHandler()
 {
-	auto& render_context = m_pRenderInterface->getRenderContext();
+	auto& render_context = m_pRenderInterface->GetRenderContext();
 }
 
 // NOTE: current implementation work only with interleaved vertex
-void CVertexHandler::create(const FVertexHandlerCreateInfo& create_info)
+void CVertexHandler::Create(const FVertexHandlerCreateInfo& create_info)
 {
 	std::unordered_set<std::string> definitions{};
 
 	// Initialize attribute descriptions
 	u64 vertex_size{ 0ull };
-	auto& render_context = m_pRenderInterface->getRenderContext();
+	auto& render_context = m_pRenderInterface->GetRenderContext();
 	for (const auto& desc : create_info.descriptions)
 	{
 		//if (desc.type == EVertexAttributeType::eJoint)
@@ -188,7 +188,7 @@ void CVertexHandler::create(const FVertexHandlerCreateInfo& create_info)
 		attrib.location = utl::cast<u32>(desc.type);
 
 		auto format = get_attribute_format_by_type(desc.type, desc.size);
-		attrib.format = render_context->getApiFormat(format);
+		attrib.format = render_context->GetApiFormat(format);
 		attrib.offset = vertex_size;
 
 		if(desc.type != EVertexAttributeType::ePosition)
@@ -214,52 +214,52 @@ void CVertexHandler::create(const FVertexHandlerCreateInfo& create_info)
 
 	log_info("[Vertex Handler] Created vertex handler: {}:{}.", create_info.name, m_definitions);
 
-	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eVertexBuffer))->create_raw("SCENE_VERTICES" + m_definitions, vertex_size, 16ull, EBufferUsageFlagBits::eVertexBuffer);
-	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eIndexBuffer))->create_raw("SCENE_INDICES" + m_definitions, create_info.indexSize, 16ull, EBufferUsageFlagBits::eIndexBuffer);
-	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eMeshletBuffer))->create<FMeshlet>("MeshletBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
-	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eVertexRemapBuffer))->create<u32>("MeshletVerticesBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
-	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eBoundsBuffer))->create<FGeometryDrawBounds>("MeshletBoundsBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
-	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eTriangleBuffer))->create<FTriangle>("MeshletTriangleBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
-	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eLodBuffer))->create<FMeshLod>("MeshLodBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
+	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eVertexBuffer))->CreateRaw("SCENE_VERTICES" + m_definitions, vertex_size, 16ull, EBufferUsageFlagBits::eVertexBuffer);
+	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eIndexBuffer))->CreateRaw("SCENE_INDICES" + m_definitions, create_info.indexSize, 16ull, EBufferUsageFlagBits::eIndexBuffer);
+	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eMeshletBuffer))->Create<FMeshlet>("MeshletBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
+	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eVertexRemapBuffer))->Create<u32>("MeshletVerticesBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
+	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eBoundsBuffer))->Create<FGeometryDrawBounds>("MeshletBoundsBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
+	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eTriangleBuffer))->Create<FTriangle>("MeshletTriangleBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
+	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eLodBuffer))->Create<FMeshLod>("MeshLodBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
 
 	return;
 }
 
-void CVertexHandler::allocate()
+void CVertexHandler::Allocate()
 {
-	auto& render_context = m_pRenderInterface->getRenderContext();
+	auto& render_context = m_pRenderInterface->GetRenderContext();
 
 	for (auto& buffer : m_vGeometryBuffers)
-		buffer->upload();
+		buffer->Upload();
 }
 
-// TODO: i can create custom bindings support here
-void CVertexHandler::bind(EQueueTypeFlagBits queue)
+// TODO: i can Create custom bindings support here
+void CVertexHandler::Bind(EQueueTypeFlagBits queue)
 {
-	auto& vertex_buffer = getGeometryBuffer(EGeometryBufferIndices::eVertexBuffer);
-	auto& index_buffer = getGeometryBuffer(EGeometryBufferIndices::eIndexBuffer);
+	auto& vertex_buffer = GetGeometryBuffer(EGeometryBufferIndices::eVertexBuffer);
+	auto& index_buffer = GetGeometryBuffer(EGeometryBufferIndices::eIndexBuffer);
 
-	if (index_buffer->count())
+	if (index_buffer->Count())
 	{
-		auto& render_context = m_pRenderInterface->getRenderContext();
+		auto& render_context = m_pRenderInterface->GetRenderContext();
 		{
 			FVertexBufferBindingInfo binding_info{};
-			binding_info.buffers.emplace_back(vertex_buffer->buffer()->handle());
+			binding_info.buffers.emplace_back(vertex_buffer->Buffer()->Handle());
 			binding_info.offsets.emplace_back(0ull);
-			render_context->bindVertexBuffers(binding_info, queue);
+			render_context->BindVertexBuffers(binding_info, queue);
 		}
 
-		if (index_buffer->count())
+		if (index_buffer->Count())
 		{
 			FIndexBufferBindingInfo binding_info{};
-			binding_info.bufferId = index_buffer->buffer()->handle();
-			binding_info.indexSize = index_buffer->stride();
-			render_context->bindIndexBuffer(binding_info, queue);
+			binding_info.bufferId = index_buffer->Buffer()->Handle();
+			binding_info.indexSize = index_buffer->Stride();
+			render_context->BindIndexBuffer(binding_info, queue);
 		}
 	}
 }
 
-const FVertexRange& CVertexHandler::addMeshData(const utl::vector<FVertexAttributePointer>& attributes_data, const FVertexAttributePointer& indices)
+const FVertexRange& CVertexHandler::AddMeshData(const utl::vector<FVertexAttributePointer>& attributes_data, const FVertexAttributePointer& indices)
 {
 	u64 input_hash = utl::murmur_hash_64(indices.data, indices.stride * indices.count, 0);
 	for (const auto& attribute : attributes_data)
@@ -286,7 +286,7 @@ const FVertexRange& CVertexHandler::addMeshData(const utl::vector<FVertexAttribu
 
 	// Create new vertex range
 	auto& new_range = m_cachedRanges[input_hash];
-	new_range.firstLod = lod_buffer->count();
+	new_range.firstLod = lod_buffer->Count();
 	new_range.lodCount = lod_count;
 
 	auto orig_indices = convert_to_u32_indices(indices);
@@ -363,29 +363,29 @@ const FVertexRange& CVertexHandler::addMeshData(const utl::vector<FVertexAttribu
 		//lod.meshletBoundsOffset = bounds_buffer->count();
 		//lod.meshletCount = addMeshlets(attributes_data, u32_indices);
 
-		auto& vertex_buffer = getGeometryBuffer(EGeometryBufferIndices::eVertexBuffer);
-		auto& index_buffer = getGeometryBuffer(EGeometryBufferIndices::eIndexBuffer);
+		auto& vertex_buffer = GetGeometryBuffer(EGeometryBufferIndices::eVertexBuffer);
+		auto& index_buffer = GetGeometryBuffer(EGeometryBufferIndices::eIndexBuffer);
 
-		lod.firstIndex = index_buffer->count();
-		lod.indexCount = addIndices(new_index_ptr);
-		lod.firstVertex = vertex_buffer->count();
-		lod.vertexCount = addVertices(attributes_data);
+		lod.firstIndex = index_buffer->Count();
+		lod.indexCount = AddIndices(new_index_ptr);
+		lod.firstVertex = vertex_buffer->Count();
+		lod.vertexCount = AddVertices(attributes_data);
 
-		lod_buffer->emplace_back(lod);
+		lod_buffer->EmplaceBack(lod);
 	}
 
 	return new_range;
 }
 
-u64 CVertexHandler::addVertices(const utl::vector<FVertexAttributePointer>& attributes_data)
+u64 CVertexHandler::AddVertices(const utl::vector<FVertexAttributePointer>& attributes_data)
 {
-	auto& vertex_buffer = getGeometryBuffer(EGeometryBufferIndices::eVertexBuffer);
+	auto& vertex_buffer = GetGeometryBuffer(EGeometryBufferIndices::eVertexBuffer);
 
 	utl::vector<u8> vertices{};
 	auto vertex_count = attributes_data.front().count;
 	for (u64 v = 0ull; v < vertex_count; ++v)
 	{
-		utl::vector<uint8_t> temp(vertex_buffer->stride());
+		utl::vector<uint8_t> temp(vertex_buffer->Stride());
 
 		u64 offset{ 0ull };
 		for (const auto& attrib : attributes_data)
@@ -397,16 +397,16 @@ u64 CVertexHandler::addVertices(const utl::vector<FVertexAttributePointer>& attr
 		vertices.insert(vertices.end(), temp.begin(), temp.end());
 	}
 
-	vertex_buffer->copy_bytes(&vertices[0], vertices.size());
+	vertex_buffer->CopyBytes(&vertices[0], vertices.size());
 
 	return vertex_count;
 }
 
-u64 CVertexHandler::addIndices(const FVertexAttributePointer& indices)
+u64 CVertexHandler::AddIndices(const FVertexAttributePointer& indices)
 {
-	auto& index_buffer = getGeometryBuffer(EGeometryBufferIndices::eIndexBuffer);
+	auto& index_buffer = GetGeometryBuffer(EGeometryBufferIndices::eIndexBuffer);
 
-	index_buffer->copy_bytes(indices.data, indices.count * indices.stride);
+	index_buffer->CopyBytes(indices.data, indices.count * indices.stride);
 	return indices.count;
 }
 
@@ -479,42 +479,42 @@ u64 CVertexHandler::addMeshlets(const utl::vector<FVertexAttributePointer>& attr
 
 		auto& meshlet = temp_meshlets[idx];
 		meshlet.triangleCount = raw_meshlet.triangle_count;
-		meshlet.triangleOffset = triangle_offset + triangle_buffer->count();
+		meshlet.triangleOffset = triangle_offset + triangle_buffer->Count();
 		meshlet.vertexCount = raw_meshlet.vertex_count;
-		meshlet.vertexOffset = raw_meshlet.vertex_offset + vertices_buffer->count(); // set from first vertex
+		meshlet.vertexOffset = raw_meshlet.vertex_offset + vertices_buffer->Count(); // set from first vertex
 
 		triangle_offset += raw_meshlet.triangle_count;
 	}
 	temp_triangles.resize(triangle_offset);
 
 	auto& meshlet_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eMeshletBuffer));
-	meshlet_buffer->copy(temp_meshlets);
+	meshlet_buffer->Copy(temp_meshlets);
 
 	auto& bounds_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eBoundsBuffer));
-	bounds_buffer->copy(temp_bounds);
+	bounds_buffer->Copy(temp_bounds);
 
-	vertices_buffer->copy(temp_vertices);
-	triangle_buffer->copy(temp_triangles);
+	vertices_buffer->Copy(temp_vertices);
+	triangle_buffer->Copy(temp_triangles);
 
 	return meshlet_count;
 }
 
-const FVertexDeclarationInfo& CVertexHandler::getVertexDeclaration() const
+const FVertexDeclarationInfo& CVertexHandler::GetVertexDeclaration() const
 {
 	return m_declaration;
 }
 
-u64 CVertexHandler::getHash() const
+u64 CVertexHandler::GetHash() const
 {
 	return m_attributeHash;
 }
 
-const std::string& CVertexHandler::getDefinitions() const
+const std::string& CVertexHandler::GetDefinitions() const
 {
 	return m_definitions;
 }
 
-const std::unique_ptr<IGPUVector>& CVertexHandler::getGeometryBuffer(EGeometryBufferIndices buffer_index)
+const std::unique_ptr<IGPUVector>& CVertexHandler::GetGeometryBuffer(EGeometryBufferIndices buffer_index)
 {
 	return m_vGeometryBuffers.at(utl::enum_cast(buffer_index));
 }

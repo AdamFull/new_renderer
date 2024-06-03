@@ -103,19 +103,19 @@ CAnimationSystem::CAnimationSystem(CSceneGraph* scenegraph)
 	m_pSceneGraph = scenegraph;
 }
 
-void CAnimationSystem::__create()
+void CAnimationSystem::__Create()
 {
 	TRACY_PROFILE_FUNCTION();
 }
 
-void CAnimationSystem::__update(float fDt)
+void CAnimationSystem::__Update(float fDt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto& registry = m_pSceneGraph->getRegistry();
-	auto root = m_pSceneGraph->getRoot();
+	auto& registry = m_pSceneGraph->GetRegistry();
+	auto root = m_pSceneGraph->GetRoot();
 
-	auto& root_component = m_pSceneGraph->getComponent<FRootComponent>(root);
+	auto& root_component = m_pSceneGraph->GetComponent<FRootComponent>(root);
 
 	if (m_animationIndeces.size() != root_component.animations.size())
 	{

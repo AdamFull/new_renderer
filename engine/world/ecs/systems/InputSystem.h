@@ -28,8 +28,8 @@ namespace engine
 				CInputSystem(CSceneGraph* scenegraph);
 				virtual ~CInputSystem() override = default;
 
-				void __create() override;
-				void __update(f32 fDt) override;
+				void __Create() override;
+				void __Update(f32 fDt) override;
 
 				//template <class... _Args>
 				//void createAction(const char* action_name, _Args &&...args)

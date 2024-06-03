@@ -77,7 +77,7 @@ std::unique_ptr<IRenderContext> make_render_context(const FRenderInterfaceCreate
 
 		copy_platform_specific_create_data(context_ci, rhi_ci);
 
-		render_context->create(context_ci);
+		render_context->Create(context_ci);
 	}
 
 	return render_context;
@@ -114,7 +114,6 @@ CRenderInterface::CRenderInterface(filesystem::IVirtualFileSystemInterface* vfs)
 	m_pVFS = vfs;
 
 	m_pResourceLoader = std::make_unique<CResourceLoader>();
-	m_pRenderScriptCore = std::make_unique<CRenderScriptCore>();
 	m_pRenderPacket = std::make_unique<FRenderDataPacket>();
 
 	m_pResources = std::make_unique<CResourceContainer>();
@@ -129,7 +128,7 @@ CRenderInterface::~CRenderInterface()
 
 }
 
-void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
+void CRenderInterface::Create(const FRenderInterfaceCreateInfo& rhi_ci)
 {
 	m_pResourceLoader->initialize(m_pVFS);
 
@@ -139,38 +138,32 @@ void CRenderInterface::create(const FRenderInterfaceCreateInfo& rhi_ci)
 	global_buffer_ci.uniforms[shader_bindings::global_uniform_frame_data] = sizeof(FGlobalUniformData);
 	global_buffer_ci.uniforms[shader_bindings::global_buffer_references] = sizeof(FGlobalBufferReference);
 	global_buffer_ci.uniforms[shader_bindings::global_post_process_data] = sizeof(FGlobalPostProcessingData);
-	m_pRenderContext->createGlobalDescriptor(global_buffer_ci);
+	m_pRenderContext->CreateGlobalDescriptor(global_buffer_ci);
 
-	m_pRenderWorld->create();
+	m_pRenderWorld->Create();
 
 	utl::vector<uint8_t> render_config{};
-	m_pVFS->readFile("/root/embed/rendering/render_config.xml", render_config);
+	m_pVFS->ReadFile("/root/embed/rendering/render_config.xml", render_config);
 	utl::vector<uint8_t> render_config_schema{};
-	m_pVFS->readFile("/root/embed/rendering/render_config.xsd", render_config_schema);
-	m_pRenderGraph->create(render_config, render_config_schema);
+	m_pVFS->ReadFile("/root/embed/rendering/render_config.xsd", render_config_schema);
+	m_pRenderGraph->Create(render_config, render_config_schema);
 
-	m_pRenderScriptCore->create(this);
-
-	//utl::vector<uint8_t> render_config{};
-	//m_pVFS->readFile("/root/embed/rendering/test_render_config.lua", render_config);
-	//m_pRenderScriptCore->build("render_config", render_config);
-
-	m_pRenderGraph->build();
+	m_pRenderGraph->Build();
 }
 
-void CRenderInterface::postLoad()
+void CRenderInterface::PostLoad()
 {
-	m_pRenderGraph->postLoad();
+	m_pRenderGraph->PostLoad();
 }
 
-void CRenderInterface::render(f32 dt)
+void CRenderInterface::Render(f32 dt)
 {
-	m_pRenderGraph->update(dt);
-	m_pRenderWorld->begin(dt);
+	m_pRenderGraph->Update(dt);
+	m_pRenderWorld->Begin(dt);
 
-	m_pRenderContext->beginFrame();
+	m_pRenderContext->BeginFrame();
 
-	const auto& world_stats = m_pRenderWorld->getStats();
+	const auto& world_stats = m_pRenderWorld->GetStats();
 
 	FGlobalUniformData global_uniform{};
 	global_uniform.dt = dt;
@@ -182,7 +175,7 @@ void CRenderInterface::render(f32 dt)
 	global_uniform.cameraCount = utl::cast<u32>(world_stats.cullerCount);
 	global_uniform.maxCommandsCount = utl::cast<u32>(world_stats.maxDrawCommands);
 	global_uniform.rawCommandsCount = utl::cast<u32>(world_stats.drawCommandCount);
-	global_uniform.defaultCameraID = utl::cast<u32>(m_pRenderWorld->getDefaultCameraID());
+	global_uniform.defaultCameraID = utl::cast<u32>(m_pRenderWorld->GetDefaultCameraID());
 	global_uniform.frameNumber = m_frameCounter;
 
 	FGlobalUniformUpdateInfo update_info{};
@@ -192,35 +185,35 @@ void CRenderInterface::render(f32 dt)
 	frame_gata_uniform.binding = 0u;
 
 	FGlobalBufferReference global_references{};
-	global_references.nodeBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eNodeBuffer)->buffer()->address();
-	global_references.matrixBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eMatricesBuffer)->buffer()->address();
-	global_references.materialBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eMaterialBuffer)->buffer()->address();
-	global_references.meshBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eMeshBuffer)->buffer()->address();
+	global_references.nodeBuffer = m_pRenderWorld->GetDrawBuffer(ERenderBufferIndices::eNodeBuffer)->Buffer()->Address();
+	global_references.matrixBuffer = m_pRenderWorld->GetDrawBuffer(ERenderBufferIndices::eMatricesBuffer)->Buffer()->Address();
+	global_references.materialBuffer = m_pRenderWorld->GetDrawBuffer(ERenderBufferIndices::eMaterialBuffer)->Buffer()->Address();
+	global_references.meshBuffer = m_pRenderWorld->GetDrawBuffer(ERenderBufferIndices::eMeshBuffer)->Buffer()->Address();
 
-	global_references.lightsBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eLightBuffer)->buffer()->address();
+	global_references.lightsBuffer = m_pRenderWorld->GetDrawBuffer(ERenderBufferIndices::eLightBuffer)->Buffer()->Address();
 
-	global_references.cascadedShadowBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eCascadedShadowBuffer)->buffer()->address();
-	global_references.omniShadowBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eOmniShadowBuffer)->buffer()->address();
-	global_references.spotShadowBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eSpotShadowBuffer)->buffer()->address();
+	global_references.cascadedShadowBuffer = m_pRenderWorld->GetDrawBuffer(ERenderBufferIndices::eCascadedShadowBuffer)->Buffer()->Address();
+	global_references.omniShadowBuffer = m_pRenderWorld->GetDrawBuffer(ERenderBufferIndices::eOmniShadowBuffer)->Buffer()->Address();
+	global_references.spotShadowBuffer = m_pRenderWorld->GetDrawBuffer(ERenderBufferIndices::eSpotShadowBuffer)->Buffer()->Address();
 
-	global_references.drawInfoBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eDrawMeshInfoBuffer)->buffer()->address();
-	global_references.rawDrawInfoBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eRawDrawMeshInfoBuffer)->buffer()->address();
-	global_references.clusterBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eClusterInfoBuffer)->buffer()->address();
-	global_references.frustumSidesBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eFrustumBuffer)->buffer()->address();
+	global_references.drawInfoBuffer = m_pRenderWorld->GetDrawBuffer(ERenderBufferIndices::eDrawMeshInfoBuffer)->Buffer()->Address();
+	global_references.rawDrawInfoBuffer = m_pRenderWorld->GetDrawBuffer(ERenderBufferIndices::eRawDrawMeshInfoBuffer)->Buffer()->Address();
+	global_references.clusterBuffer = m_pRenderWorld->GetDrawBuffer(ERenderBufferIndices::eClusterInfoBuffer)->Buffer()->Address();
+	global_references.frustumSidesBuffer = m_pRenderWorld->GetDrawBuffer(ERenderBufferIndices::eFrustumBuffer)->Buffer()->Address();
 
-	global_references.indirectCommandBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eDrawCommandBuffer)->buffer()->address();
-	global_references.indirectCountBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eCountBuffer)->buffer()->address();
-	global_references.indirectTaskCommandBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eMeshCommandBuffer)->buffer()->address();
+	global_references.indirectCommandBuffer = m_pRenderWorld->GetDrawBuffer(ERenderBufferIndices::eDrawCommandBuffer)->Buffer()->Address();
+	global_references.indirectCountBuffer = m_pRenderWorld->GetDrawBuffer(ERenderBufferIndices::eCountBuffer)->Buffer()->Address();
+	global_references.indirectTaskCommandBuffer = m_pRenderWorld->GetDrawBuffer(ERenderBufferIndices::eMeshCommandBuffer)->Buffer()->Address();
 
-	global_references.textureRemapBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eTextureRemapBuffer)->buffer()->address();
-	global_references.cameraBuffer = m_pRenderWorld->getDrawBuffer(ERenderBufferIndices::eCameraBuffer)->buffer()->address();
+	global_references.textureRemapBuffer = m_pRenderWorld->GetDrawBuffer(ERenderBufferIndices::eTextureRemapBuffer)->Buffer()->Address();
+	global_references.cameraBuffer = m_pRenderWorld->GetDrawBuffer(ERenderBufferIndices::eCameraBuffer)->Buffer()->Address();
 
 	auto& buffer_ref_uniform = update_info.uniforms[shader_bindings::global_buffer_references];
 	buffer_ref_uniform.data = &global_references;
 	buffer_ref_uniform.size = sizeof(FGlobalBufferReference);
 	buffer_ref_uniform.binding = 1u;
 
-	auto& post_process = m_pRenderWorld->getPostProcessingData();
+	auto& post_process = m_pRenderWorld->GetPostProcessingData();
 
 	FGlobalPostProcessingData postprocessing{};
 	// FXAA
@@ -272,94 +265,94 @@ void CRenderInterface::render(f32 dt)
 	postprocessing_uniform.size = sizeof(FGlobalPostProcessingData);
 	postprocessing_uniform.binding = 2u;
 
-	m_pRenderContext->updateGlobalDescriptorData(update_info);
-	m_pRenderGraph->execute(dt);
+	m_pRenderContext->UpdateGlobalDescriptorData(update_info);
+	m_pRenderGraph->Execute(dt);
 
-	m_pRenderContext->endFrame();
+	m_pRenderContext->EndFrame();
 
-	m_pRenderWorld->end();
+	m_pRenderWorld->End();
 
 	++m_frameCounter;
 }
 
-u64 CRenderInterface::createTexture(const std::string& path)
+u64 CRenderInterface::CreateTexture(const std::string& path)
 {
 	auto name = filesystem::fs::get_stem(path);
-	return m_pRenderGraph->addStaticResource(name, path);
+	return m_pRenderGraph->AddStaticResource(name, path);
 }
 
-u64 CRenderInterface::loadTexture(const std::string& path, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info)
+u64 CRenderInterface::LoadTexture(const std::string& path, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info)
 {
 	auto name = filesystem::fs::get_stem(path);
 	auto ext = filesystem::fs::get_ext(path);
 	auto ext_hash = utl::const_hash(ext.c_str(), ext.size());
 	auto mime = utl::cast<EMimeType>(ext_hash);
 
-	u64 texture_id = m_pRenderContext->getTextureId(name);
+	u64 texture_id = m_pRenderContext->GetTextureId(name);
 	if (texture_id != INVALID_HANDLE)
 		return texture_id;
 
 	utl::vector<uint8_t> data{};
-	m_pVFS->readFile(path, data);
+	m_pVFS->ReadFile(path, data);
 
-	m_pResourceLoader->loadTexture(data, mime, create_info, upload_info);
+	m_pResourceLoader->LoadTexture(data, mime, create_info, upload_info);
 
 	return INVALID_HANDLE;
 }
 
-u64 CRenderInterface::createShader(const std::string& name, const FGraphicsShaderCreateInfo& create_info)
+u64 CRenderInterface::CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& create_info)
 {
-	auto name_info = getShaderNameTag(name);
-	return createShader<FGraphicsShaderCreateInfo>(name_info, create_info);
+	auto name_info = GetShaderNameTag(name);
+	return CreateShader<FGraphicsShaderCreateInfo>(name_info, create_info);
 }
 
-u64 CRenderInterface::createShader(const std::string& name, const FComputeShaderCreateInfo& create_info)
+u64 CRenderInterface::CreateShader(const std::string& name, const FComputeShaderCreateInfo& create_info)
 {
-	auto name_info = getShaderNameTag(name);
-	return createShader<FComputeShaderCreateInfo>(name_info, create_info);
+	auto name_info = GetShaderNameTag(name);
+	return CreateShader<FComputeShaderCreateInfo>(name_info, create_info);
 }
 
-u64 CRenderInterface::createVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci)
+u64 CRenderInterface::CreateVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci)
 {
 	auto vertex_handler = std::make_unique<CVertexHandler>(this);
-	vertex_handler->create(handler_ci);
+	vertex_handler->Create(handler_ci);
 
 	return m_pResources->add<IVertexHandler>(name.c_str(), std::move(vertex_handler));
 }
 
-const std::unique_ptr<IVertexHandler>& CRenderInterface::getVertexHandler(u64 id)
+const std::unique_ptr<IVertexHandler>& CRenderInterface::GetVertexHandler(u64 id)
 {
 	return m_pResources->get<IVertexHandler>(id);
 }
 
-void CRenderInterface::updateSurfaceSize(i32 width, i32 height)
+void CRenderInterface::UpdateSurfaceSize(i32 width, i32 height)
 {
-	m_pRenderContext->updateSurface(width, height);
+	m_pRenderContext->UpdateSurface(width, height);
 }
 
-const std::unique_ptr<FRenderDataPacket>& CRenderInterface::getRenderPacket()
+const std::unique_ptr<FRenderDataPacket>& CRenderInterface::GetRenderPacket()
 {
 	return m_pRenderPacket;
 }
 
-const std::unique_ptr<IRenderGraph>& CRenderInterface::getRenderGraph()
+const std::unique_ptr<IRenderGraph>& CRenderInterface::GetRenderGraph()
 {
 	return m_pRenderGraph;
 }
 
-const std::unique_ptr<IRenderWorld>& CRenderInterface::getRenderWorld()
+const std::unique_ptr<IRenderWorld>& CRenderInterface::GetRenderWorld()
 {
 	return m_pRenderWorld;
 }
 
-const std::unique_ptr<IRenderContext>& CRenderInterface::getRenderContext()
+const std::unique_ptr<IRenderContext>& CRenderInterface::GetRenderContext()
 {
 	return m_pRenderContext;
 }
 
-FShaderUploadInfo CRenderInterface::getShaderNameTag(const std::string& name)
+FShaderUploadInfo CRenderInterface::GetShaderNameTag(const std::string& name)
 {
-	//auto vendor = m_pRenderContext->getDeviceVendor();
+	//auto vendor = m_pRenderContext->GetDeviceVendor();
 	auto name_info = get_shader_name_info(name);
 
 	//switch (vendor)

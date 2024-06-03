@@ -37,20 +37,20 @@ namespace engine
 			CScene(filesystem::IVirtualFileSystemInterface* vfs, render::IRenderInterface* render_interface);
 			~CScene();
 
-			void load(const std::string& path);
-			void makeGenerateScene(const std::string& path);
+			void Load(const std::string& path);
+			void MakeGenerateScene(const std::string& path);
 
-			void update(f32 dt);
+			void Update(f32 dt);
 		protected:
-			void loadGLTF(easygltf::FGLTFRoot& root);
-			void loadNode(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index, f32 global_scale = 1.f);
+			void LoadGLTF(easygltf::FGLTFRoot& root);
+			void LoadNode(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index, f32 global_scale = 1.f);
 
-			void loadMeshComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index);
-			void loadCameraComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index);
-			void loadLightComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index);
+			void LoadMeshComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index);
+			void LoadCameraComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index);
+			void LoadLightComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index);
 
-			void loadAnimations(const easygltf::FGLTFRoot& root);
-			void loadSkins(const easygltf::FGLTFRoot& root);
+			void LoadAnimations(const easygltf::FGLTFRoot& root);
+			void LoadSkins(const easygltf::FGLTFRoot& root);
 		private:
 			CSceneGraph* m_pSceneGraph{ nullptr };
 

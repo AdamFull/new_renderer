@@ -14,8 +14,8 @@ namespace engine
 				CAnimationSystem(CSceneGraph* scenegraph);
 				virtual ~CAnimationSystem() override = default;
 
-				void __create() override;
-				void __update(float fDt) override;
+				void __Create() override;
+				void __Update(float fDt) override;
 			private:
 				utl::vector<float> m_timers{};
 				utl::vector<u64> m_animationIndeces{};

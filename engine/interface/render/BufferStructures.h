@@ -67,24 +67,24 @@ namespace engine
 		public:
 			virtual ~IBufferObject() = default;
 
-			virtual void create(const std::string& name, const FBufferCreateInfo& create_info) = 0;
-			virtual void resize(const std::string& name, const FBufferCreateInfo& create_info) = 0;
-			virtual void upload(utl::vector<u8>&& data, const utl::vector<FBufferUploadRegion>& regions) = 0;
+			virtual void Create(const std::string& name, const FBufferCreateInfo& create_info) = 0;
+			virtual void Resize(const std::string& name, const FBufferCreateInfo& create_info) = 0;
+			virtual void Upload(utl::vector<u8>&& data, const utl::vector<FBufferUploadRegion>& regions) = 0;
 
-			virtual void map() = 0;
-			virtual void unmap() = 0;
-			virtual void write(const void* data, u64 size = ~0ull, u64 offset = 0ull) = 0;
-			virtual void flush(u64 size = ~0ull, u64 offset = 0ull) = 0;
-			virtual void clear() = 0;
+			virtual void Map() = 0;
+			virtual void Unmap() = 0;
+			virtual void Write(const void* data, u64 size = ~0ull, u64 offset = 0ull) = 0;
+			virtual void Flush(u64 size = ~0ull, u64 offset = 0ull) = 0;
+			virtual void Clear() = 0;
 
-			virtual u64 size() = 0;
-			virtual u64 instanceSize() = 0;
-			virtual u64 count() = 0;
+			virtual u64 Size() = 0;
+			virtual u64 InstanceSize() = 0;
+			virtual u64 Count() = 0;
 
-			virtual u64 handle() = 0;
-			virtual uint64_t address() = 0;
+			virtual u64 Handle() = 0;
+			virtual uint64_t Address() = 0;
 
-			virtual void* data() = 0;
+			virtual void* Data() = 0;
 		};
 
 		class IGPUVector
@@ -98,90 +98,90 @@ namespace engine
 
 			virtual ~IGPUVector() = default;
 
-			inline void create_raw(const std::string& name, u64 instance_size, u64 capacity = 64ull, EBufferUsageFlags flag = EBufferUsageFlagBits::eStorageBuffer)
+			inline void CreateRaw(const std::string& name, u64 instance_size, u64 capacity = 64ull, EBufferUsageFlags flag = EBufferUsageFlagBits::eStorageBuffer)
 			{
 				// Init intermediate data buffer
 				m_vData.resize(instance_size * capacity);
 				// Allocate buffer
-				allocate(name, flag, instance_size, capacity);
+				Allocate(name, flag, instance_size, capacity);
 			}
 
 			template<class _Ty>
-			void create(const std::string& name, u64 capacity = 64ull, EBufferUsageFlags flag = EBufferUsageFlagBits::eStorageBuffer)
+			void Create(const std::string& name, u64 capacity = 64ull, EBufferUsageFlags flag = EBufferUsageFlagBits::eStorageBuffer)
 			{
-				create_raw(name, sizeof(_Ty), capacity, flag);
+				CreateRaw(name, sizeof(_Ty), capacity, flag);
 			}
 
-			inline void copy_bytes(const void* data, u64 byte_count)
+			inline void CopyBytes(const void* data, u64 byte_count)
 			{
-				try_grow(byte_count);
-				do_copy(data, byte_count);
+				TryGrow(byte_count);
+				DoCopy(data, byte_count);
 			}
 
-			inline void copy_raw(const void* data, u64 count)
+			inline void CopyRaw(const void* data, u64 count)
 			{
-				u64 size = to_bytes(count);
-				copy_bytes(data, size);
+				u64 size = ToBytes(count);
+				CopyBytes(data, size);
 			}
 
 			template<class _Ty, size_t _Size>
-			void copy(const std::array<_Ty, _Size>& data)
+			void Copy(const std::array<_Ty, _Size>& data)
 			{
 				assert(m_elemSize == sizeof(_Ty) && "Invalid element size.");
-				copy_raw(&data[0], _Size);
+				CopyRaw(&data[0], _Size);
 			}
 
 			template<class _Ty>
-			void copy(const utl::vector<_Ty>& data)
+			void Copy(const utl::vector<_Ty>& data)
 			{
 				assert(m_elemSize == sizeof(_Ty) && "Invalid element size.");
 
 				if (data.empty())
 					return;
 
-				copy_raw(&data[0], data.size());
+				CopyRaw(&data[0], data.size());
 			}
 
 			template<class _Ty>
-			_Ty* emplace_back(const _Ty& new_element = _Ty())
+			_Ty* EmplaceBack(const _Ty& new_element = _Ty())
 			{
 				assert(m_elemSize == sizeof(_Ty) && "Invalid element size.");
 
 				u64 size = sizeof(_Ty);
-				try_grow(size);
-				do_copy(&new_element, size);
+				TryGrow(size);
+				DoCopy(&new_element, size);
 
 				return (_Ty*)(&m_vData[m_cursor - size]);
 			}
 
-			inline void set_raw(u64 index, const void* data)
+			inline void SetRaw(u64 index, const void* data)
 			{
-				do_insert(data, m_elemSize, to_bytes(index));
+				DoInsert(data, m_elemSize, ToBytes(index));
 			}
 
 			template<class _Ty>
-			void set(u64 index, _Ty&& data)
+			void Set(u64 index, _Ty&& data)
 			{
 				assert(m_elemSize == sizeof(_Ty) && "Invalid element size.");
-				set_raw(index, &data);
+				SetRaw(index, &data);
 			}
 
-			u64 pos() const
+			u64 Pos() const
 			{
 				return m_cursor / m_elemSize;
 			}
 
-			u64 count() const
+			u64 Count() const
 			{
 				return m_lastCursor / m_elemSize;
 			}
 
-			u64 capacity() const
+			u64 Capacity() const
 			{
 				return m_vData.size() / m_elemSize;
 			}
 
-			u64 stride() const
+			u64 Stride() const
 			{
 				return m_elemSize;
 			}
@@ -189,17 +189,17 @@ namespace engine
 			template<class _Ty>
 			const _Ty* at(u64 index) const
 			{
-				return (const _Ty*)(&m_vData[to_bytes(index)]);
+				return (const _Ty*)(&m_vData[ToBytes(index)]);
 			}
 
-			virtual void upload() = 0;
-			virtual void resize(u64 new_size) = 0;
-			virtual const std::unique_ptr<IBufferObject>& buffer() = 0;
+			virtual void Upload() = 0;
+			virtual void Resize(u64 new_size) = 0;
+			virtual const std::unique_ptr<IBufferObject>& Buffer() = 0;
 		protected:
-			inline u64 to_bytes(u64 size) const { return size * m_elemSize; }
+			inline u64 ToBytes(u64 size) const { return size * m_elemSize; }
 
 			// Try to grow temporary array
-			inline void try_grow(u64 size)
+			inline void TryGrow(u64 size)
 			{
 				if (m_cursor + size > m_vData.size())
 				{
@@ -208,7 +208,7 @@ namespace engine
 				}
 			}
 
-			inline void do_insert(const void* data, u64 size, u64 offset)
+			inline void DoInsert(const void* data, u64 size, u64 offset)
 			{
 				auto new_hash = utl::murmur_hash_64(data, size, 0);
 				auto old_hash = utl::murmur_hash_64(&m_vData[offset], size, 0);
@@ -221,15 +221,15 @@ namespace engine
 			}
 
 			// Copy data only when it changed ans det dirty flag
-			inline void do_copy(const void* data, u64 size)
+			inline void DoCopy(const void* data, u64 size)
 			{
-				do_insert(data, size, m_cursor);
+				DoInsert(data, size, m_cursor);
 				m_cursor += size;
 				m_lastCursor = m_cursor;
 			}
 
 			// Allocates buffer
-			virtual void allocate(const std::string& name, EBufferUsageFlags flag, u64 stride, u64 capacity) = 0;
+			virtual void Allocate(const std::string& name, EBufferUsageFlags flag, u64 stride, u64 capacity) = 0;
 
 			utl::vector<upload_range> m_vUploadRanges{};
 			utl::vector<u8> m_vData{};

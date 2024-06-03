@@ -13,11 +13,11 @@ namespace engine
 
 			~CBeginDebugMarker() = default;
 
-			void init(const std::string& name, u32 color, EQueueTypeFlagBits queue);
-			void build(const FPassBuildInfo& build_info) override;
-			void execute(f32 dt) override;
+			void Init(const std::string& name, u32 color, EQueueTypeFlagBits queue);
+			void Build(const FPassBuildInfo& build_info) override;
+			void Execute(f32 dt) override;
 
-			EPassType type() override { return EPassType::eDebug; }
+			EPassType Type() override { return EPassType::eDebug; }
 		private:
 			std::string m_markerName{};
 			u32 m_markerColor{ 0xffffffff };
