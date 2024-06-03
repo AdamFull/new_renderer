@@ -146,9 +146,7 @@ std::string get_attribute_definition(EVertexAttributeType type, u64 size)
 
 std::string get_index_definition(u64 size)
 {
-	if (size == 1ull)
-		return "INDEX_8BIT";
-	else if (size == 2ull)
+	if (size == 2ull)
 		return "INDEX_16BIT";
 
 	return "";

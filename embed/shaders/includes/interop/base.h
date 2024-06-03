@@ -105,12 +105,10 @@ namespace engine {
 		CONSTANT uint32_t light_type_spot = 3u;
 		CONSTANT uint32_t light_type_invalid = 0u;
 
-#if defined(INDEX_8BIT)
-#define Index uint8_t
-#elif defined(INDEX_16BIT)
+#if defined(INDEX_16BIT)
 #define Index uint16_t
 #else
-#define Index uint
+#define Index uint32_t
 #endif
 
 		struct FRawVertex
