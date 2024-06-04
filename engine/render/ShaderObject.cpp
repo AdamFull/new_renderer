@@ -108,6 +108,12 @@ void CShaderObject::Bind(EQueueTypeFlagBits queue)
 	render_context->BindShader(m_shaderId, queue);
 }
 
+void CShaderObject::BindResources(EQueueTypeFlagBits queue)
+{
+	auto& render_context = m_pRenderInterface->GetRenderContext();
+	render_context->BindShaderResources(m_shaderId, queue);
+}
+
 u64 CShaderObject::Handle() const
 {
 	return m_shaderId;

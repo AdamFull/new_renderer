@@ -81,6 +81,7 @@ void CDirectionalShadowMapPass::_Render(const FRenderFrameInfo& frame_info)
 				{
 					shader->FlushDescriptors();
 					shader->Bind(m_queue);
+					shader->BindResources(m_queue);
 				}
 
 				auto& shadow_data = shader->GetConstantBlock(shader_bindings::shader_data);

@@ -70,6 +70,7 @@ EApiDataFormat get_attribute_format_by_type(EVertexAttributeType type, u64 size)
 	{
 		switch (type)
 		{
+		case EVertexAttributeType::eColor:
 		case EVertexAttributeType::eJoint: return EApiDataFormat::eRGBA8_UNORM; break;
 		}
 	}

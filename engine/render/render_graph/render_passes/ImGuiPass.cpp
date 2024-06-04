@@ -38,7 +38,7 @@ void CImGuiPass::Init(const FRenderPassCreateInfo& pass_ci)
 	vertex_handler_ci.indexSize = sizeof(ImDrawIdx);
 	vertex_handler_ci.descriptions.emplace_back(FVertexHandlerAttributeDescription{ 8ull, EVertexAttributeType::ePosition });
 	vertex_handler_ci.descriptions.emplace_back(FVertexHandlerAttributeDescription{ 8ull, EVertexAttributeType::eTexCoord });
-	vertex_handler_ci.descriptions.emplace_back(FVertexHandlerAttributeDescription{ 16ull, EVertexAttributeType::eColor });
+	vertex_handler_ci.descriptions.emplace_back(FVertexHandlerAttributeDescription{ 4ull, EVertexAttributeType::eColor });
 	vertex_handler_ci.name = "imgui_vertices";
 	m_pVertexHandler = std::make_unique<CVertexHandler>(m_pRenderInterface);
 	m_pVertexHandler->Create(vertex_handler_ci);
@@ -99,6 +99,9 @@ void CImGuiPass::_Render(const FRenderFrameInfo& frame_info)
 
 		auto resolution = render_context->GetScreenRenderRect();
 
+		u32 last_vertex{ 0u };
+		u32 last_index{ 0u };
+
 		// Update vertices
 		if (draw_data->TotalVtxCount > 0)
 		{
@@ -108,6 +111,9 @@ void CImGuiPass::_Render(const FRenderFrameInfo& frame_info)
 				const ImDrawList* cmd_list = draw_data->CmdLists[n];
 				m_pVertexHandler->AddVertices(cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size, sizeof(ImDrawVert));
 				m_pVertexHandler->AddIndices(cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size, sizeof(ImDrawIdx));
+
+				last_vertex += cmd_list->VtxBuffer.Size;
+				last_index += cmd_list->IdxBuffer.Size;
 			}
 		}
 
@@ -116,9 +122,7 @@ void CImGuiPass::_Render(const FRenderFrameInfo& frame_info)
 		render_context->UploadBuffers();
 
 		// Bind pipeline:
-		{
-			m_pShader->Bind(m_queue);
-		}
+		m_pShader->Bind(m_queue);
 
 		// Bind Vertex And Index Buffer:
 		if (draw_data->TotalVtxCount > 0)
@@ -199,14 +203,22 @@ void CImGuiPass::_Render(const FRenderFrameInfo& frame_info)
 						IM_ASSERT(pcmd->TextureId == (ImTextureID)m_fontTexture);
 						attachment = m_fontTexture;
 					}
+
+					if(!pcmd->TextureId)
+						attachment = m_fontTexture;
+
 					if (attachment != last_bound_resource)
 					{
 						m_pShader->BindTexture(utl::fnv1a_64_hash_cstr("fontSampler"), attachment);
 						m_pShader->FlushDescriptors();
+						m_pShader->BindResources(m_queue);
 						last_bound_resource = attachment;
 					}
 
 					FGeometryDrawInfo draw_info{};
+					draw_info.lastVertex = last_vertex;
+					draw_info.lastIndex = last_index;
+
 					auto& range = draw_info.ranges.emplace_back();
 					range.beginIndex = pcmd->IdxOffset + global_idx_offset;
 					range.indexCount = pcmd->ElemCount;

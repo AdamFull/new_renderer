@@ -35,6 +35,7 @@ namespace engine
 				void UpdateShaderResources(const FShaderResourceCommit& shader_resources, EShaderResourcesUpdateFlags flags = EShaderResourcesUpdateFlagBits::eAll) override;
 				void FlushConstantRanges(u64 shader_id, const utl::hash_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type) override;
 				void BindShader(u64 shader_id, EQueueTypeFlagBits queue_type) override;
+				void BindShaderResources(u64 shader_id, EQueueTypeFlagBits queue_type) override;
 				void DestroyShader(u64 resource_id) override;
 
 

@@ -75,6 +75,7 @@ void CComputeGeometryPass::_Execute(const FComputeFrameInfo& frame_info)
 
 				shader->FlushDescriptors();
 				shader->Bind(m_queue);
+				shader->BindResources(m_queue);
 			}
 
 			auto& mesh_data = shader->GetConstantBlock(shader_bindings::mesh_data);

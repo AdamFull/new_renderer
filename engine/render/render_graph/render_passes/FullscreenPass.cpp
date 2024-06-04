@@ -48,6 +48,7 @@ void CFullscreenPass::_Render(const FRenderFrameInfo& frame_info)
 	m_pShader->FlushDescriptors();
 	m_pShader->FlushConstants(m_queue);
 	m_pShader->Bind(m_queue);
+	m_pShader->BindResources(m_queue);
 
 	FGeometryDrawInfo draw_info{};
 	auto& range = draw_info.ranges.emplace_back();

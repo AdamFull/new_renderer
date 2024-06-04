@@ -239,6 +239,7 @@ namespace engine
 			virtual void FlushDescriptors() = 0;
 			virtual void FlushConstants(EQueueTypeFlagBits queue) = 0;
 			virtual void Bind(EQueueTypeFlagBits queue) = 0;
+			virtual void BindResources(EQueueTypeFlagBits queue) = 0;
 
 			virtual u64 Handle() const = 0;
 
@@ -336,6 +337,7 @@ namespace engine
 			virtual void UpdateShaderResources(const FShaderResourceCommit& resources, EShaderResourcesUpdateFlags flags = EShaderResourcesUpdateFlagBits::eAll) = 0;
 			virtual void FlushConstantRanges(u64 shader_id, const utl::hash_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type) = 0;
 			virtual void BindShader(u64 shader_id, EQueueTypeFlagBits queue_type) = 0;
+			virtual void BindShaderResources(u64 shader_id, EQueueTypeFlagBits queue_type) = 0;
 			virtual void DestroyShader(u64 resource_id) = 0;
 
 			virtual u64 CreateBuffer(const std::string& name, const FBufferCreateInfo& buffer_ci) = 0;

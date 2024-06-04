@@ -80,6 +80,7 @@ void CComputeCubemapPass::_Execute(const FComputeFrameInfo& frame_info)
 			m_pShader->FlushDescriptors();
 			m_pShader->FlushConstants(m_queue);
 			m_pShader->Bind(m_queue);
+			m_pShader->BindResources(m_queue);
 
 			auto& dispatch_info = m_vDispatchGroups[0];
 			dispatch_info.globalSizes.x = info.width;

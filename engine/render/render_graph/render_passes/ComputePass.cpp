@@ -42,6 +42,7 @@ void CComputePass::_Execute(const FComputeFrameInfo& frame_info)
 	m_pShader->FlushDescriptors();
 	m_pShader->FlushConstants(m_queue);
 	m_pShader->Bind(m_queue);
+	m_pShader->BindResources(m_queue);
 
 	for (u64 dispatch_idx = 0ull; dispatch_idx < m_vDispatchGroups.size(); ++dispatch_idx)
 	{

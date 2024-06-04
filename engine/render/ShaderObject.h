@@ -25,6 +25,7 @@ namespace engine
 			void FlushConstants(EQueueTypeFlagBits queue) override;
 
 			void Bind(EQueueTypeFlagBits queue) override;
+			void BindResources(EQueueTypeFlagBits queue) override;
 
 			u64 Handle() const override;
 

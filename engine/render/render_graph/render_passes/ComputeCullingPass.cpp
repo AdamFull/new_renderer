@@ -76,6 +76,7 @@ void CComputeCullingPass::_Execute(const FComputeFrameInfo& frame_info)
 
 				shader->FlushDescriptors();
 				shader->Bind(m_queue);
+				shader->BindResources(m_queue);
 			}
 
 			shader->FlushConstants(m_queue);

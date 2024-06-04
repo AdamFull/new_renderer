@@ -922,6 +922,14 @@ void CVkRenderContext::BindShader(u64 shader_id, EQueueTypeFlagBits queue_type)
 
 	// TODO: make possible to select what pipeline i have to bind now
 	current.bindPipeline(shader->bindPoint, shader->handles.back());
+}
+
+void CVkRenderContext::BindShaderResources(u64 shader_id, EQueueTypeFlagBits queue_type)
+{
+	auto& command_buffer = getLastCommandBuffer(queue_type);
+	auto& current = command_buffer.get();
+
+	auto& shader = m_pResources->get<FVkShader>(shader_id);
 
 	bindShaderDescriptors(command_buffer, *shader);
 }
