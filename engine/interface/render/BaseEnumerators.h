@@ -16,6 +16,23 @@ namespace engine
 			eD32SFLOAT,
 			eD16UNORM,
 
+			eBC1RGB_UNORM,
+			eBC1RGB_SRGB,
+			eBC1RGBA_UNORM,
+			eBC1RGBA_SRGB,
+			eBC2_UNORM,
+			eBC2_SRGB,
+			eBC_UNORM,
+			eBC3_SRGB,
+			eBC4_UNORM,
+			eBC4_SNORM,
+			eBC5_UNORM,
+			eBC5_SNORM,
+			eBC6H_UFLOAT,
+			eBC6H_SFLOAT,
+			eBC7_UNORM,
+			eBC7_SRGB,
+
 			eRGBA8_SRGB,
 
 			eR8_UNORM,

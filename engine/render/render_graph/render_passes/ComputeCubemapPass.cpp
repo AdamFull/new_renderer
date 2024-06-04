@@ -22,8 +22,8 @@ void CComputeCubemapPass::Init(const FComputePassCreateInfo& pass_ci)
 	for (const auto& resource_binding : out_targets)
 	{
 		auto& render_resource = render_graph->GetRenderResource(resource_binding.resource);
-		auto& info = render_context->GetTextureInfo(render_resource.handle);
-		calculated_usage += info.mipLevels;
+		auto texture_view = render_context->GetTextureView(render_resource.handle);
+		calculated_usage += texture_view.mipLevels;
 	}
 
 	FComputeShaderCreateInfo shader_ci{};
@@ -56,7 +56,7 @@ void CComputeCubemapPass::_Execute(const FComputeFrameInfo& frame_info)
 	for (const auto& resource_binding : write_resources)
 	{
 		auto& render_resource = render_graph->GetRenderResource(resource_binding.resource);
-		auto& info = render_context->GetTextureInfo(render_resource.handle);
+		auto info = render_context->GetTextureView(render_resource.handle);
 		for (u32 mip = 0u; mip < info.mipLevels; ++mip)
 		{
 			for (const auto& [binding_point, sesource_binding] : m_bakedBindings)
@@ -82,8 +82,8 @@ void CComputeCubemapPass::_Execute(const FComputeFrameInfo& frame_info)
 			m_pShader->Bind(m_queue);
 
 			auto& dispatch_info = m_vDispatchGroups[0];
-			dispatch_info.globalSizes.x = info.size.width;
-			dispatch_info.globalSizes.y = info.size.height;
+			dispatch_info.globalSizes.x = info.width;
+			dispatch_info.globalSizes.y = info.height;
 			dispatch_info.shaderHandle = m_pShader->Handle();
 			
 			render_context->Dispatch(m_queue, dispatch_info, 0);

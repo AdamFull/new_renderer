@@ -56,7 +56,7 @@ namespace engine
 		struct FTextureCreateInfo
 		{
 			// EApiDataFormat
-			u32 format{ 0u };
+			EApiDataFormat format{ EApiDataFormat::eUnknown };
 			ETextureCreateFlags typeFlags{ 0u };
 			FTextureSizeInfo size{};
 
@@ -97,6 +97,13 @@ namespace engine
 			ESamplerFilterType filter{};
 			ESamplerAddressMode addressMode{};
 			u32 mipLevels{ 1u };
+		};
+
+		struct FTextureView
+		{
+			u32 width{ 1u }, height{ 1u }, depth{ 1u };
+			u32 mipLevels{ 1u };
+			u32 arrayLayers{ 1u };
 		};
 
 		class ITextureObject

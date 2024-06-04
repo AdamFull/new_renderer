@@ -122,10 +122,8 @@ CRenderGraph::CRenderGraph(IRenderInterface* render_interface)
 
 FTextureCreateInfo CRenderGraph::MakeTextureCI(EApiDataFormat format, ETextureCreateFlags flags)
 {
-	auto& render_context = m_pRenderInterface->GetRenderContext();
-
 	FTextureCreateInfo target_ci{};
-	target_ci.format = render_context->GetApiFormat(format);
+	target_ci.format = format;
 	target_ci.typeFlags = flags;
 	return target_ci;
 }
@@ -484,7 +482,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	{
 		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "culling:clear_counters");
 	
-		pass_ci.AddWorkgroupSizeByRT("IndirectCountBuffer", true);
+		pass_ci.AddWorkgroupSizeByBuffer("IndirectCountBuffer", true);
 		pass_ci.AddWriteResource("IndirectCountBuffer");
 	
 		AddRenderPass("clear_counters_pass", pass_ci);
@@ -863,7 +861,7 @@ u64 CRenderGraph::AddRenderResource(const std::string& name, const FTextureCreat
 {
 	log_debug("[Render Graph] Allocating render target: {}, size({}x{}x{}) * {}, mips: {}, layers: {}, format: {}.", name, 
 		texture_ci.size.width, texture_ci.size.height, texture_ci.size.depth, texture_ci.size.scale,
-		texture_ci.mipLevels, texture_ci.arrayLayers, texture_ci.format);
+		texture_ci.mipLevels, texture_ci.arrayLayers, utl::cast<u32>(texture_ci.format));
 
 	auto& render_context = m_pRenderInterface->GetRenderContext();
 	auto render_extent = render_context->GetRenderResolution();

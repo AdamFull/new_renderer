@@ -24,7 +24,7 @@ namespace engine
 				u64 CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) override;
 				u64 GetTextureId(const std::string& name) override;
 				u64 CreateRenderTarget(const std::string& name, const FTextureCreateInfo& texture_ci) override;
-				const FTextureCreateInfo& GetTextureInfo(u64 texture_id) override;
+				FTextureView GetTextureView(u64 texture_id) override;
 				void DestroyTexture(u64 resource_id) override;
 
 
@@ -85,10 +85,6 @@ namespace engine
 				FPoint2D<u32> GetRenderResolution() const override;
 				FRect2D<f32> GetRenderRectFromRT(u64 texture_id) override;
 				FRect2D<f32> GetScreenRenderRect() override;
-
-				u32 GetDepthFormat(bool depth_only = false) override;
-				u32 GetApiFormat(EApiDataFormat global_format) override;
-				u32 GetPresentFormat() override;
 
 				void UpdateSurface(i32 surface_width, i32 surface_height) override;
 

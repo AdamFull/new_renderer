@@ -16,17 +16,80 @@ using namespace engine;
 using namespace engine::filesystem;
 using namespace engine::render;
 
-u32 get_ktx_format(ktxTexture* This)
+EApiDataFormat lookup_api_format(u32 format)
+{
+	static const utl::hash_map<u32, EApiDataFormat> format_lookup{
+		{ VK_FORMAT_D32_SFLOAT_S8_UINT, EApiDataFormat::eD32SFLOAT_8UINT },
+		{ VK_FORMAT_D24_UNORM_S8_UINT, EApiDataFormat::eD24UNORM_8UINT },
+		{ VK_FORMAT_D16_UNORM_S8_UINT, EApiDataFormat::eD16UNORM_8UINT },
+		{ VK_FORMAT_D32_SFLOAT, EApiDataFormat::eD32SFLOAT },
+
+		{ VK_FORMAT_BC1_RGB_UNORM_BLOCK, EApiDataFormat::eBC1RGB_UNORM },
+		{ VK_FORMAT_BC1_RGB_SRGB_BLOCK, EApiDataFormat::eBC1RGB_SRGB },
+		{ VK_FORMAT_BC1_RGBA_UNORM_BLOCK, EApiDataFormat::eBC1RGBA_UNORM },
+		{ VK_FORMAT_BC1_RGBA_SRGB_BLOCK, EApiDataFormat::eBC1RGBA_SRGB },
+		{ VK_FORMAT_BC2_UNORM_BLOCK, EApiDataFormat::eBC2_UNORM },
+		{ VK_FORMAT_BC2_SRGB_BLOCK, EApiDataFormat::eBC2_SRGB },
+		{ VK_FORMAT_BC3_UNORM_BLOCK, EApiDataFormat::eBC_UNORM },
+		{ VK_FORMAT_BC3_SRGB_BLOCK, EApiDataFormat::eBC3_SRGB },
+		{ VK_FORMAT_BC4_UNORM_BLOCK, EApiDataFormat::eBC4_UNORM },
+		{ VK_FORMAT_BC4_SNORM_BLOCK, EApiDataFormat::eBC4_SNORM },
+		{ VK_FORMAT_BC5_UNORM_BLOCK, EApiDataFormat::eBC5_UNORM },
+		{ VK_FORMAT_BC5_SNORM_BLOCK, EApiDataFormat::eBC5_SNORM },
+		{ VK_FORMAT_BC6H_UFLOAT_BLOCK, EApiDataFormat::eBC6H_UFLOAT },
+		{ VK_FORMAT_BC6H_SFLOAT_BLOCK, EApiDataFormat::eBC6H_SFLOAT },
+		{ VK_FORMAT_BC7_UNORM_BLOCK, EApiDataFormat::eBC7_UNORM },
+		{ VK_FORMAT_BC7_SRGB_BLOCK, EApiDataFormat::eBC7_SRGB },
+
+		{ VK_FORMAT_D16_UNORM, EApiDataFormat::eD16UNORM },
+		{ VK_FORMAT_R8G8B8A8_SRGB, EApiDataFormat::eRGBA8_SRGB },
+
+		{ VK_FORMAT_R8_UNORM, EApiDataFormat::eR8_UNORM },
+		{ VK_FORMAT_R8G8_UNORM, EApiDataFormat::eRG8_UNORM },
+		{ VK_FORMAT_R8G8B8_UNORM, EApiDataFormat::eRGB8_UNORM },
+		{ VK_FORMAT_R8G8B8A8_UNORM, EApiDataFormat::eRGBA8_UNORM },
+
+		{ VK_FORMAT_R16_UNORM, EApiDataFormat::eR16_UNORM },
+		{ VK_FORMAT_R16G16_UNORM, EApiDataFormat::eRG16_UNORM },
+		{ VK_FORMAT_R16G16B16_UNORM, EApiDataFormat::eRGB16_UNORM },
+		{ VK_FORMAT_R16G16B16A16_UNORM, EApiDataFormat::eRGBA16_UNORM },
+
+		{ VK_FORMAT_R32_UINT, EApiDataFormat::eR32_UINT },
+		{ VK_FORMAT_R32G32_UINT, EApiDataFormat::eRG32_UINT },
+		{ VK_FORMAT_R32G32B32_UINT, EApiDataFormat::eRGB32_UINT },
+		{ VK_FORMAT_R32G32B32A32_UINT, EApiDataFormat::eRGBA32_UINT },
+
+		{ VK_FORMAT_R16_SFLOAT, EApiDataFormat::eR16_SFLOAT },
+		{ VK_FORMAT_R16G16_SFLOAT, EApiDataFormat::eRG16_SFLOAT },
+		{ VK_FORMAT_R16G16B16_SFLOAT, EApiDataFormat::eRGB16_SFLOAT },
+		{ VK_FORMAT_R16G16B16A16_SFLOAT, EApiDataFormat::eRGBA16_SFLOAT },
+
+		{ VK_FORMAT_R32_SFLOAT, EApiDataFormat::eR32_SFLOAT },
+		{ VK_FORMAT_R32G32_SFLOAT, EApiDataFormat::eRG32_SFLOAT },
+		{ VK_FORMAT_R32G32B32_SFLOAT, EApiDataFormat::eRGB32_SFLOAT },
+		{ VK_FORMAT_R32G32B32A32_SFLOAT, EApiDataFormat::eRGBA32_SFLOAT },
+
+		{ VK_FORMAT_B10G11R11_UFLOAT_PACK32, EApiDataFormat::eR11G11B10_UFLOAT },
+		{ VK_FORMAT_A2B10G10R10_UNORM_PACK32, EApiDataFormat::eR10G10B10A2_UNORM },
+	};
+
+	if (auto found = format_lookup.find(format); found != format_lookup.end())
+		return found->second;
+
+	return EApiDataFormat::eUnknown;
+}
+
+EApiDataFormat get_ktx_format(ktxTexture* This)
 {
 	if (This->classId == ktxTexture2_c)
-		return ((ktxTexture2*)This)->vkFormat;
+		return lookup_api_format(((ktxTexture2*)This)->vkFormat);
 
 	auto* ktx1 = (ktxTexture1*)This;
 	u32 vk_format{};
 	vk_format = vkGetFormatFromOpenGLInternalFormat(ktx1->glInternalformat);
 	if (vk_format == 0u)
 		vk_format = vkGetFormatFromOpenGLFormat(ktx1->glFormat, ktx1->glType);
-	return vk_format;
+	return lookup_api_format(vk_format);
 }
 
 u32 get_ktx_api_specific_format(ktxTexture* This)
@@ -114,7 +177,7 @@ bool CResourceLoader::LoadSTBFromMemory(const utl::vector<uint8_t>& data, FTextu
 	auto rawdata = stbi_load_from_memory(data.data(), data.size(), &width, &height, &channels, STBI_rgb_alpha);
 
 	create_info.SetFixedSize2D(utl::cast<u32>(width), utl::cast<u32>(height));
-	create_info.format = 37;
+	create_info.format = EApiDataFormat::eRGBA8_UNORM;
 	auto data_size = utl::cast<u32>(width * height * 4ull);
 
 	upload_info.data.resize(data_size);
@@ -207,7 +270,7 @@ bool CResourceLoader::LoadKTX2FromMemory(const utl::vector<uint8_t>& data, FText
 	upload_info.data.resize(kTexture->dataSize);
 	std::memcpy(upload_info.data.data(), kTexture->pData, kTexture->dataSize);
 
-	create_info.format = kTexture->vkFormat;
+	create_info.format = lookup_api_format(kTexture->vkFormat);
 
 	auto num_layers = kTexture->isCubemap ? kTexture->numFaces : kTexture->numLayers;
 	for (u32 layer = 0; layer < num_layers; layer++)

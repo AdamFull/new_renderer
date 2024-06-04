@@ -326,7 +326,7 @@ namespace engine
 			virtual u64 CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) = 0;
 			virtual u64 GetTextureId(const std::string& name) = 0;
 			virtual u64 CreateRenderTarget(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
-			virtual const FTextureCreateInfo& GetTextureInfo(u64 texture_id) = 0;
+			virtual FTextureView GetTextureView(u64 texture_id) = 0;
 			virtual void DestroyTexture(u64 resource_id) = 0;
 
 			virtual u64 CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
@@ -383,10 +383,6 @@ namespace engine
 			virtual FPoint2D<u32> GetRenderResolution() const = 0;
 			virtual FRect2D<f32> GetRenderRectFromRT(u64 texture_id) = 0;
 			virtual FRect2D<f32> GetScreenRenderRect() = 0;
-
-			virtual u32 GetDepthFormat(bool depth_only) = 0;
-			virtual u32 GetApiFormat(EApiDataFormat global_format) = 0;
-			virtual u32 GetPresentFormat() = 0;
 
 			virtual void UpdateSurface(i32 surface_width, i32 surface_height) = 0;
 

@@ -258,9 +258,9 @@ void IComputePass::Execute(f32 dt)
 			{
 				auto& render_resource = render_graph->GetRenderResource(group_info.target);
 
-				auto& resource_sizes = render_context->GetTextureInfo(render_resource.handle);
-				dispatch_info.globalSizes.x = resource_sizes.size.width;
-				dispatch_info.globalSizes.y = resource_sizes.size.height;
+				auto resource_sizes = render_context->GetTextureView(render_resource.handle);
+				dispatch_info.globalSizes.x = resource_sizes.width;
+				dispatch_info.globalSizes.y = resource_sizes.height;
 				dispatch_info.globalSizes.z = 1u;
 			}
 		}

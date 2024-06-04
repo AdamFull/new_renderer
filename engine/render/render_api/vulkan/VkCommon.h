@@ -60,17 +60,17 @@ namespace engine
 
 				if (texture.isRenderTarget)
 				{
-					auto format = utl::cast<vk::Format>(texture.initialData.base.format);
+					auto format = texture.info.format;
 					usageFlags |= ((is_depth_stencil_format(format) || is_depth_only_format(format)) ? vk::ImageUsageFlagBits::eDepthStencilAttachment : vk::ImageUsageFlagBits::eColorAttachment);
 				}
 
-				if (texture.initialData.base.typeFlags & ETextureCreateFlagBits::eTransferable)
+				if (texture.info.typeFlags & ETextureCreateFlagBits::eTransferable)
 					usageFlags |= vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst;
 
-				if (texture.initialData.base.typeFlags & ETextureCreateFlagBits::eSamplable)
+				if (texture.info.typeFlags & ETextureCreateFlagBits::eSamplable)
 					usageFlags |= vk::ImageUsageFlagBits::eSampled;
 
-				if (texture.initialData.base.typeFlags & ETextureCreateFlagBits::eStorage)
+				if (texture.info.typeFlags & ETextureCreateFlagBits::eStorage)
 					usageFlags |= vk::ImageUsageFlagBits::eStorage;
 
 				return usageFlags;
@@ -80,10 +80,9 @@ namespace engine
 			{
 				vk::ImageAspectFlags aspectFlags{};
 
-				auto format = utl::cast<vk::Format>(texture.initialData.base.format);
-				if (is_depth_format(format))
+				if (is_depth_format(texture.info.format))
 					aspectFlags |= vk::ImageAspectFlagBits::eDepth;
-				if (is_depth_stencil_format(format))
+				if (is_depth_stencil_format(texture.info.format))
 					aspectFlags |= vk::ImageAspectFlagBits::eStencil;
 
 				if (aspectFlags == vk::ImageAspectFlagBits::eNone)
@@ -382,7 +381,6 @@ namespace engine
 			inline vk::ImageLayout get_render_target_intermediate_layout(const FVkTexture& texture)
 			{
 				auto usage_flags = get_texture_usage_flags(texture);
-				auto image_format = static_cast<vk::Format>(texture.initialData.base.format);
 
 				if (usage_flags & vk::ImageUsageFlagBits::eStorage)
 					return vk::ImageLayout::eGeneral;
@@ -391,8 +389,8 @@ namespace engine
 				else if (usage_flags & vk::ImageUsageFlagBits::eDepthStencilAttachment)
 				{
 					// TODO: check is that stencil only target
-					bool is_depth_stencil_attachment = is_depth_stencil_format(image_format);
-					return is_depth_stencil_attachment ? vk::ImageLayout::eDepthStencilAttachmentOptimal : is_depth_only_format(image_format) ? vk::ImageLayout::eDepthAttachmentOptimal : vk::ImageLayout::eStencilAttachmentOptimal;
+					bool is_depth_stencil_attachment = is_depth_stencil_format(texture.info.format);
+					return is_depth_stencil_attachment ? vk::ImageLayout::eDepthStencilAttachmentOptimal : is_depth_only_format(texture.info.format) ? vk::ImageLayout::eDepthAttachmentOptimal : vk::ImageLayout::eStencilAttachmentOptimal;
 				}
 				
 				return vk::ImageLayout::eUndefined;
@@ -441,8 +439,8 @@ namespace engine
 
 			inline vk::AttachmentStoreOp get_attachment_store_op(const FVkTexture& texture)
 			{
-				bool transferable = utl::cast<bool>(texture.initialData.base.typeFlags & ETextureCreateFlagBits::eTransferable);
-				bool samplable = utl::cast<bool>(texture.initialData.base.typeFlags & ETextureCreateFlagBits::eSamplable);
+				bool transferable = utl::cast<bool>(texture.info.typeFlags & ETextureCreateFlagBits::eTransferable);
+				bool samplable = utl::cast<bool>(texture.info.typeFlags & ETextureCreateFlagBits::eSamplable);
 
 				if (transferable || samplable)
 					return vk::AttachmentStoreOp::eStore;
@@ -488,7 +486,7 @@ namespace engine
 				image_layout_translation.subresourceRange.baseArrayLayer = translation_info.baseArrayLayer;
 				image_layout_translation.subresourceRange.layerCount = texture.totalLayers;
 				image_layout_translation.subresourceRange.baseMipLevel = translation_info.baseMipLevel;
-				image_layout_translation.subresourceRange.levelCount = texture.initialData.base.mipLevels;
+				image_layout_translation.subresourceRange.levelCount = texture.info.mipLevels;
 
 				return image_layout_translation;
 			}

@@ -18,6 +18,70 @@ static const u32 k_max_bindless_resources{ 16384u };
 static const u64 k_max_texture_update_per_frame{ 4096ll };
 static const u64 k_max_buffer_update_per_frame{ 4096ull };
 
+vk::Format lookup_vk_format(EApiDataFormat format)
+{
+	static const utl::hash_map<EApiDataFormat, vk::Format> lookup_table{
+		{ EApiDataFormat::eD32SFLOAT_8UINT, vk::Format::eD32SfloatS8Uint },
+		{ EApiDataFormat::eD24UNORM_8UINT, vk::Format::eD24UnormS8Uint },
+		{ EApiDataFormat::eD16UNORM_8UINT, vk::Format::eD16UnormS8Uint },
+		{ EApiDataFormat::eD32SFLOAT, vk::Format::eD32Sfloat },
+		{ EApiDataFormat::eD16UNORM, vk::Format::eD16Unorm },
+
+		{ EApiDataFormat::eBC1RGB_UNORM, vk::Format::eBc1RgbUnormBlock },
+		{ EApiDataFormat::eBC1RGB_SRGB, vk::Format::eBc1RgbSrgbBlock },
+		{ EApiDataFormat::eBC1RGBA_UNORM, vk::Format::eBc1RgbaUnormBlock },
+		{ EApiDataFormat::eBC1RGBA_SRGB, vk::Format::eBc1RgbaSrgbBlock },
+		{ EApiDataFormat::eBC2_UNORM, vk::Format::eBc2UnormBlock },
+		{ EApiDataFormat::eBC2_SRGB, vk::Format::eBc2SrgbBlock },
+		{ EApiDataFormat::eBC_UNORM, vk::Format::eBc3UnormBlock },
+		{ EApiDataFormat::eBC3_SRGB, vk::Format::eBc3SrgbBlock },
+		{ EApiDataFormat::eBC4_UNORM, vk::Format::eBc4UnormBlock },
+		{ EApiDataFormat::eBC4_SNORM, vk::Format::eBc4SnormBlock },
+		{ EApiDataFormat::eBC5_UNORM, vk::Format::eBc5UnormBlock },
+		{ EApiDataFormat::eBC5_SNORM, vk::Format::eBc5SnormBlock },
+		{ EApiDataFormat::eBC6H_UFLOAT, vk::Format::eBc6HUfloatBlock },
+		{ EApiDataFormat::eBC6H_SFLOAT, vk::Format::eBc6HSfloatBlock },
+		{ EApiDataFormat::eBC7_UNORM, vk::Format::eBc7UnormBlock },
+		{ EApiDataFormat::eBC7_SRGB, vk::Format::eBc7SrgbBlock },
+
+		{ EApiDataFormat::eRGBA8_SRGB, vk::Format::eR8G8B8A8Srgb },
+
+		{ EApiDataFormat::eR8_UNORM, vk::Format::eR8Unorm },
+		{ EApiDataFormat::eRG8_UNORM, vk::Format::eR8G8Unorm },
+		{ EApiDataFormat::eRGB8_UNORM, vk::Format::eR8G8B8Unorm },
+		{ EApiDataFormat::eRGBA8_UNORM, vk::Format::eR8G8B8A8Unorm },
+
+		{ EApiDataFormat::eR16_UNORM, vk::Format::eR16Unorm },
+		{ EApiDataFormat::eRG16_UNORM, vk::Format::eR16G16Unorm },
+		{ EApiDataFormat::eRGB16_UNORM, vk::Format::eR16G16B16Unorm },
+		{ EApiDataFormat::eRGBA16_UNORM, vk::Format::eR16G16B16A16Unorm },
+
+		{ EApiDataFormat::eR32_UINT, vk::Format::eR32Uint },
+		{ EApiDataFormat::eRG32_UINT, vk::Format::eR32G32Uint },
+		{ EApiDataFormat::eRGB32_UINT, vk::Format::eR32G32B32Uint },
+		{ EApiDataFormat::eRGBA32_UINT, vk::Format::eR32G32B32A32Uint },
+
+		{ EApiDataFormat::eR16_SFLOAT, vk::Format::eR16Sfloat },
+		{ EApiDataFormat::eRG16_SFLOAT, vk::Format::eR16G16Sfloat },
+		{ EApiDataFormat::eRGB16_SFLOAT, vk::Format::eR16G16B16Sfloat },
+		{ EApiDataFormat::eRGBA16_SFLOAT, vk::Format::eR16G16B16A16Sfloat },
+
+		{ EApiDataFormat::eR32_SFLOAT, vk::Format::eR32Sfloat },
+		{ EApiDataFormat::eRG32_SFLOAT, vk::Format::eR32G32Sfloat },
+		{ EApiDataFormat::eRGB32_SFLOAT, vk::Format::eR32G32B32Sfloat },
+		{ EApiDataFormat::eRGBA32_SFLOAT, vk::Format::eR32G32B32A32Sfloat },
+
+		// Special formats
+		{ EApiDataFormat::eR11G11B10_UFLOAT, vk::Format::eB10G11R11UfloatPack32 },
+		{ EApiDataFormat::eR10G10B10A2_UNORM, vk::Format::eA2B10G10R10UnormPack32 }
+	};
+
+	if (auto found = lookup_table.find(format); found != lookup_table.end())
+		return found->second;
+
+	return vk::Format::eUndefined;
+}
+
 u64 calculate_sampler_hash(const FVkSamplerCreateInfo& sampler_ci)
 {
 	static std::hash<u32> hasher;
@@ -295,7 +359,7 @@ void CVkRenderContext::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 			auto& texture = textures.at(texture_id);
 
 			auto& start_element_index = m_textureIndexRemap.at(texture_id);
-			bool is_storage_image = utl::cast<bool>(texture->initialData.base.typeFlags & ETextureCreateFlagBits::eStorage);
+			bool is_storage_image = utl::cast<bool>(texture->info.typeFlags & ETextureCreateFlagBits::eStorage);
 
 			auto& mip_level = texture->getSubresource();
 			auto& image_descriptor = image_descriptors.at(texture_count);
@@ -303,7 +367,7 @@ void CVkRenderContext::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 			image_descriptor.sampler = texture->sampler != ~0ull ? m_samplerCache[texture->sampler] : m_defaultSampler;
 			image_descriptor.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
-			if (texture->initialData.base.typeFlags & ETextureCreateFlagBits::eSamplable)
+			if (texture->info.typeFlags & ETextureCreateFlagBits::eSamplable)
 			{
 				auto& write_descriptor_set = write_descriptor_sets.emplace_back();
 				write_descriptor_set.dstArrayElement = start_element_index;
@@ -337,7 +401,11 @@ u64 CVkRenderContext::CreateTexture(const std::string& name, const FTextureCreat
 {
 	// Create texture handle
 	FVkTextureCreateInfo vk_texture_ci{};
-	vk_texture_ci.base = texture_ci;
+	vk_texture_ci.format = lookup_vk_format(texture_ci.format);
+	vk_texture_ci.typeFlags = texture_ci.typeFlags;
+	vk_texture_ci.size = texture_ci.size;
+	vk_texture_ci.mipLevels = texture_ci.mipLevels;
+	vk_texture_ci.arrayLayers = texture_ci.arrayLayers;
 	vk_texture_ci.sampleCount = vk::SampleCountFlagBits::e1;
 	vk_texture_ci.addressMode = vk::SamplerAddressMode::eRepeat;
 	vk_texture_ci.enableAnisotropy = true;
@@ -363,7 +431,11 @@ u64 CVkRenderContext::GetTextureId(const std::string& name)
 u64 CVkRenderContext::CreateRenderTarget(const std::string& name, const FTextureCreateInfo& texture_ci)
 {
 	FVkTextureCreateInfo vk_texture_ci{};
-	vk_texture_ci.base = texture_ci;
+	vk_texture_ci.format = lookup_vk_format(texture_ci.format);
+	vk_texture_ci.typeFlags = texture_ci.typeFlags;
+	vk_texture_ci.size = texture_ci.size;
+	vk_texture_ci.mipLevels = texture_ci.mipLevels;
+	vk_texture_ci.arrayLayers = texture_ci.arrayLayers;
 	vk_texture_ci.sampleCount = vk::SampleCountFlagBits::e1;
 	vk_texture_ci.addressMode = vk::SamplerAddressMode::eClampToEdge;
 
@@ -379,10 +451,18 @@ u64 CVkRenderContext::CreateRenderTarget(const std::string& name, const FTexture
 	return m_pResources->add<FVkTexture>(name.c_str(), std::move(texture));
 }
 
-const FTextureCreateInfo& CVkRenderContext::GetTextureInfo(u64 texture_id)
+FTextureView CVkRenderContext::GetTextureView(u64 texture_id)
 {
 	auto& texture = m_pResources->get<FVkTexture>(texture_id);
-	return texture->initialData.base;
+
+	FTextureView tex_view{};
+	tex_view.width = texture->info.size.width;
+	tex_view.height = texture->info.size.height;
+	tex_view.depth = texture->info.size.depth;
+	tex_view.arrayLayers = texture->info.arrayLayers;
+	tex_view.mipLevels = texture->info.mipLevels;
+
+	return tex_view;
 }
 
 void CVkRenderContext::DestroyTexture(u64 resource_id)
@@ -417,21 +497,21 @@ u64 CVkRenderContext::CreateShader(const std::string& name, const FGraphicsShade
 		else
 			texture = textures[attachment.source].get();
 
-		pipeline_ci.colorAttachmentFormats.emplace_back(utl::cast<vk::Format>(texture->initialData.base.format));
+		pipeline_ci.colorAttachmentFormats.emplace_back(texture->info.format);
 	}
 
 	// Get depth format
 	if(shader_ci.depthAttachment.source != invalid_handle)
 	{
 		auto& texture = textures.at(shader_ci.depthAttachment.source);
-		pipeline_ci.depthAttachmentFormat = utl::cast<vk::Format>(texture->initialData.base.format);
+		pipeline_ci.depthAttachmentFormat = texture->info.format;
 	}
 
 	// Get stencil format
 	if (shader_ci.stencilAttachment.source != invalid_handle)
 	{
 		auto& texture = textures.at(shader_ci.stencilAttachment.source);
-		pipeline_ci.stencilAttachmentFormat = utl::cast<vk::Format>(texture->initialData.base.format);
+		pipeline_ci.stencilAttachmentFormat = texture->info.format;
 	}
 
 	pipeline_ci.sampleCount = vk::SampleCountFlagBits::e1;
@@ -450,7 +530,7 @@ u64 CVkRenderContext::CreateShader(const std::string& name, const FGraphicsShade
 		auto& description = pipeline_ci.vertexAttributeDescriptions.emplace_back();
 		description.location = vertex_binding.location;
 		description.binding = vertex_binding.binding;
-		description.format = utl::cast<vk::Format>(vertex_binding.format);
+		description.format = lookup_vk_format(vertex_binding.format);
 		description.offset = vertex_binding.offset;
 	}
 
@@ -962,7 +1042,7 @@ void CVkRenderContext::PushG2CBarriers(EQueueTypeFlagBits queue_type, const utl:
 		image_trans_info.subresourceRange.baseArrayLayer = 0;
 		image_trans_info.subresourceRange.layerCount = texture->totalLayers;
 		image_trans_info.subresourceRange.baseMipLevel = 0;
-		image_trans_info.subresourceRange.levelCount = texture->initialData.base.mipLevels;
+		image_trans_info.subresourceRange.levelCount = texture->info.mipLevels;
 	}
 
 	processMemoryBarriers(command_buffer, translation_info);
@@ -1006,7 +1086,7 @@ void CVkRenderContext::PushC2GBarrier(EQueueTypeFlagBits queue_type, const utl::
 		image_trans_info.subresourceRange.baseArrayLayer = 0;
 		image_trans_info.subresourceRange.layerCount = texture->totalLayers;
 		image_trans_info.subresourceRange.baseMipLevel = 0;
-		image_trans_info.subresourceRange.levelCount = texture->initialData.base.mipLevels;
+		image_trans_info.subresourceRange.levelCount = texture->info.mipLevels;
 	}
 
 	//auto& barrier = translation_info.memoryTranslationInfos.emplace_back();
@@ -1231,7 +1311,7 @@ void CVkRenderContext::BeginRendering(const FBeginRendering2Info& rendering_info
 		begin_rendering_info.pDepthAttachment = &depth_attachment;
 
 		auto& depth_target = textures.at(rendering_info.depthAttachment->handle);
-		if (!is_depth_only_format(utl::cast<vk::Format>(depth_target->initialData.base.format)) && rendering_info.stencilAttachment->handle == rendering_info.depthAttachment->handle)
+		if (!is_depth_only_format(depth_target->info.format) && rendering_info.stencilAttachment->handle == rendering_info.depthAttachment->handle)
 			begin_rendering_info.pStencilAttachment = &depth_attachment;
 	}
 
@@ -1511,8 +1591,8 @@ FRect2D<f32> CVkRenderContext::GetRenderRectFromRT(u64 texture_id)
 	auto& texture = m_pResources->get<FVkTexture>(texture_id);
 
 	FRect2D<f32> rect{};
-	rect.size.x = utl::cast<f32>(texture->initialData.base.size.width);
-	rect.size.y = utl::cast<f32>(texture->initialData.base.size.height);
+	rect.size.x = utl::cast<f32>(texture->info.size.width);
+	rect.size.y = utl::cast<f32>(texture->info.size.height);
 
 	return rect;
 }
@@ -1523,72 +1603,6 @@ FRect2D<f32> CVkRenderContext::GetScreenRenderRect()
 	rect.size.x = utl::cast<f32>(m_pDevice->m_swapchain.extent.width);
 	rect.size.y = utl::cast<f32>(m_pDevice->m_swapchain.extent.height);
 	return rect;
-}
-
-u32 CVkRenderContext::GetDepthFormat(bool depth_only)
-{
-	auto found_format = m_pDevice->FindSupportedFormat
-	(
-		{
-			vk::Format::eD32SfloatS8Uint,
-			vk::Format::eD24UnormS8Uint,
-			vk::Format::eD16UnormS8Uint,
-			vk::Format::eD32Sfloat,
-			vk::Format::eD16Unorm
-		},
-		depth_only
-	);
-
-	return utl::cast<u32>(found_format);
-}
-
-u32 CVkRenderContext::GetApiFormat(EApiDataFormat global_format)
-{
-	switch (global_format)
-	{
-	case EApiDataFormat::eD32SFLOAT_8UINT: return VK_FORMAT_D32_SFLOAT_S8_UINT; break;
-	case EApiDataFormat::eD24UNORM_8UINT: return VK_FORMAT_D24_UNORM_S8_UINT; break;
-	case EApiDataFormat::eD16UNORM_8UINT: return VK_FORMAT_D16_UNORM_S8_UINT; break;
-	case EApiDataFormat::eD32SFLOAT: return VK_FORMAT_D32_SFLOAT; break;
-	case EApiDataFormat::eD16UNORM: return VK_FORMAT_D16_UNORM; break;
-
-	case EApiDataFormat::eRGBA8_SRGB: return VK_FORMAT_R8G8B8A8_SRGB; break;
-
-	case EApiDataFormat::eR8_UNORM: return VK_FORMAT_R8_UNORM; break;
-	case EApiDataFormat::eRG8_UNORM: return VK_FORMAT_R8G8_UNORM; break;
-	case EApiDataFormat::eRGB8_UNORM: return VK_FORMAT_R8G8B8_UNORM; break;
-	case EApiDataFormat::eRGBA8_UNORM: return VK_FORMAT_R8G8B8A8_UNORM; break;
-
-	case EApiDataFormat::eR16_UNORM: return VK_FORMAT_R16_UNORM; break;
-	case EApiDataFormat::eRG16_UNORM: return VK_FORMAT_R16G16_UNORM; break;
-	case EApiDataFormat::eRGB16_UNORM: return VK_FORMAT_R16G16B16_UNORM; break;
-	case EApiDataFormat::eRGBA16_UNORM: return VK_FORMAT_R16G16B16A16_UNORM; break;
-
-	case EApiDataFormat::eR32_UINT: return VK_FORMAT_R32_UINT; break;
-	case EApiDataFormat::eRG32_UINT: return VK_FORMAT_R32G32_UINT; break;
-	case EApiDataFormat::eRGB32_UINT: return VK_FORMAT_R32G32B32_UINT; break;
-	case EApiDataFormat::eRGBA32_UINT: return VK_FORMAT_R32G32B32A32_UINT; break;
-
-	case EApiDataFormat::eR16_SFLOAT: return VK_FORMAT_R16_SFLOAT; break;
-	case EApiDataFormat::eRG16_SFLOAT: return VK_FORMAT_R16G16_SFLOAT; break;
-	case EApiDataFormat::eRGB16_SFLOAT: return VK_FORMAT_R16G16B16_SFLOAT; break;
-	case EApiDataFormat::eRGBA16_SFLOAT: return VK_FORMAT_R16G16B16A16_SFLOAT; break;
-
-	case EApiDataFormat::eR32_SFLOAT: return VK_FORMAT_R32_SFLOAT; break;
-	case EApiDataFormat::eRG32_SFLOAT: return VK_FORMAT_R32G32_SFLOAT; break;
-	case EApiDataFormat::eRGB32_SFLOAT: return VK_FORMAT_R32G32B32_SFLOAT; break;
-	case EApiDataFormat::eRGBA32_SFLOAT: return VK_FORMAT_R32G32B32A32_SFLOAT; break;
-
-	// Special formats
-	case EApiDataFormat::eR11G11B10_UFLOAT: return VK_FORMAT_B10G11R11_UFLOAT_PACK32; break;
-	case EApiDataFormat::eR10G10B10A2_UNORM: return VK_FORMAT_A2B10G10R10_UNORM_PACK32; break;
-	default: return 0; break;
-	}
-}
-
-u32 CVkRenderContext::GetPresentFormat()
-{
-	return utl::cast<u32>(m_pDevice->m_swapchain.format);
 }
 
 // TODO: update only targets, that have same size with swapchain
@@ -1616,7 +1630,7 @@ void CVkRenderContext::UpdateSurface(i32 surface_width, i32 surface_height)
 
 			auto& texture = textures.at(texture_id);
 
-			if (!texture->isRenderTarget || (texture->initialData.base.size.policy == ERenderTargetSizePolicy::eFixed))
+			if (!texture->isRenderTarget || (texture->info.size.policy == ERenderTargetSizePolicy::eFixed))
 				continue;
 
 			for (auto& mip : texture->mips)
@@ -1627,21 +1641,25 @@ void CVkRenderContext::UpdateSurface(i32 surface_width, i32 surface_height)
 			m_pDevice->DestroyImage(texture->image);
 
 			FVkTextureCreateInfo texture_ci{};
-			texture_ci.base = texture->initialData.base;
+			texture_ci.format = texture->info.format;
+			texture_ci.typeFlags = texture->info.typeFlags;
+			texture_ci.size = texture->info.size;
+			texture_ci.mipLevels = texture->info.mipLevels;
+			texture_ci.arrayLayers = texture->info.arrayLayers;
 			texture_ci.CreateSampler = false;
 #ifndef BUILD_WITHOUT_DEBUGGIND
 			texture_ci.name = texture->name;
 #endif
 			// TODO: here i should set rendering resolution, not swapchain image size
-			if (texture->initialData.base.size.policy == ERenderTargetSizePolicy::eScalable)
+			if (texture->info.size.policy == ERenderTargetSizePolicy::eScalable)
 			{
-				texture_ci.base.size.width = utl::cast<u32>(utl::cast<f32>(surface_width) * texture_ci.base.size.scale);
-				texture_ci.base.size.height = utl::cast<u32>(utl::cast<f32>(surface_height)* texture_ci.base.size.scale);
+				texture_ci.size.width = utl::cast<u32>(utl::cast<f32>(surface_width) * texture_ci.size.scale);
+				texture_ci.size.height = utl::cast<u32>(utl::cast<f32>(surface_height)* texture_ci.size.scale);
 			}
 
 			check_api_result(CreateTexture(texture_ci, *texture));
 			
-			is_storage = utl::cast<bool>(texture_ci.base.typeFlags & ETextureCreateFlagBits::eStorage);
+			is_storage = utl::cast<bool>(texture_ci.typeFlags & ETextureCreateFlagBits::eStorage);
 
 			//if (is_storage)
 			//	m_textureLayoutInfos.emplace_back(texture_id);
@@ -1837,7 +1855,7 @@ void CVkRenderContext::EndFrame()
 	auto& textures = m_pResources->data<FVkTexture>();
 	for (auto& texture : textures)
 	{
-		if (texture->isRenderTarget && !(texture->initialData.base.typeFlags & ETextureCreateFlagBits::eStorage))
+		if (texture->isRenderTarget && !(texture->info.typeFlags & ETextureCreateFlagBits::eStorage))
 		{
 			// Reset layout for all mip level
 			for(auto& mip : texture->mips)
@@ -1934,7 +1952,7 @@ void CVkRenderContext::ProcessResourceBarriers()
 		auto& texture = textures.at(layout_info.textureId);
 		auto& target_subresource = texture->getSubresource();
 
-		if (texture->initialData.base.typeFlags & ETextureCreateFlagBits::eStorage)
+		if (texture->info.typeFlags & ETextureCreateFlagBits::eStorage)
 		{
 			auto& image_translation = translation_info.imageTranslationInfos.emplace_back();
 
@@ -2020,7 +2038,7 @@ void CVkRenderContext::processResourceUpload()
 
 			image_translation = get_texture_layout_translation_info(*texture, texture_translation_info);
 
-			if (texture->initialData.base.mipLevels > 1u && texture_upload.mipLayerOffsets.empty())
+			if (texture->info.mipLevels > 1u && texture_upload.mipLayerOffsets.empty())
 				generate_mip_textures.emplace_back(texture_upload.textureId);
 		}
 
@@ -2043,17 +2061,17 @@ void CVkRenderContext::processResourceUpload()
 				for (u32 layer = 0u; layer < texture->totalLayers; ++layer)
 				{
 					auto& layer_offsets = texture_upload.mipLayerOffsets.at(layer);
-					for (u32 mip = 0u; mip < texture->initialData.base.mipLevels; ++mip)
+					for (u32 mip = 0u; mip < texture->info.mipLevels; ++mip)
 					{
 						u64 offset = layer_offsets.at(mip);
 						auto& copy_region = copy_regions.emplace_back();
 						copy_region.imageSubresource.aspectMask = aspect_mask;
 						copy_region.imageSubresource.mipLevel = mip;
 						copy_region.imageSubresource.baseArrayLayer = layer;
-						copy_region.imageSubresource.layerCount = texture->initialData.base.arrayLayers;
-						copy_region.imageExtent.width = texture->initialData.base.size.width >> mip;
-						copy_region.imageExtent.height = texture->initialData.base.size.height >> mip;
-						copy_region.imageExtent.depth = texture->initialData.base.size.depth;
+						copy_region.imageSubresource.layerCount = texture->info.arrayLayers;
+						copy_region.imageExtent.width = texture->info.size.width >> mip;
+						copy_region.imageExtent.height = texture->info.size.height >> mip;
+						copy_region.imageExtent.depth = texture->info.size.depth;
 						copy_region.bufferOffset = offset;
 					}
 				}
@@ -2065,9 +2083,9 @@ void CVkRenderContext::processResourceUpload()
 				copy_region.imageSubresource.mipLevel = 0u;
 				copy_region.imageSubresource.baseArrayLayer = 0u;
 				copy_region.imageSubresource.layerCount = texture->totalLayers;
-				copy_region.imageExtent.width = texture->initialData.base.size.width;
-				copy_region.imageExtent.height = texture->initialData.base.size.height;
-				copy_region.imageExtent.depth = texture->initialData.base.size.depth;
+				copy_region.imageExtent.width = texture->info.size.width;
+				copy_region.imageExtent.height = texture->info.size.height;
+				copy_region.imageExtent.depth = texture->info.size.depth;
 				copy_region.bufferOffset = 0ull;
 			}
 
@@ -2080,8 +2098,8 @@ void CVkRenderContext::processResourceUpload()
 			auto& texture = textures.at(texture_id);
 			auto aspect_mask = get_texture_aspect_flags(*texture);
 
-			u32 mip_width{ texture->initialData.base.size.width };
-			u32 mip_heigth{ texture->initialData.base.size.height };
+			u32 mip_width{ texture->info.size.width };
+			u32 mip_heigth{ texture->info.size.height };
 
 			FVkImageTranslationInfo image_translation_info{};
 			image_translation_info.handle = texture->image.handle;
@@ -2090,7 +2108,7 @@ void CVkRenderContext::processResourceUpload()
 			image_translation_info.subresourceRange.layerCount = texture->totalLayers;
 			image_translation_info.subresourceRange.aspectMask = aspect_mask;
 
-			for (u32 mip = 1u; mip < texture->initialData.base.mipLevels; ++mip)
+			for (u32 mip = 1u; mip < texture->info.mipLevels; ++mip)
 			{
 				image_translation_info.subresourceRange.baseMipLevel = mip - 1u;
 				image_translation_info.oldLayout = vk::ImageLayout::eTransferDstOptimal;
@@ -2280,10 +2298,10 @@ void CVkRenderContext::updateBackbuffer()
 		auto& mip = current.mips.emplace_back();
 		mip.imageView = current.base.imageView = swapchain.imageViews[frame];
 
-		current.initialData.base.typeFlags = ETextureCreateFlagBits::e2D;
-		current.initialData.base.format = utl::cast<u32>(swapchain.format);
-		current.initialData.base.size.width = swapchain.extent.width;
-		current.initialData.base.size.height = swapchain.extent.height;
+		current.info.typeFlags = ETextureCreateFlagBits::e2D;
+		current.info.format = swapchain.format;
+		current.info.size.width = swapchain.extent.width;
+		current.info.size.height = swapchain.extent.height;
 	}
 }
 
@@ -2350,7 +2368,11 @@ FVkBufferCreateInfo CVkRenderContext::makeBufferCreateInfo(const std::string& na
 
 FRenderApiErrorInfo CVkRenderContext::CreateTexture(const FVkTextureCreateInfo& texture_ci, FVkTexture& texture)
 {
-	texture.initialData.base = texture_ci.base;
+	texture.info.format = texture_ci.format;
+	texture.info.typeFlags = texture_ci.typeFlags;
+	texture.info.size = texture_ci.size;
+	texture.info.mipLevels = texture_ci.mipLevels;
+	texture.info.arrayLayers = texture_ci.arrayLayers;
 	
 	FVkImageCreateInfo image_ci{};
 	FVkImageViewCreateInfo image_view_ci{};
@@ -2358,37 +2380,37 @@ FRenderApiErrorInfo CVkRenderContext::CreateTexture(const FVkTextureCreateInfo& 
 	texture.name = image_ci.name = texture_ci.name;
 #endif
 
-	if (texture_ci.base.size.depth > 1 || (texture_ci.base.typeFlags & ETextureCreateFlagBits::e3D))
+	if (texture_ci.size.depth > 1 || (texture_ci.typeFlags & ETextureCreateFlagBits::e3D))
 		image_ci.ci.imageType = vk::ImageType::e3D;
 	else
 	{
-		if (texture_ci.base.typeFlags & ETextureCreateFlagBits::e1D)
+		if (texture_ci.typeFlags & ETextureCreateFlagBits::e1D)
 			image_ci.ci.imageType = vk::ImageType::e1D;
-		else if (texture_ci.base.typeFlags & ETextureCreateFlagBits::e2D)
+		else if (texture_ci.typeFlags & ETextureCreateFlagBits::e2D)
 			image_ci.ci.imageType = vk::ImageType::e2D;
-		else if (texture_ci.base.typeFlags & ETextureCreateFlagBits::e3D)
+		else if (texture_ci.typeFlags & ETextureCreateFlagBits::e3D)
 			image_ci.ci.imageType = vk::ImageType::e3D;
 		else
 			image_ci.ci.imageType = vk::ImageType::e2D;
 	}
 
-	image_ci.ci.extent = vk::Extent3D{ texture_ci.base.size.width, texture_ci.base.size.height, texture_ci.base.size.depth };
-	image_ci.ci.mipLevels = texture_ci.base.mipLevels;
+	image_ci.ci.extent = vk::Extent3D{ texture_ci.size.width, texture_ci.size.height, texture_ci.size.depth };
+	image_ci.ci.mipLevels = texture_ci.mipLevels;
 
-	image_ci.ci.arrayLayers = texture_ci.base.arrayLayers;
-	if ((texture_ci.base.typeFlags & ETextureCreateFlagBits::eArray) && (texture_ci.base.typeFlags & ETextureCreateFlagBits::eCubemap))
+	image_ci.ci.arrayLayers = texture_ci.arrayLayers;
+	if ((texture_ci.typeFlags & ETextureCreateFlagBits::eArray) && (texture_ci.typeFlags & ETextureCreateFlagBits::eCubemap))
 	{
 		image_ci.ci.arrayLayers *= 6u;
 		image_view_ci.ci.viewType = vk::ImageViewType::eCubeArray;
 	}
-	else if (texture_ci.base.typeFlags & ETextureCreateFlagBits::eArray)
+	else if (texture_ci.typeFlags & ETextureCreateFlagBits::eArray)
 		image_view_ci.ci.viewType = vk::ImageViewType::e2DArray;
-	else if (texture_ci.base.typeFlags & ETextureCreateFlagBits::eCubemap)
+	else if (texture_ci.typeFlags & ETextureCreateFlagBits::eCubemap)
 	{
 		image_ci.ci.arrayLayers = 6u;
 		image_view_ci.ci.viewType = vk::ImageViewType::eCube;
 	}
-	else if (texture_ci.base.typeFlags & ETextureCreateFlagBits::e3D)
+	else if (texture_ci.typeFlags & ETextureCreateFlagBits::e3D)
 		image_view_ci.ci.viewType = vk::ImageViewType::e3D;
 	else
 	{
@@ -2401,12 +2423,12 @@ FRenderApiErrorInfo CVkRenderContext::CreateTexture(const FVkTextureCreateInfo& 
 	auto usageFlags = get_texture_usage_flags(texture);
 
 	image_ci.memoryUsage = vma::MemoryUsage::eUnknown;
-	image_view_ci.ci.format = image_ci.ci.format = utl::cast<vk::Format>(texture_ci.base.format);
+	image_view_ci.ci.format = image_ci.ci.format = utl::cast<vk::Format>(texture_ci.format);
 	image_ci.ci.initialLayout = vk::ImageLayout::eUndefined;
 	image_ci.ci.usage = usageFlags;
-	texture.initialData.sampleCount = image_ci.ci.samples = texture_ci.sampleCount;
+	texture.info.sampleCount = image_ci.ci.samples = texture_ci.sampleCount;
 	image_ci.ci.sharingMode = vk::SharingMode::eExclusive;
-	image_ci.ci.flags = (texture_ci.base.typeFlags & ETextureCreateFlagBits::eCubemap) ? vk::ImageCreateFlagBits::eCubeCompatible : vk::ImageCreateFlagBits::eExtendedUsage;
+	image_ci.ci.flags = (texture_ci.typeFlags & ETextureCreateFlagBits::eCubemap) ? vk::ImageCreateFlagBits::eCubeCompatible : vk::ImageCreateFlagBits::eExtendedUsage;
 
 	RETURN_WHEN_FAULT(m_pDevice->CreateImage(image_ci, texture.image));
 
@@ -2422,7 +2444,7 @@ FRenderApiErrorInfo CVkRenderContext::CreateTexture(const FVkTextureCreateInfo& 
 
 	// At first Create default view that contain all subresources
 	image_view_ci.ci.subresourceRange.baseMipLevel = 0u;
-	image_view_ci.ci.subresourceRange.levelCount = texture.base.mipLevelCount = texture_ci.base.mipLevels;
+	image_view_ci.ci.subresourceRange.levelCount = texture.base.mipLevelCount = texture_ci.mipLevels;
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	image_view_ci.name = std::format("{}_main", texture_ci.name);
@@ -2430,8 +2452,8 @@ FRenderApiErrorInfo CVkRenderContext::CreateTexture(const FVkTextureCreateInfo& 
 
 	RETURN_WHEN_FAULT(m_pDevice->CreateImageView(image_view_ci, texture.base.imageView));
 	
-	texture.mips.resize(texture_ci.base.mipLevels);
-	for (u32 mip_index = 0u; mip_index < texture_ci.base.mipLevels; ++mip_index)
+	texture.mips.resize(texture_ci.mipLevels);
+	for (u32 mip_index = 0u; mip_index < texture_ci.mipLevels; ++mip_index)
 	{
 		auto& current_mip = texture.mips.at(mip_index);
 		image_view_ci.ci.subresourceRange.baseMipLevel = current_mip.baseMipLevel = mip_index;
@@ -2451,7 +2473,7 @@ FRenderApiErrorInfo CVkRenderContext::CreateTexture(const FVkTextureCreateInfo& 
 		sampler_ci.enableAnisotropy = texture_ci.enableAnisotropy;
 		sampler_ci.enableCompareOp = is_depth_format(image_ci.ci.format);
 		sampler_ci.minFilter = sampler_ci.magFilter = texture_ci.filter;
-		sampler_ci.mipLevels = texture_ci.base.mipLevels;
+		sampler_ci.mipLevels = texture_ci.mipLevels;
 #ifndef BUILD_WITHOUT_DEBUGGIND
 		sampler_ci.name = texture_ci.name;
 #endif

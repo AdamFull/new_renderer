@@ -373,7 +373,13 @@ namespace engine
 			// ---------------------------------------------------------------------------------
 			struct FVkTextureInitialData
 			{
-				FTextureCreateInfo base{};
+				vk::Format format{};
+				ETextureCreateFlags typeFlags{ 0u };
+				FTextureSizeInfo size{};
+
+				u32 mipLevels{ 1u };
+				u32 arrayLayers{ 1u };
+
 				vk::SampleCountFlagBits sampleCount{ vk::SampleCountFlagBits::e1 };
 			};
 
@@ -412,7 +418,7 @@ namespace engine
 					return mips[idx];
 				}
 
-				FVkTextureInitialData initialData;
+				FVkTextureInitialData info;
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				std::string name{};
 #endif
@@ -420,7 +426,12 @@ namespace engine
 
 			struct FVkTextureCreateInfo
 			{
-				FTextureCreateInfo base{};
+				vk::Format format{};
+				ETextureCreateFlags typeFlags{ 0u };
+				FTextureSizeInfo size{};
+
+				u32 mipLevels{ 1u };
+				u32 arrayLayers{ 1u };
 
 				vk::SampleCountFlagBits sampleCount{ vk::SampleCountFlagBits::e1 };
 

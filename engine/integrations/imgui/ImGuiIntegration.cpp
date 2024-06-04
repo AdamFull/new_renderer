@@ -49,7 +49,7 @@ void CImGuiIntegration::create()
     u64 upload_size = width * height * 4 * sizeof(char);
 
     FTextureCreateInfo create_info{};
-    create_info.format = render_context->GetApiFormat(EApiDataFormat::eRGBA8_UNORM);
+    create_info.format = EApiDataFormat::eRGBA8_UNORM;
     create_info.typeFlags = ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eTransferable | ETextureCreateFlagBits::e2D;
     create_info.SetFixedSize2D(width, height);
 

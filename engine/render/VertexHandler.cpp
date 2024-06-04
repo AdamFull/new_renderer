@@ -188,8 +188,7 @@ void CVertexHandler::Create(const FVertexHandlerCreateInfo& create_info)
 		attrib.binding = 0u;
 		attrib.location = utl::cast<u32>(desc.type);
 
-		auto format = get_attribute_format_by_type(desc.type, desc.size);
-		attrib.format = render_context->GetApiFormat(format);
+		attrib.format = get_attribute_format_by_type(desc.type, desc.size);
 		attrib.offset = vertex_size;
 
 		if(desc.type != EVertexAttributeType::ePosition)

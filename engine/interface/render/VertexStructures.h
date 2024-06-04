@@ -88,7 +88,7 @@ namespace engine
 			EVertexAttributeType type{ EVertexAttributeType::eIndex };
 			u32 location{ 0u };
 			u32 binding{ 0u };;
-			u32 format{ 0u };
+			EApiDataFormat format{ EApiDataFormat::eUnknown };
 			u32 offset{ 0u };
 		};
 
@@ -145,7 +145,7 @@ namespace std
 		{
 			return hash<u32>()(attr.location) ^
 				(hash<u32>()(attr.binding) << 1) ^
-				(hash<u32>()(attr.format) << 2) ^
+				(hash<u32>()(utl::cast<u32>(attr.format)) << 2) ^
 				(hash<u32>()(attr.offset) << 3);
 		}
 	};
