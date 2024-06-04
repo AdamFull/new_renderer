@@ -10,12 +10,17 @@ namespace engine
 		class CImGuiIntegration : public IIntegration
 		{
 		public:
-			~CImGuiIntegration() = default;
+			CImGuiIntegration(render::IRenderInterface* render_interface);
+			~CImGuiIntegration();
 
-			void create();
-			void destroy();
+			void create() override;
+			void destroy() override;
 
-			void render();
+			void begin();
+			void end();
+			void render() override;
+		protected:
+			void createFontTarget();
 		private:
 			u64 m_shader{ INVALID_HANDLE };
 			u64 m_vertexHandler{ INVALID_HANDLE };

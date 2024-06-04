@@ -26,7 +26,9 @@ namespace engine
 			const FVertexRange& AddMeshData(const utl::vector<FVertexAttributePointer>& attributes_data, const FVertexAttributePointer& indices) override;
 
 			u64 AddVertices(const utl::vector<FVertexAttributePointer>& attributes_data) override;
+			u64 AddVertices(const void* data, u64 count, u64 stride) override;
 			u64 AddIndices(const FVertexAttributePointer& indices) override;
+			u64 AddIndices(const void* data, u64 count, u64 stride) override;
 			u64 addMeshlets(const utl::vector<FVertexAttributePointer>& attributes_data, const utl::vector<u32>& indices);
 
 			const FVertexDeclarationInfo& GetVertexDeclaration() const override;

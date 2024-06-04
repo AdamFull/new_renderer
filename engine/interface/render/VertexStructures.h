@@ -116,7 +116,9 @@ namespace engine
 			virtual const FVertexRange& AddMeshData(const utl::vector<FVertexAttributePointer>& attributes_data, const FVertexAttributePointer& indices) = 0;
 
 			virtual u64 AddVertices(const utl::vector<FVertexAttributePointer>& attributes_data) = 0;
+			virtual u64 AddVertices(const void* data, u64 count, u64 stride) = 0;
 			virtual u64 AddIndices(const FVertexAttributePointer& indices) = 0;
+			virtual u64 AddIndices(const void* data, u64 count, u64 stride) = 0;
 
 			virtual const FVertexDeclarationInfo& GetVertexDeclaration() const = 0;
 			virtual u64 GetHash() const = 0;

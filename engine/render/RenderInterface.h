@@ -26,6 +26,7 @@ namespace engine
 
 			u64 CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& create_info) override;
 			u64 CreateShader(const std::string& name, const FComputeShaderCreateInfo& create_info) override;
+			const std::unique_ptr<IShaderObject>& GetShaderObject(u64 id) override;
 
 			u64 CreateVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) override;
 			const std::unique_ptr<IVertexHandler>& GetVertexHandler(u64 id) override;

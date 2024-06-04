@@ -472,6 +472,7 @@ namespace engine
 
 			virtual u64 CreateShader(const std::string& name_info, const FGraphicsShaderCreateInfo& create_info) = 0;
 			virtual u64 CreateShader(const std::string& name_info, const FComputeShaderCreateInfo& create_info) = 0;
+			virtual const std::unique_ptr<IShaderObject>& GetShaderObject(u64 id) = 0;
 
 			virtual u64 CreateVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) = 0;
 			virtual const std::unique_ptr<IVertexHandler>& GetVertexHandler(u64 id) = 0;

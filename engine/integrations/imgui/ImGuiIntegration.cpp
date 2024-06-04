@@ -9,6 +9,18 @@
 using namespace engine::integration;
 using namespace engine::render;
 
+CImGuiIntegration::CImGuiIntegration(IRenderInterface* render_interface)
+{
+    m_pRenderInterface = render_interface;
+
+    ImGui::CreateContext();
+}
+
+CImGuiIntegration::~CImGuiIntegration()
+{
+    ImGui::DestroyContext();
+}
+
 void CImGuiIntegration::create()
 {
     ImGuiIO& io = ImGui::GetIO();
@@ -23,7 +35,7 @@ void CImGuiIntegration::create()
 
     // Create vertex handler
     FVertexHandlerCreateInfo vertex_handler_ci{};
-    vertex_handler_ci.indexSize = 2ull;
+    vertex_handler_ci.indexSize = sizeof(ImDrawIdx);
     vertex_handler_ci.descriptions.emplace_back(FVertexHandlerAttributeDescription{ 8ull, EVertexAttributeType::ePosition });
     vertex_handler_ci.descriptions.emplace_back(FVertexHandlerAttributeDescription{ 8ull, EVertexAttributeType::eTexCoord });
     vertex_handler_ci.descriptions.emplace_back(FVertexHandlerAttributeDescription{ 16ull, EVertexAttributeType::eColor });
@@ -64,7 +76,49 @@ void CImGuiIntegration::destroy()
 
 }
 
+void CImGuiIntegration::begin()
+{
+   
+}
+
+void CImGuiIntegration::end()
+{
+    auto& render_context = m_pRenderInterface->GetRenderContext();
+    auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_vertexHandler);
+    auto& shader = m_pRenderInterface->GetShaderObject(m_shader);
+
+    ImDrawData* draw_data = ImGui::GetDrawData();
+
+    // Update vertices
+    if (draw_data->TotalVtxCount > 0)
+    {
+        // Upload vertex/index data into a single contiguous GPU buffer
+        for (int n = 0; n < draw_data->CmdListsCount; n++)
+        {
+            const ImDrawList* cmd_list = draw_data->CmdLists[n];
+            vertex_handler->AddVertices(cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size, sizeof(ImDrawVert));
+            vertex_handler->AddIndices(cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size, sizeof(ImDrawIdx));
+        }
+    }
+
+    vertex_handler->Allocate();
+
+    // Bind shader
+    shader->Bind(EQueueTypeFlagBits::eGraphics);
+
+    // Bind vertex and index buffer
+    vertex_handler->Bind(EQueueTypeFlagBits::eGraphics);
+
+
+    render_context->SetViewport();
+}
+
 void CImGuiIntegration::render()
+{
+
+}
+
+void CImGuiIntegration::createFontTarget()
 {
 
 }

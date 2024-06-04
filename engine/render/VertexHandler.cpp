@@ -411,12 +411,25 @@ u64 CVertexHandler::AddVertices(const utl::vector<FVertexAttributePointer>& attr
 	return vertex_count;
 }
 
+u64 CVertexHandler::AddVertices(const void* data, u64 count, u64 stride)
+{
+	auto& vertex_buffer = GetGeometryBuffer(EGeometryBufferIndices::eVertexBuffer);
+	vertex_buffer->CopyBytes(data, count * stride);
+	return count;
+}
+
 u64 CVertexHandler::AddIndices(const FVertexAttributePointer& indices)
 {
 	auto& index_buffer = GetGeometryBuffer(EGeometryBufferIndices::eIndexBuffer);
-
 	index_buffer->CopyBytes(indices.data, indices.count * indices.stride);
 	return indices.count;
+}
+
+u64 CVertexHandler::AddIndices(const void* data, u64 count, u64 stride)
+{
+	auto& index_buffer = GetGeometryBuffer(EGeometryBufferIndices::eIndexBuffer);
+	index_buffer->CopyBytes(data, count * stride);
+	return count;
 }
 
 u64 CVertexHandler::addMeshlets(const utl::vector<FVertexAttributePointer>& attributes, const utl::vector<u32>& indices)

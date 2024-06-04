@@ -313,6 +313,11 @@ u64 CRenderInterface::CreateShader(const std::string& name, const FComputeShader
 	return CreateShader<FComputeShaderCreateInfo>(name_info, create_info);
 }
 
+const std::unique_ptr<IShaderObject>& CRenderInterface::GetShaderObject(u64 id)
+{
+	return m_pResources->get<IShaderObject>(id);
+}
+
 u64 CRenderInterface::CreateVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci)
 {
 	auto vertex_handler = std::make_unique<CVertexHandler>(this);
