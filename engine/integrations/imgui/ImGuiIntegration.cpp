@@ -109,7 +109,7 @@ void CImGuiIntegration::end()
     // Bind vertex and index buffer
     vertex_handler->Bind(EQueueTypeFlagBits::eGraphics);
 
-
+    auto 
     render_context->SetViewport();
 }
 
