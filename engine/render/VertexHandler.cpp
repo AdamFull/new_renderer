@@ -77,6 +77,7 @@ EApiDataFormat get_attribute_format_by_type(EVertexAttributeType type, u64 size)
 	{
 		switch (type)
 		{
+		case EVertexAttributeType::ePosition:
 		case EVertexAttributeType::eTexCoord: return EApiDataFormat::eRG32_SFLOAT; break;
 		case EVertexAttributeType::eJoint: return EApiDataFormat::eRGBA16_UNORM; break;
 		}
@@ -88,7 +89,7 @@ EApiDataFormat get_attribute_format_by_type(EVertexAttributeType type, u64 size)
 		case EVertexAttributeType::ePosition:
 		case EVertexAttributeType::eColor: 
 		case EVertexAttributeType::eNormal: 
-		case EVertexAttributeType::eTangent: return EApiDataFormat::eRGBA32_SFLOAT; break;
+		case EVertexAttributeType::eTangent: return EApiDataFormat::eRGB32_SFLOAT; break;
 		}
 	}
 	else if (size == 16ull)
@@ -172,6 +173,8 @@ void CVertexHandler::Create(const FVertexHandlerCreateInfo& create_info)
 {
 	std::unordered_set<std::string> definitions{};
 
+	m_flags = create_info.flags;
+
 	// Initialize attribute descriptions
 	u64 vertex_size{ 0ull };
 	auto& render_context = m_pRenderInterface->GetRenderContext();
@@ -214,11 +217,15 @@ void CVertexHandler::Create(const FVertexHandlerCreateInfo& create_info)
 
 	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eVertexBuffer))->CreateRaw("SCENE_VERTICES" + m_definitions, vertex_size, 16ull, EBufferUsageFlagBits::eVertexBuffer);
 	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eIndexBuffer))->CreateRaw("SCENE_INDICES" + m_definitions, create_info.indexSize, 16ull, EBufferUsageFlagBits::eIndexBuffer);
-	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eMeshletBuffer))->Create<FMeshlet>("MeshletBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
-	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eVertexRemapBuffer))->Create<u32>("MeshletVerticesBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
-	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eBoundsBuffer))->Create<FGeometryDrawBounds>("MeshletBoundsBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
-	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eTriangleBuffer))->Create<FTriangle>("MeshletTriangleBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
 	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eLodBuffer))->Create<FMeshLod>("MeshLodBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
+	
+	if (create_info.flags & EVertexHandlerFlagBits::eGenerateMeshlets)
+	{
+		m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eMeshletBuffer))->Create<FMeshlet>("MeshletBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
+		m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eVertexRemapBuffer))->Create<u32>("MeshletVerticesBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
+		m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eBoundsBuffer))->Create<FGeometryDrawBounds>("MeshletBoundsBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
+		m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eTriangleBuffer))->Create<FTriangle>("MeshletTriangleBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
+	}
 
 	return;
 }
@@ -270,17 +277,13 @@ const FVertexRange& CVertexHandler::AddMeshData(const utl::vector<FVertexAttribu
 	if (position_attrib == attributes_data.end())
 		log_error("[Vertex Handler] Invalid mesh type: No vertex position found. Vertex position is required.");
 
-	auto& meshlet_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eMeshletBuffer));
-	auto& vertices_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eVertexRemapBuffer));
-	auto& triangle_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eTriangleBuffer));
-	auto& bounds_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eBoundsBuffer));
 	auto& lod_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eLodBuffer));
 
 	// Calculate number of lods
 	f32 triangle_count = utl::cast<f32>(indices.count / 3u);
 	u32 lod_count = utl::cast<u32>(glm::floor(glm::log2(triangle_count))) / 2u;
 
-	lod_count = 1u;
+	lod_count = (m_flags & EVertexHandlerFlagBits::eGenerateLods) ? lod_count : 1u;
 
 	// Create new vertex range
 	auto& new_range = m_cachedRanges[input_hash];
@@ -355,11 +358,20 @@ const FVertexRange& CVertexHandler::AddMeshData(const utl::vector<FVertexAttribu
 		}
 
 		FMeshLod lod{};
-		//lod.meshletOffset = meshlet_buffer->count();
-		//lod.meshletVertexOffset = vertices_buffer->count();
-		//lod.meshletTriangleOffset = triangle_buffer->count();
-		//lod.meshletBoundsOffset = bounds_buffer->count();
-		//lod.meshletCount = addMeshlets(attributes_data, u32_indices);
+
+		if (m_flags & EVertexHandlerFlagBits::eGenerateMeshlets)
+		{
+			auto& meshlet_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eMeshletBuffer));
+			auto& vertices_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eVertexRemapBuffer));
+			auto& triangle_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eTriangleBuffer));
+			auto& bounds_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eBoundsBuffer));
+
+			//lod.meshletOffset = meshlet_buffer->count();
+			//lod.meshletVertexOffset = vertices_buffer->count();
+			//lod.meshletTriangleOffset = triangle_buffer->count();
+			//lod.meshletBoundsOffset = bounds_buffer->count();
+			//lod.meshletCount = addMeshlets(attributes_data, u32_indices);
+		}
 
 		auto& vertex_buffer = GetGeometryBuffer(EGeometryBufferIndices::eVertexBuffer);
 		auto& index_buffer = GetGeometryBuffer(EGeometryBufferIndices::eIndexBuffer);

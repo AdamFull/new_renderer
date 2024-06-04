@@ -5,6 +5,7 @@
 #include "RenderWorld.h"
 #include "VertexHandler.h"
 #include "BufferObject.h"
+#include "ResourceLoader.h"
 #include "render_graph/RenderGraph.h"
 
 #include <shader_compiler/compiler_util.h>
@@ -130,7 +131,7 @@ CRenderInterface::~CRenderInterface()
 
 void CRenderInterface::Create(const FRenderInterfaceCreateInfo& rhi_ci)
 {
-	m_pResourceLoader->initialize(m_pVFS);
+	m_pResourceLoader->Initialize(m_pVFS);
 
 	m_pRenderContext = make_render_context(rhi_ci);
 
@@ -348,6 +349,11 @@ const std::unique_ptr<IRenderWorld>& CRenderInterface::GetRenderWorld()
 const std::unique_ptr<IRenderContext>& CRenderInterface::GetRenderContext()
 {
 	return m_pRenderContext;
+}
+
+const std::unique_ptr<IResourceLoader>& CRenderInterface::GetResourceLoader()
+{
+	return m_pResourceLoader;
 }
 
 FShaderUploadInfo CRenderInterface::GetShaderNameTag(const std::string& name)

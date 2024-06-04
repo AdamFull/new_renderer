@@ -1,8 +1,8 @@
 #pragma once
 
 #include <engine/interface/filesystem/VirtualFileSystemInterface.h>
+#include <engine/interface/render/RenderInterface.h>
 #include <engine/interface/ResourceContainer.h>
-#include "ResourceLoader.h"
 #include <logger/logger.h>
 #include <memory>
 
@@ -32,10 +32,13 @@ namespace engine
 
 			void UpdateSurfaceSize(i32 width, i32 height) override;
 
+			FShaderUploadInfo GetShaderNameTag(const std::string& name) override;
+
 			const std::unique_ptr<FRenderDataPacket>& GetRenderPacket() override;
 			const std::unique_ptr<IRenderGraph>& GetRenderGraph() override;
 			const std::unique_ptr<IRenderWorld>& GetRenderWorld() override;
 			const std::unique_ptr<IRenderContext>& GetRenderContext() override;
+			const std::unique_ptr<IResourceLoader>& GetResourceLoader() override;
 		protected:
 			template<class _Ty>
 			u64 CreateShader(const FShaderUploadInfo& name_info, const _Ty& create_info)
@@ -49,8 +52,6 @@ namespace engine
 				return INVALID_HANDLE;
 			}
 
-			FShaderUploadInfo GetShaderNameTag(const std::string& name) override;
-
 		private:
 			filesystem::IVirtualFileSystemInterface* m_pVFS{ nullptr };
 
@@ -62,7 +63,7 @@ namespace engine
 			std::unique_ptr<IRenderWorld> m_pRenderWorld{};
 			std::unique_ptr<CResourceContainer> m_pResources{};
 			std::unique_ptr<IRenderContext> m_pRenderContext{};
-			std::unique_ptr<CResourceLoader> m_pResourceLoader{};
+			std::unique_ptr<IResourceLoader> m_pResourceLoader{};
 		};
 	}
 }

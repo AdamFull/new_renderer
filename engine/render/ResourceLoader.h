@@ -11,13 +11,13 @@ namespace engine
 {
 	namespace render
 	{
-		class CResourceLoader
+		class CResourceLoader : public IResourceLoader
 		{
 		public:
-			void initialize(filesystem::IVirtualFileSystemInterface* vfs);
+			void Initialize(filesystem::IVirtualFileSystemInterface* vfs) override;
 
-			bool LoadTexture(const utl::vector<uint8_t>& data, EMimeType mime, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info);
-			bool LoadShaderData(const FShaderUploadInfo& load_info, utl::vector<FShaderCreationBlockInfo>& shader_stages);
+			bool LoadTexture(const utl::vector<uint8_t>& data, EMimeType mime, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info) override;
+			bool LoadShaderData(const FShaderUploadInfo& load_info, utl::vector<FShaderCreationBlockInfo>& shader_stages) override;
 		private:
 			bool LoadSTBFromMemory(const utl::vector<uint8_t>& data, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info);
 			bool LoadKTXFromMemory(const utl::vector<uint8_t>& data, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info);

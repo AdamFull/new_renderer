@@ -98,5 +98,14 @@ namespace engine
 			ESamplerAddressMode addressMode{};
 			u32 mipLevels{ 1u };
 		};
+
+		class ITextureObject
+		{
+		public:
+			virtual ~ITextureObject() = default;
+
+			virtual void Create(const std::string& name, const FTextureCreateInfo& create_info) = 0;
+			virtual void Load(const std::string& path) = 0;
+		};
 	}
 }

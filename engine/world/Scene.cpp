@@ -424,6 +424,7 @@ void CScene::LoadMeshComponent(const easygltf::FGLTFRoot& root, const entt::enti
 			render::FVertexHandlerCreateInfo handler_ci{};
 			handler_ci.indexSize = indices.stride;
 			handler_ci.name = mesh.name;
+			handler_ci.flags = render::EVertexHandlerFlagBits::eGenerateMeshlets;
 
 			for (const auto& attrib : attributes)
 			{

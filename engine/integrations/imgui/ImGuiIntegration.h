@@ -17,7 +17,10 @@ namespace engine
 
 			void render();
 		private:
-			render::IRenderInterface* m_pRender_inteface{ nullptr };
+			u64 m_shader{ INVALID_HANDLE };
+			u64 m_vertexHandler{ INVALID_HANDLE };
+			u64 m_fontTexture{ INVALID_HANDLE };
+			render::IRenderInterface* m_pRenderInterface{ nullptr };
 		};
 	}
 }

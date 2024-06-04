@@ -17,6 +17,8 @@
 
 namespace engine
 {
+	namespace filesystem { class IVirtualFileSystemInterface; }
+
 	namespace render
 	{
 		class IRenderContext;
@@ -449,6 +451,17 @@ namespace engine
 			virtual const FRenderWorldStats& GetStats() const = 0;
 		};
 
+		class IResourceLoader
+		{
+		public:
+			virtual ~IResourceLoader() = default;
+
+			virtual void Initialize(filesystem::IVirtualFileSystemInterface* vfs) = 0;
+
+			virtual bool LoadTexture(const utl::vector<uint8_t>& data, EMimeType mime, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info) = 0;
+			virtual bool LoadShaderData(const FShaderUploadInfo& load_info, utl::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
+		};
+
 		class IRenderInterface
 		{
 		public:
@@ -475,6 +488,7 @@ namespace engine
 			virtual const std::unique_ptr<IRenderGraph>& GetRenderGraph() = 0;
 			virtual const std::unique_ptr<IRenderWorld>& GetRenderWorld() = 0;
 			virtual const std::unique_ptr<IRenderContext>& GetRenderContext() = 0;
+			virtual const std::unique_ptr<IResourceLoader>& GetResourceLoader() = 0;
 		};
 	}
 }

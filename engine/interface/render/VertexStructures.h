@@ -33,6 +33,13 @@ namespace engine
 			eLastIndex
 		};
 
+		enum class EVertexHandlerFlagBits
+		{
+			eGenerateMeshlets = 1 << 0,
+			eGenerateLods = 1 << 1,
+		};
+		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(EVertexHandlerFlags, EVertexHandlerFlagBits)
+
 		struct FVertexAttributePointer
 		{
 			EVertexAttributeType type{ EVertexAttributeType::eIndex };
@@ -65,6 +72,7 @@ namespace engine
 		{
 			utl::vector<FVertexHandlerAttributeDescription> descriptions{};
 			u64 indexSize{ 1ull };
+			EVertexHandlerFlags flags{};
 			std::string name{};
 		};
 

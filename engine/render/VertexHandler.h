@@ -43,6 +43,7 @@ namespace engine
 			// For shader creation
 			std::string m_definitions{};
 			u64 m_attributeHash{ 0ull };
+			EVertexHandlerFlags m_flags{};
 			FVertexDeclarationInfo m_declaration{};
 
 			IRenderInterface* m_pRenderInterface{ nullptr };
