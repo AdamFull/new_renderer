@@ -1113,9 +1113,6 @@ void CVkRenderContext::ProcessResourceBarriers(EQueueTypeFlagBits queue, const u
 		ERenderResourceAccessFlagBits dst_resource_access{};
 		unpackDependencyBarrier(resource_barrier.dependencyType, src_resource_access, dst_resource_access);
 
-		if (resource_barrier.resource.handle == 13)
-			int iiiii = 0;
-
 		if (resource_barrier.barrierType == ERenderResourceBarrierType::eMemory)
 		{
 			auto& memory_barrier = translation_info.memoryTranslationInfos.emplace_back();
@@ -1492,7 +1489,7 @@ void CVkRenderContext::Draw(EQueueTypeFlagBits queue_type, const FGeometryDrawIn
 		for (auto& range : draw_info.ranges)
 		{
 			auto index_count = range.indexCount == 0ull ? draw_info.lastIndex : range.indexCount;
-			current.drawIndexed(index_count, 1, range.beginIndex, 0, 0);
+			current.drawIndexed(index_count, 1, range.beginIndex, range.beginVertex, 0);
 		}
 	}
 }
@@ -2205,9 +2202,9 @@ void CVkRenderContext::processResourceUpload()
 
 		// Create new staging buffer
 		FVkBufferCreateInfo vk_buffer_ci{};
-		vk_buffer_ci.instanceCount = staging_count;
-		vk_buffer_ci.instanceSize = bytes_count / staging_count;
-		vk_buffer_ci.minOffsetAlignment = 1; //std::lcm(physical.properties.limits.minStorageBufferOffsetAlignment, physical.properties.limits.nonCoherentAtomSize);
+		vk_buffer_ci.instanceCount = 1;
+		vk_buffer_ci.instanceSize = bytes_count;
+		vk_buffer_ci.minOffsetAlignment = 1;
 		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuOnly;
 		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
 #ifndef BUILD_WITHOUT_DEBUGGIND

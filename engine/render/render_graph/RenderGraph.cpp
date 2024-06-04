@@ -21,6 +21,7 @@
 #include "render_passes/GeometryPass.h"
 #include "render_passes/ClearPass.h"
 #include "render_passes/PostProcessPass.h"
+#include "render_passes/ImGuiPass.h"
 
 #include "render_passes/BeginDebugMarker.h"
 #include "render_passes/EndDebugMarker.h"
@@ -834,6 +835,13 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	
 		AddRenderPass("finalize_image_pass", pass_ci);
 	}
+
+	// ImGui pass
+	{
+		FRenderConfigRenderCreateInfo pass_ci = makeGraphicsPassCI(ERenderingType::eImGui, EQueueTypeFlagBits::eGraphics, "testing:imgui");
+		pass_ci.AddWriteResource("present_target");
+		AddRenderPass("imgui_pass", pass_ci);
+	}
 }
 
 u64 CRenderGraph::AddStaticResource(const std::string& name, const std::string& path)
@@ -995,6 +1003,8 @@ u64 CRenderGraph::AddRenderPass(const std::string& name, const FRenderConfigRend
 		new_pass = std::make_unique<COmnilShadowMapPass>(m_pRenderInterface);
 	else if(render_pass_ci.type == ERenderingType::eClear)
 		new_pass = std::make_unique<CClearPass>(m_pRenderInterface);
+	else if (render_pass_ci.type == ERenderingType::eImGui)
+		new_pass = std::make_unique<CImGuiPass>(m_pRenderInterface);
 
 	if (!render_pass_ci.depthResource.empty())
 		pass_ci.depthTarget = GetRenderRersourceId(render_pass_ci.depthResource);
@@ -1135,13 +1145,19 @@ void CRenderGraph::Execute(f32 dt)
 		if (!pass->CanExecute())
 			continue;
 
+		if (pass->m_debugName == "fullscreen:testing:screenspace")
+			int iiiii = 0;
+
+		if (pass->m_debugName == "imgui:testing:imgui")
+			int iiiii = 0;
+
 		render_context->ProcessResourceBarriers(pass->m_queue, resource_barriers);
 		pass->Execute(dt);
 	}
 
 	auto& backbuffer_resource = m_vRenderResources.at(m_backBufferResource);
 	utl::vector<FResourceBarrierInfo> backbuffer_barriers{};
-
+	
 	auto& backbuffer_barrier = backbuffer_barriers.emplace_back();
 	backbuffer_barrier.resource.handle = backbuffer_resource.handle;
 	backbuffer_barrier.resource.type = backbuffer_resource.type;
@@ -1149,7 +1165,7 @@ void CRenderGraph::Execute(f32 dt)
 	backbuffer_barrier.srcPassType = EPassType::eRender;
 	backbuffer_barrier.dstPassType = EPassType::eNone;
 	backbuffer_barrier.barrierType = ERenderResourceBarrierType::eFinal;
-
+	
 	render_context->ProcessResourceBarriers(EQueueTypeFlagBits::eGraphics, backbuffer_barriers);
 }
 
@@ -1259,6 +1275,7 @@ void CRenderGraph::GenerateResourceBarriers(utl::hash_map<u64, FPassBuildInfo>& 
 	for (u64 pass_index : m_vPassExecutionQueue)
 	{
 		auto& pass = m_vRenderPasses.at(pass_index);
+
 		for (const auto& [resource_group, resource_bindings] : pass->m_renderResources)
 		{
 			ERenderResourceAccessFlagBits access_flag{};
@@ -1269,6 +1286,8 @@ void CRenderGraph::GenerateResourceBarriers(utl::hash_map<u64, FPassBuildInfo>& 
 			{
 				const auto& resource_binding = resource_bindings[resource_index];
 				const auto& render_resource = m_vRenderResources[resource_binding.resource];
+
+				bool is_backbuffer_resource = m_backBufferResource == resource_binding.resource;
 
 				// Save all accessed passes for check is this last access
 				auto& accessed_passes = per_res_accessed_passes[resource_binding.resource];
@@ -1325,7 +1344,7 @@ void CRenderGraph::GenerateResourceBarriers(utl::hash_map<u64, FPassBuildInfo>& 
 				if (last_resource_access.access == ERenderResourceAccessFlagBits::eNone)
 					new_barrier.barrierType = access_flag == ERenderResourceAccessFlagBits::eRead ? new_barrier.barrierType = ERenderResourceBarrierType::eFinal : ERenderResourceBarrierType::eIntermediate;
 				else if (is_ro_access_only_remain(render_resource, pass_index))
-					new_barrier.barrierType = ERenderResourceBarrierType::eFinal;
+					new_barrier.barrierType = is_backbuffer_resource ? ERenderResourceBarrierType::eIntermediate : ERenderResourceBarrierType::eFinal;
 				else if (is_change_pipeline_ownership)
 					new_barrier.barrierType = ERenderResourceBarrierType::eIntermediate;
 

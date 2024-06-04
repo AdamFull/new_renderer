@@ -201,7 +201,10 @@ void IRenderPass::MakeShader(const std::string& name, std::unique_ptr<IShaderObj
 		auto& render_packet = m_pRenderInterface->GetRenderPacket();
 
 		auto vbo_hash = vbo->GetHash();
-		shader_ci.usageCount = render_packet->stats.perTypeVBOCount[vbo_hash];
+		auto vbo_count = render_packet->stats.perTypeVBOCount[vbo_hash];
+
+		
+		shader_ci.usageCount = vbo_count ? vbo_count : 1u;
 		shader_ci.vertexDeclaration = vbo->GetVertexDeclaration();
 	}
 

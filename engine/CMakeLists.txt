@@ -3,7 +3,6 @@ project(application)
 
 add_subdirectory(platform)
 add_subdirectory(render)
-add_subdirectory(integrations)
 add_subdirectory(filesystem)
 #add_subdirectory(scripting)
 add_subdirectory(profiler)
@@ -29,7 +28,6 @@ target_link_libraries(${PROJECT_NAME}
 	PUBLIC virtual_filesystem
 	PRIVATE engine_profiler
 	PRIVATE render_interface
-	PRIVATE integrations
 	#PRIVATE script_engine
 	PRIVATE engine_world
 )

@@ -5,6 +5,7 @@ find_package(Ktx CONFIG REQUIRED)
 find_package(tinyxml2 CONFIG REQUIRED)
 find_package(XercesC CONFIG REQUIRED)
 find_package(Lua REQUIRED)
+find_package(imgui CONFIG REQUIRED)
 
 #find_package(PkgConfig REQUIRED)  
 #pkg_check_modules(LuaJIT REQUIRED IMPORTED_TARGET luajit)
@@ -58,6 +59,7 @@ target_link_libraries(${PROJECT_NAME}
     PRIVATE KTX::ktx
     PRIVATE tinyxml2::tinyxml2
     PRIVATE XercesC::XercesC
+    PRIVATE imgui::imgui
 )
 
 target_compile_definitions(${PROJECT_NAME} 
