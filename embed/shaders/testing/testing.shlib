@@ -15,12 +15,29 @@
 					shader_name: "screenspace_frag";
 				}
 			];
+		},
+		{
+			name: "imgui";
+			sources: [
+				{
+					type: "vertex";
+					shader_name: "imgui_vert";
+				},
+				{
+					type: "fragment";
+					shader_name: "imgui_frag";
+				}
+			];
 		}
 	];
 
 	compile: [
 		{ 
 			shader_name: "screenspace";
+			pattern: "default_pattern";
+		},
+		{ 
+			shader_name: "imgui";
 			pattern: "default_pattern";
 		}
 	];

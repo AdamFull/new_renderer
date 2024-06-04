@@ -4,7 +4,7 @@
 	code: 
 	"""
 	// Vertex inputs
-#ifdef VERTEX_SHADER
+#ifdef VERTEX_INPUT
 		layout(location = 0) in vec3 inPosition;
 #if defined(COLOR_VEC3)
 		layout(location = 1) in vec3 inColor;
@@ -26,7 +26,7 @@
 		layout(location = 5) in vec4 inJoints;
 		layout(location = 6) in vec4 inWeights;
 #endif // HAS_SKIN
-#endif // VERTEX_SHADER
+#endif // VERTEX_INPUT
 
 	// Bindless texture
 	layout(set = 0, binding = 3) uniform sampler2D globalTextures[];
