@@ -1,5 +1,6 @@
 #include "ShaderObject.h"
 
+using namespace engine;
 using namespace engine::render;
 
 CShaderObject::CShaderObject(IRenderInterface* render_interface)
@@ -10,18 +11,20 @@ CShaderObject::CShaderObject(IRenderInterface* render_interface)
 CShaderObject::~CShaderObject()
 {
 	auto& render_context = m_pRenderInterface->GetRenderContext();
-	render_context->DestroyShader(m_shaderId);
+	render_context->DestroyShader(m_resourceId);
 }
 
-void CShaderObject::Create(const std::string& name, const FGraphicsShaderCreateInfo& create_info)
+void CShaderObject::Create(const std::string& name, const FGraphicsShaderCreateInfo& create_info, const utl::vector<FShaderCreationBlockInfo>& stages)
 {
-	m_shaderId = m_pRenderInterface->CreateShader(name, create_info);
+	auto& render_context = m_pRenderInterface->GetRenderContext();
+	m_resourceId = render_context->CreateShader(name, create_info, stages);
 	BuildReflection();
 }
 
-void CShaderObject::Create(const std::string& name, const FComputeShaderCreateInfo& create_info)
+void CShaderObject::Create(const std::string& name, const FComputeShaderCreateInfo& create_info, const utl::vector<FShaderCreationBlockInfo>& stages)
 {
-	m_shaderId = m_pRenderInterface->CreateShader(name, create_info);
+	auto& render_context = m_pRenderInterface->GetRenderContext();
+	m_resourceId = render_context->CreateShader(name, create_info, stages);
 	BuildReflection();
 }
 
@@ -49,12 +52,16 @@ const std::unique_ptr<CUniformHandle>& CShaderObject::GetConstantBlock(u64 name)
 
 void CShaderObject::BindBuffer(u64 name, u64 buffer_resource)
 {
-	m_bindBuffers[name] = buffer_resource;
+	auto& resource_manager = m_pRenderInterface->GetResourceManager();
+	auto& buffer = resource_manager->GetBufferObject(buffer_resource);
+	m_bindBuffers[name] = buffer->Handle();
 }
 
 void CShaderObject::BindTexture(u64 name, u64 texture_resource, u32 mip)
 {
-	m_bindTextures[name] = FTextureBindInfo{ texture_resource, mip };
+	auto& resource_manager = m_pRenderInterface->GetResourceManager();
+	auto& texture = resource_manager->GetTextureObject(texture_resource);
+	m_bindTextures[name] = FTextureBindInfo{ texture->Handle(), mip };
 }
 
 void CShaderObject::FlushDescriptors()
@@ -69,7 +76,7 @@ void CShaderObject::FlushDescriptors()
 	}
 
 	FShaderResourceCommit update_data{};
-	update_data.shaderId = m_shaderId;
+	update_data.shaderId = m_resourceId;
 	update_data.textures = m_bindTextures;
 	update_data.buffers = m_bindBuffers;
 
@@ -99,24 +106,19 @@ void CShaderObject::FlushConstants(EQueueTypeFlagBits queue)
 	}
 
 	auto& render_context = m_pRenderInterface->GetRenderContext();
-	render_context->FlushConstantRanges(m_shaderId, constants, queue);
+	render_context->FlushConstantRanges(m_resourceId, constants, queue);
 }
 
 void CShaderObject::Bind(EQueueTypeFlagBits queue)
 {
 	auto& render_context = m_pRenderInterface->GetRenderContext();
-	render_context->BindShader(m_shaderId, queue);
+	render_context->BindShader(m_resourceId, queue);
 }
 
 void CShaderObject::BindResources(EQueueTypeFlagBits queue)
 {
 	auto& render_context = m_pRenderInterface->GetRenderContext();
-	render_context->BindShaderResources(m_shaderId, queue);
-}
-
-u64 CShaderObject::Handle() const
-{
-	return m_shaderId;
+	render_context->BindShaderResources(m_resourceId, queue);
 }
 
 const FShaderReflectionData& CShaderObject::GetReflection() const
@@ -127,7 +129,7 @@ const FShaderReflectionData& CShaderObject::GetReflection() const
 void CShaderObject::BuildReflection()
 {
 	auto& render_context = m_pRenderInterface->GetRenderContext();
-	m_reflection = render_context->GetShaderReflection(m_shaderId);
+	m_reflection = render_context->GetShaderReflection(m_resourceId);
 
 	for (auto& [id, uniform_block] : m_reflection.uniformBlocks)
 	{

@@ -1,6 +1,6 @@
 #include "RenderWorld.h"
 
-#include "GPUVector.h"
+#include "render_resouces/GPUVector.h"
 
 using namespace engine::render;
 

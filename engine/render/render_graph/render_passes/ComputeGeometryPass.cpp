@@ -1,9 +1,5 @@
 #include "ComputeGeometryPass.h"
 
-#include <engine/render/ShaderObject.h>
-
-#include <format>
-
 using namespace engine::render;
 
 CComputeGeometryPass::CComputeGeometryPass(IRenderInterface* render_interface)
@@ -31,6 +27,7 @@ void CComputeGeometryPass::_Execute(const FComputeFrameInfo& frame_info)
 {
 	std::unordered_set<u64> vbos{};
 
+	auto& resource_manager = m_pRenderInterface->GetResourceManager();
 	auto& render_context = m_pRenderInterface->GetRenderContext();
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
 
@@ -44,7 +41,7 @@ void CComputeGeometryPass::_Execute(const FComputeFrameInfo& frame_info)
 	for (auto& vboId : vbos)
 	{
 		bool was_vbo_rebinded{ false };
-		auto& vbo = m_pRenderInterface->GetVertexHandler(vboId);
+		auto& vbo = resource_manager->GetVertexHandler(vboId);
 		if (!last_vbo || vbo.get() != last_vbo)
 		{
 			last_vbo = vbo.get();
@@ -96,24 +93,20 @@ void CComputeGeometryPass::_Execute(const FComputeFrameInfo& frame_info)
 
 const std::unique_ptr<IShaderObject>& CComputeGeometryPass::GetShaderByVBO(const IVertexHandler* vbo)
 {
-	auto& render_graph = m_pRenderInterface->GetRenderGraph();
+	auto& resource_manager = m_pRenderInterface->GetResourceManager();
 
 	auto& shader = m_shaders[vbo->GetHash()];
 	if (!shader)
 	{
-		shader = std::make_unique<CShaderObject>(m_pRenderInterface);
-
 		// Generate shader name
 		auto shader_name = m_baseShaderName + vbo->GetDefinitions();
-
 		auto& render_packet = m_pRenderInterface->GetRenderPacket();
 
 		FComputeShaderCreateInfo shader_ci{};
 		shader_ci.usageCount = std::max(render_packet->stats.materialCount, render_packet->stats.primitiveCount);
-		shader->Create(shader_name, shader_ci);
-
+		shader = resource_manager->CreateShader(shader_name, shader_ci);
 		InitShaderResources(shader);
 	}
 
-	return shader;
+	return resource_manager->GetShaderObject(shader);
 }

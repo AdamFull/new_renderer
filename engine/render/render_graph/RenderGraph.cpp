@@ -20,7 +20,6 @@
 #include "render_passes/FullscreenPass.h"
 #include "render_passes/GeometryPass.h"
 #include "render_passes/ClearPass.h"
-#include "render_passes/PostProcessPass.h"
 #include "render_passes/ImGuiPass.h"
 
 #include "render_passes/BeginDebugMarker.h"
@@ -131,32 +130,32 @@ FTextureCreateInfo CRenderGraph::MakeTextureCI(EApiDataFormat format, ETextureCr
 
 FTextureCreateInfo CRenderGraph::MakeTexture2DCI(EApiDataFormat format, ETextureCreateFlags flags)
 {
-	return MakeTextureCI(format, flags | ETextureCreateFlagBits::e2D);
+	return MakeTextureCI(format, flags | ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eRenderTarget);
 }
 
 FTextureCreateInfo CRenderGraph::MakeTexture2DArrayCI(EApiDataFormat format, ETextureCreateFlags flags)
 {
-	return MakeTextureCI(format, flags | ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eArray);
+	return MakeTextureCI(format, flags | ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eArray | ETextureCreateFlagBits::eRenderTarget);
 }
 
 FTextureCreateInfo CRenderGraph::MakeTexture3DCI(EApiDataFormat format, ETextureCreateFlags flags)
 {
-	return MakeTextureCI(format, flags | ETextureCreateFlagBits::e3D);
+	return MakeTextureCI(format, flags | ETextureCreateFlagBits::e3D | ETextureCreateFlagBits::eRenderTarget);
 }
 
 FTextureCreateInfo CRenderGraph::MakeTexture3DArrayCI(EApiDataFormat format, ETextureCreateFlags flags)
 {
-	return MakeTextureCI(format, flags | ETextureCreateFlagBits::e3D | ETextureCreateFlagBits::eArray);
+	return MakeTextureCI(format, flags | ETextureCreateFlagBits::e3D | ETextureCreateFlagBits::eArray | ETextureCreateFlagBits::eRenderTarget);
 }
 
 FTextureCreateInfo CRenderGraph::MakeTextureCubeCI(EApiDataFormat format, ETextureCreateFlags flags)
 {
-	return MakeTextureCI(format, flags | ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eCubemap);
+	return MakeTextureCI(format, flags | ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eCubemap | ETextureCreateFlagBits::eRenderTarget);
 }
 
 FTextureCreateInfo CRenderGraph::MakeTextureCubeArrayCI(EApiDataFormat format, ETextureCreateFlags flags)
 {
-	return MakeTextureCI(format, flags | ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eCubemap | ETextureCreateFlagBits::eArray);
+	return MakeTextureCI(format, flags | ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eCubemap | ETextureCreateFlagBits::eArray | ETextureCreateFlagBits::eRenderTarget);
 }
 
 FRenderConfigComputeCreateInfo makeComputePassCI(EComputeType type, EQueueTypeFlagBits queue, const std::string& shader)
@@ -844,33 +843,26 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	}
 }
 
-u64 CRenderGraph::AddStaticResource(const std::string& name, const std::string& path)
+void CRenderGraph::AddStaticResource(const std::string& name, const std::string& path)
 {
 	log_debug("[Render Graph] Loading static resource: {}, path: {}.", name, path);
 
-	auto& render_context = m_pRenderInterface->GetRenderContext();
+	auto& resource_manager = m_pRenderInterface->GetResourceManager();
 
 	m_nameToResource[name] = m_vRenderResources.size();
 
 	auto& new_render_resource = m_vRenderResources.emplace_back();
 	new_render_resource.type = ERenderResourceTypeFlagBits::eStaticImage;
-
-	FTextureCreateInfo create_info{}; 
-	FTextureUploadInfo upload_info{};
-	new_render_resource.handle = m_pRenderInterface->LoadTexture(path, create_info, upload_info);
-
-	if (new_render_resource.handle == INVALID_HANDLE)
-		new_render_resource.handle = render_context->CreateTexture(name, create_info, std::move(upload_info));
-
-	return new_render_resource.handle;
+	new_render_resource.handle = resource_manager->LoadTexture(path);
 }
 
-u64 CRenderGraph::AddRenderResource(const std::string& name, const FTextureCreateInfo& texture_ci)
+void CRenderGraph::AddRenderResource(const std::string& name, const FTextureCreateInfo& texture_ci)
 {
 	log_debug("[Render Graph] Allocating render target: {}, size({}x{}x{}) * {}, mips: {}, layers: {}, format: {}.", name, 
 		texture_ci.size.width, texture_ci.size.height, texture_ci.size.depth, texture_ci.size.scale,
 		texture_ci.mipLevels, texture_ci.arrayLayers, utl::cast<u32>(texture_ci.format));
 
+	auto& resource_manager = m_pRenderInterface->GetResourceManager();
 	auto& render_context = m_pRenderInterface->GetRenderContext();
 	auto render_extent = render_context->GetRenderResolution();
 	auto resource_index = m_vRenderResources.size();
@@ -888,27 +880,33 @@ u64 CRenderGraph::AddRenderResource(const std::string& name, const FTextureCreat
 	}
 
 	auto& new_render_resource = m_vRenderResources.emplace_back();
-	new_render_resource.handle = render_context->CreateRenderTarget(name, texture_create_info);
+	new_render_resource.handle = resource_manager->CreateTexture(name, texture_create_info);
 	new_render_resource.type = (texture_ci.typeFlags & ETextureCreateFlagBits::eStorage) ? ERenderResourceTypeFlagBits::eStorageTarget : ERenderResourceTypeFlagBits::eRenderTarget;
 	
 	m_nameToResource[name] = resource_index;
-	return new_render_resource.handle;
 }
 
-u64 CRenderGraph::AddRenderResource(const std::string& name, const FBufferCreateInfo& buffer_ci)
+void CRenderGraph::AddRenderResource(const std::string& name, const FBufferCreateInfo& buffer_ci)
 {
 	log_debug("[Render Graph] Allocating buffer: {}, size: {}b.", name,
 		buffer_ci.size * buffer_ci.count);
 
-	auto& render_context = m_pRenderInterface->GetRenderContext();
+	auto& resource_manager = m_pRenderInterface->GetResourceManager();
 
 	m_nameToResource[name] = m_vRenderResources.size();
 
 	auto& new_render_resource = m_vRenderResources.emplace_back();
-	new_render_resource.handle = render_context->CreateBuffer(name, buffer_ci);
+	new_render_resource.handle = resource_manager->CreateBuffer(name, buffer_ci);
 	new_render_resource.type = ERenderResourceTypeFlagBits::eBuffer;
+}
 
-	return new_render_resource.handle;
+
+void CRenderGraph::AddRenderResource(const std::string& name, const FRenderResource& resource_info)
+{
+	log_debug("[Render Graph] Importing resource: {}.", name);
+
+	m_nameToResource[name] = m_vRenderResources.size();
+	m_vRenderResources.emplace_back(resource_info);
 }
 
 void CRenderGraph::SetBackbufferResourceName(const std::string& name)
@@ -1038,8 +1036,6 @@ u64 CRenderGraph::AddRenderPass(const std::string& name, const FRenderConfigComp
 		new_pass = std::make_unique<CComputeCubemapPass>(m_pRenderInterface);
 	else if (compute_pass_ci.type == EComputeType::eCulling)
 		new_pass = std::make_unique<CComputeCullingPass>(m_pRenderInterface);
-	else if (compute_pass_ci.type == EComputeType::ePostProcess)
-		new_pass = std::make_unique<CPostProcessPass>(m_pRenderInterface);
 
 	for (const auto& group_info : compute_pass_ci.groupInfos)
 	{
@@ -1269,6 +1265,8 @@ bool CRenderGraph::WasGraphChanged()
 
 void CRenderGraph::GenerateResourceBarriers(utl::hash_map<u64, FPassBuildInfo>& build_infos, bool generate_build_infos)
 {
+	auto& resource_manager = m_pRenderInterface->GetResourceManager();
+
 	utl::hash_map<std::pair<u64, u32>, tmp_access_info, pair_hash> resource_access_map{};
 	utl::hash_map<u64, std::unordered_set<u64>> per_res_accessed_passes{};
 
@@ -1348,8 +1346,14 @@ void CRenderGraph::GenerateResourceBarriers(utl::hash_map<u64, FPassBuildInfo>& 
 				else if (is_change_pipeline_ownership)
 					new_barrier.barrierType = ERenderResourceBarrierType::eIntermediate;
 
+				if ((render_resource.type & ERenderResourceTypeFlagBits::eAllImage) && !(render_resource.type & ERenderResourceTypeFlagBits::eBackbuffer))
+					new_barrier.resource.handle = resource_manager->GetTextureObject(render_resource.handle)->Handle();
+				else if (render_resource.type & ERenderResourceTypeFlagBits::eBuffer)
+					new_barrier.resource.handle = resource_manager->GetBufferObject(render_resource.handle)->Handle();
+				else
+					new_barrier.resource.handle = render_resource.handle;
+
 				new_barrier.dependencyType = barrier_type;
-				new_barrier.resource.handle = render_resource.handle;
 				new_barrier.resource.type = render_resource.type;
 				new_barrier.subresourceIndex = resource_binding.subresource;
 				new_barrier.srcPassType = last_resource_access.pass_type;

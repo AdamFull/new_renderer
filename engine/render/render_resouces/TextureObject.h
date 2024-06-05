@@ -13,10 +13,8 @@ namespace engine
 			~CTextureObject() override;
 
 			void Create(const std::string& name, const FTextureCreateInfo& create_info) override;
-			void Load(const std::string& path) override;
+			void Create(const std::string& name, const FTextureCreateInfo& create_info, FTextureUploadInfo&& upload_info) override;
 		private:
-			u64 m_TextureId{ ~0ull };
-
 			IRenderInterface* m_pRenderInterface{ nullptr };
 		};
 	}

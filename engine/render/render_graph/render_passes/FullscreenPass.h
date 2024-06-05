@@ -19,7 +19,7 @@ namespace engine
 			void _Render(const FRenderFrameInfo& frame_info) override;
 
 		private:
-			std::unique_ptr<IShaderObject> m_pShader{};
+			u64 m_shader{ INVALID_HANDLE };
 		};
 	}
 }

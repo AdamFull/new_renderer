@@ -1,9 +1,5 @@
 #include "OmniShadowMapPass.h"
 
-#include <engine/render/ShaderObject.h>
-
-#include <format>
-
 using namespace engine::render;
 
 COmnilShadowMapPass::COmnilShadowMapPass(IRenderInterface* render_interface)
@@ -43,6 +39,7 @@ void COmnilShadowMapPass::PostLoad()
 
 void COmnilShadowMapPass::_Render(const FRenderFrameInfo& frame_info)
 {
+	auto& resource_manager = m_pRenderInterface->GetResourceManager();
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
 	auto& world_stats = render_world->GetStats();
 
@@ -67,7 +64,7 @@ void COmnilShadowMapPass::_Render(const FRenderFrameInfo& frame_info)
 			const auto& batch = *it;
 
 			bool was_vbo_rebinded{ false };
-			auto& vbo = m_pRenderInterface->GetVertexHandler(batch.vboID);
+			auto& vbo = resource_manager->GetVertexHandler(batch.vboID);
 			if (!last_vbo || vbo.get() != last_vbo)
 			{
 				last_vbo = vbo.get();
@@ -103,22 +100,18 @@ void COmnilShadowMapPass::_Render(const FRenderFrameInfo& frame_info)
 
 const std::unique_ptr<IShaderObject>& COmnilShadowMapPass::GetShaderByVBO(const IVertexHandler* vbo)
 {
-	auto& render_graph = m_pRenderInterface->GetRenderGraph();
-
 	auto vbo_hash = vbo->GetHash();
 	auto& shader = m_shaders[vbo_hash];
-	if (!shader)
+	if (shader != INVALID_HANDLE)
 	{
-		shader = std::make_unique<CShaderObject>(m_pRenderInterface);
-
 		// Generate shader name
 		auto shader_name = m_baseShaderName + vbo->GetDefinitions();
-
 		auto front_face = m_bFlipViewport ? EShaderFrontFace::eCW : EShaderFrontFace::eCCW;
 
-		MakeShader(shader_name, shader, EShaderCullModeFlagBits::eFront, front_face, false, EDepthCompareOp::eLessOrEqual, vbo);
+		shader = MakeShader(shader_name, EShaderCullModeFlagBits::eFront, front_face, false, EDepthCompareOp::eLessOrEqual, vbo);
 		InitShaderResources(shader);
 	}
 
-	return shader;
+	auto& resource_manager = m_pRenderInterface->GetResourceManager();
+	return resource_manager->GetShaderObject(shader);
 }

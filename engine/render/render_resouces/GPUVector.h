@@ -21,7 +21,9 @@ namespace engine
 			std::string m_srOriginalName{};
 			EBufferUsageFlags m_bufferFlag{};
 
-			std::unique_ptr<IBufferObject> m_pBuffer{};
+			u64 m_buffer{ INVALID_HANDLE };
+
+			IRenderInterface* m_pRenderInterface{ nullptr };
 		};
 	}
 }

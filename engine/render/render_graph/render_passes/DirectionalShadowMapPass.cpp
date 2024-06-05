@@ -1,7 +1,5 @@
 #include "DirectionalShadowMapPass.h"
 
-#include <engine/render/ShaderObject.h>
-
 #include <format>
 
 using namespace engine::render;
@@ -46,6 +44,8 @@ void CDirectionalShadowMapPass::_Render(const FRenderFrameInfo& frame_info)
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
 	auto& world_stats = render_world->GetStats();
 
+	auto& resource_manager = m_pRenderInterface->GetResourceManager();
+
 	auto& render_context = m_pRenderInterface->GetRenderContext();
 	render_context->SetScissorRect(0, 0, frame_info.renderRect.size.x, frame_info.renderRect.size.y);
 
@@ -66,7 +66,7 @@ void CDirectionalShadowMapPass::_Render(const FRenderFrameInfo& frame_info)
 			const auto& batch = *it;
 
 			bool was_vbo_rebinded{ false };
-			auto& vbo = m_pRenderInterface->GetVertexHandler(batch.vboID);
+			auto& vbo = resource_manager->GetVertexHandler(batch.vboID);
 			if (!last_vbo || vbo.get() != last_vbo)
 			{
 				last_vbo = vbo.get();
@@ -100,22 +100,18 @@ void CDirectionalShadowMapPass::_Render(const FRenderFrameInfo& frame_info)
 
 const std::unique_ptr<IShaderObject>& CDirectionalShadowMapPass::GetShaderByVBO(const IVertexHandler* vbo)
 {
-	auto& render_graph = m_pRenderInterface->GetRenderGraph();
-
 	auto vbo_hash = vbo->GetHash();
 	auto& shader = m_shaders[vbo_hash];
 	if (!shader)
 	{
-		shader = std::make_unique<CShaderObject>(m_pRenderInterface);
-
 		// Generate shader name
 		auto shader_name = m_baseShaderName + vbo->GetDefinitions();
-
 		auto front_face = m_bFlipViewport ? EShaderFrontFace::eCW : EShaderFrontFace::eCCW;
 
-		MakeShader(shader_name, shader, EShaderCullModeFlagBits::eFront, front_face, false, EDepthCompareOp::eLessOrEqual, vbo);
+		shader = MakeShader(shader_name, EShaderCullModeFlagBits::eFront, front_face, false, EDepthCompareOp::eLessOrEqual, vbo);
 		InitShaderResources(shader);
 	}
 
-	return shader;
+	auto& resource_manager = m_pRenderInterface->GetResourceManager();
+	return resource_manager->GetShaderObject(shader);
 }

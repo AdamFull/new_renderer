@@ -97,9 +97,14 @@ u32 get_ktx_api_specific_format(ktxTexture* This)
 	return 0;
 }
 
-void CResourceLoader::Initialize(IVirtualFileSystemInterface* vfs)
+CResourceLoader::CResourceLoader(filesystem::IVirtualFileSystemInterface* vfs)
 {
-	if (!vfs->ReadBson("/root/embed/rendering/shader_cache.shc", m_shaderCache))
+	m_pVFS = vfs;
+}
+
+void CResourceLoader::Create(const std::string& path)
+{
+	if (!m_pVFS->ReadBson(path, m_shaderCache))
 		log_error("Failed to load shader cache. ")
 }
 
