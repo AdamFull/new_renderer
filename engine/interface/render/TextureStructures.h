@@ -15,7 +15,8 @@ namespace engine
 			e3D = 1 << 4,
 			eTransferable = 1 << 5,
 			eSamplable = 1 << 6,
-			eStorage = 1 << 7
+			eStorage = 1 << 7,
+			eRenderTarget = 1 << 8
 		};
 		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ETextureCreateFlags, ETextureCreateFlagBits)
 
@@ -104,15 +105,6 @@ namespace engine
 			u32 width{ 1u }, height{ 1u }, depth{ 1u };
 			u32 mipLevels{ 1u };
 			u32 arrayLayers{ 1u };
-		};
-
-		class ITextureObject
-		{
-		public:
-			virtual ~ITextureObject() = default;
-
-			virtual void Create(const std::string& name, const FTextureCreateInfo& create_info) = 0;
-			virtual void Load(const std::string& path) = 0;
 		};
 	}
 }

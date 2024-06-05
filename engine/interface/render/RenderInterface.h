@@ -1,13 +1,10 @@
 #pragma once
 
 #include <engine/interface/SharedStructure.h>
-#include "BufferStructures.h"
 #include "LightStructures.h"
 #include "MaterialStructures.h"
 #include "RenderingStructures.h"
-#include "ShaderStructures.h"
-#include "TextureStructures.h"
-#include "VertexStructures.h"
+#include "RenderResource.h"
 #include "RenderGraph.h"
 #include "PostProcessStructures.h"
 
@@ -17,8 +14,6 @@
 
 namespace engine
 {
-	namespace filesystem { class IVirtualFileSystemInterface; }
-
 	namespace render
 	{
 		class IRenderContext;
@@ -158,94 +153,6 @@ namespace engine
 			glm::mat4 model{};
 		};
 
-		class CUniformHandle
-		{
-		public:
-			template<class _Ty>
-			void Create(const _Ty& block)
-			{
-				m_data.resize(block.size);
-				m_uniforms = block.uniforms;
-			}
-
-			// For render script
-			void Set(u64 name, const void* raw_data, u64 size)
-			{
-				auto found = m_uniforms.find(name);
-				if (found == m_uniforms.end() || !raw_data)
-					return;
-
-				auto& uniform = found->second;
-
-				if (size == 0ull)
-					size = uniform.size;
-
-				std::memcpy(m_data.data() + uniform.offset, raw_data, size);
-			}
-
-			template<class _Ty>
-			void Set(u64 name, const _Ty& object, u64 size = 0ull)
-			{
-				auto found = m_uniforms.find(name);
-				if (found == m_uniforms.end())
-					return;
-
-				auto& uniform = found->second;
-
-				if (size == 0ull)
-					size = (std::min)(sizeof(_Ty), uniform.size);
-
-				std::memcpy(m_data.data() + uniform.offset, &object, size);
-			}
-
-			template<class _Ty>
-			_Ty* Get(u64 name)
-			{
-				auto found = m_uniforms.find(name);
-				if (found == m_uniforms.end())
-					return nullptr;
-
-				auto& uniform = found->second;
-
-				if (sizeof(_Ty) > uniform.size)
-					return nullptr;
-
-				return reinterpret_cast<_Ty*>(m_data.data() + uniform.offset);
-			}
-
-			const utl::vector<char>& Data() const
-			{
-				return m_data;
-			}
-		private:
-			utl::hash_map<u64, FReflectionUniform> m_uniforms{};
-			utl::vector<char> m_data{};
-		};
-
-		class IShaderObject
-		{
-		public:
-			virtual ~IShaderObject() = default;
-
-			virtual void Create(const std::string& name, const FGraphicsShaderCreateInfo& create_info) = 0;
-			virtual void Create(const std::string& name, const FComputeShaderCreateInfo& create_info) = 0;
-
-			virtual const std::unique_ptr<CUniformHandle>& GetUniformBlock(u64 name) = 0;
-			virtual const std::unique_ptr<CUniformHandle>& GetConstantBlock(u64 name) = 0;
-
-			virtual void BindBuffer(u64 name, u64 buffer_resource) = 0;
-			virtual void BindTexture(u64 name, u64 texture_resource, u32 mip = ~0u) = 0;
-
-			virtual void FlushDescriptors() = 0;
-			virtual void FlushConstants(EQueueTypeFlagBits queue) = 0;
-			virtual void Bind(EQueueTypeFlagBits queue) = 0;
-			virtual void BindResources(EQueueTypeFlagBits queue) = 0;
-
-			virtual u64 Handle() const = 0;
-
-			virtual const FShaderReflectionData& GetReflection() const = 0;
-		};
-
 		struct FRenderSceneStats
 		{
 			u64 vboCount{ 0ull };
@@ -324,9 +231,9 @@ namespace engine
 			virtual void UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view) = 0;
 			virtual const utl::vector<uint32_t>& GetGlobalTextureRemap() = 0;
 
+			virtual u64 CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
 			virtual u64 CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) = 0;
 			virtual u64 GetTextureId(const std::string& name) = 0;
-			virtual u64 CreateRenderTarget(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
 			virtual FTextureView GetTextureView(u64 texture_id) = 0;
 			virtual void DestroyTexture(u64 resource_id) = 0;
 
@@ -454,10 +361,32 @@ namespace engine
 		public:
 			virtual ~IResourceLoader() = default;
 
-			virtual void Initialize(filesystem::IVirtualFileSystemInterface* vfs) = 0;
+			virtual void Create(const std::string& path) = 0;
 
 			virtual bool LoadTexture(const utl::vector<uint8_t>& data, EMimeType mime, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info) = 0;
 			virtual bool LoadShaderData(const FShaderUploadInfo& load_info, utl::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
+		};
+
+		class IRenderResourceManager
+		{
+		public:
+			~IRenderResourceManager() = default;
+
+			virtual void Create() = 0;
+			
+			virtual u64 CreateTexture(const std::string& name, const FTextureCreateInfo& create_info) = 0;
+			virtual u64 LoadTexture(const std::string& path) = 0;
+			virtual const std::unique_ptr<ITextureObject>& GetTextureObject(u64 id) = 0;
+
+			virtual u64 CreateShader(const std::string& name_info, const FGraphicsShaderCreateInfo& create_info) = 0;
+			virtual u64 CreateShader(const std::string& name_info, const FComputeShaderCreateInfo& create_info) = 0;
+			virtual const std::unique_ptr<IShaderObject>& GetShaderObject(u64 id) = 0;
+
+			virtual u64 CreateBuffer(const std::string& name_info, const FBufferCreateInfo& create_info) = 0;
+			virtual const std::unique_ptr<IBufferObject>& GetBufferObject(u64 id) = 0;
+
+			virtual u64 CreateVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& create_info) = 0;
+			virtual const std::unique_ptr<IVertexHandler>& GetVertexHandler(u64 id) = 0;
 		};
 
 		class IRenderInterface
@@ -469,25 +398,13 @@ namespace engine
 			virtual void PostLoad() = 0;
 			virtual void Render(f32 dt) = 0;
 
-			virtual u64 CreateTexture(const std::string& path) = 0;
-			virtual u64 LoadTexture(const std::string& path, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info) = 0;
-
-			virtual u64 CreateShader(const std::string& name_info, const FGraphicsShaderCreateInfo& create_info) = 0;
-			virtual u64 CreateShader(const std::string& name_info, const FComputeShaderCreateInfo& create_info) = 0;
-			virtual const std::unique_ptr<IShaderObject>& GetShaderObject(u64 id) = 0;
-
-			virtual u64 CreateVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) = 0;
-			virtual const std::unique_ptr<IVertexHandler>& GetVertexHandler(u64 id) = 0;
-
-			virtual FShaderUploadInfo GetShaderNameTag(const std::string& name) = 0;
-
 			virtual void UpdateSurfaceSize(i32 width, i32 height) = 0;
 
 			virtual const std::unique_ptr<FRenderDataPacket>& GetRenderPacket() = 0;
 			virtual const std::unique_ptr<IRenderGraph>& GetRenderGraph() = 0;
 			virtual const std::unique_ptr<IRenderWorld>& GetRenderWorld() = 0;
 			virtual const std::unique_ptr<IRenderContext>& GetRenderContext() = 0;
-			virtual const std::unique_ptr<IResourceLoader>& GetResourceLoader() = 0;
+			virtual const std::unique_ptr<IRenderResourceManager>& GetResourceManager() = 0;
 		};
 	}
 }
