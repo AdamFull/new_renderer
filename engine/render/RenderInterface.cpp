@@ -117,8 +117,7 @@ CRenderInterface::CRenderInterface(filesystem::IVirtualFileSystemInterface* vfs)
 	m_pResourceLoader = std::make_unique<CResourceLoader>();
 	m_pRenderPacket = std::make_unique<FRenderDataPacket>();
 
-	m_pResources = std::make_unique<CResourceContainer>();
-	m_pResources->registerResource<IVertexHandler>();
+	m_pResources = std::make_unique<resource_container_t>();
 
 	m_pRenderGraph = std::make_unique<CRenderGraph>(this);
 	m_pRenderWorld = std::make_unique<CRenderWorld>(this);

@@ -10,6 +10,8 @@ namespace engine
 {
 	namespace render
 	{
+		using resource_container_t = CResourceContainer<IBufferObject, ITextureObject, IShaderObject, IVertexHandler>;
+
 		class CRenderInterface : public IRenderInterface
 		{
 		public:
@@ -62,7 +64,7 @@ namespace engine
 
 			std::unique_ptr<IRenderGraph> m_pRenderGraph{};
 			std::unique_ptr<IRenderWorld> m_pRenderWorld{};
-			std::unique_ptr<CResourceContainer> m_pResources{};
+			std::unique_ptr<resource_container_t> m_pResources{};
 			std::unique_ptr<IRenderContext> m_pRenderContext{};
 			std::unique_ptr<IResourceLoader> m_pResourceLoader{};
 		};

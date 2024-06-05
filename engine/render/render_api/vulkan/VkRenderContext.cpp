@@ -1,6 +1,4 @@
 #include "VkRenderContext.h"
-
-#include "VkShaderReflection.h"
 #include "VkCommon.h"
 
 #include <logger/logger.h>
@@ -157,11 +155,7 @@ void CVkRenderContext::Create(const FRenderContextCreateInfo& context_ci)
 	m_pDevice = std::make_unique<CVkRenderDevice>();
 	m_pDevice->Create(context_ci);
 
-	m_pResources = std::make_unique<CResourceContainer>();
-	m_pResources->registerResource<FVkTexture>();
-	m_pResources->registerResource<FVkShader>();
-	m_pResources->registerResource<FVkBuffer>();
-	m_pResources->registerResource<FVkShaderReflectionData>();
+	m_pResources = std::make_unique<vk_resource_container_t>();
 
 	FVkCommandBufferCreateInfo command_buffer_ci{};
 	command_buffer_ci.count = m_pDevice->m_swapchain.framesInFlight;

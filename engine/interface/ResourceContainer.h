@@ -93,72 +93,38 @@ namespace engine
 		utl::vector<std::unique_ptr<_Ty>> objects{};
 	};
 
+	template<class... _Args>
 	class CResourceContainer
 	{
 	public:
 		template<class _Ty>
-		void registerResource()
-		{
-			const std::type_index type_index(typeid(_Ty));
-			holders[type_index] = std::make_shared<CResourceHolder<_Ty>>();
-		}
-
-		template<class _Ty>
 		resource_handle_t add(const char* name, std::unique_ptr<_Ty>&& object)
-		{
-			auto container = get_container<_Ty>();
-			return container->add(name, std::move(object));
-		}
+		{ return std::get<CResourceHolder<_Ty>>(holders).add(name, std::move(object)); }
 
 		template<class _Ty>
 		const std::unique_ptr<_Ty>& get(resource_handle_t id)
-		{
-			auto container = get_container<_Ty>();
-			return container->get(id);
-		}
+		{ return std::get<CResourceHolder<_Ty>>(holders).get(id); }
 
 		template<class _Ty>
 		const std::unique_ptr<_Ty>& get(const char* name)
-		{
-			auto container = get_container<_Ty>();
-			return container->get(name);
-		}
+		{ return std::get<CResourceHolder<_Ty>>(holders).get(name); }
 
 		template<class _Ty>
 		void remove(resource_handle_t id)
-		{
-			auto container = get_container<_Ty>();
-			return container->remove(id);
-		}
+		{ std::get<CResourceHolder<_Ty>>(holders).remove(id); }
 
 		template<class _Ty>
 		void remove(const char* name)
-		{
-			auto container = get_container<_Ty>();
-			return container->remove(name);
-		}
+		{ std::get<CResourceHolder<_Ty>>(holders).remove(name); }
 
 		template<class _Ty>
 		utl::vector<std::unique_ptr<_Ty>>& data()
-		{
-			auto container = get_container<_Ty>();
-			return container->data();
-		}
+		{ return std::get<CResourceHolder<_Ty>>(holders).data(); }
 
 		template<class _Ty>
 		resource_handle_t getId(const char* name)
-		{
-			auto container = get_container<_Ty>();
-			return container->getId(name);
-		}
-	protected:
-		template<class _Ty>
-		CResourceHolder<_Ty>* get_container()
-		{
-			const std::type_index type_index(typeid(_Ty));
-			return utl::cast<CResourceHolder<_Ty>*>(holders[type_index].get());
-		}
+		{ return std::get<CResourceHolder<_Ty>>(holders).getId(name); }
 	private:
-		utl::hash_map<std::type_index, std::shared_ptr<void>> holders{};
+		std::tuple<CResourceHolder<_Args>...> holders;
 	};
 }

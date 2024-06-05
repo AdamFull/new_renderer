@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VkRenderDevice.h"
+#include "VkShaderReflection.h"
 #include <engine/interface/ResourceContainer.h>
 #include <engine/interface/render/RenderInterface.h>
 #include <container/unique_queue.h>
@@ -11,6 +12,8 @@ namespace engine
 	{
 		namespace vulkan
 		{
+			using vk_resource_container_t = CResourceContainer<FVkTexture, FVkShader, FVkBuffer, FVkShaderReflectionData>;
+
 			class CVkRenderContext : public IRenderContext
 			{
 			public:
@@ -132,7 +135,7 @@ namespace engine
 				//void blitImage(const FVkCommandBuffer& command_buffer, );
 			private:
 				std::unique_ptr<CVkRenderDevice> m_pDevice{};
-				std::unique_ptr<CResourceContainer> m_pResources{};
+				std::unique_ptr<vk_resource_container_t> m_pResources;
 
 				utl::vector<FTextureUploadInfo> m_textureUploadInfos{};
 				utl::vector<FBufferUploadInfo> m_bufferUploadInfos{};
