@@ -151,7 +151,7 @@ void IRenderPass::BuildAttachment(u64 resource_id, const FPassBuildInfo& build_i
 	attachment_info.storeOp = resource_info.storeOp;
 }
 
-void IRenderPass::MakeShader(const std::string& name, std::unique_ptr<IShaderObject>& shader, EShaderCullModeFlagBits cull_mode, EShaderFrontFace front_face, EDepthCompareOp depthOp, const IVertexHandler* vbo)
+void IRenderPass::MakeShader(const std::string& name, std::unique_ptr<IShaderObject>& shader, EShaderCullModeFlagBits cull_mode, EShaderFrontFace front_face, bool alphaBlend, EDepthCompareOp depthOp, const IVertexHandler* vbo)
 {
 	auto& render_graph = m_pRenderInterface->GetRenderGraph();
 
@@ -160,6 +160,7 @@ void IRenderPass::MakeShader(const std::string& name, std::unique_ptr<IShaderObj
 	shader_ci.frontFace = front_face;
 	shader_ci.primitiveTopology = EVertexPrimitiveTopology::eTriangleList;
 	shader_ci.depthCompareOp = depthOp;
+	shader_ci.alphaBlending = alphaBlend;
 
 	auto& output_targets = m_renderResources[ERenderResourceGroupType::eColorWrite];
 	for (const auto& resource_binding : output_targets)

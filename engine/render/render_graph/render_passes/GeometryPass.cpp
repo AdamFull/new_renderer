@@ -108,7 +108,7 @@ const std::unique_ptr<IShaderObject>& CGeometryPass::GetShaderByVBO(const IVerte
 		auto cull_mode = m_bFlipViewport ? EShaderCullModeFlagBits::eBack : EShaderCullModeFlagBits::eFront;
 		auto front_face = m_bFlipViewport ? EShaderFrontFace::eCW : EShaderFrontFace::eCCW;
 
-		MakeShader(shader_name, shader, cull_mode, front_face, EDepthCompareOp::eLessOrEqual, vbo);
+		MakeShader(shader_name, shader, cull_mode, front_face, false, EDepthCompareOp::eLessOrEqual, vbo);
 		InitShaderResources(shader);
 	}
 

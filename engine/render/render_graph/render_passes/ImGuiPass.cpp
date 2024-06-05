@@ -63,7 +63,7 @@ void CImGuiPass::Init(const FRenderPassCreateInfo& pass_ci)
 	// Make RHI shader object
 	m_pShader = std::make_unique<CShaderObject>(m_pRenderInterface);
 
-	MakeShader(pass_ci.shader, m_pShader, EShaderCullModeFlagBits::eNone, EShaderFrontFace::eCCW, EDepthCompareOp::eLessOrEqual, m_pVertexHandler.get());
+	MakeShader(pass_ci.shader, m_pShader, EShaderCullModeFlagBits::eNone, EShaderFrontFace::eCCW, true, EDepthCompareOp::eLessOrEqual, m_pVertexHandler.get());
 	InitShaderResources(m_pShader);
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -119,7 +119,7 @@ void CImGuiPass::_Render(const FRenderFrameInfo& frame_info)
 
 		// Upload vertices
 		m_pVertexHandler->Allocate();
-		render_context->UploadBuffers();
+		//render_context->UploadBuffers();
 
 		// Bind pipeline:
 		m_pShader->Bind(m_queue);

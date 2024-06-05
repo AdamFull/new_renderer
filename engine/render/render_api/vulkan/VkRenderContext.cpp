@@ -483,6 +483,7 @@ u64 CVkRenderContext::CreateShader(const std::string& name, const FGraphicsShade
 	pipeline_ci.cullMode = get_cull_mode_flags(shader_ci.cullMode);
 	pipeline_ci.frontFace = get_front_face(shader_ci.frontFace);
 	pipeline_ci.depthCompareOp = get_compare_op(shader_ci.depthCompareOp);
+	pipeline_ci.enableAlphaBlend = shader_ci.alphaBlending;
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	pipeline_ci.name = name;
 #endif

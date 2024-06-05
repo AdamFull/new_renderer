@@ -272,6 +272,8 @@ namespace engine
 				vk::SampleCountFlagBits sampleCount{ vk::SampleCountFlagBits::e1 };
 				u32 patchControlPoints{ 0u };
 
+				bool enableAlphaBlend{ false };
+
 				utl::vector<vk::Format> colorAttachmentFormats{};
 				vk::Format depthAttachmentFormat{ vk::Format::eUndefined };
 				vk::Format stencilAttachmentFormat{ vk::Format::eUndefined };

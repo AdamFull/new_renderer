@@ -114,6 +114,8 @@ namespace engine
 			// EShaderFrontFace
 			EShaderFrontFace frontFace{};
 
+			bool alphaBlending{ false };
+
 			EDepthCompareOp depthCompareOp{ EDepthCompareOp::eLessOrEqual };
 
 			u32 usageCount{ 1u };

@@ -499,12 +499,12 @@ FRenderApiErrorInfo CVkRenderDevice::CreatePipeline(const FVkGraphicsPipelineCre
 
 		// TODO: generate write mask from format type
 		state.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
-		state.blendEnable = false; // TODO: add color blending support
+		state.blendEnable = pipeline_ci.enableAlphaBlend; // TODO: add color blending support
 
 		state.srcColorBlendFactor = vk::BlendFactor::eSrcAlpha;
 		state.dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
 		state.colorBlendOp = vk::BlendOp::eAdd;
-		state.srcAlphaBlendFactor = vk::BlendFactor::eOne;
+		state.srcAlphaBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;//vk::BlendFactor::eOne;
 		state.dstAlphaBlendFactor = vk::BlendFactor::eZero;
 		state.alphaBlendOp = vk::BlendOp::eAdd;
 	}
