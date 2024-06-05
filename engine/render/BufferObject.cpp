@@ -10,15 +10,16 @@ CBufferObject::CBufferObject(IRenderInterface* render_interface)
 CBufferObject::~CBufferObject()
 {
 	auto& render_context = m_pRenderInterface->GetRenderContext();
-	render_context->DestroyBuffer(m_resourceId);
+	render_context->DestroyBuffer(m_bufferId);
 }
 
 void CBufferObject::Create(const std::string& name, const FBufferCreateInfo& create_info)
 {
 	auto& render_context = m_pRenderInterface->GetRenderContext();
-	m_resourceId = render_context->CreateBuffer(name, create_info);
+	auto& render_graph = m_pRenderInterface->GetRenderGraph();
+	m_bufferId = render_graph->AddRenderResource(name, create_info);
 	
-	auto buffer_view = render_context->GetBufferView(m_resourceId); 
+	auto buffer_view = render_context->GetBufferView(m_bufferId); 
 	m_elemCount = buffer_view.elementCount;
 	m_elemSize = buffer_view.alignedSize / buffer_view.elementCount;
 	m_virtualAddress = buffer_view.address;
@@ -29,11 +30,11 @@ void CBufferObject::Resize(const std::string& name, const FBufferCreateInfo& cre
 	auto& render_context = m_pRenderInterface->GetRenderContext();
 
 	if (m_pMapped)
-		render_context->UnmapBufferMemory(m_resourceId);
+		render_context->UnmapBufferMemory(m_bufferId);
 
-	render_context->UpdateBuffer(name, m_resourceId, create_info);
+	render_context->UpdateBuffer(name, m_bufferId, create_info);
 
-	auto buffer_view = render_context->GetBufferView(m_resourceId);
+	auto buffer_view = render_context->GetBufferView(m_bufferId);
 	m_elemCount = buffer_view.elementCount;
 	m_elemSize = buffer_view.alignedSize / buffer_view.elementCount;
 	m_virtualAddress = buffer_view.address;
@@ -44,7 +45,7 @@ void CBufferObject::Upload(utl::vector<u8>&& data, const utl::vector<FBufferUplo
 	auto& render_context = m_pRenderInterface->GetRenderContext();
 
 	FBufferUploadInfo upload_info{};
-	upload_info.bufferId = m_resourceId;
+	upload_info.bufferId = m_bufferId;
 	upload_info.data = std::move(data);
 	upload_info.regions = regions;
 
@@ -54,7 +55,7 @@ void CBufferObject::Upload(utl::vector<u8>&& data, const utl::vector<FBufferUplo
 void CBufferObject::Map()
 {
 	auto& render_context = m_pRenderInterface->GetRenderContext();
-	render_context->MapBufferMemory(m_resourceId, m_pMapped);
+	render_context->MapBufferMemory(m_bufferId, m_pMapped);
 }
 
 void CBufferObject::Unmap() 
@@ -62,7 +63,7 @@ void CBufferObject::Unmap()
 	if (m_pMapped)
 	{
 		auto& render_context = m_pRenderInterface->GetRenderContext();
-		render_context->UnmapBufferMemory(m_resourceId);
+		render_context->UnmapBufferMemory(m_bufferId);
 		m_pMapped = nullptr;
 	}
 }
@@ -81,7 +82,7 @@ void CBufferObject::Write(const void* data, u64 size, u64 offset)
 void CBufferObject::Flush(u64 size, u64 offset) 
 {
 	auto& render_context = m_pRenderInterface->GetRenderContext();
-	render_context->FlushBuffer(m_resourceId, size, offset);
+	render_context->FlushBuffer(m_bufferId, size, offset);
 }
 
 void CBufferObject::Clear()
@@ -102,6 +103,11 @@ u64 CBufferObject::InstanceSize()
 u64 CBufferObject::Count()
 {
 	return m_elemCount;
+}
+
+u64 CBufferObject::Handle()
+{
+	return m_bufferId;
 }
 
 uint64_t CBufferObject::Address()

@@ -39,21 +39,9 @@ void IBasePass::InitShaderResources(const std::unique_ptr<IShaderObject>& shader
 	}
 }
 
-void IBasePass::InitShaderResources(u64 shader)
-{
-	auto& resource_manager = m_pRenderInterface->GetResourceManager();
-	auto& shader_object = resource_manager->GetShaderObject(shader);
-	InitShaderResources(shader_object);
-}
-
-void IBasePass::BindShaderResources(u64 shader, f32 dt)
-{
-	
-}
-
 void IBasePass::BindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt)
 {
-
+	auto& render_world = m_pRenderInterface->GetRenderWorld();
 }
 
 void IRenderPass::Init(const FRenderPassCreateInfo& pass_ci)
@@ -163,10 +151,9 @@ void IRenderPass::BuildAttachment(u64 resource_id, const FPassBuildInfo& build_i
 	attachment_info.storeOp = resource_info.storeOp;
 }
 
-u64 IRenderPass::MakeShader(const std::string& name, EShaderCullModeFlagBits cull_mode, EShaderFrontFace front_face, bool alphaBlend, EDepthCompareOp depthOp, const IVertexHandler* vbo)
+void IRenderPass::MakeShader(const std::string& name, std::unique_ptr<IShaderObject>& shader, EShaderCullModeFlagBits cull_mode, EShaderFrontFace front_face, bool alphaBlend, EDepthCompareOp depthOp, const IVertexHandler* vbo)
 {
 	auto& render_graph = m_pRenderInterface->GetRenderGraph();
-	auto& resource_manager = m_pRenderInterface->GetResourceManager();
 
 	FGraphicsShaderCreateInfo shader_ci{};
 	shader_ci.cullMode = cull_mode;
@@ -182,9 +169,8 @@ u64 IRenderPass::MakeShader(const std::string& name, EShaderCullModeFlagBits cul
 			continue;
 
 		auto& render_resource = render_graph->GetRenderResource(resource_binding.resource);
-		auto& texture = resource_manager->GetTextureObject(render_resource.handle);
 		auto& new_attachment = shader_ci.colorAttachments.emplace_back();
-		new_attachment.source = texture->Handle();
+		new_attachment.source = render_resource.handle;
 	}
 
 	auto& backbuffer_targer = m_renderResources[ERenderResourceGroupType::eBackbufferWrite];
@@ -202,15 +188,13 @@ u64 IRenderPass::MakeShader(const std::string& name, EShaderCullModeFlagBits cul
 	if (m_depthTarget != INVALID_HANDLE)
 	{
 		auto& render_resource = render_graph->GetRenderResource(m_depthTarget);
-		auto& texture = resource_manager->GetTextureObject(render_resource.handle);
-		shader_ci.depthAttachment.source = texture->Handle();
+		shader_ci.depthAttachment.source = render_resource.handle;
 	}
 
 	if (m_stencilTarget != INVALID_HANDLE)
 	{
 		auto& render_resource = render_graph->GetRenderResource(m_stencilTarget);
-		auto& texture = resource_manager->GetTextureObject(render_resource.handle);
-		shader_ci.stencilAttachment.source = texture->Handle();
+		shader_ci.stencilAttachment.source = render_resource.handle;
 	}
 
 	if (vbo)
@@ -225,22 +209,12 @@ u64 IRenderPass::MakeShader(const std::string& name, EShaderCullModeFlagBits cul
 		shader_ci.vertexDeclaration = vbo->GetVertexDeclaration();
 	}
 
-	return resource_manager->CreateShader(name, shader_ci);
-}
-
-void IRenderPass::InitShaderResources(u64 shader)
-{
-	IBasePass::InitShaderResources(shader);
+	shader->Create(name, shader_ci);
 }
 
 void IRenderPass::InitShaderResources(const std::unique_ptr<IShaderObject>& shader)
 {
 	IBasePass::InitShaderResources(shader);
-}
-
-void IRenderPass::BindShaderResources(u64 shader, f32 dt)
-{
-	IBasePass::BindShaderResources(shader, dt);
 }
 
 void IRenderPass::BindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt)
@@ -336,11 +310,6 @@ void IComputePass::InitShaderResources(const std::unique_ptr<IShaderObject>& sha
 	IBasePass::InitShaderResources(shader);
 }
 
-void IComputePass::InitShaderResources(u64 shader)
-{
-	IBasePass::InitShaderResources(shader);
-}
-
 void IComputePass::BindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt)
 {
 	IBasePass::BindShaderResources(shader, dt);
@@ -364,13 +333,4 @@ void IComputePass::BindShaderResources(const std::unique_ptr<IShaderObject>& sha
 		uniform->Set(shader_bindings::time_num_pixels_x_label, utl::cast<f32>(render_size.x));
 		uniform->Set(shader_bindings::time_num_pixels_y_label, utl::cast<f32>(render_size.y));
 	}
-}
-
-void IComputePass::BindShaderResources(u64 shader, f32 dt)
-{
-	IBasePass::BindShaderResources(shader, dt);
-
-	auto& resource_manager = m_pRenderInterface->GetResourceManager();
-	auto& shader_object = resource_manager->GetShaderObject(shader);
-	BindShaderResources(shader_object, dt);
 }

@@ -25,7 +25,8 @@ namespace engine
 			eDefault,
 			eGeometry,
 			eCubemap,
-			eCulling
+			eCulling,
+			ePostProcess
 		};
 
 		enum class ERenderingSizeType

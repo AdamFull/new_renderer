@@ -12,8 +12,8 @@ namespace engine
 			CShaderObject(IRenderInterface* render_interface);
 			~CShaderObject() override;
 
-			void Create(const std::string& name, const FGraphicsShaderCreateInfo& create_info, const utl::vector<FShaderCreationBlockInfo>& stages) override;
-			void Create(const std::string& name, const FComputeShaderCreateInfo& create_info, const utl::vector<FShaderCreationBlockInfo>& stages) override;
+			void Create(const std::string& name, const FGraphicsShaderCreateInfo& create_info) override;
+			void Create(const std::string& name, const FComputeShaderCreateInfo& create_info) override;
 
 			const std::unique_ptr<CUniformHandle>& GetUniformBlock(u64 name) override;
 			const std::unique_ptr<CUniformHandle>& GetConstantBlock(u64 name) override;
@@ -27,6 +27,8 @@ namespace engine
 			void Bind(EQueueTypeFlagBits queue) override;
 			void BindResources(EQueueTypeFlagBits queue) override;
 
+			u64 Handle() const override;
+
 			const FShaderReflectionData& GetReflection() const override;
 
 		protected:
@@ -37,6 +39,7 @@ namespace engine
 
 			utl::hash_map<u64, u64> m_bindBuffers{};
 			utl::hash_map<u64, FTextureBindInfo> m_bindTextures{};
+			u64 m_shaderId{ ~0ull };
 
 			FShaderReflectionData m_reflection{};
 

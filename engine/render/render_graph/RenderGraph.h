@@ -25,10 +25,9 @@ namespace engine
 			void Create(const utl::vector<u8>& config, const utl::vector<u8>& schema) override;
 			void PostLoad() override;
 
-			void AddStaticResource(const std::string& name, const std::string& path) override;
-			void AddRenderResource(const std::string& name, const FTextureCreateInfo& texture_ci) override;
-			void AddRenderResource(const std::string& name, const FBufferCreateInfo& buffer_ci) override;
-			void AddRenderResource(const std::string& name, const FRenderResource& resource_info) override;
+			u64 AddStaticResource(const std::string& name, const std::string& path) override;
+			u64 AddRenderResource(const std::string& name, const FTextureCreateInfo& texture_ci) override;
+			u64 AddRenderResource(const std::string& name, const FBufferCreateInfo& buffer_ci) override;
 			void SetBackbufferResourceName(const std::string& name) override;
 
 			u64 AddSampler(const std::string& name, const FSamplerCreateInfo& sampler_ci);

@@ -388,10 +388,9 @@ namespace engine
 			virtual void Create(const utl::vector<u8>& config, const utl::vector<u8>& schema) = 0;
 			virtual void PostLoad() = 0;
 
-			virtual void AddStaticResource(const std::string& name, const std::string& path) = 0;
-			virtual void AddRenderResource(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
-			virtual void AddRenderResource(const std::string& name, const FBufferCreateInfo& buffer_ci) = 0;
-			virtual void AddRenderResource(const std::string& name, const FRenderResource& resource_info) = 0;
+			virtual u64 AddStaticResource(const std::string& name, const std::string& path) = 0;
+			virtual u64 AddRenderResource(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
+			virtual u64 AddRenderResource(const std::string& name, const FBufferCreateInfo& buffer_ci) = 0;
 			virtual void SetBackbufferResourceName(const std::string& name) = 0;
 
 			virtual void PushDebugMarker(const std::string& name, u32 color, EQueueTypeFlagBits queue) = 0;

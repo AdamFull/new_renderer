@@ -201,8 +201,6 @@ void CScene::Update(f32 dt)
 
 void CScene::LoadGLTF(easygltf::FGLTFRoot& root)
 {
-	auto& resource_manager = m_pRenderInterface->GetResourceManager();
-
 	// Load textures
 	for (const auto& texture : root.textures)
 	{
@@ -216,9 +214,7 @@ void CScene::LoadGLTF(easygltf::FGLTFRoot& root)
 		// TODO: add ability to override format and sampler params
 		// TODO: find format from materials
 		auto image_path = fs::path_append(root.rootDirectory, easygltf::url_decode(image.uri));
-		u64 texture_id = resource_manager->LoadTexture(image_path);
-		auto& texture = resource_manager->GetTextureObject(texture_id);
-		m_resources.textures.emplace_back(texture->Handle());
+		m_resources.textures.emplace_back(m_pRenderInterface->CreateTexture(image_path));
 		m_resources.lastTexture++;
 	}
 
@@ -295,7 +291,7 @@ void CScene::LoadGLTF(easygltf::FGLTFRoot& root)
 	{
 		for (const auto& id : handler_ids)
 		{
-			auto& handler = resource_manager->GetVertexHandler(id);
+			auto& handler = m_pRenderInterface->GetVertexHandler(id);
 			handler->Allocate();
 		}
 	}
@@ -351,7 +347,6 @@ void CScene::LoadMeshComponent(const easygltf::FGLTFRoot& root, const entt::enti
 	auto& mesh_component = m_pSceneGraph->AddComponent<FMeshComponent>(parent, FMeshComponent{});
 	mesh_component.skin = node.skin;
 
-	auto& resource_manager = m_pRenderInterface->GetResourceManager();
 	auto& render_packet = m_pRenderInterface->GetRenderPacket();
 
 	// Load mesh primitives
@@ -417,7 +412,7 @@ void CScene::LoadMeshComponent(const easygltf::FGLTFRoot& root, const entt::enti
 		{
 			for (const auto& handler_id : found->second)
 			{
-				auto& handler = resource_manager->GetVertexHandler(handler_id);
+				auto& handler = m_pRenderInterface->GetVertexHandler(handler_id);
 
 				vertex_handler = handler.get();
 				current_handler_id = handler_id;
@@ -441,10 +436,10 @@ void CScene::LoadMeshComponent(const easygltf::FGLTFRoot& root, const entt::enti
 			auto& handlers = m_resources.vertexHandlers[attributes_hash];
 
 			auto handler_name = std::format("{}_{}_{}", mesh.name, attributes_hash, handlers.size());
-			auto handler_id = resource_manager->CreateVertexHandler(handler_name, handler_ci);
+			auto handler_id = m_pRenderInterface->CreateVertexHandler(handler_name, handler_ci);
 			handlers.emplace_back(handler_id);
 
-			auto& handler = resource_manager->GetVertexHandler(handler_id);
+			auto& handler = m_pRenderInterface->GetVertexHandler(handler_id);
 			vertex_handler = handler.get();
 			current_handler_id = handler_id;
 

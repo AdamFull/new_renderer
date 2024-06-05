@@ -14,10 +14,7 @@ namespace engine
 		class CResourceLoader : public IResourceLoader
 		{
 		public:
-			CResourceLoader(filesystem::IVirtualFileSystemInterface* vfs);
-			~CResourceLoader() = default;
-
-			void Create(const std::string& path) override;
+			void Initialize(filesystem::IVirtualFileSystemInterface* vfs) override;
 
 			bool LoadTexture(const utl::vector<uint8_t>& data, EMimeType mime, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info) override;
 			bool LoadShaderData(const FShaderUploadInfo& load_info, utl::vector<FShaderCreationBlockInfo>& shader_stages) override;
@@ -27,7 +24,6 @@ namespace engine
 			bool LoadKTX2FromMemory(const utl::vector<uint8_t>& data, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info);
 			bool LoadDDSFromMemory(const utl::vector<uint8_t>& data, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info);
 		private:
-			filesystem::IVirtualFileSystemInterface* m_pVFS{ nullptr };
 			shader_compiler::FShaderCacheData m_shaderCache{};
 		};
 	}

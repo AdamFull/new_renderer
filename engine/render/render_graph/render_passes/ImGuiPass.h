@@ -19,8 +19,8 @@ namespace engine
 			void _Render(const FRenderFrameInfo& frame_info) override;
 
 		private:
-			u64 m_shader{ INVALID_HANDLE };
-			u64 m_vertexHandler{ INVALID_HANDLE };
+			std::unique_ptr<IShaderObject> m_pShader{};
+			std::unique_ptr<IVertexHandler> m_pVertexHandler{};
 			u64 m_fontTexture{ INVALID_HANDLE };
 		};
 	}

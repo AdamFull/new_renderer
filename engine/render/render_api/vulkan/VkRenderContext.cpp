@@ -112,7 +112,7 @@ CVkRenderContext::~CVkRenderContext()
 		destroyThreadContext(context);
 
 	// Destroy all textures
-	auto& textures = m_pResources->Data<FVkTexture>();
+	auto& textures = m_pResources->data<FVkTexture>();
 	for (resource_handle_t texture_id = 0ull; texture_id < textures.size(); ++texture_id)
 	{
 		auto& texture = textures.at(texture_id);
@@ -123,7 +123,7 @@ CVkRenderContext::~CVkRenderContext()
 	}
 
 	// Destroy all shaders
-	auto& shaders = m_pResources->Data<FVkShader>();
+	auto& shaders = m_pResources->data<FVkShader>();
 	for (resource_handle_t shader_id = 0ull; shader_id < shaders.size(); ++shader_id)
 	{
 		auto& shader = shaders.at(shader_id);
@@ -134,7 +134,7 @@ CVkRenderContext::~CVkRenderContext()
 	}
 
 	// Destroy all buffers
-	auto& buffers = m_pResources->Data<FVkBuffer>();
+	auto& buffers = m_pResources->data<FVkBuffer>();
 	for (resource_handle_t buffer_id = 0ull; buffer_id < buffers.size(); ++buffer_id)
 	{
 		auto& buffer = buffers.at(buffer_id);
@@ -297,7 +297,7 @@ void CVkRenderContext::CreateGlobalDescriptor(const FGlobalUniformCreateInfo& un
 		m_pDevice->CreateBuffer(buffer_ci, *buffer);
 
 		auto buffer_name = create_object_unique_name("global:{:x}:{:x}", buffer->handle, uniform_name);
-		auto buffer_id = m_pResources->Add<FVkBuffer>(buffer_name.c_str(), std::move(buffer));
+		auto buffer_id = m_pResources->add<FVkBuffer>(buffer_name.c_str(), std::move(buffer));
 		m_globalDescriptor.uniformBuffers.emplace(uniform_name, buffer_id);
 	}
 }
@@ -310,7 +310,7 @@ void CVkRenderContext::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 	std::array<vk::DescriptorBufferInfo, k_max_buffer_update_per_frame> buffer_descriptors{};
 	utl::vector<vk::WriteDescriptorSet> write_descriptor_sets{};
 
-	auto& textures = m_pResources->Data<FVkTexture>();
+	auto& textures = m_pResources->data<FVkTexture>();
 
 	// Bind and update global uniform
 	u64 buffer_count{ 0ull };
@@ -320,7 +320,7 @@ void CVkRenderContext::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 		if (found_buffer == m_globalDescriptor.uniformBuffers.end())
 			continue;
 
-		auto& buffer = m_pResources->Get<FVkBuffer>(found_buffer->second);
+		auto& buffer = m_pResources->get<FVkBuffer>(found_buffer->second);
 		auto element_size = buffer->size / buffer->instanceCount;
 
 		auto& buffer_descriptor = buffer_descriptors.at(buffer_count);
@@ -353,7 +353,7 @@ void CVkRenderContext::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 			auto& texture = textures.at(texture_id);
 
 			auto& start_element_index = m_textureIndexRemap.at(texture_id);
-			bool is_storage_image = utl::cast<bool>(texture->info.flags & ETextureCreateFlagBits::eStorage);
+			bool is_storage_image = utl::cast<bool>(texture->info.typeFlags & ETextureCreateFlagBits::eStorage);
 
 			auto& mip_level = texture->getSubresource();
 			auto& image_descriptor = image_descriptors.at(texture_count);
@@ -361,7 +361,7 @@ void CVkRenderContext::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 			image_descriptor.sampler = texture->sampler != ~0ull ? m_samplerCache[texture->sampler] : m_defaultSampler;
 			image_descriptor.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
-			if (texture->info.flags & ETextureCreateFlagBits::eSamplable)
+			if (texture->info.typeFlags & ETextureCreateFlagBits::eSamplable)
 			{
 				auto& write_descriptor_set = write_descriptor_sets.emplace_back();
 				write_descriptor_set.dstArrayElement = start_element_index;
@@ -391,7 +391,7 @@ const utl::vector<uint32_t>& CVkRenderContext::GetGlobalTextureRemap()
 	return m_textureIndexRemap;
 }
 
-u64 CVkRenderContext::CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci)
+u64 CVkRenderContext::CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info)
 {
 	// Create texture handle
 	FVkTextureCreateInfo vk_texture_ci{};
@@ -404,38 +404,50 @@ u64 CVkRenderContext::CreateTexture(const std::string& name, const FTextureCreat
 	vk_texture_ci.addressMode = vk::SamplerAddressMode::eRepeat;
 	vk_texture_ci.enableAnisotropy = true;
 
-	if (texture_ci.typeFlags & ETextureCreateFlagBits::eRenderTarget)
-	{
-		vk_texture_ci.addressMode = vk::SamplerAddressMode::eClampToEdge;
-		vk_texture_ci.enableAnisotropy = false;
-	}
-
 #ifndef BUILD_WITHOUT_DEBUGGIND
-		vk_texture_ci.name = name;
+	vk_texture_ci.name = name;
 #endif
 
 	auto texture = std::make_unique<FVkTexture>();
 	CreateTexture(vk_texture_ci, *texture);
 
-	return m_pResources->Add<FVkTexture>(name.c_str(), std::move(texture));
-}
-
-u64 CVkRenderContext::CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info)
-{
 	auto& upload_data = m_textureUploadInfos.emplace_back(std::move(upload_info));
-	upload_data.textureId = CreateTexture(name, texture_ci);
+	upload_data.textureId = m_pResources->add<FVkTexture>(name.c_str(), std::move(texture));
 
 	return upload_data.textureId;
 }
 
 u64 CVkRenderContext::GetTextureId(const std::string& name)
 {
-	return m_pResources->GetId<FVkTexture>(name.c_str());
+	return m_pResources->getId<FVkTexture>(name.c_str());
+}
+
+u64 CVkRenderContext::CreateRenderTarget(const std::string& name, const FTextureCreateInfo& texture_ci)
+{
+	FVkTextureCreateInfo vk_texture_ci{};
+	vk_texture_ci.format = lookup_vk_format(texture_ci.format);
+	vk_texture_ci.typeFlags = texture_ci.typeFlags;
+	vk_texture_ci.size = texture_ci.size;
+	vk_texture_ci.mipLevels = texture_ci.mipLevels;
+	vk_texture_ci.arrayLayers = texture_ci.arrayLayers;
+	vk_texture_ci.sampleCount = vk::SampleCountFlagBits::e1;
+	vk_texture_ci.addressMode = vk::SamplerAddressMode::eClampToEdge;
+
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	vk_texture_ci.name = name;
+#endif
+
+	auto texture = std::make_unique<FVkTexture>();
+	texture->isRenderTarget = true;
+
+	CreateTexture(vk_texture_ci, *texture);
+
+	return m_pResources->add<FVkTexture>(name.c_str(), std::move(texture));
 }
 
 FTextureView CVkRenderContext::GetTextureView(u64 texture_id)
 {
-	auto& texture = m_pResources->Get<FVkTexture>(texture_id);
+	auto& texture = m_pResources->get<FVkTexture>(texture_id);
 
 	FTextureView tex_view{};
 	tex_view.width = texture->info.size.width;
@@ -471,7 +483,7 @@ u64 CVkRenderContext::CreateShader(const std::string& name, const FGraphicsShade
 #endif
 
 	// Get color attachment formats
-	auto& textures = m_pResources->Data<FVkTexture>();
+	auto& textures = m_pResources->data<FVkTexture>();
 	for (auto& attachment : shader_ci.colorAttachments)
 	{
 		FVkTexture* texture{ nullptr };
@@ -550,7 +562,7 @@ u64 CVkRenderContext::CreateShader(const std::string& name, const FGraphicsShade
 			shader_stage.pSpecializationInfo = &found->second.info;
 	}
 
-	shader->reflection = m_pResources->Add<FVkShaderReflectionData>(name.c_str(), std::move(reflection));
+	shader->reflection = m_pResources->add<FVkShaderReflectionData>(name.c_str(), std::move(reflection));
 
 	FVkShaderResourcesInfo resources_info{};
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -570,7 +582,7 @@ u64 CVkRenderContext::CreateShader(const std::string& name, const FGraphicsShade
 	shader->isAlive = true;
 
 	auto shader_unique_name = create_object_unique_name("shader:{:x}:{}", shader->handles.back(), vk::to_string(shader->bindPoint));
-	return m_pResources->Add<FVkShader>(shader_unique_name.c_str(), std::move(shader));
+	return m_pResources->add<FVkShader>(shader_unique_name.c_str(), std::move(shader));
 }
 
 u64 CVkRenderContext::CreateShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages)
@@ -612,7 +624,7 @@ u64 CVkRenderContext::CreateShader(const std::string& name, const FComputeShader
 			shader_stage.pSpecializationInfo = &found->second.info;
 	}
 
-	shader->reflection = m_pResources->Add<FVkShaderReflectionData>(name.c_str(), std::move(reflection));
+	shader->reflection = m_pResources->add<FVkShaderReflectionData>(name.c_str(), std::move(reflection));
 
 	FVkShaderResourcesInfo resources_info{};
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -645,7 +657,7 @@ u64 CVkRenderContext::CreateShader(const std::string& name, const FComputeShader
 		ss << ":" << std::hex << reinterpret_cast<u64>(utl::cast<vk::Pipeline::CType>(handle));
 
 	auto shader_unique_name = ss.str();
-	return m_pResources->Add<FVkShader>(shader_unique_name.c_str(), std::move(shader));
+	return m_pResources->add<FVkShader>(shader_unique_name.c_str(), std::move(shader));
 }
 
 u64 CVkRenderContext::CreateShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages)
@@ -665,13 +677,13 @@ u64 CVkRenderContext::CreateShader(const std::string& name, const FReyTracingSha
 		ss << ":" << std::hex << reinterpret_cast<u64>(utl::cast<vk::Pipeline::CType>(handle));
 
 	auto shader_unique_name = ss.str();
-	return m_pResources->Add<FVkShader>(shader_unique_name.c_str(), std::move(shader));
+	return m_pResources->add<FVkShader>(shader_unique_name.c_str(), std::move(shader));
 }
 
 FShaderReflectionData CVkRenderContext::GetShaderReflection(const u64& shader_view)
 {
-	auto& shader = m_pResources->Get<FVkShader>(shader_view);
-	auto& shader_reflection = m_pResources->Get<FVkShaderReflectionData>(shader->reflection);
+	auto& shader = m_pResources->get<FVkShader>(shader_view);
+	auto& shader_reflection = m_pResources->get<FVkShaderReflectionData>(shader->reflection);
 	FShaderReflectionData reflection_data{};
 
 	for (const auto& [id, vkuniform] : shader_reflection->uniforms)
@@ -731,11 +743,11 @@ void CVkRenderContext::UpdateShaderResources(const FShaderResourceCommit& shader
 {
 	auto& thread_context = m_perThreadContext[std::this_thread::get_id()];
 
-	auto& shader = m_pResources->Get<FVkShader>(shader_resources.shaderId);
-	auto& shader_reflection = m_pResources->Get<FVkShaderReflectionData>(shader->reflection);
+	auto& shader = m_pResources->get<FVkShader>(shader_resources.shaderId);
+	auto& shader_reflection = m_pResources->get<FVkShaderReflectionData>(shader->reflection);
 
-	auto& textures = m_pResources->Data<FVkTexture>();
-	auto& buffers = m_pResources->Data<FVkBuffer>();
+	auto& textures = m_pResources->data<FVkTexture>();
+	auto& buffers = m_pResources->data<FVkBuffer>();
 
 	std::unordered_set<u32> updated_descriptor_sets{};
 	std::array<vk::WriteDescriptorSet, 64ull> write_descriptor_sets{};
@@ -875,8 +887,8 @@ void CVkRenderContext::UpdateShaderResources(const FShaderResourceCommit& shader
 
 void CVkRenderContext::FlushConstantRanges(u64 shader_id, const utl::hash_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type)
 {
-	auto& shader = m_pResources->Get<FVkShader>(shader_id);
-	auto& shader_reflection = m_pResources->Get<FVkShaderReflectionData>(shader->reflection);
+	auto& shader = m_pResources->get<FVkShader>(shader_id);
+	auto& shader_reflection = m_pResources->get<FVkShaderReflectionData>(shader->reflection);
 
 	auto& command_buffer = getLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
@@ -901,7 +913,7 @@ void CVkRenderContext::BindShader(u64 shader_id, EQueueTypeFlagBits queue_type)
 	auto& command_buffer = getLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
 
-	auto& shader = m_pResources->Get<FVkShader>(shader_id);
+	auto& shader = m_pResources->get<FVkShader>(shader_id);
 
 	// TODO: make possible to select what pipeline i have to bind now
 	current.bindPipeline(shader->bindPoint, shader->handles.back());
@@ -912,7 +924,7 @@ void CVkRenderContext::BindShaderResources(u64 shader_id, EQueueTypeFlagBits que
 	auto& command_buffer = getLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
 
-	auto& shader = m_pResources->Get<FVkShader>(shader_id);
+	auto& shader = m_pResources->get<FVkShader>(shader_id);
 
 	bindShaderDescriptors(command_buffer, *shader);
 }
@@ -930,12 +942,12 @@ u64 CVkRenderContext::CreateBuffer(const std::string& name, const FBufferCreateI
 	m_pDevice->CreateBuffer(vk_buffer_ci, *buffer);
 
 	auto buffer_unique_name = create_object_unique_name("buffer:{:x}:{}", buffer->handle, name);
-	return m_pResources->Add<FVkBuffer>(buffer_unique_name.c_str(), std::move(buffer));
+	return m_pResources->add<FVkBuffer>(buffer_unique_name.c_str(), std::move(buffer));
 }
 
 void CVkRenderContext::UpdateBuffer(const std::string& name, u64 buffer_id, const FBufferCreateInfo& buffer_ci)
 {
-	auto& buffer = m_pResources->Get<FVkBuffer>(buffer_id);
+	auto& buffer = m_pResources->get<FVkBuffer>(buffer_id);
 	m_pDevice->DestroyBuffer(*buffer);
 
 	auto vk_buffer_ci = makeBufferCreateInfo(name, buffer_ci);
@@ -949,7 +961,7 @@ void CVkRenderContext::UploadDataToBuffer(const FBufferUploadInfo& upload_info)
 
 FBufferView CVkRenderContext::GetBufferView(u64 buffer_id)
 {
-	auto& buffer = m_pResources->Get<FVkBuffer>(buffer_id);
+	auto& buffer = m_pResources->get<FVkBuffer>(buffer_id);
 	return { buffer->size, buffer->instanceCount, buffer->address };
 }
 
@@ -960,7 +972,7 @@ void CVkRenderContext::BindVertexBuffers(const FVertexBufferBindingInfo& binding
 
 	utl::vector<vk::Buffer> buffers{};
 	for (const auto& buffer_id : binding_info.buffers)
-		buffers.emplace_back(m_pResources->Get<FVkBuffer>(buffer_id)->handle);
+		buffers.emplace_back(m_pResources->get<FVkBuffer>(buffer_id)->handle);
 
 	current.bindVertexBuffers(binding_info.firstBinding, buffers, binding_info.offsets);
 }
@@ -978,25 +990,25 @@ void CVkRenderContext::BindIndexBuffer(const FIndexBufferBindingInfo& binding_in
 	case 1: index_type = vk::IndexType::eUint8EXT; break;
 	}
 
-	auto& buffer = m_pResources->Get<FVkBuffer>(binding_info.bufferId);
+	auto& buffer = m_pResources->get<FVkBuffer>(binding_info.bufferId);
 	current.bindIndexBuffer(buffer->handle, binding_info.offset, index_type);
 }
 
 void CVkRenderContext::MapBufferMemory(u64 buffer_id, void*& memory)
 {
-	auto& buffer = m_pResources->Get<FVkBuffer>(buffer_id);
+	auto& buffer = m_pResources->get<FVkBuffer>(buffer_id);
 	m_pDevice->MapBufferMemory(*buffer, &memory);
 }
 
 void CVkRenderContext::UnmapBufferMemory(u64 buffer_id)
 {
-	auto& buffer = m_pResources->Get<FVkBuffer>(buffer_id);
+	auto& buffer = m_pResources->get<FVkBuffer>(buffer_id);
 	m_pDevice->UnmapBufferMemory(*buffer);
 }
 
 void CVkRenderContext::FlushBuffer(u64 buffer_id, u64 size, u64 offset)
 {
-	auto& buffer = m_pResources->Get<FVkBuffer>(buffer_id);
+	auto& buffer = m_pResources->get<FVkBuffer>(buffer_id);
 	m_pDevice->flushBufferMemory(*buffer, size, offset);
 }
 
@@ -1013,7 +1025,7 @@ void CVkRenderContext::UploadBuffers()
 void CVkRenderContext::PushG2CBarriers(EQueueTypeFlagBits queue_type, const utl::vector<u64>& texture_ids)
 {
 	auto& command_buffer = getLastCommandBuffer(queue_type);
-	auto& textures = m_pResources->Data<FVkTexture>();
+	auto& textures = m_pResources->data<FVkTexture>();
 
 	FVkTranslationInfo translation_info{};
 	for (auto texture_id : texture_ids)
@@ -1042,7 +1054,7 @@ void CVkRenderContext::PushG2CBarriers(EQueueTypeFlagBits queue_type, const utl:
 void CVkRenderContext::PushC2CBarrier(EQueueTypeFlagBits queue_type)
 {
 	auto& command_buffer = getLastCommandBuffer(queue_type);
-	auto& textures = m_pResources->Data<FVkTexture>();
+	auto& textures = m_pResources->data<FVkTexture>();
 
 	FVkTranslationInfo translation_info{};
 	auto& barrier = translation_info.memoryTranslationInfos.emplace_back();
@@ -1057,7 +1069,7 @@ void CVkRenderContext::PushC2CBarrier(EQueueTypeFlagBits queue_type)
 void CVkRenderContext::PushC2GBarrier(EQueueTypeFlagBits queue_type, const utl::vector<u64>& texture_ids)
 {
 	auto& command_buffer = getLastCommandBuffer(queue_type);
-	auto& textures = m_pResources->Data<FVkTexture>();
+	auto& textures = m_pResources->data<FVkTexture>();
 
 	FVkTranslationInfo translation_info{};
 	for (auto texture_id : texture_ids)
@@ -1093,8 +1105,8 @@ void CVkRenderContext::ProcessResourceBarriers(EQueueTypeFlagBits queue, const u
 {
 	auto& command_buffer = getLastCommandBuffer(queue);
 
-	auto& textures = m_pResources->Data<FVkTexture>();
-	auto& buffers = m_pResources->Data<FVkBuffer>();
+	auto& textures = m_pResources->data<FVkTexture>();
+	auto& buffers = m_pResources->data<FVkBuffer>();
 
 	FVkTranslationInfo translation_info{};
 
@@ -1210,7 +1222,7 @@ void CVkRenderContext::BeginRendering(const FBeginRendering2Info& rendering_info
 {
 	auto& command_buffer = getLastCommandBuffer(rendering_info.queue);
 
-	auto& textures = m_pResources->Data<FVkTexture>();
+	auto& textures = m_pResources->data<FVkTexture>();
 
 	utl::hash_map<u64, vk::ClearValue> clear_values{};
 	for (const auto& [handle, clear_value] : rendering_info.clearValues)
@@ -1491,8 +1503,8 @@ void CVkRenderContext::Draw(EQueueTypeFlagBits queue_type, const FIndirectGeomet
 	auto& current = command_buffer.get();
 	//current.drawMeshTasksIndirectEXT()
 
-	auto& indirect_command_buffer = m_pResources->Get<FVkBuffer>(draw_info.bufferId);
-	auto& indirect_count_buffer = m_pResources->Get<FVkBuffer>(draw_info.countBufferId);
+	auto& indirect_command_buffer = m_pResources->get<FVkBuffer>(draw_info.bufferId);
+	auto& indirect_count_buffer = m_pResources->get<FVkBuffer>(draw_info.countBufferId);
 	current.drawIndexedIndirectCount(indirect_command_buffer->handle, draw_info.offset, indirect_count_buffer->handle, draw_info.countOffset, draw_info.maxDrawCount, draw_info.stride);
 	//current.drawIndexedIndirect(indirect_command_buffer->handle, draw_info.offset, draw_info.count, draw_info.stride);
 }
@@ -1506,8 +1518,8 @@ void CVkRenderContext::Dispatch(EQueueTypeFlagBits queue_type, const FDispatch2I
 
 	if (dispatch_info.divideByLocals)
 	{
-		auto& shader = m_pResources->Get<FVkShader>(dispatch_info.shaderHandle);
-		auto& reflection = m_pResources->Get<FVkShaderReflectionData>(shader->reflection);
+		auto& shader = m_pResources->get<FVkShader>(dispatch_info.shaderHandle);
+		auto& reflection = m_pResources->get<FVkShaderReflectionData>(shader->reflection);
 
 		auto& localSizes = reflection->localSizes[subgroup_index];
 		command.x = std::max(utl::cast<u32>(std::ceil(utl::cast<f32>(command.x) / utl::cast<f32>(localSizes[0]))), 1u);
@@ -1557,12 +1569,12 @@ EAdapterVendor CVkRenderContext::GetDeviceVendor() const
 
 u64 CVkRenderContext::GetTextureResource(const char* name)
 {
-	return m_pResources->GetId<FVkTexture>(name);
+	return m_pResources->getId<FVkTexture>(name);
 }
 
 u64 CVkRenderContext::GetShaderResource(const char* name)
 {
-	return m_pResources->GetId<FVkShader>(name);
+	return m_pResources->getId<FVkShader>(name);
 }
 
 FPoint2D<u32> CVkRenderContext::GetRenderResolution() const
@@ -1576,7 +1588,7 @@ FPoint2D<u32> CVkRenderContext::GetRenderResolution() const
 
 FRect2D<f32> CVkRenderContext::GetRenderRectFromRT(u64 texture_id)
 {
-	auto& texture = m_pResources->Get<FVkTexture>(texture_id);
+	auto& texture = m_pResources->get<FVkTexture>(texture_id);
 
 	FRect2D<f32> rect{};
 	rect.size.x = utl::cast<f32>(texture->info.size.width);
@@ -1608,7 +1620,7 @@ void CVkRenderContext::UpdateSurface(i32 surface_width, i32 surface_height)
 		m_pDevice->CreateSwapchain(surface_width, surface_height);
 		m_pDevice->m_swapchain.currentFrame = 0u;
 
-		auto& textures = m_pResources->Data<FVkTexture>();
+		auto& textures = m_pResources->data<FVkTexture>();
 
 		// Updating render targets
 		for (u64 texture_id = 0ull; texture_id < textures.size(); ++texture_id)
@@ -1618,7 +1630,7 @@ void CVkRenderContext::UpdateSurface(i32 surface_width, i32 surface_height)
 
 			auto& texture = textures.at(texture_id);
 
-			if (!(texture->info.flags & ETextureCreateFlagBits::eRenderTarget) || (texture->info.size.policy == ERenderTargetSizePolicy::eFixed))
+			if (!texture->isRenderTarget || (texture->info.size.policy == ERenderTargetSizePolicy::eFixed))
 				continue;
 
 			for (auto& mip : texture->mips)
@@ -1630,7 +1642,7 @@ void CVkRenderContext::UpdateSurface(i32 surface_width, i32 surface_height)
 
 			FVkTextureCreateInfo texture_ci{};
 			texture_ci.format = texture->info.format;
-			texture_ci.typeFlags = texture->info.flags;
+			texture_ci.typeFlags = texture->info.typeFlags;
 			texture_ci.size = texture->info.size;
 			texture_ci.mipLevels = texture->info.mipLevels;
 			texture_ci.arrayLayers = texture->info.arrayLayers;
@@ -1770,7 +1782,7 @@ void CVkRenderContext::BeginFrame()
 	//m_pDevice->WriteTimestampQuery(command_buffer, vk::PipelineStageFlagBits::eTopOfPipe, m_timestampQuery);
 
 	// Update bindless textures
-	auto& textures = m_pResources->Data<FVkTexture>();
+	auto& textures = m_pResources->data<FVkTexture>();
 
 	if (m_textureIndexRemap.empty())
 	{
@@ -1781,7 +1793,7 @@ void CVkRenderContext::BeginFrame()
 		for (u64 texture_index = 0ull; texture_index < textures.size(); ++texture_index)
 		{
 			auto& texture = textures.at(texture_index);
-			if (texture->info.flags & ETextureCreateFlagBits::eRenderTarget)
+			if (texture->isRenderTarget)
 				continue;
 
 			m_textureIndexRemap.at(texture_index) = image_offset++;
@@ -1840,10 +1852,10 @@ void CVkRenderContext::EndFrame()
 
 	// Frame finished. Textures in now again in initial layout
 	// TODO: i don't need to set layout back to undefined for one time targets or for periodical targets
-	auto& textures = m_pResources->Data<FVkTexture>();
+	auto& textures = m_pResources->data<FVkTexture>();
 	for (auto& texture : textures)
 	{
-		if ((texture->info.flags & ETextureCreateFlagBits::eRenderTarget) && !(texture->info.flags & ETextureCreateFlagBits::eStorage))
+		if (texture->isRenderTarget && !(texture->info.typeFlags & ETextureCreateFlagBits::eStorage))
 		{
 			// Reset layout for all mip level
 			for(auto& mip : texture->mips)
@@ -1928,7 +1940,7 @@ void CVkRenderContext::ProcessResourceBarriers()
 	command_buffer_ci.name = "resource_barriers";
 #endif
 
-	auto& textures = m_pResources->Data<FVkTexture>();
+	auto& textures = m_pResources->data<FVkTexture>();
 
 	auto& command_buffer = CreateCommandBuffer(command_buffer_ci);
 
@@ -1940,7 +1952,7 @@ void CVkRenderContext::ProcessResourceBarriers()
 		auto& texture = textures.at(layout_info.textureId);
 		auto& target_subresource = texture->getSubresource();
 
-		if (texture->info.flags & ETextureCreateFlagBits::eStorage)
+		if (texture->info.typeFlags & ETextureCreateFlagBits::eStorage)
 		{
 			auto& image_translation = translation_info.imageTranslationInfos.emplace_back();
 
@@ -1975,7 +1987,7 @@ void CVkRenderContext::processResourceUpload()
 	command_buffer_ci.name = "resource_upload";
 #endif
 
-	auto& textures = m_pResources->Data<FVkTexture>();
+	auto& textures = m_pResources->data<FVkTexture>();
 
 	auto& command_buffer = CreateCommandBuffer(command_buffer_ci);
 
@@ -2173,7 +2185,7 @@ void CVkRenderContext::processResourceUpload()
 		auto& physical = m_pDevice->GetPhysicalDevice();
 		utl::vector<vk::BufferCopy2KHR> copy_regions(upload_info.regions.size());
 
-		auto& dst_buffer = m_pResources->Get<FVkBuffer>(upload_info.bufferId);
+		auto& dst_buffer = m_pResources->get<FVkBuffer>(upload_info.bufferId);
 		
 		// Calculate elements to copy count
 		u64 staging_count{ 0ull };
@@ -2247,21 +2259,21 @@ void CVkRenderContext::processResourceUtilization()
 
 		if (destroy_resource.mask & EResourceFlagBits::eTexture)
 		{
-			auto& texture = m_pResources->Get<FVkTexture>(destroy_resource.id);
+			auto& texture = m_pResources->get<FVkTexture>(destroy_resource.id);
 			DestroyTexture(*texture);
-			m_pResources->Remove<FVkTexture>(destroy_resource.id);
+			m_pResources->remove<FVkTexture>(destroy_resource.id);
 		}
 		else if (destroy_resource.mask & EResourceFlagBits::eShader)
 		{
-			auto& shader = m_pResources->Get<FVkShader>(destroy_resource.id);
+			auto& shader = m_pResources->get<FVkShader>(destroy_resource.id);
 			DestroyShader(*shader);
-			m_pResources->Remove<FVkShader>(destroy_resource.id);
+			m_pResources->remove<FVkShader>(destroy_resource.id);
 		}
 		else if (destroy_resource.mask & EResourceFlagBits::eBuffer)
 		{
-			auto& buffer = m_pResources->Get<FVkBuffer>(destroy_resource.id);
+			auto& buffer = m_pResources->get<FVkBuffer>(destroy_resource.id);
 			m_pDevice->DestroyBuffer(*buffer);
-			m_pResources->Remove<FVkBuffer>(destroy_resource.id);
+			m_pResources->remove<FVkBuffer>(destroy_resource.id);
 		}
 
 		m_destroyResource.pop();
@@ -2279,13 +2291,14 @@ void CVkRenderContext::updateBackbuffer()
 	{
 		auto& current = m_backbuffer[frame];
 		current.isAlive = true;
+		current.isRenderTarget = true;
 		current.name = "backbuffer_image";
 		current.image.handle = swapchain.images[frame];
 
 		auto& mip = current.mips.emplace_back();
 		mip.imageView = current.base.imageView = swapchain.imageViews[frame];
 
-		current.info.flags = ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eRenderTarget;
+		current.info.typeFlags = ETextureCreateFlagBits::e2D;
 		current.info.format = swapchain.format;
 		current.info.size.width = swapchain.extent.width;
 		current.info.size.height = swapchain.extent.height;
@@ -2356,7 +2369,7 @@ FVkBufferCreateInfo CVkRenderContext::makeBufferCreateInfo(const std::string& na
 FRenderApiErrorInfo CVkRenderContext::CreateTexture(const FVkTextureCreateInfo& texture_ci, FVkTexture& texture)
 {
 	texture.info.format = texture_ci.format;
-	texture.info.flags = texture_ci.typeFlags;
+	texture.info.typeFlags = texture_ci.typeFlags;
 	texture.info.size = texture_ci.size;
 	texture.info.mipLevels = texture_ci.mipLevels;
 	texture.info.arrayLayers = texture_ci.arrayLayers;
@@ -2492,7 +2505,7 @@ void CVkRenderContext::DestroyTexture(FVkTexture& texture)
 
 FRenderApiErrorInfo CVkRenderContext::createShaderResources(const FVkShaderResourcesInfo& resources_info, FVkShader& shader)
 {
-	auto& reflection = m_pResources->Get<FVkShaderReflectionData>(shader.reflection);
+	auto& reflection = m_pResources->get<FVkShaderReflectionData>(shader.reflection);
 
 	// TODO: generate better object names. Current names can overlap
 
@@ -2570,7 +2583,7 @@ FRenderApiErrorInfo CVkRenderContext::createShaderResources(const FVkShaderResou
 
 
 		auto buffer_name = create_object_unique_name("buffer:{:x}:{}", buffer->handle, id);
-		auto buffer_id = m_pResources->Add<FVkBuffer>(buffer_name.c_str(), std::move(buffer));
+		auto buffer_id = m_pResources->add<FVkBuffer>(buffer_name.c_str(), std::move(buffer));
 		shader.uniformBuffers.emplace(id, buffer_id);
 	}
 
@@ -2620,9 +2633,9 @@ void CVkRenderContext::DestroyShader(FVkShader& shader)
 
 	for (auto& [id, buffer_id] : shader.uniformBuffers)
 	{
-		auto& buffer = m_pResources->Get<FVkBuffer>(buffer_id);
+		auto& buffer = m_pResources->get<FVkBuffer>(buffer_id);
 		m_pDevice->DestroyBuffer(*buffer);
-		m_pResources->Remove<FVkBuffer>(buffer_id);
+		m_pResources->remove<FVkBuffer>(buffer_id);
 	}
 
 	m_pDevice->DestroyDescriptorPool(shader.descriptorPool);

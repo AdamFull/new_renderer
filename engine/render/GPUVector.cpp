@@ -5,25 +5,22 @@ using namespace engine::render;
 
 CGPUVector::CGPUVector(IRenderInterface* render_interface)
 {
-	m_pRenderInterface = render_interface;
+	m_pBuffer = std::make_unique<CBufferObject>(render_interface);
 }
 
 void CGPUVector::Upload()
 {
 	if (!m_vUploadRanges.empty())
 	{
-		auto& resource_manager = m_pRenderInterface->GetResourceManager();
-		auto& buffer = resource_manager->GetBufferObject(m_buffer);
-
 		// Buffer size is too small, need to resize it
-		if (buffer->Size() < m_vData.size())
+		if (m_pBuffer->Size() < m_vData.size())
 		{
 			FBufferCreateInfo buffer_ci{};
 			buffer_ci.count = m_vData.size() / m_elemSize;
 			buffer_ci.size = m_elemSize;
 			buffer_ci.flags = m_bufferFlag;
 
-			buffer->Resize(m_srOriginalName, buffer_ci);
+			m_pBuffer->Resize(m_srOriginalName, buffer_ci);
 
 			// Buffer was resized. We should upload whole data
 			m_vUploadRanges.clear();
@@ -64,7 +61,7 @@ void CGPUVector::Upload()
 			src_offset += range.size;
 		}
 
-		buffer->Upload(std::move(upload_data), upload_regions);
+		m_pBuffer->Upload(std::move(upload_data), upload_regions);
 
 		m_vUploadRanges.clear();
 	}
@@ -74,19 +71,16 @@ void CGPUVector::Upload()
 
 void CGPUVector::Resize(u64 new_size)
 {
-	auto& resource_manager = m_pRenderInterface->GetResourceManager();
-	auto& buffer = resource_manager->GetBufferObject(m_buffer);
-
 	u64 size = ToBytes(new_size);
 
-	if (buffer->Size() < size)
+	if (m_pBuffer->Size() < size)
 	{
 		FBufferCreateInfo buffer_ci{};
 		buffer_ci.count = new_size;
 		buffer_ci.size = m_elemSize;
 		buffer_ci.flags = m_bufferFlag;
 
-		buffer->Resize(m_srOriginalName, buffer_ci);
+		m_pBuffer->Resize(m_srOriginalName, buffer_ci);
 	}
 
 	m_vData.resize(size);
@@ -94,8 +88,7 @@ void CGPUVector::Resize(u64 new_size)
 
 const std::unique_ptr<IBufferObject>& CGPUVector::Buffer()
 {
-	auto& resource_manager = m_pRenderInterface->GetResourceManager();
-	return resource_manager->GetBufferObject(m_buffer);
+	return m_pBuffer;
 }
 
 void CGPUVector::Allocate(const std::string& name, EBufferUsageFlags flag, u64 stride, u64 capacity)
@@ -107,15 +100,6 @@ void CGPUVector::Allocate(const std::string& name, EBufferUsageFlags flag, u64 s
 
 	m_srOriginalName = name;
 
-	auto& render_graph = m_pRenderInterface->GetRenderGraph();
-	auto& resource_manager = m_pRenderInterface->GetResourceManager();
-
-	m_buffer = resource_manager->CreateBuffer(name, buffer_ci);
-
-	FRenderResource render_resource_desc{};
-	render_resource_desc.handle = m_buffer;
-	render_resource_desc.type = ERenderResourceTypeFlagBits::eBuffer;
-	render_graph->AddRenderResource(name, render_resource_desc);
-
+	m_pBuffer->Create(name, buffer_ci);
 	m_elemSize = stride;//m_pBuffer->instanceSize();
 }

@@ -90,6 +90,7 @@ namespace engine
 		{
 			u32 libraryId{ ~0u };
 			u32 shaderId{ ~0u };
+			std::string originalName{};
 		};
 
 		struct FShaderCreationBlockInfo

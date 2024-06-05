@@ -18,7 +18,7 @@ namespace engine
 		private:
 			void _Execute(const FComputeFrameInfo& frame_info) override;
 		private:
-			u64 m_shader{ INVALID_HANDLE };
+			std::unique_ptr<IShaderObject> m_pShader{};
 		};
 	}
 }
