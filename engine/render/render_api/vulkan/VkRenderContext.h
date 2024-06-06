@@ -24,9 +24,9 @@ namespace engine
 				void UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view) override;
 				const utl::vector<uint32_t>& GetGlobalTextureRemap() override;
 
+				FAPIHandle CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci) override;
 				FAPIHandle CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) override;
 				FAPIHandle GetTextureId(const std::string& name) override;
-				FAPIHandle CreateRenderTarget(const std::string& name, const FTextureCreateInfo& texture_ci) override;
 				FTextureView GetTextureView(FAPIHandle texture_id) override;
 				void DestroyTexture(FAPIHandle resource_id) override;
 
