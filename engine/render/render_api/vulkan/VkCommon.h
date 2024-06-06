@@ -58,19 +58,19 @@ namespace engine
 			{
 				vk::ImageUsageFlags usageFlags{};
 
-				if (texture.isRenderTarget)
+				if (texture.info.flags & ETextureCreateFlagBits::eRenderTarget)
 				{
 					auto format = texture.info.format;
 					usageFlags |= ((is_depth_stencil_format(format) || is_depth_only_format(format)) ? vk::ImageUsageFlagBits::eDepthStencilAttachment : vk::ImageUsageFlagBits::eColorAttachment);
 				}
 
-				if (texture.info.typeFlags & ETextureCreateFlagBits::eTransferable)
+				if (texture.info.flags & ETextureCreateFlagBits::eTransferable)
 					usageFlags |= vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst;
 
-				if (texture.info.typeFlags & ETextureCreateFlagBits::eSamplable)
+				if (texture.info.flags & ETextureCreateFlagBits::eSamplable)
 					usageFlags |= vk::ImageUsageFlagBits::eSampled;
 
-				if (texture.info.typeFlags & ETextureCreateFlagBits::eStorage)
+				if (texture.info.flags & ETextureCreateFlagBits::eStorage)
 					usageFlags |= vk::ImageUsageFlagBits::eStorage;
 
 				return usageFlags;
@@ -439,8 +439,8 @@ namespace engine
 
 			inline vk::AttachmentStoreOp get_attachment_store_op(const FVkTexture& texture)
 			{
-				bool transferable = utl::cast<bool>(texture.info.typeFlags & ETextureCreateFlagBits::eTransferable);
-				bool samplable = utl::cast<bool>(texture.info.typeFlags & ETextureCreateFlagBits::eSamplable);
+				bool transferable = utl::cast<bool>(texture.info.flags & ETextureCreateFlagBits::eTransferable);
+				bool samplable = utl::cast<bool>(texture.info.flags & ETextureCreateFlagBits::eSamplable);
 
 				if (transferable || samplable)
 					return vk::AttachmentStoreOp::eStore;

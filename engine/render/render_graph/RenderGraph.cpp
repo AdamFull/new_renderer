@@ -125,7 +125,7 @@ FTextureCreateInfo CRenderGraph::MakeTextureCI(EApiDataFormat format, ETextureCr
 {
 	FTextureCreateInfo target_ci{};
 	target_ci.format = format;
-	target_ci.typeFlags = flags;
+	target_ci.flags = flags | ETextureCreateFlagBits::eRenderTarget;
 	return target_ci;
 }
 
@@ -888,8 +888,8 @@ FAPIHandle CRenderGraph::AddRenderResource(const std::string& name, const FTextu
 	}
 
 	auto& new_render_resource = m_vRenderResources.emplace_back();
-	new_render_resource.handle = render_context->CreateRenderTarget(name, texture_create_info);
-	new_render_resource.type = (texture_ci.typeFlags & ETextureCreateFlagBits::eStorage) ? ERenderResourceTypeFlagBits::eStorageTarget : ERenderResourceTypeFlagBits::eRenderTarget;
+	new_render_resource.handle = render_context->CreateTexture(name, texture_create_info);
+	new_render_resource.type = (texture_ci.flags & ETextureCreateFlagBits::eStorage) ? ERenderResourceTypeFlagBits::eStorageTarget : ERenderResourceTypeFlagBits::eRenderTarget;
 	
 	m_nameToResource[name] = FGraphHandle(resource_index);
 	return new_render_resource.handle;

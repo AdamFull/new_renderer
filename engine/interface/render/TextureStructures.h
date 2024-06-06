@@ -15,7 +15,8 @@ namespace engine
 			e3D = 1 << 4,
 			eTransferable = 1 << 5,
 			eSamplable = 1 << 6,
-			eStorage = 1 << 7
+			eStorage = 1 << 7,
+			eRenderTarget = 1 << 8
 		};
 		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ETextureCreateFlags, ETextureCreateFlagBits)
 
@@ -57,7 +58,7 @@ namespace engine
 		{
 			// EApiDataFormat
 			EApiDataFormat format{ EApiDataFormat::eUnknown };
-			ETextureCreateFlags typeFlags{ 0u };
+			ETextureCreateFlags flags{ 0u };
 			FTextureSizeInfo size{};
 
 			u32 mipLevels{ 1u };
@@ -112,7 +113,9 @@ namespace engine
 			virtual ~ITextureObject() = default;
 
 			virtual void Create(const std::string& name, const FTextureCreateInfo& create_info) = 0;
-			virtual void Load(const std::string& path) = 0;
+			virtual void Create(const std::string& name, const FTextureCreateInfo& create_info, FTextureUploadInfo&& upload_info) = 0;
+
+			virtual FAPIHandle Handle() = 0;
 		};
 	}
 }

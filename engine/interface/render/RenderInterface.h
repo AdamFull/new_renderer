@@ -324,9 +324,9 @@ namespace engine
 			virtual void UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view) = 0;
 			virtual const utl::vector<uint32_t>& GetGlobalTextureRemap() = 0;
 
+			virtual FAPIHandle CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
 			virtual FAPIHandle CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) = 0;
 			virtual FAPIHandle GetTextureId(const std::string& name) = 0;
-			virtual FAPIHandle CreateRenderTarget(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
 			virtual FTextureView GetTextureView(FAPIHandle texture_id) = 0;
 			virtual void DestroyTexture(FAPIHandle resource_id) = 0;
 

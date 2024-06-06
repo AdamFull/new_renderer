@@ -51,7 +51,7 @@ void CImGuiPass::Init(const FRenderPassCreateInfo& pass_ci)
 
 	FTextureCreateInfo create_info{};
 	create_info.format = EApiDataFormat::eRGBA8_UNORM;
-	create_info.typeFlags = ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eTransferable | ETextureCreateFlagBits::e2D;
+	create_info.flags = ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eTransferable | ETextureCreateFlagBits::e2D;
 	create_info.SetFixedSize2D(width, height);
 
 	FTextureUploadInfo upload_info{};

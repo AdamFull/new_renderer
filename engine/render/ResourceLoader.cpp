@@ -105,7 +105,7 @@ void CResourceLoader::Initialize(IVirtualFileSystemInterface* vfs)
 
 bool CResourceLoader::LoadTexture(const utl::vector<uint8_t>& data, EMimeType mime, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info)
 {
-	create_info.typeFlags = ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eTransferable;
+	create_info.flags = ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eTransferable;
 
 	switch (mime)
 	{
@@ -183,7 +183,7 @@ bool CResourceLoader::LoadSTBFromMemory(const utl::vector<uint8_t>& data, FTextu
 	upload_info.data.resize(data_size);
 	std::memcpy(upload_info.data.data(), rawdata, data_size);
 
-	create_info.typeFlags |= ETextureCreateFlagBits::e2D;
+	create_info.flags |= ETextureCreateFlagBits::e2D;
 
 	create_info.mipLevels = utl::cast<u32>(std::floor(std::log2((std::max)(width, height)))) + 1u;
 
@@ -200,18 +200,18 @@ bool CResourceLoader::LoadKTXFromMemory(const utl::vector<uint8_t>& data, FTextu
 		return false;
 
 	if (kTexture->isArray)
-		create_info.typeFlags |= ETextureCreateFlagBits::eArray;
+		create_info.flags |= ETextureCreateFlagBits::eArray;
 	if (kTexture->isCubemap)
-		create_info.typeFlags |= ETextureCreateFlagBits::eCubemap;
+		create_info.flags |= ETextureCreateFlagBits::eCubemap;
 	
 	create_info.SetFixedSize3D(kTexture->baseWidth, kTexture->baseHeight, kTexture->baseDepth);
 	
 	if (kTexture->numDimensions == 1u)
-		create_info.typeFlags |= ETextureCreateFlagBits::e1D;
+		create_info.flags |= ETextureCreateFlagBits::e1D;
 	else if (kTexture->numDimensions == 2u)
-		create_info.typeFlags |= ETextureCreateFlagBits::e2D;
+		create_info.flags |= ETextureCreateFlagBits::e2D;
 	else if (kTexture->numDimensions == 3u)
-		create_info.typeFlags |= ETextureCreateFlagBits::e3D;
+		create_info.flags |= ETextureCreateFlagBits::e3D;
 
 	create_info.mipLevels = kTexture->numLevels;
 	create_info.arrayLayers = kTexture->numLayers;
@@ -245,21 +245,21 @@ bool CResourceLoader::LoadKTX2FromMemory(const utl::vector<uint8_t>& data, FText
 	if (ktxresult != KTX_SUCCESS)
 		return false;
 
-	create_info.typeFlags |= ETextureCreateFlagBits::eTransferable | ETextureCreateFlagBits::eSamplable;
+	create_info.flags |= ETextureCreateFlagBits::eTransferable | ETextureCreateFlagBits::eSamplable;
 
 	if (kTexture->isArray)
-		create_info.typeFlags |= ETextureCreateFlagBits::eArray;
+		create_info.flags |= ETextureCreateFlagBits::eArray;
 	if (kTexture->isCubemap)
-		create_info.typeFlags |= ETextureCreateFlagBits::eCubemap;
+		create_info.flags |= ETextureCreateFlagBits::eCubemap;
 
 	create_info.SetFixedSize3D(kTexture->baseWidth, kTexture->baseHeight, kTexture->baseDepth);
 
 	if (kTexture->numDimensions == 1u)
-		create_info.typeFlags |= ETextureCreateFlagBits::e1D;
+		create_info.flags |= ETextureCreateFlagBits::e1D;
 	else if (kTexture->numDimensions == 2u)
-		create_info.typeFlags |= ETextureCreateFlagBits::e2D;
+		create_info.flags |= ETextureCreateFlagBits::e2D;
 	else if (kTexture->numDimensions == 3u)
-		create_info.typeFlags |= ETextureCreateFlagBits::e3D;
+		create_info.flags |= ETextureCreateFlagBits::e3D;
 
 	create_info.mipLevels = kTexture->numLevels;
 	create_info.arrayLayers = kTexture->numLayers;

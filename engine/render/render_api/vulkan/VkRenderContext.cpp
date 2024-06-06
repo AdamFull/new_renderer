@@ -353,7 +353,7 @@ void CVkRenderContext::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 			auto& texture = textures.at(texture_id);
 
 			auto& start_element_index = m_textureIndexRemap.at(texture_id);
-			bool is_storage_image = utl::cast<bool>(texture->info.typeFlags & ETextureCreateFlagBits::eStorage);
+			bool is_storage_image = utl::cast<bool>(texture->info.flags & ETextureCreateFlagBits::eStorage);
 
 			auto& mip_level = texture->getSubresource();
 			auto& image_descriptor = image_descriptors.at(texture_count);
@@ -361,7 +361,7 @@ void CVkRenderContext::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 			image_descriptor.sampler = texture->sampler != ~0ull ? m_samplerCache[texture->sampler] : m_defaultSampler;
 			image_descriptor.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
-			if (texture->info.typeFlags & ETextureCreateFlagBits::eSamplable)
+			if (texture->info.flags & ETextureCreateFlagBits::eSamplable)
 			{
 				auto& write_descriptor_set = write_descriptor_sets.emplace_back();
 				write_descriptor_set.dstArrayElement = start_element_index;
@@ -391,12 +391,12 @@ const utl::vector<uint32_t>& CVkRenderContext::GetGlobalTextureRemap()
 	return m_textureIndexRemap;
 }
 
-FAPIHandle CVkRenderContext::CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info)
+FAPIHandle CVkRenderContext::CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci)
 {
 	// Create texture handle
 	FVkTextureCreateInfo vk_texture_ci{};
 	vk_texture_ci.format = lookup_vk_format(texture_ci.format);
-	vk_texture_ci.typeFlags = texture_ci.typeFlags;
+	vk_texture_ci.flags = texture_ci.flags;
 	vk_texture_ci.size = texture_ci.size;
 	vk_texture_ci.mipLevels = texture_ci.mipLevels;
 	vk_texture_ci.arrayLayers = texture_ci.arrayLayers;
@@ -404,6 +404,12 @@ FAPIHandle CVkRenderContext::CreateTexture(const std::string& name, const FTextu
 	vk_texture_ci.addressMode = vk::SamplerAddressMode::eRepeat;
 	vk_texture_ci.enableAnisotropy = true;
 
+	if (texture_ci.flags & ETextureCreateFlagBits::eRenderTarget)
+	{
+		vk_texture_ci.addressMode = vk::SamplerAddressMode::eClampToEdge;
+		vk_texture_ci.enableAnisotropy = false;
+	}
+
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	vk_texture_ci.name = name;
 #endif
@@ -411,38 +417,19 @@ FAPIHandle CVkRenderContext::CreateTexture(const std::string& name, const FTextu
 	auto texture = std::make_unique<FVkTexture>();
 	CreateTexture(vk_texture_ci, *texture);
 
-	auto& upload_data = m_textureUploadInfos.emplace_back(std::move(upload_info));
-	upload_data.textureId = FAPIHandle(m_pResources->add<FVkTexture>(name.c_str(), std::move(texture)));
+	return FAPIHandle(m_pResources->add<FVkTexture>(name.c_str(), std::move(texture)));
+}
 
-	return FAPIHandle(upload_data.textureId);
+FAPIHandle CVkRenderContext::CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info)
+{
+	auto& upload_data = m_textureUploadInfos.emplace_back(std::move(upload_info));
+	upload_data.textureId = CreateTexture(name, texture_ci);
+	return upload_data.textureId;
 }
 
 FAPIHandle CVkRenderContext::GetTextureId(const std::string& name)
 {
 	return FAPIHandle(m_pResources->getId<FVkTexture>(name.c_str()));
-}
-
-FAPIHandle CVkRenderContext::CreateRenderTarget(const std::string& name, const FTextureCreateInfo& texture_ci)
-{
-	FVkTextureCreateInfo vk_texture_ci{};
-	vk_texture_ci.format = lookup_vk_format(texture_ci.format);
-	vk_texture_ci.typeFlags = texture_ci.typeFlags;
-	vk_texture_ci.size = texture_ci.size;
-	vk_texture_ci.mipLevels = texture_ci.mipLevels;
-	vk_texture_ci.arrayLayers = texture_ci.arrayLayers;
-	vk_texture_ci.sampleCount = vk::SampleCountFlagBits::e1;
-	vk_texture_ci.addressMode = vk::SamplerAddressMode::eClampToEdge;
-
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	vk_texture_ci.name = name;
-#endif
-
-	auto texture = std::make_unique<FVkTexture>();
-	texture->isRenderTarget = true;
-
-	CreateTexture(vk_texture_ci, *texture);
-
-	return FAPIHandle(m_pResources->add<FVkTexture>(name.c_str(), std::move(texture)));
 }
 
 FTextureView CVkRenderContext::GetTextureView(FAPIHandle texture_id)
@@ -1626,7 +1613,7 @@ void CVkRenderContext::UpdateSurface(i32 surface_width, i32 surface_height)
 
 			auto& texture = textures.at(texture_id);
 
-			if (!texture->isRenderTarget || (texture->info.size.policy == ERenderTargetSizePolicy::eFixed))
+			if (!(texture->info.flags & ETextureCreateFlagBits::eRenderTarget) || (texture->info.size.policy == ERenderTargetSizePolicy::eFixed))
 				continue;
 
 			for (auto& mip : texture->mips)
@@ -1638,7 +1625,7 @@ void CVkRenderContext::UpdateSurface(i32 surface_width, i32 surface_height)
 
 			FVkTextureCreateInfo texture_ci{};
 			texture_ci.format = texture->info.format;
-			texture_ci.typeFlags = texture->info.typeFlags;
+			texture_ci.flags = texture->info.flags;
 			texture_ci.size = texture->info.size;
 			texture_ci.mipLevels = texture->info.mipLevels;
 			texture_ci.arrayLayers = texture->info.arrayLayers;
@@ -1655,7 +1642,7 @@ void CVkRenderContext::UpdateSurface(i32 surface_width, i32 surface_height)
 
 			check_api_result(CreateTexture(texture_ci, *texture));
 			
-			is_storage = utl::cast<bool>(texture_ci.typeFlags & ETextureCreateFlagBits::eStorage);
+			is_storage = utl::cast<bool>(texture_ci.flags & ETextureCreateFlagBits::eStorage);
 
 			//if (is_storage)
 			//	m_textureLayoutInfos.emplace_back(texture_id);
@@ -1789,7 +1776,7 @@ void CVkRenderContext::BeginFrame()
 		for (u64 texture_index = 0ull; texture_index < textures.size(); ++texture_index)
 		{
 			auto& texture = textures.at(texture_index);
-			if (texture->isRenderTarget)
+			if (texture->info.flags & ETextureCreateFlagBits::eRenderTarget)
 				continue;
 
 			m_textureIndexRemap.at(texture_index) = image_offset++;
@@ -1851,7 +1838,7 @@ void CVkRenderContext::EndFrame()
 	auto& textures = m_pResources->data<FVkTexture>();
 	for (auto& texture : textures)
 	{
-		if (texture->isRenderTarget && !(texture->info.typeFlags & ETextureCreateFlagBits::eStorage))
+		if ((texture->info.flags & ETextureCreateFlagBits::eRenderTarget) && !(texture->info.flags & ETextureCreateFlagBits::eStorage))
 		{
 			// Reset layout for all mip level
 			for(auto& mip : texture->mips)
@@ -1948,7 +1935,7 @@ void CVkRenderContext::ProcessResourceBarriers()
 		auto& texture = textures.at(layout_info.textureId);
 		auto& target_subresource = texture->getSubresource();
 
-		if (texture->info.typeFlags & ETextureCreateFlagBits::eStorage)
+		if (texture->info.flags & ETextureCreateFlagBits::eStorage)
 		{
 			auto& image_translation = translation_info.imageTranslationInfos.emplace_back();
 
@@ -2287,14 +2274,13 @@ void CVkRenderContext::updateBackbuffer()
 	{
 		auto& current = m_backbuffer[frame];
 		current.isAlive = true;
-		current.isRenderTarget = true;
 		current.name = "backbuffer_image";
 		current.image.handle = swapchain.images[frame];
 
 		auto& mip = current.mips.emplace_back();
 		mip.imageView = current.base.imageView = swapchain.imageViews[frame];
 
-		current.info.typeFlags = ETextureCreateFlagBits::e2D;
+		current.info.flags = ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eRenderTarget;
 		current.info.format = swapchain.format;
 		current.info.size.width = swapchain.extent.width;
 		current.info.size.height = swapchain.extent.height;
@@ -2365,7 +2351,7 @@ FVkBufferCreateInfo CVkRenderContext::makeBufferCreateInfo(const std::string& na
 FRenderApiErrorInfo CVkRenderContext::CreateTexture(const FVkTextureCreateInfo& texture_ci, FVkTexture& texture)
 {
 	texture.info.format = texture_ci.format;
-	texture.info.typeFlags = texture_ci.typeFlags;
+	texture.info.flags = texture_ci.flags;
 	texture.info.size = texture_ci.size;
 	texture.info.mipLevels = texture_ci.mipLevels;
 	texture.info.arrayLayers = texture_ci.arrayLayers;
@@ -2376,15 +2362,15 @@ FRenderApiErrorInfo CVkRenderContext::CreateTexture(const FVkTextureCreateInfo& 
 	texture.name = image_ci.name = texture_ci.name;
 #endif
 
-	if (texture_ci.size.depth > 1 || (texture_ci.typeFlags & ETextureCreateFlagBits::e3D))
+	if (texture_ci.size.depth > 1 || (texture_ci.flags & ETextureCreateFlagBits::e3D))
 		image_ci.ci.imageType = vk::ImageType::e3D;
 	else
 	{
-		if (texture_ci.typeFlags & ETextureCreateFlagBits::e1D)
+		if (texture_ci.flags & ETextureCreateFlagBits::e1D)
 			image_ci.ci.imageType = vk::ImageType::e1D;
-		else if (texture_ci.typeFlags & ETextureCreateFlagBits::e2D)
+		else if (texture_ci.flags & ETextureCreateFlagBits::e2D)
 			image_ci.ci.imageType = vk::ImageType::e2D;
-		else if (texture_ci.typeFlags & ETextureCreateFlagBits::e3D)
+		else if (texture_ci.flags & ETextureCreateFlagBits::e3D)
 			image_ci.ci.imageType = vk::ImageType::e3D;
 		else
 			image_ci.ci.imageType = vk::ImageType::e2D;
@@ -2394,19 +2380,19 @@ FRenderApiErrorInfo CVkRenderContext::CreateTexture(const FVkTextureCreateInfo& 
 	image_ci.ci.mipLevels = texture_ci.mipLevels;
 
 	image_ci.ci.arrayLayers = texture_ci.arrayLayers;
-	if ((texture_ci.typeFlags & ETextureCreateFlagBits::eArray) && (texture_ci.typeFlags & ETextureCreateFlagBits::eCubemap))
+	if ((texture_ci.flags & ETextureCreateFlagBits::eArray) && (texture_ci.flags & ETextureCreateFlagBits::eCubemap))
 	{
 		image_ci.ci.arrayLayers *= 6u;
 		image_view_ci.ci.viewType = vk::ImageViewType::eCubeArray;
 	}
-	else if (texture_ci.typeFlags & ETextureCreateFlagBits::eArray)
+	else if (texture_ci.flags & ETextureCreateFlagBits::eArray)
 		image_view_ci.ci.viewType = vk::ImageViewType::e2DArray;
-	else if (texture_ci.typeFlags & ETextureCreateFlagBits::eCubemap)
+	else if (texture_ci.flags & ETextureCreateFlagBits::eCubemap)
 	{
 		image_ci.ci.arrayLayers = 6u;
 		image_view_ci.ci.viewType = vk::ImageViewType::eCube;
 	}
-	else if (texture_ci.typeFlags & ETextureCreateFlagBits::e3D)
+	else if (texture_ci.flags & ETextureCreateFlagBits::e3D)
 		image_view_ci.ci.viewType = vk::ImageViewType::e3D;
 	else
 	{
@@ -2424,7 +2410,7 @@ FRenderApiErrorInfo CVkRenderContext::CreateTexture(const FVkTextureCreateInfo& 
 	image_ci.ci.usage = usageFlags;
 	texture.info.sampleCount = image_ci.ci.samples = texture_ci.sampleCount;
 	image_ci.ci.sharingMode = vk::SharingMode::eExclusive;
-	image_ci.ci.flags = (texture_ci.typeFlags & ETextureCreateFlagBits::eCubemap) ? vk::ImageCreateFlagBits::eCubeCompatible : vk::ImageCreateFlagBits::eExtendedUsage;
+	image_ci.ci.flags = (texture_ci.flags & ETextureCreateFlagBits::eCubemap) ? vk::ImageCreateFlagBits::eCubeCompatible : vk::ImageCreateFlagBits::eExtendedUsage;
 
 	RETURN_WHEN_FAULT(m_pDevice->CreateImage(image_ci, texture.image));
 

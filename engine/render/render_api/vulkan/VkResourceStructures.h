@@ -376,7 +376,7 @@ namespace engine
 			struct FVkTextureInitialData
 			{
 				vk::Format format{};
-				ETextureCreateFlags typeFlags{ 0u };
+				ETextureCreateFlags flags{ 0u };
 				FTextureSizeInfo size{};
 
 				u32 mipLevels{ 1u };
@@ -400,7 +400,6 @@ namespace engine
 				utl::vector<FVkTextureMipLevel> mips{};
 				u64 sampler{ ~0ull };
 				u32 totalLayers{ 1u };
-				bool isRenderTarget{ false };
 
 				bool isAlive{ false };
 
@@ -429,7 +428,7 @@ namespace engine
 			struct FVkTextureCreateInfo
 			{
 				vk::Format format{};
-				ETextureCreateFlags typeFlags{ 0u };
+				ETextureCreateFlags flags{ 0u };
 				FTextureSizeInfo size{};
 
 				u32 mipLevels{ 1u };
