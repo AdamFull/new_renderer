@@ -98,8 +98,14 @@ namespace engine
 			// Parameterized constructor
 			explicit FHandle(ValueType value) : value_(value) {}
 
+			// Copy constructor
+			FHandle(const FHandle& other) = default;
+
 			// Move constructor
 			FHandle(FHandle&& other) noexcept : value_(other.value_) { other.value_ = INVALID_HANDLE; }
+
+			// Copy assignment operator
+			FHandle& operator=(const FHandle& other) = default;
 
 			// Move assignment operator
 			FHandle& operator=(FHandle&& other) noexcept 
@@ -205,7 +211,8 @@ namespace std
 	{
 		std::size_t operator()(const engine::render::FHandle<Tag>& handle) const 
 		{
-			return std::hash<typename engine::render::FHandle<Tag>::ValueType>()(static_cast<typename engine::render::FHandle<Tag>::ValueType>(handle));
+			return std::hash<typename engine::render::FHandle<Tag>::ValueType>()(handle.Get());
+			//return std::hash<typename engine::render::FHandle<Tag>::ValueType>()(static_cast<typename engine::render::FHandle<Tag>::ValueType>(handle));
 		}
 	};
 }

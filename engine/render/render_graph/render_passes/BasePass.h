@@ -68,7 +68,7 @@ namespace engine
 
 			EPassType Type() override { return EPassType::eRender; }
 		protected:
-			void BuildAttachment(u64 resource_id, const FPassBuildInfo& build_info, FRenderGraphAttachmentInfo& attachment_info);
+			void BuildAttachment(FGraphHandle resource_id, const FPassBuildInfo& build_info, FRenderGraphAttachmentInfo& attachment_info);
 			virtual void _Render(const FRenderFrameInfo& frame_info) = 0;
 
 			virtual void MakeShader(const std::string& name, std::unique_ptr<IShaderObject>& shader, EShaderCullModeFlagBits cull_mode, EShaderFrontFace front_face, bool alphaBlend = false, EDepthCompareOp depthOp = EDepthCompareOp::eLessOrEqual, const IVertexHandler* vbo = nullptr);
@@ -78,8 +78,8 @@ namespace engine
 			bool m_bFlipViewport{ false };
 
 			u64 m_cameraIndex{ ~0ull };
-			u64 m_depthTarget{ ~0ull };
-			u64 m_stencilTarget{ ~0ull };
+			FGraphHandle m_depthTarget{ ~0ull };
+			FGraphHandle m_stencilTarget{ ~0ull };
 			u32 m_layerCount{ 1u };
 
 			utl::vector<FRenderGraphAttachmentInfo> m_vColorAttachments{};

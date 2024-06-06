@@ -160,9 +160,9 @@ namespace engine
 
 		struct FPassBuildInfo
 		{
-			utl::hash_map<u64, FRenderGraphAttachmentOperationInfo> attachments{};
+			utl::hash_map<FGraphHandle, FRenderGraphAttachmentOperationInfo> attachments{};
 
-			const FRenderGraphAttachmentOperationInfo& getAttachmentInfo(u64 resource_index) const
+			const FRenderGraphAttachmentOperationInfo& getAttachmentInfo(FGraphHandle resource_index) const
 			{
 				auto found = attachments.find(resource_index);
 				if (found != attachments.end())
@@ -301,7 +301,7 @@ namespace engine
 		{
 			ERenderingSizeType type{};
 			bool divideByLocals{ true };
-			u64 target{ INVALID_HANDLE };
+			FGraphHandle target{ INVALID_HANDLE };
 			u32 width{ 1u }, height{ 1u }, depth{ 1u };
 			u32 subresource{ ~0u };
 		};
@@ -349,7 +349,7 @@ namespace engine
 
 		struct FRenderResourceBinding
 		{
-			u64 resource{ INVALID_HANDLE };
+			FGraphHandle resource{ INVALID_HANDLE };
 			u32 subresource{ ~0u };
 
 			bool operator==(const FRenderResourceBinding& other) const
@@ -371,8 +371,8 @@ namespace engine
 		{
 			bool flipViewport{ false };
 
-			u64 depthTarget{ INVALID_HANDLE };
-			u64 stencilTarget{ INVALID_HANDLE };
+			FGraphHandle depthTarget{ INVALID_HANDLE };
+			FGraphHandle stencilTarget{ INVALID_HANDLE };
 		};
 
 		struct FComputePassCreateInfo : public FPassCreateInfo
@@ -397,7 +397,7 @@ namespace engine
 			virtual void PopDebugMarker(const std::string& name, EQueueTypeFlagBits queue) = 0;
 
 			virtual const FRenderResource& GetRenderResource(const std::string& name) const = 0;
-			virtual const FRenderResource& GetRenderResource(u64 resource_id) const = 0;
+			virtual const FRenderResource& GetRenderResource(FGraphHandle resource_id) const = 0;
 
 			virtual u64 AddRenderPass(const std::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci) = 0;
 			virtual u64 AddRenderPass(const std::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci) = 0;
@@ -414,6 +414,6 @@ struct std::hash<engine::render::FRenderResourceBinding>
 {
 	std::size_t operator()(const engine::render::FRenderResourceBinding& k) const
 	{
-		return ((std::hash<u64>()(k.resource) ^ (std::hash<u32>()(k.subresource) << 1)) >> 1);
+		return ((std::hash<engine::render::FGraphHandle>()(k.resource) ^ (std::hash<u32>()(k.subresource) << 1)) >> 1);
 	}
 };

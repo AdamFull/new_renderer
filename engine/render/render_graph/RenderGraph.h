@@ -38,9 +38,9 @@ namespace engine
 			void DestroyResource(u64 buffer_id);
 
 			const FRenderResource& GetRenderResource(const std::string& name) const override;
-			const FRenderResource& GetRenderResource(u64 resource_id) const override;
+			const FRenderResource& GetRenderResource(FGraphHandle resource_id) const override;
 
-			u64 GetRenderRersourceId(const std::string& name) const;
+			FGraphHandle GetRenderRersourceId(const std::string& name) const;
 
 			u64 AddRenderPass(const std::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci) override;
 			u64 AddRenderPass(const std::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci) override;
@@ -58,7 +58,7 @@ namespace engine
 			FTextureCreateInfo MakeTextureCubeArrayCI(EApiDataFormat format, ETextureCreateFlags flags);
 
 			void ApplyRenderPassResources(u64 pass_index, const FRenderConfigPassCreateInfo* raw_pass_ci, FPassCreateInfo* pass_ci);
-			void AapplySingleRenderResourceDependencies(u64 resource_id, ERenderResourceAccessFlagBits access_type, u64 pass_index, EQueueTypeFlagBits queue_type);
+			void AapplySingleRenderResourceDependencies(FGraphHandle resource_id, ERenderResourceAccessFlagBits access_type, u64 pass_index, EQueueTypeFlagBits queue_type);
 			void ApplyMultiRenderResourceDependencies(u64 pass_index, EQueueTypeFlagBits queue_type, const utl::hash_map<ERenderResourceGroupType, utl::vector<FRenderResourceBinding>>& associated_resources);
 
 			bool WasGraphChanged();
@@ -70,8 +70,8 @@ namespace engine
 		protected:
 			utl::vector<std::unique_ptr<IBufferObject>> m_vBufferHandlers{};
 			utl::vector<FRenderResource> m_vRenderResources{};
-			utl::hash_map<std::string, u64> m_nameToResource{};
-			u64 m_backBufferResource{ INVALID_HANDLE };
+			utl::hash_map<std::string, FGraphHandle> m_nameToResource{};
+			FGraphHandle m_backBufferResource{ INVALID_HANDLE };
 
 			u64 m_executionHash{ 0ull };
 			utl::vector<std::unique_ptr<IBasePass>> m_vRenderPasses{};

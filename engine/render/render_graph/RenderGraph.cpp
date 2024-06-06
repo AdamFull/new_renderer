@@ -850,7 +850,7 @@ u64 CRenderGraph::AddStaticResource(const std::string& name, const std::string& 
 
 	auto& render_context = m_pRenderInterface->GetRenderContext();
 
-	m_nameToResource[name] = m_vRenderResources.size();
+	m_nameToResource[name] = FGraphHandle(m_vRenderResources.size());
 
 	auto& new_render_resource = m_vRenderResources.emplace_back();
 	new_render_resource.type = ERenderResourceTypeFlagBits::eStaticImage;
@@ -891,7 +891,7 @@ u64 CRenderGraph::AddRenderResource(const std::string& name, const FTextureCreat
 	new_render_resource.handle = render_context->CreateRenderTarget(name, texture_create_info);
 	new_render_resource.type = (texture_ci.typeFlags & ETextureCreateFlagBits::eStorage) ? ERenderResourceTypeFlagBits::eStorageTarget : ERenderResourceTypeFlagBits::eRenderTarget;
 	
-	m_nameToResource[name] = resource_index;
+	m_nameToResource[name] = FGraphHandle(resource_index);
 	return new_render_resource.handle;
 }
 
@@ -902,7 +902,7 @@ u64 CRenderGraph::AddRenderResource(const std::string& name, const FBufferCreate
 
 	auto& render_context = m_pRenderInterface->GetRenderContext();
 
-	m_nameToResource[name] = m_vRenderResources.size();
+	m_nameToResource[name] = FGraphHandle(m_vRenderResources.size());
 
 	auto& new_render_resource = m_vRenderResources.emplace_back();
 	new_render_resource.handle = render_context->CreateBuffer(name, buffer_ci);
@@ -913,7 +913,7 @@ u64 CRenderGraph::AddRenderResource(const std::string& name, const FBufferCreate
 
 void CRenderGraph::SetBackbufferResourceName(const std::string& name)
 {
-	if (m_backBufferResource != INVALID_HANDLE)
+	if (m_backBufferResource)
 	{
 		log_warning("[Render Graph] Backbuffer name is already set. Adding new name association: {}.", name);
 		m_nameToResource[name] = m_backBufferResource;
@@ -925,7 +925,7 @@ void CRenderGraph::SetBackbufferResourceName(const std::string& name)
 	auto& new_render_resource = m_vRenderResources.emplace_back();
 	new_render_resource.type = ERenderResourceTypeFlagBits::eBackbuffer;
 
-	m_backBufferResource = resource_index;
+	m_backBufferResource = FGraphHandle(resource_index);
 	m_nameToResource[name] = m_backBufferResource;
 }
 
@@ -959,23 +959,23 @@ const FRenderResource& CRenderGraph::GetRenderResource(const std::string& name) 
 	
 	auto found = m_nameToResource.find(name);
 	if (found != m_nameToResource.end())
-		return m_vRenderResources.at(found->second);
+		return m_vRenderResources[found->second.Get()];
 
 	return empty_resource;
 }
 
-const FRenderResource& CRenderGraph::GetRenderResource(u64 resource_id) const
+const FRenderResource& CRenderGraph::GetRenderResource(FGraphHandle resource_id) const
 {
-	return m_vRenderResources.at(resource_id);
+	return m_vRenderResources[resource_id.Get()];
 }
 
-u64 CRenderGraph::GetRenderRersourceId(const std::string& name) const
+FGraphHandle CRenderGraph::GetRenderRersourceId(const std::string& name) const
 {
 	auto found = m_nameToResource.find(name);
 	if (found != m_nameToResource.end())
 		return found->second;
 
-	return INVALID_HANDLE;
+	return FGraphHandle(INVALID_HANDLE);
 }
 
 u64 CRenderGraph::AddRenderPass(const std::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci)
@@ -1076,13 +1076,13 @@ struct counter_pair : std::pair <_Ty, _KTy>
 
 void CRenderGraph::Build()
 {
-	if (m_backBufferResource == INVALID_HANDLE)
+	if (!m_backBufferResource)
 	{
 		log_error("[Render Graph] Failed to Build render graph. Reason: back buffer resource is not set.");
 		return;
 	}
 
-	auto& backbuffer_resource = m_vRenderResources.at(m_backBufferResource);
+	auto& backbuffer_resource = m_vRenderResources[m_backBufferResource.Get()];
 	if (!backbuffer_resource.usages.count(ERenderResourceAccessFlagBits::eWrite))
 	{
 		log_error("[Render Graph] Failed to Build render graph. Reason: No one writes to back buffer resource.");
@@ -1155,7 +1155,7 @@ void CRenderGraph::Execute(f32 dt)
 		pass->Execute(dt);
 	}
 
-	auto& backbuffer_resource = m_vRenderResources.at(m_backBufferResource);
+	auto& backbuffer_resource = m_vRenderResources[m_backBufferResource.Get()];
 	utl::vector<FResourceBarrierInfo> backbuffer_barriers{};
 	
 	auto& backbuffer_barrier = backbuffer_barriers.emplace_back();
@@ -1233,9 +1233,9 @@ void CRenderGraph::ApplyRenderPassResources(u64 pass_index, const FRenderConfigP
 	ApplyMultiRenderResourceDependencies(pass_index, pass_ci->queue, pass_ci->resources);
 }
 
-void CRenderGraph::AapplySingleRenderResourceDependencies(u64 resource_id, ERenderResourceAccessFlagBits access_type, u64 pass_index, EQueueTypeFlagBits queue_type)
+void CRenderGraph::AapplySingleRenderResourceDependencies(FGraphHandle resource_id, ERenderResourceAccessFlagBits access_type, u64 pass_index, EQueueTypeFlagBits queue_type)
 {
-	auto& render_resource = m_vRenderResources.at(resource_id);
+	auto& render_resource = m_vRenderResources[resource_id.Get()];
 	render_resource.usages[access_type].emplace(pass_index);
 	render_resource.queuesUsed |= queue_type;
 }
@@ -1269,8 +1269,8 @@ bool CRenderGraph::WasGraphChanged()
 
 void CRenderGraph::GenerateResourceBarriers(utl::hash_map<u64, FPassBuildInfo>& build_infos, bool generate_build_infos)
 {
-	utl::hash_map<std::pair<u64, u32>, tmp_access_info, pair_hash> resource_access_map{};
-	utl::hash_map<u64, std::unordered_set<u64>> per_res_accessed_passes{};
+	utl::hash_map<std::pair<FGraphHandle, u32>, tmp_access_info, pair_hash> resource_access_map{};
+	utl::hash_map<FGraphHandle, std::unordered_set<u64>> per_res_accessed_passes{};
 
 	for (u64 pass_index : m_vPassExecutionQueue)
 	{
@@ -1285,7 +1285,7 @@ void CRenderGraph::GenerateResourceBarriers(utl::hash_map<u64, FPassBuildInfo>& 
 			for (u64 resource_index = 0ull; resource_index < resource_bindings.size(); ++resource_index)
 			{
 				const auto& resource_binding = resource_bindings[resource_index];
-				const auto& render_resource = m_vRenderResources[resource_binding.resource];
+				const auto& render_resource = m_vRenderResources[resource_binding.resource.Get()];
 
 				bool is_backbuffer_resource = m_backBufferResource == resource_binding.resource;
 
@@ -1380,7 +1380,7 @@ void CRenderGraph::TraverseDependencies(u64 current_pass_index, u64 stack_count)
 
 		for (const auto& resource_access : resource_indices)
 		{
-			auto& render_resource = m_vRenderResources.at(resource_access.resource);
+			auto& render_resource = m_vRenderResources[resource_access.resource.Get()];
 			if (!render_resource.usages.count(ERenderResourceAccessFlagBits::eWrite))
 				continue;
 

@@ -79,10 +79,10 @@ void IRenderPass::Build(const FPassBuildInfo& build_info)
 		BuildAttachment(resource_binding.resource, build_info, color_attachment);
 	}
 
-	if (m_depthTarget != INVALID_HANDLE)
+	if (m_depthTarget)
 		BuildAttachment(m_depthTarget, build_info, m_depthAttachment);
 
-	if (m_stencilTarget != INVALID_HANDLE)
+	if (m_stencilTarget)
 		BuildAttachment(m_stencilTarget, build_info, m_stencilAttachment);
 }
 
@@ -139,7 +139,7 @@ void IRenderPass::Execute(f32 dt)
 	render_context->EndTimestampZone(m_queue);
 }
 
-void IRenderPass::BuildAttachment(u64 resource_id, const FPassBuildInfo& build_info, FRenderGraphAttachmentInfo& attachment_info)
+void IRenderPass::BuildAttachment(FGraphHandle resource_id, const FPassBuildInfo& build_info, FRenderGraphAttachmentInfo& attachment_info)
 {
 	auto& render_graph = m_pRenderInterface->GetRenderGraph();
 
@@ -185,13 +185,13 @@ void IRenderPass::MakeShader(const std::string& name, std::unique_ptr<IShaderObj
 		new_attachment.backbuffer = true;
 	}
 
-	if (m_depthTarget != INVALID_HANDLE)
+	if (m_depthTarget)
 	{
 		auto& render_resource = render_graph->GetRenderResource(m_depthTarget);
 		shader_ci.depthAttachment.source = render_resource.handle;
 	}
 
-	if (m_stencilTarget != INVALID_HANDLE)
+	if (m_stencilTarget)
 	{
 		auto& render_resource = render_graph->GetRenderResource(m_stencilTarget);
 		shader_ci.stencilAttachment.source = render_resource.handle;
@@ -258,7 +258,7 @@ void IComputePass::Execute(f32 dt)
 
 		if (group_info.type == ERenderingSizeType::eFromRenderTarget)
 		{
-			if (group_info.target != INVALID_HANDLE)
+			if (group_info.target)
 			{
 				auto& render_resource = render_graph->GetRenderResource(group_info.target);
 
