@@ -8,6 +8,9 @@
 
 using namespace engine::world::ecs;
 
+#define USE_OLD_ANIMATION_SYSTEM
+//#define USE_STD_MULTITHREADING
+
 glm::quat q_linear(const utl::vector<glm::vec4>& positions, uint32_t index, const float interp)
 {
 	auto& prev = positions[index];
@@ -124,9 +127,6 @@ void CAnimationSystem::__Update(float fDt)
 		m_animationIndeces.resize(root_component.animations.size());
 		std::iota(m_animationIndeces.begin(), m_animationIndeces.end(), 0ull);
 	}
-
-#define USE_OLD_ANIMATION_SYSTEM
-//#define USE_STD_MULTITHREADING
 
 #ifdef USE_STD_MULTITHREADING
 	std::for_each(std::execution::par, m_animationIndeces.begin(), m_animationIndeces.end(),

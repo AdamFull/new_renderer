@@ -52,6 +52,7 @@ namespace engine
 				utl::vector<glm::mat4> inverseBindMatrices;
 				utl::vector<entt::entity> joints;
 				utl::vector<glm::mat4> jointMatrices;
+				utl::vector<u64> indices{};
 			};
 
 			struct FRootComponent

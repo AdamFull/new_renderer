@@ -10,7 +10,11 @@
 
 #include <engine/profiler/Profiler.h>
 
+#include <execution>
+
 using namespace engine::world::ecs;
+
+//#define USE_STD_MULTITHREADING
 
 void debug_draw_skeleton(entt::registry* registry, entt::entity node, glm::mat4 parent_matrix = glm::mat4(1.f))
 {
@@ -65,16 +69,30 @@ void CSkinningSystem::__Update(f32 fDt)
 #endif
 
 		if (skin.jointMatrices.size() != skin.joints.size())
+		{
 			skin.jointMatrices.resize(skin.joints.size());
+
+			skin.indices.resize(skin.joints.size());
+			std::iota(skin.indices.begin(), skin.indices.end(), 0ull);
+		}
+
 
 		// Calculate joint matrices
 		auto inv_transform = glm::inverse(transform.gmodel);
-		for (u32 i = 0; i < skin.joints.size(); i++)
+#ifdef USE_STD_MULTITHREADING
+		std::for_each(std::execution::par, skin.indices.begin(), skin.indices.end(),
+			[&](const auto& idx)
+#else
+		for (const auto& idx : skin.indices)
+#endif
 		{
-			auto& jtransform = m_pSceneGraph->GetComponent<FTransformComponent>(skin.joints[i]);
-			skin.jointMatrices[i] = jtransform.gmodel * skin.inverseBindMatrices[i];
-			skin.jointMatrices[i] = inv_transform * skin.jointMatrices[i];
+			auto& jtransform = m_pSceneGraph->GetComponent<FTransformComponent>(skin.joints[idx]);
+			skin.jointMatrices[idx] = jtransform.gmodel * skin.inverseBindMatrices[idx];
+			skin.jointMatrices[idx] = inv_transform * skin.jointMatrices[idx];
 		}
+#ifdef USE_STD_MULTITHREADING
+		);
+#endif
 	}
 
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
