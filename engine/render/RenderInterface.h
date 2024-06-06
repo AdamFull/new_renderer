@@ -22,16 +22,26 @@ namespace engine
 			void PostLoad() override;
 			void Render(f32 dt) override;
 
-			FAPIHandle CreateTexture(const std::string& path) override;
-			FAPIHandle LoadTexture(const std::string& path, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info);
-			// TODO: add texture may be?
+			FRenderHandle CreateTextureObject(const std::string& path) override;
+			FRenderHandle CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci) override;
+			FRenderHandle CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) override;
+			void DestroyTextureObject(FRenderHandle handle) override;
+			const std::unique_ptr<ITextureObject>& GetTextureObject(FRenderHandle handle) override;
+			const std::unique_ptr<ITextureObject>& GetTextureObject(FGraphHandle handle) override;
 
-			FAPIHandle CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& create_info) override;
-			FAPIHandle CreateShader(const std::string& name, const FComputeShaderCreateInfo& create_info) override;
-			const std::unique_ptr<IShaderObject>& GetShaderObject(FAPIHandle id) override;
+			FRenderHandle CreateBufferObject(const std::string& name, const FBufferCreateInfo& buffer_ci) override;
+			void DestroyBufferObject(FRenderHandle handle) override;
+			const std::unique_ptr<IBufferObject>& GetBufferObject(FRenderHandle handle) override;
+			const std::unique_ptr<IBufferObject>& GetBufferObject(FGraphHandle handle) override;
 
-			u64 CreateVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) override;
-			const std::unique_ptr<IVertexHandler>& GetVertexHandler(u64 id) override;
+			FRenderHandle CreateShaderObject(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci) override;
+			FRenderHandle CreateShaderObject(const std::string& name, const FComputeShaderCreateInfo& shader_ci) override;
+			void DestroyShaderObject(FRenderHandle handle) override;
+			const std::unique_ptr<IShaderObject>& GetShaderObject(FRenderHandle id) override;
+
+			FRenderHandle CreateVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) override;
+			void DestroyVertexHandler(FRenderHandle handle) override;
+			const std::unique_ptr<IVertexHandler>& GetVertexHandler(FRenderHandle id) override;
 
 			void UpdateSurfaceSize(i32 width, i32 height) override;
 
@@ -43,17 +53,6 @@ namespace engine
 			const std::unique_ptr<IRenderContext>& GetRenderContext() override;
 			const std::unique_ptr<IResourceLoader>& GetResourceLoader() override;
 		protected:
-			template<class _Ty>
-			FAPIHandle CreateShader(const FShaderUploadInfo& name_info, const _Ty& create_info)
-			{
-				utl::vector<FShaderCreationBlockInfo> shader_stages{};
-				if (m_pResourceLoader->LoadShaderData(name_info, shader_stages))
-					return m_pRenderContext->CreateShader(name_info.originalName, create_info, shader_stages);
-
-				log_error("Shader with name: \"{}\" was not found.", name_info.originalName);
-
-				return FAPIHandle(INVALID_HANDLE);
-			}
 
 		private:
 			filesystem::IVirtualFileSystemInterface* m_pVFS{ nullptr };

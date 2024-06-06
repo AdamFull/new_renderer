@@ -36,8 +36,8 @@ namespace engine
 			virtual EPassType Type() = 0;
 
 		protected:
-			virtual void InitShaderResources(const std::unique_ptr<IShaderObject>& shader);
-			virtual void BindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt);
+			virtual void InitShaderResources(FRenderHandle shader);
+			virtual void BindShaderResources(FRenderHandle shader, f32 dt);
 
 			EQueueTypeFlagBits m_queue{};
 
@@ -71,9 +71,9 @@ namespace engine
 			void BuildAttachment(FGraphHandle resource_id, const FPassBuildInfo& build_info, FRenderGraphAttachmentInfo& attachment_info);
 			virtual void _Render(const FRenderFrameInfo& frame_info) = 0;
 
-			virtual void MakeShader(const std::string& name, std::unique_ptr<IShaderObject>& shader, EShaderCullModeFlagBits cull_mode, EShaderFrontFace front_face, bool alphaBlend = false, EDepthCompareOp depthOp = EDepthCompareOp::eLessOrEqual, const IVertexHandler* vbo = nullptr);
-			virtual void InitShaderResources(const std::unique_ptr<IShaderObject>& shader) override;
-			virtual void BindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt) override;
+			virtual FRenderHandle MakeShader(const std::string& name, EShaderCullModeFlagBits cull_mode, EShaderFrontFace front_face, bool alphaBlend = false, EDepthCompareOp depthOp = EDepthCompareOp::eLessOrEqual, const IVertexHandler* vbo = nullptr);
+			virtual void InitShaderResources(FRenderHandle) override;
+			virtual void BindShaderResources(FRenderHandle, f32 dt) override;
 		protected:
 			bool m_bFlipViewport{ false };
 
@@ -103,8 +103,8 @@ namespace engine
 		protected:
 			virtual void _Execute(const FComputeFrameInfo& frame_info) = 0;
 
-			virtual void InitShaderResources(const std::unique_ptr<IShaderObject>& shader) override;
-			virtual void BindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt) override;
+			virtual void InitShaderResources(FRenderHandle shader) override;
+			virtual void BindShaderResources(FRenderHandle shader, f32 dt) override;
 		protected:
 			utl::vector<FDispatch2Info> m_vDispatchGroups{};
 			utl::vector<FComputeDispatchGroupInfo> m_vDispatchInfos{};

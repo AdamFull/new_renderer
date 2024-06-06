@@ -4,24 +4,24 @@ using namespace engine::render;
 
 CShaderObject::CShaderObject(IRenderInterface* render_interface)
 {
-	m_pRenderInterface = render_interface;
+	auto& render_context = render_interface->GetRenderContext();
+	m_pRenderContext = render_context.get();
 }
 
 CShaderObject::~CShaderObject()
 {
-	auto& render_context = m_pRenderInterface->GetRenderContext();
-	render_context->DestroyShader(m_shaderId);
+	m_pRenderContext->DestroyShader(m_shaderId);
 }
 
-void CShaderObject::Create(const std::string& name, const FGraphicsShaderCreateInfo& create_info)
+void CShaderObject::Create(const std::string& name, const FGraphicsShaderCreateInfo& create_info, utl::vector<FShaderCreationBlockInfo>&& shader_stages)
 {
-	m_shaderId = m_pRenderInterface->CreateShader(name, create_info);
+	m_shaderId = m_pRenderContext->CreateShader(name, create_info, std::move(shader_stages));
 	BuildReflection();
 }
 
-void CShaderObject::Create(const std::string& name, const FComputeShaderCreateInfo& create_info)
+void CShaderObject::Create(const std::string& name, const FComputeShaderCreateInfo& create_info, utl::vector<FShaderCreationBlockInfo>&& shader_stages)
 {
-	m_shaderId = m_pRenderInterface->CreateShader(name, create_info);
+	m_shaderId = m_pRenderContext->CreateShader(name, create_info, std::move(shader_stages));
 	BuildReflection();
 }
 
@@ -63,7 +63,7 @@ void CShaderObject::FlushDescriptors()
 	auto& external_resources = GetUniformBlock(shader_bindings::external_bind_resources);
 	if (external_resources)
 	{
-		auto& render_graph = m_pRenderInterface->GetRenderGraph();
+		
 		// TODO: Required multiple changes for bindless system inside api implementation
 		// start_element_index + (layer_index * layer.mips.size()) + mip_index;
 	}
@@ -82,8 +82,7 @@ void CShaderObject::FlushDescriptors()
 		data_view.size = block_data.size();
 	}
 
-	auto& render_context = m_pRenderInterface->GetRenderContext();
-	render_context->UpdateShaderResources(update_data);
+	m_pRenderContext->UpdateShaderResources(update_data);
 }
 
 void CShaderObject::FlushConstants(EQueueTypeFlagBits queue)
@@ -98,20 +97,17 @@ void CShaderObject::FlushConstants(EQueueTypeFlagBits queue)
 		data_view.size = block_data.size();
 	}
 
-	auto& render_context = m_pRenderInterface->GetRenderContext();
-	render_context->FlushConstantRanges(m_shaderId, constants, queue);
+	m_pRenderContext->FlushConstantRanges(m_shaderId, constants, queue);
 }
 
 void CShaderObject::Bind(EQueueTypeFlagBits queue)
 {
-	auto& render_context = m_pRenderInterface->GetRenderContext();
-	render_context->BindShader(m_shaderId, queue);
+	m_pRenderContext->BindShader(m_shaderId, queue);
 }
 
 void CShaderObject::BindResources(EQueueTypeFlagBits queue)
 {
-	auto& render_context = m_pRenderInterface->GetRenderContext();
-	render_context->BindShaderResources(m_shaderId, queue);
+	m_pRenderContext->BindShaderResources(m_shaderId, queue);
 }
 
 FAPIHandle CShaderObject::Handle() const
@@ -126,8 +122,7 @@ const FShaderReflectionData& CShaderObject::GetReflection() const
 
 void CShaderObject::BuildReflection()
 {
-	auto& render_context = m_pRenderInterface->GetRenderContext();
-	m_reflection = render_context->GetShaderReflection(m_shaderId);
+	m_reflection = m_pRenderContext->GetShaderReflection(m_shaderId);
 
 	for (auto& [id, uniform_block] : m_reflection.uniformBlocks)
 	{

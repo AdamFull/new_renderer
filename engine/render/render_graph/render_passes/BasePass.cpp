@@ -24,22 +24,23 @@ bool IBasePass::CanExecute()
 	return m_bCanExecute;
 }
 
-void IBasePass::InitShaderResources(const std::unique_ptr<IShaderObject>& shader)
+void IBasePass::InitShaderResources(FRenderHandle shader)
 {
 	auto& render_graph = m_pRenderInterface->GetRenderGraph();
 
 	// Bind default textures/buffers to shader
+	auto& shader_object = m_pRenderInterface->GetShaderObject(shader);
 	for (const auto& [bind_point, resource_binding] : m_bakedBindings)
 	{
 		auto& render_resource = render_graph->GetRenderResource(resource_binding.resource);
 		if (render_resource.type & ERenderResourceTypeFlagBits::eAllImage)
-			shader->BindTexture(utl::fnv1a_64_hash_cstr(bind_point.c_str()), render_resource.handle, resource_binding.subresource);
+			shader_object->BindTexture(utl::fnv1a_64_hash_cstr(bind_point.c_str()), m_pRenderInterface->GetTextureObject(render_resource.handle)->Handle(), resource_binding.subresource);
 		else if (render_resource.type == ERenderResourceTypeFlagBits::eBuffer)
-			shader->BindBuffer(utl::fnv1a_64_hash_cstr(bind_point.c_str()), render_resource.handle);
+			shader_object->BindBuffer(utl::fnv1a_64_hash_cstr(bind_point.c_str()), m_pRenderInterface->GetBufferObject(render_resource.handle)->Handle());
 	}
 }
 
-void IBasePass::BindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt)
+void IBasePass::BindShaderResources(FRenderHandle shader, f32 dt)
 {
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
 }
@@ -146,12 +147,12 @@ void IRenderPass::BuildAttachment(FGraphHandle resource_id, const FPassBuildInfo
 	auto& render_resource = render_graph->GetRenderResource(resource_id);
 	auto& resource_info = build_info.getAttachmentInfo(resource_id);
 
-	attachment_info.handle = render_resource.handle;
+	attachment_info.handle = m_pRenderInterface->GetTextureObject(render_resource.handle)->Handle();
 	attachment_info.loadOp = resource_info.loadOp;
 	attachment_info.storeOp = resource_info.storeOp;
 }
 
-void IRenderPass::MakeShader(const std::string& name, std::unique_ptr<IShaderObject>& shader, EShaderCullModeFlagBits cull_mode, EShaderFrontFace front_face, bool alphaBlend, EDepthCompareOp depthOp, const IVertexHandler* vbo)
+FRenderHandle IRenderPass::MakeShader(const std::string& name, EShaderCullModeFlagBits cull_mode, EShaderFrontFace front_face, bool alphaBlend, EDepthCompareOp depthOp, const IVertexHandler* vbo)
 {
 	auto& render_graph = m_pRenderInterface->GetRenderGraph();
 
@@ -170,7 +171,7 @@ void IRenderPass::MakeShader(const std::string& name, std::unique_ptr<IShaderObj
 
 		auto& render_resource = render_graph->GetRenderResource(resource_binding.resource);
 		auto& new_attachment = shader_ci.colorAttachments.emplace_back();
-		new_attachment.source = render_resource.handle;
+		new_attachment.source = m_pRenderInterface->GetTextureObject(render_resource.handle)->Handle();
 	}
 
 	auto& backbuffer_targer = m_renderResources[ERenderResourceGroupType::eBackbufferWrite];
@@ -181,20 +182,19 @@ void IRenderPass::MakeShader(const std::string& name, std::unique_ptr<IShaderObj
 
 		auto& render_resource = render_graph->GetRenderResource(resource_binding.resource);
 		auto& new_attachment = shader_ci.colorAttachments.emplace_back();
-		new_attachment.source = render_resource.handle;
 		new_attachment.backbuffer = true;
 	}
 
 	if (m_depthTarget)
 	{
 		auto& render_resource = render_graph->GetRenderResource(m_depthTarget);
-		shader_ci.depthAttachment.source = render_resource.handle;
+		shader_ci.depthAttachment.source = m_pRenderInterface->GetTextureObject(render_resource.handle)->Handle();
 	}
 
 	if (m_stencilTarget)
 	{
 		auto& render_resource = render_graph->GetRenderResource(m_stencilTarget);
-		shader_ci.stencilAttachment.source = render_resource.handle;
+		shader_ci.stencilAttachment.source = m_pRenderInterface->GetTextureObject(render_resource.handle)->Handle();
 	}
 
 	if (vbo)
@@ -209,15 +209,15 @@ void IRenderPass::MakeShader(const std::string& name, std::unique_ptr<IShaderObj
 		shader_ci.vertexDeclaration = vbo->GetVertexDeclaration();
 	}
 
-	shader->Create(name, shader_ci);
+	return m_pRenderInterface->CreateShaderObject(name, shader_ci);
 }
 
-void IRenderPass::InitShaderResources(const std::unique_ptr<IShaderObject>& shader)
+void IRenderPass::InitShaderResources(FRenderHandle shader)
 {
 	IBasePass::InitShaderResources(shader);
 }
 
-void IRenderPass::BindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt)
+void IRenderPass::BindShaderResources(FRenderHandle shader, f32 dt)
 {
 	IBasePass::BindShaderResources(shader, dt);
 }
@@ -260,20 +260,16 @@ void IComputePass::Execute(f32 dt)
 		{
 			if (group_info.target)
 			{
-				auto& render_resource = render_graph->GetRenderResource(group_info.target);
-
-				auto resource_sizes = render_context->GetTextureView(render_resource.handle);
-				dispatch_info.globalSizes.x = resource_sizes.width;
-				dispatch_info.globalSizes.y = resource_sizes.height;
+				auto& texture = m_pRenderInterface->GetTextureObject(group_info.target);
+				texture->GetDimensions(&dispatch_info.globalSizes.x, &dispatch_info.globalSizes.y);
 				dispatch_info.globalSizes.z = 1u;
 			}
 		}
 		else if (group_info.type == ERenderingSizeType::eFromBuffer)
 		{
-			auto& render_resource = render_graph->GetRenderResource(group_info.target);
-			auto buffer_view = render_context->GetBufferView(render_resource.handle);
+			auto& buffer = m_pRenderInterface->GetBufferObject(group_info.target);
 
-			dispatch_info.globalSizes.x = buffer_view.alignedSize / buffer_view.elementCount;
+			dispatch_info.globalSizes.x = buffer->Count();
 			dispatch_info.globalSizes.y = 1u;
 			dispatch_info.globalSizes.z = 1u;
 		}
@@ -305,12 +301,12 @@ void IComputePass::Execute(f32 dt)
 	render_context->EndTimestampZone(m_queue);
 }
 
-void IComputePass::InitShaderResources(const std::unique_ptr<IShaderObject>& shader)
+void IComputePass::InitShaderResources(FRenderHandle shader)
 {
 	IBasePass::InitShaderResources(shader);
 }
 
-void IComputePass::BindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt)
+void IComputePass::BindShaderResources(FRenderHandle shader, f32 dt)
 {
 	IBasePass::BindShaderResources(shader, dt);
 
@@ -319,7 +315,8 @@ void IComputePass::BindShaderResources(const std::unique_ptr<IShaderObject>& sha
 	auto& post_process = render_world->GetPostProcessingData();
 
 	// For histogram calculation
-	if (auto& uniform = shader->GetUniformBlock(shader_bindings::histogram_compute_params); uniform)
+	auto& shader_object = m_pRenderInterface->GetShaderObject(shader);
+	if (auto& uniform = shader_object->GetUniformBlock(shader_bindings::histogram_compute_params); uniform)
 	{
 		float log_lum_range = post_process.tonemap.lumMax - post_process.tonemap.lumMin;
 		float time_coeff = glm::clamp<f32>(1.0f - glm::exp(-dt * post_process.tonemap.tau), 0.0, 1.0);

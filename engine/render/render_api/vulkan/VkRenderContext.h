@@ -31,9 +31,9 @@ namespace engine
 				void DestroyTexture(FAPIHandle resource_id) override;
 
 
-				FAPIHandle CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages) override;
-				FAPIHandle CreateShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages) override;
-				FAPIHandle CreateShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages) override;
+				FAPIHandle CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, utl::vector<FShaderCreationBlockInfo>&& shader_stages) override;
+				FAPIHandle CreateShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, utl::vector<FShaderCreationBlockInfo>&& shader_stages) override;
+				FAPIHandle CreateShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci, utl::vector<FShaderCreationBlockInfo>&& shader_stages) override;
 				FShaderReflectionData GetShaderReflection(FAPIHandle shader_view) override;
 				void UpdateShaderResources(const FShaderResourceCommit& shader_resources, EShaderResourcesUpdateFlags flags = EShaderResourcesUpdateFlagBits::eAll) override;
 				void FlushConstantRanges(FAPIHandle shader_id, const utl::hash_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type) override;

@@ -2,9 +2,12 @@
 
 #include "render_api/vulkan/VkRenderContext.h"
 
-#include "RenderWorld.h"
-#include "VertexHandler.h"
 #include "BufferObject.h"
+#include "ShaderObject.h"
+#include "TextureObject.h"
+#include "VertexHandler.h"
+
+#include "RenderWorld.h"
 #include "ResourceLoader.h"
 #include "render_graph/RenderGraph.h"
 
@@ -275,59 +278,169 @@ void CRenderInterface::Render(f32 dt)
 	++m_frameCounter;
 }
 
-FAPIHandle CRenderInterface::CreateTexture(const std::string& path)
-{
-	auto name = filesystem::fs::get_stem(path);
-	return m_pRenderGraph->AddStaticResource(name, path);
-}
-
-FAPIHandle CRenderInterface::LoadTexture(const std::string& path, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info)
+FRenderHandle CRenderInterface::CreateTextureObject(const std::string& path)
 {
 	auto name = filesystem::fs::get_stem(path);
 	auto ext = filesystem::fs::get_ext(path);
 	auto ext_hash = utl::const_hash(ext.c_str(), ext.size());
 	auto mime = utl::cast<EMimeType>(ext_hash);
 
-	FAPIHandle texture_id = m_pRenderContext->GetTextureId(name);
+	FRenderHandle texture_id = FRenderHandle(m_pResources->getId<ITextureObject>(name.c_str()));
 	if (texture_id)
 		return texture_id;
 
 	utl::vector<uint8_t> data{};
 	m_pVFS->ReadFile(path, data);
 
+	FTextureCreateInfo create_info; 
+	FTextureUploadInfo upload_info;
 	m_pResourceLoader->LoadTexture(data, mime, create_info, upload_info);
 
-	return FAPIHandle{};
+	return CreateTextureObject(name, create_info, std::move(upload_info));
 }
 
-FAPIHandle CRenderInterface::CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& create_info)
+FRenderHandle CRenderInterface::CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci)
 {
-	auto name_info = GetShaderNameTag(name);
-	return CreateShader<FGraphicsShaderCreateInfo>(name_info, create_info);
+	auto new_texture = std::make_unique<CTextureObject>(this);
+	new_texture->Create(name, texture_ci);
+
+	FRenderResource resource_desc{};
+	resource_desc.handle = FRenderHandle(m_pResources->add<ITextureObject>(name.c_str(), std::move(new_texture)));
+	resource_desc.type = (texture_ci.flags & ETextureCreateFlagBits::eRenderTarget) ? ERenderResourceTypeFlagBits::eRenderTarget : ((texture_ci.flags & ETextureCreateFlagBits::eStorage) ? ERenderResourceTypeFlagBits::eStorageTarget : ERenderResourceTypeFlagBits::eRenderTarget);
+
+	m_pRenderGraph->AddRenderResource(name, resource_desc);
+
+	return resource_desc.handle;
 }
 
-FAPIHandle CRenderInterface::CreateShader(const std::string& name, const FComputeShaderCreateInfo& create_info)
+FRenderHandle CRenderInterface::CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info)
 {
-	auto name_info = GetShaderNameTag(name);
-	return CreateShader<FComputeShaderCreateInfo>(name_info, create_info);
+	auto new_texture = std::make_unique<CTextureObject>(this);
+	new_texture->Create(name, texture_ci, std::move(upload_info));
+
+	FRenderResource resource_desc{};
+	resource_desc.handle = FRenderHandle(m_pResources->add<ITextureObject>(name.c_str(), std::move(new_texture)));
+	resource_desc.type = (texture_ci.flags & ETextureCreateFlagBits::eRenderTarget) ? ERenderResourceTypeFlagBits::eRenderTarget : ((texture_ci.flags & ETextureCreateFlagBits::eStorage) ? ERenderResourceTypeFlagBits::eStorageTarget : ERenderResourceTypeFlagBits::eRenderTarget);
+
+	m_pRenderGraph->AddRenderResource(name, resource_desc);
+
+	return resource_desc.handle;
 }
 
-const std::unique_ptr<IShaderObject>& CRenderInterface::GetShaderObject(FAPIHandle id)
+void CRenderInterface::DestroyTextureObject(FRenderHandle handle)
 {
-	return m_pResources->get<IShaderObject>(id.Get());
+	m_pResources->remove<ITextureObject>(handle.Get());
+
+	// Delete resource from render graph
+	// m_pRenderGraph->RemoveRenderResource(???);
 }
 
-u64 CRenderInterface::CreateVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci)
+const std::unique_ptr<ITextureObject>& CRenderInterface::GetTextureObject(FRenderHandle handle)
+{
+	return m_pResources->get<ITextureObject>(handle.Get());
+}
+
+const std::unique_ptr<ITextureObject>& CRenderInterface::GetTextureObject(FGraphHandle handle)
+{
+	auto& render_resource = m_pRenderGraph->GetRenderResource(handle);
+	if (!(render_resource.type & ERenderResourceTypeFlagBits::eAllImage))
+		log_error("Trying to get texture object, but object type is: {}", (u32)render_resource.type);
+
+	return GetTextureObject(render_resource.handle);
+}
+
+
+FRenderHandle CRenderInterface::CreateBufferObject(const std::string& name, const FBufferCreateInfo& buffer_ci)
+{
+	auto new_buffer = std::make_unique<CBufferObject>(this);
+	new_buffer->Create(name, buffer_ci);
+
+	FRenderResource resource_desc{};
+	resource_desc.handle = FRenderHandle(m_pResources->add<IBufferObject>(name.c_str(), std::move(new_buffer)));
+	resource_desc.type = ERenderResourceTypeFlagBits::eBuffer;
+
+	m_pRenderGraph->AddRenderResource(name, resource_desc);
+	return resource_desc.handle;
+}
+
+void CRenderInterface::DestroyBufferObject(FRenderHandle handle)
+{
+	return m_pResources->remove<IBufferObject>(handle.Get());
+}
+
+const std::unique_ptr<IBufferObject>& CRenderInterface::GetBufferObject(FRenderHandle handle)
+{
+	return m_pResources->get<IBufferObject>(handle.Get());
+}
+
+const std::unique_ptr<IBufferObject>& CRenderInterface::GetBufferObject(FGraphHandle handle)
+{
+	auto& render_resource = m_pRenderGraph->GetRenderResource(handle);
+	if (!(render_resource.type & ERenderResourceTypeFlagBits::eBuffer))
+		log_error("Trying to get buffer object, but object type is: {}", (u32)render_resource.type);
+
+	return GetBufferObject(render_resource.handle);
+}
+
+
+
+FRenderHandle CRenderInterface::CreateShaderObject(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci)
+{
+	utl::vector<FShaderCreationBlockInfo> shader_stages{};
+	if (!m_pResourceLoader->LoadShaderData(GetShaderNameTag(name), shader_stages))
+	{
+		log_error("Shader with name: \"{}\" was not found.", name);
+		return FRenderHandle{};
+	}
+
+	auto new_shader = std::make_unique<CShaderObject>(this);
+	new_shader->Create(name, shader_ci, std::move(shader_stages));
+
+	return FRenderHandle(m_pResources->add(name.c_str(), std::move(new_shader)));
+}
+
+FRenderHandle CRenderInterface::CreateShaderObject(const std::string& name, const FComputeShaderCreateInfo& shader_ci)
+{
+	utl::vector<FShaderCreationBlockInfo> shader_stages{};
+	if (!m_pResourceLoader->LoadShaderData(GetShaderNameTag(name), shader_stages))
+	{
+		log_error("Shader with name: \"{}\" was not found.", name);
+		return FRenderHandle{};
+	}
+
+	auto new_shader = std::make_unique<CShaderObject>(this);
+	new_shader->Create(name, shader_ci, std::move(shader_stages));
+
+	return FRenderHandle(m_pResources->add(name.c_str(), std::move(new_shader)));
+}
+
+void CRenderInterface::DestroyShaderObject(FRenderHandle handle)
+{
+	return m_pResources->remove<IShaderObject>(handle.Get());
+}
+
+const std::unique_ptr<IShaderObject>& CRenderInterface::GetShaderObject(FRenderHandle handle)
+{
+	return m_pResources->get<IShaderObject>(handle.Get());
+}
+
+
+FRenderHandle CRenderInterface::CreateVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci)
 {
 	auto vertex_handler = std::make_unique<CVertexHandler>(this);
 	vertex_handler->Create(handler_ci);
 
-	return m_pResources->add<IVertexHandler>(name.c_str(), std::move(vertex_handler));
+	return FRenderHandle(m_pResources->add<IVertexHandler>(name.c_str(), std::move(vertex_handler)));
 }
 
-const std::unique_ptr<IVertexHandler>& CRenderInterface::GetVertexHandler(u64 id)
+void CRenderInterface::DestroyVertexHandler(FRenderHandle handle)
 {
-	return m_pResources->get<IVertexHandler>(id);
+
+}
+
+const std::unique_ptr<IVertexHandler>& CRenderInterface::GetVertexHandler(FRenderHandle id)
+{
+	return m_pResources->get<IVertexHandler>(id.Get());
 }
 
 void CRenderInterface::UpdateSurfaceSize(i32 width, i32 height)
@@ -377,7 +490,6 @@ FShaderUploadInfo CRenderInterface::GetShaderNameTag(const std::string& name)
 	FShaderUploadInfo load_info{};
 	load_info.libraryId = utl::fnv1a_32_hash_cstr(name_info.library_name.c_str());
 	load_info.shaderId = shader_compiler::make_module_unique_name(name_info.shader_name, name_info.definitions);
-	load_info.originalName = name;
 
 	return load_info;
 }

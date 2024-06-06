@@ -333,28 +333,28 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	
 	// Loading test cubemap
 	{
-		AddStaticResource("CasualDay4K", "/root/embed/rendering/textures/CasualDay4K.ktx2");
-		AddStaticResource("LensDirtMask", "/root/embed/rendering/textures/DirtMaskTextureExample.png");
+		m_pRenderInterface->CreateTextureObject("/root/embed/rendering/textures/CasualDay4K.ktx2");
+		m_pRenderInterface->CreateTextureObject("/root/embed/rendering/textures/DirtMaskTextureExample.png");
 	}
 	
 	// GI targets
 	{
 		FTextureCreateInfo texture_ci = MakeTexture2DCI(EApiDataFormat::eRG16_SFLOAT, ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage);
 		texture_ci.SetFixedSize2D(1024);
-		AddRenderResource("brdf_lut_target", texture_ci);
+		m_pRenderInterface->CreateTextureObject("brdf_lut_target", texture_ci);
 	}
 	
 	{
 		FTextureCreateInfo texture_ci = MakeTextureCubeCI(EApiDataFormat::eRGBA32_SFLOAT, ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage);
 		texture_ci.SetFixedSize2D(64);
-		AddRenderResource("irradiance_cube_target", texture_ci);
+		m_pRenderInterface->CreateTextureObject("irradiance_cube_target", texture_ci);
 	}
 	
 	{
 		FTextureCreateInfo texture_ci = MakeTextureCubeCI(EApiDataFormat::eRGBA16_SFLOAT, ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage);
 		texture_ci.SetFixedSize2D(512);
 		texture_ci.EnableMipMap();
-		AddRenderResource("prefiltered_cube_target", texture_ci);
+		m_pRenderInterface->CreateTextureObject("prefiltered_cube_target", texture_ci);
 	}
 	
 	// Shadow targets
@@ -362,77 +362,77 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		FTextureCreateInfo texture_ci = MakeTexture2DArrayCI(EApiDataFormat::eD32SFLOAT, ETextureCreateFlagBits::eSamplable);
 		texture_ci.SetFixedSize2D(cascade_shadow_map_resolution);
 		texture_ci.arrayLayers = cascade_shadow_map_cascade_count * max_directional_light_shadow_count;
-		AddRenderResource("cascaded_shadows_target", texture_ci);
+		m_pRenderInterface->CreateTextureObject("cascaded_shadows_target", texture_ci);
 	}
 	
 	{
 		FTextureCreateInfo texture_ci = MakeTexture2DArrayCI(EApiDataFormat::eD16UNORM, ETextureCreateFlagBits::eSamplable);
 		texture_ci.SetFixedSize2D(spot_light_shadow_map_resolution);
 		texture_ci.arrayLayers = max_spot_light_shadow_count;
-		AddRenderResource("directional_shadows_target", texture_ci);
+		m_pRenderInterface->CreateTextureObject("directional_shadows_target", texture_ci);
 	}
 	
 	{
 		FTextureCreateInfo texture_ci = MakeTextureCubeArrayCI(EApiDataFormat::eD16UNORM, ETextureCreateFlagBits::eSamplable);
 		texture_ci.SetFixedSize2D(point_light_shadow_map_resolution);
 		texture_ci.arrayLayers = max_point_light_shadow_count;
-		AddRenderResource("omni_shadows_target", texture_ci);
+		m_pRenderInterface->CreateTextureObject("omni_shadows_target", texture_ci);
 	}
 	
 	// Visibility buffer targets
 	{
 		FTextureCreateInfo texture_ci = MakeTexture2DCI(EApiDataFormat::eRGBA8_UNORM, ETextureCreateFlagBits::eSamplable);
-		AddRenderResource("visbuffer_geometry_target", texture_ci);
+		m_pRenderInterface->CreateTextureObject("visbuffer_geometry_target", texture_ci);
 	}
 	
 	{
 		FTextureCreateInfo texture_ci = MakeTexture2DCI(EApiDataFormat::eRGBA8_UNORM, ETextureCreateFlagBits::eSamplable);
-		AddRenderResource("visbuffer_vboinst_target", texture_ci);
+		m_pRenderInterface->CreateTextureObject("visbuffer_vboinst_target", texture_ci);
 	}
 	
 	{
 		FTextureCreateInfo texture_ci = MakeTexture2DCI(EApiDataFormat::eD32SFLOAT, ETextureCreateFlagBits::eSamplable);
-		AddRenderResource("zbuffer_depth_target", texture_ci);
+		m_pRenderInterface->CreateTextureObject("zbuffer_depth_target", texture_ci);
 	}
 	
 	{
 		FTextureCreateInfo texture_ci = MakeTexture2DCI(use_low_precision_velocity ? EApiDataFormat::eRG8_UNORM : EApiDataFormat::eRG16_SFLOAT, ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage);
-		AddRenderResource("motion_vectors_target", texture_ci);
+		m_pRenderInterface->CreateTextureObject("motion_vectors_target", texture_ci);
 	}
 	
 	{
 		FTextureCreateInfo texture_ci = MakeTexture2DCI(EApiDataFormat::eR11G11B10_UFLOAT, ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage);
-		AddRenderResource("hdr0", texture_ci);
+		m_pRenderInterface->CreateTextureObject("hdr0", texture_ci);
 	}
 	
 	{
 		FTextureCreateInfo texture_ci = MakeTexture2DCI(EApiDataFormat::eR11G11B10_UFLOAT, ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage);
-		AddRenderResource("hdr1", texture_ci);
+		m_pRenderInterface->CreateTextureObject("hdr1", texture_ci);
 	}
 	
 	{
 		FTextureCreateInfo texture_ci = MakeTexture2DCI(EApiDataFormat::eR11G11B10_UFLOAT, ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage);
-		AddRenderResource("hdr0_history", texture_ci);
+		m_pRenderInterface->CreateTextureObject("hdr0_history", texture_ci);
 	}
 	
 	{
 		FTextureCreateInfo texture_ci = MakeTexture2DCI(EApiDataFormat::eR11G11B10_UFLOAT, ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage);
 		texture_ci.SetSizeScale(0.5f);
-		AddRenderResource("hdr0_div2", texture_ci);
+		m_pRenderInterface->CreateTextureObject("hdr0_div2", texture_ci);
 	}
 	
 	{
 		FTextureCreateInfo texture_ci = MakeTexture2DCI(EApiDataFormat::eR11G11B10_UFLOAT, ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage);
 		texture_ci.SetSizeScale(0.5f);
 		texture_ci.mipLevels = bloom_blur_depth;
-		AddRenderResource("bloom_target", texture_ci);
+		m_pRenderInterface->CreateTextureObject("bloom_target", texture_ci);
 	}
 	
 	// Eye adaptation targets
 	{
 		FTextureCreateInfo texture_ci = MakeTexture2DCI(EApiDataFormat::eR32_SFLOAT, ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage);
 		texture_ci.SetFixedSize2D(1);
-		AddRenderResource("avg_brightness_target", texture_ci);
+		m_pRenderInterface->CreateTextureObject("avg_brightness_target", texture_ci);
 	}
 	
 	{
@@ -440,7 +440,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		buffer_ci.flags = EBufferUsageFlagBits::eStorageBuffer;
 		buffer_ci.size = 4;
 		buffer_ci.count = 256;
-		AddRenderResource("histogram_buffer", buffer_ci);
+		m_pRenderInterface->CreateBufferObject("histogram_buffer", buffer_ci);
 	}
 	
 	// Present image targets
@@ -844,71 +844,11 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	}
 }
 
-FAPIHandle CRenderGraph::AddStaticResource(const std::string& name, const std::string& path)
+
+void CRenderGraph::AddRenderResource(const std::string& name, const FRenderResource& resource_desc)
 {
-	log_debug("[Render Graph] Loading static resource: {}, path: {}.", name, path);
-
-	auto& render_context = m_pRenderInterface->GetRenderContext();
-
 	m_nameToResource[name] = FGraphHandle(m_vRenderResources.size());
-
-	auto& new_render_resource = m_vRenderResources.emplace_back();
-	new_render_resource.type = ERenderResourceTypeFlagBits::eStaticImage;
-
-	FTextureCreateInfo create_info{}; 
-	FTextureUploadInfo upload_info{};
-	new_render_resource.handle = m_pRenderInterface->LoadTexture(path, create_info, upload_info);
-
-	if (!new_render_resource.handle)
-		new_render_resource.handle = render_context->CreateTexture(name, create_info, std::move(upload_info));
-
-	return new_render_resource.handle;
-}
-
-FAPIHandle CRenderGraph::AddRenderResource(const std::string& name, const FTextureCreateInfo& texture_ci)
-{
-	log_debug("[Render Graph] Allocating render target: {}, size({}x{}x{}) * {}, mips: {}, layers: {}, format: {}.", name, 
-		texture_ci.size.width, texture_ci.size.height, texture_ci.size.depth, texture_ci.size.scale,
-		texture_ci.mipLevels, texture_ci.arrayLayers, utl::cast<u32>(texture_ci.format));
-
-	auto& render_context = m_pRenderInterface->GetRenderContext();
-	auto render_extent = render_context->GetRenderResolution();
-	auto resource_index = m_vRenderResources.size();
-
-	FTextureCreateInfo texture_create_info{ texture_ci };
-	if (texture_create_info.size.policy == ERenderTargetSizePolicy::eFull)
-	{
-		texture_create_info.size.width = render_extent.x;
-		texture_create_info.size.height = render_extent.y;
-	}
-	else if (texture_create_info.size.policy == ERenderTargetSizePolicy::eScalable)
-	{
-		texture_create_info.size.width = utl::cast<u32>(utl::cast<f32>(render_extent.x) * texture_create_info.size.scale);
-		texture_create_info.size.height = utl::cast<u32>(utl::cast<f32>(render_extent.y) * texture_create_info.size.scale);
-	}
-
-	auto& new_render_resource = m_vRenderResources.emplace_back();
-	new_render_resource.handle = render_context->CreateTexture(name, texture_create_info);
-	new_render_resource.type = (texture_ci.flags & ETextureCreateFlagBits::eStorage) ? ERenderResourceTypeFlagBits::eStorageTarget : ERenderResourceTypeFlagBits::eRenderTarget;
-	
-	m_nameToResource[name] = FGraphHandle(resource_index);
-	return new_render_resource.handle;
-}
-
-FAPIHandle CRenderGraph::AddRenderResource(const std::string& name, const FBufferCreateInfo& buffer_ci)
-{
-	log_debug("[Render Graph] Allocating buffer: {}, size: {}b.", name,
-		buffer_ci.size * buffer_ci.count);
-
-	auto& render_context = m_pRenderInterface->GetRenderContext();
-
-	m_nameToResource[name] = FGraphHandle(m_vRenderResources.size());
-
-	auto& new_render_resource = m_vRenderResources.emplace_back();
-	new_render_resource.handle = render_context->CreateBuffer(name, buffer_ci);
-	new_render_resource.type = ERenderResourceTypeFlagBits::eBuffer;
-
-	return new_render_resource.handle;
+	m_vRenderResources.emplace_back(resource_desc);
 }
 
 void CRenderGraph::SetBackbufferResourceName(const std::string& name)

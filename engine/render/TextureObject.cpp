@@ -14,12 +14,37 @@ CTextureObject::~CTextureObject()
 
 void CTextureObject::Create(const std::string& name, const FTextureCreateInfo& create_info)
 {
-	//m_textureId = m_pRenderContext->CreateTexture(name, )
+	m_textureId = m_pRenderContext->CreateTexture(name, create_info);
 }
 
 void CTextureObject::Create(const std::string& name, const FTextureCreateInfo& create_info, FTextureUploadInfo&& upload_info)
 {
+	m_textureId = m_pRenderContext->CreateTexture(name, create_info, std::move(upload_info));
+}
 
+void CTextureObject::GetDimensions(u32* width, u32* height, u32* depth)
+{
+	auto texture_data = m_pRenderContext->GetTextureView(m_textureId);
+
+	*width = texture_data.width;
+
+	if (height)
+		*height = texture_data.height;
+
+	if (depth)
+		*depth = texture_data.depth;
+}
+
+void CTextureObject::GetMipLevelCount(u32* mip_count)
+{
+	auto texture_data = m_pRenderContext->GetTextureView(m_textureId);
+	*mip_count = texture_data.mipLevels;
+}
+
+void CTextureObject::GetLayerCount(u32* layer_count)
+{
+	auto texture_data = m_pRenderContext->GetTextureView(m_textureId);
+	*layer_count = texture_data.arrayLayers;
 }
 
 FAPIHandle CTextureObject::Handle()

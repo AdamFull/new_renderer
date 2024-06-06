@@ -5,6 +5,7 @@ using namespace engine::render;
 
 CGPUVector::CGPUVector(IRenderInterface* render_interface)
 {
+	m_pRenderInterface = render_interface;
 	m_pBuffer = std::make_unique<CBufferObject>(render_interface);
 }
 
@@ -99,6 +100,8 @@ void CGPUVector::Allocate(const std::string& name, EBufferUsageFlags flag, u64 s
 	buffer_ci.flags = m_bufferFlag = flag;
 
 	m_srOriginalName = name;
+
+	auto& render_graph = m_pRenderInterface->GetRenderGraph();
 
 	m_pBuffer->Create(name, buffer_ci);
 	m_elemSize = stride;//m_pBuffer->instanceSize();

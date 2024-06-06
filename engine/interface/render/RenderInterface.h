@@ -227,8 +227,8 @@ namespace engine
 		public:
 			virtual ~IShaderObject() = default;
 
-			virtual void Create(const std::string& name, const FGraphicsShaderCreateInfo& create_info) = 0;
-			virtual void Create(const std::string& name, const FComputeShaderCreateInfo& create_info) = 0;
+			virtual void Create(const std::string& name, const FGraphicsShaderCreateInfo& create_info, utl::vector<FShaderCreationBlockInfo>&& shader_stages) = 0;
+			virtual void Create(const std::string& name, const FComputeShaderCreateInfo& create_info, utl::vector<FShaderCreationBlockInfo>&& shader_stages) = 0;
 
 			virtual const std::unique_ptr<CUniformHandle>& GetUniformBlock(u64 name) = 0;
 			virtual const std::unique_ptr<CUniformHandle>& GetConstantBlock(u64 name) = 0;
@@ -330,9 +330,9 @@ namespace engine
 			virtual FTextureView GetTextureView(FAPIHandle texture_id) = 0;
 			virtual void DestroyTexture(FAPIHandle resource_id) = 0;
 
-			virtual FAPIHandle CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
-			virtual FAPIHandle CreateShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
-			virtual FAPIHandle CreateShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
+			virtual FAPIHandle CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, utl::vector<FShaderCreationBlockInfo>&& shader_stages) = 0;
+			virtual FAPIHandle CreateShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, utl::vector<FShaderCreationBlockInfo>&& shader_stages) = 0;
+			virtual FAPIHandle CreateShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci, utl::vector<FShaderCreationBlockInfo>&& shader_stages) = 0;
 			virtual FShaderReflectionData GetShaderReflection(FAPIHandle shader_view) = 0;
 			virtual void UpdateShaderResources(const FShaderResourceCommit& resources, EShaderResourcesUpdateFlags flags = EShaderResourcesUpdateFlagBits::eAll) = 0;
 			virtual void FlushConstantRanges(FAPIHandle shader_id, const utl::hash_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type) = 0;
@@ -469,15 +469,26 @@ namespace engine
 			virtual void PostLoad() = 0;
 			virtual void Render(f32 dt) = 0;
 
-			virtual FAPIHandle CreateTexture(const std::string& path) = 0;
-			virtual FAPIHandle LoadTexture(const std::string& path, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info) = 0;
+			virtual FRenderHandle CreateTextureObject(const std::string& path) = 0;
+			virtual FRenderHandle CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
+			virtual FRenderHandle CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) = 0;
+			virtual void DestroyTextureObject(FRenderHandle handle) = 0;
+			virtual const std::unique_ptr<ITextureObject>& GetTextureObject(FRenderHandle handle) = 0;
+			virtual const std::unique_ptr<ITextureObject>& GetTextureObject(FGraphHandle handle) = 0;
 
-			virtual FAPIHandle CreateShader(const std::string& name_info, const FGraphicsShaderCreateInfo& create_info) = 0;
-			virtual FAPIHandle CreateShader(const std::string& name_info, const FComputeShaderCreateInfo& create_info) = 0;
-			virtual const std::unique_ptr<IShaderObject>& GetShaderObject(FAPIHandle id) = 0;
+			virtual FRenderHandle CreateBufferObject(const std::string& name, const FBufferCreateInfo& buffer_ci) = 0;
+			virtual void DestroyBufferObject(FRenderHandle handle) = 0;
+			virtual const std::unique_ptr<IBufferObject>& GetBufferObject(FRenderHandle handle) = 0;
+			virtual const std::unique_ptr<IBufferObject>& GetBufferObject(FGraphHandle handle) = 0;
 
-			virtual u64 CreateVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) = 0;
-			virtual const std::unique_ptr<IVertexHandler>& GetVertexHandler(u64 id) = 0;
+			virtual FRenderHandle CreateShaderObject(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci) = 0;
+			virtual FRenderHandle CreateShaderObject(const std::string& name, const FComputeShaderCreateInfo& shader_ci) = 0;
+			virtual void DestroyShaderObject(FRenderHandle handle) = 0;
+			virtual const std::unique_ptr<IShaderObject>& GetShaderObject(FRenderHandle id) = 0;
+
+			virtual FRenderHandle CreateVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) = 0;
+			virtual void DestroyVertexHandler(FRenderHandle handle) = 0;
+			virtual const std::unique_ptr<IVertexHandler>& GetVertexHandler(FRenderHandle id) = 0;
 
 			virtual FShaderUploadInfo GetShaderNameTag(const std::string& name) = 0;
 

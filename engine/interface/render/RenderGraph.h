@@ -130,7 +130,7 @@ namespace engine
 		struct FRenderResourceView
 		{
 			ERenderResourceTypeFlagBits type{};
-			FAPIHandle handle{ INVALID_HANDLE };
+			FRenderHandle handle{ INVALID_HANDLE };
 		};
 
 		struct FResourceBarrierInfo
@@ -221,7 +221,7 @@ namespace engine
 		{
 			ERenderResourceTypeFlagBits type{};
 			EQueueTypeFlags queuesUsed{ 0u };
-			FAPIHandle handle{ INVALID_HANDLE };
+			FRenderHandle handle{ INVALID_HANDLE };
 
 			utl::hash_map<ERenderResourceAccessFlagBits, std::unordered_set<u64>> usages{};
 		};
@@ -388,9 +388,7 @@ namespace engine
 			virtual void Create(const utl::vector<u8>& config, const utl::vector<u8>& schema) = 0;
 			virtual void PostLoad() = 0;
 
-			virtual FAPIHandle AddStaticResource(const std::string& name, const std::string& path) = 0;
-			virtual FAPIHandle AddRenderResource(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
-			virtual FAPIHandle AddRenderResource(const std::string& name, const FBufferCreateInfo& buffer_ci) = 0;
+			virtual void AddRenderResource(const std::string& name, const FRenderResource& resource_desc) = 0;
 			virtual void SetBackbufferResourceName(const std::string& name) = 0;
 
 			virtual void PushDebugMarker(const std::string& name, u32 color, EQueueTypeFlagBits queue) = 0;
