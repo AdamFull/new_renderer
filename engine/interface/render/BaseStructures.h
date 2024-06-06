@@ -87,6 +87,79 @@ namespace engine
 			FPoint2D<_Ty> size{};
 		};
 
+		template<typename _Tag>
+		struct FHandle
+		{
+			using ValueType = u64;
+
+			// Default constructor
+			FHandle() : value_(INVALID_HANDLE) {}
+
+			// Parameterized constructor
+			explicit FHandle(ValueType value) : value_(value) {}
+
+			// Move constructor
+			FHandle(FHandle&& other) noexcept : value_(other.value_) { other.value_ = INVALID_HANDLE; }
+
+			// Move assignment operator
+			FHandle& operator=(FHandle&& other) noexcept 
+			{
+				if (this != &other) 
+				{
+					value_ = other.value_;
+					other.value_ = INVALID_HANDLE;
+				}
+				return *this;
+			}
+
+			// Conversion operator to uint64_t
+			//operator ValueType() const { return value_; }
+			ValueType Get() const { return value_; }
+
+			// Boolean operator for validity check
+			explicit operator bool() const { return value_ != INVALID_HANDLE; }
+
+			// Equality operator
+			bool operator==(const FHandle & other) const { return value_ == other.value_; }
+
+			// Inequality operator
+			bool operator!=(const FHandle & other) const { return value_ != other.value_; }
+
+			// Less than operator
+			bool operator<(const FHandle & other) const { return value_ < other.value_; }
+
+			// Greater than operator
+			bool operator>(const FHandle & other) const { return value_ > other.value_; }
+
+			// Less than or equal operator
+			bool operator<=(const FHandle & other) const { return value_ <= other.value_; }
+
+			// Greater than or equal operator
+			bool operator>=(const FHandle & other) const { return value_ >= other.value_; }
+
+			// Stream output operator
+			friend std::ostream& operator<<(std::ostream & os, const FHandle & handle) 
+			{
+				if (handle)
+					os << handle.value_;
+				else
+					os << "INVALID_HANDLE";
+
+				return os;
+			}
+
+		private:
+			ValueType value_;
+		};
+
+		struct GraphTag {};
+		struct RenderTag {};
+		struct ApiTag {};
+
+		using FGraphHandle = FHandle<GraphTag>;
+		using FRenderHandle = FHandle<RenderTag>;
+		using FAPIHandle = FHandle<ApiTag>;
+
 		struct FGeometryDrawInfo
 		{
 			u64 lastIndex{ 0ull };
@@ -123,4 +196,16 @@ namespace engine
 			EResourceFlagBits mask{};
 		};
 	}
+}
+
+namespace std
+{
+	template <typename Tag>
+	struct hash<engine::render::FHandle<Tag>> 
+	{
+		std::size_t operator()(const engine::render::FHandle<Tag>& handle) const 
+		{
+			return std::hash<typename engine::render::FHandle<Tag>::ValueType>()(static_cast<typename engine::render::FHandle<Tag>::ValueType>(handle));
+		}
+	};
 }
