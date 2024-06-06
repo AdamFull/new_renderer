@@ -275,21 +275,21 @@ void CRenderInterface::Render(f32 dt)
 	++m_frameCounter;
 }
 
-u64 CRenderInterface::CreateTexture(const std::string& path)
+FAPIHandle CRenderInterface::CreateTexture(const std::string& path)
 {
 	auto name = filesystem::fs::get_stem(path);
 	return m_pRenderGraph->AddStaticResource(name, path);
 }
 
-u64 CRenderInterface::LoadTexture(const std::string& path, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info)
+FAPIHandle CRenderInterface::LoadTexture(const std::string& path, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info)
 {
 	auto name = filesystem::fs::get_stem(path);
 	auto ext = filesystem::fs::get_ext(path);
 	auto ext_hash = utl::const_hash(ext.c_str(), ext.size());
 	auto mime = utl::cast<EMimeType>(ext_hash);
 
-	u64 texture_id = m_pRenderContext->GetTextureId(name);
-	if (texture_id != INVALID_HANDLE)
+	FAPIHandle texture_id = m_pRenderContext->GetTextureId(name);
+	if (texture_id)
 		return texture_id;
 
 	utl::vector<uint8_t> data{};
@@ -297,24 +297,24 @@ u64 CRenderInterface::LoadTexture(const std::string& path, FTextureCreateInfo& c
 
 	m_pResourceLoader->LoadTexture(data, mime, create_info, upload_info);
 
-	return INVALID_HANDLE;
+	return FAPIHandle{};
 }
 
-u64 CRenderInterface::CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& create_info)
+FAPIHandle CRenderInterface::CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& create_info)
 {
 	auto name_info = GetShaderNameTag(name);
 	return CreateShader<FGraphicsShaderCreateInfo>(name_info, create_info);
 }
 
-u64 CRenderInterface::CreateShader(const std::string& name, const FComputeShaderCreateInfo& create_info)
+FAPIHandle CRenderInterface::CreateShader(const std::string& name, const FComputeShaderCreateInfo& create_info)
 {
 	auto name_info = GetShaderNameTag(name);
 	return CreateShader<FComputeShaderCreateInfo>(name_info, create_info);
 }
 
-const std::unique_ptr<IShaderObject>& CRenderInterface::GetShaderObject(u64 id)
+const std::unique_ptr<IShaderObject>& CRenderInterface::GetShaderObject(FAPIHandle id)
 {
-	return m_pResources->get<IShaderObject>(id);
+	return m_pResources->get<IShaderObject>(id.Get());
 }
 
 u64 CRenderInterface::CreateVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci)

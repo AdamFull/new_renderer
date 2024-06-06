@@ -51,13 +51,13 @@ namespace engine
 		struct FVertexBufferBindingInfo
 		{
 			u32 firstBinding{ 0u };
-			utl::vector<u64> buffers{};
+			utl::vector<FAPIHandle> buffers{};
 			utl::vector<u64> offsets{};
 		};
 
 		struct FIndexBufferBindingInfo
 		{
-			u64 bufferId{ INVALID_HANDLE };
+			FAPIHandle bufferId{ INVALID_HANDLE };
 			u64 offset{ 0ull };
 			u64 indexSize{ 0ull };
 		};

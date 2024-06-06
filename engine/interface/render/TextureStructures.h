@@ -87,7 +87,7 @@ namespace engine
 
 		struct FTextureUploadInfo
 		{
-			u64 textureId{ INVALID_HANDLE };
+			FAPIHandle textureId{ INVALID_HANDLE };
 			utl::vector<uint8_t> data{};
 			utl::vector<utl::vector<u64>> mipLayerOffsets{};
 		};

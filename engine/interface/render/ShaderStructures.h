@@ -101,7 +101,7 @@ namespace engine
 
 		struct FAttachment
 		{
-			u64 source{ INVALID_HANDLE };
+			FAPIHandle source{ INVALID_HANDLE };
 			bool backbuffer{ false };
 		};
 
@@ -146,16 +146,16 @@ namespace engine
 
 		struct FTextureBindInfo
 		{
-			u64 textureId{ INVALID_HANDLE };
+			FAPIHandle textureId{ INVALID_HANDLE };
 			u32 mipLevel{ ~0u };
 		};
 
 		struct FShaderResourceCommit
 		{
-			u64 shaderId{ INVALID_HANDLE };
+			FAPIHandle shaderId{ INVALID_HANDLE };
 			utl::hash_map<u64, FUniformDataView> uniforms{};
 			utl::hash_map<u64, FTextureBindInfo> textures{};
-			utl::hash_map<u64, u64> buffers{};
+			utl::hash_map<u64, FAPIHandle> buffers{};
 		};
 	}
 }

@@ -214,7 +214,7 @@ void CScene::LoadGLTF(easygltf::FGLTFRoot& root)
 		// TODO: add ability to override format and sampler params
 		// TODO: find format from materials
 		auto image_path = fs::path_append(root.rootDirectory, easygltf::url_decode(image.uri));
-		m_resources.textures.emplace_back(m_pRenderInterface->CreateTexture(image_path));
+		m_resources.textures.emplace_back(m_pRenderInterface->CreateTexture(image_path).Get());
 		m_resources.lastTexture++;
 	}
 

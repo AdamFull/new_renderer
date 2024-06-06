@@ -153,7 +153,7 @@ void CImGuiPass::_Render(const FRenderFrameInfo& frame_info)
 			}
 		}
 
-		u64 last_bound_resource{ INVALID_HANDLE };
+		FAPIHandle last_bound_resource{ INVALID_HANDLE };
 
 		// Will project scissor/clipping rectangles into framebuffer space
 		ImVec2 clip_off = draw_data->DisplayPos;         // (0,0) unless using multi-viewports
@@ -196,7 +196,7 @@ void CImGuiPass::_Render(const FRenderFrameInfo& frame_info)
 					render_context->SetScissorRect((int32_t)(clip_min.x), (int32_t)(clip_min.y), (uint32_t)(clip_max.x - clip_min.x), (uint32_t)(clip_max.y - clip_min.y));
 
 					// Bind DescriptorSet with font or user texture
-					u64 attachment{ (u64)pcmd->TextureId };
+					FAPIHandle attachment{ (u64)pcmd->TextureId };
 					if (sizeof(ImTextureID) < sizeof(ImU64))
 					{
 						// We don't support texture switches if ImTextureID hasn't been redefined to be 64-bit. Do a flaky check that other textures haven't been used.

@@ -26,13 +26,13 @@ namespace engine
 			u64 InstanceSize() override;
 			u64 Count() override;
 
-			u64 Handle() override;
+			FAPIHandle Handle() override;
 			uint64_t Address() override;
 
 			void* Data() override;
 
 		private:
-			u64 m_bufferId{ INVALID_HANDLE };
+			FAPIHandle m_bufferId{ INVALID_HANDLE };
 			u64 m_elemSize{ 0ull };
 			u64 m_elemCount{ 0ull };
 			uint64_t m_virtualAddress{ 0ull };

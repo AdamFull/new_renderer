@@ -130,7 +130,7 @@ namespace engine
 		struct FRenderResourceView
 		{
 			ERenderResourceTypeFlagBits type{};
-			u64 handle{ INVALID_HANDLE };
+			FAPIHandle handle{ INVALID_HANDLE };
 		};
 
 		struct FResourceBarrierInfo
@@ -145,7 +145,7 @@ namespace engine
 
 		struct FRenderGraphAttachmentInfo
 		{
-			u64 handle{ INVALID_HANDLE };
+			FAPIHandle handle{ INVALID_HANDLE };
 			u32 mipLevel{ ~0u };
 			ERenderResourceLoadOp loadOp{};
 			ERenderResourceStoreOp storeOp{};
@@ -177,7 +177,7 @@ namespace engine
 			EQueueTypeFlagBits queue{};
 			u32 layerCount{ 1u };
 			FRect2D<f32> renderArea{};
-			utl::hash_map<u64, FClearValues> clearValues;
+			utl::hash_map<FAPIHandle, FClearValues> clearValues;
 
 			utl::vector<FRenderGraphAttachmentInfo>* colorAttachments{ nullptr };
 
@@ -205,14 +205,14 @@ namespace engine
 
 		struct FDispatch2Info
 		{
-			u64 shaderHandle{};
+			FAPIHandle shaderHandle{};
 			bool divideByLocals{ true };
 			FDispatch2Group globalSizes{};
 		};
 
 		struct FDispatchIndirectInfo
 		{
-			u64 shaderHandle{};
+			FAPIHandle shaderHandle{};
 			bool divideByLocals{ true };
 			utl::vector<FDispatch2Group> groups{};
 		};
@@ -221,7 +221,7 @@ namespace engine
 		{
 			ERenderResourceTypeFlagBits type{};
 			EQueueTypeFlags queuesUsed{ 0u };
-			u64 handle{ INVALID_HANDLE };
+			FAPIHandle handle{ INVALID_HANDLE };
 
 			utl::hash_map<ERenderResourceAccessFlagBits, std::unordered_set<u64>> usages{};
 		};
@@ -362,7 +362,7 @@ namespace engine
 			std::string shader{};
 			bool oneTime{ false };
 
-			utl::hash_map<u64, FClearValues> clearValues;
+			utl::hash_map<FAPIHandle, FClearValues> clearValues;
 			utl::hash_map<ERenderResourceGroupType, utl::vector<FRenderResourceBinding>> resources{};
 			utl::hash_map<std::string, FRenderResourceBinding> bindings{};
 		};
@@ -388,9 +388,9 @@ namespace engine
 			virtual void Create(const utl::vector<u8>& config, const utl::vector<u8>& schema) = 0;
 			virtual void PostLoad() = 0;
 
-			virtual u64 AddStaticResource(const std::string& name, const std::string& path) = 0;
-			virtual u64 AddRenderResource(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
-			virtual u64 AddRenderResource(const std::string& name, const FBufferCreateInfo& buffer_ci) = 0;
+			virtual FAPIHandle AddStaticResource(const std::string& name, const std::string& path) = 0;
+			virtual FAPIHandle AddRenderResource(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
+			virtual FAPIHandle AddRenderResource(const std::string& name, const FBufferCreateInfo& buffer_ci) = 0;
 			virtual void SetBackbufferResourceName(const std::string& name) = 0;
 
 			virtual void PushDebugMarker(const std::string& name, u32 color, EQueueTypeFlagBits queue) = 0;

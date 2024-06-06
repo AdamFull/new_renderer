@@ -47,12 +47,12 @@ const std::unique_ptr<CUniformHandle>& CShaderObject::GetConstantBlock(u64 name)
 	return null;
 }
 
-void CShaderObject::BindBuffer(u64 name, u64 buffer_resource)
+void CShaderObject::BindBuffer(u64 name, FAPIHandle buffer_resource)
 {
 	m_bindBuffers[name] = buffer_resource;
 }
 
-void CShaderObject::BindTexture(u64 name, u64 texture_resource, u32 mip)
+void CShaderObject::BindTexture(u64 name, FAPIHandle texture_resource, u32 mip)
 {
 	m_bindTextures[name] = FTextureBindInfo{ texture_resource, mip };
 }
@@ -114,7 +114,7 @@ void CShaderObject::BindResources(EQueueTypeFlagBits queue)
 	render_context->BindShaderResources(m_shaderId, queue);
 }
 
-u64 CShaderObject::Handle() const
+FAPIHandle CShaderObject::Handle() const
 {
 	return m_shaderId;
 }

@@ -22,13 +22,13 @@ namespace engine
 			void PostLoad() override;
 			void Render(f32 dt) override;
 
-			u64 CreateTexture(const std::string& path) override;
-			u64 LoadTexture(const std::string& path, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info);
+			FAPIHandle CreateTexture(const std::string& path) override;
+			FAPIHandle LoadTexture(const std::string& path, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info);
 			// TODO: add texture may be?
 
-			u64 CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& create_info) override;
-			u64 CreateShader(const std::string& name, const FComputeShaderCreateInfo& create_info) override;
-			const std::unique_ptr<IShaderObject>& GetShaderObject(u64 id) override;
+			FAPIHandle CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& create_info) override;
+			FAPIHandle CreateShader(const std::string& name, const FComputeShaderCreateInfo& create_info) override;
+			const std::unique_ptr<IShaderObject>& GetShaderObject(FAPIHandle id) override;
 
 			u64 CreateVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) override;
 			const std::unique_ptr<IVertexHandler>& GetVertexHandler(u64 id) override;
@@ -44,7 +44,7 @@ namespace engine
 			const std::unique_ptr<IResourceLoader>& GetResourceLoader() override;
 		protected:
 			template<class _Ty>
-			u64 CreateShader(const FShaderUploadInfo& name_info, const _Ty& create_info)
+			FAPIHandle CreateShader(const FShaderUploadInfo& name_info, const _Ty& create_info)
 			{
 				utl::vector<FShaderCreationBlockInfo> shader_stages{};
 				if (m_pResourceLoader->LoadShaderData(name_info, shader_stages))
@@ -52,7 +52,7 @@ namespace engine
 
 				log_error("Shader with name: \"{}\" was not found.", name_info.originalName);
 
-				return INVALID_HANDLE;
+				return FAPIHandle(INVALID_HANDLE);
 			}
 
 		private:

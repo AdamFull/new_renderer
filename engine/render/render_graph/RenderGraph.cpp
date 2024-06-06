@@ -844,7 +844,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	}
 }
 
-u64 CRenderGraph::AddStaticResource(const std::string& name, const std::string& path)
+FAPIHandle CRenderGraph::AddStaticResource(const std::string& name, const std::string& path)
 {
 	log_debug("[Render Graph] Loading static resource: {}, path: {}.", name, path);
 
@@ -859,13 +859,13 @@ u64 CRenderGraph::AddStaticResource(const std::string& name, const std::string& 
 	FTextureUploadInfo upload_info{};
 	new_render_resource.handle = m_pRenderInterface->LoadTexture(path, create_info, upload_info);
 
-	if (new_render_resource.handle == INVALID_HANDLE)
+	if (!new_render_resource.handle)
 		new_render_resource.handle = render_context->CreateTexture(name, create_info, std::move(upload_info));
 
 	return new_render_resource.handle;
 }
 
-u64 CRenderGraph::AddRenderResource(const std::string& name, const FTextureCreateInfo& texture_ci)
+FAPIHandle CRenderGraph::AddRenderResource(const std::string& name, const FTextureCreateInfo& texture_ci)
 {
 	log_debug("[Render Graph] Allocating render target: {}, size({}x{}x{}) * {}, mips: {}, layers: {}, format: {}.", name, 
 		texture_ci.size.width, texture_ci.size.height, texture_ci.size.depth, texture_ci.size.scale,
@@ -895,7 +895,7 @@ u64 CRenderGraph::AddRenderResource(const std::string& name, const FTextureCreat
 	return new_render_resource.handle;
 }
 
-u64 CRenderGraph::AddRenderResource(const std::string& name, const FBufferCreateInfo& buffer_ci)
+FAPIHandle CRenderGraph::AddRenderResource(const std::string& name, const FBufferCreateInfo& buffer_ci)
 {
 	log_debug("[Render Graph] Allocating buffer: {}, size: {}b.", name,
 		buffer_ci.size * buffer_ci.count);

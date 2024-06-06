@@ -105,7 +105,7 @@ u64 CBufferObject::Count()
 	return m_elemCount;
 }
 
-u64 CBufferObject::Handle()
+FAPIHandle CBufferObject::Handle()
 {
 	return m_bufferId;
 }

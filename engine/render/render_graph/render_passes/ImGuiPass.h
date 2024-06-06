@@ -21,7 +21,7 @@ namespace engine
 		private:
 			std::unique_ptr<IShaderObject> m_pShader{};
 			std::unique_ptr<IVertexHandler> m_pVertexHandler{};
-			u64 m_fontTexture{ INVALID_HANDLE };
+			FAPIHandle m_fontTexture{ INVALID_HANDLE };
 		};
 	}
 }

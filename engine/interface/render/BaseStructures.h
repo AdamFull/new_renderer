@@ -125,6 +125,8 @@ namespace engine
 			// Boolean operator for validity check
 			explicit operator bool() const { return value_ != INVALID_HANDLE; }
 
+			explicit operator void* () const { return (void*)value_; }
+
 			// Equality operator
 			bool operator==(const FHandle & other) const { return value_ == other.value_; }
 
@@ -175,10 +177,10 @@ namespace engine
 
 		struct FIndirectGeometryDrawInfo
 		{
-			u64 bufferId{ INVALID_HANDLE };
+			FAPIHandle bufferId{ INVALID_HANDLE };
 			u64 offset{ 0ull };
 
-			u64 countBufferId{ INVALID_HANDLE };
+			FAPIHandle countBufferId{};
 			u64 countOffset{ 0ull };
 
 			u64 maxDrawCount{ 0ull };
@@ -198,7 +200,7 @@ namespace engine
 
 		struct FAPIObjectDestroyInfo
 		{
-			u64 id{ INVALID_HANDLE };
+			FAPIHandle id{ INVALID_HANDLE };
 			EResourceFlagBits mask{};
 		};
 	}

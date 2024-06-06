@@ -1,5 +1,6 @@
 #pragma once
 
+#include "BaseStructures.h"
 #include <standart_library.h>
 #include <container/flags.h>
 #include <utils/hash.h>
@@ -42,7 +43,7 @@ namespace engine
 
 		struct FBufferUploadInfo
 		{
-			u64 bufferId{ ~0ull };
+			FAPIHandle bufferId{};
 			utl::vector<u8> data{};
 			utl::vector<FBufferUploadRegion> regions{};
 		};
@@ -81,7 +82,7 @@ namespace engine
 			virtual u64 InstanceSize() = 0;
 			virtual u64 Count() = 0;
 
-			virtual u64 Handle() = 0;
+			virtual FAPIHandle Handle() = 0;
 			virtual uint64_t Address() = 0;
 
 			virtual void* Data() = 0;

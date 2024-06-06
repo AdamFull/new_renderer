@@ -233,15 +233,15 @@ namespace engine
 			virtual const std::unique_ptr<CUniformHandle>& GetUniformBlock(u64 name) = 0;
 			virtual const std::unique_ptr<CUniformHandle>& GetConstantBlock(u64 name) = 0;
 
-			virtual void BindBuffer(u64 name, u64 buffer_resource) = 0;
-			virtual void BindTexture(u64 name, u64 texture_resource, u32 mip = ~0u) = 0;
+			virtual void BindBuffer(u64 name, FAPIHandle buffer_resource) = 0;
+			virtual void BindTexture(u64 name, FAPIHandle texture_resource, u32 mip = ~0u) = 0;
 
 			virtual void FlushDescriptors() = 0;
 			virtual void FlushConstants(EQueueTypeFlagBits queue) = 0;
 			virtual void Bind(EQueueTypeFlagBits queue) = 0;
 			virtual void BindResources(EQueueTypeFlagBits queue) = 0;
 
-			virtual u64 Handle() const = 0;
+			virtual FAPIHandle Handle() const = 0;
 
 			virtual const FShaderReflectionData& GetReflection() const = 0;
 		};
@@ -324,37 +324,37 @@ namespace engine
 			virtual void UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view) = 0;
 			virtual const utl::vector<uint32_t>& GetGlobalTextureRemap() = 0;
 
-			virtual u64 CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) = 0;
-			virtual u64 GetTextureId(const std::string& name) = 0;
-			virtual u64 CreateRenderTarget(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
-			virtual FTextureView GetTextureView(u64 texture_id) = 0;
-			virtual void DestroyTexture(u64 resource_id) = 0;
+			virtual FAPIHandle CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) = 0;
+			virtual FAPIHandle GetTextureId(const std::string& name) = 0;
+			virtual FAPIHandle CreateRenderTarget(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
+			virtual FTextureView GetTextureView(FAPIHandle texture_id) = 0;
+			virtual void DestroyTexture(FAPIHandle resource_id) = 0;
 
-			virtual u64 CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
-			virtual u64 CreateShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
-			virtual u64 CreateShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
-			virtual FShaderReflectionData GetShaderReflection(const u64& shader_view) = 0;
+			virtual FAPIHandle CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
+			virtual FAPIHandle CreateShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
+			virtual FAPIHandle CreateShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
+			virtual FShaderReflectionData GetShaderReflection(FAPIHandle shader_view) = 0;
 			virtual void UpdateShaderResources(const FShaderResourceCommit& resources, EShaderResourcesUpdateFlags flags = EShaderResourcesUpdateFlagBits::eAll) = 0;
-			virtual void FlushConstantRanges(u64 shader_id, const utl::hash_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type) = 0;
-			virtual void BindShader(u64 shader_id, EQueueTypeFlagBits queue_type) = 0;
-			virtual void BindShaderResources(u64 shader_id, EQueueTypeFlagBits queue_type) = 0;
-			virtual void DestroyShader(u64 resource_id) = 0;
+			virtual void FlushConstantRanges(FAPIHandle shader_id, const utl::hash_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type) = 0;
+			virtual void BindShader(FAPIHandle shader_id, EQueueTypeFlagBits queue_type) = 0;
+			virtual void BindShaderResources(FAPIHandle shader_id, EQueueTypeFlagBits queue_type) = 0;
+			virtual void DestroyShader(FAPIHandle resource_id) = 0;
 
-			virtual u64 CreateBuffer(const std::string& name, const FBufferCreateInfo& buffer_ci) = 0;
-			virtual void UpdateBuffer(const std::string& name, u64 buffer_id, const FBufferCreateInfo& buffer_ci) = 0;
+			virtual FAPIHandle CreateBuffer(const std::string& name, const FBufferCreateInfo& buffer_ci) = 0;
+			virtual void UpdateBuffer(const std::string& name, FAPIHandle buffer_id, const FBufferCreateInfo& buffer_ci) = 0;
 			virtual void UploadDataToBuffer(const FBufferUploadInfo& upload_info) = 0;
-			virtual FBufferView GetBufferView(u64 buffer_id) = 0;
+			virtual FBufferView GetBufferView(FAPIHandle buffer_id) = 0;
 			virtual void BindVertexBuffers(const FVertexBufferBindingInfo& binding_info, EQueueTypeFlagBits queue) = 0;
 			virtual void BindIndexBuffer(const FIndexBufferBindingInfo& binding_info, EQueueTypeFlagBits queue) = 0;
-			virtual void MapBufferMemory(u64 buffer_id, void*& memory) = 0;
-			virtual void UnmapBufferMemory(u64 buffer_id) = 0;
-			virtual void FlushBuffer(u64 buffer_id, u64 size, u64 offset) = 0;
-			virtual void DestroyBuffer(u64 resource_id) = 0;
+			virtual void MapBufferMemory(FAPIHandle buffer_id, void*& memory) = 0;
+			virtual void UnmapBufferMemory(FAPIHandle buffer_id) = 0;
+			virtual void FlushBuffer(FAPIHandle buffer_id, u64 size, u64 offset) = 0;
+			virtual void DestroyBuffer(FAPIHandle resource_id) = 0;
 			virtual void UploadBuffers() = 0;
 
-			virtual void PushG2CBarriers(EQueueTypeFlagBits queue_type, const utl::vector<u64>& textures) = 0;
+			virtual void PushG2CBarriers(EQueueTypeFlagBits queue_type, const utl::vector<FAPIHandle>& textures) = 0;
 			virtual void PushC2CBarrier(EQueueTypeFlagBits queue_type) = 0;
-			virtual void PushC2GBarrier(EQueueTypeFlagBits queue_type, const utl::vector<u64>& texture_ids) = 0;
+			virtual void PushC2GBarrier(EQueueTypeFlagBits queue_type, const utl::vector<FAPIHandle>& texture_ids) = 0;
 
 			virtual void ProcessResourceBarriers(EQueueTypeFlagBits queue, const utl::vector<FResourceBarrierInfo>& barriers) = 0;
 
@@ -379,11 +379,11 @@ namespace engine
 			virtual const FRenderFrameStats& GetRenderFrameStats() const = 0;
 			virtual EAdapterVendor GetDeviceVendor() const = 0;
 
-			virtual u64 GetTextureResource(const char* name) = 0;
-			virtual u64 GetShaderResource(const char* name) = 0;
+			virtual FAPIHandle GetTextureResource(const char* name) = 0;
+			virtual FAPIHandle GetShaderResource(const char* name) = 0;
 
 			virtual FPoint2D<u32> GetRenderResolution() const = 0;
-			virtual FRect2D<f32> GetRenderRectFromRT(u64 texture_id) = 0;
+			virtual FRect2D<f32> GetRenderRectFromRT(FAPIHandle texture_id) = 0;
 			virtual FRect2D<f32> GetScreenRenderRect() = 0;
 
 			virtual void UpdateSurface(i32 surface_width, i32 surface_height) = 0;
@@ -469,12 +469,12 @@ namespace engine
 			virtual void PostLoad() = 0;
 			virtual void Render(f32 dt) = 0;
 
-			virtual u64 CreateTexture(const std::string& path) = 0;
-			virtual u64 LoadTexture(const std::string& path, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info) = 0;
+			virtual FAPIHandle CreateTexture(const std::string& path) = 0;
+			virtual FAPIHandle LoadTexture(const std::string& path, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info) = 0;
 
-			virtual u64 CreateShader(const std::string& name_info, const FGraphicsShaderCreateInfo& create_info) = 0;
-			virtual u64 CreateShader(const std::string& name_info, const FComputeShaderCreateInfo& create_info) = 0;
-			virtual const std::unique_ptr<IShaderObject>& GetShaderObject(u64 id) = 0;
+			virtual FAPIHandle CreateShader(const std::string& name_info, const FGraphicsShaderCreateInfo& create_info) = 0;
+			virtual FAPIHandle CreateShader(const std::string& name_info, const FComputeShaderCreateInfo& create_info) = 0;
+			virtual const std::unique_ptr<IShaderObject>& GetShaderObject(FAPIHandle id) = 0;
 
 			virtual u64 CreateVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) = 0;
 			virtual const std::unique_ptr<IVertexHandler>& GetVertexHandler(u64 id) = 0;

@@ -24,40 +24,40 @@ namespace engine
 				void UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view) override;
 				const utl::vector<uint32_t>& GetGlobalTextureRemap() override;
 
-				u64 CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) override;
-				u64 GetTextureId(const std::string& name) override;
-				u64 CreateRenderTarget(const std::string& name, const FTextureCreateInfo& texture_ci) override;
-				FTextureView GetTextureView(u64 texture_id) override;
-				void DestroyTexture(u64 resource_id) override;
+				FAPIHandle CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) override;
+				FAPIHandle GetTextureId(const std::string& name) override;
+				FAPIHandle CreateRenderTarget(const std::string& name, const FTextureCreateInfo& texture_ci) override;
+				FTextureView GetTextureView(FAPIHandle texture_id) override;
+				void DestroyTexture(FAPIHandle resource_id) override;
 
 
-				u64 CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages) override;
-				u64 CreateShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages) override;
-				u64 CreateShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages) override;
-				FShaderReflectionData GetShaderReflection(const u64& shader_view) override;
+				FAPIHandle CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages) override;
+				FAPIHandle CreateShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages) override;
+				FAPIHandle CreateShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages) override;
+				FShaderReflectionData GetShaderReflection(FAPIHandle shader_view) override;
 				void UpdateShaderResources(const FShaderResourceCommit& shader_resources, EShaderResourcesUpdateFlags flags = EShaderResourcesUpdateFlagBits::eAll) override;
-				void FlushConstantRanges(u64 shader_id, const utl::hash_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type) override;
-				void BindShader(u64 shader_id, EQueueTypeFlagBits queue_type) override;
-				void BindShaderResources(u64 shader_id, EQueueTypeFlagBits queue_type) override;
-				void DestroyShader(u64 resource_id) override;
+				void FlushConstantRanges(FAPIHandle shader_id, const utl::hash_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type) override;
+				void BindShader(FAPIHandle shader_id, EQueueTypeFlagBits queue_type) override;
+				void BindShaderResources(FAPIHandle shader_id, EQueueTypeFlagBits queue_type) override;
+				void DestroyShader(FAPIHandle resource_id) override;
 
 
-				u64 CreateBuffer(const std::string& name, const FBufferCreateInfo& buffer_ci) override;
-				void UpdateBuffer(const std::string& name, u64 buffer_id, const FBufferCreateInfo& buffer_ci) override;
+				FAPIHandle CreateBuffer(const std::string& name, const FBufferCreateInfo& buffer_ci) override;
+				void UpdateBuffer(const std::string& name, FAPIHandle buffer_id, const FBufferCreateInfo& buffer_ci) override;
 				void UploadDataToBuffer(const FBufferUploadInfo& upload_info) override;
-				FBufferView GetBufferView(u64 buffer_id) override;
+				FBufferView GetBufferView(FAPIHandle buffer_id) override;
 				void BindVertexBuffers(const FVertexBufferBindingInfo& binding_info, EQueueTypeFlagBits queue_type) override;
 				void BindIndexBuffer(const FIndexBufferBindingInfo& binding_info, EQueueTypeFlagBits queue_type) override;
-				void MapBufferMemory(u64 buffer_id, void*& memory) override;
-				void UnmapBufferMemory(u64 buffer_id) override;
-				void FlushBuffer(u64 buffer_id, u64 size, u64 offset) override;
-				void DestroyBuffer(u64 resource_id) override;
+				void MapBufferMemory(FAPIHandle buffer_id, void*& memory) override;
+				void UnmapBufferMemory(FAPIHandle buffer_id) override;
+				void FlushBuffer(FAPIHandle buffer_id, u64 size, u64 offset) override;
+				void DestroyBuffer(FAPIHandle resource_id) override;
 				void UploadBuffers() override;
 			
 
-				void PushG2CBarriers(EQueueTypeFlagBits queue_type, const utl::vector<u64>& texture_ids) override;
+				void PushG2CBarriers(EQueueTypeFlagBits queue_type, const utl::vector<FAPIHandle>& texture_ids) override;
 				void PushC2CBarrier(EQueueTypeFlagBits queue_type) override;
-				void PushC2GBarrier(EQueueTypeFlagBits queue_type, const utl::vector<u64>& texture_ids) override;
+				void PushC2GBarrier(EQueueTypeFlagBits queue_type, const utl::vector<FAPIHandle>& texture_ids) override;
 
 				void ProcessResourceBarriers(EQueueTypeFlagBits queue, const utl::vector<FResourceBarrierInfo>& barriers) override;
 
@@ -83,11 +83,11 @@ namespace engine
 				const FRenderFrameStats& GetRenderFrameStats() const override;
 				EAdapterVendor GetDeviceVendor() const override;
 
-				u64 GetTextureResource(const char* name) override;
-				u64 GetShaderResource(const char* name) override;
+				FAPIHandle GetTextureResource(const char* name) override;
+				FAPIHandle GetShaderResource(const char* name) override;
 
 				FPoint2D<u32> GetRenderResolution() const override;
-				FRect2D<f32> GetRenderRectFromRT(u64 texture_id) override;
+				FRect2D<f32> GetRenderRectFromRT(FAPIHandle texture_id) override;
 				FRect2D<f32> GetScreenRenderRect() override;
 
 				void UpdateSurface(i32 surface_width, i32 surface_height) override;

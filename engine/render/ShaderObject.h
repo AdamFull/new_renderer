@@ -18,8 +18,8 @@ namespace engine
 			const std::unique_ptr<CUniformHandle>& GetUniformBlock(u64 name) override;
 			const std::unique_ptr<CUniformHandle>& GetConstantBlock(u64 name) override;
 
-			void BindBuffer(u64 name, u64 buffer_resource) override;
-			void BindTexture(u64 name, u64 texture_resource, u32 mip = ~0u) override;
+			void BindBuffer(u64 name, FAPIHandle buffer_resource) override;
+			void BindTexture(u64 name, FAPIHandle texture_resource, u32 mip = ~0u) override;
 
 			void FlushDescriptors() override;
 			void FlushConstants(EQueueTypeFlagBits queue) override;
@@ -27,7 +27,7 @@ namespace engine
 			void Bind(EQueueTypeFlagBits queue) override;
 			void BindResources(EQueueTypeFlagBits queue) override;
 
-			u64 Handle() const override;
+			FAPIHandle Handle() const override;
 
 			const FShaderReflectionData& GetReflection() const override;
 
@@ -37,9 +37,9 @@ namespace engine
 			utl::hash_map<u64, std::unique_ptr<CUniformHandle>> m_uniformBlocks{};
 			utl::hash_map<u64, std::unique_ptr<CUniformHandle>> m_constantBlocks{};
 
-			utl::hash_map<u64, u64> m_bindBuffers{};
+			utl::hash_map<u64, FAPIHandle> m_bindBuffers{};
 			utl::hash_map<u64, FTextureBindInfo> m_bindTextures{};
-			u64 m_shaderId{ ~0ull };
+			FAPIHandle m_shaderId{ INVALID_HANDLE };
 
 			FShaderReflectionData m_reflection{};
 
