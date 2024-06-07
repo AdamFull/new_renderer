@@ -22,7 +22,7 @@ namespace engine
 			EBufferUsageFlags m_bufferFlag{};
 
 			IRenderInterface* m_pRenderInterface{ nullptr };
-			std::unique_ptr<IBufferObject> m_pBuffer{};
+			FRHIHandle m_buffer{};
 		};
 	}
 }

@@ -19,7 +19,7 @@ namespace engine
 			void _Render(const FRenderFrameInfo& frame_info) override;
 
 		private:
-			FRenderHandle m_shader{};
+			FRHIHandle m_shader{};
 		};
 	}
 }

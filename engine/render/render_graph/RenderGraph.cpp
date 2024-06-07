@@ -20,7 +20,6 @@
 #include "render_passes/FullscreenPass.h"
 #include "render_passes/GeometryPass.h"
 #include "render_passes/ClearPass.h"
-#include "render_passes/PostProcessPass.h"
 #include "render_passes/ImGuiPass.h"
 
 #include "render_passes/BeginDebugMarker.h"
@@ -978,8 +977,6 @@ u64 CRenderGraph::AddRenderPass(const std::string& name, const FRenderConfigComp
 		new_pass = std::make_unique<CComputeCubemapPass>(m_pRenderInterface);
 	else if (compute_pass_ci.type == EComputeType::eCulling)
 		new_pass = std::make_unique<CComputeCullingPass>(m_pRenderInterface);
-	else if (compute_pass_ci.type == EComputeType::ePostProcess)
-		new_pass = std::make_unique<CPostProcessPass>(m_pRenderInterface);
 
 	for (const auto& group_info : compute_pass_ci.groupInfos)
 	{

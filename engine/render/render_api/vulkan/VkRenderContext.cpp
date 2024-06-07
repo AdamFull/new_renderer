@@ -452,7 +452,7 @@ void CVkRenderContext::DestroyTexture(FAPIHandle resource_id)
 }
 
 
-FAPIHandle CVkRenderContext::CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages)
+FAPIHandle CVkRenderContext::CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, utl::vector<FShaderCreationBlockInfo>&& shader_stages)
 {
 	const char* shaderEntryPoint{ "main" };
 
@@ -572,7 +572,7 @@ FAPIHandle CVkRenderContext::CreateShader(const std::string& name, const FGraphi
 	return FAPIHandle(m_pResources->add<FVkShader>(shader_unique_name.c_str(), std::move(shader)));
 }
 
-FAPIHandle CVkRenderContext::CreateShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages)
+FAPIHandle CVkRenderContext::CreateShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, utl::vector<FShaderCreationBlockInfo>&& shader_stages)
 {
 	const char* shaderEntryPoint{ "main" };
 
@@ -647,7 +647,7 @@ FAPIHandle CVkRenderContext::CreateShader(const std::string& name, const FComput
 	return FAPIHandle(m_pResources->add<FVkShader>(shader_unique_name.c_str(), std::move(shader)));
 }
 
-FAPIHandle CVkRenderContext::CreateShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci, const  utl::vector<FShaderCreationBlockInfo>& shader_stages)
+FAPIHandle CVkRenderContext::CreateShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci, utl::vector<FShaderCreationBlockInfo>&& shader_stages)
 {
 	const char* shaderEntryPoint{ "main" };
 

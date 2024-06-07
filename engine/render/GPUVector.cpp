@@ -6,7 +6,6 @@ using namespace engine::render;
 CGPUVector::CGPUVector(IRenderInterface* render_interface)
 {
 	m_pRenderInterface = render_interface;
-	m_pBuffer = std::make_unique<CBufferObject>(render_interface);
 }
 
 void CGPUVector::Upload()
@@ -14,14 +13,15 @@ void CGPUVector::Upload()
 	if (!m_vUploadRanges.empty())
 	{
 		// Buffer size is too small, need to resize it
-		if (m_pBuffer->Size() < m_vData.size())
+		auto& buffer = m_pRenderInterface->GetBufferObject(m_buffer);
+		if (buffer->Size() < m_vData.size())
 		{
 			FBufferCreateInfo buffer_ci{};
 			buffer_ci.count = m_vData.size() / m_elemSize;
 			buffer_ci.size = m_elemSize;
 			buffer_ci.flags = m_bufferFlag;
 
-			m_pBuffer->Resize(m_srOriginalName, buffer_ci);
+			buffer->Resize(m_srOriginalName, buffer_ci);
 
 			// Buffer was resized. We should upload whole data
 			m_vUploadRanges.clear();
@@ -62,7 +62,7 @@ void CGPUVector::Upload()
 			src_offset += range.size;
 		}
 
-		m_pBuffer->Upload(std::move(upload_data), upload_regions);
+		buffer->Upload(std::move(upload_data), upload_regions);
 
 		m_vUploadRanges.clear();
 	}
@@ -74,14 +74,15 @@ void CGPUVector::Resize(u64 new_size)
 {
 	u64 size = ToBytes(new_size);
 
-	if (m_pBuffer->Size() < size)
+	auto& buffer = m_pRenderInterface->GetBufferObject(m_buffer);
+	if (buffer->Size() < size)
 	{
 		FBufferCreateInfo buffer_ci{};
 		buffer_ci.count = new_size;
 		buffer_ci.size = m_elemSize;
 		buffer_ci.flags = m_bufferFlag;
 
-		m_pBuffer->Resize(m_srOriginalName, buffer_ci);
+		buffer->Resize(m_srOriginalName, buffer_ci);
 	}
 
 	m_vData.resize(size);
@@ -89,7 +90,7 @@ void CGPUVector::Resize(u64 new_size)
 
 const std::unique_ptr<IBufferObject>& CGPUVector::Buffer()
 {
-	return m_pBuffer;
+	return m_pRenderInterface->GetBufferObject(m_buffer);
 }
 
 void CGPUVector::Allocate(const std::string& name, EBufferUsageFlags flag, u64 stride, u64 capacity)
@@ -101,8 +102,6 @@ void CGPUVector::Allocate(const std::string& name, EBufferUsageFlags flag, u64 s
 
 	m_srOriginalName = name;
 
-	auto& render_graph = m_pRenderInterface->GetRenderGraph();
-
-	m_pBuffer->Create(name, buffer_ci);
+	m_buffer = m_pRenderInterface->CreateBufferObject(name, buffer_ci);
 	m_elemSize = stride;//m_pBuffer->instanceSize();
 }

@@ -130,7 +130,7 @@ namespace engine
 		struct FRenderResourceView
 		{
 			ERenderResourceTypeFlagBits type{};
-			FRenderHandle handle{ INVALID_HANDLE };
+			FRHIHandle handle{ INVALID_HANDLE };
 		};
 
 		struct FResourceBarrierInfo
@@ -221,7 +221,7 @@ namespace engine
 		{
 			ERenderResourceTypeFlagBits type{};
 			EQueueTypeFlags queuesUsed{ 0u };
-			FRenderHandle handle{ INVALID_HANDLE };
+			FRHIHandle handle{ INVALID_HANDLE };
 
 			utl::hash_map<ERenderResourceAccessFlagBits, std::unordered_set<u64>> usages{};
 		};
@@ -362,7 +362,7 @@ namespace engine
 			std::string shader{};
 			bool oneTime{ false };
 
-			utl::hash_map<FAPIHandle, FClearValues> clearValues;
+			utl::hash_map<FRHIHandle, FClearValues> clearValues;
 			utl::hash_map<ERenderResourceGroupType, utl::vector<FRenderResourceBinding>> resources{};
 			utl::hash_map<std::string, FRenderResourceBinding> bindings{};
 		};

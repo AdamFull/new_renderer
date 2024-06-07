@@ -16,7 +16,7 @@ namespace engine
 
 		struct FSceneLoadedResources
 		{
-			utl::hash_map<u64, utl::vector<u64>> vertexHandlers{};
+			utl::hash_map<u64, utl::vector<render::FRHIHandle>> vertexHandlers{};
 
 			utl::vector<u64> textures{};
 			u64 lastTexture{ 0ull };

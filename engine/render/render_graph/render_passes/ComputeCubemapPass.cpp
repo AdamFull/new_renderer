@@ -16,24 +16,22 @@ void CComputeCubemapPass::Init(const FComputePassCreateInfo& pass_ci)
 	u32 calculated_usage{};
 
 	auto& render_context = m_pRenderInterface->GetRenderContext();
-	auto& render_graph = m_pRenderInterface->GetRenderGraph();
 
 	auto& out_targets = m_renderResources[ERenderResourceGroupType::eStorageTextureWrite];
 	for (const auto& resource_binding : out_targets)
 	{
-		auto& render_resource = render_graph->GetRenderResource(resource_binding.resource);
-		auto texture_view = render_context->GetTextureView(render_resource.handle);
-		calculated_usage += texture_view.mipLevels;
+		auto& texture = m_pRenderInterface->GetTextureObject(resource_binding.resource);
+
+		u32  mip_count{};
+		texture->GetMipLevelCount(&mip_count);
+		calculated_usage += mip_count;
 	}
 
 	FComputeShaderCreateInfo shader_ci{};
 	shader_ci.usageCount = (std::max)(calculated_usage, 1u);
+	m_shader = m_pRenderInterface->CreateShaderObject(pass_ci.shader, shader_ci);
 
-	// Make RHI shader object
-	m_pShader = std::make_unique<CShaderObject>(m_pRenderInterface);
-	m_pShader->Create(pass_ci.shader, shader_ci);
-
-	InitShaderResources(m_pShader);
+	InitShaderResources(m_shader);
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	m_debugName = std::format("compute_cubemap:{}", pass_ci.shader);
@@ -53,39 +51,41 @@ void CComputeCubemapPass::_Execute(const FComputeFrameInfo& frame_info)
 
 	auto& write_resources = m_renderResources[ERenderResourceGroupType::eStorageTextureWrite];
 
+	auto& shader = m_pRenderInterface->GetShaderObject(m_shader);
+
 	for (const auto& resource_binding : write_resources)
 	{
-		auto& render_resource = render_graph->GetRenderResource(resource_binding.resource);
-		auto info = render_context->GetTextureView(render_resource.handle);
-		for (u32 mip = 0u; mip < info.mipLevels; ++mip)
+		u32 width, height, mip_count;
+		auto& texture = m_pRenderInterface->GetTextureObject(resource_binding.resource);
+		texture->GetDimensions(&width, &height);
+		texture->GetMipLevelCount(&mip_count);
+		for (u32 mip = 0u; mip < mip_count; ++mip)
 		{
 			for (const auto& [binding_point, sesource_binding] : m_bakedBindings)
 			{
-				auto& binding_resource = render_graph->GetRenderResource(sesource_binding.resource);
-
-				if (binding_resource.handle == render_resource.handle)
-					m_pShader->BindTexture(utl::fnv1a_64_hash_cstr(binding_point.c_str()), binding_resource.handle, mip == 0u ? ~0u : mip);
+				if (sesource_binding.resource == resource_binding.resource)
+					shader->BindTexture(utl::fnv1a_64_hash_cstr(binding_point.c_str()), texture->Handle(), mip == 0u ? ~0u : mip);
 				else
-					m_pShader->BindTexture(utl::fnv1a_64_hash_cstr(binding_point.c_str()), binding_resource.handle);
+					shader->BindTexture(utl::fnv1a_64_hash_cstr(binding_point.c_str()), m_pRenderInterface->GetTextureObject(sesource_binding.resource)->Handle());
 			}
 
-			f32 layer_roughness = utl::cast<f32>(mip) / utl::cast<f32>(info.mipLevels - 1u);
+			f32 layer_roughness = utl::cast<f32>(mip) / utl::cast<f32>(mip_count - 1u);
 
-			auto& uniform = m_pShader->GetUniformBlock(shader_bindings::compute_cubemap_data);
+			auto& uniform = shader->GetUniformBlock(shader_bindings::compute_cubemap_data);
 			if (uniform)
 			{
 				uniform->Set(shader_bindings::roughness_label, layer_roughness);
 			}
 
-			m_pShader->FlushDescriptors();
-			m_pShader->FlushConstants(m_queue);
-			m_pShader->Bind(m_queue);
-			m_pShader->BindResources(m_queue);
+			shader->FlushDescriptors();
+			shader->FlushConstants(m_queue);
+			shader->Bind(m_queue);
+			shader->BindResources(m_queue);
 
 			auto& dispatch_info = m_vDispatchGroups[0];
-			dispatch_info.globalSizes.x = info.width;
-			dispatch_info.globalSizes.y = info.height;
-			dispatch_info.shaderHandle = m_pShader->Handle();
+			dispatch_info.globalSizes.x = width;
+			dispatch_info.globalSizes.y = height;
+			dispatch_info.shaderHandle = shader->Handle();
 			
 			render_context->Dispatch(m_queue, dispatch_info, 0);
 		}

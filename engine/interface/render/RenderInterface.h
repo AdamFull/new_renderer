@@ -469,26 +469,26 @@ namespace engine
 			virtual void PostLoad() = 0;
 			virtual void Render(f32 dt) = 0;
 
-			virtual FRenderHandle CreateTextureObject(const std::string& path) = 0;
-			virtual FRenderHandle CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
-			virtual FRenderHandle CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) = 0;
-			virtual void DestroyTextureObject(FRenderHandle handle) = 0;
-			virtual const std::unique_ptr<ITextureObject>& GetTextureObject(FRenderHandle handle) = 0;
+			virtual FRHIHandle CreateTextureObject(const std::string& path) = 0;
+			virtual FRHIHandle CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
+			virtual FRHIHandle CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) = 0;
+			virtual void DestroyTextureObject(FRHIHandle handle) = 0;
+			virtual const std::unique_ptr<ITextureObject>& GetTextureObject(FRHIHandle handle) = 0;
 			virtual const std::unique_ptr<ITextureObject>& GetTextureObject(FGraphHandle handle) = 0;
 
-			virtual FRenderHandle CreateBufferObject(const std::string& name, const FBufferCreateInfo& buffer_ci) = 0;
-			virtual void DestroyBufferObject(FRenderHandle handle) = 0;
-			virtual const std::unique_ptr<IBufferObject>& GetBufferObject(FRenderHandle handle) = 0;
+			virtual FRHIHandle CreateBufferObject(const std::string& name, const FBufferCreateInfo& buffer_ci) = 0;
+			virtual void DestroyBufferObject(FRHIHandle handle) = 0;
+			virtual const std::unique_ptr<IBufferObject>& GetBufferObject(FRHIHandle handle) = 0;
 			virtual const std::unique_ptr<IBufferObject>& GetBufferObject(FGraphHandle handle) = 0;
 
-			virtual FRenderHandle CreateShaderObject(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci) = 0;
-			virtual FRenderHandle CreateShaderObject(const std::string& name, const FComputeShaderCreateInfo& shader_ci) = 0;
-			virtual void DestroyShaderObject(FRenderHandle handle) = 0;
-			virtual const std::unique_ptr<IShaderObject>& GetShaderObject(FRenderHandle id) = 0;
+			virtual FRHIHandle CreateShaderObject(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci) = 0;
+			virtual FRHIHandle CreateShaderObject(const std::string& name, const FComputeShaderCreateInfo& shader_ci) = 0;
+			virtual void DestroyShaderObject(FRHIHandle handle) = 0;
+			virtual const std::unique_ptr<IShaderObject>& GetShaderObject(FRHIHandle id) = 0;
 
-			virtual FRenderHandle CreateVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) = 0;
-			virtual void DestroyVertexHandler(FRenderHandle handle) = 0;
-			virtual const std::unique_ptr<IVertexHandler>& GetVertexHandler(FRenderHandle id) = 0;
+			virtual FRHIHandle CreateVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) = 0;
+			virtual void DestroyVertexHandler(FRHIHandle handle) = 0;
+			virtual const std::unique_ptr<IVertexHandler>& GetVertexHandler(FRHIHandle id) = 0;
 
 			virtual FShaderUploadInfo GetShaderNameTag(const std::string& name) = 0;
 

@@ -165,7 +165,7 @@ namespace engine
 		struct ApiTag {};
 
 		using FGraphHandle = FHandle<GraphTag>;
-		using FRenderHandle = FHandle<RenderTag>;
+		using FRHIHandle = FHandle<RenderTag>;
 		using FAPIHandle = FHandle<ApiTag>;
 
 		struct FGeometryDrawInfo

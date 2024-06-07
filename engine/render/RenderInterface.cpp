@@ -278,14 +278,14 @@ void CRenderInterface::Render(f32 dt)
 	++m_frameCounter;
 }
 
-FRenderHandle CRenderInterface::CreateTextureObject(const std::string& path)
+FRHIHandle CRenderInterface::CreateTextureObject(const std::string& path)
 {
 	auto name = filesystem::fs::get_stem(path);
 	auto ext = filesystem::fs::get_ext(path);
 	auto ext_hash = utl::const_hash(ext.c_str(), ext.size());
 	auto mime = utl::cast<EMimeType>(ext_hash);
 
-	FRenderHandle texture_id = FRenderHandle(m_pResources->getId<ITextureObject>(name.c_str()));
+	FRHIHandle texture_id = FRHIHandle(m_pResources->getId<ITextureObject>(name.c_str()));
 	if (texture_id)
 		return texture_id;
 
@@ -299,13 +299,13 @@ FRenderHandle CRenderInterface::CreateTextureObject(const std::string& path)
 	return CreateTextureObject(name, create_info, std::move(upload_info));
 }
 
-FRenderHandle CRenderInterface::CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci)
+FRHIHandle CRenderInterface::CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci)
 {
 	auto new_texture = std::make_unique<CTextureObject>(this);
 	new_texture->Create(name, texture_ci);
 
 	FRenderResource resource_desc{};
-	resource_desc.handle = FRenderHandle(m_pResources->add<ITextureObject>(name.c_str(), std::move(new_texture)));
+	resource_desc.handle = FRHIHandle(m_pResources->add<ITextureObject>(name.c_str(), std::move(new_texture)));
 	resource_desc.type = (texture_ci.flags & ETextureCreateFlagBits::eRenderTarget) ? ERenderResourceTypeFlagBits::eRenderTarget : ((texture_ci.flags & ETextureCreateFlagBits::eStorage) ? ERenderResourceTypeFlagBits::eStorageTarget : ERenderResourceTypeFlagBits::eRenderTarget);
 
 	m_pRenderGraph->AddRenderResource(name, resource_desc);
@@ -313,13 +313,13 @@ FRenderHandle CRenderInterface::CreateTextureObject(const std::string& name, con
 	return resource_desc.handle;
 }
 
-FRenderHandle CRenderInterface::CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info)
+FRHIHandle CRenderInterface::CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info)
 {
 	auto new_texture = std::make_unique<CTextureObject>(this);
 	new_texture->Create(name, texture_ci, std::move(upload_info));
 
 	FRenderResource resource_desc{};
-	resource_desc.handle = FRenderHandle(m_pResources->add<ITextureObject>(name.c_str(), std::move(new_texture)));
+	resource_desc.handle = FRHIHandle(m_pResources->add<ITextureObject>(name.c_str(), std::move(new_texture)));
 	resource_desc.type = (texture_ci.flags & ETextureCreateFlagBits::eRenderTarget) ? ERenderResourceTypeFlagBits::eRenderTarget : ((texture_ci.flags & ETextureCreateFlagBits::eStorage) ? ERenderResourceTypeFlagBits::eStorageTarget : ERenderResourceTypeFlagBits::eRenderTarget);
 
 	m_pRenderGraph->AddRenderResource(name, resource_desc);
@@ -327,7 +327,7 @@ FRenderHandle CRenderInterface::CreateTextureObject(const std::string& name, con
 	return resource_desc.handle;
 }
 
-void CRenderInterface::DestroyTextureObject(FRenderHandle handle)
+void CRenderInterface::DestroyTextureObject(FRHIHandle handle)
 {
 	m_pResources->remove<ITextureObject>(handle.Get());
 
@@ -335,7 +335,7 @@ void CRenderInterface::DestroyTextureObject(FRenderHandle handle)
 	// m_pRenderGraph->RemoveRenderResource(???);
 }
 
-const std::unique_ptr<ITextureObject>& CRenderInterface::GetTextureObject(FRenderHandle handle)
+const std::unique_ptr<ITextureObject>& CRenderInterface::GetTextureObject(FRHIHandle handle)
 {
 	return m_pResources->get<ITextureObject>(handle.Get());
 }
@@ -350,25 +350,25 @@ const std::unique_ptr<ITextureObject>& CRenderInterface::GetTextureObject(FGraph
 }
 
 
-FRenderHandle CRenderInterface::CreateBufferObject(const std::string& name, const FBufferCreateInfo& buffer_ci)
+FRHIHandle CRenderInterface::CreateBufferObject(const std::string& name, const FBufferCreateInfo& buffer_ci)
 {
 	auto new_buffer = std::make_unique<CBufferObject>(this);
 	new_buffer->Create(name, buffer_ci);
 
 	FRenderResource resource_desc{};
-	resource_desc.handle = FRenderHandle(m_pResources->add<IBufferObject>(name.c_str(), std::move(new_buffer)));
+	resource_desc.handle = FRHIHandle(m_pResources->add<IBufferObject>(name.c_str(), std::move(new_buffer)));
 	resource_desc.type = ERenderResourceTypeFlagBits::eBuffer;
 
 	m_pRenderGraph->AddRenderResource(name, resource_desc);
 	return resource_desc.handle;
 }
 
-void CRenderInterface::DestroyBufferObject(FRenderHandle handle)
+void CRenderInterface::DestroyBufferObject(FRHIHandle handle)
 {
 	return m_pResources->remove<IBufferObject>(handle.Get());
 }
 
-const std::unique_ptr<IBufferObject>& CRenderInterface::GetBufferObject(FRenderHandle handle)
+const std::unique_ptr<IBufferObject>& CRenderInterface::GetBufferObject(FRHIHandle handle)
 {
 	return m_pResources->get<IBufferObject>(handle.Get());
 }
@@ -384,61 +384,61 @@ const std::unique_ptr<IBufferObject>& CRenderInterface::GetBufferObject(FGraphHa
 
 
 
-FRenderHandle CRenderInterface::CreateShaderObject(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci)
+FRHIHandle CRenderInterface::CreateShaderObject(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci)
 {
 	utl::vector<FShaderCreationBlockInfo> shader_stages{};
 	if (!m_pResourceLoader->LoadShaderData(GetShaderNameTag(name), shader_stages))
 	{
 		log_error("Shader with name: \"{}\" was not found.", name);
-		return FRenderHandle{};
+		return FRHIHandle{};
 	}
 
 	auto new_shader = std::make_unique<CShaderObject>(this);
 	new_shader->Create(name, shader_ci, std::move(shader_stages));
 
-	return FRenderHandle(m_pResources->add(name.c_str(), std::move(new_shader)));
+	return FRHIHandle(m_pResources->add<IShaderObject>(name.c_str(), std::move(new_shader)));
 }
 
-FRenderHandle CRenderInterface::CreateShaderObject(const std::string& name, const FComputeShaderCreateInfo& shader_ci)
+FRHIHandle CRenderInterface::CreateShaderObject(const std::string& name, const FComputeShaderCreateInfo& shader_ci)
 {
 	utl::vector<FShaderCreationBlockInfo> shader_stages{};
 	if (!m_pResourceLoader->LoadShaderData(GetShaderNameTag(name), shader_stages))
 	{
 		log_error("Shader with name: \"{}\" was not found.", name);
-		return FRenderHandle{};
+		return FRHIHandle{};
 	}
 
 	auto new_shader = std::make_unique<CShaderObject>(this);
 	new_shader->Create(name, shader_ci, std::move(shader_stages));
 
-	return FRenderHandle(m_pResources->add(name.c_str(), std::move(new_shader)));
+	return FRHIHandle(m_pResources->add<IShaderObject>(name.c_str(), std::move(new_shader)));
 }
 
-void CRenderInterface::DestroyShaderObject(FRenderHandle handle)
+void CRenderInterface::DestroyShaderObject(FRHIHandle handle)
 {
 	return m_pResources->remove<IShaderObject>(handle.Get());
 }
 
-const std::unique_ptr<IShaderObject>& CRenderInterface::GetShaderObject(FRenderHandle handle)
+const std::unique_ptr<IShaderObject>& CRenderInterface::GetShaderObject(FRHIHandle handle)
 {
 	return m_pResources->get<IShaderObject>(handle.Get());
 }
 
 
-FRenderHandle CRenderInterface::CreateVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci)
+FRHIHandle CRenderInterface::CreateVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci)
 {
 	auto vertex_handler = std::make_unique<CVertexHandler>(this);
 	vertex_handler->Create(handler_ci);
 
-	return FRenderHandle(m_pResources->add<IVertexHandler>(name.c_str(), std::move(vertex_handler)));
+	return FRHIHandle(m_pResources->add<IVertexHandler>(name.c_str(), std::move(vertex_handler)));
 }
 
-void CRenderInterface::DestroyVertexHandler(FRenderHandle handle)
+void CRenderInterface::DestroyVertexHandler(FRHIHandle handle)
 {
 
 }
 
-const std::unique_ptr<IVertexHandler>& CRenderInterface::GetVertexHandler(FRenderHandle id)
+const std::unique_ptr<IVertexHandler>& CRenderInterface::GetVertexHandler(FRHIHandle id)
 {
 	return m_pResources->get<IVertexHandler>(id.Get());
 }

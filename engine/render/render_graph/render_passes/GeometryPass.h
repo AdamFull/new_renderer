@@ -21,7 +21,7 @@ namespace engine
 		protected:
 			const std::unique_ptr<IShaderObject>& GetShaderByVBO(const IVertexHandler* vbo);
 		private:
-			utl::hash_map<u64, std::unique_ptr<IShaderObject>> m_shaders{};
+			utl::hash_map<u64, FRHIHandle> m_shaders{};
 			std::string m_baseShaderName{};
 		};
 	}

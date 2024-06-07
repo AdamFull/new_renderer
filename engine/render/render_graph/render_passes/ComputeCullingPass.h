@@ -10,7 +10,6 @@ namespace engine
 		{
 		public:
 			CComputeCullingPass(IRenderInterface* render_interface);
-
 			~CComputeCullingPass() = default;
 
 			void Init(const FComputePassCreateInfo& pass_ci) override;
@@ -19,7 +18,7 @@ namespace engine
 			void _Execute(const FComputeFrameInfo& frame_info) override;
 			const std::unique_ptr<IShaderObject>& GetShaderByVBO(const IVertexHandler* vbo);
 		private:
-			utl::hash_map<u64, std::unique_ptr<IShaderObject>> m_shaders{};
+			utl::hash_map<u64, FRHIHandle> m_shaders{};
 			std::string m_baseShaderName{};
 		};
 	}

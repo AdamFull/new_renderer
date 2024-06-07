@@ -23,7 +23,7 @@ void prepare_meshes_to_draw(const std::unique_ptr<IRenderWorld>& render_world, c
 			continue;
 
 		auto& draw_command = draw_commands.emplace_back();
-		draw_command.vboID = primitive.vboId;
+		draw_command.vboID = primitive.vboId.Get();
 		draw_command.meshID = world_stats.meshCount + meshes.size();
 		draw_command.nodeID = node;
 

@@ -214,7 +214,8 @@ void CScene::LoadGLTF(easygltf::FGLTFRoot& root)
 		// TODO: add ability to override format and sampler params
 		// TODO: find format from materials
 		auto image_path = fs::path_append(root.rootDirectory, easygltf::url_decode(image.uri));
-		m_resources.textures.emplace_back(m_pRenderInterface->CreateTexture(image_path).Get());
+		auto new_texture_handle = m_pRenderInterface->CreateTextureObject(image_path);
+		m_resources.textures.emplace_back(m_pRenderInterface->GetTextureObject(new_texture_handle)->Handle().Get());
 		m_resources.lastTexture++;
 	}
 
@@ -406,7 +407,7 @@ void CScene::LoadMeshComponent(const easygltf::FGLTFRoot& root, const entt::enti
 
 		// Get or Create vertex buffer
 		render::IVertexHandler* vertex_handler{nullptr};
-		u64 current_handler_id{ ~0ull };
+		render::FRHIHandle current_handler_id{};
 
 		if (auto found = m_resources.vertexHandlers.find(attributes_hash); found != m_resources.vertexHandlers.end())
 		{

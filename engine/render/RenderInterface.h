@@ -22,26 +22,26 @@ namespace engine
 			void PostLoad() override;
 			void Render(f32 dt) override;
 
-			FRenderHandle CreateTextureObject(const std::string& path) override;
-			FRenderHandle CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci) override;
-			FRenderHandle CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) override;
-			void DestroyTextureObject(FRenderHandle handle) override;
-			const std::unique_ptr<ITextureObject>& GetTextureObject(FRenderHandle handle) override;
+			FRHIHandle CreateTextureObject(const std::string& path) override;
+			FRHIHandle CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci) override;
+			FRHIHandle CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) override;
+			void DestroyTextureObject(FRHIHandle handle) override;
+			const std::unique_ptr<ITextureObject>& GetTextureObject(FRHIHandle handle) override;
 			const std::unique_ptr<ITextureObject>& GetTextureObject(FGraphHandle handle) override;
 
-			FRenderHandle CreateBufferObject(const std::string& name, const FBufferCreateInfo& buffer_ci) override;
-			void DestroyBufferObject(FRenderHandle handle) override;
-			const std::unique_ptr<IBufferObject>& GetBufferObject(FRenderHandle handle) override;
+			FRHIHandle CreateBufferObject(const std::string& name, const FBufferCreateInfo& buffer_ci) override;
+			void DestroyBufferObject(FRHIHandle handle) override;
+			const std::unique_ptr<IBufferObject>& GetBufferObject(FRHIHandle handle) override;
 			const std::unique_ptr<IBufferObject>& GetBufferObject(FGraphHandle handle) override;
 
-			FRenderHandle CreateShaderObject(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci) override;
-			FRenderHandle CreateShaderObject(const std::string& name, const FComputeShaderCreateInfo& shader_ci) override;
-			void DestroyShaderObject(FRenderHandle handle) override;
-			const std::unique_ptr<IShaderObject>& GetShaderObject(FRenderHandle id) override;
+			FRHIHandle CreateShaderObject(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci) override;
+			FRHIHandle CreateShaderObject(const std::string& name, const FComputeShaderCreateInfo& shader_ci) override;
+			void DestroyShaderObject(FRHIHandle handle) override;
+			const std::unique_ptr<IShaderObject>& GetShaderObject(FRHIHandle id) override;
 
-			FRenderHandle CreateVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) override;
-			void DestroyVertexHandler(FRenderHandle handle) override;
-			const std::unique_ptr<IVertexHandler>& GetVertexHandler(FRenderHandle id) override;
+			FRHIHandle CreateVertexHandler(const std::string& name, const FVertexHandlerCreateInfo& handler_ci) override;
+			void DestroyVertexHandler(FRHIHandle handle) override;
+			const std::unique_ptr<IVertexHandler>& GetVertexHandler(FRHIHandle id) override;
 
 			void UpdateSurfaceSize(i32 width, i32 height) override;
 

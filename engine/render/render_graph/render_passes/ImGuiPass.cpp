@@ -40,8 +40,7 @@ void CImGuiPass::Init(const FRenderPassCreateInfo& pass_ci)
 	vertex_handler_ci.descriptions.emplace_back(FVertexHandlerAttributeDescription{ 8ull, EVertexAttributeType::eTexCoord });
 	vertex_handler_ci.descriptions.emplace_back(FVertexHandlerAttributeDescription{ 4ull, EVertexAttributeType::eColor });
 	vertex_handler_ci.name = "imgui_vertices";
-	m_pVertexHandler = std::make_unique<CVertexHandler>(m_pRenderInterface);
-	m_pVertexHandler->Create(vertex_handler_ci);
+	m_vertexHandler = m_pRenderInterface->CreateVertexHandler("imgui_vertices", vertex_handler_ci);
 
 	// Create font texture (just load) May be needs to implement texture interface
 	unsigned char* pixels;
@@ -58,13 +57,12 @@ void CImGuiPass::Init(const FRenderPassCreateInfo& pass_ci)
 	upload_info.data.insert(upload_info.data.end(), pixels, pixels + upload_size);
 
 	auto& render_context = m_pRenderInterface->GetRenderContext();
-	m_fontTexture = render_context->CreateTexture("imgui_font", create_info, std::move(upload_info));
+	m_fontTexture = m_pRenderInterface->CreateTextureObject("imgui_font", create_info, std::move(upload_info));
 
 	// Make RHI shader object
-	m_pShader = std::make_unique<CShaderObject>(m_pRenderInterface);
-
-	MakeShader(pass_ci.shader, m_pShader, EShaderCullModeFlagBits::eNone, EShaderFrontFace::eCCW, true, EDepthCompareOp::eLessOrEqual, m_pVertexHandler.get());
-	InitShaderResources(m_pShader);
+	auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_vertexHandler);
+	m_shader = MakeShader(pass_ci.shader, EShaderCullModeFlagBits::eNone, EShaderFrontFace::eCCW, true, EDepthCompareOp::eLessOrEqual, vertex_handler.get());
+	InitShaderResources(m_shader);
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	m_debugName = std::format("imgui:{}", pass_ci.shader);
@@ -98,6 +96,8 @@ void CImGuiPass::_Render(const FRenderFrameInfo& frame_info)
 		ImDrawData* draw_data = ImGui::GetDrawData();
 
 		auto resolution = render_context->GetScreenRenderRect();
+		auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_vertexHandler);
+		auto& shader = m_pRenderInterface->GetShaderObject(m_shader);
 
 		u32 last_vertex{ 0u };
 		u32 last_index{ 0u };
@@ -109,8 +109,8 @@ void CImGuiPass::_Render(const FRenderFrameInfo& frame_info)
 			for (int n = 0; n < draw_data->CmdListsCount; n++)
 			{
 				const ImDrawList* cmd_list = draw_data->CmdLists[n];
-				m_pVertexHandler->AddVertices(cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size, sizeof(ImDrawVert));
-				m_pVertexHandler->AddIndices(cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size, sizeof(ImDrawIdx));
+				vertex_handler->AddVertices(cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size, sizeof(ImDrawVert));
+				vertex_handler->AddIndices(cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size, sizeof(ImDrawIdx));
 
 				last_vertex += cmd_list->VtxBuffer.Size;
 				last_index += cmd_list->IdxBuffer.Size;
@@ -118,15 +118,15 @@ void CImGuiPass::_Render(const FRenderFrameInfo& frame_info)
 		}
 
 		// Upload vertices
-		m_pVertexHandler->Allocate();
+		vertex_handler->Allocate();
 		//render_context->UploadBuffers();
 
 		// Bind pipeline:
-		m_pShader->Bind(m_queue);
+		shader->Bind(m_queue);
 
 		// Bind Vertex And Index Buffer:
 		if (draw_data->TotalVtxCount > 0)
-			m_pVertexHandler->Bind(m_queue);
+			vertex_handler->Bind(m_queue);
 
 		// Setup viewport:
 		render_context->SetViewport(resolution.size.x, resolution.size.y, false);
@@ -134,7 +134,7 @@ void CImGuiPass::_Render(const FRenderFrameInfo& frame_info)
 		// Setup scale and translation:
 		// Our visible imgui space lies from draw_data->DisplayPps (top left) to draw_data->DisplayPos+data_data->DisplaySize (bottom right). DisplayPos is (0,0) for single viewport apps.
 		{
-			auto& constants = m_pShader->GetConstantBlock(utl::fnv1a_64_hash_cstr("constants"));
+			auto& constants = shader->GetConstantBlock(utl::fnv1a_64_hash_cstr("constants"));
 			if (constants)
 			{
 				glm::vec2 scale;
@@ -149,11 +149,11 @@ void CImGuiPass::_Render(const FRenderFrameInfo& frame_info)
 
 				constants->Set(utl::fnv1a_64_hash_cstr("translate"), translate);
 
-				m_pShader->FlushConstants(m_queue);
+				shader->FlushConstants(m_queue);
 			}
 		}
 
-		FAPIHandle last_bound_resource{ INVALID_HANDLE };
+		FRHIHandle last_bound_resource{ INVALID_HANDLE };
 
 		// Will project scissor/clipping rectangles into framebuffer space
 		ImVec2 clip_off = draw_data->DisplayPos;         // (0,0) unless using multi-viewports
@@ -196,7 +196,7 @@ void CImGuiPass::_Render(const FRenderFrameInfo& frame_info)
 					render_context->SetScissorRect((int32_t)(clip_min.x), (int32_t)(clip_min.y), (uint32_t)(clip_max.x - clip_min.x), (uint32_t)(clip_max.y - clip_min.y));
 
 					// Bind DescriptorSet with font or user texture
-					FAPIHandle attachment{ (u64)pcmd->TextureId };
+					FRHIHandle attachment{ (u64)pcmd->TextureId };
 					if (sizeof(ImTextureID) < sizeof(ImU64))
 					{
 						// We don't support texture switches if ImTextureID hasn't been redefined to be 64-bit. Do a flaky check that other textures haven't been used.
@@ -209,9 +209,9 @@ void CImGuiPass::_Render(const FRenderFrameInfo& frame_info)
 
 					if (attachment != last_bound_resource)
 					{
-						m_pShader->BindTexture(utl::fnv1a_64_hash_cstr("fontSampler"), attachment);
-						m_pShader->FlushDescriptors();
-						m_pShader->BindResources(m_queue);
+						shader->BindTexture(utl::fnv1a_64_hash_cstr("fontSampler"), m_pRenderInterface->GetTextureObject(attachment)->Handle());
+						shader->FlushDescriptors();
+						shader->BindResources(m_queue);
 						last_bound_resource = attachment;
 					}
 

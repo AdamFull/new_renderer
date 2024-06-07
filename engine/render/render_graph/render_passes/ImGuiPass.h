@@ -19,9 +19,9 @@ namespace engine
 			void _Render(const FRenderFrameInfo& frame_info) override;
 
 		private:
-			std::unique_ptr<IShaderObject> m_pShader{};
-			std::unique_ptr<IVertexHandler> m_pVertexHandler{};
-			FAPIHandle m_fontTexture{ INVALID_HANDLE };
+			FRHIHandle m_shader{};
+			FRHIHandle m_vertexHandler{};
+			FRHIHandle m_fontTexture{ INVALID_HANDLE };
 		};
 	}
 }

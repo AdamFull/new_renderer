@@ -32,7 +32,7 @@ namespace engine
 				render::FVertexRange vertexRange{};
 
 				size_t materialId{ ~0ull };
-				size_t vboId{ ~0ull };
+				render::FRHIHandle vboId{};
 
 				utl::vector<render::FMeshlet> meshlets{};
 				utl::vector<u32> vertices{};
