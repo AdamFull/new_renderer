@@ -320,13 +320,13 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	bool use_low_precision_velocity{ true };
 	
 	bool enable_fxaa{ false };
-	bool enable_taa{ true };
+	bool enable_taa{ false };
 	bool motion_blur_enabled{ false };
-	bool depth_of_field_enabled{ true };
+	bool depth_of_field_enabled{ false };
 	bool chromatic_aberration_enabled{ false };
 	
 	//Bloom settings
-	bool bloom_enabled{ true };
+	bool bloom_enabled{ false };
 	bool bloom_use_brightness{ true };
 	int bloom_blur_depth{ 7 };
 	
@@ -758,7 +758,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 				pass_ci.BindWriteResource("write_color", output_target);
 				pass_ci.BindReadResource("sampler_color", input_target);
 				pass_ci.BindReadResource("bloom_color", "bloom_target", 0);
-				pass_ci.BindReadResource("dirt_mask", "LensDirtMask");
+				pass_ci.BindReadResource("dirt_mask", "DirtMaskTextureExample");
 	
 				AddRenderPass("apply_bloom", pass_ci);
 			}
@@ -836,11 +836,11 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	}
 
 	// ImGui pass
-	{
-		FRenderConfigRenderCreateInfo pass_ci = makeGraphicsPassCI(ERenderingType::eImGui, EQueueTypeFlagBits::eGraphics, "testing:imgui");
-		pass_ci.AddWriteResource("present_target");
-		AddRenderPass("imgui_pass", pass_ci);
-	}
+	//{
+	//	FRenderConfigRenderCreateInfo pass_ci = makeGraphicsPassCI(ERenderingType::eImGui, EQueueTypeFlagBits::eGraphics, "testing:imgui");
+	//	pass_ci.AddWriteResource("present_target");
+	//	AddRenderPass("imgui_pass", pass_ci);
+	//}
 }
 
 
@@ -1082,10 +1082,7 @@ void CRenderGraph::Execute(f32 dt)
 		if (!pass->CanExecute())
 			continue;
 
-		if (pass->m_debugName == "fullscreen:testing:screenspace")
-			int iiiii = 0;
-
-		if (pass->m_debugName == "imgui:testing:imgui")
+		if (pass->m_debugName == "compute:postprocess:downsample")
 			int iiiii = 0;
 
 		render_context->ProcessResourceBarriers(pass->m_queue, resource_barriers);

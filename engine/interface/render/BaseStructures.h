@@ -189,7 +189,7 @@ namespace engine
 
 		struct FGeometryCPUBatch
 		{
-			u64 vboID{ INVALID_HANDLE };
+			FRHIHandle vboID{ INVALID_HANDLE };
 			FIndirectGeometryDrawInfo command{};
 		};
 

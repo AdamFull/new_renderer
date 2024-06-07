@@ -64,8 +64,13 @@ void IRenderPass::Init(const FRenderPassCreateInfo& pass_ci)
 
 	for (const auto& [handle, value] : pass_ci.clearValues)
 	{
-		auto& texture = m_pRenderInterface->GetTextureObject(handle);
-		m_clearValues.emplace(texture->Handle(), value);
+		if (handle)
+		{
+			auto& texture = m_pRenderInterface->GetTextureObject(handle);
+			m_clearValues.emplace(texture->Handle(), value);
+		}
+		else
+			m_clearValues.emplace(handle.Get(), value);
 	}
 
 	m_bFlipViewport = pass_ci.flipViewport;
@@ -162,7 +167,12 @@ void IRenderPass::BuildAttachment(FGraphHandle resource_id, const FPassBuildInfo
 	auto& render_resource = render_graph->GetRenderResource(resource_id);
 	auto& resource_info = build_info.getAttachmentInfo(resource_id);
 
-	attachment_info.handle = m_pRenderInterface->GetTextureObject(render_resource.handle)->Handle();
+	if (render_resource.handle)
+	{
+		auto& texture = m_pRenderInterface->GetTextureObject(render_resource.handle);
+		attachment_info.handle = texture->Handle();
+	}
+
 	attachment_info.loadOp = resource_info.loadOp;
 	attachment_info.storeOp = resource_info.storeOp;
 }

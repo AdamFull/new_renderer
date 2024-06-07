@@ -53,7 +53,7 @@ namespace engine
 			const std::unique_ptr<IRenderContext>& GetRenderContext() override;
 			const std::unique_ptr<IResourceLoader>& GetResourceLoader() override;
 		protected:
-
+			FTextureCreateInfo ApplyTextureExtent(const FTextureCreateInfo& texture_ci);
 		private:
 			filesystem::IVirtualFileSystemInterface* m_pVFS{ nullptr };
 

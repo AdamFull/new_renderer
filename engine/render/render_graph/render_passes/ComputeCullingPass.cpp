@@ -33,7 +33,7 @@ void CComputeCullingPass::_Execute(const FComputeFrameInfo& frame_info)
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
 	auto& world_stats = render_world->GetStats();
 
-	std::unordered_set<u64> vbos{};
+	std::unordered_set<FRHIHandle> vbos{};
 
 	const auto& geometry_batches = render_world->GetGeometryBatches();
 	for (const auto& batch : geometry_batches)
@@ -43,7 +43,7 @@ void CComputeCullingPass::_Execute(const FComputeFrameInfo& frame_info)
 	for (auto& vboId : vbos)
 	{
 		bool was_vbo_rebinded{ false };
-		auto& vbo = m_pRenderInterface->GetVertexHandler(FRHIHandle(vboId));
+		auto& vbo = m_pRenderInterface->GetVertexHandler(vboId);
 		if (!last_vbo || vbo.get() != last_vbo)
 		{
 			last_vbo = vbo.get();

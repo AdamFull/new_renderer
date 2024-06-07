@@ -1,4 +1,5 @@
 #include "ShaderObject.h"
+#include <utils/uuid.h>
 
 using namespace engine::render;
 
@@ -15,13 +16,15 @@ CShaderObject::~CShaderObject()
 
 void CShaderObject::Create(const std::string& name, const FGraphicsShaderCreateInfo& create_info, utl::vector<FShaderCreationBlockInfo>&& shader_stages)
 {
-	m_shaderId = m_pRenderContext->CreateShader(name, create_info, std::move(shader_stages));
+	auto uuid = utl::uuid_v4::gen();
+	m_shaderId = m_pRenderContext->CreateShader(uuid, create_info, std::move(shader_stages));
 	BuildReflection();
 }
 
 void CShaderObject::Create(const std::string& name, const FComputeShaderCreateInfo& create_info, utl::vector<FShaderCreationBlockInfo>&& shader_stages)
 {
-	m_shaderId = m_pRenderContext->CreateShader(name, create_info, std::move(shader_stages));
+	auto uuid = utl::uuid_v4::gen();
+	m_shaderId = m_pRenderContext->CreateShader(uuid, create_info, std::move(shader_stages));
 	BuildReflection();
 }
 

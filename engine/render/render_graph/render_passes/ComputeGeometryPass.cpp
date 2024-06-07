@@ -29,7 +29,7 @@ void CComputeGeometryPass::Build(const FPassBuildInfo& build_info)
 
 void CComputeGeometryPass::_Execute(const FComputeFrameInfo& frame_info)
 {
-	std::unordered_set<u64> vbos{};
+	std::unordered_set<FRHIHandle> vbos{};
 
 	auto& render_context = m_pRenderInterface->GetRenderContext();
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
@@ -44,7 +44,7 @@ void CComputeGeometryPass::_Execute(const FComputeFrameInfo& frame_info)
 	for (auto& vboId : vbos)
 	{
 		bool was_vbo_rebinded{ false };
-		auto& vbo = m_pRenderInterface->GetVertexHandler(FRHIHandle(vboId));
+		auto& vbo = m_pRenderInterface->GetVertexHandler(vboId);
 		if (!last_vbo || vbo.get() != last_vbo)
 		{
 			last_vbo = vbo.get();
@@ -81,7 +81,7 @@ void CComputeGeometryPass::_Execute(const FComputeFrameInfo& frame_info)
 			auto& mesh_data = shader->GetConstantBlock(shader_bindings::mesh_data);
 			if (mesh_data)
 			{
-				mesh_data->Set(shader_bindings::vbo_id_label, utl::cast<u32>(vboId));
+				mesh_data->Set(shader_bindings::vbo_id_label, utl::cast<u32>(vboId.Get()));
 			}
 
 			shader->FlushConstants(m_queue);

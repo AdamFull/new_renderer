@@ -1,4 +1,5 @@
 #include "RenderInterface.h"
+#include <utils/uuid.h>
 
 #include "render_api/vulkan/VkRenderContext.h"
 
@@ -302,11 +303,15 @@ FRHIHandle CRenderInterface::CreateTextureObject(const std::string& path)
 FRHIHandle CRenderInterface::CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci)
 {
 	auto new_texture = std::make_unique<CTextureObject>(this);
-	new_texture->Create(name, texture_ci);
+	new_texture->Create(name, ApplyTextureExtent(texture_ci));
 
 	FRenderResource resource_desc{};
 	resource_desc.handle = FRHIHandle(m_pResources->add<ITextureObject>(name.c_str(), std::move(new_texture)));
-	resource_desc.type = (texture_ci.flags & ETextureCreateFlagBits::eRenderTarget) ? ERenderResourceTypeFlagBits::eRenderTarget : ((texture_ci.flags & ETextureCreateFlagBits::eStorage) ? ERenderResourceTypeFlagBits::eStorageTarget : ERenderResourceTypeFlagBits::eRenderTarget);
+
+	if (texture_ci.flags & ETextureCreateFlagBits::eRenderTarget)
+		resource_desc.type = (texture_ci.flags & ETextureCreateFlagBits::eStorage) ? ERenderResourceTypeFlagBits::eStorageTarget : ERenderResourceTypeFlagBits::eRenderTarget;
+	else
+		resource_desc.type = ERenderResourceTypeFlagBits::eStaticImage;
 
 	m_pRenderGraph->AddRenderResource(name, resource_desc);
 
@@ -316,11 +321,15 @@ FRHIHandle CRenderInterface::CreateTextureObject(const std::string& name, const 
 FRHIHandle CRenderInterface::CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info)
 {
 	auto new_texture = std::make_unique<CTextureObject>(this);
-	new_texture->Create(name, texture_ci, std::move(upload_info));
+	new_texture->Create(name, ApplyTextureExtent(texture_ci), std::move(upload_info));
 
 	FRenderResource resource_desc{};
 	resource_desc.handle = FRHIHandle(m_pResources->add<ITextureObject>(name.c_str(), std::move(new_texture)));
-	resource_desc.type = (texture_ci.flags & ETextureCreateFlagBits::eRenderTarget) ? ERenderResourceTypeFlagBits::eRenderTarget : ((texture_ci.flags & ETextureCreateFlagBits::eStorage) ? ERenderResourceTypeFlagBits::eStorageTarget : ERenderResourceTypeFlagBits::eRenderTarget);
+	
+	if (texture_ci.flags & ETextureCreateFlagBits::eRenderTarget)
+		resource_desc.type = (texture_ci.flags & ETextureCreateFlagBits::eStorage) ? ERenderResourceTypeFlagBits::eStorageTarget : ERenderResourceTypeFlagBits::eRenderTarget;
+	else
+		resource_desc.type = ERenderResourceTypeFlagBits::eStaticImage;
 
 	m_pRenderGraph->AddRenderResource(name, resource_desc);
 
@@ -396,7 +405,8 @@ FRHIHandle CRenderInterface::CreateShaderObject(const std::string& name, const F
 	auto new_shader = std::make_unique<CShaderObject>(this);
 	new_shader->Create(name, shader_ci, std::move(shader_stages));
 
-	return FRHIHandle(m_pResources->add<IShaderObject>(name.c_str(), std::move(new_shader)));
+	auto uuid = utl::uuid_v4::gen();
+	return FRHIHandle(m_pResources->add<IShaderObject>(uuid.c_str(), std::move(new_shader)));
 }
 
 FRHIHandle CRenderInterface::CreateShaderObject(const std::string& name, const FComputeShaderCreateInfo& shader_ci)
@@ -411,7 +421,8 @@ FRHIHandle CRenderInterface::CreateShaderObject(const std::string& name, const F
 	auto new_shader = std::make_unique<CShaderObject>(this);
 	new_shader->Create(name, shader_ci, std::move(shader_stages));
 
-	return FRHIHandle(m_pResources->add<IShaderObject>(name.c_str(), std::move(new_shader)));
+	auto uuid = utl::uuid_v4::gen();
+	return FRHIHandle(m_pResources->add<IShaderObject>(uuid.c_str(), std::move(new_shader)));
 }
 
 void CRenderInterface::DestroyShaderObject(FRHIHandle handle)
@@ -471,6 +482,25 @@ const std::unique_ptr<IRenderContext>& CRenderInterface::GetRenderContext()
 const std::unique_ptr<IResourceLoader>& CRenderInterface::GetResourceLoader()
 {
 	return m_pResourceLoader;
+}
+
+FTextureCreateInfo CRenderInterface::ApplyTextureExtent(const FTextureCreateInfo& texture_ci)
+{
+	auto render_extent = m_pRenderContext->GetRenderResolution();
+
+	FTextureCreateInfo texture_create_info{ texture_ci };
+	if (texture_create_info.size.policy == ERenderTargetSizePolicy::eFull)
+	{
+		texture_create_info.size.width = render_extent.x;
+		texture_create_info.size.height = render_extent.y;
+	}
+	else if (texture_create_info.size.policy == ERenderTargetSizePolicy::eScalable)
+	{
+		texture_create_info.size.width = utl::cast<u32>(utl::cast<f32>(render_extent.x) * texture_create_info.size.scale);
+		texture_create_info.size.height = utl::cast<u32>(utl::cast<f32>(render_extent.y) * texture_create_info.size.scale);
+	}
+
+	return texture_create_info;
 }
 
 FShaderUploadInfo CRenderInterface::GetShaderNameTag(const std::string& name)

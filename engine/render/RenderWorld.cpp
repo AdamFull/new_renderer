@@ -371,12 +371,12 @@ void CRenderWorld::prepareIndirectCommands()
 		{
 			// Create batch or get already existing
 			FGeometryCPUBatch* current_batch{ nullptr };
-			if (!batches.empty() && batches.back().vboID == batch.vboID)
+			if (!batches.empty() && batches.back().vboID == FRHIHandle(batch.vboID))
 				current_batch = &batches.back();
 			else
 			{
 				auto& new_batch = batches.emplace_back();
-				new_batch.vboID = batch.vboID;
+				new_batch.vboID = FRHIHandle(batch.vboID);
 				new_batch.command.bufferId = indirect_data_buffer->Buffer()->Handle();
 				new_batch.command.offset = offset * m_vRawGeometryBatches.size() * sizeof(FDrawIndexedIndirectData);
 				new_batch.command.countBufferId = indirect_count_buffer->Buffer()->Handle();
