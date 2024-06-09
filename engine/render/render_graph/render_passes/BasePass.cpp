@@ -44,9 +44,9 @@ void IBasePass::InitShaderResources(const std::unique_ptr<IShaderObject>& shader
 	{
 		auto& render_resource = render_graph->GetRenderResource(resource_binding.resource);
 		if (render_resource.type & ERenderResourceTypeFlagBits::eAllImage)
-			shader->BindTexture(utl::fnv1a_64_hash_cstr(bind_point.c_str()), m_pRenderInterface->GetTextureObject(render_resource.handle)->Handle(), resource_binding.subresource);
+			shader->BindTexture(utl::fnv1a_64_hash_cstr(bind_point.c_str()), render_resource.handle, resource_binding.subresource);
 		else if (render_resource.type == ERenderResourceTypeFlagBits::eBuffer)
-			shader->BindBuffer(utl::fnv1a_64_hash_cstr(bind_point.c_str()), m_pRenderInterface->GetBufferObject(render_resource.handle)->Handle());
+			shader->BindBuffer(utl::fnv1a_64_hash_cstr(bind_point.c_str()), render_resource.handle);
 	}
 }
 
@@ -62,17 +62,7 @@ void IRenderPass::Init(const FRenderPassCreateInfo& pass_ci)
 	m_bakedBindings = pass_ci.bindings;
 	m_bOneTime = pass_ci.oneTime;
 
-	for (const auto& [handle, value] : pass_ci.clearValues)
-	{
-		if (handle)
-		{
-			auto& texture = m_pRenderInterface->GetTextureObject(handle);
-			m_clearValues.emplace(texture->Handle(), value);
-		}
-		else
-			m_clearValues.emplace(handle.Get(), value);
-	}
-
+	m_clearValues = pass_ci.clearValues;
 	m_bFlipViewport = pass_ci.flipViewport;
 	m_depthTarget = pass_ci.depthTarget;
 	m_stencilTarget = pass_ci.stencilTarget;
@@ -167,12 +157,7 @@ void IRenderPass::BuildAttachment(FGraphHandle resource_id, const FPassBuildInfo
 	auto& render_resource = render_graph->GetRenderResource(resource_id);
 	auto& resource_info = build_info.getAttachmentInfo(resource_id);
 
-	if (render_resource.handle)
-	{
-		auto& texture = m_pRenderInterface->GetTextureObject(render_resource.handle);
-		attachment_info.handle = texture->Handle();
-	}
-
+	attachment_info.handle = render_resource.handle;
 	attachment_info.loadOp = resource_info.loadOp;
 	attachment_info.storeOp = resource_info.storeOp;
 }
@@ -196,7 +181,7 @@ FRHIHandle IRenderPass::MakeShader(const std::string& name, EShaderCullModeFlagB
 
 		auto& render_resource = render_graph->GetRenderResource(resource_binding.resource);
 		auto& new_attachment = shader_ci.colorAttachments.emplace_back();
-		new_attachment.source = m_pRenderInterface->GetTextureObject(render_resource.handle)->Handle();
+		new_attachment.source = render_resource.handle;
 	}
 
 	auto& backbuffer_targer = m_renderResources[ERenderResourceGroupType::eBackbufferWrite];
@@ -213,13 +198,13 @@ FRHIHandle IRenderPass::MakeShader(const std::string& name, EShaderCullModeFlagB
 	if (m_depthTarget)
 	{
 		auto& render_resource = render_graph->GetRenderResource(m_depthTarget);
-		shader_ci.depthAttachment.source = m_pRenderInterface->GetTextureObject(render_resource.handle)->Handle();
+		shader_ci.depthAttachment.source = render_resource.handle;
 	}
 
 	if (m_stencilTarget)
 	{
 		auto& render_resource = render_graph->GetRenderResource(m_stencilTarget);
-		shader_ci.stencilAttachment.source = m_pRenderInterface->GetTextureObject(render_resource.handle)->Handle();
+		shader_ci.stencilAttachment.source = render_resource.handle;
 	}
 
 	if (vbo)
@@ -296,16 +281,19 @@ void IComputePass::Execute(f32 dt)
 		{
 			if (group_info.target)
 			{
-				auto& texture = m_pRenderInterface->GetTextureObject(group_info.target);
-				texture->GetDimensions(&dispatch_info.globalSizes.x, &dispatch_info.globalSizes.y);
+				auto resource = render_graph->GetRenderResource(group_info.target);
+				auto texture_view = render_context->GetTextureView(resource.handle);
+				dispatch_info.globalSizes.x = texture_view.width;
+				dispatch_info.globalSizes.y = texture_view.height;
 				dispatch_info.globalSizes.z = 1u;
 			}
 		}
 		else if (group_info.type == ERenderingSizeType::eFromBuffer)
 		{
-			auto& buffer = m_pRenderInterface->GetBufferObject(group_info.target);
+			auto resource = render_graph->GetRenderResource(group_info.target);
+			auto buffer_view = render_context->GetBufferView(resource.handle);
 
-			dispatch_info.globalSizes.x = buffer->Count();
+			dispatch_info.globalSizes.x = buffer_view.alignedSize / buffer_view.elementCount;
 			dispatch_info.globalSizes.y = 1u;
 			dispatch_info.globalSizes.z = 1u;
 		}

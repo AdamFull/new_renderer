@@ -64,7 +64,8 @@ std::unique_ptr<IRenderContext> make_render_context(const FRenderInterfaceCreate
 			VK_EXT_MESH_SHADER_EXTENSION_NAME,
 			VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME,
 			//VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME,
-			VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME
+			VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME,
+			//VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME
 		};
 		
 		context_ci.optionalDeviceExtensions = {
@@ -305,8 +306,11 @@ FRHIHandle CRenderInterface::CreateTextureObject(const std::string& name, const 
 	auto new_texture = std::make_unique<CTextureObject>(this);
 	new_texture->Create(name, ApplyTextureExtent(texture_ci));
 
+	auto handle = FRHIHandle(m_pResources->add<ITextureObject>(name.c_str(), std::move(new_texture)));
+	auto& texture = GetTextureObject(handle);
+
 	FRenderResource resource_desc{};
-	resource_desc.handle = FRHIHandle(m_pResources->add<ITextureObject>(name.c_str(), std::move(new_texture)));
+	resource_desc.handle = texture->Handle();
 
 	if (texture_ci.flags & ETextureCreateFlagBits::eRenderTarget)
 		resource_desc.type = (texture_ci.flags & ETextureCreateFlagBits::eStorage) ? ERenderResourceTypeFlagBits::eStorageTarget : ERenderResourceTypeFlagBits::eRenderTarget;
@@ -315,7 +319,7 @@ FRHIHandle CRenderInterface::CreateTextureObject(const std::string& name, const 
 
 	m_pRenderGraph->AddRenderResource(name, resource_desc);
 
-	return resource_desc.handle;
+	return handle;
 }
 
 FRHIHandle CRenderInterface::CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info)
@@ -323,8 +327,11 @@ FRHIHandle CRenderInterface::CreateTextureObject(const std::string& name, const 
 	auto new_texture = std::make_unique<CTextureObject>(this);
 	new_texture->Create(name, ApplyTextureExtent(texture_ci), std::move(upload_info));
 
+	auto handle = FRHIHandle(m_pResources->add<ITextureObject>(name.c_str(), std::move(new_texture)));
+	auto& texture = GetTextureObject(handle);
+
 	FRenderResource resource_desc{};
-	resource_desc.handle = FRHIHandle(m_pResources->add<ITextureObject>(name.c_str(), std::move(new_texture)));
+	resource_desc.handle = texture->Handle();
 	
 	if (texture_ci.flags & ETextureCreateFlagBits::eRenderTarget)
 		resource_desc.type = (texture_ci.flags & ETextureCreateFlagBits::eStorage) ? ERenderResourceTypeFlagBits::eStorageTarget : ERenderResourceTypeFlagBits::eRenderTarget;
@@ -333,7 +340,7 @@ FRHIHandle CRenderInterface::CreateTextureObject(const std::string& name, const 
 
 	m_pRenderGraph->AddRenderResource(name, resource_desc);
 
-	return resource_desc.handle;
+	return handle;
 }
 
 void CRenderInterface::DestroyTextureObject(FRHIHandle handle)
@@ -349,27 +356,21 @@ const std::unique_ptr<ITextureObject>& CRenderInterface::GetTextureObject(FRHIHa
 	return m_pResources->get<ITextureObject>(handle.Get());
 }
 
-const std::unique_ptr<ITextureObject>& CRenderInterface::GetTextureObject(FGraphHandle handle)
-{
-	auto& render_resource = m_pRenderGraph->GetRenderResource(handle);
-	if (!(render_resource.type & ERenderResourceTypeFlagBits::eAllImage))
-		log_error("Trying to get texture object, but object type is: {}", (u32)render_resource.type);
-
-	return GetTextureObject(render_resource.handle);
-}
-
 
 FRHIHandle CRenderInterface::CreateBufferObject(const std::string& name, const FBufferCreateInfo& buffer_ci)
 {
 	auto new_buffer = std::make_unique<CBufferObject>(this);
 	new_buffer->Create(name, buffer_ci);
 
+	auto handle = FRHIHandle(m_pResources->add<IBufferObject>(name.c_str(), std::move(new_buffer)));
+	auto& buffer = GetBufferObject(handle);
+
 	FRenderResource resource_desc{};
-	resource_desc.handle = FRHIHandle(m_pResources->add<IBufferObject>(name.c_str(), std::move(new_buffer)));
+	resource_desc.handle = buffer->Handle();
 	resource_desc.type = ERenderResourceTypeFlagBits::eBuffer;
 
 	m_pRenderGraph->AddRenderResource(name, resource_desc);
-	return resource_desc.handle;
+	return handle;
 }
 
 void CRenderInterface::DestroyBufferObject(FRHIHandle handle)
@@ -380,15 +381,6 @@ void CRenderInterface::DestroyBufferObject(FRHIHandle handle)
 const std::unique_ptr<IBufferObject>& CRenderInterface::GetBufferObject(FRHIHandle handle)
 {
 	return m_pResources->get<IBufferObject>(handle.Get());
-}
-
-const std::unique_ptr<IBufferObject>& CRenderInterface::GetBufferObject(FGraphHandle handle)
-{
-	auto& render_resource = m_pRenderGraph->GetRenderResource(handle);
-	if (!(render_resource.type & ERenderResourceTypeFlagBits::eBuffer))
-		log_error("Trying to get buffer object, but object type is: {}", (u32)render_resource.type);
-
-	return GetBufferObject(render_resource.handle);
 }
 
 

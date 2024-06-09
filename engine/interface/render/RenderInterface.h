@@ -474,12 +474,10 @@ namespace engine
 			virtual FRHIHandle CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) = 0;
 			virtual void DestroyTextureObject(FRHIHandle handle) = 0;
 			virtual const std::unique_ptr<ITextureObject>& GetTextureObject(FRHIHandle handle) = 0;
-			virtual const std::unique_ptr<ITextureObject>& GetTextureObject(FGraphHandle handle) = 0;
 
 			virtual FRHIHandle CreateBufferObject(const std::string& name, const FBufferCreateInfo& buffer_ci) = 0;
 			virtual void DestroyBufferObject(FRHIHandle handle) = 0;
 			virtual const std::unique_ptr<IBufferObject>& GetBufferObject(FRHIHandle handle) = 0;
-			virtual const std::unique_ptr<IBufferObject>& GetBufferObject(FGraphHandle handle) = 0;
 
 			virtual FRHIHandle CreateShaderObject(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci) = 0;
 			virtual FRHIHandle CreateShaderObject(const std::string& name, const FComputeShaderCreateInfo& shader_ci) = 0;

@@ -1333,6 +1333,8 @@ void CVkRenderDevice::PrepareRequestedLogicalDeviceFeatures()
 				ext.multiviewMeshShader = VK_FALSE;
 				ext.primitiveFragmentShadingRateMeshShader = VK_FALSE;
 			}
+			else if (extension_name == VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME)
+				RequestExtensionFeatures<vk::PhysicalDeviceDiagnosticsConfigFeaturesNV>();
 			//else if(extension_name == VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME)
 			//	RequestExtensionFeatures(vk::PhysicalDeviceIndirect)
 		}

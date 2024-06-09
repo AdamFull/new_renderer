@@ -27,12 +27,10 @@ namespace engine
 			FRHIHandle CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) override;
 			void DestroyTextureObject(FRHIHandle handle) override;
 			const std::unique_ptr<ITextureObject>& GetTextureObject(FRHIHandle handle) override;
-			const std::unique_ptr<ITextureObject>& GetTextureObject(FGraphHandle handle) override;
 
 			FRHIHandle CreateBufferObject(const std::string& name, const FBufferCreateInfo& buffer_ci) override;
 			void DestroyBufferObject(FRHIHandle handle) override;
 			const std::unique_ptr<IBufferObject>& GetBufferObject(FRHIHandle handle) override;
-			const std::unique_ptr<IBufferObject>& GetBufferObject(FGraphHandle handle) override;
 
 			FRHIHandle CreateShaderObject(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci) override;
 			FRHIHandle CreateShaderObject(const std::string& name, const FComputeShaderCreateInfo& shader_ci) override;
