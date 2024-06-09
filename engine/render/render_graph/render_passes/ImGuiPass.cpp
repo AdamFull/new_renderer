@@ -210,15 +210,14 @@ void CImGuiPass::Build(const FPassBuildInfo& build_info)
 	IRenderPass::Build(build_info);
 }
 
-void CImGuiPass::_Render(const FRenderFrameInfo& frame_info)
+void CImGuiPass::Update(f32 dt)
 {
 	auto& render_context = m_pRenderInterface->GetRenderContext();
 	auto resolution = render_context->GetScreenRenderRect();
 
 	ImGuiIO& io = ImGui::GetIO();
-
 	io.DisplaySize = ImVec2(resolution.size.x, resolution.size.y);
-	io.DeltaTime = frame_info.deltaTime;
+	io.DeltaTime = dt;
 
 	ImGui::NewFrame();
 
@@ -227,35 +226,43 @@ void CImGuiPass::_Render(const FRenderFrameInfo& frame_info)
 
 	ImGui::Render();
 
+	ImDrawData* draw_data = ImGui::GetDrawData();
+	auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_vertexHandler);
+
+	m_lastVertex = 0;
+	m_lastIndex = 0;
+
+	// Update vertices
+	if (draw_data->TotalVtxCount > 0)
+	{
+		// Upload vertex/index data into a single contiguous GPU buffer
+		for (int n = 0; n < draw_data->CmdListsCount; n++)
+		{
+			const ImDrawList* cmd_list = draw_data->CmdLists[n];
+			vertex_handler->AddVertices(cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size, sizeof(ImDrawVert));
+			vertex_handler->AddIndices(cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size, sizeof(ImDrawIdx));
+
+			m_lastVertex += cmd_list->VtxBuffer.Size;
+			m_lastIndex += cmd_list->IdxBuffer.Size;
+		}
+	}
+
+	// Upload vertices
+	vertex_handler->Allocate();
+}
+
+void CImGuiPass::_Render(const FRenderFrameInfo& frame_info)
+{
+	auto& render_context = m_pRenderInterface->GetRenderContext();
+	auto resolution = render_context->GetScreenRenderRect();
+
+	ImGuiIO& io = ImGui::GetIO();
+
 	// Render ingui
 	{
 		ImDrawData* draw_data = ImGui::GetDrawData();
-
-		auto resolution = render_context->GetScreenRenderRect();
 		auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_vertexHandler);
 		auto& shader = m_pRenderInterface->GetShaderObject(m_shader);
-
-		u32 last_vertex{ 0u };
-		u32 last_index{ 0u };
-
-		// Update vertices
-		if (draw_data->TotalVtxCount > 0)
-		{
-			// Upload vertex/index data into a single contiguous GPU buffer
-			for (int n = 0; n < draw_data->CmdListsCount; n++)
-			{
-				const ImDrawList* cmd_list = draw_data->CmdLists[n];
-				vertex_handler->AddVertices(cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size, sizeof(ImDrawVert));
-				vertex_handler->AddIndices(cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size, sizeof(ImDrawIdx));
-
-				last_vertex += cmd_list->VtxBuffer.Size;
-				last_index += cmd_list->IdxBuffer.Size;
-			}
-		}
-
-		// Upload vertices
-		vertex_handler->Allocate();
-		//render_context->UploadBuffers();
 
 		// Bind pipeline:
 		shader->Bind(m_queue);
@@ -352,8 +359,8 @@ void CImGuiPass::_Render(const FRenderFrameInfo& frame_info)
 					}
 
 					FGeometryDrawInfo draw_info{};
-					draw_info.lastVertex = last_vertex;
-					draw_info.lastIndex = last_index;
+					draw_info.lastVertex = m_lastVertex;
+					draw_info.lastIndex = m_lastIndex;
 
 					auto& range = draw_info.ranges.emplace_back();
 					range.beginIndex = pcmd->IdxOffset + global_idx_offset;

@@ -29,6 +29,7 @@ namespace engine
 			virtual void Build(const FPassBuildInfo& build_info) = 0;
 			virtual void PostLoad() {}
 
+			virtual void Update(f32 dt) {}
 			virtual void Execute(f32 dt);
 
 			virtual bool CanExecute();

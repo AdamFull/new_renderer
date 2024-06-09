@@ -16,6 +16,7 @@ namespace engine
 
 			void Init(const FRenderPassCreateInfo& pass_ci) override;
 			void Build(const FPassBuildInfo& build_info) override;
+			void Update(f32 dt) override;
 		private:
 			void _Render(const FRenderFrameInfo& frame_info) override;
 
@@ -31,6 +32,7 @@ namespace engine
 			FRHIHandle m_vertexHandler{};
 			FRHIHandle m_fontTexture{ INVALID_HANDLE };
 
+			u32 m_lastVertex{}, m_lastIndex{};
 			f32 m_lastMouseX{}, m_lastMouseY{};
 		};
 	}

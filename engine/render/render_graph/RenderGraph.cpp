@@ -1068,7 +1068,15 @@ void CRenderGraph::PostLoad()
 
 void CRenderGraph::Update(f32 dt)
 {
+	for (u64 pass_index : m_vPassExecutionQueue)
+	{
+		auto& pass = m_vRenderPasses[pass_index];
 
+		if (!pass->CanExecute())
+			continue;
+
+		pass->Update(dt);
+	}
 }
 
 void CRenderGraph::Execute(f32 dt)
