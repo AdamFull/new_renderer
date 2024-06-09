@@ -411,8 +411,8 @@ namespace engine
 			virtual const FRenderResource& GetRenderResource(const std::string& name) const = 0;
 			virtual const FRenderResource& GetRenderResource(FGraphHandle resource_id) const = 0;
 
-			virtual FRenderGraphNode AddRenderPass(const std::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci) = 0;
-			virtual FRenderGraphNode AddRenderPass(const std::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci) = 0;
+			virtual u64 AddRenderPass(const std::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci) = 0;
+			virtual u64 AddRenderPass(const std::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci) = 0;
 
 			virtual void Build() = 0;
 			virtual void Update(f32 dt) = 0;

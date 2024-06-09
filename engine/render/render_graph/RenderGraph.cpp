@@ -441,6 +441,13 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		buffer_ci.count = 256;
 		m_pRenderInterface->CreateBufferObject("histogram_buffer", buffer_ci);
 	}
+
+	// Some test things
+	{
+		FTextureCreateInfo texture_ci = MakeTexture2DCI(EApiDataFormat::eRGBA16_SFLOAT, ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eStorage);
+		texture_ci.SetSizeScale(1.0f);
+		m_pRenderInterface->CreateTextureObject("frequency_target", texture_ci);
+	}
 	
 	// Present image targets
 	SetBackbufferResourceName("present_target");
@@ -567,6 +574,17 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		pass_ci.AddReadResource("GeometryBatches");
 		pass_ci.AddReadResource("IndexedDrawIndirectBuffer");
 	
+		AddRenderPass("compute_materials_pass", pass_ci);
+	}
+
+	// Tile classification
+	{
+		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:tile_freq_classification");
+		pass_ci.AddWorkgroupSizeByRT("hdr0", true);
+
+		pass_ci.BindWriteResource("write_color", "frequency_target");
+		pass_ci.BindReadResource("sampler_color", "hdr0");
+
 		AddRenderPass("compute_materials_pass", pass_ci);
 	}
 	
@@ -830,7 +848,8 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		FRenderConfigRenderCreateInfo pass_ci = makeGraphicsPassCI(ERenderingType::eFullscreen, EQueueTypeFlagBits::eGraphics, "testing:screenspace");
 		pass_ci.FlipFiewport();
 	
-		pass_ci.BindReadResource("input_image", final_target);
+		pass_ci.BindReadResource("input_image_2", final_target);
+		pass_ci.BindReadResource("input_image", "frequency_target");
 		pass_ci.AddWriteResource("present_target");
 	
 		AddRenderPass("finalize_image_pass", pass_ci);

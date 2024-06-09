@@ -91,6 +91,15 @@
 					shader_name: "upsample_comp";
 				}
 			];
+		},
+		{
+			name: "tile_freq_classification";
+			sources: [
+				{
+					type: "compute";
+					shader_name: "tile_freq_classification_comp";
+				}
+			];
 		}
 	];
 
@@ -133,6 +142,10 @@
 		},
 		{ 
 			shader_name: "upsample";
+			pattern: "default_pattern";
+		},
+		{
+			shader_name: "tile_freq_classification";
 			pattern: "default_pattern";
 		}
 	];
