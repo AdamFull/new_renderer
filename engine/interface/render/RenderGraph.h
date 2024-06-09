@@ -89,6 +89,14 @@ namespace engine
 			eDebug
 		};
 
+		enum class ERenderGraphNodeType : u32
+		{
+			eRenderPass,
+			eDebugZoneStart,
+			eDebugZoneEnd,
+			eRenderLayer
+		};
+
 
 		inline constexpr ERenderResourceGroupType packResourceGroup(ERenderResourceAccessFlagBits access_flag, ERenderResourceGroupFlagBits group_flag)
 		{
@@ -230,6 +238,12 @@ namespace engine
 		{
 			std::string name{};
 			u32 subresource{ ~0u };
+		};
+
+		struct FRenderGraphNode
+		{
+			ERenderGraphNodeType type{};
+			u64 id{ ~0ull };
 		};
 
 		struct FRenderConfigPassCreateInfo
@@ -397,8 +411,8 @@ namespace engine
 			virtual const FRenderResource& GetRenderResource(const std::string& name) const = 0;
 			virtual const FRenderResource& GetRenderResource(FGraphHandle resource_id) const = 0;
 
-			virtual u64 AddRenderPass(const std::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci) = 0;
-			virtual u64 AddRenderPass(const std::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci) = 0;
+			virtual FRenderGraphNode AddRenderPass(const std::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci) = 0;
+			virtual FRenderGraphNode AddRenderPass(const std::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci) = 0;
 
 			virtual void Build() = 0;
 			virtual void Update(f32 dt) = 0;
