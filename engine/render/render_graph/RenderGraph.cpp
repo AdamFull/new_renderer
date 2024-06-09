@@ -699,6 +699,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		}
 	
 		// Compute bloom
+		if (bloom_enabled)
 		{
 			RENDER_DEBUG_MARKER_ZONE(compute_bloom, 0xffff33ff);
 	
@@ -836,11 +837,11 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	}
 
 	// ImGui pass
-	//{
-	//	FRenderConfigRenderCreateInfo pass_ci = makeGraphicsPassCI(ERenderingType::eImGui, EQueueTypeFlagBits::eGraphics, "testing:imgui");
-	//	pass_ci.AddWriteResource("present_target");
-	//	AddRenderPass("imgui_pass", pass_ci);
-	//}
+	{
+		FRenderConfigRenderCreateInfo pass_ci = makeGraphicsPassCI(ERenderingType::eImGui, EQueueTypeFlagBits::eGraphics, "testing:imgui");
+		pass_ci.AddWriteResource("present_target");
+		AddRenderPass("imgui_pass", pass_ci);
+	}
 }
 
 

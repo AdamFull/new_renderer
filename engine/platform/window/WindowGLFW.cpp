@@ -57,15 +57,17 @@ namespace key_converter
         case GLFW_KEY_9: return EKeyCode::eKey9;
         case GLFW_KEY_0: return EKeyCode::eKey0;
             
-        case GLFW_KEY_ENTER: return EKeyCode::eKyeReturn;
-        case GLFW_KEY_ESCAPE: return EKeyCode::eKyeEscape;
-        case GLFW_KEY_BACKSPACE: return EKeyCode::eKyeBackspace;
-        case GLFW_KEY_TAB: return EKeyCode::eKyeTab;
+        case GLFW_KEY_ENTER: return EKeyCode::eKeyReturn;
+        case GLFW_KEY_ESCAPE: return EKeyCode::eKeyEscape;
+        case GLFW_KEY_BACKSPACE: return EKeyCode::eKeyBackspace;
+        case GLFW_KEY_TAB: return EKeyCode::eKeyTab;
         case GLFW_KEY_SPACE: return EKeyCode::eKeySpace;
         case GLFW_KEY_LEFT_CONTROL: return EKeyCode::eKeyLCtrl;
         case GLFW_KEY_RIGHT_CONTROL: return EKeyCode::eKeyRCtrl;
         case GLFW_KEY_LEFT_SHIFT: return EKeyCode::eKeyLShift;
         case GLFW_KEY_RIGHT_SHIFT: return EKeyCode::eKeyRShift;
+        case GLFW_KEY_LEFT_ALT: return EKeyCode::eKeyLAlt;
+        case GLFW_KEY_RIGHT_ALT: return EKeyCode::eKeyRAlt;
             
         case GLFW_KEY_MINUS: return EKeyCode::eKeyMinus;
         case GLFW_KEY_EQUAL: return EKeyCode::eKeyEquals;
