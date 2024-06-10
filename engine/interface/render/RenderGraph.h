@@ -33,7 +33,9 @@ namespace engine
 			eStorageTexture = 1 << 2,
 			eBlitTexture = 1 << 3,
 			eStorage = 1 << 4,
-			eBackbuffer = 1 << 5
+			eIndirectArgument = 1 << 5,
+			eIndirectCount = 1 << 6,
+			eBackbuffer = 1 << 7
 		};
 		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ERenderResourceGroupFlags, ERenderResourceGroupFlagBits)
 
@@ -50,6 +52,10 @@ namespace engine
 			eStorageWrite				= utl::pack_u32_16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceGroupFlagBits::eStorage)),
 			eBackbufferRead				= utl::pack_u32_16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eRead), utl::cast<u16>(ERenderResourceGroupFlagBits::eBackbuffer)),
 			eBackbufferWrite			= utl::pack_u32_16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceGroupFlagBits::eBackbuffer)),
+			eIndirectArgumentRead		= utl::pack_u32_16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eRead), utl::cast<u16>(ERenderResourceGroupFlagBits::eIndirectArgument)),
+			eIndirectArgumentWrite		= utl::pack_u32_16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceGroupFlagBits::eIndirectArgument)),
+			eIndirectCountRead			= utl::pack_u32_16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eRead), utl::cast<u16>(ERenderResourceGroupFlagBits::eIndirectCount)),
+			eIndirectCountWrite			= utl::pack_u32_16x2(utl::cast<u16>(ERenderResourceAccessFlagBits::eWrite), utl::cast<u16>(ERenderResourceGroupFlagBits::eIndirectCount)),
 		};
 
 		enum class ERenderResourceDependencyBarrierType : u32
@@ -284,8 +290,8 @@ namespace engine
 			void AddWriteResource(const std::string& resource_name, const glm::vec4 clear_color = glm::vec4(0.f, 0.f, 0.f, 1.f)) { otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(std::make_pair(resource_name, clear_color)); }
 			void AddReadResource(const std::string& resource_name) { otherResources[ERenderResourceAccessFlagBits::eRead].emplace_back(resource_name, glm::vec4(0.f, 0.f, 0.f, 1.f)); }
 
-			void SetIndirectArgumentBuffer(const std::string& resource_name, u64 offset) { argumentBuffer = resource_name; argumentOffset = offset; }
-			void SetIndirectCountBuffer(const std::string& resource_name, u64 offset) { countBuffer = resource_name; countOffset = offset; }
+			void BindIndirectArgumentBuffer(const std::string& resource_name, u64 offset) { argumentBuffer = resource_name; argumentOffset = offset; }
+			void BindIndirectCountBuffer(const std::string& resource_name, u64 offset) { countBuffer = resource_name; countOffset = offset; }
 		};
 
 		struct FRenderConfigRenderCreateInfo : public FRenderConfigPassCreateInfo

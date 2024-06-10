@@ -451,7 +451,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 
 	{
 		FBufferCreateInfo buffer_ci{};
-		buffer_ci.flags = EBufferUsageFlagBits::eStorageBuffer;
+		buffer_ci.flags = EBufferUsageFlagBits::eIndirectBuffer;
 		buffer_ci.size = 12;
 		buffer_ci.count = 3;
 		m_pRenderInterface->CreateBufferObject("clusterized_command_buffer", buffer_ci);
@@ -617,26 +617,27 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		AddRenderPass("compute_materials_pass", pass_ci);
 	}
 
-	//{
-	//	FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:classification_debug:HIGH_FREQUENCY");
-	//
-	//	pass_ci.BindWriteResource("write_color", "hdr1");
-	//	pass_ci.BindReadResource("sampler_color", "hdr0");
-	//	pass_ci.BindReadResource("tiles", "high_frequency_tiles");
-	//
-	//	AddRenderPass("classification_debug_hf_pass", pass_ci);
-	//}
-	//
-	//{
-	//	FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:classification_debug");
-	//
-	//	pass_ci.BindWriteResource("write_color", "hdr1");
-	//	pass_ci.BindReadResource("sampler_color", "hdr0");
-	//	pass_ci.BindReadResource("tiles", "low_frequency_tiles");
-	//	pass_ci.SetIndirectArgumentBuffer("clusterized_command_buffer", 0);
-	//
-	//	AddRenderPass("classification_debug_lf_pass", pass_ci);
-	//}
+	{
+		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:classification_debug:HIGH_FREQUENCY");
+	
+		pass_ci.BindWriteResource("write_color", "hdr1");
+		pass_ci.BindReadResource("sampler_color", "hdr0");
+		pass_ci.BindReadResource("tiles", "high_frequency_tiles");
+		pass_ci.BindIndirectArgumentBuffer("clusterized_command_buffer", 0);
+
+		AddRenderPass("classification_debug_hf_pass", pass_ci);
+	}
+	
+	{
+		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:classification_debug");
+	
+		pass_ci.BindWriteResource("write_color", "hdr1");
+		pass_ci.BindReadResource("sampler_color", "hdr0");
+		pass_ci.BindReadResource("tiles", "low_frequency_tiles");
+		pass_ci.BindIndirectArgumentBuffer("clusterized_command_buffer", 12);
+	
+		AddRenderPass("classification_debug_lf_pass", pass_ci);
+	}
 	
 	// Compute static motion vectors (can be started in another queue)
 	{
@@ -645,7 +646,6 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	
 		pass_ci.BindWriteResource("write_color", "motion_vectors_target");
 		pass_ci.BindReadResource("depth_texture", "zbuffer_depth_target");
-		pass_ci.SetIndirectArgumentBuffer("clusterized_command_buffer", 12);
 	
 		AddRenderPass("generate_motion_vectors_pass", pass_ci);
 	}
@@ -662,8 +662,8 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	//	AddRenderPass("compute_smaa_pass", pass_ci);
 	//}
 	
-	auto input_target = "hdr0";
-	auto output_target = "hdr1";
+	auto input_target = "hdr1";
+	auto output_target = "hdr0";
 	
 	// TemporalAA
 	//if (enable_taa)
@@ -1237,6 +1237,35 @@ void CRenderGraph::ApplyRenderPassResources(u64 pass_index, const FRenderConfigP
 			pass_ci->resources[resource_key].emplace_back(FRenderResourceBinding{ resource_id, ~0u });
 			pass_ci->clearValues.emplace(render_resource.handle, clear_values);
 		}
+	}
+
+	// Indirect buffers
+	if (!raw_pass_ci->argumentBuffer.empty())
+	{
+		auto resource_id = GetRenderRersourceId(raw_pass_ci->argumentBuffer);
+		auto& render_resource = GetRenderResource(resource_id);
+
+		if (render_resource.type != ERenderResourceTypeFlagBits::eBuffer)
+			log_error("[Render Graph] Non buffer resource is set as indirect buffer.");
+
+		// Indirect beffer is read here in any case
+		auto resource_key = packResourceGroup(ERenderResourceAccessFlagBits::eRead, ERenderResourceGroupFlagBits::eIndirectArgument);
+		pass_ci->resources[resource_key].emplace_back(FRenderResourceBinding{ resource_id, utl::cast<u32>(raw_pass_ci->argumentOffset) });
+		AapplySingleRenderResourceDependencies(resource_id, ERenderResourceAccessFlagBits::eRead, pass_index, pass_ci->queue);
+	}
+
+	if (!raw_pass_ci->countBuffer.empty())
+	{
+		auto resource_id = GetRenderRersourceId(raw_pass_ci->countBuffer);
+		auto& render_resource = GetRenderResource(resource_id);
+
+		if (render_resource.type != ERenderResourceTypeFlagBits::eBuffer)
+			log_error("[Render Graph] Non buffer resource is set as indirect buffer.");
+
+		// Indirect beffer is read here in any case
+		auto resource_key = packResourceGroup(ERenderResourceAccessFlagBits::eRead, ERenderResourceGroupFlagBits::eIndirectCount);
+		pass_ci->resources[resource_key].emplace_back(FRenderResourceBinding{ resource_id, utl::cast<u32>(raw_pass_ci->countOffset) });
+		AapplySingleRenderResourceDependencies(resource_id, ERenderResourceAccessFlagBits::eRead, pass_index, pass_ci->queue);
 	}
 
 	ApplyMultiRenderResourceDependencies(pass_index, pass_ci->queue, pass_ci->resources);
