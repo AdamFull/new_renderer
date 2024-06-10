@@ -81,12 +81,11 @@ void CComputeCubemapPass::_Execute(const FComputeFrameInfo& frame_info)
 			shader->Bind(m_queue);
 			shader->BindResources(m_queue);
 
-			auto& dispatch_info = m_vDispatchGroups[0];
-			dispatch_info.globalSizes.x = info.width;
-			dispatch_info.globalSizes.y = info.height;
-			dispatch_info.shaderHandle = shader->Handle();
+			m_dispatchGroup.globalSizes.x = info.width;
+			m_dispatchGroup.globalSizes.y = info.height;
+			m_dispatchGroup.shaderHandle = shader->Handle();
 			
-			render_context->Dispatch(m_queue, dispatch_info, 0);
+			render_context->Dispatch(m_queue, m_dispatchGroup, 0);
 		}
 	}
 }

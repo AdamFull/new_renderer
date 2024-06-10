@@ -113,8 +113,8 @@ namespace engine
 			virtual void InitShaderResources(const std::unique_ptr<IShaderObject>& shader) override;
 			virtual void BindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt) override;
 		protected:
-			utl::vector<FDispatch2Info> m_vDispatchGroups{};
-			utl::vector<FComputeDispatchGroupInfo> m_vDispatchInfos{};
+			FDispatch2Info m_dispatchGroup{};
+			FComputeDispatchGroupInfo m_dispatchInfo{};
 		};
 	}
 }

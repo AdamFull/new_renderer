@@ -172,11 +172,13 @@ namespace engine
 
 			const FRenderGraphAttachmentOperationInfo& getAttachmentInfo(FGraphHandle resource_index) const
 			{
+				static FRenderGraphAttachmentOperationInfo attachment_info{};
+
 				auto found = attachments.find(resource_index);
 				if (found != attachments.end())
 					return found->second;
 
-				return {};
+				return attachment_info;
 			}
 		};
 
@@ -220,9 +222,10 @@ namespace engine
 
 		struct FDispatchIndirectInfo
 		{
-			FAPIHandle shaderHandle{};
-			bool divideByLocals{ true };
-			utl::vector<FDispatch2Group> groups{};
+			FAPIHandle argumentBuffer;
+			u64 argumentOffset;
+			FAPIHandle countBuffer;
+			u64 countOffset;
 		};
 
 		struct FRenderResource
@@ -238,6 +241,12 @@ namespace engine
 		{
 			std::string name{};
 			u32 subresource{ ~0u };
+		};
+
+		struct FRenderConfigIndirectDispatchArgs
+		{
+			std::string buffer;
+			u64 offset{};
 		};
 
 		struct FRenderGraphNode
@@ -257,6 +266,11 @@ namespace engine
 			utl::hash_map<ERenderResourceAccessFlagBits, utl::hash_map<std::string, FRenderConfigResourceBindingDescription>> resourceBindings{};
 			utl::hash_map<ERenderResourceAccessFlagBits, utl::vector<std::pair<std::string, FClearValues>>> otherResources{};
 
+			std::string argumentBuffer{};
+			u64 argumentOffset{ 0ull };
+			std::string countBuffer{};
+			u64 countOffset{ 0ull };
+
 			virtual void ClearResource() 
 			{ 
 				resourceBindings.clear(); 
@@ -269,6 +283,9 @@ namespace engine
 			void BindReadResource(const std::string& binding_point, const std::string& resource_name, u32 subresource) { resourceBindings[ERenderResourceAccessFlagBits::eRead].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, subresource }); }
 			void AddWriteResource(const std::string& resource_name, const glm::vec4 clear_color = glm::vec4(0.f, 0.f, 0.f, 1.f)) { otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(std::make_pair(resource_name, clear_color)); }
 			void AddReadResource(const std::string& resource_name) { otherResources[ERenderResourceAccessFlagBits::eRead].emplace_back(resource_name, glm::vec4(0.f, 0.f, 0.f, 1.f)); }
+
+			void SetIndirectArgumentBuffer(const std::string& resource_name, u64 offset) { argumentBuffer = resource_name; argumentOffset = offset; }
+			void SetIndirectCountBuffer(const std::string& resource_name, u64 offset) { countBuffer = resource_name; countOffset = offset; }
 		};
 
 		struct FRenderConfigRenderCreateInfo : public FRenderConfigPassCreateInfo
@@ -323,41 +340,37 @@ namespace engine
 		struct FRenderConfigComputeCreateInfo : public FRenderConfigPassCreateInfo
 		{
 			EComputeType type{};
-			utl::vector<FRenderConfigComputeDispatchGroupInfo> groupInfos{};
+			FRenderConfigComputeDispatchGroupInfo groupInfo{};
 
 			void ClearResource() override
 			{
 				FRenderConfigPassCreateInfo::ClearResource();
-				groupInfos.clear();
 			}
 
-			void AddWorkgroupSizeByBuffer(const std::string& target, bool divide_by_locals)
+			void SetWorkgroupSizeByBuffer(const std::string& target, bool divide_by_locals)
 			{
-				auto& group_info = groupInfos.emplace_back();
-				group_info.type = ERenderingSizeType::eFromBuffer;
-				group_info.target = target;
-				group_info.divideByLocals = divide_by_locals;
+				groupInfo.type = ERenderingSizeType::eFromBuffer;
+				groupInfo.target = target;
+				groupInfo.divideByLocals = divide_by_locals;
 			}
 
-			void AddWorkgroupSizeByRT(const std::string& target, u32 subresource, bool divide_by_locals)
+			void SetWorkgroupSizeByRT(const std::string& target, u32 subresource, bool divide_by_locals)
 			{
-				auto& group_info = groupInfos.emplace_back();
-				group_info.type = ERenderingSizeType::eFromRenderTarget;
-				group_info.target = target;
-				group_info.divideByLocals = divide_by_locals;
-				group_info.subresource = subresource;
+				groupInfo.type = ERenderingSizeType::eFromRenderTarget;
+				groupInfo.target = target;
+				groupInfo.divideByLocals = divide_by_locals;
+				groupInfo.subresource = subresource;
 			}
 
-			void AddWorkgroupSizeByRT(const std::string& target, bool divide_by_locals) { AddWorkgroupSizeByRT(target, ~0u, divide_by_locals); }
+			void SetWorkgroupSizeByRT(const std::string& target, bool divide_by_locals) { SetWorkgroupSizeByRT(target, ~0u, divide_by_locals); }
 
-			void AddWorkgroupSizeManual(u32 width, u32 height, u32 depth, bool divide_by_locals)
+			void SetWorkgroupSizeManual(u32 width, u32 height, u32 depth, bool divide_by_locals)
 			{
-				auto& group_info = groupInfos.emplace_back();
-				group_info.type = ERenderingSizeType::eManual;
-				group_info.width = width;
-				group_info.height = height;
-				group_info.depth = depth;
-				group_info.divideByLocals = divide_by_locals;
+				groupInfo.type = ERenderingSizeType::eManual;
+				groupInfo.width = width;
+				groupInfo.height = height;
+				groupInfo.depth = depth;
+				groupInfo.divideByLocals = divide_by_locals;
 			}
 		};
 
@@ -391,7 +404,7 @@ namespace engine
 
 		struct FComputePassCreateInfo : public FPassCreateInfo
 		{
-			utl::vector<FComputeDispatchGroupInfo> groupInfos{};
+			FComputeDispatchGroupInfo groupInfo{};
 		};
 
 		class IRenderGraph

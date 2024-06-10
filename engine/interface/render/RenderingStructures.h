@@ -32,7 +32,8 @@ namespace engine
 		{
 			eFromRenderTarget = 1,
 			eFromBuffer = 2,
-			eManual = 3
+			eManual = 3,
+			eIndirect = 4
 		};
 	}
 }

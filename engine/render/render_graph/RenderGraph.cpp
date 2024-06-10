@@ -448,6 +448,23 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		texture_ci.SetSizeScale(1.0f);
 		m_pRenderInterface->CreateTextureObject("frequency_target", texture_ci);
 	}
+
+	{
+		FBufferCreateInfo buffer_ci{};
+		buffer_ci.flags = EBufferUsageFlagBits::eStorageBuffer;
+		buffer_ci.size = 12;
+		buffer_ci.count = 3;
+		m_pRenderInterface->CreateBufferObject("clusterized_command_buffer", buffer_ci);
+	}
+
+	{
+		FBufferCreateInfo buffer_ci{};
+		buffer_ci.flags = EBufferUsageFlagBits::eIndirectBuffer;
+		buffer_ci.size = 4;
+		buffer_ci.count = ceil(1922 / 8) * ceil(1082 / 8);
+		m_pRenderInterface->CreateBufferObject("high_frequency_tiles", buffer_ci);
+		m_pRenderInterface->CreateBufferObject("low_frequency_tiles", buffer_ci);
+	}
 	
 	// Present image targets
 	SetBackbufferResourceName("present_target");
@@ -457,7 +474,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "lighting:brgflut_generator");
 		pass_ci.oneTime = true;
 	
-		pass_ci.AddWorkgroupSizeByRT("brdf_lut_target", true);
+		pass_ci.SetWorkgroupSizeByRT("brdf_lut_target", true);
 		pass_ci.BindWriteResource("out_color", "brdf_lut_target");
 	
 		AddRenderPass("generate_brdflut", pass_ci);
@@ -467,7 +484,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "lighting:irradiancecube_generator");
 		pass_ci.oneTime = true;
 	
-		pass_ci.AddWorkgroupSizeByRT("irradiance_cube_target", true);
+		pass_ci.SetWorkgroupSizeByRT("irradiance_cube_target", true);
 		pass_ci.BindWriteResource("out_color", "irradiance_cube_target");
 		pass_ci.BindReadResource("sampler_color", "CasualDay4K");
 	
@@ -478,7 +495,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eCubemap, EQueueTypeFlagBits::eGraphics, "lighting:prefilteredmap_generator");
 		pass_ci.oneTime = true;
 	
-		pass_ci.AddWorkgroupSizeByRT("prefiltered_cube_target", true);
+		pass_ci.SetWorkgroupSizeByRT("prefiltered_cube_target", true);
 		pass_ci.BindWriteResource("out_color", "prefiltered_cube_target");
 		pass_ci.BindReadResource("sampler_color", "CasualDay4K");
 	
@@ -489,7 +506,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	{
 		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "culling:clear_counters");
 	
-		pass_ci.AddWorkgroupSizeByBuffer("IndirectCountBuffer", true);
+		pass_ci.SetWorkgroupSizeByBuffer("IndirectCountBuffer", true);
 		pass_ci.AddWriteResource("IndirectCountBuffer");
 	
 		AddRenderPass("clear_counters_pass", pass_ci);
@@ -557,7 +574,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	
 	{
 		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eGeometry, EQueueTypeFlagBits::eGraphics, "visibilitybuffer:shade");
-		pass_ci.AddWorkgroupSizeByRT("hdr0", true);
+		pass_ci.SetWorkgroupSizeByRT("hdr0", true);
 	
 		pass_ci.BindWriteResource("write_color", "hdr0");
 		pass_ci.BindReadResource("prev_frame_color", "hdr0_history");
@@ -579,22 +596,56 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 
 	// Tile classification
 	{
-		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:tile_freq_classification");
-		pass_ci.AddWorkgroupSizeByRT("hdr0", true);
+		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:clear_tiles");
+		pass_ci.SetWorkgroupSizeByBuffer("clusterized_command_buffer", true);
 
-		pass_ci.BindWriteResource("write_color", "frequency_target");
+		pass_ci.BindWriteResource("indirect_buffer", "clusterized_command_buffer");
+
+		AddRenderPass("clear_tiles_pass", pass_ci);
+	}
+
+	{
+		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:tile_freq_classification");
+		pass_ci.SetWorkgroupSizeByRT("hdr0", true);
+
+		//pass_ci.BindWriteResource("write_color", "frequency_target");
+		pass_ci.BindWriteResource("indirect_buffer", "clusterized_command_buffer");
+		pass_ci.BindWriteResource("high_freq", "high_frequency_tiles");
+		pass_ci.BindWriteResource("low_freq", "low_frequency_tiles");
 		pass_ci.BindReadResource("sampler_color", "hdr0");
 
 		AddRenderPass("compute_materials_pass", pass_ci);
 	}
+
+	//{
+	//	FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:classification_debug:HIGH_FREQUENCY");
+	//
+	//	pass_ci.BindWriteResource("write_color", "hdr1");
+	//	pass_ci.BindReadResource("sampler_color", "hdr0");
+	//	pass_ci.BindReadResource("tiles", "high_frequency_tiles");
+	//
+	//	AddRenderPass("classification_debug_hf_pass", pass_ci);
+	//}
+	//
+	//{
+	//	FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:classification_debug");
+	//
+	//	pass_ci.BindWriteResource("write_color", "hdr1");
+	//	pass_ci.BindReadResource("sampler_color", "hdr0");
+	//	pass_ci.BindReadResource("tiles", "low_frequency_tiles");
+	//	pass_ci.SetIndirectArgumentBuffer("clusterized_command_buffer", 0);
+	//
+	//	AddRenderPass("classification_debug_lf_pass", pass_ci);
+	//}
 	
 	// Compute static motion vectors (can be started in another queue)
 	{
 		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, use_low_precision_velocity ? "postprocess:generate_motion_vectors:LOW_PRECISION_VELOCITY" : "postprocess:generate_motion_vectors");
-		pass_ci.AddWorkgroupSizeByRT("zbuffer_depth_target", true);
+		pass_ci.SetWorkgroupSizeByRT("zbuffer_depth_target", true);
 	
 		pass_ci.BindWriteResource("write_color", "motion_vectors_target");
 		pass_ci.BindReadResource("depth_texture", "zbuffer_depth_target");
+		pass_ci.SetIndirectArgumentBuffer("clusterized_command_buffer", 12);
 	
 		AddRenderPass("generate_motion_vectors_pass", pass_ci);
 	}
@@ -602,7 +653,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	// Anti - alias step
 	//{
 	//	FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:filmic_smaa_tu2x");
-	//	pass_ci.AddWorkgroupSizeByRT("hdr1", true);
+	//	pass_ci.SetWorkgroupSizeByRT("hdr1", true);
 	//
 	//	pass_ci.BindWriteResource("write_color", "hdr1");
 	//	pass_ci.BindWriteResource("current_frame", "hdr0");
@@ -618,7 +669,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	//if (enable_taa)
 	//{
 	//	FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:compute_temporal_aa");
-	//	pass_ci.AddWorkgroupSizeByRT(next_target, true);
+	//	pass_ci.SetWorkgroupSizeByRT(next_target, true);
 	//
 	//	pass_ci.BindWriteResource("write_color", next_target);
 	//	pass_ci.BindWriteResource("current_color", last_target);
@@ -634,7 +685,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	// Copy history
 	{
 		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "utility:copy_compute");
-		pass_ci.AddWorkgroupSizeByRT(input_target, true);
+		pass_ci.SetWorkgroupSizeByRT(input_target, true);
 	
 		pass_ci.BindReadResource("sampler_color", input_target);
 		pass_ci.BindWriteResource("write_color", "hdr0_history");
@@ -654,7 +705,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		if (enable_fxaa)
 		{
 			FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:apply_effect:FXAA");
-			pass_ci.AddWorkgroupSizeByRT(input_target, true);
+			pass_ci.SetWorkgroupSizeByRT(input_target, true);
 	
 			pass_ci.BindWriteResource("write_color", output_target);
 			pass_ci.BindReadResource("sampler_color", input_target);
@@ -672,7 +723,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 			// Apply motion blur
 			{
 				FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, use_low_precision_velocity ? "postprocess:apply_effect:MOTION_BLUR:LOW_PRECISION_VELOCITY" : "postprocess:apply_effect:MOTION_BLUR");
-				pass_ci.AddWorkgroupSizeByRT(input_target, true);
+				pass_ci.SetWorkgroupSizeByRT(input_target, true);
 	
 				pass_ci.BindReadResource("sampler_color", input_target);
 				pass_ci.BindReadResource("motion_vectors", "motion_vectors_target");
@@ -692,7 +743,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 			// Compute bokeh
 			{
 				FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:bokeh");
-				pass_ci.AddWorkgroupSizeByRT(input_target, true);
+				pass_ci.SetWorkgroupSizeByRT(input_target, true);
 	
 				pass_ci.BindWriteResource("write_color", "hdr0_div2");
 				pass_ci.BindReadResource("sampler_color", input_target);
@@ -703,7 +754,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 			// Apply dof
 			{
 				FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:apply_effect:DOF");
-				pass_ci.AddWorkgroupSizeByRT(input_target, true);
+				pass_ci.SetWorkgroupSizeByRT(input_target, true);
 	
 				pass_ci.BindWriteResource("write_color", output_target);
 				pass_ci.BindReadResource("sampler_color", input_target);
@@ -724,7 +775,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 			// Starting from brightness detection pass
 			{
 				FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, bloom_use_brightness ? "postprocess:brightdetect" : "utility:copy_compute");
-				pass_ci.AddWorkgroupSizeByRT("hdr0_div2", true);
+				pass_ci.SetWorkgroupSizeByRT("hdr0_div2", true);
 	
 				pass_ci.BindReadResource("sampler_color", input_target);
 				pass_ci.BindWriteResource("write_color", "hdr0_div2");
@@ -741,7 +792,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 				RENDER_DEBUG_MARKER_ZONE(downsample, 0xffff33ff);
 				for (u32 idx = 0; idx < bloom_blur_depth; ++idx)
 				{
-					pass_ci.AddWorkgroupSizeByRT("bloom_target", idx, true);
+					pass_ci.SetWorkgroupSizeByRT("bloom_target", idx, true);
 					pass_ci.BindWriteResource("write_color", "bloom_target", idx);
 	
 					AddRenderPass(std::format("downsample_pass_{}", idx), pass_ci);
@@ -760,7 +811,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 				for (u32 idx = bloom_blur_depth - 1; idx > 0; --idx)
 				{
 					FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:upsample");
-					pass_ci.AddWorkgroupSizeByRT("bloom_target", idx - 1, true);
+					pass_ci.SetWorkgroupSizeByRT("bloom_target", idx - 1, true);
 	
 					pass_ci.BindReadResource("sampler_color", "bloom_target", idx);
 					pass_ci.BindWriteResource("write_color", "bloom_target", idx - 1);
@@ -772,7 +823,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 			// Apply bloom
 			{
 				FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:apply_effect:BLOOM");
-				pass_ci.AddWorkgroupSizeByRT(output_target, true);
+				pass_ci.SetWorkgroupSizeByRT(output_target, true);
 	
 				pass_ci.BindWriteResource("write_color", output_target);
 				pass_ci.BindReadResource("sampler_color", input_target);
@@ -789,7 +840,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		if (chromatic_aberration_enabled)
 		{
 			FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:apply_effect:CHROMATIC_ABERRATION");
-			pass_ci.AddWorkgroupSizeByRT(input_target, true);
+			pass_ci.SetWorkgroupSizeByRT(input_target, true);
 	
 			pass_ci.BindWriteResource("write_color", output_target);
 			pass_ci.BindReadResource("sampler_color", input_target);
@@ -806,7 +857,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 			// Compute histogram
 			{
 				FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:compute_histogram");
-				pass_ci.AddWorkgroupSizeByRT(input_target, true);
+				pass_ci.SetWorkgroupSizeByRT(input_target, true);
 	
 				pass_ci.BindReadResource("sampler_color", input_target);
 				pass_ci.BindWriteResource("Histogram", "histogram_buffer");
@@ -817,7 +868,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 			// Compute avg screen space brightness
 			{
 				FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:compute_brightness");
-				pass_ci.AddWorkgroupSizeManual(1, 1, 1, false);
+				pass_ci.SetWorkgroupSizeManual(1, 1, 1, false);
 	
 				pass_ci .BindWriteResource("target", "avg_brightness_target");
 				pass_ci .BindReadResource("Histogram", "histogram_buffer");
@@ -828,7 +879,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 			// Apply tonemapping
 			{
 				FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:apply_effect:TONEMAP");
-				pass_ci.AddWorkgroupSizeByRT(input_target, true);
+				pass_ci.SetWorkgroupSizeByRT(input_target, true);
 	
 				pass_ci.BindWriteResource("write_color", output_target);
 				pass_ci.BindReadResource("sampler_color", input_target);
@@ -848,8 +899,8 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		FRenderConfigRenderCreateInfo pass_ci = makeGraphicsPassCI(ERenderingType::eFullscreen, EQueueTypeFlagBits::eGraphics, "testing:screenspace");
 		pass_ci.FlipFiewport();
 	
-		pass_ci.BindReadResource("input_image_2", final_target);
-		pass_ci.BindReadResource("input_image", "frequency_target");
+		pass_ci.BindReadResource("input_image", final_target);
+		//pass_ci.BindReadResource("input_image", "frequency_target");
 		pass_ci.AddWriteResource("present_target");
 	
 		AddRenderPass("finalize_image_pass", pass_ci);
@@ -998,17 +1049,13 @@ u64 CRenderGraph::AddRenderPass(const std::string& name, const FRenderConfigComp
 	else if (compute_pass_ci.type == EComputeType::eCulling)
 		new_pass = std::make_unique<CComputeCullingPass>(m_pRenderInterface);
 
-	for (const auto& group_info : compute_pass_ci.groupInfos)
-	{
-		auto& new_group_info = pass_ci.groupInfos.emplace_back();
-		new_group_info.type = group_info.type;
-		new_group_info.divideByLocals = group_info.divideByLocals;
-		new_group_info.target = GetRenderRersourceId(group_info.target);
-		new_group_info.width = group_info.width;
-		new_group_info.height = group_info.height;
-		new_group_info.depth = group_info.depth;
-		new_group_info.subresource = group_info.subresource;
-	}
+	pass_ci.groupInfo.type = compute_pass_ci.groupInfo.type;
+	pass_ci.groupInfo.divideByLocals = compute_pass_ci.groupInfo.divideByLocals;
+	pass_ci.groupInfo.target = GetRenderRersourceId(compute_pass_ci.groupInfo.target);
+	pass_ci.groupInfo.width = compute_pass_ci.groupInfo.width;
+	pass_ci.groupInfo.height = compute_pass_ci.groupInfo.height;
+	pass_ci.groupInfo.depth = compute_pass_ci.groupInfo.depth;
+	pass_ci.groupInfo.subresource = compute_pass_ci.groupInfo.subresource;
 
 	new_pass->Init(pass_ci);
 	m_vRenderPasses.emplace_back(std::move(new_pass));

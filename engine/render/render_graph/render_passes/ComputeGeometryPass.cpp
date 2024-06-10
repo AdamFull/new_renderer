@@ -86,10 +86,8 @@ void CComputeGeometryPass::_Execute(const FComputeFrameInfo& frame_info)
 
 			shader->FlushConstants(m_queue);
 
-			auto& dispatch_info = m_vDispatchGroups.front();
-			dispatch_info.shaderHandle = shader->Handle();
-
-			render_context->Dispatch(m_queue, dispatch_info, 0);
+			m_dispatchGroup.shaderHandle = shader->Handle();
+			render_context->Dispatch(m_queue, m_dispatchGroup, 0);
 		}
 	}
 }

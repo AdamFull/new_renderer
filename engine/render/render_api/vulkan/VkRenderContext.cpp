@@ -1517,7 +1517,18 @@ void CVkRenderContext::Dispatch(EQueueTypeFlagBits queue_type, const FDispatch2I
 
 void CVkRenderContext::Dispatch(EQueueTypeFlagBits queue_type, const FDispatchIndirectInfo& dispatch_info)
 {
-	
+	auto& command_buffer = getLastCommandBuffer(queue_type);
+	auto& current = command_buffer.get();
+
+	auto& argument_buffer = m_pResources->get<FVkBuffer>(dispatch_info.argumentBuffer.Get());
+
+	if (dispatch_info.countBuffer)
+	{
+		auto& argument_buffer = m_pResources->get<FVkBuffer>(dispatch_info.argumentBuffer.Get());
+		// Dispatch indirect count is not supported
+	}
+	else
+		current.dispatchIndirect(argument_buffer->handle, dispatch_info.argumentOffset);
 }
 
 FDeviceLimitations CVkRenderContext::GetDeviceLimitations()

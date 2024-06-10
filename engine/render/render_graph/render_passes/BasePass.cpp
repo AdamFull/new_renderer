@@ -248,7 +248,7 @@ void IRenderPass::BindShaderResources(const std::unique_ptr<IShaderObject>& shad
 void IComputePass::Init(const FComputePassCreateInfo& pass_ci)
 {
 	m_queue = pass_ci.queue;
-	m_vDispatchInfos = pass_ci.groupInfos;
+	m_dispatchInfo = pass_ci.groupInfo;
 	m_renderResources = pass_ci.resources;
 	m_bakedBindings = pass_ci.bindings;
 	m_bOneTime = pass_ci.oneTime;
@@ -269,45 +269,37 @@ void IComputePass::Execute(f32 dt)
 	FComputeFrameInfo frame_info{};
 	frame_info.deltaTime = dt;
 
-	if (m_vDispatchGroups.size() != m_vDispatchInfos.size())
-		m_vDispatchGroups.resize(m_vDispatchInfos.size());
-
-	for (u64 idx = 0ull; idx < m_vDispatchInfos.size(); ++idx)
+	if (m_dispatchInfo.type == ERenderingSizeType::eFromRenderTarget)
 	{
-		const auto& group_info = m_vDispatchInfos[idx];
-		auto& dispatch_info = m_vDispatchGroups[idx];
-
-		if (group_info.type == ERenderingSizeType::eFromRenderTarget)
+		if (m_dispatchInfo.target)
 		{
-			if (group_info.target)
-			{
-				auto resource = render_graph->GetRenderResource(group_info.target);
-				auto texture_view = render_context->GetTextureView(resource.handle);
-				dispatch_info.globalSizes.x = texture_view.width;
-				dispatch_info.globalSizes.y = texture_view.height;
-				dispatch_info.globalSizes.z = 1u;
-			}
+			auto resource = render_graph->GetRenderResource(m_dispatchInfo.target);
+			auto texture_view = render_context->GetTextureView(resource.handle);
+			m_dispatchGroup.globalSizes.x = texture_view.width;
+			m_dispatchGroup.globalSizes.y = texture_view.height;
+			m_dispatchGroup.globalSizes.z = 1u;
 		}
-		else if (group_info.type == ERenderingSizeType::eFromBuffer)
-		{
-			auto resource = render_graph->GetRenderResource(group_info.target);
-			auto buffer_view = render_context->GetBufferView(resource.handle);
-
-			dispatch_info.globalSizes.x = buffer_view.alignedSize / buffer_view.elementCount;
-			dispatch_info.globalSizes.y = 1u;
-			dispatch_info.globalSizes.z = 1u;
-		}
-		else if (group_info.type == ERenderingSizeType::eManual)
-		{
-			dispatch_info.globalSizes.x = group_info.width;
-			dispatch_info.globalSizes.y = group_info.height;
-			dispatch_info.globalSizes.z = group_info.depth;
-		}
-
-		caclulate_size_for_mip_level(dispatch_info.globalSizes.x, dispatch_info.globalSizes.y, group_info.subresource);
-
-		dispatch_info.divideByLocals = group_info.divideByLocals;
 	}
+	else if (m_dispatchInfo.type == ERenderingSizeType::eFromBuffer)
+	{
+		auto resource = render_graph->GetRenderResource(m_dispatchInfo.target);
+		auto buffer_view = render_context->GetBufferView(resource.handle);
+
+		m_dispatchGroup.globalSizes.x = buffer_view.alignedSize / buffer_view.elementCount;
+		m_dispatchGroup.globalSizes.y = 1u;
+		m_dispatchGroup.globalSizes.z = 1u;
+	}
+	else if (m_dispatchInfo.type == ERenderingSizeType::eManual)
+	{
+		m_dispatchGroup.globalSizes.x = m_dispatchInfo.width;
+		m_dispatchGroup.globalSizes.y = m_dispatchInfo.height;
+		m_dispatchGroup.globalSizes.z = m_dispatchInfo.depth;
+	}
+
+	caclulate_size_for_mip_level(m_dispatchGroup.globalSizes.x, m_dispatchGroup.globalSizes.y, m_dispatchInfo.subresource);
+
+	m_dispatchGroup.divideByLocals = m_dispatchInfo.divideByLocals;
+
 
 	FBeginComputeInfo compute_begin_info{};
 	compute_begin_info.queue = m_queue;

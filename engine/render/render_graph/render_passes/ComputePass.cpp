@@ -42,14 +42,6 @@ void CComputePass::_Execute(const FComputeFrameInfo& frame_info)
 	shader->Bind(m_queue);
 	shader->BindResources(m_queue);
 
-	for (u64 dispatch_idx = 0ull; dispatch_idx < m_vDispatchGroups.size(); ++dispatch_idx)
-	{
-		auto& dispatch_info = m_vDispatchGroups[dispatch_idx];
-		dispatch_info.shaderHandle = shader->Handle();
-
-		render_context->Dispatch(m_queue, dispatch_info, dispatch_idx);
-
-		if (m_vDispatchGroups.size() > 0 && dispatch_idx < m_vDispatchGroups.size() - 1)
-			render_context->PushC2CBarrier(m_queue);
-	}
+	m_dispatchGroup.shaderHandle = shader->Handle();
+	render_context->Dispatch(m_queue, m_dispatchGroup, 0);
 }

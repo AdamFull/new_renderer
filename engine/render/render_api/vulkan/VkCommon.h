@@ -102,6 +102,8 @@ namespace engine
 				case EVertexPrimitiveTopology::eTriangleStrip: return vk::PrimitiveTopology::eTriangleStrip; break;
 				case EVertexPrimitiveTopology::eTriangleFan: return vk::PrimitiveTopology::eTriangleFan; break;
 				}
+
+				return vk::PrimitiveTopology::ePointList;
 			}
 
 			inline vk::ShaderStageFlagBits get_shader_stage(u32 mask)
@@ -504,6 +506,8 @@ namespace engine
 				case EDepthCompareOp::eGreaterOrEqual: return vk::CompareOp::eGreaterOrEqual; break;
 				case EDepthCompareOp::eAlways: return vk::CompareOp::eAlways; break;
 				}
+
+				return vk::CompareOp::eNever;
 			}
 		}
 	}
