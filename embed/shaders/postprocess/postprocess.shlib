@@ -100,6 +100,24 @@
 					shader_name: "tile_freq_classification_comp";
 				}
 			];
+		},
+		{
+			name: "clear_tiles";
+			sources: [
+				{
+					type: "compute";
+					shader_name: "clear_tiles_comp";
+				}
+			];
+		},
+		{
+			name: "classification_debug";
+			sources: [
+				{
+					type: "compute";
+					shader_name: "classification_debug_comp";
+				}
+			];
 		}
 	];
 
@@ -147,6 +165,17 @@
 		{
 			shader_name: "tile_freq_classification";
 			pattern: "default_pattern";
+		},
+		{
+			shader_name: "clear_tiles";
+			pattern: "default_pattern";
+		},
+		{
+			shader_name: "classification_debug";
+			permutations: [
+				{ defines: []; },
+				{ defines: ["HIGH_FREQUENCY"]; }
+			];
 		}
 	];
 }

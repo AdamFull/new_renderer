@@ -24,6 +24,10 @@
 #define REGISTER_RW_BUFFER_PTR(BufferTypeName, DataType, Alignment) typedef uint64_t BufferTypeName
 #define REGISTER_RO_BUFFER_PTR(BufferTypeName, DataType, Alignment) typedef uint64_t BufferTypeName
 #define REGISTER_WO_BUFFER_PTR(BufferTypeName, DataType, Alignment) typedef uint64_t BufferTypeName
+
+#define REGISTER_RW_STORAGE_BUFFER(Set, Binding, BufferTypeName, DataType, Name) typedef uint64_t BufferTypeName
+#define REGISTER_RO_STORAGE_BUFFER(Set, Binding, BufferTypeName, DataType, Name) typedef uint64_t BufferTypeName
+#define REGISTER_WO_STORAGE_BUFFER(Set, Binding, BufferTypeName, DataType, Name) typedef uint64_t BufferTypeName
 #else // __cplusplus
 
 #define INVALID_HANDLE ~0u
@@ -45,6 +49,10 @@
 #define REGISTER_RW_BUFFER_PTR(BufferTypeName, DataType, Alignment) layout(std430, buffer_reference, buffer_reference_align = Alignment) buffer BufferTypeName { DataType data[]; };
 #define REGISTER_RO_BUFFER_PTR(BufferTypeName, DataType, Alignment) layout(std430, buffer_reference, buffer_reference_align = Alignment) readonly buffer BufferTypeName { DataType data[]; };
 #define REGISTER_WO_BUFFER_PTR(BufferTypeName, DataType, Alignment) layout(std430, buffer_reference, buffer_reference_align = Alignment) writeonly buffer BufferTypeName { DataType data[]; };
+
+#define REGISTER_RW_STORAGE_BUFFER(Set, Binding, BufferTypeName, DataType, Name) layout(std430, set = Set, binding = Binding) buffer BufferTypeName { DataType data[]; } Name;
+#define REGISTER_RO_STORAGE_BUFFER(Set, Binding, BufferTypeName, DataType, Name) layout(std430, set = Set, binding = Binding) readonly buffer BufferTypeName { DataType data[]; } Name;
+#define REGISTER_WO_STORAGE_BUFFER(Set, Binding, BufferTypeName, DataType, Name) layout(std430, set = Set, binding = Binding) writeonly buffer BufferTypeName { DataType data[]; } Name;
 #else // __glslang
 #define CONSTANT static const
 

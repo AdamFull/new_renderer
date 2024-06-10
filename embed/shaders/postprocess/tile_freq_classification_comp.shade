@@ -29,18 +29,14 @@
 
 		layout(local_size_x = TILE_SIZE, local_size_y = TILE_SIZE) in;
 
-		layout(set = 1, binding = 0) uniform writeonly image2D write_color;
-		layout(set = 1, binding = 1) uniform sampler2D sampler_color;
+		layout(set = 1, binding = 0) uniform sampler2D sampler_color;
+
+		REGISTER_WO_STORAGE_BUFFER(1, 1, indirect_buffer, uint32_t, indirect_cmds);
+		REGISTER_WO_STORAGE_BUFFER(1, 2, high_freq, uint32_t, high_freq_tiles);
+		REGISTER_WO_STORAGE_BUFFER(1, 3, low_freq, uint32_t, low_freq_tiles);
 
 		shared float shared_luminance_sum;
 		shared float shared_luminance_squared_sum;
-		shared bool is_high_frequency_tile;
-
-		void GroupMemoryBarrierWithGroupSync()
-		{
-			groupMemoryBarrier();
-			barrier();
-		}
 
 		float luminance(vec3 color)
 		{
@@ -49,7 +45,7 @@
 
 		void main() 
 		{
-			uvec2 image_size = imageSize(write_color);
+			uvec2 image_size = textureSize(sampler_color, 0);
 
 			uvec2 px = gl_GlobalInvocationID.xy;
 			vec2 uv;
@@ -66,26 +62,33 @@
 			    shared_luminance_squared_sum = 0.0;
 			}
 
-			GroupMemoryBarrierWithGroupSync();
+			barrier();
 
 			atomicAdd(shared_luminance_sum, luma);
 			atomicAdd(shared_luminance_squared_sum, luma * luma);
 
-			GroupMemoryBarrierWithGroupSync();
+			barrier();
 
-			float average_luminance = shared_luminance_sum / GROUP_SIZE;
-			float luminance_variance = (shared_luminance_squared_sum / GROUP_SIZE) / (average_luminance * average_luminance) - 1.0;
+			if (gl_LocalInvocationID.x == 0 && gl_LocalInvocationID.y == 0)
+			{
+				float average_luminance = shared_luminance_sum / GROUP_SIZE;
+				float luminance_variance = (shared_luminance_squared_sum / GROUP_SIZE) / (average_luminance * average_luminance) - 1.0;
 
-			// Determine if the tile is high-frequency based on the luminance variance
-			is_high_frequency_tile = luminance_variance > 0.04; // You can adjust the threshold as needed
-			
-			vec4 out_color = vec4(luminance_variance, luminance_variance, luminance_variance, 1.0);
-			if(is_high_frequency_tile)
-				out_color = vec4(1.0, 0, 0, 0);
-			else
-				out_color = vec4(0, 1.0, 0, 0);
+				// Determine if the tile is high-frequency based on the luminance variance
+				bool is_high_frequency_tile = luminance_variance > 0.04; // You can adjust the threshold as needed
 
-			imageStore(write_color, ivec2(px), out_color);
+				const uint tile = (gl_WorkGroupID.x & 0xFFFF) | ((gl_WorkGroupID.y & 0xFFFF) << 16);
+				if(is_high_frequency_tile)
+				{
+					uint idx = atomicAdd(indirect_cmds.data[0], 1);
+					high_freq_tiles.data[idx] = tile;
+				}
+				else
+				{
+					uint idx = atomicAdd(indirect_cmds.data[3], 1);
+					low_freq_tiles.data[idx] = tile;
+				}
+			}
 		}
 	""";
 }

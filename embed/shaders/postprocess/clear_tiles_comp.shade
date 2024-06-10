@@ -1,0 +1,44 @@
+{
+	version: 460;
+
+	enable_extensions: [
+		"GL_ARB_separate_shader_objects",
+		"GL_ARB_shading_language_420pack",
+		"GL_ARB_shader_draw_parameters",
+		"GL_EXT_nonuniform_qualifier",
+		"GL_EXT_shader_8bit_storage",
+		"GL_EXT_shader_16bit_storage"
+	];
+
+	definitions: ["MESH_DATA", "CULLING_DATA"];
+
+	require_extensions: [
+		"GL_EXT_buffer_reference",
+		"GL_EXT_shader_explicit_arithmetic_types",
+		"GL_EXT_shader_explicit_arithmetic_types_int8"
+	];
+
+	includes: ["shader_inputs"];
+
+	code: 
+	"""
+		#define GROUP_SIZE 1
+
+		REGISTER_WO_STORAGE_BUFFER(1, 0, indirect_buffer, uint32_t, indirect_cmds);
+
+		layout(local_size_x = GROUP_SIZE) in;
+
+		void main() 
+		{
+			uint global_draw_index = gl_GlobalInvocationID.x;
+
+			if (global_draw_index >= 6) 
+				return;
+
+			if(bool(global_draw_index % 3))
+				indirect_cmds.data[global_draw_index] = 1;
+			else
+				indirect_cmds.data[global_draw_index] = 0;
+		}
+	""";
+}
