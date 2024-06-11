@@ -1,8 +1,7 @@
 #pragma once
 
 #include "BaseStructures.h"
-#include <standart_library.h>
-#include <container/flags.h>
+#include "BaseEnumerators.h"
 #include <utils/hash.h>
 
 namespace engine

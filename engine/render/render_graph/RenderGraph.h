@@ -5,6 +5,8 @@
 #include <engine/interface/render/RenderInterface.h>
 #include <engine/interface/EngineVariable.h>
 
+#include <reactive/function.h>
+
 #include "render_passes/BasePass.h"
 
 namespace engine
@@ -43,6 +45,16 @@ namespace engine
 			u64 AddRenderPass(const std::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci) override;
 			u64 AddRenderPass(const std::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci) override;
 
+			void AddRenderNode(const std::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci);
+			void AddRenderNode(const std::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci);
+			void AddDynamicConditionNode(utl::reactive::function<u64()>&& condition, std::unique_ptr<IRenderGraphNode>&& pass, std::unique_ptr<IRenderGraphNode>&& fail);
+			void AddGroupNode(utl::vector<std::unique_ptr<IRenderGraphNode>>&& passes, const std::string& name = "unknown", u32 color = 0xFFFF00FF);
+
+			std::unique_ptr<IRenderGraphNode> CreateRenderNode(const std::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci);
+			std::unique_ptr<IRenderGraphNode> CreateRenderNode(const std::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci);
+			std::unique_ptr<IRenderGraphNode> CreateDynamicConditionNode(utl::reactive::function<u64()>&& condition, std::unique_ptr<IRenderGraphNode>&& pass, std::unique_ptr<IRenderGraphNode>&& fail);
+			std::unique_ptr<IRenderGraphNode> CreateGroupNode(utl::vector<std::unique_ptr<IRenderGraphNode>>&& passes, const std::string& name = "unknown", u32 color = 0xFFFF00FF);
+
 			void Build() override;
 			void Update(f32 dt) override;
 			void Execute(f32 dt) override;
@@ -75,6 +87,7 @@ namespace engine
 			utl::vector<std::unique_ptr<IBasePass>> m_vRenderPasses{};
 			utl::hash_map<std::string, u64> m_nameToPass{};
 		private:
+			utl::vector<std::unique_ptr<IRenderGraphNode>> m_vGraphNodes{};
 			std::unique_ptr<IVariableBlock> m_pVariableBlock{};
 			utl::hash_map<u64, utl::vector<FResourceBarrierInfo>> m_perPassResourceBarriers{};
 
