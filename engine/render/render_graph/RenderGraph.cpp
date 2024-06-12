@@ -22,6 +22,8 @@
 #include "render_passes/ClearPass.h"
 #include "render_passes/ImGuiPass.h"
 
+#include "GraphNodes.h"
+
 #include "render_passes/BeginDebugMarker.h"
 #include "render_passes/EndDebugMarker.h"
 
@@ -319,6 +321,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	
 	bool use_low_precision_velocity{ true };
 	
+	bool tonemap_enabled{ true };
 	bool enable_fxaa{ false };
 	bool enable_taa{ false };
 	bool motion_blur_enabled{ false };
@@ -477,7 +480,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		pass_ci.SetWorkgroupSizeByRT("brdf_lut_target", true);
 		pass_ci.BindWriteResource("out_color", "brdf_lut_target");
 	
-		AddRenderPass("generate_brdflut", pass_ci);
+		AddRenderNode("generate_brdflut", pass_ci);
 	}
 	
 	{
@@ -488,7 +491,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		pass_ci.BindWriteResource("out_color", "irradiance_cube_target");
 		pass_ci.BindReadResource("sampler_color", "CasualDay4K");
 	
-		AddRenderPass("generate_irradiance_cube", pass_ci);
+		AddRenderNode("generate_irradiance_cube", pass_ci);
 	}
 	
 	{
@@ -499,7 +502,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		pass_ci.BindWriteResource("out_color", "prefiltered_cube_target");
 		pass_ci.BindReadResource("sampler_color", "CasualDay4K");
 	
-		AddRenderPass("generate_prefiltered_cube", pass_ci);
+		AddRenderNode("generate_prefiltered_cube", pass_ci);
 	}
 	
 	// Culling(culling is temporary)
@@ -509,7 +512,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		pass_ci.SetWorkgroupSizeByBuffer("IndirectCountBuffer", true);
 		pass_ci.AddWriteResource("IndirectCountBuffer");
 	
-		AddRenderPass("clear_counters_pass", pass_ci);
+		AddRenderNode("clear_counters_pass", pass_ci);
 	}
 	
 	{
@@ -519,7 +522,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		pass_ci.AddWriteResource("IndexedDrawIndirectBuffer");
 		pass_ci.AddWriteResource("IndirectCountBuffer");
 	
-		AddRenderPass("gpu_culling_pass", pass_ci);
+		AddRenderNode("gpu_culling_pass", pass_ci);
 	}
 	
 	// Shadow passes
@@ -531,7 +534,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		pass_ci.AddReadResource("IndexedDrawIndirectBuffer");
 		pass_ci.AddReadResource("IndirectCountBuffer");
 	
-		AddRenderPass("cascaded_shadow_map_pass", pass_ci);
+		AddRenderNode("cascaded_shadow_map_pass", pass_ci);
 	}
 	
 	{
@@ -542,7 +545,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		pass_ci.AddReadResource("IndexedDrawIndirectBuffer");
 		pass_ci.AddReadResource("IndirectCountBuffer");
 	
-		AddRenderPass("spot_shadow_map_pass", pass_ci);
+		AddRenderNode("spot_shadow_map_pass", pass_ci);
 	}
 	
 	{
@@ -553,7 +556,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		pass_ci.AddReadResource("IndexedDrawIndirectBuffer");
 		pass_ci.AddReadResource("IndirectCountBuffer");
 	
-		AddRenderPass("omni_shadow_map_pass", pass_ci);
+		AddRenderNode("omni_shadow_map_pass", pass_ci);
 	}
 	
 	// visibility buffer write
@@ -569,7 +572,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		pass_ci.AddReadResource("IndexedDrawIndirectBuffer");
 		pass_ci.AddReadResource("IndirectCountBuffer");
 	
-		AddRenderPass("visibility_buffer_write_pass", pass_ci);
+		AddRenderNode("visibility_buffer_write_pass", pass_ci);
 	}
 	
 	{
@@ -591,53 +594,53 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		pass_ci.AddReadResource("GeometryBatches");
 		pass_ci.AddReadResource("IndexedDrawIndirectBuffer");
 	
-		AddRenderPass("compute_materials_pass", pass_ci);
+		AddRenderNode("compute_materials_pass", pass_ci);
 	}
 
 	// Tile classification
-	{
-		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:clear_tiles");
-		pass_ci.SetWorkgroupSizeByBuffer("clusterized_command_buffer", true);
-
-		pass_ci.BindWriteResource("indirect_buffer", "clusterized_command_buffer");
-
-		AddRenderPass("clear_tiles_pass", pass_ci);
-	}
-
-	{
-		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:tile_freq_classification");
-		pass_ci.SetWorkgroupSizeByRT("hdr0", true);
-
-		//pass_ci.BindWriteResource("write_color", "frequency_target");
-		pass_ci.BindWriteResource("indirect_buffer", "clusterized_command_buffer");
-		pass_ci.BindWriteResource("high_freq", "high_frequency_tiles");
-		pass_ci.BindWriteResource("low_freq", "low_frequency_tiles");
-		pass_ci.BindReadResource("sampler_color", "hdr0");
-
-		AddRenderPass("compute_materials_pass", pass_ci);
-	}
-
-	{
-		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:classification_debug:HIGH_FREQUENCY");
-	
-		pass_ci.BindWriteResource("write_color", "hdr1");
-		pass_ci.BindReadResource("sampler_color", "hdr0");
-		pass_ci.BindReadResource("tiles", "high_frequency_tiles");
-		pass_ci.BindIndirectArgumentBuffer("clusterized_command_buffer", 0);
-
-		AddRenderPass("classification_debug_hf_pass", pass_ci);
-	}
-	
-	{
-		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:classification_debug");
-	
-		pass_ci.BindWriteResource("write_color", "hdr1");
-		pass_ci.BindReadResource("sampler_color", "hdr0");
-		pass_ci.BindReadResource("tiles", "low_frequency_tiles");
-		pass_ci.BindIndirectArgumentBuffer("clusterized_command_buffer", 12);
-	
-		AddRenderPass("classification_debug_lf_pass", pass_ci);
-	}
+	//{
+	//	FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:clear_tiles");
+	//	pass_ci.SetWorkgroupSizeByBuffer("clusterized_command_buffer", true);
+	//
+	//	pass_ci.BindWriteResource("indirect_buffer", "clusterized_command_buffer");
+	//
+	//	AddRenderPass("clear_tiles_pass", pass_ci);
+	//}
+	//
+	//{
+	//	FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:tile_freq_classification");
+	//	pass_ci.SetWorkgroupSizeByRT("hdr0", true);
+	//
+	//	//pass_ci.BindWriteResource("write_color", "frequency_target");
+	//	pass_ci.BindWriteResource("indirect_buffer", "clusterized_command_buffer");
+	//	pass_ci.BindWriteResource("high_freq", "high_frequency_tiles");
+	//	pass_ci.BindWriteResource("low_freq", "low_frequency_tiles");
+	//	pass_ci.BindReadResource("sampler_color", "hdr0");
+	//
+	//	AddRenderPass("compute_materials_pass", pass_ci);
+	//}
+	//
+	//{
+	//	FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:classification_debug:HIGH_FREQUENCY");
+	//
+	//	pass_ci.BindWriteResource("write_color", "hdr1");
+	//	pass_ci.BindReadResource("sampler_color", "hdr0");
+	//	pass_ci.BindReadResource("tiles", "high_frequency_tiles");
+	//	pass_ci.BindIndirectArgumentBuffer("clusterized_command_buffer", 0);
+	//
+	//	AddRenderPass("classification_debug_hf_pass", pass_ci);
+	//}
+	//
+	//{
+	//	FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:classification_debug");
+	//
+	//	pass_ci.BindWriteResource("write_color", "hdr1");
+	//	pass_ci.BindReadResource("sampler_color", "hdr0");
+	//	pass_ci.BindReadResource("tiles", "low_frequency_tiles");
+	//	pass_ci.BindIndirectArgumentBuffer("clusterized_command_buffer", 12);
+	//
+	//	AddRenderPass("classification_debug_lf_pass", pass_ci);
+	//}
 	
 	// Compute static motion vectors (can be started in another queue)
 	{
@@ -647,7 +650,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		pass_ci.BindWriteResource("write_color", "motion_vectors_target");
 		pass_ci.BindReadResource("depth_texture", "zbuffer_depth_target");
 	
-		AddRenderPass("generate_motion_vectors_pass", pass_ci);
+		AddRenderNode("generate_motion_vectors_pass", pass_ci);
 	}
 	
 	// Anti - alias step
@@ -662,8 +665,8 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	//	AddRenderPass("compute_smaa_pass", pass_ci);
 	//}
 	
-	auto input_target = "hdr1";
-	auto output_target = "hdr0";
+	auto input_target = "hdr0";
+	auto output_target = "hdr1";
 	
 	// TemporalAA
 	//if (enable_taa)
@@ -690,7 +693,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		pass_ci.BindReadResource("sampler_color", input_target);
 		pass_ci.BindWriteResource("write_color", "hdr0_history");
 	
-		AddRenderPass("copy_final_color_pass", pass_ci);
+		AddRenderNode("copy_final_color_pass", pass_ci);
 	}
 	
 	std::string final_target = input_target;
@@ -702,21 +705,20 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		RENDER_DEBUG_MARKER_ZONE(postprocess, 0xffff33ff);
 	
 		// FXAA 
-		if (enable_fxaa)
 		{
 			FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:apply_effect:FXAA");
 			pass_ci.SetWorkgroupSizeByRT(input_target, true);
 	
 			pass_ci.BindWriteResource("write_color", output_target);
 			pass_ci.BindReadResource("sampler_color", input_target);
+
+			AddDynamicConditionNode([enable_fxaa]() { return enable_fxaa; }, CreateRenderNode("apply_fxaa", pass_ci), nullptr);
 	
-			AddRenderPass("apply_fxaa", pass_ci);
-	
-			SWAP_COUNT(input_target, output_target);
+			if(enable_fxaa)
+				SWAP_COUNT(input_target, output_target);
 		}
 	
 		// Compute motion blur
-		if (motion_blur_enabled)
 		{
 			RENDER_DEBUG_MARKER_ZONE(compute_motion_blur, 0xffff33ff);
 	
@@ -728,17 +730,19 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 				pass_ci.BindReadResource("sampler_color", input_target);
 				pass_ci.BindReadResource("motion_vectors", "motion_vectors_target");
 				pass_ci.BindWriteResource("write_color", output_target);
-	
-				AddRenderPass("apply_motion_blur", pass_ci);
+
+				AddDynamicConditionNode([motion_blur_enabled]() { return motion_blur_enabled; }, CreateRenderNode("apply_motion_blur", pass_ci), nullptr);
 			}
 	
-			SWAP_COUNT(input_target, output_target);
+			if(motion_blur_enabled)
+				SWAP_COUNT(input_target, output_target);
 		}
 	
 		// Compute dof
-		if (depth_of_field_enabled)
 		{
 			RENDER_DEBUG_MARKER_ZONE(compute_depth_of_field, 0xffff33ff);
+
+			utl::vector<std::unique_ptr<IRenderGraphNode>> passes{};
 	
 			// Compute bokeh
 			{
@@ -748,7 +752,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 				pass_ci.BindWriteResource("write_color", "hdr0_div2");
 				pass_ci.BindReadResource("sampler_color", input_target);
 	
-				AddRenderPass("compute_bokeh_blur_pass", pass_ci);
+				passes.emplace_back(CreateRenderNode("compute_bokeh_blur_pass", pass_ci));
 			}
 	
 			// Apply dof
@@ -761,16 +765,20 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 				pass_ci.BindReadResource("depth_image", "zbuffer_depth_target");
 				pass_ci.BindReadResource("bokeh_color", "hdr0_div2");
 	
-				AddRenderPass("apply_bokeh_blur_pass", pass_ci);
+				passes.emplace_back(CreateRenderNode("apply_bokeh_blur_pass", pass_ci));
 			}
+
+			AddDynamicConditionNode([depth_of_field_enabled]() { return depth_of_field_enabled; }, CreateGroupNode(std::move(passes), "compute_depth_of_field", 0xffff33ff), nullptr);
 	
-			SWAP_COUNT(input_target, output_target);
+			if(depth_of_field_enabled)
+				SWAP_COUNT(input_target, output_target);
 		}
 	
 		// Compute bloom
-		if (bloom_enabled)
 		{
 			RENDER_DEBUG_MARKER_ZONE(compute_bloom, 0xffff33ff);
+
+			utl::vector<std::unique_ptr<IRenderGraphNode>> passes{};
 	
 			// Starting from brightness detection pass
 			{
@@ -780,11 +788,13 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 				pass_ci.BindReadResource("sampler_color", input_target);
 				pass_ci.BindWriteResource("write_color", "hdr0_div2");
 	
-				AddRenderPass("brightdetect_pass", pass_ci);
+				passes.emplace_back(CreateRenderNode("brightdetect_pass", pass_ci));
 			}
 	
 			// Begin downsampling
 			{
+				utl::vector<std::unique_ptr<IRenderGraphNode>> downsample_passes{};
+
 				FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:downsample:FIRST_PASS");
 				
 				pass_ci.BindReadResource("sampler_color", "hdr0_div2");
@@ -795,7 +805,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 					pass_ci.SetWorkgroupSizeByRT("bloom_target", idx, true);
 					pass_ci.BindWriteResource("write_color", "bloom_target", idx);
 	
-					AddRenderPass(std::format("downsample_pass_{}", idx), pass_ci);
+					downsample_passes.emplace_back(CreateRenderNode(std::format("downsample_pass_{}", idx), pass_ci));
 	
 					pass_ci.ClearResource();
 					pass_ci.BindReadResource("sampler_color", "bloom_target", idx);
@@ -803,10 +813,14 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 					if(idx == 0u)
 						pass_ci.shader = "postprocess:downsample";
 				}
+
+				passes.emplace_back(CreateGroupNode(std::move(downsample_passes), "downsample", 0xffff33ff));
 			}
 	
 			// And upsampling
 			{
+				utl::vector<std::unique_ptr<IRenderGraphNode>> upsample_passes{};
+
 				RENDER_DEBUG_MARKER_ZONE(upsample, 0xffff33ff);
 				for (u32 idx = bloom_blur_depth - 1; idx > 0; --idx)
 				{
@@ -816,8 +830,10 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 					pass_ci.BindReadResource("sampler_color", "bloom_target", idx);
 					pass_ci.BindWriteResource("write_color", "bloom_target", idx - 1);
 	
-					AddRenderPass(std::format("upnsample_pass_{}", idx), pass_ci);
+					upsample_passes.emplace_back(CreateRenderNode(std::format("upnsample_pass_{}", idx), pass_ci));
 				}
+
+				passes.emplace_back(CreateGroupNode(std::move(upsample_passes), "upsample", 0xffff33ff));
 			}
 	
 			// Apply bloom
@@ -830,14 +846,16 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 				pass_ci.BindReadResource("bloom_color", "bloom_target", 0);
 				pass_ci.BindReadResource("dirt_mask", "DirtMaskTextureExample");
 	
-				AddRenderPass("apply_bloom", pass_ci);
+				passes.emplace_back(CreateRenderNode("apply_bloom", pass_ci));
 			}
+
+			AddDynamicConditionNode([bloom_enabled]() { return bloom_enabled; }, CreateGroupNode(std::move(passes), "compute_bloom", 0xffff33ff), nullptr);
 	
-			SWAP_COUNT(input_target, output_target);
+			if(bloom_enabled)
+				SWAP_COUNT(input_target, output_target);
 		}
 	
 		// Compute chromatic aberration
-		if (chromatic_aberration_enabled)
 		{
 			FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:apply_effect:CHROMATIC_ABERRATION");
 			pass_ci.SetWorkgroupSizeByRT(input_target, true);
@@ -845,14 +863,17 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 			pass_ci.BindWriteResource("write_color", output_target);
 			pass_ci.BindReadResource("sampler_color", input_target);
 	
-			AddRenderPass("apply_chromatic_aberration_pass", pass_ci);
+			AddDynamicConditionNode([chromatic_aberration_enabled]() { return chromatic_aberration_enabled; }, CreateRenderNode("apply_chromatic_aberration_pass", pass_ci), nullptr);
 		
-			SWAP_COUNT(input_target, output_target);
+			if(chromatic_aberration_enabled)
+				SWAP_COUNT(input_target, output_target);
 		}
 	
 		// Tonemap pass
 		{
 			RENDER_DEBUG_MARKER_ZONE(compute_tonemap, 0xffff33ff);
+
+			utl::vector<std::unique_ptr<IRenderGraphNode>> passes{};
 	
 			// Compute histogram
 			{
@@ -862,7 +883,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 				pass_ci.BindReadResource("sampler_color", input_target);
 				pass_ci.BindWriteResource("Histogram", "histogram_buffer");
 	
-				AddRenderPass("compute_histogram_pass", pass_ci);
+				passes.emplace_back(CreateRenderNode("compute_histogram_pass", pass_ci));
 			}
 	
 			// Compute avg screen space brightness
@@ -873,7 +894,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 				pass_ci .BindWriteResource("target", "avg_brightness_target");
 				pass_ci .BindReadResource("Histogram", "histogram_buffer");
 	
-				AddRenderPass("compute_brightness_pass", pass_ci);
+				passes.emplace_back(CreateRenderNode("compute_brightness_pass", pass_ci));
 			}
 	
 			// Apply tonemapping
@@ -885,13 +906,16 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 				pass_ci.BindReadResource("sampler_color", input_target);
 				pass_ci.BindReadResource("avg_luminosity", "avg_brightness_target");
 	
-				AddRenderPass("apply_tonemap_pass", pass_ci);
+				passes.emplace_back(CreateRenderNode("apply_tonemap_pass", pass_ci));
 			}
+
+			AddDynamicConditionNode([tonemap_enabled]() { return tonemap_enabled; }, CreateGroupNode(std::move(passes), "compute_tonemap", 0xffff33ff), nullptr);
 	
-			SWAP_COUNT(input_target, output_target);
+			if(tonemap_enabled)
+				SWAP_COUNT(input_target, output_target);
 		}
 	
-		final_target = pass_count % 2 ? input_target : output_target;
+		final_target = pass_count % 2 ? output_target : input_target;
 	}
 	
 	// Present pass
@@ -903,14 +927,14 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		//pass_ci.BindReadResource("input_image", "frequency_target");
 		pass_ci.AddWriteResource("present_target");
 	
-		AddRenderPass("finalize_image_pass", pass_ci);
+		AddRenderNode("finalize_image_pass", pass_ci);
 	}
 
 	// ImGui pass
 	{
 		FRenderConfigRenderCreateInfo pass_ci = makeGraphicsPassCI(ERenderingType::eImGui, EQueueTypeFlagBits::eGraphics, "testing:imgui");
 		pass_ci.AddWriteResource("present_target");
-		AddRenderPass("imgui_pass", pass_ci);
+		AddRenderNode("imgui_pass", pass_ci);
 	}
 }
 
@@ -945,7 +969,6 @@ void CRenderGraph::PushDebugMarker(const std::string& name, u32 color, EQueueTyp
 	new_marker->Init(name, color, queue);
 
 	auto marker_index = m_vRenderPasses.size();
-	m_vPassExecutionQueue.emplace_back(marker_index);
 
 	m_vRenderPasses.emplace_back(std::move(new_marker));
 	m_nameToPass[name + "_begin"] = marker_index;
@@ -957,7 +980,6 @@ void CRenderGraph::PopDebugMarker(const std::string& name, EQueueTypeFlagBits qu
 	new_marker->Init(queue);
 
 	auto marker_index = m_vRenderPasses.size();
-	m_vPassExecutionQueue.emplace_back(marker_index);
 
 	m_vRenderPasses.emplace_back(std::move(new_marker));
 	m_nameToPass[name + "_end"] = marker_index;
@@ -993,7 +1015,6 @@ u64 CRenderGraph::AddRenderPass(const std::string& name, const FRenderConfigRend
 	log_info("[Render Graph] Add render pass: {}", name);
 
 	u64 pass_index = m_vRenderPasses.size();
-	m_vPassExecutionQueue.emplace_back(pass_index);
 
 	FRenderPassCreateInfo pass_ci{};
 	pass_ci.flipViewport = render_pass_ci.flipViewportState;
@@ -1034,7 +1055,6 @@ u64 CRenderGraph::AddRenderPass(const std::string& name, const FRenderConfigComp
 	log_info("[Render Graph] Add compute pass: {}", name);
 
 	u64 pass_index = m_vRenderPasses.size();
-	m_vPassExecutionQueue.emplace_back(pass_index);
 
 	FComputePassCreateInfo pass_ci{};
 	ApplyRenderPassResources(pass_index, &compute_pass_ci, &pass_ci);
@@ -1062,6 +1082,48 @@ u64 CRenderGraph::AddRenderPass(const std::string& name, const FRenderConfigComp
 	m_nameToPass[name] = pass_index;
 
 	return pass_index;
+}
+
+void CRenderGraph::AddRenderNode(const std::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci)
+{
+	m_vGraphNodes.emplace_back(CreateRenderNode(name, render_pass_ci));
+}
+
+void CRenderGraph::AddRenderNode(const std::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci)
+{
+	m_vGraphNodes.emplace_back(CreateRenderNode(name, compute_pass_ci));
+}
+
+void CRenderGraph::AddDynamicConditionNode(utl::reactive::function<u64()>&& condition, std::unique_ptr<IRenderGraphNode>&& pass, std::unique_ptr<IRenderGraphNode>&& fail)
+{
+	m_vGraphNodes.emplace_back(CreateDynamicConditionNode(std::move(condition), std::move(pass), std::move(fail)));
+}
+
+void CRenderGraph::AddGroupNode(utl::vector<std::unique_ptr<IRenderGraphNode>>&& passes, const std::string& name, u32 color)
+{
+	m_vGraphNodes.emplace_back(CreateGroupNode(std::move(passes), name, color));
+}
+
+std::unique_ptr<IRenderGraphNode> CRenderGraph::CreateRenderNode(const std::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci)
+{
+	auto pass_index = AddRenderPass(name, render_pass_ci);
+	return std::make_unique<CRenderNode>(pass_index);
+}
+
+std::unique_ptr<IRenderGraphNode> CRenderGraph::CreateRenderNode(const std::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci)
+{
+	auto pass_index = AddRenderPass(name, compute_pass_ci);
+	return std::make_unique<CRenderNode>(pass_index);
+}
+
+std::unique_ptr<IRenderGraphNode> CRenderGraph::CreateDynamicConditionNode(utl::reactive::function<u64()>&& condition, std::unique_ptr<IRenderGraphNode>&& pass, std::unique_ptr<IRenderGraphNode>&& fail)
+{
+	return std::make_unique<CDynamicConditionNode>(std::move(condition), std::move(pass), std::move(fail));
+}
+
+std::unique_ptr<IRenderGraphNode> CRenderGraph::CreateGroupNode(utl::vector<std::unique_ptr<IRenderGraphNode>>&& passes, const std::string& name, u32 color)
+{
+	return std::make_unique<CGroupNode>(std::move(passes), name, color);
 }
 
 template <class _Ty, class _KTy>
@@ -1093,6 +1155,8 @@ void CRenderGraph::Build()
 		return;
 	}
 
+	for (auto& node : m_vGraphNodes)
+		node->Traverse(m_vPassExecutionQueue);
 
 	utl::hash_map<u64, FPassBuildInfo> build_infos;
 	GenerateResourceBarriers(build_infos, true);
@@ -1134,6 +1198,11 @@ void CRenderGraph::PostLoad()
 
 void CRenderGraph::Update(f32 dt)
 {
+	m_vPassExecutionQueue.clear();
+
+	for (auto& node : m_vGraphNodes)
+		node->Traverse(m_vPassExecutionQueue);
+
 	for (u64 pass_index : m_vPassExecutionQueue)
 	{
 		auto& pass = m_vRenderPasses[pass_index];
@@ -1404,8 +1473,6 @@ void CRenderGraph::GenerateResourceBarriers(utl::hash_map<u64, FPassBuildInfo>& 
 
 void CRenderGraph::TraverseDependencies(u64 current_pass_index, u64 stack_count)
 {
-	m_vPassExecutionQueue.emplace_back(current_pass_index);
-
 	auto& current_pass = m_vRenderPasses.at(current_pass_index);
 	for (const auto& [resource_group, resource_indices] : current_pass->m_renderResources)
 	{

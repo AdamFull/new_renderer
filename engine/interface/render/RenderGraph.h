@@ -413,6 +413,13 @@ namespace engine
 			FComputeDispatchGroupInfo groupInfo{};
 		};
 
+		class IRenderGraphNode
+		{
+		public:
+			virtual ~IRenderGraphNode() = default;
+			virtual void Traverse(utl::vector<u64>& passes) = 0;
+		};
+
 		class IRenderGraph
 		{
 		public:
