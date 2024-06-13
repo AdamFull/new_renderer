@@ -1383,6 +1383,7 @@ FRenderApiErrorInfo CVkRenderDevice::CreateLogicalDevice(const FRenderContextCre
 	vk10features.shaderInt16 = true;
 	vk10features.shaderStorageImageReadWithoutFormat = true;
 	vk10features.shaderStorageImageWriteWithoutFormat = true;
+	vk10features.shaderInt64 = true;
 
 	vk::DeviceCreateInfo device_ci{};
 	device_ci.queueCreateInfoCount = utl::cast<u32>(queue_create_infos.size());

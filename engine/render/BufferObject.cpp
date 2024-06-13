@@ -106,6 +106,11 @@ uint64_t CBufferObject::Address()
 	return m_virtualAddress;
 }
 
+FGPUBufferDesc CBufferObject::GetDescription()
+{
+	return { m_virtualAddress, m_elemCount };
+}
+
 void* CBufferObject::Data()
 {
 	return m_pMapped;

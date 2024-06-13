@@ -9,13 +9,13 @@
 
 		layout(std140, set = 1, binding = 4) uniform GeometryBuffers
 		{
-			RawVertexBuffer vb;
-			RawIndexBuffer ib;
-			MeshletBuffer mb; 
-			MeshletVertexRemapBuffer vrb;
-			MeshletBoundsBuffer bb;
-			MeshletTriangleBuffer tb;
-			MeshLodBuffer lb;
+			FGPUBufferDesc vb;
+			FGPUBufferDesc ib;
+			FGPUBufferDesc mb; 
+			FGPUBufferDesc vrb;
+			FGPUBufferDesc bb;
+			FGPUBufferDesc tb;
+			FGPUBufferDesc lb;
 		};
 
 		// Visbuffer structures
@@ -100,14 +100,14 @@
 			uint triVert3IndexBufferPosition = (primID * 3 + 2) + startIndex;	
 
 			// Now get vertex index from index buffer (eg, 17, 41, 32)
-			Index triVert0Index = GET_VALUE_PTR_BY_ADDRESS(ib, triVert1IndexBufferPosition);
-			Index triVert1Index = GET_VALUE_PTR_BY_ADDRESS(ib, triVert2IndexBufferPosition);
-			Index triVert2Index = GET_VALUE_PTR_BY_ADDRESS(ib, triVert3IndexBufferPosition);
+			Index triVert0Index = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(RawIndexBuffer, ib), triVert1IndexBufferPosition);
+			Index triVert1Index = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(RawIndexBuffer, ib), triVert2IndexBufferPosition); 
+			Index triVert2Index = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(RawIndexBuffer, ib), triVert3IndexBufferPosition);
 
-			// Load vertex data of the 3 control points
-			vertices[0] = GET_VALUE_PTR_BY_ADDRESS(vb, draw_command.vertexOffset + triVert0Index);
-			vertices[1] = GET_VALUE_PTR_BY_ADDRESS(vb, draw_command.vertexOffset + triVert1Index);
-			vertices[2] = GET_VALUE_PTR_BY_ADDRESS(vb, draw_command.vertexOffset + triVert2Index);
+			// Load vertex data of the 3 control points 
+			vertices[0] = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(RawVertexBuffer, vb), draw_command.vertexOffset + triVert0Index);
+			vertices[1] = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(RawVertexBuffer, vb), draw_command.vertexOffset + triVert1Index);
+			vertices[2] = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(RawVertexBuffer, vb), draw_command.vertexOffset + triVert2Index);
 
 			return vertices;
 		}

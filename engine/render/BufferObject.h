@@ -28,6 +28,7 @@ namespace engine
 
 			FAPIHandle Handle() override;
 			uint64_t Address() override;
+			FGPUBufferDesc GetDescription() override;
 
 			void* Data() override;
 

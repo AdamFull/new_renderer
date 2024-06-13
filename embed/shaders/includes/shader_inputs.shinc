@@ -31,29 +31,30 @@
 	// Bindless texture
 	layout(set = 0, binding = 3) uniform sampler2D globalTextures[];
 
-	#define GET_VALUE_PTR_BY_ADDRESS(buffer_address, index) buffer_address.data[nonuniformEXT(index)]
+	#define GET_BUFFER_POINTER(pointer_type, buffer_desc) pointer_type(buffer_desc.address)
+	#define GET_VALUE_PTR_BY_ADDRESS(buffer, index) buffer.data[nonuniformEXT(index)]
 
-	FSceneNode getSceneNode(uint index) { return GET_VALUE_PTR_BY_ADDRESS(nodeBuffer, index); }
-	FMesh getMesh(uint index) { return GET_VALUE_PTR_BY_ADDRESS(meshBuffer, index); }
-	FMaterial GetMaterial(uint index) { return GET_VALUE_PTR_BY_ADDRESS(materialBuffer, index); }
-	FLightCommit getLight(uint index) { return GET_VALUE_PTR_BY_ADDRESS(lightsBuffer, index); }
+	FSceneNode getSceneNode(uint index) { return GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(NodeBuffer, nodeBuffer), index); }
+	FMesh getMesh(uint index) { return GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(MeshBuffer, meshBuffer), index); }
+	FMaterial GetMaterial(uint index) { return GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(MaterialBuffer, materialBuffer), index); }
+	FLightCommit getLight(uint index) { return GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(Lights, lightsBuffer), index); }
 
-	FCascadedShadowCommit getCascadedShadowCommit(uint index) { return GET_VALUE_PTR_BY_ADDRESS(cascadedShadowBuffer, index); }
-	FOmniShadowCommit getOmniShadowCommit(uint index) { return GET_VALUE_PTR_BY_ADDRESS(omniShadowBuffer, index); }
-	FSpotShadowCommit getSpotShadowCommit(uint index) { return GET_VALUE_PTR_BY_ADDRESS(spotShadowBuffer, index); }
+	FCascadedShadowCommit getCascadedShadowCommit(uint index) { return GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(CascadedShadows, cascadedShadowBuffer), index); }
+	FOmniShadowCommit getOmniShadowCommit(uint index) { return GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(OmniShadows, omniShadowBuffer), index); }
+	FSpotShadowCommit getSpotShadowCommit(uint index) { return GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(SpotShadows, spotShadowBuffer), index); }
 
-	FGeometryBatch getDrawInfo(uint index) { return GET_VALUE_PTR_BY_ADDRESS(drawInfoBuffer, index); }
-	FGeometryBatch getRawDrawInfo(uint index) { return GET_VALUE_PTR_BY_ADDRESS(rawDrawInfoBuffer, index); }
+	FGeometryBatch getDrawInfo(uint index) { return GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(DrawInfoBuffer, drawInfoBuffer), index); }
+	FGeometryBatch getRawDrawInfo(uint index) { return GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(DrawInfoBuffer, rawDrawInfoBuffer), index); }
 
-	vec4 getFrustumSide(uint index) { return GET_VALUE_PTR_BY_ADDRESS(frustumSidesBuffer, index); }
+	vec4 getFrustumSide(uint index) { return GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(FrustumSidesBuffer, frustumSidesBuffer), index); }
 
-	FDrawIndexedIndirectData getDrawIndexedCommand(uint index) { return GET_VALUE_PTR_BY_ADDRESS(indirectCommandBuffer, index); }
-	uint32_t getDrawCount(uint index) { return GET_VALUE_PTR_BY_ADDRESS(indirectCountBuffer, index); }
+	FDrawIndexedIndirectData getDrawIndexedCommand(uint index) { return GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(IndirectIndexedComands, indirectCommandBuffer), index); }
+	uint32_t getDrawCount(uint index) { return GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(IndirectCountBuffer, indirectCountBuffer), index); }
 
-	uint32_t getTextureRemapIndex(uint index) { return GET_VALUE_PTR_BY_ADDRESS(textureRemapBuffer, index); }
-	FCamera GetCamera(uint index) { return GET_VALUE_PTR_BY_ADDRESS(cameraBuffer, index); }
+	uint32_t getTextureRemapIndex(uint index) { return GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(TextureBindingRemap, textureRemapBuffer), index); }
+	FCamera GetCamera(uint index) { return GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(CameraBuffer, cameraBuffer), index); }
 
-	mat4 getMatrixById(uint global_offset, uint local_offset) { return GET_VALUE_PTR_BY_ADDRESS(matrixBuffer, global_offset + local_offset); }
+	mat4 getMatrixById(uint global_offset, uint local_offset) { return GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(MatrixBuffer, matrixBuffer), global_offset + local_offset); }
 
 	mat4 getModelMatrix(uint global_offset) { return getMatrixById(global_offset, model_matrix_offset); }
 	mat4 getOldModelMatrix(uint global_offset) { return getMatrixById(global_offset, old_model_matrix_offset); }

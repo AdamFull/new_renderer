@@ -37,12 +37,12 @@
 
 		layout(std140, set = 1, binding = 1) uniform GeometryBuffers
 		{
-			RawVertexBuffer vb;
-			RawIndexBuffer ib;
-			MeshletBuffer mb; 
-			MeshletVertexRemapBuffer vrb;
-			MeshletBoundsBuffer bb;
-			MeshletTriangleBuffer tb;
+			FGPUBufferDesc vb;
+			FGPUBufferDesc ib;
+			FGPUBufferDesc mb; 
+			FGPUBufferDesc vrb;
+			FGPUBufferDesc bb;
+			FGPUBufferDesc tb;
 		} gb;
 
 		shared uint32_t s_outMeshletsCount;

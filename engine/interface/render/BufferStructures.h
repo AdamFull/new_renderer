@@ -83,6 +83,7 @@ namespace engine
 
 			virtual FAPIHandle Handle() = 0;
 			virtual uint64_t Address() = 0;
+			virtual FGPUBufferDesc GetDescription() = 0;
 
 			virtual void* Data() = 0;
 		};

@@ -21,13 +21,10 @@
 #define MATRIX3 glm::mat3
 #define MATRIX4 glm::mat4
 
-#define REGISTER_RW_BUFFER_PTR(BufferTypeName, DataType, Alignment) typedef uint64_t BufferTypeName
-#define REGISTER_RO_BUFFER_PTR(BufferTypeName, DataType, Alignment) typedef uint64_t BufferTypeName
-#define REGISTER_WO_BUFFER_PTR(BufferTypeName, DataType, Alignment) typedef uint64_t BufferTypeName
+#define REGISTER_RW_BUFFER_PTR(BufferTypeName, DataType, Alignment)
+#define REGISTER_RO_BUFFER_PTR(BufferTypeName, DataType, Alignment)
+#define REGISTER_WO_BUFFER_PTR(BufferTypeName, DataType, Alignment)
 
-#define REGISTER_RW_STORAGE_BUFFER(Set, Binding, BufferTypeName, DataType, Name) typedef uint64_t BufferTypeName
-#define REGISTER_RO_STORAGE_BUFFER(Set, Binding, BufferTypeName, DataType, Name) typedef uint64_t BufferTypeName
-#define REGISTER_WO_STORAGE_BUFFER(Set, Binding, BufferTypeName, DataType, Name) typedef uint64_t BufferTypeName
 #else // __cplusplus
 
 #define INVALID_HANDLE ~0u
@@ -307,6 +304,12 @@ namespace engine {
 			}
 		};
 #endif
+
+		struct FGPUBufferDesc
+		{
+			uint64_t address;
+			uint64_t size;
+		};
 
 		struct FCamera
 		{
@@ -599,7 +602,7 @@ namespace engine {
 		REGISTER_RO_BUFFER_PTR(SpotShadows, FSpotShadowCommit, 8);
 
 		// Vertex buffer specific data
-		REGISTER_RO_BUFFER_PTR(RawVertexBuffer, FRawVertex, 8);
+		REGISTER_RO_BUFFER_PTR(RawVertexBuffer, FRawVertex, 8); 
 		REGISTER_RO_BUFFER_PTR(RawIndexBuffer, Index, 4);
 		REGISTER_RO_BUFFER_PTR(MeshletBuffer, FMeshlet, 8);
 		REGISTER_RO_BUFFER_PTR(MeshletVertexRemapBuffer, uint32_t, 4);
@@ -627,30 +630,30 @@ namespace engine {
 		layout(std140, set = 0, binding = 1) uniform GlobalBufferReferences
 #endif
 		{
-			NodeBuffer nodeBuffer;
-			MatrixBuffer matrixBuffer;
-			MeshBuffer meshBuffer;
+			FGPUBufferDesc nodeBuffer;
+			FGPUBufferDesc matrixBuffer;
+			FGPUBufferDesc meshBuffer;
 
-			MaterialBuffer materialBuffer;
+			FGPUBufferDesc materialBuffer;
 		
-			Lights lightsBuffer;
+			FGPUBufferDesc lightsBuffer;
 		
-			CascadedShadows cascadedShadowBuffer;
-			OmniShadows omniShadowBuffer;
-			SpotShadows spotShadowBuffer;
+			FGPUBufferDesc cascadedShadowBuffer;
+			FGPUBufferDesc omniShadowBuffer;
+			FGPUBufferDesc spotShadowBuffer;
 		
-			DrawInfoBuffer drawInfoBuffer;
-			DrawInfoBuffer rawDrawInfoBuffer;
+			FGPUBufferDesc drawInfoBuffer;
+			FGPUBufferDesc rawDrawInfoBuffer;
 
-			ClusterInfoBuffer clusterBuffer;
-			FrustumSidesBuffer frustumSidesBuffer;
+			FGPUBufferDesc clusterBuffer;
+			FGPUBufferDesc frustumSidesBuffer;
 
-			IndirectIndexedComands indirectCommandBuffer;
-			IndirectCountBuffer indirectCountBuffer;
-			IndirectTaskCommands indirectTaskCommandBuffer;
+			FGPUBufferDesc indirectCommandBuffer;
+			FGPUBufferDesc indirectCountBuffer;
+			FGPUBufferDesc indirectTaskCommandBuffer;
 
-			TextureBindingRemap textureRemapBuffer;
-			CameraBuffer cameraBuffer;
+			FGPUBufferDesc textureRemapBuffer;
+			FGPUBufferDesc cameraBuffer;
 		};
 
 #ifdef __cplusplus

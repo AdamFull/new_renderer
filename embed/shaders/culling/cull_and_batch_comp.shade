@@ -28,13 +28,13 @@
 
 		layout(std140, set = 1, binding = 0) uniform GeometryBuffers
 		{
-			RawVertexBuffer vb;
-			RawIndexBuffer ib;
-			MeshletBuffer mb; 
-			MeshletVertexRemapBuffer vrb;
-			MeshletBoundsBuffer bb;
-			MeshletTriangleBuffer tb;
-			MeshLodBuffer lb;
+			FGPUBufferDesc vb;
+			FGPUBufferDesc ib;
+			FGPUBufferDesc mb; 
+			FGPUBufferDesc vrb;
+			FGPUBufferDesc bb;
+			FGPUBufferDesc tb;
+			FGPUBufferDesc lb;
 
 			uint32_t lastIndex;
 			uint32_t lastVertex;
@@ -84,10 +84,10 @@
 			//if(checkObjectInFrustum(min_extents.xyz * 1.1, min_extents.xyz * 1.1, draw_info.cameraID))
 			{	
 				uint draw_offset = frameData.maxCommandsCount * draw_info.cameraID;
-				uint culler_counter = atomicAdd(GET_VALUE_PTR_BY_ADDRESS(indirectCountBuffer, draw_info.cameraID), 1);
+				uint culler_counter = atomicAdd(GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(IndirectCountBuffer, indirectCountBuffer), draw_info.cameraID), 1);
 
 				uint output_index = draw_offset + culler_counter;
-				GET_VALUE_PTR_BY_ADDRESS(drawInfoBuffer, output_index) = draw_info;
+				GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(DrawInfoBuffer, drawInfoBuffer), output_index) = draw_info;
 			
 				// Construct  indirect Draw command
 				// TODO: In future thing about how to implement instancing here
@@ -112,7 +112,7 @@
 				uint lod_level = uint(log2(max(1.0f, lod_ratio * (mesh.lodCount - 1))));
 				lod_level = clamp(lod_level, 0, mesh.lodCount - 1);
 
-				FMeshLod lod = GET_VALUE_PTR_BY_ADDRESS(lb, mesh.lodOffset + lod_level);
+				FMeshLod lod = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(MeshLodBuffer, lb), mesh.lodOffset + lod_level);
 				
 				FDrawIndexedIndirectData indirect_command;
 				indirect_command.indexCount = lod.indexCount == 0 ? lastIndex : lod.indexCount;
@@ -121,7 +121,7 @@
 				indirect_command.vertexOffset = int(lod.firstVertex);
 				indirect_command.firstInstance = 0;
 
-				GET_VALUE_PTR_BY_ADDRESS(indirectCommandBuffer, output_index) = indirect_command;
+				GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(IndirectIndexedComands, indirectCommandBuffer), output_index) = indirect_command;
 			}
 		}
 	""";

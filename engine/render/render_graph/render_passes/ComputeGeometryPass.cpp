@@ -64,13 +64,13 @@ void CComputeGeometryPass::_Execute(const FComputeFrameInfo& frame_info)
 					auto& vertex_buffer = last_vbo->GetGeometryBuffer(EGeometryBufferIndices::eVertexBuffer);
 					auto& index_buffer = last_vbo->GetGeometryBuffer(EGeometryBufferIndices::eIndexBuffer);
 
-					buffers->Set(shader_bindings::vb_label, vertex_buffer->Buffer()->Address());
-					buffers->Set(shader_bindings::ib_label, index_buffer->Buffer()->Address());
-					buffers->Set(shader_bindings::mb_label, last_vbo->GetGeometryBuffer(EGeometryBufferIndices::eMeshletBuffer)->Buffer()->Address());
-					buffers->Set(shader_bindings::vrb_label, last_vbo->GetGeometryBuffer(EGeometryBufferIndices::eVertexRemapBuffer)->Buffer()->Address());
-					buffers->Set(shader_bindings::bb_label, last_vbo->GetGeometryBuffer(EGeometryBufferIndices::eBoundsBuffer)->Buffer()->Address());
-					buffers->Set(shader_bindings::tb_label, last_vbo->GetGeometryBuffer(EGeometryBufferIndices::eTriangleBuffer)->Buffer()->Address());
-					buffers->Set(shader_bindings::lb_label, last_vbo->GetGeometryBuffer(EGeometryBufferIndices::eLodBuffer)->Buffer()->Address());
+					buffers->Set(shader_bindings::vb_label, vertex_buffer->Buffer()->GetDescription());
+					buffers->Set(shader_bindings::ib_label, index_buffer->Buffer()->GetDescription());
+					buffers->Set(shader_bindings::mb_label, last_vbo->GetGeometryBuffer(EGeometryBufferIndices::eMeshletBuffer)->Buffer()->GetDescription());
+					buffers->Set(shader_bindings::vrb_label, last_vbo->GetGeometryBuffer(EGeometryBufferIndices::eVertexRemapBuffer)->Buffer()->GetDescription());
+					buffers->Set(shader_bindings::bb_label, last_vbo->GetGeometryBuffer(EGeometryBufferIndices::eBoundsBuffer)->Buffer()->GetDescription());
+					buffers->Set(shader_bindings::tb_label, last_vbo->GetGeometryBuffer(EGeometryBufferIndices::eTriangleBuffer)->Buffer()->GetDescription());
+					buffers->Set(shader_bindings::lb_label, last_vbo->GetGeometryBuffer(EGeometryBufferIndices::eLodBuffer)->Buffer()->GetDescription());
 				}
 
 				shader->FlushDescriptors();
