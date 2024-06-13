@@ -24,6 +24,15 @@
 					shader_name: "copy_comp";
 				}
 			];
+		},
+		{
+			name: "clear_buffer";
+			sources: [
+				{
+					type: "compute";
+					shader_name: "clear_buffer_comp";
+				}
+			];
 		}
 	];
 
@@ -34,6 +43,10 @@
 		},
 		{ 
 			shader_name: "copy_compute";
+			pattern: "default_pattern";
+		},
+		{ 
+			shader_name: "clear_buffer";
 			pattern: "default_pattern";
 		}
 	];

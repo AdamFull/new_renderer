@@ -1,0 +1,47 @@
+{
+	version: 460;
+
+	enable_extensions: [
+		"GL_ARB_separate_shader_objects",
+		"GL_ARB_shading_language_420pack",
+		"GL_ARB_shader_draw_parameters",
+		"GL_EXT_nonuniform_qualifier",
+		"GL_EXT_shader_8bit_storage",
+		"GL_EXT_shader_16bit_storage"
+	];
+
+	definitions: [];
+	require_extensions: [
+		"GL_EXT_buffer_reference",
+		"GL_EXT_shader_explicit_arithmetic_types",
+		"GL_EXT_shader_explicit_arithmetic_types_int8"
+	];
+	includes: ["compute_common", "shader_inputs", "util"];
+
+	code: 
+	"""
+		layout(local_size_x = 256) in;
+
+		layout(std140, set = 1, binding = 0) uniform bindings
+		{
+			FGPUBufferDesc buffer_desc;
+		};
+		
+		void main()
+		{
+			uint index = gl_GlobalInvocationID.x;
+
+			if (index >= buffer_desc.size) 
+				return;
+#if defined(INT32_BUFFER_PTR)
+			GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(Int32Ptr, buffer_desc), index) = 0;
+#elif defined(INT64_BUFFER_PTR)
+			GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(Int64Ptr, buffer_desc), index) = 0;
+#elif defined(UINT32_BUFFER_PTR)
+			GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(UInt32Ptr, buffer_desc), index) = 0;
+#elif defined(UINT64_BUFFER_PTR)
+			GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(UInt64Ptr, buffer_desc), index) = 0;
+#endif
+		}
+	""";
+}

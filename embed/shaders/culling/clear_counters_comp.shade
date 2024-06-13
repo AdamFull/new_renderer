@@ -33,7 +33,7 @@
 			if (global_draw_index >= frameData.cullerCount) 
 				return;
 
-			GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(IndirectCountBuffer, indirectCountBuffer), global_draw_index) = 0;
+			GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(UInt32Ptr, indirectCountBuffer), global_draw_index) = 0;
 		}
 	""";
 }

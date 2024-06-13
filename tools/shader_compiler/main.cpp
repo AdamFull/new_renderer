@@ -56,8 +56,8 @@ int main(int argc, char** argv)
 	fs::path input_path{};
 	fs::path compiled_libraries_output{};
 
-	input_path = "D:\\GitHub\\new_renderer\\embed\\shaders\\config.smake";
-	compiled_libraries_output = "D:\\GitHub\\new_renderer\\bin\\Debug\\engine\\embed\\rendering\\shader_cache.shc";
+	input_path = "C:\\Users\\ilia.baranov\\Documents\\GitHub\\new_renderer\\embed\\shaders\\config.smake";
+	compiled_libraries_output = "C:\\Users\\ilia.baranov\\Documents\\GitHub\\new_renderer\\bin\\Debug\\engine\\embed\\rendering\\shader_cache.shc";
 
 	input_path = argparse.try_get("-in", input_path);
 	if (input_path.empty())

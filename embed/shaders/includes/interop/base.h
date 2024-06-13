@@ -588,40 +588,42 @@ namespace engine {
 #endif
 
 		// Base buffers
-		REGISTER_RO_BUFFER_PTR(NodeBuffer, FSceneNode, 8);
-		REGISTER_RO_BUFFER_PTR(MatrixBuffer, MATRIX4, 64);
-		REGISTER_RO_BUFFER_PTR(MeshBuffer, FMesh, 8);
-		REGISTER_RO_BUFFER_PTR(MaterialBuffer, FMaterial, 8);
+		REGISTER_RO_BUFFER_PTR(NodePtr, FSceneNode, 8);
+		REGISTER_RO_BUFFER_PTR(MatrixPtr, MATRIX4, 64);
+		REGISTER_RO_BUFFER_PTR(MeshPtr, FMesh, 8);
+		REGISTER_RO_BUFFER_PTR(MaterialPtr, FMaterial, 8);
 
 		// Light buffers
-		REGISTER_RO_BUFFER_PTR(Lights, FLightCommit, 8);
+		REGISTER_RO_BUFFER_PTR(LightPtr, FLightCommit, 8);
 
 		// Shadow buffers
-		REGISTER_RO_BUFFER_PTR(CascadedShadows, FCascadedShadowCommit, 8);
-		REGISTER_RO_BUFFER_PTR(OmniShadows, FOmniShadowCommit, 8);
-		REGISTER_RO_BUFFER_PTR(SpotShadows, FSpotShadowCommit, 8);
+		REGISTER_RO_BUFFER_PTR(CascadedShadowPtr, FCascadedShadowCommit, 8);
+		REGISTER_RO_BUFFER_PTR(OmniShadowPtr, FOmniShadowCommit, 8);
+		REGISTER_RO_BUFFER_PTR(SpotShadowPtr, FSpotShadowCommit, 8);
 
 		// Vertex buffer specific data
-		REGISTER_RO_BUFFER_PTR(RawVertexBuffer, FRawVertex, 8); 
-		REGISTER_RO_BUFFER_PTR(RawIndexBuffer, Index, 4);
-		REGISTER_RO_BUFFER_PTR(MeshletBuffer, FMeshlet, 8);
-		REGISTER_RO_BUFFER_PTR(MeshletVertexRemapBuffer, uint32_t, 4);
-		REGISTER_RO_BUFFER_PTR(MeshletBoundsBuffer, FGeometryDrawBounds, 8);
-		REGISTER_RO_BUFFER_PTR(MeshletTriangleBuffer, FTriangle, 8);
-		REGISTER_RO_BUFFER_PTR(MeshLodBuffer, FMeshLod, 8);
+		REGISTER_RO_BUFFER_PTR(RawVertexPtr, FRawVertex, 8); 
+		REGISTER_RO_BUFFER_PTR(RawIndexPtr, Index, 4);
+		REGISTER_RO_BUFFER_PTR(MeshletPtr, FMeshlet, 8);
+		REGISTER_RO_BUFFER_PTR(MeshletVertexRemapPtr, uint32_t, 4);
+		REGISTER_RO_BUFFER_PTR(MeshletBoundsPtr, FGeometryDrawBounds, 8);
+		REGISTER_RO_BUFFER_PTR(MeshletTrianglePtr, FTriangle, 8);
+		REGISTER_RO_BUFFER_PTR(MeshLodPtr, FMeshLod, 8);
 
 		// GPU object representation
-		REGISTER_RW_BUFFER_PTR(DrawInfoBuffer, FGeometryBatch, 8);
-		REGISTER_RO_BUFFER_PTR(ClusterInfoBuffer, FClusterInfo, 8);
-		REGISTER_RO_BUFFER_PTR(FrustumSidesBuffer, VECTOR4, 16);
+		REGISTER_RW_BUFFER_PTR(DrawInfoPtr, FGeometryBatch, 8);
+		REGISTER_RO_BUFFER_PTR(ClusterInfoPtr, FClusterInfo, 8);
+		REGISTER_RO_BUFFER_PTR(FrustumSidesPtr, VECTOR4, 16);
 
 		// Indirect data
-		REGISTER_RW_BUFFER_PTR(IndirectTaskCommands, FDrawMeshIndirectData, 8);
-		REGISTER_RW_BUFFER_PTR(IndirectIndexedComands, FDrawIndexedIndirectData, 8);
-		REGISTER_RW_BUFFER_PTR(IndirectCountBuffer, uint32_t, 4);
+		REGISTER_RW_BUFFER_PTR(IndirectTaskCommandsPtr, FDrawMeshIndirectData, 8);
+		REGISTER_RW_BUFFER_PTR(IndirectDrawIndexedComandPtr, FDrawIndexedIndirectData, 8);
 
 		// Other
-		REGISTER_RO_BUFFER_PTR(TextureBindingRemap, uint32_t, 4);
+		REGISTER_RW_BUFFER_PTR(Int32Ptr, int32_t, 4);
+		REGISTER_RW_BUFFER_PTR(Int64Ptr, int64_t, 4);
+		REGISTER_RW_BUFFER_PTR(UInt32Ptr, uint32_t, 4);
+		REGISTER_RW_BUFFER_PTR(UInt64Ptr, uint64_t, 4);
 		REGISTER_RO_BUFFER_PTR(CameraBuffer, FCamera, 8);
 
 #ifdef __cplusplus
