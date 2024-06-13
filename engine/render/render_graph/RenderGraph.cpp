@@ -160,6 +160,53 @@ FTextureCreateInfo CRenderGraph::MakeTextureCubeArrayCI(EApiDataFormat format, E
 	return MakeTextureCI(format, flags | ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eCubemap | ETextureCreateFlagBits::eArray);
 }
 
+void CRenderGraph::EvaluateRenderGraph(utl::vector<u64>& passes)
+{
+	for (auto& node : m_vGraphNodes)
+		EvaluateRenderGraphNode(node, passes);
+}
+
+void CRenderGraph::EvaluateRenderGraphNode(FRenderGraphNodeHeader* header, utl::vector<u64>& passes)
+{
+	switch (header->type)
+	{
+	case ERenderGraphNodeType::eStaticCondition: 
+	{
+		auto* static_condition_node = cast_graph_node<FRenderGraphStaticConditionNode>(header);
+		EvaluateRenderGraphNode(static_condition_node->node, passes);
+	} break;
+	case ERenderGraphNodeType::eDynamicCondition: 
+	{
+		auto* dynamic_condition_node = cast_graph_node<FRenderGraphDynamicConditionNode>(header);
+		if(dynamic_condition_node->condition())
+			EvaluateRenderGraphNode(dynamic_condition_node->pass, passes);
+		else
+			EvaluateRenderGraphNode(dynamic_condition_node->fail, passes);
+
+	} break;
+	case ERenderGraphNodeType::eGroupNode: 
+	{
+		auto* group_node = cast_graph_node<FRenderGraphGroupNode>(header);
+
+		for(auto& node : group_node->nodes)
+			EvaluateRenderGraphNode(node, passes);
+
+	} break;
+	case ERenderGraphNodeType::eLayerNode:
+	{
+		// Not implemented yet
+	} break;
+	case ERenderGraphNodeType::ePassNode:
+	{
+		auto* pass_node = cast_graph_node<FRenderGraphPassNode>(header);
+
+		auto& pass = m_vRenderPasses[pass_node->passIndex];
+		if(pass->CanExecute())
+			passes.emplace_back(pass_node->passIndex);
+	} break;
+	}
+}
+
 FRenderConfigComputeCreateInfo makeComputePassCI(EComputeType type, EQueueTypeFlagBits queue, const std::string& shader)
 {
 	FRenderConfigComputeCreateInfo pass_ci{};
@@ -474,55 +521,65 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	
 	
 	{
-		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "lighting:brgflut_generator");
-		pass_ci.oneTime = true;
+		FRenderGraphComputePassNodeCreateInfo create_info;
+		create_info.name = "generate_brdflut";
+		create_info.pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "lighting:brgflut_generator");
+		create_info.pass_ci.oneTime = true;
 	
-		pass_ci.SetWorkgroupSizeByRT("brdf_lut_target", true);
-		pass_ci.BindWriteResource("out_color", "brdf_lut_target");
+		create_info.pass_ci.SetWorkgroupSizeByRT("brdf_lut_target", true);
+		create_info.pass_ci.BindWriteResource("out_color", "brdf_lut_target");
 	
-		AddRenderNode("generate_brdflut", pass_ci);
+		AddRenderNode(create_info);
 	}
 	
 	{
+		FRenderGraphComputePassNodeCreateInfo create_info;
+		create_info.name = "generate_irradiance_cube";
 		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "lighting:irradiancecube_generator");
-		pass_ci.oneTime = true;
+		create_info.pass_ci.oneTime = true;
 	
-		pass_ci.SetWorkgroupSizeByRT("irradiance_cube_target", true);
-		pass_ci.BindWriteResource("out_color", "irradiance_cube_target");
-		pass_ci.BindReadResource("sampler_color", "CasualDay4K");
+		create_info.pass_ci.SetWorkgroupSizeByRT("irradiance_cube_target", true);
+		create_info.pass_ci.BindWriteResource("out_color", "irradiance_cube_target");
+		create_info.pass_ci.BindReadResource("sampler_color", "CasualDay4K");
 	
-		AddRenderNode("generate_irradiance_cube", pass_ci);
+		AddRenderNode(create_info);
 	}
 	
 	{
-		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eCubemap, EQueueTypeFlagBits::eGraphics, "lighting:prefilteredmap_generator");
-		pass_ci.oneTime = true;
+		FRenderGraphComputePassNodeCreateInfo create_info;
+		create_info.name = "generate_prefiltered_cube";
+		create_info.pass_ci = makeComputePassCI(EComputeType::eCubemap, EQueueTypeFlagBits::eGraphics, "lighting:prefilteredmap_generator");
+		create_info.pass_ci.oneTime = true;
 	
-		pass_ci.SetWorkgroupSizeByRT("prefiltered_cube_target", true);
-		pass_ci.BindWriteResource("out_color", "prefiltered_cube_target");
-		pass_ci.BindReadResource("sampler_color", "CasualDay4K");
+		create_info.pass_ci.SetWorkgroupSizeByRT("prefiltered_cube_target", true);
+		create_info.pass_ci.BindWriteResource("out_color", "prefiltered_cube_target");
+		create_info.pass_ci.BindReadResource("sampler_color", "CasualDay4K");
 	
-		AddRenderNode("generate_prefiltered_cube", pass_ci);
+		AddRenderNode(create_info);
 	}
 	
 	// Culling(culling is temporary)
 	{
-		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "culling:clear_counters");
+		FRenderGraphComputePassNodeCreateInfo create_info;
+		create_info.name = "clear_counters_pass";
+		create_info.pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "culling:clear_counters");
 	
-		pass_ci.SetWorkgroupSizeByBuffer("IndirectCountBuffer", true);
-		pass_ci.AddWriteResource("IndirectCountBuffer");
+		create_info.pass_ci.SetWorkgroupSizeByBuffer("IndirectCountBuffer", true);
+		create_info.pass_ci.AddWriteResource("IndirectCountBuffer");
 	
-		AddRenderNode("clear_counters_pass", pass_ci);
+		AddRenderNode(create_info);
 	}
 	
 	{
-		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eCulling, EQueueTypeFlagBits::eGraphics, "culling:cull_and_batch");
+		FRenderGraphComputePassNodeCreateInfo create_info;
+		create_info.name = "gpu_culling_pass";
+		create_info.pass_ci = makeComputePassCI(EComputeType::eCulling, EQueueTypeFlagBits::eGraphics, "culling:cull_and_batch");
 	
-		pass_ci.AddWriteResource("GeometryBatches");
-		pass_ci.AddWriteResource("IndexedDrawIndirectBuffer");
-		pass_ci.AddWriteResource("IndirectCountBuffer");
+		create_info.pass_ci.AddWriteResource("GeometryBatches");
+		create_info.pass_ci.AddWriteResource("IndexedDrawIndirectBuffer");
+		create_info.pass_ci.AddWriteResource("IndirectCountBuffer");
 	
-		AddRenderNode("gpu_culling_pass", pass_ci);
+		AddRenderNode(create_info);
 	}
 	
 	// Shadow passes
@@ -1084,46 +1141,93 @@ u64 CRenderGraph::AddRenderPass(const std::string& name, const FRenderConfigComp
 	return pass_index;
 }
 
-void CRenderGraph::AddRenderNode(const std::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci)
+void CRenderGraph::AddStaticConditionNode(FRenderGraphStaticConditionNodeCreateInfo& create_info)
 {
-	m_vGraphNodes.emplace_back(CreateRenderNode(name, render_pass_ci));
+	m_vGraphNodes.emplace_back(CreateStaticConditionNode(create_info));
 }
 
-void CRenderGraph::AddRenderNode(const std::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci)
+void CRenderGraph::AddDynamicConditionNode(FRenderGraphDynamicConditionNodeCreateInfo& create_info)
 {
-	m_vGraphNodes.emplace_back(CreateRenderNode(name, compute_pass_ci));
+	m_vGraphNodes.emplace_back(CreateDynamicConditionNode(create_info));
 }
 
-void CRenderGraph::AddDynamicConditionNode(utl::reactive::function<u64()>&& condition, std::unique_ptr<IRenderGraphNode>&& pass, std::unique_ptr<IRenderGraphNode>&& fail)
+void CRenderGraph::AddGroupNode(FRenderGraphGroupNodeCreateInfo& create_info)
 {
-	m_vGraphNodes.emplace_back(CreateDynamicConditionNode(std::move(condition), std::move(pass), std::move(fail)));
+	m_vGraphNodes.emplace_back(CreateGroupNode(create_info));
 }
 
-void CRenderGraph::AddGroupNode(utl::vector<std::unique_ptr<IRenderGraphNode>>&& passes, const std::string& name, u32 color)
+void CRenderGraph::AddRenderNode(FRenderGraphRenderPassNodeCreateInfo& create_info)
 {
-	m_vGraphNodes.emplace_back(CreateGroupNode(std::move(passes), name, color));
+	m_vGraphNodes.emplace_back(CreateRenderNode(create_info));
 }
 
-std::unique_ptr<IRenderGraphNode> CRenderGraph::CreateRenderNode(const std::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci)
+void CRenderGraph::AddRenderNode(FRenderGraphComputePassNodeCreateInfo& create_info)
 {
-	auto pass_index = AddRenderPass(name, render_pass_ci);
-	return std::make_unique<CRenderNode>(pass_index);
+	m_vGraphNodes.emplace_back(CreateRenderNode(create_info));
 }
 
-std::unique_ptr<IRenderGraphNode> CRenderGraph::CreateRenderNode(const std::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci)
+
+FRenderGraphNodeHeader* CRenderGraph::CreateStaticConditionNode(FRenderGraphStaticConditionNodeCreateInfo& create_info)
 {
-	auto pass_index = AddRenderPass(name, compute_pass_ci);
-	return std::make_unique<CRenderNode>(pass_index);
+	auto* header = allocate_graph_node<FRenderGraphStaticConditionNode>(ERenderGraphNodeType::eStaticCondition);
+	auto* static_condition = cast_graph_node<FRenderGraphStaticConditionNode>(header);
+
+	if (create_info.condition)
+	{
+		static_condition->node = std::move(create_info.pass);
+		deallocate_graph_node(&create_info.fail);
+	}
+	else
+	{
+		static_condition->node = std::move(create_info.fail);
+		deallocate_graph_node(&create_info.pass);
+	}
+	
+	return header;
 }
 
-std::unique_ptr<IRenderGraphNode> CRenderGraph::CreateDynamicConditionNode(utl::reactive::function<u64()>&& condition, std::unique_ptr<IRenderGraphNode>&& pass, std::unique_ptr<IRenderGraphNode>&& fail)
+FRenderGraphNodeHeader* CRenderGraph::CreateDynamicConditionNode(FRenderGraphDynamicConditionNodeCreateInfo& create_info)
 {
-	return std::make_unique<CDynamicConditionNode>(std::move(condition), std::move(pass), std::move(fail));
+	auto* header = allocate_graph_node<FRenderGraphDynamicConditionNode>(ERenderGraphNodeType::eDynamicCondition);
+	auto* dynamic_condition = cast_graph_node<FRenderGraphDynamicConditionNode>(header);
+
+	dynamic_condition->condition = std::move(create_info.condition);
+	dynamic_condition->pass = std::move(create_info.pass);
+	dynamic_condition->fail = std::move(create_info.fail);
+
+	return header;
 }
 
-std::unique_ptr<IRenderGraphNode> CRenderGraph::CreateGroupNode(utl::vector<std::unique_ptr<IRenderGraphNode>>&& passes, const std::string& name, u32 color)
+FRenderGraphNodeHeader* CRenderGraph::CreateGroupNode(FRenderGraphGroupNodeCreateInfo& create_info)
 {
-	return std::make_unique<CGroupNode>(std::move(passes), name, color);
+	auto* header = allocate_graph_node<FRenderGraphGroupNode>(ERenderGraphNodeType::eGroupNode);
+	auto* group = cast_graph_node<FRenderGraphGroupNode>(header);
+
+	group->name = std::move(create_info.name);
+	group->color = create_info.color;
+	group->nodes = std::move(create_info.nodes);
+	
+	return header;
+}
+
+FRenderGraphNodeHeader* CRenderGraph::CreateRenderNode(FRenderGraphRenderPassNodeCreateInfo& create_info)
+{
+	auto* header = allocate_graph_node<FRenderGraphPassNode>(ERenderGraphNodeType::ePassNode);
+	auto* pass = cast_graph_node<FRenderGraphPassNode>(header);
+
+	pass->passIndex = AddRenderPass(create_info.name, create_info.pass_ci);
+
+	return header;
+}
+
+FRenderGraphNodeHeader* CRenderGraph::CreateRenderNode(FRenderGraphComputePassNodeCreateInfo& create_info)
+{
+	auto* header = allocate_graph_node<FRenderGraphPassNode>(ERenderGraphNodeType::ePassNode);
+	auto* pass = cast_graph_node<FRenderGraphPassNode>(header);
+
+	pass->passIndex = AddRenderPass(create_info.name, create_info.pass_ci);
+
+	return header;
 }
 
 template <class _Ty, class _KTy>
@@ -1155,8 +1259,7 @@ void CRenderGraph::Build()
 		return;
 	}
 
-	for (auto& node : m_vGraphNodes)
-		node->Traverse(m_vPassExecutionQueue);
+	EvaluateRenderGraph(m_vPassExecutionQueue);
 
 	utl::hash_map<u64, FPassBuildInfo> build_infos;
 	GenerateResourceBarriers(build_infos, true);
@@ -1199,9 +1302,7 @@ void CRenderGraph::PostLoad()
 void CRenderGraph::Update(f32 dt)
 {
 	m_vPassExecutionQueue.clear();
-
-	for (auto& node : m_vGraphNodes)
-		node->Traverse(m_vPassExecutionQueue);
+	EvaluateRenderGraph(m_vPassExecutionQueue);
 
 	for (u64 pass_index : m_vPassExecutionQueue)
 	{

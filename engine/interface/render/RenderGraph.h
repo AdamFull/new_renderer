@@ -95,14 +95,14 @@ namespace engine
 			eDebug
 		};
 
-		enum class ERenderGraphNodeType : u32
+		enum class ERenderGraphNodeType
 		{
-			eRenderPass,
-			eDebugZoneStart,
-			eDebugZoneEnd,
-			eRenderLayer
+			eStaticCondition,
+			eDynamicCondition,
+			eGroupNode,
+			eLayerNode,
+			ePassNode
 		};
-
 
 		inline constexpr ERenderResourceGroupType packResourceGroup(ERenderResourceAccessFlagBits access_flag, ERenderResourceGroupFlagBits group_flag)
 		{
@@ -413,12 +413,111 @@ namespace engine
 			FComputeDispatchGroupInfo groupInfo{};
 		};
 
-		class IRenderGraphNode
+
+
+		struct FRenderGraphNodeHeader
 		{
-		public:
-			virtual ~IRenderGraphNode() = default;
-			virtual void Traverse(utl::vector<u64>& passes) = 0;
+			ERenderGraphNodeType type;
+			u32 data_offset;
 		};
+
+		struct FRenderGraphStaticConditionNode
+		{
+			FRenderGraphNodeHeader* node{ nullptr };
+		};
+
+		struct FRenderGraphDynamicConditionNode
+		{
+			utl::reactive::function<bool()> condition{};
+			FRenderGraphNodeHeader* pass{ nullptr };
+			FRenderGraphNodeHeader* fail{ nullptr };
+		};
+
+		// Same for layer
+		struct FRenderGraphGroupNode
+		{
+			std::string name{};
+			u32 color{};
+			utl::vector<FRenderGraphNodeHeader*> nodes{};
+		};
+
+		struct FRenderGraphPassNode
+		{
+			u64 passIndex{ ~0ull };
+		};
+
+		struct FRenderGraphStaticConditionNodeCreateInfo
+		{
+			bool condition{ false };
+			FRenderGraphNodeHeader* pass{ nullptr };
+			FRenderGraphNodeHeader* fail{ nullptr };
+		};
+
+		struct FRenderGraphDynamicConditionNodeCreateInfo
+		{
+			utl::reactive::function<bool()> condition{};
+			FRenderGraphNodeHeader* pass{ nullptr };
+			FRenderGraphNodeHeader* fail{ nullptr };
+		};
+
+		struct FRenderGraphGroupNodeCreateInfo
+		{
+			std::string name;
+			u32 color;
+			utl::vector<FRenderGraphNodeHeader*> nodes{};
+		};
+
+		struct FRenderGraphRenderPassNodeCreateInfo
+		{
+			std::string name;
+			FRenderConfigRenderCreateInfo pass_ci;
+		};
+
+		struct FRenderGraphComputePassNodeCreateInfo
+		{
+			std::string name;
+			FRenderConfigComputeCreateInfo pass_ci;
+		};
+
+		inline void allocate_graph_node(ERenderGraphNodeType type, void** out, u64 size, u64 alignment)
+		{
+			constexpr u64 header_size = sizeof(FRenderGraphNodeHeader);
+			constexpr u64 header_align = alignof(FRenderGraphNodeHeader);
+
+			constexpr u64 aligned_header_size = header_align + header_size;
+			u64 aligned_offset = (((aligned_header_size + alignment - 1ull) / alignment) * alignment - aligned_header_size);
+			u64 node_size = header_size + size + aligned_offset;
+			(*out) = _aligned_malloc(node_size, header_align);
+
+			FRenderGraphNodeHeader* header = reinterpret_cast<FRenderGraphNodeHeader*>(*out);
+			header->type = type;
+			header->data_offset = header_size + aligned_offset;
+		}
+
+		inline void deallocate_graph_node(FRenderGraphNodeHeader** out)
+		{
+			if ((*out))
+			{
+				_aligned_free((*out));
+				(*out) = nullptr;
+
+			}
+		}
+
+		template<class _Ty>
+		FRenderGraphNodeHeader* allocate_graph_node(ERenderGraphNodeType type)
+		{
+			FRenderGraphNodeHeader* out{ nullptr };
+			allocate_graph_node(type, &out, sizeof(_Ty), alignof(_Ty));
+			return out;
+		}
+
+		template<class _Ty>
+		_Ty* cast_graph_node(FRenderGraphNodeHeader* header)
+		{
+			auto* data = static_cast<char*>(header) + header->data_offset;
+			return static_cast<_Ty*>(data);
+		}
 
 		class IRenderGraph
 		{
