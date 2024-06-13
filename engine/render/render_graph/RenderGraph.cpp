@@ -168,42 +168,45 @@ void CRenderGraph::EvaluateRenderGraph(utl::vector<u64>& passes)
 
 void CRenderGraph::EvaluateRenderGraphNode(FRenderGraphNodeHeader* header, utl::vector<u64>& passes)
 {
-	switch (header->type)
+	if (header)
 	{
-	case ERenderGraphNodeType::eStaticCondition: 
-	{
-		auto* static_condition_node = cast_graph_node<FRenderGraphStaticConditionNode>(header);
-		EvaluateRenderGraphNode(static_condition_node->node, passes);
-	} break;
-	case ERenderGraphNodeType::eDynamicCondition: 
-	{
-		auto* dynamic_condition_node = cast_graph_node<FRenderGraphDynamicConditionNode>(header);
-		if(dynamic_condition_node->condition())
-			EvaluateRenderGraphNode(dynamic_condition_node->pass, passes);
-		else
-			EvaluateRenderGraphNode(dynamic_condition_node->fail, passes);
+		switch (static_cast<ERenderGraphNodeType>(header->type))
+		{
+		case ERenderGraphNodeType::eStaticCondition:
+		{
+			auto* static_condition_node = cast_graph_node<FRenderGraphStaticConditionNode>(header);
+			EvaluateRenderGraphNode(static_condition_node->node, passes);
+		} break;
+		case ERenderGraphNodeType::eDynamicCondition:
+		{
+			auto* dynamic_condition_node = cast_graph_node<FRenderGraphDynamicConditionNode>(header);
+			if (dynamic_condition_node->condition())
+				EvaluateRenderGraphNode(dynamic_condition_node->pass, passes);
+			else
+				EvaluateRenderGraphNode(dynamic_condition_node->fail, passes);
 
-	} break;
-	case ERenderGraphNodeType::eGroupNode: 
-	{
-		auto* group_node = cast_graph_node<FRenderGraphGroupNode>(header);
+		} break;
+		case ERenderGraphNodeType::eGroupNode:
+		{
+			auto* group_node = cast_graph_node<FRenderGraphGroupNode>(header);
 
-		for(auto& node : group_node->nodes)
-			EvaluateRenderGraphNode(node, passes);
+			for (auto& node : group_node->nodes)
+				EvaluateRenderGraphNode(node, passes);
 
-	} break;
-	case ERenderGraphNodeType::eLayerNode:
-	{
-		// Not implemented yet
-	} break;
-	case ERenderGraphNodeType::ePassNode:
-	{
-		auto* pass_node = cast_graph_node<FRenderGraphPassNode>(header);
+		} break;
+		case ERenderGraphNodeType::eLayerNode:
+		{
+			// Not implemented yet
+		} break;
+		case ERenderGraphNodeType::ePassNode:
+		{
+			auto* pass_node = cast_graph_node<FRenderGraphPassNode>(header);
 
-		auto& pass = m_vRenderPasses[pass_node->passIndex];
-		if(pass->CanExecute())
-			passes.emplace_back(pass_node->passIndex);
-	} break;
+			auto& pass = m_vRenderPasses[pass_node->passIndex];
+			if (pass->CanExecute())
+				passes.emplace_back(pass_node->passIndex);
+		} break;
+		}
 	}
 }
 
@@ -535,7 +538,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	{
 		FRenderGraphComputePassNodeCreateInfo create_info;
 		create_info.name = "generate_irradiance_cube";
-		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "lighting:irradiancecube_generator");
+		create_info.pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "lighting:irradiancecube_generator");
 		create_info.pass_ci.oneTime = true;
 	
 		create_info.pass_ci.SetWorkgroupSizeByRT("irradiance_cube_target", true);
@@ -584,142 +587,164 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	
 	// Shadow passes
 	{
-		FRenderConfigRenderCreateInfo pass_ci = makeGraphicsPassCI(ERenderingType::eCascadedShadowMap, EQueueTypeFlagBits::eGraphics, "lighting:unidirectional_shadow:CASCADED_SHADOW");
-		pass_ci.SetDepthTarget("cascaded_shadows_target");
+		FRenderGraphRenderPassNodeCreateInfo create_info;
+		create_info.name = "cascaded_shadow_map_pass";
+		create_info.pass_ci = makeGraphicsPassCI(ERenderingType::eCascadedShadowMap, EQueueTypeFlagBits::eGraphics, "lighting:unidirectional_shadow:CASCADED_SHADOW");
+		create_info.pass_ci.SetDepthTarget("cascaded_shadows_target");
 	
-		pass_ci.AddReadResource("GeometryBatches");
-		pass_ci.AddReadResource("IndexedDrawIndirectBuffer");
-		pass_ci.AddReadResource("IndirectCountBuffer");
+		create_info.pass_ci.AddReadResource("GeometryBatches");
+		create_info.pass_ci.AddReadResource("IndexedDrawIndirectBuffer");
+		create_info.pass_ci.AddReadResource("IndirectCountBuffer");
 	
-		AddRenderNode("cascaded_shadow_map_pass", pass_ci);
+		AddRenderNode(create_info);
 	}
 	
 	{
-		FRenderConfigRenderCreateInfo pass_ci = makeGraphicsPassCI(ERenderingType::eDirectionalShadowMap, EQueueTypeFlagBits::eGraphics, "lighting:unidirectional_shadow");
-		pass_ci.SetDepthTarget("directional_shadows_target");
+		FRenderGraphRenderPassNodeCreateInfo create_info;
+		create_info.name = "spot_shadow_map_pass";
+		create_info.pass_ci = makeGraphicsPassCI(ERenderingType::eDirectionalShadowMap, EQueueTypeFlagBits::eGraphics, "lighting:unidirectional_shadow");
+		create_info.pass_ci.SetDepthTarget("directional_shadows_target");
 	
-		pass_ci.AddReadResource("GeometryBatches");
-		pass_ci.AddReadResource("IndexedDrawIndirectBuffer");
-		pass_ci.AddReadResource("IndirectCountBuffer");
+		create_info.pass_ci.AddReadResource("GeometryBatches");
+		create_info.pass_ci.AddReadResource("IndexedDrawIndirectBuffer");
+		create_info.pass_ci.AddReadResource("IndirectCountBuffer");
 	
-		AddRenderNode("spot_shadow_map_pass", pass_ci);
+		AddRenderNode(create_info);
 	}
 	
 	{
-		FRenderConfigRenderCreateInfo pass_ci = makeGraphicsPassCI(ERenderingType::eOmniShadowMap, EQueueTypeFlagBits::eGraphics, "lighting:unidirectional_shadow:OMNI_SHADOW");
-		pass_ci.SetDepthTarget("omni_shadows_target");
+		FRenderGraphRenderPassNodeCreateInfo create_info;
+		create_info.name = "omni_shadow_map_pass";
+		create_info.pass_ci = makeGraphicsPassCI(ERenderingType::eOmniShadowMap, EQueueTypeFlagBits::eGraphics, "lighting:unidirectional_shadow:OMNI_SHADOW");
+		create_info.pass_ci.SetDepthTarget("omni_shadows_target");
 	
-		pass_ci.AddReadResource("GeometryBatches");
-		pass_ci.AddReadResource("IndexedDrawIndirectBuffer");
-		pass_ci.AddReadResource("IndirectCountBuffer");
+		create_info.pass_ci.AddReadResource("GeometryBatches");
+		create_info.pass_ci.AddReadResource("IndexedDrawIndirectBuffer");
+		create_info.pass_ci.AddReadResource("IndirectCountBuffer");
 	
-		AddRenderNode("omni_shadow_map_pass", pass_ci);
+		AddRenderNode(create_info);
 	}
 	
 	// visibility buffer write
 	{
-		FRenderConfigRenderCreateInfo pass_ci = makeGraphicsPassCI(ERenderingType::eGeometry, EQueueTypeFlagBits::eGraphics, "visibilitybuffer:write");
-		pass_ci.SetDepthTarget("zbuffer_depth_target");
-		//pass_ci.SetStencilTarget("zbuffer_depth_target");
+		FRenderGraphRenderPassNodeCreateInfo create_info;
+		create_info.name = "visibility_buffer_write_pass";
+		create_info.pass_ci = makeGraphicsPassCI(ERenderingType::eGeometry, EQueueTypeFlagBits::eGraphics, "visibilitybuffer:write");
+		create_info.pass_ci.SetDepthTarget("zbuffer_depth_target");
+		//create_info.pass_ci.SetStencilTarget("zbuffer_depth_target");
 	
-		pass_ci.AddWriteResource("visbuffer_geometry_target", glm::vec4(0.f, 0.f, 0.f, 0.f));
-		pass_ci.AddWriteResource("visbuffer_vboinst_target", glm::vec4(0.f, 0.f, 0.f, 0.f));
-		//pass_ci.AddWriteResource("motion_vectors_target");
-		pass_ci.AddReadResource("GeometryBatches");
-		pass_ci.AddReadResource("IndexedDrawIndirectBuffer");
-		pass_ci.AddReadResource("IndirectCountBuffer");
+		create_info.pass_ci.AddWriteResource("visbuffer_geometry_target", glm::vec4(0.f, 0.f, 0.f, 0.f));
+		create_info.pass_ci.AddWriteResource("visbuffer_vboinst_target", glm::vec4(0.f, 0.f, 0.f, 0.f));
+		//create_info.pass_ci.AddWriteResource("motion_vectors_target");
+		create_info.pass_ci.AddReadResource("GeometryBatches");
+		create_info.pass_ci.AddReadResource("IndexedDrawIndirectBuffer");
+		create_info.pass_ci.AddReadResource("IndirectCountBuffer");
 	
-		AddRenderNode("visibility_buffer_write_pass", pass_ci);
+		AddRenderNode(create_info);
 	}
 	
 	{
-		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eGeometry, EQueueTypeFlagBits::eGraphics, "visibilitybuffer:shade");
-		pass_ci.SetWorkgroupSizeByRT("hdr0", true);
+		FRenderGraphComputePassNodeCreateInfo create_info;
+		create_info.name = "compute_materials_pass";
+		create_info.pass_ci = makeComputePassCI(EComputeType::eGeometry, EQueueTypeFlagBits::eGraphics, "visibilitybuffer:shade");
+		create_info.pass_ci.SetWorkgroupSizeByRT("hdr0", true);
 	
-		pass_ci.BindWriteResource("write_color", "hdr0");
-		pass_ci.BindReadResource("prev_frame_color", "hdr0_history");
-		pass_ci.BindReadResource("visbuffer_geometry", "visbuffer_geometry_target");
-		pass_ci.BindReadResource("visbuffer_vboinst", "visbuffer_vboinst_target");
-		pass_ci.BindReadResource("brdf_lut", "brdf_lut_target");
-		pass_ci.BindReadResource("irradiance_cube", "irradiance_cube_target");
-		pass_ci.BindReadResource("prefiltered_cube", "prefiltered_cube_target");
-		pass_ci.BindReadResource("cascaded_shadowmap", "cascaded_shadows_target");
-		pass_ci.BindReadResource("direct_shadowmap", "directional_shadows_target");
-		pass_ci.BindReadResource("omni_shadowmap", "omni_shadows_target");
-		pass_ci.BindReadResource("depth_buffer", "zbuffer_depth_target");
+		create_info.pass_ci.BindWriteResource("write_color", "hdr0");
+		create_info.pass_ci.BindReadResource("prev_frame_color", "hdr0_history");
+		create_info.pass_ci.BindReadResource("visbuffer_geometry", "visbuffer_geometry_target");
+		create_info.pass_ci.BindReadResource("visbuffer_vboinst", "visbuffer_vboinst_target");
+		create_info.pass_ci.BindReadResource("brdf_lut", "brdf_lut_target");
+		create_info.pass_ci.BindReadResource("irradiance_cube", "irradiance_cube_target");
+		create_info.pass_ci.BindReadResource("prefiltered_cube", "prefiltered_cube_target");
+		create_info.pass_ci.BindReadResource("cascaded_shadowmap", "cascaded_shadows_target");
+		create_info.pass_ci.BindReadResource("direct_shadowmap", "directional_shadows_target");
+		create_info.pass_ci.BindReadResource("omni_shadowmap", "omni_shadows_target");
+		create_info.pass_ci.BindReadResource("depth_buffer", "zbuffer_depth_target");
 	
-		pass_ci.AddReadResource("GeometryBatches");
-		pass_ci.AddReadResource("IndexedDrawIndirectBuffer");
+		create_info.pass_ci.AddReadResource("GeometryBatches");
+		create_info.pass_ci.AddReadResource("IndexedDrawIndirectBuffer");
 	
-		AddRenderNode("compute_materials_pass", pass_ci);
+		AddRenderNode(create_info);
 	}
 
 	// Tile classification
 	//{
-	//	FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:clear_tiles");
-	//	pass_ci.SetWorkgroupSizeByBuffer("clusterized_command_buffer", true);
+	//	FRenderGraphComputePassNodeCreateInfo create_info;
+	//	create_info.name = "clear_tiles_pass";
+	//	create_info.pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:clear_tiles");
+	//	create_info.pass_ci.SetWorkgroupSizeByBuffer("clusterized_command_buffer", true);
 	//
-	//	pass_ci.BindWriteResource("indirect_buffer", "clusterized_command_buffer");
+	//	create_info.pass_ci.BindWriteResource("indirect_buffer", "clusterized_command_buffer");
 	//
-	//	AddRenderPass("clear_tiles_pass", pass_ci);
+	//	AddRenderNode(create_info);
 	//}
 	//
 	//{
-	//	FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:tile_freq_classification");
-	//	pass_ci.SetWorkgroupSizeByRT("hdr0", true);
+	//	FRenderGraphComputePassNodeCreateInfo create_info;
+	//	create_info.name = "classification_pass";
+	//	create_info.pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:tile_freq_classification");
+	//	create_info.pass_ci.SetWorkgroupSizeByRT("hdr0", true);
 	//
-	//	//pass_ci.BindWriteResource("write_color", "frequency_target");
-	//	pass_ci.BindWriteResource("indirect_buffer", "clusterized_command_buffer");
-	//	pass_ci.BindWriteResource("high_freq", "high_frequency_tiles");
-	//	pass_ci.BindWriteResource("low_freq", "low_frequency_tiles");
-	//	pass_ci.BindReadResource("sampler_color", "hdr0");
+	//	//create_info.pass_ci.BindWriteResource("write_color", "frequency_target");
+	//	create_info.pass_ci.BindWriteResource("indirect_buffer", "clusterized_command_buffer");
+	//	create_info.pass_ci.BindWriteResource("high_freq", "high_frequency_tiles");
+	//	create_info.pass_ci.BindWriteResource("low_freq", "low_frequency_tiles");
+	//	create_info.pass_ci.BindReadResource("sampler_color", "hdr0");
 	//
-	//	AddRenderPass("compute_materials_pass", pass_ci);
+	//	AddRenderNode(create_info);
 	//}
 	//
 	//{
-	//	FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:classification_debug:HIGH_FREQUENCY");
+	//	FRenderGraphComputePassNodeCreateInfo create_info;
+	//	create_info.name = "classification_debug_hf_pass";
+	//	create_info.pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:classification_debug:HIGH_FREQUENCY");
 	//
-	//	pass_ci.BindWriteResource("write_color", "hdr1");
-	//	pass_ci.BindReadResource("sampler_color", "hdr0");
-	//	pass_ci.BindReadResource("tiles", "high_frequency_tiles");
-	//	pass_ci.BindIndirectArgumentBuffer("clusterized_command_buffer", 0);
+	//	create_info.pass_ci.BindWriteResource("write_color", "hdr1");
+	//	create_info.pass_ci.BindReadResource("sampler_color", "hdr0");
+	//	create_info.pass_ci.BindReadResource("tiles", "high_frequency_tiles");
+	//	create_info.pass_ci.BindIndirectArgumentBuffer("clusterized_command_buffer", 0);
 	//
-	//	AddRenderPass("classification_debug_hf_pass", pass_ci);
+	//	AddRenderNode(create_info);
 	//}
 	//
 	//{
-	//	FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:classification_debug");
+	//	FRenderGraphComputePassNodeCreateInfo create_info;
+	//	create_info.name = "classification_debug_lf_pass";
+	//	create_info.pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:classification_debug");
 	//
-	//	pass_ci.BindWriteResource("write_color", "hdr1");
-	//	pass_ci.BindReadResource("sampler_color", "hdr0");
-	//	pass_ci.BindReadResource("tiles", "low_frequency_tiles");
-	//	pass_ci.BindIndirectArgumentBuffer("clusterized_command_buffer", 12);
+	//	create_info.pass_ci.BindWriteResource("write_color", "hdr1");
+	//	create_info.pass_ci.BindReadResource("sampler_color", "hdr0");
+	//	create_info.pass_ci.BindReadResource("tiles", "low_frequency_tiles");
+	//	create_info.pass_ci.BindIndirectArgumentBuffer("clusterized_command_buffer", 12);
 	//
-	//	AddRenderPass("classification_debug_lf_pass", pass_ci);
+	//	AddRenderNode(create_info);
 	//}
 	
 	// Compute static motion vectors (can be started in another queue)
 	{
-		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, use_low_precision_velocity ? "postprocess:generate_motion_vectors:LOW_PRECISION_VELOCITY" : "postprocess:generate_motion_vectors");
-		pass_ci.SetWorkgroupSizeByRT("zbuffer_depth_target", true);
+		FRenderGraphComputePassNodeCreateInfo create_info;
+		create_info.name = "generate_motion_vectors_pass";
+		create_info.pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, use_low_precision_velocity ? "postprocess:generate_motion_vectors:LOW_PRECISION_VELOCITY" : "postprocess:generate_motion_vectors");
+		create_info.pass_ci.SetWorkgroupSizeByRT("zbuffer_depth_target", true);
 	
-		pass_ci.BindWriteResource("write_color", "motion_vectors_target");
-		pass_ci.BindReadResource("depth_texture", "zbuffer_depth_target");
+		create_info.pass_ci.BindWriteResource("write_color", "motion_vectors_target");
+		create_info.pass_ci.BindReadResource("depth_texture", "zbuffer_depth_target");
 	
-		AddRenderNode("generate_motion_vectors_pass", pass_ci);
+		AddRenderNode(create_info);
 	}
 	
 	// Anti - alias step
 	//{
-	//	FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:filmic_smaa_tu2x");
-	//	pass_ci.SetWorkgroupSizeByRT("hdr1", true);
+	//	FRenderGraphComputePassNodeCreateInfo create_info;
+	//	create_info.name = "compute_smaa_pass";
+	//	create_info.pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:filmic_smaa_tu2x");
+	//	create_info.pass_ci.SetWorkgroupSizeByRT("hdr1", true);
 	//
-	//	pass_ci.BindWriteResource("write_color", "hdr1");
-	//	pass_ci.BindWriteResource("current_frame", "hdr0");
-	//	pass_ci.BindWriteResource("prev_frame", "hdr0_history");
+	//	create_info.pass_ci.BindWriteResource("write_color", "hdr1");
+	//	create_info.pass_ci.BindWriteResource("current_frame", "hdr0");
+	//	create_info.pass_ci.BindWriteResource("prev_frame", "hdr0_history");
 	//
-	//	AddRenderPass("compute_smaa_pass", pass_ci);
+	//	AddRenderNode(create_info);
 	//}
 	
 	auto input_target = "hdr0";
@@ -728,29 +753,33 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	// TemporalAA
 	//if (enable_taa)
 	//{
-	//	FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:compute_temporal_aa");
-	//	pass_ci.SetWorkgroupSizeByRT(next_target, true);
+	//	FRenderGraphComputePassNodeCreateInfo create_info;
+	//	create_info.name = "resolve_temporal_aa_pass";
+	//	create_info.pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:compute_temporal_aa");
+	//	create_info.pass_ci.SetWorkgroupSizeByRT(next_target, true);
 	//
-	//	pass_ci.BindWriteResource("write_color", next_target);
-	//	pass_ci.BindWriteResource("current_color", last_target);
-	//	pass_ci.BindWriteResource("prev_color", "hdr0_history");
-	//	pass_ci.BindWriteResource("motion_vectors", "motion_vectors_target");
-	//	pass_ci.BindWriteResource("depth_image", "zbuffer_depth_target");
+	//	create_info.pass_ci.BindWriteResource("write_color", next_target);
+	//	create_info.pass_ci.BindWriteResource("current_color", last_target);
+	//	create_info.pass_ci.BindWriteResource("prev_color", "hdr0_history");
+	//	create_info.pass_ci.BindWriteResource("motion_vectors", "motion_vectors_target");
+	//	create_info.pass_ci.BindWriteResource("depth_image", "zbuffer_depth_target");
 	//
-	//	AddRenderPass("resolve_temporal_aa_pass", pass_ci);
+	//	AddRenderNode(create_info);
 	//
 	//	std::swap(input_target, output_target);
 	//}
 	
 	// Copy history
 	{
-		FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "utility:copy_compute");
-		pass_ci.SetWorkgroupSizeByRT(input_target, true);
+		FRenderGraphComputePassNodeCreateInfo create_info;
+		create_info.name = "copy_final_color_pass";
+		create_info.pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "utility:copy_compute");
+		create_info.pass_ci.SetWorkgroupSizeByRT(input_target, true);
 	
-		pass_ci.BindReadResource("sampler_color", input_target);
-		pass_ci.BindWriteResource("write_color", "hdr0_history");
+		create_info.pass_ci.BindReadResource("sampler_color", input_target);
+		create_info.pass_ci.BindWriteResource("write_color", "hdr0_history");
 	
-		AddRenderNode("copy_final_color_pass", pass_ci);
+		AddRenderNode(create_info);
 	}
 	
 	std::string final_target = input_target;
@@ -759,17 +788,19 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	{
 		u32 pass_count{ 0u };
 	
-		RENDER_DEBUG_MARKER_ZONE(postprocess, 0xffff33ff);
-	
 		// FXAA 
 		{
-			FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:apply_effect:FXAA");
-			pass_ci.SetWorkgroupSizeByRT(input_target, true);
+			FRenderGraphComputePassNodeCreateInfo create_info;
+			create_info.name = "apply_fxaa";
+			create_info.pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:apply_effect:FXAA");
+			create_info.pass_ci.SetWorkgroupSizeByRT(input_target, true);
 	
-			pass_ci.BindWriteResource("write_color", output_target);
-			pass_ci.BindReadResource("sampler_color", input_target);
+			create_info.pass_ci.BindWriteResource("write_color", output_target);
+			create_info.pass_ci.BindReadResource("sampler_color", input_target);
 
-			AddDynamicConditionNode([enable_fxaa]() { return enable_fxaa; }, CreateRenderNode("apply_fxaa", pass_ci), nullptr);
+			FRenderGraphDynamicConditionNodeCreateInfo condition_info;
+			condition_info.condition = [enable_fxaa]() { return enable_fxaa; };
+			condition_info.pass = CreateRenderNode(create_info);
 	
 			if(enable_fxaa)
 				SWAP_COUNT(input_target, output_target);
@@ -777,18 +808,21 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	
 		// Compute motion blur
 		{
-			RENDER_DEBUG_MARKER_ZONE(compute_motion_blur, 0xffff33ff);
-	
 			// Apply motion blur
 			{
-				FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, use_low_precision_velocity ? "postprocess:apply_effect:MOTION_BLUR:LOW_PRECISION_VELOCITY" : "postprocess:apply_effect:MOTION_BLUR");
-				pass_ci.SetWorkgroupSizeByRT(input_target, true);
+				FRenderGraphComputePassNodeCreateInfo create_info;
+				create_info.name = "apply_motion_blur";
+				create_info.pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, use_low_precision_velocity ? "postprocess:apply_effect:MOTION_BLUR:LOW_PRECISION_VELOCITY" : "postprocess:apply_effect:MOTION_BLUR");
+				create_info.pass_ci.SetWorkgroupSizeByRT(input_target, true);
 	
-				pass_ci.BindReadResource("sampler_color", input_target);
-				pass_ci.BindReadResource("motion_vectors", "motion_vectors_target");
-				pass_ci.BindWriteResource("write_color", output_target);
+				create_info.pass_ci.BindReadResource("sampler_color", input_target);
+				create_info.pass_ci.BindReadResource("motion_vectors", "motion_vectors_target");
+				create_info.pass_ci.BindWriteResource("write_color", output_target);
 
-				AddDynamicConditionNode([motion_blur_enabled]() { return motion_blur_enabled; }, CreateRenderNode("apply_motion_blur", pass_ci), nullptr);
+				FRenderGraphDynamicConditionNodeCreateInfo condition_info;
+				condition_info.condition = [motion_blur_enabled]() { return motion_blur_enabled; };
+				condition_info.pass = CreateRenderNode(create_info);
+				AddDynamicConditionNode(condition_info);
 			}
 	
 			if(motion_blur_enabled)
@@ -797,35 +831,42 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	
 		// Compute dof
 		{
-			RENDER_DEBUG_MARKER_ZONE(compute_depth_of_field, 0xffff33ff);
-
-			utl::vector<std::unique_ptr<IRenderGraphNode>> passes{};
+			FRenderGraphGroupNodeCreateInfo dof_group{};
+			dof_group.name = "compute_depth_of_field";
+			dof_group.color = 0xffff33ff;
 	
 			// Compute bokeh
 			{
-				FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:bokeh");
-				pass_ci.SetWorkgroupSizeByRT(input_target, true);
+				FRenderGraphComputePassNodeCreateInfo create_info;
+				create_info.name = "compute_bokeh_blur_pass";
+				create_info.pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:bokeh");
+				create_info.pass_ci.SetWorkgroupSizeByRT(input_target, true);
 	
-				pass_ci.BindWriteResource("write_color", "hdr0_div2");
-				pass_ci.BindReadResource("sampler_color", input_target);
+				create_info.pass_ci.BindWriteResource("write_color", "hdr0_div2");
+				create_info.pass_ci.BindReadResource("sampler_color", input_target);
 	
-				passes.emplace_back(CreateRenderNode("compute_bokeh_blur_pass", pass_ci));
+				dof_group.nodes.emplace_back(CreateRenderNode(create_info));
 			}
 	
 			// Apply dof
 			{
-				FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:apply_effect:DOF");
-				pass_ci.SetWorkgroupSizeByRT(input_target, true);
+				FRenderGraphComputePassNodeCreateInfo create_info;
+				create_info.name = "apply_bokeh_blur_pass";
+				create_info.pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:apply_effect:DOF");
+				create_info.pass_ci.SetWorkgroupSizeByRT(input_target, true);
 	
-				pass_ci.BindWriteResource("write_color", output_target);
-				pass_ci.BindReadResource("sampler_color", input_target);
-				pass_ci.BindReadResource("depth_image", "zbuffer_depth_target");
-				pass_ci.BindReadResource("bokeh_color", "hdr0_div2");
+				create_info.pass_ci.BindWriteResource("write_color", output_target);
+				create_info.pass_ci.BindReadResource("sampler_color", input_target);
+				create_info.pass_ci.BindReadResource("depth_image", "zbuffer_depth_target");
+				create_info.pass_ci.BindReadResource("bokeh_color", "hdr0_div2");
 	
-				passes.emplace_back(CreateRenderNode("apply_bokeh_blur_pass", pass_ci));
+				dof_group.nodes.emplace_back(CreateRenderNode(create_info));
 			}
 
-			AddDynamicConditionNode([depth_of_field_enabled]() { return depth_of_field_enabled; }, CreateGroupNode(std::move(passes), "compute_depth_of_field", 0xffff33ff), nullptr);
+			FRenderGraphDynamicConditionNodeCreateInfo condition_info;
+			condition_info.condition = [depth_of_field_enabled]() { return depth_of_field_enabled; };
+			condition_info.pass = CreateGroupNode(dof_group);
+			AddDynamicConditionNode(condition_info);
 	
 			if(depth_of_field_enabled)
 				SWAP_COUNT(input_target, output_target);
@@ -833,80 +874,92 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	
 		// Compute bloom
 		{
-			RENDER_DEBUG_MARKER_ZONE(compute_bloom, 0xffff33ff);
-
-			utl::vector<std::unique_ptr<IRenderGraphNode>> passes{};
+			FRenderGraphGroupNodeCreateInfo bloom_group{};
+			bloom_group.name = "compute_bloom";
+			bloom_group.color = 0xffff33ff;
 	
 			// Starting from brightness detection pass
 			{
-				FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, bloom_use_brightness ? "postprocess:brightdetect" : "utility:copy_compute");
-				pass_ci.SetWorkgroupSizeByRT("hdr0_div2", true);
+				FRenderGraphComputePassNodeCreateInfo create_info;
+				create_info.name = "brightdetect_pass";
+				create_info.pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, bloom_use_brightness ? "postprocess:brightdetect" : "utility:copy_compute");
+				create_info.pass_ci.SetWorkgroupSizeByRT("hdr0_div2", true);
 	
-				pass_ci.BindReadResource("sampler_color", input_target);
-				pass_ci.BindWriteResource("write_color", "hdr0_div2");
+				create_info.pass_ci.BindReadResource("sampler_color", input_target);
+				create_info.pass_ci.BindWriteResource("write_color", "hdr0_div2");
 	
-				passes.emplace_back(CreateRenderNode("brightdetect_pass", pass_ci));
+				bloom_group.nodes.emplace_back(CreateRenderNode(create_info));
 			}
 	
 			// Begin downsampling
 			{
-				utl::vector<std::unique_ptr<IRenderGraphNode>> downsample_passes{};
+				FRenderGraphGroupNodeCreateInfo downsample_group{};
+				downsample_group.name = "downsample";
+				downsample_group.color = 0xff3333ff;
 
-				FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:downsample:FIRST_PASS");
-				
-				pass_ci.BindReadResource("sampler_color", "hdr0_div2");
+				FRenderGraphComputePassNodeCreateInfo create_info;
+				create_info.pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:downsample:FIRST_PASS");
+				create_info.pass_ci.BindReadResource("sampler_color", "hdr0_div2");
 	
-				RENDER_DEBUG_MARKER_ZONE(downsample, 0xffff33ff);
 				for (u32 idx = 0; idx < bloom_blur_depth; ++idx)
 				{
-					pass_ci.SetWorkgroupSizeByRT("bloom_target", idx, true);
-					pass_ci.BindWriteResource("write_color", "bloom_target", idx);
+					create_info.pass_ci.SetWorkgroupSizeByRT("bloom_target", idx, true);
+					create_info.pass_ci.BindWriteResource("write_color", "bloom_target", idx);
+					create_info.name = std::format("downnsample_pass_{}", idx);
+
+					downsample_group.nodes.emplace_back(CreateRenderNode(create_info));
 	
-					downsample_passes.emplace_back(CreateRenderNode(std::format("downsample_pass_{}", idx), pass_ci));
-	
-					pass_ci.ClearResource();
-					pass_ci.BindReadResource("sampler_color", "bloom_target", idx);
+					create_info.pass_ci.ClearResource();
+					create_info.pass_ci.BindReadResource("sampler_color", "bloom_target", idx);
 	
 					if(idx == 0u)
-						pass_ci.shader = "postprocess:downsample";
+						create_info.pass_ci.shader = "postprocess:downsample";
 				}
 
-				passes.emplace_back(CreateGroupNode(std::move(downsample_passes), "downsample", 0xffff33ff));
+				bloom_group.nodes.emplace_back(CreateGroupNode(downsample_group));
 			}
 	
 			// And upsampling
 			{
-				utl::vector<std::unique_ptr<IRenderGraphNode>> upsample_passes{};
+				FRenderGraphGroupNodeCreateInfo upsample_group{};
+				upsample_group.name = "upsample";
+				upsample_group.color = 0xff6633ff;
 
-				RENDER_DEBUG_MARKER_ZONE(upsample, 0xffff33ff);
 				for (u32 idx = bloom_blur_depth - 1; idx > 0; --idx)
 				{
-					FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:upsample");
-					pass_ci.SetWorkgroupSizeByRT("bloom_target", idx - 1, true);
+					FRenderGraphComputePassNodeCreateInfo create_info;
+					create_info.name = std::format("upnsample_pass_{}", idx);
+					create_info.pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:upsample");
+					create_info.pass_ci.SetWorkgroupSizeByRT("bloom_target", idx - 1, true);
 	
-					pass_ci.BindReadResource("sampler_color", "bloom_target", idx);
-					pass_ci.BindWriteResource("write_color", "bloom_target", idx - 1);
+					create_info.pass_ci.BindReadResource("sampler_color", "bloom_target", idx);
+					create_info.pass_ci.BindWriteResource("write_color", "bloom_target", idx - 1);
 	
-					upsample_passes.emplace_back(CreateRenderNode(std::format("upnsample_pass_{}", idx), pass_ci));
+					upsample_group.nodes.emplace_back(CreateRenderNode(create_info));
 				}
 
-				passes.emplace_back(CreateGroupNode(std::move(upsample_passes), "upsample", 0xffff33ff));
+				bloom_group.nodes.emplace_back(CreateGroupNode(upsample_group));
 			}
 	
 			// Apply bloom
 			{
-				FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:apply_effect:BLOOM");
-				pass_ci.SetWorkgroupSizeByRT(output_target, true);
+				FRenderGraphComputePassNodeCreateInfo create_info;
+				create_info.name = "apply_bloom";
+				create_info.pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:apply_effect:BLOOM");
+				create_info.pass_ci.SetWorkgroupSizeByRT(output_target, true);
 	
-				pass_ci.BindWriteResource("write_color", output_target);
-				pass_ci.BindReadResource("sampler_color", input_target);
-				pass_ci.BindReadResource("bloom_color", "bloom_target", 0);
-				pass_ci.BindReadResource("dirt_mask", "DirtMaskTextureExample");
+				create_info.pass_ci.BindWriteResource("write_color", output_target);
+				create_info.pass_ci.BindReadResource("sampler_color", input_target);
+				create_info.pass_ci.BindReadResource("bloom_color", "bloom_target", 0);
+				create_info.pass_ci.BindReadResource("dirt_mask", "DirtMaskTextureExample");
 	
-				passes.emplace_back(CreateRenderNode("apply_bloom", pass_ci));
+				bloom_group.nodes.emplace_back(CreateRenderNode(create_info));
 			}
 
-			AddDynamicConditionNode([bloom_enabled]() { return bloom_enabled; }, CreateGroupNode(std::move(passes), "compute_bloom", 0xffff33ff), nullptr);
+			FRenderGraphDynamicConditionNodeCreateInfo condition_info;
+			condition_info.condition = [bloom_enabled]() { return bloom_enabled; };
+			condition_info.pass = CreateGroupNode(bloom_group);
+			AddDynamicConditionNode(condition_info);
 	
 			if(bloom_enabled)
 				SWAP_COUNT(input_target, output_target);
@@ -914,13 +967,18 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	
 		// Compute chromatic aberration
 		{
-			FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:apply_effect:CHROMATIC_ABERRATION");
-			pass_ci.SetWorkgroupSizeByRT(input_target, true);
+			FRenderGraphComputePassNodeCreateInfo create_info;
+			create_info.name = "apply_chromatic_aberration_pass";
+			create_info.pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:apply_effect:CHROMATIC_ABERRATION");
+			create_info.pass_ci.SetWorkgroupSizeByRT(input_target, true);
 	
-			pass_ci.BindWriteResource("write_color", output_target);
-			pass_ci.BindReadResource("sampler_color", input_target);
+			create_info.pass_ci.BindWriteResource("write_color", output_target);
+			create_info.pass_ci.BindReadResource("sampler_color", input_target);
 	
-			AddDynamicConditionNode([chromatic_aberration_enabled]() { return chromatic_aberration_enabled; }, CreateRenderNode("apply_chromatic_aberration_pass", pass_ci), nullptr);
+			FRenderGraphDynamicConditionNodeCreateInfo condition_info;
+			condition_info.condition = [chromatic_aberration_enabled]() { return chromatic_aberration_enabled; };
+			condition_info.pass = CreateRenderNode(create_info);
+			AddDynamicConditionNode(condition_info);
 		
 			if(chromatic_aberration_enabled)
 				SWAP_COUNT(input_target, output_target);
@@ -928,45 +986,54 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	
 		// Tonemap pass
 		{
-			RENDER_DEBUG_MARKER_ZONE(compute_tonemap, 0xffff33ff);
-
-			utl::vector<std::unique_ptr<IRenderGraphNode>> passes{};
+			FRenderGraphGroupNodeCreateInfo tonemap_group{};
+			tonemap_group.name = "compute_tonemap";
+			tonemap_group.color = 0x336633ff;
 	
 			// Compute histogram
 			{
-				FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:compute_histogram");
-				pass_ci.SetWorkgroupSizeByRT(input_target, true);
+				FRenderGraphComputePassNodeCreateInfo create_info;
+				create_info.name = "compute_histogram_pass";
+				create_info.pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:compute_histogram");
+				create_info.pass_ci.SetWorkgroupSizeByRT(input_target, true);
 	
-				pass_ci.BindReadResource("sampler_color", input_target);
-				pass_ci.BindWriteResource("Histogram", "histogram_buffer");
+				create_info.pass_ci.BindReadResource("sampler_color", input_target);
+				create_info.pass_ci.BindWriteResource("Histogram", "histogram_buffer");
 	
-				passes.emplace_back(CreateRenderNode("compute_histogram_pass", pass_ci));
+				tonemap_group.nodes.emplace_back(CreateRenderNode(create_info));
 			}
 	
 			// Compute avg screen space brightness
 			{
-				FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:compute_brightness");
-				pass_ci.SetWorkgroupSizeManual(1, 1, 1, false);
+				FRenderGraphComputePassNodeCreateInfo create_info;
+				create_info.name = "compute_brightness_pass";
+				create_info.pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:compute_brightness");
+				create_info.pass_ci.SetWorkgroupSizeManual(1, 1, 1, false);
 	
-				pass_ci .BindWriteResource("target", "avg_brightness_target");
-				pass_ci .BindReadResource("Histogram", "histogram_buffer");
+				create_info.pass_ci .BindWriteResource("target", "avg_brightness_target");
+				create_info.pass_ci .BindReadResource("Histogram", "histogram_buffer");
 	
-				passes.emplace_back(CreateRenderNode("compute_brightness_pass", pass_ci));
+				tonemap_group.nodes.emplace_back(CreateRenderNode(create_info));
 			}
 	
 			// Apply tonemapping
 			{
-				FRenderConfigComputeCreateInfo pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:apply_effect:TONEMAP");
-				pass_ci.SetWorkgroupSizeByRT(input_target, true);
+				FRenderGraphComputePassNodeCreateInfo create_info;
+				create_info.name = "apply_tonemap_pass";
+				create_info.pass_ci = makeComputePassCI(EComputeType::eDefault, EQueueTypeFlagBits::eGraphics, "postprocess:apply_effect:TONEMAP");
+				create_info.pass_ci.SetWorkgroupSizeByRT(input_target, true);
 	
-				pass_ci.BindWriteResource("write_color", output_target);
-				pass_ci.BindReadResource("sampler_color", input_target);
-				pass_ci.BindReadResource("avg_luminosity", "avg_brightness_target");
+				create_info.pass_ci.BindWriteResource("write_color", output_target);
+				create_info.pass_ci.BindReadResource("sampler_color", input_target);
+				create_info.pass_ci.BindReadResource("avg_luminosity", "avg_brightness_target");
 	
-				passes.emplace_back(CreateRenderNode("apply_tonemap_pass", pass_ci));
+				tonemap_group.nodes.emplace_back(CreateRenderNode(create_info));
 			}
 
-			AddDynamicConditionNode([tonemap_enabled]() { return tonemap_enabled; }, CreateGroupNode(std::move(passes), "compute_tonemap", 0xffff33ff), nullptr);
+			FRenderGraphDynamicConditionNodeCreateInfo condition_info;
+			condition_info.condition = [tonemap_enabled]() { return tonemap_enabled; };
+			condition_info.pass = CreateGroupNode(tonemap_group);
+			AddDynamicConditionNode(condition_info);
 	
 			if(tonemap_enabled)
 				SWAP_COUNT(input_target, output_target);
@@ -977,21 +1044,25 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	
 	// Present pass
 	{
-		FRenderConfigRenderCreateInfo pass_ci = makeGraphicsPassCI(ERenderingType::eFullscreen, EQueueTypeFlagBits::eGraphics, "testing:screenspace");
-		pass_ci.FlipFiewport();
+		FRenderGraphRenderPassNodeCreateInfo create_info;
+		create_info.name = "finalize_image_pass";
+		create_info.pass_ci = makeGraphicsPassCI(ERenderingType::eFullscreen, EQueueTypeFlagBits::eGraphics, "testing:screenspace");
+		create_info.pass_ci.FlipFiewport();
 	
-		pass_ci.BindReadResource("input_image", final_target);
-		//pass_ci.BindReadResource("input_image", "frequency_target");
-		pass_ci.AddWriteResource("present_target");
+		create_info.pass_ci.BindReadResource("input_image", final_target);
+		//create_info.pass_ci.create_info.BindReadResource("input_image", "frequency_target");
+		create_info.pass_ci.AddWriteResource("present_target");
 	
-		AddRenderNode("finalize_image_pass", pass_ci);
+		AddRenderNode(create_info);
 	}
 
 	// ImGui pass
 	{
-		FRenderConfigRenderCreateInfo pass_ci = makeGraphicsPassCI(ERenderingType::eImGui, EQueueTypeFlagBits::eGraphics, "testing:imgui");
-		pass_ci.AddWriteResource("present_target");
-		AddRenderNode("imgui_pass", pass_ci);
+		FRenderGraphRenderPassNodeCreateInfo create_info;
+		create_info.name = "imgui_pass";
+		create_info.pass_ci = makeGraphicsPassCI(ERenderingType::eImGui, EQueueTypeFlagBits::eGraphics, "testing:imgui");
+		create_info.pass_ci.AddWriteResource("present_target");
+		AddRenderNode(create_info);
 	}
 }
 

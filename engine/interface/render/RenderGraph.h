@@ -1,6 +1,7 @@
 #pragma once 
 
 #include <container/hash_map.h>
+#include <reactive/function.h>
 #include "TextureStructures.h"
 
 namespace engine
@@ -417,7 +418,7 @@ namespace engine
 
 		struct FRenderGraphNodeHeader
 		{
-			ERenderGraphNodeType type;
+			u32 type;
 			u32 data_offset;
 		};
 
@@ -479,19 +480,23 @@ namespace engine
 			FRenderConfigComputeCreateInfo pass_ci;
 		};
 
-		inline void allocate_graph_node(ERenderGraphNodeType type, void** out, u64 size, u64 alignment)
+		inline u64 aligned_size(u64 size, u64 alignment)
 		{
-			constexpr u64 header_size = sizeof(FRenderGraphNodeHeader);
-			constexpr u64 header_align = alignof(FRenderGraphNodeHeader);
+			return (size + alignment - 1) & ~(alignment - 1);
+		}
 
-			constexpr u64 aligned_header_size = header_align + header_size;
-			u64 aligned_offset = (((aligned_header_size + alignment - 1ull) / alignment) * alignment - aligned_header_size);
-			u64 node_size = header_size + size + aligned_offset;
-			(*out) = _aligned_malloc(node_size, header_align);
+		template<class _HeaderType>
+		inline void allocate_combined_space(u32 type, void** out, u64 size, u64 alignment)
+		{
+			u64 aligned_header_size = aligned_size(sizeof(_HeaderType), alignment);
+			u64 aligned_data_size = aligned_size(size, alignment);
+			(*out) = _aligned_malloc(aligned_header_size + aligned_data_size, alignment);
 
-			FRenderGraphNodeHeader* header = reinterpret_cast<FRenderGraphNodeHeader*>(*out);
+			_HeaderType* header = reinterpret_cast<_HeaderType*>(*out);
 			header->type = type;
-			header->data_offset = header_size + aligned_offset;
+			header->data_offset = aligned_header_size;
+
+			std::memset(reinterpret_cast<char*>(header) + header->data_offset, 0, aligned_data_size);
 		}
 
 		inline void deallocate_graph_node(FRenderGraphNodeHeader** out)
@@ -508,15 +513,15 @@ namespace engine
 		FRenderGraphNodeHeader* allocate_graph_node(ERenderGraphNodeType type)
 		{
 			FRenderGraphNodeHeader* out{ nullptr };
-			allocate_graph_node(type, &out, sizeof(_Ty), alignof(_Ty));
+			allocate_combined_space<FRenderGraphNodeHeader>(static_cast<u32>(type), (void**)&out, sizeof(_Ty), alignof(max_align_t));
 			return out;
 		}
 
 		template<class _Ty>
 		_Ty* cast_graph_node(FRenderGraphNodeHeader* header)
 		{
-			auto* data = static_cast<char*>(header) + header->data_offset;
-			return static_cast<_Ty*>(data);
+			auto* data = reinterpret_cast<char*>(header) + header->data_offset;
+			return reinterpret_cast<_Ty*>(data);
 		}
 
 		class IRenderGraph

@@ -18,5 +18,3 @@ namespace engine
 		};
 	}
 }
-
-#define RENDER_DEBUG_MARKER_ZONE(name, ...) CScopedDebugMarker name(this, #name, __VA_ARGS__)
