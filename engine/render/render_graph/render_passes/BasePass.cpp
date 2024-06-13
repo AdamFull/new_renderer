@@ -13,48 +13,6 @@ void caclulate_size_for_mip_level(u32& width, u32& height, u32 mip_level)
 	height = std::max(1u, height >> mip_level);
 }
 
-void IBasePass::Execute(f32 dt)
-{
-	if (m_bOneTime && m_bCanExecute)
-		m_bCanExecute = false;
-}
-
-bool IBasePass::CanExecute()
-{
-	return m_bCanExecute;
-}
-
-void IBasePass::InitShaderResources(FRHIHandle shader)
-{
-	auto& shader_object = m_pRenderInterface->GetShaderObject(shader);
-	InitShaderResources(shader_object);
-}
-
-void IBasePass::BindShaderResources(FRHIHandle shader, f32 dt)
-{
-
-}
-
-void IBasePass::InitShaderResources(const std::unique_ptr<IShaderObject>& shader)
-{
-	auto& render_graph = m_pRenderInterface->GetRenderGraph();
-
-	// Bind default textures/buffers to shader
-	for (const auto& [bind_point, resource_binding] : m_bakedBindings)
-	{
-		auto& render_resource = render_graph->GetRenderResource(resource_binding.resource);
-		if (render_resource.type & ERenderResourceTypeFlagBits::eAllImage)
-			shader->BindTexture(utl::fnv1a_64_hash_cstr(bind_point.c_str()), render_resource.handle, resource_binding.subresource);
-		else if (render_resource.type == ERenderResourceTypeFlagBits::eBuffer)
-			shader->BindBuffer(utl::fnv1a_64_hash_cstr(bind_point.c_str()), render_resource.handle);
-	}
-}
-
-void IBasePass::BindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt)
-{
-
-}
-
 void IRenderPass::Init(const FRenderPassCreateInfo& pass_ci)
 {
 	m_queue = pass_ci.queue;
@@ -224,22 +182,32 @@ FRHIHandle IRenderPass::MakeShader(const std::string& name, EShaderCullModeFlagB
 
 void IRenderPass::InitShaderResources(FRHIHandle shader)
 {
-	IBasePass::InitShaderResources(shader);
+	auto& shader_object = m_pRenderInterface->GetShaderObject(shader);
+	InitShaderResources(shader_object);
 }
 
 void IRenderPass::BindShaderResources(FRHIHandle shader, f32 dt)
 {
-	IBasePass::BindShaderResources(shader, dt);
+	
 }
 
 void IRenderPass::InitShaderResources(const std::unique_ptr<IShaderObject>& shader)
 {
-	IBasePass::InitShaderResources(shader);
+	auto& render_graph = m_pRenderInterface->GetRenderGraph();
+	// Bind default textures/buffers to shader
+	for (const auto& [bind_point, resource_binding] : m_bakedBindings)
+	{
+		auto& render_resource = render_graph->GetRenderResource(resource_binding.resource);
+		if (render_resource.type & ERenderResourceTypeFlagBits::eAllImage)
+			shader->BindTexture(utl::fnv1a_64_hash_cstr(bind_point.c_str()), render_resource.handle, resource_binding.subresource);
+		else if (render_resource.type == ERenderResourceTypeFlagBits::eBuffer)
+			shader->BindBuffer(utl::fnv1a_64_hash_cstr(bind_point.c_str()), render_resource.handle);
+	}
 }
 
 void IRenderPass::BindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt)
 {
-	IBasePass::BindShaderResources(shader, dt);
+
 }
 
 
@@ -319,7 +287,8 @@ void IComputePass::Execute(f32 dt)
 
 void IComputePass::InitShaderResources(FRHIHandle shader)
 {
-	IBasePass::InitShaderResources(shader);
+	auto& shader_object = m_pRenderInterface->GetShaderObject(shader);
+	InitShaderResources(shader_object);
 }
 
 void IComputePass::BindShaderResources(FRHIHandle shader, f32 dt)
@@ -330,13 +299,20 @@ void IComputePass::BindShaderResources(FRHIHandle shader, f32 dt)
 
 void IComputePass::InitShaderResources(const std::unique_ptr<IShaderObject>& shader)
 {
-	IBasePass::InitShaderResources(shader);
+	auto& render_graph = m_pRenderInterface->GetRenderGraph();
+	// Bind default textures/buffers to shader
+	for (const auto& [bind_point, resource_binding] : m_bakedBindings)
+	{
+		auto& render_resource = render_graph->GetRenderResource(resource_binding.resource);
+		if (render_resource.type & ERenderResourceTypeFlagBits::eAllImage)
+			shader->BindTexture(utl::fnv1a_64_hash_cstr(bind_point.c_str()), render_resource.handle, resource_binding.subresource);
+		else if (render_resource.type == ERenderResourceTypeFlagBits::eBuffer)
+			shader->BindBuffer(utl::fnv1a_64_hash_cstr(bind_point.c_str()), render_resource.handle);
+	}
 }
 
 void IComputePass::BindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt)
 {
-	IBasePass::BindShaderResources(shader, dt);
-
 	auto& render_context = m_pRenderInterface->GetRenderContext();
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
 	auto& post_process = render_world->GetPostProcessingData();

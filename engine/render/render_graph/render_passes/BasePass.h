@@ -20,43 +20,6 @@ namespace engine
 		{
 		};
 
-		class IBasePass
-		{
-		public:
-			friend class CRenderGraph;
-			virtual ~IBasePass() = default;
-
-			virtual void Build(const FPassBuildInfo& build_info) = 0;
-			virtual void PostLoad() {}
-
-			virtual void Update(f32 dt) {}
-			virtual void Execute(f32 dt);
-
-			virtual bool CanExecute();
-
-			virtual EPassType Type() = 0;
-
-		protected:
-			virtual void InitShaderResources(FRHIHandle shader);
-			virtual void BindShaderResources(FRHIHandle shader, f32 dt);
-			virtual void InitShaderResources(const std::unique_ptr<IShaderObject>& shader);
-			virtual void BindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt);
-
-			EQueueTypeFlagBits m_queue{};
-
-			utl::hash_map<ERenderResourceGroupType, utl::vector<FRenderResourceBinding>> m_renderResources{};
-			utl::hash_map<std::string, FRenderResourceBinding> m_bakedBindings{};
-
-			bool m_bOneTime{ false };
-			bool m_bCanExecute{ true };
-
-#ifndef BUILD_WITHOUT_DEBUGGIND
-			std::string m_debugName{};
-#endif
-
-			IRenderInterface* m_pRenderInterface{ nullptr };
-		};
-
 		class IRenderPass : public IBasePass
 		{
 		public:
@@ -75,10 +38,10 @@ namespace engine
 			virtual void _Render(const FRenderFrameInfo& frame_info) = 0;
 
 			virtual FRHIHandle MakeShader(const std::string& name, EShaderCullModeFlagBits cull_mode, EShaderFrontFace front_face, bool alphaBlend = false, EDepthCompareOp depthOp = EDepthCompareOp::eLessOrEqual, const IVertexHandler* vbo = nullptr);
-			virtual void InitShaderResources(FRHIHandle) override;
-			virtual void BindShaderResources(FRHIHandle, f32 dt) override;
-			virtual void InitShaderResources(const std::unique_ptr<IShaderObject>& shader) override;
-			virtual void BindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt) override;
+			void InitShaderResources(FRHIHandle);
+			void BindShaderResources(FRHIHandle, f32 dt);
+			void InitShaderResources(const std::unique_ptr<IShaderObject>& shader);
+			void BindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt);
 		protected:
 			bool m_bFlipViewport{ false };
 
@@ -91,6 +54,8 @@ namespace engine
 			utl::hash_map<FAPIHandle, FClearValues> m_clearValues;
 			FRenderGraphAttachmentInfo m_depthAttachment{};
 			FRenderGraphAttachmentInfo m_stencilAttachment{};
+
+			IRenderInterface* m_pRenderInterface{ nullptr };
 		};
 
 		class IComputePass : public IBasePass
@@ -108,13 +73,15 @@ namespace engine
 		protected:
 			virtual void _Execute(const FComputeFrameInfo& frame_info) = 0;
 
-			virtual void InitShaderResources(FRHIHandle shader) override;
-			virtual void BindShaderResources(FRHIHandle shader, f32 dt) override;
-			virtual void InitShaderResources(const std::unique_ptr<IShaderObject>& shader) override;
-			virtual void BindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt) override;
+			virtual void InitShaderResources(FRHIHandle shader);
+			virtual void BindShaderResources(FRHIHandle shader, f32 dt);
+			virtual void InitShaderResources(const std::unique_ptr<IShaderObject>& shader);
+			virtual void BindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt);
 		protected:
 			FDispatch2Info m_dispatchGroup{};
 			FComputeDispatchGroupInfo m_dispatchInfo{};
+
+			IRenderInterface* m_pRenderInterface{ nullptr };
 		};
 	}
 }

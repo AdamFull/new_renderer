@@ -16,8 +16,7 @@ namespace engine
 			eDirectionalShadowMap,
 			eOmniShadowMap,
 			eRenderScript,
-			eClear,
-			eImGui
+			eClear
 		};
 
 		enum class EComputeType

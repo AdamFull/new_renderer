@@ -20,14 +20,6 @@
 #include "render_passes/FullscreenPass.h"
 #include "render_passes/GeometryPass.h"
 #include "render_passes/ClearPass.h"
-#include "render_passes/ImGuiPass.h"
-
-#include "GraphNodes.h"
-
-#include "render_passes/BeginDebugMarker.h"
-#include "render_passes/EndDebugMarker.h"
-
-#include "ScopedDebugMarker.h"
 
 #include <engine/VariableBlock.h>
 #include <engine/Variables.h>
@@ -36,25 +28,6 @@ using namespace engine;
 using namespace engine::render;
 
 #define SWAP_COUNT(in, out) std::swap(in, out); ++pass_count;
-
-struct pair_hash
-{
-	template <class _T1, class _T2>
-	std::size_t operator()(const std::pair<_T1, _T2>& pair) const 
-	{
-		std::size_t hash1 = std::hash<_T1>{}(pair.first);
-		std::size_t hash2 = std::hash<_T2>{}(pair.second);
-		return hash1 ^ hash2;
-	}
-};
-
-struct tmp_access_info
-{
-	ERenderResourceAccessFlagBits access{};
-	utl::vector<ERenderResourceAccessFlagBits> all_time_access{};
-	EPassType pass_type{};
-	FResourceBarrierInfo* last_barrier{ nullptr };
-};
 
 bool is_x_only_access(const FRenderResource& resource, ERenderResourceAccessFlagBits required_access)
 {
@@ -100,7 +73,7 @@ bool is_ro_access_only_remain(const FRenderResource& resource, u64 current_pass)
 	return true;
 }
 
-bool was_accessed(const tmp_access_info& access_info, ERenderResourceAccessFlagBits access_flag)
+bool was_accessed(const FConsistentAccessInfo& access_info, ERenderResourceAccessFlagBits access_flag)
 {
 	auto found = std::find_if(access_info.all_time_access.begin(), access_info.all_time_access.end(),
 		[access_flag](const ERenderResourceAccessFlagBits& access) {return access == access_flag; });
@@ -120,6 +93,11 @@ void filter_pass_queue(utl::vector<u64>& pass_list)
 CRenderGraph::CRenderGraph(IRenderInterface* render_interface)
 {
 	m_pRenderInterface = render_interface;
+}
+
+CRenderGraph::~CRenderGraph()
+{
+	DestoyRenderGraph();
 }
 
 FTextureCreateInfo CRenderGraph::MakeTextureCI(EApiDataFormat format, ETextureCreateFlags flags)
@@ -160,13 +138,22 @@ FTextureCreateInfo CRenderGraph::MakeTextureCubeArrayCI(EApiDataFormat format, E
 	return MakeTextureCI(format, flags | ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eCubemap | ETextureCreateFlagBits::eArray);
 }
 
-void CRenderGraph::EvaluateRenderGraph(utl::vector<u64>& passes)
+void CRenderGraph::EvaluateRenderGraph(ERenderGraphEvaluateFlags flags, f32 dt)
 {
+	if (flags & ERenderGraphEvaluateFlagBits::eUpdateGraph)
+	{
+		m_graph.perResourceAccessedPasses.clear();
+		m_graph.resourceAccessMap.clear();
+		m_graph.passes.clear();
+		m_graph.buildInfos.clear();
+		m_graph.perPassBarriers.clear();
+	}
+
 	for (auto& node : m_vGraphNodes)
-		EvaluateRenderGraphNode(node, passes);
+		EvaluateRenderGraphNode(flags, node, dt);
 }
 
-void CRenderGraph::EvaluateRenderGraphNode(FRenderGraphNodeHeader* header, utl::vector<u64>& passes)
+void CRenderGraph::EvaluateRenderGraphNode(ERenderGraphEvaluateFlags flags, FRenderGraphNodeHeader* header, f32 dt)
 {
 	if (header)
 	{
@@ -175,37 +162,189 @@ void CRenderGraph::EvaluateRenderGraphNode(FRenderGraphNodeHeader* header, utl::
 		case ERenderGraphNodeType::eStaticCondition:
 		{
 			auto* static_condition_node = cast_graph_node<FRenderGraphStaticConditionNode>(header);
-			EvaluateRenderGraphNode(static_condition_node->node, passes);
+			EvaluateRenderGraphNode(flags, static_condition_node->node, dt);
 		} break;
 		case ERenderGraphNodeType::eDynamicCondition:
 		{
 			auto* dynamic_condition_node = cast_graph_node<FRenderGraphDynamicConditionNode>(header);
 			if (dynamic_condition_node->condition())
-				EvaluateRenderGraphNode(dynamic_condition_node->pass, passes);
+				EvaluateRenderGraphNode(flags, dynamic_condition_node->pass, dt);
 			else
-				EvaluateRenderGraphNode(dynamic_condition_node->fail, passes);
+				EvaluateRenderGraphNode(flags, dynamic_condition_node->fail, dt);
 
 		} break;
 		case ERenderGraphNodeType::eGroupNode:
 		{
 			auto* group_node = cast_graph_node<FRenderGraphGroupNode>(header);
 
-			for (auto& node : group_node->nodes)
-				EvaluateRenderGraphNode(node, passes);
+			auto& render_context = m_pRenderInterface->GetRenderContext();
+			if (flags & ERenderGraphEvaluateFlagBits::eRender)
+				render_context->BeginDebugLabel(group_node->name.c_str(), group_node->queue, group_node->color);
 
-		} break;
-		case ERenderGraphNodeType::eLayerNode:
-		{
-			// Not implemented yet
+			for (auto& node : group_node->nodes)
+				EvaluateRenderGraphNode(flags, node, dt);
+
+			if (flags & ERenderGraphEvaluateFlagBits::eRender)
+				render_context->EndDebugLabel(group_node->queue);
+
 		} break;
 		case ERenderGraphNodeType::ePassNode:
 		{
 			auto* pass_node = cast_graph_node<FRenderGraphPassNode>(header);
 
 			auto& pass = m_vRenderPasses[pass_node->passIndex];
-			if (pass->CanExecute())
-				passes.emplace_back(pass_node->passIndex);
+			if (!pass->CanExecute())
+				return;
+
+			if (flags & ERenderGraphEvaluateFlagBits::eUpdateGraph)
+				GraphUpdateBarriers(pass_node->passIndex);
+
+			if (flags & ERenderGraphEvaluateFlagBits::eRender)
+			{
+				auto& render_context = m_pRenderInterface->GetRenderContext();
+				auto& pass_barriers = m_graph.perPassBarriers[pass_node->passIndex];
+				render_context->ProcessResourceBarriers(pass->m_queue, pass_barriers);
+				pass->Execute(dt);
+			}
 		} break;
+		}
+	}
+}
+void CRenderGraph::DestoyRenderGraph()
+{
+	for (auto& node : m_vGraphNodes)
+		DestoyRenderGraphNode(node);
+}
+
+void CRenderGraph::DestoyRenderGraphNode(FRenderGraphNodeHeader* header)
+{
+	if (header)
+	{
+		switch (static_cast<ERenderGraphNodeType>(header->type))
+		{
+		case ERenderGraphNodeType::eStaticCondition:
+		{
+			auto* static_condition_node = cast_graph_node<FRenderGraphStaticConditionNode>(header);
+			DestoyRenderGraphNode(static_condition_node->node);
+			deallocate_graph_node(&static_condition_node->node);
+		} break;
+		case ERenderGraphNodeType::eDynamicCondition:
+		{
+			auto* dynamic_condition_node = cast_graph_node<FRenderGraphDynamicConditionNode>(header);
+
+			DestoyRenderGraphNode(dynamic_condition_node->pass);
+			deallocate_graph_node(&dynamic_condition_node->pass);
+
+			DestoyRenderGraphNode(dynamic_condition_node->fail);
+			deallocate_graph_node(&dynamic_condition_node->fail);
+
+		} break;
+		case ERenderGraphNodeType::eGroupNode:
+		{
+			auto* group_node = cast_graph_node<FRenderGraphGroupNode>(header);
+
+			auto& render_context = m_pRenderInterface->GetRenderContext();
+
+			for (auto& node : group_node->nodes)
+			{
+				DestoyRenderGraphNode(node);
+				deallocate_graph_node(&node);
+			}
+
+		} break;
+		}
+	}
+}
+
+void CRenderGraph::GraphUpdateBarriers(u64 pass_index)
+{
+	auto& pass = m_vRenderPasses[pass_index];
+	auto& pass_barriers = m_graph.perPassBarriers[pass_index];
+
+	m_graph.passes.emplace_back(pass_index);
+
+	for (const auto& [resource_group, resource_bindings] : pass->m_renderResources)
+	{
+		ERenderResourceAccessFlagBits access_flag{};
+		ERenderResourceGroupFlagBits group_flag{};
+		unpackResourceGroup(resource_group, access_flag, group_flag);
+
+		for (u64 resource_index = 0ull; resource_index < resource_bindings.size(); ++resource_index)
+		{
+			const auto& resource_binding = resource_bindings[resource_index];
+			const auto& render_resource = m_vRenderResources[resource_binding.resource.Get()];
+
+			bool is_backbuffer_resource = m_backBufferResource == resource_binding.resource;
+
+			// Save all accessed passes for check is this last access
+			auto& accessed_passes = m_graph.perResourceAccessedPasses[resource_binding.resource];
+			accessed_passes.emplace(pass_index);
+
+			// Barriers is not needed for static resource (Loaded from file). 
+			if (render_resource.type & ERenderResourceTypeFlagBits::eStaticImage)
+				continue;
+
+			// Check will this resource even be writen by any pass
+			if (is_x_only_access(render_resource, ERenderResourceAccessFlagBits::eRead))
+				continue;
+
+			u32 subresource_key = resource_binding.subresource == ~0ull ? 0u : resource_binding.subresource;
+
+			auto resource_key = std::make_pair(resource_binding.resource, subresource_key);
+			auto& last_resource_access = m_graph.resourceAccessMap[resource_key];
+
+			// Ignoring read after read barriers
+			if (last_resource_access.access == access_flag && access_flag == ERenderResourceAccessFlagBits::eRead)
+				continue;
+
+			auto barrier_type = packDependencyBarrier(last_resource_access.access, access_flag);
+
+			// Check for last access duplicating
+			if (last_resource_access.last_barrier)
+			{
+				auto& last_barrier = *last_resource_access.last_barrier;
+				if (
+					last_barrier.dependencyType == barrier_type &&
+					last_barrier.resource.handle == render_resource.handle &&
+					last_barrier.resource.type == render_resource.type &&
+					last_barrier.subresourceIndex == resource_binding.subresource &&
+					last_barrier.srcPassType == last_resource_access.pass_type &&
+					last_barrier.dstPassType == pass->Type()
+					)
+					continue;
+			}
+
+			// Prepare infos for render pipeline
+			auto& build_info = m_graph.buildInfos[pass_index];
+			auto& attachment = build_info.attachments[resource_binding.resource];
+			attachment.loadOp = barrier_type == ERenderResourceDependencyBarrierType::eWriteAfterWrite ? ERenderResourceLoadOp::eLoad : ERenderResourceLoadOp::eClear;
+			attachment.storeOp = (render_resource.usages.count(ERenderResourceAccessFlagBits::eRead) || resource_binding.resource == m_backBufferResource) ? ERenderResourceStoreOp::eStore : ERenderResourceStoreOp::eDontCare;
+
+			// TODO: Ignore duplicate barriers
+			auto& new_barrier = pass_barriers.emplace_back();
+
+			// First time barrier should be translation barrier and last barrier should be if resource is read only
+			// TODO: Add special enum class for it
+			bool is_change_pipeline_ownership = last_resource_access.pass_type == pass->Type() && barrier_type == ERenderResourceDependencyBarrierType::eWriteAfterWrite;
+
+			if (last_resource_access.access == ERenderResourceAccessFlagBits::eNone)
+				new_barrier.barrierType = access_flag == ERenderResourceAccessFlagBits::eRead ? new_barrier.barrierType = ERenderResourceBarrierType::eFinal : ERenderResourceBarrierType::eIntermediate;
+			else if (is_ro_access_only_remain(render_resource, pass_index))
+				new_barrier.barrierType = is_backbuffer_resource ? ERenderResourceBarrierType::eIntermediate : ERenderResourceBarrierType::eFinal;
+			else if (is_change_pipeline_ownership)
+				new_barrier.barrierType = ERenderResourceBarrierType::eIntermediate;
+
+			new_barrier.dependencyType = barrier_type;
+			new_barrier.resource.handle = render_resource.handle;
+			new_barrier.resource.type = render_resource.type;
+			new_barrier.subresourceIndex = resource_binding.subresource;
+			new_barrier.srcPassType = last_resource_access.pass_type;
+			new_barrier.dstPassType = pass->Type();
+
+			last_resource_access.access = access_flag;
+			last_resource_access.all_time_access.emplace_back(access_flag);
+			last_resource_access.pass_type = new_barrier.dstPassType;
+			last_resource_access.last_barrier = &new_barrier;
 		}
 	}
 }
@@ -1056,13 +1195,13 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		AddRenderNode(create_info);
 	}
 
-	// ImGui pass
+	// GUI layer
 	{
-		FRenderGraphRenderPassNodeCreateInfo create_info;
-		create_info.name = "imgui_pass";
-		create_info.pass_ci = makeGraphicsPassCI(ERenderingType::eImGui, EQueueTypeFlagBits::eGraphics, "testing:imgui");
-		create_info.pass_ci.AddWriteResource("present_target");
-		AddRenderNode(create_info);
+		FRenderGraphGroupNodeCreateInfo ui_layer{};
+		ui_layer.name = "gui_layer";
+		ui_layer.color = 0x113333ff;
+
+		AddLayerNode(ui_layer);
 	}
 }
 
@@ -1089,28 +1228,6 @@ void CRenderGraph::SetBackbufferResourceName(const std::string& name)
 
 	m_backBufferResource = FGraphHandle(resource_index);
 	m_nameToResource[name] = m_backBufferResource;
-}
-
-void CRenderGraph::PushDebugMarker(const std::string& name, u32 color, EQueueTypeFlagBits queue)
-{
-	auto new_marker = std::make_unique<CBeginDebugMarker>(m_pRenderInterface);
-	new_marker->Init(name, color, queue);
-
-	auto marker_index = m_vRenderPasses.size();
-
-	m_vRenderPasses.emplace_back(std::move(new_marker));
-	m_nameToPass[name + "_begin"] = marker_index;
-}
-
-void CRenderGraph::PopDebugMarker(const std::string& name, EQueueTypeFlagBits queue)
-{
-	auto new_marker = std::make_unique<CEndDebugMarker>(m_pRenderInterface);
-	new_marker->Init(queue);
-
-	auto marker_index = m_vRenderPasses.size();
-
-	m_vRenderPasses.emplace_back(std::move(new_marker));
-	m_nameToPass[name + "_end"] = marker_index;
 }
 
 const FRenderResource& CRenderGraph::GetRenderResource(const std::string& name) const
@@ -1162,8 +1279,6 @@ u64 CRenderGraph::AddRenderPass(const std::string& name, const FRenderConfigRend
 		new_pass = std::make_unique<COmnilShadowMapPass>(m_pRenderInterface);
 	else if(render_pass_ci.type == ERenderingType::eClear)
 		new_pass = std::make_unique<CClearPass>(m_pRenderInterface);
-	else if (render_pass_ci.type == ERenderingType::eImGui)
-		new_pass = std::make_unique<CImGuiPass>(m_pRenderInterface);
 
 	if (!render_pass_ci.depthResource.empty())
 		pass_ci.depthTarget = GetRenderRersourceId(render_pass_ci.depthResource);
@@ -1173,7 +1288,6 @@ u64 CRenderGraph::AddRenderPass(const std::string& name, const FRenderConfigRend
 
 	new_pass->Init(pass_ci);
 	m_vRenderPasses.emplace_back(std::move(new_pass));
-	m_nameToPass[name] = pass_index;
 
 	return pass_index;
 }
@@ -1207,7 +1321,6 @@ u64 CRenderGraph::AddRenderPass(const std::string& name, const FRenderConfigComp
 
 	new_pass->Init(pass_ci);
 	m_vRenderPasses.emplace_back(std::move(new_pass));
-	m_nameToPass[name] = pass_index;
 
 	return pass_index;
 }
@@ -1225,6 +1338,12 @@ void CRenderGraph::AddDynamicConditionNode(FRenderGraphDynamicConditionNodeCreat
 void CRenderGraph::AddGroupNode(FRenderGraphGroupNodeCreateInfo& create_info)
 {
 	m_vGraphNodes.emplace_back(CreateGroupNode(create_info));
+}
+
+void CRenderGraph::AddLayerNode(FRenderGraphGroupNodeCreateInfo& create_info)
+{
+	m_nameToLayer.emplace(utl::fnv1a_64_hash_cstr(create_info.name.c_str()), m_vGraphNodes.size());
+	AddGroupNode(create_info);
 }
 
 void CRenderGraph::AddRenderNode(FRenderGraphRenderPassNodeCreateInfo& create_info)
@@ -1277,6 +1396,7 @@ FRenderGraphNodeHeader* CRenderGraph::CreateGroupNode(FRenderGraphGroupNodeCreat
 	group->name = std::move(create_info.name);
 	group->color = create_info.color;
 	group->nodes = std::move(create_info.nodes);
+	group->queue = create_info.queue;
 	
 	return header;
 }
@@ -1301,19 +1421,24 @@ FRenderGraphNodeHeader* CRenderGraph::CreateRenderNode(FRenderGraphComputePassNo
 	return header;
 }
 
-template <class _Ty, class _KTy>
-struct counter_pair : std::pair <_Ty, _KTy>
+void CRenderGraph::AddPassToLayer(const std::string& layer_name, std::unique_ptr<IBasePass>&& pass)
 {
-	using std::pair<_Ty, _KTy>::pair;
+	auto hash = utl::fnv1a_64_hash_cstr(layer_name.c_str());
 
-	bool operator== (const counter_pair& other)
+	if (auto found = m_nameToLayer.find(hash); found != m_nameToLayer.end())
 	{
-		std::pair p1 = *this;
-		std::pair p2 = other;
+		auto* header = allocate_graph_node<FRenderGraphPassNode>(ERenderGraphNodeType::ePassNode);
+		auto* pass_node = cast_graph_node<FRenderGraphPassNode>(header);
 
-		return p1 == p2;
+		pass_node->passIndex = m_vRenderPasses.size();
+
+		auto* layer_header = m_vGraphNodes[found->second];
+		auto* layer_node = cast_graph_node<FRenderGraphGroupNode>(header);
+		layer_node->nodes.emplace_back();
+
+		m_vRenderPasses.emplace_back(std::move(pass));
 	}
-};
+}
 
 void CRenderGraph::Build()
 {
@@ -1330,58 +1455,31 @@ void CRenderGraph::Build()
 		return;
 	}
 
-	EvaluateRenderGraph(m_vPassExecutionQueue);
-
-	utl::hash_map<u64, FPassBuildInfo> build_infos;
-	GenerateResourceBarriers(build_infos, true);
-
-	// Barriers post process
-
-	//m_vPassDependencies.resize(m_vRenderPasses.size());
-	//m_vPassMergeDependencies.resize(m_vRenderPasses.size());
-	//m_vPassProcessing.resize(m_vRenderPasses.size());
-	//
-	//for (u64 pass_index : backbuffer_resource.usages[ERenderResourceAccessFlagBits::eWrite])
-	//	TraverseDependencies(pass_index);
-	//
-	//std::reverse(m_vPassExecutionQueue.begin(), m_vPassExecutionQueue.end());
-	//filter_pass_queue(m_vPassExecutionQueue);
-	//
-	//ReorderPasses(m_vPassExecutionQueue);
-	//
-
 	// Build render passes
-	for (u64 pass_index : m_vPassExecutionQueue)
-	{
-		auto& build_info = build_infos[pass_index];
-		auto& pass = m_vRenderPasses.at(pass_index);
-		pass->Build(build_info);
-	}
+	EvaluateRenderGraph(ERenderGraphEvaluateFlagBits::eUpdateGraph);
 
-	return;
+	for (u64 pass_index : m_graph.passes)
+	{
+		auto& pass = m_vRenderPasses[pass_index];
+		auto& build_info = m_graph.buildInfos[pass_index];
+		pass->Build(build_info);
+	}	
 }
 
 void CRenderGraph::PostLoad()
 {
-	for (u64 pass_index : m_vPassExecutionQueue)
+	for (u64 pass_index : m_graph.passes)
 	{
-		auto& pass = m_vRenderPasses.at(pass_index);
+		auto& pass = m_vRenderPasses[pass_index];
 		pass->PostLoad();
 	}
 }
 
 void CRenderGraph::Update(f32 dt)
 {
-	m_vPassExecutionQueue.clear();
-	EvaluateRenderGraph(m_vPassExecutionQueue);
-
-	for (u64 pass_index : m_vPassExecutionQueue)
+	for (u64 pass_index : m_graph.passes)
 	{
 		auto& pass = m_vRenderPasses[pass_index];
-
-		if (!pass->CanExecute())
-			continue;
-
 		pass->Update(dt);
 	}
 }
@@ -1390,20 +1488,7 @@ void CRenderGraph::Execute(f32 dt)
 {
 	auto& render_context = m_pRenderInterface->GetRenderContext();
 
-	for (u64 pass_index : m_vPassExecutionQueue)
-	{
-		auto& pass = m_vRenderPasses[pass_index];
-		auto& resource_barriers = m_perPassResourceBarriers[pass_index];
-
-		if (!pass->CanExecute())
-			continue;
-
-		if (pass->m_debugName == "compute:postprocess:downsample")
-			int iiiii = 0;
-
-		render_context->ProcessResourceBarriers(pass->m_queue, resource_barriers);
-		pass->Execute(dt);
-	}
+	EvaluateRenderGraph(ERenderGraphEvaluateFlagBits::eRender, dt);
 
 	auto& backbuffer_resource = m_vRenderResources[m_backBufferResource.Get()];
 	utl::vector<FResourceBarrierInfo> backbuffer_barriers{};
@@ -1531,256 +1616,17 @@ void CRenderGraph::ApplyMultiRenderResourceDependencies(u64 pass_index, EQueueTy
 
 bool CRenderGraph::WasGraphChanged()
 {
-	static std::hash<u64> hasher;
-	u64 new_hash{ 0ull };
-	for (u64 pass_index : m_vPassExecutionQueue)
-	{
-		auto& pass = m_vRenderPasses[pass_index];
-
-		if (pass->CanExecute())
-			new_hash ^= hasher(pass_index);
-	}
-
-	bool res{ new_hash != m_executionHash };
-	m_executionHash = new_hash;
-	return res;
-}
-
-void CRenderGraph::GenerateResourceBarriers(utl::hash_map<u64, FPassBuildInfo>& build_infos, bool generate_build_infos)
-{
-	utl::hash_map<std::pair<FGraphHandle, u32>, tmp_access_info, pair_hash> resource_access_map{};
-	utl::hash_map<FGraphHandle, std::unordered_set<u64>> per_res_accessed_passes{};
-
-	for (u64 pass_index : m_vPassExecutionQueue)
-	{
-		auto& pass = m_vRenderPasses.at(pass_index);
-
-		for (const auto& [resource_group, resource_bindings] : pass->m_renderResources)
-		{
-			ERenderResourceAccessFlagBits access_flag{};
-			ERenderResourceGroupFlagBits group_flag{};
-			unpackResourceGroup(resource_group, access_flag, group_flag);
-
-			for (u64 resource_index = 0ull; resource_index < resource_bindings.size(); ++resource_index)
-			{
-				const auto& resource_binding = resource_bindings[resource_index];
-				const auto& render_resource = m_vRenderResources[resource_binding.resource.Get()];
-
-				bool is_backbuffer_resource = m_backBufferResource == resource_binding.resource;
-
-				// Save all accessed passes for check is this last access
-				auto& accessed_passes = per_res_accessed_passes[resource_binding.resource];
-				accessed_passes.emplace(pass_index);
-
-				// Barriers is not needed for static resource (Loaded from file). 
-				if (render_resource.type & ERenderResourceTypeFlagBits::eStaticImage)
-					continue;
-
-				// Check will this resource even be writen by any pass
-				if (is_x_only_access(render_resource, ERenderResourceAccessFlagBits::eRead))
-					continue;
-
-				u32 subresource_key = resource_binding.subresource == ~0ull ? 0u : resource_binding.subresource;
-
-				auto resource_key = std::make_pair(resource_binding.resource, subresource_key);
-				auto& last_resource_access = resource_access_map[resource_key];
-
-				// Ignoring read after read barriers
-				if (last_resource_access.access == access_flag && access_flag == ERenderResourceAccessFlagBits::eRead)
-					continue;
-
-				auto barrier_type = packDependencyBarrier(last_resource_access.access, access_flag);
-
-				// Check for last access duplicating
-				if (last_resource_access.last_barrier)
-				{
-					auto& last_barrier = *last_resource_access.last_barrier;
-					if (
-						last_barrier.dependencyType == barrier_type &&
-						last_barrier.resource.handle == render_resource.handle &&
-						last_barrier.resource.type == render_resource.type &&
-						last_barrier.subresourceIndex == resource_binding.subresource &&
-						last_barrier.srcPassType == last_resource_access.pass_type &&
-						last_barrier.dstPassType == pass->Type()
-						)
-						continue;
-				}
-
-				// Prepare infos for render pipeline
-				auto& build_info = build_infos[pass_index];
-				auto& attachment = build_info.attachments[resource_binding.resource];
-				attachment.loadOp = barrier_type == ERenderResourceDependencyBarrierType::eWriteAfterWrite ? ERenderResourceLoadOp::eLoad : ERenderResourceLoadOp::eClear;
-				attachment.storeOp = (render_resource.usages.count(ERenderResourceAccessFlagBits::eRead) || resource_binding.resource == m_backBufferResource) ? ERenderResourceStoreOp::eStore : ERenderResourceStoreOp::eDontCare;
-
-				// TODO: Ignore duplicate barriers
-				auto& pass_barriers = m_perPassResourceBarriers[pass_index];
-				auto& new_barrier = pass_barriers.emplace_back();
-
-				// First time barrier should be translation barrier and last barrier should be if resource is read only
-				// TODO: Add special enum class for it
-				bool is_change_pipeline_ownership = last_resource_access.pass_type == pass->Type() && barrier_type == ERenderResourceDependencyBarrierType::eWriteAfterWrite;
-
-				if (last_resource_access.access == ERenderResourceAccessFlagBits::eNone)
-					new_barrier.barrierType = access_flag == ERenderResourceAccessFlagBits::eRead ? new_barrier.barrierType = ERenderResourceBarrierType::eFinal : ERenderResourceBarrierType::eIntermediate;
-				else if (is_ro_access_only_remain(render_resource, pass_index))
-					new_barrier.barrierType = is_backbuffer_resource ? ERenderResourceBarrierType::eIntermediate : ERenderResourceBarrierType::eFinal;
-				else if (is_change_pipeline_ownership)
-					new_barrier.barrierType = ERenderResourceBarrierType::eIntermediate;
-
-				new_barrier.dependencyType = barrier_type;
-				new_barrier.resource.handle = render_resource.handle;
-				new_barrier.resource.type = render_resource.type;
-				new_barrier.subresourceIndex = resource_binding.subresource;
-				new_barrier.srcPassType = last_resource_access.pass_type;
-				new_barrier.dstPassType = pass->Type();
-
-				last_resource_access.access = access_flag;
-				last_resource_access.all_time_access.emplace_back(access_flag);
-				last_resource_access.pass_type = new_barrier.dstPassType;
-				last_resource_access.last_barrier = &new_barrier;
-			}
-		}
-	}
-}
-
-void CRenderGraph::TraverseDependencies(u64 current_pass_index, u64 stack_count)
-{
-	auto& current_pass = m_vRenderPasses.at(current_pass_index);
-	for (const auto& [resource_group, resource_indices] : current_pass->m_renderResources)
-	{
-		ERenderResourceAccessFlagBits access_flag{};
-		ERenderResourceGroupFlagBits group_flag{};
-		unpackResourceGroup(resource_group, access_flag, group_flag);
-
-		if (access_flag != ERenderResourceAccessFlagBits::eRead)
-			continue;
-
-		for (const auto& resource_access : resource_indices)
-		{
-			auto& render_resource = m_vRenderResources[resource_access.resource.Get()];
-			if (!render_resource.usages.count(ERenderResourceAccessFlagBits::eWrite))
-				continue;
-
-			auto& writer_passes = render_resource.usages[ERenderResourceAccessFlagBits::eWrite];
-
-			if (stack_count > m_vRenderPasses.size())
-				log_error("[Render Graph] Cycle detected.");
-
-			for (u64 write_pass_index : writer_passes)
-			{
-				if (write_pass_index == current_pass_index)
-					continue;
-
-				m_vPassDependencies.at(current_pass_index).emplace(write_pass_index);
-
-				if (group_flag == ERenderResourceGroupFlagBits::eColor)
-					m_vPassMergeDependencies.at(current_pass_index).emplace(write_pass_index);
-
-				stack_count++;
-				TraverseDependencies(write_pass_index, stack_count);
-				stack_count--;
-			}
-		}
-	}
-}
-
-bool CRenderGraph::CheckPassDependencies(u64 dst_pass, u64 src_pass)
-{
-	if (dst_pass == src_pass)
-		return true;
-
-	for (const auto& dep : m_vPassDependencies[dst_pass])
-	{
-		if (CheckPassDependencies(dep, src_pass))
-			return true;
-	}
-
-	return false;
-}
-
-void CRenderGraph::ReorderPasses(utl::vector<u64>& flattened_passes)
-{
-	for (const auto& pass_merge_deps : m_vPassMergeDependencies)
-	{
-		auto pass_index = u64(&pass_merge_deps - m_vPassMergeDependencies.data());
-		auto& pass_deps = m_vPassDependencies[pass_index];
-
-		for (const auto& merge_dep : pass_merge_deps)
-		{
-			for (const auto& dependee : pass_deps)
-			{
-				// Avoid cycles.
-				if (CheckPassDependencies(dependee, merge_dep))
-					continue;
-
-				if (merge_dep != dependee)
-					m_vPassDependencies[merge_dep].insert(dependee);
-			}
-		}
-	}
-
-	if (flattened_passes.size() <= 2ull)
-		return;
-
-	utl::vector<u64> unscheduled_passes;
-	unscheduled_passes.reserve(m_vRenderPasses.size());
-	std::swap(flattened_passes, unscheduled_passes);
-
-	const auto schedule = [&](unsigned index) 
-		{
-		// Need to preserve the order of remaining elements.
-		flattened_passes.push_back(unscheduled_passes[index]);
-		std::move(unscheduled_passes.begin() + index + 1,
-			unscheduled_passes.end(),
-			unscheduled_passes.begin() + index);
-		unscheduled_passes.pop_back();
-		};
-
-	schedule(0);
-	while (!unscheduled_passes.empty())
-	{
-		u64 best_candidate = 0;
-		u64 best_overlap_factor = 0;
-
-		for (u64 i = 0ull; i < unscheduled_passes.size(); i++)
-		{
-			u64 overlap_factor = 0ull;
-
-			// Always try to merge passes if possible on tilers.
-			// This might not make sense on desktop however,
-			// so we can conditionally enable this path depending on our GPU.
-			if (m_vPassMergeDependencies[unscheduled_passes[i]].count(flattened_passes.back()))
-				overlap_factor = INVALID_HANDLE;
-			else
-			{
-				for (auto itr = flattened_passes.rbegin(); itr != flattened_passes.rend(); ++itr)
-				{
-					if (CheckPassDependencies(unscheduled_passes[i], *itr))
-						break;
-					overlap_factor++;
-				}
-			}
-
-			if (overlap_factor <= best_overlap_factor)
-				continue;
-
-			bool possible_candidate = true;
-			for (u64 j = 0; j < i; j++)
-			{
-				if (CheckPassDependencies(unscheduled_passes[i], unscheduled_passes[j]))
-				{
-					possible_candidate = false;
-					break;
-				}
-			}
-
-			if (!possible_candidate)
-				continue;
-
-			best_candidate = i;
-			best_overlap_factor = overlap_factor;
-		}
-
-		schedule(best_candidate);
-	}
+	//static std::hash<u64> hasher;
+	//u64 new_hash{ 0ull };
+	//for (u64 pass_index : m_vPassExecutionQueue)
+	//{
+	//	auto& pass = m_vRenderPasses[pass_index];
+	//
+	//	if (pass->CanExecute())
+	//		new_hash ^= hasher(pass_index);
+	//}
+	//
+	//bool res{ new_hash != m_executionHash };
+	//m_executionHash = new_hash;
+	return true;
 }

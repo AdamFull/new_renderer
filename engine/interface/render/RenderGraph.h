@@ -4,6 +4,17 @@
 #include <reactive/function.h>
 #include "TextureStructures.h"
 
+struct pair_hash
+{
+	template <class _T1, class _T2>
+	std::size_t operator()(const std::pair<_T1, _T2>&pair) const
+	{
+		std::size_t hash1 = std::hash<_T1>{}(pair.first);
+		std::size_t hash2 = std::hash<_T2>{}(pair.second);
+		return hash1 ^ hash2;
+	}
+};
+
 namespace engine
 {
 	namespace render
@@ -39,6 +50,13 @@ namespace engine
 			eBackbuffer = 1 << 7
 		};
 		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ERenderResourceGroupFlags, ERenderResourceGroupFlagBits)
+
+		enum class ERenderGraphEvaluateFlagBits
+		{
+			eUpdateGraph = 1 << 0,
+			eRender = 1 << 1,			
+		};
+		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ERenderGraphEvaluateFlags, ERenderGraphEvaluateFlagBits)
 
 		enum class ERenderResourceGroupType : u32
 		{
@@ -101,7 +119,6 @@ namespace engine
 			eStaticCondition,
 			eDynamicCondition,
 			eGroupNode,
-			eLayerNode,
 			ePassNode
 		};
 
@@ -415,6 +432,22 @@ namespace engine
 		};
 
 
+		struct FConsistentAccessInfo
+		{
+			ERenderResourceAccessFlagBits access{};
+			utl::vector<ERenderResourceAccessFlagBits> all_time_access{};
+			EPassType pass_type{};
+			FResourceBarrierInfo* last_barrier{ nullptr };
+		};
+
+		struct FRenderGraphData
+		{
+			utl::hash_map<std::pair<FGraphHandle, u32>, FConsistentAccessInfo, pair_hash> resourceAccessMap{};
+			utl::hash_map<FGraphHandle, std::unordered_set<u64>> perResourceAccessedPasses{};
+			utl::vector<u64> passes{};
+			utl::hash_map<u64, FPassBuildInfo> buildInfos;
+			utl::hash_map<u64, utl::vector<FResourceBarrierInfo>> perPassBarriers{};
+		};
 
 		struct FRenderGraphNodeHeader
 		{
@@ -439,6 +472,7 @@ namespace engine
 		{
 			std::string name{};
 			u32 color{};
+			EQueueTypeFlagBits queue{ EQueueTypeFlagBits::eGraphics };
 			utl::vector<FRenderGraphNodeHeader*> nodes{};
 		};
 
@@ -466,6 +500,7 @@ namespace engine
 			std::string name;
 			u32 color;
 			utl::vector<FRenderGraphNodeHeader*> nodes{};
+			EQueueTypeFlagBits queue{ EQueueTypeFlagBits::eGraphics };
 		};
 
 		struct FRenderGraphRenderPassNodeCreateInfo
@@ -524,6 +559,41 @@ namespace engine
 			return reinterpret_cast<_Ty*>(data);
 		}
 
+		class IBasePass
+		{
+		public:
+			friend class CRenderGraph;
+			virtual ~IBasePass() = default;
+
+			virtual void Build(const FPassBuildInfo& build_info) = 0;
+			virtual void PostLoad() {}
+
+			virtual void Update(f32 dt) {}
+			virtual void Execute(f32 dt)
+			{
+				if (m_bOneTime && m_bCanExecute)
+					m_bCanExecute = false;
+			}
+
+			virtual bool CanExecute() { return m_bCanExecute; }
+
+			virtual EPassType Type() = 0;
+
+		protected:
+
+			EQueueTypeFlagBits m_queue{};
+
+			utl::hash_map<ERenderResourceGroupType, utl::vector<FRenderResourceBinding>> m_renderResources{};
+			utl::hash_map<std::string, FRenderResourceBinding> m_bakedBindings{};
+
+			bool m_bOneTime{ false };
+			bool m_bCanExecute{ true };
+
+#ifndef BUILD_WITHOUT_DEBUGGIND
+			std::string m_debugName{};
+#endif
+		};
+
 		class IRenderGraph
 		{
 		public:
@@ -535,14 +605,13 @@ namespace engine
 			virtual void AddRenderResource(const std::string& name, const FRenderResource& resource_desc) = 0;
 			virtual void SetBackbufferResourceName(const std::string& name) = 0;
 
-			virtual void PushDebugMarker(const std::string& name, u32 color, EQueueTypeFlagBits queue) = 0;
-			virtual void PopDebugMarker(const std::string& name, EQueueTypeFlagBits queue) = 0;
-
 			virtual const FRenderResource& GetRenderResource(const std::string& name) const = 0;
 			virtual const FRenderResource& GetRenderResource(FGraphHandle resource_id) const = 0;
 
 			virtual u64 AddRenderPass(const std::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci) = 0;
 			virtual u64 AddRenderPass(const std::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci) = 0;
+
+			virtual void AddPassToLayer(const std::string& layer_name, std::unique_ptr<IBasePass>&& pass) = 0;
 
 			virtual void Build() = 0;
 			virtual void Update(f32 dt) = 0;

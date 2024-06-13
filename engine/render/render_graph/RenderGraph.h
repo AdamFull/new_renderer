@@ -5,37 +5,23 @@
 #include <engine/interface/render/RenderInterface.h>
 #include <engine/interface/EngineVariable.h>
 
-#include <reactive/function.h>
-
 #include "render_passes/BasePass.h"
 
 namespace engine
 {
 	namespace render
 	{
-		struct FDependencyTree
-		{
-			utl::vector<std::unordered_set<u64>> passDependencies{};
-		};
-
 		class CRenderGraph : public IRenderGraph
 		{
 		public:
 			CRenderGraph(IRenderInterface* render_interface);
-			~CRenderGraph() = default;
+			~CRenderGraph();
 
 			void Create(const utl::vector<u8>& config, const utl::vector<u8>& schema) override;
 			void PostLoad() override;
 
 			void AddRenderResource(const std::string& name, const FRenderResource& resource_desc) override;
 			void SetBackbufferResourceName(const std::string& name) override;
-
-			u64 AddSampler(const std::string& name, const FSamplerCreateInfo& sampler_ci);
-
-			void PushDebugMarker(const std::string& name, u32 color, EQueueTypeFlagBits queue) override;
-			void PopDebugMarker(const std::string& name, EQueueTypeFlagBits queue) override;
-
-			void DestroyResource(u64 buffer_id);
 
 			const FRenderResource& GetRenderResource(const std::string& name) const override;
 			const FRenderResource& GetRenderResource(FGraphHandle resource_id) const override;
@@ -48,6 +34,7 @@ namespace engine
 			void AddStaticConditionNode(FRenderGraphStaticConditionNodeCreateInfo& create_info);
 			void AddDynamicConditionNode(FRenderGraphDynamicConditionNodeCreateInfo& create_info);
 			void AddGroupNode(FRenderGraphGroupNodeCreateInfo& create_info);
+			void AddLayerNode(FRenderGraphGroupNodeCreateInfo& create_info);
 			void AddRenderNode(FRenderGraphRenderPassNodeCreateInfo& create_info);
 			void AddRenderNode(FRenderGraphComputePassNodeCreateInfo& create_info);
 
@@ -56,6 +43,8 @@ namespace engine
 			FRenderGraphNodeHeader* CreateGroupNode(FRenderGraphGroupNodeCreateInfo& create_info);
 			FRenderGraphNodeHeader* CreateRenderNode(FRenderGraphRenderPassNodeCreateInfo& create_info);
 			FRenderGraphNodeHeader* CreateRenderNode(FRenderGraphComputePassNodeCreateInfo& create_info);
+
+			void AddPassToLayer(const std::string& layer_name, std::unique_ptr<IBasePass>&& pass) override;
 
 			void Build() override;
 			void Update(f32 dt) override;
@@ -69,18 +58,16 @@ namespace engine
 			FTextureCreateInfo MakeTextureCubeCI(EApiDataFormat format, ETextureCreateFlags flags);
 			FTextureCreateInfo MakeTextureCubeArrayCI(EApiDataFormat format, ETextureCreateFlags flags);
 
-			void EvaluateRenderGraph(utl::vector<u64>& passes);
-			void EvaluateRenderGraphNode(FRenderGraphNodeHeader* node, utl::vector<u64>& passes);
+			void EvaluateRenderGraph(ERenderGraphEvaluateFlags flags, f32 dt = 0.f);
+			void EvaluateRenderGraphNode(ERenderGraphEvaluateFlags flags, FRenderGraphNodeHeader* node, f32 dt = 0.f);
+			void DestoyRenderGraph();
+			void DestoyRenderGraphNode(FRenderGraphNodeHeader* node);
+			void GraphUpdateBarriers(u64 pass_index);
 			void ApplyRenderPassResources(u64 pass_index, const FRenderConfigPassCreateInfo* raw_pass_ci, FPassCreateInfo* pass_ci);
 			void AapplySingleRenderResourceDependencies(FGraphHandle resource_id, ERenderResourceAccessFlagBits access_type, u64 pass_index, EQueueTypeFlagBits queue_type);
 			void ApplyMultiRenderResourceDependencies(u64 pass_index, EQueueTypeFlagBits queue_type, const utl::hash_map<ERenderResourceGroupType, utl::vector<FRenderResourceBinding>>& associated_resources);
 
 			bool WasGraphChanged();
-			void GenerateResourceBarriers(utl::hash_map<u64, FPassBuildInfo>& build_infos, bool generate_build_infos);
-			void TraverseDependencies(u64 current_pass_index, u64 stack_count = 0ull);
-			void TraverseDependencies2(u64 current_pass_index, u64 stack_count = 0ull);
-			bool CheckPassDependencies(u64 dst_pass, u64 src_pass);
-			void ReorderPasses(utl::vector<u64>& flattened_passes);
 		protected:
 			utl::vector<std::unique_ptr<IBufferObject>> m_vBufferHandlers{};
 			utl::vector<FRenderResource> m_vRenderResources{};
@@ -89,15 +76,12 @@ namespace engine
 
 			u64 m_executionHash{ 0ull };
 			utl::vector<std::unique_ptr<IBasePass>> m_vRenderPasses{};
-			utl::hash_map<std::string, u64> m_nameToPass{};
 		private:
+			FRenderGraphData m_graph;
+			utl::hash_map<u64, u64> m_nameToLayer{};
 			utl::vector<FRenderGraphNodeHeader*> m_vGraphNodes{};
 			std::unique_ptr<IVariableBlock> m_pVariableBlock{};
-			utl::hash_map<u64, utl::vector<FResourceBarrierInfo>> m_perPassResourceBarriers{};
 
-			utl::vector<u64> m_vPassExecutionQueue{};
-			utl::vector<std::unordered_set<u64>> m_vPassDependencies{};
-			utl::vector<std::unordered_set<u64>> m_vPassMergeDependencies{};
 			IRenderInterface* m_pRenderInterface{ nullptr };
 		};
 	}
