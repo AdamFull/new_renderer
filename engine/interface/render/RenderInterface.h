@@ -465,8 +465,9 @@ namespace engine
 		public:
 			virtual ~IRenderInterface() = default;
 
-			virtual void Create(const FRenderInterfaceCreateInfo& render_interface_ci) = 0;
-			virtual void PostLoad() = 0;
+			virtual void PreInitialize(const FRenderInterfaceCreateInfo& render_interface_ci) = 0;
+			virtual void Initialize() = 0;
+			virtual void PostInitialize() = 0;
 
 			virtual void PreUpdate(f32 dt) = 0;
 			virtual void Update(f32 dt) = 0;

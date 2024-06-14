@@ -133,7 +133,7 @@ CRenderInterface::~CRenderInterface()
 
 }
 
-void CRenderInterface::Create(const FRenderInterfaceCreateInfo& rhi_ci)
+void CRenderInterface::PreInitialize(const FRenderInterfaceCreateInfo& rhi_ci)
 {
 	m_pResourceLoader->Initialize(m_pVFS);
 
@@ -146,18 +146,20 @@ void CRenderInterface::Create(const FRenderInterfaceCreateInfo& rhi_ci)
 	m_pRenderContext->CreateGlobalDescriptor(global_buffer_ci);
 
 	m_pRenderWorld->Create();
+}
 
+void CRenderInterface::Initialize()
+{
 	utl::vector<uint8_t> render_config{};
 	m_pVFS->ReadFile("/root/embed/rendering/render_config.xml", render_config);
 	utl::vector<uint8_t> render_config_schema{};
 	m_pVFS->ReadFile("/root/embed/rendering/render_config.xsd", render_config_schema);
 	m_pRenderGraph->Create(render_config, render_config_schema);
-
-	m_pRenderGraph->Build();
 }
 
-void CRenderInterface::PostLoad()
+void CRenderInterface::PostInitialize()
 {
+	m_pRenderGraph->Build();
 	m_pRenderGraph->PostLoad();
 }
 

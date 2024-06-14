@@ -8,7 +8,9 @@
 #include <engine/world/Scene.h>
 #include <interface/EngineSystem.h>
 #include <interface/Application.h>
+
 #include "InputMapper.h"
+#include "EngineSystemManager.h"
 
 #include <utils/stopwatch.h>
 
@@ -17,12 +19,15 @@ namespace engine
 	class CEngine
 	{
 	public:
+		CEngine();
 		void SetApplication(std::unique_ptr<IApplication>&& app);
 		void Initialize();
 	private:
 		void Loop();
 		void UpdateTitle();
 	private:
+		std::unique_ptr<CEngineSystemManager> m_pSystemManager{};
+
 		std::unique_ptr<IApplication> m_pApplication{};
 		std::unique_ptr<IWindowInterface> m_pWindowHandle{};
 		std::unique_ptr<CInputMapper> m_pInputMapper{};

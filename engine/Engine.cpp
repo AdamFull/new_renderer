@@ -7,6 +7,8 @@
 #include <engine/filesystem/native/NativeFileSystem.h>
 #include <engine/filesystem/vfs_helper.h>
 
+#include <integrations/imgui/ImGuiSystem.h>
+
 using namespace engine;
 using namespace engine::render;
 
@@ -18,6 +20,11 @@ void get_platform_specific_window_data(FRenderInterfaceCreateInfo& rhi_ci, const
 #endif
 }
 
+CEngine::CEngine()
+{
+	m_pSystemManager = std::make_unique<CEngineSystemManager>();
+}
+
 void CEngine::SetApplication(std::unique_ptr<IApplication>&& app)
 {
 	m_pApplication = std::move(app);
@@ -25,16 +32,14 @@ void CEngine::SetApplication(std::unique_ptr<IApplication>&& app)
 
 void CEngine::Initialize()
 {
-	// Pre initialization zone BEGIN
-	m_pApplication->PreInitialize();
-	// Pre initialization zone END
-
 	m_pVirtualFileSystem = std::make_unique<filesystem::CVirtualFileSystemManager>();
-
 	m_pVirtualFileSystem->Mount("/root", std::make_unique<filesystem::CNativeFileSystem>("./"));
 
-	//m_pScriptEngine = std::make_unique<scripting::CScriptEngine>();
-	//m_pScriptEngine->initialize();
+	m_pRenderInterface = std::make_unique<render::CRenderInterface>(m_pVirtualFileSystem.get());
+
+	m_pInputMapper = std::make_unique<CInputMapper>();
+
+	m_pSystemManager->RegisterSystem<CImGuiEngineSystem>(m_pRenderInterface.get());
 
 	FWindowCreateInfo window_ci{};
 	window_ci.name = "Vulkan App";
@@ -44,18 +49,19 @@ void CEngine::Initialize()
 
 	m_pWindowHandle = make_platform_window(window_ci);
 
-	m_pInputMapper = std::make_unique<CInputMapper>();
-	m_pInputMapper->Create();
-
+	// Pre initialization zone BEGIN
 	FRenderInterfaceCreateInfo rhi_ci{};
 	rhi_ci.render_api = ERenderApi::eVulkan11;
 	m_pWindowHandle->GetWindowSize(rhi_ci.initialWidth, rhi_ci.initialHeight);
 	get_platform_specific_window_data(rhi_ci, m_pWindowHandle);
 
-	m_pRenderInterface = std::make_unique<render::CRenderInterface>(m_pVirtualFileSystem.get());
-	m_pRenderInterface->Create(rhi_ci);
+	m_pRenderInterface->PreInitialize(rhi_ci);
+	m_pInputMapper->Create();
+	m_pApplication->PreInitialize();
+	// Pre initialization zone END
 
 	// Initialization zone BEGIN
+	m_pRenderInterface->Initialize();
 	m_pApplication->Initialize();
 	// Initialization zone END
 
@@ -70,9 +76,9 @@ void CEngine::Initialize()
 	//m_pScene->load("/root/toadman/round1.gltf");
 	//m_pScene->load("/root/Landscape/landscape.gltf");
 
-	m_pRenderInterface->PostLoad();
-
 	// Post initialization zone BEGIN
+	m_pSystemManager->PostInitialize();
+	m_pRenderInterface->PostInitialize();
 	m_pApplication->PostInitialize();
 	// Post initialization zone END
 

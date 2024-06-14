@@ -31,4 +31,5 @@ target_link_libraries(${PROJECT_NAME}
 	PRIVATE render_interface
 	#PRIVATE script_engine
 	PRIVATE engine_world
+	PRIVATE imgui_integration
 )

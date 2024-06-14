@@ -18,8 +18,9 @@ namespace engine
 			CRenderInterface(filesystem::IVirtualFileSystemInterface* vfs);
 			~CRenderInterface() override;
 
-			void Create(const FRenderInterfaceCreateInfo& render_interface_ci) override;
-			void PostLoad() override;
+			void PreInitialize(const FRenderInterfaceCreateInfo& render_interface_ci) override;
+			void Initialize() override;
+			void PostInitialize() override;
 
 			void PreUpdate(f32 dt) override;
 			void Update(f32 dt) override;

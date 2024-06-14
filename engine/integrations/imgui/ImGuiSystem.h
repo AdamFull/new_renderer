@@ -6,7 +6,7 @@
 
 namespace engine
 {
-	class CImGuiEngineSystem : IEngineSystem
+	class CImGuiEngineSystem : public IEngineSystem
 	{
 	public:
 		CImGuiEngineSystem(render::IRenderInterface* render_interface);
