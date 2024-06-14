@@ -6,6 +6,7 @@
 #include <engine/interface/filesystem/VirtualFileSystemInterface.h>
 #include <engine/scripting/ScriptEngine.h>
 #include <engine/world/Scene.h>
+#include <interface/EngineSystem.h>
 
 #include <utils/stopwatch.h>
 
@@ -21,6 +22,7 @@ namespace engine
 	private:
 		void UpdateTitle();
 	private:
+		utl::vector<std::unique_ptr<IEngineSystem>> m_vEngineSystems{};
 		std::unique_ptr<IWindowInterface> m_pWindowHandle{};
 		std::unique_ptr<CInputMapper> m_pInputMapper{};
 		std::unique_ptr<render::IRenderInterface> m_pRenderInterface{};
