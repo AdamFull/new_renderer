@@ -525,7 +525,7 @@ namespace engine
 			virtual void PostLoad() {}
 
 			virtual void Update(f32 dt) {}
-			virtual void Execute(f32 dt)
+			virtual void Execute()
 			{
 				if (m_bOneTime && m_bCanExecute)
 					m_bCanExecute = false;
@@ -571,7 +571,7 @@ namespace engine
 
 			virtual void Build() = 0;
 			virtual void Update(f32 dt) = 0;
-			virtual void Execute(f32 dt) = 0;
+			virtual void Execute() = 0;
 		};
 	}
 }

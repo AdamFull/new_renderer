@@ -55,9 +55,9 @@ void IRenderPass::Build(const FPassBuildInfo& build_info)
 		BuildAttachment(m_stencilTarget, build_info, m_stencilAttachment);
 }
 
-void IRenderPass::Execute(f32 dt)
+void IRenderPass::Execute()
 {
-	IBasePass::Execute(dt);
+	IBasePass::Execute();
 
 	auto& render_context = m_pRenderInterface->GetRenderContext();
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
@@ -227,15 +227,12 @@ void IComputePass::Build(const FPassBuildInfo& build_info)
 
 }
 
-void IComputePass::Execute(f32 dt)
+void IComputePass::Execute()
 {
-	IBasePass::Execute(dt);
+	IBasePass::Execute();
 
 	auto& render_context = m_pRenderInterface->GetRenderContext();
 	auto& render_graph = m_pRenderInterface->GetRenderGraph();
-
-	FComputeFrameInfo frame_info{};
-	frame_info.deltaTime = dt;
 
 	if (m_dispatchInfo.type == ERenderingSizeType::eFromRenderTarget)
 	{
@@ -279,7 +276,7 @@ void IComputePass::Execute(f32 dt)
 	render_context->BeginTimestampZone(m_queue);
 	render_context->BeginCompute(compute_begin_info);
 
-	_Execute(frame_info);
+	_Execute();
 
 	render_context->EndCompute(m_queue);
 	render_context->EndTimestampZone(m_queue);

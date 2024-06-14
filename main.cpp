@@ -1,4 +1,5 @@
-#include <engine/Application.h>
+#include "Application.h"
+#include <engine/Engine.h>
 
 #include <codecvt>
 
@@ -338,9 +339,10 @@ int main(int argc, char** argv)
     utl::plugin_system::uplugin_manager manager;
     auto& plugin = manager.load("virtual_filesystem", "D:\\GitHub\\new_renderer\\bin\\Debug\\engine\\virtual_filesystem.dll");
 
-    auto app = std::make_unique<CApplication>();
-    app->Create();
-    app->Loop();
+    auto engine = std::make_unique<CEngine>();
+    engine->SetApplication(std::make_unique<CApplication>());
+
+    engine->Initialize();
 
     //HANDLE hFile = ::CreateFile("crashdump.dmp", GENERIC_READ | GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
     //MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(), hFile, MiniDumpWithDataSegs, nullptr, NULL, NULL);

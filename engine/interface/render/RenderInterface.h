@@ -467,7 +467,14 @@ namespace engine
 
 			virtual void Create(const FRenderInterfaceCreateInfo& render_interface_ci) = 0;
 			virtual void PostLoad() = 0;
-			virtual void Render(f32 dt) = 0;
+
+			virtual void PreUpdate(f32 dt) = 0;
+			virtual void Update(f32 dt) = 0;
+			virtual void PostUpdate(f32 dt) = 0;
+
+			virtual void PreRender() = 0;
+			virtual void Render() = 0;
+			virtual void PostRender() = 0;
 
 			virtual FRHIHandle CreateTextureObject(const std::string& path) = 0;
 			virtual FRHIHandle CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;

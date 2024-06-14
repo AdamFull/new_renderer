@@ -182,7 +182,7 @@ FTextureCreateInfo CRenderGraph::MakeTextureCubeArrayCI(EApiDataFormat format, E
 	return MakeTextureCI(format, flags | ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eCubemap | ETextureCreateFlagBits::eArray);
 }
 
-void CRenderGraph::EvaluateRenderGraph(ERenderGraphEvaluateFlags flags, f32 dt)
+void CRenderGraph::EvaluateRenderGraph(ERenderGraphEvaluateFlags flags)
 {
 	if (flags & ERenderGraphEvaluateFlagBits::eUpdateGraph)
 	{
@@ -194,10 +194,10 @@ void CRenderGraph::EvaluateRenderGraph(ERenderGraphEvaluateFlags flags, f32 dt)
 	}
 
 	for (auto& node : m_vGraphNodes)
-		EvaluateRenderGraphNode(flags, node, dt);
+		EvaluateRenderGraphNode(flags, node);
 }
 
-void CRenderGraph::EvaluateRenderGraphNode(ERenderGraphEvaluateFlags flags, FRenderGraphNodeHeader* header, f32 dt)
+void CRenderGraph::EvaluateRenderGraphNode(ERenderGraphEvaluateFlags flags, FRenderGraphNodeHeader* header)
 {
 	if (header)
 	{
@@ -206,15 +206,15 @@ void CRenderGraph::EvaluateRenderGraphNode(ERenderGraphEvaluateFlags flags, FRen
 		case ERenderGraphNodeType::eStaticCondition:
 		{
 			auto* static_condition_node = cast_graph_node<FRenderGraphStaticConditionNode>(header);
-			EvaluateRenderGraphNode(flags, static_condition_node->node, dt);
+			EvaluateRenderGraphNode(flags, static_condition_node->node);
 		} break;
 		case ERenderGraphNodeType::eDynamicCondition:
 		{
 			auto* dynamic_condition_node = cast_graph_node<FRenderGraphDynamicConditionNode>(header);
 			if (dynamic_condition_node->condition())
-				EvaluateRenderGraphNode(flags, dynamic_condition_node->pass, dt);
+				EvaluateRenderGraphNode(flags, dynamic_condition_node->pass);
 			else
-				EvaluateRenderGraphNode(flags, dynamic_condition_node->fail, dt);
+				EvaluateRenderGraphNode(flags, dynamic_condition_node->fail);
 
 		} break;
 		case ERenderGraphNodeType::eGroupNode:
@@ -226,7 +226,7 @@ void CRenderGraph::EvaluateRenderGraphNode(ERenderGraphEvaluateFlags flags, FRen
 				render_context->BeginDebugLabel(group_node->name.c_str(), group_node->queue, group_node->color);
 
 			for (auto& node : group_node->nodes)
-				EvaluateRenderGraphNode(flags, node, dt);
+				EvaluateRenderGraphNode(flags, node);
 
 			if (flags & ERenderGraphEvaluateFlagBits::eRender)
 				render_context->EndDebugLabel(group_node->queue);
@@ -248,7 +248,7 @@ void CRenderGraph::EvaluateRenderGraphNode(ERenderGraphEvaluateFlags flags, FRen
 				auto& render_context = m_pRenderInterface->GetRenderContext();
 				auto& pass_barriers = m_graph.perPassBarriers[pass_node->passIndex];
 				render_context->ProcessResourceBarriers(pass->m_queue, pass_barriers);
-				pass->Execute(dt);
+				pass->Execute();
 			}
 		} break;
 		}
@@ -1528,7 +1528,7 @@ void CRenderGraph::Update(f32 dt)
 	}
 }
 
-void CRenderGraph::Execute(f32 dt)
+void CRenderGraph::Execute()
 {
 	auto& render_context = m_pRenderInterface->GetRenderContext();
 

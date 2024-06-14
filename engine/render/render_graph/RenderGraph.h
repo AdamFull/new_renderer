@@ -48,7 +48,7 @@ namespace engine
 
 			void Build() override;
 			void Update(f32 dt) override;
-			void Execute(f32 dt) override;
+			void Execute() override;
 		private:
 			FTextureCreateInfo MakeTextureCI(EApiDataFormat format, ETextureCreateFlags flags);
 			FTextureCreateInfo MakeTexture2DCI(EApiDataFormat format, ETextureCreateFlags flags);
@@ -58,8 +58,8 @@ namespace engine
 			FTextureCreateInfo MakeTextureCubeCI(EApiDataFormat format, ETextureCreateFlags flags);
 			FTextureCreateInfo MakeTextureCubeArrayCI(EApiDataFormat format, ETextureCreateFlags flags);
 
-			void EvaluateRenderGraph(ERenderGraphEvaluateFlags flags, f32 dt = 0.f);
-			void EvaluateRenderGraphNode(ERenderGraphEvaluateFlags flags, FRenderGraphNodeHeader* node, f32 dt = 0.f);
+			void EvaluateRenderGraph(ERenderGraphEvaluateFlags flags);
+			void EvaluateRenderGraphNode(ERenderGraphEvaluateFlags flags, FRenderGraphNodeHeader* node);
 			void DestoyRenderGraph();
 			void DestoyRenderGraphNode(FRenderGraphNodeHeader* node);
 			void GraphUpdateBarriers(u64 pass_index);

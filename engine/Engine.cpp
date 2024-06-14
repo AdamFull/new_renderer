@@ -1,4 +1,4 @@
-#include "Application.h"
+#include "Engine.h"
 
 #include <engine/platform/PlatformSpecific.h>
 #include <engine/render/RenderInterface.h>
@@ -6,14 +6,6 @@
 #include <engine/filesystem/VirtualFileSystemManager.h>
 #include <engine/filesystem/native/NativeFileSystem.h>
 #include <engine/filesystem/vfs_helper.h>
-
-#include <iostream>
-#include <fstream>
-#include <sstream>
-
-#include <engine/interface/SharedStructure.h>
-
-#include <engine/profiler/Profiler.h>
 
 using namespace engine;
 using namespace engine::render;
@@ -26,8 +18,17 @@ void get_platform_specific_window_data(FRenderInterfaceCreateInfo& rhi_ci, const
 #endif
 }
 
-void CApplication::Create()
+void CEngine::SetApplication(std::unique_ptr<IApplication>&& app)
 {
+	m_pApplication = std::move(app);
+}
+
+void CEngine::Initialize()
+{
+	// Pre initialization zone BEGIN
+	m_pApplication->PreInitialize();
+	// Pre initialization zone END
+
 	m_pVirtualFileSystem = std::make_unique<filesystem::CVirtualFileSystemManager>();
 
 	m_pVirtualFileSystem->Mount("/root", std::make_unique<filesystem::CNativeFileSystem>("./"));
@@ -54,6 +55,10 @@ void CApplication::Create()
 	m_pRenderInterface = std::make_unique<render::CRenderInterface>(m_pVirtualFileSystem.get());
 	m_pRenderInterface->Create(rhi_ci);
 
+	// Initialization zone BEGIN
+	m_pApplication->Initialize();
+	// Initialization zone END
+
 	m_pScene = std::make_unique<world::CScene>(m_pVirtualFileSystem.get(), m_pRenderInterface.get());
 	//m_pScene->load("/root/reflections/reflections.gltf");
 	//m_pScene->load("/root/helmet/DamagedHelmet.gltf");
@@ -66,9 +71,13 @@ void CApplication::Create()
 	//m_pScene->load("/root/Landscape/landscape.gltf");
 
 	m_pRenderInterface->PostLoad();
+
+	// Post initialization zone BEGIN
+	m_pApplication->PostInitialize();
+	// Post initialization zone END
 }
 
-void CApplication::Loop()
+void CEngine::Loop()
 {
 	utl::utils::stopwatch sw{};
 	f32 dt{ 0.f };
@@ -89,11 +98,37 @@ void CApplication::Loop()
 			m_pRenderInterface->UpdateSurfaceSize(window_width, window_height);
 		}
 
-		m_pInputMapper->Update(dt);
+		// Pre update zone BEGIN
+		m_pApplication->PreUpdate(dt);
+		m_pRenderInterface->PreUpdate(dt);
+		// Pre update zone END
 
+		// Update zone BEGIN
+		m_pInputMapper->Update(dt);
 		m_pScene->Update(dt);
-		// TODO: render thread should signal game thread about finish rendering
-		m_pRenderInterface->Render(dt);
+		m_pApplication->Update(dt);
+		m_pRenderInterface->Update(dt);
+		// Update zone END
+
+		// Post update zone BEGIN
+		m_pRenderInterface->PostUpdate(dt);
+		m_pApplication->PostUpdate(dt);
+		// Post update zone EMD
+
+		// Pre render zone BEGIN
+		m_pApplication->PreRender();
+		m_pRenderInterface->PreRender();
+		// Pre render zone END
+
+		// Render zone BEGIN
+		m_pApplication->Render();
+		m_pRenderInterface->Render();
+		// Render zone END
+
+		// Post render zone BEGIN
+		m_pRenderInterface->PostRender();
+		m_pApplication->PostRender();
+		// Post render zone END
 
 		TRACY_PROFILE_FRAMEMARKER();
 
@@ -109,7 +144,7 @@ void CApplication::Loop()
 	}
 }
 
-void CApplication::UpdateTitle()
+void CEngine::UpdateTitle()
 {
 	auto& render_context = m_pRenderInterface->GetRenderContext();
 	auto& render_stats = render_context->GetRenderFrameStats();

@@ -20,7 +20,14 @@ namespace engine
 
 			void Create(const FRenderInterfaceCreateInfo& render_interface_ci) override;
 			void PostLoad() override;
-			void Render(f32 dt) override;
+
+			void PreUpdate(f32 dt) override;
+			void Update(f32 dt) override;
+			void PostUpdate(f32 dt) override;
+
+			void PreRender() override;
+			void Render() override;
+			void PostRender() override;
 
 			FRHIHandle CreateTextureObject(const std::string& path) override;
 			FRHIHandle CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci) override;

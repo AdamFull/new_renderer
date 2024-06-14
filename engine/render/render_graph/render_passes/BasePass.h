@@ -6,20 +6,6 @@ namespace engine
 {
 	namespace render
 	{
-		struct FBaseFrameInfo
-		{
-			f32 deltaTime{};
-		};
-
-		struct FRenderFrameInfo : public FBaseFrameInfo
-		{
-			FRect2D<f32> renderRect{};
-		};
-
-		struct FComputeFrameInfo : public FBaseFrameInfo
-		{
-		};
-
 		class IRenderPass : public IBasePass
 		{
 		public:
@@ -30,12 +16,12 @@ namespace engine
 			virtual void Build(const FPassBuildInfo& build_info) override;
 			virtual bool CanRender() const { return true; }
 
-			void Execute(f32 dt) override;
+			void Execute() override;
 
 			EPassType Type() override { return EPassType::eRender; }
 		protected:
 			void BuildAttachment(FGraphHandle resource_id, const FPassBuildInfo& build_info, FRenderGraphAttachmentInfo& attachment_info);
-			virtual void _Render(const FRenderFrameInfo& frame_info) = 0;
+			virtual void _Render() = 0;
 
 			virtual FRHIHandle MakeShader(const std::string& name, EShaderCullModeFlagBits cull_mode, EShaderFrontFace front_face, bool alphaBlend = false, EDepthCompareOp depthOp = EDepthCompareOp::eLessOrEqual, const IVertexHandler* vbo = nullptr);
 			void InitShaderResources(FRHIHandle);
@@ -67,11 +53,11 @@ namespace engine
 			virtual void Init(const FComputePassCreateInfo& pass_ci);
 			virtual void Build(const FPassBuildInfo& build_info) override;
 
-			void Execute(f32 dt) override;
+			void Execute() override;
 
 			EPassType Type() override { return EPassType::eCompute; }
 		protected:
-			virtual void _Execute(const FComputeFrameInfo& frame_info) = 0;
+			virtual void _Execute() = 0;
 
 			virtual void InitShaderResources(FRHIHandle shader);
 			virtual void BindShaderResources(FRHIHandle shader, f32 dt);

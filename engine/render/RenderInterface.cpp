@@ -161,13 +161,14 @@ void CRenderInterface::PostLoad()
 	m_pRenderGraph->PostLoad();
 }
 
-void CRenderInterface::Render(f32 dt)
+void CRenderInterface::PreUpdate(f32 dt)
 {
 	m_pRenderGraph->Update(dt);
 	m_pRenderWorld->Begin(dt);
+}
 
-	m_pRenderContext->BeginFrame();
-
+void CRenderInterface::Update(f32 dt)
+{
 	const auto& world_stats = m_pRenderWorld->GetStats();
 
 	FGlobalUniformData global_uniform{};
@@ -271,12 +272,27 @@ void CRenderInterface::Render(f32 dt)
 	postprocessing_uniform.binding = 2u;
 
 	m_pRenderContext->UpdateGlobalDescriptorData(update_info);
+}
+
+void CRenderInterface::PostUpdate(f32 dt)
+{
+
+}
+
+void CRenderInterface::PreRender()
+{
+	m_pRenderContext->BeginFrame();
+}
+
+void CRenderInterface::Render()
+{	
 	m_pRenderGraph->Execute(dt);
+}
 
+void CRenderInterface::PostRender()
+{
 	m_pRenderContext->EndFrame();
-
 	m_pRenderWorld->End();
-
 	++m_frameCounter;
 }
 
