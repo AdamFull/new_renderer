@@ -544,6 +544,7 @@ namespace engine
 
 			bool m_bOneTime{ false };
 			bool m_bCanExecute{ true };
+			f32 m_deltaTime{};
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
 			std::string m_debugName{};

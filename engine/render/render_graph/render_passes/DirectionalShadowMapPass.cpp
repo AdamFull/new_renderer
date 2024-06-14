@@ -41,13 +41,13 @@ void CDirectionalShadowMapPass::PostLoad()
 	m_cameraIndex = render_world->GetCameraID(ERenderGeometryCullerType::eSpotShadow);
 }
 
-void CDirectionalShadowMapPass::_Render(const FRenderFrameInfo& frame_info)
+void CDirectionalShadowMapPass::_Render()
 {
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
 	auto& world_stats = render_world->GetStats();
 
 	auto& render_context = m_pRenderInterface->GetRenderContext();
-	render_context->SetScissorRect(0, 0, frame_info.renderRect.size.x, frame_info.renderRect.size.y);
+	render_context->SetScissorRect(0, 0, m_renderArea.size.x, m_renderArea.size.y);
 
 	IVertexHandler* last_vbo{ nullptr };
 

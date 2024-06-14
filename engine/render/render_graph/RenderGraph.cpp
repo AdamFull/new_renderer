@@ -1532,7 +1532,7 @@ void CRenderGraph::Execute()
 {
 	auto& render_context = m_pRenderInterface->GetRenderContext();
 
-	EvaluateRenderGraph(ERenderGraphEvaluateFlagBits::eRender, dt);
+	EvaluateRenderGraph(ERenderGraphEvaluateFlagBits::eRender);
 
 	auto& backbuffer_resource = m_vRenderResources[m_backBufferResource.Get()];
 	utl::vector<FResourceBarrierInfo> backbuffer_barriers{};

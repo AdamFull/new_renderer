@@ -27,7 +27,12 @@ void CComputeGeometryPass::Build(const FPassBuildInfo& build_info)
 	IComputePass::Build(build_info);
 }
 
-void CComputeGeometryPass::_Execute(const FComputeFrameInfo& frame_info)
+void CComputeGeometryPass::Update(f32 dt)
+{
+	m_deltaTime = dt;
+}
+
+void CComputeGeometryPass::_Execute()
 {
 	std::unordered_set<FRHIHandle> vbos{};
 
@@ -58,7 +63,7 @@ void CComputeGeometryPass::_Execute(const FComputeFrameInfo& frame_info)
 
 			if (was_vbo_rebinded)
 			{
-				BindShaderResources(shader, frame_info.deltaTime);
+				BindShaderResources(shader, m_deltaTime);
 				if (auto& buffers = shader->GetUniformBlock(shader_bindings::geometry_buffers); buffers)
 				{
 					auto& vertex_buffer = last_vbo->GetGeometryBuffer(EGeometryBufferIndices::eVertexBuffer);

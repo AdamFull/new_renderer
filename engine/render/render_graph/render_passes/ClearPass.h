@@ -16,7 +16,7 @@ namespace engine
 			void Init(const FRenderPassCreateInfo& pass_ci) override;
 			void Build(const FPassBuildInfo& build_info) override;
 		private:
-			void _Render(const FRenderFrameInfo& frame_info) override;
+			void _Render() override;
 		};
 	}
 }

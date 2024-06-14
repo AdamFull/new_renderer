@@ -19,7 +19,7 @@ namespace engine
 
 			void PostLoad() override;
 		private:
-			void _Render(const FRenderFrameInfo& frame_info) override;
+			void _Render() override;
 		protected:
 			const std::unique_ptr<IShaderObject>& GetShaderByVBO(const IVertexHandler* vbo);
 		private:

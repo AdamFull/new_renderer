@@ -1,5 +1,7 @@
 #pragma once
 
+#include <standart_library.h>
+
 namespace engine
 {
 	class IApplication

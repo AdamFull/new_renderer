@@ -75,6 +75,8 @@ void CEngine::Initialize()
 	// Post initialization zone BEGIN
 	m_pApplication->PostInitialize();
 	// Post initialization zone END
+
+	Loop();
 }
 
 void CEngine::Loop()
@@ -104,9 +106,9 @@ void CEngine::Loop()
 		// Pre update zone END
 
 		// Update zone BEGIN
+		m_pApplication->Update(dt);
 		m_pInputMapper->Update(dt);
 		m_pScene->Update(dt);
-		m_pApplication->Update(dt);
 		m_pRenderInterface->Update(dt);
 		// Update zone END
 
@@ -130,7 +132,7 @@ void CEngine::Loop()
 		m_pApplication->PostRender();
 		// Post render zone END
 
-		TRACY_PROFILE_FRAMEMARKER();
+		//TRACY_PROFILE_FRAMEMARKER();
 
 		dt = sw.stop<f32>();
 

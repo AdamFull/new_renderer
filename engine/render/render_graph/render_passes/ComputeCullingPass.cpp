@@ -27,7 +27,12 @@ void CComputeCullingPass::Build(const FPassBuildInfo& build_info)
 	IComputePass::Build(build_info);
 }
 
-void CComputeCullingPass::_Execute(const FComputeFrameInfo& frame_info)
+void CComputeCullingPass::Update(f32 dt)
+{
+	m_deltaTime = dt;
+}
+
+void CComputeCullingPass::_Execute()
 {
 	auto& render_context = m_pRenderInterface->GetRenderContext();
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
@@ -57,7 +62,7 @@ void CComputeCullingPass::_Execute(const FComputeFrameInfo& frame_info)
 
 			if (was_vbo_rebinded)
 			{
-				BindShaderResources(shader, frame_info.deltaTime);
+				BindShaderResources(shader, m_deltaTime);
 				if (auto& buffers = shader->GetUniformBlock(shader_bindings::geometry_buffers); buffers)
 				{
 					auto& vertex_buffer = last_vbo->GetGeometryBuffer(EGeometryBufferIndices::eVertexBuffer);

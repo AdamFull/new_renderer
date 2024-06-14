@@ -42,7 +42,7 @@ void CComputeCubemapPass::Build(const FPassBuildInfo& build_info)
 	IComputePass::Build(build_info);
 }
 
-void CComputeCubemapPass::_Execute(const FComputeFrameInfo& frame_info)
+void CComputeCubemapPass::_Execute()
 {
 	auto& render_context = m_pRenderInterface->GetRenderContext();
 	auto& render_graph = m_pRenderInterface->GetRenderGraph();

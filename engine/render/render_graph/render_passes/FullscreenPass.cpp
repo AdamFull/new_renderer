@@ -33,12 +33,17 @@ void CFullscreenPass::Build(const FPassBuildInfo& build_info)
 	IRenderPass::Build(build_info);
 }
 
-void CFullscreenPass::_Render(const FRenderFrameInfo& frame_info)
+void CFullscreenPass::Update(f32 dt)
+{
+	m_deltaTime = dt;
+}
+
+void CFullscreenPass::_Render()
 {
 	auto& render_context = m_pRenderInterface->GetRenderContext();
 
 	auto& shader = m_pRenderInterface->GetShaderObject(m_shader);
-	BindShaderResources(m_shader, frame_info.deltaTime);
+	BindShaderResources(m_shader, m_deltaTime);
 
 	auto resolution = render_context->GetScreenRenderRect();
 	render_context->SetViewport(resolution.size.x, resolution.size.y, m_bFlipViewport);

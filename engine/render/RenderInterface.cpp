@@ -161,14 +161,18 @@ void CRenderInterface::PostLoad()
 	m_pRenderGraph->PostLoad();
 }
 
+// There should already be information about geometry here, and everything that needed to be updated should be updated.
 void CRenderInterface::PreUpdate(f32 dt)
+{
+	
+}
+
+// Updates global unoforms. It also acalled after another update
+void CRenderInterface::Update(f32 dt)
 {
 	m_pRenderGraph->Update(dt);
 	m_pRenderWorld->Begin(dt);
-}
 
-void CRenderInterface::Update(f32 dt)
-{
 	const auto& world_stats = m_pRenderWorld->GetStats();
 
 	FGlobalUniformData global_uniform{};
@@ -274,21 +278,25 @@ void CRenderInterface::Update(f32 dt)
 	m_pRenderContext->UpdateGlobalDescriptorData(update_info);
 }
 
+// Calls before another post updates
 void CRenderInterface::PostUpdate(f32 dt)
 {
 
 }
 
+// Calls after another PreRender
 void CRenderInterface::PreRender()
 {
 	m_pRenderContext->BeginFrame();
 }
 
+// Calls after another Render
 void CRenderInterface::Render()
 {	
-	m_pRenderGraph->Execute(dt);
+	m_pRenderGraph->Execute();
 }
 
+// Calls before another PreRender
 void CRenderInterface::PostRender()
 {
 	m_pRenderContext->EndFrame();

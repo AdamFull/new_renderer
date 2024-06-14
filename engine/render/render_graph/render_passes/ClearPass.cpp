@@ -23,7 +23,7 @@ void CClearPass::Build(const FPassBuildInfo& build_info)
 #endif
 }
 
-void CClearPass::_Render(const FRenderFrameInfo& frame_info)
+void CClearPass::_Render()
 {
 
 }

@@ -35,6 +35,7 @@ namespace engine
 			FGraphHandle m_depthTarget{ ~0ull };
 			FGraphHandle m_stencilTarget{ ~0ull };
 			u32 m_layerCount{ 1u };
+			FRect2D<f32> m_renderArea{};
 
 			utl::vector<FRenderGraphAttachmentInfo> m_vColorAttachments{};
 			utl::hash_map<FAPIHandle, FClearValues> m_clearValues;

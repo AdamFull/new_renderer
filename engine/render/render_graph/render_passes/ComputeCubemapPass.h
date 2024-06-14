@@ -16,7 +16,7 @@ namespace engine
 			void Init(const FComputePassCreateInfo& pass_ci) override;
 			void Build(const FPassBuildInfo& build_info) override;
 		private:
-			void _Execute(const FComputeFrameInfo& frame_info) override;
+			void _Execute() override;
 		private:
 			FRHIHandle m_shader{};
 		};

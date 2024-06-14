@@ -30,13 +30,18 @@ void CComputePass::Build(const FPassBuildInfo& build_info)
 	IComputePass::Build(build_info);
 }
 
-void CComputePass::_Execute(const FComputeFrameInfo& frame_info)
+void CComputePass::Update(f32 dt)
+{
+	m_deltaTime = dt;
+}
+
+void CComputePass::_Execute()
 {
 	auto& render_context = m_pRenderInterface->GetRenderContext();
 	auto& render_graph = m_pRenderInterface->GetRenderGraph();
 	auto& shader = m_pRenderInterface->GetShaderObject(m_shader);
 
-	BindShaderResources(m_shader, frame_info.deltaTime);
+	BindShaderResources(m_shader, m_deltaTime);
 
 	shader->FlushDescriptors();
 	shader->FlushConstants(m_queue);

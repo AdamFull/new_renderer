@@ -41,7 +41,7 @@ void CImGuiPass::Build(const FPassBuildInfo& build_info)
 	IRenderPass::Build(build_info);
 }
 
-void CImGuiPass::_Render(const FRenderFrameInfo& frame_info)
+void CImGuiPass::_Render()
 {
 	auto& render_context = m_pRenderInterface->GetRenderContext();
 	auto resolution = render_context->GetScreenRenderRect();
@@ -149,8 +149,8 @@ void CImGuiPass::_Render(const FRenderFrameInfo& frame_info)
 					}
 
 					FGeometryDrawInfo draw_info{};
-					draw_info.lastVertex = m_lastVertex;
-					draw_info.lastIndex = m_lastIndex;
+					//draw_info.lastVertex = m_lastVertex;
+					//draw_info.lastIndex = m_lastIndex;
 
 					auto& range = draw_info.ranges.emplace_back();
 					range.beginIndex = pcmd->IdxOffset + global_idx_offset;

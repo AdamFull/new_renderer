@@ -15,8 +15,9 @@ namespace engine
 
 			void Init(const FRenderPassCreateInfo& pass_ci) override;
 			void Build(const FPassBuildInfo& build_info) override;
+			void Update(f32 dt) override;
 		private:
-			void _Render(const FRenderFrameInfo& frame_info) override;
+			void _Render() override;
 
 		private:
 			FRHIHandle m_shader{};

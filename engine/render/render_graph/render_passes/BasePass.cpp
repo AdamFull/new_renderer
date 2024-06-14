@@ -96,11 +96,9 @@ void IRenderPass::Execute()
 		render_context->BeginRendering(beginRenderingInfo);
 		render_context->SetViewport(utl::cast<f32>(beginRenderingInfo.renderArea.size.x), utl::cast<f32>(beginRenderingInfo.renderArea.size.y), m_bFlipViewport);
 
-		FRenderFrameInfo frame_info{};
-		frame_info.deltaTime = dt;
-		frame_info.renderRect = beginRenderingInfo.renderArea;
+		m_renderArea = beginRenderingInfo.renderArea;
 
-		_Render(frame_info);
+		_Render();
 
 		render_context->EndRendering(beginRenderingInfo.queue);
 	}

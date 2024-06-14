@@ -33,10 +33,10 @@ void CGeometryPass::PostLoad()
 	m_cameraIndex = render_world->GetDefaultCameraID();
 }
 
-void CGeometryPass::_Render(const FRenderFrameInfo& frame_info)
+void CGeometryPass::_Render()
 {
 	auto& render_context = m_pRenderInterface->GetRenderContext();
-	render_context->SetScissorRect(0, 0, frame_info.renderRect.size.x, frame_info.renderRect.size.y);
+	render_context->SetScissorRect(0, 0, m_renderArea.size.x, m_renderArea.size.y);
 
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
 	const auto& world_stats = render_world->GetStats();
