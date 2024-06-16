@@ -32,34 +32,29 @@ void DebugDraw::Render()
 
 void DebugDraw::DrawPoint(const glm::vec3& position, const glm::vec3& color, float size)
 {
-    DrawLine(position - glm::vec3(size, size, 0), position + glm::vec3(size, size, 0), color, size);
+    uint32_t vertexOffset = vertices.size();
+    uint32_t indexOffset = indices.size();
+
+    vertices.emplace_back(Vertex{ position, glm::vec2(0.0f), ColorToUint32(color) });
+    indices.emplace_back(vertexOffset);
+
+    glm::vec4 clipRect = CalculateClipRect(position, 0.0f, 0.0f);
+    AddDrawCmd(vertexOffset, indexOffset, 1, DebugGeometryType::ePoints, clipRect);
 }
 
 void DebugDraw::DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& color, float thickness)
 {
     uint32_t vertexOffset = vertices.size();
     uint32_t indexOffset = indices.size();
-    uint32_t packedColor = ColorToUint32(color);
 
-    // Calculate the direction and perpendicular vector
-    glm::vec3 dir = glm::normalize(to - from);
-    glm::vec3 perp = glm::cross(dir, glm::vec3(0, 0, 1)) * thickness * 0.5f; // Cross product to get perpendicular vector
+    vertices.emplace_back(Vertex{ from, glm::vec2(0.0f), ColorToUint32(color) });
+    vertices.emplace_back(Vertex{ to, glm::vec2(0.0f), ColorToUint32(color) });
 
-    // Create a thin rectangle (two triangles) to represent the line
-    vertices.push_back(Vertex{ from - perp, glm::vec2(0.0f), packedColor });
-    vertices.push_back(Vertex{ from + perp, glm::vec2(0.0f), packedColor });
-    vertices.push_back(Vertex{ to + perp, glm::vec2(0.0f), packedColor });
-    vertices.push_back(Vertex{ to - perp, glm::vec2(0.0f), packedColor });
+    indices.emplace_back(vertexOffset);
+    indices.emplace_back(vertexOffset + 1);
 
-    indices.push_back(vertexOffset);
-    indices.push_back(vertexOffset + 1);
-    indices.push_back(vertexOffset + 2);
-    indices.push_back(vertexOffset);
-    indices.push_back(vertexOffset + 2);
-    indices.push_back(vertexOffset + 3);
-
-    glm::vec4 clipRect = CalculateClipRect(from, glm::length(to - from), thickness);
-    AddDrawCmd(vertexOffset, indexOffset, 6, DebugGeometryType::eTriangles, clipRect);
+    glm::vec4 clipRect = CalculateClipRect(from, to.x - from.x, to.y - from.y);
+    AddDrawCmd(vertexOffset, indexOffset, 2, DebugGeometryType::eLines, clipRect);
 }
 
 void DebugDraw::DrawBox(const glm::vec3& min, const glm::vec3& max, const glm::vec3& color)
@@ -75,23 +70,26 @@ void DebugDraw::DrawBox(const glm::vec3& min, const glm::vec3& max, const glm::v
         { min.x, max.y, max.z }
     };
 
-    // Bottom face
-    DrawLine(verticesPos[0], verticesPos[1], color);
-    DrawLine(verticesPos[1], verticesPos[2], color);
-    DrawLine(verticesPos[2], verticesPos[3], color);
-    DrawLine(verticesPos[3], verticesPos[0], color);
+    uint32_t vertexOffset = vertices.size();
+    uint32_t indexOffset = indices.size();
+    uint32_t packedColor = ColorToUint32(color);
 
-    // Top face
-    DrawLine(verticesPos[4], verticesPos[5], color);
-    DrawLine(verticesPos[5], verticesPos[6], color);
-    DrawLine(verticesPos[6], verticesPos[7], color);
-    DrawLine(verticesPos[7], verticesPos[4], color);
+    for (const auto& pos : verticesPos)
+        vertices.emplace_back(Vertex{ pos, glm::vec2(0.0f), packedColor });
 
-    // Vertical edges
-    DrawLine(verticesPos[0], verticesPos[4], color);
-    DrawLine(verticesPos[1], verticesPos[5], color);
-    DrawLine(verticesPos[2], verticesPos[6], color);
-    DrawLine(verticesPos[3], verticesPos[7], color);
+    uint32_t boxIndices[] = 
+    {
+        0, 1, 1, 2, 2, 3, 3, 0,
+        4, 5, 5, 6, 6, 7, 7, 4,
+        0, 4, 1, 5, 2, 6, 3, 7
+    };
+
+    for (const auto& idx : boxIndices) {
+        indices.emplace_back(vertexOffset + idx);
+    }
+
+    glm::vec4 clipRect = CalculateClipRect(min, max.x - min.x, max.y - min.y);
+    AddDrawCmd(vertexOffset, indexOffset, 24, DebugGeometryType::eLines, clipRect);
 }
 
 void DebugDraw::DrawSphere(const glm::vec3& center, float radius, const glm::vec3& color)
@@ -120,8 +118,8 @@ void DebugDraw::DrawSphere(const glm::vec3& center, float radius, const glm::vec
             vertices.emplace_back(Vertex{ p1, glm::vec2(0.0f), ColorToUint32(color) });
             vertices.emplace_back(Vertex{ p2, glm::vec2(0.0f), ColorToUint32(color) });
 
-            indices.push_back(vertex_offset + j * 2);
-            indices.push_back(vertex_offset + j * 2 + 1);
+            indices.emplace_back(vertex_offset + j * 2);
+            indices.emplace_back(vertex_offset + j * 2 + 1);
         }
 
         const glm::vec4 clip_rect = CalculateClipRect(center, radius * 2, radius * 2);

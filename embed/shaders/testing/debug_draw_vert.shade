@@ -35,11 +35,13 @@
 		void main() 
 		{
 			FCamera camera = GetCamera(frameData.defaultCameraID);
-			mat4 viewProjection = getViewProjectionMatrix(camera.matricesOffset);
+			mat4 projection = getProjectionMatrix(camera.matricesOffset);
+			mat4 view = getViewMatrix(camera.matricesOffset);
+			projection[1][1] *= -1.f;
 
 			outUV = inUV;
 			outColor = inColor;
-			gl_Position = viewProjection * vec4(inPos, 1.0);
+			gl_Position = projection * view * vec4(inPos, 1.0);
 		}
 	""";
 }
