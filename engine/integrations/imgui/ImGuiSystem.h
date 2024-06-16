@@ -29,12 +29,7 @@ namespace engine
 		void HandleKeyInput(EKeyCode, EKeyState);
 		void HandleCharInput(u32 character);
 	private:
-		u32 m_lastVertex{}, m_lastIndex{};
 		f32 m_lastMouseX{}, m_lastMouseY{};
-
-		render::FRHIHandle m_vertexHandler{};
-		render::FRHIHandle m_fontTexture{ INVALID_HANDLE };
-
 		render::IRenderInterface* m_pRenderInterface{ nullptr };
 	};
 }

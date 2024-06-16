@@ -11,11 +11,9 @@
 using namespace engine;
 using namespace engine::render;
 
-CImGuiPass::CImGuiPass(IRenderInterface* render_interface, FRHIHandle vertex_handler, FRHIHandle font_texture)
+CImGuiPass::CImGuiPass(IRenderInterface* render_interface)
 {
 	m_pRenderInterface = render_interface;
-	m_vertexHandler = vertex_handler;
-	m_fontTexture = font_texture;
 }
 
 CImGuiPass::~CImGuiPass()
@@ -25,6 +23,43 @@ CImGuiPass::~CImGuiPass()
 void CImGuiPass::Init(const FRenderPassCreateInfo& pass_ci)
 {
 	IRenderPass::Init(pass_ci);
+
+	ImGui::CreateContext();
+
+	ImGuiIO& io = ImGui::GetIO();
+	IMGUI_CHECKVERSION();
+	IM_ASSERT(io.BackendRendererUserData == nullptr && "Already initialized a renderer backend!");
+
+	io.BackendRendererUserData = (void*)this;
+	io.BackendRendererName = "vulkan";
+	io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;  // We can honor the ImDrawCmd::VtxOffset field, allowing for large meshes.
+	//io.BackendFlags |= ImGuiBackendFlags_RendererHasViewports;  // We can Create multi-viewports on the Renderer side (optional)
+
+	// At first create vertex/index handler
+	FVertexHandlerCreateInfo vertex_handler_ci{};
+	vertex_handler_ci.indexSize = sizeof(ImDrawIdx);
+	vertex_handler_ci.descriptions.emplace_back(FVertexHandlerAttributeDescription{ 8ull, EVertexAttributeType::ePosition });
+	vertex_handler_ci.descriptions.emplace_back(FVertexHandlerAttributeDescription{ 8ull, EVertexAttributeType::eTexCoord });
+	vertex_handler_ci.descriptions.emplace_back(FVertexHandlerAttributeDescription{ 4ull, EVertexAttributeType::eColor });
+	vertex_handler_ci.name = "imgui_vertices";
+	m_vertexHandler = m_pRenderInterface->CreateVertexHandler("imgui_vertices", vertex_handler_ci);
+
+	// Create font texture (just load) May be needs to implement texture interface
+	unsigned char* pixels;
+	int width, height;
+	io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
+	u64 upload_size = width * height * 4 * sizeof(char);
+
+	FTextureCreateInfo font_ci{};
+	font_ci.format = EApiDataFormat::eRGBA8_UNORM;
+	font_ci.flags = ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eTransferable | ETextureCreateFlagBits::e2D;
+	font_ci.SetFixedSize2D(width, height);
+
+	FTextureUploadInfo upload_info{};
+	upload_info.data.insert(upload_info.data.end(), pixels, pixels + upload_size);
+
+	auto& render_context = m_pRenderInterface->GetRenderContext();
+	m_fontTexture = m_pRenderInterface->CreateTextureObject("imgui_font", font_ci, std::move(upload_info));
 
 	// Make RHI shader object
 	auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_vertexHandler);
@@ -53,6 +88,27 @@ void CImGuiPass::_Render()
 		ImDrawData* draw_data = ImGui::GetDrawData();
 		auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_vertexHandler);
 		auto& shader = m_pRenderInterface->GetShaderObject(m_shader);
+
+		m_lastVertex = 0;
+		m_lastIndex = 0;
+
+		// Update vertices
+		if (draw_data->TotalVtxCount > 0)
+		{
+			// Upload vertex/index data into a single contiguous GPU buffer
+			for (int n = 0; n < draw_data->CmdListsCount; n++)
+			{
+				const ImDrawList* cmd_list = draw_data->CmdLists[n];
+				vertex_handler->AddVertices(cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size, sizeof(ImDrawVert));
+				vertex_handler->AddIndices(cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size, sizeof(ImDrawIdx));
+
+				m_lastVertex += cmd_list->VtxBuffer.Size;
+				m_lastIndex += cmd_list->IdxBuffer.Size;
+			}
+		}
+
+		// Upload vertices
+		vertex_handler->Allocate();
 
 		// Bind pipeline:
 		shader->Bind(m_queue);
@@ -142,15 +198,15 @@ void CImGuiPass::_Render()
 
 					if (attachment != last_bound_resource)
 					{
-						shader->BindTexture(utl::fnv1a_64_hash_cstr("fontSampler"), m_pRenderInterface->GetTextureObject(attachment)->Handle());
+						shader->BindTexture(utl::fnv1a_64_hash_cstr("font_sampler"), m_pRenderInterface->GetTextureObject(attachment)->Handle());
 						shader->FlushDescriptors();
 						shader->BindResources(m_queue);
 						last_bound_resource = attachment;
 					}
 
 					FGeometryDrawInfo draw_info{};
-					//draw_info.lastVertex = m_lastVertex;
-					//draw_info.lastIndex = m_lastIndex;
+					draw_info.lastVertex = 9999999999;
+					draw_info.lastIndex = 9999999999;
 
 					auto& range = draw_info.ranges.emplace_back();
 					range.beginIndex = pcmd->IdxOffset + global_idx_offset;

@@ -57,11 +57,13 @@ void CEngine::Initialize()
 
 	m_pRenderInterface->PreInitialize(rhi_ci);
 	m_pInputMapper->Create();
+	m_pSystemManager->PreInitialize();
 	m_pApplication->PreInitialize();
 	// Pre initialization zone END
 
 	// Initialization zone BEGIN
 	m_pRenderInterface->Initialize();
+	m_pSystemManager->Initialize();
 	m_pApplication->Initialize();
 	// Initialization zone END
 
@@ -77,8 +79,8 @@ void CEngine::Initialize()
 	//m_pScene->load("/root/Landscape/landscape.gltf");
 
 	// Post initialization zone BEGIN
-	m_pSystemManager->PostInitialize();
 	m_pRenderInterface->PostInitialize();
+	m_pSystemManager->PostInitialize();
 	m_pApplication->PostInitialize();
 	// Post initialization zone END
 
@@ -107,34 +109,40 @@ void CEngine::Loop()
 		}
 
 		// Pre update zone BEGIN
-		m_pApplication->PreUpdate(dt);
 		m_pRenderInterface->PreUpdate(dt);
+		m_pSystemManager->PreUpdate(dt);
+		m_pApplication->PreUpdate(dt);
 		// Pre update zone END
 
 		// Update zone BEGIN
-		m_pApplication->Update(dt);
-		m_pInputMapper->Update(dt);
 		m_pScene->Update(dt);
+		m_pInputMapper->Update(dt);
 		m_pRenderInterface->Update(dt);
+		m_pSystemManager->Update(dt);
+		m_pApplication->Update(dt);
 		// Update zone END
 
 		// Post update zone BEGIN
 		m_pRenderInterface->PostUpdate(dt);
+		m_pSystemManager->PostUpdate(dt);
 		m_pApplication->PostUpdate(dt);
 		// Post update zone EMD
 
 		// Pre render zone BEGIN
-		m_pApplication->PreRender();
 		m_pRenderInterface->PreRender();
+		m_pSystemManager->PreRender();
+		m_pApplication->PreRender();
 		// Pre render zone END
 
 		// Render zone BEGIN
-		m_pApplication->Render();
 		m_pRenderInterface->Render();
+		m_pSystemManager->Render();
+		m_pApplication->Render();
 		// Render zone END
 
 		// Post render zone BEGIN
 		m_pRenderInterface->PostRender();
+		m_pSystemManager->PostRender();
 		m_pApplication->PostRender();
 		// Post render zone END
 
