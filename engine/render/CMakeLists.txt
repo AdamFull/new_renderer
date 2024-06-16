@@ -4,13 +4,13 @@ project(render_interface)
 find_package(Ktx CONFIG REQUIRED)
 find_package(tinyxml2 CONFIG REQUIRED)
 find_package(XercesC CONFIG REQUIRED)
-find_package(Lua REQUIRED)
 
 #find_package(PkgConfig REQUIRED)  
 #pkg_check_modules(LuaJIT REQUIRED IMPORTED_TARGET luajit)
 
 find_package(sol2 CONFIG REQUIRED)
 
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/DebugDraw")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/render_api/vulkan")
 
 file(GLOB ENGINE_RENDER_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
@@ -58,6 +58,7 @@ target_link_libraries(${PROJECT_NAME}
     PRIVATE KTX::ktx
     PRIVATE tinyxml2::tinyxml2
     PRIVATE XercesC::XercesC
+    PRIVATE ImmediateModeDebugDraw
 )
 
 target_compile_definitions(${PROJECT_NAME} 

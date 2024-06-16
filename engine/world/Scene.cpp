@@ -166,7 +166,7 @@ void CScene::MakeGenerateScene(const std::string& path)
 
 	auto& current_scene = root.scenes.at(root.scene < 0 ? 0 : root.scene);
 
-	constexpr const u64 duplicate_count = 60000;
+	constexpr const u64 duplicate_count = 1000;
 	for (u64 idx = 0ull; idx < duplicate_count; ++idx)
 	{
 		// Add new node to scene

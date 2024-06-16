@@ -63,7 +63,14 @@ void CImGuiPass::Init(const FRenderPassCreateInfo& pass_ci)
 
 	// Make RHI shader object
 	auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_vertexHandler);
-	m_shader = MakeShader(pass_ci.shader, EShaderCullModeFlagBits::eNone, EShaderFrontFace::eCCW, true, EDepthCompareOp::eLessOrEqual, vertex_handler.get());
+
+	FGraphicsShaderCreateInfo shader_ci{};
+	shader_ci.frontFace = EShaderFrontFace::eCCW;
+	shader_ci.cullMode = EShaderCullModeFlagBits::eNone;
+	shader_ci.alphaBlending = true;
+	shader_ci.primitiveTopology = EVertexPrimitiveTopology::eTriangleList;
+
+	m_shader = MakeShader(pass_ci.shader, shader_ci, vertex_handler.get());
 	InitShaderResources(m_shader);
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -85,6 +92,7 @@ void CImGuiPass::_Render()
 
 	// Render ingui
 	{
+		// Move to pre render
 		ImDrawData* draw_data = ImGui::GetDrawData();
 		auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_vertexHandler);
 		auto& shader = m_pRenderInterface->GetShaderObject(m_shader);
@@ -205,8 +213,8 @@ void CImGuiPass::_Render()
 					}
 
 					FGeometryDrawInfo draw_info{};
-					draw_info.lastVertex = 9999999999;
-					draw_info.lastIndex = 9999999999;
+					draw_info.lastVertex = m_lastVertex;
+					draw_info.lastIndex = m_lastIndex;
 
 					auto& range = draw_info.ranges.emplace_back();
 					range.beginIndex = pcmd->IdxOffset + global_idx_offset;

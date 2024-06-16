@@ -17,10 +17,12 @@ void CFullscreenPass::Init(const FRenderPassCreateInfo& pass_ci)
 
 	auto& render_graph = m_pRenderInterface->GetRenderGraph();
 
-	// Make RHI shader object
-	auto cull_mode = pass_ci.flipViewport ? EShaderCullModeFlagBits::eBack : EShaderCullModeFlagBits::eFront;
+	FGraphicsShaderCreateInfo shader_ci{};
+	shader_ci.frontFace = EShaderFrontFace::eCCW;
+	shader_ci.cullMode = pass_ci.flipViewport ? EShaderCullModeFlagBits::eBack : EShaderCullModeFlagBits::eFront;
+	shader_ci.primitiveTopology = EVertexPrimitiveTopology::eTriangleList;
 
-	m_shader = MakeShader(pass_ci.shader, cull_mode, EShaderFrontFace::eCCW);
+	m_shader = MakeShader(pass_ci.shader, shader_ci);
 	InitShaderResources(m_shader);
 
 #ifndef BUILD_WITHOUT_DEBUGGIND

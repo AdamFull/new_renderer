@@ -190,11 +190,11 @@ void CLibraryCompiler::compilePermutations(const std::filesystem::path parent_pa
 		auto& shader_pool = compiled_library.shaders[name_type_hash];
 
 		// Process and compile all definition combinations
-#ifdef NDEBUG
-		std::for_each(std::execution::par, cached_permutations.begin(), cached_permutations.end(),
-#else
+//#ifdef NDEBUG
+//		std::for_each(std::execution::par, cached_permutations.begin(), cached_permutations.end(),
+//#else
 		std::for_each(cached_permutations.begin(), cached_permutations.end(),
-#endif
+//#endif
 			[&](const utl::vector<std::string>& definitions)
 			{
 				bool is_compiling_first_time{ false };
@@ -275,8 +275,13 @@ void CLibraryCompiler::compilePermutations(const std::filesystem::path parent_pa
 				{
 					compiled_spirv = m_pShaderCompiler->compile(preprocessed_code, compile_info);
 
+					std::stringstream ss{};
+					ss << source.shader_name;
+					for (auto& definition : definitions)
+						ss << ":" << definition;
+
 					m_locks[3].lock();
-					log_info("{} shader {}[{}] was {}.", name_type_hash, source.shader_name, preprocessed_hash, is_compiling_first_time ? "compiled" : "recompiled");
+					log_info("{} shader {}[{}] was {}.", name_type_hash, ss.str(), preprocessed_hash, is_compiling_first_time ? "compiled" : "recompiled");
 					m_locks[3].unlock();
 				}
 

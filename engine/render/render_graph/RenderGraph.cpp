@@ -20,6 +20,7 @@
 #include "render_passes/FullscreenPass.h"
 #include "render_passes/GeometryPass.h"
 #include "render_passes/ClearPass.h"
+#include "render_passes/DebugDrawPass.h"
 #include "render_passes/ImGuiPass.h"
 
 #include <engine/VariableBlock.h>
@@ -1240,6 +1241,17 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		AddRenderNode(create_info);
 	}
 
+	// Debug draw pass
+	{
+		FRenderGraphRenderPassNodeCreateInfo create_info;
+		create_info.name = "debug_draw_pass";
+		create_info.pass_ci = makeGraphicsPassCI(ERenderingType::eDebugDraw, EQueueTypeFlagBits::eGraphics, "testing:debug_draw");
+		create_info.pass_ci.FlipFiewport();
+		create_info.pass_ci.AddWriteResource("present_target");
+	
+		AddRenderNode(create_info);
+	}
+
 	// ImGui pass
 	{
 		FRenderGraphRenderPassNodeCreateInfo create_info;
@@ -1247,7 +1259,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		create_info.pass_ci = makeGraphicsPassCI(ERenderingType::eImGui, EQueueTypeFlagBits::eGraphics, "testing:imgui");
 		create_info.pass_ci.AddWriteResource("present_target");
 
-		AddRenderNode(create_info);
+		//AddRenderNode(create_info);
 	}
 }
 
@@ -1325,6 +1337,8 @@ u64 CRenderGraph::AddRenderPass(const std::string& name, const FRenderConfigRend
 		new_pass = std::make_unique<COmnilShadowMapPass>(m_pRenderInterface);
 	else if(render_pass_ci.type == ERenderingType::eClear)
 		new_pass = std::make_unique<CClearPass>(m_pRenderInterface);
+	else if (render_pass_ci.type == ERenderingType::eDebugDraw)
+		new_pass = std::make_unique<CDebugDrawPass>(m_pRenderInterface);
 	else if(render_pass_ci.type == ERenderingType::eImGui)
 		new_pass = std::make_unique<CImGuiPass>(m_pRenderInterface);
 

@@ -6,6 +6,8 @@
 #include <engine/world/ecs/components/RootComponent.h>
 #include <engine/world/ecs/components/TransformComponent.h>
 
+#include <engine/render/DebugDraw/DebugDraw.h>
+
 #include <engine/profiler/Profiler.h>
 
 using namespace engine::render;
@@ -60,6 +62,15 @@ void prepare_draw_commands(const std::unique_ptr<IRenderWorld>& render_world, en
 
 		if (auto found = root_component.skinRemap.find(utl::cast<u32>(mesh_component.skin)); found != root_component.skinRemap.end())
 			scene_node.skeletonID = found->second;
+
+		for (const auto& primitive : mesh_component.primitives)
+		{
+			const auto& material = render_world->GetMaterial(primitive.materialId);
+			if (material.alphaMode != alpha_mode)
+				continue;
+
+			DebugDraw::DrawBox(transform.gposition + primitive.dims.min * transform.gscale, transform.gposition + primitive.dims.max * transform.gscale, glm::vec3(1.f, 0.f, 0.f));
+		}
 
 		auto remapped_idx = render_world->UpdateNode(node, scene_node);
 		prepare_meshes_to_draw(render_world, mesh_component.primitives, draw_commands, remapped_idx, alpha_mode);

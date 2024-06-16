@@ -59,6 +59,10 @@ void IRenderPass::Execute()
 {
 	IBasePass::Execute();
 
+	volatile int iiiii;
+	if (m_debugName == "debug:testing:debug_draw")
+		iiiii++;
+
 	auto& render_context = m_pRenderInterface->GetRenderContext();
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
 	auto render_size = render_context->GetScreenRenderRect();
@@ -118,16 +122,9 @@ void IRenderPass::BuildAttachment(FGraphHandle resource_id, const FPassBuildInfo
 	attachment_info.storeOp = resource_info.storeOp;
 }
 
-FRHIHandle IRenderPass::MakeShader(const std::string& name, EShaderCullModeFlagBits cull_mode, EShaderFrontFace front_face, bool alphaBlend, EDepthCompareOp depthOp, const IVertexHandler* vbo)
+FRHIHandle IRenderPass::MakeShader(const std::string& name, FGraphicsShaderCreateInfo& shader_ci, const IVertexHandler* vbo)
 {
 	auto& render_graph = m_pRenderInterface->GetRenderGraph();
-
-	FGraphicsShaderCreateInfo shader_ci{};
-	shader_ci.cullMode = cull_mode;
-	shader_ci.frontFace = front_face;
-	shader_ci.primitiveTopology = EVertexPrimitiveTopology::eTriangleList;
-	shader_ci.depthCompareOp = depthOp;
-	shader_ci.alphaBlending = alphaBlend;
 
 	auto& output_targets = m_renderResources[ERenderResourceGroupType::eColorWrite];
 	for (const auto& resource_binding : output_targets)

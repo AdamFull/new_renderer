@@ -17,6 +17,7 @@ namespace engine
 			eOmniShadowMap,
 			eRenderScript,
 			eClear,
+			eDebugDraw,
 			eImGui
 		};
 

@@ -107,9 +107,12 @@ const std::unique_ptr<IShaderObject>& CDirectionalShadowMapPass::GetShaderByVBO(
 		// Generate shader name
 		auto shader_name = m_baseShaderName + vbo->GetDefinitions();
 
-		auto front_face = m_bFlipViewport ? EShaderFrontFace::eCW : EShaderFrontFace::eCCW;
+		FGraphicsShaderCreateInfo shader_ci{};
+		shader_ci.frontFace = m_bFlipViewport ? EShaderFrontFace::eCW : EShaderFrontFace::eCCW;
+		shader_ci.cullMode = EShaderCullModeFlagBits::eFront;
+		shader_ci.primitiveTopology = EVertexPrimitiveTopology::eTriangleList;
 
-		shader = MakeShader(shader_name, EShaderCullModeFlagBits::eFront, front_face, false, EDepthCompareOp::eLessOrEqual, vbo);
+		shader = MakeShader(shader_name, shader_ci, vbo);
 		InitShaderResources(shader);
 	}
 

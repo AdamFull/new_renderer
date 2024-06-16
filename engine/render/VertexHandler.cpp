@@ -215,16 +215,16 @@ void CVertexHandler::Create(const FVertexHandlerCreateInfo& create_info)
 
 	log_info("[Vertex Handler] Created vertex handler: {}:{}.", create_info.name, m_definitions);
 
-	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eVertexBuffer))->CreateRaw("SCENE_VERTICES" + m_definitions, vertex_size, 16ull, EBufferUsageFlagBits::eVertexBuffer);
-	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eIndexBuffer))->CreateRaw("SCENE_INDICES" + m_definitions, create_info.indexSize, 16ull, EBufferUsageFlagBits::eIndexBuffer);
-	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eLodBuffer))->Create<FMeshLod>("MeshLodBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
+	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eVertexBuffer))->CreateRaw(create_info.name + ":VERTICES" + m_definitions, vertex_size, 16ull, EBufferUsageFlagBits::eVertexBuffer);
+	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eIndexBuffer))->CreateRaw(create_info.name + ":INDICES" + m_definitions, create_info.indexSize, 16ull, EBufferUsageFlagBits::eIndexBuffer);
+	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eLodBuffer))->Create<FMeshLod>(create_info.name + ":MeshLodBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
 	
 	if (create_info.flags & EVertexHandlerFlagBits::eGenerateMeshlets)
 	{
-		m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eMeshletBuffer))->Create<FMeshlet>("MeshletBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
-		m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eVertexRemapBuffer))->Create<u32>("MeshletVerticesBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
-		m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eBoundsBuffer))->Create<FGeometryDrawBounds>("MeshletBoundsBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
-		m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eTriangleBuffer))->Create<FTriangle>("MeshletTriangleBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
+		m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eMeshletBuffer))->Create<FMeshlet>(create_info.name + ":MeshletBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
+		m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eVertexRemapBuffer))->Create<u32>(create_info.name + ":MeshletVerticesBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
+		m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eBoundsBuffer))->Create<FGeometryDrawBounds>(create_info.name + ":MeshletBoundsBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
+		m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eTriangleBuffer))->Create<FTriangle>(create_info.name + ":MeshletTriangleBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
 	}
 
 	return;

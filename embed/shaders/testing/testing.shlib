@@ -28,6 +28,19 @@
 					shader_name: "imgui_frag";
 				}
 			];
+		},
+		{
+			name: "debug_draw";
+			sources: [
+				{
+					type: "vertex";
+					shader_name: "debug_draw_vert";
+				},
+				{
+					type: "fragment";
+					shader_name: "debug_draw_frag";
+				}
+			];
 		}
 	];
 
@@ -38,6 +51,10 @@
 		},
 		{ 
 			shader_name: "imgui";
+			pattern: "default_pattern";
+		},
+		{ 
+			shader_name: "debug_draw";
 			pattern: "default_pattern";
 		}
 	];

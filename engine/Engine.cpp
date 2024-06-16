@@ -8,6 +8,7 @@
 #include <engine/filesystem/vfs_helper.h>
 
 #include <integrations/imgui/ImGuiSystem.h>
+#include <integrations/imgui/DebugSystem.h>
 
 using namespace engine;
 using namespace engine::render;
@@ -39,7 +40,8 @@ void CEngine::Initialize()
 
 	m_pInputMapper = std::make_unique<CInputMapper>();
 
-	m_pSystemManager->RegisterSystem<CImGuiEngineSystem>(m_pRenderInterface.get());
+	//m_pSystemManager->RegisterSystem<CImGuiEngineSystem>(m_pRenderInterface.get());
+	m_pSystemManager->RegisterSystem<CDebugDrawEngineSystem>(m_pRenderInterface.get());
 
 	FWindowCreateInfo window_ci{};
 	window_ci.name = "Vulkan App";

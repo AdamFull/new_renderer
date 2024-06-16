@@ -33,9 +33,3 @@ namespace engine
 		render::IRenderInterface* m_pRenderInterface{ nullptr };
 	};
 }
-
-//FRenderGraphRenderPassNodeCreateInfo create_info;
-//create_info.name = "imgui_pass";
-//create_info.pass_ci = makeGraphicsPassCI(ERenderingType::eImGui, EQueueTypeFlagBits::eGraphics, "testing:imgui");
-//create_info.pass_ci.AddWriteResource("present_target");
-//AddRenderNode(create_info);

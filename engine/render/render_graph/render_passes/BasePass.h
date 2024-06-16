@@ -23,7 +23,7 @@ namespace engine
 			void BuildAttachment(FGraphHandle resource_id, const FPassBuildInfo& build_info, FRenderGraphAttachmentInfo& attachment_info);
 			virtual void _Render() = 0;
 
-			virtual FRHIHandle MakeShader(const std::string& name, EShaderCullModeFlagBits cull_mode, EShaderFrontFace front_face, bool alphaBlend = false, EDepthCompareOp depthOp = EDepthCompareOp::eLessOrEqual, const IVertexHandler* vbo = nullptr);
+			virtual FRHIHandle MakeShader(const std::string& name, FGraphicsShaderCreateInfo& shader_ci, const IVertexHandler* vbo = nullptr);
 			void InitShaderResources(FRHIHandle);
 			void BindShaderResources(FRHIHandle, f32 dt);
 			void InitShaderResources(const std::unique_ptr<IShaderObject>& shader);
