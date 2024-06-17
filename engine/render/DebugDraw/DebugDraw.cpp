@@ -3,211 +3,237 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-// Initialize static members
-utl::vector<Vertex> DebugDraw::vertices;
-utl::vector<uint16_t> DebugDraw::indices;
-utl::hash_map<DebugGeometryType, utl::vector<DebugDrawCmd>> DebugDraw::drawCommands;
+static ImDbgContext* context{ nullptr };
 
-void DebugDraw::Init()
+namespace ImDbg
 {
+    u32 ColorToUint32(const glm::vec3& color);
+    glm::vec2 GetUVForChar(char c);
+    glm::vec4 CalculateClipRect(const glm::vec3& position, float width, float height);
 
-}
-
-void DebugDraw::Shutdown()
-{
-
-}
-
-void DebugDraw::NewFrame()
-{
-    vertices.clear();
-    indices.clear();
-    drawCommands.clear();
-}
-
-void DebugDraw::Render()
-{
-    
-}
-
-void DebugDraw::DrawPoint(const glm::vec3& position, const glm::vec3& color, float size)
-{
-    uint32_t vertexOffset = vertices.size();
-    uint32_t indexOffset = indices.size();
-
-    vertices.emplace_back(Vertex{ position, glm::vec2(0.0f), ColorToUint32(color) });
-    indices.emplace_back(vertexOffset);
-
-    glm::vec4 clipRect = CalculateClipRect(position, 0.0f, 0.0f);
-    AddDrawCmd(vertexOffset, indexOffset, 1, DebugGeometryType::ePoints, clipRect);
-}
-
-void DebugDraw::DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& color, float thickness)
-{
-    uint32_t vertexOffset = vertices.size();
-    uint32_t indexOffset = indices.size();
-
-    vertices.emplace_back(Vertex{ from, glm::vec2(0.0f), ColorToUint32(color) });
-    vertices.emplace_back(Vertex{ to, glm::vec2(0.0f), ColorToUint32(color) });
-
-    indices.emplace_back(vertexOffset);
-    indices.emplace_back(vertexOffset + 1);
-
-    glm::vec4 clipRect = CalculateClipRect(from, to.x - from.x, to.y - from.y);
-    AddDrawCmd(vertexOffset, indexOffset, 2, DebugGeometryType::eLines, clipRect);
-}
-
-void DebugDraw::DrawBox(const glm::vec3& min, const glm::vec3& max, const glm::vec3& color)
-{
-    glm::vec3 verticesPos[8] = {
-        { min.x, min.y, min.z },
-        { max.x, min.y, min.z },
-        { max.x, max.y, min.z },
-        { min.x, max.y, min.z },
-        { min.x, min.y, max.z },
-        { max.x, min.y, max.z },
-        { max.x, max.y, max.z },
-        { min.x, max.y, max.z }
-    };
-
-    uint32_t vertexOffset = vertices.size();
-    uint32_t indexOffset = indices.size();
-    uint32_t packedColor = ColorToUint32(color);
-
-    for (const auto& pos : verticesPos)
-        vertices.emplace_back(Vertex{ pos, glm::vec2(0.0f), packedColor });
-
-    uint32_t boxIndices[] = 
+    void CreateContext()
     {
-        0, 1, 1, 2, 2, 3, 3, 0,
-        4, 5, 5, 6, 6, 7, 7, 4,
-        0, 4, 1, 5, 2, 6, 3, 7
-    };
+        static constexpr const std::array<ImDbgGeometryType, 3ull> geometry_types{ ImDbgGeometryType::ePoints, ImDbgGeometryType::eLines, ImDbgGeometryType::eTriangles };
 
-    for (const auto& idx : boxIndices) {
-        indices.emplace_back(vertexOffset + idx);
+        context = new ImDbgContext();
+
+        for (const auto& type : geometry_types)
+        {
+            auto& new_list = context->drawData.drawLists.emplace_back();
+            new_list.type = type;
+        }
     }
 
-    glm::vec4 clipRect = CalculateClipRect(min, max.x - min.x, max.y - min.y);
-    AddDrawCmd(vertexOffset, indexOffset, 24, DebugGeometryType::eLines, clipRect);
-}
-
-void DebugDraw::DrawSphere(const glm::vec3& center, float radius, const glm::vec3& color)
-{
-    const int segments = 16;
-    glm::vec3 axis[] = 
+    void DestroyContext()
     {
-        {1.0f, 0.0f, 0.0f},
-        {0.0f, 1.0f, 0.0f},
-        {0.0f, 0.0f, 1.0f}
-    };
+        delete context;
+        context = nullptr;
+    }
 
-    for (int i = 0; i < 3; ++i) 
+    void NewFrame()
     {
-        uint32_t vertex_offset = vertices.size();
-        uint32_t index_offset = indices.size();
-
-        for (int j = 0; j < segments; ++j) 
+        for (auto& list : context->drawData.drawLists)
         {
-            float theta1 = j * glm::two_pi<float>() / segments;
-            float theta2 = (j + 1) * glm::two_pi<float>() / segments;
-
-            glm::vec3 p1 = center + radius * (glm::cos(theta1) * axis[i] + glm::sin(theta1) * axis[(i + 1) % 3]);
-            glm::vec3 p2 = center + radius * (glm::cos(theta2) * axis[i] + glm::sin(theta2) * axis[(i + 1) % 3]);
-
-            vertices.emplace_back(Vertex{ p1, glm::vec2(0.0f), ColorToUint32(color) });
-            vertices.emplace_back(Vertex{ p2, glm::vec2(0.0f), ColorToUint32(color) });
-
-            indices.emplace_back(vertex_offset + j * 2);
-            indices.emplace_back(vertex_offset + j * 2 + 1);
+            list.vertices.clear();
+            list.indices.clear();
+            list.drawCommands.clear();
         }
 
-        const glm::vec4 clip_rect = CalculateClipRect(center, radius * 2, radius * 2);
-        AddDrawCmd(vertex_offset, index_offset, segments * 2, DebugGeometryType::eLines, clip_rect);
-    }
-}
-
-void DebugDraw::DrawText(const glm::vec3& position, const std::string& text, const glm::vec3& color)
-{
-    uint32_t vertex_offset = vertices.size();
-    uint32_t index_offset = indices.size();
-    uint32_t packed_color = ColorToUint32(color);
-
-    float x = position.x;
-    float y = position.y;
-
-    for (char c : text) {
-        glm::vec2 uv = GetUVForChar(c);
-
-        vertices.emplace_back(Vertex{ glm::vec3(x, y, position.z), uv, packed_color });
-        vertices.emplace_back(Vertex{ glm::vec3(x + 1, y, position.z), uv, packed_color });
-        vertices.emplace_back(Vertex{ glm::vec3(x + 1, y + 1, position.z), uv, packed_color });
-        vertices.emplace_back(Vertex{ glm::vec3(x, y + 1, position.z), uv, packed_color });
-
-        indices.emplace_back(vertex_offset);
-        indices.emplace_back(vertex_offset + 1);
-        indices.emplace_back(vertex_offset + 2);
-        indices.emplace_back(vertex_offset + 2);
-        indices.emplace_back(vertex_offset + 3);
-        indices.emplace_back(vertex_offset);
-
-        vertex_offset += 4;
-        index_offset += 6;
-
-        x += 1.0f; // Move to the next character position
+        context->drawData.totalIndexCount = 0;
+        context->drawData.totalVertexCount = 0;
     }
 
-    const glm::vec4 clip_rect = CalculateClipRect(position, text.size(), 1.0f);
-    AddDrawCmd(vertex_offset, index_offset, text.size() * 6, DebugGeometryType::eTriangles, clip_rect);
-}
+    void EndFrame()
+    {
+
+    }
+
+    void DrawPoint(const glm::vec3& position, const glm::vec3& color, float size)
+    {
+        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::ePoints];
+
+        auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
+        new_draw_cmd.vertexOffset = draw_list.vertices.size();
+        new_draw_cmd.indexOffset = draw_list.indices.size();
+        new_draw_cmd.indexCount = 1;
+        new_draw_cmd.clipRect = CalculateClipRect(position, 0.0f, 0.0f);
+
+        draw_list.vertices.emplace_back(ImDbgVertex{ position, glm::vec2(0.0f), ColorToUint32(color) });
+        draw_list.indices.emplace_back(new_draw_cmd.vertexOffset);
+
+        context->drawData.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
+        context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+    }
+
+    void DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& color, float thickness)
+    {
+        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eLines];
+
+        auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
+        new_draw_cmd.vertexOffset = draw_list.vertices.size();
+        new_draw_cmd.indexOffset = draw_list.indices.size();
+        new_draw_cmd.indexCount = 2;
+        new_draw_cmd.clipRect = CalculateClipRect(from, to.x - from.x, to.y - from.y);
+
+        draw_list.vertices.emplace_back(ImDbgVertex{ from, glm::vec2(0.0f), ColorToUint32(color) });
+        draw_list.vertices.emplace_back(ImDbgVertex{ to, glm::vec2(0.0f), ColorToUint32(color) });
+        draw_list.indices.emplace_back(new_draw_cmd.vertexOffset);
+        draw_list.indices.emplace_back(new_draw_cmd.vertexOffset + 1);
+
+        context->drawData.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
+        context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+    }
+
+    void DrawBox(const glm::vec3& min, const glm::vec3& max, const glm::vec3& color)
+    {
+        static const glm::vec3 verticesPos[8] = 
+        {
+            { min.x, min.y, min.z },
+            { max.x, min.y, min.z },
+            { max.x, max.y, min.z },
+            { min.x, max.y, min.z },
+            { min.x, min.y, max.z },
+            { max.x, min.y, max.z },
+            { max.x, max.y, max.z },
+            { min.x, max.y, max.z }
+        };
+
+        static const u32 boxIndices[] =
+        {
+            0, 1, 1, 2, 2, 3, 3, 0,
+            4, 5, 5, 6, 6, 7, 7, 4,
+            0, 4, 1, 5, 2, 6, 3, 7
+        };
+
+        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eLines];
+
+        auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
+        new_draw_cmd.vertexOffset = draw_list.vertices.size();
+        new_draw_cmd.indexOffset = draw_list.indices.size();
+        new_draw_cmd.indexCount = 24;
+        new_draw_cmd.clipRect = CalculateClipRect(min, max.x - min.x, max.y - min.y);
+
+        u32 packedColor = ColorToUint32(color);
+
+        for (const auto& pos : verticesPos)
+            draw_list.vertices.emplace_back(ImDbgVertex{ pos, glm::vec2(0.0f), packedColor });
+
+        for (const auto& idx : boxIndices)
+            draw_list.indices.emplace_back(new_draw_cmd.vertexOffset + idx);
+
+        context->drawData.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
+        context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+    }
+
+    void DrawSphere(const glm::vec3& center, float radius, const glm::vec3& color)
+    {
+        const int segments = 16;
+        static const glm::vec3 axis[] =
+        {
+            {1.0f, 0.0f, 0.0f},
+            {0.0f, 1.0f, 0.0f},
+            {0.0f, 0.0f, 1.0f}
+        };
+
+        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eLines];
+
+        for (int i = 0; i < 3; ++i)
+        {
+            auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
+            new_draw_cmd.vertexOffset = draw_list.vertices.size();
+            new_draw_cmd.indexOffset = draw_list.indices.size();
+            new_draw_cmd.indexCount = segments * 2;
+            new_draw_cmd.clipRect = CalculateClipRect(center, radius * 2.f, radius * 2.f);
+
+            for (int j = 0; j < segments; ++j)
+            {
+                float theta1 = j * glm::two_pi<float>() / segments;
+                float theta2 = (j + 1) * glm::two_pi<float>() / segments;
+
+                glm::vec3 p1 = center + radius * (glm::cos(theta1) * axis[i] + glm::sin(theta1) * axis[(i + 1) % 3]);
+                glm::vec3 p2 = center + radius * (glm::cos(theta2) * axis[i] + glm::sin(theta2) * axis[(i + 1) % 3]);
+
+                draw_list.vertices.emplace_back(ImDbgVertex{ p1, glm::vec2(0.0f), ColorToUint32(color) });
+                draw_list.vertices.emplace_back(ImDbgVertex{ p2, glm::vec2(0.0f), ColorToUint32(color) });
+
+                draw_list.indices.emplace_back(new_draw_cmd.vertexOffset + j * 2);
+                draw_list.indices.emplace_back(new_draw_cmd.vertexOffset + j * 2 + 1);
+            }
+
+            context->drawData.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
+            context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+        }
+    }
+
+    void DrawText(const glm::vec3& position, const std::string& text, const glm::vec3& color)
+    {
+        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eLines];
+
+        auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
+        u32 vertex_offset = new_draw_cmd.vertexOffset = draw_list.vertices.size();
+        new_draw_cmd.indexOffset = draw_list.indices.size();
+        new_draw_cmd.indexCount = text.size() * 6;
+        new_draw_cmd.clipRect = CalculateClipRect(position, text.size(), 1.0f);
+
+        float x = position.x;
+        float y = position.y;
+
+        uint32_t packed_color = ColorToUint32(color);
+
+        for (char c : text)
+        {
+            glm::vec2 uv = GetUVForChar(c);
+
+            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(x, y, position.z), uv, packed_color });
+            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(x + 1, y, position.z), uv, packed_color });
+            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(x + 1, y + 1, position.z), uv, packed_color });
+            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(x, y + 1, position.z), uv, packed_color });
+
+            draw_list.indices.emplace_back(vertex_offset);
+            draw_list.indices.emplace_back(vertex_offset + 1);
+            draw_list.indices.emplace_back(vertex_offset + 2);
+            draw_list.indices.emplace_back(vertex_offset + 2);
+            draw_list.indices.emplace_back(vertex_offset + 3);
+            draw_list.indices.emplace_back(vertex_offset);
+
+            vertex_offset += 4;
+
+            x += 1.0f; // Move to the next character position
+        }
+
+        context->drawData.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
+        context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+    }
 
 
-const utl::vector<Vertex>& DebugDraw::GetVertices()
-{
-    return vertices;
-}
+    ImDbgDrawData* GetDrawData()
+    {
+        return &context->drawData;
+    }
 
-const utl::vector<u16>& DebugDraw::GetIndices()
-{
-    return indices;
-}
+    // Other functions
+    u32 ColorToUint32(const glm::vec3& color)
+    {
+        uint8_t r = static_cast<uint8_t>(glm::clamp(color.z, 0.0f, 1.0f) * 255.0f);
+        uint8_t g = static_cast<uint8_t>(glm::clamp(color.y, 0.0f, 1.0f) * 255.0f);
+        uint8_t b = static_cast<uint8_t>(glm::clamp(color.x, 0.0f, 1.0f) * 255.0f);
+        return (r << 16) | (g << 8) | b;
+    }
 
-const utl::vector<DebugDrawCmd>& DebugDraw::GetDrawCommands(DebugGeometryType type)
-{
-    static utl::vector<DebugDrawCmd> empty{};
-    if (auto found = drawCommands.find(type); found != drawCommands.end())
-        return found->second;
-
-    return empty;
-}
-
-
-void DebugDraw::AddDrawCmd(u32 vertex_offset, u32 index_offset, u32 elementCount, DebugGeometryType type, const glm::vec4& clipRect)
-{
-    drawCommands[type].emplace_back(DebugDrawCmd{vertex_offset, index_offset, elementCount, clipRect});
-}
-
-u32 DebugDraw::ColorToUint32(const glm::vec3& color)
-{
-    uint8_t r = static_cast<uint8_t>(glm::clamp(color.z, 0.0f, 1.0f) * 255.0f);
-    uint8_t g = static_cast<uint8_t>(glm::clamp(color.y, 0.0f, 1.0f) * 255.0f);
-    uint8_t b = static_cast<uint8_t>(glm::clamp(color.x, 0.0f, 1.0f) * 255.0f);
-    return (r << 16) | (g << 8) | b;
-}
-
-glm::vec2 DebugDraw::GetUVForChar(char c) 
-{
-    // Dummy implementation, replace with actual UV lookup based on your font texture atlas
+    glm::vec2 GetUVForChar(char c)
+    {
+        // Dummy implementation, replace with actual UV lookup based on your font texture atlas
     // For example purposes, we'll map 'a' to 'z' in a 16x16 grid
-    int index = c - 'a'; // Assuming 'a' to 'z'
-    int col = index % 16;
-    int row = index / 16;
-    float u = col / 16.0f;
-    float v = row / 16.0f;
-    return glm::vec2(u, v);
-}
+        int index = c - 'a'; // Assuming 'a' to 'z'
+        int col = index % 16;
+        int row = index / 16;
+        float u = col / 16.0f;
+        float v = row / 16.0f;
+        return glm::vec2(u, v);
+    }
 
-glm::vec4 DebugDraw::CalculateClipRect(const glm::vec3& position, float width, float height)
-{
-    return glm::vec4(position.x, position.y, position.x + width, position.y + height);
+    glm::vec4 CalculateClipRect(const glm::vec3& position, float width, float height)
+    {
+        return glm::vec4(position.x, position.y, position.x + width, position.y + height);
+    }
 }

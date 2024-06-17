@@ -13,19 +13,19 @@ CDebugDrawEngineSystem::CDebugDrawEngineSystem(IRenderInterface* render_interfac
 
 void CDebugDrawEngineSystem::Initialize()
 {
-	DebugDraw::Init();
+	ImDbg::CreateContext();
 }
 
 void CDebugDrawEngineSystem::PreUpdate(f32 dt)
 {
-	DebugDraw::NewFrame();
+	ImDbg::NewFrame();
 
-	//DebugDraw::DrawLine(glm::vec3(0.f), glm::vec3(20.5f, 50.5f, 0.f), glm::vec3(1.f, 0.f, 0.f));
+	//ImDbg::DrawLine(glm::vec3(0.f), glm::vec3(20.5f, 50.5f, 0.f), glm::vec3(1.f, 0.f, 0.f));
 }
 
 void CDebugDrawEngineSystem::Update(f32 dt)
 {
-	DebugDraw::Render();
+	ImDbg::EndFrame();
 }
 
 void CDebugDrawEngineSystem::Render()
@@ -34,5 +34,5 @@ void CDebugDrawEngineSystem::Render()
 
 void CDebugDrawEngineSystem::Destroy()
 {
-	DebugDraw::Shutdown();
+	ImDbg::DestroyContext();
 }

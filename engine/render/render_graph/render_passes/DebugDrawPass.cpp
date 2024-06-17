@@ -21,8 +21,6 @@ void CDebugDrawPass::Init(const FRenderPassCreateInfo& pass_ci)
 {
 	IRenderPass::Init(pass_ci);
 
-	DebugDraw::Init();
-
 	// At first create vertex/index handler
 	FVertexHandlerCreateInfo vertex_handler_ci{};
 	vertex_handler_ci.indexSize = sizeof(u16);
@@ -50,8 +48,8 @@ void CDebugDrawPass::Init(const FRenderPassCreateInfo& pass_ci)
 		shader_ci.cullMode = EShaderCullModeFlagBits::eNone;
 		shader_ci.primitiveTopology = EVertexPrimitiveTopology::eLineList;
 
-		m_shaders[(u32)DebugGeometryType::eLines] = MakeShader(pass_ci.shader, shader_ci, vertex_handler.get());
-		InitShaderResources(m_shaders[(u32)DebugGeometryType::eLines]);
+		m_shaders[(u32)ImDbgGeometryType::eLines] = MakeShader(pass_ci.shader, shader_ci, vertex_handler.get());
+		InitShaderResources(m_shaders[(u32)ImDbgGeometryType::eLines]);
 	}
 
 	{
@@ -60,8 +58,8 @@ void CDebugDrawPass::Init(const FRenderPassCreateInfo& pass_ci)
 		shader_ci.cullMode = EShaderCullModeFlagBits::eNone;
 		shader_ci.primitiveTopology = EVertexPrimitiveTopology::eTriangleList;
 
-		m_shaders[(u32)DebugGeometryType::eTriangles] = MakeShader(pass_ci.shader, shader_ci, vertex_handler.get());
-		InitShaderResources(m_shaders[(u32)DebugGeometryType::eTriangles]);
+		m_shaders[(u32)ImDbgGeometryType::eTriangles] = MakeShader(pass_ci.shader, shader_ci, vertex_handler.get());
+		InitShaderResources(m_shaders[(u32)ImDbgGeometryType::eTriangles]);
 	}
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -76,22 +74,25 @@ void CDebugDrawPass::Build(const FPassBuildInfo& build_info)
 
 void CDebugDrawPass::Update(f32 dt)
 {
+	ImDbgDrawData* draw_data = ImDbg::GetDrawData();
+
 	m_lastVertex = 0;
 	m_lastIndex = 0;
 
-	const auto& vertices = DebugDraw::GetVertices();
-	const auto& indices = DebugDraw::GetIndices();
 	auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_vertexHandler);
 
 	// Update vertices
-	if (vertices.size())
+	if (draw_data->totalVertexCount > 0)
 	{
-		// Upload vertex/index data into a single contiguous GPU buffer
-		vertex_handler->AddVertices(vertices.data(), vertices.size(), sizeof(Vertex));
-		vertex_handler->AddIndices(indices.data(), indices.size(), sizeof(u16));
+		for (const auto& draw_list : draw_data->drawLists)
+		{
+			// Upload vertex/index data into a single contiguous GPU buffer
+			vertex_handler->AddVertices(draw_list.vertices.data(), draw_list.vertices.size(), sizeof(ImDbgVertex));
+			vertex_handler->AddIndices(draw_list.indices.data(), draw_list.indices.size(), sizeof(ImDbgIndex));
 
-		m_lastVertex += vertices.size();
-		m_lastIndex += indices.size();
+			m_lastVertex += draw_list.vertices.size();
+			m_lastIndex += draw_list.indices.size();
+		}
 
 		// Upload vertices
 		vertex_handler->Allocate();
@@ -100,29 +101,31 @@ void CDebugDrawPass::Update(f32 dt)
 
 void CDebugDrawPass::_Render()
 {
-	static const std::array<DebugGeometryType, 3> draw_types{ DebugGeometryType::ePoints, DebugGeometryType::eLines, DebugGeometryType::eTriangles };
-
 	auto& render_context = m_pRenderInterface->GetRenderContext();
 	auto resolution = render_context->GetScreenRenderRect();
+
+	ImDbgDrawData* draw_data = ImDbg::GetDrawData();
 
 	// At first update vertices if needed
 	auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_vertexHandler);
 
 	// Bind Vertex And Index Buffer:
-	const auto& vertices = DebugDraw::GetVertices();
-	if (vertices.size())
+	if (draw_data->totalVertexCount > 0)
 		vertex_handler->Bind(m_queue);
 
 	// Setup viewport:
 	render_context->SetViewport(resolution.size.x, resolution.size.y, false);
 
-	for (const auto& draw_type : draw_types)
+	u32 global_idx_offset{ 0u };
+	u32 global_vtx_offset{ 0u };
+
+	for (const auto& draw_list : draw_data->drawLists)
 	{
-		const auto& draw_commands = DebugDraw::GetDrawCommands(draw_type);
+		const auto& draw_commands = draw_list.drawCommands;
 		if (draw_commands.empty())
 			continue;
 
-		const auto& shader_id = m_shaders[(u32)draw_type];
+		const auto& shader_id = m_shaders[(u32)draw_list.type];
 		auto& shader = m_pRenderInterface->GetShaderObject(shader_id);
 		shader->Bind(m_queue);
 
@@ -133,8 +136,8 @@ void CDebugDrawPass::_Render()
 		for (const auto& command : draw_commands)
 		{
 			// Project scissor/clipping rectangles into framebuffer space
-			glm::vec2 clip_min = { command.clip_rect.x, command.clip_rect.y };
-			glm::vec2 clip_max = { command.clip_rect.z, command.clip_rect.w };
+			glm::vec2 clip_min = { command.clipRect.x, command.clipRect.y };
+			glm::vec2 clip_max = { command.clipRect.z, command.clipRect.w };
 
 			// Clamp to viewport as vkCmdSetScissor() won't accept values that are off bounds
 			if (clip_min.x < 0.0f) { clip_min.x = 0.0f; }
@@ -153,12 +156,15 @@ void CDebugDrawPass::_Render()
 			draw_info.lastIndex = m_lastIndex;
 
 			auto& range = draw_info.ranges.emplace_back();
-			range.beginIndex = command.index_offset;// +global_idx_offset;
-			range.indexCount = command.index_count;
-			range.beginVertex = command.vertex_offset;// +global_vtx_offset;
+			range.beginIndex = command.indexOffset + global_idx_offset;
+			range.indexCount = command.indexCount;
+			range.beginVertex = command.vertexOffset + global_vtx_offset;
 
 			// Draw
 			render_context->Draw(m_queue, draw_info);
 		}
+
+		global_idx_offset += draw_list.indices.size();
+		global_vtx_offset += draw_list.vertices.size();
 	}
 }
