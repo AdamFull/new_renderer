@@ -3,6 +3,7 @@
 #include <standart_library.h>
 
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 #ifdef DrawText
 #undef DrawText
@@ -52,11 +53,21 @@ struct ImDbgDrawData
 	u32 totalVertexCount;
 	u32 totalIndexCount;
 
+	glm::mat4 worldToClipSpace;
+	glm::mat4 clipSpaceToScreenSpace;
+	glm::mat4 screenSpaceToClipSpace;
+
 	utl::vector<ImDbgDrawList> drawLists;
+};
+
+struct ImDbgIO
+{
+	glm::vec2 screenSize;
 };
 
 struct ImDbgContext
 {
+	ImDbgIO io;
 	ImDbgDrawData drawData;
 };
 
@@ -74,5 +85,6 @@ namespace ImDbg
 	void DrawSphere(const glm::vec3& center, float radius, const glm::vec3& color);
 	void DrawText(const glm::vec3& position, const std::string& text, const glm::vec3& color);
 
+	ImDbgIO* GetIO();
 	ImDbgDrawData* GetDrawData();
 }

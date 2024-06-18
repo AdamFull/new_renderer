@@ -18,6 +18,16 @@ void CDebugDrawEngineSystem::Initialize()
 
 void CDebugDrawEngineSystem::PreUpdate(f32 dt)
 {
+	auto* io = ImDbg::GetIO();
+	auto* draw_data = ImDbg::GetDrawData();
+
+	auto& render_world = m_pRenderInterface->GetRenderWorld();
+
+	const auto& camera = render_world->GetDefaultCamera();
+	io->screenSize = camera.size;
+	
+	draw_data->worldToClipSpace = render_world->GetMatrix(camera.matricesOffset + render::view_projection_matrix_offset);
+
 	ImDbg::NewFrame();
 
 	//ImDbg::DrawLine(glm::vec3(0.f), glm::vec3(20.5f, 50.5f, 0.f), glm::vec3(1.f, 0.f, 0.f));

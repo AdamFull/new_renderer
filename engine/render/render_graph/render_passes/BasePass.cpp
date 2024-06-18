@@ -59,10 +59,6 @@ void IRenderPass::Execute()
 {
 	IBasePass::Execute();
 
-	volatile int iiiii;
-	if (m_debugName == "debug:testing:debug_draw")
-		iiiii++;
-
 	auto& render_context = m_pRenderInterface->GetRenderContext();
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
 	auto render_size = render_context->GetScreenRenderRect();

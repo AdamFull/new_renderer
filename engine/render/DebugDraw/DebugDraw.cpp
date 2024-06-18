@@ -1,6 +1,7 @@
 #include "DebugDraw.h"
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 static ImDbgContext* context{ nullptr };
@@ -9,7 +10,7 @@ namespace ImDbg
 {
     u32 ColorToUint32(const glm::vec3& color);
     glm::vec2 GetUVForChar(char c);
-    glm::vec4 CalculateClipRect(const glm::vec3& position, float width, float height);
+    glm::vec4 CalculateClipRect(const glm::vec3& min, const glm::vec3& max);
 
     void CreateContext()
     {
@@ -41,6 +42,16 @@ namespace ImDbg
 
         context->drawData.totalIndexCount = 0;
         context->drawData.totalVertexCount = 0;
+
+        context->drawData.clipSpaceToScreenSpace = 
+            glm::mat4(
+            context->io.screenSize.x / 2.0f, 0.0f,                             0.0f, context->io.screenSize.x / 2.0f,
+            0.0f,                            -context->io.screenSize.y / 2.0f, 0.0f, context->io.screenSize.y / 2.0f,
+            0.0f,                            0.0f,                             1.0f, 0.0f,
+            0.0f,                            0.0f,                             0.0f, 1.0f
+        );
+
+        context->drawData.screenSpaceToClipSpace = glm::inverse(context->drawData.clipSpaceToScreenSpace);
     }
 
     void EndFrame()
@@ -56,7 +67,7 @@ namespace ImDbg
         new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = 1;
-        new_draw_cmd.clipRect = CalculateClipRect(position, 0.0f, 0.0f);
+        new_draw_cmd.clipRect = CalculateClipRect(position, position);
 
         draw_list.vertices.emplace_back(ImDbgVertex{ position, glm::vec2(0.0f), ColorToUint32(color) });
         draw_list.indices.emplace_back(new_draw_cmd.vertexOffset);
@@ -73,7 +84,7 @@ namespace ImDbg
         new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = 2;
-        new_draw_cmd.clipRect = CalculateClipRect(from, to.x - from.x, to.y - from.y);
+        new_draw_cmd.clipRect = CalculateClipRect(from, to);
 
         draw_list.vertices.emplace_back(ImDbgVertex{ from, glm::vec2(0.0f), ColorToUint32(color) });
         draw_list.vertices.emplace_back(ImDbgVertex{ to, glm::vec2(0.0f), ColorToUint32(color) });
@@ -111,7 +122,7 @@ namespace ImDbg
         new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = 24;
-        new_draw_cmd.clipRect = CalculateClipRect(min, max.x - min.x, max.y - min.y);
+        new_draw_cmd.clipRect = CalculateClipRect(min, max);
 
         u32 packedColor = ColorToUint32(color);
 
@@ -143,7 +154,7 @@ namespace ImDbg
             new_draw_cmd.vertexOffset = draw_list.vertices.size();
             new_draw_cmd.indexOffset = draw_list.indices.size();
             new_draw_cmd.indexCount = segments * 2;
-            new_draw_cmd.clipRect = CalculateClipRect(center, radius * 2.f, radius * 2.f);
+            new_draw_cmd.clipRect = CalculateClipRect(center - radius, center + radius);
 
             for (int j = 0; j < segments; ++j)
             {
@@ -173,7 +184,7 @@ namespace ImDbg
         u32 vertex_offset = new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = text.size() * 6;
-        new_draw_cmd.clipRect = CalculateClipRect(position, text.size(), 1.0f);
+        new_draw_cmd.clipRect = CalculateClipRect(position, position + (f32)text.size());
 
         float x = position.x;
         float y = position.y;
@@ -205,6 +216,11 @@ namespace ImDbg
         context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
 
+    ImDbgIO* GetIO()
+    {
+        return &context->io;
+    }
+
 
     ImDbgDrawData* GetDrawData()
     {
@@ -232,8 +248,23 @@ namespace ImDbg
         return glm::vec2(u, v);
     }
 
-    glm::vec4 CalculateClipRect(const glm::vec3& position, float width, float height)
+    glm::vec4 CalculateClipRect(const glm::vec3& min, const glm::vec3& max)
     {
-        return glm::vec4(position.x, position.y, position.x + width, position.y + height);
+        auto cs_min = context->drawData.worldToClipSpace * glm::vec4(min, 1.f);
+        auto ndc_min = cs_min / cs_min.w;
+
+        auto cs_max = context->drawData.worldToClipSpace * glm::vec4(max, 1.f);
+        auto ndc_max = cs_max / cs_max.w;
+
+        glm::vec2 ss_min;
+        glm::vec2 ss_max;
+
+        ss_min.x = (ndc_min.x * 0.5f + 0.5f) * context->io.screenSize.x;
+        ss_max.x = (ndc_max.x * 0.5f + 0.5f) * context->io.screenSize.x;
+        ss_min.y = (1.0f - (ndc_min.y * 0.5f + 0.5f)) * context->io.screenSize.y;
+        ss_max.y = (1.0f - (ndc_max.y * 0.5f + 0.5f)) * context->io.screenSize.y;
+
+        // Return the clip rect in screen space coordinates
+        return glm::vec4(ss_min.x, ss_min.y, ss_max.x, ss_max.y);
     }
 }
