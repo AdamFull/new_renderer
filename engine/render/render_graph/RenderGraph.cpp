@@ -703,6 +703,12 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		m_pRenderInterface->CreateBufferObject("high_frequency_tiles", buffer_ci);
 		m_pRenderInterface->CreateBufferObject("low_frequency_tiles", buffer_ci);
 	}
+
+	{
+		FTextureCreateInfo texture_ci = MakeTexture2DCI(EApiDataFormat::eRGBA8_UNORM, ETextureCreateFlagBits::eSamplable);
+		texture_ci.SetSizeScale(1.0f);
+		m_pRenderInterface->CreateTextureObject("pre_present", texture_ci);
+	}
 	
 	// Present image targets
 	SetBackbufferResourceName("present_target");
@@ -1230,13 +1236,11 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	// Present pass
 	{
 		FRenderGraphRenderPassNodeCreateInfo create_info;
-		create_info.name = "finalize_image_pass";
+		create_info.name = "blit_final_pass";
 		create_info.pass_ci = makeGraphicsPassCI(ERenderingType::eFullscreen, EQueueTypeFlagBits::eGraphics, "testing:screenspace");
-		create_info.pass_ci.FlipFiewport();
 	
 		create_info.pass_ci.BindReadResource("input_image", final_target);
-		//create_info.pass_ci.create_info.BindReadResource("input_image", "frequency_target");
-		create_info.pass_ci.AddWriteResource("present_target");
+		create_info.pass_ci.AddWriteResource("pre_present");
 	
 		AddRenderNode(create_info);
 	}
@@ -1246,8 +1250,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		FRenderGraphRenderPassNodeCreateInfo create_info;
 		create_info.name = "debug_draw_pass";
 		create_info.pass_ci = makeGraphicsPassCI(ERenderingType::eDebugDraw, EQueueTypeFlagBits::eGraphics, "testing:debug_draw");
-		create_info.pass_ci.FlipFiewport();
-		create_info.pass_ci.AddWriteResource("present_target");
+		create_info.pass_ci.AddWriteResource("pre_present");
 	
 		AddRenderNode(create_info);
 	}
@@ -1257,9 +1260,21 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		FRenderGraphRenderPassNodeCreateInfo create_info;
 		create_info.name = "imgui_pass";
 		create_info.pass_ci = makeGraphicsPassCI(ERenderingType::eImGui, EQueueTypeFlagBits::eGraphics, "testing:imgui");
-		create_info.pass_ci.AddWriteResource("present_target");
+		create_info.pass_ci.AddWriteResource("pre_present");
 
 		//AddRenderNode(create_info);
+	}
+
+	{
+		FRenderGraphRenderPassNodeCreateInfo create_info;
+		create_info.name = "finalize_image_pass";
+		create_info.pass_ci = makeGraphicsPassCI(ERenderingType::eFullscreen, EQueueTypeFlagBits::eGraphics, "testing:screenspace");
+		create_info.pass_ci.FlipFiewport();
+
+		create_info.pass_ci.BindReadResource("input_image", "pre_present");
+		create_info.pass_ci.AddWriteResource("present_target");
+
+		AddRenderNode(create_info);
 	}
 }
 

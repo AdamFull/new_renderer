@@ -37,7 +37,7 @@
 			FCamera camera = GetCamera(frameData.defaultCameraID);
 			mat4 projection = getProjectionMatrix(camera.matricesOffset);
 			mat4 view = getViewMatrix(camera.matricesOffset);
-			projection[1][1] *= -1.f;
+			//projection[1][1] *= -1.f;
 
 			outUV = inUV;
 			outColor = inColor;
