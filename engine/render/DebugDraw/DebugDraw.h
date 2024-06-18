@@ -13,6 +13,29 @@ typedef void* ImDbgHandle;
 
 typedef uint16_t ImDbgIndex;
 
+struct ImDbgIO;
+struct ImDbgDrawData;
+
+namespace ImDbg
+{
+	void CreateContext();
+	void DestroyContext();
+
+	void LoadFont(const u8* data, u32 data_size, u32 character_size);
+
+	void NewFrame();
+	void EndFrame();
+
+	void DrawPoint(const glm::vec3& position, const glm::vec3& color, float size = 0.5f);
+	void DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& color, float thickness = 0.01f);
+	void DrawBox(const glm::vec3& min, const glm::vec3& max, const glm::vec3& color);
+	void DrawSphere(const glm::vec3& center, float radius, const glm::vec3& color);
+	void DrawText(const glm::vec3& position, const std::string& text, const glm::vec3& color);
+
+	ImDbgIO* GetIO();
+	ImDbgDrawData* GetDrawData();
+}
+
 enum class ImDbgGeometryType
 {
 	ePoints,
@@ -53,38 +76,19 @@ struct ImDbgDrawData
 	u32 totalVertexCount;
 	u32 totalIndexCount;
 
-	glm::mat4 worldToClipSpace;
-	glm::mat4 clipSpaceToScreenSpace;
-	glm::mat4 screenSpaceToClipSpace;
-
 	utl::vector<ImDbgDrawList> drawLists;
 };
+
 
 struct ImDbgIO
 {
 	glm::vec2 screenSize;
+	f32 deltaTime;
 };
 
 struct ImDbgContext
 {
 	ImDbgIO io;
 	ImDbgDrawData drawData;
+	struct FontImpl* font;
 };
-
-namespace ImDbg
-{
-	void CreateContext();
-	void DestroyContext();
-
-	void NewFrame();
-	void EndFrame();
-
-	void DrawPoint(const glm::vec3& position, const glm::vec3& color, float size = 0.5f);
-	void DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& color, float thickness = 0.01f);
-	void DrawBox(const glm::vec3& min, const glm::vec3& max, const glm::vec3& color);
-	void DrawSphere(const glm::vec3& center, float radius, const glm::vec3& color);
-	void DrawText(const glm::vec3& position, const std::string& text, const glm::vec3& color);
-
-	ImDbgIO* GetIO();
-	ImDbgDrawData* GetDrawData();
-}

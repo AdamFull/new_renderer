@@ -69,6 +69,7 @@
     "benchmark",
     "directx-dxc",
     "tinyxml2",
-    "xerces-c"
+    "xerces-c",
+    "freetype"
   ]
 }

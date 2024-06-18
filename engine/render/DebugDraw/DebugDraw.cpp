@@ -4,13 +4,33 @@
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
+#include "monoisome_regular.ttf.h"
+
 static ImDbgContext* context{ nullptr };
+
+struct FontAtlas
+{
+    FT_Face face;
+
+    u8* texture;
+    u32 width;
+    u32 height;
+};
+
+struct FontImpl
+{
+    FT_Library ft;
+    utl::vector<FontAtlas> atlases;
+};
 
 namespace ImDbg
 {
     u32 ColorToUint32(const glm::vec3& color);
     glm::vec2 GetUVForChar(char c);
-    glm::vec4 CalculateClipRect(const glm::vec3& min, const glm::vec3& max);
+    glm::vec4 CalculateClipRect(const glm::vec2& start, f32 width, f32 height);
 
     void CreateContext()
     {
@@ -23,12 +43,71 @@ namespace ImDbg
             auto& new_list = context->drawData.drawLists.emplace_back();
             new_list.type = type;
         }
+
+        context->font = new FontImpl();
+        auto err = FT_Init_FreeType(&context->font->ft);
+        assert(err);
+
+        LoadFont(monoisome_regular_ttf, monoisome_regular_ttf_len, 48);
     }
 
     void DestroyContext()
     {
+        for (auto& font_atlas : context->font->atlases)
+        {
+            if (font_atlas.texture)
+            {
+                free(font_atlas.texture);
+                font_atlas.texture = nullptr;
+            }
+
+            if(font_atlas.face)
+                FT_Done_Face(font_atlas.face);
+        }
+        
+        FT_Done_FreeType(context->font->ft);
+
         delete context;
         context = nullptr;
+
+        delete context;
+        context = nullptr;
+    }
+
+    void LoadFont(const u8* data, u32 data_size, u32 character_size)
+    {
+        auto& new_atlas = context->font->atlases.emplace_back();
+
+        auto err = FT_New_Memory_Face(context->font->ft, monoisome_regular_ttf, monoisome_regular_ttf_len, 0, &new_atlas.face);
+        assert(err);
+
+        err = FT_New_Memory_Face(context->font->ft, data, data_size, 0, &new_atlas.face);
+        assert(err);
+
+        err = FT_Set_Pixel_Sizes(new_atlas.face, 0, character_size);
+        assert(err);
+
+        u32 roww = 0;
+        u32 rowh = 0;
+
+        for (int i = 0; i < 128; i++) 
+        {
+            if (FT_Load_Char(new_atlas.face, i, FT_LOAD_RENDER))
+            {
+                fprintf(stderr, "Loading character %c failed!\n", i);
+                continue;
+            }
+
+            if (roww + new_atlas.face->glyph->bitmap.width + 1 >= (u32)context->io.screenSize.x)
+            {
+                new_atlas.width = std::max(new_atlas.width, roww);
+                new_atlas.height += rowh;
+                roww = 0;
+                rowh = 0;
+            }
+            roww += new_atlas.face->glyph->bitmap.width + 1;
+            rowh = std::max(rowh, new_atlas.face->glyph->bitmap.rows);
+        }
     }
 
     void NewFrame()
@@ -42,16 +121,6 @@ namespace ImDbg
 
         context->drawData.totalIndexCount = 0;
         context->drawData.totalVertexCount = 0;
-
-        context->drawData.clipSpaceToScreenSpace = 
-            glm::mat4(
-            context->io.screenSize.x / 2.0f, 0.0f,                             0.0f, context->io.screenSize.x / 2.0f,
-            0.0f,                            -context->io.screenSize.y / 2.0f, 0.0f, context->io.screenSize.y / 2.0f,
-            0.0f,                            0.0f,                             1.0f, 0.0f,
-            0.0f,                            0.0f,                             0.0f, 1.0f
-        );
-
-        context->drawData.screenSpaceToClipSpace = glm::inverse(context->drawData.clipSpaceToScreenSpace);
     }
 
     void EndFrame()
@@ -67,7 +136,7 @@ namespace ImDbg
         new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = 1;
-        new_draw_cmd.clipRect = CalculateClipRect(position, position);
+        new_draw_cmd.clipRect = CalculateClipRect(glm::vec3(0.0f), context->io.screenSize.x, context->io.screenSize.y);
 
         draw_list.vertices.emplace_back(ImDbgVertex{ position, glm::vec2(0.0f), ColorToUint32(color) });
         draw_list.indices.emplace_back(new_draw_cmd.vertexOffset);
@@ -84,7 +153,7 @@ namespace ImDbg
         new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = 2;
-        new_draw_cmd.clipRect = CalculateClipRect(from, to);
+        new_draw_cmd.clipRect = CalculateClipRect(glm::vec3(0.0f), context->io.screenSize.x, context->io.screenSize.y);
 
         draw_list.vertices.emplace_back(ImDbgVertex{ from, glm::vec2(0.0f), ColorToUint32(color) });
         draw_list.vertices.emplace_back(ImDbgVertex{ to, glm::vec2(0.0f), ColorToUint32(color) });
@@ -122,7 +191,7 @@ namespace ImDbg
         new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = 24;
-        new_draw_cmd.clipRect = CalculateClipRect(min, max);
+        new_draw_cmd.clipRect = CalculateClipRect(glm::vec3(0.0f), context->io.screenSize.x, context->io.screenSize.y);
 
         u32 packedColor = ColorToUint32(color);
 
@@ -154,7 +223,7 @@ namespace ImDbg
             new_draw_cmd.vertexOffset = draw_list.vertices.size();
             new_draw_cmd.indexOffset = draw_list.indices.size();
             new_draw_cmd.indexCount = segments * 2;
-            new_draw_cmd.clipRect = CalculateClipRect(center - radius, center + radius);
+            new_draw_cmd.clipRect = CalculateClipRect(glm::vec3(0.0f), context->io.screenSize.x, context->io.screenSize.y);
 
             for (int j = 0; j < segments; ++j)
             {
@@ -184,21 +253,38 @@ namespace ImDbg
         u32 vertex_offset = new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = text.size() * 6;
-        new_draw_cmd.clipRect = CalculateClipRect(position, position + (f32)text.size());
+        new_draw_cmd.clipRect = CalculateClipRect(position, text.size(), 1.0f);
 
-        float x = position.x;
-        float y = position.y;
+        glm::vec2 ss_pos{ position.x, position.y };
 
         uint32_t packed_color = ColorToUint32(color);
 
         for (char c : text)
         {
+            auto err = FT_Load_Char(context->font->face, c, FT_LOAD_RENDER);
+            assert(err);
+
+            FT_GlyphSlot g = context->font->face->glyph;
+
+            ss_pos.x = ss_pos.x + g->bitmap_left;
+            ss_pos.y = ss_pos.y - (g->bitmap.rows - g->bitmap_top);
+            
+            f32 w = g->bitmap.width;
+            f32 h = g->bitmap.rows;
+
+            glm::vec2 v0{ ss_pos.x / context->io.screenSize.x * 2.f - 1.f, ss_pos.y + h };
+            glm::vec2 v1{ ss_pos.x, ss_pos.y };
+            glm::vec2 v2{ ss_pos.x + w, ss_pos.y };
+            glm::vec2 v3{ ss_pos.x + w, ss_pos.y + h };
+
+            v0 = 
+
             glm::vec2 uv = GetUVForChar(c);
 
-            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(x, y, position.z), uv, packed_color });
-            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(x + 1, y, position.z), uv, packed_color });
-            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(x + 1, y + 1, position.z), uv, packed_color });
-            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(x, y + 1, position.z), uv, packed_color });
+            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(ss_pos.x, ss_pos.y + h, 0.f), uv, packed_color });
+            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(ss_pos.x, ss_pos.y, 0.f), uv, packed_color });
+            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(ss_pos.x + w, ss_pos.y, 0.f), uv, packed_color });
+            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(ss_pos.x + w, ss_pos.y + h, 0.f), uv, packed_color });
 
             draw_list.indices.emplace_back(vertex_offset);
             draw_list.indices.emplace_back(vertex_offset + 1);
@@ -248,23 +334,8 @@ namespace ImDbg
         return glm::vec2(u, v);
     }
 
-    glm::vec4 CalculateClipRect(const glm::vec3& min, const glm::vec3& max)
+    glm::vec4 CalculateClipRect(const glm::vec2& start, f32 width, f32 height)
     {
-        auto cs_min = context->drawData.worldToClipSpace * glm::vec4(min, 1.f);
-        auto ndc_min = cs_min / cs_min.w;
-
-        auto cs_max = context->drawData.worldToClipSpace * glm::vec4(max, 1.f);
-        auto ndc_max = cs_max / cs_max.w;
-
-        glm::vec2 ss_min;
-        glm::vec2 ss_max;
-
-        ss_min.x = (ndc_min.x * 0.5f + 0.5f) * context->io.screenSize.x;
-        ss_max.x = (ndc_max.x * 0.5f + 0.5f) * context->io.screenSize.x;
-        ss_min.y = (1.0f - (ndc_min.y * 0.5f + 0.5f)) * context->io.screenSize.y;
-        ss_max.y = (1.0f - (ndc_max.y * 0.5f + 0.5f)) * context->io.screenSize.y;
-
-        // Return the clip rect in screen space coordinates
-        return glm::vec4(ss_min.x, ss_min.y, ss_max.x, ss_max.y);
+        return glm::vec4(start.x, start.y, start.x + width, start.y + height);
     }
 }
