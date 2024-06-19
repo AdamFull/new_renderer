@@ -34,12 +34,16 @@ void CDebugDrawEngineSystem::PreUpdate(f32 dt)
 	ImDbg::NewFrame();
 	
 	// Drawing a box
-	//ImDbg::DrawBox2D(glm::vec2(50, 50), glm::vec2(200, 200), ImDbg::Color::Red, 1.0f);
+	ImDbg::DrawLine2D(glm::vec2(500, 100), glm::vec2(1000, 500), ImDbg::Color::Green, 1.0f);
+
+	ImDbg::DrawBox2D(glm::vec2(50, 50), glm::vec2(200, 200), ImDbg::Color::Red, 1.0f);
+	ImDbg::DrawBox2D(glm::vec2(200, 200), glm::vec2(400, 400), ImDbg::Color::Red, 1.0f);
 
 	// Drawing a line
-	ImDbg::DrawLine2D(glm::vec2(500, 100), glm::vec2(300, 300), ImDbg::Color::Green, 1.0f);
 
 	ImDbg::DrawCircle2D(glm::vec2(500, 500), 500, "#00FF00"_color);
+
+	ImDbg::DrawLine2D(glm::vec2(500, 100), glm::vec2(300, 300), ImDbg::Color::Green, 1.0f);
 
 	// Drawing text
 	ImDbg::DrawText2D(glm::vec2(150, 150), "Hello, World!", ImDbg::Color::Blue);

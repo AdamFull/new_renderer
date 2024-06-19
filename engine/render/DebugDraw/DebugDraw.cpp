@@ -270,9 +270,9 @@ namespace ImDbg
 
         u32 vertex_offset = draw_list.vertices.size();
 
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x, min.y), glm::vec2(0.0f), color }); // bottom-left
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ min, glm::vec2(0.0f), color }); // bottom-left
         draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x, min.y), glm::vec2(0.0f), color }); // bottom-right
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x, max.y), glm::vec2(0.0f), color }); // top-right
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ max, glm::vec2(0.0f), color }); // top-right
         draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x, max.y), glm::vec2(0.0f), color }); // top-left
 
         draw_list.indices.emplace_back(vertex_offset);
