@@ -69,7 +69,7 @@ void prepare_draw_commands(const std::unique_ptr<IRenderWorld>& render_world, en
 			if (material.alphaMode != alpha_mode)
 				continue;
 
-			ImDbg::DrawBox(transform.gposition + primitive.dims.min * transform.gscale, transform.gposition + primitive.dims.max * transform.gscale, glm::vec3(1.f, 0.f, 0.f));
+			//ImDbg::DrawBox(transform.gposition + primitive.dims.min * transform.gscale, transform.gposition + primitive.dims.max * transform.gscale, glm::vec3(1.f, 0.f, 0.f));
 		}
 
 		auto remapped_idx = render_world->UpdateNode(node, scene_node);

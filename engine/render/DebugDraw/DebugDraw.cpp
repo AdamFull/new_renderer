@@ -60,8 +60,11 @@ namespace ImDbg
 
         for (const auto& type : geometry_types)
         {
-            auto& new_list = context->drawData.drawLists.emplace_back();
-            new_list.type = type;
+            auto& new_list2d = context->drawData2d.drawLists.emplace_back();
+            new_list2d.type = type;
+
+            auto& new_list3d = context->drawData3d.drawLists.emplace_back();
+            new_list3d.type = type;
         }
 
         context->font = new FontImpl();
@@ -192,15 +195,25 @@ namespace ImDbg
 
     void NewFrame()
     {
-        for (auto& list : context->drawData.drawLists)
+        for (auto& list : context->drawData2d.drawLists)
         {
             list.vertices.clear();
             list.indices.clear();
             list.drawCommands.clear();
         }
 
-        context->drawData.totalIndexCount = 0;
-        context->drawData.totalVertexCount = 0;
+        context->drawData2d.totalIndexCount = 0;
+        context->drawData2d.totalVertexCount = 0;
+
+        for (auto& list : context->drawData3d.drawLists)
+        {
+            list.vertices.clear();
+            list.indices.clear();
+            list.drawCommands.clear();
+        }
+
+        context->drawData3d.totalIndexCount = 0;
+        context->drawData3d.totalVertexCount = 0;
     }
 
     void EndFrame()
@@ -208,147 +221,104 @@ namespace ImDbg
 
     }
 
-    void DrawPoint(const glm::vec3& position, const glm::vec3& color, float size)
+    // For 2d drawings
+    void DrawPoint2D(const glm::vec2& position, ImDbgColor color, f32 size)
     {
-        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::ePoints];
+        auto& draw_list = context->drawData2d.drawLists[(u32)ImDbgGeometryType::ePoints];
 
         auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
         new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = 1;
-        new_draw_cmd.clipRect = CalculateClipRect(glm::vec3(0.0f), context->io.screenSize.x, context->io.screenSize.y);
+        new_draw_cmd.clipRect = CalculateClipRect(position - glm::vec2(size), size * 2, size * 2);
 
-        draw_list.vertices.emplace_back(ImDbgVertex{ position, glm::vec2(0.0f), ColorToUint32(color) });
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ position, glm::vec2(0.0f), color });
         draw_list.indices.emplace_back(new_draw_cmd.vertexOffset);
 
-        context->drawData.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
-        context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+        context->drawData2d.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
+        context->drawData2d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
 
-    void DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& color, float thickness)
+    void DrawLine2D(const glm::vec2& from, const glm::vec2& to, ImDbgColor color, f32 thickness)
     {
-        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eLines];
+        auto& draw_list = context->drawData2d.drawLists[(u32)ImDbgGeometryType::eLines];
 
         auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
         new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = 2;
-        new_draw_cmd.clipRect = CalculateClipRect(glm::vec3(0.0f), context->io.screenSize.x, context->io.screenSize.y);
+        new_draw_cmd.clipRect = CalculateClipRect(glm::min(from, to) - thickness, glm::distance(from, to), thickness);
 
-        draw_list.vertices.emplace_back(ImDbgVertex{ from, glm::vec2(0.0f), ColorToUint32(color) });
-        draw_list.vertices.emplace_back(ImDbgVertex{ to, glm::vec2(0.0f), ColorToUint32(color) });
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ from, glm::vec2(0.0f), color });
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ to, glm::vec2(0.0f), color });
         draw_list.indices.emplace_back(new_draw_cmd.vertexOffset);
         draw_list.indices.emplace_back(new_draw_cmd.vertexOffset + 1);
 
-        context->drawData.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
-        context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+        context->drawData2d.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
+        context->drawData2d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
 
-    void DrawBox(const glm::vec3& min, const glm::vec3& max, const glm::vec3& color)
+    void DrawBox2D(const glm::vec2& min, const glm::vec2& max, ImDbgColor color, f32 thickness)
     {
-        const glm::vec2 verticesPos[8] =
-        {
-            WorldToScreen({ min.x, min.y, min.z }),
-            WorldToScreen({ max.x, min.y, min.z }),
-            WorldToScreen({ max.x, max.y, min.z }),
-            WorldToScreen({ min.x, max.y, min.z }),
-            WorldToScreen({ min.x, min.y, max.z }),
-            WorldToScreen({ max.x, min.y, max.z }),
-            WorldToScreen({ max.x, max.y, max.z }),
-            WorldToScreen({ min.x, max.y, max.z })
-        };
-
-        glm::vec2 min_point{ verticesPos[0] };
-        glm::vec2 max_point{ verticesPos[0] };
-
-        for (u64 i = 1ull; i < 8; ++i)
-        {
-            min_point = glm::min(min_point, verticesPos[i]);
-            max_point = glm::max(max_point, verticesPos[i]);
-        }
-
-        glm::vec2 len = max_point - min_point;
-
-        static const u32 boxIndices[] =
-        {
-            0, 1, 1, 2, 2, 3, 3, 0,
-            4, 5, 5, 6, 6, 7, 7, 4,
-            0, 4, 1, 5, 2, 6, 3, 7
-        };
-
-        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eLines];
+        auto& draw_list = context->drawData2d.drawLists[(u32)ImDbgGeometryType::eLines];
 
         auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
         new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
-        new_draw_cmd.indexCount = 24;
-        new_draw_cmd.clipRect = CalculateClipRect(min_point, len.x, len.y);
+        new_draw_cmd.indexCount = 8;
+        new_draw_cmd.clipRect = CalculateClipRect(min, max.x - min.x, max.y - min.y);
 
-        u32 packedColor = ColorToUint32(color);
+        u32 vertex_offset = draw_list.vertices.size();
 
-        for (const auto& pos : verticesPos)
-            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(pos, 0.f), glm::vec2(0.0f), packedColor });
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x, min.y), glm::vec2(0.0f), color }); // bottom-left
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x, min.y), glm::vec2(0.0f), color }); // bottom-right
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x, max.y), glm::vec2(0.0f), color }); // top-right
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x, max.y), glm::vec2(0.0f), color }); // top-left
 
-        for (const auto& idx : boxIndices)
-            draw_list.indices.emplace_back(new_draw_cmd.vertexOffset + idx);
+        draw_list.indices.emplace_back(vertex_offset);
+        draw_list.indices.emplace_back(vertex_offset + 1);
+        draw_list.indices.emplace_back(vertex_offset + 1);
+        draw_list.indices.emplace_back(vertex_offset + 2);
+        draw_list.indices.emplace_back(vertex_offset + 2);
+        draw_list.indices.emplace_back(vertex_offset + 3);
+        draw_list.indices.emplace_back(vertex_offset + 3);
+        draw_list.indices.emplace_back(vertex_offset);
 
-        context->drawData.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
-        context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+        context->drawData2d.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
+        context->drawData2d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
 
-    void DrawSphere(const glm::vec3& center, float radius, const glm::vec3& color)
+    void DrawCircle2D(const glm::vec2& center, f32 radius, ImDbgColor color)
     {
-        const int segments = 16;
-        static const glm::vec3 axis[] =
+        auto& draw_list = context->drawData2d.drawLists[(u32)ImDbgGeometryType::eLines];
+
+        const int segments = 36;
+        float increment = 2.0f * glm::pi<float>() / segments;
+        float theta = 0.0f;
+
+        for (int i = 0; i < segments; i++)
         {
-            {1.0f, 0.0f, 0.0f},
-            {0.0f, 1.0f, 0.0f},
-            {0.0f, 0.0f, 1.0f}
-        };
-
-        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eLines];
-
-        for (int i = 0; i < 3; ++i)
-        {
-            auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
-            new_draw_cmd.vertexOffset = draw_list.vertices.size();
-            new_draw_cmd.indexOffset = draw_list.indices.size();
-            new_draw_cmd.indexCount = segments * 2;
-            new_draw_cmd.clipRect = CalculateClipRect(glm::vec3(0.0f), context->io.screenSize.x, context->io.screenSize.y);
-
-            for (int j = 0; j < segments; ++j)
-            {
-                float theta1 = j * glm::two_pi<float>() / segments;
-                float theta2 = (j + 1) * glm::two_pi<float>() / segments;
-
-                glm::vec3 p1 = center + radius * (glm::cos(theta1) * axis[i] + glm::sin(theta1) * axis[(i + 1) % 3]);
-                glm::vec3 p2 = center + radius * (glm::cos(theta2) * axis[i] + glm::sin(theta2) * axis[(i + 1) % 3]);
-
-                draw_list.vertices.emplace_back(ImDbgVertex{ p1, glm::vec2(0.0f), ColorToUint32(color) });
-                draw_list.vertices.emplace_back(ImDbgVertex{ p2, glm::vec2(0.0f), ColorToUint32(color) });
-
-                draw_list.indices.emplace_back(new_draw_cmd.vertexOffset + j * 2);
-                draw_list.indices.emplace_back(new_draw_cmd.vertexOffset + j * 2 + 1);
-            }
-
-            context->drawData.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
-            context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+            glm::vec2 start = center + radius * glm::vec2(glm::cos(theta), glm::sin(theta));
+            theta += increment;
+            glm::vec2 end = center + radius * glm::vec2(glm::cos(theta), glm::sin(theta));
+            DrawLine2D(start, end, color);
         }
     }
 
-    void DrawText(const glm::vec3& position, const std::string& text, const glm::vec3& color)
+    void DrawText2D(const glm::vec2& position, const std::string& text, ImDbgColor color)
     {
-        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eTriangles];
+        auto& draw_list = context->drawData2d.drawLists[(u32)ImDbgGeometryType::eTriangles];
 
         auto& font_atlas = context->font->atlases[0]; // Assuming you have only one font atlas
-        auto color_uint = ColorToUint32(color);
 
         auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
         new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = text.size() * 6;
 
-        glm::vec2 cursor = glm::vec2(position); // Initial position of the text
+        // TODO: add \n support 
+
+        glm::vec2 cursor = position; // Initial position of the text
         f32 height{};
         for (char c : text)
         {
@@ -376,10 +346,10 @@ namespace ImDbg
             u32 vertex_offset = draw_list.vertices.size();
 
             // Add vertices for the glyph quad
-            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(x0, y0, position.z), glm::vec2(u0, v0), color_uint });
-            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(x1, y0, position.z), glm::vec2(u1, v0), color_uint });
-            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(x1, y1, position.z), glm::vec2(u1, v1), color_uint });
-            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(x0, y1, position.z), glm::vec2(u0, v1), color_uint });
+            draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(x0, y0), glm::vec2(u0, v0), color });
+            draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(x1, y0), glm::vec2(u1, v0), color });
+            draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(x1, y1), glm::vec2(u1, v1), color });
+            draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(x0, y1), glm::vec2(u0, v1), color });
 
             // Add indices for the glyph quad
             draw_list.indices.emplace_back(vertex_offset);
@@ -392,11 +362,134 @@ namespace ImDbg
             cursor.x += glyph.advance.x;
             height = std::max(glyph.size.y, height);
         }
-        
-        context->drawData.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
-        context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+
+        context->drawData2d.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
+        context->drawData2d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
 
         new_draw_cmd.clipRect = CalculateClipRect(position, cursor.x - position.x, height);
+    }
+
+    // For 3d drawings
+    void DrawPoint3D(const glm::vec3& position, const glm::vec3& color, float size)
+    {
+        auto& draw_list = context->drawData3d.drawLists[(u32)ImDbgGeometryType::ePoints];
+
+        auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
+        new_draw_cmd.vertexOffset = draw_list.vertices.size();
+        new_draw_cmd.indexOffset = draw_list.indices.size();
+        new_draw_cmd.indexCount = 1;
+        new_draw_cmd.clipRect = CalculateClipRect(glm::vec3(0.0f), context->io.screenSize.x, context->io.screenSize.y);
+
+        draw_list.vertices.emplace_back(ImDbgVertex3D{ position, glm::vec2(0.0f), ColorToUint32(color) });
+        draw_list.indices.emplace_back(new_draw_cmd.vertexOffset);
+
+        context->drawData3d.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
+        context->drawData3d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+    }
+
+    void DrawLine3D(const glm::vec3& from, const glm::vec3& to, const glm::vec3& color, float thickness)
+    {
+        auto& draw_list = context->drawData3d.drawLists[(u32)ImDbgGeometryType::eLines];
+
+        auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
+        new_draw_cmd.vertexOffset = draw_list.vertices.size();
+        new_draw_cmd.indexOffset = draw_list.indices.size();
+        new_draw_cmd.indexCount = 2;
+        new_draw_cmd.clipRect = CalculateClipRect(glm::vec3(0.0f), context->io.screenSize.x, context->io.screenSize.y);
+
+        draw_list.vertices.emplace_back(ImDbgVertex3D{ from, glm::vec2(0.0f), ColorToUint32(color) });
+        draw_list.vertices.emplace_back(ImDbgVertex3D{ to, glm::vec2(0.0f), ColorToUint32(color) });
+        draw_list.indices.emplace_back(new_draw_cmd.vertexOffset);
+        draw_list.indices.emplace_back(new_draw_cmd.vertexOffset + 1);
+
+        context->drawData3d.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
+        context->drawData3d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+    }
+
+    void DrawBox3D(const glm::vec3& min, const glm::vec3& max, const glm::vec3& color)
+    {
+        const glm::vec3 verticesPos[8] =
+        {
+            { min.x, min.y, min.z },
+            { max.x, min.y, min.z },
+            { max.x, max.y, min.z },
+            { min.x, max.y, min.z },
+            { min.x, min.y, max.z },
+            { max.x, min.y, max.z },
+            { max.x, max.y, max.z },
+            { min.x, max.y, max.z }
+        };
+
+        static const u32 boxIndices[] =
+        {
+            0, 1, 1, 2, 2, 3, 3, 0,
+            4, 5, 5, 6, 6, 7, 7, 4,
+            0, 4, 1, 5, 2, 6, 3, 7
+        };
+
+        auto& draw_list = context->drawData3d.drawLists[(u32)ImDbgGeometryType::eLines];
+
+        auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
+        new_draw_cmd.vertexOffset = draw_list.vertices.size();
+        new_draw_cmd.indexOffset = draw_list.indices.size();
+        new_draw_cmd.indexCount = 24;
+        new_draw_cmd.clipRect = CalculateClipRect(glm::vec2(0.f), context->io.screenSize.x, context->io.screenSize.y);
+
+        u32 packedColor = ColorToUint32(color);
+
+        for (const auto& pos : verticesPos)
+            draw_list.vertices.emplace_back(ImDbgVertex3D{ pos, glm::vec2(0.0f), packedColor });
+
+        for (const auto& idx : boxIndices)
+            draw_list.indices.emplace_back(new_draw_cmd.vertexOffset + idx);
+
+        context->drawData3d.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
+        context->drawData3d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+    }
+
+    void DrawSphere3D(const glm::vec3& center, float radius, const glm::vec3& color)
+    {
+        const int segments = 16;
+        static const glm::vec3 axis[] =
+        {
+            {1.0f, 0.0f, 0.0f},
+            {0.0f, 1.0f, 0.0f},
+            {0.0f, 0.0f, 1.0f}
+        };
+
+        auto& draw_list = context->drawData3d.drawLists[(u32)ImDbgGeometryType::eLines];
+
+        for (int i = 0; i < 3; ++i)
+        {
+            auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
+            new_draw_cmd.vertexOffset = draw_list.vertices.size();
+            new_draw_cmd.indexOffset = draw_list.indices.size();
+            new_draw_cmd.indexCount = segments * 2;
+            new_draw_cmd.clipRect = CalculateClipRect(glm::vec3(0.0f), context->io.screenSize.x, context->io.screenSize.y);
+
+            for (int j = 0; j < segments; ++j)
+            {
+                float theta1 = j * glm::two_pi<float>() / segments;
+                float theta2 = (j + 1) * glm::two_pi<float>() / segments;
+
+                glm::vec3 p1 = center + radius * (glm::cos(theta1) * axis[i] + glm::sin(theta1) * axis[(i + 1) % 3]);
+                glm::vec3 p2 = center + radius * (glm::cos(theta2) * axis[i] + glm::sin(theta2) * axis[(i + 1) % 3]);
+
+                draw_list.vertices.emplace_back(ImDbgVertex3D{ p1, glm::vec2(0.0f), ColorToUint32(color) });
+                draw_list.vertices.emplace_back(ImDbgVertex3D{ p2, glm::vec2(0.0f), ColorToUint32(color) });
+
+                draw_list.indices.emplace_back(new_draw_cmd.vertexOffset + j * 2);
+                draw_list.indices.emplace_back(new_draw_cmd.vertexOffset + j * 2 + 1);
+            }
+
+            context->drawData3d.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
+            context->drawData3d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+        }
+    }
+
+    void DrawText3D(const glm::vec3& position, const std::string& text, const glm::vec3& color)
+    {
+        
     }
 
     ImDbgIO* GetIO()
@@ -404,10 +497,14 @@ namespace ImDbg
         return &context->io;
     }
 
-
-    ImDbgDrawData* GetDrawData()
+    ImDbgDrawData<ImDbgVertex2D>* GetDrawData2D()
     {
-        return &context->drawData;
+        return &context->drawData2d;
+    }
+
+    ImDbgDrawData<ImDbgVertex3D>* GetDrawData3D()
+    {
+        return &context->drawData3d;
     }
 
     // Other functions

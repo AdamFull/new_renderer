@@ -18,6 +18,8 @@ void CDebugDrawEngineSystem::Initialize()
 
 void CDebugDrawEngineSystem::PreUpdate(f32 dt)
 {
+	using namespace ImDbg;
+
 	auto& render_context = m_pRenderInterface->GetRenderContext();
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
 	auto resolution = render_context->GetScreenRenderRect();
@@ -31,8 +33,16 @@ void CDebugDrawEngineSystem::PreUpdate(f32 dt)
 
 	ImDbg::NewFrame();
 	
-	ImDbg::DrawText(glm::vec3(100.f, 100.f, 0.f), "Hello World", glm::vec3(1.f, 0.f, 0.f));
-	//ImDbg::DrawLine(glm::vec3(0.f), glm::vec3(20.5f, 50.5f, 0.f), glm::vec3(1.f, 0.f, 0.f));
+	// Drawing a box
+	//ImDbg::DrawBox2D(glm::vec2(50, 50), glm::vec2(200, 200), ImDbg::Color::Red, 1.0f);
+
+	// Drawing a line
+	ImDbg::DrawLine2D(glm::vec2(500, 100), glm::vec2(300, 300), ImDbg::Color::Green, 1.0f);
+
+	ImDbg::DrawCircle2D(glm::vec2(500, 500), 500, "#00FF00"_color);
+
+	// Drawing text
+	ImDbg::DrawText2D(glm::vec2(150, 150), "Hello, World!", ImDbg::Color::Blue);
 }
 
 void CDebugDrawEngineSystem::Update(f32 dt)

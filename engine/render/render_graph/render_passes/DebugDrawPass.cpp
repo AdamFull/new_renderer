@@ -43,11 +43,11 @@ void CDebugDrawPass::Init(const FRenderPassCreateInfo& pass_ci)
 	// At first create vertex/index handler
 	FVertexHandlerCreateInfo vertex_handler_ci{};
 	vertex_handler_ci.indexSize = sizeof(u16);
-	vertex_handler_ci.descriptions.emplace_back(FVertexHandlerAttributeDescription{ 12ull, EVertexAttributeType::ePosition });
+	vertex_handler_ci.descriptions.emplace_back(FVertexHandlerAttributeDescription{ 8ull, EVertexAttributeType::ePosition });
 	vertex_handler_ci.descriptions.emplace_back(FVertexHandlerAttributeDescription{ 8ull, EVertexAttributeType::eTexCoord });
 	vertex_handler_ci.descriptions.emplace_back(FVertexHandlerAttributeDescription{ 4ull, EVertexAttributeType::eColor });
-	vertex_handler_ci.name = "debug_vertices";
-	m_vertexHandler = m_pRenderInterface->CreateVertexHandler("debug_vertices", vertex_handler_ci);
+	vertex_handler_ci.name = "debug_vertices_2d";
+	m_vertexHandler = m_pRenderInterface->CreateVertexHandler("debug_vertices_2d", vertex_handler_ci);
 
 	// Make RHI shader object
 	auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_vertexHandler);
@@ -94,7 +94,7 @@ void CDebugDrawPass::Build(const FPassBuildInfo& build_info)
 
 void CDebugDrawPass::Update(f32 dt)
 {
-	ImDbgDrawData* draw_data = ImDbg::GetDrawData();
+	auto* draw_data = ImDbg::GetDrawData2D();
 
 	m_lastVertex = 0;
 	m_lastIndex = 0;
@@ -107,7 +107,7 @@ void CDebugDrawPass::Update(f32 dt)
 		for (const auto& draw_list : draw_data->drawLists)
 		{
 			// Upload vertex/index data into a single contiguous GPU buffer
-			vertex_handler->AddVertices(draw_list.vertices.data(), draw_list.vertices.size(), sizeof(ImDbgVertex));
+			vertex_handler->AddVertices(draw_list.vertices.data(), draw_list.vertices.size(), sizeof(ImDbgVertex2D));
 			vertex_handler->AddIndices(draw_list.indices.data(), draw_list.indices.size(), sizeof(ImDbgIndex));
 
 			m_lastVertex += draw_list.vertices.size();
@@ -125,7 +125,7 @@ void CDebugDrawPass::_Render()
 	auto resolution = render_context->GetScreenRenderRect();
 
 	ImDbgIO* io = ImDbg::GetIO();
-	ImDbgDrawData* draw_data = ImDbg::GetDrawData();
+	auto* draw_data = ImDbg::GetDrawData2D();
 
 	// At first update vertices if needed
 	auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_vertexHandler);
