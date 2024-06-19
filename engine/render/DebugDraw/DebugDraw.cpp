@@ -429,8 +429,8 @@ namespace ImDbg
         const glm::vec4 cs_pos = context->io.worldToClip * glm::vec4(pos, 1.f);
         const glm::vec3 ndc_pos = glm::vec3(cs_pos) / cs_pos.w;
         return glm::vec2(
-            (ndc_pos.x * 0.5f + 0.5f) * context->io.screenSize.x,
-            (1.0f - (ndc_pos.y * 0.5f + 0.5f)) * context->io.screenSize.y
+            (ndc_pos.x + 1.0f) * 0.5f * context->io.screenSize.x,
+            (1.0f - ndc_pos.y) * 0.5f * context->io.screenSize.y
         );
     }
 }

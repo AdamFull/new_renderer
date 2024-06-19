@@ -189,8 +189,8 @@ void CDebugDrawPass::_Render()
 			//	continue;
 
 			// Apply scissor/clipping rectangle
-			render_context->SetScissorRect((int32_t)(clip_min.x), (int32_t)(clip_min.y), (uint32_t)(clip_max.x - clip_min.x), (uint32_t)(clip_max.y - clip_min.y));
-			//render_context->SetScissorRect(0, 0, resolution.size.x, resolution.size.y);
+			//render_context->SetScissorRect((int32_t)(clip_min.x), (int32_t)(clip_min.y), (uint32_t)(clip_max.x - clip_min.x), (uint32_t)(clip_max.y - clip_min.y));
+			render_context->SetScissorRect(0, 0, resolution.size.x, resolution.size.y);
 
 			FGeometryDrawInfo draw_info{};
 			draw_info.lastVertex = m_lastVertex;
