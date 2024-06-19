@@ -7,7 +7,15 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
+#define STBI_MSC_SECURE_CRT
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb/stb_image_write.h>
+
 #include "monoisome_regular.ttf.h"
+
+constexpr const u32 start_glyph = 33;
+constexpr const u32 max_glyph_count = 128;
+constexpr const u32 max_atlas_width = 1024;
 
 static ImDbgContext* context{ nullptr };
 
@@ -18,6 +26,8 @@ struct FontAtlas
     u8* texture;
     u32 width;
     u32 height;
+    u64 size;
+    u32 stride;
 };
 
 struct FontImpl
@@ -46,7 +56,7 @@ namespace ImDbg
 
         context->font = new FontImpl();
         auto err = FT_Init_FreeType(&context->font->ft);
-        assert(err);
+        assert(!err);
 
         LoadFont(monoisome_regular_ttf, monoisome_regular_ttf_len, 48);
     }
@@ -74,41 +84,93 @@ namespace ImDbg
         context = nullptr;
     }
 
-    void LoadFont(const u8* data, u32 data_size, u32 character_size)
-    {
-        auto& new_atlas = context->font->atlases.emplace_back();
+	void LoadFont(const u8* data, u32 data_size, u32 character_size)
+	{
+		auto& new_atlas = context->font->atlases.emplace_back();
 
-        auto err = FT_New_Memory_Face(context->font->ft, monoisome_regular_ttf, monoisome_regular_ttf_len, 0, &new_atlas.face);
-        assert(err);
+		auto err = FT_New_Memory_Face(context->font->ft, monoisome_regular_ttf, monoisome_regular_ttf_len, 0, &new_atlas.face);
+		assert(!err);
 
-        err = FT_New_Memory_Face(context->font->ft, data, data_size, 0, &new_atlas.face);
-        assert(err);
+		err = FT_New_Memory_Face(context->font->ft, data, data_size, 0, &new_atlas.face);
+		assert(!err);
 
-        err = FT_Set_Pixel_Sizes(new_atlas.face, 0, character_size);
-        assert(err);
+		err = FT_Set_Pixel_Sizes(new_atlas.face, 0, character_size);
+		assert(!err);
 
-        u32 roww = 0;
-        u32 rowh = 0;
-
-        for (int i = 0; i < 128; i++) 
+        // Caqlculating max atlas width
+        int max_dim = (1 + (new_atlas.face->size->metrics.height >> 6)) * glm::ceil(glm::sqrt(max_glyph_count - start_glyph));
+        new_atlas.width = 1;
+        while (new_atlas.width < max_dim) new_atlas.width <<= 1;
+        
+        u32 maxy{};
+        glm::uvec2 pen{};
+        for (u64 i = start_glyph; i < max_glyph_count; i++)
         {
-            if (FT_Load_Char(new_atlas.face, i, FT_LOAD_RENDER))
+            FT_Load_Char(new_atlas.face, i, FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_TARGET_LIGHT);
+            FT_Bitmap* bmp = &new_atlas.face->glyph->bitmap;
+
+            if (pen.x + bmp->width >= new_atlas.width)
             {
-                fprintf(stderr, "Loading character %c failed!\n", i);
-                continue;
+                pen.x = 0;
+                pen.y += (new_atlas.face->size->metrics.height >> 6) + 1;
             }
 
-            if (roww + new_atlas.face->glyph->bitmap.width + 1 >= (u32)context->io.screenSize.x)
-            {
-                new_atlas.width = std::max(new_atlas.width, roww);
-                new_atlas.height += rowh;
-                roww = 0;
-                rowh = 0;
-            }
-            roww += new_atlas.face->glyph->bitmap.width + 1;
-            rowh = std::max(rowh, new_atlas.face->glyph->bitmap.rows);
+            pen.x += bmp->width + 1;
+            if (pen.y + bmp->rows > maxy)
+                maxy = pen.y + bmp->rows;
         }
-    }
+
+        // Adjust the texture height to the exact height required
+        new_atlas.height = 1;
+        while (new_atlas.height < maxy) new_atlas.height <<= 1;
+
+        // Fill glyph texture
+        new_atlas.stride = sizeof(u32);
+        new_atlas.size = (u64)new_atlas.width * (u64)new_atlas.height * (u64)new_atlas.stride;
+        new_atlas.texture = (u8*)calloc(new_atlas.size, 1);
+
+        glm::uvec2 cursor{};
+        for (u64 i = start_glyph; i < max_glyph_count; i++)
+        {
+            FT_Load_Char(new_atlas.face, i, FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_TARGET_LIGHT);
+            FT_Bitmap* bmp = &new_atlas.face->glyph->bitmap;
+
+            if (cursor.x + bmp->width >= new_atlas.width)
+            {
+                cursor.x = 0;
+                cursor.y += ((new_atlas.face->size->metrics.height >> 6) + 1);
+            }
+
+            for (u64 row = 0; row < bmp->rows; ++row)
+            {
+                for (u64 col = 0; col < bmp->width; ++col)
+                {
+                    int x = cursor.x + col;
+                    int y = cursor.y + row;
+                    int pixel_index = (y * new_atlas.width + x) * new_atlas.stride;
+                    auto value = bmp->buffer[row * bmp->pitch + col];
+
+                    for (u64 idx = 0; idx < new_atlas.stride; ++idx)
+                        new_atlas.texture[pixel_index + idx] = value;
+                }
+            }
+
+            // this is stuff you'd need when rendering individual glyphs out of the atlas
+
+            //info[i].x0 = pen_x;
+            //info[i].y0 = pen_y;
+            //info[i].x1 = pen_x + bmp->width;
+            //info[i].y1 = pen_y + bmp->rows;
+            //
+            //info[i].x_off = face->glyph->bitmap_left;
+            //info[i].y_off = face->glyph->bitmap_top;
+            //info[i].advance = face->glyph->advance.x >> 6;
+
+            cursor.x += bmp->width + 1;
+        }
+
+        stbi_write_png("font.png", new_atlas.width, new_atlas.height, new_atlas.stride, new_atlas.texture, new_atlas.width * new_atlas.stride);
+	}
 
     void NewFrame()
     {
@@ -259,44 +321,44 @@ namespace ImDbg
 
         uint32_t packed_color = ColorToUint32(color);
 
-        for (char c : text)
-        {
-            auto err = FT_Load_Char(context->font->face, c, FT_LOAD_RENDER);
-            assert(err);
-
-            FT_GlyphSlot g = context->font->face->glyph;
-
-            ss_pos.x = ss_pos.x + g->bitmap_left;
-            ss_pos.y = ss_pos.y - (g->bitmap.rows - g->bitmap_top);
-            
-            f32 w = g->bitmap.width;
-            f32 h = g->bitmap.rows;
-
-            glm::vec2 v0{ ss_pos.x / context->io.screenSize.x * 2.f - 1.f, ss_pos.y + h };
-            glm::vec2 v1{ ss_pos.x, ss_pos.y };
-            glm::vec2 v2{ ss_pos.x + w, ss_pos.y };
-            glm::vec2 v3{ ss_pos.x + w, ss_pos.y + h };
-
-            v0 = 
-
-            glm::vec2 uv = GetUVForChar(c);
-
-            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(ss_pos.x, ss_pos.y + h, 0.f), uv, packed_color });
-            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(ss_pos.x, ss_pos.y, 0.f), uv, packed_color });
-            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(ss_pos.x + w, ss_pos.y, 0.f), uv, packed_color });
-            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(ss_pos.x + w, ss_pos.y + h, 0.f), uv, packed_color });
-
-            draw_list.indices.emplace_back(vertex_offset);
-            draw_list.indices.emplace_back(vertex_offset + 1);
-            draw_list.indices.emplace_back(vertex_offset + 2);
-            draw_list.indices.emplace_back(vertex_offset + 2);
-            draw_list.indices.emplace_back(vertex_offset + 3);
-            draw_list.indices.emplace_back(vertex_offset);
-
-            vertex_offset += 4;
-
-            x += 1.0f; // Move to the next character position
-        }
+        //for (char c : text)
+        //{
+        //    auto err = FT_Load_Char(context->font->face, c, FT_LOAD_RENDER);
+        //    assert(err);
+        //
+        //    FT_GlyphSlot g = context->font->face->glyph;
+        //
+        //    ss_pos.x = ss_pos.x + g->bitmap_left;
+        //    ss_pos.y = ss_pos.y - (g->bitmap.rows - g->bitmap_top);
+        //    
+        //    f32 w = g->bitmap.width;
+        //    f32 h = g->bitmap.rows;
+        //
+        //    glm::vec2 v0{ ss_pos.x / context->io.screenSize.x * 2.f - 1.f, ss_pos.y + h };
+        //    glm::vec2 v1{ ss_pos.x, ss_pos.y };
+        //    glm::vec2 v2{ ss_pos.x + w, ss_pos.y };
+        //    glm::vec2 v3{ ss_pos.x + w, ss_pos.y + h };
+        //
+        //    v0 = 
+        //
+        //    glm::vec2 uv = GetUVForChar(c);
+        //
+        //    draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(ss_pos.x, ss_pos.y + h, 0.f), uv, packed_color });
+        //    draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(ss_pos.x, ss_pos.y, 0.f), uv, packed_color });
+        //    draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(ss_pos.x + w, ss_pos.y, 0.f), uv, packed_color });
+        //    draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(ss_pos.x + w, ss_pos.y + h, 0.f), uv, packed_color });
+        //
+        //    draw_list.indices.emplace_back(vertex_offset);
+        //    draw_list.indices.emplace_back(vertex_offset + 1);
+        //    draw_list.indices.emplace_back(vertex_offset + 2);
+        //    draw_list.indices.emplace_back(vertex_offset + 2);
+        //    draw_list.indices.emplace_back(vertex_offset + 3);
+        //    draw_list.indices.emplace_back(vertex_offset);
+        //
+        //    vertex_offset += 4;
+        //
+        //    x += 1.0f; // Move to the next character position
+        //}
 
         context->drawData.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
         context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
