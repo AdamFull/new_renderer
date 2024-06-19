@@ -50,6 +50,7 @@ namespace ImDbg
 {
     u32 ColorToUint32(const glm::vec3& color);
     glm::vec4 CalculateClipRect(const glm::vec2& start, f32 width, f32 height);
+    glm::vec2 WorldToScreen(const glm::vec3& pos);
 
     void CreateContext()
     {
@@ -245,17 +246,28 @@ namespace ImDbg
 
     void DrawBox(const glm::vec3& min, const glm::vec3& max, const glm::vec3& color)
     {
-        const glm::vec3 verticesPos[8] = 
+        const glm::vec2 verticesPos[8] =
         {
-            { min.x, min.y, min.z },
-            { max.x, min.y, min.z },
-            { max.x, max.y, min.z },
-            { min.x, max.y, min.z },
-            { min.x, min.y, max.z },
-            { max.x, min.y, max.z },
-            { max.x, max.y, max.z },
-            { min.x, max.y, max.z }
+            WorldToScreen({ min.x, min.y, min.z }),
+            WorldToScreen({ max.x, min.y, min.z }),
+            WorldToScreen({ max.x, max.y, min.z }),
+            WorldToScreen({ min.x, max.y, min.z }),
+            WorldToScreen({ min.x, min.y, max.z }),
+            WorldToScreen({ max.x, min.y, max.z }),
+            WorldToScreen({ max.x, max.y, max.z }),
+            WorldToScreen({ min.x, max.y, max.z })
         };
+
+        glm::vec2 min_point{ verticesPos[0] };
+        glm::vec2 max_point{ verticesPos[0] };
+
+        for (u64 i = 1ull; i < 8; ++i)
+        {
+            min_point = glm::min(min_point, verticesPos[i]);
+            max_point = glm::max(max_point, verticesPos[i]);
+        }
+
+        glm::vec2 len = max_point - min_point;
 
         static const u32 boxIndices[] =
         {
@@ -270,12 +282,12 @@ namespace ImDbg
         new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = 24;
-        new_draw_cmd.clipRect = CalculateClipRect(glm::vec3(0.0f), context->io.screenSize.x, context->io.screenSize.y);
+        new_draw_cmd.clipRect = CalculateClipRect(min_point, len.x, len.y);
 
         u32 packedColor = ColorToUint32(color);
 
         for (const auto& pos : verticesPos)
-            draw_list.vertices.emplace_back(ImDbgVertex{ pos, glm::vec2(0.0f), packedColor });
+            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(pos, 0.f), glm::vec2(0.0f), packedColor });
 
         for (const auto& idx : boxIndices)
             draw_list.indices.emplace_back(new_draw_cmd.vertexOffset + idx);
@@ -335,16 +347,21 @@ namespace ImDbg
         new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = text.size() * 6;
-        new_draw_cmd.clipRect = CalculateClipRect(glm::vec3(0.0f), context->io.screenSize.x, context->io.screenSize.y);
 
         glm::vec2 cursor = glm::vec2(position); // Initial position of the text
-
+        f32 height{};
         for (char c : text)
         {
             if (c < start_glyph || c >= max_glyph_count)
                 continue;
 
             const ImDbgFontGlyph& glyph = font_atlas.glyphs[c - start_glyph];
+
+            if (glyph.size.x == 0.f || glyph.size.y == 0.f)
+            {
+                cursor.x += glyph.advance.x;
+                continue;
+            }
 
             float x0 = cursor.x + glyph.corners.x;
             float y0 = cursor.y + glyph.corners.y;
@@ -373,10 +390,13 @@ namespace ImDbg
             draw_list.indices.emplace_back(vertex_offset + 3);
 
             cursor.x += glyph.advance.x;
+            height = std::max(glyph.size.y, height);
         }
         
         context->drawData.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
         context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+
+        new_draw_cmd.clipRect = CalculateClipRect(position, cursor.x - position.x, height);
     }
 
     ImDbgIO* GetIO()
@@ -402,5 +422,15 @@ namespace ImDbg
     glm::vec4 CalculateClipRect(const glm::vec2& start, f32 width, f32 height)
     {
         return glm::vec4(start.x, start.y, start.x + width, start.y + height);
+    }
+
+    glm::vec2 WorldToScreen(const glm::vec3& pos)
+    {
+        const glm::vec4 cs_pos = context->io.worldToClip * glm::vec4(pos, 1.f);
+        const glm::vec3 ndc_pos = glm::vec3(cs_pos) / cs_pos.w;
+        return glm::vec2(
+            (ndc_pos.x * 0.5f + 0.5f) * context->io.screenSize.x,
+            (1.0f - (ndc_pos.y * 0.5f + 0.5f)) * context->io.screenSize.y
+        );
     }
 }

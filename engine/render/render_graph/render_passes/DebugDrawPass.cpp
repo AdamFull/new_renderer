@@ -181,16 +181,16 @@ void CDebugDrawPass::_Render()
 			glm::vec2 clip_max = { command.clipRect.z, command.clipRect.w };
 
 			// Clamp to viewport as vkCmdSetScissor() won't accept values that are off bounds
-			if (clip_min.x < 0.0f) { clip_min.x = 0.0f; }
-			if (clip_min.y < 0.0f) { clip_min.y = 0.0f; }
-			if (clip_max.x > resolution.size.x) { clip_max.x = resolution.size.x; }
-			if (clip_max.y > resolution.size.y) { clip_max.y = resolution.size.y; }
-			if (clip_max.x <= clip_min.x || clip_max.y <= clip_min.y)
-				continue;
+			//if (clip_min.x < 0.0f) { clip_min.x = 0.0f; }
+			//if (clip_min.y < 0.0f) { clip_min.y = 0.0f; }
+			//if (clip_max.x > resolution.size.x) { clip_max.x = resolution.size.x; }
+			//if (clip_max.y > resolution.size.y) { clip_max.y = resolution.size.y; }
+			//if (clip_max.x <= clip_min.x || clip_max.y <= clip_min.y)
+			//	continue;
 
 			// Apply scissor/clipping rectangle
-			//render_context->SetScissorRect((int32_t)(clip_min.x), (int32_t)(clip_min.y), (uint32_t)(clip_max.x - clip_min.x), (uint32_t)(clip_max.y - clip_min.y));
-			render_context->SetScissorRect(0, 0, resolution.size.x, resolution.size.y);
+			render_context->SetScissorRect((int32_t)(clip_min.x), (int32_t)(clip_min.y), (uint32_t)(clip_max.x - clip_min.x), (uint32_t)(clip_max.y - clip_min.y));
+			//render_context->SetScissorRect(0, 0, resolution.size.x, resolution.size.y);
 
 			FGeometryDrawInfo draw_info{};
 			draw_info.lastVertex = m_lastVertex;

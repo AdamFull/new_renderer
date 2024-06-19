@@ -83,8 +83,9 @@ struct ImDbgDrawData
 
 struct ImDbgIO
 {
-	glm::vec2 screenSize;
-	f32 deltaTime;
+	glm::vec2 screenSize{};
+	f32 deltaTime{};
+	glm::mat4 worldToClip{};
 };
 
 struct ImDbgContext
