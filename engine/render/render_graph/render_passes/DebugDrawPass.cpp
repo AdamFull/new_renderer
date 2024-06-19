@@ -15,11 +15,30 @@ CDebugDrawPass::CDebugDrawPass(IRenderInterface* render_interface)
 
 CDebugDrawPass::~CDebugDrawPass()
 {
+	ImDbg::DestroyContext();
 }
 
 void CDebugDrawPass::Init(const FRenderPassCreateInfo& pass_ci)
 {
 	IRenderPass::Init(pass_ci);
+
+	ImDbg::CreateContext();
+
+	u8* pixels{ nullptr };
+	i32 width, height, stride;
+	ImDbg::GetTexDataAsRGBA32(0, &pixels, &width, &height, &stride);
+	u64 upload_size = width * height * stride;
+
+	FTextureCreateInfo font_ci{};
+	font_ci.format = EApiDataFormat::eRGBA8_UNORM;
+	font_ci.flags = ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eTransferable | ETextureCreateFlagBits::e2D;
+	font_ci.SetFixedSize2D(width, height);
+
+	FTextureUploadInfo upload_info{};
+	upload_info.data.insert(upload_info.data.end(), pixels, pixels + upload_size);
+
+	auto& render_context = m_pRenderInterface->GetRenderContext();
+	m_fontTexture = m_pRenderInterface->CreateTextureObject("default_debug_font", font_ci, std::move(upload_info));
 
 	// At first create vertex/index handler
 	FVertexHandlerCreateInfo vertex_handler_ci{};
@@ -57,6 +76,7 @@ void CDebugDrawPass::Init(const FRenderPassCreateInfo& pass_ci)
 		shader_ci.frontFace = EShaderFrontFace::eCCW;
 		shader_ci.cullMode = EShaderCullModeFlagBits::eNone;
 		shader_ci.primitiveTopology = EVertexPrimitiveTopology::eTriangleList;
+		//shader_ci.alphaBlending = true;
 
 		m_shaders[(u32)ImDbgGeometryType::eTriangles] = MakeShader(pass_ci.shader, shader_ci, vertex_handler.get());
 		InitShaderResources(m_shaders[(u32)ImDbgGeometryType::eTriangles]);
@@ -104,6 +124,7 @@ void CDebugDrawPass::_Render()
 	auto& render_context = m_pRenderInterface->GetRenderContext();
 	auto resolution = render_context->GetScreenRenderRect();
 
+	ImDbgIO* io = ImDbg::GetIO();
 	ImDbgDrawData* draw_data = ImDbg::GetDrawData();
 
 	// At first update vertices if needed
@@ -129,6 +150,26 @@ void CDebugDrawPass::_Render()
 		auto& shader = m_pRenderInterface->GetShaderObject(shader_id);
 		shader->Bind(m_queue);
 
+		auto& constants = shader->GetConstantBlock(utl::fnv1a_64_hash_cstr("constants"));
+		if (constants)
+		{
+			glm::vec2 scale;
+			scale.x = 2.f / io->screenSize.x;
+			scale.y = 2.f / io->screenSize.y;
+
+			constants->Set(utl::fnv1a_64_hash_cstr("scale"), scale);
+
+			glm::vec2 translate;
+			translate.x = -1.0f - 0.f * scale.x;
+			translate.y = -1.0f - 0.f * scale.y;
+
+			constants->Set(utl::fnv1a_64_hash_cstr("translate"), translate);
+
+			shader->FlushConstants(m_queue);
+		}
+
+		shader->BindTexture(utl::fnv1a_64_hash_cstr("font_sampler"), m_pRenderInterface->GetTextureObject(m_fontTexture)->Handle());
+
 		// TODO: add font texture support
 		shader->FlushDescriptors();
 		shader->BindResources(m_queue);
@@ -148,8 +189,8 @@ void CDebugDrawPass::_Render()
 				continue;
 
 			// Apply scissor/clipping rectangle
-			render_context->SetScissorRect((int32_t)(clip_min.x), (int32_t)(clip_min.y), (uint32_t)(clip_max.x - clip_min.x), (uint32_t)(clip_max.y - clip_min.y));
-			//render_context->SetScissorRect(0, 0, resolution.size.x, resolution.size.y);
+			//render_context->SetScissorRect((int32_t)(clip_min.x), (int32_t)(clip_min.y), (uint32_t)(clip_max.x - clip_min.x), (uint32_t)(clip_max.y - clip_min.y));
+			render_context->SetScissorRect(0, 0, resolution.size.x, resolution.size.y);
 
 			FGeometryDrawInfo draw_info{};
 			draw_info.lastVertex = m_lastVertex;

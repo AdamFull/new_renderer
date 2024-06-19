@@ -13,7 +13,7 @@ CDebugDrawEngineSystem::CDebugDrawEngineSystem(IRenderInterface* render_interfac
 
 void CDebugDrawEngineSystem::Initialize()
 {
-	ImDbg::CreateContext();
+	
 }
 
 void CDebugDrawEngineSystem::PreUpdate(f32 dt)
@@ -26,7 +26,8 @@ void CDebugDrawEngineSystem::PreUpdate(f32 dt)
 	io->deltaTime = dt;
 
 	ImDbg::NewFrame();
-
+	
+	ImDbg::DrawText(glm::vec3(100.f, 100.f, 0.f), "Hello World", glm::vec3(1.f, 0.f, 0.f));
 	//ImDbg::DrawLine(glm::vec3(0.f), glm::vec3(20.5f, 50.5f, 0.f), glm::vec3(1.f, 0.f, 0.f));
 }
 
@@ -41,5 +42,5 @@ void CDebugDrawEngineSystem::Render()
 
 void CDebugDrawEngineSystem::Destroy()
 {
-	ImDbg::DestroyContext();
+	
 }

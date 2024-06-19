@@ -22,6 +22,7 @@ namespace ImDbg
 	void DestroyContext();
 
 	void LoadFont(const u8* data, u32 data_size, u32 character_size);
+	void GetTexDataAsRGBA32(u32 index, u8** out_pixels, i32* out_width, i32* out_height, i32* out_bytes_per_pixel);
 
 	void NewFrame();
 	void EndFrame();

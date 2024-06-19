@@ -126,7 +126,7 @@ void CImGuiPass::_Render()
 			vertex_handler->Bind(m_queue);
 
 		// Setup viewport:
-		render_context->SetViewport(resolution.size.x, resolution.size.y, false);
+		render_context->SetViewport(resolution.size.x, resolution.size.y, m_bFlipViewport);
 
 		// Setup scale and translation:
 		// Our visible imgui space lies from draw_data->DisplayPps (top left) to draw_data->DisplayPos+data_data->DisplaySize (bottom right). DisplayPos is (0,0) for single viewport apps.

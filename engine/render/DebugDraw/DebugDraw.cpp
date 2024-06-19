@@ -13,21 +13,31 @@
 
 #include "monoisome_regular.ttf.h"
 
-constexpr const u32 start_glyph = 33;
+constexpr const u32 start_glyph = 33 - 1; 
 constexpr const u32 max_glyph_count = 128;
 constexpr const u32 max_atlas_width = 1024;
 
 static ImDbgContext* context{ nullptr };
 
+struct ImDbgFontGlyph
+{
+    glm::vec2 advance{};
+    glm::vec2 size{};
+    glm::vec2 corners{};
+    glm::vec2 uv{};
+};
+
 struct FontAtlas
 {
     FT_Face face;
 
-    u8* texture;
-    u32 width;
-    u32 height;
-    u64 size;
-    u32 stride;
+    utl::vector<ImDbgFontGlyph> glyphs{};
+
+    u8* texture{ nullptr };
+    u32 width{};
+    u32 height{};
+    u64 size{};
+    u32 stride{};
 };
 
 struct FontImpl
@@ -39,7 +49,6 @@ struct FontImpl
 namespace ImDbg
 {
     u32 ColorToUint32(const glm::vec3& color);
-    glm::vec2 GetUVForChar(char c);
     glm::vec4 CalculateClipRect(const glm::vec2& start, f32 width, f32 height);
 
     void CreateContext()
@@ -155,22 +164,30 @@ namespace ImDbg
                 }
             }
 
-            // this is stuff you'd need when rendering individual glyphs out of the atlas
-
-            //info[i].x0 = pen_x;
-            //info[i].y0 = pen_y;
-            //info[i].x1 = pen_x + bmp->width;
-            //info[i].y1 = pen_y + bmp->rows;
-            //
-            //info[i].x_off = face->glyph->bitmap_left;
-            //info[i].y_off = face->glyph->bitmap_top;
-            //info[i].advance = face->glyph->advance.x >> 6;
+            auto& new_glyph = new_atlas.glyphs.emplace_back();
+            new_glyph.advance.x = new_atlas.face->glyph->advance.x >> 6;
+            new_glyph.advance.y = new_atlas.face->glyph->advance.y >> 6;
+            new_glyph.size.x = new_atlas.face->glyph->bitmap.width;
+            new_glyph.size.y = new_atlas.face->glyph->bitmap.rows;
+            new_glyph.corners.x = new_atlas.face->glyph->bitmap_left;
+            new_glyph.corners.y = new_atlas.face->glyph->bitmap_top;
+            new_glyph.uv.x = (f32)cursor.x / (f32)new_atlas.width;
+            new_glyph.uv.y = (f32)cursor.y / (f32)new_atlas.height;
 
             cursor.x += bmp->width + 1;
         }
 
-        stbi_write_png("font.png", new_atlas.width, new_atlas.height, new_atlas.stride, new_atlas.texture, new_atlas.width * new_atlas.stride);
+        //stbi_write_png("font.png", new_atlas.width, new_atlas.height, new_atlas.stride, new_atlas.texture, new_atlas.width * new_atlas.stride);
 	}
+
+    void GetTexDataAsRGBA32(u32 index, u8** out_pixels, i32* out_width, i32* out_height, i32* out_bytes_per_pixel)
+    {
+        auto& atlas = context->font->atlases[index];
+        *out_pixels = atlas.texture;
+        *out_width = atlas.width;
+        *out_height = atlas.height;
+        *out_bytes_per_pixel = atlas.stride;
+    }
 
     void NewFrame()
     {
@@ -309,57 +326,55 @@ namespace ImDbg
 
     void DrawText(const glm::vec3& position, const std::string& text, const glm::vec3& color)
     {
-        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eLines];
+        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eTriangles];
+
+        auto& font_atlas = context->font->atlases[0]; // Assuming you have only one font atlas
+        auto color_uint = ColorToUint32(color);
 
         auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
-        u32 vertex_offset = new_draw_cmd.vertexOffset = draw_list.vertices.size();
+        new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = text.size() * 6;
-        new_draw_cmd.clipRect = CalculateClipRect(position, text.size(), 1.0f);
+        new_draw_cmd.clipRect = CalculateClipRect(glm::vec3(0.0f), context->io.screenSize.x, context->io.screenSize.y);
 
-        glm::vec2 ss_pos{ position.x, position.y };
+        glm::vec2 cursor = glm::vec2(position); // Initial position of the text
 
-        uint32_t packed_color = ColorToUint32(color);
+        for (char c : text)
+        {
+            if (c < start_glyph || c >= max_glyph_count)
+                continue;
 
-        //for (char c : text)
-        //{
-        //    auto err = FT_Load_Char(context->font->face, c, FT_LOAD_RENDER);
-        //    assert(err);
-        //
-        //    FT_GlyphSlot g = context->font->face->glyph;
-        //
-        //    ss_pos.x = ss_pos.x + g->bitmap_left;
-        //    ss_pos.y = ss_pos.y - (g->bitmap.rows - g->bitmap_top);
-        //    
-        //    f32 w = g->bitmap.width;
-        //    f32 h = g->bitmap.rows;
-        //
-        //    glm::vec2 v0{ ss_pos.x / context->io.screenSize.x * 2.f - 1.f, ss_pos.y + h };
-        //    glm::vec2 v1{ ss_pos.x, ss_pos.y };
-        //    glm::vec2 v2{ ss_pos.x + w, ss_pos.y };
-        //    glm::vec2 v3{ ss_pos.x + w, ss_pos.y + h };
-        //
-        //    v0 = 
-        //
-        //    glm::vec2 uv = GetUVForChar(c);
-        //
-        //    draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(ss_pos.x, ss_pos.y + h, 0.f), uv, packed_color });
-        //    draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(ss_pos.x, ss_pos.y, 0.f), uv, packed_color });
-        //    draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(ss_pos.x + w, ss_pos.y, 0.f), uv, packed_color });
-        //    draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(ss_pos.x + w, ss_pos.y + h, 0.f), uv, packed_color });
-        //
-        //    draw_list.indices.emplace_back(vertex_offset);
-        //    draw_list.indices.emplace_back(vertex_offset + 1);
-        //    draw_list.indices.emplace_back(vertex_offset + 2);
-        //    draw_list.indices.emplace_back(vertex_offset + 2);
-        //    draw_list.indices.emplace_back(vertex_offset + 3);
-        //    draw_list.indices.emplace_back(vertex_offset);
-        //
-        //    vertex_offset += 4;
-        //
-        //    x += 1.0f; // Move to the next character position
-        //}
+            const ImDbgFontGlyph& glyph = font_atlas.glyphs[c - start_glyph];
 
+            float x0 = cursor.x + glyph.corners.x;
+            float y0 = cursor.y + glyph.corners.y;
+            float x1 = x0 + glyph.size.x;
+            float y1 = y0 - glyph.size.y;
+
+            float u0 = glyph.uv.x;
+            float v0 = glyph.uv.y;
+            float u1 = u0 + glyph.size.x / font_atlas.width;
+            float v1 = v0 + glyph.size.y / font_atlas.height;
+
+            u32 vertex_offset = draw_list.vertices.size();
+
+            // Add vertices for the glyph quad
+            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(x0, y0, position.z), glm::vec2(u0, v0), color_uint });
+            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(x1, y0, position.z), glm::vec2(u1, v0), color_uint });
+            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(x1, y1, position.z), glm::vec2(u1, v1), color_uint });
+            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(x0, y1, position.z), glm::vec2(u0, v1), color_uint });
+
+            // Add indices for the glyph quad
+            draw_list.indices.emplace_back(vertex_offset);
+            draw_list.indices.emplace_back(vertex_offset + 1);
+            draw_list.indices.emplace_back(vertex_offset + 2);
+            draw_list.indices.emplace_back(vertex_offset);
+            draw_list.indices.emplace_back(vertex_offset + 2);
+            draw_list.indices.emplace_back(vertex_offset + 3);
+
+            cursor.x += glyph.advance.x;
+        }
+        
         context->drawData.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
         context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
@@ -382,18 +397,6 @@ namespace ImDbg
         uint8_t g = static_cast<uint8_t>(glm::clamp(color.y, 0.0f, 1.0f) * 255.0f);
         uint8_t b = static_cast<uint8_t>(glm::clamp(color.x, 0.0f, 1.0f) * 255.0f);
         return (r << 16) | (g << 8) | b;
-    }
-
-    glm::vec2 GetUVForChar(char c)
-    {
-        // Dummy implementation, replace with actual UV lookup based on your font texture atlas
-    // For example purposes, we'll map 'a' to 'z' in a 16x16 grid
-        int index = c - 'a'; // Assuming 'a' to 'z'
-        int col = index % 16;
-        int row = index / 16;
-        float u = col / 16.0f;
-        float v = row / 16.0f;
-        return glm::vec2(u, v);
     }
 
     glm::vec4 CalculateClipRect(const glm::vec2& start, f32 width, f32 height)

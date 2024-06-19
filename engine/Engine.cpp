@@ -40,7 +40,7 @@ void CEngine::Initialize()
 
 	m_pInputMapper = std::make_unique<CInputMapper>();
 
-	//m_pSystemManager->RegisterSystem<CImGuiEngineSystem>(m_pRenderInterface.get());
+	m_pSystemManager->RegisterSystem<CImGuiEngineSystem>(m_pRenderInterface.get());
 	m_pSystemManager->RegisterSystem<CDebugDrawEngineSystem>(m_pRenderInterface.get());
 
 	FWindowCreateInfo window_ci{};

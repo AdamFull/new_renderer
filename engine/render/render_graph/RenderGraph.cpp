@@ -1254,17 +1254,8 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	
 		AddRenderNode(create_info);
 	}
-
-	// ImGui pass
-	{
-		FRenderGraphRenderPassNodeCreateInfo create_info;
-		create_info.name = "imgui_pass";
-		create_info.pass_ci = makeGraphicsPassCI(ERenderingType::eImGui, EQueueTypeFlagBits::eGraphics, "testing:imgui");
-		create_info.pass_ci.AddWriteResource("pre_present");
-
-		//AddRenderNode(create_info);
-	}
-
+	
+	// Blit pass
 	{
 		FRenderGraphRenderPassNodeCreateInfo create_info;
 		create_info.name = "finalize_image_pass";
@@ -1272,6 +1263,16 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		create_info.pass_ci.FlipFiewport();
 
 		create_info.pass_ci.BindReadResource("input_image", "pre_present");
+		create_info.pass_ci.AddWriteResource("present_target");
+
+		AddRenderNode(create_info);
+	}
+
+	// ImGui pass
+	{
+		FRenderGraphRenderPassNodeCreateInfo create_info;
+		create_info.name = "imgui_pass";
+		create_info.pass_ci = makeGraphicsPassCI(ERenderingType::eImGui, EQueueTypeFlagBits::eGraphics, "testing:imgui");
 		create_info.pass_ci.AddWriteResource("present_target");
 
 		AddRenderNode(create_info);

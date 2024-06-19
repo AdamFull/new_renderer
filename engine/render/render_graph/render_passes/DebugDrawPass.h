@@ -22,6 +22,7 @@ namespace engine
 
 			u32 m_lastVertex{}, m_lastIndex{};
 			FRHIHandle m_vertexHandler{};
+			FRHIHandle m_fontTexture{};
 		private:
 			utl::hash_map<u32, FRHIHandle> m_shaders{};
 		};
