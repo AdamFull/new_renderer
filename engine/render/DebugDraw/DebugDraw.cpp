@@ -142,7 +142,18 @@ namespace ImDbg
         new_atlas.size = (u64)new_atlas.width * (u64)new_atlas.height * (u64)new_atlas.stride;
         new_atlas.texture = (u8*)calloc(new_atlas.size, 1);
 
-        glm::uvec2 cursor{};
+        int strip_width = 1; // Width of the filled strip
+        for (int y = 0; y < new_atlas.height; ++y)
+        {
+            for (int x = 0; x < strip_width; ++x)
+            {
+                int pixel_index = (y * new_atlas.width + x) * new_atlas.stride;
+                for (u64 idx = 0; idx < new_atlas.stride; ++idx)
+                    new_atlas.texture[pixel_index + idx] = 0xFF;
+            }
+        }
+
+        glm::uvec2 cursor{ strip_width * 2, 0};
         for (u64 i = start_glyph; i < max_glyph_count; i++)
         {
             FT_Load_Char(new_atlas.face, i, FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_TARGET_LIGHT);

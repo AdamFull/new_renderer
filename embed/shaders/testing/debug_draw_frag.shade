@@ -29,11 +29,11 @@
 		
 		void main() 
 		{
-			//vec4 readed_color = texture(font_sampler, inUV);
-			//if(readed_color.a < 0.5)
-			//	discard;
+			vec4 readed_color = texture(font_sampler, inUV);
+			if(readed_color.a < 0.5)
+				discard;
 
-			outColor = inColor;// * readed_color;
+			outColor = inColor * readed_color;
 		}
 	""";
 }
