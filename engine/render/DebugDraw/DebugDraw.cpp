@@ -271,60 +271,14 @@ namespace ImDbg
 
     void DrawRect2D(const glm::vec2& min, const glm::vec2& max, ImDbgColor color, f32 thickness)
     {
-        auto& draw_list = context->drawData2d.drawLists[(u32)ImDbgGeometryType::eLines];
-
-        auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
-        new_draw_cmd.vertexOffset = draw_list.vertices.size();
-        new_draw_cmd.indexOffset = draw_list.indices.size();
-        new_draw_cmd.indexCount = 8;
-        new_draw_cmd.clipRect = CalculateClipRect(min, max.x - min.x, max.y - min.y);
-
-        u32 vertex_offset = draw_list.vertices.size();
-
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ min, glm::vec2(0.0f), color }); // bottom-left
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x, min.y), glm::vec2(0.0f), color }); // bottom-right
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ max, glm::vec2(0.0f), color }); // top-right
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x, max.y), glm::vec2(0.0f), color }); // top-left
-
-        draw_list.indices.emplace_back(vertex_offset);
-        draw_list.indices.emplace_back(vertex_offset + 1);
-        draw_list.indices.emplace_back(vertex_offset + 1);
-        draw_list.indices.emplace_back(vertex_offset + 2);
-        draw_list.indices.emplace_back(vertex_offset + 2);
-        draw_list.indices.emplace_back(vertex_offset + 3);
-        draw_list.indices.emplace_back(vertex_offset + 3);
-        draw_list.indices.emplace_back(vertex_offset);
-
-        context->drawData2d.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
-        context->drawData2d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+        const utl::vector<glm::vec2> points{ min, {max.x, min.y}, max, {min.x, max.y} };
+        DrawPolygon2D(points, color, thickness);
     }
 
     void DrawFillRect2D(const glm::vec2& min, const glm::vec2& max, ImDbgColor color)
     {
-        auto& draw_list = context->drawData2d.drawLists[(u32)ImDbgGeometryType::eTriangles];
-
-        auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
-        new_draw_cmd.vertexOffset = draw_list.vertices.size();
-        new_draw_cmd.indexOffset = draw_list.indices.size();
-        new_draw_cmd.indexCount = 6;
-        new_draw_cmd.clipRect = CalculateClipRect(min, max.x - min.x, max.y - min.y);
-
-        u32 vertex_offset = draw_list.vertices.size();
-
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ min, glm::vec2(0.0f), color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x, min.y), glm::vec2(0.0f), color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ max, glm::vec2(0.0f), color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x, max.y), glm::vec2(0.0f), color });
-
-        draw_list.indices.emplace_back(vertex_offset);
-        draw_list.indices.emplace_back(vertex_offset + 1);
-        draw_list.indices.emplace_back(vertex_offset + 2);
-        draw_list.indices.emplace_back(vertex_offset);
-        draw_list.indices.emplace_back(vertex_offset + 2);
-        draw_list.indices.emplace_back(vertex_offset + 3);
-
-        context->drawData2d.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
-        context->drawData2d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+        const utl::vector<glm::vec2> points{ min, {max.x, min.y}, max, {min.x, max.y} };
+        DrawFillPolygon2D(points, color);
     }
 
     void DrawCircle2D(const glm::vec2& center, f32 radius, ImDbgColor color, f32 thickness)
@@ -397,60 +351,14 @@ namespace ImDbg
 
     void DrawTriangle2D(const glm::vec2& p1, const glm::vec2& p2, const glm::vec2& p3, ImDbgColor color, f32 thickness)
     {
-        // Triangle bounds
-        auto min = glm::min(glm::min(p1, p2), p3);
-        auto max = glm::max(glm::max(p1, p2), p3);
-        auto range = max - min;
-
-        auto& draw_list = context->drawData2d.drawLists[(u32)ImDbgGeometryType::eLines];
-
-        auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
-        new_draw_cmd.vertexOffset = draw_list.vertices.size();
-        new_draw_cmd.indexOffset = draw_list.indices.size();
-        new_draw_cmd.indexCount = 6;
-        new_draw_cmd.clipRect = CalculateClipRect(min - thickness, range.x + thickness, range.y + thickness);
-
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ p1, glm::vec2(0.0f), color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ p2, glm::vec2(0.0f), color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ p3, glm::vec2(0.0f), color });
-
-        draw_list.indices.emplace_back(new_draw_cmd.vertexOffset);
-        draw_list.indices.emplace_back(new_draw_cmd.vertexOffset + 1);
-        draw_list.indices.emplace_back(new_draw_cmd.vertexOffset + 1);
-        draw_list.indices.emplace_back(new_draw_cmd.vertexOffset + 2);
-        draw_list.indices.emplace_back(new_draw_cmd.vertexOffset + 2);
-        draw_list.indices.emplace_back(new_draw_cmd.vertexOffset);
-
-        context->drawData2d.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
-        context->drawData2d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+        const utl::vector<glm::vec2> points{ p1, p2, p3 };
+        DrawPolygon2D(points, color, thickness);
     }
 
     void DrawFillTriangle2D(const glm::vec2& p1, const glm::vec2& p2, const glm::vec2& p3, ImDbgColor color)
     {
-        // Triangle bounds
-        auto min = glm::min(glm::min(p1, p2), p3);
-        auto max = glm::max(glm::max(p1, p2), p3);
-        auto range = max - min;
-
-        auto& draw_list = context->drawData2d.drawLists[(u32)ImDbgGeometryType::eTriangles];
-
-        auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
-        new_draw_cmd.vertexOffset = draw_list.vertices.size();
-        new_draw_cmd.indexOffset = draw_list.indices.size();
-        new_draw_cmd.indexCount = 3;
-        new_draw_cmd.clipRect = CalculateClipRect(min, range.x, range.y);
-
-        u32 vertex_offset = draw_list.vertices.size();
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ p1, glm::vec2(0.0f), color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ p2, glm::vec2(0.0f), color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ p3, glm::vec2(0.0f), color });
-
-        draw_list.indices.emplace_back(vertex_offset);
-        draw_list.indices.emplace_back(vertex_offset + 1);
-        draw_list.indices.emplace_back(vertex_offset + 2);
-
-        context->drawData2d.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
-        context->drawData2d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+        const utl::vector<glm::vec2> points{ p1, p2, p3 };
+        DrawFillPolygon2D(points, color);
     }
 
     void DrawPolygon2D(const utl::vector<glm::vec2>& points, ImDbgColor color, f32 thickness)

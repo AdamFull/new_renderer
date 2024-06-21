@@ -45,7 +45,7 @@ void CDebugDrawEngineSystem::PreUpdate(f32 dt)
 
 	// Circle test
 	//ImDbg::DrawCircle2D({ 150, 150 }, 110, "#00FF00"_color);
-	//ImDbg::DrawFillCircle2D({ 150, 150 }, 100, "#FF0000"_color);
+	ImDbg::DrawFillCircle2D({ 150, 150 }, 100, "#FF0000"_color);
 
 	// Triangle test
 	//ImDbg::DrawTriangle2D(glm::vec2(300, 150), glm::vec2(500, 150), glm::vec2(500, 300), "#00FF3F"_color);
