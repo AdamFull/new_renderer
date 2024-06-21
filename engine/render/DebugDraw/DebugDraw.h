@@ -127,8 +127,16 @@ namespace ImDbg
 	// 2d drawings
 	void DrawPoint2D(const glm::vec2& position, ImDbgColor color, f32 size = 1.0f);
 	void DrawLine2D(const glm::vec2& from, const glm::vec2& to, ImDbgColor color, f32 thickness = 1.0f);
-	void DrawBox2D(const glm::vec2& min, const glm::vec2& max, ImDbgColor color, f32 thickness = 1.0f);
-	void DrawCircle2D(const glm::vec2& center, f32 radius, ImDbgColor color);
+	void DrawRect2D(const glm::vec2& min, const glm::vec2& max, ImDbgColor color, f32 thickness = 1.0f);
+	void DrawFillRect2D(const glm::vec2& min, const glm::vec2& max, ImDbgColor color);
+	void DrawCircle2D(const glm::vec2& center, f32 radius, ImDbgColor color, f32 thickness = 1.0f);
+	void DrawFillCircle2D(const glm::vec2& center, f32 radius, ImDbgColor color);
+	void DrawTriangle2D(const glm::vec2& p1, const glm::vec2& p2, const glm::vec2& p3, ImDbgColor color, f32 thickness = 1.0f);
+	void DrawFillTriangle2D(const glm::vec2& p1, const glm::vec2& p2, const glm::vec2& p3, ImDbgColor color);
+	void DrawPolygon2D(const utl::vector<glm::vec2>& points, ImDbgColor color, f32 thickness = 1.0f);
+	void DrawFillPolygon2D(const utl::vector<glm::vec2>& points, ImDbgColor color);
+	void DrawRoundedRect2D(const glm::vec2& min, const glm::vec2& max, f32 radius, ImDbgColor color, f32 thickness = 1.0f);
+	void DrawFillRoundedRect2D(const glm::vec2& min, const glm::vec2& max, f32 radius, ImDbgColor color);
 	void DrawText2D(const glm::vec2& position, const std::string& text, ImDbgColor color);
 
 	// 3d drawings

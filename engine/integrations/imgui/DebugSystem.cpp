@@ -32,21 +32,36 @@ void CDebugDrawEngineSystem::PreUpdate(f32 dt)
 	io->worldToClip = render_world->GetMatrix(camera.matricesOffset + view_projection_matrix_offset);
 
 	ImDbg::NewFrame();
-	
-	// Drawing a box
-	ImDbg::DrawLine2D(glm::vec2(500, 100), glm::vec2(1000, 500), ImDbg::Color::Green, 1.0f);
 
-	ImDbg::DrawBox2D(glm::vec2(50, 50), glm::vec2(200, 200), ImDbg::Color::Red, 1.0f);
-	ImDbg::DrawBox2D(glm::vec2(200, 200), glm::vec2(400, 400), ImDbg::Color::Red, 1.0f);
+	// Draw point
+	//ImDbg::DrawPoint2D({50, 50}, "#FF0001"_color);
 
-	// Drawing a line
+	// Draw line
+	//ImDbg::DrawLine2D({ 51, 51 }, {101, 101}, "#FFFF00"_color);
 
-	ImDbg::DrawCircle2D(glm::vec2(500, 500), 500, "#00FF00"_color);
+	// Draw rects
+	//ImDbg::DrawRect2D({ 100, 100 }, { 300, 300 }, "#FFFF00"_color);
+	//ImDbg::DrawFillRect2D({ 100, 100 }, { 300, 300 }, "#FFFF00"_color);
 
-	ImDbg::DrawLine2D(glm::vec2(500, 100), glm::vec2(300, 300), ImDbg::Color::Green, 1.0f);
+	// Circle test
+	//ImDbg::DrawCircle2D({ 150, 150 }, 110, "#00FF00"_color);
+	//ImDbg::DrawFillCircle2D({ 150, 150 }, 100, "#FF0000"_color);
+
+	// Triangle test
+	//ImDbg::DrawTriangle2D(glm::vec2(300, 150), glm::vec2(500, 150), glm::vec2(500, 300), "#00FF3F"_color);
+	//ImDbg::DrawFillTriangle2D(glm::vec2(300, 300), glm::vec2(500, 300), glm::vec2(500, 500), "#00FF3F"_color);
+
+	// Polygon test
+	//utl::vector<glm::vec2> points{ {300, 300}, {500, 300}, {500, 500}, {300, 500} };
+	//ImDbg::DrawPolygon2D(points, "#CCCC0F"_color);
+	//ImDbg::DrawFillPolygon2D(points, "#CCCC0F"_color);
+
+	// Rounded rect
+	//ImDbg::DrawRoundedRect2D({ 200, 200 }, {400, 400}, 10, "#0F0F0F"_color);
+	//ImDbg::DrawFillRoundedRect2D({ 200, 200 }, { 400, 400 }, 10, "#0F0F0F"_color);
 
 	// Drawing text
-	ImDbg::DrawText2D(glm::vec2(150, 150), "Hello, World!", ImDbg::Color::Blue);
+	//ImDbg::DrawText2D(glm::vec2(150, 150), "Hello, World!", ImDbg::Color::Blue);
 }
 
 void CDebugDrawEngineSystem::Update(f32 dt)
