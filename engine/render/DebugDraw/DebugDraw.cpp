@@ -281,31 +281,30 @@ namespace ImDbg
         DrawFillPolygon2D(points, color);
     }
 
-    void DrawCircle2D(const glm::vec2& center, f32 radius, ImDbgColor color, f32 thickness)
+    void DrawArc2D(const glm::vec2& center, f32 radius, f32 start_angle, f32 end_angle, ImDbgColor color, i32 segments, f32 thickness)
     {
         auto& draw_list = context->drawData2d.drawLists[(u32)ImDbgGeometryType::eLines];
 
-        const int segments = 36;
-        float increment = 2.0f * glm::pi<float>() / segments;
+        float increment = (end_angle - start_angle) / segments;
 
         auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
         new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = segments * 2;
-        new_draw_cmd.clipRect = CalculateClipRect(center - glm::vec2(radius), radius * 2, radius * 2);
+        new_draw_cmd.clipRect = CalculateClipRect(center - glm::vec2(radius) - thickness, radius * 2 + thickness, radius * 2 + thickness);
 
         u32 vertex_offset = draw_list.vertices.size();
 
-        // Add vertices for the circle
-        for (int i = 0; i <= segments; ++i)
+        // Add vertices for the arc
+        for (i32 i = 0; i <= segments; ++i)
         {
-            float theta = i * increment;
+            float theta = start_angle + i * increment;
             glm::vec2 pos = center + radius * glm::vec2(glm::cos(theta), glm::sin(theta));
             draw_list.vertices.emplace_back(ImDbgVertex2D{ pos, glm::vec2(0.0f), color });
         }
 
-        // Add indices for the circle
-        for (int i = 0; i < segments; ++i)
+        // Add indices for the arc
+        for (i32 i = 0; i < segments; ++i)
         {
             draw_list.indices.emplace_back(vertex_offset + i);
             draw_list.indices.emplace_back(vertex_offset + i + 1);
@@ -315,38 +314,51 @@ namespace ImDbg
         context->drawData2d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
 
-    void DrawFillCircle2D(const glm::vec2& center, f32 radius, ImDbgColor color)
+    void DrawPie2D(const glm::vec2& center, f32 radius, f32 start_angle, f32 end_angle, ImDbgColor color, i32 segments)
     {
         auto& draw_list = context->drawData2d.drawLists[(u32)ImDbgGeometryType::eTriangles];
 
-        const int segments = 36;
-        float increment = 2.0f * glm::pi<float>() / segments;
+        float increment = (end_angle - start_angle) / segments;
 
         auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
         new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
-        new_draw_cmd.indexCount = segments * 3;
+        new_draw_cmd.indexCount = segments * 3;  // Each segment forms a triangle
         new_draw_cmd.clipRect = CalculateClipRect(center - glm::vec2(radius), radius * 2, radius * 2);
 
         u32 vertex_offset = draw_list.vertices.size();
+
+        // Center vertex
         draw_list.vertices.emplace_back(ImDbgVertex2D{ center, glm::vec2(0.0f), color });
 
-        for (int i = 0; i <= segments; i++)
+        // Add vertices for the arc
+        for (int i = 0; i <= segments; ++i)
         {
-            float theta = i * increment;
+            float theta = start_angle + i * increment;
             glm::vec2 pos = center + radius * glm::vec2(glm::cos(theta), glm::sin(theta));
             draw_list.vertices.emplace_back(ImDbgVertex2D{ pos, glm::vec2(0.0f), color });
+        }
 
-            if (i > 0)
-            {
-                draw_list.indices.emplace_back(vertex_offset);
-                draw_list.indices.emplace_back(vertex_offset + i);
-                draw_list.indices.emplace_back(vertex_offset + i + 1);
-            }
+        // Add indices for the pie
+        for (int i = 0; i < segments; ++i)
+        {
+            draw_list.indices.emplace_back(vertex_offset);       // Center vertex
+            draw_list.indices.emplace_back(vertex_offset + i + 1);
+            draw_list.indices.emplace_back(vertex_offset + i + 2);
         }
 
         context->drawData2d.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
         context->drawData2d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+    }
+
+    void DrawCircle2D(const glm::vec2& center, f32 radius, ImDbgColor color, f32 thickness)
+    {
+        DrawArc2D(center, radius, 0.0f, 2.0f * glm::pi<float>(), color, 36, thickness);
+    }
+
+    void DrawFillCircle2D(const glm::vec2& center, f32 radius, ImDbgColor color)
+    {
+        DrawPie2D(center, radius, 0.0f, 2.0f * glm::pi<float>(), color, 36);
     }
 
     void DrawTriangle2D(const glm::vec2& p1, const glm::vec2& p2, const glm::vec2& p3, ImDbgColor color, f32 thickness)
