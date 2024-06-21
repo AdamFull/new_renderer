@@ -335,6 +335,8 @@ namespace ImDbg
 	void DrawSphere3D(const glm::vec3& center, float radius, const glm::vec3& color);
 	void DrawText3D(const glm::vec3& position, const std::string& text, const glm::vec3& color);
 
+    glm::vec2 GetTextSize2D(const std::string& text);
+
 	ImDbgIO* GetIO();
 	ImDbgDrawData<ImDbgVertex2D>* GetDrawData2D();
 	ImDbgDrawData<ImDbgVertex3D>* GetDrawData3D();

@@ -44,6 +44,30 @@ void DrawProgressBar(const glm::vec2& position, const glm::vec2& size, f32 progr
     ImDbg::DrawText2D(text_position, text, text_color);
 }
 
+void DrawBouncingText(glm::vec2& position, glm::vec2& velocity, const glm::vec2& screen_size, const std::string& text, ImDbgColor color)
+{
+    // Update position
+    position += velocity;
+
+    // Calculate text size
+    glm::vec2 text_size = ImDbg::GetTextSize2D(text);
+
+    // Check for screen boundaries and reverse direction if necessary
+    if (position.x <= 0 || position.x + text_size.x >= screen_size.x)
+    {
+        velocity.x = -velocity.x;
+        position.x = glm::clamp(position.x, 0.0f, screen_size.x - text_size.x);
+    }
+    if (position.y <= 0 || position.y + text_size.y >= screen_size.y)
+    {
+        velocity.y = -velocity.y;
+        position.y = glm::clamp(position.y, 0.0f, screen_size.y - text_size.y);
+    }
+
+    // Draw the text at the updated position
+    ImDbg::DrawText2D(position, text, color);
+}
+
 CDebugDrawEngineSystem::CDebugDrawEngineSystem(IRenderInterface* render_interface)
 {
 	m_pRenderInterface = render_interface;
@@ -58,6 +82,11 @@ void CDebugDrawEngineSystem::PreUpdate(f32 dt)
 {
     static float progress_increment{ 0.01f };
     static float progress{ 0.f };
+
+    // Bouncing text initial position and velocity
+    static glm::vec2 text_position = glm::vec2(400, 300);
+    static glm::vec2 text_velocity = glm::vec2(2.0f, 3.0f);
+    static std::string bouncing_text = "Bouncing Text";
 
 	using namespace ImDbg;
 
@@ -99,6 +128,9 @@ void CDebugDrawEngineSystem::PreUpdate(f32 dt)
 
     // Draw complex shape
     DrawComplexShape();
+
+    // Draw bouncing text
+    DrawBouncingText(text_position, text_velocity, io->screenSize, bouncing_text, ImDbg::Color::Yellow);
 
     progress += progress_increment;
     if (progress >= 1.0f || progress <= 0.0f)

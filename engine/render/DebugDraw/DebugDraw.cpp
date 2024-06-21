@@ -479,11 +479,14 @@ namespace ImDbg
         for (const auto& point : points)
             draw_list.vertices.emplace_back(ImDbgVertex2D{ point, default_uv, color });
 
-        for (i32 i = 1; i < points.size() - 1; ++i)
+        for (i32 i = 0; i < points.size() - 1; ++i)
         {
-            draw_list.indices.emplace_back(0);
-            draw_list.indices.emplace_back(i);
-            draw_list.indices.emplace_back(i + 1);
+            if (i > 1)
+            {
+                draw_list.indices.emplace_back(0);
+                draw_list.indices.emplace_back(i);
+                draw_list.indices.emplace_back(i + 1);
+            }
         }
 
         context->drawData2d.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
@@ -690,7 +693,7 @@ namespace ImDbg
         for (i32 i = 0; i <= segments; ++i)
         {
             f32 theta = i * increment + 3.0f * glm::half_pi<float>();
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ bottom_left - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), default_uv, color });
+            draw_list.vertices.emplace_back(ImDbgVertex2D{ bottom_left + radius * glm::vec2(glm::cos(theta), glm::sin(theta)), default_uv, color });
         }
 
         for (i32 i = 0; i < segments; ++i)
@@ -857,6 +860,28 @@ namespace ImDbg
     void DrawText3D(const glm::vec3& position, const std::string& text, const glm::vec3& color)
     {
         
+    }
+
+    glm::vec2 GetTextSize2D(const std::string& text)
+    {
+        auto& font_atlas = context->font->atlases[0];
+
+        glm::vec2 text_size(0.0f);
+        float max_width = 0.0f;
+
+        for (char c : text)
+        {
+            if (c < start_glyph || c >= max_glyph_count)
+                continue;
+
+            const ImDbgFontGlyph& glyph = font_atlas.glyphs[c - start_glyph];
+
+            text_size.x += glyph.advance.x;
+            max_width = std::max(max_width, text_size.x);
+            text_size.y = std::max(text_size.y, glyph.size.y);
+        }
+
+        return glm::vec2(max_width, text_size.y);
     }
 
     ImDbgIO* GetIO()
