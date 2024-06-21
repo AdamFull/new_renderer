@@ -16,8 +16,10 @@
 constexpr const u32 start_glyph = 33 - 1; 
 constexpr const u32 max_glyph_count = 128;
 constexpr const u32 max_atlas_width = 1024;
+constexpr const glm::vec2 default_uv = { 0.01f, 0.01f };
 
 static ImDbgContext* context{ nullptr };
+
 
 struct ImDbgFontGlyph
 {
@@ -142,7 +144,7 @@ namespace ImDbg
         new_atlas.size = (u64)new_atlas.width * (u64)new_atlas.height * (u64)new_atlas.stride;
         new_atlas.texture = (u8*)calloc(new_atlas.size, 1);
 
-        int strip_width = 1; // Width of the filled strip
+        int strip_width = 3; // Width of the filled strip
         for (int y = 0; y < new_atlas.height; ++y)
         {
             for (int x = 0; x < strip_width; ++x)
@@ -153,7 +155,7 @@ namespace ImDbg
             }
         }
 
-        glm::uvec2 cursor{ strip_width * 2, 0};
+        glm::uvec2 cursor{ strip_width + 1, 0};
         for (u64 i = start_glyph; i < max_glyph_count; i++)
         {
             FT_Load_Char(new_atlas.face, i, FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_TARGET_LIGHT);
@@ -161,7 +163,7 @@ namespace ImDbg
 
             if (cursor.x + bmp->width >= new_atlas.width)
             {
-                cursor.x = 0;
+                cursor.x = strip_width + 1;
                 cursor.y += ((new_atlas.face->size->metrics.height >> 6) + 1);
             }
 
@@ -243,7 +245,7 @@ namespace ImDbg
         new_draw_cmd.indexCount = 1;
         new_draw_cmd.clipRect = CalculateClipRect(position - glm::vec2(size), size * 2, size * 2);
 
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ position, glm::vec2(0.0f), color });
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ position, default_uv, color });
         draw_list.indices.emplace_back(new_draw_cmd.vertexOffset);
 
         context->drawData2d.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
@@ -260,8 +262,8 @@ namespace ImDbg
         new_draw_cmd.indexCount = 2;
         new_draw_cmd.clipRect = CalculateClipRect(glm::min(from, to) - thickness, glm::distance(from, to), thickness);
 
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ from, glm::vec2(0.0f), color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ to, glm::vec2(0.0f), color });
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ from, default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ to, default_uv, color });
         draw_list.indices.emplace_back(new_draw_cmd.vertexOffset);
         draw_list.indices.emplace_back(new_draw_cmd.vertexOffset + 1);
 
@@ -300,7 +302,7 @@ namespace ImDbg
         {
             float theta = start_angle + i * increment;
             glm::vec2 pos = center + radius * glm::vec2(glm::cos(theta), glm::sin(theta));
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ pos, glm::vec2(0.0f), color });
+            draw_list.vertices.emplace_back(ImDbgVertex2D{ pos, default_uv, color });
         }
 
         // Add indices for the arc
@@ -329,14 +331,14 @@ namespace ImDbg
         u32 vertex_offset = draw_list.vertices.size();
 
         // Center vertex
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ center, glm::vec2(0.0f), color });
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ center, default_uv, color });
 
         // Add vertices for the arc
         for (int i = 0; i <= segments; ++i)
         {
             float theta = start_angle + i * increment;
             glm::vec2 pos = center + radius * glm::vec2(glm::cos(theta), glm::sin(theta));
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ pos, glm::vec2(0.0f), color });
+            draw_list.vertices.emplace_back(ImDbgVertex2D{ pos, default_uv, color });
         }
 
         // Add indices for the pie
@@ -371,8 +373,8 @@ namespace ImDbg
             float theta = start_angle + i * increment;
             glm::vec2 inner_pos = center + inner_radius * glm::vec2(glm::cos(theta), glm::sin(theta));
             glm::vec2 outer_pos = center + outer_radius * glm::vec2(glm::cos(theta), glm::sin(theta));
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ inner_pos, glm::vec2(0.0f), color });
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ outer_pos, glm::vec2(0.0f), color });
+            draw_list.vertices.emplace_back(ImDbgVertex2D{ inner_pos, default_uv, color });
+            draw_list.vertices.emplace_back(ImDbgVertex2D{ outer_pos, default_uv, color });
         }
 
         // Add indices for the ring segment
@@ -448,7 +450,7 @@ namespace ImDbg
         u32 vertex_offset = draw_list.vertices.size();
 
         for (const auto& point : points)
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ point, glm::vec2(0.0f), color });
+            draw_list.vertices.emplace_back(ImDbgVertex2D{ point, default_uv, color });
 
         for (i32 i = 0; i < points.size(); ++i)
         {
@@ -483,7 +485,7 @@ namespace ImDbg
         new_draw_cmd.clipRect = CalculateClipRect(min, range.x, range.y);
 
         for (const auto& point : points)
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ point, glm::vec2(0.0f), color });
+            draw_list.vertices.emplace_back(ImDbgVertex2D{ point, default_uv, color });
 
         u32 vertex_offset = draw_list.vertices.size() - points.size();
 
@@ -522,33 +524,33 @@ namespace ImDbg
         for (int i = 0; i <= segments; ++i)
         {
             float theta = i * increment;
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ top_left - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), glm::vec2(0.0f), color });
+            draw_list.vertices.emplace_back(ImDbgVertex2D{ top_left - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), default_uv, color });
         }
         for (int i = 0; i <= segments; ++i)
         {
             float theta = i * increment + glm::half_pi<float>();
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ top_right - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), glm::vec2(0.0f), color });
+            draw_list.vertices.emplace_back(ImDbgVertex2D{ top_right - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), default_uv, color });
         }
         for (int i = 0; i <= segments; ++i)
         {
             float theta = i * increment + glm::pi<float>();
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ bottom_right - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), glm::vec2(0.0f), color });
+            draw_list.vertices.emplace_back(ImDbgVertex2D{ bottom_right - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), default_uv, color });
         }
         for (int i = 0; i <= segments; ++i)
         {
             float theta = i * increment + 3.0f * glm::half_pi<float>();
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ bottom_left - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), glm::vec2(0.0f), color });
+            draw_list.vertices.emplace_back(ImDbgVertex2D{ bottom_left - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), default_uv, color });
         }
 
         // Add vertices for straight edges
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x + radius, min.y), glm::vec2(0.0f), color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x - radius, min.y), glm::vec2(0.0f), color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x, min.y + radius), glm::vec2(0.0f), color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x, max.y - radius), glm::vec2(0.0f), color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x - radius, max.y), glm::vec2(0.0f), color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x + radius, max.y), glm::vec2(0.0f), color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x, max.y - radius), glm::vec2(0.0f), color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x, min.y + radius), glm::vec2(0.0f), color });
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x + radius, min.y), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x - radius, min.y), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x, min.y + radius), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x, max.y - radius), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x - radius, max.y), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x + radius, max.y), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x, max.y - radius), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x, min.y + radius), default_uv, color });
 
         // Add indices for lines
         for (int i = 0; i < segments; ++i)
@@ -602,10 +604,10 @@ namespace ImDbg
 
         // Center rectangle
         u32 vertex_offset = draw_list.vertices.size();
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x + radius, min.y), glm::vec2(0.0f), color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x - radius, min.y), glm::vec2(0.0f), color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x - radius, max.y), glm::vec2(0.0f), color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x + radius, max.y), glm::vec2(0.0f), color });
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x + radius, min.y), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x - radius, min.y), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x - radius, max.y), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x + radius, max.y), default_uv, color });
 
         draw_list.indices.emplace_back(vertex_offset);
         draw_list.indices.emplace_back(vertex_offset + 1);
@@ -617,10 +619,10 @@ namespace ImDbg
 
         // Side rectangles
         vertex_offset = draw_list.vertices.size();
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x, min.y + radius), glm::vec2(0.0f), color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x + radius, min.y + radius), glm::vec2(0.0f), color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x + radius, max.y - radius), glm::vec2(0.0f), color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x, max.y - radius), glm::vec2(0.0f), color });
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x, min.y + radius), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x + radius, min.y + radius), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x + radius, max.y - radius), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x, max.y - radius), default_uv, color });
 
         draw_list.indices.emplace_back(vertex_offset);
         draw_list.indices.emplace_back(vertex_offset + 1);
@@ -631,10 +633,10 @@ namespace ImDbg
         new_draw_cmd.indexCount += 6;
 
         vertex_offset = draw_list.vertices.size();
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x - radius, min.y + radius), glm::vec2(0.0f), color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x, min.y + radius), glm::vec2(0.0f), color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x, max.y - radius), glm::vec2(0.0f), color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x - radius, max.y - radius), glm::vec2(0.0f), color });
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x - radius, min.y + radius), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x, min.y + radius), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x, max.y - radius), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x - radius, max.y - radius), default_uv, color });
 
         draw_list.indices.emplace_back(vertex_offset);
         draw_list.indices.emplace_back(vertex_offset + 1);
@@ -652,7 +654,7 @@ namespace ImDbg
         for (i32 i = 0; i <= segments; ++i)
         {
             float theta = i * increment;
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ top_left - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), glm::vec2(0.0f), color });
+            draw_list.vertices.emplace_back(ImDbgVertex2D{ top_left - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), default_uv, color });
         }
 
         for (i32 i = 0; i < segments; ++i)
@@ -667,7 +669,7 @@ namespace ImDbg
         for (i32 i = 0; i <= segments; ++i)
         {
             float theta = i * increment + glm::half_pi<float>();
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ top_right - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), glm::vec2(0.0f), color });
+            draw_list.vertices.emplace_back(ImDbgVertex2D{ top_right - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), default_uv, color });
         }
 
         for (i32 i = 0; i < segments; ++i)
@@ -682,7 +684,7 @@ namespace ImDbg
         for (int i = 0; i <= segments; ++i)
         {
             float theta = i * increment + glm::pi<float>();
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ bottom_right - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), glm::vec2(0.0f), color });
+            draw_list.vertices.emplace_back(ImDbgVertex2D{ bottom_right - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), default_uv, color });
         }
 
         for (i32 i = 0; i < segments; ++i)
@@ -697,7 +699,7 @@ namespace ImDbg
         for (i32 i = 0; i <= segments; ++i)
         {
             f32 theta = i * increment + 3.0f * glm::half_pi<float>();
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ bottom_left - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), glm::vec2(0.0f), color });
+            draw_list.vertices.emplace_back(ImDbgVertex2D{ bottom_left - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), default_uv, color });
         }
 
         for (i32 i = 0; i < segments; ++i)
