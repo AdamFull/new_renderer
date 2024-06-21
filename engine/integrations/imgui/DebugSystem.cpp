@@ -43,9 +43,15 @@ void CDebugDrawEngineSystem::PreUpdate(f32 dt)
 	//ImDbg::DrawRect2D({ 100, 100 }, { 300, 300 }, "#FFFF00"_color);
 	//ImDbg::DrawFillRect2D({ 100, 100 }, { 300, 300 }, "#FFFF00"_color);
 
+	// Arcs test
+	//ImDbg::DrawArc2D({500, 500}, 100, 0.f, 0.5f * glm::pi<f32>(), "#FFFFFF"_color);
+	//ImDbg::DrawPie2D({ 500, 500 }, 100, 0.f, 0.5f * glm::pi<f32>(), "#FFFFFF"_color);
+	//ImDbg::DrawRingArc2D({ 500, 500 }, 50.f, 100.f, 0.f, 0.5f * glm::pi<f32>(), "#FFFFFF"_color);
+	//ImDbg::DrawRing2D({ 500, 500 }, 50.f, 100.f, "#FFFFFF"_color);
+
 	// Circle test
 	//ImDbg::DrawCircle2D({ 150, 150 }, 110, "#00FF00"_color);
-	ImDbg::DrawFillCircle2D({ 150, 150 }, 100, "#FF0000"_color);
+	//ImDbg::DrawFillCircle2D({ 150, 150 }, 100, "#FF0000"_color);
 
 	// Triangle test
 	//ImDbg::DrawTriangle2D(glm::vec2(300, 150), glm::vec2(500, 150), glm::vec2(500, 300), "#00FF3F"_color);

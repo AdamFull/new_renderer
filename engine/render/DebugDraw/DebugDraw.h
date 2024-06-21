@@ -131,6 +131,8 @@ namespace ImDbg
 	void DrawFillRect2D(const glm::vec2& min, const glm::vec2& max, ImDbgColor color);
 	void DrawArc2D(const glm::vec2& center, f32 radius, f32 start_angle, f32 end_angle, ImDbgColor color, i32 segments = 36, f32 thickness = 1.0f);
 	void DrawPie2D(const glm::vec2& center, f32 radius, f32 start_angle, f32 end_angle, ImDbgColor color, i32 segments = 36);
+	void DrawRingArc2D(const glm::vec2& center, f32 inner_radius, f32 outer_radius, f32 start_angle, f32 end_angle, ImDbgColor color, int segments = 36);
+	void DrawRing2D(const glm::vec2& center, f32 inner_radius, f32 outer_radius, ImDbgColor color, i32 segments = 36);
 	void DrawCircle2D(const glm::vec2& center, f32 radius, ImDbgColor color, f32 thickness = 1.0f);
 	void DrawFillCircle2D(const glm::vec2& center, f32 radius, ImDbgColor color);
 	void DrawTriangle2D(const glm::vec2& p1, const glm::vec2& p2, const glm::vec2& p3, ImDbgColor color, f32 thickness = 1.0f);

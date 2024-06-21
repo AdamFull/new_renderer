@@ -351,6 +351,56 @@ namespace ImDbg
         context->drawData2d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
 
+    void DrawRingArc2D(const glm::vec2& center, f32 inner_radius, f32 outer_radius, f32 start_angle, f32 end_angle, ImDbgColor color, i32 segments)
+    {
+        auto& draw_list = context->drawData2d.drawLists[(u32)ImDbgGeometryType::eTriangles];
+
+        float increment = (end_angle - start_angle) / segments;
+
+        auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
+        new_draw_cmd.vertexOffset = draw_list.vertices.size();
+        new_draw_cmd.indexOffset = draw_list.indices.size();
+        new_draw_cmd.indexCount = segments * 6;  // Each segment forms two triangles
+        new_draw_cmd.clipRect = CalculateClipRect(center - glm::vec2(outer_radius), outer_radius * 2, outer_radius * 2);
+
+        u32 vertex_offset = draw_list.vertices.size();
+
+        // Add vertices for the inner and outer arc
+        for (int i = 0; i <= segments; ++i)
+        {
+            float theta = start_angle + i * increment;
+            glm::vec2 inner_pos = center + inner_radius * glm::vec2(glm::cos(theta), glm::sin(theta));
+            glm::vec2 outer_pos = center + outer_radius * glm::vec2(glm::cos(theta), glm::sin(theta));
+            draw_list.vertices.emplace_back(ImDbgVertex2D{ inner_pos, glm::vec2(0.0f), color });
+            draw_list.vertices.emplace_back(ImDbgVertex2D{ outer_pos, glm::vec2(0.0f), color });
+        }
+
+        // Add indices for the ring segment
+        for (int i = 0; i < segments; ++i)
+        {
+            int inner_idx1 = vertex_offset + i * 2;
+            int outer_idx1 = vertex_offset + i * 2 + 1;
+            int inner_idx2 = vertex_offset + (i + 1) * 2;
+            int outer_idx2 = vertex_offset + (i + 1) * 2 + 1;
+
+            draw_list.indices.emplace_back(inner_idx1);
+            draw_list.indices.emplace_back(outer_idx1);
+            draw_list.indices.emplace_back(inner_idx2);
+
+            draw_list.indices.emplace_back(outer_idx1);
+            draw_list.indices.emplace_back(outer_idx2);
+            draw_list.indices.emplace_back(inner_idx2);
+        }
+
+        context->drawData2d.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
+        context->drawData2d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+    }
+
+    void DrawRing2D(const glm::vec2& center, f32 inner_radius, f32 outer_radius, ImDbgColor color, i32 segments)
+    {
+        DrawRingArc2D(center, inner_radius, outer_radius, 0.f, 2.f * glm::pi<f32>(), color, segments);
+    }
+
     void DrawCircle2D(const glm::vec2& center, f32 radius, ImDbgColor color, f32 thickness)
     {
         DrawArc2D(center, radius, 0.0f, 2.0f * glm::pi<float>(), color, 36, thickness);
