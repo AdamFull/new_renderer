@@ -86,6 +86,61 @@ struct ImDbgContext
 
 namespace ImDbg
 {
+	template<class _Ty>
+	class ArrayProxy
+	{
+	public:
+		constexpr ArrayProxy() noexcept : m_data{ nullptr }, m_size{ 0ull }{}
+		ArrayProxy(_Ty const& val) noexcept : m_data{ &val }, m_size{ 1ull }{}
+		ArrayProxy(u64 size, _Ty const* data) : m_data{ data }, m_size{ size }{}
+
+		template<u64 _Size>
+		ArrayProxy(_Ty const(&arr)[_Size]) noexcept : m_data{ arr }, m_size{ _Size }{}
+
+		ArrayProxy(std::initializer_list<_Ty> const& list) noexcept : m_data{ list.begin() }, m_size{ list.size() }{}
+
+		template <class  _B = _Ty, typename std::enable_if<std::is_const<_B>::value, int>::type = 0>
+		ArrayProxy(std::initializer_list<typename std::remove_const<_Ty>::type> const& list) noexcept : m_data(list.begin()), m_size(static_cast<uint32_t>(list.size())){}
+
+		template <typename _V, typename std::enable_if<std::is_convertible<decltype(std::declval<_V>().data()), _Ty*>::value && std::is_convertible<decltype(std::declval<_V>().size()), std::size_t>::value>::type* = nullptr>
+		ArrayProxy(_V const& v) noexcept : m_data{ v.data() }, m_size{ v.size() }{}
+
+		const _Ty* begin() const noexcept { return m_data; }
+		const _Ty* end() const noexcept { return m_data + m_size; }
+
+		_Ty& operator[](std::size_t pos) noexcept
+		{
+			assert(pos < m_size);
+			return m_data[pos];
+		}
+
+		const _Ty& operator[](std::size_t pos) const noexcept
+		{
+			assert(pos < m_size);
+			return m_data[pos];
+		}
+
+		const _Ty& front() const noexcept
+		{
+			assert(m_size && m_data);
+			return *m_data;
+		}
+
+		const _Ty& back() const noexcept
+		{
+			assert(m_size && m_data);
+			return *(m_data + m_size - 1);
+		}
+
+		bool empty() const noexcept { return (m_size == 0); }
+
+		uint32_t size() const noexcept { return m_size; }
+		_Ty const* data() const noexcept { return m_data; }
+	private:
+		const _Ty* m_data{ nullptr };
+		u64 m_size{ 0ull };
+	};
+
 	constexpr uint8_t hex_to_value(char c) 
 	{
 		return (c >= '0' && c <= '9') ? (c - '0') :
@@ -137,8 +192,8 @@ namespace ImDbg
 	void DrawFillCircle2D(const glm::vec2& center, f32 radius, ImDbgColor color);
 	void DrawTriangle2D(const glm::vec2& p1, const glm::vec2& p2, const glm::vec2& p3, ImDbgColor color, f32 thickness = 1.0f);
 	void DrawFillTriangle2D(const glm::vec2& p1, const glm::vec2& p2, const glm::vec2& p3, ImDbgColor color);
-	void DrawPolygon2D(const utl::vector<glm::vec2>& points, ImDbgColor color, f32 thickness = 1.0f);
-	void DrawFillPolygon2D(const utl::vector<glm::vec2>& points, ImDbgColor color);
+	void DrawPolygon2D(const ArrayProxy<glm::vec2>& points, ImDbgColor color, f32 thickness = 1.0f);
+	void DrawFillPolygon2D(const ArrayProxy<glm::vec2>& points, ImDbgColor color);
 	void DrawRoundedRect2D(const glm::vec2& min, const glm::vec2& max, f32 radius, ImDbgColor color, f32 thickness = 1.0f);
 	void DrawFillRoundedRect2D(const glm::vec2& min, const glm::vec2& max, f32 radius, ImDbgColor color);
 	void DrawText2D(const glm::vec2& position, const std::string& text, ImDbgColor color);

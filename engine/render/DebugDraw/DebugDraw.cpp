@@ -271,13 +271,13 @@ namespace ImDbg
 
     void DrawRect2D(const glm::vec2& min, const glm::vec2& max, ImDbgColor color, f32 thickness)
     {
-        const utl::vector<glm::vec2> points{ min, {max.x, min.y}, max, {min.x, max.y} };
+        const std::array<glm::vec2, 4ull> points{ min, {max.x, min.y}, max, {min.x, max.y} };
         DrawPolygon2D(points, color, thickness);
     }
 
     void DrawFillRect2D(const glm::vec2& min, const glm::vec2& max, ImDbgColor color)
     {
-        const utl::vector<glm::vec2> points{ min, {max.x, min.y}, max, {min.x, max.y} };
+        const std::array<glm::vec2, 4ull> points{ min, {max.x, min.y}, max, {min.x, max.y} };
         DrawFillPolygon2D(points, color);
     }
 
@@ -413,17 +413,17 @@ namespace ImDbg
 
     void DrawTriangle2D(const glm::vec2& p1, const glm::vec2& p2, const glm::vec2& p3, ImDbgColor color, f32 thickness)
     {
-        const utl::vector<glm::vec2> points{ p1, p2, p3 };
+        const std::array<glm::vec2, 3ull> points{ p1, p2, p3 };
         DrawPolygon2D(points, color, thickness);
     }
 
     void DrawFillTriangle2D(const glm::vec2& p1, const glm::vec2& p2, const glm::vec2& p3, ImDbgColor color)
     {
-        const utl::vector<glm::vec2> points{ p1, p2, p3 };
+        const std::array<glm::vec2, 3ull> points{ p1, p2, p3 };
         DrawFillPolygon2D(points, color);
     }
 
-    void DrawPolygon2D(const utl::vector<glm::vec2>& points, ImDbgColor color, f32 thickness)
+    void DrawPolygon2D(const ArrayProxy<glm::vec2>& points, ImDbgColor color, f32 thickness)
     {
         if (points.size() < 2) return;
 
@@ -460,7 +460,7 @@ namespace ImDbg
         context->drawData2d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
 
-    void DrawFillPolygon2D(const utl::vector<glm::vec2>& points, ImDbgColor color)
+    void DrawFillPolygon2D(const ArrayProxy<glm::vec2>& points, ImDbgColor color)
     {
         if (points.size() < 3) return;
 
