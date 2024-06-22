@@ -35,8 +35,6 @@ struct FontAtlas
 
     utl::vector<ImDbgFontGlyph> glyphs{};
 
-    glm::vec2 max_glyph_size{};
-
     u8* texture{ nullptr };
     u32 width{};
     u32 height{};
@@ -131,10 +129,6 @@ namespace ImDbg
                 pen.x = 0;
                 pen.y += (new_atlas.face->size->metrics.height >> 6) + 1;
             }
-
-            // Update max glyph size
-            new_atlas.max_glyph_size.x = std::max(new_atlas.max_glyph_size.x, static_cast<f32>(bmp->width));
-            new_atlas.max_glyph_size.y = std::max(new_atlas.max_glyph_size.y, static_cast<f32>(bmp->rows));
 
             pen.x += bmp->width + 1;
             if (pen.y + bmp->rows > maxy)
@@ -733,13 +727,6 @@ namespace ImDbg
         f32 height{};
         for (char c : text)
         {
-            if (c == '\n') 
-            {
-                cursor.x = position.x;
-                cursor.y += font_atlas.max_glyph_size.y; // Move to the next line
-                continue;
-            }
-
             if (c < start_glyph || c >= max_glyph_count)
                 continue;
 
@@ -879,27 +866,20 @@ namespace ImDbg
     {
         auto& font_atlas = context->font->atlases[0];
         glm::vec2 text_size(0.0f);
-        glm::vec2 max_size(0.0f);
+        float max_width = 0.0f;
 
         for (char c : text)
         {
-            if (c == '\n')
-            {
-                text_size.x = 0.0f;
-                text_size.y += font_atlas.max_glyph_size.y; // Move to the next line
-                continue;
-            }
-
             if (c < start_glyph || c >= max_glyph_count)
                 continue;
 
             const ImDbgFontGlyph& glyph = font_atlas.glyphs[c - start_glyph];
             text_size.x += glyph.advance.x;
-            max_size.x = std::max(max_size.x, text_size.x);
+            max_width = std::max(max_width, text_size.x);
+            text_size.y = std::max(text_size.y, glyph.size.y);
         }
 
-        text_size.y += font_atlas.max_glyph_size.y; // Add the height of the last line
-        return glm::vec2(max_size.x, text_size.y);
+        return glm::vec2(max_width, text_size.y);
     }
 
     ImDbgIO* GetIO()
