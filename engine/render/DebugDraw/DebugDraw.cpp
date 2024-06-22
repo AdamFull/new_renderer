@@ -726,6 +726,8 @@ namespace ImDbg
 
         // TODO: add \n support 
 
+        glm::vec2 min{ position }, max{ position };
+
         u32 vertex_count{ 0u };
         glm::vec2 cursor = position; // Initial position of the text
         f32 height{};
@@ -758,6 +760,13 @@ namespace ImDbg
             draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(x1, y1), glm::vec2(u1, v1), color });
             draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(x0, y1), glm::vec2(u0, v1), color });
 
+            for (i32 i = draw_list.vertices.size() - 4; i < draw_list.vertices.size(); ++i)
+            {
+                const auto& vertex = draw_list.vertices[i];
+                min = glm::min(min, vertex.position);
+                max = glm::max(max, vertex.position);
+            }
+
             // Add indices for the glyph quad
             draw_list.indices.emplace_back(vertex_count);
             draw_list.indices.emplace_back(vertex_count + 1);
@@ -775,7 +784,9 @@ namespace ImDbg
         context->drawData2d.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
         context->drawData2d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
 
-        new_draw_cmd.clipRect = CalculateClipRect(position, cursor.x - position.x, height);
+        auto range = max - min;
+
+        new_draw_cmd.clipRect = CalculateClipRect(min, range.x, range.y);
     }
 
     // For 3d drawings
