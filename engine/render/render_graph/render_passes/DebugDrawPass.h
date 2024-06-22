@@ -18,10 +18,13 @@ namespace engine
 			void Build(const FPassBuildInfo& build_info) override;
 			void Update(f32 dt) override;
 		private:
+			void Render2D();
+			void Render3D();
 			void _Render() override;
 
 			u32 m_lastVertex{}, m_lastIndex{};
-			FRHIHandle m_vertexHandler{};
+			FRHIHandle m_vertexHandler2d{};
+			FRHIHandle m_vertexHandler3d{};
 			FRHIHandle m_fontTexture{};
 		private:
 			utl::hash_map<u32, FRHIHandle> m_shaders{};

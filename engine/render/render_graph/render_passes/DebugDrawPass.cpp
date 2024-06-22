@@ -47,10 +47,10 @@ void CDebugDrawPass::Init(const FRenderPassCreateInfo& pass_ci)
 	vertex_handler_ci.descriptions.emplace_back(FVertexHandlerAttributeDescription{ 8ull, EVertexAttributeType::eTexCoord });
 	vertex_handler_ci.descriptions.emplace_back(FVertexHandlerAttributeDescription{ 4ull, EVertexAttributeType::eColor });
 	vertex_handler_ci.name = "debug_vertices_2d";
-	m_vertexHandler = m_pRenderInterface->CreateVertexHandler("debug_vertices_2d", vertex_handler_ci);
+	m_vertexHandler2d = m_pRenderInterface->CreateVertexHandler("debug_vertices_2d", vertex_handler_ci);
 
 	// Make RHI shader object
-	auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_vertexHandler);
+	auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_vertexHandler2d);
 	{
 		FGraphicsShaderCreateInfo shader_ci{};
 		shader_ci.frontFace = EShaderFrontFace::eCCW;
@@ -99,7 +99,7 @@ void CDebugDrawPass::Update(f32 dt)
 	m_lastVertex = 0;
 	m_lastIndex = 0;
 
-	auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_vertexHandler);
+	auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_vertexHandler2d);
 
 	// Update vertices
 	if (draw_data->totalVertexCount > 0)
@@ -119,6 +119,16 @@ void CDebugDrawPass::Update(f32 dt)
 	}
 }
 
+void CDebugDrawPass::Render2D()
+{
+
+}
+
+void CDebugDrawPass::Render3D()
+{
+
+}
+
 void CDebugDrawPass::_Render()
 {
 	auto& render_context = m_pRenderInterface->GetRenderContext();
@@ -128,7 +138,7 @@ void CDebugDrawPass::_Render()
 	auto* draw_data = ImDbg::GetDrawData2D();
 
 	// At first update vertices if needed
-	auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_vertexHandler);
+	auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_vertexHandler2d);
 
 	// Bind Vertex And Index Buffer:
 	if (draw_data->totalVertexCount > 0)
@@ -189,8 +199,8 @@ void CDebugDrawPass::_Render()
 			//	continue;
 
 			// Apply scissor/clipping rectangle
-			//render_context->SetScissorRect((int32_t)(clip_min.x), (int32_t)(clip_min.y), (uint32_t)(clip_max.x - clip_min.x), (uint32_t)(clip_max.y - clip_min.y));
-			render_context->SetScissorRect(0, 0, resolution.size.x, resolution.size.y);
+			render_context->SetScissorRect((int32_t)(clip_min.x), (int32_t)(clip_min.y), (uint32_t)(clip_max.x - clip_min.x), (uint32_t)(clip_max.y - clip_min.y));
+			//render_context->SetScissorRect(0, 0, resolution.size.x, resolution.size.y);
 
 			FGeometryDrawInfo draw_info{};
 			draw_info.lastVertex = m_lastVertex;
