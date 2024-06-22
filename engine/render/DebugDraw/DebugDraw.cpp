@@ -254,13 +254,16 @@ namespace ImDbg
 
     void DrawLine2D(const glm::vec2& from, const glm::vec2& to, ImDbgColor color, f32 thickness)
     {
+        auto min = glm::min(from, to);
+        auto range = glm::max(from, to) - min;
+
         auto& draw_list = context->drawData2d.drawLists[(u32)ImDbgGeometryType::eLines];
 
         auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
         new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = 2;
-        new_draw_cmd.clipRect = CalculateClipRect(glm::min(from, to) - thickness, glm::distance(from, to), thickness);
+        new_draw_cmd.clipRect = CalculateClipRect(min - thickness, range.x + thickness, range.y + thickness);
 
         draw_list.vertices.emplace_back(ImDbgVertex2D{ from, default_uv, color });
         draw_list.vertices.emplace_back(ImDbgVertex2D{ to, default_uv, color });
@@ -509,7 +512,7 @@ namespace ImDbg
         new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = (segments + 1) * 8;
-        new_draw_cmd.clipRect = CalculateClipRect(min - thickness, max.x - min.x - thickness, max.y - min.y - thickness);
+        new_draw_cmd.clipRect = CalculateClipRect(min - thickness, max.x - min.x + thickness, max.y - min.y + thickness);
 
         // Add vertices for rounded corners
         for (int i = 0; i <= segments; ++i)
@@ -592,6 +595,7 @@ namespace ImDbg
         new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = 0;
+        new_draw_cmd.clipRect = CalculateClipRect(min, max.x - min.x, max.y - min.y);
 
         // Center rectangle
         u32 vertex_count{ 0u };
