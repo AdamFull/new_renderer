@@ -65,7 +65,8 @@ std::unique_ptr<IRenderContext> make_render_context(const FRenderInterfaceCreate
 			VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME,
 			//VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME,
 			VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME,
-			//VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME
+			//VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME,
+			VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME
 		};
 		
 		context_ci.optionalDeviceExtensions = {
@@ -73,7 +74,7 @@ std::unique_ptr<IRenderContext> make_render_context(const FRenderInterfaceCreate
 		};
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-		context_ci.validationState = false;
+		context_ci.validationState = true;
 		context_ci.validationLayers = { "VK_LAYER_KHRONOS_validation", "VK_LAYER_KHRONOS_synchronization2" };
 		context_ci.validationFeatures = vulkan::SYNCHRONIZATION_VALIDATION_FLAG_BIT;
 #endif

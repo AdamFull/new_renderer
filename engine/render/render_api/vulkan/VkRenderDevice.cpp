@@ -1335,6 +1335,8 @@ void CVkRenderDevice::PrepareRequestedLogicalDeviceFeatures()
 			}
 			else if (extension_name == VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME)
 				RequestExtensionFeatures<vk::PhysicalDeviceDiagnosticsConfigFeaturesNV>();
+			else if (extension_name == VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME)
+				RequestExtensionFeatures<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>();
 			//else if(extension_name == VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME)
 			//	RequestExtensionFeatures(vk::PhysicalDeviceIndirect)
 		}
