@@ -375,7 +375,7 @@ void CRenderGraph::GraphUpdateBarriers(u64 pass_index)
 
 			if (last_resource_access.access == ERenderResourceAccessFlagBits::eNone)
 				new_barrier.barrierType = access_flag == ERenderResourceAccessFlagBits::eRead ? new_barrier.barrierType = ERenderResourceBarrierType::eFinal : ERenderResourceBarrierType::eIntermediate;
-			else if (is_ro_access_only_remain(render_resource, pass_index))
+			else if (access_flag != ERenderResourceAccessFlagBits::eWrite && is_ro_access_only_remain(render_resource, pass_index))
 				new_barrier.barrierType = is_backbuffer_resource ? ERenderResourceBarrierType::eIntermediate : ERenderResourceBarrierType::eFinal;
 			else if (is_change_pipeline_ownership)
 				new_barrier.barrierType = ERenderResourceBarrierType::eIntermediate;
