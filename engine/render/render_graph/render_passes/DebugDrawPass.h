@@ -7,6 +7,13 @@ namespace engine
 {
 	namespace render
 	{
+		struct FImDbgDrawRes
+		{
+			u32 lastVertex{}, lastIndex{};
+			FRHIHandle vertexHandler{};
+			FRHIHandle shader{};
+		};
+
 		class CDebugDrawPass : public IRenderPass
 		{
 		public:
@@ -21,13 +28,11 @@ namespace engine
 			void Render2D();
 			void Render3D();
 			void _Render() override;
-
-			u32 m_lastVertex{}, m_lastIndex{};
-			FRHIHandle m_vertexHandler2d{};
-			FRHIHandle m_vertexHandler3d{};
+			
 			FRHIHandle m_fontTexture{};
-		private:
-			utl::hash_map<u32, FRHIHandle> m_shaders{};
+
+			FImDbgDrawRes m_2d{};
+			FImDbgDrawRes m_3d{};
 		};
 	}
 }
