@@ -55,7 +55,10 @@
 		},
 		{ 
 			shader_name: "debug_draw";
-			pattern: "default_pattern";
+			permutations: [
+				{ defines: []; },
+				{ defines: ["DEBUG_3D"]; }
+			];
 		}
 	];
 }

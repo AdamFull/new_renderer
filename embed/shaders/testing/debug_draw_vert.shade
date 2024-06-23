@@ -20,7 +20,12 @@
 
 	code: 
 	"""
-		layout (location = 0) in vec2 inPos;
+		#ifdef DEBUG_3D
+			layout (location = 0) in vec3 inPos;
+		#else
+			layout (location = 0) in vec2 inPos;
+		#endif
+
 		layout (location = 1) in vec4 inColor;
 		layout (location = 2) in vec2 inUV;
 		
@@ -40,15 +45,17 @@
 		
 		void main() 
 		{
-			FCamera camera = GetCamera(frameData.defaultCameraID);
-			mat4 projection = getProjectionMatrix(camera.matricesOffset);
-			mat4 view = getViewMatrix(camera.matricesOffset);
-			//projection[1][1] *= -1.f;
-
 			outUV = inUV;
 			outColor = inColor;
-			//gl_Position = projection * view * vec4(inPos, 1.0);
-			gl_Position = vec4(inPos.xy * constants.scale + constants.translate, 0.0, 1.0);
+
+			#ifdef DEBUG_3D
+				FCamera camera = GetCamera(frameData.defaultCameraID);
+				mat4 viewProjection = getViewProjectionMatrix(camera.matricesOffset);
+
+				gl_Position = viewProjection * vec4(inPos, 1.0);
+			#else
+				gl_Position = vec4(inPos.xy * constants.scale + constants.translate, 0.0, 1.0);
+			#endif
 		}
 	""";
 }
