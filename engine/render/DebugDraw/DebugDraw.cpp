@@ -52,7 +52,6 @@ struct FontImpl
 
 namespace ImDbg
 {
-    u32 ColorToUint32(const glm::vec3& color);
     glm::vec4 CalculateClipRect(const glm::vec2& start, f32 width, f32 height);
     glm::vec2 WorldToScreen(const glm::vec3& pos);
 
@@ -799,7 +798,7 @@ namespace ImDbg
     }
 
     // For 3d drawings
-    void DrawPoint3D(const glm::vec3& position, const glm::vec3& color, float size)
+    void DrawPoint3D(const glm::vec3& position, ImDbgColor color, float size)
     {
         auto& draw_list = context->drawData3d.drawLists[(u32)ImDbgGeometryType::ePoints];
 
@@ -807,16 +806,15 @@ namespace ImDbg
         new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = 1;
-        new_draw_cmd.clipRect = CalculateClipRect(glm::vec3(0.0f), context->io.screenSize.x, context->io.screenSize.y);
 
-        draw_list.vertices.emplace_back(ImDbgVertex3D{ position, glm::vec2(0.0f), ColorToUint32(color) });
+        draw_list.vertices.emplace_back(ImDbgVertex3D{ position, glm::vec2(0.0f), color });
         draw_list.indices.emplace_back(0);
 
         context->drawData3d.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
         context->drawData3d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
 
-    void DrawLine3D(const glm::vec3& from, const glm::vec3& to, const glm::vec3& color, float thickness)
+    void DrawLine3D(const glm::vec3& from, const glm::vec3& to, ImDbgColor color, float thickness)
     {
         auto& draw_list = context->drawData3d.drawLists[(u32)ImDbgGeometryType::eLines];
 
@@ -824,10 +822,9 @@ namespace ImDbg
         new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = 2;
-        new_draw_cmd.clipRect = CalculateClipRect(glm::vec3(0.0f), context->io.screenSize.x, context->io.screenSize.y);
 
-        draw_list.vertices.emplace_back(ImDbgVertex3D{ from, glm::vec2(0.0f), ColorToUint32(color) });
-        draw_list.vertices.emplace_back(ImDbgVertex3D{ to, glm::vec2(0.0f), ColorToUint32(color) });
+        draw_list.vertices.emplace_back(ImDbgVertex3D{ from, glm::vec2(0.0f), color });
+        draw_list.vertices.emplace_back(ImDbgVertex3D{ to, glm::vec2(0.0f), color });
         draw_list.indices.emplace_back(0);
         draw_list.indices.emplace_back(1);
 
@@ -835,7 +832,7 @@ namespace ImDbg
         context->drawData3d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
 
-    void DrawBox3D(const glm::vec3& min, const glm::vec3& max, const glm::vec3& color)
+    void DrawBox3D(const glm::vec3& min, const glm::vec3& max, ImDbgColor color)
     {
         const glm::vec3 verticesPos[8] =
         {
@@ -862,12 +859,9 @@ namespace ImDbg
         new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = 24;
-        new_draw_cmd.clipRect = CalculateClipRect(glm::vec2(0.f), context->io.screenSize.x, context->io.screenSize.y);
-
-        u32 packedColor = ColorToUint32(color);
 
         for (const auto& pos : verticesPos)
-            draw_list.vertices.emplace_back(ImDbgVertex3D{ pos, glm::vec2(0.0f), packedColor });
+            draw_list.vertices.emplace_back(ImDbgVertex3D{ pos, glm::vec2(0.0f), color });
 
         for (const auto& idx : boxIndices)
             draw_list.indices.emplace_back(idx);
@@ -876,12 +870,12 @@ namespace ImDbg
         context->drawData3d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
 
-    void DrawSphere3D(const glm::vec3& center, float radius, const glm::vec3& color)
+    void DrawSphere3D(const glm::vec3& center, float radius, ImDbgColor color)
     {
         
     }
 
-    void DrawText3D(const glm::vec3& position, const std::string& text, const glm::vec3& color)
+    void DrawText3D(const glm::vec3& position, const std::string& text, ImDbgColor color)
     {
         
     }
@@ -947,14 +941,6 @@ namespace ImDbg
     }
 
     // Other functions
-    u32 ColorToUint32(const glm::vec3& color)
-    {
-        uint8_t r = static_cast<uint8_t>(glm::clamp(color.z, 0.0f, 1.0f) * 255.0f);
-        uint8_t g = static_cast<uint8_t>(glm::clamp(color.y, 0.0f, 1.0f) * 255.0f);
-        uint8_t b = static_cast<uint8_t>(glm::clamp(color.x, 0.0f, 1.0f) * 255.0f);
-        return (r << 16) | (g << 8) | b;
-    }
-
     glm::vec4 CalculateClipRect(const glm::vec2& start, f32 width, f32 height)
     {
         return glm::vec4(start.x, start.y, start.x + width, start.y + height);

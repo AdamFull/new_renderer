@@ -72,6 +72,7 @@ namespace engine
 
 				void SetViewport(f32 width, f32 height, bool flip_viewport = false) override;
 				void SetScissorRect(i32 offset_x, i32 offset_y, u32 width, u32 height) override;
+				void SetPrimitiveTopology(EVertexPrimitiveTopology primitivd_topology) override;
 
 				void Draw(EQueueTypeFlagBits queue_type, const FGeometryDrawInfo& draw_info) override;
 				void Draw(EQueueTypeFlagBits queue_type, const FIndirectGeometryDrawInfo& draw_info) override;

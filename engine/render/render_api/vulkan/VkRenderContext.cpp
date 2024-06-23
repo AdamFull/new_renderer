@@ -1451,6 +1451,14 @@ void CVkRenderContext::SetScissorRect(i32 offset_x, i32 offset_y, u32 width, u32
 	current.setScissor(0, 1, &scissor_rect);
 }
 
+void CVkRenderContext::SetPrimitiveTopology(EVertexPrimitiveTopology primitivd_topology)
+{
+	auto& command_buffer = getLastCommandBuffer(EQueueTypeFlagBits::eGraphics);
+	auto& current = command_buffer.get();
+
+	current.setPrimitiveTopology(get_primitive_topology(primitivd_topology));
+}
+
 // TODO: add indirect Draw support
 void CVkRenderContext::Draw(EQueueTypeFlagBits queue_type, const FGeometryDrawInfo& draw_info)
 {

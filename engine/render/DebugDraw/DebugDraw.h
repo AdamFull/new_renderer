@@ -329,11 +329,11 @@ namespace ImDbg
 	void DrawText2D(const glm::vec2& position, const std::string& text, ImDbgColor color);
 
 	// 3d drawings
-	void DrawPoint3D(const glm::vec3& position, const glm::vec3& color, float size = 0.5f);
-	void DrawLine3D(const glm::vec3& from, const glm::vec3& to, const glm::vec3& color, float thickness = 0.01f);
-	void DrawBox3D(const glm::vec3& min, const glm::vec3& max, const glm::vec3& color);
-	void DrawSphere3D(const glm::vec3& center, float radius, const glm::vec3& color);
-	void DrawText3D(const glm::vec3& position, const std::string& text, const glm::vec3& color);
+	void DrawPoint3D(const glm::vec3& position, ImDbgColor color, float size = 0.5f);
+	void DrawLine3D(const glm::vec3& from, const glm::vec3& to, ImDbgColor color, float thickness = 0.01f);
+	void DrawBox3D(const glm::vec3& min, const glm::vec3& max, ImDbgColor color);
+	void DrawSphere3D(const glm::vec3& center, float radius, ImDbgColor color);
+	void DrawText3D(const glm::vec3& position, const std::string& text, ImDbgColor color);
 
     glm::vec2 GetTextSize2D(const std::string& text);
 

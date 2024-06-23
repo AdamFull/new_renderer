@@ -369,6 +369,7 @@ namespace engine
 
 			virtual void SetViewport(f32 width, f32 height, bool flip_viewport) = 0;
 			virtual void SetScissorRect(i32 offset_x, i32 offset_y, u32 width, u32 height) = 0;
+			virtual void SetPrimitiveTopology(EVertexPrimitiveTopology primitivd_topology) = 0;
 
 			virtual void Draw(EQueueTypeFlagBits queue_type, const FGeometryDrawInfo& draw_info) = 0;
 			virtual void Draw(EQueueTypeFlagBits queue_type, const FIndirectGeometryDrawInfo& draw_info) = 0;
