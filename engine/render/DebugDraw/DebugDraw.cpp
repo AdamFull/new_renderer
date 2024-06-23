@@ -35,6 +35,8 @@ struct FontAtlas
 
     utl::vector<ImDbgFontGlyph> glyphs{};
 
+    f32 lineHeight{};
+
     u8* texture{ nullptr };
     u32 width{};
     u32 height{};
@@ -134,6 +136,9 @@ namespace ImDbg
             if (pen.y + bmp->rows > maxy)
                 maxy = pen.y + bmp->rows;
         }
+
+        // Get scaled line height
+        new_atlas.lineHeight = new_atlas.face->size->metrics.height >> 6;
 
         // Adjust the texture height to the exact height required
         new_atlas.height = 1;
@@ -730,9 +735,14 @@ namespace ImDbg
 
         u32 vertex_count{ 0u };
         glm::vec2 cursor = position; // Initial position of the text
-        f32 height{};
         for (char c : text)
         {
+            if (c == '\n')
+            {
+                cursor.x = position.x;
+                cursor.y -= font_atlas.lineHeight;
+            }
+
             if (c < start_glyph || c >= max_glyph_count)
                 continue;
 
@@ -778,7 +788,6 @@ namespace ImDbg
             vertex_count += 4u;
 
             cursor.x += glyph.advance.x;
-            height = std::max(glyph.size.y, height);
         }
 
         context->drawData2d.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
@@ -880,21 +889,46 @@ namespace ImDbg
     glm::vec2 GetTextSize2D(const std::string& text)
     {
         auto& font_atlas = context->font->atlases[0];
-        glm::vec2 text_size(0.0f);
-        float max_width = 0.0f;
+
+        glm::vec2 min{}, max{};
+        glm::vec2 cursor{};
 
         for (char c : text)
         {
+            if (c == '\n')
+            {
+                cursor.x = 0.f;
+                cursor.y -= font_atlas.lineHeight;
+            }
+
             if (c < start_glyph || c >= max_glyph_count)
                 continue;
 
             const ImDbgFontGlyph& glyph = font_atlas.glyphs[c - start_glyph];
-            text_size.x += glyph.advance.x;
-            max_width = std::max(max_width, text_size.x);
-            text_size.y = std::max(text_size.y, glyph.size.y);
+
+            if (glyph.size.x == 0.f || glyph.size.y == 0.f)
+            {
+                cursor.x += glyph.advance.x;
+                continue;
+            }
+
+            float x0 = cursor.x + glyph.corners.x;
+            float y0 = cursor.y + glyph.corners.y;
+            float x1 = x0 + glyph.size.x;
+            float y1 = y0 - glyph.size.y;
+
+            const std::array<glm::vec2, 4ull> vertices{ glm::vec2(x0, y0), glm::vec2(x1, y0), glm::vec2(x1, y1), glm::vec2(x0, y1) };
+
+            for (const auto& vertex : vertices)
+            {
+                min = glm::min(min, vertex);
+                max = glm::max(max, vertex);
+            }
+
+            cursor.x += glyph.advance.x;
         }
 
-        return glm::vec2(max_width, text_size.y);
+        return max - min;
     }
 
     ImDbgIO* GetIO()
