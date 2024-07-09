@@ -1,4 +1,5 @@
 #pragma once
+#include <thread>
 
 #include <vma/vk_mem_alloc.hpp>
 

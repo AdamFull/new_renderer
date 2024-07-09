@@ -5,6 +5,7 @@
 #include <engine/interface/filesystem/VirtualFileSystemInterface.h>
 
 #include <container/hash_map.h>
+#include <mutex>
 
 namespace engine
 {

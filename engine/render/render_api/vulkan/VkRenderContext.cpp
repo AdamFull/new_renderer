@@ -4,6 +4,7 @@
 #include <logger/logger.h>
 
 #include <numeric>
+#include <type_traits>
 #include <unordered_set>
 
 using namespace engine;

@@ -86,7 +86,7 @@ void CDebugDrawEngineSystem::PreUpdate(f32 dt)
     // Bouncing text initial position and velocity
     static glm::vec2 text_position = glm::vec2(400, 300);
     static glm::vec2 text_velocity = glm::vec2(2.0f, 3.0f);
-    static std::string bouncing_text = "Bouncing Text";
+    static std::string bouncing_text = "Bouncing\nText";
 
 	using namespace ImDbg;
 

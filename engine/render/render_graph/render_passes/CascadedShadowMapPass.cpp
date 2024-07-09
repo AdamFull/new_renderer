@@ -48,6 +48,7 @@ void CCascadedShadowMapPass::_Render()
 
 	auto& render_context = m_pRenderInterface->GetRenderContext();
 	render_context->SetScissorRect(0, 0, m_renderArea.size.x, m_renderArea.size.y);
+	render_context->SetPrimitiveTopology(EVertexPrimitiveTopology::eTriangleList);
 
 	IVertexHandler* last_vbo{ nullptr };
 

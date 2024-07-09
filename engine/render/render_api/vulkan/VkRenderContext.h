@@ -5,6 +5,7 @@
 #include <engine/interface/ResourceContainer.h>
 #include <engine/interface/render/RenderInterface.h>
 #include <container/unique_queue.h>
+#include <thread>
 
 namespace engine
 {

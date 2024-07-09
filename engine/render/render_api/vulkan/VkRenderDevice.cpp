@@ -188,7 +188,7 @@ FRenderApiErrorInfo CVkRenderDevice::CreateCommandBuffer(const FVkCommandBufferC
 
 	vk::Result res = m_logicalDevice.handle.allocateCommandBuffers(&command_buffer_ai, command_buffer.handles.data());
 #ifndef BUILD_WITHOUT_DEBUGGIND
-	for(u64 idx = 0ull; idx < command_buffer.handles.size(); ++idx)
+	for(i32 idx = 0; idx < command_buffer.handles.size(); ++idx)
 		DebugSetObjectName(command_buffer.get(), std::format("{} #{}", command_buffer_ci.name, idx));
 #endif
 
@@ -541,7 +541,7 @@ FRenderApiErrorInfo CVkRenderDevice::CreatePipeline(const FVkGraphicsPipelineCre
 	depth_stencil_state.depthBoundsTestEnable = false;
 	depth_stencil_state.stencilTestEnable = false; // TODO: implement stencil test
 
-	utl::vector<vk::DynamicState> dynamic_states{ vk::DynamicState::eViewport, vk::DynamicState::eScissor };
+	utl::vector<vk::DynamicState> dynamic_states{ vk::DynamicState::eViewport, vk::DynamicState::eScissor, vk::DynamicState::ePrimitiveTopology };
 
 	vk::PipelineDynamicStateCreateInfo dynamic_state{};
 	dynamic_state.pDynamicStates = dynamic_states.data();

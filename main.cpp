@@ -7,7 +7,6 @@
 #include <taskflow/taskflow.hpp>
 
 #include <parsing/argparse.h>
-#include <reactive/command_processor.h>
 #include <plugin/plugin_manager.h>
 #include <container/hash_map.h>
 
@@ -286,20 +285,6 @@ static int mimalloc_version = mi_version();
 
 using namespace engine;
 
-void on_print(const utl::reactive::detail::command_arguments_t& args)
-{
-    std::cout << "printing:";
-
-    for (const auto& [name, arg] : args)
-        std::cout << arg.as<std::string>();
-    std::cout << std::endl;
-}
-
-void on_terminate(const utl::reactive::detail::command_arguments_t& args)
-{
-    terminate();
-}
-
 int main(int argc, char** argv)
 {
     std::cout << "Mimalloc version:" << mimalloc_version << std::endl;
@@ -307,25 +292,6 @@ int main(int argc, char** argv)
     utl::parsing::argument_parser argparse{};
 
     argparse.parse_arguments(argc, argv);
-
-    utl::reactive::command_processor processor{};
-
-    processor
-        .register_processor("system")
-            .register_processor("io")
-                .register_command("print")
-                    .set_executor(&on_print)
-                    .add_argument("t")
-                        .set_description("Text to print.")
-                        .set_default("Hello world")
-                    .end()
-                .end()
-            .end()
-        .register_command("terminate").set_executor(&on_terminate)
-        .end();
-    
-    //processor.execute("system.io.print(t:\"sosu pizdu\")");
-    //processor.execute("system.terminate()");
 
     log_add_file_output("engine_log.log");
     log_add_cout_output();
