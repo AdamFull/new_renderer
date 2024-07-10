@@ -100,7 +100,7 @@ template<class _Ty, class ..._Args>
 std::string create_object_unique_name(const char* fmt, const _Ty& handle, _Args&&... args)
 {
 	auto object_handle = reinterpret_cast<u64>(static_cast<_Ty::CType>(handle));
-	return std::vformat(fmt, std::make_format_args(object_handle, std::forward<_Args>(args)...));
+	return std::vformat(fmt, std::make_format_args(object_handle, args...));
 }
 
 CVkRenderContext::~CVkRenderContext()
