@@ -1,6 +1,8 @@
 #include "GPUVector.h"
 #include "BufferObject.h"
 
+#include <memory.h>
+
 using namespace engine::render;
 
 CGPUVector::CGPUVector(IRenderInterface* render_interface)
@@ -10,6 +12,9 @@ CGPUVector::CGPUVector(IRenderInterface* render_interface)
 
 void CGPUVector::Upload()
 {
+	utl::medium_temp_pool temp_pool;
+	utl::medium_temp_allocator_t<FBufferUploadRegion> allocator(temp_pool);
+
 	if (!m_vUploadRanges.empty())
 	{
 		// Buffer size is too small, need to resize it
@@ -47,7 +52,7 @@ void CGPUVector::Upload()
 		// Create upload infos
 		u64 src_offset{ 0ull };
 		utl::vector<u8> upload_data{};
-		utl::vector<FBufferUploadRegion> upload_regions{};
+		std::vector<FBufferUploadRegion, utl::medium_temp_allocator_t<FBufferUploadRegion>> upload_regions{ allocator };
 		for (const auto& range : merged_ranges)
 		{
 			auto& region = upload_regions.emplace_back();

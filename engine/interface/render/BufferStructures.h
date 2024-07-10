@@ -3,6 +3,7 @@
 #include "BaseStructures.h"
 #include "BaseEnumerators.h"
 #include <utils/hash.h>
+#include <span>
 
 namespace engine
 {
@@ -44,7 +45,7 @@ namespace engine
 		{
 			FAPIHandle bufferId{};
 			utl::vector<u8> data{};
-			utl::vector<FBufferUploadRegion> regions{};
+			std::span<FBufferUploadRegion> regions{};
 		};
 
 		struct FBufferCreateInfo
@@ -69,7 +70,7 @@ namespace engine
 
 			virtual void Create(const std::string& name, const FBufferCreateInfo& create_info) = 0;
 			virtual void Resize(const std::string& name, const FBufferCreateInfo& create_info) = 0;
-			virtual void Upload(utl::vector<u8>&& data, const utl::vector<FBufferUploadRegion>& regions) = 0;
+			virtual void Upload(utl::vector<u8>&& data, const std::span<FBufferUploadRegion>& regions) = 0;
 
 			virtual void Map() = 0;
 			virtual void Unmap() = 0;
