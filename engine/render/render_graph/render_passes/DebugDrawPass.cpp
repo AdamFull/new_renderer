@@ -48,38 +48,17 @@ void CDebugDrawPass::Init(const FRenderPassCreateInfo& pass_ci)
 		vertex_handler_ci.descriptions.emplace_back(FVertexHandlerAttributeDescription{ 8ull, EVertexAttributeType::eTexCoord });
 		vertex_handler_ci.descriptions.emplace_back(FVertexHandlerAttributeDescription{ 4ull, EVertexAttributeType::eColor });
 		vertex_handler_ci.name = "debug_vertices_2d";
-		m_2d.vertexHandler = m_pRenderInterface->CreateVertexHandler("debug_vertices_2d", vertex_handler_ci);
+		m_vertexHandler = m_pRenderInterface->CreateVertexHandler("debug_vertices_2d", vertex_handler_ci);
 
-		auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_2d.vertexHandler);
+		auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_vertexHandler);
 	
 		FGraphicsShaderCreateInfo shader_ci{};
 		shader_ci.frontFace = EShaderFrontFace::eCCW;
 		shader_ci.cullMode = EShaderCullModeFlagBits::eNone;
 		shader_ci.primitiveTopology = EVertexPrimitiveTopology::eTriangleList;
 
-		m_2d.shader = MakeShader(pass_ci.shader, shader_ci, vertex_handler.get());
-		InitShaderResources(m_2d.shader);
-	}
-
-	// Init 3d part
-	{
-		FVertexHandlerCreateInfo vertex_handler_ci{};
-		vertex_handler_ci.indexSize = sizeof(u16);
-		vertex_handler_ci.descriptions.emplace_back(FVertexHandlerAttributeDescription{ 12ull, EVertexAttributeType::ePosition });
-		vertex_handler_ci.descriptions.emplace_back(FVertexHandlerAttributeDescription{ 8ull, EVertexAttributeType::eTexCoord });
-		vertex_handler_ci.descriptions.emplace_back(FVertexHandlerAttributeDescription{ 4ull, EVertexAttributeType::eColor });
-		vertex_handler_ci.name = "debug_vertices_3d";
-		m_3d.vertexHandler = m_pRenderInterface->CreateVertexHandler("debug_vertices_3d", vertex_handler_ci);
-
-		auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_3d.vertexHandler);
-
-		FGraphicsShaderCreateInfo shader_ci{};
-		shader_ci.frontFace = EShaderFrontFace::eCCW;
-		shader_ci.cullMode = EShaderCullModeFlagBits::eNone;
-		shader_ci.primitiveTopology = EVertexPrimitiveTopology::eTriangleList;
-
-		m_3d.shader = MakeShader(pass_ci.shader + ":DEBUG_3D", shader_ci, vertex_handler.get());
-		InitShaderResources(m_3d.shader);
+		m_shader = MakeShader(pass_ci.shader, shader_ci, vertex_handler.get());
+		InitShaderResources(m_shader);
 	}
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -98,47 +77,21 @@ void CDebugDrawPass::Update(f32 dt)
 	{
 		auto* draw_data = ImDbg::GetDrawData2D();
 
-		m_2d.lastVertex = 0;
-		m_2d.lastIndex = 0;
+		m_lastVertex = 0;
+		m_lastIndex = 0;
 
 		// Update vertices
 		if (draw_data->totalVertexCount > 0)
 		{
-			auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_2d.vertexHandler);
+			auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_vertexHandler);
 			for (const auto& draw_list : draw_data->drawLists)
 			{
 				// Upload vertex/index data into a single contiguous GPU buffer
 				vertex_handler->AddVertices(draw_list.vertices.data(), draw_list.vertices.size(), sizeof(ImDbgVertex2D));
 				vertex_handler->AddIndices(draw_list.indices.data(), draw_list.indices.size(), sizeof(ImDbgIndex));
 
-				m_2d.lastVertex += draw_list.vertices.size();
-				m_2d.lastIndex += draw_list.indices.size();
-			}
-
-			// Upload vertices
-			vertex_handler->Allocate();
-		}
-	}
-
-	// Update 3d
-	{
-		auto* draw_data = ImDbg::GetDrawData2D();
-
-		m_3d.lastVertex = 0;
-		m_3d.lastIndex = 0;
-
-		// Update vertices
-		if (draw_data->totalVertexCount > 0)
-		{
-			auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_3d.vertexHandler);
-			for (const auto& draw_list : draw_data->drawLists)
-			{
-				// Upload vertex/index data into a single contiguous GPU buffer
-				vertex_handler->AddVertices(draw_list.vertices.data(), draw_list.vertices.size(), sizeof(ImDbgVertex2D));
-				vertex_handler->AddIndices(draw_list.indices.data(), draw_list.indices.size(), sizeof(ImDbgIndex));
-
-				m_3d.lastVertex += draw_list.vertices.size();
-				m_3d.lastIndex += draw_list.indices.size();
+				m_lastVertex += draw_list.vertices.size();
+				m_lastIndex += draw_list.indices.size();
 			}
 
 			// Upload vertices
@@ -168,8 +121,8 @@ void CDebugDrawPass::_Render()
 		auto* draw_data = ImDbg::GetDrawData2D();
 
 		// At first update vertices if needed
-		auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_2d.vertexHandler);
-		auto& shader = m_pRenderInterface->GetShaderObject(m_2d.shader);
+		auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_vertexHandler);
+		auto& shader = m_pRenderInterface->GetShaderObject(m_shader);
 
 		// Bind Vertex And Index Buffer:
 		if (draw_data->totalVertexCount > 0)
@@ -246,89 +199,8 @@ void CDebugDrawPass::_Render()
 				//render_context->SetScissorRect(0, 0, resolution.size.x, resolution.size.y);
 
 				FGeometryDrawInfo draw_info{};
-				draw_info.lastVertex = m_2d.lastVertex;
-				draw_info.lastIndex = m_2d.lastIndex;
-
-				auto& range = draw_info.ranges.emplace_back();
-				range.beginIndex = command.indexOffset + global_idx_offset;
-				range.indexCount = command.indexCount;
-				range.beginVertex = command.vertexOffset + global_vtx_offset;
-
-				// Draw
-				render_context->Draw(m_queue, draw_info);
-			}
-
-			global_idx_offset += draw_list.indices.size();
-			global_vtx_offset += draw_list.vertices.size();
-		}
-	}
-
-	{
-		auto* draw_data = ImDbg::GetDrawData3D();
-
-		// At first update vertices if needed
-		auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_3d.vertexHandler);
-		auto& shader = m_pRenderInterface->GetShaderObject(m_3d.shader);
-
-		// Bind Vertex And Index Buffer:
-		if (draw_data->totalVertexCount > 0)
-			vertex_handler->Bind(m_queue);
-
-		// Setup viewport:
-		render_context->SetViewport(resolution.size.x, resolution.size.y, false);
-
-		u32 global_idx_offset{ 0u };
-		u32 global_vtx_offset{ 0u };
-
-		for (const auto& draw_list : draw_data->drawLists)
-		{
-			const auto& draw_commands = draw_list.drawCommands;
-			if (draw_commands.empty())
-				continue;
-
-			shader->Bind(m_queue);
-
-			EVertexPrimitiveTopology topology{ EVertexPrimitiveTopology::eLineList };
-			if (draw_list.type == ImDbgGeometryType::ePoints)
-				topology = EVertexPrimitiveTopology::ePointList;
-			else if (draw_list.type == ImDbgGeometryType::eLines)
-				topology = EVertexPrimitiveTopology::eLineList;
-			else if (draw_list.type == ImDbgGeometryType::eTriangles)
-				topology = EVertexPrimitiveTopology::eTriangleList;
-
-			render_context->SetPrimitiveTopology(EVertexPrimitiveTopology::eTriangleList);
-
-			auto& constants = shader->GetConstantBlock(utl::fnv1a_64_hash_cstr("constants"));
-			if (constants)
-			{
-				glm::vec2 scale;
-				scale.x = 2.f / io->screenSize.x;
-				scale.y = 2.f / io->screenSize.y;
-
-				constants->Set(utl::fnv1a_64_hash_cstr("scale"), scale);
-
-				glm::vec2 translate;
-				translate.x = -1.0f - 0.f * scale.x;
-				translate.y = -1.0f - 0.f * scale.y;
-
-				constants->Set(utl::fnv1a_64_hash_cstr("translate"), translate);
-
-				shader->FlushConstants(m_queue);
-			}
-
-			shader->BindTexture(utl::fnv1a_64_hash_cstr("font_sampler"), m_pRenderInterface->GetTextureObject(m_fontTexture)->Handle());
-
-			// TODO: add font texture support
-			shader->FlushDescriptors();
-			shader->BindResources(m_queue);
-
-			for (const auto& command : draw_commands)
-			{
-				render_context->SetScissorRect(0, 0, resolution.size.x, resolution.size.y);
-
-				FGeometryDrawInfo draw_info{};
-				draw_info.lastVertex = m_3d.lastVertex;
-				draw_info.lastIndex = m_3d.lastIndex;
+				draw_info.lastVertex = m_lastVertex;
+				draw_info.lastIndex = m_lastIndex;
 
 				auto& range = draw_info.ranges.emplace_back();
 				range.beginIndex = command.indexOffset + global_idx_offset;
