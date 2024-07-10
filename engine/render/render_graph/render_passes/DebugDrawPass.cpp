@@ -44,7 +44,7 @@ void CDebugDrawPass::Init(const FRenderPassCreateInfo& pass_ci)
 	{
 		FVertexHandlerCreateInfo vertex_handler_ci{};
 		vertex_handler_ci.indexSize = sizeof(u16);
-		vertex_handler_ci.descriptions.emplace_back(FVertexHandlerAttributeDescription{ 8ull, EVertexAttributeType::ePosition });
+		vertex_handler_ci.descriptions.emplace_back(FVertexHandlerAttributeDescription{ 12ull, EVertexAttributeType::ePosition });
 		vertex_handler_ci.descriptions.emplace_back(FVertexHandlerAttributeDescription{ 8ull, EVertexAttributeType::eTexCoord });
 		vertex_handler_ci.descriptions.emplace_back(FVertexHandlerAttributeDescription{ 4ull, EVertexAttributeType::eColor });
 		vertex_handler_ci.name = "debug_vertices_2d";
@@ -73,30 +73,27 @@ void CDebugDrawPass::Build(const FPassBuildInfo& build_info)
 
 void CDebugDrawPass::Update(f32 dt)
 {
-	// Update 2d
+	auto* draw_data = ImDbg::GetDrawData();
+
+	m_lastVertex = 0;
+	m_lastIndex = 0;
+
+	// Update vertices
+	if (draw_data->totalVertexCount > 0)
 	{
-		auto* draw_data = ImDbg::GetDrawData2D();
-
-		m_lastVertex = 0;
-		m_lastIndex = 0;
-
-		// Update vertices
-		if (draw_data->totalVertexCount > 0)
+		auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_vertexHandler);
+		for (const auto& draw_list : draw_data->drawLists)
 		{
-			auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_vertexHandler);
-			for (const auto& draw_list : draw_data->drawLists)
-			{
-				// Upload vertex/index data into a single contiguous GPU buffer
-				vertex_handler->AddVertices(draw_list.vertices.data(), draw_list.vertices.size(), sizeof(ImDbgVertex2D));
-				vertex_handler->AddIndices(draw_list.indices.data(), draw_list.indices.size(), sizeof(ImDbgIndex));
+			// Upload vertex/index data into a single contiguous GPU buffer
+			vertex_handler->AddVertices(draw_list.vertices.data(), draw_list.vertices.size(), sizeof(ImDbgVertex));
+			vertex_handler->AddIndices(draw_list.indices.data(), draw_list.indices.size(), sizeof(ImDbgIndex));
 
-				m_lastVertex += draw_list.vertices.size();
-				m_lastIndex += draw_list.indices.size();
-			}
-
-			// Upload vertices
-			vertex_handler->Allocate();
+			m_lastVertex += draw_list.vertices.size();
+			m_lastIndex += draw_list.indices.size();
 		}
+
+		// Upload vertices
+		vertex_handler->Allocate();
 	}
 }
 
@@ -118,7 +115,7 @@ void CDebugDrawPass::_Render()
 	ImDbgIO* io = ImDbg::GetIO();
 
 	{
-		auto* draw_data = ImDbg::GetDrawData2D();
+		auto* draw_data = ImDbg::GetDrawData();
 
 		// At first update vertices if needed
 		auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_vertexHandler);

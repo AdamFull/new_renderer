@@ -63,10 +63,10 @@ namespace ImDbg
 
         for (const auto& type : geometry_types)
         {
-            auto& new_list2d = context->drawData2d.drawLists.emplace_back();
+            auto& new_list2d = context->drawData.drawLists.emplace_back();
             new_list2d.type = type;
 
-            auto& new_list3d = context->drawData3d.drawLists.emplace_back();
+            auto& new_list3d = context->drawData.drawLists.emplace_back();
             new_list3d.type = type;
         }
 
@@ -212,25 +212,25 @@ namespace ImDbg
 
     void NewFrame()
     {
-        for (auto& list : context->drawData2d.drawLists)
+        for (auto& list : context->drawData.drawLists)
         {
             list.vertices.clear();
             list.indices.clear();
             list.drawCommands.clear();
         }
 
-        context->drawData2d.totalIndexCount = 0;
-        context->drawData2d.totalVertexCount = 0;
+        context->drawData.totalIndexCount = 0;
+        context->drawData.totalVertexCount = 0;
 
-        for (auto& list : context->drawData3d.drawLists)
+        for (auto& list : context->drawData.drawLists)
         {
             list.vertices.clear();
             list.indices.clear();
             list.drawCommands.clear();
         }
 
-        context->drawData3d.totalIndexCount = 0;
-        context->drawData3d.totalVertexCount = 0;
+        context->drawData.totalIndexCount = 0;
+        context->drawData.totalVertexCount = 0;
     }
 
     void EndFrame()
@@ -241,19 +241,20 @@ namespace ImDbg
     // For 2d drawings
     void DrawPoint2D(const glm::vec2& position, ImDbgColor color, f32 size)
     {
-        auto& draw_list = context->drawData2d.drawLists[(u32)ImDbgGeometryType::ePoints];
+        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::ePoints];
 
         auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
+        new_draw_cmd.type = ImDbgDrawType::e2D;
         new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = 1;
         new_draw_cmd.clipRect = CalculateClipRect(position - glm::vec2(size), size * 2, size * 2);
 
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ position, default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(position, 0.f), default_uv, color });
         draw_list.indices.emplace_back(0);
 
-        context->drawData2d.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
-        context->drawData2d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+        context->drawData.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
+        context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
 
     void DrawLine2D(const glm::vec2& from, const glm::vec2& to, ImDbgColor color, f32 thickness)
@@ -261,21 +262,22 @@ namespace ImDbg
         auto min = glm::min(from, to);
         auto range = glm::max(from, to) - min;
 
-        auto& draw_list = context->drawData2d.drawLists[(u32)ImDbgGeometryType::eLines];
+        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eLines];
 
         auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
+        new_draw_cmd.type = ImDbgDrawType::e2D;
         new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = 2;
         new_draw_cmd.clipRect = CalculateClipRect(min - thickness, range.x + thickness, range.y + thickness);
 
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ from, default_uv, color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ to, default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(from, 0.f), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(to, 0.f), default_uv, color });
         draw_list.indices.emplace_back(0);
         draw_list.indices.emplace_back(1);
 
-        context->drawData2d.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
-        context->drawData2d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+        context->drawData.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
+        context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
 
     void DrawRect2D(const glm::vec2& min, const glm::vec2& max, ImDbgColor color, f32 thickness)
@@ -292,11 +294,12 @@ namespace ImDbg
 
     void DrawArc2D(const glm::vec2& center, f32 radius, f32 start_angle, f32 end_angle, ImDbgColor color, i32 segments, f32 thickness)
     {
-        auto& draw_list = context->drawData2d.drawLists[(u32)ImDbgGeometryType::eLines];
+        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eLines];
 
         float increment = (end_angle - start_angle) / segments;
 
         auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
+        new_draw_cmd.type = ImDbgDrawType::e2D;
         new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = segments * 2;
@@ -307,7 +310,7 @@ namespace ImDbg
         {
             float theta = start_angle + i * increment;
             glm::vec2 pos = center + radius * glm::vec2(glm::cos(theta), glm::sin(theta));
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ pos, default_uv, color });
+            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(pos, 0.f), default_uv, color });
         }
 
         // Add indices for the arc
@@ -317,31 +320,32 @@ namespace ImDbg
             draw_list.indices.emplace_back(i + 1);
         }
 
-        context->drawData2d.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
-        context->drawData2d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+        context->drawData.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
+        context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
 
     void DrawPie2D(const glm::vec2& center, f32 radius, f32 start_angle, f32 end_angle, ImDbgColor color, i32 segments)
     {
-        auto& draw_list = context->drawData2d.drawLists[(u32)ImDbgGeometryType::eTriangles];
+        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eTriangles];
 
         float increment = (end_angle - start_angle) / segments;
 
         auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
+        new_draw_cmd.type = ImDbgDrawType::e2D;
         new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = segments * 3;  // Each segment forms a triangle
         new_draw_cmd.clipRect = CalculateClipRect(center - glm::vec2(radius), radius * 2, radius * 2);
 
         // Center vertex
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ center, default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(center, 0.f), default_uv, color });
 
         // Add vertices for the arc
         for (int i = 0; i <= segments; ++i)
         {
             float theta = start_angle + i * increment;
             glm::vec2 pos = center + radius * glm::vec2(glm::cos(theta), glm::sin(theta));
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ pos, default_uv, color });
+            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(pos, 0.f), default_uv, color });
         }
 
         // Add indices for the pie
@@ -352,17 +356,18 @@ namespace ImDbg
             draw_list.indices.emplace_back(i + 2);
         }
 
-        context->drawData2d.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
-        context->drawData2d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+        context->drawData.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
+        context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
 
     void DrawRingArc2D(const glm::vec2& center, f32 inner_radius, f32 outer_radius, f32 start_angle, f32 end_angle, ImDbgColor color, i32 segments)
     {
-        auto& draw_list = context->drawData2d.drawLists[(u32)ImDbgGeometryType::eTriangles];
+        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eTriangles];
 
         float increment = (end_angle - start_angle) / segments;
 
         auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
+        new_draw_cmd.type = ImDbgDrawType::e2D;
         new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = segments * 6;  // Each segment forms two triangles
@@ -374,8 +379,8 @@ namespace ImDbg
             float theta = start_angle + i * increment;
             glm::vec2 inner_pos = center + inner_radius * glm::vec2(glm::cos(theta), glm::sin(theta));
             glm::vec2 outer_pos = center + outer_radius * glm::vec2(glm::cos(theta), glm::sin(theta));
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ inner_pos, default_uv, color });
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ outer_pos, default_uv, color });
+            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(inner_pos, 0.f), default_uv, color });
+            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(outer_pos, 0.f), default_uv, color });
         }
 
         // Add indices for the ring segment
@@ -395,8 +400,8 @@ namespace ImDbg
             draw_list.indices.emplace_back(inner_idx2);
         }
 
-        context->drawData2d.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
-        context->drawData2d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+        context->drawData.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
+        context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
 
     void DrawRing2D(const glm::vec2& center, f32 inner_radius, f32 outer_radius, ImDbgColor color, i32 segments)
@@ -440,16 +445,17 @@ namespace ImDbg
 
         glm::vec2 range = max - min;
 
-        auto& draw_list = context->drawData2d.drawLists[(u32)ImDbgGeometryType::eLines];
+        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eLines];
 
         auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
+        new_draw_cmd.type = ImDbgDrawType::e2D;
         new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = points.size() * 2;
         new_draw_cmd.clipRect = CalculateClipRect(min - thickness, range.x + thickness, range.y + thickness);
 
         for (const auto& point : points)
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ point, default_uv, color });
+            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(point, 0.f), default_uv, color });
 
         for (i32 i = 0; i < points.size(); ++i)
         {
@@ -457,8 +463,8 @@ namespace ImDbg
             draw_list.indices.emplace_back(((i + 1) % points.size()));
         }
 
-        context->drawData2d.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
-        context->drawData2d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+        context->drawData.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
+        context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
 
     void DrawFillPolygon2D(const ArrayProxy<glm::vec2>& points, ImDbgColor color)
@@ -475,16 +481,17 @@ namespace ImDbg
 
         glm::vec2 range = max - min;
 
-        auto& draw_list = context->drawData2d.drawLists[(u32)ImDbgGeometryType::eTriangles];
+        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eTriangles];
 
         auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
+        new_draw_cmd.type = ImDbgDrawType::e2D;
         new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = (points.size() - 2) * 3;
         new_draw_cmd.clipRect = CalculateClipRect(min, range.x, range.y);
 
         for (const auto& point : points)
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ point, default_uv, color });
+            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(point, 0.f), default_uv, color });
 
         for (i32 i = 0; i < points.size() - 1; ++i)
         {
@@ -496,13 +503,13 @@ namespace ImDbg
             }
         }
 
-        context->drawData2d.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
-        context->drawData2d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+        context->drawData.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
+        context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
 
     void DrawRoundedRect2D(const glm::vec2& min, const glm::vec2& max, f32 radius, ImDbgColor color, f32 thickness)
     {
-        auto& draw_list = context->drawData2d.drawLists[(u32)ImDbgGeometryType::eLines];
+        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eLines];
 
         const int segments = 8;
         float increment = glm::half_pi<float>() / segments;
@@ -513,6 +520,7 @@ namespace ImDbg
         glm::vec2 bottom_right = glm::vec2(max.x - radius, max.y - radius);
 
         auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
+        new_draw_cmd.type = ImDbgDrawType::e2D;
         new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = (segments + 1) * 8;
@@ -522,33 +530,33 @@ namespace ImDbg
         for (int i = 0; i <= segments; ++i)
         {
             float theta = i * increment;
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ top_left - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), default_uv, color });
+            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(top_left - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), 0.f), default_uv, color });
         }
         for (int i = 0; i <= segments; ++i)
         {
             float theta = i * increment + glm::half_pi<float>();
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ top_right - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), default_uv, color });
+            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(top_right - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), 0.f), default_uv, color });
         }
         for (int i = 0; i <= segments; ++i)
         {
             float theta = i * increment + glm::pi<float>();
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ bottom_right - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), default_uv, color });
+            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(bottom_right - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), 0.f), default_uv, color });
         }
         for (int i = 0; i <= segments; ++i)
         {
             float theta = i * increment + 3.0f * glm::half_pi<float>();
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ bottom_left - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), default_uv, color });
+            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(bottom_left - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), 0.f), default_uv, color });
         }
 
         // Add vertices for straight edges
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x + radius, min.y), default_uv, color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x - radius, min.y), default_uv, color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x, min.y + radius), default_uv, color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x, max.y - radius), default_uv, color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x - radius, max.y), default_uv, color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x + radius, max.y), default_uv, color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x, max.y - radius), default_uv, color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x, min.y + radius), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(min.x + radius, min.y, 0.f), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(max.x - radius, min.y, 0.f), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(max.x, min.y + radius, 0.f), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(max.x, max.y - radius, 0.f), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(max.x - radius, max.y, 0.f), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(min.x + radius, max.y, 0.f), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(min.x, max.y - radius, 0.f), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(min.x, min.y + radius, 0.f), default_uv, color });
 
         // Add indices for lines
         for (int i = 0; i < segments; ++i)
@@ -581,13 +589,13 @@ namespace ImDbg
         draw_list.indices.emplace_back((segments + 1) * 4 + 6);
         draw_list.indices.emplace_back((segments + 1) * 4 + 7);
 
-        context->drawData2d.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
-        context->drawData2d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+        context->drawData.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
+        context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
 
     void DrawFillRoundedRect2D(const glm::vec2& min, const glm::vec2& max, f32 radius, ImDbgColor color)
     {
-        auto& draw_list = context->drawData2d.drawLists[(u32)ImDbgGeometryType::eTriangles];
+        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eTriangles];
 
         // Define corners
         glm::vec2 top_left = glm::vec2(min.x + radius, min.y + radius);
@@ -596,6 +604,7 @@ namespace ImDbg
         glm::vec2 bottom_right = glm::vec2(max.x - radius, max.y - radius);
 
         auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
+        new_draw_cmd.type = ImDbgDrawType::e2D;
         new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = 0;
@@ -603,10 +612,10 @@ namespace ImDbg
 
         // Center rectangle
         u32 vertex_count{ 0u };
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x + radius, min.y), default_uv, color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x - radius, min.y), default_uv, color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x - radius, max.y), default_uv, color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x + radius, max.y), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(min.x + radius, min.y, 0.f), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(max.x - radius, min.y, 0.f), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(max.x - radius, max.y, 0.f), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(min.x + radius, max.y, 0.f), default_uv, color });
 
         draw_list.indices.emplace_back(vertex_count);
         draw_list.indices.emplace_back(vertex_count + 1);
@@ -619,10 +628,10 @@ namespace ImDbg
         new_draw_cmd.indexCount += 6;
 
         // Side rectangles
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x, min.y + radius), default_uv, color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x + radius, min.y + radius), default_uv, color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x + radius, max.y - radius), default_uv, color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(min.x, max.y - radius), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(min.x, min.y + radius, 0.f), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(min.x + radius, min.y + radius, 0.f), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(min.x + radius, max.y - radius, 0.f), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(min.x, max.y - radius, 0.f), default_uv, color });
 
         draw_list.indices.emplace_back(vertex_count);
         draw_list.indices.emplace_back(vertex_count + 1);
@@ -634,10 +643,10 @@ namespace ImDbg
         vertex_count += 4;
         new_draw_cmd.indexCount += 6;
 
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x - radius, min.y + radius), default_uv, color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x, min.y + radius), default_uv, color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x, max.y - radius), default_uv, color });
-        draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(max.x - radius, max.y - radius), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(max.x - radius, min.y + radius, 0.f), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(max.x, min.y + radius, 0.f), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(max.x, max.y - radius, 0.f), default_uv, color });
+        draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(max.x - radius, max.y - radius, 0.f), default_uv, color });
 
         draw_list.indices.emplace_back(vertex_count);
         draw_list.indices.emplace_back(vertex_count + 1);
@@ -656,7 +665,7 @@ namespace ImDbg
         for (i32 i = 0; i <= segments; ++i)
         {
             float theta = i * increment;
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ top_left - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), default_uv, color });
+            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(top_left - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), 0.f), default_uv, color });
         }
 
         for (i32 i = 0; i < segments; ++i)
@@ -671,7 +680,7 @@ namespace ImDbg
         for (i32 i = 0; i <= segments; ++i)
         {
             float theta = i * increment + glm::half_pi<float>();
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ top_right - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), default_uv, color });
+            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(top_right - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), 0.f), default_uv, color });
         }
 
         for (i32 i = 0; i < segments; ++i)
@@ -686,7 +695,7 @@ namespace ImDbg
         for (int i = 0; i <= segments; ++i)
         {
             float theta = i * increment + glm::pi<float>();
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ bottom_right - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), default_uv, color });
+            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(bottom_right - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), 0.f), default_uv, color });
         }
 
         for (i32 i = 0; i < segments; ++i)
@@ -701,7 +710,7 @@ namespace ImDbg
         for (i32 i = 0; i <= segments; ++i)
         {
             f32 theta = i * increment + 3.0f * glm::half_pi<float>();
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ bottom_left + radius * glm::vec2(glm::cos(theta), glm::sin(theta)), default_uv, color });
+            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(bottom_left + radius * glm::vec2(glm::cos(theta), glm::sin(theta)), 0.f), default_uv, color });
         }
 
         for (i32 i = 0; i < segments; ++i)
@@ -713,13 +722,13 @@ namespace ImDbg
         }
         vertex_count += segments;
 
-        context->drawData2d.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
-        context->drawData2d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+        context->drawData.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
+        context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
 
     void DrawText2D(const glm::vec2& position, const std::string& text, ImDbgColor color)
     {
-        auto& draw_list = context->drawData2d.drawLists[(u32)ImDbgGeometryType::eTriangles];
+        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eTriangles];
 
         auto& font_atlas = context->font->atlases[0]; // Assuming you have only one font atlas
 
@@ -730,7 +739,7 @@ namespace ImDbg
 
         // TODO: add \n support 
 
-        glm::vec2 min{ position }, max{ position };
+        glm::vec3 min{ position, 0.f }, max{ position, 0.f };
 
         u32 vertex_count{ 0u };
         glm::vec2 cursor = position; // Initial position of the text
@@ -764,10 +773,10 @@ namespace ImDbg
             float v1 = v0 + glyph.size.y / font_atlas.height;
 
             // Add vertices for the glyph quad
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(x0, y0), glm::vec2(u0, v0), color });
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(x1, y0), glm::vec2(u1, v0), color });
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(x1, y1), glm::vec2(u1, v1), color });
-            draw_list.vertices.emplace_back(ImDbgVertex2D{ glm::vec2(x0, y1), glm::vec2(u0, v1), color });
+            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(x0, y0, 0.f), glm::vec2(u0, v0), color });
+            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(x1, y0, 0.f), glm::vec2(u1, v0), color });
+            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(x1, y1, 0.f), glm::vec2(u1, v1), color });
+            draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(x0, y1, 0.f), glm::vec2(u0, v1), color });
 
             for (i32 i = draw_list.vertices.size() - 4; i < draw_list.vertices.size(); ++i)
             {
@@ -789,8 +798,8 @@ namespace ImDbg
             cursor.x += glyph.advance.x;
         }
 
-        context->drawData2d.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
-        context->drawData2d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+        context->drawData.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
+        context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
 
         auto range = max - min;
 
@@ -800,36 +809,38 @@ namespace ImDbg
     // For 3d drawings
     void DrawPoint3D(const glm::vec3& position, ImDbgColor color, float size)
     {
-        auto& draw_list = context->drawData3d.drawLists[(u32)ImDbgGeometryType::ePoints];
+        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::ePoints];
 
         auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
+        new_draw_cmd.type = ImDbgDrawType::e3D;
         new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = 1;
 
-        draw_list.vertices.emplace_back(ImDbgVertex3D{ position, glm::vec2(0.0f), color });
+        draw_list.vertices.emplace_back(ImDbgVertex{ position, glm::vec2(0.0f), color });
         draw_list.indices.emplace_back(0);
 
-        context->drawData3d.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
-        context->drawData3d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+        context->drawData.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
+        context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
 
     void DrawLine3D(const glm::vec3& from, const glm::vec3& to, ImDbgColor color, float thickness)
     {
-        auto& draw_list = context->drawData3d.drawLists[(u32)ImDbgGeometryType::eLines];
+        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eLines];
 
         auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
+        new_draw_cmd.type = ImDbgDrawType::e3D;
         new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = 2;
 
-        draw_list.vertices.emplace_back(ImDbgVertex3D{ from, glm::vec2(0.0f), color });
-        draw_list.vertices.emplace_back(ImDbgVertex3D{ to, glm::vec2(0.0f), color });
+        draw_list.vertices.emplace_back(ImDbgVertex{ from, glm::vec2(0.0f), color });
+        draw_list.vertices.emplace_back(ImDbgVertex{ to, glm::vec2(0.0f), color });
         draw_list.indices.emplace_back(0);
         draw_list.indices.emplace_back(1);
 
-        context->drawData3d.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
-        context->drawData3d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+        context->drawData.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
+        context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
 
     void DrawBox3D(const glm::vec3& min, const glm::vec3& max, ImDbgColor color)
@@ -853,21 +864,22 @@ namespace ImDbg
             0, 4, 1, 5, 2, 6, 3, 7
         };
 
-        auto& draw_list = context->drawData3d.drawLists[(u32)ImDbgGeometryType::eLines];
+        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eLines];
 
         auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
+        new_draw_cmd.type = ImDbgDrawType::e3D;
         new_draw_cmd.vertexOffset = draw_list.vertices.size();
         new_draw_cmd.indexOffset = draw_list.indices.size();
         new_draw_cmd.indexCount = 24;
 
         for (const auto& pos : verticesPos)
-            draw_list.vertices.emplace_back(ImDbgVertex3D{ pos, glm::vec2(0.0f), color });
+            draw_list.vertices.emplace_back(ImDbgVertex{ pos, glm::vec2(0.0f), color });
 
         for (const auto& idx : boxIndices)
             draw_list.indices.emplace_back(idx);
 
-        context->drawData3d.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
-        context->drawData3d.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
+        context->drawData.totalVertexCount += draw_list.vertices.size() - new_draw_cmd.vertexOffset;
+        context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
 
     void DrawSphere3D(const glm::vec3& center, float radius, ImDbgColor color)
@@ -930,14 +942,9 @@ namespace ImDbg
         return &context->io;
     }
 
-    ImDbgDrawData<ImDbgVertex2D>* GetDrawData2D()
+    ImDbgDrawData* GetDrawData()
     {
-        return &context->drawData2d;
-    }
-
-    ImDbgDrawData<ImDbgVertex3D>* GetDrawData3D()
-    {
-        return &context->drawData3d;
+        return &context->drawData;
     }
 
     // Other functions

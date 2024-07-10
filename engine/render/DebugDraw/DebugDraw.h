@@ -22,8 +22,23 @@ enum class ImDbgGeometryType
 	eTriangles
 };
 
+enum class ImDbgDrawType
+{
+    e2D,
+    e3D
+};
+
+struct ImDbgVertex
+{
+    glm::vec3 position;
+    glm::vec2 uv;
+    u32 color;
+};
+
 struct ImDbgDrawCmd
 {
+    ImDbgDrawType type;
+
 	u32 vertexOffset;
 	u32 indexOffset;
 	u32 indexCount;
@@ -33,39 +48,21 @@ struct ImDbgDrawCmd
 	glm::vec4 clipRect;
 };
 
-template<class _Vertex>
 struct ImDbgDrawList
 {
 	ImDbgGeometryType type;
 
-	utl::vector<_Vertex> vertices;
+	utl::vector<ImDbgVertex> vertices;
 	utl::vector<ImDbgIndex> indices;
 
 	utl::vector<ImDbgDrawCmd> drawCommands;
 };
 
-// For 2d drawings
-struct ImDbgVertex2D
-{
-	glm::vec2 position;
-	glm::vec2 uv;
-	u32 color;
-};
-
-// For 3d drawings
-struct ImDbgVertex3D
-{
-	glm::vec3 position;
-	glm::vec2 uv;
-	u32 color;
-};
-
-template<class _Vertex>
 struct ImDbgDrawData
 {
 	u32 totalVertexCount;
 	u32 totalIndexCount;
-	utl::vector<ImDbgDrawList<_Vertex>> drawLists;
+	utl::vector<ImDbgDrawList> drawLists;
 };
 
 
@@ -79,8 +76,7 @@ struct ImDbgIO
 struct ImDbgContext
 {
 	ImDbgIO io;
-	ImDbgDrawData<ImDbgVertex2D> drawData2d;
-	ImDbgDrawData<ImDbgVertex3D> drawData3d;
+    ImDbgDrawData drawData;
 	struct FontImpl* font;
 };
 
@@ -338,6 +334,5 @@ namespace ImDbg
     glm::vec2 GetTextSize2D(const std::string& text);
 
 	ImDbgIO* GetIO();
-	ImDbgDrawData<ImDbgVertex2D>* GetDrawData2D();
-	ImDbgDrawData<ImDbgVertex3D>* GetDrawData3D();
+	ImDbgDrawData* GetDrawData();
 }
