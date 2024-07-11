@@ -15,8 +15,6 @@
 #include "shader_library_parse.hpp"
 #include "compiler_util.h"
 
-static int allocator_version = mi_version();
-
 namespace fs = std::filesystem;
 using namespace shader_compiler;
 

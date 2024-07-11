@@ -10,8 +10,6 @@
 #include <plugin/plugin_manager.h>
 #include <container/hash_map.h>
 
-static int mimalloc_version = mi_version();
-
 //#include <DbgHelp.h>
 //#include <tlhelp32.h>
 //#include <psapi.h>
@@ -287,8 +285,6 @@ using namespace engine;
 
 int main(int argc, char** argv)
 {
-    std::cout << "Mimalloc version:" << mimalloc_version << std::endl;
-
     utl::parsing::argument_parser argparse{};
 
     argparse.parse_arguments(argc, argv);

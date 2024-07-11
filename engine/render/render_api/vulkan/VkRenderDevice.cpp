@@ -18,19 +18,19 @@ using namespace engine::render::vulkan;
 
 void* vk_malloc(void* pUserData, u64 size, u64 alignment, VkSystemAllocationScope allocationScope)
 {
-	void* ptr = mi_malloc(size);
+	void* ptr = malloc(size);
 	memset(ptr, 0, size);
 	return ptr;
 }
 
 void vk_free(void* pUserData, void* pMemory)
 {
-	mi_free(pMemory);
+	free(pMemory);
 }
 
 void* vk_realloc(void* pUserData, void* pOriginal, u64 size, u64 alignment, VkSystemAllocationScope allocationScope)
 {
-	return mi_realloc(pOriginal, size);
+	return realloc(pOriginal, size);
 }
 
 void vk_malloc_notification(void* pUserData, u64  size, VkInternalAllocationType allocationType, VkSystemAllocationScope allocationScope)

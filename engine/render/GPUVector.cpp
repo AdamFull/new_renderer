@@ -12,8 +12,8 @@ CGPUVector::CGPUVector(IRenderInterface* render_interface)
 
 void CGPUVector::Upload()
 {
-	utl::medium_temp_pool temp_pool;
-	utl::medium_temp_allocator_t<FBufferUploadRegion> allocator(temp_pool);
+	utl::medium_temp_pool<> temp_pool;
+	utl::medium_temp_allocator<upload_range> merged_ranges_allocator(temp_pool);
 
 	if (!m_vUploadRanges.empty())
 	{
@@ -37,7 +37,7 @@ void CGPUVector::Upload()
 		std::sort(m_vUploadRanges.begin(), m_vUploadRanges.end(), [](const upload_range& a, const upload_range& b) { return a.offset < b.offset; });
 
 		// Merge upload ranges
-		utl::vector<upload_range> merged_ranges{};
+		utl::vector<upload_range, utl::medium_temp_allocator<upload_range>> merged_ranges{ merged_ranges_allocator };
 		merged_ranges.emplace_back(m_vUploadRanges.front());
 
 		for (u64 i = 1ull; i < m_vUploadRanges.size(); ++i)
@@ -52,7 +52,7 @@ void CGPUVector::Upload()
 		// Create upload infos
 		u64 src_offset{ 0ull };
 		utl::vector<u8> upload_data{};
-		std::vector<FBufferUploadRegion, utl::medium_temp_allocator_t<FBufferUploadRegion>> upload_regions{ allocator };
+		utl::vector<FBufferUploadRegion> upload_regions{};
 		for (const auto& range : merged_ranges)
 		{
 			auto& region = upload_regions.emplace_back();

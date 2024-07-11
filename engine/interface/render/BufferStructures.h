@@ -45,7 +45,7 @@ namespace engine
 		{
 			FAPIHandle bufferId{};
 			utl::vector<u8> data{};
-			std::span<FBufferUploadRegion> regions{};
+			utl::vector<FBufferUploadRegion> regions{};
 		};
 
 		struct FBufferCreateInfo
@@ -70,7 +70,7 @@ namespace engine
 
 			virtual void Create(const std::string& name, const FBufferCreateInfo& create_info) = 0;
 			virtual void Resize(const std::string& name, const FBufferCreateInfo& create_info) = 0;
-			virtual void Upload(utl::vector<u8>&& data, const std::span<FBufferUploadRegion>& regions) = 0;
+			virtual void Upload(utl::vector<u8>&& data, const utl::vector<FBufferUploadRegion>& regions) = 0;
 
 			virtual void Map() = 0;
 			virtual void Unmap() = 0;

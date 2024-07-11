@@ -36,7 +36,7 @@ void CBufferObject::Resize(const std::string& name, const FBufferCreateInfo& cre
 	m_virtualAddress = buffer_view.address;
 }
 
-void CBufferObject::Upload(utl::vector<u8>&& data, const std::span<FBufferUploadRegion>& regions)
+void CBufferObject::Upload(utl::vector<u8>&& data, const utl::vector<FBufferUploadRegion>& regions)
 {
 	FBufferUploadInfo upload_info{};
 	upload_info.bufferId = m_bufferId;
