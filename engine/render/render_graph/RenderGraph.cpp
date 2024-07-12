@@ -29,15 +29,10 @@
 using namespace engine;
 using namespace engine::render;
 
-inline u64 aligned_size(u64 size, u64 alignment)
-{
-	return (size + alignment - 1) & ~(alignment - 1);
-}
-
 template<class _HeaderType>
 inline void allocate_combined_space(u32 type, void** out, u64 size, u64 alignment)
 {
-	u64 aligned_header_size = aligned_size(sizeof(_HeaderType), alignment);
+	u64 aligned_header_size = utl::aligned_size(sizeof(_HeaderType), alignment);
 	u64 aligned_data_size = aligned_size(size, alignment);
 	(*out) = _aligned_malloc(aligned_header_size + aligned_data_size, alignment);
 
