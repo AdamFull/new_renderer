@@ -13,7 +13,6 @@ CGPUVector::CGPUVector(IRenderInterface* render_interface)
 void CGPUVector::Upload()
 {
 	utl::ring_memory_pool<1024> temp_pool;
-	utl::ring_allocator<upload_range, 1024> allocator{ temp_pool };
 
 	if (!m_vUploadRanges.empty())
 	{
@@ -37,7 +36,7 @@ void CGPUVector::Upload()
 		std::sort(m_vUploadRanges.begin(), m_vUploadRanges.end(), [](const upload_range& a, const upload_range& b) { return a.offset < b.offset; });
 
 		// Merge upload ranges
-		utl::rvector<upload_range, 1024> merged_ranges{ allocator };
+		utl::vector<upload_range, utl::alloca> merged_ranges{ allocator };
 		merged_ranges.emplace_back(m_vUploadRanges.front());
 
 		for (u64 i = 1ull; i < m_vUploadRanges.size(); ++i)
