@@ -26,6 +26,8 @@
 #include <engine/VariableBlock.h>
 #include <engine/Variables.h>
 
+#include <memory.h>
+
 using namespace engine;
 using namespace engine::render;
 

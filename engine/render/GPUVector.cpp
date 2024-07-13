@@ -36,7 +36,7 @@ void CGPUVector::Upload()
 		std::sort(m_vUploadRanges.begin(), m_vUploadRanges.end(), [](const upload_range& a, const upload_range& b) { return a.offset < b.offset; });
 
 		// Merge upload ranges
-		utl::vector<upload_range, utl::alloca> merged_ranges{ allocator };
+		utl::vector<upload_range> merged_ranges{};
 		merged_ranges.emplace_back(m_vUploadRanges.front());
 
 		for (u64 i = 1ull; i < m_vUploadRanges.size(); ++i)
