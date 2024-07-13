@@ -129,24 +129,14 @@ namespace shader_compiler
 		sjson.try_parse_to("build_modules", value.buildModules);
 	}
 
-	void deserialize(const sjson::sjson_object& sjson, FShaderObject& value)
+	void deserialize(const sjson::sjson_object& sjson, FShaderMeta& value)
 	{
-		sjson.try_parse_to("version", value.version);
-
 		sjson.try_parse_to("enable_extensions", value.enable_extensions);
 		sjson.try_parse_to("require_extensions", value.require_extensions);
 		sjson.try_parse_to("definitions", value.definitions);
-		sjson.try_parse_to("includes", value.includes);
 
-		sjson.try_parse_to("code", value.code, true);
-	}
-
-
-	void deserialize(const sjson::sjson_object& sjson, FShaderSource& value)
-	{
 		sjson.try_parse_to("type", value.type, true);
-		sjson.try_parse_to("common", value.common);
-		sjson.try_parse_to("shader_name", value.shader_name, true);
+		sjson.try_parse_to("source", value.source, true);
 	}
 
 

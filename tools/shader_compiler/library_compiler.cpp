@@ -178,7 +178,7 @@ void CLibraryCompiler::compile(const std::filesystem::path& library_path, FShade
 	}
 }
 
-void CLibraryCompiler::compilePermutations(const std::filesystem::path parent_path, const std::string& name, const utl::vector<FShaderSource>& sources, const utl::vector<utl::vector<std::string>>& cached_permutations, FCompiledLibrary& compiled_library)
+void CLibraryCompiler::compilePermutations(const std::filesystem::path parent_path, const std::string& name, const utl::vector<FShaderMeta>& sources, const utl::vector<utl::vector<std::string>>& cached_permutations, FCompiledLibrary& compiled_library)
 {
 	u64 shader_index{ 0ull };
 	// Process all shader included sources

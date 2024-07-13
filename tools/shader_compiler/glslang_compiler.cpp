@@ -17,6 +17,65 @@
 
 using namespace shader_compiler;
 
+class shader_includer : public glslang::TShader::Includer
+{
+public:
+	shader_includer() = default;
+
+	IncludeResult* includeLocal(const char* headerName, const char* includerName, size_t inclusionDepth) override
+	{
+		if (inclusionDepth == 1)
+			m_srDirectory = std::filesystem::path(includerName).parent_path();
+		else
+			m_srDirectory = m_srDirectory.append(includerName);
+
+		auto local_path = std::filesystem::weakly_canonical(m_srDirectory.append(headerName));
+
+		std::string fileLoaded;
+		if (!m_pVFS->readFile(local_path, fileLoaded))
+		{
+			std::stringstream ss;
+			ss << "In shader file: " << includerName << " Shader Include could not be loaded: " << std::quoted(headerName);
+			log_error(ss.str());
+			return nullptr;
+		}
+
+		auto content = new char[fileLoaded.size()];
+		std::memcpy(content, fileLoaded.data(), fileLoaded.size());
+		return new IncludeResult(headerName, content, fileLoaded.size(), content);
+	}
+
+	IncludeResult* includeSystem(const char* headerName, const char* includerName, size_t inclusionDepth) override
+	{
+		auto header = std::filesystem::path("shaders", headerName);
+
+		std::string fileLoaded;
+		if (!m_pVFS->readFile(header, fileLoaded))
+		{
+			std::stringstream ss;
+			ss << "Shader Include could not be loaded: " << std::quoted(headerName);
+			log_error(ss.str());
+			return nullptr;
+		}
+
+		auto content = new char[fileLoaded.size()];
+		std::memcpy(content, fileLoaded.data(), fileLoaded.size());
+		return new IncludeResult(headerName, content, fileLoaded.size(), content);
+	}
+
+	void releaseInclude(IncludeResult* result) override
+	{
+		if (result)
+		{
+			delete[] result->userData;
+			delete result;
+		}
+	}
+private:
+	std::filesystem::path m_includeDir{};
+	std::filesystem::path m_srDirectory{};
+};
+
 class empty_includer : public glslang::TShader::Includer
 {
 public:

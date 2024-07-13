@@ -22,7 +22,7 @@ namespace shader_compiler
 		void generatePermutations(const utl::hash_map<std::string, FPermutationPattern>& permutation_patterns);
 		void compile(const std::filesystem::path& library_path, FShaderCacheData& shader_cache);
 	protected:
-		void compilePermutations(const std::filesystem::path parent_path, const std::string& name, const utl::vector<FShaderSource>& sources, const utl::vector<utl::vector<std::string>>& cached_permutations, FCompiledLibrary& compiled_library);
+		void compilePermutations(const std::filesystem::path parent_path, const std::string& name, const utl::vector<FShaderMeta>& sources, const utl::vector<utl::vector<std::string>>& cached_permutations, FCompiledLibrary& compiled_library);
 	private:
 		utl::hash_map<std::string, utl::vector<utl::vector<std::string>>> m_permutations;
 		std::unique_ptr<CShaderPreprocessor> m_pPreprocessor{};

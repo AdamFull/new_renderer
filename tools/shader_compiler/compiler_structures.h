@@ -103,16 +103,14 @@ namespace shader_compiler
 		utl::vector<std::string> buildModules;
 	};
 
-	struct FShaderObject
+	struct FShaderMeta
 	{
-		uint32_t version;
-
 		utl::vector<std::string> enable_extensions;
 		utl::vector<std::string> require_extensions;
 		utl::vector<std::string> definitions;
-		utl::vector<std::string> includes;
 
-		std::string code;
+		EShaderType type{ EShaderType::eUnknown };
+		std::string source;
 	};
 
 	// Description about HOW to compile shader
@@ -123,19 +121,11 @@ namespace shader_compiler
 		utl::vector<FDefinitionList> permutations;
 	};
 
-	// Description about how to find shader source file
-	struct FShaderSource
-	{
-		EShaderType type{ EShaderType::eUnknown };
-		bool common{ false };
-		std::string shader_name;
-	};
-
 	// Shader sources description (used sources)
 	struct FShaderDescription
 	{
 		std::string name;
-		utl::vector<FShaderSource> sources;
+		utl::vector<std::string> sources;
 	};
 
 	// Describes shader library

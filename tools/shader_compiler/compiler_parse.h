@@ -16,8 +16,7 @@ namespace shader_compiler
 	void deserialize(const sjson::sjson_object& sjson, FPermutationPattern& value);
 
 	void deserialize(const sjson::sjson_object& sjson, FShaderMakeInfo& value);
-	void deserialize(const sjson::sjson_object& sjson, FShaderObject& value);
-	void deserialize(const sjson::sjson_object& sjson, FShaderSource& value);
+	void deserialize(const sjson::sjson_object& sjson, FShaderMeta& value);
 	void deserialize(const sjson::sjson_object& sjson, FShaderDescription& value);
 	void deserialize(const sjson::sjson_object& sjson, FShaderCompile& value);
 	void deserialize(const sjson::sjson_object& sjson, FShaderLibrary& value);
