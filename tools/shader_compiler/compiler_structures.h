@@ -125,7 +125,7 @@ namespace shader_compiler
 	struct FShaderDescription
 	{
 		std::string name;
-		utl::vector<std::string> sources;
+		utl::vector<FShaderMeta> sources;
 	};
 
 	// Describes shader library

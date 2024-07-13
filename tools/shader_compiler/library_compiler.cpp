@@ -198,7 +198,7 @@ void CLibraryCompiler::compilePermutations(const std::filesystem::path parent_pa
 			[&](const utl::vector<std::string>& definitions)
 			{
 				bool is_compiling_first_time{ false };
-				FCompileInfo compile_info{ source.type, source.shader_name };
+				FCompileInfo compile_info{ source.type, source.source };
 
 				// This thing will add unique definitions by shader type. Dor example for vertex shader it will add VERTEX_SHADER definition
 				utl::vector<std::string> unique_shader_definitions(definitions.begin(), definitions.end());
@@ -276,7 +276,7 @@ void CLibraryCompiler::compilePermutations(const std::filesystem::path parent_pa
 					compiled_spirv = m_pShaderCompiler->compile(preprocessed_code, compile_info);
 
 					std::stringstream ss{};
-					ss << source.shader_name;
+					ss << source.source;
 					for (auto& definition : definitions)
 						ss << ":" << definition;
 
