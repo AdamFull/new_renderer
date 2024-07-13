@@ -1,0 +1,13 @@
+{
+	enable_extensions: [
+		"GL_ARB_separate_shader_objects",
+		"GL_ARB_shading_language_420pack"
+	];
+
+	definitions: [];
+
+	require_extensions: [];
+
+	type: "fragment";
+	source: "copy.frag";
+}

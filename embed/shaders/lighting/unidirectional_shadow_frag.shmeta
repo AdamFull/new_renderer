@@ -1,0 +1,18 @@
+{
+	enable_extensions: [
+		"GL_ARB_separate_shader_objects",
+		"GL_ARB_shading_language_420pack",
+		"GL_EXT_nonuniform_qualifier"
+	];
+
+	definitions: ["MESH_DATA"];
+
+	require_extensions: [ 
+		"GL_EXT_buffer_reference",
+		"GL_EXT_shader_explicit_arithmetic_types",
+		"GL_ARB_shader_viewport_layer_array" 
+	];
+
+	type: "fragment";
+	source: "unidirectional_shadow.frag";
+}

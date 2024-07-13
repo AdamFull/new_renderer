@@ -1,0 +1,9 @@
+#ifndef MATH_GLSL
+#define MATH_GLSL
+
+//Here is implementation of math functions/constanst that repeating in code
+#define PI 3.1415926535897932384626433832795
+#define HALF_PI PI * 0.5
+#define TWO_PI PI * 2.0
+
+#endif // MATH_GLSL

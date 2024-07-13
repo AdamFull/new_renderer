@@ -5,41 +5,22 @@
 		{
 			name: "screenspace";
 			sources: [
-				{
-					type: "vertex";
-					common: true;
-					shader_name: "screenspace_vert";
-				},
-				{
-					type: "fragment";
-					shader_name: "screenspace_frag";
-				}
+				"screenspace_vert",
+				"screenspace_frag"
 			];
 		},
 		{
 			name: "imgui";
-			sources: [
-				{
-					type: "vertex";
-					shader_name: "imgui_vert";
-				},
-				{
-					type: "fragment";
-					shader_name: "imgui_frag";
-				}
+			sources: [;
+				"imgui_vert",
+				"imgui_frag"
 			];
 		},
 		{
 			name: "debug_draw";
 			sources: [
-				{
-					type: "vertex";
-					shader_name: "debug_draw_vert";
-				},
-				{
-					type: "fragment";
-					shader_name: "debug_draw_frag";
-				}
+				"debug_draw_vert",
+				"debug_draw_frag"
 			];
 		}
 	];

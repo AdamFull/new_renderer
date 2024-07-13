@@ -5,36 +5,14 @@
 		{
 			name: "write";
 			sources: [
-				{
-					type: "vertex";
-					shader_name: "visbufferwrite_vert";
-				},
-				{
-					type: "fragment";
-					shader_name: "visbufferwrite_frag";
-				}
+				"visbufferwrite_vert",
+				"visbufferwrite_frag"
 			];
 		},
 		{
 			name: "shade";
 			sources: [
-				{
-					type: "compute";
-					shader_name: "visbuffershade_comp";
-				}
-			];
-		},
-		{
-			name: "write_mesh";
-			sources: [
-				{
-					type: "task";
-					shader_name: "visbufferwrite_task";
-				},
-				{
-					type: "mesh";
-					shader_name: "visbufferwrite_mesh";
-				}
+				"visbuffershade_comp"
 			];
 		}
 	];
@@ -46,10 +24,6 @@
 		},
 		{
 			shader_name: "shade";
-			pattern: "geometry_pattern";
-		},
-		{
-			shader_name: "write_mesh";
 			pattern: "geometry_pattern";
 		}
 	];

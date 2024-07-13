@@ -1,0 +1,32 @@
+#version 450
+
+#include "shader_inputs"
+#include "compute_common"
+
+#define TILE_SIZE 8
+#define GROUP_SIZE (TILE_SIZE * TILE_SIZE)
+
+layout(local_size_x = TILE_SIZE, local_size_y = TILE_SIZE) in;
+
+layout(set = 2, binding = 0) uniform writeonly image2D write_color;
+layout(set = 1, binding = 1) uniform sampler2D sampler_color;
+REGISTER_RO_STORAGE_BUFFER(1, 2, tiles, uint32_t, packed_tiles);
+
+void main() 
+{
+	uint tile_index = gl_WorkGroupID.x;
+	uint tile_packed = packed_tiles.data[tile_index];
+	uvec2 tile_pos = uvec2(tile_packed & 0xFFFF, (tile_packed >> 16) & 0xFFFF);
+
+	uvec2 px = tile_pos * TILE_SIZE + gl_LocalInvocationID.xy;
+	vec4 color = texelFetch(sampler_color, ivec2(px), 0);
+
+	// Perform processing for high-frequency tiles
+	#ifdef HIGH_FREQUENCY
+	vec4 processed_color = color * vec4(1.0, 0.5, 0.5, 1.0);
+	#else
+	vec4 processed_color = color * vec4(0.5, 1.0, 0.5, 1.0);
+	#endif
+
+	imageStore(write_color, ivec2(px), processed_color);
+}

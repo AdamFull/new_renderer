@@ -5,19 +5,13 @@
 		{
 			name: "brgflut_generator";
 			sources: [
-				{
-					type: "compute";
-					shader_name: "brdflut_comp";
-				}
+				"brdflut_comp"
 			];
 		},
 		{
 			name: "irradiancecube_generator";
 			sources: [
-				{
-					type: "compute";
-					shader_name: "irradiancecube_comp";
-				}
+				"irradiancecube_comp"
 			];
 		},
 		{
@@ -26,20 +20,13 @@
 				{
 					type: "compute";
 					shader_name: "prefilteredmap_comp";
-				}
 			];
 		},
 		{
 			name: "unidirectional_shadow";
 			sources: [
-				{
-					type: "vertex";
-					shader_name: "unidirectional_shadow_vert";
-				},
-				{
-					type: "fragment";
-					shader_name: "unidirectional_shadow_frag";
-				}
+				"unidirectional_shadow_vert",
+				"unidirectional_shadow_frag"
 			];
 		}
 	];

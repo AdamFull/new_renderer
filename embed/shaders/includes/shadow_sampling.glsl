@@ -1,0 +1,113 @@
+#ifndef SHADOW_SAMPLING_GLSL
+#define SHADOW_SAMPLING_GLSL
+
+const bool enableCascadedPCF = true;
+
+const mat4 biasMat = mat4(
+	0.5, 0.0, 0.0, 0.0,
+	0.0, 0.5, 0.0, 0.0,
+	0.0, 0.0, 1.0, 0.0,
+	0.5, 0.5, 0.0, 1.0
+);
+
+float cascadeShadowProjection(sampler2DArrayShadow shadowmap_tex, vec4 shadowCoord, vec2 offset, uint cascadeIndex, float bias)
+{
+	return texture(shadowmap_tex, vec4(shadowCoord.st + offset, cascadeIndex, shadowCoord.z - bias));
+}
+
+float cascadeShadowFilterPCF(sampler2DArrayShadow shadowmap_tex, vec4 sc, uint cascadeIndex, float bias)
+{
+	ivec2 texDim = textureSize(shadowmap_tex, 0).xy;
+	float scale = 0.75;
+	float dx = scale * 1.0 / float(texDim.x);
+	float dy = scale * 1.0 / float(texDim.y);
+
+	float shadowFactor = 0.0;
+	int count = 0;
+	const int range = 1;
+	
+	[[unroll]]
+	for (int x = -range; x <= range; x++) 
+	{
+		[[unroll]]
+		for (int y = -range; y <= range; y++) 
+		{
+			shadowFactor += cascadeShadowProjection(shadowmap_tex, sc, vec2(dx*x, dy*y), cascadeIndex, bias);
+			count++;
+		}
+	}
+	return shadowFactor / count;
+}
+
+// For spotlight source
+float directionalShadowProjection(sampler2DArrayShadow shadowmap_tex, vec4 P, vec2 offset, float bias, int layer)
+{
+	vec4 shadowCoord = P / P.w;
+	shadowCoord.st = shadowCoord.st * 0.5 + 0.5;
+	return texture(shadowmap_tex, vec4(shadowCoord.st + offset, layer, shadowCoord.z - bias));
+}
+
+float directionalShadowFilterPCF(sampler2DArrayShadow shadowmap_tex, vec4 sc, float bias, int layer)
+{
+	ivec2 texDim = textureSize(shadowmap_tex, 0).xy;
+	float scale = 1.5;
+	float dx = scale * 1.0 / float(texDim.x);
+	float dy = scale * 1.0 / float(texDim.y);
+
+	float shadowFactor = 0.0;
+	int count = 0;
+	const int range = 1;
+	
+	[[unroll]]
+	for (int x = -range; x <= range; x++)
+	{
+		[[unroll]]
+		for (int y = -range; y <= range; y++)
+		{
+			shadowFactor += directionalShadowProjection(shadowmap_tex, sc, vec2(dx*x, dy*y), bias, layer);
+			count++;
+		}
+	
+	}
+	return shadowFactor / count;
+}
+
+// For omni directional source
+//Based on https://learnopengl.com/Advanced-Lighting/Shadows/Point-Shadows
+
+vec3 sampleOffsetDirections[20] = vec3[]
+(
+   vec3( 1,  1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1,  1,  1), 
+   vec3( 1,  1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1,  1, -1),
+   vec3( 1,  1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0), vec3(-1,  1,  0),
+   vec3( 1,  0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1,  0, -1),
+   vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0,  1, -1)
+);   
+
+float omniShadowProjection(samplerCubeArrayShadow shadowmap_tex, vec3 shadowClip, vec3 offset, float bias, float radius, int layer)
+{
+	float currentDist = length(shadowClip) / radius;
+	return texture(shadowmap_tex, vec4(shadowClip + offset, layer), currentDist - bias);
+}
+
+float omniShadowFilterPCF(samplerCubeArrayShadow shadowmap_tex, vec3 shadowClip, float bias, float radius, int layer)
+{
+	float shadowFactor = 0.0;
+	float samples = 4.0;
+	const float offset  = 0.1;
+
+	[[unroll]]
+	for(float x = -offset; x < offset; x += offset / (samples * 0.5))
+	{
+		[[unroll]]
+		for(float y = -offset; y < offset; y += offset / (samples * 0.5))
+		{
+			for(float z = -offset; z < offset; z += offset / (samples * 0.5))
+				shadowFactor += omniShadowProjection(shadowmap_tex, shadowClip, vec3(x, y, z), bias, radius, layer);
+		}
+	}
+	shadowFactor /= (samples * samples * samples);
+	return shadowFactor;
+}
+
+#endif // SHADOW_SAMPLING_GLSL

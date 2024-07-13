@@ -5,118 +5,79 @@
 		{
 			name: "ao_blur";
 			sources: [
-				{
-					type: "compute";
-					shader_name: "ao_blur_comp";
-				}
+				"ao_blur_comp"
 			];
 		},
 		{
 			name: "apply_effect";
 			sources: [
-				{
-					type: "compute";
-					shader_name: "apply_effect_comp";
-				}
+				"apply_effect_comp"
 			];
 		},
 		{
 			name: "bokeh";
 			sources: [
-				{
-					type: "compute";
-					shader_name: "bokeh_comp";
-				}
+				"bokeh_comp"
 			];
 		},
 		{
 			name: "brightdetect";
 			sources: [
-				{
-					type: "compute";
-					shader_name: "brightdetect_comp";
-				}
+				"brightdetect_comp"
 			];
 		},
 		{
 			name: "downsample";
 			sources: [
-				{
-					type: "compute";
-					shader_name: "downsample_comp";
-				}
+				"downsample_comp"
 			];
 		},
 		{
 			name: "filmic_smaa_tu2x";
 			sources: [
-				{
-					type: "compute";
-					shader_name: "filmic_smaa_tu2x_comp";
-				}
+				"filmic_smaa_tu2x_comp"
 			];
 		},
 		{
 			name: "generate_motion_vectors";
 			sources: [
-				{
-					type: "compute";
-					shader_name: "generate_motion_vectors_comp";
-				}
+				"generate_motion_vectors_comp"
 			];
 		},
 		{
 			name: "compute_histogram";
 			sources: [
-				{
-					type: "compute";
-					shader_name: "comp_histogram_comp";
-				}
+				"comp_histogram_comp"
 			];
 		},
 		{
 			name: "compute_brightness";
 			sources: [
-				{
-					type: "compute";
-					shader_name: "comp_average_brightness_comp";
-				}
+				"comp_average_brightness_comp"
 			];
 		},
 		{
 			name: "upsample";
 			sources: [
-				{
-					type: "compute";
-					shader_name: "upsample_comp";
-				}
+				"upsample_comp"
 			];
 		},
 		{
 			name: "tile_freq_classification";
 			sources: [
-				{
-					type: "compute";
-					shader_name: "tile_freq_classification_comp";
-				}
+				"tile_freq_classification_comp"
 			];
 		},
 		{
 			name: "clear_tiles";
 			sources: [
-				{
-					type: "compute";
-					shader_name: "clear_tiles_comp";
-				}
+				"clear_tiles_comp"
 			];
 		},
 		{
 			name: "classification_debug";
 			sources: [
-				{
-					type: "compute";
-					shader_name: "classification_debug_comp";
-				}
+				"classification_debug_comp"
 			];
 		}
 	];

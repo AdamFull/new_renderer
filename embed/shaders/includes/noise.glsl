@@ -1,0 +1,19 @@
+#ifndef NOISE_GLSL
+#define NOISE_GLSL
+
+//From "NEXT GENERATION POST PROCESSING IN CALL OF DUTY: ADVANCED WARFARE"
+//http://advances.realtimerendering.com/s2014/index.html
+float interleavedGradientNoise(in vec2 uv)
+{
+	const vec3 magic = vec3(0.06711056f, 0.00583715f, 52.9829189f);
+	return fract(magic.z * fract(dot(uv, magic.xy)));
+}
+
+float interleavedGradientNoise(in vec2 uv, in float offset)
+{
+	uv += offset * (vec2(47, 17) * 0.695f);
+	const vec3 magic = vec3( 0.06711056f, 0.00583715f, 52.9829189f );
+	return fract(magic.z * fract(dot(uv, magic.xy)));
+}
+
+#endif // NOISE_GLSL

@@ -1,0 +1,23 @@
+{
+	enable_extensions: [
+		"GL_ARB_separate_shader_objects",
+		"GL_ARB_shading_language_420pack",
+		"GL_ARB_shader_draw_parameters",
+		"GL_EXT_nonuniform_qualifier",
+		"GL_EXT_shader_8bit_storage",
+		"GL_EXT_shader_16bit_storage",
+		"GL_EXT_control_flow_attributes",
+		"GL_EXT_shader_atomic_float"
+	];
+
+	definitions: ["MESH_DATA", "CULLING_DATA"];
+
+	require_extensions: [
+		"GL_EXT_buffer_reference",
+		"GL_EXT_shader_explicit_arithmetic_types",
+		"GL_EXT_shader_explicit_arithmetic_types_int8"
+	];
+
+	type: "compute";
+	source: "tile_freq_classification.comp";
+}

@@ -1,0 +1,380 @@
+#version 450
+
+#include "visibility_buffer"
+#include "compute_common"
+#include "lighting_model"
+#include "shadow_sampling"
+#include "util"
+#include "noise"
+#include "atmosphere/scattering"
+#include "ssr"
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
+#define DISABLE_SHADOWS
+
+layout(set = 2, binding = 0) uniform writeonly image2D write_color;
+layout(set = 2, binding = 1) uniform sampler2D brdf_lut;
+layout(set = 2, binding = 2) uniform samplerCube irradiance_cube;
+layout(set = 2, binding = 3) uniform samplerCube prefiltered_cube;
+layout(set = 2, binding = 4) uniform sampler2D depth_buffer;
+layout(set = 2, binding = 5) uniform sampler2D prev_frame_color;
+
+layout (set = 2, binding = 6) uniform sampler2DArrayShadow cascaded_shadowmap;
+layout (set = 2, binding = 7) uniform sampler2DArrayShadow direct_shadowmap;
+layout (set = 2, binding = 8) uniform samplerCubeArrayShadow omni_shadowmap;
+
+layout(push_constant) uniform UniformMeshData
+{
+	uint vboId;
+	uint objectId;
+	uint materialId;
+} meshData;
+
+vec4 sampleTexture(in uint s, in VertexAttribute va)
+{
+	return sampleTexture2DGrad(s, 0, va.uv, va.uv_dx, va.uv_dy);
+}
+
+MaterialSample sampleMaterial(in FMaterial mat, in VertexAttribute va)
+{
+	MaterialSample res;
+
+	// Sample albedo
+	vec4 base_color = mat.baseColorFactor * va.color;
+	if(mat.baseColorTexture != INVALID_HANDLE)
+		base_color *= sampleTexture(mat.baseColorTexture, va);
+
+	res.albedo = base_color.rgb;
+	res.opacity = base_color.a;
+
+	// Sample emission
+	res.emission = mat.emissiveFactor;
+	if(mat.emissiveTexture != INVALID_HANDLE)
+		res.emission *= sampleTexture(mat.emissiveTexture, va).rgb;
+	res.emission *= mat.emissiveStrength;
+
+	// Sample metallic roughness
+	res.metallic = mat.metallicFactor;
+	res.roughness = mat.roughnessFactor;
+	if(mat.metallicRoughnessTexture != INVALID_HANDLE)
+	{
+		vec4 mr = sampleTexture(mat.metallicRoughnessTexture, va);
+		res.metallic *= mr.b;
+		res.roughness *= mr.g;
+	}
+	res.roughness = clamp(res.roughness, 0.04, 1.0);
+
+	// Sample normals
+	res.normal = va.normal;
+	if(mat.normalTexture != INVALID_HANDLE)
+	{
+		vec3 ts_normal = sampleTexture(mat.normalTexture, va).rgb;
+
+		vec3 b = cross(va.normal, va.tangent.xyz) * va.tangent.w;
+		mat3 tbn = mat3(va.tangent.xyz, b, va.normal);
+
+		res.normal = normalize(tbn * ((2.0 * ts_normal - 1.0) * vec3(mat.normalScale, mat.normalScale, 1.0)));
+	}
+
+	// Sample AO
+	res.ao = 1.0;
+	if(mat.occlusionTexture != INVALID_HANDLE)
+		res.ao = sampleTexture(mat.occlusionTexture, va).r;
+
+	res.ior = mat.ior;
+
+	return res;
+}
+
+uint getScadowCascadeSplit(in FCascadedShadowCommit shadow, in float view_depth, in float dither)
+{
+	float cascade = 0.0;
+	for(uint i = 0u; i < cascade_shadow_map_cascade_count; ++i)
+	{
+		float split = shadow.splitDepths[i];
+		cascade += float(view_depth > split) * float(split > 0.0);
+	}
+
+	uint cascade_index = uint(min(cascade, float(cascade_shadow_map_cascade_count - 1)));
+
+	//const float cascade_fade_theshold = 0.1f;
+	//float next_split = shadow.splitDepths[cascade_index];
+	//float split_range = cascade_index == 0 ? next_split : next_split - shadow.splitDepths[cascade_index - 1];
+	//float fade_factor = (next_split - view_depth) / split_range;
+	//
+	//if(fade_factor <= cascade_fade_theshold && cascade_index < cascade_shadow_map_cascade_count - 1)
+	//{
+	//	float lerp_amount = smoothstep(0.0f, cascade_fade_theshold, fade_factor);
+	//	if(lerp_amount < dither)
+	//		cascade_index++;
+	//}
+
+	return cascade_index;
+}
+
+float getCascadeShadow(sampler2DArrayShadow shadowmap_tex, in FLightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
+{
+	FCascadedShadowCommit commit = getCascadedShadowCommit(light.shadowIndex);
+	FCamera camera = GetCamera(commit.cameraID);
+
+	uint cascadeIndex = getScadowCascadeSplit(commit, va.linearZ, dither);
+
+	vec4 offsetPos = vec4(va.pos + 0.05 * ms.normal, 1.0);
+	vec4 shadowCoord = (biasMat * getViewProjectionMatrix(camera.matricesOffset + cascadeIndex * matrix_offset_count)) * vec4(va.pos, 1.0);
+	shadowCoord = shadowCoord / shadowCoord.w;
+
+	float shadow_sample = 1.f;
+	if (enableCascadedPCF)
+		shadow_sample = cascadeShadowFilterPCF(shadowmap_tex, shadowCoord, cascadeIndex, 0.005);
+	else
+		shadow_sample = cascadeShadowProjection(shadowmap_tex, shadowCoord, vec2(0.0), cascadeIndex, 0.005);
+
+	return shadow_sample;
+}
+
+vec3 calculateDirectionalLight(in FLightCommit light, in VertexAttribute va, in MaterialSample ms, in vec3 V, in vec3 F0, in float dither)
+{
+	vec3 L = normalize(-light.direction);
+
+	vec3 color = specularContribution(ms.albedo, L, V, ms.normal, F0, ms.metallic, ms.roughness);
+
+	float shadow_factor = 1.0;
+	if(light.castShadows > 0 && light.shadowIndex > -1)
+	{
+		shadow_factor = getCascadeShadow(cascaded_shadowmap, light, va, ms, dither);
+		//shadow_factor = ScreenSpaceShadows(va.pos, light.direction, depth_buffer, 32, 0.02f, dither);
+	}
+
+	return light.color * light.intencity * color * shadow_factor;
+}
+
+
+
+
+float getOmniShadow(samplerCubeArrayShadow shadowmap_tex, in FLightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
+{
+	FOmniShadowCommit commit = getOmniShadowCommit(light.shadowIndex);
+
+	float shadow = 1.0;
+	vec3 shadowClip = va.pos - light.position;
+
+	vec3 L = normalize(light.position - va.pos);
+
+	//float bias = max(0.02 * (1.0 - dot(va.normal, L)), 0.001);
+	float bias = 0.00000001;
+
+	bool enablePCF = true;
+	if (enablePCF)
+		shadow = omniShadowFilterPCF(shadowmap_tex, shadowClip, bias, commit.farPlane, light.shadowIndex);
+	else
+		shadow = omniShadowProjection(shadowmap_tex, shadowClip, vec3(0.0), bias, commit.farPlane, light.shadowIndex);
+
+	return shadow;
+}
+
+vec3 calculatePointLight(in FLightCommit light, in VertexAttribute va, in MaterialSample ms, in vec3 V, in vec3 F0, in float dither)
+{
+	vec3 L = normalize(light.position - va.pos);
+	float dist = distance(va.pos, light.position);
+	
+	float atten = clamp(1.0 - pow(dist, 2.0f)/pow(light.radius, 2.0f), 0.0f, 1.0f); atten *= atten;
+	vec3 color = specularContribution(ms.albedo, L, V, ms.normal, F0, ms.metallic, ms.roughness);
+
+	float shadow_factor = 1.0;
+	if(light.castShadows > 0 && light.shadowIndex > -1)
+	{
+		shadow_factor = getOmniShadow(omni_shadowmap, light, va, ms, dither);
+		//shadow_factor = ScreenSpaceShadows(va.pos, light.direction, depth_buffer, 32, 0.02f, dither);
+	}
+
+	return light.color * atten * color * light.intencity * shadow_factor;
+}
+
+
+float getDirectionalShadow(sampler2DArrayShadow shadomwap_tex, in FLightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
+{
+	FSpotShadowCommit commit = getSpotShadowCommit(light.shadowIndex);
+	FCamera camera = GetCamera(commit.cameraID);
+
+    float shadow = 1.0;
+	vec4 shadowClip	= getViewProjectionMatrix(camera.matricesOffset) * vec4(va.pos, 1.0);
+
+	float cosTheta = dot(va.normal, light.direction);
+	const float max_bias = 0.005f;
+	const float min_bias = 0.001f;
+	float bias = max(max_bias * (1.0 - cosTheta), min_bias);
+
+	bool enablePCF = true;
+	if (enablePCF)
+		shadow = directionalShadowFilterPCF(shadomwap_tex, shadowClip, bias, light.shadowIndex);
+	else
+		shadow = directionalShadowProjection(shadomwap_tex, shadowClip, vec2(0.0), bias, light.shadowIndex);
+	return shadow;
+}
+
+vec3 calculateSpotlight(in FLightCommit light, in VertexAttribute va, in MaterialSample ms, in vec3 V, in vec3 F0, in float dither)
+{
+	vec3 L = normalize(light.position - va.pos);
+
+	// Direction vector from source to target
+	vec3 dir = vec3(normalize(light.direction));
+	if(light.toTarget > 0)
+		dir = normalize(light.position - light.direction);
+
+	vec3 color = specularContribution(ms.albedo, L, V, ms.normal, F0, ms.metallic, ms.roughness);
+
+	// https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_lights_punctual/README.md
+	float cd = dot(light.toTarget > 0 ? L : -L, dir);
+	float angularAttenuation = clamp(cd * light.lightAngleScale + light.lightAngleOffset, 0.0, 1.0);
+	angularAttenuation *= angularAttenuation;	
+
+	float shadow_factor = 1.0;
+	if(light.castShadows > 0 && light.shadowIndex > -1)
+	{
+		shadow_factor = getDirectionalShadow(direct_shadowmap, light, va, ms, dither);
+		//shadow_factor = ScreenSpaceShadows(va.pos, light.direction, depth_buffer, 32, 0.02f, dither);
+	}
+
+	return light.color * light.intencity * color * angularAttenuation * shadow_factor;
+}
+
+vec3 calculateLights(in VertexAttribute va, in MaterialSample ms, in vec3 V, in vec3 F0, in float dither)
+{
+	vec3 Lo =  vec3(0.0);
+
+	for(uint i = 0u; i < frameData.lightCount; i++)
+	{
+		FLightCommit light = getLight(i);
+
+		if(light.type == light_type_directional)
+			Lo += calculateDirectionalLight(light, va, ms, V, F0, dither);
+		else if(light.type == light_type_point)
+			Lo += calculatePointLight(light, va, ms, V, F0, dither);
+		else if(light.type == light_type_spot)
+			Lo += calculateSpotlight(light, va, ms, V, F0, dither);
+	}
+
+	return Lo;
+}
+
+vec3 debug_visualize_cascades(in float view_depth, float dither)
+{
+	FCascadedShadowCommit shadow = getCascadedShadowCommit(0);
+	uint cascade_index = getScadowCascadeSplit(shadow, view_depth, dither);
+
+	switch(cascade_index) 
+	{
+	case 0 : return vec3(1.0f, 0.25f, 0.25f); break;
+	case 1 : return vec3(0.25f, 1.0f, 0.25f); break;
+	case 2 : return vec3(0.25f, 0.25f, 1.0f); break;
+	case 3 : return vec3(1.0f, 1.0f, 0.25f); break;
+	case 4 : return vec3(0.25f, 1.0f, 1.0f); break;
+	case 5 : return vec3(1.0f, 0.25f, 1.0f); break;
+	case 6 : return vec3(1.0f, 0.5f, 0.5f); break;
+	case 7 : return vec3(0.5f, 1.0f, 0.5f); break;
+	}
+
+	return vec3(1.0f, 1.0f, 1.0f);
+}
+
+void main() 
+{
+	uvec2 image_size = imageSize(write_color);
+
+	uvec2 px;
+	vec2 uv;
+
+	if(swizzle_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, gl_WorkGroupID.xy, image_size, uv, px))
+		return;
+
+	FCamera camera = GetCamera(frameData.defaultCameraID);
+	mat4 inv_view = getInvViewMatrix(camera.matricesOffset);
+
+	vec3 camera_pos = vec3(inv_view[3]);
+
+	//vec4 pixel_color = vec4(0.35f, 0.55f, 0.7f, 1.0f);
+	vec4 pixel_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+	VisibilityBuffer visbuffer;
+
+	[[branch]]
+	if(!loadVisBuffer(uv, visbuffer))
+	{
+		vec4 dir_world_space = vec4(0.0);
+		const vec3 origin = vec3(0, atmosphere_planet_radius, 0) + camera_pos;
+		
+		float depth = texture(depth_buffer, uv).r;
+		dir_world_space.xyz = getPositionFromDepth(uv, 1.0f, getInvViewProjectionMatrix(camera.matricesOffset));
+		
+		uint sun_count = 0;
+		for(uint i = 0u; i < frameData.lightCount; i++)
+		{
+			const FLightCommit light = getLight(i);
+			if(light.type == light_type_directional)
+			{
+				const vec3 dir_to_sun = normalize(-light.direction);
+				pixel_color.rgb += atmosphere(origin, dir_world_space.xyz, -dir_to_sun, light.intencity);
+				sun_count++;
+			}
+		}
+		
+		pixel_color.rgb /= float(sun_count);
+		pixel_color.rgb = 1.0 - exp(-1.0 * pixel_color.rgb);
+
+		imageStore(write_color, ivec2(px), pixel_color);
+		return;
+	}
+
+	[[branch]]
+	if(visbuffer.vboID != meshData.vboId)
+	{
+		//imageStore(write_color, ivec2(px), pixel_color);
+		return;
+	}
+
+	float dither = interleavedGradientNoise(uv);
+
+	VertexAttribute va = getVertexData(uv, visbuffer);
+	FMaterial material = GetMaterial(visbuffer.matID);
+	MaterialSample ms = sampleMaterial(material, va);
+
+	// Calculate direction from fragment to viewPosition
+	vec3 V = normalize(camera_pos - va.pos);
+
+	vec3 F0 = F0FromIOR(ms.ior);
+	F0 = mix(F0, ms.albedo, ms.metallic);
+
+	vec3 Lo = calculateLights(va, ms, V, F0, dither);
+
+	// Reflection vector
+	vec3 R = -normalize(reflect(V, ms.normal));
+
+	float NdotV = dot(ms.normal, V);
+	vec2 brdf = texture(brdf_lut, vec2(max(NdotV, 0.0f), ms.roughness)).rg;
+	vec3 reflection = prefilteredReflection(R, ms.roughness, prefiltered_cube);
+	vec3 irradiance = texture(irradiance_cube, ms.normal).rgb;
+
+	// Diffuse based on irradiance
+	vec3 diffuse = ms.albedo * irradiance;
+
+	vec3 F = F_SchlickR(max(NdotV, 0.0f), F0, ms.roughness);
+
+	// Specular reflectance
+	vec3 specular = reflection * (F * brdf.x + brdf.y);
+
+	vec3 kD = (1.0 - F) * (1.0 - ms.metallic);
+	vec3 ambient = kD * diffuse + specular;
+
+	ambient = mix(ambient, ambient * ms.ao, material.occlusionStrenth);
+
+	vec3 res = ambient + ms.emission + Lo;
+	//res *= debug_visualize_cascades(va.linearZ, dither);
+
+	pixel_color = vec4(res, 1.0);
+	//pixel_color.rgb += computeSSR(uv, va.pos, va.normal, ms.metallic, ms.roughness, depth_buffer, prev_frame_color);
+	float ssr_weight = 0.f;
+	//pixel_color.rgb += ScreenSpaceReflections(va.pos, ms.normal, V, ms.roughness, depth_buffer, prev_frame_color, dither, ssr_weight);
+
+	imageStore(write_color, ivec2(px), pixel_color);
+}

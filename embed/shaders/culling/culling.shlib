@@ -5,19 +5,13 @@
 		{
 			name: "cull_and_batch";
 			sources: [
-				{
-					type: "compute";
-					shader_name: "cull_and_batch_comp";
-				}
+				"cull_and_batch_comp"
 			];
 		},
 		{
 			name: "clear_counters";
 			sources: [
-				{
-					type: "compute";
-					shader_name: "clear_counters_comp";
-				}
+					"clear_counters_comp"
 			];
 		}
 	];

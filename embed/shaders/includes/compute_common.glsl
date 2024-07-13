@@ -1,0 +1,103 @@
+#ifndef COMPUTE_COMMON_GLSL
+#define COMPUTE_COMMON_GLSL
+
+uint ABfiM(uint src, uint ins, uint bits)
+{
+	uint mask = (1 << bits) - 1;
+	return (ins & mask) | (src & (~mask));
+}
+
+uint ABfe(uint src, uint off, uint bits)
+{
+	uint mask = (1<<bits) - 1;
+	return (src >> off) & mask;
+}
+
+uvec2 ARmp8x8(uint a)
+{
+	return uvec2(ABfe(a, 1, 3), ABfiM(ABfe(a, 3, 3), a, 1));
+}
+
+// https://github.com/LouisBavoil/ThreadGroupIDSwizzling/blob/master/ThreadGroupTilingX.hlsl
+// Divide the 2D-Dispatch_Grid into tiles of dimension [N, DipatchGridDim.y]
+// “CTA” (Cooperative Thread Array) == Thread Group in DirectX terminology
+uvec2 ThreadGroupTilingX(
+	const uvec2 dipatchGridDim,		// Arguments of the Dispatch call (typically from a ConstantBuffer)
+	const uvec2 ctaDim,			// Already known in HLSL, eg:[numthreads(8, 8, 1)] -> uvec2(8, 8)
+	const uint maxTileWidth,		// User parameter (N). Recommended values: 8, 16 or 32.
+	const uvec2 groupThreadID,		// SV_GroupThreadID
+	const uvec2 groupId			// SV_GroupID
+)
+{
+	// A perfect tile is one with dimensions = [maxTileWidth, dipatchGridDim.y]
+	const uint Number_of_CTAs_in_a_perfect_tile = maxTileWidth * dipatchGridDim.y;
+
+	// Possible number of perfect tiles
+	const uint Number_of_perfect_tiles = dipatchGridDim.x / maxTileWidth;
+
+	// Total number of CTAs present in the perfect tiles
+	const uint Total_CTAs_in_all_perfect_tiles = Number_of_perfect_tiles * maxTileWidth * dipatchGridDim.y;
+	const uint vThreadGroupIDFlattened = dipatchGridDim.x * groupId.y + groupId.x;
+
+	// Tile_ID_of_current_CTA : current CTA to TILE-ID mapping.
+	const uint Tile_ID_of_current_CTA = vThreadGroupIDFlattened / Number_of_CTAs_in_a_perfect_tile;
+	const uint Local_CTA_ID_within_current_tile = vThreadGroupIDFlattened % Number_of_CTAs_in_a_perfect_tile;
+	uint Local_CTA_ID_y_within_current_tile;
+	uint Local_CTA_ID_x_within_current_tile;
+
+	if (Total_CTAs_in_all_perfect_tiles <= vThreadGroupIDFlattened)
+	{
+		// Path taken only if the last tile has imperfect dimensions and CTAs from the last tile are launched. 
+		uint X_dimension_of_last_tile = dipatchGridDim.x % maxTileWidth;
+	#ifdef DXC_STATIC_DISPATCH_GRID_DIM
+		X_dimension_of_last_tile = max(1, X_dimension_of_last_tile);
+	#endif
+		Local_CTA_ID_y_within_current_tile = Local_CTA_ID_within_current_tile / X_dimension_of_last_tile;
+		Local_CTA_ID_x_within_current_tile = Local_CTA_ID_within_current_tile % X_dimension_of_last_tile;
+	}
+	else
+	{
+		Local_CTA_ID_y_within_current_tile = Local_CTA_ID_within_current_tile / maxTileWidth;
+		Local_CTA_ID_x_within_current_tile = Local_CTA_ID_within_current_tile % maxTileWidth;
+	}
+
+	const uint Swizzled_vThreadGroupIDFlattened =
+		Tile_ID_of_current_CTA * maxTileWidth +
+		Local_CTA_ID_y_within_current_tile * dipatchGridDim.x +
+		Local_CTA_ID_x_within_current_tile;
+
+	uvec2 SwizzledvThreadGroupID;
+	SwizzledvThreadGroupID.y = Swizzled_vThreadGroupIDFlattened / dipatchGridDim.x;
+	SwizzledvThreadGroupID.x = Swizzled_vThreadGroupIDFlattened % dipatchGridDim.x;
+
+	uvec2 SwizzledvThreadID;
+	SwizzledvThreadID.x = ctaDim.x * SwizzledvThreadGroupID.x + groupThreadID.x;
+	SwizzledvThreadID.y = ctaDim.y * SwizzledvThreadGroupID.y + groupThreadID.y;
+
+	return SwizzledvThreadID.xy;
+}
+
+bool swizzle_workgroups_8x8(in uvec2 gid, in uvec2 lid, in uvec2 wid, in uvec2 face_size, out vec2 uv, out ivec2 px)
+{
+//#if defined(VENDOR_NVIDIA)
+//			const uvec2 cta = uvec2(8, 8);
+//			const uvec2 grid_dim = face_size / cta;
+//			px = ivec2(ThreadGroupTilingX(grid_dim, cta, 8, lid, wid));
+//#elif defined(VENDOR_AMD)
+			uvec2 base_tx = gid - lid;
+			uint lid1d = lid.y * 8 + lid.x;
+			uvec2 sub_xy = ARmp8x8(lid1d);
+			uvec2 tx = uvec2(sub_xy.x + 8 * ((lid1d >> 6) % 2), sub_xy.y + 8 * ((lid1d >> 7)));
+			px = ivec2(base_tx + tx);
+//#else
+//			px = ivec2(gid);
+//#endif
+	
+	uv = (vec2(px) + vec2(0.5, 0.5)) / vec2(face_size);
+	if (px.x > face_size.x || px.y > face_size.y)
+		return true;
+
+	return false;
+}
+
+#endif // COMPUTE_COMMON_GLSL

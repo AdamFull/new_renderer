@@ -1,0 +1,71 @@
+#version 450
+
+#include "shader_inputs"
+#include "compute_common"
+
+#define TILE_SIZE 8
+#define GROUP_SIZE (TILE_SIZE * TILE_SIZE)
+
+layout(local_size_x = TILE_SIZE, local_size_y = TILE_SIZE) in;
+
+layout(set = 1, binding = 0) uniform sampler2D sampler_color;
+
+REGISTER_WO_STORAGE_BUFFER(1, 1, indirect_buffer, uint32_t, indirect_cmds);
+REGISTER_WO_STORAGE_BUFFER(1, 2, high_freq, uint32_t, high_freq_tiles);
+REGISTER_WO_STORAGE_BUFFER(1, 3, low_freq, uint32_t, low_freq_tiles);
+
+shared float shared_luminance_sum;
+shared float shared_luminance_squared_sum;
+
+float luminance(vec3 color)
+{
+	return color.r * 0.2125 + color.g * 0.7154 + color.b * 0.0721;
+}
+
+void main() 
+{
+	uvec2 image_size = textureSize(sampler_color, 0);
+
+	uvec2 px = gl_GlobalInvocationID.xy;
+	vec2 uv;
+
+	if(swizzle_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, gl_WorkGroupID.xy, image_size, uv, px))
+		return;
+
+	// Get the color of the current pixel
+	float luma = luminance(texelFetch(sampler_color, ivec2(px), 0).rgb);
+
+	if (gl_LocalInvocationID.x == 0 && gl_LocalInvocationID.y == 0) 
+	{
+	    shared_luminance_sum = 0.0;
+	    shared_luminance_squared_sum = 0.0;
+	}
+
+	barrier();
+
+	atomicAdd(shared_luminance_sum, luma);
+	atomicAdd(shared_luminance_squared_sum, luma * luma);
+
+	barrier();
+
+	if (gl_LocalInvocationID.x == 0 && gl_LocalInvocationID.y == 0)
+	{
+		float average_luminance = shared_luminance_sum / GROUP_SIZE;
+		float luminance_variance = (shared_luminance_squared_sum / GROUP_SIZE) / (average_luminance * average_luminance) - 1.0;
+
+		// Determine if the tile is high-frequency based on the luminance variance
+		bool is_high_frequency_tile = luminance_variance > 0.04; // You can adjust the threshold as needed
+
+		const uint tile = (gl_WorkGroupID.x & 0xFFFF) | ((gl_WorkGroupID.y & 0xFFFF) << 16);
+		if(is_high_frequency_tile)
+		{
+			uint idx = atomicAdd(indirect_cmds.data[0], 1);
+			high_freq_tiles.data[idx] = tile;
+		}
+		else
+		{
+			uint idx = atomicAdd(indirect_cmds.data[3], 1);
+			low_freq_tiles.data[idx] = tile;
+		}
+	}
+}
