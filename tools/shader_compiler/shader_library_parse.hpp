@@ -83,7 +83,7 @@ namespace shader_compiler
 
     inline void from_json(const nlohmann::json& json, FShaderData& type)
     {
-        utl::parsing::parse_to("shaders", json, type.path);
+        utl::parsing::parse_to("path", json, type.path);
     }
 
 

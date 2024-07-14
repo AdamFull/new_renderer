@@ -221,6 +221,18 @@ bool CVirtualFileSystemManager::ReadFile(const std::string& path, utl::vector<ui
 	return false;
 }
 
+bool CVirtualFileSystemManager::ReadFile(const std::string& path, utl::vector<uint32_t>& data)
+{
+	auto pFile = OpenFile(path);
+	if (pFile && pFile->IsOpen())
+	{
+		pFile->Read(data);
+		return true;
+	}
+
+	return false;
+}
+
 bool CVirtualFileSystemManager::WriteFile(const std::string& path, const std::string& data)
 {
 	auto pFile = CreateFile(path);

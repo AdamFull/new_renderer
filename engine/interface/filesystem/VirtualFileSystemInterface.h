@@ -41,6 +41,7 @@ namespace engine
             virtual bool ReadFile(const std::string& path, char* data, size_t size) = 0;
             virtual bool ReadFile(const std::string& path, std::string& data) = 0;
             virtual bool ReadFile(const std::string& path, utl::vector<uint8_t>& data) = 0;
+            virtual bool ReadFile(const std::string& path, utl::vector<uint32_t>& data) = 0;
 
             virtual bool WriteFile(const std::string& path, const std::string& data) = 0;
             virtual bool WriteFile(const std::string& path, const utl::vector<uint8_t>& binary) = 0;

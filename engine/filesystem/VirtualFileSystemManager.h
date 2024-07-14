@@ -127,6 +127,7 @@ namespace engine
 			bool ReadFile(const std::string& path, char* data, size_t size) override;
 			bool ReadFile(const std::string& path, std::string& data) override;
 			bool ReadFile(const std::string& path, utl::vector<uint8_t>& data) override;
+			bool ReadFile(const std::string& path, utl::vector<uint32_t>& data) override;
 
 			bool WriteFile(const std::string& path, const std::string& data) override;
 			bool WriteFile(const std::string& path, const utl::vector<uint8_t>& binary) override;

@@ -233,9 +233,6 @@ void CLibraryCompiler::CompilePermutations(const std::filesystem::path& parent_p
 	if (!std::filesystem::exists(shader_library_path))
 		std::filesystem::create_directories(shader_library_path);
 
-	if (shader_name == "unidirectional_shadow")
-		int iiiii = 0;
-
 	u64 shader_index{ 0ull };
 	// Process all shader included sources
 	for (auto& meta_name : sources)
@@ -346,17 +343,20 @@ void CLibraryCompiler::CompilePermutations(const std::filesystem::path& parent_p
 					auto compiled_spirv = m_pShaderCompiler->compile(preprocessed_code, compile_info);
 
 					std::stringstream ss{};
-					ss << shader_name << "." << name_type_hash << (definitions.empty() ? "" : ".");
-					ss << shader_meta.source;
+					ss << shader_name;
 					for (auto& definition : definitions)
-						ss << "." << definition;
+						ss << ":" << definition;
 
 					m_locks[3].lock();
 					log_info("{} shader {}[{}] was {}.", name_type_hash, ss.str(), preprocessed_hash, is_compiling_first_time ? "compiled" : "recompiled");
 					m_locks[3].unlock();
 
-					compiled_shader_path.path = normalize_path(ss.str() + ".spv").string();
-					auto shader_output_path = shader_library_path / compiled_shader_path.path;
+					// Generate name
+					std::stringstream ssn;
+					ssn << shader_name << "." << name_type_hash << "." << unique_module_name << ".spv";
+					compiled_shader_path.path = library_name + "/" + ssn.str();
+
+					auto shader_output_path = normalize_path((shader_library_path / ssn.str()).string());
 					if (!write_file(shader_output_path, compiled_spirv))
 					{
 						log_error("Failed to comile shader: {}.", compiled_shader_path.path);

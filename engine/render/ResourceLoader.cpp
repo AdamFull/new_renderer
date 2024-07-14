@@ -101,7 +101,7 @@ void CResourceLoader::Initialize(IVirtualFileSystemInterface* vfs)
 {
 	m_pVFS = vfs;
 
-	if (!vfs->ReadBson("/root/embed/rendering/shader_cache.shc", m_shaderCache))
+	if (!vfs->ReadBson("/root/embed/rendering/shaders/shader_cache.shc", m_shaderCache))
 		log_error("Failed to load shader cache. ")
 }
 
@@ -173,8 +173,8 @@ bool CResourceLoader::LoadShaderData(const FShaderUploadInfo& load_info, utl::ve
 
 		if (shader_data.data.empty())
 		{
-			auto file_path = fs::path_append("/root/embed/rendering", shader_data.path);
-			if (!m_pVFS->ReadFile(file_path, (char*)(&shader_data.data[0]), shader_data.data.size() * sizeof(u32)))
+			auto file_path = fs::path_append("/root/embed/rendering/shaders", shader_data.path);
+			if (!m_pVFS->ReadFile(file_path, shader_data.data))
 			{
 				log_error("Failed to load shader: {}.", shader_data.path);
 				return false;

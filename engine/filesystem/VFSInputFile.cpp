@@ -113,6 +113,19 @@ CVFSInFile& CVFSInFile::Read(utl::vector<uint8_t>& buffer)
 	return *this;
 }
 
+CVFSInFile& CVFSInFile::Read(utl::vector<uint32_t>& buffer)
+{
+	Seekg(0, SEEK_END);
+	auto filesize = Tellg() / sizeof(uint32_t);
+	Seekg(0);
+
+	buffer.resize(filesize);
+	if (m_pFileInterface)
+		m_gcount = m_pFileInterface->Read(buffer.data(), sizeof(uint32_t), filesize);
+
+	return *this;
+}
+
 CVFSInFile& CVFSInFile::Unget()
 {
 	if (m_pFileInterface)
