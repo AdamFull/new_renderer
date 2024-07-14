@@ -131,6 +131,8 @@ namespace shader_compiler
 
 	void deserialize(const sjson::sjson_object& sjson, FShaderMeta& value)
 	{
+		sjson.try_parse_to("version", value.version);
+
 		sjson.try_parse_to("enable_extensions", value.enable_extensions);
 		sjson.try_parse_to("require_extensions", value.require_extensions);
 		sjson.try_parse_to("definitions", value.definitions);

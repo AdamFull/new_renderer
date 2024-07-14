@@ -1,5 +1,3 @@
-#version 450
-
 #include "math"
 #include "compute_common"
 #include "interop/base"

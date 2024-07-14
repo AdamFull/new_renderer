@@ -105,6 +105,8 @@ namespace shader_compiler
 
 	struct FShaderMeta
 	{
+		i32 version{ 450 };
+
 		utl::vector<std::string> enable_extensions;
 		utl::vector<std::string> require_extensions;
 		utl::vector<std::string> definitions;
@@ -125,7 +127,7 @@ namespace shader_compiler
 	struct FShaderDescription
 	{
 		std::string name;
-		utl::vector<FShaderMeta> sources;
+		utl::vector<std::string> sources;
 	};
 
 	// Describes shader library

@@ -89,13 +89,13 @@ namespace shader_compiler
 		return stream.str();
 	}
 
-	inline bool read_file(const std::filesystem::path& file_path, utl::vector<char>& buffer)
+	inline bool read_file(const std::filesystem::path& file_path, utl::vector<uint8_t>& buffer, const char* mode = "rb")
 	{
 		if (!std::filesystem::exists(file_path))
 			return false;
 
 		auto path_str = file_path.string();
-		FILE* file = fopen(path_str.c_str(), "rb");
+		FILE* file = fopen(path_str.c_str(), mode);
 		if (!file)
 			return false;
 
@@ -113,16 +113,13 @@ namespace shader_compiler
 		size_t result = fread(buffer.data(), 1, file_size, file);
 		fclose(file);
 
-		if (result != file_size)
-			return false;
-
 		return true;
 	}
 
 	template<class _Ty>
 	inline bool parse_file_to(const std::filesystem::path& file_path, _Ty& output)
 	{
-		utl::vector<char> buffer{};
+		utl::vector<uint8_t> buffer{};
 		if (!read_file(file_path, buffer))
 			return false;
 
@@ -134,7 +131,7 @@ namespace shader_compiler
 	template<class _Ty>
 	inline bool parse_json_to(const std::filesystem::path& file_path, _Ty& output)
 	{
-		utl::vector<char> buffer{};
+		utl::vector<uint8_t> buffer{};
 		if (!read_file(file_path, buffer))
 			return false;
 
@@ -145,7 +142,7 @@ namespace shader_compiler
 
 	inline bool parse_header(const std::filesystem::path& file_path, std::string& data)
 	{
-		utl::vector<char> buffer{};
+		utl::vector<uint8_t> buffer{};
 		if (!read_file(file_path, buffer))
 			return false;
 
@@ -154,10 +151,10 @@ namespace shader_compiler
 	}
 
 	template<class _Ty>
-	inline bool dump_json_from(const std::filesystem::path& file_path, const _Ty& input)
+	inline bool dump_json_from(const std::filesystem::path& file_path, const _Ty& input, const char* mode = "wb")
 	{
 		auto path_str = file_path.string();
-		FILE* file = fopen(path_str.c_str(), "wb");
+		FILE* file = fopen(path_str.c_str(), mode);
 		if (!file)
 			return false;
 
@@ -172,7 +169,7 @@ namespace shader_compiler
 		return true;
 	}
 
-	inline void make_shader_compiler_fatal_error(const std::string& name, const std::string& code, const std::string& error)
+	inline void make_shader_compiler_fatal_error(const std::string& name, std::span<uint8_t> code, const std::string& error)
 	{
 		auto current_path = std::filesystem::current_path();
 		log_error(error);

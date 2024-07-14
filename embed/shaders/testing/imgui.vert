@@ -1,6 +1,4 @@
-#version 450
-
-#include "shader_inputs"
+//#include "shader_inputs"
 
 layout (location = 0) in vec2 inPos;
 layout (location = 1) in vec4 inColor;

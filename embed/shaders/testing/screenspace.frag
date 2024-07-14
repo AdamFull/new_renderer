@@ -1,5 +1,3 @@
-#version 450
-
 #include "shader_inputs"
 #include "util"
 

@@ -1,5 +1,3 @@
-#version 450
-
 // Based on shader from this article https://bruop.github.io/exposure/
 
 #define THREADS_X 256

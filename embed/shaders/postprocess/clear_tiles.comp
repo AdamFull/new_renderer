@@ -1,5 +1,3 @@
-#version 450
-
 #include "shader_inputs"
 
 #define GROUP_SIZE 1

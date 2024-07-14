@@ -1,5 +1,3 @@
-#version 450
-
 #include "shader_inputs"
 
 layout(location = 0) out flat uint drawID;
@@ -29,24 +27,24 @@ void main()
 	mat4 modelMatrix = getModelMatrix(node.matrixOffset);
 	//mat4 oldModelMatrix = getOldModelMatrix(node.matrixOffset)
 
-AS_SKIN
+#ifdef HAS_SKIN
 	if(node.skeletonID != ~0u)
 	{
-ned(JOINTS_8BIT)
+#if defined(JOINTS_8BIT)
 		u8vec4 joints = u8vec4(uint8_t(inJoints.x * 255.0), uint8_t(inJoints.y * 255.0), uint8_t(inJoints.z * 255.0), uint8_t(inJoints.w * 255.0));
-fined(JOINTS_16BIT)
+#elif defined(JOINTS_16BIT)
 		u16vec4 joints = u16vec4(uint16_t(inJoints.x * 65535.0), uint16_t(inJoints.y * 65535.0), uint16_t(inJoints.z * 65535.0), uint16_t(inJoints.w * 65535.0));
-
+#endif
 		mat4 skinMat = 
 			inWeights.x * getMatrixById(node.skeletonID, joints.x) +
 			inWeights.y * getMatrixById(node.skeletonID, joints.y) +
 			inWeights.z * getMatrixById(node.skeletonID, joints.z) +
 			inWeights.w * getMatrixById(node.skeletonID, joints.w);
-
+	
 		modelMatrix = modelMatrix * skinMat;
 		// oldModelMatrix = oldModelMatrix * skinMat; // TODO: should keep skinMat from prev frame
 	}
-/ HAS_SKIN
+#endif // HAS_SKIN
 
 	FCamera camera = GetCamera(draw_info.cameraID);
 

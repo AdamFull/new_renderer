@@ -9,7 +9,6 @@
 #include <parsing/argparse.h>
 
 #include "library_compiler.h"
-#include "shader_preprocessor.h"
 
 #include "compiler_parse.h"
 #include "shader_library_parse.hpp"
@@ -54,8 +53,8 @@ int main(int argc, char** argv)
 	fs::path input_path{};
 	fs::path compiled_libraries_output{};
 
-	input_path = "C:\\Users\\ilia.baranov\\Documents\\GitHub\\new_renderer\\embed\\shaders\\config.smake";
-	compiled_libraries_output = "C:\\Users\\ilia.baranov\\Documents\\GitHub\\new_renderer\\bin\\Debug\\engine\\embed\\rendering\\shader_cache.shc";
+	input_path = "..\\..\\..\\..\\embed\\shaders\\config.smake";
+	compiled_libraries_output = "..\\..\\engine\\embed\\rendering\\shader_cache.shc";
 
 	input_path = argparse.try_get("-in", input_path);
 	if (input_path.empty())
@@ -91,8 +90,8 @@ int main(int argc, char** argv)
 
 	// Initialize library compiler
 	auto library_compiler = std::make_unique<CLibraryCompiler>(shaders_common, include_directories);
-	library_compiler->initialize(make_info.targetApi, make_info.lang, build_type);
-	library_compiler->generatePermutations(make_info.permutationPatterns);
+	library_compiler->Initialize(make_info.targetApi, make_info.lang, build_type);
+	library_compiler->GeneratePermutations(make_info.permutationPatterns);
 
 	utl::utils::stopwatch stopwatch{};
 	FShaderCacheData shader_cahce{};
@@ -104,7 +103,7 @@ int main(int argc, char** argv)
 	{
 		log_info("Building module: {}", module_local_path);
 		fs::path module_path = make_file_dir / module_local_path;
-		library_compiler->compile(module_path, shader_cahce);
+		library_compiler->Compile(module_path, shader_cahce);
 			//dump_json_from(compiled_libraries_output, shader_cahce);
 	}
 

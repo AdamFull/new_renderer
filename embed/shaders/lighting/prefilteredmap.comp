@@ -1,5 +1,3 @@
-#version 460
-
 #include "compute_common"
 #include "lighting_model"
 

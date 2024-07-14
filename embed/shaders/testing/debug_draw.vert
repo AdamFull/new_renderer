@@ -1,5 +1,3 @@
-#version 450
-
 #include "shader_inputs"
 
 layout (location = 0) in vec3 inPos;

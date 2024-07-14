@@ -1,5 +1,3 @@
-#version 450
-
 #include "compute_common"
 #include "shader_inputs"
 #include "nvidia_fxaa"

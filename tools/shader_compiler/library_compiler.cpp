@@ -39,15 +39,6 @@ std::string get_definition_by_shader_type(EShaderType type)
 	return res;
 }
 
-std::string emplace_data(std::string base_string, const std::string& target, const std::string& replacement)
-{
-	u64 start_pos = base_string.find(target);
-	if (start_pos == std::string::npos)
-		return base_string;
-	base_string.replace(start_pos, target.length(), replacement);
-	return base_string;
-}
-
 //utl::vector<std::string> make_permutation(u64 mask, const utl::vector<FDefinitionChain>& chains) 
 //{
 //	utl::vector<std::string> permutation;
@@ -96,11 +87,12 @@ void generate_permutations(const utl::vector<std::string>& base, const utl::vect
 
 CLibraryCompiler::CLibraryCompiler(const std::filesystem::path& common_path, const utl::vector<std::filesystem::path>& includes_path)
 {
-	m_pPreprocessor = std::make_unique<CShaderPreprocessor>(common_path, includes_path);
+	m_commonPath = common_path;
+	m_vIncludeDirs = includes_path;
 }
 
 
-void CLibraryCompiler::initialize(ETargetAPIType target_api, EShaderLang shader_lang, ETargetBuildType build_type)
+void CLibraryCompiler::Initialize(ETargetAPIType target_api, EShaderLang shader_lang, ETargetBuildType build_type)
 {
 	switch (shader_lang)
 	{
@@ -109,11 +101,11 @@ void CLibraryCompiler::initialize(ETargetAPIType target_api, EShaderLang shader_
 	case shader_compiler::EShaderLang::eHLSL: { m_pShaderCompiler = std::make_unique<CDXCCompiler>(target_api, build_type); } break;
 	}
 
-	m_pPreprocessor->initialize(shader_lang);
+	m_lang = shader_lang;
 	m_pShaderCompiler->initialize();
 }
 
-void CLibraryCompiler::generatePermutations(const utl::hash_map<std::string, FPermutationPattern>& permutation_patterns)
+void CLibraryCompiler::GeneratePermutations(const utl::hash_map<std::string, FPermutationPattern>& permutation_patterns)
 {
 	for (const auto& [name, pattern] : permutation_patterns)
 	{
@@ -139,7 +131,7 @@ void CLibraryCompiler::generatePermutations(const utl::hash_map<std::string, FPe
 	}
 }
 
-void CLibraryCompiler::compile(const std::filesystem::path& library_path, FShaderCacheData& shader_cache)
+void CLibraryCompiler::Compile(const std::filesystem::path& library_path, FShaderCacheData& shader_cache)
 {
 	FShaderLibrary shader_library_ci{};
 	if (!parse_file_to(library_path, shader_library_ci))
@@ -165,7 +157,7 @@ void CLibraryCompiler::compile(const std::filesystem::path& library_path, FShade
 		if (!compile.pattern.empty())
 		{
 			const auto& cached_permutations = m_permutations[compile.pattern];
-			compilePermutations(parent_path, compile.name, shader_desc.sources, cached_permutations, compiled_library);
+			CompilePermutations(parent_path, compile.name, shader_desc.sources, cached_permutations, compiled_library);
 		}
 		else
 		{
@@ -173,20 +165,82 @@ void CLibraryCompiler::compile(const std::filesystem::path& library_path, FShade
 			for (const auto& permutation : compile.permutations)
 				cached_permutations.emplace_back(permutation.definitions.begin(), permutation.definitions.end());
 
-			compilePermutations(parent_path, compile.name, shader_desc.sources, cached_permutations, compiled_library);
+			CompilePermutations(parent_path, compile.name, shader_desc.sources, cached_permutations, compiled_library);
 		}
 	}
 }
 
-void CLibraryCompiler::compilePermutations(const std::filesystem::path parent_path, const std::string& name, const utl::vector<FShaderMeta>& sources, const utl::vector<utl::vector<std::string>>& cached_permutations, FCompiledLibrary& compiled_library)
+std::string CLibraryCompiler::GeneratePreamble(const FShaderMeta& meta)
+{
+	std::stringstream ss;
+
+	if (m_lang == EShaderLang::eGLSL)
+	{
+		// Apply enabled extensions
+		for (auto& extension_name : meta.enable_extensions)
+			ss << std::format("#extension {} : enable", extension_name) << std::endl;
+		ss << std::endl;
+
+		// Include extention is required by default
+		ss << "#extension GL_GOOGLE_include_directive : require" << std::endl;
+
+		// Apply required extensions
+		for (auto& extension_name : meta.require_extensions)
+			ss << std::format("#extension {} : require", extension_name) << std::endl;
+		ss << std::endl;
+	}
+
+	// Apply definitions (TODO: add definition values)
+	for (auto& definition : meta.definitions)
+		ss << std::format("#define {}", definition) << std::endl;
+
+	if (m_lang == EShaderLang::eGLSL)
+		ss << "#define __glslang" << std::endl;
+	else if (m_lang == EShaderLang::eHLSL)
+		ss << "#define __hlslang" << std::endl;
+
+	return ss.str();
+}
+
+bool CLibraryCompiler::LoadShader(const std::filesystem::path& library_path, const std::string& meta_name, FShaderMeta& meta, std::vector<uint8_t>& code)
+{
+	utl::vector<std::filesystem::path> search_paths{ library_path, m_commonPath };
+	for (auto& path : search_paths)
+	{
+		auto meta_path = path / (meta_name + ".shmeta");
+		if (!parse_file_to(meta_path, meta))
+			continue;
+
+		auto shader_path = path / meta.source;
+		if (!read_file(shader_path, code, "r"))
+			return false;
+
+		return true;
+	}
+
+	return false;
+}
+
+void CLibraryCompiler::CompilePermutations(const std::filesystem::path& parent_path, const std::string& name, const utl::vector<std::string>& sources, const utl::vector<utl::vector<std::string>>& cached_permutations, FCompiledLibrary& compiled_library)
 {
 	u64 shader_index{ 0ull };
 	// Process all shader included sources
-	for (auto& source : sources)
+	for (auto& meta_name : sources)
 	{
+		// Load meta information and shader code
+		FShaderMeta shader_meta{};
+		utl::vector<uint8_t> shader_code{};
+		if(!LoadShader(parent_path, meta_name, shader_meta, shader_code))
+		{
+			log_error("Failed for open shader. Check that shader in meta file is correct. Required shader name: {}.", meta_name);
+			continue;
+		}
+
+		// Generating base preamble
+		std::string base_preamble = GeneratePreamble(shader_meta);
+
 		// Generate shader code (apply extensions, process includes and definitions)
-		auto base_shader_code = m_pPreprocessor->generate(parent_path, source);
-		auto name_type_hash = get_shader_type(source.type);
+		auto name_type_hash = get_shader_type(shader_meta.type);
 		auto& shader_pool = compiled_library.shaders[name_type_hash];
 
 		// Process and compile all definition combinations
@@ -198,11 +252,10 @@ void CLibraryCompiler::compilePermutations(const std::filesystem::path parent_pa
 			[&](const utl::vector<std::string>& definitions)
 			{
 				bool is_compiling_first_time{ false };
-				FCompileInfo compile_info{ source.type, source.source };
 
 				// This thing will add unique definitions by shader type. Dor example for vertex shader it will add VERTEX_SHADER definition
 				utl::vector<std::string> unique_shader_definitions(definitions.begin(), definitions.end());
-				unique_shader_definitions.emplace_back(get_definition_by_shader_type(source.type));
+				unique_shader_definitions.emplace_back(get_definition_by_shader_type(shader_meta.type));
 
 				// Make unique shader name(key)
 				auto unique_module_name = make_module_unique_name_str(name, definitions);
@@ -212,13 +265,16 @@ void CLibraryCompiler::compilePermutations(const std::filesystem::path parent_pa
 				utl::vector<FShaderModule>& shader_modules = compiled_library.modules[unique_module_name];
 				m_locks[0].unlock();
 
-				// Apply definitions for current permutation
-				std::stringstream ss{ "" };
-				for (auto& definition : unique_shader_definitions)
-					ss << std::format("#define {}", definition) << std::endl;
-				ss << std::endl;
+				FCompileInfo compile_info{};
+				compile_info.version = shader_meta.version;
+				compile_info.type = shader_meta.type;
+				compile_info.name = shader_meta.source;
+				compile_info.include_directories = m_vIncludeDirs;
 
-				auto shader_code = emplace_data(base_shader_code, "{other_definitions}", ss.str());
+				// Apply definitions for current permutation
+				compile_info.preamble = base_preamble;
+				for (auto& definition : unique_shader_definitions)
+					compile_info.preamble += std::format("#define {}\n", definition);
 
 				// Preprocess generated code (and remove ugly code after preprocessing)
 				std::string preprocessed_code{};
@@ -239,7 +295,7 @@ void CLibraryCompiler::compilePermutations(const std::filesystem::path parent_pa
 				m_locks[2].lock();
 				if (shader_modules.empty() || (shader_modules.size() <= shader_index))
 				{
-					shader_modules.emplace_back(source.type, 0ull);
+					shader_modules.emplace_back(shader_meta.type, 0ull);
 					is_compiling_first_time = true;
 				}
 				m_locks[2].unlock();
@@ -247,14 +303,14 @@ void CLibraryCompiler::compilePermutations(const std::filesystem::path parent_pa
 				auto& current_module = shader_modules.at(shader_index);
 
 				bool is_code_outdated = current_module.link != utl::cast<int64_t>(preprocessed_hash);
-				bool is_type_missmatch = current_module.type != source.type;
+				bool is_type_missmatch = current_module.type != shader_meta.type;
 
 				// Notify, that type was changed
 				if (is_type_missmatch)
 				{
 					m_locks[3].lock();
 					log_warning("Type mismatch for shader module named: \"{}\". Previous type: \"{}\" new type: \"{}\". Old shaders will be removed.",
-						unique_module_name, get_shader_type_str(current_module.type), get_shader_type_str(source.type));
+						unique_module_name, get_shader_type_str(current_module.type), get_shader_type_str(shader_meta.type));
 					m_locks[3].unlock();
 
 					// Removing old shaders
@@ -266,7 +322,7 @@ void CLibraryCompiler::compilePermutations(const std::filesystem::path parent_pa
 					// Cleaning links
 					m_locks[2].lock();
 					shader_modules.clear();
-					current_module = shader_modules.emplace_back(source.type, 0ull);
+					current_module = shader_modules.emplace_back(shader_meta.type, 0ull);
 					m_locks[2].unlock();
 				}
 
@@ -276,7 +332,7 @@ void CLibraryCompiler::compilePermutations(const std::filesystem::path parent_pa
 					compiled_spirv = m_pShaderCompiler->compile(preprocessed_code, compile_info);
 
 					std::stringstream ss{};
-					ss << source.source;
+					ss << shader_meta.source;
 					for (auto& definition : definitions)
 						ss << ":" << definition;
 

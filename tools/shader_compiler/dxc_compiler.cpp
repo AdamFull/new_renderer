@@ -65,10 +65,10 @@ bool CDXCCompiler::initialize()
 	return true;
 }
 
-bool CDXCCompiler::preprocess(const std::string& shader_code, const FCompileInfo& info, std::string& preprocessed_code, u32& preprocessed_hash)
+bool CDXCCompiler::preprocess(std::span<uint8_t> shader_code, const FCompileInfo& info, std::string& preprocessed_code, u32& preprocessed_hash)
 {
 	CComPtr<IDxcBlobEncoding> pSourceBlob;
-	HRESULT hr = m_pLibrary->CreateBlobWithEncodingFromPinned(shader_code.c_str(), shader_code.size(), CP_UTF8, &pSourceBlob);
+	HRESULT hr = m_pLibrary->CreateBlobWithEncodingFromPinned(shader_code.data(), shader_code.size(), CP_UTF8, &pSourceBlob);
 	if (FAILED(hr)) 
 	{
 		log_error("Failed to create source blob");
@@ -103,19 +103,23 @@ bool CDXCCompiler::preprocess(const std::string& shader_code, const FCompileInfo
 	
 	IDxcBlob* pBlob;
 	hr = pResult->GetResult(&pBlob);
-	if (SUCCEEDED(hr)) 
-		preprocessed_code = std::string((char*)pBlob->GetBufferPointer(), pBlob->GetBufferSize());
+	if (SUCCEEDED(hr))
+	{
+		char* begin = (char*)pBlob->GetBufferPointer();
+		char* end = begin + pBlob->GetBufferSize();
+		preprocessed_code.insert(preprocessed_code.end(), begin, end);
+	}
 	pBlob->Release();
 
-	preprocessed_hash = utl::fnv1a_32_hash_cstr(preprocessed_code.c_str());
+	preprocessed_hash = utl::fnv1a_32_hash(preprocessed_code.data(), preprocessed_code.size());
 
 	return true;
 }
 
-utl::vector<uint32_t> CDXCCompiler::compile(const std::string& shader_code, const FCompileInfo& info)
+utl::vector<uint32_t> CDXCCompiler::compile(std::span<char> shader_code, const FCompileInfo& info)
 {
 	CComPtr<IDxcBlobEncoding> pSourceBlob;
-	HRESULT hr = m_pLibrary->CreateBlobWithEncodingFromPinned(shader_code.c_str(), shader_code.size(), CP_UTF8, &pSourceBlob);
+	HRESULT hr = m_pLibrary->CreateBlobWithEncodingFromPinned(shader_code.data(), shader_code.size(), CP_UTF8, &pSourceBlob);
 	if (FAILED(hr))
 	{
 		log_error("Failed to create source blob");

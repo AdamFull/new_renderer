@@ -1,4 +1,6 @@
 {
+	version: 460;
+
 	enable_extensions: [
 		"GL_ARB_compute_shader"
 	];

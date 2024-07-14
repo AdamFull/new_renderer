@@ -1,6 +1,4 @@
-#version 450
-
-#include "shader_inputs"
+//#include "shader_inputs"
 
 layout (set = 1, binding = 0) uniform sampler2D font_sampler;
 

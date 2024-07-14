@@ -1,5 +1,3 @@
-#version 450
-
 #include "shader_inputs"
 
 layout(location = 0) out vec2 outTexcoord;

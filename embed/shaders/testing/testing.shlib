@@ -11,7 +11,7 @@
 		},
 		{
 			name: "imgui";
-			sources: [;
+			sources: [
 				"imgui_vert",
 				"imgui_frag"
 			];

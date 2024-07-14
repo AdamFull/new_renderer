@@ -1,5 +1,5 @@
 #ifndef UTIL_GLSL
-#endif UTIL_GLSL
+#define UTIL_GLSL
 
 vec4 sRGBToLinear(in vec4 srgbIn)
 {
