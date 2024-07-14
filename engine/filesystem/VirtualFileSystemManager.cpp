@@ -185,6 +185,18 @@ std::unique_ptr<IDirectoryIteratorInterface> CVirtualFileSystemManager::Walk(con
 	return std::make_unique<CDirectoryIterator>(pFilesystem->Walk(fs::get_local_path(path), recursive), fs::get_mount_point(path));
 }
 
+bool CVirtualFileSystemManager::ReadFile(const std::string& path, char* data, size_t size)
+{
+	auto pFile = OpenFile(path);
+	if (pFile && pFile->IsOpen())
+	{
+		pFile->Read(data, size);
+		return true;
+	}
+
+	return false;
+}
+
 bool CVirtualFileSystemManager::ReadFile(const std::string& path, std::string& data)
 {
 	auto pFile = OpenFile(path);

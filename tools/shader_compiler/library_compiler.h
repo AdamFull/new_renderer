@@ -15,7 +15,7 @@ namespace shader_compiler
 	{
 	public:
 		CLibraryCompiler() = default;
-		CLibraryCompiler(const std::filesystem::path& common_path, const utl::vector<std::filesystem::path>& includes_path);
+		CLibraryCompiler(const std::filesystem::path& common_path, const utl::vector<std::filesystem::path>& includes_path, const std::filesystem::path& out_dir);
 
 		void Initialize(ETargetAPIType target_api, EShaderLang shader_lang, ETargetBuildType build_type);
 		void GeneratePermutations(const utl::hash_map<std::string, FPermutationPattern>& permutation_patterns);
@@ -23,13 +23,14 @@ namespace shader_compiler
 	protected:
 		bool LoadShader(const std::filesystem::path& library_path, const std::string& meta_name, FShaderMeta& meta, std::vector<uint8_t>& code);
 		std::string GeneratePreamble(const FShaderMeta& meta);
-		void CompilePermutations(const std::filesystem::path& parent_path, const std::string& name, const utl::vector<std::string>& sources, const utl::vector<utl::vector<std::string>>& cached_permutations, FCompiledLibrary& compiled_library);
+		void CompilePermutations(const std::filesystem::path& parent_path, const std::string& shader_name, const std::string& library_name, const utl::vector<std::string>& sources, const utl::vector<utl::vector<std::string>>& cached_permutations, FCompiledLibrary& compiled_library);
 	private:
 		utl::hash_map<std::string, utl::vector<utl::vector<std::string>>> m_permutations;
 		std::unique_ptr<IShaderCompiler> m_pShaderCompiler{};
 		std::array<std::mutex, 4> m_locks{};
 
 		std::filesystem::path m_commonPath;
+		std::filesystem::path m_outpath;
 		utl::vector<std::filesystem::path> m_vIncludeDirs;
 
 		EShaderLang m_lang;

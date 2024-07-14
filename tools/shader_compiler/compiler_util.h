@@ -89,7 +89,8 @@ namespace shader_compiler
 		return stream.str();
 	}
 
-	inline bool read_file(const std::filesystem::path& file_path, utl::vector<uint8_t>& buffer, const char* mode = "rb")
+	template<typename _Ty>
+	inline bool read_file(const std::filesystem::path& file_path, utl::vector<_Ty>& buffer, const char* mode = "rb")
 	{
 		if (!std::filesystem::exists(file_path))
 			return false;
@@ -111,6 +112,23 @@ namespace shader_compiler
 
 		buffer.resize(file_size);
 		size_t result = fread(buffer.data(), 1, file_size, file);
+		fclose(file);
+
+		return true;
+	}
+
+	template<typename _Ty>
+	inline bool write_file(const std::filesystem::path& file_path, utl::vector<_Ty>& buffer, const char* mode = "wb")
+	{
+		auto path_str = file_path.string();
+		FILE* file = fopen(path_str.c_str(), mode);
+		if (!file)
+			return false;
+
+		size_t result = fwrite(buffer.data(), sizeof(_Ty), buffer.size(), file);
+		if (result != buffer.size())
+			return false;
+
 		fclose(file);
 
 		return true;
@@ -153,20 +171,11 @@ namespace shader_compiler
 	template<class _Ty>
 	inline bool dump_json_from(const std::filesystem::path& file_path, const _Ty& input, const char* mode = "wb")
 	{
-		auto path_str = file_path.string();
-		FILE* file = fopen(path_str.c_str(), mode);
-		if (!file)
-			return false;
-
 		std::vector<uint8_t> data = nlohmann::json::to_bson(nlohmann::json(input));
+		if (write_file(file_path, data, mode))
+			return true;
 
-		size_t result = fwrite(data.data(), 1, data.size(), file);
-		fclose(file);
-
-		if (result != data.size())
-			return false;
-
-		return true;
+		return false;
 	}
 
 	inline void make_shader_compiler_fatal_error(const std::string& name, std::span<uint8_t> code, const std::string& error)

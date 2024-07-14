@@ -31,6 +31,12 @@ namespace shader_compiler
         u32 link{ 0ll };
     };
 
+    struct FShaderData
+    {
+        std::string path;
+        utl::vector<u32> data;
+    };
+
     // Contains associative maps for cantaining compiled shader code
     struct FCompiledLibrary
     {
@@ -47,7 +53,7 @@ namespace shader_compiler
 
         // Key is the type of shader (EShaderType) it's like container of same shader types. 
         // Key in value it's link to shader from shader module. 
-        utl::hash_map<u32, utl::hash_map<u32, utl::vector<u32>>> shaders;
+        utl::hash_map<u32, utl::hash_map<u32, FShaderData>> shaders;
         utl::hash_map<u32, utl::vector<FShaderModule>> modules;
     };
 
@@ -67,6 +73,17 @@ namespace shader_compiler
     {
         utl::parsing::parse_to("type", json, type.type);
         utl::parsing::parse_to("link", json, type.link);
+    }
+
+
+    inline void to_json(nlohmann::json& json, const FShaderData& type)
+    {
+        utl::parsing::serialize_from("path", json, type.path, true);
+    }
+
+    inline void from_json(const nlohmann::json& json, FShaderData& type)
+    {
+        utl::parsing::parse_to("shaders", json, type.path);
     }
 
 

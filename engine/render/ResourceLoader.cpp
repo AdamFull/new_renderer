@@ -99,6 +99,8 @@ u32 get_ktx_api_specific_format(ktxTexture* This)
 
 void CResourceLoader::Initialize(IVirtualFileSystemInterface* vfs)
 {
+	m_pVFS = vfs;
+
 	if (!vfs->ReadBson("/root/embed/rendering/shader_cache.shc", m_shaderCache))
 		log_error("Failed to load shader cache. ")
 }
@@ -150,6 +152,7 @@ bool CResourceLoader::LoadShaderData(const FShaderUploadInfo& load_info, utl::ve
 	for (const auto& shader_module : shader_modules)
 	{
 		auto pool_name = shader_compiler::get_shader_type(shader_module.type);
+
 		auto found_shader_pool = shader_library.shaders.find(pool_name);
 		if (found_shader_pool == shader_library.shaders.end())
 		{
@@ -163,9 +166,22 @@ bool CResourceLoader::LoadShaderData(const FShaderUploadInfo& load_info, utl::ve
 		if (found_shader_code == shader_pool.end())
 			continue;
 
+		shader_compiler::FShaderData& shader_data = found_shader_code->second;
+
 		auto& shader_code_info = shader_stages.emplace_back();
 		shader_code_info.stage = utl::cast<u32>(shader_module.type);
-		shader_code_info.code = &found_shader_code->second;
+
+		if (shader_data.data.empty())
+		{
+			auto file_path = fs::path_append("/root/embed/rendering", shader_data.path);
+			if (!m_pVFS->ReadFile(file_path, (char*)(&shader_data.data[0]), shader_data.data.size() * sizeof(u32)))
+			{
+				log_error("Failed to load shader: {}.", shader_data.path);
+				return false;
+			}
+		}
+
+		shader_code_info.code = &shader_data.data;
 	}
 
 	return true;

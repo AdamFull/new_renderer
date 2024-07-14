@@ -13,6 +13,11 @@
 
 using namespace shader_compiler;
 
+std::filesystem::path normalize_path(const std::filesystem::path& path)
+{
+	return std::filesystem::weakly_canonical(path).make_preferred();
+}
+
 std::string get_definition_by_shader_type(EShaderType type)
 {
 	std::string res{};
@@ -85,9 +90,10 @@ void generate_permutations(const utl::vector<std::string>& base, const utl::vect
 	}
 }
 
-CLibraryCompiler::CLibraryCompiler(const std::filesystem::path& common_path, const utl::vector<std::filesystem::path>& includes_path)
+CLibraryCompiler::CLibraryCompiler(const std::filesystem::path& common_path, const utl::vector<std::filesystem::path>& includes_path, const std::filesystem::path& out_dir)
 {
 	m_commonPath = common_path;
+	m_outpath = out_dir;
 	m_vIncludeDirs = includes_path;
 }
 
@@ -157,7 +163,7 @@ void CLibraryCompiler::Compile(const std::filesystem::path& library_path, FShade
 		if (!compile.pattern.empty())
 		{
 			const auto& cached_permutations = m_permutations[compile.pattern];
-			CompilePermutations(parent_path, compile.name, shader_desc.sources, cached_permutations, compiled_library);
+			CompilePermutations(parent_path, compile.name, shader_library_ci.name, shader_desc.sources, cached_permutations, compiled_library);
 		}
 		else
 		{
@@ -165,7 +171,7 @@ void CLibraryCompiler::Compile(const std::filesystem::path& library_path, FShade
 			for (const auto& permutation : compile.permutations)
 				cached_permutations.emplace_back(permutation.definitions.begin(), permutation.definitions.end());
 
-			CompilePermutations(parent_path, compile.name, shader_desc.sources, cached_permutations, compiled_library);
+			CompilePermutations(parent_path, compile.name, shader_library_ci.name, shader_desc.sources, cached_permutations, compiled_library);
 		}
 	}
 }
@@ -221,8 +227,15 @@ bool CLibraryCompiler::LoadShader(const std::filesystem::path& library_path, con
 	return false;
 }
 
-void CLibraryCompiler::CompilePermutations(const std::filesystem::path& parent_path, const std::string& name, const utl::vector<std::string>& sources, const utl::vector<utl::vector<std::string>>& cached_permutations, FCompiledLibrary& compiled_library)
+void CLibraryCompiler::CompilePermutations(const std::filesystem::path& parent_path, const std::string& shader_name, const std::string& library_name, const utl::vector<std::string>& sources, const utl::vector<utl::vector<std::string>>& cached_permutations, FCompiledLibrary& compiled_library)
 {
+	auto shader_library_path = m_outpath / library_name;
+	if (!std::filesystem::exists(shader_library_path))
+		std::filesystem::create_directories(shader_library_path);
+
+	if (shader_name == "unidirectional_shadow")
+		int iiiii = 0;
+
 	u64 shader_index{ 0ull };
 	// Process all shader included sources
 	for (auto& meta_name : sources)
@@ -258,7 +271,7 @@ void CLibraryCompiler::CompilePermutations(const std::filesystem::path& parent_p
 				unique_shader_definitions.emplace_back(get_definition_by_shader_type(shader_meta.type));
 
 				// Make unique shader name(key)
-				auto unique_module_name = make_module_unique_name_str(name, definitions);
+				auto unique_module_name = make_module_unique_name_str(shader_name, definitions);
 
 				// Get shader module
 				m_locks[0].lock();
@@ -288,9 +301,6 @@ void CLibraryCompiler::CompilePermutations(const std::filesystem::path& parent_p
 				}
 
 				// Make hash for preprocessed data
-				m_locks[1].lock();
-				auto& compiled_spirv = shader_pool[preprocessed_hash];
-				m_locks[1].unlock();
 
 				m_locks[2].lock();
 				if (shader_modules.empty() || (shader_modules.size() <= shader_index))
@@ -329,16 +339,29 @@ void CLibraryCompiler::CompilePermutations(const std::filesystem::path& parent_p
 				// Compile shader if we need
 				if (is_code_outdated || is_type_missmatch || is_compiling_first_time)
 				{
-					compiled_spirv = m_pShaderCompiler->compile(preprocessed_code, compile_info);
+					m_locks[1].lock();
+					auto& compiled_shader_path = shader_pool[preprocessed_hash];
+					m_locks[1].unlock();
+
+					auto compiled_spirv = m_pShaderCompiler->compile(preprocessed_code, compile_info);
 
 					std::stringstream ss{};
+					ss << shader_name << "." << name_type_hash << (definitions.empty() ? "" : ".");
 					ss << shader_meta.source;
 					for (auto& definition : definitions)
-						ss << ":" << definition;
+						ss << "." << definition;
 
 					m_locks[3].lock();
 					log_info("{} shader {}[{}] was {}.", name_type_hash, ss.str(), preprocessed_hash, is_compiling_first_time ? "compiled" : "recompiled");
 					m_locks[3].unlock();
+
+					compiled_shader_path.path = normalize_path(ss.str() + ".spv").string();
+					auto shader_output_path = shader_library_path / compiled_shader_path.path;
+					if (!write_file(shader_output_path, compiled_spirv))
+					{
+						log_error("Failed to comile shader: {}.", compiled_shader_path.path);
+						return;
+					}
 				}
 
 				// Removing old shader data

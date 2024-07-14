@@ -25,6 +25,7 @@ namespace engine
 			bool LoadDDSFromMemory(const utl::vector<uint8_t>& data, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info);
 		private:
 			shader_compiler::FShaderCacheData m_shaderCache{};
+			filesystem::IVirtualFileSystemInterface* m_pVFS{ nullptr };
 		};
 	}
 }

@@ -38,6 +38,7 @@ namespace engine
 
             virtual std::unique_ptr<IDirectoryIteratorInterface> Walk(const std::string& path, bool recursive) = 0;
 
+            virtual bool ReadFile(const std::string& path, char* data, size_t size) = 0;
             virtual bool ReadFile(const std::string& path, std::string& data) = 0;
             virtual bool ReadFile(const std::string& path, utl::vector<uint8_t>& data) = 0;
 

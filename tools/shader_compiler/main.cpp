@@ -54,7 +54,7 @@ int main(int argc, char** argv)
 	fs::path compiled_libraries_output{};
 
 	input_path = "..\\..\\..\\..\\embed\\shaders\\config.smake";
-	compiled_libraries_output = "..\\..\\engine\\embed\\rendering\\shader_cache.shc";
+	compiled_libraries_output = "..\\..\\engine\\embed\\rendering\\shaders";
 
 	input_path = argparse.try_get("-in", input_path);
 	if (input_path.empty())
@@ -89,13 +89,13 @@ int main(int argc, char** argv)
 		include_directories.emplace_back(make_file_dir / include_path);
 
 	// Initialize library compiler
-	auto library_compiler = std::make_unique<CLibraryCompiler>(shaders_common, include_directories);
+	auto library_compiler = std::make_unique<CLibraryCompiler>(shaders_common, include_directories, compiled_libraries_output);
 	library_compiler->Initialize(make_info.targetApi, make_info.lang, build_type);
 	library_compiler->GeneratePermutations(make_info.permutationPatterns);
 
 	utl::utils::stopwatch stopwatch{};
 	FShaderCacheData shader_cahce{};
-	if (!parse_json_to(compiled_libraries_output, shader_cahce))
+	if (!parse_json_to(compiled_libraries_output / "shader_cache.shc", shader_cahce))
 		log_info("No shader cache found.");
 
 	// Compile all modules
@@ -107,7 +107,7 @@ int main(int argc, char** argv)
 			//dump_json_from(compiled_libraries_output, shader_cahce);
 	}
 
-	dump_json_from(compiled_libraries_output, shader_cahce);
+	dump_json_from(compiled_libraries_output / "shader_cache.shc", shader_cahce);
 
 	log_info("Cache saved to: {}", compiled_libraries_output.string());
 	log_info("Compilation finished with: {:.2f}s", stopwatch.stop<float>());
