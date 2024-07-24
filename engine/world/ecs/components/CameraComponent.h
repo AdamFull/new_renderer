@@ -1,5 +1,6 @@
 #pragma once
 
+#include <nlohmann/json.hpp>
 #include <standart_library.h>
 
 namespace engine
@@ -39,6 +40,8 @@ namespace engine
 				bool orbit{ true };
 
 				u64 frustumID{ ~0ull };
+
+				//NLOHMANN_DEFINE_TYPE_INTRUSIVE(FCameraComponent, type, fieldOfView, nearPlane, farPlane, aspectRatio, xmag, ymag, controllable, orbit);
 			};
 		}
 	}

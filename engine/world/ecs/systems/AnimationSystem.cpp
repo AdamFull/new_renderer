@@ -116,7 +116,7 @@ void CAnimationSystem::__Update(float fDt)
 	TRACY_PROFILE_FUNCTION();
 
 	auto& registry = m_pSceneGraph->GetRegistry();
-	auto root = m_pSceneGraph->GetRoot();
+	auto root = m_pSceneGraph->GetRoot(); 
 
 	auto& root_component = m_pSceneGraph->GetComponent<FRootComponent>(root);
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <nlohmann/json.hpp>
+
 namespace engine
 {
 	namespace world
@@ -13,6 +15,8 @@ namespace engine
 				std::string name{};
 				bool enabled{ true };
 				bool visible{ true };
+
+				//NLOHMANN_DEFINE_TYPE_INTRUSIVE(FBaseComponent, name, enabled, visible);
 			};
 		}
 	}

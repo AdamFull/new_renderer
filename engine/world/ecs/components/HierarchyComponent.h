@@ -1,5 +1,8 @@
 #pragma once
 
+#include <standart_library.h>
+#include <entt/fwd.hpp>
+
 namespace engine
 {
 	namespace world

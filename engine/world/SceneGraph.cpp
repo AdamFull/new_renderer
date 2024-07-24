@@ -3,6 +3,8 @@
 #include <logger/logger.h>
 #include <engine/world/ecs/components/components.h>
 
+#include "GameObject.h"
+
 using namespace engine::world;
 using namespace engine::world::ecs;
 
@@ -139,4 +141,18 @@ const std::unique_ptr<entt::registry>& CSceneGraph::GetRegistry() const
 entt::entity CSceneGraph::GetRoot() const
 {
 	return m_root;
+}
+
+nlohmann::json CSceneGraph::SerializeGameObject(class CGameObject* go)
+{
+	nlohmann::json j;
+
+	auto entity = go->GetEntity();
+
+	return j;
+}
+
+void CSceneGraph::DeserializeGameObject(const nlohmann::json& j)
+{
+
 }

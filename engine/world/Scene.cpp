@@ -116,6 +116,16 @@ CScene::CScene(IVirtualFileSystemInterface* vfs, render::IRenderInterface* rende
 
 	m_pSceneGraph = new CSceneGraph();
 
+	m_pSceneGraph->RegisterComponent<FBaseComponent>();
+	m_pSceneGraph->RegisterComponent<FCameraComponent>();
+	m_pSceneGraph->RegisterComponent<FDirectionalLightComponent>();
+	m_pSceneGraph->RegisterComponent<FHierarchyComponent>();
+	m_pSceneGraph->RegisterComponent<FMeshComponent>();
+	m_pSceneGraph->RegisterComponent<FPointLightComponent>();
+	m_pSceneGraph->RegisterComponent<FRootComponent>();
+	m_pSceneGraph->RegisterComponent<FSpotLightComponent>();
+	m_pSceneGraph->RegisterComponent<FTransformComponent>();
+
 	m_systems.emplace_back(std::make_unique<ecs::CInputSystem>(m_pSceneGraph));
 	m_systems.emplace_back(std::make_unique<ecs::CAnimationSystem>(m_pSceneGraph));
 	m_systems.emplace_back(std::make_unique<ecs::CScenegraphSystem>(m_pSceneGraph));
