@@ -5,7 +5,8 @@
 #include <nlohmann/json.hpp>
 #include <standart_library.h>
 
-#include "ecs/components/components.h"
+#include <engine/world/ecs/systems/BaseSystem.h>
+#include <engine/world/ecs/components/components.h>
 
 namespace glm
 {
@@ -48,7 +49,7 @@ namespace engine
 			NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FTransformComponent, lposition, lrotation, lscale);
 		}
 
-		class CSceneSerializer
+		class CEntityComponentManager
 		{
 		public:
 			using serialize_function_t = std::function<void(entt::registry&, entt::entity, nlohmann::json&)>;
@@ -69,17 +70,42 @@ namespace engine
 					};
 			}
 
-			static entt::entity CreateNode(entt::registry& registry, entt::entity parent = entt::null, const std::string& name = "");
-			static void DestroyNode(entt::registry& registry, entt::entity node);
-			static void AttachChild(entt::registry& registry, entt::entity parent, entt::entity child);
-			static void DetachChild(entt::registry& registry, entt::entity parent, entt::entity child);
-			static void DetachChild(entt::registry& registry, entt::entity child);
-			static entt::entity Instantiate(entt::registry& registry, entt::entity prefab);
+			template<typename _Ty, typename... _Args>
+			static void RegisterSystem(_Args&&... args)
+			{
+				m_vSystems.emplace_back(std::make_unique<_Ty>(std::forward<_Args>(args)...));
+			}
 
-			static nlohmann::json SerializeEntity(entt::registry& registry, entt::entity entity);
-			static entt::entity DeserializeEntity(entt::registry& registry, entt::entity parent, const nlohmann::json& j);
+			static entt::entity CreateRoot(const std::string& name);
+			static entt::entity CreateNode(const std::string& name = "", entt::entity parent = entt::null);
+			static void DestroyNode(entt::entity node);
+			static void AttachChild(entt::entity parent, entt::entity child);
+			static void DetachChild(entt::entity parent, entt::entity child);
+			static void DetachChild(entt::entity child);
+			static entt::entity Instantiate(entt::entity prefab);
+
+			template<typename _Ty>
+			static _Ty& AddComponent(entt::entity entity, _Ty&& component)
+			{
+				return m_registry.emplace<_Ty>(entity, std::forward<_Ty>(component));
+			}
+
+			template<typename _Ty>
+			static _Ty& GetComponent(entt::entity entity)
+			{
+				return m_registry.get<_Ty>(entity);
+			}
+
+			static entt::registry& GetRegistry() { return m_registry; }
+			static entt::entity GetRoot() { return m_root; }
+
+			static nlohmann::json SerializeEntity(entt::entity entity);
+			static entt::entity DeserializeEntity(entt::entity parent, const nlohmann::json& j);
 
 		private:
+			static entt::registry m_registry;
+			static entt::entity m_root;
+			static utl::vector<std::unique_ptr<ecs::ISystem>> m_vSystems;
 			static utl::hash_map<entt::id_type, serialize_function_t> m_componentSerializers;
 			static utl::hash_map<entt::id_type, deserialize_function_t> m_componentDeserializers;
 		};

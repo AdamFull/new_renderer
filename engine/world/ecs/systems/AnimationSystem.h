@@ -11,7 +11,7 @@ namespace engine
 			class CAnimationSystem : public ISystem
 			{
 			public:
-				CAnimationSystem(CSceneGraph* scenegraph);
+				CAnimationSystem();
 				virtual ~CAnimationSystem() override = default;
 
 				void __Create() override;

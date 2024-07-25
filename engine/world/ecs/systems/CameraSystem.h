@@ -12,7 +12,7 @@ namespace engine
 			class CCameraSystem : public ISystem
 			{
 			public:
-				CCameraSystem(CSceneGraph* scenegraph, render::IRenderInterface* render_interface);
+				CCameraSystem(render::IRenderInterface* render_interface);
 				virtual ~CCameraSystem() override = default;
 
 				void __Create() override;

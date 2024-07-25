@@ -5,7 +5,7 @@
 #include <engine/world/ecs/components/BaseComponent.h>
 #include <engine/world/ecs/components/HierarchyComponent.h>
 #include <engine/world/ecs/components/TransformComponent.h>
-#include <engine/world/SceneGraph.h>
+#include <engine/world/EntityComponentManager.h>
 
 #include <engine/profiler/Profiler.h>
 

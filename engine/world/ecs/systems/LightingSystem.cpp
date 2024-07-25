@@ -1,6 +1,6 @@
 #include "LightingSystem.h"
 
-#include <engine/world/SceneGraph.h>
+#include <engine/world/EntityComponentManager.h>
 #include <engine/world/ecs/components/BaseComponent.h>
 #include <engine/world/ecs/components/TransformComponent.h>
 #include <engine/world/ecs/components/DirectionalLightComponent.h>
@@ -13,9 +13,8 @@ using namespace engine;
 using namespace engine::render;
 using namespace engine::world::ecs;
 
-CLightingSystem::CLightingSystem(CSceneGraph* scenegraph, IRenderInterface* render_interface)
+CLightingSystem::CLightingSystem(IRenderInterface* render_interface)
 {
-	m_pSceneGraph = scenegraph;
 	m_pRenderInterface = render_interface;
 }
 

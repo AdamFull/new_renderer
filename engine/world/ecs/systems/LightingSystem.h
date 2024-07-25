@@ -12,7 +12,7 @@ namespace engine
 			class CLightingSystem : public ISystem
 			{
 			public:
-				CLightingSystem(CSceneGraph* scenegraph, render::IRenderInterface* render_interface);
+				CLightingSystem(render::IRenderInterface* render_interface);
 				virtual ~CLightingSystem() override = default;
 
 				void __Create() override;

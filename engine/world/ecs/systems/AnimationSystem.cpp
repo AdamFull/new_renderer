@@ -1,7 +1,7 @@
 #include "AnimationSystem.h"
 
+#include <engine/world/EntityComponentManager.h>
 #include <engine/world/ecs/components/components.h>
-#include <engine/world/SceneGraph.h>
 
 #include <engine/profiler/Profiler.h>
 #include <execution>
@@ -101,9 +101,9 @@ glm::quat q_interpolate(EInterpolationType interpolation, const utl::vector<glm:
 	}
 }
 
-CAnimationSystem::CAnimationSystem(CSceneGraph* scenegraph)
+CAnimationSystem::CAnimationSystem()
 {
-	m_pSceneGraph = scenegraph;
+	
 }
 
 void CAnimationSystem::__Create()

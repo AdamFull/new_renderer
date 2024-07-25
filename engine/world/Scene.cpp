@@ -1,6 +1,5 @@
 #include "Scene.h"
 
-#include <engine/world/SceneGraph.h>
 #include <engine/world/ecs/components/components.h>
 #include <engine/world/ecs/systems/systems.h>
 
@@ -17,7 +16,7 @@
 
 #include "TerrainGenerator.h"
 
-#include "SceneSerializer.h"
+#include "EntityComponentManager.h"
 
 using namespace engine::world;
 using namespace engine::world::ecs;
@@ -116,37 +115,40 @@ CScene::CScene(IVirtualFileSystemInterface* vfs, render::IRenderInterface* rende
 	m_pVFS = vfs;
 	m_pRenderInterface = render_interface;
 
-	m_pSceneGraph = new CSceneGraph();
+	//CEntityComponentManager::RegisterComponent<FBaseComponent>();
+	CEntityComponentManager::RegisterComponent<FCameraComponent>();
+	CEntityComponentManager::RegisterComponent<FDirectionalLightComponent>();
+	//CEntityComponentManager::RegisterComponent<FHierarchyComponent>();
+	CEntityComponentManager::RegisterComponent<FMeshComponent>();
+	CEntityComponentManager::RegisterComponent<FPointLightComponent>();
+	//CEntityComponentManager::RegisterComponent<FRootComponent>();
+	CEntityComponentManager::RegisterComponent<FSpotLightComponent>();
+	CEntityComponentManager::RegisterComponent<FTransformComponent>();
 
-	//CSceneSerializer::RegisterComponent<FBaseComponent>();
-	CSceneSerializer::RegisterComponent<FCameraComponent>();
-	CSceneSerializer::RegisterComponent<FDirectionalLightComponent>();
-	//CSceneSerializer::RegisterComponent<FHierarchyComponent>();
-	CSceneSerializer::RegisterComponent<FMeshComponent>();
-	CSceneSerializer::RegisterComponent<FPointLightComponent>();
-	//CSceneSerializer::RegisterComponent<FRootComponent>();
-	CSceneSerializer::RegisterComponent<FSpotLightComponent>();
-	CSceneSerializer::RegisterComponent<FTransformComponent>();
+	CEntityComponentManager::RegisterSystem<ecs::CInputSystem>();
+	CEntityComponentManager::RegisterSystem<ecs::CAnimationSystem>();
+	CEntityComponentManager::RegisterSystem<ecs::CScenegraphSystem>();
+	CEntityComponentManager::RegisterSystem<ecs::CSkinningSystem>();
 
-	m_systems.emplace_back(std::make_unique<ecs::CInputSystem>(m_pSceneGraph));
-	m_systems.emplace_back(std::make_unique<ecs::CAnimationSystem>(m_pSceneGraph));
-	m_systems.emplace_back(std::make_unique<ecs::CScenegraphSystem>(m_pSceneGraph));
-	//m_systems.emplace_back(std::make_unique<ecs::CAnimationSystem>(m_pSceneGraph));
-	m_systems.emplace_back(std::make_unique<ecs::CSkinningSystem>(m_pSceneGraph, render_interface));
+	CEntityComponentManager::RegisterSystem<ecs::CCameraSystem>();
+	CEntityComponentManager::RegisterSystem<ecs::CShadowsSystem>();
+	CEntityComponentManager::RegisterSystem<ecs::CLightingSystem>();
+	CEntityComponentManager::RegisterSystem<ecs::CMeshSystem>();
 
-	m_systems.emplace_back(std::make_unique<ecs::CCameraSystem>(m_pSceneGraph, render_interface));
-	m_systems.emplace_back(std::make_unique<ecs::CShadowsSystem>(m_pSceneGraph, render_interface));
-	m_systems.emplace_back(std::make_unique<ecs::CLightingSystem>(m_pSceneGraph, render_interface));
-	m_systems.emplace_back(std::make_unique<ecs::CMeshSystem>(m_pSceneGraph, render_interface));
+	m_systems.emplace_back(std::make_unique<ecs::CInputSystem>());
+	m_systems.emplace_back(std::make_unique<ecs::CAnimationSystem>());
+	m_systems.emplace_back(std::make_unique<ecs::CScenegraphSystem>());
+	//m_systems.emplace_back(std::make_unique<ecs::CAnimationSystem>());
+	m_systems.emplace_back(std::make_unique<ecs::CSkinningSystem>( render_interface));
+
+	m_systems.emplace_back(std::make_unique<ecs::CCameraSystem>(render_interface));
+	m_systems.emplace_back(std::make_unique<ecs::CShadowsSystem>(render_interface));
+	m_systems.emplace_back(std::make_unique<ecs::CLightingSystem>(render_interface));
+	m_systems.emplace_back(std::make_unique<ecs::CMeshSystem>(render_interface));
 }
 
 CScene::~CScene()
 {
-	if (m_pSceneGraph)
-	{
-		delete m_pSceneGraph;
-		m_pSceneGraph = nullptr;
-	}
 }
 
 void CScene::Load(const std::string& path)
@@ -159,10 +161,6 @@ void CScene::Load(const std::string& path)
 		return;
 
 	LoadGLTF(root);
-
-	auto json = CSceneSerializer::SerializeEntity(*m_pSceneGraph->GetRegistry().get(), m_pSceneGraph->GetRoot());
-	auto data = json.dump(4);
-	return;
 }
 
 void CScene::MakeGenerateScene(const std::string& path)
@@ -296,10 +294,11 @@ void CScene::LoadGLTF(easygltf::FGLTFRoot& root)
 
 	// Loading nodes
 	const easygltf::Scene& scene = root.scenes[root.scene > -1 ? root.scene : 0];
-	auto root_node = m_pSceneGraph->CreateRoot(scene.name);
+	m_root = CEntityComponentManager::CreateNode(scene.name);
+	CEntityComponentManager::AddComponent<FRootComponent>(m_root, FRootComponent{});
 
 	for (const auto& node_index : scene.nodes)
-		LoadNode(root, root_node, node_index);
+		LoadNode(root, m_root, node_index);
 
 	LoadAnimations(root);
 	LoadSkins(root);
@@ -323,14 +322,14 @@ void CScene::LoadNode(const easygltf::FGLTFRoot& root, const entt::entity parent
 
 	const auto& node = root.nodes[node_index];
 
-	auto new_node = m_pSceneGraph->CreateNode(node.name);
+	auto new_node = CEntityComponentManager::CreateNode(node.name);
 
 	log_info("[Scene] Loadind node: {}:{}.", node.name, node_index);
 
 	m_temporary.nodeToEntity[node_index] = new_node;
 
 	// Parse node local transform
-	auto& transform = m_pSceneGraph->GetComponent<FTransformComponent>(new_node);
+	auto& transform = CEntityComponentManager::GetComponent<FTransformComponent>(new_node);
 	transform.lposition = glm::make_vec3(node.translation.data());
 	transform.lrotation = glm::make_quat(node.rotation.data());
 	transform.lscale = glm::make_vec3(node.scale.data());
@@ -352,7 +351,7 @@ void CScene::LoadNode(const easygltf::FGLTFRoot& root, const entt::entity parent
 	if(node.hasExtension<easygltf::extensions::KHR_lights_punctual>())
 		LoadLightComponent(root, m_temporary.nodeToEntity[node_index], node_index);
 
-	m_pSceneGraph->AttachChild(parent, new_node);
+	CEntityComponentManager::AttachChild(parent, new_node);
 	render_packet->stats.nodeCount++;
 }
 
@@ -361,7 +360,7 @@ void CScene::LoadMeshComponent(const easygltf::FGLTFRoot& root, const entt::enti
 	const auto& node = root.nodes[node_index];
 	const auto& mesh = root.meshes[node.mesh];
 
-	auto& mesh_component = m_pSceneGraph->AddComponent<FMeshComponent>(parent, FMeshComponent{});
+	auto& mesh_component = CEntityComponentManager::AddComponent<FMeshComponent>(parent, FMeshComponent{});
 	mesh_component.skin = node.skin;
 
 	auto& render_packet = m_pRenderInterface->GetRenderPacket();
@@ -502,7 +501,7 @@ void CScene::LoadCameraComponent(const easygltf::FGLTFRoot& root, const entt::en
 		camera_component.farPlane = camera.perspective.zfar;
 	}
 
-	m_pSceneGraph->AddComponent<FCameraComponent>(parent, std::move(camera_component));
+	CEntityComponentManager::AddComponent<FCameraComponent>(parent, std::move(camera_component));
 }
 
 void CScene::LoadLightComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index)
@@ -515,7 +514,7 @@ void CScene::LoadLightComponent(const easygltf::FGLTFRoot& root, const entt::ent
 		FDirectionalLightComponent light_component;
 		light_component.color = glm::make_vec3(light.color.data());
 		light_component.intencity = light.intensity;
-		m_pSceneGraph->AddComponent<FDirectionalLightComponent>(parent, std::move(light_component));
+		CEntityComponentManager::AddComponent<FDirectionalLightComponent>(parent, std::move(light_component));
 	}
 	else if (light.type == easygltf::extensions::KHR_lights_punctual::enumerators::light_type::spot)
 	{
@@ -524,7 +523,7 @@ void CScene::LoadLightComponent(const easygltf::FGLTFRoot& root, const entt::ent
 		light_component.innerAngle = light.spot.innerConeAngle;
 		light_component.outerAngle = light.spot.outerConeAngle;
 		light_component.intencity = light.intensity;
-		m_pSceneGraph->AddComponent<FSpotLightComponent>(parent, std::move(light_component));
+		CEntityComponentManager::AddComponent<FSpotLightComponent>(parent, std::move(light_component));
 	}
 	else if (light.type == easygltf::extensions::KHR_lights_punctual::enumerators::light_type::point)
 	{
@@ -532,14 +531,13 @@ void CScene::LoadLightComponent(const easygltf::FGLTFRoot& root, const entt::ent
 		light_component.color = glm::make_vec3(light.color.data());
 		light_component.intencity = light.intensity;
 		light_component.radius = (std::max)(light.range, 1.0);
-		m_pSceneGraph->AddComponent<FPointLightComponent>(parent, std::move(light_component));
+		CEntityComponentManager::AddComponent<FPointLightComponent>(parent, std::move(light_component));
 	}
 }
 
 void CScene::LoadAnimations(const easygltf::FGLTFRoot& root)
 {
-	auto scene_root = m_pSceneGraph->GetRoot();
-	auto& root_component = m_pSceneGraph->GetComponent<FRootComponent>(scene_root);
+	auto& root_component = CEntityComponentManager::GetComponent<FRootComponent>(m_root);
 
 	for (auto& anim : root.animations)
 	{
@@ -646,8 +644,7 @@ void CScene::LoadAnimations(const easygltf::FGLTFRoot& root)
 
 void CScene::LoadSkins(const easygltf::FGLTFRoot& root)
 {
-	auto scene_root = m_pSceneGraph->GetRoot();
-	auto& root_component = m_pSceneGraph->GetComponent<FRootComponent>(scene_root);
+	auto& root_component = CEntityComponentManager::GetComponent<FRootComponent>(CEntityComponentManager::GetRoot());
 
 	for (auto& source : root.skins)
 	{

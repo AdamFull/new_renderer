@@ -25,7 +25,7 @@ namespace engine
 			class CInputSystem : public ISystem
 			{
 			public:
-				CInputSystem(CSceneGraph* scenegraph);
+				CInputSystem();
 				virtual ~CInputSystem() override = default;
 
 				void __Create() override;

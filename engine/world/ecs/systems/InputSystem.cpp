@@ -1,6 +1,6 @@
 #include "InputSystem.h"
 
-#include <engine/world/SceneGraph.h>
+#include <engine/world/EntityComponentManager.h>
 #include <engine/world/ecs/components/BaseComponent.h>
 #include <engine/world/ecs/components/CameraComponent.h>
 #include <engine/world/ecs/components/TransformComponent.h>
@@ -18,9 +18,8 @@ inline _Ty remap(_Ty input, _Ty in_min, _Ty in_max, _Ty out_min, _Ty out_max)
 
 using namespace engine::world::ecs;
 
-CInputSystem::CInputSystem(CSceneGraph* scenegraph)
+CInputSystem::CInputSystem()
 {
-	m_pSceneGraph = scenegraph;
 }
 
 void CInputSystem::__Create()

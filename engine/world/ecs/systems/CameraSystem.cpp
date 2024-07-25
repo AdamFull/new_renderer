@@ -1,6 +1,6 @@
 #include "CameraSystem.h"
 
-#include <engine/world/SceneGraph.h>
+#include <engine/world/EntityComponentManager.h>
 #include <engine/world/ecs/components/BaseComponent.h>
 #include <engine/world/ecs/components/CameraComponent.h>
 #include <engine/world/ecs/components/TransformComponent.h>
@@ -10,9 +10,8 @@
 using namespace engine::render;
 using namespace engine::world::ecs;
 
-CCameraSystem::CCameraSystem(CSceneGraph* scenegraph, IRenderInterface* render_interface)
+CCameraSystem::CCameraSystem(IRenderInterface* render_interface)
 {
-	m_pSceneGraph = scenegraph;
 	m_pRenderInterface = render_interface;
 }
 
