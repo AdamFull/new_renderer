@@ -1,5 +1,6 @@
 #pragma once
 
+#include <glm/glm.hpp>
 #include <engine/interface/render/VertexStructures.h>
 #include <embed/shaders/includes/interop/base.h>
 

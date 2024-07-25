@@ -3,6 +3,7 @@
 #include <nlohmann/json.hpp>
 #include <entt/entt.hpp>
 #include <standart_library.h>
+#include <functional>
 
 namespace engine
 {
@@ -12,12 +13,6 @@ namespace engine
 		{
 		public:
 			CSceneGraph();
-
-			template<typename _Ty>
-			void RegisterComponent()
-			{
-				//m_vComponents.emplace_back(entt::type_id<_Ty>().index());
-			}
 
 			entt::entity CreateRoot(const std::string& name);
 			entt::entity CreateNode(const std::string& name);
@@ -43,10 +38,9 @@ namespace engine
 				return m_pRegistry->get<_Ty>(entity);
 			}
 		private:
-			nlohmann::json SerializeGameObject(class CGameObject* go);
-			void DeserializeGameObject(const nlohmann::json& j);
+			nlohmann::json SerializeEntity(entt::entity entity);
+			void DeserializeEntity(const nlohmann::json& j);
 		private:
-			utl::vector<entt::id_type> m_vComponents{};
 			utl::hash_map<entt::entity, class CGameObject*> m_gameObjects;
 			std::unique_ptr<entt::registry> m_pRegistry{};
 			entt::entity m_root{};

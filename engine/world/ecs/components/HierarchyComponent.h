@@ -11,6 +11,7 @@ namespace engine
 		{
 			struct FHierarchyComponent
 			{
+				FHierarchyComponent(entt::entity parent) : parent(parent) {}
 				entt::entity parent{ entt::null };
 				utl::vector<entt::entity> children{};
 			};

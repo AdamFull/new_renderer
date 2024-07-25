@@ -1,5 +1,6 @@
 #pragma once
 
+#include <glm/glm.hpp>
 #include <container/hash_map.h>
 
 namespace engine
@@ -60,6 +61,8 @@ namespace engine
 				utl::vector<FMeshAnimation> animations;
 				utl::vector<FMeshSkin> skins;
 				utl::hash_map<uint32_t, uint32_t> skinRemap{};
+
+				entt::entity entity;
 			};
 		}
 	}

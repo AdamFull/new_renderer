@@ -17,6 +17,8 @@
 
 #include "TerrainGenerator.h"
 
+#include "SceneSerializer.h"
+
 using namespace engine::world;
 using namespace engine::world::ecs;
 using namespace engine::filesystem;
@@ -116,15 +118,15 @@ CScene::CScene(IVirtualFileSystemInterface* vfs, render::IRenderInterface* rende
 
 	m_pSceneGraph = new CSceneGraph();
 
-	m_pSceneGraph->RegisterComponent<FBaseComponent>();
-	m_pSceneGraph->RegisterComponent<FCameraComponent>();
-	m_pSceneGraph->RegisterComponent<FDirectionalLightComponent>();
-	m_pSceneGraph->RegisterComponent<FHierarchyComponent>();
-	m_pSceneGraph->RegisterComponent<FMeshComponent>();
-	m_pSceneGraph->RegisterComponent<FPointLightComponent>();
-	m_pSceneGraph->RegisterComponent<FRootComponent>();
-	m_pSceneGraph->RegisterComponent<FSpotLightComponent>();
-	m_pSceneGraph->RegisterComponent<FTransformComponent>();
+	//CSceneSerializer::RegisterComponent<FBaseComponent>();
+	CSceneSerializer::RegisterComponent<FCameraComponent>();
+	CSceneSerializer::RegisterComponent<FDirectionalLightComponent>();
+	//CSceneSerializer::RegisterComponent<FHierarchyComponent>();
+	CSceneSerializer::RegisterComponent<FMeshComponent>();
+	CSceneSerializer::RegisterComponent<FPointLightComponent>();
+	//CSceneSerializer::RegisterComponent<FRootComponent>();
+	CSceneSerializer::RegisterComponent<FSpotLightComponent>();
+	CSceneSerializer::RegisterComponent<FTransformComponent>();
 
 	m_systems.emplace_back(std::make_unique<ecs::CInputSystem>(m_pSceneGraph));
 	m_systems.emplace_back(std::make_unique<ecs::CAnimationSystem>(m_pSceneGraph));
@@ -157,6 +159,10 @@ void CScene::Load(const std::string& path)
 		return;
 
 	LoadGLTF(root);
+
+	auto json = CSceneSerializer::SerializeEntity(*m_pSceneGraph->GetRegistry().get(), m_pSceneGraph->GetRoot());
+	auto data = json.dump(4);
+	return;
 }
 
 void CScene::MakeGenerateScene(const std::string& path)

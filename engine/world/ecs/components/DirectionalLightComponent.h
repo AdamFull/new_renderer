@@ -1,5 +1,6 @@
 #pragma once
 
+#include <glm/glm.hpp>
 #include <nlohmann/json.hpp>
 #include <standart_library.h>
 
@@ -15,8 +16,6 @@ namespace engine
 				f32 intencity{ 1.f };
 				int shadowIndex{ -1 };
 				bool castShadows{ true };
-
-				//NLOHMANN_DEFINE_TYPE_INTRUSIVE(FDirectionalLightComponent, color, intencity, castShadows);
 			};
 		}
 	}

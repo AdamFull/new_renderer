@@ -142,17 +142,3 @@ entt::entity CSceneGraph::GetRoot() const
 {
 	return m_root;
 }
-
-nlohmann::json CSceneGraph::SerializeGameObject(class CGameObject* go)
-{
-	nlohmann::json j;
-
-	auto entity = go->GetEntity();
-
-	return j;
-}
-
-void CSceneGraph::DeserializeGameObject(const nlohmann::json& j)
-{
-
-}
