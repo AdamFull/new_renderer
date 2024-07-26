@@ -1,6 +1,5 @@
 #pragma once
 
-#include <interface/EngineGui.h>
 #include <interface/EngineSystem.h>
 #include <interface/render/RenderInterface.h>
 #include <engine/interface/WindowInterface.h>
@@ -30,7 +29,6 @@ namespace engine
 		void HandleKeyInput(EKeyCode, EKeyState);
 		void HandleCharInput(u32 character);
 	private:
-		utl::vector<IUIElement*> m_vElements;
 		f32 m_lastMouseX{}, m_lastMouseY{};
 		render::IRenderInterface* m_pRenderInterface{ nullptr };
 	};
