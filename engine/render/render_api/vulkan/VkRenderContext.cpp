@@ -238,10 +238,10 @@ void CVkRenderContext::CreateGlobalDescriptor(const FGlobalUniformCreateInfo& un
 
 	// Descriptor binding extension
 	utl::vector<vk::DescriptorBindingFlags> bindingFlags{};
-	bindingFlags.emplace_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
-	bindingFlags.emplace_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
-	bindingFlags.emplace_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
-	bindingFlags.emplace_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
+	bindingFlags.emplace_back(vk::DescriptorBindingFlagBits::ePartiallyBound /* | vk::DescriptorBindingFlagBits::eUpdateAfterBind */ );
+	bindingFlags.emplace_back(vk::DescriptorBindingFlagBits::ePartiallyBound /* | vk::DescriptorBindingFlagBits::eUpdateAfterBind */ );
+	bindingFlags.emplace_back(vk::DescriptorBindingFlagBits::ePartiallyBound /* | vk::DescriptorBindingFlagBits::eUpdateAfterBind */ );
+	bindingFlags.emplace_back(vk::DescriptorBindingFlagBits::ePartiallyBound /* | vk::DescriptorBindingFlagBits::eUpdateAfterBind */ );
 
 	vk::DescriptorSetLayoutBindingFlagsCreateInfoEXT descriptorSetLayoutBindingFlagsCIEXT{};
 	descriptorSetLayoutBindingFlagsCIEXT.bindingCount = utl::cast<u32>(bindingFlags.size());
