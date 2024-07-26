@@ -7,6 +7,7 @@
 
 namespace ImGui
 {
+    // TODO: Rename this and add ability to register callbacks for value changed (begin/end editing)
     constexpr const float widthScale = 0.2f;
 
     constexpr const char* axis_names[4]{ "X", "Y", "Z", "W" };
