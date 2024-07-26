@@ -111,40 +111,40 @@ void CEngine::Loop()
 		}
 
 		// Pre update zone BEGIN
-		m_pRenderInterface->PreUpdate(dt);
 		m_pSystemManager->PreUpdate(dt);
+		m_pRenderInterface->PreUpdate(dt);
 		m_pApplication->PreUpdate(dt);
 		// Pre update zone END
 
 		// Update zone BEGIN
 		m_pScene->Update(dt);
 		m_pInputMapper->Update(dt);
-		m_pRenderInterface->Update(dt);
 		m_pSystemManager->Update(dt);
+		m_pRenderInterface->Update(dt);
 		m_pApplication->Update(dt);
 		// Update zone END
 
 		// Post update zone BEGIN
-		m_pRenderInterface->PostUpdate(dt);
 		m_pSystemManager->PostUpdate(dt);
+		m_pRenderInterface->PostUpdate(dt);
 		m_pApplication->PostUpdate(dt);
 		// Post update zone EMD
 
 		// Pre render zone BEGIN
-		m_pRenderInterface->PreRender();
 		m_pSystemManager->PreRender();
+		m_pRenderInterface->PreRender();
 		m_pApplication->PreRender();
 		// Pre render zone END
 
 		// Render zone BEGIN
-		m_pRenderInterface->Render();
 		m_pSystemManager->Render();
+		m_pRenderInterface->Render();
 		m_pApplication->Render();
 		// Render zone END
 
 		// Post render zone BEGIN
-		m_pRenderInterface->PostRender();
 		m_pSystemManager->PostRender();
+		m_pRenderInterface->PostRender();
 		m_pApplication->PostRender();
 		// Post render zone END
 

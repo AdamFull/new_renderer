@@ -44,11 +44,11 @@ void prepare_meshes_to_draw(const std::unique_ptr<IRenderWorld>& render_world, c
 void prepare_draw_commands(const std::unique_ptr<IRenderWorld>& render_world, utl::vector<FGeometryBatch>& draw_commands, u32 alpha_mode)
 {
 	auto& registry = CEntityComponentManager::GetRegistry();
-	auto root = scene_graph->GetRoot();
+	auto root = CEntityComponentManager::GetRoot();
 	auto& root_component = CEntityComponentManager::GetComponent<FRootComponent>(root);
 	auto& world_stats = render_world->GetStats();
 
-	auto view = registry->view<FTransformComponent, FBaseComponent, FMeshComponent>();
+	auto view = registry.view<FTransformComponent, FBaseComponent, FMeshComponent>();
 	for (auto [entity, transform, base, mesh_component] : view.each())
 	{
 		if (!base.visible)

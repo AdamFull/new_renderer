@@ -19,10 +19,10 @@ void CCameraSystem::__Create()
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto& registry = m_pSceneGraph->GetRegistry();
+	auto& registry = CEntityComponentManager::GetRegistry();
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
 
-	auto view = registry->view<FTransformComponent, FBaseComponent, FCameraComponent>();
+	auto view = registry.view<FTransformComponent, FBaseComponent, FCameraComponent>();
 	for (auto [entity, transform, base, camera] : view.each())
 		camera.frustumID = render_world->RegisterCamera(ERenderGeometryCullerType::eScene);
 }
@@ -31,12 +31,12 @@ void CCameraSystem::__Update(f32 fDt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto& registry = m_pSceneGraph->GetRegistry();
+	auto& registry = CEntityComponentManager::GetRegistry();
 	auto& render_packet = m_pRenderInterface->GetRenderPacket();
 	auto& render_context = m_pRenderInterface->GetRenderContext();
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
 
-	auto view = registry->view<FTransformComponent, FBaseComponent, FCameraComponent>();
+	auto view = registry.view<FTransformComponent, FBaseComponent, FCameraComponent>();
 	for (auto [entity, transform, base, camera] : view.each())
 	{
 		// TODO: add something like active camera tag

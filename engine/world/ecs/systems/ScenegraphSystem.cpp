@@ -11,9 +11,8 @@
 
 using namespace engine::world::ecs;
 
-CScenegraphSystem::CScenegraphSystem(CSceneGraph* scenegraph)
+CScenegraphSystem::CScenegraphSystem()
 {
-	m_pSceneGraph = scenegraph;
 }
 
 void CScenegraphSystem::__Create()
@@ -25,19 +24,19 @@ void CScenegraphSystem::__Update(f32 fDt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto& registry = m_pSceneGraph->GetRegistry();
-	auto root = m_pSceneGraph->GetRoot();
-	if (!registry->valid(root))
+	auto& registry = CEntityComponentManager::GetRegistry();
+	auto root = CEntityComponentManager::GetRoot();
+	if (!registry.valid(root))
 		return;
 
-	buildHierarchy(registry.get(), root);
+	buildHierarchy(registry, root);
 }
 
-void CScenegraphSystem::buildHierarchy(entt::registry* registry, entt::entity node)
+void CScenegraphSystem::buildHierarchy(entt::registry& registry, entt::entity node)
 {
-	auto& base = registry->get<FBaseComponent>(node);
-	auto& transform = registry->get<FTransformComponent>(node);
-	auto& hierarchy = registry->get<FHierarchyComponent>(node);
+	auto& base = registry.get<FBaseComponent>(node);
+	auto& transform = registry.get<FTransformComponent>(node);
+	auto& hierarchy = registry.get<FHierarchyComponent>(node);
 
 	// Check is update disabled for branch
 	if (!base.enabled)
@@ -47,9 +46,9 @@ void CScenegraphSystem::buildHierarchy(entt::registry* registry, entt::entity no
 	initMatrix(&transform);
 
 	auto parent = hierarchy.parent;
-	if (registry->valid(parent))
+	if (registry.valid(parent))
 	{
-		auto& ptransform = registry->get<FTransformComponent>(parent);
+		auto& ptransform = registry.get<FTransformComponent>(parent);
 		transform.gmodel = ptransform.gmodel * transform.gmodel;
 	}
 

@@ -18,9 +18,8 @@ using namespace engine::world::ecs;
 
 constexpr const f32 cascade_split_lambda = 0.85f;
 
-CShadowsSystem::CShadowsSystem(CSceneGraph* scenegraph, IRenderInterface* render_interface)
+CShadowsSystem::CShadowsSystem(IRenderInterface* render_interface)
 {
-	m_pSceneGraph = scenegraph;
 	m_pRenderInterface = render_interface;
 }
 
@@ -62,7 +61,7 @@ void CShadowsSystem::__Update(f32 fDt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto& registry = m_pSceneGraph->GetRegistry();
+	auto& registry = CEntityComponentManager::GetRegistry();
 	auto& render_packet = m_pRenderInterface->GetRenderPacket();
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
 	auto& render_graph = m_pRenderInterface->GetRenderGraph();
@@ -87,7 +86,7 @@ void CShadowsSystem::__Update(f32 fDt)
 
 		auto& culler_group = m_shadowCullers[ERenderGeometryCullerType::eCascadedShadow];
 
-		auto view = registry->view<FTransformComponent, FBaseComponent, FDirectionalLightComponent>();
+		auto view = registry.view<FTransformComponent, FBaseComponent, FDirectionalLightComponent>();
 		for (auto [entity, ltransform, base, light] : view.each())
 		{
 			// Reset shadow index
@@ -209,7 +208,7 @@ void CShadowsSystem::__Update(f32 fDt)
 		std::array<glm::mat4, 6u> matrices{};
 		auto& culler_group = m_shadowCullers[ERenderGeometryCullerType::eOmniShadow];
 
-		auto view = registry->view<FTransformComponent, FBaseComponent, FPointLightComponent>();
+		auto view = registry.view<FTransformComponent, FBaseComponent, FPointLightComponent>();
 		for (auto [entity, ltransform, base, light] : view.each())
 		{
 			light.shadowIndex = -1;
@@ -255,7 +254,7 @@ void CShadowsSystem::__Update(f32 fDt)
 	{
 		auto& culler_group = m_shadowCullers[ERenderGeometryCullerType::eSpotShadow];
 
-		auto view = registry->view<FTransformComponent, FBaseComponent, FSpotLightComponent>();
+		auto view = registry.view<FTransformComponent, FBaseComponent, FSpotLightComponent>();
 		for (auto [entity, ltransform, base, light] : view.each())
 		{
 			light.shadowIndex = -1;

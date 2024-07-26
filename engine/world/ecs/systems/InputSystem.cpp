@@ -55,8 +55,8 @@ void CInputSystem::__Update(f32 fDt)
 	f32 dY = (curY - oldY) * fDt;
 	oldY = curY;
 
-	auto& registry = m_pSceneGraph->GetRegistry();
-	auto view = registry->view<FTransformComponent, FBaseComponent, FCameraComponent>();
+	auto& registry = CEntityComponentManager::GetRegistry();
+	auto view = registry.view<FTransformComponent, FBaseComponent, FCameraComponent>();
 	for (auto [entity, transform, base, camera] : view.each())
 	{
 		if (base.enabled)

@@ -12,13 +12,13 @@ namespace engine
 			class CScenegraphSystem : public ISystem
 			{
 			public:
-				CScenegraphSystem(CSceneGraph* scenegraph);
+				CScenegraphSystem();
 				virtual ~CScenegraphSystem() override = default;
 
 				void __Create() override;
 				void __Update(float fDt) override;
 			private:
-				static void buildHierarchy(entt::registry* registry, entt::entity node);
+				static void buildHierarchy(entt::registry& registry, entt::entity node);
 				static void initMatrix(FTransformComponent* transform);
 				static void initMatrices(entt::registry* registry, entt::entity node);
 				static void calculateMatrices(entt::registry* registry, entt::entity node);

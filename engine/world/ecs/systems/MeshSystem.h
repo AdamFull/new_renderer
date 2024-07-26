@@ -12,7 +12,7 @@ namespace engine
 			class CMeshSystem : public ISystem
 			{
 			public:
-				CMeshSystem(CSceneGraph* scenegraph, render::IRenderInterface* render_interface);
+				CMeshSystem(render::IRenderInterface* render_interface);
 				virtual ~CMeshSystem() override = default;
 
 				void __Create() override;

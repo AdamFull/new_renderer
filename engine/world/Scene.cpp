@@ -125,21 +125,21 @@ CScene::CScene(IVirtualFileSystemInterface* vfs, render::IRenderInterface* rende
 	CEntityComponentManager::RegisterComponent<FSpotLightComponent>();
 	CEntityComponentManager::RegisterComponent<FTransformComponent>();
 
-	CEntityComponentManager::RegisterSystem<ecs::CInputSystem>();
-	CEntityComponentManager::RegisterSystem<ecs::CAnimationSystem>();
-	CEntityComponentManager::RegisterSystem<ecs::CScenegraphSystem>();
-	CEntityComponentManager::RegisterSystem<ecs::CSkinningSystem>();
-
-	CEntityComponentManager::RegisterSystem<ecs::CCameraSystem>();
-	CEntityComponentManager::RegisterSystem<ecs::CShadowsSystem>();
-	CEntityComponentManager::RegisterSystem<ecs::CLightingSystem>();
-	CEntityComponentManager::RegisterSystem<ecs::CMeshSystem>();
+	//CEntityComponentManager::RegisterSystem<ecs::CInputSystem>();
+	//CEntityComponentManager::RegisterSystem<ecs::CAnimationSystem>();
+	//CEntityComponentManager::RegisterSystem<ecs::CScenegraphSystem>();
+	//CEntityComponentManager::RegisterSystem<ecs::CSkinningSystem>(render_interface);
+	//
+	//CEntityComponentManager::RegisterSystem<ecs::CCameraSystem>(render_interface);
+	//CEntityComponentManager::RegisterSystem<ecs::CShadowsSystem>(render_interface);
+	//CEntityComponentManager::RegisterSystem<ecs::CLightingSystem>(render_interface);
+	//CEntityComponentManager::RegisterSystem<ecs::CMeshSystem>(render_interface);
 
 	m_systems.emplace_back(std::make_unique<ecs::CInputSystem>());
 	m_systems.emplace_back(std::make_unique<ecs::CAnimationSystem>());
 	m_systems.emplace_back(std::make_unique<ecs::CScenegraphSystem>());
 	//m_systems.emplace_back(std::make_unique<ecs::CAnimationSystem>());
-	m_systems.emplace_back(std::make_unique<ecs::CSkinningSystem>( render_interface));
+	m_systems.emplace_back(std::make_unique<ecs::CSkinningSystem>(render_interface));
 
 	m_systems.emplace_back(std::make_unique<ecs::CCameraSystem>(render_interface));
 	m_systems.emplace_back(std::make_unique<ecs::CShadowsSystem>(render_interface));
@@ -294,11 +294,10 @@ void CScene::LoadGLTF(easygltf::FGLTFRoot& root)
 
 	// Loading nodes
 	const easygltf::Scene& scene = root.scenes[root.scene > -1 ? root.scene : 0];
-	m_root = CEntityComponentManager::CreateNode(scene.name);
-	CEntityComponentManager::AddComponent<FRootComponent>(m_root, FRootComponent{});
+	auto scene_root = CEntityComponentManager::CreateRoot(scene.name);
 
 	for (const auto& node_index : scene.nodes)
-		LoadNode(root, m_root, node_index);
+		LoadNode(root, scene_root, node_index);
 
 	LoadAnimations(root);
 	LoadSkins(root);
@@ -537,7 +536,8 @@ void CScene::LoadLightComponent(const easygltf::FGLTFRoot& root, const entt::ent
 
 void CScene::LoadAnimations(const easygltf::FGLTFRoot& root)
 {
-	auto& root_component = CEntityComponentManager::GetComponent<FRootComponent>(m_root);
+	auto scene_root = CEntityComponentManager::GetRoot();
+	auto& root_component = CEntityComponentManager::GetComponent<FRootComponent>(scene_root);
 
 	for (auto& anim : root.animations)
 	{
@@ -644,7 +644,8 @@ void CScene::LoadAnimations(const easygltf::FGLTFRoot& root)
 
 void CScene::LoadSkins(const easygltf::FGLTFRoot& root)
 {
-	auto& root_component = CEntityComponentManager::GetComponent<FRootComponent>(CEntityComponentManager::GetRoot());
+	auto scene_root = CEntityComponentManager::GetRoot();
+	auto& root_component = CEntityComponentManager::GetComponent<FRootComponent>(scene_root);
 
 	for (auto& source : root.skins)
 	{

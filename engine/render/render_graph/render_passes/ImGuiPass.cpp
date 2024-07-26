@@ -83,6 +83,33 @@ void CImGuiPass::Build(const FPassBuildInfo& build_info)
 	IRenderPass::Build(build_info);
 }
 
+void CImGuiPass::Update(f32 dt)
+{
+	ImDrawData* draw_data = ImGui::GetDrawData();
+	auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_vertexHandler);
+
+	m_lastVertex = 0;
+	m_lastIndex = 0;
+
+	// Update vertices
+	if (draw_data->TotalVtxCount > 0)
+	{
+		// Upload vertex/index data into a single contiguous GPU buffer
+		for (int n = 0; n < draw_data->CmdListsCount; n++)
+		{
+			const ImDrawList* cmd_list = draw_data->CmdLists[n];
+			vertex_handler->AddVertices(cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size, sizeof(ImDrawVert));
+			vertex_handler->AddIndices(cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size, sizeof(ImDrawIdx));
+
+			m_lastVertex += cmd_list->VtxBuffer.Size;
+			m_lastIndex += cmd_list->IdxBuffer.Size;
+		}
+	}
+
+	// Upload vertices
+	vertex_handler->Allocate();
+}
+
 void CImGuiPass::_Render()
 {
 	auto& render_context = m_pRenderInterface->GetRenderContext();
@@ -96,27 +123,6 @@ void CImGuiPass::_Render()
 		ImDrawData* draw_data = ImGui::GetDrawData();
 		auto& vertex_handler = m_pRenderInterface->GetVertexHandler(m_vertexHandler);
 		auto& shader = m_pRenderInterface->GetShaderObject(m_shader);
-
-		m_lastVertex = 0;
-		m_lastIndex = 0;
-
-		// Update vertices
-		if (draw_data->TotalVtxCount > 0)
-		{
-			// Upload vertex/index data into a single contiguous GPU buffer
-			for (int n = 0; n < draw_data->CmdListsCount; n++)
-			{
-				const ImDrawList* cmd_list = draw_data->CmdLists[n];
-				vertex_handler->AddVertices(cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size, sizeof(ImDrawVert));
-				vertex_handler->AddIndices(cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size, sizeof(ImDrawIdx));
-
-				m_lastVertex += cmd_list->VtxBuffer.Size;
-				m_lastIndex += cmd_list->IdxBuffer.Size;
-			}
-		}
-
-		// Upload vertices
-		vertex_handler->Allocate();
 
 		// Bind pipeline:
 		shader->Bind(m_queue);

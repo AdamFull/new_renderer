@@ -115,10 +115,10 @@ void CAnimationSystem::__Update(float fDt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto& registry = m_pSceneGraph->GetRegistry();
-	auto root = m_pSceneGraph->GetRoot(); 
+	auto& registry = CEntityComponentManager::GetRegistry();
+	auto root = CEntityComponentManager::GetRoot();
 
-	auto& root_component = m_pSceneGraph->GetComponent<FRootComponent>(root);
+	auto& root_component = CEntityComponentManager::GetComponent<FRootComponent>(root);
 
 	if (m_animationIndeces.size() != root_component.animations.size())
 	{
@@ -157,7 +157,7 @@ void CAnimationSystem::__Update(float fDt)
 
 					if (u <= 1.0f)
 					{
-						auto& transform = registry->get<FTransformComponent>(channel.node);
+						auto& transform = registry.get<FTransformComponent>(channel.node);
 #ifdef USE_OLD_ANIMATION_SYSTEM
 						switch (channel.path)
 						{
