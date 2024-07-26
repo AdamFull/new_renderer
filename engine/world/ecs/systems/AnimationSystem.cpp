@@ -1,6 +1,6 @@
 #include "AnimationSystem.h"
 
-#include <engine/world/EntityComponentManager.h>
+#include <engine/world/EntityManager.h>
 #include <engine/world/ecs/components/components.h>
 
 #include <engine/profiler/Profiler.h>
@@ -115,10 +115,10 @@ void CAnimationSystem::__Update(float fDt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto& registry = CEntityComponentManager::GetRegistry();
-	auto root = CEntityComponentManager::GetRoot();
+	auto& registry = CEntityManager::GetRegistry();
+	auto root = CEntityManager::GetRoot();
 
-	auto& root_component = CEntityComponentManager::GetComponent<FRootComponent>(root);
+	auto& root_component = CEntityManager::GetComponent<FRootComponent>(root);
 
 	if (m_animationIndeces.size() != root_component.animations.size())
 	{

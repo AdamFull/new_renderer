@@ -1,6 +1,6 @@
 #include "LightingSystem.h"
 
-#include <engine/world/EntityComponentManager.h>
+#include <engine/world/EntityManager.h>
 #include <engine/world/ecs/components/BaseComponent.h>
 #include <engine/world/ecs/components/TransformComponent.h>
 #include <engine/world/ecs/components/DirectionalLightComponent.h>
@@ -26,7 +26,6 @@ void CLightingSystem::__Update(f32 fDt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto& registry = CEntityComponentManager::GetRegistry();
 	auto& render_packet = m_pRenderInterface->GetRenderPacket();
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
 	auto& world_stats = render_world->GetStats();
@@ -35,7 +34,7 @@ void CLightingSystem::__Update(f32 fDt)
 	{
 		world_stats.directionalLightCount = 0ull;
 
-		auto view = registry.view<FTransformComponent, FBaseComponent, FDirectionalLightComponent>();
+		auto view = CEntityManager::View<FTransformComponent, FBaseComponent, FDirectionalLightComponent>();
 		for (auto [entity, transform, base, light] : view.each())
 		{
 			if (!base.enabled)
@@ -60,7 +59,7 @@ void CLightingSystem::__Update(f32 fDt)
 	{
 		world_stats.pointLightCount = 0ull;
 
-		auto view = registry.view<FTransformComponent, FBaseComponent, FPointLightComponent>();
+		auto view = CEntityManager::View<FTransformComponent, FBaseComponent, FPointLightComponent>();
 		for (auto [entity, transform, base, light] : view.each())
 		{
 			if (!base.enabled)
@@ -88,7 +87,7 @@ void CLightingSystem::__Update(f32 fDt)
 		world_stats.spotLightCount = 0ull;
 
 		// TODO: direction as dot product of rotation and some vec
-		auto view = registry.view<FTransformComponent, FSpotLightComponent>();
+		auto view = CEntityManager::View<FTransformComponent, FSpotLightComponent>();
 		for (auto [entity, transform, light] : view.each())
 		{
 			if (world_stats.spotLightCount > max_spot_light_count)

@@ -1,6 +1,6 @@
 #include "SkinningSystem.h"
 
-#include <engine/world/EntityComponentManager.h>
+#include <engine/world/EntityManager.h>
 
 #include <engine/world/ecs/components/BaseComponent.h>
 #include <engine/world/ecs/components/HierarchyComponent.h>
@@ -12,17 +12,18 @@
 
 #include <execution>
 
+using namespace engine::world;
 using namespace engine::world::ecs;
 
 //#define USE_STD_MULTITHREADING
 
-void debug_draw_skeleton(entt::registry& registry, entt::entity node, glm::mat4 parent_matrix = glm::mat4(1.f))
+void debug_draw_skeleton(entt::entity node, glm::mat4 parent_matrix = glm::mat4(1.f))
 {
-	if (!registry.valid(node))
+	if (!CEntityManager::IsValid(node))
 		return;
 
-	auto& node_transform = registry.get<FTransformComponent>(node);
-	auto& node_hierarchy = registry.get<FHierarchyComponent>(node);
+	auto& node_transform = CEntityManager::GetComponent<FTransformComponent>(node);
+	auto& node_hierarchy = CEntityManager::GetComponent<FHierarchyComponent>(node);
 
 	glm::vec3 node_position = glm::vec3(node_transform.gmodel[3]);
 
@@ -34,7 +35,7 @@ void debug_draw_skeleton(entt::registry& registry, entt::entity node, glm::mat4 
 	}
 
 	for (auto child : node_hierarchy.children)
-		debug_draw_skeleton(registry, child, node_transform.gmodel);
+		debug_draw_skeleton(child, node_transform.gmodel);
 }
 
 CSkinningSystem::CSkinningSystem(render::IRenderInterface* render_interface)
@@ -51,11 +52,10 @@ void CSkinningSystem::__Update(f32 fDt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto& registry = CEntityComponentManager::GetRegistry();
-	auto root = CEntityComponentManager::GetRoot();
-	auto& root_component = CEntityComponentManager::GetComponent<FRootComponent>(root);
+	auto root = CEntityManager::GetRoot();
+	auto& root_component = CEntityManager::GetComponent<FRootComponent>(root);
 
-	auto view = registry.view<FTransformComponent, FBaseComponent, FMeshComponent>();
+	auto view = CEntityManager::View<FTransformComponent, FBaseComponent, FMeshComponent>();
 	for (auto [entity, transform, base, mesh] : view.each())
 	{
 		if (!base.enabled || mesh.skin < 0)
@@ -64,7 +64,7 @@ void CSkinningSystem::__Update(f32 fDt)
 		auto& skin = root_component.skins[mesh.skin];
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-		debug_draw_skeleton(registry, skin.root);
+		debug_draw_skeleton(skin.root);
 #endif
 
 		if (skin.jointMatrices.size() != skin.joints.size())
@@ -85,7 +85,7 @@ void CSkinningSystem::__Update(f32 fDt)
 		for (const auto& idx : skin.indices)
 #endif
 		{
-			auto& jtransform = CEntityComponentManager::GetComponent<FTransformComponent>(skin.joints[idx]);
+			auto& jtransform = CEntityManager::GetComponent<FTransformComponent>(skin.joints[idx]);
 			skin.jointMatrices[idx] = jtransform.gmodel * skin.inverseBindMatrices[idx];
 			skin.jointMatrices[idx] = inv_transform * skin.jointMatrices[idx];
 		}

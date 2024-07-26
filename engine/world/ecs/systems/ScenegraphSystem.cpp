@@ -5,7 +5,7 @@
 #include <engine/world/ecs/components/BaseComponent.h>
 #include <engine/world/ecs/components/HierarchyComponent.h>
 #include <engine/world/ecs/components/TransformComponent.h>
-#include <engine/world/EntityComponentManager.h>
+#include <engine/world/EntityManager.h>
 
 #include <engine/profiler/Profiler.h>
 
@@ -24,19 +24,19 @@ void CScenegraphSystem::__Update(f32 fDt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto& registry = CEntityComponentManager::GetRegistry();
-	auto root = CEntityComponentManager::GetRoot();
-	if (!registry.valid(root))
+	auto& registry = CEntityManager::GetRegistry();
+	auto root = CEntityManager::GetRoot();
+	if (!CEntityManager::IsValid(root))
 		return;
 
-	buildHierarchy(registry, root);
+	buildHierarchy(root);
 }
 
-void CScenegraphSystem::buildHierarchy(entt::registry& registry, entt::entity node)
+void CScenegraphSystem::buildHierarchy(entt::entity node)
 {
-	auto& base = registry.get<FBaseComponent>(node);
-	auto& transform = registry.get<FTransformComponent>(node);
-	auto& hierarchy = registry.get<FHierarchyComponent>(node);
+	auto& base = CEntityManager::GetComponent<FBaseComponent>(node);
+	auto& transform = CEntityManager::GetComponent<FTransformComponent>(node);
+	auto& hierarchy = CEntityManager::GetComponent<FHierarchyComponent>(node);
 
 	// Check is update disabled for branch
 	if (!base.enabled)
@@ -46,9 +46,9 @@ void CScenegraphSystem::buildHierarchy(entt::registry& registry, entt::entity no
 	initMatrix(&transform);
 
 	auto parent = hierarchy.parent;
-	if (registry.valid(parent))
+	if (CEntityManager::IsValid(parent))
 	{
-		auto& ptransform = registry.get<FTransformComponent>(parent);
+		auto& ptransform = CEntityManager::GetComponent<FTransformComponent>(parent);
 		transform.gmodel = ptransform.gmodel * transform.gmodel;
 	}
 
@@ -59,7 +59,7 @@ void CScenegraphSystem::buildHierarchy(entt::registry& registry, entt::entity no
 	transform.grotation = glm::normalize(transform.grotation);
 
 	for (const auto& child : hierarchy.children)
-		buildHierarchy(registry, child);
+		buildHierarchy(child);
 }
 
 void CScenegraphSystem::initMatrix(FTransformComponent* transform)

@@ -2,6 +2,16 @@
 
 #include <engine/platform/window/WindowCallback.h>
 
+#include "UI/Button.h"
+#include "UI/CheckBox.h"
+#include "UI/ComboBox.h"
+#include "UI/DragScalar.h"
+#include "UI/Image.h"
+#include "UI/ImageButton.h"
+#include "UI/ProgressBar.h"
+#include "UI/Radio.h"
+#include "UI/Window.h"
+
 #include <imgui.h>
 
 using namespace engine;
@@ -147,6 +157,22 @@ void CImGuiEngineSystem::Initialize()
 	FWindowCallbackMapper::SubscribeMouseScroll(this, &CImGuiEngineSystem::HandleMouseScroll);
 	FWindowCallbackMapper::SubscribeKeyInput(this, &CImGuiEngineSystem::HandleKeyInput);
 	FWindowCallbackMapper::SubscribeCharInput(this, &CImGuiEngineSystem::HandleCharInput);
+
+	auto* test_window = m_vElements.emplace_back(new CUIWindow("TestWindow"));
+	auto* test_button = new CUIButton("Button", []() { printf("Button click!\n"); });
+	test_window->PushElement(test_button);
+
+	static bool test_bool{ false };
+	auto* test_check_box = new CUICheckBox("Check box", test_bool);
+	test_check_box->SubscribeOnEndEdit([](const bool& value) { printf("Bool value changed: %s\n", value ? "true" : "false"); });
+	test_window->PushElement(test_check_box);
+
+	static int test_int{ 0 };
+	auto* test_drag_int = new CUIDragScalar<int>("Drag Int", test_int, -100, 100, "%d");
+	test_drag_int->SubscribeOnBeginEdit([](const int& value) {printf("Beginnig edit int: %d\n", value); });
+	test_drag_int->SubscribeOnEdit([](const int& value) {printf("Editing int: %d\n", value); });
+	test_drag_int->SubscribeOnEndEdit([](const int& value) {printf("Edited int: %d\n", value); });
+	test_window->PushElement(test_drag_int);
 }
 
 void CImGuiEngineSystem::Update(f32 dt)
@@ -162,6 +188,9 @@ void CImGuiEngineSystem::Update(f32 dt)
 
 	static bool show_demo_window{ true };
 	ImGui::ShowDemoWindow(&show_demo_window);
+
+	for (auto& element : m_vElements)
+		element->OnGui(dt);
 
 	ImGui::Render();
 }

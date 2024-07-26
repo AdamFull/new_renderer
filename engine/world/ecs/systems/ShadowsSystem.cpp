@@ -1,6 +1,6 @@
 #include "ShadowsSystem.h"
 
-#include <engine/world/EntityComponentManager.h>
+#include <engine/world/EntityManager.h>
 
 #include <engine/world/ecs/components/BaseComponent.h>
 #include <engine/world/ecs/components/TransformComponent.h>
@@ -61,8 +61,6 @@ void CShadowsSystem::__Update(f32 fDt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto& registry = CEntityComponentManager::GetRegistry();
-	auto& render_packet = m_pRenderInterface->GetRenderPacket();
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
 	auto& render_graph = m_pRenderInterface->GetRenderGraph();
 	auto& world_stats = render_world->GetStats();
@@ -86,7 +84,7 @@ void CShadowsSystem::__Update(f32 fDt)
 
 		auto& culler_group = m_shadowCullers[ERenderGeometryCullerType::eCascadedShadow];
 
-		auto view = registry.view<FTransformComponent, FBaseComponent, FDirectionalLightComponent>();
+		auto view = CEntityManager::View<FTransformComponent, FBaseComponent, FDirectionalLightComponent>();
 		for (auto [entity, ltransform, base, light] : view.each())
 		{
 			// Reset shadow index
@@ -208,7 +206,7 @@ void CShadowsSystem::__Update(f32 fDt)
 		std::array<glm::mat4, 6u> matrices{};
 		auto& culler_group = m_shadowCullers[ERenderGeometryCullerType::eOmniShadow];
 
-		auto view = registry.view<FTransformComponent, FBaseComponent, FPointLightComponent>();
+		auto view = CEntityManager::View<FTransformComponent, FBaseComponent, FPointLightComponent>();
 		for (auto [entity, ltransform, base, light] : view.each())
 		{
 			light.shadowIndex = -1;
@@ -254,7 +252,7 @@ void CShadowsSystem::__Update(f32 fDt)
 	{
 		auto& culler_group = m_shadowCullers[ERenderGeometryCullerType::eSpotShadow];
 
-		auto view = registry.view<FTransformComponent, FBaseComponent, FSpotLightComponent>();
+		auto view = CEntityManager::View<FTransformComponent, FBaseComponent, FSpotLightComponent>();
 		for (auto [entity, ltransform, base, light] : view.each())
 		{
 			light.shadowIndex = -1;

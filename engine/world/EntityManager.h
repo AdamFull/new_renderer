@@ -49,7 +49,7 @@ namespace engine
 			NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FTransformComponent, lposition, lrotation, lscale);
 		}
 
-		class CEntityComponentManager
+		class CEntityManager
 		{
 		public:
 			using serialize_function_t = std::function<void(entt::registry&, entt::entity, nlohmann::json&)>;
@@ -83,6 +83,22 @@ namespace engine
 			static void DetachChild(entt::entity parent, entt::entity child);
 			static void DetachChild(entt::entity child);
 			static entt::entity Instantiate(entt::entity prefab);
+
+			static bool IsValid(entt::entity entity);
+
+			template<typename... _Components>
+			static auto View() 
+			{
+				return m_registry.view<_Components...>();
+			}
+
+			template<typename... _Components, typename _Func>
+			static void Each(_Func func) 
+			{
+				auto v = m_registry.view<_Components...>();
+				v.each(func);
+			}
+
 
 			template<typename _Ty>
 			static _Ty& AddComponent(entt::entity entity, _Ty&& component)

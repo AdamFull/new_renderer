@@ -1,6 +1,6 @@
 #include "MeshSystem.h"
 
-#include <engine/world/EntityComponentManager.h>
+#include <engine/world/EntityManager.h>
 #include <engine/world/ecs/components/BaseComponent.h>
 #include <engine/world/ecs/components/MeshComponent.h>
 #include <engine/world/ecs/components/RootComponent.h>
@@ -43,12 +43,11 @@ void prepare_meshes_to_draw(const std::unique_ptr<IRenderWorld>& render_world, c
 
 void prepare_draw_commands(const std::unique_ptr<IRenderWorld>& render_world, utl::vector<FGeometryBatch>& draw_commands, u32 alpha_mode)
 {
-	auto& registry = CEntityComponentManager::GetRegistry();
-	auto root = CEntityComponentManager::GetRoot();
-	auto& root_component = CEntityComponentManager::GetComponent<FRootComponent>(root);
+	auto root = CEntityManager::GetRoot();
+	auto& root_component = CEntityManager::GetComponent<FRootComponent>(root);
 	auto& world_stats = render_world->GetStats();
 
-	auto view = registry.view<FTransformComponent, FBaseComponent, FMeshComponent>();
+	auto view = CEntityManager::View<FTransformComponent, FBaseComponent, FMeshComponent>();
 	for (auto [entity, transform, base, mesh_component] : view.each())
 	{
 		if (!base.visible)

@@ -1,6 +1,6 @@
 #include "CameraSystem.h"
 
-#include <engine/world/EntityComponentManager.h>
+#include <engine/world/EntityManager.h>
 #include <engine/world/ecs/components/BaseComponent.h>
 #include <engine/world/ecs/components/CameraComponent.h>
 #include <engine/world/ecs/components/TransformComponent.h>
@@ -19,7 +19,7 @@ void CCameraSystem::__Create()
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto& registry = CEntityComponentManager::GetRegistry();
+	auto& registry = CEntityManager::GetRegistry();
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
 
 	auto view = registry.view<FTransformComponent, FBaseComponent, FCameraComponent>();
@@ -31,12 +31,10 @@ void CCameraSystem::__Update(f32 fDt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto& registry = CEntityComponentManager::GetRegistry();
-	auto& render_packet = m_pRenderInterface->GetRenderPacket();
 	auto& render_context = m_pRenderInterface->GetRenderContext();
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
 
-	auto view = registry.view<FTransformComponent, FBaseComponent, FCameraComponent>();
+	auto view = CEntityManager::View<FTransformComponent, FBaseComponent, FCameraComponent>();
 	for (auto [entity, transform, base, camera] : view.each())
 	{
 		// TODO: add something like active camera tag

@@ -1,6 +1,6 @@
 #include "InputSystem.h"
 
-#include <engine/world/EntityComponentManager.h>
+#include <engine/world/EntityManager.h>
 #include <engine/world/ecs/components/BaseComponent.h>
 #include <engine/world/ecs/components/CameraComponent.h>
 #include <engine/world/ecs/components/TransformComponent.h>
@@ -55,8 +55,7 @@ void CInputSystem::__Update(f32 fDt)
 	f32 dY = (curY - oldY) * fDt;
 	oldY = curY;
 
-	auto& registry = CEntityComponentManager::GetRegistry();
-	auto view = registry.view<FTransformComponent, FBaseComponent, FCameraComponent>();
+	auto view = CEntityManager::View<FTransformComponent, FBaseComponent, FCameraComponent>();
 	for (auto [entity, transform, base, camera] : view.each())
 	{
 		if (base.enabled)

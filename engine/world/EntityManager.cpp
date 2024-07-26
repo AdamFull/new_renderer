@@ -1,16 +1,16 @@
-#include "EntityComponentManager.h"
+#include "EntityManager.h"
 
 #include <logger/logger.h>
 
 using namespace engine::world;
 
-entt::registry CEntityComponentManager::m_registry{};
-entt::entity CEntityComponentManager::m_root{};
-utl::vector<std::unique_ptr<ecs::ISystem>> CEntityComponentManager::m_vSystems;
-utl::hash_map<entt::id_type, CEntityComponentManager::serialize_function_t> CEntityComponentManager::m_componentSerializers{};
-utl::hash_map<entt::id_type, CEntityComponentManager::deserialize_function_t> CEntityComponentManager::m_componentDeserializers{};
+entt::registry CEntityManager::m_registry{};
+entt::entity CEntityManager::m_root{};
+utl::vector<std::unique_ptr<ecs::ISystem>> CEntityManager::m_vSystems;
+utl::hash_map<entt::id_type, CEntityManager::serialize_function_t> CEntityManager::m_componentSerializers{};
+utl::hash_map<entt::id_type, CEntityManager::deserialize_function_t> CEntityManager::m_componentDeserializers{};
 
-entt::entity CEntityComponentManager::CreateRoot(const std::string& name)
+entt::entity CEntityManager::CreateRoot(const std::string& name)
 {
 	if (m_registry.valid(m_root))
 		return m_root;
@@ -20,7 +20,7 @@ entt::entity CEntityComponentManager::CreateRoot(const std::string& name)
 	return m_root;
 }
 
-entt::entity CEntityComponentManager::CreateNode(const std::string& name, entt::entity parent)
+entt::entity CEntityManager::CreateNode(const std::string& name, entt::entity parent)
 {
 	entt::entity entity = m_registry.create();
 	m_registry.emplace<ecs::FBaseComponent>(entity, ecs::FBaseComponent{ name });
@@ -32,14 +32,14 @@ entt::entity CEntityComponentManager::CreateNode(const std::string& name, entt::
 	return entity;
 }
 
-void CEntityComponentManager::DestroyNode(entt::entity node)
+void CEntityManager::DestroyNode(entt::entity node)
 {
 	DetachChild(node);
 	m_registry.destroy(node);
 	log_debug("[Scene Graph] Entity with id {} was destroyed", static_cast<uint32_t>(node));
 }
 
-void CEntityComponentManager::AttachChild(entt::entity parent, entt::entity child)
+void CEntityManager::AttachChild(entt::entity parent, entt::entity child)
 {
 	if (parent == child)
 	{
@@ -54,7 +54,7 @@ void CEntityComponentManager::AttachChild(entt::entity parent, entt::entity chil
 	chierarchy.parent = parent;
 }
 
-void CEntityComponentManager::DetachChild(entt::entity parent, entt::entity child)
+void CEntityManager::DetachChild(entt::entity parent, entt::entity child)
 {
 	if (parent == entt::null)
 		return;
@@ -71,18 +71,23 @@ void CEntityComponentManager::DetachChild(entt::entity parent, entt::entity chil
 	chierarchy.parent = entt::null;
 }
 
-void CEntityComponentManager::DetachChild(entt::entity child)
+void CEntityManager::DetachChild(entt::entity child)
 {
 	auto& chierarchy = m_registry.get<ecs::FHierarchyComponent>(child);
 	DetachChild(chierarchy.parent, child);
 }
 
-entt::entity Instantiate(entt::entity prefab)
+entt::entity CEntityManager::Instantiate(entt::entity prefab)
 {
 	return entt::null;
 }
 
-nlohmann::json CEntityComponentManager::SerializeEntity(entt::entity entity)
+bool CEntityManager::IsValid(entt::entity entity)
+{
+	return m_registry.valid(entity);
+}
+
+nlohmann::json CEntityManager::SerializeEntity(entt::entity entity)
 {
 	nlohmann::json j = nlohmann::json::object();
 
@@ -103,7 +108,7 @@ nlohmann::json CEntityComponentManager::SerializeEntity(entt::entity entity)
 	return j;
 }
 
-entt::entity CEntityComponentManager::DeserializeEntity(entt::entity parent, const nlohmann::json& j)
+entt::entity CEntityManager::DeserializeEntity(entt::entity parent, const nlohmann::json& j)
 {
 	entt::entity entity = CreateNode("", parent);
 
@@ -124,13 +129,13 @@ entt::entity CEntityComponentManager::DeserializeEntity(entt::entity parent, con
 	return entity;
 }
 
-void CEntityComponentManager::Create()
+void CEntityManager::Create()
 {
 	for (auto& system : m_vSystems)
 		system->Create();
 }
 
-void CEntityComponentManager::Update(f32 dt)
+void CEntityManager::Update(f32 dt)
 {
 	for (auto& system : m_vSystems)
 		system->Update(dt);
