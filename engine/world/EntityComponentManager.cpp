@@ -123,3 +123,15 @@ entt::entity CEntityComponentManager::DeserializeEntity(entt::entity parent, con
 
 	return entity;
 }
+
+void CEntityComponentManager::Create()
+{
+	for (auto& system : m_vSystems)
+		system->Create();
+}
+
+void CEntityComponentManager::Update(f32 dt)
+{
+	for (auto& system : m_vSystems)
+		system->Update(dt);
+}

@@ -125,26 +125,26 @@ CScene::CScene(IVirtualFileSystemInterface* vfs, render::IRenderInterface* rende
 	CEntityComponentManager::RegisterComponent<FSpotLightComponent>();
 	CEntityComponentManager::RegisterComponent<FTransformComponent>();
 
-	//CEntityComponentManager::RegisterSystem<ecs::CInputSystem>();
-	//CEntityComponentManager::RegisterSystem<ecs::CAnimationSystem>();
-	//CEntityComponentManager::RegisterSystem<ecs::CScenegraphSystem>();
-	//CEntityComponentManager::RegisterSystem<ecs::CSkinningSystem>(render_interface);
-	//
-	//CEntityComponentManager::RegisterSystem<ecs::CCameraSystem>(render_interface);
-	//CEntityComponentManager::RegisterSystem<ecs::CShadowsSystem>(render_interface);
-	//CEntityComponentManager::RegisterSystem<ecs::CLightingSystem>(render_interface);
-	//CEntityComponentManager::RegisterSystem<ecs::CMeshSystem>(render_interface);
+	CEntityComponentManager::RegisterSystem<ecs::CInputSystem>();
+	CEntityComponentManager::RegisterSystem<ecs::CAnimationSystem>();
+	CEntityComponentManager::RegisterSystem<ecs::CScenegraphSystem>();
+	CEntityComponentManager::RegisterSystem<ecs::CSkinningSystem>(render_interface);
+	
+	CEntityComponentManager::RegisterSystem<ecs::CCameraSystem>(render_interface);
+	CEntityComponentManager::RegisterSystem<ecs::CShadowsSystem>(render_interface);
+	CEntityComponentManager::RegisterSystem<ecs::CLightingSystem>(render_interface);
+	CEntityComponentManager::RegisterSystem<ecs::CMeshSystem>(render_interface);
 
-	m_systems.emplace_back(std::make_unique<ecs::CInputSystem>());
-	m_systems.emplace_back(std::make_unique<ecs::CAnimationSystem>());
-	m_systems.emplace_back(std::make_unique<ecs::CScenegraphSystem>());
+	//m_systems.emplace_back(std::make_unique<ecs::CInputSystem>());
 	//m_systems.emplace_back(std::make_unique<ecs::CAnimationSystem>());
-	m_systems.emplace_back(std::make_unique<ecs::CSkinningSystem>(render_interface));
-
-	m_systems.emplace_back(std::make_unique<ecs::CCameraSystem>(render_interface));
-	m_systems.emplace_back(std::make_unique<ecs::CShadowsSystem>(render_interface));
-	m_systems.emplace_back(std::make_unique<ecs::CLightingSystem>(render_interface));
-	m_systems.emplace_back(std::make_unique<ecs::CMeshSystem>(render_interface));
+	//m_systems.emplace_back(std::make_unique<ecs::CScenegraphSystem>());
+	////m_systems.emplace_back(std::make_unique<ecs::CAnimationSystem>());
+	//m_systems.emplace_back(std::make_unique<ecs::CSkinningSystem>(render_interface));
+	//
+	//m_systems.emplace_back(std::make_unique<ecs::CCameraSystem>(render_interface));
+	//m_systems.emplace_back(std::make_unique<ecs::CShadowsSystem>(render_interface));
+	//m_systems.emplace_back(std::make_unique<ecs::CLightingSystem>(render_interface));
+	//m_systems.emplace_back(std::make_unique<ecs::CMeshSystem>(render_interface));
 }
 
 CScene::~CScene()
@@ -209,8 +209,7 @@ void CScene::Update(f32 dt)
 
 	TRACY_PROFILE_SCOPE("Scene update")
 
-	for (auto& system : m_systems)
-		system->Update(dt);
+	CEntityComponentManager::Update(dt);
 }
 
 void CScene::LoadGLTF(easygltf::FGLTFRoot& root)
@@ -311,8 +310,7 @@ void CScene::LoadGLTF(easygltf::FGLTFRoot& root)
 		}
 	}
 
-	for (auto& system : m_systems)
-		system->Create();
+	CEntityComponentManager::Create();
 }
 
 void CScene::LoadNode(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index, f32 global_scale)

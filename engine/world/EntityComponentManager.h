@@ -102,6 +102,9 @@ namespace engine
 			static nlohmann::json SerializeEntity(entt::entity entity);
 			static entt::entity DeserializeEntity(entt::entity parent, const nlohmann::json& j);
 
+			static void Create();
+			static void Update(f32 dt);
+
 		private:
 			static entt::registry m_registry;
 			static entt::entity m_root;

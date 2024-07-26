@@ -52,8 +52,6 @@ namespace engine
 			void LoadAnimations(const easygltf::FGLTFRoot& root);
 			void LoadSkins(const easygltf::FGLTFRoot& root);
 		private:
-			utl::vector<std::unique_ptr<ecs::ISystem>> m_systems{};
-
 			FSceneLoadedResources m_resources{};
 			FSceneTemporaryResources m_temporary{};
 
