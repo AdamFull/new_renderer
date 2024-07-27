@@ -3,11 +3,15 @@
 #include <engine/platform/window/WindowCallback.h>
 
 #include "ImGuiElements.h"
+#include "editor/HierarchyWindow.h"
+#include "ImFontManager.h"
+
+#include <engine/integrations/imgui/font/IconsMaterialDesignIcons.h>
 
 using namespace engine;
 using namespace engine::render;
 
-void setup_imgui_style()
+void ApplyModernStyle()
 {
 	// Modern style by LousyBook-01 from ImThemes
 	ImGuiStyle& style = ImGui::GetStyle();
@@ -96,6 +100,143 @@ void setup_imgui_style()
 	style.Colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.0f, 1.0f, 1.0f, 0.4678111672401428f);
 	style.Colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.733905553817749f);
 	style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.7982832789421082f);
+}
+
+void ApplyCinderTheme()
+{
+	ImGuiStyle& style = ImGui::GetStyle();
+	style.WindowRounding = 0.0f;
+	style.ChildRounding = 0.0f;
+	style.FrameRounding = 0.0f;
+	style.GrabRounding = 0.0f;
+	style.PopupRounding = 0.0f;
+	style.ScrollbarRounding = 0.0f;
+	style.TabRounding = 0.0f;
+	ImVec4* colors = style.Colors;
+
+	colors[ImGuiCol_Text] = ImVec4(0.95f, 0.96f, 0.98f, 1.00f);
+	colors[ImGuiCol_TextDisabled] = ImVec4(0.36f, 0.42f, 0.47f, 1.00f);
+	colors[ImGuiCol_WindowBg] = ImVec4(0.13f, 0.14f, 0.17f, 0.50f);
+	colors[ImGuiCol_Border] = ImVec4(0.31f, 0.31f, 1.00f, 0.00f);
+	colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+	colors[ImGuiCol_FrameBg] = ImVec4(0.20f, 0.22f, 0.27f, 1.00f);
+	colors[ImGuiCol_FrameBgHovered] = ImVec4(0.92f, 0.18f, 0.29f, 0.78f);
+	colors[ImGuiCol_FrameBgActive] = ImVec4(0.92f, 0.18f, 0.29f, 1.00f);
+	colors[ImGuiCol_TitleBg] = ImVec4(0.20f, 0.22f, 0.27f, 1.00f);
+	colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.20f, 0.22f, 0.27f, 0.75f);
+	colors[ImGuiCol_TitleBgActive] = ImVec4(0.92f, 0.18f, 0.29f, 1.00f);
+	colors[ImGuiCol_MenuBarBg] = ImVec4(0.20f, 0.22f, 0.27f, 0.47f);
+	colors[ImGuiCol_ScrollbarBg] = ImVec4(0.20f, 0.22f, 0.27f, 1.00f);
+	colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.09f, 0.15f, 0.16f, 1.00f);
+	colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.92f, 0.18f, 0.29f, 0.78f);
+	colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.92f, 0.18f, 0.29f, 1.00f);
+	colors[ImGuiCol_CheckMark] = ImVec4(0.71f, 0.22f, 0.27f, 1.00f);
+	colors[ImGuiCol_SliderGrab] = ImVec4(0.47f, 0.77f, 0.83f, 0.14f);
+	colors[ImGuiCol_SliderGrabActive] = ImVec4(0.92f, 0.18f, 0.29f, 1.00f);
+	colors[ImGuiCol_Button] = ImVec4(0.47f, 0.77f, 0.83f, 0.14f);
+	colors[ImGuiCol_ButtonHovered] = ImVec4(0.92f, 0.18f, 0.29f, 0.86f);
+	colors[ImGuiCol_ButtonActive] = ImVec4(0.92f, 0.18f, 0.29f, 1.00f);
+	colors[ImGuiCol_Header] = ImVec4(0.92f, 0.18f, 0.29f, 0.76f);
+	colors[ImGuiCol_HeaderHovered] = ImVec4(0.92f, 0.18f, 0.29f, 0.86f);
+	colors[ImGuiCol_HeaderActive] = ImVec4(0.92f, 0.18f, 0.29f, 1.00f);
+	colors[ImGuiCol_ResizeGrip] = ImVec4(0.47f, 0.77f, 0.83f, 0.04f);
+	colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.92f, 0.18f, 0.29f, 0.78f);
+	colors[ImGuiCol_ResizeGripActive] = ImVec4(0.92f, 0.18f, 0.29f, 1.00f);
+	colors[ImGuiCol_PlotLines] = ImVec4(0.86f, 0.93f, 0.89f, 0.63f);
+	colors[ImGuiCol_PlotLinesHovered] = ImVec4(0.92f, 0.18f, 0.29f, 1.00f);
+	colors[ImGuiCol_PlotHistogram] = ImVec4(0.86f, 0.93f, 0.89f, 0.63f);
+	colors[ImGuiCol_PlotHistogramHovered] = ImVec4(0.92f, 0.18f, 0.29f, 1.00f);
+	colors[ImGuiCol_TextSelectedBg] = ImVec4(0.92f, 0.18f, 0.29f, 0.43f);
+	colors[ImGuiCol_PopupBg] = ImVec4(0.20f, 0.22f, 0.27f, 0.9f);
+	colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.5f);
+
+	colors[ImGuiCol_Separator] = colors[ImGuiCol_MenuBarBg];
+	colors[ImGuiCol_SeparatorActive] = colors[ImGuiCol_Separator];
+	colors[ImGuiCol_SeparatorHovered] = colors[ImGuiCol_Separator];
+
+	colors[ImGuiCol_Tab] = colors[ImGuiCol_Button];
+	colors[ImGuiCol_TabHovered] = colors[ImGuiCol_ButtonHovered];
+	colors[ImGuiCol_TabActive] = colors[ImGuiCol_ButtonActive];
+	colors[ImGuiCol_TabUnfocused] = ImLerp(colors[ImGuiCol_Tab], colors[ImGuiCol_TitleBg], 0.80f);
+	colors[ImGuiCol_TabUnfocusedActive] = ImLerp(colors[ImGuiCol_TabActive], colors[ImGuiCol_TitleBg], 0.40f);
+}
+
+void ApplyDarkBlueTheme()
+{
+	constexpr auto ColorFromBytes = [](uint8_t r, uint8_t g, uint8_t b)
+		{
+			return ImVec4((float)r / 255.0f, (float)g / 255.0f, (float)b / 255.0f, 1.0f);
+		};
+
+	auto& style = ImGui::GetStyle();
+	ImVec4* colors = style.Colors;
+
+	const ImVec4 bgColor = ColorFromBytes(37, 37, 38);
+	const ImVec4 lightBgColor = ColorFromBytes(82, 82, 85);
+	const ImVec4 veryLightBgColor = ColorFromBytes(90, 90, 95);
+
+	const ImVec4 panelColor = ColorFromBytes(51, 51, 55);
+	const ImVec4 panelHoverColor = ColorFromBytes(29, 151, 236);
+	const ImVec4 panelActiveColor = ColorFromBytes(0, 119, 200);
+
+	const ImVec4 textColor = ColorFromBytes(255, 255, 255);
+	const ImVec4 textDisabledColor = ColorFromBytes(151, 151, 151);
+	const ImVec4 borderColor = ColorFromBytes(78, 78, 78);
+
+	colors[ImGuiCol_Text] = textColor;
+	colors[ImGuiCol_TextDisabled] = textDisabledColor;
+	colors[ImGuiCol_TextSelectedBg] = panelActiveColor;
+	colors[ImGuiCol_WindowBg] = bgColor;
+	colors[ImGuiCol_ChildBg] = bgColor;
+	colors[ImGuiCol_PopupBg] = bgColor;
+	colors[ImGuiCol_Border] = borderColor;
+	colors[ImGuiCol_BorderShadow] = borderColor;
+	colors[ImGuiCol_FrameBg] = panelColor;
+	colors[ImGuiCol_FrameBgHovered] = panelHoverColor;
+	colors[ImGuiCol_FrameBgActive] = panelActiveColor;
+	colors[ImGuiCol_TitleBg] = bgColor;
+	colors[ImGuiCol_TitleBgActive] = bgColor;
+	colors[ImGuiCol_TitleBgCollapsed] = bgColor;
+	colors[ImGuiCol_MenuBarBg] = panelColor;
+	colors[ImGuiCol_ScrollbarBg] = panelColor;
+	colors[ImGuiCol_ScrollbarGrab] = lightBgColor;
+	colors[ImGuiCol_ScrollbarGrabHovered] = veryLightBgColor;
+	colors[ImGuiCol_ScrollbarGrabActive] = veryLightBgColor;
+	colors[ImGuiCol_CheckMark] = panelActiveColor;
+	colors[ImGuiCol_SliderGrab] = panelHoverColor;
+	colors[ImGuiCol_SliderGrabActive] = panelActiveColor;
+	colors[ImGuiCol_Button] = panelColor;
+	colors[ImGuiCol_ButtonHovered] = panelHoverColor;
+	colors[ImGuiCol_ButtonActive] = panelHoverColor;
+	colors[ImGuiCol_Header] = panelColor;
+	colors[ImGuiCol_HeaderHovered] = panelHoverColor;
+	colors[ImGuiCol_HeaderActive] = panelActiveColor;
+	colors[ImGuiCol_Separator] = borderColor;
+	colors[ImGuiCol_SeparatorHovered] = borderColor;
+	colors[ImGuiCol_SeparatorActive] = borderColor;
+	colors[ImGuiCol_ResizeGrip] = bgColor;
+	colors[ImGuiCol_ResizeGripHovered] = panelColor;
+	colors[ImGuiCol_ResizeGripActive] = lightBgColor;
+	colors[ImGuiCol_PlotLines] = panelActiveColor;
+	colors[ImGuiCol_PlotLinesHovered] = panelHoverColor;
+	colors[ImGuiCol_PlotHistogram] = panelActiveColor;
+	colors[ImGuiCol_PlotHistogramHovered] = panelHoverColor;
+	colors[ImGuiCol_DragDropTarget] = bgColor;
+	colors[ImGuiCol_NavHighlight] = bgColor;
+	colors[ImGuiCol_DockingPreview] = panelActiveColor;
+	colors[ImGuiCol_Tab] = bgColor;
+	colors[ImGuiCol_TabActive] = panelActiveColor;
+	colors[ImGuiCol_TabUnfocused] = bgColor;
+	colors[ImGuiCol_TabUnfocusedActive] = panelActiveColor;
+	colors[ImGuiCol_TabHovered] = panelHoverColor;
+
+	style.WindowRounding = 0.0f;
+	style.ChildRounding = 0.0f;
+	style.FrameRounding = 0.0f;
+	style.GrabRounding = 0.0f;
+	style.PopupRounding = 0.0f;
+	style.ScrollbarRounding = 0.0f;
+	style.TabRounding = 0.0f;
 }
 
 ImGuiKey key_code_to_im_gui_key(EKeyCode code)
@@ -230,7 +371,39 @@ CImGuiEngineSystem::CImGuiEngineSystem(IRenderInterface* render_interface)
 
 void CImGuiEngineSystem::Initialize()
 {
-	setup_imgui_style();
+	ImGui::CreateContext();
+
+	ImGuiIO& io = ImGui::GetIO();
+	IMGUI_CHECKVERSION();
+	IM_ASSERT(io.BackendRendererUserData == nullptr && "Already initialized a renderer backend!");
+
+	io.BackendRendererUserData = (void*)this;
+	io.BackendRendererName = "vulkan";
+	io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;  // We can honor the ImDrawCmd::VtxOffset field, allowing for large meshes.
+	//io.BackendFlags |= ImGuiBackendFlags_RendererHasViewports;  // We can Create multi-viewports on the Renderer side (optional)
+	
+	// Load fonts
+	static const ImWchar icons_ranges[] = { ICON_MIN_MDI, ICON_MAX_MDI, 0 };
+	
+	ImFontConfig icons_config;
+	icons_config.MergeMode = true;
+	icons_config.PixelSnapH = true;
+	icons_config.GlyphOffset.y = 1.0f;
+	icons_config.OversampleH = icons_config.OversampleV = 1;
+	icons_config.GlyphMinAdvanceX = 4.0f;
+	icons_config.SizePixels = 12.0f;
+
+	CImFontManager::GetInstance()->AddFont("small_icon", std::format("embed/font/{}", FONT_ICON_FILE_NAME_MDI), 13.f, &icons_config, icons_ranges);
+
+	icons_config.GlyphOffset.y = 15.0f;
+	icons_config.SizePixels = 48.0f;
+	icons_config.GlyphMaxAdvanceX = 48.f;
+
+	CImFontManager::GetInstance()->AddFont("big_icon", std::format("embed/font/{}", FONT_ICON_FILE_NAME_MDI), 48.f, &icons_config, icons_ranges);
+
+	//ApplyModernStyle();
+	ApplyCinderTheme();
+	//ApplyDarkBlueTheme();
 
 	// Window events
 	FWindowCallbackMapper::SubscribeFocusChange(this, &CImGuiEngineSystem::HandleFocusChanged);
@@ -240,6 +413,11 @@ void CImGuiEngineSystem::Initialize()
 	FWindowCallbackMapper::SubscribeMouseScroll(this, &CImGuiEngineSystem::HandleMouseScroll);
 	FWindowCallbackMapper::SubscribeKeyInput(this, &CImGuiEngineSystem::HandleKeyInput);
 	FWindowCallbackMapper::SubscribeCharInput(this, &CImGuiEngineSystem::HandleCharInput);
+
+	m_vWindows.emplace_back(std::make_unique<CEditorHierarchy>("Hierarchy"));
+
+	for (auto& window : m_vWindows)
+		window->Create();
 }
 
 void CImGuiEngineSystem::Update(f32 dt)
@@ -268,61 +446,64 @@ void CImGuiEngineSystem::Update(f32 dt)
 
 	ImGui::NewFrame();
 
+	for (auto& window : m_vWindows)
+		window->Draw(dt);
+
 	//static bool show_demo_window{ true };
 	//ImGui::ShowDemoWindow(&show_demo_window);
 
-	bool test_window_state{ true };
-	if (ImGui::Begin("Test window", &test_window_state))
-	{
-		ImGui::GDragInt<1>("Drag int 1", &int_test_1, 1.f, -100, 100);
-		ImGui::GDragInt<2>("Drag int 2", int_test_2, 1.f, -100, 100);
-		ImGui::GDragInt<3>("Drag int 3", int_test_3, 1.f, -100, 100);
-		ImGui::GDragInt<4>("Drag int 4", int_test_4, 1.f, -100, 100);
-		ImGui::Separator();
-		ImGui::GDragFloat<1>("Drag float 1", &float_test_1, 1.f, -1.f, 1.f);
-		ImGui::GDragFloat<2>("Drag float 2", float_test_2, 1.f, -1.f, 1.f);
-		ImGui::GDragFloat<3>("Drag float 3", float_test_3, 1.f, -1.f, 1.f);
-		ImGui::GDragFloat<4>("Drag float 4", float_test_4, 1.f, -1.f, 1.f);
-		ImGui::Separator();
-		ImGui::GDragDouble<1>("Drag double 1", &double_test_1, 1.f, -100, 100);
-		ImGui::GDragDouble<2>("Drag double 2", double_test_2, 1.f, -1.0, 1.0);
-		ImGui::GDragDouble<3>("Drag double 3", double_test_3, 1.f, -1.0, 1.0);
-		ImGui::GDragDouble<4>("Drag double 4", double_test_4, 1.f, -1.0, 1.0);
-		ImGui::Separator();
-		ImGui::Separator();
-		ImGui::GSliderInt<1>("Slider int 1", &int_test_1, -100, 100);
-		ImGui::GSliderInt<2>("Slider int 2", int_test_2, -100, 100);
-		ImGui::GSliderInt<3>("Slider int 3", int_test_3, -100, 100);
-		ImGui::GSliderInt<4>("Slider int 4", int_test_4, -100, 100);
-		ImGui::Separator();
-		ImGui::GSliderFloat<1>("Slider float 1", &float_test_1, -1.f, 1.f);
-		ImGui::GSliderFloat<2>("Slider float 2", float_test_2, -1.f, 1.f);
-		ImGui::GSliderFloat<3>("Slider float 3", float_test_3, -1.f, 1.f);
-		ImGui::GSliderFloat<4>("Slider float 4", float_test_4, -1.f, 1.f);
-		ImGui::Separator();
-		ImGui::GSliderDouble<1>("Slider double 1", &double_test_1, -100, 100);
-		ImGui::GSliderDouble<2>("Slider double 2", double_test_2, -1.0, 1.0);
-		ImGui::GSliderDouble<3>("Slider double 3", double_test_3, -1.0, 1.0);
-		ImGui::GSliderDouble<4>("Slider double 4", double_test_4, -1.0, 1.0);
-		ImGui::Separator();
-		ImGui::Separator();
-		ImGui::GInputInt<1>("Input int 1", &int_test_1, 1, 10);
-		ImGui::GInputInt<2>("Input int 2", int_test_2, 1, 10);
-		ImGui::GInputInt<3>("Input int 3", int_test_3, 1, 10);
-		ImGui::GInputInt<4>("Input int 4", int_test_4, 1, 10);
-		ImGui::Separator();
-		ImGui::GInputFloat<1>("Input float 1", &float_test_1, 0.01f, 1.f);
-		ImGui::GInputFloat<2>("Input float 2", float_test_2, 0.01f, 1.f);
-		ImGui::GInputFloat<3>("Input float 3", float_test_3, 0.01f, 1.f);
-		ImGui::GInputFloat<4>("Input float 4", float_test_4, 0.01f, 1.f);
-		ImGui::Separator();
-		ImGui::GInputDouble<1>("Input double 1", &double_test_1, 0.005, 1.0);
-		ImGui::GInputDouble<2>("Input double 2", double_test_2, 0.005, 1.0);
-		ImGui::GInputDouble<3>("Input double 3", double_test_3, 0.005, 1.0);
-		ImGui::GInputDouble<4>("Input double 4", double_test_4, 0.005, 1.0);
-
-		ImGui::End();
-	}
+	//bool test_window_state{ true };
+	//if (ImGui::Begin("Test window", &test_window_state))
+	//{
+	//	ImGui::GDragInt<1>("Drag int 1", &int_test_1, 1.f, -100, 100);
+	//	ImGui::GDragInt<2>("Drag int 2", int_test_2, 1.f, -100, 100);
+	//	ImGui::GDragInt<3>("Drag int 3", int_test_3, 1.f, -100, 100);
+	//	ImGui::GDragInt<4>("Drag int 4", int_test_4, 1.f, -100, 100);
+	//	ImGui::Separator();
+	//	ImGui::GDragFloat<1>("Drag float 1", &float_test_1, 1.f, -1.f, 1.f);
+	//	ImGui::GDragFloat<2>("Drag float 2", float_test_2, 1.f, -1.f, 1.f);
+	//	ImGui::GDragFloat<3>("Drag float 3", float_test_3, 1.f, -1.f, 1.f);
+	//	ImGui::GDragFloat<4>("Drag float 4", float_test_4, 1.f, -1.f, 1.f);
+	//	ImGui::Separator();
+	//	ImGui::GDragDouble<1>("Drag double 1", &double_test_1, 1.f, -100, 100);
+	//	ImGui::GDragDouble<2>("Drag double 2", double_test_2, 1.f, -1.0, 1.0);
+	//	ImGui::GDragDouble<3>("Drag double 3", double_test_3, 1.f, -1.0, 1.0);
+	//	ImGui::GDragDouble<4>("Drag double 4", double_test_4, 1.f, -1.0, 1.0);
+	//	ImGui::Separator();
+	//	ImGui::Separator();
+	//	ImGui::GSliderInt<1>("Slider int 1", &int_test_1, -100, 100);
+	//	ImGui::GSliderInt<2>("Slider int 2", int_test_2, -100, 100);
+	//	ImGui::GSliderInt<3>("Slider int 3", int_test_3, -100, 100);
+	//	ImGui::GSliderInt<4>("Slider int 4", int_test_4, -100, 100);
+	//	ImGui::Separator();
+	//	ImGui::GSliderFloat<1>("Slider float 1", &float_test_1, -1.f, 1.f);
+	//	ImGui::GSliderFloat<2>("Slider float 2", float_test_2, -1.f, 1.f);
+	//	ImGui::GSliderFloat<3>("Slider float 3", float_test_3, -1.f, 1.f);
+	//	ImGui::GSliderFloat<4>("Slider float 4", float_test_4, -1.f, 1.f);
+	//	ImGui::Separator();
+	//	ImGui::GSliderDouble<1>("Slider double 1", &double_test_1, -100, 100);
+	//	ImGui::GSliderDouble<2>("Slider double 2", double_test_2, -1.0, 1.0);
+	//	ImGui::GSliderDouble<3>("Slider double 3", double_test_3, -1.0, 1.0);
+	//	ImGui::GSliderDouble<4>("Slider double 4", double_test_4, -1.0, 1.0);
+	//	ImGui::Separator();
+	//	ImGui::Separator();
+	//	ImGui::GInputInt<1>("Input int 1", &int_test_1, 1, 10);
+	//	ImGui::GInputInt<2>("Input int 2", int_test_2, 1, 10);
+	//	ImGui::GInputInt<3>("Input int 3", int_test_3, 1, 10);
+	//	ImGui::GInputInt<4>("Input int 4", int_test_4, 1, 10);
+	//	ImGui::Separator();
+	//	ImGui::GInputFloat<1>("Input float 1", &float_test_1, 0.01f, 1.f);
+	//	ImGui::GInputFloat<2>("Input float 2", float_test_2, 0.01f, 1.f);
+	//	ImGui::GInputFloat<3>("Input float 3", float_test_3, 0.01f, 1.f);
+	//	ImGui::GInputFloat<4>("Input float 4", float_test_4, 0.01f, 1.f);
+	//	ImGui::Separator();
+	//	ImGui::GInputDouble<1>("Input double 1", &double_test_1, 0.005, 1.0);
+	//	ImGui::GInputDouble<2>("Input double 2", double_test_2, 0.005, 1.0);
+	//	ImGui::GInputDouble<3>("Input double 3", double_test_3, 0.005, 1.0);
+	//	ImGui::GInputDouble<4>("Input double 4", double_test_4, 0.005, 1.0);
+	//
+	//	ImGui::End();
+	//}
 
 	ImGui::Render();
 }

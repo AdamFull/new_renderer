@@ -3,6 +3,7 @@
 #include <interface/EngineSystem.h>
 #include <interface/render/RenderInterface.h>
 #include <engine/interface/WindowInterface.h>
+#include <editor/EditorWindow.h>
 
 namespace engine
 {
@@ -30,6 +31,7 @@ namespace engine
 		void HandleCharInput(u32 character);
 	private:
 		f32 m_lastMouseX{}, m_lastMouseY{};
+		utl::vector<std::unique_ptr<IEditorWindow>> m_vWindows{};
 		render::IRenderInterface* m_pRenderInterface{ nullptr };
 	};
 }

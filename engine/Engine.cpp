@@ -64,8 +64,8 @@ void CEngine::Initialize()
 	// Pre initialization zone END
 
 	// Initialization zone BEGIN
-	m_pRenderInterface->Initialize();
 	m_pSystemManager->Initialize();
+	m_pRenderInterface->Initialize();
 	m_pApplication->Initialize();
 	// Initialization zone END
 

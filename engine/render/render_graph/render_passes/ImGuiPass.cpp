@@ -24,16 +24,7 @@ void CImGuiPass::Init(const FRenderPassCreateInfo& pass_ci)
 {
 	IRenderPass::Init(pass_ci);
 
-	ImGui::CreateContext();
-
 	ImGuiIO& io = ImGui::GetIO();
-	IMGUI_CHECKVERSION();
-	IM_ASSERT(io.BackendRendererUserData == nullptr && "Already initialized a renderer backend!");
-
-	io.BackendRendererUserData = (void*)this;
-	io.BackendRendererName = "vulkan";
-	io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;  // We can honor the ImDrawCmd::VtxOffset field, allowing for large meshes.
-	//io.BackendFlags |= ImGuiBackendFlags_RendererHasViewports;  // We can Create multi-viewports on the Renderer side (optional)
 
 	// At first create vertex/index handler
 	FVertexHandlerCreateInfo vertex_handler_ci{};

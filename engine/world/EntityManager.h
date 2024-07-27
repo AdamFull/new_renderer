@@ -112,6 +112,12 @@ namespace engine
 				return m_registry.get<_Ty>(entity);
 			}
 
+			template<typename _Ty>
+			static _Ty* TryGetComponent(entt::entity entity)
+			{
+				return m_registry.try_get<_Ty>(entity);
+			}
+
 			static entt::registry& GetRegistry() { return m_registry; }
 			static entt::entity GetRoot() { return m_root; }
 
