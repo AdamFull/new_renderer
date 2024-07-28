@@ -12,7 +12,10 @@ namespace engine
 	{
 	public:
 		void AddFont(const char* name, const std::string& path, f32 size, const ImFontConfig* config = nullptr, const ImWchar* glyph_range = nullptr);
+		void AddFont(const char* name, const utl::vector<u8>& bytes, f32 size, const ImFontConfig* config = nullptr, const ImWchar* glyph_range = nullptr);
 		ImFont* GetFont(const char* name);
+
+		void SetFileReaderFn(read_file_t&& readerfn);
 
 	private:
 		utl::hash_map<u64, ImFont*> m_fonts;

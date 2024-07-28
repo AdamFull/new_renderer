@@ -12,10 +12,15 @@ void CImFontManager::AddFont(const char* name, const std::string& path, f32 size
 
 	utl::vector<u8> bytes;
 	if (m_fnReadFile && m_fnReadFile(path, bytes))
-	{
-		auto hash = utl::fnv1a_64_hash_cstr(name);
-		m_fonts[hash] = io.Fonts->AddFontFromMemoryTTF(bytes.data(), bytes.size(), size, config, glyph_range);
-	}
+		AddFont(name, bytes, size, config, glyph_range);
+}
+
+void CImFontManager::AddFont(const char* name, const utl::vector<u8>& bytes, f32 size, const ImFontConfig* config, const ImWchar* glyph_range)
+{
+	ImGuiIO& io = ImGui::GetIO();
+
+	auto hash = utl::fnv1a_64_hash_cstr(name);
+	m_fonts[hash] = io.Fonts->AddFontFromMemoryTTF((void*)bytes.data(), bytes.size(), size, config, glyph_range);
 }
 
 ImFont* CImFontManager::GetFont(const char* name)
@@ -25,4 +30,9 @@ ImFont* CImFontManager::GetFont(const char* name)
 		return found->second;
 
 	return nullptr;
+}
+
+void CImFontManager::SetFileReaderFn(read_file_t&& readerfn)
+{
+	m_fnReadFile = std::move(readerfn);
 }

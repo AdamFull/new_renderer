@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.18.0)
 project(imgui_integration)
 
-find_package(imgui CONFIG REQUIRED)
-
 file(GLOB_RECURSE IMGUI_INTEGRATION_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 file(GLOB_RECURSE IMGUI_INTEGRATION_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 
@@ -22,8 +20,4 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 target_include_directories(${PROJECT_NAME} 
 	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/"
     PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/engine"
-)
-
-target_link_libraries(${PROJECT_NAME}
-    PRIVATE imgui::imgui
 )

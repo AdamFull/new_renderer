@@ -15,8 +15,8 @@ namespace engine
 		void Create() override {}
 		void __draw(float fDt) override;
 	private:
-		entt::entity selected_entity{ entt::null };
-		entt::entity copy_entity{ entt::null };
+		entt::entity m_currentSelection{ entt::null };
+		entt::entity m_copySelection{ entt::null };
 		void BuildHierarchy(const entt::entity& entity);
 	};
 }

@@ -3,75 +3,11 @@
 #include <imgui.h>
 #include <engine/world/EntityManager.h>
 
-#include <engine/world/ecs/components/components.h>
-
-#include <engine/integrations/imgui/font/IconsMaterialDesignIcons.h>
+#include <engine/integrations/imgui/EditorTraits.h>
+#include <engine/integrations/imgui/EditorState.h>
 
 using namespace engine;
 using namespace engine::world;
-
-template<typename _Ty>
-struct IconByComponentType;
-
-template<>
-struct IconByComponentType<entt::entity>
-{ static constexpr const char* value = ICON_MDI_GRAPH; };
-
-template<>
-struct IconByComponentType<ecs::FTransformComponent>
-{ static constexpr const char* value = ICON_MDI_AXIS; /*ICON_MDI_VECTOR_LINE*/ };
-
-template<>
-struct IconByComponentType<ecs::FSpotLightComponent>
-{ static constexpr const char* value = ICON_MDI_HEAD_LIGHTBULB; };
-
-template<>
-struct IconByComponentType<ecs::FPointLightComponent>
-{ static constexpr const char* value = ICON_MDI_LIGHTBULB; };
-
-template<>
-struct IconByComponentType<ecs::FDirectionalLightComponent>
-{ static constexpr const char* value = ICON_MDI_BRIGHTNESS_7; };
-
-//template<>
-//struct IconByComponentType<ecs::FAudioComponent>
-//{ static constexpr const char* value = ICON_MDI_VOLUME_HIGH; };
-
-template<>
-struct IconByComponentType<ecs::FCameraComponent>
-{ static constexpr const char* value = ICON_MDI_CAMERA; };
-
-template<>
-struct IconByComponentType<ecs::FMeshComponent>
-{ static constexpr const char* value = ICON_MDI_SHAPE; };
-
-//template<>
-//struct IconByComponentType<ecs::FRigidBodyComponent>
-//{ static constexpr const char* value = ICON_MDI_SHAPE; };
-
-//template<>
-//struct IconByComponentType<ecs::FScriptComponent>
-//{ static constexpr const char* value = ICON_MDI_SCRIPT; };
-//
-//template<>
-//struct IconByComponentType<ecs::FEnvironmentComponent>
-//{ static constexpr const char* value = ICON_MDI_EARTH; };
-//
-//template<>
-//struct IconByComponentType<ecs::FSpriteComponent>
-//{ static constexpr const char* value = ICON_MDI_IMAGE; };
-//
-//template<>
-//struct IconByComponentType<ecs::FParticleComponent>
-//{ static constexpr const char* value = ICON_MDI_CREATION; };
-//
-//template<>
-//struct IconByComponentType<ecs::FTerrainComponent>
-//{ static constexpr const char* value = ICON_MDI_CREATION; };
-
-template<typename _Ty>
-constexpr const char* IconByComponentType_v = IconByComponentType<_Ty>::value;
-
 
 template<class _Ty>
 void try_add_menu_item_h(const std::string& name, const entt::entity& entity)
@@ -104,46 +40,47 @@ void CEditorHierarchy::__draw(float fDt)
     {
         if (ImGui::BeginMenu("create"))
         {
-            try_add_menu_item_h<entt::entity>("entity", selected_entity);
-            //try_add_menu_item_h<ecs::FAudioComponent>("audio", selected_entity);
-            try_add_menu_item_h<ecs::FCameraComponent>("camera", selected_entity);
-            //try_add_menu_item_h<ecs::FEnvironmentComponent>("environment", selected_entity);
-            try_add_menu_item_h<ecs::FDirectionalLightComponent>("directional light", selected_entity);
-            try_add_menu_item_h<ecs::FSpotLightComponent>("spot light", selected_entity);
-            try_add_menu_item_h<ecs::FPointLightComponent>("point light", selected_entity);
-            //try_add_menu_item_h<ecs::FSceneComponent>("scene", selected_entity);
-            //try_add_menu_item_h<ecs::FRigidBodyComponent>("rigidbody", selected_entity);
-            //try_add_menu_item_h<ecs::FParticleComponent>("particle", selected_entity);
-            //try_add_menu_item_h<ecs::FTerrainComponent>("terrain", selected_entity);
+            try_add_menu_item_h<entt::entity>("entity", m_currentSelection);
+            //try_add_menu_item_h<ecs::FAudioComponent>("audio", m_currentSelection);
+            try_add_menu_item_h<ecs::FCameraComponent>("camera", m_currentSelection);
+            //try_add_menu_item_h<ecs::FEnvironmentComponent>("environment", m_currentSelection);
+            try_add_menu_item_h<ecs::FDirectionalLightComponent>("directional light", m_currentSelection);
+            try_add_menu_item_h<ecs::FSpotLightComponent>("spot light", m_currentSelection);
+            try_add_menu_item_h<ecs::FPointLightComponent>("point light", m_currentSelection);
+            //try_add_menu_item_h<ecs::FSceneComponent>("scene", m_currentSelection);
+            //try_add_menu_item_h<ecs::FRigidBodyComponent>("rigidbody", m_currentSelection);
+            //try_add_menu_item_h<ecs::FParticleComponent>("particle", m_currentSelection);
+            //try_add_menu_item_h<ecs::FTerrainComponent>("terrain", m_currentSelection);
             ImGui::EndMenu();
         }
 
         if (ImGui::MenuItem("copy", "CTRL+C"))
-            copy_entity = selected_entity;
+            m_copySelection = m_currentSelection;
 
-        if (ImGui::MenuItem("paste", "CTRL+V", nullptr, copy_entity != entt::null))
+        if (ImGui::MenuItem("paste", "CTRL+V", nullptr, m_copySelection != entt::null))
         {
-            //actionBuffer->addOperation(std::make_unique<CCopyEntityOperation>(selected_entity, copy_entity));
-            copy_entity = entt::null;
+            //actionBuffer->addOperation(std::make_unique<CCopyEntityOperation>(m_currentSelection, m_copySelection));
+            m_copySelection = entt::null;
         }
 
         if (ImGui::MenuItem("duplicate"))
         {
             entt::entity attach_to{ root };
-            auto& hierarchy = CEntityManager::GetComponent<ecs::FHierarchyComponent>(selected_entity);
+            auto& hierarchy = CEntityManager::GetComponent<ecs::FHierarchyComponent>(m_currentSelection);
 
             if (hierarchy.parent != entt::null)
                 attach_to = hierarchy.parent;
 
-            //actionBuffer->addOperation(std::make_unique<CDuplicateEntityOperation>(attach_to, selected_entity));
+            //actionBuffer->addOperation(std::make_unique<CDuplicateEntityOperation>(attach_to, m_currentSelection));
         }
 
         if (ImGui::MenuItem("delete", "DEL"))
         {
-            //if (EGEditor->isSelected(selected_entity))
-            //    EGEditor->selectObject(root);
-            //
-            //actionBuffer->addOperation(std::make_unique<CRemoveEntityOperation>(selected_entity));
+            auto& state = CEditorState::GetInstance();
+            if (state->IsSelected(m_currentSelection))
+                state->SetSelection(root);
+            
+            //state->AddOperation(std::make_unique<CRemoveEntityOperation>(m_currentSelection));
         }
 
         ImGui::EndPopup();
@@ -154,13 +91,15 @@ void CEditorHierarchy::__draw(float fDt)
     ImGui::SetCursorPosX(0);
     if (ImGui::InvisibleButton("###unselect_all_btn", ImVec2(size_x, size_y)))
     {
-        selected_entity = root;
-        //EGEditor->deselectAll();
+        m_currentSelection = root;
+        CEditorState::GetInstance()->DeselectAll();
     }
 }
 
 void CEditorHierarchy::BuildHierarchy(const entt::entity& entity)
 {
+    auto& state = CEditorState::GetInstance();
+
     if (entity != entt::null)
     {
         std::string icon{};
@@ -171,7 +110,7 @@ void CEditorHierarchy::BuildHierarchy(const entt::entity& entity)
         auto& hierarchy = CEntityManager::GetComponent<ecs::FHierarchyComponent>(entity);
 
         //Is object selected
-        auto isSelected = false;//EGEditor->isSelected(entity);
+        auto isSelected = state->IsSelected(entity);
         if (isSelected)
             flags |= ImGuiTreeNodeFlags_Selected;
 
@@ -186,7 +125,7 @@ void CEditorHierarchy::BuildHierarchy(const entt::entity& entity)
         ImGui::PopID();
 
         if (ImGui::IsItemClicked(0) || ImGui::IsItemClicked(1))
-            selected_entity = entity;
+            m_currentSelection = entity;
 
         //Mouse double click event
         if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
@@ -199,16 +138,15 @@ void CEditorHierarchy::BuildHierarchy(const entt::entity& entity)
             // Ctrl + click
             if (ImGui::IsKeyPressed(ImGuiKey_LeftCtrl) && ImGui::IsItemClicked(0))
             {
-                if (isSelected);
-                //EGEditor->deselectObject();
-                else;
-                    //EGEditor->selectObject(entity);
+                if (isSelected)
+                    state->DeselectOne(entity);
+                else
+                    state->SetSelection(entity);
             }
             //Mouse click event
             else if (!ImGui::IsKeyPressed(ImGuiKey_LeftCtrl) && ImGui::IsItemClicked(0))
             {
-                //EGEditor->deselectAll();
-                //EGEditor->selectObject(entity);
+                state->SetSelection(entity);
             }
         }
 
