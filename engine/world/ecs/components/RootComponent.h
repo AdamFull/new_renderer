@@ -1,6 +1,6 @@
 #pragma once
 
-#include <glm/glm.hpp>
+#include "Component.h"
 #include <container/hash_map.h>
 
 namespace engine
@@ -56,7 +56,7 @@ namespace engine
 				utl::vector<u64> indices{};
 			};
 
-			struct FRootComponent
+			struct FRootComponent : public IComponent
 			{
 				utl::vector<FMeshAnimation> animations;
 				utl::vector<FMeshSkin> skins;

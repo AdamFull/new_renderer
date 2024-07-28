@@ -1,6 +1,6 @@
 #pragma once
 
-#include <string>
+#include "Component.h"
 
 namespace engine
 {
@@ -8,7 +8,7 @@ namespace engine
 	{
 		namespace ecs
 		{
-			struct FBaseComponent
+			struct FBaseComponent : public IComponent
 			{
 				FBaseComponent() = default;
 				FBaseComponent(const std::string& name) : name(name) {}

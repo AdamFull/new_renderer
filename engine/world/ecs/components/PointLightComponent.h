@@ -1,6 +1,6 @@
 #pragma once
 
-#include <glm/glm.hpp>
+#include "Component.h"
 
 namespace engine
 {
@@ -8,7 +8,7 @@ namespace engine
 	{
 		namespace ecs
 		{
-			struct FPointLightComponent
+			struct FPointLightComponent : public IComponent
 			{
 				glm::vec3 color{ 1.f };
 				f32 intencity{ 1.f };

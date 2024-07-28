@@ -1,7 +1,6 @@
 #pragma once
 
-#include <standart_library.h>
-#include <entt/entt.hpp>
+#include "Component.h"
 
 namespace engine
 {
@@ -9,7 +8,7 @@ namespace engine
 	{
 		namespace ecs
 		{
-			struct FHierarchyComponent
+			struct FHierarchyComponent : public IComponent
 			{
 				FHierarchyComponent(entt::entity parent) : parent(parent) {}
 				entt::entity parent{ entt::null };

@@ -1,8 +1,9 @@
 #pragma once
 
-#include <glm/glm.hpp>
 #include <engine/interface/render/VertexStructures.h>
 #include <embed/shaders/includes/interop/base.h>
+
+#include "Component.h"
 
 namespace engine
 {
@@ -41,7 +42,7 @@ namespace engine
 				utl::vector<render::FTriangle> triangles{};
 			};
 
-			struct FMeshComponent
+			struct FMeshComponent : public IComponent
 			{
 				utl::vector<FMeshPrimitive> primitives{};
 				int32_t skin{ -1 };

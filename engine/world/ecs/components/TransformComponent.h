@@ -1,7 +1,6 @@
 #pragma once
 
-#include <glm/glm.hpp>
-#include <glm/gtx/quaternion.hpp>
+#include "Component.h"
 
 namespace engine
 {
@@ -9,7 +8,7 @@ namespace engine
 	{
 		namespace ecs
 		{
-			struct FTransformComponent
+			struct FTransformComponent : public IComponent
 			{
 				// Local transform
 				glm::vec3 lposition{ 0.f };

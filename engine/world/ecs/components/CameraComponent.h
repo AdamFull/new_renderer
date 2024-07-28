@@ -1,7 +1,6 @@
 #pragma once
 
-#include <glm/glm.hpp>
-#include <standart_library.h>
+#include "Component.h"
 
 namespace engine
 {
@@ -15,7 +14,7 @@ namespace engine
 				ePerspective
 			};
 
-			struct FCameraComponent
+			struct FCameraComponent : public IComponent
 			{
 				ECameraType type{ ECameraType::ePerspective };
 

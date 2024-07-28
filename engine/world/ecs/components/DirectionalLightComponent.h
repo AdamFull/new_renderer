@@ -1,8 +1,6 @@
 #pragma once
 
-#include <glm/glm.hpp>
-#include <nlohmann/json.hpp>
-#include <standart_library.h>
+#include "Component.h"
 
 namespace engine
 {
@@ -10,7 +8,7 @@ namespace engine
 	{
 		namespace ecs
 		{
-			struct FDirectionalLightComponent
+			struct FDirectionalLightComponent : public IComponent
 			{
 				glm::vec3 color{ 1.f };
 				f32 intencity{ 1.f };
