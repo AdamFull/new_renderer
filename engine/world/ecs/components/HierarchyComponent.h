@@ -1,7 +1,7 @@
 #pragma once
 
 #include <standart_library.h>
-#include <entt/fwd.hpp>
+#include <entt/entt.hpp>
 
 namespace engine
 {

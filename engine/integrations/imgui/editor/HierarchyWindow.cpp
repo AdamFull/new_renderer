@@ -22,7 +22,7 @@ void try_add_menu_item_h(const std::string& name, const entt::entity& entity)
     }
 }
 
-void CEditorHierarchy::__draw(float fDt)
+void CHierarchyWindow::__draw(float fDt)
 {
     //auto& actionBuffer = EGEditor->getActionBuffer();
     auto root = CEntityManager::GetRoot();
@@ -96,7 +96,7 @@ void CEditorHierarchy::__draw(float fDt)
     }
 }
 
-void CEditorHierarchy::BuildHierarchy(const entt::entity& entity)
+void CHierarchyWindow::BuildHierarchy(const entt::entity& entity)
 {
     auto& state = CEditorState::GetInstance();
 

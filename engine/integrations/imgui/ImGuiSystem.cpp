@@ -4,6 +4,7 @@
 
 #include "ImGuiElements.h"
 #include "editor/HierarchyWindow.h"
+#include "editor/InspectorWindow.h"
 #include "ImFontManager.h"
 
 #include <engine/integrations/imgui/font/IconsMaterialDesignIcons.h>
@@ -421,7 +422,6 @@ void CImGuiEngineSystem::Initialize()
 	icons_config.SizePixels = 12.0f;
 
 	io.Fonts->AddFontDefault();
-
 	font_manager->AddFont("small_icon", data, 13.f, &icons_config, icons_ranges);
 
 	icons_config.GlyphOffset.y = 15.0f;
@@ -445,7 +445,8 @@ void CImGuiEngineSystem::Initialize()
 	FWindowCallbackMapper::SubscribeKeyInput(this, &CImGuiEngineSystem::HandleKeyInput);
 	FWindowCallbackMapper::SubscribeCharInput(this, &CImGuiEngineSystem::HandleCharInput);
 
-	m_vWindows.emplace_back(std::make_unique<CEditorHierarchy>("Hierarchy"));
+	m_vWindows.emplace_back(std::make_unique<CHierarchyWindow>("Hierarchy"));
+	m_vWindows.emplace_back(std::make_unique<CInspectorWindow>("Inspector"));
 
 	for (auto& window : m_vWindows)
 		window->Create();
