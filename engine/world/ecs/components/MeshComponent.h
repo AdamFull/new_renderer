@@ -44,13 +44,15 @@ namespace engine
 
 			struct FMeshComponent : public IComponent
 			{
+				DECLARE_COMPONENT(FMeshComponent)
+
 				utl::vector<FMeshPrimitive> primitives{};
 				int32_t skin{ -1 };
 				bool castShadows{ true };
 
-				bool IsSerializable() override { return true; }
-
 				void OnEdit() override;
+
+				DECLARE_FIELDS(FDECL(castShadows))
 			};
 		}
 	}

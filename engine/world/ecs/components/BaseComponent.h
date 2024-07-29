@@ -10,6 +10,8 @@ namespace engine
 		{
 			struct FBaseComponent : public IComponent
 			{
+				DECLARE_COMPONENT(FBaseComponent)
+
 				FBaseComponent() = default;
 				FBaseComponent(const std::string& name) : name(name) {}
 				std::string name{};

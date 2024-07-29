@@ -10,6 +10,8 @@ namespace engine
 		{
 			struct FSpotLightComponent : public  IComponent
 			{
+				DECLARE_COMPONENT(FSpotLightComponent)
+
 				glm::vec3 color{ 1.f };
 				glm::vec3 target{ 0.f, 0.f, 1.f };
 				f32 intencity{ 1.f };
@@ -19,9 +21,10 @@ namespace engine
 				int shadowIndex{ -1 };
 				bool castShadows{ true };
 
-				bool IsSerializable() override { return true; }
-
 				void OnEdit() override;
+
+				DECLARE_FIELDS(FDECL(color), FDECL(target), FDECL(intencity), FDECL(innerAngle),
+					FDECL(outerAngle), FDECL(toTarget), FDECL(castShadows))
 			};
 		}
 	}

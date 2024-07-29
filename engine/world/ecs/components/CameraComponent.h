@@ -16,6 +16,8 @@ namespace engine
 
 			struct FCameraComponent : public IComponent
 			{
+				DECLARE_COMPONENT(FCameraComponent)
+
 				ECameraType type{ ECameraType::ePerspective };
 
 				f32 fieldOfView{ 45.f };
@@ -40,12 +42,11 @@ namespace engine
 
 				u64 frustumID{ ~0ull };
 
-				void Serialize(nlohmann::json& j) override;
-				void Deserialize(const nlohmann::json& j) override;
-
 				void OnEdit() override;
 
-				bool IsSerializable() override { return true; }
+				DECLARE_FIELDS(FDECL(type), FDECL(fieldOfView), FDECL(nearPlane),
+					FDECL(farPlane), FDECL(aspectRatio), FDECL(xmag), FDECL(ymag)
+				)
 			};
 		}
 	}

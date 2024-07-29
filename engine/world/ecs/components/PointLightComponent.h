@@ -10,15 +10,17 @@ namespace engine
 		{
 			struct FPointLightComponent : public IComponent
 			{
+				DECLARE_COMPONENT(FPointLightComponent)
+
 				glm::vec3 color{ 1.f };
 				f32 intencity{ 1.f };
 				f32 radius{ 1.f };
 				int shadowIndex{ -1 };
 				bool castShadows{ true };
 
-				bool IsSerializable() override { return true; }
-
 				void OnEdit() override;
+
+				DECLARE_FIELDS(FDECL(color), FDECL(intencity), FDECL(radius), FDECL(castShadows))
 			};
 		}
 	}

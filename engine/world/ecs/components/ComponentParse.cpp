@@ -2,24 +2,6 @@
 
 #include <engine/integrations/imgui/EditorElements.h>
 
-namespace glm
-{
-	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ivec2, x, y);
-	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(vec2, x, y);
-	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(dvec2, x, y);
-
-	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ivec3, x, y, z);
-	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(vec3, x, y, z);
-	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(dvec3, x, y, z);
-
-	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ivec4, x, y, z, w);
-	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(vec4, x, y, z, w);
-	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(dvec4, x, y, z, w);
-
-	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(quat, w, x, y, z);
-	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(dquat, w, x, y, z);
-}
-
 namespace engine
 {
 	namespace world
@@ -32,63 +14,21 @@ namespace engine
 					{ECameraType::ePerspective, "perspective"}
 				})
 
-			NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FRootComponent, entity);
-			NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FBaseComponent, name, enabled, visible);
-			NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FCameraComponent, type, fieldOfView, nearPlane, farPlane, aspectRatio, xmag, ymag);
-			NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FDirectionalLightComponent, color, intencity, castShadows);
-			NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FHierarchyComponent, parent, children);
-			NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FMeshComponent, castShadows);
-			NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FPointLightComponent, color, intencity, radius, castShadows);
-			NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FSpotLightComponent, color, target, intencity, innerAngle, outerAngle, toTarget, castShadows);
-			NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FTransformComponent, lposition, lrotation, lscale);
+			//NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FRootComponent, entity);
+			//NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FBaseComponent, name, enabled, visible);
+			//NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FCameraComponent, type, fieldOfView, nearPlane, farPlane, aspectRatio, xmag, ymag);
+			//NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FDirectionalLightComponent, color, intencity, castShadows);
+			//NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FHierarchyComponent, parent, children);
+			//NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FMeshComponent, castShadows);
+			//NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FPointLightComponent, color, intencity, radius, castShadows);
+			//NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FSpotLightComponent, color, target, intencity, innerAngle, outerAngle, toTarget, castShadows);
+			//NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FTransformComponent, lposition, lrotation, lscale);
 		}
 	}
 }
 
 using namespace engine;
 using namespace engine::world::ecs;
-
-template<typename _Ty>
-void SerializeField(const char* field, nlohmann::json& j, const _Ty& value, const _Ty default_value = _Ty{})
-{
-	if (value != default_value)
-		j[field] = value;
-}
-
-template<typename _Ty>
-void DeserializeField(const char* field, const nlohmann::json& j, _Ty& value, bool expected = false)
-{
-	if (auto obj = j.find(field); obj != j.end())
-		obj->get_to(value);
-	else if(expected)
-		throw std::runtime_error("Expected field was not found!");
-}
-
-#define SERIALIZE_FIELD(field) SerializeField(#field, j, field)
-#define DESERIALIZE_FIELD(field) DeserializeField(#field, j, field)
-#define DESERIALIZE_EXPECTED_FIELD(field) DeserializeField(#field, j, field, true)
-
-void FCameraComponent::Serialize(nlohmann::json& j)
-{
-	SERIALIZE_FIELD(type);
-	SERIALIZE_FIELD(fieldOfView);
-	SERIALIZE_FIELD(nearPlane);
-	SERIALIZE_FIELD(farPlane);
-	SERIALIZE_FIELD(aspectRatio);
-	SERIALIZE_FIELD(xmag);
-	SERIALIZE_FIELD(ymag);
-}
-
-void FCameraComponent::Deserialize(const nlohmann::json& j)
-{
-	DESERIALIZE_FIELD(type);
-	DESERIALIZE_FIELD(fieldOfView);
-	DESERIALIZE_FIELD(nearPlane);
-	DESERIALIZE_FIELD(farPlane);
-	DESERIALIZE_FIELD(aspectRatio);
-	DESERIALIZE_FIELD(xmag);
-	DESERIALIZE_FIELD(ymag);
-}
 
 void FCameraComponent::OnEdit()
 {

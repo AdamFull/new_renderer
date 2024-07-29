@@ -58,13 +58,13 @@ namespace engine
 
 			struct FRootComponent : public IComponent
 			{
+				DECLARE_COMPONENT(FRootComponent)
+
 				utl::vector<FMeshAnimation> animations;
 				utl::vector<FMeshSkin> skins;
 				utl::hash_map<uint32_t, uint32_t> skinRemap{};
 
 				entt::entity entity;
-
-				bool IsSerializable() override { return false; }
 			};
 		}
 	}

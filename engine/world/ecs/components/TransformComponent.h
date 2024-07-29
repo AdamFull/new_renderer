@@ -10,6 +10,8 @@ namespace engine
 		{
 			struct FTransformComponent : public IComponent
 			{
+				DECLARE_COMPONENT(FTransformComponent)
+
 				// Local transform
 				glm::vec3 lposition{ 0.f };
 				glm::quat lrotation{ 1.f, 0.f, 0.f, 0.f };
@@ -25,36 +27,10 @@ namespace engine
 				glm::mat4 oldmodel{ 1.f };
 				glm::mat4 normal{ 1.f };
 
-				bool IsSerializable() override { return true; }
-
 				void OnEdit() override;
+
+				DECLARE_FIELDS(FDECL(lposition), FDECL(lrotation), FDECL(lscale), FDECL(lmodel));
 			};
 		}
 	}
 }
-
-/*
-* {
-*	images: [],
-*	textures: [],
-*	materials: [],
-*	
-*	root: {
-*		components: {
-*			base_component: {
-*				name: "bla_bla",
-*				visible: true,
-*				enabled: true
-*			},
-*			transform_component: {
-*				pos: [],
-*				rot: [],
-*				scale: [],
-*				mat: []
-*			},
-*			hierarchy_component: {
-*			}
-*		}
-*	}
-* }
-*/

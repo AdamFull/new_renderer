@@ -8,6 +8,137 @@
 
 #include <entt/entt.hpp>
 
+#include <tuple>
+#include <type_traits>
+#include <typeinfo>
+
+#define REGISTER_GLM_MATRIX_SERIALIZATION(MatrixType) \
+inline void to_json(nlohmann::json& j, const MatrixType& mat) { \
+	j = nlohmann::json::array(); \
+	for (int i = 0; i < mat.length(); ++i) \
+		for (int k = 0; k < mat[i].length(); ++k) \
+			j.push_back(mat[i][k]); \
+} \
+inline void from_json(const nlohmann::json& j, MatrixType& mat) { \
+	int index = 0; \
+	for (int i = 0; i < mat.length(); ++i) \
+		for (int k = 0; k < mat[i].length(); ++k) \
+			mat[i][k] = j.at(index++); \
+}
+
+namespace glm
+{
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ivec2, x, y);
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(vec2, x, y);
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(dvec2, x, y);
+
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ivec3, x, y, z);
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(vec3, x, y, z);
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(dvec3, x, y, z);
+
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ivec4, x, y, z, w);
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(vec4, x, y, z, w);
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(dvec4, x, y, z, w);
+
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(quat, w, x, y, z);
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(dquat, w, x, y, z);
+
+	REGISTER_GLM_MATRIX_SERIALIZATION(mat2);
+	REGISTER_GLM_MATRIX_SERIALIZATION(mat3);
+	REGISTER_GLM_MATRIX_SERIALIZATION(mat4);
+}
+
+#define DECLARE_COMPONENT(clazz) \
+	using _Self = clazz;
+
+#define DECLARE_FIELDS(...) \
+	bool IsSerializable() override { return true; } \
+    static constexpr auto fields() { return std::make_tuple(__VA_ARGS__); } \
+	void Serialize(nlohmann::json& j) override { SerializeFields(j, *this); } \
+	void Deserialize(const nlohmann::json& j) override { DeserializeFields(j, *this); }
+
+#define FDECL(name) std::make_pair(&_Self::name, #name)
+	
+
+template <typename T>
+const char* GetFieldName(const T& field) 
+{
+	return field.second;
+}
+
+template <typename T, typename U>
+U T::* GetFieldPtr(const std::pair<U T::*, const char*>& field) 
+{
+	return field.first;
+}
+
+template <typename T, std::size_t... I>
+void SerializeFieldsImpl(nlohmann::json& j, const T& obj, std::index_sequence<I...>) 
+{
+	((j[GetFieldName(std::get<I>(T::fields()))] = obj.*GetFieldPtr(std::get<I>(T::fields()))), ...);
+}
+
+template <typename T>
+void SerializeFields(nlohmann::json& j, const T& obj) 
+{
+	SerializeFieldsImpl(j, obj, std::make_index_sequence<std::tuple_size_v<decltype(T::fields())>>{});
+}
+
+template <typename T, std::size_t... I>
+void DeserializeFieldsImpl(const nlohmann::json& j, T& obj, std::index_sequence<I...>) 
+{
+	((j.at(GetFieldName(std::get<I>(T::fields()))).get_to(obj.*GetFieldPtr(std::get<I>(T::fields())))), ...);
+}
+
+template <typename T>
+void DeserializeFields(const nlohmann::json& j, T& obj) 
+{
+	DeserializeFieldsImpl(j, obj, std::make_index_sequence<std::tuple_size_v<decltype(T::fields())>>{});
+}
+
+
+template<typename _Ty>
+void SerializeField(const char* field, nlohmann::json& j, const _Ty& value, const _Ty default_value = _Ty{})
+{
+	if (value != default_value)
+		j[field] = value;
+}
+
+template<typename _Ty>
+void SerializeFields(nlohmann::json& j, const _Ty& field, const char* fieldName)
+{
+	SerializeField(fieldName, j, field);
+}
+
+template<typename _Ty, typename... _Args>
+void SerializeFields(nlohmann::json& j, const _Ty& field, const char* fieldName, _Args... args)
+{
+	SerializeField(fieldName, j, field);
+	SerializeFields(j, args...);
+}
+
+template<typename _Ty>
+void DeserializeField(const char* field, const nlohmann::json& j, _Ty& value, bool expected = false)
+{
+	if (auto obj = j.find(field); obj != j.end())
+		obj->get_to(value);
+	else if (expected)
+		throw std::runtime_error("Expected field was not found!");
+}
+
+template<typename _Ty>
+void DeserializeFields(const nlohmann::json& j, _Ty& field, const char* fieldName)
+{
+	DeserializeField(fieldName, j, field);
+}
+
+template<typename _Ty, typename... _Args>
+void DeserializeFields(const nlohmann::json& j, _Ty& field, const char* fieldName, _Args... args)
+{
+	DeserializeField(fieldName, j, field);
+	DeserializeFields(j, args...);
+}
+
 namespace engine
 {
 	namespace world
