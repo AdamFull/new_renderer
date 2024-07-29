@@ -15,8 +15,6 @@ namespace engine
 				std::string name{};
 				bool enabled{ true };
 				bool visible{ true };
-
-				bool IsSerializable() override { return false; }
 			};
 		}
 	}

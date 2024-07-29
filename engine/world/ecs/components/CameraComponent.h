@@ -40,9 +40,12 @@ namespace engine
 
 				u64 frustumID{ ~0ull };
 
-				bool IsSerializable() override { return true; }
+				void Serialize(nlohmann::json& j) override;
+				void Deserialize(const nlohmann::json& j) override;
 
 				void OnEdit() override;
+
+				bool IsSerializable() override { return true; }
 			};
 		}
 	}
