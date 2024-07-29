@@ -18,6 +18,10 @@ namespace engine
 				bool toTarget{ false };
 				int shadowIndex{ -1 };
 				bool castShadows{ true };
+
+				bool IsSerializable() override { return true; }
+
+				void OnEdit() override;
 			};
 		}
 	}

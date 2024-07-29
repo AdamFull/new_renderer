@@ -47,6 +47,10 @@ namespace engine
 				utl::vector<FMeshPrimitive> primitives{};
 				int32_t skin{ -1 };
 				bool castShadows{ true };
+
+				bool IsSerializable() override { return true; }
+
+				void OnEdit() override;
 			};
 		}
 	}

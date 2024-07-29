@@ -39,6 +39,10 @@ namespace engine
 				bool orbit{ true };
 
 				u64 frustumID{ ~0ull };
+
+				bool IsSerializable() override { return true; }
+
+				void OnEdit() override;
 			};
 		}
 	}

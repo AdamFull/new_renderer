@@ -15,6 +15,10 @@ namespace engine
 				f32 radius{ 1.f };
 				int shadowIndex{ -1 };
 				bool castShadows{ true };
+
+				bool IsSerializable() override { return true; }
+
+				void OnEdit() override;
 			};
 		}
 	}

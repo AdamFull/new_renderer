@@ -102,55 +102,7 @@ void CInspectorWindow::__draw(float fDt)
 		ImGui::GTextInput("Name", &base.name);
 		ImGui::Separator();
 
-		TryShowEdit<ecs::FTransformComponent>("Transform", selected,
-			[this](auto* object) { ImGui::GDragTransform(object->lposition, object->lrotation, object->lscale); });
-		//TryShowEdit<ecs::FAudioComponent>("Audio", selected,
-		//	[this](auto* object) { audioEdit(object); });
-		TryShowEdit<ecs::FCameraComponent>("Camera", selected,
-			[this](auto* object) { CameraEdit(object); });
-		TryShowEdit<ecs::FMeshComponent>("Mesh", selected,
-			[this](auto* object) { MeshEdit(object); });
-		//TryShowEdit<ecs::FScriptComponent>("Script", selected,
-		//	[this](auto* object) { scriptEdit(object); });
-		//TryShowEdit<ecs::FEnvironmentComponent>("Environment", selected,
-		//	[this](auto* object) { skyboxEdit(object); });
-		//TryShowEdit<ecs::FSceneComponent>("Scene", selected,
-		//	[this](auto* object) { sceneEdit(object); });
-		//TryShowEdit<ecs::FRigidBodyComponent>("RigidBody", selected,
-		//	[this, &transform](auto* object) { rigidbodyEdit(&transform, object); });
-		//TryShowEdit<ecs::FParticleComponent>("Particle system", selected,
-		//	[this, &transform](auto* object) { particleSystemEdit(&transform, object); });
-		//TryShowEdit<ecs::FTerrainComponent>("Terrain", selected,
-		//	[this, &transform](auto* object) { terrainEdit(object); });
-
-		TryShowEdit<ecs::FDirectionalLightComponent>("Directional light", selected,
-			[&](auto* object)
-			{
-				ImGui::GColorEdit3("Color", object->color);
-				ImGui::GDragFloat<1>("Intencity", &object->intencity, 0.01f, 0.01f, 50.f);
-				ImGui::GCheckbox("Cast shadows", &object->castShadows);
-			});
-
-		TryShowEdit<ecs::FSpotLightComponent>("Spot light", selected,
-			[&](auto* object)
-			{
-				ImGui::GColorEdit3("Color", object->color);
-				ImGui::GDragFloat<3>("Target", glm::value_ptr(object->target), 0.01f);
-				ImGui::GDragFloat<1>("Intencity", &object->intencity, 0.01f, 0.01f, 50.f);
-				ImGui::GDragFloat<1>("Inner angle", &object->innerAngle, 0.01f, 0.01f, object->outerAngle);
-				ImGui::GDragFloat<1>("Outer angle", &object->outerAngle, 0.01f, object->innerAngle, 3.14f);
-				ImGui::GCheckbox("To target", &object->toTarget);
-				ImGui::GCheckbox("Cast shadows", &object->castShadows);
-			});
-
-		TryShowEdit<ecs::FPointLightComponent>("Point light", selected,
-			[&](auto* object)
-			{
-				ImGui::GColorEdit3("Color", object->color);
-				ImGui::GDragFloat<1>("Intencity", &object->intencity, 0.01f, 0.01f, 50.f);
-				ImGui::GDragFloat<1>("Radius", &object->radius, 0.01f, 0.01f);
-				ImGui::GCheckbox("Cast shadows", &object->castShadows);
-			});
+		CEntityManager::IterateComponents(selected, [](ecs::IComponent* component) {component->OnEdit(); });
 
 		if (ImGui::Button(ICON_MDI_PLUS, ImVec2(-1.f, 0.f)))
 			ImGui::OpenPopup("add_component_popup");

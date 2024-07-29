@@ -14,6 +14,8 @@ namespace engine
 				f32 intencity{ 1.f };
 				int shadowIndex{ -1 };
 				bool castShadows{ true };
+
+				void OnEdit() override;
 			};
 		}
 	}

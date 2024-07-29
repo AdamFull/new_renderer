@@ -20,6 +20,8 @@ namespace engine
 				virtual void Deserialize(const nlohmann::json& j) {}
 
 				virtual void OnEdit() {}
+
+				virtual bool IsSerializable() { return false; }
 			};
 		}
 	}

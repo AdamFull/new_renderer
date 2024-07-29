@@ -7,8 +7,6 @@ using namespace engine::world;
 entt::registry CEntityManager::m_registry{};
 entt::entity CEntityManager::m_root{};
 utl::vector<std::unique_ptr<ecs::ISystem>> CEntityManager::m_vSystems;
-utl::hash_map<entt::id_type, CEntityManager::serialize_function_t> CEntityManager::m_componentSerializers{};
-utl::hash_map<entt::id_type, CEntityManager::deserialize_function_t> CEntityManager::m_componentDeserializers{};
 
 entt::entity CEntityManager::CreateRoot(const std::string& name)
 {
@@ -26,7 +24,7 @@ entt::entity CEntityManager::CreateNode(const std::string& name, entt::entity pa
 	m_registry.emplace<ecs::FBaseComponent>(entity, ecs::FBaseComponent{ name });
 	m_registry.emplace<ecs::FTransformComponent>(entity, ecs::FTransformComponent{});
 	m_registry.emplace<ecs::FHierarchyComponent>(entity, ecs::FHierarchyComponent{ parent });
-
+	
 	log_debug("[Scene Graph] Entity with id {} was created", static_cast<uint32_t>(entity));
 
 	return entity;
@@ -97,13 +95,12 @@ nlohmann::json CEntityManager::SerializeEntity(entt::entity entity)
 	j["visible"] = base.visible;
 
 	auto& components = j["components"];
-	for (const auto& [type, serializer] : m_componentSerializers)
-		serializer(m_registry, entity, components);
+	IterateComponents(entity, [&components](ecs::IComponent* component) { component->Serialize(components); });
 
 	auto& children = j["children"];
 	auto& hierarchy = m_registry.get<ecs::FHierarchyComponent>(entity);
 	for (entt::entity child : hierarchy.children)
-		children.push_back(SerializeEntity(child));
+		children.emplace_back(SerializeEntity(child));
 
 	return j;
 }
@@ -118,8 +115,7 @@ entt::entity CEntityManager::DeserializeEntity(entt::entity parent, const nlohma
 	j.at("visible").get_to(base.visible);
 
 	auto& components = j["components"];
-	for (const auto& [type, deserializer] : m_componentDeserializers)
-		deserializer(m_registry, entity, components);
+	IterateComponents(entity, [&components](ecs::IComponent* component) { component->Deserialize(components); });
 
 	auto& hierarchy = m_registry.get<ecs::FHierarchyComponent>(entity);
 	auto& children = j["children"];

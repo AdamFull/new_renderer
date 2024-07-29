@@ -63,6 +63,8 @@ namespace engine
 				utl::hash_map<uint32_t, uint32_t> skinRemap{};
 
 				entt::entity entity;
+
+				bool IsSerializable() override { return false; }
 			};
 		}
 	}

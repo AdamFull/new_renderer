@@ -59,15 +59,6 @@ namespace engine
 			static void RegisterComponent()
 			{
 				entt::id_type type = entt::type_hash<_Ty>::value();
-				auto string_type = std::to_string(type);
-				m_componentSerializers[type] = [string_type](entt::registry& registry, entt::entity entity, nlohmann::json& j) {
-					if (registry.all_of<_Ty>(entity))
-						j[string_type] = registry.get<_Ty>(entity);
-					};
-				m_componentDeserializers[type] = [string_type](entt::registry& registry, entt::entity entity, const nlohmann::json& j) {
-					if (j.contains(string_type))
-						registry.emplace_or_replace<_Ty>(entity, j.at(string_type).get<_Ty>());
-					};
 			}
 
 			template<typename _Ty, typename... _Args>
@@ -99,6 +90,15 @@ namespace engine
 				v.each(func);
 			}
 
+			template<typename _Func>
+			static void IterateComponents(entt::entity entity, _Func&& func)
+			{
+				for (auto&& storage : m_registry.storage())
+				{
+					if (auto& set = storage.second; set.contains(entity))
+						func(static_cast<ecs::IComponent*>(set.get(entity)));
+				}
+			}
 
 			template<typename _Ty>
 			static _Ty& AddComponent(entt::entity entity, _Ty&& component)
@@ -131,8 +131,6 @@ namespace engine
 			static entt::registry m_registry;
 			static entt::entity m_root;
 			static utl::vector<std::unique_ptr<ecs::ISystem>> m_vSystems;
-			static utl::hash_map<entt::id_type, serialize_function_t> m_componentSerializers;
-			static utl::hash_map<entt::id_type, deserialize_function_t> m_componentDeserializers;
 		};
 	}
 }
