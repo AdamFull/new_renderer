@@ -27,9 +27,12 @@ namespace engine
 				glm::mat4 oldmodel{ 1.f };
 				glm::mat4 normal{ 1.f };
 
-				void OnEdit() override;
-
-				DECLARE_FIELDS(FDECL(lposition), FDECL(lrotation), FDECL(lscale), FDECL(lmodel));
+				DECLARE_FIELDS(
+					FDECL(lposition, DragField(0.f, 0.f, 0.01f)),
+					FDECL(lrotation, DragField(-1.f, 1.f, 0.01f)), 
+					FDECL(lscale, DragField(0.f, 0.f, 0.01f)),
+					FDECL(lmodel, NoEdit{})
+				);
 			};
 		}
 	}

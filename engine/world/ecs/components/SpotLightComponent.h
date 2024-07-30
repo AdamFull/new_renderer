@@ -21,10 +21,15 @@ namespace engine
 				int shadowIndex{ -1 };
 				bool castShadows{ true };
 
-				void OnEdit() override;
-
-				DECLARE_FIELDS(FDECL(color), FDECL(target), FDECL(intencity), FDECL(innerAngle),
-					FDECL(outerAngle), FDECL(toTarget), FDECL(castShadows))
+				DECLARE_FIELDS(
+					FDECL(color, ColorEditField()),
+					FDECL(target, DragField(0.f, 0.f, 0.01f)),
+					FDECL(intencity, DragField(0.f, 1000.f, 0.01f)),
+					FDECL(innerAngle, DragField(0.f, 3.14f, 0.01f)),
+					FDECL(outerAngle, DragField(0.f, 3.14f, 0.01f)),
+					FDECL(toTarget, ToggleField()), 
+					FDECL(castShadows, ToggleField())
+				)
 			};
 		}
 	}

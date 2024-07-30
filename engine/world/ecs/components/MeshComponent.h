@@ -50,9 +50,9 @@ namespace engine
 				int32_t skin{ -1 };
 				bool castShadows{ true };
 
-				void OnEdit() override;
-
-				DECLARE_FIELDS(FDECL(castShadows))
+				DECLARE_FIELDS(
+					FDECL(castShadows, ToggleField())
+				)
 			};
 		}
 	}

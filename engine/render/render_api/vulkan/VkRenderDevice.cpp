@@ -83,7 +83,7 @@ VKAPI_ATTR vk::Bool32 VKAPI_CALL debug_report_callback(VkDebugReportFlagsEXT fla
 	case VK_DEBUG_REPORT_INFORMATION_BIT_EXT: log_info(report_text); break;
 	case VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT: log_warning(report_text); break;
 	case VK_DEBUG_REPORT_WARNING_BIT_EXT: log_warning(report_text); break;
-	case VK_DEBUG_REPORT_ERROR_BIT_EXT: log_error(report_text); break;
+ 	case VK_DEBUG_REPORT_ERROR_BIT_EXT: log_error(report_text); break;
 	case VK_DEBUG_REPORT_DEBUG_BIT_EXT: log_debug(report_text); break;
 	}
 	

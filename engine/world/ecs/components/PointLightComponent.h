@@ -18,9 +18,12 @@ namespace engine
 				int shadowIndex{ -1 };
 				bool castShadows{ true };
 
-				void OnEdit() override;
-
-				DECLARE_FIELDS(FDECL(color), FDECL(intencity), FDECL(radius), FDECL(castShadows))
+				DECLARE_FIELDS(
+					FDECL(color, ColorEditField()),
+					FDECL(intencity, DragField(0.f, 1000.f, 0.01f)),
+					FDECL(radius, DragField(0.f, 0.f, 0.01f)),
+					FDECL(castShadows, ToggleField())
+				)
 			};
 		}
 	}

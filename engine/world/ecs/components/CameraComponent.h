@@ -14,6 +14,12 @@ namespace engine
 				ePerspective
 			};
 
+			NLOHMANN_JSON_SERIALIZE_ENUM(ECameraType,
+				{
+					{ECameraType::eOrthographic, "ortho"},
+					{ECameraType::ePerspective, "perspective"}
+				})
+
 			struct FCameraComponent : public IComponent
 			{
 				DECLARE_COMPONENT(FCameraComponent)
@@ -42,10 +48,14 @@ namespace engine
 
 				u64 frustumID{ ~0ull };
 
-				void OnEdit() override;
-
-				DECLARE_FIELDS(FDECL(type), FDECL(fieldOfView), FDECL(nearPlane),
-					FDECL(farPlane), FDECL(aspectRatio), FDECL(xmag), FDECL(ymag)
+				DECLARE_FIELDS(
+					FDECL(type, NoEdit()),
+					FDECL(fieldOfView, DragField(0.f, 180.f, 0.01f)),
+					FDECL(nearPlane, DragField(0.01f, 0.f, 0.01f)),
+					FDECL(farPlane, DragField(0.01f, 0.f, 0.01f)),
+					FDECL(aspectRatio, DragField(0.01f, 0.f, 0.01f)),
+					FDECL(xmag, DragField(0.01f, 0.f, 0.01f)),
+					FDECL(ymag, DragField(0.01f, 0.f, 0.01f))
 				)
 			};
 		}
