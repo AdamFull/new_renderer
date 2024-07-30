@@ -68,9 +68,9 @@ struct NoEdit {};
 template<typename _Ty>
 struct SliderField
 {
+	_Ty step;
 	_Ty min;
 	_Ty max;
-	_Ty step;
 };
 
 template<typename _Ty>
@@ -86,6 +86,21 @@ struct InputField
 {
 	_Ty step;
 	_Ty fast_step;
+};
+
+template<std::size_t N>
+struct StringLiteral 
+{
+	constexpr StringLiteral(const char(&str)[N]) 
+	{ std::copy_n(str, N, value); }
+
+	char value[N];
+};
+
+template<size_t N>
+struct DropdownField
+{
+	std::array<const char*, N> fields;
 };
 
 template<typename _Ty = float>
@@ -194,6 +209,30 @@ void DrawFieldImpl(T& obj, const Field& field, const ColorEditField<U>& editor)
 		ImGui::ColorEdit4(field_name, reinterpret_cast<U*>(&(obj.*field_ptr)));
 	else
 		static_assert(false, "Unknown control type for color edit.");
+}
+
+template <typename T, typename Field, size_t N>
+void DrawFieldImpl(T& obj, const Field& field, const DropdownField<N>& editor)
+{
+	auto field_ptr = GetFieldPtr(field);
+	auto field_name = GetFieldName(field);
+
+	int* current = reinterpret_cast<int*>(&(obj.*field_ptr));
+	const char* preview = editor.fields[*current];
+	
+	if (ImGui::BeginCombo(field_name, preview))
+	{
+		for (int n = 0; n < editor.fields.size(); n++)
+		{
+			bool is_selected = (*current == n);
+			if (ImGui::Selectable(editor.fields[n], is_selected))
+				*current = n;
+			if (is_selected)
+				ImGui::SetItemDefaultFocus();
+		}
+
+		ImGui::EndCombo();
+	}
 }
 
 template <typename T, typename Field>

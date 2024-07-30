@@ -49,7 +49,7 @@ namespace engine
 				u64 frustumID{ ~0ull };
 
 				DECLARE_FIELDS(
-					FDECL(type, NoEdit()),
+					FDECL(type, DropdownField<2>({ "ortho", "perspective" })),
 					FDECL(fieldOfView, DragField(0.f, 180.f, 0.01f)),
 					FDECL(nearPlane, DragField(0.01f, 0.f, 0.01f)),
 					FDECL(farPlane, DragField(0.01f, 0.f, 0.01f)),
