@@ -106,13 +106,36 @@ void ApplyModernStyle()
 void ApplyCinderTheme()
 {
 	ImGuiStyle& style = ImGui::GetStyle();
-	style.WindowRounding = 0.0f;
-	style.ChildRounding = 0.0f;
-	style.FrameRounding = 0.0f;
-	style.GrabRounding = 0.0f;
-	style.PopupRounding = 0.0f;
-	style.ScrollbarRounding = 0.0f;
-	style.TabRounding = 0.0f;
+	style.Alpha = 1.0f;
+	style.DisabledAlpha = 0.3f;
+	style.WindowPadding = ImVec2(10.1f, 10.1f);
+	style.WindowRounding = 10.3f;
+	style.WindowBorderSize = 1.0f;
+	style.WindowMinSize = ImVec2(20.0f, 32.0f);
+	style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
+	style.WindowMenuButtonPosition = ImGuiDir_Right;
+	style.ChildRounding = 8.2f;
+	style.ChildBorderSize = 1.0f;
+	style.PopupRounding = 10.7f;
+	style.PopupBorderSize = 1.0f;
+	style.FramePadding = ImVec2(20.0f, 1.5f);
+	style.FrameRounding = 4.8f;
+	style.FrameBorderSize = 0.0f;
+	style.ItemSpacing = ImVec2(9.7f, 5.3f);
+	style.ItemInnerSpacing = ImVec2(5.4f, 9.3f);
+	style.CellPadding = ImVec2(7.9f, 2.0f);
+	style.IndentSpacing = 10.7f;
+	style.ColumnsMinSpacing = 6.0f;
+	style.ScrollbarSize = 12.1f;
+	style.ScrollbarRounding = 20.0f;
+	style.GrabMinSize = 10.0f;
+	style.GrabRounding = 4.6f;
+	style.TabRounding = 4.0f;
+	style.TabBorderSize = 0.0f;
+	style.TabMinWidthForCloseButton = 0.0f;
+	style.ColorButtonPosition = ImGuiDir_Right;
+	style.ButtonTextAlign = ImVec2(0.5f, 0.5f);
+	style.SelectableTextAlign = ImVec2(0.0f, 0.0f);
 	ImVec4* colors = style.Colors;
 
 	colors[ImGuiCol_Text] = ImVec4(0.95f, 0.96f, 0.98f, 1.00f);
