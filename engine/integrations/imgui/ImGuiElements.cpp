@@ -35,8 +35,8 @@ bool SimpleValueEdit(const char* label, _Ty* value, _Func&& function)
 
     if (ImGui::BeginTable("data_table", 2, ImGuiTableFlags_SizingFixedFit))
     {
-        ImGui::TableSetupColumn("Parameter", 0, ImGui::GetContentRegionAvail().x * ImGui::widthScale);
-        ImGui::TableSetupColumn("Field", 0, ImGui::GetContentRegionAvail().x * (1.f - ImGui::widthScale));
+        ImGui::TableSetupColumn("Parameter", ImGuiTableColumnFlags_WidthFixed, ImGui::columnWidth);
+        ImGui::TableSetupColumn("Field", ImGuiTableColumnFlags_WidthStretch);
 
         ImGui::TableNextColumn();
         ImGui::Text(label);

@@ -9,6 +9,7 @@ namespace ImGui
 {
     // TODO: Rename this and add ability to register callbacks for value changed (begin/end editing)
     constexpr const float widthScale = 0.2f;
+    constexpr const float columnWidth{ 100.f };
 
     constexpr const char* axis_names[4]{ "X", "Y", "Z", "W" };
     constexpr const char* axis_sub_names[4]{ "##X", "##Y", "##Z", "##W" };
@@ -20,7 +21,6 @@ namespace ImGui
     bool UniversalEdit(const char* label, _Ty* value, _Func&& function)
     {
         static _Ty old[_Count]{ (_Ty)0 };
-        constexpr const float columnWidth{ 100.f };
 
         bool value_changed{ false };
         ImGuiIO& io = GetIO();
@@ -39,7 +39,7 @@ namespace ImGui
 
             TableSetColumnIndex(1);
 
-            PushMultiItemsWidths(_Count, CalcItemWidth() + columnWidth);
+            PushMultiItemsWidths(_Count, GetContentRegionAvail().x);
             PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 0, 0 });
 
             float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
