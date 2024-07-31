@@ -132,10 +132,11 @@ namespace glm
     static constexpr auto fields() { return std::make_tuple(__VA_ARGS__); } \
 	void Serialize(nlohmann::json& j) override { SerializeFields(j, *this); } \
 	void Deserialize(const nlohmann::json& j) override { DeserializeFields(j, *this); } \
+	void OnInstantiate(entt::registry& registry, entt::entity entity) override { registry.emplace<_Self>(entity); } \
 	void OnEdit() override { DefaultComponentEdit(_Name.data(), [this]() {DrawFields(*this); }); } \
 	const char* GetName() override { return _Name.data(); }
 
-#define FDECL(name, meta) std::make_tuple(&_Self::name, #name, meta)
+#define FDECL(member, name, meta) std::make_tuple(&_Self::member, name, meta)
 	
 
 struct NoEdit {};
@@ -161,15 +162,6 @@ struct InputField
 {
 	_Ty step;
 	_Ty fast_step;
-};
-
-template<std::size_t N>
-struct StringLiteral 
-{
-	constexpr StringLiteral(const char(&str)[N]) 
-	{ std::copy_n(str, N, value); }
-
-	char value[N];
 };
 
 template<size_t N>
@@ -407,7 +399,8 @@ namespace engine
 			{
 				virtual void Serialize(nlohmann::json& j) {}
 				virtual void Deserialize(const nlohmann::json& j) {}
-
+				
+				virtual void OnInstantiate(entt::registry& registry, entt::entity entity) {}
 				virtual void OnEdit() {}
 				virtual const char* GetName(){ return ""; }
 

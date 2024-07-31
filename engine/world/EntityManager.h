@@ -12,16 +12,33 @@ namespace engine
 {
 	namespace world
 	{
+		struct FComponentMeta
+		{
+			using fn_sign_1_t = std::function<ecs::IComponent*(entt::registry&, entt::entity)>;
+			using fn_sign_2_t = std::function<void(entt::registry&, entt::entity)>;
+			using fn_sign_3_t = std::function<bool(entt::registry&, entt::entity)>;
+
+			const char* name;
+			fn_sign_1_t create;
+			fn_sign_2_t destroy;
+			fn_sign_3_t check;
+			fn_sign_1_t get;
+		};
+
 		class CEntityManager
 		{
 		public:
-			using serialize_function_t = std::function<void(entt::registry&, entt::entity, nlohmann::json&)>;
-			using deserialize_function_t = std::function<void(entt::registry&, entt::entity, const nlohmann::json&)>;
-
 			template<typename _Ty>
 			static void RegisterComponent()
 			{
 				entt::id_type type = entt::type_hash<_Ty>::value();
+
+				auto& meta = m_meta[type];
+				meta.name = _Ty::_Name.data();
+				meta.create = [](entt::registry& registry, entt::entity entity) -> ecs::IComponent* { return (ecs::IComponent*)(&registry.emplace<_Ty>(entity, _Ty{})); };
+				meta.destroy = [](entt::registry& registry, entt::entity entity) { registry.remove<_Ty>(entity); };
+				meta.check = [](entt::registry& registry, entt::entity entity) { return registry.any_of<_Ty>(entity); };
+				meta.get = [](entt::registry& registry, entt::entity entity) -> ecs::IComponent* { return (ecs::IComponent*)registry.try_get<_Ty>(entity); };
 			}
 
 			template<typename _Ty, typename... _Args>
@@ -81,6 +98,25 @@ namespace engine
 				return m_registry.try_get<_Ty>(entity);
 			}
 
+			template<typename _Ty>
+			static bool HasComponent(entt::entity entity)
+			{
+				return m_registry.any_of<_Ty>(entity);
+			}
+
+			// Some runtime stuff
+			static ecs::IComponent* AddComponent(entt::entity entity, entt::id_type type);
+			static ecs::IComponent* TryGetComponent(entt::entity entity, entt::id_type type);
+			static bool HasComponent(entt::entity entity, entt::id_type type);
+
+			template<typename _Func>
+			static void IterateRegisteredComponents(_Func&& func)
+			{
+				for (const auto& [type, meta] : m_meta)
+					func(type, meta);
+			}
+
+
 			static entt::registry& GetRegistry() { return m_registry; }
 			static entt::entity GetRoot() { return m_root; }
 
@@ -94,6 +130,7 @@ namespace engine
 			static entt::registry m_registry;
 			static entt::entity m_root;
 			static utl::vector<std::unique_ptr<ecs::ISystem>> m_vSystems;
+			static utl::hash_map<entt::id_type, FComponentMeta> m_meta;
 		};
 	}
 }

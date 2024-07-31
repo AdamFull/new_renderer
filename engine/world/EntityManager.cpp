@@ -7,6 +7,7 @@ using namespace engine::world;
 entt::registry CEntityManager::m_registry{};
 entt::entity CEntityManager::m_root{};
 utl::vector<std::unique_ptr<ecs::ISystem>> CEntityManager::m_vSystems;
+utl::hash_map<entt::id_type, FComponentMeta> CEntityManager::m_meta;
 
 entt::entity CEntityManager::CreateRoot(const std::string& name)
 {
@@ -24,6 +25,9 @@ entt::entity CEntityManager::CreateNode(const std::string& name, entt::entity pa
 	m_registry.emplace<ecs::FBaseComponent>(entity, ecs::FBaseComponent{ name });
 	m_registry.emplace<ecs::FTransformComponent>(entity, ecs::FTransformComponent{});
 	m_registry.emplace<ecs::FHierarchyComponent>(entity, ecs::FHierarchyComponent{ parent });
+
+	if(parent != entt::null)
+		AttachChild(parent, entity);
 	
 	log_debug("[Scene Graph] Entity with id {} was created", static_cast<uint32_t>(entity));
 
@@ -83,6 +87,39 @@ entt::entity CEntityManager::Instantiate(entt::entity prefab)
 bool CEntityManager::IsValid(entt::entity entity)
 {
 	return m_registry.valid(entity);
+}
+
+ecs::IComponent* CEntityManager::AddComponent(entt::entity entity, entt::id_type type)
+{
+	if (auto found = m_meta.find(type); found != m_meta.end())
+	{
+		auto& meta = found->second;
+		return meta.create(m_registry, entity);
+	}
+
+	return nullptr;
+}
+
+ecs::IComponent* CEntityManager::TryGetComponent(entt::entity entity, entt::id_type type)
+{
+	if (auto found = m_meta.find(type); found != m_meta.end())
+	{
+		auto& meta = found->second;
+		return meta.get(m_registry, entity);
+	}
+
+	return nullptr;
+}
+
+bool CEntityManager::HasComponent(entt::entity entity, entt::id_type type)
+{
+	if (auto found = m_meta.find(type); found != m_meta.end())
+	{
+		auto& meta = found->second;
+		return meta.check(m_registry, entity);
+	}
+
+	return false;
 }
 
 nlohmann::json CEntityManager::SerializeEntity(entt::entity entity)

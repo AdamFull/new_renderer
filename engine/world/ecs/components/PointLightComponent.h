@@ -19,10 +19,10 @@ namespace engine
 				bool castShadows{ true };
 
 				DECLARE_FIELDS(
-					FDECL(color, ColorEditField()),
-					FDECL(intencity, DragField(0.f, 1000.f, 0.01f)),
-					FDECL(radius, DragField(0.f, 0.f, 0.01f)),
-					FDECL(castShadows, ToggleField())
+					FDECL(color, "Color", ColorEditField()),
+					FDECL(intencity, "Intencity", DragField(0.f, 1000.f, 0.01f)),
+					FDECL(radius, "Radius", DragField(0.f, 0.f, 0.01f)),
+					FDECL(castShadows, "Cast shadows", ToggleField())
 				)
 			};
 		}

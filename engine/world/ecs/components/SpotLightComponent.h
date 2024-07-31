@@ -22,13 +22,13 @@ namespace engine
 				bool castShadows{ true };
 
 				DECLARE_FIELDS(
-					FDECL(color, ColorEditField()),
-					FDECL(target, DragField(0.f, 0.f, 0.01f)),
-					FDECL(intencity, DragField(0.f, 1000.f, 0.01f)),
-					FDECL(innerAngle, DragField(0.f, 3.14f, 0.01f)),
-					FDECL(outerAngle, DragField(0.f, 3.14f, 0.01f)),
-					FDECL(toTarget, ToggleField()), 
-					FDECL(castShadows, ToggleField())
+					FDECL(color, "Color", ColorEditField()),
+					FDECL(target, "Target", DragField(0.f, 0.f, 0.01f)),
+					FDECL(intencity, "Intencity", DragField(0.f, 1000.f, 0.01f)),
+					FDECL(innerAngle, "Inner angle", DragField(0.f, 3.14f, 0.01f)),
+					FDECL(outerAngle, "Outer angle", DragField(0.f, 3.14f, 0.01f)),
+					FDECL(toTarget, "To target", ToggleField()),
+					FDECL(castShadows, "Cast chadows", ToggleField())
 				)
 			};
 		}

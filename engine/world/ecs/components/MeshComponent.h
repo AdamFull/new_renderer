@@ -51,7 +51,7 @@ namespace engine
 				bool castShadows{ true };
 
 				DECLARE_FIELDS(
-					FDECL(castShadows, ToggleField())
+					FDECL(castShadows, "Cast shadows", ToggleField())
 				)
 			};
 		}

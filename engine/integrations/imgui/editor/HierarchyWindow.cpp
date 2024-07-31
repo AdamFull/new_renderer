@@ -40,17 +40,26 @@ void CHierarchyWindow::__draw(float fDt)
     {
         if (ImGui::BeginMenu("create"))
         {
-            try_add_menu_item_h<entt::entity>("entity", m_currentSelection);
-            //try_add_menu_item_h<ecs::FAudioComponent>("audio", m_currentSelection);
-            try_add_menu_item_h<ecs::FCameraComponent>("camera", m_currentSelection);
-            //try_add_menu_item_h<ecs::FEnvironmentComponent>("environment", m_currentSelection);
-            try_add_menu_item_h<ecs::FDirectionalLightComponent>("directional light", m_currentSelection);
-            try_add_menu_item_h<ecs::FSpotLightComponent>("spot light", m_currentSelection);
-            try_add_menu_item_h<ecs::FPointLightComponent>("point light", m_currentSelection);
-            //try_add_menu_item_h<ecs::FSceneComponent>("scene", m_currentSelection);
-            //try_add_menu_item_h<ecs::FRigidBodyComponent>("rigidbody", m_currentSelection);
-            //try_add_menu_item_h<ecs::FParticleComponent>("particle", m_currentSelection);
-            //try_add_menu_item_h<ecs::FTerrainComponent>("terrain", m_currentSelection);
+            if (ImGui::MenuItem((std::format("{} {}", icon::entity, "GameObject")).c_str()))
+                CEntityManager::CreateNode("Gamebject", m_currentSelection);
+
+            CEntityManager::IterateRegisteredComponents([entity = m_currentSelection](const auto& type, const auto& meta)
+                {
+                    if (!CEntityManager::HasComponent(entity, type))
+                    {
+                        if (ImGui::MenuItem(meta.name))
+                            CEntityManager::AddComponent(entity, type);
+                    }
+                });
+
+            // TODO: I wnat to see here only components that is not exists in entity
+            //CEntityManager::IterateComponents(m_currentSelection, [entity = m_currentSelection](ecs::IComponent* component)
+            //    {
+            //        auto& registry = CEntityManager::GetRegistry();
+            //        if (ImGui::MenuItem(component->GetName()))
+            //            component->OnInstantiate(registry, entity);
+            //    });
+
             ImGui::EndMenu();
         }
 
