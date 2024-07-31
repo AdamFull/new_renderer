@@ -45,6 +45,8 @@ namespace ImGui
             float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
             ImVec2 buttonSize = { lineHeight + 3.0f, lineHeight };
 
+            float item_width = GetContentRegionAvail().x / (float)_Count - lineHeight;
+
             for (size_t idx = 0ull; idx < _Count; ++idx)
             {
                 PushStyleColor(ImGuiCol_Button, axis_button_colors[idx]);
@@ -62,6 +64,8 @@ namespace ImGui
                 PopStyleColor(3);
 
                 SameLine();
+
+                PushItemWidth(item_width);
                 value_changed |= function(axis_sub_names[idx], &value[idx]);
                 //ApplyPropertyChange(oldValue[idx], &value[idx]);
                 PopItemWidth();
