@@ -58,7 +58,7 @@ namespace engine
 
 			struct FRootComponent : public IComponent
 			{
-				DECLARE_COMPONENT(FRootComponent)
+				DECLARE_COMPONENT(FRootComponent, icon::entity, "Root")
 
 				utl::vector<FMeshAnimation> animations;
 				utl::vector<FMeshSkin> skins;

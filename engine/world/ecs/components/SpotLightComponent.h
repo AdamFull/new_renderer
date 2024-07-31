@@ -10,7 +10,7 @@ namespace engine
 		{
 			struct FSpotLightComponent : public  IComponent
 			{
-				DECLARE_COMPONENT(FSpotLightComponent)
+				DECLARE_COMPONENT(FSpotLightComponent, icon::spot_light, "Spot light")
 
 				glm::vec3 color{ 1.f };
 				glm::vec3 target{ 0.f, 0.f, 1.f };

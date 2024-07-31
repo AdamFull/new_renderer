@@ -22,7 +22,7 @@ namespace engine
 
 			struct FCameraComponent : public IComponent
 			{
-				DECLARE_COMPONENT(FCameraComponent)
+				DECLARE_COMPONENT(FCameraComponent, icon::camera, "Camera")
 
 				ECameraType type{ ECameraType::ePerspective };
 

@@ -10,7 +10,7 @@ namespace engine
 		{
 			struct FHierarchyComponent : public IComponent
 			{
-				DECLARE_COMPONENT(FHierarchyComponent)
+				DECLARE_COMPONENT(FHierarchyComponent, icon::entity, "Hierarchy")
 
 				FHierarchyComponent(entt::entity parent) : parent(parent) {}
 				entt::entity parent{ entt::null };

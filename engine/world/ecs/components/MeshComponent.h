@@ -44,7 +44,7 @@ namespace engine
 
 			struct FMeshComponent : public IComponent
 			{
-				DECLARE_COMPONENT(FMeshComponent)
+				DECLARE_COMPONENT(FMeshComponent, icon::shape, "Mesh renderer")
 
 				utl::vector<FMeshPrimitive> primitives{};
 				int32_t skin{ -1 };

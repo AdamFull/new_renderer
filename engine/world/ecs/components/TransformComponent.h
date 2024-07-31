@@ -10,7 +10,7 @@ namespace engine
 		{
 			struct FTransformComponent : public IComponent
 			{
-				DECLARE_COMPONENT(FTransformComponent)
+				DECLARE_COMPONENT(FTransformComponent, icon::transform, "Transform")
 
 				// Local transform
 				glm::vec3 lposition{ 0.f };

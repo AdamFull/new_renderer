@@ -10,7 +10,7 @@ namespace engine
 		{
 			struct FBaseComponent : public IComponent
 			{
-				DECLARE_COMPONENT(FBaseComponent)
+				DECLARE_COMPONENT(FBaseComponent, icon::entity, "Base")
 
 				FBaseComponent() = default;
 				FBaseComponent(const std::string& name) : name(name) {}

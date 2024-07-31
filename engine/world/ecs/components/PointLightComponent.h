@@ -10,7 +10,7 @@ namespace engine
 		{
 			struct FPointLightComponent : public IComponent
 			{
-				DECLARE_COMPONENT(FPointLightComponent)
+				DECLARE_COMPONENT(FPointLightComponent, icon::point_light, "Point light")
 
 				glm::vec3 color{ 1.f };
 				f32 intencity{ 1.f };
