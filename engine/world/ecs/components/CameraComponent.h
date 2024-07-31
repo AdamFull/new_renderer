@@ -49,13 +49,13 @@ namespace engine
 				u64 frustumID{ ~0ull };
 
 				DECLARE_FIELDS(
-					FDECL(type, "Type", DropdownField<2>({"ortho", "perspective"})),
-					FDECL(fieldOfView, "FOV", DragField(0.f, 180.f, 0.01f)),
-					FDECL(nearPlane, "Near", DragField(0.01f, 0.f, 0.01f)),
-					FDECL(farPlane, "Far", DragField(0.01f, 0.f, 0.01f)),
-					FDECL(aspectRatio, "Aspect", DragField(0.01f, 0.f, 0.01f)),
-					FDECL(xmag, "XMag", DragField(0.01f, 0.f, 0.01f)),
-					FDECL(ymag, "YMag", DragField(0.01f, 0.f, 0.01f))
+					FDECL(type, "Type", DropdownField<2>({ "ortho", "perspective" })),
+					FDECL(fieldOfView, "FOV", DragField(0.01f, 0.f, 180.f)),
+					FDECL(nearPlane, "Near", DragField(0.01f, 0.01f, 0.f)),
+					FDECL(farPlane, "Far", DragField(0.01f, 0.01f, 0.f)),
+					FDECL(aspectRatio, "Aspect", DragField(0.01f, 0.01f, 0.f)),
+					FDECL(xmag, "XMag", DragField(0.01f, 0.01f, 0.f)),
+					FDECL(ymag, "YMag", DragField(0.01f, 0.01f, 0.f))
 				)
 			};
 		}

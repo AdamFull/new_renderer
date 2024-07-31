@@ -20,6 +20,7 @@ namespace ImGui
     bool UniversalEdit(const char* label, _Ty* value, _Func&& function)
     {
         static _Ty old[_Count]{ (_Ty)0 };
+        constexpr const float columnWidth{ 100.f };
 
         bool value_changed{ false };
         ImGuiIO& io = GetIO();
@@ -27,18 +28,22 @@ namespace ImGui
 
         PushID(label);
 
-        if (BeginTable("data_table", 2, ImGuiTableFlags_SizingFixedFit))
+        if (BeginTable("UniversalEditTable", 2, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersOuter))
         {
-            TableSetupColumn("Parameter", 0, GetContentRegionAvail().x * widthScale);
-            TableSetupColumn("Field", 0, GetContentRegionAvail().x * (1.f - widthScale));
+            TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed, columnWidth);
+            TableSetupColumn("Controls", ImGuiTableColumnFlags_WidthStretch);
+            TableNextRow();
 
-            TableNextColumn();
+            TableSetColumnIndex(0);
             Text(label);
 
-            TableNextColumn();
+            TableSetColumnIndex(1);
 
-            PushMultiItemsWidths(_Count, GetContentRegionAvail().x * (1.f - widthScale));
+            PushMultiItemsWidths(_Count, CalcItemWidth() + columnWidth);
             PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 0, 0 });
+
+            float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+            ImVec2 buttonSize = { lineHeight + 3.0f, lineHeight };
 
             for (size_t idx = 0ull; idx < _Count; ++idx)
             {
@@ -47,7 +52,7 @@ namespace ImGui
                 PushStyleColor(ImGuiCol_ButtonActive, axis_button_active_colors[idx]);
                 PushFont(bold_font);
 
-                if (Button(axis_names[idx]))
+                if (Button(axis_names[idx], buttonSize))
                 {
                     value_changed = true;
                     value[idx] = 0;
@@ -61,7 +66,7 @@ namespace ImGui
                 //ApplyPropertyChange(oldValue[idx], &value[idx]);
                 PopItemWidth();
 
-                if (_Count > 1)
+                if (_Count > 1 && idx < _Count - 1)
                     SameLine();
             }
 
@@ -70,6 +75,7 @@ namespace ImGui
         }
 
         PopID();
+
         return value_changed;
     }
 

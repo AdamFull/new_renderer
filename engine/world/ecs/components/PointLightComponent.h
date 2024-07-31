@@ -20,8 +20,8 @@ namespace engine
 
 				DECLARE_FIELDS(
 					FDECL(color, "Color", ColorEditField()),
-					FDECL(intencity, "Intencity", DragField(0.f, 1000.f, 0.01f)),
-					FDECL(radius, "Radius", DragField(0.f, 0.f, 0.01f)),
+					FDECL(intencity, "Intencity", DragField(0.01f, 0.f, 1000.f)),
+					FDECL(radius, "Radius", DragField(0.01f, 0.f, FLT_MAX)),
 					FDECL(castShadows, "Cast shadows", ToggleField())
 				)
 			};

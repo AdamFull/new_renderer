@@ -28,9 +28,9 @@ namespace engine
 				glm::mat4 normal{ 1.f };
 
 				DECLARE_FIELDS(
-					FDECL(lposition, "Position", DragField(0.f, 0.f, 0.01f)),
-					FDECL(lrotation, "Rotation", DragField(-1.f, 1.f, 0.01f)),
-					FDECL(lscale, "Scale", DragField(0.f, 0.f, 0.01f)),
+					FDECL(lposition, "Position", DragField(0.01f, -FLT_MAX, FLT_MAX)),
+					FDECL(lrotation, "Rotation", DragField(0.01f, -1.f, 1.f)),
+					FDECL(lscale, "Scale", DragField(0.01f, 0.f, FLT_MAX)),
 					FDECL(lmodel, "Model", NoEdit{})
 				);
 			};

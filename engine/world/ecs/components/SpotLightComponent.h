@@ -23,12 +23,12 @@ namespace engine
 
 				DECLARE_FIELDS(
 					FDECL(color, "Color", ColorEditField()),
-					FDECL(target, "Target", DragField(0.f, 0.f, 0.01f)),
-					FDECL(intencity, "Intencity", DragField(0.f, 1000.f, 0.01f)),
-					FDECL(innerAngle, "Inner angle", DragField(0.f, 3.14f, 0.01f)),
-					FDECL(outerAngle, "Outer angle", DragField(0.f, 3.14f, 0.01f)),
-					FDECL(toTarget, "To target", ToggleField()),
-					FDECL(castShadows, "Cast chadows", ToggleField())
+					FDECL(target, "Target", DragField(0.01f, 0.f, 0.f)),
+					FDECL(intencity, "Intencity", DragField(0.01f, 0.f, 1000.f)),
+					FDECL(innerAngle, "Inner angle", DragField(0.01f, 0.f, 3.14f)),
+					FDECL(outerAngle, "Outer angle", DragField(0.01f, 0.f, 3.14f)),
+					FDECL(toTarget, "To target", ToggleField()), 
+					FDECL(castShadows, "Cast shadows", ToggleField())
 				)
 			};
 		}
