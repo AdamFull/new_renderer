@@ -71,29 +71,29 @@ bool combo_std_list_pred(void* data, int idx, const char** out_text)
 
 bool ImGui::SpartialRoundedButtonEx(const char* label, const ImVec2& size, ImGuiButtonRoundingFlags rounding_flags)
 {
-    ImGuiWindow* window = ImGui::GetCurrentWindow();
+    ImGuiWindow* window = GetCurrentWindow();
     if (window->SkipItems)
         return false;
 
-    ImGuiContext& g = *ImGui::GetCurrentContext();
+    ImGuiContext& g = *GetCurrentContext();
     const ImGuiID id = window->GetID(label);
-    const ImVec2 label_size = ImGui::CalcTextSize(label, NULL, true);
+    const ImVec2 label_size = CalcTextSize(label, NULL, true);
 
     ImVec2 pos = window->DC.CursorPos;
-    ImVec2 size_arg = ImGui::CalcItemSize(size, label_size.x + g.Style.FramePadding.x * 2.0f, label_size.y + g.Style.FramePadding.y * 2.0f);
+    ImVec2 size_arg = CalcItemSize(size, label_size.x + g.Style.FramePadding.x * 2.0f, label_size.y + g.Style.FramePadding.y * 2.0f);
     const ImRect bb(pos, ImVec2(pos.x + size_arg.x, pos.y + size_arg.y));
-    ImGui::ItemSize(size_arg, g.Style.FramePadding.y);
-    if (!ImGui::ItemAdd(bb, id))
+    ItemSize(size_arg, g.Style.FramePadding.y);
+    if (!ItemAdd(bb, id))
         return false;
 
     bool hovered, held;
-    bool pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held);
+    bool pressed = ButtonBehavior(bb, id, &hovered, &held);
 
     // Custom rounding
     float rounding = g.Style.FrameRounding;
-    ImU32 col = ImGui::GetColorU32((hovered && held) ? ImGuiCol_ButtonActive : hovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button);
+    ImU32 col = GetColorU32((hovered && held) ? ImGuiCol_ButtonActive : hovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button);
 
-    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+    ImDrawList* draw_list = GetWindowDrawList();
     
     // Helper function to add corner arcs
     auto AddArc = [&](ImVec2 center, float radius, float a_min, float a_max) {
@@ -102,44 +102,47 @@ bool ImGui::SpartialRoundedButtonEx(const char* label, const ImVec2& size, ImGui
 
     // Draw filled rectangle with custom rounded and concave corners
     draw_list->PathClear();
-
+    
+    // Top left corner
     if (rounding_flags & ImGuiButtonRounding_RoundTopLeft)
         AddArc(ImVec2(bb.Min.x + rounding, bb.Min.y + rounding), rounding, IM_PI, IM_PI + IM_PI * 0.5f);
     else if (rounding_flags & ImGuiButtonRounding_ConcaveTopLeft)
-        AddArc(ImVec2(bb.Min.x, bb.Min.y), rounding, IM_PI * 0.5f, IM_PI);
+        AddArc(ImVec2(bb.Min.x - rounding, bb.Min.y + rounding), rounding, 0.f, -IM_PI * 0.5f);
     else
         draw_list->PathLineTo(ImVec2(bb.Min.x, bb.Min.y));
 
+    // Top right corner
     if (rounding_flags & ImGuiButtonRounding_RoundTopRight)
         AddArc(ImVec2(bb.Max.x - rounding, bb.Min.y + rounding), rounding, IM_PI * 1.5f, IM_PI * 2.0f);
     else if (rounding_flags & ImGuiButtonRounding_ConcaveTopRight)
-        AddArc(ImVec2(bb.Max.x, bb.Min.y), rounding, 0.0f, IM_PI * 0.5f);
+        AddArc(ImVec2(bb.Max.x + rounding, bb.Min.y + rounding), rounding, IM_PI * 1.5f, IM_PI);
     else
         draw_list->PathLineTo(ImVec2(bb.Max.x, bb.Min.y));
 
+    // Bottom right corner
     if (rounding_flags & ImGuiButtonRounding_RoundBottomRight)
         AddArc(ImVec2(bb.Max.x - rounding, bb.Max.y - rounding), rounding, 0.0f, IM_PI * 0.5f);
     else if (rounding_flags & ImGuiButtonRounding_ConcaveBottomRight)
-        AddArc(ImVec2(bb.Max.x, bb.Max.y), rounding, IM_PI * 1.5f, IM_PI * 2.f);
+        AddArc(ImVec2(bb.Max.x + rounding, bb.Max.y - rounding), rounding, IM_PI, IM_PI * 0.5f);
     else
         draw_list->PathLineTo(ImVec2(bb.Max.x, bb.Max.y));
 
+    // Bottom left corner
     if (rounding_flags & ImGuiButtonRounding_RoundBottomLeft)
         AddArc(ImVec2(bb.Min.x + rounding, bb.Max.y - rounding), rounding, IM_PI * 0.5f, IM_PI);
     else if (rounding_flags & ImGuiButtonRounding_ConcaveBottomLeft)
-        AddArc(ImVec2(bb.Min.x, bb.Max.y), rounding, IM_PI, IM_PI * 1.5f);
+        AddArc(ImVec2(bb.Min.x - rounding, bb.Max.y - rounding), rounding, IM_PI * 0.5f, 0.f);
     else
         draw_list->PathLineTo(ImVec2(bb.Min.x, bb.Max.y));
 
-    draw_list->PathFillConvex(col);
-
+    draw_list->PathFillConcave(col);
+    
     if (g.Style.FrameBorderSize > 0.0f)
-        draw_list->PathStroke(ImGui::GetColorU32(ImGuiCol_Border), true, g.Style.FrameBorderSize);
+        draw_list->PathStroke(GetColorU32(ImGuiCol_Border), true, g.Style.FrameBorderSize);
 
-    // Adjust the text position to reduce left padding
-    ImVec2 text_min = ImVec2(bb.Min.x + g.Style.FramePadding.x, bb.Min.y + g.Style.FramePadding.y); // Reduce left padding to 2.0f
-    ImVec2 text_max = ImVec2(bb.Max.x - g.Style.FramePadding.x, bb.Max.y - g.Style.FramePadding.y);
-    ImGui::RenderTextClipped(text_min, text_max, label, NULL, &label_size, g.Style.ButtonTextAlign, &bb);
+    if (g.LogEnabled)
+        LogSetNextTextDecoration("[", "]");
+    RenderTextClipped(bb.Min + g.Style.FramePadding, bb.Max - g.Style.FramePadding, label, NULL, &label_size, g.Style.ButtonTextAlign, &bb);
     
     IMGUI_TEST_ENGINE_ITEM_INFO(id, label, g.LastItemData.StatusFlags);
     return pressed;

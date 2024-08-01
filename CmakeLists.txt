@@ -47,6 +47,7 @@ if(MSVC)
 endif()
 
 add_compile_definitions(
+    IMGUI_DEFINE_MATH_OPERATORS
     IMGUI_USE_WCHAR32
     NOMINMAX
     GLM_FORCE_INLINE 

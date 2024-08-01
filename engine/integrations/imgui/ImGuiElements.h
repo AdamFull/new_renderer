@@ -76,7 +76,7 @@ namespace ImGui
 
             auto defautl_button_flags = ImGuiButtonRounding_RoundTopLeft | ImGuiButtonRounding_RoundBottomLeft | ImGuiButtonRounding_ConcaveTopRight | ImGuiButtonRounding_ConcaveBottomRight;
 
-            float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+            float lineHeight = (GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f) * GImGui->IO.FontGlobalScale;
             ImVec2 buttonSize = { lineHeight + 3.0f, lineHeight };
 
             float item_width = GetContentRegionAvail().x / (float)_Count - lineHeight;
@@ -89,6 +89,7 @@ namespace ImGui
                 PushFont(bold_font);
 
                 if (SpartialRoundedButtonEx(axis_names[idx], buttonSize, defautl_button_flags))
+                //if(GButtonLR(axis_names[idx], buttonSize))
                 {
                     value_changed = true;
                     value[idx] = 0;
