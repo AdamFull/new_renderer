@@ -136,7 +136,7 @@ namespace glm
 	void OnEdit() override { DefaultComponentEdit(_Name.data(), [this]() {DrawFields(*this); }); } \
 	const char* GetName() override { return _Name.data(); }
 
-#define FDECL(member, name, meta) std::make_tuple(&_Self::member, name, meta)
+#define FDECL(member, name, meta) std::make_tuple(&_Self::member, #member, name, meta)
 	
 
 struct NoEdit {};
@@ -187,6 +187,11 @@ struct ElementCount<glm::vec4> { static constexpr std::size_t value = 4; };
 template<>
 struct ElementCount<glm::quat> { static constexpr std::size_t value = 4; };
 
+template <typename T>
+constexpr auto GetFieldPtr(const T& field)
+{
+	return std::get<0>(field);
+}
 
 template <typename T>
 const char* GetFieldName(const T& field) 
@@ -194,16 +199,16 @@ const char* GetFieldName(const T& field)
 	return std::get<1>(field);
 }
 
-template <typename T, typename U, typename Meta>
-U T::* GetFieldPtr(const std::tuple<U T::*, const char*, Meta>& field)
+template <typename T>
+const char* GetEditorName(const T& field)
 {
-	return std::get<0>(field);
+	return std::get<2>(field);
 }
 
 template <typename T>
 constexpr auto GetFieldMeta(const T& field)
 {
-	return std::get<2>(field);
+	return std::get<3>(field);
 }
 
 template <typename T, std::size_t... I>
@@ -243,7 +248,7 @@ template <typename T, typename Field, typename U>
 void DrawFieldImpl(T& obj, const Field& field, const SliderField<U>& editor) 
 {
 	auto field_ptr = GetFieldPtr(field);
-	auto field_name = GetFieldName(field);
+	auto field_name = GetEditorName(field);
 	using ValueType = std::decay_t<decltype(std::declval<T>().*field_ptr)>;
 	ImGui::Slider<U, ElementCount<ValueType>::value>(field_name, reinterpret_cast<U*>(&(obj.*field_ptr)), editor.min, editor.max, ImGui::FormatByType_v<U>);
 }
@@ -252,7 +257,7 @@ template <typename T, typename Field, typename U>
 void DrawFieldImpl(T& obj, const Field& field, const DragField<U>& editor) 
 {
 	auto field_ptr = GetFieldPtr(field);
-	auto field_name = GetFieldName(field);
+	auto field_name = GetEditorName(field);
 	using ValueType = std::decay_t<decltype(std::declval<T>().*field_ptr)>;
 	ImGui::Drag<U, ElementCount<ValueType>::value>(field_name, reinterpret_cast<U*>(&(obj.*field_ptr)), editor.min, editor.max, editor.speed, ImGui::FormatByType_v<U>);
 }
@@ -261,7 +266,7 @@ template <typename T, typename Field, typename U>
 void DrawFieldImpl(T& obj, const Field& field, const InputField<U>& editor) 
 {
 	auto field_ptr = GetFieldPtr(field);
-	auto field_name = GetFieldName(field);
+	auto field_name = GetEditorName(field);
 	using ValueType = std::decay_t<decltype(std::declval<T>().*field_ptr)>;
 	ImGui::Input<U, ElementCount<ValueType>::value>(field_name, reinterpret_cast<U*>(&(obj.*field_ptr)), editor.step, editor.fast_step, ImGui::FormatByType_v<U>);
 }
@@ -270,7 +275,7 @@ template <typename T, typename Field, typename U>
 void DrawFieldImpl(T& obj, const Field& field, const ColorEditField<U>& editor)
 {
 	auto field_ptr = GetFieldPtr(field);
-	auto field_name = GetFieldName(field);
+	auto field_name = GetEditorName(field);
 	using ValueType = std::decay_t<decltype(std::declval<T>().*field_ptr)>;
 	if constexpr (ElementCount<ValueType>::value == 3)
 		ImGui::ColorEdit3(field_name, reinterpret_cast<U*>(&(obj.*field_ptr)));
@@ -284,31 +289,19 @@ template <typename T, typename Field, size_t N>
 void DrawFieldImpl(T& obj, const Field& field, const DropdownField<N>& editor)
 {
 	auto field_ptr = GetFieldPtr(field);
-	auto field_name = GetFieldName(field);
+	auto field_name = GetEditorName(field);
 
 	int* current = reinterpret_cast<int*>(&(obj.*field_ptr));
 	const char* preview = editor.fields[*current];
 	
-	if (ImGui::BeginCombo(field_name, preview))
-	{
-		for (int n = 0; n < editor.fields.size(); n++)
-		{
-			bool is_selected = (*current == n);
-			if (ImGui::Selectable(editor.fields[n], is_selected))
-				*current = n;
-			if (is_selected)
-				ImGui::SetItemDefaultFocus();
-		}
-
-		ImGui::EndCombo();
-	}
+	if(ImGui::GCombo(field_name, current, editor.fields.data(), editor.fields.size()));
 }
 
 template <typename T, typename Field>
 void DrawFieldImpl(T& obj, const Field& field, const ToggleField& editor)
 {
 	auto field_ptr = GetFieldPtr(field);
-	auto field_name = GetFieldName(field);
+	auto field_name = GetEditorName(field);
 	ImGui::GCheckbox(field_name, &(obj.*field_ptr));
 }
 

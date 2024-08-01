@@ -5,6 +5,21 @@
 #include "ImGuiTraits.h"
 #include <imgui_internal.h>
 
+enum ImGuiButtonRounding_
+{
+    ImGuiButtonRounding_None = 0,
+    ImGuiButtonRounding_RoundTopLeft = 1 << 0,
+    ImGuiButtonRounding_RoundTopRight = 1 << 1,
+    ImGuiButtonRounding_RoundBottomLeft = 1 << 2,
+    ImGuiButtonRounding_RoundBottomRight = 1 << 3,
+    ImGuiButtonRounding_ConcaveTopLeft = 1 << 4,
+    ImGuiButtonRounding_ConcaveTopRight = 1 << 5,
+    ImGuiButtonRounding_ConcaveBottomLeft = 1 << 6,
+    ImGuiButtonRounding_ConcaveBottomRight = 1 << 7
+};
+
+typedef int ImGuiButtonRoundingFlags;
+
 namespace ImGui
 {
     // TODO: Rename this and add ability to register callbacks for value changed (begin/end editing)
@@ -17,6 +32,23 @@ namespace ImGui
     constexpr const ImVec4 axis_button_hovered_colors[4]{ ImVec4{ 0.9f, 0.2f, 0.2f, 1.0f }, ImVec4{ 0.3f, 0.8f, 0.3f, 1.0f }, ImVec4{ 0.2f, 0.35f, 0.9f, 1.0f }, ImVec4{ 0.6f, 0.6f, 0.6f, 1.0f } };
     constexpr const ImVec4 axis_button_active_colors[4]{ ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f }, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f }, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f }, ImVec4{ 0.5f, 0.5f, 0.5f, 1.0f } };
 
+    bool SpartialRoundedButtonEx(const char* label, const ImVec2& size, ImGuiButtonRoundingFlags rounding);
+    bool GButtonLR(const char* label, const ImVec2& size = ImVec2(0, 0));
+    bool GButtonRR(const char* label, const ImVec2& size = ImVec2(0, 0));
+    bool GButtonTR(const char* label, const ImVec2& size = ImVec2(0, 0));
+    bool GButtonBR(const char* label, const ImVec2& size = ImVec2(0, 0));
+
+    void GText(const char* label, const char* fmt, ...);
+    bool GTextInput(const char* label, std::string* value, bool enabled = true);
+    bool GCheckbox(const char* label, bool* value);
+    bool GColorEdit3(const char* label, glm::vec3& value);
+    bool GColorEdit4(const char* label, glm::vec4& value);
+
+    bool GDragTransform(glm::vec3& pos, glm::quat& rot, glm::vec3& scale, float step = 0.01f, float min = 0.0f, float max = 0.0f);
+    bool GAssetHolder(const char* label, const std::string& source);
+    bool GCombo(const char* label, int* current_item, const char* const items[], int item_count, int height_in_items = -1);
+
+
     template<typename _Ty, size_t _Count, typename _Func>
     bool UniversalEdit(const char* label, _Ty* value, _Func&& function)
     {
@@ -28,7 +60,7 @@ namespace ImGui
 
         PushID(label);
 
-        if (BeginTable("UniversalEditTable", 2, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersOuter))
+        if (BeginTable("UniversalEditTable", 2, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg))
         {
             TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed, columnWidth);
             TableSetupColumn("Controls", ImGuiTableColumnFlags_WidthStretch);
@@ -42,6 +74,8 @@ namespace ImGui
             PushMultiItemsWidths(_Count, GetContentRegionAvail().x);
             PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 0, 0 });
 
+            auto defautl_button_flags = ImGuiButtonRounding_RoundTopLeft | ImGuiButtonRounding_RoundBottomLeft | ImGuiButtonRounding_ConcaveTopRight | ImGuiButtonRounding_ConcaveBottomRight;
+
             float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
             ImVec2 buttonSize = { lineHeight + 3.0f, lineHeight };
 
@@ -54,7 +88,7 @@ namespace ImGui
                 PushStyleColor(ImGuiCol_ButtonActive, axis_button_active_colors[idx]);
                 PushFont(bold_font);
 
-                if (Button(axis_names[idx], buttonSize))
+                if (SpartialRoundedButtonEx(axis_names[idx], buttonSize, defautl_button_flags))
                 {
                     value_changed = true;
                     value[idx] = 0;
@@ -71,7 +105,10 @@ namespace ImGui
                 PopItemWidth();
 
                 if (_Count > 1 && idx < _Count - 1)
+                {
+                    defautl_button_flags = ImGuiButtonRounding_ConcaveTopLeft | ImGuiButtonRounding_ConcaveBottomLeft | ImGuiButtonRounding_ConcaveTopRight | ImGuiButtonRounding_ConcaveBottomRight;
                     SameLine();
+                }
             }
 
             PopStyleVar();
@@ -168,14 +205,4 @@ namespace ImGui
     {
         return Input<double, _Count>(label, value, step, fast_step, "%.6f");
     }
-
-    void GText(const char* label, const char* fmt, ...);
-    bool GTextInput(const char* label, std::string* value, bool enabled = true);
-    bool GCheckbox(const char* label, bool* value);
-    bool GColorEdit3(const char* label, glm::vec3& value);
-    bool GColorEdit4(const char* label, glm::vec4& value);
-
-    bool GDragTransform(glm::vec3& pos, glm::quat& rot, glm::vec3& scale, float step = 0.01f, float min = 0.0f, float max = 0.0f);
-    bool GAssetHolder(const char* label, const std::string& source);
-    bool GCombo(const char* label, int* current_item, const char* const items[], int item_count, int height_in_items = -1);
 }

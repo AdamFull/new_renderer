@@ -35,8 +35,8 @@ bool SimpleValueEdit(const char* label, _Ty* value, _Func&& function)
 
     if (ImGui::BeginTable("data_table", 2, ImGuiTableFlags_SizingFixedFit))
     {
-        ImGui::TableSetupColumn("Parameter", ImGuiTableColumnFlags_WidthFixed, ImGui::columnWidth);
-        ImGui::TableSetupColumn("Field", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed, ImGui::columnWidth);
+        ImGui::TableSetupColumn("Controls", ImGuiTableColumnFlags_WidthStretch);
 
         ImGui::TableNextColumn();
         ImGui::Text(label);
@@ -54,6 +54,7 @@ bool SimpleValueEdit(const char* label, _Ty* value, _Func&& function)
     return bValueChanged;
 }
 
+
 bool combo_std_vector_pred(void* data, int idx, const char** out_text)
 {
     std::vector<std::string>* vector = reinterpret_cast<std::vector<std::string>*>(data);
@@ -68,14 +69,110 @@ bool combo_std_list_pred(void* data, int idx, const char** out_text)
     return true;
 }
 
+bool ImGui::SpartialRoundedButtonEx(const char* label, const ImVec2& size, ImGuiButtonRoundingFlags rounding_flags)
+{
+    ImGuiWindow* window = ImGui::GetCurrentWindow();
+    if (window->SkipItems)
+        return false;
+
+    ImGuiContext& g = *ImGui::GetCurrentContext();
+    const ImGuiID id = window->GetID(label);
+    const ImVec2 label_size = ImGui::CalcTextSize(label, NULL, true);
+
+    ImVec2 pos = window->DC.CursorPos;
+    ImVec2 size_arg = ImGui::CalcItemSize(size, label_size.x + g.Style.FramePadding.x * 2.0f, label_size.y + g.Style.FramePadding.y * 2.0f);
+    const ImRect bb(pos, ImVec2(pos.x + size_arg.x, pos.y + size_arg.y));
+    ImGui::ItemSize(size_arg, g.Style.FramePadding.y);
+    if (!ImGui::ItemAdd(bb, id))
+        return false;
+
+    bool hovered, held;
+    bool pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held);
+
+    // Custom rounding
+    float rounding = g.Style.FrameRounding;
+    ImU32 col = ImGui::GetColorU32((hovered && held) ? ImGuiCol_ButtonActive : hovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button);
+
+    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+    
+    // Helper function to add corner arcs
+    auto AddArc = [&](ImVec2 center, float radius, float a_min, float a_max) {
+        draw_list->PathArcTo(center, radius, a_min, a_max, 16);
+        };
+
+    // Draw filled rectangle with custom rounded and concave corners
+    draw_list->PathClear();
+
+    if (rounding_flags & ImGuiButtonRounding_RoundTopLeft)
+        AddArc(ImVec2(bb.Min.x + rounding, bb.Min.y + rounding), rounding, IM_PI, IM_PI + IM_PI * 0.5f);
+    else if (rounding_flags & ImGuiButtonRounding_ConcaveTopLeft)
+        AddArc(ImVec2(bb.Min.x, bb.Min.y), rounding, IM_PI * 0.5f, IM_PI);
+    else
+        draw_list->PathLineTo(ImVec2(bb.Min.x, bb.Min.y));
+
+    if (rounding_flags & ImGuiButtonRounding_RoundTopRight)
+        AddArc(ImVec2(bb.Max.x - rounding, bb.Min.y + rounding), rounding, IM_PI * 1.5f, IM_PI * 2.0f);
+    else if (rounding_flags & ImGuiButtonRounding_ConcaveTopRight)
+        AddArc(ImVec2(bb.Max.x, bb.Min.y), rounding, 0.0f, IM_PI * 0.5f);
+    else
+        draw_list->PathLineTo(ImVec2(bb.Max.x, bb.Min.y));
+
+    if (rounding_flags & ImGuiButtonRounding_RoundBottomRight)
+        AddArc(ImVec2(bb.Max.x - rounding, bb.Max.y - rounding), rounding, 0.0f, IM_PI * 0.5f);
+    else if (rounding_flags & ImGuiButtonRounding_ConcaveBottomRight)
+        AddArc(ImVec2(bb.Max.x, bb.Max.y), rounding, IM_PI * 1.5f, IM_PI * 2.f);
+    else
+        draw_list->PathLineTo(ImVec2(bb.Max.x, bb.Max.y));
+
+    if (rounding_flags & ImGuiButtonRounding_RoundBottomLeft)
+        AddArc(ImVec2(bb.Min.x + rounding, bb.Max.y - rounding), rounding, IM_PI * 0.5f, IM_PI);
+    else if (rounding_flags & ImGuiButtonRounding_ConcaveBottomLeft)
+        AddArc(ImVec2(bb.Min.x, bb.Max.y), rounding, IM_PI, IM_PI * 1.5f);
+    else
+        draw_list->PathLineTo(ImVec2(bb.Min.x, bb.Max.y));
+
+    draw_list->PathFillConvex(col);
+
+    if (g.Style.FrameBorderSize > 0.0f)
+        draw_list->PathStroke(ImGui::GetColorU32(ImGuiCol_Border), true, g.Style.FrameBorderSize);
+
+    // Adjust the text position to reduce left padding
+    ImVec2 text_min = ImVec2(bb.Min.x + g.Style.FramePadding.x, bb.Min.y + g.Style.FramePadding.y); // Reduce left padding to 2.0f
+    ImVec2 text_max = ImVec2(bb.Max.x - g.Style.FramePadding.x, bb.Max.y - g.Style.FramePadding.y);
+    ImGui::RenderTextClipped(text_min, text_max, label, NULL, &label_size, g.Style.ButtonTextAlign, &bb);
+    
+    IMGUI_TEST_ENGINE_ITEM_INFO(id, label, g.LastItemData.StatusFlags);
+    return pressed;
+}
+
+bool ImGui::GButtonLR(const char* label, const ImVec2& size)
+{
+    return SpartialRoundedButtonEx(label, size, ImGuiButtonRounding_ConcaveTopLeft | ImGuiButtonRounding_ConcaveBottomLeft | ImGuiButtonRounding_ConcaveTopRight | ImGuiButtonRounding_ConcaveBottomRight);
+}
+
+bool ImGui::GButtonRR(const char* label, const ImVec2& size)
+{
+    return SpartialRoundedButtonEx(label, size, ImDrawFlags_RoundCornersTopRight | ImDrawFlags_RoundCornersBottomRight);
+}
+
+bool ImGui::GButtonTR(const char* label, const ImVec2& size)
+{
+    return SpartialRoundedButtonEx(label, size, ImDrawFlags_RoundCornersTopLeft | ImDrawFlags_RoundCornersTopRight);
+}
+
+bool ImGui::GButtonBR(const char* label, const ImVec2& size)
+{
+    return SpartialRoundedButtonEx(label, size, ImDrawFlags_RoundCornersBottomLeft | ImDrawFlags_RoundCornersBottomRight);
+}
+
 void ImGui::GText(const char* label, const char* fmt, ...)
 {
     PushID(label);
 
     if (BeginTable("data_table", 2, ImGuiTableFlags_SizingFixedFit))
     {
-        TableSetupColumn("Parameter", 0, GetContentRegionAvail().x * widthScale);
-        TableSetupColumn("Field", 0, GetContentRegionAvail().x * (1.f - widthScale));
+        TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed, columnWidth);
+        TableSetupColumn("Controls", ImGuiTableColumnFlags_WidthStretch);
 
         TableNextColumn();
         Text(label);
@@ -122,8 +219,8 @@ bool ImGui::GColorEdit3(const char* label, glm::vec3& value)
 
     if (BeginTable("data_table", 2, ImGuiTableFlags_SizingFixedFit))
     {
-        TableSetupColumn("Parameter", 0, GetContentRegionAvail().x * widthScale);
-        TableSetupColumn("Field", 0, GetContentRegionAvail().x * (1.f - widthScale));
+        TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed, columnWidth);
+        TableSetupColumn("Controls", ImGuiTableColumnFlags_WidthStretch);
 
         TableNextColumn();
         Text(label);
@@ -151,8 +248,8 @@ bool ImGui::GColorEdit4(const char* label, glm::vec4& value)
 
     if (BeginTable("data_table", 2, ImGuiTableFlags_SizingFixedFit))
     {
-        TableSetupColumn("Parameter", 0, GetContentRegionAvail().x * widthScale);
-        TableSetupColumn("Field", 0, GetContentRegionAvail().x * (1.f - widthScale));
+        TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed, columnWidth);
+        TableSetupColumn("Controls", ImGuiTableColumnFlags_WidthStretch);
 
         TableNextColumn();
         Text(label);
@@ -209,16 +306,34 @@ bool ImGui::GCombo(const char* label, int* current_item, const char* const items
 
     PushID(label);
 
-    if (BeginTable("table", 2))
+    if (BeginTable("data_table", 2, ImGuiTableFlags_SizingFixedFit))
     {
+        TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed, columnWidth);
+        TableSetupColumn("Controls", ImGuiTableColumnFlags_WidthStretch);
+
         TableNextColumn();
         Text(label);
 
         TableNextColumn();
-        SetNextItemWidth(GetContentRegionAvail().x);
-        result = Combo(label, current_item, items, item_count, height_in_items);
-        ApplyPropertyChange(oldValue, current_item);
 
+        const char* preview = items[*current_item];
+
+        SetNextItemWidth(GetContentRegionAvail().x);
+        if (BeginCombo("##", preview))
+        {
+            for (int n = 0; n < item_count; n++)
+            {
+                bool is_selected = (*current_item == n);
+                if (Selectable(items[n], is_selected))
+                    *current_item = n;
+                if (is_selected)
+                    SetItemDefaultFocus();
+            }
+
+            EndCombo();
+        }
+
+        ApplyPropertyChange(oldValue, current_item);
         EndTable();
     }
 
