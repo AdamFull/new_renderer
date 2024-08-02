@@ -19,6 +19,24 @@
 #include <string_view>
 #include <utility>
 
+namespace engine
+{
+	namespace world
+	{
+		namespace ecs
+		{
+			struct IComponent
+			{
+				virtual void Serialize(nlohmann::json& j) const {}
+				virtual void Deserialize(const nlohmann::json& j) {}
+
+				virtual void OnEdit() {}
+				virtual const char* GetName() { return ""; }
+			};
+		}
+	}
+}
+
 namespace impl
 {
 	/// Base declaration of our constexpr string_view concatenation helper
@@ -129,7 +147,7 @@ namespace glm
 
 #define DECLARE_FIELDS(...) \
     static constexpr auto fields() { return std::make_tuple(__VA_ARGS__); } \
-	void Serialize(nlohmann::json& j) override { SerializeFields(j, *this); } \
+	void Serialize(nlohmann::json& j) const override { SerializeFields(j, *this); } \
 	void Deserialize(const nlohmann::json& j) override { DeserializeFields(j, *this); } \
 	void OnEdit() override { DefaultComponentEdit(_Name.data(), [this]() {DrawFields(*this); }); } \
 	const char* GetName() override { return _Name.data(); }
@@ -188,6 +206,22 @@ struct ElementCount<glm::vec4> { static constexpr std::size_t value = 4; };
 template<>
 struct ElementCount<glm::quat> { static constexpr std::size_t value = 4; };
 
+template<typename T, typename _ = void>
+struct is_container : std::false_type {};
+
+template<typename... Ts>
+struct is_container_helper {};
+
+template<typename T>
+struct is_container<T, std::conditional_t<
+	false,
+	is_container_helper<typename T::value_type, decltype(std::declval<T>().begin()), decltype(std::declval<T>().end())>,
+	void
+	>> : public std::true_type {};
+
+template<typename T>
+inline constexpr bool is_container_v = is_container<T>::value;
+
 template <typename T>
 constexpr auto GetFieldPtr(const T& field)
 {
@@ -212,10 +246,36 @@ constexpr auto GetFieldMeta(const T& field)
 	return std::get<3>(field);
 }
 
+// SerializeField function
+template<typename FieldType>
+void SerializeField(nlohmann::json& j, const char* fieldName, const FieldType& field) 
+{
+	if constexpr (std::is_base_of_v<engine::world::ecs::IComponent, FieldType>)
+	{
+		nlohmann::json componentJson;
+		field.Serialize(componentJson);
+		j[fieldName] = componentJson;
+	}
+	else if constexpr (is_container_v<FieldType>)
+	{
+		nlohmann::json containerJson = nlohmann::json::array();
+		for (const auto& item : field) 
+		{
+			nlohmann::json itemJson;
+			SerializeField(itemJson, "", item);
+			containerJson.push_back(itemJson);
+		}
+
+		j[fieldName] = containerJson;
+	}
+	else
+		j[fieldName] = field;
+}
+
 template <typename T, std::size_t... I>
 void SerializeFieldsImpl(nlohmann::json& j, const T& obj, std::index_sequence<I...>) 
 {
-	((j[GetFieldName(std::get<I>(T::fields()))] = obj.*GetFieldPtr(std::get<I>(T::fields()))), ...);
+	((SerializeField(j, GetFieldName(std::get<I>(T::fields())), obj.*GetFieldPtr(std::get<I>(T::fields())))), ...);
 }
 
 template <typename T>
@@ -224,10 +284,40 @@ void SerializeFields(nlohmann::json& j, const T& obj)
 	SerializeFieldsImpl(j, obj, std::make_index_sequence<std::tuple_size_v<decltype(T::fields())>>{});
 }
 
+template<typename FieldType>
+void DeserializeField(const nlohmann::json& j, const char* fieldName, FieldType& field) 
+{
+	if constexpr (std::is_base_of_v<engine::world::ecs::IComponent, FieldType>) 
+	{
+		if (j.contains(fieldName))
+			field.Deserialize(j.at(fieldName));
+	}
+	else if constexpr (is_container_v<FieldType>) 
+	{
+		// If the field is a container
+		if (j.contains(fieldName)) 
+		{
+			const auto& containerJson = j.at(fieldName);
+			field.clear();
+			for (const auto& itemJson : containerJson) 
+			{
+				typename FieldType::value_type item;
+				DeserializeField(itemJson, "", item);
+				field.push_back(item);
+			}
+		}
+	}
+	else 
+	{
+		if (j.contains(fieldName))
+			j.at(fieldName).get_to(field);
+	}
+}
+
 template <typename T, std::size_t... I>
 void DeserializeFieldsImpl(const nlohmann::json& j, T& obj, std::index_sequence<I...>) 
 {
-	((j.at(GetFieldName(std::get<I>(T::fields()))).get_to(obj.*GetFieldPtr(std::get<I>(T::fields())))), ...);
+	((DeserializeField(j, GetFieldName(std::get<I>(T::fields())), obj.*GetFieldPtr(std::get<I>(T::fields())))), ...);
 }
 
 template <typename T>
@@ -391,22 +481,4 @@ void DeserializeFields(const nlohmann::json& j, _Ty& field, const char* fieldNam
 {
 	DeserializeField(fieldName, j, field);
 	DeserializeFields(j, args...);
-}
-
-namespace engine
-{
-	namespace world
-	{
-		namespace ecs
-		{
-			struct IComponent
-			{
-				virtual void Serialize(nlohmann::json& j) {}
-				virtual void Deserialize(const nlohmann::json& j) {}
-				
-				virtual void OnEdit() {}
-				virtual const char* GetName(){ return ""; }
-			};
-		}
-	}
 }

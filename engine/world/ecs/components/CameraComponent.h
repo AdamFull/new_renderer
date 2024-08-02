@@ -27,8 +27,6 @@ namespace engine
 				f32 biba{ 45.f };
 				f32 boba{ 0.1f };
 
-				NLOHMANN_DEFINE_TYPE_INTRUSIVE(FPupa, biba, boba);
-
 				DECLARE_FIELDS(
 					FDECL(biba, "Biba", DragField(0.01f, 0.f, 0.f)),
 					FDECL(boba, "Boba", DragField(0.01f, 0.f, 0.f))
