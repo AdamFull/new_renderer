@@ -14,18 +14,6 @@ using namespace engine;
 using namespace engine::filesystem;
 using namespace engine::world;
 
-template<class _Ty>
-void TryAddMenuItemI(const std::string& name, const entt::entity& entity)
-{
-	//auto& actionBuffer = EGEditor->getActionBuffer();
-	if (!CEntityManager::TryGetComponent<_Ty>(entity))
-	{
-		if (ImGui::MenuItem(_Ty::_Name.data()));
-			//actionBuffer->addOperation(std::make_unique<CAddComponentOperation>(entity, utl::type_hash<_Ty>()));
-	}
-}
-
-
 void CInspectorWindow::Create()
 {
 
@@ -47,17 +35,15 @@ void CInspectorWindow::__draw(float fDt)
 
 		if (ImGui::BeginPopup("add_component_popup"))
 		{
-			//TryAddMenuItemI<ecs::FAudioComponent>("Audio", selected);
-			TryAddMenuItemI<ecs::FCameraComponent>("Camera", selected);
-			//TryAddMenuItemI<ecs::FScriptComponent>("Script", selected);
-			//TryAddMenuItemI<ecs::FEnvironmentComponent>("Environment", selected);
-			TryAddMenuItemI<ecs::FDirectionalLightComponent>("Directional light", selected);
-			TryAddMenuItemI<ecs::FSpotLightComponent>("Spot light", selected);
-			TryAddMenuItemI<ecs::FPointLightComponent>("Point light", selected);
-			//TryAddMenuItemI<ecs::FSceneComponent>("Scene", selected);
-			//TryAddMenuItemI<ecs::FRigidBodyComponent>("RigidBody", selected);
-			//TryAddMenuItemI<ecs::FParticleComponent>("Particle system", selected);
-			//TryAddMenuItemI<ecs::FTerrainComponent>("Terrain", selected);
+			CEntityManager::IterateRegisteredComponents([entity = selected](const auto& type, const auto& meta)
+				{
+					if (!CEntityManager::HasComponent(entity, type))
+					{
+						if (ImGui::MenuItem(meta.name))
+							CEntityManager::AddComponent(entity, type);
+					}
+				});
+
 			ImGui::EndPopup();
 		}
 

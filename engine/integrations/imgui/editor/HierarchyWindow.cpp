@@ -9,19 +9,6 @@
 using namespace engine;
 using namespace engine::world;
 
-template<class _Ty>
-void try_add_menu_item_h(const std::string& name, const entt::entity& entity)
-{
-    using namespace engine;
-    //auto& actionBuffer = EGEditor->getActionBuffer();
-    if (!CEntityManager::TryGetComponent<_Ty>(entity))
-    {
-        const char* icon = IconByComponentType_v<_Ty>;
-        if (ImGui::MenuItem((std::format("{} {}", icon, name)).c_str()));
-            //actionBuffer->addOperation(std::make_unique<CCreateEntityOperation>(entity, utl::type_hash<_Ty>()));
-    }
-}
-
 void CHierarchyWindow::__draw(float fDt)
 {
     //auto& actionBuffer = EGEditor->getActionBuffer();
@@ -51,14 +38,6 @@ void CHierarchyWindow::__draw(float fDt)
                             CEntityManager::AddComponent(entity, type);
                     }
                 });
-
-            // TODO: I wnat to see here only components that is not exists in entity
-            //CEntityManager::IterateComponents(m_currentSelection, [entity = m_currentSelection](ecs::IComponent* component)
-            //    {
-            //        auto& registry = CEntityManager::GetRegistry();
-            //        if (ImGui::MenuItem(component->GetName()))
-            //            component->OnInstantiate(registry, entity);
-            //    });
 
             ImGui::EndMenu();
         }
