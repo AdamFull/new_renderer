@@ -206,4 +206,49 @@ namespace ImGui
     {
         return Input<double, _Count>(label, value, step, fast_step, "%.6f");
     }
+
+    template<typename _Element>
+    void DrawElementEdit(int idx, _Element& element)
+    {
+        auto label = std::format("Element {}", idx);
+        if constexpr (std::is_arithmetic_v<_Element>)
+            Input<_Element, 1>(label.c_str(), &element, 1, 1, FormatByType_v<_Element>);
+        else
+            element.OnEdit();
+    }
+
+
+    template <typename _Container>
+    void DrawContainerEdit(const char* label, _Container& container);
+
+    template <typename _Ty>
+    void DrawContainerEdit(const char* label, std::vector<_Ty>& container)
+    {
+        if (TreeNode(label))
+        {
+            int size = static_cast<int>(container.size());
+            if (GInputInt<1>("Size", &size, 1, 1))
+            {
+                if (size < 0) size = 0;
+
+                if (size != static_cast<int>(container.size()))
+                    container.resize(size);
+            }
+
+            for (int i = 0; i < size; ++i)
+            {
+                DrawElementEdit(i, container[i]);
+                if (Button("Remove"))
+                {
+                    container.erase(container.begin() + i);
+                    --i;
+                }
+            }
+
+            if (Button("Add"))
+                container.emplace_back(_Ty{});
+
+            TreePop();
+        }
+    }
 }

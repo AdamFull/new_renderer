@@ -128,11 +128,9 @@ namespace glm
 	static constexpr std::string_view _Name = join_v<clazz_ico, _NameRaw>;
 
 #define DECLARE_FIELDS(...) \
-	bool IsSerializable() override { return true; } \
     static constexpr auto fields() { return std::make_tuple(__VA_ARGS__); } \
 	void Serialize(nlohmann::json& j) override { SerializeFields(j, *this); } \
 	void Deserialize(const nlohmann::json& j) override { DeserializeFields(j, *this); } \
-	void OnInstantiate(entt::registry& registry, entt::entity entity) override { registry.emplace<_Self>(entity); } \
 	void OnEdit() override { DefaultComponentEdit(_Name.data(), [this]() {DrawFields(*this); }); } \
 	const char* GetName() override { return _Name.data(); }
 
@@ -174,6 +172,9 @@ template<typename _Ty = float>
 struct ColorEditField {};
 
 struct ToggleField {};
+
+template<typename _Ty>
+struct ContainerField {};
 
 template<typename T>
 struct ElementCount { static constexpr std::size_t value = 1; };
@@ -305,6 +306,16 @@ void DrawFieldImpl(T& obj, const Field& field, const ToggleField& editor)
 	ImGui::GCheckbox(field_name, &(obj.*field_ptr));
 }
 
+template <typename T, typename Field, typename U>
+void DrawFieldImpl(T& obj, const Field& field, const ContainerField<U>& editor)
+{
+	auto field_ptr = GetFieldPtr(field);
+	auto field_name = GetEditorName(field);
+	using ValueType = std::decay_t<decltype(std::declval<T>().*field_ptr)>;
+
+	ImGui::DrawContainerEdit(field_name, obj.*field_ptr);
+}
+
 template <typename T, typename Field>
 void DrawField(T& obj, const Field& field) 
 {
@@ -393,11 +404,8 @@ namespace engine
 				virtual void Serialize(nlohmann::json& j) {}
 				virtual void Deserialize(const nlohmann::json& j) {}
 				
-				virtual void OnInstantiate(entt::registry& registry, entt::entity entity) {}
 				virtual void OnEdit() {}
 				virtual const char* GetName(){ return ""; }
-
-				virtual bool IsSerializable() { return false; }
 			};
 		}
 	}
