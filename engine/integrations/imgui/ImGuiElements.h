@@ -214,7 +214,13 @@ namespace ImGui
         if constexpr (std::is_arithmetic_v<_Element>)
             Input<_Element, 1>(label.c_str(), &element, 1, 1, FormatByType_v<_Element>);
         else
-            element.OnEdit();
+        {
+            if (TreeNode(label.c_str()))
+            {
+                element.OnEdit();
+                TreePop();
+            }
+        }
     }
 
 
@@ -224,10 +230,12 @@ namespace ImGui
     template <typename _Ty>
     void DrawContainerEdit(const char* label, std::vector<_Ty>& container)
     {
-        if (TreeNode(label))
+        PushID(label);
+
+        if (ImGui::TreeNodeEx(label, ImGuiTreeNodeFlags_DefaultOpen))
         {
             int size = static_cast<int>(container.size());
-            if (GInputInt<1>("Size", &size, 1, 1))
+            if (GDragInt<1>("Size", &size, 1, 1))
             {
                 if (size < 0) size = 0;
 
@@ -236,19 +244,13 @@ namespace ImGui
             }
 
             for (int i = 0; i < size; ++i)
-            {
                 DrawElementEdit(i, container[i]);
-                if (Button("Remove"))
-                {
-                    container.erase(container.begin() + i);
-                    --i;
-                }
-            }
 
             if (Button("Add"))
                 container.emplace_back(_Ty{});
 
             TreePop();
         }
+        PopID();
     }
 }
