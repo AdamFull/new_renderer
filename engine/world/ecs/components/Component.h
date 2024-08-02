@@ -31,7 +31,7 @@ namespace engine
 				virtual void Deserialize(const nlohmann::json& j) {}
 
 				virtual void OnEdit() {}
-				virtual const char* GetName() { return ""; }
+				virtual const char* GetName() { return nullptr; }
 			};
 		}
 	}
@@ -149,7 +149,7 @@ namespace glm
     static constexpr auto fields() { return std::make_tuple(__VA_ARGS__); } \
 	void Serialize(nlohmann::json& j) const override { SerializeFields(j, *this); } \
 	void Deserialize(const nlohmann::json& j) override { DeserializeFields(j, *this); } \
-	void OnEdit() override { DefaultComponentEdit(_Name.data(), [this]() {DrawFields(*this); }); } \
+	void OnEdit() override { DrawFields(*this); } \
 	const char* GetName() override { return _Name.data(); }
 
 #define FDECL(member, name, meta) std::make_tuple(&_Self::member, #member, name, meta)
@@ -424,21 +424,6 @@ void DrawFields(T& obj)
 {
 	DrawFieldsImpl(obj, std::make_index_sequence<std::tuple_size_v<decltype(T::fields())>>{});
 }
-
-template<typename _OnEdit>
-void DefaultComponentEdit(const char* name, _OnEdit&& edit)
-{
-	ImGui::PushID(name);
-
-	if (ImGui::CollapsingHeader(name, ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap))
-	{
-		edit();
-	}
-
-	ImGui::PopID();
-	ImGui::Separator();
-}
-
 
 
 template<typename _Ty>

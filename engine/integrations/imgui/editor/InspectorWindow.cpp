@@ -66,7 +66,20 @@ void CInspectorWindow::__draw(float fDt)
 		ImGui::GTextInput("Name", &base.name);
 		ImGui::Separator();
 
-		CEntityManager::IterateComponents(selected, [](ecs::IComponent* component) {component->OnEdit(); });
+		CEntityManager::IterateComponents(selected, [](ecs::IComponent* component) 
+			{
+				auto* name = component->GetName();
+				if (name)
+				{
+					ImGui::PushID(name);
+					if (ImGui::CollapsingHeader(name, ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap))
+					{
+						component->OnEdit();
+						ImGui::Separator();
+					}
+					ImGui::PopID();
+				}
+			});
 
 		if (ImGui::Button(ICON_MDI_PLUS, ImVec2(-1.f, 0.f)))
 			ImGui::OpenPopup("add_component_popup");
@@ -102,44 +115,4 @@ void CInspectorWindow::__draw(float fDt)
 			ImGui::EndDragDropTarget();
 		}
 	}
-}
-
-//void CInspectorWindow::AudioEdit(ecs::FAudioComponent* object)
-//{
-//
-//}
-
-void CInspectorWindow::CameraEdit(world::ecs::FCameraComponent* object)
-{
-
-}
-
-//void CInspectorWindow::ScriptEdit(world::ecs::FScriptComponent* object)
-//{
-//
-//}
-//void CInspectorWindow::SkyboxEdit(world::ecs::FEnvironmentComponent* object) 
-//{
-//
-//}
-//void CInspectorWindow::SceneEdit(world::ecs::FSceneComponent* object) 
-//{
-//
-//}
-//void CInspectorWindow::RigidbodyEdit(world::ecs::FTransformComponent* transform, world::ecs::FRigidBodyComponent* object) 
-//{
-//
-//}
-//void CInspectorWindow::ParticleSystemEdit(world::ecs::FTransformComponent* transform, world::ecs::FParticleComponent* object) 
-//{
-//
-//}
-//void CInspectorWindow::TerrainEdit(world::ecs::FTerrainComponent* object) 
-//{
-//
-//}
-		
-void CInspectorWindow::MeshEdit(world::ecs::FMeshComponent* object)
-{
-
 }
