@@ -1270,7 +1270,7 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 		FRenderGraphRenderPassNodeCreateInfo create_info;
 		create_info.name = "imgui_pass";
 		create_info.pass_ci = makeGraphicsPassCI(ERenderingType::eImGui, EQueueTypeFlagBits::eGraphics, "testing:imgui");
-		create_info.pass_ci.AddReadResource();
+		//wcreate_info.pass_ci.AddReadResource("pre_present");
 		create_info.pass_ci.AddWriteResource("present_target");
 
 		AddRenderNode(create_info);

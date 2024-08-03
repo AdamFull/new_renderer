@@ -30,6 +30,7 @@ namespace engine
 				FAPIHandle GetTextureId(const std::string& name) override;
 				FTextureView GetTextureView(FAPIHandle texture_id) override;
 				void DestroyTexture(FAPIHandle resource_id) override;
+				void ReadPixel(FAPIHandle resource_id, u32 x, u32 y, void* data) override;
 
 
 				FAPIHandle CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, utl::vector<FShaderCreationBlockInfo>&& shader_stages) override;
@@ -97,9 +98,9 @@ namespace engine
 				void GetNativeContext(void* context) override;
 
 				FVkCommandBuffer& CreateCommandBuffer(const FVkCommandBufferCreateInfo& command_buffer_ci, std::thread::id thread_id = std::this_thread::get_id());
-				FVkCommandBuffer& getLastCommandBuffer(EQueueTypeFlagBits queue_type, std::thread::id thread_id = std::this_thread::get_id());
+				FVkCommandBuffer& GetLastCommandBuffer(EQueueTypeFlagBits queue_type, std::thread::id thread_id = std::this_thread::get_id());
 				FVkCommandBuffer& GetCommandBuffer(EQueueTypeFlagBits queue_type, u64 index, std::thread::id thread_id = std::this_thread::get_id());
-				utl::vector<FVkCommandBuffer>& getCommandBuffers(EQueueTypeFlagBits queue_type, std::thread::id thread_id = std::this_thread::get_id());
+				utl::vector<FVkCommandBuffer>& GetCommandBuffers(EQueueTypeFlagBits queue_type, std::thread::id thread_id = std::this_thread::get_id());
 				void DestroyCommandBuffer(EQueueTypeFlagBits queue_type, std::thread::id thread_id = std::this_thread::get_id());
 
 				const std::unique_ptr<CVkRenderDevice>& getDevice() const;
@@ -113,27 +114,27 @@ namespace engine
 				void InsertDebugLabel(const std::string& label, EQueueTypeFlagBits queue_type, u32 color = 0xffffffff) override;
 				void EndDebugLabel(EQueueTypeFlagBits queue_type) override;
 			protected:
-				void destroyThreadContext(FVkThreadContext& context);
+				void DestroyThreadContext(FVkThreadContext& context);
 				void ProcessResourceBarriers();
-				void processResourceUpload();
-				void processResourceUtilization();
-				void updateBackbuffer();
+				void ProcessResourceUpload();
+				void ProcessResourceUtilization();
+				void UpdateBackbuffer();
 
-				FVkBufferCreateInfo makeBufferCreateInfo(const std::string& name, const FBufferCreateInfo& buffer_ci);
+				FVkBufferCreateInfo MakeBufferCreateInfo(const std::string& name, const FBufferCreateInfo& buffer_ci);
 
 				FRenderApiErrorInfo CreateTexture(const FVkTextureCreateInfo& texture_ci, FVkTexture& texture);
 				void DestroyTexture(FVkTexture& texture);
 
-				FRenderApiErrorInfo createShaderResources(const FVkShaderResourcesInfo& resources_info, FVkShader& shader);
+				FRenderApiErrorInfo CreateShaderResources(const FVkShaderResourcesInfo& resources_info, FVkShader& shader);
 				void DestroyShader(FVkShader& shader);
 
-				void bindShaderDescriptors(const FVkCommandBuffer& command_buffer, const FVkShader& shader);
+				void BindShaderDescriptors(const FVkCommandBuffer& command_buffer, const FVkShader& shader);
 
-				void processMemoryBarriers(const FVkCommandBuffer& command_buffer, const FVkTranslationInfo& translation_info);
-				void processImageLayoutTranslation(const FVkCommandBuffer& command_buffer, const FVkImageTranslationInfo& image_translation_info);
-				void textureLayoutTranslation(const FVkCommandBuffer& command_buffer, FVkTexture& texture, const FVkTextureTranslationInfo& translation_info);
+				void ProcessMemoryBarriers(const FVkCommandBuffer& command_buffer, const FVkTranslationInfo& translation_info);
+				void ProcessImageLayoutTranslation(const FVkCommandBuffer& command_buffer, const FVkImageTranslationInfo& image_translation_info);
+				void TextureLayoutTranslation(const FVkCommandBuffer& command_buffer, FVkTexture& texture, const FVkTextureTranslationInfo& translation_info);
 
-				void copyBufferToTexture(const FVkCommandBuffer& command_buffer, const FVkBuffer& buffer, const FVkTexture& texture, const utl::vector<vk::BufferImageCopy2KHR>& copy_regions);
+				void CopyBufferToTexture(const FVkCommandBuffer& command_buffer, const FVkBuffer& buffer, const FVkTexture& texture, const utl::vector<vk::BufferImageCopy2KHR>& copy_regions);
 				//void blitImage(const FVkCommandBuffer& command_buffer, );
 			private:
 				std::unique_ptr<CVkRenderDevice> m_pDevice{};
