@@ -502,6 +502,7 @@ void CVkRenderContext::ReadPixel(FAPIHandle resource_id, u32 x, u32 y, void* dat
 	current.copyImageToBuffer(texture->image.handle, vk::ImageLayout::eTransferSrcOptimal, staging_buffer.handle, 1, &region);
 
 	m_pDevice->SubmitCommandBuffer(command_buffer);
+	DestroyCommandBuffer(EQueueTypeFlagBits::eGraphics);
 	// TODO: DESTROY COMMAND BUFFER AND DELETE IT
 
 	// Copy data to buffer
@@ -1052,7 +1053,7 @@ void CVkRenderContext::UnmapBufferMemory(FAPIHandle buffer_id)
 void CVkRenderContext::FlushBuffer(FAPIHandle buffer_id, u64 size, u64 offset)
 {
 	auto& buffer = m_pResources->get<FVkBuffer>(buffer_id.Get());
-	m_pDevice->flushBufferMemory(*buffer, size, offset);
+	m_pDevice->FlushBufferMemory(*buffer, size, offset);
 }
 
 void CVkRenderContext::DestroyBuffer(FAPIHandle resource_id)
@@ -1737,7 +1738,7 @@ void CVkRenderContext::GetNativeContext(void* context)
 	auto* native_context = static_cast<FVkNativeContext*>(context);
 	auto& physical_device = m_pDevice->GetPhysicalDevice();
 	auto& logical_device = m_pDevice->GetLogicalDevice();
-	auto& swapchain = m_pDevice->getSwapchain();
+	auto& swapchain = m_pDevice->GetSwapchain();
 
 	native_context->instance = m_pDevice->GetInstance();
 	native_context->physicalDevice = physical_device.handle;

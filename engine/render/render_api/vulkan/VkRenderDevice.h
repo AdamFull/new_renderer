@@ -59,7 +59,7 @@ namespace engine
 				void DestroyBuffer(FVkBuffer& buffer);
 				FRenderApiErrorInfo MapBufferMemory(FVkBuffer& buffer, void** mappedMemory);
 				void UnmapBufferMemory(FVkBuffer& buffer);
-				void flushBufferMemory(const FVkBuffer& buffer, vk::DeviceSize size, vk::DeviceSize offset);
+				void FlushBufferMemory(const FVkBuffer& buffer, vk::DeviceSize size, vk::DeviceSize offset);
 
 				// VkDescriptorSetLayout
 				FRenderApiErrorInfo CreateDescriptorSetLayout(const FVkDescriptorSetLayoutCreateInfo& layout_ci, vk::DescriptorSetLayout& descriptor_set_layout);
@@ -170,7 +170,7 @@ namespace engine
 				const vk::PipelineCache& GetPipelineCache() const;
 				utl::vector<char> GetPipelineCacheData() const;
 
-				const FSwapchain& getSwapchain() const;
+				const FSwapchain& GetSwapchain() const;
 			protected:
 				void RegisterAllocationCallbacks();
 				FRenderApiErrorInfo CreateInstance(const FRenderContextCreateInfo& context_ci);

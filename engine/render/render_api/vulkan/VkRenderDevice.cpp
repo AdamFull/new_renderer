@@ -354,7 +354,7 @@ void CVkRenderDevice::UnmapBufferMemory(FVkBuffer& buffer)
 	}
 }
 
-void CVkRenderDevice::flushBufferMemory(const FVkBuffer& buffer, vk::DeviceSize size, vk::DeviceSize offset)
+void CVkRenderDevice::FlushBufferMemory(const FVkBuffer& buffer, vk::DeviceSize size, vk::DeviceSize offset)
 {
 	m_memoryAllocator.flushAllocation(buffer.memory, size, offset);
 }
@@ -1006,7 +1006,7 @@ utl::vector<char> CVkRenderDevice::GetPipelineCacheData() const
 	return pipeline_cache_data;
 }
 
-const FSwapchain& CVkRenderDevice::getSwapchain() const
+const FSwapchain& CVkRenderDevice::GetSwapchain() const
 {
 	return m_swapchain;
 }
@@ -1510,7 +1510,7 @@ FRenderApiErrorInfo CVkRenderDevice::CreateSwapchain(u32 surface_width, u32 surf
 	check_api_result(make_api_error(vk::ObjectType::eSwapchainKHR, res, "Failed to Create"));
 
 	m_swapchain.images.resize(image_count);
-	res = m_logicalDevice.handle.getSwapchainImagesKHR(m_swapchain.handle, &image_count, m_swapchain.images.data());
+	res = m_logicalDevice.handle.GetSwapchainImagesKHR(m_swapchain.handle, &image_count, m_swapchain.images.data());
 	check_api_result(make_api_error(vk::ObjectType::eSwapchainKHR, res, "Failed to Create images"));
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
