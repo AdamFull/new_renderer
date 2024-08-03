@@ -452,6 +452,65 @@ void CVkRenderContext::DestroyTexture(FAPIHandle resource_id)
 	m_destroyResource.push(FAPIObjectDestroyInfo{ resource_id, EResourceFlagBits::eTexture });
 }
 
+void CVkRenderContext::ReadPixel(FAPIHandle resource_id, u32 x, u32 y, void* data)
+{
+	static constexpr u64 pixel_size{ 4ull };
+
+	auto& texture = m_pResources->get<FVkTexture>(resource_id.Get());
+
+	// Create temporary command buffer
+	FVkCommandBufferCreateInfo command_buffer_ci{};
+	command_buffer_ci.count = 1;
+	command_buffer_ci.mask = EQueueTypeFlagBits::eGraphics;
+	command_buffer_ci.level = vk::CommandBufferLevel::ePrimary;
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	command_buffer_ci.name = std::format("pick pixel #{}(x:{},y{})", resource_id.Get(), x, y);
+#endif
+
+	FVkCommandBuffer command_buffer = CreateCommandBuffer(command_buffer_ci);
+	m_pDevice->BeginCommandBuffer(command_buffer, vk::CommandBufferUsageFlagBits::eOneTimeSubmit, 0);
+	auto& current = command_buffer.get();
+
+	FVkBufferCreateInfo staging_buffer_ci{};
+	staging_buffer_ci.instanceCount = 1ull;
+	staging_buffer_ci.instanceSize = pixel_size;
+	staging_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
+	staging_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuOnly;
+#ifndef BUILD_WITHOUT_DEBUGGIND
+	staging_buffer_ci.name = std::format("pick pixel #{}(x:{},y{})", resource_id.Get(), x, y);
+#endif
+
+	FVkBuffer staging_buffer{};
+	m_pDevice->CreateBuffer(staging_buffer_ci, staging_buffer);
+
+	vk::BufferImageCopy region;
+	region.bufferOffset = 0;
+	region.bufferImageHeight = 0;
+	region.bufferRowLength = 0;
+
+	region.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+	region.imageSubresource.mipLevel = 0;
+	region.imageSubresource.baseArrayLayer = 0;
+	region.imageSubresource.layerCount = 1;
+
+	region.imageOffset.x = x;
+	region.imageOffset.y = y;
+	region.imageExtent.width = 1;
+	region.imageExtent.height = 1;
+	region.imageExtent.depth = 1;
+
+	current.copyImageToBuffer(texture->image.handle, vk::ImageLayout::eTransferSrcOptimal, staging_buffer.handle, 1, &region);
+
+	m_pDevice->SubmitCommandBuffer(command_buffer);
+	// TODO: DESTROY COMMAND BUFFER AND DELETE IT
+
+	// Copy data to buffer
+	void* mapped_buffer_memory{ nullptr };
+	m_pDevice->MapBufferMemory(staging_buffer, &mapped_buffer_memory);
+	std::memcpy(data, mapped_buffer_memory, pixel_size);
+	m_pDevice->UnmapBufferMemory(staging_buffer);
+}
+
 
 FAPIHandle CVkRenderContext::CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, utl::vector<FShaderCreationBlockInfo>&& shader_stages)
 {

@@ -329,6 +329,7 @@ namespace engine
 			virtual FAPIHandle GetTextureId(const std::string& name) = 0;
 			virtual FTextureView GetTextureView(FAPIHandle texture_id) = 0;
 			virtual void DestroyTexture(FAPIHandle resource_id) = 0;
+			virtual void ReadPixel(FAPIHandle resource_id, u32 x, u32 y, void* data) = 0;
 
 			virtual FAPIHandle CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, utl::vector<FShaderCreationBlockInfo>&& shader_stages) = 0;
 			virtual FAPIHandle CreateShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, utl::vector<FShaderCreationBlockInfo>&& shader_stages) = 0;
