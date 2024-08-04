@@ -16,6 +16,10 @@ using namespace engine::world::ecs;
 CLightingSystem::CLightingSystem(IRenderInterface* render_interface)
 {
 	m_pRenderInterface = render_interface;
+
+	CEntityManager::RegisterComponent<FDirectionalLightComponent>();
+	CEntityManager::RegisterComponent<FPointLightComponent>();
+	CEntityManager::RegisterComponent<FSpotLightComponent>();
 }
 
 void CLightingSystem::__Create()

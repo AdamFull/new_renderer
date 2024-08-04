@@ -70,7 +70,7 @@ namespace engine
 
 		const std::unique_ptr<_Ty>& get(const char* name)
 		{
-			auto id = nameToId[utl::fnv1a_64_hash(name)];
+			auto id = nameToId[utl::fnv1a_64_hash_cstr(name)];
 			return get(id);
 		}
 

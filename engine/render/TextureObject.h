@@ -15,6 +15,8 @@ namespace engine
 			void Create(const std::string& name, const FTextureCreateInfo& create_info) override;
 			void Create(const std::string& name, const FTextureCreateInfo& create_info, FTextureUploadInfo&& upload_info) override;
 
+			void GetPixel(u32 x, u32 y, u8* data) override;
+
 			void GetDimensions(u32* width, u32* height, u32* depth) override;
 			void GetMipLevelCount(u32* mip_count) override;
 			void GetLayerCount(u32* layer_count) override;

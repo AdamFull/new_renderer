@@ -1510,7 +1510,7 @@ FRenderApiErrorInfo CVkRenderDevice::CreateSwapchain(u32 surface_width, u32 surf
 	check_api_result(make_api_error(vk::ObjectType::eSwapchainKHR, res, "Failed to Create"));
 
 	m_swapchain.images.resize(image_count);
-	res = m_logicalDevice.handle.GetSwapchainImagesKHR(m_swapchain.handle, &image_count, m_swapchain.images.data());
+	res = m_logicalDevice.handle.getSwapchainImagesKHR(m_swapchain.handle, &image_count, m_swapchain.images.data());
 	check_api_result(make_api_error(vk::ObjectType::eSwapchainKHR, res, "Failed to Create images"));
 
 #ifndef BUILD_WITHOUT_DEBUGGIND

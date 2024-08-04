@@ -383,6 +383,11 @@ const std::unique_ptr<ITextureObject>& CRenderInterface::GetTextureObject(FRHIHa
 	return m_pResources->get<ITextureObject>(handle.Get());
 }
 
+const std::unique_ptr<ITextureObject>& CRenderInterface::GetTextureObject(const char* name)
+{
+	return m_pResources->get<ITextureObject>(name);
+}
+
 
 FRHIHandle CRenderInterface::CreateBufferObject(const std::string& name, const FBufferCreateInfo& buffer_ci)
 {
@@ -410,7 +415,10 @@ const std::unique_ptr<IBufferObject>& CRenderInterface::GetBufferObject(FRHIHand
 	return m_pResources->get<IBufferObject>(handle.Get());
 }
 
-
+const std::unique_ptr<IBufferObject>& CRenderInterface::GetBufferObject(const char* name)
+{
+	return m_pResources->get<IBufferObject>(name);
+}
 
 FRHIHandle CRenderInterface::CreateShaderObject(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci)
 {
@@ -452,6 +460,11 @@ void CRenderInterface::DestroyShaderObject(FRHIHandle handle)
 const std::unique_ptr<IShaderObject>& CRenderInterface::GetShaderObject(FRHIHandle handle)
 {
 	return m_pResources->get<IShaderObject>(handle.Get());
+}
+
+const std::unique_ptr<IShaderObject>& CRenderInterface::GetShaderObject(const char* name)
+{
+	return m_pResources->get<IShaderObject>(name);
 }
 
 

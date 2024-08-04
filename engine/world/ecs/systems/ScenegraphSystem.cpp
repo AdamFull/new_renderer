@@ -13,6 +13,10 @@ using namespace engine::world::ecs;
 
 CScenegraphSystem::CScenegraphSystem()
 {
+	CEntityManager::RegisterComponent<FRootComponent>(EComponentFlagBits::eHiddenInEditor);
+	CEntityManager::RegisterComponent<FBaseComponent>(EComponentFlagBits::eHiddenInEditor);
+	CEntityManager::RegisterComponent<FHierarchyComponent>(EComponentFlagBits::eHiddenInEditor);
+	CEntityManager::RegisterComponent<FTransformComponent>();
 }
 
 void CScenegraphSystem::__Create()

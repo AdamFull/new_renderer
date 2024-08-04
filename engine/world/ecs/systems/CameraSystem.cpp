@@ -13,6 +13,7 @@ using namespace engine::world::ecs;
 CCameraSystem::CCameraSystem(IRenderInterface* render_interface)
 {
 	m_pRenderInterface = render_interface;
+	CEntityManager::RegisterComponent<FCameraComponent>();
 }
 
 void CCameraSystem::__Create()

@@ -7,7 +7,7 @@ using namespace engine::world;
 entt::registry CEntityManager::m_registry{};
 entt::entity CEntityManager::m_root{};
 utl::vector<std::unique_ptr<ecs::ISystem>> CEntityManager::m_vSystems;
-utl::hash_map<entt::id_type, FComponentMeta> CEntityManager::m_meta;
+utl::vector<FComponentMeta> CEntityManager::m_meta;
 
 entt::entity CEntityManager::CreateRoot(const std::string& name)
 {
@@ -91,33 +91,24 @@ bool CEntityManager::IsValid(entt::entity entity)
 
 ecs::IComponent* CEntityManager::AddComponent(entt::entity entity, entt::id_type type)
 {
-	if (auto found = m_meta.find(type); found != m_meta.end())
-	{
-		auto& meta = found->second;
-		return meta.create(m_registry, entity);
-	}
+	if (auto found = std::find_if(m_meta.begin(), m_meta.end(), [type](const FComponentMeta& meta) {return meta.type == type; }); found != m_meta.end())
+		return found->create(m_registry, entity);
 
 	return nullptr;
 }
 
 ecs::IComponent* CEntityManager::TryGetComponent(entt::entity entity, entt::id_type type)
 {
-	if (auto found = m_meta.find(type); found != m_meta.end())
-	{
-		auto& meta = found->second;
-		return meta.get(m_registry, entity);
-	}
+	if (auto found = std::find_if(m_meta.begin(), m_meta.end(), [type](const FComponentMeta& meta) {return meta.type == type; }); found != m_meta.end())
+		return found->try_get(m_registry, entity);
 
 	return nullptr;
 }
 
 bool CEntityManager::HasComponent(entt::entity entity, entt::id_type type)
 {
-	if (auto found = m_meta.find(type); found != m_meta.end())
-	{
-		auto& meta = found->second;
-		return meta.check(m_registry, entity);
-	}
+	if (auto found = std::find_if(m_meta.begin(), m_meta.end(), [type](const FComponentMeta& meta) {return meta.type == type; }); found != m_meta.end())
+		return found->has(m_registry, entity);
 
 	return false;
 }
@@ -132,7 +123,7 @@ nlohmann::json CEntityManager::SerializeEntity(entt::entity entity)
 	j["visible"] = base.visible;
 
 	auto& components = j["components"];
-	IterateComponents(entity, [&components](ecs::IComponent* component) { component->Serialize(components); });
+	IterateComponents(entity, [&components](ecs::IComponent* component, const FComponentMeta& meta) { component->Serialize(components); });
 
 	auto& children = j["children"];
 	auto& hierarchy = m_registry.get<ecs::FHierarchyComponent>(entity);
@@ -152,7 +143,7 @@ entt::entity CEntityManager::DeserializeEntity(entt::entity parent, const nlohma
 	j.at("visible").get_to(base.visible);
 
 	auto& components = j["components"];
-	IterateComponents(entity, [&components](ecs::IComponent* component) { component->Deserialize(components); });
+	IterateComponents(entity, [&components](ecs::IComponent* component, const FComponentMeta& meta) { component->Deserialize(components); });
 
 	auto& hierarchy = m_registry.get<ecs::FHierarchyComponent>(entity);
 	auto& children = j["children"];

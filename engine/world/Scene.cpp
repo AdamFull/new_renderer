@@ -115,16 +115,6 @@ CScene::CScene(IVirtualFileSystemInterface* vfs, render::IRenderInterface* rende
 	m_pVFS = vfs;
 	m_pRenderInterface = render_interface;
 
-	//CEntityManager::RegisterComponent<FBaseComponent>();
-	CEntityManager::RegisterComponent<FCameraComponent>();
-	CEntityManager::RegisterComponent<FDirectionalLightComponent>();
-	//CEntityManager::RegisterComponent<FHierarchyComponent>();
-	CEntityManager::RegisterComponent<FMeshComponent>();
-	CEntityManager::RegisterComponent<FPointLightComponent>();
-	//CEntityManager::RegisterComponent<FRootComponent>();
-	CEntityManager::RegisterComponent<FSpotLightComponent>();
-	CEntityManager::RegisterComponent<FTransformComponent>();
-
 	CEntityManager::RegisterSystem<ecs::CInputSystem>();
 	CEntityManager::RegisterSystem<ecs::CAnimationSystem>();
 	CEntityManager::RegisterSystem<ecs::CScenegraphSystem>();
@@ -134,17 +124,6 @@ CScene::CScene(IVirtualFileSystemInterface* vfs, render::IRenderInterface* rende
 	CEntityManager::RegisterSystem<ecs::CShadowsSystem>(render_interface);
 	CEntityManager::RegisterSystem<ecs::CLightingSystem>(render_interface);
 	CEntityManager::RegisterSystem<ecs::CMeshSystem>(render_interface);
-
-	//m_systems.emplace_back(std::make_unique<ecs::CInputSystem>());
-	//m_systems.emplace_back(std::make_unique<ecs::CAnimationSystem>());
-	//m_systems.emplace_back(std::make_unique<ecs::CScenegraphSystem>());
-	////m_systems.emplace_back(std::make_unique<ecs::CAnimationSystem>());
-	//m_systems.emplace_back(std::make_unique<ecs::CSkinningSystem>(render_interface));
-	//
-	//m_systems.emplace_back(std::make_unique<ecs::CCameraSystem>(render_interface));
-	//m_systems.emplace_back(std::make_unique<ecs::CShadowsSystem>(render_interface));
-	//m_systems.emplace_back(std::make_unique<ecs::CLightingSystem>(render_interface));
-	//m_systems.emplace_back(std::make_unique<ecs::CMeshSystem>(render_interface));
 }
 
 CScene::~CScene()

@@ -35,12 +35,12 @@ void CInspectorWindow::__draw(float fDt)
 
 		if (ImGui::BeginPopup("add_component_popup"))
 		{
-			CEntityManager::IterateRegisteredComponents([entity = selected](const auto& type, const auto& meta)
+			CEntityManager::IterateRegisteredComponents([entity = selected](const FComponentMeta& meta)
 				{
-					if (!CEntityManager::HasComponent(entity, type))
+					if (!CEntityManager::HasComponent(entity, meta.type))
 					{
 						if (ImGui::MenuItem(meta.name))
-							CEntityManager::AddComponent(entity, type);
+							CEntityManager::AddComponent(entity, meta.type);
 					}
 				});
 
@@ -52,13 +52,12 @@ void CInspectorWindow::__draw(float fDt)
 		ImGui::GTextInput("Name", &base.name);
 		ImGui::Separator();
 
-		CEntityManager::IterateComponents(selected, [](ecs::IComponent* component) 
+		CEntityManager::IterateComponents(selected, [](ecs::IComponent* component, const FComponentMeta& meta)
 			{
-				auto* name = component->GetName();
-				if (name)
+				if (meta.name && !(meta.flags & EComponentFlagBits::eHiddenInEditor))
 				{
-					ImGui::PushID(name);
-					if (ImGui::CollapsingHeader(name, ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap))
+					ImGui::PushID(meta.name);
+					if (ImGui::CollapsingHeader(meta.name, ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap))
 					{
 						component->OnEdit();
 						ImGui::Separator();
@@ -79,23 +78,9 @@ void CInspectorWindow::__draw(float fDt)
 
 				if (fs::is_audio_format(source))
 				{
-					//if (!CEntityManager::TryGetComponent<ecs::FAudioComponent>(selected))
-					//{
-					//	ecs::FAudioComponent naudio{};
-					//	naudio.source = source;
-					//
-					//	CEntityManager::AddComponent<ecs::FAudioComponent>(selected, std::move(naudio));
-					//}
 				}
 				else if (fs::is_script_format(source))
 				{
-					//if (!CEntityManager::TryGetComponent<ecs::FScriptComponent>(selected))
-					//{
-					//	ecs::FScriptComponent nscript{};
-					//	nscript.source = source;
-					//
-					//	CEntityManager::AddComponent<ecs::FScriptComponent>(selected, std::move(nscript));
-					//}
 				}
 			}
 			ImGui::EndDragDropTarget();

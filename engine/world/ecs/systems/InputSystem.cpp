@@ -20,6 +20,7 @@ using namespace engine::world::ecs;
 
 CInputSystem::CInputSystem()
 {
+	
 }
 
 void CInputSystem::__Create()

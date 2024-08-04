@@ -80,6 +80,8 @@ void prepare_draw_commands(const std::unique_ptr<IRenderWorld>& render_world, ut
 CMeshSystem::CMeshSystem(render::IRenderInterface* render_interface)
 {
 	m_pRenderInterface = render_interface;
+
+	CEntityManager::RegisterComponent<FMeshComponent>();
 }
 
 void CMeshSystem::__Create()

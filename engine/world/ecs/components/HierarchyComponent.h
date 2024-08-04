@@ -12,6 +12,7 @@ namespace engine
 			{
 				DECLARE_COMPONENT(FHierarchyComponent, icon::entity, "Hierarchy")
 
+				FHierarchyComponent(){};
 				FHierarchyComponent(entt::entity parent) : parent(parent) {}
 				entt::entity parent{ entt::null };
 				utl::vector<entt::entity> children{};

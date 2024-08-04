@@ -115,6 +115,8 @@ namespace engine
 			virtual void Create(const std::string& name, const FTextureCreateInfo& create_info) = 0;
 			virtual void Create(const std::string& name, const FTextureCreateInfo& create_info, FTextureUploadInfo&& upload_info) = 0;
 
+			virtual void GetPixel(u32 x, u32 y, u8* data) = 0;
+
 			virtual void GetDimensions(u32* width, u32* height = nullptr, u32* depth = nullptr) = 0;
 			virtual void GetMipLevelCount(u32* mip_count) = 0;
 			virtual void GetLayerCount(u32* layer_count) = 0;

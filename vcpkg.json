@@ -57,6 +57,7 @@
       "name": "backward-cpp",
       "version>=": "1.6#1"
     },
+    "refl-cpp",
     "meshoptimizer",
     "nlohmann-json",
     "mimalloc",

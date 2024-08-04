@@ -12,33 +12,41 @@ namespace engine
 {
 	namespace world
 	{
+		enum class EComponentFlagBits
+		{
+			eNone = 0,
+			eHiddenInEditor = 1 << 0
+		};
+		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(EComponentFlags, EComponentFlagBits);
+
 		struct FComponentMeta
 		{
-			using fn_sign_1_t = std::function<ecs::IComponent*(entt::registry&, entt::entity)>;
-			using fn_sign_2_t = std::function<void(entt::registry&, entt::entity)>;
-			using fn_sign_3_t = std::function<bool(entt::registry&, entt::entity)>;
+			const char* name{ nullptr };
+			entt::id_type type{};
+			EComponentFlags flags{};
 
-			const char* name;
-			fn_sign_1_t create;
-			fn_sign_2_t destroy;
-			fn_sign_3_t check;
-			fn_sign_1_t get;
+			std::function<ecs::IComponent* (entt::registry&, entt::entity)> create;
+			std::function<ecs::IComponent* (entt::registry&, entt::entity)> try_get;
+			std::function<void(entt::registry&, entt::entity)> destroy;
+			std::function<bool(entt::registry&, entt::entity)> has;
+			std::function<void(entt::registry&, entt::entity)> edit;
 		};
 
 		class CEntityManager
 		{
 		public:
 			template<typename _Ty>
-			static void RegisterComponent()
+			static void RegisterComponent(EComponentFlags flags = EComponentFlagBits::eNone)
 			{
-				entt::id_type type = entt::type_hash<_Ty>::value();
-
-				auto& meta = m_meta[type];
+				auto& meta = m_meta.emplace_back();
 				meta.name = _Ty::_Name.data();
+				meta.type = entt::type_hash<_Ty>::value();
+
 				meta.create = [](entt::registry& registry, entt::entity entity) -> ecs::IComponent* { return (ecs::IComponent*)(&registry.emplace<_Ty>(entity, _Ty{})); };
+				meta.try_get = [](entt::registry& registry, entt::entity entity) -> ecs::IComponent* { return (ecs::IComponent*)registry.try_get<_Ty>(entity); };
 				meta.destroy = [](entt::registry& registry, entt::entity entity) { registry.remove<_Ty>(entity); };
-				meta.check = [](entt::registry& registry, entt::entity entity) { return registry.any_of<_Ty>(entity); };
-				meta.get = [](entt::registry& registry, entt::entity entity) -> ecs::IComponent* { return (ecs::IComponent*)registry.try_get<_Ty>(entity); };
+				meta.has = [](entt::registry& registry, entt::entity entity) { return registry.any_of<_Ty>(entity); };
+				meta.edit = [](entt::registry&, entt::entity) {};
 			}
 
 			template<typename _Ty, typename... _Args>
@@ -76,7 +84,10 @@ namespace engine
 				for (auto&& storage : m_registry.storage())
 				{
 					if (auto& set = storage.second; set.contains(entity))
-						func(static_cast<ecs::IComponent*>(set.get(entity)));
+					{
+						if (auto found = std::find_if(m_meta.begin(), m_meta.end(), [type = storage.first](const FComponentMeta& meta) {return meta.type == type; }); found != m_meta.end())
+							func(static_cast<ecs::IComponent*>(set.get(entity)), *found);
+					}
 				}
 			}
 
@@ -112,8 +123,8 @@ namespace engine
 			template<typename _Func>
 			static void IterateRegisteredComponents(_Func&& func)
 			{
-				for (const auto& [type, meta] : m_meta)
-					func(type, meta);
+				for (const auto& meta : m_meta)
+					func(meta);
 			}
 
 
@@ -130,7 +141,7 @@ namespace engine
 			static entt::registry m_registry;
 			static entt::entity m_root;
 			static utl::vector<std::unique_ptr<ecs::ISystem>> m_vSystems;
-			static utl::hash_map<entt::id_type, FComponentMeta> m_meta;
+			static utl::vector<FComponentMeta> m_meta;
 		};
 	}
 }

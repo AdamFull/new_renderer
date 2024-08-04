@@ -78,7 +78,7 @@ add_subdirectory(tools/scene_compiler)
 
 add_subdirectory(engine)
 
-add_executable(${PROJECT_NAME} main.cpp Application.cpp)
+add_executable(${PROJECT_NAME} main.cpp Application.cpp )
 
 target_link_libraries(${PROJECT_NAME} 
     PUBLIC imgui
