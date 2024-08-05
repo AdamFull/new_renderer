@@ -1,9 +1,24 @@
 #pragma once
 
+#include <nlohmann/json.hpp>
 #include <refl.hpp>
 
 namespace engine
 {
+	namespace conc
+	{
+		template<typename _Ty>
+		concept Reflectable = std::is_class_v<_Ty> && refl::is_reflectable<_Ty>();
+
+
+		template<typename _Ty>
+		concept Serializable = requires(nlohmann::json & j, const _Ty & t) 
+		{
+			{ to_json(j, t) } -> std::same_as<void>;
+			{ from_json(j, std::declval<_Ty&>()) } -> std::same_as<void>;
+		};
+	}
+
 	namespace attr
 	{
 		struct HiddenField : refl::attr::usage::type, refl::attr::usage::field, refl::attr::usage::function {};
