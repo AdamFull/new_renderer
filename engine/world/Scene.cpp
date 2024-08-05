@@ -462,7 +462,7 @@ void CScene::LoadCameraComponent(const easygltf::FGLTFRoot& root, const entt::en
 	FCameraComponent camera_component;
 	if (camera.type == easygltf::base::enumerators::camera_type::orthographic)
 	{
-		camera_component.type = ECameraType::eOrthographic;
+		camera_component.ctype = ECameraType::eOrthographic;
 		camera_component.xmag = camera.orthographic.xmag;
 		camera_component.ymag = camera.orthographic.ymag;
 		camera_component.nearPlane = camera.orthographic.znear;
@@ -470,7 +470,7 @@ void CScene::LoadCameraComponent(const easygltf::FGLTFRoot& root, const entt::en
 	}
 	else if (camera.type == easygltf::base::enumerators::camera_type::perspective)
 	{
-		camera_component.type = ECameraType::ePerspective;
+		camera_component.ctype = ECameraType::ePerspective;
 		camera_component.aspectRatio = camera.perspective.aspectRatio;
 		camera_component.fieldOfView = glm::degrees(2.0f * glm::atan(glm::tan(camera.perspective.yfov * 0.5f) * camera.perspective.aspectRatio));
 		camera_component.nearPlane = camera.perspective.znear;

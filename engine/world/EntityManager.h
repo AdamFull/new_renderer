@@ -5,6 +5,7 @@
 #include <nlohmann/json.hpp>
 #include <standart_library.h>
 
+#include <engine/integrations/imgui/editor/InspectorDrawer.h>
 #include <engine/world/ecs/systems/BaseSystem.h>
 #include <engine/world/ecs/components/components.h>
 
@@ -29,7 +30,7 @@ namespace engine
 			std::function<ecs::IComponent* (entt::registry&, entt::entity)> try_get;
 			std::function<void(entt::registry&, entt::entity)> destroy;
 			std::function<bool(entt::registry&, entt::entity)> has;
-			std::function<void(entt::registry&, entt::entity)> edit;
+			std::function<void(CInspectorDrawer&, entt::registry&, entt::entity)> edit;
 		};
 
 		class CEntityManager
@@ -46,7 +47,12 @@ namespace engine
 				meta.try_get = [](entt::registry& registry, entt::entity entity) -> ecs::IComponent* { return (ecs::IComponent*)registry.try_get<_Ty>(entity); };
 				meta.destroy = [](entt::registry& registry, entt::entity entity) { registry.remove<_Ty>(entity); };
 				meta.has = [](entt::registry& registry, entt::entity entity) { return registry.any_of<_Ty>(entity); };
-				meta.edit = [](entt::registry&, entt::entity) {};
+				meta.edit = [](CInspectorDrawer& drawer, entt::registry& registry, entt::entity entity) 
+					{
+						auto* component = registry.try_get<_Ty>(entity);
+						if (component)
+							drawer.Draw(*component);
+					};
 			}
 
 			template<typename _Ty, typename... _Args>

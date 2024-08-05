@@ -57,3 +57,8 @@ namespace engine
 		}
 	}
 }
+
+REFL_AUTO(
+	type(engine::world::ecs::FMeshComponent),
+	field(castShadows, engine::attr::ToggleField())
+)

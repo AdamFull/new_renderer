@@ -37,7 +37,7 @@ namespace engine
 			{
 				DECLARE_COMPONENT(FCameraComponent, icon::camera, "Camera")
 
-				ECameraType type{ ECameraType::ePerspective };
+				ECameraType ctype{ ECameraType::ePerspective };
 
 				f32 fieldOfView{ 45.f };
 				f32 nearPlane{ 0.1f };
@@ -64,7 +64,7 @@ namespace engine
 				std::vector<FPupa> pupas;
 
 				DECLARE_FIELDS(
-					FDECL(type, "Type", DropdownField<2>({ "ortho", "perspective" })),
+					FDECL(ctype, "Type", DropdownField<2>({ "ortho", "perspective" })),
 					FDECL(fieldOfView, "FOV", DragField(0.01f, 0.f, 180.f)),
 					FDECL(nearPlane, "Near", DragField(0.01f, 0.01f, 0.f)),
 					FDECL(farPlane, "Far", DragField(0.01f, 0.01f, 0.f)),
@@ -79,3 +79,15 @@ namespace engine
 		}
 	}
 }
+
+REFL_AUTO(
+	type(engine::world::ecs::FCameraComponent),
+	field(ctype),
+	field(fieldOfView, engine::attr::DragField(0.f, 180.f)),
+	field(nearPlane, engine::attr::DragField(0.f, FLT_MAX)),
+	field(farPlane, engine::attr::DragField(0.f, FLT_MAX)),
+	field(aspectRatio, engine::attr::DragField(0.f, FLT_MAX)),
+	field(xmag, engine::attr::DragField(0.f, 0.f)),
+	field(ymag, engine::attr::DragField(0.f, 0.f))
+	//field(ctype, engine::attr::DropdownField<2>({ "ortho", "perspective" }))
+)

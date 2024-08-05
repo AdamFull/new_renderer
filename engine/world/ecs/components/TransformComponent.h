@@ -37,3 +37,11 @@ namespace engine
 		}
 	}
 }
+
+REFL_AUTO(
+	type(engine::world::ecs::FTransformComponent),
+	field(lposition, engine::attr::DragField(-FLT_MAX, FLT_MAX)),
+	field(lrotation, engine::attr::DragField(-1.f, 1.f)),
+	field(lscale, engine::attr::DragField(0.f, FLT_MAX)),
+	field(lmodel, engine::attr::HiddenField())
+)
