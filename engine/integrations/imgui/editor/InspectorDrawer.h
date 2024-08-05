@@ -38,31 +38,21 @@ namespace engine
 			return ImGui::Input<_Ty, _Count>(field_name, obj, min, max);
 		}
 
-
-		template<size_t _Count, typename _Ty, glm::qualifier _Q>
-		bool PropertyEdit(const char* field_name, glm::vec<_Count, _Ty, _Q>& obj, attr::SliderField<_Ty>& attr)
-		{
-			return SliderEdit<_Ty, _Count>(field_name, reinterpret_cast<_Ty*>(&obj), attr.min, attr.max);
-		}
-
-		template<size_t _Count, typename _Ty, glm::qualifier _Q>
-		bool PropertyEdit(const char* field_name, glm::vec<_Count, _Ty, _Q>& obj, attr::DragField<_Ty>& attr)
-		{
-			return DragEdit<_Ty, _Count>(field_name, reinterpret_cast<_Ty*>(&obj), attr.min, attr.max);
-		}
-
-		template<size_t _Count, typename _Ty, glm::qualifier _Q>
-		bool PropertyEdit(const char* field_name, glm::vec<_Count, _Ty, _Q>& obj, attr::InputField<_Ty>& attr)
-		{
-			return InputEdit<_Ty, _Count>(field_name, reinterpret_cast<_Ty*>(&obj), attr.min, attr.max);
-		}
-
-
-		template<typename _Ty, glm::qualifier _Q>
-		bool PropertyEdit(const char* field_name, glm::qua<_Ty, _Q>& obj, attr::SliderField<_Ty>& attr)
+		template<typename _Ty, glm::qualifier _Q, template<typename> class FieldType>
+		bool PropertyEdit(const char* field_name, glm::qua<_Ty, _Q>& obj, FieldType<_Ty>& attr)
 		{
 			glm::vec<3ull, _Ty, _Q> angles = glm::degrees(glm::eulerAngles(obj));
-			if (SliderEdit<_Ty, 3>(field_name, reinterpret_cast<_Ty*>(&angles), attr.min, attr.max))
+			bool edited{ false };
+
+			auto* ptr = reinterpret_cast<_Ty*>(&angles);
+			if constexpr (std::is_same_v<FieldType<_Ty>, attr::SliderField<_Ty>>)
+				edited = SliderEdit<_Ty, 3>(field_name, ptr, attr.min, attr.max);
+			else if constexpr (std::is_same_v<FieldType<_Ty>, attr::DragField<_Ty>>)
+				edited = DragEdit<_Ty, 3>(field_name, ptr, attr.min, attr.max);
+			else if constexpr (std::is_same_v<FieldType<_Ty>, attr::InputField<_Ty>>)
+				edited = InputEdit<_Ty, 3>(field_name, ptr, attr.min, attr.max);
+
+			if (edited)
 			{
 				obj = glm::qua<_Ty, _Q>(glm::radians(angles));
 				return true;
@@ -70,49 +60,32 @@ namespace engine
 			return false;
 		}
 
-		template<typename _Ty, glm::qualifier _Q>
-		bool PropertyEdit(const char* field_name, glm::qua<_Ty, _Q>& obj, attr::DragField<_Ty>& attr)
+		template<size_t _Count, typename _Ty, glm::qualifier _Q, template<typename> class FieldType>
+		bool PropertyEdit(const char* field_name, glm::vec<_Count, _Ty, _Q>& obj, FieldType<_Ty>& attr)
 		{
-			glm::vec<3ull, _Ty, _Q> angles = glm::degrees(glm::eulerAngles(obj));
-			if (DragEdit<_Ty, 3>(field_name, reinterpret_cast<_Ty*>(&angles), attr.min, attr.max))
-			{
-				obj = glm::qua<_Ty, _Q>(glm::radians(angles));
-				return true;
-			}
-			return false;
+			auto* ptr = reinterpret_cast<_Ty*>(&obj);
+			if constexpr (std::is_same_v<FieldType<_Ty>, attr::SliderField<_Ty>>)
+				return SliderEdit<_Ty, _Count>(field_name, ptr, attr.min, attr.max);
+			else if constexpr (std::is_same_v<FieldType<_Ty>, attr::DragField<_Ty>>)
+				return DragEdit<_Ty, _Count>(field_name, ptr, attr.min, attr.max);
+			else if constexpr (std::is_same_v<FieldType<_Ty>, attr::InputField<_Ty>>)
+				return InputEdit<_Ty, _Count>(field_name, ptr, attr.min, attr.max);
+			else
+				return false;
 		}
 
-		template<typename _Ty, glm::qualifier _Q>
-		bool PropertyEdit(const char* field_name, glm::qua<_Ty, _Q>& obj, attr::InputField<_Ty>& attr)
+		template<typename _Ty, template<typename> class FieldType>
+		bool PropertyEdit(const char* field_name, _Ty& obj, FieldType<_Ty>& attr)
 		{
-			glm::vec<3ull, _Ty, _Q> angles = glm::degrees(glm::eulerAngles(obj));
-			if (InputEdit<_Ty, 3>(field_name, reinterpret_cast<_Ty*>(&angles), attr.min, attr.max))
-			{
-				obj = glm::qua<_Ty, _Q>(glm::radians(angles));
-				return true;
-			}
-			return false;
+			if constexpr (std::is_same_v<FieldType<_Ty>, attr::SliderField<_Ty>>)
+				return SliderEdit<_Ty, 1>(field_name, &obj, attr.min, attr.max);
+			else if constexpr (std::is_same_v<FieldType<_Ty>, attr::DragField<_Ty>>)
+				return DragEdit<_Ty, 1>(field_name, &obj, attr.min, attr.max);
+			else if constexpr (std::is_same_v<FieldType<_Ty>, attr::InputField<_Ty>>)
+				return InputEdit<_Ty, 1>(field_name, &obj, attr.min, attr.max);
+			else
+				return false;
 		}
-
-
-		template<typename _Ty>
-		bool PropertyEdit(const char* field_name, _Ty& obj, attr::SliderField<_Ty>& attr)
-		{
-			return SliderEdit<_Ty, 1>(field_name, reinterpret_cast<_Ty*>(&obj), attr.min, attr.max);
-		}
-
-		template<typename _Ty>
-		bool PropertyEdit(const char* field_name, _Ty& obj, attr::DragField<_Ty>& attr)
-		{
-			return DragEdit<_Ty, 1>(field_name, reinterpret_cast<_Ty*>(&obj), attr.min, attr.max);
-		}
-
-		template<typename _Ty>
-		bool PropertyEdit(const char* field_name, _Ty& obj, attr::InputField<_Ty>& attr)
-		{
-			return InputEdit<_Ty, 1>(field_name, reinterpret_cast<_Ty*>(&obj), attr.min, attr.max);
-		}
-
 
 		template<typename _Element>
 		bool PropertyEdit(int idx, _Element& element)
@@ -164,7 +137,7 @@ namespace engine
 		{
 			if constexpr (refl::is_reflectable<_Ty>())
 				return Draw(obj);
-			if constexpr (has_attribute<attr::SliderField>(member))
+			else if constexpr (has_attribute<attr::SliderField>(member))
 			{
 				auto attr = get_attribute<attr::SliderField>(member);
 				return PropertyEdit(field_name, obj, attr);

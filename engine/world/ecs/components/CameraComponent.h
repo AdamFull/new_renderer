@@ -78,5 +78,4 @@ REFL_AUTO(
 	field(xmag, engine::attr::DragField(0.f, 0.f)),
 	field(ymag, engine::attr::DragField(0.f, 0.f)),
 	field(pupas)
-	//field(ctype, engine::attr::DropdownField<2>({ "ortho", "perspective" }))
 )
