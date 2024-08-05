@@ -211,7 +211,7 @@ bool ImGui::GCheckbox(const char* label, bool* value)
         });
 }
 
-bool ImGui::GColorEdit3(const char* label, glm::vec3& value)
+bool ImGui::GColorEdit3(const char* label, float* value)
 {
     static glm::vec3 oldValue{ 0.f };
 
@@ -229,8 +229,10 @@ bool ImGui::GColorEdit3(const char* label, glm::vec3& value)
         Text(label);
 
         TableNextColumn();
-        bValueChanged = ColorEdit3("##light_color", glm::value_ptr(value));
-        ApplyPropertyChange(oldValue, &value);
+        PushItemWidth(GetContentRegionAvail().x);
+        bValueChanged = ColorEdit3("##light_color", value);
+        PopItemWidth();
+        //ApplyPropertyChange(oldValue, &value);
 
         EndTable();
     }
@@ -240,7 +242,7 @@ bool ImGui::GColorEdit3(const char* label, glm::vec3& value)
     return bValueChanged;
 }
 
-bool ImGui::GColorEdit4(const char* label, glm::vec4& value)
+bool ImGui::GColorEdit4(const char* label, float* value)
 {
     static glm::vec4 oldValue{ 0.f };
 
@@ -258,8 +260,8 @@ bool ImGui::GColorEdit4(const char* label, glm::vec4& value)
         Text(label);
 
         TableNextColumn();
-        bValueChanged = ColorEdit4("##", glm::value_ptr(value), misc_flags);
-        ApplyPropertyChange(oldValue, &value);
+        bValueChanged = ColorEdit4("##", value, misc_flags);
+        //ApplyPropertyChange(oldValue, &value);
 
         EndTable();
     }

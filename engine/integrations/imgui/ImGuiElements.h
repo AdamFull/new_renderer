@@ -2,6 +2,7 @@
 
 #include <standart_library.h>
 #include <glm/glm.hpp>
+#include <glm/gtx/quaternion.hpp>
 #include "ImGuiTraits.h"
 #include <imgui_internal.h>
 
@@ -41,8 +42,8 @@ namespace ImGui
     void GText(const char* label, const char* fmt, ...);
     bool GTextInput(const char* label, std::string* value, bool enabled = true);
     bool GCheckbox(const char* label, bool* value);
-    bool GColorEdit3(const char* label, glm::vec3& value);
-    bool GColorEdit4(const char* label, glm::vec4& value);
+    bool GColorEdit3(const char* label, float* value);
+    bool GColorEdit4(const char* label, float* value);
 
     bool GDragTransform(glm::vec3& pos, glm::quat& rot, glm::vec3& scale, float step = 0.01f, float min = 0.0f, float max = 0.0f);
     bool GAssetHolder(const char* label, const std::string& source);
@@ -71,7 +72,6 @@ namespace ImGui
 
             TableSetColumnIndex(1);
 
-            PushMultiItemsWidths(_Count, GetContentRegionAvail().x);
             PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 0, 0 });
 
             auto defautl_button_flags = ImGuiButtonRounding_RoundTopLeft | ImGuiButtonRounding_RoundBottomLeft | ImGuiButtonRounding_ConcaveTopRight | ImGuiButtonRounding_ConcaveBottomRight;
@@ -122,89 +122,89 @@ namespace ImGui
     }
 
     template<typename _Ty, size_t _Count = 1>
-    bool Drag(const char* label, _Ty* value, _Ty min, _Ty max, float speed, const char* format)
+    bool Drag(const char* label, _Ty* value, _Ty min, _Ty max, float speed)
     {
         return UniversalEdit<_Ty, _Count>(label, value,
-            [min, max, speed, format](const char* label, _Ty* value)
+            [min, max, speed](const char* label, _Ty* value)
             {
-                return DragScalar(label, DataTypeByType_v<_Ty>, value, speed, &min, &max, format);
+                return DragScalar(label, DataTypeByType_v<_Ty>, value, speed, &min, &max, FormatByType_v<_Ty>);
             });
     }
 
     template<typename _Ty, size_t _Count = 1>
-    bool Slider(const char* label, _Ty* value, _Ty min, _Ty max, const char* format)
+    bool Slider(const char* label, _Ty* value, _Ty min, _Ty max)
     {
         return UniversalEdit<_Ty, _Count>(label, value,
-            [min, max, format](const char* label, _Ty* value)
+            [min, max](const char* label, _Ty* value)
             {
-                return SliderScalar(label, DataTypeByType_v<_Ty>, value, &min, &max, format);
+                return SliderScalar(label, DataTypeByType_v<_Ty>, value, &min, &max, FormatByType_v<_Ty>);
             });
     }
 
     template<typename _Ty, size_t _Count = 1>
-    bool Input(const char* label, _Ty* value, _Ty step, _Ty fast_step, const char* format)
+    bool Input(const char* label, _Ty* value, _Ty step, _Ty fast_step)
     {
         return UniversalEdit<_Ty, _Count>(label, value,
-            [step, fast_step, format](const char* label, _Ty* value)
+            [step, fast_step](const char* label, _Ty* value)
             {
-                return InputScalar(label, DataTypeByType_v<_Ty>, value, &step, &fast_step, format);
+                return InputScalar(label, DataTypeByType_v<_Ty>, value, &step, &fast_step, FormatByType_v<_Ty>);
             });
     }
 
     template<size_t _Count>
     bool GDragInt(const char* label, int* value, float speed = 1.f, int min = 0, int max = 0)
     {
-        return Drag<int, _Count>(label, value, min, max, speed, "%d");
+        return Drag<int, _Count>(label, value, min, max, speed);
     }
 
     template<size_t _Count>
     bool GDragFloat(const char* label, float* value, float speed = 1.f, float min = 0.f, float max = 0.f)
     {
-        return Drag<float, _Count>(label, value, min, max, speed, "%.3f");
+        return Drag<float, _Count>(label, value, min, max, speed);
     }
 
     template<size_t _Count>
     bool GDragDouble(const char* label, double* value, float speed = 1.f, double min = 0.0, double max = 0.0)
     {
-        return Drag<double, _Count>(label, value, min, max, speed, "%.3f");
+        return Drag<double, _Count>(label, value, min, max, speed);
     }
 
 
     template<size_t _Count>
     bool GSliderInt(const char* label, int* value, int min, int max)
     {
-        return Slider<int, _Count>(label, value, min, max, "%d");
+        return Slider<int, _Count>(label, value, min, max);
     }
 
     template<size_t _Count>
     bool GSliderFloat(const char* label, float* value, float min, float max)
     {
-        return Slider<float, _Count>(label, value, min, max, "%.3f");
+        return Slider<float, _Count>(label, value, min, max);
     }
 
     template<size_t _Count>
     bool GSliderDouble(const char* label, double* value, double min, double max)
     {
-        return Slider<double, _Count>(label, value, min, max, "%.6f");
+        return Slider<double, _Count>(label, value, min, max);
     }
 
 
     template<size_t _Count>
     bool GInputInt(const char* label, int* value, int step, int fast_step)
     {
-        return Input<int, _Count>(label, value, step, fast_step, "%d");
+        return Input<int, _Count>(label, value, step, fast_step);
     }
 
     template<size_t _Count>
     bool GInputFloat(const char* label, float* value, float step, float fast_step)
     {
-        return Input<float, _Count>(label, value, step, fast_step, "%.3f");
+        return Input<float, _Count>(label, value, step, fast_step);
     }
 
     template<size_t _Count>
     bool GInputDouble(const char* label, double* value, double step, double fast_step)
     {
-        return Input<double, _Count>(label, value, step, fast_step, "%.6f");
+        return Input<double, _Count>(label, value, step, fast_step);
     }
 
     template<typename _Element>
@@ -221,36 +221,5 @@ namespace ImGui
                 TreePop();
             }
         }
-    }
-
-
-    template <typename _Container>
-    void DrawContainerEdit(const char* label, _Container& container);
-
-    template <typename _Ty>
-    void DrawContainerEdit(const char* label, std::vector<_Ty>& container)
-    {
-        PushID(label);
-
-        if (ImGui::TreeNodeEx(label, ImGuiTreeNodeFlags_DefaultOpen))
-        {
-            int size = static_cast<int>(container.size());
-            if (GDragInt<1>("Size", &size, 1, 1))
-            {
-                if (size < 0) size = 0;
-
-                if (size != static_cast<int>(container.size()))
-                    container.resize(size);
-            }
-
-            for (int i = 0; i < size; ++i)
-                DrawElementEdit(i, container[i]);
-
-            if (Button("Add"))
-                container.emplace_back(_Ty{});
-
-            TreePop();
-        }
-        PopID();
     }
 }

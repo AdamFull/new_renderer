@@ -56,7 +56,7 @@ namespace engine
 				utl::vector<u64> indices{};
 			};
 
-			struct FRootComponent : public IComponent
+			struct FRootComponent
 			{
 				DECLARE_COMPONENT(FRootComponent, icon::entity, "Root")
 

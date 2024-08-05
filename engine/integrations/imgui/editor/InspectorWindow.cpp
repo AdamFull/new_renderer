@@ -37,7 +37,7 @@ void CInspectorWindow::__draw(float fDt)
 		{
 			CEntityManager::IterateRegisteredComponents([entity = selected](const FComponentMeta& meta)
 				{
-					if (!CEntityManager::HasComponent(entity, meta.type))
+					if (!meta.has(entity))
 					{
 						if (ImGui::MenuItem(meta.name))
 							CEntityManager::AddComponent(entity, meta.type);
@@ -52,14 +52,15 @@ void CInspectorWindow::__draw(float fDt)
 		ImGui::GTextInput("Name", &base.name);
 		ImGui::Separator();
 
-		CEntityManager::IterateComponents(selected, [](ecs::IComponent* component, const FComponentMeta& meta)
+		CEntityManager::IterateComponents(selected, [&](void* component, const FComponentMeta& meta)
 			{
 				if (meta.name && !(meta.flags & EComponentFlagBits::eHiddenInEditor))
 				{
 					ImGui::PushID(meta.name);
 					if (ImGui::CollapsingHeader(meta.name, ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap))
 					{
-						component->OnEdit();
+						meta.edit(m_drawer, selected);
+						//component->OnEdit();
 						ImGui::Separator();
 					}
 					ImGui::PopID();

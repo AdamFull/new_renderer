@@ -8,7 +8,7 @@ namespace engine
 	{
 		namespace ecs
 		{
-			struct FPointLightComponent : public IComponent
+			struct FPointLightComponent
 			{
 				DECLARE_COMPONENT(FPointLightComponent, icon::point_light, "Point light")
 
@@ -17,13 +17,6 @@ namespace engine
 				f32 radius{ 1.f };
 				int shadowIndex{ -1 };
 				bool castShadows{ true };
-
-				DECLARE_FIELDS(
-					FDECL(color, "Color", ColorEditField()),
-					FDECL(intencity, "Intencity", DragField(0.01f, 0.f, 1000.f)),
-					FDECL(radius, "Radius", DragField(0.01f, 0.f, FLT_MAX)),
-					FDECL(castShadows, "Cast shadows", ToggleField())
-				)
 			};
 		}
 	}

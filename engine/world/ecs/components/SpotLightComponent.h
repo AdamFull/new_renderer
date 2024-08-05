@@ -8,7 +8,7 @@ namespace engine
 	{
 		namespace ecs
 		{
-			struct FSpotLightComponent : public  IComponent
+			struct FSpotLightComponent
 			{
 				DECLARE_COMPONENT(FSpotLightComponent, icon::spot_light, "Spot light")
 
@@ -20,16 +20,6 @@ namespace engine
 				bool toTarget{ false };
 				int shadowIndex{ -1 };
 				bool castShadows{ true };
-
-				DECLARE_FIELDS(
-					FDECL(color, "Color", ColorEditField()),
-					FDECL(target, "Target", DragField(0.01f, 0.f, 0.f)),
-					FDECL(intencity, "Intencity", DragField(0.01f, 0.f, 1000.f)),
-					FDECL(innerAngle, "Inner angle", DragField(0.01f, 0.f, 3.14f)),
-					FDECL(outerAngle, "Outer angle", DragField(0.01f, 0.f, 3.14f)),
-					FDECL(toTarget, "To target", ToggleField()), 
-					FDECL(castShadows, "Cast shadows", ToggleField())
-				)
 			};
 		}
 	}

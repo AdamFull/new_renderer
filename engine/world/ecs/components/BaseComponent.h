@@ -8,7 +8,7 @@ namespace engine
 	{
 		namespace ecs
 		{
-			struct FBaseComponent : public IComponent
+			struct FBaseComponent
 			{
 				DECLARE_COMPONENT(FBaseComponent, icon::entity, "Base")
 

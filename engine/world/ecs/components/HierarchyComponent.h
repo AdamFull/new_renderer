@@ -8,7 +8,7 @@ namespace engine
 	{
 		namespace ecs
 		{
-			struct FHierarchyComponent : public IComponent
+			struct FHierarchyComponent
 			{
 				DECLARE_COMPONENT(FHierarchyComponent, icon::entity, "Hierarchy")
 

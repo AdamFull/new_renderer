@@ -42,17 +42,13 @@ namespace engine
 				utl::vector<render::FTriangle> triangles{};
 			};
 
-			struct FMeshComponent : public IComponent
+			struct FMeshComponent
 			{
 				DECLARE_COMPONENT(FMeshComponent, icon::shape, "Mesh renderer")
 
 				utl::vector<FMeshPrimitive> primitives{};
 				int32_t skin{ -1 };
 				bool castShadows{ true };
-
-				DECLARE_FIELDS(
-					FDECL(castShadows, "Cast shadows", ToggleField())
-				)
 			};
 		}
 	}

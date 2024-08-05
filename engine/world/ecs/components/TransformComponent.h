@@ -8,7 +8,7 @@ namespace engine
 	{
 		namespace ecs
 		{
-			struct FTransformComponent : public IComponent
+			struct FTransformComponent
 			{
 				DECLARE_COMPONENT(FTransformComponent, icon::transform, "Transform")
 
@@ -26,13 +26,6 @@ namespace engine
 				glm::mat4 lmodel{ 1.f };
 				glm::mat4 oldmodel{ 1.f };
 				glm::mat4 normal{ 1.f };
-
-				DECLARE_FIELDS(
-					FDECL(lposition, "Position", DragField(0.01f, -FLT_MAX, FLT_MAX)),
-					FDECL(lrotation, "Rotation", DragField(0.01f, -1.f, 1.f)),
-					FDECL(lscale, "Scale", DragField(0.01f, 0.f, FLT_MAX)),
-					FDECL(lmodel, "Model", NoEdit{})
-				);
 			};
 		}
 	}
@@ -41,7 +34,7 @@ namespace engine
 REFL_AUTO(
 	type(engine::world::ecs::FTransformComponent),
 	field(lposition, engine::attr::DragField(-FLT_MAX, FLT_MAX)),
-	field(lrotation, engine::attr::DragField(-1.f, 1.f)),
+	field(lrotation, engine::attr::DragField(0.f, 0.f)),
 	field(lscale, engine::attr::DragField(0.f, FLT_MAX)),
 	field(lmodel, engine::attr::HiddenField())
 )

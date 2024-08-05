@@ -8,7 +8,7 @@ namespace engine
 	{
 		namespace ecs
 		{
-			struct FDirectionalLightComponent : public IComponent
+			struct FDirectionalLightComponent
 			{
 				DECLARE_COMPONENT(FDirectionalLightComponent, icon::directional_light, "Directional light")
 
@@ -16,12 +16,6 @@ namespace engine
 				f32 intencity{ 1.f };
 				int shadowIndex{ -1 };
 				bool castShadows{ true };
-
-				DECLARE_FIELDS(
-					FDECL(color, "Color", ColorEditField()),
-					FDECL(intencity, "Intencity", DragField(0.01f, 0.f, 1000.f)),
-					FDECL(castShadows, "Cast shadows", ToggleField())
-				)
 			};
 		}
 	}

@@ -20,20 +20,15 @@ namespace engine
 					{ECameraType::ePerspective, "perspective"}
 				})
 
-			struct FPupa : public IComponent
+			struct FPupa
 			{
 				DECLARE_COMPONENT(FPupa, icon::shape, "Pupa")
 
 				f32 biba{ 45.f };
 				f32 boba{ 0.1f };
-
-				DECLARE_FIELDS(
-					FDECL(biba, "Biba", DragField(0.01f, 0.f, 0.f)),
-					FDECL(boba, "Boba", DragField(0.01f, 0.f, 0.f))
-					)
 			};
 
-			struct FCameraComponent : public IComponent
+			struct FCameraComponent
 			{
 				DECLARE_COMPONENT(FCameraComponent, icon::camera, "Camera")
 
@@ -62,23 +57,16 @@ namespace engine
 				u64 frustumID{ ~0ull };
 
 				std::vector<FPupa> pupas;
-
-				DECLARE_FIELDS(
-					FDECL(ctype, "Type", DropdownField<2>({ "ortho", "perspective" })),
-					FDECL(fieldOfView, "FOV", DragField(0.01f, 0.f, 180.f)),
-					FDECL(nearPlane, "Near", DragField(0.01f, 0.01f, 0.f)),
-					FDECL(farPlane, "Far", DragField(0.01f, 0.01f, 0.f)),
-					FDECL(aspectRatio, "Aspect", DragField(0.01f, 0.01f, 0.f)),
-					FDECL(xmag, "XMag", DragField(0.01f, 0.01f, 0.f)),
-					FDECL(ymag, "YMag", DragField(0.01f, 0.01f, 0.f)),
-					FDECL(pupas, "Pupa vector", ContainerField<FPupa>())
-				)
-
-				//
 			};
 		}
 	}
 }
+
+REFL_AUTO(
+	type(engine::world::ecs::FPupa),
+	field(biba, engine::attr::DragField(0.f, 0.f)),
+	field(boba, engine::attr::DragField(0.f, 0.f))
+)
 
 REFL_AUTO(
 	type(engine::world::ecs::FCameraComponent),
@@ -88,6 +76,7 @@ REFL_AUTO(
 	field(farPlane, engine::attr::DragField(0.f, FLT_MAX)),
 	field(aspectRatio, engine::attr::DragField(0.f, FLT_MAX)),
 	field(xmag, engine::attr::DragField(0.f, 0.f)),
-	field(ymag, engine::attr::DragField(0.f, 0.f))
+	field(ymag, engine::attr::DragField(0.f, 0.f)),
+	field(pupas)
 	//field(ctype, engine::attr::DropdownField<2>({ "ortho", "perspective" }))
 )

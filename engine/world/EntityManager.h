@@ -26,11 +26,13 @@ namespace engine
 			entt::id_type type{};
 			EComponentFlags flags{};
 
-			std::function<ecs::IComponent* (entt::registry&, entt::entity)> create;
-			std::function<ecs::IComponent* (entt::registry&, entt::entity)> try_get;
-			std::function<void(entt::registry&, entt::entity)> destroy;
-			std::function<bool(entt::registry&, entt::entity)> has;
-			std::function<void(CInspectorDrawer&, entt::registry&, entt::entity)> edit;
+			std::function<void* (entt::entity)> create;
+			std::function<void* (entt::entity)> try_get;
+			std::function<void(entt::entity)> destroy;
+			std::function<bool(entt::entity)> has;
+			std::function<void(CInspectorDrawer&, entt::entity)> edit;
+			std::function<void(nlohmann::json& , entt::entity)> serialize;
+			std::function<void(const nlohmann::json& , entt::entity)> deserialize;
 		};
 
 		class CEntityManager
@@ -42,16 +44,38 @@ namespace engine
 				auto& meta = m_meta.emplace_back();
 				meta.name = _Ty::_Name.data();
 				meta.type = entt::type_hash<_Ty>::value();
+				meta.flags = flags;
 
-				meta.create = [](entt::registry& registry, entt::entity entity) -> ecs::IComponent* { return (ecs::IComponent*)(&registry.emplace<_Ty>(entity, _Ty{})); };
-				meta.try_get = [](entt::registry& registry, entt::entity entity) -> ecs::IComponent* { return (ecs::IComponent*)registry.try_get<_Ty>(entity); };
-				meta.destroy = [](entt::registry& registry, entt::entity entity) { registry.remove<_Ty>(entity); };
-				meta.has = [](entt::registry& registry, entt::entity entity) { return registry.any_of<_Ty>(entity); };
-				meta.edit = [](CInspectorDrawer& drawer, entt::registry& registry, entt::entity entity) 
+				meta.create = [&registry = m_registry](entt::entity entity) -> void* { return (&registry.emplace<_Ty>(entity, _Ty{})); };
+				meta.try_get = [&registry = m_registry](entt::entity entity) -> void* { return registry.try_get<_Ty>(entity); };
+				meta.destroy = [&registry = m_registry](entt::entity entity) { registry.remove<_Ty>(entity); };
+				meta.has = [&registry = m_registry](entt::entity entity) { return registry.any_of<_Ty>(entity); };
+
+				meta.edit = [&registry = m_registry](CInspectorDrawer& drawer, entt::entity entity)
 					{
 						auto* component = registry.try_get<_Ty>(entity);
 						if (component)
 							drawer.Draw(*component);
+					};
+
+				meta.serialize = [&registry = m_registry](nlohmann::json& j, entt::entity entity)
+					{
+						if constexpr (refl::is_reflectable<_Ty>())
+						{
+							auto* component = registry.try_get<_Ty>(entity);
+							if (component)
+								Serialize(j, *component);
+						}
+					};
+
+				meta.deserialize = [&registry = m_registry](const nlohmann::json& j, entt::entity entity)
+					{
+						if constexpr (refl::is_reflectable<_Ty>())
+						{
+							auto* component = registry.try_get<_Ty>(entity);
+							if (component)
+								Deserialize(j, *component);
+						}
 					};
 			}
 
@@ -92,7 +116,7 @@ namespace engine
 					if (auto& set = storage.second; set.contains(entity))
 					{
 						if (auto found = std::find_if(m_meta.begin(), m_meta.end(), [type = storage.first](const FComponentMeta& meta) {return meta.type == type; }); found != m_meta.end())
-							func(static_cast<ecs::IComponent*>(set.get(entity)), *found);
+							func(set.get(entity), *found);
 					}
 				}
 			}
@@ -122,8 +146,8 @@ namespace engine
 			}
 
 			// Some runtime stuff
-			static ecs::IComponent* AddComponent(entt::entity entity, entt::id_type type);
-			static ecs::IComponent* TryGetComponent(entt::entity entity, entt::id_type type);
+			static void* AddComponent(entt::entity entity, entt::id_type type);
+			static void* TryGetComponent(entt::entity entity, entt::id_type type);
 			static bool HasComponent(entt::entity entity, entt::id_type type);
 
 			template<typename _Func>

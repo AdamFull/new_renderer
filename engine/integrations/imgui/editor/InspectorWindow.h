@@ -1,6 +1,7 @@
 #pragma once
 
 #include "EditorWindow.h"
+#include "InspectorDrawer.h"
 #include <engine/world/ecs/components/components.h>
 
 namespace engine
@@ -13,6 +14,7 @@ namespace engine
 
 		void Create() override;
 	private:
+		CInspectorDrawer m_drawer{};
 		void __draw(float fDt) override;
 	};
 }
