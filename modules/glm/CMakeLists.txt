@@ -1,0 +1,5 @@
+
+file(GLOB GLM_MODULES ${CMAKE_CURRENT_LIST_DIR}/*.cppm)
+
+add_library(glm STATIC)
+target_sources(glm PUBLIC FILE_SET CXX_MODULES FILES ${GLM_MODULES})
