@@ -20,105 +20,6 @@ namespace engine
 	class CInspectorDrawer
 	{
 	public:
-		template<typename _Ty, size_t _Count>
-		bool SliderEdit(const char* field_name, _Ty* obj, const _Ty& min, const _Ty& max)
-		{
-			return ImGui::Slider<_Ty, _Count>(field_name, obj, attr.min, attr.max);
-		}
-
-		template<typename _Ty, size_t _Count>
-		bool DragEdit(const char* field_name, _Ty* obj, const _Ty& min, const _Ty& max)
-		{
-			return ImGui::Drag<_Ty, _Count>(field_name, obj, min, max, 1.f);
-		}
-
-		template<typename _Ty, size_t _Count>
-		bool InputEdit(const char* field_name, _Ty* obj, const _Ty& min, const _Ty& max)
-		{
-			return ImGui::Input<_Ty, _Count>(field_name, obj, min, max);
-		}
-
-
-		template<typename _Ty, glm::qualifier _Q>
-		bool PropertyEdit(const char* field_name, glm::qua<_Ty, _Q>& obj, attr::SliderField<_Ty>& attr)
-		{
-			glm::vec<3ull, _Ty, _Q> angles = glm::degrees(glm::eulerAngles(obj));
-			if(SliderEdit<_Ty, 3>(field_name, reinterpret_cast<_Ty*>(&angles), attr.min, attr.max))
-			{
-				obj = glm::qua<_Ty, _Q>(glm::radians(angles));
-				return true;
-			}
-			return false;
-		}
-
-		template<typename _Ty, glm::qualifier _Q>
-		bool PropertyEdit(const char* field_name, glm::qua<_Ty, _Q>& obj, attr::DragField<_Ty>& attr)
-		{
-			glm::vec<3ull, _Ty, _Q> angles = glm::degrees(glm::eulerAngles(obj));
-			if (DragEdit<_Ty, 3>(field_name, reinterpret_cast<_Ty*>(&angles), attr.min, attr.max))
-			{
-				obj = glm::qua<_Ty, _Q>(glm::radians(angles));
-				return true;
-			}
-			return false;
-		}
-
-		template<typename _Ty, glm::qualifier _Q>
-		bool PropertyEdit(const char* field_name, glm::qua<_Ty, _Q>& obj, attr::InputField<_Ty>& attr)
-		{
-			glm::vec<3ull, _Ty, _Q> angles = glm::degrees(glm::eulerAngles(obj));
-			if (InputEdit<_Ty, 3>(field_name, reinterpret_cast<_Ty*>(&angles), attr.min, attr.max))
-			{
-				obj = glm::qua<_Ty, _Q>(glm::radians(angles));
-				return true;
-			}
-			return false;
-		}
-
-
-		template<size_t _Count, typename _Ty, glm::qualifier _Q>
-		bool PropertyEdit(const char* field_name, glm::vec<_Count, _Ty, _Q>& obj, attr::SliderField<_Ty>& attr)
-		{
-			return SliderEdit<_Ty, _Count>(field_name, reinterpret_cast<_Ty*>(&obj), attr.min, attr.max);
-		}
-
-		template<size_t _Count, typename _Ty, glm::qualifier _Q>
-		bool PropertyEdit(const char* field_name, glm::vec<_Count, _Ty, _Q>& obj, attr::DragField<_Ty>& attr)
-		{
-			return DragEdit<_Ty, _Count>(field_name, reinterpret_cast<_Ty*>(&obj), attr.min, attr.max);
-		}
-
-		template<size_t _Count, typename _Ty, glm::qualifier _Q>
-		bool PropertyEdit(const char* field_name, glm::vec<_Count, _Ty, _Q>& obj, attr::InputField<_Ty>& attr)
-		{
-			return InputEdit<_Ty, _Count>(field_name, reinterpret_cast<_Ty*>(&obj), attr.min, attr.max);
-		}
-
-
-		template<typename _Ty>
-		bool PropertyEdit(const char* field_name, _Ty& obj, attr::SliderField<_Ty>& attr)
-		{
-			return SliderEdit<_Ty, 1>(field_name, &obj, attr.min, attr.max);
-		}
-
-		template<typename _Ty>
-		bool PropertyEdit(const char* field_name, _Ty& obj, attr::DragField<_Ty>& attr)
-		{
-			return DragEdit<_Ty, 1>(field_name, &obj, attr.min, attr.max);
-		}
-
-		template<typename _Ty>
-		bool PropertyEdit(const char* field_name, _Ty& obj, attr::InputField<_Ty>& attr)
-		{
-			return InputEdit<_Ty, 1>(field_name, &obj, attr.min, attr.max);
-		}
-
-
-		bool PropertyEdit(const char* field_name, bool& val)
-		{
-			return ImGui::GCheckbox(field_name, &val);
-		}
-
 		template<typename _Element>
 		bool PropertyEdit(int idx, _Element& element)
 		{
@@ -208,26 +109,40 @@ namespace engine
 			return false;
 		}
 
+		template<typename _Member, typename _Ty, glm::qualifier _Q, size_t _Count>
+		bool PropertyEdit(_Member member, const char* field_name, glm::vec<_Count, _Ty, _Q>& obj)
+		{
+			attr::Range<_Ty> range;
+			if constexpr (has_attribute<attr::Range>(member))
+				range = get_attribute<attr::Range>(member);
+
+			auto* ptr = reinterpret_cast<_Ty*>(&obj);
+
+			if constexpr (has_attribute<attr::SliderField>(member))
+				return ImGui::Slider<_Ty, _Count>(field_name, ptr, range.min, range.max);
+			else if constexpr (has_attribute<attr::InputField>(member))
+				return ImGui::Input<_Ty, _Count>(field_name, ptr, range.min, range.max);
+
+			return ImGui::Drag<_Ty, _Count>(field_name, reinterpret_cast<_Ty*>(&obj), range.min, range.max, 0.01f);
+		}
+
+		template<typename _Member, typename _Ty, glm::qualifier _Q>
+		bool PropertyEdit(_Member member, const char* field_name, glm::qua<_Ty, _Q>& obj)
+		{
+			auto angles = glm::degrees(glm::eulerAngles(obj));
+			if (PropertyEdit(member, field_name, angles))
+			{
+				obj = glm::qua<_Ty, _Q>(glm::radians(angles));
+				return true;
+			}
+			return false;
+		}
+
 		template<typename _Member, typename _Ty>
 		bool PropertyEdit(_Member member, const char* field_name, _Ty& obj)
 		{
 			if constexpr (refl::is_reflectable<_Ty>())
 				return Draw(obj);
-			else if constexpr (has_attribute<attr::SliderField>(member))
-			{
-				auto attr = get_attribute<attr::SliderField>(member);
-				return PropertyEdit(field_name, obj, attr);
-			}
-			else if constexpr (has_attribute<attr::DragField>(member))
-			{
-				auto attr = get_attribute<attr::DragField>(member);
-				return PropertyEdit(field_name, obj, attr);
-			}
-			else if constexpr (has_attribute<attr::InputField>(member))
-			{
-				auto attr = get_attribute<attr::InputField>(member);
-				return PropertyEdit(field_name, obj, attr);
-			}
 			else if constexpr (has_attribute<attr::ColorField>(member))
 			{
 				return ImGui::GColorEdit3(field_name, reinterpret_cast<f32*>(&obj));

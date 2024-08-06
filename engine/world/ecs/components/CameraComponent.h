@@ -71,18 +71,18 @@ namespace engine
 
 REFL_AUTO(
 	type(engine::world::ecs::FPupa),
-	field(biba, engine::attr::DragField(0.f, 0.f)),
-	field(boba, engine::attr::DragField(0.f, 0.f))
+	field(biba, engine::attr::Range(0.f, 0.f)),
+	field(boba, engine::attr::Range(0.f, 0.f))
 )
 
 REFL_AUTO(
 	type(engine::world::ecs::FCameraComponent),
 	field(ctype),
-	field(fieldOfView, engine::attr::DragField(0.f, 180.f)),
-	field(nearPlane, engine::attr::DragField(0.f, FLT_MAX)),
-	field(farPlane, engine::attr::DragField(0.f, FLT_MAX)),
-	field(aspectRatio, engine::attr::DragField(0.f, FLT_MAX)),
-	field(xmag, engine::attr::DragField(0.f, 0.f)),
-	field(ymag, engine::attr::DragField(0.f, 0.f)),
+	field(fieldOfView, engine::attr::Range(0.f, 180.f)),
+	field(nearPlane, engine::attr::Range(0.f, FLT_MAX)),
+	field(farPlane, engine::attr::Range(0.f, FLT_MAX)),
+	field(aspectRatio, engine::attr::Range(0.f, FLT_MAX)),
+	field(xmag, engine::attr::Range(0.f, 0.f)),
+	field(ymag, engine::attr::Range(0.f, 0.f)),
 	field(pupas)
 )

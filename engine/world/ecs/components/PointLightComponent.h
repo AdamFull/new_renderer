@@ -25,7 +25,7 @@ namespace engine
 REFL_AUTO(
 	type(engine::world::ecs::FPointLightComponent),
 	field(color, engine::attr::ColorField()),
-	field(intencity, engine::attr::DragField(0.f, 0.f)),
-	field(radius, engine::attr::DragField(0.f, FLT_MAX)),
+	field(intencity, engine::attr::Range(0.f, 0.f)),
+	field(radius, engine::attr::Range(0.f, FLT_MAX)),
 	field(castShadows)
 )

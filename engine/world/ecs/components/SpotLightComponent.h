@@ -28,10 +28,10 @@ namespace engine
 REFL_AUTO(
 	type(engine::world::ecs::FSpotLightComponent),
 	field(color, engine::attr::ColorField()),
-	field(target, engine::attr::DragField(0.f, 0.f)),
-	field(intencity, engine::attr::DragField(0.f, 0.f)),
-	field(innerAngle, engine::attr::DragField(0.f, 3.14f)),
-	field(outerAngle, engine::attr::DragField(0.f, 3.14f)),
+	field(target, engine::attr::Range(0.f, 0.f)),
+	field(intencity, engine::attr::Range(0.f, 0.f)),
+	field(innerAngle, engine::attr::Range(0.f, 3.14f)),
+	field(outerAngle, engine::attr::Range(0.f, 3.14f)),
 	field(toTarget),
 	field(castShadows)
 )

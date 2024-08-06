@@ -33,8 +33,8 @@ namespace engine
 
 REFL_AUTO(
 	type(engine::world::ecs::FTransformComponent),
-	field(lposition, engine::attr::DragField(-FLT_MAX, FLT_MAX)),
-	field(lrotation, engine::attr::DragField(0.f, 0.f)),
-	field(lscale, engine::attr::DragField(0.f, FLT_MAX)),
+	field(lposition, engine::attr::Range(-FLT_MAX, FLT_MAX)),
+	field(lrotation, engine::attr::Range(0.f, 0.f)),
+	field(lscale, engine::attr::Range(0.f, FLT_MAX)),
 	field(lmodel, engine::attr::HiddenField())
 )

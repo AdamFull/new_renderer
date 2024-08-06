@@ -24,6 +24,6 @@ namespace engine
 REFL_AUTO(
 	type(engine::world::ecs::FDirectionalLightComponent),
 	field(color, engine::attr::ColorField()),
-	field(intencity, engine::attr::DragField(0.f, 0.f)),
+	field(intencity, engine::attr::Range(0.f, 0.f)),
 	field(castShadows)
 )

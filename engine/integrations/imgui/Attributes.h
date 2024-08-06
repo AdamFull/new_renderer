@@ -38,30 +38,16 @@ namespace engine
 		struct HiddenField : refl::attr::usage::type, refl::attr::usage::field, refl::attr::usage::function {};
 
 		template<typename _Ty>
-		struct EditableField : refl::attr::usage::field, refl::attr::usage::function
+		struct Range : refl::attr::usage::field, refl::attr::usage::function
 		{
-			constexpr EditableField(_Ty min, _Ty max) : min(min), max(max) {}
+			constexpr Range() {}
+			constexpr Range(_Ty min, _Ty max) : min(min), max(max) {}
 			_Ty min;
 			_Ty max;
 		};
 
-		template<typename _Ty>
-		struct SliderField : EditableField<_Ty> 
-		{
-			constexpr SliderField(_Ty min, _Ty max) : EditableField<_Ty>(min, max) {}
-		};
-
-		template<typename _Ty>
-		struct DragField : EditableField<_Ty> 
-		{
-			constexpr DragField(_Ty min, _Ty max) : EditableField<_Ty>(min, max) {}
-		};
-
-		template<typename _Ty>
-		struct InputField : EditableField<_Ty> 
-		{
-			constexpr InputField(_Ty min, _Ty max) : EditableField<_Ty>(min, max) {}
-		};
+		struct SliderField : refl::attr::usage::type, refl::attr::usage::field, refl::attr::usage::function {};
+		struct InputField : refl::attr::usage::type, refl::attr::usage::field, refl::attr::usage::function {};
 
 		struct ColorField : refl::attr::usage::field, refl::attr::usage::function {};
 
