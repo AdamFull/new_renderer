@@ -61,12 +61,12 @@ namespace engine
 		}
 	}
 
-	//template<>
-	//inline constexpr std::array EnumEntries<engine::world::ecs::ECameraType> =
-	//{
-	//	std::pair{world::ecs::ECameraType::eOrthographic, "Orthographic"_hs},
-	//	std::pair{world::ecs::ECameraType::ePerspective, "Perspective"_hs}
-	//};
+	template<>
+	inline constexpr std::array EnumEntries<engine::world::ecs::ECameraType> =
+	{
+		std::pair{world::ecs::ECameraType::eOrthographic, "Orthographic"_hs},
+		std::pair{world::ecs::ECameraType::ePerspective, "Perspective"_hs}
+	};
 }
 
 REFL_AUTO(

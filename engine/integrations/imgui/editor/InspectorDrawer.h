@@ -38,21 +38,12 @@ namespace engine
 			return ImGui::Input<_Ty, _Count>(field_name, obj, min, max);
 		}
 
-		template<typename _Ty, glm::qualifier _Q, template<typename> class FieldType>
-		bool PropertyEdit(const char* field_name, glm::qua<_Ty, _Q>& obj, FieldType<_Ty>& attr)
+
+		template<typename _Ty, glm::qualifier _Q>
+		bool PropertyEdit(const char* field_name, glm::qua<_Ty, _Q>& obj, attr::SliderField<_Ty>& attr)
 		{
 			glm::vec<3ull, _Ty, _Q> angles = glm::degrees(glm::eulerAngles(obj));
-			bool edited{ false };
-
-			auto* ptr = reinterpret_cast<_Ty*>(&angles);
-			if constexpr (std::is_same_v<FieldType<_Ty>, attr::SliderField<_Ty>>)
-				edited = SliderEdit<_Ty, 3>(field_name, ptr, attr.min, attr.max);
-			else if constexpr (std::is_same_v<FieldType<_Ty>, attr::DragField<_Ty>>)
-				edited = DragEdit<_Ty, 3>(field_name, ptr, attr.min, attr.max);
-			else if constexpr (std::is_same_v<FieldType<_Ty>, attr::InputField<_Ty>>)
-				edited = InputEdit<_Ty, 3>(field_name, ptr, attr.min, attr.max);
-
-			if (edited)
+			if(SliderEdit<_Ty, 3>(field_name, reinterpret_cast<_Ty*>(&angles), attr.min, attr.max))
 			{
 				obj = glm::qua<_Ty, _Q>(glm::radians(angles));
 				return true;
@@ -60,32 +51,68 @@ namespace engine
 			return false;
 		}
 
-		template<size_t _Count, typename _Ty, glm::qualifier _Q, template<typename> class FieldType>
-		bool PropertyEdit(const char* field_name, glm::vec<_Count, _Ty, _Q>& obj, FieldType<_Ty>& attr)
+		template<typename _Ty, glm::qualifier _Q>
+		bool PropertyEdit(const char* field_name, glm::qua<_Ty, _Q>& obj, attr::DragField<_Ty>& attr)
 		{
-			auto* ptr = reinterpret_cast<_Ty*>(&obj);
-			if constexpr (std::is_same_v<FieldType<_Ty>, attr::SliderField<_Ty>>)
-				return SliderEdit<_Ty, _Count>(field_name, ptr, attr.min, attr.max);
-			else if constexpr (std::is_same_v<FieldType<_Ty>, attr::DragField<_Ty>>)
-				return DragEdit<_Ty, _Count>(field_name, ptr, attr.min, attr.max);
-			else if constexpr (std::is_same_v<FieldType<_Ty>, attr::InputField<_Ty>>)
-				return InputEdit<_Ty, _Count>(field_name, ptr, attr.min, attr.max);
-			else
-				return false;
+			glm::vec<3ull, _Ty, _Q> angles = glm::degrees(glm::eulerAngles(obj));
+			if (DragEdit<_Ty, 3>(field_name, reinterpret_cast<_Ty*>(&angles), attr.min, attr.max))
+			{
+				obj = glm::qua<_Ty, _Q>(glm::radians(angles));
+				return true;
+			}
+			return false;
 		}
 
-		template<typename _Ty, template<typename> class FieldType>
-		bool PropertyEdit(const char* field_name, _Ty& obj, FieldType<_Ty>& attr) requires std::is_arithmetic_v<_Ty>
+		template<typename _Ty, glm::qualifier _Q>
+		bool PropertyEdit(const char* field_name, glm::qua<_Ty, _Q>& obj, attr::InputField<_Ty>& attr)
 		{
-			if constexpr (std::is_same_v<FieldType<_Ty>, attr::SliderField<_Ty>>)
-				return SliderEdit<_Ty, 1>(field_name, &obj, attr.min, attr.max);
-			else if constexpr (std::is_same_v<FieldType<_Ty>, attr::DragField<_Ty>>)
-				return DragEdit<_Ty, 1>(field_name, &obj, attr.min, attr.max);
-			else if constexpr (std::is_same_v<FieldType<_Ty>, attr::InputField<_Ty>>)
-				return InputEdit<_Ty, 1>(field_name, &obj, attr.min, attr.max);
-			else
-				return false;
+			glm::vec<3ull, _Ty, _Q> angles = glm::degrees(glm::eulerAngles(obj));
+			if (InputEdit<_Ty, 3>(field_name, reinterpret_cast<_Ty*>(&angles), attr.min, attr.max))
+			{
+				obj = glm::qua<_Ty, _Q>(glm::radians(angles));
+				return true;
+			}
+			return false;
 		}
+
+
+		template<size_t _Count, typename _Ty, glm::qualifier _Q>
+		bool PropertyEdit(const char* field_name, glm::vec<_Count, _Ty, _Q>& obj, attr::SliderField<_Ty>& attr)
+		{
+			return SliderEdit<_Ty, _Count>(field_name, reinterpret_cast<_Ty*>(&obj), attr.min, attr.max);
+		}
+
+		template<size_t _Count, typename _Ty, glm::qualifier _Q>
+		bool PropertyEdit(const char* field_name, glm::vec<_Count, _Ty, _Q>& obj, attr::DragField<_Ty>& attr)
+		{
+			return DragEdit<_Ty, _Count>(field_name, reinterpret_cast<_Ty*>(&obj), attr.min, attr.max);
+		}
+
+		template<size_t _Count, typename _Ty, glm::qualifier _Q>
+		bool PropertyEdit(const char* field_name, glm::vec<_Count, _Ty, _Q>& obj, attr::InputField<_Ty>& attr)
+		{
+			return InputEdit<_Ty, _Count>(field_name, reinterpret_cast<_Ty*>(&obj), attr.min, attr.max);
+		}
+
+
+		template<typename _Ty>
+		bool PropertyEdit(const char* field_name, _Ty& obj, attr::SliderField<_Ty>& attr)
+		{
+			return SliderEdit<_Ty, 1>(field_name, &obj, attr.min, attr.max);
+		}
+
+		template<typename _Ty>
+		bool PropertyEdit(const char* field_name, _Ty& obj, attr::DragField<_Ty>& attr)
+		{
+			return DragEdit<_Ty, 1>(field_name, &obj, attr.min, attr.max);
+		}
+
+		template<typename _Ty>
+		bool PropertyEdit(const char* field_name, _Ty& obj, attr::InputField<_Ty>& attr)
+		{
+			return InputEdit<_Ty, 1>(field_name, &obj, attr.min, attr.max);
+		}
+
 
 		bool PropertyEdit(const char* field_name, bool& val)
 		{
@@ -148,28 +175,35 @@ namespace engine
 				auto it = std::find_if(EnumEntries<_Enum>.begin(), EnumEntries<_Enum>.end(), [val](auto& pair) { return pair.first == val; });
 				if (it != EnumEntries<_Enum>.end())
 					selected = it->second;
-		
+
 				bool changed = false;
-				if (ImGui::BeginCombo(field_name, selected))
+				if (ImGui::GBeginTable(field_name))
 				{
-					for (auto& [entry, entryString] : EnumEntries<_Enum>)
+					ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+					if (ImGui::BeginCombo(field_name, selected))
 					{
-						bool isSelected = val == entry;
-						if (ImGui::Selectable(entryString, isSelected))
+						for (auto& [entry, entryString] : EnumEntries<_Enum>)
 						{
-							val = entry;
-							changed = true;
+							bool isSelected = val == entry;
+							if (ImGui::Selectable(entryString, isSelected))
+							{
+								val = entry;
+								changed = true;
+							}
+
+							if (isSelected)
+								ImGui::SetItemDefaultFocus();
 						}
-		
-						if (isSelected)
-							ImGui::SetItemDefaultFocus();
+						ImGui::EndCombo();
 					}
-					ImGui::EndCombo();
+
+					ImGui::GEndTable();
 				}
+				
 				return changed;
 			}
-			//else
-			//	return ImGui::InputInt<1>(field_name, reinterpret_cast<std::underlying_type_t<_Enum>*>(&val));
+			else
+				return ImGui::InputInt<1>(field_name, reinterpret_cast<std::underlying_type_t<_Enum>*>(&val));
 
 			return false;
 		}

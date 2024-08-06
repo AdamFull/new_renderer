@@ -31,25 +31,14 @@ bool SimpleValueEdit(const char* label, _Ty* value, _Func&& function)
     static _Ty oldValue{};
     bool bValueChanged{ false };
 
-    ImGui::PushID(label);
-
-    if (ImGui::BeginTable("data_table", 2, ImGuiTableFlags_SizingFixedFit))
+    if (ImGui::GBeginTable(label))
     {
-        ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed, ImGui::columnWidth);
-        ImGui::TableSetupColumn("Controls", ImGuiTableColumnFlags_WidthStretch);
-
-        ImGui::TableNextColumn();
-        ImGui::Text(label);
-
-        ImGui::TableNextColumn();
         ImGui::SetNextItemWidth(-1.f);
         bValueChanged = function("##input", value);
         ApplyPropertyChange(oldValue, value);
 
-        ImGui::EndTable();
+        ImGui::GEndTable();
     }
-
-    ImGui::PopID();
 
     return bValueChanged;
 }
@@ -170,27 +159,15 @@ bool ImGui::GButtonBR(const char* label, const ImVec2& size)
 
 void ImGui::GText(const char* label, const char* fmt, ...)
 {
-    PushID(label);
-
-    if (BeginTable("data_table", 2, ImGuiTableFlags_SizingFixedFit))
+    if (GBeginTable(label))
     {
-        TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed, columnWidth);
-        TableSetupColumn("Controls", ImGuiTableColumnFlags_WidthStretch);
-
-        TableNextColumn();
-        Text(label);
-
-        TableNextColumn();
-
         va_list args;
         va_start(args, fmt);
         TextV(fmt, args);
         va_end(args);
 
-        EndTable();
+        GEndTable();
     }
-
-    PopID();
 }
 
 bool ImGui::GTextInput(const char* label, std::string* value, bool enabled)
@@ -218,26 +195,15 @@ bool ImGui::GColorEdit3(const char* label, float* value)
     ImGuiColorEditFlags misc_flags{};
     bool bValueChanged{ false };
 
-    PushID(label);
-
-    if (BeginTable("data_table", 2, ImGuiTableFlags_SizingFixedFit))
+    if (GBeginTable(label))
     {
-        TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed, columnWidth);
-        TableSetupColumn("Controls", ImGuiTableColumnFlags_WidthStretch);
-
-        TableNextColumn();
-        Text(label);
-
-        TableNextColumn();
         PushItemWidth(GetContentRegionAvail().x);
         bValueChanged = ColorEdit3("##light_color", value);
         PopItemWidth();
         //ApplyPropertyChange(oldValue, &value);
 
-        EndTable();
+        GEndTable();
     }
-
-    PopID();
 
     return bValueChanged;
 }
@@ -249,34 +215,14 @@ bool ImGui::GColorEdit4(const char* label, float* value)
     ImGuiColorEditFlags misc_flags{};
     bool bValueChanged{ false };
 
-    PushID(label);
-
-    if (BeginTable("data_table", 2, ImGuiTableFlags_SizingFixedFit))
+    if (GBeginTable(label))
     {
-        TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed, columnWidth);
-        TableSetupColumn("Controls", ImGuiTableColumnFlags_WidthStretch);
-
-        TableNextColumn();
-        Text(label);
-
-        TableNextColumn();
         bValueChanged = ColorEdit4("##", value, misc_flags);
         //ApplyPropertyChange(oldValue, &value);
 
-        EndTable();
+        GEndTable();
     }
 
-    PopID();
-
-    return bValueChanged;
-}
-
-bool ImGui::GDragTransform(glm::vec3& pos, glm::quat& rot, glm::vec3& scale, float step, float min, float max)
-{
-    bool bValueChanged{ false };
-    bValueChanged |= GDragFloat<3>("position", glm::value_ptr(pos), step, min, max);
-    bValueChanged |= GDragFloat<4>("rotation", glm::value_ptr(rot), step, min, max);
-    bValueChanged |= GDragFloat<3>("scale", glm::value_ptr(scale), step, min, max);
     return bValueChanged;
 }
 
@@ -284,31 +230,20 @@ bool ImGui::GAssetHolder(const char* label, const std::string& source)
 {
     bool result{ false };
 
-    PushID(label);
-
-    if (BeginTable("table", 2))
+    if (GBeginTable(label))
     {
-        TableNextColumn();
-        Text(label);
-
-        TableNextColumn();
         BeginDisabled(!source.empty());
         result = Button(source.empty() ? "+" : source.c_str(), ImVec2(-1.f, 0.f));
         EndDisabled();
 
-        EndTable();
+        GEndTable();
     }
-
-    PopID();
 
     return result;
 }
 
-bool ImGui::GCombo(const char* label, int* current_item, const char* const items[], int item_count, int height_in_items)
+bool ImGui::GBeginTable(const char* label)
 {
-    static int oldValue{ 0 };
-    bool result{ false };
-
     PushID(label);
 
     if (BeginTable("data_table", 2, ImGuiTableFlags_SizingFixedFit))
@@ -321,6 +256,25 @@ bool ImGui::GCombo(const char* label, int* current_item, const char* const items
 
         TableNextColumn();
 
+        return true;
+    }
+
+    return false;
+}
+
+void ImGui::GEndTable()
+{
+    EndTable();
+    PopID();
+}
+
+bool ImGui::GCombo(const char* label, int* current_item, const char* const items[], int item_count, int height_in_items)
+{
+    static int oldValue{ 0 };
+    bool result{ false };
+
+    if (GBeginTable(label))
+    {
         const char* preview = items[*current_item];
 
         SetNextItemWidth(GetContentRegionAvail().x);
@@ -339,10 +293,8 @@ bool ImGui::GCombo(const char* label, int* current_item, const char* const items
         }
 
         ApplyPropertyChange(oldValue, current_item);
-        EndTable();
+        GEndTable();
     }
-
-    PopID();
 
     return result;
 }

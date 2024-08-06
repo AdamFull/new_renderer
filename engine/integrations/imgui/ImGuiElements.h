@@ -45,8 +45,9 @@ namespace ImGui
     bool GColorEdit3(const char* label, float* value);
     bool GColorEdit4(const char* label, float* value);
 
-    bool GDragTransform(glm::vec3& pos, glm::quat& rot, glm::vec3& scale, float step = 0.01f, float min = 0.0f, float max = 0.0f);
     bool GAssetHolder(const char* label, const std::string& source);
+    bool GBeginTable(const char* label);
+    void GEndTable();
     bool GCombo(const char* label, int* current_item, const char* const items[], int item_count, int height_in_items = -1);
 
 
@@ -59,19 +60,8 @@ namespace ImGui
         ImGuiIO& io = GetIO();
         auto bold_font = io.Fonts->Fonts[0];
 
-        PushID(label);
-
-        if (BeginTable("UniversalEditTable", 2, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg))
+        if (GBeginTable(label))
         {
-            TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed, columnWidth);
-            TableSetupColumn("Controls", ImGuiTableColumnFlags_WidthStretch);
-            TableNextRow();
-
-            TableSetColumnIndex(0);
-            Text(label);
-
-            TableSetColumnIndex(1);
-
             PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 0, 0 });
 
             auto defautl_button_flags = ImGuiButtonRounding_RoundTopLeft | ImGuiButtonRounding_RoundBottomLeft | ImGuiButtonRounding_ConcaveTopRight | ImGuiButtonRounding_ConcaveBottomRight;
@@ -113,10 +103,8 @@ namespace ImGui
             }
 
             PopStyleVar();
-            EndTable();
+            GEndTable();
         }
-
-        PopID();
 
         return value_changed;
     }
