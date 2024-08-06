@@ -206,20 +206,4 @@ namespace ImGui
     {
         return Input<double, _Count>(label, value, step, fast_step);
     }
-
-    template<typename _Element>
-    void DrawElementEdit(int idx, _Element& element)
-    {
-        auto label = std::format("Element {}", idx);
-        if constexpr (std::is_arithmetic_v<_Element>)
-            Input<_Element, 1>(label.c_str(), &element, 1, 1, FormatByType_v<_Element>);
-        else
-        {
-            if (TreeNode(label.c_str()))
-            {
-                element.OnEdit();
-                TreePop();
-            }
-        }
-    }
 }

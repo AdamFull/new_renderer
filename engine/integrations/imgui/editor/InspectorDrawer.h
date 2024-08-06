@@ -132,6 +132,41 @@ namespace engine
 			return false;
 		}
 
+
+
+		template<typename _Enum>
+		bool PropertyEdit(const char* field_name, _Enum& val) requires std::is_enum_v<_Enum>
+		{
+			if constexpr (HasEnumEntries<_Enum>)
+			{
+				const char* selected{ nullptr };
+				auto it = std::find_if(EnumEntries<_Enum>.begin(), EnumEntries<_Enum>.end(), [val](auto& pair) { return pair.first == val; });
+				if (it != EnumEntries<_Enum>.end())
+					selected = it->second;
+		
+				bool changed = false;
+				if (ImGui::BeginCombo(field_name, selected))
+				{
+					for (auto& [entry, entryString] : EnumEntries<_Enum>)
+					{
+						bool isSelected = val == entry;
+						if (ImGui::Selectable(entryString, isSelected))
+						{
+							val = entry;
+							changed = true;
+						}
+		
+						if (isSelected)
+							ImGui::SetItemDefaultFocus();
+					}
+					ImGui::EndCombo();
+				}
+				return changed;
+			}
+			else
+				return ImGui::InputInt<1>(field_name, reinterpret_cast<std::underlying_type_t<_Enum>*>(&val));
+		}
+
 		template<typename _Member, typename _Ty>
 		bool PropertyEdit(_Member member, const char* field_name, _Ty& obj)
 		{
@@ -163,6 +198,10 @@ namespace engine
 			else if constexpr (traits::is_vector<_Ty>::value)
 			{
 				return PropertyEdit(field_name, obj);
+			}
+			else
+			{
+				PropertyEdit(field_name, obj);
 			}
 
 			return false;
