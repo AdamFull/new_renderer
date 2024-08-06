@@ -53,9 +53,12 @@ namespace engine
 
 				meta.edit = [&registry = m_registry](CInspectorDrawer& drawer, entt::entity entity)
 					{
-						auto* component = registry.try_get<_Ty>(entity);
-						if (component)
-							drawer.Draw(*component);
+						if constexpr (refl::is_reflectable<_Ty>())
+						{
+							auto* component = registry.try_get<_Ty>(entity);
+							if (component)
+								drawer.Draw(*component);
+						}
 					};
 
 				meta.serialize = [&registry = m_registry](nlohmann::json& j, entt::entity entity)

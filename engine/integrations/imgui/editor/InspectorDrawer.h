@@ -20,6 +20,60 @@ namespace engine
 	class CInspectorDrawer
 	{
 	public:
+		template<typename _Member, typename _Ty, glm::qualifier _Q, size_t _Count>
+		bool PropertyEdit(_Member member, const char* field_name, glm::vec<_Count, _Ty, _Q>& val)
+		{
+			attr::Range<_Ty> range;
+			if constexpr (has_attribute<attr::Range>(member))
+				range = get_attribute<attr::Range>(member);
+
+			auto* ptr = reinterpret_cast<_Ty*>(&val);
+
+			if constexpr (has_attribute<attr::SliderField>(member))
+				return ImGui::Slider<_Ty, _Count>(field_name, ptr, range.min, range.max);
+			else if constexpr (has_attribute<attr::InputField>(member))
+				return ImGui::Input<_Ty, _Count>(field_name, ptr, range.min, range.max);
+			else if constexpr(has_attribute<attr::ColorField>(member))
+				return ImGui::GColorEdit3(field_name, ptr);
+
+			return ImGui::Drag<_Ty, _Count>(field_name, ptr, range.min, range.max, 0.01f);
+		}
+
+		template<typename _Member, typename _Ty, glm::qualifier _Q>
+		bool PropertyEdit(_Member member, const char* field_name, glm::qua<_Ty, _Q>& val)
+		{
+			auto angles = glm::degrees(glm::eulerAngles(val));
+			if (PropertyEdit(member, field_name, angles))
+			{
+				val = glm::qua<_Ty, _Q>(glm::radians(angles));
+				return true;
+			}
+			return false;
+		}
+
+		template<typename _Member, typename _Ty>
+		bool PropertyEdit(_Member member, const char* field_name, _Ty& val) 
+			requires std::is_fundamental_v<_Ty> && std::is_arithmetic_v<_Ty> && !std::is_same_v<_Ty, bool>
+		{
+			attr::Range<_Ty> range;
+			if constexpr (has_attribute<attr::Range>(member))
+				range = get_attribute<attr::Range>(member);
+
+			if constexpr (has_attribute<attr::SliderField>(member))
+				return ImGui::Slider<_Ty, 1>(field_name, &val, range.min, range.max);
+			else if constexpr (has_attribute<attr::InputField>(member))
+				return ImGui::Input<_Ty, 1>(field_name, &val, range.min, range.max);
+
+			return ImGui::Drag<_Ty, 1>(field_name, &val, range.min, range.max, 0.01f);
+		}
+
+		template<typename _Ty>
+		bool PropertyEdit(const char* field_name, _Ty& val)
+			requires std::is_same_v<_Ty, bool>
+		{
+			return ImGui::GCheckbox(field_name, &val);
+		}
+
 		template<typename _Element>
 		bool PropertyEdit(int idx, _Element& element)
 		{
@@ -35,29 +89,29 @@ namespace engine
 				}
 			}
 		}
-		
+
 		template<typename _Ty>
 		bool PropertyEdit(const char* field_name, std::vector<_Ty>& container)
 		{
 			ImGui::PushID(field_name);
-		
+
 			if (ImGui::TreeNodeEx(field_name, ImGuiTreeNodeFlags_DefaultOpen))
 			{
 				int size = static_cast<int>(container.size());
 				if (ImGui::GDragInt<1>("Size", &size, 1, 1))
 				{
 					if (size < 0) size = 0;
-		
+
 					if (size != static_cast<int>(container.size()))
 						container.resize(size);
 				}
-		
+
 				for (int i = 0; i < size; ++i)
 					PropertyEdit(i, container[i]);
-		
+
 				if (ImGui::Button("Add"))
 					container.emplace_back(_Ty{});
-		
+
 				ImGui::TreePop();
 			}
 			ImGui::PopID();
@@ -100,7 +154,7 @@ namespace engine
 
 					ImGui::GEndTable();
 				}
-				
+
 				return changed;
 			}
 			else
@@ -109,71 +163,34 @@ namespace engine
 			return false;
 		}
 
-		template<typename _Member, typename _Ty, glm::qualifier _Q, size_t _Count>
-		bool PropertyEdit(_Member member, const char* field_name, glm::vec<_Count, _Ty, _Q>& obj)
+		template<typename _Member, typename _Ty>
+		bool PropertyEdit(_Member member, const char* field_name, _Ty& obj) 
+			requires conc::Reflectable<_Ty>
 		{
-			attr::Range<_Ty> range;
-			if constexpr (has_attribute<attr::Range>(member))
-				range = get_attribute<attr::Range>(member);
-
-			auto* ptr = reinterpret_cast<_Ty*>(&obj);
-
-			if constexpr (has_attribute<attr::SliderField>(member))
-				return ImGui::Slider<_Ty, _Count>(field_name, ptr, range.min, range.max);
-			else if constexpr (has_attribute<attr::InputField>(member))
-				return ImGui::Input<_Ty, _Count>(field_name, ptr, range.min, range.max);
-
-			return ImGui::Drag<_Ty, _Count>(field_name, reinterpret_cast<_Ty*>(&obj), range.min, range.max, 0.01f);
-		}
-
-		template<typename _Member, typename _Ty, glm::qualifier _Q>
-		bool PropertyEdit(_Member member, const char* field_name, glm::qua<_Ty, _Q>& obj)
-		{
-			auto angles = glm::degrees(glm::eulerAngles(obj));
-			if (PropertyEdit(member, field_name, angles))
-			{
-				obj = glm::qua<_Ty, _Q>(glm::radians(angles));
-				return true;
-			}
-			return false;
+			return Draw(obj);
 		}
 
 		template<typename _Member, typename _Ty>
 		bool PropertyEdit(_Member member, const char* field_name, _Ty& obj)
 		{
-			if constexpr (refl::is_reflectable<_Ty>())
-				return Draw(obj);
-			else if constexpr (has_attribute<attr::ColorField>(member))
-			{
-				return ImGui::GColorEdit3(field_name, reinterpret_cast<f32*>(&obj));
-			}
-			else
-			{
-				PropertyEdit(field_name, obj);
-			}
-
-			return false;
+			return PropertyEdit(field_name, obj);
 		}
 
 		template<typename _Ty>
 		bool Draw(_Ty& obj)
+			requires conc::Reflectable<_Ty>
 		{
-			if constexpr (refl::is_reflectable<_Ty>())
-			{
-				bool changed{ false };
-				// Find all displayable members
-				auto members = filter(refl::reflect<_Ty>().members, [](auto member) { return !has_attribute<attr::HiddenField>(member); });
+			bool changed{ false };
+			// Find all displayable members
+			auto members = filter(refl::reflect<_Ty>().members, [](auto member) { return !has_attribute<attr::HiddenField>(member); });
 
-				auto fields = filter(members, [](auto member) { return is_field(member); });
-				for_each(fields, [&](auto member)
-					{
-						changed |= PropertyEdit(member, member.name.c_str(), member(obj));
-					});
+			auto fields = filter(members, [](auto member) { return is_field(member); });
+			for_each(fields, [&](auto member)
+				{
+					changed |= PropertyEdit(member, member.name.c_str(), member(obj));
+				});
 
-				return changed;
-			}
-
-			return false;
-			}
+			return changed;
+		}
 	};
 }
