@@ -64,7 +64,6 @@ namespace engine
 		};
 
 		struct ColorField : refl::attr::usage::field, refl::attr::usage::function {};
-		struct ToggleField : refl::attr::usage::field, refl::attr::usage::function {};
 
 		template<size_t N>
 		struct DropdownField : refl::attr::usage::field, refl::attr::usage::function { std::array<const char*, N> fields; };

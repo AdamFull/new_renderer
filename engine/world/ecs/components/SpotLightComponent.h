@@ -32,6 +32,6 @@ REFL_AUTO(
 	field(intencity, engine::attr::DragField(0.f, 0.f)),
 	field(innerAngle, engine::attr::DragField(0.f, 3.14f)),
 	field(outerAngle, engine::attr::DragField(0.f, 3.14f)),
-	field(toTarget, engine::attr::ToggleField()),
-	field(castShadows, engine::attr::ToggleField())
+	field(toTarget),
+	field(castShadows)
 )

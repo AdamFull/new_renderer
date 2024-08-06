@@ -75,7 +75,7 @@ namespace engine
 		}
 
 		template<typename _Ty, template<typename> class FieldType>
-		bool PropertyEdit(const char* field_name, _Ty& obj, FieldType<_Ty>& attr)
+		bool PropertyEdit(const char* field_name, _Ty& obj, FieldType<_Ty>& attr) requires std::is_arithmetic_v<_Ty>
 		{
 			if constexpr (std::is_same_v<FieldType<_Ty>, attr::SliderField<_Ty>>)
 				return SliderEdit<_Ty, 1>(field_name, &obj, attr.min, attr.max);
@@ -85,6 +85,11 @@ namespace engine
 				return InputEdit<_Ty, 1>(field_name, &obj, attr.min, attr.max);
 			else
 				return false;
+		}
+
+		bool PropertyEdit(const char* field_name, bool& val)
+		{
+			return ImGui::GCheckbox(field_name, &val);
 		}
 
 		template<typename _Element>
@@ -163,8 +168,10 @@ namespace engine
 				}
 				return changed;
 			}
-			else
-				return ImGui::InputInt<1>(field_name, reinterpret_cast<std::underlying_type_t<_Enum>*>(&val));
+			//else
+			//	return ImGui::InputInt<1>(field_name, reinterpret_cast<std::underlying_type_t<_Enum>*>(&val));
+
+			return false;
 		}
 
 		template<typename _Member, typename _Ty>
@@ -190,14 +197,6 @@ namespace engine
 			else if constexpr (has_attribute<attr::ColorField>(member))
 			{
 				return ImGui::GColorEdit3(field_name, reinterpret_cast<f32*>(&obj));
-			}
-			else if constexpr (has_attribute<attr::ToggleField>(member))
-			{
-				return ImGui::GCheckbox(field_name, &obj);
-			}
-			else if constexpr (traits::is_vector<_Ty>::value)
-			{
-				return PropertyEdit(field_name, obj);
 			}
 			else
 			{
