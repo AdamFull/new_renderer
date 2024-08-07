@@ -1,6 +1,7 @@
 module;
 
 #include <glm/vec4.hpp>
+#include <glm/packing.hpp>
 
 export module glm.vec4;
 
@@ -22,4 +23,10 @@ export namespace glm
 
 	using glm::i64vec4;
 	using glm::u64vec4;
+
+	// Functions packing
+	using glm::packUnorm4x8;
+	using glm::packSnorm4x8;
+	using glm::unpackUnorm4x8;
+	using glm::unpackSnorm4x8;
 }

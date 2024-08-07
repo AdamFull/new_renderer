@@ -1,6 +1,7 @@
 module;
 
 #include <glm/vec2.hpp>
+#include <glm/packing.hpp>
 
 export module glm.vec2;
 
@@ -22,4 +23,16 @@ export namespace glm
 
 	using glm::i64vec2;
 	using glm::u64vec2;
+
+	// Functions packing
+	using glm::packUnorm2x16;
+	using glm::packSnorm2x16;
+	using glm::unpackUnorm2x16;
+	using glm::unpackSnorm2x16;
+
+	using glm::packDouble2x32;
+	using glm::unpackDouble2x32;
+
+	using glm::packHalf2x16;
+	using glm::unpackHalf2x16;
 }
