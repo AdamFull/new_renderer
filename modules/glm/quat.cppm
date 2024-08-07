@@ -1,11 +1,12 @@
+module;
+
+#include <glm/ext/quaternion_float.hpp>
+#include <glm/ext/quaternion_double.hpp>
+
 export module glm.quat;
 
-import "glm/ext/quaternion_float.hpp";
-import "glm/ext/quaternion_double.hpp";
-
-
-namespace glm
+export namespace glm
 {
-	export using quat = glm::quat;
-	export using dquat = glm::dquat;
+	using glm::quat;
+	using glm::dquat;
 }

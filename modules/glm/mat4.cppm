@@ -1,10 +1,11 @@
+module;
+
+#include <glm/mat4x4.hpp>
+
 export module glm.mat4;
 
-import "glm/mat4x4.hpp";
-
-
-namespace glm
+export namespace glm
 {
-	export using mat4 = glm::mat4;
-	export using dmat4 = glm::dmat4;
+	using glm::mat4;
+	using glm::dmat4;
 }

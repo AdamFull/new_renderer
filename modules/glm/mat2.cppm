@@ -1,9 +1,11 @@
+module;
+
+#include <glm/mat2x2.hpp>
+
 export module glm.mat2;
 
-import "glm/mat2x2.hpp";
-
-namespace glm
+export namespace glm
 {
-	export using mat2 = glm::mat2;
-	export using dmat2 = glm::dmat2;
+	using glm::mat2;
+	using glm::dmat2;
 }
