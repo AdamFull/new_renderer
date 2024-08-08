@@ -62,4 +62,17 @@ export namespace glm
 
 	using glm::tweakedInfinitePerspective;
 	using glm::tweakedInfinitePerspective;
+
+	using glm::identity;
+	using glm::translate;
+
+	using glm::rotate;
+	using glm::rotate_slow;
+
+	using glm::scale;
+	using glm::scale_slow;
+
+	using glm::lookAtRH;
+	using glm::lookAtLH;
+	using glm::lookAt;
 }
