@@ -1,381 +1,207 @@
 module;
 
+#include <glm/mat2x2.hpp>
+#include <glm/mat2x3.hpp>
+#include <glm/mat2x4.hpp>
+
+#include <glm/mat3x2.hpp>
+#include <glm/mat3x3.hpp>
+#include <glm/mat3x4.hpp>
+
+#include <glm/mat4x2.hpp>
+#include <glm/mat4x3.hpp>
+#include <glm/mat4x4.hpp>
+
+#include <glm/gtc/matrix_integer.hpp>
 #include <glm/gtc/type_aligned.hpp>
 
-export module glm.gtc.type_aligned;
+#include <glm/gtc/matrix_access.hpp>
+#include <glm/gtc/matrix_inverse.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+#include <glm/gtc/type_ptr.hpp>
+
+export module glm.mat2;
 
 export namespace glm
 {
-	/// @addtogroup gtc_type_aligned
-	/// @{
+	// -- *mat2 --
 
-	// -- *vec1 --
+	using glm::mat2;
+	using glm::dmat2;
 
-	/// 1 component vector aligned in memory of single-precision floating-point numbers using high precision arithmetic in term of ULPs.
-	using glm::aligned_highp_vec1;
+	using glm::mat2x3;
+	using glm::dmat2x3;
 
-	/// 1 component vector aligned in memory of single-precision floating-point numbers using medium precision arithmetic in term of ULPs.
-	using glm::aligned_mediump_vec1;
+	using glm::mat2x4;
+	using glm::dmat2x4;
 
-	/// 1 component vector aligned in memory of single-precision floating-point numbers using low precision arithmetic in term of ULPs.
-	using glm::aligned_lowp_vec1;
+	using glm::highp_imat2;
 
-	/// 1 component vector aligned in memory of double-precision floating-point numbers using high precision arithmetic in term of ULPs.
-	using glm::aligned_highp_dvec1;
+	using glm::highp_imat2x2;
+	using glm::highp_imat2x3;
+	using glm::highp_imat2x4;
 
-	/// 1 component vector aligned in memory of double-precision floating-point numbers using medium precision arithmetic in term of ULPs.
-	using glm::aligned_mediump_dvec1;
+	using glm::mediump_imat2;
 
-	/// 1 component vector aligned in memory of double-precision floating-point numbers using low precision arithmetic in term of ULPs.
-	using glm::aligned_lowp_dvec1;
+	using glm::mediump_imat2x2;
+	using glm::mediump_imat2x3;
+	using glm::mediump_imat2x4;
 
-	/// 1 component vector aligned in memory of signed integer numbers.
-	using glm::aligned_highp_ivec1;
+	using glm::lowp_imat2;
 
-	/// 1 component vector aligned in memory of signed integer numbers.
-	using glm::aligned_mediump_ivec1;
+	using glm::lowp_imat2x2;
+	using glm::lowp_imat2x3;
+	using glm::lowp_imat2x4;
 
-	/// 1 component vector aligned in memory of signed integer numbers.
-	using glm::aligned_lowp_ivec1;
+	using glm::highp_umat2;
 
-	/// 1 component vector aligned in memory of unsigned integer numbers.
-	using glm::aligned_highp_uvec1;
+	using glm::highp_umat2x2;
+	using glm::highp_umat2x3;
+	using glm::highp_umat2x4;
 
-	/// 1 component vector aligned in memory of unsigned integer numbers.
-	using glm::aligned_mediump_uvec1;
+	using glm::mediump_umat2;
 
-	/// 1 component vector aligned in memory of unsigned integer numbers.
-	using glm::aligned_lowp_uvec1;
+	using glm::mediump_umat2x2;
+	using glm::mediump_umat2x3;
+	using glm::mediump_umat2x4;
 
-	/// 1 component vector aligned in memory of bool values.
-	using glm::aligned_highp_bvec1;
+	using glm::lowp_umat2;
 
-	/// 1 component vector aligned in memory of bool values.
-	using glm::aligned_mediump_bvec1;
+	using glm::lowp_umat2x2;
+	using glm::lowp_umat2x3;
+	using glm::lowp_umat2x4;
 
-	/// 1 component vector aligned in memory of bool values.
-	using glm::aligned_lowp_bvec1;
+	using glm::imat2;
 
-	/// 1 component vector tightly packed in memory of single-precision floating-point numbers using high precision arithmetic in term of ULPs.
-	using glm::packed_highp_vec1;
+	using glm::imat2x2;
+	using glm::imat2x3;
+	using glm::imat2x4;
 
-	/// 1 component vector tightly packed in memory of single-precision floating-point numbers using medium precision arithmetic in term of ULPs.
-	using glm::packed_mediump_vec1;
+	using glm::umat2;
 
-	/// 1 component vector tightly packed in memory of single-precision floating-point numbers using low precision arithmetic in term of ULPs.
-	using glm::packed_lowp_vec1;
+	using glm::umat2x2;
+	using glm::umat2x3;
+	using glm::umat2x4;
 
-	/// 1 component vector tightly packed in memory of double-precision floating-point numbers using high precision arithmetic in term of ULPs.
-	using glm::packed_highp_dvec1;
 
-	/// 1 component vector tightly packed in memory of double-precision floating-point numbers using medium precision arithmetic in term of ULPs.
-	using glm::packed_mediump_dvec1;
 
-	/// 1 component vector tightly packed in memory of double-precision floating-point numbers using low precision arithmetic in term of ULPs.
-	using glm::packed_lowp_dvec1;
+	using glm::mat3x2;
+	using glm::dmat3x2;
 
-	/// 1 component vector tightly packed in memory of signed integer numbers.
-	using glm::packed_highp_ivec1;
+	using glm::mat3;
+	using glm::dmat3;
 
-	/// 1 component vector tightly packed in memory of signed integer numbers.
-	using glm::packed_mediump_ivec1;
+	using glm::mat3x4;
+	using glm::dmat3x4;
 
-	/// 1 component vector tightly packed in memory of signed integer numbers.
-	using glm::packed_lowp_ivec1;
+	using glm::highp_imat3;
 
-	/// 1 component vector tightly packed in memory of unsigned integer numbers.
-	using glm::packed_highp_uvec1;
+	using glm::highp_imat3x2;
+	using glm::highp_imat3x3;
+	using glm::highp_imat3x4;
 
-	/// 1 component vector tightly packed in memory of unsigned integer numbers.
-	using glm::packed_mediump_uvec1;
+	using glm::mediump_imat3;
 
-	/// 1 component vector tightly packed in memory of unsigned integer numbers.
-	using glm::packed_lowp_uvec1;
+	using glm::mediump_imat3x2;
+	using glm::mediump_imat3x3;
+	using glm::mediump_imat3x4;
 
-	/// 1 component vector tightly packed in memory of bool values.
-	using glm::packed_highp_bvec1;
+	using glm::lowp_imat3;
 
-	/// 1 component vector tightly packed in memory of bool values.
-	using glm::packed_mediump_bvec1;
+	using glm::lowp_imat3x2;
+	using glm::lowp_imat3x3;
+	using glm::lowp_imat3x4;
 
-	/// 1 component vector tightly packed in memory of bool values.
-	using glm::packed_lowp_bvec1;
+	using glm::highp_umat3;
 
-	// -- *vec2 --
+	using glm::highp_umat3x2;
+	using glm::highp_umat3x3;
+	using glm::highp_umat3x4;
 
-	/// 2 components vector aligned in memory of single-precision floating-point numbers using high precision arithmetic in term of ULPs.
-	using glm::aligned_highp_vec2;
+	using glm::mediump_umat3;
 
-	/// 2 components vector aligned in memory of single-precision floating-point numbers using medium precision arithmetic in term of ULPs.
-	using glm::aligned_mediump_vec2;
+	using glm::mediump_umat3x2;
+	using glm::mediump_umat3x3;
+	using glm::mediump_umat3x4;
 
-	/// 2 components vector aligned in memory of single-precision floating-point numbers using low precision arithmetic in term of ULPs.
-	using glm::aligned_lowp_vec2;
+	using glm::lowp_umat3;
 
-	/// 2 components vector aligned in memory of double-precision floating-point numbers using high precision arithmetic in term of ULPs.
-	using glm::aligned_highp_dvec2;
+	using glm::lowp_umat3x2;
+	using glm::lowp_umat3x3;
+	using glm::lowp_umat3x4;
 
-	/// 2 components vector aligned in memory of double-precision floating-point numbers using medium precision arithmetic in term of ULPs.
-	using glm::aligned_mediump_dvec2;
+	using glm::imat3;
 
-	/// 2 components vector aligned in memory of double-precision floating-point numbers using low precision arithmetic in term of ULPs.
-	using glm::aligned_lowp_dvec2;
+	using glm::imat3x2;
+	using glm::imat3x3;
+	using glm::imat3x4;
 
-	/// 2 components vector aligned in memory of signed integer numbers.
-	using glm::aligned_highp_ivec2;
+	using glm::umat3;
 
-	/// 2 components vector aligned in memory of signed integer numbers.
-	using glm::aligned_mediump_ivec2;
+	using glm::umat3x2;
+	using glm::umat3x3;
+	using glm::umat3x4;
 
-	/// 2 components vector aligned in memory of signed integer numbers.
-	using glm::aligned_lowp_ivec2;
 
-	/// 2 components vector aligned in memory of unsigned integer numbers.
-	using glm::aligned_highp_uvec2;
+	using glm::mat4x2;
+	using glm::dmat4x2;
 
-	/// 2 components vector aligned in memory of unsigned integer numbers.
-	using glm::aligned_mediump_uvec2;
+	using glm::mat4x3;
+	using glm::dmat4x3;
 
-	/// 2 components vector aligned in memory of unsigned integer numbers.
-	using glm::aligned_lowp_uvec2;
+	using glm::mat4;
+	using glm::dmat4;
 
-	/// 2 components vector aligned in memory of bool values.
-	using glm::aligned_highp_bvec2;
+	using glm::highp_imat4;
 
-	/// 2 components vector aligned in memory of bool values.
-	using glm::aligned_mediump_bvec2;
+	using glm::highp_imat4x2;
+	using glm::highp_imat4x3;
+	using glm::highp_imat4x4;
 
-	/// 2 components vector aligned in memory of bool values.
-	using glm::aligned_lowp_bvec2;
+	using glm::mediump_imat4;
 
-	/// 2 components vector tightly packed in memory of single-precision floating-point numbers using high precision arithmetic in term of ULPs.
-	using glm::packed_highp_vec2;
+	using glm::mediump_imat4x2;
+	using glm::mediump_imat4x3;
+	using glm::mediump_imat4x4;
 
-	/// 2 components vector tightly packed in memory of single-precision floating-point numbers using medium precision arithmetic in term of ULPs.
-	using glm::packed_mediump_vec2;
+	using glm::lowp_imat4;
 
-	/// 2 components vector tightly packed in memory of single-precision floating-point numbers using low precision arithmetic in term of ULPs.
-	using glm::packed_lowp_vec2;
+	using glm::lowp_imat4x2;
+	using glm::lowp_imat4x3;
+	using glm::lowp_imat4x4;
 
-	/// 2 components vector tightly packed in memory of double-precision floating-point numbers using high precision arithmetic in term of ULPs.
-	using glm::packed_highp_dvec2;
+	using glm::highp_umat4;
 
-	/// 2 components vector tightly packed in memory of double-precision floating-point numbers using medium precision arithmetic in term of ULPs.
-	using glm::packed_mediump_dvec2;
+	using glm::highp_umat4x2;
+	using glm::highp_umat4x3;
+	using glm::highp_umat4x4;
 
-	/// 2 components vector tightly packed in memory of double-precision floating-point numbers using low precision arithmetic in term of ULPs.
-	using glm::packed_lowp_dvec2;
+	using glm::mediump_umat4;
 
-	/// 2 components vector tightly packed in memory of signed integer numbers.
-	using glm::packed_highp_ivec2;
+	using glm::mediump_umat4x2;
+	using glm::mediump_umat4x3;
+	using glm::mediump_umat4x4;
 
-	/// 2 components vector tightly packed in memory of signed integer numbers.
-	using glm::packed_mediump_ivec2;
+	using glm::lowp_umat4;
 
-	/// 2 components vector tightly packed in memory of signed integer numbers.
-	using glm::packed_lowp_ivec2;
+	using glm::lowp_umat4x2;
+	using glm::lowp_umat4x3;
+	using glm::lowp_umat4x4;
 
-	/// 2 components vector tightly packed in memory of unsigned integer numbers.
-	using glm::packed_highp_uvec2;
+	using glm::imat4;
 
-	/// 2 components vector tightly packed in memory of unsigned integer numbers.
-	using glm::packed_mediump_uvec2;
+	using glm::imat4x2;
+	using glm::imat4x3;
+	using glm::imat4x4;
 
-	/// 2 components vector tightly packed in memory of unsigned integer numbers.
-	using glm::packed_lowp_uvec2;
+	using glm::umat4;
 
-	/// 2 components vector tightly packed in memory of bool values.
-	using glm::packed_highp_bvec2;
+	using glm::umat4x2;
+	using glm::umat4x3;
+	using glm::umat4x4;
 
-	/// 2 components vector tightly packed in memory of bool values.
-	using glm::packed_mediump_bvec2;
-
-	/// 2 components vector tightly packed in memory of bool values.
-	using glm::packed_lowp_bvec2;
-
-	// -- *vec3 --
-
-	/// 3 components vector aligned in memory of single-precision floating-point numbers using high precision arithmetic in term of ULPs.
-	using glm::aligned_highp_vec3;
-
-	/// 3 components vector aligned in memory of single-precision floating-point numbers using medium precision arithmetic in term of ULPs.
-	using glm::aligned_mediump_vec3;
-
-	/// 3 components vector aligned in memory of single-precision floating-point numbers using low precision arithmetic in term of ULPs.
-	using glm::aligned_lowp_vec3;
-
-	/// 3 components vector aligned in memory of double-precision floating-point numbers using high precision arithmetic in term of ULPs.
-	using glm::aligned_highp_dvec3;
-
-	/// 3 components vector aligned in memory of double-precision floating-point numbers using medium precision arithmetic in term of ULPs.
-	using glm::aligned_mediump_dvec3;
-
-	/// 3 components vector aligned in memory of double-precision floating-point numbers using low precision arithmetic in term of ULPs.
-	using glm::aligned_lowp_dvec3;
-
-	/// 3 components vector aligned in memory of signed integer numbers.
-	using glm::aligned_highp_ivec3;
-
-	/// 3 components vector aligned in memory of signed integer numbers.
-	using glm::aligned_mediump_ivec3;
-
-	/// 3 components vector aligned in memory of signed integer numbers.
-	using glm::aligned_lowp_ivec3;
-
-	/// 3 components vector aligned in memory of unsigned integer numbers.
-	using glm::aligned_highp_uvec3;
-
-	/// 3 components vector aligned in memory of unsigned integer numbers.
-	using glm::aligned_mediump_uvec3;
-
-	/// 3 components vector aligned in memory of unsigned integer numbers.
-	using glm::aligned_lowp_uvec3;
-
-	/// 3 components vector aligned in memory of bool values.
-	using glm::aligned_highp_bvec3;
-
-	/// 3 components vector aligned in memory of bool values.
-	using glm::aligned_mediump_bvec3;
-
-	/// 3 components vector aligned in memory of bool values.
-	using glm::aligned_lowp_bvec3;
-
-	/// 3 components vector tightly packed in memory of single-precision floating-point numbers using high precision arithmetic in term of ULPs.
-	using glm::packed_highp_vec3;
-
-	/// 3 components vector tightly packed in memory of single-precision floating-point numbers using medium precision arithmetic in term of ULPs.
-	using glm::packed_mediump_vec3;
-
-	/// 3 components vector tightly packed in memory of single-precision floating-point numbers using low precision arithmetic in term of ULPs.
-	using glm::packed_lowp_vec3;
-
-	/// 3 components vector tightly packed in memory of double-precision floating-point numbers using high precision arithmetic in term of ULPs.
-	using glm::packed_highp_dvec3;
-
-	/// 3 components vector tightly packed in memory of double-precision floating-point numbers using medium precision arithmetic in term of ULPs.
-	using glm::packed_mediump_dvec3;
-
-	/// 3 components vector tightly packed in memory of double-precision floating-point numbers using low precision arithmetic in term of ULPs.
-	using glm::packed_lowp_dvec3;
-
-	/// 3 components vector tightly packed in memory of signed integer numbers.
-	using glm::packed_highp_ivec3;
-
-	/// 3 components vector tightly packed in memory of signed integer numbers.
-	using glm::packed_mediump_ivec3;
-
-	/// 3 components vector tightly packed in memory of signed integer numbers.
-	using glm::packed_lowp_ivec3;
-
-	/// 3 components vector tightly packed in memory of unsigned integer numbers.
-	using glm::packed_highp_uvec3;
-
-	/// 3 components vector tightly packed in memory of unsigned integer numbers.
-	using glm::packed_mediump_uvec3;
-
-	/// 3 components vector tightly packed in memory of unsigned integer numbers.
-	using glm::packed_lowp_uvec3;
-
-	/// 3 components vector tightly packed in memory of bool values.
-	using glm::packed_highp_bvec3;
-
-	/// 3 components vector tightly packed in memory of bool values.
-	using glm::packed_mediump_bvec3;
-
-	/// 3 components vector tightly packed in memory of bool values.
-	using glm::packed_lowp_bvec3;
-
-	// -- *vec4 --
-
-	/// 4 components vector aligned in memory of single-precision floating-point numbers using high precision arithmetic in term of ULPs.
-	using glm::aligned_highp_vec4;
-
-	/// 4 components vector aligned in memory of single-precision floating-point numbers using medium precision arithmetic in term of ULPs.
-	using glm::aligned_mediump_vec4;
-
-	/// 4 components vector aligned in memory of single-precision floating-point numbers using low precision arithmetic in term of ULPs.
-	using glm::aligned_lowp_vec4;
-
-	/// 4 components vector aligned in memory of double-precision floating-point numbers using high precision arithmetic in term of ULPs.
-	using glm::aligned_highp_dvec4;
-
-	/// 4 components vector aligned in memory of double-precision floating-point numbers using medium precision arithmetic in term of ULPs.
-	using glm::aligned_mediump_dvec4;
-
-	/// 4 components vector aligned in memory of double-precision floating-point numbers using low precision arithmetic in term of ULPs.
-	using glm::aligned_lowp_dvec4;
-
-	/// 4 components vector aligned in memory of signed integer numbers.
-	using glm::aligned_highp_ivec4;
-
-	/// 4 components vector aligned in memory of signed integer numbers.
-	using glm::aligned_mediump_ivec4;
-
-	/// 4 components vector aligned in memory of signed integer numbers.
-	using glm::aligned_lowp_ivec4;
-
-	/// 4 components vector aligned in memory of unsigned integer numbers.
-	using glm::aligned_highp_uvec4;
-
-	/// 4 components vector aligned in memory of unsigned integer numbers.
-	using glm::aligned_mediump_uvec4;
-
-	/// 4 components vector aligned in memory of unsigned integer numbers.
-	using glm::aligned_lowp_uvec4;
-
-	/// 4 components vector aligned in memory of bool values.
-	using glm::aligned_highp_bvec4;
-
-	/// 4 components vector aligned in memory of bool values.
-	using glm::aligned_mediump_bvec4;
-
-	/// 4 components vector aligned in memory of bool values.
-	using glm::aligned_lowp_bvec4;
-
-	/// 4 components vector tightly packed in memory of single-precision floating-point numbers using high precision arithmetic in term of ULPs.
-	using glm::packed_highp_vec4;
-
-	/// 4 components vector tightly packed in memory of single-precision floating-point numbers using medium precision arithmetic in term of ULPs.
-	using glm::packed_mediump_vec4;
-
-	/// 4 components vector tightly packed in memory of single-precision floating-point numbers using low precision arithmetic in term of ULPs.
-	using glm::packed_lowp_vec4;
-
-	/// 4 components vector tightly packed in memory of double-precision floating-point numbers using high precision arithmetic in term of ULPs.
-	using glm::packed_highp_dvec4;
-
-	/// 4 components vector tightly packed in memory of double-precision floating-point numbers using medium precision arithmetic in term of ULPs.
-	using glm::packed_mediump_dvec4;
-
-	/// 4 components vector tightly packed in memory of double-precision floating-point numbers using low precision arithmetic in term of ULPs.
-	using glm::packed_lowp_dvec4;
-
-	/// 4 components vector tightly packed in memory of signed integer numbers.
-	using glm::packed_highp_ivec4;
-
-	/// 4 components vector tightly packed in memory of signed integer numbers.
-	using glm::packed_mediump_ivec4;
-
-	/// 4 components vector tightly packed in memory of signed integer numbers.
-	using glm::packed_lowp_ivec4;
-
-	/// 4 components vector tightly packed in memory of unsigned integer numbers.
-	using glm::packed_highp_uvec4;
-
-	/// 4 components vector tightly packed in memory of unsigned integer numbers.
-	using glm::packed_mediump_uvec4;
-
-	/// 4 components vector tightly packed in memory of unsigned integer numbers.
-	using glm::packed_lowp_uvec4;
-
-	/// 4 components vector tightly packed in memory of bool values.
-	using glm::packed_highp_bvec4;
-
-	/// 4 components vector tightly packed in memory of bool values.
-	using glm::packed_mediump_bvec4;
-
-	/// 4 components vector tightly packed in memory of bool values.
-	using glm::packed_lowp_bvec4;
+	// Type aligned
 
 	// -- *mat2 --
 
@@ -834,29 +660,6 @@ export namespace glm
 	using glm::packed_lowp_dmat4x4;
 
 	// -- default --
-	/// 1 component vector aligned in memory of single-precision floating-point numbers.
-	using glm::aligned_vec1;
-
-	/// 2 components vector aligned in memory of single-precision floating-point numbers.
-	using glm::aligned_vec2;
-
-	/// 3 components vector aligned in memory of single-precision floating-point numbers.
-	using glm::aligned_vec3;
-
-	/// 4 components vector aligned in memory of single-precision floating-point numbers.
-	using glm::aligned_vec4;
-
-	/// 1 component vector tightly packed in memory of single-precision floating-point numbers.
-	using glm::packed_vec1;
-
-	/// 2 components vector tightly packed in memory of single-precision floating-point numbers.
-	using glm::packed_vec2;
-
-	/// 3 components vector tightly packed in memory of single-precision floating-point numbers.
-	using glm::packed_vec3;
-
-	/// 4 components vector tightly packed in memory of single-precision floating-point numbers.
-	using glm::packed_vec4;
 
 	/// 2 by 2 matrix tightly aligned in memory of single-precision floating-point numbers.
 	using glm::aligned_mat2;
@@ -930,30 +733,6 @@ export namespace glm
 	/// 4 by 4 matrix tightly packed in memory of single-precision floating-point numbers.
 	using glm::packed_mat4x4;
 
-	/// 1 component vector aligned in memory of double-precision floating-point numbers.
-	using glm::aligned_dvec1;
-
-	/// 2 components vector aligned in memory of double-precision floating-point numbers.
-	using glm::aligned_dvec2;
-
-	/// 3 components vector aligned in memory of double-precision floating-point numbers.
-	using glm::aligned_dvec3;
-
-	/// 4 components vector aligned in memory of double-precision floating-point numbers.
-	using glm::aligned_dvec4;
-
-	/// 1 component vector tightly packed in memory of double-precision floating-point numbers.
-	using glm::packed_dvec1;
-
-	/// 2 components vector tightly packed in memory of double-precision floating-point numbers.
-	using glm::packed_dvec2;
-
-	/// 3 components vector tightly packed in memory of double-precision floating-point numbers.
-	using glm::packed_dvec3;
-
-	/// 4 components vector tightly packed in memory of double-precision floating-point numbers.
-	using glm::packed_dvec4;
-
 	/// 2 by 2 matrix tightly aligned in memory of double-precision floating-point numbers.
 	using glm::aligned_dmat2;
 
@@ -1026,77 +805,243 @@ export namespace glm
 	/// 4 by 4 matrix tightly packed in memory of double-precision floating-point numbers.
 	using glm::packed_dmat4x4;
 
-	/// 1 component vector aligned in memory of signed integer numbers.
-	using glm::aligned_ivec1;
 
-	/// 2 components vector aligned in memory of signed integer numbers.
-	using glm::aligned_ivec2;
+	// Access
 
-	/// 3 components vector aligned in memory of signed integer numbers.
-	using glm::aligned_ivec3;
+	/// Get a specific row of a matrix.
+	using glm::row;
 
-	/// 4 components vector aligned in memory of signed integer numbers.
-	using glm::aligned_ivec4;
+	/// Get a specific column of a matrix.
+	using glm::column;
 
-	/// 1 component vector tightly packed in memory of signed integer numbers.
-	using glm::packed_ivec1;
+	// Inverse
 
-	/// 2 components vector tightly packed in memory of signed integer numbers.
-	using glm::packed_ivec2;
+	/// Fast matrix inverse for affine matrix.
+	using glm::affineInverse;
 
-	/// 3 components vector tightly packed in memory of signed integer numbers.
-	using glm::packed_ivec3;
+	/// Compute the inverse transpose of a matrix.
+	using glm::inverseTranspose;
 
-	/// 4 components vector tightly packed in memory of signed integer numbers.
-	using glm::packed_ivec4;
+	// Transform
 
-	// -- Unsigned integer definition --
+	using glm::projectZO;
 
-	/// 1 component vector aligned in memory of unsigned integer numbers.
-	using glm::aligned_uvec1;
 
-	/// 2 components vector aligned in memory of unsigned integer numbers.
-	using glm::aligned_uvec2;
+	using glm::projectNO;
 
-	/// 3 components vector aligned in memory of unsigned integer numbers.
-	using glm::aligned_uvec3;
 
-	/// 4 components vector aligned in memory of unsigned integer numbers.
-	using glm::aligned_uvec4;
+	using glm::project;
 
-	/// 1 component vector tightly packed in memory of unsigned integer numbers.
-	using glm::packed_uvec1;
 
-	/// 2 components vector tightly packed in memory of unsigned integer numbers.
-	using glm::packed_uvec2;
 
-	/// 3 components vector tightly packed in memory of unsigned integer numbers.
-	using glm::packed_uvec3;
+	using glm::unProjectZO;
 
-	/// 4 components vector tightly packed in memory of unsigned integer numbers.
-	using glm::packed_uvec4;
 
-	/// 1 component vector aligned in memory of bool values.
-	using glm::aligned_bvec1;
+	using glm::unProjectNO;
 
-	/// 2 components vector aligned in memory of bool values.
-	using glm::aligned_bvec2;
 
-	/// 3 components vector aligned in memory of bool values.
-	using glm::aligned_bvec3;
+	using glm::unProject;
 
-	/// 4 components vector aligned in memory of bool values.
-	using glm::aligned_bvec4;
 
-	/// 1 components vector tightly packed in memory of bool values.
-	using glm::packed_bvec1;
 
-	/// 2 components vector tightly packed in memory of bool values.
-	using glm::packed_bvec2;
+	using glm::pickMatrix;
 
-	/// 3 components vector tightly packed in memory of bool values.
-	using glm::packed_bvec3;
 
-	/// 4 components vector tightly packed in memory of bool values.
-	using glm::packed_bvec4;
+
+	using glm::orthoLH_ZO;
+
+
+	using glm::orthoLH_NO;
+
+
+	using glm::orthoRH_ZO;
+
+
+	using glm::orthoRH_NO;
+
+
+	using glm::orthoZO;
+
+
+	using glm::orthoNO;
+
+
+	using glm::orthoLH;
+
+
+	using glm::orthoRH;
+
+
+	using glm::ortho;
+
+
+
+	using glm::frustumLH_ZO;
+
+
+	using glm::frustumLH_NO;
+
+
+	using glm::frustumRH_ZO;
+
+
+	using glm::frustumRH_NO;
+
+
+	using glm::frustumZO;
+
+
+	using glm::frustumNO;
+
+
+	using glm::frustumLH;
+
+
+	using glm::frustumRH;
+
+
+	using glm::frustum;
+
+
+
+	using glm::perspectiveRH_ZO;
+
+
+	using glm::perspectiveRH_NO;
+
+
+	using glm::perspectiveLH_ZO;
+
+
+	using glm::perspectiveLH_NO;
+
+
+	using glm::perspectiveZO;
+
+
+	using glm::perspectiveNO;
+
+
+	using glm::perspectiveRH;
+
+
+	using glm::perspectiveLH;
+
+
+	using glm::perspective;
+
+
+
+	using glm::perspectiveFovRH_ZO;
+
+
+	using glm::perspectiveFovRH_NO;
+
+
+	using glm::perspectiveFovLH_ZO;
+
+
+	using glm::perspectiveFovLH_NO;
+
+
+	using glm::perspectiveFovZO;
+
+
+	using glm::perspectiveFovNO;
+
+
+	using glm::perspectiveFovRH;
+
+
+	using glm::perspectiveFovLH;
+
+
+	using glm::perspectiveFov;
+
+
+
+	using glm::infinitePerspectiveLH;
+
+
+	using glm::infinitePerspectiveRH;
+
+
+	using glm::infinitePerspective;
+
+
+
+	using glm::tweakedInfinitePerspective;
+
+
+	using glm::tweakedInfinitePerspective;
+
+
+
+	using glm::identity;
+
+
+	using glm::translate;
+
+
+
+	using glm::rotate;
+
+
+	using glm::rotate_slow;
+
+
+
+	using glm::scale;
+
+
+	using glm::scale_slow;
+
+
+
+	using glm::lookAtRH;
+
+
+	using glm::lookAtLH;
+
+
+	using glm::lookAt;
+
+
+	// Type ptr
+
+	/// Build a matrix from a pointer.
+	using glm::make_mat2x2;
+
+	/// Build a matrix from a pointer.
+	using glm::make_mat2x3;
+
+	/// Build a matrix from a pointer.
+	using glm::make_mat2x4;
+
+	/// Build a matrix from a pointer.
+	using glm::make_mat3x2;
+
+	/// Build a matrix from a pointer.
+	using glm::make_mat3x3;
+
+	/// Build a matrix from a pointer.
+	using glm::make_mat3x4;
+
+	/// Build a matrix from a pointer.
+	using glm::make_mat4x2;
+
+	/// Build a matrix from a pointer.
+	using glm::make_mat4x3;
+
+	/// Build a matrix from a pointer.
+	using glm::make_mat4x4;
+
+	/// Build a matrix from a pointer.
+	using glm::make_mat2;
+
+	/// Build a matrix from a pointer.
+	using glm::make_mat3;
+
+	/// Build a matrix from a pointer.
+	using glm::make_mat4;
 }
