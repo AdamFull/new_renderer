@@ -5,6 +5,7 @@ ngengine is a modern game engine focused on advanced rendering techniques and de
 ## Features
 
 ### Completed
+- **Bindless design**: Full bindless dynamic design based on self growing buffers.
 - **Visibility Buffer**: Efficient management of visible objects to optimize rendering.
 - **Shadow Maps**: Support for shadow mapping to achieve realistic lighting.
 - **Vulkan 1.1-1.3 Support**: Full compatibility with Vulkan API versions 1.1 through 1.3.
