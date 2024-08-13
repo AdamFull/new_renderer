@@ -2,7 +2,7 @@
 
 #include <parsing/json_parser.h>
 #include "compiler_structures.h"
-#include <common/StringUtil.h>
+#include <string.hpp>
 
 namespace shader_compiler
 {
@@ -82,7 +82,7 @@ namespace shader_compiler
 
     struct FShaderReflectionBlockMember
     {
-        //utl::id_string32 name;
+        utl::id_string32 name;;
 
         // TODO: type
         u32 offset;
@@ -91,7 +91,7 @@ namespace shader_compiler
 
     struct FShaderReflectionUniform
     {
-        std::string name{};
+        utl::id_string32 name;;
 
         u32 set{ 0u };
         u32 binding{ 0u };
@@ -110,7 +110,7 @@ namespace shader_compiler
 
     struct FShaderReflectionUnit
     {
-        std::string name{};
+        utl::id_string32 name;;
         EShaderReflectionScopeType scope{};
 
         // In witch shaders it used (onty for local scope)
