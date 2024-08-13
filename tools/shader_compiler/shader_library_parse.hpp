@@ -2,6 +2,7 @@
 
 #include <parsing/json_parser.h>
 #include "compiler_structures.h"
+#include <common/StringUtil.h>
 
 namespace shader_compiler
 {
@@ -55,6 +56,81 @@ namespace shader_compiler
         // Key in value it's link to shader from shader module. 
         utl::hash_map<u32, utl::hash_map<u32, FShaderData>> shaders;
         utl::hash_map<u32, utl::vector<FShaderModule>> modules;
+    };
+
+    enum class EShaderReflectionBlockType
+    {
+        eUnknown,
+        ePushConstant,
+        eSpecializationConstant,
+        eUniformBuffer, 
+        eStorageBuffer, 
+        eCombinedImageSampler, 
+        eSampledImage, 
+        eSampler, 
+        eStorageImage, 
+        eInputAttachment,
+        eAccelerationStructure
+    };
+
+    enum class EShaderReflectionScopeType
+    {
+        eNone,
+        eGlobal, 
+        eLocal
+    };
+
+    struct FShaderReflectionBlockMember
+    {
+        //utl::id_string32 name;
+
+        // TODO: type
+        u32 offset;
+        u32 size;
+    };
+
+    struct FShaderReflectionUniform
+    {
+        std::string name{};
+
+        u32 set{ 0u };
+        u32 binding{ 0u };
+        u32 offset{ 0ull };
+        u32 size{ 0ull };
+    };
+
+    struct FShaderReflectionBlock
+    {
+        u32 set{ 0u };
+        u32 binding{ 0u };
+        u64 size{ 0ull };
+
+        utl::hash_map<u64, FShaderReflectionUniform> uniforms{};
+    };
+
+    struct FShaderReflectionUnit
+    {
+        std::string name{};
+        EShaderReflectionScopeType scope{};
+
+        // In witch shaders it used (onty for local scope)
+        utl::vector<u32> usages{};
+
+        // TODO: add something like permutation or something
+
+        EShaderReflectionBlockType blockType{};
+        u32 shaderStages{};
+        
+        u32 memberRef{};
+    };
+
+    struct FShaderReflection
+    {
+        utl::vector<FShaderReflectionBlock> reflectedBlocks;
+
+        utl::vector<FShaderReflectionBlock> pushBlock;
+        utl::vector<FShaderReflectionBlock> uniformBlocks;
+        utl::vector<FShaderReflectionBlock> storageBlocks;
     };
 
     struct FShaderCacheData
