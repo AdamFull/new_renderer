@@ -1,7 +1,7 @@
 #pragma once
 
 #include <container/flags.h>
-#include <container/hash_map.h>
+#include <hash.hpp>
 
 namespace engine
 {

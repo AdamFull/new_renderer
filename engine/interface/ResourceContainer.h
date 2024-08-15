@@ -1,7 +1,6 @@
 #pragma once
 
 #include <typeindex>
-#include <utils/hash.h>
 #include <container/hash_map.h>
 
 namespace engine

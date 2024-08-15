@@ -4,7 +4,6 @@
 #include <glslang/Public/ShaderLang.h>
 
 #include <logger/logger.h>
-#include <utils/hash.h>
 
 #include <stack>
 

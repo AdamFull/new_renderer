@@ -4,7 +4,6 @@
 #include <filesystem>
 
 #include <nlohmann/json.hpp>
-#include <utils/hash.h>
 #include "compiler_structures.h"
 #include <parsing/sjson_parser.h>
 

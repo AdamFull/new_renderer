@@ -2,7 +2,7 @@
 
 #include <engine/interface/WindowInterface.h>
 #include <reactive/function.h>
-#include <utils/hash.h>
+#include <hash.hpp>
 #include <container/hash_map.h>
 
 namespace engine

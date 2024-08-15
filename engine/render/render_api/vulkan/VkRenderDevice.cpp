@@ -3,7 +3,7 @@
 #include <sstream>
 #include <set>
 
-#include <utils/hash.h>
+#include <hash.hpp>
 #include "VkCommon.h"
 
 #include <vulkan/vulkan.hpp>
@@ -1279,10 +1279,10 @@ FRenderApiErrorInfo CVkRenderDevice::SelectPhysicalDevice(const FRenderContextCr
 
 	auto& selected_device = GetPhysicalDevice();
 	for (auto& extension_name : context_ci.requiredDeviceExtensions)
-		selected_device.supportedExtensions[utl::const_hash(extension_name.c_str())] = true;
+		selected_device.supportedExtensions[utl::fnv1a_32_hash_cstr(extension_name.c_str())] = true;
 
 	for (auto& extension_name : context_ci.optionalDeviceExtensions)
-		selected_device.supportedExtensions[utl::const_hash(extension_name.c_str())] = check_contains_single(extension_name, selected_device.avaliableExtensions);
+		selected_device.supportedExtensions[utl::fnv1a_32_hash_cstr(extension_name.c_str())] = check_contains_single(extension_name, selected_device.avaliableExtensions);
 
 	return make_api_error(vk::ObjectType::ePhysicalDevice, vk::Result::eSuccess);
 }
@@ -1292,7 +1292,7 @@ void CVkRenderDevice::PrepareRequestedLogicalDeviceFeatures()
 	auto& physical_device = GetPhysicalDevice();
 	for (auto& extension_name : physical_device.avaliableExtensions)
 	{
-		auto extension_name_hash = utl::const_hash(extension_name.c_str());
+		auto extension_name_hash = utl::fnv1a_32_hash_cstr(extension_name.c_str());
 		if (physical_device.supportedExtensions.count(extension_name_hash))
 		{
 			if (extension_name == VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)
@@ -1347,8 +1347,8 @@ FRenderApiErrorInfo CVkRenderDevice::CreateLogicalDevice(const FRenderContextCre
 {
 	auto api_version = get_api_version(context_ci.apiVersion);
 	auto& physical_device = GetPhysicalDevice();
-	bool bindless_support = physical_device.supportedExtensions.count(utl::const_hash(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME));
-	bool timeline_semaphore_support = physical_device.supportedExtensions.count(utl::const_hash(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME));
+	bool bindless_support = physical_device.supportedExtensions.count(utl::fnv1a_32_hash_cstr(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME));
+	bool timeline_semaphore_support = physical_device.supportedExtensions.count(utl::fnv1a_32_hash_cstr(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME));
 
 	if (!is_sample_count_supported(physical_device, m_requiredSampleCount))
 		m_requiredSampleCount = vk::SampleCountFlagBits::e1;
@@ -1397,7 +1397,7 @@ FRenderApiErrorInfo CVkRenderDevice::CreateLogicalDevice(const FRenderContextCre
 	for (auto& ext_name : physical_device.avaliableExtensions)
 	{
 		auto ext_name_c = ext_name.c_str();
-		if (physical_device.supportedExtensions.count(utl::const_hash(ext_name_c)))
+		if (physical_device.supportedExtensions.count(utl::fnv1a_32_hash_cstr(ext_name_c)))
 			enabled_extension_names.emplace_back(ext_name_c);
 	}
 

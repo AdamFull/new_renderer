@@ -1,7 +1,7 @@
 #pragma once
 
 #include "compiler_structures.h"
-#include <utils/hash.h>
+#include <hash.hpp>
 
 namespace shader_compiler
 {

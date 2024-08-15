@@ -2,7 +2,7 @@
 
 #include "BaseStructures.h"
 #include "BaseEnumerators.h"
-#include <utils/hash.h>
+#include <hash.hpp>
 #include <span>
 
 namespace engine

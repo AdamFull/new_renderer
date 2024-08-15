@@ -1,6 +1,6 @@
 #include "ImFontManager.h"
 
-#include <utils/hash.h>
+#include <hash.hpp>
 
 #include <imgui.h>
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <ie_vfs_exports.h>
-#include <utils/hash.h>
+#include <hash.hpp>
 
 namespace engine
 {
@@ -11,36 +11,36 @@ namespace engine
         {
             using namespace utl;
             // images
-            constexpr inline u32 ktx = ".ktx"_utl_hash;
-            constexpr inline u32 ktx2 = ".ktx2"_utl_hash;
-            constexpr inline u32 dds = ".dds"_utl_hash;
-            constexpr inline u32 png = ".png"_utl_hash;
-            constexpr inline u32 jpg = ".jpg"_utl_hash;
+            constexpr inline u32 ktx = ".ktx"_mr32;
+            constexpr inline u32 ktx2 = ".ktx2"_fnv1a32;
+            constexpr inline u32 dds = ".dds"_fnv1a32;
+            constexpr inline u32 png = ".png"_fnv1a32;
+            constexpr inline u32 jpg = ".jpg"_fnv1a32;
             constexpr inline u64 image_ts = 5;
 
             // meshes
-            constexpr inline u32 gltf = ".gltf"_utl_hash;
-            constexpr inline u32 glb = ".glb"_utl_hash;
-            constexpr inline u32 obj = ".obj"_utl_hash;
-            constexpr inline u32 fbx = ".fbx"_utl_hash;
+            constexpr inline u32 gltf = ".gltf"_fnv1a32;
+            constexpr inline u32 glb = ".glb"_fnv1a32;
+            constexpr inline u32 obj = ".obj"_fnv1a32;
+            constexpr inline u32 fbx = ".fbx"_fnv1a32;
             constexpr inline u64 mesh_ts = 2;
 
             // scripts
-            constexpr inline u32 js = ".js"_utl_hash;
+            constexpr inline u32 js = ".js"_fnv1a32;
             constexpr inline u64 script_ts = 1;
 
             // scenes
-            constexpr inline u32 iescene = ".iescene"_utl_hash; // incenerate scene
+            constexpr inline u32 iescene = ".iescene"_fnv1a32; // incenerate scene
             constexpr inline u64 scene_ts = 1;
 
             // audio
-            constexpr inline u32 wav = ".wav"_utl_hash;
-            constexpr inline u32 wave = ".wave"_utl_hash;
-            constexpr inline u32 ogg = ".ogg"_utl_hash;
+            constexpr inline u32 wav = ".wav"_fnv1a32;
+            constexpr inline u32 wave = ".wave"_fnv1a32;
+            constexpr inline u32 ogg = ".ogg"_fnv1a32;
             constexpr inline u64 audio_ts = 3;
 
             // particles
-            constexpr inline u32 efkefc = ".efkefc"_utl_hash;
+            constexpr inline u32 efkefc = ".efkefc"_fnv1a32;
         }
 
 		struct INCENERATE_VFS_EXPORT fs
