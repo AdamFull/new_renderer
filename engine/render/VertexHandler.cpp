@@ -266,9 +266,9 @@ void CVertexHandler::Bind(EQueueTypeFlagBits queue)
 
 const FVertexRange& CVertexHandler::AddMeshData(const utl::vector<FVertexAttributePointer>& attributes_data, const FVertexAttributePointer& indices)
 {
-	u64 input_hash = utl::murmur_hash_64(indices.data, indices.stride * indices.count, 0);
+	u64 input_hash = utl::murmur_hash_64(reinterpret_cast<const char*>(indices.data), indices.stride * indices.count, 0);
 	for (const auto& attribute : attributes_data)
-		input_hash = utl::murmur_hash_64(attribute.data, attribute.stride * attribute.count, input_hash);
+		input_hash = utl::murmur_hash_64(reinterpret_cast<const char*>(attribute.data), attribute.stride * attribute.count, input_hash);
 
 	if (auto found = m_cachedRanges.find(input_hash); found != m_cachedRanges.end())
 		return found->second;

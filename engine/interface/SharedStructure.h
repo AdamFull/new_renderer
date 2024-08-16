@@ -9,19 +9,19 @@ namespace engine
 		using namespace utl;
 		enum class EMimeType : u32
 		{
-			eJPG = ".jpg"_fnv1a32,
-			eJPEG = ".jpeg"_fnv1a32,
-			ePNG = ".png"_fnv1a32,
-			eTGA = ".tga"_fnv1a32,
-			eBMP = ".bmp"_fnv1a32,
-			ePSD = ".psd"_fnv1a32,
-			eGIF = ".gif"_fnv1a32,
-			eHDR = ".hdr"_fnv1a32,
-			ePIC = ".pic"_fnv1a32,
-			ePNM = ".pnm"_fnv1a32,
-			eKTX = ".ktx"_fnv1a32,
-			eKTX2 = ".ktx2"_fnv1a32,
-			eDDS = ".dds"_fnv1a32,
+			eJPG = ".jpg"_hash32,
+			eJPEG = ".jpeg"_hash32,
+			ePNG = ".png"_hash32,
+			eTGA = ".tga"_hash32,
+			eBMP = ".bmp"_hash32,
+			ePSD = ".psd"_hash32,
+			eGIF = ".gif"_hash32,
+			eHDR = ".hdr"_hash32,
+			ePIC = ".pic"_hash32,
+			ePNM = ".pnm"_hash32,
+			eKTX = ".ktx"_hash32,
+			eKTX2 = ".ktx2"_hash32,
+			eDDS = ".dds"_hash32,
 		};
 	//}
 }

@@ -143,7 +143,7 @@ void CLibraryCompiler::Compile(const std::filesystem::path& library_path, FShade
 	if (!parse_file_to(library_path, shader_library_ci))
 		return;
 
-	FCompiledLibrary& compiled_library = shader_cache.libraries[utl::fnv1a_32_hash_cstr(shader_library_ci.name.c_str())];
+	FCompiledLibrary& compiled_library = shader_cache.libraries[utl::murmur_hash(shader_library_ci.name)];
 
 	auto parent_path = library_path.parent_path();
 

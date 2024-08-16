@@ -11,36 +11,36 @@ namespace engine
         {
             using namespace utl;
             // images
-            constexpr inline u32 ktx = ".ktx"_mr32;
-            constexpr inline u32 ktx2 = ".ktx2"_fnv1a32;
-            constexpr inline u32 dds = ".dds"_fnv1a32;
-            constexpr inline u32 png = ".png"_fnv1a32;
-            constexpr inline u32 jpg = ".jpg"_fnv1a32;
+            constexpr inline u32 ktx = ".ktx"_hash32;
+            constexpr inline u32 ktx2 = ".ktx2"_hash32;
+            constexpr inline u32 dds = ".dds"_hash32;
+            constexpr inline u32 png = ".png"_hash32;
+            constexpr inline u32 jpg = ".jpg"_hash32;
             constexpr inline u64 image_ts = 5;
 
             // meshes
-            constexpr inline u32 gltf = ".gltf"_fnv1a32;
-            constexpr inline u32 glb = ".glb"_fnv1a32;
-            constexpr inline u32 obj = ".obj"_fnv1a32;
-            constexpr inline u32 fbx = ".fbx"_fnv1a32;
+            constexpr inline u32 gltf = ".gltf"_hash32;
+            constexpr inline u32 glb = ".glb"_hash32;
+            constexpr inline u32 obj = ".obj"_hash32;
+            constexpr inline u32 fbx = ".fbx"_hash32;
             constexpr inline u64 mesh_ts = 2;
 
             // scripts
-            constexpr inline u32 js = ".js"_fnv1a32;
+            constexpr inline u32 js = ".js"_hash32;
             constexpr inline u64 script_ts = 1;
 
             // scenes
-            constexpr inline u32 iescene = ".iescene"_fnv1a32; // incenerate scene
+            constexpr inline u32 iescene = ".iescene"_hash32; // incenerate scene
             constexpr inline u64 scene_ts = 1;
 
             // audio
-            constexpr inline u32 wav = ".wav"_fnv1a32;
-            constexpr inline u32 wave = ".wave"_fnv1a32;
-            constexpr inline u32 ogg = ".ogg"_fnv1a32;
+            constexpr inline u32 wav = ".wav"_hash32;
+            constexpr inline u32 wave = ".wave"_hash32;
+            constexpr inline u32 ogg = ".ogg"_hash32;
             constexpr inline u64 audio_ts = 3;
 
             // particles
-            constexpr inline u32 efkefc = ".efkefc"_fnv1a32;
+            constexpr inline u32 efkefc = ".efkefc"_hash32;
         }
 
 		struct INCENERATE_VFS_EXPORT fs

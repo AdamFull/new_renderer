@@ -423,7 +423,7 @@ bool CGLSLANGCompiler::preprocess(std::span<uint8_t> shader_code, const FCompile
 	}
 
 	preprocessed_code = clean_code(preprocessed_code);
-	preprocessed_hash = utl::fnv1a_32_hash(preprocessed_code.data(), preprocessed_code.size());
+	preprocessed_hash = utl::murmur_hash(preprocessed_code);
 
 	return true;
 }

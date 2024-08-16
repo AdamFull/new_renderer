@@ -79,13 +79,13 @@ namespace engine
 		void AddVariable(const char* name, std::unique_ptr<IVariable>&& var)
 		{
 			// TODO: check for collisions
-			m_variables.emplace(utl::fnv1a_32_hash_cstr(name), std::move(var));
+			m_variables.emplace(utl::murmur_hash(name), std::move(var));
 		}
 
 		void AddBlock(const char* name, std::unique_ptr<IVariableBlock>&& block)
 		{
 			// TODO: check for collisions
-			m_blocks.emplace(utl::fnv1a_32_hash_cstr(name), std::move(block));
+			m_blocks.emplace(utl::murmur_hash(name), std::move(block));
 		}
 
 	protected:

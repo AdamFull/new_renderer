@@ -311,7 +311,7 @@ FRHIHandle CRenderInterface::CreateTextureObject(const std::string& path)
 {
 	auto name = filesystem::fs::get_stem(path);
 	auto ext = filesystem::fs::get_ext(path);
-	auto ext_hash = utl::fnv1a_32_hash_cstr(ext.c_str(), ext.size());
+	auto ext_hash = utl::murmur_hash(ext.c_str(), ext.size(), 0);
 	auto mime = utl::cast<EMimeType>(ext_hash);
 
 	FRHIHandle texture_id = FRHIHandle(m_pResources->getId<ITextureObject>(name.c_str()));
@@ -550,7 +550,7 @@ FShaderUploadInfo CRenderInterface::GetShaderNameTag(const std::string& name)
 	//}
 
 	FShaderUploadInfo load_info{};
-	load_info.libraryId = utl::fnv1a_32_hash_cstr(name_info.library_name.c_str());
+	load_info.libraryId = utl::murmur_hash(name_info.library_name);
 	load_info.shaderId = shader_compiler::make_module_unique_name(name_info.shader_name, name_info.definitions);
 
 	return load_info;

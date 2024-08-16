@@ -111,7 +111,7 @@ bool CDXCCompiler::preprocess(std::span<uint8_t> shader_code, const FCompileInfo
 	}
 	pBlob->Release();
 
-	preprocessed_hash = utl::fnv1a_32_hash(preprocessed_code.data(), preprocessed_code.size());
+	preprocessed_hash = utl::murmur_hash(preprocessed_code);
 
 	return true;
 }

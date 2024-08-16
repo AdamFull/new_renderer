@@ -212,8 +212,8 @@ namespace engine
 
 			inline void DoInsert(const void* data, u64 size, u64 offset)
 			{
-				auto new_hash = utl::murmur_hash_64(data, size, 0);
-				auto old_hash = utl::murmur_hash_64(&m_vData[offset], size, 0);
+				auto new_hash = utl::murmur_hash_64(reinterpret_cast<const char*>(data), size, 0);
+				auto old_hash = utl::murmur_hash_64(reinterpret_cast<const char*>(&m_vData[offset]), size, 0);
 
 				if (new_hash != old_hash)
 				{

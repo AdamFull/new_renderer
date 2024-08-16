@@ -17,7 +17,7 @@ namespace shader_compiler
 	{
 		u32 result_hash{ 0ll };
 		for (auto& token : tokens)
-			result_hash = (result_hash + utl::fnv1a_32_hash_cstr(token.c_str())) % MOD;
+			result_hash = (result_hash + utl::murmur_hash(token)) % MOD;
 		return result_hash;
 	}
 
@@ -26,20 +26,20 @@ namespace shader_compiler
 		switch (type)
 		{
 		case EShaderType::eUnknown: return 0ull; break;
-		case EShaderType::eVertex: return utl::fnv1a_32_hash_cstr("vertex"); break;
-		case EShaderType::eControl: return utl::fnv1a_32_hash_cstr("control"); break;
-		case EShaderType::eEvaluation: return utl::fnv1a_32_hash_cstr("evaluation"); break;
-		case EShaderType::eGeometry: return utl::fnv1a_32_hash_cstr("geometry"); break;
-		case EShaderType::eFragment: return utl::fnv1a_32_hash_cstr("fragment"); break;
-		case EShaderType::eCompute: return utl::fnv1a_32_hash_cstr("compute"); break;
-		case EShaderType::eRayGen: return utl::fnv1a_32_hash_cstr("raygen"); break;
-		case EShaderType::eIntersection: return utl::fnv1a_32_hash_cstr("intersection"); break;
-		case EShaderType::eAnyHit: return utl::fnv1a_32_hash_cstr("anyhit"); break;
-		case EShaderType::eClosestHit: return utl::fnv1a_32_hash_cstr("closesthit"); break;
-		case EShaderType::eMiss: return utl::fnv1a_32_hash_cstr("miss"); break;
-		case EShaderType::eCallable: return utl::fnv1a_32_hash_cstr("callable"); break;
-		case EShaderType::eTask: return utl::fnv1a_32_hash_cstr("task"); break;
-		case EShaderType::eMesh: return utl::fnv1a_32_hash_cstr("mesh"); break;
+		case EShaderType::eVertex: return utl::murmur_hash("vertex"); break;
+		case EShaderType::eControl: return utl::murmur_hash("control"); break;
+		case EShaderType::eEvaluation: return utl::murmur_hash("evaluation"); break;
+		case EShaderType::eGeometry: return utl::murmur_hash("geometry"); break;
+		case EShaderType::eFragment: return utl::murmur_hash("fragment"); break;
+		case EShaderType::eCompute: return utl::murmur_hash("compute"); break;
+		case EShaderType::eRayGen: return utl::murmur_hash("raygen"); break;
+		case EShaderType::eIntersection: return utl::murmur_hash("intersection"); break;
+		case EShaderType::eAnyHit: return utl::murmur_hash("anyhit"); break;
+		case EShaderType::eClosestHit: return utl::murmur_hash("closesthit"); break;
+		case EShaderType::eMiss: return utl::murmur_hash("miss"); break;
+		case EShaderType::eCallable: return utl::murmur_hash("callable"); break;
+		case EShaderType::eTask: return utl::murmur_hash("task"); break;
+		case EShaderType::eMesh: return utl::murmur_hash("mesh"); break;
 		}
 
 		return 0ull;
