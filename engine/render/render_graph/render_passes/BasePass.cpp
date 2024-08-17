@@ -190,9 +190,9 @@ void IRenderPass::InitShaderResources(const std::unique_ptr<IShaderObject>& shad
 	{
 		auto& render_resource = render_graph->GetRenderResource(resource_binding.resource);
 		if (render_resource.type & ERenderResourceTypeFlagBits::eAllImage)
-			shader->BindTexture(utl::fnv1a_64_hash_cstr(bind_point.c_str()), render_resource.handle, resource_binding.subresource);
+			shader->BindTexture(utl::murmur_hash_64(bind_point), render_resource.handle, resource_binding.subresource);
 		else if (render_resource.type == ERenderResourceTypeFlagBits::eBuffer)
-			shader->BindBuffer(utl::fnv1a_64_hash_cstr(bind_point.c_str()), render_resource.handle);
+			shader->BindBuffer(utl::murmur_hash_64(bind_point), render_resource.handle);
 	}
 }
 
@@ -293,9 +293,9 @@ void IComputePass::InitShaderResources(const std::unique_ptr<IShaderObject>& sha
 	{
 		auto& render_resource = render_graph->GetRenderResource(resource_binding.resource);
 		if (render_resource.type & ERenderResourceTypeFlagBits::eAllImage)
-			shader->BindTexture(utl::fnv1a_64_hash_cstr(bind_point.c_str()), render_resource.handle, resource_binding.subresource);
+			shader->BindTexture(utl::murmur_hash_64(bind_point), render_resource.handle, resource_binding.subresource);
 		else if (render_resource.type == ERenderResourceTypeFlagBits::eBuffer)
-			shader->BindBuffer(utl::fnv1a_64_hash_cstr(bind_point.c_str()), render_resource.handle);
+			shader->BindBuffer(utl::murmur_hash_64(bind_point), render_resource.handle);
 	}
 }
 

@@ -149,25 +149,25 @@ void CDebugDrawPass::_Render()
 
 			render_context->SetPrimitiveTopology(EVertexPrimitiveTopology::eTriangleList);
 
-			auto& constants = shader->GetConstantBlock(utl::fnv1a_64_hash_cstr("constants"));
+			auto& constants = shader->GetConstantBlock(utl::murmur_hash_64("constants"));
 			if (constants)
 			{
 				glm::vec2 scale;
 				scale.x = 2.f / io->screenSize.x;
 				scale.y = 2.f / io->screenSize.y;
 
-				constants->Set(utl::fnv1a_64_hash_cstr("scale"), scale);
+				constants->Set(utl::murmur_hash_64("scale"), scale);
 
 				glm::vec2 translate;
 				translate.x = -1.0f - 0.f * scale.x;
 				translate.y = -1.0f - 0.f * scale.y;
 
-				constants->Set(utl::fnv1a_64_hash_cstr("translate"), translate);
+				constants->Set(utl::murmur_hash_64("translate"), translate);
 
 				shader->FlushConstants(m_queue);
 			}
 
-			shader->BindTexture(utl::fnv1a_64_hash_cstr("font_sampler"), m_pRenderInterface->GetTextureObject(m_fontTexture)->Handle());
+			shader->BindTexture(utl::murmur_hash_64("font_sampler"), m_pRenderInterface->GetTextureObject(m_fontTexture)->Handle());
 
 			// TODO: add font texture support
 			shader->FlushDescriptors();

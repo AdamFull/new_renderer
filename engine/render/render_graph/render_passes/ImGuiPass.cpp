@@ -128,20 +128,20 @@ void CImGuiPass::_Render()
 		// Setup scale and translation:
 		// Our visible imgui space lies from draw_data->DisplayPps (top left) to draw_data->DisplayPos+data_data->DisplaySize (bottom right). DisplayPos is (0,0) for single viewport apps.
 		{
-			auto& constants = shader->GetConstantBlock(utl::fnv1a_64_hash_cstr("constants"));
+			auto& constants = shader->GetConstantBlock(utl::murmur_hash_64("constants"));
 			if (constants)
 			{
 				glm::vec2 scale;
 				scale.x = 2.f / draw_data->DisplaySize.x;
 				scale.y = 2.f / draw_data->DisplaySize.y;
 
-				constants->Set(utl::fnv1a_64_hash_cstr("scale"), scale);
+				constants->Set(utl::murmur_hash_64("scale"), scale);
 
 				glm::vec2 translate;
 				translate.x = -1.0f - draw_data->DisplayPos.x * scale.x;
 				translate.y = -1.0f - draw_data->DisplayPos.y * scale.y;
 
-				constants->Set(utl::fnv1a_64_hash_cstr("translate"), translate);
+				constants->Set(utl::murmur_hash_64("translate"), translate);
 
 				shader->FlushConstants(m_queue);
 			}
@@ -203,7 +203,7 @@ void CImGuiPass::_Render()
 
 					if (attachment != last_bound_resource)
 					{
-						shader->BindTexture(utl::fnv1a_64_hash_cstr("font_sampler"), m_pRenderInterface->GetTextureObject(attachment)->Handle());
+						shader->BindTexture(utl::murmur_hash_64("font_sampler"), m_pRenderInterface->GetTextureObject(attachment)->Handle());
 						shader->FlushDescriptors();
 						shader->BindResources(m_queue);
 						last_bound_resource = attachment;

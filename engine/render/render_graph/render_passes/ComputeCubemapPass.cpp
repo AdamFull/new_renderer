@@ -63,9 +63,9 @@ void CComputeCubemapPass::_Execute()
 			{
 				auto& binding_resource = render_graph->GetRenderResource(sesource_binding.resource);
 				if (binding_resource.handle == render_resource.handle)
-					shader->BindTexture(utl::fnv1a_64_hash_cstr(binding_point.c_str()), binding_resource.handle, mip == 0u ? ~0u : mip);
+					shader->BindTexture(utl::murmur_hash_64(binding_point), binding_resource.handle, mip == 0u ? ~0u : mip);
 				else
-					shader->BindTexture(utl::fnv1a_64_hash_cstr(binding_point.c_str()), binding_resource.handle);
+					shader->BindTexture(utl::murmur_hash_64(binding_point), binding_resource.handle);
 			}
 
 			f32 layer_roughness = utl::cast<f32>(mip) / utl::cast<f32>(info.mipLevels - 1u);

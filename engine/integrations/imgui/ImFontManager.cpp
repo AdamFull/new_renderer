@@ -19,13 +19,13 @@ void CImFontManager::AddFont(const char* name, const utl::vector<u8>& bytes, f32
 {
 	ImGuiIO& io = ImGui::GetIO();
 
-	auto hash = utl::fnv1a_64_hash_cstr(name);
+	auto hash = utl::murmur_hash_64(name);
 	m_fonts[hash] = io.Fonts->AddFontFromMemoryTTF((void*)bytes.data(), bytes.size(), size, config, glyph_range);
 }
 
 ImFont* CImFontManager::GetFont(const char* name)
 {
-	auto hash = utl::fnv1a_64_hash_cstr(name);
+	auto hash = utl::murmur_hash_64(name);
 	if (auto found = m_fonts.find(hash); found != m_fonts.end())
 		return found->second;
 

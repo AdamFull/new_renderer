@@ -211,7 +211,7 @@ void CVertexHandler::Create(const FVertexHandlerCreateInfo& create_info)
 		ss << ":" << definition;
 	m_definitions = ss.str();
 
-	m_attributeHash = utl::fnv1a_64_hash_cstr(m_definitions.c_str());
+	m_attributeHash = utl::murmur_hash_64(m_definitions);
 
 	log_info("[Vertex Handler] Created vertex handler: {}:{}.", create_info.name, m_definitions);
 

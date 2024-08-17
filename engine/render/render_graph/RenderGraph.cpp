@@ -1418,7 +1418,7 @@ void CRenderGraph::AddGroupNode(FRenderGraphGroupNodeCreateInfo& create_info)
 
 void CRenderGraph::AddLayerNode(FRenderGraphGroupNodeCreateInfo& create_info)
 {
-	m_nameToLayer.emplace(utl::fnv1a_64_hash_cstr(create_info.name.c_str()), m_vGraphNodes.size());
+	m_nameToLayer.emplace(utl::murmur_hash_64(create_info.name), m_vGraphNodes.size());
 	AddGroupNode(create_info);
 }
 
@@ -1499,7 +1499,7 @@ FRenderGraphNodeHeader* CRenderGraph::CreateRenderNode(FRenderGraphComputePassNo
 
 void CRenderGraph::AddPassToLayer(const std::string& layer_name, std::unique_ptr<IBasePass>&& pass)
 {
-	auto hash = utl::fnv1a_64_hash_cstr(layer_name.c_str());
+	auto hash = utl::murmur_hash_64(layer_name);
 
 	if (auto found = m_nameToLayer.find(hash); found != m_nameToLayer.end())
 	{

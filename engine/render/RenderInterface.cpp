@@ -311,7 +311,7 @@ FRHIHandle CRenderInterface::CreateTextureObject(const std::string& path)
 {
 	auto name = filesystem::fs::get_stem(path);
 	auto ext = filesystem::fs::get_ext(path);
-	auto ext_hash = utl::murmur_hash(ext.c_str(), ext.size(), 0);
+	auto ext_hash = utl::murmur_hash(ext);
 	auto mime = utl::cast<EMimeType>(ext_hash);
 
 	FRHIHandle texture_id = FRHIHandle(m_pResources->getId<ITextureObject>(name.c_str()));

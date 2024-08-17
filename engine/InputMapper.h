@@ -45,14 +45,14 @@ namespace engine
 		{
 			std::array<EKeyCode, sizeof...(_Args)> keys{ {args...} };
 			
-			auto& action = m_inputActions[utl::fnv1a_64_hash(action_name)];
+			auto& action = m_inputActions[utl::murmur_hash_64(action_name)];
 			action.keys.insert(action.keys.end(), keys.begin(), keys.end());
 		}
 
 		template<class... _Args>
 		void BindAction(const char* action_name, _Args&& ...args)
 		{
-			auto found = m_inputActions.find(utl::fnv1a_64_hash(action_name));
+			auto found = m_inputActions.find(utl::murmur_hash_64(action_name));
 			if (found != m_inputActions.end())
 			{
 				auto& input_action = found->second;
@@ -65,7 +65,7 @@ namespace engine
 		{
 			static_assert(sizeof...(_Args) % 2ull == 0, "Incorrect argument count, it should be even.");
 
-			auto& new_axis = m_inputAxis[utl::fnv1a_64_hash(axis_name)];
+			auto& new_axis = m_inputAxis[utl::murmur_hash_64(axis_name)];
 			new_axis.type = type;
 
 			UnpackAxisValues(new_axis.keyValue, std::forward<_Args>(args)...);
@@ -74,7 +74,7 @@ namespace engine
 		template<class... _Args>
 		void BindAxis(const char* axis_name, _Args& ...args)
 		{
-			auto found = m_inputAxis.find(utl::fnv1a_64_hash(axis_name));
+			auto found = m_inputAxis.find(utl::murmur_hash_64(axis_name));
 			if (found != m_inputAxis.end())
 			{
 				auto& found_axis = found->second;
