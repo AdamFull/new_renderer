@@ -1,5 +1,5 @@
 #include "RenderInterface.h"
-#include <utils/uuid.h>
+#include <uuid.hpp>
 
 #include "render_api/vulkan/VkRenderContext.h"
 
@@ -432,7 +432,7 @@ FRHIHandle CRenderInterface::CreateShaderObject(const std::string& name, const F
 	auto new_shader = std::make_unique<CShaderObject>(this);
 	new_shader->Create(name, shader_ci, std::move(shader_stages));
 
-	auto uuid = utl::uuid_v4::gen();
+	auto uuid = utl::to_string(utl::generate_guid());
 	return FRHIHandle(m_pResources->add<IShaderObject>(uuid.c_str(), std::move(new_shader)));
 }
 
@@ -448,7 +448,7 @@ FRHIHandle CRenderInterface::CreateShaderObject(const std::string& name, const F
 	auto new_shader = std::make_unique<CShaderObject>(this);
 	new_shader->Create(name, shader_ci, std::move(shader_stages));
 
-	auto uuid = utl::uuid_v4::gen();
+	auto uuid = utl::to_string(utl::generate_guid());
 	return FRHIHandle(m_pResources->add<IShaderObject>(uuid.c_str(), std::move(new_shader)));
 }
 

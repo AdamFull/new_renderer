@@ -1,7 +1,7 @@
 #include "GPUVector.h"
 #include "BufferObject.h"
 
-#include <memory.h>
+#include <memory.hpp>
 
 using namespace engine::render;
 
