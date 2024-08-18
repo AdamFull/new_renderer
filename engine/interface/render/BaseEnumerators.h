@@ -1,6 +1,6 @@
 #pragma once
 
-#include <container/flags.h>
+#include <enum.hpp>
 
 namespace engine
 {

@@ -55,12 +55,6 @@ namespace engine
 		struct DropdownField : refl::attr::usage::field, refl::attr::usage::function { std::array<const char*, N> fields; };
 	}
 
-	template <typename _Enum>
-	inline constexpr std::array<std::pair<_Enum, entt::hashed_string>, 0> EnumEntries;
-
-	template <typename _Enum>
-	constexpr bool HasEnumEntries = !EnumEntries<_Enum>.empty();
-
 	template<typename _Ty>
 	void Serialize(nlohmann::json& j, const _Ty& obj)
 	{

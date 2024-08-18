@@ -1,5 +1,6 @@
 #pragma once
 
+#include <enum.hpp>
 #include <engine/integrations/imgui/Attributes.h>
 #include <engine/integrations/imgui/ImGuiElements.h>
 
@@ -124,20 +125,20 @@ namespace engine
 		template<typename _Enum>
 		bool PropertyEdit(const char* field_name, _Enum& val) requires std::is_enum_v<_Enum>
 		{
-			if constexpr (HasEnumEntries<_Enum>)
+			if constexpr (utl::has_enum_metadata<_Enum>)
 			{
-				const char* selected{ nullptr };
-				auto it = std::find_if(EnumEntries<_Enum>.begin(), EnumEntries<_Enum>.end(), [val](auto& pair) { return pair.first == val; });
-				if (it != EnumEntries<_Enum>.end())
+				std::string_view selected;
+				auto it = std::find_if(utl::enum_metadata<_Enum>.begin(), utl::enum_metadata<_Enum>.end(), [val](auto& pair) { return pair.first == val; });
+				if (it != utl::enum_metadata<_Enum>.end())
 					selected = it->second;
 
 				bool changed = false;
 				if (ImGui::GBeginTable(field_name))
 				{
 					ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-					if (ImGui::BeginCombo(field_name, selected))
+					if (ImGui::BeginCombo(field_name, selected.data()))
 					{
-						for (auto& [entry, entryString] : EnumEntries<_Enum>)
+						for (auto& [entry, entryString] : utl::enum_metadata<_Enum>)
 						{
 							bool isSelected = val == entry;
 							if (ImGui::Selectable(entryString, isSelected))

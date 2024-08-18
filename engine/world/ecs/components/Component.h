@@ -10,12 +10,12 @@
 #include <engine/integrations/imgui/font/IconsMaterialDesignIcons.h>
 #include <engine/integrations/imgui/ImGuiElements.h>
 
-#include <array>
-#include <string_view>
 #include <utility>
 
 #include <engine/integrations/imgui/Attributes.h>
 #include <string.hpp>
+
+#include <enum.hpp>
 
 namespace icon
 {

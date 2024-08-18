@@ -60,14 +60,12 @@ namespace engine
 			};
 		}
 	}
-
-	template<>
-	inline constexpr std::array EnumEntries<engine::world::ecs::ECameraType> =
-	{
-		std::pair{world::ecs::ECameraType::eOrthographic, "Orthographic"_hs},
-		std::pair{world::ecs::ECameraType::ePerspective, "Perspective"_hs}
-	};
 }
+
+UTL_REGISTER_ENUM_CLASS(engine::world::ecs::ECameraType,
+	UTL_ENUM_META(engine::world::ecs::ECameraType::eOrthographic, "Orthographic"),
+	UTL_ENUM_META(engine::world::ecs::ECameraType::ePerspective, "Perspective")
+);
 
 REFL_AUTO(
 	type(engine::world::ecs::FPupa),
