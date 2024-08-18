@@ -26,39 +26,40 @@ namespace engine
 
 		namespace shader_bindings
 		{
-			constexpr const u64 global_uniform_frame_data = utl::murmur_hash_64("GlobalUniformFrameData");
-			constexpr const u64 global_buffer_references = utl::murmur_hash_64("GlobalBufferReferences");
-			constexpr const u64 global_post_process_data = utl::murmur_hash_64("GlobalPostProcessingData");
-			constexpr const u64 uniform_mesh_data = utl::murmur_hash_64("UniformMeshData");
-			constexpr const u64 uniform_skinning_joints = utl::murmur_hash_64("UniformSkinningJoints");
-			constexpr const u64 external_bind_resources = utl::murmur_hash_64("FExternalBindResources");
-			constexpr const u64 histogram_compute_params = utl::murmur_hash_64("FHistogramComputeParams");
-			constexpr const u64 min_log_lum_label = utl::murmur_hash_64("minLogLum");
-			constexpr const u64 log_lum_range_label = utl::murmur_hash_64("logLumRange");
-			constexpr const u64 time_coeff_label = utl::murmur_hash_64("timeCoeff");
-			constexpr const u64 time_num_pixels_x_label = utl::murmur_hash_64("numPixelsX");
-			constexpr const u64 time_num_pixels_y_label = utl::murmur_hash_64("numPixelsY");
-			constexpr const u64 references = utl::murmur_hash_64("references");
-			constexpr const u64 frustum_label = utl::murmur_hash_64("frustum");
-			constexpr const u64 shader_data = utl::murmur_hash_64("shadowData");
-			constexpr const u64 call_id_label = utl::murmur_hash_64("callID");
-			constexpr const u64 shadow_index_label = utl::murmur_hash_64("shadowIndex");
-			constexpr const u64 layer_label = utl::murmur_hash_64("layer");
-			constexpr const u64 compute_cubemap_data = utl::murmur_hash_64("ComputeCubemapData");
-			constexpr const u64 roughness_label = utl::murmur_hash_64("roughness");
-			constexpr const u64 mesh_data = utl::murmur_hash_64("meshData");
-			constexpr const u64 batch_id_label = utl::murmur_hash_64("batchID");
-			constexpr const u64 vbo_id_label = utl::murmur_hash_64("vboId");
-			constexpr const u64 geometry_buffers = utl::murmur_hash_64("GeometryBuffers");
-			constexpr const u64 vb_label = utl::murmur_hash_64("vb");
-			constexpr const u64 ib_label = utl::murmur_hash_64("ib");
-			constexpr const u64 mb_label = utl::murmur_hash_64("mb");
-			constexpr const u64 vrb_label = utl::murmur_hash_64("vrb");
-			constexpr const u64 bb_label = utl::murmur_hash_64("bb");
-			constexpr const u64 tb_label = utl::murmur_hash_64("tb");
-			constexpr const u64 lb_label = utl::murmur_hash_64("lb");
-			constexpr const u64 last_index_label = utl::murmur_hash_64("lastIndex");
-			constexpr const u64 last_vertex_label = utl::fnv1a_64_hash_cstr("lastVertex");
+			using namespace utl;
+			constexpr const u64 global_uniform_frame_data = "GlobalUniformFrameData"_hash64;
+			constexpr const u64 global_buffer_references = "GlobalBufferReferences"_hash64;
+			constexpr const u64 global_post_process_data = "GlobalPostProcessingData"_hash64;
+			constexpr const u64 uniform_mesh_data = "UniformMeshData"_hash64;
+			constexpr const u64 uniform_skinning_joints = "UniformSkinningJoints"_hash64;
+			constexpr const u64 external_bind_resources = "FExternalBindResources"_hash64;
+			constexpr const u64 histogram_compute_params = "FHistogramComputeParams"_hash64;
+			constexpr const u64 min_log_lum_label = "minLogLum"_hash64;
+			constexpr const u64 log_lum_range_label = "logLumRange"_hash64;
+			constexpr const u64 time_coeff_label = "timeCoeff"_hash64;
+			constexpr const u64 time_num_pixels_x_label = "numPixelsX"_hash64;
+			constexpr const u64 time_num_pixels_y_label = "numPixelsY"_hash64;
+			constexpr const u64 references = "references"_hash64;
+			constexpr const u64 frustum_label = "frustum"_hash64;
+			constexpr const u64 shader_data = "shadowData"_hash64;
+			constexpr const u64 call_id_label = "callID"_hash64;
+			constexpr const u64 shadow_index_label = "shadowIndex"_hash64;
+			constexpr const u64 layer_label = "layer"_hash64;
+			constexpr const u64 compute_cubemap_data = "ComputeCubemapData"_hash64;
+			constexpr const u64 roughness_label = "roughness"_hash64;
+			constexpr const u64 mesh_data = "meshData"_hash64;
+			constexpr const u64 batch_id_label = "batchID"_hash64;
+			constexpr const u64 vbo_id_label = "vboId"_hash64;
+			constexpr const u64 geometry_buffers = "GeometryBuffers"_hash64;
+			constexpr const u64 vb_label = "vb"_hash64;
+			constexpr const u64 ib_label = "ib"_hash64;
+			constexpr const u64 mb_label = "mb"_hash64;
+			constexpr const u64 vrb_label = "vrb"_hash64;
+			constexpr const u64 bb_label = "bb"_hash64;
+			constexpr const u64 tb_label = "tb"_hash64;
+			constexpr const u64 lb_label = "lb"_hash64;
+			constexpr const u64 last_index_label = "lastIndex"_hash64;
+			constexpr const u64 last_vertex_label = "lastVertex"_hash64;
 		}
 			
 #ifndef BUILD_WITHOUT_DEBUGGIND
