@@ -21,8 +21,8 @@ void CGPUVector::Upload()
 		if (buffer->Size() < m_vData.size())
 		{
 			FBufferCreateInfo buffer_ci{};
-			buffer_ci.count = m_vData.size() / m_elemSize;
-			buffer_ci.size = m_elemSize;
+			buffer_ci.count = m_vData.size();
+			buffer_ci.size = 1u;
 			buffer_ci.flags = m_bufferFlag;
 
 			buffer->Resize(m_srOriginalName, buffer_ci);

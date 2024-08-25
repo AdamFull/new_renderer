@@ -41,9 +41,16 @@ void CCameraSystem::__Update(f32 fDt)
 		// TODO: add something like active camera tag
 		if (base.enabled)
 		{
-			camera.forward = glm::normalize(glm::rotate(transform.grotation, glm::vec3(0.f, 0.f, -1.f)));
-			camera.right = glm::normalize(glm::cross(camera.forward, glm::vec3{ 0.f, 1.f, 0.f }));
-			camera.up = glm::normalize(glm::cross(camera.right, camera.forward));
+			auto posHash = utl::murmur_hash(reinterpret_cast<const char*>(&transform.grotation[0]), sizeof(transform.gposition));
+
+			if (posHash != camera.lastPosHash)
+			{
+				camera.lastPosHash = posHash;
+				camera.forward = glm::normalize(glm::rotate(transform.grotation, glm::vec3(0.f, 0.f, -1.f)));
+				camera.right = glm::normalize(glm::cross(camera.forward, glm::vec3{ 0.f, 1.f, 0.f }));
+				camera.up = glm::normalize(glm::cross(camera.right, camera.forward));
+
+			}
 
 			//if (camera.moved)
 			{
@@ -53,7 +60,7 @@ void CCameraSystem::__Update(f32 fDt)
 				camera.view = glm::lookAt(transform.gposition, transform.gposition + camera.forward, camera.up);
 				camera.projection = glm::perspective(camera.fieldOfView, screen_size.size.x / screen_size.size.y, camera.nearPlane, camera.farPlane);
 
-				render_world->UpdateCamera(camera.frustumID, camera.view, prev_view, camera.projection, prev_projection, glm::vec2(screen_size.size.x, screen_size.size.y), camera.nearPlane, camera.farPlane);
+				render_world->UpdateCamera(camera.frustumID, transform.gposition, transform.grotation, glm::vec2(screen_size.size.x, screen_size.size.y), camera.fieldOfView, camera.nearPlane, camera.farPlane);
 
 				camera.moved = false;
 			}

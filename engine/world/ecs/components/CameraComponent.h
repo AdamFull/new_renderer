@@ -56,6 +56,8 @@ namespace engine
 
 				u64 frustumID{ ~0ull };
 
+				u32 lastPosHash{ ~0u };
+
 				std::vector<FPupa> pupas;
 			};
 		}
