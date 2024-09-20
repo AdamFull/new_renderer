@@ -247,22 +247,6 @@ namespace engine
 			virtual const FShaderReflectionData& GetReflection() const = 0;
 		};
 
-		class IRenderTransform
-		{
-		public:
-			virtual ~IRenderTransform() = default;
-
-			virtual void Create() = 0;
-		};
-
-		class IRenderCamera
-		{
-		public:
-			virtual ~IRenderCamera() = default;
-
-			virtual void Create() = 0;
-		};
-
 		struct FRenderSceneStats
 		{
 			u64 vboCount{ 0ull };
@@ -329,164 +313,6 @@ namespace engine
 
 			u64 totalGPUMemory{};
 			u64 usedGPUMemory{};
-		};
-
-
-		struct FFrustum
-		{
-		public:
-			void update(const glm::mat4& view, const glm::mat4& projection, glm::vec4* frustumSides)
-			{
-				clip[0] = view[0][0] * projection[0][0] + view[0][1] * projection[1][0] + view[0][2] * projection[2][0] + view[0][3] * projection[3][0];
-				clip[1] = view[0][0] * projection[0][1] + view[0][1] * projection[1][1] + view[0][2] * projection[2][1] + view[0][3] * projection[3][1];
-				clip[2] = view[0][0] * projection[0][2] + view[0][1] * projection[1][2] + view[0][2] * projection[2][2] + view[0][3] * projection[3][2];
-				clip[3] = view[0][0] * projection[0][3] + view[0][1] * projection[1][3] + view[0][2] * projection[2][3] + view[0][3] * projection[3][3];
-
-				clip[4] = view[1][0] * projection[0][0] + view[1][1] * projection[1][0] + view[1][2] * projection[2][0] + view[1][3] * projection[3][0];
-				clip[5] = view[1][0] * projection[0][1] + view[1][1] * projection[1][1] + view[1][2] * projection[2][1] + view[1][3] * projection[3][1];
-				clip[6] = view[1][0] * projection[0][2] + view[1][1] * projection[1][2] + view[1][2] * projection[2][2] + view[1][3] * projection[3][2];
-				clip[7] = view[1][0] * projection[0][3] + view[1][1] * projection[1][3] + view[1][2] * projection[2][3] + view[1][3] * projection[3][3];
-
-				clip[8] = view[2][0] * projection[0][0] + view[2][1] * projection[1][0] + view[2][2] * projection[2][0] + view[2][3] * projection[3][0];
-				clip[9] = view[2][0] * projection[0][1] + view[2][1] * projection[1][1] + view[2][2] * projection[2][1] + view[2][3] * projection[3][1];
-				clip[10] = view[2][0] * projection[0][2] + view[2][1] * projection[1][2] + view[2][2] * projection[2][2] + view[2][3] * projection[3][2];
-				clip[11] = view[2][0] * projection[0][3] + view[2][1] * projection[1][3] + view[2][2] * projection[2][3] + view[2][3] * projection[3][3];
-
-				clip[12] = view[3][0] * projection[0][0] + view[3][1] * projection[1][0] + view[3][2] * projection[2][0] + view[3][3] * projection[3][0];
-				clip[13] = view[3][0] * projection[0][1] + view[3][1] * projection[1][1] + view[3][2] * projection[2][1] + view[3][3] * projection[3][1];
-				clip[14] = view[3][0] * projection[0][2] + view[3][1] * projection[1][2] + view[3][2] * projection[2][2] + view[3][3] * projection[3][2];
-				clip[15] = view[3][0] * projection[0][3] + view[3][1] * projection[1][3] + view[3][2] * projection[2][3] + view[3][3] * projection[3][3];
-
-				//Left
-				frustumSides[1][0] = clip[3] - clip[0];
-				frustumSides[1][1] = clip[7] - clip[4];
-				frustumSides[1][2] = clip[11] - clip[8];
-				frustumSides[1][3] = clip[15] - clip[12];
-				normalizeFrustumSide(1, frustumSides);
-
-				//Right
-				frustumSides[0][0] = clip[3] + clip[0];
-				frustumSides[0][1] = clip[7] + clip[4];
-				frustumSides[0][2] = clip[11] + clip[8];
-				frustumSides[0][3] = clip[15] + clip[12];
-				normalizeFrustumSide(0, frustumSides);
-
-				//Top
-				frustumSides[3][0] = clip[3] - clip[1];
-				frustumSides[3][1] = clip[7] - clip[5];
-				frustumSides[3][2] = clip[11] - clip[9];
-				frustumSides[3][3] = clip[15] - clip[13];
-				normalizeFrustumSide(3, frustumSides);
-
-				//Bottom
-				frustumSides[2][0] = clip[3] + clip[1];
-				frustumSides[2][1] = clip[7] + clip[5];
-				frustumSides[2][2] = clip[11] + clip[9];
-				frustumSides[2][3] = clip[15] + clip[13];
-				normalizeFrustumSide(2, frustumSides);
-
-				//Back
-				frustumSides[4][0] = clip[3] + clip[2];
-				frustumSides[4][1] = clip[7] + clip[6];
-				frustumSides[4][2] = clip[11] + clip[10];
-				frustumSides[4][3] = clip[15] + clip[14];
-				normalizeFrustumSide(4, frustumSides);
-
-				//Front
-				frustumSides[5][0] = clip[3] - clip[2];
-				frustumSides[5][1] = clip[7] - clip[6];
-				frustumSides[5][2] = clip[11] - clip[10];
-				frustumSides[5][3] = clip[15] - clip[14];
-			}
-
-			/**
-			 * @brief Check is point in frustum
-			 *
-			 * @param pos Point position
-			 * @return true when point is in frustum
-			 */
-			//bool checkPoint(const glm::vec3& pos) const
-			//{
-			//	for (u32 i = 0; i < 6; i++)
-			//	{
-			//		if (frustumSides[i].x * pos.x + frustumSides[i].y * pos.y + frustumSides[i].z * pos.z + frustumSides[i].w <= 0.0f)
-			//			return false;
-			//	}
-			//	return true;
-			//}
-
-			/**
-			 * @brief Check is sphere intersects with frustum
-			 *
-			 * @param pos Sphere center position
-			 * @param radius Sphere radius
-			 * @return true when sphere intersects with camera frustum
-			 */
-			//bool checkSphere(const glm::vec3& pos, f32 radius) const
-			//{
-			//	for (u32 i = 0; i < 6; i++)
-			//	{
-			//		if (frustumSides[i].x * pos.x + frustumSides[i].y * pos.y + frustumSides[i].z * pos.z + frustumSides[i].w <= -radius)
-			//			return false;
-			//	}
-			//	return true;
-			//}
-
-			/**
-			 * @brief Check is bounding box intersects with frustum
-			 *
-			 * @param start Bounding box start point
-			 * @param end Bounding box end boint
-			 * @return true when bounding box intersects with camera frustum
-			 */
-			//bool checkBox(const glm::vec3& start, const glm::vec3& end) const
-			//{
-			//	for (u32 i = 0; i < 6; i++)
-			//	{
-			//		if (frustumSides[i].x * start.x + frustumSides[i].y * start.y + frustumSides[i].z * start.z + frustumSides[i].w <= 0.0f
-			//			&& frustumSides[i].x * end.x + frustumSides[i].y * start.y + frustumSides[i].z * start.z + frustumSides[i].w <= 0.0f
-			//			&& frustumSides[i].x * start.x + frustumSides[i].y * end.y + frustumSides[i].z * start.z + frustumSides[i].w <= 0.0f
-			//			&& frustumSides[i].x * end.x + frustumSides[i].y * end.y + frustumSides[i].z * start.z + frustumSides[i].w <= 0.0f
-			//			&& frustumSides[i].x * start.x + frustumSides[i].y * start.y + frustumSides[i].z * end.z + frustumSides[i].w <= 0.0f
-			//			&& frustumSides[i].x * end.x + frustumSides[i].y * start.y + frustumSides[i].z * end.z + frustumSides[i].w <= 0.0f
-			//			&& frustumSides[i].x * start.x + frustumSides[i].y * end.y + frustumSides[i].z * end.z + frustumSides[i].w <= 0.0f
-			//			&& frustumSides[i].x * end.x + frustumSides[i].y * end.y + frustumSides[i].z * end.z + frustumSides[i].w <= 0.0f)
-			//			return false;
-			//	}
-			//	return true;
-			//}
-
-			std::array<f32, 16> clip;
-		private:
-			void normalizeFrustumSide(u64 side, glm::vec4* frustumSides)
-			{
-				auto magnitude = std::sqrt(frustumSides[side][0] * frustumSides[side][0] + frustumSides[side][1] * frustumSides[side][1] + frustumSides[side][2] * frustumSides[side][2]);
-				frustumSides[side][0] /= magnitude;
-				frustumSides[side][1] /= magnitude;
-				frustumSides[side][2] /= magnitude;
-				frustumSides[side][3] /= magnitude;
-			}
-		};
-
-		struct FRenderCamera
-		{
-			// Unique index to gpu camera instance
-			u32 cameraId{ ~0u };
-			// Unique index to gpu matrices range
-			u32 matricesId{ ~0u };
-			// Unique index to gpu frustum sides
-			u32 frustumId{ ~0u };
-			// Camera/culler type
-			ERenderGeometryCullerType type{};
-
-			f32 znear{};
-			f32 zfar{};
-
-			glm::vec2 size{};
-
-			FFrustum frustum{};
-
-			std::array<u32, 6ull> paramHash;
 		};
 
 		class IRenderContext
@@ -585,9 +411,9 @@ namespace engine
 			virtual void Create() = 0;
 
 			virtual u64 RegisterCamera(ERenderGeometryCullerType type) = 0;
-			virtual void UpdateCamera(u64 camera_id, const glm::vec3& position, const glm::quat& rotation, const glm::vec2& size, f32 fov, f32 znear = 0.f, f32 zfar = 1.f) = 0;
-			virtual const FRenderCamera& GetCamera(u64 index) const = 0;
-			virtual const FRenderCamera& GetDefaultCamera() const = 0;
+			virtual void UpdateCamera(u64 camera_id, const glm::mat4& view, const glm::mat4& prev_view, const glm::mat4& projection, const glm::mat4& prev_projection, const glm::vec2& size, float znear = 0.f, float zfar = 1.f) = 0;
+			virtual const FCamera& GetCamera(u64 index) const = 0;
+			virtual const FCamera& GetDefaultCamera() const = 0;
 			virtual const u64 GetCameraID(ERenderGeometryCullerType type) const = 0;
 			virtual const u64 GetDefaultCameraID() const = 0;
 

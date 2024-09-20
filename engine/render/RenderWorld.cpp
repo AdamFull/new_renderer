@@ -1,11 +1,6 @@
 #include "RenderWorld.h"
 
 #include "GPUVector.h"
-#include "RangeGPUVector.h"
-
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/quaternion.hpp>
-#include <glm/gtx/quaternion.hpp>
 
 using namespace engine::render;
 
@@ -35,9 +30,6 @@ CRenderWorld::CRenderWorld(IRenderInterface* render_interface)
 
 	for (auto& buffer : m_vBuffers)
 		buffer = std::make_unique<CGPUVector>(render_interface);
-
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eMatricesBuffer)) = std::make_unique<CRangeGPUVector>(render_interface);
-	m_vBuffers.at(utl::enum_cast(ERenderBufferIndices::eCameraBuffer)) = std::make_unique<CRangeGPUVector>(render_interface);
 }
 
 void CRenderWorld::Create()
@@ -71,152 +63,88 @@ void CRenderWorld::Create()
 
 u64 CRenderWorld::RegisterCamera(ERenderGeometryCullerType type)
 {
+	u64 camera_id = m_vSceneFrustums.size();
+	m_vSceneFrustums.emplace_back();
+
 	auto& camera_buffer = GetDrawBuffer(ERenderBufferIndices::eCameraBuffer);
-	auto& frustum_buffer = GetDrawBuffer(ERenderBufferIndices::eFrustumBuffer);
-	auto& matrices_buffer = GetDrawBuffer(ERenderBufferIndices::eMatricesBuffer);
+	auto& camera = *(camera_buffer->EmplaceBack<FCamera>());
+	camera.type = type == ERenderGeometryCullerType::eCascadedShadow;
 
-	auto& new_camera = m_vCameras.emplace_back();
-	new_camera.cameraId = camera_buffer->AddByteBlock();
-	new_camera.matricesId = matrices_buffer->AddByteBlock(matrix_offset_count);
-	new_camera.frustumId = frustum_buffer->AddByteBlock(4u);
-	new_camera.type = type;
+	auto& culling_info = m_vCullingInfo.emplace_back();
+	culling_info.cullerID = camera_id;
+	culling_info.type = type;
 
-	//camera.type = type == ERenderGeometryCullerType::eCascadedShadow; // I think that it's "ortho"/"perspective"
-
-	return m_vCameras.size() - 1ull;
+	return camera_id;
 }
 
-void CRenderWorld::UpdateCamera(u64 camera_id, const glm::vec3& position, const glm::quat& rotation, const glm::vec2& size, f32 fov, f32 znear, f32 zfar)
+void CRenderWorld::UpdateCamera(u64 camera_id, const glm::mat4& view, const glm::mat4& prev_view, const glm::mat4& projection, const glm::mat4& prev_projection, const glm::vec2& size, float znear, float zfar)
+{
+	auto& frustum = m_vSceneFrustums.at(camera_id);
+	frustum.update(view, projection);
+
+	std::array<glm::mat4, matrix_offset_count> matrices{};
+	matrices[view_matrix_offset] = view;																							// view_matrix_offset
+	matrices[inv_view_matrix_offset] = glm::inverse(matrices[view_matrix_offset]);													// inv_view_matrix_offset
+	matrices[projection_matrix_offset] = projection;																				// projection_matrix_offset
+	matrices[inv_projection_matrix_offset] = glm::inverse(matrices[projection_matrix_offset]);										// inv_projection_matrix_offset
+	matrices[view_projection_matrix_offset] = matrices[projection_matrix_offset] * matrices[view_matrix_offset];					// view_projection_matrix_offset
+	matrices[prev_view_projection_matrix_offset] = prev_projection * prev_view;		// prev_view_projection_matrix_offset
+	matrices[inv_view_projection_matrix_offset] = glm::inverse(matrices[view_projection_matrix_offset]);							// inv_view_projection_matrix_offset
+	auto& camera_reprojection = matrices[reprojection_matrix_offset];																// reprojection_matrix_offset
+
+	camera_reprojection = matrices[prev_view_projection_matrix_offset] *  matrices[inv_view_projection_matrix_offset];
+	//camera_reprojection = matrices[inv_view_projection_matrix_offset] * matrices[prev_view_projection_matrix_offset];
+
+	float rcp_half_dimx = 2.0f / size.x;
+	float rcp_half_dimy = 2.0f / size.y;
+	float rcp_z_magic = znear / (zfar - znear);
+
+	bool linear_z = false;
+	
+	// Transform from uv to clip space: texcoord * 2 - 1
+	static glm::mat4 to_clip_space =
+	{
+		rcp_half_dimx, 0.0f, 0.0f, 0.0f,
+		0.0f, -rcp_half_dimy, 0.0f, 0.0f,
+		0.0f, 0.0f, linear_z ? rcp_z_magic : 1.0f, 0.0f,
+		- 1.0f, 1.0f, linear_z ? -rcp_z_magic : 0.0f, 1.0f
+	};
+	// Transform from clip to uv space: texcoord * 0.5 + 0.5
+	static glm::mat4 to_uv_space =
+	{
+		1.0f / rcp_half_dimx, 0.0f, 0.0f, 0.0f,
+		0.0f, -1.0f / rcp_half_dimy, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f,
+		1.0f / rcp_half_dimx, 1.0f / rcp_half_dimy, 0.0f, 1.0f
+	};
+	camera_reprojection = to_clip_space * camera_reprojection * to_uv_space;
+
+	auto& camera_buffer = GetDrawBuffer(ERenderBufferIndices::eCameraBuffer);
+	const FCamera* camera = camera_buffer->at<FCamera>(camera_id);
+	camera_buffer->Set(camera_id, FCamera{ utl::cast<u32>(m_stats.matricesCount), camera->type, znear, zfar, size, 1.f / size });
+
+	auto& matrices_buffer = GetDrawBuffer(ERenderBufferIndices::eMatricesBuffer);
+	matrices_buffer->Copy(matrices);
+	m_stats.matricesCount += matrices.size();
+}
+
+const FCamera& CRenderWorld::GetCamera(u64 index) const
 {
 	auto& camera_buffer = GetDrawBuffer(ERenderBufferIndices::eCameraBuffer);
-	auto& frustum_buffer = GetDrawBuffer(ERenderBufferIndices::eFrustumBuffer);
-	auto& matrices_buffer = GetDrawBuffer(ERenderBufferIndices::eMatricesBuffer);
-
-	auto& camera = m_vCameras[camera_id];
-
-	const std::array<std::pair<const void*, u64>, 2u> view_params{
-		std::make_pair(&position[0], sizeof(position)),
-		std::make_pair(&rotation[0], sizeof(rotation))
-	};
-
-	const std::array<std::pair<const void*, u64>, 4u> proj_params{
-		std::make_pair(&size[0], sizeof(size)),
-		std::make_pair(&fov, sizeof(fov)),
-		std::make_pair(&znear, sizeof(znear)),
-		std::make_pair(&zfar, sizeof(zfar))
-	};
-
-	bool need_update_view{ false };
-	for (u64 idx = 0ull; idx < view_params.size(); ++idx)
-	{
-		const auto& param = view_params[idx];
-		auto hash = utl::murmur_hash((const char*)param.first, param.second, 0u);
-		if (camera.paramHash[idx] != hash)
-		{
-			need_update_view = true;
-			camera.paramHash[idx] = hash;
-		}
-	}
-
-	bool need_update_projection{ false };
-	for (u64 idx = 0ull; idx < proj_params.size(); ++idx)
-	{
-		const auto& param = proj_params[idx];
-		auto hash = utl::murmur_hash((const char*)param.first, param.second, 0u);
-		if (camera.paramHash[idx + view_params.size()] != hash)
-		{
-			need_update_projection = true;
-			camera.paramHash[idx + view_params.size()] = hash;
-		}
-	}
-
-	auto matrices = matrices_buffer->GetRange<glm::mat4>(camera.matricesId);
-
-	glm::mat4 prev_view{};
-	if (need_update_view)
-	{
-		glm::vec3 forward = glm::normalize(glm::rotate(rotation, glm::vec3(0.f, 0.f, -1.f)));
-		glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3{ 0.f, 1.f, 0.f }));
-		glm::vec3 up = glm::normalize(glm::cross(right, forward));
-
-		prev_view = matrices[view_matrix_offset];
-		matrices[view_matrix_offset] = glm::lookAt(position, position + forward, up);
-		matrices[inv_view_matrix_offset] = glm::inverse(matrices[view_matrix_offset]);
-	}
-
-	glm::mat4 prev_projection{};
-	if (need_update_projection)
-	{
-		prev_projection = matrices[projection_matrix_offset];
-		matrices[projection_matrix_offset] = glm::perspective(fov, size.x / size.y, znear, zfar); // TODO: ortho
-		matrices[inv_projection_matrix_offset] = glm::inverse(matrices[projection_matrix_offset]);
-	}
-
-	if (need_update_view || need_update_projection)
-	{
-		// Update camera frustum
-		auto frustum_range = frustum_buffer->GetRange<glm::vec4>(camera.frustumId);
-		camera.frustum.update(matrices[view_matrix_offset], matrices[projection_matrix_offset], frustum_range.data());
-
-		matrices[view_projection_matrix_offset] = matrices[projection_matrix_offset] * matrices[view_matrix_offset];
-		matrices[inv_view_projection_matrix_offset] = glm::inverse(matrices[view_projection_matrix_offset]);
-		matrices[prev_view_projection_matrix_offset] = prev_projection;
-
-		auto& camera_reprojection = matrices[reprojection_matrix_offset];
-		camera_reprojection = matrices[prev_view_projection_matrix_offset] * matrices[inv_view_projection_matrix_offset];
-		//camera_reprojection = matrices[inv_view_projection_matrix_offset] * matrices[prev_view_projection_matrix_offset];
-
-		float rcp_half_dimx = 2.0f / size.x;
-		float rcp_half_dimy = 2.0f / size.y;
-		float rcp_z_magic = znear / (zfar - znear);
-
-		bool linear_z = false;
-
-		// Transform from uv to clip space: texcoord * 2 - 1
-		static glm::mat4 to_clip_space =
-		{
-			rcp_half_dimx, 0.0f, 0.0f, 0.0f,
-			0.0f, -rcp_half_dimy, 0.0f, 0.0f,
-			0.0f, 0.0f, linear_z ? rcp_z_magic : 1.0f, 0.0f,
-			-1.0f, 1.0f, linear_z ? -rcp_z_magic : 0.0f, 1.0f
-		};
-		// Transform from clip to uv space: texcoord * 0.5 + 0.5
-		static glm::mat4 to_uv_space =
-		{
-			1.0f / rcp_half_dimx, 0.0f, 0.0f, 0.0f,
-			0.0f, -1.0f / rcp_half_dimy, 0.0f, 0.0f,
-			0.0f, 0.0f, 1.0f, 0.0f,
-			1.0f / rcp_half_dimx, 1.0f / rcp_half_dimy, 0.0f, 1.0f
-		};
-		camera_reprojection = to_clip_space * camera_reprojection * to_uv_space;
-
-		auto& matrices_range = matrices_buffer->GetByteRange(camera.matricesId);
-
-		auto& camera_instance = camera_buffer->Get<FCamera>(camera.cameraId);
-		camera_instance.matricesOffset = matrices_range.begin;
-		camera_instance.zNear = znear;
-		camera_instance.zFar = zfar;
-		camera_instance.size = size;
-		camera_instance.invSize = 1.f / size;
-	}
+	return *(camera_buffer->at<FCamera>(index));
 }
 
-const FRenderCamera& CRenderWorld::GetCamera(u64 camera_id) const
-{
-	return m_vCameras[camera_id];
-}
-
-const FRenderCamera& CRenderWorld::GetDefaultCamera() const
+const FCamera& CRenderWorld::GetDefaultCamera() const
 {
 	return GetCamera(m_defaultCameraID);
 }
 
 const u64 CRenderWorld::GetCameraID(ERenderGeometryCullerType type) const
 {
-	for (u64 idx = 0ull; idx < m_vCameras.size(); ++idx)
+	for (const auto& camera_info : m_vCullingInfo)
 	{
-		if (m_vCameras[idx].type == type)
-			return idx;
+		if (camera_info.type == type)
+			return camera_info.cullerID;
 	}
 
 	return m_defaultCameraID;
@@ -242,6 +170,13 @@ void CRenderWorld::Begin(f32 dt)
 
 	prepareIndirectCommands();
 	//prepareMeshletCommands();
+
+	// Copy frustum sides to gpu buffer
+	{
+		auto& frustum_buffer = GetDrawBuffer(ERenderBufferIndices::eFrustumBuffer);
+		for (const auto& frustum : m_vSceneFrustums)
+			frustum_buffer->Copy(frustum.frustumSides);
+	}
 
 	auto& render_context = m_pRenderInterface->GetRenderContext();
 	auto& texture_remap_data = render_context->GetGlobalTextureRemap();
@@ -423,15 +358,13 @@ void CRenderWorld::prepareIndirectCommands()
 	utl::vector<FGeometryBatch> gpu_batches{};
 
 	u64 offset{ 0ull };
-	for (u64 cameraID = 0ull; cameraID < m_vCameras.size(); ++cameraID)
+	for (const auto& culler : m_vCullingInfo)
 	{
-		auto& camera = m_vCameras[cameraID];
-
-		auto& draw_infos = m_perCullerDrawCommands[camera.type];
+		auto& draw_infos = m_perCullerDrawCommands[culler.type];
 		auto& draw_info = draw_infos.emplace_back();
 		draw_info.first = m_vGeometryBatches.size();
 		draw_info.drawCount = m_vRawGeometryBatches.size();
-		draw_info.cullerID = cameraID;
+		draw_info.cullerID = culler.cullerID;
 
 		utl::vector<FGeometryCPUBatch> batches{};
 		for (const auto& batch : m_vRawGeometryBatches)
@@ -487,7 +420,7 @@ void CRenderWorld::prepareIndirectCommands()
 			gpu_batch.vboID = batch.vboID;
 			gpu_batch.meshID = batch.meshID;
 			gpu_batch.nodeID = batch.nodeID;
-			gpu_batch.cameraID = cameraID;
+			gpu_batch.cameraID = culler.cullerID;
 		}
 
 		draw_info.count = batches.size();
@@ -497,9 +430,9 @@ void CRenderWorld::prepareIndirectCommands()
 	}
 
 	// Count max possible Draw command count
-	m_stats.cullerCount = m_vCameras.size();
+	m_stats.cullerCount = m_vCullingInfo.size();
 	m_stats.maxDrawCommands = m_vRawGeometryBatches.size();
-	m_stats.drawCommandCount = m_stats.maxDrawCommands * m_vCameras.size();
+	m_stats.drawCommandCount = m_stats.maxDrawCommands * m_vCullingInfo.size();
 	//m_stats.drawCommandCount = m_stats.maxDrawCommands * (1 + max_directional_light_shadow_count * cascade_shadow_map_cascade_count + max_spot_light_shadow_count + max_point_light_shadow_count * 6);
 	if (indirect_data_buffer->Capacity() < m_stats.drawCommandCount)
 		indirect_data_buffer->Resize(m_stats.drawCommandCount * 1.1f);

@@ -221,13 +221,6 @@ void CShadowsSystem::__Update(f32 fDt)
 
 				glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, light.radius / 2.f);
 
-				const std::array<glm::vec3, 6u> offsets{};
-				for (u64 idx = 0ull; idx < matrices.size(); ++idx)
-				{
-					auto& view = matrices[idx];
-					render_world->UpdateCamera(culler_list[idx], ltransform.gposition, ltransform.gposition + offsets[idx], up_vectors[idx]), 0.f, light.radius / 2.f);
-				}
-
 				matrices[0] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)); // POSITIVE_X
 				matrices[1] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)); // NEGATIVE_X
 				matrices[2] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0)); // POSITIVE_Y

@@ -89,18 +89,6 @@ namespace engine
 			virtual void* Data() = 0;
 		};
 
-		struct FByteRange
-		{
-			u32 begin;
-			u32 count;
-		};
-
-		struct FByteBlock
-		{
-			FByteRange range;
-			u32 hash;
-		};
-
 		class IGPUVector
 		{
 		public:
@@ -124,38 +112,6 @@ namespace engine
 			void Create(const std::string& name, u64 capacity = 64ull, EBufferUsageFlags flag = EBufferUsageFlagBits::eStorageBuffer)
 			{
 				CreateRaw(name, sizeof(_Ty), capacity, flag);
-			}
-
-			inline u32 AddByteBlock(u32 count = 1u)
-			{
-				auto& block = m_vBlocks.emplace_back();
-				block.range.begin = m_blockCursor;
-				block.range.count = m_elemSize * count;
-				block.hash = ~0u;
-
-				TryGrow(m_blockCursor, block.range.count);
-				m_blockCursor += block.range.count;
-
-				return m_vBlocks.size() - 1ull;
-			}
-
-			inline FByteRange& GetByteRange(u32 id)
-			{
-				return m_vBlocks[id].range;
-			}
-
-			template<typename _Ty>
-			inline std::span<_Ty> GetRange(u32 id)
-			{
-				const auto& block = m_vBlocks[id];
-				return std::span<_Ty>((_Ty*)(&m_vData[block.range.begin]), block.range.count / m_elemSize);
-			}
-
-			template<typename _Ty>
-			inline _Ty& Get(u32 id)
-			{
-				const auto& block = m_vBlocks[id];
-				return *reinterpret_cast<_Ty*>(&m_vData[block.range.begin]);
 			}
 
 			inline void CopyBytes(const void* data, u64 byte_count)
@@ -247,14 +203,11 @@ namespace engine
 			// Try to grow temporary array
 			inline void TryGrow(u64 size)
 			{
-				TryGrow(m_cursor, size);
-			}
-
-			inline void TryGrow(u64 offset, u64 size)
-			{
-				u64 total = offset + size;
-				if (total > m_vData.size())
-					m_vData.resize(total * 2.f);
+				if (m_cursor + size > m_vData.size())
+				{
+					u64 new_size = (m_cursor + size) * 2.f;
+					m_vData.resize(new_size);
+				}
 			}
 
 			inline void DoInsert(const void* data, u64 size, u64 offset)
@@ -279,9 +232,6 @@ namespace engine
 
 			// Allocates buffer
 			virtual void Allocate(const std::string& name, EBufferUsageFlags flag, u64 stride, u64 capacity) = 0;
-
-			utl::vector<FByteBlock> m_vBlocks{};
-			u64 m_blockCursor{ 0u };
 
 			utl::vector<upload_range> m_vUploadRanges{};
 			utl::vector<u8> m_vData{};

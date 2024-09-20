@@ -15,9 +15,9 @@ namespace engine
 			void Create() override;
 
 			u64 RegisterCamera(ERenderGeometryCullerType type) override;
-			void UpdateCamera(u64 camera_id, const glm::vec3& position, const glm::quat& rotation, const glm::vec2& size, f32 fov, f32 znear = 0.f, f32 zfar = 1.f) override;
-			const FRenderCamera& GetCamera(u64 index) const override;
-			const FRenderCamera& GetDefaultCamera() const override;
+			void UpdateCamera(u64 camera_id, const glm::mat4& view, const glm::mat4& prev_view, const glm::mat4& projection, const glm::mat4& prev_projection, const glm::vec2& size, float znear = 0.f, float zfar = 1.f) override;
+			const FCamera& GetCamera(u64 index) const override;
+			const FCamera& GetDefaultCamera() const override;
 			const u64 GetCameraID(ERenderGeometryCullerType type) const override;
 			const u64 GetDefaultCameraID() const override;
 
@@ -57,9 +57,9 @@ namespace engine
 			void prepareMeshletCommands();
 		protected:
 			utl::hash_map<ERenderGeometryCullerType, utl::vector<FDrawInfo>> m_perCullerDrawCommands{};
+			utl::vector<FFrustum> m_vSceneFrustums{};
+			utl::vector<FCullingInfo> m_vCullingInfo{};
 			u64 m_defaultCameraID{ 0ull };
-
-			utl::vector<FRenderCamera> m_vCameras{};
 
 			utl::hash_map<u32, u64> m_nodeRemap{};
 
