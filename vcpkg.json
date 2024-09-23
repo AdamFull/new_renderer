@@ -65,6 +65,7 @@
     "directx-dxc",
     "tinyxml2",
     "xerces-c",
-    "freetype"
+    "freetype",
+    "spdlog"
   ]
 }

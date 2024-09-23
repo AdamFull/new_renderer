@@ -1,0 +1,24 @@
+#pragma once
+
+#include <memory>
+
+#include <engine/runtime/RuntimeContext.h>
+
+int RuntimeMain(const engine::RuntimeContext&);
+
+#if defined(PLATFORM_WINDOWS)
+#include <engine/runtime/windows/WindowsRuntimeContext.h>
+
+int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, INT nCmdShow)
+{
+	auto context = std::make_unique<engine::win32::WindowsRuntimeContext>(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
+	return RuntimeMain(*context);
+}
+#else
+# include <stdexcept>
+
+int main(int argc, char* argv[])
+{
+	throw std::runtime_error{ "platform not supported" };
+}
+#endif
