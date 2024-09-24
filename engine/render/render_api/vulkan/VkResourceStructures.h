@@ -3,7 +3,7 @@
 
 #include <vma/vk_mem_alloc.hpp>
 
-#include <logger/logger.h>
+#include <util/Logger.h>
 #include <engine/interface/render/RenderInterface.h>
 
 namespace engine

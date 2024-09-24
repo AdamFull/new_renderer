@@ -23,14 +23,6 @@ constexpr const u64 MAX_RENDER_OBJECT_COUNT{ 16384ull };
 constexpr const u64 MAX_PRIMITIVE_COUNT{ 512ull };
 constexpr const u64 MAX_MATERIAL_COUNT{ 512ull };
 
-void copy_platform_specific_create_data(FRenderContextCreateInfo& context_ci, const FRenderInterfaceCreateInfo& rhi_ci)
-{
-#if defined(PLATFORM_WIN32)
-	context_ci.hinstance = rhi_ci.hinstance;
-	context_ci.hwnd = rhi_ci.hwnd;
-#endif
-}
-
 std::unique_ptr<IRenderContext> make_render_context(const FRenderInterfaceCreateInfo& rhi_ci)
 {
 	FRenderContextCreateInfo context_ci{};
@@ -79,10 +71,7 @@ std::unique_ptr<IRenderContext> make_render_context(const FRenderInterfaceCreate
 		context_ci.validationFeatures = vulkan::SYNCHRONIZATION_VALIDATION_FLAG_BIT;
 #endif
 
-		context_ci.initialWidth = rhi_ci.initialWidth;
-		context_ci.initialHeight = rhi_ci.initialHeight;
-
-		copy_platform_specific_create_data(context_ci, rhi_ci);
+		context_ci.window = rhi_ci.window;
 
 		render_context->Create(context_ci);
 	}

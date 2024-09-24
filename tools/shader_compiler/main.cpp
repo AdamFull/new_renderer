@@ -4,7 +4,7 @@
 #include <sstream>
 #include <regex>
 
-#include <logger/logger.h>
+#include <util/Logger.h>
 #include <utils/stopwatch.h>
 #include <parsing/argparse.h>
 
@@ -46,9 +46,19 @@ int main(int argc, char** argv)
 
 	argparse.parse_arguments(argc, argv);
 
-	log_add_file_output("shader_compiler.log");
-	log_add_cout_output();
-	log_init("shader_compiler", "1.0.0");
+#define APP_NAME "shader_compiler"
+
+#ifdef PLATFORM_ANDROID
+	auto logger = spdlog::android_logger_mt(APP_NAME, APP_NAME);
+#else
+	auto logger = spdlog::stdout_color_mt(APP_NAME);
+#endif
+
+	logger->set_pattern(LOGGER_FORMAT);
+	logger->set_level(spdlog::level::trace);
+
+	//spdlog::register_logger(logger);
+	spdlog::set_default_logger(logger);
 
 	fs::path input_path{};
 	fs::path compiled_libraries_output{};

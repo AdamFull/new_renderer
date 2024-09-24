@@ -8,10 +8,10 @@ namespace engine
 
 	}
 
-	//vk::SurfaceKHR HeadlessWindow::CreateSurface(vk::Instance instance)
-	//{
-	//	return nullptr;
-	//}
+	vk::SurfaceKHR HeadlessWindow::CreateSurface(vk::Instance instance, vk::AllocationCallbacks* callbacks)
+	{
+		return nullptr;
+	}
 
 	bool HeadlessWindow::ShouldClose()
 	{

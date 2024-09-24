@@ -6,7 +6,7 @@
 
 #include <windows.h>
 
-#include <logger/logger.h>
+#include <util/Logger.h>
 
 using namespace shader_compiler;
 

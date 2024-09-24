@@ -1,14 +1,12 @@
 #pragma once
 
-#if defined(PLATFORM_WIN32)
-#include <Windows.h>
-#endif
-
 #include <embed/shaders/includes/interop/base.h>
 #include "BaseEnumerators.h"
 
 namespace engine
 {
+	class Window;
+
 	namespace render
 	{
 		enum class ERenderApi
@@ -24,14 +22,7 @@ namespace engine
 		struct FRenderInterfaceCreateInfo
 		{
 			ERenderApi render_api{};
-
-#if defined( PLATFORM_WIN32 )
-			HINSTANCE hinstance;
-			HWND hwnd;
-#endif
-
-			i32 initialWidth{};
-			i32 initialHeight{};
+			Window* window;
 		};
 
 		struct FRenderContextCreateInfo
@@ -39,17 +30,12 @@ namespace engine
 			std::string appName{ "dummy_app" };
 			ERenderApi apiVersion{};
 
-#if defined( VK_USE_PLATFORM_WIN32_KHR )
-			HINSTANCE                       hinstance;
-			HWND                            hwnd;
-#endif
+			Window* window;
+
 			utl::vector<char> pipelineCache{};
 
 			utl::vector<std::string> requiredDeviceExtensions{};
 			utl::vector<std::string> optionalDeviceExtensions{};
-
-			u32 initialWidth{ 0u };
-			u32 initialHeight{ 0u };
 
 			bool validationState{ false };
 			u32 validationFeatures{ 0u };

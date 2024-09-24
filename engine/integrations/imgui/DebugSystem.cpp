@@ -1,6 +1,5 @@
 #include "DebugSystem.h"
 
-#include <engine/platform/window/WindowCallback.h>
 #include <engine/render/DebugDraw/DebugDraw.h>
 
 using namespace engine;

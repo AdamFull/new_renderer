@@ -5,7 +5,6 @@
 #include <engine/world/ecs/components/CameraComponent.h>
 #include <engine/world/ecs/components/TransformComponent.h>
 
-#include <engine/platform/window/WindowCallback.h>
 #include <engine/profiler/Profiler.h>
 
 constexpr const f32 movement_scale{ 50.f };
@@ -27,10 +26,10 @@ void CInputSystem::__Create()
 {
 	TRACY_PROFILE_FUNCTION();
 
-	FWindowCallbackMapper::SubscribeKeyInput(this, &CInputSystem::keyInput);
-	FWindowCallbackMapper::SubscribeMousePosition(this, &CInputSystem::mouseMovementInput);
-	FWindowCallbackMapper::SubscribeMouseScroll(this, &CInputSystem::mouseWheelInput);
-	FWindowCallbackMapper::SubscribeMouseButton(this, &CInputSystem::keyInput);
+	//FWindowCallbackMapper::SubscribeKeyInput(this, &CInputSystem::keyInput);
+	//FWindowCallbackMapper::SubscribeMousePosition(this, &CInputSystem::mouseMovementInput);
+	//FWindowCallbackMapper::SubscribeMouseScroll(this, &CInputSystem::mouseWheelInput);
+	//FWindowCallbackMapper::SubscribeMouseButton(this, &CInputSystem::keyInput);
 }
 
 void CInputSystem::__Update(f32 fDt)

@@ -2,7 +2,6 @@
 
 #include <engine/render/ShaderObject.h>
 #include <engine/render/VertexHandler.h>
-#include <engine/platform/window/WindowCallback.h>
 
 #include <format>
 

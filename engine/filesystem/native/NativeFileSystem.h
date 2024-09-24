@@ -6,6 +6,14 @@
 
 #include <filesystem>
 
+#ifdef CreateDirectory
+#undef CreateDirectory
+#endif
+
+#ifdef CreateFile
+#undef CreateFile
+#endif
+
 namespace engine
 {
     namespace filesystem

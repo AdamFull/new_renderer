@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+#include <vulkan/vulkan.hpp>
+
 namespace engine
 {
 	/**
@@ -65,6 +67,14 @@ namespace engine
 		Window(const Properties& properties);
 
 		virtual ~Window() = default;
+
+		/**
+		 * @brief Gets a handle from the platform's Vulkan surface
+		 * @param instance A Vulkan instance
+		 * @param physical_device A Vulkan PhysicalDevice
+		 * @returns A VkSurfaceKHR handle, for use by the application
+		 */
+		virtual vk::SurfaceKHR CreateSurface(vk::Instance instance, vk::AllocationCallbacks* callbacks) = 0;
 
 		/**
 		 * @brief Checks if the window should be closed

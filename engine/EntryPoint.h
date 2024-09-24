@@ -8,6 +8,7 @@ int RuntimeMain(const engine::RuntimeContext&);
 
 #if defined(PLATFORM_WINDOWS)
 #include <engine/runtime/windows/WindowsRuntimeContext.h>
+#include <engine/runtime/windows/WindowsRuntime.h>
 
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, INT nCmdShow)
 {
@@ -16,6 +17,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLin
 }
 #else
 # include <stdexcept>
+#error "Platform not supported"
 
 int main(int argc, char* argv[])
 {

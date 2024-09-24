@@ -1,14 +1,7 @@
-#include "Application.h"
-#include <engine/Engine.h>
+#include <engine/EntryPoint.h>
+#include <engine/EngineApplication.h>
 
-#include <codecvt>
-
-#include <logger/logger.h>
-#include <taskflow/taskflow.hpp>
-
-#include <parsing/argparse.h>
-#include <plugin/plugin_manager.h>
-#include <container/hash_map.h>
+#include <util/Logger.h>
 
 //#include <DbgHelp.h>
 //#include <tlhelp32.h>
@@ -281,35 +274,35 @@
 //    return crashdump;
 //}
 
-using namespace engine;
-
-int main(int argc, char** argv)
+class MyApp : public engine::EngineApplication
 {
-    utl::parsing::argument_parser argparse{};
+public:
+    ~MyApp() = default;
+private:
 
-    argparse.parse_arguments(argc, argv);
+};
 
-    log_add_file_output("engine_log.log");
-    log_add_cout_output();
-    log_init("engine_app", "1.0.0");
+int RuntimeMain(const engine::RuntimeContext& context)
+{
+#if defined(PLATFORM_WINDOWS)
+    engine::win32::WindowsRuntime runtime{ context };
+#else
+#	error "Platform not supported"
+#endif
 
-    utl::hash_map<std::string, u32> my_map{};
-    auto& new_val = my_map["hello"];
-    my_map.emplace("bla bla", 10);
-    //my_map.emplace();
-
-    utl::plugin_system::uplugin_manager manager;
-    auto& plugin = manager.load("virtual_filesystem", "D:\\GitHub\\new_renderer\\bin\\Debug\\engine\\virtual_filesystem.dll");
-
-    auto engine = std::make_unique<CEngine>();
-    engine->SetApplication(std::make_unique<CApplication>());
-
-    engine->Initialize();
-
-    //HANDLE hFile = ::CreateFile("crashdump.dmp", GENERIC_READ | GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-    //MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(), hFile, MiniDumpWithDataSegs, nullptr, NULL, NULL);
-
-    //auto dump = CaptureCrashDump();
+    engine::ApplicationCreateInfo app_ci{};
+    app_ci.name = "MyApp";
+    app_ci.app_allocator = []() { return std::make_unique<MyApp>(); };
+    
+    runtime.RequestApplication(&app_ci);
+    
+    auto code = runtime.Initialize();
+    if (code == engine::ExitCode::Success)
+    {
+    	code = runtime.MainLoop();
+    }
+    
+    runtime.Terminate(code);
 
     return 0;
 }

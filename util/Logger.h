@@ -1,5 +1,7 @@
 #pragma once
 
+#define LOGGER_FORMAT "[%Y-%m-%d %H:%M:%S] [%^%l%$] %v"
+
 #include <spdlog/fmt/fmt.h>
 #include <spdlog/spdlog.h>
 
@@ -13,8 +15,3 @@
 #define log_warning(...) spdlog::warn(__VA_ARGS__);
 #define log_error(...) spdlog::error(__VA_ARGS__);
 #define log_debug(...) spdlog::debug(__VA_ARGS__);
-
-namespace engine
-{
-	void LoggerInit();
-}

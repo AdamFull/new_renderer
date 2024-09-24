@@ -1,6 +1,6 @@
 #include "RenderGraph.h"
 
-#include <logger/logger.h>
+#include <util/Logger.h>
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <xercesc/parsers/XercesDOMParser.hpp>

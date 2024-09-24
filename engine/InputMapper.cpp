@@ -1,7 +1,5 @@
 #include "InputMapper.h"
 
-#include <engine/platform/window/WindowCallback.h>
-
 using namespace engine;
 
 template<class _Ty>
@@ -12,10 +10,10 @@ inline _Ty remap(_Ty input, _Ty in_min, _Ty in_max, _Ty out_min, _Ty out_max)
 
 void CInputMapper::Create()
 {
-	FWindowCallbackMapper::SubscribeKeyInput(this, &CInputMapper::HandleKeyInput);
-	FWindowCallbackMapper::SubscribeMousePosition(this, &CInputMapper::HandleAxisInput);
-	//FWindowCallbackMapper::SubscribeMouseScroll(this, &CInputMapper::handleMovementInput);
-	FWindowCallbackMapper::SubscribeMouseButton(this, &CInputMapper::HandleKeyInput);
+	//FWindowCallbackMapper::SubscribeKeyInput(this, &CInputMapper::HandleKeyInput);
+	//FWindowCallbackMapper::SubscribeMousePosition(this, &CInputMapper::HandleAxisInput);
+	////FWindowCallbackMapper::SubscribeMouseScroll(this, &CInputMapper::handleMovementInput);
+	//FWindowCallbackMapper::SubscribeMouseButton(this, &CInputMapper::HandleKeyInput);
 }
 
 void CInputMapper::Update(float dt)

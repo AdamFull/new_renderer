@@ -1,7 +1,5 @@
 #include "ImGuiSystem.h"
 
-#include <engine/platform/window/WindowCallback.h>
-
 #include "ImGuiElements.h"
 #include "editor/HierarchyWindow.h"
 #include "editor/InspectorWindow.h"
@@ -461,13 +459,13 @@ void CImGuiEngineSystem::Initialize()
 	//ApplyDarkBlueTheme();
 
 	// Window events
-	FWindowCallbackMapper::SubscribeFocusChange(this, &CImGuiEngineSystem::HandleFocusChanged);
-	FWindowCallbackMapper::SubscribeCursorEnter(this, &CImGuiEngineSystem::HandleCursorEnter);
-	FWindowCallbackMapper::SubscribeMousePosition(this, &CImGuiEngineSystem::HandleAxisInput);
-	FWindowCallbackMapper::SubscribeMouseButton(this, &CImGuiEngineSystem::HandleMouseButton);
-	FWindowCallbackMapper::SubscribeMouseScroll(this, &CImGuiEngineSystem::HandleMouseScroll);
-	FWindowCallbackMapper::SubscribeKeyInput(this, &CImGuiEngineSystem::HandleKeyInput);
-	FWindowCallbackMapper::SubscribeCharInput(this, &CImGuiEngineSystem::HandleCharInput);
+	//FWindowCallbackMapper::SubscribeFocusChange(this, &CImGuiEngineSystem::HandleFocusChanged);
+	//FWindowCallbackMapper::SubscribeCursorEnter(this, &CImGuiEngineSystem::HandleCursorEnter);
+	//FWindowCallbackMapper::SubscribeMousePosition(this, &CImGuiEngineSystem::HandleAxisInput);
+	//FWindowCallbackMapper::SubscribeMouseButton(this, &CImGuiEngineSystem::HandleMouseButton);
+	//FWindowCallbackMapper::SubscribeMouseScroll(this, &CImGuiEngineSystem::HandleMouseScroll);
+	//FWindowCallbackMapper::SubscribeKeyInput(this, &CImGuiEngineSystem::HandleKeyInput);
+	//FWindowCallbackMapper::SubscribeCharInput(this, &CImGuiEngineSystem::HandleCharInput);
 
 	m_vWindows.emplace_back(std::make_unique<CHierarchyWindow>("Hierarchy"));
 	m_vWindows.emplace_back(std::make_unique<CInspectorWindow>("Inspector"));

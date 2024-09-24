@@ -6,7 +6,7 @@
 #include <ktx.h>
 #include "native_format/vk_format.h"
 
-#include <logger/logger.h>
+#include <util/Logger.h>
 
 #include <shader_compiler/compiler_util.h>
 

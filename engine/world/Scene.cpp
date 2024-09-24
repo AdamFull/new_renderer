@@ -9,7 +9,7 @@
 #include <meshoptimizer.h>
 
 #include <engine/filesystem/vfs_helper.h>
-#include <logger/logger.h>
+#include <util/Logger.h>
 #include <glm/gtc/type_ptr.hpp>
 
 #include <engine/profiler/Profiler.h>

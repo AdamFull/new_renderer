@@ -82,7 +82,27 @@ add_subdirectory(tools/scene_compiler)
 
 add_subdirectory(engine)
 
-add_executable(${PROJECT_NAME} main.cpp Application.cpp )
+set(APP_SOURCES main.cpp)
+
+if(ANDROID)
+    if(CMAKE_VS_NsightTegra_VERSION)
+        list(APPEND APP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/android/AndroidManifest.xml)
+    endif()
+
+    add_library(${PROJECT_NAME} SHARED ${APP_SOURCES})
+elseif(IOS)
+	list(REMOVE_AT APP_SOURCES 0)
+	list(APPEND APP_SOURCES
+			${CMAKE_CURRENT_SOURCE_DIR}/ios/main.mm
+			${CMAKE_CURRENT_SOURCE_DIR}/ios/AppDelegate.h
+			${CMAKE_CURRENT_SOURCE_DIR}/ios/AppDelegate.m
+			${CMAKE_CURRENT_SOURCE_DIR}/ios/ViewController.h
+			${CMAKE_CURRENT_SOURCE_DIR}/ios/ViewController.mm
+	)
+    add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${APP_SOURCES})
+else()
+    add_executable(${PROJECT_NAME} WIN32 ${APP_SOURCES})
+endif()
 
 target_link_libraries(${PROJECT_NAME} 
     PUBLIC utils

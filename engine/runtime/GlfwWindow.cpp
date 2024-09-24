@@ -311,23 +311,23 @@ namespace engine
 		glfwTerminate();
 	}
 
-	//vk::SurfaceKHR GlfwWindow::CreateSurface(vk::Instance instance)
-	//{
-	//	if (instance == nullptr || !handle)
-	//	{
-	//		return nullptr;
-	//	}
-	//
-	//	VkSurfaceKHR surface;
-	//	VkResult errCode = glfwCreateWindowSurface(instance, handle, nullptr, &surface);
-	//
-	//	if (errCode != VK_SUCCESS)
-	//	{
-	//		return nullptr;
-	//	}
-	//
-	//	return surface;
-	//}
+	vk::SurfaceKHR GlfwWindow::CreateSurface(vk::Instance instance, vk::AllocationCallbacks* callbacks)
+	{
+		if (instance == nullptr || !handle)
+		{
+			return nullptr;
+		}
+	
+		VkSurfaceKHR surface;
+		VkResult errCode = glfwCreateWindowSurface(instance, handle, (VkAllocationCallbacks*)callbacks, &surface);
+	
+		if (errCode != VK_SUCCESS)
+		{
+			return nullptr;
+		}
+	
+		return surface;
+	}
 
 	bool GlfwWindow::ShouldClose()
 	{

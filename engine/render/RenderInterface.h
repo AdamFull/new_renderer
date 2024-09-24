@@ -3,7 +3,7 @@
 #include <engine/interface/filesystem/VirtualFileSystemInterface.h>
 #include <engine/interface/render/RenderInterface.h>
 #include <engine/interface/ResourceContainer.h>
-#include <logger/logger.h>
+#include <util/Logger.h>
 #include <memory>
 
 namespace engine

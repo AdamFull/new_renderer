@@ -3,7 +3,7 @@
 #include <glslang/SPIRV/GlslangToSpv.h>
 #include <glslang/Public/ShaderLang.h>
 
-#include <logger/logger.h>
+#include <util/Logger.h>
 
 #include <stack>
 

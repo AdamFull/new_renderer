@@ -18,7 +18,7 @@ namespace engine
 
 		virtual ~GlfwWindow();
 
-		//vk::SurfaceKHR CreateSurface(vk::Instance instance) override;
+		vk::SurfaceKHR CreateSurface(vk::Instance instance, vk::AllocationCallbacks* callbacks) override;
 
 		bool ShouldClose() override;
 

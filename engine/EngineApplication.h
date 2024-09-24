@@ -3,15 +3,17 @@
 #include <engine/Application.h>
 #include <engine/interface/filesystem/VirtualFileSystemInterface.h>
 #include <engine/interface/render/RenderInterface.h>
+#include <engine/world/Scene.h>
 
 #include <engine/InputMapper.h>
+#include <engine/EngineSystemManager.h>
 
 namespace engine
 {
 	class EngineApplication : public Application
 	{
 	public:
-		EngineApplication() = default;
+		EngineApplication();
 
 		virtual ~EngineApplication() override;
 	protected:
@@ -29,6 +31,10 @@ namespace engine
 		 */
 		void Update(float delta_time) override;
 	private:
-
+		std::unique_ptr<CEngineSystemManager> m_pSystemManager{};
+		std::unique_ptr<CInputMapper> m_pInputMapper{};
+		std::unique_ptr<render::IRenderInterface> m_pRenderInterface{};
+		std::unique_ptr<filesystem::IVirtualFileSystemInterface> m_pVirtualFileSystem{};
+		std::unique_ptr<world::CScene> m_pScene{};
 	};
 }

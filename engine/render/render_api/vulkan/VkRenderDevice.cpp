@@ -11,6 +11,8 @@
 #define PROFILE_VULKAN
 #include <engine/profiler/Profiler.h>
 
+#include <engine/runtime/Window.h>
+
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 using namespace engine::render;
@@ -63,7 +65,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debug_messenger_callback(VkDebugUtilsMessageSever
 {
 	switch (messageSeverity)
 	{
-	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT: log_verbose(pCallbackData->pMessage); break;
+	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT: log_info(pCallbackData->pMessage); break;
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT: log_info(pCallbackData->pMessage); break;
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT: log_warning(pCallbackData->pMessage); break;
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:  log_error(pCallbackData->pMessage); break;
@@ -138,7 +140,8 @@ void CVkRenderDevice::Create(const FRenderContextCreateInfo& context_ci)
 	CreateMemoryAllocator(context_ci);
 
 	check_api_result(CreatePipelineCache(context_ci));
-	check_api_result(CreateSwapchain(context_ci.initialWidth, context_ci.initialHeight));
+	auto& extent = context_ci.window->GetExtent();
+	check_api_result(CreateSwapchain(extent.width, extent.height));
 }
 
 FRenderApiErrorInfo CVkRenderDevice::CreateCommandPool(const FVkCommandPoolCreateInfo& command_pool_ci, FVkCommandPool& command_pool)
@@ -1099,16 +1102,19 @@ void CVkRenderDevice::CreateDebugMessanger(const FRenderContextCreateInfo& conte
 
 FRenderApiErrorInfo CVkRenderDevice::CreateSurface(const FRenderContextCreateInfo& context_ci)
 {
-	vk::Result result{ vk::Result::eErrorUnknown };
-#if defined( VK_USE_PLATFORM_WIN32_KHR )
-	vk::Win32SurfaceCreateInfoKHR surface_ci{};
-	surface_ci.hinstance = context_ci.hinstance;
-	surface_ci.hwnd = context_ci.hwnd;
-	
-	result = m_vkInstance.createWin32SurfaceKHR(&surface_ci, m_allocationCallbacks, &m_vkSurface);
-#else
-#endif;
-	return make_api_error(vk::ObjectType::eSurfaceKHR, result, "Failed to Create");
+	m_vkSurface = context_ci.window->CreateSurface(m_vkInstance, m_allocationCallbacks);
+
+//	vk::Result result{ vk::Result::eErrorUnknown };
+//#if defined( VK_USE_PLATFORM_WIN32_KHR )
+//	vk::Win32SurfaceCreateInfoKHR surface_ci{};
+//	surface_ci.hinstance = context_ci.hinstance;
+//	surface_ci.hwnd = context_ci.hwnd;
+//	
+//	result = m_vkInstance.createWin32SurfaceKHR(&surface_ci, m_allocationCallbacks, &m_vkSurface);
+//#else
+//#endif;
+//	return make_api_error(vk::ObjectType::eSurfaceKHR, result, "Failed to Create");
+	return FRenderApiErrorInfo{};
 }
 
 void CVkRenderDevice::SelectQueueFamilies(FVkPhysicalDevice& device_info)

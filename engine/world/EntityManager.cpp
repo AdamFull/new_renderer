@@ -1,6 +1,6 @@
 #include "EntityManager.h"
 
-#include <logger/logger.h>
+#include <util/Logger.h>
 
 using namespace engine::world;
 

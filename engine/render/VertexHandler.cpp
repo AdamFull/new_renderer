@@ -2,7 +2,7 @@
 
 #include "GPUVector.h"
 
-#include <logger/logger.h>
+#include <util/Logger.h>
 #include <meshoptimizer.h>
 #include <glm/gtc/type_ptr.hpp>
 

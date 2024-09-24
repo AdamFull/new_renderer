@@ -28,6 +28,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 )
 
 target_link_libraries(${PROJECT_NAME} 
+    PRIVATE utils
     PRIVATE Microsoft::DirectXShaderCompiler
 	PRIVATE glslang::glslang
 	PRIVATE glslang::SPIRV

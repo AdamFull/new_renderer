@@ -14,7 +14,7 @@ namespace engine
 		 * @brief A direct window doesn't have a surface
 		 * @returns nullptr
 		 */
-		//vk::SurfaceKHR CreateSurface(vk::Instance instance) override;
+		vk::SurfaceKHR CreateSurface(vk::Instance instance, vk::AllocationCallbacks* callbacks) override;
 
 		bool ShouldClose() override;
 

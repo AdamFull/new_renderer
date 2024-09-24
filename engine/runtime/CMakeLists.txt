@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.18.0)
 project(runtime LANGUAGES CXX)
 
+find_package(glfw3 REQUIRED)
+
 file(GLOB RUNTIME_SOURCES FILES *.cpp *.h)
 
 if(WIN32)
@@ -14,4 +16,8 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     CXX_EXTENSIONS OFF
     CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON
+)
+
+target_link_libraries(${PROJECT_NAME}
+    PRIVATE glfw
 )

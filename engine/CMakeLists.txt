@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.18.0)
 project(application)
 
-add_subdirectory(platform)
 add_subdirectory(runtime)
 add_subdirectory(render)
 add_subdirectory(filesystem)
@@ -35,7 +34,6 @@ target_include_directories(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
 	PUBLIC glm_module
-	PUBLIC platform_specific
 	PUBLIC virtual_filesystem
 	PRIVATE engine_profiler
 	PRIVATE runtime
