@@ -95,8 +95,6 @@ namespace engine
 
 				void UpdateSurface(i32 surface_width, i32 surface_height) override;
 
-				void GetNativeContext(void* context) override;
-
 				FVkCommandBuffer& CreateCommandBuffer(const FVkCommandBufferCreateInfo& command_buffer_ci, std::thread::id thread_id = std::this_thread::get_id());
 				FVkCommandBuffer& GetLastCommandBuffer(EQueueTypeFlagBits queue_type, std::thread::id thread_id = std::this_thread::get_id());
 				FVkCommandBuffer& GetCommandBuffer(EQueueTypeFlagBits queue_type, u64 index, std::thread::id thread_id = std::this_thread::get_id());

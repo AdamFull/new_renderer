@@ -7,6 +7,10 @@
 #include <type_traits>
 #include <unordered_set>
 
+#include <engine/render/render_api/vulkan/PhysicalDevice.h>
+#include <engine/render/render_api/vulkan/DebugUtils.h>
+#include <engine/render/render_api/vulkan/Device.h>
+
 using namespace engine;
 using namespace engine::render;
 using namespace engine::render::vulkan;
@@ -106,7 +110,7 @@ std::string create_object_unique_name(const char* fmt, const _Ty& handle, _Args&
 CVkRenderContext::~CVkRenderContext()
 {
 	auto& logical_device = m_pDevice->GetLogicalDevice();
-	logical_device.handle.waitIdle();
+	Handle(logical_device).waitIdle();
 
 	// Destroy thread contexts
 	for (auto& [thread_id, context] : m_perThreadContext)
@@ -282,7 +286,7 @@ void CVkRenderContext::CreateGlobalDescriptor(const FGlobalUniformCreateInfo& un
 		FVkBufferCreateInfo buffer_ci{};
 		buffer_ci.instanceCount = m_pDevice->m_swapchain.framesInFlight;
 		buffer_ci.instanceSize = size;
-		buffer_ci.minOffsetAlignment = std::lcm(physical.properties.limits.minUniformBufferOffsetAlignment, physical.properties.limits.nonCoherentAtomSize);
+		buffer_ci.minOffsetAlignment = std::lcm(physical.GetProperties().limits.minUniformBufferOffsetAlignment, physical.GetProperties().limits.nonCoherentAtomSize);
 		buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
 		buffer_ci.usageFlags = vk::BufferUsageFlagBits::eUniformBuffer;
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -383,7 +387,7 @@ void CVkRenderContext::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 	if (!write_descriptor_sets.empty())
 	{
 		auto& logical = m_pDevice->GetLogicalDevice();
-		logical.handle.updateDescriptorSets(utl::cast<u32>(write_descriptor_sets.size()), write_descriptor_sets.data(), 0, nullptr);
+		Handle(logical).updateDescriptorSets(utl::cast<u32>(write_descriptor_sets.size()), write_descriptor_sets.data(), 0, nullptr);
 	}
 }
 
@@ -925,7 +929,7 @@ void CVkRenderContext::UpdateShaderResources(const FShaderResourceCommit& shader
 	if (!write_descriptor_sets.empty())
 	{
 		auto& logical = m_pDevice->GetLogicalDevice();
-		logical.handle.updateDescriptorSets(utl::cast<u32>(writes_count), write_descriptor_sets.data(), 0, nullptr);
+		Handle(logical).updateDescriptorSets(utl::cast<u32>(writes_count), write_descriptor_sets.data(), 0, nullptr);
 	}
 }
 
@@ -1604,8 +1608,6 @@ FDeviceLimitations CVkRenderContext::GetDeviceLimitations()
 {
 	FDeviceLimitations limits{};
 
-	auto& logical = m_pDevice->m_logicalDevice.handle;
-
 	return limits;
 }
 
@@ -1677,7 +1679,7 @@ void CVkRenderContext::UpdateSurface(i32 surface_width, i32 surface_height)
 		this->m_iSurfaceHeight = surface_height;
 
 		auto& logical_device = m_pDevice->GetLogicalDevice();
-		logical_device.handle.waitIdle();
+		Handle(logical_device).waitIdle();
 
 		m_pDevice->CleanupSwapchain();
 		m_pDevice->CreateSwapchain(surface_width, surface_height);
@@ -1731,30 +1733,6 @@ void CVkRenderContext::UpdateSurface(i32 surface_width, i32 surface_height)
 		// Update backbuffer resources
 		UpdateBackbuffer();
 	}
-}
-
-void CVkRenderContext::GetNativeContext(void* context)
-{
-	auto* native_context = static_cast<FVkNativeContext*>(context);
-	auto& physical_device = m_pDevice->GetPhysicalDevice();
-	auto& logical_device = m_pDevice->GetLogicalDevice();
-	auto& swapchain = m_pDevice->GetSwapchain();
-
-	native_context->instance = m_pDevice->GetInstance();
-	native_context->physicalDevice = physical_device.handle;
-	native_context->device = logical_device.handle;
-
-	if(auto found = physical_device.queueFamilies.queueToFamily.find(EQueueTypeFlagBits::ePresent); found != physical_device.queueFamilies.queueToFamily.end())
-		native_context->presentQueueFamily = found->second;
-	if(auto found = logical_device.queues.find(EQueueTypeFlagBits::ePresent); found != logical_device.queues.end())
-	native_context->presentQueue = found->second;
-
-	native_context->pipelineCache = m_pDevice->GetPipelineCache();
-	native_context->backbufferFormat = swapchain.format;
-	native_context->backbufferFrames = swapchain.framesInFlight;
-	native_context->samples = m_pDevice->GetMultisamplingCount();
-	native_context->allocationCallbacks = m_pDevice->GetAllocationCallbacks();
-	native_context->memoryAllocator = m_pDevice->GetMemoryAllocator();
 }
 
 FVkCommandBuffer& CVkRenderContext::CreateCommandBuffer(const FVkCommandBufferCreateInfo& command_buffer_ci, std::thread::id thread_id)
@@ -2399,13 +2377,13 @@ FVkBufferCreateInfo CVkRenderContext::MakeBufferCreateInfo(const std::string& na
 	if (buffer_ci.flags & EBufferUsageFlagBits::eUniform)
 	{
 		vk_buffer_ci.usageFlags |= vk::BufferUsageFlagBits::eUniformBuffer;
-		minimal_alignment = std::lcm(physical.properties.limits.minUniformBufferOffsetAlignment, physical.properties.limits.nonCoherentAtomSize);
+		minimal_alignment = std::lcm(physical.GetProperties().limits.minUniformBufferOffsetAlignment, physical.GetProperties().limits.nonCoherentAtomSize);
 	}
 
 	if (buffer_ci.flags & EBufferUsageFlagBits::eStorage)
 	{
 		vk_buffer_ci.usageFlags |= vk::BufferUsageFlagBits::eStorageBuffer;
-		minimal_alignment = std::max(minimal_alignment, physical.properties.limits.minStorageBufferOffsetAlignment);
+		minimal_alignment = std::max(minimal_alignment, physical.GetProperties().limits.minStorageBufferOffsetAlignment);
 	}
 
 	if (buffer_ci.flags & EBufferUsageFlagBits::eIndirect)
@@ -2613,7 +2591,7 @@ FRenderApiErrorInfo CVkRenderContext::CreateShaderResources(const FVkShaderResou
 
 	// Minimal buffer offset
 	auto& physical = m_pDevice->GetPhysicalDevice();
-	auto minOffsetAllignment = std::lcm(physical.properties.limits.minUniformBufferOffsetAlignment, physical.properties.limits.nonCoherentAtomSize);
+	auto minOffsetAllignment = std::lcm(physical.GetProperties().limits.minUniformBufferOffsetAlignment, physical.GetProperties().limits.nonCoherentAtomSize);
 
 	// Create uniform buffers
 	for (const auto& [id, uniform_block] : reflection->uniformBlocks)

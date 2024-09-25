@@ -72,6 +72,8 @@ include_directories(
     "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include"
 )
 
+add_compile_definitions($<$<CONFIG:DEBUG>:ENGINE_DEBUG>)
+
 add_subdirectory(util)
 add_subdirectory(modules/glm)
 add_subdirectory(modules/imgui)

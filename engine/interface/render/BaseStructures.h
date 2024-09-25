@@ -34,12 +34,11 @@ namespace engine
 
 			utl::vector<char> pipelineCache{};
 
-			utl::vector<std::string> requiredDeviceExtensions{};
-			utl::vector<std::string> optionalDeviceExtensions{};
+			utl::vector<const char*> requiredDeviceExtensions{};
+			utl::vector<const char*> optionalDeviceExtensions{};
 
-			bool validationState{ false };
 			u32 validationFeatures{ 0u };
-			utl::vector<std::string> validationLayers{};
+			utl::vector<const char*> validationLayers{};
 		};
 
 		template<class _Ty>

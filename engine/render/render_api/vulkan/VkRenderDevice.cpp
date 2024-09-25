@@ -13,6 +13,12 @@
 
 #include <engine/runtime/Window.h>
 
+#include <engine/render/render_api/vulkan/PhysicalDevice.h>
+#include <engine/render/render_api/vulkan/DebugUtils.h>
+#include <engine/render/render_api/vulkan/Device.h>
+
+#include <volk.h>
+
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 using namespace engine::render;
@@ -60,49 +66,13 @@ u32 get_api_version(ERenderApi version)
 	return 0u;
 }
 
-
-VKAPI_ATTR VkBool32 VKAPI_CALL debug_messenger_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
-{
-	switch (messageSeverity)
-	{
-	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT: log_info(pCallbackData->pMessage); break;
-	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT: log_info(pCallbackData->pMessage); break;
-	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT: log_warning(pCallbackData->pMessage); break;
-	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:  log_error(pCallbackData->pMessage); break;
-	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT: break;
-	}
-
-	return VK_FALSE;
-}
-
-VKAPI_ATTR vk::Bool32 VKAPI_CALL debug_report_callback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, u64 object, u64 location, i32 messageCode, const char* pLayerPrefix, const char* pMessage, void* pUserData)
-{
-	vk::DebugReportObjectTypeEXT object_type = utl::cast<vk::DebugReportObjectTypeEXT>(objectType);
-	auto report_text = std::format("Report[{}:{}:{}]: {}", pLayerPrefix, vk::to_string(object_type), location, pMessage);
-
-	switch (flags)
-	{
-	case VK_DEBUG_REPORT_INFORMATION_BIT_EXT: log_info(report_text); break;
-	case VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT: log_warning(report_text); break;
-	case VK_DEBUG_REPORT_WARNING_BIT_EXT: log_warning(report_text); break;
- 	case VK_DEBUG_REPORT_ERROR_BIT_EXT: log_error(report_text); break;
-	case VK_DEBUG_REPORT_DEBUG_BIT_EXT: log_debug(report_text); break;
-	}
-	
-	return VK_FALSE;
-}
-
 CVkRenderDevice::~CVkRenderDevice()
 {
 	CleanupSwapchain();
-	m_logicalDevice.handle.destroySwapchainKHR(m_swapchain.handle, m_allocationCallbacks);
-	m_logicalDevice.handle.destroyPipelineCache(m_pipelineCache, m_allocationCallbacks);
+	Handle(*device).destroySwapchainKHR(m_swapchain.handle, m_allocationCallbacks);
+	Handle(*device).destroyPipelineCache(m_pipelineCache, m_allocationCallbacks);
 	m_memoryAllocator.destroy();
-	m_logicalDevice.handle.destroy(m_allocationCallbacks);
-	m_vkInstance.destroyDebugUtilsMessengerEXT(m_debugMessenger, m_allocationCallbacks);
-	m_vkInstance.destroyDebugReportCallbackEXT(m_debugReport, m_allocationCallbacks);
-	m_vkInstance.destroySurfaceKHR(m_vkSurface, m_allocationCallbacks);
-	m_vkInstance.destroy(m_allocationCallbacks);
+	Handle(*instance).destroySurfaceKHR(surface, m_allocationCallbacks);
 
 	if (m_allocationCallbacks)
 	{
@@ -117,6 +87,21 @@ CVkRenderDevice::~CVkRenderDevice()
 #endif
 }
 
+void CVkRenderDevice::AddDeviceExtension(const char* extension)
+{
+	device_extensions.emplace_back(extension);
+}
+
+void CVkRenderDevice::AddInstanceExtension(const char* extension)
+{
+	instance_extensions.emplace_back(extension);
+}
+
+void CVkRenderDevice::AddLayerSetting(vk::LayerSettingEXT const& layerSetting)
+{
+	layer_settings.emplace_back(layerSetting);
+}
+
 void CVkRenderDevice::Create(const FRenderContextCreateInfo& context_ci)
 {
 	// Register dispatcher
@@ -124,18 +109,131 @@ void CVkRenderDevice::Create(const FRenderContextCreateInfo& context_ci)
 	VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 
 	// Create allocation callbacks
-	RegisterAllocationCallbacks();
+	//RegisterAllocationCallbacks();
 
-	check_api_result(CreateInstance(context_ci));
-	VULKAN_HPP_DEFAULT_DISPATCHER.init(m_vkInstance);
-	CreateDebugMessanger(context_ci);
+	auto* window = context_ci.window;
 
-	check_api_result(CreateSurface(context_ci));
-	check_api_result(SelectPhysicalDevice(context_ci));
-	PrepareRequestedLogicalDeviceFeatures();
+	bool headless = window->GetWindowMode() == Window::Mode::Headless;
 
-	check_api_result(CreateLogicalDevice(context_ci));
-	VULKAN_HPP_DEFAULT_DISPATCHER.init(m_logicalDevice.handle);
+	// for a while we're running on mixed C- and C++-bindings, needing volk for the C-bindings!
+	VkResult result = volkInitialize();
+	if (result)
+	{
+		return;
+		//throw VulkanException(static_cast<vk::Result>(result), "Failed to initialize volk.");
+	}
+
+	// Apply instance extensions requested by surface
+	{
+		auto required_surface_extensions = window->GetRequiredSurfaceExtensions();
+		instance_extensions.insert(instance_extensions.end(), required_surface_extensions.begin(), required_surface_extensions.end());
+	}
+
+	// Apply extensions requested by user
+	instance_extensions.insert(instance_extensions.end(), context_ci.validationLayers.begin(), context_ci.validationLayers.end());
+
+#ifdef VULKAN_DEBUG
+	{
+		std::vector<vk::ExtensionProperties> available_instance_extensions = vk::enumerateInstanceExtensionProperties();
+		auto debugExtensionIt = std::find_if(available_instance_extensions.begin(), available_instance_extensions.end(),
+				[](vk::ExtensionProperties const& ep) { return strcmp(ep.extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME) == 0; });
+		if (debugExtensionIt != available_instance_extensions.end())
+		{
+			log_info("Vulkan debug utils enabled ({})", VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+
+			debug_utils = std::make_unique<DebugUtilsExtDebugUtils>();
+			AddInstanceExtension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+		}
+	}
+#endif
+
+	InstanceCreateInfo instance_ci{ "App", instance_extensions, validation_layers, layer_settings, headless, get_api_version(context_ci.apiVersion)};
+	instance = std::make_unique<Instance>(instance_ci);
+
+	VULKAN_HPP_DEFAULT_DISPATCHER.init(Handle(*instance));
+
+	surface = context_ci.window->CreateSurface(Handle(*instance), m_allocationCallbacks);
+	if (!surface)
+	{
+		throw std::runtime_error("Failed to create window surface.");
+	}
+
+	// Creating vulkan device, specifying the swapchain extension always
+	if (!headless || instance->IsEnabled(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME))
+	{
+		AddDeviceExtension(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+
+		if (std::find(instance_extensions.begin(), instance_extensions.end(), VK_KHR_DISPLAY_EXTENSION_NAME) != instance_extensions.end())
+		{
+			AddDeviceExtension(VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME);
+		}
+	}
+
+#ifdef VULKAN_ENABLE_PORTABILITY
+	// VK_KHR_portability_subset must be enabled if present in the implementation (e.g on macOS/iOS with beta extensions enabled)
+	AddDeviceExtension(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+#endif
+
+	// Apply required device extensions
+	device_extensions.insert(device_extensions.end(), context_ci.requiredDeviceExtensions.begin(), context_ci.requiredDeviceExtensions.end());
+
+	// Pick best device from found on device
+	instance->SelectBestDevice(surface, device_extensions);
+
+	auto& physical_device = instance->GetBestDevice();	
+
+#ifdef VULKAN_DEBUG
+	if (!debug_utils)
+	{
+		std::vector<vk::ExtensionProperties> available_device_extensions = Handle(physical_device).enumerateDeviceExtensionProperties();
+		auto debugExtensionIt = std::find_if(available_device_extensions.begin(), available_device_extensions.end(),
+			[](vk::ExtensionProperties const& ep) { return strcmp(ep.extensionName, VK_EXT_DEBUG_MARKER_EXTENSION_NAME) == 0; });
+		if (debugExtensionIt != available_device_extensions.end())
+		{
+			log_info("Vulkan debug utils enabled ({})", VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
+
+			debug_utils = std::make_unique<DebugMarkerExtDebugUtils>();
+			AddDeviceExtension(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
+		}
+	}
+
+	if (!debug_utils)
+	{
+		log_warning("Vulkan debug utils were requested, but no extension that provides them was found");
+	}
+#endif
+
+	if (!debug_utils)
+	{
+		debug_utils = std::make_unique<DummyDebugUtils>();
+	}
+
+	// Enable vulkan features
+	EnableDeviceFeatures(physical_device);
+
+	// Enable vk 1.0 features
+	auto& requested_features = physical_device.GetMutableRequestedFeatures();
+	requested_features.samplerAnisotropy = true;
+	requested_features.sampleRateShading = true;
+	requested_features.fillModeNonSolid = true;
+	requested_features.multiViewport = true;
+	requested_features.geometryShader = true;
+	requested_features.tessellationShader = true;
+	requested_features.fragmentStoresAndAtomics = true;
+	requested_features.logicOp = true;
+	requested_features.imageCubeArray = true;
+	requested_features.depthClamp = true;
+	requested_features.independentBlend = true;
+	requested_features.multiDrawIndirect = true;
+	requested_features.shaderInt16 = true;
+	requested_features.shaderStorageImageReadWithoutFormat = true;
+	requested_features.shaderStorageImageWriteWithoutFormat = true;
+	requested_features.shaderInt64 = true;
+
+	device = std::make_unique<Device>(physical_device, surface, device_extensions);
+
+	//check_api_result(CreateLogicalDevice(context_ci));
+	VULKAN_HPP_DEFAULT_DISPATCHER.init(Handle(*device));
 
 	CreateMemoryAllocator(context_ci);
 
@@ -146,26 +244,31 @@ void CVkRenderDevice::Create(const FRenderContextCreateInfo& context_ci)
 
 FRenderApiErrorInfo CVkRenderDevice::CreateCommandPool(const FVkCommandPoolCreateInfo& command_pool_ci, FVkCommandPool& command_pool)
 {
-	auto& physical_device = GetPhysicalDevice();
-
-	const bool async_compute_support = physical_device.compatFlags & PHYSICAL_DEVICE_COMPAT_ASYNC_COMPUTE_FLAG_BIT;
-	const bool async_transfer_support = physical_device.compatFlags & PHYSICAL_DEVICE_COMPAT_ASYNC_TRANSFER_FLAG_BIT;
-
-	const bool is_compute_queue = (command_pool_ci.mask & EQueueTypeFlagBits::eCompute) && async_compute_support;
-	const bool is_transfer_queue = (command_pool_ci.mask & EQueueTypeFlagBits::eTransfer) && async_transfer_support;
+	const bool is_compute_queue = (command_pool_ci.mask & EQueueTypeFlagBits::eCompute) != 0;
+	const bool is_transfer_queue = (command_pool_ci.mask & EQueueTypeFlagBits::eTransfer) != 0;
 
 	vk::CommandPoolCreateInfo pool_ci{};
 	pool_ci.flags = vk::CommandPoolCreateFlagBits::eTransient | vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
 
-	u32 queue_family_index{ physical_device.queueFamilies.queueToFamily[EQueueTypeFlagBits::eGraphics] };
-	if (is_compute_queue)
-		queue_family_index = physical_device.queueFamilies.queueToFamily[EQueueTypeFlagBits::eCompute];
-	else if(is_transfer_queue)
-		queue_family_index = physical_device.queueFamilies.queueToFamily[EQueueTypeFlagBits::eTransfer];
+	if (command_pool_ci.mask & EQueueTypeFlagBits::ePresent)
+	{
+		auto& found = device->GetQueueByPresent(0);
+		pool_ci.queueFamilyIndex = found.GetFamilyIndex();
+	}
+	else if (command_pool_ci.mask & EQueueTypeFlagBits::eGraphics)
+	{
+		pool_ci.queueFamilyIndex = device->GetQueueFamilyIndex(vk::QueueFlagBits::eGraphics);
+	}
+	else if (command_pool_ci.mask & EQueueTypeFlagBits::eCompute)
+	{
+		pool_ci.queueFamilyIndex = device->GetQueueFamilyIndex(vk::QueueFlagBits::eCompute);
+	}
+	else if (command_pool_ci.mask & EQueueTypeFlagBits::eTransfer)
+	{
+		pool_ci.queueFamilyIndex = device->GetQueueFamilyIndex(vk::QueueFlagBits::eTransfer);
+	}
 
-	pool_ci.queueFamilyIndex = queue_family_index;
-
-	vk::Result res = m_logicalDevice.handle.createCommandPool(&pool_ci, m_allocationCallbacks, &command_pool.handle);
+	vk::Result res = Handle(*device).createCommandPool(&pool_ci, m_allocationCallbacks, &command_pool.handle);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	std::stringstream ss{};
 	ss << command_pool_ci.threadId;
@@ -177,7 +280,7 @@ FRenderApiErrorInfo CVkRenderDevice::CreateCommandPool(const FVkCommandPoolCreat
 
 void CVkRenderDevice::DestroyCommandPool(FVkCommandPool& command_pool)
 {
-	m_logicalDevice.handle.destroyCommandPool(command_pool.handle, m_allocationCallbacks);
+	Handle(*device).destroyCommandPool(command_pool.handle, m_allocationCallbacks);
 }
 
 FRenderApiErrorInfo CVkRenderDevice::CreateCommandBuffer(const FVkCommandBufferCreateInfo& command_buffer_ci, const FVkCommandPool& command_pool, FVkCommandBuffer& command_buffer)
@@ -189,7 +292,7 @@ FRenderApiErrorInfo CVkRenderDevice::CreateCommandBuffer(const FVkCommandBufferC
 
 	command_buffer.handles.resize(command_buffer_ci.count);
 
-	vk::Result res = m_logicalDevice.handle.allocateCommandBuffers(&command_buffer_ai, command_buffer.handles.data());
+	vk::Result res = Handle(*device).allocateCommandBuffers(&command_buffer_ai, command_buffer.handles.data());
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	for(i32 idx = 0; idx < command_buffer.handles.size(); ++idx)
 		DebugSetObjectName(command_buffer.get(), std::format("{} #{}", command_buffer_ci.name, idx));
@@ -202,7 +305,7 @@ FRenderApiErrorInfo CVkRenderDevice::CreateCommandBuffer(const FVkCommandBufferC
 
 void CVkRenderDevice::DestroyCommandBuffer(const FVkCommandPool& command_pool, FVkCommandBuffer& command_buffer)
 {
-	m_logicalDevice.handle.freeCommandBuffers(command_pool.handle, command_buffer.handles);
+	Handle(*device).freeCommandBuffers(command_pool.handle, command_buffer.handles);
 }
 
 void CVkRenderDevice::BeginCommandBuffer(FVkCommandBuffer& command_buffer, vk::CommandBufferUsageFlags usage, u32 image_index)
@@ -250,7 +353,7 @@ void CVkRenderDevice::DestroyImage(FVkImage& image)
 
 FRenderApiErrorInfo CVkRenderDevice::CreateImageView(const FVkImageViewCreateInfo& image_view_ci, vk::ImageView& image_view)
 {
-	vk::Result res = m_logicalDevice.handle.createImageView(&image_view_ci.ci, m_allocationCallbacks, &image_view);
+	vk::Result res = Handle(*device).createImageView(&image_view_ci.ci, m_allocationCallbacks, &image_view);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	DebugSetObjectName(image_view, image_view_ci.name);
 #endif
@@ -259,12 +362,12 @@ FRenderApiErrorInfo CVkRenderDevice::CreateImageView(const FVkImageViewCreateInf
 
 void CVkRenderDevice::DestroyImageView(vk::ImageView& image_view)
 {
-	m_logicalDevice.handle.destroyImageView(image_view, m_allocationCallbacks);
+	Handle(*device).destroyImageView(image_view, m_allocationCallbacks);
 }
 
 FRenderApiErrorInfo CVkRenderDevice::CreateSampler(const FVkSamplerCreateInfo& sampler_ci, vk::Sampler& sampler)
 {
-	auto& physical_device = GetPhysicalDevice();
+	auto& physical_device = instance->GetBestDevice();
 
 	vk::SamplerCreateInfo ci{};
 	ci.magFilter = sampler_ci.magFilter;
@@ -277,7 +380,7 @@ FRenderApiErrorInfo CVkRenderDevice::CreateSampler(const FVkSamplerCreateInfo& s
 
 	// Anisotropy filtering
 	ci.anisotropyEnable = sampler_ci.enableAnisotropy;
-	ci.maxAnisotropy = physical_device.properties.limits.maxSamplerAnisotropy;
+	ci.maxAnisotropy = physical_device.GetProperties().limits.maxSamplerAnisotropy;
 
 	// Depth
 	ci.compareEnable = sampler_ci.enableCompareOp;
@@ -288,7 +391,7 @@ FRenderApiErrorInfo CVkRenderDevice::CreateSampler(const FVkSamplerCreateInfo& s
 	ci.minLod = 0.f;
 	ci.maxLod = utl::cast<f32>(sampler_ci.mipLevels);
 
-	vk::Result res = m_logicalDevice.handle.createSampler(&ci, m_allocationCallbacks, &sampler);
+	vk::Result res = Handle(*device).createSampler(&ci, m_allocationCallbacks, &sampler);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	DebugSetObjectName(sampler, sampler_ci.name);
 #endif
@@ -297,7 +400,7 @@ FRenderApiErrorInfo CVkRenderDevice::CreateSampler(const FVkSamplerCreateInfo& s
 
 void CVkRenderDevice::DestroySampler(vk::Sampler& sampler)
 {
-	m_logicalDevice.handle.destroySampler(sampler, m_allocationCallbacks);
+	Handle(*device).destroySampler(sampler, m_allocationCallbacks);
 }
 
 FRenderApiErrorInfo CVkRenderDevice::CreateBuffer(const FVkBufferCreateInfo& buffer_ci, FVkBuffer& buffer)
@@ -323,7 +426,7 @@ FRenderApiErrorInfo CVkRenderDevice::CreateBuffer(const FVkBufferCreateInfo& buf
 	{
 		vk::BufferDeviceAddressInfoKHR address_info{};
 		address_info.buffer = buffer.handle;
-		buffer.address = m_logicalDevice.handle.getBufferAddressKHR(address_info);
+		buffer.address = Handle(*device).getBufferAddressKHR(address_info);
 	}
 
 	return make_api_error(buffer.handle.objectType, res, "Failed to Create");
@@ -370,7 +473,7 @@ FRenderApiErrorInfo CVkRenderDevice::CreateDescriptorSetLayout(const FVkDescript
 	descriptor_set_layout_ci.flags = layout_ci.flags;
 	descriptor_set_layout_ci.pNext = layout_ci.next;
 
-	vk::Result res = m_logicalDevice.handle.createDescriptorSetLayout(&descriptor_set_layout_ci, m_allocationCallbacks, &descriptor_set_layout);
+	vk::Result res = Handle(*device).createDescriptorSetLayout(&descriptor_set_layout_ci, m_allocationCallbacks, &descriptor_set_layout);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	DebugSetObjectName(descriptor_set_layout, layout_ci.name);
 #endif
@@ -379,7 +482,7 @@ FRenderApiErrorInfo CVkRenderDevice::CreateDescriptorSetLayout(const FVkDescript
 
 void CVkRenderDevice::DestroyDescriptorSetLayout(vk::DescriptorSetLayout& descriptor_set_layout)
 {
-	m_logicalDevice.handle.destroyDescriptorSetLayout(descriptor_set_layout, m_allocationCallbacks);
+	Handle(*device).destroyDescriptorSetLayout(descriptor_set_layout, m_allocationCallbacks);
 }
 
 FRenderApiErrorInfo CVkRenderDevice::CreateDescriptorPool(const FVkDescriptorPoolCreateInfo& pool_ci, FVkDescriptorPool& descriptor_pool)
@@ -400,7 +503,7 @@ FRenderApiErrorInfo CVkRenderDevice::CreateDescriptorPool(const FVkDescriptorPoo
 	descriptor_pool_ci.maxSets = maxSets;
 	descriptor_pool_ci.flags = pool_ci.flags;
 
-	vk::Result res = m_logicalDevice.handle.createDescriptorPool(&descriptor_pool_ci, m_allocationCallbacks, &descriptor_pool.handle);
+	vk::Result res = Handle(*device).createDescriptorPool(&descriptor_pool_ci, m_allocationCallbacks, &descriptor_pool.handle);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	DebugSetObjectName(descriptor_pool.handle, pool_ci.name);
 #endif
@@ -416,12 +519,12 @@ FRenderApiErrorInfo CVkRenderDevice::GrowDescriptorPool(const FVkDescriptorPoolC
 
 void CVkRenderDevice::ResetDescriptorPool(FVkDescriptorPool& descriptor_pool)
 {
-	m_logicalDevice.handle.resetDescriptorPool(descriptor_pool.handle);
+	Handle(*device).resetDescriptorPool(descriptor_pool.handle);
 }
 
 void CVkRenderDevice::DestroyDescriptorPool(FVkDescriptorPool& descriptor_pool)
 {
-	m_logicalDevice.handle.destroyDescriptorPool(descriptor_pool.handle, m_allocationCallbacks);
+	Handle(*device).destroyDescriptorPool(descriptor_pool.handle, m_allocationCallbacks);
 }
 
 FRenderApiErrorInfo CVkRenderDevice::CreateDescriptorSet(const FVkDescriptorSetCreateInfo& set_ci, FVkDescriptorSet& descriptor_set)
@@ -435,7 +538,7 @@ FRenderApiErrorInfo CVkRenderDevice::CreateDescriptorSet(const FVkDescriptorSetC
 	descriptor_ai.pNext = set_ci.next;
 
 	descriptor_set.handles.resize(set_ci.descriptorCount);
-	vk::Result res = m_logicalDevice.handle.allocateDescriptorSets(&descriptor_ai, descriptor_set.handles.data());
+	vk::Result res = Handle(*device).allocateDescriptorSets(&descriptor_ai, descriptor_set.handles.data());
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	for (u64 idx = 0ull; idx < descriptor_set.handles.size(); ++idx)
@@ -447,7 +550,7 @@ FRenderApiErrorInfo CVkRenderDevice::CreateDescriptorSet(const FVkDescriptorSetC
 
 void CVkRenderDevice::DestroyDescriptorSet(const FVkDescriptorPool& descriptor_pool, FVkDescriptorSet& descriptor_set)
 {
-	m_logicalDevice.handle.freeDescriptorSets(descriptor_pool.handle, descriptor_set.handles);
+	Handle(*device).freeDescriptorSets(descriptor_pool.handle, descriptor_set.handles);
 }
 
 FRenderApiErrorInfo CVkRenderDevice::CreateShaderModule(const FVkShaderModuleCreateInfo& shader_module_ci, vk::ShaderModule& shader_module)
@@ -456,7 +559,7 @@ FRenderApiErrorInfo CVkRenderDevice::CreateShaderModule(const FVkShaderModuleCre
 	module_ci.codeSize = shader_module_ci.shaderCode->size() * sizeof(u32);
 	module_ci.pCode = shader_module_ci.shaderCode->data();
 
-	vk::Result res = m_logicalDevice.handle.createShaderModule(&module_ci, m_allocationCallbacks, &shader_module);
+	vk::Result res = Handle(*device).createShaderModule(&module_ci, m_allocationCallbacks, &shader_module);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	DebugSetObjectName(shader_module, shader_module_ci.name);
 #endif
@@ -465,7 +568,7 @@ FRenderApiErrorInfo CVkRenderDevice::CreateShaderModule(const FVkShaderModuleCre
 
 void CVkRenderDevice::DestroyShaderModule(vk::ShaderModule& shader_module)
 {
-	m_logicalDevice.handle.destroyShaderModule(shader_module, m_allocationCallbacks);
+	Handle(*device).destroyShaderModule(shader_module, m_allocationCallbacks);
 }
 
 FRenderApiErrorInfo CVkRenderDevice::CreatePipelineLayout(const FVkPipelineLayoutCreateInfo& pipeline_layout_ci, vk::PipelineLayout& pipeline_layout)
@@ -475,7 +578,7 @@ FRenderApiErrorInfo CVkRenderDevice::CreatePipelineLayout(const FVkPipelineLayou
 	layout_ci.pSetLayouts = pipeline_layout_ci.descriptorSetLayouts.data();
 	layout_ci.pushConstantRangeCount = utl::cast<u32>(pipeline_layout_ci.pushConstantRanges.size());
 	layout_ci.pPushConstantRanges = pipeline_layout_ci.pushConstantRanges.data();
-	vk::Result res = m_logicalDevice.handle.createPipelineLayout(&layout_ci, m_allocationCallbacks, &pipeline_layout);
+	vk::Result res = Handle(*device).createPipelineLayout(&layout_ci, m_allocationCallbacks, &pipeline_layout);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	DebugSetObjectName(pipeline_layout, pipeline_layout_ci.name);
 #endif
@@ -484,7 +587,7 @@ FRenderApiErrorInfo CVkRenderDevice::CreatePipelineLayout(const FVkPipelineLayou
 
 void CVkRenderDevice::DestroyPipelineLayout(vk::PipelineLayout& pipeline_layout)
 {
-	m_logicalDevice.handle.destroyPipelineLayout(pipeline_layout, m_allocationCallbacks);
+	Handle(*device).destroyPipelineLayout(pipeline_layout, m_allocationCallbacks);
 }
 
 FRenderApiErrorInfo CVkRenderDevice::CreatePipeline(const FVkGraphicsPipelineCreateInfo& pipeline_ci, vk::Pipeline& pipeline)
@@ -590,7 +693,7 @@ FRenderApiErrorInfo CVkRenderDevice::CreatePipeline(const FVkGraphicsPipelineCre
 	graphics_pipeline_ci.pTessellationState = (enableTessellation ? &tessellation_state : nullptr);
 	graphics_pipeline_ci.pNext = &rendering_ci;
 
-	vk::Result res = m_logicalDevice.handle.createGraphicsPipelines(m_pipelineCache, 1u, &graphics_pipeline_ci, m_allocationCallbacks, &pipeline);
+	vk::Result res = Handle(*device).createGraphicsPipelines(m_pipelineCache, 1u, &graphics_pipeline_ci, m_allocationCallbacks, &pipeline);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	DebugSetObjectName(pipeline, pipeline_ci.name);
 #endif
@@ -605,7 +708,7 @@ FRenderApiErrorInfo CVkRenderDevice::CreatePipeline(const FVkComputePipelineCrea
 	compute_pipeline_ci.basePipelineHandle = nullptr;
 	compute_pipeline_ci.basePipelineIndex = -1;
 
-	vk::Result res = m_logicalDevice.handle.createComputePipelines(m_pipelineCache, 1u, &compute_pipeline_ci, m_allocationCallbacks, &pipeline);
+	vk::Result res = Handle(*device).createComputePipelines(m_pipelineCache, 1u, &compute_pipeline_ci, m_allocationCallbacks, &pipeline);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	DebugSetObjectName(pipeline, pipeline_ci.name);
 #endif
@@ -618,8 +721,8 @@ FRenderApiErrorInfo CVkRenderDevice::CreatePipeline(const FVkRayTracingPipelineC
 	vk::RayTracingShaderGroupTypeKHR;
 
 	vk::RayTracingPipelineCreateInfoKHR rtx_pipeline_ci{};
-	//m_logicalDevice.handle.createRayTracingPipelinesKHR()
-	vk::Result res;// = m_logicalDevice.handle.createRayTracingPipelinesKHR(m_pipelineCache, 1u, &rtx_pipeline_ci, m_allocationCallbacks, &pipeline);
+	//Handle(*device).createRayTracingPipelinesKHR()
+	vk::Result res;// = Handle(*device).createRayTracingPipelinesKHR(m_pipelineCache, 1u, &rtx_pipeline_ci, m_allocationCallbacks, &pipeline);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	DebugSetObjectName(pipeline, pipeline_ci.name);
 #endif
@@ -628,12 +731,12 @@ FRenderApiErrorInfo CVkRenderDevice::CreatePipeline(const FVkRayTracingPipelineC
 
 void CVkRenderDevice::DestroyPipeline(vk::Pipeline& pipeline)
 {
-	m_logicalDevice.handle.destroyPipeline(pipeline, m_allocationCallbacks);
+	Handle(*device).destroyPipeline(pipeline, m_allocationCallbacks);
 }
 
 FRenderApiErrorInfo CVkRenderDevice::CreateSemaphore(const FVkSemaphoreCreateInfo& semaphore_ci, vk::Semaphore& semaphore)
 {
-	vk::Result res = m_logicalDevice.handle.createSemaphore(&semaphore_ci.ci, m_allocationCallbacks, &semaphore);
+	vk::Result res = Handle(*device).createSemaphore(&semaphore_ci.ci, m_allocationCallbacks, &semaphore);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	DebugSetObjectName(semaphore, semaphore_ci.name);
 #endif
@@ -642,7 +745,7 @@ FRenderApiErrorInfo CVkRenderDevice::CreateSemaphore(const FVkSemaphoreCreateInf
 
 FRenderApiErrorInfo CVkRenderDevice::CreateFence(const FVkFenceCreateInfo& fence_ci, vk::Fence& fence)
 {
-	vk::Result res = m_logicalDevice.handle.createFence(&fence_ci.ci, m_allocationCallbacks, &fence);
+	vk::Result res = Handle(*device).createFence(&fence_ci.ci, m_allocationCallbacks, &fence);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	DebugSetObjectName(fence, fence_ci.name);
 #endif
@@ -657,15 +760,15 @@ FRenderApiErrorInfo CVkRenderDevice::CreateTimestampQuery(u32 count, FVkTimestam
 
 	timestamp_query.values.resize(count);
 
-	vk::Result res = m_logicalDevice.handle.createQueryPool(&query_pool_ci, m_allocationCallbacks, &timestamp_query.handle);
-	m_logicalDevice.handle.resetQueryPool(timestamp_query.handle, 0u, count);
+	vk::Result res = Handle(*device).createQueryPool(&query_pool_ci, m_allocationCallbacks, &timestamp_query.handle);
+	Handle(*device).resetQueryPool(timestamp_query.handle, 0u, count);
 
 	return make_api_error(timestamp_query.handle.objectType, res, "Failed to Create");
 }
 
 void CVkRenderDevice::ResetTimestampQuery(FVkTimestampQuery& timestamp_query)
 {
-	m_logicalDevice.handle.resetQueryPool(timestamp_query.handle, 0u, static_cast<u32>(timestamp_query.values.size()));
+	Handle(*device).resetQueryPool(timestamp_query.handle, 0u, static_cast<u32>(timestamp_query.values.size()));
 	timestamp_query.queryIndex = 0u;
 }
 
@@ -684,7 +787,7 @@ void CVkRenderDevice::WriteTimestampQuery(FVkCommandBuffer& command_buffer, vk::
 
 FRenderApiErrorInfo CVkRenderDevice::GetTimestampQueryResults(FVkTimestampQuery& timestamp_query, utl::vector<f32>& results)
 {
-	vk::Result res = m_logicalDevice.handle.getQueryPoolResults(
+	vk::Result res = Handle(*device).getQueryPoolResults(
 		timestamp_query.handle,
 		0u,
 		timestamp_query.queryIndex,
@@ -693,8 +796,8 @@ FRenderApiErrorInfo CVkRenderDevice::GetTimestampQueryResults(FVkTimestampQuery&
 		sizeof(u64),
 		vk::QueryResultFlagBits::e64 | vk::QueryResultFlagBits::eWait);
 
-	auto& physical = GetPhysicalDevice();
-	auto& timestamp_frequency = physical.properties.limits.timestampPeriod;
+	auto& physical = instance->GetBestDevice();
+	auto& timestamp_frequency = physical.GetProperties().limits.timestampPeriod;
 
 	if(results.size() != timestamp_query.queryIndex / 2ull)
 		results.resize(timestamp_query.queryIndex / 2);
@@ -710,7 +813,7 @@ FRenderApiErrorInfo CVkRenderDevice::GetTimestampQueryResults(FVkTimestampQuery&
 
 void CVkRenderDevice::DestroyTimestampQuery(FVkTimestampQuery& timestamp_query)
 {
-	m_logicalDevice.handle.destroyQueryPool(timestamp_query.handle);
+	Handle(*device).destroyQueryPool(timestamp_query.handle);
 	timestamp_query.values.clear();
 }
 
@@ -720,8 +823,8 @@ void CVkRenderDevice::GetOccupedDeviceMemory(vk::MemoryHeapFlags memory_flags, u
 	vk::PhysicalDeviceMemoryProperties2 memory_props{};
 	memory_props.pNext = &memory_budget_props;
 
-	auto& physical_device = GetPhysicalDevice();
-	physical_device.handle.getMemoryProperties2(&memory_props);
+	auto& physical_device = instance->GetBestDevice();
+	Handle(physical_device).getMemoryProperties2(&memory_props);
 
 	total_memory = used_memory = 0ull;
 
@@ -747,17 +850,17 @@ void CVkRenderDevice::SubmitCommandBuffer(const FVkCommandBuffer& command_buffer
 	vk::Fence fence{};
 	CreateFence(fence_ci, fence);
 
-	m_logicalDevice.handle.resetFences(1, &fence);
+	Handle(*device).resetFences(1, &fence);
 
 	auto& queue = GetQueue(command_buffer.mask);
 	queue.submit(submitInfo, fence);
-	m_logicalDevice.handle.waitForFences(1, &fence, VK_TRUE, (std::numeric_limits<u64>::max)());
-	m_logicalDevice.handle.destroyFence(fence, m_allocationCallbacks);
+	Handle(*device).waitForFences(1, &fence, VK_TRUE, (std::numeric_limits<u64>::max)());
+	Handle(*device).destroyFence(fence, m_allocationCallbacks);
 }
 
 vk::Result CVkRenderDevice::Present(FVkCommandBuffer& command_buffer)
 {
-	vk::Result res = m_logicalDevice.handle.resetFences(1, &m_swapchain.inFlightFences.at(m_swapchain.currentFrame));
+	vk::Result res = Handle(*device).resetFences(1, &m_swapchain.inFlightFences.at(m_swapchain.currentFrame));
 	check_api_result(make_api_error(vk::ObjectType::eFence, res, "Failed to reset"));
 
 	try
@@ -808,7 +911,7 @@ vk::Result CVkRenderDevice::Present(FVkCommandBuffer& command_buffer)
 	res = present_queue.presentKHR(present_info);
 	check_api_result(make_api_error(vk::ObjectType::eQueue, res, "Failed to present"));
 
-	res = m_logicalDevice.handle.waitForFences(1, &m_swapchain.inFlightFences[m_swapchain.currentFrame], VK_TRUE, (std::numeric_limits<u64>::max)());
+	res = Handle(*device).waitForFences(1, &m_swapchain.inFlightFences[m_swapchain.currentFrame], VK_TRUE, (std::numeric_limits<u64>::max)());
 	m_swapchain.currentFrame = (m_swapchain.currentFrame + 1) % m_swapchain.framesInFlight;
 
 	return res;
@@ -816,7 +919,7 @@ vk::Result CVkRenderDevice::Present(FVkCommandBuffer& command_buffer)
 
 vk::Result CVkRenderDevice::AcquireNextImage(u32& image_index)
 {
-	return m_logicalDevice.handle.acquireNextImageKHR(m_swapchain.handle, (std::numeric_limits<u64>::max)(), m_swapchain.imageAvaliableSemaphores[m_swapchain.currentFrame], nullptr, &image_index);
+	return Handle(*device).acquireNextImageKHR(m_swapchain.handle, (std::numeric_limits<u64>::max)(), m_swapchain.imageAvaliableSemaphores[m_swapchain.currentFrame], nullptr, &image_index);
 }
 
 void CVkRenderDevice::DebugBeginLabel(vk::CommandBuffer& command_buffer, const std::string& name, u32 color)
@@ -881,9 +984,9 @@ void CVkRenderDevice::InitProfiler(const FVkCommandPool& command_pool)
 
 	m_tracyContext.resize(m_swapchain.framesInFlight);
 	for (u32 idx = 0u; idx < m_swapchain.framesInFlight; ++idx)
-		m_tracyContext[idx] = TracyVkContext(physical_device.handle, m_logicalDevice.handle, graphics, tracy_cmd_buffer.handles.back());
+		m_tracyContext[idx] = TracyVkContext(Handle(physical_device), Handle(*device), graphics, tracy_cmd_buffer.handles.back());
 
-	m_presentTracyContext = TracyVkContext(physical_device.handle, m_logicalDevice.handle, present, tracy_cmd_buffer.handles.back());
+	m_presentTracyContext = TracyVkContext(Handle(physical_device), Handle(*device), present, tracy_cmd_buffer.handles.back());
 
 	graphics.waitIdle();
 	DestroyCommandBuffer(command_pool, tracy_cmd_buffer);
@@ -892,7 +995,7 @@ void CVkRenderDevice::InitProfiler(const FVkCommandPool& command_pool)
 
 vk::Format CVkRenderDevice::FindSupportedFormat(const utl::vector<vk::Format>& candidates, bool depth_only)
 {
-	auto& phusical_device = GetPhysicalDevice();
+	auto& phusical_device = instance->GetBestDevice();
 
 	vk::Format depth_format{ vk::Format::eUndefined };
 	for (const auto& format : candidates)
@@ -901,7 +1004,7 @@ vk::Format CVkRenderDevice::FindSupportedFormat(const utl::vector<vk::Format>& c
 			continue;
 
 		vk::FormatProperties format_properties;
-		phusical_device.handle.getFormatProperties(format, &format_properties);
+		Handle(phusical_device).getFormatProperties(format, &format_properties);
 
 		// Format must support depth stencil attachment for optimal tiling
 		if (format_properties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment)
@@ -924,29 +1027,9 @@ const vk::AllocationCallbacks* CVkRenderDevice::GetAllocationCallbacks() const
 	return m_allocationCallbacks;
 }
 
-const vk::Instance& CVkRenderDevice::GetInstance() const
-{
-	return m_vkInstance;
-}
-
-const vk::DebugUtilsMessengerEXT& CVkRenderDevice::GetDebugMessanger() const
-{
-	return m_debugMessenger;
-}
-
-const vk::DebugReportCallbackEXT& CVkRenderDevice::GetDebugReport() const
-{
-	return m_debugReport;
-}
-
 const vk::SurfaceKHR& CVkRenderDevice::GetSurface() const
 {
-	return m_vkSurface;
-}
-
-FVkPhysicalDevice& CVkRenderDevice::GetPhysicalDevice()
-{
-	return m_physicalDevices.at(m_selectedPhysicalDevice);
+	return surface;
 }
 
 const vk::SampleCountFlagBits CVkRenderDevice::GetMultisamplingCount() const
@@ -954,32 +1037,43 @@ const vk::SampleCountFlagBits CVkRenderDevice::GetMultisamplingCount() const
 	return m_requiredSampleCount;
 }
 
-const FVkLogicalDevice& CVkRenderDevice::GetLogicalDevice() const
+Instance& CVkRenderDevice::GetInstance() const
 {
-	return m_logicalDevice;
+	return *instance;
 }
 
-vk::Queue& CVkRenderDevice::GetQueue(EQueueTypeFlagBits flag)
+PhysicalDevice& CVkRenderDevice::GetPhysicalDevice() const
 {
-	auto& physical_device = GetPhysicalDevice();
+	return instance->GetBestDevice();
+}
 
-	const bool async_compute_support = physical_device.compatFlags & PHYSICAL_DEVICE_COMPAT_ASYNC_COMPUTE_FLAG_BIT;
-	const bool async_transfer_support = physical_device.compatFlags & PHYSICAL_DEVICE_COMPAT_ASYNC_TRANSFER_FLAG_BIT;
+Device& CVkRenderDevice::GetLogicalDevice() const
+{
+	return *device;
+}
 
-	const bool is_present_queue = utl::cast<bool>(flag & EQueueTypeFlagBits::ePresent);
-	const bool is_compute_queue = utl::cast<bool>(flag & EQueueTypeFlagBits::eCompute) && async_compute_support;
-	const bool is_transfer_queue = utl::cast<bool>(flag & EQueueTypeFlagBits::eTransfer) && async_transfer_support;
-
-	// Code can require compute or transfer queue, but device might not support it. It means that we will use graphics as default.
-	EQueueTypeFlagBits selected_queue_type{ EQueueTypeFlagBits::eGraphics };
-	if (is_present_queue)
-		selected_queue_type = EQueueTypeFlagBits::ePresent;
-	else if (is_compute_queue)
-		selected_queue_type = EQueueTypeFlagBits::eCompute;
-	else if (is_transfer_queue)
-		selected_queue_type = EQueueTypeFlagBits::eTransfer;
-	
-	return m_logicalDevice.queues[selected_queue_type];
+vk::Queue const& CVkRenderDevice::GetQueue(EQueueTypeFlagBits flag)
+{
+	if (flag == EQueueTypeFlagBits::ePresent)
+	{
+		auto& found = device->GetQueueByPresent(0);
+		return Handle(found);
+	}
+	else if (flag == EQueueTypeFlagBits::eGraphics)
+	{
+		auto& found = device->GetQueueByFlags(vk::QueueFlagBits::eGraphics, 0);
+		return Handle(found);
+	}
+	else if (flag == EQueueTypeFlagBits::eCompute)
+	{
+		auto& found = device->GetQueueByFlags(vk::QueueFlagBits::eCompute, 0);
+		return Handle(found);
+	}
+	else if (flag == EQueueTypeFlagBits::eTransfer)
+	{
+		auto& found = device->GetQueueByFlags(vk::QueueFlagBits::eTransfer, 0);
+		return Handle(found);
+	}
 }
 
 vma::Allocator& CVkRenderDevice::GetMemoryAllocator()
@@ -998,7 +1092,7 @@ utl::vector<char> CVkRenderDevice::GetPipelineCacheData() const
 
 	u64 data_size{ 0ull };
 	void* data_ptr{ nullptr };
-	vk::Result res = m_logicalDevice.handle.getPipelineCacheData(m_pipelineCache, &data_size, data_ptr);
+	vk::Result res = Handle(*device).getPipelineCacheData(m_pipelineCache, &data_size, data_ptr);
 
 	if (res == vk::Result::eSuccess)
 	{
@@ -1026,409 +1120,55 @@ void CVkRenderDevice::RegisterAllocationCallbacks()
 	m_allocationCallbacks->pfnInternalFree = (PFN_vkInternalFreeNotification)(&vk_free_notification);
 }
 
-FRenderApiErrorInfo CVkRenderDevice::CreateInstance(const FRenderContextCreateInfo& context_ci)
+void CVkRenderDevice::EnableDeviceFeatures(PhysicalDevice& device)
 {
-	// Load instance layer props
-	auto layer_props = vk::enumerateInstanceLayerProperties();
-	for (auto& layer : layer_props)
-		m_avaliableLayers.push_back(layer.layerName);
-
-	if (context_ci.validationState && !check_contains_all(context_ci.validationLayers, m_avaliableLayers))
-		return make_api_error(vk::ObjectType::eInstance, vk::Result::eErrorUnknown, "Some validation layers is not supported");
-
-	vk::ApplicationInfo app_info{};
-	app_info.applicationVersion = app_info.engineVersion = app_info.apiVersion = get_api_version(context_ci.apiVersion);
-	app_info.pApplicationName = app_info.pEngineName = context_ci.appName.c_str();
-
-	auto instance_extensions = get_instance_extension_names();
-
-	vk::InstanceCreateInfo instance_ci{};
-	instance_ci.pApplicationInfo = &app_info;
-	instance_ci.enabledExtensionCount = utl::cast<u32>(instance_extensions.size());
-	instance_ci.ppEnabledExtensionNames = instance_extensions.data();
-
-	// Apply validation features
-	utl::vector<vk::ValidationFeatureEnableEXT> feature_enables{};
-	vk::ValidationFeaturesEXT validation_features{};
-
-	if (context_ci.validationFeatures & GPU_ASSISTED_FLAG_BIT)
-		feature_enables.emplace_back(vk::ValidationFeatureEnableEXT::eGpuAssisted);
-	if (context_ci.validationFeatures & GPU_ASSISTED_RESERVE_BINDING_SLOT_FLAG_BIT)
-		feature_enables.emplace_back(vk::ValidationFeatureEnableEXT::eGpuAssistedReserveBindingSlot);
-	if (context_ci.validationFeatures & BEST_PRACTICE_FLAG_BIT)
-		feature_enables.emplace_back(vk::ValidationFeatureEnableEXT::eBestPractices);
-	if (context_ci.validationFeatures & DEBUG_PRINTF_FLAG_BIT)
-		feature_enables.emplace_back(vk::ValidationFeatureEnableEXT::eDebugPrintf);
-	if (context_ci.validationFeatures & SYNCHRONIZATION_VALIDATION_FLAG_BIT)
-		feature_enables.emplace_back(vk::ValidationFeatureEnableEXT::eSynchronizationValidation);
-
-	validation_features.enabledValidationFeatureCount = utl::cast<u32>(feature_enables.size());
-	validation_features.pEnabledValidationFeatures = feature_enables.data();
-
-	utl::vector<const char*> layer_names{};
-	for (auto& layer_name : context_ci.validationLayers)
-		layer_names.emplace_back(layer_name.c_str());
-
-	if (context_ci.validationState)
+	for (auto& extension_name : device_extensions)
 	{
-		instance_ci.enabledLayerCount = utl::cast<u32>(layer_names.size());
-		instance_ci.ppEnabledLayerNames = layer_names.data();
-		instance_ci.pNext = &validation_features;
-	}
-	return make_api_error(vk::ObjectType::eInstance, vk::createInstance(&instance_ci, m_allocationCallbacks, &m_vkInstance), "Failed to Create");
-}
-
-void CVkRenderDevice::CreateDebugMessanger(const FRenderContextCreateInfo& context_ci)
-{
-	if (context_ci.validationState)
-	{
-		vk::DebugUtilsMessengerCreateInfoEXT debug_messenger_ci{};
-		debug_messenger_ci.flags = vk::DebugUtilsMessengerCreateFlagsEXT();
-		debug_messenger_ci.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
-		debug_messenger_ci.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance;
-		debug_messenger_ci.pfnUserCallback = &debug_messenger_callback;
-		debug_messenger_ci.pUserData = this;
-
-		m_debugMessenger = m_vkInstance.createDebugUtilsMessengerEXT(debug_messenger_ci, m_allocationCallbacks);
-
-		vk::DebugReportCallbackCreateInfoEXT debug_report_ci{};
-		debug_report_ci.flags = vk::DebugReportFlagBitsEXT::eWarning | vk::DebugReportFlagBitsEXT::eError;
-		debug_report_ci.pfnCallback = &debug_report_callback;
-		debug_report_ci.pUserData = this;
-
-		m_debugReport = m_vkInstance.createDebugReportCallbackEXT(debug_report_ci, m_allocationCallbacks);
-	}
-}
-
-FRenderApiErrorInfo CVkRenderDevice::CreateSurface(const FRenderContextCreateInfo& context_ci)
-{
-	m_vkSurface = context_ci.window->CreateSurface(m_vkInstance, m_allocationCallbacks);
-
-//	vk::Result result{ vk::Result::eErrorUnknown };
-//#if defined( VK_USE_PLATFORM_WIN32_KHR )
-//	vk::Win32SurfaceCreateInfoKHR surface_ci{};
-//	surface_ci.hinstance = context_ci.hinstance;
-//	surface_ci.hwnd = context_ci.hwnd;
-//	
-//	result = m_vkInstance.createWin32SurfaceKHR(&surface_ci, m_allocationCallbacks, &m_vkSurface);
-//#else
-//#endif;
-//	return make_api_error(vk::ObjectType::eSurfaceKHR, result, "Failed to Create");
-	return FRenderApiErrorInfo{};
-}
-
-void CVkRenderDevice::SelectQueueFamilies(FVkPhysicalDevice& device_info)
-{
-	utl::hash_map<u32, vk::QueueFamilyProperties> family_properties{};
-
-	auto& physical_device = device_info.handle;
-	auto& families_info = device_info.queueFamilies;
-	auto& family_usages = families_info.familyUsages;
-
-	{
-		auto family_props = physical_device.getQueueFamilyProperties();
-		for (u32 index = 0u; index < family_props.size(); ++index)
-			family_properties[index] = family_props.at(index);
-	}
-
-	auto is_family_queues_enought = [&family_usages](u32 index, const vk::QueueFamilyProperties& prop) -> bool { return family_usages[index] < prop.queueCount; };
-	auto is_family_selected = [&families_info](EQueueTypeFlagBits mask) -> bool { return utl::cast<bool>(families_info.queueMask & mask); };
-	auto apply_family_usage = [&families_info](u32 index, EQueueTypeFlagBits mask) -> void { families_info.queueToFamily[mask] = index; families_info.queueMask |= mask; families_info.familyUsages[index]++; };
-	
-	for (auto& [index, prop] : family_properties)
-	{
-		const bool has_graphics_bit = utl::cast<bool>(prop.queueFlags & vk::QueueFlagBits::eGraphics);
-		const bool has_compute_bit = utl::cast<bool>(prop.queueFlags & vk::QueueFlagBits::eCompute);
-		const bool has_transfer_bit = utl::cast<bool>(prop.queueFlags & vk::QueueFlagBits::eTransfer);
-		const bool has_present_bit = physical_device.getSurfaceSupportKHR(index, m_vkSurface);
-
-		const bool is_present_only = has_present_bit && !(has_graphics_bit || has_compute_bit || has_transfer_bit);
-		const bool is_compute_compat = has_compute_bit && !has_graphics_bit;
-		const bool is_transfer_only = has_transfer_bit && !has_compute_bit && !has_graphics_bit;
-
-		// Looking for present family
-		if (is_present_only && !is_family_selected(EQueueTypeFlagBits::ePresent) && is_family_queues_enought(index, prop))
-			apply_family_usage(index, EQueueTypeFlagBits::ePresent);
-
-		// Looking for suitable graphics family
-		if (has_graphics_bit && !is_family_selected(EQueueTypeFlagBits::eGraphics) && is_family_queues_enought(index, prop))
-			apply_family_usage(index, EQueueTypeFlagBits::eGraphics);
-
-		// Looking for compute only family
-		if (is_compute_compat && !is_family_selected(EQueueTypeFlagBits::eCompute) && is_family_queues_enought(index, prop))
-			apply_family_usage(index, EQueueTypeFlagBits::eCompute);
-
-		// Looking for transfer only family
-		if (is_transfer_only && !is_family_selected(EQueueTypeFlagBits::eTransfer) && is_family_queues_enought(index, prop))
-			apply_family_usage(index, EQueueTypeFlagBits::eTransfer);
-	}
-
-	// Try to find compute and transfer family if not found
-	for (auto& [index, prop] : family_properties)
-	{
-		const bool has_compute_bit = utl::cast<bool>(prop.queueFlags & vk::QueueFlagBits::eCompute);
-		const bool has_transfer_bit = utl::cast<bool>(prop.queueFlags & vk::QueueFlagBits::eTransfer);
-		const bool has_present_bit = physical_device.getSurfaceSupportKHR(index, m_vkSurface);
-
-		if (has_present_bit && !is_family_selected(EQueueTypeFlagBits::ePresent) && is_family_queues_enought(index, prop))
-			apply_family_usage(index, EQueueTypeFlagBits::ePresent);
-
-		if (has_compute_bit && !is_family_selected(EQueueTypeFlagBits::eCompute) && is_family_queues_enought(index, prop))
-			apply_family_usage(index, EQueueTypeFlagBits::eCompute);
-
-		if (has_transfer_bit && !is_family_selected(EQueueTypeFlagBits::eTransfer) && is_family_queues_enought(index, prop))
-			apply_family_usage(index, EQueueTypeFlagBits::eTransfer);
-	}
-
-	if ((families_info.queueMask & EQueueTypeFlagBits::ePresent) && (families_info.queueMask & EQueueTypeFlagBits::eGraphics))
-		device_info.compatFlags |= PHYSICAL_DEVICE_COMPAT_BETTER_THEN_NOTHING_FLAG_BIT;
-
-	if (families_info.queueMask & EQueueTypeFlagBits::eCompute)
-		device_info.compatFlags |= PHYSICAL_DEVICE_COMPAT_ASYNC_COMPUTE_FLAG_BIT;
-
-	if (families_info.queueMask & EQueueTypeFlagBits::eTransfer)
-		device_info.compatFlags |= PHYSICAL_DEVICE_COMPAT_ASYNC_TRANSFER_FLAG_BIT;
-
-	std::set<u32> unique_families{};
-	for (auto& [index, count] : family_usages)
-	{
-		if(count > 0)
-			unique_families.emplace(index);
-	}
-
-	device_info.queueFamilies.uniqueFamilies = utl::vector<u32>(unique_families.begin(), unique_families.end());
-}
-
-FRenderApiErrorInfo CVkRenderDevice::SelectPhysicalDevice(const FRenderContextCreateInfo& context_ci)
-{
-	auto api_version = get_api_version(context_ci.apiVersion);
-	auto avaliable_devices = m_vkInstance.enumeratePhysicalDevices();
-
-	i32 fallback_device_index{ -1 };
-	for (auto& device : avaliable_devices)
-	{
-		auto device_index = m_physicalDevices.size();
-		m_physicalDevices.emplace_back(make_physical_device(device));
-		auto& current_device = m_physicalDevices.back();
-
-#ifndef BUILD_WITHOUT_DEBUGGIND
-		std::stringstream uuid_ss;
-		for (uint8_t byte : current_device.properties.pipelineCacheUUID)
-			uuid_ss << std::hex << std::setfill('0') << std::setw(2) << utl::cast<int>(byte);
-
-		log_debug("Physical device: \nName: {}\nID: {}\nVendor: {}\nDriver: {}\nAPI version: {}\nType: {}\nCache UUID: {}",
-			current_device.properties.deviceName.data(),
-			current_device.properties.deviceID,
-			current_device.properties.vendorID,
-			current_device.properties.driverVersion,
-			current_device.properties.apiVersion,
-			vk::to_string(current_device.properties.deviceType),
-			uuid_ss.str()
-		);
-#endif
-
-		if (current_device.properties.apiVersion < api_version)
+		if (strcmp(extension_name, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME) == 0)
+			device.RequestExtensionFeatures<vk::PhysicalDeviceSynchronization2FeaturesKHR>();
+		else if (strcmp(extension_name, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME) == 0)
+			device.RequestExtensionFeatures<vk::PhysicalDeviceTimelineSemaphoreFeaturesKHR>();
+		else if (strcmp(extension_name, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME) == 0)
+			device.RequestExtensionFeatures<vk::PhysicalDeviceDynamicRenderingFeaturesKHR>();
+		else if (strcmp(extension_name, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME) == 0)
+			device.RequestExtensionFeatures<vk::PhysicalDeviceBufferDeviceAddressFeaturesKHR>();
+		else if (strcmp(extension_name, VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME) == 0)
+			device.RequestExtensionFeatures<vk::PhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT>();
+		else if (strcmp(extension_name, VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME) == 0)
+			device.RequestExtensionFeatures<vk::PhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
+		else if (strcmp(extension_name, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME) == 0)
+			device.RequestExtensionFeatures<vk::PhysicalDeviceDescriptorIndexingFeaturesEXT>();
+		else if (strcmp(extension_name, VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME) == 0)
+			device.RequestExtensionFeatures<vk::PhysicalDeviceBufferDeviceAddressFeaturesKHR>();
+		else if (strcmp(extension_name, VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME) == 0)
+			device.RequestExtensionFeatures<vk::PhysicalDeviceDescriptorBufferFeaturesEXT>();
+		else if (strcmp(extension_name, VK_EXT_SHADER_OBJECT_EXTENSION_NAME) == 0)
+			device.RequestExtensionFeatures<vk::PhysicalDeviceShaderObjectFeaturesEXT>();
+		else if (strcmp(extension_name, VK_KHR_8BIT_STORAGE_EXTENSION_NAME) == 0)
+			device.RequestExtensionFeatures<vk::PhysicalDevice8BitStorageFeaturesKHR>();
+		else if (strcmp(extension_name, VK_KHR_16BIT_STORAGE_EXTENSION_NAME) == 0)
+			device.RequestExtensionFeatures<vk::PhysicalDevice16BitStorageFeaturesKHR>();
+		else if (strcmp(extension_name, VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME) == 0)
+			device.RequestExtensionFeatures<vk::PhysicalDeviceShaderFloat16Int8FeaturesKHR>();
+		//else if (strcmp(extension_name, VK_NV_MESH_SHADER_EXTENSION_NAME) == 0)
+		//	device.RequestExtensionFeatures<vk::PhysicalDeviceMeshShaderPropertiesEXT>();
+		else if (strcmp(extension_name, VK_EXT_MULTI_DRAW_EXTENSION_NAME) == 0)
+			device.RequestExtensionFeatures<vk::PhysicalDeviceMultiDrawFeaturesEXT>();
+		else if (strcmp(extension_name, VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME) == 0)
+			device.RequestExtensionFeatures<vk::PhysicalDeviceHostQueryResetFeaturesEXT>();
+		else if (strcmp(extension_name, VK_EXT_MESH_SHADER_EXTENSION_NAME) == 0)
 		{
-			log_warning("Device is not supported. Required API version: {}, but device supporting {}.", api_version, current_device.properties.apiVersion);
-			continue;
+			auto& ext = device.RequestExtensionFeatures<vk::PhysicalDeviceMeshShaderFeaturesEXT>();
+			ext.multiviewMeshShader = VK_FALSE;
+			ext.primitiveFragmentShadingRateMeshShader = VK_FALSE;
 		}
-
-		vk::PhysicalDeviceMeshShaderPropertiesEXT meshShaderProperties;
-		vk::StructureChain<vk::PhysicalDeviceProperties2, vk::PhysicalDeviceMeshShaderPropertiesEXT> propertiesChain;
-		
-		current_device.handle.getProperties2(&propertiesChain.get<vk::PhysicalDeviceProperties2>());
-		meshShaderProperties = propertiesChain.get<vk::PhysicalDeviceMeshShaderPropertiesEXT>();
-
-		utl::vector<std::string> unsupported_extensions{};
-		for (const auto& req : context_ci.requiredDeviceExtensions)
-		{
-			if (!check_contains_single(req, current_device.avaliableExtensions))
-				unsupported_extensions.emplace_back(req);
-		}
-
-		if (!unsupported_extensions.empty())
-		{
-#ifndef BUILD_WITHOUT_DEBUGGIND
-			std::stringstream ss{};
-			for (const auto& ext : unsupported_extensions)
-				ss << ext << " ";
-			log_info("Device is not supporting extensions: {}.", ss.str());
-#endif
-			continue;
-		}
-
-		// Get supported queue families for this device
-		SelectQueueFamilies(current_device);
-		const bool is_device_better_then_nothing = current_device.compatFlags & PHYSICAL_DEVICE_COMPAT_BETTER_THEN_NOTHING_FLAG_BIT;
-		const bool is_device_best_candidate = current_device.compatFlags & PHYSICAL_DEVICE_COMPAT_BEST_CANDIDATE_FLAG_BIT;
-		if (!(is_device_best_candidate || is_device_better_then_nothing))
-			continue;
-
-		// Discrete gpu is in higher priority
-		if (current_device.properties.deviceType != vk::PhysicalDeviceType::eDiscreteGpu)
-		{
-			fallback_device_index = device_index;
-			continue;
-		}
-
-		m_selectedPhysicalDevice = device_index;
-		break;
+		else if (strcmp(extension_name, VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME) == 0)
+			device.RequestExtensionFeatures<vk::PhysicalDeviceDiagnosticsConfigFeaturesNV>();
+		else if (strcmp(extension_name, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME) == 0)
+			device.RequestExtensionFeatures<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+		//else if(strcmp(extension_name, VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME) == 0)
+		//	device.RequestExtensionFeatures(vk::PhysicalDeviceIndirect)
 	}
-
-	if (m_selectedPhysicalDevice < 0)
-	{
-		if (fallback_device_index < 0)
-			return make_api_error(vk::ObjectType::ePhysicalDevice, vk::Result::eErrorUnknown, "Not found any suitable device");
-			
-		m_selectedPhysicalDevice = fallback_device_index;
-	}
-
-	auto& selected_device = GetPhysicalDevice();
-	for (auto& extension_name : context_ci.requiredDeviceExtensions)
-		selected_device.supportedExtensions[utl::murmur_hash(extension_name)] = true;
-
-	for (auto& extension_name : context_ci.optionalDeviceExtensions)
-		selected_device.supportedExtensions[utl::murmur_hash(extension_name)] = check_contains_single(extension_name, selected_device.avaliableExtensions);
-
-	return make_api_error(vk::ObjectType::ePhysicalDevice, vk::Result::eSuccess);
-}
-
-void CVkRenderDevice::PrepareRequestedLogicalDeviceFeatures()
-{
-	auto& physical_device = GetPhysicalDevice();
-	for (auto& extension_name : physical_device.avaliableExtensions)
-	{
-		auto extension_name_hash = utl::murmur_hash(extension_name);
-		if (physical_device.supportedExtensions.count(extension_name_hash))
-		{
-			if (extension_name == VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)
-				RequestExtensionFeatures<vk::PhysicalDeviceSynchronization2FeaturesKHR>();
-			else if (extension_name == VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)
-				RequestExtensionFeatures<vk::PhysicalDeviceTimelineSemaphoreFeaturesKHR>();
-			else if (extension_name == VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)
-				RequestExtensionFeatures<vk::PhysicalDeviceDynamicRenderingFeaturesKHR>();
-			else if (extension_name == VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)
-				RequestExtensionFeatures<vk::PhysicalDeviceBufferDeviceAddressFeaturesKHR>();
-			else if (extension_name == VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME)
-				RequestExtensionFeatures<vk::PhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT>();
-			else if (extension_name == VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME)
-				RequestExtensionFeatures<vk::PhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
-			else if (extension_name == VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)
-				RequestExtensionFeatures<vk::PhysicalDeviceDescriptorIndexingFeaturesEXT>();
-			else if (extension_name == VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)
-				RequestExtensionFeatures<vk::PhysicalDeviceBufferDeviceAddressFeaturesKHR>();
-			else if (extension_name == VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME)
-				RequestExtensionFeatures<vk::PhysicalDeviceDescriptorBufferFeaturesEXT>();
-			else if (extension_name == VK_EXT_SHADER_OBJECT_EXTENSION_NAME)
-				RequestExtensionFeatures<vk::PhysicalDeviceShaderObjectFeaturesEXT>();
-			else if (extension_name == VK_KHR_8BIT_STORAGE_EXTENSION_NAME)
-				RequestExtensionFeatures<vk::PhysicalDevice8BitStorageFeaturesKHR>();
-			else if (extension_name == VK_KHR_16BIT_STORAGE_EXTENSION_NAME)
-				RequestExtensionFeatures<vk::PhysicalDevice16BitStorageFeaturesKHR>();
-			else if (extension_name == VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME)
-				RequestExtensionFeatures<vk::PhysicalDeviceShaderFloat16Int8FeaturesKHR>();
-			else if (extension_name == VK_NV_MESH_SHADER_EXTENSION_NAME)
-				RequestExtensionFeatures<vk::PhysicalDeviceMeshShaderPropertiesEXT>();
-			else if (extension_name == VK_EXT_MULTI_DRAW_EXTENSION_NAME)
-				RequestExtensionFeatures<vk::PhysicalDeviceMultiDrawFeaturesEXT>();
-			else if (extension_name == VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME)
-				RequestExtensionFeatures<vk::PhysicalDeviceHostQueryResetFeaturesEXT>();
-			else if (extension_name == VK_EXT_MESH_SHADER_EXTENSION_NAME)
-			{
-				auto& ext = RequestExtensionFeatures<vk::PhysicalDeviceMeshShaderFeaturesEXT>();
-				ext.multiviewMeshShader = VK_FALSE;
-				ext.primitiveFragmentShadingRateMeshShader = VK_FALSE;
-			}
-			else if (extension_name == VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME)
-				RequestExtensionFeatures<vk::PhysicalDeviceDiagnosticsConfigFeaturesNV>();
-			else if (extension_name == VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME)
-				RequestExtensionFeatures<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>();
-			//else if(extension_name == VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME)
-			//	RequestExtensionFeatures(vk::PhysicalDeviceIndirect)
-		}
-	}
-}
-
-FRenderApiErrorInfo CVkRenderDevice::CreateLogicalDevice(const FRenderContextCreateInfo& context_ci)
-{
-	auto api_version = get_api_version(context_ci.apiVersion);
-	auto& physical_device = GetPhysicalDevice();
-	bool bindless_support = physical_device.supportedExtensions.count(utl::murmur_hash(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME));
-	bool timeline_semaphore_support = physical_device.supportedExtensions.count(utl::murmur_hash(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME));
-
-	if (!is_sample_count_supported(physical_device, m_requiredSampleCount))
-		m_requiredSampleCount = vk::SampleCountFlagBits::e1;
-
-	// Get queue Create infos
-	utl::vector<vk::DeviceQueueCreateInfo> queue_create_infos{};
-	utl::hash_map<u32, utl::vector<f32>> queue_priorities{};
-	for (auto& [index, usages] : physical_device.queueFamilies.familyUsages)
-	{
-		for (u64 usage = 0; usage < usages; ++usage)
-			queue_priorities[index].emplace_back(1.f);
-
-		auto& create_info = queue_create_infos.emplace_back();
-		create_info.flags = vk::DeviceQueueCreateFlags{};
-		create_info.queueFamilyIndex = index;
-		create_info.queueCount = usages;
-		create_info.pQueuePriorities = queue_priorities[index].data();
-	}
-
-	// Vulkan 1.0 features
-	vk::PhysicalDeviceFeatures vk10features{};
-	vk10features.samplerAnisotropy = true;
-	vk10features.sampleRateShading = true;
-	vk10features.fillModeNonSolid = true;
-	vk10features.multiViewport = true;
-	vk10features.geometryShader = true;
-	vk10features.tessellationShader = true;
-	vk10features.fragmentStoresAndAtomics = true;
-	vk10features.logicOp = true;
-	vk10features.imageCubeArray = true;
-	vk10features.depthClamp = true;
-	vk10features.independentBlend = true;
-	vk10features.multiDrawIndirect = true;
-	vk10features.shaderInt16 = true;
-	vk10features.shaderStorageImageReadWithoutFormat = true;
-	vk10features.shaderStorageImageWriteWithoutFormat = true;
-	vk10features.shaderInt64 = true;
-
-	vk::DeviceCreateInfo device_ci{};
-	device_ci.queueCreateInfoCount = utl::cast<u32>(queue_create_infos.size());
-	device_ci.pQueueCreateInfos = queue_create_infos.data();
-	device_ci.pEnabledFeatures = &vk10features;
-	device_ci.pNext = m_logicalDevice.lastExtensionFeature;
-
-	utl::vector<const char*> enabled_extension_names{};
-	for (auto& ext_name : physical_device.avaliableExtensions)
-	{
-		auto ext_name_c = ext_name.c_str();
-		if (physical_device.supportedExtensions.count(utl::murmur_hash(ext_name_c)))
-			enabled_extension_names.emplace_back(ext_name_c);
-	}
-
-	device_ci.enabledExtensionCount = utl::cast<u32>(enabled_extension_names.size());
-	device_ci.ppEnabledExtensionNames = enabled_extension_names.data();
-
-	utl::vector<const char*> layer_names{};
-	for (auto& layer_name : context_ci.validationLayers)
-		layer_names.emplace_back(layer_name.c_str());
-
-	if (context_ci.validationState)
-	{
-		device_ci.enabledLayerCount = utl::cast<u32>(layer_names.size());
-		device_ci.ppEnabledLayerNames = layer_names.data();
-	}
-
-	auto res = make_api_error(vk::ObjectType::eDevice, physical_device.handle.createDevice(&device_ci, m_allocationCallbacks, &m_logicalDevice.handle), "Failed to Create");
-
-	auto get_queue_family_index = [&physical_device](EQueueTypeFlagBits mask) -> u32 { return physical_device.queueFamilies.queueToFamily.count(mask) ? physical_device.queueFamilies.queueToFamily[mask] : ~0u; };
-
-	utl::hash_map<u32, u32> family_usages{};
-	for (auto& [type, family] : physical_device.queueFamilies.queueToFamily)
-		m_logicalDevice.queues[type] = m_logicalDevice.handle.getQueue(family, family_usages[family]++);
-
-	return res;
 }
 
 void CVkRenderDevice::CreateMemoryAllocator(const FRenderContextCreateInfo& context_ci)
@@ -1437,11 +1177,11 @@ void CVkRenderDevice::CreateMemoryAllocator(const FRenderContextCreateInfo& cont
 	vk_functions.vkGetInstanceProcAddr = m_dynamicLoader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
 	vk_functions.vkGetDeviceProcAddr = m_dynamicLoader.getProcAddress<PFN_vkGetDeviceProcAddr>("vkGetDeviceProcAddr");
 
-	auto& physical_device = GetPhysicalDevice();
+	auto& physical_device = instance->GetBestDevice();
 	vma::AllocatorCreateInfo allocator_ci{};
-	allocator_ci.instance = m_vkInstance;
-	allocator_ci.physicalDevice = physical_device.handle;
-	allocator_ci.device = m_logicalDevice.handle;
+	allocator_ci.instance = Handle(*instance);
+	allocator_ci.physicalDevice = Handle(physical_device);
+	allocator_ci.device = Handle(*device);
 	allocator_ci.pAllocationCallbacks = m_allocationCallbacks;
 	allocator_ci.vulkanApiVersion = get_api_version(context_ci.apiVersion);
 	allocator_ci.pVulkanFunctions = &vk_functions;
@@ -1455,19 +1195,19 @@ FRenderApiErrorInfo CVkRenderDevice::CreatePipelineCache(const FRenderContextCre
 	vk::PipelineCacheCreateInfo pipeline_cache_ci{};
 	pipeline_cache_ci.initialDataSize = utl::cast<u32>(context_ci.pipelineCache.size());
 	pipeline_cache_ci.pInitialData = context_ci.pipelineCache.data();
-	return make_api_error(vk::ObjectType::ePipelineCache, m_logicalDevice.handle.createPipelineCache(&pipeline_cache_ci, m_allocationCallbacks, &m_pipelineCache), "Failed to Create");
+	return make_api_error(vk::ObjectType::ePipelineCache, Handle(*device).createPipelineCache(&pipeline_cache_ci, m_allocationCallbacks, &m_pipelineCache), "Failed to Create");
 }
 
 FRenderApiErrorInfo CVkRenderDevice::CreateSwapchain(u32 surface_width, u32 surface_height)
 {
-	auto& physical_device = GetPhysicalDevice();
+	auto& physical_device = instance->GetBestDevice();
 
 	vk::SwapchainKHR old_swapchain{ m_swapchain.handle };
 	m_swapchain.handle = nullptr;
 
-	auto surface_caps = physical_device.handle.getSurfaceCapabilitiesKHR(m_vkSurface);
-	auto surface_formats = physical_device.handle.getSurfaceFormatsKHR(m_vkSurface);
-	auto present_modes = physical_device.handle.getSurfacePresentModesKHR(m_vkSurface);
+	auto surface_caps = Handle(physical_device).getSurfaceCapabilitiesKHR(surface);
+	auto surface_formats = Handle(physical_device).getSurfaceFormatsKHR(surface);
+	auto present_modes = Handle(physical_device).getSurfacePresentModesKHR(surface);
 
 	auto surface_format = choice_surface_format(surface_formats);
 	auto present_mode = choice_surface_present_mode(present_modes);
@@ -1482,7 +1222,7 @@ FRenderApiErrorInfo CVkRenderDevice::CreateSwapchain(u32 surface_width, u32 surf
 	m_swapchain.framesInFlight = image_count;
 
 	vk::SwapchainCreateInfoKHR swapchain_ci{};
-	swapchain_ci.surface = m_vkSurface;
+	swapchain_ci.surface = surface;
 	swapchain_ci.minImageCount = image_count;
 	swapchain_ci.imageFormat = surface_format.format;
 	swapchain_ci.imageColorSpace = surface_format.colorSpace;
@@ -1495,15 +1235,17 @@ FRenderApiErrorInfo CVkRenderDevice::CreateSwapchain(u32 surface_width, u32 surf
 	if (surface_caps.supportedUsageFlags & vk::ImageUsageFlagBits::eTransferDst)
 		swapchain_ci.imageUsage |= vk::ImageUsageFlagBits::eTransferDst;
 
-	const auto graphics_family = physical_device.queueFamilies.queueToFamily[EQueueTypeFlagBits::eGraphics];
-	const auto present_family = physical_device.queueFamilies.queueToFamily[EQueueTypeFlagBits::ePresent];
-	if (graphics_family != present_family)
-	{
-		swapchain_ci.imageSharingMode = vk::SharingMode::eConcurrent;
-		swapchain_ci.queueFamilyIndexCount = utl::cast<u32>(physical_device.queueFamilies.uniqueFamilies.size());
-		swapchain_ci.pQueueFamilyIndices = physical_device.queueFamilies.uniqueFamilies.data();
-	}
-	else
+	// TODO: Complete this one
+	//auto& graphics_family = device->GetQueueByFlags(vk::QueueFlagBits::eGraphics, 0);
+	//auto& present_family = device->GetQueueByPresent(0);
+	//
+	//if (graphics_family.GetFamilyIndex() != present_family.GetFamilyIndex())
+	//{
+	//	swapchain_ci.imageSharingMode = vk::SharingMode::eConcurrent;
+	//	swapchain_ci.queueFamilyIndexCount = utl::cast<u32>(device->GetQueueCount());
+	//	swapchain_ci.pQueueFamilyIndices = physical_device.queueFamilies.uniqueFamilies.data();
+	//}
+	//else
 		swapchain_ci.imageSharingMode = vk::SharingMode::eExclusive;
 
 	swapchain_ci.preTransform = surface_caps.currentTransform;
@@ -1512,11 +1254,11 @@ FRenderApiErrorInfo CVkRenderDevice::CreateSwapchain(u32 surface_width, u32 surf
 	swapchain_ci.clipped = VK_TRUE;
 	swapchain_ci.oldSwapchain = old_swapchain;
 
-	vk::Result res = m_logicalDevice.handle.createSwapchainKHR(&swapchain_ci, m_allocationCallbacks, &m_swapchain.handle);
+	vk::Result res = Handle(*device).createSwapchainKHR(&swapchain_ci, m_allocationCallbacks, &m_swapchain.handle);
 	check_api_result(make_api_error(vk::ObjectType::eSwapchainKHR, res, "Failed to Create"));
 
 	m_swapchain.images.resize(image_count);
-	res = m_logicalDevice.handle.getSwapchainImagesKHR(m_swapchain.handle, &image_count, m_swapchain.images.data());
+	res = Handle(*device).getSwapchainImagesKHR(m_swapchain.handle, &image_count, m_swapchain.images.data());
 	check_api_result(make_api_error(vk::ObjectType::eSwapchainKHR, res, "Failed to Create images"));
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -1529,7 +1271,7 @@ FRenderApiErrorInfo CVkRenderDevice::CreateSwapchain(u32 surface_width, u32 surf
 #endif
 
 	if (old_swapchain)
-		m_logicalDevice.handle.destroySwapchainKHR(old_swapchain, m_allocationCallbacks);
+		Handle(*device).destroySwapchainKHR(old_swapchain, m_allocationCallbacks);
 
 	// Create m_swapchain image views
 	{
@@ -1588,9 +1330,9 @@ void CVkRenderDevice::CleanupSwapchain()
 {
 	for (u64 idx = 0ull; idx < m_swapchain.framesInFlight; ++idx)
 	{
-		m_logicalDevice.handle.destroyFence(m_swapchain.inFlightFences.at(idx), m_allocationCallbacks);
-		m_logicalDevice.handle.destroyImageView(m_swapchain.imageViews.at(idx), m_allocationCallbacks);
-		m_logicalDevice.handle.destroySemaphore(m_swapchain.imageAvaliableSemaphores.at(idx), m_allocationCallbacks);
-		m_logicalDevice.handle.destroySemaphore(m_swapchain.renderFinishedSemaphores.at(idx), m_allocationCallbacks);
+		Handle(*device).destroyFence(m_swapchain.inFlightFences.at(idx), m_allocationCallbacks);
+		Handle(*device).destroyImageView(m_swapchain.imageViews.at(idx), m_allocationCallbacks);
+		Handle(*device).destroySemaphore(m_swapchain.imageAvaliableSemaphores.at(idx), m_allocationCallbacks);
+		Handle(*device).destroySemaphore(m_swapchain.renderFinishedSemaphores.at(idx), m_allocationCallbacks);
 	}
 }

@@ -20,6 +20,11 @@ namespace engine
 	{
 		namespace vulkan
 		{
+			class Instance;
+			class PhysicalDevice;
+			class DebugUtils;
+			class Device;
+
 			// =================================================================================
 			// =================================CVkRenderDevice================================
 			// =================================================================================
@@ -29,6 +34,26 @@ namespace engine
 				friend class CVkRenderContext;
 
 				~CVkRenderDevice();
+
+				/**
+				 * @brief Add a sample-specific device extension
+				 * @param extension The extension name
+				 * @param optional (Optional) Whether the extension is optional
+				 */
+				void AddDeviceExtension(const char* extension);
+
+				/**
+				 * @brief Add a sample-specific instance extension
+				 * @param extension The extension name
+				 * @param optional (Optional) Whether the extension is optional
+				 */
+				void AddInstanceExtension(const char* extension);
+
+				/**
+				 * @brief Add a sample-specific layer setting
+				 * @param layerSetting The layer setting
+				 */
+				void AddLayerSetting(vk::LayerSettingEXT const& layerSetting);
 
 				void Create(const FRenderContextCreateInfo& context_ci);
 
@@ -118,14 +143,14 @@ namespace engine
 #ifndef BUILD_WITHOUT_DEBUGGIND
 					if (!name.empty())
 					{
-						vk::DebugUtilsObjectNameInfoEXT object_name_info{};
-						object_name_info.objectType = object.objectType;
-						object_name_info.objectHandle = reinterpret_cast<u64>(static_cast<_Ty::CType>(object));
-
-						auto formatted_debug_object_name = std::format("{}:{} | {:x}", vk::to_string(object.objectType), name, object_name_info.objectHandle);
-						object_name_info.pObjectName = formatted_debug_object_name.c_str();
-
-						m_logicalDevice.handle.setDebugUtilsObjectNameEXT(object_name_info);
+						//vk::DebugUtilsObjectNameInfoEXT object_name_info{};
+						//object_name_info.objectType = object.objectType;
+						//object_name_info.objectHandle = reinterpret_cast<u64>(static_cast<_Ty::CType>(object));
+						//
+						//auto formatted_debug_object_name = std::format("{}:{} | {:x}", vk::to_string(object.objectType), name, object_name_info.objectHandle);
+						//object_name_info.pObjectName = formatted_debug_object_name.c_str();
+						//
+						//m_logicalDevice.handle.setDebugUtilsObjectNameEXT(object_name_info);
 					}
 #endif
 				}
@@ -134,14 +159,14 @@ namespace engine
 				void DebugSetObjectTag(const _Ty& object, u64 name, const void* data, u64 size)
 				{
 #ifndef BUILD_WITHOUT_DEBUGGIND
-					vk::DebugUtilsObjectTagInfoEXT object_tag_info{};
-					object_tag_info.objectType = object.objectType;
-					object_tag_info.objectHandle = reinterpret_cast<u64>(static_cast<_Ty::CType>(object));
-					object_tag_info.tagName = name;
-					object_tag_info.pTag = data;
-					object_tag_info.tagSize = size;
-
-					m_logicalDevice.handle.setDebugUtilsObjectTagEXT(object_tag_info);
+					//vk::DebugUtilsObjectTagInfoEXT object_tag_info{};
+					//object_tag_info.objectType = object.objectType;
+					//object_tag_info.objectHandle = reinterpret_cast<u64>(static_cast<_Ty::CType>(object));
+					//object_tag_info.tagName = name;
+					//object_tag_info.pTag = data;
+					//object_tag_info.tagSize = size;
+					//
+					//m_logicalDevice.handle.setDebugUtilsObjectTagEXT(object_tag_info);
 #endif
 				}
 
@@ -153,17 +178,14 @@ namespace engine
 				const vk::DynamicLoader& GetDynamicLoader() const;
 				const vk::AllocationCallbacks* GetAllocationCallbacks() const;
 
-				const vk::Instance& GetInstance() const;
-				const vk::DebugUtilsMessengerEXT& GetDebugMessanger() const;
-				const vk::DebugReportCallbackEXT& GetDebugReport() const;
 				const vk::SurfaceKHR& GetSurface() const;
-				
-				FVkPhysicalDevice& GetPhysicalDevice();
 
 				const vk::SampleCountFlagBits GetMultisamplingCount() const;
-				const FVkLogicalDevice& GetLogicalDevice() const;
+				Instance& GetInstance() const;
+				PhysicalDevice& GetPhysicalDevice() const;
+				Device& GetLogicalDevice() const;
 
-				vk::Queue& GetQueue(EQueueTypeFlagBits flag);
+				vk::Queue const& GetQueue(EQueueTypeFlagBits flag);
 
 				vma::Allocator& GetMemoryAllocator();
 
@@ -173,62 +195,37 @@ namespace engine
 				const FSwapchain& GetSwapchain() const;
 			protected:
 				void RegisterAllocationCallbacks();
-				FRenderApiErrorInfo CreateInstance(const FRenderContextCreateInfo& context_ci);
-				void CreateDebugMessanger(const FRenderContextCreateInfo& context_ci);
-				FRenderApiErrorInfo CreateSurface(const FRenderContextCreateInfo& context_ci);
-				void SelectQueueFamilies(FVkPhysicalDevice& device_info);
-				FRenderApiErrorInfo SelectPhysicalDevice(const FRenderContextCreateInfo& context_ci);
-				void PrepareRequestedLogicalDeviceFeatures();
-				FRenderApiErrorInfo CreateLogicalDevice(const FRenderContextCreateInfo& context_ci);
+				void EnableDeviceFeatures(PhysicalDevice& device);
 				void CreateMemoryAllocator(const FRenderContextCreateInfo& context_ci);
 				FRenderApiErrorInfo CreatePipelineCache(const FRenderContextCreateInfo& context_ci);
 				FRenderApiErrorInfo CreateSwapchain(u32 surface_width, u32 surface_height);
 
 				void CleanupSwapchain();
-
-				template<class _Ty>
-				_Ty& RequestExtensionFeatures()
-				{
-					auto structure_type = _Ty::structureType;
-
-					auto& physical_device = GetPhysicalDevice();
-					auto& extension_features = m_logicalDevice.extensionFeatures;
-
-					auto found_feature = extension_features.find(structure_type);
-					if (found_feature != extension_features.end())
-						return *utl::cast<_Ty*>(found_feature->second.get());
-
-					vk::PhysicalDeviceFeatures2KHR physical_device_features2{};
-					_Ty extension{};
-					physical_device_features2.pNext = &extension;
-
-					physical_device.handle.getFeatures2KHR(&physical_device_features2);
-
-					extension_features.insert({ structure_type, std::make_shared<_Ty>(extension) });
-
-					auto* extension_ptr = utl::cast<_Ty*>(extension_features[structure_type].get());
-
-					if (m_logicalDevice.lastExtensionFeature)
-						extension_ptr->pNext = m_logicalDevice.lastExtensionFeature;
-					m_logicalDevice.lastExtensionFeature = extension_ptr;
-
-					return *extension_ptr;
-				}
 			private:
 				vk::DynamicLoader m_dynamicLoader;
 				vk::AllocationCallbacks* m_allocationCallbacks{ nullptr };
 
-				vk::Instance m_vkInstance{ nullptr };
-				vk::DebugUtilsMessengerEXT m_debugMessenger{ nullptr };
-				vk::DebugReportCallbackEXT m_debugReport{ nullptr };
-				vk::SurfaceKHR m_vkSurface{ nullptr };
-				utl::vector<std::string> m_avaliableLayers{};
+				/** @brief Set of device extensions to be enabled for this example and whether they are optional (must be set in the derived constructor) */
+				std::vector<const char*> device_extensions;
 
-				i32 m_selectedPhysicalDevice{ -1 };
-				utl::vector<FVkPhysicalDevice> m_physicalDevices{};
+				/** @brief Set of instance extensions to be enabled for this example and whether they are optional (must be set in the derived constructor) */
+				std::vector<const char*> instance_extensions;
+
+				/** @brief Validation layers */
+				std::vector<const char*> validation_layers;
+
+				/** @brief Vector of layer settings to be enabled for this example (must be set in the derived constructor) */
+				std::vector<vk::LayerSettingEXT> layer_settings;
+
+				std::unique_ptr<Instance> instance;
+
+				vk::SurfaceKHR surface{ nullptr };
+
+				std::unique_ptr<DebugUtils> debug_utils;
+
+				std::unique_ptr<Device> device;
 
 				vk::SampleCountFlagBits m_requiredSampleCount{ vk::SampleCountFlagBits::e1 };
-				FVkLogicalDevice m_logicalDevice{};
 
 				vma::Allocator m_memoryAllocator{ nullptr };
 

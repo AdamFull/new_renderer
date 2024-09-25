@@ -66,6 +66,7 @@
     "tinyxml2",
     "xerces-c",
     "freetype",
-    "spdlog"
+    "spdlog",
+    "volk"
   ]
 }

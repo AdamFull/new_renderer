@@ -27,45 +27,9 @@ namespace engine
 				SYNCHRONIZATION_VALIDATION_FLAG_BIT = 1 << 4
 			};
 
-			struct FQueueFamilies
-			{
-				utl::vector<u32> uniqueFamilies{};
-				utl::hash_map<u32, u32> familyUsages;
-				utl::hash_map<EQueueTypeFlagBits, u32> queueToFamily;
-				EQueueTypeFlags queueMask{ 0u };
-			};
-
-			enum EPhysicalDeviceCompatibilityFlagBits
-			{
-				PHYSICAL_DEVICE_COMPAT_BETTER_THEN_NOTHING_FLAG_BIT = 1 << 0,
-				PHYSICAL_DEVICE_COMPAT_ASYNC_COMPUTE_FLAG_BIT = 1 << 1,
-				PHYSICAL_DEVICE_COMPAT_ASYNC_TRANSFER_FLAG_BIT = 1 << 2,
-				PHYSICAL_DEVICE_COMPAT_BEST_CANDIDATE_FLAG_BIT = PHYSICAL_DEVICE_COMPAT_BETTER_THEN_NOTHING_FLAG_BIT |
-				PHYSICAL_DEVICE_COMPAT_ASYNC_COMPUTE_FLAG_BIT |
-				PHYSICAL_DEVICE_COMPAT_ASYNC_TRANSFER_FLAG_BIT
-			};
-
 			// =================================================================================
 			// ==================================Object Handles=================================
 			// =================================================================================
-
-			struct FVkPhysicalDevice
-			{
-				vk::PhysicalDevice handle{ nullptr };
-				vk::PhysicalDeviceProperties properties{};
-				utl::vector<std::string> avaliableExtensions{};
-				FQueueFamilies queueFamilies{};
-				utl::hash_map<u32, bool> supportedExtensions{};
-				u32 compatFlags{ 0u };
-			};
-
-			struct FVkLogicalDevice
-			{
-				vk::Device handle{ nullptr };
-				utl::hash_map<EQueueTypeFlagBits, vk::Queue> queues{};
-				void* lastExtensionFeature{ nullptr };
-				std::map<vk::StructureType, std::shared_ptr<void>> extensionFeatures{};
-			};
 
 			struct FSwapchain
 			{

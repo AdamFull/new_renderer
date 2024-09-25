@@ -151,19 +151,7 @@ namespace engine
 				return vk::FrontFace::eClockwise;
 			}
 
-			inline FVkPhysicalDevice make_physical_device(vk::PhysicalDevice device)
-			{
-				FVkPhysicalDevice current_device{};
-				current_device.handle = device;
-				current_device.properties = device.getProperties();
-
-				auto extension_props = device.enumerateDeviceExtensionProperties();
-				for (auto& extension : extension_props)
-					current_device.avaliableExtensions.push_back(extension.extensionName);
-
-				return current_device;
-			}
-
+#if 0
 			inline utl::vector<vk::SampleCountFlagBits> get_avaliable_sample_count(const FVkPhysicalDevice& device)
 			{
 				utl::vector<vk::SampleCountFlagBits> avaliable_samples{ vk::SampleCountFlagBits::e1 };
@@ -191,6 +179,7 @@ namespace engine
 				auto found = std::find(avaliable_samples.begin(), avaliable_samples.end(), sample_count);
 				return found != avaliable_samples.end();
 			}
+#endif
 
 			inline vk::SurfaceFormatKHR choice_surface_format(const std::vector<vk::SurfaceFormatKHR>& available_formats)
 			{
