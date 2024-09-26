@@ -28,6 +28,11 @@ namespace engine
 		return 1.0f;
 	}
 
+	void HeadlessWindow::SetTitle(const std::string& new_title)
+	{
+
+	}
+
 	std::vector<const char*> HeadlessWindow::GetRequiredSurfaceExtensions() const
 	{
 		return {};

@@ -22,6 +22,8 @@ namespace engine
 
 		float GetDpiFactor() const override;
 
+		void SetTitle(const std::string& new_title) override;
+
 		std::vector<const char*> GetRequiredSurfaceExtensions() const override;
 
 	private:

@@ -28,6 +28,8 @@ namespace engine
 
 		float GetDpiFactor() const override;
 
+		void SetTitle(const std::string& new_title) override;
+
 		float GetContentScaleFactor() const override;
 
 		std::vector<const char*> GetRequiredSurfaceExtensions() const override;
@@ -38,6 +40,7 @@ namespace engine
 		static void KeyCallback(GLFWwindow* window, int key, int /*scancode*/, int action, int /*mods*/);
 		static void CursorPositionCallback(GLFWwindow* window, double xpos, double ypos);
 		static void MouseButtonCallback(GLFWwindow* window, int button, int action, int /*mods*/);
+		static void MouseScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 
 	private:
 		GLFWwindow* handle{ nullptr };

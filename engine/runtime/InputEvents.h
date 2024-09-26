@@ -131,6 +131,10 @@ namespace engine
 		RightControl,
 		RightAlt,
 
+		MouseLeft,
+		MouseRight,
+		MouseMiddle,
+
 		Count
 	};
 
@@ -157,45 +161,33 @@ namespace engine
 		KeyAction action;
 	};
 
-	enum class MouseButton
-	{
-		Left,
-		Right,
-		Middle,
-		Back,
-		Forward,
-		Unknown
-	};
-
 	enum class MouseAction
 	{
 		Down,
 		Up,
 		Move,
+		Scroll,
 		Unknown
 	};
 
 	class MouseButtonInputEvent final : public InputEvent
 	{
 	public:
-		MouseButtonInputEvent(MouseButton button, MouseAction action, float pos_x, float pos_y);
+		MouseButtonInputEvent(KeyCode button, MouseAction action, float value_x, float value_y);
 
-		MouseButton GetButton() const;
+		KeyCode GetButton() const;
 
 		MouseAction GetAction() const;
 
-		float GetPosX() const;
-
-		float GetPosY() const;
+		float GetValueX() const;
+		float GetValueY() const;
 
 	private:
-		MouseButton button;
+		KeyCode button;
 
 		MouseAction action;
 
-		float pos_x;
-
-		float pos_y;
+		float value_x, value_y;
 	};
 
 	enum class TouchAction

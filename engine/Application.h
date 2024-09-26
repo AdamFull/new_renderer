@@ -10,6 +10,7 @@
 namespace engine
 {
 	class Window;
+	class InputManager;
 	class Application;
 
 	struct ApplicationCreateInfo
@@ -22,6 +23,7 @@ namespace engine
 	{
 		bool benchmark_enabled;
 		Window* window;
+		InputManager* input_manager;
 	};
 
 	class Application

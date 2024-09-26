@@ -29,16 +29,16 @@ namespace engine
         return action;
     }
 
-    MouseButtonInputEvent::MouseButtonInputEvent(MouseButton button, MouseAction action, float pos_x, float pos_y) :
+    MouseButtonInputEvent::MouseButtonInputEvent(KeyCode button, MouseAction action, float value_x, float value_y) :
         InputEvent{ EventSource::Mouse },
         button{ button },
         action{ action },
-        pos_x{ pos_x },
-        pos_y{ pos_y }
+        value_x{ value_x },
+        value_y{ value_y }
     {
     }
 
-    MouseButton MouseButtonInputEvent::GetButton() const
+    KeyCode MouseButtonInputEvent::GetButton() const
     {
         return button;
     }
@@ -48,14 +48,14 @@ namespace engine
         return action;
     }
 
-    float MouseButtonInputEvent::GetPosX() const
+    float MouseButtonInputEvent::GetValueX() const
     {
-        return pos_x;
+        return value_x;
     }
 
-    float MouseButtonInputEvent::GetPosY() const
+    float MouseButtonInputEvent::GetValueY() const
     {
-        return pos_y;
+        return value_y;
     }
 
     TouchInputEvent::TouchInputEvent(int32_t pointer_id, std::size_t touch_points, TouchAction action, float pos_x, float pos_y) :

@@ -102,6 +102,12 @@ namespace engine
 		virtual float GetContentScaleFactor() const;
 
 		/**
+		 * @brief Windows title setter
+		 * @param new_title New window title
+		 */
+		virtual void SetTitle(const std::string& new_title) = 0;
+
+		/**
 		 * @brief Attempt to Resize the window - not guaranteed to change
 		 *
 		 * @param extent The preferred window extent

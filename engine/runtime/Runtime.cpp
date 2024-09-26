@@ -91,6 +91,10 @@ namespace engine
 	{
 		auto delta_time = counter.GetFrameTime();
 
+		auto new_windows_name = std::format("{} [{:.2f} fps; {:.2f} ms]", app->GetName(), counter.GetFps(), delta_time);
+		//auto winname = std::format("Vulkan App {} fps ({:.2f} ms); {} gpu fps ({:.2f} ms); gpu memory ({:.2f}/{:.2f} Gb)", cpuCounter.fps(), cpuCounter.delta_time() * 1000.f, gpuCounter.fps(), gpuCounter.delta_time() * 1000.f, used_gpu_memory, total_gpu_memory);
+		window->SetTitle(new_windows_name);
+
 		if (focused || always_render)
 		{
 			OnUpdate(delta_time);
@@ -100,19 +104,9 @@ namespace engine
 				delta_time = simulation_frame_time;
 			}
 
-			//app->update_overlay(delta_time, [=]() {
-			//	on_update_ui_overlay(*active_app->get_drawer());
-			//	});
-			app->Update(delta_time);
+			// TODO: update debug ui here
 
-			// TODO: This original code is bad. May be think about something better...
-			//if (auto* app = dynamic_cast<RenderApplication*>(app.get()))
-			//{
-			//	//if (app->HasRenderContext())
-			//	//{
-			//	//	OnPostDraw(reinterpret_cast<RenderContext&>(app->GetRenderContext()));
-			//	//}
-			//}
+			app->Update(delta_time);
 		}
 	}
 

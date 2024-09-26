@@ -154,14 +154,14 @@ namespace engine
 			return KeyAction::Unknown;
 		}
 
-		inline MouseButton TranslateMouseButton(int button)
+		inline KeyCode TranslateMouseButton(int button)
 		{
-			if (button < GLFW_MOUSE_BUTTON_6)
+			if (button < GLFW_MOUSE_BUTTON_4)
 			{
-				return static_cast<MouseButton>(button);
+				return static_cast<KeyCode>(button + static_cast<int32_t>(KeyCode::MouseLeft));
 			}
 
-			return MouseButton::Unknown;
+			return KeyCode::Unknown;
 		}
 
 		inline MouseAction TranslateMouseAction(int action)
@@ -217,10 +217,8 @@ namespace engine
 		if (auto* runtime = reinterpret_cast<Runtime*>(glfwGetWindowUserPointer(window)))
 		{
 			runtime->OnInputEvent(MouseButtonInputEvent{
-				MouseButton::Unknown,
-				MouseAction::Move,
-				static_cast<float>(xpos),
-				static_cast<float>(ypos) });
+				KeyCode::Unknown, MouseAction::Move,
+				static_cast<float>(xpos), static_cast<float>(ypos) });
 		}
 	}
 
@@ -238,6 +236,16 @@ namespace engine
 		}
 	}
 
+	void GlfwWindow::MouseScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
+	{
+		if (auto* runtime = reinterpret_cast<Runtime*>(glfwGetWindowUserPointer(window)))
+		{
+			runtime->OnInputEvent(MouseButtonInputEvent{
+				KeyCode::Unknown, MouseAction::Scroll,
+				static_cast<float>(xoffset), static_cast<float>(yoffset) });
+		}
+	}
+	
 	GlfwWindow::GlfwWindow(Runtime* runtime, const Window::Properties& properties) :
 		Window(properties)
 	{
@@ -301,6 +309,7 @@ namespace engine
 		glfwSetKeyCallback(handle, &GlfwWindow::KeyCallback);
 		glfwSetCursorPosCallback(handle, &GlfwWindow::CursorPositionCallback);
 		glfwSetMouseButtonCallback(handle, &GlfwWindow::MouseButtonCallback);
+		glfwSetScrollCallback(handle, &GlfwWindow::MouseScrollCallback);
 
 		glfwSetInputMode(handle, GLFW_STICKY_KEYS, 1);
 		glfwSetInputMode(handle, GLFW_STICKY_MOUSE_BUTTONS, 1);
@@ -361,6 +370,11 @@ namespace engine
 		auto dpi = static_cast<uint32_t>(vidmode->width / (width_mm / inch_to_mm));
 		auto dpi_factor = dpi / win_base_density;
 		return dpi_factor;
+	}
+
+	void GlfwWindow::SetTitle(const std::string& new_title)
+	{
+		glfwSetWindowTitle(handle, new_title.c_str());
 	}
 
 	float GlfwWindow::GetContentScaleFactor() const
