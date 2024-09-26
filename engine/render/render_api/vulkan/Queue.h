@@ -35,6 +35,8 @@ namespace engine
 				vk::Bool32 SupportPresent() const;
 
 				void Submit(const vk::CommandBuffer& command_buffer, vk::Fence fence) const;
+				void Submit(const vk::SubmitInfo& submit_info, vk::Fence fence) const;
+				void Submit(const vk::SubmitInfo2& submit_info, vk::Fence fence) const;
 
 				vk::Result Present(const vk::PresentInfoKHR& present_infos) const;
 

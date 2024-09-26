@@ -255,7 +255,11 @@ namespace engine
 				// Determine the optimal validation layers to enable that are necessary for useful debugging
 				std::vector<const char*> optimal_validation_layers = GetOptimalValidationLayers(supported_validation_layers);
 				requested_validation_layers.insert(requested_validation_layers.end(), optimal_validation_layers.begin(), optimal_validation_layers.end());
-#endif
+
+#if defined(VULKAN_VALIDATION_LAYERS_SYNCHRONIZATION)
+				requested_validation_layers.emplace_back("VK_LAYER_KHRONOS_synchronization2");
+#endif // VULKAN_VALIDATION_LAYERS_SYNCHRONIZATION
+#endif // USE_VALIDATION_LAYERS
 
 				if (ValidateLayers(requested_validation_layers, supported_validation_layers))
 				{

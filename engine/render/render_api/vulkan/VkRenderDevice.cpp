@@ -24,6 +24,20 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 using namespace engine::render;
 using namespace engine::render::vulkan;
 
+vk::QueueFlags GetQueueFlags(EQueueTypeFlagBits flag)
+{
+	vk::QueueFlags flags{};
+
+	if (flag == EQueueTypeFlagBits::eGraphics)
+		flags |= vk::QueueFlagBits::eGraphics;
+	if (flag == EQueueTypeFlagBits::eCompute)
+		flags |= vk::QueueFlagBits::eCompute;
+	if (flag == EQueueTypeFlagBits::eTransfer)
+		flags |= vk::QueueFlagBits::eTransfer;
+
+	return flags;
+}
+
 void* vk_malloc(void* pUserData, u64 size, u64 alignment, VkSystemAllocationScope allocationScope)
 {
 	void* ptr = malloc(size);
@@ -130,7 +144,7 @@ void CVkRenderDevice::Create(const FRenderContextCreateInfo& context_ci)
 	}
 
 	// Apply extensions requested by user
-	instance_extensions.insert(instance_extensions.end(), context_ci.validationLayers.begin(), context_ci.validationLayers.end());
+	instance_extensions.insert(instance_extensions.end(), context_ci.requiredInstanceExtensions.begin(), context_ci.requiredInstanceExtensions.end());
 
 #ifdef VULKAN_DEBUG
 	{
@@ -150,7 +164,7 @@ void CVkRenderDevice::Create(const FRenderContextCreateInfo& context_ci)
 	InstanceCreateInfo instance_ci{ "App", instance_extensions, validation_layers, layer_settings, headless, get_api_version(context_ci.apiVersion)};
 	instance = std::make_unique<Instance>(instance_ci);
 
-	VULKAN_HPP_DEFAULT_DISPATCHER.init(Handle(*instance));
+	//VULKAN_HPP_DEFAULT_DISPATCHER.init(Handle(*instance));
 
 	surface = context_ci.window->CreateSurface(Handle(*instance), m_allocationCallbacks);
 	if (!surface)
@@ -231,9 +245,6 @@ void CVkRenderDevice::Create(const FRenderContextCreateInfo& context_ci)
 	requested_features.shaderInt64 = true;
 
 	device = std::make_unique<Device>(physical_device, surface, device_extensions);
-
-	//check_api_result(CreateLogicalDevice(context_ci));
-	VULKAN_HPP_DEFAULT_DISPATCHER.init(Handle(*device));
 
 	CreateMemoryAllocator(context_ci);
 
@@ -852,8 +863,8 @@ void CVkRenderDevice::SubmitCommandBuffer(const FVkCommandBuffer& command_buffer
 
 	Handle(*device).resetFences(1, &fence);
 
-	auto& queue = GetQueue(command_buffer.mask);
-	queue.submit(submitInfo, fence);
+	auto& queue = device->GetQueueByFlags(GetQueueFlags(command_buffer.mask), 0);
+	queue.Submit(submitInfo, fence);
 	Handle(*device).waitForFences(1, &fence, VK_TRUE, (std::numeric_limits<u64>::max)());
 	Handle(*device).destroyFence(fence, m_allocationCallbacks);
 }
@@ -865,7 +876,7 @@ vk::Result CVkRenderDevice::Present(FVkCommandBuffer& command_buffer)
 
 	try
 	{
-		auto& queue = GetQueue(command_buffer.mask);
+		auto& queue = device->GetQueueByFlags(GetQueueFlags(command_buffer.mask), 0);
 
 		vk::SubmitInfo2 submit_info{};
 
@@ -891,7 +902,7 @@ vk::Result CVkRenderDevice::Present(FVkCommandBuffer& command_buffer)
 		submit_info.pCommandBufferInfos = &command_buffer_si;
 		submit_info.commandBufferInfoCount = 1;
 
-		queue.submit2(submit_info, m_swapchain.inFlightFences.at(m_swapchain.currentFrame));
+		queue.Submit(submit_info, m_swapchain.inFlightFences.at(m_swapchain.currentFrame));
 	}
 	catch (vk::SystemError error)
 	{
@@ -907,8 +918,8 @@ vk::Result CVkRenderDevice::Present(FVkCommandBuffer& command_buffer)
 	present_info.pSwapchains = swap_chains;
 	present_info.pImageIndices = &m_swapchain.currentFrame;
 
-	auto& present_queue = GetQueue(EQueueTypeFlagBits::ePresent);
-	res = present_queue.presentKHR(present_info);
+	auto& present_queue = device->GetQueueByPresent(0);
+	res = present_queue.Present(present_info);
 	check_api_result(make_api_error(vk::ObjectType::eQueue, res, "Failed to present"));
 
 	res = Handle(*device).waitForFences(1, &m_swapchain.inFlightFences[m_swapchain.currentFrame], VK_TRUE, (std::numeric_limits<u64>::max)());
@@ -1050,30 +1061,6 @@ PhysicalDevice& CVkRenderDevice::GetPhysicalDevice() const
 Device& CVkRenderDevice::GetLogicalDevice() const
 {
 	return *device;
-}
-
-vk::Queue const& CVkRenderDevice::GetQueue(EQueueTypeFlagBits flag)
-{
-	if (flag == EQueueTypeFlagBits::ePresent)
-	{
-		auto& found = device->GetQueueByPresent(0);
-		return Handle(found);
-	}
-	else if (flag == EQueueTypeFlagBits::eGraphics)
-	{
-		auto& found = device->GetQueueByFlags(vk::QueueFlagBits::eGraphics, 0);
-		return Handle(found);
-	}
-	else if (flag == EQueueTypeFlagBits::eCompute)
-	{
-		auto& found = device->GetQueueByFlags(vk::QueueFlagBits::eCompute, 0);
-		return Handle(found);
-	}
-	else if (flag == EQueueTypeFlagBits::eTransfer)
-	{
-		auto& found = device->GetQueueByFlags(vk::QueueFlagBits::eTransfer, 0);
-		return Handle(found);
-	}
 }
 
 vma::Allocator& CVkRenderDevice::GetMemoryAllocator()

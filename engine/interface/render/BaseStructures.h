@@ -38,7 +38,7 @@ namespace engine
 			utl::vector<const char*> optionalDeviceExtensions{};
 
 			u32 validationFeatures{ 0u };
-			utl::vector<const char*> validationLayers{};
+			utl::vector<const char*> requiredInstanceExtensions{};
 		};
 
 		template<class _Ty>

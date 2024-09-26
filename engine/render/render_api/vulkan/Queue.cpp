@@ -19,14 +19,13 @@ namespace engine
 			}
 
 			Queue::Queue(Queue&& other) :
-				VulkanResource{ other.handle },
+				VulkanResource{ std::move(other) },
 				device(other.device),
 				family_index(std::exchange(other.family_index, {})),
 				index(std::exchange(other.index, 0)),
 				can_present(std::exchange(other.can_present, false)),
 				properties(std::exchange(other.properties, {}))
 			{
-				handle = nullptr;
 			}
 
 			const Device& Queue::GetDevice() const
@@ -58,6 +57,16 @@ namespace engine
 			{
 				vk::SubmitInfo submit_info({}, {}, command_buffer);
 				handle.submit(submit_info, fence);
+			}
+
+			void Queue::Submit(const vk::SubmitInfo& submit_info, vk::Fence fence) const
+			{
+				handle.submit(submit_info, fence);
+			}
+
+			void Queue::Submit(const vk::SubmitInfo2& submit_info, vk::Fence fence) const
+			{
+				handle.submit2(submit_info, fence);
 			}
 
 			vk::Result Queue::Present(const vk::PresentInfoKHR& present_info) const

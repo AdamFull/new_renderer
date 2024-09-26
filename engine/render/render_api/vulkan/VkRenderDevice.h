@@ -185,8 +185,6 @@ namespace engine
 				PhysicalDevice& GetPhysicalDevice() const;
 				Device& GetLogicalDevice() const;
 
-				vk::Queue const& GetQueue(EQueueTypeFlagBits flag);
-
 				vma::Allocator& GetMemoryAllocator();
 
 				const vk::PipelineCache& GetPipelineCache() const;

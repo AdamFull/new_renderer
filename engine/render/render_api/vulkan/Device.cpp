@@ -3,6 +3,8 @@
 
 #include <util/Logger.h>
 
+#include <volk.h>
+
 namespace engine
 {
 	namespace render
@@ -95,6 +97,11 @@ namespace engine
 				create_info.pNext = gpu.GetExtensionFeatureChain();
 
 				handle = Handle(gpu).createDevice(create_info);
+
+				VULKAN_HPP_DEFAULT_DISPATCHER.init(handle);
+
+				// Need to load volk for all the not-yet Vulkan-Hpp calls
+				volkLoadDevice(handle);
 
 				queues.resize(queue_family_properties.size());
 
