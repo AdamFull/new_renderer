@@ -41,28 +41,28 @@ void CInputMapper::Update(float dt)
 		for (const auto& key : action.keys)
 			is_passes = is_passes && m_keyDecoder.Test(key);
 
-		if (is_passes)
-		{
-			switch (action.state)
-			{
-			case EKeyState::eReleased: action.state = EKeyState::ePress; break;
-			case EKeyState::ePress: action.state = EKeyState::ePressed; break;
-			}
-		}
-		else
-		{
-			switch (action.state)
-			{
-			case EKeyState::ePressed: action.state = EKeyState::eRelease; is_passes = true; break;
-			case EKeyState::eRelease: action.state = EKeyState::eReleased; is_passes = true; break;
-			}
-		}
+		//if (is_passes)
+		//{
+		//	switch (action.state)
+		//	{
+		//	case KeyState::eReleased: action.state = KeyState::ePress; break;
+		//	case KeyState::ePress: action.state = KeyState::ePressed; break;
+		//	}
+		//}
+		//else
+		//{
+		//	switch (action.state)
+		//	{
+		//	case KeyState::ePressed: action.state = KeyState::eRelease; is_passes = true; break;
+		//	case KeyState::eRelease: action.state = KeyState::eReleased; is_passes = true; break;
+		//	}
+		//}
 
-		if (is_passes)
-		{
-			for (auto& callback : action.callbacks)
-				callback(action.state);
-		}
+		//if (is_passes)
+		//{
+		//	for (auto& callback : action.callbacks)
+		//		callback(action.state);
+		//}
 	}
 
 	// Process input axis
@@ -100,13 +100,18 @@ void CInputMapper::Update(float dt)
 	}
 }
 
-void CInputMapper::HandleKeyInput(EKeyCode code, EKeyState state)
+void CInputMapper::OnInputEvent(const InputEvent& input_event)
 {
-	m_keyDecoder.Update(code, state == EKeyState::ePress);
+
 }
 
-void CInputMapper::HandleAxisInput(float x, float y, float xmax, float ymax)
-{
-	m_hwAxis[EAxisType::eMouseX] = remap(x, 0.f, xmax, -1.f, 1.f);
-	m_hwAxis[EAxisType::eMouseY] = remap(y, 0.f, ymax, -1.f, 1.f);
-}
+//void CInputMapper::HandleKeyInput(EKeyCode code, EKeyState state)
+//{
+//	m_keyDecoder.Update(code, state == EKeyState::ePress);
+//}
+//
+//void CInputMapper::HandleAxisInput(float x, float y, float xmax, float ymax)
+//{
+//	m_hwAxis[EAxisType::eMouseX] = remap(x, 0.f, xmax, -1.f, 1.f);
+//	m_hwAxis[EAxisType::eMouseY] = remap(y, 0.f, ymax, -1.f, 1.f);
+//}

@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <bitset>
 
 namespace engine
 {
@@ -128,7 +129,9 @@ namespace engine
 		LeftAlt,
 		RightShift,
 		RightControl,
-		RightAlt
+		RightAlt,
+
+		Count
 	};
 
 	enum class KeyAction
@@ -231,5 +234,35 @@ namespace engine
 		float pos_x;
 
 		float pos_y;
+	};
+
+	using keystate = std::bitset<static_cast<uint64_t>(KeyCode::Count)>;
+
+	class CKeyDecoder
+	{
+	public:
+		bool Update(KeyCode eCode, bool bPressed)
+		{
+			auto code = static_cast<uint64_t>(eCode);
+
+			if (bPressed != states.test(code))
+			{
+				if (bPressed)
+					states.set(static_cast<uint64_t>(eCode));
+				else
+					states.reset(static_cast<uint64_t>(eCode));
+
+				return true;
+			}
+
+			return false;
+		}
+
+		bool Test(KeyCode eCode)
+		{
+			return states.test(static_cast<uint64_t>(eCode));
+		}
+	private:
+		keystate states;
 	};
 }

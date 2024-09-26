@@ -134,58 +134,31 @@ namespace engine
 				return {};
 			}
 
-			namespace
-			{
-				bool EnableExtension(const char* required_ext_name, const std::vector<vk::ExtensionProperties>& available_exts, std::vector<const char*>& enabled_extensions)
-				{
-					for (auto& avail_ext_it : available_exts)
-					{
-						if (strcmp(avail_ext_it.extensionName, required_ext_name) == 0)
-						{
-							auto it = std::find_if(enabled_extensions.begin(), enabled_extensions.end(),
-								[required_ext_name](const char* enabled_ext_name) {
-									return strcmp(enabled_ext_name, required_ext_name) == 0;
-								});
-							if (it != enabled_extensions.end())
-							{
-								// Extension is already enabled
-							}
-							else
-							{
-								log_info("Extension {} found, enabling it", required_ext_name);
-								enabled_extensions.emplace_back(required_ext_name);
-							}
-							return true;
-						}
-					}
 
-					log_info("Extension {} not found", required_ext_name);
-					return false;
-				}
-
-				bool EnableAllExtensions(const std::vector<const char*> required_ext_names, const std::vector<vk::ExtensionProperties>& available_exts, std::vector<const char*>& enabled_extensions)
-				{
-					using std::placeholders::_1;
-
-					return std::all_of(required_ext_names.begin(), required_ext_names.end(), std::bind(EnableExtension, _1, available_exts, enabled_extensions));
-				}
-			}
+			//Result<std::unique_ptr<Instance>, vk::Result> Instance::Construct(const InstanceCreateInfo& create_info)
+			//{
+			//	std::unique_ptr<Instance> instance = std::make_unique<Instance>(create_info);
+			//
+			//
+			//
+			//	return Result<std::unique_ptr<Instance>, vk::Result>::Success(std::move(instance));
+			//}
 
 			Instance::Instance(const InstanceCreateInfo& create_info) :
 				VulkanResource{ nullptr },
 				api_version{ create_info.api_version },
 				selected_gpu_index{ -1 }
 			{
-				std::vector<vk::ExtensionProperties> available_instance_extensions = vk::enumerateInstanceExtensionProperties();
+				available_extensions = vk::enumerateInstanceExtensionProperties();
 
 #ifdef USE_VALIDATION_LAYERS
 				// Check if VK_EXT_debug_utils is supported, which supersedes VK_EXT_Debug_Report
-				const bool has_debug_utils = EnableExtension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, available_instance_extensions, enabled_extensions);
+				const bool has_debug_utils = EnableExtension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 				bool has_debug_report = false;
 
 				if (!has_debug_utils)
 				{
-					has_debug_report = EnableExtension(VK_EXT_DEBUG_REPORT_EXTENSION_NAME, available_instance_extensions, enabled_extensions);
+					has_debug_report = EnableExtension(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
 					if (!has_debug_report)
 					{
 						log_warning("Neither of {} or {} are available; disabling debug reporting", VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
@@ -208,7 +181,7 @@ namespace engine
 						{
 							validation_features = true;
 							log_info("{} is available, enabling it", VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
-							enabled_extensions.emplace_back(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
+							EnableExtension(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
 						}
 					}
 				}
@@ -217,7 +190,7 @@ namespace engine
 				// Try to enable headless surface extension if it exists
 				if (create_info.headless)
 				{
-					const bool has_headless_surface = EnableExtension(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME, available_instance_extensions, enabled_extensions);
+					const bool has_headless_surface = EnableExtension(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
 					if (!has_headless_surface)
 					{
 						log_warning("{} is not available, disabling swapchain creation", VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
@@ -225,17 +198,17 @@ namespace engine
 				}
 				else
 				{
-					enabled_extensions.emplace_back(VK_KHR_SURFACE_EXTENSION_NAME);
+					EnableExtension(VK_KHR_SURFACE_EXTENSION_NAME);
 				}
 
 				// VK_KHR_get_physical_device_properties2 is a prerequisite of VK_KHR_performance_query
 				// which will be used for stats gathering where available.
-				EnableExtension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, available_instance_extensions, enabled_extensions);
+				EnableExtension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
 				auto extension_error = false;
 				for (auto extension_name : create_info.required_extensions)
 				{
-					if (!EnableExtension(extension_name, available_instance_extensions, enabled_extensions))
+					if (!EnableExtension(extension_name))
 					{
 						log_error("Required instance extension {} not available, cannot run", extension_name);
 						extension_error = true;
@@ -330,7 +303,7 @@ namespace engine
 				vk::LayerSettingsCreateInfoEXT layerSettingsCreateInfo;
 
 				// If layer settings extension enabled by sample, then activate layer settings during instance creation
-				if (std::find(enabled_extensions.begin(), enabled_extensions.end(), VK_EXT_LAYER_SETTINGS_EXTENSION_NAME) != enabled_extensions.end())
+				if (IsEnabled(VK_EXT_LAYER_SETTINGS_EXTENSION_NAME))
 				{
 					layerSettingsCreateInfo.settingCount = static_cast<uint32_t>(create_info.required_layer_settings.size());
 					layerSettingsCreateInfo.pSettings = create_info.required_layer_settings.data();
@@ -358,7 +331,18 @@ namespace engine
 				}
 #endif
 
-				QueryGpus();
+				// Querying valid physical devices on the machine
+				std::vector<vk::PhysicalDevice> physical_devices = handle.enumeratePhysicalDevices();
+				if (physical_devices.empty())
+				{
+					throw std::runtime_error("Couldn't find a physical device that supports Vulkan.");
+				}
+
+				// Create gpus wrapper objects from the vk::PhysicalDevice's
+				for (auto& physical_device : physical_devices)
+				{
+					gpus.emplace_back(std::make_unique<PhysicalDevice>(*this, physical_device));
+				}
 			}
 
 			Instance::Instance(vk::Instance instance) :
@@ -366,7 +350,18 @@ namespace engine
 			{
 				if (handle)
 				{
-					QueryGpus();
+					// Querying valid physical devices on the machine
+					std::vector<vk::PhysicalDevice> physical_devices = handle.enumeratePhysicalDevices();
+					if (physical_devices.empty())
+					{
+						throw std::runtime_error("Couldn't find a physical device that supports Vulkan.");
+					}
+
+					// Create gpus wrapper objects from the vk::PhysicalDevice's
+					for (auto& physical_device : physical_devices)
+					{
+						gpus.emplace_back(std::make_unique<PhysicalDevice>(*this, physical_device));
+					}
 				}
 				else
 				{
@@ -499,20 +494,31 @@ namespace engine
 				return std::find_if(enabled_extensions.begin(), enabled_extensions.end(), [extension](const char* enabled_extension) { return strcmp(extension, enabled_extension) == 0; }) != enabled_extensions.end();
 			}
 
-			void Instance::QueryGpus()
+			bool Instance::EnableExtension(const char* extension_name)
 			{
-				// Querying valid physical devices on the machine
-				std::vector<vk::PhysicalDevice> physical_devices = handle.enumeratePhysicalDevices();
-				if (physical_devices.empty())
+				for (auto& avail_ext_it : available_extensions)
 				{
-					throw std::runtime_error("Couldn't find a physical device that supports Vulkan.");
+					if (strcmp(avail_ext_it.extensionName, extension_name) == 0)
+					{
+						auto it = std::find_if(enabled_extensions.begin(), enabled_extensions.end(),
+							[extension_name](const char* enabled_ext_name) {
+								return strcmp(enabled_ext_name, extension_name) == 0;
+							});
+						if (it != enabled_extensions.end())
+						{
+							// Extension is already enabled
+						}
+						else
+						{
+							log_info("Extension {} found, enabling it", extension_name);
+							enabled_extensions.emplace_back(extension_name);
+						}
+						return true;
+					}
 				}
 
-				// Create gpus wrapper objects from the vk::PhysicalDevice's
-				for (auto& physical_device : physical_devices)
-				{
-					gpus.emplace_back(std::make_unique<PhysicalDevice>(*this, physical_device));
-				}
+				log_info("Extension {} not found", extension_name);
+				return false;
 			}
 		}
 	}

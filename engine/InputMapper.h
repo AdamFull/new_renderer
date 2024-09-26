@@ -1,9 +1,9 @@
 #pragma once
 
-#include <engine/interface/WindowInterface.h>
 #include <reactive/function.h>
 #include <hash.hpp>
 #include <container/hash_map.h>
+#include <engine/runtime/InputEvents.h>
 
 namespace engine
 {
@@ -23,15 +23,15 @@ namespace engine
 	struct FInputAxis
 	{
 		EAxisType type{};
-		utl::hash_map<EKeyCode, f32> keyValue{};
+		utl::hash_map<KeyCode, f32> keyValue{};
 		utl::vector<utl::reactive::function<void(f32)>> callbacks{};
 	};
 
 	struct FInputAction
 	{
-		utl::vector<EKeyCode> keys{};
-		EKeyState state{ EKeyState::eReleased };
-		utl::vector<utl::reactive::function<void(EKeyState)>> callbacks{};
+		utl::vector<KeyCode> keys{};
+		//KeyState state{ KeyState::eReleased };
+		//utl::vector<utl::reactive::function<void(KeyState)>> callbacks{};
 	};
 
 	class CInputMapper
@@ -40,10 +40,12 @@ namespace engine
 		void Create();
 		void Update(f32 dt);
 
+		void OnInputEvent(const InputEvent& input_event);
+
 		template<class... _Args>
 		void RegisterAction(const char* action_name, _Args&& ...args)
 		{
-			std::array<EKeyCode, sizeof...(_Args)> keys{ {args...} };
+			std::array<KeyCode, sizeof...(_Args)> keys{ {args...} };
 			
 			auto& action = m_inputActions[utl::murmur_hash_64(action_name)];
 			action.keys.insert(action.keys.end(), keys.begin(), keys.end());
@@ -56,7 +58,7 @@ namespace engine
 			if (found != m_inputActions.end())
 			{
 				auto& input_action = found->second;
-				input_action.callbacks.emplace_back(utl::reactive::function<void(EKeyState)>(std::forward<_Args>(args)...));
+				//input_action.callbacks.emplace_back(utl::reactive::function<void(EKeyState)>(std::forward<_Args>(args)...));
 			}
 		}
 
@@ -84,20 +86,20 @@ namespace engine
 
 		//void registerAxisMapping(const char* name, )
 	protected:
-		void HandleKeyInput(EKeyCode code, EKeyState state);
-		void HandleAxisInput(f32 x, f32 y, f32 xmax, f32 ymax);
+		//void HandleKeyInput(KeyCode code, EKeyState state);
+		//void HandleAxisInput(f32 x, f32 y, f32 xmax, f32 ymax);
 
-		void UnpackAxisValues(utl::hash_map<EKeyCode, f32>& map) {}
+		void UnpackAxisValues(utl::hash_map<KeyCode, f32>& map) {}
 
 		template<class... _Args>
-		void UnpackAxisValues(utl::hash_map<EKeyCode, f32>& map, EKeyCode key, f32 value, _Args&&... args) 
+		void UnpackAxisValues(utl::hash_map<KeyCode, f32>& map, KeyCode key, f32 value, _Args&&... args) 
 		{ 
 			map[key] = value; 
 			UnpackAxisValues(map, std::forward<_Args>(args)...);
 		}
 
 		template<class... _Args>
-		void UnpackAxisValues(utl::hash_map<EKeyCode, f32>& map, _Args&&... args) { static_assert(true, "Incorrect argument types. Should be EKeyCode:f32."); }
+		void UnpackAxisValues(utl::hash_map<KeyCode, f32>& map, _Args&&... args) { static_assert(true, "Incorrect argument types. Should be EKeyCode:f32."); }
 	private:
 		CKeyDecoder m_keyDecoder{};
 

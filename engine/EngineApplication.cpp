@@ -49,6 +49,7 @@ namespace engine
 
 	void EngineApplication::OnInputEvent(const InputEvent& input_event)
 	{
+		m_pInputMapper->OnInputEvent(input_event);
 	}
 
 	void EngineApplication::Finish()

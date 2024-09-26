@@ -41,14 +41,14 @@ void CInputSystem::__Update(f32 fDt)
 	glm::vec3 orbitCenter{ 0.0f, 0.0f, 0.0f };
 	f32 orbitDistance{ 10.0f };
 
-	if (m_keyDecoder.Test(EKeyCode::eKeyW)) movF = 1.f;
-	if (m_keyDecoder.Test(EKeyCode::eKeyS)) movF = -1.f;
-	if (m_keyDecoder.Test(EKeyCode::eKeyA)) movR = -1.f;
-	if (m_keyDecoder.Test(EKeyCode::eKeyD)) movR = 1.f;
-	if (m_keyDecoder.Test(EKeyCode::eKeySpace)) movU = 1.f;
-	if (m_keyDecoder.Test(EKeyCode::eKeyLCtrl)) movU = -1.f;
-	if (m_keyDecoder.Test(EKeyCode::eMouseMiddle))
-		allowRotation = true;
+	//if (m_keyDecoder.Test(EKeyCode::eKeyW)) movF = 1.f;
+	//if (m_keyDecoder.Test(EKeyCode::eKeyS)) movF = -1.f;
+	//if (m_keyDecoder.Test(EKeyCode::eKeyA)) movR = -1.f;
+	//if (m_keyDecoder.Test(EKeyCode::eKeyD)) movR = 1.f;
+	//if (m_keyDecoder.Test(EKeyCode::eKeySpace)) movU = 1.f;
+	//if (m_keyDecoder.Test(EKeyCode::eKeyLCtrl)) movU = -1.f;
+	//if (m_keyDecoder.Test(EKeyCode::eMouseMiddle))
+	//	allowRotation = true;
 
 	f32 dX = (curX - oldX) * fDt;
 	oldX = curX;
@@ -104,18 +104,18 @@ void CInputSystem::__Update(f32 fDt)
 	}
 }
 
-void CInputSystem::keyInput(EKeyCode code, EKeyState state)
-{
-	m_keyDecoder.Update(code, state == EKeyState::ePress);
-}
-
-void CInputSystem::mouseMovementInput(f32 x, f32 y, f32 xmax, f32 ymax)
-{
-	curX = remap(x, 0.f, xmax, -1.f, 1.f);
-	curY = remap(y, 0.f, ymax, -1.f, 1.f);
-}
-
-void CInputSystem::mouseWheelInput(f32 x, f32 y)
-{
-
-}
+//void CInputSystem::keyInput(EKeyCode code, EKeyState state)
+//{
+//	m_keyDecoder.Update(code, state == EKeyState::ePress);
+//}
+//
+//void CInputSystem::mouseMovementInput(f32 x, f32 y, f32 xmax, f32 ymax)
+//{
+//	curX = remap(x, 0.f, xmax, -1.f, 1.f);
+//	curY = remap(y, 0.f, ymax, -1.f, 1.f);
+//}
+//
+//void CInputSystem::mouseWheelInput(f32 x, f32 y)
+//{
+//
+//}

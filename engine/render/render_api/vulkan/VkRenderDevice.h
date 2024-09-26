@@ -137,39 +137,6 @@ namespace engine
 				void DebugInsertLabel(vk::Queue& queue, const std::string& name, u32 color);
 				void EndLabel(vk::Queue& queue);
 
-				template<class _Ty>
-				void DebugSetObjectName(const _Ty& object, const std::string& name)
-				{
-#ifndef BUILD_WITHOUT_DEBUGGIND
-					if (!name.empty())
-					{
-						//vk::DebugUtilsObjectNameInfoEXT object_name_info{};
-						//object_name_info.objectType = object.objectType;
-						//object_name_info.objectHandle = reinterpret_cast<u64>(static_cast<_Ty::CType>(object));
-						//
-						//auto formatted_debug_object_name = std::format("{}:{} | {:x}", vk::to_string(object.objectType), name, object_name_info.objectHandle);
-						//object_name_info.pObjectName = formatted_debug_object_name.c_str();
-						//
-						//m_logicalDevice.handle.setDebugUtilsObjectNameEXT(object_name_info);
-					}
-#endif
-				}
-
-				template<class _Ty>
-				void DebugSetObjectTag(const _Ty& object, u64 name, const void* data, u64 size)
-				{
-#ifndef BUILD_WITHOUT_DEBUGGIND
-					//vk::DebugUtilsObjectTagInfoEXT object_tag_info{};
-					//object_tag_info.objectType = object.objectType;
-					//object_tag_info.objectHandle = reinterpret_cast<u64>(static_cast<_Ty::CType>(object));
-					//object_tag_info.tagName = name;
-					//object_tag_info.pTag = data;
-					//object_tag_info.tagSize = size;
-					//
-					//m_logicalDevice.handle.setDebugUtilsObjectTagEXT(object_tag_info);
-#endif
-				}
-
 				void InitProfiler(const FVkCommandPool& command_pool);
 
 				// Getters
@@ -192,6 +159,9 @@ namespace engine
 
 				const FSwapchain& GetSwapchain() const;
 			protected:
+				template<class _Ty>
+				void DebugSetObjectName(const _Ty& object, const std::string& name);
+
 				void RegisterAllocationCallbacks();
 				void EnableDeviceFeatures(PhysicalDevice& device);
 				void CreateMemoryAllocator(const FRenderContextCreateInfo& context_ci);

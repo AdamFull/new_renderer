@@ -4,6 +4,7 @@
 #include <vector>
 #include <unordered_map>
 
+#include <util/Result.hpp>
 #include <engine/render/render_api/vulkan/VkResource.h>
 
 namespace engine
@@ -40,6 +41,8 @@ namespace engine
 			class Instance final : public VulkanResource<vk::Instance>
 			{
 			public:
+				static Result<std::unique_ptr<Instance>, vk::Result> Construct(const InstanceCreateInfo& create_info);
+
 				/**
 				 * @brief Initializes the connection to Vulkan
 				 * @param application_name The name of the application
@@ -103,9 +106,11 @@ namespace engine
 
 			private:
 				/**
-				 * @brief Queries the instance for the physical devices on the machine
-				 */
-				void QueryGpus();
+				* @brief Enables extension when it supported
+				* @param Requested extension name
+				* @returns True if extension is supported or enabled
+				*/
+				bool EnableExtension(const char* extension_name);
 
 			private:
 				/**
@@ -117,6 +122,11 @@ namespace engine
 				 * @brief Best gpu index
 				 */
 				int32_t selected_gpu_index;
+
+				/**
+				 * @brief All avaliable extensions
+				 */
+				std::vector<vk::ExtensionProperties> available_extensions;
 
 				/**
 				 * @brief The enabled extensions

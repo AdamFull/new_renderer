@@ -1,7 +1,6 @@
 #pragma once
 
 #include <engine/render/render_graph/render_passes/BasePass.h>
-#include <engine/interface/WindowInterface.h>
 
 namespace engine
 {

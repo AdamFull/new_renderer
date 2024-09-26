@@ -2,7 +2,7 @@
 
 #include <interface/EngineSystem.h>
 #include <interface/render/RenderInterface.h>
-#include <engine/interface/WindowInterface.h>
+#include <engine/runtime/InputEvents.h>
 
 namespace engine
 {

@@ -2,7 +2,7 @@
 
 #include <interface/EngineSystem.h>
 #include <interface/render/RenderInterface.h>
-#include <engine/interface/WindowInterface.h>
+#include <engine/runtime/InputEvents.h>
 #include <editor/EditorWindow.h>
 
 namespace engine
@@ -22,13 +22,13 @@ namespace engine
 
 		void Destroy() override;
 	protected:
-		void HandleFocusChanged(i32 focused);
-		void HandleCursorEnter(i32 enter);
-		void HandleAxisInput(f32 x, f32 y, f32 xmax, f32 ymax);
-		void HandleMouseButton(EKeyCode code, EKeyState state);
-		void HandleMouseScroll(f32 x, f32 y);
-		void HandleKeyInput(EKeyCode, EKeyState);
-		void HandleCharInput(u32 character);
+		//void HandleFocusChanged(i32 focused);
+		//void HandleCursorEnter(i32 enter);
+		//void HandleAxisInput(f32 x, f32 y, f32 xmax, f32 ymax);
+		//void HandleMouseButton(EKeyCode code, EKeyState state);
+		//void HandleMouseScroll(f32 x, f32 y);
+		//void HandleKeyInput(EKeyCode, EKeyState);
+		//void HandleCharInput(u32 character);
 	private:
 		f32 m_lastMouseX{}, m_lastMouseY{};
 		utl::vector<std::unique_ptr<IEditorWindow>> m_vWindows{};

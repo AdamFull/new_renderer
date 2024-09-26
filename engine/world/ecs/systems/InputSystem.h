@@ -1,6 +1,6 @@
 #pragma once
 
-#include <engine/interface/WindowInterface.h>
+#include <engine/runtime/InputEvents.h>
 #include <engine/world/ecs/systems/BaseSystem.h>
 
 #include <reactive/function.h>
@@ -13,8 +13,8 @@ namespace engine
 		{
 			struct FInputAction
 			{
-				EKeyState state;
-				utl::vector<utl::reactive::function<void(EKeyCode, EKeyState)>> listeners;
+				//KeyState state;
+				//utl::vector<utl::reactive::function<void(EeyCode, KeyState)>> listeners;
 			};
 
 			struct FInputAxis
@@ -42,9 +42,9 @@ namespace engine
 				//	}
 				//}
 			protected:
-				void keyInput(EKeyCode code, EKeyState state);
-				void mouseMovementInput(f32 x, f32 y, f32 xmax, f32 ymax);
-				void mouseWheelInput(f32 x, f32 y);
+				//void keyInput(EKeyCode code, EKeyState state);
+				//void mouseMovementInput(f32 x, f32 y, f32 xmax, f32 ymax);
+				//void mouseWheelInput(f32 x, f32 y);
 			private:
 				CKeyDecoder m_keyDecoder{};
 				f32 m_deltaTime{ 0.f };
