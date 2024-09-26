@@ -55,7 +55,10 @@ namespace engine
 	}
 
 
-	FPSCounter::FPSCounter() : total_frame_count(0u), frame_count(0), last_time(0), frame_time(0), fps(0) {}
+	FPSCounter::FPSCounter() : total_frame_count(0u), frame_count(0), delta_time(0), accumulated_time(0), fps(0)
+	{
+		last_time = ElapsedSeconds();
+	}
 
 	void FPSCounter::Frame()
 	{
@@ -63,13 +66,16 @@ namespace engine
 		++frame_count;
 
 		float current_time = ElapsedSeconds();
-		frame_time = current_time - last_time;
+		delta_time = current_time - last_time;
+		last_time = current_time;
 
-		if (frame_time >= 1.0f)
+		accumulated_time += delta_time;
+
+		if (accumulated_time >= 1.0f)
 		{
-			fps = frame_count / frame_time;
+			fps = frame_count / accumulated_time;
 			frame_count = 0;
-			last_time = current_time;
+			accumulated_time = 0.f;
 		}
 	}
 
@@ -80,7 +86,7 @@ namespace engine
 
 	float FPSCounter::GetFrameTime() const
 	{
-		return frame_time;
+		return delta_time;
 	}
 
 	uint32_t FPSCounter::GetTotalFrames() const

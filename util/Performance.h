@@ -30,8 +30,7 @@ namespace engine
 	private:
 		uint32_t total_frame_count;
 		int32_t frame_count;
-		float last_time;
-		float frame_time;
+		float last_time, delta_time, accumulated_time;
 		float fps;
 	};
 }
