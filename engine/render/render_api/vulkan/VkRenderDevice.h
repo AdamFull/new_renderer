@@ -151,6 +151,7 @@ namespace engine
 				Instance& GetInstance() const;
 				PhysicalDevice& GetPhysicalDevice() const;
 				Device& GetLogicalDevice() const;
+				DebugUtils& GetDebugUtils() const;
 
 				vma::Allocator& GetMemoryAllocator();
 

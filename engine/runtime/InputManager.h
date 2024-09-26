@@ -8,6 +8,5 @@ namespace engine
 	{
 	public:
 	private:
-		std::_Adjust_manually_vector_aligned<
 	};
 }

@@ -87,8 +87,8 @@ namespace engine
 			CVkRenderDevice::~CVkRenderDevice()
 			{
 				CleanupSwapchain();
-				Handle(*device).destroySwapchainKHR(m_swapchain.handle, m_allocationCallbacks);
-				Handle(*device).destroyPipelineCache(m_pipelineCache, m_allocationCallbacks);
+				device->DestroyObject(m_swapchain.handle);
+				device->DestroyObject(m_pipelineCache);
 				m_memoryAllocator.destroy();
 				Handle(*instance).destroySurfaceKHR(surface, m_allocationCallbacks);
 
@@ -232,7 +232,7 @@ namespace engine
 				requested_features.shaderStorageImageWriteWithoutFormat = true;
 				requested_features.shaderInt64 = true;
 
-				device = std::make_unique<Device>(physical_device, surface, device_extensions);
+				device = std::make_unique<Device>(physical_device, m_allocationCallbacks, surface, device_extensions);
 
 				// Create debug utils
 				if (instance->IsEnabled(VK_EXT_DEBUG_UTILS_EXTENSION_NAME))
@@ -1065,6 +1065,11 @@ namespace engine
 				return *device;
 			}
 
+			DebugUtils& CVkRenderDevice::GetDebugUtils() const
+			{
+				return *debug_utils;
+			}
+
 			vma::Allocator& CVkRenderDevice::GetMemoryAllocator()
 			{
 				return m_memoryAllocator;
@@ -1184,7 +1189,7 @@ namespace engine
 				vk::PipelineCacheCreateInfo pipeline_cache_ci{};
 				pipeline_cache_ci.initialDataSize = utl::cast<u32>(context_ci.pipelineCache.size());
 				pipeline_cache_ci.pInitialData = context_ci.pipelineCache.data();
-				return make_api_error(vk::ObjectType::ePipelineCache, Handle(*device).createPipelineCache(&pipeline_cache_ci, m_allocationCallbacks, &m_pipelineCache), "Failed to Create");
+				return make_api_error(vk::ObjectType::ePipelineCache, device->CreateObject(pipeline_cache_ci, m_pipelineCache), "Failed to Create");
 			}
 
 			FRenderApiErrorInfo CVkRenderDevice::CreateSwapchain(u32 surface_width, u32 surface_height)
@@ -1243,7 +1248,7 @@ namespace engine
 				swapchain_ci.clipped = VK_TRUE;
 				swapchain_ci.oldSwapchain = old_swapchain;
 
-				vk::Result res = Handle(*device).createSwapchainKHR(&swapchain_ci, m_allocationCallbacks, &m_swapchain.handle);
+				vk::Result res = device->CreateObject(swapchain_ci, m_swapchain.handle);
 				check_api_result(make_api_error(vk::ObjectType::eSwapchainKHR, res, "Failed to Create"));
 
 				m_swapchain.images.resize(image_count);

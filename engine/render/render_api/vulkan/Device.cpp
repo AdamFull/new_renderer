@@ -11,9 +11,10 @@ namespace engine
 	{
 		namespace vulkan
 		{
-			Device::Device(PhysicalDevice& gpu, vk::SurfaceKHR surface, std::vector<const char*> requested_extensions) :
+			Device::Device(PhysicalDevice& gpu, vk::AllocationCallbacks* allocation_callbacks, vk::SurfaceKHR surface, std::vector<const char*> requested_extensions) :
 				VulkanResource{ nullptr },
-				gpu(gpu)
+				gpu(gpu),
+				allocation_callbacks(allocation_callbacks)
 			{
 				// Prepare the device queues
 				auto& queue_family_properties = gpu.GetQueueFamilyProperties();

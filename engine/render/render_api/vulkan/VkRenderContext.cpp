@@ -160,6 +160,11 @@ void CVkRenderContext::Create(const FRenderContextCreateInfo& context_ci)
 	m_pDevice = std::make_unique<CVkRenderDevice>();
 	m_pDevice->Create(context_ci);
 
+	auto& swapchain = m_pDevice->GetSwapchain();
+
+	m_iSurfaceWidth = swapchain.extent.width;
+	m_iSurfaceHeight = swapchain.extent.height;
+
 	m_pResources = std::make_unique<vk_resource_container_t>();
 
 	FVkCommandBufferCreateInfo command_buffer_ci{};
