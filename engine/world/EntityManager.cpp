@@ -164,3 +164,9 @@ void CEntityManager::Update(f32 dt)
 	for (auto& system : m_vSystems)
 		system->Update(dt);
 }
+
+void CEntityManager::OnInputEvent(const InputEvent& input_event)
+{
+	for (auto& system : m_vSystems)
+		system->OnInputEvent(input_event);
+}

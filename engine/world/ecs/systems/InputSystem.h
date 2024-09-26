@@ -11,12 +11,6 @@ namespace engine
 	{
 		namespace ecs
 		{
-			struct FInputAction
-			{
-				//KeyState state;
-				//utl::vector<utl::reactive::function<void(EeyCode, KeyState)>> listeners;
-			};
-
 			struct FInputAxis
 			{
 				utl::vector<utl::reactive::function<void(f32, f32)>> listeners;
@@ -28,23 +22,15 @@ namespace engine
 				CInputSystem();
 				virtual ~CInputSystem() override = default;
 
+				void OnInputEvent(const InputEvent& input_event) override;
+
 				void __Create() override;
 				void __Update(f32 fDt) override;
 
-				//template <class... _Args>
-				//void createAction(const char* action_name, _Args &&...args)
-				//{
-				//	// static_assert(std::is_same_v<Args, EActionKey>&&..., "Type that you send to CreateAction is not supported.");
-				//	std::array<EKeyState, sizeof...(Args)> aKeys = { {args...} };
-				//	for (auto key : aKeys)
-				//	{
-				//		m_mInputDescriptor.emplace(std::make_pair(key, srActionName));
-				//	}
-				//}
 			protected:
-				//void keyInput(EKeyCode code, EKeyState state);
-				//void mouseMovementInput(f32 x, f32 y, f32 xmax, f32 ymax);
-				//void mouseWheelInput(f32 x, f32 y);
+				void HandleKeyboardInput(const KeyInputEvent& input_event);
+				void HandleMouseInput(const MouseButtonInputEvent& input_event);
+				void HandleTouchInput(const TouchInputEvent& input_event);
 			private:
 				CKeyDecoder m_keyDecoder{};
 				f32 m_deltaTime{ 0.f };

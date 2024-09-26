@@ -378,7 +378,7 @@ namespace engine
 
 	std::vector<const char*> GlfwWindow::GetRequiredSurfaceExtensions() const
 	{
-		uint32_t     glfw_extension_count{ 0 };
+		uint32_t glfw_extension_count{ 0 };
 		const char** names = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
 		return { names, names + glfw_extension_count };
 	}

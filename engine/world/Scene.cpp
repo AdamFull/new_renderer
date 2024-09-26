@@ -191,6 +191,11 @@ void CScene::Update(f32 dt)
 	CEntityManager::Update(dt);
 }
 
+void CScene::OnInputEvent(const InputEvent& input_event)
+{
+	CEntityManager::OnInputEvent(input_event);
+}
+
 void CScene::LoadGLTF(easygltf::FGLTFRoot& root)
 {
 	// Load textures

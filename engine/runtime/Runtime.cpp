@@ -144,12 +144,34 @@ namespace engine
 
 	void Runtime::OnResize(uint32_t width, uint32_t height)
 	{
+		auto extent = Window::Extent{ std::max<uint32_t>(width, 420), std::max<uint32_t>(height, 320) };
+		if ((window) && (width > 0) && (height > 0))
+		{
+			auto actual_extent = window->Resize(extent);
 
+			if (app)
+			{
+				app->OnResize(actual_extent.width, actual_extent.height);
+			}
+		}
 	}
 
 	void Runtime::OnInputEvent(const InputEvent& input_event)
 	{
+		if (process_input_events && app)
+		{
+			app->OnInputEvent(input_event);
+		}
 
+		if (input_event.GetSource() == EventSource::Keyboard)
+		{
+			const auto& key_event = static_cast<const KeyInputEvent&>(input_event);
+
+			if (key_event.GetCode() == KeyCode::Back || key_event.GetCode() == KeyCode::Escape)
+			{
+				Close();
+			}
+		}
 	}
 
 	Window& Runtime::GetWindow()

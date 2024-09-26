@@ -7,7 +7,7 @@
 
 #include <engine/profiler/Profiler.h>
 
-constexpr const f32 movement_scale{ 50.f };
+constexpr const f32 movement_scale{ 1.f };
 
 template<class _Ty>
 inline _Ty remap(_Ty input, _Ty in_min, _Ty in_max, _Ty out_min, _Ty out_max)
@@ -22,14 +22,31 @@ CInputSystem::CInputSystem()
 	
 }
 
+void CInputSystem::OnInputEvent(const InputEvent& input_event)
+{
+	switch (input_event.GetSource())
+	{
+	case EventSource::Keyboard: 
+	{
+		const auto& key_input = static_cast<const KeyInputEvent&>(input_event);
+		HandleKeyboardInput(key_input);
+	} break;
+	case EventSource::Mouse:
+	{
+		const auto& mouse_input = static_cast<const MouseButtonInputEvent&>(input_event);
+		HandleMouseInput(mouse_input);
+	} break;
+	case EventSource::Touchscreen:
+	{
+		const auto& touch_input = static_cast<const TouchInputEvent&>(input_event);
+		HandleTouchInput(touch_input);
+	} break;
+	}
+}
+
 void CInputSystem::__Create()
 {
 	TRACY_PROFILE_FUNCTION();
-
-	//FWindowCallbackMapper::SubscribeKeyInput(this, &CInputSystem::keyInput);
-	//FWindowCallbackMapper::SubscribeMousePosition(this, &CInputSystem::mouseMovementInput);
-	//FWindowCallbackMapper::SubscribeMouseScroll(this, &CInputSystem::mouseWheelInput);
-	//FWindowCallbackMapper::SubscribeMouseButton(this, &CInputSystem::keyInput);
 }
 
 void CInputSystem::__Update(f32 fDt)
@@ -41,13 +58,13 @@ void CInputSystem::__Update(f32 fDt)
 	glm::vec3 orbitCenter{ 0.0f, 0.0f, 0.0f };
 	f32 orbitDistance{ 10.0f };
 
-	//if (m_keyDecoder.Test(EKeyCode::eKeyW)) movF = 1.f;
-	//if (m_keyDecoder.Test(EKeyCode::eKeyS)) movF = -1.f;
-	//if (m_keyDecoder.Test(EKeyCode::eKeyA)) movR = -1.f;
-	//if (m_keyDecoder.Test(EKeyCode::eKeyD)) movR = 1.f;
-	//if (m_keyDecoder.Test(EKeyCode::eKeySpace)) movU = 1.f;
-	//if (m_keyDecoder.Test(EKeyCode::eKeyLCtrl)) movU = -1.f;
-	//if (m_keyDecoder.Test(EKeyCode::eMouseMiddle))
+	if (m_keyDecoder.Test(KeyCode::W)) movF = 1.f;
+	if (m_keyDecoder.Test(KeyCode::S)) movF = -1.f;
+	if (m_keyDecoder.Test(KeyCode::A)) movR = -1.f;
+	if (m_keyDecoder.Test(KeyCode::D)) movR = 1.f;
+	if (m_keyDecoder.Test(KeyCode::Space)) movU = 1.f;
+	if (m_keyDecoder.Test(KeyCode::LeftControl)) movU = -1.f;
+	//if (m_keyDecoder.Test(KeyCode::eMouseMiddle))
 	//	allowRotation = true;
 
 	f32 dX = (curX - oldX) * fDt;
@@ -104,18 +121,19 @@ void CInputSystem::__Update(f32 fDt)
 	}
 }
 
-//void CInputSystem::keyInput(EKeyCode code, EKeyState state)
-//{
-//	m_keyDecoder.Update(code, state == EKeyState::ePress);
-//}
-//
-//void CInputSystem::mouseMovementInput(f32 x, f32 y, f32 xmax, f32 ymax)
-//{
-//	curX = remap(x, 0.f, xmax, -1.f, 1.f);
-//	curY = remap(y, 0.f, ymax, -1.f, 1.f);
-//}
-//
-//void CInputSystem::mouseWheelInput(f32 x, f32 y)
-//{
-//
-//}
+void CInputSystem::HandleKeyboardInput(const KeyInputEvent& input_event)
+{
+	m_keyDecoder.Update(input_event.GetCode(), input_event.GetAction() == KeyAction::Down);
+}
+
+void CInputSystem::HandleMouseInput(const MouseButtonInputEvent& input_event)
+{
+	//	curX = remap(x, 0.f, xmax, -1.f, 1.f);
+	//	curY = remap(y, 0.f, ymax, -1.f, 1.f);
+	//input_event.GetPosX
+}
+
+void CInputSystem::HandleTouchInput(const TouchInputEvent& input_event)
+{
+
+}

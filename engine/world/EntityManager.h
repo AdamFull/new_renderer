@@ -169,6 +169,7 @@ namespace engine
 
 			static void Create();
 			static void Update(f32 dt);
+			static void OnInputEvent(const InputEvent& input_event);
 
 		private:
 			static entt::registry m_registry;

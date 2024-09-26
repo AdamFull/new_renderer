@@ -1,6 +1,7 @@
 #pragma once
 
 #include <utils/stopwatch.h>
+#include <engine/runtime/InputEvents.h>
 
 namespace engine
 {
@@ -15,6 +16,8 @@ namespace engine
 
 				virtual void Create();
 				void Update(f32 dt);
+
+				virtual void OnInputEvent(const InputEvent& input_event);
 
 			protected:
 				virtual void __Create() = 0;
