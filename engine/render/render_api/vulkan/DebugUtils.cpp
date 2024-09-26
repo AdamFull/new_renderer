@@ -1,4 +1,5 @@
 #include <engine/render/render_api/vulkan/DebugUtils.h>
+#include <engine/render/render_api/vulkan/Device.h>
 
 namespace engine
 {
@@ -6,16 +7,26 @@ namespace engine
 	{
 		namespace vulkan
 		{
-			void DebugUtilsExtDebugUtils::SetDebugName(vk::Device device, vk::ObjectType object_type, uint64_t object_handle, const char* name) const
+			DebugUtils::DebugUtils(Device& device) :
+				device{ device }
 			{
-				vk::DebugUtilsObjectNameInfoEXT name_info(object_type, object_handle, name);
-				device.setDebugUtilsObjectNameEXT(name_info);
 			}
 
-			void DebugUtilsExtDebugUtils::SetDebugTag(vk::Device device, vk::ObjectType object_type, uint64_t object_handle, uint64_t tag_name, const void* tag_data, size_t tag_data_size) const
+			DebugUtilsExtDebugUtils::DebugUtilsExtDebugUtils(Device& device) :
+				DebugUtils{ device }
+			{
+			}
+
+			void DebugUtilsExtDebugUtils::SetDebugName(vk::ObjectType object_type, uint64_t object_handle, const char* name) const
+			{
+				vk::DebugUtilsObjectNameInfoEXT name_info(object_type, object_handle, name);
+				Handle(device).setDebugUtilsObjectNameEXT(name_info);
+			}
+
+			void DebugUtilsExtDebugUtils::SetDebugTag(vk::ObjectType object_type, uint64_t object_handle, uint64_t tag_name, const void* tag_data, size_t tag_data_size) const
 			{
 				vk::DebugUtilsObjectTagInfoEXT tag_info(object_type, object_handle, tag_name, tag_data_size, tag_data);
-				device.setDebugUtilsObjectTagEXT(tag_info);
+				Handle(device).setDebugUtilsObjectTagEXT(tag_info);
 			}
 
 			void DebugUtilsExtDebugUtils::BeginLabel(vk::CommandBuffer command_buffer, const char* name, glm::vec4 const color) const
@@ -35,17 +46,22 @@ namespace engine
 				command_buffer.insertDebugUtilsLabelEXT(label_info);
 			}
 
-			void DebugMarkerExtDebugUtils::SetDebugName(vk::Device device, vk::ObjectType object_type, uint64_t object_handle, const char* name) const
+
+			DebugMarkerExtDebugUtils::DebugMarkerExtDebugUtils(Device& device) :
+				DebugUtils{ device }
 			{
-				vk::DebugMarkerObjectNameInfoEXT name_info(vk::debugReportObjectType(object_type), object_handle, name);
-				device.debugMarkerSetObjectNameEXT(name_info);
 			}
 
-			void DebugMarkerExtDebugUtils::SetDebugTag(
-				vk::Device device, vk::ObjectType object_type, uint64_t object_handle, uint64_t tag_name, const void* tag_data, size_t tag_data_size) const
+			void DebugMarkerExtDebugUtils::SetDebugName(vk::ObjectType object_type, uint64_t object_handle, const char* name) const
+			{
+				vk::DebugMarkerObjectNameInfoEXT name_info(vk::debugReportObjectType(object_type), object_handle, name);
+				Handle(device).debugMarkerSetObjectNameEXT(name_info);
+			}
+
+			void DebugMarkerExtDebugUtils::SetDebugTag(vk::ObjectType object_type, uint64_t object_handle, uint64_t tag_name, const void* tag_data, size_t tag_data_size) const
 			{
 				vk::DebugMarkerObjectTagInfoEXT tag_info(vk::debugReportObjectType(object_type), object_handle, tag_name, tag_data_size, tag_data);
-				device.debugMarkerSetObjectTagEXT(tag_info);
+				Handle(device).debugMarkerSetObjectTagEXT(tag_info);
 			}
 
 			void DebugMarkerExtDebugUtils::BeginLabel(vk::CommandBuffer command_buffer, const char* name, glm::vec4 const color) const
@@ -63,6 +79,13 @@ namespace engine
 			{
 				vk::DebugMarkerMarkerInfoEXT marker_info(name, reinterpret_cast<std::array<float, 4> const&>(*&color[0]));
 				command_buffer.debugMarkerInsertEXT(marker_info);
+			}
+
+
+			DummyDebugUtils::DummyDebugUtils(Device& device) :
+				DebugUtils{ device }
+			{
+
 			}
 		}
 	}

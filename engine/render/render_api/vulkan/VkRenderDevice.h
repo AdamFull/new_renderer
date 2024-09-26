@@ -159,9 +159,6 @@ namespace engine
 
 				const FSwapchain& GetSwapchain() const;
 			protected:
-				template<class _Ty>
-				void DebugSetObjectName(const _Ty& object, const std::string& name);
-
 				void RegisterAllocationCallbacks();
 				void EnableDeviceFeatures(PhysicalDevice& device);
 				void CreateMemoryAllocator(const FRenderContextCreateInfo& context_ci);

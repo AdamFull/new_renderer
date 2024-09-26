@@ -158,8 +158,6 @@ namespace engine
 					if (debugExtensionIt != available_instance_extensions.end())
 					{
 						log_info("Vulkan debug utils enabled ({})", VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-
-						debug_utils = std::make_unique<DebugUtilsExtDebugUtils>();
 						AddInstanceExtension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 					}
 				}
@@ -167,8 +165,6 @@ namespace engine
 
 				InstanceCreateInfo instance_ci{ "App", instance_extensions, validation_layers, layer_settings, headless, get_api_version(context_ci.apiVersion) };
 				instance = std::make_unique<Instance>(instance_ci);
-
-				//VULKAN_HPP_DEFAULT_DISPATCHER.init(Handle(*instance));
 
 				surface = context_ci.window->CreateSurface(Handle(*instance), m_allocationCallbacks);
 				if (!surface)
@@ -201,7 +197,7 @@ namespace engine
 				auto& physical_device = instance->GetBestDevice();
 
 #ifdef VULKAN_DEBUG
-				if (!debug_utils)
+				if (!instance->IsEnabled(VK_EXT_DEBUG_UTILS_EXTENSION_NAME))
 				{
 					std::vector<vk::ExtensionProperties> available_device_extensions = Handle(physical_device).enumerateDeviceExtensionProperties();
 					auto debugExtensionIt = std::find_if(available_device_extensions.begin(), available_device_extensions.end(),
@@ -209,22 +205,10 @@ namespace engine
 					if (debugExtensionIt != available_device_extensions.end())
 					{
 						log_info("Vulkan debug utils enabled ({})", VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
-
-						debug_utils = std::make_unique<DebugMarkerExtDebugUtils>();
 						AddDeviceExtension(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
 					}
 				}
-
-				if (!debug_utils)
-				{
-					log_warning("Vulkan debug utils were requested, but no extension that provides them was found");
-				}
 #endif
-
-				if (!debug_utils)
-				{
-					debug_utils = std::make_unique<DummyDebugUtils>();
-				}
 
 				// Enable vulkan features
 				EnableDeviceFeatures(physical_device);
@@ -249,6 +233,20 @@ namespace engine
 				requested_features.shaderInt64 = true;
 
 				device = std::make_unique<Device>(physical_device, surface, device_extensions);
+
+				// Create debug utils
+				if (instance->IsEnabled(VK_EXT_DEBUG_UTILS_EXTENSION_NAME))
+				{
+					debug_utils = std::make_unique<DebugUtilsExtDebugUtils>(*device);
+				}
+				else if (device->IsEnabled(VK_EXT_DEBUG_MARKER_EXTENSION_NAME))
+				{
+					debug_utils = std::make_unique<DebugMarkerExtDebugUtils>(*device);
+				}
+				else
+				{
+					debug_utils = std::make_unique<DummyDebugUtils>(*device);
+				}
 
 				CreateMemoryAllocator(context_ci);
 
@@ -287,7 +285,7 @@ namespace engine
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				std::stringstream ss{};
 				ss << command_pool_ci.threadId;
-				DebugSetObjectName(command_pool.handle, std::format("thread_id {}", ss.str()));
+				debug_utils->SetDebugName(command_pool.handle, std::format("thread_id {}", ss.str()));
 #endif
 
 				return make_api_error(command_pool.handle.objectType, res, "Failed to Create");
@@ -310,7 +308,7 @@ namespace engine
 				vk::Result res = Handle(*device).allocateCommandBuffers(&command_buffer_ai, command_buffer.handles.data());
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				for (i32 idx = 0; idx < command_buffer.handles.size(); ++idx)
-					DebugSetObjectName(command_buffer.get(), std::format("{} #{}", command_buffer_ci.name, idx));
+					debug_utils->SetDebugName(command_buffer.get(), std::format("{} #{}", command_buffer_ci.name, idx));
 #endif
 
 				command_buffer.mask = command_buffer_ci.mask;
@@ -356,7 +354,7 @@ namespace engine
 
 				vk::Result res = m_memoryAllocator.createImage(&image_ci.ci, &alloc_ci, &image.handle, &image.memory, nullptr);
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				DebugSetObjectName(image.handle, image_ci.name);
+				debug_utils->SetDebugName(image.handle, image_ci.name);
 #endif
 				return make_api_error(image.handle.objectType, res, "Failed to Create");
 			}
@@ -370,7 +368,7 @@ namespace engine
 			{
 				vk::Result res = Handle(*device).createImageView(&image_view_ci.ci, m_allocationCallbacks, &image_view);
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				DebugSetObjectName(image_view, image_view_ci.name);
+				debug_utils->SetDebugName(image_view, image_view_ci.name);
 #endif
 				return make_api_error(image_view.objectType, res, "Failed to Create");
 			}
@@ -408,7 +406,7 @@ namespace engine
 
 				vk::Result res = Handle(*device).createSampler(&ci, m_allocationCallbacks, &sampler);
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				DebugSetObjectName(sampler, sampler_ci.name);
+				debug_utils->SetDebugName(sampler, sampler_ci.name);
 #endif
 				return make_api_error(sampler.objectType, res, "Failed to Create");
 			}
@@ -433,7 +431,7 @@ namespace engine
 
 				vk::Result res = m_memoryAllocator.createBuffer(&ci, &alloc_ci, &buffer.handle, &buffer.memory, nullptr);
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				DebugSetObjectName(buffer.handle, buffer_ci.name);
+				debug_utils->SetDebugName(buffer.handle, buffer_ci.name);
 #endif
 				buffer.isAlive = true;
 
@@ -490,7 +488,7 @@ namespace engine
 
 				vk::Result res = Handle(*device).createDescriptorSetLayout(&descriptor_set_layout_ci, m_allocationCallbacks, &descriptor_set_layout);
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				DebugSetObjectName(descriptor_set_layout, layout_ci.name);
+				debug_utils->SetDebugName(descriptor_set_layout, layout_ci.name);
 #endif
 				return make_api_error(descriptor_set_layout.objectType, res, "Failed to Create");
 			}
@@ -520,7 +518,7 @@ namespace engine
 
 				vk::Result res = Handle(*device).createDescriptorPool(&descriptor_pool_ci, m_allocationCallbacks, &descriptor_pool.handle);
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				DebugSetObjectName(descriptor_pool.handle, pool_ci.name);
+				debug_utils->SetDebugName(descriptor_pool.handle, pool_ci.name);
 #endif
 
 				return make_api_error(descriptor_pool.handle.objectType, res, "Failed to Create");
@@ -557,7 +555,7 @@ namespace engine
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				for (u64 idx = 0ull; idx < descriptor_set.handles.size(); ++idx)
-					DebugSetObjectName(descriptor_set.handles.at(idx), std::format("{} #{}", set_ci.name, idx));
+					debug_utils->SetDebugName(descriptor_set.handles.at(idx), std::format("{} #{}", set_ci.name, idx));
 #endif
 
 				return make_api_error(vk::ObjectType::eDescriptorSet, res, "Failed to allocate");
@@ -576,7 +574,7 @@ namespace engine
 
 				vk::Result res = Handle(*device).createShaderModule(&module_ci, m_allocationCallbacks, &shader_module);
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				DebugSetObjectName(shader_module, shader_module_ci.name);
+				debug_utils->SetDebugName(shader_module, shader_module_ci.name);
 #endif
 				return make_api_error(shader_module.objectType, res, "Failed to Create");
 			}
@@ -595,7 +593,7 @@ namespace engine
 				layout_ci.pPushConstantRanges = pipeline_layout_ci.pushConstantRanges.data();
 				vk::Result res = Handle(*device).createPipelineLayout(&layout_ci, m_allocationCallbacks, &pipeline_layout);
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				DebugSetObjectName(pipeline_layout, pipeline_layout_ci.name);
+				debug_utils->SetDebugName(pipeline_layout, pipeline_layout_ci.name);
 #endif
 				return make_api_error(pipeline_layout.objectType, res, "Failed to Create");
 			}
@@ -710,7 +708,7 @@ namespace engine
 
 				vk::Result res = Handle(*device).createGraphicsPipelines(m_pipelineCache, 1u, &graphics_pipeline_ci, m_allocationCallbacks, &pipeline);
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				DebugSetObjectName(pipeline, pipeline_ci.name);
+				debug_utils->SetDebugName(pipeline, pipeline_ci.name);
 #endif
 				return make_api_error(pipeline.objectType, res, "Failed to Create");
 			}
@@ -725,7 +723,7 @@ namespace engine
 
 				vk::Result res = Handle(*device).createComputePipelines(m_pipelineCache, 1u, &compute_pipeline_ci, m_allocationCallbacks, &pipeline);
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				DebugSetObjectName(pipeline, pipeline_ci.name);
+				debug_utils->SetDebugName(pipeline, pipeline_ci.name);
 #endif
 				return make_api_error(pipeline.objectType, res, "Failed to Create");
 			}
@@ -739,7 +737,7 @@ namespace engine
 				//Handle(*device).createRayTracingPipelinesKHR()
 				vk::Result res;// = Handle(*device).createRayTracingPipelinesKHR(m_pipelineCache, 1u, &rtx_pipeline_ci, m_allocationCallbacks, &pipeline);
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				DebugSetObjectName(pipeline, pipeline_ci.name);
+				debug_utils->SetDebugName(pipeline, pipeline_ci.name);
 #endif
 				return make_api_error(pipeline.objectType, res, "Failed to Create");
 			}
@@ -753,7 +751,7 @@ namespace engine
 			{
 				vk::Result res = Handle(*device).createSemaphore(&semaphore_ci.ci, m_allocationCallbacks, &semaphore);
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				DebugSetObjectName(semaphore, semaphore_ci.name);
+				debug_utils->SetDebugName(semaphore, semaphore_ci.name);
 #endif
 				return make_api_error(semaphore.objectType, res, "Failed to Create");
 			}
@@ -762,7 +760,7 @@ namespace engine
 			{
 				vk::Result res = Handle(*device).createFence(&fence_ci.ci, m_allocationCallbacks, &fence);
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				DebugSetObjectName(fence, fence_ci.name);
+				debug_utils->SetDebugName(fence, fence_ci.name);
 #endif
 				return make_api_error(fence.objectType, res, "Failed to Create");
 			}
@@ -1099,18 +1097,6 @@ namespace engine
 				return m_swapchain;
 			}
 
-			template<class _Ty>
-			void CVkRenderDevice::DebugSetObjectName(const _Ty& object, const std::string& name)
-			{
-				if (debug_utils)
-				{
-					auto object_id = reinterpret_cast<u64>(static_cast<_Ty::CType>(object));
-					auto formatted_debug_object_name = std::format("{}:{} | {:x}", vk::to_string(object.objectType), name, object_id);
-
-					debug_utils->SetDebugName(Handle(*device), object.objectType, object_id, name.c_str());
-				}
-			}
-
 			void CVkRenderDevice::RegisterAllocationCallbacks()
 			{
 				m_allocationCallbacks = new vk::AllocationCallbacks();
@@ -1269,7 +1255,7 @@ namespace engine
 				{
 					const auto& image = m_swapchain.images[idx];
 					auto name = std::format("swapchain_image_{}", idx);
-					DebugSetObjectName(image, name);
+					debug_utils->SetDebugName(image, name);
 				}
 #endif
 
