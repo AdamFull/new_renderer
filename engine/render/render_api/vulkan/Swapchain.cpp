@@ -293,10 +293,35 @@ namespace engine
 				create_info.clipped = VK_TRUE;
 				create_info.oldSwapchain = properties.old_swapchain;
 
-				device.CreateObject(create_info, handle);
+				vk::Result res = device.CreateObject(create_info, handle);
 				//Handle(device).destroySwapchainKHR(old_swapchain);
 
 				images = Handle(device).getSwapchainImagesKHR(handle);
+
+				// Create image views
+
+				image_views.resize(image_count);
+
+				vk::ImageViewCreateInfo image_view_ci{};
+				image_view_ci.viewType = vk::ImageViewType::e2D;
+				image_view_ci.format = properties.surface_format.format;
+				image_view_ci.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+				image_view_ci.subresourceRange.baseMipLevel = 0;
+				image_view_ci.subresourceRange.levelCount = 1;
+				image_view_ci.subresourceRange.baseArrayLayer = 0;
+				image_view_ci.subresourceRange.layerCount = 1;
+				image_view_ci.components.r = vk::ComponentSwizzle::eR;
+				image_view_ci.components.g = vk::ComponentSwizzle::eG;
+				image_view_ci.components.b = vk::ComponentSwizzle::eB;
+				image_view_ci.components.a = vk::ComponentSwizzle::eA;
+
+				// TODO: Pass here debug utils for name image views
+				for (int32_t i = 0; i < image_count; ++i)
+				{
+					image_view_ci.image = images[i];
+					// TODO: Handle result
+					device.CreateObject(image_view_ci, image_views[i]);
+				}
 			}
 
 			Swapchain::~Swapchain()
@@ -306,9 +331,10 @@ namespace engine
 					device.DestroyObject(handle);
 				}
 
-				for (int32_t i = 0; i < image_views.size(); ++i)
+				// Destroy image views
+				for (auto& image_view : image_views)
 				{
-					
+					device.DestroyObject(image_view);
 				}
 			}
 
@@ -317,6 +343,7 @@ namespace engine
 				device{ other.device },
 				surface{ std::exchange(other.surface, nullptr) },
 				images{ std::exchange(other.images, {}) },
+				image_views{ std::exchange(other.image_views, {}) },
 				properties{ std::exchange(other.properties, {}) },
 				present_mode_priority_list{ std::exchange(other.present_mode_priority_list, {}) },
 				surface_format_priority_list{ std::exchange(other.surface_format_priority_list, {}) },
@@ -377,6 +404,11 @@ namespace engine
 			vk::PresentModeKHR Swapchain::GetPresentMode() const
 			{
 				return properties.present_mode;
+			}
+
+			uint32_t Swapchain::GetImageCount() const
+			{
+				return properties.image_count;
 			}
 		}
 	}

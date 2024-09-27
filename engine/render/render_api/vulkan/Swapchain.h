@@ -96,6 +96,8 @@ namespace engine
 
 				vk::PresentModeKHR GetPresentMode() const;
 
+				uint32_t GetImageCount() const;
+
 			private:
 				Device& device;
 

@@ -1097,6 +1097,11 @@ namespace engine
 				return pipeline_cache_data;
 			}
 
+			const std::vector<vk::SurfaceFormatKHR>& VkRenderDevice::GetSurfacePriorityList() const
+			{
+				return surface_priority_list;
+			}
+
 			const FSwapchain& VkRenderDevice::GetSwapchain() const
 			{
 				return m_swapchain;
