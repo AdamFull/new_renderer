@@ -26,14 +26,14 @@ namespace engine
 			class Device;
 
 			// =================================================================================
-			// =================================CVkRenderDevice================================
+			// =================================VkRenderDevice================================
 			// =================================================================================
-			class CVkRenderDevice
+			class VkRenderDevice
 			{
 			public:
 				friend class VkRenderBackend;
 
-				~CVkRenderDevice();
+				~VkRenderDevice();
 
 				/**
 				 * @brief Add a sample-specific device extension

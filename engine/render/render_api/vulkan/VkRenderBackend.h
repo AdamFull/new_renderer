@@ -101,7 +101,7 @@ namespace engine
 				utl::vector<FVkCommandBuffer>& GetCommandBuffers(EQueueTypeFlagBits queue_type, std::thread::id thread_id = std::this_thread::get_id());
 				void DestroyCommandBuffer(EQueueTypeFlagBits queue_type, std::thread::id thread_id = std::this_thread::get_id());
 
-				const std::unique_ptr<CVkRenderDevice>& getDevice() const;
+				const std::unique_ptr<VkRenderDevice>& getDevice() const;
 
 				void BeginFrame() override;
 				void EndFrame() override;
@@ -135,7 +135,7 @@ namespace engine
 				void CopyBufferToTexture(const FVkCommandBuffer& command_buffer, const FVkBuffer& buffer, const FVkTexture& texture, const utl::vector<vk::BufferImageCopy2KHR>& copy_regions);
 				//void blitImage(const FVkCommandBuffer& command_buffer, );
 			private:
-				std::unique_ptr<CVkRenderDevice> m_pDevice{};
+				std::unique_ptr<VkRenderDevice> m_pDevice{};
 				std::unique_ptr<vk_resource_container_t> m_pResources;
 
 				utl::vector<FTextureUploadInfo> m_textureUploadInfos{};

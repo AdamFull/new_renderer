@@ -8,7 +8,7 @@
 //	initialize();
 //}
 //
-//CVkDescriptorAllocator::CVkDescriptorAllocator(CVkRenderDevice* device)
+//CVkDescriptorAllocator::CVkDescriptorAllocator(VkRenderDevice* device)
 //{
 //	m_pDevice = device;
 //	initialize();

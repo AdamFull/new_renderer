@@ -157,7 +157,7 @@ VkRenderBackend::~VkRenderBackend()
 
 void VkRenderBackend::Create(const FRenderContextCreateInfo& context_ci)
 {
-	m_pDevice = std::make_unique<CVkRenderDevice>();
+	m_pDevice = std::make_unique<VkRenderDevice>();
 	m_pDevice->Create(context_ci);
 
 	auto& swapchain = m_pDevice->GetSwapchain();
@@ -1793,7 +1793,7 @@ void VkRenderBackend::DestroyCommandBuffer(EQueueTypeFlagBits queue_type, std::t
 	per_queue.commandBuffers.pop_back();
 }
 
-const std::unique_ptr<CVkRenderDevice>& VkRenderBackend::getDevice() const
+const std::unique_ptr<VkRenderDevice>& VkRenderBackend::getDevice() const
 {
 	return m_pDevice;
 }

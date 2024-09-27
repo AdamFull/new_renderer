@@ -84,7 +84,7 @@ namespace engine
 				return 0u;
 			}
 
-			CVkRenderDevice::~CVkRenderDevice()
+			VkRenderDevice::~VkRenderDevice()
 			{
 				CleanupSwapchain();
 				device->DestroyObject(m_swapchain.handle);
@@ -105,22 +105,22 @@ namespace engine
 #endif
 			}
 
-			void CVkRenderDevice::AddDeviceExtension(const char* extension)
+			void VkRenderDevice::AddDeviceExtension(const char* extension)
 			{
 				device_extensions.emplace_back(extension);
 			}
 
-			void CVkRenderDevice::AddInstanceExtension(const char* extension)
+			void VkRenderDevice::AddInstanceExtension(const char* extension)
 			{
 				instance_extensions.emplace_back(extension);
 			}
 
-			void CVkRenderDevice::AddLayerSetting(vk::LayerSettingEXT const& layerSetting)
+			void VkRenderDevice::AddLayerSetting(vk::LayerSettingEXT const& layerSetting)
 			{
 				layer_settings.emplace_back(layerSetting);
 			}
 
-			void CVkRenderDevice::Create(const FRenderContextCreateInfo& context_ci)
+			void VkRenderDevice::Create(const FRenderContextCreateInfo& context_ci)
 			{
 				// Register dispatcher
 				PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr = m_dynamicLoader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
@@ -255,7 +255,7 @@ namespace engine
 				check_api_result(CreateSwapchain(extent.width, extent.height));
 			}
 
-			FRenderApiErrorInfo CVkRenderDevice::CreateCommandPool(const FVkCommandPoolCreateInfo& command_pool_ci, FVkCommandPool& command_pool)
+			FRenderApiErrorInfo VkRenderDevice::CreateCommandPool(const FVkCommandPoolCreateInfo& command_pool_ci, FVkCommandPool& command_pool)
 			{
 				const bool is_compute_queue = (command_pool_ci.mask & EQueueTypeFlagBits::eCompute) != 0;
 				const bool is_transfer_queue = (command_pool_ci.mask & EQueueTypeFlagBits::eTransfer) != 0;
@@ -291,12 +291,12 @@ namespace engine
 				return make_api_error(command_pool.handle.objectType, res, "Failed to Create");
 			}
 
-			void CVkRenderDevice::DestroyCommandPool(FVkCommandPool& command_pool)
+			void VkRenderDevice::DestroyCommandPool(FVkCommandPool& command_pool)
 			{
 				Handle(*device).destroyCommandPool(command_pool.handle, m_allocationCallbacks);
 			}
 
-			FRenderApiErrorInfo CVkRenderDevice::CreateCommandBuffer(const FVkCommandBufferCreateInfo& command_buffer_ci, const FVkCommandPool& command_pool, FVkCommandBuffer& command_buffer)
+			FRenderApiErrorInfo VkRenderDevice::CreateCommandBuffer(const FVkCommandBufferCreateInfo& command_buffer_ci, const FVkCommandPool& command_pool, FVkCommandBuffer& command_buffer)
 			{
 				vk::CommandBufferAllocateInfo command_buffer_ai{};
 				command_buffer_ai.commandPool = command_pool.handle;
@@ -316,12 +316,12 @@ namespace engine
 				return make_api_error(vk::ObjectType::eCommandBuffer, res, "Failed to allocate");
 			}
 
-			void CVkRenderDevice::DestroyCommandBuffer(const FVkCommandPool& command_pool, FVkCommandBuffer& command_buffer)
+			void VkRenderDevice::DestroyCommandBuffer(const FVkCommandPool& command_pool, FVkCommandBuffer& command_buffer)
 			{
 				Handle(*device).freeCommandBuffers(command_pool.handle, command_buffer.handles);
 			}
 
-			void CVkRenderDevice::BeginCommandBuffer(FVkCommandBuffer& command_buffer, vk::CommandBufferUsageFlags usage, u32 image_index)
+			void VkRenderDevice::BeginCommandBuffer(FVkCommandBuffer& command_buffer, vk::CommandBufferUsageFlags usage, u32 image_index)
 			{
 				if (command_buffer.isRunning)
 					return;
@@ -336,7 +336,7 @@ namespace engine
 				command_buffer.isRunning = true;
 			}
 
-			void CVkRenderDevice::EndCommandBuffer(FVkCommandBuffer& command_buffer)
+			void VkRenderDevice::EndCommandBuffer(FVkCommandBuffer& command_buffer)
 			{
 				if (!command_buffer.isRunning)
 					return;
@@ -347,7 +347,7 @@ namespace engine
 				command_buffer.isRunning = false;
 			}
 
-			FRenderApiErrorInfo CVkRenderDevice::CreateImage(const FVkImageCreateInfo& image_ci, FVkImage& image)
+			FRenderApiErrorInfo VkRenderDevice::CreateImage(const FVkImageCreateInfo& image_ci, FVkImage& image)
 			{
 				vma::AllocationCreateInfo alloc_ci{};
 				alloc_ci.usage = image_ci.memoryUsage;
@@ -359,12 +359,12 @@ namespace engine
 				return make_api_error(image.handle.objectType, res, "Failed to Create");
 			}
 
-			void CVkRenderDevice::DestroyImage(FVkImage& image)
+			void VkRenderDevice::DestroyImage(FVkImage& image)
 			{
 				m_memoryAllocator.destroyImage(image.handle, image.memory);
 			}
 
-			FRenderApiErrorInfo CVkRenderDevice::CreateImageView(const FVkImageViewCreateInfo& image_view_ci, vk::ImageView& image_view)
+			FRenderApiErrorInfo VkRenderDevice::CreateImageView(const FVkImageViewCreateInfo& image_view_ci, vk::ImageView& image_view)
 			{
 				vk::Result res = Handle(*device).createImageView(&image_view_ci.ci, m_allocationCallbacks, &image_view);
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -373,12 +373,12 @@ namespace engine
 				return make_api_error(image_view.objectType, res, "Failed to Create");
 			}
 
-			void CVkRenderDevice::DestroyImageView(vk::ImageView& image_view)
+			void VkRenderDevice::DestroyImageView(vk::ImageView& image_view)
 			{
 				Handle(*device).destroyImageView(image_view, m_allocationCallbacks);
 			}
 
-			FRenderApiErrorInfo CVkRenderDevice::CreateSampler(const FVkSamplerCreateInfo& sampler_ci, vk::Sampler& sampler)
+			FRenderApiErrorInfo VkRenderDevice::CreateSampler(const FVkSamplerCreateInfo& sampler_ci, vk::Sampler& sampler)
 			{
 				auto& physical_device = instance->GetBestDevice();
 
@@ -411,12 +411,12 @@ namespace engine
 				return make_api_error(sampler.objectType, res, "Failed to Create");
 			}
 
-			void CVkRenderDevice::DestroySampler(vk::Sampler& sampler)
+			void VkRenderDevice::DestroySampler(vk::Sampler& sampler)
 			{
 				Handle(*device).destroySampler(sampler, m_allocationCallbacks);
 			}
 
-			FRenderApiErrorInfo CVkRenderDevice::CreateBuffer(const FVkBufferCreateInfo& buffer_ci, FVkBuffer& buffer)
+			FRenderApiErrorInfo VkRenderDevice::CreateBuffer(const FVkBufferCreateInfo& buffer_ci, FVkBuffer& buffer)
 			{
 				auto alligned_instance_size = get_alligned_instance_size(buffer_ci.instanceSize, buffer_ci.minOffsetAlignment);
 
@@ -445,14 +445,14 @@ namespace engine
 				return make_api_error(buffer.handle.objectType, res, "Failed to Create");
 			}
 
-			void CVkRenderDevice::DestroyBuffer(FVkBuffer& buffer)
+			void VkRenderDevice::DestroyBuffer(FVkBuffer& buffer)
 			{
 				UnmapBufferMemory(buffer);
 				m_memoryAllocator.destroyBuffer(buffer.handle, buffer.memory);
 				buffer.isAlive = false;
 			}
 
-			FRenderApiErrorInfo CVkRenderDevice::MapBufferMemory(FVkBuffer& buffer, void** mappedMemory)
+			FRenderApiErrorInfo VkRenderDevice::MapBufferMemory(FVkBuffer& buffer, void** mappedMemory)
 			{
 				if (!buffer.isMapped)
 				{
@@ -464,7 +464,7 @@ namespace engine
 				return make_api_error(vk::ObjectType::eBuffer, vk::Result::eSuccess);
 			}
 
-			void CVkRenderDevice::UnmapBufferMemory(FVkBuffer& buffer)
+			void VkRenderDevice::UnmapBufferMemory(FVkBuffer& buffer)
 			{
 				if (buffer.isMapped)
 				{
@@ -473,12 +473,12 @@ namespace engine
 				}
 			}
 
-			void CVkRenderDevice::FlushBufferMemory(const FVkBuffer& buffer, vk::DeviceSize size, vk::DeviceSize offset)
+			void VkRenderDevice::FlushBufferMemory(const FVkBuffer& buffer, vk::DeviceSize size, vk::DeviceSize offset)
 			{
 				m_memoryAllocator.flushAllocation(buffer.memory, size, offset);
 			}
 
-			FRenderApiErrorInfo CVkRenderDevice::CreateDescriptorSetLayout(const FVkDescriptorSetLayoutCreateInfo& layout_ci, vk::DescriptorSetLayout& descriptor_set_layout)
+			FRenderApiErrorInfo VkRenderDevice::CreateDescriptorSetLayout(const FVkDescriptorSetLayoutCreateInfo& layout_ci, vk::DescriptorSetLayout& descriptor_set_layout)
 			{
 				vk::DescriptorSetLayoutCreateInfo descriptor_set_layout_ci{};
 				descriptor_set_layout_ci.bindingCount = utl::cast<u32>(layout_ci.layoutBindings.size());
@@ -493,12 +493,12 @@ namespace engine
 				return make_api_error(descriptor_set_layout.objectType, res, "Failed to Create");
 			}
 
-			void CVkRenderDevice::DestroyDescriptorSetLayout(vk::DescriptorSetLayout& descriptor_set_layout)
+			void VkRenderDevice::DestroyDescriptorSetLayout(vk::DescriptorSetLayout& descriptor_set_layout)
 			{
 				Handle(*device).destroyDescriptorSetLayout(descriptor_set_layout, m_allocationCallbacks);
 			}
 
-			FRenderApiErrorInfo CVkRenderDevice::CreateDescriptorPool(const FVkDescriptorPoolCreateInfo& pool_ci, FVkDescriptorPool& descriptor_pool)
+			FRenderApiErrorInfo VkRenderDevice::CreateDescriptorPool(const FVkDescriptorPoolCreateInfo& pool_ci, FVkDescriptorPool& descriptor_pool)
 			{
 				utl::vector<vk::DescriptorPoolSize> pool_sizes{ pool_ci.poolSizes };
 
@@ -524,23 +524,23 @@ namespace engine
 				return make_api_error(descriptor_pool.handle.objectType, res, "Failed to Create");
 			}
 
-			FRenderApiErrorInfo CVkRenderDevice::GrowDescriptorPool(const FVkDescriptorPoolCreateInfo& pool_ci, FVkDescriptorPool& descriptor_pool)
+			FRenderApiErrorInfo VkRenderDevice::GrowDescriptorPool(const FVkDescriptorPoolCreateInfo& pool_ci, FVkDescriptorPool& descriptor_pool)
 			{
 				DestroyDescriptorPool(descriptor_pool);
 				return CreateDescriptorPool(pool_ci, descriptor_pool);
 			}
 
-			void CVkRenderDevice::ResetDescriptorPool(FVkDescriptorPool& descriptor_pool)
+			void VkRenderDevice::ResetDescriptorPool(FVkDescriptorPool& descriptor_pool)
 			{
 				Handle(*device).resetDescriptorPool(descriptor_pool.handle);
 			}
 
-			void CVkRenderDevice::DestroyDescriptorPool(FVkDescriptorPool& descriptor_pool)
+			void VkRenderDevice::DestroyDescriptorPool(FVkDescriptorPool& descriptor_pool)
 			{
 				Handle(*device).destroyDescriptorPool(descriptor_pool.handle, m_allocationCallbacks);
 			}
 
-			FRenderApiErrorInfo CVkRenderDevice::CreateDescriptorSet(const FVkDescriptorSetCreateInfo& set_ci, FVkDescriptorSet& descriptor_set)
+			FRenderApiErrorInfo VkRenderDevice::CreateDescriptorSet(const FVkDescriptorSetCreateInfo& set_ci, FVkDescriptorSet& descriptor_set)
 			{
 				utl::vector<vk::DescriptorSetLayout> per_frame_layout(set_ci.descriptorCount, set_ci.layout);
 
@@ -561,12 +561,12 @@ namespace engine
 				return make_api_error(vk::ObjectType::eDescriptorSet, res, "Failed to allocate");
 			}
 
-			void CVkRenderDevice::DestroyDescriptorSet(const FVkDescriptorPool& descriptor_pool, FVkDescriptorSet& descriptor_set)
+			void VkRenderDevice::DestroyDescriptorSet(const FVkDescriptorPool& descriptor_pool, FVkDescriptorSet& descriptor_set)
 			{
 				Handle(*device).freeDescriptorSets(descriptor_pool.handle, descriptor_set.handles);
 			}
 
-			FRenderApiErrorInfo CVkRenderDevice::CreateShaderModule(const FVkShaderModuleCreateInfo& shader_module_ci, vk::ShaderModule& shader_module)
+			FRenderApiErrorInfo VkRenderDevice::CreateShaderModule(const FVkShaderModuleCreateInfo& shader_module_ci, vk::ShaderModule& shader_module)
 			{
 				vk::ShaderModuleCreateInfo module_ci{};
 				module_ci.codeSize = shader_module_ci.shaderCode->size() * sizeof(u32);
@@ -579,12 +579,12 @@ namespace engine
 				return make_api_error(shader_module.objectType, res, "Failed to Create");
 			}
 
-			void CVkRenderDevice::DestroyShaderModule(vk::ShaderModule& shader_module)
+			void VkRenderDevice::DestroyShaderModule(vk::ShaderModule& shader_module)
 			{
 				Handle(*device).destroyShaderModule(shader_module, m_allocationCallbacks);
 			}
 
-			FRenderApiErrorInfo CVkRenderDevice::CreatePipelineLayout(const FVkPipelineLayoutCreateInfo& pipeline_layout_ci, vk::PipelineLayout& pipeline_layout)
+			FRenderApiErrorInfo VkRenderDevice::CreatePipelineLayout(const FVkPipelineLayoutCreateInfo& pipeline_layout_ci, vk::PipelineLayout& pipeline_layout)
 			{
 				vk::PipelineLayoutCreateInfo layout_ci{};
 				layout_ci.setLayoutCount = utl::cast<u32>(pipeline_layout_ci.descriptorSetLayouts.size());
@@ -598,12 +598,12 @@ namespace engine
 				return make_api_error(pipeline_layout.objectType, res, "Failed to Create");
 			}
 
-			void CVkRenderDevice::DestroyPipelineLayout(vk::PipelineLayout& pipeline_layout)
+			void VkRenderDevice::DestroyPipelineLayout(vk::PipelineLayout& pipeline_layout)
 			{
 				Handle(*device).destroyPipelineLayout(pipeline_layout, m_allocationCallbacks);
 			}
 
-			FRenderApiErrorInfo CVkRenderDevice::CreatePipeline(const FVkGraphicsPipelineCreateInfo& pipeline_ci, vk::Pipeline& pipeline)
+			FRenderApiErrorInfo VkRenderDevice::CreatePipeline(const FVkGraphicsPipelineCreateInfo& pipeline_ci, vk::Pipeline& pipeline)
 			{
 				vk::PipelineVertexInputStateCreateInfo vertex_input_state{};
 				vertex_input_state.vertexAttributeDescriptionCount = utl::cast<u32>(pipeline_ci.vertexAttributeDescriptions.size());
@@ -713,7 +713,7 @@ namespace engine
 				return make_api_error(pipeline.objectType, res, "Failed to Create");
 			}
 
-			FRenderApiErrorInfo CVkRenderDevice::CreatePipeline(const FVkComputePipelineCreateInfo& pipeline_ci, vk::Pipeline& pipeline)
+			FRenderApiErrorInfo VkRenderDevice::CreatePipeline(const FVkComputePipelineCreateInfo& pipeline_ci, vk::Pipeline& pipeline)
 			{
 				vk::ComputePipelineCreateInfo compute_pipeline_ci{};
 				compute_pipeline_ci.stage = pipeline_ci.shaderStage;
@@ -728,7 +728,7 @@ namespace engine
 				return make_api_error(pipeline.objectType, res, "Failed to Create");
 			}
 
-			FRenderApiErrorInfo CVkRenderDevice::CreatePipeline(const FVkRayTracingPipelineCreateInfo& pipeline_ci, vk::Pipeline& pipeline)
+			FRenderApiErrorInfo VkRenderDevice::CreatePipeline(const FVkRayTracingPipelineCreateInfo& pipeline_ci, vk::Pipeline& pipeline)
 			{
 				vk::RayTracingShaderGroupCreateInfoKHR shader_group_ci{};
 				vk::RayTracingShaderGroupTypeKHR;
@@ -742,12 +742,12 @@ namespace engine
 				return make_api_error(pipeline.objectType, res, "Failed to Create");
 			}
 
-			void CVkRenderDevice::DestroyPipeline(vk::Pipeline& pipeline)
+			void VkRenderDevice::DestroyPipeline(vk::Pipeline& pipeline)
 			{
 				Handle(*device).destroyPipeline(pipeline, m_allocationCallbacks);
 			}
 
-			FRenderApiErrorInfo CVkRenderDevice::CreateSemaphore(const FVkSemaphoreCreateInfo& semaphore_ci, vk::Semaphore& semaphore)
+			FRenderApiErrorInfo VkRenderDevice::CreateSemaphore(const FVkSemaphoreCreateInfo& semaphore_ci, vk::Semaphore& semaphore)
 			{
 				vk::Result res = Handle(*device).createSemaphore(&semaphore_ci.ci, m_allocationCallbacks, &semaphore);
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -756,7 +756,7 @@ namespace engine
 				return make_api_error(semaphore.objectType, res, "Failed to Create");
 			}
 
-			FRenderApiErrorInfo CVkRenderDevice::CreateFence(const FVkFenceCreateInfo& fence_ci, vk::Fence& fence)
+			FRenderApiErrorInfo VkRenderDevice::CreateFence(const FVkFenceCreateInfo& fence_ci, vk::Fence& fence)
 			{
 				vk::Result res = Handle(*device).createFence(&fence_ci.ci, m_allocationCallbacks, &fence);
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -765,7 +765,7 @@ namespace engine
 				return make_api_error(fence.objectType, res, "Failed to Create");
 			}
 
-			FRenderApiErrorInfo CVkRenderDevice::CreateTimestampQuery(u32 count, FVkTimestampQuery& timestamp_query)
+			FRenderApiErrorInfo VkRenderDevice::CreateTimestampQuery(u32 count, FVkTimestampQuery& timestamp_query)
 			{
 				vk::QueryPoolCreateInfo query_pool_ci{};
 				query_pool_ci.queryType = vk::QueryType::eTimestamp;
@@ -779,26 +779,26 @@ namespace engine
 				return make_api_error(timestamp_query.handle.objectType, res, "Failed to Create");
 			}
 
-			void CVkRenderDevice::ResetTimestampQuery(FVkTimestampQuery& timestamp_query)
+			void VkRenderDevice::ResetTimestampQuery(FVkTimestampQuery& timestamp_query)
 			{
 				Handle(*device).resetQueryPool(timestamp_query.handle, 0u, static_cast<u32>(timestamp_query.values.size()));
 				timestamp_query.queryIndex = 0u;
 			}
 
-			void CVkRenderDevice::ResetTimestampQuery(FVkCommandBuffer& command_buffer, FVkTimestampQuery& timestamp_query)
+			void VkRenderDevice::ResetTimestampQuery(FVkCommandBuffer& command_buffer, FVkTimestampQuery& timestamp_query)
 			{
 				auto& current_buffer = command_buffer.get();
 				current_buffer.resetQueryPool(timestamp_query.handle, 0u, static_cast<u32>(timestamp_query.values.size()));
 				timestamp_query.queryIndex = 0u;
 			}
 
-			void CVkRenderDevice::WriteTimestampQuery(FVkCommandBuffer& command_buffer, vk::PipelineStageFlagBits pipeline_state, FVkTimestampQuery& timestamp_query)
+			void VkRenderDevice::WriteTimestampQuery(FVkCommandBuffer& command_buffer, vk::PipelineStageFlagBits pipeline_state, FVkTimestampQuery& timestamp_query)
 			{
 				auto& current_buffer = command_buffer.get();
 				current_buffer.writeTimestamp(pipeline_state, timestamp_query.handle, timestamp_query.queryIndex++);
 			}
 
-			FRenderApiErrorInfo CVkRenderDevice::GetTimestampQueryResults(FVkTimestampQuery& timestamp_query, utl::vector<f32>& results)
+			FRenderApiErrorInfo VkRenderDevice::GetTimestampQueryResults(FVkTimestampQuery& timestamp_query, utl::vector<f32>& results)
 			{
 				vk::Result res = Handle(*device).getQueryPoolResults(
 					timestamp_query.handle,
@@ -824,13 +824,13 @@ namespace engine
 				return make_api_error(timestamp_query.handle.objectType, res, "Failed to get.");
 			}
 
-			void CVkRenderDevice::DestroyTimestampQuery(FVkTimestampQuery& timestamp_query)
+			void VkRenderDevice::DestroyTimestampQuery(FVkTimestampQuery& timestamp_query)
 			{
 				Handle(*device).destroyQueryPool(timestamp_query.handle);
 				timestamp_query.values.clear();
 			}
 
-			void CVkRenderDevice::GetOccupedDeviceMemory(vk::MemoryHeapFlags memory_flags, u64& total_memory, u64& used_memory)
+			void VkRenderDevice::GetOccupedDeviceMemory(vk::MemoryHeapFlags memory_flags, u64& total_memory, u64& used_memory)
 			{
 				vk::PhysicalDeviceMemoryBudgetPropertiesEXT memory_budget_props{};
 				vk::PhysicalDeviceMemoryProperties2 memory_props{};
@@ -853,7 +853,7 @@ namespace engine
 				}
 			}
 
-			void CVkRenderDevice::SubmitCommandBuffer(const FVkCommandBuffer& command_buffer)
+			void VkRenderDevice::SubmitCommandBuffer(const FVkCommandBuffer& command_buffer)
 			{
 				vk::SubmitInfo submitInfo{};
 				submitInfo.commandBufferCount = utl::cast<u32>(command_buffer.handles.size());
@@ -871,7 +871,7 @@ namespace engine
 				Handle(*device).destroyFence(fence, m_allocationCallbacks);
 			}
 
-			vk::Result CVkRenderDevice::Present(FVkCommandBuffer& command_buffer)
+			vk::Result VkRenderDevice::Present(FVkCommandBuffer& command_buffer)
 			{
 				vk::Result res = Handle(*device).resetFences(1, &m_swapchain.inFlightFences.at(m_swapchain.currentFrame));
 				check_api_result(make_api_error(vk::ObjectType::eFence, res, "Failed to reset"));
@@ -930,12 +930,12 @@ namespace engine
 				return res;
 			}
 
-			vk::Result CVkRenderDevice::AcquireNextImage(u32& image_index)
+			vk::Result VkRenderDevice::AcquireNextImage(u32& image_index)
 			{
 				return Handle(*device).acquireNextImageKHR(m_swapchain.handle, (std::numeric_limits<u64>::max)(), m_swapchain.imageAvaliableSemaphores[m_swapchain.currentFrame], nullptr, &image_index);
 			}
 
-			void CVkRenderDevice::DebugBeginLabel(vk::CommandBuffer& command_buffer, const std::string& name, u32 color)
+			void VkRenderDevice::DebugBeginLabel(vk::CommandBuffer& command_buffer, const std::string& name, u32 color)
 			{
 #ifndef BUILD_WITHOUT_DEBUGGIND
 #ifdef ENABLE_TRACY_PROFILING
@@ -945,42 +945,42 @@ namespace engine
 #endif
 			}
 
-			void CVkRenderDevice::DebugInsertLabel(vk::CommandBuffer& command_buffer, const std::string& name, u32 color)
+			void VkRenderDevice::DebugInsertLabel(vk::CommandBuffer& command_buffer, const std::string& name, u32 color)
 			{
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				command_buffer.insertDebugUtilsLabelEXT(make_debug_label(name.c_str(), color));
 #endif
 			}
 
-			void CVkRenderDevice::EndLabel(vk::CommandBuffer& command_buffer)
+			void VkRenderDevice::EndLabel(vk::CommandBuffer& command_buffer)
 			{
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				command_buffer.endDebugUtilsLabelEXT();
 #endif
 			}
 
-			void CVkRenderDevice::DebugBeginLabel(vk::Queue& queue, const std::string& name, u32 color)
+			void VkRenderDevice::DebugBeginLabel(vk::Queue& queue, const std::string& name, u32 color)
 			{
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				queue.beginDebugUtilsLabelEXT(make_debug_label(name.c_str(), color));
 #endif
 			}
 
-			void CVkRenderDevice::DebugInsertLabel(vk::Queue& queue, const std::string& name, u32 color)
+			void VkRenderDevice::DebugInsertLabel(vk::Queue& queue, const std::string& name, u32 color)
 			{
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				queue.insertDebugUtilsLabelEXT(make_debug_label(name.c_str(), color));
 #endif
 			}
 
-			void CVkRenderDevice::EndLabel(vk::Queue& queue)
+			void VkRenderDevice::EndLabel(vk::Queue& queue)
 			{
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				queue.endDebugUtilsLabelEXT();
 #endif
 			}
 
-			void CVkRenderDevice::InitProfiler(const FVkCommandPool& command_pool)
+			void VkRenderDevice::InitProfiler(const FVkCommandPool& command_pool)
 			{
 #if !defined(BUILD_WITHOUT_DEBUGGIND) && defined(ENABLE_TRACY_PROFILING)
 				FVkCommandBufferCreateInfo command_buffer_ci{};
@@ -1006,7 +1006,7 @@ namespace engine
 #endif
 			}
 
-			vk::Format CVkRenderDevice::FindSupportedFormat(const utl::vector<vk::Format>& candidates, bool depth_only)
+			vk::Format VkRenderDevice::FindSupportedFormat(const utl::vector<vk::Format>& candidates, bool depth_only)
 			{
 				auto& phusical_device = instance->GetBestDevice();
 
@@ -1030,57 +1030,57 @@ namespace engine
 				return depth_format;
 			}
 
-			const vk::DynamicLoader& CVkRenderDevice::GetDynamicLoader() const
+			const vk::DynamicLoader& VkRenderDevice::GetDynamicLoader() const
 			{
 				return m_dynamicLoader;
 			}
 
-			const vk::AllocationCallbacks* CVkRenderDevice::GetAllocationCallbacks() const
+			const vk::AllocationCallbacks* VkRenderDevice::GetAllocationCallbacks() const
 			{
 				return m_allocationCallbacks;
 			}
 
-			const vk::SurfaceKHR& CVkRenderDevice::GetSurface() const
+			const vk::SurfaceKHR& VkRenderDevice::GetSurface() const
 			{
 				return surface;
 			}
 
-			const vk::SampleCountFlagBits CVkRenderDevice::GetMultisamplingCount() const
+			const vk::SampleCountFlagBits VkRenderDevice::GetMultisamplingCount() const
 			{
 				return m_requiredSampleCount;
 			}
 
-			Instance& CVkRenderDevice::GetInstance() const
+			Instance& VkRenderDevice::GetInstance() const
 			{
 				return *instance;
 			}
 
-			PhysicalDevice& CVkRenderDevice::GetPhysicalDevice() const
+			PhysicalDevice& VkRenderDevice::GetPhysicalDevice() const
 			{
 				return instance->GetBestDevice();
 			}
 
-			Device& CVkRenderDevice::GetLogicalDevice() const
+			Device& VkRenderDevice::GetLogicalDevice() const
 			{
 				return *device;
 			}
 
-			DebugUtils& CVkRenderDevice::GetDebugUtils() const
+			DebugUtils& VkRenderDevice::GetDebugUtils() const
 			{
 				return *debug_utils;
 			}
 
-			vma::Allocator& CVkRenderDevice::GetMemoryAllocator()
+			vma::Allocator& VkRenderDevice::GetMemoryAllocator()
 			{
 				return m_memoryAllocator;
 			}
 
-			const vk::PipelineCache& CVkRenderDevice::GetPipelineCache() const
+			const vk::PipelineCache& VkRenderDevice::GetPipelineCache() const
 			{
 				return m_pipelineCache;
 			}
 
-			utl::vector<char> CVkRenderDevice::GetPipelineCacheData() const
+			utl::vector<char> VkRenderDevice::GetPipelineCacheData() const
 			{
 				utl::vector<char> pipeline_cache_data{};
 
@@ -1097,12 +1097,12 @@ namespace engine
 				return pipeline_cache_data;
 			}
 
-			const FSwapchain& CVkRenderDevice::GetSwapchain() const
+			const FSwapchain& VkRenderDevice::GetSwapchain() const
 			{
 				return m_swapchain;
 			}
 
-			void CVkRenderDevice::RegisterAllocationCallbacks()
+			void VkRenderDevice::RegisterAllocationCallbacks()
 			{
 				m_allocationCallbacks = new vk::AllocationCallbacks();
 				memset(m_allocationCallbacks, 0, sizeof(vk::AllocationCallbacks));
@@ -1114,7 +1114,7 @@ namespace engine
 				m_allocationCallbacks->pfnInternalFree = (PFN_vkInternalFreeNotification)(&vk_free_notification);
 			}
 
-			void CVkRenderDevice::EnableDeviceFeatures(PhysicalDevice& device)
+			void VkRenderDevice::EnableDeviceFeatures(PhysicalDevice& device)
 			{
 				for (auto& extension_name : device_extensions)
 				{
@@ -1165,7 +1165,7 @@ namespace engine
 				}
 			}
 
-			void CVkRenderDevice::CreateMemoryAllocator(const FRenderContextCreateInfo& context_ci)
+			void VkRenderDevice::CreateMemoryAllocator(const FRenderContextCreateInfo& context_ci)
 			{
 				vma::VulkanFunctions vk_functions{};
 				vk_functions.vkGetInstanceProcAddr = m_dynamicLoader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
@@ -1184,7 +1184,7 @@ namespace engine
 				m_memoryAllocator = vma::createAllocator(allocator_ci);
 			}
 
-			FRenderApiErrorInfo CVkRenderDevice::CreatePipelineCache(const FRenderContextCreateInfo& context_ci)
+			FRenderApiErrorInfo VkRenderDevice::CreatePipelineCache(const FRenderContextCreateInfo& context_ci)
 			{
 				vk::PipelineCacheCreateInfo pipeline_cache_ci{};
 				pipeline_cache_ci.initialDataSize = utl::cast<u32>(context_ci.pipelineCache.size());
@@ -1192,7 +1192,7 @@ namespace engine
 				return make_api_error(vk::ObjectType::ePipelineCache, device->CreateObject(pipeline_cache_ci, m_pipelineCache), "Failed to Create");
 			}
 
-			FRenderApiErrorInfo CVkRenderDevice::CreateSwapchain(u32 surface_width, u32 surface_height)
+			FRenderApiErrorInfo VkRenderDevice::CreateSwapchain(u32 surface_width, u32 surface_height)
 			{
 				auto& physical_device = instance->GetBestDevice();
 
@@ -1320,7 +1320,7 @@ namespace engine
 				return make_api_error(vk::ObjectType::eSwapchainKHR, vk::Result::eSuccess);
 			}
 
-			void CVkRenderDevice::CleanupSwapchain()
+			void VkRenderDevice::CleanupSwapchain()
 			{
 				for (u64 idx = 0ull; idx < m_swapchain.framesInFlight; ++idx)
 				{
