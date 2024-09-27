@@ -37,7 +37,7 @@ void CComputePass::Update(f32 dt)
 
 void CComputePass::_Execute()
 {
-	auto& render_context = m_pRenderInterface->GetRenderContext();
+	auto& render_backend = m_pRenderInterface->GetRenderBackend();
 	auto& render_graph = m_pRenderInterface->GetRenderGraph();
 	auto& shader = m_pRenderInterface->GetShaderObject(m_shader);
 
@@ -59,11 +59,11 @@ void CComputePass::_Execute()
 		FDispatchIndirectInfo command{};
 		command.argumentBuffer = render_resource.handle;
 		command.argumentOffset = resource.subresource;
-		render_context->Dispatch(m_queue, command);
+		render_backend->Dispatch(m_queue, command);
 	}
 	else
 	{
 		m_dispatchGroup.shaderHandle = shader->Handle();
-		render_context->Dispatch(m_queue, m_dispatchGroup, 0);
+		render_backend->Dispatch(m_queue, m_dispatchGroup, 0);
 	}
 }

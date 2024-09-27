@@ -15,14 +15,14 @@ void CComputeCubemapPass::Init(const FComputePassCreateInfo& pass_ci)
 
 	u32 calculated_usage{};
 
-	auto& render_context = m_pRenderInterface->GetRenderContext();
+	auto& render_backend = m_pRenderInterface->GetRenderBackend();
 	auto& render_graph = m_pRenderInterface->GetRenderGraph();
 
 	auto& out_targets = m_renderResources[ERenderResourceGroupType::eStorageTextureWrite];
 	for (const auto& resource_binding : out_targets)
 	{
 		auto& render_resource = render_graph->GetRenderResource(resource_binding.resource);
-		auto texture_view = render_context->GetTextureView(render_resource.handle);
+		auto texture_view = render_backend->GetTextureView(render_resource.handle);
 		calculated_usage += texture_view.mipLevels;
 	}
 
@@ -44,7 +44,7 @@ void CComputeCubemapPass::Build(const FPassBuildInfo& build_info)
 
 void CComputeCubemapPass::_Execute()
 {
-	auto& render_context = m_pRenderInterface->GetRenderContext();
+	auto& render_backend = m_pRenderInterface->GetRenderBackend();
 	auto& render_graph = m_pRenderInterface->GetRenderGraph();
 	auto& render_packet = m_pRenderInterface->GetRenderPacket();
 
@@ -55,7 +55,7 @@ void CComputeCubemapPass::_Execute()
 	for (const auto& resource_binding : write_resources)
 	{
 		auto& render_resource = render_graph->GetRenderResource(resource_binding.resource);
-		auto info = render_context->GetTextureView(render_resource.handle);
+		auto info = render_backend->GetTextureView(render_resource.handle);
 
 		for (u32 mip = 0u; mip < info.mipLevels; ++mip)
 		{
@@ -85,7 +85,7 @@ void CComputeCubemapPass::_Execute()
 			m_dispatchGroup.globalSizes.y = info.height;
 			m_dispatchGroup.shaderHandle = shader->Handle();
 			
-			render_context->Dispatch(m_queue, m_dispatchGroup, 0);
+			render_backend->Dispatch(m_queue, m_dispatchGroup, 0);
 		}
 	}
 }

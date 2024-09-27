@@ -178,8 +178,8 @@ void CRenderWorld::Begin(f32 dt)
 			frustum_buffer->Copy(frustum.frustumSides);
 	}
 
-	auto& render_context = m_pRenderInterface->GetRenderContext();
-	auto& texture_remap_data = render_context->GetGlobalTextureRemap();
+	auto& render_backend = m_pRenderInterface->GetRenderBackend();
+	auto& texture_remap_data = render_backend->GetGlobalTextureRemap();
 
 	auto& texture_remap_buffer = GetDrawBuffer(ERenderBufferIndices::eTextureRemapBuffer);
 	texture_remap_buffer->Copy(texture_remap_data);

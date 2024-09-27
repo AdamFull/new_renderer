@@ -59,9 +59,9 @@ void IRenderPass::Execute()
 {
 	IBasePass::Execute();
 
-	auto& render_context = m_pRenderInterface->GetRenderContext();
+	auto& render_backend = m_pRenderInterface->GetRenderBackend();
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
-	auto render_size = render_context->GetScreenRenderRect();
+	auto render_size = render_backend->GetScreenRenderRect();
 
 	FBeginRendering2Info beginRenderingInfo{};
 	beginRenderingInfo.queue = m_queue;
@@ -79,7 +79,7 @@ void IRenderPass::Execute()
 	}
 	else
 	{
-		auto screen_rect = render_context->GetScreenRenderRect();
+		auto screen_rect = render_backend->GetScreenRenderRect();
 		beginRenderingInfo.renderArea.size.x = screen_rect.size.x;
 		beginRenderingInfo.renderArea.size.y = screen_rect.size.y;
 	}
@@ -89,21 +89,21 @@ void IRenderPass::Execute()
 	beginRenderingInfo.name = m_debugName;
 #endif
 
-	render_context->BeginTimestampZone(m_queue);
+	render_backend->BeginTimestampZone(m_queue);
 
 	if (CanRender())
 	{
-		render_context->BeginRendering(beginRenderingInfo);
-		render_context->SetViewport(utl::cast<f32>(beginRenderingInfo.renderArea.size.x), utl::cast<f32>(beginRenderingInfo.renderArea.size.y), m_bFlipViewport);
+		render_backend->BeginRendering(beginRenderingInfo);
+		render_backend->SetViewport(utl::cast<f32>(beginRenderingInfo.renderArea.size.x), utl::cast<f32>(beginRenderingInfo.renderArea.size.y), m_bFlipViewport);
 
 		m_renderArea = beginRenderingInfo.renderArea;
 
 		_Render();
 
-		render_context->EndRendering(beginRenderingInfo.queue);
+		render_backend->EndRendering(beginRenderingInfo.queue);
 	}
 	
-	render_context->EndTimestampZone(m_queue);
+	render_backend->EndTimestampZone(m_queue);
 }
 
 void IRenderPass::BuildAttachment(FGraphHandle resource_id, const FPassBuildInfo& build_info, FRenderGraphAttachmentInfo& attachment_info)
@@ -222,7 +222,7 @@ void IComputePass::Execute()
 {
 	IBasePass::Execute();
 
-	auto& render_context = m_pRenderInterface->GetRenderContext();
+	auto& render_backend = m_pRenderInterface->GetRenderBackend();
 	auto& render_graph = m_pRenderInterface->GetRenderGraph();
 
 	if (m_dispatchInfo.type == ERenderingSizeType::eFromRenderTarget)
@@ -230,7 +230,7 @@ void IComputePass::Execute()
 		if (m_dispatchInfo.target)
 		{
 			auto resource = render_graph->GetRenderResource(m_dispatchInfo.target);
-			auto texture_view = render_context->GetTextureView(resource.handle);
+			auto texture_view = render_backend->GetTextureView(resource.handle);
 			m_dispatchGroup.globalSizes.x = texture_view.width;
 			m_dispatchGroup.globalSizes.y = texture_view.height;
 			m_dispatchGroup.globalSizes.z = 1u;
@@ -239,7 +239,7 @@ void IComputePass::Execute()
 	else if (m_dispatchInfo.type == ERenderingSizeType::eFromBuffer)
 	{
 		auto resource = render_graph->GetRenderResource(m_dispatchInfo.target);
-		auto buffer_view = render_context->GetBufferView(resource.handle);
+		auto buffer_view = render_backend->GetBufferView(resource.handle);
 
 		m_dispatchGroup.globalSizes.x = buffer_view.alignedSize / buffer_view.elementCount;
 		m_dispatchGroup.globalSizes.y = 1u;
@@ -264,13 +264,13 @@ void IComputePass::Execute()
 	compute_begin_info.name = m_debugName;
 #endif
 
-	render_context->BeginTimestampZone(m_queue);
-	render_context->BeginCompute(compute_begin_info);
+	render_backend->BeginTimestampZone(m_queue);
+	render_backend->BeginCompute(compute_begin_info);
 
 	_Execute();
 
-	render_context->EndCompute(m_queue);
-	render_context->EndTimestampZone(m_queue);
+	render_backend->EndCompute(m_queue);
+	render_backend->EndTimestampZone(m_queue);
 }
 
 void IComputePass::InitShaderResources(FRHIHandle shader)
@@ -301,7 +301,7 @@ void IComputePass::InitShaderResources(const std::unique_ptr<IShaderObject>& sha
 
 void IComputePass::BindShaderResources(const std::unique_ptr<IShaderObject>& shader, f32 dt)
 {
-	auto& render_context = m_pRenderInterface->GetRenderContext();
+	auto& render_backend = m_pRenderInterface->GetRenderBackend();
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
 	auto& post_process = render_world->GetPostProcessingData();
 
@@ -312,7 +312,7 @@ void IComputePass::BindShaderResources(const std::unique_ptr<IShaderObject>& sha
 		float time_coeff = glm::clamp<f32>(1.0f - glm::exp(-dt * post_process.tonemap.tau), 0.0, 1.0);
 
 		// TODO: it's incorrect now. I should get size from input target
-		auto render_size = render_context->GetRenderResolution();
+		auto render_size = render_backend->GetRenderResolution();
 
 		uniform->Set(shader_bindings::min_log_lum_label, post_process.tonemap.lumMin);
 		uniform->Set(shader_bindings::log_lum_range_label, log_lum_range);

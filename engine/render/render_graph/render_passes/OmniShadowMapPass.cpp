@@ -46,8 +46,8 @@ void COmnilShadowMapPass::_Render()
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
 	auto& world_stats = render_world->GetStats();
 
-	auto& render_context = m_pRenderInterface->GetRenderContext();
-	render_context->SetScissorRect(0, 0, m_renderArea.size.x, m_renderArea.size.y);
+	auto& render_backend = m_pRenderInterface->GetRenderBackend();
+	render_backend->SetScissorRect(0, 0, m_renderArea.size.x, m_renderArea.size.y);
 
 	IVertexHandler* last_vbo{ nullptr };
 
@@ -92,7 +92,7 @@ void COmnilShadowMapPass::_Render()
 					shadow_data->Set(shader_bindings::shadow_index_label, utl::cast<u32>(shadow_index));
 					shadow_data->Set(shader_bindings::layer_label, utl::cast<i32>(current_layer));
 					shader->FlushConstants(m_queue);
-					render_context->Draw(m_queue, batch.command);
+					render_backend->Draw(m_queue, batch.command);
 				}
 			}
 

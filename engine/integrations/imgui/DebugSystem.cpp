@@ -89,9 +89,9 @@ void CDebugDrawEngineSystem::PreUpdate(f32 dt)
 
 	using namespace ImDbg;
 
-	auto& render_context = m_pRenderInterface->GetRenderContext();
+	auto& render_backend = m_pRenderInterface->GetRenderBackend();
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
-	auto resolution = render_context->GetScreenRenderRect();
+	auto resolution = render_backend->GetScreenRenderRect();
 
 	const auto& camera = render_world->GetDefaultCamera();
 

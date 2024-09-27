@@ -42,14 +42,14 @@ void CFullscreenPass::Update(f32 dt)
 
 void CFullscreenPass::_Render()
 {
-	auto& render_context = m_pRenderInterface->GetRenderContext();
+	auto& render_backend = m_pRenderInterface->GetRenderBackend();
 
 	auto& shader = m_pRenderInterface->GetShaderObject(m_shader);
 	BindShaderResources(m_shader, m_deltaTime);
 
-	auto resolution = render_context->GetScreenRenderRect();
-	render_context->SetViewport(resolution.size.x, resolution.size.y, m_bFlipViewport);
-	render_context->SetScissorRect(0, 0, resolution.size.x, resolution.size.y);
+	auto resolution = render_backend->GetScreenRenderRect();
+	render_backend->SetViewport(resolution.size.x, resolution.size.y, m_bFlipViewport);
+	render_backend->SetScissorRect(0, 0, resolution.size.x, resolution.size.y);
 
 	shader->FlushDescriptors();
 	shader->FlushConstants(m_queue);
@@ -63,5 +63,5 @@ void CFullscreenPass::_Render()
 	range.beginVertex = 0ull;
 	range.vertexCount = 3ull;
 
-	render_context->Draw(m_queue, draw_info);
+	render_backend->Draw(m_queue, draw_info);
 }

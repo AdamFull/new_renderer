@@ -4,8 +4,8 @@ using namespace engine::render;
 
 CBufferObject::CBufferObject(IRenderInterface* render_interface)
 {
-	auto& render_context = render_interface->GetRenderContext();
-	m_pRenderContext = render_context.get();
+	auto& render_backend = render_interface->GetRenderBackend();
+	m_pRenderContext = render_backend.get();
 }
 
 CBufferObject::~CBufferObject()

@@ -15,10 +15,10 @@ namespace engine
 		{
 			using vk_resource_container_t = CResourceContainer<FVkTexture, FVkShader, FVkBuffer, FVkShaderReflectionData>;
 
-			class CVkRenderContext : public IRenderContext
+			class VkRenderBackend : public IRenderBackend
 			{
 			public:
-				~CVkRenderContext() override;
+				~VkRenderBackend() override;
 
 				void Create(const FRenderContextCreateInfo& context_ci) override;
 				void CreateGlobalDescriptor(const FGlobalUniformCreateInfo& uniform_ci) override;

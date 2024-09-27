@@ -4,7 +4,7 @@ using namespace engine::render;
 
 CTextureObject::CTextureObject(IRenderInterface* render_interface)
 {
-	m_pRenderContext = render_interface->GetRenderContext().get();
+	m_pRenderContext = render_interface->GetRenderBackend().get();
 }
 
 CTextureObject::~CTextureObject()

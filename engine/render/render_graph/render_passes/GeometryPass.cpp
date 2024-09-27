@@ -35,8 +35,8 @@ void CGeometryPass::PostLoad()
 
 void CGeometryPass::_Render()
 {
-	auto& render_context = m_pRenderInterface->GetRenderContext();
-	render_context->SetScissorRect(0, 0, m_renderArea.size.x, m_renderArea.size.y);
+	auto& render_backend = m_pRenderInterface->GetRenderBackend();
+	render_backend->SetScissorRect(0, 0, m_renderArea.size.x, m_renderArea.size.y);
 
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
 	const auto& world_stats = render_world->GetStats();
@@ -86,7 +86,7 @@ void CGeometryPass::_Render()
 
 			shader->FlushConstants(m_queue);
 
-			render_context->Draw(m_queue, batch.command);
+			render_backend->Draw(m_queue, batch.command);
 			drawcall_id += draw_info.drawCount;
 		}
 	}

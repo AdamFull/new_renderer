@@ -1,5 +1,5 @@
-#include "VkRenderContext.h"
-#include "VkCommon.h"
+#include <engine/render/render_api/vulkan/VkRenderBackend.h>
+#include <engine/render/render_api/vulkan/VkCommon.h>
 
 #include <util/Logger.h>
 
@@ -107,7 +107,7 @@ std::string create_object_unique_name(const char* fmt, const _Ty& handle, _Args&
 	return std::vformat(fmt, std::make_format_args(object_handle, args...));
 }
 
-CVkRenderContext::~CVkRenderContext()
+VkRenderBackend::~VkRenderBackend()
 {
 	auto& logical_device = m_pDevice->GetLogicalDevice();
 	Handle(logical_device).waitIdle();
@@ -155,7 +155,7 @@ CVkRenderContext::~CVkRenderContext()
 		m_pDevice->DestroySampler(sampler);
 }
 
-void CVkRenderContext::Create(const FRenderContextCreateInfo& context_ci)
+void VkRenderBackend::Create(const FRenderContextCreateInfo& context_ci)
 {
 	m_pDevice = std::make_unique<CVkRenderDevice>();
 	m_pDevice->Create(context_ci);
@@ -199,7 +199,7 @@ void CVkRenderContext::Create(const FRenderContextCreateInfo& context_ci)
 	m_pDevice->CreateSampler(sampler_ci, m_defaultSampler);
 }
 
-void CVkRenderContext::CreateGlobalDescriptor(const FGlobalUniformCreateInfo& uniform_ci)
+void VkRenderBackend::CreateGlobalDescriptor(const FGlobalUniformCreateInfo& uniform_ci)
 {
 	// Create descriptor pool
 	FVkDescriptorPoolCreateInfo pool_ci{};
@@ -312,7 +312,7 @@ void CVkRenderContext::CreateGlobalDescriptor(const FGlobalUniformCreateInfo& un
 	}
 }
 
-void CVkRenderContext::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view)
+void VkRenderBackend::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view)
 {
 	auto& dest_set = m_globalDescriptor.descriptorSet.handles.at(m_pDevice->m_swapchain.currentFrame);
 
@@ -396,12 +396,12 @@ void CVkRenderContext::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo
 	}
 }
 
-const utl::vector<uint32_t>& CVkRenderContext::GetGlobalTextureRemap()
+const utl::vector<uint32_t>& VkRenderBackend::GetGlobalTextureRemap()
 {
 	return m_textureIndexRemap;
 }
 
-FAPIHandle CVkRenderContext::CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci)
+FAPIHandle VkRenderBackend::CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci)
 {
 	// Create texture handle
 	FVkTextureCreateInfo vk_texture_ci{};
@@ -430,19 +430,19 @@ FAPIHandle CVkRenderContext::CreateTexture(const std::string& name, const FTextu
 	return FAPIHandle(m_pResources->add<FVkTexture>(name.c_str(), std::move(texture)));
 }
 
-FAPIHandle CVkRenderContext::CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info)
+FAPIHandle VkRenderBackend::CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info)
 {
 	auto& upload_data = m_textureUploadInfos.emplace_back(std::move(upload_info));
 	upload_data.textureId = CreateTexture(name, texture_ci);
 	return upload_data.textureId;
 }
 
-FAPIHandle CVkRenderContext::GetTextureId(const std::string& name)
+FAPIHandle VkRenderBackend::GetTextureId(const std::string& name)
 {
 	return FAPIHandle(m_pResources->getId<FVkTexture>(name.c_str()));
 }
 
-FTextureView CVkRenderContext::GetTextureView(FAPIHandle texture_id)
+FTextureView VkRenderBackend::GetTextureView(FAPIHandle texture_id)
 {
 	auto& texture = m_pResources->get<FVkTexture>(texture_id.Get());
 
@@ -456,12 +456,12 @@ FTextureView CVkRenderContext::GetTextureView(FAPIHandle texture_id)
 	return tex_view;
 }
 
-void CVkRenderContext::DestroyTexture(FAPIHandle resource_id)
+void VkRenderBackend::DestroyTexture(FAPIHandle resource_id)
 {
 	m_destroyResource.push(FAPIObjectDestroyInfo{ resource_id, EResourceFlagBits::eTexture });
 }
 
-void CVkRenderContext::ReadPixel(FAPIHandle resource_id, u32 x, u32 y, void* data)
+void VkRenderBackend::ReadPixel(FAPIHandle resource_id, u32 x, u32 y, void* data)
 {
 	static constexpr u64 pixel_size{ 4ull };
 
@@ -522,7 +522,7 @@ void CVkRenderContext::ReadPixel(FAPIHandle resource_id, u32 x, u32 y, void* dat
 }
 
 
-FAPIHandle CVkRenderContext::CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, utl::vector<FShaderCreationBlockInfo>&& shader_stages)
+FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, utl::vector<FShaderCreationBlockInfo>&& shader_stages)
 {
 	const char* shaderEntryPoint{ "main" };
 
@@ -642,7 +642,7 @@ FAPIHandle CVkRenderContext::CreateShader(const std::string& name, const FGraphi
 	return FAPIHandle(m_pResources->add<FVkShader>(shader_unique_name.c_str(), std::move(shader)));
 }
 
-FAPIHandle CVkRenderContext::CreateShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, utl::vector<FShaderCreationBlockInfo>&& shader_stages)
+FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, utl::vector<FShaderCreationBlockInfo>&& shader_stages)
 {
 	const char* shaderEntryPoint{ "main" };
 
@@ -717,7 +717,7 @@ FAPIHandle CVkRenderContext::CreateShader(const std::string& name, const FComput
 	return FAPIHandle(m_pResources->add<FVkShader>(shader_unique_name.c_str(), std::move(shader)));
 }
 
-FAPIHandle CVkRenderContext::CreateShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci, utl::vector<FShaderCreationBlockInfo>&& shader_stages)
+FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci, utl::vector<FShaderCreationBlockInfo>&& shader_stages)
 {
 	const char* shaderEntryPoint{ "main" };
 
@@ -733,7 +733,7 @@ FAPIHandle CVkRenderContext::CreateShader(const std::string& name, const FReyTra
 	return FAPIHandle(m_pResources->add<FVkShader>(shader_unique_name.c_str(), std::move(shader)));
 }
 
-FShaderReflectionData CVkRenderContext::GetShaderReflection(FAPIHandle shader_view)
+FShaderReflectionData VkRenderBackend::GetShaderReflection(FAPIHandle shader_view)
 {
 	auto& shader = m_pResources->get<FVkShader>(shader_view.Get());
 	auto& shader_reflection = m_pResources->get<FVkShaderReflectionData>(shader->reflection);
@@ -792,7 +792,7 @@ FShaderReflectionData CVkRenderContext::GetShaderReflection(FAPIHandle shader_vi
 // TODO: I only need to write data to descriptors if I have not written anything yet for the current 
 // swapchain frame and if the previous hash sum of data does not match the current one. Otherwise, 
 // I'll just be doing unnecessary work both copying data and loading it, including loading descriptors.
-void CVkRenderContext::UpdateShaderResources(const FShaderResourceCommit& shader_resources, EShaderResourcesUpdateFlags flags)
+void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_resources, EShaderResourcesUpdateFlags flags)
 {
 	auto& thread_context = m_perThreadContext[std::this_thread::get_id()];
 
@@ -938,7 +938,7 @@ void CVkRenderContext::UpdateShaderResources(const FShaderResourceCommit& shader
 	}
 }
 
-void CVkRenderContext::FlushConstantRanges(FAPIHandle shader_id, const utl::hash_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type)
+void VkRenderBackend::FlushConstantRanges(FAPIHandle shader_id, const utl::hash_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type)
 {
 	auto& shader = m_pResources->get<FVkShader>(shader_id.Get());
 	auto& shader_reflection = m_pResources->get<FVkShaderReflectionData>(shader->reflection);
@@ -961,7 +961,7 @@ void CVkRenderContext::FlushConstantRanges(FAPIHandle shader_id, const utl::hash
 	}
 }
 
-void CVkRenderContext::BindShader(FAPIHandle shader_id, EQueueTypeFlagBits queue_type)
+void VkRenderBackend::BindShader(FAPIHandle shader_id, EQueueTypeFlagBits queue_type)
 {
 	auto& command_buffer = GetLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
@@ -972,7 +972,7 @@ void CVkRenderContext::BindShader(FAPIHandle shader_id, EQueueTypeFlagBits queue
 	current.bindPipeline(shader->bindPoint, shader->handles.back());
 }
 
-void CVkRenderContext::BindShaderResources(FAPIHandle shader_id, EQueueTypeFlagBits queue_type)
+void VkRenderBackend::BindShaderResources(FAPIHandle shader_id, EQueueTypeFlagBits queue_type)
 {
 	auto& command_buffer = GetLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
@@ -982,12 +982,12 @@ void CVkRenderContext::BindShaderResources(FAPIHandle shader_id, EQueueTypeFlagB
 	BindShaderDescriptors(command_buffer, *shader);
 }
 
-void CVkRenderContext::DestroyShader(FAPIHandle resource_id)
+void VkRenderBackend::DestroyShader(FAPIHandle resource_id)
 {
 	m_destroyResource.push(FAPIObjectDestroyInfo{ resource_id, EResourceFlagBits::eShader });
 }
 
-FAPIHandle CVkRenderContext::CreateBuffer(const std::string& name, const FBufferCreateInfo& buffer_ci)
+FAPIHandle VkRenderBackend::CreateBuffer(const std::string& name, const FBufferCreateInfo& buffer_ci)
 {
 	auto vk_buffer_ci = MakeBufferCreateInfo(name, buffer_ci);
 
@@ -998,7 +998,7 @@ FAPIHandle CVkRenderContext::CreateBuffer(const std::string& name, const FBuffer
 	return FAPIHandle(m_pResources->add<FVkBuffer>(buffer_unique_name.c_str(), std::move(buffer)));
 }
 
-void CVkRenderContext::UpdateBuffer(const std::string& name, FAPIHandle buffer_id, const FBufferCreateInfo& buffer_ci)
+void VkRenderBackend::UpdateBuffer(const std::string& name, FAPIHandle buffer_id, const FBufferCreateInfo& buffer_ci)
 {
 	auto& buffer = m_pResources->get<FVkBuffer>(buffer_id.Get());
 	m_pDevice->DestroyBuffer(*buffer);
@@ -1007,18 +1007,18 @@ void CVkRenderContext::UpdateBuffer(const std::string& name, FAPIHandle buffer_i
 	m_pDevice->CreateBuffer(vk_buffer_ci, *buffer);
 }
 
-void CVkRenderContext::UploadDataToBuffer(const FBufferUploadInfo& upload_info)
+void VkRenderBackend::UploadDataToBuffer(const FBufferUploadInfo& upload_info)
 {
 	m_bufferUploadInfos.emplace_back(upload_info);
 }
 
-FBufferView CVkRenderContext::GetBufferView(FAPIHandle buffer_id)
+FBufferView VkRenderBackend::GetBufferView(FAPIHandle buffer_id)
 {
 	auto& buffer = m_pResources->get<FVkBuffer>(buffer_id.Get());
 	return { buffer->size, buffer->instanceCount, buffer->address };
 }
 
-void CVkRenderContext::BindVertexBuffers(const FVertexBufferBindingInfo& binding_info, EQueueTypeFlagBits queue_type)
+void VkRenderBackend::BindVertexBuffers(const FVertexBufferBindingInfo& binding_info, EQueueTypeFlagBits queue_type)
 {
 	auto& command_buffer = GetLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
@@ -1030,7 +1030,7 @@ void CVkRenderContext::BindVertexBuffers(const FVertexBufferBindingInfo& binding
 	current.bindVertexBuffers(binding_info.firstBinding, buffers, binding_info.offsets);
 }
 
-void CVkRenderContext::BindIndexBuffer(const FIndexBufferBindingInfo& binding_info, EQueueTypeFlagBits queue_type)
+void VkRenderBackend::BindIndexBuffer(const FIndexBufferBindingInfo& binding_info, EQueueTypeFlagBits queue_type)
 {
 	auto& command_buffer = GetLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
@@ -1047,35 +1047,35 @@ void CVkRenderContext::BindIndexBuffer(const FIndexBufferBindingInfo& binding_in
 	current.bindIndexBuffer(buffer->handle, binding_info.offset, index_type);
 }
 
-void CVkRenderContext::MapBufferMemory(FAPIHandle buffer_id, void*& memory)
+void VkRenderBackend::MapBufferMemory(FAPIHandle buffer_id, void*& memory)
 {
 	auto& buffer = m_pResources->get<FVkBuffer>(buffer_id.Get());
 	m_pDevice->MapBufferMemory(*buffer, &memory);
 }
 
-void CVkRenderContext::UnmapBufferMemory(FAPIHandle buffer_id)
+void VkRenderBackend::UnmapBufferMemory(FAPIHandle buffer_id)
 {
 	auto& buffer = m_pResources->get<FVkBuffer>(buffer_id.Get());
 	m_pDevice->UnmapBufferMemory(*buffer);
 }
 
-void CVkRenderContext::FlushBuffer(FAPIHandle buffer_id, u64 size, u64 offset)
+void VkRenderBackend::FlushBuffer(FAPIHandle buffer_id, u64 size, u64 offset)
 {
 	auto& buffer = m_pResources->get<FVkBuffer>(buffer_id.Get());
 	m_pDevice->FlushBufferMemory(*buffer, size, offset);
 }
 
-void CVkRenderContext::DestroyBuffer(FAPIHandle resource_id)
+void VkRenderBackend::DestroyBuffer(FAPIHandle resource_id)
 {
 	m_destroyResource.push(FAPIObjectDestroyInfo{ resource_id, EResourceFlagBits::eBuffer });
 }
 
-void CVkRenderContext::UploadBuffers()
+void VkRenderBackend::UploadBuffers()
 {
 	ProcessResourceUpload();
 }
 
-void CVkRenderContext::PushG2CBarriers(EQueueTypeFlagBits queue_type, const utl::vector<FAPIHandle>& texture_ids)
+void VkRenderBackend::PushG2CBarriers(EQueueTypeFlagBits queue_type, const utl::vector<FAPIHandle>& texture_ids)
 {
 	auto& command_buffer = GetLastCommandBuffer(queue_type);
 	auto& textures = m_pResources->data<FVkTexture>();
@@ -1104,7 +1104,7 @@ void CVkRenderContext::PushG2CBarriers(EQueueTypeFlagBits queue_type, const utl:
 	ProcessMemoryBarriers(command_buffer, translation_info);
 }
 
-void CVkRenderContext::PushC2CBarrier(EQueueTypeFlagBits queue_type)
+void VkRenderBackend::PushC2CBarrier(EQueueTypeFlagBits queue_type)
 {
 	auto& command_buffer = GetLastCommandBuffer(queue_type);
 	auto& textures = m_pResources->data<FVkTexture>();
@@ -1119,7 +1119,7 @@ void CVkRenderContext::PushC2CBarrier(EQueueTypeFlagBits queue_type)
 	ProcessMemoryBarriers(command_buffer, translation_info);
 }
 
-void CVkRenderContext::PushC2GBarrier(EQueueTypeFlagBits queue_type, const utl::vector<FAPIHandle>& texture_ids)
+void VkRenderBackend::PushC2GBarrier(EQueueTypeFlagBits queue_type, const utl::vector<FAPIHandle>& texture_ids)
 {
 	auto& command_buffer = GetLastCommandBuffer(queue_type);
 	auto& textures = m_pResources->data<FVkTexture>();
@@ -1154,7 +1154,7 @@ void CVkRenderContext::PushC2GBarrier(EQueueTypeFlagBits queue_type, const utl::
 	ProcessMemoryBarriers(command_buffer, translation_info);
 }
 
-void CVkRenderContext::ProcessResourceBarriers(EQueueTypeFlagBits queue, const utl::vector<FResourceBarrierInfo>& barriers)
+void VkRenderBackend::ProcessResourceBarriers(EQueueTypeFlagBits queue, const utl::vector<FResourceBarrierInfo>& barriers)
 {
 	auto& command_buffer = GetLastCommandBuffer(queue);
 
@@ -1258,20 +1258,20 @@ void CVkRenderContext::ProcessResourceBarriers(EQueueTypeFlagBits queue, const u
 	ProcessMemoryBarriers(command_buffer, translation_info);
 }
 
-void CVkRenderContext::BeginTimestampZone(EQueueTypeFlagBits queue)
+void VkRenderBackend::BeginTimestampZone(EQueueTypeFlagBits queue)
 {
 	//assert(m_zoneEntries[queue] == 0 && "Previous zone was not ended.");
 	auto& command_buffer = GetLastCommandBuffer(queue);
 	m_pDevice->WriteTimestampQuery(command_buffer, vk::PipelineStageFlagBits::eTopOfPipe, m_timestampQuery);
 }
 
-void CVkRenderContext::EndTimestampZone(EQueueTypeFlagBits queue)
+void VkRenderBackend::EndTimestampZone(EQueueTypeFlagBits queue)
 {
 	auto& command_buffer = GetLastCommandBuffer(queue);
 	m_pDevice->WriteTimestampQuery(command_buffer, vk::PipelineStageFlagBits::eBottomOfPipe, m_timestampQuery);
 }
 
-void CVkRenderContext::BeginRendering(const FBeginRendering2Info& rendering_info)
+void VkRenderBackend::BeginRendering(const FBeginRendering2Info& rendering_info)
 {
 	auto& command_buffer = GetLastCommandBuffer(rendering_info.queue);
 
@@ -1380,7 +1380,7 @@ void CVkRenderContext::BeginRendering(const FBeginRendering2Info& rendering_info
 	current_buffer.beginRenderingKHR(begin_rendering_info);
 }
 
-void CVkRenderContext::EndRendering(EQueueTypeFlagBits queue)
+void VkRenderBackend::EndRendering(EQueueTypeFlagBits queue)
 {
 	auto& command_buffer = GetLastCommandBuffer(queue);
 
@@ -1392,7 +1392,7 @@ void CVkRenderContext::EndRendering(EQueueTypeFlagBits queue)
 #endif
 }
 
-void CVkRenderContext::BeginCompute(const FBeginComputeInfo& compute_info)
+void VkRenderBackend::BeginCompute(const FBeginComputeInfo& compute_info)
 {
 	auto& command_buffer = GetLastCommandBuffer(compute_info.queue);
 	auto& current_buffer = command_buffer.get();
@@ -1402,7 +1402,7 @@ void CVkRenderContext::BeginCompute(const FBeginComputeInfo& compute_info)
 #endif
 }
 
-void CVkRenderContext::EndCompute(EQueueTypeFlagBits queue)
+void VkRenderBackend::EndCompute(EQueueTypeFlagBits queue)
 {
 	auto& command_buffer = GetLastCommandBuffer(queue);
 	auto& current_buffer = command_buffer.get();
@@ -1412,7 +1412,7 @@ void CVkRenderContext::EndCompute(EQueueTypeFlagBits queue)
 #endif
 }
 
-void CVkRenderContext::ProcessMemoryBarriers(const FVkCommandBuffer& command_buffer, const FVkTranslationInfo& translation_info)
+void VkRenderBackend::ProcessMemoryBarriers(const FVkCommandBuffer& command_buffer, const FVkTranslationInfo& translation_info)
 {
 	utl::vector<vk::ImageMemoryBarrier2KHR> image_barriers{};
 	for (const auto& image_info : translation_info.imageTranslationInfos)
@@ -1478,7 +1478,7 @@ void CVkRenderContext::ProcessMemoryBarriers(const FVkCommandBuffer& command_buf
 	current_buffer.pipelineBarrier2KHR(dependency_info);
 }
 
-void CVkRenderContext::SetViewport(f32 width, f32 height, bool flip_viewport)
+void VkRenderBackend::SetViewport(f32 width, f32 height, bool flip_viewport)
 {
 	vk::Viewport viewport{};
 	viewport.minDepth = 0.f;
@@ -1506,7 +1506,7 @@ void CVkRenderContext::SetViewport(f32 width, f32 height, bool flip_viewport)
 	current.setViewport(0, 1, &viewport);
 }
 
-void CVkRenderContext::SetScissorRect(i32 offset_x, i32 offset_y, u32 width, u32 height)
+void VkRenderBackend::SetScissorRect(i32 offset_x, i32 offset_y, u32 width, u32 height)
 {
 	vk::Rect2D scissor_rect{};
 	scissor_rect.offset.x = offset_x;
@@ -1521,7 +1521,7 @@ void CVkRenderContext::SetScissorRect(i32 offset_x, i32 offset_y, u32 width, u32
 	current.setScissor(0, 1, &scissor_rect);
 }
 
-void CVkRenderContext::SetPrimitiveTopology(EVertexPrimitiveTopology primitivd_topology)
+void VkRenderBackend::SetPrimitiveTopology(EVertexPrimitiveTopology primitivd_topology)
 {
 	auto& command_buffer = GetLastCommandBuffer(EQueueTypeFlagBits::eGraphics);
 	auto& current = command_buffer.get();
@@ -1530,7 +1530,7 @@ void CVkRenderContext::SetPrimitiveTopology(EVertexPrimitiveTopology primitivd_t
 }
 
 // TODO: add indirect Draw support
-void CVkRenderContext::Draw(EQueueTypeFlagBits queue_type, const FGeometryDrawInfo& draw_info)
+void VkRenderBackend::Draw(EQueueTypeFlagBits queue_type, const FGeometryDrawInfo& draw_info)
 {
 	auto& command_buffer = GetLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
@@ -1558,7 +1558,7 @@ void CVkRenderContext::Draw(EQueueTypeFlagBits queue_type, const FGeometryDrawIn
 	}
 }
 
-void CVkRenderContext::Draw(EQueueTypeFlagBits queue_type, const FIndirectGeometryDrawInfo& draw_info)
+void VkRenderBackend::Draw(EQueueTypeFlagBits queue_type, const FIndirectGeometryDrawInfo& draw_info)
 {
 	auto& command_buffer = GetLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
@@ -1570,7 +1570,7 @@ void CVkRenderContext::Draw(EQueueTypeFlagBits queue_type, const FIndirectGeomet
 	//current.drawIndexedIndirect(indirect_command_buffer->handle, draw_info.offset, draw_info.count, draw_info.stride);
 }
 
-void CVkRenderContext::Dispatch(EQueueTypeFlagBits queue_type, const FDispatch2Info& dispatch_info, u64 subgroup_index)
+void VkRenderBackend::Dispatch(EQueueTypeFlagBits queue_type, const FDispatch2Info& dispatch_info, u64 subgroup_index)
 {
 	vk::DispatchIndirectCommand command{};
 	command.x = dispatch_info.globalSizes.x;
@@ -1593,7 +1593,7 @@ void CVkRenderContext::Dispatch(EQueueTypeFlagBits queue_type, const FDispatch2I
 	current.dispatch(command.x, command.y, command.z);
 }
 
-void CVkRenderContext::Dispatch(EQueueTypeFlagBits queue_type, const FDispatchIndirectInfo& dispatch_info)
+void VkRenderBackend::Dispatch(EQueueTypeFlagBits queue_type, const FDispatchIndirectInfo& dispatch_info)
 {
 	auto& command_buffer = GetLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
@@ -1609,19 +1609,19 @@ void CVkRenderContext::Dispatch(EQueueTypeFlagBits queue_type, const FDispatchIn
 		current.dispatchIndirect(argument_buffer->handle, dispatch_info.argumentOffset);
 }
 
-FDeviceLimitations CVkRenderContext::GetDeviceLimitations()
+FDeviceLimitations VkRenderBackend::GetDeviceLimitations()
 {
 	FDeviceLimitations limits{};
 
 	return limits;
 }
 
-const FRenderFrameStats& CVkRenderContext::GetRenderFrameStats() const
+const FRenderFrameStats& VkRenderBackend::GetRenderFrameStats() const
 {
 	return m_renderStats;
 }
 
-EAdapterVendor CVkRenderContext::GetDeviceVendor() const
+EAdapterVendor VkRenderBackend::GetDeviceVendor() const
 {
 	auto& physical = m_pDevice->GetPhysicalDevice();
 
@@ -1637,17 +1637,17 @@ EAdapterVendor CVkRenderContext::GetDeviceVendor() const
 	return EAdapterVendor::eNVidia;
 }
 
-FAPIHandle CVkRenderContext::GetTextureResource(const char* name)
+FAPIHandle VkRenderBackend::GetTextureResource(const char* name)
 {
 	return FAPIHandle(m_pResources->getId<FVkTexture>(name));
 }
 
-FAPIHandle CVkRenderContext::GetShaderResource(const char* name)
+FAPIHandle VkRenderBackend::GetShaderResource(const char* name)
 {
 	return FAPIHandle(m_pResources->getId<FVkShader>(name));
 }
 
-FPoint2D<u32> CVkRenderContext::GetRenderResolution() const
+FPoint2D<u32> VkRenderBackend::GetRenderResolution() const
 {
 	FPoint2D<u32> resolution{};
 	resolution.x = m_pDevice->m_swapchain.extent.width;
@@ -1656,7 +1656,7 @@ FPoint2D<u32> CVkRenderContext::GetRenderResolution() const
 	return resolution;
 }
 
-FRect2D<f32> CVkRenderContext::GetRenderRectFromRT(FAPIHandle texture_id)
+FRect2D<f32> VkRenderBackend::GetRenderRectFromRT(FAPIHandle texture_id)
 {
 	auto& texture = m_pResources->get<FVkTexture>(texture_id.Get());
 
@@ -1667,7 +1667,7 @@ FRect2D<f32> CVkRenderContext::GetRenderRectFromRT(FAPIHandle texture_id)
 	return rect;
 }
 
-FRect2D<f32> CVkRenderContext::GetScreenRenderRect()
+FRect2D<f32> VkRenderBackend::GetScreenRenderRect()
 {
 	FRect2D<f32> rect{};
 	rect.size.x = utl::cast<f32>(m_pDevice->m_swapchain.extent.width);
@@ -1676,7 +1676,7 @@ FRect2D<f32> CVkRenderContext::GetScreenRenderRect()
 }
 
 // TODO: update only targets, that have same size with swapchain
-void CVkRenderContext::UpdateSurface(i32 surface_width, i32 surface_height)
+void VkRenderBackend::UpdateSurface(i32 surface_width, i32 surface_height)
 {
 	if (this->m_iSurfaceWidth != surface_width || this->m_iSurfaceHeight != surface_height)
 	{
@@ -1740,7 +1740,7 @@ void CVkRenderContext::UpdateSurface(i32 surface_width, i32 surface_height)
 	}
 }
 
-FVkCommandBuffer& CVkRenderContext::CreateCommandBuffer(const FVkCommandBufferCreateInfo& command_buffer_ci, std::thread::id thread_id)
+FVkCommandBuffer& VkRenderBackend::CreateCommandBuffer(const FVkCommandBufferCreateInfo& command_buffer_ci, std::thread::id thread_id)
 {
 	auto& thread_context = m_perThreadContext[thread_id];
 	auto& per_queue = thread_context.perQueue[command_buffer_ci.mask];
@@ -1759,7 +1759,7 @@ FVkCommandBuffer& CVkRenderContext::CreateCommandBuffer(const FVkCommandBufferCr
 	return command_buffer;
 }
 
-FVkCommandBuffer& CVkRenderContext::GetLastCommandBuffer(EQueueTypeFlagBits queue_type, std::thread::id thread_id)
+FVkCommandBuffer& VkRenderBackend::GetLastCommandBuffer(EQueueTypeFlagBits queue_type, std::thread::id thread_id)
 {
 	auto& thread_context = m_perThreadContext[thread_id];
 	auto& per_queue = thread_context.perQueue[queue_type];
@@ -1767,7 +1767,7 @@ FVkCommandBuffer& CVkRenderContext::GetLastCommandBuffer(EQueueTypeFlagBits queu
 	return per_queue.commandBuffers.back();
 }
 
-FVkCommandBuffer& CVkRenderContext::GetCommandBuffer(EQueueTypeFlagBits queue_type, u64 index, std::thread::id thread_id)
+FVkCommandBuffer& VkRenderBackend::GetCommandBuffer(EQueueTypeFlagBits queue_type, u64 index, std::thread::id thread_id)
 {
 	auto& thread_context = m_perThreadContext[thread_id];
 	auto& per_queue = thread_context.perQueue[queue_type];
@@ -1775,7 +1775,7 @@ FVkCommandBuffer& CVkRenderContext::GetCommandBuffer(EQueueTypeFlagBits queue_ty
 	return per_queue.commandBuffers.at(index);
 }
 
-utl::vector<FVkCommandBuffer>& CVkRenderContext::GetCommandBuffers(EQueueTypeFlagBits queue_type, std::thread::id thread_id)
+utl::vector<FVkCommandBuffer>& VkRenderBackend::GetCommandBuffers(EQueueTypeFlagBits queue_type, std::thread::id thread_id)
 {
 	auto& thread_context = m_perThreadContext[thread_id];
 	auto& per_queue = thread_context.perQueue[queue_type];
@@ -1783,7 +1783,7 @@ utl::vector<FVkCommandBuffer>& CVkRenderContext::GetCommandBuffers(EQueueTypeFla
 	return per_queue.commandBuffers;
 }
 
-void CVkRenderContext::DestroyCommandBuffer(EQueueTypeFlagBits queue_type, std::thread::id thread_id)
+void VkRenderBackend::DestroyCommandBuffer(EQueueTypeFlagBits queue_type, std::thread::id thread_id)
 {
 	auto& thread_context = m_perThreadContext[thread_id];
 	auto& per_queue = thread_context.perQueue[queue_type];
@@ -1793,12 +1793,12 @@ void CVkRenderContext::DestroyCommandBuffer(EQueueTypeFlagBits queue_type, std::
 	per_queue.commandBuffers.pop_back();
 }
 
-const std::unique_ptr<CVkRenderDevice>& CVkRenderContext::getDevice() const
+const std::unique_ptr<CVkRenderDevice>& VkRenderBackend::getDevice() const
 {
 	return m_pDevice;
 }
 
-void CVkRenderContext::BeginFrame()
+void VkRenderBackend::BeginFrame()
 {
 	u32 image_index{ 0u };
 
@@ -1850,7 +1850,7 @@ void CVkRenderContext::BeginFrame()
 	}
 }
 
-void CVkRenderContext::EndFrame()
+void VkRenderBackend::EndFrame()
 {
 	// TODO: here i should run only main command buffer. But for now i getting the last one
 	auto& command_buffer = GetLastCommandBuffer(EQueueTypeFlagBits::eGraphics);
@@ -1924,12 +1924,12 @@ void CVkRenderContext::EndFrame()
 	m_utilizationCounter++;
 }
 
-bool CVkRenderContext::IsSwapChainFinished()
+bool VkRenderBackend::IsSwapChainFinished()
 {
 	return (m_utilizationCounter % m_pDevice->m_swapchain.framesInFlight == 0) && m_utilizationCounter != 0ull;
 }
 
-void CVkRenderContext::BeginDebugLabel(const std::string& label, EQueueTypeFlagBits queue_type, u32 color)
+void VkRenderBackend::BeginDebugLabel(const std::string& label, EQueueTypeFlagBits queue_type, u32 color)
 {
 	auto& command_buffer = GetLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
@@ -1937,7 +1937,7 @@ void CVkRenderContext::BeginDebugLabel(const std::string& label, EQueueTypeFlagB
 	m_pDevice->DebugBeginLabel(current, label, color);
 }
 
-void CVkRenderContext::InsertDebugLabel(const std::string& label, EQueueTypeFlagBits queue_type, u32 color)
+void VkRenderBackend::InsertDebugLabel(const std::string& label, EQueueTypeFlagBits queue_type, u32 color)
 {
 	auto& command_buffer = GetLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
@@ -1945,7 +1945,7 @@ void CVkRenderContext::InsertDebugLabel(const std::string& label, EQueueTypeFlag
 	m_pDevice->DebugInsertLabel(current, label, color);
 }
 
-void CVkRenderContext::EndDebugLabel(EQueueTypeFlagBits queue_type)
+void VkRenderBackend::EndDebugLabel(EQueueTypeFlagBits queue_type)
 {
 	auto& command_buffer = GetLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
@@ -1953,7 +1953,7 @@ void CVkRenderContext::EndDebugLabel(EQueueTypeFlagBits queue_type)
 	m_pDevice->EndLabel(current);
 }
 
-void CVkRenderContext::DestroyThreadContext(FVkThreadContext& context)
+void VkRenderBackend::DestroyThreadContext(FVkThreadContext& context)
 {
 	// Destroy command buffers and pools
 	for (auto& [queue_id, queue_resources] : context.perQueue)
@@ -1972,7 +1972,7 @@ void CVkRenderContext::DestroyThreadContext(FVkThreadContext& context)
 	m_pDevice->DestroyDescriptorPool(context.descriptorPool);
 }
 
-void CVkRenderContext::ProcessResourceBarriers()
+void VkRenderBackend::ProcessResourceBarriers()
 {
 	// TODO: add mip level and array layer support
 	if (m_textureLayoutInfos.empty())
@@ -2020,7 +2020,7 @@ void CVkRenderContext::ProcessResourceBarriers()
 	m_textureLayoutInfos.clear();
 }
 
-void CVkRenderContext::ProcessResourceUpload()
+void VkRenderBackend::ProcessResourceUpload()
 {
 	if (m_textureUploadInfos.empty() && m_bufferUploadInfos.empty())
 		return;
@@ -2297,7 +2297,7 @@ void CVkRenderContext::ProcessResourceUpload()
 	m_bufferUploadInfos.clear();
 }
 
-void CVkRenderContext::ProcessResourceUtilization()
+void VkRenderBackend::ProcessResourceUtilization()
 {
 	while (!m_destroyResource.empty())
 	{
@@ -2326,7 +2326,7 @@ void CVkRenderContext::ProcessResourceUtilization()
 	}
 }
 
-void CVkRenderContext::UpdateBackbuffer()
+void VkRenderBackend::UpdateBackbuffer()
 {
 	auto& swapchain = m_pDevice->m_swapchain;
 
@@ -2350,7 +2350,7 @@ void CVkRenderContext::UpdateBackbuffer()
 	}
 }
 
-FVkBufferCreateInfo CVkRenderContext::MakeBufferCreateInfo(const std::string& name, const FBufferCreateInfo& buffer_ci)
+FVkBufferCreateInfo VkRenderBackend::MakeBufferCreateInfo(const std::string& name, const FBufferCreateInfo& buffer_ci)
 {
 	auto& physical = m_pDevice->GetPhysicalDevice();
 
@@ -2411,7 +2411,7 @@ FVkBufferCreateInfo CVkRenderContext::MakeBufferCreateInfo(const std::string& na
 	return vk_buffer_ci;
 }
 
-FRenderApiErrorInfo CVkRenderContext::CreateTexture(const FVkTextureCreateInfo& texture_ci, FVkTexture& texture)
+FRenderApiErrorInfo VkRenderBackend::CreateTexture(const FVkTextureCreateInfo& texture_ci, FVkTexture& texture)
 {
 	texture.info.format = texture_ci.format;
 	texture.info.flags = texture_ci.flags;
@@ -2536,7 +2536,7 @@ FRenderApiErrorInfo CVkRenderContext::CreateTexture(const FVkTextureCreateInfo& 
 	return res;
 }
 
-void CVkRenderContext::DestroyTexture(FVkTexture& texture)
+void VkRenderBackend::DestroyTexture(FVkTexture& texture)
 {	
 	for(auto& mip : texture.mips)
 		m_pDevice->DestroyImageView(mip.imageView);
@@ -2548,7 +2548,7 @@ void CVkRenderContext::DestroyTexture(FVkTexture& texture)
 	texture.isAlive = false;
 }
 
-FRenderApiErrorInfo CVkRenderContext::CreateShaderResources(const FVkShaderResourcesInfo& resources_info, FVkShader& shader)
+FRenderApiErrorInfo VkRenderBackend::CreateShaderResources(const FVkShaderResourcesInfo& resources_info, FVkShader& shader)
 {
 	auto& reflection = m_pResources->get<FVkShaderReflectionData>(shader.reflection);
 
@@ -2665,7 +2665,7 @@ FRenderApiErrorInfo CVkRenderContext::CreateShaderResources(const FVkShaderResou
 }
 
 // Destroy shader object
-void CVkRenderContext::DestroyShader(FVkShader& shader)
+void VkRenderBackend::DestroyShader(FVkShader& shader)
 {
 	for (auto& pipeline : shader.handles)
 		m_pDevice->DestroyPipeline(pipeline);
@@ -2693,7 +2693,7 @@ void CVkRenderContext::DestroyShader(FVkShader& shader)
 	shader.isAlive = false;
 }
 
-void CVkRenderContext::BindShaderDescriptors(const FVkCommandBuffer& command_buffer, const FVkShader& shader)
+void VkRenderBackend::BindShaderDescriptors(const FVkCommandBuffer& command_buffer, const FVkShader& shader)
 {
 	utl::vector<vk::DescriptorSet> bindDescriptorSets{};
 
@@ -2722,20 +2722,20 @@ void CVkRenderContext::BindShaderDescriptors(const FVkCommandBuffer& command_buf
 	}
 }
 
-void CVkRenderContext::ProcessImageLayoutTranslation(const FVkCommandBuffer& command_buffer, const FVkImageTranslationInfo& image_translation_info)
+void VkRenderBackend::ProcessImageLayoutTranslation(const FVkCommandBuffer& command_buffer, const FVkImageTranslationInfo& image_translation_info)
 {
 	FVkTranslationInfo translation_info{};
 	translation_info.imageTranslationInfos.emplace_back(image_translation_info);
 	ProcessMemoryBarriers(command_buffer, translation_info);
 }
 
-void CVkRenderContext::TextureLayoutTranslation(const FVkCommandBuffer& command_buffer, FVkTexture& texture, const FVkTextureTranslationInfo& translation_info)
+void VkRenderBackend::TextureLayoutTranslation(const FVkCommandBuffer& command_buffer, FVkTexture& texture, const FVkTextureTranslationInfo& translation_info)
 {
 	auto image_layout_translation = get_texture_layout_translation_info(texture, translation_info);
 	ProcessImageLayoutTranslation(command_buffer, image_layout_translation);
 }
 
-void CVkRenderContext::CopyBufferToTexture(const FVkCommandBuffer& command_buffer, const FVkBuffer& buffer, const FVkTexture& texture, const utl::vector<vk::BufferImageCopy2KHR>& copy_regions)
+void VkRenderBackend::CopyBufferToTexture(const FVkCommandBuffer& command_buffer, const FVkBuffer& buffer, const FVkTexture& texture, const utl::vector<vk::BufferImageCopy2KHR>& copy_regions)
 {
 	auto& current_buffer = command_buffer.get();
 	auto& target_subresource = texture.getSubresource();

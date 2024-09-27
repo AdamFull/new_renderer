@@ -43,7 +43,7 @@ namespace engine
 
 			FShaderReflectionData m_reflection{};
 
-			IRenderContext* m_pRenderContext{ nullptr };
+			IRenderBackend* m_pRenderContext{ nullptr };
 		};
 	}
 }

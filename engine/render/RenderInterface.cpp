@@ -1,7 +1,7 @@
 #include "RenderInterface.h"
 #include <uuid.hpp>
 
-#include "render_api/vulkan/VkRenderContext.h"
+#include <engine/render/render_api/vulkan/VkRenderBackend.h>
 
 #include "BufferObject.h"
 #include "ShaderObject.h"
@@ -23,15 +23,15 @@ constexpr const u64 MAX_RENDER_OBJECT_COUNT{ 16384ull };
 constexpr const u64 MAX_PRIMITIVE_COUNT{ 512ull };
 constexpr const u64 MAX_MATERIAL_COUNT{ 512ull };
 
-std::unique_ptr<IRenderContext> make_render_context(const FRenderInterfaceCreateInfo& rhi_ci)
+std::unique_ptr<IRenderBackend> make_render_context(const FRenderInterfaceCreateInfo& rhi_ci)
 {
 	FRenderContextCreateInfo context_ci{};
-	std::unique_ptr<IRenderContext> render_context{};
+	std::unique_ptr<IRenderBackend> render_backend{};
 
 	if (rhi_ci.render_api == ERenderApi::eVulkan10 || rhi_ci.render_api == ERenderApi::eVulkan11 ||
 		rhi_ci.render_api == ERenderApi::eVulkan12 || rhi_ci.render_api == ERenderApi::eVulkan13)
 	{
-		render_context = std::make_unique<vulkan::CVkRenderContext>();
+		render_backend = std::make_unique<vulkan::VkRenderBackend>();
 
 		context_ci.apiVersion = rhi_ci.render_api;
 		context_ci.requiredDeviceExtensions = {
@@ -71,10 +71,10 @@ std::unique_ptr<IRenderContext> make_render_context(const FRenderInterfaceCreate
 
 		context_ci.window = rhi_ci.window;
 
-		render_context->Create(context_ci);
+		render_backend->Create(context_ci);
 	}
 
-	return render_context;
+	return render_backend;
 }
 
 struct FShaderNameInfo
@@ -493,7 +493,7 @@ const std::unique_ptr<IRenderWorld>& CRenderInterface::GetRenderWorld()
 	return m_pRenderWorld;
 }
 
-const std::unique_ptr<IRenderContext>& CRenderInterface::GetRenderContext()
+const std::unique_ptr<IRenderBackend>& CRenderInterface::GetRenderBackend()
 {
 	return m_pRenderContext;
 }

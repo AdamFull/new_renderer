@@ -36,7 +36,7 @@ void CComputeGeometryPass::_Execute()
 {
 	std::unordered_set<FRHIHandle> vbos{};
 
-	auto& render_context = m_pRenderInterface->GetRenderContext();
+	auto& render_backend = m_pRenderInterface->GetRenderBackend();
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
 
 
@@ -92,7 +92,7 @@ void CComputeGeometryPass::_Execute()
 			shader->FlushConstants(m_queue);
 
 			m_dispatchGroup.shaderHandle = shader->Handle();
-			render_context->Dispatch(m_queue, m_dispatchGroup, 0);
+			render_backend->Dispatch(m_queue, m_dispatchGroup, 0);
 		}
 	}
 }

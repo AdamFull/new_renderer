@@ -34,7 +34,7 @@ void CComputeCullingPass::Update(f32 dt)
 
 void CComputeCullingPass::_Execute()
 {
-	auto& render_context = m_pRenderInterface->GetRenderContext();
+	auto& render_backend = m_pRenderInterface->GetRenderBackend();
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
 	auto& world_stats = render_world->GetStats();
 
@@ -93,7 +93,7 @@ void CComputeCullingPass::_Execute()
 			dispatch_info.globalSizes.z = 1;
 			dispatch_info.shaderHandle = shader->Handle();
 
-			render_context->Dispatch(m_queue, dispatch_info, 0);
+			render_backend->Dispatch(m_queue, dispatch_info, 0);
 		}
 	}
 }

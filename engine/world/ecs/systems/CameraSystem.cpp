@@ -32,7 +32,7 @@ void CCameraSystem::__Update(f32 fDt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto& render_context = m_pRenderInterface->GetRenderContext();
+	auto& render_backend = m_pRenderInterface->GetRenderBackend();
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
 
 	auto view = CEntityManager::View<FTransformComponent, FBaseComponent, FCameraComponent>();
@@ -47,7 +47,7 @@ void CCameraSystem::__Update(f32 fDt)
 
 			//if (camera.moved)
 			{
-				auto screen_size = render_context->GetScreenRenderRect();
+				auto screen_size = render_backend->GetScreenRenderRect();
 				glm::mat4 prev_view = camera.view;
 				glm::mat4 prev_projection = camera.projection;
 				camera.view = glm::lookAt(transform.gposition, transform.gposition + camera.forward, camera.up);

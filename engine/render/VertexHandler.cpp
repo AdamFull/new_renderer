@@ -166,7 +166,7 @@ CVertexHandler::CVertexHandler(IRenderInterface* render_interface)
 // TODO: destroy buffers
 CVertexHandler::~CVertexHandler()
 {
-	auto& render_context = m_pRenderInterface->GetRenderContext();
+	auto& render_backend = m_pRenderInterface->GetRenderBackend();
 }
 
 // NOTE: current implementation work only with interleaved vertex
@@ -178,7 +178,7 @@ void CVertexHandler::Create(const FVertexHandlerCreateInfo& create_info)
 
 	// Initialize attribute descriptions
 	u64 vertex_size{ 0ull };
-	auto& render_context = m_pRenderInterface->GetRenderContext();
+	auto& render_backend = m_pRenderInterface->GetRenderBackend();
 	for (const auto& desc : create_info.descriptions)
 	{
 		//if (desc.type == EVertexAttributeType::eJoint)
@@ -232,7 +232,7 @@ void CVertexHandler::Create(const FVertexHandlerCreateInfo& create_info)
 
 void CVertexHandler::Allocate()
 {
-	auto& render_context = m_pRenderInterface->GetRenderContext();
+	auto& render_backend = m_pRenderInterface->GetRenderBackend();
 
 	for (auto& buffer : m_vGeometryBuffers)
 		buffer->Upload();
@@ -246,12 +246,12 @@ void CVertexHandler::Bind(EQueueTypeFlagBits queue)
 
 	if (index_buffer->Count())
 	{
-		auto& render_context = m_pRenderInterface->GetRenderContext();
+		auto& render_backend = m_pRenderInterface->GetRenderBackend();
 		{
 			FVertexBufferBindingInfo binding_info{};
 			binding_info.buffers.emplace_back(vertex_buffer->Buffer()->Handle());
 			binding_info.offsets.emplace_back(0ull);
-			render_context->BindVertexBuffers(binding_info, queue);
+			render_backend->BindVertexBuffers(binding_info, queue);
 		}
 
 		if (index_buffer->Count())
@@ -259,7 +259,7 @@ void CVertexHandler::Bind(EQueueTypeFlagBits queue)
 			FIndexBufferBindingInfo binding_info{};
 			binding_info.bufferId = index_buffer->Buffer()->Handle();
 			binding_info.indexSize = index_buffer->Stride();
-			render_context->BindIndexBuffer(binding_info, queue);
+			render_backend->BindIndexBuffer(binding_info, queue);
 		}
 	}
 }

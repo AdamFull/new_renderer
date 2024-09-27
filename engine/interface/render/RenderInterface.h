@@ -21,7 +21,7 @@ namespace engine
 
 	namespace render
 	{
-		class IRenderContext;
+		class IRenderBackend;
 		class IRenderInterface;
 
 		namespace shader_bindings
@@ -315,10 +315,10 @@ namespace engine
 			u64 usedGPUMemory{};
 		};
 
-		class IRenderContext
+		class IRenderBackend
 		{
 		public:
-			virtual ~IRenderContext() = default;
+			virtual ~IRenderBackend() = default;
 
 			virtual void Create(const FRenderContextCreateInfo& context_ci) = 0;
 			virtual void CreateGlobalDescriptor(const FGlobalUniformCreateInfo& uniform_ci) = 0;
@@ -507,7 +507,7 @@ namespace engine
 			virtual const std::unique_ptr<FRenderDataPacket>& GetRenderPacket() = 0;
 			virtual const std::unique_ptr<IRenderGraph>& GetRenderGraph() = 0;
 			virtual const std::unique_ptr<IRenderWorld>& GetRenderWorld() = 0;
-			virtual const std::unique_ptr<IRenderContext>& GetRenderContext() = 0;
+			virtual const std::unique_ptr<IRenderBackend>& GetRenderBackend() = 0;
 			virtual const std::unique_ptr<IResourceLoader>& GetResourceLoader() = 0;
 		};
 	}

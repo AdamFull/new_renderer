@@ -476,8 +476,8 @@ void CImGuiEngineSystem::Initialize()
 
 void CImGuiEngineSystem::Update(f32 dt)
 {
-	auto& render_context = m_pRenderInterface->GetRenderContext();
-	auto resolution = render_context->GetScreenRenderRect();
+	auto& render_backend = m_pRenderInterface->GetRenderBackend();
+	auto resolution = render_backend->GetScreenRenderRect();
 
 	ImGuiIO& io = ImGui::GetIO();
 	io.DisplaySize = ImVec2(resolution.size.x, resolution.size.y);

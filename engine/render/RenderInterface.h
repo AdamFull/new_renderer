@@ -59,7 +59,7 @@ namespace engine
 			const std::unique_ptr<FRenderDataPacket>& GetRenderPacket() override;
 			const std::unique_ptr<IRenderGraph>& GetRenderGraph() override;
 			const std::unique_ptr<IRenderWorld>& GetRenderWorld() override;
-			const std::unique_ptr<IRenderContext>& GetRenderContext() override;
+			const std::unique_ptr<IRenderBackend>& GetRenderBackend() override;
 			const std::unique_ptr<IResourceLoader>& GetResourceLoader() override;
 		protected:
 			FTextureCreateInfo ApplyTextureExtent(const FTextureCreateInfo& texture_ci);
@@ -73,7 +73,7 @@ namespace engine
 			std::unique_ptr<IRenderGraph> m_pRenderGraph{};
 			std::unique_ptr<IRenderWorld> m_pRenderWorld{};
 			std::unique_ptr<resource_container_t> m_pResources{};
-			std::unique_ptr<IRenderContext> m_pRenderContext{};
+			std::unique_ptr<IRenderBackend> m_pRenderContext{};
 			std::unique_ptr<IResourceLoader> m_pResourceLoader{};
 		};
 	}

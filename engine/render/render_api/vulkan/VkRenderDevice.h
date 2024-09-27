@@ -31,7 +31,7 @@ namespace engine
 			class CVkRenderDevice
 			{
 			public:
-				friend class CVkRenderContext;
+				friend class VkRenderBackend;
 
 				~CVkRenderDevice();
 

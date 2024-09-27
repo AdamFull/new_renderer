@@ -37,7 +37,7 @@ void CDebugDrawPass::Init(const FRenderPassCreateInfo& pass_ci)
 	FTextureUploadInfo upload_info{};
 	upload_info.data.insert(upload_info.data.end(), pixels, pixels + upload_size);
 
-	auto& render_context = m_pRenderInterface->GetRenderContext();
+	auto& render_backend = m_pRenderInterface->GetRenderBackend();
 	m_fontTexture = m_pRenderInterface->CreateTextureObject("default_debug_font", font_ci, std::move(upload_info));
 
 	// Init 2d part
@@ -109,8 +109,8 @@ void CDebugDrawPass::Render3D()
 
 void CDebugDrawPass::_Render()
 {
-	auto& render_context = m_pRenderInterface->GetRenderContext();
-	auto resolution = render_context->GetScreenRenderRect();
+	auto& render_backend = m_pRenderInterface->GetRenderBackend();
+	auto resolution = render_backend->GetScreenRenderRect();
 
 	ImDbgIO* io = ImDbg::GetIO();
 
@@ -126,7 +126,7 @@ void CDebugDrawPass::_Render()
 			vertex_handler->Bind(m_queue);
 
 		// Setup viewport:
-		render_context->SetViewport(resolution.size.x, resolution.size.y, false);
+		render_backend->SetViewport(resolution.size.x, resolution.size.y, false);
 
 		u32 global_idx_offset{ 0u };
 		u32 global_vtx_offset{ 0u };
@@ -147,7 +147,7 @@ void CDebugDrawPass::_Render()
 			else if (draw_list.type == ImDbgGeometryType::eTriangles)
 				topology = EVertexPrimitiveTopology::eTriangleList;
 
-			render_context->SetPrimitiveTopology(EVertexPrimitiveTopology::eTriangleList);
+			render_backend->SetPrimitiveTopology(EVertexPrimitiveTopology::eTriangleList);
 
 			auto& constants = shader->GetConstantBlock(utl::murmur_hash_64("constants"));
 			if (constants)
@@ -192,8 +192,8 @@ void CDebugDrawPass::_Render()
 				}
 
 				// Apply scissor/clipping rectangle
-				render_context->SetScissorRect((int32_t)(clip_min.x), (int32_t)(clip_min.y), (uint32_t)(clip_max.x - clip_min.x), (uint32_t)(clip_max.y - clip_min.y));
-				//render_context->SetScissorRect(0, 0, resolution.size.x, resolution.size.y);
+				render_backend->SetScissorRect((int32_t)(clip_min.x), (int32_t)(clip_min.y), (uint32_t)(clip_max.x - clip_min.x), (uint32_t)(clip_max.y - clip_min.y));
+				//render_backend->SetScissorRect(0, 0, resolution.size.x, resolution.size.y);
 
 				FGeometryDrawInfo draw_info{};
 				draw_info.lastVertex = m_lastVertex;
@@ -205,7 +205,7 @@ void CDebugDrawPass::_Render()
 				range.beginVertex = command.vertexOffset + global_vtx_offset;
 
 				// Draw
-				render_context->Draw(m_queue, draw_info);
+				render_backend->Draw(m_queue, draw_info);
 			}
 
 			global_idx_offset += draw_list.indices.size();

@@ -39,7 +39,7 @@ namespace engine
 			uint64_t m_virtualAddress{ 0ull };
 			void* m_pMapped{ nullptr };
 
-			IRenderContext* m_pRenderContext{ nullptr };
+			IRenderBackend* m_pRenderContext{ nullptr };
 		};
 	}
 }

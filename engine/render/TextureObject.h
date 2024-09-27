@@ -25,7 +25,7 @@ namespace engine
 		private:
 			FAPIHandle m_textureId{};
 
-			IRenderContext* m_pRenderContext{ nullptr };
+			IRenderBackend* m_pRenderContext{ nullptr };
 		};
 	}
 }

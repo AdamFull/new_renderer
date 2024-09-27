@@ -48,7 +48,7 @@ void CImGuiPass::Init(const FRenderPassCreateInfo& pass_ci)
 	FTextureUploadInfo upload_info{};
 	upload_info.data.insert(upload_info.data.end(), pixels, pixels + upload_size);
 
-	auto& render_context = m_pRenderInterface->GetRenderContext();
+	auto& render_backend = m_pRenderInterface->GetRenderBackend();
 	m_fontTexture = m_pRenderInterface->CreateTextureObject("imgui_font", font_ci, std::move(upload_info));
 
 	// Make RHI shader object
@@ -102,8 +102,8 @@ void CImGuiPass::Update(f32 dt)
 
 void CImGuiPass::_Render()
 {
-	auto& render_context = m_pRenderInterface->GetRenderContext();
-	auto resolution = render_context->GetScreenRenderRect();
+	auto& render_backend = m_pRenderInterface->GetRenderBackend();
+	auto resolution = render_backend->GetScreenRenderRect();
 
 	ImGuiIO& io = ImGui::GetIO();
 
@@ -122,7 +122,7 @@ void CImGuiPass::_Render()
 			vertex_handler->Bind(m_queue);
 
 		// Setup viewport:
-		render_context->SetViewport(resolution.size.x, resolution.size.y, m_bFlipViewport);
+		render_backend->SetViewport(resolution.size.x, resolution.size.y, m_bFlipViewport);
 
 		// Setup scale and translation:
 		// Our visible imgui space lies from draw_data->DisplayPps (top left) to draw_data->DisplayPos+data_data->DisplaySize (bottom right). DisplayPos is (0,0) for single viewport apps.
@@ -186,7 +186,7 @@ void CImGuiPass::_Render()
 						continue;
 
 					// Apply scissor/clipping rectangle
-					render_context->SetScissorRect((int32_t)(clip_min.x), (int32_t)(clip_min.y), (uint32_t)(clip_max.x - clip_min.x), (uint32_t)(clip_max.y - clip_min.y));
+					render_backend->SetScissorRect((int32_t)(clip_min.x), (int32_t)(clip_min.y), (uint32_t)(clip_max.x - clip_min.x), (uint32_t)(clip_max.y - clip_min.y));
 
 					// Bind DescriptorSet with font or user texture
 					FRHIHandle attachment{ (u64)pcmd->TextureId };
@@ -218,7 +218,7 @@ void CImGuiPass::_Render()
 					range.beginVertex = pcmd->VtxOffset + global_vtx_offset;
 
 					// Draw
-					render_context->Draw(m_queue, draw_info);
+					render_backend->Draw(m_queue, draw_info);
 				}
 			}
 			global_idx_offset += cmd_list->IdxBuffer.Size;
@@ -232,6 +232,6 @@ void CImGuiPass::_Render()
 		// If you use VK_DYNAMIC_STATE_VIEWPORT or VK_DYNAMIC_STATE_SCISSOR you are responsible for setting the values before rendering.
 		// In theory we should aim to backup/restore those values but I am not sure this is possible.
 		// We perform a call to vkCmdSetScissor() to set back a full viewport which is likely to fix things for 99% users but technically this is not perfect. (See github #4644)
-		render_context->SetScissorRect(0, 0, (u32)resolution.size.x, (u32)resolution.size.y);
+		render_backend->SetScissorRect(0, 0, (u32)resolution.size.x, (u32)resolution.size.y);
 	}
 }

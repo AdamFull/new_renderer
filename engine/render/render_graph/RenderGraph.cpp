@@ -220,15 +220,15 @@ void CRenderGraph::EvaluateRenderGraphNode(ERenderGraphEvaluateFlags flags, FRen
 		{
 			auto* group_node = cast_graph_node<FRenderGraphGroupNode>(header);
 
-			auto& render_context = m_pRenderInterface->GetRenderContext();
+			auto& render_backend = m_pRenderInterface->GetRenderBackend();
 			if (flags & ERenderGraphEvaluateFlagBits::eRender)
-				render_context->BeginDebugLabel(group_node->name.c_str(), group_node->queue, group_node->color);
+				render_backend->BeginDebugLabel(group_node->name.c_str(), group_node->queue, group_node->color);
 
 			for (auto& node : group_node->nodes)
 				EvaluateRenderGraphNode(flags, node);
 
 			if (flags & ERenderGraphEvaluateFlagBits::eRender)
-				render_context->EndDebugLabel(group_node->queue);
+				render_backend->EndDebugLabel(group_node->queue);
 
 		} break;
 		case ERenderGraphNodeType::ePassNode:
@@ -244,9 +244,9 @@ void CRenderGraph::EvaluateRenderGraphNode(ERenderGraphEvaluateFlags flags, FRen
 
 			if (flags & ERenderGraphEvaluateFlagBits::eRender)
 			{
-				auto& render_context = m_pRenderInterface->GetRenderContext();
+				auto& render_backend = m_pRenderInterface->GetRenderBackend();
 				auto& pass_barriers = m_graph.perPassBarriers[pass_node->passIndex];
-				render_context->ProcessResourceBarriers(pass->m_queue, pass_barriers);
+				render_backend->ProcessResourceBarriers(pass->m_queue, pass_barriers);
 				pass->Execute();
 			}
 		} break;
@@ -286,7 +286,7 @@ void CRenderGraph::DestoyRenderGraphNode(FRenderGraphNodeHeader* header)
 		{
 			auto* group_node = cast_graph_node<FRenderGraphGroupNode>(header);
 
-			auto& render_context = m_pRenderInterface->GetRenderContext();
+			auto& render_backend = m_pRenderInterface->GetRenderBackend();
 
 			for (auto& node : group_node->nodes)
 			{
@@ -548,8 +548,8 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	//delete errHandler;
 	//xercesc::XMLPlatformUtils::Terminate();
 
-	auto& render_context = m_pRenderInterface->GetRenderContext();
-	auto surface_resolution = render_context->GetRenderResolution();
+	auto& render_backend = m_pRenderInterface->GetRenderBackend();
+	auto surface_resolution = render_backend->GetRenderResolution();
 	
 	bool use_low_precision_velocity{ true };
 	
@@ -1562,7 +1562,7 @@ void CRenderGraph::Update(f32 dt)
 
 void CRenderGraph::Execute()
 {
-	auto& render_context = m_pRenderInterface->GetRenderContext();
+	auto& render_backend = m_pRenderInterface->GetRenderBackend();
 
 	EvaluateRenderGraph(ERenderGraphEvaluateFlagBits::eRender);
 
@@ -1577,7 +1577,7 @@ void CRenderGraph::Execute()
 	backbuffer_barrier.dstPassType = EPassType::eNone;
 	backbuffer_barrier.barrierType = ERenderResourceBarrierType::eFinal;
 	
-	render_context->ProcessResourceBarriers(EQueueTypeFlagBits::eGraphics, backbuffer_barriers);
+	render_backend->ProcessResourceBarriers(EQueueTypeFlagBits::eGraphics, backbuffer_barriers);
 }
 
 void CRenderGraph::ApplyRenderPassResources(u64 pass_index, const FRenderConfigPassCreateInfo* raw_pass_ci, FPassCreateInfo* pass_ci)
