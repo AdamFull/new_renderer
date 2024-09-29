@@ -64,11 +64,11 @@ void CBufferObject::Write(const void* data, u64 size, u64 offset)
 {
 	if (size == INVALID_HANDLE)
 	{
-		util::Copy<std::execution::parallel_policy>(m_pMapped, data, m_elemSize * m_elemCount);
+		util::Copy(m_pMapped, data, m_elemSize * m_elemCount, std::execution::par);
 		return;
 	}
 
-	util::Copy<std::execution::parallel_policy>(m_pMapped, data, size * m_elemSize, offset);
+	util::Copy(m_pMapped, offset, data, size * m_elemSize, 0ull, std::execution::par);
 }
 
 void CBufferObject::Flush(u64 size, u64 offset) 

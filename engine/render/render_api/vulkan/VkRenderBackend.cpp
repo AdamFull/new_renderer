@@ -348,7 +348,7 @@ void VkRenderBackend::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo&
 
 		void* mapped_memory{ nullptr };
 		m_pDevice->MapBufferMemory(*buffer, &mapped_memory);
-		util::Copy(mapped_memory, uniform_data.data, uniform_data.size, buffer_descriptor.offset);
+		util::Copy(mapped_memory, buffer_descriptor.offset, uniform_data.data, uniform_data.size);
 		m_pDevice->UnmapBufferMemory(*buffer);
 		buffer_count++;
 	}
@@ -850,7 +850,7 @@ void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_
 			// Write new data to buffer memory
 			void* mapped_memory{ nullptr };
 			m_pDevice->MapBufferMemory(*buffer, &mapped_memory);
-			util::Copy(mapped_memory, uniform_data.data, uniform_data.size, buffer_descriptor.offset);
+			util::Copy(mapped_memory, buffer_descriptor.offset, uniform_data.data, uniform_data.size);
 			m_pDevice->UnmapBufferMemory(*buffer);
 		}
 	}
@@ -2063,7 +2063,7 @@ void VkRenderBackend::ProcessResourceUpload()
 			// Copy data to buffer
 			void* mapped_buffer_memory{ nullptr };
 			m_pDevice->MapBufferMemory(staging_buffer, &mapped_buffer_memory);
-			util::Copy<std::execution::parallel_policy>(mapped_buffer_memory, texture_upload.data.data(), texture_upload.data.size());
+			util::Copy(mapped_buffer_memory, 0ull, texture_upload.data, 0ull, std::execution::par);
 			m_pDevice->UnmapBufferMemory(staging_buffer);
 
 			texture_upload.data.clear();
@@ -2270,7 +2270,7 @@ void VkRenderBackend::ProcessResourceUpload()
 
 		// Copy upload data to buffer
 		char* dst_memory = utl::cast<char*>(mapped_memory);
-		util::Copy<std::execution::parallel_policy>(dst_memory, upload_info.data.data(), upload_info.data.size());
+		util::Copy(dst_memory, 0ull, upload_info.data, 0ull, std::execution::par);
 		m_pDevice->UnmapBufferMemory(src_buffer);
 
 		vk::CopyBufferInfo2KHR copy_buffer{};

@@ -219,8 +219,7 @@ namespace engine
 
 				if (new_hash != old_hash)
 				{
-					// TODO: Copy parallel on big block size
-					util::Copy<std::execution::parallel_policy>(&m_vData[0], data, size, offset);
+					util::Copy(&m_vData[0], offset, data, size, 0ull, std::execution::par);
 					m_vUploadRanges.emplace_back(upload_range{ offset, size });
 				}
 			}

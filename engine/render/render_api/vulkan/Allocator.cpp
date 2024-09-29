@@ -3,6 +3,7 @@
 #include <engine/render/render_api/vulkan/Device.h>
 
 #include <util/Logger.h>
+#include <util/Util.h>
 
 #include <volk.h>
 
@@ -231,13 +232,13 @@ namespace engine
 			{
 				if (persistent)
 				{
-					std::copy(data, data + size, mapped_data + offset);
+					util::Copy(mapped_data, offset, data, size, 0ull, std::execution::par);
 					Flush();
 				}
 				else
 				{
 					Map();
-					std::copy(data, data + size, mapped_data + offset);
+					util::Copy(mapped_data, offset, data, size, 0ull, std::execution::par);
 					Flush();
 					Unmap();
 				}

@@ -58,7 +58,7 @@ void build_specialization_constant_reflection(FVkShaderReflectionData& reflectio
     specialization_constant.offset = utl::cast<u32>(offset);
 
     reflection_data.specializationDataBuffer.resize(offset + specialization_constant.size);
-    engine::util::Copy(reflection_data.specializationDataBuffer.data(), &constant.m.c[0].r[0], specialization_constant.size, offset);
+    engine::util::Copy(reflection_data.specializationDataBuffer.data(), offset, &constant.m.c[0].r[0], specialization_constant.size);
 
     reflection_data.specializationConstants.emplace(name_hash, specialization_constant);
 }
