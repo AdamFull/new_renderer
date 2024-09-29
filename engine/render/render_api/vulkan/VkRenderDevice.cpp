@@ -17,6 +17,7 @@
 #include <engine/render/render_api/vulkan/PhysicalDevice.h>
 #include <engine/render/render_api/vulkan/DebugUtils.h>
 #include <engine/render/render_api/vulkan/Device.h>
+#include <engine/render/render_api/vulkan/Allocator.h>
 
 #include <volk.h>
 
@@ -89,7 +90,6 @@ namespace engine
 				CleanupSwapchain();
 				device->DestroyObject(m_swapchain.handle);
 				device->DestroyObject(m_pipelineCache);
-				m_memoryAllocator.destroy();
 				Handle(*instance).destroySurfaceKHR(surface, m_allocationCallbacks);
 
 				if (m_allocationCallbacks)
@@ -248,7 +248,7 @@ namespace engine
 					debug_utils = std::make_unique<DummyDebugUtils>(*device);
 				}
 
-				CreateMemoryAllocator(context_ci);
+				allocator = std::make_unique<Allocator>(*device);
 
 				check_api_result(CreatePipelineCache(context_ci));
 				auto& extent = context_ci.window->GetExtent();
@@ -352,7 +352,7 @@ namespace engine
 				vma::AllocationCreateInfo alloc_ci{};
 				alloc_ci.usage = image_ci.memoryUsage;
 
-				vk::Result res = m_memoryAllocator.createImage(&image_ci.ci, &alloc_ci, &image.handle, &image.memory, nullptr);
+				vk::Result res = Handle(*allocator).createImage(&image_ci.ci, &alloc_ci, &image.handle, &image.memory, nullptr);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				debug_utils->SetDebugName(image.handle, image_ci.name);
 #endif
@@ -361,7 +361,7 @@ namespace engine
 
 			void VkRenderDevice::DestroyImage(FVkImage& image)
 			{
-				m_memoryAllocator.destroyImage(image.handle, image.memory);
+				Handle(*allocator).destroyImage(image.handle, image.memory);
 			}
 
 			FRenderApiErrorInfo VkRenderDevice::CreateImageView(const FVkImageViewCreateInfo& image_view_ci, vk::ImageView& image_view)
@@ -429,7 +429,7 @@ namespace engine
 				vma::AllocationCreateInfo alloc_ci{};
 				alloc_ci.usage = buffer_ci.memoryUsage;
 
-				vk::Result res = m_memoryAllocator.createBuffer(&ci, &alloc_ci, &buffer.handle, &buffer.memory, nullptr);
+				vk::Result res = Handle(*allocator).createBuffer(&ci, &alloc_ci, &buffer.handle, &buffer.memory, nullptr);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				debug_utils->SetDebugName(buffer.handle, buffer_ci.name);
 #endif
@@ -448,7 +448,7 @@ namespace engine
 			void VkRenderDevice::DestroyBuffer(FVkBuffer& buffer)
 			{
 				UnmapBufferMemory(buffer);
-				m_memoryAllocator.destroyBuffer(buffer.handle, buffer.memory);
+				Handle(*allocator).destroyBuffer(buffer.handle, buffer.memory);
 				buffer.isAlive = false;
 			}
 
@@ -456,7 +456,7 @@ namespace engine
 			{
 				if (!buffer.isMapped)
 				{
-					vk::Result res = m_memoryAllocator.mapMemory(buffer.memory, mappedMemory);
+					vk::Result res = Handle(*allocator).mapMemory(buffer.memory, mappedMemory);
 					buffer.isMapped = res == vk::Result::eSuccess;
 					return make_api_error(buffer.handle.objectType, res, "Failed to map buffer memory");
 				}
@@ -468,14 +468,14 @@ namespace engine
 			{
 				if (buffer.isMapped)
 				{
-					m_memoryAllocator.unmapMemory(buffer.memory);
+					Handle(*allocator).unmapMemory(buffer.memory);
 					buffer.isMapped = false;
 				}
 			}
 
 			void VkRenderDevice::FlushBufferMemory(const FVkBuffer& buffer, vk::DeviceSize size, vk::DeviceSize offset)
 			{
-				m_memoryAllocator.flushAllocation(buffer.memory, size, offset);
+				Handle(*allocator).flushAllocation(buffer.memory, size, offset);
 			}
 
 			FRenderApiErrorInfo VkRenderDevice::CreateDescriptorSetLayout(const FVkDescriptorSetLayoutCreateInfo& layout_ci, vk::DescriptorSetLayout& descriptor_set_layout)
@@ -1070,9 +1070,14 @@ namespace engine
 				return *debug_utils;
 			}
 
+			Allocator& VkRenderDevice::GetAllocator() const
+			{
+				return *allocator;
+			}
+
 			vma::Allocator& VkRenderDevice::GetMemoryAllocator()
 			{
-				return m_memoryAllocator;
+				return Handle(*allocator);
 			}
 
 			const vk::PipelineCache& VkRenderDevice::GetPipelineCache() const
@@ -1168,25 +1173,6 @@ namespace engine
 					//else if(strcmp(extension_name, VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME) == 0)
 					//	device.RequestExtensionFeatures(vk::PhysicalDeviceIndirect)
 				}
-			}
-
-			void VkRenderDevice::CreateMemoryAllocator(const FRenderContextCreateInfo& context_ci)
-			{
-				vma::VulkanFunctions vk_functions{};
-				vk_functions.vkGetInstanceProcAddr = m_dynamicLoader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
-				vk_functions.vkGetDeviceProcAddr = m_dynamicLoader.getProcAddress<PFN_vkGetDeviceProcAddr>("vkGetDeviceProcAddr");
-
-				auto& physical_device = instance->GetBestDevice();
-				vma::AllocatorCreateInfo allocator_ci{};
-				allocator_ci.instance = Handle(*instance);
-				allocator_ci.physicalDevice = Handle(physical_device);
-				allocator_ci.device = Handle(*device);
-				allocator_ci.pAllocationCallbacks = m_allocationCallbacks;
-				allocator_ci.vulkanApiVersion = get_api_version(context_ci.apiVersion);
-				allocator_ci.pVulkanFunctions = &vk_functions;
-				allocator_ci.flags = vma::AllocatorCreateFlagBits::eBufferDeviceAddress;
-
-				m_memoryAllocator = vma::createAllocator(allocator_ci);
 			}
 
 			FRenderApiErrorInfo VkRenderDevice::CreatePipelineCache(const FRenderContextCreateInfo& context_ci)

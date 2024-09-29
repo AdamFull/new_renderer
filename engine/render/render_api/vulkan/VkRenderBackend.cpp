@@ -10,6 +10,7 @@
 #include <engine/render/render_api/vulkan/PhysicalDevice.h>
 #include <engine/render/render_api/vulkan/DebugUtils.h>
 #include <engine/render/render_api/vulkan/Device.h>
+#include <engine/render/render_api/vulkan/Allocator.h>
 
 using namespace engine;
 using namespace engine::render;

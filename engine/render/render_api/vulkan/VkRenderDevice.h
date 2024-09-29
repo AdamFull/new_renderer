@@ -24,6 +24,7 @@ namespace engine
 			class PhysicalDevice;
 			class DebugUtils;
 			class Device;
+			class Allocator;
 
 			// =================================================================================
 			// =================================VkRenderDevice================================
@@ -152,6 +153,7 @@ namespace engine
 				PhysicalDevice& GetPhysicalDevice() const;
 				Device& GetLogicalDevice() const;
 				DebugUtils& GetDebugUtils() const;
+				Allocator& GetAllocator() const;
 
 				vma::Allocator& GetMemoryAllocator();
 
@@ -164,7 +166,6 @@ namespace engine
 			protected:
 				void RegisterAllocationCallbacks();
 				void EnableDeviceFeatures(PhysicalDevice& device);
-				void CreateMemoryAllocator(const FRenderContextCreateInfo& context_ci);
 				FRenderApiErrorInfo CreatePipelineCache(const FRenderContextCreateInfo& context_ci);
 				FRenderApiErrorInfo CreateSwapchain(u32 surface_width, u32 surface_height);
 
@@ -193,9 +194,9 @@ namespace engine
 
 				std::unique_ptr<Device> device;
 
-				vk::SampleCountFlagBits m_requiredSampleCount{ vk::SampleCountFlagBits::e1 };
+				std::unique_ptr<Allocator> allocator;
 
-				vma::Allocator m_memoryAllocator{ nullptr };
+				vk::SampleCountFlagBits m_requiredSampleCount{ vk::SampleCountFlagBits::e1 };
 
 				vk::PipelineCache m_pipelineCache{ nullptr };
 				FSwapchain m_swapchain{};
