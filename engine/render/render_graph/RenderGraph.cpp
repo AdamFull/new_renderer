@@ -1243,14 +1243,14 @@ void CRenderGraph::Create(const utl::vector<u8>& config, const utl::vector<u8>& 
 	}
 
 	// Debug draw pass
-	{
-		FRenderGraphRenderPassNodeCreateInfo create_info;
-		create_info.name = "debug_draw_pass";
-		create_info.pass_ci = makeGraphicsPassCI(ERenderingType::eDebugDraw, EQueueTypeFlagBits::eGraphics, "testing:debug_draw");
-		create_info.pass_ci.AddWriteResource("pre_present");
-	
-		AddRenderNode(create_info);
-	}
+	//{
+	//	FRenderGraphRenderPassNodeCreateInfo create_info;
+	//	create_info.name = "debug_draw_pass";
+	//	create_info.pass_ci = makeGraphicsPassCI(ERenderingType::eDebugDraw, EQueueTypeFlagBits::eGraphics, "testing:debug_draw");
+	//	create_info.pass_ci.AddWriteResource("pre_present");
+	//
+	//	AddRenderNode(create_info);
+	//}
 	
 	// Blit pass
 	{

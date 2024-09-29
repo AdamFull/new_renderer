@@ -241,6 +241,9 @@ namespace ImDbg
     // For 2d drawings
     void DrawPoint2D(const glm::vec2& position, ImDbgColor color, f32 size)
     {
+        if (!context)
+            return;
+
         auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::ePoints];
 
         auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
@@ -259,6 +262,9 @@ namespace ImDbg
 
     void DrawLine2D(const glm::vec2& from, const glm::vec2& to, ImDbgColor color, f32 thickness)
     {
+        if (!context)
+            return;
+
         auto min = glm::min(from, to);
         auto range = glm::max(from, to) - min;
 
@@ -294,6 +300,9 @@ namespace ImDbg
 
     void DrawArc2D(const glm::vec2& center, f32 radius, f32 start_angle, f32 end_angle, ImDbgColor color, i32 segments, f32 thickness)
     {
+        if (!context)
+            return;
+
         auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eLines];
 
         float increment = (end_angle - start_angle) / segments;
@@ -326,6 +335,9 @@ namespace ImDbg
 
     void DrawPie2D(const glm::vec2& center, f32 radius, f32 start_angle, f32 end_angle, ImDbgColor color, i32 segments)
     {
+        if (!context)
+            return;
+
         auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eTriangles];
 
         float increment = (end_angle - start_angle) / segments;
@@ -427,12 +439,18 @@ namespace ImDbg
 
     void DrawFillTriangle2D(const glm::vec2& p1, const glm::vec2& p2, const glm::vec2& p3, ImDbgColor color)
     {
+        if (!context)
+            return;
+
         const std::array<glm::vec2, 3ull> points{ p1, p2, p3 };
         DrawFillPolygon2D(points, color);
     }
 
     void DrawPolygon2D(const ArrayProxy<glm::vec2>& points, ImDbgColor color, f32 thickness)
     {
+        if (!context)
+            return;
+
         if (points.size() < 2) return;
 
         // Calculate polygon aabb
@@ -469,6 +487,9 @@ namespace ImDbg
 
     void DrawFillPolygon2D(const ArrayProxy<glm::vec2>& points, ImDbgColor color)
     {
+        if (!context)
+            return;
+
         if (points.size() < 3) return;
 
         // Calculate polygon aabb
@@ -509,6 +530,9 @@ namespace ImDbg
 
     void DrawRoundedRect2D(const glm::vec2& min, const glm::vec2& max, f32 radius, ImDbgColor color, f32 thickness)
     {
+        if (!context)
+            return;
+
         auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eLines];
 
         const int segments = 8;
@@ -595,6 +619,9 @@ namespace ImDbg
 
     void DrawFillRoundedRect2D(const glm::vec2& min, const glm::vec2& max, f32 radius, ImDbgColor color)
     {
+        if (!context)
+            return;
+
         auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eTriangles];
 
         // Define corners
@@ -728,6 +755,9 @@ namespace ImDbg
 
     void DrawText2D(const glm::vec2& position, const std::string& text, ImDbgColor color)
     {
+        if (!context)
+            return;
+
         auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eTriangles];
 
         auto& font_atlas = context->font->atlases[0]; // Assuming you have only one font atlas
@@ -809,6 +839,9 @@ namespace ImDbg
     // For 3d drawings
     void DrawPoint3D(const glm::vec3& position, ImDbgColor color, float size)
     {
+        if (!context)
+            return;
+
         auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::ePoints];
 
         auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
@@ -826,6 +859,9 @@ namespace ImDbg
 
     void DrawLine3D(const glm::vec3& from, const glm::vec3& to, ImDbgColor color, float thickness)
     {
+        if (!context)
+            return;
+
         auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eLines];
 
         auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
@@ -845,6 +881,9 @@ namespace ImDbg
 
     void DrawBox3D(const glm::vec3& min, const glm::vec3& max, ImDbgColor color)
     {
+        if (!context)
+            return;
+
         const glm::vec3 verticesPos[8] =
         {
             { min.x, min.y, min.z },
