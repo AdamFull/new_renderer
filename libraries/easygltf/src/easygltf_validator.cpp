@@ -159,10 +159,10 @@ bool easygltf::validateAnimation(size_t id, const Animation& animation, const st
 	bool result{ true };
 
 	for (size_t sid = 0ull; sid < animation.samplers.size(); ++sid)
-		result = result && validateAnimationSampler(sid, animation.samplers.at(sid), messenger);
+		result = result && validateAnimationSampler(sid, animation.samplers[sid], messenger);
 
 	for (size_t cid = 0ull; cid < animation.channels.size(); ++cid)
-		result = result && validateAnimationChannel(cid, animation.channels.at(cid), messenger);
+		result = result && validateAnimationChannel(cid, animation.channels[cid], messenger);
 
 	return result;
 }
@@ -436,55 +436,55 @@ bool easygltf::validate(const FGLTFRoot& gltf, const std::unique_ptr<IDebugMesse
 
 	// Validate accessors
 	for (size_t id = 0ull; id < gltf.accessors.size(); ++id)
-		result = result && validateAccessor(id, gltf.accessors.at(id), messenger);
+		result = result && validateAccessor(id, gltf.accessors[id], messenger);
 
 	// Validate animations
 	for (size_t id = 0ull; id < gltf.animations.size(); ++id)
-		result = result && validateAnimation(id, gltf.animations.at(id), messenger);
+		result = result && validateAnimation(id, gltf.animations[id], messenger);
 
 	// Validate buffers
 	for (size_t id = 0ull; id < gltf.buffers.size(); ++id)
-		result = result && validateBuffer(id, gltf.buffers.at(id), messenger);
+		result = result && validateBuffer(id, gltf.buffers[id], messenger);
 
 	// Validate buffer views
 	for (size_t id = 0ull; id < gltf.bufferViews.size(); ++id)
-		result = result && validateBufferView(id, gltf.bufferViews.at(id), messenger);
+		result = result && validateBufferView(id, gltf.bufferViews[id], messenger);
 
 	// Validate cameras
 	for (size_t id = 0ull; id < gltf.cameras.size(); ++id)
-		result = result && validateCamera(id, gltf.cameras.at(id), messenger);
+		result = result && validateCamera(id, gltf.cameras[id], messenger);
 
 	// Validate images
 	for (size_t id = 0ull; id < gltf.images.size(); ++id)
-		result = result && validateImage(id, gltf.images.at(id), messenger);
+		result = result && validateImage(id, gltf.images[id], messenger);
 
 	// Validate materials
 	for (size_t id = 0ull; id < gltf.materials.size(); ++id)
-		result = result && validateMaterial(id, gltf.materials.at(id), messenger);
+		result = result && validateMaterial(id, gltf.materials[id], messenger);
 
 	// Validate meshes
 	for (size_t id = 0ull; id < gltf.meshes.size(); ++id)
-		result = result && validateMesh(id, gltf.meshes.at(id), messenger);
+		result = result && validateMesh(id, gltf.meshes[id], messenger);
 
 	// Validate nodes
 	for (size_t id = 0ull; id < gltf.nodes.size(); ++id)
-		result = result && validateNode(id, gltf.nodes.at(id), messenger);
+		result = result && validateNode(id, gltf.nodes[id], messenger);
 
 	// Validate samplers
 	for (size_t id = 0ull; id < gltf.samplers.size(); ++id)
-		result = result && validateSampler(id, gltf.samplers.at(id), messenger);
+		result = result && validateSampler(id, gltf.samplers[id], messenger);
 
 	// Validate scenes
 	for (size_t id = 0ull; id < gltf.scenes.size(); ++id)
-		result = result && validateScene(id, gltf.scenes.at(id), messenger);
+		result = result && validateScene(id, gltf.scenes[id], messenger);
 
 	// Validate skins
 	for (size_t id = 0ull; id < gltf.skins.size(); ++id)
-		result = result && validateSkin(id, gltf.skins.at(id), messenger);
+		result = result && validateSkin(id, gltf.skins[id], messenger);
 
 	// Validate textures
 	for (size_t id = 0ull; id < gltf.textures.size(); ++id)
-		result = result && validateTexture(id, gltf.textures.at(id), messenger);
+		result = result && validateTexture(id, gltf.textures[id], messenger);
 
 	// Validate asset
 	result = result && validateAsset(gltf.asset, messenger);

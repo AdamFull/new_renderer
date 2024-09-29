@@ -47,7 +47,7 @@ void CZipIterator::_OperatorIncrement()
 
 const std::string& CZipIterator::_OperatorDereferencing() const
 {
-    return entries_.at(index_);
+    return entries_[index_];
 }
 
 bool CZipIterator::_OperatorNotEqual(const IDirectoryIteratorInterface* other) const

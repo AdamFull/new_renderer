@@ -26,7 +26,7 @@ namespace engine
 				resource_handle_t current_id = freeIds.front();
 				freeIds.pop();
 
-				objects.at(current_id) = std::move(object);
+				objects[current_id] = std::move(object);
 
 				return current_id;
 			}
@@ -47,7 +47,7 @@ namespace engine
 			{
 				freeIds.push(id);
 				nameToId.erase(it);
-				objects.at(id) = nullptr;
+				objects[id] = nullptr;
 			}
 		}
 
@@ -58,13 +58,13 @@ namespace engine
 			{
 				freeIds.push(it->second);
 				nameToId.erase(it);
-				objects.at(it->second) = nullptr;
+				objects[it->second] = nullptr;
 			}
 		}
 
 		const std::unique_ptr<_Ty>& get(resource_handle_t id)
 		{
-			return objects.at(id);
+			return objects[id];
 		}
 
 		const std::unique_ptr<_Ty>& get(const char* name)

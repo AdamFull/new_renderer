@@ -121,7 +121,7 @@ VkRenderBackend::~VkRenderBackend()
 	auto& textures = m_pResources->data<FVkTexture>();
 	for (resource_handle_t texture_id = 0ull; texture_id < textures.size(); ++texture_id)
 	{
-		auto& texture = textures.at(texture_id);
+		auto& texture = textures[texture_id];
 		if (!texture->isAlive)
 			continue;
 
@@ -132,7 +132,7 @@ VkRenderBackend::~VkRenderBackend()
 	auto& shaders = m_pResources->data<FVkShader>();
 	for (resource_handle_t shader_id = 0ull; shader_id < shaders.size(); ++shader_id)
 	{
-		auto& shader = shaders.at(shader_id);
+		auto& shader = shaders[shader_id];
 		if (!shader->isAlive)
 			continue;
 
@@ -143,7 +143,7 @@ VkRenderBackend::~VkRenderBackend()
 	auto& buffers = m_pResources->data<FVkBuffer>();
 	for (resource_handle_t buffer_id = 0ull; buffer_id < buffers.size(); ++buffer_id)
 	{
-		auto& buffer = buffers.at(buffer_id);
+		auto& buffer = buffers[buffer_id];
 		if (!buffer->isAlive)
 			continue;
 
@@ -315,7 +315,7 @@ void VkRenderBackend::CreateGlobalDescriptor(const FGlobalUniformCreateInfo& uni
 
 void VkRenderBackend::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view)
 {
-	auto& dest_set = m_globalDescriptor.descriptorSet.handles.at(m_pDevice->m_swapchain.currentFrame);
+	auto& dest_set = m_globalDescriptor.descriptorSet.handles[m_pDevice->m_swapchain.currentFrame];
 
 	std::array<vk::DescriptorImageInfo, k_max_texture_update_per_frame> image_descriptors{};
 	std::array<vk::DescriptorBufferInfo, k_max_buffer_update_per_frame> buffer_descriptors{};
@@ -334,7 +334,7 @@ void VkRenderBackend::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo&
 		auto& buffer = m_pResources->get<FVkBuffer>(found_buffer->second);
 		auto element_size = buffer->size / buffer->instanceCount;
 
-		auto& buffer_descriptor = buffer_descriptors.at(buffer_count);
+		auto& buffer_descriptor = buffer_descriptors[buffer_count];
 		buffer_descriptor.buffer = buffer->handle;
 		buffer_descriptor.range = element_size;
 		buffer_descriptor.offset = m_pDevice->m_swapchain.currentFrame * element_size;
@@ -361,13 +361,13 @@ void VkRenderBackend::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo&
 		while (!texture_queue.empty() && texture_count < k_max_texture_update_per_frame)
 		{
 			auto texture_id = texture_queue.front();
-			auto& texture = textures.at(texture_id);
+			auto& texture = textures[texture_id];
 
-			auto& start_element_index = m_textureIndexRemap.at(texture_id);
+			auto& start_element_index = m_textureIndexRemap[texture_id];
 			bool is_storage_image = utl::cast<bool>(texture->info.flags & ETextureCreateFlagBits::eStorage);
 
 			auto& mip_level = texture->getSubresource();
-			auto& image_descriptor = image_descriptors.at(texture_count);
+			auto& image_descriptor = image_descriptors[texture_count];
 			image_descriptor.imageView = mip_level.imageView;
 			image_descriptor.sampler = texture->sampler != ~0ull ? m_samplerCache[texture->sampler] : m_defaultSampler;
 			image_descriptor.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
@@ -654,7 +654,7 @@ FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FCompute
 	// Create shader modules and collect reflection data
 	for (u64 idx = 0ull; idx < shader_stages.size(); ++idx)
 	{
-		auto& code = shader_stages.at(idx);
+		auto& code = shader_stages[idx];
 		FVkShaderModuleCreateInfo shader_module_ci{};
 		shader_module_ci.shaderCode = code.code;
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -697,7 +697,7 @@ FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FCompute
 
 	for (u64 idx = 0ull; idx < pipeline_stages.size(); ++idx)
 	{
-		auto& stage = pipeline_stages.at(idx);
+		auto& stage = pipeline_stages[idx];
 		pipeline_ci.shaderStage = stage;
 #ifndef BUILD_WITHOUT_DEBUGGIND
 		pipeline_ci.name = std::format("{} #{}", name, idx);
@@ -827,19 +827,19 @@ void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_
 			updated_descriptor_sets.emplace(uniform_block.set);
 
 			auto buffer_id = shader->uniformBuffers[uniform_name];
-			auto& buffer = buffers.at(buffer_id);
+			auto& buffer = buffers[buffer_id];
 			auto buffer_element_size = buffer->size / buffer->instanceCount;
 
 			// Not sure that it is correct, because i don't know how to determine previous buffer
-			auto& buffer_descriptor = buffer_descriptors.at(buffer_count);
+			auto& buffer_descriptor = buffer_descriptors[buffer_count];
 			buffer_descriptor.buffer = buffer->handle;
 			buffer_descriptor.range = uniform_block.size;
 			buffer_descriptor.offset = descriptor_index * buffer_element_size;
 			buffer_count++;
 
-			auto& current_descriptor_set = shader->descriptorSets[uniform_block.set].handles.at(descriptor_index);
+			auto& current_descriptor_set = shader->descriptorSets[uniform_block.set].handles[descriptor_index];
 
-			auto& write_descriptor_set = write_descriptor_sets.at(writes_count);
+			auto& write_descriptor_set = write_descriptor_sets[writes_count];
 			write_descriptor_set.descriptorType = uniform_block.descriptorType;
 			write_descriptor_set.dstBinding = uniform_block.binding;
 			write_descriptor_set.dstSet = current_descriptor_set;
@@ -871,16 +871,16 @@ void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_
 			auto& buffer = buffers[buffer_id.Get()];
 
 			// Not sure that it is correct, because i don't know how to determine previous buffer
-			auto& buffer_descriptor = buffer_descriptors.at(buffer_count);
+			auto& buffer_descriptor = buffer_descriptors[buffer_count];
 			buffer_descriptor.buffer = buffer->handle;
 			buffer_descriptor.range = buffer->size;
 			buffer_descriptor.offset = 0ull;
 			buffer_count++;
 
 			auto descriptor_index = shader->descriptorUsage[uniform_block.set];
-			auto& current_descriptor_set = shader->descriptorSets[uniform_block.set].handles.at(descriptor_index);
+			auto& current_descriptor_set = shader->descriptorSets[uniform_block.set].handles[descriptor_index];
 
-			auto& write_descriptor_set = write_descriptor_sets.at(writes_count);
+			auto& write_descriptor_set = write_descriptor_sets[writes_count];
 			write_descriptor_set.descriptorType = uniform_block.descriptorType;
 			write_descriptor_set.dstBinding = uniform_block.binding;
 			write_descriptor_set.dstSet = current_descriptor_set;
@@ -905,16 +905,16 @@ void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_
 			auto& uniform = found_reflection->second;
 			updated_descriptor_sets.emplace(uniform.set);
 
-			auto& image_descriptor = image_descriptors.at(texture_count);
+			auto& image_descriptor = image_descriptors[texture_count];
 			image_descriptor.imageView = texture_subresource.imageView;
 			image_descriptor.sampler = texture->sampler != ~0ull ? m_samplerCache[texture->sampler] : m_defaultSampler;
 			image_descriptor.imageLayout = texture_subresource.layout;
 			texture_count++;
 
 			auto descriptor_index = shader->descriptorUsage[uniform.set];
-			auto& current_descriptor_set = shader->descriptorSets[uniform.set].handles.at(descriptor_index);
+			auto& current_descriptor_set = shader->descriptorSets[uniform.set].handles[descriptor_index];
 
-			auto& write_descriptor_set = write_descriptor_sets.at(writes_count);
+			auto& write_descriptor_set = write_descriptor_sets[writes_count];
 			write_descriptor_set.descriptorType = uniform.descriptorType;
 			write_descriptor_set.dstBinding = uniform.binding;
 			write_descriptor_set.dstSet = current_descriptor_set;
@@ -1699,7 +1699,7 @@ void VkRenderBackend::UpdateSurface(i32 surface_width, i32 surface_height)
 			bool is_storage{ false };
 			u64 swapchainFrameIndex{ 0ull };
 
-			auto& texture = textures.at(texture_id);
+			auto& texture = textures[texture_id];
 
 			if (!(texture->info.flags & ETextureCreateFlagBits::eRenderTarget) || (texture->info.size.policy == ERenderTargetSizePolicy::eFixed))
 				continue;
@@ -1773,7 +1773,7 @@ FVkCommandBuffer& VkRenderBackend::GetCommandBuffer(EQueueTypeFlagBits queue_typ
 	auto& thread_context = m_perThreadContext[thread_id];
 	auto& per_queue = thread_context.perQueue[queue_type];
 
-	return per_queue.commandBuffers.at(index);
+	return per_queue.commandBuffers[index];
 }
 
 utl::vector<FVkCommandBuffer>& VkRenderBackend::GetCommandBuffers(EQueueTypeFlagBits queue_type, std::thread::id thread_id)
@@ -1839,11 +1839,11 @@ void VkRenderBackend::BeginFrame()
 		u64 image_offset{ 0ull };
 		for (u64 texture_index = 0ull; texture_index < textures.size(); ++texture_index)
 		{
-			auto& texture = textures.at(texture_index);
+			auto& texture = textures[texture_index];
 			if (texture->info.flags & ETextureCreateFlagBits::eRenderTarget)
 				continue;
 
-			m_textureIndexRemap.at(texture_index) = image_offset++;
+			m_textureIndexRemap[texture_index] = image_offset++;
 
 			for (u32 frame_index = 0u; frame_index < m_pDevice->m_swapchain.framesInFlight; ++frame_index)
 				m_textureToUpdate[frame_index].push(texture_index);
@@ -1996,7 +1996,7 @@ void VkRenderBackend::ProcessResourceBarriers()
 	FVkTranslationInfo translation_info{};
 	for (const auto& layout_info : m_textureLayoutInfos)
 	{
-		auto& texture = textures.at(layout_info.textureId);
+		auto& texture = textures[layout_info.textureId];
 		auto& target_subresource = texture->getSubresource();
 
 		if (texture->info.flags & ETextureCreateFlagBits::eStorage)
@@ -2096,9 +2096,9 @@ void VkRenderBackend::ProcessResourceUpload()
 		// Copy buffer to image
 		for (u64 idx = 0ull; idx < m_textureUploadInfos.size(); ++idx)
 		{
-			auto& texture_upload = m_textureUploadInfos.at(idx);
+			auto& texture_upload = m_textureUploadInfos[idx];
 			auto& texture = textures[texture_upload.textureId.Get()];
-			auto& staging_buffer = staging_buffers.at(idx);
+			auto& staging_buffer = staging_buffers[idx];
 
 			auto aspect_mask = get_texture_aspect_flags(*texture);
 
@@ -2107,10 +2107,10 @@ void VkRenderBackend::ProcessResourceUpload()
 			{
 				for (u32 layer = 0u; layer < texture->totalLayers; ++layer)
 				{
-					auto& layer_offsets = texture_upload.mipLayerOffsets.at(layer);
+					auto& layer_offsets = texture_upload.mipLayerOffsets[layer];
 					for (u32 mip = 0u; mip < texture->info.mipLevels; ++mip)
 					{
-						u64 offset = layer_offsets.at(mip);
+						u64 offset = layer_offsets[mip];
 						auto& copy_region = copy_regions.emplace_back();
 						copy_region.imageSubresource.aspectMask = aspect_mask;
 						copy_region.imageSubresource.mipLevel = mip;
@@ -2501,7 +2501,7 @@ FRenderApiErrorInfo VkRenderBackend::CreateTexture(const FVkTextureCreateInfo& t
 	texture.mips.resize(texture_ci.mipLevels);
 	for (u32 mip_index = 0u; mip_index < texture_ci.mipLevels; ++mip_index)
 	{
-		auto& current_mip = texture.mips.at(mip_index);
+		auto& current_mip = texture.mips[mip_index];
 		image_view_ci.ci.subresourceRange.baseMipLevel = current_mip.baseMipLevel = mip_index;
 		image_view_ci.ci.subresourceRange.levelCount = current_mip.mipLevelCount = 1u;
 
@@ -2699,7 +2699,7 @@ void VkRenderBackend::BindShaderDescriptors(const FVkCommandBuffer& command_buff
 	utl::vector<vk::DescriptorSet> bindDescriptorSets{};
 
 	// NOTE: bind global descriptor set
-	bindDescriptorSets.emplace_back(m_globalDescriptor.descriptorSet.handles.at(m_pDevice->m_swapchain.currentFrame));
+	bindDescriptorSets.emplace_back(m_globalDescriptor.descriptorSet.handles[m_pDevice->m_swapchain.currentFrame]);
 
 	// NOTE: shader.descriptorUsage contains next index of descriptor set to use. 
 	// Here i collecting all shader descriptor sets, that was changed in past
@@ -2710,7 +2710,7 @@ void VkRenderBackend::BindShaderDescriptors(const FVkCommandBuffer& command_buff
 		if (found_descriptor_sets != shader.descriptorSets.end())
 		{
 			auto& descriptor_set = found_descriptor_sets->second;
-			auto& target_descriptor_set = descriptor_set.handles.at(actual_descriptor_usage);
+			auto& target_descriptor_set = descriptor_set.handles[actual_descriptor_usage];
 			bindDescriptorSets.emplace_back(target_descriptor_set);
 		}
 	}

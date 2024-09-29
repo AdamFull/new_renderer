@@ -71,8 +71,8 @@ namespace engine
 				bool isRunning{ false };
 				u32 commandBufferIndex{ 0u };
 
-				vk::CommandBuffer& get() { return handles.at(commandBufferIndex); }
-				const vk::CommandBuffer& get() const { return handles.at(commandBufferIndex); }
+				vk::CommandBuffer& get() { return handles[commandBufferIndex]; }
+				const vk::CommandBuffer& get() const { return handles[commandBufferIndex]; }
 			};
 
 			struct FVkCommandBufferCreateInfo

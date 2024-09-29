@@ -555,7 +555,7 @@ namespace engine
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				for (u64 idx = 0ull; idx < descriptor_set.handles.size(); ++idx)
-					debug_utils->SetDebugName(descriptor_set.handles.at(idx), std::format("{} #{}", set_ci.name, idx));
+					debug_utils->SetDebugName(descriptor_set.handles[idx], std::format("{} #{}", set_ci.name, idx));
 #endif
 
 				return make_api_error(vk::ObjectType::eDescriptorSet, res, "Failed to allocate");
@@ -817,8 +817,8 @@ namespace engine
 
 				for (u64 idx = 0ull; idx < timestamp_query.queryIndex; idx += 2ull)
 				{
-					f32 diff = static_cast<f32>(timestamp_query.values.at(idx + 1) - timestamp_query.values.at(idx));
-					results.at(idx / 2ull) = diff * timestamp_frequency / 1000000000.f;
+					f32 diff = static_cast<f32>(timestamp_query.values[idx + 1] - timestamp_query.values[idx]);
+					results[idx / 2ull] = diff * timestamp_frequency / 1000000000.f;
 				}
 
 				return make_api_error(timestamp_query.handle.objectType, res, "Failed to get.");
@@ -873,7 +873,7 @@ namespace engine
 
 			vk::Result VkRenderDevice::Present(FVkCommandBuffer& command_buffer)
 			{
-				vk::Result res = Handle(*device).resetFences(1, &m_swapchain.inFlightFences.at(m_swapchain.currentFrame));
+				vk::Result res = Handle(*device).resetFences(1, &m_swapchain.inFlightFences[m_swapchain.currentFrame]);
 				check_api_result(make_api_error(vk::ObjectType::eFence, res, "Failed to reset"));
 
 				try
@@ -904,7 +904,7 @@ namespace engine
 					submit_info.pCommandBufferInfos = &command_buffer_si;
 					submit_info.commandBufferInfoCount = 1;
 
-					queue.Submit(submit_info, m_swapchain.inFlightFences.at(m_swapchain.currentFrame));
+					queue.Submit(submit_info, m_swapchain.inFlightFences[m_swapchain.currentFrame]);
 				}
 				catch (vk::SystemError error)
 				{
@@ -1280,8 +1280,8 @@ namespace engine
 #ifndef BUILD_WITHOUT_DEBUGGIND
 						image_view_ci.name = std::format("frame #{}", idx);
 #endif
-						image_view_ci.ci.image = m_swapchain.images.at(idx);
-						check_api_result(CreateImageView(image_view_ci, m_swapchain.imageViews.at(idx)));
+						image_view_ci.ci.image = m_swapchain.images[idx];
+						check_api_result(CreateImageView(image_view_ci, m_swapchain.imageViews[idx]));
 					}
 				}
 
@@ -1302,9 +1302,9 @@ namespace engine
 						rf_semaphore_ci.name = std::format("render finished #{}", idx);
 						fence_ci.name = std::format("frame #{}", idx);
 #endif
-						check_api_result(CreateSemaphore(ia_semaphore_ci, m_swapchain.imageAvaliableSemaphores.at(idx)));
-						check_api_result(CreateSemaphore(rf_semaphore_ci, m_swapchain.renderFinishedSemaphores.at(idx)));
-						check_api_result(CreateFence(fence_ci, m_swapchain.inFlightFences.at(idx)));
+						check_api_result(CreateSemaphore(ia_semaphore_ci, m_swapchain.imageAvaliableSemaphores[idx]));
+						check_api_result(CreateSemaphore(rf_semaphore_ci, m_swapchain.renderFinishedSemaphores[idx]));
+						check_api_result(CreateFence(fence_ci, m_swapchain.inFlightFences[idx]));
 					}
 				}
 
@@ -1315,10 +1315,10 @@ namespace engine
 			{
 				for (u64 idx = 0ull; idx < m_swapchain.framesInFlight; ++idx)
 				{
-					Handle(*device).destroyFence(m_swapchain.inFlightFences.at(idx), m_allocationCallbacks);
-					Handle(*device).destroyImageView(m_swapchain.imageViews.at(idx), m_allocationCallbacks);
-					Handle(*device).destroySemaphore(m_swapchain.imageAvaliableSemaphores.at(idx), m_allocationCallbacks);
-					Handle(*device).destroySemaphore(m_swapchain.renderFinishedSemaphores.at(idx), m_allocationCallbacks);
+					Handle(*device).destroyFence(m_swapchain.inFlightFences[idx], m_allocationCallbacks);
+					Handle(*device).destroyImageView(m_swapchain.imageViews[idx], m_allocationCallbacks);
+					Handle(*device).destroySemaphore(m_swapchain.imageAvaliableSemaphores[idx], m_allocationCallbacks);
+					Handle(*device).destroySemaphore(m_swapchain.renderFinishedSemaphores[idx], m_allocationCallbacks);
 				}
 			}
 		}

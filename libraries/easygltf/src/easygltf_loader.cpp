@@ -186,7 +186,7 @@ bool CGLTFLoader::_LoadGLTFFromMemory(const utl::vector<uint8_t>& data, FGLTFRoo
 	// Load buffers
 	for (size_t buffer_id = 0ull; buffer_id < root.buffers.size(); ++buffer_id)
 	{
-		auto& buffer = root.buffers.at(buffer_id);
+		auto& buffer = root.buffers[buffer_id];
 
 		auto buffer_path = path_helper::path_append(root.rootDirectory, url_decode(buffer.uri));
 		if (!m_pFS->readFile(buffer_path, buffer.data))

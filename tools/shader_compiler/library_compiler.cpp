@@ -307,7 +307,7 @@ void CLibraryCompiler::CompilePermutations(const std::filesystem::path& parent_p
 				}
 				m_locks[2].unlock();
 
-				auto& current_module = shader_modules.at(shader_index);
+				auto& current_module = shader_modules[shader_index];
 
 				bool is_code_outdated = current_module.link != utl::cast<int64_t>(preprocessed_hash);
 				bool is_type_missmatch = current_module.type != shader_meta.type;

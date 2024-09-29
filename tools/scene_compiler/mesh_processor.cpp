@@ -348,7 +348,7 @@ void CGLTFEditor::prepare()
 
 	for (int32_t animation_id = 0; animation_id < m_root.animations.size(); ++animation_id)
 	{
-		auto& animation = m_root.animations.at(animation_id);
+		auto& animation = m_root.animations[animation_id];
 		// Load samplers
 		for (const auto& sampler : animation.samplers)
 		{
@@ -400,13 +400,13 @@ void CGLTFEditor::apply()
 
 	for (const auto& [mesh_idx, primitives] : m_meshes)
 	{
-		auto& mesh = m_root.meshes.at(mesh_idx);
+		auto& mesh = m_root.meshes[mesh_idx];
 		assert(mesh.primitives.size() == primitives.size());
 
 		for (size_t idx = 0ull; idx < primitives.size(); ++idx)
 		{
-			auto& mesh_primitive = mesh.primitives.at(idx);
-			auto& primitive = primitives.at(idx);
+			auto& mesh_primitive = mesh.primitives[idx];
+			auto& primitive = primitives[idx];
 
 			mesh_primitive.attributes.clear();
 			mesh_primitive.targets.clear();
@@ -496,7 +496,7 @@ void CGLTFEditor::apply()
 	for (const auto& [type, temp_buffer] : buffer_map)
 	{
 		auto buffer_view_idx = buffer_view_map[type];
-		auto& buffer_view = m_root.bufferViews.at(buffer_view_idx);
+		auto& buffer_view = m_root.bufferViews[buffer_view_idx];
 
 		buffer_view.buffer = 0;
 		buffer_view.byteOffset = buffer.data.size();

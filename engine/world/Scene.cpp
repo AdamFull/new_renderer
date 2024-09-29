@@ -157,7 +157,7 @@ void CScene::MakeGenerateScene(const std::string& path)
 		return;
 	}
 
-	auto& current_scene = root.scenes.at(root.scene < 0 ? 0 : root.scene);
+	auto& current_scene = root.scenes[root.scene < 0 ? 0 : root.scene];
 
 	constexpr const u64 duplicate_count = 1000;
 	for (u64 idx = 0ull; idx < duplicate_count; ++idx)
@@ -173,7 +173,7 @@ void CScene::MakeGenerateScene(const std::string& path)
 		random_fill(new_node.scale, 0.1, 0.5);
 	
 		auto& new_animation = root.animations.emplace_back();
-		new_animation = root.animations.at(0);
+		new_animation = root.animations[0];
 		
 		for (auto& channel : new_animation.channels)
 			channel.target.node = current_scene.nodes.back();
@@ -205,8 +205,8 @@ void CScene::LoadGLTF(easygltf::FGLTFRoot& root)
 		if (texture.source < 0)
 			texture_source = texture.khrTextureBasisU.source;
 
-		auto& image = root.images.at(texture_source);
-		auto& sampler = root.images.at(texture.sampler);
+		auto& image = root.images[texture_source];
+		auto& sampler = root.images[texture.sampler];
 
 		// TODO: add ability to override format and sampler params
 		// TODO: find format from materials
@@ -231,29 +231,29 @@ void CScene::LoadGLTF(easygltf::FGLTFRoot& root)
 
 		// Attach base color (aka albedo)
 		if (auto& texture = material.pbrMetallicRoughness.baseColorTexture; texture.index >= 0)
-			material_data.baseColorTexture = m_resources.textures.at(texture.index);
+			material_data.baseColorTexture = m_resources.textures[texture.index];
 
 		// Attach metallic roughness texture (metallic = green, roughness = blue)
 		if (auto& texture = material.pbrMetallicRoughness.metallicRoughnessTexture; texture.index >= 0)
-			material_data.metallicRoughnessTexture = m_resources.textures.at(texture.index);
+			material_data.metallicRoughnessTexture = m_resources.textures[texture.index];
 
 		// Attach normal map texture
 		if (auto& texture = material.normalTexture; texture.index >= 0)
 		{
 			material_data.normalScale = utl::cast<f32>(texture.scale);
-			material_data.normalTexture = m_resources.textures.at(texture.index);
+			material_data.normalTexture = m_resources.textures[texture.index];
 		}
 
 		// Attach baked ambient occlusion texture
 		if (auto& texture = material.occlusionTexture; texture.index >= 0)
 		{
 			material_data.occlusionStrenth = utl::cast<f32>(texture.strength);
-			material_data.occlusionTexture = m_resources.textures.at(texture.index);
+			material_data.occlusionTexture = m_resources.textures[texture.index];
 		}
 
 		// Attach emissive texture
 		if (auto& texture = material.emissiveTexture; texture.index >= 0)
-			material_data.emissiveTexture = m_resources.textures.at(texture.index);
+			material_data.emissiveTexture = m_resources.textures[texture.index];
 
 		material_data.emissiveFactor = glm::make_vec3(material.emissiveFactor.data());
 		material_data.roughnessFactor = utl::cast<f32>(material.pbrMetallicRoughness.roughnessFactor);

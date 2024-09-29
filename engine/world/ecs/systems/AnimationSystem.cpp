@@ -135,7 +135,7 @@ void CAnimationSystem::__Update(float fDt)
 	for (const auto& idx : m_animationIndeces)
 #endif
 	{
-		auto& animation = root_component.animations.at(idx);
+		auto& animation = root_component.animations[idx];
 		auto& time = m_timers[idx];
 
 		time += fDt;

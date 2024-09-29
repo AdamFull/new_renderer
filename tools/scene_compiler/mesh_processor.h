@@ -7,7 +7,7 @@ namespace mesh_compiler
 {
 	struct FStream
 	{
-		uint8_t* get(size_t index = 0ull) { return &data.at(index * stride); }
+		uint8_t* get(size_t index = 0ull) { return &data[index * stride]; }
 
 		size_t stride{ 0ull };
 		size_t count{ 0ull };

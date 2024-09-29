@@ -78,14 +78,14 @@ bool CTerrainGenerator::generate(utl::vector<FTerrainVertexAttribute>& out_attri
 		norm.data.resize(norm.stride * norm.count);
 	}
 
-	auto& positions = out_attributes.at(0);
-	auto& uvs = out_attributes.at(1);
-	auto& normals = out_attributes.at(2);
+	auto& positions = out_attributes[0];
+	auto& uvs = out_attributes[1];
+	auto& normals = out_attributes[2];
 
 	// Copying vertex data
 	for (size_t idx = 0ull; idx < vertices.size(); ++idx)
 	{
-		const auto& vertex = vertices.at(idx);
+		const auto& vertex = vertices[idx];
 		util::Copy(&positions.data[idx * positions.stride], &vertex.pos, positions.stride);
 		util::Copy(&uvs.data[idx * uvs.stride], &vertex.uv, uvs.stride);
 		util::Copy(&normals.data[idx * normals.stride], &vertex.normal, normals.stride);

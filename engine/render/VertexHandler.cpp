@@ -215,16 +215,16 @@ void CVertexHandler::Create(const FVertexHandlerCreateInfo& create_info)
 
 	log_info("[Vertex Handler] Created vertex handler: {}:{}.", create_info.name, m_definitions);
 
-	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eVertexBuffer))->CreateRaw(create_info.name + ":VERTICES" + m_definitions, vertex_size, 16ull, EBufferUsageFlagBits::eVertexBuffer);
-	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eIndexBuffer))->CreateRaw(create_info.name + ":INDICES" + m_definitions, create_info.indexSize, 16ull, EBufferUsageFlagBits::eIndexBuffer);
-	m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eLodBuffer))->Create<FMeshLod>(create_info.name + ":MeshLodBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
+	m_vGeometryBuffers[utl::enum_cast(EGeometryBufferIndices::eVertexBuffer)]->CreateRaw(create_info.name + ":VERTICES" + m_definitions, vertex_size, 16ull, EBufferUsageFlagBits::eVertexBuffer);
+	m_vGeometryBuffers[utl::enum_cast(EGeometryBufferIndices::eIndexBuffer)]->CreateRaw(create_info.name + ":INDICES" + m_definitions, create_info.indexSize, 16ull, EBufferUsageFlagBits::eIndexBuffer);
+	m_vGeometryBuffers[utl::enum_cast(EGeometryBufferIndices::eLodBuffer)]->Create<FMeshLod>(create_info.name + ":MeshLodBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
 	
 	if (create_info.flags & EVertexHandlerFlagBits::eGenerateMeshlets)
 	{
-		m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eMeshletBuffer))->Create<FMeshlet>(create_info.name + ":MeshletBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
-		m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eVertexRemapBuffer))->Create<u32>(create_info.name + ":MeshletVerticesBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
-		m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eBoundsBuffer))->Create<FGeometryDrawBounds>(create_info.name + ":MeshletBoundsBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
-		m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eTriangleBuffer))->Create<FTriangle>(create_info.name + ":MeshletTriangleBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
+		m_vGeometryBuffers[utl::enum_cast(EGeometryBufferIndices::eMeshletBuffer)]->Create<FMeshlet>(create_info.name + ":MeshletBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
+		m_vGeometryBuffers[utl::enum_cast(EGeometryBufferIndices::eVertexRemapBuffer)]->Create<u32>(create_info.name + ":MeshletVerticesBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
+		m_vGeometryBuffers[utl::enum_cast(EGeometryBufferIndices::eBoundsBuffer)]->Create<FGeometryDrawBounds>(create_info.name + ":MeshletBoundsBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
+		m_vGeometryBuffers[utl::enum_cast(EGeometryBufferIndices::eTriangleBuffer)]->Create<FTriangle>(create_info.name + ":MeshletTriangleBuffer" + m_definitions, 16ull, EBufferUsageFlagBits::eStorageBuffer);
 	}
 
 	return;
@@ -277,7 +277,7 @@ const FVertexRange& CVertexHandler::AddMeshData(const utl::vector<FVertexAttribu
 	if (position_attrib == attributes_data.end())
 		log_error("[Vertex Handler] Invalid mesh type: No vertex position found. Vertex position is required.");
 
-	auto& lod_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eLodBuffer));
+	auto& lod_buffer = m_vGeometryBuffers[utl::enum_cast(EGeometryBufferIndices::eLodBuffer)];
 
 	// Calculate number of lods
 	f32 triangle_count = utl::cast<f32>(indices.count / 3u);
@@ -361,10 +361,10 @@ const FVertexRange& CVertexHandler::AddMeshData(const utl::vector<FVertexAttribu
 
 		if (m_flags & EVertexHandlerFlagBits::eGenerateMeshlets)
 		{
-			auto& meshlet_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eMeshletBuffer));
-			auto& vertices_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eVertexRemapBuffer));
-			auto& triangle_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eTriangleBuffer));
-			auto& bounds_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eBoundsBuffer));
+			auto& meshlet_buffer = m_vGeometryBuffers[utl::enum_cast(EGeometryBufferIndices::eMeshletBuffer)];
+			auto& vertices_buffer = m_vGeometryBuffers[utl::enum_cast(EGeometryBufferIndices::eVertexRemapBuffer)];
+			auto& triangle_buffer = m_vGeometryBuffers[utl::enum_cast(EGeometryBufferIndices::eTriangleBuffer)];
+			auto& bounds_buffer = m_vGeometryBuffers[utl::enum_cast(EGeometryBufferIndices::eBoundsBuffer)];
 
 			//lod.meshletOffset = meshlet_buffer->count();
 			//lod.meshletVertexOffset = vertices_buffer->count();
@@ -474,8 +474,8 @@ u64 CVertexHandler::addMeshlets(const utl::vector<FVertexAttributePointer>& attr
 	temp_bounds.resize(meshlet_count);
 	temp_triangles.resize(raw_meshlet_triangles.size() / 3);
 
-	auto& triangle_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eTriangleBuffer));
-	auto& vertices_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eVertexRemapBuffer));
+	auto& triangle_buffer = m_vGeometryBuffers[utl::enum_cast(EGeometryBufferIndices::eTriangleBuffer)];
+	auto& vertices_buffer = m_vGeometryBuffers[utl::enum_cast(EGeometryBufferIndices::eVertexRemapBuffer)];
 
 	u32 triangle_offset{ 0u };
 	for (u32 idx = 0u; idx < meshlet_count; ++idx)
@@ -510,10 +510,10 @@ u64 CVertexHandler::addMeshlets(const utl::vector<FVertexAttributePointer>& attr
 	}
 	temp_triangles.resize(triangle_offset);
 
-	auto& meshlet_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eMeshletBuffer));
+	auto& meshlet_buffer = m_vGeometryBuffers[utl::enum_cast(EGeometryBufferIndices::eMeshletBuffer)];
 	meshlet_buffer->Copy(temp_meshlets);
 
-	auto& bounds_buffer = m_vGeometryBuffers.at(utl::enum_cast(EGeometryBufferIndices::eBoundsBuffer));
+	auto& bounds_buffer = m_vGeometryBuffers[utl::enum_cast(EGeometryBufferIndices::eBoundsBuffer)];
 	bounds_buffer->Copy(temp_bounds);
 
 	vertices_buffer->Copy(temp_vertices);
@@ -539,5 +539,5 @@ const std::string& CVertexHandler::GetDefinitions() const
 
 const std::unique_ptr<IGPUVector>& CVertexHandler::GetGeometryBuffer(EGeometryBufferIndices buffer_index)
 {
-	return m_vGeometryBuffers.at(utl::enum_cast(buffer_index));
+	return m_vGeometryBuffers[utl::enum_cast(buffer_index)];
 }
