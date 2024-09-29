@@ -86,9 +86,9 @@ bool CTerrainGenerator::generate(utl::vector<FTerrainVertexAttribute>& out_attri
 	for (size_t idx = 0ull; idx < vertices.size(); ++idx)
 	{
 		const auto& vertex = vertices.at(idx);
-		std::memcpy(&positions.data[idx * positions.stride], &vertex.pos, positions.stride);
-		std::memcpy(&uvs.data[idx * uvs.stride], &vertex.uv, uvs.stride);
-		std::memcpy(&normals.data[idx * normals.stride], &vertex.normal, normals.stride);
+		util::Copy(&positions.data[idx * positions.stride], &vertex.pos, positions.stride);
+		util::Copy(&uvs.data[idx * uvs.stride], &vertex.uv, uvs.stride);
+		util::Copy(&normals.data[idx * normals.stride], &vertex.normal, normals.stride);
 	}
 
 	// Copying index data
@@ -98,7 +98,7 @@ bool CTerrainGenerator::generate(utl::vector<FTerrainVertexAttribute>& out_attri
 	{
 		out_indices.stride = sizeof(uint32_t);
 		out_indices.data.resize(out_indices.count * out_indices.stride);
-		std::memcpy(&out_indices.data[0], &indices[0], out_indices.data.size());
+		util::Copy(&out_indices.data[0], &indices[0], out_indices.data.size());
 	}
 	else
 	{
@@ -107,7 +107,7 @@ bool CTerrainGenerator::generate(utl::vector<FTerrainVertexAttribute>& out_attri
 		utl::vector<uint16_t> temp{};
 		temp.insert(temp.end(), indices.begin(), indices.end());
 		out_indices.data.resize(out_indices.count * out_indices.stride);
-		std::memcpy(&out_indices.data[0], &temp[0], out_indices.data.size());
+		util::Copy(&out_indices.data[0], &temp[0], out_indices.data.size());
 	}
 
 	return true;

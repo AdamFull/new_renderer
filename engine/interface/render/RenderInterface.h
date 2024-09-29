@@ -181,7 +181,7 @@ namespace engine
 				if (size == 0ull)
 					size = uniform.size;
 
-				std::memcpy(m_data.data() + uniform.offset, raw_data, size);
+				util::Copy(m_data.data() + uniform.offset, raw_data, size);
 			}
 
 			template<class _Ty>
@@ -196,7 +196,7 @@ namespace engine
 				if (size == 0ull)
 					size = (std::min)(sizeof(_Ty), uniform.size);
 
-				std::memcpy(m_data.data() + uniform.offset, &object, size);
+				util::Copy(m_data.data() + uniform.offset, &object, size);
 			}
 
 			template<class _Ty>

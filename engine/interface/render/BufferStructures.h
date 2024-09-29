@@ -5,6 +5,8 @@
 #include <hash.hpp>
 #include <span>
 
+#include <util/Util.h>
+
 namespace engine
 {
 	namespace render
@@ -217,7 +219,8 @@ namespace engine
 
 				if (new_hash != old_hash)
 				{
-					std::memcpy(&m_vData[offset], data, size);
+					// TODO: Copy parallel on big block size
+					util::Copy<std::execution::parallel_policy>(&m_vData[0], data, size, offset);
 					m_vUploadRanges.emplace_back(upload_range{ offset, size });
 				}
 			}

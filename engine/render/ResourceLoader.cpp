@@ -197,7 +197,7 @@ bool CResourceLoader::LoadSTBFromMemory(const utl::vector<uint8_t>& data, FTextu
 	auto data_size = utl::cast<u32>(width * height * 4ull);
 
 	upload_info.data.resize(data_size);
-	std::memcpy(upload_info.data.data(), rawdata, data_size);
+	util::Copy<std::execution::parallel_policy>(upload_info.data.data(), rawdata, data_size);
 
 	create_info.flags |= ETextureCreateFlagBits::e2D;
 
@@ -233,7 +233,7 @@ bool CResourceLoader::LoadKTXFromMemory(const utl::vector<uint8_t>& data, FTextu
 	create_info.arrayLayers = kTexture->numLayers;
 
 	upload_info.data.resize(kTexture->dataSize);
-	std::memcpy(upload_info.data.data(), kTexture->pData, kTexture->dataSize);
+	util::Copy<std::execution::parallel_policy>(upload_info.data.data(), kTexture->pData, kTexture->dataSize);
 
 	// TODO: get api format
 	create_info.format = get_ktx_format(kTexture);
@@ -284,7 +284,7 @@ bool CResourceLoader::LoadKTX2FromMemory(const utl::vector<uint8_t>& data, FText
 		ktxresult = ktxTexture2_TranscodeBasis(kTexture, KTX_TTF_BC7_RGBA, 0);
 
 	upload_info.data.resize(kTexture->dataSize);
-	std::memcpy(upload_info.data.data(), kTexture->pData, kTexture->dataSize);
+	util::Copy<std::execution::parallel_policy>(upload_info.data.data(), kTexture->pData, kTexture->dataSize);
 
 	create_info.format = lookup_api_format(kTexture->vkFormat);
 

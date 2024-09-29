@@ -546,7 +546,7 @@ void CScene::LoadAnimations(const easygltf::FGLTFRoot& root)
 				assert(accessor.componentType == easygltf::base::enumerators::component_type::float_type);
 
 				f32* buf = new f32[accessor.count];
-				std::memcpy(buf, stream.data, stream.count * sizeof(f32));
+				util::Copy(buf, stream.data, stream.count * sizeof(f32));
 				for (u64 index = 0; index < stream.count; index++)
 					sampler.inputs.push_back(buf[index]);
 
@@ -571,7 +571,7 @@ void CScene::LoadAnimations(const easygltf::FGLTFRoot& root)
 				if(accessor.type == easygltf::base::enumerators::accessor_type::vec3_type)
 				{
 					glm::vec3* buf = new glm::vec3[stream.count];
-					std::memcpy(buf, stream.data, stream.count * sizeof(glm::vec3));
+					util::Copy(buf, stream.data, stream.count * sizeof(glm::vec3));
 					for (u64 index = 0; index < stream.count; index++)
 						sampler.outputsVec4.push_back(glm::vec4(buf[index], 0.0f));
 
@@ -580,7 +580,7 @@ void CScene::LoadAnimations(const easygltf::FGLTFRoot& root)
 				else if (accessor.type == easygltf::base::enumerators::accessor_type::vec4_type)
 				{
 					glm::vec4* buf = new glm::vec4[stream.count];
-					memcpy(buf, stream.data, stream.count * sizeof(glm::vec4));
+					util::Copy(buf, stream.data, stream.count * sizeof(glm::vec4));
 					for (u64 index = 0; index < stream.count; index++)
 						sampler.outputsVec4.push_back(buf[index]);
 
@@ -656,7 +656,7 @@ void CScene::LoadSkins(const easygltf::FGLTFRoot& root)
 			const easygltf::Accessor& accessor = root.accessors[source.inverseBindMatrices];
 			auto stream = root.getStream(accessor);
 			skin.inverseBindMatrices.resize(stream.count);
-			std::memcpy(skin.inverseBindMatrices.data(), stream.data, stream.count * sizeof(glm::mat4));
+			util::Copy(skin.inverseBindMatrices.data(), stream.data, stream.count * sizeof(glm::mat4));
 		}
 
 		root_component.skins.emplace_back(skin);

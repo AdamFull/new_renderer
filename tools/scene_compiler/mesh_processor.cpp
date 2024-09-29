@@ -7,6 +7,8 @@
 
 #include <hash.hpp>
 
+#include <util/Util.h>
+
 using namespace mesh_compiler;
 
 namespace data_type
@@ -140,11 +142,11 @@ template<class _Ty>
 void copy_element(const uint8_t* src, double& dst)
 {
 	if constexpr(std::is_same_v<_Ty, double>)
-		std::memcpy(&dst, src, sizeof(_Ty));
+		engine::util::Copy(&dst, src, sizeof(_Ty));
 	else
 	{
 		_Ty temp{};
-		std::memcpy(&temp, src, sizeof(_Ty));
+		engine::util::Copy(&temp, src, sizeof(_Ty));
 		dst = static_cast<double>(temp);
 	}
 }
@@ -215,21 +217,21 @@ void read_index_stream(const easygltf::Stream& stream, utl::vector<u32>& indices
 	{
 		// 32bit index
 		utl::vector<u32> temp(stream.count);
-		std::memcpy(temp.data(), stream.data, stream.stride * stream.count);
+		engine::util::Copy(temp.data(), stream.data, stream.stride * stream.count);
 		indices.insert(indices.end(), temp.begin(), temp.end());
 	}
 	else if (stream.stride == 2ull)
 	{
 		// 16bit index
 		utl::vector<uint16_t> temp(stream.count);
-		std::memcpy(temp.data(), stream.data, stream.stride * stream.count);
+		engine::util::Copy(temp.data(), stream.data, stream.stride * stream.count);
 		indices.insert(indices.end(), temp.begin(), temp.end());
 	}
 	else if (stream.stride == 1ull)
 	{
 		// 8bit index
 		utl::vector<uint8_t> temp(stream.count);
-		std::memcpy(temp.data(), stream.data, stream.stride * stream.count);
+		engine::util::Copy(temp.data(), stream.data, stream.stride * stream.count);
 		indices.insert(indices.end(), temp.begin(), temp.end());
 	}
 }
@@ -447,11 +449,11 @@ void CGLTFEditor::apply()
 					temp.insert(temp.end(), primitive.indices.begin(), primitive.indices.end());
 
 					buffer.data.resize(buffer.count * buffer.stride);
-					std::memcpy(&buffer.data[0], &temp[0], buffer.data.size());
+					engine::util::Copy(&buffer.data[0], &temp[0], buffer.data.size());
 				} break;
 				case 4ull: {
 					buffer.data.resize(buffer.count * buffer.stride);
-					std::memcpy(&buffer.data[0], &primitive.indices[0], buffer.data.size());
+					engine::util::Copy(&buffer.data[0], &primitive.indices[0], buffer.data.size());
 				} break;
 				}
 

@@ -1096,7 +1096,7 @@ namespace engine
 				if (res == vk::Result::eSuccess)
 				{
 					pipeline_cache_data.resize(data_size);
-					std::memcpy(pipeline_cache_data.data(), data_ptr, data_size);
+					util::Copy<std::execution::parallel_policy>(pipeline_cache_data.data(), data_ptr, data_size);
 				}
 
 				return pipeline_cache_data;

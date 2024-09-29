@@ -400,7 +400,7 @@ u64 CVertexHandler::AddVertices(const utl::vector<FVertexAttributePointer>& attr
 		u64 offset{ 0ull };
 		for (const auto& attrib : attributes_data)
 		{
-			std::memcpy(temp.data() + offset, &attrib.data[v * attrib.stride], attrib.stride);
+			util::Copy(temp.data(), &attrib.data[v * attrib.stride], attrib.stride, offset);
 			offset += attrib.stride;
 		}
 
