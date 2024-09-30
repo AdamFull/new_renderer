@@ -56,7 +56,8 @@ namespace engine
 
 			Buffer::Buffer(VkRenderDevice& render_device, BufferBuilder const& builder) :
 				VulkanResource{ nullptr },
-				Allocation{ render_device.GetAllocator(), builder.alloc_create_info }
+				Allocation{ render_device.GetAllocator(), builder.alloc_create_info },
+				size{ builder.create_info.size }
 			{
 				handle = allocator.CreateBuffer(*this, builder.create_info);
 				if (!builder.debug_name.empty())
