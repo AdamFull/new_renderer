@@ -110,11 +110,11 @@ std::string create_object_unique_name(const char* fmt, const _Ty& handle, _Args&
 
 VkRenderBackend::~VkRenderBackend()
 {
-	auto& logical_device = m_pDevice->GetLogicalDevice();
+	auto& logical_device = render_device->GetLogicalDevice();
 	Handle(logical_device).waitIdle();
 
 	// Destroy thread contexts
-	for (auto& [thread_id, context] : m_perThreadContext)
+	for (auto& [thread_id, context] : per_thread_context)
 		DestroyThreadContext(context);
 
 	// Destroy all textures
@@ -147,29 +147,29 @@ VkRenderBackend::~VkRenderBackend()
 		if (!buffer->isAlive)
 			continue;
 
-		m_pDevice->DestroyBuffer(*buffer);
+		render_device->DestroyBuffer(*buffer);
 	}
 
-	m_pDevice->DestroySampler(m_defaultSampler);
+	render_device->DestroySampler(default_sampler);
 
-	for(auto& [uid, sampler] : m_samplerCache)
-		m_pDevice->DestroySampler(sampler);
+	for(auto& [uid, sampler] : sampler_cache)
+		render_device->DestroySampler(sampler);
 }
 
 void VkRenderBackend::Create(const FRenderContextCreateInfo& context_ci)
 {
-	m_pDevice = std::make_unique<VkRenderDevice>();
-	m_pDevice->Create(context_ci);
+	render_device = std::make_unique<VkRenderDevice>();
+	render_device->Create(context_ci);
 
-	auto& swapchain = m_pDevice->GetSwapchain();
+	auto& swapchain = render_device->GetSwapchain();
 
-	m_iSurfaceWidth = swapchain.extent.width;
+	surface_width = swapchain.extent.width;
 	m_iSurfaceHeight = swapchain.extent.height;
 
 	m_pResources = std::make_unique<vk_resource_container_t>();
 
 	FVkCommandBufferCreateInfo command_buffer_ci{};
-	command_buffer_ci.count = m_pDevice->swapchain.framesInFlight;
+	command_buffer_ci.count = render_device->swapchain.framesInFlight;
 	command_buffer_ci.mask = EQueueTypeFlagBits::eGraphics;
 	command_buffer_ci.level = vk::CommandBufferLevel::ePrimary;
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -178,11 +178,11 @@ void VkRenderBackend::Create(const FRenderContextCreateInfo& context_ci)
 
 	CreateCommandBuffer(command_buffer_ci);
 
-	auto res = m_pDevice->CreateTimestampQuery(256, m_timestampQuery);
+	auto res = render_device->CreateTimestampQuery(256, timestamp_query);
 
-	auto& per_thread = m_perThreadContext[std::this_thread::get_id()];
+	auto& per_thread = per_thread_context[std::this_thread::get_id()];
 	auto& per_queue = per_thread.perQueue[EQueueTypeFlagBits::eGraphics];
-	m_pDevice->InitProfiler(per_queue.commandPool);
+	render_device->InitProfiler(per_queue.commandPool);
 
 	UpdateBackbuffer();
 
@@ -197,7 +197,7 @@ void VkRenderBackend::Create(const FRenderContextCreateInfo& context_ci)
 	sampler_ci.name = "default";
 #endif
 
-	m_pDevice->CreateSampler(sampler_ci, m_defaultSampler);
+	render_device->CreateSampler(sampler_ci, default_sampler);
 }
 
 void VkRenderBackend::CreateGlobalDescriptor(const FGlobalUniformCreateInfo& uniform_ci)
@@ -205,13 +205,13 @@ void VkRenderBackend::CreateGlobalDescriptor(const FGlobalUniformCreateInfo& uni
 	// Create descriptor pool
 	FVkDescriptorPoolCreateInfo pool_ci{};
 	pool_ci.poolSizes = { { vk::DescriptorType::eCombinedImageSampler, k_max_bindless_resources }, {vk::DescriptorType::eUniformBuffer, 3u} };
-	pool_ci.usageCount = 1u * m_pDevice->swapchain.framesInFlight;
+	pool_ci.usageCount = 1u * render_device->swapchain.framesInFlight;
 	pool_ci.flags |= vk::DescriptorPoolCreateFlagBits::eUpdateAfterBindEXT;
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	pool_ci.name = "global:textures";
 #endif
 
-	m_pDevice->CreateDescriptorPool(pool_ci, m_globalDescriptor.descriptorPool);
+	render_device->CreateDescriptorPool(pool_ci, global_descriptor.descriptorPool);
 
 	// Create descriptor set layout
 	FVkDescriptorSetLayoutCreateInfo set_layout_ci{};
@@ -263,18 +263,18 @@ void VkRenderBackend::CreateGlobalDescriptor(const FGlobalUniformCreateInfo& uni
 	set_layout_ci.name = "global:textures";
 #endif
 
-	m_pDevice->CreateDescriptorSetLayout(set_layout_ci, m_globalDescriptor.deecriptorSetLayout);
+	render_device->CreateDescriptorSetLayout(set_layout_ci, global_descriptor.deecriptorSetLayout);
 
 	// Create descriptor set
 	FVkDescriptorSetCreateInfo set_ci{};
-	set_ci.descriptorCount = m_pDevice->swapchain.framesInFlight;
-	set_ci.layout = m_globalDescriptor.deecriptorSetLayout;
-	set_ci.pool = m_globalDescriptor.descriptorPool.handle;
+	set_ci.descriptorCount = render_device->swapchain.framesInFlight;
+	set_ci.layout = global_descriptor.deecriptorSetLayout;
+	set_ci.pool = global_descriptor.descriptorPool.handle;
 
 	// TODO: Potential problems here in future. I think that max_sets array is incorrect
-	utl::vector<u32> max_sets(m_pDevice->swapchain.framesInFlight, k_max_bindless_resources - 1);
+	utl::vector<u32> max_sets(render_device->swapchain.framesInFlight, k_max_bindless_resources - 1);
 	vk::DescriptorSetVariableDescriptorCountAllocateInfoEXT descriptor_set_variable_descriptor_count_AIEXT{};
-	descriptor_set_variable_descriptor_count_AIEXT.descriptorSetCount = m_pDevice->swapchain.framesInFlight;
+	descriptor_set_variable_descriptor_count_AIEXT.descriptorSetCount = render_device->swapchain.framesInFlight;
 	descriptor_set_variable_descriptor_count_AIEXT.pDescriptorCounts = max_sets.data();
 	set_ci.next = &descriptor_set_variable_descriptor_count_AIEXT;
 
@@ -282,15 +282,15 @@ void VkRenderBackend::CreateGlobalDescriptor(const FGlobalUniformCreateInfo& uni
 	set_ci.name = "global:textures";
 #endif
 
-	m_pDevice->CreateDescriptorSet(set_ci, m_globalDescriptor.descriptorSet);
+	render_device->CreateDescriptorSet(set_ci, global_descriptor.descriptorSet);
 
 	// Create uniform buffers
-	auto& physical = m_pDevice->GetPhysicalDevice();
+	auto& physical = render_device->GetPhysicalDevice();
 
 	for (auto& [uniform_name, size] : uniform_ci.uniforms)
 	{
 		FVkBufferCreateInfo buffer_ci{};
-		buffer_ci.instanceCount = m_pDevice->swapchain.framesInFlight;
+		buffer_ci.instanceCount = render_device->swapchain.framesInFlight;
 		buffer_ci.instanceSize = size;
 		buffer_ci.minOffsetAlignment = std::lcm(physical.GetProperties().limits.minUniformBufferOffsetAlignment, physical.GetProperties().limits.nonCoherentAtomSize);
 		buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
@@ -305,17 +305,17 @@ void VkRenderBackend::CreateGlobalDescriptor(const FGlobalUniformCreateInfo& uni
 #endif
 
 		auto buffer = std::make_unique<FVkBuffer>();
-		m_pDevice->CreateBuffer(buffer_ci, *buffer);
+		render_device->CreateBuffer(buffer_ci, *buffer);
 
 		auto buffer_name = create_object_unique_name("global:{:x}:{:x}", buffer->handle, uniform_name);
 		auto buffer_id = m_pResources->add<FVkBuffer>(buffer_name.c_str(), std::move(buffer));
-		m_globalDescriptor.uniformBuffers.emplace(uniform_name, buffer_id);
+		global_descriptor.uniformBuffers.emplace(uniform_name, buffer_id);
 	}
 }
 
 void VkRenderBackend::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view)
 {
-	auto& dest_set = m_globalDescriptor.descriptorSet.handles[m_pDevice->swapchain.currentFrame];
+	auto& dest_set = global_descriptor.descriptorSet.handles[render_device->swapchain.currentFrame];
 
 	std::array<vk::DescriptorImageInfo, k_max_texture_update_per_frame> image_descriptors{};
 	std::array<vk::DescriptorBufferInfo, k_max_buffer_update_per_frame> buffer_descriptors{};
@@ -327,8 +327,8 @@ void VkRenderBackend::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo&
 	u64 buffer_count{ 0ull };
 	for (const auto& [uniform_name, uniform_data] : data_view.uniforms)
 	{
-		auto found_buffer = m_globalDescriptor.uniformBuffers.find(uniform_name);
-		if (found_buffer == m_globalDescriptor.uniformBuffers.end())
+		auto found_buffer = global_descriptor.uniformBuffers.find(uniform_name);
+		if (found_buffer == global_descriptor.uniformBuffers.end())
 			continue;
 
 		auto& buffer = m_pResources->get<FVkBuffer>(found_buffer->second);
@@ -337,7 +337,7 @@ void VkRenderBackend::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo&
 		auto& buffer_descriptor = buffer_descriptors[buffer_count];
 		buffer_descriptor.buffer = buffer->handle;
 		buffer_descriptor.range = element_size;
-		buffer_descriptor.offset = m_pDevice->swapchain.currentFrame * element_size;
+		buffer_descriptor.offset = render_device->swapchain.currentFrame * element_size;
 
 		auto& write_descriptor_set = write_descriptor_sets.emplace_back();
 		write_descriptor_set.descriptorType = vk::DescriptorType::eUniformBuffer;
@@ -347,15 +347,15 @@ void VkRenderBackend::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo&
 		write_descriptor_set.pBufferInfo = &buffer_descriptor;
 
 		void* mapped_memory{ nullptr };
-		m_pDevice->MapBufferMemory(*buffer, &mapped_memory);
+		render_device->MapBufferMemory(*buffer, &mapped_memory);
 		util::Copy(mapped_memory, buffer_descriptor.offset, uniform_data.data, uniform_data.size);
-		m_pDevice->UnmapBufferMemory(*buffer);
+		render_device->UnmapBufferMemory(*buffer);
 		buffer_count++;
 	}
 
 	// Process bindless textures
 	{
-		auto& texture_queue = m_textureToUpdate[m_pDevice->swapchain.currentFrame];
+		auto& texture_queue = texture_to_update[render_device->swapchain.currentFrame];
 
 		u64 texture_count{ 0ull };
 		while (!texture_queue.empty() && texture_count < k_max_texture_update_per_frame)
@@ -363,13 +363,13 @@ void VkRenderBackend::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo&
 			auto texture_id = texture_queue.front();
 			auto& texture = textures[texture_id];
 
-			auto& start_element_index = m_textureIndexRemap[texture_id];
+			auto& start_element_index = texture_index_remap[texture_id];
 			bool is_storage_image = utl::cast<bool>(texture->info.flags & ETextureCreateFlagBits::eStorage);
 
 			auto& mip_level = texture->getSubresource();
 			auto& image_descriptor = image_descriptors[texture_count];
 			image_descriptor.imageView = mip_level.imageView;
-			image_descriptor.sampler = texture->sampler != ~0ull ? m_samplerCache[texture->sampler] : m_defaultSampler;
+			image_descriptor.sampler = texture->sampler != ~0ull ? sampler_cache[texture->sampler] : default_sampler;
 			image_descriptor.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
 			if (texture->info.flags & ETextureCreateFlagBits::eSamplable)
@@ -392,14 +392,14 @@ void VkRenderBackend::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo&
 	// Update descriptor sets if needed
 	if (!write_descriptor_sets.empty())
 	{
-		auto& logical = m_pDevice->GetLogicalDevice();
+		auto& logical = render_device->GetLogicalDevice();
 		Handle(logical).updateDescriptorSets(utl::cast<u32>(write_descriptor_sets.size()), write_descriptor_sets.data(), 0, nullptr);
 	}
 }
 
 const utl::vector<uint32_t>& VkRenderBackend::GetGlobalTextureRemap()
 {
-	return m_textureIndexRemap;
+	return texture_index_remap;
 }
 
 FAPIHandle VkRenderBackend::CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci)
@@ -433,7 +433,7 @@ FAPIHandle VkRenderBackend::CreateTexture(const std::string& name, const FTextur
 
 FAPIHandle VkRenderBackend::CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info)
 {
-	auto& upload_data = m_textureUploadInfos.emplace_back(std::move(upload_info));
+	auto& upload_data = texture_upload_infos.emplace_back(std::move(upload_info));
 	upload_data.textureId = CreateTexture(name, texture_ci);
 	return upload_data.textureId;
 }
@@ -459,7 +459,7 @@ FTextureView VkRenderBackend::GetTextureView(FAPIHandle texture_id)
 
 void VkRenderBackend::DestroyTexture(FAPIHandle resource_id)
 {
-	m_destroyResource.push(FAPIObjectDestroyInfo{ resource_id, EResourceFlagBits::eTexture });
+	resource_destroy_queue.push(FAPIObjectDestroyInfo{ resource_id, EResourceFlagBits::eTexture });
 }
 
 void VkRenderBackend::ReadPixel(FAPIHandle resource_id, u32 x, u32 y, void* data)
@@ -478,7 +478,7 @@ void VkRenderBackend::ReadPixel(FAPIHandle resource_id, u32 x, u32 y, void* data
 #endif
 
 	FVkCommandBuffer command_buffer = CreateCommandBuffer(command_buffer_ci);
-	m_pDevice->BeginCommandBuffer(command_buffer, vk::CommandBufferUsageFlagBits::eOneTimeSubmit, 0);
+	render_device->BeginCommandBuffer(command_buffer, vk::CommandBufferUsageFlagBits::eOneTimeSubmit, 0);
 	auto& current = command_buffer.get();
 
 	FVkBufferCreateInfo staging_buffer_ci{};
@@ -491,7 +491,7 @@ void VkRenderBackend::ReadPixel(FAPIHandle resource_id, u32 x, u32 y, void* data
 #endif
 
 	FVkBuffer staging_buffer{};
-	m_pDevice->CreateBuffer(staging_buffer_ci, staging_buffer);
+	render_device->CreateBuffer(staging_buffer_ci, staging_buffer);
 
 	vk::BufferImageCopy region;
 	region.bufferOffset = 0u;
@@ -511,15 +511,15 @@ void VkRenderBackend::ReadPixel(FAPIHandle resource_id, u32 x, u32 y, void* data
 
 	current.copyImageToBuffer(texture->image.handle, vk::ImageLayout::eTransferSrcOptimal, staging_buffer.handle, 1, &region);
 
-	m_pDevice->SubmitCommandBuffer(command_buffer);
+	render_device->SubmitCommandBuffer(command_buffer);
 	DestroyCommandBuffer(EQueueTypeFlagBits::eGraphics);
 	// TODO: DESTROY COMMAND BUFFER AND DELETE IT
 
 	// Copy data to buffer
 	void* mapped_buffer_memory{ nullptr };
-	m_pDevice->MapBufferMemory(staging_buffer, &mapped_buffer_memory);
+	render_device->MapBufferMemory(staging_buffer, &mapped_buffer_memory);
 	util::Copy(data, mapped_buffer_memory, pixel_size);
-	m_pDevice->UnmapBufferMemory(staging_buffer);
+	render_device->UnmapBufferMemory(staging_buffer);
 }
 
 
@@ -546,7 +546,7 @@ FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FGraphic
 	{
 		FVkTexture* texture{ nullptr };
 		if (attachment.backbuffer)
-			texture = &m_backbuffer[m_pDevice->swapchain.currentFrame];
+			texture = &backbuffer[render_device->swapchain.currentFrame];
 		else
 			texture = textures[attachment.source.Get()].get();
 
@@ -599,7 +599,7 @@ FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FGraphic
 #endif
 
 		auto& shader_module = shader->shaderModules.emplace_back();
-		m_pDevice->CreateShaderModule(shader_module_ci, shader_module);
+		render_device->CreateShaderModule(shader_module_ci, shader_module);
 
 		auto& stage_ci = pipeline_ci.shaderStages.emplace_back();
 		stage_ci.stage = shader_stage;
@@ -635,7 +635,7 @@ FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FGraphic
 	shader->bindPoint = vk::PipelineBindPoint::eGraphics;
 
 	auto& pipeline = shader->handles.emplace_back();
-	m_pDevice->CreatePipeline(pipeline_ci, pipeline);
+	render_device->CreatePipeline(pipeline_ci, pipeline);
 	
 	shader->isAlive = true;
 
@@ -662,7 +662,7 @@ FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FCompute
 #endif
 
 		auto& shader_module = shader->shaderModules.emplace_back();
-		m_pDevice->CreateShaderModule(shader_module_ci, shader_module);
+		render_device->CreateShaderModule(shader_module_ci, shader_module);
 
 		auto& stage = pipeline_stages.emplace_back();
 		stage.stage = vk::ShaderStageFlagBits::eCompute;
@@ -704,7 +704,7 @@ FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FCompute
 #endif
 
 		auto& pipeline = shader->handles.emplace_back();
-		m_pDevice->CreatePipeline(pipeline_ci, pipeline);
+		render_device->CreatePipeline(pipeline_ci, pipeline);
 	}
 
 	shader->bindPoint = vk::PipelineBindPoint::eCompute;
@@ -795,7 +795,7 @@ FShaderReflectionData VkRenderBackend::GetShaderReflection(FAPIHandle shader_vie
 // I'll just be doing unnecessary work both copying data and loading it, including loading descriptors.
 void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_resources, EShaderResourcesUpdateFlags flags)
 {
-	auto& thread_context = m_perThreadContext[std::this_thread::get_id()];
+	auto& thread_context = per_thread_context[std::this_thread::get_id()];
 
 	auto& shader = m_pResources->get<FVkShader>(shader_resources.shaderId.Get());
 	auto& shader_reflection = m_pResources->get<FVkShaderReflectionData>(shader->reflection);
@@ -849,9 +849,9 @@ void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_
 
 			// Write new data to buffer memory
 			void* mapped_memory{ nullptr };
-			m_pDevice->MapBufferMemory(*buffer, &mapped_memory);
+			render_device->MapBufferMemory(*buffer, &mapped_memory);
 			util::Copy(mapped_memory, buffer_descriptor.offset, uniform_data.data, uniform_data.size);
-			m_pDevice->UnmapBufferMemory(*buffer);
+			render_device->UnmapBufferMemory(*buffer);
 		}
 	}
 
@@ -907,7 +907,7 @@ void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_
 
 			auto& image_descriptor = image_descriptors[texture_count];
 			image_descriptor.imageView = texture_subresource.imageView;
-			image_descriptor.sampler = texture->sampler != ~0ull ? m_samplerCache[texture->sampler] : m_defaultSampler;
+			image_descriptor.sampler = texture->sampler != ~0ull ? sampler_cache[texture->sampler] : default_sampler;
 			image_descriptor.imageLayout = texture_subresource.layout;
 			texture_count++;
 
@@ -934,7 +934,7 @@ void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_
 	// Update descriptor sets if needed
 	if (!write_descriptor_sets.empty())
 	{
-		auto& logical = m_pDevice->GetLogicalDevice();
+		auto& logical = render_device->GetLogicalDevice();
 		Handle(logical).updateDescriptorSets(utl::cast<u32>(writes_count), write_descriptor_sets.data(), 0, nullptr);
 	}
 }
@@ -985,7 +985,7 @@ void VkRenderBackend::BindShaderResources(FAPIHandle shader_id, EQueueTypeFlagBi
 
 void VkRenderBackend::DestroyShader(FAPIHandle resource_id)
 {
-	m_destroyResource.push(FAPIObjectDestroyInfo{ resource_id, EResourceFlagBits::eShader });
+	resource_destroy_queue.push(FAPIObjectDestroyInfo{ resource_id, EResourceFlagBits::eShader });
 }
 
 FAPIHandle VkRenderBackend::CreateBuffer(const std::string& name, const FBufferCreateInfo& buffer_ci)
@@ -993,7 +993,7 @@ FAPIHandle VkRenderBackend::CreateBuffer(const std::string& name, const FBufferC
 	auto vk_buffer_ci = MakeBufferCreateInfo(name, buffer_ci);
 
 	auto buffer = std::make_unique<FVkBuffer>();
-	m_pDevice->CreateBuffer(vk_buffer_ci, *buffer);
+	render_device->CreateBuffer(vk_buffer_ci, *buffer);
 
 	auto buffer_unique_name = create_object_unique_name("buffer:{:x}:{}", buffer->handle, name);
 	return FAPIHandle(m_pResources->add<FVkBuffer>(buffer_unique_name.c_str(), std::move(buffer)));
@@ -1002,15 +1002,15 @@ FAPIHandle VkRenderBackend::CreateBuffer(const std::string& name, const FBufferC
 void VkRenderBackend::UpdateBuffer(const std::string& name, FAPIHandle buffer_id, const FBufferCreateInfo& buffer_ci)
 {
 	auto& buffer = m_pResources->get<FVkBuffer>(buffer_id.Get());
-	m_pDevice->DestroyBuffer(*buffer);
+	render_device->DestroyBuffer(*buffer);
 
 	auto vk_buffer_ci = MakeBufferCreateInfo(name, buffer_ci);
-	m_pDevice->CreateBuffer(vk_buffer_ci, *buffer);
+	render_device->CreateBuffer(vk_buffer_ci, *buffer);
 }
 
 void VkRenderBackend::UploadDataToBuffer(const FBufferUploadInfo& upload_info)
 {
-	m_bufferUploadInfos.emplace_back(upload_info);
+	buffer_upload_infos.emplace_back(upload_info);
 }
 
 FBufferView VkRenderBackend::GetBufferView(FAPIHandle buffer_id)
@@ -1051,24 +1051,24 @@ void VkRenderBackend::BindIndexBuffer(const FIndexBufferBindingInfo& binding_inf
 void VkRenderBackend::MapBufferMemory(FAPIHandle buffer_id, void*& memory)
 {
 	auto& buffer = m_pResources->get<FVkBuffer>(buffer_id.Get());
-	m_pDevice->MapBufferMemory(*buffer, &memory);
+	render_device->MapBufferMemory(*buffer, &memory);
 }
 
 void VkRenderBackend::UnmapBufferMemory(FAPIHandle buffer_id)
 {
 	auto& buffer = m_pResources->get<FVkBuffer>(buffer_id.Get());
-	m_pDevice->UnmapBufferMemory(*buffer);
+	render_device->UnmapBufferMemory(*buffer);
 }
 
 void VkRenderBackend::FlushBuffer(FAPIHandle buffer_id, u64 size, u64 offset)
 {
 	auto& buffer = m_pResources->get<FVkBuffer>(buffer_id.Get());
-	m_pDevice->FlushBufferMemory(*buffer, size, offset);
+	render_device->FlushBufferMemory(*buffer, size, offset);
 }
 
 void VkRenderBackend::DestroyBuffer(FAPIHandle resource_id)
 {
-	m_destroyResource.push(FAPIObjectDestroyInfo{ resource_id, EResourceFlagBits::eBuffer });
+	resource_destroy_queue.push(FAPIObjectDestroyInfo{ resource_id, EResourceFlagBits::eBuffer });
 }
 
 void VkRenderBackend::UploadBuffers()
@@ -1202,7 +1202,7 @@ void VkRenderBackend::ProcessResourceBarriers(EQueueTypeFlagBits queue, const ut
 
 				FVkTexture* texture{ nullptr };
 				if (resource_barrier.resource.type & ERenderResourceTypeFlagBits::eBackbuffer)
-					texture = &m_backbuffer[m_pDevice->swapchain.currentFrame];
+					texture = &backbuffer[render_device->swapchain.currentFrame];
 				else
 					texture = textures[resource_barrier.resource.handle.Get()].get();
 
@@ -1261,15 +1261,15 @@ void VkRenderBackend::ProcessResourceBarriers(EQueueTypeFlagBits queue, const ut
 
 void VkRenderBackend::BeginTimestampZone(EQueueTypeFlagBits queue)
 {
-	//assert(m_zoneEntries[queue] == 0 && "Previous zone was not ended.");
+	//assert(zone_entries[queue] == 0 && "Previous zone was not ended.");
 	auto& command_buffer = GetLastCommandBuffer(queue);
-	m_pDevice->WriteTimestampQuery(command_buffer, vk::PipelineStageFlagBits::eTopOfPipe, m_timestampQuery);
+	render_device->WriteTimestampQuery(command_buffer, vk::PipelineStageFlagBits::eTopOfPipe, timestamp_query);
 }
 
 void VkRenderBackend::EndTimestampZone(EQueueTypeFlagBits queue)
 {
 	auto& command_buffer = GetLastCommandBuffer(queue);
-	m_pDevice->WriteTimestampQuery(command_buffer, vk::PipelineStageFlagBits::eBottomOfPipe, m_timestampQuery);
+	render_device->WriteTimestampQuery(command_buffer, vk::PipelineStageFlagBits::eBottomOfPipe, timestamp_query);
 }
 
 void VkRenderBackend::BeginRendering(const FBeginRendering2Info& rendering_info)
@@ -1307,7 +1307,7 @@ void VkRenderBackend::BeginRendering(const FBeginRendering2Info& rendering_info)
 
 			FVkTexture* texture{ nullptr };
 			if (color_attachment_info.backbuffer)
-				texture = &m_backbuffer[m_pDevice->swapchain.currentFrame];
+				texture = &backbuffer[render_device->swapchain.currentFrame];
 			else
 				texture = textures[color_attachment_info.handle.Get()].get();
 
@@ -1375,7 +1375,7 @@ void VkRenderBackend::BeginRendering(const FBeginRendering2Info& rendering_info)
 	auto& current_buffer = command_buffer.get();
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-	m_pDevice->DebugBeginLabel(current_buffer, rendering_info.name, 0x5555ffff);
+	render_device->DebugBeginLabel(current_buffer, rendering_info.name, 0x5555ffff);
 #endif
 
 	current_buffer.beginRenderingKHR(begin_rendering_info);
@@ -1389,7 +1389,7 @@ void VkRenderBackend::EndRendering(EQueueTypeFlagBits queue)
 	current_buffer.endRenderingKHR();
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-	m_pDevice->EndLabel(current_buffer);
+	render_device->EndLabel(current_buffer);
 #endif
 }
 
@@ -1399,7 +1399,7 @@ void VkRenderBackend::BeginCompute(const FBeginComputeInfo& compute_info)
 	auto& current_buffer = command_buffer.get();
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-	m_pDevice->DebugBeginLabel(current_buffer, compute_info.name, 0x55ff55ff);
+	render_device->DebugBeginLabel(current_buffer, compute_info.name, 0x55ff55ff);
 #endif
 }
 
@@ -1409,7 +1409,7 @@ void VkRenderBackend::EndCompute(EQueueTypeFlagBits queue)
 	auto& current_buffer = command_buffer.get();
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-	m_pDevice->EndLabel(current_buffer);
+	render_device->EndLabel(current_buffer);
 #endif
 }
 
@@ -1619,12 +1619,12 @@ FDeviceLimitations VkRenderBackend::GetDeviceLimitations()
 
 const FRenderFrameStats& VkRenderBackend::GetRenderFrameStats() const
 {
-	return m_renderStats;
+	return render_stats;
 }
 
 EAdapterVendor VkRenderBackend::GetDeviceVendor() const
 {
-	auto& physical = m_pDevice->GetPhysicalDevice();
+	auto& physical = render_device->GetPhysicalDevice();
 
 	//switch (physical.properties.vendorID)
 	//{
@@ -1651,8 +1651,8 @@ FAPIHandle VkRenderBackend::GetShaderResource(const char* name)
 FPoint2D<u32> VkRenderBackend::GetRenderResolution() const
 {
 	FPoint2D<u32> resolution{};
-	resolution.x = m_pDevice->swapchain.extent.width;
-	resolution.y = m_pDevice->swapchain.extent.height;
+	resolution.x = render_device->swapchain.extent.width;
+	resolution.y = render_device->swapchain.extent.height;
 
 	return resolution;
 }
@@ -1671,25 +1671,25 @@ FRect2D<f32> VkRenderBackend::GetRenderRectFromRT(FAPIHandle texture_id)
 FRect2D<f32> VkRenderBackend::GetScreenRenderRect()
 {
 	FRect2D<f32> rect{};
-	rect.size.x = utl::cast<f32>(m_pDevice->swapchain.extent.width);
-	rect.size.y = utl::cast<f32>(m_pDevice->swapchain.extent.height);
+	rect.size.x = utl::cast<f32>(render_device->swapchain.extent.width);
+	rect.size.y = utl::cast<f32>(render_device->swapchain.extent.height);
 	return rect;
 }
 
 // TODO: update only targets, that have same size with swapchain
-void VkRenderBackend::UpdateSurface(i32 surface_width, i32 surface_height)
+void VkRenderBackend::UpdateSurface(i32 new_width, i32 new_height)
 {
-	if (this->m_iSurfaceWidth != surface_width || this->m_iSurfaceHeight != surface_height)
+	if (this->surface_width != new_width || this->m_iSurfaceHeight != new_height)
 	{
-		this->m_iSurfaceWidth = surface_width;
-		this->m_iSurfaceHeight = surface_height;
+		this->surface_width = new_width;
+		this->m_iSurfaceHeight = new_height;
 
-		auto& logical_device = m_pDevice->GetLogicalDevice();
+		auto& logical_device = render_device->GetLogicalDevice();
 		Handle(logical_device).waitIdle();
 
-		m_pDevice->CleanupSwapchain();
-		m_pDevice->CreateSwapchain(surface_width, surface_height);
-		m_pDevice->swapchain.currentFrame = 0u;
+		render_device->CleanupSwapchain();
+		render_device->CreateSwapchain(new_width, new_height);
+		render_device->swapchain.currentFrame = 0u;
 
 		auto& textures = m_pResources->data<FVkTexture>();
 
@@ -1705,11 +1705,11 @@ void VkRenderBackend::UpdateSurface(i32 surface_width, i32 surface_height)
 				continue;
 
 			for (auto& mip : texture->mips)
-				m_pDevice->DestroyImageView(mip.imageView);
+				render_device->DestroyImageView(mip.imageView);
 			texture->mips.clear();
 
-			m_pDevice->DestroyImageView(texture->base.imageView);
-			m_pDevice->DestroyImage(texture->image);
+			render_device->DestroyImageView(texture->base.imageView);
+			render_device->DestroyImage(texture->image);
 
 			FVkTextureCreateInfo texture_ci{};
 			texture_ci.format = texture->info.format;
@@ -1724,8 +1724,8 @@ void VkRenderBackend::UpdateSurface(i32 surface_width, i32 surface_height)
 			// TODO: here i should set rendering resolution, not swapchain image size
 			if (texture->info.size.policy == ERenderTargetSizePolicy::eScalable)
 			{
-				texture_ci.size.width = utl::cast<u32>(utl::cast<f32>(surface_width) * texture_ci.size.scale);
-				texture_ci.size.height = utl::cast<u32>(utl::cast<f32>(surface_height)* texture_ci.size.scale);
+				texture_ci.size.width = utl::cast<u32>(utl::cast<f32>(new_width) * texture_ci.size.scale);
+				texture_ci.size.height = utl::cast<u32>(utl::cast<f32>(new_height)* texture_ci.size.scale);
 			}
 
 			check_api_result(CreateTexture(texture_ci, *texture));
@@ -1733,7 +1733,7 @@ void VkRenderBackend::UpdateSurface(i32 surface_width, i32 surface_height)
 			is_storage = utl::cast<bool>(texture_ci.flags & ETextureCreateFlagBits::eStorage);
 
 			//if (is_storage)
-			//	m_textureLayoutInfos.emplace_back(texture_id);
+			//	texture_layout_change_infos.emplace_back(texture_id);
 		}
 
 		// Update backbuffer resources
@@ -1743,7 +1743,7 @@ void VkRenderBackend::UpdateSurface(i32 surface_width, i32 surface_height)
 
 FVkCommandBuffer& VkRenderBackend::CreateCommandBuffer(const FVkCommandBufferCreateInfo& command_buffer_ci, std::thread::id thread_id)
 {
-	auto& thread_context = m_perThreadContext[thread_id];
+	auto& thread_context = per_thread_context[thread_id];
 	auto& per_queue = thread_context.perQueue[command_buffer_ci.mask];
 
 	if (!per_queue.commandPool.handle)
@@ -1751,18 +1751,18 @@ FVkCommandBuffer& VkRenderBackend::CreateCommandBuffer(const FVkCommandBufferCre
 		FVkCommandPoolCreateInfo pool_ci{};
 		pool_ci.mask = command_buffer_ci.mask;
 
-		check_api_result(m_pDevice->CreateCommandPool(pool_ci, per_queue.commandPool));
+		check_api_result(render_device->CreateCommandPool(pool_ci, per_queue.commandPool));
 	}
 	
 	auto& command_buffer = per_queue.commandBuffers.emplace_back();
-	check_api_result(m_pDevice->CreateCommandBuffer(command_buffer_ci, per_queue.commandPool, command_buffer));
+	check_api_result(render_device->CreateCommandBuffer(command_buffer_ci, per_queue.commandPool, command_buffer));
 
 	return command_buffer;
 }
 
 FVkCommandBuffer& VkRenderBackend::GetLastCommandBuffer(EQueueTypeFlagBits queue_type, std::thread::id thread_id)
 {
-	auto& thread_context = m_perThreadContext[thread_id];
+	auto& thread_context = per_thread_context[thread_id];
 	auto& per_queue = thread_context.perQueue[queue_type];
 
 	return per_queue.commandBuffers.back();
@@ -1770,7 +1770,7 @@ FVkCommandBuffer& VkRenderBackend::GetLastCommandBuffer(EQueueTypeFlagBits queue
 
 FVkCommandBuffer& VkRenderBackend::GetCommandBuffer(EQueueTypeFlagBits queue_type, u64 index, std::thread::id thread_id)
 {
-	auto& thread_context = m_perThreadContext[thread_id];
+	auto& thread_context = per_thread_context[thread_id];
 	auto& per_queue = thread_context.perQueue[queue_type];
 
 	return per_queue.commandBuffers[index];
@@ -1778,7 +1778,7 @@ FVkCommandBuffer& VkRenderBackend::GetCommandBuffer(EQueueTypeFlagBits queue_typ
 
 utl::vector<FVkCommandBuffer>& VkRenderBackend::GetCommandBuffers(EQueueTypeFlagBits queue_type, std::thread::id thread_id)
 {
-	auto& thread_context = m_perThreadContext[thread_id];
+	auto& thread_context = per_thread_context[thread_id];
 	auto& per_queue = thread_context.perQueue[queue_type];
 
 	return per_queue.commandBuffers;
@@ -1786,17 +1786,17 @@ utl::vector<FVkCommandBuffer>& VkRenderBackend::GetCommandBuffers(EQueueTypeFlag
 
 void VkRenderBackend::DestroyCommandBuffer(EQueueTypeFlagBits queue_type, std::thread::id thread_id)
 {
-	auto& thread_context = m_perThreadContext[thread_id];
+	auto& thread_context = per_thread_context[thread_id];
 	auto& per_queue = thread_context.perQueue[queue_type];
 
 	auto& command_buffer = per_queue.commandBuffers.back();
-	m_pDevice->DestroyCommandBuffer(per_queue.commandPool, command_buffer);
+	render_device->DestroyCommandBuffer(per_queue.commandPool, command_buffer);
 	per_queue.commandBuffers.pop_back();
 }
 
 const std::unique_ptr<VkRenderDevice>& VkRenderBackend::getDevice() const
 {
-	return m_pDevice;
+	return render_device;
 }
 
 void VkRenderBackend::BeginFrame()
@@ -1808,33 +1808,33 @@ void VkRenderBackend::BeginFrame()
 	// TODO: sync queues here
 
 	vk::Result res{};
-	try { res = m_pDevice->AcquireNextImage(image_index); }
+	try { res = render_device->AcquireNextImage(image_index); }
 	catch (vk::OutOfDateKHRError error) { res = vk::Result::eErrorOutOfDateKHR; }
 	catch (vk::SystemError err) { log_error("Failed to acquire swap chain image!"); }
 
 	if (res == vk::Result::eErrorOutOfDateKHR)
-		UpdateSurface(m_iSurfaceWidth, m_iSurfaceHeight);
+		UpdateSurface(surface_width, m_iSurfaceHeight);
 	else if (res == vk::Result::eSuboptimalKHR)
 		log_error("Failed to acquire swap chain image!");
 
 	if (res != vk::Result::eSuccess)
 		return;
 
-	m_bIsFrameStarted = true;
+	is_frame_started = true;
 
 	// TODO: here i should run only main command buffer. But for now i getting the last one
 	auto& command_buffer = GetLastCommandBuffer(EQueueTypeFlagBits::eGraphics);
-	m_pDevice->BeginCommandBuffer(command_buffer, vk::CommandBufferUsageFlagBits::eRenderPassContinue, image_index);
-	m_pDevice->ResetTimestampQuery(m_timestampQuery);
-	//m_pDevice->WriteTimestampQuery(command_buffer, vk::PipelineStageFlagBits::eTopOfPipe, m_timestampQuery);
+	render_device->BeginCommandBuffer(command_buffer, vk::CommandBufferUsageFlagBits::eRenderPassContinue, image_index);
+	render_device->ResetTimestampQuery(timestamp_query);
+	//render_device->WriteTimestampQuery(command_buffer, vk::PipelineStageFlagBits::eTopOfPipe, timestamp_query);
 
 	// Update bindless textures
 	auto& textures = m_pResources->data<FVkTexture>();
 
-	if (m_textureIndexRemap.empty())
+	if (texture_index_remap.empty())
 	{
 		// Resizing remap vector
-		m_textureIndexRemap.resize(textures.size());
+		texture_index_remap.resize(textures.size());
 
 		u64 image_offset{ 0ull };
 		for (u64 texture_index = 0ull; texture_index < textures.size(); ++texture_index)
@@ -1843,10 +1843,10 @@ void VkRenderBackend::BeginFrame()
 			if (texture->info.flags & ETextureCreateFlagBits::eRenderTarget)
 				continue;
 
-			m_textureIndexRemap[texture_index] = image_offset++;
+			texture_index_remap[texture_index] = image_offset++;
 
-			for (u32 frame_index = 0u; frame_index < m_pDevice->swapchain.framesInFlight; ++frame_index)
-				m_textureToUpdate[frame_index].push(texture_index);
+			for (u32 frame_index = 0u; frame_index < render_device->swapchain.framesInFlight; ++frame_index)
+				texture_to_update[frame_index].push(texture_index);
 		}
 	}
 }
@@ -1855,46 +1855,46 @@ void VkRenderBackend::EndFrame()
 {
 	// TODO: here i should run only main command buffer. But for now i getting the last one
 	auto& command_buffer = GetLastCommandBuffer(EQueueTypeFlagBits::eGraphics);
-	//m_pDevice->WriteTimestampQuery(command_buffer, vk::PipelineStageFlagBits::eBottomOfPipe, m_timestampQuery);
+	//render_device->WriteTimestampQuery(command_buffer, vk::PipelineStageFlagBits::eBottomOfPipe, timestamp_query);
 
-	m_pDevice->EndCommandBuffer(command_buffer);
-	m_bIsFrameStarted = false;
+	render_device->EndCommandBuffer(command_buffer);
+	is_frame_started = false;
 
 	vk::Result presentResult{};
-	try { presentResult = m_pDevice->Present(command_buffer); }
+	try { presentResult = render_device->Present(command_buffer); }
 	catch (vk::OutOfDateKHRError err) { presentResult = vk::Result::eErrorOutOfDateKHR; }
 	catch (vk::SystemError err) { log_error("failed to present swap chain image!"); }
 
 	utl::vector<f32> results{};
-	auto timestamp_result = m_pDevice->GetTimestampQueryResults(m_timestampQuery, m_renderStats.timestampResults);
+	auto timestamp_result = render_device->GetTimestampQueryResults(timestamp_query, render_stats.timestampResults);
 	if (!timestamp_result.fault)
 	{
-		m_renderStats.gpuFrameTime = 0.f;
-		for (const auto& time : m_renderStats.timestampResults)
-			m_renderStats.gpuFrameTime += time;
+		render_stats.gpuFrameTime = 0.f;
+		for (const auto& time : render_stats.timestampResults)
+			render_stats.gpuFrameTime += time;
 	}
 
 	// Get gpu memory usage info
-	m_pDevice->GetOccupedDeviceMemory(vk::MemoryHeapFlagBits::eDeviceLocal, m_renderStats.totalGPUMemory, m_renderStats.usedGPUMemory);
+	render_device->GetOccupedDeviceMemory(vk::MemoryHeapFlagBits::eDeviceLocal, render_stats.totalGPUMemory, render_stats.usedGPUMemory);
 
 	if (presentResult == vk::Result::eSuboptimalKHR || presentResult == vk::Result::eErrorOutOfDateKHR)
-		UpdateSurface(m_iSurfaceWidth, m_iSurfaceHeight);
+		UpdateSurface(surface_width, m_iSurfaceHeight);
 	utl::hash_map<std::string, std::string> kk;
 	
 	// Destroy unused contexts
-	for (auto it = m_perThreadContext.begin(); it != m_perThreadContext.end();)
+	for (auto it = per_thread_context.begin(); it != per_thread_context.end();)
 	{
 		if (it->second.use_count() < 1)
 		{
 			DestroyThreadContext(it->second);
-			it = m_perThreadContext.erase(it);
+			it = per_thread_context.erase(it);
 			continue;
 		}
 		++it;
 	}
 
 	// Try to free resources
-	if (m_utilizationCounter % m_pDevice->swapchain.framesInFlight == 0)
+	if (utilization_counter % render_device->swapchain.framesInFlight == 0)
 		ProcessResourceUtilization();
 
 	// Frame finished. Textures in now again in initial layout
@@ -1914,7 +1914,7 @@ void VkRenderBackend::EndFrame()
 	}
 
 	// Also for backbuffer
-	for (auto& current : m_backbuffer)
+	for (auto& current : backbuffer)
 	{
 		for (auto& mip : current.mips)
 			mip.layout = vk::ImageLayout::eUndefined;
@@ -1922,12 +1922,12 @@ void VkRenderBackend::EndFrame()
 		current.base.layout = vk::ImageLayout::eUndefined;
 	}
 
-	m_utilizationCounter++;
+	utilization_counter++;
 }
 
 bool VkRenderBackend::IsSwapChainFinished()
 {
-	return (m_utilizationCounter % m_pDevice->swapchain.framesInFlight == 0) && m_utilizationCounter != 0ull;
+	return (utilization_counter % render_device->swapchain.framesInFlight == 0) && utilization_counter != 0ull;
 }
 
 void VkRenderBackend::BeginDebugLabel(const std::string& label, EQueueTypeFlagBits queue_type, u32 color)
@@ -1935,7 +1935,7 @@ void VkRenderBackend::BeginDebugLabel(const std::string& label, EQueueTypeFlagBi
 	auto& command_buffer = GetLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
 
-	m_pDevice->DebugBeginLabel(current, label, color);
+	render_device->DebugBeginLabel(current, label, color);
 }
 
 void VkRenderBackend::InsertDebugLabel(const std::string& label, EQueueTypeFlagBits queue_type, u32 color)
@@ -1943,7 +1943,7 @@ void VkRenderBackend::InsertDebugLabel(const std::string& label, EQueueTypeFlagB
 	auto& command_buffer = GetLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
 
-	m_pDevice->DebugInsertLabel(current, label, color);
+	render_device->DebugInsertLabel(current, label, color);
 }
 
 void VkRenderBackend::EndDebugLabel(EQueueTypeFlagBits queue_type)
@@ -1951,7 +1951,7 @@ void VkRenderBackend::EndDebugLabel(EQueueTypeFlagBits queue_type)
 	auto& command_buffer = GetLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
 
-	m_pDevice->EndLabel(current);
+	render_device->EndLabel(current);
 }
 
 void VkRenderBackend::DestroyThreadContext(FVkThreadContext& context)
@@ -1960,23 +1960,23 @@ void VkRenderBackend::DestroyThreadContext(FVkThreadContext& context)
 	for (auto& [queue_id, queue_resources] : context.perQueue)
 	{
 		for (auto& command_buffer : queue_resources.commandBuffers)
-			m_pDevice->DestroyCommandBuffer(queue_resources.commandPool, command_buffer);
+			render_device->DestroyCommandBuffer(queue_resources.commandPool, command_buffer);
 
-		m_pDevice->DestroyCommandPool(queue_resources.commandPool);
+		render_device->DestroyCommandPool(queue_resources.commandPool);
 	}
 
 	// Destroy descriptor sets
 	for (auto& [id, descriptor_set] : context.descriptorSets)
-		m_pDevice->DestroyDescriptorSet(context.descriptorPool, descriptor_set);
+		render_device->DestroyDescriptorSet(context.descriptorPool, descriptor_set);
 
 	// Destroy descriptor pool
-	m_pDevice->DestroyDescriptorPool(context.descriptorPool);
+	render_device->DestroyDescriptorPool(context.descriptorPool);
 }
 
 void VkRenderBackend::ProcessResourceBarriers()
 {
 	// TODO: add mip level and array layer support
-	if (m_textureLayoutInfos.empty())
+	if (texture_layout_change_infos.empty())
 		return;
 
 	FVkCommandBufferCreateInfo command_buffer_ci{};
@@ -1991,10 +1991,10 @@ void VkRenderBackend::ProcessResourceBarriers()
 
 	auto& command_buffer = CreateCommandBuffer(command_buffer_ci);
 
-	m_pDevice->BeginCommandBuffer(command_buffer, vk::CommandBufferUsageFlagBits::eOneTimeSubmit, 0u);
+	render_device->BeginCommandBuffer(command_buffer, vk::CommandBufferUsageFlagBits::eOneTimeSubmit, 0u);
 
 	FVkTranslationInfo translation_info{};
-	for (const auto& layout_info : m_textureLayoutInfos)
+	for (const auto& layout_info : texture_layout_change_infos)
 	{
 		auto& texture = textures[layout_info.textureId];
 		auto& target_subresource = texture->getSubresource();
@@ -2013,17 +2013,17 @@ void VkRenderBackend::ProcessResourceBarriers()
 
 	ProcessMemoryBarriers(command_buffer, translation_info);
 
-	m_pDevice->EndCommandBuffer(command_buffer);
-	m_pDevice->SubmitCommandBuffer(command_buffer);
+	render_device->EndCommandBuffer(command_buffer);
+	render_device->SubmitCommandBuffer(command_buffer);
 
 	DestroyCommandBuffer(EQueueTypeFlagBits::eGraphics);
 
-	m_textureLayoutInfos.clear();
+	texture_layout_change_infos.clear();
 }
 
 void VkRenderBackend::ProcessResourceUpload()
 {
-	if (m_textureUploadInfos.empty() && m_bufferUploadInfos.empty())
+	if (texture_upload_infos.empty() && buffer_upload_infos.empty())
 		return;
 
 	FVkCommandBufferCreateInfo command_buffer_ci{};
@@ -2038,7 +2038,7 @@ void VkRenderBackend::ProcessResourceUpload()
 
 	auto& command_buffer = CreateCommandBuffer(command_buffer_ci);
 
-	m_pDevice->BeginCommandBuffer(command_buffer, vk::CommandBufferUsageFlagBits::eOneTimeSubmit, 0u);
+	render_device->BeginCommandBuffer(command_buffer, vk::CommandBufferUsageFlagBits::eOneTimeSubmit, 0u);
 
 	utl::vector<FVkBuffer> staging_buffers{};
 
@@ -2046,7 +2046,7 @@ void VkRenderBackend::ProcessResourceUpload()
 	{
 		// Prepare staging buffers
 		
-		for (auto& texture_upload : m_textureUploadInfos)
+		for (auto& texture_upload : texture_upload_infos)
 		{
 			FVkBufferCreateInfo staging_buffer_ci{};
 			staging_buffer_ci.instanceCount = 1ull;
@@ -2058,13 +2058,13 @@ void VkRenderBackend::ProcessResourceUpload()
 #endif
 
 			auto& staging_buffer = staging_buffers.emplace_back();
-			m_pDevice->CreateBuffer(staging_buffer_ci, staging_buffer);
+			render_device->CreateBuffer(staging_buffer_ci, staging_buffer);
 
 			// Copy data to buffer
 			void* mapped_buffer_memory{ nullptr };
-			m_pDevice->MapBufferMemory(staging_buffer, &mapped_buffer_memory);
+			render_device->MapBufferMemory(staging_buffer, &mapped_buffer_memory);
 			util::Copy(mapped_buffer_memory, 0ull, texture_upload.data, 0ull, std::execution::par);
-			m_pDevice->UnmapBufferMemory(staging_buffer);
+			render_device->UnmapBufferMemory(staging_buffer);
 
 			texture_upload.data.clear();
 		}
@@ -2072,7 +2072,7 @@ void VkRenderBackend::ProcessResourceUpload()
 		// Translate all images to transfer dst stage
 		utl::vector<FAPIHandle> generate_mip_textures{};
 		FVkTranslationInfo translation_info{};
-		for (const auto& texture_upload : m_textureUploadInfos)
+		for (const auto& texture_upload : texture_upload_infos)
 		{
 			auto& texture = textures[texture_upload.textureId.Get()];
 			auto& target_subresource = texture->getSubresource();
@@ -2094,9 +2094,9 @@ void VkRenderBackend::ProcessResourceUpload()
 		translation_info.imageTranslationInfos.clear();
 
 		// Copy buffer to image
-		for (u64 idx = 0ull; idx < m_textureUploadInfos.size(); ++idx)
+		for (u64 idx = 0ull; idx < texture_upload_infos.size(); ++idx)
 		{
-			auto& texture_upload = m_textureUploadInfos[idx];
+			auto& texture_upload = texture_upload_infos[idx];
 			auto& texture = textures[texture_upload.textureId.Get()];
 			auto& staging_buffer = staging_buffers[idx];
 
@@ -2208,7 +2208,7 @@ void VkRenderBackend::ProcessResourceUpload()
 		}
 
 		// Translate images to shader read only layout
-		for (const auto& texture_upload : m_textureUploadInfos)
+		for (const auto& texture_upload : texture_upload_infos)
 		{
 			auto& texture = textures[texture_upload.textureId.Get()];
 			auto& target_subresource = texture->getSubresource();
@@ -2227,9 +2227,9 @@ void VkRenderBackend::ProcessResourceUpload()
 	}
 
 	// Upload buffers
-	for(const auto& upload_info : m_bufferUploadInfos)
+	for(const auto& upload_info : buffer_upload_infos)
 	{
-		auto& physical = m_pDevice->GetPhysicalDevice();
+		auto& physical = render_device->GetPhysicalDevice();
 		utl::vector<vk::BufferCopy2KHR> copy_regions(upload_info.regions.size());
 
 		auto& dst_buffer = m_pResources->get<FVkBuffer>(upload_info.bufferId.Get());
@@ -2262,16 +2262,16 @@ void VkRenderBackend::ProcessResourceUpload()
 #endif
 
 		auto src_buffer = staging_buffers.emplace_back();
-		m_pDevice->CreateBuffer(vk_buffer_ci, src_buffer);
+		render_device->CreateBuffer(vk_buffer_ci, src_buffer);
 
 		// Copy data to staging buffer
 		void* mapped_memory{ nullptr };
-		m_pDevice->MapBufferMemory(src_buffer, &mapped_memory);
+		render_device->MapBufferMemory(src_buffer, &mapped_memory);
 
 		// Copy upload data to buffer
 		char* dst_memory = utl::cast<char*>(mapped_memory);
 		util::Copy(dst_memory, 0ull, upload_info.data, 0ull, std::execution::par);
-		m_pDevice->UnmapBufferMemory(src_buffer);
+		render_device->UnmapBufferMemory(src_buffer);
 
 		vk::CopyBufferInfo2KHR copy_buffer{};
 		copy_buffer.srcBuffer = src_buffer.handle;
@@ -2283,26 +2283,26 @@ void VkRenderBackend::ProcessResourceUpload()
 		current.copyBuffer2KHR(copy_buffer);
 	}
 
-	m_pDevice->EndCommandBuffer(command_buffer);
+	render_device->EndCommandBuffer(command_buffer);
 
-	m_pDevice->SubmitCommandBuffer(command_buffer);
+	render_device->SubmitCommandBuffer(command_buffer);
 
 	// TODO: submit command buffer. But with pushing semaphores for synchronize with main command buffer
 	DestroyCommandBuffer(EQueueTypeFlagBits::eGraphics);
 
 	// destroy staging buffers
 	for (auto& staging_buffer : staging_buffers)
-		m_pDevice->DestroyBuffer(staging_buffer);
+		render_device->DestroyBuffer(staging_buffer);
 
-	m_textureUploadInfos.clear();
-	m_bufferUploadInfos.clear();
+	texture_upload_infos.clear();
+	buffer_upload_infos.clear();
 }
 
 void VkRenderBackend::ProcessResourceUtilization()
 {
-	while (!m_destroyResource.empty())
+	while (!resource_destroy_queue.empty())
 	{
-		auto destroy_resource = m_destroyResource.front();
+		auto destroy_resource = resource_destroy_queue.front();
 
 		if (destroy_resource.mask & EResourceFlagBits::eTexture)
 		{
@@ -2319,24 +2319,24 @@ void VkRenderBackend::ProcessResourceUtilization()
 		else if (destroy_resource.mask & EResourceFlagBits::eBuffer)
 		{
 			auto& buffer = m_pResources->get<FVkBuffer>(destroy_resource.id.Get());
-			m_pDevice->DestroyBuffer(*buffer);
+			render_device->DestroyBuffer(*buffer);
 			m_pResources->remove<FVkBuffer>(destroy_resource.id.Get());
 		}
 
-		m_destroyResource.pop();
+		resource_destroy_queue.pop();
 	}
 }
 
 void VkRenderBackend::UpdateBackbuffer()
 {
-	auto& swapchain = m_pDevice->swapchain;
+	auto& swapchain = render_device->swapchain;
 
-	m_backbuffer.clear();
-	m_backbuffer.resize(swapchain.framesInFlight);
+	backbuffer.clear();
+	backbuffer.resize(swapchain.framesInFlight);
 
-	for (u64 frame = 0ull; frame < m_backbuffer.size(); ++frame)
+	for (u64 frame = 0ull; frame < backbuffer.size(); ++frame)
 	{
-		auto& current = m_backbuffer[frame];
+		auto& current = backbuffer[frame];
 		current.isAlive = true;
 		current.name = "backbuffer_image";
 		current.image.handle = swapchain.images[frame];
@@ -2353,7 +2353,7 @@ void VkRenderBackend::UpdateBackbuffer()
 
 FVkBufferCreateInfo VkRenderBackend::MakeBufferCreateInfo(const std::string& name, const FBufferCreateInfo& buffer_ci)
 {
-	auto& physical = m_pDevice->GetPhysicalDevice();
+	auto& physical = render_device->GetPhysicalDevice();
 
 	FVkBufferCreateInfo vk_buffer_ci{};
 	vk_buffer_ci.instanceCount = buffer_ci.count;
@@ -2476,7 +2476,7 @@ FRenderApiErrorInfo VkRenderBackend::CreateTexture(const FVkTextureCreateInfo& t
 	image_ci.ci.sharingMode = vk::SharingMode::eExclusive;
 	image_ci.ci.flags = (texture_ci.flags & ETextureCreateFlagBits::eCubemap) ? vk::ImageCreateFlagBits::eCubeCompatible : vk::ImageCreateFlagBits::eExtendedUsage;
 
-	RETURN_WHEN_FAULT(m_pDevice->CreateImage(image_ci, texture.image));
+	RETURN_WHEN_FAULT(render_device->CreateImage(image_ci, texture.image));
 
 	auto image_aspect = get_texture_aspect_flags(texture);
 	if (image_aspect & vk::ImageAspectFlagBits::eStencil)
@@ -2496,7 +2496,7 @@ FRenderApiErrorInfo VkRenderBackend::CreateTexture(const FVkTextureCreateInfo& t
 	image_view_ci.name = std::format("{}_main", texture_ci.name);
 #endif
 
-	RETURN_WHEN_FAULT(m_pDevice->CreateImageView(image_view_ci, texture.base.imageView));
+	RETURN_WHEN_FAULT(render_device->CreateImageView(image_view_ci, texture.base.imageView));
 	
 	texture.mips.resize(texture_ci.mipLevels);
 	for (u32 mip_index = 0u; mip_index < texture_ci.mipLevels; ++mip_index)
@@ -2508,7 +2508,7 @@ FRenderApiErrorInfo VkRenderBackend::CreateTexture(const FVkTextureCreateInfo& t
 #ifndef BUILD_WITHOUT_DEBUGGIND
 		image_view_ci.name = std::format("{}[{}]", texture_ci.name, mip_index);
 #endif
-		RETURN_WHEN_FAULT(m_pDevice->CreateImageView(image_view_ci, current_mip.imageView));
+		RETURN_WHEN_FAULT(render_device->CreateImageView(image_view_ci, current_mip.imageView));
 	}
 
 	FRenderApiErrorInfo res = make_api_error(vk::ObjectType::eSampler, vk::Result::eSuccess);
@@ -2524,10 +2524,10 @@ FRenderApiErrorInfo VkRenderBackend::CreateTexture(const FVkTextureCreateInfo& t
 		sampler_ci.name = texture_ci.name;
 #endif
 		u64 key = calculate_sampler_hash(sampler_ci);
-		auto& sampler = m_samplerCache[key];
+		auto& sampler = sampler_cache[key];
 		
 		if(!sampler)
-			res = m_pDevice->CreateSampler(sampler_ci, sampler);
+			res = render_device->CreateSampler(sampler_ci, sampler);
 
 		texture.sampler = key;
 	}
@@ -2540,11 +2540,11 @@ FRenderApiErrorInfo VkRenderBackend::CreateTexture(const FVkTextureCreateInfo& t
 void VkRenderBackend::DestroyTexture(FVkTexture& texture)
 {	
 	for(auto& mip : texture.mips)
-		m_pDevice->DestroyImageView(mip.imageView);
+		render_device->DestroyImageView(mip.imageView);
 	texture.mips.clear();
 
-	m_pDevice->DestroyImageView(texture.base.imageView);
-	m_pDevice->DestroyImage(texture.image);
+	render_device->DestroyImageView(texture.base.imageView);
+	render_device->DestroyImage(texture.image);
 
 	texture.isAlive = false;
 }
@@ -2556,7 +2556,7 @@ FRenderApiErrorInfo VkRenderBackend::CreateShaderResources(const FVkShaderResour
 	// TODO: generate better object names. Current names can overlap
 
 	// Remember maximum shader usage count
-	shader.maximumDescriptorSlots = m_pDevice->swapchain.framesInFlight * resources_info.usageCount;
+	shader.maximumDescriptorSlots = render_device->swapchain.framesInFlight * resources_info.usageCount;
 
 	// Create descriptor set layouts
 	for (const auto& [set, layout_bindings] : reflection->descriptorSetLayoutBindings)
@@ -2568,7 +2568,7 @@ FRenderApiErrorInfo VkRenderBackend::CreateShaderResources(const FVkShaderResour
 		descriptor_set_layout_ci.layoutBindings = layout_bindings; // TODO: may be send pointer to vector here?
 
 		auto& descriptor_set_Layout = shader.descriptorSetLayouts[set];
-		RETURN_WHEN_FAULT(m_pDevice->CreateDescriptorSetLayout(descriptor_set_layout_ci, descriptor_set_Layout));
+		RETURN_WHEN_FAULT(render_device->CreateDescriptorSetLayout(descriptor_set_layout_ci, descriptor_set_Layout));
 	}
 
 	// Create descriptor pool
@@ -2577,8 +2577,8 @@ FRenderApiErrorInfo VkRenderBackend::CreateShaderResources(const FVkShaderResour
 	pool_ci.name = resources_info.name;
 #endif
 	pool_ci.poolSizes = reflection->descriptorPoolSizes;
-	pool_ci.usageCount = resources_info.usageCount * m_pDevice->swapchain.framesInFlight;
-	RETURN_WHEN_FAULT(m_pDevice->CreateDescriptorPool(pool_ci, shader.descriptorPool));
+	pool_ci.usageCount = resources_info.usageCount * render_device->swapchain.framesInFlight;
+	RETURN_WHEN_FAULT(render_device->CreateDescriptorPool(pool_ci, shader.descriptorPool));
 
 	// Create descrioptor sets for each shader usage
 	for (const auto& [set, layout] : shader.descriptorSetLayouts)
@@ -2592,11 +2592,11 @@ FRenderApiErrorInfo VkRenderBackend::CreateShaderResources(const FVkShaderResour
 		descriptor_set_ci.descriptorCount = shader.maximumDescriptorSlots;
 
 		auto& descriptor_set = shader.descriptorSets[set];
-		RETURN_WHEN_FAULT(m_pDevice->CreateDescriptorSet(descriptor_set_ci, descriptor_set));
+		RETURN_WHEN_FAULT(render_device->CreateDescriptorSet(descriptor_set_ci, descriptor_set));
 	}
 
 	// Minimal buffer offset
-	auto& physical = m_pDevice->GetPhysicalDevice();
+	auto& physical = render_device->GetPhysicalDevice();
 	auto minOffsetAllignment = std::lcm(physical.GetProperties().limits.minUniformBufferOffsetAlignment, physical.GetProperties().limits.nonCoherentAtomSize);
 
 	// Create uniform buffers
@@ -2625,7 +2625,7 @@ FRenderApiErrorInfo VkRenderBackend::CreateShaderResources(const FVkShaderResour
 			buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer;
 
 		auto buffer = std::make_unique<FVkBuffer>();
-		RETURN_WHEN_FAULT(m_pDevice->CreateBuffer(buffer_ci, *buffer));
+		RETURN_WHEN_FAULT(render_device->CreateBuffer(buffer_ci, *buffer));
 
 
 		auto buffer_name = create_object_unique_name("buffer:{:x}:{}", buffer->handle, id);
@@ -2640,7 +2640,7 @@ FRenderApiErrorInfo VkRenderBackend::CreateShaderResources(const FVkShaderResour
 #endif
 
 	// NOTE: adding global descriptor set layout
-	layout_ci.descriptorSetLayouts.emplace_back(m_globalDescriptor.deecriptorSetLayout);
+	layout_ci.descriptorSetLayouts.emplace_back(global_descriptor.deecriptorSetLayout);
 
 	// Send descriptor set layouts to Create info
 	for (u64 idx = 1ull; idx < shader.descriptorSetLayouts.size() + 1ull; ++idx)
@@ -2662,34 +2662,34 @@ FRenderApiErrorInfo VkRenderBackend::CreateShaderResources(const FVkShaderResour
 		current_offset += push_constant_range.size;
 	}
 
-	return m_pDevice->CreatePipelineLayout(layout_ci, shader.layout);
+	return render_device->CreatePipelineLayout(layout_ci, shader.layout);
 }
 
 // Destroy shader object
 void VkRenderBackend::DestroyShader(FVkShader& shader)
 {
 	for (auto& pipeline : shader.handles)
-		m_pDevice->DestroyPipeline(pipeline);
+		render_device->DestroyPipeline(pipeline);
 
 	for (auto& shader_module : shader.shaderModules)
-		m_pDevice->DestroyShaderModule(shader_module);
+		render_device->DestroyShaderModule(shader_module);
 
 	for (auto& [set, descriptor_set] : shader.descriptorSets)
-		m_pDevice->DestroyDescriptorSet(shader.descriptorPool, descriptor_set);
+		render_device->DestroyDescriptorSet(shader.descriptorPool, descriptor_set);
 
 	for (auto& [id, buffer_id] : shader.uniformBuffers)
 	{
 		auto& buffer = m_pResources->get<FVkBuffer>(buffer_id);
-		m_pDevice->DestroyBuffer(*buffer);
+		render_device->DestroyBuffer(*buffer);
 		m_pResources->remove<FVkBuffer>(buffer_id);
 	}
 
-	m_pDevice->DestroyDescriptorPool(shader.descriptorPool);
+	render_device->DestroyDescriptorPool(shader.descriptorPool);
 
-	m_pDevice->DestroyPipelineLayout(shader.layout);
+	render_device->DestroyPipelineLayout(shader.layout);
 
 	for (auto& [set, descriptor_set_layout] : shader.descriptorSetLayouts)
-		m_pDevice->DestroyDescriptorSetLayout(descriptor_set_layout);
+		render_device->DestroyDescriptorSetLayout(descriptor_set_layout);
 
 	shader.isAlive = false;
 }
@@ -2699,7 +2699,7 @@ void VkRenderBackend::BindShaderDescriptors(const FVkCommandBuffer& command_buff
 	utl::vector<vk::DescriptorSet> bindDescriptorSets{};
 
 	// NOTE: bind global descriptor set
-	bindDescriptorSets.emplace_back(m_globalDescriptor.descriptorSet.handles[m_pDevice->swapchain.currentFrame]);
+	bindDescriptorSets.emplace_back(global_descriptor.descriptorSet.handles[render_device->swapchain.currentFrame]);
 
 	// NOTE: shader.descriptorUsage contains next index of descriptor set to use. 
 	// Here i collecting all shader descriptor sets, that was changed in past

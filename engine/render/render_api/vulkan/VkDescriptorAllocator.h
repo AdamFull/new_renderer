@@ -33,7 +33,7 @@
 //				utl::vector<FVkDescriptorPool> m_free{};
 //				utl::hash_map<vk::DescriptorType, f32> m_sizes{};
 //
-//				VkRenderDevice* m_pDevice{ nullptr };
+//				VkRenderDevice* render_device{ nullptr };
 //			};
 //
 //			class CVkDescriptorLayoutCache

@@ -135,39 +135,36 @@ namespace engine
 				void CopyBufferToTexture(const FVkCommandBuffer& command_buffer, const FVkBuffer& buffer, const FVkTexture& texture, const utl::vector<vk::BufferImageCopy2KHR>& copy_regions);
 				//void blitImage(const FVkCommandBuffer& command_buffer, );
 			private:
-				std::unique_ptr<VkRenderDevice> m_pDevice{};
+				std::unique_ptr<VkRenderDevice> render_device{};
 				std::unique_ptr<vk_resource_container_t> m_pResources;
 
-				utl::vector<FTextureUploadInfo> m_textureUploadInfos{};
-				utl::vector<FBufferUploadInfo> m_bufferUploadInfos{};
-				utl::vector<FVkTextureLayoutChangeInfo> m_textureLayoutInfos{};
+				utl::vector<FTextureUploadInfo> texture_upload_infos{};
+				utl::vector<FBufferUploadInfo> buffer_upload_infos{};
+				utl::vector<FVkTextureLayoutChangeInfo> texture_layout_change_infos{};
 
-				utl::vector<uint32_t> m_textureIndexRemap{};
+				utl::vector<uint32_t> texture_index_remap{};
 
-				std::queue<FAPIObjectDestroyInfo> m_destroyResource{};
-
-				u64 m_indirectDispatchBuffer{ INVALID_HANDLE };
-				u64 m_dispatchBufferOffset{ 0ull };
+				std::queue<FAPIObjectDestroyInfo> resource_destroy_queue{};
 
 				// NOTE: global descriptor uses set 0 and binding 0 and 1 (0 is for global uniform, 1 is for texture array)
-				FVkGlobalDescriptor m_globalDescriptor{};
-				utl::hash_map<u32, utl::unique_queue<u64>> m_textureToUpdate{};
+				FVkGlobalDescriptor global_descriptor{};
+				utl::hash_map<u32, utl::unique_queue<u64>> texture_to_update{};
 
-				utl::hash_map<std::thread::id, FVkThreadContext> m_perThreadContext{};
-				bool m_bIsFrameStarted{ false };
+				utl::hash_map<std::thread::id, FVkThreadContext> per_thread_context{};
+				bool is_frame_started{ false };
 
-				FRenderFrameStats m_renderStats{};
-				utl::hash_map<EQueueTypeFlagBits, u32> m_zoneEntries{};
-				FVkTimestampQuery m_timestampQuery{};
+				FRenderFrameStats render_stats{};
+				utl::hash_map<EQueueTypeFlagBits, u32> zone_entries{};
+				FVkTimestampQuery timestamp_query{};
 
-				utl::vector<FVkTexture> m_backbuffer{};
+				utl::vector<FVkTexture> backbuffer{};
 
-				utl::hash_map<u64, vk::Sampler> m_samplerCache{};
-				vk::Sampler m_defaultSampler{};
+				utl::hash_map<u64, vk::Sampler> sampler_cache{};
+				vk::Sampler default_sampler{};
 
-				u64 m_utilizationCounter{ 0ull };
+				u64 utilization_counter{ 0ull };
 
-				i32 m_iSurfaceWidth{}, m_iSurfaceHeight{};
+				i32 surface_width{}, m_iSurfaceHeight{};
 			};
 		}
 	}

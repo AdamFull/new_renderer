@@ -10,7 +10,7 @@
 //
 //CVkDescriptorAllocator::CVkDescriptorAllocator(VkRenderDevice* device)
 //{
-//	m_pDevice = device;
+//	render_device = device;
 //	initialize();
 //}
 //
@@ -30,7 +30,7 @@
 //void CVkDescriptorAllocator::reset()
 //{
 //	for (auto& pool : m_used)
-//		m_pDevice->ResetDescriptorPool(pool);
+//		render_device->ResetDescriptorPool(pool);
 //
 //	m_free = m_used;
 //	m_used.clear();
@@ -40,10 +40,10 @@
 //void CVkDescriptorAllocator::cleanup()
 //{
 //	for (auto& pool : m_free)
-//		m_pDevice->DestroyDescriptorPool(pool);
+//		render_device->DestroyDescriptorPool(pool);
 //
 //	for (auto& pool : m_used)
-//		m_pDevice->DestroyDescriptorPool(pool);
+//		render_device->DestroyDescriptorPool(pool);
 //}
 //
 //void CVkDescriptorAllocator::initialize()
@@ -76,6 +76,6 @@
 //	FVkDescriptorPoolCreateInfo pool_ci{};
 //	// TODO: handle flags
 //
-//		//check_api_result(m_pDevice->CreateDescriptorPool());
+//		//check_api_result(render_device->CreateDescriptorPool());
 //	return new_pool;
 //}
