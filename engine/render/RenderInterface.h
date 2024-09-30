@@ -72,7 +72,7 @@ namespace engine
 
 			std::unique_ptr<IRenderGraph> m_pRenderGraph{};
 			std::unique_ptr<IRenderWorld> m_pRenderWorld{};
-			std::unique_ptr<resource_container_t> m_pResources{};
+			std::unique_ptr<resource_container_t> render_resources{};
 			std::unique_ptr<IRenderBackend> m_pRenderContext{};
 			std::unique_ptr<IResourceLoader> m_pResourceLoader{};
 		};

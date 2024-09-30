@@ -136,7 +136,7 @@ namespace engine
 				//void blitImage(const FVkCommandBuffer& command_buffer, );
 			private:
 				std::unique_ptr<VkRenderDevice> render_device{};
-				std::unique_ptr<vk_resource_container_t> m_pResources;
+				std::unique_ptr<vk_resource_container_t> render_resources;
 
 				utl::vector<FTextureUploadInfo> texture_upload_infos{};
 				utl::vector<FBufferUploadInfo> buffer_upload_infos{};

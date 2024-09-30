@@ -110,7 +110,7 @@ CRenderInterface::CRenderInterface(filesystem::IVirtualFileSystemInterface* vfs)
 	m_pResourceLoader = std::make_unique<CResourceLoader>();
 	m_pRenderPacket = std::make_unique<FRenderDataPacket>();
 
-	m_pResources = std::make_unique<resource_container_t>();
+	render_resources = std::make_unique<resource_container_t>();
 
 	m_pRenderGraph = std::make_unique<CRenderGraph>(this);
 	m_pRenderWorld = std::make_unique<CRenderWorld>(this);
@@ -301,7 +301,7 @@ FRHIHandle CRenderInterface::CreateTextureObject(const std::string& path)
 	auto ext_hash = utl::murmur_hash(ext);
 	auto mime = utl::cast<EMimeType>(ext_hash);
 
-	FRHIHandle texture_id = FRHIHandle(m_pResources->getId<ITextureObject>(name.c_str()));
+	FRHIHandle texture_id = FRHIHandle(render_resources->getId<ITextureObject>(name.c_str()));
 	if (texture_id)
 		return texture_id;
 
@@ -320,7 +320,7 @@ FRHIHandle CRenderInterface::CreateTextureObject(const std::string& name, const 
 	auto new_texture = std::make_unique<CTextureObject>(this);
 	new_texture->Create(name, ApplyTextureExtent(texture_ci));
 
-	auto handle = FRHIHandle(m_pResources->add<ITextureObject>(name.c_str(), std::move(new_texture)));
+	auto handle = FRHIHandle(render_resources->add<ITextureObject>(name.c_str(), std::move(new_texture)));
 	auto& texture = GetTextureObject(handle);
 
 	FRenderResource resource_desc{};
@@ -341,7 +341,7 @@ FRHIHandle CRenderInterface::CreateTextureObject(const std::string& name, const 
 	auto new_texture = std::make_unique<CTextureObject>(this);
 	new_texture->Create(name, ApplyTextureExtent(texture_ci), std::move(upload_info));
 
-	auto handle = FRHIHandle(m_pResources->add<ITextureObject>(name.c_str(), std::move(new_texture)));
+	auto handle = FRHIHandle(render_resources->add<ITextureObject>(name.c_str(), std::move(new_texture)));
 	auto& texture = GetTextureObject(handle);
 
 	FRenderResource resource_desc{};
@@ -359,7 +359,7 @@ FRHIHandle CRenderInterface::CreateTextureObject(const std::string& name, const 
 
 void CRenderInterface::DestroyTextureObject(FRHIHandle handle)
 {
-	m_pResources->remove<ITextureObject>(handle.Get());
+	render_resources->remove<ITextureObject>(handle.Get());
 
 	// Delete resource from render graph
 	// m_pRenderGraph->RemoveRenderResource(???);
@@ -367,12 +367,12 @@ void CRenderInterface::DestroyTextureObject(FRHIHandle handle)
 
 const std::unique_ptr<ITextureObject>& CRenderInterface::GetTextureObject(FRHIHandle handle)
 {
-	return m_pResources->get<ITextureObject>(handle.Get());
+	return render_resources->get<ITextureObject>(handle.Get());
 }
 
 const std::unique_ptr<ITextureObject>& CRenderInterface::GetTextureObject(const char* name)
 {
-	return m_pResources->get<ITextureObject>(name);
+	return render_resources->get<ITextureObject>(name);
 }
 
 
@@ -381,7 +381,7 @@ FRHIHandle CRenderInterface::CreateBufferObject(const std::string& name, const F
 	auto new_buffer = std::make_unique<CBufferObject>(this);
 	new_buffer->Create(name, buffer_ci);
 
-	auto handle = FRHIHandle(m_pResources->add<IBufferObject>(name.c_str(), std::move(new_buffer)));
+	auto handle = FRHIHandle(render_resources->add<IBufferObject>(name.c_str(), std::move(new_buffer)));
 	auto& buffer = GetBufferObject(handle);
 
 	FRenderResource resource_desc{};
@@ -394,17 +394,17 @@ FRHIHandle CRenderInterface::CreateBufferObject(const std::string& name, const F
 
 void CRenderInterface::DestroyBufferObject(FRHIHandle handle)
 {
-	return m_pResources->remove<IBufferObject>(handle.Get());
+	return render_resources->remove<IBufferObject>(handle.Get());
 }
 
 const std::unique_ptr<IBufferObject>& CRenderInterface::GetBufferObject(FRHIHandle handle)
 {
-	return m_pResources->get<IBufferObject>(handle.Get());
+	return render_resources->get<IBufferObject>(handle.Get());
 }
 
 const std::unique_ptr<IBufferObject>& CRenderInterface::GetBufferObject(const char* name)
 {
-	return m_pResources->get<IBufferObject>(name);
+	return render_resources->get<IBufferObject>(name);
 }
 
 FRHIHandle CRenderInterface::CreateShaderObject(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci)
@@ -420,7 +420,7 @@ FRHIHandle CRenderInterface::CreateShaderObject(const std::string& name, const F
 	new_shader->Create(name, shader_ci, std::move(shader_stages));
 
 	auto uuid = utl::to_string(utl::generate_guid());
-	return FRHIHandle(m_pResources->add<IShaderObject>(uuid.c_str(), std::move(new_shader)));
+	return FRHIHandle(render_resources->add<IShaderObject>(uuid.c_str(), std::move(new_shader)));
 }
 
 FRHIHandle CRenderInterface::CreateShaderObject(const std::string& name, const FComputeShaderCreateInfo& shader_ci)
@@ -436,22 +436,22 @@ FRHIHandle CRenderInterface::CreateShaderObject(const std::string& name, const F
 	new_shader->Create(name, shader_ci, std::move(shader_stages));
 
 	auto uuid = utl::to_string(utl::generate_guid());
-	return FRHIHandle(m_pResources->add<IShaderObject>(uuid.c_str(), std::move(new_shader)));
+	return FRHIHandle(render_resources->add<IShaderObject>(uuid.c_str(), std::move(new_shader)));
 }
 
 void CRenderInterface::DestroyShaderObject(FRHIHandle handle)
 {
-	return m_pResources->remove<IShaderObject>(handle.Get());
+	return render_resources->remove<IShaderObject>(handle.Get());
 }
 
 const std::unique_ptr<IShaderObject>& CRenderInterface::GetShaderObject(FRHIHandle handle)
 {
-	return m_pResources->get<IShaderObject>(handle.Get());
+	return render_resources->get<IShaderObject>(handle.Get());
 }
 
 const std::unique_ptr<IShaderObject>& CRenderInterface::GetShaderObject(const char* name)
 {
-	return m_pResources->get<IShaderObject>(name);
+	return render_resources->get<IShaderObject>(name);
 }
 
 
@@ -460,7 +460,7 @@ FRHIHandle CRenderInterface::CreateVertexHandler(const std::string& name, const 
 	auto vertex_handler = std::make_unique<CVertexHandler>(this);
 	vertex_handler->Create(handler_ci);
 
-	return FRHIHandle(m_pResources->add<IVertexHandler>(name.c_str(), std::move(vertex_handler)));
+	return FRHIHandle(render_resources->add<IVertexHandler>(name.c_str(), std::move(vertex_handler)));
 }
 
 void CRenderInterface::DestroyVertexHandler(FRHIHandle handle)
@@ -470,7 +470,7 @@ void CRenderInterface::DestroyVertexHandler(FRHIHandle handle)
 
 const std::unique_ptr<IVertexHandler>& CRenderInterface::GetVertexHandler(FRHIHandle id)
 {
-	return m_pResources->get<IVertexHandler>(id.Get());
+	return render_resources->get<IVertexHandler>(id.Get());
 }
 
 void CRenderInterface::UpdateSurfaceSize(i32 width, i32 height)
