@@ -2,6 +2,7 @@
 #include <uuid.hpp>
 
 #include <engine/render/render_api/vulkan/VkRenderBackend.h>
+#include <engine/render/render_api/vulkan/Buffer.h>
 
 #include "BufferObject.h"
 #include "ShaderObject.h"

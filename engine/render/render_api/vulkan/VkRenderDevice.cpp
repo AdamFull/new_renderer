@@ -416,68 +416,6 @@ namespace engine
 				Handle(*device).destroySampler(sampler, allocation_callbacks);
 			}
 
-			FRenderApiErrorInfo VkRenderDevice::CreateBuffer(const FVkBufferCreateInfo& buffer_ci, FVkBuffer& buffer)
-			{
-				auto alligned_instance_size = get_alligned_instance_size(buffer_ci.instanceSize, buffer_ci.minOffsetAlignment);
-
-				vk::BufferCreateInfo ci{};
-				buffer.instanceCount = buffer_ci.instanceCount;
-				buffer.size = ci.size = alligned_instance_size * buffer_ci.instanceCount;
-				ci.usage = buffer_ci.usageFlags;
-				ci.sharingMode = vk::SharingMode::eExclusive;
-
-				vma::AllocationCreateInfo alloc_ci{};
-				alloc_ci.usage = buffer_ci.memoryUsage;
-
-				vk::Result res = Handle(*allocator).createBuffer(&ci, &alloc_ci, &buffer.handle, &buffer.memory, nullptr);
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				debug_utils->SetDebugName(buffer.handle, buffer_ci.name);
-#endif
-				buffer.isAlive = true;
-
-				if (buffer_ci.usageFlags & vk::BufferUsageFlagBits::eShaderDeviceAddressKHR)
-				{
-					vk::BufferDeviceAddressInfoKHR address_info{};
-					address_info.buffer = buffer.handle;
-					buffer.address = Handle(*device).getBufferAddressKHR(address_info);
-				}
-
-				return make_api_error(buffer.handle.objectType, res, "Failed to Create");
-			}
-
-			void VkRenderDevice::DestroyBuffer(FVkBuffer& buffer)
-			{
-				UnmapBufferMemory(buffer);
-				Handle(*allocator).destroyBuffer(buffer.handle, buffer.memory);
-				buffer.isAlive = false;
-			}
-
-			FRenderApiErrorInfo VkRenderDevice::MapBufferMemory(FVkBuffer& buffer, void** mappedMemory)
-			{
-				if (!buffer.isMapped)
-				{
-					vk::Result res = Handle(*allocator).mapMemory(buffer.memory, mappedMemory);
-					buffer.isMapped = res == vk::Result::eSuccess;
-					return make_api_error(buffer.handle.objectType, res, "Failed to map buffer memory");
-				}
-
-				return make_api_error(vk::ObjectType::eBuffer, vk::Result::eSuccess);
-			}
-
-			void VkRenderDevice::UnmapBufferMemory(FVkBuffer& buffer)
-			{
-				if (buffer.isMapped)
-				{
-					Handle(*allocator).unmapMemory(buffer.memory);
-					buffer.isMapped = false;
-				}
-			}
-
-			void VkRenderDevice::FlushBufferMemory(const FVkBuffer& buffer, vk::DeviceSize size, vk::DeviceSize offset)
-			{
-				Handle(*allocator).flushAllocation(buffer.memory, size, offset);
-			}
-
 			FRenderApiErrorInfo VkRenderDevice::CreateDescriptorSetLayout(const FVkDescriptorSetLayoutCreateInfo& layout_ci, vk::DescriptorSetLayout& descriptor_set_layout)
 			{
 				vk::DescriptorSetLayoutCreateInfo descriptor_set_layout_ci{};

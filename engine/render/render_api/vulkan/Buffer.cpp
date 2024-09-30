@@ -9,9 +9,18 @@ namespace engine
 	{
 		namespace vulkan
 		{
-			BufferBuilder::BufferBuilder(vk::DeviceSize size) :
-				AllocationBuilder{ vk::BufferCreateInfo{ {}, size } }
+
+			inline vk::DeviceSize CalculateAlignedSize(vk::DeviceSize allocation_size, vk::DeviceSize minimal_alignment)
 			{
+				if (minimal_alignment > 0ull)
+					return (allocation_size + minimal_alignment - 1ull) & ~(minimal_alignment - 1ull);
+				return allocation_size;
+			}
+
+			BufferBuilder::BufferBuilder(vk::DeviceSize allocation_size, vk::DeviceSize suballocation_count, vk::DeviceSize minimal_alignment) :
+				AllocationBuilder{ vk::BufferCreateInfo{ {}, 0ull } }, suballocation_count{ suballocation_count }
+			{
+				create_info.size = CalculateAlignedSize(allocation_size, minimal_alignment) * suballocation_count;
 			}
 
 			Buffer BufferBuilder::Build(VkRenderDevice& render_device) const
@@ -46,7 +55,7 @@ namespace engine
 				return *this;
 			}
 
-			BufferBuilder& BufferBuilder::SetUsage(vk::BufferUsageFlagBits usage)
+			BufferBuilder& BufferBuilder::SetUsage(vk::BufferUsageFlags usage)
 			{
 				create_info.usage = usage;
 				return *this;
@@ -57,7 +66,8 @@ namespace engine
 			Buffer::Buffer(VkRenderDevice& render_device, BufferBuilder const& builder) :
 				VulkanResource{ nullptr },
 				Allocation{ render_device.GetAllocator(), builder.alloc_create_info },
-				size{ builder.create_info.size }
+				size{ builder.create_info.size },
+				suballocation_count{ builder.suballocation_count }
 			{
 				handle = allocator.CreateBuffer(*this, builder.create_info);
 				if (!builder.debug_name.empty())
@@ -83,6 +93,11 @@ namespace engine
 			vk::DeviceSize Buffer::GetSize() const
 			{
 				return size;
+			}
+
+			vk::DeviceSize Buffer::GetSuballocationSize() const
+			{
+				return size / suballocation_count;
 			}
 		}
 	}

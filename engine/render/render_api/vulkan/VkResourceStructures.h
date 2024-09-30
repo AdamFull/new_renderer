@@ -276,32 +276,32 @@ namespace engine
 			// ---------------------------------------------------------------------------------
 			// ====================================| BUFFER |===================================
 			// ---------------------------------------------------------------------------------
-			struct FVkBuffer
-			{
-				vk::Buffer handle{};
-				vma::Allocation memory{};
-				vk::DeviceSize size{};
-				vk::DeviceSize instanceCount{};
-				vk::BufferUsageFlags usageFlags{};
-				uint64_t address{};
-
-				std::string name{};
-
-				bool isMapped{ false };
-				bool isAlive{ false };
-			};
-
-			struct FVkBufferCreateInfo
-			{
-				vk::DeviceSize instanceSize{ 0ull };
-				vk::DeviceSize instanceCount{ 0ull };
-				vk::DeviceSize minOffsetAlignment{ 1ull };
-				vk::BufferUsageFlags usageFlags{};
-				vma::MemoryUsage memoryUsage{};
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				std::string name{};
-#endif
-			};
+//			struct FVkBuffer
+//			{
+//				vk::Buffer handle{};
+//				vma::Allocation memory{};
+//				vk::DeviceSize size{};
+//				vk::DeviceSize instanceCount{};
+//				vk::BufferUsageFlags usageFlags{};
+//				uint64_t address{};
+//
+//				std::string name{};
+//
+//				bool isMapped{ false };
+//				bool isAlive{ false };
+//			};
+//
+//			struct FVkBufferCreateInfo
+//			{
+//				vk::DeviceSize instanceSize{ 0ull };
+//				vk::DeviceSize instanceCount{ 0ull };
+//				vk::DeviceSize minOffsetAlignment{ 1ull };
+//				vk::BufferUsageFlags usageFlags{};
+//				vma::MemoryUsage memoryUsage{};
+//#ifndef BUILD_WITHOUT_DEBUGGIND
+//				std::string name{};
+//#endif
+//			};
 
 			// HIGH LEVEL OBJECTS
 

@@ -14,14 +14,16 @@ namespace engine
 			class BufferBuilder : public AllocationBuilder<BufferBuilder, vk::BufferCreateInfo>
 			{
 			public:
-				BufferBuilder(vk::DeviceSize size);
+				BufferBuilder(vk::DeviceSize allocation_size, vk::DeviceSize suballocation_count, vk::DeviceSize minimal_alignment);
 
 				Buffer Build(VkRenderDevice& render_device) const;
 				std::unique_ptr<Buffer> BuildUnique(VkRenderDevice& render_device) const;
 				BufferBuilder& SetFlags(vk::BufferCreateFlags flags);
 				BufferBuilder& SetImplicitSharingMode();
 				BufferBuilder& SetSharingMode(vk::SharingMode sharing_mode);
-				BufferBuilder& SetUsage(vk::BufferUsageFlagBits usage);
+				BufferBuilder& SetUsage(vk::BufferUsageFlags usage);
+
+				vk::DeviceSize suballocation_count{ 0ull };
 			};
 
 			class Buffer final : public Allocation, public VulkanResource<vk::Buffer>
@@ -46,8 +48,11 @@ namespace engine
 				 */
 				vk::DeviceSize GetSize() const;
 
+				vk::DeviceSize GetSuballocationSize() const;
+
 			private:
 				vk::DeviceSize size{ 0ull };
+				vk::DeviceSize suballocation_count{ 0ull };
 			};
 		}
 	}

@@ -5,7 +5,7 @@
 
 #include <engine/render/render_api/vulkan/VkResource.h>
 
-#include <vk_mem_alloc.hpp>
+#include <vma/vk_mem_alloc.hpp>
 
 namespace engine
 {
@@ -43,7 +43,7 @@ namespace engine
 				CreateInfoType create_info;
 
 			protected:
-				AllocationBuilder(const AllocationBuilder& other) = delete;
+				//AllocationBuilder(const AllocationBuilder& other) = delete;
 				AllocationBuilder(const CreateInfoType& create_info) :
 					create_info(create_info)
 				{

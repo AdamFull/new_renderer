@@ -13,7 +13,9 @@ namespace engine
 	{
 		namespace vulkan
 		{
-			using vk_resource_container_t = CResourceContainer<FVkTexture, FVkShader, FVkBuffer, FVkShaderReflectionData>;
+			class Buffer;
+
+			using vk_resource_container_t = CResourceContainer<FVkTexture, FVkShader, Buffer, FVkShaderReflectionData>;
 
 			class VkRenderBackend : public IRenderBackend
 			{
@@ -118,8 +120,6 @@ namespace engine
 				void ProcessResourceUtilization();
 				void UpdateBackbuffer();
 
-				FVkBufferCreateInfo MakeBufferCreateInfo(const std::string& name, const FBufferCreateInfo& buffer_ci);
-
 				FRenderApiErrorInfo CreateTexture(const FVkTextureCreateInfo& texture_ci, FVkTexture& texture);
 				void DestroyTexture(FVkTexture& texture);
 
@@ -132,7 +132,7 @@ namespace engine
 				void ProcessImageLayoutTranslation(const FVkCommandBuffer& command_buffer, const FVkImageTranslationInfo& image_translation_info);
 				void TextureLayoutTranslation(const FVkCommandBuffer& command_buffer, FVkTexture& texture, const FVkTextureTranslationInfo& translation_info);
 
-				void CopyBufferToTexture(const FVkCommandBuffer& command_buffer, const FVkBuffer& buffer, const FVkTexture& texture, const utl::vector<vk::BufferImageCopy2KHR>& copy_regions);
+				void CopyBufferToTexture(const FVkCommandBuffer& command_buffer, const Buffer& buffer, const FVkTexture& texture, const utl::vector<vk::BufferImageCopy2KHR>& copy_regions);
 				//void blitImage(const FVkCommandBuffer& command_buffer, );
 			private:
 				std::unique_ptr<VkRenderDevice> render_device{};

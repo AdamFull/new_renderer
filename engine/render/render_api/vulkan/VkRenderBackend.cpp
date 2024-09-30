@@ -10,7 +10,7 @@
 #include <engine/render/render_api/vulkan/PhysicalDevice.h>
 #include <engine/render/render_api/vulkan/DebugUtils.h>
 #include <engine/render/render_api/vulkan/Device.h>
-#include <engine/render/render_api/vulkan/Allocator.h>
+#include <engine/render/render_api/vulkan/Buffer.h>
 
 using namespace engine;
 using namespace engine::render;
@@ -108,6 +108,62 @@ std::string create_object_unique_name(const char* fmt, const _Ty& handle, _Args&
 	return std::vformat(fmt, std::make_format_args(object_handle, args...));
 }
 
+BufferBuilder MakeBufferBuilder(const FBufferCreateInfo& buffer_ci, const vk::PhysicalDeviceProperties& properties)
+{
+	u64 minimal_alignment{ 1ull };
+	vma::MemoryUsage memory_usage_flags{};
+	vk::BufferUsageFlags usage_flags{};
+
+	if (buffer_ci.flags & EBufferUsageFlagBits::eTransfer)
+		usage_flags |= vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
+
+	if (buffer_ci.flags & EBufferUsageFlagBits::eVertex)
+	{
+		usage_flags |= vk::BufferUsageFlagBits::eVertexBuffer;
+		minimal_alignment = std::max(minimal_alignment, 16ull);
+	}
+
+	if (buffer_ci.flags & EBufferUsageFlagBits::eIndex)
+	{
+		usage_flags |= vk::BufferUsageFlagBits::eIndexBuffer;
+		minimal_alignment = std::max(minimal_alignment, 4ull);
+	}
+
+	if (buffer_ci.flags & EBufferUsageFlagBits::eUniform)
+	{
+		usage_flags |= vk::BufferUsageFlagBits::eUniformBuffer;
+		minimal_alignment = std::lcm(properties.limits.minUniformBufferOffsetAlignment, properties.limits.nonCoherentAtomSize);
+	}
+
+	if (buffer_ci.flags & EBufferUsageFlagBits::eStorage)
+	{
+		usage_flags |= vk::BufferUsageFlagBits::eStorageBuffer;
+		minimal_alignment = std::max(minimal_alignment, properties.limits.minStorageBufferOffsetAlignment);
+	}
+
+	if (buffer_ci.flags & EBufferUsageFlagBits::eIndirect)
+		usage_flags |= vk::BufferUsageFlagBits::eIndirectBuffer;
+
+	if (buffer_ci.flags & EBufferUsageFlagBits::eHasDeviceAddress)
+		usage_flags |= vk::BufferUsageFlagBits::eShaderDeviceAddressKHR;
+
+	// Determine memory type
+	if (buffer_ci.flags & EBufferUsageFlagBits::eGpuOnly)
+		memory_usage_flags = vma::MemoryUsage::eUnknown;
+	else if (buffer_ci.flags & EBufferUsageFlagBits::eCpuToGpu)
+		memory_usage_flags = vma::MemoryUsage::eCpuToGpu;
+	else
+		memory_usage_flags = vma::MemoryUsage::eCpuOnly;
+
+	// Add buffer alignment
+	// std::lcm(minimal_alignment, physical.properties.limits.nonCoherentAtomSize);
+	auto builder = BufferBuilder(buffer_ci.size, buffer_ci.count, minimal_alignment);
+	builder.SetVmaUsage(memory_usage_flags);
+	builder.SetUsage(usage_flags);
+
+	return builder;
+}
+
 VkRenderBackend::~VkRenderBackend()
 {
 	auto& logical_device = render_device->GetLogicalDevice();
@@ -140,15 +196,8 @@ VkRenderBackend::~VkRenderBackend()
 	}
 
 	// Destroy all buffers
-	auto& buffers = render_resources->data<FVkBuffer>();
-	for (resource_handle_t buffer_id = 0ull; buffer_id < buffers.size(); ++buffer_id)
-	{
-		auto& buffer = buffers[buffer_id];
-		if (!buffer->isAlive)
-			continue;
-
-		render_device->DestroyBuffer(*buffer);
-	}
+	auto& buffers = render_resources->data<Buffer>();
+	buffers.clear();
 
 	render_device->DestroySampler(default_sampler);
 
@@ -286,29 +335,27 @@ void VkRenderBackend::CreateGlobalDescriptor(const FGlobalUniformCreateInfo& uni
 
 	// Create uniform buffers
 	auto& physical = render_device->GetPhysicalDevice();
+	auto minimal_alignment = std::lcm(physical.GetProperties().limits.minUniformBufferOffsetAlignment, physical.GetProperties().limits.nonCoherentAtomSize);
 
 	for (auto& [uniform_name, size] : uniform_ci.uniforms)
 	{
-		FVkBufferCreateInfo buffer_ci{};
-		buffer_ci.instanceCount = render_device->swapchain.framesInFlight;
-		buffer_ci.instanceSize = size;
-		buffer_ci.minOffsetAlignment = std::lcm(physical.GetProperties().limits.minUniformBufferOffsetAlignment, physical.GetProperties().limits.nonCoherentAtomSize);
-		buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
-		buffer_ci.usageFlags = vk::BufferUsageFlagBits::eUniformBuffer;
+		auto builder = BufferBuilder{ size, render_device->swapchain.framesInFlight, minimal_alignment};
+		builder.SetVmaUsage(vma::MemoryUsage::eCpuToGpu);
+		builder.SetUsage(vk::BufferUsageFlagBits::eUniformBuffer);
+
 #ifndef BUILD_WITHOUT_DEBUGGIND
 		auto* debug_name = debug_mapping::find(uniform_name);
 
 		if(debug_name)
-			buffer_ci.name = std::format("global:{}", debug_name);
+			builder.SetDebugName(std::format("global:{}", debug_name));
 		else
-			buffer_ci.name = std::format("global:{:x}", uniform_name);
+			builder.SetDebugName(std::format("global:{:x}", uniform_name));
 #endif
 
-		auto buffer = std::make_unique<FVkBuffer>();
-		render_device->CreateBuffer(buffer_ci, *buffer);
+		auto buffer = builder.BuildUnique(*render_device);
 
-		auto buffer_name = create_object_unique_name("global:{:x}:{:x}", buffer->handle, uniform_name);
-		auto buffer_id = render_resources->add<FVkBuffer>(buffer_name.c_str(), std::move(buffer));
+		auto buffer_name = create_object_unique_name("global:{:x}:{:x}", Handle(*buffer), uniform_name);
+		auto buffer_id = render_resources->add<Buffer>(buffer_name.c_str(), std::move(buffer));
 		global_descriptor.uniformBuffers.emplace(uniform_name, buffer_id);
 	}
 }
@@ -331,11 +378,11 @@ void VkRenderBackend::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo&
 		if (found_buffer == global_descriptor.uniformBuffers.end())
 			continue;
 
-		auto& buffer = render_resources->get<FVkBuffer>(found_buffer->second);
-		auto element_size = buffer->size / buffer->instanceCount;
+		auto& buffer = render_resources->get<Buffer>(found_buffer->second);
+		auto element_size = buffer->GetSuballocationSize();
 
 		auto& buffer_descriptor = buffer_descriptors[buffer_count];
-		buffer_descriptor.buffer = buffer->handle;
+		buffer_descriptor.buffer = Handle(*buffer);
 		buffer_descriptor.range = element_size;
 		buffer_descriptor.offset = render_device->swapchain.currentFrame * element_size;
 
@@ -346,10 +393,9 @@ void VkRenderBackend::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo&
 		write_descriptor_set.descriptorCount = 1u;
 		write_descriptor_set.pBufferInfo = &buffer_descriptor;
 
-		void* mapped_memory{ nullptr };
-		render_device->MapBufferMemory(*buffer, &mapped_memory);
+		void* mapped_memory = buffer->Map();
 		util::Copy(mapped_memory, buffer_descriptor.offset, uniform_data.data, uniform_data.size);
-		render_device->UnmapBufferMemory(*buffer);
+		buffer->Unmap();
 		buffer_count++;
 	}
 
@@ -481,17 +527,15 @@ void VkRenderBackend::ReadPixel(FAPIHandle resource_id, u32 x, u32 y, void* data
 	render_device->BeginCommandBuffer(command_buffer, vk::CommandBufferUsageFlagBits::eOneTimeSubmit, 0);
 	auto& current = command_buffer.get();
 
-	FVkBufferCreateInfo staging_buffer_ci{};
-	staging_buffer_ci.instanceCount = 1ull;
-	staging_buffer_ci.instanceSize = pixel_size;
-	staging_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
-	staging_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuOnly;
+	auto builder = BufferBuilder(pixel_size, 1ull, 1ull);
+	builder.SetVmaUsage(vma::MemoryUsage::eCpuOnly);
+	builder.SetUsage(vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst);
+
 #ifndef BUILD_WITHOUT_DEBUGGIND
-	staging_buffer_ci.name = std::format("pick pixel #{}(x:{},y{})", resource_id.Get(), x, y);
+	builder.SetDebugName(std::format("pick pixel #{}(x:{},y{})", resource_id.Get(), x, y));
 #endif
 
-	FVkBuffer staging_buffer{};
-	render_device->CreateBuffer(staging_buffer_ci, staging_buffer);
+	auto staging_buffer = builder.BuildUnique(*render_device);
 
 	vk::BufferImageCopy region;
 	region.bufferOffset = 0u;
@@ -509,17 +553,16 @@ void VkRenderBackend::ReadPixel(FAPIHandle resource_id, u32 x, u32 y, void* data
 	region.imageExtent.height = 1u;
 	region.imageExtent.depth = 1u;
 
-	current.copyImageToBuffer(texture->image.handle, vk::ImageLayout::eTransferSrcOptimal, staging_buffer.handle, 1, &region);
+	current.copyImageToBuffer(texture->image.handle, vk::ImageLayout::eTransferSrcOptimal, Handle(*staging_buffer), 1, &region);
 
 	render_device->SubmitCommandBuffer(command_buffer);
 	DestroyCommandBuffer(EQueueTypeFlagBits::eGraphics);
 	// TODO: DESTROY COMMAND BUFFER AND DELETE IT
 
 	// Copy data to buffer
-	void* mapped_buffer_memory{ nullptr };
-	render_device->MapBufferMemory(staging_buffer, &mapped_buffer_memory);
+	void* mapped_buffer_memory = staging_buffer->Map();
 	util::Copy(data, mapped_buffer_memory, pixel_size);
-	render_device->UnmapBufferMemory(staging_buffer);
+	staging_buffer->Unmap();
 }
 
 
@@ -801,7 +844,7 @@ void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_
 	auto& shader_reflection = render_resources->get<FVkShaderReflectionData>(shader->reflection);
 
 	auto& textures = render_resources->data<FVkTexture>();
-	auto& buffers = render_resources->data<FVkBuffer>();
+	auto& buffers = render_resources->data<Buffer>();
 
 	std::unordered_set<u32> updated_descriptor_sets{};
 	std::array<vk::WriteDescriptorSet, 64ull> write_descriptor_sets{};
@@ -828,11 +871,11 @@ void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_
 
 			auto buffer_id = shader->uniformBuffers[uniform_name];
 			auto& buffer = buffers[buffer_id];
-			auto buffer_element_size = buffer->size / buffer->instanceCount;
+			auto buffer_element_size = buffer->GetSuballocationSize();
 
 			// Not sure that it is correct, because i don't know how to determine previous buffer
 			auto& buffer_descriptor = buffer_descriptors[buffer_count];
-			buffer_descriptor.buffer = buffer->handle;
+			buffer_descriptor.buffer = Handle(*buffer);
 			buffer_descriptor.range = uniform_block.size;
 			buffer_descriptor.offset = descriptor_index * buffer_element_size;
 			buffer_count++;
@@ -848,10 +891,9 @@ void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_
 			writes_count++;
 
 			// Write new data to buffer memory
-			void* mapped_memory{ nullptr };
-			render_device->MapBufferMemory(*buffer, &mapped_memory);
+			void* mapped_memory = buffer->Map();
 			util::Copy(mapped_memory, buffer_descriptor.offset, uniform_data.data, uniform_data.size);
-			render_device->UnmapBufferMemory(*buffer);
+			buffer->Unmap();
 		}
 	}
 
@@ -872,8 +914,8 @@ void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_
 
 			// Not sure that it is correct, because i don't know how to determine previous buffer
 			auto& buffer_descriptor = buffer_descriptors[buffer_count];
-			buffer_descriptor.buffer = buffer->handle;
-			buffer_descriptor.range = buffer->size;
+			buffer_descriptor.buffer = Handle(*buffer);
+			buffer_descriptor.range = buffer->GetSize();
 			buffer_descriptor.offset = 0ull;
 			buffer_count++;
 
@@ -990,22 +1032,22 @@ void VkRenderBackend::DestroyShader(FAPIHandle resource_id)
 
 FAPIHandle VkRenderBackend::CreateBuffer(const std::string& name, const FBufferCreateInfo& buffer_ci)
 {
-	auto vk_buffer_ci = MakeBufferCreateInfo(name, buffer_ci);
+	auto& physical = render_device->GetPhysicalDevice();
+	auto builder = MakeBufferBuilder(buffer_ci, physical.GetProperties());
 
-	auto buffer = std::make_unique<FVkBuffer>();
-	render_device->CreateBuffer(vk_buffer_ci, *buffer);
+	auto buffer = builder.BuildUnique(*render_device);
 
-	auto buffer_unique_name = create_object_unique_name("buffer:{:x}:{}", buffer->handle, name);
-	return FAPIHandle(render_resources->add<FVkBuffer>(buffer_unique_name.c_str(), std::move(buffer)));
+	auto buffer_unique_name = create_object_unique_name("buffer:{:x}:{}", Handle(*buffer), name);
+	return FAPIHandle(render_resources->add<Buffer>(buffer_unique_name.c_str(), std::move(buffer)));
 }
 
 void VkRenderBackend::UpdateBuffer(const std::string& name, FAPIHandle buffer_id, const FBufferCreateInfo& buffer_ci)
 {
-	auto& buffer = render_resources->get<FVkBuffer>(buffer_id.Get());
-	render_device->DestroyBuffer(*buffer);
+	auto& buffer = render_resources->get<Buffer>(buffer_id.Get());
 
-	auto vk_buffer_ci = MakeBufferCreateInfo(name, buffer_ci);
-	render_device->CreateBuffer(vk_buffer_ci, *buffer);
+	auto& physical = render_device->GetPhysicalDevice();
+	auto builder = MakeBufferBuilder(buffer_ci, physical.GetProperties());
+	buffer = builder.BuildUnique(*render_device);
 }
 
 void VkRenderBackend::UploadDataToBuffer(const FBufferUploadInfo& upload_info)
@@ -1015,8 +1057,8 @@ void VkRenderBackend::UploadDataToBuffer(const FBufferUploadInfo& upload_info)
 
 FBufferView VkRenderBackend::GetBufferView(FAPIHandle buffer_id)
 {
-	auto& buffer = render_resources->get<FVkBuffer>(buffer_id.Get());
-	return { buffer->size, buffer->instanceCount, buffer->address };
+	auto& buffer = render_resources->get<Buffer>(buffer_id.Get());
+	return { buffer->GetSize(), buffer->GetSize() / buffer->GetSuballocationSize(), buffer->GetDeviceAddress()};
 }
 
 void VkRenderBackend::BindVertexBuffers(const FVertexBufferBindingInfo& binding_info, EQueueTypeFlagBits queue_type)
@@ -1026,7 +1068,7 @@ void VkRenderBackend::BindVertexBuffers(const FVertexBufferBindingInfo& binding_
 
 	utl::vector<vk::Buffer> buffers{};
 	for (const auto& buffer_id : binding_info.buffers)
-		buffers.emplace_back(render_resources->get<FVkBuffer>(buffer_id.Get())->handle);
+		buffers.emplace_back(Handle(*render_resources->get<Buffer>(buffer_id.Get())));
 
 	current.bindVertexBuffers(binding_info.firstBinding, buffers, binding_info.offsets);
 }
@@ -1044,26 +1086,26 @@ void VkRenderBackend::BindIndexBuffer(const FIndexBufferBindingInfo& binding_inf
 	case 1: index_type = vk::IndexType::eUint8EXT; break;
 	}
 
-	auto& buffer = render_resources->get<FVkBuffer>(binding_info.bufferId.Get());
-	current.bindIndexBuffer(buffer->handle, binding_info.offset, index_type);
+	auto& buffer = render_resources->get<Buffer>(binding_info.bufferId.Get());
+	current.bindIndexBuffer(Handle(*buffer), binding_info.offset, index_type);
 }
 
 void VkRenderBackend::MapBufferMemory(FAPIHandle buffer_id, void*& memory)
 {
-	auto& buffer = render_resources->get<FVkBuffer>(buffer_id.Get());
-	render_device->MapBufferMemory(*buffer, &memory);
+	auto& buffer = render_resources->get<Buffer>(buffer_id.Get());
+	memory = buffer->Map();
 }
 
 void VkRenderBackend::UnmapBufferMemory(FAPIHandle buffer_id)
 {
-	auto& buffer = render_resources->get<FVkBuffer>(buffer_id.Get());
-	render_device->UnmapBufferMemory(*buffer);
+	auto& buffer = render_resources->get<Buffer>(buffer_id.Get());
+	buffer->Unmap();
 }
 
 void VkRenderBackend::FlushBuffer(FAPIHandle buffer_id, u64 size, u64 offset)
 {
-	auto& buffer = render_resources->get<FVkBuffer>(buffer_id.Get());
-	render_device->FlushBufferMemory(*buffer, size, offset);
+	auto& buffer = render_resources->get<Buffer>(buffer_id.Get());
+	buffer->Flush(offset, size);
 }
 
 void VkRenderBackend::DestroyBuffer(FAPIHandle resource_id)
@@ -1160,7 +1202,7 @@ void VkRenderBackend::ProcessResourceBarriers(EQueueTypeFlagBits queue, const ut
 	auto& command_buffer = GetLastCommandBuffer(queue);
 
 	auto& textures = render_resources->data<FVkTexture>();
-	auto& buffers = render_resources->data<FVkBuffer>();
+	auto& buffers = render_resources->data<Buffer>();
 
 	FVkTranslationInfo translation_info{};
 
@@ -1245,8 +1287,8 @@ void VkRenderBackend::ProcessResourceBarriers(EQueueTypeFlagBits queue, const ut
 				auto& buffer = buffers[resource_barrier.resource.handle.Get()];
 
 				FVkBufferTranslationInfo buffer_translation_info{};
-				buffer_translation_info.handle = buffer->handle;
-				buffer_translation_info.size = buffer->size;
+				buffer_translation_info.handle = Handle(*buffer);
+				buffer_translation_info.size = buffer->GetSize();
 				buffer_translation_info.srcStageMask = get_translation_stage_flags(resource_barrier.srcPassType);
 				buffer_translation_info.srcAccessMask = get_translation_access_flags(resource_barrier.srcPassType, src_resource_access);
 				buffer_translation_info.dstStageMask = get_translation_stage_flags(resource_barrier.dstPassType);
@@ -1565,9 +1607,9 @@ void VkRenderBackend::Draw(EQueueTypeFlagBits queue_type, const FIndirectGeometr
 	auto& current = command_buffer.get();
 	//current.drawMeshTasksIndirectEXT()
 
-	auto& indirect_command_buffer = render_resources->get<FVkBuffer>(draw_info.bufferId.Get());
-	auto& indirect_count_buffer = render_resources->get<FVkBuffer>(draw_info.countBufferId.Get());
-	current.drawIndexedIndirectCount(indirect_command_buffer->handle, draw_info.offset, indirect_count_buffer->handle, draw_info.countOffset, draw_info.maxDrawCount, draw_info.stride);
+	auto& indirect_command_buffer = render_resources->get<Buffer>(draw_info.bufferId.Get());
+	auto& indirect_count_buffer = render_resources->get<Buffer>(draw_info.countBufferId.Get());
+	current.drawIndexedIndirectCount(Handle(*indirect_command_buffer), draw_info.offset, Handle(*indirect_count_buffer), draw_info.countOffset, draw_info.maxDrawCount, draw_info.stride);
 	//current.drawIndexedIndirect(indirect_command_buffer->handle, draw_info.offset, draw_info.count, draw_info.stride);
 }
 
@@ -1599,15 +1641,15 @@ void VkRenderBackend::Dispatch(EQueueTypeFlagBits queue_type, const FDispatchInd
 	auto& command_buffer = GetLastCommandBuffer(queue_type);
 	auto& current = command_buffer.get();
 
-	auto& argument_buffer = render_resources->get<FVkBuffer>(dispatch_info.argumentBuffer.Get());
+	auto& argument_buffer = render_resources->get<Buffer>(dispatch_info.argumentBuffer.Get());
 
 	if (dispatch_info.countBuffer)
 	{
-		auto& argument_buffer = render_resources->get<FVkBuffer>(dispatch_info.argumentBuffer.Get());
+		auto& argument_buffer = render_resources->get<Buffer>(dispatch_info.argumentBuffer.Get());
 		// Dispatch indirect count is not supported
 	}
 	else
-		current.dispatchIndirect(argument_buffer->handle, dispatch_info.argumentOffset);
+		current.dispatchIndirect(Handle(*argument_buffer), dispatch_info.argumentOffset);
 }
 
 FDeviceLimitations VkRenderBackend::GetDeviceLimitations()
@@ -2040,7 +2082,7 @@ void VkRenderBackend::ProcessResourceUpload()
 
 	render_device->BeginCommandBuffer(command_buffer, vk::CommandBufferUsageFlagBits::eOneTimeSubmit, 0u);
 
-	utl::vector<FVkBuffer> staging_buffers{};
+	utl::vector<std::unique_ptr<Buffer>> staging_buffers{};
 
 	// Upload textures
 	{
@@ -2048,23 +2090,20 @@ void VkRenderBackend::ProcessResourceUpload()
 		
 		for (auto& texture_upload : texture_upload_infos)
 		{
-			FVkBufferCreateInfo staging_buffer_ci{};
-			staging_buffer_ci.instanceCount = 1ull;
-			staging_buffer_ci.instanceSize = texture_upload.data.size();
-			staging_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
-			staging_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuOnly;
+			auto builder = BufferBuilder(texture_upload.data.size(), 1ull, 1ull);
+			builder.SetVmaUsage(vma::MemoryUsage::eCpuOnly);
+			builder.SetUsage(vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst);
+
 #ifndef BUILD_WITHOUT_DEBUGGIND
-			staging_buffer_ci.name = std::format("texture upload #{}", texture_upload.textureId.Get());
+			builder.SetDebugName(std::format("texture upload #{}", texture_upload.textureId.Get()));
 #endif
 
-			auto& staging_buffer = staging_buffers.emplace_back();
-			render_device->CreateBuffer(staging_buffer_ci, staging_buffer);
+			auto& staging_buffer = staging_buffers.emplace_back(builder.BuildUnique(*render_device));
 
 			// Copy data to buffer
-			void* mapped_buffer_memory{ nullptr };
-			render_device->MapBufferMemory(staging_buffer, &mapped_buffer_memory);
+			void* mapped_buffer_memory = staging_buffer->Map();
 			util::Copy(mapped_buffer_memory, 0ull, texture_upload.data, 0ull, std::execution::par);
-			render_device->UnmapBufferMemory(staging_buffer);
+			staging_buffer->Unmap();
 
 			texture_upload.data.clear();
 		}
@@ -2136,7 +2175,7 @@ void VkRenderBackend::ProcessResourceUpload()
 				copy_region.bufferOffset = 0ull;
 			}
 
-			CopyBufferToTexture(command_buffer, staging_buffer, *texture, copy_regions);
+			CopyBufferToTexture(command_buffer, *staging_buffer, *texture, copy_regions);
 		}
 
 		auto& current_command_buffer = command_buffer.get();
@@ -2232,7 +2271,7 @@ void VkRenderBackend::ProcessResourceUpload()
 		auto& physical = render_device->GetPhysicalDevice();
 		utl::vector<vk::BufferCopy2KHR> copy_regions(upload_info.regions.size());
 
-		auto& dst_buffer = render_resources->get<FVkBuffer>(upload_info.bufferId.Get());
+		auto& dst_buffer = render_resources->get<Buffer>(upload_info.bufferId.Get());
 		
 		// Calculate elements to copy count
 		u64 staging_count{ 0ull };
@@ -2251,31 +2290,27 @@ void VkRenderBackend::ProcessResourceUpload()
 		}
 
 		// Create new staging buffer
-		FVkBufferCreateInfo vk_buffer_ci{};
-		vk_buffer_ci.instanceCount = 1;
-		vk_buffer_ci.instanceSize = bytes_count;
-		vk_buffer_ci.minOffsetAlignment = 1;
-		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuOnly;
-		vk_buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
+		auto builder = BufferBuilder(bytes_count, 1ull, 1ull);
+		builder.SetVmaUsage(vma::MemoryUsage::eCpuOnly);
+		builder.SetUsage(vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst);
+
 #ifndef BUILD_WITHOUT_DEBUGGIND
-		vk_buffer_ci.name = std::format("staging for #{}", upload_info.bufferId.Get());
+		builder.SetDebugName(std::format("staging for #{}", upload_info.bufferId.Get()));
 #endif
 
-		auto src_buffer = staging_buffers.emplace_back();
-		render_device->CreateBuffer(vk_buffer_ci, src_buffer);
+		auto& src_buffer = staging_buffers.emplace_back(builder.BuildUnique(*render_device));
 
 		// Copy data to staging buffer
-		void* mapped_memory{ nullptr };
-		render_device->MapBufferMemory(src_buffer, &mapped_memory);
+		void* mapped_memory = src_buffer->Map();
 
 		// Copy upload data to buffer
 		char* dst_memory = utl::cast<char*>(mapped_memory);
 		util::Copy(dst_memory, 0ull, upload_info.data, 0ull, std::execution::par);
-		render_device->UnmapBufferMemory(src_buffer);
+		src_buffer->Unmap();
 
 		vk::CopyBufferInfo2KHR copy_buffer{};
-		copy_buffer.srcBuffer = src_buffer.handle;
-		copy_buffer.dstBuffer = dst_buffer->handle;
+		copy_buffer.srcBuffer = Handle(*src_buffer);
+		copy_buffer.dstBuffer = Handle(*dst_buffer);
 		copy_buffer.regionCount = utl::cast<u32>(copy_regions.size());
 		copy_buffer.pRegions = &copy_regions[0];
 		
@@ -2291,8 +2326,7 @@ void VkRenderBackend::ProcessResourceUpload()
 	DestroyCommandBuffer(EQueueTypeFlagBits::eGraphics);
 
 	// destroy staging buffers
-	for (auto& staging_buffer : staging_buffers)
-		render_device->DestroyBuffer(staging_buffer);
+	staging_buffers.clear();
 
 	texture_upload_infos.clear();
 	buffer_upload_infos.clear();
@@ -2318,9 +2352,9 @@ void VkRenderBackend::ProcessResourceUtilization()
 		}
 		else if (destroy_resource.mask & EResourceFlagBits::eBuffer)
 		{
-			auto& buffer = render_resources->get<FVkBuffer>(destroy_resource.id.Get());
-			render_device->DestroyBuffer(*buffer);
-			render_resources->remove<FVkBuffer>(destroy_resource.id.Get());
+			auto& buffer = render_resources->get<Buffer>(destroy_resource.id.Get());
+			buffer.reset();
+			render_resources->remove<Buffer>(destroy_resource.id.Get());
 		}
 
 		resource_destroy_queue.pop();
@@ -2349,67 +2383,6 @@ void VkRenderBackend::UpdateBackbuffer()
 		current.info.size.width = swapchain.extent.width;
 		current.info.size.height = swapchain.extent.height;
 	}
-}
-
-FVkBufferCreateInfo VkRenderBackend::MakeBufferCreateInfo(const std::string& name, const FBufferCreateInfo& buffer_ci)
-{
-	auto& physical = render_device->GetPhysicalDevice();
-
-	FVkBufferCreateInfo vk_buffer_ci{};
-	vk_buffer_ci.instanceCount = buffer_ci.count;
-	vk_buffer_ci.instanceSize = buffer_ci.size;
-
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	vk_buffer_ci.name = name;
-#endif
-
-	// Build buffer usage flags
-	u64 minimal_alignment{ 1ull };
-	if (buffer_ci.flags & EBufferUsageFlagBits::eTransfer)
-		vk_buffer_ci.usageFlags |= vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
-
-	if (buffer_ci.flags & EBufferUsageFlagBits::eVertex)
-	{
-		vk_buffer_ci.usageFlags |= vk::BufferUsageFlagBits::eVertexBuffer;
-		minimal_alignment = std::max(minimal_alignment, 16ull);
-	}
-
-	if (buffer_ci.flags & EBufferUsageFlagBits::eIndex)
-	{
-		vk_buffer_ci.usageFlags |= vk::BufferUsageFlagBits::eIndexBuffer;
-		minimal_alignment = std::max(minimal_alignment, 4ull);
-	}
-
-	if (buffer_ci.flags & EBufferUsageFlagBits::eUniform)
-	{
-		vk_buffer_ci.usageFlags |= vk::BufferUsageFlagBits::eUniformBuffer;
-		minimal_alignment = std::lcm(physical.GetProperties().limits.minUniformBufferOffsetAlignment, physical.GetProperties().limits.nonCoherentAtomSize);
-	}
-
-	if (buffer_ci.flags & EBufferUsageFlagBits::eStorage)
-	{
-		vk_buffer_ci.usageFlags |= vk::BufferUsageFlagBits::eStorageBuffer;
-		minimal_alignment = std::max(minimal_alignment, physical.GetProperties().limits.minStorageBufferOffsetAlignment);
-	}
-
-	if (buffer_ci.flags & EBufferUsageFlagBits::eIndirect)
-		vk_buffer_ci.usageFlags |= vk::BufferUsageFlagBits::eIndirectBuffer;
-
-	if (buffer_ci.flags & EBufferUsageFlagBits::eHasDeviceAddress)
-		vk_buffer_ci.usageFlags |= vk::BufferUsageFlagBits::eShaderDeviceAddressKHR;
-
-	// Determine memory type
-	if (buffer_ci.flags & EBufferUsageFlagBits::eGpuOnly)
-		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eUnknown;
-	else if (buffer_ci.flags & EBufferUsageFlagBits::eCpuToGpu)
-		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
-	else
-		vk_buffer_ci.memoryUsage = vma::MemoryUsage::eCpuOnly;
-
-	// Add buffer alignment
-	vk_buffer_ci.minOffsetAlignment = minimal_alignment;// std::lcm(minimal_alignment, physical.properties.limits.nonCoherentAtomSize);
-
-	return vk_buffer_ci;
 }
 
 FRenderApiErrorInfo VkRenderBackend::CreateTexture(const FVkTextureCreateInfo& texture_ci, FVkTexture& texture)
@@ -2606,30 +2579,26 @@ FRenderApiErrorInfo VkRenderBackend::CreateShaderResources(const FVkShaderResour
 		if (uniform_block.descriptorType == vk::DescriptorType::eStorageBuffer)
 			continue;
 
-		FVkBufferCreateInfo buffer_ci{};
-		buffer_ci.instanceCount = shader.maximumDescriptorSlots;
-		buffer_ci.instanceSize = uniform_block.size;
-		buffer_ci.minOffsetAlignment = minOffsetAllignment;
-		buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
+		auto builder = BufferBuilder(uniform_block.size, shader.maximumDescriptorSlots, minOffsetAllignment);
+		builder.SetVmaUsage(vma::MemoryUsage::eCpuToGpu);
+
 #ifndef BUILD_WITHOUT_DEBUGGIND
 		auto* debug_name = debug_mapping::find(id);
 		if (debug_name)
-			buffer_ci.name = std::format("{}:{}", resources_info.name, debug_name);
+			builder.SetDebugName(std::format("{}:{}", resources_info.name, debug_name));
 		else
-			buffer_ci.name = std::format("{}:{:x}", resources_info.name, id);
+			builder.SetDebugName(std::format("{}:{:x}", resources_info.name, id));
 #endif
 
 		if (uniform_block.descriptorType == vk::DescriptorType::eUniformBuffer)
-			buffer_ci.usageFlags = vk::BufferUsageFlagBits::eUniformBuffer;
+			builder.SetUsage(vk::BufferUsageFlagBits::eUniformBuffer);
 		else if (uniform_block.descriptorType == vk::DescriptorType::eStorageBuffer)
-			buffer_ci.usageFlags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer;
+			builder.SetUsage(vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer);
 
-		auto buffer = std::make_unique<FVkBuffer>();
-		RETURN_WHEN_FAULT(render_device->CreateBuffer(buffer_ci, *buffer));
+		auto buffer = builder.BuildUnique(*render_device);
 
-
-		auto buffer_name = create_object_unique_name("buffer:{:x}:{}", buffer->handle, id);
-		auto buffer_id = render_resources->add<FVkBuffer>(buffer_name.c_str(), std::move(buffer));
+		auto buffer_name = create_object_unique_name("buffer:{:x}:{}", Handle(*buffer), id);
+		auto buffer_id = render_resources->add<Buffer>(buffer_name.c_str(), std::move(buffer));
 		shader.uniformBuffers.emplace(id, buffer_id);
 	}
 
@@ -2679,9 +2648,9 @@ void VkRenderBackend::DestroyShader(FVkShader& shader)
 
 	for (auto& [id, buffer_id] : shader.uniformBuffers)
 	{
-		auto& buffer = render_resources->get<FVkBuffer>(buffer_id);
-		render_device->DestroyBuffer(*buffer);
-		render_resources->remove<FVkBuffer>(buffer_id);
+		auto& buffer = render_resources->get<Buffer>(buffer_id);
+		buffer.reset();
+		render_resources->remove<Buffer>(buffer_id);
 	}
 
 	render_device->DestroyDescriptorPool(shader.descriptorPool);
@@ -2736,13 +2705,13 @@ void VkRenderBackend::TextureLayoutTranslation(const FVkCommandBuffer& command_b
 	ProcessImageLayoutTranslation(command_buffer, image_layout_translation);
 }
 
-void VkRenderBackend::CopyBufferToTexture(const FVkCommandBuffer& command_buffer, const FVkBuffer& buffer, const FVkTexture& texture, const utl::vector<vk::BufferImageCopy2KHR>& copy_regions)
+void VkRenderBackend::CopyBufferToTexture(const FVkCommandBuffer& command_buffer, const Buffer& buffer, const FVkTexture& texture, const utl::vector<vk::BufferImageCopy2KHR>& copy_regions)
 {
 	auto& current_buffer = command_buffer.get();
 	auto& target_subresource = texture.getSubresource();
 
 	vk::CopyBufferToImageInfo2KHR copy_info{};
-	copy_info.srcBuffer = buffer.handle;
+	copy_info.srcBuffer = Handle(buffer);
 	copy_info.dstImage = texture.image.handle;
 	copy_info.dstImageLayout = target_subresource.layout;
 	copy_info.regionCount = utl::cast<u32>(copy_regions.size());

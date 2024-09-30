@@ -80,13 +80,6 @@ namespace engine
 				FRenderApiErrorInfo CreateSampler(const FVkSamplerCreateInfo& sampler_ci, vk::Sampler& sampler);
 				void DestroySampler(vk::Sampler& sampler);
 
-				// VkBuffer
-				FRenderApiErrorInfo CreateBuffer(const FVkBufferCreateInfo& buffer_ci, FVkBuffer& buffer);
-				void DestroyBuffer(FVkBuffer& buffer);
-				FRenderApiErrorInfo MapBufferMemory(FVkBuffer& buffer, void** mappedMemory);
-				void UnmapBufferMemory(FVkBuffer& buffer);
-				void FlushBufferMemory(const FVkBuffer& buffer, vk::DeviceSize size, vk::DeviceSize offset);
-
 				// VkDescriptorSetLayout
 				FRenderApiErrorInfo CreateDescriptorSetLayout(const FVkDescriptorSetLayoutCreateInfo& layout_ci, vk::DescriptorSetLayout& descriptor_set_layout);
 				void DestroyDescriptorSetLayout(vk::DescriptorSetLayout& descriptor_set_layout);

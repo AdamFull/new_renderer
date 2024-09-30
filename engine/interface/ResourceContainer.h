@@ -20,7 +20,7 @@ namespace engine
 			auto found_association = nameToId.find(name_hash);
 			if (found_association != nameToId.end())
 				return found_association->second;
-			
+
 			if (!freeIds.empty())
 			{
 				resource_handle_t current_id = freeIds.front();
@@ -62,12 +62,23 @@ namespace engine
 			}
 		}
 
-		const std::unique_ptr<_Ty>& get(resource_handle_t id)
+		const std::unique_ptr<_Ty>& get(resource_handle_t id) const
 		{
 			return objects[id];
 		}
 
-		const std::unique_ptr<_Ty>& get(const char* name)
+		std::unique_ptr<_Ty>& get(resource_handle_t id)
+		{
+			return objects[id];
+		}
+
+		const std::unique_ptr<_Ty>& get(const char* name) const
+		{
+			auto id = nameToId[utl::murmur_hash_64(name)];
+			return get(id);
+		}
+
+		std::unique_ptr<_Ty>& get(const char* name)
 		{
 			auto id = nameToId[utl::murmur_hash_64(name)];
 			return get(id);
@@ -98,31 +109,57 @@ namespace engine
 	public:
 		template<class _Ty>
 		resource_handle_t add(const char* name, std::unique_ptr<_Ty>&& object)
-		{ return std::get<CResourceHolder<_Ty>>(holders).add(name, std::move(object)); }
+		{
+			return std::get<CResourceHolder<_Ty>>(holders).add(name, std::move(object));
+		}
 
 		template<class _Ty>
-		const std::unique_ptr<_Ty>& get(resource_handle_t id)
-		{ return std::get<CResourceHolder<_Ty>>(holders).get(id); }
+		const std::unique_ptr<_Ty>& get(resource_handle_t id) const
+		{
+			return std::get<CResourceHolder<_Ty>>(holders).get(id);
+		}
 
 		template<class _Ty>
-		const std::unique_ptr<_Ty>& get(const char* name)
-		{ return std::get<CResourceHolder<_Ty>>(holders).get(name); }
+		std::unique_ptr<_Ty>& get(resource_handle_t id)
+		{
+			return std::get<CResourceHolder<_Ty>>(holders).get(id);
+		}
+
+		template<class _Ty>
+		const std::unique_ptr<_Ty>& get(const char* name) const
+		{
+			return std::get<CResourceHolder<_Ty>>(holders).get(name);
+		}
+
+		template<class _Ty>
+		std::unique_ptr<_Ty>& get(const char* name)
+		{
+			return std::get<CResourceHolder<_Ty>>(holders).get(name);
+		}
 
 		template<class _Ty>
 		void remove(resource_handle_t id)
-		{ std::get<CResourceHolder<_Ty>>(holders).remove(id); }
+		{
+			std::get<CResourceHolder<_Ty>>(holders).remove(id);
+		}
 
 		template<class _Ty>
 		void remove(const char* name)
-		{ std::get<CResourceHolder<_Ty>>(holders).remove(name); }
+		{
+			std::get<CResourceHolder<_Ty>>(holders).remove(name);
+		}
 
 		template<class _Ty>
 		utl::vector<std::unique_ptr<_Ty>>& data()
-		{ return std::get<CResourceHolder<_Ty>>(holders).data(); }
+		{
+			return std::get<CResourceHolder<_Ty>>(holders).data();
+		}
 
 		template<class _Ty>
 		resource_handle_t getId(const char* name)
-		{ return std::get<CResourceHolder<_Ty>>(holders).getId(name); }
+		{
+			return std::get<CResourceHolder<_Ty>>(holders).getId(name);
+		}
 	private:
 		std::tuple<CResourceHolder<_Args>...> holders;
 	};
