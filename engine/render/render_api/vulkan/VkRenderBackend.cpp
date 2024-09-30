@@ -393,9 +393,7 @@ void VkRenderBackend::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo&
 		write_descriptor_set.descriptorCount = 1u;
 		write_descriptor_set.pBufferInfo = &buffer_descriptor;
 
-		void* mapped_memory = buffer->Map();
-		util::Copy(mapped_memory, buffer_descriptor.offset, uniform_data.data, uniform_data.size);
-		buffer->Unmap();
+		buffer->Update(uniform_data.data, uniform_data.size, buffer_descriptor.offset);
 		buffer_count++;
 	}
 
@@ -891,9 +889,7 @@ void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_
 			writes_count++;
 
 			// Write new data to buffer memory
-			void* mapped_memory = buffer->Map();
-			util::Copy(mapped_memory, buffer_descriptor.offset, uniform_data.data, uniform_data.size);
-			buffer->Unmap();
+			buffer->Update(uniform_data.data, uniform_data.size, buffer_descriptor.offset);
 		}
 	}
 
@@ -2101,9 +2097,7 @@ void VkRenderBackend::ProcessResourceUpload()
 			auto& staging_buffer = staging_buffers.emplace_back(builder.BuildUnique(*render_device));
 
 			// Copy data to buffer
-			void* mapped_buffer_memory = staging_buffer->Map();
-			util::Copy(mapped_buffer_memory, 0ull, texture_upload.data, 0ull, std::execution::par);
-			staging_buffer->Unmap();
+			staging_buffer->Update(texture_upload.data);
 
 			texture_upload.data.clear();
 		}
@@ -2304,9 +2298,7 @@ void VkRenderBackend::ProcessResourceUpload()
 		void* mapped_memory = src_buffer->Map();
 
 		// Copy upload data to buffer
-		char* dst_memory = utl::cast<char*>(mapped_memory);
-		util::Copy(dst_memory, 0ull, upload_info.data, 0ull, std::execution::par);
-		src_buffer->Unmap();
+		src_buffer->Update(upload_info.data);
 
 		vk::CopyBufferInfo2KHR copy_buffer{};
 		copy_buffer.srcBuffer = Handle(*src_buffer);
