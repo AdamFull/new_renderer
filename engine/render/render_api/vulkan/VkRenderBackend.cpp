@@ -169,7 +169,7 @@ void VkRenderBackend::Create(const FRenderContextCreateInfo& context_ci)
 	m_pResources = std::make_unique<vk_resource_container_t>();
 
 	FVkCommandBufferCreateInfo command_buffer_ci{};
-	command_buffer_ci.count = m_pDevice->m_swapchain.framesInFlight;
+	command_buffer_ci.count = m_pDevice->swapchain.framesInFlight;
 	command_buffer_ci.mask = EQueueTypeFlagBits::eGraphics;
 	command_buffer_ci.level = vk::CommandBufferLevel::ePrimary;
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -205,7 +205,7 @@ void VkRenderBackend::CreateGlobalDescriptor(const FGlobalUniformCreateInfo& uni
 	// Create descriptor pool
 	FVkDescriptorPoolCreateInfo pool_ci{};
 	pool_ci.poolSizes = { { vk::DescriptorType::eCombinedImageSampler, k_max_bindless_resources }, {vk::DescriptorType::eUniformBuffer, 3u} };
-	pool_ci.usageCount = 1u * m_pDevice->m_swapchain.framesInFlight;
+	pool_ci.usageCount = 1u * m_pDevice->swapchain.framesInFlight;
 	pool_ci.flags |= vk::DescriptorPoolCreateFlagBits::eUpdateAfterBindEXT;
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	pool_ci.name = "global:textures";
@@ -267,14 +267,14 @@ void VkRenderBackend::CreateGlobalDescriptor(const FGlobalUniformCreateInfo& uni
 
 	// Create descriptor set
 	FVkDescriptorSetCreateInfo set_ci{};
-	set_ci.descriptorCount = m_pDevice->m_swapchain.framesInFlight;
+	set_ci.descriptorCount = m_pDevice->swapchain.framesInFlight;
 	set_ci.layout = m_globalDescriptor.deecriptorSetLayout;
 	set_ci.pool = m_globalDescriptor.descriptorPool.handle;
 
 	// TODO: Potential problems here in future. I think that max_sets array is incorrect
-	utl::vector<u32> max_sets(m_pDevice->m_swapchain.framesInFlight, k_max_bindless_resources - 1);
+	utl::vector<u32> max_sets(m_pDevice->swapchain.framesInFlight, k_max_bindless_resources - 1);
 	vk::DescriptorSetVariableDescriptorCountAllocateInfoEXT descriptor_set_variable_descriptor_count_AIEXT{};
-	descriptor_set_variable_descriptor_count_AIEXT.descriptorSetCount = m_pDevice->m_swapchain.framesInFlight;
+	descriptor_set_variable_descriptor_count_AIEXT.descriptorSetCount = m_pDevice->swapchain.framesInFlight;
 	descriptor_set_variable_descriptor_count_AIEXT.pDescriptorCounts = max_sets.data();
 	set_ci.next = &descriptor_set_variable_descriptor_count_AIEXT;
 
@@ -290,7 +290,7 @@ void VkRenderBackend::CreateGlobalDescriptor(const FGlobalUniformCreateInfo& uni
 	for (auto& [uniform_name, size] : uniform_ci.uniforms)
 	{
 		FVkBufferCreateInfo buffer_ci{};
-		buffer_ci.instanceCount = m_pDevice->m_swapchain.framesInFlight;
+		buffer_ci.instanceCount = m_pDevice->swapchain.framesInFlight;
 		buffer_ci.instanceSize = size;
 		buffer_ci.minOffsetAlignment = std::lcm(physical.GetProperties().limits.minUniformBufferOffsetAlignment, physical.GetProperties().limits.nonCoherentAtomSize);
 		buffer_ci.memoryUsage = vma::MemoryUsage::eCpuToGpu;
@@ -315,7 +315,7 @@ void VkRenderBackend::CreateGlobalDescriptor(const FGlobalUniformCreateInfo& uni
 
 void VkRenderBackend::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view)
 {
-	auto& dest_set = m_globalDescriptor.descriptorSet.handles[m_pDevice->m_swapchain.currentFrame];
+	auto& dest_set = m_globalDescriptor.descriptorSet.handles[m_pDevice->swapchain.currentFrame];
 
 	std::array<vk::DescriptorImageInfo, k_max_texture_update_per_frame> image_descriptors{};
 	std::array<vk::DescriptorBufferInfo, k_max_buffer_update_per_frame> buffer_descriptors{};
@@ -337,7 +337,7 @@ void VkRenderBackend::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo&
 		auto& buffer_descriptor = buffer_descriptors[buffer_count];
 		buffer_descriptor.buffer = buffer->handle;
 		buffer_descriptor.range = element_size;
-		buffer_descriptor.offset = m_pDevice->m_swapchain.currentFrame * element_size;
+		buffer_descriptor.offset = m_pDevice->swapchain.currentFrame * element_size;
 
 		auto& write_descriptor_set = write_descriptor_sets.emplace_back();
 		write_descriptor_set.descriptorType = vk::DescriptorType::eUniformBuffer;
@@ -355,7 +355,7 @@ void VkRenderBackend::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo&
 
 	// Process bindless textures
 	{
-		auto& texture_queue = m_textureToUpdate[m_pDevice->m_swapchain.currentFrame];
+		auto& texture_queue = m_textureToUpdate[m_pDevice->swapchain.currentFrame];
 
 		u64 texture_count{ 0ull };
 		while (!texture_queue.empty() && texture_count < k_max_texture_update_per_frame)
@@ -546,7 +546,7 @@ FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FGraphic
 	{
 		FVkTexture* texture{ nullptr };
 		if (attachment.backbuffer)
-			texture = &m_backbuffer[m_pDevice->m_swapchain.currentFrame];
+			texture = &m_backbuffer[m_pDevice->swapchain.currentFrame];
 		else
 			texture = textures[attachment.source.Get()].get();
 
@@ -1202,7 +1202,7 @@ void VkRenderBackend::ProcessResourceBarriers(EQueueTypeFlagBits queue, const ut
 
 				FVkTexture* texture{ nullptr };
 				if (resource_barrier.resource.type & ERenderResourceTypeFlagBits::eBackbuffer)
-					texture = &m_backbuffer[m_pDevice->m_swapchain.currentFrame];
+					texture = &m_backbuffer[m_pDevice->swapchain.currentFrame];
 				else
 					texture = textures[resource_barrier.resource.handle.Get()].get();
 
@@ -1307,7 +1307,7 @@ void VkRenderBackend::BeginRendering(const FBeginRendering2Info& rendering_info)
 
 			FVkTexture* texture{ nullptr };
 			if (color_attachment_info.backbuffer)
-				texture = &m_backbuffer[m_pDevice->m_swapchain.currentFrame];
+				texture = &m_backbuffer[m_pDevice->swapchain.currentFrame];
 			else
 				texture = textures[color_attachment_info.handle.Get()].get();
 
@@ -1651,8 +1651,8 @@ FAPIHandle VkRenderBackend::GetShaderResource(const char* name)
 FPoint2D<u32> VkRenderBackend::GetRenderResolution() const
 {
 	FPoint2D<u32> resolution{};
-	resolution.x = m_pDevice->m_swapchain.extent.width;
-	resolution.y = m_pDevice->m_swapchain.extent.height;
+	resolution.x = m_pDevice->swapchain.extent.width;
+	resolution.y = m_pDevice->swapchain.extent.height;
 
 	return resolution;
 }
@@ -1671,8 +1671,8 @@ FRect2D<f32> VkRenderBackend::GetRenderRectFromRT(FAPIHandle texture_id)
 FRect2D<f32> VkRenderBackend::GetScreenRenderRect()
 {
 	FRect2D<f32> rect{};
-	rect.size.x = utl::cast<f32>(m_pDevice->m_swapchain.extent.width);
-	rect.size.y = utl::cast<f32>(m_pDevice->m_swapchain.extent.height);
+	rect.size.x = utl::cast<f32>(m_pDevice->swapchain.extent.width);
+	rect.size.y = utl::cast<f32>(m_pDevice->swapchain.extent.height);
 	return rect;
 }
 
@@ -1689,7 +1689,7 @@ void VkRenderBackend::UpdateSurface(i32 surface_width, i32 surface_height)
 
 		m_pDevice->CleanupSwapchain();
 		m_pDevice->CreateSwapchain(surface_width, surface_height);
-		m_pDevice->m_swapchain.currentFrame = 0u;
+		m_pDevice->swapchain.currentFrame = 0u;
 
 		auto& textures = m_pResources->data<FVkTexture>();
 
@@ -1845,7 +1845,7 @@ void VkRenderBackend::BeginFrame()
 
 			m_textureIndexRemap[texture_index] = image_offset++;
 
-			for (u32 frame_index = 0u; frame_index < m_pDevice->m_swapchain.framesInFlight; ++frame_index)
+			for (u32 frame_index = 0u; frame_index < m_pDevice->swapchain.framesInFlight; ++frame_index)
 				m_textureToUpdate[frame_index].push(texture_index);
 		}
 	}
@@ -1894,7 +1894,7 @@ void VkRenderBackend::EndFrame()
 	}
 
 	// Try to free resources
-	if (m_utilizationCounter % m_pDevice->m_swapchain.framesInFlight == 0)
+	if (m_utilizationCounter % m_pDevice->swapchain.framesInFlight == 0)
 		ProcessResourceUtilization();
 
 	// Frame finished. Textures in now again in initial layout
@@ -1927,7 +1927,7 @@ void VkRenderBackend::EndFrame()
 
 bool VkRenderBackend::IsSwapChainFinished()
 {
-	return (m_utilizationCounter % m_pDevice->m_swapchain.framesInFlight == 0) && m_utilizationCounter != 0ull;
+	return (m_utilizationCounter % m_pDevice->swapchain.framesInFlight == 0) && m_utilizationCounter != 0ull;
 }
 
 void VkRenderBackend::BeginDebugLabel(const std::string& label, EQueueTypeFlagBits queue_type, u32 color)
@@ -2329,7 +2329,7 @@ void VkRenderBackend::ProcessResourceUtilization()
 
 void VkRenderBackend::UpdateBackbuffer()
 {
-	auto& swapchain = m_pDevice->m_swapchain;
+	auto& swapchain = m_pDevice->swapchain;
 
 	m_backbuffer.clear();
 	m_backbuffer.resize(swapchain.framesInFlight);
@@ -2556,7 +2556,7 @@ FRenderApiErrorInfo VkRenderBackend::CreateShaderResources(const FVkShaderResour
 	// TODO: generate better object names. Current names can overlap
 
 	// Remember maximum shader usage count
-	shader.maximumDescriptorSlots = m_pDevice->m_swapchain.framesInFlight * resources_info.usageCount;
+	shader.maximumDescriptorSlots = m_pDevice->swapchain.framesInFlight * resources_info.usageCount;
 
 	// Create descriptor set layouts
 	for (const auto& [set, layout_bindings] : reflection->descriptorSetLayoutBindings)
@@ -2577,7 +2577,7 @@ FRenderApiErrorInfo VkRenderBackend::CreateShaderResources(const FVkShaderResour
 	pool_ci.name = resources_info.name;
 #endif
 	pool_ci.poolSizes = reflection->descriptorPoolSizes;
-	pool_ci.usageCount = resources_info.usageCount * m_pDevice->m_swapchain.framesInFlight;
+	pool_ci.usageCount = resources_info.usageCount * m_pDevice->swapchain.framesInFlight;
 	RETURN_WHEN_FAULT(m_pDevice->CreateDescriptorPool(pool_ci, shader.descriptorPool));
 
 	// Create descrioptor sets for each shader usage
@@ -2699,7 +2699,7 @@ void VkRenderBackend::BindShaderDescriptors(const FVkCommandBuffer& command_buff
 	utl::vector<vk::DescriptorSet> bindDescriptorSets{};
 
 	// NOTE: bind global descriptor set
-	bindDescriptorSets.emplace_back(m_globalDescriptor.descriptorSet.handles[m_pDevice->m_swapchain.currentFrame]);
+	bindDescriptorSets.emplace_back(m_globalDescriptor.descriptorSet.handles[m_pDevice->swapchain.currentFrame]);
 
 	// NOTE: shader.descriptorUsage contains next index of descriptor set to use. 
 	// Here i collecting all shader descriptor sets, that was changed in past

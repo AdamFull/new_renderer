@@ -171,8 +171,8 @@ namespace engine
 
 				void CleanupSwapchain();
 			private:
-				vk::DynamicLoader m_dynamicLoader;
-				vk::AllocationCallbacks* m_allocationCallbacks{ nullptr };
+				vk::DynamicLoader dl;
+				vk::AllocationCallbacks* allocation_callbacks{ nullptr };
 
 				/** @brief Set of device extensions to be enabled for this example and whether they are optional (must be set in the derived constructor) */
 				std::vector<const char*> device_extensions;
@@ -196,10 +196,10 @@ namespace engine
 
 				std::unique_ptr<Allocator> allocator;
 
-				vk::SampleCountFlagBits m_requiredSampleCount{ vk::SampleCountFlagBits::e1 };
+				vk::SampleCountFlagBits required_sample_count{ vk::SampleCountFlagBits::e1 };
 
-				vk::PipelineCache m_pipelineCache{ nullptr };
-				FSwapchain m_swapchain{};
+				vk::PipelineCache pipeline_cache{ nullptr };
+				FSwapchain swapchain{};
 
 				/**
 				 * @brief A list of surface formats in order of priority (vector[0] has high priority, vector[size-1] has low priority)
@@ -209,8 +209,8 @@ namespace engine
 					{vk::Format::eB8G8R8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear} };
 
 #ifdef ENABLE_TRACY_PROFILING
-				utl::vector<tracy::VkCtx*> m_tracyContext;
-				tracy::VkCtx* m_presentTracyContext;
+				utl::vector<tracy::VkCtx*> tracy_context;
+				tracy::VkCtx* present_tracy_context;
 #endif
 			};
 		}

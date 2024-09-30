@@ -88,20 +88,20 @@ namespace engine
 			VkRenderDevice::~VkRenderDevice()
 			{
 				CleanupSwapchain();
-				device->DestroyObject(m_swapchain.handle);
-				device->DestroyObject(m_pipelineCache);
-				Handle(*instance).destroySurfaceKHR(surface, m_allocationCallbacks);
+				device->DestroyObject(swapchain.handle);
+				device->DestroyObject(pipeline_cache);
+				Handle(*instance).destroySurfaceKHR(surface, allocation_callbacks);
 
-				if (m_allocationCallbacks)
+				if (allocation_callbacks)
 				{
-					delete m_allocationCallbacks;
-					m_allocationCallbacks = nullptr;
+					delete allocation_callbacks;
+					allocation_callbacks = nullptr;
 				}
 
 #if !defined(BUILD_WITHOUT_DEBUGGIND) && defined(ENABLE_TRACY_PROFILING)
-				for (auto& context : m_tracyContext)
+				for (auto& context : tracy_context)
 					TracyVkDestroy(context);
-				TracyVkDestroy(m_presentTracyContext);
+				TracyVkDestroy(present_tracy_context);
 #endif
 			}
 
@@ -123,7 +123,7 @@ namespace engine
 			void VkRenderDevice::Create(const FRenderContextCreateInfo& context_ci)
 			{
 				// Register dispatcher
-				PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr = m_dynamicLoader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
+				PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr = dl.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
 				VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 
 				// Create allocation callbacks
@@ -166,7 +166,7 @@ namespace engine
 				InstanceCreateInfo instance_ci{ "App", instance_extensions, validation_layers, layer_settings, headless, get_api_version(context_ci.apiVersion) };
 				instance = std::make_unique<Instance>(instance_ci);
 
-				surface = context_ci.window->CreateSurface(Handle(*instance), m_allocationCallbacks);
+				surface = context_ci.window->CreateSurface(Handle(*instance), allocation_callbacks);
 				if (!surface)
 				{
 					throw std::runtime_error("Failed to create window surface.");
@@ -232,7 +232,7 @@ namespace engine
 				requested_features.shaderStorageImageWriteWithoutFormat = true;
 				requested_features.shaderInt64 = true;
 
-				device = std::make_unique<Device>(physical_device, m_allocationCallbacks, surface, device_extensions);
+				device = std::make_unique<Device>(physical_device, allocation_callbacks, surface, device_extensions);
 
 				// Create debug utils
 				if (instance->IsEnabled(VK_EXT_DEBUG_UTILS_EXTENSION_NAME))
@@ -281,7 +281,7 @@ namespace engine
 					pool_ci.queueFamilyIndex = device->GetQueueFamilyIndex(vk::QueueFlagBits::eTransfer);
 				}
 
-				vk::Result res = Handle(*device).createCommandPool(&pool_ci, m_allocationCallbacks, &command_pool.handle);
+				vk::Result res = Handle(*device).createCommandPool(&pool_ci, allocation_callbacks, &command_pool.handle);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				std::stringstream ss{};
 				ss << command_pool_ci.threadId;
@@ -293,7 +293,7 @@ namespace engine
 
 			void VkRenderDevice::DestroyCommandPool(FVkCommandPool& command_pool)
 			{
-				Handle(*device).destroyCommandPool(command_pool.handle, m_allocationCallbacks);
+				Handle(*device).destroyCommandPool(command_pool.handle, allocation_callbacks);
 			}
 
 			FRenderApiErrorInfo VkRenderDevice::CreateCommandBuffer(const FVkCommandBufferCreateInfo& command_buffer_ci, const FVkCommandPool& command_pool, FVkCommandBuffer& command_buffer)
@@ -366,7 +366,7 @@ namespace engine
 
 			FRenderApiErrorInfo VkRenderDevice::CreateImageView(const FVkImageViewCreateInfo& image_view_ci, vk::ImageView& image_view)
 			{
-				vk::Result res = Handle(*device).createImageView(&image_view_ci.ci, m_allocationCallbacks, &image_view);
+				vk::Result res = Handle(*device).createImageView(&image_view_ci.ci, allocation_callbacks, &image_view);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				debug_utils->SetDebugName(image_view, image_view_ci.name);
 #endif
@@ -375,7 +375,7 @@ namespace engine
 
 			void VkRenderDevice::DestroyImageView(vk::ImageView& image_view)
 			{
-				Handle(*device).destroyImageView(image_view, m_allocationCallbacks);
+				Handle(*device).destroyImageView(image_view, allocation_callbacks);
 			}
 
 			FRenderApiErrorInfo VkRenderDevice::CreateSampler(const FVkSamplerCreateInfo& sampler_ci, vk::Sampler& sampler)
@@ -404,7 +404,7 @@ namespace engine
 				ci.minLod = 0.f;
 				ci.maxLod = utl::cast<f32>(sampler_ci.mipLevels);
 
-				vk::Result res = Handle(*device).createSampler(&ci, m_allocationCallbacks, &sampler);
+				vk::Result res = Handle(*device).createSampler(&ci, allocation_callbacks, &sampler);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				debug_utils->SetDebugName(sampler, sampler_ci.name);
 #endif
@@ -413,7 +413,7 @@ namespace engine
 
 			void VkRenderDevice::DestroySampler(vk::Sampler& sampler)
 			{
-				Handle(*device).destroySampler(sampler, m_allocationCallbacks);
+				Handle(*device).destroySampler(sampler, allocation_callbacks);
 			}
 
 			FRenderApiErrorInfo VkRenderDevice::CreateBuffer(const FVkBufferCreateInfo& buffer_ci, FVkBuffer& buffer)
@@ -486,7 +486,7 @@ namespace engine
 				descriptor_set_layout_ci.flags = layout_ci.flags;
 				descriptor_set_layout_ci.pNext = layout_ci.next;
 
-				vk::Result res = Handle(*device).createDescriptorSetLayout(&descriptor_set_layout_ci, m_allocationCallbacks, &descriptor_set_layout);
+				vk::Result res = Handle(*device).createDescriptorSetLayout(&descriptor_set_layout_ci, allocation_callbacks, &descriptor_set_layout);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				debug_utils->SetDebugName(descriptor_set_layout, layout_ci.name);
 #endif
@@ -495,7 +495,7 @@ namespace engine
 
 			void VkRenderDevice::DestroyDescriptorSetLayout(vk::DescriptorSetLayout& descriptor_set_layout)
 			{
-				Handle(*device).destroyDescriptorSetLayout(descriptor_set_layout, m_allocationCallbacks);
+				Handle(*device).destroyDescriptorSetLayout(descriptor_set_layout, allocation_callbacks);
 			}
 
 			FRenderApiErrorInfo VkRenderDevice::CreateDescriptorPool(const FVkDescriptorPoolCreateInfo& pool_ci, FVkDescriptorPool& descriptor_pool)
@@ -516,7 +516,7 @@ namespace engine
 				descriptor_pool_ci.maxSets = maxSets;
 				descriptor_pool_ci.flags = pool_ci.flags;
 
-				vk::Result res = Handle(*device).createDescriptorPool(&descriptor_pool_ci, m_allocationCallbacks, &descriptor_pool.handle);
+				vk::Result res = Handle(*device).createDescriptorPool(&descriptor_pool_ci, allocation_callbacks, &descriptor_pool.handle);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				debug_utils->SetDebugName(descriptor_pool.handle, pool_ci.name);
 #endif
@@ -537,7 +537,7 @@ namespace engine
 
 			void VkRenderDevice::DestroyDescriptorPool(FVkDescriptorPool& descriptor_pool)
 			{
-				Handle(*device).destroyDescriptorPool(descriptor_pool.handle, m_allocationCallbacks);
+				Handle(*device).destroyDescriptorPool(descriptor_pool.handle, allocation_callbacks);
 			}
 
 			FRenderApiErrorInfo VkRenderDevice::CreateDescriptorSet(const FVkDescriptorSetCreateInfo& set_ci, FVkDescriptorSet& descriptor_set)
@@ -572,7 +572,7 @@ namespace engine
 				module_ci.codeSize = shader_module_ci.shaderCode->size() * sizeof(u32);
 				module_ci.pCode = shader_module_ci.shaderCode->data();
 
-				vk::Result res = Handle(*device).createShaderModule(&module_ci, m_allocationCallbacks, &shader_module);
+				vk::Result res = Handle(*device).createShaderModule(&module_ci, allocation_callbacks, &shader_module);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				debug_utils->SetDebugName(shader_module, shader_module_ci.name);
 #endif
@@ -581,7 +581,7 @@ namespace engine
 
 			void VkRenderDevice::DestroyShaderModule(vk::ShaderModule& shader_module)
 			{
-				Handle(*device).destroyShaderModule(shader_module, m_allocationCallbacks);
+				Handle(*device).destroyShaderModule(shader_module, allocation_callbacks);
 			}
 
 			FRenderApiErrorInfo VkRenderDevice::CreatePipelineLayout(const FVkPipelineLayoutCreateInfo& pipeline_layout_ci, vk::PipelineLayout& pipeline_layout)
@@ -591,7 +591,7 @@ namespace engine
 				layout_ci.pSetLayouts = pipeline_layout_ci.descriptorSetLayouts.data();
 				layout_ci.pushConstantRangeCount = utl::cast<u32>(pipeline_layout_ci.pushConstantRanges.size());
 				layout_ci.pPushConstantRanges = pipeline_layout_ci.pushConstantRanges.data();
-				vk::Result res = Handle(*device).createPipelineLayout(&layout_ci, m_allocationCallbacks, &pipeline_layout);
+				vk::Result res = Handle(*device).createPipelineLayout(&layout_ci, allocation_callbacks, &pipeline_layout);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				debug_utils->SetDebugName(pipeline_layout, pipeline_layout_ci.name);
 #endif
@@ -600,7 +600,7 @@ namespace engine
 
 			void VkRenderDevice::DestroyPipelineLayout(vk::PipelineLayout& pipeline_layout)
 			{
-				Handle(*device).destroyPipelineLayout(pipeline_layout, m_allocationCallbacks);
+				Handle(*device).destroyPipelineLayout(pipeline_layout, allocation_callbacks);
 			}
 
 			FRenderApiErrorInfo VkRenderDevice::CreatePipeline(const FVkGraphicsPipelineCreateInfo& pipeline_ci, vk::Pipeline& pipeline)
@@ -706,7 +706,7 @@ namespace engine
 				graphics_pipeline_ci.pTessellationState = (enableTessellation ? &tessellation_state : nullptr);
 				graphics_pipeline_ci.pNext = &rendering_ci;
 
-				vk::Result res = Handle(*device).createGraphicsPipelines(m_pipelineCache, 1u, &graphics_pipeline_ci, m_allocationCallbacks, &pipeline);
+				vk::Result res = Handle(*device).createGraphicsPipelines(pipeline_cache, 1u, &graphics_pipeline_ci, allocation_callbacks, &pipeline);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				debug_utils->SetDebugName(pipeline, pipeline_ci.name);
 #endif
@@ -721,7 +721,7 @@ namespace engine
 				compute_pipeline_ci.basePipelineHandle = nullptr;
 				compute_pipeline_ci.basePipelineIndex = -1;
 
-				vk::Result res = Handle(*device).createComputePipelines(m_pipelineCache, 1u, &compute_pipeline_ci, m_allocationCallbacks, &pipeline);
+				vk::Result res = Handle(*device).createComputePipelines(pipeline_cache, 1u, &compute_pipeline_ci, allocation_callbacks, &pipeline);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				debug_utils->SetDebugName(pipeline, pipeline_ci.name);
 #endif
@@ -735,7 +735,7 @@ namespace engine
 
 				vk::RayTracingPipelineCreateInfoKHR rtx_pipeline_ci{};
 				//Handle(*device).createRayTracingPipelinesKHR()
-				vk::Result res;// = Handle(*device).createRayTracingPipelinesKHR(m_pipelineCache, 1u, &rtx_pipeline_ci, m_allocationCallbacks, &pipeline);
+				vk::Result res;// = Handle(*device).createRayTracingPipelinesKHR(pipeline_cache, 1u, &rtx_pipeline_ci, allocation_callbacks, &pipeline);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				debug_utils->SetDebugName(pipeline, pipeline_ci.name);
 #endif
@@ -744,12 +744,12 @@ namespace engine
 
 			void VkRenderDevice::DestroyPipeline(vk::Pipeline& pipeline)
 			{
-				Handle(*device).destroyPipeline(pipeline, m_allocationCallbacks);
+				Handle(*device).destroyPipeline(pipeline, allocation_callbacks);
 			}
 
 			FRenderApiErrorInfo VkRenderDevice::CreateSemaphore(const FVkSemaphoreCreateInfo& semaphore_ci, vk::Semaphore& semaphore)
 			{
-				vk::Result res = Handle(*device).createSemaphore(&semaphore_ci.ci, m_allocationCallbacks, &semaphore);
+				vk::Result res = Handle(*device).createSemaphore(&semaphore_ci.ci, allocation_callbacks, &semaphore);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				debug_utils->SetDebugName(semaphore, semaphore_ci.name);
 #endif
@@ -758,7 +758,7 @@ namespace engine
 
 			FRenderApiErrorInfo VkRenderDevice::CreateFence(const FVkFenceCreateInfo& fence_ci, vk::Fence& fence)
 			{
-				vk::Result res = Handle(*device).createFence(&fence_ci.ci, m_allocationCallbacks, &fence);
+				vk::Result res = Handle(*device).createFence(&fence_ci.ci, allocation_callbacks, &fence);
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				debug_utils->SetDebugName(fence, fence_ci.name);
 #endif
@@ -773,7 +773,7 @@ namespace engine
 
 				timestamp_query.values.resize(count);
 
-				vk::Result res = Handle(*device).createQueryPool(&query_pool_ci, m_allocationCallbacks, &timestamp_query.handle);
+				vk::Result res = Handle(*device).createQueryPool(&query_pool_ci, allocation_callbacks, &timestamp_query.handle);
 				Handle(*device).resetQueryPool(timestamp_query.handle, 0u, count);
 
 				return make_api_error(timestamp_query.handle.objectType, res, "Failed to Create");
@@ -868,12 +868,12 @@ namespace engine
 				auto& queue = device->GetQueueByFlags(GetQueueFlags(command_buffer.mask), 0);
 				queue.Submit(submitInfo, fence);
 				Handle(*device).waitForFences(1, &fence, VK_TRUE, (std::numeric_limits<u64>::max)());
-				Handle(*device).destroyFence(fence, m_allocationCallbacks);
+				Handle(*device).destroyFence(fence, allocation_callbacks);
 			}
 
 			vk::Result VkRenderDevice::Present(FVkCommandBuffer& command_buffer)
 			{
-				vk::Result res = Handle(*device).resetFences(1, &m_swapchain.inFlightFences[m_swapchain.currentFrame]);
+				vk::Result res = Handle(*device).resetFences(1, &swapchain.inFlightFences[swapchain.currentFrame]);
 				check_api_result(make_api_error(vk::ObjectType::eFence, res, "Failed to reset"));
 
 				try
@@ -883,14 +883,14 @@ namespace engine
 					vk::SubmitInfo2 submit_info{};
 
 					vk::SemaphoreSubmitInfo semaphore_si{};
-					semaphore_si.semaphore = m_swapchain.imageAvaliableSemaphores[m_swapchain.currentFrame];
+					semaphore_si.semaphore = swapchain.imageAvaliableSemaphores[swapchain.currentFrame];
 					semaphore_si.stageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
 
 					submit_info.pWaitSemaphoreInfos = &semaphore_si;
 					submit_info.waitSemaphoreInfoCount = 1;
 
 					vk::SemaphoreSubmitInfo signal_si{};
-					signal_si.semaphore = m_swapchain.renderFinishedSemaphores[m_swapchain.currentFrame];
+					signal_si.semaphore = swapchain.renderFinishedSemaphores[swapchain.currentFrame];
 					signal_si.stageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
 
 					submit_info.pSignalSemaphoreInfos = &signal_si;
@@ -904,7 +904,7 @@ namespace engine
 					submit_info.pCommandBufferInfos = &command_buffer_si;
 					submit_info.commandBufferInfoCount = 1;
 
-					queue.Submit(submit_info, m_swapchain.inFlightFences[m_swapchain.currentFrame]);
+					queue.Submit(submit_info, swapchain.inFlightFences[swapchain.currentFrame]);
 				}
 				catch (vk::SystemError error)
 				{
@@ -913,33 +913,33 @@ namespace engine
 
 				vk::PresentInfoKHR present_info = {};
 				present_info.waitSemaphoreCount = 1;
-				present_info.pWaitSemaphores = &m_swapchain.renderFinishedSemaphores[m_swapchain.currentFrame];
+				present_info.pWaitSemaphores = &swapchain.renderFinishedSemaphores[swapchain.currentFrame];
 
-				vk::SwapchainKHR swap_chains[] = { m_swapchain.handle };
+				vk::SwapchainKHR swap_chains[] = { swapchain.handle };
 				present_info.swapchainCount = 1;
 				present_info.pSwapchains = swap_chains;
-				present_info.pImageIndices = &m_swapchain.currentFrame;
+				present_info.pImageIndices = &swapchain.currentFrame;
 
 				auto& present_queue = device->GetQueueByPresent(0);
 				res = present_queue.Present(present_info);
 				check_api_result(make_api_error(vk::ObjectType::eQueue, res, "Failed to present"));
 
-				res = Handle(*device).waitForFences(1, &m_swapchain.inFlightFences[m_swapchain.currentFrame], VK_TRUE, (std::numeric_limits<u64>::max)());
-				m_swapchain.currentFrame = (m_swapchain.currentFrame + 1) % m_swapchain.framesInFlight;
+				res = Handle(*device).waitForFences(1, &swapchain.inFlightFences[swapchain.currentFrame], VK_TRUE, (std::numeric_limits<u64>::max)());
+				swapchain.currentFrame = (swapchain.currentFrame + 1) % swapchain.framesInFlight;
 
 				return res;
 			}
 
 			vk::Result VkRenderDevice::AcquireNextImage(u32& image_index)
 			{
-				return Handle(*device).acquireNextImageKHR(m_swapchain.handle, (std::numeric_limits<u64>::max)(), m_swapchain.imageAvaliableSemaphores[m_swapchain.currentFrame], nullptr, &image_index);
+				return Handle(*device).acquireNextImageKHR(swapchain.handle, (std::numeric_limits<u64>::max)(), swapchain.imageAvaliableSemaphores[swapchain.currentFrame], nullptr, &image_index);
 			}
 
 			void VkRenderDevice::DebugBeginLabel(vk::CommandBuffer& command_buffer, const std::string& name, u32 color)
 			{
 #ifndef BUILD_WITHOUT_DEBUGGIND
 #ifdef ENABLE_TRACY_PROFILING
-				TracyVkZone(m_tracyContext.at(m_swapchain.currentFrame), command_buffer, name.c_str());
+				TracyVkZone(tracy_context.at(swapchain.currentFrame), command_buffer, name.c_str());
 #endif
 				command_buffer.beginDebugUtilsLabelEXT(make_debug_label(name.c_str(), color));
 #endif
@@ -995,11 +995,11 @@ namespace engine
 				auto& graphics = m_logicalDevice.queues[EQueueTypeFlagBits::eGraphics];
 				auto& present = m_logicalDevice.queues[EQueueTypeFlagBits::ePresent];
 
-				m_tracyContext.resize(m_swapchain.framesInFlight);
-				for (u32 idx = 0u; idx < m_swapchain.framesInFlight; ++idx)
-					m_tracyContext[idx] = TracyVkContext(Handle(physical_device), Handle(*device), graphics, tracy_cmd_buffer.handles.back());
+				tracy_context.resize(swapchain.framesInFlight);
+				for (u32 idx = 0u; idx < swapchain.framesInFlight; ++idx)
+					tracy_context[idx] = TracyVkContext(Handle(physical_device), Handle(*device), graphics, tracy_cmd_buffer.handles.back());
 
-				m_presentTracyContext = TracyVkContext(Handle(physical_device), Handle(*device), present, tracy_cmd_buffer.handles.back());
+				present_tracy_context = TracyVkContext(Handle(physical_device), Handle(*device), present, tracy_cmd_buffer.handles.back());
 
 				graphics.waitIdle();
 				DestroyCommandBuffer(command_pool, tracy_cmd_buffer);
@@ -1032,12 +1032,12 @@ namespace engine
 
 			const vk::DynamicLoader& VkRenderDevice::GetDynamicLoader() const
 			{
-				return m_dynamicLoader;
+				return dl;
 			}
 
 			const vk::AllocationCallbacks* VkRenderDevice::GetAllocationCallbacks() const
 			{
-				return m_allocationCallbacks;
+				return allocation_callbacks;
 			}
 
 			const vk::SurfaceKHR& VkRenderDevice::GetSurface() const
@@ -1047,7 +1047,7 @@ namespace engine
 
 			const vk::SampleCountFlagBits VkRenderDevice::GetMultisamplingCount() const
 			{
-				return m_requiredSampleCount;
+				return required_sample_count;
 			}
 
 			Instance& VkRenderDevice::GetInstance() const
@@ -1082,7 +1082,7 @@ namespace engine
 
 			const vk::PipelineCache& VkRenderDevice::GetPipelineCache() const
 			{
-				return m_pipelineCache;
+				return pipeline_cache;
 			}
 
 			utl::vector<char> VkRenderDevice::GetPipelineCacheData() const
@@ -1091,7 +1091,7 @@ namespace engine
 
 				u64 data_size{ 0ull };
 				void* data_ptr{ nullptr };
-				vk::Result res = Handle(*device).getPipelineCacheData(m_pipelineCache, &data_size, data_ptr);
+				vk::Result res = Handle(*device).getPipelineCacheData(pipeline_cache, &data_size, data_ptr);
 
 				if (res == vk::Result::eSuccess)
 				{
@@ -1109,19 +1109,19 @@ namespace engine
 
 			const FSwapchain& VkRenderDevice::GetSwapchain() const
 			{
-				return m_swapchain;
+				return swapchain;
 			}
 
 			void VkRenderDevice::RegisterAllocationCallbacks()
 			{
-				m_allocationCallbacks = new vk::AllocationCallbacks();
-				memset(m_allocationCallbacks, 0, sizeof(vk::AllocationCallbacks));
+				allocation_callbacks = new vk::AllocationCallbacks();
+				memset(allocation_callbacks, 0, sizeof(vk::AllocationCallbacks));
 
-				m_allocationCallbacks->pfnAllocation = (PFN_vkAllocationFunction)(&vk_malloc);
-				m_allocationCallbacks->pfnReallocation = (PFN_vkReallocationFunction)(&vk_realloc);
-				m_allocationCallbacks->pfnFree = (PFN_vkFreeFunction)(&vk_free);
-				m_allocationCallbacks->pfnInternalAllocation = (PFN_vkInternalAllocationNotification)(&vk_malloc_notification);
-				m_allocationCallbacks->pfnInternalFree = (PFN_vkInternalFreeNotification)(&vk_free_notification);
+				allocation_callbacks->pfnAllocation = (PFN_vkAllocationFunction)(&vk_malloc);
+				allocation_callbacks->pfnReallocation = (PFN_vkReallocationFunction)(&vk_realloc);
+				allocation_callbacks->pfnFree = (PFN_vkFreeFunction)(&vk_free);
+				allocation_callbacks->pfnInternalAllocation = (PFN_vkInternalAllocationNotification)(&vk_malloc_notification);
+				allocation_callbacks->pfnInternalFree = (PFN_vkInternalFreeNotification)(&vk_free_notification);
 			}
 
 			void VkRenderDevice::EnableDeviceFeatures(PhysicalDevice& device)
@@ -1180,15 +1180,15 @@ namespace engine
 				vk::PipelineCacheCreateInfo pipeline_cache_ci{};
 				pipeline_cache_ci.initialDataSize = utl::cast<u32>(context_ci.pipelineCache.size());
 				pipeline_cache_ci.pInitialData = context_ci.pipelineCache.data();
-				return make_api_error(vk::ObjectType::ePipelineCache, device->CreateObject(pipeline_cache_ci, m_pipelineCache), "Failed to Create");
+				return make_api_error(vk::ObjectType::ePipelineCache, device->CreateObject(pipeline_cache_ci, pipeline_cache), "Failed to Create");
 			}
 
 			FRenderApiErrorInfo VkRenderDevice::CreateSwapchain(u32 surface_width, u32 surface_height)
 			{
 				auto& physical_device = instance->GetBestDevice();
 
-				vk::SwapchainKHR old_swapchain{ m_swapchain.handle };
-				m_swapchain.handle = nullptr;
+				vk::SwapchainKHR old_swapchain{ swapchain.handle };
+				swapchain.handle = nullptr;
 
 				auto surface_caps = Handle(physical_device).getSurfaceCapabilitiesKHR(surface);
 				auto surface_formats = Handle(physical_device).getSurfaceFormatsKHR(surface);
@@ -1196,22 +1196,22 @@ namespace engine
 
 				auto surface_format = choice_surface_format(surface_formats);
 				auto present_mode = choice_surface_present_mode(present_modes);
-				m_swapchain.extent = choice_swapchain_extent(surface_caps, surface_width, surface_height);
-				m_swapchain.format = surface_format.format;
+				swapchain.extent = choice_swapchain_extent(surface_caps, surface_width, surface_height);
+				swapchain.format = surface_format.format;
 
-				u32 image_count{ m_swapchain.framesInFlight };
+				u32 image_count{ swapchain.framesInFlight };
 				if (surface_caps.maxImageCount > 0 && image_count > surface_caps.maxImageCount)
 					image_count = surface_caps.maxImageCount;
 				else if (image_count < surface_caps.minImageCount)
 					image_count = surface_caps.minImageCount;
-				m_swapchain.framesInFlight = image_count;
+				swapchain.framesInFlight = image_count;
 
 				vk::SwapchainCreateInfoKHR swapchain_ci{};
 				swapchain_ci.surface = surface;
 				swapchain_ci.minImageCount = image_count;
 				swapchain_ci.imageFormat = surface_format.format;
 				swapchain_ci.imageColorSpace = surface_format.colorSpace;
-				swapchain_ci.imageExtent = m_swapchain.extent;
+				swapchain_ci.imageExtent = swapchain.extent;
 				swapchain_ci.imageArrayLayers = 1u;
 				swapchain_ci.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
 
@@ -1239,32 +1239,32 @@ namespace engine
 				swapchain_ci.clipped = VK_TRUE;
 				swapchain_ci.oldSwapchain = old_swapchain;
 
-				vk::Result res = device->CreateObject(swapchain_ci, m_swapchain.handle);
+				vk::Result res = device->CreateObject(swapchain_ci, swapchain.handle);
 				check_api_result(make_api_error(vk::ObjectType::eSwapchainKHR, res, "Failed to Create"));
 
-				m_swapchain.images.resize(image_count);
-				res = Handle(*device).getSwapchainImagesKHR(m_swapchain.handle, &image_count, m_swapchain.images.data());
+				swapchain.images.resize(image_count);
+				res = Handle(*device).getSwapchainImagesKHR(swapchain.handle, &image_count, swapchain.images.data());
 				check_api_result(make_api_error(vk::ObjectType::eSwapchainKHR, res, "Failed to Create images"));
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				for (u64 idx = 0ull; idx < m_swapchain.images.size(); ++idx)
+				for (u64 idx = 0ull; idx < swapchain.images.size(); ++idx)
 				{
-					const auto& image = m_swapchain.images[idx];
+					const auto& image = swapchain.images[idx];
 					auto name = std::format("swapchain_image_{}", idx);
 					debug_utils->SetDebugName(image, name);
 				}
 #endif
 
 				if (old_swapchain)
-					Handle(*device).destroySwapchainKHR(old_swapchain, m_allocationCallbacks);
+					Handle(*device).destroySwapchainKHR(old_swapchain, allocation_callbacks);
 
-				// Create m_swapchain image views
+				// Create swapchain image views
 				{
-					m_swapchain.imageViews.resize(image_count);
+					swapchain.imageViews.resize(image_count);
 
 					FVkImageViewCreateInfo image_view_ci{};
 					image_view_ci.ci.viewType = vk::ImageViewType::e2D;
-					image_view_ci.ci.format = m_swapchain.format;
+					image_view_ci.ci.format = swapchain.format;
 					image_view_ci.ci.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
 					image_view_ci.ci.subresourceRange.baseMipLevel = 0;
 					image_view_ci.ci.subresourceRange.levelCount = 1;
@@ -1280,16 +1280,16 @@ namespace engine
 #ifndef BUILD_WITHOUT_DEBUGGIND
 						image_view_ci.name = std::format("frame #{}", idx);
 #endif
-						image_view_ci.ci.image = m_swapchain.images[idx];
-						check_api_result(CreateImageView(image_view_ci, m_swapchain.imageViews[idx]));
+						image_view_ci.ci.image = swapchain.images[idx];
+						check_api_result(CreateImageView(image_view_ci, swapchain.imageViews[idx]));
 					}
 				}
 
-				// Create m_swapchain sync objects
+				// Create swapchain sync objects
 				{
-					m_swapchain.imageAvaliableSemaphores.resize(image_count);
-					m_swapchain.renderFinishedSemaphores.resize(image_count);
-					m_swapchain.inFlightFences.resize(image_count);
+					swapchain.imageAvaliableSemaphores.resize(image_count);
+					swapchain.renderFinishedSemaphores.resize(image_count);
+					swapchain.inFlightFences.resize(image_count);
 
 					FVkSemaphoreCreateInfo ia_semaphore_ci{};
 					FVkSemaphoreCreateInfo rf_semaphore_ci{};
@@ -1302,9 +1302,9 @@ namespace engine
 						rf_semaphore_ci.name = std::format("render finished #{}", idx);
 						fence_ci.name = std::format("frame #{}", idx);
 #endif
-						check_api_result(CreateSemaphore(ia_semaphore_ci, m_swapchain.imageAvaliableSemaphores[idx]));
-						check_api_result(CreateSemaphore(rf_semaphore_ci, m_swapchain.renderFinishedSemaphores[idx]));
-						check_api_result(CreateFence(fence_ci, m_swapchain.inFlightFences[idx]));
+						check_api_result(CreateSemaphore(ia_semaphore_ci, swapchain.imageAvaliableSemaphores[idx]));
+						check_api_result(CreateSemaphore(rf_semaphore_ci, swapchain.renderFinishedSemaphores[idx]));
+						check_api_result(CreateFence(fence_ci, swapchain.inFlightFences[idx]));
 					}
 				}
 
@@ -1313,12 +1313,12 @@ namespace engine
 
 			void VkRenderDevice::CleanupSwapchain()
 			{
-				for (u64 idx = 0ull; idx < m_swapchain.framesInFlight; ++idx)
+				for (u64 idx = 0ull; idx < swapchain.framesInFlight; ++idx)
 				{
-					Handle(*device).destroyFence(m_swapchain.inFlightFences[idx], m_allocationCallbacks);
-					Handle(*device).destroyImageView(m_swapchain.imageViews[idx], m_allocationCallbacks);
-					Handle(*device).destroySemaphore(m_swapchain.imageAvaliableSemaphores[idx], m_allocationCallbacks);
-					Handle(*device).destroySemaphore(m_swapchain.renderFinishedSemaphores[idx], m_allocationCallbacks);
+					Handle(*device).destroyFence(swapchain.inFlightFences[idx], allocation_callbacks);
+					Handle(*device).destroyImageView(swapchain.imageViews[idx], allocation_callbacks);
+					Handle(*device).destroySemaphore(swapchain.imageAvaliableSemaphores[idx], allocation_callbacks);
+					Handle(*device).destroySemaphore(swapchain.renderFinishedSemaphores[idx], allocation_callbacks);
 				}
 			}
 		}

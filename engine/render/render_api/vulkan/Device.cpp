@@ -251,6 +251,11 @@ namespace engine
 
 				throw std::runtime_error("Could not find a matching queue family index");
 			}
+
+			vk::AllocationCallbacks* Device::GetAllocationCallbacks() const
+			{
+				return allocation_callbacks;
+			}
 		}
 	}
 }

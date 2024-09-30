@@ -28,6 +28,7 @@ namespace engine
 				allocator_info.physicalDevice = Handle(physical);
 				allocator_info.device = Handle(device);
 				allocator_info.instance = Handle(physical.GetInstance());
+				allocator_info.pAllocationCallbacks = device.GetAllocationCallbacks();
 
 				bool can_get_memory_requirements = device.IsExtensionSupported(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
 				bool has_dedicated_allocation = device.IsExtensionSupported(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);

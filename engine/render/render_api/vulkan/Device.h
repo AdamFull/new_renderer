@@ -54,6 +54,8 @@ namespace engine
 
 				uint32_t GetQueueFamilyIndex(vk::QueueFlagBits queue_flag) const;
 
+				vk::AllocationCallbacks* GetAllocationCallbacks() const;
+
 				template<typename _CreateInfo, typename _ObjectHandle>
 				vk::Result CreateObject(const _CreateInfo& create_info, _ObjectHandle& object)
 				{ return {}; }
