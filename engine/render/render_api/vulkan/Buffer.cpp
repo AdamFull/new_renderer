@@ -84,6 +84,29 @@ namespace engine
 				}
 			}
 
+			void Buffer::CopyTo(vk::CommandBuffer& current, Buffer& dst_buffer, const std::vector<vk::BufferCopy2KHR>& regions)
+			{
+				vk::CopyBufferInfo2KHR copy_buffer{};
+				copy_buffer.srcBuffer = handle;
+				copy_buffer.dstBuffer = dst_buffer.handle;
+				copy_buffer.regionCount = static_cast<uint32_t>(regions.size());
+				copy_buffer.pRegions = &regions[0];
+
+				current.copyBuffer2KHR(copy_buffer);
+			}
+
+			void Buffer::CopyTo(vk::CommandBuffer& current, vk::Image& image, vk::ImageLayout layout, const utl::vector<vk::BufferImageCopy2KHR>& regions)
+			{
+				vk::CopyBufferToImageInfo2KHR copy_info{};
+				copy_info.srcBuffer = handle;
+				copy_info.dstImage = image;
+				copy_info.dstImageLayout = layout;
+				copy_info.regionCount = static_cast<uint32_t>(regions.size());
+				copy_info.pRegions = regions.data();
+
+				current.copyBufferToImage2KHR(&copy_info);
+			}
+
 			uint64_t Buffer::GetDeviceAddress() const
 			{
 				auto& device = allocator.GetDevice();

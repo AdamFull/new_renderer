@@ -39,6 +39,23 @@ namespace engine
 				~Buffer();
 
 				/**
+				 * @brief Copy this buffer to other
+				 * @param command_buffer The command buffer used for copy
+				 * @param dst_buffer Destination buffer
+				 * @param regions Buffer copy regions
+				 */
+				void CopyTo(vk::CommandBuffer& command_buffer, Buffer& dst_buffer, const std::vector<vk::BufferCopy2KHR>& regions);
+
+				/**
+				 * @brief Copy this buffer to image
+				 * @param command_buffer The command buffer used for copy
+				 * @param image Destination image
+				 * @param layout Destination image layout
+				 * @param regions Buffer copy regions
+				 */
+				void CopyTo(vk::CommandBuffer& command_buffer, vk::Image& image, vk::ImageLayout layout, const std::vector<vk::BufferImageCopy2KHR>& regions);
+
+				/**
 				 * @return Return the buffer's device address (note: requires that the buffer has been created with the VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT usage fla)
 				 */
 				uint64_t GetDeviceAddress() const;

@@ -2169,7 +2169,8 @@ void VkRenderBackend::ProcessResourceUpload()
 				copy_region.bufferOffset = 0ull;
 			}
 
-			CopyBufferToTexture(command_buffer, *staging_buffer, *texture, copy_regions);
+			auto& target_subresource = texture->getSubresource();
+			staging_buffer->CopyTo(command_buffer.get(), texture->image.handle, target_subresource.layout, copy_regions);
 		}
 
 		auto& current_command_buffer = command_buffer.get();
@@ -2300,14 +2301,8 @@ void VkRenderBackend::ProcessResourceUpload()
 		// Copy upload data to buffer
 		src_buffer->Update(upload_info.data);
 
-		vk::CopyBufferInfo2KHR copy_buffer{};
-		copy_buffer.srcBuffer = Handle(*src_buffer);
-		copy_buffer.dstBuffer = Handle(*dst_buffer);
-		copy_buffer.regionCount = utl::cast<u32>(copy_regions.size());
-		copy_buffer.pRegions = &copy_regions[0];
-		
 		auto& current = command_buffer.get();
-		current.copyBuffer2KHR(copy_buffer);
+		src_buffer->CopyTo(current, *dst_buffer, copy_regions);
 	}
 
 	render_device->EndCommandBuffer(command_buffer);
@@ -2695,19 +2690,4 @@ void VkRenderBackend::TextureLayoutTranslation(const FVkCommandBuffer& command_b
 {
 	auto image_layout_translation = get_texture_layout_translation_info(texture, translation_info);
 	ProcessImageLayoutTranslation(command_buffer, image_layout_translation);
-}
-
-void VkRenderBackend::CopyBufferToTexture(const FVkCommandBuffer& command_buffer, const Buffer& buffer, const FVkTexture& texture, const utl::vector<vk::BufferImageCopy2KHR>& copy_regions)
-{
-	auto& current_buffer = command_buffer.get();
-	auto& target_subresource = texture.getSubresource();
-
-	vk::CopyBufferToImageInfo2KHR copy_info{};
-	copy_info.srcBuffer = Handle(buffer);
-	copy_info.dstImage = texture.image.handle;
-	copy_info.dstImageLayout = target_subresource.layout;
-	copy_info.regionCount = utl::cast<u32>(copy_regions.size());
-	copy_info.pRegions = copy_regions.data();
-
-	current_buffer.copyBufferToImage2KHR(&copy_info);
 }
