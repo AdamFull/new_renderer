@@ -88,8 +88,8 @@ namespace engine
 			VkRenderDevice::~VkRenderDevice()
 			{
 				CleanupSwapchain();
-				device->DestroyObject(swapchain.handle);
-				device->DestroyObject(pipeline_cache);
+				device->Destroy(swapchain.handle);
+				device->Destroy(pipeline_cache);
 				Handle(*instance).destroySurfaceKHR(surface, allocation_callbacks);
 
 				if (allocation_callbacks)
@@ -1118,7 +1118,7 @@ namespace engine
 				vk::PipelineCacheCreateInfo pipeline_cache_ci{};
 				pipeline_cache_ci.initialDataSize = utl::cast<u32>(context_ci.pipelineCache.size());
 				pipeline_cache_ci.pInitialData = context_ci.pipelineCache.data();
-				return make_api_error(vk::ObjectType::ePipelineCache, device->CreateObject(pipeline_cache_ci, pipeline_cache), "Failed to Create");
+				return make_api_error(vk::ObjectType::ePipelineCache, device->CreatePipelineCache(pipeline_cache_ci, pipeline_cache), "Failed to Create");
 			}
 
 			FRenderApiErrorInfo VkRenderDevice::CreateSwapchain(u32 surface_width, u32 surface_height)
@@ -1177,7 +1177,7 @@ namespace engine
 				swapchain_ci.clipped = VK_TRUE;
 				swapchain_ci.oldSwapchain = old_swapchain;
 
-				vk::Result res = device->CreateObject(swapchain_ci, swapchain.handle);
+				vk::Result res = device->CreateSwapchain(swapchain_ci, swapchain.handle);
 				check_api_result(make_api_error(vk::ObjectType::eSwapchainKHR, res, "Failed to Create"));
 
 				swapchain.images.resize(image_count);

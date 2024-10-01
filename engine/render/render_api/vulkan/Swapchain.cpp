@@ -293,7 +293,7 @@ namespace engine
 				create_info.clipped = VK_TRUE;
 				create_info.oldSwapchain = properties.old_swapchain;
 
-				vk::Result res = device.CreateObject(create_info, handle);
+				vk::Result res = device.CreateSwapchain(create_info, handle);
 				//Handle(device).destroySwapchainKHR(old_swapchain);
 
 				images = Handle(device).getSwapchainImagesKHR(handle);
@@ -320,7 +320,7 @@ namespace engine
 				{
 					image_view_ci.image = images[i];
 					// TODO: Handle result
-					device.CreateObject(image_view_ci, image_views[i]);
+					device.CreateImageView(image_view_ci, image_views[i]);
 				}
 			}
 
@@ -328,13 +328,13 @@ namespace engine
 			{
 				if (handle)
 				{
-					device.DestroyObject(handle);
+					device.Destroy(handle);
 				}
 
 				// Destroy image views
 				for (auto& image_view : image_views)
 				{
-					device.DestroyObject(image_view);
+					device.Destroy(image_view);
 				}
 			}
 

@@ -56,9 +56,9 @@ namespace engine
 			{
 				for (int32_t i = 0; i < swapchain->GetImageCount(); ++i)
 				{
-					device.DestroyObject(image_avaliable_semaphores[i]);
-					device.DestroyObject(render_finished_semaphores[i]);
-					device.DestroyObject(in_flight_fences[i]);
+					device.Destroy(image_avaliable_semaphores[i]);
+					device.Destroy(render_finished_semaphores[i]);
+					device.Destroy(in_flight_fences[i]);
 				}
 			}
 

@@ -123,6 +123,8 @@ namespace engine
 				FRenderApiErrorInfo CreateTexture(const FVkTextureCreateInfo& texture_ci, FVkTexture& texture);
 				void DestroyTexture(FVkTexture& texture);
 
+				u64 GetSampler(const FVkSamplerCreateInfo& create_info);
+
 				FRenderApiErrorInfo CreateShaderResources(const FVkShaderResourcesInfo& resources_info, FVkShader& shader);
 				void DestroyShader(FVkShader& shader);
 

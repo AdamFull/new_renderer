@@ -2483,18 +2483,13 @@ FRenderApiErrorInfo VkRenderBackend::CreateTexture(const FVkTextureCreateInfo& t
 #ifndef BUILD_WITHOUT_DEBUGGIND
 		sampler_ci.name = texture_ci.name;
 #endif
-		u64 key = calculate_sampler_hash(sampler_ci);
-		auto& sampler = sampler_cache[key];
-		
-		if(!sampler)
-			res = render_device->CreateSampler(sampler_ci, sampler);
 
-		texture.sampler = key;
+		texture.sampler = GetSampler(sampler_ci);
 	}
 
 	texture.isAlive = true;
 
-	return res;
+	return make_api_error(vk::ObjectType::eSampler, vk::Result::eSuccess);
 }
 
 void VkRenderBackend::DestroyTexture(FVkTexture& texture)
@@ -2507,6 +2502,18 @@ void VkRenderBackend::DestroyTexture(FVkTexture& texture)
 	render_device->DestroyImage(texture.image);
 
 	texture.isAlive = false;
+}
+
+u64 VkRenderBackend::GetSampler(const FVkSamplerCreateInfo& create_info)
+{
+	u64 key = calculate_sampler_hash(create_info);
+
+	auto& sampler = sampler_cache[key];
+
+	if (!sampler)
+		render_device->CreateSampler(create_info, sampler);
+
+	return key;
 }
 
 FRenderApiErrorInfo VkRenderBackend::CreateShaderResources(const FVkShaderResourcesInfo& resources_info, FVkShader& shader)

@@ -4,6 +4,10 @@
 
 #include <engine/render/render_api/vulkan/Queue.h>
 
+#ifdef CreateSemaphore
+#undef CreateSemaphore
+#endif
+
 namespace engine
 {
 	namespace render
@@ -56,34 +60,23 @@ namespace engine
 
 				vk::AllocationCallbacks* GetAllocationCallbacks() const;
 
-				template<typename _CreateInfo, typename _ObjectHandle>
-				vk::Result CreateObject(const _CreateInfo& create_info, _ObjectHandle& object)
-				{ return {}; }
+				vk::Result CreatePipelineCache(const vk::PipelineCacheCreateInfo& create_info, vk::PipelineCache& object);
+				void Destroy(vk::PipelineCache& object);
 
-				template<>
-				vk::Result CreateObject(const vk::PipelineCacheCreateInfo& create_info, vk::PipelineCache& object)
-				{ return handle.createPipelineCache(&create_info, allocation_callbacks, &object); }
+				vk::Result CreateSwapchain(const vk::SwapchainCreateInfoKHR& create_info, vk::SwapchainKHR& object);
+				void Destroy(vk::SwapchainKHR& object);
 
-				template<>
-				vk::Result CreateObject(const vk::SwapchainCreateInfoKHR& create_info, vk::SwapchainKHR& object)
-				{ return handle.createSwapchainKHR(&create_info, allocation_callbacks, &object); }
+				vk::Result CreateSemaphore(const vk::SemaphoreCreateInfo& create_info, vk::Semaphore& object);
+				void Destroy(vk::Semaphore& object);
 
+				vk::Result CreateFence(const vk::FenceCreateInfo& create_info, vk::Fence& object);
+				void Destroy(vk::Fence& object);
 
-				template<typename _ObjectType>
-				void DestroyObject(_ObjectType& object)
-				{
-					throw std::runtime_error("Don't know how to destroy object of type");
-				}
+				vk::Result CreateImageView(const vk::ImageViewCreateInfo& create_info, vk::ImageView& object);
+				void Destroy(vk::ImageView& object);
 
-				template<>
-				void DestroyObject(vk::PipelineCache& object)
-				{
-					handle.destroyPipelineCache(object, allocation_callbacks);
-				}
-
-				template<>
-				void DestroyObject(vk::SwapchainKHR& object)
-				{ handle.destroySwapchainKHR(object, allocation_callbacks); }
+				vk::Result CreateSampler(const vk::SamplerCreateInfo& create_info, vk::Sampler& object);
+				void Destroy(vk::Sampler& object);
 
 			private:
 				PhysicalDevice const& gpu;
