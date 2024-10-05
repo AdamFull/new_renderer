@@ -133,11 +133,11 @@ namespace engine
 				return std::make_unique<Sampler>(context, *this);
 			}
 
-			Sampler::Sampler(VkRenderDevice& render_device, SamplerBuilder& builder) :
+			Sampler::Sampler(VkRenderDevice& render_device, const SamplerBuilder& builder) :
 				VulkanResource{ nullptr },
 				device{ render_device.GetLogicalDevice() }
 			{
-
+				device.CreateSampler(builder.create_info, handle);
 			}
 
 			Sampler::~Sampler()
@@ -148,7 +148,7 @@ namespace engine
 				}
 			}
 
-			Sampler::Sampler(Sampler&& other) :
+			Sampler::Sampler(Sampler&& other) noexcept :
 				VulkanResource{ std::move(other) },
 				device{ other.device }
 			{

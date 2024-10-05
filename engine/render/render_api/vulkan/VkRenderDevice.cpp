@@ -110,16 +110,6 @@ namespace engine
 				device_extensions.emplace_back(extension);
 			}
 
-			void VkRenderDevice::AddInstanceExtension(const char* extension)
-			{
-				instance_extensions.emplace_back(extension);
-			}
-
-			void VkRenderDevice::AddLayerSetting(vk::LayerSettingEXT const& layerSetting)
-			{
-				layer_settings.emplace_back(layerSetting);
-			}
-
 			void VkRenderDevice::Create(const FRenderContextCreateInfo& context_ci)
 			{
 				// Register dispatcher
@@ -133,6 +123,12 @@ namespace engine
 
 				bool headless = window->GetWindowMode() == Window::Mode::Headless;
 
+				auto instance_builder = InstanceBuilder();
+				instance_builder.SetHeadless(headless);
+				instance_builder.SetApiVersion(VK_VERSION_1_1);
+				instance_builder.SetApplicationName("App");
+				instance_builder.SetEngineName("NewEngineApp");
+
 				// for a while we're running on mixed C- and C++-bindings, needing volk for the C-bindings!
 				VkResult result = volkInitialize();
 				if (result)
@@ -144,11 +140,11 @@ namespace engine
 				// Apply instance extensions requested by surface
 				{
 					auto required_surface_extensions = window->GetRequiredSurfaceExtensions();
-					instance_extensions.insert(instance_extensions.end(), required_surface_extensions.begin(), required_surface_extensions.end());
+					instance_builder.AddRequiredExtensions(required_surface_extensions);
 				}
 
 				// Apply extensions requested by user
-				instance_extensions.insert(instance_extensions.end(), context_ci.requiredInstanceExtensions.begin(), context_ci.requiredInstanceExtensions.end());
+				instance_builder.AddRequiredExtensions(context_ci.requiredInstanceExtensions);
 
 #ifdef VULKAN_DEBUG
 				{
@@ -158,13 +154,12 @@ namespace engine
 					if (debugExtensionIt != available_instance_extensions.end())
 					{
 						log_info("Vulkan debug utils enabled ({})", VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-						AddInstanceExtension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+						instance_builder.AddRequiredExtension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 					}
 				}
 #endif
 
-				InstanceCreateInfo instance_ci{ "App", instance_extensions, validation_layers, layer_settings, headless, get_api_version(context_ci.apiVersion) };
-				instance = std::make_unique<Instance>(instance_ci);
+				instance = instance_builder.BuildUnique();
 
 				surface = context_ci.window->CreateSurface(Handle(*instance), allocation_callbacks);
 				if (!surface)
@@ -176,15 +171,17 @@ namespace engine
 				if (!headless || instance->IsEnabled(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME))
 				{
 					AddDeviceExtension(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-
-					if (std::find(instance_extensions.begin(), instance_extensions.end(), VK_KHR_DISPLAY_EXTENSION_NAME) != instance_extensions.end())
+					
+					if (instance->IsEnabled(VK_KHR_DISPLAY_EXTENSION_NAME))
 					{
+						// Optional
 						AddDeviceExtension(VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME);
 					}
 				}
 
 #ifdef VULKAN_ENABLE_PORTABILITY
 				// VK_KHR_portability_subset must be enabled if present in the implementation (e.g on macOS/iOS with beta extensions enabled)
+				// Optional
 				AddDeviceExtension(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 #endif
 

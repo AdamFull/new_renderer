@@ -14,6 +14,7 @@ namespace engine
 
 			class SamplerBuilder
 			{
+			public:
 				std::string debug_name;
 				vk::SamplerCreateInfo create_info;
 
@@ -45,7 +46,7 @@ namespace engine
 			class Sampler : public VulkanResource<vk::Sampler>
 			{
 			public:
-				Sampler(VkRenderDevice& render_device, SamplerBuilder& builder);
+				Sampler(VkRenderDevice& render_device, const SamplerBuilder& builder);
 				~Sampler() override;
 
 				Sampler(Sampler&) = delete;

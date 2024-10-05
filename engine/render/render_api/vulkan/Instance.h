@@ -15,14 +15,56 @@ namespace engine
 		{
 			class PhysicalDevice;
 
-			struct InstanceCreateInfo
+			class Instance;
+
+			class InstanceBuilder
 			{
-				std::string application_name;
-				std::vector<const char*>& required_extensions;
-				std::vector<const char*>& required_validation_layers;
-				std::vector<vk::LayerSettingEXT>& required_layer_settings;
-				bool headless = false;
-				uint32_t api_version = VK_API_VERSION_1_0;
+			public:
+				std::string application_name{ "app" };
+				uint32_t application_version{ 0u };
+				std::string engine_name{ "engine" };
+				uint32_t engine_version{ 0u };
+				uint32_t api_version{ VK_API_VERSION_1_1 };
+
+				std::vector<const char*> required_extensions;
+				std::vector<const char*> optional_extensions;
+
+				std::vector<const char*> validation_layers;
+
+				std::vector<vk::LayerSettingEXT> layer_settings;
+
+				bool headless;
+
+				InstanceBuilder();
+
+				InstanceBuilder& SetApplicationName(const std::string& name);
+				InstanceBuilder& SetApplicationVersion(uint32_t version);
+
+				InstanceBuilder& SetEngineName(const std::string& name);
+				InstanceBuilder& SetEngineVersion(uint32_t version);
+
+				InstanceBuilder& SetApiVersion(uint32_t version);
+
+				InstanceBuilder& SetRequiredExtensions(std::vector<const char*>&& extensions);
+				InstanceBuilder& AddRequiredExtensions(const std::vector<const char*>& extensions);
+				InstanceBuilder& AddRequiredExtension(const char* extension_name);
+
+				InstanceBuilder& SetOptionalExtensions(std::vector<const char*>&& extensions);
+				InstanceBuilder& AddOptionalExtensions(const std::vector<const char*>& extensions);
+				InstanceBuilder& AddOptionalExtension(const char* extension_name);
+
+				InstanceBuilder& SetValidationLayers(std::vector<const char*>&& layers);
+				InstanceBuilder& AddValidationLayers(const std::vector<const char*>& layers);
+				InstanceBuilder& AddValidationLayer(const char* layer_name);
+
+				InstanceBuilder& SetLayerSettings(std::vector<vk::LayerSettingEXT>&& layer_settings);
+				InstanceBuilder& AddLayerSettings(const std::vector<vk::LayerSettingEXT>& layer_settings);
+				InstanceBuilder& AddLayerSetting(vk::LayerSettingEXT layer_setting);
+
+				InstanceBuilder& SetHeadless(bool headless);
+
+				Instance Build();
+				std::unique_ptr<Instance> BuildUnique();
 			};
 
 			/**
@@ -33,16 +75,14 @@ namespace engine
 			std::vector<const char*> GetOptimalValidationLayers(const std::vector<vk::LayerProperties>& supported_instance_layers);
 
 			/**
-	 * @brief A wrapper class for vk::Instance
-	 *
-	 * This class is responsible for initializing the dispatcher, enumerating over all available extensions and validation layers
-	 * enabling them if they exist, setting up debug messaging and querying all the physical devices existing on the machine.
-	 */
+			 * @brief A wrapper class for vk::Instance
+			 *
+			 * This class is responsible for initializing the dispatcher, enumerating over all available extensions and validation layers
+			 * enabling them if they exist, setting up debug messaging and querying all the physical devices existing on the machine.
+			 */
 			class Instance final : public VulkanResource<vk::Instance>
 			{
 			public:
-				static Result<std::unique_ptr<Instance>, vk::Result> Construct(const InstanceCreateInfo& create_info);
-
 				/**
 				 * @brief Initializes the connection to Vulkan
 				 * @param application_name The name of the application
@@ -53,7 +93,7 @@ namespace engine
 				 * @param api_version The Vulkan API version that the instance will be using
 				 * @throws runtime_error if the required extensions and validation layers are not found
 				 */
-				Instance(const InstanceCreateInfo& create_info);
+				Instance(const InstanceBuilder& builder);
 
 				/**
 				 * @brief Queries the GPUs of a vk::Instance that is already created

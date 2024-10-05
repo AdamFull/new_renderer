@@ -144,9 +144,139 @@ namespace engine
 			//	return Result<std::unique_ptr<Instance>, vk::Result>::Success(std::move(instance));
 			//}
 
-			Instance::Instance(const InstanceCreateInfo& create_info) :
+
+			InstanceBuilder::InstanceBuilder()
+			{
+			}
+
+			InstanceBuilder& InstanceBuilder::SetApplicationName(const std::string& name)
+			{
+				application_name = name;
+				return *this;
+			}
+
+			InstanceBuilder& InstanceBuilder::SetApplicationVersion(uint32_t version)
+			{
+				application_version = version;
+				return *this;
+			}
+
+			InstanceBuilder& InstanceBuilder::SetEngineName(const std::string& name)
+			{
+				engine_name = name;
+				return *this;
+			}
+
+			InstanceBuilder& InstanceBuilder::SetEngineVersion(uint32_t version)
+			{
+				engine_version = version;
+				return *this;
+			}
+
+			InstanceBuilder& InstanceBuilder::SetApiVersion(uint32_t version)
+			{
+				api_version = version;
+				return *this;
+			}
+
+			InstanceBuilder& InstanceBuilder::SetRequiredExtensions(std::vector<const char*>&& extensions) 
+			{
+				required_extensions = std::move(extensions);
+				return *this;
+			}
+
+			InstanceBuilder& InstanceBuilder::AddRequiredExtensions(const std::vector<const char*>& extensions)
+			{
+				required_extensions.insert(required_extensions.end(), extensions.begin(), extensions.end());
+				return *this;
+			}
+
+			InstanceBuilder& InstanceBuilder::AddRequiredExtension(const char* extension_name)
+			{
+				required_extensions.emplace_back(extension_name);
+				return *this;
+			}
+
+			InstanceBuilder& InstanceBuilder::SetOptionalExtensions(std::vector<const char*>&& extensions)
+			{
+				optional_extensions = std::move(extensions);
+				return *this;
+			}
+
+			InstanceBuilder& InstanceBuilder::AddOptionalExtensions(const std::vector<const char*>& extensions)
+			{
+				optional_extensions.insert(optional_extensions.end(), extensions.begin(), extensions.end());
+				return *this;
+			}
+
+			InstanceBuilder& InstanceBuilder::AddOptionalExtension(const char* extension_name)
+			{
+				optional_extensions.emplace_back(extension_name);
+				return *this;
+			}
+
+
+			InstanceBuilder& InstanceBuilder::SetValidationLayers(std::vector<const char*>&& layers)
+			{
+				validation_layers = std::move(layers);
+				return *this;
+			}
+
+			InstanceBuilder& InstanceBuilder::AddValidationLayers(const std::vector<const char*>& layers)
+			{
+				validation_layers.insert(validation_layers.end(), layers.begin(), layers.end());
+				return *this;
+			}
+
+			InstanceBuilder& InstanceBuilder::AddValidationLayer(const char* layer_name)
+			{
+				validation_layers.emplace_back(layer_name);
+				return *this;
+			}
+
+
+			InstanceBuilder& InstanceBuilder::SetLayerSettings(std::vector<vk::LayerSettingEXT>&& settings)
+			{
+				layer_settings = std::move(settings);
+				return *this;
+			}
+
+			InstanceBuilder& InstanceBuilder::AddLayerSettings(const std::vector<vk::LayerSettingEXT>& settings)
+			{
+				layer_settings.insert(layer_settings.end(), settings.begin(), settings.end());
+				return *this;
+			}
+
+			InstanceBuilder& InstanceBuilder::AddLayerSetting(vk::LayerSettingEXT setting)
+			{
+				layer_settings.emplace_back(setting);
+				return *this;
+			}
+
+
+			InstanceBuilder& InstanceBuilder::SetHeadless(bool headless)
+			{
+				this->headless = headless;
+				return *this;
+			}
+
+
+			Instance InstanceBuilder::Build()
+			{
+				return Instance(*this);
+			}
+
+			std::unique_ptr<Instance> InstanceBuilder::BuildUnique()
+			{
+				return std::make_unique<Instance>(*this);
+			}
+
+
+
+
+			Instance::Instance(const InstanceBuilder& builder) :
 				VulkanResource{ nullptr },
-				api_version{ create_info.api_version },
+				api_version{ builder.api_version },
 				selected_gpu_index{ -1 }
 			{
 				available_extensions = vk::enumerateInstanceExtensionProperties();
@@ -188,7 +318,7 @@ namespace engine
 #endif
 
 				// Try to enable headless surface extension if it exists
-				if (create_info.headless)
+				if (builder.headless)
 				{
 					const bool has_headless_surface = EnableExtension(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
 					if (!has_headless_surface)
@@ -206,12 +336,20 @@ namespace engine
 				EnableExtension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
 				auto extension_error = false;
-				for (auto extension_name : create_info.required_extensions)
+				for (auto extension_name : builder.required_extensions)
 				{
 					if (!EnableExtension(extension_name))
 					{
 						log_error("Required instance extension {} not available, cannot run", extension_name);
 						extension_error = true;
+					}
+				}
+
+				for (auto extension_name : builder.optional_extensions)
+				{
+					if (!EnableExtension(extension_name))
+					{
+						log_error("Optional instance extension {} not available", extension_name);
 					}
 				}
 
@@ -222,7 +360,7 @@ namespace engine
 
 				std::vector<vk::LayerProperties> supported_validation_layers = vk::enumerateInstanceLayerProperties();
 
-				std::vector<const char*> requested_validation_layers{ create_info.required_validation_layers };
+				std::vector<const char*> requested_validation_layers{ builder.validation_layers };
 
 #ifdef USE_VALIDATION_LAYERS
 				// Determine the optimal validation layers to enable that are necessary for useful debugging
@@ -247,7 +385,7 @@ namespace engine
 					throw std::runtime_error("Required validation layers are missing.");
 				}
 
-				vk::ApplicationInfo app_info(create_info.application_name.c_str(), 0, create_info.application_name.c_str(), 0, create_info.api_version);
+				vk::ApplicationInfo app_info(builder.application_name.c_str(), builder.application_version, builder.engine_name.c_str(), builder.engine_version, builder.api_version);
 
 				vk::InstanceCreateInfo instance_info({}, &app_info, requested_validation_layers, enabled_extensions);
 
@@ -305,8 +443,8 @@ namespace engine
 				// If layer settings extension enabled by sample, then activate layer settings during instance creation
 				if (IsEnabled(VK_EXT_LAYER_SETTINGS_EXTENSION_NAME))
 				{
-					layerSettingsCreateInfo.settingCount = static_cast<uint32_t>(create_info.required_layer_settings.size());
-					layerSettingsCreateInfo.pSettings = create_info.required_layer_settings.data();
+					layerSettingsCreateInfo.settingCount = static_cast<uint32_t>(builder.layer_settings.size());
+					layerSettingsCreateInfo.pSettings = builder.layer_settings.data();
 					layerSettingsCreateInfo.pNext = instance_info.pNext;
 					instance_info.pNext = &layerSettingsCreateInfo;
 				}

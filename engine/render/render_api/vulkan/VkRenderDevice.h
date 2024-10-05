@@ -43,19 +43,6 @@ namespace engine
 				 */
 				void AddDeviceExtension(const char* extension);
 
-				/**
-				 * @brief Add a sample-specific instance extension
-				 * @param extension The extension name
-				 * @param optional (Optional) Whether the extension is optional
-				 */
-				void AddInstanceExtension(const char* extension);
-
-				/**
-				 * @brief Add a sample-specific layer setting
-				 * @param layerSetting The layer setting
-				 */
-				void AddLayerSetting(vk::LayerSettingEXT const& layerSetting);
-
 				void Create(const FRenderContextCreateInfo& context_ci);
 
 				// VkCommandPool
@@ -169,15 +156,6 @@ namespace engine
 
 				/** @brief Set of device extensions to be enabled for this example and whether they are optional (must be set in the derived constructor) */
 				std::vector<const char*> device_extensions;
-
-				/** @brief Set of instance extensions to be enabled for this example and whether they are optional (must be set in the derived constructor) */
-				std::vector<const char*> instance_extensions;
-
-				/** @brief Validation layers */
-				std::vector<const char*> validation_layers;
-
-				/** @brief Vector of layer settings to be enabled for this example (must be set in the derived constructor) */
-				std::vector<vk::LayerSettingEXT> layer_settings;
 
 				std::unique_ptr<Instance> instance;
 
