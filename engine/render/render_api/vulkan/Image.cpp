@@ -95,18 +95,13 @@ namespace engine
 
 			Image::Image(RenderDevice& render_device, ImageBuilder const& builder) :
 				VulkanResource{ nullptr },
-				Allocation{ render_device.GetAllocator(), builder.alloc_create_info },
+				Allocation{ render_device, builder.alloc_create_info },
 				create_info{ builder.create_info },
 				device{ render_device.GetLogicalDevice() }
 			{
-				handle = allocator.CreateImage(*this, create_info);
+				handle = render_device.CreateImage2(*this, builder.create_info, builder.debug_name);
 				subresource.arrayLayer = create_info.arrayLayers;
 				subresource.mipLevel = create_info.mipLevels;
-
-				if (!builder.debug_name.empty())
-				{
-					render_device.GetDebugUtils().SetDebugName(handle, builder.debug_name.c_str());
-				}
 			}
 
 			Image::Image(Image&& other) noexcept :
@@ -120,7 +115,7 @@ namespace engine
 
 			Image::~Image()
 			{
-				allocator.DestroyImage(*this, handle);
+				render_device.DestroyImage2(*this, handle);
 			}
 
 			uint8_t* Image::Map()

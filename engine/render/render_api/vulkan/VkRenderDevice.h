@@ -1,7 +1,7 @@
 #pragma once
 
 #include <engine/interface/render/RenderInterface.h>
-#include "VkResourceStructures.h"
+#include <engine/render/render_api/vulkan/VkResourceStructures.h>
 
 #include <format>
 
@@ -25,6 +25,7 @@ namespace engine
 			class DebugUtils;
 			class Device;
 			class Allocator;
+			class Allocation;
 
 			// =================================================================================
 			// =================================RenderDevice================================
@@ -44,6 +45,13 @@ namespace engine
 				void AddDeviceExtension(const char* extension);
 
 				void Create(const FRenderContextCreateInfo& context_ci);
+
+				vk::Buffer CreateBuffer(Allocation& allocation, vk::BufferCreateInfo const& create_info, const std::string& debug_name = "");
+				uint64_t GetBufferDeviceAddress(const vk::Buffer& handle);
+				void DestroyBuffer(Allocation& allocation, vk::Buffer& handle);
+
+				vk::Image CreateImage2(Allocation& allocation, vk::ImageCreateInfo const& create_info, const std::string& debug_name = "");
+				void DestroyImage2(Allocation& allocation, vk::Image& handle);
 
 				// VkCommandPool
 				FRenderApiErrorInfo CreateCommandPool(const FVkCommandPoolCreateInfo& command_pool_ci, FVkCommandPool& command_pool);

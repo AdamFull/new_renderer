@@ -65,23 +65,16 @@ namespace engine
 
 			Buffer::Buffer(RenderDevice& render_device, BufferBuilder const& builder) :
 				VulkanResource{ nullptr },
-				Allocation{ render_device.GetAllocator(), builder.alloc_create_info },
+				Allocation{ render_device, builder.alloc_create_info },
 				size{ builder.create_info.size },
 				suballocation_count{ builder.suballocation_count }
 			{
-				handle = allocator.CreateBuffer(*this, builder.create_info);
-				if (!builder.debug_name.empty())
-				{
-					render_device.GetDebugUtils().SetDebugName(handle, builder.debug_name.c_str());
-				}
+				handle = render_device.CreateBuffer(*this, builder.create_info, builder.debug_name);
 			}
 
 			Buffer::~Buffer()
 			{
-				if (allocator)
-				{
-					allocator.DestroyBuffer(*this, handle);
-				}
+				render_device.DestroyBuffer(*this, handle);
 			}
 
 			void Buffer::CopyTo(vk::CommandBuffer& current, Buffer& dst_buffer, const std::vector<vk::BufferCopy2KHR>& regions)
@@ -109,8 +102,7 @@ namespace engine
 
 			uint64_t Buffer::GetDeviceAddress() const
 			{
-				auto& device = allocator.GetDevice();
-				return Handle(device).getBufferAddressKHR(handle);
+				return render_device.GetBufferDeviceAddress(handle);
 			}
 
 			vk::DeviceSize Buffer::GetSize() const

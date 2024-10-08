@@ -1,6 +1,7 @@
 #include <engine/render/render_api/vulkan/Allocator.h>
 #include <engine/render/render_api/vulkan/PhysicalDevice.h>
 #include <engine/render/render_api/vulkan/Device.h>
+#include <engine/render/render_api/vulkan/VkRenderDevice.h>
 
 #include <util/Logger.h>
 #include <util/Util.h>
@@ -98,7 +99,7 @@ namespace engine
 				return buffer;
 			}
 
-			void Allocator::DestroyBuffer(Allocation& allocation, vk::Buffer buffer)
+			void Allocator::DestroyBuffer(Allocation& allocation, vk::Buffer& buffer)
 			{
 				if (buffer && allocation)
 				{
@@ -144,7 +145,7 @@ namespace engine
 
 
 
-			void Allocator::DestroyImage(Allocation& allocation, vk::Image image)
+			void Allocator::DestroyImage(Allocation& allocation, vk::Image& image)
 			{
 				if (image && allocation)
 				{
@@ -169,13 +170,13 @@ namespace engine
 			}
 
 
-			Allocation::Allocation(Allocator& _allocator, const vma::AllocationCreateInfo& create_info) :
-				allocator{ _allocator }, alloc_create_info{ create_info }
+			Allocation::Allocation(RenderDevice& render_device, const vma::AllocationCreateInfo& create_info) :
+				render_device{ render_device }, alloc_create_info{ create_info }
 			{
 			}
 
 			Allocation::Allocation(Allocation&& other) noexcept :
-				allocator{ other.allocator }, alloc_create_info{ other.alloc_create_info }
+				render_device{ other.render_device }, alloc_create_info{ other.alloc_create_info }
 			{
 			}
 
@@ -187,6 +188,7 @@ namespace engine
 			vk::DeviceMemory Allocation::GetMemory() const
 			{
 				vma::AllocationInfo alloc_info;
+				auto& allocator = render_device.GetAllocator();
 				Handle(allocator).getAllocationInfo(allocation, &alloc_info);
 				return alloc_info.deviceMemory;
 			}
@@ -195,6 +197,7 @@ namespace engine
 			{
 				if (!coherent)
 				{
+					auto& allocator = render_device.GetAllocator();
 					Handle(allocator).flushAllocation(allocation, offset, size);
 				}
 			}
@@ -208,6 +211,7 @@ namespace engine
 			{
 				if (!persistent && !IsMapped())
 				{
+					auto& allocator = render_device.GetAllocator();
 					auto result = Handle(allocator).mapMemory(allocation, reinterpret_cast<void**>(&mapped_data));
 					if (result != vk::Result::eSuccess)
 					{
@@ -224,6 +228,7 @@ namespace engine
 			{
 				if (!persistent && IsMapped())
 				{
+					auto& allocator = render_device.GetAllocator();
 					Handle(allocator).unmapMemory(allocation);
 					mapped_data = nullptr;
 				}

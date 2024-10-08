@@ -15,6 +15,7 @@ namespace engine
 		{
 			class Device;
 			class Allocation;
+			class RenderDevice;
 
 			class Allocator final : public VulkanResource<vma::Allocator>
 			{
@@ -23,9 +24,9 @@ namespace engine
 				~Allocator();
 
 				[[nodiscard]] vk::Buffer CreateBuffer(Allocation& allocation, vk::BufferCreateInfo const& create_info);
-				void DestroyBuffer(Allocation& allocation, vk::Buffer handle);
+				void DestroyBuffer(Allocation& allocation, vk::Buffer& handle);
 				[[nodiscard]] vk::Image CreateImage(Allocation& allocation, vk::ImageCreateInfo const& create_info);
-				void DestroyImage(Allocation& allocation, vk::Image image);
+				void DestroyImage(Allocation& allocation, vk::Image& image);
 
 				Device& GetDevice();
 
@@ -130,7 +131,7 @@ namespace engine
 			public:
 				friend class Allocator;
 
-				Allocation(Allocator& allocator, const vma::AllocationCreateInfo& create_info);
+				Allocation(RenderDevice& allocator, const vma::AllocationCreateInfo& create_info);
 
 				Allocation(Allocation const&) = delete;
 				Allocation(Allocation&& other) noexcept;
@@ -219,7 +220,7 @@ namespace engine
 			protected:
 				void Clear();
 			protected:
-				Allocator& allocator;
+				RenderDevice& render_device;
 
 				vma::AllocationCreateInfo alloc_create_info{};
 				vma::Allocation allocation{ nullptr };

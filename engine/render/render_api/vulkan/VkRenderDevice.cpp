@@ -252,6 +252,45 @@ namespace engine
 				check_api_result(CreateSwapchain(extent.width, extent.height));
 			}
 
+			vk::Buffer RenderDevice::CreateBuffer(Allocation& allocation, vk::BufferCreateInfo const& create_info, const std::string& debug_name)
+			{
+				auto handle = allocator->CreateBuffer(allocation, create_info);
+
+				if (!debug_name.empty())
+				{
+					debug_utils->SetDebugName(handle, debug_name.c_str());
+				}
+
+				return handle;
+			}
+
+			uint64_t RenderDevice::GetBufferDeviceAddress(const vk::Buffer& handle)
+			{
+				return Handle(*device).getBufferAddressKHR(handle);
+			}
+
+			void RenderDevice::DestroyBuffer(Allocation& allocation, vk::Buffer& handle)
+			{
+				allocator->DestroyBuffer(allocation, handle);
+			}
+
+			vk::Image RenderDevice::CreateImage2(Allocation& allocation, vk::ImageCreateInfo const& create_info, const std::string& debug_name)
+			{
+				auto handle = allocator->CreateImage(allocation, create_info);
+
+				if (!debug_name.empty())
+				{
+					debug_utils->SetDebugName(handle, debug_name.c_str());
+				}
+
+				return handle;
+			}
+
+			void RenderDevice::DestroyImage2(Allocation& allocation, vk::Image& handle)
+			{
+				allocator->DestroyImage(allocation, handle);
+			}
+
 			FRenderApiErrorInfo RenderDevice::CreateCommandPool(const FVkCommandPoolCreateInfo& command_pool_ci, FVkCommandPool& command_pool)
 			{
 				const bool is_compute_queue = (command_pool_ci.mask & EQueueTypeFlagBits::eCompute) != 0;
