@@ -10,7 +10,7 @@ namespace engine
 		{
 			class Device;
 			class Sampler;
-			class VkRenderDevice;
+			class RenderDevice;
 
 			class SamplerBuilder
 			{
@@ -39,14 +39,14 @@ namespace engine
 				SamplerBuilder& SetBorderColor(vk::BorderColor border_color);
 				SamplerBuilder& SetUnnormalizedCoordinates(bool value);
 
-				Sampler Build(VkRenderDevice& context) const;
-				std::unique_ptr<Sampler> BuildUnique(VkRenderDevice& context) const;
+				Sampler Build(RenderDevice& render_device) const;
+				std::unique_ptr<Sampler> BuildUnique(RenderDevice& render_device) const;
 			};
 
 			class Sampler : public VulkanResource<vk::Sampler>
 			{
 			public:
-				Sampler(VkRenderDevice& render_device, const SamplerBuilder& builder);
+				Sampler(RenderDevice& render_device, const SamplerBuilder& builder);
 				~Sampler() override;
 
 				Sampler(Sampler&) = delete;

@@ -1,5 +1,5 @@
 //#include "VkDescriptorAllocator.h"
-//#include "VkRenderDevice.h"
+//#include "RenderDevice.h"
 //
 //using namespace engine::render::vulkan;
 //
@@ -8,7 +8,7 @@
 //	initialize();
 //}
 //
-//CVkDescriptorAllocator::CVkDescriptorAllocator(VkRenderDevice* device)
+//CVkDescriptorAllocator::CVkDescriptorAllocator(RenderDevice* device)
 //{
 //	render_device = device;
 //	initialize();

@@ -11,7 +11,7 @@ namespace engine
 		{
 			class Device;
 			class Image;
-			class VkRenderDevice;
+			class RenderDevice;
 
 			class ImageBuilder : public AllocationBuilder<ImageBuilder, vk::ImageCreateInfo>
 			{
@@ -29,15 +29,15 @@ namespace engine
 				ImageBuilder& SetFlags(vk::ImageCreateFlags flags);
 				ImageBuilder& SetImplicitSharingMode();
 
-				Image Build(VkRenderDevice& context) const;
-				std::unique_ptr<Image> BuildUnique(VkRenderDevice& context) const;
+				Image Build(RenderDevice& render_device) const;
+				std::unique_ptr<Image> BuildUnique(RenderDevice& render_device) const;
 			};
 
 
 			class Image : public Allocation, public VulkanResource<vk::Image>
 			{
 			public:
-				Image(VkRenderDevice& context, ImageBuilder const& builder);
+				Image(RenderDevice& context, ImageBuilder const& builder);
 
 				Image(const Image&) = delete;
 

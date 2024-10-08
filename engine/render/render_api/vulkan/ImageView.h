@@ -11,7 +11,7 @@ namespace engine
 			class Device;
 			class Image;
 			class ImageView;
-			class VkRenderDevice;
+			class RenderDevice;
 
 			struct ImageViewBuilder
 			{
@@ -31,8 +31,8 @@ namespace engine
 				ImageViewBuilder& SetMipLevelCount(uint32_t count);
 				ImageViewBuilder& SetArrayLayerlCount(uint32_t count);
 
-				ImageView Build(VkRenderDevice& context, Image& image) const;
-				std::unique_ptr<ImageView> BuildUnique(VkRenderDevice& context, Image& image) const;
+				ImageView Build(RenderDevice& render_device, Image& image) const;
+				std::unique_ptr<ImageView> BuildUnique(RenderDevice& render_device, Image& image) const;
 
 			private:
 				void Finalize(Image& image) const;
@@ -41,7 +41,7 @@ namespace engine
 			class ImageView : public VulkanResource<vk::ImageView>
 			{
 			public:
-				ImageView(VkRenderDevice& context, Image& image, ImageViewBuilder const& builder);
+				ImageView(RenderDevice& render_device, Image& image, ImageViewBuilder const& builder);
 
 				ImageView(ImageView&) = delete;
 				ImageView(ImageView&& other) noexcept;

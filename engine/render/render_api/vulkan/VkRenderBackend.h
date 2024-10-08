@@ -1,7 +1,7 @@
 #pragma once
 
-#include "VkRenderDevice.h"
-#include "VkShaderReflection.h"
+#include <engine/render/render_api/vulkan/VkRenderDevice.h>
+#include <engine/render/render_api/vulkan/VkShaderReflection.h>
 #include <engine/interface/ResourceContainer.h>
 #include <engine/interface/render/RenderInterface.h>
 #include <container/unique_queue.h>
@@ -103,7 +103,7 @@ namespace engine
 				utl::vector<FVkCommandBuffer>& GetCommandBuffers(EQueueTypeFlagBits queue_type, std::thread::id thread_id = std::this_thread::get_id());
 				void DestroyCommandBuffer(EQueueTypeFlagBits queue_type, std::thread::id thread_id = std::this_thread::get_id());
 
-				const std::unique_ptr<VkRenderDevice>& getDevice() const;
+				const std::unique_ptr<RenderDevice>& getDevice() const;
 
 				void BeginFrame() override;
 				void EndFrame() override;
@@ -136,7 +136,7 @@ namespace engine
 
 				//void blitImage(const FVkCommandBuffer& command_buffer, );
 			private:
-				std::unique_ptr<VkRenderDevice> render_device{};
+				std::unique_ptr<RenderDevice> render_device{};
 				std::unique_ptr<vk_resource_container_t> render_resources;
 
 				utl::vector<FTextureUploadInfo> texture_upload_infos{};

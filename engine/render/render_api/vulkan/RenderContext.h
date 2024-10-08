@@ -12,12 +12,12 @@ namespace engine
 		{
 			class Device;
 			class Swapchain;
-			class VkRenderDevice;
+			class RenderDevice;
 
 			class RenderContext
 			{
 			public:
-				RenderContext(Window* window, VkRenderDevice& render_device);
+				RenderContext(Window* window, RenderDevice& render_device);
 				~RenderContext();
 
 				int32_t GetCurrentFrameIndex() const;

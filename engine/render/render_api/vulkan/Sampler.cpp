@@ -123,17 +123,17 @@ namespace engine
 			}
 
 
-			Sampler SamplerBuilder::Build(VkRenderDevice& context) const
+			Sampler SamplerBuilder::Build(RenderDevice& render_device) const
 			{
-				return Sampler(context, *this);
+				return Sampler(render_device, *this);
 			}
 
-			std::unique_ptr<Sampler> SamplerBuilder::BuildUnique(VkRenderDevice& context) const
+			std::unique_ptr<Sampler> SamplerBuilder::BuildUnique(RenderDevice& render_device) const
 			{
-				return std::make_unique<Sampler>(context, *this);
+				return std::make_unique<Sampler>(render_device, *this);
 			}
 
-			Sampler::Sampler(VkRenderDevice& render_device, const SamplerBuilder& builder) :
+			Sampler::Sampler(RenderDevice& render_device, const SamplerBuilder& builder) :
 				VulkanResource{ nullptr },
 				device{ render_device.GetLogicalDevice() }
 			{

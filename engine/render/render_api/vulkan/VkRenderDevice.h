@@ -27,14 +27,14 @@ namespace engine
 			class Allocator;
 
 			// =================================================================================
-			// =================================VkRenderDevice================================
+			// =================================RenderDevice================================
 			// =================================================================================
-			class VkRenderDevice
+			class RenderDevice
 			{
 			public:
 				friend class VkRenderBackend;
 
-				~VkRenderDevice();
+				~RenderDevice();
 
 				/**
 				 * @brief Add a sample-specific device extension

@@ -11,7 +11,7 @@ namespace engine
 	{
 		namespace vulkan
 		{
-			RenderContext::RenderContext(Window* window, VkRenderDevice& render_device) :
+			RenderContext::RenderContext(Window* window, RenderDevice& render_device) :
 				device{ render_device.GetLogicalDevice() }
 			{
 #ifdef VK_USE_PLATFORM_ANDROID_KHR

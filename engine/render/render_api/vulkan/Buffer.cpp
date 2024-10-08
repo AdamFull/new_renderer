@@ -23,12 +23,12 @@ namespace engine
 				create_info.size = CalculateAlignedSize(allocation_size, minimal_alignment) * suballocation_count;
 			}
 
-			Buffer BufferBuilder::Build(VkRenderDevice& render_device) const
+			Buffer BufferBuilder::Build(RenderDevice& render_device) const
 			{
 				return Buffer(render_device, *this);
 			}
 
-			std::unique_ptr<Buffer> BufferBuilder::BuildUnique(VkRenderDevice& render_device) const
+			std::unique_ptr<Buffer> BufferBuilder::BuildUnique(RenderDevice& render_device) const
 			{
 				return std::make_unique<Buffer>(render_device, *this);
 			}
@@ -63,7 +63,7 @@ namespace engine
 
 
 
-			Buffer::Buffer(VkRenderDevice& render_device, BufferBuilder const& builder) :
+			Buffer::Buffer(RenderDevice& render_device, BufferBuilder const& builder) :
 				VulkanResource{ nullptr },
 				Allocation{ render_device.GetAllocator(), builder.alloc_create_info },
 				size{ builder.create_info.size },

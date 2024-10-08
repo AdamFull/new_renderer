@@ -11,13 +11,13 @@
 //		namespace vulkan
 //		{
 //			// fwd
-//			class VkRenderDevice;
+//			class RenderDevice;
 //
 //			class CVkDescriptorAllocator
 //			{
 //			public:
 //				CVkDescriptorAllocator();
-//				CVkDescriptorAllocator(VkRenderDevice* device);
+//				CVkDescriptorAllocator(RenderDevice* device);
 //
 //				bool allocate(FVkDescriptorSet& descriptor_set, const vk::DescriptorSetLayout& layout);
 //				void reset();
@@ -33,7 +33,7 @@
 //				utl::vector<FVkDescriptorPool> m_free{};
 //				utl::hash_map<vk::DescriptorType, f32> m_sizes{};
 //
-//				VkRenderDevice* render_device{ nullptr };
+//				RenderDevice* render_device{ nullptr };
 //			};
 //
 //			class CVkDescriptorLayoutCache

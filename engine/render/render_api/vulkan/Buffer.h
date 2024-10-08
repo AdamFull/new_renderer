@@ -9,15 +9,15 @@ namespace engine
 		namespace vulkan
 		{
 			class Buffer;
-			class VkRenderDevice;
+			class RenderDevice;
 
 			class BufferBuilder : public AllocationBuilder<BufferBuilder, vk::BufferCreateInfo>
 			{
 			public:
 				BufferBuilder(vk::DeviceSize allocation_size, vk::DeviceSize suballocation_count, vk::DeviceSize minimal_alignment);
 
-				Buffer Build(VkRenderDevice& render_device) const;
-				std::unique_ptr<Buffer> BuildUnique(VkRenderDevice& render_device) const;
+				Buffer Build(RenderDevice& render_device) const;
+				std::unique_ptr<Buffer> BuildUnique(RenderDevice& render_device) const;
 				BufferBuilder& SetFlags(vk::BufferCreateFlags flags);
 				BufferBuilder& SetImplicitSharingMode();
 				BufferBuilder& SetSharingMode(vk::SharingMode sharing_mode);
@@ -35,7 +35,7 @@ namespace engine
 				Buffer& operator=(const Buffer&) = delete;
 				Buffer& operator=(Buffer&&) = default;
 
-				Buffer(VkRenderDevice& render_device, BufferBuilder const& builder);
+				Buffer(RenderDevice& render_device, BufferBuilder const& builder);
 				~Buffer();
 
 				/**

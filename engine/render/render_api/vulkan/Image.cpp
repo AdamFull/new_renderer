@@ -82,22 +82,22 @@ namespace engine
 				return *this;
 			}
 
-			Image ImageBuilder::Build(VkRenderDevice& context) const
+			Image ImageBuilder::Build(RenderDevice& render_device) const
 			{
-				return Image(context, *this);
+				return Image(render_device, *this);
 			}
 
-			std::unique_ptr<Image> ImageBuilder::BuildUnique(VkRenderDevice& context) const
+			std::unique_ptr<Image> ImageBuilder::BuildUnique(RenderDevice& render_device) const
 			{
-				return std::make_unique<Image>(context, *this);
+				return std::make_unique<Image>(render_device, *this);
 			}
 
 
-			Image::Image(VkRenderDevice& context, ImageBuilder const& builder) :
+			Image::Image(RenderDevice& render_device, ImageBuilder const& builder) :
 				VulkanResource{ nullptr },
-				Allocation{ context.GetAllocator(), builder.alloc_create_info },
+				Allocation{ render_device.GetAllocator(), builder.alloc_create_info },
 				create_info{ builder.create_info },
-				device{ context.GetLogicalDevice() }
+				device{ render_device.GetLogicalDevice() }
 			{
 				handle = allocator.CreateImage(*this, create_info);
 				subresource.arrayLayer = create_info.arrayLayers;
@@ -105,7 +105,7 @@ namespace engine
 
 				if (!builder.debug_name.empty())
 				{
-					context.GetDebugUtils().SetDebugName(handle, builder.debug_name.c_str());
+					render_device.GetDebugUtils().SetDebugName(handle, builder.debug_name.c_str());
 				}
 			}
 

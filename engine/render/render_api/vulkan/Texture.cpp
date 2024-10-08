@@ -83,7 +83,7 @@ namespace engine
 				return hash;
 			}
 
-			Texture::Texture(VkRenderDevice& render_device, const FVkTextureCreateInfo& create_info)
+			Texture::Texture(RenderDevice& render_device, const FVkTextureCreateInfo& create_info)
 			{
 				properties.format = create_info.format;
 				properties.flags = create_info.flags;

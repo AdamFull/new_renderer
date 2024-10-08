@@ -11,7 +11,7 @@ namespace engine
 		{
 			class Image;
 			class ImageView;
-			class VkRenderDevice;
+			class RenderDevice;
 
 			struct TextureProperties
 			{
@@ -31,7 +31,7 @@ namespace engine
 			class Texture
 			{
 			public:
-				Texture(VkRenderDevice& render_device, const FVkTextureCreateInfo& create_info);
+				Texture(RenderDevice& render_device, const FVkTextureCreateInfo& create_info);
 				~Texture();
 
 				Image& GetImage();

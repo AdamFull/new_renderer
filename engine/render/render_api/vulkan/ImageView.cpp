@@ -78,16 +78,16 @@ namespace engine
 			}
 
 
-			ImageView ImageViewBuilder::Build(VkRenderDevice& context, Image& image) const
+			ImageView ImageViewBuilder::Build(RenderDevice& render_device, Image& image) const
 			{
 				Finalize(image);
-				return ImageView(context, image, *this);
+				return ImageView(render_device, image, *this);
 			}
 
-			std::unique_ptr<ImageView> ImageViewBuilder::BuildUnique(VkRenderDevice& context, Image& image) const
+			std::unique_ptr<ImageView> ImageViewBuilder::BuildUnique(RenderDevice& render_device, Image& image) const
 			{
 				Finalize(image);
-				return std::make_unique<ImageView>(context, image, *this);
+				return std::make_unique<ImageView>(render_device, image, *this);
 			}
 
 			void ImageViewBuilder::Finalize(Image& image) const
@@ -109,9 +109,9 @@ namespace engine
 			}
 
 
-			ImageView::ImageView(VkRenderDevice& context, Image& image, ImageViewBuilder const& builder) :
+			ImageView::ImageView(RenderDevice& render_device, Image& image, ImageViewBuilder const& builder) :
 				VulkanResource{ nullptr },
-				device{ context.GetLogicalDevice() }, 
+				device{ render_device.GetLogicalDevice() },
 				format{ builder.create_info.format }, 
 				subresource_range{ builder.create_info.subresourceRange }
 			{
@@ -119,7 +119,7 @@ namespace engine
 
 				if (!builder.debug_name.empty())
 				{
-					context.GetDebugUtils().SetDebugName(handle, builder.debug_name.c_str());
+					render_device.GetDebugUtils().SetDebugName(handle, builder.debug_name.c_str());
 				}
 			}
 
