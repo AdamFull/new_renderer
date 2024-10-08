@@ -315,6 +315,8 @@ namespace engine
 				//images = Handle(*device).getSwapchainImagesKHR(handle);
 				images.resize(image_count);
 				vk::Result result = Handle(*device).getSwapchainImagesKHR(handle, &image_count, images.data());
+
+				// TODO: Rename images
 			}
 
 			void RenderDevice::DestroySwapchain2(vk::SwapchainKHR& handle) const
