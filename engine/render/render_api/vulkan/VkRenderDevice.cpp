@@ -88,7 +88,7 @@ namespace engine
 			RenderDevice::~RenderDevice()
 			{
 				CleanupSwapchain();
-				device->Destroy(swapchain.handle);
+				DestroySwapchain2(swapchain.handle);
 				device->Destroy(pipeline_cache);
 				Handle(*instance).destroySurfaceKHR(surface, allocation_callbacks);
 
@@ -252,7 +252,7 @@ namespace engine
 				check_api_result(CreateSwapchain(extent.width, extent.height));
 			}
 
-			vk::Buffer RenderDevice::CreateBuffer(Allocation& allocation, vk::BufferCreateInfo const& create_info, const std::string& debug_name)
+			vk::Buffer RenderDevice::CreateBuffer(Allocation& allocation, vk::BufferCreateInfo const& create_info, const std::string& debug_name) const
 			{
 				auto handle = allocator->CreateBuffer(allocation, create_info);
 
@@ -264,17 +264,17 @@ namespace engine
 				return handle;
 			}
 
-			uint64_t RenderDevice::GetBufferDeviceAddress(const vk::Buffer& handle)
+			uint64_t RenderDevice::GetBufferDeviceAddress(const vk::Buffer& handle) const
 			{
 				return Handle(*device).getBufferAddressKHR(handle);
 			}
 
-			void RenderDevice::DestroyBuffer(Allocation& allocation, vk::Buffer& handle)
+			void RenderDevice::DestroyBuffer(Allocation& allocation, vk::Buffer& handle) const
 			{
 				allocator->DestroyBuffer(allocation, handle);
 			}
 
-			vk::Image RenderDevice::CreateImage2(Allocation& allocation, vk::ImageCreateInfo const& create_info, const std::string& debug_name)
+			vk::Image RenderDevice::CreateImage2(Allocation& allocation, vk::ImageCreateInfo const& create_info, const std::string& debug_name) const
 			{
 				auto handle = allocator->CreateImage(allocation, create_info);
 
@@ -286,9 +286,40 @@ namespace engine
 				return handle;
 			}
 
-			void RenderDevice::DestroyImage2(Allocation& allocation, vk::Image& handle)
+			void RenderDevice::DestroyImage2(Allocation& allocation, vk::Image& handle) const
 			{
 				allocator->DestroyImage(allocation, handle);
+			}
+
+			vk::SwapchainKHR RenderDevice::CreateSwapchain2(const vk::SwapchainCreateInfoKHR& create_info, const std::string& debug_name) const
+			{
+				vk::SwapchainKHR handle{ VK_NULL_HANDLE };
+
+				// TODO: handle result
+				vk::Result result = Handle(*device).createSwapchainKHR(&create_info, allocation_callbacks, &handle);
+				if (result != vk::Result::eSuccess)
+				{
+					
+				}
+
+				if (!debug_name.empty())
+				{
+					debug_utils->SetDebugName(handle, debug_name.c_str());
+				}
+
+				return handle;
+			}
+
+			void RenderDevice::GetSwapchainImages(const vk::SwapchainKHR& handle, std::vector<vk::Image>& images, uint32_t& image_count)
+			{
+				//images = Handle(*device).getSwapchainImagesKHR(handle);
+				images.resize(image_count);
+				vk::Result result = Handle(*device).getSwapchainImagesKHR(handle, &image_count, images.data());
+			}
+
+			void RenderDevice::DestroySwapchain2(vk::SwapchainKHR& handle) const
+			{
+				Handle(*device).destroySwapchainKHR(handle, allocation_callbacks);
 			}
 
 			FRenderApiErrorInfo RenderDevice::CreateCommandPool(const FVkCommandPoolCreateInfo& command_pool_ci, FVkCommandPool& command_pool)
@@ -1213,12 +1244,11 @@ namespace engine
 				swapchain_ci.clipped = VK_TRUE;
 				swapchain_ci.oldSwapchain = old_swapchain;
 
-				vk::Result res = device->CreateSwapchain(swapchain_ci, swapchain.handle);
-				check_api_result(make_api_error(vk::ObjectType::eSwapchainKHR, res, "Failed to Create"));
+				swapchain.handle = CreateSwapchain2(swapchain_ci);
+				//check_api_result(make_api_error(vk::ObjectType::eSwapchainKHR, res, "Failed to Create"));
 
-				swapchain.images.resize(image_count);
-				res = Handle(*device).getSwapchainImagesKHR(swapchain.handle, &image_count, swapchain.images.data());
-				check_api_result(make_api_error(vk::ObjectType::eSwapchainKHR, res, "Failed to Create images"));
+				GetSwapchainImages(swapchain.handle, swapchain.images, image_count);
+				//check_api_result(make_api_error(vk::ObjectType::eSwapchainKHR, res, "Failed to Create images"));
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				for (u64 idx = 0ull; idx < swapchain.images.size(); ++idx)

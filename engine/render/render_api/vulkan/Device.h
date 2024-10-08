@@ -63,9 +63,6 @@ namespace engine
 				vk::Result CreatePipelineCache(const vk::PipelineCacheCreateInfo& create_info, vk::PipelineCache& object);
 				void Destroy(vk::PipelineCache& object);
 
-				vk::Result CreateSwapchain(const vk::SwapchainCreateInfoKHR& create_info, vk::SwapchainKHR& object);
-				void Destroy(vk::SwapchainKHR& object);
-
 				vk::Result CreateSemaphore(const vk::SemaphoreCreateInfo& create_info, vk::Semaphore& object);
 				void Destroy(vk::Semaphore& object);
 

@@ -46,12 +46,16 @@ namespace engine
 
 				void Create(const FRenderContextCreateInfo& context_ci);
 
-				vk::Buffer CreateBuffer(Allocation& allocation, vk::BufferCreateInfo const& create_info, const std::string& debug_name = "");
-				uint64_t GetBufferDeviceAddress(const vk::Buffer& handle);
-				void DestroyBuffer(Allocation& allocation, vk::Buffer& handle);
+				vk::Buffer CreateBuffer(Allocation& allocation, vk::BufferCreateInfo const& create_info, const std::string& debug_name = "") const;
+				uint64_t GetBufferDeviceAddress(const vk::Buffer& handle) const;
+				void DestroyBuffer(Allocation& allocation, vk::Buffer& handle) const;
 
-				vk::Image CreateImage2(Allocation& allocation, vk::ImageCreateInfo const& create_info, const std::string& debug_name = "");
-				void DestroyImage2(Allocation& allocation, vk::Image& handle);
+				vk::Image CreateImage2(Allocation& allocation, vk::ImageCreateInfo const& create_info, const std::string& debug_name = "") const;
+				void DestroyImage2(Allocation& allocation, vk::Image& handle) const;
+
+				vk::SwapchainKHR CreateSwapchain2(const vk::SwapchainCreateInfoKHR& create_info, const std::string& debug_name = "") const;
+				void GetSwapchainImages(const vk::SwapchainKHR& handle, std::vector<vk::Image>& images, uint32_t& image_count);
+				void DestroySwapchain2(vk::SwapchainKHR& handle) const;
 
 				// VkCommandPool
 				FRenderApiErrorInfo CreateCommandPool(const FVkCommandPoolCreateInfo& command_pool_ci, FVkCommandPool& command_pool);

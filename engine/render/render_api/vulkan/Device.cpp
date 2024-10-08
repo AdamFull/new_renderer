@@ -267,16 +267,6 @@ namespace engine
 				handle.destroyPipelineCache(object, allocation_callbacks);
 			}
 
-			vk::Result Device::CreateSwapchain(const vk::SwapchainCreateInfoKHR& create_info, vk::SwapchainKHR& object)
-			{
-				return handle.createSwapchainKHR(&create_info, allocation_callbacks, &object);
-			}
-
-			void Device::Destroy(vk::SwapchainKHR& object)
-			{
-				handle.destroySwapchainKHR(object, allocation_callbacks);
-			}
-
 			vk::Result Device::CreateSemaphore(const vk::SemaphoreCreateInfo& create_info, vk::Semaphore& object)
 			{
 				return handle.createSemaphore(&create_info, allocation_callbacks, &object);
