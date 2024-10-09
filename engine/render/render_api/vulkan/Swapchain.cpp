@@ -325,7 +325,7 @@ namespace engine
 
 			Swapchain::~Swapchain()
 			{
-				render_device.DestroySwapchain2(handle);
+				render_device.Destroy(handle);
 
 				// Destroy image views
 				for (auto& image_view : image_views)

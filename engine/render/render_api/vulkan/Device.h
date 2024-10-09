@@ -14,7 +14,26 @@ namespace engine
 	{
 		namespace vulkan
 		{
+			class Device;
 			class PhysicalDevice;
+
+			class DeviceBuilder
+			{
+			public:
+				std::vector<const char*> required_extensions;
+				std::vector<const char*> optional_extensions;
+
+				DeviceBuilder& SetRequiredExtensions(std::vector<const char*>&& extensions);
+				DeviceBuilder& AddRequiredExtensions(const std::vector<const char*>& extensions);
+				DeviceBuilder& AddRequiredExtension(const char* extension_name);
+
+				DeviceBuilder& SetOptionalExtensions(std::vector<const char*>&& extensions);
+				DeviceBuilder& AddOptionalExtensions(const std::vector<const char*>& extensions);
+				DeviceBuilder& AddOptionalExtension(const char* extension_name);
+
+				Device Build(PhysicalDevice& gpu, vk::SurfaceKHR& surface) const;
+				std::unique_ptr<Device> BuildUnique(PhysicalDevice& gpu, vk::SurfaceKHR& surface) const;
+			};
 
 			class Device : public VulkanResource<vk::Device>
 			{
@@ -26,7 +45,9 @@ namespace engine
 				 * @param debug_utils The debug utils to be associated to this device
 				 * @param requested_extensions (Optional) List of required device extensions and whether support is optional or not
 				 */
-				Device(PhysicalDevice& gpu, vk::AllocationCallbacks*, vk::SurfaceKHR surface, std::vector<const char*> requested_extensions = {});
+				Device(PhysicalDevice& gpu, vk::SurfaceKHR surface, std::vector<const char*> requested_extensions = {});
+
+				Device(PhysicalDevice& gpu, vk::SurfaceKHR& surface, const DeviceBuilder& builder);
 
 				Device(const Device&) = delete;
 				Device(Device&&) = delete;
@@ -51,26 +72,12 @@ namespace engine
 				 * @return The first present supported queue, otherwise just any graphics queue
 				 */
 				Queue const& GetSuitableGraphicsQueue() const;
-
+				
 				bool IsExtensionSupported(const char* extension) const;
 
 				bool IsEnabled(std::string const& extension) const;
 
 				uint32_t GetQueueFamilyIndex(vk::QueueFlagBits queue_flag) const;
-
-				vk::AllocationCallbacks* GetAllocationCallbacks() const;
-
-				vk::Result CreatePipelineCache(const vk::PipelineCacheCreateInfo& create_info, vk::PipelineCache& object);
-				void Destroy(vk::PipelineCache& object);
-
-				vk::Result CreateSemaphore(const vk::SemaphoreCreateInfo& create_info, vk::Semaphore& object);
-				void Destroy(vk::Semaphore& object);
-
-				vk::Result CreateFence(const vk::FenceCreateInfo& create_info, vk::Fence& object);
-				void Destroy(vk::Fence& object);
-
-				vk::Result CreateSampler(const vk::SamplerCreateInfo& create_info, vk::Sampler& object);
-				void Destroy(vk::Sampler& object);
 
 			private:
 				PhysicalDevice const& gpu;

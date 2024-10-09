@@ -135,24 +135,20 @@ namespace engine
 
 			Sampler::Sampler(RenderDevice& render_device, const SamplerBuilder& builder) :
 				VulkanResource{ nullptr },
-				device{ render_device.GetLogicalDevice() }
+				render_device{ render_device }
 			{
-				device.CreateSampler(builder.create_info, handle);
+				handle = render_device.CreateSampler2(builder.create_info, builder.debug_name);
 			}
 
 			Sampler::~Sampler()
 			{
-				if (handle)
-				{
-					device.Destroy(handle);
-				}
+				render_device.Destroy(handle);
 			}
 
 			Sampler::Sampler(Sampler&& other) noexcept :
 				VulkanResource{ std::move(other) },
-				device{ other.device }
+				render_device{ other.render_device }
 			{
-			
 			}
 		}
 	}

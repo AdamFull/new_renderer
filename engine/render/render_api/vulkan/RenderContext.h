@@ -10,7 +10,6 @@ namespace engine
 	{
 		namespace vulkan
 		{
-			class Device;
 			class Swapchain;
 			class RenderDevice;
 
@@ -22,10 +21,10 @@ namespace engine
 
 				int32_t GetCurrentFrameIndex() const;
 
-				Device& GetDevice() const;
+				RenderDevice& GetDevice() const;
 				Swapchain& GetSwapchain() const;
 			private:
-				Device& device;
+				RenderDevice& render_device;
 
 				std::unique_ptr<Swapchain> swapchain;
 

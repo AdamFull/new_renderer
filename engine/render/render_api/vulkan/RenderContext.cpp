@@ -12,7 +12,7 @@ namespace engine
 		namespace vulkan
 		{
 			RenderContext::RenderContext(Window* window, RenderDevice& render_device) :
-				device{ render_device.GetLogicalDevice() }
+				render_device{ render_device }
 			{
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 				vk::PresentModeKHR present_mode = (window->GetProperties().vsync == Window::Vsync::OFF) ? vk::PresentModeKHR::eMailbox : vk::PresentModeKHR::eFifo;
@@ -35,20 +35,16 @@ namespace engine
 				render_finished_semaphores.resize(image_count);
 				in_flight_fences.resize(image_count);
 
-				FVkSemaphoreCreateInfo ia_semaphore_ci{};
-				FVkSemaphoreCreateInfo rf_semaphore_ci{};
-				FVkFenceCreateInfo fence_ci{};
-				fence_ci.ci.flags = vk::FenceCreateFlagBits::eSignaled;
+				vk::SemaphoreCreateInfo ia_semaphore_ci{};
+				vk::SemaphoreCreateInfo rf_semaphore_ci{};
+				vk::FenceCreateInfo fence_ci{};
+				fence_ci.flags = vk::FenceCreateFlagBits::eSignaled;
+
 				for (u64 idx = 0ull; idx < image_count; ++idx)
 				{
-#ifndef BUILD_WITHOUT_DEBUGGIND
-					ia_semaphore_ci.name = std::format("image avaliable #{}", idx);
-					rf_semaphore_ci.name = std::format("render finished #{}", idx);
-					fence_ci.name = std::format("frame #{}", idx);
-#endif
-					render_device.CreateSemaphore(ia_semaphore_ci, image_avaliable_semaphores[idx]);
-					render_device.CreateSemaphore(rf_semaphore_ci, render_finished_semaphores[idx]);
-					render_device.CreateFence(fence_ci, in_flight_fences[idx]);
+					image_avaliable_semaphores[idx] = render_device.CreateSemaphore2(ia_semaphore_ci, std::format("image avaliable #{}", idx));
+					render_finished_semaphores[idx] = render_device.CreateSemaphore2(rf_semaphore_ci, std::format("render finished #{}", idx));
+					in_flight_fences[idx] = render_device.CreateFence2(fence_ci, std::format("frame #{}", idx));
 				}
 			}
 
@@ -56,9 +52,9 @@ namespace engine
 			{
 				for (int32_t i = 0; i < swapchain->GetImageCount(); ++i)
 				{
-					device.Destroy(image_avaliable_semaphores[i]);
-					device.Destroy(render_finished_semaphores[i]);
-					device.Destroy(in_flight_fences[i]);
+					render_device.Destroy(image_avaliable_semaphores[i]);
+					render_device.Destroy(render_finished_semaphores[i]);
+					render_device.Destroy(in_flight_fences[i]);
 				}
 			}
 
@@ -67,9 +63,9 @@ namespace engine
 				return frame_index;
 			}
 
-			Device& RenderContext::GetDevice() const
+			RenderDevice& RenderContext::GetDevice() const
 			{
-				return device;
+				return render_device;
 			}
 
 			Swapchain& RenderContext::GetSwapchain() const

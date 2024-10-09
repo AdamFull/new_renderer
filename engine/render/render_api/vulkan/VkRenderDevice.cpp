@@ -29,6 +29,19 @@ namespace engine
 	{
 		namespace vulkan
 		{
+			template<typename _HandleType, typename _CreateFunc>
+			_HandleType VkCreateHandleAndCheckResult(_CreateFunc create_func)
+			{
+				_HandleType handle{ VK_NULL_HANDLE };
+				vk::Result result = create_func(handle);
+				if (result != vk::Result::eSuccess) 
+				{
+					log_error("Failed to create handle of type {} with result: {}", vk::to_string(handle.objectType), vk::to_string(result));
+					return nullptr;
+				}
+				return handle;
+			}
+
 			vk::QueueFlags GetQueueFlags(EQueueTypeFlagBits flag)
 			{
 				vk::QueueFlags flags{};
@@ -88,8 +101,8 @@ namespace engine
 			RenderDevice::~RenderDevice()
 			{
 				CleanupSwapchain();
-				DestroySwapchain2(swapchain.handle);
-				device->Destroy(pipeline_cache);
+				Destroy(swapchain.handle);
+				Destroy(pipeline_cache);
 				Handle(*instance).destroySurfaceKHR(surface, allocation_callbacks);
 
 				if (allocation_callbacks)
@@ -229,7 +242,7 @@ namespace engine
 				requested_features.shaderStorageImageWriteWithoutFormat = true;
 				requested_features.shaderInt64 = true;
 
-				device = std::make_unique<Device>(physical_device, allocation_callbacks, surface, device_extensions);
+				device = std::make_unique<Device>(physical_device, surface, device_extensions);
 
 				// Create debug utils
 				if (instance->IsEnabled(VK_EXT_DEBUG_UTILS_EXTENSION_NAME))
@@ -255,12 +268,7 @@ namespace engine
 			vk::Buffer RenderDevice::CreateBuffer(Allocation& allocation, vk::BufferCreateInfo const& create_info, const std::string& debug_name) const
 			{
 				auto handle = allocator->CreateBuffer(allocation, create_info);
-
-				if (!debug_name.empty())
-				{
-					debug_utils->SetDebugName(handle, debug_name.c_str());
-				}
-
+				debug_utils->SetDebugName(handle, debug_name);
 				return handle;
 			}
 
@@ -269,7 +277,7 @@ namespace engine
 				return Handle(*device).getBufferAddressKHR(handle);
 			}
 
-			void RenderDevice::DestroyBuffer(Allocation& allocation, vk::Buffer& handle) const
+			void RenderDevice::Destroy(Allocation& allocation, vk::Buffer& handle) const
 			{
 				allocator->DestroyBuffer(allocation, handle);
 			}
@@ -277,60 +285,31 @@ namespace engine
 			vk::Image RenderDevice::CreateImage2(Allocation& allocation, vk::ImageCreateInfo const& create_info, const std::string& debug_name) const
 			{
 				auto handle = allocator->CreateImage(allocation, create_info);
-
-				if (!debug_name.empty())
-				{
-					debug_utils->SetDebugName(handle, debug_name.c_str());
-				}
-
+				debug_utils->SetDebugName(handle, debug_name);
 				return handle;
 			}
 
-			void RenderDevice::DestroyImage2(Allocation& allocation, vk::Image& handle) const
+			void RenderDevice::Destroy(Allocation& allocation, vk::Image& handle) const
 			{
 				allocator->DestroyImage(allocation, handle);
 			}
 
 			vk::ImageView RenderDevice::CreateImageView(const vk::ImageViewCreateInfo& create_info, const std::string& debug_name) const
 			{
-				vk::ImageView handle{ VK_NULL_HANDLE };
-
-				vk::Result result = Handle(*device).createImageView(&create_info, allocation_callbacks, &handle);
-				if (result != vk::Result::eSuccess)
-				{
-					log_error("Failed to create image view with reason: {}.", vk::to_string(result));
-					return nullptr;
-				}
-
-				if (!debug_name.empty())
-				{
-					debug_utils->SetDebugName(handle, debug_name.c_str());
-				}
-
+				vk::ImageView handle = VkCreateHandleAndCheckResult<vk::ImageView>([&](auto& handle) { return Handle(*device).createImageView(&create_info, allocation_callbacks, &handle); });
+				debug_utils->SetDebugName(handle, debug_name);
 				return handle;
 			}
 
-			void RenderDevice::DestroyImageView(vk::ImageView& image_view) const
+			void RenderDevice::Destroy(vk::ImageView& image_view) const
 			{
 				Handle(*device).destroyImageView(image_view, allocation_callbacks);
 			}
 
 			vk::SwapchainKHR RenderDevice::CreateSwapchain2(const vk::SwapchainCreateInfoKHR& create_info, const std::string& debug_name) const
 			{
-				vk::SwapchainKHR handle{ VK_NULL_HANDLE };
-
-				vk::Result result = Handle(*device).createSwapchainKHR(&create_info, allocation_callbacks, &handle);
-				if (result != vk::Result::eSuccess)
-				{
-					log_error("Failed to create swapchain with reason: {}.", vk::to_string(result));
-					return nullptr;
-				}
-
-				if (!debug_name.empty())
-				{
-					debug_utils->SetDebugName(handle, debug_name.c_str());
-				}
-
+				vk::SwapchainKHR handle = VkCreateHandleAndCheckResult<vk::SwapchainKHR>([&](auto& handle) { return Handle(*device).createSwapchainKHR(&create_info, allocation_callbacks, &handle); });
+				debug_utils->SetDebugName(handle, debug_name);
 				return handle;
 			}
 
@@ -354,9 +333,57 @@ namespace engine
 				}
 			}
 
-			void RenderDevice::DestroySwapchain2(vk::SwapchainKHR& handle) const
+			void RenderDevice::Destroy(vk::SwapchainKHR& handle) const
 			{
 				Handle(*device).destroySwapchainKHR(handle, allocation_callbacks);
+			}
+
+			vk::PipelineCache RenderDevice::CreatePipelineCache2(const vk::PipelineCacheCreateInfo& create_info, const std::string& debug_name) const
+			{
+				vk::PipelineCache handle = VkCreateHandleAndCheckResult<vk::PipelineCache>([&](auto& handle) { return Handle(*device).createPipelineCache(&create_info, allocation_callbacks, &handle); });
+				debug_utils->SetDebugName(handle, debug_name);
+				return handle;
+			}
+
+			void RenderDevice::Destroy(vk::PipelineCache& handle) const
+			{
+				Handle(*device).destroyPipelineCache(handle, allocation_callbacks);
+			}
+
+			vk::Sampler RenderDevice::CreateSampler2(const vk::SamplerCreateInfo& create_info, const std::string& debug_name) const
+			{
+				vk::Sampler handle = VkCreateHandleAndCheckResult<vk::Sampler>([&](auto& handle) { return Handle(*device).createSampler(&create_info, allocation_callbacks, &handle); });
+				debug_utils->SetDebugName(handle, debug_name);
+				return handle;
+			}
+
+			void RenderDevice::Destroy(vk::Sampler& handle) const
+			{
+				Handle(*device).destroySampler(handle, allocation_callbacks);
+			}
+
+			vk::Semaphore RenderDevice::CreateSemaphore2(const vk::SemaphoreCreateInfo& create_info, const std::string& debug_name) const
+			{
+				auto handle = VkCreateHandleAndCheckResult<vk::Semaphore>([&](auto& handle) { return Handle(*device).createSemaphore(&create_info, allocation_callbacks, &handle); });
+				debug_utils->SetDebugName(handle, debug_name);
+				return handle;
+			}
+
+			void RenderDevice::Destroy(vk::Semaphore& handle) const
+			{
+				Handle(*device).destroySemaphore(handle, allocation_callbacks);
+			}
+
+			vk::Fence RenderDevice::CreateFence2(const vk::FenceCreateInfo& create_info, const std::string& debug_name) const
+			{
+				auto handle = VkCreateHandleAndCheckResult<vk::Fence>([&](auto& handle) { return Handle(*device).createFence(&create_info, allocation_callbacks, &handle); });
+				debug_utils->SetDebugName(handle, debug_name);
+				return handle;
+			}
+
+			void RenderDevice::Destroy(vk::Fence& handle) const
+			{
+				Handle(*device).destroyFence(handle, allocation_callbacks);
 			}
 
 			FRenderApiErrorInfo RenderDevice::CreateCommandPool(const FVkCommandPoolCreateInfo& command_pool_ci, FVkCommandPool& command_pool)
@@ -1222,7 +1249,8 @@ namespace engine
 				vk::PipelineCacheCreateInfo pipeline_cache_ci{};
 				pipeline_cache_ci.initialDataSize = utl::cast<u32>(context_ci.pipelineCache.size());
 				pipeline_cache_ci.pInitialData = context_ci.pipelineCache.data();
-				return make_api_error(vk::ObjectType::ePipelineCache, device->CreatePipelineCache(pipeline_cache_ci, pipeline_cache), "Failed to Create");
+				pipeline_cache = CreatePipelineCache2(pipeline_cache_ci, "pipeline_cache");
+				return FRenderApiErrorInfo{};
 			}
 
 			FRenderApiErrorInfo RenderDevice::CreateSwapchain(u32 surface_width, u32 surface_height)

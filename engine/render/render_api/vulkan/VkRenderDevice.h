@@ -46,19 +46,94 @@ namespace engine
 
 				void Create(const FRenderContextCreateInfo& context_ci);
 
+				/**
+				 * @brief Creates buffer handle and allocates memory for it
+				 * @param allocation Allocation handle that contains vma allocation
+				 * @param create_info Vulkan buffer create info
+				 * @param debug_name Debug name for handle
+				 * @return Vulkan buffer handle
+				 */
 				vk::Buffer CreateBuffer(Allocation& allocation, vk::BufferCreateInfo const& create_info, const std::string& debug_name = "") const;
+
+				/**
+				 * @brief Returns virtual buffer address of buffer on gpu side
+				 * @param handle Vulkan buffer handle
+				 * @return Virtual address to buffer memory
+				 */
 				uint64_t GetBufferDeviceAddress(const vk::Buffer& handle) const;
-				void DestroyBuffer(Allocation& allocation, vk::Buffer& handle) const;
 
+				/**
+				 * @brief Destroys buffer handle and deallocates buffer memory
+				 * @param allocation Allocation handle that contains vma allocation
+				 * @param handle Vulkan buffer handle
+				 */
+				void Destroy(Allocation& allocation, vk::Buffer& handle) const;
+
+				/**
+				 * @brief Creates image handle and allocates memory for it
+				 * @param allocation Allocation handle that contains vma allocation
+				 * @param create_info Vulkan image create info
+				 * @param debug_name Debug name for handle
+				 * @return Vulkan image handle
+				 */
 				vk::Image CreateImage2(Allocation& allocation, vk::ImageCreateInfo const& create_info, const std::string& debug_name = "") const;
-				void DestroyImage2(Allocation& allocation, vk::Image& handle) const;
 
+				/**
+				 * @brief Destroys image handle and deallocates it's memory
+				 * @param allocation Allocation handle that contains vma allocation
+				 * @param handle Vulkan image handle
+				 */
+				void Destroy(Allocation& allocation, vk::Image& handle) const;
+
+				/**
+				 * @brief Creates image view handle
+				 * @param create_info Vulkan image view create info
+				 * @param debug_name Debug name for handle
+				 * @return Vulkan image view handle
+				 */
 				vk::ImageView CreateImageView(const vk::ImageViewCreateInfo& create_info, const std::string& debug_name = "") const;
-				void DestroyImageView(vk::ImageView& image_view) const;
 
+				/**
+				 * @brief Destroys image view handle
+				 * @param handle Vulkan image view handle
+				 */
+				void Destroy(vk::ImageView& image_view) const;
+
+				/**
+				 * @brief Creates swapchainKHR
+				 * @param create_info Vulkan swapchainKHR create info
+				 * @param debug_name Debug name for handle
+				 * @return Vulkan image view handle
+				 */
 				vk::SwapchainKHR CreateSwapchain2(const vk::SwapchainCreateInfoKHR& create_info, const std::string& debug_name = "") const;
+
+				/**
+				 * @brief Requests vulkan images from swapchain handle
+				 * @param handle Vulkan swapchainKHR handle
+				 * @param images Mutable vector of vk image handles
+				 * @param image_count Mutable number of swapchain image count
+				 * @param debug_name Per-image debug name pattern
+				 */
 				void GetSwapchainImages(const vk::SwapchainKHR& handle, std::vector<vk::Image>& images, uint32_t& image_count, const std::string& debug_name = "");
-				void DestroySwapchain2(vk::SwapchainKHR& handle) const;
+
+				/**
+				 * @brief Destroys swapchainKHR handle
+				 * @param handle Vulkan swapchainKHR handle
+				 */
+				void Destroy(vk::SwapchainKHR& handle) const;
+
+
+				vk::PipelineCache CreatePipelineCache2(const vk::PipelineCacheCreateInfo& create_info, const std::string& debug_name = "") const;
+				void Destroy(vk::PipelineCache& handle) const;
+
+				vk::Sampler CreateSampler2(const vk::SamplerCreateInfo& create_info, const std::string& debug_name = "") const;
+				void Destroy(vk::Sampler& handle) const;
+
+				vk::Semaphore CreateSemaphore2(const vk::SemaphoreCreateInfo& create_info, const std::string& debug_name = "") const;
+				void Destroy(vk::Semaphore& handle) const;
+
+				vk::Fence CreateFence2(const vk::FenceCreateInfo& create_info, const std::string& debug_name = "") const;
+				void Destroy(vk::Fence& handle) const;
 
 				// VkCommandPool
 				FRenderApiErrorInfo CreateCommandPool(const FVkCommandPoolCreateInfo& command_pool_ci, FVkCommandPool& command_pool);

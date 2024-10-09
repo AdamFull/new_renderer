@@ -11,10 +11,56 @@ namespace engine
 	{
 		namespace vulkan
 		{
-			Device::Device(PhysicalDevice& gpu, vk::AllocationCallbacks* allocation_callbacks, vk::SurfaceKHR surface, std::vector<const char*> requested_extensions) :
+			DeviceBuilder& DeviceBuilder::SetRequiredExtensions(std::vector<const char*>&& extensions)
+			{
+				required_extensions = std::move(extensions);
+				return *this;
+			}
+
+			DeviceBuilder& DeviceBuilder::AddRequiredExtensions(const std::vector<const char*>& extensions)
+			{
+				required_extensions.insert(required_extensions.end(), extensions.begin(), extensions.end());
+				return *this;
+			}
+
+			DeviceBuilder& DeviceBuilder::AddRequiredExtension(const char* extension_name)
+			{
+				required_extensions.push_back(extension_name);
+				return *this;
+			}
+
+			DeviceBuilder& DeviceBuilder::SetOptionalExtensions(std::vector<const char*>&& extensions)
+			{
+				optional_extensions = std::move(extensions);
+				return *this;
+			}
+
+			DeviceBuilder& DeviceBuilder::AddOptionalExtensions(const std::vector<const char*>& extensions)
+			{
+				optional_extensions.insert(optional_extensions.end(), extensions.begin(), extensions.end());
+				return *this;
+			}
+
+			DeviceBuilder& DeviceBuilder::AddOptionalExtension(const char* extension_name)
+			{
+				optional_extensions.push_back(extension_name);
+				return *this;
+			}
+
+			Device DeviceBuilder::Build(PhysicalDevice& gpu, vk::SurfaceKHR& surface) const
+			{
+				return Device(gpu, surface, *this);
+			}
+
+			std::unique_ptr<Device> DeviceBuilder::BuildUnique(PhysicalDevice& gpu, vk::SurfaceKHR& surface) const
+			{
+				return std::make_unique<Device>(gpu, surface, *this);
+			}
+
+
+			Device::Device(PhysicalDevice& gpu, vk::SurfaceKHR surface, std::vector<const char*> requested_extensions) :
 				VulkanResource{ nullptr },
-				gpu(gpu),
-				allocation_callbacks(allocation_callbacks)
+				gpu(gpu)
 			{
 				// Prepare the device queues
 				auto& queue_family_properties = gpu.GetQueueFamilyProperties();
@@ -117,6 +163,13 @@ namespace engine
 						queues[queue_family_index].emplace_back(*this, queue_family_index, queue_family_property, present_supported, queue_index);
 					}
 				}
+			}
+
+			Device::Device(PhysicalDevice& gpu, vk::SurfaceKHR& surface, const DeviceBuilder& builder) :
+				VulkanResource{ nullptr },
+				gpu(gpu)
+			{
+
 			}
 
 			Device::~Device()
@@ -250,51 +303,6 @@ namespace engine
 				}
 
 				throw std::runtime_error("Could not find a matching queue family index");
-			}
-
-			vk::AllocationCallbacks* Device::GetAllocationCallbacks() const
-			{
-				return allocation_callbacks;
-			}
-
-			vk::Result Device::CreatePipelineCache(const vk::PipelineCacheCreateInfo& create_info, vk::PipelineCache& object)
-			{
-				return handle.createPipelineCache(&create_info, allocation_callbacks, &object);
-			}
-
-			void Device::Destroy(vk::PipelineCache& object)
-			{
-				handle.destroyPipelineCache(object, allocation_callbacks);
-			}
-
-			vk::Result Device::CreateSemaphore(const vk::SemaphoreCreateInfo& create_info, vk::Semaphore& object)
-			{
-				return handle.createSemaphore(&create_info, allocation_callbacks, &object);
-			}
-
-			void Device::Destroy(vk::Semaphore& object)
-			{
-				handle.destroySemaphore(object, allocation_callbacks);
-			}
-
-			vk::Result Device::CreateFence(const vk::FenceCreateInfo& create_info, vk::Fence& object)
-			{
-				return handle.createFence(&create_info, allocation_callbacks, &object);
-			}
-
-			void Device::Destroy(vk::Fence& object)
-			{
-				handle.destroyFence(object, allocation_callbacks);
-			}
-
-			vk::Result Device::CreateSampler(const vk::SamplerCreateInfo& create_info, vk::Sampler& object)
-			{
-				return handle.createSampler(&create_info, allocation_callbacks, &object);
-			}
-
-			void Device::Destroy(vk::Sampler& object)
-			{
-				handle.destroySampler(object, allocation_callbacks);
 			}
 		}
 	}

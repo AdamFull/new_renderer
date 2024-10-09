@@ -115,7 +115,7 @@ namespace engine
 
 			Image::~Image()
 			{
-				render_device.DestroyImage2(*this, handle);
+				render_device.Destroy(*this, handle);
 			}
 
 			uint8_t* Image::Map()

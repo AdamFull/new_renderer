@@ -74,7 +74,7 @@ namespace engine
 
 			Buffer::~Buffer()
 			{
-				render_device.DestroyBuffer(*this, handle);
+				render_device.Destroy(*this, handle);
 			}
 
 			void Buffer::CopyTo(vk::CommandBuffer& current, Buffer& dst_buffer, const std::vector<vk::BufferCopy2KHR>& regions)

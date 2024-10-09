@@ -8,7 +8,6 @@ namespace engine
 	{
 		namespace vulkan
 		{
-			class Device;
 			class Sampler;
 			class RenderDevice;
 
@@ -55,7 +54,7 @@ namespace engine
 				Sampler& operator=(const Sampler&) = delete;
 				Sampler& operator=(Sampler&&) = delete;
 			private:
-				Device& device;
+				RenderDevice& render_device;
 			};
 		}
 	}
