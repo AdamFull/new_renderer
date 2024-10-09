@@ -199,9 +199,6 @@ namespace engine
 				FRenderApiErrorInfo CreateImageView(const FVkImageViewCreateInfo& image_view_ci, vk::ImageView& image_view);
 				void DestroyImageView(vk::ImageView& image_view);
 
-				FRenderApiErrorInfo CreateSampler(const FVkSamplerCreateInfo& sampler_ci, vk::Sampler& sampler);
-				void DestroySampler(vk::Sampler& sampler);
-
 				// VkDescriptorSetLayout
 				FRenderApiErrorInfo CreateDescriptorSetLayout(const FVkDescriptorSetLayoutCreateInfo& layout_ci, vk::DescriptorSetLayout& descriptor_set_layout);
 				void DestroyDescriptorSetLayout(vk::DescriptorSetLayout& descriptor_set_layout);

@@ -1,6 +1,7 @@
 #include <engine/render/render_api/vulkan/Sampler.h>
 #include <engine/render/render_api/vulkan/Device.h>
 #include <engine/render/render_api/vulkan/DebugUtils.h>
+#include <engine/render/render_api/vulkan/PhysicalDevice.h>
 #include <engine/render/render_api/vulkan/VkRenderDevice.h>
 
 namespace engine
@@ -11,7 +12,15 @@ namespace engine
 		{
 			SamplerBuilder::SamplerBuilder()
 			{
-
+				create_info.mipmapMode = vk::SamplerMipmapMode::eNearest;
+				create_info.mipLodBias = 0.0f;
+				create_info.anisotropyEnable = VK_FALSE;
+				create_info.compareEnable = VK_FALSE;
+				create_info.compareOp = vk::CompareOp::eLess;
+				create_info.minLod = 0.0f;
+				create_info.maxLod = 1.0f;
+				create_info.borderColor = vk::BorderColor::eIntOpaqueWhite;
+				create_info.unnormalizedCoordinates = VK_FALSE;
 			}
 
 			SamplerBuilder& SamplerBuilder::SetDebugName(const std::string& name)
@@ -122,16 +131,52 @@ namespace engine
 				return *this;
 			}
 
+			uint64_t SamplerBuilder::Hash() const
+			{
+				uint32_t hash{ 0u };
+
+				hash = utl::murmur_hash(static_cast<uint32_t>(create_info.flags), hash);
+				hash = utl::murmur_hash(utl::enum_cast(create_info.magFilter), hash);
+				hash = utl::murmur_hash(utl::enum_cast(create_info.minFilter), hash);
+				hash = utl::murmur_hash(utl::enum_cast(create_info.mipmapMode), hash);
+				hash = utl::murmur_hash(utl::enum_cast(create_info.addressModeU), hash);
+				hash = utl::murmur_hash(utl::enum_cast(create_info.addressModeV), hash);
+				hash = utl::murmur_hash(utl::enum_cast(create_info.addressModeW), hash);
+				hash = utl::murmur_hash(create_info.mipLodBias, hash);
+				hash = utl::murmur_hash(create_info.anisotropyEnable, hash);
+				hash = utl::murmur_hash(create_info.maxAnisotropy, hash);
+				hash = utl::murmur_hash(create_info.compareEnable, hash);
+				hash = utl::murmur_hash(utl::enum_cast(create_info.compareOp), hash);
+				hash = utl::murmur_hash(create_info.minLod, hash);
+				hash = utl::murmur_hash(create_info.maxLod, hash);
+				hash = utl::murmur_hash(utl::enum_cast(create_info.borderColor), hash);
+				hash = utl::murmur_hash(create_info.unnormalizedCoordinates, hash);
+
+				return hash;
+			}
+
 
 			Sampler SamplerBuilder::Build(RenderDevice& render_device) const
 			{
+				Finalize(render_device);
 				return Sampler(render_device, *this);
 			}
 
 			std::unique_ptr<Sampler> SamplerBuilder::BuildUnique(RenderDevice& render_device) const
 			{
+				Finalize(render_device);
 				return std::make_unique<Sampler>(render_device, *this);
 			}
+
+			void SamplerBuilder::Finalize(RenderDevice& render_device) const
+			{
+				if (create_info.anisotropyEnable && create_info.maxAnisotropy == 0.0f)
+				{
+					auto& physical_device = render_device.GetPhysicalDevice();
+					create_info.maxAnisotropy = physical_device.GetProperties().limits.maxSamplerAnisotropy;
+				}
+			}
+
 
 			Sampler::Sampler(RenderDevice& render_device, const SamplerBuilder& builder) :
 				VulkanResource{ nullptr },

@@ -11,6 +11,7 @@
 #include <engine/render/render_api/vulkan/DebugUtils.h>
 #include <engine/render/render_api/vulkan/Device.h>
 #include <engine/render/render_api/vulkan/Buffer.h>
+#include <engine/render/render_api/vulkan/Sampler.h>
 
 using namespace engine;
 using namespace engine::render;
@@ -84,21 +85,6 @@ vk::Format lookup_vk_format(EApiDataFormat format)
 		return found->second;
 
 	return vk::Format::eUndefined;
-}
-
-u64 calculate_sampler_hash(const FVkSamplerCreateInfo& sampler_ci)
-{
-	static std::hash<u32> hasher;
-	u64 hash{ 0ull };
-
-	hash ^= hasher(utl::enum_cast(sampler_ci.magFilter));
-	hash ^= hasher(utl::enum_cast(sampler_ci.minFilter));
-	hash ^= hasher(utl::enum_cast(sampler_ci.addressMode));
-	hash ^= hasher(utl::cast<u32>(sampler_ci.enableAnisotropy));
-	hash ^= hasher(utl::cast<u32>(sampler_ci.enableCompareOp));
-	hash ^= hasher(sampler_ci.mipLevels);
-
-	return hash;
 }
 
 template<class _Ty, class ..._Args>
@@ -199,10 +185,8 @@ VkRenderBackend::~VkRenderBackend()
 	auto& buffers = render_resources->data<Buffer>();
 	buffers.clear();
 
-	render_device->DestroySampler(default_sampler);
-
-	for(auto& [uid, sampler] : sampler_cache)
-		render_device->DestroySampler(sampler);
+	default_sampler.reset();
+	sampler_cache.clear();
 }
 
 void VkRenderBackend::Create(const FRenderContextCreateInfo& context_ci)
@@ -236,17 +220,13 @@ void VkRenderBackend::Create(const FRenderContextCreateInfo& context_ci)
 	UpdateBackbuffer();
 
 	// Create default sampler
-	FVkSamplerCreateInfo sampler_ci{};
-	sampler_ci.addressMode = vk::SamplerAddressMode::eClampToEdge;
-	sampler_ci.enableAnisotropy = false;
-	sampler_ci.enableCompareOp = false;
-	sampler_ci.minFilter = sampler_ci.magFilter = vk::Filter::eLinear;
-	sampler_ci.mipLevels = 1u;
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	sampler_ci.name = "default";
-#endif
-
-	render_device->CreateSampler(sampler_ci, default_sampler);
+	auto sampler_builder = SamplerBuilder();
+	sampler_builder.SetAddressMode(vk::SamplerAddressMode::eClampToEdge);
+	sampler_builder.SetMinFilter(vk::Filter::eLinear);
+	sampler_builder.SetMagFilter(vk::Filter::eLinear);
+	sampler_builder.SetDebugName("default");
+	
+	default_sampler = sampler_builder.BuildUnique(*render_device);
 }
 
 void VkRenderBackend::CreateGlobalDescriptor(const FGlobalUniformCreateInfo& uniform_ci)
@@ -413,7 +393,7 @@ void VkRenderBackend::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo&
 			auto& mip_level = texture->getSubresource();
 			auto& image_descriptor = image_descriptors[texture_count];
 			image_descriptor.imageView = mip_level.imageView;
-			image_descriptor.sampler = texture->sampler != ~0ull ? sampler_cache[texture->sampler] : default_sampler;
+			image_descriptor.sampler = Handle(*(texture->sampler != ~0ull ? sampler_cache[texture->sampler] : default_sampler));
 			image_descriptor.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
 			if (texture->info.flags & ETextureCreateFlagBits::eSamplable)
@@ -945,7 +925,7 @@ void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_
 
 			auto& image_descriptor = image_descriptors[texture_count];
 			image_descriptor.imageView = texture_subresource.imageView;
-			image_descriptor.sampler = texture->sampler != ~0ull ? sampler_cache[texture->sampler] : default_sampler;
+			image_descriptor.sampler = Handle(*(texture->sampler != ~0ull ? sampler_cache[texture->sampler] : default_sampler));
 			image_descriptor.imageLayout = texture_subresource.layout;
 			texture_count++;
 
@@ -2474,17 +2454,22 @@ FRenderApiErrorInfo VkRenderBackend::CreateTexture(const FVkTextureCreateInfo& t
 	FRenderApiErrorInfo res = make_api_error(vk::ObjectType::eSampler, vk::Result::eSuccess);
 	if (texture_ci.CreateSampler)
 	{
-		FVkSamplerCreateInfo sampler_ci{};
-		sampler_ci.addressMode = texture_ci.addressMode;
-		sampler_ci.enableAnisotropy = texture_ci.enableAnisotropy;
-		sampler_ci.enableCompareOp = is_depth_format(image_ci.ci.format);
-		sampler_ci.minFilter = sampler_ci.magFilter = texture_ci.filter;
-		sampler_ci.mipLevels = texture_ci.mipLevels;
-#ifndef BUILD_WITHOUT_DEBUGGIND
-		sampler_ci.name = texture_ci.name;
-#endif
+		auto sampler_builder = SamplerBuilder();
+		sampler_builder.SetAddressMode(texture_ci.addressMode);
+		sampler_builder.SetEnableAnisotropy(texture_ci.enableAnisotropy);
+		sampler_builder.SetCompareEnable(is_depth_format(image_ci.ci.format));
+		sampler_builder.SetMinFilter(texture_ci.filter);
+		sampler_builder.SetMagFilter(texture_ci.filter);
+		sampler_builder.SetMaxLod(texture_ci.mipLevels);
+		sampler_builder.SetDebugName(texture_ci.name);
 
-		texture.sampler = GetSampler(sampler_ci);
+		auto sampler_hash = sampler_builder.Hash();
+		if (auto found = sampler_cache.find(sampler_hash); found == sampler_cache.end())
+		{
+			sampler_cache[sampler_hash] = sampler_builder.BuildUnique(*render_device);
+		}
+
+		texture.sampler = sampler_hash;
 	}
 
 	texture.isAlive = true;
@@ -2502,18 +2487,6 @@ void VkRenderBackend::DestroyTexture(FVkTexture& texture)
 	render_device->DestroyImage(texture.image);
 
 	texture.isAlive = false;
-}
-
-u64 VkRenderBackend::GetSampler(const FVkSamplerCreateInfo& create_info)
-{
-	u64 key = calculate_sampler_hash(create_info);
-
-	auto& sampler = sampler_cache[key];
-
-	if (!sampler)
-		render_device->CreateSampler(create_info, sampler);
-
-	return key;
 }
 
 FRenderApiErrorInfo VkRenderBackend::CreateShaderResources(const FVkShaderResourcesInfo& resources_info, FVkShader& shader)

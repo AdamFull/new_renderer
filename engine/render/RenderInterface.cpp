@@ -3,6 +3,7 @@
 
 #include <engine/render/render_api/vulkan/VkRenderBackend.h>
 #include <engine/render/render_api/vulkan/Buffer.h>
+#include <engine/render/render_api/vulkan/Sampler.h>
 
 #include "BufferObject.h"
 #include "ShaderObject.h"

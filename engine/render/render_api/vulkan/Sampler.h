@@ -15,7 +15,7 @@ namespace engine
 			{
 			public:
 				std::string debug_name;
-				vk::SamplerCreateInfo create_info;
+				mutable vk::SamplerCreateInfo create_info;
 
 				SamplerBuilder();
 
@@ -38,8 +38,13 @@ namespace engine
 				SamplerBuilder& SetBorderColor(vk::BorderColor border_color);
 				SamplerBuilder& SetUnnormalizedCoordinates(bool value);
 
+				uint64_t Hash() const;
+
 				Sampler Build(RenderDevice& render_device) const;
 				std::unique_ptr<Sampler> BuildUnique(RenderDevice& render_device) const;
+
+			private:
+				void Finalize(RenderDevice& render_device) const;
 			};
 
 			class Sampler : public VulkanResource<vk::Sampler>

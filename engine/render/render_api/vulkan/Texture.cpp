@@ -68,21 +68,6 @@ namespace engine
 				return aspect_flags;
 			}
 
-			u64 CalculateSamplerHash(const FVkSamplerCreateInfo& sampler_ci)
-			{
-				static std::hash<u32> hasher;
-				u64 hash{ 0ull };
-
-				hash ^= hasher(utl::enum_cast(sampler_ci.magFilter));
-				hash ^= hasher(utl::enum_cast(sampler_ci.minFilter));
-				hash ^= hasher(utl::enum_cast(sampler_ci.addressMode));
-				hash ^= hasher(utl::cast<u32>(sampler_ci.enableAnisotropy));
-				hash ^= hasher(utl::cast<u32>(sampler_ci.enableCompareOp));
-				hash ^= hasher(sampler_ci.mipLevels);
-
-				return hash;
-			}
-
 			Texture::Texture(RenderDevice& render_device, const FVkTextureCreateInfo& create_info)
 			{
 				properties.format = create_info.format;

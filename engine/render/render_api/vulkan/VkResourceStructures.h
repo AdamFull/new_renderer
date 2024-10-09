@@ -114,22 +114,6 @@ namespace engine
 #endif
 			};
 
-			// ---------------------------------------------------------------------------------
-			// ====================================| SAMPLER |==================================
-			// ---------------------------------------------------------------------------------
-			struct FVkSamplerCreateInfo
-			{
-				vk::Filter magFilter{};
-				vk::Filter minFilter{};
-				vk::SamplerAddressMode addressMode{};
-				bool enableAnisotropy{ false };
-				bool enableCompareOp{ false };
-				u32 mipLevels{ 1u };
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				std::string name{};
-#endif
-			};
-
 			struct FVkDescriptorSetLayoutCreateInfo
 			{
 				utl::vector<vk::DescriptorSetLayoutBinding> layoutBindings{};

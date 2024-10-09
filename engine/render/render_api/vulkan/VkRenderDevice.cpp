@@ -1,4 +1,4 @@
-#include "VkRenderDevice.h"
+#include <engine/render/render_api/vulkan/VkRenderDevice.h>
 
 #include <sstream>
 #include <set>
@@ -507,44 +507,6 @@ namespace engine
 			void RenderDevice::DestroyImageView(vk::ImageView& image_view)
 			{
 				Handle(*device).destroyImageView(image_view, allocation_callbacks);
-			}
-
-			FRenderApiErrorInfo RenderDevice::CreateSampler(const FVkSamplerCreateInfo& sampler_ci, vk::Sampler& sampler)
-			{
-				auto& physical_device = instance->GetBestDevice();
-
-				vk::SamplerCreateInfo ci{};
-				ci.magFilter = sampler_ci.magFilter;
-				ci.minFilter = sampler_ci.minFilter;
-				ci.addressModeU = sampler_ci.addressMode;
-				ci.addressModeV = sampler_ci.addressMode;
-				ci.addressModeW = sampler_ci.addressMode;
-				ci.borderColor = vk::BorderColor::eIntOpaqueWhite;
-				ci.unnormalizedCoordinates = VK_FALSE;
-
-				// Anisotropy filtering
-				ci.anisotropyEnable = sampler_ci.enableAnisotropy;
-				ci.maxAnisotropy = physical_device.GetProperties().limits.maxSamplerAnisotropy;
-
-				// Depth
-				ci.compareEnable = sampler_ci.enableCompareOp;
-				ci.compareOp = vk::CompareOp::eLess;
-
-				ci.mipmapMode = vk::SamplerMipmapMode::eNearest;
-				ci.mipLodBias = 0.f;
-				ci.minLod = 0.f;
-				ci.maxLod = utl::cast<f32>(sampler_ci.mipLevels);
-
-				vk::Result res = Handle(*device).createSampler(&ci, allocation_callbacks, &sampler);
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				debug_utils->SetDebugName(sampler, sampler_ci.name);
-#endif
-				return make_api_error(sampler.objectType, res, "Failed to Create");
-			}
-
-			void RenderDevice::DestroySampler(vk::Sampler& sampler)
-			{
-				Handle(*device).destroySampler(sampler, allocation_callbacks);
 			}
 
 			FRenderApiErrorInfo RenderDevice::CreateDescriptorSetLayout(const FVkDescriptorSetLayoutCreateInfo& layout_ci, vk::DescriptorSetLayout& descriptor_set_layout)

@@ -13,6 +13,7 @@ namespace engine
 	{
 		namespace vulkan
 		{
+			class Sampler;
 			class Buffer;
 
 			using vk_resource_container_t = CResourceContainer<FVkTexture, FVkShader, Buffer, FVkShaderReflectionData>;
@@ -123,8 +124,6 @@ namespace engine
 				FRenderApiErrorInfo CreateTexture(const FVkTextureCreateInfo& texture_ci, FVkTexture& texture);
 				void DestroyTexture(FVkTexture& texture);
 
-				u64 GetSampler(const FVkSamplerCreateInfo& create_info);
-
 				FRenderApiErrorInfo CreateShaderResources(const FVkShaderResourcesInfo& resources_info, FVkShader& shader);
 				void DestroyShader(FVkShader& shader);
 
@@ -160,8 +159,8 @@ namespace engine
 
 				utl::vector<FVkTexture> backbuffer{};
 
-				utl::hash_map<u64, vk::Sampler> sampler_cache{};
-				vk::Sampler default_sampler{};
+				utl::hash_map<u32, std::unique_ptr<Sampler>> sampler_cache{};
+				std::unique_ptr<Sampler> default_sampler{};
 
 				u64 utilization_counter{ 0ull };
 

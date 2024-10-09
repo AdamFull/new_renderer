@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VkResourceStructures.h"
+#include <engine/render/render_api/vulkan/VkResourceStructures.h>
 
 namespace engine
 {
