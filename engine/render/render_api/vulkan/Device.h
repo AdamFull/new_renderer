@@ -69,9 +69,6 @@ namespace engine
 				vk::Result CreateFence(const vk::FenceCreateInfo& create_info, vk::Fence& object);
 				void Destroy(vk::Fence& object);
 
-				vk::Result CreateImageView(const vk::ImageViewCreateInfo& create_info, vk::ImageView& object);
-				void Destroy(vk::ImageView& object);
-
 				vk::Result CreateSampler(const vk::SamplerCreateInfo& create_info, vk::Sampler& object);
 				void Destroy(vk::Sampler& object);
 

@@ -111,21 +111,16 @@ namespace engine
 
 			ImageView::ImageView(RenderDevice& render_device, Image& image, ImageViewBuilder const& builder) :
 				VulkanResource{ nullptr },
-				device{ render_device.GetLogicalDevice() },
+				render_device{ render_device },
 				format{ builder.create_info.format }, 
 				subresource_range{ builder.create_info.subresourceRange }
 			{
-				device.CreateImageView(builder.create_info, handle);
-
-				if (!builder.debug_name.empty())
-				{
-					render_device.GetDebugUtils().SetDebugName(handle, builder.debug_name.c_str());
-				}
+				handle = render_device.CreateImageView(builder.create_info, builder.debug_name);
 			}
 
 			ImageView::ImageView(ImageView&& other) noexcept :
 				VulkanResource{ std::move(other) }, 
-				device{ other.device }, 
+				render_device{ other.render_device }, 
 				format{ other.format }, 
 				subresource_range{ other.subresource_range }
 			{
@@ -133,10 +128,7 @@ namespace engine
 
 			ImageView::~ImageView()
 			{
-				if (handle)
-				{
-					device.Destroy(handle);
-				}
+				render_device.DestroyImageView(handle);
 			}
 
 			vk::Format ImageView::GetFormat() const

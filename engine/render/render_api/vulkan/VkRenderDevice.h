@@ -53,8 +53,11 @@ namespace engine
 				vk::Image CreateImage2(Allocation& allocation, vk::ImageCreateInfo const& create_info, const std::string& debug_name = "") const;
 				void DestroyImage2(Allocation& allocation, vk::Image& handle) const;
 
+				vk::ImageView CreateImageView(const vk::ImageViewCreateInfo& create_info, const std::string& debug_name = "") const;
+				void DestroyImageView(vk::ImageView& image_view) const;
+
 				vk::SwapchainKHR CreateSwapchain2(const vk::SwapchainCreateInfoKHR& create_info, const std::string& debug_name = "") const;
-				void GetSwapchainImages(const vk::SwapchainKHR& handle, std::vector<vk::Image>& images, uint32_t& image_count);
+				void GetSwapchainImages(const vk::SwapchainKHR& handle, std::vector<vk::Image>& images, uint32_t& image_count, const std::string& debug_name = "");
 				void DestroySwapchain2(vk::SwapchainKHR& handle) const;
 
 				// VkCommandPool

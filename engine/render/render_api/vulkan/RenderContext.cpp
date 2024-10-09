@@ -21,7 +21,7 @@ namespace engine
 				vk::PresentModeKHR present_mode = (window->GetProperties().vsync == Window::Vsync::ON) ? vk::PresentModeKHR::eFifo : vk::PresentModeKHR::eMailbox;
 				std::vector<vk::PresentModeKHR> present_mode_priority_list{ vk::PresentModeKHR::eMailbox, vk::PresentModeKHR::eFifo, vk::PresentModeKHR::eImmediate };
 #endif
-				swapchain = std::make_unique<Swapchain>(render_device.GetLogicalDevice(), 
+				swapchain = std::make_unique<Swapchain>(render_device, 
 					render_device.GetSurface(), 
 					present_mode, 
 					present_mode_priority_list, 

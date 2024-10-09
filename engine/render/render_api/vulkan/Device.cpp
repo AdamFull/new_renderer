@@ -287,16 +287,6 @@ namespace engine
 				handle.destroyFence(object, allocation_callbacks);
 			}
 
-			vk::Result Device::CreateImageView(const vk::ImageViewCreateInfo& create_info, vk::ImageView& object)
-			{
-				return handle.createImageView(&create_info, allocation_callbacks, &object);
-			}
-
-			void Device::Destroy(vk::ImageView& object)
-			{
-				handle.destroyImageView(object, allocation_callbacks);
-			}
-
 			vk::Result Device::CreateSampler(const vk::SamplerCreateInfo& create_info, vk::Sampler& object)
 			{
 				return handle.createSampler(&create_info, allocation_callbacks, &object);

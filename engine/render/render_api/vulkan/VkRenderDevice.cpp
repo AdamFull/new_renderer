@@ -291,15 +291,15 @@ namespace engine
 				allocator->DestroyImage(allocation, handle);
 			}
 
-			vk::SwapchainKHR RenderDevice::CreateSwapchain2(const vk::SwapchainCreateInfoKHR& create_info, const std::string& debug_name) const
+			vk::ImageView RenderDevice::CreateImageView(const vk::ImageViewCreateInfo& create_info, const std::string& debug_name) const
 			{
-				vk::SwapchainKHR handle{ VK_NULL_HANDLE };
+				vk::ImageView handle{ VK_NULL_HANDLE };
 
-				// TODO: handle result
-				vk::Result result = Handle(*device).createSwapchainKHR(&create_info, allocation_callbacks, &handle);
+				vk::Result result = Handle(*device).createImageView(&create_info, allocation_callbacks, &handle);
 				if (result != vk::Result::eSuccess)
 				{
-					
+					log_error("Failed to create image view with reason: {}.", vk::to_string(result));
+					return nullptr;
 				}
 
 				if (!debug_name.empty())
@@ -310,13 +310,48 @@ namespace engine
 				return handle;
 			}
 
-			void RenderDevice::GetSwapchainImages(const vk::SwapchainKHR& handle, std::vector<vk::Image>& images, uint32_t& image_count)
+			void RenderDevice::DestroyImageView(vk::ImageView& image_view) const
 			{
-				//images = Handle(*device).getSwapchainImagesKHR(handle);
+				Handle(*device).destroyImageView(image_view, allocation_callbacks);
+			}
+
+			vk::SwapchainKHR RenderDevice::CreateSwapchain2(const vk::SwapchainCreateInfoKHR& create_info, const std::string& debug_name) const
+			{
+				vk::SwapchainKHR handle{ VK_NULL_HANDLE };
+
+				vk::Result result = Handle(*device).createSwapchainKHR(&create_info, allocation_callbacks, &handle);
+				if (result != vk::Result::eSuccess)
+				{
+					log_error("Failed to create swapchain with reason: {}.", vk::to_string(result));
+					return nullptr;
+				}
+
+				if (!debug_name.empty())
+				{
+					debug_utils->SetDebugName(handle, debug_name.c_str());
+				}
+
+				return handle;
+			}
+
+			void RenderDevice::GetSwapchainImages(const vk::SwapchainKHR& handle, std::vector<vk::Image>& images, uint32_t& image_count, const std::string& debug_name)
+			{
 				images.resize(image_count);
 				vk::Result result = Handle(*device).getSwapchainImagesKHR(handle, &image_count, images.data());
+				if (result != vk::Result::eSuccess)
+				{
+					log_error("Failed to get swapchain images with reason: {}.", vk::to_string(result));
+					return;
+				}
 
-				// TODO: Rename images
+				if (!debug_name.empty())
+				{
+					for (int32_t i = 0; i < image_count; ++i)
+					{
+						auto image_name = std::format("{}_{}", debug_name, i);
+						debug_utils->SetDebugName(images[i], image_name.c_str());
+					}
+				}
 			}
 
 			void RenderDevice::DestroySwapchain2(vk::SwapchainKHR& handle) const
@@ -1246,20 +1281,11 @@ namespace engine
 				swapchain_ci.clipped = VK_TRUE;
 				swapchain_ci.oldSwapchain = old_swapchain;
 
-				swapchain.handle = CreateSwapchain2(swapchain_ci);
+				swapchain.handle = CreateSwapchain2(swapchain_ci, "swapchain");
 				//check_api_result(make_api_error(vk::ObjectType::eSwapchainKHR, res, "Failed to Create"));
 
-				GetSwapchainImages(swapchain.handle, swapchain.images, image_count);
+				GetSwapchainImages(swapchain.handle, swapchain.images, image_count, "swapchain_image");
 				//check_api_result(make_api_error(vk::ObjectType::eSwapchainKHR, res, "Failed to Create images"));
-
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				for (u64 idx = 0ull; idx < swapchain.images.size(); ++idx)
-				{
-					const auto& image = swapchain.images[idx];
-					auto name = std::format("swapchain_image_{}", idx);
-					debug_utils->SetDebugName(image, name);
-				}
-#endif
 
 				if (old_swapchain)
 					Handle(*device).destroySwapchainKHR(old_swapchain, allocation_callbacks);

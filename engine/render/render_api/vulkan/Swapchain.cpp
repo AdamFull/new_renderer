@@ -1,6 +1,7 @@
 #include <engine/render/render_api/vulkan/Swapchain.h>
 #include <engine/render/render_api/vulkan/PhysicalDevice.h>
 #include <engine/render/render_api/vulkan/Device.h>
+#include <engine/render/render_api/vulkan/VkRenderDevice.h>
 
 #include <util/Logger.h>
 
@@ -182,7 +183,7 @@ namespace engine
 
 
 			Swapchain::Swapchain(Swapchain& old_swapchain, const vk::Extent2D& extent) :
-				Swapchain{ old_swapchain.device, old_swapchain.surface,
+				Swapchain{ old_swapchain.render_device, old_swapchain.surface,
 							 old_swapchain.properties.present_mode,
 							 old_swapchain.present_mode_priority_list,
 							 old_swapchain.surface_format_priority_list,
@@ -194,7 +195,7 @@ namespace engine
 			{}
 
 			Swapchain::Swapchain(Swapchain& old_swapchain, const uint32_t image_count) :
-				Swapchain{ old_swapchain.device, old_swapchain.surface,
+				Swapchain{ old_swapchain.render_device, old_swapchain.surface,
 							 old_swapchain.properties.present_mode,
 							 old_swapchain.present_mode_priority_list,
 							 old_swapchain.surface_format_priority_list,
@@ -206,7 +207,7 @@ namespace engine
 			{}
 
 			Swapchain::Swapchain(Swapchain& old_swapchain, const std::set<vk::ImageUsageFlagBits>& image_usage_flags) :
-				Swapchain{ old_swapchain.device, old_swapchain.surface,
+				Swapchain{ old_swapchain.render_device, old_swapchain.surface,
 							 old_swapchain.properties.present_mode,
 							 old_swapchain.present_mode_priority_list,
 							 old_swapchain.surface_format_priority_list,
@@ -218,7 +219,7 @@ namespace engine
 			{}
 
 			Swapchain::Swapchain(Swapchain& old_swapchain, const vk::Extent2D& extent, const vk::SurfaceTransformFlagBitsKHR transform) :
-				Swapchain{ old_swapchain.device, old_swapchain.surface,
+				Swapchain{ old_swapchain.render_device, old_swapchain.surface,
 							 old_swapchain.properties.present_mode,
 							 old_swapchain.present_mode_priority_list,
 							 old_swapchain.surface_format_priority_list,
@@ -229,23 +230,23 @@ namespace engine
 							 old_swapchain.GetHandle() }
 			{}
 
-			Swapchain::Swapchain(Device& device, vk::SurfaceKHR surface,
+			Swapchain::Swapchain(RenderDevice& render_device, vk::SurfaceKHR surface,
 				const vk::PresentModeKHR present_mode,
 				const std::vector<vk::PresentModeKHR>& present_mode_priority_list,
 				const std::vector<vk::SurfaceFormatKHR>& surface_format_priority_list,
 				const vk::Extent2D& extent,
-				const uint32_t image_count,
+				uint32_t image_count,
 				const vk::SurfaceTransformFlagBitsKHR transform,
 				const std::set<vk::ImageUsageFlagBits>& image_usage_flags,
 				vk::SwapchainKHR old_swapchain) :
 				VulkanResource{ nullptr },
-				device{ device },
+				render_device{ render_device },
 				surface{ surface }
 			{
 				this->present_mode_priority_list = present_mode_priority_list;
 				this->surface_format_priority_list = surface_format_priority_list;
 
-				auto& physical_device = device.GetGpu();
+				auto& physical_device = render_device.GetPhysicalDevice();
 
 				std::vector<vk::SurfaceFormatKHR> surface_formats = Handle(physical_device).getSurfaceFormatsKHR(surface);
 				log_info("Surface supports the following surface formats:");
@@ -293,10 +294,9 @@ namespace engine
 				create_info.clipped = VK_TRUE;
 				create_info.oldSwapchain = properties.old_swapchain;
 
-				vk::Result res = device.CreateSwapchain(create_info, handle);
-				//Handle(device).destroySwapchainKHR(old_swapchain);
+				handle = render_device.CreateSwapchain2(create_info, "swapchain");
 
-				images = Handle(device).getSwapchainImagesKHR(handle);
+				render_device.GetSwapchainImages(handle, images, image_count, "swapchain_image");
 
 				// Create image views
 
@@ -319,28 +319,24 @@ namespace engine
 				for (int32_t i = 0; i < image_count; ++i)
 				{
 					image_view_ci.image = images[i];
-					// TODO: Handle result
-					device.CreateImageView(image_view_ci, image_views[i]);
+					image_views[i] = render_device.CreateImageView(image_view_ci, std::format("swapchain_image_view_{}", i));
 				}
 			}
 
 			Swapchain::~Swapchain()
 			{
-				if (handle)
-				{
-					device.Destroy(handle);
-				}
+				render_device.DestroySwapchain2(handle);
 
 				// Destroy image views
 				for (auto& image_view : image_views)
 				{
-					device.Destroy(image_view);
+					render_device.DestroyImageView(image_view);
 				}
 			}
 
 			Swapchain::Swapchain(Swapchain&& other) :
 				VulkanResource{ std::move(other) },
-				device{ other.device },
+				render_device{ other.render_device },
 				surface{ std::exchange(other.surface, nullptr) },
 				images{ std::exchange(other.images, {}) },
 				image_views{ std::exchange(other.image_views, {}) },
@@ -355,14 +351,14 @@ namespace engine
 				return !!handle;
 			}
 
-			Device const& Swapchain::GetDevice() const
+			RenderDevice const& Swapchain::GetDevice() const
 			{
-				return device;
+				return render_device;
 			}
 
 			std::pair<vk::Result, uint32_t> Swapchain::AcquireNextImage(vk::Semaphore image_acquired_semaphore, vk::Fence fence) const
 			{
-				vk::ResultValue<uint32_t> rv = Handle(device).acquireNextImageKHR(handle, std::numeric_limits<uint64_t>::max(), image_acquired_semaphore, fence);
+				vk::ResultValue<uint32_t> rv = Handle(render_device.GetLogicalDevice()).acquireNextImageKHR(handle, std::numeric_limits<uint64_t>::max(), image_acquired_semaphore, fence);
 				return std::make_pair(rv.result, rv.value);
 			}
 

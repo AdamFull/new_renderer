@@ -8,7 +8,6 @@ namespace engine
 	{
 		namespace vulkan
 		{
-			class Device;
 			class Image;
 			class ImageView;
 			class RenderDevice;
@@ -55,7 +54,7 @@ namespace engine
 				vk::ImageSubresourceLayers GetSubresourceLayers() const;
 				vk::ImageSubresourceRange GetSubresourceRange() const;
 			private:
-				Device& device;
+				RenderDevice& render_device;
 
 				vk::Format format;
 				vk::ImageSubresourceRange subresource_range;

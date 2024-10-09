@@ -10,7 +10,7 @@ namespace engine
 	{
 		namespace vulkan
 		{
-			class Device;
+			class RenderDevice;
 
 			struct SwapchainProperties
 			{
@@ -55,12 +55,12 @@ namespace engine
 				/**
 				 * @brief Constructor to create a swapchain.
 				 */
-				Swapchain(Device& device, vk::SurfaceKHR surface,
+				Swapchain(RenderDevice& device, vk::SurfaceKHR surface,
 					const vk::PresentModeKHR present_mode,
 					const std::vector<vk::PresentModeKHR>& present_mode_priority_list = { vk::PresentModeKHR::eFifo, vk::PresentModeKHR::eMailbox },
 					const std::vector<vk::SurfaceFormatKHR>& surface_format_priority_list = { {vk::Format::eR8G8B8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear},
 																							 {vk::Format::eB8G8R8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear} },
-					const vk::Extent2D& extent = {}, const uint32_t image_count = 3,
+					const vk::Extent2D& extent = {}, uint32_t image_count = 3,
 					const vk::SurfaceTransformFlagBitsKHR    transform = vk::SurfaceTransformFlagBitsKHR::eIdentity,
 					const std::set<vk::ImageUsageFlagBits>& image_usage_flags = { vk::ImageUsageFlagBits::eColorAttachment, vk::ImageUsageFlagBits::eTransferSrc },
 					vk::SwapchainKHR                         old_swapchain = nullptr);
@@ -77,7 +77,7 @@ namespace engine
 
 				bool IsValid() const;
 
-				Device const& GetDevice() const;
+				RenderDevice const& GetDevice() const;
 
 				std::pair<vk::Result, uint32_t> AcquireNextImage(vk::Semaphore image_acquired_semaphore, vk::Fence fence = nullptr) const;
 
@@ -99,7 +99,7 @@ namespace engine
 				uint32_t GetImageCount() const;
 
 			private:
-				Device& device;
+				RenderDevice& render_device;
 
 				vk::SurfaceKHR surface;
 
