@@ -27,9 +27,11 @@ namespace engine
 			class Allocator;
 			class Allocation;
 
-			// =================================================================================
-			// =================================RenderDevice================================
-			// =================================================================================
+			/**
+			 * @brief A class that represents all device functions
+			 *
+			 * This class is responsible for creating all vulkan objects associated with vk::Device. 
+			 */
 			class RenderDevice
 			{
 			public:
@@ -100,10 +102,10 @@ namespace engine
 				void Destroy(vk::ImageView& image_view) const;
 
 				/**
-				 * @brief Creates swapchainKHR
+				 * @brief Creates swapchainKHR handle
 				 * @param create_info Vulkan swapchainKHR create info
 				 * @param debug_name Debug name for handle
-				 * @return Vulkan image view handle
+				 * @return Vulkan swapchainKHR handle
 				 */
 				vk::SwapchainKHR CreateSwapchain2(const vk::SwapchainCreateInfoKHR& create_info, const std::string& debug_name = "") const;
 
@@ -122,17 +124,60 @@ namespace engine
 				 */
 				void Destroy(vk::SwapchainKHR& handle) const;
 
-
+				/**
+				 * @brief Creates pipeline cache handle
+				 * @param create_info Vulkan pipeline cache create info
+				 * @param debug_name Debug name for handle
+				 * @return Vulkan pipeline cache handle
+				 */
 				vk::PipelineCache CreatePipelineCache2(const vk::PipelineCacheCreateInfo& create_info, const std::string& debug_name = "") const;
+
+				/**
+				 * @brief Destroys pipeline cache handle
+				 * @param handle Vulkan pipeline cache handle
+				 */
 				void Destroy(vk::PipelineCache& handle) const;
 
+				/**
+				 * @brief Creates sampler handle
+				 * @param create_info Vulkan sampler create info
+				 * @param debug_name Debug name for handle
+				 * @return Vulkan sampler handle
+				 */
 				vk::Sampler CreateSampler2(const vk::SamplerCreateInfo& create_info, const std::string& debug_name = "") const;
+
+				/**
+				 * @brief Destroys sampler handle
+				 * @param handle Vulkan sampler handle
+				 */
 				void Destroy(vk::Sampler& handle) const;
 
+				/**
+				 * @brief Creates semaphore handle
+				 * @param create_info Vulkan semaphore create info
+				 * @param debug_name Debug name for handle
+				 * @return Vulkan semaphore handle
+				 */
 				vk::Semaphore CreateSemaphore2(const vk::SemaphoreCreateInfo& create_info, const std::string& debug_name = "") const;
+
+				/**
+				 * @brief Destroys semaphore handle
+				 * @param handle Vulkan semaphore handle
+				 */
 				void Destroy(vk::Semaphore& handle) const;
 
+				/**
+				 * @brief Creates fence handle
+				 * @param create_info Vulkan fence create info
+				 * @param debug_name Debug name for handle
+				 * @return Vulkan fence handle
+				 */
 				vk::Fence CreateFence2(const vk::FenceCreateInfo& create_info, const std::string& debug_name = "") const;
+
+				/**
+				 * @brief Destroys fence handle
+				 * @param handle Vulkan fence handle
+				 */
 				void Destroy(vk::Fence& handle) const;
 
 				// VkCommandPool
@@ -182,9 +227,6 @@ namespace engine
 				FRenderApiErrorInfo CreatePipeline(const FVkComputePipelineCreateInfo& pipeline_ci, vk::Pipeline& pipeline);
 				FRenderApiErrorInfo CreatePipeline(const FVkRayTracingPipelineCreateInfo& pipeline_ci, vk::Pipeline& pipeline);
 				void DestroyPipeline(vk::Pipeline& shader_object);
-
-				FRenderApiErrorInfo CreateSemaphore(const FVkSemaphoreCreateInfo& semaphore_ci, vk::Semaphore& semaphore);
-				FRenderApiErrorInfo CreateFence(const FVkFenceCreateInfo& fence_ci, vk::Fence& fence);
 
 				FRenderApiErrorInfo CreateTimestampQuery(u32 count, FVkTimestampQuery& timestamp_query);
 				void ResetTimestampQuery(FVkTimestampQuery& timestamp_query);

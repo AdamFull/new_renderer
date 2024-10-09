@@ -130,28 +130,6 @@ namespace engine
 #endif
 			};
 
-			// ---------------------------------------------------------------------------------
-			// ===================================| SEMAPHORE |=================================
-			// ---------------------------------------------------------------------------------
-			struct FVkSemaphoreCreateInfo
-			{
-				vk::SemaphoreCreateInfo ci{};
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				std::string name{};
-#endif
-			};
-
-			// ---------------------------------------------------------------------------------
-			// ====================================| FENCE |===================================
-			// ---------------------------------------------------------------------------------
-			struct FVkFenceCreateInfo
-			{
-				vk::FenceCreateInfo ci{};
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				std::string name{};
-#endif
-			};
-
 			struct FVkDescriptorSetLayoutCreateInfo
 			{
 				utl::vector<vk::DescriptorSetLayoutBinding> layoutBindings{};

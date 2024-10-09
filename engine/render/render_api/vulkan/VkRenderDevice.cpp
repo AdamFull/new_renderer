@@ -816,24 +816,6 @@ namespace engine
 				Handle(*device).destroyPipeline(pipeline, allocation_callbacks);
 			}
 
-			FRenderApiErrorInfo RenderDevice::CreateSemaphore(const FVkSemaphoreCreateInfo& semaphore_ci, vk::Semaphore& semaphore)
-			{
-				vk::Result res = Handle(*device).createSemaphore(&semaphore_ci.ci, allocation_callbacks, &semaphore);
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				debug_utils->SetDebugName(semaphore, semaphore_ci.name);
-#endif
-				return make_api_error(semaphore.objectType, res, "Failed to Create");
-			}
-
-			FRenderApiErrorInfo RenderDevice::CreateFence(const FVkFenceCreateInfo& fence_ci, vk::Fence& fence)
-			{
-				vk::Result res = Handle(*device).createFence(&fence_ci.ci, allocation_callbacks, &fence);
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				debug_utils->SetDebugName(fence, fence_ci.name);
-#endif
-				return make_api_error(fence.objectType, res, "Failed to Create");
-			}
-
 			FRenderApiErrorInfo RenderDevice::CreateTimestampQuery(u32 count, FVkTimestampQuery& timestamp_query)
 			{
 				vk::QueryPoolCreateInfo query_pool_ci{};
@@ -928,9 +910,8 @@ namespace engine
 				submitInfo.commandBufferCount = utl::cast<u32>(command_buffer.handles.size());
 				submitInfo.pCommandBuffers = command_buffer.handles.data();
 
-				FVkFenceCreateInfo fence_ci{};
-				vk::Fence fence{};
-				CreateFence(fence_ci, fence);
+				vk::FenceCreateInfo fence_ci{};
+				vk::Fence fence = CreateFence2(fence_ci);
 
 				Handle(*device).resetFences(1, &fence);
 
@@ -1351,20 +1332,16 @@ namespace engine
 					swapchain.renderFinishedSemaphores.resize(image_count);
 					swapchain.inFlightFences.resize(image_count);
 
-					FVkSemaphoreCreateInfo ia_semaphore_ci{};
-					FVkSemaphoreCreateInfo rf_semaphore_ci{};
-					FVkFenceCreateInfo fence_ci{};
-					fence_ci.ci.flags = vk::FenceCreateFlagBits::eSignaled;
+					vk::SemaphoreCreateInfo ia_semaphore_ci{};
+					vk::SemaphoreCreateInfo rf_semaphore_ci{};
+					vk::FenceCreateInfo fence_ci{};
+					fence_ci.flags = vk::FenceCreateFlagBits::eSignaled;
+
 					for (u64 idx = 0ull; idx < image_count; ++idx)
 					{
-#ifndef BUILD_WITHOUT_DEBUGGIND
-						ia_semaphore_ci.name = std::format("image avaliable #{}", idx);
-						rf_semaphore_ci.name = std::format("render finished #{}", idx);
-						fence_ci.name = std::format("frame #{}", idx);
-#endif
-						check_api_result(CreateSemaphore(ia_semaphore_ci, swapchain.imageAvaliableSemaphores[idx]));
-						check_api_result(CreateSemaphore(rf_semaphore_ci, swapchain.renderFinishedSemaphores[idx]));
-						check_api_result(CreateFence(fence_ci, swapchain.inFlightFences[idx]));
+						swapchain.imageAvaliableSemaphores[idx] = CreateSemaphore2(ia_semaphore_ci, std::format("image avaliable #{}", idx));
+						swapchain.renderFinishedSemaphores[idx] = CreateSemaphore2(rf_semaphore_ci, std::format("render finished #{}", idx));
+						swapchain.inFlightFences[idx] = CreateFence2(fence_ci, std::format("frame #{}", idx));
 					}
 				}
 

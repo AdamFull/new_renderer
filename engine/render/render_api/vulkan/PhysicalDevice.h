@@ -18,10 +18,10 @@ namespace engine
 			};
 
 			/**
-	 * @brief A wrapper class for vk::PhysicalDevice
-	 *
-	 * This class is responsible for handling gpu features, properties, and queue families for the device creation.
-	 */
+			 * @brief A wrapper class for vk::PhysicalDevice
+			 *
+			 * This class is responsible for handling gpu features, properties, and queue families for the device creation.
+			 */
 			class PhysicalDevice : public VulkanResource<vk::PhysicalDevice>
 			{
 			public:
