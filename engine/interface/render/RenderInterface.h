@@ -354,10 +354,6 @@ namespace engine
 			virtual void DestroyBuffer(FAPIHandle resource_id) = 0;
 			virtual void UploadBuffers() = 0;
 
-			virtual void PushG2CBarriers(EQueueTypeFlagBits queue_type, const utl::vector<FAPIHandle>& textures) = 0;
-			virtual void PushC2CBarrier(EQueueTypeFlagBits queue_type) = 0;
-			virtual void PushC2GBarrier(EQueueTypeFlagBits queue_type, const utl::vector<FAPIHandle>& texture_ids) = 0;
-
 			virtual void ProcessResourceBarriers(EQueueTypeFlagBits queue, const utl::vector<FResourceBarrierInfo>& barriers) = 0;
 
 			virtual void BeginTimestampZone(EQueueTypeFlagBits queue) = 0;

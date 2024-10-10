@@ -12,6 +12,9 @@
 #include <engine/render/render_api/vulkan/Device.h>
 #include <engine/render/render_api/vulkan/Buffer.h>
 #include <engine/render/render_api/vulkan/Sampler.h>
+#include <engine/render/render_api/vulkan/Image.h>
+#include <engine/render/render_api/vulkan/ImageView.h>
+#include <engine/render/render_api/vulkan/Texture.h>
 
 using namespace engine;
 using namespace engine::render;
@@ -160,15 +163,17 @@ VkRenderBackend::~VkRenderBackend()
 		DestroyThreadContext(context);
 
 	// Destroy all textures
-	auto& textures = render_resources->data<FVkTexture>();
-	for (resource_handle_t texture_id = 0ull; texture_id < textures.size(); ++texture_id)
-	{
-		auto& texture = textures[texture_id];
-		if (!texture->isAlive)
-			continue;
-
-		DestroyTexture(*texture);
-	}
+	auto& textures = render_resources->data<Texture>();
+	textures.clear();
+	// TODO TEXTURE
+	//for (resource_handle_t texture_id = 0ull; texture_id < textures.size(); ++texture_id)
+	//{
+	//	auto& texture = textures[texture_id];
+	//	if (!texture->isAlive)
+	//		continue;
+	//
+	//	DestroyTexture(*texture);
+	//}
 
 	// Destroy all shaders
 	auto& shaders = render_resources->data<FVkShader>();
@@ -348,7 +353,7 @@ void VkRenderBackend::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo&
 	std::array<vk::DescriptorBufferInfo, k_max_buffer_update_per_frame> buffer_descriptors{};
 	utl::vector<vk::WriteDescriptorSet> write_descriptor_sets{};
 
-	auto& textures = render_resources->data<FVkTexture>();
+	auto& textures = render_resources->data<Texture>();
 
 	// Bind and update global uniform
 	u64 buffer_count{ 0ull };
@@ -388,15 +393,16 @@ void VkRenderBackend::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo&
 			auto& texture = textures[texture_id];
 
 			auto& start_element_index = texture_index_remap[texture_id];
-			bool is_storage_image = utl::cast<bool>(texture->info.flags & ETextureCreateFlagBits::eStorage);
+			bool is_storage_image = utl::cast<bool>(texture->GetFlags() & ETextureCreateFlagBits::eStorage);
 
-			auto& mip_level = texture->getSubresource();
+			// TODO TEXTURE
+			auto& mip_level = texture->GetImageView();
 			auto& image_descriptor = image_descriptors[texture_count];
-			image_descriptor.imageView = mip_level.imageView;
-			image_descriptor.sampler = Handle(*(texture->sampler != ~0ull ? sampler_cache[texture->sampler] : default_sampler));
+			image_descriptor.imageView = Handle(mip_level);
+			image_descriptor.sampler = Handle(*(texture->GetSamplerID() != ~0u ? sampler_cache[texture->GetSamplerID()] : default_sampler));
 			image_descriptor.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
-			if (texture->info.flags & ETextureCreateFlagBits::eSamplable)
+			if (texture->GetFlags() & ETextureCreateFlagBits::eSamplable)
 			{
 				auto& write_descriptor_set = write_descriptor_sets.emplace_back();
 				write_descriptor_set.dstArrayElement = start_element_index;
@@ -428,35 +434,54 @@ const utl::vector<uint32_t>& VkRenderBackend::GetGlobalTextureRemap()
 
 FAPIHandle VkRenderBackend::CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci)
 {
-	// Create texture handle
-	FVkTextureCreateInfo vk_texture_ci{};
-	vk_texture_ci.format = lookup_vk_format(texture_ci.format);
-	vk_texture_ci.flags = texture_ci.flags;
-	vk_texture_ci.size = texture_ci.size;
-	vk_texture_ci.mipLevels = texture_ci.mipLevels;
-	vk_texture_ci.arrayLayers = texture_ci.arrayLayers;
-	vk_texture_ci.sampleCount = vk::SampleCountFlagBits::e1;
-	vk_texture_ci.addressMode = vk::SamplerAddressMode::eRepeat;
-	vk_texture_ci.enableAnisotropy = true;
+	auto format = lookup_vk_format(texture_ci.format);
+
+	auto texture_builder = TextureBuilder();
+
+	texture_builder.SetFormat(format);
+	texture_builder.SetFlags(texture_ci.flags);
+	texture_builder.SetExtent({ texture_ci.size.width, texture_ci.size.height, texture_ci.size.depth });
+	texture_builder.SetSizingPolicy(texture_ci.size.policy);
+	texture_builder.SetScaleFactor(texture_ci.size.scale);
+	texture_builder.SetMipCount(texture_ci.mipLevels);
+	texture_builder.SetLayerCount(texture_ci.arrayLayers);
+	texture_builder.SetDebugName(name);
+
+	auto sampler_builder = SamplerBuilder();
+	sampler_builder.SetAddressMode(vk::SamplerAddressMode::eRepeat);
+	sampler_builder.SetEnableAnisotropy(true);
+	sampler_builder.SetCompareEnable(is_depth_format(format));
+	sampler_builder.SetMinFilter(vk::Filter::eNearest);
+	sampler_builder.SetMagFilter(vk::Filter::eNearest);
+	sampler_builder.SetMinLod(0.f);
+	sampler_builder.SetMaxLod(1000.f);
+	sampler_builder.SetDebugName(name);
 
 	if (texture_ci.flags & ETextureCreateFlagBits::eRenderTarget)
 	{
-		vk_texture_ci.addressMode = vk::SamplerAddressMode::eClampToEdge;
-		vk_texture_ci.enableAnisotropy = false;
+		sampler_builder.SetAddressMode(vk::SamplerAddressMode::eClampToEdge);
+		sampler_builder.SetEnableAnisotropy(false);
 	}
 
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	vk_texture_ci.name = name;
-#endif
+	auto sampler_hash = sampler_builder.Hash();
+	if (auto found = sampler_cache.find(sampler_hash); found == sampler_cache.end())
+	{
+		sampler_cache[sampler_hash] = sampler_builder.BuildUnique(*render_device);
+	}
 
-	auto texture = std::make_unique<FVkTexture>();
-	CreateTexture(vk_texture_ci, *texture);
+	texture_builder.SetSampler(sampler_hash);
 
-	return FAPIHandle(render_resources->add<FVkTexture>(name.c_str(), std::move(texture)));
+	// Create texture handle
+	return FAPIHandle(render_resources->add<Texture>(name.c_str(), texture_builder.BuildUnique(*render_device)));
 }
 
 FAPIHandle VkRenderBackend::CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info)
 {
+	if (!upload_info.mipLayerOffsets.empty())
+	{
+		int iiiii = 0;
+	}
+
 	auto& upload_data = texture_upload_infos.emplace_back(std::move(upload_info));
 	upload_data.textureId = CreateTexture(name, texture_ci);
 	return upload_data.textureId;
@@ -464,19 +489,21 @@ FAPIHandle VkRenderBackend::CreateTexture(const std::string& name, const FTextur
 
 FAPIHandle VkRenderBackend::GetTextureId(const std::string& name)
 {
-	return FAPIHandle(render_resources->getId<FVkTexture>(name.c_str()));
+	return FAPIHandle(render_resources->getId<Texture>(name.c_str()));
 }
 
 FTextureView VkRenderBackend::GetTextureView(FAPIHandle texture_id)
 {
-	auto& texture = render_resources->get<FVkTexture>(texture_id.Get());
+	auto& texture = render_resources->get<Texture>(texture_id.Get());
+
+	const auto& texture_extent = texture->GetImage().GetExtent();
 
 	FTextureView tex_view{};
-	tex_view.width = texture->info.size.width;
-	tex_view.height = texture->info.size.height;
-	tex_view.depth = texture->info.size.depth;
-	tex_view.arrayLayers = texture->info.arrayLayers;
-	tex_view.mipLevels = texture->info.mipLevels;
+	tex_view.width = texture_extent.width;
+	tex_view.height = texture_extent.height;
+	tex_view.depth = texture_extent.depth;
+	tex_view.arrayLayers = texture->GetImage().GetArrayLayerCount();
+	tex_view.mipLevels = texture->GetImage().GetMipLevelCount();
 
 	return tex_view;
 }
@@ -490,7 +517,7 @@ void VkRenderBackend::ReadPixel(FAPIHandle resource_id, u32 x, u32 y, void* data
 {
 	static constexpr u64 pixel_size{ 4ull };
 
-	auto& texture = render_resources->get<FVkTexture>(resource_id.Get());
+	auto& texture = render_resources->get<Texture>(resource_id.Get());
 
 	// Create temporary command buffer
 	FVkCommandBufferCreateInfo command_buffer_ci{};
@@ -531,7 +558,8 @@ void VkRenderBackend::ReadPixel(FAPIHandle resource_id, u32 x, u32 y, void* data
 	region.imageExtent.height = 1u;
 	region.imageExtent.depth = 1u;
 
-	current.copyImageToBuffer(texture->image.handle, vk::ImageLayout::eTransferSrcOptimal, Handle(*staging_buffer), 1, &region);
+	// TODO TEXTURE
+	current.copyImageToBuffer(Handle(texture->GetImage()), vk::ImageLayout::eTransferSrcOptimal, Handle(*staging_buffer), 1, &region);
 
 	render_device->SubmitCommandBuffer(command_buffer);
 	DestroyCommandBuffer(EQueueTypeFlagBits::eGraphics);
@@ -562,30 +590,30 @@ FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FGraphic
 #endif
 
 	// Get color attachment formats
-	auto& textures = render_resources->data<FVkTexture>();
+	auto& textures = render_resources->data<Texture>();
 	for (auto& attachment : shader_ci.colorAttachments)
 	{
-		FVkTexture* texture{ nullptr };
+		vk::Format rt_format{ vk::Format::eUndefined };
 		if (attachment.backbuffer)
-			texture = &backbuffer[render_device->swapchain.currentFrame];
+			rt_format = backbuffer[render_device->swapchain.currentFrame]->GetImage().GetFormat();
 		else
-			texture = textures[attachment.source.Get()].get();
+			rt_format = textures[attachment.source.Get()]->GetImage().GetFormat();
 
-		pipeline_ci.colorAttachmentFormats.emplace_back(texture->info.format);
+		pipeline_ci.colorAttachmentFormats.emplace_back(rt_format);
 	}
 
 	// Get depth format
 	if(shader_ci.depthAttachment.source)
 	{
 		auto& texture = textures[shader_ci.depthAttachment.source.Get()];
-		pipeline_ci.depthAttachmentFormat = texture->info.format;
+		pipeline_ci.depthAttachmentFormat = texture->GetImage().GetFormat();
 	}
 
 	// Get stencil format
 	if (shader_ci.stencilAttachment.source)
 	{
 		auto& texture = textures[shader_ci.stencilAttachment.source.Get()];
-		pipeline_ci.stencilAttachmentFormat = texture->info.format;
+		pipeline_ci.stencilAttachmentFormat = texture->GetImage().GetFormat();
 	}
 
 	pipeline_ci.sampleCount = vk::SampleCountFlagBits::e1;
@@ -821,7 +849,7 @@ void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_
 	auto& shader = render_resources->get<FVkShader>(shader_resources.shaderId.Get());
 	auto& shader_reflection = render_resources->get<FVkShaderReflectionData>(shader->reflection);
 
-	auto& textures = render_resources->data<FVkTexture>();
+	auto& textures = render_resources->data<Texture>();
 	auto& buffers = render_resources->data<Buffer>();
 
 	std::unordered_set<u32> updated_descriptor_sets{};
@@ -914,7 +942,7 @@ void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_
 		for (const auto& [texture_name, bind_info] : shader_resources.textures)
 		{
 			auto& texture = textures[bind_info.textureId.Get()];
-			auto& texture_subresource = texture->getSubresource(bind_info.mipLevel);
+			auto& texture_subresource = texture->GetImageView(bind_info.mipLevel);
 
 			auto found_reflection = shader_reflection->uniforms.find(texture_name);
 			if (found_reflection == shader_reflection->uniforms.end())
@@ -924,9 +952,9 @@ void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_
 			updated_descriptor_sets.emplace(uniform.set);
 
 			auto& image_descriptor = image_descriptors[texture_count];
-			image_descriptor.imageView = texture_subresource.imageView;
-			image_descriptor.sampler = Handle(*(texture->sampler != ~0ull ? sampler_cache[texture->sampler] : default_sampler));
-			image_descriptor.imageLayout = texture_subresource.layout;
+			image_descriptor.imageView = Handle(texture_subresource);
+			image_descriptor.sampler = Handle(*(texture->GetSamplerID() != ~0u ? sampler_cache[texture->GetSamplerID()] : default_sampler));
+			image_descriptor.imageLayout = texture_subresource.GetImageLayout();
 			texture_count++;
 
 			auto descriptor_index = shader->descriptorUsage[uniform.set];
@@ -1094,90 +1122,11 @@ void VkRenderBackend::UploadBuffers()
 	ProcessResourceUpload();
 }
 
-void VkRenderBackend::PushG2CBarriers(EQueueTypeFlagBits queue_type, const utl::vector<FAPIHandle>& texture_ids)
-{
-	auto& command_buffer = GetLastCommandBuffer(queue_type);
-	auto& textures = render_resources->data<FVkTexture>();
-
-	FVkTranslationInfo translation_info{};
-	for (auto texture_id : texture_ids)
-	{
-		auto& texture = textures[texture_id.Get()];
-
-		auto& image_trans_info = translation_info.imageTranslationInfos.emplace_back();
-		image_trans_info.srcStageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
-		image_trans_info.srcAccessMask = vk::AccessFlagBits2::eColorAttachmentWrite;
-		image_trans_info.oldLayout = vk::ImageLayout::eUndefined;
-		image_trans_info.dstStageMask = vk::PipelineStageFlagBits2::eComputeShader;
-		image_trans_info.dstAccessMask = vk::AccessFlagBits2::eShaderRead;
-		image_trans_info.newLayout = get_render_target_final_layout(*texture);
-		image_trans_info.handle = texture->image.handle;
-
-		image_trans_info.subresourceRange.aspectMask = get_texture_aspect_flags(*texture);
-		image_trans_info.subresourceRange.baseArrayLayer = 0;
-		image_trans_info.subresourceRange.layerCount = texture->totalLayers;
-		image_trans_info.subresourceRange.baseMipLevel = 0;
-		image_trans_info.subresourceRange.levelCount = texture->info.mipLevels;
-	}
-
-	ProcessMemoryBarriers(command_buffer, translation_info);
-}
-
-void VkRenderBackend::PushC2CBarrier(EQueueTypeFlagBits queue_type)
-{
-	auto& command_buffer = GetLastCommandBuffer(queue_type);
-	auto& textures = render_resources->data<FVkTexture>();
-
-	FVkTranslationInfo translation_info{};
-	auto& barrier = translation_info.memoryTranslationInfos.emplace_back();
-	barrier.srcStageMask = vk::PipelineStageFlagBits2::eComputeShader;
-	barrier.srcAccessMask = vk::AccessFlagBits2::eShaderWrite;
-	barrier.dstStageMask = vk::PipelineStageFlagBits2::eComputeShader;
-	barrier.dstAccessMask = vk::AccessFlagBits2::eShaderRead;
-
-	ProcessMemoryBarriers(command_buffer, translation_info);
-}
-
-void VkRenderBackend::PushC2GBarrier(EQueueTypeFlagBits queue_type, const utl::vector<FAPIHandle>& texture_ids)
-{
-	auto& command_buffer = GetLastCommandBuffer(queue_type);
-	auto& textures = render_resources->data<FVkTexture>();
-
-	FVkTranslationInfo translation_info{};
-	for (auto texture_id : texture_ids)
-	{
-		auto& texture = textures[texture_id.Get()];
-	
-		auto& image_trans_info = translation_info.imageTranslationInfos.emplace_back();
-		image_trans_info.srcStageMask = vk::PipelineStageFlagBits2::eComputeShader;
-		image_trans_info.srcAccessMask = vk::AccessFlagBits2::eShaderWrite | vk::AccessFlagBits2::eShaderStorageWrite | vk::AccessFlagBits2::eMemoryWrite;
-		image_trans_info.oldLayout = get_render_target_final_layout(*texture);
-		image_trans_info.dstStageMask = vk::PipelineStageFlagBits2::eFragmentShader;
-		image_trans_info.dstAccessMask = vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderStorageRead | vk::AccessFlagBits2::eShaderSampledRead;
-		image_trans_info.newLayout = get_render_target_final_layout(*texture);
-		image_trans_info.handle = texture->image.handle;
-	
-		image_trans_info.subresourceRange.aspectMask = get_texture_aspect_flags(*texture);
-		image_trans_info.subresourceRange.baseArrayLayer = 0;
-		image_trans_info.subresourceRange.layerCount = texture->totalLayers;
-		image_trans_info.subresourceRange.baseMipLevel = 0;
-		image_trans_info.subresourceRange.levelCount = texture->info.mipLevels;
-	}
-
-	//auto& barrier = translation_info.memoryTranslationInfos.emplace_back();
-	//barrier.srcStageMask = vk::PipelineStageFlagBits2::eComputeShader;
-	//barrier.srcAccessMask = vk::AccessFlagBits2::eShaderWrite | vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eMemoryWrite;
-	//barrier.dstStageMask = vk::PipelineStageFlagBits2::eFragmentShader;
-	//barrier.dstAccessMask = vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eMemoryRead;
-
-	ProcessMemoryBarriers(command_buffer, translation_info);
-}
-
 void VkRenderBackend::ProcessResourceBarriers(EQueueTypeFlagBits queue, const utl::vector<FResourceBarrierInfo>& barriers)
 {
 	auto& command_buffer = GetLastCommandBuffer(queue);
 
-	auto& textures = render_resources->data<FVkTexture>();
+	auto& textures = render_resources->data<Texture>();
 	auto& buffers = render_resources->data<Buffer>();
 
 	FVkTranslationInfo translation_info{};
@@ -1195,12 +1144,7 @@ void VkRenderBackend::ProcessResourceBarriers(EQueueTypeFlagBits queue, const ut
 			if (resource_barrier.resource.type & ERenderResourceTypeFlagBits::eAllImage)
 			{
 				auto& texture = textures[resource_barrier.resource.handle.Get()];
-				auto& texture_subresource = texture->getSubresource(resource_barrier.subresourceIndex);
-
-				memory_barrier.srcStageMask = get_translation_stage_flags(texture_subresource.layout, resource_barrier.srcPassType);
-				memory_barrier.srcAccessMask = get_translation_access_flags(texture_subresource.layout, resource_barrier.srcPassType, src_resource_access);
-				memory_barrier.dstStageMask = get_translation_stage_flags(texture_subresource.layout, resource_barrier.dstPassType);
-				memory_barrier.dstAccessMask = get_translation_access_flags(texture_subresource.layout, resource_barrier.dstPassType, dst_resource_access);
+				texture->MakeImageLayoutTranslation(memory_barrier, resource_barrier);
 			}
 			else
 			{
@@ -1214,62 +1158,21 @@ void VkRenderBackend::ProcessResourceBarriers(EQueueTypeFlagBits queue, const ut
 		{
 			if (resource_barrier.resource.type & ERenderResourceTypeFlagBits::eAllImage)
 			{
-				auto& texture_barrier = translation_info.imageTranslationInfos.emplace_back();
-				texture_barrier.subresourceRange.baseArrayLayer = 0u;
-				texture_barrier.subresourceRange.baseMipLevel = 0u;
-
-				FVkTexture* texture{ nullptr };
+				Texture* texture{ nullptr };
 				if (resource_barrier.resource.type & ERenderResourceTypeFlagBits::eBackbuffer)
-					texture = &backbuffer[render_device->swapchain.currentFrame];
+					texture = backbuffer[render_device->swapchain.currentFrame].get();
 				else
 					texture = textures[resource_barrier.resource.handle.Get()].get();
 
-				auto& texture_subresource = texture->getSubresource(resource_barrier.subresourceIndex);
-
-				vk::ImageLayout old_image_layout{ vk::ImageLayout::eUndefined }, new_image_layout{ vk::ImageLayout::eUndefined };
-				vk::ImageAspectFlags aspect_flags{};
-
-				if (resource_barrier.barrierType == ERenderResourceBarrierType::eIntermediate)
-					new_image_layout = get_render_target_intermediate_layout(*texture);
-				else if (resource_barrier.barrierType == ERenderResourceBarrierType::eFinal)
-					new_image_layout = get_render_target_final_layout(*texture);
-
-				old_image_layout = texture_subresource.layout;
-				texture_subresource.layout = new_image_layout;
-				texture_barrier.handle = texture->image.handle;
-				texture_barrier.subresourceRange.aspectMask = get_texture_aspect_flags(*texture);
-
-				// TODO: Fix here required. Sometimes i need to process all layers and levels
-				if (resource_barrier.subresourceIndex == ~0u)
-				{
-					for (auto& mip : texture->mips)
-						mip.layout = new_image_layout;
-				}
-
-				texture_barrier.subresourceRange.baseMipLevel = texture_subresource.baseMipLevel;
-				texture_barrier.subresourceRange.levelCount = texture_subresource.mipLevelCount;
-				texture_barrier.subresourceRange.layerCount = texture->totalLayers;
-
-				texture_barrier.srcStageMask = get_translation_stage_flags(old_image_layout, resource_barrier.srcPassType);
-				texture_barrier.srcAccessMask = get_translation_access_flags(old_image_layout, resource_barrier.srcPassType, src_resource_access);
-				texture_barrier.oldLayout = old_image_layout;
-				texture_barrier.dstStageMask = get_translation_stage_flags(new_image_layout, resource_barrier.dstPassType);
-				texture_barrier.dstAccessMask = get_translation_access_flags(new_image_layout, resource_barrier.dstPassType, dst_resource_access);
-				texture_barrier.newLayout = new_image_layout;
+				auto& texture_barrier = translation_info.imageTranslationInfos.emplace_back();
+				texture->MakeImageLayoutTranslation(texture_barrier, resource_barrier);
 			}
 			// For buffers
 			else
 			{
 				auto& buffer = buffers[resource_barrier.resource.handle.Get()];
-
-				FVkBufferTranslationInfo buffer_translation_info{};
-				buffer_translation_info.handle = Handle(*buffer);
-				buffer_translation_info.size = buffer->GetSize();
-				buffer_translation_info.srcStageMask = get_translation_stage_flags(resource_barrier.srcPassType);
-				buffer_translation_info.srcAccessMask = get_translation_access_flags(resource_barrier.srcPassType, src_resource_access);
-				buffer_translation_info.dstStageMask = get_translation_stage_flags(resource_barrier.dstPassType);
-				buffer_translation_info.dstAccessMask = get_translation_access_flags(resource_barrier.dstPassType, dst_resource_access);
-				translation_info.bufferTranslationInfos.emplace_back(buffer_translation_info);
+				auto& buffer_translation_info = translation_info.bufferTranslationInfos.emplace_back();
+				buffer->MakeTranslation(buffer_translation_info, resource_barrier);
 			}
 		}
 	}
@@ -1294,7 +1197,7 @@ void VkRenderBackend::BeginRendering(const FBeginRendering2Info& rendering_info)
 {
 	auto& command_buffer = GetLastCommandBuffer(rendering_info.queue);
 
-	auto& textures = render_resources->data<FVkTexture>();
+	auto& textures = render_resources->data<Texture>();
 
 	utl::hash_map<u64, vk::ClearValue> clear_values{};
 	for (const auto& [handle, clear_value] : rendering_info.clearValues)
@@ -1305,7 +1208,7 @@ void VkRenderBackend::BeginRendering(const FBeginRendering2Info& rendering_info)
 		{
 			auto& texture = textures[handle.Get()];
 
-			auto aspect = get_texture_aspect_flags(*texture);
+			auto aspect = texture->GetImageView().GetSubresourceRange().aspectMask;
 			if(aspect & vk::ImageAspectFlagBits::eColor)
 				new_value.color = vk::ClearColorValue(clear_value.color.x, clear_value.color.y, clear_value.color.z, clear_value.color.w);
 			else
@@ -1323,15 +1226,15 @@ void VkRenderBackend::BeginRendering(const FBeginRendering2Info& rendering_info)
 		{
 			auto& attachment_info = color_attachments.emplace_back();
 
-			FVkTexture* texture{ nullptr };
+			Texture* texture{ nullptr };
 			if (color_attachment_info.backbuffer)
-				texture = &backbuffer[render_device->swapchain.currentFrame];
+				texture = backbuffer[render_device->swapchain.currentFrame].get();
 			else
 				texture = textures[color_attachment_info.handle.Get()].get();
 
-			auto& target_subresource = texture->getSubresource(color_attachment_info.mipLevel);
-			attachment_info.imageView = target_subresource.imageView;
-			attachment_info.imageLayout = target_subresource.layout;
+			auto& target_subresource = texture->GetImageView(color_attachment_info.mipLevel);
+			attachment_info.imageView = Handle(target_subresource);
+			attachment_info.imageLayout = target_subresource.GetImageLayout();
 
 			attachment_info.resolveMode = vk::ResolveModeFlagBits::eNone;
 			attachment_info.loadOp = get_attachment_load_op(color_attachment_info.loadOp);
@@ -1345,10 +1248,10 @@ void VkRenderBackend::BeginRendering(const FBeginRendering2Info& rendering_info)
 	if (rendering_info.depthAttachment && rendering_info.depthAttachment->handle)
 	{
 		auto& depth_target = textures[rendering_info.depthAttachment->handle.Get()];
-		auto& target_subresource = depth_target->getSubresource(rendering_info.depthAttachment->mipLevel);
+		auto& target_subresource = depth_target->GetImageView(rendering_info.depthAttachment->mipLevel);
 
-		depth_attachment.imageView = target_subresource.imageView;
-		depth_attachment.imageLayout = target_subresource.layout;
+		depth_attachment.imageView = Handle(target_subresource);
+		depth_attachment.imageLayout = target_subresource.GetImageLayout();
 		depth_attachment.resolveMode = vk::ResolveModeFlagBits::eNone;
 		depth_attachment.loadOp = get_attachment_load_op(rendering_info.depthAttachment->loadOp);
 		depth_attachment.storeOp = get_attachment_store_op(rendering_info.depthAttachment->storeOp);
@@ -1359,10 +1262,10 @@ void VkRenderBackend::BeginRendering(const FBeginRendering2Info& rendering_info)
 	if (rendering_info.stencilAttachment && rendering_info.stencilAttachment->handle != rendering_info.depthAttachment->handle && rendering_info.stencilAttachment->handle)
 	{
 		auto& stencil_target = textures[rendering_info.stencilAttachment->handle.Get()];
-		auto& target_subresource = stencil_target->getSubresource(rendering_info.stencilAttachment->mipLevel);
+		auto& target_subresource = stencil_target->GetImageView(rendering_info.stencilAttachment->mipLevel);
 
-		stencil_attachment.imageView = target_subresource.imageView;
-		stencil_attachment.imageLayout = target_subresource.layout;
+		stencil_attachment.imageView = Handle(target_subresource);
+		stencil_attachment.imageLayout = target_subresource.GetImageLayout();
 		stencil_attachment.resolveMode = vk::ResolveModeFlagBits::eNone;
 		stencil_attachment.loadOp = get_attachment_load_op(rendering_info.stencilAttachment->loadOp);
 		stencil_attachment.storeOp = get_attachment_store_op(rendering_info.stencilAttachment->storeOp);
@@ -1383,7 +1286,7 @@ void VkRenderBackend::BeginRendering(const FBeginRendering2Info& rendering_info)
 		begin_rendering_info.pDepthAttachment = &depth_attachment;
 
 		auto& depth_target = textures[rendering_info.depthAttachment->handle.Get()];
-		if (!is_depth_only_format(depth_target->info.format) && rendering_info.stencilAttachment->handle == rendering_info.depthAttachment->handle)
+		if (!is_depth_only_format(depth_target->GetImage().GetFormat()) && rendering_info.stencilAttachment->handle == rendering_info.depthAttachment->handle)
 			begin_rendering_info.pStencilAttachment = &depth_attachment;
 	}
 
@@ -1658,7 +1561,7 @@ EAdapterVendor VkRenderBackend::GetDeviceVendor() const
 
 FAPIHandle VkRenderBackend::GetTextureResource(const char* name)
 {
-	return FAPIHandle(render_resources->getId<FVkTexture>(name));
+	return FAPIHandle(render_resources->getId<Texture>(name));
 }
 
 FAPIHandle VkRenderBackend::GetShaderResource(const char* name)
@@ -1677,11 +1580,11 @@ FPoint2D<u32> VkRenderBackend::GetRenderResolution() const
 
 FRect2D<f32> VkRenderBackend::GetRenderRectFromRT(FAPIHandle texture_id)
 {
-	auto& texture = render_resources->get<FVkTexture>(texture_id.Get());
+	auto& texture = render_resources->get<Texture>(texture_id.Get());
 
 	FRect2D<f32> rect{};
-	rect.size.x = utl::cast<f32>(texture->info.size.width);
-	rect.size.y = utl::cast<f32>(texture->info.size.height);
+	rect.size.x = utl::cast<f32>(texture->GetImage().GetExtent().width);
+	rect.size.y = utl::cast<f32>(texture->GetImage().GetExtent().height);
 
 	return rect;
 }
@@ -1709,7 +1612,7 @@ void VkRenderBackend::UpdateSurface(i32 new_width, i32 new_height)
 		render_device->CreateSwapchain(new_width, new_height);
 		render_device->swapchain.currentFrame = 0u;
 
-		auto& textures = render_resources->data<FVkTexture>();
+		auto& textures = render_resources->data<Texture>();
 
 		// Updating render targets
 		for (u64 texture_id = 0ull; texture_id < textures.size(); ++texture_id)
@@ -1719,36 +1622,21 @@ void VkRenderBackend::UpdateSurface(i32 new_width, i32 new_height)
 
 			auto& texture = textures[texture_id];
 
-			if (!(texture->info.flags & ETextureCreateFlagBits::eRenderTarget) || (texture->info.size.policy == ERenderTargetSizePolicy::eFixed))
+			if (!(texture->GetFlags() & ETextureCreateFlagBits::eRenderTarget) || (texture->GetSizingPolicy() == ERenderTargetSizePolicy::eFixed))
 				continue;
 
-			for (auto& mip : texture->mips)
-				render_device->DestroyImageView(mip.imageView);
-			texture->mips.clear();
+			vk::Extent3D new_extent{ (u32)new_width, (u32)new_height, 1u };
 
-			render_device->DestroyImageView(texture->base.imageView);
-			render_device->DestroyImage(texture->image);
-
-			FVkTextureCreateInfo texture_ci{};
-			texture_ci.format = texture->info.format;
-			texture_ci.flags = texture->info.flags;
-			texture_ci.size = texture->info.size;
-			texture_ci.mipLevels = texture->info.mipLevels;
-			texture_ci.arrayLayers = texture->info.arrayLayers;
-			texture_ci.CreateSampler = false;
-#ifndef BUILD_WITHOUT_DEBUGGIND
-			texture_ci.name = texture->name;
-#endif
 			// TODO: here i should set rendering resolution, not swapchain image size
-			if (texture->info.size.policy == ERenderTargetSizePolicy::eScalable)
+			if (texture->GetSizingPolicy() == ERenderTargetSizePolicy::eScalable)
 			{
-				texture_ci.size.width = utl::cast<u32>(utl::cast<f32>(new_width) * texture_ci.size.scale);
-				texture_ci.size.height = utl::cast<u32>(utl::cast<f32>(new_height)* texture_ci.size.scale);
+				new_extent.width *= texture->GetScaleFactor();
+				new_extent.height *= texture->GetScaleFactor();
 			}
 
-			check_api_result(CreateTexture(texture_ci, *texture));
+			texture = std::make_unique<Texture>(*texture, new_extent);
 			
-			is_storage = utl::cast<bool>(texture_ci.flags & ETextureCreateFlagBits::eStorage);
+			is_storage = utl::cast<bool>(texture->GetFlags() & ETextureCreateFlagBits::eStorage);
 
 			//if (is_storage)
 			//	texture_layout_change_infos.emplace_back(texture_id);
@@ -1847,7 +1735,7 @@ void VkRenderBackend::BeginFrame()
 	//render_device->WriteTimestampQuery(command_buffer, vk::PipelineStageFlagBits::eTopOfPipe, timestamp_query);
 
 	// Update bindless textures
-	auto& textures = render_resources->data<FVkTexture>();
+	auto& textures = render_resources->data<Texture>();
 
 	if (texture_index_remap.empty())
 	{
@@ -1858,7 +1746,7 @@ void VkRenderBackend::BeginFrame()
 		for (u64 texture_index = 0ull; texture_index < textures.size(); ++texture_index)
 		{
 			auto& texture = textures[texture_index];
-			if (texture->info.flags & ETextureCreateFlagBits::eRenderTarget)
+			if (texture->GetFlags() & ETextureCreateFlagBits::eRenderTarget)
 				continue;
 
 			texture_index_remap[texture_index] = image_offset++;
@@ -1917,27 +1805,24 @@ void VkRenderBackend::EndFrame()
 
 	// Frame finished. Textures in now again in initial layout
 	// TODO: i don't need to set layout back to undefined for one time targets or for periodical targets
-	auto& textures = render_resources->data<FVkTexture>();
+	auto& textures = render_resources->data<Texture>();
 	for (auto& texture : textures)
 	{
-		if ((texture->info.flags & ETextureCreateFlagBits::eRenderTarget) && !(texture->info.flags & ETextureCreateFlagBits::eStorage))
+		if ((texture->GetFlags() & ETextureCreateFlagBits::eRenderTarget) && !(texture->GetFlags() & ETextureCreateFlagBits::eStorage))
 		{
 			// Reset layout for all mip level
-			for(auto& mip : texture->mips)
-				mip.layout = vk::ImageLayout::eUndefined;
+			for(auto& mip : texture->GetImageViews())
+				mip->SetImageLayout(vk::ImageLayout::eUndefined);
 
 			// Also reset view that stores all other levels
-			texture->base.layout = vk::ImageLayout::eUndefined;
+			texture->GetImageView().SetImageLayout(vk::ImageLayout::eUndefined);
 		}
 	}
 
 	// Also for backbuffer
 	for (auto& current : backbuffer)
 	{
-		for (auto& mip : current.mips)
-			mip.layout = vk::ImageLayout::eUndefined;
-
-		current.base.layout = vk::ImageLayout::eUndefined;
+		current->GetImageView().SetImageLayout(vk::ImageLayout::eUndefined);
 	}
 
 	utilization_counter++;
@@ -2005,7 +1890,7 @@ void VkRenderBackend::ProcessResourceBarriers()
 	command_buffer_ci.name = "resource_barriers";
 #endif
 
-	auto& textures = render_resources->data<FVkTexture>();
+	auto& textures = render_resources->data<Texture>();
 
 	auto& command_buffer = CreateCommandBuffer(command_buffer_ci);
 
@@ -2015,17 +1900,18 @@ void VkRenderBackend::ProcessResourceBarriers()
 	for (const auto& layout_info : texture_layout_change_infos)
 	{
 		auto& texture = textures[layout_info.textureId];
-		auto& target_subresource = texture->getSubresource();
+		auto& target_subresource = texture->GetImageView();
 
-		if (texture->info.flags & ETextureCreateFlagBits::eStorage)
+		if (texture->GetFlags() & ETextureCreateFlagBits::eStorage)
 		{
 			auto& image_translation = translation_info.imageTranslationInfos.emplace_back();
 
 			FVkTextureTranslationInfo texture_translation_info{};
 			texture_translation_info.oldLayout = vk::ImageLayout::eUndefined;
-			target_subresource.layout = texture_translation_info.newLayout = vk::ImageLayout::eGeneral;
+			texture_translation_info.newLayout = vk::ImageLayout::eGeneral;
+			target_subresource.SetImageLayout(vk::ImageLayout::eGeneral);
 
-			image_translation = get_texture_layout_translation_info(*texture, texture_translation_info);
+			image_translation = texture->GetTranslationInfo(texture_translation_info);
 		}
 	}
 
@@ -2052,7 +1938,7 @@ void VkRenderBackend::ProcessResourceUpload()
 	command_buffer_ci.name = "resource_upload";
 #endif
 
-	auto& textures = render_resources->data<FVkTexture>();
+	auto& textures = render_resources->data<Texture>();
 
 	auto& command_buffer = CreateCommandBuffer(command_buffer_ci);
 
@@ -2088,17 +1974,18 @@ void VkRenderBackend::ProcessResourceUpload()
 		for (const auto& texture_upload : texture_upload_infos)
 		{
 			auto& texture = textures[texture_upload.textureId.Get()];
-			auto& target_subresource = texture->getSubresource();
+			auto& target_subresource = texture->GetImageView();
 
 			auto& image_translation = translation_info.imageTranslationInfos.emplace_back();
 
 			FVkTextureTranslationInfo texture_translation_info{};
 			texture_translation_info.oldLayout = vk::ImageLayout::eUndefined;
-			target_subresource.layout = texture_translation_info.newLayout = vk::ImageLayout::eTransferDstOptimal;
+			texture_translation_info.newLayout = vk::ImageLayout::eTransferDstOptimal;
+			target_subresource.SetImageLayout(vk::ImageLayout::eTransferDstOptimal);
 
-			image_translation = get_texture_layout_translation_info(*texture, texture_translation_info);
+			image_translation = texture->GetTranslationInfo(texture_translation_info);
 
-			if (texture->info.mipLevels > 1u && texture_upload.mipLayerOffsets.empty())
+			if (texture->GetImage().GetMipLevelCount() > 1u && texture_upload.mipLayerOffsets.empty())
 				generate_mip_textures.emplace_back(texture_upload.textureId);
 		}
 
@@ -2113,25 +2000,27 @@ void VkRenderBackend::ProcessResourceUpload()
 			auto& texture = textures[texture_upload.textureId.Get()];
 			auto& staging_buffer = staging_buffers[idx];
 
-			auto aspect_mask = get_texture_aspect_flags(*texture);
+			auto aspect_mask = texture->GetImageView().GetSubresourceRange().aspectMask;
+			auto& image = texture->GetImage();
+			auto extent = image.GetExtent();
 
 			utl::vector<vk::BufferImageCopy2KHR> copy_regions{};
 			if (!texture_upload.mipLayerOffsets.empty())
 			{
-				for (u32 layer = 0u; layer < texture->totalLayers; ++layer)
+				for (u32 layer = 0u; layer < image.GetArrayLayerCount(); ++layer)
 				{
 					auto& layer_offsets = texture_upload.mipLayerOffsets[layer];
-					for (u32 mip = 0u; mip < texture->info.mipLevels; ++mip)
+					for (u32 mip = 0u; mip < image.GetMipLevelCount(); ++mip)
 					{
 						u64 offset = layer_offsets[mip];
 						auto& copy_region = copy_regions.emplace_back();
 						copy_region.imageSubresource.aspectMask = aspect_mask;
 						copy_region.imageSubresource.mipLevel = mip;
 						copy_region.imageSubresource.baseArrayLayer = layer;
-						copy_region.imageSubresource.layerCount = texture->info.arrayLayers;
-						copy_region.imageExtent.width = texture->info.size.width >> mip;
-						copy_region.imageExtent.height = texture->info.size.height >> mip;
-						copy_region.imageExtent.depth = texture->info.size.depth;
+						copy_region.imageSubresource.layerCount = 1u;
+						copy_region.imageExtent.width = extent.width >> mip;
+						copy_region.imageExtent.height = extent.height >> mip;
+						copy_region.imageExtent.depth = extent.depth;
 						copy_region.bufferOffset = offset;
 					}
 				}
@@ -2142,34 +2031,34 @@ void VkRenderBackend::ProcessResourceUpload()
 				copy_region.imageSubresource.aspectMask = aspect_mask;
 				copy_region.imageSubresource.mipLevel = 0u;
 				copy_region.imageSubresource.baseArrayLayer = 0u;
-				copy_region.imageSubresource.layerCount = texture->totalLayers;
-				copy_region.imageExtent.width = texture->info.size.width;
-				copy_region.imageExtent.height = texture->info.size.height;
-				copy_region.imageExtent.depth = texture->info.size.depth;
+				copy_region.imageSubresource.layerCount = texture->GetImage().GetArrayLayerCount();
+				copy_region.imageExtent.width = extent.width;
+				copy_region.imageExtent.height = extent.height;
+				copy_region.imageExtent.depth = extent.depth;
 				copy_region.bufferOffset = 0ull;
 			}
 
-			auto& target_subresource = texture->getSubresource();
-			staging_buffer->CopyTo(command_buffer.get(), texture->image.handle, target_subresource.layout, copy_regions);
+			auto& target_subresource = texture->GetImageView();
+			staging_buffer->CopyTo(command_buffer.get(), Handle(texture->GetImage()), target_subresource.GetImageLayout(), copy_regions);
 		}
 
 		auto& current_command_buffer = command_buffer.get();
 		for (auto& texture_id : generate_mip_textures)
 		{
 			auto& texture = textures[texture_id.Get()];
-			auto aspect_mask = get_texture_aspect_flags(*texture);
+			auto aspect_mask = texture->GetImageView().GetSubresourceRange().aspectMask;
 
-			u32 mip_width{ texture->info.size.width };
-			u32 mip_heigth{ texture->info.size.height };
+			u32 mip_width{ texture->GetImage().GetExtent().width };
+			u32 mip_heigth{ texture->GetImage().GetExtent().height };
 
 			FVkImageTranslationInfo image_translation_info{};
-			image_translation_info.handle = texture->image.handle;
+			image_translation_info.handle = Handle(texture->GetImage());
 			image_translation_info.subresourceRange.baseArrayLayer = 0u;
 			image_translation_info.subresourceRange.levelCount = 1;
-			image_translation_info.subresourceRange.layerCount = texture->totalLayers;
+			image_translation_info.subresourceRange.layerCount = texture->GetImage().GetArrayLayerCount();
 			image_translation_info.subresourceRange.aspectMask = aspect_mask;
 
-			for (u32 mip = 1u; mip < texture->info.mipLevels; ++mip)
+			for (u32 mip = 1u; mip < texture->GetImage().GetMipLevelCount(); ++mip)
 			{
 				image_translation_info.subresourceRange.baseMipLevel = mip - 1u;
 				image_translation_info.oldLayout = vk::ImageLayout::eTransferDstOptimal;
@@ -2196,9 +2085,9 @@ void VkRenderBackend::ProcessResourceUpload()
 				image_blit.dstSubresource.layerCount = 1u;
 
 				vk::BlitImageInfo2KHR blit_info{};
-				blit_info.srcImage = texture->image.handle;
+				blit_info.srcImage = Handle(texture->GetImage());
 				blit_info.srcImageLayout = vk::ImageLayout::eTransferSrcOptimal;
-				blit_info.dstImage = texture->image.handle;
+				blit_info.dstImage = Handle(texture->GetImage());
 				blit_info.dstImageLayout = vk::ImageLayout::eTransferDstOptimal;
 				blit_info.regionCount = 1u;
 				blit_info.pRegions = &image_blit;
@@ -2225,15 +2114,16 @@ void VkRenderBackend::ProcessResourceUpload()
 		for (const auto& texture_upload : texture_upload_infos)
 		{
 			auto& texture = textures[texture_upload.textureId.Get()];
-			auto& target_subresource = texture->getSubresource();
+			auto& target_subresource = texture->GetImageView();
 
 			auto& image_translation = translation_info.imageTranslationInfos.emplace_back();
 
 			FVkTextureTranslationInfo texture_translation_info{};
 			texture_translation_info.oldLayout = vk::ImageLayout::eTransferDstOptimal;
-			target_subresource.layout = texture_translation_info.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+			texture_translation_info.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+			target_subresource.SetImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
 
-			image_translation = get_texture_layout_translation_info(*texture, texture_translation_info);
+			image_translation = texture->GetTranslationInfo(texture_translation_info);
 		}
 
 		ProcessMemoryBarriers(command_buffer, translation_info);
@@ -2307,9 +2197,9 @@ void VkRenderBackend::ProcessResourceUtilization()
 
 		if (destroy_resource.mask & EResourceFlagBits::eTexture)
 		{
-			auto& texture = render_resources->get<FVkTexture>(destroy_resource.id.Get());
-			DestroyTexture(*texture);
-			render_resources->remove<FVkTexture>(destroy_resource.id.Get());
+			auto& texture = render_resources->get<Texture>(destroy_resource.id.Get());
+			texture.reset();
+			render_resources->remove<Texture>(destroy_resource.id.Get());
 		}
 		else if (destroy_resource.mask & EResourceFlagBits::eShader)
 		{
@@ -2337,156 +2227,16 @@ void VkRenderBackend::UpdateBackbuffer()
 
 	for (u64 frame = 0ull; frame < backbuffer.size(); ++frame)
 	{
-		auto& current = backbuffer[frame];
-		current.isAlive = true;
-		current.name = "backbuffer_image";
-		current.image.handle = swapchain.images[frame];
+		auto builder = TextureBuilder();
+		builder.SetDebugName("backbuffer");
+		builder.SetExternalImage(swapchain.images[frame]);
+		builder.SetExternalImageView(swapchain.imageViews[frame]);
+		builder.SetFlags(ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eRenderTarget);
+		builder.SetFormat(swapchain.format);
+		builder.SetExtent({ swapchain.extent.width, swapchain.extent.height, 1u });
 
-		auto& mip = current.mips.emplace_back();
-		mip.imageView = current.base.imageView = swapchain.imageViews[frame];
-
-		current.info.flags = ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eRenderTarget;
-		current.info.format = swapchain.format;
-		current.info.size.width = swapchain.extent.width;
-		current.info.size.height = swapchain.extent.height;
+		backbuffer[frame] = builder.BuildUnique(*render_device);
 	}
-}
-
-FRenderApiErrorInfo VkRenderBackend::CreateTexture(const FVkTextureCreateInfo& texture_ci, FVkTexture& texture)
-{
-	texture.info.format = texture_ci.format;
-	texture.info.flags = texture_ci.flags;
-	texture.info.size = texture_ci.size;
-	texture.info.mipLevels = texture_ci.mipLevels;
-	texture.info.arrayLayers = texture_ci.arrayLayers;
-	
-	FVkImageCreateInfo image_ci{};
-	FVkImageViewCreateInfo image_view_ci{};
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	texture.name = image_ci.name = texture_ci.name;
-#endif
-
-	if (texture_ci.size.depth > 1 || (texture_ci.flags & ETextureCreateFlagBits::e3D))
-		image_ci.ci.imageType = vk::ImageType::e3D;
-	else
-	{
-		if (texture_ci.flags & ETextureCreateFlagBits::e1D)
-			image_ci.ci.imageType = vk::ImageType::e1D;
-		else if (texture_ci.flags & ETextureCreateFlagBits::e2D)
-			image_ci.ci.imageType = vk::ImageType::e2D;
-		else if (texture_ci.flags & ETextureCreateFlagBits::e3D)
-			image_ci.ci.imageType = vk::ImageType::e3D;
-		else
-			image_ci.ci.imageType = vk::ImageType::e2D;
-	}
-
-	image_ci.ci.extent = vk::Extent3D{ texture_ci.size.width, texture_ci.size.height, texture_ci.size.depth };
-	image_ci.ci.mipLevels = texture_ci.mipLevels;
-
-	image_ci.ci.arrayLayers = texture_ci.arrayLayers;
-	if ((texture_ci.flags & ETextureCreateFlagBits::eArray) && (texture_ci.flags & ETextureCreateFlagBits::eCubemap))
-	{
-		image_ci.ci.arrayLayers *= 6u;
-		image_view_ci.ci.viewType = vk::ImageViewType::eCubeArray;
-	}
-	else if (texture_ci.flags & ETextureCreateFlagBits::eArray)
-		image_view_ci.ci.viewType = vk::ImageViewType::e2DArray;
-	else if (texture_ci.flags & ETextureCreateFlagBits::eCubemap)
-	{
-		image_ci.ci.arrayLayers = 6u;
-		image_view_ci.ci.viewType = vk::ImageViewType::eCube;
-	}
-	else if (texture_ci.flags & ETextureCreateFlagBits::e3D)
-		image_view_ci.ci.viewType = vk::ImageViewType::e3D;
-	else
-	{
-		image_ci.ci.arrayLayers = 1u;
-		image_view_ci.ci.viewType = vk::ImageViewType::e2D;
-	}
-
-	image_view_ci.ci.subresourceRange.layerCount = texture.totalLayers = image_ci.ci.arrayLayers;
-
-	auto usageFlags = get_texture_usage_flags(texture);
-
-	image_ci.memoryUsage = vma::MemoryUsage::eUnknown;
-	image_view_ci.ci.format = image_ci.ci.format = utl::cast<vk::Format>(texture_ci.format);
-	image_ci.ci.initialLayout = vk::ImageLayout::eUndefined;
-	image_ci.ci.usage = usageFlags;
-	texture.info.sampleCount = image_ci.ci.samples = texture_ci.sampleCount;
-	image_ci.ci.sharingMode = vk::SharingMode::eExclusive;
-	image_ci.ci.flags = (texture_ci.flags & ETextureCreateFlagBits::eCubemap) ? vk::ImageCreateFlagBits::eCubeCompatible : vk::ImageCreateFlagBits::eExtendedUsage;
-
-	RETURN_WHEN_FAULT(render_device->CreateImage(image_ci, texture.image));
-
-	auto image_aspect = get_texture_aspect_flags(texture);
-	if (image_aspect & vk::ImageAspectFlagBits::eStencil)
-		image_aspect = vk::ImageAspectFlagBits::eDepth;
-
-	image_view_ci.ci.components = { vk::ComponentSwizzle::eR, vk::ComponentSwizzle::eG, vk::ComponentSwizzle::eB, vk::ComponentSwizzle::eA };
-	image_view_ci.ci.subresourceRange.aspectMask = image_aspect;
-	image_view_ci.ci.image = texture.image.handle;
-	image_view_ci.ci.subresourceRange.baseArrayLayer = 0u;
-	image_view_ci.ci.subresourceRange.layerCount = texture.totalLayers;
-
-	// At first Create default view that contain all subresources
-	image_view_ci.ci.subresourceRange.baseMipLevel = 0u;
-	image_view_ci.ci.subresourceRange.levelCount = texture.base.mipLevelCount = texture_ci.mipLevels;
-
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	image_view_ci.name = std::format("{}_main", texture_ci.name);
-#endif
-
-	RETURN_WHEN_FAULT(render_device->CreateImageView(image_view_ci, texture.base.imageView));
-	
-	texture.mips.resize(texture_ci.mipLevels);
-	for (u32 mip_index = 0u; mip_index < texture_ci.mipLevels; ++mip_index)
-	{
-		auto& current_mip = texture.mips[mip_index];
-		image_view_ci.ci.subresourceRange.baseMipLevel = current_mip.baseMipLevel = mip_index;
-		image_view_ci.ci.subresourceRange.levelCount = current_mip.mipLevelCount = 1u;
-
-#ifndef BUILD_WITHOUT_DEBUGGIND
-		image_view_ci.name = std::format("{}[{}]", texture_ci.name, mip_index);
-#endif
-		RETURN_WHEN_FAULT(render_device->CreateImageView(image_view_ci, current_mip.imageView));
-	}
-
-	FRenderApiErrorInfo res = make_api_error(vk::ObjectType::eSampler, vk::Result::eSuccess);
-	if (texture_ci.CreateSampler)
-	{
-		auto sampler_builder = SamplerBuilder();
-		sampler_builder.SetAddressMode(texture_ci.addressMode);
-		sampler_builder.SetEnableAnisotropy(texture_ci.enableAnisotropy);
-		sampler_builder.SetCompareEnable(is_depth_format(image_ci.ci.format));
-		sampler_builder.SetMinFilter(texture_ci.filter);
-		sampler_builder.SetMagFilter(texture_ci.filter);
-		sampler_builder.SetMaxLod(texture_ci.mipLevels);
-		sampler_builder.SetDebugName(texture_ci.name);
-
-		auto sampler_hash = sampler_builder.Hash();
-		if (auto found = sampler_cache.find(sampler_hash); found == sampler_cache.end())
-		{
-			sampler_cache[sampler_hash] = sampler_builder.BuildUnique(*render_device);
-		}
-
-		texture.sampler = sampler_hash;
-	}
-
-	texture.isAlive = true;
-
-	return make_api_error(vk::ObjectType::eSampler, vk::Result::eSuccess);
-}
-
-void VkRenderBackend::DestroyTexture(FVkTexture& texture)
-{	
-	for(auto& mip : texture.mips)
-		render_device->DestroyImageView(mip.imageView);
-	texture.mips.clear();
-
-	render_device->DestroyImageView(texture.base.imageView);
-	render_device->DestroyImage(texture.image);
-
-	texture.isAlive = false;
 }
 
 FRenderApiErrorInfo VkRenderBackend::CreateShaderResources(const FVkShaderResourcesInfo& resources_info, FVkShader& shader)
@@ -2666,8 +2416,8 @@ void VkRenderBackend::ProcessImageLayoutTranslation(const FVkCommandBuffer& comm
 	ProcessMemoryBarriers(command_buffer, translation_info);
 }
 
-void VkRenderBackend::TextureLayoutTranslation(const FVkCommandBuffer& command_buffer, FVkTexture& texture, const FVkTextureTranslationInfo& translation_info)
+void VkRenderBackend::TextureLayoutTranslation(const FVkCommandBuffer& command_buffer, Texture& texture, const FVkTextureTranslationInfo& translation_info)
 {
-	auto image_layout_translation = get_texture_layout_translation_info(texture, translation_info);
+	auto image_layout_translation = texture.GetTranslationInfo(translation_info);
 	ProcessImageLayoutTranslation(command_buffer, image_layout_translation);
 }

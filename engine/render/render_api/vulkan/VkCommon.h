@@ -54,43 +54,6 @@ namespace engine
 #endif
 			}
 
-			inline vk::ImageUsageFlags get_texture_usage_flags(const FVkTexture& texture)
-			{
-				vk::ImageUsageFlags usageFlags{};
-
-				if (texture.info.flags & ETextureCreateFlagBits::eRenderTarget)
-				{
-					auto format = texture.info.format;
-					usageFlags |= ((is_depth_stencil_format(format) || is_depth_only_format(format)) ? vk::ImageUsageFlagBits::eDepthStencilAttachment : vk::ImageUsageFlagBits::eColorAttachment);
-				}
-
-				if (texture.info.flags & ETextureCreateFlagBits::eTransferable)
-					usageFlags |= vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst;
-
-				if (texture.info.flags & ETextureCreateFlagBits::eSamplable)
-					usageFlags |= vk::ImageUsageFlagBits::eSampled;
-
-				if (texture.info.flags & ETextureCreateFlagBits::eStorage)
-					usageFlags |= vk::ImageUsageFlagBits::eStorage;
-
-				return usageFlags;
-			}
-
-			inline vk::ImageAspectFlags get_texture_aspect_flags(const FVkTexture& texture)
-			{
-				vk::ImageAspectFlags aspectFlags{};
-
-				if (is_depth_format(texture.info.format))
-					aspectFlags |= vk::ImageAspectFlagBits::eDepth;
-				if (is_depth_stencil_format(texture.info.format))
-					aspectFlags |= vk::ImageAspectFlagBits::eStencil;
-
-				if (aspectFlags == vk::ImageAspectFlagBits::eNone)
-					aspectFlags = vk::ImageAspectFlagBits::eColor;
-
-				return aspectFlags;
-			}
-
 			inline vk::PrimitiveTopology get_primitive_topology(EVertexPrimitiveTopology mask)
 			{
 				switch (mask)
@@ -369,76 +332,6 @@ namespace engine
 				return vk::AccessFlagBits2KHR::eNone;
 			}
 
-			inline vk::ImageLayout get_render_target_intermediate_layout(const FVkTexture& texture)
-			{
-				auto usage_flags = get_texture_usage_flags(texture);
-
-				if (usage_flags & vk::ImageUsageFlagBits::eStorage)
-					return vk::ImageLayout::eGeneral;
-				else if (usage_flags & vk::ImageUsageFlagBits::eColorAttachment)
-					return vk::ImageLayout::eColorAttachmentOptimal;
-				else if (usage_flags & vk::ImageUsageFlagBits::eDepthStencilAttachment)
-				{
-					// TODO: check is that stencil only target
-					bool is_depth_stencil_attachment = is_depth_stencil_format(texture.info.format);
-					return is_depth_stencil_attachment ? vk::ImageLayout::eDepthStencilAttachmentOptimal : is_depth_only_format(texture.info.format) ? vk::ImageLayout::eDepthAttachmentOptimal : vk::ImageLayout::eStencilAttachmentOptimal;
-				}
-				
-				return vk::ImageLayout::eUndefined;
-			}
-
-			inline vk::ImageLayout get_render_target_final_layout(const FVkTexture& texture)
-			{
-				auto usage_flags = get_texture_usage_flags(texture);
-
-				if (usage_flags & vk::ImageUsageFlagBits::eStorage)
-					return vk::ImageLayout::eGeneral; // vk::ImageLayout::eShaderReadOnlyOptimal
-				else if (usage_flags & vk::ImageUsageFlagBits::eColorAttachment)
-				{
-					if (usage_flags & vk::ImageUsageFlagBits::eTransferSrc)
-						return vk::ImageLayout::eTransferSrcOptimal;
-					else if (usage_flags & vk::ImageUsageFlagBits::eSampled)
-						return vk::ImageLayout::eShaderReadOnlyOptimal;
-					else if (usage_flags & vk::ImageUsageFlagBits::eInputAttachment)
-					{
-						if (usage_flags & vk::ImageUsageFlagBits::eSampled)
-							return vk::ImageLayout::eShaderReadOnlyOptimal;
-						else
-							return vk::ImageLayout::eColorAttachmentOptimal;
-					}
-				}
-				else if (usage_flags & vk::ImageUsageFlagBits::eDepthStencilAttachment)
-				{
-					if (usage_flags & vk::ImageUsageFlagBits::eSampled)
-						return vk::ImageLayout::eDepthStencilReadOnlyOptimal;
-					else
-						return vk::ImageLayout::eDepthStencilAttachmentOptimal;
-				}
-				else
-				{
-					if (usage_flags & vk::ImageUsageFlagBits::eSampled && usage_flags & vk::ImageUsageFlagBits::eTransferDst)
-						return vk::ImageLayout::eShaderReadOnlyOptimal;
-				}
-
-				return vk::ImageLayout::ePresentSrcKHR;
-			}
-
-			inline vk::AttachmentLoadOp get_attachment_load_op(const FVkTexture& texture)
-			{
-				return vk::AttachmentLoadOp::eClear;
-			}
-
-			inline vk::AttachmentStoreOp get_attachment_store_op(const FVkTexture& texture)
-			{
-				bool transferable = utl::cast<bool>(texture.info.flags & ETextureCreateFlagBits::eTransferable);
-				bool samplable = utl::cast<bool>(texture.info.flags & ETextureCreateFlagBits::eSamplable);
-
-				if (transferable || samplable)
-					return vk::AttachmentStoreOp::eStore;
-
-				return vk::AttachmentStoreOp::eDontCare;
-			}
-
 			inline vk::AttachmentLoadOp get_attachment_load_op(const ERenderResourceLoadOp load_op)
 			{
 				switch (load_op)
@@ -460,26 +353,6 @@ namespace engine
 				}
 
 				return vk::AttachmentStoreOp::eNone;
-			}
-
-			inline FVkImageTranslationInfo get_texture_layout_translation_info(const FVkTexture& texture, const FVkTextureTranslationInfo& translation_info)
-			{
-				FVkImageTranslationInfo image_layout_translation{};
-				image_layout_translation.srcStageMask = get_translation_stage_flags(translation_info.oldLayout);
-				image_layout_translation.srcAccessMask = get_translation_access_flags(translation_info.oldLayout);
-				image_layout_translation.oldLayout = translation_info.oldLayout;
-				image_layout_translation.dstStageMask = get_translation_stage_flags(translation_info.newLayout);
-				image_layout_translation.dstAccessMask = get_translation_access_flags(translation_info.newLayout);
-				image_layout_translation.newLayout = translation_info.newLayout;
-				image_layout_translation.handle = texture.image.handle;
-
-				image_layout_translation.subresourceRange.aspectMask = get_texture_aspect_flags(texture);
-				image_layout_translation.subresourceRange.baseArrayLayer = translation_info.baseArrayLayer;
-				image_layout_translation.subresourceRange.layerCount = texture.totalLayers;
-				image_layout_translation.subresourceRange.baseMipLevel = translation_info.baseMipLevel;
-				image_layout_translation.subresourceRange.levelCount = texture.info.mipLevels;
-
-				return image_layout_translation;
 			}
 
 			inline vk::CompareOp get_compare_op(EDepthCompareOp op)

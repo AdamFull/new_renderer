@@ -12,7 +12,8 @@ namespace engine
 	{
 		namespace vulkan
 		{
-			ImageViewBuilder::ImageViewBuilder()
+			ImageViewBuilder::ImageViewBuilder() :
+				external_handle{ nullptr }
 			{
 				create_info.components = { vk::ComponentSwizzle::eR, vk::ComponentSwizzle::eG, vk::ComponentSwizzle::eB, vk::ComponentSwizzle::eA };
 			}
@@ -25,6 +26,7 @@ namespace engine
 
 			ImageViewBuilder& ImageViewBuilder::SetViewType(vk::ImageViewType view_type)
 			{
+				create_info.viewType = view_type;
 				return *this;
 			}
 
@@ -77,6 +79,11 @@ namespace engine
 				return *this;
 			}
 
+			ImageViewBuilder& ImageViewBuilder::SetExternalHandle(vk::ImageView handle)
+			{
+				external_handle = handle;
+				return *this;
+			}
 
 			ImageView ImageViewBuilder::Build(RenderDevice& render_device, Image& image) const
 			{
@@ -112,28 +119,55 @@ namespace engine
 			ImageView::ImageView(RenderDevice& render_device, Image& image, ImageViewBuilder const& builder) :
 				VulkanResource{ nullptr },
 				render_device{ render_device },
-				format{ builder.create_info.format }, 
+				format{ builder.create_info.format },
+				layout{ vk::ImageLayout::eUndefined },
+				type{ builder.create_info.viewType },
 				subresource_range{ builder.create_info.subresourceRange }
 			{
-				handle = render_device.CreateImageView(builder.create_info, builder.debug_name);
+				if (!builder.external_handle)
+				{
+					handle = render_device.CreateImageView(builder.create_info, builder.debug_name);
+				}
+				else
+				{
+					external_handle = true;
+					handle = builder.external_handle;
+				}
 			}
 
 			ImageView::ImageView(ImageView&& other) noexcept :
 				VulkanResource{ std::move(other) }, 
 				render_device{ other.render_device }, 
 				format{ other.format }, 
+				layout{ other.layout },
+				type{ other.type },
 				subresource_range{ other.subresource_range }
 			{
 			}
 
 			ImageView::~ImageView()
 			{
-				render_device.DestroyImageView(handle);
+				render_device.Destroy(handle);
+			}
+
+			void ImageView::SetImageLayout(vk::ImageLayout new_layout)
+			{
+				layout = new_layout;
 			}
 
 			vk::Format ImageView::GetFormat() const
 			{
 				return format;
+			}
+
+			vk::ImageLayout ImageView::GetImageLayout() const
+			{
+				return layout;
+			}
+
+			vk::ImageViewType ImageView::GetType() const
+			{
+				return type;
 			}
 
 			vk::ImageSubresourceLayers ImageView::GetSubresourceLayers() const

@@ -191,14 +191,6 @@ namespace engine
 				void BeginCommandBuffer(FVkCommandBuffer& command_buffer, vk::CommandBufferUsageFlags usage, u32 image_index);
 				void EndCommandBuffer(FVkCommandBuffer& command_buffer);
 
-				// VkImage
-				FRenderApiErrorInfo CreateImage(const FVkImageCreateInfo& image_ci, FVkImage& image);
-				void DestroyImage(FVkImage& image);
-
-				// VkImageView
-				FRenderApiErrorInfo CreateImageView(const FVkImageViewCreateInfo& image_view_ci, vk::ImageView& image_view);
-				void DestroyImageView(vk::ImageView& image_view);
-
 				// VkDescriptorSetLayout
 				FRenderApiErrorInfo CreateDescriptorSetLayout(const FVkDescriptorSetLayoutCreateInfo& layout_ci, vk::DescriptorSetLayout& descriptor_set_layout);
 				void DestroyDescriptorSetLayout(vk::DescriptorSetLayout& descriptor_set_layout);

@@ -4,6 +4,9 @@
 #include <engine/render/render_api/vulkan/VkRenderBackend.h>
 #include <engine/render/render_api/vulkan/Buffer.h>
 #include <engine/render/render_api/vulkan/Sampler.h>
+#include <engine/render/render_api/vulkan/Image.h>
+#include <engine/render/render_api/vulkan/ImageView.h>
+#include <engine/render/render_api/vulkan/Texture.h>
 
 #include "BufferObject.h"
 #include "ShaderObject.h"

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <engine/render/render_api/vulkan/Allocator.h>
+#include <engine/render/render_api/vulkan/VkResourceStructures.h>
 
 namespace engine
 {
@@ -66,6 +67,8 @@ namespace engine
 				vk::DeviceSize GetSize() const;
 
 				vk::DeviceSize GetSuballocationSize() const;
+
+				void MakeTranslation(FVkBufferTranslationInfo& buffer_barrier, const FResourceBarrierInfo& barrier);
 
 			private:
 				vk::DeviceSize size{ 0ull };

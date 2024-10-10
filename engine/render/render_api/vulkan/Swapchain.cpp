@@ -330,7 +330,7 @@ namespace engine
 				// Destroy image views
 				for (auto& image_view : image_views)
 				{
-					render_device.DestroyImageView(image_view);
+					render_device.Destroy(image_view);
 				}
 			}
 

@@ -12,6 +12,9 @@ namespace engine
 	{
 		namespace vulkan
 		{
+			class Image;
+			class ImageView;
+
 			struct FRenderApiErrorInfo
 			{
 				bool fault{ false };
@@ -80,35 +83,6 @@ namespace engine
 				EQueueTypeFlagBits mask{};
 				vk::CommandBufferLevel level{};
 				u32 count{ 1u };
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				std::string name{};
-#endif
-			};
-
-			// ---------------------------------------------------------------------------------
-			// ====================================| IMAGE |====================================
-			// ---------------------------------------------------------------------------------
-			struct FVkImage
-			{
-				vk::Image handle{};
-				vma::Allocation memory{};
-			};
-
-			struct FVkImageCreateInfo
-			{
-				vk::ImageCreateInfo ci{};
-				vma::MemoryUsage memoryUsage{};
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				std::string name{};
-#endif
-			};
-
-			// ---------------------------------------------------------------------------------
-			// ==================================| IMAGE VIEW |=================================
-			// ---------------------------------------------------------------------------------
-			struct FVkImageViewCreateInfo
-			{
-				vk::ImageViewCreateInfo ci{};
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				std::string name{};
 #endif
@@ -291,83 +265,6 @@ namespace engine
 			struct FVkShaderResourcesInfo
 			{
 				u32 usageCount{ 1u };
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				std::string name{};
-#endif
-			};
-
-
-			// ---------------------------------------------------------------------------------
-			// ===================================| TEXTURE |===================================
-			// ---------------------------------------------------------------------------------
-			struct FVkTextureInitialData
-			{
-				vk::Format format{};
-				ETextureCreateFlags flags{ 0u };
-				FTextureSizeInfo size{};
-
-				u32 mipLevels{ 1u };
-				u32 arrayLayers{ 1u };
-
-				vk::SampleCountFlagBits sampleCount{ vk::SampleCountFlagBits::e1 };
-			};
-
-			struct FVkTextureMipLevel
-			{
-				vk::ImageView imageView{};
-				u32 baseMipLevel{};
-				u32 mipLevelCount{ 1u };
-				vk::ImageLayout layout{};
-			};
-
-			struct FVkTexture
-			{
-				FVkImage image{};
-				FVkTextureMipLevel base{};
-				utl::vector<FVkTextureMipLevel> mips{};
-				u64 sampler{ ~0ull };
-				u32 totalLayers{ 1u };
-
-				bool isAlive{ false };
-
-				FVkTextureMipLevel& getSubresource(u32 idx = ~0u)
-				{
-					if (idx == ~0u)
-						return base;
-
-					return mips[idx];
-				}
-
-				const FVkTextureMipLevel& getSubresource(u32 idx = ~0u) const
-				{
-					if (idx == ~0u)
-						return base;
-
-					return mips[idx];
-				}
-
-				FVkTextureInitialData info;
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				std::string name{};
-#endif
-			};
-
-			struct FVkTextureCreateInfo
-			{
-				vk::Format format{};
-				ETextureCreateFlags flags{ 0u };
-				FTextureSizeInfo size{};
-
-				u32 mipLevels{ 1u };
-				u32 arrayLayers{ 1u };
-
-				vk::SampleCountFlagBits sampleCount{ vk::SampleCountFlagBits::e1 };
-
-				bool CreateSampler{ true };
-				vk::Filter filter{ vk::Filter::eLinear };
-				vk::SamplerAddressMode addressMode{ vk::SamplerAddressMode::eClampToEdge };
-				bool enableAnisotropy{ false };
-
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				std::string name{};
 #endif

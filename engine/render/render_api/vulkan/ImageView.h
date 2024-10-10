@@ -15,6 +15,7 @@ namespace engine
 			struct ImageViewBuilder
 			{
 				std::string debug_name;
+				vk::ImageView external_handle;
 				mutable vk::ImageViewCreateInfo create_info;
 
 				ImageViewBuilder();
@@ -29,6 +30,7 @@ namespace engine
 				ImageViewBuilder& SetBaseArrayLayer(uint32_t layer);
 				ImageViewBuilder& SetMipLevelCount(uint32_t count);
 				ImageViewBuilder& SetArrayLayerlCount(uint32_t count);
+				ImageViewBuilder& SetExternalHandle(vk::ImageView handle);
 
 				ImageView Build(RenderDevice& render_device, Image& image) const;
 				std::unique_ptr<ImageView> BuildUnique(RenderDevice& render_device, Image& image) const;
@@ -50,13 +52,20 @@ namespace engine
 				ImageView& operator=(const ImageView&) = delete;
 				ImageView& operator=(ImageView&&) = delete;
 
+				void SetImageLayout(vk::ImageLayout new_layout);
+
 				vk::Format GetFormat() const;
+				vk::ImageLayout GetImageLayout() const;
+				vk::ImageViewType GetType() const;
 				vk::ImageSubresourceLayers GetSubresourceLayers() const;
 				vk::ImageSubresourceRange GetSubresourceRange() const;
 			private:
 				RenderDevice& render_device;
+				bool external_handle{ false };
 
 				vk::Format format;
+				vk::ImageLayout layout;
+				vk::ImageViewType type;
 				vk::ImageSubresourceRange subresource_range;
 			};
 		}

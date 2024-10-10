@@ -82,6 +82,12 @@ namespace engine
 				return *this;
 			}
 
+			ImageBuilder& ImageBuilder::SetExternalHandle(vk::Image handle)
+			{
+				external_handle = handle;
+				return *this;
+			}
+
 			Image ImageBuilder::Build(RenderDevice& render_device) const
 			{
 				return Image(render_device, *this);
@@ -96,10 +102,18 @@ namespace engine
 			Image::Image(RenderDevice& render_device, ImageBuilder const& builder) :
 				VulkanResource{ nullptr },
 				Allocation{ render_device, builder.alloc_create_info },
-				create_info{ builder.create_info },
-				device{ render_device.GetLogicalDevice() }
+				create_info{ builder.create_info }
 			{
-				handle = render_device.CreateImage2(*this, builder.create_info, builder.debug_name);
+				if (!builder.external_handle)
+				{
+					handle = render_device.CreateImage2(*this, builder.create_info, builder.debug_name);
+				}
+				else
+				{
+					external_handle = true;
+					handle = builder.external_handle;
+				}
+				
 				subresource.arrayLayer = create_info.arrayLayers;
 				subresource.mipLevel = create_info.mipLevels;
 			}
@@ -107,7 +121,6 @@ namespace engine
 			Image::Image(Image&& other) noexcept :
 				VulkanResource{ std::move(other) },
 				Allocation{ std::move(other) },
-				device{ other.device },
 				create_info(std::exchange(other.create_info, {})),
 				subresource(std::exchange(other.subresource, {}))
 			{
@@ -115,7 +128,10 @@ namespace engine
 
 			Image::~Image()
 			{
-				render_device.Destroy(*this, handle);
+				if (!external_handle)
+				{
+					render_device.Destroy(*this, handle);
+				}
 			}
 
 			uint8_t* Image::Map()
@@ -125,16 +141,6 @@ namespace engine
 					log_warning("Mapping image memory that is not linear");
 				}
 				return Allocation::Map();
-			}
-
-			Device& Image::GetDevice()
-			{
-				return device;
-			}
-
-			Device const& Image::GetDevice() const
-			{
-				return device;
 			}
 
 			vk::ImageType Image::GetType() const
@@ -170,6 +176,11 @@ namespace engine
 			vk::ImageSubresource Image::GetSubresource() const
 			{
 				return subresource;
+			}
+
+			uint32_t Image::GetMipLevelCount() const
+			{
+				return create_info.mipLevels;
 			}
 
 			uint32_t Image::GetArrayLayerCount() const

@@ -193,6 +193,16 @@ namespace engine
 				return alloc_info.deviceMemory;
 			}
 
+			RenderDevice& Allocation::GetDevice()
+			{
+				return render_device;
+			}
+
+			RenderDevice const& Allocation::GetDevice() const
+			{
+				return render_device;
+			}
+
 			void Allocation::Flush(vk::DeviceSize offset, vk::DeviceSize size)
 			{
 				if (!coherent)

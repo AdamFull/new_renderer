@@ -19,6 +19,21 @@
 		"GL_EXT_shader_explicit_arithmetic_types_int8"
 	];
 
+	samplers: [
+		{
+			name: "sampler";
+			texture: "";
+
+			min_filter: "point";
+			mag_filter: "point";
+			mip_filter: "point";
+
+			address_u: "clamp";
+			address_v: "clamp";
+			address_w: "clamp";
+		}
+	];
+
 	type: "compute";
 	source: "visbuffershade.comp";
 }

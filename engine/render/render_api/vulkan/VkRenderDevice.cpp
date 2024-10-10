@@ -478,37 +478,6 @@ namespace engine
 				command_buffer.isRunning = false;
 			}
 
-			FRenderApiErrorInfo RenderDevice::CreateImage(const FVkImageCreateInfo& image_ci, FVkImage& image)
-			{
-				vma::AllocationCreateInfo alloc_ci{};
-				alloc_ci.usage = image_ci.memoryUsage;
-
-				vk::Result res = Handle(*allocator).createImage(&image_ci.ci, &alloc_ci, &image.handle, &image.memory, nullptr);
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				debug_utils->SetDebugName(image.handle, image_ci.name);
-#endif
-				return make_api_error(image.handle.objectType, res, "Failed to Create");
-			}
-
-			void RenderDevice::DestroyImage(FVkImage& image)
-			{
-				Handle(*allocator).destroyImage(image.handle, image.memory);
-			}
-
-			FRenderApiErrorInfo RenderDevice::CreateImageView(const FVkImageViewCreateInfo& image_view_ci, vk::ImageView& image_view)
-			{
-				vk::Result res = Handle(*device).createImageView(&image_view_ci.ci, allocation_callbacks, &image_view);
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				debug_utils->SetDebugName(image_view, image_view_ci.name);
-#endif
-				return make_api_error(image_view.objectType, res, "Failed to Create");
-			}
-
-			void RenderDevice::DestroyImageView(vk::ImageView& image_view)
-			{
-				Handle(*device).destroyImageView(image_view, allocation_callbacks);
-			}
-
 			FRenderApiErrorInfo RenderDevice::CreateDescriptorSetLayout(const FVkDescriptorSetLayoutCreateInfo& layout_ci, vk::DescriptorSetLayout& descriptor_set_layout)
 			{
 				vk::DescriptorSetLayoutCreateInfo descriptor_set_layout_ci{};
@@ -1265,26 +1234,23 @@ namespace engine
 				{
 					swapchain.imageViews.resize(image_count);
 
-					FVkImageViewCreateInfo image_view_ci{};
-					image_view_ci.ci.viewType = vk::ImageViewType::e2D;
-					image_view_ci.ci.format = swapchain.format;
-					image_view_ci.ci.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-					image_view_ci.ci.subresourceRange.baseMipLevel = 0;
-					image_view_ci.ci.subresourceRange.levelCount = 1;
-					image_view_ci.ci.subresourceRange.baseArrayLayer = 0;
-					image_view_ci.ci.subresourceRange.layerCount = 1;
-					image_view_ci.ci.components.r = vk::ComponentSwizzle::eR;
-					image_view_ci.ci.components.g = vk::ComponentSwizzle::eG;
-					image_view_ci.ci.components.b = vk::ComponentSwizzle::eB;
-					image_view_ci.ci.components.a = vk::ComponentSwizzle::eA;
+					vk::ImageViewCreateInfo image_view_ci{};
+					image_view_ci.viewType = vk::ImageViewType::e2D;
+					image_view_ci.format = swapchain.format;
+					image_view_ci.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+					image_view_ci.subresourceRange.baseMipLevel = 0;
+					image_view_ci.subresourceRange.levelCount = 1;
+					image_view_ci.subresourceRange.baseArrayLayer = 0;
+					image_view_ci.subresourceRange.layerCount = 1;
+					image_view_ci.components.r = vk::ComponentSwizzle::eR;
+					image_view_ci.components.g = vk::ComponentSwizzle::eG;
+					image_view_ci.components.b = vk::ComponentSwizzle::eB;
+					image_view_ci.components.a = vk::ComponentSwizzle::eA;
 
 					for (u32 idx = 0u; idx < image_count; ++idx)
 					{
-#ifndef BUILD_WITHOUT_DEBUGGIND
-						image_view_ci.name = std::format("frame #{}", idx);
-#endif
-						image_view_ci.ci.image = swapchain.images[idx];
-						check_api_result(CreateImageView(image_view_ci, swapchain.imageViews[idx]));
+						image_view_ci.image = swapchain.images[idx];
+						swapchain.imageViews[idx] = CreateImageView(image_view_ci, std::format("frame #{}", idx));
 					}
 				}
 

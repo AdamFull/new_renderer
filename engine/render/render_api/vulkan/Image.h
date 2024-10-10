@@ -9,13 +9,14 @@ namespace engine
 	{
 		namespace vulkan
 		{
-			class Device;
 			class Image;
 			class RenderDevice;
 
 			class ImageBuilder : public AllocationBuilder<ImageBuilder, vk::ImageCreateInfo>
 			{
 			public:
+				vk::Image external_handle{ nullptr };
+
 				ImageBuilder(vk::Extent3D const& extent);
 				ImageBuilder(vk::Extent2D const& extent);
 				ImageBuilder(uint32_t width, uint32_t height = 1u, uint32_t depth = 1u);
@@ -28,6 +29,7 @@ namespace engine
 				ImageBuilder& SetUsage(vk::ImageUsageFlags usage);
 				ImageBuilder& SetFlags(vk::ImageCreateFlags flags);
 				ImageBuilder& SetImplicitSharingMode();
+				ImageBuilder& SetExternalHandle(vk::Image handle);
 
 				Image Build(RenderDevice& render_device) const;
 				std::unique_ptr<Image> BuildUnique(RenderDevice& render_device) const;
@@ -55,8 +57,6 @@ namespace engine
 				 */
 				uint8_t* Map();
 
-				Device& GetDevice();
-				Device const& GetDevice() const;
 				vk::ImageType GetType() const;
 				const vk::Extent3D& GetExtent() const;
 				vk::Format GetFormat() const;
@@ -64,11 +64,13 @@ namespace engine
 				vk::ImageUsageFlags GetUsage() const;
 				vk::ImageTiling GetTiling() const;
 				vk::ImageSubresource GetSubresource() const;
+				uint32_t GetMipLevelCount() const;
 				uint32_t GetArrayLayerCount() const;
 
-			private:
-				Device& device;
 
+
+			private:
+				bool external_handle{ false };
 				vk::ImageCreateInfo create_info;
 				vk::ImageSubresource subresource;
 			};

@@ -2,6 +2,7 @@
 #include <engine/render/render_api/vulkan/Device.h>
 #include <engine/render/render_api/vulkan/DebugUtils.h>
 #include <engine/render/render_api/vulkan/VkRenderDevice.h>
+#include <engine/render/render_api/vulkan/VkCommon.h>
 
 namespace engine
 {
@@ -113,6 +114,20 @@ namespace engine
 			vk::DeviceSize Buffer::GetSuballocationSize() const
 			{
 				return size / suballocation_count;
+			}
+
+			void Buffer::MakeTranslation(FVkBufferTranslationInfo& buffer_barrier, const FResourceBarrierInfo& barrier)
+			{
+				ERenderResourceAccessFlagBits src_resource_access{};
+				ERenderResourceAccessFlagBits dst_resource_access{};
+				unpackDependencyBarrier(barrier.dependencyType, src_resource_access, dst_resource_access);
+
+				buffer_barrier.handle = handle;
+				buffer_barrier.size = size;
+				buffer_barrier.srcStageMask = get_translation_stage_flags(barrier.srcPassType);
+				buffer_barrier.srcAccessMask = get_translation_access_flags(barrier.srcPassType, src_resource_access);
+				buffer_barrier.dstStageMask = get_translation_stage_flags(barrier.dstPassType);
+				buffer_barrier.dstAccessMask = get_translation_access_flags(barrier.dstPassType, dst_resource_access);
 			}
 		}
 	}

@@ -14,9 +14,10 @@ namespace engine
 		namespace vulkan
 		{
 			class Sampler;
+			class Texture;
 			class Buffer;
 
-			using vk_resource_container_t = CResourceContainer<FVkTexture, FVkShader, Buffer, FVkShaderReflectionData>;
+			using vk_resource_container_t = CResourceContainer<Texture, FVkShader, Buffer, FVkShaderReflectionData>;
 
 			class VkRenderBackend : public IRenderBackend
 			{
@@ -58,11 +59,6 @@ namespace engine
 				void FlushBuffer(FAPIHandle buffer_id, u64 size, u64 offset) override;
 				void DestroyBuffer(FAPIHandle resource_id) override;
 				void UploadBuffers() override;
-			
-
-				void PushG2CBarriers(EQueueTypeFlagBits queue_type, const utl::vector<FAPIHandle>& texture_ids) override;
-				void PushC2CBarrier(EQueueTypeFlagBits queue_type) override;
-				void PushC2GBarrier(EQueueTypeFlagBits queue_type, const utl::vector<FAPIHandle>& texture_ids) override;
 
 				void ProcessResourceBarriers(EQueueTypeFlagBits queue, const utl::vector<FResourceBarrierInfo>& barriers) override;
 
@@ -121,9 +117,6 @@ namespace engine
 				void ProcessResourceUtilization();
 				void UpdateBackbuffer();
 
-				FRenderApiErrorInfo CreateTexture(const FVkTextureCreateInfo& texture_ci, FVkTexture& texture);
-				void DestroyTexture(FVkTexture& texture);
-
 				FRenderApiErrorInfo CreateShaderResources(const FVkShaderResourcesInfo& resources_info, FVkShader& shader);
 				void DestroyShader(FVkShader& shader);
 
@@ -131,7 +124,7 @@ namespace engine
 
 				void ProcessMemoryBarriers(const FVkCommandBuffer& command_buffer, const FVkTranslationInfo& translation_info);
 				void ProcessImageLayoutTranslation(const FVkCommandBuffer& command_buffer, const FVkImageTranslationInfo& image_translation_info);
-				void TextureLayoutTranslation(const FVkCommandBuffer& command_buffer, FVkTexture& texture, const FVkTextureTranslationInfo& translation_info);
+				void TextureLayoutTranslation(const FVkCommandBuffer& command_buffer, Texture& texture, const FVkTextureTranslationInfo& translation_info);
 
 				//void blitImage(const FVkCommandBuffer& command_buffer, );
 			private:
@@ -157,7 +150,7 @@ namespace engine
 				utl::hash_map<EQueueTypeFlagBits, u32> zone_entries{};
 				FVkTimestampQuery timestamp_query{};
 
-				utl::vector<FVkTexture> backbuffer{};
+				utl::vector<std::unique_ptr<Texture>> backbuffer;
 
 				utl::hash_map<u32, std::unique_ptr<Sampler>> sampler_cache{};
 				std::unique_ptr<Sampler> default_sampler{};
