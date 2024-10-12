@@ -169,9 +169,9 @@ void build_uniform_reflection(FVkShaderReflectionData& reflection_data, spirv_cr
 }
 
 
-void CVkShaderReflectionBuilder::AddShaderStage(vk::ShaderStageFlagBits shaderStage, const utl::vector<u32>& shaderCode)
+void CVkShaderReflectionBuilder::AddShaderStage(vk::ShaderStageFlagBits shaderStage, std::span<uint32_t> shader_code)
 {
-	spirv_cross::CompilerGLSL compiler(shaderCode.data(), shaderCode.size());
+	spirv_cross::CompilerGLSL compiler(shader_code.data(), shader_code.size());
     auto active = compiler.get_active_interface_variables();
     auto resources = compiler.get_shader_resources(active);
     compiler.set_enabled_interface_variables(std::move(active));

@@ -37,9 +37,9 @@ namespace engine
 				void ReadPixel(FAPIHandle resource_id, u32 x, u32 y, void* data) override;
 
 
-				FAPIHandle CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, utl::vector<FShaderCreationBlockInfo>&& shader_stages) override;
-				FAPIHandle CreateShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, utl::vector<FShaderCreationBlockInfo>&& shader_stages) override;
-				FAPIHandle CreateShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci, utl::vector<FShaderCreationBlockInfo>&& shader_stages) override;
+				FAPIHandle CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const std::vector<FShaderCreationBlockInfo>& shader_stages) override;
+				FAPIHandle CreateShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const FShaderCreationBlockInfo& shader_stage) override;
+				FAPIHandle CreateShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci) override;
 				FShaderReflectionData GetShaderReflection(FAPIHandle shader_view) override;
 				void UpdateShaderResources(const FShaderResourceCommit& shader_resources, EShaderResourcesUpdateFlags flags = EShaderResourcesUpdateFlagBits::eAll) override;
 				void FlushConstantRanges(FAPIHandle shader_id, const utl::hash_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type) override;

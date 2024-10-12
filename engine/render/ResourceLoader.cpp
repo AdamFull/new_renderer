@@ -209,7 +209,7 @@ bool CResourceLoader::LoadShaderData(const FShaderUploadInfo& load_info, utl::ve
 			}
 		}
 
-		shader_code_info.code = &shader_data.data;
+		shader_code_info.code = shader_data.data;
 	}
 
 	return true;

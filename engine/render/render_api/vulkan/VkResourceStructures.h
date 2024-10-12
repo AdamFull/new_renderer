@@ -148,7 +148,7 @@ namespace engine
 			// ---------------------------------------------------------------------------------
 			struct FVkShaderModuleCreateInfo
 			{
-				utl::vector<u32>* shaderCode{};
+				std::span<uint32_t> shader_code{};
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				std::string name{};
 #endif

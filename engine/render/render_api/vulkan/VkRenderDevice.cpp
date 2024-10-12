@@ -569,8 +569,8 @@ namespace engine
 			FRenderApiErrorInfo RenderDevice::CreateShaderModule(const FVkShaderModuleCreateInfo& shader_module_ci, vk::ShaderModule& shader_module)
 			{
 				vk::ShaderModuleCreateInfo module_ci{};
-				module_ci.codeSize = shader_module_ci.shaderCode->size() * sizeof(u32);
-				module_ci.pCode = shader_module_ci.shaderCode->data();
+				module_ci.codeSize = shader_module_ci.shader_code.size() * sizeof(u32);
+				module_ci.pCode = shader_module_ci.shader_code.data();
 
 				vk::Result res = Handle(*device).createShaderModule(&module_ci, allocation_callbacks, &shader_module);
 #ifndef BUILD_WITHOUT_DEBUGGIND

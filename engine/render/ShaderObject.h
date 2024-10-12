@@ -12,8 +12,8 @@ namespace engine
 			CShaderObject(IRenderInterface* render_interface);
 			~CShaderObject() override;
 
-			void Create(const std::string& name, const FGraphicsShaderCreateInfo& create_info, utl::vector<FShaderCreationBlockInfo>&& shader_stages) override;
-			void Create(const std::string& name, const FComputeShaderCreateInfo& create_info, utl::vector<FShaderCreationBlockInfo>&& shader_stages) override;
+			void Create(const std::string& name, const FGraphicsShaderCreateInfo& create_info, const std::vector<FShaderCreationBlockInfo>& shader_stages) override;
+			void Create(const std::string& name, const FComputeShaderCreateInfo& create_info, const FShaderCreationBlockInfo& shader_stage) override;
 
 			const std::unique_ptr<CUniformHandle>& GetUniformBlock(u64 name) override;
 			const std::unique_ptr<CUniformHandle>& GetConstantBlock(u64 name) override;

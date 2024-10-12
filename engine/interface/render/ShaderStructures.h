@@ -95,7 +95,7 @@ namespace engine
 		struct FShaderCreationBlockInfo
 		{
 			u32 stage{ 0u };
-			utl::vector<u32>* code{ nullptr };
+			std::span<uint32_t> code;
 		};
 
 		struct FAttachment

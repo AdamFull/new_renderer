@@ -228,8 +228,8 @@ namespace engine
 		public:
 			virtual ~IShaderObject() = default;
 
-			virtual void Create(const std::string& name, const FGraphicsShaderCreateInfo& create_info, utl::vector<FShaderCreationBlockInfo>&& shader_stages) = 0;
-			virtual void Create(const std::string& name, const FComputeShaderCreateInfo& create_info, utl::vector<FShaderCreationBlockInfo>&& shader_stages) = 0;
+			virtual void Create(const std::string& name, const FGraphicsShaderCreateInfo& create_info, const std::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
+			virtual void Create(const std::string& name, const FComputeShaderCreateInfo& create_info, const FShaderCreationBlockInfo& shader_stage) = 0;
 
 			virtual const std::unique_ptr<CUniformHandle>& GetUniformBlock(u64 name) = 0;
 			virtual const std::unique_ptr<CUniformHandle>& GetConstantBlock(u64 name) = 0;
@@ -332,9 +332,9 @@ namespace engine
 			virtual void DestroyTexture(FAPIHandle resource_id) = 0;
 			virtual void ReadPixel(FAPIHandle resource_id, u32 x, u32 y, void* data) = 0;
 
-			virtual FAPIHandle CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, utl::vector<FShaderCreationBlockInfo>&& shader_stages) = 0;
-			virtual FAPIHandle CreateShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, utl::vector<FShaderCreationBlockInfo>&& shader_stages) = 0;
-			virtual FAPIHandle CreateShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci, utl::vector<FShaderCreationBlockInfo>&& shader_stages) = 0;
+			virtual FAPIHandle CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const std::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
+			virtual FAPIHandle CreateShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const FShaderCreationBlockInfo& shader_stage) = 0;
+			virtual FAPIHandle CreateShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci) = 0;
 			virtual FShaderReflectionData GetShaderReflection(FAPIHandle shader_view) = 0;
 			virtual void UpdateShaderResources(const FShaderResourceCommit& resources, EShaderResourcesUpdateFlags flags = EShaderResourcesUpdateFlagBits::eAll) = 0;
 			virtual void FlushConstantRanges(FAPIHandle shader_id, const utl::hash_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type) = 0;

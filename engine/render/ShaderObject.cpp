@@ -14,17 +14,17 @@ CShaderObject::~CShaderObject()
 	m_pRenderContext->DestroyShader(m_shaderId);
 }
 
-void CShaderObject::Create(const std::string& name, const FGraphicsShaderCreateInfo& create_info, utl::vector<FShaderCreationBlockInfo>&& shader_stages)
+void CShaderObject::Create(const std::string& name, const FGraphicsShaderCreateInfo& create_info, const std::vector<FShaderCreationBlockInfo>& shader_stages)
 {
 	auto uuid = utl::to_string(utl::generate_guid());
-	m_shaderId = m_pRenderContext->CreateShader(uuid, create_info, std::move(shader_stages));
+	m_shaderId = m_pRenderContext->CreateShader(uuid, create_info, shader_stages);
 	BuildReflection();
 }
 
-void CShaderObject::Create(const std::string& name, const FComputeShaderCreateInfo& create_info, utl::vector<FShaderCreationBlockInfo>&& shader_stages)
+void CShaderObject::Create(const std::string& name, const FComputeShaderCreateInfo& create_info, const FShaderCreationBlockInfo& shader_stage)
 {
 	auto uuid = utl::to_string(utl::generate_guid());
-	m_shaderId = m_pRenderContext->CreateShader(uuid, create_info, std::move(shader_stages));
+	m_shaderId = m_pRenderContext->CreateShader(uuid, create_info, shader_stage);
 	BuildReflection();
 }
 

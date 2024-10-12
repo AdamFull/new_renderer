@@ -580,7 +580,7 @@ void VkRenderBackend::ReadPixel(FAPIHandle resource_id, u32 x, u32 y, void* data
 }
 
 
-FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, utl::vector<FShaderCreationBlockInfo>&& shader_stages)
+FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const std::vector<FShaderCreationBlockInfo>& shader_stages)
 {
 	const char* shaderEntryPoint{ "main" };
 
@@ -650,7 +650,7 @@ FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FGraphic
 	{
 		auto shader_stage = get_shader_stage(stage);
 		FVkShaderModuleCreateInfo shader_module_ci{};
-		shader_module_ci.shaderCode = code;
+		shader_module_ci.shader_code = code;
 #ifndef BUILD_WITHOUT_DEBUGGIND
 		shader_module_ci.name = std::format("{} stage {} #{}", name, vk::to_string(shader_stage), shader_index);
 #endif
@@ -663,7 +663,7 @@ FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FGraphic
 		stage_ci.module = shader_module;
 		stage_ci.pName = shaderEntryPoint;
 
-		reflection_builder.AddShaderStage(shader_stage, *code);
+		reflection_builder.AddShaderStage(shader_stage, code);
 		shader_index++;
 	}
 
@@ -700,7 +700,7 @@ FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FGraphic
 	return FAPIHandle(render_resources->add<FVkShader>(shader_unique_name.c_str(), std::move(shader)));
 }
 
-FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, utl::vector<FShaderCreationBlockInfo>&& shader_stages)
+FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const FShaderCreationBlockInfo& shader_stage)
 {
 	const char* shaderEntryPoint{ "main" };
 
@@ -709,25 +709,20 @@ FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FCompute
 	utl::vector<vk::PipelineShaderStageCreateInfo> pipeline_stages{};
 
 	// Create shader modules and collect reflection data
-	for (u64 idx = 0ull; idx < shader_stages.size(); ++idx)
-	{
-		auto& code = shader_stages[idx];
-		FVkShaderModuleCreateInfo shader_module_ci{};
-		shader_module_ci.shaderCode = code.code;
-#ifndef BUILD_WITHOUT_DEBUGGIND
-		shader_module_ci.name = std::format("{} stage {} #{}", name, vk::to_string(vk::ShaderStageFlagBits::eCompute), idx);
-#endif
 
-		auto& shader_module = shader->shaderModules.emplace_back();
-		render_device->CreateShaderModule(shader_module_ci, shader_module);
+	FVkShaderModuleCreateInfo shader_module_ci{};
+	shader_module_ci.shader_code = shader_stage.code;
+	shader_module_ci.name = std::format("{} stage {}", name, vk::to_string(vk::ShaderStageFlagBits::eCompute));
 
-		auto& stage = pipeline_stages.emplace_back();
-		stage.stage = vk::ShaderStageFlagBits::eCompute;
-		stage.module = shader_module;
-		stage.pName = shaderEntryPoint;
+	auto& shader_module = shader->shaderModules.emplace_back();
+	render_device->CreateShaderModule(shader_module_ci, shader_module);
 
-		reflection_builder.AddShaderStage(vk::ShaderStageFlagBits::eCompute, *code.code);
-	}
+	auto& stage = pipeline_stages.emplace_back();
+	stage.stage = vk::ShaderStageFlagBits::eCompute;
+	stage.module = shader_module;
+	stage.pName = shaderEntryPoint;
+
+	reflection_builder.AddShaderStage(vk::ShaderStageFlagBits::eCompute, shader_stage.code);
 
 	auto reflection = std::make_unique<FVkShaderReflectionData>(reflection_builder.Build());
 
@@ -775,7 +770,7 @@ FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FCompute
 	return FAPIHandle(render_resources->add<FVkShader>(shader_unique_name.c_str(), std::move(shader)));
 }
 
-FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci, utl::vector<FShaderCreationBlockInfo>&& shader_stages)
+FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci)
 {
 	const char* shaderEntryPoint{ "main" };
 

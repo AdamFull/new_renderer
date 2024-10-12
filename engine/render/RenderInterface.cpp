@@ -426,7 +426,7 @@ FRHIHandle CRenderInterface::CreateShaderObject(const std::string& name, const F
 	}
 
 	auto new_shader = std::make_unique<CShaderObject>(this);
-	new_shader->Create(name, shader_ci, std::move(shader_stages));
+	new_shader->Create(name, shader_ci, shader_stages);
 
 	auto uuid = utl::to_string(utl::generate_guid());
 	return FRHIHandle(render_resources->add<IShaderObject>(uuid.c_str(), std::move(new_shader)));
@@ -442,7 +442,7 @@ FRHIHandle CRenderInterface::CreateShaderObject(const std::string& name, const F
 	}
 
 	auto new_shader = std::make_unique<CShaderObject>(this);
-	new_shader->Create(name, shader_ci, std::move(shader_stages));
+	new_shader->Create(name, shader_ci, shader_stages.front());
 
 	auto uuid = utl::to_string(utl::generate_guid());
 	return FRHIHandle(render_resources->add<IShaderObject>(uuid.c_str(), std::move(new_shader)));
