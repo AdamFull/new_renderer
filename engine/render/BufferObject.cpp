@@ -36,12 +36,15 @@ void CBufferObject::Resize(const std::string& name, const FBufferCreateInfo& cre
 	m_virtualAddress = buffer_view.address;
 }
 
-void CBufferObject::Upload(utl::vector<u8>&& data, const utl::vector<FBufferUploadRegion>& regions)
+void CBufferObject::Upload(const utl::vector<u8>& data, const utl::vector<FBufferUploadRegion>& regions)
 {
 	FBufferUploadInfo upload_info{};
-	upload_info.bufferId = m_bufferId;
-	upload_info.data = std::move(data);
+	upload_info.buffer_id = m_bufferId;
 	upload_info.regions = regions;
+	upload_info.upload_data = std::span{ data.data(), data.size() };
+
+	for (const auto& region : regions)
+		upload_info.upload_size += region.size;
 
 	m_pRenderContext->UploadDataToBuffer(upload_info);
 }

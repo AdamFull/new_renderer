@@ -68,7 +68,7 @@ namespace engine
 
 				vk::DeviceSize GetSuballocationSize() const;
 
-				void MakeTranslation(FVkBufferTranslationInfo& buffer_barrier, const FResourceBarrierInfo& barrier);
+				void MakeTranslation(vk::BufferMemoryBarrier2KHR& buffer_barrier, const FResourceBarrierInfo& barrier);
 
 			private:
 				vk::DeviceSize size{ 0ull };

@@ -326,7 +326,7 @@ namespace engine
 			virtual const utl::vector<uint32_t>& GetGlobalTextureRemap() = 0;
 
 			virtual FAPIHandle CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
-			virtual FAPIHandle CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) = 0;
+			virtual FAPIHandle CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci, const FTextureUploadInfo& upload_info) = 0;
 			virtual FAPIHandle GetTextureId(const std::string& name) = 0;
 			virtual FTextureView GetTextureView(FAPIHandle texture_id) = 0;
 			virtual void DestroyTexture(FAPIHandle resource_id) = 0;
@@ -453,8 +453,9 @@ namespace engine
 
 			virtual void Initialize(filesystem::IVirtualFileSystemInterface* vfs) = 0;
 
-			virtual bool LoadTexture(const utl::vector<uint8_t>& data, EMimeType mime, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info) = 0;
+			virtual bool LoadTexture(const utl::vector<uint8_t>& data, EMimeType mime, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info, FTextureResourceHandle& handle) = 0;
 			virtual bool LoadShaderData(const FShaderUploadInfo& load_info, utl::vector<FShaderCreationBlockInfo>& shader_stages) = 0;
+			virtual void DestroyHandle(FTextureResourceHandle& handle) = 0;
 		};
 
 		class IRenderInterface
@@ -476,7 +477,7 @@ namespace engine
 
 			virtual FRHIHandle CreateTextureObject(const std::string& path) = 0;
 			virtual FRHIHandle CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci) = 0;
-			virtual FRHIHandle CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) = 0;
+			virtual FRHIHandle CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci, const FTextureUploadInfo& upload_info) = 0;
 			virtual void DestroyTextureObject(FRHIHandle handle) = 0;
 			virtual const std::unique_ptr<ITextureObject>& GetTextureObject(FRHIHandle handle) = 0;
 			virtual const std::unique_ptr<ITextureObject>& GetTextureObject(const char* name) = 0;

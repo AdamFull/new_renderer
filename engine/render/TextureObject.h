@@ -13,7 +13,7 @@ namespace engine
 			~CTextureObject() override;
 
 			void Create(const std::string& name, const FTextureCreateInfo& create_info) override;
-			void Create(const std::string& name, const FTextureCreateInfo& create_info, FTextureUploadInfo&& upload_info) override;
+			void Create(const std::string& name, const FTextureCreateInfo& create_info, const FTextureUploadInfo& upload_info) override;
 
 			void GetPixel(u32 x, u32 y, u8* data) override;
 

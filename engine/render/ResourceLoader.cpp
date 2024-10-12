@@ -105,9 +105,10 @@ void CResourceLoader::Initialize(IVirtualFileSystemInterface* vfs)
 		log_error("Failed to load shader cache. ")
 }
 
-bool CResourceLoader::LoadTexture(const utl::vector<uint8_t>& data, EMimeType mime, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info)
+bool CResourceLoader::LoadTexture(const utl::vector<uint8_t>& data, EMimeType mime, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info, FTextureResourceHandle& handle)
 {
 	create_info.flags = ETextureCreateFlagBits::eSamplable | ETextureCreateFlagBits::eTransferable;
+	handle.mime_type = mime;
 
 	switch (mime)
 	{
@@ -121,16 +122,43 @@ bool CResourceLoader::LoadTexture(const utl::vector<uint8_t>& data, EMimeType mi
 	case EMimeType::eHDR:
 	case EMimeType::ePIC:
 	case EMimeType::ePNM:
-		return LoadSTBFromMemory(data, create_info, upload_info);
+		return LoadSTBFromMemory(data, create_info, upload_info, handle);
 	case EMimeType::eKTX:
-		return LoadKTXFromMemory(data, create_info, upload_info);
+		return LoadKTXFromMemory(data, create_info, upload_info, handle);
 	case EMimeType::eKTX2:
-		return LoadKTX2FromMemory(data, create_info, upload_info);
+		return LoadKTX2FromMemory(data, create_info, upload_info, handle);
 	case EMimeType::eDDS:
-		return LoadDDSFromMemory(data, create_info, upload_info);
+		return LoadDDSFromMemory(data, create_info, upload_info, handle);
 	}
 
 	return false;
+}
+
+void CResourceLoader::DestroyHandle(FTextureResourceHandle& handle)
+{
+	switch (handle.mime_type)
+	{
+	case EMimeType::eJPG:
+	case EMimeType::eJPEG:
+	case EMimeType::ePNG:
+	case EMimeType::eTGA:
+	case EMimeType::eBMP:
+	case EMimeType::ePSD:
+	case EMimeType::eGIF:
+	case EMimeType::eHDR:
+	case EMimeType::ePIC:
+	case EMimeType::ePNM:
+	{
+		stbi_image_free(handle.handle);
+	} break;
+	case EMimeType::eKTX:
+	case EMimeType::eKTX2:
+	{
+		ktxTexture_Destroy((ktxTexture*)handle.handle);
+	} break;
+	}
+
+	handle.handle = nullptr;
 }
 
 bool CResourceLoader::LoadShaderData(const FShaderUploadInfo& load_info, utl::vector<FShaderCreationBlockInfo>& shader_stages)
@@ -187,7 +215,7 @@ bool CResourceLoader::LoadShaderData(const FShaderUploadInfo& load_info, utl::ve
 	return true;
 }
 
-bool CResourceLoader::LoadSTBFromMemory(const utl::vector<uint8_t>& data, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info)
+bool CResourceLoader::LoadSTBFromMemory(const utl::vector<uint8_t>& data, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info, FTextureResourceHandle& handle)
 {
 	int width{ 0 }, height{ 0 }, channels{ 0 };
 	auto rawdata = stbi_load_from_memory(data.data(), data.size(), &width, &height, &channels, STBI_rgb_alpha);
@@ -196,19 +224,18 @@ bool CResourceLoader::LoadSTBFromMemory(const utl::vector<uint8_t>& data, FTextu
 	create_info.format = EApiDataFormat::eRGBA8_UNORM;
 	auto data_size = utl::cast<u32>(width * height * 4ull);
 
-	upload_info.data.resize(data_size);
-	util::Copy(upload_info.data.data(), rawdata, data_size, std::execution::par);
+	upload_info.upload_data = std::span{ rawdata, data_size };
 
 	create_info.flags |= ETextureCreateFlagBits::e2D;
 
 	create_info.mipLevels = utl::cast<u32>(std::floor(std::log2((std::max)(width, height)))) + 1u;
 
-	stbi_image_free(rawdata);
+	handle.handle = rawdata;
 
 	return true;
 }
 
-bool CResourceLoader::LoadKTXFromMemory(const utl::vector<uint8_t>& data, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info)
+bool CResourceLoader::LoadKTXFromMemory(const utl::vector<uint8_t>& data, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info, FTextureResourceHandle& handle)
 {
 	ktxTexture* kTexture{ nullptr };
 	auto ktxresult = ktxTexture_CreateFromMemory(data.data(), data.size(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &kTexture);
@@ -232,8 +259,7 @@ bool CResourceLoader::LoadKTXFromMemory(const utl::vector<uint8_t>& data, FTextu
 	create_info.mipLevels = kTexture->numLevels;
 	create_info.arrayLayers = kTexture->numLayers;
 
-	upload_info.data.resize(kTexture->dataSize);
-	util::Copy(upload_info.data.data(), kTexture->pData, kTexture->dataSize, std::execution::par);
+	upload_info.upload_data = std::span{ kTexture->pData, kTexture->dataSize };
 
 	// TODO: get api format
 	create_info.format = get_ktx_format(kTexture);
@@ -241,7 +267,7 @@ bool CResourceLoader::LoadKTXFromMemory(const utl::vector<uint8_t>& data, FTextu
 	auto num_layers = kTexture->isCubemap ? kTexture->numFaces : kTexture->numLayers;
 	for (u32 layer = 0; layer < num_layers; layer++)
 	{
-		auto& mip_layer = upload_info.mipLayerOffsets.emplace_back();
+		auto& mip_layer = upload_info.mip_layer_offsets.emplace_back();
 		for (u32 level = 0u; level < kTexture->numLevels; level++)
 		{
 			auto& mip_offset = mip_layer.emplace_back();
@@ -249,12 +275,12 @@ bool CResourceLoader::LoadKTXFromMemory(const utl::vector<uint8_t>& data, FTextu
 		}
 	}
 
-	ktxTexture_Destroy(kTexture);
+	handle.handle = kTexture;
 
 	return true;
 }
 
-bool CResourceLoader::LoadKTX2FromMemory(const utl::vector<uint8_t>& data, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info)
+bool CResourceLoader::LoadKTX2FromMemory(const utl::vector<uint8_t>& data, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info, FTextureResourceHandle& handle)
 {
 	ktxTexture2* kTexture{ nullptr };
 	auto ktxresult = ktxTexture_CreateFromMemory(data.data(), data.size(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, (ktxTexture**)&kTexture);
@@ -283,15 +309,14 @@ bool CResourceLoader::LoadKTX2FromMemory(const utl::vector<uint8_t>& data, FText
 	if (ktxTexture2_NeedsTranscoding(kTexture))
 		ktxresult = ktxTexture2_TranscodeBasis(kTexture, KTX_TTF_BC7_RGBA, 0);
 
-	upload_info.data.resize(kTexture->dataSize);
-	util::Copy(upload_info.data.data(), kTexture->pData, kTexture->dataSize, std::execution::par);
+	upload_info.upload_data = std::span{ kTexture->pData, kTexture->dataSize };
 
 	create_info.format = lookup_api_format(kTexture->vkFormat);
 
 	auto num_layers = kTexture->isCubemap ? kTexture->numFaces : kTexture->numLayers;
 	for (u32 layer = 0; layer < num_layers; layer++)
 	{
-		auto& mip_layer = upload_info.mipLayerOffsets.emplace_back();
+		auto& mip_layer = upload_info.mip_layer_offsets.emplace_back();
 		for (u32 level = 0u; level < kTexture->numLevels; level++)
 		{
 			auto& mip_offset = mip_layer.emplace_back();
@@ -299,12 +324,12 @@ bool CResourceLoader::LoadKTX2FromMemory(const utl::vector<uint8_t>& data, FText
 		}
 	}
 
-	ktxTexture_Destroy((ktxTexture*)kTexture);
+	handle.handle = kTexture;
 
 	return true;
 }
 
-bool CResourceLoader::LoadDDSFromMemory(const utl::vector<uint8_t>& data, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info)
+bool CResourceLoader::LoadDDSFromMemory(const utl::vector<uint8_t>& data, FTextureCreateInfo& create_info, FTextureUploadInfo& upload_info, FTextureResourceHandle& handle)
 {
 	return false;
 }

@@ -270,53 +270,26 @@ namespace engine
 #endif
 			};
 
-			struct FVkImageTranslationInfo
+			struct VkTextureUploadInfo
 			{
-				vk::Image handle;
-
-				vk::PipelineStageFlags2KHR srcStageMask{};
-				vk::AccessFlags2KHR srcAccessMask{};
-				vk::ImageLayout oldLayout{};
-				u32 srcQueueFamilyIndex{ VK_QUEUE_FAMILY_IGNORED };
-
-				vk::PipelineStageFlags2KHR dstStageMask{};
-				vk::AccessFlags2KHR dstAccessMask{};
-				vk::ImageLayout newLayout{};
-				u32 dstQueueFamilyIndex{ VK_QUEUE_FAMILY_IGNORED };
-
-				vk::ImageSubresourceRange subresourceRange{};
+				FAPIHandle texture_id{ INVALID_HANDLE };
+				uint64_t upload_index{ ~0ull };
+				std::vector<std::vector<uint64_t>> mip_layer_offsets{};
 			};
 
-			struct FVkBufferTranslationInfo
+			struct VkBufferUploadInfo
 			{
-				vk::Buffer handle{};
-
-				vk::PipelineStageFlags2KHR srcStageMask{};
-				vk::AccessFlags2KHR srcAccessMask{};
-				u32 srcQueueFamilyIndex{ VK_QUEUE_FAMILY_IGNORED };
-
-				vk::PipelineStageFlags2KHR dstStageMask{};
-				vk::AccessFlags2KHR dstAccessMask{};
-				u32 dstQueueFamilyIndex{ VK_QUEUE_FAMILY_IGNORED };
-
-				vk::DeviceSize size{};
-				vk::DeviceSize offset{};
-			};
-
-			struct FVkMemoryTranslationInfo
-			{
-				vk::PipelineStageFlags2KHR srcStageMask{};
-				vk::AccessFlags2KHR srcAccessMask{};
-
-				vk::PipelineStageFlags2KHR dstStageMask{};
-				vk::AccessFlags2KHR dstAccessMask{};
+				FAPIHandle buffer_id{};
+				uint64_t upload_index{ ~0ull };
+				uint64_t upload_size{ 0ull };
+				std::vector<FBufferUploadRegion> copy_regions{};
 			};
 
 			struct FVkTranslationInfo
 			{
-				utl::vector<FVkImageTranslationInfo> imageTranslationInfos{};
-				utl::vector<FVkBufferTranslationInfo> bufferTranslationInfos{};
-				utl::vector<FVkMemoryTranslationInfo> memoryTranslationInfos{};
+				utl::vector<vk::ImageMemoryBarrier2KHR> imageTranslationInfos{};
+				utl::vector<vk::BufferMemoryBarrier2KHR> bufferTranslationInfos{};
+				utl::vector<vk::MemoryBarrier2KHR> memoryTranslationInfos{};
 			};
 
 			struct FVkTextureTranslationInfo

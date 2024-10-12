@@ -79,16 +79,18 @@ namespace engine
 				ERenderTargetSizePolicy GetSizingPolicy() const;
 				float GetScaleFactor() const;
 
+				void GenerateMipMaps(vk::CommandBuffer& command_buffer);
+
 				vk::ImageLayout GetFinalLayout() const;
 				vk::ImageLayout GetIntermediateLayout() const;
 
 				vk::AttachmentLoadOp GetLoadOp();
 				vk::AttachmentStoreOp GetStoreOp();
 
-				void MakeImageLayoutTranslation(FVkImageTranslationInfo& translation_info, const FResourceBarrierInfo& barrier);
-				void MakeImageLayoutTranslation(FVkMemoryTranslationInfo& translation_info, const FResourceBarrierInfo& barrier);
+				void MakeImageLayoutTranslation(vk::ImageMemoryBarrier2KHR& translation_info, const FResourceBarrierInfo& barrier);
+				void MakeImageLayoutTranslation(vk::MemoryBarrier2KHR& translation_info, const FResourceBarrierInfo& barrier);
 
-				FVkImageTranslationInfo GetTranslationInfo(const FVkTextureTranslationInfo& translation_info);
+				vk::ImageMemoryBarrier2KHR GetTranslationInfo(const FVkTextureTranslationInfo& translation_info);
 
 				vk::DescriptorImageInfo GetDescriptor(uint32_t level);
 			private:

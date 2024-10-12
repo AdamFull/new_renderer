@@ -30,7 +30,7 @@ namespace engine
 				const utl::vector<uint32_t>& GetGlobalTextureRemap() override;
 
 				FAPIHandle CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci) override;
-				FAPIHandle CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) override;
+				FAPIHandle CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci, const FTextureUploadInfo& upload_info) override;
 				FAPIHandle GetTextureId(const std::string& name) override;
 				FTextureView GetTextureView(FAPIHandle texture_id) override;
 				void DestroyTexture(FAPIHandle resource_id) override;
@@ -123,7 +123,7 @@ namespace engine
 				void BindShaderDescriptors(const FVkCommandBuffer& command_buffer, const FVkShader& shader);
 
 				void ProcessMemoryBarriers(const FVkCommandBuffer& command_buffer, const FVkTranslationInfo& translation_info);
-				void ProcessImageLayoutTranslation(const FVkCommandBuffer& command_buffer, const FVkImageTranslationInfo& image_translation_info);
+				void ProcessImageLayoutTranslation(const FVkCommandBuffer& command_buffer, const vk::ImageMemoryBarrier2KHR& image_translation_info);
 				void TextureLayoutTranslation(const FVkCommandBuffer& command_buffer, Texture& texture, const FVkTextureTranslationInfo& translation_info);
 
 				//void blitImage(const FVkCommandBuffer& command_buffer, );
@@ -131,9 +131,11 @@ namespace engine
 				std::unique_ptr<RenderDevice> render_device{};
 				std::unique_ptr<vk_resource_container_t> render_resources;
 
-				utl::vector<FTextureUploadInfo> texture_upload_infos{};
-				utl::vector<FBufferUploadInfo> buffer_upload_infos{};
+				utl::vector<VkTextureUploadInfo> texture_upload_infos{};
+				utl::vector<VkBufferUploadInfo> buffer_upload_infos{};
 				utl::vector<FVkTextureLayoutChangeInfo> texture_layout_change_infos{};
+
+				utl::vector<std::unique_ptr<Buffer>> upload_buffers;
 
 				utl::vector<uint32_t> texture_index_remap{};
 

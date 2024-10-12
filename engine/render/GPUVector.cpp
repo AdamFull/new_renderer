@@ -66,7 +66,7 @@ void CGPUVector::Upload()
 			src_offset += range.size;
 		}
 
-		buffer->Upload(std::move(upload_data), upload_regions);
+		buffer->Upload(upload_data, upload_regions);
 
 		m_vUploadRanges.clear();
 	}

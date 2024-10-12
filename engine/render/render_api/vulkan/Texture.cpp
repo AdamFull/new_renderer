@@ -386,6 +386,76 @@ namespace engine
 				return scale_factor;
 			}
 
+			void Texture::GenerateMipMaps(vk::CommandBuffer& command_buffer)
+			{
+				const vk::Extent3D& extent = image->GetExtent();
+
+				uint32_t mip_width{ extent.width };
+				uint32_t mip_heigth{ extent.height };
+
+				vk::ImageMemoryBarrier2KHR image_translation_info{};
+				vk::DependencyInfoKHR dependency_info{};
+				dependency_info.imageMemoryBarrierCount = 1u;
+				dependency_info.pImageMemoryBarriers = &image_translation_info;
+				dependency_info.dependencyFlags = vk::DependencyFlagBits::eByRegion;
+
+				image_translation_info.image = Handle(*image);
+
+				for (int32_t mip = 1; mip < mips.size(); ++mip)
+				{
+					auto& subresource = mips[mip - 1];
+					image_translation_info.subresourceRange = subresource->GetSubresourceRange();
+
+					image_translation_info.subresourceRange.baseMipLevel = mip - 1;
+					image_translation_info.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+					image_translation_info.srcStageMask = get_translation_stage_flags(image_translation_info.oldLayout);
+					image_translation_info.srcAccessMask = get_translation_access_flags(image_translation_info.oldLayout);
+					image_translation_info.newLayout = vk::ImageLayout::eTransferSrcOptimal;
+					image_translation_info.dstStageMask = get_translation_stage_flags(image_translation_info.newLayout);
+					image_translation_info.dstAccessMask = get_translation_access_flags(image_translation_info.newLayout);
+
+					command_buffer.pipelineBarrier2KHR(dependency_info);
+
+					vk::ImageBlit2KHR image_blit{};
+					image_blit.srcOffsets[0] = vk::Offset3D{ 0, 0, 0 };
+					image_blit.srcOffsets[1] = vk::Offset3D{ utl::cast<i32>(mip_width), utl::cast<i32>(mip_heigth), 1 };
+					image_blit.srcSubresource.aspectMask = image_translation_info.subresourceRange.aspectMask;
+					image_blit.srcSubresource.mipLevel = image_translation_info.subresourceRange.baseMipLevel;
+					image_blit.srcSubresource.baseArrayLayer = 0u;
+					image_blit.srcSubresource.layerCount = 1u;
+					image_blit.dstOffsets[0] = vk::Offset3D{ 0, 0, 0 };
+					image_blit.dstOffsets[1] = vk::Offset3D{ utl::cast<i32>(mip_width > 1u ? mip_width / 2u : 1u), utl::cast<i32>(mip_heigth > 1u ? mip_heigth / 2u : 1u), 1 };
+					image_blit.dstSubresource.aspectMask = image_translation_info.subresourceRange.aspectMask;
+					image_blit.dstSubresource.mipLevel = mip;
+					image_blit.dstSubresource.baseArrayLayer = 0u;
+					image_blit.dstSubresource.layerCount = 1u;
+
+					vk::BlitImageInfo2KHR blit_info{};
+					blit_info.srcImage = Handle(*image);
+					blit_info.srcImageLayout = vk::ImageLayout::eTransferSrcOptimal;
+					blit_info.dstImage = Handle(*image);
+					blit_info.dstImageLayout = vk::ImageLayout::eTransferDstOptimal;
+					blit_info.regionCount = 1u;
+					blit_info.pRegions = &image_blit;
+					blit_info.filter = vk::Filter::eNearest;
+
+					command_buffer.blitImage2KHR(blit_info);
+
+					image_translation_info.oldLayout = vk::ImageLayout::eTransferSrcOptimal;
+					image_translation_info.srcStageMask = get_translation_stage_flags(image_translation_info.oldLayout);
+					image_translation_info.srcAccessMask = get_translation_access_flags(image_translation_info.oldLayout);
+					image_translation_info.newLayout = vk::ImageLayout::eTransferDstOptimal;
+					image_translation_info.dstStageMask = get_translation_stage_flags(image_translation_info.newLayout);
+					image_translation_info.dstAccessMask = get_translation_access_flags(image_translation_info.newLayout);
+					command_buffer.pipelineBarrier2KHR(dependency_info);
+
+					if (mip_width > 1u)
+						mip_width /= 2u;
+					if (mip_heigth > 1u)
+						mip_heigth /= 2u;
+				}
+			}
+
 			vk::ImageLayout Texture::GetFinalLayout() const
 			{
 				auto usage_flags = image->GetUsage();
@@ -457,7 +527,7 @@ namespace engine
 				return vk::AttachmentStoreOp::eDontCare;
 			}
 
-			void Texture::MakeImageLayoutTranslation(FVkImageTranslationInfo& translation_info, const FResourceBarrierInfo& barrier)
+			void Texture::MakeImageLayoutTranslation(vk::ImageMemoryBarrier2KHR& translation_info, const FResourceBarrierInfo& barrier)
 			{
 				auto& texture_subresource = GetImageView(barrier.subresourceIndex);
 
@@ -472,7 +542,7 @@ namespace engine
 
 				old_image_layout = texture_subresource.GetImageLayout();
 				texture_subresource.SetImageLayout(new_image_layout);
-				translation_info.handle = Handle(*image);
+				translation_info.image = Handle(*image);
 				translation_info.subresourceRange = texture_subresource.GetSubresourceRange();
 
 				// TODO: Fix here required. Sometimes i need to process all layers and levels
@@ -494,7 +564,7 @@ namespace engine
 				translation_info.newLayout = new_image_layout;
 			}
 
-			void Texture::MakeImageLayoutTranslation(FVkMemoryTranslationInfo& translation_info, const FResourceBarrierInfo& barrier)
+			void Texture::MakeImageLayoutTranslation(vk::MemoryBarrier2KHR& translation_info, const FResourceBarrierInfo& barrier)
 			{
 				auto& texture_subresource = GetImageView(barrier.subresourceIndex);
 
@@ -508,16 +578,16 @@ namespace engine
 				translation_info.dstAccessMask = get_translation_access_flags(texture_subresource.GetImageLayout(), barrier.dstPassType, dst_resource_access);
 			}
 
-			FVkImageTranslationInfo Texture::GetTranslationInfo(const FVkTextureTranslationInfo& translation_info)
+			vk::ImageMemoryBarrier2KHR Texture::GetTranslationInfo(const FVkTextureTranslationInfo& translation_info)
 			{
-				FVkImageTranslationInfo image_layout_translation{};
+				vk::ImageMemoryBarrier2KHR image_layout_translation{};
 				image_layout_translation.srcStageMask = get_translation_stage_flags(translation_info.oldLayout);
 				image_layout_translation.srcAccessMask = get_translation_access_flags(translation_info.oldLayout);
 				image_layout_translation.oldLayout = translation_info.oldLayout;
 				image_layout_translation.dstStageMask = get_translation_stage_flags(translation_info.newLayout);
 				image_layout_translation.dstAccessMask = get_translation_access_flags(translation_info.newLayout);
 				image_layout_translation.newLayout = translation_info.newLayout;
-				image_layout_translation.handle = Handle(*image);
+				image_layout_translation.image = Handle(*image);
 
 				image_layout_translation.subresourceRange = base->GetSubresourceRange();
 

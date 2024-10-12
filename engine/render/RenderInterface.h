@@ -32,7 +32,7 @@ namespace engine
 
 			FRHIHandle CreateTextureObject(const std::string& path) override;
 			FRHIHandle CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci) override;
-			FRHIHandle CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info) override;
+			FRHIHandle CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci, const FTextureUploadInfo& upload_info) override;
 			void DestroyTextureObject(FRHIHandle handle) override;
 			const std::unique_ptr<ITextureObject>& GetTextureObject(FRHIHandle handle) override;
 			const std::unique_ptr<ITextureObject>& GetTextureObject(const char* name) override;

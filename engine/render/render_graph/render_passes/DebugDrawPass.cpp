@@ -35,10 +35,10 @@ void CDebugDrawPass::Init(const FRenderPassCreateInfo& pass_ci)
 	font_ci.SetFixedSize2D(width, height);
 
 	FTextureUploadInfo upload_info{};
-	upload_info.data.insert(upload_info.data.end(), pixels, pixels + upload_size);
+	upload_info.upload_data = { pixels, upload_size };
 
 	auto& render_backend = m_pRenderInterface->GetRenderBackend();
-	m_fontTexture = m_pRenderInterface->CreateTextureObject("default_debug_font", font_ci, std::move(upload_info));
+	m_fontTexture = m_pRenderInterface->CreateTextureObject("default_debug_font", font_ci, upload_info);
 
 	// Init 2d part
 	{

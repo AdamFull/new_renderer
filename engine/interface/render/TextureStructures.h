@@ -88,9 +88,14 @@ namespace engine
 
 		struct FTextureUploadInfo
 		{
-			FAPIHandle textureId{ INVALID_HANDLE };
-			utl::vector<uint8_t> data{};
-			utl::vector<utl::vector<u64>> mipLayerOffsets{};
+			std::span<const uint8_t> upload_data;
+			std::vector<std::vector<u64>> mip_layer_offsets{};
+		};
+
+		struct FTextureResourceHandle
+		{
+			EMimeType mime_type{};
+			void* handle{ nullptr };
 		};
 
 		struct FSamplerCreateInfo
@@ -113,7 +118,7 @@ namespace engine
 			virtual ~ITextureObject() = default;
 
 			virtual void Create(const std::string& name, const FTextureCreateInfo& create_info) = 0;
-			virtual void Create(const std::string& name, const FTextureCreateInfo& create_info, FTextureUploadInfo&& upload_info) = 0;
+			virtual void Create(const std::string& name, const FTextureCreateInfo& create_info, const FTextureUploadInfo& upload_info) = 0;
 
 			virtual void GetPixel(u32 x, u32 y, u8* data) = 0;
 

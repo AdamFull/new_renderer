@@ -2,6 +2,7 @@
 
 #include <array>
 #include <vector>
+#include <span>
 
 #include <engine/render/render_api/vulkan/VkResource.h>
 
@@ -196,6 +197,12 @@ namespace engine
 
 				template <typename _Ty, size_t N>
 				size_t Update(std::array<_Ty, N> const& data, size_t offset = 0ull)
+				{
+					return Update(data.data(), data.size() * sizeof(_Ty), offset);
+				}
+
+				template<typename _Ty>
+				size_t Update(std::span<_Ty> data, size_t offset = 0ull)
 				{
 					return Update(data.data(), data.size() * sizeof(_Ty), offset);
 				}

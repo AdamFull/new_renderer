@@ -116,13 +116,13 @@ namespace engine
 				return size / suballocation_count;
 			}
 
-			void Buffer::MakeTranslation(FVkBufferTranslationInfo& buffer_barrier, const FResourceBarrierInfo& barrier)
+			void Buffer::MakeTranslation(vk::BufferMemoryBarrier2KHR& buffer_barrier, const FResourceBarrierInfo& barrier)
 			{
 				ERenderResourceAccessFlagBits src_resource_access{};
 				ERenderResourceAccessFlagBits dst_resource_access{};
 				unpackDependencyBarrier(barrier.dependencyType, src_resource_access, dst_resource_access);
 
-				buffer_barrier.handle = handle;
+				buffer_barrier.buffer = handle;
 				buffer_barrier.size = size;
 				buffer_barrier.srcStageMask = get_translation_stage_flags(barrier.srcPassType);
 				buffer_barrier.srcAccessMask = get_translation_access_flags(barrier.srcPassType, src_resource_access);

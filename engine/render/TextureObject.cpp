@@ -17,9 +17,9 @@ void CTextureObject::Create(const std::string& name, const FTextureCreateInfo& c
 	m_textureId = m_pRenderContext->CreateTexture(name, create_info);
 }
 
-void CTextureObject::Create(const std::string& name, const FTextureCreateInfo& create_info, FTextureUploadInfo&& upload_info)
+void CTextureObject::Create(const std::string& name, const FTextureCreateInfo& create_info, const FTextureUploadInfo& upload_info)
 {
-	m_textureId = m_pRenderContext->CreateTexture(name, create_info, std::move(upload_info));
+	m_textureId = m_pRenderContext->CreateTexture(name, create_info, upload_info);
 }
 
 void CTextureObject::GetPixel(u32 x, u32 y, u8* data)

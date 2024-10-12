@@ -315,9 +315,13 @@ FRHIHandle CRenderInterface::CreateTextureObject(const std::string& path)
 
 	FTextureCreateInfo create_info; 
 	FTextureUploadInfo upload_info;
-	m_pResourceLoader->LoadTexture(data, mime, create_info, upload_info);
+	FTextureResourceHandle resource_handle;
+	m_pResourceLoader->LoadTexture(data, mime, create_info, upload_info, resource_handle);
 
-	return CreateTextureObject(name, create_info, std::move(upload_info));
+	texture_id = CreateTextureObject(name, create_info, upload_info);
+	m_pResourceLoader->DestroyHandle(resource_handle);
+
+	return texture_id;
 }
 
 FRHIHandle CRenderInterface::CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci)
@@ -341,10 +345,10 @@ FRHIHandle CRenderInterface::CreateTextureObject(const std::string& name, const 
 	return handle;
 }
 
-FRHIHandle CRenderInterface::CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci, FTextureUploadInfo&& upload_info)
+FRHIHandle CRenderInterface::CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci, const FTextureUploadInfo& upload_info)
 {
 	auto new_texture = std::make_unique<CTextureObject>(this);
-	new_texture->Create(name, ApplyTextureExtent(texture_ci), std::move(upload_info));
+	new_texture->Create(name, ApplyTextureExtent(texture_ci), upload_info);
 
 	auto handle = FRHIHandle(render_resources->add<ITextureObject>(name.c_str(), std::move(new_texture)));
 	auto& texture = GetTextureObject(handle);
