@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vulkan/vulkan.hpp>
+#include <hash.hpp>
 
 namespace engine
 {
@@ -8,6 +9,13 @@ namespace engine
 	{
 		namespace vulkan
 		{
+			template<typename _Ty>
+			uint32_t HandleHash(const _Ty& handle, uint32_t seed = 0u)
+			{
+				auto handle_address = reinterpret_cast<uint64_t>(static_cast<_Ty::CType>(handle));
+				return utl::murmur_hash(handle_address, seed);
+			}
+
 			// Cast vulkan resource for get it's handle
 			template<typename _Ty>
 			auto& Handle(_Ty& object)
@@ -50,6 +58,11 @@ namespace engine
 				const _Ty& GetHandle() const
 				{
 					return handle;
+				}
+
+				uint32_t Hash() const
+				{
+					return HandleHash(handle);
 				}
 
 				explicit operator bool() const noexcept

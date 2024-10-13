@@ -386,6 +386,41 @@ namespace engine
 				Handle(*device).destroyFence(handle, allocation_callbacks);
 			}
 
+			vk::Pipeline RenderDevice::CreateGraphicsPipeline(const vk::GraphicsPipelineCreateInfo& create_info, const std::string& debug_name) const
+			{
+				vk::Pipeline handle{ VK_NULL_HANDLE };
+				vk::Result result = Handle(*device).createGraphicsPipelines(pipeline_cache, 1u, &create_info, allocation_callbacks, &handle);
+				if (result != vk::Result::eSuccess)
+				{
+					log_error("Failed to create handle of type {} with result: {}", vk::to_string(handle.objectType), vk::to_string(result));
+					return nullptr;
+				}
+
+				debug_utils->SetDebugName(handle, debug_name);
+
+				return handle;
+			}
+
+			vk::Pipeline RenderDevice::CreateComputePipeline(const vk::ComputePipelineCreateInfo& create_info, const std::string& debug_name) const
+			{
+				vk::Pipeline handle{ VK_NULL_HANDLE };
+				vk::Result result = Handle(*device).createComputePipelines(pipeline_cache, 1u, &create_info, allocation_callbacks, &handle);
+				if (result != vk::Result::eSuccess)
+				{
+					log_error("Failed to create handle of type {} with result: {}", vk::to_string(handle.objectType), vk::to_string(result));
+					return nullptr;
+				}
+
+				debug_utils->SetDebugName(handle, debug_name);
+
+				return handle;
+			}
+
+			void RenderDevice::Destroy(vk::Pipeline& handle) const
+			{
+				Handle(*device).destroyPipeline(handle, allocation_callbacks);
+			}
+
 			FRenderApiErrorInfo RenderDevice::CreateCommandPool(const FVkCommandPoolCreateInfo& command_pool_ci, FVkCommandPool& command_pool)
 			{
 				const bool is_compute_queue = (command_pool_ci.mask & EQueueTypeFlagBits::eCompute) != 0;

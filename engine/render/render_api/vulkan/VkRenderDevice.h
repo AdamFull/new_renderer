@@ -180,6 +180,10 @@ namespace engine
 				 */
 				void Destroy(vk::Fence& handle) const;
 
+				vk::Pipeline CreateGraphicsPipeline(const vk::GraphicsPipelineCreateInfo& create_info, const std::string& debug_name = "") const;
+				vk::Pipeline CreateComputePipeline(const vk::ComputePipelineCreateInfo& create_info, const std::string& debug_name = "") const;
+				void Destroy(vk::Pipeline& handle) const;
+
 				// VkCommandPool
 				FRenderApiErrorInfo CreateCommandPool(const FVkCommandPoolCreateInfo& command_pool_ci, FVkCommandPool& command_pool);
 				void DestroyCommandPool(FVkCommandPool& command_pool);
