@@ -18,6 +18,19 @@ namespace engine
 				return hash;
 			}
 
+			uint32_t HashStencilOpState(const vk::StencilOpState& state, uint32_t hash)
+			{
+				hash = utl::murmur_hash(utl::enum_cast(state.failOp), hash);
+				hash = utl::murmur_hash(utl::enum_cast(state.passOp), hash);
+				hash = utl::murmur_hash(utl::enum_cast(state.depthFailOp), hash);
+				hash = utl::murmur_hash(utl::enum_cast(state.compareOp), hash);
+				hash = utl::murmur_hash(state.compareMask, hash);
+				hash = utl::murmur_hash(state.writeMask, hash);
+				hash = utl::murmur_hash(state.reference, hash);
+
+				return hash;
+			}
+
 			Pipeline::Pipeline(RenderDevice& render_device) :
 				VulkanResource{ nullptr },
 				render_device{ render_device }
@@ -401,23 +414,125 @@ namespace engine
 					hash = HashShaderStage(stage, hash);
 				}
 
+				// Vertex input state hash
 				hash = utl::murmur_hash(static_cast<uint32_t>(vertex_input_state.flags), hash);
 
+				if (vertex_input_state.pVertexBindingDescriptions)
+				{
+					for (int32_t i = 0; i < vertex_input_state.vertexBindingDescriptionCount; ++i)
+					{
+						const auto& desc = vertex_input_state.pVertexBindingDescriptions[i];
+						hash = utl::murmur_hash(desc.binding, hash);
+						hash = utl::murmur_hash(desc.stride, hash);
+						hash = utl::murmur_hash(utl::enum_cast(desc.inputRate), hash);
+					}
+				}
+
+				if (vertex_input_state.pVertexAttributeDescriptions)
+				{
+					for (int32_t i = 0; i < vertex_input_state.vertexAttributeDescriptionCount; ++i)
+					{
+						const auto& desc = vertex_input_state.pVertexAttributeDescriptions[i];
+						hash = utl::murmur_hash(desc.location, hash);
+						hash = utl::murmur_hash(desc.binding, hash);
+						hash = utl::murmur_hash(utl::enum_cast(desc.format), hash);
+						hash = utl::murmur_hash(desc.offset, hash);
+					}
+				}
+
+				// Input assembly state hash
 				hash = utl::murmur_hash(static_cast<uint32_t>(input_assembly_state.flags), hash);
+				hash = utl::murmur_hash(utl::enum_cast(input_assembly_state.topology), hash);
+				hash = utl::murmur_hash(input_assembly_state.primitiveRestartEnable, hash);
 
+				// Tessellation state hash
 				hash = utl::murmur_hash(static_cast<uint32_t>(tessellation_state.flags), hash);
+				hash = utl::murmur_hash(tessellation_state.patchControlPoints, hash);
 
+				// Viewport state hash
 				hash = utl::murmur_hash(static_cast<uint32_t>(viewport_state.flags), hash);
 
+				for (const auto& viewport : viewports)
+				{
+					hash = utl::murmur_hash(viewport.x, hash);
+					hash = utl::murmur_hash(viewport.y, hash);
+					hash = utl::murmur_hash(viewport.width, hash);
+					hash = utl::murmur_hash(viewport.height, hash);
+					hash = utl::murmur_hash(viewport.minDepth, hash);
+					hash = utl::murmur_hash(viewport.maxDepth, hash);
+				}
+
+				for (const auto& scissor : scissors)
+				{
+					hash = utl::murmur_hash(scissor.offset.x, hash);
+					hash = utl::murmur_hash(scissor.offset.y, hash);
+					hash = utl::murmur_hash(scissor.extent.width, hash);
+					hash = utl::murmur_hash(scissor.extent.height, hash);
+				}
+
+				// Rasterization state hash
 				hash = utl::murmur_hash(static_cast<uint32_t>(rasterization_state.flags), hash);
+				hash = utl::murmur_hash(rasterization_state.depthClampEnable, hash);
+				hash = utl::murmur_hash(rasterization_state.rasterizerDiscardEnable, hash);
+				hash = utl::murmur_hash(utl::enum_cast(rasterization_state.polygonMode), hash);
+				hash = utl::murmur_hash(static_cast<uint32_t>(rasterization_state.cullMode), hash);
+				hash = utl::murmur_hash(utl::enum_cast(rasterization_state.frontFace), hash);
+				hash = utl::murmur_hash(rasterization_state.depthBiasEnable, hash);
+				hash = utl::murmur_hash(rasterization_state.depthBiasConstantFactor, hash);
+				hash = utl::murmur_hash(rasterization_state.depthBiasClamp, hash);
+				hash = utl::murmur_hash(rasterization_state.depthBiasSlopeFactor, hash);
+				hash = utl::murmur_hash(rasterization_state.lineWidth, hash);
 
+				// Multisample state hash
 				hash = utl::murmur_hash(static_cast<uint32_t>(multisample_state.flags), hash);
+				hash = utl::murmur_hash(utl::enum_cast(multisample_state.rasterizationSamples), hash);
+				hash = utl::murmur_hash(multisample_state.sampleShadingEnable, hash);
+				hash = utl::murmur_hash(multisample_state.minSampleShading, hash);
 
+				if (multisample_state.pSampleMask)
+				{
+					hash = utl::murmur_hash(*multisample_state.pSampleMask, hash);
+				}
+					
+				hash = utl::murmur_hash(multisample_state.alphaToCoverageEnable, hash);
+				hash = utl::murmur_hash(multisample_state.alphaToOneEnable, hash);
+
+				// Depth state hash
 				hash = utl::murmur_hash(static_cast<uint32_t>(depth_stencil_state.flags), hash);
+				hash = utl::murmur_hash(depth_stencil_state.depthTestEnable, hash);
+				hash = utl::murmur_hash(depth_stencil_state.depthWriteEnable, hash);
+				hash = utl::murmur_hash(utl::enum_cast(depth_stencil_state.depthCompareOp), hash);
+				hash = utl::murmur_hash(depth_stencil_state.depthBoundsTestEnable, hash);
+				hash = utl::murmur_hash(depth_stencil_state.stencilTestEnable, hash);
+				hash = HashStencilOpState(depth_stencil_state.front, hash);
+				hash = HashStencilOpState(depth_stencil_state.back, hash);
+				hash = utl::murmur_hash(depth_stencil_state.minDepthBounds, hash);
+				hash = utl::murmur_hash(depth_stencil_state.maxDepthBounds, hash);
 
+				// Color blending hash
 				hash = utl::murmur_hash(static_cast<uint32_t>(color_blending_state.flags), hash);
+				hash = utl::murmur_hash(color_blending_state.logicOpEnable, hash);
+				hash = utl::murmur_hash(utl::enum_cast(color_blending_state.logicOp), hash);
 
+				for (const auto& attachment : color_blend_attachments)
+				{
+					hash = utl::murmur_hash(attachment.blendEnable, hash);
+					hash = utl::murmur_hash(utl::enum_cast(attachment.srcColorBlendFactor), hash);
+					hash = utl::murmur_hash(utl::enum_cast(attachment.dstColorBlendFactor), hash);
+					hash = utl::murmur_hash(utl::enum_cast(attachment.colorBlendOp), hash);
+					hash = utl::murmur_hash(utl::enum_cast(attachment.srcAlphaBlendFactor), hash);
+					hash = utl::murmur_hash(utl::enum_cast(attachment.dstAlphaBlendFactor), hash);
+					hash = utl::murmur_hash(utl::enum_cast(attachment.alphaBlendOp), hash);
+					hash = utl::murmur_hash(static_cast<uint32_t>(attachment.colorWriteMask), hash);
+				}
+
+				for(const auto& constant : color_blending_state.blendConstants)
+					hash = utl::murmur_hash(constant, hash);
+
+				// Dynamic states hash
 				hash = utl::murmur_hash(static_cast<uint32_t>(dynamic_state.flags), hash);
+				for(const auto& state : dynamic_states)
+					hash = utl::murmur_hash(utl::enum_cast(state), hash);
 
 				return hash;
 			}
