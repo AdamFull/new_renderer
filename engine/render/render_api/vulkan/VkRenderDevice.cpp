@@ -421,96 +421,36 @@ namespace engine
 				Handle(*device).destroyPipeline(handle, allocation_callbacks);
 			}
 
-			FRenderApiErrorInfo RenderDevice::CreateCommandPool(const FVkCommandPoolCreateInfo& command_pool_ci, FVkCommandPool& command_pool)
+			vk::CommandPool RenderDevice::CreateCommandPool2(const vk::CommandPoolCreateInfo& create_info, const std::string& debug_name) const
 			{
-				const bool is_compute_queue = (command_pool_ci.mask & EQueueTypeFlagBits::eCompute) != 0;
-				const bool is_transfer_queue = (command_pool_ci.mask & EQueueTypeFlagBits::eTransfer) != 0;
-
-				vk::CommandPoolCreateInfo pool_ci{};
-				pool_ci.flags = vk::CommandPoolCreateFlagBits::eTransient | vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
-
-				if (command_pool_ci.mask & EQueueTypeFlagBits::ePresent)
-				{
-					auto& found = device->GetQueueByPresent(0);
-					pool_ci.queueFamilyIndex = found.GetFamilyIndex();
-				}
-				else if (command_pool_ci.mask & EQueueTypeFlagBits::eGraphics)
-				{
-					pool_ci.queueFamilyIndex = device->GetQueueFamilyIndex(vk::QueueFlagBits::eGraphics);
-				}
-				else if (command_pool_ci.mask & EQueueTypeFlagBits::eCompute)
-				{
-					pool_ci.queueFamilyIndex = device->GetQueueFamilyIndex(vk::QueueFlagBits::eCompute);
-				}
-				else if (command_pool_ci.mask & EQueueTypeFlagBits::eTransfer)
-				{
-					pool_ci.queueFamilyIndex = device->GetQueueFamilyIndex(vk::QueueFlagBits::eTransfer);
-				}
-
-				vk::Result res = Handle(*device).createCommandPool(&pool_ci, allocation_callbacks, &command_pool.handle);
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				std::stringstream ss{};
-				ss << command_pool_ci.threadId;
-				debug_utils->SetDebugName(command_pool.handle, std::format("thread_id {}", ss.str()));
-#endif
-
-				return make_api_error(command_pool.handle.objectType, res, "Failed to Create");
+				auto handle = VkCreateHandleAndCheckResult<vk::CommandPool>([&](auto& handle) { return Handle(*device).createCommandPool(&create_info, allocation_callbacks, &handle); });
+				debug_utils->SetDebugName(handle, debug_name);
+				return handle;
 			}
 
-			void RenderDevice::DestroyCommandPool(FVkCommandPool& command_pool)
+			void RenderDevice::ResetCommandPool(vk::CommandPool& handle) const
 			{
-				Handle(*device).destroyCommandPool(command_pool.handle, allocation_callbacks);
+				Handle(*device).resetCommandPool(handle);
 			}
 
-			FRenderApiErrorInfo RenderDevice::CreateCommandBuffer(const FVkCommandBufferCreateInfo& command_buffer_ci, const FVkCommandPool& command_pool, FVkCommandBuffer& command_buffer)
+			void RenderDevice::AllocateCommandBuffers(const vk::CommandBufferAllocateInfo& allocate_info, vk::CommandBuffer* command_buffers) const
 			{
-				vk::CommandBufferAllocateInfo command_buffer_ai{};
-				command_buffer_ai.commandPool = command_pool.handle;
-				command_buffer_ai.level = command_buffer_ci.level;
-				command_buffer_ai.commandBufferCount = command_buffer_ci.count;
-
-				command_buffer.handles.resize(command_buffer_ci.count);
-
-				vk::Result res = Handle(*device).allocateCommandBuffers(&command_buffer_ai, command_buffer.handles.data());
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				for (i32 idx = 0; idx < command_buffer.handles.size(); ++idx)
-					debug_utils->SetDebugName(command_buffer.get(), std::format("{} #{}", command_buffer_ci.name, idx));
-#endif
-
-				command_buffer.mask = command_buffer_ci.mask;
-
-				return make_api_error(vk::ObjectType::eCommandBuffer, res, "Failed to allocate");
+				Handle(*device).allocateCommandBuffers(&allocate_info, command_buffers);
 			}
 
-			void RenderDevice::DestroyCommandBuffer(const FVkCommandPool& command_pool, FVkCommandBuffer& command_buffer)
+			void RenderDevice::FreeCommandBuffers(vk::CommandPool& command_pool, vk::CommandBuffer* command_buffers, uint32_t command_buffer_count)
 			{
-				Handle(*device).freeCommandBuffers(command_pool.handle, command_buffer.handles);
+				Handle(*device).freeCommandBuffers(command_pool, command_buffer_count, command_buffers);
 			}
 
-			void RenderDevice::BeginCommandBuffer(FVkCommandBuffer& command_buffer, vk::CommandBufferUsageFlags usage, u32 image_index)
+			void RenderDevice::FreeCommandBuffers(vk::CommandPool& command_pool, std::span<vk::CommandBuffer> command_buffers)
 			{
-				if (command_buffer.isRunning)
-					return;
-
-				command_buffer.commandBufferIndex = image_index;
-
-				vk::CommandBufferBeginInfo begin_info{};
-				begin_info.flags = usage;
-
-				auto& current_command_buffer_handle = command_buffer.get();
-				current_command_buffer_handle.begin(begin_info);
-				command_buffer.isRunning = true;
+				FreeCommandBuffers(command_pool, command_buffers.data(), command_buffers.size());
 			}
 
-			void RenderDevice::EndCommandBuffer(FVkCommandBuffer& command_buffer)
+			void RenderDevice::Destroy(vk::CommandPool& handle) const
 			{
-				if (!command_buffer.isRunning)
-					return;
-
-				auto& current_command_buffer_handle = command_buffer.get();
-				current_command_buffer_handle.end();
-
-				command_buffer.isRunning = false;
+				Handle(*device).destroyCommandPool(handle, allocation_callbacks);
 			}
 
 			FRenderApiErrorInfo RenderDevice::CreateDescriptorSetLayout(const FVkDescriptorSetLayoutCreateInfo& layout_ci, vk::DescriptorSetLayout& descriptor_set_layout)
@@ -796,25 +736,6 @@ namespace engine
 				return make_api_error(timestamp_query.handle.objectType, res, "Failed to Create");
 			}
 
-			void RenderDevice::ResetTimestampQuery(FVkTimestampQuery& timestamp_query)
-			{
-				Handle(*device).resetQueryPool(timestamp_query.handle, 0u, static_cast<u32>(timestamp_query.values.size()));
-				timestamp_query.queryIndex = 0u;
-			}
-
-			void RenderDevice::ResetTimestampQuery(FVkCommandBuffer& command_buffer, FVkTimestampQuery& timestamp_query)
-			{
-				auto& current_buffer = command_buffer.get();
-				current_buffer.resetQueryPool(timestamp_query.handle, 0u, static_cast<u32>(timestamp_query.values.size()));
-				timestamp_query.queryIndex = 0u;
-			}
-
-			void RenderDevice::WriteTimestampQuery(FVkCommandBuffer& command_buffer, vk::PipelineStageFlagBits pipeline_state, FVkTimestampQuery& timestamp_query)
-			{
-				auto& current_buffer = command_buffer.get();
-				current_buffer.writeTimestamp(pipeline_state, timestamp_query.handle, timestamp_query.queryIndex++);
-			}
-
 			FRenderApiErrorInfo RenderDevice::GetTimestampQueryResults(FVkTimestampQuery& timestamp_query, utl::vector<f32>& results)
 			{
 				vk::Result res = Handle(*device).getQueryPoolResults(
@@ -870,31 +791,33 @@ namespace engine
 				}
 			}
 
-			void RenderDevice::SubmitCommandBuffer(const FVkCommandBuffer& command_buffer)
+			void RenderDevice::SubmitCommandBuffer(vk::CommandBuffer& command_buffer)
 			{
 				vk::SubmitInfo submitInfo{};
-				submitInfo.commandBufferCount = utl::cast<u32>(command_buffer.handles.size());
-				submitInfo.pCommandBuffers = command_buffer.handles.data();
+				submitInfo.commandBufferCount = 1u;
+				submitInfo.pCommandBuffers = &command_buffer;
 
 				vk::FenceCreateInfo fence_ci{};
 				vk::Fence fence = CreateFence2(fence_ci);
 
 				Handle(*device).resetFences(1, &fence);
 
-				auto& queue = device->GetQueueByFlags(GetQueueFlags(command_buffer.mask), 0);
+				// TODO: COMMAND BUFFERS
+				auto& queue = device->GetQueueByFlags(vk::QueueFlagBits::eGraphics, 0);
 				queue.Submit(submitInfo, fence);
 				Handle(*device).waitForFences(1, &fence, VK_TRUE, (std::numeric_limits<u64>::max)());
 				Handle(*device).destroyFence(fence, allocation_callbacks);
 			}
 
-			vk::Result RenderDevice::Present(FVkCommandBuffer& command_buffer)
+			vk::Result RenderDevice::Present(vk::CommandBuffer& command_buffer)
 			{
 				vk::Result res = Handle(*device).resetFences(1, &swapchain.inFlightFences[swapchain.currentFrame]);
 				check_api_result(make_api_error(vk::ObjectType::eFence, res, "Failed to reset"));
 
 				try
 				{
-					auto& queue = device->GetQueueByFlags(GetQueueFlags(command_buffer.mask), 0);
+					// TODO: COMMAND BUFFERS
+					auto& queue = device->GetQueueByFlags(vk::QueueFlagBits::eGraphics, 0);
 
 					vk::SubmitInfo2 submit_info{};
 
@@ -912,10 +835,8 @@ namespace engine
 					submit_info.pSignalSemaphoreInfos = &signal_si;
 					submit_info.signalSemaphoreInfoCount = 1;
 
-					auto& current_command_buffer = command_buffer.get();
-
 					vk::CommandBufferSubmitInfo command_buffer_si{};
-					command_buffer_si.commandBuffer = current_command_buffer;
+					command_buffer_si.commandBuffer = command_buffer;
 
 					submit_info.pCommandBufferInfos = &command_buffer_si;
 					submit_info.commandBufferInfoCount = 1;
@@ -951,52 +872,7 @@ namespace engine
 				return Handle(*device).acquireNextImageKHR(swapchain.handle, (std::numeric_limits<u64>::max)(), swapchain.imageAvaliableSemaphores[swapchain.currentFrame], nullptr, &image_index);
 			}
 
-			void RenderDevice::DebugBeginLabel(vk::CommandBuffer& command_buffer, const std::string& name, u32 color)
-			{
-#ifndef BUILD_WITHOUT_DEBUGGIND
-#ifdef ENABLE_TRACY_PROFILING
-				TracyVkZone(tracy_context.at(swapchain.currentFrame), command_buffer, name.c_str());
-#endif
-				command_buffer.beginDebugUtilsLabelEXT(make_debug_label(name.c_str(), color));
-#endif
-			}
-
-			void RenderDevice::DebugInsertLabel(vk::CommandBuffer& command_buffer, const std::string& name, u32 color)
-			{
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				command_buffer.insertDebugUtilsLabelEXT(make_debug_label(name.c_str(), color));
-#endif
-			}
-
-			void RenderDevice::EndLabel(vk::CommandBuffer& command_buffer)
-			{
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				command_buffer.endDebugUtilsLabelEXT();
-#endif
-			}
-
-			void RenderDevice::DebugBeginLabel(vk::Queue& queue, const std::string& name, u32 color)
-			{
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				queue.beginDebugUtilsLabelEXT(make_debug_label(name.c_str(), color));
-#endif
-			}
-
-			void RenderDevice::DebugInsertLabel(vk::Queue& queue, const std::string& name, u32 color)
-			{
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				queue.insertDebugUtilsLabelEXT(make_debug_label(name.c_str(), color));
-#endif
-			}
-
-			void RenderDevice::EndLabel(vk::Queue& queue)
-			{
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				queue.endDebugUtilsLabelEXT();
-#endif
-			}
-
-			void RenderDevice::InitProfiler(const FVkCommandPool& command_pool)
+			void RenderDevice::InitProfiler(vk::CommandBuffer& command_pool)
 			{
 #if !defined(BUILD_WITHOUT_DEBUGGIND) && defined(ENABLE_TRACY_PROFILING)
 				FVkCommandBufferCreateInfo command_buffer_ci{};

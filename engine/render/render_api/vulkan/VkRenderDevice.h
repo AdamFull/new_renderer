@@ -184,16 +184,12 @@ namespace engine
 				vk::Pipeline CreateComputePipeline(const vk::ComputePipelineCreateInfo& create_info, const std::string& debug_name = "") const;
 				void Destroy(vk::Pipeline& handle) const;
 
-				// VkCommandPool
-				FRenderApiErrorInfo CreateCommandPool(const FVkCommandPoolCreateInfo& command_pool_ci, FVkCommandPool& command_pool);
-				void DestroyCommandPool(FVkCommandPool& command_pool);
-
-				// VkCommandBuffer
-				FRenderApiErrorInfo CreateCommandBuffer(const FVkCommandBufferCreateInfo& command_buffer_ci, const FVkCommandPool& command_pool, FVkCommandBuffer& command_buffer);
-				FVkCommandBuffer& GetCommandBuffer(const FVkGetCommandBufferInfo& get_info);
-				void DestroyCommandBuffer(const FVkCommandPool& command_pool, FVkCommandBuffer& command_buffer);
-				void BeginCommandBuffer(FVkCommandBuffer& command_buffer, vk::CommandBufferUsageFlags usage, u32 image_index);
-				void EndCommandBuffer(FVkCommandBuffer& command_buffer);
+				vk::CommandPool CreateCommandPool2(const vk::CommandPoolCreateInfo& create_info, const std::string& debug_name = "") const;
+				void ResetCommandPool(vk::CommandPool& handle) const;
+				void AllocateCommandBuffers(const vk::CommandBufferAllocateInfo& allocate_info, vk::CommandBuffer* command_buffers) const;
+				void FreeCommandBuffers(vk::CommandPool& command_pool, vk::CommandBuffer* command_buffers, uint32_t command_buffer_count);
+				void FreeCommandBuffers(vk::CommandPool& command_pool, std::span<vk::CommandBuffer> command_buffers);
+				void Destroy(vk::CommandPool& handle) const;
 
 				// VkDescriptorSetLayout
 				FRenderApiErrorInfo CreateDescriptorSetLayout(const FVkDescriptorSetLayoutCreateInfo& layout_ci, vk::DescriptorSetLayout& descriptor_set_layout);
@@ -222,28 +218,16 @@ namespace engine
 				void DestroyPipeline(vk::Pipeline& shader_object);
 
 				FRenderApiErrorInfo CreateTimestampQuery(u32 count, FVkTimestampQuery& timestamp_query);
-				void ResetTimestampQuery(FVkTimestampQuery& timestamp_query);
-				void ResetTimestampQuery(FVkCommandBuffer& command_buffer, FVkTimestampQuery& timestamp_query);
-				void WriteTimestampQuery(FVkCommandBuffer& command_buffer, vk::PipelineStageFlagBits pipeline_state, FVkTimestampQuery& timestamp_query);
 				FRenderApiErrorInfo GetTimestampQueryResults(FVkTimestampQuery& timestamp_query, utl::vector<f32>& results);
 				void DestroyTimestampQuery(FVkTimestampQuery& timestamp_query);
 
 				void GetOccupedDeviceMemory(vk::MemoryHeapFlags memory_flags, u64& total_memory, u64& used_memory);
 
-				void SubmitCommandBuffer(const FVkCommandBuffer& command_buffer);
-				vk::Result Present(FVkCommandBuffer& command_buffer);
+				void SubmitCommandBuffer(vk::CommandBuffer& command_buffer);
+				vk::Result Present(vk::CommandBuffer& command_buffer);
 				vk::Result AcquireNextImage(u32& image_index);
 
-				// Debug markers
-				void DebugBeginLabel(vk::CommandBuffer& command_buffer, const std::string& name, u32 color);
-				void DebugInsertLabel(vk::CommandBuffer& command_buffer, const std::string& name, u32 color);
-				void EndLabel(vk::CommandBuffer& command_buffer);
-
-				void DebugBeginLabel(vk::Queue& queue, const std::string& name, u32 color);
-				void DebugInsertLabel(vk::Queue& queue, const std::string& name, u32 color);
-				void EndLabel(vk::Queue& queue);
-
-				void InitProfiler(const FVkCommandPool& command_pool);
+				void InitProfiler(vk::CommandBuffer& command_pool);
 
 				// Getters
 				vk::Format FindSupportedFormat(const utl::vector<vk::Format>& candidates, bool depth_only);

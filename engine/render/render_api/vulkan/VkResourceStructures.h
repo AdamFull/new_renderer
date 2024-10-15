@@ -48,46 +48,6 @@ namespace engine
 				u32 currentFrame{ 0u };
 			};
 
-			// ---------------------------------------------------------------------------------
-			// ================================| COMMAND POOL |=================================
-			// ---------------------------------------------------------------------------------
-			struct FVkCommandPool
-			{
-				vk::CommandPool handle{ nullptr };
-			};
-
-			struct FVkCommandPoolCreateInfo
-			{
-				EQueueTypeFlagBits mask{};
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				std::thread::id threadId{ std::this_thread::get_id() };
-#endif
-			};
-
-			// ---------------------------------------------------------------------------------
-			// ===============================| COMMAND BUFFER |================================
-			// ---------------------------------------------------------------------------------
-			struct FVkCommandBuffer
-			{
-				utl::vector<vk::CommandBuffer> handles{};
-				EQueueTypeFlagBits mask{};
-				bool isRunning{ false };
-				u32 commandBufferIndex{ 0u };
-
-				vk::CommandBuffer& get() { return handles[commandBufferIndex]; }
-				const vk::CommandBuffer& get() const { return handles[commandBufferIndex]; }
-			};
-
-			struct FVkCommandBufferCreateInfo
-			{
-				EQueueTypeFlagBits mask{};
-				vk::CommandBufferLevel level{};
-				u32 count{ 1u };
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				std::string name{};
-#endif
-			};
-
 			struct FVkDescriptorSetLayoutCreateInfo
 			{
 				utl::vector<vk::DescriptorSetLayoutBinding> layoutBindings{};
@@ -208,37 +168,6 @@ namespace engine
 #endif
 			};
 
-
-			// ---------------------------------------------------------------------------------
-			// ====================================| BUFFER |===================================
-			// ---------------------------------------------------------------------------------
-//			struct FVkBuffer
-//			{
-//				vk::Buffer handle{};
-//				vma::Allocation memory{};
-//				vk::DeviceSize size{};
-//				vk::DeviceSize instanceCount{};
-//				vk::BufferUsageFlags usageFlags{};
-//				uint64_t address{};
-//
-//				std::string name{};
-//
-//				bool isMapped{ false };
-//				bool isAlive{ false };
-//			};
-//
-//			struct FVkBufferCreateInfo
-//			{
-//				vk::DeviceSize instanceSize{ 0ull };
-//				vk::DeviceSize instanceCount{ 0ull };
-//				vk::DeviceSize minOffsetAlignment{ 1ull };
-//				vk::BufferUsageFlags usageFlags{};
-//				vma::MemoryUsage memoryUsage{};
-//#ifndef BUILD_WITHOUT_DEBUGGIND
-//				std::string name{};
-//#endif
-//			};
-
 			// HIGH LEVEL OBJECTS
 
 			struct FVkShader
@@ -313,12 +242,6 @@ namespace engine
 				utl::hash_map<u64, u64> uniformBuffers{};
 			};
 
-			struct FVkPerQueueResources
-			{
-				FVkCommandPool commandPool{};
-				utl::vector<FVkCommandBuffer> commandBuffers{};
-			};
-
 			struct FVkTimestampQuery
 			{
 				vk::QueryPool handle{};
@@ -326,35 +249,35 @@ namespace engine
 				u32 queryIndex{ 0ull };
 			};
 
-			struct FVkThreadContext
-			{
-				FVkThreadContext() { incrementUsage(); }
-				~FVkThreadContext() { decrementUsage(); }
-
-				FVkThreadContext(const FVkThreadContext& other) : perQueue(other.perQueue), descriptorPool(other.descriptorPool), descriptorSets(other.descriptorSets)
-				{ incrementUsage(); }
-
-				FVkThreadContext& operator=(const FVkThreadContext& other)
-				{
-					if (this != &other)
-					{
-						perQueue = other.perQueue;
-						descriptorPool.handle = other.descriptorPool.handle;
-						descriptorSets = other.descriptorSets;
-					}
-					return *this;
-				}
-
-				i32 use_count() { return refCounter.load(std::memory_order_relaxed); }
-
-				utl::hash_map<EQueueTypeFlagBits, FVkPerQueueResources> perQueue{};
-				FVkDescriptorPool descriptorPool{};
-				utl::hash_map<u64, FVkDescriptorSet> descriptorSets{};
-			private:
-				void incrementUsage() { refCounter.fetch_add(1, std::memory_order_relaxed); }
-				void decrementUsage() { refCounter.fetch_sub(1, std::memory_order_relaxed); }
-				std::atomic<i32> refCounter{ 0 };
-			};
+			//struct FVkThreadContext
+			//{
+			//	FVkThreadContext() { incrementUsage(); }
+			//	~FVkThreadContext() { decrementUsage(); }
+			//
+			//	FVkThreadContext(const FVkThreadContext& other) : perQueue(other.perQueue), descriptorPool(other.descriptorPool), descriptorSets(other.descriptorSets)
+			//	{ incrementUsage(); }
+			//
+			//	FVkThreadContext& operator=(const FVkThreadContext& other)
+			//	{
+			//		if (this != &other)
+			//		{
+			//			perQueue = other.perQueue;
+			//			descriptorPool.handle = other.descriptorPool.handle;
+			//			descriptorSets = other.descriptorSets;
+			//		}
+			//		return *this;
+			//	}
+			//
+			//	i32 use_count() { return refCounter.load(std::memory_order_relaxed); }
+			//
+			//	utl::hash_map<EQueueTypeFlagBits, FVkPerQueueResources> perQueue{};
+			//	FVkDescriptorPool descriptorPool{};
+			//	utl::hash_map<u64, FVkDescriptorSet> descriptorSets{};
+			//private:
+			//	void incrementUsage() { refCounter.fetch_add(1, std::memory_order_relaxed); }
+			//	void decrementUsage() { refCounter.fetch_sub(1, std::memory_order_relaxed); }
+			//	std::atomic<i32> refCounter{ 0 };
+			//};
 
 			struct FVkNativeContext
 			{

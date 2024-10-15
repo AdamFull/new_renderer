@@ -15,6 +15,7 @@
 #include <engine/render/render_api/vulkan/Image.h>
 #include <engine/render/render_api/vulkan/ImageView.h>
 #include <engine/render/render_api/vulkan/Texture.h>
+#include <engine/render/render_api/vulkan/CommandPool.h>
 
 using namespace engine;
 using namespace engine::render;
@@ -158,9 +159,7 @@ VkRenderBackend::~VkRenderBackend()
 	auto& logical_device = render_device->GetLogicalDevice();
 	Handle(logical_device).waitIdle();
 
-	// Destroy thread contexts
-	for (auto& [thread_id, context] : per_thread_context)
-		DestroyThreadContext(context);
+	command_pool.reset();
 
 	// Destroy all textures
 	auto& textures = render_resources->data<Texture>();
@@ -206,21 +205,15 @@ void VkRenderBackend::Create(const FRenderContextCreateInfo& context_ci)
 
 	render_resources = std::make_unique<vk_resource_container_t>();
 
-	FVkCommandBufferCreateInfo command_buffer_ci{};
-	command_buffer_ci.count = render_device->swapchain.framesInFlight;
-	command_buffer_ci.mask = EQueueTypeFlagBits::eGraphics;
-	command_buffer_ci.level = vk::CommandBufferLevel::ePrimary;
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	command_buffer_ci.name = "Graphics";
-#endif
+	auto command_pool_builder = CommandPoolBuilder();
+	command_pool_builder.SetDebugName("Graphics");
+	command_pool_builder.SetResetMode(CommandBuffer::ResetMode::ResetPool);
+	// TODO: Add queue selection in builder
+	command_pool_builder.SetQueueFamily(render_device->GetLogicalDevice().GetQueueByFlags(vk::QueueFlagBits::eGraphics, 0).GetFamilyIndex());
 
-	CreateCommandBuffer(command_buffer_ci);
+	command_pool = command_pool_builder.BuildUnique(*render_device);
 
 	auto res = render_device->CreateTimestampQuery(256, timestamp_query);
-
-	auto& per_thread = per_thread_context[std::this_thread::get_id()];
-	auto& per_queue = per_thread.perQueue[EQueueTypeFlagBits::eGraphics];
-	render_device->InitProfiler(per_queue.commandPool);
 
 	UpdateBackbuffer();
 
@@ -528,17 +521,8 @@ void VkRenderBackend::ReadPixel(FAPIHandle resource_id, u32 x, u32 y, void* data
 	auto& texture = render_resources->get<Texture>(resource_id.Get());
 
 	// Create temporary command buffer
-	FVkCommandBufferCreateInfo command_buffer_ci{};
-	command_buffer_ci.count = 1;
-	command_buffer_ci.mask = EQueueTypeFlagBits::eGraphics;
-	command_buffer_ci.level = vk::CommandBufferLevel::ePrimary;
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	command_buffer_ci.name = std::format("pick pixel #{}(x:{},y{})", resource_id.Get(), x, y);
-#endif
-
-	FVkCommandBuffer command_buffer = CreateCommandBuffer(command_buffer_ci);
-	render_device->BeginCommandBuffer(command_buffer, vk::CommandBufferUsageFlagBits::eOneTimeSubmit, 0);
-	auto& current = command_buffer.get();
+	auto& command_buffer = command_pool->RequestCommandBuffer(vk::CommandBufferLevel::ePrimary);
+	command_buffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
 	auto builder = BufferBuilder(pixel_size, 1ull, 1ull);
 	builder.SetVmaUsage(vma::MemoryUsage::eCpuOnly);
@@ -566,11 +550,10 @@ void VkRenderBackend::ReadPixel(FAPIHandle resource_id, u32 x, u32 y, void* data
 	region.imageExtent.height = 1u;
 	region.imageExtent.depth = 1u;
 
-	// TODO TEXTURE
-	current.copyImageToBuffer(Handle(texture->GetImage()), vk::ImageLayout::eTransferSrcOptimal, Handle(*staging_buffer), 1, &region);
+	// TODO TEXTURE/COMMAND BUFFER
+	Handle(command_buffer).copyImageToBuffer(Handle(texture->GetImage()), vk::ImageLayout::eTransferSrcOptimal, Handle(*staging_buffer), 1, &region);
 
-	render_device->SubmitCommandBuffer(command_buffer);
-	DestroyCommandBuffer(EQueueTypeFlagBits::eGraphics);
+	render_device->SubmitCommandBuffer(Handle(command_buffer));
 	// TODO: DESTROY COMMAND BUFFER AND DELETE IT
 
 	// Copy data to buffer
@@ -847,8 +830,6 @@ FShaderReflectionData VkRenderBackend::GetShaderReflection(FAPIHandle shader_vie
 // I'll just be doing unnecessary work both copying data and loading it, including loading descriptors.
 void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_resources, EShaderResourcesUpdateFlags flags)
 {
-	auto& thread_context = per_thread_context[std::this_thread::get_id()];
-
 	auto& shader = render_resources->get<FVkShader>(shader_resources.shaderId.Get());
 	auto& shader_reflection = render_resources->get<FVkShaderReflectionData>(shader->reflection);
 
@@ -993,9 +974,6 @@ void VkRenderBackend::FlushConstantRanges(FAPIHandle shader_id, const utl::hash_
 	auto& shader = render_resources->get<FVkShader>(shader_id.Get());
 	auto& shader_reflection = render_resources->get<FVkShaderReflectionData>(shader->reflection);
 
-	auto& command_buffer = GetLastCommandBuffer(queue_type);
-	auto& current = command_buffer.get();
-
 	// TODO: remove all other posibilities to have more than one push block. 
 	for (const auto& [constant_name, constant_data] : constants)
 	{
@@ -1004,7 +982,7 @@ void VkRenderBackend::FlushConstantRanges(FAPIHandle shader_id, const utl::hash_
 			continue;
 
 		auto& constant_block = found_reflection->second;
-		current.pushConstants(shader->layout, constant_block.stageFlags, 0, constant_data.size, constant_data.data);
+		Handle(*current_command_buffer).pushConstants(shader->layout, constant_block.stageFlags, 0, constant_data.size, constant_data.data);
 
 		// Break, because we can have only one push constants block
 		break;
@@ -1013,23 +991,17 @@ void VkRenderBackend::FlushConstantRanges(FAPIHandle shader_id, const utl::hash_
 
 void VkRenderBackend::BindShader(FAPIHandle shader_id, EQueueTypeFlagBits queue_type)
 {
-	auto& command_buffer = GetLastCommandBuffer(queue_type);
-	auto& current = command_buffer.get();
-
 	auto& shader = render_resources->get<FVkShader>(shader_id.Get());
 
 	// TODO: make possible to select what pipeline i have to bind now
-	current.bindPipeline(shader->bindPoint, shader->handles.back());
+	Handle(*current_command_buffer).bindPipeline(shader->bindPoint, shader->handles.back());
 }
 
 void VkRenderBackend::BindShaderResources(FAPIHandle shader_id, EQueueTypeFlagBits queue_type)
 {
-	auto& command_buffer = GetLastCommandBuffer(queue_type);
-	auto& current = command_buffer.get();
-
 	auto& shader = render_resources->get<FVkShader>(shader_id.Get());
 
-	BindShaderDescriptors(command_buffer, *shader);
+	BindShaderDescriptors(*current_command_buffer, *shader);
 }
 
 void VkRenderBackend::DestroyShader(FAPIHandle resource_id)
@@ -1086,21 +1058,15 @@ FBufferView VkRenderBackend::GetBufferView(FAPIHandle buffer_id)
 
 void VkRenderBackend::BindVertexBuffers(const FVertexBufferBindingInfo& binding_info, EQueueTypeFlagBits queue_type)
 {
-	auto& command_buffer = GetLastCommandBuffer(queue_type);
-	auto& current = command_buffer.get();
-
 	utl::vector<vk::Buffer> buffers{};
 	for (const auto& buffer_id : binding_info.buffers)
 		buffers.emplace_back(Handle(*render_resources->get<Buffer>(buffer_id.Get())));
 
-	current.bindVertexBuffers(binding_info.firstBinding, buffers, binding_info.offsets);
+	Handle(*current_command_buffer).bindVertexBuffers(binding_info.firstBinding, buffers, binding_info.offsets);
 }
 
 void VkRenderBackend::BindIndexBuffer(const FIndexBufferBindingInfo& binding_info, EQueueTypeFlagBits queue_type)
 {
-	auto& command_buffer = GetLastCommandBuffer(queue_type);
-	auto& current = command_buffer.get();
-
 	vk::IndexType index_type{ vk::IndexType::eNoneKHR };
 	switch (binding_info.indexSize)
 	{
@@ -1110,7 +1076,7 @@ void VkRenderBackend::BindIndexBuffer(const FIndexBufferBindingInfo& binding_inf
 	}
 
 	auto& buffer = render_resources->get<Buffer>(binding_info.bufferId.Get());
-	current.bindIndexBuffer(Handle(*buffer), binding_info.offset, index_type);
+	Handle(*current_command_buffer).bindIndexBuffer(Handle(*buffer), binding_info.offset, index_type);
 }
 
 void VkRenderBackend::MapBufferMemory(FAPIHandle buffer_id, void*& memory)
@@ -1143,8 +1109,6 @@ void VkRenderBackend::UploadBuffers()
 
 void VkRenderBackend::ProcessResourceBarriers(EQueueTypeFlagBits queue, const utl::vector<FResourceBarrierInfo>& barriers)
 {
-	auto& command_buffer = GetLastCommandBuffer(queue);
-
 	auto& textures = render_resources->data<Texture>();
 	auto& buffers = render_resources->data<Buffer>();
 
@@ -1196,26 +1160,22 @@ void VkRenderBackend::ProcessResourceBarriers(EQueueTypeFlagBits queue, const ut
 		}
 	}
 
-	ProcessMemoryBarriers(command_buffer, translation_info);
+	ProcessMemoryBarriers(*current_command_buffer, translation_info);
 }
 
 void VkRenderBackend::BeginTimestampZone(EQueueTypeFlagBits queue)
 {
 	//assert(zone_entries[queue] == 0 && "Previous zone was not ended.");
-	auto& command_buffer = GetLastCommandBuffer(queue);
-	render_device->WriteTimestampQuery(command_buffer, vk::PipelineStageFlagBits::eTopOfPipe, timestamp_query);
+	current_command_buffer->WriteTimestampQuery(vk::PipelineStageFlagBits::eTopOfPipe, timestamp_query);
 }
 
 void VkRenderBackend::EndTimestampZone(EQueueTypeFlagBits queue)
 {
-	auto& command_buffer = GetLastCommandBuffer(queue);
-	render_device->WriteTimestampQuery(command_buffer, vk::PipelineStageFlagBits::eBottomOfPipe, timestamp_query);
+	current_command_buffer->WriteTimestampQuery(vk::PipelineStageFlagBits::eBottomOfPipe, timestamp_query);
 }
 
 void VkRenderBackend::BeginRendering(const FBeginRendering2Info& rendering_info)
 {
-	auto& command_buffer = GetLastCommandBuffer(rendering_info.queue);
-
 	auto& textures = render_resources->data<Texture>();
 
 	utl::hash_map<u64, vk::ClearValue> clear_values{};
@@ -1312,48 +1272,28 @@ void VkRenderBackend::BeginRendering(const FBeginRendering2Info& rendering_info)
 	if (rendering_info.stencilAttachment->handle && rendering_info.stencilAttachment->handle != rendering_info.depthAttachment->handle)
 		begin_rendering_info.pStencilAttachment = &stencil_attachment;
 
-	auto& current_buffer = command_buffer.get();
+	current_command_buffer->BeginDebugLabel(rendering_info.name, 0x5555ffff);
 
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	render_device->DebugBeginLabel(current_buffer, rendering_info.name, 0x5555ffff);
-#endif
-
-	current_buffer.beginRenderingKHR(begin_rendering_info);
+	Handle(*current_command_buffer).beginRenderingKHR(begin_rendering_info);
 }
 
 void VkRenderBackend::EndRendering(EQueueTypeFlagBits queue)
 {
-	auto& command_buffer = GetLastCommandBuffer(queue);
-
-	auto& current_buffer = command_buffer.get();
-	current_buffer.endRenderingKHR();
-
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	render_device->EndLabel(current_buffer);
-#endif
+	Handle(*current_command_buffer).endRenderingKHR();
+	current_command_buffer->EndDebugLabel();
 }
 
 void VkRenderBackend::BeginCompute(const FBeginComputeInfo& compute_info)
 {
-	auto& command_buffer = GetLastCommandBuffer(compute_info.queue);
-	auto& current_buffer = command_buffer.get();
-
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	render_device->DebugBeginLabel(current_buffer, compute_info.name, 0x55ff55ff);
-#endif
+	current_command_buffer->BeginDebugLabel(compute_info.name, 0x55ff55ff);
 }
 
 void VkRenderBackend::EndCompute(EQueueTypeFlagBits queue)
 {
-	auto& command_buffer = GetLastCommandBuffer(queue);
-	auto& current_buffer = command_buffer.get();
-
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	render_device->EndLabel(current_buffer);
-#endif
+	current_command_buffer->EndDebugLabel();
 }
 
-void VkRenderBackend::ProcessMemoryBarriers(const FVkCommandBuffer& command_buffer, const FVkTranslationInfo& translation_info)
+void VkRenderBackend::ProcessMemoryBarriers(CommandBuffer& command_buffer, const FVkTranslationInfo& translation_info)
 {
 	vk::DependencyInfoKHR dependency_info{};
 	dependency_info.imageMemoryBarrierCount = utl::cast<u32>(translation_info.imageTranslationInfos.size());
@@ -1364,8 +1304,7 @@ void VkRenderBackend::ProcessMemoryBarriers(const FVkCommandBuffer& command_buff
 	dependency_info.pMemoryBarriers = translation_info.memoryTranslationInfos.data();
 	dependency_info.dependencyFlags = vk::DependencyFlagBits::eByRegion;
 
-	auto& current_buffer = command_buffer.get();
-	current_buffer.pipelineBarrier2KHR(dependency_info);
+	Handle(command_buffer).pipelineBarrier2KHR(dependency_info);
 }
 
 void VkRenderBackend::SetViewport(f32 width, f32 height, bool flip_viewport)
@@ -1389,11 +1328,7 @@ void VkRenderBackend::SetViewport(f32 width, f32 height, bool flip_viewport)
 		viewport.y = 0.f;
 	}
 
-	// Because i can set family only in graphics
-	auto& command_buffer = GetLastCommandBuffer(EQueueTypeFlagBits::eGraphics);
-	auto& current = command_buffer.get();
-
-	current.setViewport(0, 1, &viewport);
+	Handle(*current_command_buffer).setViewport(0, 1, &viewport);
 }
 
 void VkRenderBackend::SetScissorRect(i32 offset_x, i32 offset_y, u32 width, u32 height)
@@ -1404,38 +1339,28 @@ void VkRenderBackend::SetScissorRect(i32 offset_x, i32 offset_y, u32 width, u32 
 	scissor_rect.extent.width = width;
 	scissor_rect.extent.height = height;
 
-	// Because i can set family only in graphics
-	auto& command_buffer = GetLastCommandBuffer(EQueueTypeFlagBits::eGraphics);
-	auto& current = command_buffer.get();
-
-	current.setScissor(0, 1, &scissor_rect);
+	Handle(*current_command_buffer).setScissor(0, 1, &scissor_rect);
 }
 
 void VkRenderBackend::SetPrimitiveTopology(EVertexPrimitiveTopology primitivd_topology)
 {
-	auto& command_buffer = GetLastCommandBuffer(EQueueTypeFlagBits::eGraphics);
-	auto& current = command_buffer.get();
-
-	current.setPrimitiveTopology(get_primitive_topology(primitivd_topology));
+	Handle(*current_command_buffer).setPrimitiveTopology(get_primitive_topology(primitivd_topology));
 }
 
 // TODO: add indirect Draw support
 void VkRenderBackend::Draw(EQueueTypeFlagBits queue_type, const FGeometryDrawInfo& draw_info)
 {
-	auto& command_buffer = GetLastCommandBuffer(queue_type);
-	auto& current = command_buffer.get();
-	
 	if (draw_info.lastIndex == 0ull && draw_info.lastVertex == 0ull)
 	{
 		auto& range = draw_info.ranges.front();
-		current.draw(range.vertexCount, 1, range.beginVertex, 0);
+		Handle(*current_command_buffer).draw(range.vertexCount, 1, range.beginVertex, 0);
 	}
 	else if (draw_info.lastIndex == 0ull)
 	{
 		for (auto& range : draw_info.ranges)
 		{
 			auto vertex_count = range.vertexCount == 0ull ? draw_info.lastIndex : range.vertexCount;
-			current.draw(vertex_count, 1, range.beginVertex, 0);
+			Handle(*current_command_buffer).draw(vertex_count, 1, range.beginVertex, 0);
 		}
 	}
 	else
@@ -1443,20 +1368,16 @@ void VkRenderBackend::Draw(EQueueTypeFlagBits queue_type, const FGeometryDrawInf
 		for (auto& range : draw_info.ranges)
 		{
 			auto index_count = range.indexCount == 0ull ? draw_info.lastIndex : range.indexCount;
-			current.drawIndexed(index_count, 1, range.beginIndex, range.beginVertex, 0);
+			Handle(*current_command_buffer).drawIndexed(index_count, 1, range.beginIndex, range.beginVertex, 0);
 		}
 	}
 }
 
 void VkRenderBackend::Draw(EQueueTypeFlagBits queue_type, const FIndirectGeometryDrawInfo& draw_info)
 {
-	auto& command_buffer = GetLastCommandBuffer(queue_type);
-	auto& current = command_buffer.get();
-	//current.drawMeshTasksIndirectEXT()
-
 	auto& indirect_command_buffer = render_resources->get<Buffer>(draw_info.bufferId.Get());
 	auto& indirect_count_buffer = render_resources->get<Buffer>(draw_info.countBufferId.Get());
-	current.drawIndexedIndirectCount(Handle(*indirect_command_buffer), draw_info.offset, Handle(*indirect_count_buffer), draw_info.countOffset, draw_info.maxDrawCount, draw_info.stride);
+	Handle(*current_command_buffer).drawIndexedIndirectCount(Handle(*indirect_command_buffer), draw_info.offset, Handle(*indirect_count_buffer), draw_info.countOffset, draw_info.maxDrawCount, draw_info.stride);
 	//current.drawIndexedIndirect(indirect_command_buffer->handle, draw_info.offset, draw_info.count, draw_info.stride);
 }
 
@@ -1478,16 +1399,11 @@ void VkRenderBackend::Dispatch(EQueueTypeFlagBits queue_type, const FDispatch2In
 		command.z = std::max(utl::cast<u32>(std::ceil(utl::cast<f32>(command.z) / utl::cast<f32>(localSizes[2]))), 1u);
 	}
 
-	auto& command_buffer = GetLastCommandBuffer(queue_type);
-	auto& current = command_buffer.get();
-	current.dispatch(command.x, command.y, command.z);
+	Handle(*current_command_buffer).dispatch(command.x, command.y, command.z);
 }
 
 void VkRenderBackend::Dispatch(EQueueTypeFlagBits queue_type, const FDispatchIndirectInfo& dispatch_info)
 {
-	auto& command_buffer = GetLastCommandBuffer(queue_type);
-	auto& current = command_buffer.get();
-
 	auto& argument_buffer = render_resources->get<Buffer>(dispatch_info.argumentBuffer.Get());
 
 	if (dispatch_info.countBuffer)
@@ -1496,7 +1412,7 @@ void VkRenderBackend::Dispatch(EQueueTypeFlagBits queue_type, const FDispatchInd
 		// Dispatch indirect count is not supported
 	}
 	else
-		current.dispatchIndirect(Handle(*argument_buffer), dispatch_info.argumentOffset);
+		Handle(*current_command_buffer).dispatchIndirect(Handle(*argument_buffer), dispatch_info.argumentOffset);
 }
 
 FDeviceLimitations VkRenderBackend::GetDeviceLimitations()
@@ -1615,59 +1531,6 @@ void VkRenderBackend::UpdateSurface(i32 new_width, i32 new_height)
 	}
 }
 
-FVkCommandBuffer& VkRenderBackend::CreateCommandBuffer(const FVkCommandBufferCreateInfo& command_buffer_ci, std::thread::id thread_id)
-{
-	auto& thread_context = per_thread_context[thread_id];
-	auto& per_queue = thread_context.perQueue[command_buffer_ci.mask];
-
-	if (!per_queue.commandPool.handle)
-	{
-		FVkCommandPoolCreateInfo pool_ci{};
-		pool_ci.mask = command_buffer_ci.mask;
-
-		check_api_result(render_device->CreateCommandPool(pool_ci, per_queue.commandPool));
-	}
-	
-	auto& command_buffer = per_queue.commandBuffers.emplace_back();
-	check_api_result(render_device->CreateCommandBuffer(command_buffer_ci, per_queue.commandPool, command_buffer));
-
-	return command_buffer;
-}
-
-FVkCommandBuffer& VkRenderBackend::GetLastCommandBuffer(EQueueTypeFlagBits queue_type, std::thread::id thread_id)
-{
-	auto& thread_context = per_thread_context[thread_id];
-	auto& per_queue = thread_context.perQueue[queue_type];
-
-	return per_queue.commandBuffers.back();
-}
-
-FVkCommandBuffer& VkRenderBackend::GetCommandBuffer(EQueueTypeFlagBits queue_type, u64 index, std::thread::id thread_id)
-{
-	auto& thread_context = per_thread_context[thread_id];
-	auto& per_queue = thread_context.perQueue[queue_type];
-
-	return per_queue.commandBuffers[index];
-}
-
-utl::vector<FVkCommandBuffer>& VkRenderBackend::GetCommandBuffers(EQueueTypeFlagBits queue_type, std::thread::id thread_id)
-{
-	auto& thread_context = per_thread_context[thread_id];
-	auto& per_queue = thread_context.perQueue[queue_type];
-
-	return per_queue.commandBuffers;
-}
-
-void VkRenderBackend::DestroyCommandBuffer(EQueueTypeFlagBits queue_type, std::thread::id thread_id)
-{
-	auto& thread_context = per_thread_context[thread_id];
-	auto& per_queue = thread_context.perQueue[queue_type];
-
-	auto& command_buffer = per_queue.commandBuffers.back();
-	render_device->DestroyCommandBuffer(per_queue.commandPool, command_buffer);
-	per_queue.commandBuffers.pop_back();
-}
-
 const std::unique_ptr<RenderDevice>& VkRenderBackend::getDevice() const
 {
 	return render_device;
@@ -1697,9 +1560,9 @@ void VkRenderBackend::BeginFrame()
 	is_frame_started = true;
 
 	// TODO: here i should run only main command buffer. But for now i getting the last one
-	auto& command_buffer = GetLastCommandBuffer(EQueueTypeFlagBits::eGraphics);
-	render_device->BeginCommandBuffer(command_buffer, vk::CommandBufferUsageFlagBits::eRenderPassContinue, image_index);
-	render_device->ResetTimestampQuery(timestamp_query);
+	current_command_buffer = &command_pool->RequestCommandBuffer(vk::CommandBufferLevel::ePrimary);
+	current_command_buffer->Begin(vk::CommandBufferUsageFlagBits::eRenderPassContinue);
+	current_command_buffer->ResetTimestampQuery(timestamp_query);
 	//render_device->WriteTimestampQuery(command_buffer, vk::PipelineStageFlagBits::eTopOfPipe, timestamp_query);
 
 	// Update bindless textures
@@ -1728,14 +1591,13 @@ void VkRenderBackend::BeginFrame()
 void VkRenderBackend::EndFrame()
 {
 	// TODO: here i should run only main command buffer. But for now i getting the last one
-	auto& command_buffer = GetLastCommandBuffer(EQueueTypeFlagBits::eGraphics);
 	//render_device->WriteTimestampQuery(command_buffer, vk::PipelineStageFlagBits::eBottomOfPipe, timestamp_query);
 
-	render_device->EndCommandBuffer(command_buffer);
+	current_command_buffer->End();
 	is_frame_started = false;
 
 	vk::Result presentResult{};
-	try { presentResult = render_device->Present(command_buffer); }
+	try { presentResult = render_device->Present(Handle(*current_command_buffer)); }
 	catch (vk::OutOfDateKHRError err) { presentResult = vk::Result::eErrorOutOfDateKHR; }
 	catch (vk::SystemError err) { log_error("failed to present swap chain image!"); }
 
@@ -1756,16 +1618,16 @@ void VkRenderBackend::EndFrame()
 	utl::hash_map<std::string, std::string> kk;
 	
 	// Destroy unused contexts
-	for (auto it = per_thread_context.begin(); it != per_thread_context.end();)
-	{
-		if (it->second.use_count() < 1)
-		{
-			DestroyThreadContext(it->second);
-			it = per_thread_context.erase(it);
-			continue;
-		}
-		++it;
-	}
+	//for (auto it = per_thread_context.begin(); it != per_thread_context.end();)
+	//{
+	//	if (it->second.use_count() < 1)
+	//	{
+	//		DestroyThreadContext(it->second);
+	//		it = per_thread_context.erase(it);
+	//		continue;
+	//	}
+	//	++it;
+	//}
 
 	// Try to free resources
 	if (utilization_counter % render_device->swapchain.framesInFlight == 0)
@@ -1803,45 +1665,17 @@ bool VkRenderBackend::IsSwapChainFinished()
 
 void VkRenderBackend::BeginDebugLabel(const std::string& label, EQueueTypeFlagBits queue_type, u32 color)
 {
-	auto& command_buffer = GetLastCommandBuffer(queue_type);
-	auto& current = command_buffer.get();
-
-	render_device->DebugBeginLabel(current, label, color);
+	current_command_buffer->BeginDebugLabel(label, color);
 }
 
 void VkRenderBackend::InsertDebugLabel(const std::string& label, EQueueTypeFlagBits queue_type, u32 color)
 {
-	auto& command_buffer = GetLastCommandBuffer(queue_type);
-	auto& current = command_buffer.get();
-
-	render_device->DebugInsertLabel(current, label, color);
+	current_command_buffer->InsertDebugLabel(label, color);
 }
 
 void VkRenderBackend::EndDebugLabel(EQueueTypeFlagBits queue_type)
 {
-	auto& command_buffer = GetLastCommandBuffer(queue_type);
-	auto& current = command_buffer.get();
-
-	render_device->EndLabel(current);
-}
-
-void VkRenderBackend::DestroyThreadContext(FVkThreadContext& context)
-{
-	// Destroy command buffers and pools
-	for (auto& [queue_id, queue_resources] : context.perQueue)
-	{
-		for (auto& command_buffer : queue_resources.commandBuffers)
-			render_device->DestroyCommandBuffer(queue_resources.commandPool, command_buffer);
-
-		render_device->DestroyCommandPool(queue_resources.commandPool);
-	}
-
-	// Destroy descriptor sets
-	for (auto& [id, descriptor_set] : context.descriptorSets)
-		render_device->DestroyDescriptorSet(context.descriptorPool, descriptor_set);
-
-	// Destroy descriptor pool
-	render_device->DestroyDescriptorPool(context.descriptorPool);
+	current_command_buffer->EndDebugLabel();
 }
 
 void VkRenderBackend::ProcessResourceBarriers()
@@ -1850,19 +1684,10 @@ void VkRenderBackend::ProcessResourceBarriers()
 	if (texture_layout_change_infos.empty())
 		return;
 
-	FVkCommandBufferCreateInfo command_buffer_ci{};
-	command_buffer_ci.count = 1u;
-	command_buffer_ci.level = vk::CommandBufferLevel::ePrimary;
-	command_buffer_ci.mask = EQueueTypeFlagBits::eGraphics;
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	command_buffer_ci.name = "resource_barriers";
-#endif
-
 	auto& textures = render_resources->data<Texture>();
 
-	auto& command_buffer = CreateCommandBuffer(command_buffer_ci);
-
-	render_device->BeginCommandBuffer(command_buffer, vk::CommandBufferUsageFlagBits::eOneTimeSubmit, 0u);
+	auto& command_buffer = command_pool->RequestCommandBuffer(vk::CommandBufferLevel::ePrimary);
+	command_buffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
 	FVkTranslationInfo translation_info{};
 	for (const auto& layout_info : texture_layout_change_infos)
@@ -1885,10 +1710,8 @@ void VkRenderBackend::ProcessResourceBarriers()
 
 	ProcessMemoryBarriers(command_buffer, translation_info);
 
-	render_device->EndCommandBuffer(command_buffer);
-	render_device->SubmitCommandBuffer(command_buffer);
-
-	DestroyCommandBuffer(EQueueTypeFlagBits::eGraphics);
+	command_buffer.End();
+	render_device->SubmitCommandBuffer(Handle(command_buffer));
 
 	texture_layout_change_infos.clear();
 }
@@ -1898,19 +1721,10 @@ void VkRenderBackend::ProcessResourceUpload()
 	if (texture_upload_infos.empty() && buffer_upload_infos.empty())
 		return;
 
-	FVkCommandBufferCreateInfo command_buffer_ci{};
-	command_buffer_ci.count = 1u;
-	command_buffer_ci.level = vk::CommandBufferLevel::ePrimary;
-	command_buffer_ci.mask = EQueueTypeFlagBits::eGraphics;
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	command_buffer_ci.name = "resource_upload";
-#endif
-
 	auto& textures = render_resources->data<Texture>();
 
-	auto& command_buffer = CreateCommandBuffer(command_buffer_ci);
-
-	render_device->BeginCommandBuffer(command_buffer, vk::CommandBufferUsageFlagBits::eOneTimeSubmit, 0u);
+	auto& command_buffer = command_pool->RequestCommandBuffer(vk::CommandBufferLevel::ePrimary);
+	command_buffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
 	// Upload textures
 	{
@@ -1984,14 +1798,13 @@ void VkRenderBackend::ProcessResourceUpload()
 			}
 
 			auto& target_subresource = texture->GetImageView();
-			staging_buffer->CopyTo(command_buffer.get(), Handle(texture->GetImage()), target_subresource.GetImageLayout(), copy_regions);
+			staging_buffer->CopyTo(Handle(command_buffer), Handle(texture->GetImage()), target_subresource.GetImageLayout(), copy_regions);
 		}
 
-		auto& current_command_buffer = command_buffer.get();
 		for (auto& texture_id : generate_mip_textures)
 		{
 			auto& texture = textures[texture_id.Get()];
-			texture->GenerateMipMaps(current_command_buffer);
+			texture->GenerateMipMaps(Handle(command_buffer));
 		}
 
 		// Translate images to shader read only layout
@@ -2032,17 +1845,13 @@ void VkRenderBackend::ProcessResourceUpload()
 			copy_region.size = region_info.size;
 		}
 
-		auto& current = command_buffer.get();
 		auto& staging_buffer = upload_buffers[upload_info.upload_index];
-		staging_buffer->CopyTo(current, *dst_buffer, copy_regions);
+		staging_buffer->CopyTo(Handle(command_buffer), *dst_buffer, copy_regions);
 	}
 
-	render_device->EndCommandBuffer(command_buffer);
+	command_buffer.End();
 
-	render_device->SubmitCommandBuffer(command_buffer);
-
-	// TODO: submit command buffer. But with pushing semaphores for synchronize with main command buffer
-	DestroyCommandBuffer(EQueueTypeFlagBits::eGraphics);
+	render_device->SubmitCommandBuffer(Handle(command_buffer));
 
 	// destroy staging buffers
 	upload_buffers.clear();
@@ -2242,7 +2051,7 @@ void VkRenderBackend::DestroyShader(FVkShader& shader)
 	shader.isAlive = false;
 }
 
-void VkRenderBackend::BindShaderDescriptors(const FVkCommandBuffer& command_buffer, const FVkShader& shader)
+void VkRenderBackend::BindShaderDescriptors(CommandBuffer& command_buffer, const FVkShader& shader)
 {
 	utl::vector<vk::DescriptorSet> bindDescriptorSets{};
 
@@ -2266,19 +2075,18 @@ void VkRenderBackend::BindShaderDescriptors(const FVkCommandBuffer& command_buff
 	// TODO: determine the lowest descriptor index and start binding from lowest one (for example from 1)
 	if (!bindDescriptorSets.empty())
 	{
-		auto& current_command_buffer = command_buffer.get();
-		current_command_buffer.bindDescriptorSets(shader.bindPoint, shader.layout, 0, utl::cast<u32>(bindDescriptorSets.size()), bindDescriptorSets.data(), 0u, nullptr);
+		Handle(command_buffer).bindDescriptorSets(shader.bindPoint, shader.layout, 0, utl::cast<u32>(bindDescriptorSets.size()), bindDescriptorSets.data(), 0u, nullptr);
 	}
 }
 
-void VkRenderBackend::ProcessImageLayoutTranslation(const FVkCommandBuffer& command_buffer, const vk::ImageMemoryBarrier2KHR& image_translation_info)
+void VkRenderBackend::ProcessImageLayoutTranslation(CommandBuffer& command_buffer, const vk::ImageMemoryBarrier2KHR& image_translation_info)
 {
 	FVkTranslationInfo translation_info{};
 	translation_info.imageTranslationInfos.emplace_back(image_translation_info);
 	ProcessMemoryBarriers(command_buffer, translation_info);
 }
 
-void VkRenderBackend::TextureLayoutTranslation(const FVkCommandBuffer& command_buffer, Texture& texture, const FVkTextureTranslationInfo& translation_info)
+void VkRenderBackend::TextureLayoutTranslation(CommandBuffer& command_buffer, Texture& texture, const FVkTextureTranslationInfo& translation_info)
 {
 	auto image_layout_translation = texture.GetTranslationInfo(translation_info);
 	ProcessImageLayoutTranslation(command_buffer, image_layout_translation);

@@ -16,6 +16,8 @@ namespace engine
 			class Sampler;
 			class Texture;
 			class Buffer;
+			class CommandPool;
+			class CommandBuffer;
 
 			using vk_resource_container_t = CResourceContainer<Texture, FVkShader, Buffer, FVkShaderReflectionData>;
 
@@ -94,12 +96,6 @@ namespace engine
 
 				void UpdateSurface(i32 surface_width, i32 surface_height) override;
 
-				FVkCommandBuffer& CreateCommandBuffer(const FVkCommandBufferCreateInfo& command_buffer_ci, std::thread::id thread_id = std::this_thread::get_id());
-				FVkCommandBuffer& GetLastCommandBuffer(EQueueTypeFlagBits queue_type, std::thread::id thread_id = std::this_thread::get_id());
-				FVkCommandBuffer& GetCommandBuffer(EQueueTypeFlagBits queue_type, u64 index, std::thread::id thread_id = std::this_thread::get_id());
-				utl::vector<FVkCommandBuffer>& GetCommandBuffers(EQueueTypeFlagBits queue_type, std::thread::id thread_id = std::this_thread::get_id());
-				void DestroyCommandBuffer(EQueueTypeFlagBits queue_type, std::thread::id thread_id = std::this_thread::get_id());
-
 				const std::unique_ptr<RenderDevice>& getDevice() const;
 
 				void BeginFrame() override;
@@ -111,7 +107,7 @@ namespace engine
 				void InsertDebugLabel(const std::string& label, EQueueTypeFlagBits queue_type, u32 color = 0xffffffff) override;
 				void EndDebugLabel(EQueueTypeFlagBits queue_type) override;
 			protected:
-				void DestroyThreadContext(FVkThreadContext& context);
+				void DestroyThreadContext(CommandBuffer& context);
 				void ProcessResourceBarriers();
 				void ProcessResourceUpload();
 				void ProcessResourceUtilization();
@@ -120,11 +116,11 @@ namespace engine
 				FRenderApiErrorInfo CreateShaderResources(const FVkShaderResourcesInfo& resources_info, FVkShader& shader);
 				void DestroyShader(FVkShader& shader);
 
-				void BindShaderDescriptors(const FVkCommandBuffer& command_buffer, const FVkShader& shader);
+				void BindShaderDescriptors(CommandBuffer& command_buffer, const FVkShader& shader);
 
-				void ProcessMemoryBarriers(const FVkCommandBuffer& command_buffer, const FVkTranslationInfo& translation_info);
-				void ProcessImageLayoutTranslation(const FVkCommandBuffer& command_buffer, const vk::ImageMemoryBarrier2KHR& image_translation_info);
-				void TextureLayoutTranslation(const FVkCommandBuffer& command_buffer, Texture& texture, const FVkTextureTranslationInfo& translation_info);
+				void ProcessMemoryBarriers(CommandBuffer& command_buffer, const FVkTranslationInfo& translation_info);
+				void ProcessImageLayoutTranslation(CommandBuffer& command_buffer, const vk::ImageMemoryBarrier2KHR& image_translation_info);
+				void TextureLayoutTranslation(CommandBuffer& command_buffer, Texture& texture, const FVkTextureTranslationInfo& translation_info);
 
 				//void blitImage(const FVkCommandBuffer& command_buffer, );
 			private:
@@ -145,7 +141,13 @@ namespace engine
 				FVkGlobalDescriptor global_descriptor{};
 				utl::hash_map<u32, utl::unique_queue<u64>> texture_to_update{};
 
-				utl::hash_map<std::thread::id, FVkThreadContext> per_thread_context{};
+				std::unique_ptr<CommandPool> command_pool;
+				CommandBuffer* current_command_buffer{ nullptr };
+
+				FVkDescriptorPool descriptorPool{};
+				utl::hash_map<u64, FVkDescriptorSet> descriptorSets{};
+
+
 				bool is_frame_started{ false };
 
 				FRenderFrameStats render_stats{};

@@ -51,7 +51,7 @@ namespace engine
 				/**
 				 * @brief Inserts a command to begin a new debug label/marker scope.
 				 */
-				virtual void BeginLabel(vk::CommandBuffer command_buffer, const char* name, glm::vec4 const color = {}) const = 0;
+				virtual void BeginLabel(vk::CommandBuffer command_buffer, const char* name, uint32_t color) const = 0;
 
 				/**
 				 * @brief Inserts a command to end the current debug label/marker scope.
@@ -61,7 +61,7 @@ namespace engine
 				/**
 				 * @brief Inserts a (non-scoped) debug label/marker in the command buffer.
 				 */
-				virtual void InsertLabel(vk::CommandBuffer command_buffer, const char* name, glm::vec4 const color = {}) const = 0;
+				virtual void InsertLabel(vk::CommandBuffer command_buffer, const char* name, uint32_t color) const = 0;
 			protected:
 				Device& device;
 			};
@@ -77,9 +77,9 @@ namespace engine
 
 				void SetDebugName(vk::ObjectType object_type, uint64_t object_handle, const char* name) const override;
 				void SetDebugTag(vk::ObjectType object_type, uint64_t object_handle, uint64_t tag_name, const void* tag_data, size_t tag_data_size) const override;
-				void BeginLabel(vk::CommandBuffer command_buffer, const char* name, glm::vec4 const color) const override;
+				void BeginLabel(vk::CommandBuffer command_buffer, const char* name, uint32_t color) const override;
 				void EndLabel(vk::CommandBuffer command_buffer) const override;
-				void InsertLabel(vk::CommandBuffer command_buffer, const char* name, glm::vec4 const color) const override;
+				void InsertLabel(vk::CommandBuffer command_buffer, const char* name, uint32_t color) const override;
 			};
 
 			/**
@@ -93,9 +93,9 @@ namespace engine
 
 				void SetDebugName(vk::ObjectType object_type, uint64_t object_handle, const char* name) const override;
 				void SetDebugTag(vk::ObjectType object_type, uint64_t object_handle, uint64_t tag_name, const void* tag_data, size_t tag_data_size) const override;
-				void BeginLabel(vk::CommandBuffer command_buffer, const char* name, glm::vec4 const color) const override;
+				void BeginLabel(vk::CommandBuffer command_buffer, const char* name, uint32_t color) const override;
 				void EndLabel(vk::CommandBuffer command_buffer) const override;
-				void InsertLabel(vk::CommandBuffer command_buffer, const char* name, glm::vec4 const color) const override;
+				void InsertLabel(vk::CommandBuffer command_buffer, const char* name, uint32_t color) const override;
 			};
 
 			/**
@@ -109,9 +109,9 @@ namespace engine
 
 				inline void SetDebugName(vk::ObjectType, uint64_t, const char*) const override {}
 				inline void SetDebugTag(vk::ObjectType, uint64_t, uint64_t, const void*, size_t) const override {}
-				inline void BeginLabel(vk::CommandBuffer, const char*, glm::vec4 const) const override {}
+				inline void BeginLabel(vk::CommandBuffer, const char*, uint32_t) const override {}
 				inline void EndLabel(vk::CommandBuffer) const override {}
-				inline void InsertLabel(vk::CommandBuffer, const char*, glm::vec4 const) const override {}
+				inline void InsertLabel(vk::CommandBuffer, const char*, uint32_t) const override {}
 			};
 		}
 	}

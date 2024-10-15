@@ -7,6 +7,17 @@ namespace engine
 	{
 		namespace vulkan
 		{
+			inline std::array<float, 4> MakeColor(uint32_t color)
+			{
+				std::array<float, 4> out_color{};
+				out_color[0] = ((color >> 24) & 0xFF) / 255.0f;
+				out_color[1] = ((color >> 16) & 0xFF) / 255.0f;
+				out_color[2] = ((color >> 8) & 0xFF) / 255.0f;
+				out_color[3] = (color & 0xFF) / 255.0f;
+
+				return out_color;
+			}
+
 			DebugUtils::DebugUtils(Device& device) :
 				device{ device }
 			{
@@ -29,9 +40,9 @@ namespace engine
 				Handle(device).setDebugUtilsObjectTagEXT(tag_info);
 			}
 
-			void DebugUtilsExtDebugUtils::BeginLabel(vk::CommandBuffer command_buffer, const char* name, glm::vec4 const color) const
+			void DebugUtilsExtDebugUtils::BeginLabel(vk::CommandBuffer command_buffer, const char* name, uint32_t color) const
 			{
-				vk::DebugUtilsLabelEXT label_info(name, reinterpret_cast<std::array<float, 4> const&>(*&color[0]));
+				vk::DebugUtilsLabelEXT label_info(name, MakeColor(color));
 				command_buffer.beginDebugUtilsLabelEXT(label_info);
 			}
 
@@ -40,9 +51,9 @@ namespace engine
 				command_buffer.endDebugUtilsLabelEXT();
 			}
 
-			void DebugUtilsExtDebugUtils::InsertLabel(vk::CommandBuffer command_buffer, const char* name, glm::vec4 const color) const
+			void DebugUtilsExtDebugUtils::InsertLabel(vk::CommandBuffer command_buffer, const char* name, uint32_t color) const
 			{
-				vk::DebugUtilsLabelEXT label_info(name, reinterpret_cast<std::array<float, 4> const&>(*&color[0]));
+				vk::DebugUtilsLabelEXT label_info(name, MakeColor(color));
 				command_buffer.insertDebugUtilsLabelEXT(label_info);
 			}
 
@@ -64,9 +75,9 @@ namespace engine
 				Handle(device).debugMarkerSetObjectTagEXT(tag_info);
 			}
 
-			void DebugMarkerExtDebugUtils::BeginLabel(vk::CommandBuffer command_buffer, const char* name, glm::vec4 const color) const
+			void DebugMarkerExtDebugUtils::BeginLabel(vk::CommandBuffer command_buffer, const char* name, uint32_t color) const
 			{
-				vk::DebugMarkerMarkerInfoEXT marker_info(name, reinterpret_cast<std::array<float, 4> const&>(*&color[0]));
+				vk::DebugMarkerMarkerInfoEXT marker_info(name, MakeColor(color));
 				command_buffer.debugMarkerBeginEXT(marker_info);
 			}
 
@@ -75,9 +86,9 @@ namespace engine
 				command_buffer.debugMarkerEndEXT();
 			}
 
-			void DebugMarkerExtDebugUtils::InsertLabel(vk::CommandBuffer command_buffer, const char* name, glm::vec4 const color) const
+			void DebugMarkerExtDebugUtils::InsertLabel(vk::CommandBuffer command_buffer, const char* name, uint32_t color) const
 			{
-				vk::DebugMarkerMarkerInfoEXT marker_info(name, reinterpret_cast<std::array<float, 4> const&>(*&color[0]));
+				vk::DebugMarkerMarkerInfoEXT marker_info(name, MakeColor(color));
 				command_buffer.debugMarkerInsertEXT(marker_info);
 			}
 
