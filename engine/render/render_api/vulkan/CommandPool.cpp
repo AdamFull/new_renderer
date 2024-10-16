@@ -155,6 +155,16 @@ namespace engine
 				return render_device;
 			}
 
+			uint32_t CommandPool::GetQueueFamilyIndex() const
+			{
+				return queue_family_index;
+			}
+
+			CommandBuffer::ResetMode CommandPool::GetResetMode() const
+			{
+				return reset_mode;
+			}
+
 			void CommandPool::ResetCommandBuffers()
 			{
 				for (auto& cmd_buf : primary_command_buffers)

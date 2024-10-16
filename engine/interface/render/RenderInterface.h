@@ -385,8 +385,6 @@ namespace engine
 			virtual FRect2D<f32> GetRenderRectFromRT(FAPIHandle texture_id) = 0;
 			virtual FRect2D<f32> GetScreenRenderRect() = 0;
 
-			virtual void UpdateSurface(i32 surface_width, i32 surface_height) = 0;
-
 			virtual void BeginFrame() = 0;
 			virtual void EndFrame() = 0;
 

@@ -182,7 +182,7 @@ namespace engine
 				VulkanResource{ nullptr },
 				render_device{ render_device }
 			{
-				handle = render_device.CreateSampler2(builder.create_info, builder.debug_name);
+				handle = render_device.CreateSampler(builder.create_info, builder.debug_name);
 			}
 
 			Sampler::~Sampler()

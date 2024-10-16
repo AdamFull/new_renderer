@@ -37,10 +37,10 @@ namespace engine
 		return properties.mode;
 	}
 
-	//bool Window::GetDisplayPresentInfo(VkDisplayPresentInfoKHR* info,
-	//	uint32_t src_width, uint32_t src_height) const
-	//{
-	//	// Default is to not use the extra present info
-	//	return false;
-	//}
+	bool Window::GetDisplayPresentInfo(VkDisplayPresentInfoKHR* info,
+		uint32_t src_width, uint32_t src_height) const
+	{
+		// Default is to not use the extra present info
+		return false;
+	}
 }

@@ -46,6 +46,9 @@ namespace engine
 
 				RenderDevice& GetDevice();
 				RenderDevice const& GetDevice() const;
+
+				uint32_t GetQueueFamilyIndex() const;
+				CommandBuffer::ResetMode GetResetMode() const;
 			protected:
 				void ResetCommandBuffers();
 			private:

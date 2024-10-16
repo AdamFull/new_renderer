@@ -107,7 +107,7 @@ namespace engine
 				 * @param debug_name Debug name for handle
 				 * @return Vulkan swapchainKHR handle
 				 */
-				vk::SwapchainKHR CreateSwapchain2(const vk::SwapchainCreateInfoKHR& create_info, const std::string& debug_name = "") const;
+				vk::SwapchainKHR CreateSwapchain(const vk::SwapchainCreateInfoKHR& create_info, const std::string& debug_name = "") const;
 
 				/**
 				 * @brief Requests vulkan images from swapchain handle
@@ -130,7 +130,7 @@ namespace engine
 				 * @param debug_name Debug name for handle
 				 * @return Vulkan pipeline cache handle
 				 */
-				vk::PipelineCache CreatePipelineCache2(const vk::PipelineCacheCreateInfo& create_info, const std::string& debug_name = "") const;
+				vk::PipelineCache CreatePipelineCache(const vk::PipelineCacheCreateInfo& create_info, const std::string& debug_name = "") const;
 
 				/**
 				 * @brief Destroys pipeline cache handle
@@ -144,7 +144,7 @@ namespace engine
 				 * @param debug_name Debug name for handle
 				 * @return Vulkan sampler handle
 				 */
-				vk::Sampler CreateSampler2(const vk::SamplerCreateInfo& create_info, const std::string& debug_name = "") const;
+				vk::Sampler CreateSampler(const vk::SamplerCreateInfo& create_info, const std::string& debug_name = "") const;
 
 				/**
 				 * @brief Destroys sampler handle
@@ -158,7 +158,7 @@ namespace engine
 				 * @param debug_name Debug name for handle
 				 * @return Vulkan semaphore handle
 				 */
-				vk::Semaphore CreateSemaphore2(const vk::SemaphoreCreateInfo& create_info, const std::string& debug_name = "") const;
+				vk::Semaphore CreateSemaphore(const vk::SemaphoreCreateInfo& create_info, const std::string& debug_name = "") const;
 
 				/**
 				 * @brief Destroys semaphore handle
@@ -172,7 +172,12 @@ namespace engine
 				 * @param debug_name Debug name for handle
 				 * @return Vulkan fence handle
 				 */
-				vk::Fence CreateFence2(const vk::FenceCreateInfo& create_info, const std::string& debug_name = "") const;
+				vk::Fence CreateFence(const vk::FenceCreateInfo& create_info, const std::string& debug_name = "") const;
+
+				vk::Result WaitForFences(vk::Fence* handles, uint32_t fence_count, vk::Bool32 wait_for_all = VK_TRUE, uint64_t timeout = std::numeric_limits<uint64_t>::max()) const;
+				vk::Result WaitForFences(std::span<vk::Fence> handles, vk::Bool32 wait_for_all = VK_TRUE, uint64_t timeout = std::numeric_limits<uint64_t>::max()) const;
+				vk::Result ResetFences(vk::Fence* handles, uint32_t fence_count) const;
+				vk::Result ResetFences(std::span<vk::Fence> handles) const;
 
 				/**
 				 * @brief Destroys fence handle
@@ -190,6 +195,8 @@ namespace engine
 				void FreeCommandBuffers(vk::CommandPool& command_pool, vk::CommandBuffer* command_buffers, uint32_t command_buffer_count);
 				void FreeCommandBuffers(vk::CommandPool& command_pool, std::span<vk::CommandBuffer> command_buffers);
 				void Destroy(vk::CommandPool& handle) const;
+
+				void Wait();
 
 				// VkDescriptorSetLayout
 				FRenderApiErrorInfo CreateDescriptorSetLayout(const FVkDescriptorSetLayoutCreateInfo& layout_ci, vk::DescriptorSetLayout& descriptor_set_layout);
@@ -224,8 +231,6 @@ namespace engine
 				void GetOccupedDeviceMemory(vk::MemoryHeapFlags memory_flags, u64& total_memory, u64& used_memory);
 
 				void SubmitCommandBuffer(vk::CommandBuffer& command_buffer);
-				vk::Result Present(vk::CommandBuffer& command_buffer);
-				vk::Result AcquireNextImage(u32& image_index);
 
 				void InitProfiler(vk::CommandBuffer& command_pool);
 
@@ -250,15 +255,10 @@ namespace engine
 				utl::vector<char> GetPipelineCacheData() const;
 
 				const std::vector<vk::SurfaceFormatKHR>& GetSurfacePriorityList() const;
-
-				const FSwapchain& GetSwapchain() const;
 			protected:
 				void RegisterAllocationCallbacks();
 				void EnableDeviceFeatures(PhysicalDevice& device);
 				FRenderApiErrorInfo CreatePipelineCache(const FRenderContextCreateInfo& context_ci);
-				FRenderApiErrorInfo CreateSwapchain(u32 surface_width, u32 surface_height);
-
-				void CleanupSwapchain();
 			private:
 				vk::DynamicLoader dl;
 				vk::AllocationCallbacks* allocation_callbacks{ nullptr };
@@ -279,12 +279,12 @@ namespace engine
 				vk::SampleCountFlagBits required_sample_count{ vk::SampleCountFlagBits::e1 };
 
 				vk::PipelineCache pipeline_cache{ nullptr };
-				FSwapchain swapchain{};
 
 				/**
 				 * @brief A list of surface formats in order of priority (vector[0] has high priority, vector[size-1] has low priority)
 				 */
 				std::vector<vk::SurfaceFormatKHR> surface_priority_list = {
+					{vk::Format::eB8G8R8A8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear},
 					{vk::Format::eR8G8B8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear},
 					{vk::Format::eB8G8R8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear} };
 

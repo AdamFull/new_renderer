@@ -147,7 +147,10 @@ namespace engine
 
 			ImageView::~ImageView()
 			{
-				render_device.Destroy(handle);
+				if (!external_handle)
+				{
+					render_device.Destroy(handle);
+				}
 			}
 
 			void ImageView::SetImageLayout(vk::ImageLayout new_layout)

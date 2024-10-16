@@ -25,6 +25,9 @@ namespace engine
 				BufferBuilder& SetUsage(vk::BufferUsageFlags usage);
 
 				vk::DeviceSize suballocation_count{ 0ull };
+			private:
+				void Finalize(RenderDevice& render_device) const;
+				mutable std::array<uint32_t, 8u> queue_families{};
 			};
 
 			class Buffer final : public Allocation, public VulkanResource<vk::Buffer>

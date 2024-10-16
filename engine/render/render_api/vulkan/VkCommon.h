@@ -143,60 +143,6 @@ namespace engine
 				return found != avaliable_samples.end();
 			}
 #endif
-
-			inline vk::SurfaceFormatKHR choice_surface_format(const std::vector<vk::SurfaceFormatKHR>& available_formats)
-			{
-				if (available_formats.size() == 1 && available_formats[0].format == vk::Format::eUndefined)
-					return { vk::Format::eB8G8R8A8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear };
-
-				for (const auto& available_format : available_formats)
-				{
-					if (available_format.format == vk::Format::eB8G8R8A8Unorm && available_format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
-						return available_format;
-				}
-
-				return available_formats[0];
-			}
-
-			inline vk::PresentModeKHR choice_surface_present_mode(const std::vector<vk::PresentModeKHR>& present_modes)
-			{
-				vk::PresentModeKHR best_mode = vk::PresentModeKHR::eFifo;
-
-				for (const auto& present_mode : present_modes)
-				{
-					if (present_mode == vk::PresentModeKHR::eMailbox)
-						return present_mode;
-					else if (present_mode == vk::PresentModeKHR::eImmediate)
-						best_mode = present_mode;
-				}
-
-				return best_mode;
-			}
-
-			inline vk::Extent2D choice_swapchain_extent(const vk::SurfaceCapabilitiesKHR& capabilities, u32 width, u32 height)
-			{
-				if (capabilities.currentExtent.width != (std::numeric_limits<u32>::max)())
-					return capabilities.currentExtent;
-
-				vk::Extent2D actual_extent = { width, height };
-
-				actual_extent.width = (std::max)(capabilities.minImageExtent.width, (std::min)(capabilities.maxImageExtent.width, actual_extent.width));
-				actual_extent.height = (std::max)(capabilities.minImageExtent.height, (std::min)(capabilities.maxImageExtent.height, actual_extent.height));
-
-				return actual_extent;
-			}
-
-			inline vk::DebugUtilsLabelEXT make_debug_label(const char* label, u32 color)
-			{
-				vk::DebugUtilsLabelEXT debug_label{};
-				debug_label.pLabelName = label;
-				debug_label.color[0] = ((color >> 24) & 0xFF) / 255.0f;
-				debug_label.color[1] = ((color >> 16) & 0xFF) / 255.0f;
-				debug_label.color[2] = ((color >> 8) & 0xFF) / 255.0f;
-				debug_label.color[3] = (color & 0xFF) / 255.0f;
-				return debug_label;
-			}
-
 			inline EQueueTypeFlags convert_vk_queue_flags_to_impl(vk::QueueFlags flags)
 			{
 				EQueueTypeFlags mask{ 0u };

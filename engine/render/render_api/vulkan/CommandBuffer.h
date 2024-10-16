@@ -37,6 +37,11 @@ namespace engine
 
 				void Reset(ResetMode reset_mode);
 
+				void BindPipeline(vk::PipelineBindPoint bind_point, vk::Pipeline& pipeline);
+				void PushConstants(const vk::PushConstantsInfoKHR& push_info);
+
+				void BindVertexBuffers(uint32_t first_binding, const std::vector<vk::Buffer>& buffers, const std::vector<uint64_t>& offsets);
+
 				void ResetTimestampQuery(FVkTimestampQuery& timestamp_query);
 				void WriteTimestampQuery(vk::PipelineStageFlagBits pipeline_state, FVkTimestampQuery& timestamp_query);
 

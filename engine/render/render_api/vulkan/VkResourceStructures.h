@@ -34,20 +34,6 @@ namespace engine
 			// ==================================Object Handles=================================
 			// =================================================================================
 
-			struct FSwapchain
-			{
-				vk::SwapchainKHR handle{ nullptr };
-				vk::Format format{};
-				vk::Extent2D extent{};
-				utl::vector<vk::Image> images{};
-				utl::vector<vk::ImageView> imageViews{};
-				utl::vector<vk::Semaphore> imageAvaliableSemaphores{};
-				utl::vector<vk::Semaphore> renderFinishedSemaphores{};
-				utl::vector<vk::Fence> inFlightFences{};
-				u32 framesInFlight{ 2u };
-				u32 currentFrame{ 0u };
-			};
-
 			struct FVkDescriptorSetLayoutCreateInfo
 			{
 				utl::vector<vk::DescriptorSetLayoutBinding> layoutBindings{};
@@ -247,56 +233,6 @@ namespace engine
 				vk::QueryPool handle{};
 				utl::vector<u64> values{};
 				u32 queryIndex{ 0ull };
-			};
-
-			//struct FVkThreadContext
-			//{
-			//	FVkThreadContext() { incrementUsage(); }
-			//	~FVkThreadContext() { decrementUsage(); }
-			//
-			//	FVkThreadContext(const FVkThreadContext& other) : perQueue(other.perQueue), descriptorPool(other.descriptorPool), descriptorSets(other.descriptorSets)
-			//	{ incrementUsage(); }
-			//
-			//	FVkThreadContext& operator=(const FVkThreadContext& other)
-			//	{
-			//		if (this != &other)
-			//		{
-			//			perQueue = other.perQueue;
-			//			descriptorPool.handle = other.descriptorPool.handle;
-			//			descriptorSets = other.descriptorSets;
-			//		}
-			//		return *this;
-			//	}
-			//
-			//	i32 use_count() { return refCounter.load(std::memory_order_relaxed); }
-			//
-			//	utl::hash_map<EQueueTypeFlagBits, FVkPerQueueResources> perQueue{};
-			//	FVkDescriptorPool descriptorPool{};
-			//	utl::hash_map<u64, FVkDescriptorSet> descriptorSets{};
-			//private:
-			//	void incrementUsage() { refCounter.fetch_add(1, std::memory_order_relaxed); }
-			//	void decrementUsage() { refCounter.fetch_sub(1, std::memory_order_relaxed); }
-			//	std::atomic<i32> refCounter{ 0 };
-			//};
-
-			struct FVkNativeContext
-			{
-				vk::Instance instance{};
-				vk::PhysicalDevice physicalDevice{};
-				vk::Device device{};
-
-				uint32_t presentQueueFamily{};
-				vk::Queue presentQueue{};
-
-				vk::PipelineCache pipelineCache{};
-				vk::Format backbufferFormat{};
-				uint32_t backbufferFrames{};
-				vk::SampleCountFlagBits samples{};
-
-				const vk::AllocationCallbacks* allocationCallbacks{};
-
-				vma::Allocator memoryAllocator{};
-
 			};
 		}
 	}

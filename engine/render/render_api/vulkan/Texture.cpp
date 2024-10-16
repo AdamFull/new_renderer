@@ -250,7 +250,7 @@ namespace engine
 				base = image_view_builder.BuildUnique(render_device, *image);
 
 				// Need to create additional views only if it's controlled from this class
-				if (!builder.external_image && !builder.external_image_view)
+				if (!builder.external_image)
 				{
 					mips.resize(builder.mip_count);
 					for (u32 mip_index = 0u; mip_index < builder.mip_count; ++mip_index)

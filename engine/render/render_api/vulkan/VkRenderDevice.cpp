@@ -100,8 +100,6 @@ namespace engine
 
 			RenderDevice::~RenderDevice()
 			{
-				CleanupSwapchain();
-				Destroy(swapchain.handle);
 				Destroy(pipeline_cache);
 				Handle(*instance).destroySurfaceKHR(surface, allocation_callbacks);
 
@@ -261,8 +259,6 @@ namespace engine
 				allocator = std::make_unique<Allocator>(*device);
 
 				check_api_result(CreatePipelineCache(context_ci));
-				auto& extent = context_ci.window->GetExtent();
-				check_api_result(CreateSwapchain(extent.width, extent.height));
 			}
 
 			vk::Buffer RenderDevice::CreateBuffer(Allocation& allocation, vk::BufferCreateInfo const& create_info, const std::string& debug_name) const
@@ -306,7 +302,7 @@ namespace engine
 				Handle(*device).destroyImageView(image_view, allocation_callbacks);
 			}
 
-			vk::SwapchainKHR RenderDevice::CreateSwapchain2(const vk::SwapchainCreateInfoKHR& create_info, const std::string& debug_name) const
+			vk::SwapchainKHR RenderDevice::CreateSwapchain(const vk::SwapchainCreateInfoKHR& create_info, const std::string& debug_name) const
 			{
 				vk::SwapchainKHR handle = VkCreateHandleAndCheckResult<vk::SwapchainKHR>([&](auto& handle) { return Handle(*device).createSwapchainKHR(&create_info, allocation_callbacks, &handle); });
 				debug_utils->SetDebugName(handle, debug_name);
@@ -338,7 +334,7 @@ namespace engine
 				Handle(*device).destroySwapchainKHR(handle, allocation_callbacks);
 			}
 
-			vk::PipelineCache RenderDevice::CreatePipelineCache2(const vk::PipelineCacheCreateInfo& create_info, const std::string& debug_name) const
+			vk::PipelineCache RenderDevice::CreatePipelineCache(const vk::PipelineCacheCreateInfo& create_info, const std::string& debug_name) const
 			{
 				vk::PipelineCache handle = VkCreateHandleAndCheckResult<vk::PipelineCache>([&](auto& handle) { return Handle(*device).createPipelineCache(&create_info, allocation_callbacks, &handle); });
 				debug_utils->SetDebugName(handle, debug_name);
@@ -350,7 +346,7 @@ namespace engine
 				Handle(*device).destroyPipelineCache(handle, allocation_callbacks);
 			}
 
-			vk::Sampler RenderDevice::CreateSampler2(const vk::SamplerCreateInfo& create_info, const std::string& debug_name) const
+			vk::Sampler RenderDevice::CreateSampler(const vk::SamplerCreateInfo& create_info, const std::string& debug_name) const
 			{
 				vk::Sampler handle = VkCreateHandleAndCheckResult<vk::Sampler>([&](auto& handle) { return Handle(*device).createSampler(&create_info, allocation_callbacks, &handle); });
 				debug_utils->SetDebugName(handle, debug_name);
@@ -362,7 +358,7 @@ namespace engine
 				Handle(*device).destroySampler(handle, allocation_callbacks);
 			}
 
-			vk::Semaphore RenderDevice::CreateSemaphore2(const vk::SemaphoreCreateInfo& create_info, const std::string& debug_name) const
+			vk::Semaphore RenderDevice::CreateSemaphore(const vk::SemaphoreCreateInfo& create_info, const std::string& debug_name) const
 			{
 				auto handle = VkCreateHandleAndCheckResult<vk::Semaphore>([&](auto& handle) { return Handle(*device).createSemaphore(&create_info, allocation_callbacks, &handle); });
 				debug_utils->SetDebugName(handle, debug_name);
@@ -374,11 +370,31 @@ namespace engine
 				Handle(*device).destroySemaphore(handle, allocation_callbacks);
 			}
 
-			vk::Fence RenderDevice::CreateFence2(const vk::FenceCreateInfo& create_info, const std::string& debug_name) const
+			vk::Fence RenderDevice::CreateFence(const vk::FenceCreateInfo& create_info, const std::string& debug_name) const
 			{
 				auto handle = VkCreateHandleAndCheckResult<vk::Fence>([&](auto& handle) { return Handle(*device).createFence(&create_info, allocation_callbacks, &handle); });
 				debug_utils->SetDebugName(handle, debug_name);
 				return handle;
+			}
+
+			vk::Result RenderDevice::WaitForFences(vk::Fence* handles, uint32_t fence_count, vk::Bool32 wait_for_all, uint64_t timeout) const
+			{
+				return Handle(*device).waitForFences(fence_count, handles, wait_for_all, timeout);
+			}
+
+			vk::Result RenderDevice::WaitForFences(std::span<vk::Fence> handles, vk::Bool32 wait_for_all, uint64_t timeout) const
+			{
+				return WaitForFences(handles.data(), handles.size(), wait_for_all, timeout);
+			}
+
+			vk::Result RenderDevice::ResetFences(vk::Fence* handles, uint32_t fence_count) const
+			{
+				return Handle(*device).resetFences(fence_count, handles);
+			}
+
+			vk::Result RenderDevice::ResetFences(std::span<vk::Fence> handles) const
+			{
+				return ResetFences(handles.data(), handles.size());
 			}
 
 			void RenderDevice::Destroy(vk::Fence& handle) const
@@ -451,6 +467,11 @@ namespace engine
 			void RenderDevice::Destroy(vk::CommandPool& handle) const
 			{
 				Handle(*device).destroyCommandPool(handle, allocation_callbacks);
+			}
+
+			void RenderDevice::Wait()
+			{
+				Handle(*device).waitIdle();
 			}
 
 			FRenderApiErrorInfo RenderDevice::CreateDescriptorSetLayout(const FVkDescriptorSetLayoutCreateInfo& layout_ci, vk::DescriptorSetLayout& descriptor_set_layout)
@@ -798,7 +819,7 @@ namespace engine
 				submitInfo.pCommandBuffers = &command_buffer;
 
 				vk::FenceCreateInfo fence_ci{};
-				vk::Fence fence = CreateFence2(fence_ci);
+				vk::Fence fence = CreateFence(fence_ci);
 
 				Handle(*device).resetFences(1, &fence);
 
@@ -807,69 +828,6 @@ namespace engine
 				queue.Submit(submitInfo, fence);
 				Handle(*device).waitForFences(1, &fence, VK_TRUE, (std::numeric_limits<u64>::max)());
 				Handle(*device).destroyFence(fence, allocation_callbacks);
-			}
-
-			vk::Result RenderDevice::Present(vk::CommandBuffer& command_buffer)
-			{
-				vk::Result res = Handle(*device).resetFences(1, &swapchain.inFlightFences[swapchain.currentFrame]);
-				check_api_result(make_api_error(vk::ObjectType::eFence, res, "Failed to reset"));
-
-				try
-				{
-					// TODO: COMMAND BUFFERS
-					auto& queue = device->GetQueueByFlags(vk::QueueFlagBits::eGraphics, 0);
-
-					vk::SubmitInfo2 submit_info{};
-
-					vk::SemaphoreSubmitInfo semaphore_si{};
-					semaphore_si.semaphore = swapchain.imageAvaliableSemaphores[swapchain.currentFrame];
-					semaphore_si.stageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
-
-					submit_info.pWaitSemaphoreInfos = &semaphore_si;
-					submit_info.waitSemaphoreInfoCount = 1;
-
-					vk::SemaphoreSubmitInfo signal_si{};
-					signal_si.semaphore = swapchain.renderFinishedSemaphores[swapchain.currentFrame];
-					signal_si.stageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
-
-					submit_info.pSignalSemaphoreInfos = &signal_si;
-					submit_info.signalSemaphoreInfoCount = 1;
-
-					vk::CommandBufferSubmitInfo command_buffer_si{};
-					command_buffer_si.commandBuffer = command_buffer;
-
-					submit_info.pCommandBufferInfos = &command_buffer_si;
-					submit_info.commandBufferInfoCount = 1;
-
-					queue.Submit(submit_info, swapchain.inFlightFences[swapchain.currentFrame]);
-				}
-				catch (vk::SystemError error)
-				{
-					log_error("failed to submit Draw command buffer!");
-				}
-
-				vk::PresentInfoKHR present_info = {};
-				present_info.waitSemaphoreCount = 1;
-				present_info.pWaitSemaphores = &swapchain.renderFinishedSemaphores[swapchain.currentFrame];
-
-				vk::SwapchainKHR swap_chains[] = { swapchain.handle };
-				present_info.swapchainCount = 1;
-				present_info.pSwapchains = swap_chains;
-				present_info.pImageIndices = &swapchain.currentFrame;
-
-				auto& present_queue = device->GetQueueByPresent(0);
-				res = present_queue.Present(present_info);
-				check_api_result(make_api_error(vk::ObjectType::eQueue, res, "Failed to present"));
-
-				res = Handle(*device).waitForFences(1, &swapchain.inFlightFences[swapchain.currentFrame], VK_TRUE, (std::numeric_limits<u64>::max)());
-				swapchain.currentFrame = (swapchain.currentFrame + 1) % swapchain.framesInFlight;
-
-				return res;
-			}
-
-			vk::Result RenderDevice::AcquireNextImage(u32& image_index)
-			{
-				return Handle(*device).acquireNextImageKHR(swapchain.handle, (std::numeric_limits<u64>::max)(), swapchain.imageAvaliableSemaphores[swapchain.currentFrame], nullptr, &image_index);
 			}
 
 			void RenderDevice::InitProfiler(vk::CommandBuffer& command_pool)
@@ -999,11 +957,6 @@ namespace engine
 				return surface_priority_list;
 			}
 
-			const FSwapchain& RenderDevice::GetSwapchain() const
-			{
-				return swapchain;
-			}
-
 			void RenderDevice::RegisterAllocationCallbacks()
 			{
 				allocation_callbacks = new vk::AllocationCallbacks();
@@ -1072,130 +1025,8 @@ namespace engine
 				vk::PipelineCacheCreateInfo pipeline_cache_ci{};
 				pipeline_cache_ci.initialDataSize = utl::cast<u32>(context_ci.pipelineCache.size());
 				pipeline_cache_ci.pInitialData = context_ci.pipelineCache.data();
-				pipeline_cache = CreatePipelineCache2(pipeline_cache_ci, "pipeline_cache");
+				pipeline_cache = CreatePipelineCache(pipeline_cache_ci, "pipeline_cache");
 				return FRenderApiErrorInfo{};
-			}
-
-			FRenderApiErrorInfo RenderDevice::CreateSwapchain(u32 surface_width, u32 surface_height)
-			{
-				auto& physical_device = instance->GetBestDevice();
-
-				vk::SwapchainKHR old_swapchain{ swapchain.handle };
-				swapchain.handle = nullptr;
-
-				auto surface_caps = Handle(physical_device).getSurfaceCapabilitiesKHR(surface);
-				auto surface_formats = Handle(physical_device).getSurfaceFormatsKHR(surface);
-				auto present_modes = Handle(physical_device).getSurfacePresentModesKHR(surface);
-
-				auto surface_format = choice_surface_format(surface_formats);
-				auto present_mode = choice_surface_present_mode(present_modes);
-				swapchain.extent = choice_swapchain_extent(surface_caps, surface_width, surface_height);
-				swapchain.format = surface_format.format;
-
-				u32 image_count{ swapchain.framesInFlight };
-				if (surface_caps.maxImageCount > 0 && image_count > surface_caps.maxImageCount)
-					image_count = surface_caps.maxImageCount;
-				else if (image_count < surface_caps.minImageCount)
-					image_count = surface_caps.minImageCount;
-				swapchain.framesInFlight = image_count;
-
-				vk::SwapchainCreateInfoKHR swapchain_ci{};
-				swapchain_ci.surface = surface;
-				swapchain_ci.minImageCount = image_count;
-				swapchain_ci.imageFormat = surface_format.format;
-				swapchain_ci.imageColorSpace = surface_format.colorSpace;
-				swapchain_ci.imageExtent = swapchain.extent;
-				swapchain_ci.imageArrayLayers = 1u;
-				swapchain_ci.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
-
-				if (surface_caps.supportedUsageFlags & vk::ImageUsageFlagBits::eTransferSrc)
-					swapchain_ci.imageUsage |= vk::ImageUsageFlagBits::eTransferSrc;
-				if (surface_caps.supportedUsageFlags & vk::ImageUsageFlagBits::eTransferDst)
-					swapchain_ci.imageUsage |= vk::ImageUsageFlagBits::eTransferDst;
-
-				// TODO: Complete this one
-				//auto& graphics_family = device->GetQueueByFlags(vk::QueueFlagBits::eGraphics, 0);
-				//auto& present_family = device->GetQueueByPresent(0);
-				//
-				//if (graphics_family.GetFamilyIndex() != present_family.GetFamilyIndex())
-				//{
-				//	swapchain_ci.imageSharingMode = vk::SharingMode::eConcurrent;
-				//	swapchain_ci.queueFamilyIndexCount = utl::cast<u32>(device->GetQueueCount());
-				//	swapchain_ci.pQueueFamilyIndices = physical_device.queueFamilies.uniqueFamilies.data();
-				//}
-				//else
-				swapchain_ci.imageSharingMode = vk::SharingMode::eExclusive;
-
-				swapchain_ci.preTransform = surface_caps.currentTransform;
-				swapchain_ci.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
-				swapchain_ci.presentMode = present_mode;
-				swapchain_ci.clipped = VK_TRUE;
-				swapchain_ci.oldSwapchain = old_swapchain;
-
-				swapchain.handle = CreateSwapchain2(swapchain_ci, "swapchain");
-				//check_api_result(make_api_error(vk::ObjectType::eSwapchainKHR, res, "Failed to Create"));
-
-				GetSwapchainImages(swapchain.handle, swapchain.images, image_count, "swapchain_image");
-				//check_api_result(make_api_error(vk::ObjectType::eSwapchainKHR, res, "Failed to Create images"));
-
-				if (old_swapchain)
-					Handle(*device).destroySwapchainKHR(old_swapchain, allocation_callbacks);
-
-				// Create swapchain image views
-				{
-					swapchain.imageViews.resize(image_count);
-
-					vk::ImageViewCreateInfo image_view_ci{};
-					image_view_ci.viewType = vk::ImageViewType::e2D;
-					image_view_ci.format = swapchain.format;
-					image_view_ci.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-					image_view_ci.subresourceRange.baseMipLevel = 0;
-					image_view_ci.subresourceRange.levelCount = 1;
-					image_view_ci.subresourceRange.baseArrayLayer = 0;
-					image_view_ci.subresourceRange.layerCount = 1;
-					image_view_ci.components.r = vk::ComponentSwizzle::eR;
-					image_view_ci.components.g = vk::ComponentSwizzle::eG;
-					image_view_ci.components.b = vk::ComponentSwizzle::eB;
-					image_view_ci.components.a = vk::ComponentSwizzle::eA;
-
-					for (u32 idx = 0u; idx < image_count; ++idx)
-					{
-						image_view_ci.image = swapchain.images[idx];
-						swapchain.imageViews[idx] = CreateImageView(image_view_ci, std::format("frame #{}", idx));
-					}
-				}
-
-				// Create swapchain sync objects
-				{
-					swapchain.imageAvaliableSemaphores.resize(image_count);
-					swapchain.renderFinishedSemaphores.resize(image_count);
-					swapchain.inFlightFences.resize(image_count);
-
-					vk::SemaphoreCreateInfo ia_semaphore_ci{};
-					vk::SemaphoreCreateInfo rf_semaphore_ci{};
-					vk::FenceCreateInfo fence_ci{};
-					fence_ci.flags = vk::FenceCreateFlagBits::eSignaled;
-
-					for (u64 idx = 0ull; idx < image_count; ++idx)
-					{
-						swapchain.imageAvaliableSemaphores[idx] = CreateSemaphore2(ia_semaphore_ci, std::format("image avaliable #{}", idx));
-						swapchain.renderFinishedSemaphores[idx] = CreateSemaphore2(rf_semaphore_ci, std::format("render finished #{}", idx));
-						swapchain.inFlightFences[idx] = CreateFence2(fence_ci, std::format("frame #{}", idx));
-					}
-				}
-
-				return make_api_error(vk::ObjectType::eSwapchainKHR, vk::Result::eSuccess);
-			}
-
-			void RenderDevice::CleanupSwapchain()
-			{
-				for (u64 idx = 0ull; idx < swapchain.framesInFlight; ++idx)
-				{
-					Handle(*device).destroyFence(swapchain.inFlightFences[idx], allocation_callbacks);
-					Handle(*device).destroyImageView(swapchain.imageViews[idx], allocation_callbacks);
-					Handle(*device).destroySemaphore(swapchain.imageAvaliableSemaphores[idx], allocation_callbacks);
-					Handle(*device).destroySemaphore(swapchain.renderFinishedSemaphores[idx], allocation_callbacks);
-				}
 			}
 		}
 	}

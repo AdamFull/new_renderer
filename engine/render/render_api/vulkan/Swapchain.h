@@ -79,14 +79,14 @@ namespace engine
 
 				RenderDevice const& GetDevice() const;
 
-				std::pair<vk::Result, uint32_t> AcquireNextImage(vk::Semaphore image_acquired_semaphore, vk::Fence fence = nullptr) const;
+				vk::Result AcquireNextImage(vk::Semaphore image_acquired_semaphore, vk::Fence fence, uint32_t& image_index) const;
 
 				const vk::Extent2D& GetExtent() const;
 
 				vk::Format GetFormat() const;
 
+				vk::Image& GetImage(uint32_t index);
 				const std::vector<vk::Image>& GetImages() const;
-				const std::vector<vk::ImageView>& GetImageViews() const;
 
 				vk::SurfaceTransformFlagBitsKHR GetTransform() const;
 
@@ -104,7 +104,6 @@ namespace engine
 				vk::SurfaceKHR surface;
 
 				std::vector<vk::Image> images;
-				std::vector<vk::ImageView> image_views;
 
 				SwapchainProperties properties;
 

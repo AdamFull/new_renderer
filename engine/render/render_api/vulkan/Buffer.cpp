@@ -26,11 +26,13 @@ namespace engine
 
 			Buffer BufferBuilder::Build(RenderDevice& render_device) const
 			{
+				Finalize(render_device);
 				return Buffer(render_device, *this);
 			}
 
 			std::unique_ptr<Buffer> BufferBuilder::BuildUnique(RenderDevice& render_device) const
 			{
+				Finalize(render_device);
 				return std::make_unique<Buffer>(render_device, *this);
 			}
 
@@ -60,6 +62,19 @@ namespace engine
 			{
 				create_info.usage = usage;
 				return *this;
+			}
+
+			void BufferBuilder::Finalize(RenderDevice& render_device) const
+			{
+				if (create_info.sharingMode == vk::SharingMode::eConcurrent)
+				{
+					auto& device = render_device.GetLogicalDevice();
+					auto family_count = device.GetQueueCount();
+
+					std::iota(queue_families.begin(), queue_families.begin() + family_count, 0u);
+					create_info.queueFamilyIndexCount = family_count;
+					create_info.pQueueFamilyIndices = &queue_families[0];
+				}
 			}
 
 

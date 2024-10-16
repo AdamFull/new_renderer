@@ -14,6 +14,9 @@ namespace engine
 				command_pool{ command_pool }
 			{
 				handle = command_pool.AllocateCommandBuffer(level);
+
+				auto reset_mode = command_pool.GetResetMode();
+				Reset(reset_mode);
 			}
 
 			CommandBuffer::CommandBuffer(CommandBuffer&& other) :
@@ -66,6 +69,21 @@ namespace engine
 				{
 					handle.reset(vk::CommandBufferResetFlagBits::eReleaseResources);
 				}
+			}
+
+			void CommandBuffer::BindPipeline(vk::PipelineBindPoint bind_point, vk::Pipeline& pipeline)
+			{
+				handle.bindPipeline(bind_point, pipeline);
+			}
+
+			void CommandBuffer::PushConstants(const vk::PushConstantsInfoKHR& push_info)
+			{
+				handle.pushConstants(push_info.layout, push_info.stageFlags, push_info.offset, push_info.size, push_info.pValues);
+			}
+
+			void CommandBuffer::BindVertexBuffers(uint32_t first_binding, const std::vector<vk::Buffer>& buffers, const std::vector<uint64_t>& offsets)
+			{
+				handle.bindVertexBuffers(first_binding, buffers, offsets);
 			}
 
 			void CommandBuffer::ResetTimestampQuery(FVkTimestampQuery& timestamp_query)

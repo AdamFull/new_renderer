@@ -124,8 +124,8 @@ namespace engine
 		 * @return true if the present info was filled in and should be used
 		 * @return false if the extra present info should not be used. info is left untouched.
 		 */
-		//virtual bool GetDisplayPresentInfo(VkDisplayPresentInfoKHR* info,
-		//	uint32_t src_width, uint32_t src_height) const;
+		virtual bool GetDisplayPresentInfo(VkDisplayPresentInfoKHR* info,
+			uint32_t src_width, uint32_t src_height) const;
 
 		virtual std::vector<const char*> GetRequiredSurfaceExtensions() const = 0;
 

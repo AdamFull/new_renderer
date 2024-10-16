@@ -16,6 +16,8 @@
 #include <engine/render/render_api/vulkan/ImageView.h>
 #include <engine/render/render_api/vulkan/Texture.h>
 #include <engine/render/render_api/vulkan/CommandPool.h>
+#include <engine/render/render_api/vulkan/Swapchain.h>
+#include <engine/render/render_api/vulkan/RenderContext.h>
 
 using namespace engine;
 using namespace engine::render;
@@ -150,6 +152,7 @@ BufferBuilder MakeBufferBuilder(const FBufferCreateInfo& buffer_ci, const vk::Ph
 	auto builder = BufferBuilder(buffer_ci.size, buffer_ci.count, minimal_alignment);
 	builder.SetVmaUsage(memory_usage_flags);
 	builder.SetUsage(usage_flags);
+	builder.SetSharingMode(vk::SharingMode::eConcurrent);
 
 	return builder;
 }
@@ -198,24 +201,19 @@ void VkRenderBackend::Create(const FRenderContextCreateInfo& context_ci)
 	render_device = std::make_unique<RenderDevice>();
 	render_device->Create(context_ci);
 
-	auto& swapchain = render_device->GetSwapchain();
-
-	surface_width = swapchain.extent.width;
-	m_iSurfaceHeight = swapchain.extent.height;
+	render_context = std::make_unique<RenderContext>(*render_device, context_ci.window);
 
 	render_resources = std::make_unique<vk_resource_container_t>();
 
 	auto command_pool_builder = CommandPoolBuilder();
 	command_pool_builder.SetDebugName("Graphics");
-	command_pool_builder.SetResetMode(CommandBuffer::ResetMode::ResetPool);
+	command_pool_builder.SetResetMode(CommandBuffer::ResetMode::ResetIndividually);
 	// TODO: Add queue selection in builder
 	command_pool_builder.SetQueueFamily(render_device->GetLogicalDevice().GetQueueByFlags(vk::QueueFlagBits::eGraphics, 0).GetFamilyIndex());
 
 	command_pool = command_pool_builder.BuildUnique(*render_device);
 
 	auto res = render_device->CreateTimestampQuery(256, timestamp_query);
-
-	UpdateBackbuffer();
 
 	// Create default sampler
 	auto sampler_builder = SamplerBuilder();
@@ -232,7 +230,7 @@ void VkRenderBackend::CreateGlobalDescriptor(const FGlobalUniformCreateInfo& uni
 	// Create descriptor pool
 	FVkDescriptorPoolCreateInfo pool_ci{};
 	pool_ci.poolSizes = { { vk::DescriptorType::eCombinedImageSampler, k_max_bindless_resources }, {vk::DescriptorType::eUniformBuffer, 3u} };
-	pool_ci.usageCount = 1u * render_device->swapchain.framesInFlight;
+	pool_ci.usageCount = 1u * render_context->GetSwapchain().GetImageCount();
 	pool_ci.flags |= vk::DescriptorPoolCreateFlagBits::eUpdateAfterBindEXT;
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	pool_ci.name = "global:textures";
@@ -294,14 +292,14 @@ void VkRenderBackend::CreateGlobalDescriptor(const FGlobalUniformCreateInfo& uni
 
 	// Create descriptor set
 	FVkDescriptorSetCreateInfo set_ci{};
-	set_ci.descriptorCount = render_device->swapchain.framesInFlight;
+	set_ci.descriptorCount = render_context->GetSwapchain().GetImageCount();
 	set_ci.layout = global_descriptor.deecriptorSetLayout;
 	set_ci.pool = global_descriptor.descriptorPool.handle;
 
 	// TODO: Potential problems here in future. I think that max_sets array is incorrect
-	utl::vector<u32> max_sets(render_device->swapchain.framesInFlight, k_max_bindless_resources - 1);
+	utl::vector<u32> max_sets(render_context->GetSwapchain().GetImageCount(), k_max_bindless_resources - 1);
 	vk::DescriptorSetVariableDescriptorCountAllocateInfoEXT descriptor_set_variable_descriptor_count_AIEXT{};
-	descriptor_set_variable_descriptor_count_AIEXT.descriptorSetCount = render_device->swapchain.framesInFlight;
+	descriptor_set_variable_descriptor_count_AIEXT.descriptorSetCount = render_context->GetSwapchain().GetImageCount();
 	descriptor_set_variable_descriptor_count_AIEXT.pDescriptorCounts = max_sets.data();
 	set_ci.next = &descriptor_set_variable_descriptor_count_AIEXT;
 
@@ -317,9 +315,10 @@ void VkRenderBackend::CreateGlobalDescriptor(const FGlobalUniformCreateInfo& uni
 
 	for (auto& [uniform_name, size] : uniform_ci.uniforms)
 	{
-		auto builder = BufferBuilder{ size, render_device->swapchain.framesInFlight, minimal_alignment};
+		auto builder = BufferBuilder{ size, render_context->GetSwapchain().GetImageCount(), minimal_alignment};
 		builder.SetVmaUsage(vma::MemoryUsage::eCpuToGpu);
 		builder.SetUsage(vk::BufferUsageFlagBits::eUniformBuffer);
+		builder.SetSharingMode(vk::SharingMode::eConcurrent);
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
 		auto* debug_name = debug_mapping::find(uniform_name);
@@ -340,7 +339,7 @@ void VkRenderBackend::CreateGlobalDescriptor(const FGlobalUniformCreateInfo& uni
 
 void VkRenderBackend::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view)
 {
-	auto& dest_set = global_descriptor.descriptorSet.handles[render_device->swapchain.currentFrame];
+	auto& dest_set = global_descriptor.descriptorSet.handles[render_context->GetCurrentFrameIndex()];
 
 	std::array<vk::DescriptorImageInfo, k_max_texture_update_per_frame> image_descriptors{};
 	std::array<vk::DescriptorBufferInfo, k_max_buffer_update_per_frame> buffer_descriptors{};
@@ -362,7 +361,7 @@ void VkRenderBackend::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo&
 		auto& buffer_descriptor = buffer_descriptors[buffer_count];
 		buffer_descriptor.buffer = Handle(*buffer);
 		buffer_descriptor.range = element_size;
-		buffer_descriptor.offset = render_device->swapchain.currentFrame * element_size;
+		buffer_descriptor.offset = render_context->GetCurrentFrameIndex() * element_size;
 
 		auto& write_descriptor_set = write_descriptor_sets.emplace_back();
 		write_descriptor_set.descriptorType = vk::DescriptorType::eUniformBuffer;
@@ -377,7 +376,7 @@ void VkRenderBackend::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo&
 
 	// Process bindless textures
 	{
-		auto& texture_queue = texture_to_update[render_device->swapchain.currentFrame];
+		auto& texture_queue = texture_to_update[render_context->GetCurrentFrameIndex()];
 
 		u64 texture_count{ 0ull };
 		while (!texture_queue.empty() && texture_count < k_max_texture_update_per_frame)
@@ -473,6 +472,7 @@ FAPIHandle VkRenderBackend::CreateTexture(const std::string& name, const FTextur
 	auto builder = BufferBuilder(upload_info.upload_data.size(), 1ull, 1ull);
 	builder.SetVmaUsage(vma::MemoryUsage::eCpuOnly);
 	builder.SetUsage(vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst);
+	builder.SetSharingMode(vk::SharingMode::eConcurrent);
 
 	builder.SetDebugName(std::format("texture upload #{}", name));
 
@@ -527,6 +527,7 @@ void VkRenderBackend::ReadPixel(FAPIHandle resource_id, u32 x, u32 y, void* data
 	auto builder = BufferBuilder(pixel_size, 1ull, 1ull);
 	builder.SetVmaUsage(vma::MemoryUsage::eCpuOnly);
 	builder.SetUsage(vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst);
+	builder.SetSharingMode(vk::SharingMode::eConcurrent);
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
 	builder.SetDebugName(std::format("pick pixel #{}(x:{},y{})", resource_id.Get(), x, y));
@@ -586,7 +587,10 @@ FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FGraphic
 	{
 		vk::Format rt_format{ vk::Format::eUndefined };
 		if (attachment.backbuffer)
-			rt_format = backbuffer[render_device->swapchain.currentFrame]->GetImage().GetFormat();
+		{
+			auto& current_frame = render_context->GetCurrentFrame();
+			rt_format = current_frame.GetBackbuffer().GetImage().GetFormat();
+		}
 		else
 			rt_format = textures[attachment.source.Get()]->GetImage().GetFormat();
 
@@ -982,7 +986,7 @@ void VkRenderBackend::FlushConstantRanges(FAPIHandle shader_id, const utl::hash_
 			continue;
 
 		auto& constant_block = found_reflection->second;
-		Handle(*current_command_buffer).pushConstants(shader->layout, constant_block.stageFlags, 0, constant_data.size, constant_data.data);
+		render_context->GetCurrentCommandBuffer().PushConstants({ shader->layout, constant_block.stageFlags, 0u, (u32)constant_data.size, constant_data.data });
 
 		// Break, because we can have only one push constants block
 		break;
@@ -994,14 +998,14 @@ void VkRenderBackend::BindShader(FAPIHandle shader_id, EQueueTypeFlagBits queue_
 	auto& shader = render_resources->get<FVkShader>(shader_id.Get());
 
 	// TODO: make possible to select what pipeline i have to bind now
-	Handle(*current_command_buffer).bindPipeline(shader->bindPoint, shader->handles.back());
+	render_context->GetCurrentCommandBuffer().BindPipeline(shader->bindPoint, shader->handles.back());
 }
 
 void VkRenderBackend::BindShaderResources(FAPIHandle shader_id, EQueueTypeFlagBits queue_type)
 {
 	auto& shader = render_resources->get<FVkShader>(shader_id.Get());
 
-	BindShaderDescriptors(*current_command_buffer, *shader);
+	BindShaderDescriptors(render_context->GetCurrentCommandBuffer(), *shader);
 }
 
 void VkRenderBackend::DestroyShader(FAPIHandle resource_id)
@@ -1035,6 +1039,7 @@ void VkRenderBackend::UploadDataToBuffer(const FBufferUploadInfo& upload_info)
 	auto builder = BufferBuilder(upload_info.upload_size, 1ull, 1ull);
 	builder.SetVmaUsage(vma::MemoryUsage::eCpuOnly);
 	builder.SetUsage(vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst);
+	builder.SetSharingMode(vk::SharingMode::eConcurrent);
 
 	builder.SetDebugName(std::format("staging for #{}", upload_info.buffer_id.Get()));
 
@@ -1062,7 +1067,7 @@ void VkRenderBackend::BindVertexBuffers(const FVertexBufferBindingInfo& binding_
 	for (const auto& buffer_id : binding_info.buffers)
 		buffers.emplace_back(Handle(*render_resources->get<Buffer>(buffer_id.Get())));
 
-	Handle(*current_command_buffer).bindVertexBuffers(binding_info.firstBinding, buffers, binding_info.offsets);
+	render_context->GetCurrentCommandBuffer().BindVertexBuffers(binding_info.firstBinding, buffers, binding_info.offsets);
 }
 
 void VkRenderBackend::BindIndexBuffer(const FIndexBufferBindingInfo& binding_info, EQueueTypeFlagBits queue_type)
@@ -1076,7 +1081,7 @@ void VkRenderBackend::BindIndexBuffer(const FIndexBufferBindingInfo& binding_inf
 	}
 
 	auto& buffer = render_resources->get<Buffer>(binding_info.bufferId.Get());
-	Handle(*current_command_buffer).bindIndexBuffer(Handle(*buffer), binding_info.offset, index_type);
+	Handle(render_context->GetCurrentCommandBuffer()).bindIndexBuffer(Handle(*buffer), binding_info.offset, index_type);
 }
 
 void VkRenderBackend::MapBufferMemory(FAPIHandle buffer_id, void*& memory)
@@ -1143,7 +1148,10 @@ void VkRenderBackend::ProcessResourceBarriers(EQueueTypeFlagBits queue, const ut
 			{
 				Texture* texture{ nullptr };
 				if (resource_barrier.resource.type & ERenderResourceTypeFlagBits::eBackbuffer)
-					texture = backbuffer[render_device->swapchain.currentFrame].get();
+				{
+					auto& current_frame = render_context->GetCurrentFrame();
+					texture = &current_frame.GetBackbuffer();
+				}
 				else
 					texture = textures[resource_barrier.resource.handle.Get()].get();
 
@@ -1160,18 +1168,18 @@ void VkRenderBackend::ProcessResourceBarriers(EQueueTypeFlagBits queue, const ut
 		}
 	}
 
-	ProcessMemoryBarriers(*current_command_buffer, translation_info);
+	ProcessMemoryBarriers(render_context->GetCurrentCommandBuffer(), translation_info);
 }
 
 void VkRenderBackend::BeginTimestampZone(EQueueTypeFlagBits queue)
 {
 	//assert(zone_entries[queue] == 0 && "Previous zone was not ended.");
-	current_command_buffer->WriteTimestampQuery(vk::PipelineStageFlagBits::eTopOfPipe, timestamp_query);
+	render_context->GetCurrentCommandBuffer().WriteTimestampQuery(vk::PipelineStageFlagBits::eTopOfPipe, timestamp_query);
 }
 
 void VkRenderBackend::EndTimestampZone(EQueueTypeFlagBits queue)
 {
-	current_command_buffer->WriteTimestampQuery(vk::PipelineStageFlagBits::eBottomOfPipe, timestamp_query);
+	render_context->GetCurrentCommandBuffer().WriteTimestampQuery(vk::PipelineStageFlagBits::eBottomOfPipe, timestamp_query);
 }
 
 void VkRenderBackend::BeginRendering(const FBeginRendering2Info& rendering_info)
@@ -1207,7 +1215,10 @@ void VkRenderBackend::BeginRendering(const FBeginRendering2Info& rendering_info)
 
 			Texture* texture{ nullptr };
 			if (color_attachment_info.backbuffer)
-				texture = backbuffer[render_device->swapchain.currentFrame].get();
+			{
+				auto& current_frame = render_context->GetCurrentFrame();
+				texture = &current_frame.GetBackbuffer();
+			}
 			else
 				texture = textures[color_attachment_info.handle.Get()].get();
 
@@ -1272,25 +1283,25 @@ void VkRenderBackend::BeginRendering(const FBeginRendering2Info& rendering_info)
 	if (rendering_info.stencilAttachment->handle && rendering_info.stencilAttachment->handle != rendering_info.depthAttachment->handle)
 		begin_rendering_info.pStencilAttachment = &stencil_attachment;
 
-	current_command_buffer->BeginDebugLabel(rendering_info.name, 0x5555ffff);
+	render_context->GetCurrentCommandBuffer().BeginDebugLabel(rendering_info.name, 0x5555ffff);
 
-	Handle(*current_command_buffer).beginRenderingKHR(begin_rendering_info);
+	Handle(render_context->GetCurrentCommandBuffer()).beginRenderingKHR(begin_rendering_info);
 }
 
 void VkRenderBackend::EndRendering(EQueueTypeFlagBits queue)
 {
-	Handle(*current_command_buffer).endRenderingKHR();
-	current_command_buffer->EndDebugLabel();
+	Handle(render_context->GetCurrentCommandBuffer()).endRenderingKHR();
+	render_context->GetCurrentCommandBuffer().EndDebugLabel();
 }
 
 void VkRenderBackend::BeginCompute(const FBeginComputeInfo& compute_info)
 {
-	current_command_buffer->BeginDebugLabel(compute_info.name, 0x55ff55ff);
+	render_context->GetCurrentCommandBuffer().BeginDebugLabel(compute_info.name, 0x55ff55ff);
 }
 
 void VkRenderBackend::EndCompute(EQueueTypeFlagBits queue)
 {
-	current_command_buffer->EndDebugLabel();
+	render_context->GetCurrentCommandBuffer().EndDebugLabel();
 }
 
 void VkRenderBackend::ProcessMemoryBarriers(CommandBuffer& command_buffer, const FVkTranslationInfo& translation_info)
@@ -1328,7 +1339,7 @@ void VkRenderBackend::SetViewport(f32 width, f32 height, bool flip_viewport)
 		viewport.y = 0.f;
 	}
 
-	Handle(*current_command_buffer).setViewport(0, 1, &viewport);
+	Handle(render_context->GetCurrentCommandBuffer()).setViewport(0, 1, &viewport);
 }
 
 void VkRenderBackend::SetScissorRect(i32 offset_x, i32 offset_y, u32 width, u32 height)
@@ -1339,12 +1350,12 @@ void VkRenderBackend::SetScissorRect(i32 offset_x, i32 offset_y, u32 width, u32 
 	scissor_rect.extent.width = width;
 	scissor_rect.extent.height = height;
 
-	Handle(*current_command_buffer).setScissor(0, 1, &scissor_rect);
+	Handle(render_context->GetCurrentCommandBuffer()).setScissor(0, 1, &scissor_rect);
 }
 
 void VkRenderBackend::SetPrimitiveTopology(EVertexPrimitiveTopology primitivd_topology)
 {
-	Handle(*current_command_buffer).setPrimitiveTopology(get_primitive_topology(primitivd_topology));
+	Handle(render_context->GetCurrentCommandBuffer()).setPrimitiveTopology(get_primitive_topology(primitivd_topology));
 }
 
 // TODO: add indirect Draw support
@@ -1353,14 +1364,14 @@ void VkRenderBackend::Draw(EQueueTypeFlagBits queue_type, const FGeometryDrawInf
 	if (draw_info.lastIndex == 0ull && draw_info.lastVertex == 0ull)
 	{
 		auto& range = draw_info.ranges.front();
-		Handle(*current_command_buffer).draw(range.vertexCount, 1, range.beginVertex, 0);
+		Handle(render_context->GetCurrentCommandBuffer()).draw(range.vertexCount, 1, range.beginVertex, 0);
 	}
 	else if (draw_info.lastIndex == 0ull)
 	{
 		for (auto& range : draw_info.ranges)
 		{
 			auto vertex_count = range.vertexCount == 0ull ? draw_info.lastIndex : range.vertexCount;
-			Handle(*current_command_buffer).draw(vertex_count, 1, range.beginVertex, 0);
+			Handle(render_context->GetCurrentCommandBuffer()).draw(vertex_count, 1, range.beginVertex, 0);
 		}
 	}
 	else
@@ -1368,7 +1379,7 @@ void VkRenderBackend::Draw(EQueueTypeFlagBits queue_type, const FGeometryDrawInf
 		for (auto& range : draw_info.ranges)
 		{
 			auto index_count = range.indexCount == 0ull ? draw_info.lastIndex : range.indexCount;
-			Handle(*current_command_buffer).drawIndexed(index_count, 1, range.beginIndex, range.beginVertex, 0);
+			Handle(render_context->GetCurrentCommandBuffer()).drawIndexed(index_count, 1, range.beginIndex, range.beginVertex, 0);
 		}
 	}
 }
@@ -1377,7 +1388,7 @@ void VkRenderBackend::Draw(EQueueTypeFlagBits queue_type, const FIndirectGeometr
 {
 	auto& indirect_command_buffer = render_resources->get<Buffer>(draw_info.bufferId.Get());
 	auto& indirect_count_buffer = render_resources->get<Buffer>(draw_info.countBufferId.Get());
-	Handle(*current_command_buffer).drawIndexedIndirectCount(Handle(*indirect_command_buffer), draw_info.offset, Handle(*indirect_count_buffer), draw_info.countOffset, draw_info.maxDrawCount, draw_info.stride);
+	Handle(render_context->GetCurrentCommandBuffer()).drawIndexedIndirectCount(Handle(*indirect_command_buffer), draw_info.offset, Handle(*indirect_count_buffer), draw_info.countOffset, draw_info.maxDrawCount, draw_info.stride);
 	//current.drawIndexedIndirect(indirect_command_buffer->handle, draw_info.offset, draw_info.count, draw_info.stride);
 }
 
@@ -1399,7 +1410,7 @@ void VkRenderBackend::Dispatch(EQueueTypeFlagBits queue_type, const FDispatch2In
 		command.z = std::max(utl::cast<u32>(std::ceil(utl::cast<f32>(command.z) / utl::cast<f32>(localSizes[2]))), 1u);
 	}
 
-	Handle(*current_command_buffer).dispatch(command.x, command.y, command.z);
+	Handle(render_context->GetCurrentCommandBuffer()).dispatch(command.x, command.y, command.z);
 }
 
 void VkRenderBackend::Dispatch(EQueueTypeFlagBits queue_type, const FDispatchIndirectInfo& dispatch_info)
@@ -1412,7 +1423,7 @@ void VkRenderBackend::Dispatch(EQueueTypeFlagBits queue_type, const FDispatchInd
 		// Dispatch indirect count is not supported
 	}
 	else
-		Handle(*current_command_buffer).dispatchIndirect(Handle(*argument_buffer), dispatch_info.argumentOffset);
+		Handle(render_context->GetCurrentCommandBuffer()).dispatchIndirect(Handle(*argument_buffer), dispatch_info.argumentOffset);
 }
 
 FDeviceLimitations VkRenderBackend::GetDeviceLimitations()
@@ -1455,9 +1466,10 @@ FAPIHandle VkRenderBackend::GetShaderResource(const char* name)
 
 FPoint2D<u32> VkRenderBackend::GetRenderResolution() const
 {
+	auto& extent = render_context->GetSwapchain().GetExtent();
 	FPoint2D<u32> resolution{};
-	resolution.x = render_device->swapchain.extent.width;
-	resolution.y = render_device->swapchain.extent.height;
+	resolution.x = extent.width;
+	resolution.y = extent.height;
 
 	return resolution;
 }
@@ -1475,59 +1487,38 @@ FRect2D<f32> VkRenderBackend::GetRenderRectFromRT(FAPIHandle texture_id)
 
 FRect2D<f32> VkRenderBackend::GetScreenRenderRect()
 {
+	auto& extent = render_context->GetSwapchain().GetExtent();
+
 	FRect2D<f32> rect{};
-	rect.size.x = utl::cast<f32>(render_device->swapchain.extent.width);
-	rect.size.y = utl::cast<f32>(render_device->swapchain.extent.height);
+	rect.size.x = utl::cast<f32>(extent.width);
+	rect.size.y = utl::cast<f32>(extent.height);
 	return rect;
 }
 
 // TODO: update only targets, that have same size with swapchain
-void VkRenderBackend::UpdateSurface(i32 new_width, i32 new_height)
+void VkRenderBackend::UpdateSurface()
 {
-	if (this->surface_width != new_width || this->m_iSurfaceHeight != new_height)
+	auto& surface_extent = render_context->GetSwapchain().GetExtent();
+	auto& textures = render_resources->data<Texture>();
+
+	// Updating render targets
+	for (u64 texture_id = 0ull; texture_id < textures.size(); ++texture_id)
 	{
-		this->surface_width = new_width;
-		this->m_iSurfaceHeight = new_height;
+		auto& texture = textures[texture_id];
 
-		auto& logical_device = render_device->GetLogicalDevice();
-		Handle(logical_device).waitIdle();
+		if (!(texture->GetFlags() & ETextureCreateFlagBits::eRenderTarget) || (texture->GetSizingPolicy() == ERenderTargetSizePolicy::eFixed))
+			continue;
 
-		render_device->CleanupSwapchain();
-		render_device->CreateSwapchain(new_width, new_height);
-		render_device->swapchain.currentFrame = 0u;
+		vk::Extent3D new_extent{ surface_extent, 1u };
 
-		auto& textures = render_resources->data<Texture>();
-
-		// Updating render targets
-		for (u64 texture_id = 0ull; texture_id < textures.size(); ++texture_id)
+		// TODO: here i should set rendering resolution, not swapchain image size
+		if (texture->GetSizingPolicy() == ERenderTargetSizePolicy::eScalable)
 		{
-			bool is_storage{ false };
-			u64 swapchainFrameIndex{ 0ull };
-
-			auto& texture = textures[texture_id];
-
-			if (!(texture->GetFlags() & ETextureCreateFlagBits::eRenderTarget) || (texture->GetSizingPolicy() == ERenderTargetSizePolicy::eFixed))
-				continue;
-
-			vk::Extent3D new_extent{ (u32)new_width, (u32)new_height, 1u };
-
-			// TODO: here i should set rendering resolution, not swapchain image size
-			if (texture->GetSizingPolicy() == ERenderTargetSizePolicy::eScalable)
-			{
-				new_extent.width *= texture->GetScaleFactor();
-				new_extent.height *= texture->GetScaleFactor();
-			}
-
-			texture = std::make_unique<Texture>(*texture, new_extent);
-			
-			is_storage = utl::cast<bool>(texture->GetFlags() & ETextureCreateFlagBits::eStorage);
-
-			//if (is_storage)
-			//	texture_layout_change_infos.emplace_back(texture_id);
+			new_extent.width *= texture->GetScaleFactor();
+			new_extent.height *= texture->GetScaleFactor();
 		}
 
-		// Update backbuffer resources
-		UpdateBackbuffer();
+		texture = std::make_unique<Texture>(*texture, new_extent);
 	}
 }
 
@@ -1544,26 +1535,15 @@ void VkRenderBackend::BeginFrame()
 	ProcessResourceUpload();
 	// TODO: sync queues here
 
-	vk::Result res{};
-	try { res = render_device->AcquireNextImage(image_index); }
-	catch (vk::OutOfDateKHRError error) { res = vk::Result::eErrorOutOfDateKHR; }
-	catch (vk::SystemError err) { log_error("Failed to acquire swap chain image!"); }
-
-	if (res == vk::Result::eErrorOutOfDateKHR)
-		UpdateSurface(surface_width, m_iSurfaceHeight);
-	else if (res == vk::Result::eSuboptimalKHR)
-		log_error("Failed to acquire swap chain image!");
-
-	if (res != vk::Result::eSuccess)
-		return;
-
-	is_frame_started = true;
+	bool surface_updated{ false };
+	auto& command_buffer = render_context->Begin(surface_updated);
+	if (surface_updated)
+	{
+		UpdateSurface();
+	}
 
 	// TODO: here i should run only main command buffer. But for now i getting the last one
-	current_command_buffer = &command_pool->RequestCommandBuffer(vk::CommandBufferLevel::ePrimary);
-	current_command_buffer->Begin(vk::CommandBufferUsageFlagBits::eRenderPassContinue);
-	current_command_buffer->ResetTimestampQuery(timestamp_query);
-	//render_device->WriteTimestampQuery(command_buffer, vk::PipelineStageFlagBits::eTopOfPipe, timestamp_query);
+	command_buffer.ResetTimestampQuery(timestamp_query);
 
 	// Update bindless textures
 	auto& textures = render_resources->data<Texture>();
@@ -1582,7 +1562,7 @@ void VkRenderBackend::BeginFrame()
 
 			texture_index_remap[texture_index] = image_offset++;
 
-			for (u32 frame_index = 0u; frame_index < render_device->swapchain.framesInFlight; ++frame_index)
+			for (u32 frame_index = 0u; frame_index < render_context->GetSwapchain().GetImageCount(); ++frame_index)
 				texture_to_update[frame_index].push(texture_index);
 		}
 	}
@@ -1593,13 +1573,7 @@ void VkRenderBackend::EndFrame()
 	// TODO: here i should run only main command buffer. But for now i getting the last one
 	//render_device->WriteTimestampQuery(command_buffer, vk::PipelineStageFlagBits::eBottomOfPipe, timestamp_query);
 
-	current_command_buffer->End();
-	is_frame_started = false;
-
-	vk::Result presentResult{};
-	try { presentResult = render_device->Present(Handle(*current_command_buffer)); }
-	catch (vk::OutOfDateKHRError err) { presentResult = vk::Result::eErrorOutOfDateKHR; }
-	catch (vk::SystemError err) { log_error("failed to present swap chain image!"); }
+	render_context->EndFrame();
 
 	utl::vector<f32> results{};
 	auto timestamp_result = render_device->GetTimestampQueryResults(timestamp_query, render_stats.timestampResults);
@@ -1612,25 +1586,9 @@ void VkRenderBackend::EndFrame()
 
 	// Get gpu memory usage info
 	render_device->GetOccupedDeviceMemory(vk::MemoryHeapFlagBits::eDeviceLocal, render_stats.totalGPUMemory, render_stats.usedGPUMemory);
-
-	if (presentResult == vk::Result::eSuboptimalKHR || presentResult == vk::Result::eErrorOutOfDateKHR)
-		UpdateSurface(surface_width, m_iSurfaceHeight);
-	utl::hash_map<std::string, std::string> kk;
 	
-	// Destroy unused contexts
-	//for (auto it = per_thread_context.begin(); it != per_thread_context.end();)
-	//{
-	//	if (it->second.use_count() < 1)
-	//	{
-	//		DestroyThreadContext(it->second);
-	//		it = per_thread_context.erase(it);
-	//		continue;
-	//	}
-	//	++it;
-	//}
-
 	// Try to free resources
-	if (utilization_counter % render_device->swapchain.framesInFlight == 0)
+	if (utilization_counter % render_context->GetSwapchain().GetImageCount() == 0)
 		ProcessResourceUtilization();
 
 	// Frame finished. Textures in now again in initial layout
@@ -1649,33 +1607,27 @@ void VkRenderBackend::EndFrame()
 		}
 	}
 
-	// Also for backbuffer
-	for (auto& current : backbuffer)
-	{
-		current->GetImageView().SetImageLayout(vk::ImageLayout::eUndefined);
-	}
-
 	utilization_counter++;
 }
 
 bool VkRenderBackend::IsSwapChainFinished()
 {
-	return (utilization_counter % render_device->swapchain.framesInFlight == 0) && utilization_counter != 0ull;
+	return (utilization_counter % render_context->GetSwapchain().GetImageCount() == 0) && utilization_counter != 0ull;
 }
 
 void VkRenderBackend::BeginDebugLabel(const std::string& label, EQueueTypeFlagBits queue_type, u32 color)
 {
-	current_command_buffer->BeginDebugLabel(label, color);
+	render_context->GetCurrentCommandBuffer().BeginDebugLabel(label, color);
 }
 
 void VkRenderBackend::InsertDebugLabel(const std::string& label, EQueueTypeFlagBits queue_type, u32 color)
 {
-	current_command_buffer->InsertDebugLabel(label, color);
+	render_context->GetCurrentCommandBuffer().InsertDebugLabel(label, color);
 }
 
 void VkRenderBackend::EndDebugLabel(EQueueTypeFlagBits queue_type)
 {
-	current_command_buffer->EndDebugLabel();
+	render_context->GetCurrentCommandBuffer().EndDebugLabel();
 }
 
 void VkRenderBackend::ProcessResourceBarriers()
@@ -1889,27 +1841,6 @@ void VkRenderBackend::ProcessResourceUtilization()
 	}
 }
 
-void VkRenderBackend::UpdateBackbuffer()
-{
-	auto& swapchain = render_device->swapchain;
-
-	backbuffer.clear();
-	backbuffer.resize(swapchain.framesInFlight);
-
-	for (u64 frame = 0ull; frame < backbuffer.size(); ++frame)
-	{
-		auto builder = TextureBuilder();
-		builder.SetDebugName("backbuffer");
-		builder.SetExternalImage(swapchain.images[frame]);
-		builder.SetExternalImageView(swapchain.imageViews[frame]);
-		builder.SetFlags(ETextureCreateFlagBits::e2D | ETextureCreateFlagBits::eRenderTarget);
-		builder.SetFormat(swapchain.format);
-		builder.SetExtent({ swapchain.extent.width, swapchain.extent.height, 1u });
-
-		backbuffer[frame] = builder.BuildUnique(*render_device);
-	}
-}
-
 FRenderApiErrorInfo VkRenderBackend::CreateShaderResources(const FVkShaderResourcesInfo& resources_info, FVkShader& shader)
 {
 	auto& reflection = render_resources->get<FVkShaderReflectionData>(shader.reflection);
@@ -1917,7 +1848,7 @@ FRenderApiErrorInfo VkRenderBackend::CreateShaderResources(const FVkShaderResour
 	// TODO: generate better object names. Current names can overlap
 
 	// Remember maximum shader usage count
-	shader.maximumDescriptorSlots = render_device->swapchain.framesInFlight * resources_info.usageCount;
+	shader.maximumDescriptorSlots = render_context->GetSwapchain().GetImageCount() * resources_info.usageCount;
 
 	// Create descriptor set layouts
 	for (const auto& [set, layout_bindings] : reflection->descriptorSetLayoutBindings)
@@ -1938,7 +1869,7 @@ FRenderApiErrorInfo VkRenderBackend::CreateShaderResources(const FVkShaderResour
 	pool_ci.name = resources_info.name;
 #endif
 	pool_ci.poolSizes = reflection->descriptorPoolSizes;
-	pool_ci.usageCount = resources_info.usageCount * render_device->swapchain.framesInFlight;
+	pool_ci.usageCount = resources_info.usageCount * render_context->GetSwapchain().GetImageCount();
 	RETURN_WHEN_FAULT(render_device->CreateDescriptorPool(pool_ci, shader.descriptorPool));
 
 	// Create descrioptor sets for each shader usage
@@ -1969,6 +1900,7 @@ FRenderApiErrorInfo VkRenderBackend::CreateShaderResources(const FVkShaderResour
 
 		auto builder = BufferBuilder(uniform_block.size, shader.maximumDescriptorSlots, minOffsetAllignment);
 		builder.SetVmaUsage(vma::MemoryUsage::eCpuToGpu);
+		builder.SetSharingMode(vk::SharingMode::eConcurrent);
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
 		auto* debug_name = debug_mapping::find(id);
@@ -2056,7 +1988,7 @@ void VkRenderBackend::BindShaderDescriptors(CommandBuffer& command_buffer, const
 	utl::vector<vk::DescriptorSet> bindDescriptorSets{};
 
 	// NOTE: bind global descriptor set
-	bindDescriptorSets.emplace_back(global_descriptor.descriptorSet.handles[render_device->swapchain.currentFrame]);
+	bindDescriptorSets.emplace_back(global_descriptor.descriptorSet.handles[render_context->GetCurrentFrameIndex()]);
 
 	// NOTE: shader.descriptorUsage contains next index of descriptor set to use. 
 	// Here i collecting all shader descriptor sets, that was changed in past

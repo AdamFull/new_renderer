@@ -42,7 +42,7 @@ namespace engine
 			{
 				vma::AllocationCreateInfo alloc_create_info{};
 				std::string debug_name;
-				CreateInfoType create_info;
+				mutable CreateInfoType create_info;
 
 			protected:
 				//AllocationBuilder(const AllocationBuilder& other) = delete;

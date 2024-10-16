@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vulkan/vulkan.hpp>
+#include <engine/render/render_api/vulkan/RenderFrame.h>
 
 namespace engine
 {
@@ -11,28 +11,52 @@ namespace engine
 		namespace vulkan
 		{
 			class Swapchain;
+			class Queue;
 			class RenderDevice;
+			class CommandBuffer;
 
 			class RenderContext
 			{
 			public:
-				RenderContext(Window* window, RenderDevice& render_device);
+				RenderContext(RenderDevice& render_device, Window* window);
 				~RenderContext();
 
-				int32_t GetCurrentFrameIndex() const;
+				void UpdateSwapchain(const vk::Extent2D& extent);
+				void UpdateSwapchain(const vk::Extent2D& extent, const vk::SurfaceTransformFlagBitsKHR transform);
+				void UpdateSwapchain(uint32_t image_count);
+
+				bool HandleSurfaceChange(bool force_update = false);
+
+				CommandBuffer& Begin(bool& surface_updated);
+
+				void BeginFrame(bool& surface_updated);
+				void EndFrame();
+
+				CommandBuffer& GetCurrentCommandBuffer();
+				RenderFrame& GetCurrentFrame();
+
+				const uint32_t& GetCurrentFrameIndex() const;
 
 				RenderDevice& GetDevice() const;
 				Swapchain& GetSwapchain() const;
+			protected:
+				void UpdateResources();
 			private:
 				RenderDevice& render_device;
 
+				const Window& window;
+				const Queue& queue;
+
 				std::unique_ptr<Swapchain> swapchain;
+				vk::SurfaceTransformFlagBitsKHR pre_transform{ vk::SurfaceTransformFlagBitsKHR::eIdentity };
 
-				std::vector<vk::Semaphore> image_avaliable_semaphores{};
-				std::vector<vk::Semaphore> render_finished_semaphores{};
-				std::vector<vk::Fence> in_flight_fences{};
+				std::vector<std::unique_ptr<RenderFrame>> render_frames{};
+				uint32_t active_frame_index{ 0u };
+				uint32_t current_frame_index{ 0u };
+				bool frame_active{ false };
 
-				int32_t frame_index;
+				vk::Semaphore acquired_semaphore;
+				CommandBuffer* current_command_buffer{ nullptr };
 			};
 		}
 	}

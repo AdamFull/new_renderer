@@ -18,6 +18,7 @@ namespace engine
 			class Buffer;
 			class CommandPool;
 			class CommandBuffer;
+			class RenderContext;
 
 			using vk_resource_container_t = CResourceContainer<Texture, FVkShader, Buffer, FVkShaderReflectionData>;
 
@@ -94,7 +95,7 @@ namespace engine
 				FRect2D<f32> GetRenderRectFromRT(FAPIHandle texture_id) override;
 				FRect2D<f32> GetScreenRenderRect() override;
 
-				void UpdateSurface(i32 surface_width, i32 surface_height) override;
+				void UpdateSurface();
 
 				const std::unique_ptr<RenderDevice>& getDevice() const;
 
@@ -111,7 +112,6 @@ namespace engine
 				void ProcessResourceBarriers();
 				void ProcessResourceUpload();
 				void ProcessResourceUtilization();
-				void UpdateBackbuffer();
 
 				FRenderApiErrorInfo CreateShaderResources(const FVkShaderResourcesInfo& resources_info, FVkShader& shader);
 				void DestroyShader(FVkShader& shader);
@@ -142,26 +142,20 @@ namespace engine
 				utl::hash_map<u32, utl::unique_queue<u64>> texture_to_update{};
 
 				std::unique_ptr<CommandPool> command_pool;
-				CommandBuffer* current_command_buffer{ nullptr };
+
+				std::unique_ptr<RenderContext> render_context;
 
 				FVkDescriptorPool descriptorPool{};
 				utl::hash_map<u64, FVkDescriptorSet> descriptorSets{};
-
-
-				bool is_frame_started{ false };
 
 				FRenderFrameStats render_stats{};
 				utl::hash_map<EQueueTypeFlagBits, u32> zone_entries{};
 				FVkTimestampQuery timestamp_query{};
 
-				utl::vector<std::unique_ptr<Texture>> backbuffer;
-
 				utl::hash_map<u32, std::unique_ptr<Sampler>> sampler_cache{};
 				std::unique_ptr<Sampler> default_sampler{};
 
 				u64 utilization_counter{ 0ull };
-
-				i32 surface_width{}, m_iSurfaceHeight{};
 			};
 		}
 	}

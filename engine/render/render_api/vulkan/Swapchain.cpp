@@ -58,6 +58,50 @@ namespace engine
 				}
 			}
 
+
+
+			//inline vk::SurfaceFormatKHR choice_surface_format(const std::vector<vk::SurfaceFormatKHR>& available_formats)
+			//{
+			//	if (available_formats.size() == 1 && available_formats[0].format == vk::Format::eUndefined)
+			//		return { vk::Format::eB8G8R8A8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear };
+			//
+			//	for (const auto& available_format : available_formats)
+			//	{
+			//		if (available_format.format == vk::Format::eB8G8R8A8Unorm && available_format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
+			//			return available_format;
+			//	}
+			//
+			//	return available_formats[0];
+			//}
+			//
+			//inline vk::PresentModeKHR choice_surface_present_mode(const std::vector<vk::PresentModeKHR>& present_modes)
+			//{
+			//	vk::PresentModeKHR best_mode = vk::PresentModeKHR::eFifo;
+			//
+			//	for (const auto& present_mode : present_modes)
+			//	{
+			//		if (present_mode == vk::PresentModeKHR::eMailbox)
+			//			return present_mode;
+			//		else if (present_mode == vk::PresentModeKHR::eImmediate)
+			//			best_mode = present_mode;
+			//	}
+			//
+			//	return best_mode;
+			//}
+			//
+			//inline vk::Extent2D choice_swapchain_extent(const vk::SurfaceCapabilitiesKHR& capabilities, u32 width, u32 height)
+			//{
+			//	if (capabilities.currentExtent.width != (std::numeric_limits<u32>::max)())
+			//		return capabilities.currentExtent;
+			//
+			//	vk::Extent2D actual_extent = { width, height };
+			//
+			//	actual_extent.width = (std::max)(capabilities.minImageExtent.width, (std::min)(capabilities.maxImageExtent.width, actual_extent.width));
+			//	actual_extent.height = (std::max)(capabilities.minImageExtent.height, (std::min)(capabilities.maxImageExtent.height, actual_extent.height));
+			//
+			//	return actual_extent;
+			//}
+
 			vk::SurfaceFormatKHR ChooseSurfaceFormat(const vk::SurfaceFormatKHR requested_surface_format, const std::vector<vk::SurfaceFormatKHR>& available_surface_formats, const std::vector<vk::SurfaceFormatKHR>& surface_format_priority_list)
 			{
 				// Try to find the requested surface format in the available surface formats
@@ -294,44 +338,14 @@ namespace engine
 				create_info.clipped = VK_TRUE;
 				create_info.oldSwapchain = properties.old_swapchain;
 
-				handle = render_device.CreateSwapchain2(create_info, "swapchain");
+				handle = render_device.CreateSwapchain(create_info, "swapchain");
 
 				render_device.GetSwapchainImages(handle, images, image_count, "swapchain_image");
-
-				// Create image views
-
-				image_views.resize(image_count);
-
-				vk::ImageViewCreateInfo image_view_ci{};
-				image_view_ci.viewType = vk::ImageViewType::e2D;
-				image_view_ci.format = properties.surface_format.format;
-				image_view_ci.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-				image_view_ci.subresourceRange.baseMipLevel = 0;
-				image_view_ci.subresourceRange.levelCount = 1;
-				image_view_ci.subresourceRange.baseArrayLayer = 0;
-				image_view_ci.subresourceRange.layerCount = 1;
-				image_view_ci.components.r = vk::ComponentSwizzle::eR;
-				image_view_ci.components.g = vk::ComponentSwizzle::eG;
-				image_view_ci.components.b = vk::ComponentSwizzle::eB;
-				image_view_ci.components.a = vk::ComponentSwizzle::eA;
-
-				// TODO: Pass here debug utils for name image views
-				for (int32_t i = 0; i < image_count; ++i)
-				{
-					image_view_ci.image = images[i];
-					image_views[i] = render_device.CreateImageView(image_view_ci, std::format("swapchain_image_view_{}", i));
-				}
 			}
 
 			Swapchain::~Swapchain()
 			{
 				render_device.Destroy(handle);
-
-				// Destroy image views
-				for (auto& image_view : image_views)
-				{
-					render_device.Destroy(image_view);
-				}
 			}
 
 			Swapchain::Swapchain(Swapchain&& other) :
@@ -339,7 +353,7 @@ namespace engine
 				render_device{ other.render_device },
 				surface{ std::exchange(other.surface, nullptr) },
 				images{ std::exchange(other.images, {}) },
-				image_views{ std::exchange(other.image_views, {}) },
+				//image_views{ std::exchange(other.image_views, {}) },
 				properties{ std::exchange(other.properties, {}) },
 				present_mode_priority_list{ std::exchange(other.present_mode_priority_list, {}) },
 				surface_format_priority_list{ std::exchange(other.surface_format_priority_list, {}) },
@@ -356,10 +370,9 @@ namespace engine
 				return render_device;
 			}
 
-			std::pair<vk::Result, uint32_t> Swapchain::AcquireNextImage(vk::Semaphore image_acquired_semaphore, vk::Fence fence) const
+			vk::Result Swapchain::AcquireNextImage(vk::Semaphore image_acquired_semaphore, vk::Fence fence, uint32_t& image_index) const
 			{
-				vk::ResultValue<uint32_t> rv = Handle(render_device.GetLogicalDevice()).acquireNextImageKHR(handle, std::numeric_limits<uint64_t>::max(), image_acquired_semaphore, fence);
-				return std::make_pair(rv.result, rv.value);
+				return Handle(render_device.GetLogicalDevice()).acquireNextImageKHR(handle, std::numeric_limits<uint64_t>::max(), image_acquired_semaphore, fence, &image_index);
 			}
 
 			const vk::Extent2D& Swapchain::GetExtent() const
@@ -372,14 +385,14 @@ namespace engine
 				return properties.surface_format.format;
 			}
 
+			vk::Image& Swapchain::GetImage(uint32_t index)
+			{
+				return images[index];
+			}
+
 			const std::vector<vk::Image>& Swapchain::GetImages() const
 			{
 				return images;
-			}
-
-			const std::vector<vk::ImageView>& Swapchain::GetImageViews() const
-			{
-				return image_views;
 			}
 
 			vk::SurfaceTransformFlagBitsKHR Swapchain::GetTransform() const
