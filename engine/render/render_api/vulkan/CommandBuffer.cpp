@@ -86,6 +86,11 @@ namespace engine
 				handle.bindVertexBuffers(first_binding, buffers, offsets);
 			}
 
+			void CommandBuffer::PipelineBarrier(const vk::DependencyInfoKHR& dependency_info)
+			{
+				handle.pipelineBarrier2KHR(dependency_info);
+			}
+
 			void CommandBuffer::ResetTimestampQuery(FVkTimestampQuery& timestamp_query)
 			{
 				handle.resetQueryPool(timestamp_query.handle, 0u, static_cast<u32>(timestamp_query.values.size()));

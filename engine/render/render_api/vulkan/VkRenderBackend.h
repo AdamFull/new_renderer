@@ -19,6 +19,7 @@ namespace engine
 			class CommandPool;
 			class CommandBuffer;
 			class RenderContext;
+			class UploadContext;
 
 			using vk_resource_container_t = CResourceContainer<Texture, FVkShader, Buffer, FVkShaderReflectionData>;
 
@@ -108,7 +109,6 @@ namespace engine
 				void InsertDebugLabel(const std::string& label, EQueueTypeFlagBits queue_type, u32 color = 0xffffffff) override;
 				void EndDebugLabel(EQueueTypeFlagBits queue_type) override;
 			protected:
-				void DestroyThreadContext(CommandBuffer& context);
 				void ProcessResourceBarriers();
 				void ProcessResourceUpload();
 				void ProcessResourceUtilization();
@@ -144,6 +144,7 @@ namespace engine
 				std::unique_ptr<CommandPool> command_pool;
 
 				std::unique_ptr<RenderContext> render_context;
+				std::unique_ptr<UploadContext> upload_context;
 
 				FVkDescriptorPool descriptorPool{};
 				utl::hash_map<u64, FVkDescriptorSet> descriptorSets{};

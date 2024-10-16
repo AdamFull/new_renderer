@@ -14,6 +14,8 @@ namespace engine
 		{
 			class Image;
 			class ImageView;
+			class Texture;
+			class Buffer;
 
 			struct FRenderApiErrorInfo
 			{
@@ -187,14 +189,14 @@ namespace engine
 
 			struct VkTextureUploadInfo
 			{
-				FAPIHandle texture_id{ INVALID_HANDLE };
+				Texture* texture_handle{ nullptr };
 				uint64_t upload_index{ ~0ull };
 				std::vector<std::vector<uint64_t>> mip_layer_offsets{};
 			};
 
 			struct VkBufferUploadInfo
 			{
-				FAPIHandle buffer_id{};
+				Buffer* buffer_handle{ nullptr };
 				uint64_t upload_index{ ~0ull };
 				uint64_t upload_size{ 0ull };
 				std::vector<FBufferUploadRegion> copy_regions{};

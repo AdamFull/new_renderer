@@ -250,6 +250,7 @@ namespace engine
 					current_frame_index = (current_frame_index + 1) % swapchain->GetImageCount();
 				}
 
+				previous_frame_semaphore = acquired_semaphore;
 				if (acquired_semaphore)
 				{
 					acquired_semaphore = nullptr;

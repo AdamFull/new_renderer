@@ -15,11 +15,16 @@ namespace engine
 			class RenderDevice;
 			class CommandBuffer;
 
-			class RenderContext
+			class RenderContext final
 			{
 			public:
 				RenderContext(RenderDevice& render_device, Window* window);
 				~RenderContext();
+
+				RenderContext(const RenderContext&) = delete;
+				RenderContext(RenderContext&&) = delete;
+				RenderContext& operator=(const RenderContext&) = delete;
+				RenderContext& operator=(RenderContext&&) = delete;
 
 				void UpdateSwapchain(const vk::Extent2D& extent);
 				void UpdateSwapchain(const vk::Extent2D& extent, const vk::SurfaceTransformFlagBitsKHR transform);
@@ -55,7 +60,8 @@ namespace engine
 				uint32_t current_frame_index{ 0u };
 				bool frame_active{ false };
 
-				vk::Semaphore acquired_semaphore;
+				vk::Semaphore acquired_semaphore{ nullptr };
+				vk::Semaphore previous_frame_semaphore{ nullptr };
 				CommandBuffer* current_command_buffer{ nullptr };
 			};
 		}

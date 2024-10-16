@@ -42,6 +42,8 @@ namespace engine
 
 				void BindVertexBuffers(uint32_t first_binding, const std::vector<vk::Buffer>& buffers, const std::vector<uint64_t>& offsets);
 
+				void PipelineBarrier(const vk::DependencyInfoKHR& dependency_info);
+
 				void ResetTimestampQuery(FVkTimestampQuery& timestamp_query);
 				void WriteTimestampQuery(vk::PipelineStageFlagBits pipeline_state, FVkTimestampQuery& timestamp_query);
 

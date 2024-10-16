@@ -7,6 +7,7 @@
 #include <engine/render/render_api/vulkan/Texture.h>
 #include <engine/render/render_api/vulkan/CommandPool.h>
 #include <engine/render/render_api/vulkan/RenderContext.h>
+#include <engine/render/render_api/vulkan/UploadContext.h>
 
 #include "BufferObject.h"
 #include "ShaderObject.h"
