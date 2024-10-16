@@ -182,7 +182,7 @@ namespace engine
 				current_frame.Reset();
 			}
 
-			void RenderContext::EndFrame()
+			void RenderContext::EndFrame(vk::Semaphore wait_semaphore)
 			{
 				current_command_buffer->End();
 				frame_active = false;
@@ -195,18 +195,19 @@ namespace engine
 					// TODO: COMMAND BUFFERS
 					vk::SubmitInfo2 submit_info{};
 
-					vk::SemaphoreSubmitInfo semaphore_si{};
-					semaphore_si.semaphore = acquired_semaphore;
-					semaphore_si.stageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
+					vk::SemaphoreSubmitInfo wait_semaphores[2] = { 
+						vk::SemaphoreSubmitInfo{ acquired_semaphore, 0ull, vk::PipelineStageFlagBits2::eColorAttachmentOutput },
+						vk::SemaphoreSubmitInfo{ wait_semaphore, 0ull, vk::PipelineStageFlagBits2::eAllCommands }
+					};
 
-					submit_info.pWaitSemaphoreInfos = &semaphore_si;
-					submit_info.waitSemaphoreInfoCount = 1;
+					submit_info.pWaitSemaphoreInfos = &wait_semaphores[0];
+					submit_info.waitSemaphoreInfoCount = wait_semaphore ? 2 : 1;
 
-					vk::SemaphoreSubmitInfo signal_si{};
-					signal_si.semaphore = current_frame.GetRenderFinishedSemaphore();
-					signal_si.stageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
+					vk::SemaphoreSubmitInfo signal_semaphore{};
+					signal_semaphore.semaphore = current_frame.GetRenderFinishedSemaphore();
+					signal_semaphore.stageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
 
-					submit_info.pSignalSemaphoreInfos = &signal_si;
+					submit_info.pSignalSemaphoreInfos = &signal_semaphore;
 					submit_info.signalSemaphoreInfoCount = 1;
 
 					vk::CommandBufferSubmitInfo command_buffer_si{};
@@ -250,11 +251,16 @@ namespace engine
 					current_frame_index = (current_frame_index + 1) % swapchain->GetImageCount();
 				}
 
-				previous_frame_semaphore = acquired_semaphore;
+				previous_frame_semaphore = current_frame.GetRenderFinishedSemaphore();
 				if (acquired_semaphore)
 				{
 					acquired_semaphore = nullptr;
 				}
+			}
+
+			vk::Semaphore RenderContext::GetLastAcquiredSemaphore()
+			{
+				return previous_frame_semaphore;
 			}
 
 			CommandBuffer& RenderContext::GetCurrentCommandBuffer()

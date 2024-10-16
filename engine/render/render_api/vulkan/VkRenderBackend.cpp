@@ -30,6 +30,8 @@ static const u32 k_max_bindless_resources{ 16384u };
 static const u64 k_max_texture_update_per_frame{ 4096ll };
 static const u64 k_max_buffer_update_per_frame{ 4096ull };
 
+#define OLD_UPLOADER
+
 vk::Format lookup_vk_format(EApiDataFormat format)
 {
 	static const utl::hash_map<EApiDataFormat, vk::Format> lookup_table{
@@ -471,6 +473,10 @@ FAPIHandle VkRenderBackend::CreateTexture(const std::string& name, const FTextur
 
 FAPIHandle VkRenderBackend::CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci, const FTextureUploadInfo& upload_info)
 {
+	auto texture_id = CreateTexture(name, texture_ci);
+	auto& texture = render_resources->get<Texture>(texture_id.Get());
+
+#ifdef OLD_UPLOADER
 	auto builder = BufferBuilder(upload_info.upload_data.size(), 1ull, 1ull);
 	builder.SetVmaUsage(vma::MemoryUsage::eCpuOnly);
 	builder.SetUsage(vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst);
@@ -483,12 +489,14 @@ FAPIHandle VkRenderBackend::CreateTexture(const std::string& name, const FTextur
 	// Copy data to buffer
 	staging_buffer->Update(upload_info.upload_data);
 
-	auto texture_id = CreateTexture(name, texture_ci);
-
 	auto& new_upload_info = texture_upload_infos.emplace_back();
-	new_upload_info.texture_handle = render_resources->get<Texture>(texture_id.Get()).get();
+	new_upload_info.texture_handle = texture.get();
 	new_upload_info.upload_index = upload_buffers.size() - 1ull;
 	new_upload_info.mip_layer_offsets = upload_info.mip_layer_offsets;
+#else
+	upload_context->UpdateTexture(texture.get(), upload_info);
+#endif
+	
 	return texture_id;
 }
 
@@ -1039,6 +1047,8 @@ void VkRenderBackend::UpdateBuffer(const std::string& name, FAPIHandle buffer_id
 
 void VkRenderBackend::UploadDataToBuffer(const FBufferUploadInfo& upload_info)
 {
+	auto& buffer = render_resources->get<Buffer>(upload_info.buffer_id.Get());
+#ifdef OLD_UPLOADER
 	// Create new staging buffer
 	auto builder = BufferBuilder(upload_info.upload_size, 1ull, 1ull);
 	builder.SetVmaUsage(vma::MemoryUsage::eCpuOnly);
@@ -1053,10 +1063,13 @@ void VkRenderBackend::UploadDataToBuffer(const FBufferUploadInfo& upload_info)
 	src_buffer->Update(upload_info.upload_data);
 
 	auto& new_upload_info = buffer_upload_infos.emplace_back();
-	new_upload_info.buffer_handle = render_resources->get<Buffer>(upload_info.buffer_id.Get()).get();
+	new_upload_info.buffer_handle = buffer.get();
 	new_upload_info.upload_index = upload_buffers.size() - 1ull;
 	new_upload_info.upload_size = upload_info.upload_size;
 	new_upload_info.copy_regions = upload_info.regions;
+#else
+	upload_context->UploadBuffer(buffer.get(), upload_info);
+#endif
 }
 
 FBufferView VkRenderBackend::GetBufferView(FAPIHandle buffer_id)
@@ -1113,7 +1126,9 @@ void VkRenderBackend::DestroyBuffer(FAPIHandle resource_id)
 
 void VkRenderBackend::UploadBuffers()
 {
+#ifdef OLD_UPLOADER
 	ProcessResourceUpload();
+#endif
 }
 
 void VkRenderBackend::ProcessResourceBarriers(EQueueTypeFlagBits queue, const utl::vector<FResourceBarrierInfo>& barriers)
@@ -1536,7 +1551,9 @@ void VkRenderBackend::BeginFrame()
 	u32 image_index{ 0u };
 
 	ProcessResourceBarriers();
+#ifdef OLD_UPLOADER
 	ProcessResourceUpload();
+#endif
 	// TODO: sync queues here
 
 	bool surface_updated{ false };
@@ -1577,7 +1594,12 @@ void VkRenderBackend::EndFrame()
 	// TODO: here i should run only main command buffer. But for now i getting the last one
 	//render_device->WriteTimestampQuery(command_buffer, vk::PipelineStageFlagBits::eBottomOfPipe, timestamp_query);
 
-	render_context->EndFrame();
+	vk::Semaphore upload_wait_semaphore{};
+#ifndef OLD_UPLOADER
+	upload_wait_semaphore = upload_context->Submit(render_context->GetLastAcquiredSemaphore());
+#endif
+
+	render_context->EndFrame(upload_wait_semaphore);
 
 	utl::vector<f32> results{};
 	auto timestamp_result = render_device->GetTimestampQueryResults(timestamp_query, render_stats.timestampResults);

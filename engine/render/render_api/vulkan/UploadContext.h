@@ -29,7 +29,13 @@ namespace engine
 				void UpdateTexture(Texture* texture_handle, const FTextureUploadInfo& upload_info);
 				void UploadBuffer(Buffer* buffer_handle, const FBufferUploadInfo& upload_info);
 
-				vk::Semaphore Submit();
+				void BeginTextureUpdate(Texture* texture_handle);
+				void EndTextureUpdate();
+
+				void BeginBufferUpdate(Buffer* buffer_handle);
+				void EndBufferUpdate();
+
+				vk::Semaphore Submit(vk::Semaphore wait_semaphore = nullptr);
 			private:
 				void BeginCommands();
 			private:
@@ -38,6 +44,7 @@ namespace engine
 				const Queue& queue;
 
 				vk::Semaphore signal_semaphore{};
+				vk::Fence upload_fence{};
 
 				std::unique_ptr<CommandPool> command_pool;
 				CommandBuffer* active_command_buffer{ nullptr };

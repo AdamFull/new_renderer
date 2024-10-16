@@ -25,6 +25,11 @@ namespace engine
 
 				vk::SemaphoreCreateInfo semaphore_ci{};
 				signal_semaphore = render_device.CreateSemaphore(semaphore_ci);
+
+				vk::FenceCreateInfo fence_ci{};
+				fence_ci.flags = vk::FenceCreateFlagBits::eSignaled;
+
+				upload_fence = render_device.CreateFence(fence_ci);
 			}
 
 			UploadContext::~UploadContext()
@@ -149,23 +154,48 @@ namespace engine
 					copy_region.size = region_info.size;
 				}
 
-				auto& staging_buffer = upload_buffers[upload_info.upload_index];
 				src_buffer->CopyTo(Handle(*active_command_buffer), *dst_buffer, copy_regions);
 			}
 
-			vk::Semaphore UploadContext::Submit()
+			vk::Semaphore UploadContext::Submit(vk::Semaphore wait_semaphore)
 			{
-				return signal_semaphore;
+				if (writing_commands)
+				{
+					active_command_buffer->End();
+					writing_commands = false;
+
+					vk::PipelineStageFlags wait_stage{ vk::PipelineStageFlagBits::eColorAttachmentOutput };
+
+					vk::SubmitInfo submitInfo{};
+					submitInfo.pSignalSemaphores = &signal_semaphore;
+					submitInfo.signalSemaphoreCount = 1u;
+					submitInfo.pWaitSemaphores = &wait_semaphore;
+					submitInfo.waitSemaphoreCount = wait_semaphore ? 1 : 0;
+					submitInfo.commandBufferCount = 1u;
+					submitInfo.pWaitDstStageMask = &wait_stage;
+					submitInfo.pCommandBuffers = &Handle(*active_command_buffer);
+
+					queue.Submit(submitInfo, upload_fence);
+
+					return signal_semaphore;
+				}
+
+				return nullptr;
 			}
 
 			void UploadContext::BeginCommands()
 			{
 				if (!writing_commands)
 				{
+					render_device.WaitForFences(&upload_fence, 1u);
+					render_device.ResetFences(&upload_fence, 1u);
+					command_pool->Reset();
+
 					auto& command_buffer = command_pool->RequestCommandBuffer(vk::CommandBufferLevel::ePrimary);
 					command_buffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 					active_command_buffer = &command_buffer;
 
+					upload_buffers.clear();
 					writing_commands = true;
 				}
 			}

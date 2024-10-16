@@ -340,7 +340,7 @@ namespace engine
 
 				handle = render_device.CreateSwapchain(create_info, "swapchain");
 
-				render_device.GetSwapchainImages(handle, images, image_count, "swapchain_image");
+				render_device.GetSwapchainImages(handle, images, properties.image_count, "swapchain_image");
 			}
 
 			Swapchain::~Swapchain()
