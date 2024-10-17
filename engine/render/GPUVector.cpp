@@ -48,25 +48,28 @@ void CGPUVector::Upload()
 				merged_ranges.emplace_back(m_vUploadRanges[i]);
 		}
 
+		BufferUpdateInfo upload_info{};
+		upload_info.update_size = std::accumulate(merged_ranges.begin(), merged_ranges.end(), 0, [](uint64_t acc, const upload_range& item) { return acc + item.size; });
+		buffer->Lock(upload_info);
+
 		// Create upload infos
 		u64 src_offset{ 0ull };
-		utl::vector<u8> upload_data{};
-		utl::vector<FBufferUploadRegion> upload_regions{};
 		for (const auto& range : merged_ranges)
 		{
-			auto& region = upload_regions.emplace_back();
+			auto& region = upload_info.regions.emplace_back();
 			region.srcOffset = src_offset;
 			region.dstOffset = range.offset;
 			region.count = range.size / m_elemSize;
 			region.size = range.size;
 
-			auto range_start = m_vData.begin() + range.offset;
-			upload_data.insert(upload_data.end(), range_start, range_start + range.size);
+			uint8_t* range_start = &m_vData[range.offset];
+			std::copy(range_start, range_start + range.size, upload_info.data + src_offset);
 
 			src_offset += range.size;
 		}
 
-		buffer->Upload(upload_data, upload_regions);
+		
+		buffer->Unlock(upload_info);
 
 		m_vUploadRanges.clear();
 	}

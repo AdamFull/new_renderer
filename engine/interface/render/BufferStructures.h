@@ -43,13 +43,16 @@ namespace engine
 			u64 dstOffset{ 0ull };
 		};
 
-		struct FBufferUploadInfo
+		struct BufferUpdateInfo
 		{
 			FAPIHandle buffer_id{};
-			uint32_t upload_index{ ~0u };
-			uint64_t upload_size{ 0ull };
-			std::span<const uint8_t> upload_data;
+			uint64_t update_size{ 0ull };
+
 			std::vector<FBufferUploadRegion> regions{};
+
+			uint8_t* data{ nullptr };
+			size_t mapped_size{ 0ull };
+			size_t buffer_index{ ~0ull };
 		};
 
 		struct FBufferCreateInfo
@@ -74,7 +77,8 @@ namespace engine
 
 			virtual void Create(const std::string& name, const FBufferCreateInfo& create_info) = 0;
 			virtual void Resize(const std::string& name, const FBufferCreateInfo& create_info) = 0;
-			virtual void Upload(const utl::vector<u8>& data, const utl::vector<FBufferUploadRegion>& regions) = 0;
+			virtual void Lock(BufferUpdateInfo& update_info) = 0;
+			virtual void Unlock(BufferUpdateInfo& update_info) = 0;
 
 			virtual void Map() = 0;
 			virtual void Unmap() = 0;

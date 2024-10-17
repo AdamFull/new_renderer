@@ -54,7 +54,8 @@ namespace engine
 
 				FAPIHandle CreateBuffer(const std::string& name, const FBufferCreateInfo& buffer_ci) override;
 				void UpdateBuffer(const std::string& name, FAPIHandle buffer_id, const FBufferCreateInfo& buffer_ci) override;
-				void UploadDataToBuffer(const FBufferUploadInfo& upload_info) override;
+				void BeginUpdateBuffer(BufferUpdateInfo& update_info) override;
+				void EndUpdateBuffer(BufferUpdateInfo& update_info) override;
 				FBufferView GetBufferView(FAPIHandle buffer_id) override;
 				void BindVertexBuffers(const FVertexBufferBindingInfo& binding_info, EQueueTypeFlagBits queue_type) override;
 				void BindIndexBuffer(const FIndexBufferBindingInfo& binding_info, EQueueTypeFlagBits queue_type) override;

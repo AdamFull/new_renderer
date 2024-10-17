@@ -30,7 +30,7 @@ static const u32 k_max_bindless_resources{ 16384u };
 static const u64 k_max_texture_update_per_frame{ 4096ll };
 static const u64 k_max_buffer_update_per_frame{ 4096ull };
 
-#define OLD_UPLOADER
+//#define OLD_UPLOADER
 
 vk::Format lookup_vk_format(EApiDataFormat format)
 {
@@ -144,7 +144,7 @@ BufferBuilder MakeBufferBuilder(const FBufferCreateInfo& buffer_ci, const vk::Ph
 
 	// Determine memory type
 	if (buffer_ci.flags & EBufferUsageFlagBits::eGpuOnly)
-		memory_usage_flags = vma::MemoryUsage::eUnknown;
+		memory_usage_flags = vma::MemoryUsage::eGpuOnly;
 	else if (buffer_ci.flags & EBufferUsageFlagBits::eCpuToGpu)
 		memory_usage_flags = vma::MemoryUsage::eCpuToGpu;
 	else
@@ -1045,31 +1045,47 @@ void VkRenderBackend::UpdateBuffer(const std::string& name, FAPIHandle buffer_id
 	buffer = builder.BuildUnique(*render_device);
 }
 
-void VkRenderBackend::UploadDataToBuffer(const FBufferUploadInfo& upload_info)
+void VkRenderBackend::BeginUpdateBuffer(BufferUpdateInfo& update_info)
 {
-	auto& buffer = render_resources->get<Buffer>(upload_info.buffer_id.Get());
-#ifdef OLD_UPLOADER
-	// Create new staging buffer
-	auto builder = BufferBuilder(upload_info.upload_size, 1ull, 1ull);
-	builder.SetVmaUsage(vma::MemoryUsage::eCpuOnly);
-	builder.SetUsage(vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst);
-	builder.SetSharingMode(vk::SharingMode::eConcurrent);
+	auto& buffer = render_resources->get<Buffer>(update_info.buffer_id.Get());
 
-	builder.SetDebugName(std::format("staging for #{}", upload_info.buffer_id.Get()));
+	VkBufferUpdateInfo vk_update_info{};
+	vk_update_info.dst_buffer = buffer.get();
+	vk_update_info.update_size = update_info.update_size;
+	
+	upload_context->BeginBufferUpdate(vk_update_info);
 
-	auto& src_buffer = upload_buffers.emplace_back(builder.BuildUnique(*render_device));
+	update_info.data = vk_update_info.map_info.data;
+	update_info.mapped_size = vk_update_info.map_info.avaliable_size;
+	update_info.buffer_index = vk_update_info.map_info.buffer_index;
+}
 
-	// Copy upload data to buffer
-	src_buffer->Update(upload_info.upload_data);
+void VkRenderBackend::EndUpdateBuffer(BufferUpdateInfo& update_info)
+{
+	auto& buffer = render_resources->get<Buffer>(update_info.buffer_id.Get());
 
-	auto& new_upload_info = buffer_upload_infos.emplace_back();
-	new_upload_info.buffer_handle = buffer.get();
-	new_upload_info.upload_index = upload_buffers.size() - 1ull;
-	new_upload_info.upload_size = upload_info.upload_size;
-	new_upload_info.copy_regions = upload_info.regions;
-#else
-	upload_context->UploadBuffer(buffer.get(), upload_info);
-#endif
+	VkBufferUpdateInfo vk_update_info{};
+	vk_update_info.dst_buffer = buffer.get();
+	vk_update_info.update_size = update_info.update_size;
+	vk_update_info.map_info.data = update_info.data;
+	vk_update_info.map_info.avaliable_size = update_info.mapped_size;
+	vk_update_info.map_info.buffer_index = update_info.buffer_index;
+
+	vk_update_info.copy_regions.resize(update_info.regions.size());
+	for (int32_t i = 0; i < update_info.regions.size(); ++i)
+	{
+		auto& region_info = update_info.regions[i];
+		auto& copy_region = vk_update_info.copy_regions[i];
+		copy_region.srcOffset = region_info.srcOffset;
+		copy_region.dstOffset = region_info.dstOffset;
+		copy_region.size = region_info.size;
+	}
+
+	upload_context->EndBufferUpdate(vk_update_info);
+
+	update_info.data = vk_update_info.map_info.data;
+	update_info.mapped_size = vk_update_info.map_info.avaliable_size;
+	update_info.buffer_index = vk_update_info.map_info.buffer_index;
 }
 
 FBufferView VkRenderBackend::GetBufferView(FAPIHandle buffer_id)
@@ -1594,9 +1610,11 @@ void VkRenderBackend::EndFrame()
 	// TODO: here i should run only main command buffer. But for now i getting the last one
 	//render_device->WriteTimestampQuery(command_buffer, vk::PipelineStageFlagBits::eBottomOfPipe, timestamp_query);
 
-	vk::Semaphore upload_wait_semaphore{};
+	vk::SemaphoreSubmitInfo upload_wait_semaphore{};
 #ifndef OLD_UPLOADER
-	upload_wait_semaphore = upload_context->Submit(render_context->GetLastAcquiredSemaphore());
+	//auto upload_avaliable = render_context->GetUploadAvaliableSemaphore();
+	//upload_wait_semaphore = upload_context->Submit(&upload_avaliable, upload_avaliable.semaphore ? 1 : 0);
+	upload_wait_semaphore = upload_context->Submit(nullptr, 0);
 #endif
 
 	render_context->EndFrame(upload_wait_semaphore);

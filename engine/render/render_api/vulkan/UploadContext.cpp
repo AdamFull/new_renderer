@@ -17,19 +17,8 @@ namespace engine
 				render_device{ render_device },
 				queue{ render_device.GetLogicalDevice().GetQueueByFlags(vk::QueueFlagBits::eGraphics, 1u) }
 			{
-				auto command_pool_builder = CommandPoolBuilder();
-				command_pool_builder.SetDebugName("Upload");
-				command_pool_builder.SetResetMode(CommandBuffer::ResetMode::ResetIndividually);
-				command_pool_builder.SetQueueFamily(queue.GetFamilyIndex());
-				command_pool = command_pool_builder.BuildUnique(render_device);
-
-				vk::SemaphoreCreateInfo semaphore_ci{};
-				signal_semaphore = render_device.CreateSemaphore(semaphore_ci);
-
-				vk::FenceCreateInfo fence_ci{};
-				fence_ci.flags = vk::FenceCreateFlagBits::eSignaled;
-
-				upload_fence = render_device.CreateFence(fence_ci);
+				upload_frames.emplace_back(std::make_unique<UploadFrame>(render_device, queue));
+				//upload_frames.emplace_back(std::make_unique<UploadFrame>(render_device, queue));
 			}
 
 			UploadContext::~UploadContext()
@@ -39,7 +28,10 @@ namespace engine
 
 			void UploadContext::UpdateTexture(Texture* texture_handle, const FTextureUploadInfo& upload_info)
 			{
-				BeginCommands();
+				BeginFrame();
+
+				auto& upload_frame = GetActiveFrame();
+				auto& command_buffer = upload_frame.AcquireOrGetCommandBuffer();
 
 				auto& target_subresource = texture_handle->GetImageView();
 
@@ -55,7 +47,7 @@ namespace engine
 				dependency_info.imageMemoryBarrierCount = 1u;
 				dependency_info.pImageMemoryBarriers = &image_translation;
 
-				active_command_buffer->PipelineBarrier(dependency_info);
+				command_buffer.PipelineBarrier(dependency_info);
 
 
 				auto builder = BufferBuilder(upload_info.upload_data.size(), 1ull, 1ull);
@@ -63,10 +55,10 @@ namespace engine
 				builder.SetUsage(vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst);
 				builder.SetSharingMode(vk::SharingMode::eConcurrent);
 
-				auto& staging_buffer = upload_buffers.emplace_back(builder.BuildUnique(render_device));
+				auto& staging_buffer = upload_frame.RequestStagingBuffer(upload_info.upload_data.size());
 
 				// Copy data to buffer
-				staging_buffer->Update(upload_info.upload_data);
+				staging_buffer.Update(upload_info.upload_data);
 
 				auto aspect_mask = texture_handle->GetImageView().GetSubresourceRange().aspectMask;
 				auto& image = texture_handle->GetImage();
@@ -106,10 +98,10 @@ namespace engine
 					copy_region.bufferOffset = 0ull;
 				}
 
-				staging_buffer->CopyTo(Handle(*active_command_buffer), Handle(image), target_subresource.GetImageLayout(), copy_regions);
+				staging_buffer.CopyTo(Handle(command_buffer), Handle(image), target_subresource.GetImageLayout(), copy_regions);
 
 				if (image.GetMipLevelCount() > 1u && upload_info.mip_layer_offsets.empty())
-					texture_handle->GenerateMipMaps(Handle(*active_command_buffer));
+					texture_handle->GenerateMipMaps(Handle(command_buffer));
 
 				texture_translation_info.oldLayout = vk::ImageLayout::eTransferDstOptimal;
 				texture_translation_info.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
@@ -120,82 +112,101 @@ namespace engine
 				dependency_info.imageMemoryBarrierCount = 1u;
 				dependency_info.pImageMemoryBarriers = &image_translation;
 
-				active_command_buffer->PipelineBarrier(dependency_info);
+				command_buffer.PipelineBarrier(dependency_info);
 			}
 
-			void UploadContext::UploadBuffer(Buffer* buffer_handle, const FBufferUploadInfo& upload_info)
+			void UploadContext::BeginBufferUpdate(VkBufferUpdateInfo& update_info)
 			{
-				BeginCommands();
+				BeginFrame();
 
-				// Create new staging buffer
-				auto builder = BufferBuilder(upload_info.upload_size, 1ull, 1ull);
-				builder.SetVmaUsage(vma::MemoryUsage::eCpuOnly);
-				builder.SetUsage(vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst);
-				builder.SetSharingMode(vk::SharingMode::eConcurrent);
+				Buffer* dst_buffer = update_info.dst_buffer;
 
-				builder.SetDebugName(std::format("staging for #{}", upload_info.buffer_id.Get()));
-
-				auto& src_buffer = upload_buffers.emplace_back(builder.BuildUnique(render_device));
-
-				// Copy upload data to buffer
-				src_buffer->Update(upload_info.upload_data);
-
-				utl::vector<vk::BufferCopy2KHR> copy_regions(upload_info.regions.size());
-
-				auto* dst_buffer = buffer_handle;
-
-				for (int32_t idx = 0; idx < copy_regions.size(); ++idx)
+				if (dst_buffer->GetUsage() != vma::MemoryUsage::eGpuOnly)
 				{
-					auto& region_info = upload_info.regions[idx];
-
-					auto& copy_region = copy_regions[idx];
-					copy_region.srcOffset = region_info.srcOffset;
-					copy_region.dstOffset = region_info.dstOffset;
-					copy_region.size = region_info.size;
+					log_warning("This buffer can be updated from the CPU, no additional memory needs to be allocated.");
+					update_info.map_info.data = dst_buffer->Map();
+					update_info.map_info.avaliable_size = dst_buffer->GetSize();
 				}
+				else
+				{
+					vk::DeviceSize allocation_size = update_info.update_size > 0ull ? update_info.update_size : dst_buffer->GetSize();
 
-				src_buffer->CopyTo(Handle(*active_command_buffer), *dst_buffer, copy_regions);
+					auto& upload_frame = GetActiveFrame();
+					auto& src_buffer = upload_frame.RequestStagingBuffer(allocation_size, &update_info.map_info.buffer_index);
+
+					update_info.map_info.data = src_buffer.Map();
+					update_info.map_info.avaliable_size = src_buffer.GetSize();
+				}
 			}
 
-			vk::Semaphore UploadContext::Submit(vk::Semaphore wait_semaphore)
+			void UploadContext::EndBufferUpdate(VkBufferUpdateInfo& update_info)
+			{
+				Buffer* dst_buffer = update_info.dst_buffer;
+
+				if (update_info.map_info.avaliable_size == ~0ull)
+				{
+					dst_buffer->Unmap();
+				}
+				else
+				{
+					auto& upload_frame = GetActiveFrame();
+					auto& command_buffer = upload_frame.AcquireOrGetCommandBuffer();
+					auto& src_buffer = upload_frame.GetStagingBuffer(update_info.map_info.buffer_index);
+
+					// TODO: Add memory barrier befor copy for dst buffer
+					vk::BufferMemoryBarrier2KHR buffer_barrier{};
+					buffer_barrier.buffer = Handle(*dst_buffer);
+					buffer_barrier.size = dst_buffer->GetSize();
+					buffer_barrier.dstStageMask = vk::PipelineStageFlagBits2::eTransfer;
+					buffer_barrier.dstAccessMask = vk::AccessFlagBits2::eMemoryWrite;
+
+					vk::DependencyInfoKHR dependency_info{};
+					dependency_info.pBufferMemoryBarriers = &buffer_barrier;
+					dependency_info.bufferMemoryBarrierCount = 1u;
+
+					command_buffer.PipelineBarrier(dependency_info);
+
+					src_buffer.CopyTo(Handle(command_buffer), *dst_buffer, update_info.copy_regions);
+				}
+			}
+
+			vk::SemaphoreSubmitInfo UploadContext::Submit(vk::SemaphoreSubmitInfo* wait_infos, uint32_t wait_semaphore_count)
 			{
 				if (writing_commands)
 				{
-					active_command_buffer->End();
+					auto& upload_frame = GetActiveFrame();
+					auto& command_buffer = upload_frame.AcquireOrGetCommandBuffer();
+
+					command_buffer.EndDebugLabel();
+					command_buffer.End();
 					writing_commands = false;
 
-					vk::PipelineStageFlags wait_stage{ vk::PipelineStageFlagBits::eColorAttachmentOutput };
+					auto signal_semaphore_info = upload_frame.Submit(wait_infos, wait_semaphore_count);
 
-					vk::SubmitInfo submitInfo{};
-					submitInfo.pSignalSemaphores = &signal_semaphore;
-					submitInfo.signalSemaphoreCount = 1u;
-					submitInfo.pWaitSemaphores = &wait_semaphore;
-					submitInfo.waitSemaphoreCount = wait_semaphore ? 1 : 0;
-					submitInfo.commandBufferCount = 1u;
-					submitInfo.pWaitDstStageMask = &wait_stage;
-					submitInfo.pCommandBuffers = &Handle(*active_command_buffer);
+					active_upload_frame = (active_upload_frame + 1u) % (uint32_t)upload_frames.size();
 
-					queue.Submit(submitInfo, upload_fence);
-
-					return signal_semaphore;
+					return signal_semaphore_info;
 				}
 
-				return nullptr;
+				return {};
 			}
 
-			void UploadContext::BeginCommands()
+			UploadFrame& UploadContext::GetActiveFrame()
+			{
+				return *upload_frames[active_upload_frame];
+			}
+
+			void UploadContext::BeginFrame()
 			{
 				if (!writing_commands)
 				{
-					render_device.WaitForFences(&upload_fence, 1u);
-					render_device.ResetFences(&upload_fence, 1u);
-					command_pool->Reset();
+					auto& upload_frame = GetActiveFrame();
+					upload_frame.Reset();
 
-					auto& command_buffer = command_pool->RequestCommandBuffer(vk::CommandBufferLevel::ePrimary);
-					command_buffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-					active_command_buffer = &command_buffer;
+					auto& command_buffer = upload_frame.AcquireOrGetCommandBuffer();
 
-					upload_buffers.clear();
+					command_buffer.BeginDebugLabel("Upload resources", 0xFFFFFFFF);
+
 					writing_commands = true;
 				}
 			}

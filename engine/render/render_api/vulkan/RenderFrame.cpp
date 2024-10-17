@@ -22,6 +22,7 @@ namespace engine
 				vk::SemaphoreCreateInfo semaphore_ci{};
 				image_avaliable = render_device.CreateSemaphore(semaphore_ci);
 				render_finished = render_device.CreateSemaphore(semaphore_ci);
+				upload_avaliable = render_device.CreateSemaphore(semaphore_ci);
 
 				vk::FenceCreateInfo fence_ci{};
 				fence_ci.flags = vk::FenceCreateFlagBits::eSignaled;
@@ -33,6 +34,7 @@ namespace engine
 			{
 				render_device.Destroy(image_avaliable);
 				render_device.Destroy(render_finished);
+				render_device.Destroy(upload_avaliable);
 				render_device.Destroy(frame_fence);
 			}
 
@@ -76,6 +78,11 @@ namespace engine
 			vk::Semaphore& RenderFrame::GetRenderFinishedSemaphore()
 			{
 				return render_finished;
+			}
+
+			vk::Semaphore& RenderFrame::GetUploadAvaliableSemaphore()
+			{
+				return upload_avaliable;
 			}
 
 			vk::Fence& RenderFrame::GetFence()

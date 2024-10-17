@@ -344,7 +344,8 @@ namespace engine
 
 			virtual FAPIHandle CreateBuffer(const std::string& name, const FBufferCreateInfo& buffer_ci) = 0;
 			virtual void UpdateBuffer(const std::string& name, FAPIHandle buffer_id, const FBufferCreateInfo& buffer_ci) = 0;
-			virtual void UploadDataToBuffer(const FBufferUploadInfo& upload_info) = 0;
+			virtual void BeginUpdateBuffer(BufferUpdateInfo& update_info) = 0;
+			virtual void EndUpdateBuffer(BufferUpdateInfo& update_info) = 0;
 			virtual FBufferView GetBufferView(FAPIHandle buffer_id) = 0;
 			virtual void BindVertexBuffers(const FVertexBufferBindingInfo& binding_info, EQueueTypeFlagBits queue) = 0;
 			virtual void BindIndexBuffer(const FIndexBufferBindingInfo& binding_info, EQueueTypeFlagBits queue) = 0;

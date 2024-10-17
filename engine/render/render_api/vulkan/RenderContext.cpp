@@ -182,7 +182,7 @@ namespace engine
 				current_frame.Reset();
 			}
 
-			void RenderContext::EndFrame(vk::Semaphore wait_semaphore)
+			void RenderContext::EndFrame(vk::SemaphoreSubmitInfo wait_semaphore)
 			{
 				current_command_buffer->End();
 				frame_active = false;
@@ -197,17 +197,19 @@ namespace engine
 
 					vk::SemaphoreSubmitInfo wait_semaphores[2] = { 
 						vk::SemaphoreSubmitInfo{ acquired_semaphore, 0ull, vk::PipelineStageFlagBits2::eColorAttachmentOutput },
-						vk::SemaphoreSubmitInfo{ wait_semaphore, 0ull, vk::PipelineStageFlagBits2::eAllCommands }
+						wait_semaphore
 					};
 
 					submit_info.pWaitSemaphoreInfos = &wait_semaphores[0];
-					submit_info.waitSemaphoreInfoCount = wait_semaphore ? 2 : 1;
+					submit_info.waitSemaphoreInfoCount = wait_semaphore.semaphore ? 2 : 1;
 
-					vk::SemaphoreSubmitInfo signal_semaphore{};
-					signal_semaphore.semaphore = current_frame.GetRenderFinishedSemaphore();
-					signal_semaphore.stageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
 
-					submit_info.pSignalSemaphoreInfos = &signal_semaphore;
+					vk::SemaphoreSubmitInfo signal_semaphores[2] = {
+						vk::SemaphoreSubmitInfo{ current_frame.GetRenderFinishedSemaphore(), 0ull, vk::PipelineStageFlagBits2::eColorAttachmentOutput },
+						vk::SemaphoreSubmitInfo{ current_frame.GetUploadAvaliableSemaphore(), 0ull, vk::PipelineStageFlagBits2::eAllCommands }
+					};
+
+					submit_info.pSignalSemaphoreInfos = &signal_semaphores[0];
 					submit_info.signalSemaphoreInfoCount = 1;
 
 					vk::CommandBufferSubmitInfo command_buffer_si{};
@@ -251,16 +253,16 @@ namespace engine
 					current_frame_index = (current_frame_index + 1) % swapchain->GetImageCount();
 				}
 
-				previous_frame_semaphore = current_frame.GetRenderFinishedSemaphore();
+				previous_frame_semaphore = current_frame.GetUploadAvaliableSemaphore();
 				if (acquired_semaphore)
 				{
 					acquired_semaphore = nullptr;
 				}
 			}
 
-			vk::Semaphore RenderContext::GetLastAcquiredSemaphore()
+			vk::SemaphoreSubmitInfo RenderContext::GetUploadAvaliableSemaphore()
 			{
-				return previous_frame_semaphore;
+				return vk::SemaphoreSubmitInfo{ previous_frame_semaphore, 0ull, vk::PipelineStageFlagBits2::eAllCommands };
 			}
 
 			CommandBuffer& RenderContext::GetCurrentCommandBuffer()

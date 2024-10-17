@@ -35,6 +35,7 @@ namespace engine
 
 				vk::Semaphore& GetImageAvaliableSemaphore();
 				vk::Semaphore& GetRenderFinishedSemaphore();
+				vk::Semaphore& GetUploadAvaliableSemaphore();
 				vk::Fence& GetFence();
 
 				void Reset();
@@ -46,6 +47,7 @@ namespace engine
 
 				vk::Semaphore image_avaliable{};
 				vk::Semaphore render_finished{};
+				vk::Semaphore upload_avaliable{};
 				vk::Fence frame_fence{};
 			};
 		}

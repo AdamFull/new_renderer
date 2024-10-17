@@ -35,9 +35,9 @@ namespace engine
 				CommandBuffer& Begin(bool& surface_updated);
 
 				void BeginFrame(bool& surface_updated);
-				void EndFrame(vk::Semaphore wait_semaphore = nullptr);
+				void EndFrame(vk::SemaphoreSubmitInfo wait_semaphore);
 
-				vk::Semaphore GetLastAcquiredSemaphore();
+				vk::SemaphoreSubmitInfo GetUploadAvaliableSemaphore();
 
 				CommandBuffer& GetCurrentCommandBuffer();
 				RenderFrame& GetCurrentFrame();

@@ -236,6 +236,21 @@ namespace engine
 				utl::vector<u64> values{};
 				u32 queryIndex{ 0ull };
 			};
+
+			struct VkBufferUpdateInfo
+			{
+				Buffer* dst_buffer{ nullptr };
+				vk::DeviceSize update_size{ 0ull };
+
+				std::vector<vk::BufferCopy2KHR> copy_regions{};
+
+				struct
+				{
+					uint8_t* data{ nullptr };
+					vk::DeviceSize avaliable_size{ 0ull };
+					size_t buffer_index{ ~0ull };
+				} map_info;
+			};
 		}
 	}
 }

@@ -272,6 +272,11 @@ namespace engine
 				persistent = false;
 				alloc_create_info = vma::AllocationCreateInfo{};
 			}
+
+			vma::MemoryUsage Allocation::GetUsage()
+			{
+				return alloc_create_info.usage;
+			}
 	}
 }
 }

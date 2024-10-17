@@ -14,7 +14,8 @@ namespace engine
 
 			void Create(const std::string& name, const FBufferCreateInfo& create_info) override;
 			void Resize(const std::string& name, const FBufferCreateInfo& create_info) override;
-			void Upload(const utl::vector<u8>& data, const utl::vector<FBufferUploadRegion>& regions) override;
+			void Lock(BufferUpdateInfo& update_info) override;
+			void Unlock(BufferUpdateInfo& update_info) override;
 
 			void Map() override;
 			void Unmap() override;

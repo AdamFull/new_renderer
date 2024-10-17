@@ -1,6 +1,6 @@
 #pragma once
 
-#include <engine/render/render_api/vulkan/VkResourceStructures.h>
+#include <engine/render/render_api/vulkan/UploadFrame.h>
 
 namespace engine
 {
@@ -27,32 +27,24 @@ namespace engine
 				UploadContext& operator=(UploadContext&&) = delete;
 
 				void UpdateTexture(Texture* texture_handle, const FTextureUploadInfo& upload_info);
-				void UploadBuffer(Buffer* buffer_handle, const FBufferUploadInfo& upload_info);
 
 				void BeginTextureUpdate(Texture* texture_handle);
 				void EndTextureUpdate();
 
-				void BeginBufferUpdate(Buffer* buffer_handle);
-				void EndBufferUpdate();
+				void BeginBufferUpdate(VkBufferUpdateInfo& update_info);
+				void EndBufferUpdate(VkBufferUpdateInfo& update_info);
 
-				vk::Semaphore Submit(vk::Semaphore wait_semaphore = nullptr);
+				vk::SemaphoreSubmitInfo Submit(vk::SemaphoreSubmitInfo* wait_infos, uint32_t wait_semaphore_count);
 			private:
-				void BeginCommands();
+				UploadFrame& GetActiveFrame();
+				void BeginFrame();
 			private:
 				RenderDevice& render_device;
 
 				const Queue& queue;
 
-				vk::Semaphore signal_semaphore{};
-				vk::Fence upload_fence{};
-
-				std::unique_ptr<CommandPool> command_pool;
-				CommandBuffer* active_command_buffer{ nullptr };
-
-				utl::vector<VkTextureUploadInfo> texture_upload_infos{};
-				utl::vector<VkBufferUploadInfo> buffer_upload_infos{};
-
-				utl::vector<std::unique_ptr<Buffer>> upload_buffers;
+				std::vector<std::unique_ptr<UploadFrame>> upload_frames{};
+				uint32_t active_upload_frame{ 0u };
 
 				bool writing_commands{ false };
 			};

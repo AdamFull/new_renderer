@@ -227,6 +227,10 @@ namespace engine
 				{
 					return !allocation;
 				}
+
+				vma::MemoryUsage GetUsage();
+
+
 			protected:
 				void Clear();
 			protected:
