@@ -653,8 +653,7 @@ FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FGraphic
 #ifndef BUILD_WITHOUT_DEBUGGIND
 		shader_module_ci.name = std::format("{} stage {} #{}", name, vk::to_string(shader_stage), shader_index);
 #endif
-
-		auto& shader_module = shader->shaderModules.emplace_back();
+		auto& shader_module = shader->shaderModules[shader->shader_module_count++];
 		render_device->CreateShaderModule(shader_module_ci, shader_module);
 
 		auto& stage_ci = pipeline_ci.shaderStages.emplace_back();
@@ -690,12 +689,12 @@ FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FGraphic
 
 	shader->bindPoint = vk::PipelineBindPoint::eGraphics;
 
-	auto& pipeline = shader->handles.emplace_back();
+	auto& pipeline = shader->handles[shader->pipeline_count++];
 	render_device->CreatePipeline(pipeline_ci, pipeline);
 	
 	shader->isAlive = true;
 
-	auto shader_unique_name = create_object_unique_name("shader:{:x}:{}", shader->handles.back(), vk::to_string(shader->bindPoint));
+	auto shader_unique_name = create_object_unique_name("shader:{:x}:{}", shader->handles[shader->pipeline_count - 1], vk::to_string(shader->bindPoint));
 	return FAPIHandle(render_resources->add<FVkShader>(shader_unique_name.c_str(), std::move(shader)));
 }
 
@@ -713,7 +712,7 @@ FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FCompute
 	shader_module_ci.shader_code = shader_stage.code;
 	shader_module_ci.name = std::format("{} stage {}", name, vk::to_string(vk::ShaderStageFlagBits::eCompute));
 
-	auto& shader_module = shader->shaderModules.emplace_back();
+	auto& shader_module = shader->shaderModules[shader->shader_module_count++];
 	render_device->CreateShaderModule(shader_module_ci, shader_module);
 
 	auto& stage = pipeline_stages.emplace_back();
@@ -746,7 +745,7 @@ FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FCompute
 	FVkComputePipelineCreateInfo pipeline_ci{};
 	pipeline_ci.layout = shader->layout;
 
-	for (u64 idx = 0ull; idx < pipeline_stages.size(); ++idx)
+	for (int32_t idx = 0; idx < pipeline_stages.size(); ++idx)
 	{
 		auto& stage = pipeline_stages[idx];
 		pipeline_ci.shaderStage = stage;
@@ -754,7 +753,7 @@ FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FCompute
 		pipeline_ci.name = std::format("{} #{}", name, idx);
 #endif
 
-		auto& pipeline = shader->handles.emplace_back();
+		auto& pipeline = shader->handles[shader->pipeline_count++];
 		render_device->CreatePipeline(pipeline_ci, pipeline);
 	}
 
@@ -762,8 +761,8 @@ FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FCompute
 
 	std::stringstream ss{};
 	ss << name;
-	for (const auto& handle : shader->handles)
-		ss << ":" << std::hex << reinterpret_cast<u64>(utl::cast<vk::Pipeline::CType>(handle));
+	for (int32_t i = 0; i < shader->pipeline_count; ++i)
+		ss << ":" << std::hex << reinterpret_cast<u64>(utl::cast<vk::Pipeline::CType>(shader->handles[i]));
 
 	auto shader_unique_name = ss.str();
 	return FAPIHandle(render_resources->add<FVkShader>(shader_unique_name.c_str(), std::move(shader)));
@@ -778,8 +777,8 @@ FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FReyTrac
 
 	std::stringstream ss{};
 	ss << name;
-	for (const auto& handle : shader->handles)
-		ss << ":" << std::hex << reinterpret_cast<u64>(utl::cast<vk::Pipeline::CType>(handle));
+	for (int32_t i = 0; i < shader->pipeline_count; ++i)
+		ss << ":" << std::hex << reinterpret_cast<u64>(utl::cast<vk::Pipeline::CType>(shader->handles[i]));
 
 	auto shader_unique_name = ss.str();
 	return FAPIHandle(render_resources->add<FVkShader>(shader_unique_name.c_str(), std::move(shader)));
@@ -1010,7 +1009,7 @@ void VkRenderBackend::BindShader(FAPIHandle shader_id, EQueueTypeFlagBits queue_
 	auto& shader = render_resources->get<FVkShader>(shader_id.Get());
 
 	// TODO: make possible to select what pipeline i have to bind now
-	render_context->GetCurrentCommandBuffer().BindPipeline(shader->bindPoint, shader->handles.back());
+	render_context->GetCurrentCommandBuffer().BindPipeline(shader->bindPoint, shader->handles[0]);
 }
 
 void VkRenderBackend::BindShaderResources(FAPIHandle shader_id, EQueueTypeFlagBits queue_type)

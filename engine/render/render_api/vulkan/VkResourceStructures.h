@@ -64,7 +64,9 @@ namespace engine
 			struct FVkDescriptorSet
 			{
 				// Per frame descriptor sets
-				utl::vector<vk::DescriptorSet> handles{};
+				static constexpr size_t k_max_descriptor_sets{ 100ull };
+				std::array<vk::DescriptorSet, k_max_descriptor_sets> handles{};
+				size_t descriptor_count{ 0ull };
 			};
 
 			struct FVkDescriptorSetCreateInfo
@@ -160,9 +162,16 @@ namespace engine
 
 			struct FVkShader
 			{
-				utl::vector<vk::Pipeline> handles{};
+				static constexpr size_t k_max_pipelines_handles{ 4ull };
+				static constexpr size_t k_max_shader_module_handles{ 8ull };
+
+				std::array<vk::Pipeline, k_max_pipelines_handles> handles{};
+				size_t pipeline_count{ 0ull };
+
+				std::array<vk::ShaderModule, k_max_shader_module_handles> shaderModules{};
+				size_t shader_module_count{ 0ull };
+
 				vk::PipelineLayout layout{};
-				utl::vector<vk::ShaderModule> shaderModules{};
 				utl::hash_map<u32, vk::DescriptorSetLayout> descriptorSetLayouts{};
 				utl::hash_map<u32, FVkDescriptorSet> descriptorSets{};
 				utl::hash_map<u32, u32> descriptorUsage{};

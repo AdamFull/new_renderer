@@ -546,11 +546,12 @@ namespace engine
 				descriptor_ai.pSetLayouts = per_frame_layout.data();
 				descriptor_ai.pNext = set_ci.next;
 
-				descriptor_set.handles.resize(set_ci.descriptorCount);
+				assert(FVkDescriptorSet::k_max_descriptor_sets > set_ci.descriptorCount);
+				descriptor_set.descriptor_count = set_ci.descriptorCount;
 				vk::Result res = Handle(*device).allocateDescriptorSets(&descriptor_ai, descriptor_set.handles.data());
 
 #ifndef BUILD_WITHOUT_DEBUGGIND
-				for (u64 idx = 0ull; idx < descriptor_set.handles.size(); ++idx)
+				for (u64 idx = 0ull; idx < descriptor_set.descriptor_count; ++idx)
 					debug_utils->SetDebugName(descriptor_set.handles[idx], std::format("{} #{}", set_ci.name, idx));
 #endif
 
@@ -559,7 +560,7 @@ namespace engine
 
 			void RenderDevice::DestroyDescriptorSet(const FVkDescriptorPool& descriptor_pool, FVkDescriptorSet& descriptor_set)
 			{
-				Handle(*device).freeDescriptorSets(descriptor_pool.handle, descriptor_set.handles);
+				Handle(*device).freeDescriptorSets(descriptor_pool.handle, descriptor_set.descriptor_count, descriptor_set.handles.data());
 			}
 
 			FRenderApiErrorInfo RenderDevice::CreateShaderModule(const FVkShaderModuleCreateInfo& shader_module_ci, vk::ShaderModule& shader_module)
