@@ -43,7 +43,9 @@ namespace engine
 
 				const Queue& queue;
 
-				std::vector<std::unique_ptr<UploadFrame>> upload_frames{};
+				static constexpr size_t k_max_upload_frames{ 8ull };
+				std::array<std::unique_ptr<UploadFrame>, k_max_upload_frames> upload_frames{};
+				uint32_t upload_frame_count{ 1u };
 				uint32_t active_upload_frame{ 0u };
 
 				bool writing_commands{ false };

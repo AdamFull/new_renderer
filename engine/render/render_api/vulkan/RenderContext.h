@@ -57,7 +57,8 @@ namespace engine
 				std::unique_ptr<Swapchain> swapchain;
 				vk::SurfaceTransformFlagBitsKHR pre_transform{ vk::SurfaceTransformFlagBitsKHR::eIdentity };
 
-				std::vector<std::unique_ptr<RenderFrame>> render_frames{};
+				static constexpr size_t k_max_frames_in_flight{ 8ull };
+				std::array<std::unique_ptr<RenderFrame>, k_max_frames_in_flight> render_frames{};
 				uint32_t active_frame_index{ 0u };
 				uint32_t current_frame_index{ 0u };
 				bool frame_active{ false };

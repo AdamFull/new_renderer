@@ -37,14 +37,18 @@ namespace engine
 
 				for (int32_t i = 0; i < image_count; ++i)
 				{
-					auto& render_frame = render_frames.emplace_back(std::make_unique<RenderFrame>(render_device, queue));
-					render_frame->UpdateBackbuffer(extent, swapchain->GetFormat(), swapchain->GetImage(i));
+					render_frames[i] = std::make_unique<RenderFrame>(render_device, queue);
+					render_frames[i]->UpdateBackbuffer(extent, swapchain->GetFormat(), swapchain->GetImage(i));
 				}
 			}
 
 			RenderContext::~RenderContext()
 			{
-				render_frames.clear();
+				for (int32_t i = 0; i < swapchain->GetImageCount(); ++i)
+				{
+					render_frames[i].reset();
+				}
+
 				swapchain.reset();
 			}
 
@@ -305,8 +309,8 @@ namespace engine
 					else
 					{
 						// Create a new frame if the new swapchain has more images than current frames
-						auto& render_frame = render_frames.emplace_back(std::make_unique<RenderFrame>(render_device, queue));
-						render_frame->UpdateBackbuffer(extent, swapchain->GetFormat(), swapchain->GetImage(i));
+						render_frames[i] = std::make_unique<RenderFrame>(render_device, queue);
+						render_frames[i]->UpdateBackbuffer(extent, swapchain->GetFormat(), swapchain->GetImage(i));
 					}
 
 					++frame_it;

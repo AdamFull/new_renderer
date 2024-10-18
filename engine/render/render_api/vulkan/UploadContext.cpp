@@ -17,8 +17,12 @@ namespace engine
 				render_device{ render_device },
 				queue{ render_device.GetLogicalDevice().GetQueueByFlags(vk::QueueFlagBits::eGraphics, 1u) }
 			{
-				upload_frames.emplace_back(std::make_unique<UploadFrame>(render_device, queue));
-				//upload_frames.emplace_back(std::make_unique<UploadFrame>(render_device, queue));
+				assert(k_max_upload_frames > upload_frame_count);
+
+				for (int32_t i = 0; i < upload_frame_count; ++i)
+				{
+					upload_frames[i] = std::make_unique<UploadFrame>(render_device, queue);
+				}
 			}
 
 			UploadContext::~UploadContext()
@@ -157,8 +161,10 @@ namespace engine
 					vk::BufferMemoryBarrier2KHR buffer_barrier{};
 					buffer_barrier.buffer = Handle(*dst_buffer);
 					buffer_barrier.size = dst_buffer->GetSize();
+					buffer_barrier.srcStageMask = vk::PipelineStageFlagBits2::eAllCommands;
+					buffer_barrier.srcAccessMask = vk::AccessFlagBits2::eTransferWrite | vk::AccessFlagBits2::eShaderWrite | vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eShaderStorageWrite;
 					buffer_barrier.dstStageMask = vk::PipelineStageFlagBits2::eTransfer;
-					buffer_barrier.dstAccessMask = vk::AccessFlagBits2::eMemoryWrite;
+					buffer_barrier.dstAccessMask = vk::AccessFlagBits2::eTransferWrite;
 
 					vk::DependencyInfoKHR dependency_info{};
 					dependency_info.pBufferMemoryBarriers = &buffer_barrier;
@@ -183,7 +189,7 @@ namespace engine
 
 					auto signal_semaphore_info = upload_frame.Submit(wait_infos, wait_semaphore_count);
 
-					active_upload_frame = (active_upload_frame + 1u) % (uint32_t)upload_frames.size();
+					active_upload_frame = (active_upload_frame + 1u) % upload_frame_count;
 
 					return signal_semaphore_info;
 				}
