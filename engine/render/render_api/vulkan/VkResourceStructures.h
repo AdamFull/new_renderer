@@ -253,6 +253,19 @@ namespace engine
 				u32 queryIndex{ 0ull };
 			};
 
+			struct VkTextureUpdateInfo
+			{
+				Texture* dst_texture{ nullptr };
+				vk::DeviceSize update_size{ 0ull };
+
+				struct
+				{
+					uint8_t* data{ nullptr };
+					vk::DeviceSize avaliable_size{ 0ull };
+					size_t buffer_index{ ~0ull };
+				} map_info;
+			};
+
 			struct VkBufferUpdateInfo
 			{
 				Buffer* dst_buffer{ nullptr };

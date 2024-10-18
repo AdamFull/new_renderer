@@ -119,6 +119,18 @@ namespace engine
 				command_buffer.PipelineBarrier(dependency_info);
 			}
 
+			void UploadContext::BeginTextureUpdate(VkTextureUpdateInfo& update_info)
+			{
+				BeginFrame();
+
+				Texture* dst_texture = update_info.dst_texture;
+			}
+
+			void UploadContext::EndTextureUpdate(VkTextureUpdateInfo& update_info)
+			{
+
+			}
+
 			void UploadContext::BeginBufferUpdate(VkBufferUpdateInfo& update_info)
 			{
 				BeginFrame();
@@ -172,8 +184,12 @@ namespace engine
 
 					command_buffer.PipelineBarrier(dependency_info);
 
+					update_info.map_info.buffer_index = ~0ull;
 					src_buffer.CopyTo(Handle(command_buffer), *dst_buffer, update_info.copy_regions);
 				}
+
+				update_info.map_info.data = nullptr;
+				update_info.map_info.avaliable_size = 0ull;
 			}
 
 			vk::SemaphoreSubmitInfo UploadContext::Submit(vk::SemaphoreSubmitInfo* wait_infos, uint32_t wait_semaphore_count)

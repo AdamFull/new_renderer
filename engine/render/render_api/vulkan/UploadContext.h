@@ -28,8 +28,8 @@ namespace engine
 
 				void UpdateTexture(Texture* texture_handle, const FTextureUploadInfo& upload_info);
 
-				void BeginTextureUpdate(Texture* texture_handle);
-				void EndTextureUpdate();
+				void BeginTextureUpdate(VkTextureUpdateInfo& update_info);
+				void EndTextureUpdate(VkTextureUpdateInfo& update_info);
 
 				void BeginBufferUpdate(VkBufferUpdateInfo& update_info);
 				void EndBufferUpdate(VkBufferUpdateInfo& update_info);
