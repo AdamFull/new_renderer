@@ -8,6 +8,7 @@
 #include <engine/render/render_api/vulkan/CommandPool.h>
 #include <engine/render/render_api/vulkan/RenderContext.h>
 #include <engine/render/render_api/vulkan/UploadContext.h>
+#include <engine/render/render_api/vulkan/DescriptorPool.h>
 
 #include "BufferObject.h"
 #include "ShaderObject.h"

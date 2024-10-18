@@ -16,6 +16,9 @@ namespace engine
 			class ImageView;
 			class Texture;
 			class Buffer;
+			class DescriptorPool;
+			class DescriptorSetLayout;
+			class DescriptorSet;
 
 			struct FRenderApiErrorInfo
 			{
@@ -53,7 +56,10 @@ namespace engine
 
 			struct FVkDescriptorPoolCreateInfo
 			{
-				utl::vector<vk::DescriptorPoolSize> poolSizes{};
+				static constexpr size_t k_max_pool_sizes{ 20ull };
+				std::array<vk::DescriptorPoolSize, k_max_pool_sizes> pool_sizes{};
+				size_t pool_sizes_count{ 0ull };
+
 				u32 usageCount{ 1u };
 				vk::DescriptorPoolCreateFlags flags{ vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet };
 #ifndef BUILD_WITHOUT_DEBUGGIND
@@ -240,10 +246,10 @@ namespace engine
 
 			struct FVkGlobalDescriptor
 			{
-				FVkDescriptorPool descriptorPool{};
-				vk::DescriptorSetLayout deecriptorSetLayout{};
-				FVkDescriptorSet descriptorSet{};
-				utl::hash_map<u64, u64> uniformBuffers{};
+				std::unique_ptr<DescriptorPool> descriptor_pool{};
+				std::unique_ptr<DescriptorSetLayout> descriptor_set_layout{};
+				std::array<std::unique_ptr<DescriptorSet>, 8ull> descriptor_sets{};
+				utl::hash_map<u64, u64> uniform_buffers{};
 			};
 
 			struct FVkTimestampQuery

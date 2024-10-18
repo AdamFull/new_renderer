@@ -13,6 +13,13 @@ namespace engine
 			class CommandBuffer;
 			class Queue;
 			class Texture;
+			class DescriptorPool;
+
+			enum class DescriptorManagementStrategy
+			{
+				StoreInCache,
+				CreateDirectly
+			};
 
 			class RenderFrame final
 			{
@@ -44,6 +51,9 @@ namespace engine
 
 				std::unique_ptr<Texture> backbuffer;
 				std::unique_ptr<CommandPool> command_pool;
+				std::unique_ptr<DescriptorPool> descriptor_pool;
+
+				DescriptorManagementStrategy descriptor_management_strategy{ DescriptorManagementStrategy::StoreInCache };
 
 				vk::Semaphore image_avaliable{};
 				vk::Semaphore render_finished{};

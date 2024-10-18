@@ -4,6 +4,7 @@
 #include <engine/render/render_api/vulkan/CommandPool.h>
 #include <engine/render/render_api/vulkan/ImageView.h>
 #include <engine/render/render_api/vulkan/Texture.h>
+#include <engine/render/render_api/vulkan/DescriptorPool.h>
 
 namespace engine
 {
@@ -18,6 +19,8 @@ namespace engine
 				command_pool_builder.SetResetMode(CommandBuffer::ResetMode::ResetIndividually);
 				command_pool_builder.SetQueueFamily(queue.GetFamilyIndex());
 				command_pool = command_pool_builder.BuildUnique(render_device);
+
+				descriptor_pool = std::make_unique<DescriptorPool>(render_device);
 
 				vk::SemaphoreCreateInfo semaphore_ci{};
 				image_avaliable = render_device.CreateSemaphore(semaphore_ci);

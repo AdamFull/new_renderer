@@ -469,6 +469,61 @@ namespace engine
 				Handle(*device).destroyCommandPool(handle, allocation_callbacks);
 			}
 
+			vk::DescriptorSetLayout RenderDevice::CreateDescriptorSetLayout2(const vk::DescriptorSetLayoutCreateInfo& create_info, const std::string& debug_name) const
+			{
+				auto handle = VkCreateHandleAndCheckResult<vk::DescriptorSetLayout>([&](auto& handle) { return Handle(*device).createDescriptorSetLayout(&create_info, allocation_callbacks, &handle); });
+				debug_utils->SetDebugName(handle, debug_name);
+				return handle;
+			}
+
+			void RenderDevice::Destroy(vk::DescriptorSetLayout& handle) const
+			{
+				Handle(*device).destroyDescriptorSetLayout(handle, allocation_callbacks);
+			}
+
+			vk::DescriptorPool RenderDevice::CreateDescriptorPool2(const vk::DescriptorPoolCreateInfo& create_info, const std::string& debug_name) const
+			{
+				auto handle = VkCreateHandleAndCheckResult<vk::DescriptorPool>([&](auto& handle) { return Handle(*device).createDescriptorPool(&create_info, allocation_callbacks, &handle); });
+				debug_utils->SetDebugName(handle, debug_name);
+				return handle;
+			}
+
+			void RenderDevice::ResetDescriptorPool2(vk::DescriptorPool& handle, vk::DescriptorPoolResetFlags flags) const
+			{
+				Handle(*device).resetDescriptorPool(handle, flags);
+			}
+
+			void RenderDevice::Destroy(vk::DescriptorPool& handle) const
+			{
+				Handle(*device).destroyDescriptorPool(handle, allocation_callbacks);
+			}
+
+			void RenderDevice::AllocateDescriptorSet2(const vk::DescriptorSetAllocateInfo& allocate_info, vk::DescriptorSet* descriptor_sets, const std::string& debug_name) const
+			{
+				vk::Result result = Handle(*device).allocateDescriptorSets(&allocate_info, descriptor_sets);
+				if (result != vk::Result::eSuccess)
+				{
+					log_error("Failed to allocate descriptor set with result: {}", vk::to_string(result));
+					return;
+				}
+
+				for (int32_t i = 0; i < allocate_info.descriptorSetCount; ++i)
+				{
+					auto& handle = descriptor_sets[i];
+					debug_utils->SetDebugName(handle, std::format("{}_{}", debug_name, i));
+				}
+			}
+
+			void RenderDevice::FreeDescriptorSets2(vk::DescriptorPool& pool, vk::DescriptorSet* descriptor_sets, uint32_t descriptor_set_count) const
+			{
+				Handle(*device).freeDescriptorSets(pool, descriptor_set_count, descriptor_sets);
+			}
+
+			void RenderDevice::FreeDescriptorSets2(vk::DescriptorPool& pool, std::span<vk::DescriptorSet> descriptor_sets) const
+			{
+				FreeDescriptorSets2(pool, descriptor_sets.data(), descriptor_sets.size());
+			}
+
 			void RenderDevice::Wait()
 			{
 				Handle(*device).waitIdle();
@@ -496,18 +551,19 @@ namespace engine
 
 			FRenderApiErrorInfo RenderDevice::CreateDescriptorPool(const FVkDescriptorPoolCreateInfo& pool_ci, FVkDescriptorPool& descriptor_pool)
 			{
-				utl::vector<vk::DescriptorPoolSize> pool_sizes{ pool_ci.poolSizes };
+				std::array<vk::DescriptorPoolSize, FVkDescriptorPoolCreateInfo::k_max_pool_sizes> pool_sizes{ pool_ci.pool_sizes };
 
 				// Calculate total descriptor set count in descriptor pool and update descriptor sizes
 				u32 maxSets{ 1u };
-				for (auto& pool_size : pool_sizes)
+				for (int32_t i = 0; i < pool_ci.pool_sizes_count; ++i)
 				{
+					auto& pool_size = pool_sizes[i];
 					pool_size.descriptorCount *= pool_ci.usageCount;
 					maxSets += pool_size.descriptorCount;
 				}
 
 				vk::DescriptorPoolCreateInfo descriptor_pool_ci{};
-				descriptor_pool_ci.poolSizeCount = utl::cast<u32>(pool_sizes.size());
+				descriptor_pool_ci.poolSizeCount = utl::cast<u32>(pool_ci.pool_sizes_count);
 				descriptor_pool_ci.pPoolSizes = pool_sizes.data();
 				descriptor_pool_ci.maxSets = maxSets;
 				descriptor_pool_ci.flags = pool_ci.flags;

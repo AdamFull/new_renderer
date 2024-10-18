@@ -243,7 +243,7 @@ FVkShaderReflectionData CVkShaderReflectionBuilder::Build()
     }
 
     for (const auto& [descriptorType, count] : descriptorUsageCounter)
-        reflectionData.descriptorPoolSizes.emplace_back(vk::DescriptorPoolSize{ descriptorType, count });
+        reflectionData.descriptor_pool_sizes[reflectionData.pool_sizes_count++] = vk::DescriptorPoolSize{ descriptorType, count };
 
     // Sort descriptors by binding.
     for (auto& [set, descriptors] : reflectionData.descriptorSetLayoutBindings)

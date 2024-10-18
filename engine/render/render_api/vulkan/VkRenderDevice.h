@@ -196,6 +196,17 @@ namespace engine
 				void FreeCommandBuffers(vk::CommandPool& command_pool, std::span<vk::CommandBuffer> command_buffers);
 				void Destroy(vk::CommandPool& handle) const;
 
+				vk::DescriptorSetLayout CreateDescriptorSetLayout2(const vk::DescriptorSetLayoutCreateInfo& create_info, const std::string& debug_name = "") const;
+				void Destroy(vk::DescriptorSetLayout& handle) const;
+
+				vk::DescriptorPool CreateDescriptorPool2(const vk::DescriptorPoolCreateInfo& create_info, const std::string& debug_name = "") const;
+				void ResetDescriptorPool2(vk::DescriptorPool& handle, vk::DescriptorPoolResetFlags flags = {}) const;
+				void Destroy(vk::DescriptorPool& handle) const;
+
+				void AllocateDescriptorSet2(const vk::DescriptorSetAllocateInfo& allocate_info, vk::DescriptorSet* descriptor_sets, const std::string& debug_name = "") const;
+				void FreeDescriptorSets2(vk::DescriptorPool& pool, vk::DescriptorSet* descriptor_sets, uint32_t descriptor_set_count) const;
+				void FreeDescriptorSets2(vk::DescriptorPool& pool, std::span<vk::DescriptorSet> descriptor_sets) const;
+
 				void Wait();
 
 				// VkDescriptorSetLayout
