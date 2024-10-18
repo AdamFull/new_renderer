@@ -213,9 +213,16 @@ namespace engine
 
 			struct FVkTranslationInfo
 			{
-				utl::vector<vk::ImageMemoryBarrier2KHR> imageTranslationInfos{};
-				utl::vector<vk::BufferMemoryBarrier2KHR> bufferTranslationInfos{};
-				utl::vector<vk::MemoryBarrier2KHR> memoryTranslationInfos{};
+				static constexpr size_t k_max_translations{ 64ull };
+
+				std::array<vk::ImageMemoryBarrier2KHR, k_max_translations> imageTranslationInfos{};
+				size_t image_tanslation_count{ 0ull };
+
+				std::array<vk::BufferMemoryBarrier2KHR, k_max_translations> bufferTranslationInfos{};
+				size_t buffer_tanslation_count{ 0ull };
+
+				std::array<vk::MemoryBarrier2KHR, k_max_translations> memoryTranslationInfos{};
+				size_t memory_tanslation_count{ 0ull };
 			};
 
 			struct FVkTextureTranslationInfo

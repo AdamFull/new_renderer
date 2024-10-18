@@ -1161,7 +1161,7 @@ void VkRenderBackend::ProcessResourceBarriers(EQueueTypeFlagBits queue, const ut
 
 		if (resource_barrier.barrierType == ERenderResourceBarrierType::eMemory)
 		{
-			auto& memory_barrier = translation_info.memoryTranslationInfos.emplace_back();
+			auto& memory_barrier = translation_info.memoryTranslationInfos[translation_info.memory_tanslation_count++];
 
 			if (resource_barrier.resource.type & ERenderResourceTypeFlagBits::eAllImage)
 			{
@@ -1189,14 +1189,14 @@ void VkRenderBackend::ProcessResourceBarriers(EQueueTypeFlagBits queue, const ut
 				else
 					texture = textures[resource_barrier.resource.handle.Get()].get();
 
-				auto& texture_barrier = translation_info.imageTranslationInfos.emplace_back();
+				auto& texture_barrier = translation_info.imageTranslationInfos[translation_info.image_tanslation_count++];
 				texture->MakeImageLayoutTranslation(texture_barrier, resource_barrier);
 			}
 			// For buffers
 			else
 			{
 				auto& buffer = buffers[resource_barrier.resource.handle.Get()];
-				auto& buffer_translation_info = translation_info.bufferTranslationInfos.emplace_back();
+				auto& buffer_translation_info = translation_info.bufferTranslationInfos[translation_info.buffer_tanslation_count++];
 				buffer->MakeTranslation(buffer_translation_info, resource_barrier);
 			}
 		}
@@ -1341,11 +1341,11 @@ void VkRenderBackend::EndCompute(EQueueTypeFlagBits queue)
 void VkRenderBackend::ProcessMemoryBarriers(CommandBuffer& command_buffer, const FVkTranslationInfo& translation_info)
 {
 	vk::DependencyInfoKHR dependency_info{};
-	dependency_info.imageMemoryBarrierCount = utl::cast<u32>(translation_info.imageTranslationInfos.size());
+	dependency_info.imageMemoryBarrierCount = utl::cast<u32>(translation_info.image_tanslation_count);
 	dependency_info.pImageMemoryBarriers = translation_info.imageTranslationInfos.data();
-	dependency_info.bufferMemoryBarrierCount = utl::cast<u32>(translation_info.bufferTranslationInfos.size());
+	dependency_info.bufferMemoryBarrierCount = utl::cast<u32>(translation_info.buffer_tanslation_count);
 	dependency_info.pBufferMemoryBarriers = translation_info.bufferTranslationInfos.data();
-	dependency_info.memoryBarrierCount = utl::cast<u32>(translation_info.memoryTranslationInfos.size());
+	dependency_info.memoryBarrierCount = utl::cast<u32>(translation_info.memory_tanslation_count);
 	dependency_info.pMemoryBarriers = translation_info.memoryTranslationInfos.data();
 	dependency_info.dependencyFlags = vk::DependencyFlagBits::eByRegion;
 
@@ -1692,7 +1692,7 @@ void VkRenderBackend::ProcessResourceBarriers()
 
 		if (texture->GetFlags() & ETextureCreateFlagBits::eStorage)
 		{
-			auto& image_translation = translation_info.imageTranslationInfos.emplace_back();
+			auto& image_translation = translation_info.imageTranslationInfos[translation_info.image_tanslation_count];
 
 			FVkTextureTranslationInfo texture_translation_info{};
 			texture_translation_info.oldLayout = vk::ImageLayout::eUndefined;
@@ -1731,7 +1731,7 @@ void VkRenderBackend::ProcessResourceUpload()
 			auto* texture = texture_upload.texture_handle;
 			auto& target_subresource = texture->GetImageView();
 
-			auto& image_translation = translation_info.imageTranslationInfos.emplace_back();
+			auto& image_translation = translation_info.imageTranslationInfos[translation_info.image_tanslation_count];
 
 			FVkTextureTranslationInfo texture_translation_info{};
 			texture_translation_info.oldLayout = vk::ImageLayout::eUndefined;
@@ -1746,7 +1746,7 @@ void VkRenderBackend::ProcessResourceUpload()
 
 		// Process layout transfers
 		ProcessMemoryBarriers(command_buffer, translation_info);
-		translation_info.imageTranslationInfos.clear();
+		translation_info.image_tanslation_count = 0ull;
 
 		// Copy buffer to image
 		for (const auto& texture_upload : texture_upload_infos)
@@ -1807,7 +1807,7 @@ void VkRenderBackend::ProcessResourceUpload()
 			auto& texture = texture_upload.texture_handle;
 			auto& target_subresource = texture->GetImageView();
 
-			auto& image_translation = translation_info.imageTranslationInfos.emplace_back();
+			auto& image_translation = translation_info.imageTranslationInfos[translation_info.image_tanslation_count++];
 
 			FVkTextureTranslationInfo texture_translation_info{};
 			texture_translation_info.oldLayout = vk::ImageLayout::eTransferDstOptimal;
@@ -1818,7 +1818,7 @@ void VkRenderBackend::ProcessResourceUpload()
 		}
 
 		ProcessMemoryBarriers(command_buffer, translation_info);
-		translation_info.imageTranslationInfos.clear();
+		translation_info.image_tanslation_count = 0ull;
 	}
 
 	// Upload buffers
@@ -2056,7 +2056,7 @@ void VkRenderBackend::BindShaderDescriptors(CommandBuffer& command_buffer, const
 void VkRenderBackend::ProcessImageLayoutTranslation(CommandBuffer& command_buffer, const vk::ImageMemoryBarrier2KHR& image_translation_info)
 {
 	FVkTranslationInfo translation_info{};
-	translation_info.imageTranslationInfos.emplace_back(image_translation_info);
+	translation_info.imageTranslationInfos[translation_info.image_tanslation_count++] = image_translation_info;
 	ProcessMemoryBarriers(command_buffer, translation_info);
 }
 
