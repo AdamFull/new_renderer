@@ -63,7 +63,6 @@ namespace engine
 				void UnmapBufferMemory(FAPIHandle buffer_id) override;
 				void FlushBuffer(FAPIHandle buffer_id, u64 size, u64 offset) override;
 				void DestroyBuffer(FAPIHandle resource_id) override;
-				void UploadBuffers() override;
 
 				void ProcessResourceBarriers(EQueueTypeFlagBits queue, const utl::vector<FResourceBarrierInfo>& barriers) override;
 
@@ -111,7 +110,6 @@ namespace engine
 				void EndDebugLabel(EQueueTypeFlagBits queue_type) override;
 			protected:
 				void ProcessResourceBarriers();
-				void ProcessResourceUpload();
 				void ProcessResourceUtilization();
 
 				FRenderApiErrorInfo CreateShaderResources(const FVkShaderResourcesInfo& resources_info, FVkShader& shader);

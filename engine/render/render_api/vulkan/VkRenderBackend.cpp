@@ -30,8 +30,6 @@ static const u32 k_max_bindless_resources{ 16384u };
 static const u64 k_max_texture_update_per_frame{ 4096ll };
 static const u64 k_max_buffer_update_per_frame{ 4096ull };
 
-//#define OLD_UPLOADER
-
 vk::Format lookup_vk_format(EApiDataFormat format)
 {
 	static const utl::hash_map<EApiDataFormat, vk::Format> lookup_table{
@@ -476,26 +474,7 @@ FAPIHandle VkRenderBackend::CreateTexture(const std::string& name, const FTextur
 	auto texture_id = CreateTexture(name, texture_ci);
 	auto& texture = render_resources->get<Texture>(texture_id.Get());
 
-#ifdef OLD_UPLOADER
-	auto builder = BufferBuilder(upload_info.upload_data.size(), 1ull, 1ull);
-	builder.SetVmaUsage(vma::MemoryUsage::eCpuOnly);
-	builder.SetUsage(vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst);
-	builder.SetSharingMode(vk::SharingMode::eConcurrent);
-
-	builder.SetDebugName(std::format("texture upload #{}", name));
-
-	auto& staging_buffer = upload_buffers.emplace_back(builder.BuildUnique(*render_device));
-
-	// Copy data to buffer
-	staging_buffer->Update(upload_info.upload_data);
-
-	auto& new_upload_info = texture_upload_infos.emplace_back();
-	new_upload_info.texture_handle = texture.get();
-	new_upload_info.upload_index = upload_buffers.size() - 1ull;
-	new_upload_info.mip_layer_offsets = upload_info.mip_layer_offsets;
-#else
 	upload_context->UpdateTexture(texture.get(), upload_info);
-#endif
 	
 	return texture_id;
 }
@@ -1139,13 +1118,6 @@ void VkRenderBackend::DestroyBuffer(FAPIHandle resource_id)
 	resource_destroy_queue.push(FAPIObjectDestroyInfo{ resource_id, EResourceFlagBits::eBuffer });
 }
 
-void VkRenderBackend::UploadBuffers()
-{
-#ifdef OLD_UPLOADER
-	ProcessResourceUpload();
-#endif
-}
-
 void VkRenderBackend::ProcessResourceBarriers(EQueueTypeFlagBits queue, const utl::vector<FResourceBarrierInfo>& barriers)
 {
 	auto& textures = render_resources->data<Texture>();
@@ -1566,9 +1538,6 @@ void VkRenderBackend::BeginFrame()
 	u32 image_index{ 0u };
 
 	ProcessResourceBarriers();
-#ifdef OLD_UPLOADER
-	ProcessResourceUpload();
-#endif
 	// TODO: sync queues here
 
 	bool surface_updated{ false };
@@ -1610,11 +1579,9 @@ void VkRenderBackend::EndFrame()
 	//render_device->WriteTimestampQuery(command_buffer, vk::PipelineStageFlagBits::eBottomOfPipe, timestamp_query);
 
 	vk::SemaphoreSubmitInfo upload_wait_semaphore{};
-#ifndef OLD_UPLOADER
 	//auto upload_avaliable = render_context->GetUploadAvaliableSemaphore();
 	//upload_wait_semaphore = upload_context->Submit(&upload_avaliable, upload_avaliable.semaphore ? 1 : 0);
 	upload_wait_semaphore = upload_context->Submit(nullptr, 0);
-#endif
 
 	render_context->EndFrame(upload_wait_semaphore);
 
@@ -1709,149 +1676,6 @@ void VkRenderBackend::ProcessResourceBarriers()
 	render_device->SubmitCommandBuffer(Handle(command_buffer));
 
 	texture_layout_change_infos.clear();
-}
-
-void VkRenderBackend::ProcessResourceUpload()
-{
-	if (texture_upload_infos.empty() && buffer_upload_infos.empty())
-		return;
-
-	auto& textures = render_resources->data<Texture>();
-
-	auto& command_buffer = command_pool->RequestCommandBuffer(vk::CommandBufferLevel::ePrimary);
-	command_buffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-
-	// Upload textures
-	{
-		// Translate all images to transfer dst stage
-		utl::vector<Texture*> generate_mip_textures{};
-		FVkTranslationInfo translation_info{};
-		for (const auto& texture_upload : texture_upload_infos)
-		{
-			auto* texture = texture_upload.texture_handle;
-			auto& target_subresource = texture->GetImageView();
-
-			auto& image_translation = translation_info.imageTranslationInfos[translation_info.image_tanslation_count];
-
-			FVkTextureTranslationInfo texture_translation_info{};
-			texture_translation_info.oldLayout = vk::ImageLayout::eUndefined;
-			texture_translation_info.newLayout = vk::ImageLayout::eTransferDstOptimal;
-			target_subresource.SetImageLayout(vk::ImageLayout::eTransferDstOptimal);
-
-			image_translation = texture->GetTranslationInfo(texture_translation_info);
-
-			if (texture->GetImage().GetMipLevelCount() > 1u && texture_upload.mip_layer_offsets.empty())
-				generate_mip_textures.emplace_back(texture);
-		}
-
-		// Process layout transfers
-		ProcessMemoryBarriers(command_buffer, translation_info);
-		translation_info.image_tanslation_count = 0ull;
-
-		// Copy buffer to image
-		for (const auto& texture_upload : texture_upload_infos)
-		{
-			auto* texture = texture_upload.texture_handle;
-			auto& staging_buffer = upload_buffers[texture_upload.upload_index];
-
-			auto aspect_mask = texture->GetImageView().GetSubresourceRange().aspectMask;
-			auto& image = texture->GetImage();
-			auto extent = image.GetExtent();
-
-			utl::vector<vk::BufferImageCopy2KHR> copy_regions{};
-			if (!texture_upload.mip_layer_offsets.empty())
-			{
-				for (u32 layer = 0u; layer < image.GetArrayLayerCount(); ++layer)
-				{
-					auto& layer_offsets = texture_upload.mip_layer_offsets[layer];
-					for (u32 mip = 0u; mip < image.GetMipLevelCount(); ++mip)
-					{
-						u64 offset = layer_offsets[mip];
-						auto& copy_region = copy_regions.emplace_back();
-						copy_region.imageSubresource.aspectMask = aspect_mask;
-						copy_region.imageSubresource.mipLevel = mip;
-						copy_region.imageSubresource.baseArrayLayer = layer;
-						copy_region.imageSubresource.layerCount = 1u;
-						copy_region.imageExtent.width = extent.width >> mip;
-						copy_region.imageExtent.height = extent.height >> mip;
-						copy_region.imageExtent.depth = extent.depth;
-						copy_region.bufferOffset = offset;
-					}
-				}
-			}
-			else
-			{
-				auto& copy_region = copy_regions.emplace_back();
-				copy_region.imageSubresource.aspectMask = aspect_mask;
-				copy_region.imageSubresource.mipLevel = 0u;
-				copy_region.imageSubresource.baseArrayLayer = 0u;
-				copy_region.imageSubresource.layerCount = texture->GetImage().GetArrayLayerCount();
-				copy_region.imageExtent.width = extent.width;
-				copy_region.imageExtent.height = extent.height;
-				copy_region.imageExtent.depth = extent.depth;
-				copy_region.bufferOffset = 0ull;
-			}
-
-			auto& target_subresource = texture->GetImageView();
-			staging_buffer->CopyTo(Handle(command_buffer), Handle(texture->GetImage()), target_subresource.GetImageLayout(), copy_regions);
-		}
-
-		for (auto& texture : generate_mip_textures)
-		{
-			texture->GenerateMipMaps(Handle(command_buffer));
-		}
-
-		// Translate images to shader read only layout
-		for (const auto& texture_upload : texture_upload_infos)
-		{
-			auto& texture = texture_upload.texture_handle;
-			auto& target_subresource = texture->GetImageView();
-
-			auto& image_translation = translation_info.imageTranslationInfos[translation_info.image_tanslation_count++];
-
-			FVkTextureTranslationInfo texture_translation_info{};
-			texture_translation_info.oldLayout = vk::ImageLayout::eTransferDstOptimal;
-			texture_translation_info.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-			target_subresource.SetImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
-
-			image_translation = texture->GetTranslationInfo(texture_translation_info);
-		}
-
-		ProcessMemoryBarriers(command_buffer, translation_info);
-		translation_info.image_tanslation_count = 0ull;
-	}
-
-	// Upload buffers
-	for(const auto& upload_info : buffer_upload_infos)
-	{
-		auto& physical = render_device->GetPhysicalDevice();
-		utl::vector<vk::BufferCopy2KHR> copy_regions(upload_info.copy_regions.size());
-
-		auto* dst_buffer = upload_info.buffer_handle;
-		
-		for (int32_t idx = 0; idx < copy_regions.size(); ++idx)
-		{
-			auto& region_info = upload_info.copy_regions[idx];
-
-			auto& copy_region = copy_regions[idx];
-			copy_region.srcOffset = region_info.srcOffset;
-			copy_region.dstOffset = region_info.dstOffset;
-			copy_region.size = region_info.size;
-		}
-
-		auto& staging_buffer = upload_buffers[upload_info.upload_index];
-		staging_buffer->CopyTo(Handle(command_buffer), *dst_buffer, copy_regions);
-	}
-
-	command_buffer.End();
-
-	render_device->SubmitCommandBuffer(Handle(command_buffer));
-
-	// destroy staging buffers
-	upload_buffers.clear();
-
-	texture_upload_infos.clear();
-	buffer_upload_infos.clear();
 }
 
 void VkRenderBackend::ProcessResourceUtilization()

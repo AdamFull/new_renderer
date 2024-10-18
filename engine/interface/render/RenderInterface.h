@@ -353,7 +353,6 @@ namespace engine
 			virtual void UnmapBufferMemory(FAPIHandle buffer_id) = 0;
 			virtual void FlushBuffer(FAPIHandle buffer_id, u64 size, u64 offset) = 0;
 			virtual void DestroyBuffer(FAPIHandle resource_id) = 0;
-			virtual void UploadBuffers() = 0;
 
 			virtual void ProcessResourceBarriers(EQueueTypeFlagBits queue, const utl::vector<FResourceBarrierInfo>& barriers) = 0;
 
