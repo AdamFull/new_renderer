@@ -113,7 +113,6 @@ namespace engine
 				void InsertDebugLabel(const std::string& label, EQueueTypeFlagBits queue_type, u32 color = 0xffffffff) override;
 				void EndDebugLabel(EQueueTypeFlagBits queue_type) override;
 			protected:
-				void ProcessResourceBarriers();
 				void ProcessResourceUtilization();
 
 				void ProcessMemoryBarriers(CommandBuffer& command_buffer, const FVkTranslationInfo& translation_info);
@@ -124,10 +123,6 @@ namespace engine
 			private:
 				std::unique_ptr<RenderDevice> render_device{};
 				std::unique_ptr<vk_resource_container_t> render_resources;
-
-				utl::vector<VkTextureUploadInfo> texture_upload_infos{};
-				utl::vector<VkBufferUploadInfo> buffer_upload_infos{};
-				utl::vector<FVkTextureLayoutChangeInfo> texture_layout_change_infos{};
 
 				utl::vector<std::unique_ptr<Buffer>> upload_buffers;
 

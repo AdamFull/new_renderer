@@ -101,7 +101,7 @@ namespace engine
 
 				void DivideByLocalSizes(vk::DispatchIndirectCommand& command, uint64_t subgroup_index);
 
-				void UpdateUniform(uint64_t reflection_name, std::span<const char> data, uint32_t frame_index);
+				void UpdateUniform(RenderContext& render_context, uint64_t reflection_name, std::span<const char> data);
 				void UpdateTextureBinding(uint64_t reflection_name, Texture& texture, Sampler& sampler, uint32_t mip_level);
 				void UpdateBufferBinding(uint64_t reflection_name, Buffer& buffer);
 

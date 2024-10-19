@@ -576,7 +576,7 @@ FShaderReflectionData VkRenderBackend::GetShaderReflection(FAPIHandle shader_vie
 void VkRenderBackend::UpdateUniform(FAPIHandle shader_id, uint64_t reflection_name, std::span<const char> data)
 {
 	auto& shader = render_resources->get<Shader>(shader_id.Get());
-	shader->UpdateUniform(reflection_name, data, render_context->GetCurrentFrameIndex());
+	shader->UpdateUniform(*render_context, reflection_name, data);
 }
 
 void VkRenderBackend::BindTexture(FAPIHandle shader_id, uint64_t reflection_name, FAPIHandle texture_id, uint32_t mip_level)
@@ -1158,8 +1158,6 @@ const std::unique_ptr<RenderDevice>& VkRenderBackend::getDevice() const
 void VkRenderBackend::BeginFrame()
 {
 	u32 image_index{ 0u };
-
-	ProcessResourceBarriers();
 	// TODO: sync queues here
 
 	bool surface_updated{ false };
@@ -1260,44 +1258,6 @@ void VkRenderBackend::InsertDebugLabel(const std::string& label, EQueueTypeFlagB
 void VkRenderBackend::EndDebugLabel(EQueueTypeFlagBits queue_type)
 {
 	render_context->GetCurrentCommandBuffer().EndDebugLabel();
-}
-
-void VkRenderBackend::ProcessResourceBarriers()
-{
-	// TODO: add mip level and array layer support
-	if (texture_layout_change_infos.empty())
-		return;
-
-	auto& textures = render_resources->data<Texture>();
-
-	auto& command_buffer = command_pool->RequestCommandBuffer(vk::CommandBufferLevel::ePrimary);
-	command_buffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-
-	FVkTranslationInfo translation_info{};
-	for (const auto& layout_info : texture_layout_change_infos)
-	{
-		auto& texture = textures[layout_info.textureId];
-		auto& target_subresource = texture->GetImageView();
-
-		if (texture->GetFlags() & ETextureCreateFlagBits::eStorage)
-		{
-			auto& image_translation = translation_info.imageTranslationInfos[translation_info.image_tanslation_count];
-
-			FVkTextureTranslationInfo texture_translation_info{};
-			texture_translation_info.oldLayout = vk::ImageLayout::eUndefined;
-			texture_translation_info.newLayout = vk::ImageLayout::eGeneral;
-			target_subresource.SetImageLayout(vk::ImageLayout::eGeneral);
-
-			image_translation = texture->GetTranslationInfo(texture_translation_info);
-		}
-	}
-
-	ProcessMemoryBarriers(command_buffer, translation_info);
-
-	command_buffer.End();
-	render_device->SubmitCommandBuffer(Handle(command_buffer));
-
-	texture_layout_change_infos.clear();
 }
 
 void VkRenderBackend::ProcessResourceUtilization()

@@ -57,94 +57,8 @@ namespace engine
 			// ---------------------------------------------------------------------------------
 			// ====================================| PIPELINE |=================================
 			// ---------------------------------------------------------------------------------
-			struct FVkShaderModuleCreateInfo
-			{
-				std::span<uint32_t> shader_code{};
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				std::string name{};
-#endif
-			};
-
-			struct FVkPipelineLayoutCreateInfo
-			{
-				std::array<vk::DescriptorSetLayout, k_max_descriptor_sets> descriptor_set_layouts{};
-				size_t descriptor_set_layout_count{ 0ull };
-
-				utl::vector<vk::PushConstantRange> pushConstantRanges{};
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				std::string name{};
-#endif
-			};
-
-			struct FVkGraphicsPipelineCreateInfo
-			{
-				vk::PipelineLayout layout{};
-
-				vk::PrimitiveTopology primitiveTopology{};
-				vk::CullModeFlags cullMode{};
-				vk::FrontFace frontFace{};
-				vk::SampleCountFlagBits sampleCount{ vk::SampleCountFlagBits::e1 };
-				u32 patchControlPoints{ 0u };
-
-				bool enableAlphaBlend{ false };
-
-				utl::vector<vk::Format> colorAttachmentFormats{};
-				vk::Format depthAttachmentFormat{ vk::Format::eUndefined };
-				vk::Format stencilAttachmentFormat{ vk::Format::eUndefined };
-
-				vk::CompareOp depthCompareOp{ vk::CompareOp::eLessOrEqual };
-
-				utl::vector<vk::VertexInputBindingDescription> vertexBindingDescriptions{};
-				utl::vector<vk::VertexInputAttributeDescription> vertexAttributeDescriptions{};
-
-				utl::vector<vk::PipelineShaderStageCreateInfo> shaderStages{};
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				std::string name{};
-#endif
-			};
-
-			struct FVkComputePipelineCreateInfo
-			{
-				vk::PipelineLayout layout{};
-				vk::PipelineShaderStageCreateInfo shaderStage{};
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				std::string name{};
-#endif
-			};
-
-			struct FVkRayTracingPipelineCreateInfo
-			{
-				vk::PipelineLayout layout{};
-				vk::PipelineShaderStageCreateInfo shaderStage{};
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				std::string name{};
-#endif
-			};
 
 			// HIGH LEVEL OBJECTS
-			struct FVkShaderResourcesInfo
-			{
-				u32 usageCount{ 1u };
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				std::string name{};
-#endif
-			};
-
-			struct VkTextureUploadInfo
-			{
-				Texture* texture_handle{ nullptr };
-				uint64_t upload_index{ ~0ull };
-				std::vector<std::vector<uint64_t>> mip_layer_offsets{};
-			};
-
-			struct VkBufferUploadInfo
-			{
-				Buffer* buffer_handle{ nullptr };
-				uint64_t upload_index{ ~0ull };
-				uint64_t upload_size{ 0ull };
-				std::vector<FBufferUploadRegion> copy_regions{};
-			};
-
 			struct FVkTranslationInfo
 			{
 				static constexpr size_t k_max_translations{ 64ull };
@@ -165,11 +79,6 @@ namespace engine
 				vk::ImageLayout newLayout{};
 				u32 baseArrayLayer{ 0u };
 				u32 baseMipLevel{ 0u };
-			};
-
-			struct FVkTextureLayoutChangeInfo
-			{
-				u64 textureId{ INVALID_HANDLE };
 			};
 
 			struct FVkTimestampQuery

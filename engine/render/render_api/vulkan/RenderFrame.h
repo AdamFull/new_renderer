@@ -1,6 +1,7 @@
 #pragma once
 
 #include <engine/render/render_api/vulkan/VkResourceStructures.h>
+#include <engine/render/render_api/vulkan/UniformPool.h>
 
 namespace engine
 {
@@ -16,6 +17,7 @@ namespace engine
 			class DescriptorAllocator;
 			class DescriptorSet;
 			class DescriptorSetLayout;
+			class UniformPool;
 
 			enum class DescriptorManagementStrategy
 			{
@@ -41,6 +43,8 @@ namespace engine
 
 				DescriptorSet& RequestDescriptorSet(DescriptorSetLayout& layout);
 
+				UniformBlockDesc RequestUniformBlock(vk::DeviceSize requested_size);
+
 				void ResetFence();
 				void WaitFence();
 
@@ -58,6 +62,8 @@ namespace engine
 
 				std::unique_ptr<DescriptorAllocator> descriptor_allocator;
 				std::vector<std::unique_ptr<DescriptorSet>> allocated_sets{};
+
+				std::unique_ptr<UniformPool> uniform_pool{};
 
 				DescriptorManagementStrategy descriptor_management_strategy{ DescriptorManagementStrategy::StoreInCache };
 

@@ -4,6 +4,7 @@
 #include <engine/render/render_api/vulkan/CommandPool.h>
 #include <engine/render/render_api/vulkan/ImageView.h>
 #include <engine/render/render_api/vulkan/Texture.h>
+#include <engine/render/render_api/vulkan/Buffer.h>
 #include <engine/render/render_api/vulkan/DescriptorPool.h>
 
 namespace engine
@@ -21,6 +22,8 @@ namespace engine
 				command_pool = command_pool_builder.BuildUnique(render_device);
 
 				descriptor_allocator = std::make_unique<DescriptorAllocator>(render_device);
+
+				uniform_pool = std::make_unique<UniformPool>(render_device, 16384ull);
 
 				vk::SemaphoreCreateInfo semaphore_ci{};
 				image_avaliable = render_device.CreateSemaphore(semaphore_ci);
@@ -71,6 +74,11 @@ namespace engine
 				return *new_descriptor_set;
 			}
 
+			UniformBlockDesc RenderFrame::RequestUniformBlock(vk::DeviceSize requested_size)
+			{
+				return uniform_pool->RequestBlock(requested_size);
+			}
+
 			void RenderFrame::ResetFence()
 			{
 				render_device.ResetFences(&frame_fence, 1u);
@@ -108,6 +116,8 @@ namespace engine
 
 				backbuffer->GetImageView().SetImageLayout(vk::ImageLayout::eUndefined);
 				command_pool->Reset();
+
+				uniform_pool->Reset();
 
 				allocated_sets.clear();
 				descriptor_allocator->Reset();
