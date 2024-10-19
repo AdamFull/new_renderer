@@ -27,6 +27,8 @@ namespace engine
 				render_finished = render_device.CreateSemaphore(semaphore_ci);
 				upload_avaliable = render_device.CreateSemaphore(semaphore_ci);
 
+				allocated_sets.reserve(100ull);
+
 				vk::FenceCreateInfo fence_ci{};
 				fence_ci.flags = vk::FenceCreateFlagBits::eSignaled;
 
@@ -61,6 +63,12 @@ namespace engine
 			CommandBuffer& RenderFrame::RequestCommandBuffer(vk::CommandBufferLevel level)
 			{
 				return command_pool->RequestCommandBuffer(level);
+			}
+
+			DescriptorSet& RenderFrame::RequestDescriptorSet(DescriptorSetLayout& layout)
+			{
+				auto& new_descriptor_set = allocated_sets.emplace_back(descriptor_allocator->Allocate(layout));
+				return *new_descriptor_set;
 			}
 
 			void RenderFrame::ResetFence()
@@ -100,6 +108,9 @@ namespace engine
 
 				backbuffer->GetImageView().SetImageLayout(vk::ImageLayout::eUndefined);
 				command_pool->Reset();
+
+				allocated_sets.clear();
+				descriptor_allocator->Reset();
 			}
 		}
 	}

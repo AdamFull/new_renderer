@@ -54,11 +54,6 @@ namespace engine
 				utl::vector<char> specializationDataBuffer{};
 
 				utl::hash_map<uint32_t, utl::vector<vk::DescriptorSetLayoutBinding>> descriptorSetLayoutBindings;
-
-				static constexpr size_t k_max_pool_sizes{ 20ull };
-				std::array<vk::DescriptorPoolSize, k_max_pool_sizes> descriptor_pool_sizes;
-				size_t pool_sizes_count{ 0ull };
-
 				utl::hash_map<vk::ShaderStageFlagBits, FVkSpecializationConstantData> specializationConstantStages{};
 			};
 

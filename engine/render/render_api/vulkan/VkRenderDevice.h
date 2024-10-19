@@ -209,18 +209,6 @@ namespace engine
 
 				void Wait();
 
-				// VkDescriptorSetLayout
-				FRenderApiErrorInfo CreateDescriptorSetLayout(const FVkDescriptorSetLayoutCreateInfo& layout_ci, vk::DescriptorSetLayout& descriptor_set_layout);
-				void DestroyDescriptorSetLayout(vk::DescriptorSetLayout& descriptor_set_layout);
-
-				FRenderApiErrorInfo CreateDescriptorPool(const FVkDescriptorPoolCreateInfo& pool_ci, FVkDescriptorPool& descriptor_pool);
-				FRenderApiErrorInfo GrowDescriptorPool(const FVkDescriptorPoolCreateInfo& pool_ci, FVkDescriptorPool& descriptor_pool);
-				void ResetDescriptorPool(FVkDescriptorPool& descriptor_pool);
-				void DestroyDescriptorPool(FVkDescriptorPool& descriptor_pool);
-
-				FRenderApiErrorInfo CreateDescriptorSet(const FVkDescriptorSetCreateInfo& set_ci, FVkDescriptorSet& descriptor_set);
-				void DestroyDescriptorSet(const FVkDescriptorPool& descriptor_pool, FVkDescriptorSet& descriptor_set);
-
 				// VkShaderModule
 				FRenderApiErrorInfo CreateShaderModule(const FVkShaderModuleCreateInfo& shader_module_ci, vk::ShaderModule& shader_module);
 				void DestroyShaderModule(vk::ShaderModule& shader_module);

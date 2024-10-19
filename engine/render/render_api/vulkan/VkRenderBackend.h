@@ -145,9 +145,6 @@ namespace engine
 				std::unique_ptr<RenderContext> render_context;
 				std::unique_ptr<UploadContext> upload_context;
 
-				FVkDescriptorPool descriptorPool{};
-				utl::hash_map<u64, FVkDescriptorSet> descriptorSets{};
-
 				FRenderFrameStats render_stats{};
 				utl::hash_map<EQueueTypeFlagBits, u32> zone_entries{};
 				FVkTimestampQuery timestamp_query{};

@@ -4,6 +4,7 @@
 #include <engine/render/render_api/vulkan/Swapchain.h>
 #include <engine/render/render_api/vulkan/CommandPool.h>
 #include <engine/render/render_api/vulkan/VkRenderDevice.h>
+#include <engine/render/render_api/vulkan/DescriptorPool.h>
 
 #include <engine/runtime/Window.h>
 

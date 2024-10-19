@@ -20,6 +20,8 @@ namespace engine
 			class DescriptorSetLayout;
 			class DescriptorSet;
 
+			constexpr size_t k_max_descriptor_sets{ 8ull };
+
 			struct FRenderApiErrorInfo
 			{
 				bool fault{ false };
@@ -38,53 +40,6 @@ namespace engine
 			// =================================================================================
 			// ==================================Object Handles=================================
 			// =================================================================================
-
-			struct FVkDescriptorSetLayoutCreateInfo
-			{
-				utl::vector<vk::DescriptorSetLayoutBinding> layoutBindings{};
-				vk::DescriptorSetLayoutCreateFlags flags{};
-				void* next{ nullptr };
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				std::string name{};
-#endif
-			};
-
-			struct FVkDescriptorPool
-			{
-				vk::DescriptorPool handle{};
-			};
-
-			struct FVkDescriptorPoolCreateInfo
-			{
-				static constexpr size_t k_max_pool_sizes{ 20ull };
-				std::array<vk::DescriptorPoolSize, k_max_pool_sizes> pool_sizes{};
-				size_t pool_sizes_count{ 0ull };
-
-				u32 usageCount{ 1u };
-				vk::DescriptorPoolCreateFlags flags{ vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet };
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				std::string name{};
-#endif
-			};
-
-			struct FVkDescriptorSet
-			{
-				// Per frame descriptor sets
-				static constexpr size_t k_max_descriptor_sets{ 100ull };
-				std::array<vk::DescriptorSet, k_max_descriptor_sets> handles{};
-				size_t descriptor_count{ 0ull };
-			};
-
-			struct FVkDescriptorSetCreateInfo
-			{
-				vk::DescriptorPool pool{};
-				vk::DescriptorSetLayout layout{};
-				u32 descriptorCount{ 0u };
-				void* next{ nullptr };
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				std::string name{};
-#endif
-			};
 
 			struct FVkGetCommandBufferInfo
 			{
@@ -112,7 +67,9 @@ namespace engine
 
 			struct FVkPipelineLayoutCreateInfo
 			{
-				utl::vector<vk::DescriptorSetLayout> descriptorSetLayouts{};
+				std::array<vk::DescriptorSetLayout, k_max_descriptor_sets> descriptor_set_layouts{};
+				size_t descriptor_set_layout_count{ 0ull };
+
 				utl::vector<vk::PushConstantRange> pushConstantRanges{};
 #ifndef BUILD_WITHOUT_DEBUGGIND
 				std::string name{};
@@ -178,10 +135,10 @@ namespace engine
 				size_t shader_module_count{ 0ull };
 
 				vk::PipelineLayout layout{};
-				utl::hash_map<u32, vk::DescriptorSetLayout> descriptorSetLayouts{};
-				utl::hash_map<u32, FVkDescriptorSet> descriptorSets{};
+
+				std::array<std::unique_ptr<DescriptorSetLayout>, k_max_descriptor_sets> descriptor_set_layouts{};
+				std::array<vk::DescriptorSet, k_max_descriptor_sets> descriptor_sets{};
 				utl::hash_map<u32, u32> descriptorUsage{};
-				FVkDescriptorPool descriptorPool{};
 				utl::vector<vk::PushConstantRange> pushConstantRanges{};
 
 				utl::hash_map<u64, u64> uniformBuffers{};

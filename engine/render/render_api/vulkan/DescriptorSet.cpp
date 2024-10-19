@@ -23,7 +23,7 @@ namespace engine
 
 			DescriptorSet::~DescriptorSet()
 			{
-				descriptor_pool.Free(*this);
+				//descriptor_pool.Free(*this);
 			}
 		}
 	}

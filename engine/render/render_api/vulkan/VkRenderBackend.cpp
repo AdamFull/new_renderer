@@ -806,6 +806,17 @@ void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_
 	u64 buffer_count{ 0ull };
 	u64 writes_count{ 0ull };
 
+	// Clear all old descriptor sets
+	for (int32_t i = 0; i < k_max_descriptor_sets; ++i)
+	{
+		shader->descriptor_sets[i] = nullptr;
+	}
+
+	// Set global descriptor set
+	shader->descriptor_sets[0] = global_descriptor.descriptor_sets[render_context->GetCurrentFrameIndex()]->GetHandle();
+
+	auto& current_frame = render_context->GetCurrentFrame();
+
 	// TODO: add something like check sum to check changed data in buffers or not
 	if (flags & EShaderResourcesUpdateFlagBits::eUniformBlocks)
 	{
@@ -831,7 +842,17 @@ void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_
 			buffer_descriptor.offset = descriptor_index * buffer_element_size;
 			buffer_count++;
 
-			auto& current_descriptor_set = shader->descriptorSets[uniform_block.set].handles[descriptor_index];
+			vk::DescriptorSet current_descriptor_set{ nullptr };
+			if (shader->descriptor_sets[uniform_block.set])
+			{
+				current_descriptor_set = shader->descriptor_sets[uniform_block.set];
+			}
+			else
+			{
+				auto& new_descriptor_set = current_frame.RequestDescriptorSet(*shader->descriptor_set_layouts[uniform_block.set]);
+				shader->descriptor_sets[uniform_block.set] = new_descriptor_set.GetHandle();
+				current_descriptor_set = new_descriptor_set.GetHandle();
+			}
 
 			auto& write_descriptor_set = write_descriptor_sets[writes_count];
 			write_descriptor_set.descriptorType = uniform_block.descriptorType;
@@ -869,7 +890,18 @@ void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_
 			buffer_count++;
 
 			auto descriptor_index = shader->descriptorUsage[uniform_block.set];
-			auto& current_descriptor_set = shader->descriptorSets[uniform_block.set].handles[descriptor_index];
+
+			vk::DescriptorSet current_descriptor_set{ nullptr };
+			if (shader->descriptor_sets[uniform_block.set])
+			{
+				current_descriptor_set = shader->descriptor_sets[uniform_block.set];
+			}
+			else
+			{
+				auto& new_descriptor_set = current_frame.RequestDescriptorSet(*shader->descriptor_set_layouts[uniform_block.set]);
+				shader->descriptor_sets[uniform_block.set] = new_descriptor_set.GetHandle();
+				current_descriptor_set = new_descriptor_set.GetHandle();
+			}
 
 			auto& write_descriptor_set = write_descriptor_sets[writes_count];
 			write_descriptor_set.descriptorType = uniform_block.descriptorType;
@@ -903,7 +935,17 @@ void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_
 			texture_count++;
 
 			auto descriptor_index = shader->descriptorUsage[uniform.set];
-			auto& current_descriptor_set = shader->descriptorSets[uniform.set].handles[descriptor_index];
+			vk::DescriptorSet current_descriptor_set{ nullptr };
+			if (shader->descriptor_sets[uniform.set])
+			{
+				current_descriptor_set = shader->descriptor_sets[uniform.set];
+			}
+			else
+			{
+				auto& new_descriptor_set = current_frame.RequestDescriptorSet(*shader->descriptor_set_layouts[uniform.set]);
+				shader->descriptor_sets[uniform.set] = new_descriptor_set.GetHandle();
+				current_descriptor_set = new_descriptor_set.GetHandle();
+			}
 
 			auto& write_descriptor_set = write_descriptor_sets[writes_count];
 			write_descriptor_set.descriptorType = uniform.descriptorType;
@@ -1686,39 +1728,16 @@ FRenderApiErrorInfo VkRenderBackend::CreateShaderResources(const FVkShaderResour
 	// Create descriptor set layouts
 	for (const auto& [set, layout_bindings] : reflection->descriptorSetLayoutBindings)
 	{
-		FVkDescriptorSetLayoutCreateInfo descriptor_set_layout_ci{};
-#ifndef BUILD_WITHOUT_DEBUGGIND
-		descriptor_set_layout_ci.name = std::format("{}: set #{}", resources_info.name, set);
-#endif
-		descriptor_set_layout_ci.layoutBindings = layout_bindings; // TODO: may be send pointer to vector here?
+		auto builder = DescriptorSetLayoutBuilder();
+		builder.SetDebugName(std::format("{}: set #{}", resources_info.name, set));
 
-		auto& descriptor_set_Layout = shader.descriptorSetLayouts[set];
-		RETURN_WHEN_FAULT(render_device->CreateDescriptorSetLayout(descriptor_set_layout_ci, descriptor_set_Layout));
-	}
+		// TODO: Do it in reflecton data
+		for (const auto& binding : layout_bindings)
+		{
+			builder.AddLayoutBinding(binding);
+		}
 
-	// Create descriptor pool
-	FVkDescriptorPoolCreateInfo pool_ci{};
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	pool_ci.name = resources_info.name;
-#endif
-	pool_ci.pool_sizes = reflection->descriptor_pool_sizes;
-	pool_ci.pool_sizes_count = reflection->pool_sizes_count;
-	pool_ci.usageCount = resources_info.usageCount * render_context->GetSwapchain().GetImageCount();
-	RETURN_WHEN_FAULT(render_device->CreateDescriptorPool(pool_ci, shader.descriptorPool));
-
-	// Create descrioptor sets for each shader usage
-	for (const auto& [set, layout] : shader.descriptorSetLayouts)
-	{
-		FVkDescriptorSetCreateInfo descriptor_set_ci{};
-#ifndef BUILD_WITHOUT_DEBUGGIND
-		descriptor_set_ci.name = std::format("{}: set #{}", resources_info.name, set);
-#endif
-		descriptor_set_ci.pool = shader.descriptorPool.handle;
-		descriptor_set_ci.layout = layout;
-		descriptor_set_ci.descriptorCount = shader.maximumDescriptorSlots;
-
-		auto& descriptor_set = shader.descriptorSets[set];
-		RETURN_WHEN_FAULT(render_device->CreateDescriptorSet(descriptor_set_ci, descriptor_set));
+		shader.descriptor_set_layouts[set] = builder.BuildUnique(*render_device);
 	}
 
 	// Minimal buffer offset
@@ -1763,13 +1782,17 @@ FRenderApiErrorInfo VkRenderBackend::CreateShaderResources(const FVkShaderResour
 #endif
 
 	// NOTE: adding global descriptor set layout
-	layout_ci.descriptorSetLayouts.emplace_back(Handle(*global_descriptor.descriptor_set_layout));
+	layout_ci.descriptor_set_layouts[0] = global_descriptor.descriptor_set_layout->GetHandle();
+	++layout_ci.descriptor_set_layout_count;
 
 	// Send descriptor set layouts to Create info
-	for (u64 idx = 1ull; idx < shader.descriptorSetLayouts.size() + 1ull; ++idx)
+	for (int32_t idx = 1; idx < shader.descriptor_set_layouts.size(); ++idx)
 	{
-		if(shader.descriptorSetLayouts.count(idx))
-			layout_ci.descriptorSetLayouts.emplace_back(shader.descriptorSetLayouts[idx]);
+		if (shader.descriptor_set_layouts[idx])
+		{
+			// I think that should be idx here, but it can cause errors when some layout is not exists
+			layout_ci.descriptor_set_layouts[layout_ci.descriptor_set_layout_count++] = shader.descriptor_set_layouts[idx]->GetHandle();
+		}
 	}
 	//for (const auto& [set, descriptor_set_layout] : shader.descriptorSetLayouts)
 	//	layout_ci.descriptorSetLayouts.emplace_back(descriptor_set_layout);
@@ -1797,9 +1820,6 @@ void VkRenderBackend::DestroyShader(FVkShader& shader)
 	for (auto& shader_module : shader.shaderModules)
 		render_device->DestroyShaderModule(shader_module);
 
-	for (auto& [set, descriptor_set] : shader.descriptorSets)
-		render_device->DestroyDescriptorSet(shader.descriptorPool, descriptor_set);
-
 	for (auto& [id, buffer_id] : shader.uniformBuffers)
 	{
 		auto& buffer = render_resources->get<Buffer>(buffer_id);
@@ -1807,42 +1827,34 @@ void VkRenderBackend::DestroyShader(FVkShader& shader)
 		render_resources->remove<Buffer>(buffer_id);
 	}
 
-	render_device->DestroyDescriptorPool(shader.descriptorPool);
-
 	render_device->DestroyPipelineLayout(shader.layout);
-
-	for (auto& [set, descriptor_set_layout] : shader.descriptorSetLayouts)
-		render_device->DestroyDescriptorSetLayout(descriptor_set_layout);
 
 	shader.isAlive = false;
 }
 
 void VkRenderBackend::BindShaderDescriptors(CommandBuffer& command_buffer, const FVkShader& shader)
 {
-	utl::vector<vk::DescriptorSet> bindDescriptorSets{};
+	std::array<vk::DescriptorSet, k_max_descriptor_sets> bind_descriptor_sets{};
+	size_t descriptor_set_count{ 1ull };
 
 	// NOTE: bind global descriptor set
-	bindDescriptorSets.emplace_back(Handle(*global_descriptor.descriptor_sets[render_context->GetCurrentFrameIndex()]));
+	bind_descriptor_sets[0] = global_descriptor.descriptor_sets[render_context->GetCurrentFrameIndex()]->GetHandle();
 
+	// TODO: I think i can separate bindings by empty sets here. If some set is empty, i have to save last index, bind sets and after that continue bind from index.
 	// NOTE: shader.descriptorUsage contains next index of descriptor set to use. 
 	// Here i collecting all shader descriptor sets, that was changed in past
 	for (auto& [set, usage_index] : shader.descriptorUsage)
 	{
 		auto actual_descriptor_usage = usage_index == 0u ? shader.maximumDescriptorSlots - 1u : usage_index - 1u;
-		auto found_descriptor_sets = shader.descriptorSets.find(set);
-		if (found_descriptor_sets != shader.descriptorSets.end())
+		if (shader.descriptor_sets[set])
 		{
-			auto& descriptor_set = found_descriptor_sets->second;
-			auto& target_descriptor_set = descriptor_set.handles[actual_descriptor_usage];
-			bindDescriptorSets.emplace_back(target_descriptor_set);
+			bind_descriptor_sets[set] = shader.descriptor_sets[set];
+			++descriptor_set_count;
 		}
 	}
 
 	// TODO: determine the lowest descriptor index and start binding from lowest one (for example from 1)
-	if (!bindDescriptorSets.empty())
-	{
-		Handle(command_buffer).bindDescriptorSets(shader.bindPoint, shader.layout, 0, utl::cast<u32>(bindDescriptorSets.size()), bindDescriptorSets.data(), 0u, nullptr);
-	}
+	Handle(command_buffer).bindDescriptorSets(shader.bindPoint, shader.layout, 0, utl::cast<u32>(descriptor_set_count), bind_descriptor_sets.data(), 0u, nullptr);
 }
 
 void VkRenderBackend::ProcessImageLayoutTranslation(CommandBuffer& command_buffer, const vk::ImageMemoryBarrier2KHR& image_translation_info)

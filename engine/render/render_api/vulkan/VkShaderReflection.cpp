@@ -216,8 +216,6 @@ void CVkShaderReflectionBuilder::AddShaderStage(vk::ShaderStageFlagBits shaderSt
 
 FVkShaderReflectionData CVkShaderReflectionBuilder::Build()
 {
-    utl::hash_map<vk::DescriptorType, u32> descriptorUsageCounter{};
-
     for (const auto& [name, block] : reflectionData.uniformBlocks)
     {
         vk::DescriptorSetLayoutBinding descriptor_binding{};
@@ -227,7 +225,6 @@ FVkShaderReflectionData CVkShaderReflectionBuilder::Build()
         descriptor_binding.stageFlags = block.stageFlags;
 
         reflectionData.descriptorSetLayoutBindings[block.set].emplace_back(descriptor_binding);
-        descriptorUsageCounter[block.descriptorType]++;
     }
 
     for (const auto& [name, uniform] : reflectionData.uniforms)
@@ -239,11 +236,10 @@ FVkShaderReflectionData CVkShaderReflectionBuilder::Build()
         descriptor_binding.stageFlags = uniform.stageFlags;
 
         reflectionData.descriptorSetLayoutBindings[uniform.set].emplace_back(descriptor_binding);
-        descriptorUsageCounter[uniform.descriptorType]++;
     }
 
-    for (const auto& [descriptorType, count] : descriptorUsageCounter)
-        reflectionData.descriptor_pool_sizes[reflectionData.pool_sizes_count++] = vk::DescriptorPoolSize{ descriptorType, count };
+    //for (const auto& [descriptorType, count] : descriptorUsageCounter)
+    //    reflectionData.descriptor_pool_sizes[reflectionData.pool_sizes_count++] = vk::DescriptorPoolSize{ descriptorType, count };
 
     // Sort descriptors by binding.
     for (auto& [set, descriptors] : reflectionData.descriptorSetLayoutBindings)

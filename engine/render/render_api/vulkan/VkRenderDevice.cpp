@@ -529,96 +529,6 @@ namespace engine
 				Handle(*device).waitIdle();
 			}
 
-			FRenderApiErrorInfo RenderDevice::CreateDescriptorSetLayout(const FVkDescriptorSetLayoutCreateInfo& layout_ci, vk::DescriptorSetLayout& descriptor_set_layout)
-			{
-				vk::DescriptorSetLayoutCreateInfo descriptor_set_layout_ci{};
-				descriptor_set_layout_ci.bindingCount = utl::cast<u32>(layout_ci.layoutBindings.size());
-				descriptor_set_layout_ci.pBindings = layout_ci.layoutBindings.data();
-				descriptor_set_layout_ci.flags = layout_ci.flags;
-				descriptor_set_layout_ci.pNext = layout_ci.next;
-
-				vk::Result res = Handle(*device).createDescriptorSetLayout(&descriptor_set_layout_ci, allocation_callbacks, &descriptor_set_layout);
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				debug_utils->SetDebugName(descriptor_set_layout, layout_ci.name);
-#endif
-				return make_api_error(descriptor_set_layout.objectType, res, "Failed to Create");
-			}
-
-			void RenderDevice::DestroyDescriptorSetLayout(vk::DescriptorSetLayout& descriptor_set_layout)
-			{
-				Handle(*device).destroyDescriptorSetLayout(descriptor_set_layout, allocation_callbacks);
-			}
-
-			FRenderApiErrorInfo RenderDevice::CreateDescriptorPool(const FVkDescriptorPoolCreateInfo& pool_ci, FVkDescriptorPool& descriptor_pool)
-			{
-				std::array<vk::DescriptorPoolSize, FVkDescriptorPoolCreateInfo::k_max_pool_sizes> pool_sizes{ pool_ci.pool_sizes };
-
-				// Calculate total descriptor set count in descriptor pool and update descriptor sizes
-				u32 maxSets{ 1u };
-				for (int32_t i = 0; i < pool_ci.pool_sizes_count; ++i)
-				{
-					auto& pool_size = pool_sizes[i];
-					pool_size.descriptorCount *= pool_ci.usageCount;
-					maxSets += pool_size.descriptorCount;
-				}
-
-				vk::DescriptorPoolCreateInfo descriptor_pool_ci{};
-				descriptor_pool_ci.poolSizeCount = utl::cast<u32>(pool_ci.pool_sizes_count);
-				descriptor_pool_ci.pPoolSizes = pool_sizes.data();
-				descriptor_pool_ci.maxSets = maxSets;
-				descriptor_pool_ci.flags = pool_ci.flags;
-
-				vk::Result res = Handle(*device).createDescriptorPool(&descriptor_pool_ci, allocation_callbacks, &descriptor_pool.handle);
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				debug_utils->SetDebugName(descriptor_pool.handle, pool_ci.name);
-#endif
-
-				return make_api_error(descriptor_pool.handle.objectType, res, "Failed to Create");
-			}
-
-			FRenderApiErrorInfo RenderDevice::GrowDescriptorPool(const FVkDescriptorPoolCreateInfo& pool_ci, FVkDescriptorPool& descriptor_pool)
-			{
-				DestroyDescriptorPool(descriptor_pool);
-				return CreateDescriptorPool(pool_ci, descriptor_pool);
-			}
-
-			void RenderDevice::ResetDescriptorPool(FVkDescriptorPool& descriptor_pool)
-			{
-				Handle(*device).resetDescriptorPool(descriptor_pool.handle);
-			}
-
-			void RenderDevice::DestroyDescriptorPool(FVkDescriptorPool& descriptor_pool)
-			{
-				Handle(*device).destroyDescriptorPool(descriptor_pool.handle, allocation_callbacks);
-			}
-
-			FRenderApiErrorInfo RenderDevice::CreateDescriptorSet(const FVkDescriptorSetCreateInfo& set_ci, FVkDescriptorSet& descriptor_set)
-			{
-				utl::vector<vk::DescriptorSetLayout> per_frame_layout(set_ci.descriptorCount, set_ci.layout);
-
-				vk::DescriptorSetAllocateInfo descriptor_ai{};
-				descriptor_ai.descriptorPool = set_ci.pool;
-				descriptor_ai.descriptorSetCount = utl::cast<u32>(per_frame_layout.size());
-				descriptor_ai.pSetLayouts = per_frame_layout.data();
-				descriptor_ai.pNext = set_ci.next;
-
-				assert(FVkDescriptorSet::k_max_descriptor_sets > set_ci.descriptorCount);
-				descriptor_set.descriptor_count = set_ci.descriptorCount;
-				vk::Result res = Handle(*device).allocateDescriptorSets(&descriptor_ai, descriptor_set.handles.data());
-
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				for (u64 idx = 0ull; idx < descriptor_set.descriptor_count; ++idx)
-					debug_utils->SetDebugName(descriptor_set.handles[idx], std::format("{} #{}", set_ci.name, idx));
-#endif
-
-				return make_api_error(vk::ObjectType::eDescriptorSet, res, "Failed to allocate");
-			}
-
-			void RenderDevice::DestroyDescriptorSet(const FVkDescriptorPool& descriptor_pool, FVkDescriptorSet& descriptor_set)
-			{
-				Handle(*device).freeDescriptorSets(descriptor_pool.handle, descriptor_set.descriptor_count, descriptor_set.handles.data());
-			}
-
 			FRenderApiErrorInfo RenderDevice::CreateShaderModule(const FVkShaderModuleCreateInfo& shader_module_ci, vk::ShaderModule& shader_module)
 			{
 				vk::ShaderModuleCreateInfo module_ci{};
@@ -640,8 +550,8 @@ namespace engine
 			FRenderApiErrorInfo RenderDevice::CreatePipelineLayout(const FVkPipelineLayoutCreateInfo& pipeline_layout_ci, vk::PipelineLayout& pipeline_layout)
 			{
 				vk::PipelineLayoutCreateInfo layout_ci{};
-				layout_ci.setLayoutCount = utl::cast<u32>(pipeline_layout_ci.descriptorSetLayouts.size());
-				layout_ci.pSetLayouts = pipeline_layout_ci.descriptorSetLayouts.data();
+				layout_ci.setLayoutCount = utl::cast<u32>(pipeline_layout_ci.descriptor_set_layout_count);
+				layout_ci.pSetLayouts = pipeline_layout_ci.descriptor_set_layouts.data();
 				layout_ci.pushConstantRangeCount = utl::cast<u32>(pipeline_layout_ci.pushConstantRanges.size());
 				layout_ci.pPushConstantRanges = pipeline_layout_ci.pushConstantRanges.data();
 				vk::Result res = Handle(*device).createPipelineLayout(&layout_ci, allocation_callbacks, &pipeline_layout);

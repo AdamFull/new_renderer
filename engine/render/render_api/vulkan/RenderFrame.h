@@ -14,6 +14,8 @@ namespace engine
 			class Queue;
 			class Texture;
 			class DescriptorAllocator;
+			class DescriptorSet;
+			class DescriptorSetLayout;
 
 			enum class DescriptorManagementStrategy
 			{
@@ -37,6 +39,8 @@ namespace engine
 
 				CommandBuffer& RequestCommandBuffer(vk::CommandBufferLevel level);
 
+				DescriptorSet& RequestDescriptorSet(DescriptorSetLayout& layout);
+
 				void ResetFence();
 				void WaitFence();
 
@@ -51,7 +55,9 @@ namespace engine
 
 				std::unique_ptr<Texture> backbuffer;
 				std::unique_ptr<CommandPool> command_pool;
+
 				std::unique_ptr<DescriptorAllocator> descriptor_allocator;
+				std::vector<std::unique_ptr<DescriptorSet>> allocated_sets{};
 
 				DescriptorManagementStrategy descriptor_management_strategy{ DescriptorManagementStrategy::StoreInCache };
 
