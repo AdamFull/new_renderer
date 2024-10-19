@@ -53,7 +53,6 @@ namespace engine
 
 				utl::vector<char> specializationDataBuffer{};
 
-				utl::hash_map<uint32_t, utl::vector<vk::DescriptorSetLayoutBinding>> descriptorSetLayoutBindings;
 				utl::hash_map<vk::ShaderStageFlagBits, FVkSpecializationConstantData> specializationConstantStages{};
 			};
 

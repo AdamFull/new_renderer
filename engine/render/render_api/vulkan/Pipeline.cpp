@@ -91,20 +91,35 @@ namespace engine
 			// Graphics pipeline
 			GraphicsPipelineBuilder::GraphicsPipelineBuilder()
 			{
+				create_info.pStages = shader_stages.data();
+
+				vertex_input_state.pVertexBindingDescriptions = binding_descriptions.data();
+				vertex_input_state.pVertexAttributeDescriptions = attribute_descriptions.data();
 				create_info.pVertexInputState = &vertex_input_state;
+
 				create_info.pInputAssemblyState = &input_assembly_state;
 				create_info.pTessellationState = &tessellation_state;
+
+				viewport_state.pViewports = viewports.data();
+				viewport_state.pScissors = scissors.data();
 				create_info.pViewportState = &viewport_state;
+
 				create_info.pRasterizationState = &rasterization_state;
 				create_info.pMultisampleState = &multisample_state;
 				create_info.pDepthStencilState = &depth_stencil_state;
+
+				color_blending_state.pAttachments = color_blend_attachments.data();
 				create_info.pColorBlendState = &color_blending_state;
+
+				dynamic_state.pDynamicStates = dynamic_states.data();
 				create_info.pDynamicState = &dynamic_state;
+
+				dynamic_rendering_create_info.pColorAttachmentFormats = color_attachments.data();
 			}
 
 			GraphicsPipelineBuilder& GraphicsPipelineBuilder::AddShaderStage(vk::PipelineShaderStageCreateInfo stage)
 			{
-				shader_stages.push_back(stage);
+				shader_stages[create_info.stageCount++] = stage;
 				return *this;
 			}
 
@@ -115,17 +130,15 @@ namespace engine
 				return *this;
 			}
 
-			GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetVertexInputBindingDescription(std::span<vk::VertexInputBindingDescription> binding_description)
+			GraphicsPipelineBuilder& GraphicsPipelineBuilder::AddVertexInputBindingDescription(const vk::VertexInputBindingDescription& binding_description)
 			{
-				vertex_input_state.pVertexBindingDescriptions = binding_description.data();
-				vertex_input_state.vertexBindingDescriptionCount = static_cast<uint32_t>(binding_description.size());
+				binding_descriptions[vertex_input_state.vertexBindingDescriptionCount++] = binding_description;
 				return *this;
 			}
 
-			GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetVertexAttributeDescription(std::span<vk::VertexInputAttributeDescription> attribute_description)
+			GraphicsPipelineBuilder& GraphicsPipelineBuilder::AddVertexAttributeDescription(const vk::VertexInputAttributeDescription& attribute_description)
 			{
-				vertex_input_state.pVertexAttributeDescriptions = attribute_description.data();
-				vertex_input_state.vertexAttributeDescriptionCount = static_cast<uint32_t>(attribute_description.size());
+				attribute_descriptions[vertex_input_state.vertexAttributeDescriptionCount++] = attribute_description;
 				return *this;
 			}
 
@@ -173,13 +186,13 @@ namespace engine
 
 			GraphicsPipelineBuilder& GraphicsPipelineBuilder::AddViewport(vk::Viewport viewport)
 			{
-				viewports.emplace_back(viewport);
+				viewports[viewport_state.viewportCount++] = viewport;
 				return *this;
 			}
 
 			GraphicsPipelineBuilder& GraphicsPipelineBuilder::AddScissorRect(vk::Rect2D rect)
 			{
-				scissors.emplace_back(rect);
+				scissors[viewport_state.scissorCount++] = rect;
 				return *this;
 			}
 
@@ -374,7 +387,7 @@ namespace engine
 
 			GraphicsPipelineBuilder& GraphicsPipelineBuilder::AddColorBlendingAttachment(vk::PipelineColorBlendAttachmentState attachment)
 			{
-				color_blend_attachments.push_back(attachment);
+				color_blend_attachments[color_blending_state.attachmentCount++] = attachment;
 				return *this;
 			}
 
@@ -392,6 +405,12 @@ namespace engine
 				return *this;
 			}
 
+			GraphicsPipelineBuilder& GraphicsPipelineBuilder::AddDynamicState(vk::DynamicState state)
+			{
+				dynamic_states[dynamic_state.dynamicStateCount++] = state;
+				return *this;
+			}
+
 
 			GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetRenderPass(vk::RenderPass& render_pass)
 			{
@@ -402,6 +421,30 @@ namespace engine
 			GraphicsPipelineBuilder GraphicsPipelineBuilder::SetSubpass(uint32_t subpass)
 			{
 				create_info.subpass = subpass;
+				return *this;
+			}
+
+			GraphicsPipelineBuilder& GraphicsPipelineBuilder::AddColorAttachmentFormat(vk::Format format)
+			{
+				color_attachments[dynamic_rendering_create_info.colorAttachmentCount++] = format;
+				return *this;
+			}
+
+			GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetDepthAttachmentFormat(vk::Format format)
+			{
+				dynamic_rendering_create_info.depthAttachmentFormat = format;
+				return *this;
+			}
+
+			GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetStencilAttachmentFormat(vk::Format format)
+			{
+				dynamic_rendering_create_info.stencilAttachmentFormat = format;
+				return *this;
+			}
+
+			GraphicsPipelineBuilder& GraphicsPipelineBuilder::EnableDynamicRendering(bool enable)
+			{
+				create_info.pNext = enable ? &dynamic_rendering_create_info : nullptr;
 				return *this;
 			}
 
@@ -540,31 +583,12 @@ namespace engine
 
 			GraphicsPipeline GraphicsPipelineBuilder::Build(RenderDevice& render_device) const
 			{
-				Finalize();
 				return GraphicsPipeline(render_device, *this);
 			}
 
 			std::unique_ptr<GraphicsPipeline> GraphicsPipelineBuilder::BuildUnique(RenderDevice& render_device) const
 			{
-				Finalize();
 				return std::make_unique<GraphicsPipeline>(render_device, *this);
-			}
-
-			void GraphicsPipelineBuilder::Finalize() const
-			{
-				create_info.pStages = shader_stages.data();
-				create_info.stageCount = static_cast<uint32_t>(shader_stages.size());
-
-				viewport_state.pViewports = viewports.data();
-				viewport_state.viewportCount = static_cast<uint32_t>(viewports.size());
-				viewport_state.pScissors = scissors.data();
-				viewport_state.scissorCount = static_cast<uint32_t>(scissors.size());
-
-				color_blending_state.pAttachments = color_blend_attachments.data();
-				color_blending_state.attachmentCount = static_cast<uint32_t>(color_blend_attachments.size());
-
-				dynamic_state.pDynamicStates = dynamic_states.data();
-				dynamic_state.dynamicStateCount = static_cast<uint32_t>(dynamic_states.size());	
 			}
 
 			GraphicsPipeline::GraphicsPipeline(RenderDevice& render_device, const GraphicsPipelineBuilder& builder) :

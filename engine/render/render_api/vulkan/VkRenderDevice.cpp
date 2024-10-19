@@ -524,46 +524,33 @@ namespace engine
 				FreeDescriptorSets2(pool, descriptor_sets.data(), descriptor_sets.size());
 			}
 
+			vk::ShaderModule RenderDevice::CreateShaderModule2(const vk::ShaderModuleCreateInfo& create_info, const std::string& debug_name) const
+			{
+				auto handle = VkCreateHandleAndCheckResult<vk::ShaderModule>([&](auto& handle) { return Handle(*device).createShaderModule(&create_info, allocation_callbacks, &handle); });
+				debug_utils->SetDebugName(handle, debug_name);
+				return handle;
+			}
+
+			void RenderDevice::Destroy(vk::ShaderModule& handle)
+			{
+				Handle(*device).destroyShaderModule(handle);
+			}
+
+			vk::PipelineLayout RenderDevice::CreatePipelineLayout2(const vk::PipelineLayoutCreateInfo& create_info, const std::string& debug_name) const
+			{
+				auto handle = VkCreateHandleAndCheckResult<vk::PipelineLayout>([&](auto& handle) { return Handle(*device).createPipelineLayout(&create_info, allocation_callbacks, &handle); });
+				debug_utils->SetDebugName(handle, debug_name);
+				return handle;
+			}
+
+			void RenderDevice::Destroy(vk::PipelineLayout& handle) const
+			{
+				Handle(*device).destroyPipelineLayout(handle);
+			}
+
 			void RenderDevice::Wait()
 			{
 				Handle(*device).waitIdle();
-			}
-
-			FRenderApiErrorInfo RenderDevice::CreateShaderModule(const FVkShaderModuleCreateInfo& shader_module_ci, vk::ShaderModule& shader_module)
-			{
-				vk::ShaderModuleCreateInfo module_ci{};
-				module_ci.codeSize = shader_module_ci.shader_code.size() * sizeof(u32);
-				module_ci.pCode = shader_module_ci.shader_code.data();
-
-				vk::Result res = Handle(*device).createShaderModule(&module_ci, allocation_callbacks, &shader_module);
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				debug_utils->SetDebugName(shader_module, shader_module_ci.name);
-#endif
-				return make_api_error(shader_module.objectType, res, "Failed to Create");
-			}
-
-			void RenderDevice::DestroyShaderModule(vk::ShaderModule& shader_module)
-			{
-				Handle(*device).destroyShaderModule(shader_module, allocation_callbacks);
-			}
-
-			FRenderApiErrorInfo RenderDevice::CreatePipelineLayout(const FVkPipelineLayoutCreateInfo& pipeline_layout_ci, vk::PipelineLayout& pipeline_layout)
-			{
-				vk::PipelineLayoutCreateInfo layout_ci{};
-				layout_ci.setLayoutCount = utl::cast<u32>(pipeline_layout_ci.descriptor_set_layout_count);
-				layout_ci.pSetLayouts = pipeline_layout_ci.descriptor_set_layouts.data();
-				layout_ci.pushConstantRangeCount = utl::cast<u32>(pipeline_layout_ci.pushConstantRanges.size());
-				layout_ci.pPushConstantRanges = pipeline_layout_ci.pushConstantRanges.data();
-				vk::Result res = Handle(*device).createPipelineLayout(&layout_ci, allocation_callbacks, &pipeline_layout);
-#ifndef BUILD_WITHOUT_DEBUGGIND
-				debug_utils->SetDebugName(pipeline_layout, pipeline_layout_ci.name);
-#endif
-				return make_api_error(pipeline_layout.objectType, res, "Failed to Create");
-			}
-
-			void RenderDevice::DestroyPipelineLayout(vk::PipelineLayout& pipeline_layout)
-			{
-				Handle(*device).destroyPipelineLayout(pipeline_layout, allocation_callbacks);
 			}
 
 			FRenderApiErrorInfo RenderDevice::CreatePipeline(const FVkGraphicsPipelineCreateInfo& pipeline_ci, vk::Pipeline& pipeline)

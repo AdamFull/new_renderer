@@ -10,12 +10,15 @@ namespace engine
 		{
 			class RenderDevice;
 
+			constexpr uint32_t k_max_render_target_count{ 8u };
+			constexpr uint32_t k_max_shader_stage_count{ 8u };
+
 			template<typename _CreateInfoType, typename _BuilderType>
 			class PipelineBuilder
 			{
 			public:
 				std::string debug_name{};
-				mutable _CreateInfoType create_info{};
+				_CreateInfoType create_info{};
 
 				_BuilderType& SetDebugName(const std::string& name)
 				{
@@ -109,25 +112,31 @@ namespace engine
 			class GraphicsPipelineBuilder : public PipelineBuilder<vk::GraphicsPipelineCreateInfo, GraphicsPipelineBuilder>
 			{
 			public:
-				std::vector<vk::PipelineShaderStageCreateInfo> shader_stages{};
+				std::array<vk::PipelineShaderStageCreateInfo, k_max_shader_stage_count> shader_stages{};
 
+				std::array<vk::VertexInputBindingDescription, 16ull> binding_descriptions{};
+				std::array<vk::VertexInputAttributeDescription, 16ull> attribute_descriptions{};
 				vk::PipelineVertexInputStateCreateInfo vertex_input_state{};
+
 				vk::PipelineInputAssemblyStateCreateInfo input_assembly_state{};
 				vk::PipelineTessellationStateCreateInfo tessellation_state{};
 
-				std::vector<vk::Viewport> viewports{};
-				std::vector<vk::Rect2D> scissors{};
-				mutable vk::PipelineViewportStateCreateInfo viewport_state{};
+				std::array<vk::Viewport, 32ull> viewports{};
+				std::array<vk::Rect2D, 32ull> scissors{};
+				vk::PipelineViewportStateCreateInfo viewport_state{};
 
 				vk::PipelineRasterizationStateCreateInfo rasterization_state{};
 				vk::PipelineMultisampleStateCreateInfo multisample_state{};
 				vk::PipelineDepthStencilStateCreateInfo depth_stencil_state{};
 
-				std::vector<vk::PipelineColorBlendAttachmentState> color_blend_attachments{};
-				mutable vk::PipelineColorBlendStateCreateInfo color_blending_state{};
+				std::array<vk::PipelineColorBlendAttachmentState, k_max_render_target_count> color_blend_attachments{};
+				vk::PipelineColorBlendStateCreateInfo color_blending_state{};
 
-				std::vector<vk::DynamicState> dynamic_states{};
-				mutable vk::PipelineDynamicStateCreateInfo dynamic_state{};
+				std::array<vk::DynamicState, 32ull> dynamic_states{};
+				vk::PipelineDynamicStateCreateInfo dynamic_state{};
+
+				vk::PipelineRenderingCreateInfoKHR dynamic_rendering_create_info{};
+				std::array<vk::Format, 8ull> color_attachments{};
 
 				GraphicsPipelineBuilder();
 
@@ -135,8 +144,8 @@ namespace engine
 
 				// Vertex input state
 				GraphicsPipelineBuilder& SetVertexInputStateFlags(vk::PipelineVertexInputStateCreateFlags flags);
-				GraphicsPipelineBuilder& SetVertexInputBindingDescription(std::span<vk::VertexInputBindingDescription> binding_description);
-				GraphicsPipelineBuilder& SetVertexAttributeDescription(std::span<vk::VertexInputAttributeDescription> attribute_description);
+				GraphicsPipelineBuilder& AddVertexInputBindingDescription(const vk::VertexInputBindingDescription& binding_description);
+				GraphicsPipelineBuilder& AddVertexAttributeDescription(const vk::VertexInputAttributeDescription& attribute_description);
 
 				// Input assembly state
 				GraphicsPipelineBuilder& SetInputAsseblyStateFlags(vk::PipelineInputAssemblyStateCreateFlags flags);
@@ -194,17 +203,21 @@ namespace engine
 
 				// Dynamic state
 				GraphicsPipelineBuilder& SetDynamicStateFlags(vk::PipelineDynamicStateCreateFlags flags);
+				GraphicsPipelineBuilder& AddDynamicState(vk::DynamicState state);
 
 				GraphicsPipelineBuilder& SetRenderPass(vk::RenderPass& render_pass);
 				GraphicsPipelineBuilder SetSubpass(uint32_t subpass);
+
+				GraphicsPipelineBuilder& AddColorAttachmentFormat(vk::Format format);
+				GraphicsPipelineBuilder& SetDepthAttachmentFormat(vk::Format format);
+				GraphicsPipelineBuilder& SetStencilAttachmentFormat(vk::Format format);
+
+				GraphicsPipelineBuilder& EnableDynamicRendering(bool enable);
 
 				uint32_t Hash() const;
 
 				GraphicsPipeline Build(RenderDevice& render_device) const;
 				std::unique_ptr<GraphicsPipeline> BuildUnique(RenderDevice& render_device) const;
-
-			private:
-				void Finalize() const;
 			};
 
 			class GraphicsPipeline : public Pipeline

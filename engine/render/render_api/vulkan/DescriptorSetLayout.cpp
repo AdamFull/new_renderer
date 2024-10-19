@@ -38,15 +38,32 @@ namespace engine
 				return *this;
 			}
 
-
-			DescriptorSetLayout DescriptorSetLayoutBuilder::Build(RenderDevice& render_device)
+			bool DescriptorSetLayoutBuilder::CanBuild() const
 			{
+				return create_info.bindingCount > 0;
+			}
+
+			DescriptorSetLayout DescriptorSetLayoutBuilder::Build(RenderDevice& render_device) const
+			{
+				Finalize();
 				return DescriptorSetLayout(render_device, *this);
 			}
 
-			std::unique_ptr<DescriptorSetLayout> DescriptorSetLayoutBuilder::BuildUnique(RenderDevice& render_device)
+			std::unique_ptr<DescriptorSetLayout> DescriptorSetLayoutBuilder::BuildUnique(RenderDevice& render_device) const
 			{
+				Finalize();
 				return std::make_unique<DescriptorSetLayout>(render_device, *this);
+			}
+
+			void DescriptorSetLayoutBuilder::Finalize() const
+			{
+				// Sort bindings
+				std::sort(bindings.begin(), bindings.begin() + create_info.bindingCount, [](const vk::DescriptorSetLayoutBinding& l, const vk::DescriptorSetLayoutBinding& r) { return l.binding < r.binding; });
+
+				// Remove not unique elements
+				auto first = std::unique(bindings.begin(), bindings.begin() + create_info.bindingCount, [](const vk::DescriptorSetLayoutBinding& l, const vk::DescriptorSetLayoutBinding& r) { return l.binding == r.binding; });
+
+				if (first != bindings.end());
 			}
 
 			DescriptorSetLayout::DescriptorSetLayout(RenderDevice& render_device, const DescriptorSetLayoutBuilder& builder) :

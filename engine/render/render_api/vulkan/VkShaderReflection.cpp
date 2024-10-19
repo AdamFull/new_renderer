@@ -216,43 +216,8 @@ void CVkShaderReflectionBuilder::AddShaderStage(vk::ShaderStageFlagBits shaderSt
 
 FVkShaderReflectionData CVkShaderReflectionBuilder::Build()
 {
-    for (const auto& [name, block] : reflectionData.uniformBlocks)
-    {
-        vk::DescriptorSetLayoutBinding descriptor_binding{};
-        descriptor_binding.binding = block.binding;
-        descriptor_binding.descriptorType = block.descriptorType;
-        descriptor_binding.descriptorCount = 1u;
-        descriptor_binding.stageFlags = block.stageFlags;
-
-        reflectionData.descriptorSetLayoutBindings[block.set].emplace_back(descriptor_binding);
-    }
-
-    for (const auto& [name, uniform] : reflectionData.uniforms)
-    {
-        vk::DescriptorSetLayoutBinding descriptor_binding = {};
-        descriptor_binding.binding = uniform.binding;
-        descriptor_binding.descriptorType = uniform.descriptorType;
-        descriptor_binding.descriptorCount = 1u;
-        descriptor_binding.stageFlags = uniform.stageFlags;
-
-        reflectionData.descriptorSetLayoutBindings[uniform.set].emplace_back(descriptor_binding);
-    }
-
     //for (const auto& [descriptorType, count] : descriptorUsageCounter)
     //    reflectionData.descriptor_pool_sizes[reflectionData.pool_sizes_count++] = vk::DescriptorPoolSize{ descriptorType, count };
-
-    // Sort descriptors by binding.
-    for (auto& [set, descriptors] : reflectionData.descriptorSetLayoutBindings)
-        std::sort(descriptors.begin(), descriptors.end(), [](const vk::DescriptorSetLayoutBinding& l, const vk::DescriptorSetLayoutBinding& r) { return l.binding < r.binding; });
-
-    // Remove not unique elements
-    for (auto& [set, descriptors] : reflectionData.descriptorSetLayoutBindings)
-    {
-        auto first = std::unique(descriptors.begin(), descriptors.end(), [](const vk::DescriptorSetLayoutBinding& l, const vk::DescriptorSetLayoutBinding& r) { return l.binding == r.binding; });
-
-        if(first != descriptors.end())
-            descriptors.erase(first, descriptors.end());
-    }
     
     for (const auto& stage : shaderStages)
     {

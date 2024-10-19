@@ -20,8 +20,9 @@ namespace engine
 			class CommandBuffer;
 			class RenderContext;
 			class UploadContext;
+			class Shader;
 
-			using vk_resource_container_t = CResourceContainer<Texture, FVkShader, Buffer, FVkShaderReflectionData>;
+			using vk_resource_container_t = CResourceContainer<Texture, Shader, Buffer>;
 
 			class VkRenderBackend : public IRenderBackend
 			{
@@ -111,11 +112,6 @@ namespace engine
 			protected:
 				void ProcessResourceBarriers();
 				void ProcessResourceUtilization();
-
-				FRenderApiErrorInfo CreateShaderResources(const FVkShaderResourcesInfo& resources_info, FVkShader& shader);
-				void DestroyShader(FVkShader& shader);
-
-				void BindShaderDescriptors(CommandBuffer& command_buffer, const FVkShader& shader);
 
 				void ProcessMemoryBarriers(CommandBuffer& command_buffer, const FVkTranslationInfo& translation_info);
 				void ProcessImageLayoutTranslation(CommandBuffer& command_buffer, const vk::ImageMemoryBarrier2KHR& image_translation_info);

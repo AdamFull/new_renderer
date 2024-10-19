@@ -26,15 +26,20 @@ namespace engine
 				vk::DescriptorSetLayoutCreateInfo create_info{};
 				vk::DescriptorSetLayoutBindingFlagsCreateInfoEXT ext_create_info{};
 
-				std::array<vk::DescriptorSetLayoutBinding, k_max_layout_bindings> bindings{};
+				mutable std::array<vk::DescriptorSetLayoutBinding, k_max_layout_bindings> bindings{};
 				std::array<vk::DescriptorBindingFlagsEXT, k_max_layout_bindings> binding_flags_ext{};
 
 				DescriptorSetLayoutBuilder& SetDebugName(const std::string& name);
 				DescriptorSetLayoutBuilder& AddLayoutBinding(const vk::DescriptorSetLayoutBinding& binding, vk::DescriptorBindingFlagsEXT flags = {});
 				DescriptorSetLayoutBuilder& SetCreateFlags(vk::DescriptorSetLayoutCreateFlags flags);
 
-				DescriptorSetLayout Build(RenderDevice& render_device);
-				std::unique_ptr<DescriptorSetLayout> BuildUnique(RenderDevice& render_device);
+				bool CanBuild() const;
+
+				DescriptorSetLayout Build(RenderDevice& render_device) const;
+				std::unique_ptr<DescriptorSetLayout> BuildUnique(RenderDevice& render_device) const;
+
+			private:
+				void Finalize() const;
 			};
 
 			class DescriptorSetLayout final : public VulkanResource<vk::DescriptorSetLayout>

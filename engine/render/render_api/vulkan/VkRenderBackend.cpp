@@ -20,6 +20,7 @@
 #include <engine/render/render_api/vulkan/RenderContext.h>
 #include <engine/render/render_api/vulkan/UploadContext.h>
 #include <engine/render/render_api/vulkan/DescriptorPool.h>
+#include <engine/render/render_api/vulkan/Shader.h>
 
 using namespace engine;
 using namespace engine::render;
@@ -169,26 +170,10 @@ VkRenderBackend::~VkRenderBackend()
 	// Destroy all textures
 	auto& textures = render_resources->data<Texture>();
 	textures.clear();
-	// TODO TEXTURE
-	//for (resource_handle_t texture_id = 0ull; texture_id < textures.size(); ++texture_id)
-	//{
-	//	auto& texture = textures[texture_id];
-	//	if (!texture->isAlive)
-	//		continue;
-	//
-	//	DestroyTexture(*texture);
-	//}
 
 	// Destroy all shaders
-	auto& shaders = render_resources->data<FVkShader>();
-	for (resource_handle_t shader_id = 0ull; shader_id < shaders.size(); ++shader_id)
-	{
-		auto& shader = shaders[shader_id];
-		if (!shader->isAlive)
-			continue;
-
-		DestroyShader(*shader);
-	}
+	auto& shaders = render_resources->data<Shader>();
+	shaders.clear();
 
 	// Destroy all buffers
 	auto& buffers = render_resources->data<Buffer>();
@@ -526,18 +511,25 @@ FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FGraphic
 {
 	const char* shaderEntryPoint{ "main" };
 
-	auto shader = std::make_unique<FVkShader>();
-	CVkShaderReflectionBuilder reflection_builder{};
+	auto shader_builder = ShaderBuilder();
+	shader_builder.SetBindPoint(vk::PipelineBindPoint::eGraphics);
 
-	FVkGraphicsPipelineCreateInfo pipeline_ci{};
-	pipeline_ci.primitiveTopology = get_primitive_topology(shader_ci.primitiveTopology);
-	pipeline_ci.cullMode = get_cull_mode_flags(shader_ci.cullMode);
-	pipeline_ci.frontFace = get_front_face(shader_ci.frontFace);
-	pipeline_ci.depthCompareOp = get_compare_op(shader_ci.depthCompareOp);
-	pipeline_ci.enableAlphaBlend = shader_ci.alphaBlending;
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	pipeline_ci.name = name;
-#endif
+	// TODO: Add alpha blend support?
+	shader_builder.graphics_pipeline_builder.SetDebugName(name);
+	shader_builder.graphics_pipeline_builder.SetPrimitiveTopology(get_primitive_topology(shader_ci.primitiveTopology));
+	shader_builder.graphics_pipeline_builder.SetCullMode(get_cull_mode_flags(shader_ci.cullMode));
+	shader_builder.graphics_pipeline_builder.SetFrontFace(get_front_face(shader_ci.frontFace));
+	shader_builder.graphics_pipeline_builder.SetPolygonMode(vk::PolygonMode::eFill);
+	shader_builder.graphics_pipeline_builder.SetDepthCompareOp(get_compare_op(shader_ci.depthCompareOp));
+	shader_builder.graphics_pipeline_builder.SetSampleCount(vk::SampleCountFlagBits::e1);
+	shader_builder.graphics_pipeline_builder.SetPatchControlPointsCount(0);
+	shader_builder.graphics_pipeline_builder.SetLineWidth(1.f);
+	shader_builder.SetUsageCount(shader_ci.usageCount);
+
+	shader_builder.graphics_pipeline_builder.SetDepthClampEnable(true);
+
+	shader_builder.graphics_pipeline_builder.SetColorBlendingLogicOpEnable(false);
+	shader_builder.graphics_pipeline_builder.SetColorBlendingLogicOp(vk::LogicOp::eCopy);
 
 	// Get color attachment formats
 	auto& textures = render_resources->data<Texture>();
@@ -552,41 +544,66 @@ FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FGraphic
 		else
 			rt_format = textures[attachment.source.Get()]->GetImage().GetFormat();
 
-		pipeline_ci.colorAttachmentFormats.emplace_back(rt_format);
+		shader_builder.graphics_pipeline_builder.AddColorAttachmentFormat(rt_format);
+
+		// Add blending state
+		vk::PipelineColorBlendAttachmentState state{};
+		state.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+		state.blendEnable = shader_ci.alphaBlending; // TODO: add color blending support
+
+		state.srcColorBlendFactor = vk::BlendFactor::eSrcAlpha;
+		state.dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
+		state.colorBlendOp = vk::BlendOp::eAdd;
+		state.srcAlphaBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;//vk::BlendFactor::eOne;
+		state.dstAlphaBlendFactor = vk::BlendFactor::eZero;
+		state.alphaBlendOp = vk::BlendOp::eAdd;
+		
+		shader_builder.graphics_pipeline_builder.AddColorBlendingAttachment(state);
+		shader_builder.graphics_pipeline_builder.SetDepthClampEnable(false);
 	}
 
+	shader_builder.graphics_pipeline_builder.AddDynamicState(vk::DynamicState::eViewport);
+	shader_builder.graphics_pipeline_builder.AddDynamicState(vk::DynamicState::eScissor);
+	shader_builder.graphics_pipeline_builder.AddDynamicState(vk::DynamicState::ePrimitiveTopology);
+
+	shader_builder.graphics_pipeline_builder.AddViewport({});
+	shader_builder.graphics_pipeline_builder.AddScissorRect({});
+
+	shader_builder.graphics_pipeline_builder.EnableDynamicRendering(true);
+
 	// Get depth format
-	if(shader_ci.depthAttachment.source)
+	if (shader_ci.depthAttachment.source)
 	{
 		auto& texture = textures[shader_ci.depthAttachment.source.Get()];
-		pipeline_ci.depthAttachmentFormat = texture->GetImage().GetFormat();
+		shader_builder.graphics_pipeline_builder.SetDepthAttachmentFormat(texture->GetImage().GetFormat());
+		shader_builder.graphics_pipeline_builder.SetDepthTestEnable(true);
+		shader_builder.graphics_pipeline_builder.SetDepthWriteEnable(true);
 	}
 
 	// Get stencil format
 	if (shader_ci.stencilAttachment.source)
 	{
 		auto& texture = textures[shader_ci.stencilAttachment.source.Get()];
-		pipeline_ci.stencilAttachmentFormat = texture->GetImage().GetFormat();
+		shader_builder.graphics_pipeline_builder.SetStencilAttachmentFormat(texture->GetImage().GetFormat());
 	}
-
-	pipeline_ci.sampleCount = vk::SampleCountFlagBits::e1;
-	pipeline_ci.patchControlPoints = 0;
 
 	for (auto& vertex_binding : shader_ci.vertexDeclaration.bindingDescriptions)
 	{
-		auto& description = pipeline_ci.vertexBindingDescriptions.emplace_back();
+		vk::VertexInputBindingDescription description{};
 		description.binding = vertex_binding.binding;
 		description.stride = vertex_binding.stride;
 		description.inputRate = vk::VertexInputRate::eVertex;
+		shader_builder.graphics_pipeline_builder.AddVertexInputBindingDescription(description);
 	}
 
 	for (auto& vertex_binding : shader_ci.vertexDeclaration.attributeDescriptions)
 	{
-		auto& description = pipeline_ci.vertexAttributeDescriptions.emplace_back();
+		vk::VertexInputAttributeDescription description{};
 		description.location = vertex_binding.location;
 		description.binding = vertex_binding.binding;
 		description.format = lookup_vk_format(vertex_binding.format);
 		description.offset = vertex_binding.offset;
+		shader_builder.graphics_pipeline_builder.AddVertexAttributeDescription(description);
 	}
 
 	// Create shader modules and collect reflection data
@@ -594,149 +611,43 @@ FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FGraphic
 	for (const auto& [stage, code] : shader_stages)
 	{
 		auto shader_stage = get_shader_stage(stage);
-		FVkShaderModuleCreateInfo shader_module_ci{};
-		shader_module_ci.shader_code = code;
-#ifndef BUILD_WITHOUT_DEBUGGIND
-		shader_module_ci.name = std::format("{} stage {} #{}", name, vk::to_string(shader_stage), shader_index);
-#endif
-		auto& shader_module = shader->shaderModules[shader->shader_module_count++];
-		render_device->CreateShaderModule(shader_module_ci, shader_module);
-
-		auto& stage_ci = pipeline_ci.shaderStages.emplace_back();
-		stage_ci.stage = shader_stage;
-		stage_ci.module = shader_module;
-		stage_ci.pName = shaderEntryPoint;
-
-		reflection_builder.AddShaderStage(shader_stage, code);
-		shader_index++;
+		shader_builder.AddShaderModule(shader_stage, code);
 	}
 
-	auto reflection = std::make_unique<FVkShaderReflectionData>(reflection_builder.Build());
+	shader_builder.AddDefaultLayout(global_descriptor.descriptor_set_layout->GetHandle());
 
-	// Update shader stage specialization info
-	for (auto& shader_stage : pipeline_ci.shaderStages)
-	{
-		auto found = reflection->specializationConstantStages.find(shader_stage.stage);
-		if (found != reflection->specializationConstantStages.end())
-			shader_stage.pSpecializationInfo = &found->second.info;
-	}
-
-	shader->reflection = render_resources->add<FVkShaderReflectionData>(name.c_str(), std::move(reflection));
-
-	FVkShaderResourcesInfo resources_info{};
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	resources_info.name = name;
-#endif
-	resources_info.usageCount = shader_ci.usageCount;
-
-	auto res = CreateShaderResources(resources_info, *shader);
-
-	pipeline_ci.layout = shader->layout;
-
-	shader->bindPoint = vk::PipelineBindPoint::eGraphics;
-
-	auto& pipeline = shader->handles[shader->pipeline_count++];
-	render_device->CreatePipeline(pipeline_ci, pipeline);
-	
-	shader->isAlive = true;
-
-	auto shader_unique_name = create_object_unique_name("shader:{:x}:{}", shader->handles[shader->pipeline_count - 1], vk::to_string(shader->bindPoint));
-	return FAPIHandle(render_resources->add<FVkShader>(shader_unique_name.c_str(), std::move(shader)));
+	auto shader = shader_builder.BuildUnique(*render_device);
+	auto shader_unique_name = create_object_unique_name("shader:{:x}:{}", shader->pipeline->GetHandle(), vk::to_string(shader->bind_point));
+	return FAPIHandle(render_resources->add<Shader>(shader_unique_name.c_str(), std::move(shader)));
 }
 
 FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const FShaderCreationBlockInfo& shader_stage)
 {
-	const char* shaderEntryPoint{ "main" };
+	auto shader_builder = ShaderBuilder();
+	shader_builder.SetBindPoint(vk::PipelineBindPoint::eCompute);
 
-	auto shader = std::make_unique<FVkShader>();
-	CVkShaderReflectionBuilder reflection_builder{};
-	utl::vector<vk::PipelineShaderStageCreateInfo> pipeline_stages{};
+	shader_builder.AddShaderModule(vk::ShaderStageFlagBits::eCompute, shader_stage.code);
+	shader_builder.SetUsageCount(shader_ci.usageCount);
 
-	// Create shader modules and collect reflection data
+	shader_builder.AddDefaultLayout(global_descriptor.descriptor_set_layout->GetHandle());
 
-	FVkShaderModuleCreateInfo shader_module_ci{};
-	shader_module_ci.shader_code = shader_stage.code;
-	shader_module_ci.name = std::format("{} stage {}", name, vk::to_string(vk::ShaderStageFlagBits::eCompute));
+	auto shader = shader_builder.BuildUnique(*render_device);
 
-	auto& shader_module = shader->shaderModules[shader->shader_module_count++];
-	render_device->CreateShaderModule(shader_module_ci, shader_module);
-
-	auto& stage = pipeline_stages.emplace_back();
-	stage.stage = vk::ShaderStageFlagBits::eCompute;
-	stage.module = shader_module;
-	stage.pName = shaderEntryPoint;
-
-	reflection_builder.AddShaderStage(vk::ShaderStageFlagBits::eCompute, shader_stage.code);
-
-	auto reflection = std::make_unique<FVkShaderReflectionData>(reflection_builder.Build());
-
-	// Update shader stage specialization info
-	for (auto& shader_stage : pipeline_stages)
-	{
-		auto found = reflection->specializationConstantStages.find(shader_stage.stage);
-		if (found != reflection->specializationConstantStages.end())
-			shader_stage.pSpecializationInfo = &found->second.info;
-	}
-
-	shader->reflection = render_resources->add<FVkShaderReflectionData>(name.c_str(), std::move(reflection));
-
-	FVkShaderResourcesInfo resources_info{};
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	resources_info.name = name;
-#endif
-	resources_info.usageCount = shader_ci.usageCount;
-
-	CreateShaderResources(resources_info, *shader);
-
-	FVkComputePipelineCreateInfo pipeline_ci{};
-	pipeline_ci.layout = shader->layout;
-
-	for (int32_t idx = 0; idx < pipeline_stages.size(); ++idx)
-	{
-		auto& stage = pipeline_stages[idx];
-		pipeline_ci.shaderStage = stage;
-#ifndef BUILD_WITHOUT_DEBUGGIND
-		pipeline_ci.name = std::format("{} #{}", name, idx);
-#endif
-
-		auto& pipeline = shader->handles[shader->pipeline_count++];
-		render_device->CreatePipeline(pipeline_ci, pipeline);
-	}
-
-	shader->bindPoint = vk::PipelineBindPoint::eCompute;
-
-	std::stringstream ss{};
-	ss << name;
-	for (int32_t i = 0; i < shader->pipeline_count; ++i)
-		ss << ":" << std::hex << reinterpret_cast<u64>(utl::cast<vk::Pipeline::CType>(shader->handles[i]));
-
-	auto shader_unique_name = ss.str();
-	return FAPIHandle(render_resources->add<FVkShader>(shader_unique_name.c_str(), std::move(shader)));
+	auto shader_unique_name = create_object_unique_name("shader:{:x}:{}", shader->pipeline->GetHandle(), vk::to_string(shader->bind_point));
+	return FAPIHandle(render_resources->add<Shader>(shader_unique_name.c_str(), std::move(shader)));
 }
 
 FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci)
 {
-	const char* shaderEntryPoint{ "main" };
-
-	auto shader = std::make_unique<FVkShader>();
-	shader->bindPoint = vk::PipelineBindPoint::eRayTracingKHR;
-
-	std::stringstream ss{};
-	ss << name;
-	for (int32_t i = 0; i < shader->pipeline_count; ++i)
-		ss << ":" << std::hex << reinterpret_cast<u64>(utl::cast<vk::Pipeline::CType>(shader->handles[i]));
-
-	auto shader_unique_name = ss.str();
-	return FAPIHandle(render_resources->add<FVkShader>(shader_unique_name.c_str(), std::move(shader)));
+	return FAPIHandle{};
 }
 
 FShaderReflectionData VkRenderBackend::GetShaderReflection(FAPIHandle shader_view)
 {
-	auto& shader = render_resources->get<FVkShader>(shader_view.Get());
-	auto& shader_reflection = render_resources->get<FVkShaderReflectionData>(shader->reflection);
+	auto& shader = render_resources->get<Shader>(shader_view.Get());
 	FShaderReflectionData reflection_data{};
 
-	for (const auto& [id, vkuniform] : shader_reflection->uniforms)
+	for (const auto& [id, vkuniform] : shader->reflection.uniforms)
 	{
 		auto& uniform = reflection_data.uniforms[id];
 		uniform.binding = vkuniform.binding;
@@ -745,7 +656,7 @@ FShaderReflectionData VkRenderBackend::GetShaderReflection(FAPIHandle shader_vie
 		uniform.size = vkuniform.size;
 	}
 
-	for (const auto& [aid, vkuniform_block] : shader_reflection->uniformBlocks)
+	for (const auto& [aid, vkuniform_block] : shader->reflection.uniformBlocks)
 	{
 		if (vkuniform_block.descriptorType == vk::DescriptorType::eStorageBuffer)
 			continue;
@@ -765,7 +676,7 @@ FShaderReflectionData VkRenderBackend::GetShaderReflection(FAPIHandle shader_vie
 		}
 	}
 
-	for (const auto& [aid, vkpush_block] : shader_reflection->pushBlocks)
+	for (const auto& [aid, vkpush_block] : shader->reflection.pushBlocks)
 	{
 		auto& push_block = reflection_data.pushBlocks[aid];
 		push_block.size = vkpush_block.size;
@@ -780,8 +691,8 @@ FShaderReflectionData VkRenderBackend::GetShaderReflection(FAPIHandle shader_vie
 		}
 	}
 
-	if(!shader_reflection->localSizes.empty())
-		reflection_data.localSizes = shader_reflection->localSizes.front();
+	if(!shader->reflection.localSizes.empty())
+		reflection_data.localSizes = shader->reflection.localSizes.front();
 
 	return reflection_data;
 }
@@ -791,8 +702,7 @@ FShaderReflectionData VkRenderBackend::GetShaderReflection(FAPIHandle shader_vie
 // I'll just be doing unnecessary work both copying data and loading it, including loading descriptors.
 void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_resources, EShaderResourcesUpdateFlags flags)
 {
-	auto& shader = render_resources->get<FVkShader>(shader_resources.shaderId.Get());
-	auto& shader_reflection = render_resources->get<FVkShaderReflectionData>(shader->reflection);
+	auto& shader = render_resources->get<Shader>(shader_resources.shaderId.Get());
 
 	auto& textures = render_resources->data<Texture>();
 	auto& buffers = render_resources->data<Buffer>();
@@ -822,8 +732,8 @@ void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_
 	{
 		for (const auto& [uniform_name, uniform_data] : shader_resources.uniforms)
 		{
-			auto found_reflection = shader_reflection->uniformBlocks.find(uniform_name);
-			if (found_reflection == shader_reflection->uniformBlocks.end())
+			auto found_reflection = shader->reflection.uniformBlocks.find(uniform_name);
+			if (found_reflection == shader->reflection.uniformBlocks.end())
 				continue;
 
 			// Prepare descriptor update data
@@ -831,8 +741,7 @@ void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_
 			auto descriptor_index = shader->descriptorUsage[uniform_block.set];
 			updated_descriptor_sets.emplace(uniform_block.set);
 
-			auto buffer_id = shader->uniformBuffers[uniform_name];
-			auto& buffer = buffers[buffer_id];
+			auto& buffer = shader->uniform_buffers[uniform_name];
 			auto buffer_element_size = buffer->GetSuballocationSize();
 
 			// Not sure that it is correct, because i don't know how to determine previous buffer
@@ -872,8 +781,8 @@ void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_
 	{
 		for (const auto& [uniform_name, buffer_id] : shader_resources.buffers)
 		{
-			auto found_reflection = shader_reflection->uniformBlocks.find(uniform_name);
-			if (found_reflection == shader_reflection->uniformBlocks.end())
+			auto found_reflection = shader->reflection.uniformBlocks.find(uniform_name);
+			if (found_reflection == shader->reflection.uniformBlocks.end())
 				continue;
 
 			// Prepare descriptor update data
@@ -921,8 +830,8 @@ void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_
 			auto& texture = textures[bind_info.textureId.Get()];
 			auto& texture_subresource = texture->GetImageView(bind_info.mipLevel);
 
-			auto found_reflection = shader_reflection->uniforms.find(texture_name);
-			if (found_reflection == shader_reflection->uniforms.end())
+			auto found_reflection = shader->reflection.uniforms.find(texture_name);
+			if (found_reflection == shader->reflection.uniforms.end())
 				continue;
 
 			auto& uniform = found_reflection->second;
@@ -974,14 +883,13 @@ void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_
 
 void VkRenderBackend::FlushConstantRanges(FAPIHandle shader_id, const utl::hash_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type)
 {
-	auto& shader = render_resources->get<FVkShader>(shader_id.Get());
-	auto& shader_reflection = render_resources->get<FVkShaderReflectionData>(shader->reflection);
+	auto& shader = render_resources->get<Shader>(shader_id.Get());
 
 	// TODO: remove all other posibilities to have more than one push block. 
 	for (const auto& [constant_name, constant_data] : constants)
 	{
-		auto found_reflection = shader_reflection->pushBlocks.find(constant_name);
-		if (found_reflection == shader_reflection->pushBlocks.end())
+		auto found_reflection = shader->reflection.pushBlocks.find(constant_name);
+		if (found_reflection == shader->reflection.pushBlocks.end())
 			continue;
 
 		auto& constant_block = found_reflection->second;
@@ -994,17 +902,16 @@ void VkRenderBackend::FlushConstantRanges(FAPIHandle shader_id, const utl::hash_
 
 void VkRenderBackend::BindShader(FAPIHandle shader_id, EQueueTypeFlagBits queue_type)
 {
-	auto& shader = render_resources->get<FVkShader>(shader_id.Get());
+	auto& shader = render_resources->get<Shader>(shader_id.Get());
 
 	// TODO: make possible to select what pipeline i have to bind now
-	render_context->GetCurrentCommandBuffer().BindPipeline(shader->bindPoint, shader->handles[0]);
+	render_context->GetCurrentCommandBuffer().BindPipeline(shader->bind_point, Handle(*shader->pipeline));
 }
 
 void VkRenderBackend::BindShaderResources(FAPIHandle shader_id, EQueueTypeFlagBits queue_type)
 {
-	auto& shader = render_resources->get<FVkShader>(shader_id.Get());
-
-	BindShaderDescriptors(render_context->GetCurrentCommandBuffer(), *shader);
+	auto& shader = render_resources->get<Shader>(shader_id.Get());
+	shader->BindDescriptors(render_context->GetCurrentCommandBuffer().GetHandle(), global_descriptor.descriptor_sets[render_context->GetCurrentFrameIndex()]->GetHandle());
 }
 
 void VkRenderBackend::DestroyShader(FAPIHandle resource_id)
@@ -1416,10 +1323,9 @@ void VkRenderBackend::Dispatch(EQueueTypeFlagBits queue_type, const FDispatch2In
 
 	if (dispatch_info.divideByLocals)
 	{
-		auto& shader = render_resources->get<FVkShader>(dispatch_info.shaderHandle.Get());
-		auto& reflection = render_resources->get<FVkShaderReflectionData>(shader->reflection);
+		auto& shader = render_resources->get<Shader>(dispatch_info.shaderHandle.Get());
 
-		auto& localSizes = reflection->localSizes[subgroup_index];
+		auto& localSizes = shader->reflection.localSizes[subgroup_index];
 		command.x = std::max(utl::cast<u32>(std::ceil(utl::cast<f32>(command.x) / utl::cast<f32>(localSizes[0]))), 1u);
 		command.y = std::max(utl::cast<u32>(std::ceil(utl::cast<f32>(command.y) / utl::cast<f32>(localSizes[1]))), 1u);
 		command.z = std::max(utl::cast<u32>(std::ceil(utl::cast<f32>(command.z) / utl::cast<f32>(localSizes[2]))), 1u);
@@ -1476,7 +1382,7 @@ FAPIHandle VkRenderBackend::GetTextureResource(const char* name)
 
 FAPIHandle VkRenderBackend::GetShaderResource(const char* name)
 {
-	return FAPIHandle(render_resources->getId<FVkShader>(name));
+	return FAPIHandle(render_resources->getId<Shader>(name));
 }
 
 FPoint2D<u32> VkRenderBackend::GetRenderResolution() const
@@ -1701,9 +1607,9 @@ void VkRenderBackend::ProcessResourceUtilization()
 		}
 		else if (destroy_resource.mask & EResourceFlagBits::eShader)
 		{
-			auto& shader = render_resources->get<FVkShader>(destroy_resource.id.Get());
-			DestroyShader(*shader);
-			render_resources->remove<FVkShader>(destroy_resource.id.Get());
+			auto& shader = render_resources->get<Shader>(destroy_resource.id.Get());
+			shader.reset();
+			render_resources->remove<Shader>(destroy_resource.id.Get());
 		}
 		else if (destroy_resource.mask & EResourceFlagBits::eBuffer)
 		{
@@ -1714,147 +1620,6 @@ void VkRenderBackend::ProcessResourceUtilization()
 
 		resource_destroy_queue.pop();
 	}
-}
-
-FRenderApiErrorInfo VkRenderBackend::CreateShaderResources(const FVkShaderResourcesInfo& resources_info, FVkShader& shader)
-{
-	auto& reflection = render_resources->get<FVkShaderReflectionData>(shader.reflection);
-
-	// TODO: generate better object names. Current names can overlap
-
-	// Remember maximum shader usage count
-	shader.maximumDescriptorSlots = render_context->GetSwapchain().GetImageCount() * resources_info.usageCount;
-
-	// Create descriptor set layouts
-	for (const auto& [set, layout_bindings] : reflection->descriptorSetLayoutBindings)
-	{
-		auto builder = DescriptorSetLayoutBuilder();
-		builder.SetDebugName(std::format("{}: set #{}", resources_info.name, set));
-
-		// TODO: Do it in reflecton data
-		for (const auto& binding : layout_bindings)
-		{
-			builder.AddLayoutBinding(binding);
-		}
-
-		shader.descriptor_set_layouts[set] = builder.BuildUnique(*render_device);
-	}
-
-	// Minimal buffer offset
-	auto& physical = render_device->GetPhysicalDevice();
-	auto minOffsetAllignment = std::lcm(physical.GetProperties().limits.minUniformBufferOffsetAlignment, physical.GetProperties().limits.nonCoherentAtomSize);
-
-	// Create uniform buffers
-	for (const auto& [id, uniform_block] : reflection->uniformBlocks)
-	{
-		// Storage buffers is binding from outside
-		if (uniform_block.descriptorType == vk::DescriptorType::eStorageBuffer)
-			continue;
-
-		auto builder = BufferBuilder(uniform_block.size, shader.maximumDescriptorSlots, minOffsetAllignment);
-		builder.SetVmaUsage(vma::MemoryUsage::eCpuToGpu);
-		builder.SetSharingMode(vk::SharingMode::eConcurrent);
-
-#ifndef BUILD_WITHOUT_DEBUGGIND
-		auto* debug_name = debug_mapping::find(id);
-		if (debug_name)
-			builder.SetDebugName(std::format("{}:{}", resources_info.name, debug_name));
-		else
-			builder.SetDebugName(std::format("{}:{:x}", resources_info.name, id));
-#endif
-
-		if (uniform_block.descriptorType == vk::DescriptorType::eUniformBuffer)
-			builder.SetUsage(vk::BufferUsageFlagBits::eUniformBuffer);
-		else if (uniform_block.descriptorType == vk::DescriptorType::eStorageBuffer)
-			builder.SetUsage(vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer);
-
-		auto buffer = builder.BuildUnique(*render_device);
-
-		auto buffer_name = create_object_unique_name("buffer:{:x}:{}", Handle(*buffer), id);
-		auto buffer_id = render_resources->add<Buffer>(buffer_name.c_str(), std::move(buffer));
-		shader.uniformBuffers.emplace(id, buffer_id);
-	}
-
-	// Create pipeline layout
-	FVkPipelineLayoutCreateInfo layout_ci{};
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	layout_ci.name = resources_info.name;
-#endif
-
-	// NOTE: adding global descriptor set layout
-	layout_ci.descriptor_set_layouts[0] = global_descriptor.descriptor_set_layout->GetHandle();
-	++layout_ci.descriptor_set_layout_count;
-
-	// Send descriptor set layouts to Create info
-	for (int32_t idx = 1; idx < shader.descriptor_set_layouts.size(); ++idx)
-	{
-		if (shader.descriptor_set_layouts[idx])
-		{
-			// I think that should be idx here, but it can cause errors when some layout is not exists
-			layout_ci.descriptor_set_layouts[layout_ci.descriptor_set_layout_count++] = shader.descriptor_set_layouts[idx]->GetHandle();
-		}
-	}
-	//for (const auto& [set, descriptor_set_layout] : shader.descriptorSetLayouts)
-	//	layout_ci.descriptorSetLayouts.emplace_back(descriptor_set_layout);
-
-	// Prepare push blocks info
-	u32 current_offset{ 0u };
-	for (const auto& [name, block] : reflection->pushBlocks)
-	{
-		auto& push_constant_range = layout_ci.pushConstantRanges.emplace_back();
-		push_constant_range.stageFlags = block.stageFlags;
-		push_constant_range.offset = current_offset;
-		push_constant_range.size = utl::cast<u32>(block.size);
-		current_offset += push_constant_range.size;
-	}
-
-	return render_device->CreatePipelineLayout(layout_ci, shader.layout);
-}
-
-// Destroy shader object
-void VkRenderBackend::DestroyShader(FVkShader& shader)
-{
-	for (auto& pipeline : shader.handles)
-		render_device->DestroyPipeline(pipeline);
-
-	for (auto& shader_module : shader.shaderModules)
-		render_device->DestroyShaderModule(shader_module);
-
-	for (auto& [id, buffer_id] : shader.uniformBuffers)
-	{
-		auto& buffer = render_resources->get<Buffer>(buffer_id);
-		buffer.reset();
-		render_resources->remove<Buffer>(buffer_id);
-	}
-
-	render_device->DestroyPipelineLayout(shader.layout);
-
-	shader.isAlive = false;
-}
-
-void VkRenderBackend::BindShaderDescriptors(CommandBuffer& command_buffer, const FVkShader& shader)
-{
-	std::array<vk::DescriptorSet, k_max_descriptor_sets> bind_descriptor_sets{};
-	size_t descriptor_set_count{ 1ull };
-
-	// NOTE: bind global descriptor set
-	bind_descriptor_sets[0] = global_descriptor.descriptor_sets[render_context->GetCurrentFrameIndex()]->GetHandle();
-
-	// TODO: I think i can separate bindings by empty sets here. If some set is empty, i have to save last index, bind sets and after that continue bind from index.
-	// NOTE: shader.descriptorUsage contains next index of descriptor set to use. 
-	// Here i collecting all shader descriptor sets, that was changed in past
-	for (auto& [set, usage_index] : shader.descriptorUsage)
-	{
-		auto actual_descriptor_usage = usage_index == 0u ? shader.maximumDescriptorSlots - 1u : usage_index - 1u;
-		if (shader.descriptor_sets[set])
-		{
-			bind_descriptor_sets[set] = shader.descriptor_sets[set];
-			++descriptor_set_count;
-		}
-	}
-
-	// TODO: determine the lowest descriptor index and start binding from lowest one (for example from 1)
-	Handle(command_buffer).bindDescriptorSets(shader.bindPoint, shader.layout, 0, utl::cast<u32>(descriptor_set_count), bind_descriptor_sets.data(), 0u, nullptr);
 }
 
 void VkRenderBackend::ProcessImageLayoutTranslation(CommandBuffer& command_buffer, const vk::ImageMemoryBarrier2KHR& image_translation_info)

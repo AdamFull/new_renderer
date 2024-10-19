@@ -207,15 +207,13 @@ namespace engine
 				void FreeDescriptorSets2(vk::DescriptorPool& pool, vk::DescriptorSet* descriptor_sets, uint32_t descriptor_set_count) const;
 				void FreeDescriptorSets2(vk::DescriptorPool& pool, std::span<vk::DescriptorSet> descriptor_sets) const;
 
+				vk::ShaderModule CreateShaderModule2(const vk::ShaderModuleCreateInfo& create_info, const std::string& debug_name = "") const;
+				void Destroy(vk::ShaderModule& handle);
+
+				vk::PipelineLayout CreatePipelineLayout2(const vk::PipelineLayoutCreateInfo& create_info, const std::string& debug_name = "") const;
+				void Destroy(vk::PipelineLayout& handle) const;
+
 				void Wait();
-
-				// VkShaderModule
-				FRenderApiErrorInfo CreateShaderModule(const FVkShaderModuleCreateInfo& shader_module_ci, vk::ShaderModule& shader_module);
-				void DestroyShaderModule(vk::ShaderModule& shader_module);
-
-				// VkPipelineLayout
-				FRenderApiErrorInfo CreatePipelineLayout(const FVkPipelineLayoutCreateInfo& pipeline_layout_ci, vk::PipelineLayout& pipeline_layout);
-				void DestroyPipelineLayout(vk::PipelineLayout& pipeline_layout);
 
 				// VkPipeline
 				FRenderApiErrorInfo CreatePipeline(const FVkGraphicsPipelineCreateInfo& pipeline_ci, vk::Pipeline& pipeline);

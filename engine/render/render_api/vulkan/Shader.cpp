@@ -1,4 +1,9 @@
 #include <engine/render/render_api/vulkan/Shader.h>
+#include <engine/render/render_api/vulkan/PhysicalDevice.h>
+#include <engine/render/render_api/vulkan/VkRenderDevice.h>
+#include <engine/render/render_api/vulkan/Buffer.h>
+#include <engine/render/render_api/vulkan/DescriptorSetLayout.h>
+#include <engine/render/render_api/vulkan/VkCommon.h>
 
 namespace engine
 {
@@ -6,7 +11,253 @@ namespace engine
 	{
 		namespace vulkan
 		{
+			ShaderBuilder& ShaderBuilder::SetBindPoint(vk::PipelineBindPoint bind_point)
+			{
+				this->bind_point = bind_point;
+				return *this;
+			}
 
+			ShaderBuilder& ShaderBuilder::SetUsageCount(uint32_t usage_count)
+			{
+				this->usage_count = usage_count;
+				return *this;
+			}
+
+			ShaderBuilder& ShaderBuilder::AddShaderModule(vk::ShaderStageFlagBits stage, std::span<uint32_t> code)
+			{
+				shader_modules[shader_module_count++] = ShaderModuleInfo{ stage, vk::ShaderModuleCreateInfo{ {}, code.size() * sizeof(uint32_t), code.data()}};
+				reflection_builder.AddShaderStage(stage, code);
+				return *this;
+			}
+
+			ShaderBuilder& ShaderBuilder::AddDefaultLayout(vk::DescriptorSetLayout layout)
+			{
+				default_layouts[default_descriptor_count++] = layout;
+				return *this;
+			}
+
+			Shader ShaderBuilder::Build(RenderDevice& render_device)
+			{
+				return Shader(render_device, *this);
+			}
+
+			std::unique_ptr<Shader> ShaderBuilder::BuildUnique(RenderDevice& render_device)
+			{
+				return std::make_unique<Shader>(render_device, *this);
+			}
+
+			Shader::Shader(RenderDevice& render_device, ShaderBuilder& builder) :
+				render_device{ render_device },
+				bind_point{ builder.bind_point }
+			{
+				// Create shader modules
+				for (int32_t i = 0; i < builder.shader_module_count; ++i)
+				{
+					auto& module_info = builder.shader_modules[i];
+					shader_modules[i] = render_device.CreateShaderModule2(module_info.create_info);
+
+					vk::PipelineShaderStageCreateInfo shader_stage{};
+					shader_stage.stage = module_info.stage;
+					shader_stage.module = shader_modules[i];
+					shader_stage.pName = module_info.entry_point;
+
+					if (bind_point == vk::PipelineBindPoint::eGraphics)
+					{
+						builder.graphics_pipeline_builder.AddShaderStage(shader_stage);
+					}
+					else if (bind_point == vk::PipelineBindPoint::eCompute)
+					{
+						builder.compute_pipeline_builder.SetShaderStage(shader_stage);
+						break;
+					}
+					else
+					{
+						assert(false);
+					}
+				}
+
+				// Create reflection
+				reflection = builder.reflection_builder.Build();
+
+				// Update shader stage specialization info
+				//for (auto& shader_stage : pipeline_ci.shaderStages)
+				//{
+				//	auto found = reflection->specializationConstantStages.find(shader_stage.stage);
+				//	if (found != reflection->specializationConstantStages.end())
+				//		shader_stage.pSpecializationInfo = &found->second.info;
+				//}
+
+
+				// TODO: generate better object names. Current names can overlap
+
+				// TODO: dynamic per frame resource allocation
+				maximumDescriptorSlots = builder.usage_count * 2u;
+
+				std::array<DescriptorSetLayoutBuilder, k_max_descriptor_sets> descriptor_set_layout_builders{};
+
+				// Create descriptor set layouts
+				for (const auto& [name, block] : reflection.uniformBlocks)
+				{
+					vk::DescriptorSetLayoutBinding descriptor_binding{};
+					descriptor_binding.binding = block.binding;
+					descriptor_binding.descriptorType = block.descriptorType;
+					descriptor_binding.descriptorCount = 1u;
+					descriptor_binding.stageFlags = block.stageFlags;
+
+					auto& builder = descriptor_set_layout_builders[block.set];
+					builder.AddLayoutBinding(descriptor_binding);
+				}
+
+				for (const auto& [name, uniform] : reflection.uniforms)
+				{
+					vk::DescriptorSetLayoutBinding descriptor_binding = {};
+					descriptor_binding.binding = uniform.binding;
+					descriptor_binding.descriptorType = uniform.descriptorType;
+					descriptor_binding.descriptorCount = 1u;
+					descriptor_binding.stageFlags = uniform.stageFlags;
+
+					auto& builder = descriptor_set_layout_builders[uniform.set];
+					builder.AddLayoutBinding(descriptor_binding);
+				}
+
+				for (int32_t set = 0; set < k_max_descriptor_sets; ++set)
+				{
+					auto& builder = descriptor_set_layout_builders[set];
+					if (builder.CanBuild())
+					{
+						descriptor_set_layouts[set] = builder.BuildUnique(render_device);
+					}
+				}
+
+				// Minimal buffer offset
+				auto& physical = render_device.GetPhysicalDevice();
+				auto minOffsetAllignment = std::lcm(physical.GetProperties().limits.minUniformBufferOffsetAlignment, physical.GetProperties().limits.nonCoherentAtomSize);
+
+				// Create uniform buffers
+				for (const auto& [id, uniform_block] : reflection.uniformBlocks)
+				{
+					// Storage buffers is binding from outside
+					if (uniform_block.descriptorType == vk::DescriptorType::eStorageBuffer)
+						continue;
+
+					auto builder = BufferBuilder(uniform_block.size, maximumDescriptorSlots, minOffsetAllignment);
+					builder.SetVmaUsage(vma::MemoryUsage::eCpuToGpu);
+					builder.SetSharingMode(vk::SharingMode::eConcurrent);
+
+//#ifndef BUILD_WITHOUT_DEBUGGIND
+//					auto* debug_name = debug_mapping::find(id);
+//					if (debug_name)
+//						builder.SetDebugName(std::format("{}:{}", resources_info.name, debug_name));
+//					else
+//						builder.SetDebugName(std::format("{}:{:x}", resources_info.name, id));
+//#endif
+
+					if (uniform_block.descriptorType == vk::DescriptorType::eUniformBuffer)
+						builder.SetUsage(vk::BufferUsageFlagBits::eUniformBuffer);
+					else if (uniform_block.descriptorType == vk::DescriptorType::eStorageBuffer)
+						builder.SetUsage(vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer);
+
+					uniform_buffers.emplace(id, builder.BuildUnique(render_device));
+				}
+
+				// Create pipeline layout
+				std::array<vk::DescriptorSetLayout, k_max_descriptor_sets> descriptor_set_layouts_ci{};
+				vk::PipelineLayoutCreateInfo layout_ci{};
+				layout_ci.pSetLayouts = descriptor_set_layouts_ci.data();
+
+				// NOTE: adding global descriptor set layout
+				descriptor_set_layouts_ci[0] = builder.default_layouts[0];
+				layout_ci.setLayoutCount++;
+
+				// Send descriptor set layouts to Create info
+				for (int32_t idx = 1; idx < descriptor_set_layouts.size(); ++idx)
+				{
+					if (descriptor_set_layouts[idx])
+					{
+						// I think that should be idx here, but it can cause errors when some layout is not exists
+						descriptor_set_layouts_ci[layout_ci.setLayoutCount++] = descriptor_set_layouts[idx]->GetHandle();
+					}
+				}
+				//for (const auto& [set, descriptor_set_layout] : shader.descriptorSetLayouts)
+				//	layout_ci.descriptorSetLayouts.emplace_back(descriptor_set_layout);
+
+				// Prepare push blocks info
+				u32 current_offset{ 0u };
+				for (const auto& [name, block] : reflection.pushBlocks)
+				{
+					auto& push_constant_range = pushConstantRanges.emplace_back();
+					push_constant_range.stageFlags = block.stageFlags;
+					push_constant_range.offset = current_offset;
+					push_constant_range.size = utl::cast<u32>(block.size);
+					current_offset += push_constant_range.size;
+				}
+
+				layout_ci.pPushConstantRanges = pushConstantRanges.data();
+				layout_ci.pushConstantRangeCount = static_cast<uint32_t>(pushConstantRanges.size());
+
+				layout = render_device.CreatePipelineLayout2(layout_ci);
+
+				if (bind_point == vk::PipelineBindPoint::eGraphics)
+				{
+					builder.graphics_pipeline_builder.SetPipelineLayout(layout);
+					pipeline = builder.graphics_pipeline_builder.BuildUnique(render_device);
+				}
+				else if (bind_point == vk::PipelineBindPoint::eCompute)
+				{
+					builder.compute_pipeline_builder.SetPipelineLayout(layout);
+					pipeline = builder.compute_pipeline_builder.BuildUnique(render_device);
+				}
+			}
+
+			Shader::~Shader()
+			{
+				pipeline.reset();
+
+				for (int32_t i = 0; i < shader_module_count; ++i)
+				{
+					render_device.Destroy(shader_modules[i]);
+				}
+
+				uniform_buffers.clear();
+				render_device.Destroy(layout);
+			}
+
+			Shader::Shader(Shader&& other) noexcept :
+				render_device{ other.render_device },
+				pipeline{ std::exchange(other.pipeline, {}) },
+				shader_modules{ std::exchange(other.shader_modules, {}) },
+				shader_module_count{ std::exchange(other.shader_module_count, {}) },
+				bind_point{ std::exchange(other.bind_point, {}) },
+				layout{ std::exchange(other.layout, {}) },
+				descriptor_set_layouts{ std::exchange(other.descriptor_set_layouts, {}) },
+				descriptor_sets{ std::exchange(other.descriptor_sets, {}) },
+				pushConstantRanges{ std::exchange(other.pushConstantRanges, {}) }
+			{
+			}
+
+			void Shader::BindDescriptors(vk::CommandBuffer& command_buffer, vk::DescriptorSet global_descriptor)
+			{
+				std::array<vk::DescriptorSet, k_max_descriptor_sets> bind_descriptor_sets{};
+				size_t descriptor_set_count{ 1ull };
+
+				bind_descriptor_sets[0] = global_descriptor;
+
+				// TODO: I think i can separate bindings by empty sets here. If some set is empty, i have to save last index, bind sets and after that continue bind from index.
+				// NOTE: shader.descriptorUsage contains next index of descriptor set to use. 
+				// Here i collecting all shader descriptor sets, that was changed in past
+				for (auto& [set, usage_index] : descriptorUsage)
+				{
+					auto actual_descriptor_usage = usage_index == 0u ? maximumDescriptorSlots - 1u : usage_index - 1u;
+					if (descriptor_sets[set])
+					{
+						bind_descriptor_sets[set] = descriptor_sets[set];
+						++descriptor_set_count;
+					}
+				}
+
+				// TODO: determine the lowest descriptor index and start binding from lowest one (for example from 1)
+				command_buffer.bindDescriptorSets(bind_point, layout, 0, utl::cast<u32>(descriptor_set_count), bind_descriptor_sets.data(), 0u, nullptr);
+			}
 		}
 	}
 }

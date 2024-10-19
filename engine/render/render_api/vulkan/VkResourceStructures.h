@@ -122,35 +122,6 @@ namespace engine
 			};
 
 			// HIGH LEVEL OBJECTS
-
-			struct FVkShader
-			{
-				static constexpr size_t k_max_pipelines_handles{ 4ull };
-				static constexpr size_t k_max_shader_module_handles{ 8ull };
-
-				std::array<vk::Pipeline, k_max_pipelines_handles> handles{};
-				size_t pipeline_count{ 0ull };
-
-				std::array<vk::ShaderModule, k_max_shader_module_handles> shaderModules{};
-				size_t shader_module_count{ 0ull };
-
-				vk::PipelineLayout layout{};
-
-				std::array<std::unique_ptr<DescriptorSetLayout>, k_max_descriptor_sets> descriptor_set_layouts{};
-				std::array<vk::DescriptorSet, k_max_descriptor_sets> descriptor_sets{};
-				utl::hash_map<u32, u32> descriptorUsage{};
-				utl::vector<vk::PushConstantRange> pushConstantRanges{};
-
-				utl::hash_map<u64, u64> uniformBuffers{};
-				u64 maximumDescriptorSlots{ 0ull };
-				
-				vk::PipelineBindPoint bindPoint{};
-
-				u64 reflection{ INVALID_HANDLE };
-
-				bool isAlive{ false };
-			};
-
 			struct FVkShaderResourcesInfo
 			{
 				u32 usageCount{ 1u };
