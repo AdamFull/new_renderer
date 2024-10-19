@@ -20,7 +20,7 @@ namespace engine
 				command_pool_builder.SetQueueFamily(queue.GetFamilyIndex());
 				command_pool = command_pool_builder.BuildUnique(render_device);
 
-				descriptor_pool = std::make_unique<DescriptorPool>(render_device);
+				descriptor_allocator = std::make_unique<DescriptorAllocator>(render_device);
 
 				vk::SemaphoreCreateInfo semaphore_ci{};
 				image_avaliable = render_device.CreateSemaphore(semaphore_ci);

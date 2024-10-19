@@ -16,7 +16,7 @@ namespace engine
 			class ImageView;
 			class Texture;
 			class Buffer;
-			class DescriptorPool;
+			class DescriptorAllocator;
 			class DescriptorSetLayout;
 			class DescriptorSet;
 
@@ -246,7 +246,7 @@ namespace engine
 
 			struct FVkGlobalDescriptor
 			{
-				std::unique_ptr<DescriptorPool> descriptor_pool{};
+				std::unique_ptr<DescriptorAllocator> descriptor_allocator{};
 				std::unique_ptr<DescriptorSetLayout> descriptor_set_layout{};
 				std::array<std::unique_ptr<DescriptorSet>, 8ull> descriptor_sets{};
 				utl::hash_map<u64, u64> uniform_buffers{};

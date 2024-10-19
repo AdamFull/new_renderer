@@ -6,7 +6,7 @@ namespace engine
 	{
 		namespace vulkan
 		{
-			DescriptorSet::DescriptorSet(DescriptorPool& descriptor_pool, vk::DescriptorSet handle, size_t pool_index, const PoolSizes& used_sizes) :
+			DescriptorSet::DescriptorSet(DescriptorPool& descriptor_pool, vk::DescriptorSet handle, const PoolSizes& used_sizes) :
 				VulkanResource{ handle },
 				descriptor_pool{ descriptor_pool },
 				pool_index{ pool_index },

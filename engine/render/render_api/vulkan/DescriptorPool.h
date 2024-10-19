@@ -10,10 +10,19 @@ namespace engine
 		{
 			class RenderDevice;
 
-			class DescriptorPool final
+			enum class CanAllocateResult
+			{
+				Success,
+				MaxSetsLimit,
+				MaxDescriptorLimit,
+				InvalidFlags,
+				Other
+			};
+
+			class DescriptorPool final : public VulkanResource<vk::DescriptorPool>
 			{
 			public:
-				DescriptorPool(RenderDevice& render_device);
+				DescriptorPool(RenderDevice& render_device, DescriptorSetLayout& layout, DescriptorPool* previous_pool = nullptr);
 				DescriptorPool(const DescriptorPool&) = delete;
 				DescriptorPool(DescriptorPool&&);
 				~DescriptorPool();
@@ -24,28 +33,43 @@ namespace engine
 				void Reset();
 				std::unique_ptr<DescriptorSet> Allocate(DescriptorSetLayout& layout, const std::string& debug_name = "");
 				vk::Result Free(DescriptorSet& descriptor_set);
-			private:
-				void AllocateNewDescriptorPool(DescriptorSetLayout& layout);
+
+				bool IsExpired() const;
+				CanAllocateResult CanAllocate(DescriptorSetLayout& layout);
 			private:
 				RenderDevice& render_device;
 
-				struct DescriptorPoolBlock
-				{
-					// Max set count that can be allocated in one descriptor pool
-					static constexpr size_t k_max_sets{ 50ull };
+				// Initial number of descriptor count
+				PoolSizes initial_sizes{};
 
-					// Initial number of descriptor count
-					PoolSizes initial_sizes{};
+				// Avaliable number of descriptors
+				PoolSizes avaliable_sizes{};
 
-					// Avaliable number of descriptors
-					PoolSizes avaliable_sizes{};
+				CanAllocateResult last_allocation_result{};
 
-					vk::DescriptorPool handle{};
-					uint32_t allocated_count{ 0u };
-				};
+				uint32_t allocated_count{ 0u };
+				int32_t countdown_count{ 0 };
+			};
 
+			class DescriptorAllocator final
+			{
+			public:
+				DescriptorAllocator(RenderDevice& render_device);
+				DescriptorAllocator(const DescriptorAllocator&) = delete;
+				DescriptorAllocator(DescriptorAllocator&&);
+				~DescriptorAllocator();
+
+				DescriptorAllocator& operator=(const DescriptorAllocator&) = delete;
+				DescriptorAllocator& operator=(DescriptorAllocator&&) = delete;
+
+				void Reset();
+				std::unique_ptr<DescriptorSet> Allocate(DescriptorSetLayout& layout, const std::string& debug_name = "");
+			private:
+				RenderDevice& render_device;
+
+				// TODO: Do i even need to allocate memory here?
 				uint32_t multiplicator{ 2u };
-				std::vector<DescriptorPoolBlock> descriptor_pools{};
+				std::vector<std::unique_ptr<DescriptorPool>> descriptor_pools{};
 			};
 		}
 	}

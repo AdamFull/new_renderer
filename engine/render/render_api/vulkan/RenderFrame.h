@@ -13,7 +13,7 @@ namespace engine
 			class CommandBuffer;
 			class Queue;
 			class Texture;
-			class DescriptorPool;
+			class DescriptorAllocator;
 
 			enum class DescriptorManagementStrategy
 			{
@@ -51,7 +51,7 @@ namespace engine
 
 				std::unique_ptr<Texture> backbuffer;
 				std::unique_ptr<CommandPool> command_pool;
-				std::unique_ptr<DescriptorPool> descriptor_pool;
+				std::unique_ptr<DescriptorAllocator> descriptor_allocator;
 
 				DescriptorManagementStrategy descriptor_management_strategy{ DescriptorManagementStrategy::StoreInCache };
 

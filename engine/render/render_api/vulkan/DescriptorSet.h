@@ -15,7 +15,7 @@ namespace engine
 			public:
 				friend class DescriptorPool;
 
-				DescriptorSet(DescriptorPool& descriptor_pool, vk::DescriptorSet handle, size_t pool_index, const PoolSizes& used_sizes);
+				DescriptorSet(DescriptorPool& descriptor_pool, vk::DescriptorSet handle, const PoolSizes& used_sizes);
 				DescriptorSet(const DescriptorSet&) = delete;
 				DescriptorSet(DescriptorSet&& other);
 

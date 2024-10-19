@@ -9,6 +9,9 @@ namespace engine
 	{
 		namespace vulkan
 		{
+			constexpr size_t k_max_sets{ 50ull };
+			constexpr size_t k_max_frames_unused{ 300ull };
+
 			PoolSizes default_pool_sizes
 			{
 				1u, // vk::DescriptorType::eSampler
@@ -45,142 +48,45 @@ namespace engine
 				return true;
 			}
 
-			DescriptorPool::DescriptorPool(RenderDevice& render_device) :
+			DescriptorPool::DescriptorPool(RenderDevice& render_device, DescriptorSetLayout& layout, DescriptorPool* previous_pool) :
+				VulkanResource{ handle },
 				render_device{ render_device }
 			{
-				
-			}
-
-			DescriptorPool::DescriptorPool(DescriptorPool&& other) :
-				render_device{ other.render_device }
-			{
-
-			}
-
-			DescriptorPool::~DescriptorPool()
-			{
-				for (auto& pool : descriptor_pools)
-				{
-					render_device.Destroy(pool.handle);
-				}
-			}
-
-			void DescriptorPool::Reset()
-			{
-				for (auto& pool : descriptor_pools)
-				{
-					render_device.ResetDescriptorPool2(pool.handle);
-					pool.allocated_count = 0ull;
-
-					// Reset avaliable descriptors
-					std::copy(pool.initial_sizes.begin(), pool.initial_sizes.end(), pool.avaliable_sizes.begin());
-				}
-			}
-
-			std::unique_ptr<DescriptorSet> DescriptorPool::Allocate(DescriptorSetLayout& layout, const std::string& debug_name)
-			{
-				// We didn't have any pool for now, needs to allocate new one
-				if (descriptor_pools.empty())
-				{
-					AllocateNewDescriptorPool(layout);
-				}
-
-				const auto& required_descriptor_count = layout.GetRequiredDescriptorCount();
-				auto found = std::find_if(descriptor_pools.begin(), descriptor_pools.end(), [&required_descriptor_count](const DescriptorPoolBlock& pool)
-					{
-						return pool.allocated_count < DescriptorPoolBlock::k_max_sets && HaveEnoughtSizes(pool.avaliable_sizes, required_descriptor_count);
-					});
-
-				DescriptorPoolBlock* pool{ nullptr };
-				if (found != descriptor_pools.end())
-				{
-					pool = &(*found);
-				}
-				else
-				{
-					AllocateNewDescriptorPool(layout);
-					pool = &descriptor_pools.back();
-				}
-
-				assert(pool);
-
-				vk::DescriptorSetAllocateInfo alloc_info{};
-				alloc_info.descriptorPool = pool->handle;
-				alloc_info.descriptorSetCount = 1;
-				alloc_info.pSetLayouts = &Handle(layout);
-
-				vk::DescriptorSet descriptor_set{ VK_NULL_HANDLE };
-				render_device.AllocateDescriptorSet2(alloc_info, &descriptor_set, debug_name);
-				assert(descriptor_set);
-
-				for (int32_t i = 0; i < k_max_pool_sizes_count; ++i)
-				{
-					pool->avaliable_sizes[i] -= required_descriptor_count[i];
-				}
-				++pool->allocated_count;
-
-				return std::make_unique<DescriptorSet>(*this, descriptor_set, pool - &descriptor_pools[0], required_descriptor_count);
-			}
-
-			vk::Result DescriptorPool::Free(DescriptorSet& descriptor_set)
-			{
-				if (descriptor_set.handle)
-				{
-					auto& pool = descriptor_pools[descriptor_set.pool_index];
-					render_device.FreeDescriptorSets2(pool.handle, &descriptor_set.handle, 1u);
-					descriptor_set.handle = nullptr;
-
-					--pool.allocated_count;
-
-					for (int32_t i = 0; i < k_max_pool_sizes_count; ++i)
-					{
-						pool.avaliable_sizes[i] += descriptor_set.used_sizes[i];
-					}
-				}
-
-				return vk::Result::eSuccess;
-			}
-
-			void DescriptorPool::AllocateNewDescriptorPool(DescriptorSetLayout& layout)
-			{
 				auto& requested_sizes = layout.GetRequiredDescriptorCount();
-				bool have_previous_pools = !descriptor_pools.empty();
 
-				auto& new_pool = descriptor_pools.emplace_back();
-				if (have_previous_pools)
+				if (previous_pool)
 				{
-					auto& last_pool = descriptor_pools[descriptor_pools.size() - 2ull];
-
-					// If in last pool allocated_count is reached limit and sizes was enought, we save the size
-					if (HaveEnoughtSizes(last_pool.initial_sizes, requested_sizes) && last_pool.allocated_count > DescriptorPoolBlock::k_max_sets)
+					switch (previous_pool->last_allocation_result)
 					{
-						// We have reached max sets limit. We can save previous pool sizes
-						std::copy(last_pool.initial_sizes.begin(), last_pool.initial_sizes.end(), new_pool.initial_sizes.begin());
-					}
-					else
-					{
-						new_pool.initial_sizes = MergePoolSizes(last_pool.initial_sizes, requested_sizes, multiplicator);
+					case CanAllocateResult::MaxSetsLimit: 
+						std::copy(previous_pool->initial_sizes.begin(), previous_pool->initial_sizes.end(), initial_sizes.begin());
+						break;
+					case CanAllocateResult::MaxDescriptorLimit: 
+						initial_sizes = MergePoolSizes(previous_pool->initial_sizes, requested_sizes, 2);
+						break;
+					case CanAllocateResult::InvalidFlags: break;
+					default: break;
 					}
 				}
 				else
 				{
-					new_pool.initial_sizes = MergePoolSizes(default_pool_sizes, requested_sizes, multiplicator);
+					initial_sizes = MergePoolSizes(default_pool_sizes, requested_sizes, 2);
 				}
 
 				// Reset avaliable sizes
-				std::copy(new_pool.initial_sizes.begin(), new_pool.initial_sizes.end(), new_pool.avaliable_sizes.begin());
+				std::copy(initial_sizes.begin(), initial_sizes.end(), avaliable_sizes.begin());
 
 				// Prepare pool sizes
 				std::array<vk::DescriptorPoolSize, k_max_pool_sizes_count> pool_sizes{};
 				for (int32_t i = 0; i < k_max_pool_sizes_count; ++i)
 				{
-					pool_sizes[i] = { static_cast<vk::DescriptorType>(i), static_cast<uint32_t>(new_pool.initial_sizes[i]) };
+					pool_sizes[i] = { static_cast<vk::DescriptorType>(i), static_cast<uint32_t>(initial_sizes[i]) };
 				}
 
 				vk::DescriptorPoolCreateInfo create_info{};
 				create_info.poolSizeCount = k_max_pool_sizes_count;
 				create_info.pPoolSizes = pool_sizes.data();
-				create_info.maxSets = DescriptorPoolBlock::k_max_sets;
+				create_info.maxSets = k_max_sets;
 
 				for (int32_t i = 0; i < layout.GetBindingCount(); ++i)
 				{
@@ -192,7 +98,156 @@ namespace engine
 					}
 				}
 
-				new_pool.handle = render_device.CreateDescriptorPool2(create_info);
+				handle = render_device.CreateDescriptorPool2(create_info);
+				countdown_count = k_max_frames_unused;
+			}
+
+			DescriptorPool::DescriptorPool(DescriptorPool&& other) :
+				VulkanResource{ std::move(other) },
+				render_device{ other.render_device },
+				initial_sizes{ std::exchange(other.initial_sizes, {}) },
+				avaliable_sizes{ std::exchange(other.avaliable_sizes, {}) },
+				allocated_count{ std::exchange(other.allocated_count, {}) },
+				countdown_count{ std::exchange(other.countdown_count, {}) }
+			{
+			}
+
+			DescriptorPool::~DescriptorPool()
+			{
+				render_device.Destroy(handle);
+			}
+
+			void DescriptorPool::Reset()
+			{
+				render_device.ResetDescriptorPool2(handle);
+
+				last_allocation_result = CanAllocateResult::Success;
+				allocated_count = 0u;
+				--countdown_count;
+
+				// Reset avaliable descriptors
+				std::copy(initial_sizes.begin(), initial_sizes.end(), avaliable_sizes.begin());
+			}
+
+			std::unique_ptr<DescriptorSet> DescriptorPool::Allocate(DescriptorSetLayout& layout, const std::string& debug_name)
+			{
+				vk::DescriptorSetAllocateInfo alloc_info{};
+				alloc_info.descriptorPool = handle;
+				alloc_info.descriptorSetCount = 1;
+				alloc_info.pSetLayouts = &layout.GetHandle();
+
+				vk::DescriptorSet descriptor_set{ VK_NULL_HANDLE };
+				render_device.AllocateDescriptorSet2(alloc_info, &descriptor_set, debug_name);
+				assert(descriptor_set);
+
+				auto& required_descriptor_count = layout.GetRequiredDescriptorCount();
+				for (int32_t i = 0; i < k_max_pool_sizes_count; ++i)
+				{
+					avaliable_sizes[i] -= required_descriptor_count[i];
+				}
+				++allocated_count;
+				countdown_count = k_max_frames_unused;
+
+				return std::make_unique<DescriptorSet>(*this, descriptor_set, required_descriptor_count);
+			}
+
+			vk::Result DescriptorPool::Free(DescriptorSet& descriptor_set)
+			{
+				if (descriptor_set.handle)
+				{
+					render_device.FreeDescriptorSets2(handle, &descriptor_set.handle, 1u);
+					descriptor_set.handle = nullptr;
+
+					--allocated_count;
+					countdown_count = k_max_frames_unused;
+
+					for (int32_t i = 0; i < k_max_pool_sizes_count; ++i)
+					{
+						avaliable_sizes[i] += descriptor_set.used_sizes[i];
+					}
+
+					return vk::Result::eSuccess;
+				}
+
+				return vk::Result::eIncomplete;
+			}
+
+			bool DescriptorPool::IsExpired() const
+			{
+				return countdown_count < 0;
+			}
+
+			CanAllocateResult DescriptorPool::CanAllocate(DescriptorSetLayout& layout)
+			{
+				auto& required_descriptor_count = layout.GetRequiredDescriptorCount();
+
+				bool max_set_limit_reached = allocated_count >= k_max_sets;
+				bool max_descriptor_limit_reached = !HaveEnoughtSizes(avaliable_sizes, required_descriptor_count);
+
+				last_allocation_result = CanAllocateResult::Success;
+				if (!max_descriptor_limit_reached && max_set_limit_reached)
+					last_allocation_result = CanAllocateResult::MaxSetsLimit;
+				else if (max_descriptor_limit_reached)
+					last_allocation_result = CanAllocateResult::MaxSetsLimit;
+
+				// TODO: implement flags and other
+
+				return last_allocation_result;
+			}
+
+
+			DescriptorAllocator::DescriptorAllocator(RenderDevice& render_device) :
+				render_device{ render_device }
+			{
+			}
+
+			DescriptorAllocator::DescriptorAllocator(DescriptorAllocator&& other) :
+				render_device{ other.render_device },
+				descriptor_pools{ std::exchange(other.descriptor_pools, {}) }
+			{
+			}
+
+			DescriptorAllocator::~DescriptorAllocator()
+			{
+				descriptor_pools.clear();
+			}
+
+			void DescriptorAllocator::Reset()
+			{
+				auto to_delete = std::remove_if(descriptor_pools.begin(), descriptor_pools.end(), [](const std::unique_ptr<DescriptorPool>& pool) 
+					{
+						pool->Reset();
+						return pool->IsExpired();
+					});
+
+				if (to_delete != descriptor_pools.end())
+				{
+					descriptor_pools.erase(to_delete);
+				}
+			}
+
+			std::unique_ptr<DescriptorSet> DescriptorAllocator::Allocate(DescriptorSetLayout& layout, const std::string& debug_name)
+			{
+				// We didn't have any pool for now, needs to allocate new one
+				if (descriptor_pools.empty())
+				{
+					auto& new_pool = descriptor_pools.emplace_back(std::make_unique<DescriptorPool>(render_device, layout));
+					return new_pool->Allocate(layout, debug_name);
+				}
+
+				const auto& required_descriptor_count = layout.GetRequiredDescriptorCount();
+				auto found = std::find_if(descriptor_pools.begin(), descriptor_pools.end(), [&layout](const std::unique_ptr<DescriptorPool>& pool)
+					{
+						return pool->CanAllocate(layout) == CanAllocateResult::Success;
+					});
+;
+				if (found != descriptor_pools.end())
+				{
+					return (*found)->Allocate(layout, debug_name);
+				}
+
+				auto& new_pool = descriptor_pools.emplace_back(std::make_unique<DescriptorPool>(render_device, layout, !descriptor_pools.empty() ? descriptor_pools.back().get() : nullptr));
+				return new_pool->Allocate(layout, debug_name);
 			}
 		}
 	}

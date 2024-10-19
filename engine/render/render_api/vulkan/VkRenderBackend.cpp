@@ -231,7 +231,7 @@ void VkRenderBackend::Create(const FRenderContextCreateInfo& context_ci)
 void VkRenderBackend::CreateGlobalDescriptor(const FGlobalUniformCreateInfo& uniform_ci)
 {
 	// Create descriptor pool
-	global_descriptor.descriptor_pool = std::make_unique<DescriptorPool>(*render_device);
+	global_descriptor.descriptor_allocator = std::make_unique<DescriptorAllocator>(*render_device);
 
 	// Create descriptor set layout
 	auto descriptor_set_layout_builder = DescriptorSetLayoutBuilder();
@@ -275,7 +275,7 @@ void VkRenderBackend::CreateGlobalDescriptor(const FGlobalUniformCreateInfo& uni
 	// TODO: i have to create new pool after recreating pipeline when count of frames was changed
 	for (int32_t i = 0; i < render_context->GetSwapchain().GetImageCount(); ++i)
 	{
-		global_descriptor.descriptor_sets[i] = global_descriptor.descriptor_pool->Allocate(*global_descriptor.descriptor_set_layout, std::format("global_{}", i));
+		global_descriptor.descriptor_sets[i] = global_descriptor.descriptor_allocator->Allocate(*global_descriptor.descriptor_set_layout, std::format("global_{}", i));
 	}
 
 	// Create uniform buffers
