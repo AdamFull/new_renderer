@@ -76,7 +76,6 @@ void CComputeCubemapPass::_Execute()
 				uniform->Set(shader_bindings::roughness_label, layer_roughness);
 			}
 
-			shader->FlushDescriptors();
 			shader->FlushConstants(m_queue);
 			shader->Bind(m_queue);
 			shader->BindResources(m_queue);

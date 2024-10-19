@@ -21,7 +21,6 @@ namespace engine
 			void BindBuffer(u64 name, FAPIHandle buffer_resource) override;
 			void BindTexture(u64 name, FAPIHandle texture_resource, u32 mip = ~0u) override;
 
-			void FlushDescriptors() override;
 			void FlushConstants(EQueueTypeFlagBits queue) override;
 
 			void Bind(EQueueTypeFlagBits queue) override;

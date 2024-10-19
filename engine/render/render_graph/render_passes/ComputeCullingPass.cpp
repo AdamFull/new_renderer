@@ -79,7 +79,6 @@ void CComputeCullingPass::_Execute()
 					buffers->Set(shader_bindings::last_vertex_label, utl::cast<u32>(vertex_buffer->Count()));
 				}
 
-				shader->FlushDescriptors();
 				shader->Bind(m_queue);
 				shader->BindResources(m_queue);
 			}

@@ -81,7 +81,6 @@ void CCascadedShadowMapPass::_Render()
 				auto& shader = GetShaderByVBO(last_vbo);
 				if (was_vbo_rebinded)
 				{
-					shader->FlushDescriptors();
 					shader->Bind(m_queue);
 					shader->BindResources(m_queue);
 				}

@@ -57,35 +57,7 @@ void CShaderObject::BindBuffer(u64 name, FAPIHandle buffer_resource)
 
 void CShaderObject::BindTexture(u64 name, FAPIHandle texture_resource, u32 mip)
 {
-	m_bindTextures[name] = FTextureBindInfo{ texture_resource, mip };
-}
-
-void CShaderObject::FlushDescriptors()
-{
-	// Universal block for binding external resources
-	auto& external_resources = GetUniformBlock(shader_bindings::external_bind_resources);
-	if (external_resources)
-	{
-		
-		// TODO: Required multiple changes for bindless system inside api implementation
-		// start_element_index + (layer_index * layer.mips.size()) + mip_index;
-	}
-
-	FShaderResourceCommit update_data{};
-	update_data.shaderId = m_shaderId;
-	update_data.textures = m_bindTextures;
-	update_data.buffers = m_bindBuffers;
-
-	// Collect uniform buffers and storage buffers
-	for (auto& [id, block] : m_uniformBlocks)
-	{
-		auto& data_view = update_data.uniforms[id];
-		auto& block_data = block->Data();
-		data_view.data = block_data.data();
-		data_view.size = block_data.size();
-	}
-
-	m_pRenderContext->UpdateShaderResources(update_data);
+	m_bindTextures[name] = { texture_resource, mip };
 }
 
 void CShaderObject::FlushConstants(EQueueTypeFlagBits queue)
@@ -110,6 +82,25 @@ void CShaderObject::Bind(EQueueTypeFlagBits queue)
 
 void CShaderObject::BindResources(EQueueTypeFlagBits queue)
 {
+	m_pRenderContext->ResetShaderResources(m_shaderId);
+
+	for (const auto& [id, handle] : m_bindBuffers)
+	{
+		m_pRenderContext->BindBuffer(m_shaderId, id, handle);
+	}
+
+	for (const auto& [id, bind_info] : m_bindTextures)
+	{
+		m_pRenderContext->BindTexture(m_shaderId, id, bind_info.textureId, bind_info.mipLevel);
+	}
+
+	// Collect uniform buffers and storage buffers
+	for (auto& [id, block] : m_uniformBlocks)
+	{
+		auto& block_data = block->Data();
+		m_pRenderContext->UpdateUniform(m_shaderId, id, std::span<const char>(block_data.data(), block_data.size()));
+	}
+
 	m_pRenderContext->BindShaderResources(m_shaderId, queue);
 }
 

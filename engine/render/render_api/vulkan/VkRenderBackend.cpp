@@ -573,119 +573,27 @@ FShaderReflectionData VkRenderBackend::GetShaderReflection(FAPIHandle shader_vie
 	return shader->GetReflectionData();
 }
 
-// TODO: I only need to write data to descriptors if I have not written anything yet for the current 
-// swapchain frame and if the previous hash sum of data does not match the current one. Otherwise, 
-// I'll just be doing unnecessary work both copying data and loading it, including loading descriptors.
-void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_resources, EShaderResourcesUpdateFlags flags)
+void VkRenderBackend::UpdateUniform(FAPIHandle shader_id, uint64_t reflection_name, std::span<const char> data)
 {
-	auto& shader = render_resources->get<Shader>(shader_resources.shaderId.Get());
+	auto& shader = render_resources->get<Shader>(shader_id.Get());
+	shader->UpdateUniform(reflection_name, data, render_context->GetCurrentFrameIndex());
+}
 
-	auto& textures = render_resources->data<Texture>();
-	auto& buffers = render_resources->data<Buffer>();
+void VkRenderBackend::BindTexture(FAPIHandle shader_id, uint64_t reflection_name, FAPIHandle texture_id, uint32_t mip_level)
+{
+	auto& shader = render_resources->get<Shader>(shader_id.Get());
+	auto& texture = render_resources->get<Texture>(texture_id.Get());
 
-	DescriptorUpdate descriptor_update{};
+	auto& sampler = texture->GetSamplerID() != ~0u ? sampler_cache[texture->GetSamplerID()] : default_sampler;
+	shader->UpdateTextureBinding(reflection_name, *texture, *sampler, mip_level);
+}
 
-	shader->ResetDescriptors(*render_context);
+void VkRenderBackend::BindBuffer(FAPIHandle shader_id, uint64_t reflection_name, FAPIHandle buffer_id)
+{
+	auto& shader = render_resources->get<Shader>(shader_id.Get());
+	auto& buffer = render_resources->get<Buffer>(buffer_id.Get());
 
-	auto& current_frame = render_context->GetCurrentFrame();
-
-	// TODO: add something like check sum to check changed data in buffers or not
-	if (flags & EShaderResourcesUpdateFlagBits::eUniformBlocks)
-	{
-		//shader->UpdateUniforms(descriptor_update, shader_resources.uniforms);
-		for (const auto& [uniform_name, uniform_data] : shader_resources.uniforms)
-		{
-			auto found_reflection = shader->reflection.uniformBlocks.find(uniform_name);
-			if (found_reflection == shader->reflection.uniformBlocks.end())
-				continue;
-
-			// Prepare descriptor update data
-			auto& uniform_block = found_reflection->second;
-			auto descriptor_index = render_context->GetCurrentFrameIndex();
-
-			auto& buffer = shader->uniform_buffers[uniform_name];
-			auto buffer_element_size = buffer->GetSuballocationSize();
-
-			// Not sure that it is correct, because i don't know how to determine previous buffer
-			auto& buffer_descriptor = descriptor_update.AddBufferInfo();
-			buffer_descriptor.buffer = buffer->GetHandle();
-			buffer_descriptor.range = uniform_block.size;
-			buffer_descriptor.offset = descriptor_index * buffer_element_size;
-
-			auto& write_descriptor_set = descriptor_update.AddDescriptorWrite();;
-			write_descriptor_set.descriptorType = uniform_block.descriptorType;
-			write_descriptor_set.dstBinding = uniform_block.binding;
-			write_descriptor_set.dstSet = shader->descriptor_sets[uniform_block.set];
-			write_descriptor_set.pBufferInfo = &buffer_descriptor;
-			write_descriptor_set.descriptorCount = 1;
-
-			// Write new data to buffer memory
-			buffer->Update(uniform_data.data, uniform_data.size, buffer_descriptor.offset);
-		}
-	}
-
-	// Bind storage buffers
-	if (flags & EShaderResourcesUpdateFlagBits::eStorageBlocks)
-	{
-		for (const auto& [uniform_name, buffer_id] : shader_resources.buffers)
-		{
-			auto found_reflection = shader->reflection.uniformBlocks.find(uniform_name);
-			if (found_reflection == shader->reflection.uniformBlocks.end())
-				continue;
-
-			// Prepare descriptor update data
-			auto& uniform_block = found_reflection->second;
-			auto& buffer = buffers[buffer_id.Get()];
-
-			// Not sure that it is correct, because i don't know how to determine previous buffer
-			auto& buffer_descriptor = descriptor_update.AddBufferInfo();
-			buffer_descriptor.buffer = Handle(*buffer);
-			buffer_descriptor.range = buffer->GetSize();
-			buffer_descriptor.offset = 0ull;
-
-			auto& write_descriptor_set = descriptor_update.AddDescriptorWrite();
-			write_descriptor_set.descriptorType = uniform_block.descriptorType;
-			write_descriptor_set.dstBinding = uniform_block.binding;
-			write_descriptor_set.dstSet = shader->descriptor_sets[uniform_block.set];
-			write_descriptor_set.pBufferInfo = &buffer_descriptor;
-			write_descriptor_set.descriptorCount = 1;
-		}
-	}
-
-	// Updating textures in shader
-	if (flags & EShaderResourcesUpdateFlagBits::eTextures)
-	{
-		for (const auto& [texture_name, bind_info] : shader_resources.textures)
-		{
-			auto& texture = textures[bind_info.textureId.Get()];
-			auto& texture_subresource = texture->GetImageView(bind_info.mipLevel);
-
-			auto found_reflection = shader->reflection.uniforms.find(texture_name);
-			if (found_reflection == shader->reflection.uniforms.end())
-				continue;
-
-			auto& uniform = found_reflection->second;
-
-			auto& image_descriptor = descriptor_update.AddImageInfo();
-			image_descriptor.imageView = Handle(texture_subresource);
-			image_descriptor.sampler = Handle(*(texture->GetSamplerID() != ~0u ? sampler_cache[texture->GetSamplerID()] : default_sampler));
-			image_descriptor.imageLayout = texture_subresource.GetImageLayout();
-
-			auto& write_descriptor_set = descriptor_update.AddDescriptorWrite();
-			write_descriptor_set.descriptorType = uniform.descriptorType;
-			write_descriptor_set.dstBinding = uniform.binding;
-			write_descriptor_set.dstSet = shader->descriptor_sets[uniform.set];
-			write_descriptor_set.pImageInfo = &image_descriptor;
-			write_descriptor_set.descriptorCount = 1;
-		}
-	}
-
-	// Update descriptor sets if needed
-	if (descriptor_update.writes_count)
-	{
-		auto& logical = render_device->GetLogicalDevice();
-		Handle(logical).updateDescriptorSets(descriptor_update.writes_count, descriptor_update.write_descriptor_sets.data(), 0, nullptr);
-	}
+	shader->UpdateBufferBinding(reflection_name, *buffer);
 }
 
 void VkRenderBackend::FlushConstantRanges(FAPIHandle shader_id, const utl::hash_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type)
@@ -702,6 +610,12 @@ void VkRenderBackend::BindShader(FAPIHandle shader_id, EQueueTypeFlagBits queue_
 	// TODO: make possible to select what pipeline i have to bind now
 	auto& shader = render_resources->get<Shader>(shader_id.Get());
 	shader->Bind(command_buffer);
+}
+
+void VkRenderBackend::ResetShaderResources(FAPIHandle shader_id)
+{
+	auto& shader = render_resources->get<Shader>(shader_id.Get());
+	shader->ResetDescriptors(*render_context);
 }
 
 void VkRenderBackend::BindShaderResources(FAPIHandle shader_id, EQueueTypeFlagBits queue_type)

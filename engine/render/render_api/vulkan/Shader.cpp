@@ -1,7 +1,11 @@
 #include <engine/render/render_api/vulkan/Shader.h>
 #include <engine/render/render_api/vulkan/PhysicalDevice.h>
+#include <engine/render/render_api/vulkan/Device.h>
 #include <engine/render/render_api/vulkan/VkRenderDevice.h>
 #include <engine/render/render_api/vulkan/Buffer.h>
+#include <engine/render/render_api/vulkan/Texture.h>
+#include <engine/render/render_api/vulkan/ImageView.h>
+#include <engine/render/render_api/vulkan/Sampler.h>
 #include <engine/render/render_api/vulkan/VkCommon.h>
 #include <engine/render/render_api/vulkan/RenderContext.h>
 #include <engine/render/render_api/vulkan/DescriptorSet.h>
@@ -64,7 +68,12 @@ namespace engine
 				return buffer_descriptors[buffer_count++];
 			}
 
-
+			void DescriptorUpdate::Clear()
+			{
+				writes_count = 0u;
+				image_count = 0u;
+				buffer_count = 0u;
+			}
 
 
 			Shader::Shader(RenderDevice& render_device, ShaderBuilder& builder) :
@@ -250,7 +259,7 @@ namespace engine
 				shader_module_count{ std::exchange(other.shader_module_count, {}) },
 				bind_point{ std::exchange(other.bind_point, {}) },
 				layout{ std::exchange(other.layout, {}) },
-				descriptor_set_layouts{ std::exchange(other.descriptor_set_layouts, {}) },
+				descriptor_set_layouts{ std::move(other.descriptor_set_layouts) },
 				descriptor_sets{ std::exchange(other.descriptor_sets, {}) },
 				pushConstantRanges{ std::exchange(other.pushConstantRanges, {}) }
 			{
@@ -352,13 +361,15 @@ namespace engine
 				}
 			}
 
-			void Shader::UpdateUniforms(DescriptorUpdate& descriptor_update, const utl::hash_map<u64, FUniformDataView>& uniforms)
-			{
-				
-			}
-
 			void Shader::BindDescriptors(CommandBuffer& command_buffer)
 			{
+				if (descriptor_update.writes_count)
+				{
+					auto& logical = render_device.GetLogicalDevice();
+					Handle(logical).updateDescriptorSets(descriptor_update.writes_count, descriptor_update.write_descriptor_sets.data(), 0, nullptr);
+					descriptor_update.Clear();
+				}
+
 				uint32_t descriptor_set_count{ 0u };
 
 				// TODO: I think i can separate bindings by empty sets here. If some set is empty, i have to save last index, bind sets and after that continue bind from index.
@@ -379,6 +390,81 @@ namespace engine
 			void Shader::Bind(CommandBuffer& command_buffer)
 			{
 				command_buffer.BindPipeline(bind_point, pipeline->GetHandle());
+			}
+
+			void Shader::UpdateUniform(uint64_t reflection_name, std::span<const char> data, uint32_t frame_index)
+			{
+				// TODO: may be add something like index of buffer?
+				auto found_reflection = reflection.uniformBlocks.find(reflection_name);
+				if (found_reflection == reflection.uniformBlocks.end())
+					return;
+
+				// Prepare descriptor update data
+				auto& uniform_block = found_reflection->second;
+
+				auto& buffer = uniform_buffers[reflection_name];
+				auto buffer_element_size = buffer->GetSuballocationSize();
+
+				// Not sure that it is correct, because i don't know how to determine previous buffer
+				auto& buffer_descriptor = descriptor_update.AddBufferInfo();
+				buffer_descriptor.buffer = buffer->GetHandle();
+				buffer_descriptor.range = uniform_block.size;
+				buffer_descriptor.offset = frame_index * buffer_element_size;
+
+				auto& write_descriptor_set = descriptor_update.AddDescriptorWrite();;
+				write_descriptor_set.descriptorType = uniform_block.descriptorType;
+				write_descriptor_set.dstBinding = uniform_block.binding;
+				write_descriptor_set.dstSet = descriptor_sets[uniform_block.set];
+				write_descriptor_set.pBufferInfo = &buffer_descriptor;
+				write_descriptor_set.descriptorCount = 1;
+
+				// Write new data to buffer memory
+				buffer->Update(data.data(), data.size(), buffer_descriptor.offset);
+			}
+
+			void Shader::UpdateTextureBinding(uint64_t reflection_name, Texture& texture, Sampler& sampler, uint32_t mip_level)
+			{
+				auto found_reflection = reflection.uniforms.find(reflection_name);
+				if (found_reflection == reflection.uniforms.end())
+					return;
+
+				auto& texture_subresource = texture.GetImageView(mip_level);
+				auto& uniform = found_reflection->second;
+
+				auto& image_descriptor = descriptor_update.AddImageInfo();
+				image_descriptor.imageView = texture_subresource.GetHandle();
+				image_descriptor.sampler = sampler.GetHandle();
+				image_descriptor.imageLayout = texture_subresource.GetImageLayout();
+
+				auto& write_descriptor_set = descriptor_update.AddDescriptorWrite();
+				write_descriptor_set.descriptorType = uniform.descriptorType;
+				write_descriptor_set.dstBinding = uniform.binding;
+				write_descriptor_set.dstSet = descriptor_sets[uniform.set];
+				write_descriptor_set.pImageInfo = &image_descriptor;
+				write_descriptor_set.descriptorCount = 1;
+			}
+
+			void Shader::UpdateBufferBinding(uint64_t reflection_name, Buffer& buffer)
+			{
+				auto found_reflection = reflection.uniformBlocks.find(reflection_name);
+				if (found_reflection == reflection.uniformBlocks.end())
+					return;
+
+				// Prepare descriptor update data
+				auto& uniform_block = found_reflection->second;
+
+				// Not sure that it is correct, because i don't know how to determine previous buffer
+				auto& buffer_descriptor = descriptor_update.AddBufferInfo();
+				buffer_descriptor.buffer = buffer.GetHandle();
+				buffer_descriptor.range = buffer.GetSize();
+				buffer_descriptor.offset = 0ull;
+
+				auto& write_descriptor_set = descriptor_update.AddDescriptorWrite();
+				write_descriptor_set.descriptorType = uniform_block.descriptorType;
+				write_descriptor_set.dstBinding = uniform_block.binding;
+				write_descriptor_set.dstSet = descriptor_sets[uniform_block.set];
+				write_descriptor_set.pBufferInfo = &buffer_descriptor;
+				write_descriptor_set.descriptorCount = 1;
 			}
 
 			void Shader::DivideByLocalSizes(vk::DispatchIndirectCommand& command, uint64_t subgroup_index)

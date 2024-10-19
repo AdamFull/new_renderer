@@ -43,7 +43,6 @@ void CComputePass::_Execute()
 
 	BindShaderResources(m_shader, m_deltaTime);
 
-	shader->FlushDescriptors();
 	shader->FlushConstants(m_queue);
 	shader->Bind(m_queue);
 	shader->BindResources(m_queue);

@@ -78,7 +78,6 @@ void CComputeGeometryPass::_Execute()
 					buffers->Set(shader_bindings::lb_label, last_vbo->GetGeometryBuffer(EGeometryBufferIndices::eLodBuffer)->Buffer()->GetDescription());
 				}
 
-				shader->FlushDescriptors();
 				shader->Bind(m_queue);
 				shader->BindResources(m_queue);
 			}

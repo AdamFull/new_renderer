@@ -170,7 +170,6 @@ void CDebugDrawPass::_Render()
 			shader->BindTexture(utl::murmur_hash_64("font_sampler"), m_pRenderInterface->GetTextureObject(m_fontTexture)->Handle());
 
 			// TODO: add font texture support
-			shader->FlushDescriptors();
 			shader->BindResources(m_queue);
 
 			for (const auto& command : draw_commands)

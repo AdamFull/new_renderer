@@ -237,7 +237,6 @@ namespace engine
 			virtual void BindBuffer(u64 name, FAPIHandle buffer_resource) = 0;
 			virtual void BindTexture(u64 name, FAPIHandle texture_resource, u32 mip = ~0u) = 0;
 
-			virtual void FlushDescriptors() = 0;
 			virtual void FlushConstants(EQueueTypeFlagBits queue) = 0;
 			virtual void Bind(EQueueTypeFlagBits queue) = 0;
 			virtual void BindResources(EQueueTypeFlagBits queue) = 0;
@@ -336,9 +335,12 @@ namespace engine
 			virtual FAPIHandle CreateShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const FShaderCreationBlockInfo& shader_stage) = 0;
 			virtual FAPIHandle CreateShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci) = 0;
 			virtual FShaderReflectionData GetShaderReflection(FAPIHandle shader_view) = 0;
-			virtual void UpdateShaderResources(const FShaderResourceCommit& resources, EShaderResourcesUpdateFlags flags = EShaderResourcesUpdateFlagBits::eAll) = 0;
+			virtual void UpdateUniform(FAPIHandle shader_id, uint64_t reflection_name, std::span<const char> data) = 0;
+			virtual void BindTexture(FAPIHandle shader_id, uint64_t reflection_name, FAPIHandle texture_id, uint32_t mip_level) = 0;
+			virtual void BindBuffer(FAPIHandle shader_id, uint64_t reflection_name, FAPIHandle buffer_id) = 0;
 			virtual void FlushConstantRanges(FAPIHandle shader_id, const utl::hash_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type) = 0;
 			virtual void BindShader(FAPIHandle shader_id, EQueueTypeFlagBits queue_type) = 0;
+			virtual void ResetShaderResources(FAPIHandle shader_id) = 0;
 			virtual void BindShaderResources(FAPIHandle shader_id, EQueueTypeFlagBits queue_type) = 0;
 			virtual void DestroyShader(FAPIHandle resource_id) = 0;
 

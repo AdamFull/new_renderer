@@ -46,9 +46,12 @@ namespace engine
 				FAPIHandle CreateShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const FShaderCreationBlockInfo& shader_stage) override;
 				FAPIHandle CreateShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci) override;
 				FShaderReflectionData GetShaderReflection(FAPIHandle shader_view) override;
-				void UpdateShaderResources(const FShaderResourceCommit& shader_resources, EShaderResourcesUpdateFlags flags = EShaderResourcesUpdateFlagBits::eAll) override;
+				void UpdateUniform(FAPIHandle shader_id, uint64_t reflection_name, std::span<const char> data) override;
+				void BindTexture(FAPIHandle shader_id, uint64_t reflection_name, FAPIHandle texture_id, uint32_t mip_level) override;
+				void BindBuffer(FAPIHandle shader_id, uint64_t reflection_name, FAPIHandle buffer_id) override;
 				void FlushConstantRanges(FAPIHandle shader_id, const utl::hash_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type) override;
 				void BindShader(FAPIHandle shader_id, EQueueTypeFlagBits queue_type) override;
+				void ResetShaderResources(FAPIHandle shader_id) override;
 				void BindShaderResources(FAPIHandle shader_id, EQueueTypeFlagBits queue_type) override;
 				void DestroyShader(FAPIHandle resource_id) override;
 

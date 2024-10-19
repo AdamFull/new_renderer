@@ -14,6 +14,8 @@ namespace engine
 			class RenderContext;
 			class CommandBuffer;
 			class Buffer;
+			class Texture;
+			class Sampler;
 			class Shader;
 			class DescriptorSetLayout;
 			class Pipeline;
@@ -66,6 +68,8 @@ namespace engine
 				vk::WriteDescriptorSet& AddDescriptorWrite();
 				vk::DescriptorImageInfo& AddImageInfo();
 				vk::DescriptorBufferInfo& AddBufferInfo();
+
+				void Clear();
 			};
 
 			class Shader final
@@ -91,15 +95,18 @@ namespace engine
 				void FlushConstantRanges(CommandBuffer& command_buffer, const utl::hash_map<u64, FUniformDataView>& constants);
 
 				void ResetDescriptors(RenderContext& render_context);
-				void UpdateUniforms(DescriptorUpdate& descriptor_update, const utl::hash_map<u64, FUniformDataView>& uniforms);
 
 				void BindDescriptors(CommandBuffer& command_buffer);
 				void Bind(CommandBuffer& command_buffer);
 
 				void DivideByLocalSizes(vk::DispatchIndirectCommand& command, uint64_t subgroup_index);
 
+				void UpdateUniform(uint64_t reflection_name, std::span<const char> data, uint32_t frame_index);
+				void UpdateTextureBinding(uint64_t reflection_name, Texture& texture, Sampler& sampler, uint32_t mip_level);
+				void UpdateBufferBinding(uint64_t reflection_name, Buffer& buffer);
+
 				Buffer* GetUniformBuffer(uint64_t uniform_name) const;
-			public:
+			private:
 				RenderDevice& render_device;
 
 				// Pipeline object
@@ -115,12 +122,12 @@ namespace engine
 				std::array<vk::DescriptorSet, k_max_descriptor_sets> descriptor_sets{};
 				utl::vector<vk::PushConstantRange> pushConstantRanges{};
 
-				// Other...
-
 				utl::hash_map<u64, std::unique_ptr<Buffer>> uniform_buffers{};
 				u64 maximumDescriptorSlots{ 0ull };
 
 				FVkShaderReflectionData reflection{};
+
+				DescriptorUpdate descriptor_update{};
 			};
 		}
 	}

@@ -203,7 +203,6 @@ void CImGuiPass::_Render()
 					if (attachment != last_bound_resource)
 					{
 						shader->BindTexture(utl::murmur_hash_64("font_sampler"), m_pRenderInterface->GetTextureObject(attachment)->Handle());
-						shader->FlushDescriptors();
 						shader->BindResources(m_queue);
 						last_bound_resource = attachment;
 					}

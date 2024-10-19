@@ -51,7 +51,6 @@ void CFullscreenPass::_Render()
 	render_backend->SetViewport(resolution.size.x, resolution.size.y, m_bFlipViewport);
 	render_backend->SetScissorRect(0, 0, resolution.size.x, resolution.size.y);
 
-	shader->FlushDescriptors();
 	shader->FlushConstants(m_queue);
 	shader->Bind(m_queue);
 	shader->BindResources(m_queue);
