@@ -26,6 +26,8 @@ namespace engine
 				RenderContext& operator=(const RenderContext&) = delete;
 				RenderContext& operator=(RenderContext&&) = delete;
 
+				void CreateGlobalDescriptors(const FGlobalUniformCreateInfo& uniform_ci);
+
 				void UpdateSwapchain(const vk::Extent2D& extent);
 				void UpdateSwapchain(const vk::Extent2D& extent, const vk::SurfaceTransformFlagBitsKHR transform);
 				void UpdateSwapchain(uint32_t image_count);
@@ -46,6 +48,10 @@ namespace engine
 
 				RenderDevice& GetDevice() const;
 				Swapchain& GetSwapchain() const;
+
+				DescriptorSetLayout& GetGlobalDescriptorSetLayout() const;
+				DescriptorSet& GetCurrentGlobalDescriptorSet() const;
+				Buffer* GetGlobalUniformBuffer(uint64_t uniform_name) const;
 			protected:
 				void UpdateResources();
 			private:
@@ -66,6 +72,12 @@ namespace engine
 				vk::Semaphore acquired_semaphore{ nullptr };
 				vk::Semaphore previous_frame_semaphore{ nullptr };
 				CommandBuffer* current_command_buffer{ nullptr };
+
+				// Global descriptor
+				std::unique_ptr<DescriptorAllocator> descriptor_allocator{};
+				std::unique_ptr<DescriptorSetLayout> descriptor_set_layout{};
+				std::array<std::unique_ptr<DescriptorSet>, k_max_descriptor_sets> descriptor_sets{};
+				utl::hash_map<u64, std::unique_ptr<Buffer>> uniform_buffers{};
 			};
 		}
 	}

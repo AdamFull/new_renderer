@@ -28,7 +28,6 @@ using namespace engine::render::vulkan;
 
 static const u32 k_max_bindless_buffers{ 256u };
 
-static const u32 k_max_bindless_resources{ 16384u };
 static const u64 k_max_texture_update_per_frame{ 4096ll };
 static const u64 k_max_buffer_update_per_frame{ 4096ull };
 
@@ -215,85 +214,12 @@ void VkRenderBackend::Create(const FRenderContextCreateInfo& context_ci)
 
 void VkRenderBackend::CreateGlobalDescriptor(const FGlobalUniformCreateInfo& uniform_ci)
 {
-	// Create descriptor pool
-	global_descriptor.descriptor_allocator = std::make_unique<DescriptorAllocator>(*render_device);
-
-	// Create descriptor set layout
-	auto descriptor_set_layout_builder = DescriptorSetLayoutBuilder();
-
-	// Frame data
-	vk::DescriptorSetLayoutBinding global_frame_data_binding{};
-	global_frame_data_binding.descriptorType = vk::DescriptorType::eUniformBuffer;
-	global_frame_data_binding.descriptorCount = 1u;
-	global_frame_data_binding.binding = 0u;
-	global_frame_data_binding.stageFlags = vk::ShaderStageFlagBits::eAllGraphics | vk::ShaderStageFlagBits::eCompute;
-	descriptor_set_layout_builder.AddLayoutBinding(global_frame_data_binding, vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
-
-	// Uniform buffer with adresses to another buffers
-	vk::DescriptorSetLayoutBinding global_buffer_references_binding{};
-	global_buffer_references_binding.descriptorType = vk::DescriptorType::eUniformBuffer;
-	global_buffer_references_binding.descriptorCount = 1u;
-	global_buffer_references_binding.binding = 1u;
-	global_buffer_references_binding.stageFlags = vk::ShaderStageFlagBits::eAllGraphics | vk::ShaderStageFlagBits::eCompute;
-	descriptor_set_layout_builder.AddLayoutBinding(global_buffer_references_binding, vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
-
-	// Uniform buffer with post processing data
-	vk::DescriptorSetLayoutBinding global_postprocess_binding{};
-	global_postprocess_binding.descriptorType = vk::DescriptorType::eUniformBuffer;
-	global_postprocess_binding.descriptorCount = 1u;
-	global_postprocess_binding.binding = 2u;
-	global_postprocess_binding.stageFlags = vk::ShaderStageFlagBits::eAllGraphics | vk::ShaderStageFlagBits::eCompute;
-	descriptor_set_layout_builder.AddLayoutBinding(global_postprocess_binding, vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
-
-	// Bindles textures
-	vk::DescriptorSetLayoutBinding global_textures_binding{};
-	global_textures_binding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-	global_textures_binding.descriptorCount = k_max_bindless_resources;
-	global_textures_binding.binding = 3u;
-	global_textures_binding.stageFlags = vk::ShaderStageFlagBits::eAllGraphics | vk::ShaderStageFlagBits::eCompute;
-	global_textures_binding.pImmutableSamplers = nullptr;
-	descriptor_set_layout_builder.AddLayoutBinding(global_textures_binding, vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
-
-	descriptor_set_layout_builder.SetDebugName("global");
-	global_descriptor.descriptor_set_layout = descriptor_set_layout_builder.BuildUnique(*render_device);
-
-	// TODO: i have to create new pool after recreating pipeline when count of frames was changed
-	for (int32_t i = 0; i < render_context->GetSwapchain().GetImageCount(); ++i)
-	{
-		global_descriptor.descriptor_sets[i] = global_descriptor.descriptor_allocator->Allocate(*global_descriptor.descriptor_set_layout, std::format("global_{}", i));
-	}
-
-	// Create uniform buffers
-	auto& physical = render_device->GetPhysicalDevice();
-	auto minimal_alignment = std::lcm(physical.GetProperties().limits.minUniformBufferOffsetAlignment, physical.GetProperties().limits.nonCoherentAtomSize);
-
-	for (auto& [uniform_name, size] : uniform_ci.uniforms)
-	{
-		auto builder = BufferBuilder{ size, render_context->GetSwapchain().GetImageCount(), minimal_alignment};
-		builder.SetVmaUsage(vma::MemoryUsage::eCpuToGpu);
-		builder.SetUsage(vk::BufferUsageFlagBits::eUniformBuffer);
-		builder.SetSharingMode(vk::SharingMode::eConcurrent);
-
-#ifndef BUILD_WITHOUT_DEBUGGIND
-		auto* debug_name = debug_mapping::find(uniform_name);
-
-		if(debug_name)
-			builder.SetDebugName(std::format("global:{}", debug_name));
-		else
-			builder.SetDebugName(std::format("global:{:x}", uniform_name));
-#endif
-
-		auto buffer = builder.BuildUnique(*render_device);
-
-		auto buffer_name = create_object_unique_name("global:{:x}:{:x}", Handle(*buffer), uniform_name);
-		auto buffer_id = render_resources->add<Buffer>(buffer_name.c_str(), std::move(buffer));
-		global_descriptor.uniform_buffers.emplace(uniform_name, buffer_id);
-	}
+	render_context->CreateGlobalDescriptors(uniform_ci);
 }
 
 void VkRenderBackend::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view)
 {
-	auto& dest_set = global_descriptor.descriptor_sets[render_context->GetCurrentFrameIndex()];
+	auto& dest_set = render_context->GetCurrentGlobalDescriptorSet();
 
 	std::array<vk::DescriptorImageInfo, k_max_texture_update_per_frame> image_descriptors{};
 	std::array<vk::DescriptorBufferInfo, k_max_buffer_update_per_frame> buffer_descriptors{};
@@ -305,11 +231,10 @@ void VkRenderBackend::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo&
 	u64 buffer_count{ 0ull };
 	for (const auto& [uniform_name, uniform_data] : data_view.uniforms)
 	{
-		auto found_buffer = global_descriptor.uniform_buffers.find(uniform_name);
-		if (found_buffer == global_descriptor.uniform_buffers.end())
+		auto* buffer = render_context->GetGlobalUniformBuffer(uniform_name);
+		if (!buffer)
 			continue;
 
-		auto& buffer = render_resources->get<Buffer>(found_buffer->second);
 		auto element_size = buffer->GetSuballocationSize();
 
 		auto& buffer_descriptor = buffer_descriptors[buffer_count];
@@ -319,7 +244,7 @@ void VkRenderBackend::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo&
 
 		auto& write_descriptor_set = write_descriptor_sets.emplace_back();
 		write_descriptor_set.descriptorType = vk::DescriptorType::eUniformBuffer;
-		write_descriptor_set.dstSet = Handle(*dest_set);
+		write_descriptor_set.dstSet = dest_set.GetHandle();
 		write_descriptor_set.dstBinding = uniform_data.binding;
 		write_descriptor_set.descriptorCount = 1u;
 		write_descriptor_set.pBufferInfo = &buffer_descriptor;
@@ -353,7 +278,7 @@ void VkRenderBackend::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo&
 				auto& write_descriptor_set = write_descriptor_sets.emplace_back();
 				write_descriptor_set.dstArrayElement = start_element_index;
 				write_descriptor_set.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-				write_descriptor_set.dstSet = Handle(*dest_set);
+				write_descriptor_set.dstSet = dest_set.GetHandle();
 				write_descriptor_set.dstBinding = 3u;
 				write_descriptor_set.descriptorCount = 1u;
 				write_descriptor_set.pImageInfo = &image_descriptor;
@@ -614,10 +539,10 @@ FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FGraphic
 		shader_builder.AddShaderModule(shader_stage, code);
 	}
 
-	shader_builder.AddDefaultLayout(global_descriptor.descriptor_set_layout->GetHandle());
+	shader_builder.AddDefaultLayout(Handle(render_context->GetGlobalDescriptorSetLayout()));
 
 	auto shader = shader_builder.BuildUnique(*render_device);
-	auto shader_unique_name = create_object_unique_name("shader:{:x}:{}", shader->pipeline->GetHandle(), vk::to_string(shader->bind_point));
+	auto shader_unique_name = create_object_unique_name("shader:{:x}:{}", shader->GetPipeline().GetHandle(), vk::to_string(shader->GetBindPoint()));
 	return FAPIHandle(render_resources->add<Shader>(shader_unique_name.c_str(), std::move(shader)));
 }
 
@@ -629,11 +554,11 @@ FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FCompute
 	shader_builder.AddShaderModule(vk::ShaderStageFlagBits::eCompute, shader_stage.code);
 	shader_builder.SetUsageCount(shader_ci.usageCount);
 
-	shader_builder.AddDefaultLayout(global_descriptor.descriptor_set_layout->GetHandle());
+	shader_builder.AddDefaultLayout(Handle(render_context->GetGlobalDescriptorSetLayout()));
 
 	auto shader = shader_builder.BuildUnique(*render_device);
 
-	auto shader_unique_name = create_object_unique_name("shader:{:x}:{}", shader->pipeline->GetHandle(), vk::to_string(shader->bind_point));
+	auto shader_unique_name = create_object_unique_name("shader:{:x}:{}", shader->GetPipeline().GetHandle(), vk::to_string(shader->GetBindPoint()));
 	return FAPIHandle(render_resources->add<Shader>(shader_unique_name.c_str(), std::move(shader)));
 }
 
@@ -645,56 +570,7 @@ FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FReyTrac
 FShaderReflectionData VkRenderBackend::GetShaderReflection(FAPIHandle shader_view)
 {
 	auto& shader = render_resources->get<Shader>(shader_view.Get());
-	FShaderReflectionData reflection_data{};
-
-	for (const auto& [id, vkuniform] : shader->reflection.uniforms)
-	{
-		auto& uniform = reflection_data.uniforms[id];
-		uniform.binding = vkuniform.binding;
-		uniform.set = vkuniform.set;
-		uniform.offset = vkuniform.offset;
-		uniform.size = vkuniform.size;
-	}
-
-	for (const auto& [aid, vkuniform_block] : shader->reflection.uniformBlocks)
-	{
-		if (vkuniform_block.descriptorType == vk::DescriptorType::eStorageBuffer)
-			continue;
-
-		auto& uniform_block = reflection_data.uniformBlocks[aid];
-		uniform_block.binding = vkuniform_block.binding;
-		uniform_block.set = vkuniform_block.set;
-		uniform_block.size = vkuniform_block.size;
-
-		for (const auto& [bid, vkuniform] : vkuniform_block.uniforms)
-		{
-			auto& uniform = uniform_block.uniforms[bid];
-			uniform.binding = vkuniform.binding;
-			uniform.set = vkuniform.set;
-			uniform.offset = vkuniform.offset;
-			uniform.size = vkuniform.size;
-		}
-	}
-
-	for (const auto& [aid, vkpush_block] : shader->reflection.pushBlocks)
-	{
-		auto& push_block = reflection_data.pushBlocks[aid];
-		push_block.size = vkpush_block.size;
-
-		for (const auto& [bid, vkuniform] : vkpush_block.uniforms)
-		{
-			auto& uniform = push_block.uniforms[bid];
-			uniform.binding = vkuniform.binding;
-			uniform.set = vkuniform.set;
-			uniform.offset = vkuniform.offset;
-			uniform.size = vkuniform.size;
-		}
-	}
-
-	if(!shader->reflection.localSizes.empty())
-		reflection_data.localSizes = shader->reflection.localSizes.front();
-
-	return reflection_data;
+	return shader->GetReflectionData();
 }
 
 // TODO: I only need to write data to descriptors if I have not written anything yet for the current 
@@ -707,29 +583,16 @@ void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_
 	auto& textures = render_resources->data<Texture>();
 	auto& buffers = render_resources->data<Buffer>();
 
-	std::unordered_set<u32> updated_descriptor_sets{};
-	std::array<vk::WriteDescriptorSet, 64ull> write_descriptor_sets{};
-	std::array<vk::DescriptorImageInfo, 64ull> image_descriptors{};
-	std::array<vk::DescriptorBufferInfo, 64ull> buffer_descriptors{};
+	DescriptorUpdate descriptor_update{};
 
-	u64 texture_count{ 0ull };
-	u64 buffer_count{ 0ull };
-	u64 writes_count{ 0ull };
-
-	// Clear all old descriptor sets
-	for (int32_t i = 0; i < k_max_descriptor_sets; ++i)
-	{
-		shader->descriptor_sets[i] = nullptr;
-	}
-
-	// Set global descriptor set
-	shader->descriptor_sets[0] = global_descriptor.descriptor_sets[render_context->GetCurrentFrameIndex()]->GetHandle();
+	shader->ResetDescriptors(*render_context);
 
 	auto& current_frame = render_context->GetCurrentFrame();
 
 	// TODO: add something like check sum to check changed data in buffers or not
 	if (flags & EShaderResourcesUpdateFlagBits::eUniformBlocks)
 	{
+		//shader->UpdateUniforms(descriptor_update, shader_resources.uniforms);
 		for (const auto& [uniform_name, uniform_data] : shader_resources.uniforms)
 		{
 			auto found_reflection = shader->reflection.uniformBlocks.find(uniform_name);
@@ -738,38 +601,23 @@ void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_
 
 			// Prepare descriptor update data
 			auto& uniform_block = found_reflection->second;
-			auto descriptor_index = shader->descriptorUsage[uniform_block.set];
-			updated_descriptor_sets.emplace(uniform_block.set);
+			auto descriptor_index = render_context->GetCurrentFrameIndex();
 
 			auto& buffer = shader->uniform_buffers[uniform_name];
 			auto buffer_element_size = buffer->GetSuballocationSize();
 
 			// Not sure that it is correct, because i don't know how to determine previous buffer
-			auto& buffer_descriptor = buffer_descriptors[buffer_count];
-			buffer_descriptor.buffer = Handle(*buffer);
+			auto& buffer_descriptor = descriptor_update.AddBufferInfo();
+			buffer_descriptor.buffer = buffer->GetHandle();
 			buffer_descriptor.range = uniform_block.size;
 			buffer_descriptor.offset = descriptor_index * buffer_element_size;
-			buffer_count++;
 
-			vk::DescriptorSet current_descriptor_set{ nullptr };
-			if (shader->descriptor_sets[uniform_block.set])
-			{
-				current_descriptor_set = shader->descriptor_sets[uniform_block.set];
-			}
-			else
-			{
-				auto& new_descriptor_set = current_frame.RequestDescriptorSet(*shader->descriptor_set_layouts[uniform_block.set]);
-				shader->descriptor_sets[uniform_block.set] = new_descriptor_set.GetHandle();
-				current_descriptor_set = new_descriptor_set.GetHandle();
-			}
-
-			auto& write_descriptor_set = write_descriptor_sets[writes_count];
+			auto& write_descriptor_set = descriptor_update.AddDescriptorWrite();;
 			write_descriptor_set.descriptorType = uniform_block.descriptorType;
 			write_descriptor_set.dstBinding = uniform_block.binding;
-			write_descriptor_set.dstSet = current_descriptor_set;
+			write_descriptor_set.dstSet = shader->descriptor_sets[uniform_block.set];
 			write_descriptor_set.pBufferInfo = &buffer_descriptor;
 			write_descriptor_set.descriptorCount = 1;
-			writes_count++;
 
 			// Write new data to buffer memory
 			buffer->Update(uniform_data.data, uniform_data.size, buffer_descriptor.offset);
@@ -787,38 +635,20 @@ void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_
 
 			// Prepare descriptor update data
 			auto& uniform_block = found_reflection->second;
-			updated_descriptor_sets.emplace(uniform_block.set);
-
 			auto& buffer = buffers[buffer_id.Get()];
 
 			// Not sure that it is correct, because i don't know how to determine previous buffer
-			auto& buffer_descriptor = buffer_descriptors[buffer_count];
+			auto& buffer_descriptor = descriptor_update.AddBufferInfo();
 			buffer_descriptor.buffer = Handle(*buffer);
 			buffer_descriptor.range = buffer->GetSize();
 			buffer_descriptor.offset = 0ull;
-			buffer_count++;
 
-			auto descriptor_index = shader->descriptorUsage[uniform_block.set];
-
-			vk::DescriptorSet current_descriptor_set{ nullptr };
-			if (shader->descriptor_sets[uniform_block.set])
-			{
-				current_descriptor_set = shader->descriptor_sets[uniform_block.set];
-			}
-			else
-			{
-				auto& new_descriptor_set = current_frame.RequestDescriptorSet(*shader->descriptor_set_layouts[uniform_block.set]);
-				shader->descriptor_sets[uniform_block.set] = new_descriptor_set.GetHandle();
-				current_descriptor_set = new_descriptor_set.GetHandle();
-			}
-
-			auto& write_descriptor_set = write_descriptor_sets[writes_count];
+			auto& write_descriptor_set = descriptor_update.AddDescriptorWrite();
 			write_descriptor_set.descriptorType = uniform_block.descriptorType;
 			write_descriptor_set.dstBinding = uniform_block.binding;
-			write_descriptor_set.dstSet = current_descriptor_set;
+			write_descriptor_set.dstSet = shader->descriptor_sets[uniform_block.set];
 			write_descriptor_set.pBufferInfo = &buffer_descriptor;
 			write_descriptor_set.descriptorCount = 1;
-			writes_count++;
 		}
 	}
 
@@ -835,83 +665,50 @@ void VkRenderBackend::UpdateShaderResources(const FShaderResourceCommit& shader_
 				continue;
 
 			auto& uniform = found_reflection->second;
-			updated_descriptor_sets.emplace(uniform.set);
 
-			auto& image_descriptor = image_descriptors[texture_count];
+			auto& image_descriptor = descriptor_update.AddImageInfo();
 			image_descriptor.imageView = Handle(texture_subresource);
 			image_descriptor.sampler = Handle(*(texture->GetSamplerID() != ~0u ? sampler_cache[texture->GetSamplerID()] : default_sampler));
 			image_descriptor.imageLayout = texture_subresource.GetImageLayout();
-			texture_count++;
 
-			auto descriptor_index = shader->descriptorUsage[uniform.set];
-			vk::DescriptorSet current_descriptor_set{ nullptr };
-			if (shader->descriptor_sets[uniform.set])
-			{
-				current_descriptor_set = shader->descriptor_sets[uniform.set];
-			}
-			else
-			{
-				auto& new_descriptor_set = current_frame.RequestDescriptorSet(*shader->descriptor_set_layouts[uniform.set]);
-				shader->descriptor_sets[uniform.set] = new_descriptor_set.GetHandle();
-				current_descriptor_set = new_descriptor_set.GetHandle();
-			}
-
-			auto& write_descriptor_set = write_descriptor_sets[writes_count];
+			auto& write_descriptor_set = descriptor_update.AddDescriptorWrite();
 			write_descriptor_set.descriptorType = uniform.descriptorType;
 			write_descriptor_set.dstBinding = uniform.binding;
-			write_descriptor_set.dstSet = current_descriptor_set;
+			write_descriptor_set.dstSet = shader->descriptor_sets[uniform.set];
 			write_descriptor_set.pImageInfo = &image_descriptor;
 			write_descriptor_set.descriptorCount = 1;
-			writes_count++;
 		}
 	}
 
-	// NOTE: here we updating index for descriptor set that we will bind in future
-	for (auto& descriptor_set : updated_descriptor_sets)
-	{
-		auto usages = shader->descriptorUsage[descriptor_set];
-		shader->descriptorUsage[descriptor_set] = (usages + 1u) % shader->maximumDescriptorSlots;
-	}
-
 	// Update descriptor sets if needed
-	if (!write_descriptor_sets.empty())
+	if (descriptor_update.writes_count)
 	{
 		auto& logical = render_device->GetLogicalDevice();
-		Handle(logical).updateDescriptorSets(utl::cast<u32>(writes_count), write_descriptor_sets.data(), 0, nullptr);
+		Handle(logical).updateDescriptorSets(descriptor_update.writes_count, descriptor_update.write_descriptor_sets.data(), 0, nullptr);
 	}
 }
 
 void VkRenderBackend::FlushConstantRanges(FAPIHandle shader_id, const utl::hash_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type)
 {
+	auto& command_buffer = render_context->GetCurrentCommandBuffer();
 	auto& shader = render_resources->get<Shader>(shader_id.Get());
-
-	// TODO: remove all other posibilities to have more than one push block. 
-	for (const auto& [constant_name, constant_data] : constants)
-	{
-		auto found_reflection = shader->reflection.pushBlocks.find(constant_name);
-		if (found_reflection == shader->reflection.pushBlocks.end())
-			continue;
-
-		auto& constant_block = found_reflection->second;
-		render_context->GetCurrentCommandBuffer().PushConstants({ shader->layout, constant_block.stageFlags, 0u, (u32)constant_data.size, constant_data.data });
-
-		// Break, because we can have only one push constants block
-		break;
-	}
+	shader->FlushConstantRanges(command_buffer, constants);
 }
 
 void VkRenderBackend::BindShader(FAPIHandle shader_id, EQueueTypeFlagBits queue_type)
 {
-	auto& shader = render_resources->get<Shader>(shader_id.Get());
+	auto& command_buffer = render_context->GetCurrentCommandBuffer();
 
 	// TODO: make possible to select what pipeline i have to bind now
-	render_context->GetCurrentCommandBuffer().BindPipeline(shader->bind_point, Handle(*shader->pipeline));
+	auto& shader = render_resources->get<Shader>(shader_id.Get());
+	shader->Bind(command_buffer);
 }
 
 void VkRenderBackend::BindShaderResources(FAPIHandle shader_id, EQueueTypeFlagBits queue_type)
 {
+	auto& command_buffer = render_context->GetCurrentCommandBuffer();
 	auto& shader = render_resources->get<Shader>(shader_id.Get());
-	shader->BindDescriptors(render_context->GetCurrentCommandBuffer().GetHandle(), global_descriptor.descriptor_sets[render_context->GetCurrentFrameIndex()]->GetHandle());
+	shader->BindDescriptors(command_buffer);
 }
 
 void VkRenderBackend::DestroyShader(FAPIHandle resource_id)
@@ -1324,11 +1121,7 @@ void VkRenderBackend::Dispatch(EQueueTypeFlagBits queue_type, const FDispatch2In
 	if (dispatch_info.divideByLocals)
 	{
 		auto& shader = render_resources->get<Shader>(dispatch_info.shaderHandle.Get());
-
-		auto& localSizes = shader->reflection.localSizes[subgroup_index];
-		command.x = std::max(utl::cast<u32>(std::ceil(utl::cast<f32>(command.x) / utl::cast<f32>(localSizes[0]))), 1u);
-		command.y = std::max(utl::cast<u32>(std::ceil(utl::cast<f32>(command.y) / utl::cast<f32>(localSizes[1]))), 1u);
-		command.z = std::max(utl::cast<u32>(std::ceil(utl::cast<f32>(command.z) / utl::cast<f32>(localSizes[2]))), 1u);
+		shader->DivideByLocalSizes(command, subgroup_index);
 	}
 
 	Handle(render_context->GetCurrentCommandBuffer()).dispatch(command.x, command.y, command.z);

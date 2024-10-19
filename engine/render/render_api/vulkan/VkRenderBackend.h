@@ -132,8 +132,6 @@ namespace engine
 
 				std::queue<FAPIObjectDestroyInfo> resource_destroy_queue{};
 
-				// NOTE: global descriptor uses set 0 and binding 0 and 1 (0 is for global uniform, 1 is for texture array)
-				FVkGlobalDescriptor global_descriptor{};
 				utl::hash_map<u32, utl::unique_queue<u64>> texture_to_update{};
 
 				std::unique_ptr<CommandPool> command_pool;

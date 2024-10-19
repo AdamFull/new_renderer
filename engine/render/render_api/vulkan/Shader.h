@@ -11,6 +11,8 @@ namespace engine
 		namespace vulkan
 		{
 			class RenderDevice;
+			class RenderContext;
+			class CommandBuffer;
 			class Buffer;
 			class Shader;
 			class DescriptorSetLayout;
@@ -49,6 +51,23 @@ namespace engine
 				std::unique_ptr<Shader> BuildUnique(RenderDevice& render_device);
 			};
 
+			class DescriptorUpdate
+			{
+			public:
+				std::array<vk::WriteDescriptorSet, 64ull> write_descriptor_sets{};
+				uint32_t writes_count{ 0u };
+
+				std::array<vk::DescriptorImageInfo, 64ull> image_descriptors{};
+				uint32_t image_count{ 0u };
+
+				std::array<vk::DescriptorBufferInfo, 64ull> buffer_descriptors{};
+				uint32_t buffer_count{ 0u };
+				
+				vk::WriteDescriptorSet& AddDescriptorWrite();
+				vk::DescriptorImageInfo& AddImageInfo();
+				vk::DescriptorBufferInfo& AddBufferInfo();
+			};
+
 			class Shader final
 			{
 			public:
@@ -63,8 +82,23 @@ namespace engine
 				Shader& operator=(const Shader&) = delete;
 				Shader& operator=(Shader&&) = default;
 
-				void BindDescriptors(vk::CommandBuffer& command_buffer, vk::DescriptorSet global_descriptor);
+				Pipeline& GetPipeline();
 
+				vk::PipelineBindPoint GetBindPoint();
+
+				FShaderReflectionData GetReflectionData();
+
+				void FlushConstantRanges(CommandBuffer& command_buffer, const utl::hash_map<u64, FUniformDataView>& constants);
+
+				void ResetDescriptors(RenderContext& render_context);
+				void UpdateUniforms(DescriptorUpdate& descriptor_update, const utl::hash_map<u64, FUniformDataView>& uniforms);
+
+				void BindDescriptors(CommandBuffer& command_buffer);
+				void Bind(CommandBuffer& command_buffer);
+
+				void DivideByLocalSizes(vk::DispatchIndirectCommand& command, uint64_t subgroup_index);
+
+				Buffer* GetUniformBuffer(uint64_t uniform_name) const;
 			public:
 				RenderDevice& render_device;
 
@@ -82,7 +116,6 @@ namespace engine
 				utl::vector<vk::PushConstantRange> pushConstantRanges{};
 
 				// Other...
-				utl::hash_map<u32, u32> descriptorUsage{};
 
 				utl::hash_map<u64, std::unique_ptr<Buffer>> uniform_buffers{};
 				u64 maximumDescriptorSlots{ 0ull };

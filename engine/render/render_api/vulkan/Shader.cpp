@@ -2,8 +2,10 @@
 #include <engine/render/render_api/vulkan/PhysicalDevice.h>
 #include <engine/render/render_api/vulkan/VkRenderDevice.h>
 #include <engine/render/render_api/vulkan/Buffer.h>
-#include <engine/render/render_api/vulkan/DescriptorSetLayout.h>
 #include <engine/render/render_api/vulkan/VkCommon.h>
+#include <engine/render/render_api/vulkan/RenderContext.h>
+#include <engine/render/render_api/vulkan/DescriptorSet.h>
+#include <engine/render/render_api/vulkan/CommandBuffer.h>
 
 namespace engine
 {
@@ -45,6 +47,25 @@ namespace engine
 			{
 				return std::make_unique<Shader>(render_device, *this);
 			}
+
+
+			vk::WriteDescriptorSet& DescriptorUpdate::AddDescriptorWrite()
+			{
+				return write_descriptor_sets[writes_count++];
+			}
+
+			vk::DescriptorImageInfo& DescriptorUpdate::AddImageInfo()
+			{
+				return image_descriptors[image_count++];
+			}
+
+			vk::DescriptorBufferInfo& DescriptorUpdate::AddBufferInfo()
+			{
+				return buffer_descriptors[buffer_count++];
+			}
+
+
+
 
 			Shader::Shader(RenderDevice& render_device, ShaderBuilder& builder) :
 				render_device{ render_device },
@@ -235,28 +256,146 @@ namespace engine
 			{
 			}
 
-			void Shader::BindDescriptors(vk::CommandBuffer& command_buffer, vk::DescriptorSet global_descriptor)
+			Pipeline& Shader::GetPipeline()
 			{
-				std::array<vk::DescriptorSet, k_max_descriptor_sets> bind_descriptor_sets{};
-				size_t descriptor_set_count{ 1ull };
+				return *pipeline;
+			}
 
-				bind_descriptor_sets[0] = global_descriptor;
+			vk::PipelineBindPoint Shader::GetBindPoint()
+			{
+				return bind_point;
+			}
+
+			FShaderReflectionData Shader::GetReflectionData()
+			{
+				FShaderReflectionData reflection_data{};
+
+				for (const auto& [id, vkuniform] : reflection.uniforms)
+				{
+					auto& uniform = reflection_data.uniforms[id];
+					uniform.binding = vkuniform.binding;
+					uniform.set = vkuniform.set;
+					uniform.offset = vkuniform.offset;
+					uniform.size = vkuniform.size;
+				}
+
+				for (const auto& [aid, vkuniform_block] : reflection.uniformBlocks)
+				{
+					if (vkuniform_block.descriptorType == vk::DescriptorType::eStorageBuffer)
+						continue;
+
+					auto& uniform_block = reflection_data.uniformBlocks[aid];
+					uniform_block.binding = vkuniform_block.binding;
+					uniform_block.set = vkuniform_block.set;
+					uniform_block.size = vkuniform_block.size;
+
+					for (const auto& [bid, vkuniform] : vkuniform_block.uniforms)
+					{
+						auto& uniform = uniform_block.uniforms[bid];
+						uniform.binding = vkuniform.binding;
+						uniform.set = vkuniform.set;
+						uniform.offset = vkuniform.offset;
+						uniform.size = vkuniform.size;
+					}
+				}
+
+				for (const auto& [aid, vkpush_block] : reflection.pushBlocks)
+				{
+					auto& push_block = reflection_data.pushBlocks[aid];
+					push_block.size = vkpush_block.size;
+
+					for (const auto& [bid, vkuniform] : vkpush_block.uniforms)
+					{
+						auto& uniform = push_block.uniforms[bid];
+						uniform.binding = vkuniform.binding;
+						uniform.set = vkuniform.set;
+						uniform.offset = vkuniform.offset;
+						uniform.size = vkuniform.size;
+					}
+				}
+
+				if (!reflection.localSizes.empty())
+					reflection_data.localSizes = reflection.localSizes.front();
+
+				return reflection_data;
+			}
+
+			void Shader::FlushConstantRanges(CommandBuffer& command_buffer, const utl::hash_map<u64, FUniformDataView>& constants)
+			{
+				// TODO: remove all other posibilities to have more than one push block. 
+				for (const auto& [constant_name, constant_data] : constants)
+				{
+					auto found_reflection = reflection.pushBlocks.find(constant_name);
+					if (found_reflection == reflection.pushBlocks.end())
+						continue;
+
+					auto& constant_block = found_reflection->second;
+					command_buffer.PushConstants({ layout, constant_block.stageFlags, 0u, (u32)constant_data.size, constant_data.data });
+
+					// Break, because we can have only one push constants block
+					break;
+				}
+			}
+
+			void Shader::ResetDescriptors(RenderContext& render_context)
+			{
+				auto& current_frame = render_context.GetCurrentFrame();
+				descriptor_sets[0] = Handle(render_context.GetCurrentGlobalDescriptorSet());
+				
+				for (int32_t i = 1; i < k_max_descriptor_sets; ++i)
+				{
+					auto& descriptor_set_layout = descriptor_set_layouts[i];
+					if (descriptor_set_layout)
+					{
+						descriptor_sets[i] = Handle(current_frame.RequestDescriptorSet(*descriptor_set_layout));
+					}
+				}
+			}
+
+			void Shader::UpdateUniforms(DescriptorUpdate& descriptor_update, const utl::hash_map<u64, FUniformDataView>& uniforms)
+			{
+				
+			}
+
+			void Shader::BindDescriptors(CommandBuffer& command_buffer)
+			{
+				uint32_t descriptor_set_count{ 0u };
 
 				// TODO: I think i can separate bindings by empty sets here. If some set is empty, i have to save last index, bind sets and after that continue bind from index.
 				// NOTE: shader.descriptorUsage contains next index of descriptor set to use. 
 				// Here i collecting all shader descriptor sets, that was changed in past
-				for (auto& [set, usage_index] : descriptorUsage)
+				for (int32_t i = 0; i < k_max_descriptor_sets; ++i)
 				{
-					auto actual_descriptor_usage = usage_index == 0u ? maximumDescriptorSlots - 1u : usage_index - 1u;
-					if (descriptor_sets[set])
+					if (descriptor_sets[i])
 					{
-						bind_descriptor_sets[set] = descriptor_sets[set];
 						++descriptor_set_count;
 					}
 				}
 
 				// TODO: determine the lowest descriptor index and start binding from lowest one (for example from 1)
-				command_buffer.bindDescriptorSets(bind_point, layout, 0, utl::cast<u32>(descriptor_set_count), bind_descriptor_sets.data(), 0u, nullptr);
+				Handle(command_buffer).bindDescriptorSets(bind_point, layout, 0, descriptor_set_count, descriptor_sets.data(), 0u, nullptr);
+			}
+
+			void Shader::Bind(CommandBuffer& command_buffer)
+			{
+				command_buffer.BindPipeline(bind_point, pipeline->GetHandle());
+			}
+
+			void Shader::DivideByLocalSizes(vk::DispatchIndirectCommand& command, uint64_t subgroup_index)
+			{
+				auto& localSizes = reflection.localSizes[subgroup_index];
+				command.x = std::max(utl::cast<u32>(std::ceil(utl::cast<f32>(command.x) / utl::cast<f32>(localSizes[0]))), 1u);
+				command.y = std::max(utl::cast<u32>(std::ceil(utl::cast<f32>(command.y) / utl::cast<f32>(localSizes[1]))), 1u);
+				command.z = std::max(utl::cast<u32>(std::ceil(utl::cast<f32>(command.z) / utl::cast<f32>(localSizes[2]))), 1u);
+			}
+
+			Buffer* Shader::GetUniformBuffer(uint64_t uniform_name) const
+			{
+				auto found = uniform_buffers.find(uniform_name);
+				if (found != uniform_buffers.end())
+					return found->second.get();
+
+				return nullptr;
 			}
 		}
 	}

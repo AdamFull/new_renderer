@@ -172,14 +172,6 @@ namespace engine
 				u64 textureId{ INVALID_HANDLE };
 			};
 
-			struct FVkGlobalDescriptor
-			{
-				std::unique_ptr<DescriptorAllocator> descriptor_allocator{};
-				std::unique_ptr<DescriptorSetLayout> descriptor_set_layout{};
-				std::array<std::unique_ptr<DescriptorSet>, 8ull> descriptor_sets{};
-				utl::hash_map<u64, u64> uniform_buffers{};
-			};
-
 			struct FVkTimestampQuery
 			{
 				vk::QueryPool handle{};

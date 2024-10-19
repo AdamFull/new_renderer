@@ -5,6 +5,7 @@
 #include <engine/render/render_api/vulkan/CommandPool.h>
 #include <engine/render/render_api/vulkan/VkRenderDevice.h>
 #include <engine/render/render_api/vulkan/DescriptorPool.h>
+#include <engine/render/render_api/vulkan/Buffer.h>
 
 #include <engine/runtime/Window.h>
 
@@ -14,6 +15,8 @@ namespace engine
 	{
 		namespace vulkan
 		{
+			static const u32 k_max_bindless_resources{ 16384u };
+
 			RenderContext::RenderContext(RenderDevice& render_device, Window* window) :
 				render_device{ render_device },
 				window{ *window },
@@ -51,6 +54,79 @@ namespace engine
 				}
 
 				swapchain.reset();
+			}
+
+			void RenderContext::CreateGlobalDescriptors(const FGlobalUniformCreateInfo& uniform_ci)
+			{
+				// Create descriptor pool
+				descriptor_allocator = std::make_unique<DescriptorAllocator>(render_device);
+
+				// Create descriptor set layout
+				auto descriptor_set_layout_builder = DescriptorSetLayoutBuilder();
+
+				// Frame data
+				vk::DescriptorSetLayoutBinding global_frame_data_binding{};
+				global_frame_data_binding.descriptorType = vk::DescriptorType::eUniformBuffer;
+				global_frame_data_binding.descriptorCount = 1u;
+				global_frame_data_binding.binding = 0u;
+				global_frame_data_binding.stageFlags = vk::ShaderStageFlagBits::eAllGraphics | vk::ShaderStageFlagBits::eCompute;
+				descriptor_set_layout_builder.AddLayoutBinding(global_frame_data_binding, vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
+
+				// Uniform buffer with adresses to another buffers
+				vk::DescriptorSetLayoutBinding global_buffer_references_binding{};
+				global_buffer_references_binding.descriptorType = vk::DescriptorType::eUniformBuffer;
+				global_buffer_references_binding.descriptorCount = 1u;
+				global_buffer_references_binding.binding = 1u;
+				global_buffer_references_binding.stageFlags = vk::ShaderStageFlagBits::eAllGraphics | vk::ShaderStageFlagBits::eCompute;
+				descriptor_set_layout_builder.AddLayoutBinding(global_buffer_references_binding, vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
+
+				// Uniform buffer with post processing data
+				vk::DescriptorSetLayoutBinding global_postprocess_binding{};
+				global_postprocess_binding.descriptorType = vk::DescriptorType::eUniformBuffer;
+				global_postprocess_binding.descriptorCount = 1u;
+				global_postprocess_binding.binding = 2u;
+				global_postprocess_binding.stageFlags = vk::ShaderStageFlagBits::eAllGraphics | vk::ShaderStageFlagBits::eCompute;
+				descriptor_set_layout_builder.AddLayoutBinding(global_postprocess_binding, vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
+
+				// Bindles textures
+				vk::DescriptorSetLayoutBinding global_textures_binding{};
+				global_textures_binding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+				global_textures_binding.descriptorCount = k_max_bindless_resources;
+				global_textures_binding.binding = 3u;
+				global_textures_binding.stageFlags = vk::ShaderStageFlagBits::eAllGraphics | vk::ShaderStageFlagBits::eCompute;
+				global_textures_binding.pImmutableSamplers = nullptr;
+				descriptor_set_layout_builder.AddLayoutBinding(global_textures_binding, vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
+
+				descriptor_set_layout_builder.SetDebugName("global");
+				descriptor_set_layout = descriptor_set_layout_builder.BuildUnique(render_device);
+
+				// TODO: i have to create new pool after recreating pipeline when count of frames was changed
+				for (int32_t i = 0; i < swapchain->GetImageCount(); ++i)
+				{
+					descriptor_sets[i] = descriptor_allocator->Allocate(*descriptor_set_layout, std::format("global_{}", i));
+				}
+
+				// Create uniform buffers
+				auto& physical = render_device.GetPhysicalDevice();
+				auto minimal_alignment = std::lcm(physical.GetProperties().limits.minUniformBufferOffsetAlignment, physical.GetProperties().limits.nonCoherentAtomSize);
+
+				for (auto& [uniform_name, size] : uniform_ci.uniforms)
+				{
+					auto builder = BufferBuilder{ size, swapchain->GetImageCount(), minimal_alignment };
+					builder.SetVmaUsage(vma::MemoryUsage::eCpuToGpu);
+					builder.SetUsage(vk::BufferUsageFlagBits::eUniformBuffer);
+					builder.SetSharingMode(vk::SharingMode::eConcurrent);
+
+#ifndef BUILD_WITHOUT_DEBUGGIND
+					auto* debug_name = debug_mapping::find(uniform_name);
+
+					if (debug_name)
+						builder.SetDebugName(std::format("global:{}", debug_name));
+					else
+						builder.SetDebugName(std::format("global:{:x}", uniform_name));
+#endif
+					uniform_buffers.emplace(uniform_name, builder.BuildUnique(render_device));
+				}
 			}
 
 			void RenderContext::UpdateSwapchain(const vk::Extent2D& extent)
@@ -293,6 +369,25 @@ namespace engine
 			Swapchain& RenderContext::GetSwapchain() const
 			{
 				return *swapchain;
+			}
+
+			DescriptorSetLayout& RenderContext::GetGlobalDescriptorSetLayout() const
+			{
+				return *descriptor_set_layout;
+			}
+
+			DescriptorSet& RenderContext::GetCurrentGlobalDescriptorSet() const
+			{
+				return *descriptor_sets[GetCurrentFrameIndex()];
+			}
+
+			Buffer* RenderContext::GetGlobalUniformBuffer(uint64_t uniform_name) const
+			{
+				auto found_buffer = uniform_buffers.find(uniform_name);
+				if (found_buffer != uniform_buffers.end())
+					return found_buffer->second.get();
+
+				return nullptr;
 			}
 
 			void RenderContext::UpdateResources()
