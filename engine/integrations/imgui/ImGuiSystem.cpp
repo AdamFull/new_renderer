@@ -5,6 +5,8 @@
 #include "editor/InspectorWindow.h"
 #include "ImFontManager.h"
 
+#include <engine/runtime/InputManager.h>
+
 #include <engine/integrations/imgui/font/IconsMaterialDesignIcons.h>
 
 using namespace engine;
@@ -281,130 +283,130 @@ bool ReadFile(const std::string& path, utl::vector<u8>& out)
 	return true;
 }
 
-//ImGuiKey key_code_to_im_gui_key(KeyCode code)
-//{
-//	switch (code)
-//	{
-//	case EKeyCode::eKeyTab: return ImGuiKey_Tab;
-//	case EKeyCode::eKeyLeft: return ImGuiKey_LeftArrow;
-//	case EKeyCode::eKeyRight: return ImGuiKey_RightArrow;
-//	case EKeyCode::eKeyUp: return ImGuiKey_UpArrow;
-//	case EKeyCode::eKeyDown: return ImGuiKey_DownArrow;
-//	case EKeyCode::eKeyPageUp: return ImGuiKey_PageUp;
-//	case EKeyCode::eKeyPageDown: return ImGuiKey_PageDown;
-//	case EKeyCode::eKeyHome: return ImGuiKey_Home;
-//	case EKeyCode::eKeyEnd: return ImGuiKey_End;
-//	case EKeyCode::eKeyInsert: return ImGuiKey_Insert;
-//	case EKeyCode::eKeyDelete: return ImGuiKey_Delete;
-//	case EKeyCode::eKeyBackspace: return ImGuiKey_Backspace;
-//	case EKeyCode::eKeySpace: return ImGuiKey_Space;
-//	case EKeyCode::eKeyReturn: return ImGuiKey_Enter;
-//	case EKeyCode::eKeyEscape: return ImGuiKey_Escape;
-//	case EKeyCode::eKeyApostrophe: return ImGuiKey_Apostrophe;
-//	case EKeyCode::eKeyComma: return ImGuiKey_Comma;
-//	case EKeyCode::eKeyMinus: return ImGuiKey_Minus;
-//	case EKeyCode::eKeyPeriod: return ImGuiKey_Period;
-//	case EKeyCode::eKeySlash: return ImGuiKey_Slash;
-//	case EKeyCode::eKeySemicolon: return ImGuiKey_Semicolon;
-//	case EKeyCode::eKeyEquals: return ImGuiKey_Equal;
-//	case EKeyCode::eKeyLeftBracket: return ImGuiKey_LeftBracket;
-//	case EKeyCode::eKeyBackslash: return ImGuiKey_Backslash;
-//	case EKeyCode::eKeyRightBracket: return ImGuiKey_RightBracket;
-//		//case GLFW_KEY_GRAVE_ACCENT: return ImGuiKey_GraveAccent;
-//	case EKeyCode::eKeyCapslock: return ImGuiKey_CapsLock;
-//	case EKeyCode::eKeyScrollLock: return ImGuiKey_ScrollLock;
-//		//case GLFW_KEY_NUM_LOCK: return ImGuiKey_NumLock;
-//	case EKeyCode::eKeyPrintscreen: return ImGuiKey_PrintScreen;
-//	case EKeyCode::eKeyPause: return ImGuiKey_Pause;
-//		//case GLFW_KEY_KP_0: return ImGuiKey_Keypad0;
-//		//case GLFW_KEY_KP_1: return ImGuiKey_Keypad1;
-//		//case GLFW_KEY_KP_2: return ImGuiKey_Keypad2;
-//		//case GLFW_KEY_KP_3: return ImGuiKey_Keypad3;
-//		//case GLFW_KEY_KP_4: return ImGuiKey_Keypad4;
-//		//case GLFW_KEY_KP_5: return ImGuiKey_Keypad5;
-//		//case GLFW_KEY_KP_6: return ImGuiKey_Keypad6;
-//		//case GLFW_KEY_KP_7: return ImGuiKey_Keypad7;
-//		//case GLFW_KEY_KP_8: return ImGuiKey_Keypad8;
-//		//case GLFW_KEY_KP_9: return ImGuiKey_Keypad9;
-//		//case GLFW_KEY_KP_DECIMAL: return ImGuiKey_KeypadDecimal;
-//		//case GLFW_KEY_KP_DIVIDE: return ImGuiKey_KeypadDivide;
-//		//case GLFW_KEY_KP_MULTIPLY: return ImGuiKey_KeypadMultiply;
-//		//case GLFW_KEY_KP_SUBTRACT: return ImGuiKey_KeypadSubtract;
-//		//case GLFW_KEY_KP_ADD: return ImGuiKey_KeypadAdd;
-//		//case GLFW_KEY_KP_ENTER: return ImGuiKey_KeypadEnter;
-//		//case GLFW_KEY_KP_EQUAL: return ImGuiKey_KeypadEqual;
-//	case EKeyCode::eKeyLShift: return ImGuiKey_LeftShift;
-//	case EKeyCode::eKeyLCtrl: return ImGuiKey_LeftCtrl;
-//	case EKeyCode::eKeyLAlt: return ImGuiKey_LeftAlt;
-//		//case GLFW_KEY_LEFT_SUPER: return ImGuiKey_LeftSuper;
-//	case EKeyCode::eKeyRShift: return ImGuiKey_RightShift;
-//	case EKeyCode::eKeyRCtrl: return ImGuiKey_RightCtrl;
-//	case EKeyCode::eKeyRAlt: return ImGuiKey_RightAlt;
-//		//case GLFW_KEY_RIGHT_SUPER: return ImGuiKey_RightSuper;
-//		//case GLFW_KEY_MENU: return ImGuiKey_Menu;
-//	case EKeyCode::eKey0: return ImGuiKey_0;
-//	case EKeyCode::eKey1: return ImGuiKey_1;
-//	case EKeyCode::eKey2: return ImGuiKey_2;
-//	case EKeyCode::eKey3: return ImGuiKey_3;
-//	case EKeyCode::eKey4: return ImGuiKey_4;
-//	case EKeyCode::eKey5: return ImGuiKey_5;
-//	case EKeyCode::eKey6: return ImGuiKey_6;
-//	case EKeyCode::eKey7: return ImGuiKey_7;
-//	case EKeyCode::eKey8: return ImGuiKey_8;
-//	case EKeyCode::eKey9: return ImGuiKey_9;
-//	case EKeyCode::eKeyA: return ImGuiKey_A;
-//	case EKeyCode::eKeyB: return ImGuiKey_B;
-//	case EKeyCode::eKeyC: return ImGuiKey_C;
-//	case EKeyCode::eKeyD: return ImGuiKey_D;
-//	case EKeyCode::eKeyE: return ImGuiKey_E;
-//	case EKeyCode::eKeyF: return ImGuiKey_F;
-//	case EKeyCode::eKeyG: return ImGuiKey_G;
-//	case EKeyCode::eKeyH: return ImGuiKey_H;
-//	case EKeyCode::eKeyI: return ImGuiKey_I;
-//	case EKeyCode::eKeyJ: return ImGuiKey_J;
-//	case EKeyCode::eKeyK: return ImGuiKey_K;
-//	case EKeyCode::eKeyL: return ImGuiKey_L;
-//	case EKeyCode::eKeyM: return ImGuiKey_M;
-//	case EKeyCode::eKeyN: return ImGuiKey_N;
-//	case EKeyCode::eKeyO: return ImGuiKey_O;
-//	case EKeyCode::eKeyP: return ImGuiKey_P;
-//	case EKeyCode::eKeyQ: return ImGuiKey_Q;
-//	case EKeyCode::eKeyR: return ImGuiKey_R;
-//	case EKeyCode::eKeyS: return ImGuiKey_S;
-//	case EKeyCode::eKeyT: return ImGuiKey_T;
-//	case EKeyCode::eKeyU: return ImGuiKey_U;
-//	case EKeyCode::eKeyV: return ImGuiKey_V;
-//	case EKeyCode::eKeyW: return ImGuiKey_W;
-//	case EKeyCode::eKeyX: return ImGuiKey_X;
-//	case EKeyCode::eKeyY: return ImGuiKey_Y;
-//	case EKeyCode::eKeyZ: return ImGuiKey_Z;
-//	case EKeyCode::eKeyF1: return ImGuiKey_F1;
-//	case EKeyCode::eKeyF2: return ImGuiKey_F2;
-//	case EKeyCode::eKeyF3: return ImGuiKey_F3;
-//	case EKeyCode::eKeyF4: return ImGuiKey_F4;
-//	case EKeyCode::eKeyF5: return ImGuiKey_F5;
-//	case EKeyCode::eKeyF6: return ImGuiKey_F6;
-//	case EKeyCode::eKeyF7: return ImGuiKey_F7;
-//	case EKeyCode::eKeyF8: return ImGuiKey_F8;
-//	case EKeyCode::eKeyF9: return ImGuiKey_F9;
-//	case EKeyCode::eKeyF10: return ImGuiKey_F10;
-//	case EKeyCode::eKeyF11: return ImGuiKey_F11;
-//	case EKeyCode::eKeyF12: return ImGuiKey_F12;
-//		//case EKeyCode::eKeyF13: return ImGuiKey_F13;
-//		//case EKeyCode::eKeyF14: return ImGuiKey_F14;
-//		//case EKeyCode::eKeyF15: return ImGuiKey_F15;
-//		//case EKeyCode::eKeyF16: return ImGuiKey_F16;
-//		//case EKeyCode::eKeyF17: return ImGuiKey_F17;
-//		//case EKeyCode::eKeyF18: return ImGuiKey_F18;
-//		//case EKeyCode::eKeyF19: return ImGuiKey_F19;
-//		//case EKeyCode::eKeyF20: return ImGuiKey_F20;
-//		//case EKeyCode::eKeyF21: return ImGuiKey_F21;
-//		//case EKeyCode::eKeyF22: return ImGuiKey_F22;
-//		//case EKeyCode::eKeyF23: return ImGuiKey_F23;
-//		//case EKeyCode::eKeyF24: return ImGuiKey_F24;
-//	default: return ImGuiKey_None;
-//	}
-//}
+ImGuiKey key_code_to_im_gui_key(KeyCode code)
+{
+	switch (code)
+	{
+	case KeyCode::Tab: return ImGuiKey_Tab;
+	case KeyCode::Left: return ImGuiKey_LeftArrow;
+	case KeyCode::Right: return ImGuiKey_RightArrow;
+	case KeyCode::Up: return ImGuiKey_UpArrow;
+	case KeyCode::Down: return ImGuiKey_DownArrow;
+	case KeyCode::PageUp: return ImGuiKey_PageUp;
+	case KeyCode::PageDown: return ImGuiKey_PageDown;
+	case KeyCode::Home: return ImGuiKey_Home;
+	case KeyCode::End: return ImGuiKey_End;
+	case KeyCode::Insert: return ImGuiKey_Insert;
+	case KeyCode::DelKey: return ImGuiKey_Delete;
+	case KeyCode::Backspace: return ImGuiKey_Backspace;
+	case KeyCode::Space: return ImGuiKey_Space;
+	case KeyCode::Enter: return ImGuiKey_Enter;
+	case KeyCode::Escape: return ImGuiKey_Escape;
+	case KeyCode::Apostrophe: return ImGuiKey_Apostrophe;
+	case KeyCode::Comma: return ImGuiKey_Comma;
+	case KeyCode::Minus: return ImGuiKey_Minus;
+	case KeyCode::Period: return ImGuiKey_Period;
+	case KeyCode::Slash: return ImGuiKey_Slash;
+	case KeyCode::Semicolon: return ImGuiKey_Semicolon;
+	case KeyCode::Equal: return ImGuiKey_Equal;
+	case KeyCode::LeftBracket: return ImGuiKey_LeftBracket;
+	case KeyCode::Backslash: return ImGuiKey_Backslash;
+	case KeyCode::RightBracket: return ImGuiKey_RightBracket;
+	case KeyCode::GraveAccent: return ImGuiKey_GraveAccent;
+	case KeyCode::CapsLock: return ImGuiKey_CapsLock;
+	case KeyCode::ScrollLock: return ImGuiKey_ScrollLock;
+	case KeyCode::NumLock: return ImGuiKey_NumLock;
+	case KeyCode::PrintScreen: return ImGuiKey_PrintScreen;
+	case KeyCode::Pause: return ImGuiKey_Pause;
+	case KeyCode::KP_0: return ImGuiKey_Keypad0;
+	case KeyCode::KP_1: return ImGuiKey_Keypad1;
+	case KeyCode::KP_2: return ImGuiKey_Keypad2;
+	case KeyCode::KP_3: return ImGuiKey_Keypad3;
+	case KeyCode::KP_4: return ImGuiKey_Keypad4;
+	case KeyCode::KP_5: return ImGuiKey_Keypad5;
+	case KeyCode::KP_6: return ImGuiKey_Keypad6;
+	case KeyCode::KP_7: return ImGuiKey_Keypad7;
+	case KeyCode::KP_8: return ImGuiKey_Keypad8;
+	case KeyCode::KP_9: return ImGuiKey_Keypad9;
+	case KeyCode::KP_Decimal: return ImGuiKey_KeypadDecimal;
+	case KeyCode::KP_Divide: return ImGuiKey_KeypadDivide;
+	case KeyCode::KP_Multiply: return ImGuiKey_KeypadMultiply;
+	case KeyCode::KP_Subtract: return ImGuiKey_KeypadSubtract;
+	case KeyCode::KP_Add: return ImGuiKey_KeypadAdd;
+	case KeyCode::KP_Enter: return ImGuiKey_KeypadEnter;
+	case KeyCode::KP_Equal: return ImGuiKey_KeypadEqual;
+	case KeyCode::LeftShift: return ImGuiKey_LeftShift;
+	case KeyCode::LeftControl: return ImGuiKey_LeftCtrl;
+	case KeyCode::LeftAlt: return ImGuiKey_LeftAlt;
+		//case GLFW_KEY_LEFT_SUPER: return ImGuiKey_LeftSuper;
+	case KeyCode::RightShift: return ImGuiKey_RightShift;
+	case KeyCode::RightControl: return ImGuiKey_RightCtrl;
+	case KeyCode::RightAlt: return ImGuiKey_RightAlt;
+		//case GLFW_KEY_RIGHT_SUPER: return ImGuiKey_RightSuper;
+		//case GLFW_KEY_MENU: return ImGuiKey_Menu;
+	case KeyCode::_0: return ImGuiKey_0;
+	case KeyCode::_1: return ImGuiKey_1;
+	case KeyCode::_2: return ImGuiKey_2;
+	case KeyCode::_3: return ImGuiKey_3;
+	case KeyCode::_4: return ImGuiKey_4;
+	case KeyCode::_5: return ImGuiKey_5;
+	case KeyCode::_6: return ImGuiKey_6;
+	case KeyCode::_7: return ImGuiKey_7;
+	case KeyCode::_8: return ImGuiKey_8;
+	case KeyCode::_9: return ImGuiKey_9;
+	case KeyCode::A: return ImGuiKey_A;
+	case KeyCode::B: return ImGuiKey_B;
+	case KeyCode::C: return ImGuiKey_C;
+	case KeyCode::D: return ImGuiKey_D;
+	case KeyCode::E: return ImGuiKey_E;
+	case KeyCode::F: return ImGuiKey_F;
+	case KeyCode::G: return ImGuiKey_G;
+	case KeyCode::H: return ImGuiKey_H;
+	case KeyCode::I: return ImGuiKey_I;
+	case KeyCode::J: return ImGuiKey_J;
+	case KeyCode::K: return ImGuiKey_K;
+	case KeyCode::L: return ImGuiKey_L;
+	case KeyCode::M: return ImGuiKey_M;
+	case KeyCode::N: return ImGuiKey_N;
+	case KeyCode::O: return ImGuiKey_O;
+	case KeyCode::P: return ImGuiKey_P;
+	case KeyCode::Q: return ImGuiKey_Q;
+	case KeyCode::R: return ImGuiKey_R;
+	case KeyCode::S: return ImGuiKey_S;
+	case KeyCode::T: return ImGuiKey_T;
+	case KeyCode::U: return ImGuiKey_U;
+	case KeyCode::V: return ImGuiKey_V;
+	case KeyCode::W: return ImGuiKey_W;
+	case KeyCode::X: return ImGuiKey_X;
+	case KeyCode::Y: return ImGuiKey_Y;
+	case KeyCode::Z: return ImGuiKey_Z;
+	case KeyCode::F1: return ImGuiKey_F1;
+	case KeyCode::F2: return ImGuiKey_F2;
+	case KeyCode::F3: return ImGuiKey_F3;
+	case KeyCode::F4: return ImGuiKey_F4;
+	case KeyCode::F5: return ImGuiKey_F5;
+	case KeyCode::F6: return ImGuiKey_F6;
+	case KeyCode::F7: return ImGuiKey_F7;
+	case KeyCode::F8: return ImGuiKey_F8;
+	case KeyCode::F9: return ImGuiKey_F9;
+	case KeyCode::F10: return ImGuiKey_F10;
+	case KeyCode::F11: return ImGuiKey_F11;
+	case KeyCode::F12: return ImGuiKey_F12;
+		//case KeyCode::eKeyF13: return ImGuiKey_F13;
+		//case KeyCode::eKeyF14: return ImGuiKey_F14;
+		//case KeyCode::eKeyF15: return ImGuiKey_F15;
+		//case KeyCode::eKeyF16: return ImGuiKey_F16;
+		//case KeyCode::eKeyF17: return ImGuiKey_F17;
+		//case KeyCode::eKeyF18: return ImGuiKey_F18;
+		//case KeyCode::eKeyF19: return ImGuiKey_F19;
+		//case KeyCode::eKeyF20: return ImGuiKey_F20;
+		//case KeyCode::eKeyF21: return ImGuiKey_F21;
+		//case KeyCode::eKeyF22: return ImGuiKey_F22;
+		//case KeyCode::eKeyF23: return ImGuiKey_F23;
+		//case KeyCode::eKeyF24: return ImGuiKey_F24;
+	default: return ImGuiKey_None;
+	}
+}
 
 CImGuiEngineSystem::CImGuiEngineSystem(IRenderInterface* render_interface)
 {
@@ -458,14 +460,7 @@ void CImGuiEngineSystem::Initialize()
 	ApplyCinderTheme();
 	//ApplyDarkBlueTheme();
 
-	// Window events
-	//FWindowCallbackMapper::SubscribeFocusChange(this, &CImGuiEngineSystem::HandleFocusChanged);
-	//FWindowCallbackMapper::SubscribeCursorEnter(this, &CImGuiEngineSystem::HandleCursorEnter);
-	//FWindowCallbackMapper::SubscribeMousePosition(this, &CImGuiEngineSystem::HandleAxisInput);
-	//FWindowCallbackMapper::SubscribeMouseButton(this, &CImGuiEngineSystem::HandleMouseButton);
-	//FWindowCallbackMapper::SubscribeMouseScroll(this, &CImGuiEngineSystem::HandleMouseScroll);
-	//FWindowCallbackMapper::SubscribeKeyInput(this, &CImGuiEngineSystem::HandleKeyInput);
-	//FWindowCallbackMapper::SubscribeCharInput(this, &CImGuiEngineSystem::HandleCharInput);
+	InputManager::SubscribeInputEvent(this, &CImGuiEngineSystem::OnAnyInput);
 
 	m_vWindows.emplace_back(std::make_unique<CHierarchyWindow>("Hierarchy"));
 	m_vWindows.emplace_back(std::make_unique<CInspectorWindow>("Inspector"));
@@ -576,6 +571,91 @@ void CImGuiEngineSystem::Destroy()
 	ImGui::DestroyContext();
 }
 
+void CImGuiEngineSystem::OnAnyInput(const InputEvent& input_event)
+{
+	switch (input_event.GetSource())
+	{
+	case EventSource::Keyboard:
+	{
+		const auto& key_input = static_cast<const KeyInputEvent&>(input_event);
+		HandleKeyboardInput(key_input);
+	} break;
+	case EventSource::Mouse:
+	{
+		const auto& mouse_input = static_cast<const MouseButtonInputEvent&>(input_event);
+		HandleMouseInput(mouse_input);
+	} break;
+	case EventSource::Touchscreen:
+	{
+		const auto& touch_input = static_cast<const TouchInputEvent&>(input_event);
+		HandleTouchInput(touch_input);
+	} break;
+	}
+}
+
+void CImGuiEngineSystem::HandleKeyboardInput(const KeyInputEvent& input_event)
+{
+	auto action = input_event.GetAction();
+	if (action != KeyAction::Down && action != KeyAction::Up)
+		return;
+
+	ImGuiIO& io = ImGui::GetIO();
+	ImGuiKey imgui_key = key_code_to_im_gui_key(input_event.GetCode());
+	io.AddKeyEvent(imgui_key, (action == KeyAction::Down));
+	//io.SetKeyEventNativeData(imgui_key, keycode, scancode);
+}
+
+void CImGuiEngineSystem::HandleMouseInput(const MouseButtonInputEvent& input_event)
+{
+	auto action = input_event.GetAction();
+	switch (action)
+	{
+	case MouseAction::Down:
+	case MouseAction::Up:
+	{
+		int button{ -1 };
+		switch (input_event.GetButton())
+		{
+		case KeyCode::MouseLeft:
+			button = 0; 
+			break;
+		case KeyCode::MouseRight:
+			button = 1;
+			break;
+		case KeyCode::MouseMiddle:
+			button = 2;
+			break;
+		}
+		
+		ImGuiIO& io = ImGui::GetIO();
+		if (button >= 0 && button < ImGuiMouseButton_COUNT)
+			io.AddMouseButtonEvent(button, action == MouseAction::Down);
+	} break;
+	case MouseAction::Move:
+	{
+		ImGuiIO& io = ImGui::GetIO();
+		
+		// TODO: do update only when window is focused
+		
+		io.AddMousePosEvent(input_event.GetValueX(), input_event.GetValueY());
+		m_lastMouseX = input_event.GetValueX();
+		m_lastMouseY = input_event.GetValueY();
+	} break;
+	case MouseAction::Scroll:
+	{
+		ImGuiIO& io = ImGui::GetIO();
+		io.AddMouseWheelEvent(input_event.GetValueX(), input_event.GetValueY());
+	} break;
+	default:
+		break;
+	}
+}
+
+void CImGuiEngineSystem::HandleTouchInput(const TouchInputEvent& input_event)
+{
+
+}
+
 //void CImGuiEngineSystem::HandleFocusChanged(i32 focused)
 //{
 //	ImGuiIO& io = ImGui::GetIO();
@@ -596,50 +676,6 @@ void CImGuiEngineSystem::Destroy()
 //		io.AddMousePosEvent(-FLT_MAX, -FLT_MAX);
 //	}
 //}
-//
-//void CImGuiEngineSystem::HandleAxisInput(f32 x, f32 y, f32 xmax, f32 ymax)
-//{
-//	ImGuiIO& io = ImGui::GetIO();
-//
-//	// TODO: do update only when window is focused
-//
-//	io.AddMousePosEvent(x, y);
-//	m_lastMouseX = x;
-//	m_lastMouseY = y;
-//}
-//
-//void CImGuiEngineSystem::HandleMouseButton(EKeyCode code, EKeyState state)
-//{
-//	int button{ -1 };
-//	if (code == EKeyCode::eMouseLeft)
-//		button = 0;
-//	else if (code == EKeyCode::eMouseRight)
-//		button = 1;
-//	else if (code == EKeyCode::eMouseMiddle)
-//		button = 2;
-//
-//	ImGuiIO& io = ImGui::GetIO();
-//	if (button >= 0 && button < ImGuiMouseButton_COUNT)
-//		io.AddMouseButtonEvent(button, state == EKeyState::ePress);
-//}
-//
-//void CImGuiEngineSystem::HandleMouseScroll(f32 x, f32 y)
-//{
-//	ImGuiIO& io = ImGui::GetIO();
-//	io.AddMouseWheelEvent(x, y);
-//}
-//
-//void CImGuiEngineSystem::HandleKeyInput(EKeyCode code, EKeyState state)
-//{
-//	if (state != EKeyState::ePress && state != EKeyState::eRelease)
-//		return;
-//
-//	ImGuiIO& io = ImGui::GetIO();
-//	ImGuiKey imgui_key = key_code_to_im_gui_key(code);
-//	io.AddKeyEvent(imgui_key, (state == EKeyState::ePress));
-//	//io.SetKeyEventNativeData(imgui_key, keycode, scancode);
-//}
-//
 //void CImGuiEngineSystem::HandleCharInput(u32 character)
 //{
 //	ImGuiIO& io = ImGui::GetIO();

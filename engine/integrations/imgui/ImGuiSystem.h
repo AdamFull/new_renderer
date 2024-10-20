@@ -22,13 +22,10 @@ namespace engine
 
 		void Destroy() override;
 	protected:
-		//void HandleFocusChanged(i32 focused);
-		//void HandleCursorEnter(i32 enter);
-		//void HandleAxisInput(f32 x, f32 y, f32 xmax, f32 ymax);
-		//void HandleMouseButton(EKeyCode code, EKeyState state);
-		//void HandleMouseScroll(f32 x, f32 y);
-		//void HandleKeyInput(EKeyCode, EKeyState);
-		//void HandleCharInput(u32 character);
+		void OnAnyInput(const InputEvent& input_event);
+		void HandleKeyboardInput(const KeyInputEvent& input_event);
+		void HandleMouseInput(const MouseButtonInputEvent& input_event);
+		void HandleTouchInput(const TouchInputEvent& input_event);
 	private:
 		f32 m_lastMouseX{}, m_lastMouseY{};
 		utl::vector<std::unique_ptr<IEditorWindow>> m_vWindows{};

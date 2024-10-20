@@ -125,7 +125,7 @@ void CInputSystem::OnAnyInput(const InputEvent& input_event)
 
 void CInputSystem::HandleKeyboardInput(const KeyInputEvent& input_event)
 {
-	key_decoder.Update(input_event.GetCode(), input_event.GetAction() == KeyAction::Down);
+	key_decoder.Update(input_event.GetCode(), input_event.GetAction() == KeyAction::Down || input_event.GetAction() == KeyAction::Repeat);
 }
 
 void CInputSystem::HandleMouseInput(const MouseButtonInputEvent& input_event)
