@@ -1,7 +1,7 @@
-#include <engine/render/render_api/vulkan/UniformPool.h>
-#include <engine/render/render_api/vulkan/PhysicalDevice.h>
-#include <engine/render/render_api/vulkan/VkRenderDevice.h>
-#include <engine/render/render_api/vulkan/Buffer.h>
+#include <UniformPool.h>
+#include <base/PhysicalDevice.h>
+#include <VkRenderDevice.h>
+#include <base/Buffer.h>
 
 namespace engine
 {

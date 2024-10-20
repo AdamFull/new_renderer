@@ -2,13 +2,13 @@
 #include <uuid.hpp>
 
 #include <engine/render/render_api/vulkan/VkRenderBackend.h>
-#include <engine/render/render_api/vulkan/Buffer.h>
-#include <engine/render/render_api/vulkan/Sampler.h>
+#include <engine/render/render_api/vulkan/base/Buffer.h>
+#include <engine/render/render_api/vulkan/base/Sampler.h>
 #include <engine/render/render_api/vulkan/Texture.h>
-#include <engine/render/render_api/vulkan/CommandPool.h>
+#include <engine/render/render_api/vulkan/base/CommandPool.h>
 #include <engine/render/render_api/vulkan/RenderContext.h>
 #include <engine/render/render_api/vulkan/UploadContext.h>
-#include <engine/render/render_api/vulkan/DescriptorPool.h>
+#include <engine/render/render_api/vulkan/base/DescriptorPool.h>
 #include <engine/render/render_api/vulkan/Shader.h>
 
 #include "BufferObject.h"

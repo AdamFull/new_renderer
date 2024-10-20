@@ -1,11 +1,11 @@
-#include <engine/render/render_api/vulkan/RenderContext.h>
-#include <engine/render/render_api/vulkan/PhysicalDevice.h>
-#include <engine/render/render_api/vulkan/Device.h>
-#include <engine/render/render_api/vulkan/Swapchain.h>
-#include <engine/render/render_api/vulkan/CommandPool.h>
-#include <engine/render/render_api/vulkan/VkRenderDevice.h>
-#include <engine/render/render_api/vulkan/DescriptorPool.h>
-#include <engine/render/render_api/vulkan/Buffer.h>
+#include <RenderContext.h>
+#include <base/PhysicalDevice.h>
+#include <base/Device.h>
+#include <base/Swapchain.h>
+#include <base/CommandPool.h>
+#include <VkRenderDevice.h>
+#include <base/DescriptorPool.h>
+#include <base/Buffer.h>
 
 #include <engine/runtime/Window.h>
 

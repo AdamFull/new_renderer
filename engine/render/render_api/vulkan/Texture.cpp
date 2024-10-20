@@ -1,9 +1,9 @@
-#include <engine/render/render_api/vulkan/Texture.h>
-#include <engine/render/render_api/vulkan/Image.h>
-#include <engine/render/render_api/vulkan/ImageView.h> 
-#include <engine/render/render_api/vulkan/Sampler.h> 
-#include <engine/render/render_api/vulkan/VkRenderDevice.h> 
-#include <engine/render/render_api/vulkan/VkCommon.h> 
+#include <Texture.h>
+#include <base/Image.h>
+#include <base/ImageView.h> 
+#include <base/Sampler.h> 
+#include <VkRenderDevice.h> 
+#include <VkCommon.h> 
 
 namespace engine
 {

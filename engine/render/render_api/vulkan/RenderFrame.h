@@ -1,7 +1,7 @@
 #pragma once
 
-#include <engine/render/render_api/vulkan/VkResourceStructures.h>
-#include <engine/render/render_api/vulkan/UniformPool.h>
+#include <VkResourceStructures.h>
+#include <UniformPool.h>
 
 namespace engine
 {

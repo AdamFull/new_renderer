@@ -1,5 +1,5 @@
-#include <engine/render/render_api/vulkan/VkRenderBackend.h>
-#include <engine/render/render_api/vulkan/VkCommon.h>
+#include <VkRenderBackend.h>
+#include <VkCommon.h>
 
 #include <util/Logger.h>
 
@@ -7,20 +7,20 @@
 #include <type_traits>
 #include <unordered_set>
 
-#include <engine/render/render_api/vulkan/PhysicalDevice.h>
-#include <engine/render/render_api/vulkan/DebugUtils.h>
-#include <engine/render/render_api/vulkan/Device.h>
-#include <engine/render/render_api/vulkan/Buffer.h>
-#include <engine/render/render_api/vulkan/Sampler.h>
-#include <engine/render/render_api/vulkan/Image.h>
-#include <engine/render/render_api/vulkan/ImageView.h>
-#include <engine/render/render_api/vulkan/Texture.h>
-#include <engine/render/render_api/vulkan/CommandPool.h>
-#include <engine/render/render_api/vulkan/Swapchain.h>
-#include <engine/render/render_api/vulkan/RenderContext.h>
-#include <engine/render/render_api/vulkan/UploadContext.h>
-#include <engine/render/render_api/vulkan/DescriptorPool.h>
-#include <engine/render/render_api/vulkan/Shader.h>
+#include <base/PhysicalDevice.h>
+#include <base/DebugUtils.h>
+#include <base/Device.h>
+#include <base/Buffer.h>
+#include <base/Sampler.h>
+#include <base/Image.h>
+#include <base/ImageView.h>
+#include <Texture.h>
+#include <base/CommandPool.h>
+#include <base/Swapchain.h>
+#include <RenderContext.h>
+#include <UploadContext.h>
+#include <base/DescriptorPool.h>
+#include <Shader.h>
 
 using namespace engine;
 using namespace engine::render;

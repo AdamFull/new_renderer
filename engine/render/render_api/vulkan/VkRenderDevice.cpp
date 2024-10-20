@@ -1,4 +1,4 @@
-#include <engine/render/render_api/vulkan/VkRenderDevice.h>
+#include <VkRenderDevice.h>
 
 #include <sstream>
 #include <set>
@@ -14,10 +14,10 @@
 
 #include <engine/runtime/Window.h>
 
-#include <engine/render/render_api/vulkan/PhysicalDevice.h>
-#include <engine/render/render_api/vulkan/DebugUtils.h>
-#include <engine/render/render_api/vulkan/Device.h>
-#include <engine/render/render_api/vulkan/Allocator.h>
+#include <base/PhysicalDevice.h>
+#include <base/DebugUtils.h>
+#include <base/Device.h>
+#include <base/Allocator.h>
 
 #include <volk.h>
 

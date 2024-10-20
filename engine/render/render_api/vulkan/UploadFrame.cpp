@@ -1,8 +1,8 @@
-#include <engine/render/render_api/vulkan/UploadFrame.h>
-#include <engine/render/render_api/vulkan/Queue.h>
-#include <engine/render/render_api/vulkan/CommandPool.h>
-#include <engine/render/render_api/vulkan/VkRenderDevice.h>
-#include <engine/render/render_api/vulkan/Buffer.h>
+#include <UploadFrame.h>
+#include <base/Queue.h>
+#include <base/CommandPool.h>
+#include <VkRenderDevice.h>
+#include <base/Buffer.h>
 
 namespace engine
 {

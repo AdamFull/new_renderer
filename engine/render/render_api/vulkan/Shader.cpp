@@ -1,15 +1,15 @@
-#include <engine/render/render_api/vulkan/Shader.h>
-#include <engine/render/render_api/vulkan/PhysicalDevice.h>
-#include <engine/render/render_api/vulkan/Device.h>
-#include <engine/render/render_api/vulkan/VkRenderDevice.h>
-#include <engine/render/render_api/vulkan/Buffer.h>
-#include <engine/render/render_api/vulkan/Texture.h>
-#include <engine/render/render_api/vulkan/ImageView.h>
-#include <engine/render/render_api/vulkan/Sampler.h>
-#include <engine/render/render_api/vulkan/VkCommon.h>
-#include <engine/render/render_api/vulkan/RenderContext.h>
-#include <engine/render/render_api/vulkan/DescriptorSet.h>
-#include <engine/render/render_api/vulkan/CommandBuffer.h>
+#include <Shader.h>
+#include <base/PhysicalDevice.h>
+#include <base/Device.h>
+#include <VkRenderDevice.h>
+#include <base/Buffer.h>
+#include <Texture.h>
+#include <base/ImageView.h>
+#include <base/Sampler.h>
+#include <VkCommon.h>
+#include <RenderContext.h>
+#include <base/DescriptorSet.h>
+#include <base/CommandBuffer.h>
 
 namespace engine
 {

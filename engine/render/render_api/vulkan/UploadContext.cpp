@@ -1,11 +1,11 @@
-#include <engine/render/render_api/vulkan/UploadContext.h>
-#include <engine/render/render_api/vulkan/Device.h>
-#include <engine/render/render_api/vulkan/CommandPool.h>
-#include <engine/render/render_api/vulkan/VkRenderDevice.h>
-#include <engine/render/render_api/vulkan/Buffer.h>
-#include <engine/render/render_api/vulkan/Image.h>
-#include <engine/render/render_api/vulkan/ImageView.h>
-#include <engine/render/render_api/vulkan/Texture.h>
+#include <UploadContext.h>
+#include <base/Device.h>
+#include <base/CommandPool.h>
+#include <VkRenderDevice.h>
+#include <base/Buffer.h>
+#include <base/Image.h>
+#include <base/ImageView.h>
+#include <Texture.h>
 
 namespace engine
 {

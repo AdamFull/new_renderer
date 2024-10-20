@@ -1,7 +1,7 @@
 #pragma once
 
-#include <engine/render/render_api/vulkan/VkRenderDevice.h>
-#include <engine/render/render_api/vulkan/VkShaderReflection.h>
+#include <VkRenderDevice.h>
+#include <VkShaderReflection.h>
 #include <engine/interface/ResourceContainer.h>
 #include <engine/interface/render/RenderInterface.h>
 #include <container/unique_queue.h>

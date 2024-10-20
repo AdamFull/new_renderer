@@ -1,7 +1,7 @@
 #pragma once
 
 #include <engine/interface/render/RenderInterface.h>
-#include <engine/render/render_api/vulkan/VkResourceStructures.h>
+#include <VkResourceStructures.h>
 
 #include <format>
 

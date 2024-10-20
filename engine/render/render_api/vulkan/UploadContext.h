@@ -1,6 +1,6 @@
 #pragma once
 
-#include <engine/render/render_api/vulkan/UploadFrame.h>
+#include <UploadFrame.h>
 
 namespace engine
 {

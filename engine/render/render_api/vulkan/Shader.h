@@ -1,8 +1,8 @@
 #pragma once
 
-#include <engine/render/render_api/vulkan/VkResourceStructures.h>
-#include <engine/render/render_api/vulkan/VkShaderReflection.h>
-#include <engine/render/render_api/vulkan/Pipeline.h>
+#include <VkResourceStructures.h>
+#include <VkShaderReflection.h>
+#include <base/Pipeline.h>
 
 namespace engine
 {

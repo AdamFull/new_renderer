@@ -1,6 +1,6 @@
 #pragma once
 
-#include <engine/render/render_api/vulkan/RenderFrame.h>
+#include <RenderFrame.h>
 
 namespace engine
 {
