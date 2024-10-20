@@ -11,7 +11,7 @@ find_package(XercesC CONFIG REQUIRED)
 find_package(sol2 CONFIG REQUIRED)
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/DebugDraw")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/render_api/vulkan")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/render_api")
 
 file(GLOB ENGINE_RENDER_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 file(GLOB ENGINE_RENDER_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
@@ -52,7 +52,7 @@ target_include_directories(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-	PUBLIC vulkan_renderer
+	PRIVATE gfx
     PRIVATE ${LUA_LIBRARIES}
     #PRIVATE PkgConfig::LuaJIT
     PRIVATE sol2
