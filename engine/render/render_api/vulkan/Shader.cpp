@@ -23,12 +23,6 @@ namespace engine
 				return *this;
 			}
 
-			ShaderBuilder& ShaderBuilder::SetUsageCount(uint32_t usage_count)
-			{
-				this->usage_count = usage_count;
-				return *this;
-			}
-
 			ShaderBuilder& ShaderBuilder::AddShaderModule(vk::ShaderStageFlagBits stage, std::span<uint32_t> code)
 			{
 				shader_modules[shader_module_count++] = ShaderModuleInfo{ stage, vk::ShaderModuleCreateInfo{ {}, code.size() * sizeof(uint32_t), code.data()}};
@@ -120,9 +114,6 @@ namespace engine
 
 				// TODO: generate better object names. Current names can overlap
 
-				// TODO: dynamic per frame resource allocation
-				maximumDescriptorSlots = builder.usage_count * 2u;
-
 				std::array<DescriptorSetLayoutBuilder, k_max_descriptor_sets> descriptor_set_layout_builders{};
 
 				// Create descriptor set layouts
@@ -157,37 +148,6 @@ namespace engine
 					{
 						descriptor_set_layouts[set] = builder.BuildUnique(render_device);
 					}
-				}
-
-				// Minimal buffer offset
-				auto& physical = render_device.GetPhysicalDevice();
-				auto minOffsetAllignment = std::lcm(physical.GetProperties().limits.minUniformBufferOffsetAlignment, physical.GetProperties().limits.nonCoherentAtomSize);
-
-				// Create uniform buffers
-				for (const auto& [id, uniform_block] : reflection.uniformBlocks)
-				{
-					// Storage buffers is binding from outside
-					if (uniform_block.descriptorType == vk::DescriptorType::eStorageBuffer)
-						continue;
-
-					auto builder = BufferBuilder(uniform_block.size, maximumDescriptorSlots, minOffsetAllignment);
-					builder.SetVmaUsage(vma::MemoryUsage::eCpuToGpu);
-					builder.SetSharingMode(vk::SharingMode::eConcurrent);
-
-//#ifndef BUILD_WITHOUT_DEBUGGIND
-//					auto* debug_name = debug_mapping::find(id);
-//					if (debug_name)
-//						builder.SetDebugName(std::format("{}:{}", resources_info.name, debug_name));
-//					else
-//						builder.SetDebugName(std::format("{}:{:x}", resources_info.name, id));
-//#endif
-
-					if (uniform_block.descriptorType == vk::DescriptorType::eUniformBuffer)
-						builder.SetUsage(vk::BufferUsageFlagBits::eUniformBuffer);
-					else if (uniform_block.descriptorType == vk::DescriptorType::eStorageBuffer)
-						builder.SetUsage(vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer);
-
-					uniform_buffers.emplace(id, builder.BuildUnique(render_device));
 				}
 
 				// Create pipeline layout
@@ -248,7 +208,6 @@ namespace engine
 					render_device.Destroy(shader_modules[i]);
 				}
 
-				uniform_buffers.clear();
 				render_device.Destroy(layout);
 			}
 
@@ -474,15 +433,6 @@ namespace engine
 				command.x = std::max(utl::cast<u32>(std::ceil(utl::cast<f32>(command.x) / utl::cast<f32>(localSizes[0]))), 1u);
 				command.y = std::max(utl::cast<u32>(std::ceil(utl::cast<f32>(command.y) / utl::cast<f32>(localSizes[1]))), 1u);
 				command.z = std::max(utl::cast<u32>(std::ceil(utl::cast<f32>(command.z) / utl::cast<f32>(localSizes[2]))), 1u);
-			}
-
-			Buffer* Shader::GetUniformBuffer(uint64_t uniform_name) const
-			{
-				auto found = uniform_buffers.find(uniform_name);
-				if (found != uniform_buffers.end())
-					return found->second.get();
-
-				return nullptr;
 			}
 		}
 	}

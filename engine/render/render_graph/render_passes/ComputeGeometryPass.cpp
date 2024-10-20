@@ -106,7 +106,6 @@ const std::unique_ptr<IShaderObject>& CComputeGeometryPass::GetShaderByVBO(const
 		auto& render_packet = m_pRenderInterface->GetRenderPacket();
 
 		FComputeShaderCreateInfo shader_ci{};
-		shader_ci.usageCount = std::max(render_packet->stats.materialCount, render_packet->stats.primitiveCount);
 		shader = m_pRenderInterface->CreateShaderObject(shader_name, shader_ci);
 
 		InitShaderResources(shader);

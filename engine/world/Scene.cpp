@@ -440,7 +440,6 @@ void CScene::LoadMeshComponent(const easygltf::FGLTFRoot& root, const entt::enti
 			vertex_handler = handler.get();
 			current_handler_id = handler_id;
 
-			render_packet->stats.perTypeVBOCount[handler->GetHash()]++;
 			render_packet->stats.vboCount++;
 		}
 

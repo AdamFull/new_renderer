@@ -252,9 +252,6 @@ namespace engine
 			u64 primitiveCount{ 0ull };
 			u64 materialCount{ 0ull };
 			u64 nodeCount{ 0ull };
-
-			// Type is a hash of all used attributes
-			utl::hash_map<u64, u64> perTypeVBOCount{};
 		};
 
 		struct FCullingInfo

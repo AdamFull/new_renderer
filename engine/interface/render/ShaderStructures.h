@@ -117,8 +117,6 @@ namespace engine
 
 			EDepthCompareOp depthCompareOp{ EDepthCompareOp::eLessOrEqual };
 
-			u32 usageCount{ 1u };
-
 			utl::vector<FAttachment> colorAttachments{};
 			FAttachment depthAttachment{};
 			FAttachment stencilAttachment{};
@@ -128,12 +126,12 @@ namespace engine
 
 		struct FComputeShaderCreateInfo
 		{
-			u32 usageCount{ 1u };
+			u32 dummy{ 1u };
 		};
 
 		struct FReyTracingShaderCreateInfo
 		{
-			u32 usageCount{ 1u };
+			u32 dummy{ 1u };
 		};
 
 		struct FUniformDataView

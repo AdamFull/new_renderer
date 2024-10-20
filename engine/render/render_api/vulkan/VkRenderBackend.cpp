@@ -449,7 +449,6 @@ FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FGraphic
 	shader_builder.graphics_pipeline_builder.SetSampleCount(vk::SampleCountFlagBits::e1);
 	shader_builder.graphics_pipeline_builder.SetPatchControlPointsCount(0);
 	shader_builder.graphics_pipeline_builder.SetLineWidth(1.f);
-	shader_builder.SetUsageCount(shader_ci.usageCount);
 
 	shader_builder.graphics_pipeline_builder.SetDepthClampEnable(true);
 
@@ -552,7 +551,6 @@ FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FCompute
 	shader_builder.SetBindPoint(vk::PipelineBindPoint::eCompute);
 
 	shader_builder.AddShaderModule(vk::ShaderStageFlagBits::eCompute, shader_stage.code);
-	shader_builder.SetUsageCount(shader_ci.usageCount);
 
 	shader_builder.AddDefaultLayout(Handle(render_context->GetGlobalDescriptorSetLayout()));
 

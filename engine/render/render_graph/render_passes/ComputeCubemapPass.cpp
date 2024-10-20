@@ -13,21 +13,10 @@ void CComputeCubemapPass::Init(const FComputePassCreateInfo& pass_ci)
 {
 	IComputePass::Init(pass_ci);
 
-	u32 calculated_usage{};
-
 	auto& render_backend = m_pRenderInterface->GetRenderBackend();
 	auto& render_graph = m_pRenderInterface->GetRenderGraph();
 
-	auto& out_targets = m_renderResources[ERenderResourceGroupType::eStorageTextureWrite];
-	for (const auto& resource_binding : out_targets)
-	{
-		auto& render_resource = render_graph->GetRenderResource(resource_binding.resource);
-		auto texture_view = render_backend->GetTextureView(render_resource.handle);
-		calculated_usage += texture_view.mipLevels;
-	}
-
 	FComputeShaderCreateInfo shader_ci{};
-	shader_ci.usageCount = (std::max)(calculated_usage, 1u);
 	m_shader = m_pRenderInterface->CreateShaderObject(pass_ci.shader, shader_ci);
 
 	InitShaderResources(m_shader);

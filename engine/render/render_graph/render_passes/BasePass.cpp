@@ -159,12 +159,6 @@ FRHIHandle IRenderPass::MakeShader(const std::string& name, FGraphicsShaderCreat
 	if (vbo)
 	{
 		auto& render_packet = m_pRenderInterface->GetRenderPacket();
-
-		auto vbo_hash = vbo->GetHash();
-		auto vbo_count = render_packet->stats.perTypeVBOCount[vbo_hash];
-
-		
-		shader_ci.usageCount = vbo_count ? vbo_count : 1u;
 		shader_ci.vertexDeclaration = vbo->GetVertexDeclaration();
 	}
 

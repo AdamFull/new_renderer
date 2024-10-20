@@ -26,7 +26,6 @@ namespace engine
 				CVkShaderReflectionBuilder reflection_builder{};
 
 				vk::PipelineBindPoint bind_point{};
-				uint32_t usage_count{ 1u };
 
 				struct ShaderModuleInfo
 				{
@@ -45,7 +44,6 @@ namespace engine
 				mutable ComputePipelineBuilder compute_pipeline_builder{};
 
 				ShaderBuilder& SetBindPoint(vk::PipelineBindPoint bind_point);
-				ShaderBuilder& SetUsageCount(uint32_t usage_count);
 				ShaderBuilder& AddShaderModule(vk::ShaderStageFlagBits stage, std::span<uint32_t> code);
 				ShaderBuilder& AddDefaultLayout(vk::DescriptorSetLayout layout);
 
@@ -104,8 +102,6 @@ namespace engine
 				void UpdateUniform(RenderContext& render_context, uint64_t reflection_name, std::span<const char> data);
 				void UpdateTextureBinding(uint64_t reflection_name, Texture& texture, Sampler& sampler, uint32_t mip_level);
 				void UpdateBufferBinding(uint64_t reflection_name, Buffer& buffer);
-
-				Buffer* GetUniformBuffer(uint64_t uniform_name) const;
 			private:
 				RenderDevice& render_device;
 
@@ -121,9 +117,6 @@ namespace engine
 				std::array<std::unique_ptr<DescriptorSetLayout>, k_max_descriptor_sets> descriptor_set_layouts{};
 				std::array<vk::DescriptorSet, k_max_descriptor_sets> descriptor_sets{};
 				utl::vector<vk::PushConstantRange> pushConstantRanges{};
-
-				utl::hash_map<u64, std::unique_ptr<Buffer>> uniform_buffers{};
-				u64 maximumDescriptorSlots{ 0ull };
 
 				FVkShaderReflectionData reflection{};
 
