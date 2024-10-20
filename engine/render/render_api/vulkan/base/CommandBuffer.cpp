@@ -91,17 +91,6 @@ namespace engine
 				handle.pipelineBarrier2KHR(dependency_info);
 			}
 
-			void CommandBuffer::ResetTimestampQuery(FVkTimestampQuery& timestamp_query)
-			{
-				handle.resetQueryPool(timestamp_query.handle, 0u, static_cast<u32>(timestamp_query.values.size()));
-				timestamp_query.queryIndex = 0u;
-			}
-
-			void CommandBuffer::WriteTimestampQuery(vk::PipelineStageFlagBits pipeline_state, FVkTimestampQuery& timestamp_query)
-			{
-				handle.writeTimestamp(pipeline_state, timestamp_query.handle, timestamp_query.queryIndex++);
-			}
-
 			void CommandBuffer::BeginDebugLabel(const std::string& label, u32 color)
 			{
 				auto& render_device = command_pool.GetDevice();

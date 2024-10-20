@@ -21,6 +21,7 @@ namespace engine
 			class RenderContext;
 			class UploadContext;
 			class Shader;
+			class QueryPool;
 
 			using vk_resource_container_t = CResourceContainer<Texture, Shader, Buffer>;
 
@@ -136,8 +137,10 @@ namespace engine
 				std::unique_ptr<UploadContext> upload_context;
 
 				FRenderFrameStats render_stats{};
-				utl::hash_map<EQueueTypeFlagBits, u32> zone_entries{};
-				FVkTimestampQuery timestamp_query{};
+
+				std::unique_ptr<QueryPool> timestamp_pool{};
+				std::vector<uint64_t> timestamp_values{};
+				uint32_t query_index{ 0ull };
 
 				utl::hash_map<u32, std::unique_ptr<Sampler>> sampler_cache{};
 				std::unique_ptr<Sampler> default_sampler{};

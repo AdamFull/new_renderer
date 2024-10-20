@@ -23,12 +23,6 @@ namespace engine
 			constexpr uint32_t k_max_descriptor_sets{ 8u };
 			constexpr uint32_t k_max_push_constant_range_count{ 16u };
 
-			struct FRenderApiErrorInfo
-			{
-				bool fault{ false };
-				std::string description{};
-			};
-
 			enum EnableValidationFeatureFlagBits
 			{
 				GPU_ASSISTED_FLAG_BIT = 1 << 0,
@@ -80,13 +74,6 @@ namespace engine
 				vk::ImageLayout newLayout{};
 				u32 baseArrayLayer{ 0u };
 				u32 baseMipLevel{ 0u };
-			};
-
-			struct FVkTimestampQuery
-			{
-				vk::QueryPool handle{};
-				utl::vector<u64> values{};
-				u32 queryIndex{ 0ull };
 			};
 
 			struct VkTextureUpdateInfo

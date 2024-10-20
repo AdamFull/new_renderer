@@ -52,7 +52,7 @@ namespace engine
 				VulkanResource{ nullptr },
 				render_device{ render_device }
 			{
-				handle = render_device.CreatePipelineLayout2(builder.create_info, builder.debug_name);
+				handle = render_device.CreatePipelineLayout(builder.create_info, builder.debug_name);
 			}
 
 			PipelineLayout::PipelineLayout(PipelineLayout&& other) :

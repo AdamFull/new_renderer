@@ -156,26 +156,6 @@ namespace engine
 				return mask;
 			}
 
-			inline FRenderApiErrorInfo make_api_error(vk::ObjectType type, vk::Result result, const std::string& error_text = "")
-			{
-				FRenderApiErrorInfo error_info{};
-				error_info.fault = result != vk::Result::eSuccess;
-
-				if (error_info.fault)
-					error_info.description = std::format("\"{}\": {}. Reason: {}.", vk::to_string(type), error_text, vk::to_string(result));
-
-				return error_info;
-			}
-
-			inline void check_api_result(const FRenderApiErrorInfo& result)
-			{
-				if (result.fault)
-				{
-					log_error(result.description);
-					throw std::runtime_error(result.description);
-				}
-			}
-
 			inline vk::DeviceSize get_alligned_instance_size(vk::DeviceSize instanceSize, vk::DeviceSize minOffsetAlignment)
 			{
 				if (minOffsetAlignment > 0ull)

@@ -98,7 +98,7 @@ namespace engine
 					}
 				}
 
-				handle = render_device.CreateDescriptorPool2(create_info);
+				handle = render_device.CreateDescriptorPool(create_info);
 				countdown_count = k_max_frames_unused;
 			}
 
@@ -121,7 +121,7 @@ namespace engine
 
 			void DescriptorPool::Reset()
 			{
-				render_device.ResetDescriptorPool2(handle);
+				render_device.ResetDescriptorPool(handle);
 				allocated_descriptors.clear();
 
 				last_allocation_result = CanAllocateResult::Success;
@@ -140,7 +140,7 @@ namespace engine
 				alloc_info.pSetLayouts = &layout.GetHandle();
 
 				vk::DescriptorSet descriptor_set{ VK_NULL_HANDLE };
-				render_device.AllocateDescriptorSet2(alloc_info, &descriptor_set, debug_name);
+				render_device.AllocateDescriptorSet(alloc_info, &descriptor_set, debug_name);
 				assert(descriptor_set);
 
 				auto& required_descriptor_count = layout.GetRequiredDescriptorCount();
@@ -158,7 +158,7 @@ namespace engine
 			{
 				if (descriptor_set.handle)
 				{
-					render_device.FreeDescriptorSets2(handle, &descriptor_set.handle, 1u);
+					render_device.FreeDescriptorSets(handle, &descriptor_set.handle, 1u);
 					descriptor_set.handle = nullptr;
 
 					--allocated_count;

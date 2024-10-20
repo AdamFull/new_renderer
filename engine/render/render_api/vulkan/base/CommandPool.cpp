@@ -54,7 +54,7 @@ namespace engine
 				queue_family_index{ builder.create_info.queueFamilyIndex },
 				reset_mode{ builder.reset_mode }
 			{
-				handle = render_device.CreateCommandPool2(builder.create_info, builder.debug_name);
+				handle = render_device.CreateCommandPool(builder.create_info, builder.debug_name);
 			}
 
 			CommandPool::CommandPool(CommandPool&& other) :

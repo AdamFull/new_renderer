@@ -70,7 +70,7 @@ namespace engine
 				VulkanResource{ nullptr },
 				render_device{ render_device }
 			{
-				handle = render_device.CreateDescriptorSetLayout2(builder.create_info, builder.debug_name);
+				handle = render_device.CreateDescriptorSetLayout(builder.create_info, builder.debug_name);
 
 				for (int32_t i = 0; i < builder.create_info.bindingCount; ++i)
 				{

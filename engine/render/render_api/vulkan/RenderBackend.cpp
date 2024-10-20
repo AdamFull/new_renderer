@@ -21,6 +21,7 @@
 #include <UploadContext.h>
 #include <base/DescriptorPool.h>
 #include <Shader.h>
+#include <base/QueryPool.h>
 
 using namespace engine;
 using namespace engine::render;
@@ -187,7 +188,15 @@ void RenderBackend::Create(const FRenderContextCreateInfo& context_ci)
 
 	render_resources = std::make_unique<vk_resource_container_t>();
 
-	auto res = render_device->CreateTimestampQuery(256, timestamp_query);
+	// Timestamp query initialization
+	auto query_pool_builder = QueryPoolBuilder();
+	query_pool_builder.SetDebugName("gpu time counters");
+	query_pool_builder.SetQueryType(vk::QueryType::eTimestamp);
+	query_pool_builder.SetQueryCount(256);
+
+	timestamp_pool = query_pool_builder.BuildUnique(*render_device);
+	timestamp_pool->Reset(0u);
+	timestamp_values.resize(256);
 
 	// Create default sampler
 	auto sampler_builder = SamplerBuilder();
@@ -743,13 +752,14 @@ void RenderBackend::ProcessResourceBarriers(EQueueTypeFlagBits queue, const utl:
 
 void RenderBackend::BeginTimestampZone(EQueueTypeFlagBits queue)
 {
-	//assert(zone_entries[queue] == 0 && "Previous zone was not ended.");
-	render_context->GetCurrentCommandBuffer().WriteTimestampQuery(vk::PipelineStageFlagBits::eTopOfPipe, timestamp_query);
+	auto& command_buffer = render_context->GetCurrentCommandBuffer();
+	Handle(command_buffer).writeTimestamp(vk::PipelineStageFlagBits::eTopOfPipe, timestamp_pool->GetHandle(), query_index++);
 }
 
 void RenderBackend::EndTimestampZone(EQueueTypeFlagBits queue)
 {
-	render_context->GetCurrentCommandBuffer().WriteTimestampQuery(vk::PipelineStageFlagBits::eBottomOfPipe, timestamp_query);
+	auto& command_buffer = render_context->GetCurrentCommandBuffer();
+	Handle(command_buffer).writeTimestamp(vk::PipelineStageFlagBits::eBottomOfPipe, timestamp_pool->GetHandle(), query_index++);
 }
 
 void RenderBackend::BeginRendering(const FBeginRendering2Info& rendering_info)
@@ -1105,7 +1115,10 @@ void RenderBackend::BeginFrame()
 	}
 
 	// TODO: here i should run only main command buffer. But for now i getting the last one
-	command_buffer.ResetTimestampQuery(timestamp_query);
+	//Handle(command_buffer).resetQueryPool(timestamp_pool->GetHandle(), 0u, timestamp_pool->GetQueryCount());
+
+	timestamp_pool->Reset(0u);
+	query_index = 0u;
 
 	// Update bindless textures
 	auto& textures = render_resources->data<Texture>();
@@ -1141,10 +1154,21 @@ void RenderBackend::EndFrame()
 	upload_wait_semaphore = upload_context->Submit(nullptr, 0);
 
 	render_context->EndFrame(upload_wait_semaphore);
+	vk::Result result = timestamp_pool->GetResults(0u, query_index, query_index * sizeof(uint64_t), timestamp_values.data(), sizeof(uint64_t), vk::QueryResultFlagBits::e64 | vk::QueryResultFlagBits::eWait);
 
-	utl::vector<f32> results{};
-	auto timestamp_result = render_device->GetTimestampQueryResults(timestamp_query, render_stats.timestampResults);
-	if (!timestamp_result.fault)
+	auto& physical = render_device->GetPhysicalDevice();
+	auto& timestamp_frequency = physical.GetProperties().limits.timestampPeriod;
+
+	if (render_stats.timestampResults.size() != query_index / 2u)
+		render_stats.timestampResults.resize(query_index / 2u);
+
+	for (int32_t idx = 0; idx < query_index; idx += 2)
+	{
+		f32 diff = static_cast<f32>(timestamp_values[idx + 1] - timestamp_values[idx]);
+		render_stats.timestampResults[idx / 2] = diff * timestamp_frequency / 1000000000.f;
+	}
+
+	if (result == vk::Result::eSuccess)
 	{
 		render_stats.gpuFrameTime = 0.f;
 		for (const auto& time : render_stats.timestampResults)

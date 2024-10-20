@@ -78,7 +78,7 @@ namespace engine
 				 * @param debug_name Debug name for handle
 				 * @return Vulkan image handle
 				 */
-				vk::Image CreateImage2(Allocation& allocation, vk::ImageCreateInfo const& create_info, const std::string& debug_name = "") const;
+				vk::Image CreateImage(Allocation& allocation, vk::ImageCreateInfo const& create_info, const std::string& debug_name = "") const;
 
 				/**
 				 * @brief Destroys image handle and deallocates it's memory
@@ -189,35 +189,37 @@ namespace engine
 				vk::Pipeline CreateComputePipeline(const vk::ComputePipelineCreateInfo& create_info, const std::string& debug_name = "") const;
 				void Destroy(vk::Pipeline& handle) const;
 
-				vk::CommandPool CreateCommandPool2(const vk::CommandPoolCreateInfo& create_info, const std::string& debug_name = "") const;
+				vk::CommandPool CreateCommandPool(const vk::CommandPoolCreateInfo& create_info, const std::string& debug_name = "") const;
 				void ResetCommandPool(vk::CommandPool& handle) const;
 				void AllocateCommandBuffers(const vk::CommandBufferAllocateInfo& allocate_info, vk::CommandBuffer* command_buffers) const;
 				void FreeCommandBuffers(vk::CommandPool& command_pool, vk::CommandBuffer* command_buffers, uint32_t command_buffer_count);
 				void FreeCommandBuffers(vk::CommandPool& command_pool, std::span<vk::CommandBuffer> command_buffers);
 				void Destroy(vk::CommandPool& handle) const;
 
-				vk::DescriptorSetLayout CreateDescriptorSetLayout2(const vk::DescriptorSetLayoutCreateInfo& create_info, const std::string& debug_name = "") const;
+				vk::DescriptorSetLayout CreateDescriptorSetLayout(const vk::DescriptorSetLayoutCreateInfo& create_info, const std::string& debug_name = "") const;
 				void Destroy(vk::DescriptorSetLayout& handle) const;
 
-				vk::DescriptorPool CreateDescriptorPool2(const vk::DescriptorPoolCreateInfo& create_info, const std::string& debug_name = "") const;
-				void ResetDescriptorPool2(vk::DescriptorPool& handle, vk::DescriptorPoolResetFlags flags = {}) const;
+				vk::DescriptorPool CreateDescriptorPool(const vk::DescriptorPoolCreateInfo& create_info, const std::string& debug_name = "") const;
+				void ResetDescriptorPool(vk::DescriptorPool& handle, vk::DescriptorPoolResetFlags flags = {}) const;
 				void Destroy(vk::DescriptorPool& handle) const;
 
-				void AllocateDescriptorSet2(const vk::DescriptorSetAllocateInfo& allocate_info, vk::DescriptorSet* descriptor_sets, const std::string& debug_name = "") const;
-				void FreeDescriptorSets2(vk::DescriptorPool& pool, vk::DescriptorSet* descriptor_sets, uint32_t descriptor_set_count) const;
-				void FreeDescriptorSets2(vk::DescriptorPool& pool, std::span<vk::DescriptorSet> descriptor_sets) const;
+				void AllocateDescriptorSet(const vk::DescriptorSetAllocateInfo& allocate_info, vk::DescriptorSet* descriptor_sets, const std::string& debug_name = "") const;
+				void FreeDescriptorSets(vk::DescriptorPool& pool, vk::DescriptorSet* descriptor_sets, uint32_t descriptor_set_count) const;
+				void FreeDescriptorSets(vk::DescriptorPool& pool, std::span<vk::DescriptorSet> descriptor_sets) const;
 
-				vk::ShaderModule CreateShaderModule2(const vk::ShaderModuleCreateInfo& create_info, const std::string& debug_name = "") const;
+				vk::ShaderModule CreateShaderModule(const vk::ShaderModuleCreateInfo& create_info, const std::string& debug_name = "") const;
 				void Destroy(vk::ShaderModule& handle);
 
-				vk::PipelineLayout CreatePipelineLayout2(const vk::PipelineLayoutCreateInfo& create_info, const std::string& debug_name = "") const;
+				vk::PipelineLayout CreatePipelineLayout(const vk::PipelineLayoutCreateInfo& create_info, const std::string& debug_name = "") const;
 				void Destroy(vk::PipelineLayout& handle) const;
 
-				void Wait();
+				vk::QueryPool CreateQueryPool(const vk::QueryPoolCreateInfo& create_info, const std::string& debug_name = "") const;
+				vk::Result GetQueryResult(vk::QueryPool& handle, uint32_t first_query, uint32_t query_count, vk::DeviceSize stride, vk::QueryResultFlags flags) const;
+				vk::Result GetQueryResults(vk::QueryPool& handle, uint32_t first_query, uint32_t query_count, vk::DeviceSize data_size, void* data_ptr, vk::DeviceSize stride, vk::QueryResultFlags flags) const;
+				void ResetQueryPool(vk::QueryPool& handle, uint32_t first_query, uint32_t query_count) const;
+				void Destroy(vk::QueryPool& handle) const;
 
-				FRenderApiErrorInfo CreateTimestampQuery(u32 count, FVkTimestampQuery& timestamp_query);
-				FRenderApiErrorInfo GetTimestampQueryResults(FVkTimestampQuery& timestamp_query, utl::vector<f32>& results);
-				void DestroyTimestampQuery(FVkTimestampQuery& timestamp_query);
+				void Wait();
 
 				void GetOccupedDeviceMemory(vk::MemoryHeapFlags memory_flags, u64& total_memory, u64& used_memory);
 
@@ -249,7 +251,6 @@ namespace engine
 			protected:
 				void RegisterAllocationCallbacks();
 				void EnableDeviceFeatures(PhysicalDevice& device);
-				FRenderApiErrorInfo CreatePipelineCache(const FRenderContextCreateInfo& context_ci);
 			private:
 				vk::DynamicLoader dl;
 				vk::AllocationCallbacks* allocation_callbacks{ nullptr };

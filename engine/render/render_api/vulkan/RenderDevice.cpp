@@ -258,7 +258,10 @@ namespace engine
 
 				allocator = std::make_unique<Allocator>(*device);
 
-				check_api_result(CreatePipelineCache(context_ci));
+				vk::PipelineCacheCreateInfo pipeline_cache_ci{};
+				pipeline_cache_ci.initialDataSize = utl::cast<u32>(context_ci.pipelineCache.size());
+				pipeline_cache_ci.pInitialData = context_ci.pipelineCache.data();
+				pipeline_cache = CreatePipelineCache(pipeline_cache_ci, "pipeline_cache");
 			}
 
 			vk::Buffer RenderDevice::CreateBuffer(Allocation& allocation, vk::BufferCreateInfo const& create_info, const std::string& debug_name) const
@@ -278,7 +281,7 @@ namespace engine
 				allocator->DestroyBuffer(allocation, handle);
 			}
 
-			vk::Image RenderDevice::CreateImage2(Allocation& allocation, vk::ImageCreateInfo const& create_info, const std::string& debug_name) const
+			vk::Image RenderDevice::CreateImage(Allocation& allocation, vk::ImageCreateInfo const& create_info, const std::string& debug_name) const
 			{
 				auto handle = allocator->CreateImage(allocation, create_info);
 				debug_utils->SetDebugName(handle, debug_name);
@@ -437,7 +440,7 @@ namespace engine
 				Handle(*device).destroyPipeline(handle, allocation_callbacks);
 			}
 
-			vk::CommandPool RenderDevice::CreateCommandPool2(const vk::CommandPoolCreateInfo& create_info, const std::string& debug_name) const
+			vk::CommandPool RenderDevice::CreateCommandPool(const vk::CommandPoolCreateInfo& create_info, const std::string& debug_name) const
 			{
 				auto handle = VkCreateHandleAndCheckResult<vk::CommandPool>([&](auto& handle) { return Handle(*device).createCommandPool(&create_info, allocation_callbacks, &handle); });
 				debug_utils->SetDebugName(handle, debug_name);
@@ -469,7 +472,7 @@ namespace engine
 				Handle(*device).destroyCommandPool(handle, allocation_callbacks);
 			}
 
-			vk::DescriptorSetLayout RenderDevice::CreateDescriptorSetLayout2(const vk::DescriptorSetLayoutCreateInfo& create_info, const std::string& debug_name) const
+			vk::DescriptorSetLayout RenderDevice::CreateDescriptorSetLayout(const vk::DescriptorSetLayoutCreateInfo& create_info, const std::string& debug_name) const
 			{
 				auto handle = VkCreateHandleAndCheckResult<vk::DescriptorSetLayout>([&](auto& handle) { return Handle(*device).createDescriptorSetLayout(&create_info, allocation_callbacks, &handle); });
 				debug_utils->SetDebugName(handle, debug_name);
@@ -481,14 +484,14 @@ namespace engine
 				Handle(*device).destroyDescriptorSetLayout(handle, allocation_callbacks);
 			}
 
-			vk::DescriptorPool RenderDevice::CreateDescriptorPool2(const vk::DescriptorPoolCreateInfo& create_info, const std::string& debug_name) const
+			vk::DescriptorPool RenderDevice::CreateDescriptorPool(const vk::DescriptorPoolCreateInfo& create_info, const std::string& debug_name) const
 			{
 				auto handle = VkCreateHandleAndCheckResult<vk::DescriptorPool>([&](auto& handle) { return Handle(*device).createDescriptorPool(&create_info, allocation_callbacks, &handle); });
 				debug_utils->SetDebugName(handle, debug_name);
 				return handle;
 			}
 
-			void RenderDevice::ResetDescriptorPool2(vk::DescriptorPool& handle, vk::DescriptorPoolResetFlags flags) const
+			void RenderDevice::ResetDescriptorPool(vk::DescriptorPool& handle, vk::DescriptorPoolResetFlags flags) const
 			{
 				Handle(*device).resetDescriptorPool(handle, flags);
 			}
@@ -498,7 +501,7 @@ namespace engine
 				Handle(*device).destroyDescriptorPool(handle, allocation_callbacks);
 			}
 
-			void RenderDevice::AllocateDescriptorSet2(const vk::DescriptorSetAllocateInfo& allocate_info, vk::DescriptorSet* descriptor_sets, const std::string& debug_name) const
+			void RenderDevice::AllocateDescriptorSet(const vk::DescriptorSetAllocateInfo& allocate_info, vk::DescriptorSet* descriptor_sets, const std::string& debug_name) const
 			{
 				vk::Result result = Handle(*device).allocateDescriptorSets(&allocate_info, descriptor_sets);
 				if (result != vk::Result::eSuccess)
@@ -514,17 +517,17 @@ namespace engine
 				}
 			}
 
-			void RenderDevice::FreeDescriptorSets2(vk::DescriptorPool& pool, vk::DescriptorSet* descriptor_sets, uint32_t descriptor_set_count) const
+			void RenderDevice::FreeDescriptorSets(vk::DescriptorPool& pool, vk::DescriptorSet* descriptor_sets, uint32_t descriptor_set_count) const
 			{
 				Handle(*device).freeDescriptorSets(pool, descriptor_set_count, descriptor_sets);
 			}
 
-			void RenderDevice::FreeDescriptorSets2(vk::DescriptorPool& pool, std::span<vk::DescriptorSet> descriptor_sets) const
+			void RenderDevice::FreeDescriptorSets(vk::DescriptorPool& pool, std::span<vk::DescriptorSet> descriptor_sets) const
 			{
-				FreeDescriptorSets2(pool, descriptor_sets.data(), descriptor_sets.size());
+				FreeDescriptorSets(pool, descriptor_sets.data(), descriptor_sets.size());
 			}
 
-			vk::ShaderModule RenderDevice::CreateShaderModule2(const vk::ShaderModuleCreateInfo& create_info, const std::string& debug_name) const
+			vk::ShaderModule RenderDevice::CreateShaderModule(const vk::ShaderModuleCreateInfo& create_info, const std::string& debug_name) const
 			{
 				auto handle = VkCreateHandleAndCheckResult<vk::ShaderModule>([&](auto& handle) { return Handle(*device).createShaderModule(&create_info, allocation_callbacks, &handle); });
 				debug_utils->SetDebugName(handle, debug_name);
@@ -536,7 +539,7 @@ namespace engine
 				Handle(*device).destroyShaderModule(handle);
 			}
 
-			vk::PipelineLayout RenderDevice::CreatePipelineLayout2(const vk::PipelineLayoutCreateInfo& create_info, const std::string& debug_name) const
+			vk::PipelineLayout RenderDevice::CreatePipelineLayout(const vk::PipelineLayoutCreateInfo& create_info, const std::string& debug_name) const
 			{
 				auto handle = VkCreateHandleAndCheckResult<vk::PipelineLayout>([&](auto& handle) { return Handle(*device).createPipelineLayout(&create_info, allocation_callbacks, &handle); });
 				debug_utils->SetDebugName(handle, debug_name);
@@ -548,55 +551,37 @@ namespace engine
 				Handle(*device).destroyPipelineLayout(handle);
 			}
 
+			vk::QueryPool RenderDevice::CreateQueryPool(const vk::QueryPoolCreateInfo& create_info, const std::string& debug_name) const
+			{
+				auto handle = VkCreateHandleAndCheckResult<vk::QueryPool>([&](auto& handle) { return Handle(*device).createQueryPool(&create_info, allocation_callbacks, &handle); });
+				debug_utils->SetDebugName(handle, debug_name);
+				return handle;
+			}
+
+			vk::Result RenderDevice::GetQueryResult(vk::QueryPool& handle, uint32_t first_query, uint32_t query_count, vk::DeviceSize stride, vk::QueryResultFlags flags) const
+			{
+				//auto result = Handle(*device).getQueryPoolResult(handle, first_query, query_count, stride, flags);
+				return vk::Result::eIncomplete;
+			}
+
+			vk::Result RenderDevice::GetQueryResults(vk::QueryPool& handle, uint32_t first_query, uint32_t query_count, vk::DeviceSize data_size, void* data_ptr, vk::DeviceSize stride, vk::QueryResultFlags flags) const
+			{
+				return Handle(*device).getQueryPoolResults(handle, first_query, query_count, data_size, data_ptr, stride, flags);
+			}
+
+			void RenderDevice::ResetQueryPool(vk::QueryPool& handle, uint32_t first_query, uint32_t query_count) const
+			{
+				Handle(*device).resetQueryPool(handle, first_query, query_count);
+			}
+
+			void RenderDevice::Destroy(vk::QueryPool& handle) const
+			{
+				Handle(*device).destroyQueryPool(handle);
+			}
+
 			void RenderDevice::Wait()
 			{
 				Handle(*device).waitIdle();
-			}
-
-			FRenderApiErrorInfo RenderDevice::CreateTimestampQuery(u32 count, FVkTimestampQuery& timestamp_query)
-			{
-				vk::QueryPoolCreateInfo query_pool_ci{};
-				query_pool_ci.queryType = vk::QueryType::eTimestamp;
-				query_pool_ci.queryCount = count;
-
-				timestamp_query.values.resize(count);
-
-				vk::Result res = Handle(*device).createQueryPool(&query_pool_ci, allocation_callbacks, &timestamp_query.handle);
-				Handle(*device).resetQueryPool(timestamp_query.handle, 0u, count);
-
-				return make_api_error(timestamp_query.handle.objectType, res, "Failed to Create");
-			}
-
-			FRenderApiErrorInfo RenderDevice::GetTimestampQueryResults(FVkTimestampQuery& timestamp_query, utl::vector<f32>& results)
-			{
-				vk::Result res = Handle(*device).getQueryPoolResults(
-					timestamp_query.handle,
-					0u,
-					timestamp_query.queryIndex,
-					timestamp_query.values.size() * sizeof(u64),
-					timestamp_query.values.data(),
-					sizeof(u64),
-					vk::QueryResultFlagBits::e64 | vk::QueryResultFlagBits::eWait);
-
-				auto& physical = instance->GetBestDevice();
-				auto& timestamp_frequency = physical.GetProperties().limits.timestampPeriod;
-
-				if (results.size() != timestamp_query.queryIndex / 2ull)
-					results.resize(timestamp_query.queryIndex / 2);
-
-				for (u64 idx = 0ull; idx < timestamp_query.queryIndex; idx += 2ull)
-				{
-					f32 diff = static_cast<f32>(timestamp_query.values[idx + 1] - timestamp_query.values[idx]);
-					results[idx / 2ull] = diff * timestamp_frequency / 1000000000.f;
-				}
-
-				return make_api_error(timestamp_query.handle.objectType, res, "Failed to get.");
-			}
-
-			void RenderDevice::DestroyTimestampQuery(FVkTimestampQuery& timestamp_query)
-			{
-				Handle(*device).destroyQueryPool(timestamp_query.handle);
-				timestamp_query.values.clear();
 			}
 
 			void RenderDevice::GetOccupedDeviceMemory(vk::MemoryHeapFlags memory_flags, u64& total_memory, u64& used_memory)
@@ -828,15 +813,6 @@ namespace engine
 					//else if(strcmp(extension_name, VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME) == 0)
 					//	device.RequestExtensionFeatures(vk::PhysicalDeviceIndirect)
 				}
-			}
-
-			FRenderApiErrorInfo RenderDevice::CreatePipelineCache(const FRenderContextCreateInfo& context_ci)
-			{
-				vk::PipelineCacheCreateInfo pipeline_cache_ci{};
-				pipeline_cache_ci.initialDataSize = utl::cast<u32>(context_ci.pipelineCache.size());
-				pipeline_cache_ci.pInitialData = context_ci.pipelineCache.data();
-				pipeline_cache = CreatePipelineCache(pipeline_cache_ci, "pipeline_cache");
-				return FRenderApiErrorInfo{};
 			}
 		}
 	}

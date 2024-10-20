@@ -44,9 +44,6 @@ namespace engine
 
 				void PipelineBarrier(const vk::DependencyInfoKHR& dependency_info);
 
-				void ResetTimestampQuery(FVkTimestampQuery& timestamp_query);
-				void WriteTimestampQuery(vk::PipelineStageFlagBits pipeline_state, FVkTimestampQuery& timestamp_query);
-
 				void BeginDebugLabel(const std::string& label, u32 color);
 				void InsertDebugLabel(const std::string& label, u32 color);
 				void EndDebugLabel();

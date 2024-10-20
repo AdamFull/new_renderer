@@ -55,7 +55,7 @@ namespace engine
 				for (int32_t i = 0; i < builder.shader_module_count; ++i)
 				{
 					auto& module_info = builder.shader_modules[i];
-					shader_modules[i] = render_device.CreateShaderModule2(module_info.create_info);
+					shader_modules[i] = render_device.CreateShaderModule(module_info.create_info);
 
 					vk::PipelineShaderStageCreateInfo shader_stage{};
 					shader_stage.stage = module_info.stage;

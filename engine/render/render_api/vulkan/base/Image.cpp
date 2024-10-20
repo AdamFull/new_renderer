@@ -106,7 +106,7 @@ namespace engine
 			{
 				if (!builder.external_handle)
 				{
-					handle = render_device.CreateImage2(*this, builder.create_info, builder.debug_name);
+					handle = render_device.CreateImage(*this, builder.create_info, builder.debug_name);
 				}
 				else
 				{
