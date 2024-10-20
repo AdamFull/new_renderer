@@ -317,6 +317,13 @@ namespace engine
 
 				return vk::CompareOp::eNever;
 			}
+
+			inline vk::DeviceSize CalculateAlignedSize(vk::DeviceSize allocation_size, vk::DeviceSize minimal_alignment)
+			{
+				if (minimal_alignment > 0ull)
+					return (allocation_size + minimal_alignment - 1ull) & ~(minimal_alignment - 1ull);
+				return allocation_size;
+			}
 		}
 	}
 }

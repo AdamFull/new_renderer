@@ -2,6 +2,7 @@
 #include <base/PhysicalDevice.h>
 #include <VkRenderDevice.h>
 #include <base/Buffer.h>
+#include <VkCommon.h>
 
 namespace engine
 {
@@ -10,13 +11,6 @@ namespace engine
 		namespace vulkan
 		{
 			constexpr int32_t k_max_frames_idle{ 300 };
-
-			inline vk::DeviceSize CalculateAlignedSize(vk::DeviceSize allocation_size, vk::DeviceSize minimal_alignment)
-			{
-				if (minimal_alignment > 0ull)
-					return (allocation_size + minimal_alignment - 1ull) & ~(minimal_alignment - 1ull);
-				return allocation_size;
-			}
 
 			UniformPoolFrame::UniformPoolFrame(RenderDevice& render_device, vk::DeviceSize whole_size, vk::DeviceSize alignment)
 			{
