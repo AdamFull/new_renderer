@@ -63,7 +63,7 @@ void CGPUVector::Upload()
 			region.size = range.size;
 
 			uint8_t* range_start = &m_vData[range.offset];
-			std::copy(range_start, range_start + range.size, upload_info.data + src_offset);
+			util::Copy(upload_info.data, src_offset, m_vData.data(), range.size, range.offset);
 
 			src_offset += range.size;
 		}
