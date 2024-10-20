@@ -1,7 +1,7 @@
 #include <UploadContext.h>
 #include <base/Device.h>
 #include <base/CommandPool.h>
-#include <VkRenderDevice.h>
+#include <RenderDevice.h>
 #include <base/Buffer.h>
 #include <base/Image.h>
 #include <base/ImageView.h>

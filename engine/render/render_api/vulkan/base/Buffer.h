@@ -1,7 +1,7 @@
 #pragma once
 
 #include <base/Allocator.h>
-#include <VkResourceStructures.h>
+#include <ResourceStructures.h>
 
 namespace engine
 {

@@ -1,4 +1,4 @@
-#include <VkRenderBackend.h>
+#include <RenderBackend.h>
 #include <VkCommon.h>
 
 #include <util/Logger.h>
@@ -156,7 +156,7 @@ BufferBuilder MakeBufferBuilder(const FBufferCreateInfo& buffer_ci, const vk::Ph
 	return builder;
 }
 
-VkRenderBackend::~VkRenderBackend()
+RenderBackend::~RenderBackend()
 {
 	auto& logical_device = render_device->GetLogicalDevice();
 	Handle(logical_device).waitIdle();
@@ -177,7 +177,7 @@ VkRenderBackend::~VkRenderBackend()
 	sampler_cache.clear();
 }
 
-void VkRenderBackend::Create(const FRenderContextCreateInfo& context_ci)
+void RenderBackend::Create(const FRenderContextCreateInfo& context_ci)
 {
 	render_device = std::make_unique<RenderDevice>();
 	render_device->Create(context_ci);
@@ -199,12 +199,12 @@ void VkRenderBackend::Create(const FRenderContextCreateInfo& context_ci)
 	default_sampler = sampler_builder.BuildUnique(*render_device);
 }
 
-void VkRenderBackend::CreateGlobalDescriptor(const FGlobalUniformCreateInfo& uniform_ci)
+void RenderBackend::CreateGlobalDescriptor(const FGlobalUniformCreateInfo& uniform_ci)
 {
 	render_context->CreateGlobalDescriptors(uniform_ci);
 }
 
-void VkRenderBackend::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view)
+void RenderBackend::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view)
 {
 	// Bind and update global uniform
 	for (const auto& [uniform_name, uniform_data] : data_view.uniforms)
@@ -237,12 +237,12 @@ void VkRenderBackend::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo&
 	render_context->UpdateDescriptors();
 }
 
-const utl::vector<uint32_t>& VkRenderBackend::GetGlobalTextureRemap()
+const utl::vector<uint32_t>& RenderBackend::GetGlobalTextureRemap()
 {
 	return texture_index_remap;
 }
 
-FAPIHandle VkRenderBackend::CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci)
+FAPIHandle RenderBackend::CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci)
 {
 	auto format = lookup_vk_format(texture_ci.format);
 
@@ -285,7 +285,7 @@ FAPIHandle VkRenderBackend::CreateTexture(const std::string& name, const FTextur
 	return FAPIHandle(render_resources->add<Texture>(name.c_str(), texture_builder.BuildUnique(*render_device)));
 }
 
-FAPIHandle VkRenderBackend::CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci, const FTextureUploadInfo& upload_info)
+FAPIHandle RenderBackend::CreateTexture(const std::string& name, const FTextureCreateInfo& texture_ci, const FTextureUploadInfo& upload_info)
 {
 	auto texture_id = CreateTexture(name, texture_ci);
 	auto& texture = render_resources->get<Texture>(texture_id.Get());
@@ -295,12 +295,12 @@ FAPIHandle VkRenderBackend::CreateTexture(const std::string& name, const FTextur
 	return texture_id;
 }
 
-FAPIHandle VkRenderBackend::GetTextureId(const std::string& name)
+FAPIHandle RenderBackend::GetTextureId(const std::string& name)
 {
 	return FAPIHandle(render_resources->getId<Texture>(name.c_str()));
 }
 
-FTextureView VkRenderBackend::GetTextureView(FAPIHandle texture_id)
+FTextureView RenderBackend::GetTextureView(FAPIHandle texture_id)
 {
 	auto& texture = render_resources->get<Texture>(texture_id.Get());
 
@@ -316,12 +316,12 @@ FTextureView VkRenderBackend::GetTextureView(FAPIHandle texture_id)
 	return tex_view;
 }
 
-void VkRenderBackend::DestroyTexture(FAPIHandle resource_id)
+void RenderBackend::DestroyTexture(FAPIHandle resource_id)
 {
 	resource_destroy_queue.push(FAPIObjectDestroyInfo{ resource_id, EResourceFlagBits::eTexture });
 }
 
-void VkRenderBackend::ReadPixel(FAPIHandle resource_id, u32 x, u32 y, void* data)
+void RenderBackend::ReadPixel(FAPIHandle resource_id, u32 x, u32 y, void* data)
 {
 //	static constexpr u64 pixel_size{ 4ull };
 //
@@ -371,7 +371,7 @@ void VkRenderBackend::ReadPixel(FAPIHandle resource_id, u32 x, u32 y, void* data
 }
 
 
-FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const std::vector<FShaderCreationBlockInfo>& shader_stages)
+FAPIHandle RenderBackend::CreateShader(const std::string& name, const FGraphicsShaderCreateInfo& shader_ci, const std::vector<FShaderCreationBlockInfo>& shader_stages)
 {
 	const char* shaderEntryPoint{ "main" };
 
@@ -484,7 +484,7 @@ FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FGraphic
 	return FAPIHandle(render_resources->add<Shader>(shader_unique_name.c_str(), std::move(shader)));
 }
 
-FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const FShaderCreationBlockInfo& shader_stage)
+FAPIHandle RenderBackend::CreateShader(const std::string& name, const FComputeShaderCreateInfo& shader_ci, const FShaderCreationBlockInfo& shader_stage)
 {
 	auto shader_builder = ShaderBuilder();
 	shader_builder.SetBindPoint(vk::PipelineBindPoint::eCompute);
@@ -499,24 +499,24 @@ FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FCompute
 	return FAPIHandle(render_resources->add<Shader>(shader_unique_name.c_str(), std::move(shader)));
 }
 
-FAPIHandle VkRenderBackend::CreateShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci)
+FAPIHandle RenderBackend::CreateShader(const std::string& name, const FReyTracingShaderCreateInfo& shader_ci)
 {
 	return FAPIHandle{};
 }
 
-FShaderReflectionData VkRenderBackend::GetShaderReflection(FAPIHandle shader_view)
+FShaderReflectionData RenderBackend::GetShaderReflection(FAPIHandle shader_view)
 {
 	auto& shader = render_resources->get<Shader>(shader_view.Get());
 	return shader->GetReflectionData();
 }
 
-void VkRenderBackend::UpdateUniform(FAPIHandle shader_id, uint64_t reflection_name, std::span<const char> data)
+void RenderBackend::UpdateUniform(FAPIHandle shader_id, uint64_t reflection_name, std::span<const char> data)
 {
 	auto& shader = render_resources->get<Shader>(shader_id.Get());
 	shader->UpdateUniform(*render_context, reflection_name, data);
 }
 
-void VkRenderBackend::BindTexture(FAPIHandle shader_id, uint64_t reflection_name, FAPIHandle texture_id, uint32_t mip_level)
+void RenderBackend::BindTexture(FAPIHandle shader_id, uint64_t reflection_name, FAPIHandle texture_id, uint32_t mip_level)
 {
 	auto& shader = render_resources->get<Shader>(shader_id.Get());
 	auto& texture = render_resources->get<Texture>(texture_id.Get());
@@ -525,7 +525,7 @@ void VkRenderBackend::BindTexture(FAPIHandle shader_id, uint64_t reflection_name
 	shader->UpdateTextureBinding(reflection_name, *texture, *sampler, mip_level);
 }
 
-void VkRenderBackend::BindBuffer(FAPIHandle shader_id, uint64_t reflection_name, FAPIHandle buffer_id)
+void RenderBackend::BindBuffer(FAPIHandle shader_id, uint64_t reflection_name, FAPIHandle buffer_id)
 {
 	auto& shader = render_resources->get<Shader>(shader_id.Get());
 	auto& buffer = render_resources->get<Buffer>(buffer_id.Get());
@@ -533,14 +533,14 @@ void VkRenderBackend::BindBuffer(FAPIHandle shader_id, uint64_t reflection_name,
 	shader->UpdateBufferBinding(reflection_name, *buffer);
 }
 
-void VkRenderBackend::FlushConstantRanges(FAPIHandle shader_id, const utl::hash_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type)
+void RenderBackend::FlushConstantRanges(FAPIHandle shader_id, const utl::hash_map<u64, FUniformDataView>& constants, EQueueTypeFlagBits queue_type)
 {
 	auto& command_buffer = render_context->GetCurrentCommandBuffer();
 	auto& shader = render_resources->get<Shader>(shader_id.Get());
 	shader->FlushConstantRanges(command_buffer, constants);
 }
 
-void VkRenderBackend::BindShader(FAPIHandle shader_id, EQueueTypeFlagBits queue_type)
+void RenderBackend::BindShader(FAPIHandle shader_id, EQueueTypeFlagBits queue_type)
 {
 	auto& command_buffer = render_context->GetCurrentCommandBuffer();
 
@@ -549,25 +549,25 @@ void VkRenderBackend::BindShader(FAPIHandle shader_id, EQueueTypeFlagBits queue_
 	shader->Bind(command_buffer);
 }
 
-void VkRenderBackend::ResetShaderResources(FAPIHandle shader_id)
+void RenderBackend::ResetShaderResources(FAPIHandle shader_id)
 {
 	auto& shader = render_resources->get<Shader>(shader_id.Get());
 	shader->ResetDescriptors(*render_context);
 }
 
-void VkRenderBackend::BindShaderResources(FAPIHandle shader_id, EQueueTypeFlagBits queue_type)
+void RenderBackend::BindShaderResources(FAPIHandle shader_id, EQueueTypeFlagBits queue_type)
 {
 	auto& command_buffer = render_context->GetCurrentCommandBuffer();
 	auto& shader = render_resources->get<Shader>(shader_id.Get());
 	shader->BindDescriptors(command_buffer);
 }
 
-void VkRenderBackend::DestroyShader(FAPIHandle resource_id)
+void RenderBackend::DestroyShader(FAPIHandle resource_id)
 {
 	resource_destroy_queue.push(FAPIObjectDestroyInfo{ resource_id, EResourceFlagBits::eShader });
 }
 
-FAPIHandle VkRenderBackend::CreateBuffer(const std::string& name, const FBufferCreateInfo& buffer_ci)
+FAPIHandle RenderBackend::CreateBuffer(const std::string& name, const FBufferCreateInfo& buffer_ci)
 {
 	auto& physical = render_device->GetPhysicalDevice();
 	auto builder = MakeBufferBuilder(buffer_ci, physical.GetProperties());
@@ -578,7 +578,7 @@ FAPIHandle VkRenderBackend::CreateBuffer(const std::string& name, const FBufferC
 	return FAPIHandle(render_resources->add<Buffer>(buffer_unique_name.c_str(), std::move(buffer)));
 }
 
-void VkRenderBackend::UpdateBuffer(const std::string& name, FAPIHandle buffer_id, const FBufferCreateInfo& buffer_ci)
+void RenderBackend::UpdateBuffer(const std::string& name, FAPIHandle buffer_id, const FBufferCreateInfo& buffer_ci)
 {
 	auto& buffer = render_resources->get<Buffer>(buffer_id.Get());
 
@@ -587,7 +587,7 @@ void VkRenderBackend::UpdateBuffer(const std::string& name, FAPIHandle buffer_id
 	buffer = builder.BuildUnique(*render_device);
 }
 
-void VkRenderBackend::BeginUpdateBuffer(BufferUpdateInfo& update_info)
+void RenderBackend::BeginUpdateBuffer(BufferUpdateInfo& update_info)
 {
 	auto& buffer = render_resources->get<Buffer>(update_info.buffer_id.Get());
 
@@ -602,7 +602,7 @@ void VkRenderBackend::BeginUpdateBuffer(BufferUpdateInfo& update_info)
 	update_info.buffer_index = vk_update_info.map_info.buffer_index;
 }
 
-void VkRenderBackend::EndUpdateBuffer(BufferUpdateInfo& update_info)
+void RenderBackend::EndUpdateBuffer(BufferUpdateInfo& update_info)
 {
 	auto& buffer = render_resources->get<Buffer>(update_info.buffer_id.Get());
 
@@ -630,13 +630,13 @@ void VkRenderBackend::EndUpdateBuffer(BufferUpdateInfo& update_info)
 	update_info.buffer_index = vk_update_info.map_info.buffer_index;
 }
 
-FBufferView VkRenderBackend::GetBufferView(FAPIHandle buffer_id)
+FBufferView RenderBackend::GetBufferView(FAPIHandle buffer_id)
 {
 	auto& buffer = render_resources->get<Buffer>(buffer_id.Get());
 	return { buffer->GetSize(), buffer->GetSize() / buffer->GetSuballocationSize(), buffer->GetDeviceAddress()};
 }
 
-void VkRenderBackend::BindVertexBuffers(const FVertexBufferBindingInfo& binding_info, EQueueTypeFlagBits queue_type)
+void RenderBackend::BindVertexBuffers(const FVertexBufferBindingInfo& binding_info, EQueueTypeFlagBits queue_type)
 {
 	utl::vector<vk::Buffer> buffers{};
 	for (const auto& buffer_id : binding_info.buffers)
@@ -645,7 +645,7 @@ void VkRenderBackend::BindVertexBuffers(const FVertexBufferBindingInfo& binding_
 	render_context->GetCurrentCommandBuffer().BindVertexBuffers(binding_info.firstBinding, buffers, binding_info.offsets);
 }
 
-void VkRenderBackend::BindIndexBuffer(const FIndexBufferBindingInfo& binding_info, EQueueTypeFlagBits queue_type)
+void RenderBackend::BindIndexBuffer(const FIndexBufferBindingInfo& binding_info, EQueueTypeFlagBits queue_type)
 {
 	vk::IndexType index_type{ vk::IndexType::eNoneKHR };
 	switch (binding_info.indexSize)
@@ -659,30 +659,30 @@ void VkRenderBackend::BindIndexBuffer(const FIndexBufferBindingInfo& binding_inf
 	Handle(render_context->GetCurrentCommandBuffer()).bindIndexBuffer(Handle(*buffer), binding_info.offset, index_type);
 }
 
-void VkRenderBackend::MapBufferMemory(FAPIHandle buffer_id, void*& memory)
+void RenderBackend::MapBufferMemory(FAPIHandle buffer_id, void*& memory)
 {
 	auto& buffer = render_resources->get<Buffer>(buffer_id.Get());
 	memory = buffer->Map();
 }
 
-void VkRenderBackend::UnmapBufferMemory(FAPIHandle buffer_id)
+void RenderBackend::UnmapBufferMemory(FAPIHandle buffer_id)
 {
 	auto& buffer = render_resources->get<Buffer>(buffer_id.Get());
 	buffer->Unmap();
 }
 
-void VkRenderBackend::FlushBuffer(FAPIHandle buffer_id, u64 size, u64 offset)
+void RenderBackend::FlushBuffer(FAPIHandle buffer_id, u64 size, u64 offset)
 {
 	auto& buffer = render_resources->get<Buffer>(buffer_id.Get());
 	buffer->Flush(offset, size);
 }
 
-void VkRenderBackend::DestroyBuffer(FAPIHandle resource_id)
+void RenderBackend::DestroyBuffer(FAPIHandle resource_id)
 {
 	resource_destroy_queue.push(FAPIObjectDestroyInfo{ resource_id, EResourceFlagBits::eBuffer });
 }
 
-void VkRenderBackend::ProcessResourceBarriers(EQueueTypeFlagBits queue, const utl::vector<FResourceBarrierInfo>& barriers)
+void RenderBackend::ProcessResourceBarriers(EQueueTypeFlagBits queue, const utl::vector<FResourceBarrierInfo>& barriers)
 {
 	auto& textures = render_resources->data<Texture>();
 	auto& buffers = render_resources->data<Buffer>();
@@ -741,18 +741,18 @@ void VkRenderBackend::ProcessResourceBarriers(EQueueTypeFlagBits queue, const ut
 	ProcessMemoryBarriers(render_context->GetCurrentCommandBuffer(), translation_info);
 }
 
-void VkRenderBackend::BeginTimestampZone(EQueueTypeFlagBits queue)
+void RenderBackend::BeginTimestampZone(EQueueTypeFlagBits queue)
 {
 	//assert(zone_entries[queue] == 0 && "Previous zone was not ended.");
 	render_context->GetCurrentCommandBuffer().WriteTimestampQuery(vk::PipelineStageFlagBits::eTopOfPipe, timestamp_query);
 }
 
-void VkRenderBackend::EndTimestampZone(EQueueTypeFlagBits queue)
+void RenderBackend::EndTimestampZone(EQueueTypeFlagBits queue)
 {
 	render_context->GetCurrentCommandBuffer().WriteTimestampQuery(vk::PipelineStageFlagBits::eBottomOfPipe, timestamp_query);
 }
 
-void VkRenderBackend::BeginRendering(const FBeginRendering2Info& rendering_info)
+void RenderBackend::BeginRendering(const FBeginRendering2Info& rendering_info)
 {
 	auto& textures = render_resources->data<Texture>();
 
@@ -858,23 +858,23 @@ void VkRenderBackend::BeginRendering(const FBeginRendering2Info& rendering_info)
 	Handle(render_context->GetCurrentCommandBuffer()).beginRenderingKHR(begin_rendering_info);
 }
 
-void VkRenderBackend::EndRendering(EQueueTypeFlagBits queue)
+void RenderBackend::EndRendering(EQueueTypeFlagBits queue)
 {
 	Handle(render_context->GetCurrentCommandBuffer()).endRenderingKHR();
 	render_context->GetCurrentCommandBuffer().EndDebugLabel();
 }
 
-void VkRenderBackend::BeginCompute(const FBeginComputeInfo& compute_info)
+void RenderBackend::BeginCompute(const FBeginComputeInfo& compute_info)
 {
 	render_context->GetCurrentCommandBuffer().BeginDebugLabel(compute_info.name, 0x55ff55ff);
 }
 
-void VkRenderBackend::EndCompute(EQueueTypeFlagBits queue)
+void RenderBackend::EndCompute(EQueueTypeFlagBits queue)
 {
 	render_context->GetCurrentCommandBuffer().EndDebugLabel();
 }
 
-void VkRenderBackend::ProcessMemoryBarriers(CommandBuffer& command_buffer, const FVkTranslationInfo& translation_info)
+void RenderBackend::ProcessMemoryBarriers(CommandBuffer& command_buffer, const FVkTranslationInfo& translation_info)
 {
 	vk::DependencyInfoKHR dependency_info{};
 	dependency_info.imageMemoryBarrierCount = utl::cast<u32>(translation_info.image_tanslation_count);
@@ -888,7 +888,7 @@ void VkRenderBackend::ProcessMemoryBarriers(CommandBuffer& command_buffer, const
 	command_buffer.PipelineBarrier(dependency_info);
 }
 
-void VkRenderBackend::SetViewport(f32 width, f32 height, bool flip_viewport)
+void RenderBackend::SetViewport(f32 width, f32 height, bool flip_viewport)
 {
 	vk::Viewport viewport{};
 	viewport.minDepth = 0.f;
@@ -912,7 +912,7 @@ void VkRenderBackend::SetViewport(f32 width, f32 height, bool flip_viewport)
 	Handle(render_context->GetCurrentCommandBuffer()).setViewport(0, 1, &viewport);
 }
 
-void VkRenderBackend::SetScissorRect(i32 offset_x, i32 offset_y, u32 width, u32 height)
+void RenderBackend::SetScissorRect(i32 offset_x, i32 offset_y, u32 width, u32 height)
 {
 	vk::Rect2D scissor_rect{};
 	scissor_rect.offset.x = offset_x;
@@ -923,13 +923,13 @@ void VkRenderBackend::SetScissorRect(i32 offset_x, i32 offset_y, u32 width, u32 
 	Handle(render_context->GetCurrentCommandBuffer()).setScissor(0, 1, &scissor_rect);
 }
 
-void VkRenderBackend::SetPrimitiveTopology(EVertexPrimitiveTopology primitivd_topology)
+void RenderBackend::SetPrimitiveTopology(EVertexPrimitiveTopology primitivd_topology)
 {
 	Handle(render_context->GetCurrentCommandBuffer()).setPrimitiveTopology(get_primitive_topology(primitivd_topology));
 }
 
 // TODO: add indirect Draw support
-void VkRenderBackend::Draw(EQueueTypeFlagBits queue_type, const FGeometryDrawInfo& draw_info)
+void RenderBackend::Draw(EQueueTypeFlagBits queue_type, const FGeometryDrawInfo& draw_info)
 {
 	if (draw_info.lastIndex == 0ull && draw_info.lastVertex == 0ull)
 	{
@@ -954,7 +954,7 @@ void VkRenderBackend::Draw(EQueueTypeFlagBits queue_type, const FGeometryDrawInf
 	}
 }
 
-void VkRenderBackend::Draw(EQueueTypeFlagBits queue_type, const FIndirectGeometryDrawInfo& draw_info)
+void RenderBackend::Draw(EQueueTypeFlagBits queue_type, const FIndirectGeometryDrawInfo& draw_info)
 {
 	auto& indirect_command_buffer = render_resources->get<Buffer>(draw_info.bufferId.Get());
 	auto& indirect_count_buffer = render_resources->get<Buffer>(draw_info.countBufferId.Get());
@@ -962,7 +962,7 @@ void VkRenderBackend::Draw(EQueueTypeFlagBits queue_type, const FIndirectGeometr
 	//current.drawIndexedIndirect(indirect_command_buffer->handle, draw_info.offset, draw_info.count, draw_info.stride);
 }
 
-void VkRenderBackend::Dispatch(EQueueTypeFlagBits queue_type, const FDispatch2Info& dispatch_info, u64 subgroup_index)
+void RenderBackend::Dispatch(EQueueTypeFlagBits queue_type, const FDispatch2Info& dispatch_info, u64 subgroup_index)
 {
 	vk::DispatchIndirectCommand command{};
 	command.x = dispatch_info.globalSizes.x;
@@ -978,7 +978,7 @@ void VkRenderBackend::Dispatch(EQueueTypeFlagBits queue_type, const FDispatch2In
 	Handle(render_context->GetCurrentCommandBuffer()).dispatch(command.x, command.y, command.z);
 }
 
-void VkRenderBackend::Dispatch(EQueueTypeFlagBits queue_type, const FDispatchIndirectInfo& dispatch_info)
+void RenderBackend::Dispatch(EQueueTypeFlagBits queue_type, const FDispatchIndirectInfo& dispatch_info)
 {
 	auto& argument_buffer = render_resources->get<Buffer>(dispatch_info.argumentBuffer.Get());
 
@@ -991,19 +991,19 @@ void VkRenderBackend::Dispatch(EQueueTypeFlagBits queue_type, const FDispatchInd
 		Handle(render_context->GetCurrentCommandBuffer()).dispatchIndirect(Handle(*argument_buffer), dispatch_info.argumentOffset);
 }
 
-FDeviceLimitations VkRenderBackend::GetDeviceLimitations()
+FDeviceLimitations RenderBackend::GetDeviceLimitations()
 {
 	FDeviceLimitations limits{};
 
 	return limits;
 }
 
-const FRenderFrameStats& VkRenderBackend::GetRenderFrameStats() const
+const FRenderFrameStats& RenderBackend::GetRenderFrameStats() const
 {
 	return render_stats;
 }
 
-EAdapterVendor VkRenderBackend::GetDeviceVendor() const
+EAdapterVendor RenderBackend::GetDeviceVendor() const
 {
 	auto& physical = render_device->GetPhysicalDevice();
 
@@ -1019,17 +1019,17 @@ EAdapterVendor VkRenderBackend::GetDeviceVendor() const
 	return EAdapterVendor::eNVidia;
 }
 
-FAPIHandle VkRenderBackend::GetTextureResource(const char* name)
+FAPIHandle RenderBackend::GetTextureResource(const char* name)
 {
 	return FAPIHandle(render_resources->getId<Texture>(name));
 }
 
-FAPIHandle VkRenderBackend::GetShaderResource(const char* name)
+FAPIHandle RenderBackend::GetShaderResource(const char* name)
 {
 	return FAPIHandle(render_resources->getId<Shader>(name));
 }
 
-FPoint2D<u32> VkRenderBackend::GetRenderResolution() const
+FPoint2D<u32> RenderBackend::GetRenderResolution() const
 {
 	auto& extent = render_context->GetSwapchain().GetExtent();
 	FPoint2D<u32> resolution{};
@@ -1039,7 +1039,7 @@ FPoint2D<u32> VkRenderBackend::GetRenderResolution() const
 	return resolution;
 }
 
-FRect2D<f32> VkRenderBackend::GetRenderRectFromRT(FAPIHandle texture_id)
+FRect2D<f32> RenderBackend::GetRenderRectFromRT(FAPIHandle texture_id)
 {
 	auto& texture = render_resources->get<Texture>(texture_id.Get());
 
@@ -1050,7 +1050,7 @@ FRect2D<f32> VkRenderBackend::GetRenderRectFromRT(FAPIHandle texture_id)
 	return rect;
 }
 
-FRect2D<f32> VkRenderBackend::GetScreenRenderRect()
+FRect2D<f32> RenderBackend::GetScreenRenderRect()
 {
 	auto& extent = render_context->GetSwapchain().GetExtent();
 
@@ -1061,7 +1061,7 @@ FRect2D<f32> VkRenderBackend::GetScreenRenderRect()
 }
 
 // TODO: update only targets, that have same size with swapchain
-void VkRenderBackend::UpdateSurface()
+void RenderBackend::UpdateSurface()
 {
 	auto& surface_extent = render_context->GetSwapchain().GetExtent();
 	auto& textures = render_resources->data<Texture>();
@@ -1087,12 +1087,12 @@ void VkRenderBackend::UpdateSurface()
 	}
 }
 
-const std::unique_ptr<RenderDevice>& VkRenderBackend::getDevice() const
+const std::unique_ptr<RenderDevice>& RenderBackend::getDevice() const
 {
 	return render_device;
 }
 
-void VkRenderBackend::BeginFrame()
+void RenderBackend::BeginFrame()
 {
 	u32 image_index{ 0u };
 	// TODO: sync queues here
@@ -1130,7 +1130,7 @@ void VkRenderBackend::BeginFrame()
 	}
 }
 
-void VkRenderBackend::EndFrame()
+void RenderBackend::EndFrame()
 {
 	// TODO: here i should run only main command buffer. But for now i getting the last one
 	//render_device->WriteTimestampQuery(command_buffer, vk::PipelineStageFlagBits::eBottomOfPipe, timestamp_query);
@@ -1177,27 +1177,27 @@ void VkRenderBackend::EndFrame()
 	utilization_counter++;
 }
 
-bool VkRenderBackend::IsSwapChainFinished()
+bool RenderBackend::IsSwapChainFinished()
 {
 	return (utilization_counter % render_context->GetSwapchain().GetImageCount() == 0) && utilization_counter != 0ull;
 }
 
-void VkRenderBackend::BeginDebugLabel(const std::string& label, EQueueTypeFlagBits queue_type, u32 color)
+void RenderBackend::BeginDebugLabel(const std::string& label, EQueueTypeFlagBits queue_type, u32 color)
 {
 	render_context->GetCurrentCommandBuffer().BeginDebugLabel(label, color);
 }
 
-void VkRenderBackend::InsertDebugLabel(const std::string& label, EQueueTypeFlagBits queue_type, u32 color)
+void RenderBackend::InsertDebugLabel(const std::string& label, EQueueTypeFlagBits queue_type, u32 color)
 {
 	render_context->GetCurrentCommandBuffer().InsertDebugLabel(label, color);
 }
 
-void VkRenderBackend::EndDebugLabel(EQueueTypeFlagBits queue_type)
+void RenderBackend::EndDebugLabel(EQueueTypeFlagBits queue_type)
 {
 	render_context->GetCurrentCommandBuffer().EndDebugLabel();
 }
 
-void VkRenderBackend::ProcessResourceUtilization()
+void RenderBackend::ProcessResourceUtilization()
 {
 	while (!resource_destroy_queue.empty())
 	{
@@ -1226,14 +1226,14 @@ void VkRenderBackend::ProcessResourceUtilization()
 	}
 }
 
-void VkRenderBackend::ProcessImageLayoutTranslation(CommandBuffer& command_buffer, const vk::ImageMemoryBarrier2KHR& image_translation_info)
+void RenderBackend::ProcessImageLayoutTranslation(CommandBuffer& command_buffer, const vk::ImageMemoryBarrier2KHR& image_translation_info)
 {
 	FVkTranslationInfo translation_info{};
 	translation_info.imageTranslationInfos[translation_info.image_tanslation_count++] = image_translation_info;
 	ProcessMemoryBarriers(command_buffer, translation_info);
 }
 
-void VkRenderBackend::TextureLayoutTranslation(CommandBuffer& command_buffer, Texture& texture, const FVkTextureTranslationInfo& translation_info)
+void RenderBackend::TextureLayoutTranslation(CommandBuffer& command_buffer, Texture& texture, const FVkTextureTranslationInfo& translation_info)
 {
 	auto image_layout_translation = texture.GetTranslationInfo(translation_info);
 	ProcessImageLayoutTranslation(command_buffer, image_layout_translation);

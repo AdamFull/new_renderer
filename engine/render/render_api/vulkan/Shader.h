@@ -1,7 +1,7 @@
 #pragma once
 
-#include <VkResourceStructures.h>
-#include <VkShaderReflection.h>
+#include <ResourceStructures.h>
+#include <SPIRVReflection.h>
 #include <base/Pipeline.h>
 #include <base/PipelineLayout.h>
 #include <DescriptorUpdate.h>

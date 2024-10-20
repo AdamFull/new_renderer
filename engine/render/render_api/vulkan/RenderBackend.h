@@ -1,7 +1,7 @@
 #pragma once
 
-#include <VkRenderDevice.h>
-#include <VkShaderReflection.h>
+#include <RenderDevice.h>
+#include <SPIRVReflection.h>
 #include <engine/interface/ResourceContainer.h>
 #include <engine/interface/render/RenderInterface.h>
 #include <container/unique_queue.h>
@@ -24,10 +24,10 @@ namespace engine
 
 			using vk_resource_container_t = CResourceContainer<Texture, Shader, Buffer>;
 
-			class VkRenderBackend : public IRenderBackend
+			class RenderBackend : public IRenderBackend
 			{
 			public:
-				~VkRenderBackend() override;
+				~RenderBackend() override;
 
 				void Create(const FRenderContextCreateInfo& context_ci) override;
 				void CreateGlobalDescriptor(const FGlobalUniformCreateInfo& uniform_ci) override;

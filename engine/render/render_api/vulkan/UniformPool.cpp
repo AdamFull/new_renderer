@@ -1,6 +1,6 @@
 #include <UniformPool.h>
 #include <base/PhysicalDevice.h>
-#include <VkRenderDevice.h>
+#include <RenderDevice.h>
 #include <VkCommon.h>
 
 namespace engine

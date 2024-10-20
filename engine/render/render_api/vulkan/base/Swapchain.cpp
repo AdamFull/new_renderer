@@ -1,7 +1,7 @@
 #include <base/Swapchain.h>
 #include <base/PhysicalDevice.h>
 #include <base/Device.h>
-#include <VkRenderDevice.h>
+#include <RenderDevice.h>
 
 #include <util/Logger.h>
 

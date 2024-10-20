@@ -1,6 +1,6 @@
 #pragma once
 
-#include <VkResourceStructures.h>
+#include <ResourceStructures.h>
 
 namespace engine
 {

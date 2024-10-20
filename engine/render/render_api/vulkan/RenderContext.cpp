@@ -3,7 +3,7 @@
 #include <base/Device.h>
 #include <base/Swapchain.h>
 #include <base/CommandPool.h>
-#include <VkRenderDevice.h>
+#include <RenderDevice.h>
 #include <DescriptorAllocator.h>
 #include <base/Buffer.h>
 #include <UniformPool.h>

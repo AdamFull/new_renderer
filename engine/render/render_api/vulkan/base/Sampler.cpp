@@ -2,7 +2,7 @@
 #include <base/Device.h>
 #include <base/DebugUtils.h>
 #include <base/PhysicalDevice.h>
-#include <VkRenderDevice.h>
+#include <RenderDevice.h>
 
 namespace engine
 {

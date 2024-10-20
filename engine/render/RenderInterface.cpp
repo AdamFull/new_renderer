@@ -1,7 +1,7 @@
 #include "RenderInterface.h"
 #include <uuid.hpp>
 
-#include <engine/render/render_api/vulkan/VkRenderBackend.h>
+#include <engine/render/render_api/vulkan/RenderBackend.h>
 #include <engine/render/render_api/vulkan/base/Buffer.h>
 #include <engine/render/render_api/vulkan/base/Sampler.h>
 #include <engine/render/render_api/vulkan/Texture.h>
@@ -39,7 +39,7 @@ std::unique_ptr<IRenderBackend> make_render_context(const FRenderInterfaceCreate
 	if (rhi_ci.render_api == ERenderApi::eVulkan10 || rhi_ci.render_api == ERenderApi::eVulkan11 ||
 		rhi_ci.render_api == ERenderApi::eVulkan12 || rhi_ci.render_api == ERenderApi::eVulkan13)
 	{
-		render_backend = std::make_unique<vulkan::VkRenderBackend>();
+		render_backend = std::make_unique<vulkan::RenderBackend>();
 
 		context_ci.apiVersion = rhi_ci.render_api;
 		context_ci.requiredDeviceExtensions = {

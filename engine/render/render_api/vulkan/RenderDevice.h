@@ -1,7 +1,7 @@
 #pragma once
 
 #include <engine/interface/render/RenderInterface.h>
-#include <VkResourceStructures.h>
+#include <ResourceStructures.h>
 
 #include <format>
 
@@ -35,7 +35,7 @@ namespace engine
 			class RenderDevice
 			{
 			public:
-				friend class VkRenderBackend;
+				friend class RenderBackend;
 
 				~RenderDevice();
 

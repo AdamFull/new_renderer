@@ -1,7 +1,7 @@
 #include <Shader.h>
 #include <base/PhysicalDevice.h>
 #include <base/Device.h>
-#include <VkRenderDevice.h>
+#include <RenderDevice.h>
 #include <base/Buffer.h>
 #include <Texture.h>
 #include <base/ImageView.h>

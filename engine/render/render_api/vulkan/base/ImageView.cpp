@@ -2,7 +2,7 @@
 #include <base/Device.h>
 #include <base/Image.h>
 #include <base/DebugUtils.h>
-#include <VkRenderDevice.h>
+#include <RenderDevice.h>
 
 #include <vulkan/vulkan_format_traits.hpp>
 
