@@ -3,6 +3,7 @@
 #include <VkResourceStructures.h>
 #include <VkShaderReflection.h>
 #include <base/Pipeline.h>
+#include <base/PipelineLayout.h>
 #include <DescriptorUpdate.h>
 
 namespace engine
@@ -95,10 +96,9 @@ namespace engine
 				uint32_t shader_module_count{ 0u };
 
 				// Root signature
-				vk::PipelineLayout layout{};
+				std::unique_ptr<PipelineLayout> layout{};
 				std::array<std::unique_ptr<DescriptorSetLayout>, k_max_descriptor_sets> descriptor_set_layouts{};
 				std::array<vk::DescriptorSet, k_max_descriptor_sets> descriptor_sets{};
-				utl::vector<vk::PushConstantRange> pushConstantRanges{};
 
 				FVkShaderReflectionData reflection{};
 

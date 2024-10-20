@@ -128,50 +128,42 @@ namespace engine
 				}
 
 				// Create pipeline layout
-				std::array<vk::DescriptorSetLayout, k_max_descriptor_sets> descriptor_set_layouts_ci{};
-				vk::PipelineLayoutCreateInfo layout_ci{};
-				layout_ci.pSetLayouts = descriptor_set_layouts_ci.data();
+				auto layout_builder = PipelineLayoutBuilder();
 
 				// NOTE: adding global descriptor set layout
-				descriptor_set_layouts_ci[0] = builder.default_layouts[0];
-				layout_ci.setLayoutCount++;
+				layout_builder.AddDescriptorSetLayout(builder.default_layouts[0]);
 
 				// Send descriptor set layouts to Create info
 				for (int32_t idx = 1; idx < descriptor_set_layouts.size(); ++idx)
 				{
 					if (descriptor_set_layouts[idx])
 					{
-						// I think that should be idx here, but it can cause errors when some layout is not exists
-						descriptor_set_layouts_ci[layout_ci.setLayoutCount++] = descriptor_set_layouts[idx]->GetHandle();
+						layout_builder.AddDescriptorSetLayout(descriptor_set_layouts[idx]->GetHandle());
 					}
 				}
-				//for (const auto& [set, descriptor_set_layout] : shader.descriptorSetLayouts)
-				//	layout_ci.descriptorSetLayouts.emplace_back(descriptor_set_layout);
 
 				// Prepare push blocks info
 				u32 current_offset{ 0u };
 				for (const auto& [name, block] : reflection.pushBlocks)
 				{
-					auto& push_constant_range = pushConstantRanges.emplace_back();
+					vk::PushConstantRange push_constant_range{};
 					push_constant_range.stageFlags = block.stageFlags;
 					push_constant_range.offset = current_offset;
 					push_constant_range.size = utl::cast<u32>(block.size);
+					layout_builder.AddPushConstantRange(push_constant_range);
 					current_offset += push_constant_range.size;
 				}
 
-				layout_ci.pPushConstantRanges = pushConstantRanges.data();
-				layout_ci.pushConstantRangeCount = static_cast<uint32_t>(pushConstantRanges.size());
-
-				layout = render_device.CreatePipelineLayout2(layout_ci);
+				layout = layout_builder.BuildUnique(render_device);
 
 				if (bind_point == vk::PipelineBindPoint::eGraphics)
 				{
-					builder.graphics_pipeline_builder.SetPipelineLayout(layout);
+					builder.graphics_pipeline_builder.SetPipelineLayout(layout->GetHandle());
 					pipeline = builder.graphics_pipeline_builder.BuildUnique(render_device);
 				}
 				else if (bind_point == vk::PipelineBindPoint::eCompute)
 				{
-					builder.compute_pipeline_builder.SetPipelineLayout(layout);
+					builder.compute_pipeline_builder.SetPipelineLayout(layout->GetHandle());
 					pipeline = builder.compute_pipeline_builder.BuildUnique(render_device);
 				}
 			}
@@ -179,13 +171,12 @@ namespace engine
 			Shader::~Shader()
 			{
 				pipeline.reset();
+				layout.reset();
 
 				for (int32_t i = 0; i < shader_module_count; ++i)
 				{
 					render_device.Destroy(shader_modules[i]);
 				}
-
-				render_device.Destroy(layout);
 			}
 
 			Shader::Shader(Shader&& other) noexcept :
@@ -196,8 +187,7 @@ namespace engine
 				bind_point{ std::exchange(other.bind_point, {}) },
 				layout{ std::exchange(other.layout, {}) },
 				descriptor_set_layouts{ std::move(other.descriptor_set_layouts) },
-				descriptor_sets{ std::exchange(other.descriptor_sets, {}) },
-				pushConstantRanges{ std::exchange(other.pushConstantRanges, {}) }
+				descriptor_sets{ std::exchange(other.descriptor_sets, {}) }
 			{
 			}
 
@@ -275,7 +265,7 @@ namespace engine
 						continue;
 
 					auto& constant_block = found_reflection->second;
-					command_buffer.PushConstants({ layout, constant_block.stageFlags, 0u, (u32)constant_data.size, constant_data.data });
+					command_buffer.PushConstants({ layout->GetHandle(), constant_block.stageFlags, 0u, (u32)constant_data.size, constant_data.data });
 
 					// Break, because we can have only one push constants block
 					break;
@@ -320,7 +310,7 @@ namespace engine
 				}
 
 				// TODO: determine the lowest descriptor index and start binding from lowest one (for example from 1)
-				Handle(command_buffer).bindDescriptorSets(bind_point, layout, 0, descriptor_set_count, descriptor_sets.data(), 0u, nullptr);
+				Handle(command_buffer).bindDescriptorSets(bind_point, layout->GetHandle(), 0, descriptor_set_count, descriptor_sets.data(), 0u, nullptr);
 			}
 
 			void Shader::Bind(CommandBuffer& command_buffer)

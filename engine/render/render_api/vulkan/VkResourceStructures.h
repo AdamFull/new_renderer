@@ -20,7 +20,8 @@ namespace engine
 			class DescriptorSetLayout;
 			class DescriptorSet;
 
-			constexpr size_t k_max_descriptor_sets{ 8ull };
+			constexpr uint32_t k_max_descriptor_sets{ 8u };
+			constexpr uint32_t k_max_push_constant_range_count{ 16u };
 
 			struct FRenderApiErrorInfo
 			{
