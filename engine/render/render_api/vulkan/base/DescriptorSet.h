@@ -8,25 +8,35 @@ namespace engine
 	{
 		namespace vulkan
 		{
-			class DescriptorPool;
-
 			class DescriptorSet final : public VulkanResource<vk::DescriptorSet>
 			{
 			public:
 				friend class DescriptorPool;
 
-				DescriptorSet(DescriptorPool& descriptor_pool, vk::DescriptorSet handle, const PoolSizes& used_sizes);
-				DescriptorSet(const DescriptorSet&) = delete;
-				DescriptorSet(DescriptorSet&& other);
+				DescriptorSet() :
+					VulkanResource{ nullptr }
+				{
+				}
 
-				~DescriptorSet();
+				DescriptorSet(vk::DescriptorSet handle, const PoolSizes& sizes) :
+					VulkanResource{ handle },
+					used_sizes{ sizes }
+				{
+				}
+
+				DescriptorSet(const DescriptorSet&) = delete;
+				
+				DescriptorSet(DescriptorSet&& other) :
+					VulkanResource{ std::move(other) },
+					used_sizes{ std::exchange(other.used_sizes, {}) }
+				{
+				}
+
+				~DescriptorSet() = default;
 
 				DescriptorSet& operator=(const DescriptorSet&) = delete;
 				DescriptorSet& operator=(DescriptorSet&&) = delete;
 			private:
-				DescriptorPool& descriptor_pool;
-
-				size_t pool_index{ ~0ull };
 				PoolSizes used_sizes;
 			};
 		}

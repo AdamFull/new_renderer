@@ -28,9 +28,6 @@ using namespace engine::render::vulkan;
 
 static const u32 k_max_bindless_buffers{ 256u };
 
-static const u64 k_max_texture_update_per_frame{ 4096ll };
-static const u64 k_max_buffer_update_per_frame{ 4096ull };
-
 vk::Format lookup_vk_format(EApiDataFormat format)
 {
 	static const utl::hash_map<EApiDataFormat, vk::Format> lookup_table{
@@ -164,8 +161,6 @@ VkRenderBackend::~VkRenderBackend()
 	auto& logical_device = render_device->GetLogicalDevice();
 	Handle(logical_device).waitIdle();
 
-	command_pool.reset();
-
 	// Destroy all textures
 	auto& textures = render_resources->data<Texture>();
 	textures.clear();
@@ -192,14 +187,6 @@ void VkRenderBackend::Create(const FRenderContextCreateInfo& context_ci)
 
 	render_resources = std::make_unique<vk_resource_container_t>();
 
-	auto command_pool_builder = CommandPoolBuilder();
-	command_pool_builder.SetDebugName("Graphics");
-	command_pool_builder.SetResetMode(CommandBuffer::ResetMode::ResetIndividually);
-	// TODO: Add queue selection in builder
-	command_pool_builder.SetQueueFamily(render_device->GetLogicalDevice().GetQueueByFlags(vk::QueueFlagBits::eGraphics, 0).GetFamilyIndex());
-
-	command_pool = command_pool_builder.BuildUnique(*render_device);
-
 	auto res = render_device->CreateTimestampQuery(256, timestamp_query);
 
 	// Create default sampler
@@ -219,83 +206,35 @@ void VkRenderBackend::CreateGlobalDescriptor(const FGlobalUniformCreateInfo& uni
 
 void VkRenderBackend::UpdateGlobalDescriptorData(const FGlobalUniformUpdateInfo& data_view)
 {
-	auto& dest_set = render_context->GetCurrentGlobalDescriptorSet();
-
-	std::array<vk::DescriptorImageInfo, k_max_texture_update_per_frame> image_descriptors{};
-	std::array<vk::DescriptorBufferInfo, k_max_buffer_update_per_frame> buffer_descriptors{};
-	utl::vector<vk::WriteDescriptorSet> write_descriptor_sets{};
-
-	auto& textures = render_resources->data<Texture>();
-
 	// Bind and update global uniform
-	u64 buffer_count{ 0ull };
 	for (const auto& [uniform_name, uniform_data] : data_view.uniforms)
 	{
-		auto* buffer = render_context->GetGlobalUniformBuffer(uniform_name);
-		if (!buffer)
-			continue;
+		if (!render_context->CanUpdateUniform())
+			break;
 
-		auto element_size = buffer->GetSuballocationSize();
-
-		auto& buffer_descriptor = buffer_descriptors[buffer_count];
-		buffer_descriptor.buffer = Handle(*buffer);
-		buffer_descriptor.range = element_size;
-		buffer_descriptor.offset = render_context->GetCurrentFrameIndex() * element_size;
-
-		auto& write_descriptor_set = write_descriptor_sets.emplace_back();
-		write_descriptor_set.descriptorType = vk::DescriptorType::eUniformBuffer;
-		write_descriptor_set.dstSet = dest_set.GetHandle();
-		write_descriptor_set.dstBinding = uniform_data.binding;
-		write_descriptor_set.descriptorCount = 1u;
-		write_descriptor_set.pBufferInfo = &buffer_descriptor;
-
-		buffer->Update(uniform_data.data, uniform_data.size, buffer_descriptor.offset);
-		buffer_count++;
+		render_context->UpdateUniform(uniform_data.binding, std::span<const char>((const char*)uniform_data.data, uniform_data.size));
 	}
 
 	// Process bindless textures
 	{
+		auto& textures = render_resources->data<Texture>();
 		auto& texture_queue = texture_to_update[render_context->GetCurrentFrameIndex()];
 
-		u64 texture_count{ 0ull };
-		while (!texture_queue.empty() && texture_count < k_max_texture_update_per_frame)
+		while (!texture_queue.empty() && render_context->CanUpdateTextureBinding())
 		{
 			auto texture_id = texture_queue.front();
 			auto& texture = textures[texture_id];
 
 			auto& start_element_index = texture_index_remap[texture_id];
-			bool is_storage_image = utl::cast<bool>(texture->GetFlags() & ETextureCreateFlagBits::eStorage);
 
-			// TODO TEXTURE
-			auto& mip_level = texture->GetImageView();
-			auto& image_descriptor = image_descriptors[texture_count];
-			image_descriptor.imageView = Handle(mip_level);
-			image_descriptor.sampler = Handle(*(texture->GetSamplerID() != ~0u ? sampler_cache[texture->GetSamplerID()] : default_sampler));
-			image_descriptor.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-
-			if (texture->GetFlags() & ETextureCreateFlagBits::eSamplable)
-			{
-				auto& write_descriptor_set = write_descriptor_sets.emplace_back();
-				write_descriptor_set.dstArrayElement = start_element_index;
-				write_descriptor_set.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-				write_descriptor_set.dstSet = dest_set.GetHandle();
-				write_descriptor_set.dstBinding = 3u;
-				write_descriptor_set.descriptorCount = 1u;
-				write_descriptor_set.pImageInfo = &image_descriptor;
-			}
-
-			texture_count++;
+			Sampler& sampler = *(texture->GetSamplerID() != ~0u ? sampler_cache[texture->GetSamplerID()] : default_sampler);
+			render_context->UpdateTextureBinding(*texture, sampler, start_element_index);
 
 			texture_queue.pop();
 		}
 	}
 
-	// Update descriptor sets if needed
-	if (!write_descriptor_sets.empty())
-	{
-		auto& logical = render_device->GetLogicalDevice();
-		Handle(logical).updateDescriptorSets(utl::cast<u32>(write_descriptor_sets.size()), write_descriptor_sets.data(), 0, nullptr);
-	}
+	render_context->UpdateDescriptors();
 }
 
 const utl::vector<uint32_t>& VkRenderBackend::GetGlobalTextureRemap()
@@ -384,51 +323,51 @@ void VkRenderBackend::DestroyTexture(FAPIHandle resource_id)
 
 void VkRenderBackend::ReadPixel(FAPIHandle resource_id, u32 x, u32 y, void* data)
 {
-	static constexpr u64 pixel_size{ 4ull };
-
-	auto& texture = render_resources->get<Texture>(resource_id.Get());
-
-	// Create temporary command buffer
-	auto& command_buffer = command_pool->RequestCommandBuffer(vk::CommandBufferLevel::ePrimary);
-	command_buffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-
-	auto builder = BufferBuilder(pixel_size, 1ull, 1ull);
-	builder.SetVmaUsage(vma::MemoryUsage::eCpuOnly);
-	builder.SetUsage(vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst);
-	builder.SetSharingMode(vk::SharingMode::eConcurrent);
-
-#ifndef BUILD_WITHOUT_DEBUGGIND
-	builder.SetDebugName(std::format("pick pixel #{}(x:{},y{})", resource_id.Get(), x, y));
-#endif
-
-	auto staging_buffer = builder.BuildUnique(*render_device);
-
-	vk::BufferImageCopy region;
-	region.bufferOffset = 0u;
-	region.bufferImageHeight = 0u;
-	region.bufferRowLength = 0u;
-
-	region.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
-	region.imageSubresource.mipLevel = 0u;
-	region.imageSubresource.baseArrayLayer = 0u;
-	region.imageSubresource.layerCount = 1u;
-
-	region.imageOffset.x = x;
-	region.imageOffset.y = y;
-	region.imageExtent.width = 1u;
-	region.imageExtent.height = 1u;
-	region.imageExtent.depth = 1u;
-
-	// TODO TEXTURE/COMMAND BUFFER
-	Handle(command_buffer).copyImageToBuffer(Handle(texture->GetImage()), vk::ImageLayout::eTransferSrcOptimal, Handle(*staging_buffer), 1, &region);
-
-	render_device->SubmitCommandBuffer(Handle(command_buffer));
-	// TODO: DESTROY COMMAND BUFFER AND DELETE IT
-
-	// Copy data to buffer
-	void* mapped_buffer_memory = staging_buffer->Map();
-	util::Copy(data, mapped_buffer_memory, pixel_size);
-	staging_buffer->Unmap();
+//	static constexpr u64 pixel_size{ 4ull };
+//
+//	auto& texture = render_resources->get<Texture>(resource_id.Get());
+//
+//	// Create temporary command buffer
+//	auto& command_buffer = command_pool->RequestCommandBuffer(vk::CommandBufferLevel::ePrimary);
+//	command_buffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+//
+//	auto builder = BufferBuilder(pixel_size, 1ull, 1ull);
+//	builder.SetVmaUsage(vma::MemoryUsage::eCpuOnly);
+//	builder.SetUsage(vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst);
+//	builder.SetSharingMode(vk::SharingMode::eConcurrent);
+//
+//#ifndef BUILD_WITHOUT_DEBUGGIND
+//	builder.SetDebugName(std::format("pick pixel #{}(x:{},y{})", resource_id.Get(), x, y));
+//#endif
+//
+//	auto staging_buffer = builder.BuildUnique(*render_device);
+//
+//	vk::BufferImageCopy region;
+//	region.bufferOffset = 0u;
+//	region.bufferImageHeight = 0u;
+//	region.bufferRowLength = 0u;
+//
+//	region.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+//	region.imageSubresource.mipLevel = 0u;
+//	region.imageSubresource.baseArrayLayer = 0u;
+//	region.imageSubresource.layerCount = 1u;
+//
+//	region.imageOffset.x = x;
+//	region.imageOffset.y = y;
+//	region.imageExtent.width = 1u;
+//	region.imageExtent.height = 1u;
+//	region.imageExtent.depth = 1u;
+//
+//	// TODO TEXTURE/COMMAND BUFFER
+//	Handle(command_buffer).copyImageToBuffer(Handle(texture->GetImage()), vk::ImageLayout::eTransferSrcOptimal, Handle(*staging_buffer), 1, &region);
+//
+//	render_device->SubmitCommandBuffer(Handle(command_buffer));
+//	// TODO: DESTROY COMMAND BUFFER AND DELETE IT
+//
+//	// Copy data to buffer
+//	void* mapped_buffer_memory = staging_buffer->Map();
+//	util::Copy(data, mapped_buffer_memory, pixel_size);
+//	staging_buffer->Unmap();
 }
 
 

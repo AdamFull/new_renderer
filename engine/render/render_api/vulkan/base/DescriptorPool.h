@@ -31,7 +31,7 @@ namespace engine
 				DescriptorPool& operator=(DescriptorPool&&) = delete;
 
 				void Reset();
-				std::unique_ptr<DescriptorSet> Allocate(DescriptorSetLayout& layout, const std::string& debug_name = "");
+				DescriptorSet& Allocate(DescriptorSetLayout& layout, const std::string& debug_name = "");
 				vk::Result Free(DescriptorSet& descriptor_set);
 
 				bool IsExpired() const;
@@ -44,6 +44,7 @@ namespace engine
 
 				// Avaliable number of descriptors
 				PoolSizes avaliable_sizes{};
+				std::vector<DescriptorSet> allocated_descriptors;
 
 				CanAllocateResult last_allocation_result{};
 

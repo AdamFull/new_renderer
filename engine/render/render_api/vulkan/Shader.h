@@ -3,6 +3,7 @@
 #include <VkResourceStructures.h>
 #include <VkShaderReflection.h>
 #include <base/Pipeline.h>
+#include <DescriptorUpdate.h>
 
 namespace engine
 {
@@ -49,25 +50,6 @@ namespace engine
 
 				Shader Build(RenderDevice& render_device);
 				std::unique_ptr<Shader> BuildUnique(RenderDevice& render_device);
-			};
-
-			class DescriptorUpdate
-			{
-			public:
-				std::array<vk::WriteDescriptorSet, 64ull> write_descriptor_sets{};
-				uint32_t writes_count{ 0u };
-
-				std::array<vk::DescriptorImageInfo, 64ull> image_descriptors{};
-				uint32_t image_count{ 0u };
-
-				std::array<vk::DescriptorBufferInfo, 64ull> buffer_descriptors{};
-				uint32_t buffer_count{ 0u };
-				
-				vk::WriteDescriptorSet& AddDescriptorWrite();
-				vk::DescriptorImageInfo& AddImageInfo();
-				vk::DescriptorBufferInfo& AddBufferInfo();
-
-				void Clear();
 			};
 
 			class Shader final

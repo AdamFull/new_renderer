@@ -47,29 +47,6 @@ namespace engine
 			}
 
 
-			vk::WriteDescriptorSet& DescriptorUpdate::AddDescriptorWrite()
-			{
-				return write_descriptor_sets[writes_count++];
-			}
-
-			vk::DescriptorImageInfo& DescriptorUpdate::AddImageInfo()
-			{
-				return image_descriptors[image_count++];
-			}
-
-			vk::DescriptorBufferInfo& DescriptorUpdate::AddBufferInfo()
-			{
-				return buffer_descriptors[buffer_count++];
-			}
-
-			void DescriptorUpdate::Clear()
-			{
-				writes_count = 0u;
-				image_count = 0u;
-				buffer_count = 0u;
-			}
-
-
 			Shader::Shader(RenderDevice& render_device, ShaderBuilder& builder) :
 				render_device{ render_device },
 				bind_point{ builder.bind_point }
@@ -308,7 +285,7 @@ namespace engine
 			void Shader::ResetDescriptors(RenderContext& render_context)
 			{
 				auto& current_frame = render_context.GetCurrentFrame();
-				descriptor_sets[0] = Handle(render_context.GetCurrentGlobalDescriptorSet());
+				descriptor_sets[0] = render_context.GetCurrentGlobalDescriptorSet();
 				
 				for (int32_t i = 1; i < k_max_descriptor_sets; ++i)
 				{

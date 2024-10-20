@@ -108,8 +108,10 @@ namespace engine
 				initial_sizes{ std::exchange(other.initial_sizes, {}) },
 				avaliable_sizes{ std::exchange(other.avaliable_sizes, {}) },
 				allocated_count{ std::exchange(other.allocated_count, {}) },
-				countdown_count{ std::exchange(other.countdown_count, {}) }
+				countdown_count{ std::exchange(other.countdown_count, {}) },
+				allocated_descriptors{ std::exchange(other.allocated_descriptors, {}) }
 			{
+				allocated_descriptors.resize(k_max_sets);
 			}
 
 			DescriptorPool::~DescriptorPool()
@@ -120,6 +122,7 @@ namespace engine
 			void DescriptorPool::Reset()
 			{
 				render_device.ResetDescriptorPool2(handle);
+				allocated_descriptors.clear();
 
 				last_allocation_result = CanAllocateResult::Success;
 				allocated_count = 0u;
@@ -129,7 +132,7 @@ namespace engine
 				std::copy(initial_sizes.begin(), initial_sizes.end(), avaliable_sizes.begin());
 			}
 
-			std::unique_ptr<DescriptorSet> DescriptorPool::Allocate(DescriptorSetLayout& layout, const std::string& debug_name)
+			DescriptorSet& DescriptorPool::Allocate(DescriptorSetLayout& layout, const std::string& debug_name)
 			{
 				vk::DescriptorSetAllocateInfo alloc_info{};
 				alloc_info.descriptorPool = handle;
@@ -148,7 +151,7 @@ namespace engine
 				++allocated_count;
 				countdown_count = k_max_frames_unused;
 
-				return std::make_unique<DescriptorSet>(*this, descriptor_set, required_descriptor_count);
+				return allocated_descriptors.emplace_back(descriptor_set, required_descriptor_count);
 			}
 
 			vk::Result DescriptorPool::Free(DescriptorSet& descriptor_set)

@@ -20,7 +20,7 @@ namespace engine
 				DescriptorAllocator& operator=(DescriptorAllocator&&) = delete;
 
 				void Reset();
-				std::unique_ptr<DescriptorSet> Allocate(DescriptorSetLayout& layout, const std::string& debug_name = "");
+				DescriptorSet& Allocate(DescriptorSetLayout& layout, const std::string& debug_name = "");
 			private:
 				RenderDevice& render_device;
 

@@ -132,8 +132,6 @@ namespace engine
 
 				utl::hash_map<u32, utl::unique_queue<u64>> texture_to_update{};
 
-				std::unique_ptr<CommandPool> command_pool;
-
 				std::unique_ptr<RenderContext> render_context;
 				std::unique_ptr<UploadContext> upload_context;
 

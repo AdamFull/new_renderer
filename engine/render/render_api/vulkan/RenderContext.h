@@ -1,6 +1,7 @@
 #pragma once
 
 #include <RenderFrame.h>
+#include <DescriptorUpdate.h>
 
 namespace engine
 {
@@ -14,6 +15,8 @@ namespace engine
 			class Queue;
 			class RenderDevice;
 			class CommandBuffer;
+			class UniformPool;
+			class Sampler;
 
 			class RenderContext final
 			{
@@ -50,8 +53,14 @@ namespace engine
 				Swapchain& GetSwapchain() const;
 
 				DescriptorSetLayout& GetGlobalDescriptorSetLayout() const;
-				DescriptorSet& GetCurrentGlobalDescriptorSet() const;
-				Buffer* GetGlobalUniformBuffer(uint64_t uniform_name) const;
+				vk::DescriptorSet GetCurrentGlobalDescriptorSet() const;
+
+				bool CanUpdateUniform() const;
+				bool CanUpdateTextureBinding() const;
+
+				void UpdateUniform(uint32_t binding, std::span<const char> data);
+				void UpdateTextureBinding(Texture& texture, Sampler& sampler, uint32_t binding_slot);
+				void UpdateDescriptors();
 			protected:
 				void UpdateResources();
 			private:
@@ -76,8 +85,9 @@ namespace engine
 				// Global descriptor
 				std::unique_ptr<DescriptorAllocator> descriptor_allocator{};
 				std::unique_ptr<DescriptorSetLayout> descriptor_set_layout{};
-				std::array<std::unique_ptr<DescriptorSet>, k_max_descriptor_sets> descriptor_sets{};
-				utl::hash_map<u64, std::unique_ptr<Buffer>> uniform_buffers{};
+				std::vector<vk::DescriptorSet> descriptor_sets;
+				std::unique_ptr<UniformPool> uniform_pool{};
+				DescriptorUpdate descriptor_update{};
 			};
 		}
 	}

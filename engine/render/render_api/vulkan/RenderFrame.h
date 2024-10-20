@@ -61,7 +61,6 @@ namespace engine
 				std::unique_ptr<CommandPool> command_pool;
 
 				std::unique_ptr<DescriptorAllocator> descriptor_allocator;
-				std::vector<std::unique_ptr<DescriptorSet>> allocated_sets{};
 
 				std::unique_ptr<UniformPool> uniform_pool{};
 

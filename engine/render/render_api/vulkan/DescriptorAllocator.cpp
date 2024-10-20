@@ -36,7 +36,7 @@ namespace engine
 				}
 			}
 
-			std::unique_ptr<DescriptorSet> DescriptorAllocator::Allocate(DescriptorSetLayout& layout, const std::string& debug_name)
+			DescriptorSet& DescriptorAllocator::Allocate(DescriptorSetLayout& layout, const std::string& debug_name)
 			{
 				// We didn't have any pool for now, needs to allocate new one
 				if (descriptor_pools.empty())

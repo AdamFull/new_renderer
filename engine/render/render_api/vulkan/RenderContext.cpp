@@ -6,6 +6,10 @@
 #include <VkRenderDevice.h>
 #include <DescriptorAllocator.h>
 #include <base/Buffer.h>
+#include <UniformPool.h>
+#include <Texture.h>
+#include <base/ImageView.h>
+#include <base/Sampler.h>
 
 #include <engine/runtime/Window.h>
 
@@ -16,6 +20,8 @@ namespace engine
 		namespace vulkan
 		{
 			static const u32 k_max_bindless_resources{ 16384u };
+			static const u64 k_max_texture_update_per_frame{ 64ull };
+			static const u64 k_max_buffer_update_per_frame{ 64ull };
 
 			RenderContext::RenderContext(RenderDevice& render_device, Window* window) :
 				render_device{ render_device },
@@ -101,32 +107,13 @@ namespace engine
 				descriptor_set_layout = descriptor_set_layout_builder.BuildUnique(render_device);
 
 				// TODO: i have to create new pool after recreating pipeline when count of frames was changed
-				for (int32_t i = 0; i < swapchain->GetImageCount(); ++i)
+				descriptor_sets.resize(swapchain->GetImageCount());
+				for (auto& set : descriptor_sets)
 				{
-					descriptor_sets[i] = descriptor_allocator->Allocate(*descriptor_set_layout, std::format("global_{}", i));
+					set = descriptor_allocator->Allocate(*descriptor_set_layout).GetHandle();
 				}
 
-				// Create uniform buffers
-				auto& physical = render_device.GetPhysicalDevice();
-				auto minimal_alignment = std::lcm(physical.GetProperties().limits.minUniformBufferOffsetAlignment, physical.GetProperties().limits.nonCoherentAtomSize);
-
-				for (auto& [uniform_name, size] : uniform_ci.uniforms)
-				{
-					auto builder = BufferBuilder{ size, swapchain->GetImageCount(), minimal_alignment };
-					builder.SetVmaUsage(vma::MemoryUsage::eCpuToGpu);
-					builder.SetUsage(vk::BufferUsageFlagBits::eUniformBuffer);
-					builder.SetSharingMode(vk::SharingMode::eConcurrent);
-
-#ifndef BUILD_WITHOUT_DEBUGGIND
-					auto* debug_name = debug_mapping::find(uniform_name);
-
-					if (debug_name)
-						builder.SetDebugName(std::format("global:{}", debug_name));
-					else
-						builder.SetDebugName(std::format("global:{:x}", uniform_name));
-#endif
-					uniform_buffers.emplace(uniform_name, builder.BuildUnique(render_device));
-				}
+				uniform_pool = std::make_unique<UniformPool>(render_device, 4096ull);
 			}
 
 			void RenderContext::UpdateSwapchain(const vk::Extent2D& extent)
@@ -376,18 +363,60 @@ namespace engine
 				return *descriptor_set_layout;
 			}
 
-			DescriptorSet& RenderContext::GetCurrentGlobalDescriptorSet() const
+			vk::DescriptorSet RenderContext::GetCurrentGlobalDescriptorSet() const
 			{
-				return *descriptor_sets[GetCurrentFrameIndex()];
+				return descriptor_sets[GetCurrentFrameIndex()];
 			}
 
-			Buffer* RenderContext::GetGlobalUniformBuffer(uint64_t uniform_name) const
+			bool RenderContext::CanUpdateUniform() const
 			{
-				auto found_buffer = uniform_buffers.find(uniform_name);
-				if (found_buffer != uniform_buffers.end())
-					return found_buffer->second.get();
+				return descriptor_update.buffer_count < k_max_buffer_update_per_frame;
+			}
 
-				return nullptr;
+			bool RenderContext::CanUpdateTextureBinding() const
+			{
+				return descriptor_update.image_count < k_max_texture_update_per_frame;
+			}
+
+			void RenderContext::UpdateUniform(uint32_t binding, std::span<const char> data)
+			{
+				auto requested_block = uniform_pool->RequestBlock(data.size());
+
+				auto& buffer_descriptor = descriptor_update.AddBufferInfo();
+				buffer_descriptor.buffer = requested_block.buffer.GetHandle();
+				buffer_descriptor.range = requested_block.size;
+				buffer_descriptor.offset = requested_block.offset;
+
+				auto& write_descriptor_set = descriptor_update.AddDescriptorWrite();
+				write_descriptor_set.descriptorType = vk::DescriptorType::eUniformBuffer;
+				write_descriptor_set.dstSet = descriptor_sets[GetCurrentFrameIndex()];
+				write_descriptor_set.dstBinding = binding;
+				write_descriptor_set.descriptorCount = 1u;
+				write_descriptor_set.pBufferInfo = &buffer_descriptor;
+
+				requested_block.buffer.Update(data.data(), data.size(), requested_block.offset);
+			}
+
+			void RenderContext::UpdateTextureBinding(Texture& texture, Sampler& sampler, uint32_t binding_slot)
+			{
+				bool is_storage_image = utl::cast<bool>(texture.GetFlags() & ETextureCreateFlagBits::eStorage);
+
+				auto& mip_level = texture.GetImageView();
+				auto& image_descriptor = descriptor_update.AddImageInfo();
+				image_descriptor.imageView = mip_level.GetHandle();
+				image_descriptor.sampler = sampler.GetHandle();
+				image_descriptor.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+
+				if (texture.GetFlags() & ETextureCreateFlagBits::eSamplable)
+				{
+					auto& write_descriptor_set = descriptor_update.AddDescriptorWrite();
+					write_descriptor_set.dstArrayElement = binding_slot;
+					write_descriptor_set.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+					write_descriptor_set.dstSet = descriptor_sets[GetCurrentFrameIndex()];
+					write_descriptor_set.dstBinding = 3u;
+					write_descriptor_set.descriptorCount = 1u;
+					write_descriptor_set.pImageInfo = &image_descriptor;
+				}
 			}
 
 			void RenderContext::UpdateResources()
@@ -410,6 +439,16 @@ namespace engine
 					}
 
 					++frame_it;
+				}
+			}
+
+			void RenderContext::UpdateDescriptors()
+			{
+				if (descriptor_update.writes_count)
+				{
+					auto& logical = render_device.GetLogicalDevice();
+					Handle(logical).updateDescriptorSets(descriptor_update.writes_count, descriptor_update.write_descriptor_sets.data(), 0, nullptr);
+					descriptor_update.Clear();
 				}
 			}
 		}
