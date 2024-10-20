@@ -136,6 +136,40 @@ namespace engine
 				buffer_barrier.dstStageMask = get_translation_stage_flags(barrier.dstPassType);
 				buffer_barrier.dstAccessMask = get_translation_access_flags(barrier.dstPassType, dst_resource_access);
 			}
+
+
+
+
+			BufferSuballocation::BufferSuballocation(Buffer& buffer, vk::DeviceSize offset, vk::DeviceSize size) :
+				buffer{ buffer },
+				size{ size },
+				offset{ offset }
+			{
+			}
+
+			BufferSuballocation::BufferSuballocation(BufferSuballocation&& other) :
+				buffer{ other.buffer },
+				size{ std::exchange(other.size, {}) },
+				offset{ std::exchange(other.offset, {}) }
+			{
+			}
+
+			vk::DescriptorBufferInfo BufferSuballocation::GetDescriptor()
+			{
+				return { buffer.GetHandle(), offset, size };
+			}
+
+			void BufferSuballocation::Update(std::span<const char> data)
+			{
+				assert(data.size() <= size);
+				buffer.Update(data, offset);
+			}
+
+			void BufferSuballocation::Update(const char* data, vk::DeviceSize data_size)
+			{
+				assert(data_size <= size);
+				buffer.Update(data, data_size, offset);
+			}
 		}
 	}
 }

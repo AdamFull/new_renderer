@@ -383,9 +383,7 @@ namespace engine
 				auto requested_block = uniform_pool->RequestBlock(data.size());
 
 				auto& buffer_descriptor = descriptor_update.AddBufferInfo();
-				buffer_descriptor.buffer = requested_block.buffer.GetHandle();
-				buffer_descriptor.range = requested_block.size;
-				buffer_descriptor.offset = requested_block.offset;
+				buffer_descriptor = requested_block.GetDescriptor();
 
 				auto& write_descriptor_set = descriptor_update.AddDescriptorWrite();
 				write_descriptor_set.descriptorType = vk::DescriptorType::eUniformBuffer;
@@ -394,7 +392,7 @@ namespace engine
 				write_descriptor_set.descriptorCount = 1u;
 				write_descriptor_set.pBufferInfo = &buffer_descriptor;
 
-				requested_block.buffer.Update(data.data(), data.size(), requested_block.offset);
+				requested_block.Update(data);
 			}
 
 			void RenderContext::UpdateTextureBinding(Texture& texture, Sampler& sampler, uint32_t binding_slot)

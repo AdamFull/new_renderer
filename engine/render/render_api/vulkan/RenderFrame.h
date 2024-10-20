@@ -43,7 +43,7 @@ namespace engine
 
 				DescriptorSet& RequestDescriptorSet(DescriptorSetLayout& layout);
 
-				UniformBlockDesc RequestUniformBlock(vk::DeviceSize requested_size);
+				BufferSuballocation RequestUniformBlock(vk::DeviceSize requested_size);
 
 				void ResetFence();
 				void WaitFence();

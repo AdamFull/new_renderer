@@ -71,7 +71,7 @@ namespace engine
 				return descriptor_allocator->Allocate(layout);
 			}
 
-			UniformBlockDesc RenderFrame::RequestUniformBlock(vk::DeviceSize requested_size)
+			BufferSuballocation RenderFrame::RequestUniformBlock(vk::DeviceSize requested_size)
 			{
 				return uniform_pool->RequestBlock(requested_size);
 			}

@@ -1,7 +1,6 @@
 #include <UniformPool.h>
 #include <base/PhysicalDevice.h>
 #include <VkRenderDevice.h>
-#include <base/Buffer.h>
 #include <VkCommon.h>
 
 namespace engine
@@ -49,14 +48,12 @@ namespace engine
 				return static_cast<int64_t>(size_remain) - static_cast<int64_t>(requested_size) > 0;
 			}
 
-			UniformBlockDesc UniformPoolFrame::RequestBlock(vk::DeviceSize requested_size)
+			BufferSuballocation UniformPoolFrame::RequestBlock(vk::DeviceSize requested_size)
 			{
-				UniformBlockDesc block_desc{ *buffer, buffer->GetSize() - size_remain, requested_size };
-
+				BufferSuballocation suballocation{ *buffer, buffer->GetSize() - size_remain, requested_size };
 				expired_countdown = k_max_frames_idle;
 				size_remain -= requested_size;
-
-				return block_desc;
+				return suballocation;
 			}
 
 
@@ -93,7 +90,7 @@ namespace engine
 				}
 			}
 
-			UniformBlockDesc UniformPool::RequestBlock(vk::DeviceSize requested_size)
+			BufferSuballocation UniformPool::RequestBlock(vk::DeviceSize requested_size)
 			{
 				//minUniformBufferOffsetAlignment
 				vk::DeviceSize aligned_size = CalculateAlignedSize(requested_size, minimal_alignment);

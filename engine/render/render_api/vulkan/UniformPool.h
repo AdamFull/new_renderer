@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vulkan/vulkan.hpp>
+#include <base/Buffer.h>
 
 namespace engine
 {
@@ -8,16 +9,6 @@ namespace engine
 	{
 		namespace vulkan
 		{
-			class RenderDevice;
-			class Buffer;
-
-			struct UniformBlockDesc
-			{
-				Buffer& buffer;
-				vk::DeviceSize offset;
-				vk::DeviceSize size;
-			};
-
 			class UniformPoolFrame final
 			{
 			public:
@@ -33,7 +24,7 @@ namespace engine
 				bool IsExpired() const;
 				void Reset() const;
 				bool HasEnoughtSpace(vk::DeviceSize requested_size) const;
-				UniformBlockDesc RequestBlock(vk::DeviceSize requested_size);
+				BufferSuballocation RequestBlock(vk::DeviceSize requested_size);
 			private:
 				std::unique_ptr<Buffer> buffer;
 				mutable vk::DeviceSize size_remain{ 0ull };
@@ -54,7 +45,7 @@ namespace engine
 				UniformPool& operator=(UniformPool&&) = delete;
 
 				void Reset();
-				UniformBlockDesc RequestBlock(vk::DeviceSize requested_size);
+				BufferSuballocation RequestBlock(vk::DeviceSize requested_size);
 			private:
 				RenderDevice& render_device;
 

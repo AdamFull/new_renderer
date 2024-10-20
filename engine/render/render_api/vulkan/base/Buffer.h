@@ -77,6 +77,28 @@ namespace engine
 				vk::DeviceSize size{ 0ull };
 				vk::DeviceSize suballocation_count{ 0ull };
 			};
+
+			class BufferSuballocation final
+			{
+			public:
+				BufferSuballocation(Buffer& buffer, vk::DeviceSize offset, vk::DeviceSize size);
+				~BufferSuballocation() = default;
+
+				BufferSuballocation(const BufferSuballocation&) = delete;
+				BufferSuballocation(BufferSuballocation&& other);
+
+				BufferSuballocation& operator=(const BufferSuballocation&) = delete;
+				BufferSuballocation& operator=(BufferSuballocation&&) = delete;
+
+				vk::DescriptorBufferInfo GetDescriptor();
+
+				void Update(std::span<const char> data);
+				void Update(const char* data, vk::DeviceSize data_size);
+			private:
+				Buffer& buffer;
+				vk::DeviceSize size{ 0ull };
+				vk::DeviceSize offset{ 0ull };
+			};
 		}
 	}
 }
