@@ -4,7 +4,7 @@
 #include <base/Swapchain.h>
 #include <base/CommandPool.h>
 #include <VkRenderDevice.h>
-#include <base/DescriptorPool.h>
+#include <DescriptorAllocator.h>
 #include <base/Buffer.h>
 
 #include <engine/runtime/Window.h>

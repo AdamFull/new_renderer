@@ -5,7 +5,7 @@
 #include <base/ImageView.h>
 #include <Texture.h>
 #include <base/Buffer.h>
-#include <base/DescriptorPool.h>
+#include <DescriptorAllocator.h>
 
 namespace engine
 {
