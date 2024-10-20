@@ -3,6 +3,8 @@
 #include <engine/runtime/RuntimeContext.h>
 #include <util/Logger.h>
 
+#include <engine/runtime/InputManager.h>
+
 #ifdef CreateWindow
 #undef CreateWindow
 #endif
@@ -154,7 +156,8 @@ namespace engine
 	{
 		if (process_input_events && app)
 		{
-			app->OnInputEvent(input_event);
+			InputManager::DispatchInputEvent(input_event);
+			//app->OnInputEvent(input_event);
 		}
 
 		if (input_event.GetSource() == EventSource::Keyboard)

@@ -216,9 +216,13 @@ namespace engine
 	{
 		if (auto* runtime = reinterpret_cast<Runtime*>(glfwGetWindowUserPointer(window)))
 		{
+			int32_t width{}, height{};
+			glfwGetWindowSize(window, &width, &height);
+
 			runtime->OnInputEvent(MouseButtonInputEvent{
 				KeyCode::Unknown, MouseAction::Move,
-				static_cast<float>(xpos), static_cast<float>(ypos) });
+				static_cast<float>(xpos), static_cast<float>(ypos),
+				static_cast<float>(width), static_cast<float>(height) });
 		}
 	}
 
@@ -231,8 +235,12 @@ namespace engine
 			double xpos, ypos;
 			glfwGetCursorPos(window, &xpos, &ypos);
 
+			int32_t width{}, height{};
+			glfwGetWindowSize(window, &width, &height);
+
 			runtime->OnInputEvent(MouseButtonInputEvent{ TranslateMouseButton(button), mouse_action,
-				static_cast<float>(xpos), static_cast<float>(ypos) });
+				static_cast<float>(xpos), static_cast<float>(ypos),
+				static_cast<float>(width), static_cast<float>(height) });
 		}
 	}
 
@@ -242,7 +250,8 @@ namespace engine
 		{
 			runtime->OnInputEvent(MouseButtonInputEvent{
 				KeyCode::Unknown, MouseAction::Scroll,
-				static_cast<float>(xoffset), static_cast<float>(yoffset) });
+				static_cast<float>(xoffset), static_cast<float>(yoffset),
+				0.f, 0.f});
 		}
 	}
 	

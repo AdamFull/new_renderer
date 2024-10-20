@@ -22,17 +22,16 @@ namespace engine
 				CInputSystem();
 				virtual ~CInputSystem() override = default;
 
-				void OnInputEvent(const InputEvent& input_event) override;
-
 				void __Create() override;
 				void __Update(f32 fDt) override;
 
 			protected:
+				void OnAnyInput(const InputEvent& input_event);
 				void HandleKeyboardInput(const KeyInputEvent& input_event);
 				void HandleMouseInput(const MouseButtonInputEvent& input_event);
 				void HandleTouchInput(const TouchInputEvent& input_event);
 			private:
-				CKeyDecoder m_keyDecoder{};
+				CKeyDecoder key_decoder{};
 				f32 m_deltaTime{ 0.f };
 				f32 oldX{ 0.f }, oldY{ 0.f }, curX{ 0.f }, curY{ 0.f };
 

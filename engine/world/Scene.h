@@ -41,8 +41,6 @@ namespace engine
 			void MakeGenerateScene(const std::string& path);
 
 			void Update(f32 dt);
-
-			void OnInputEvent(const InputEvent& input_event);
 		protected:
 			void LoadGLTF(easygltf::FGLTFRoot& root);
 			void LoadNode(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index, f32 global_scale = 1.f);

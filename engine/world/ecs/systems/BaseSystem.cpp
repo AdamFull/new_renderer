@@ -15,8 +15,3 @@ void ISystem::Update(float dt)
 	__Update(dt);
 	m_updateTime = m_stopWatch.stop<float>();
 }
-
-void ISystem::OnInputEvent(const InputEvent& input_event)
-{
-
-}

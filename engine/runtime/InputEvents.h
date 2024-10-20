@@ -173,7 +173,7 @@ namespace engine
 	class MouseButtonInputEvent final : public InputEvent
 	{
 	public:
-		MouseButtonInputEvent(KeyCode button, MouseAction action, float value_x, float value_y);
+		MouseButtonInputEvent(KeyCode button, MouseAction action, float value_x, float value_y, float max_x, float max_y);
 
 		KeyCode GetButton() const;
 
@@ -182,12 +182,16 @@ namespace engine
 		float GetValueX() const;
 		float GetValueY() const;
 
+		float GetMaxX() const;
+		float GetMaxY() const;
+
 	private:
 		KeyCode button;
 
 		MouseAction action;
 
 		float value_x, value_y;
+		float max_x, max_y;
 	};
 
 	enum class TouchAction

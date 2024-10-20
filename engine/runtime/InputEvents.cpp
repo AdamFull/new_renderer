@@ -29,12 +29,14 @@ namespace engine
         return action;
     }
 
-    MouseButtonInputEvent::MouseButtonInputEvent(KeyCode button, MouseAction action, float value_x, float value_y) :
+    MouseButtonInputEvent::MouseButtonInputEvent(KeyCode button, MouseAction action, float value_x, float value_y, float max_x, float max_y) :
         InputEvent{ EventSource::Mouse },
         button{ button },
         action{ action },
         value_x{ value_x },
-        value_y{ value_y }
+        value_y{ value_y },
+        max_x{ max_x },
+        max_y{ max_y }
     {
     }
 
@@ -56,6 +58,16 @@ namespace engine
     float MouseButtonInputEvent::GetValueY() const
     {
         return value_y;
+    }
+
+    float MouseButtonInputEvent::GetMaxX() const
+    {
+        return max_x;
+    }
+
+    float MouseButtonInputEvent::GetMaxY() const
+    {
+        return max_y;
     }
 
     TouchInputEvent::TouchInputEvent(int32_t pointer_id, std::size_t touch_points, TouchAction action, float pos_x, float pos_y) :

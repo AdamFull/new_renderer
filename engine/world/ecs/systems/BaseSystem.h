@@ -17,8 +17,6 @@ namespace engine
 				virtual void Create();
 				void Update(f32 dt);
 
-				virtual void OnInputEvent(const InputEvent& input_event);
-
 			protected:
 				virtual void __Create() = 0;
 				virtual void __Update(f32 fDf) = 0;
