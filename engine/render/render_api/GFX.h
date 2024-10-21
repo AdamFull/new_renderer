@@ -3,6 +3,10 @@
 #include <memory>
 #include <GFXStructures.h>
 
+#ifdef CreateSemaphore
+#undef CreateSemaphore
+#endif
+
 namespace gfx
 {
 	class GFXResource
@@ -19,7 +23,8 @@ namespace gfx
 	public:
 		virtual ~Fence() = default;
 
-		virtual void Wait() = 0;
+		virtual void Wait(uint64_t timeout = std::numeric_limits<uint64_t>::max()) = 0;
+		virtual void Reset() = 0;
 	};
 
 	class Semaphore : public GFXResource
@@ -33,8 +38,8 @@ namespace gfx
 	public:
 		virtual ~Queue() = default;
 
-		virtual void Submit() = 0;
-		virtual void Present() = 0;
+		virtual void Submit(const SubmitInfo& submit_info, Fence* fence) = 0;
+		virtual void Present(const PresentInfo& present_info) = 0;
 		virtual void WaitIdle() = 0;
 	};
 
@@ -50,6 +55,11 @@ namespace gfx
 	{
 	public:
 		virtual ~Buffer() = default;
+
+		virtual uint64_t Update(const void* data, uint64_t size, uint64_t offset = 0ull) = 0;
+
+		virtual uint64_t GetSize() const = 0;
+		virtual uint64_t GetAddress() const = 0;
 	};
 
 	class CommandList : public GFXResource
@@ -179,7 +189,7 @@ namespace gfx
 		virtual void DestroyFence(Fence* fence) = 0;
 
 		virtual Semaphore* CreateSemaphore() = 0;
-		virtual void DestroyFence(Semaphore* semaphore) = 0;
+		virtual void DestroySemaphore(Semaphore* semaphore) = 0;
 
 		virtual Queue* RequestQueue(QueueTypeFlags queue_type_flags, uint32_t queue_index = 0u) = 0;
 
@@ -217,11 +227,13 @@ namespace gfx
 		virtual QueryPool* CreateQueryPool() = 0;
 		virtual void DestroyQueryPool(QueryPool* query_pool) = 0;
 
+		virtual void WaitForFences(uint32_t fence_count, Fence** fences) = 0;
+
 		virtual void RequestTimestampFrequency(double* frequency) = 0;
 		virtual void RequestMemoryUsage(uint64_t* total_memory, uint64_t* used_memory) = 0;
 		
 		virtual void SetResourceName(GFXResource* resource_handle, const char* name) = 0;
 	};
 
-	std::unique_ptr<GFXContext> CreateGFXContext(const char* app_name, RenderApi render_api = RenderApi::eAuto);
+	std::unique_ptr<GFXContext> CreateGFXContext(const GFXContextCreateInfo& create_info);
 }

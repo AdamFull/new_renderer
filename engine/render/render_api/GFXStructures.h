@@ -29,6 +29,39 @@ namespace gfx
 	class DescriptorSet;
 	class QueryPool;
 
+	struct GFXContextCreateInfo
+	{
+		RenderApi render_api{ RenderApi::eVulkan };
+		engine::Window* window{ nullptr };
+		const char* app_name{ nullptr };
+	};
+
+	struct SemaphoreSubmitInfo
+	{
+		Semaphore* semaphore{ nullptr };
+		uint64_t value{ 0ull };
+		StageFlags stage;
+	};
+
+	struct SubmitInfo
+	{
+		uint32_t wait_semaphore_count{ 0u };
+		SemaphoreSubmitInfo* wait_semaphore_infos{ nullptr };
+		uint32_t command_buffer_count{ 0u };
+		CommandList** command_listss{ nullptr };
+		uint32_t signal_semaphore_count{ 0u };
+		SemaphoreSubmitInfo* signal_semaphore_infos{ nullptr };
+	};
+
+	struct PresentInfo
+	{
+		uint32_t wait_semaphore_count{ 0u };
+		Semaphore** wait_semaphores{ nullptr };
+		uint32_t swapchain_count{ 0u };
+		Swapchain** swapchains{ nullptr };
+		const uint32_t* image_indices{ nullptr };
+	};
+
 	struct ShaderStageInfo
 	{
 		const char* entry_point{ nullptr };
@@ -112,4 +145,6 @@ namespace gfx
 		QueryType type{};
 		uint32_t query_count{};
 	};
+
+	uint32_t Hash(const SamplerCreateInfo& create_info);
 }
