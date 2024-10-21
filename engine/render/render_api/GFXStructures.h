@@ -1,5 +1,7 @@
 #pragma once
 
+#include <array>
+#include <span>
 #include <GFXEnums.h>
 
 namespace engine
@@ -18,14 +20,47 @@ namespace gfx
 	class CommandList;
 	class CommandPool;
 	class Texture;
-	class RenderTarget;
 	class Sampler;
 	class Shader;
 	class RootSignature;
 	class Pipeline;
 	class PipelineCache;
+	class DescriptorPool;
 	class DescriptorSet;
 	class QueryPool;
+
+	struct ShaderStageInfo
+	{
+		const char* entry_point{ nullptr };
+		std::span<uint8_t> code{};
+	};
+
+	struct ShaderCreateInfo
+	{
+		std::array<ShaderStageInfo, 6ull> shader_stages{};
+	};
+
+	struct RootSignatureCreateInfo
+	{
+
+	};
+
+	struct GraphicsPipelineCreateInfo
+	{
+		Shader* shader{ nullptr };
+		RootSignature* root_signature{ nullptr };
+	};
+
+	struct ComputePipelineCreateInfo
+	{
+		Shader* shader{ nullptr };
+		RootSignature* root_signature{ nullptr };
+	};
+
+	struct PipelineCacheCreateInfo
+	{
+		std::span<uint8_t> data{};
+	};
 
 	struct SwapChainCreateInfo
 	{
@@ -42,17 +77,17 @@ namespace gfx
 
 	struct BufferCreateInfo
 	{
-
+		BufferUsageFlags usage{};
+		size_t size{ 1ull };
+		size_t count{ 1ull };
 	};
 
 	struct TextureCreateInfo
 	{
+		TextureUsageFlags usage{};
 
-	};
-
-	struct RenderTargetCreateInfo
-	{
-
+		uint32_t width{};
+		uint32_t height{};
 	};
 
 	struct SamplerCreateInfo

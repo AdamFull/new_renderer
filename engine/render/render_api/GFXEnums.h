@@ -22,14 +22,24 @@ namespace gfx
 		eCommandList,
 		eCommandPool,
 		eTexture,
-		eRenderTarget,
 		eSampler,
 		eShader,
 		eRootSignature,
 		ePipeline,
 		ePipelineCache,
+		eDescriptorPool,
 		eDescriptorSet,
 		eQueryPool
+	};
+
+	enum class ShaderStage
+	{
+		eVertex,
+		eTesselationControl,
+		eTesselationEvaluation,
+		eGeometry,
+		eFragment,
+		eCompute
 	};
 
 	enum class QueueTypeFlag
@@ -83,4 +93,33 @@ namespace gfx
 		eOcclusion,
 		ePipelineStatistics
 	};
+
+	enum class BufferUsageFlag
+	{
+		eCopy = 1 << 0,
+		eStorage = 1 << 1,
+		eVertex = 1 << 2,
+		eIndex = 1 << 3,
+		eUniform = 1 << 4,
+		eIndirect = 1 << 5,
+		eGpuOnly = 1 << 6,
+		eCpuToGpu = 1 << 7,
+
+		eHasDeviceAddress = eVertex | eIndex | eStorage | eIndirect,
+
+		eStagingBuffer = eCopy,
+		eStorageBufferCPU = eCopy | eStorage | eCpuToGpu,
+		eStorageBuffer = eCopy | eStorage | eGpuOnly,
+		eVertexBuffer = eCopy | eVertex | eGpuOnly,
+		eIndexBuffer = eCopy | eIndex | eGpuOnly,
+		eUniformBuffer = eCopy | eUniform | eCpuToGpu,
+		eIndirectBuffer = eCopy | eStorage | eIndirect | eGpuOnly
+	};
+	UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(BufferUsageFlags, BufferUsageFlag);
+
+	enum class TextureUsageFlag
+	{
+
+	};
+	UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(TextureUsageFlags, TextureUsageFlag);
 }

@@ -111,12 +111,6 @@ namespace gfx
 		virtual ~Texture() = default;
 	};
 
-	class RenderTarget : public GFXResource
-	{
-	public:
-		virtual ~RenderTarget() = default;
-	};
-
 	class Sampler : public GFXResource
 	{
 	public:
@@ -158,6 +152,14 @@ namespace gfx
 		virtual void Update() = 0;
 	};
 
+	class DescriptorPool : public GFXResource
+	{
+	public:
+		virtual ~DescriptorPool() = default;
+
+		virtual DescriptorSet* Allocate() = 0;
+	};
+
 	class QueryPool : public GFXResource
 	{
 	public:
@@ -193,8 +195,21 @@ namespace gfx
 		virtual Texture* CreateTexture(const TextureCreateInfo& create_info) = 0;
 		virtual void DestroyTexture(Texture* texture) = 0;
 
-		virtual RenderTarget* CreateRenderTarget(const RenderTargetCreateInfo& create_info) = 0;
-		virtual void DestroyRenderTarget(RenderTarget* render_target) = 0;
+		virtual Shader* CreateShader(const ShaderCreateInfo& create_info) = 0;
+		virtual void DestroyShader(Shader* shader) = 0;
+
+		virtual RootSignature* CreateRootSignature(const RootSignatureCreateInfo& create_info) = 0;
+		virtual void DestroyRootSignature(RootSignature* root_signature) = 0;
+
+		virtual Pipeline* CreatePipeline(const GraphicsPipelineCreateInfo& create_info) = 0;
+		virtual Pipeline* CreatePipeline(const ComputePipelineCreateInfo& create_info) = 0;
+		virtual void DestroyPipeline(Pipeline* pipeline) = 0;
+
+		virtual PipelineCache* CreatePipelineCache(const PipelineCacheCreateInfo& create_info) = 0;
+		virtual void DestroyPipelineCache(PipelineCache* pipeline_cache) = 0;
+
+		virtual DescriptorPool* CreateDescriptorPool() = 0;
+		virtual void DestroyDescriptorPool(DescriptorPool* descriptor_pool) = 0;
 
 		virtual Sampler* CreateSampler(const SamplerCreateInfo& create_info) = 0;
 		virtual void DestroySampler(Sampler* sampler) = 0;
