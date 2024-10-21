@@ -183,16 +183,16 @@ namespace gfx
 			return gpu;
 		}
 
-		VulkanQueue const& Device::GetQueue(uint32_t queue_family_index, uint32_t queue_index) const
+		VulkanQueue& Device::GetQueue(uint32_t queue_family_index, uint32_t queue_index)
 		{
 			return queues[queue_family_index][queue_index];
 		}
 
-		VulkanQueue const& Device::GetQueueByFlags(vk::QueueFlags required_queue_flags, uint32_t queue_index) const
+		VulkanQueue& Device::GetQueueByFlags(vk::QueueFlags required_queue_flags, uint32_t queue_index)
 		{
 			for (size_t queue_family_index = 0U; queue_family_index < queues.size(); ++queue_family_index)
 			{
-				VulkanQueue const& first_queue = queues[queue_family_index][0];
+				VulkanQueue& first_queue = queues[queue_family_index][0];
 
 				vk::QueueFlags queue_flags = first_queue.GetProperties().queueFlags;
 				uint32_t queue_count = first_queue.GetProperties().queueCount;
@@ -206,11 +206,11 @@ namespace gfx
 			throw std::runtime_error("Queue not found");
 		}
 
-		VulkanQueue const& Device::GetQueueByPresent(uint32_t queue_index) const
+		VulkanQueue& Device::GetQueueByPresent(uint32_t queue_index)
 		{
 			for (uint32_t queue_family_index = 0U; queue_family_index < queues.size(); ++queue_family_index)
 			{
-				VulkanQueue const& first_queue = queues[queue_family_index][0];
+				VulkanQueue& first_queue = queues[queue_family_index][0];
 
 				uint32_t queue_count = first_queue.GetProperties().queueCount;
 
@@ -228,7 +228,7 @@ namespace gfx
 			return queues.size();
 		}
 
-		VulkanQueue const& Device::GetSuitableGraphicsQueue() const
+		VulkanQueue& Device::GetSuitableGraphicsQueue()
 		{
 			for (size_t queue_family_index = 0U; queue_family_index < queues.size(); ++queue_family_index)
 			{

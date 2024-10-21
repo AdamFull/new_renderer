@@ -48,7 +48,7 @@ namespace gfx
 		uint32_t wait_semaphore_count{ 0u };
 		SemaphoreSubmitInfo* wait_semaphore_infos{ nullptr };
 		uint32_t command_buffer_count{ 0u };
-		CommandList** command_listss{ nullptr };
+		CommandList** command_lists{ nullptr };
 		uint32_t signal_semaphore_count{ 0u };
 		SemaphoreSubmitInfo* signal_semaphore_infos{ nullptr };
 	};
