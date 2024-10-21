@@ -19,6 +19,8 @@
 #include <base/Device.h>
 #include <base/Allocator.h>
 
+#include <Config.h>
+
 #include <volk.h>
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
@@ -197,7 +199,7 @@ namespace engine
 #endif
 
 				// Apply required device extensions
-				device_extensions.insert(device_extensions.end(), context_ci.requiredDeviceExtensions.begin(), context_ci.requiredDeviceExtensions.end());
+				device_extensions.insert(device_extensions.end(), required_device_extensions, required_device_extensions + std::size(required_device_extensions));
 
 				// Pick best device from found on device
 				instance->SelectBestDevice(surface, device_extensions);
@@ -223,22 +225,7 @@ namespace engine
 
 				// Enable vk 1.0 features
 				auto& requested_features = physical_device.GetMutableRequestedFeatures();
-				requested_features.samplerAnisotropy = true;
-				requested_features.sampleRateShading = true;
-				requested_features.fillModeNonSolid = true;
-				requested_features.multiViewport = true;
-				requested_features.geometryShader = true;
-				requested_features.tessellationShader = true;
-				requested_features.fragmentStoresAndAtomics = true;
-				requested_features.logicOp = true;
-				requested_features.imageCubeArray = true;
-				requested_features.depthClamp = true;
-				requested_features.independentBlend = true;
-				requested_features.multiDrawIndirect = true;
-				requested_features.shaderInt16 = true;
-				requested_features.shaderStorageImageReadWithoutFormat = true;
-				requested_features.shaderStorageImageWriteWithoutFormat = true;
-				requested_features.shaderInt64 = true;
+				EnablePhysicalDeviceFeatures(requested_features);
 
 				device = std::make_unique<Device>(physical_device, surface, device_extensions);
 

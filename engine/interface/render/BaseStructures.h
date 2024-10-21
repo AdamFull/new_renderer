@@ -34,9 +34,6 @@ namespace engine
 
 			utl::vector<char> pipelineCache{};
 
-			utl::vector<const char*> requiredDeviceExtensions{};
-			utl::vector<const char*> optionalDeviceExtensions{};
-
 			u32 validationFeatures{ 0u };
 			utl::vector<const char*> requiredInstanceExtensions{};
 		};
