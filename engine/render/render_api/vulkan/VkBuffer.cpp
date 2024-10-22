@@ -89,27 +89,12 @@ namespace gfx
 
 		uint8_t* VulkanBuffer::Map()
 		{
-			if (!persistent && !IsMapped())
-			{
-				auto result = Handle(allocator).mapMemory(allocation, reinterpret_cast<void**>(&mapped_data));
-				if (result != vk::Result::eSuccess)
-				{
-					//throw VulkanException(result, "Failed to map memory.");
-					throw std::runtime_error("Failed to map memory.");
-				}
-
-				assert(mapped_data);
-			}
-			return mapped_data;
+			return MapMemory();
 		}
 
 		void VulkanBuffer::Unmap()
 		{
-			if (!persistent && IsMapped())
-			{
-				Handle(allocator).unmapMemory(allocation);
-				mapped_data = nullptr;
-			}
+			UnmapMemory();
 		}
 
 		uint64_t VulkanBuffer::Update(const void* data, uint64_t size, uint64_t offset)
@@ -121,10 +106,10 @@ namespace gfx
 			}
 			else
 			{
-				Map();
+				MapMemory();
 				engine::util::Copy(mapped_data, offset, data, size, 0ull, std::execution::par);
 				Flush();
-				Unmap();
+				UnmapMemory();
 			}
 			return size;
 		}

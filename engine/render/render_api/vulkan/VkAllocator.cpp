@@ -12,7 +12,7 @@ namespace gfx
 	namespace vulkan
 	{
 		Allocator::Allocator(Device& device) :
-			VulkanResource{ nullptr, nullptr },
+			VulkanResource{ nullptr, device.GetAllocationCallbacks() },
 			device{ device }
 		{
 			vma::VulkanFunctions vma_vulkan_func{};
@@ -26,7 +26,7 @@ namespace gfx
 			allocator_info.physicalDevice = Handle(physical);
 			allocator_info.device = Handle(device);
 			allocator_info.instance = Handle(physical.GetInstance());
-			//allocator_info.pAllocationCallbacks = device.GetAllocationCallbacks();
+			allocator_info.pAllocationCallbacks = allocation_callbacks;
 
 			bool can_get_memory_requirements = device.IsExtensionSupported(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
 			bool has_dedicated_allocation = device.IsExtensionSupported(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
@@ -100,6 +100,7 @@ namespace gfx
 		{
 			if (buffer && allocation)
 			{
+				allocation.UnmapMemory();
 				handle.destroyBuffer(buffer, allocation.allocation);
 				allocation.Clear();
 			}
@@ -145,6 +146,7 @@ namespace gfx
 		{
 			if (image && allocation)
 			{
+				allocation.UnmapMemory();
 				handle.destroyImage(image, allocation.allocation);
 				allocation.Clear();
 			}
@@ -198,6 +200,31 @@ namespace gfx
 		bool Allocation::IsMapped() const
 		{
 			return mapped_data != nullptr;
+		}
+
+		uint8_t* Allocation::MapMemory()
+		{
+			if (!persistent && !IsMapped())
+			{
+				auto result = Handle(allocator).mapMemory(allocation, reinterpret_cast<void**>(&mapped_data));
+				if (result != vk::Result::eSuccess)
+				{
+					//throw VulkanException(result, "Failed to map memory.");
+					throw std::runtime_error("Failed to map memory.");
+				}
+
+				assert(mapped_data);
+			}
+			return mapped_data;
+		}
+
+		void Allocation::UnmapMemory()
+		{
+			if (!persistent && IsMapped())
+			{
+				Handle(allocator).unmapMemory(allocation);
+				mapped_data = nullptr;
+			}
 		}
 
 		void Allocation::Clear()
