@@ -32,15 +32,17 @@ namespace gfx
 		eQueryPool
 	};
 
-	enum class ShaderStage
+	enum class ShaderStageFlag
 	{
-		eVertex,
-		eTesselationControl,
-		eTesselationEvaluation,
-		eGeometry,
-		eFragment,
-		eCompute
+		eVertex = 1 << 0,
+		eTessellationControl = 1 << 1,
+		eTessellationEvaluation = 1 << 2,
+		eGeometry = 1 << 3,
+		eFragment = 1 << 4,
+		eCompute = 1 << 5,
+		eAllGraphics = eVertex | eTessellationControl | eTessellationEvaluation | eGeometry | eFragment
 	};
+	UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ShaderStageFlags, ShaderStageFlag);
 
 	enum class IndexType
 	{
@@ -170,4 +172,25 @@ namespace gfx
 		eRenderTarget = 1 << 4
 	};
 	UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(TextureUsageFlags, TextureUsageFlag);
+
+	enum class PipelineType
+	{
+		eCompute,
+		eGraphics
+	};
+
+	enum class DescriptorType
+	{
+		eSampler,
+		eCombinedImageSampler,
+		eSampledImage,
+		eStorageImage,
+		eUniformTexelBuffer,
+		eStorageTexelBuffer,
+		eUniformBuffer,
+		eStorageBuffer,
+		eUniformBufferDynamic,
+		eStorageBufferDynamic,
+		eInputAttachment,
+	};
 }

@@ -192,6 +192,9 @@ namespace gfx
 		{
 			return ResourceType::eShader;
 		}
+
+	protected:
+		ShaderReflection reflection{};
 	};
 
 	class RootSignature : public GFXResource
@@ -214,6 +217,8 @@ namespace gfx
 		{
 			return ResourceType::ePipeline;
 		}
+
+		virtual PipelineType GetType() const = 0;
 	};
 
 	class PipelineCache : public GFXResource

@@ -1,0 +1,46 @@
+#pragma once
+
+#include <GFXBase.h>
+#include <VkResource.h>
+
+namespace gfx
+{
+	namespace vulkan
+	{
+		class Device;
+
+		class ShaderModule final : public VulkanResource<vk::ShaderModule>
+		{
+		public:
+			ShaderModule(Device& device, const ShaderStageInfo& create_info);
+			~ShaderModule();
+
+			ShaderModule(ShaderModule&& other) = delete;
+			ShaderModule(const ShaderModule&) = delete;
+			ShaderModule& operator=(const ShaderModule&) = delete;
+			ShaderModule& operator=(ShaderModule&&) = delete;
+		private:
+			Device& device;
+
+			char entry_point_name[255];
+			vk::PipelineShaderStageCreateInfo stage_create_info{};
+		};
+
+		class VulkanShader final : public Shader
+		{
+		public:
+			VulkanShader(Device& device, const ShaderCreateInfo& create_info);
+			VulkanShader(VulkanShader&& other);
+			~VulkanShader() = default;
+
+			VulkanShader(const VulkanShader&) = delete;
+			VulkanShader& operator=(const VulkanShader&) = delete;
+			VulkanShader& operator=(VulkanShader&&) = delete;
+		private:
+			void AddReflectionStage(const ShaderStageInfo& create_info);
+		private:
+			std::array<std::unique_ptr<ShaderModule>, 6ull> shader_modules{};
+			uint32_t shader_module_count{ 0u };
+		};
+	}
+}

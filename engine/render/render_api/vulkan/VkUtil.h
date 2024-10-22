@@ -7,20 +7,42 @@ namespace gfx
 {
 	namespace vulkan
 	{
-        inline vk::ShaderStageFlagBits ShaderStageToVk(ShaderStage flags)
+		inline vk::ShaderStageFlags ShaderStageFlagsToVk(ShaderStageFlags flags)
+		{
+			vk::ShaderStageFlags stage_flags{};
+
+			if (flags & ShaderStageFlag::eVertex)
+				stage_flags |= vk::ShaderStageFlagBits::eVertex;
+			if (flags & ShaderStageFlag::eTessellationControl)
+				stage_flags |= vk::ShaderStageFlagBits::eTessellationControl;
+			if (flags & ShaderStageFlag::eTessellationEvaluation)
+				stage_flags |= vk::ShaderStageFlagBits::eTessellationEvaluation;
+			if (flags & ShaderStageFlag::eGeometry)
+				stage_flags |= vk::ShaderStageFlagBits::eGeometry;
+			if (flags & ShaderStageFlag::eFragment)
+				stage_flags |= vk::ShaderStageFlagBits::eFragment;
+			if (flags & ShaderStageFlag::eCompute)
+				stage_flags |= vk::ShaderStageFlagBits::eCompute;
+
+			return stage_flags;
+		}
+
+        inline vk::ShaderStageFlagBits ShaderStageFlagToVk(ShaderStageFlag flag)
         {
-            if (flags == ShaderStage::eVertex)
-                return vk::ShaderStageFlagBits::eVertex;
-            else if (flags == ShaderStage::eTesselationControl)
-                return vk::ShaderStageFlagBits::eTessellationControl;
-            else if (flags == ShaderStage::eTesselationEvaluation)
-                return vk::ShaderStageFlagBits::eTessellationEvaluation;
-            else if (flags == ShaderStage::eGeometry)
-                return vk::ShaderStageFlagBits::eGeometry;
-            else if (flags == ShaderStage::eFragment)
-                return vk::ShaderStageFlagBits::eFragment;
-            else if (flags == ShaderStage::eCompute)
-                return vk::ShaderStageFlagBits::eCompute;
+			if (flag == ShaderStageFlag::eVertex)
+				return vk::ShaderStageFlagBits::eVertex;
+			if (flag == ShaderStageFlag::eTessellationControl)
+				return vk::ShaderStageFlagBits::eTessellationControl;
+			if (flag == ShaderStageFlag::eTessellationEvaluation)
+				return vk::ShaderStageFlagBits::eTessellationEvaluation;
+			if (flag == ShaderStageFlag::eGeometry)
+				return vk::ShaderStageFlagBits::eGeometry;
+			if (flag == ShaderStageFlag::eFragment)
+				return vk::ShaderStageFlagBits::eFragment;
+			if (flag == ShaderStageFlag::eCompute)
+				return vk::ShaderStageFlagBits::eCompute;
+
+			return vk::ShaderStageFlagBits::eAll;
         }
 
 		inline vk::PipelineStageFlags2KHR StageFlagsToVk(StageFlags flags)
