@@ -165,8 +165,8 @@ namespace gfx
 		}
 
 
-		Allocation::Allocation(Allocator& allocator, const vma::AllocationCreateInfo& create_info) :
-			allocator{ allocator }, alloc_create_info{ create_info }
+		Allocation::Allocation(Allocator& allocator) :
+			allocator{ allocator }
 		{
 		}
 

@@ -12,7 +12,7 @@ namespace gfx
 		class VulkanPipelineCache : public PipelineCache, public VulkanResource<vk::PipelineCache>
 		{
 		public:
-			VulkanPipelineCache(Device& device, vk::AllocationCallbacks* allocation_callbacks, const vk::PipelineCacheCreateInfo& create_info);
+			VulkanPipelineCache(Device& device, const PipelineCacheCreateInfo& create_info);
 			~VulkanPipelineCache();
 
 			VulkanPipelineCache(VulkanPipelineCache&) = delete;

@@ -119,9 +119,12 @@ namespace gfx
 	{
 		TextureUsageFlags usage{};
 
-		uint32_t width{};
-		uint32_t height{};
+		uint32_t width{ 1u };
+		uint32_t height{ 1u };
+		uint32_t depth{ 1u };
 
+		uint32_t layers{ 1u };
+		uint32_t levels{ 1u };
 
 	};
 

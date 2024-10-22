@@ -6,6 +6,7 @@
 #include <VkSampler.h>
 #include <VkPipelineCache.h>
 #include <VkCommandPool.h>
+#include <VkQueryPool.h>
 
 #ifdef CreateSemaphore
 #undef CreateSemaphore
@@ -67,7 +68,7 @@ namespace gfx
 			Sampler* CreateSampler(const SamplerCreateInfo& create_info) override;
 			void DestroySampler(Sampler* sampler) override;
 
-			QueryPool* CreateQueryPool() override;
+			QueryPool* CreateQueryPool(const QueryPoolCreateInfo& create_info) override;
 			void DestroyQueryPool(QueryPool* query_pool) override;
 
 			void WaitForFences(uint32_t fence_count, Fence** fences, uint64_t timeout = std::numeric_limits<uint64_t>::max()) override;
@@ -111,6 +112,7 @@ namespace gfx
 			std::vector<std::unique_ptr<VulkanSampler>> samplers{};
 			std::vector<std::unique_ptr<VulkanPipelineCache>> pipeline_caches{};
 			std::vector<std::unique_ptr<VulkanCommandPool>> command_pools{};
+			std::vector<std::unique_ptr<VulkanQueryPool>> query_pools{};
 		};
 	}
 }

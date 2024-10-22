@@ -163,7 +163,11 @@ namespace gfx
 
 	enum class TextureUsageFlag
 	{
-
+		eCubemap = 1 << 0,
+		eTransferable = 1 << 1,
+		eSamplable = 1 << 2,
+		eStorage = 1 << 3,
+		eRenderTarget = 1 << 4
 	};
 	UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(TextureUsageFlags, TextureUsageFlag);
 }

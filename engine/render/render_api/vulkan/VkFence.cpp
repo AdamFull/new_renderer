@@ -5,8 +5,8 @@ namespace gfx
 {
 	namespace vulkan
 	{
-		VulkanFence::VulkanFence(Device& device, vk::AllocationCallbacks* allocation_callbacks) :
-			VulkanResource{ nullptr, allocation_callbacks },
+		VulkanFence::VulkanFence(Device& device) :
+			VulkanResource{ nullptr, device.GetAllocationCallbacks() },
 			device{ device }
 		{
 			vk::FenceCreateInfo create_info{};

@@ -264,6 +264,12 @@ namespace gfx
 			return *this;
 		}
 
+		InstanceBuilder& InstanceBuilder::SetAllocationCallbacks(vk::AllocationCallbacks* allocation_callbacks)
+		{
+			this->allocation_callbacks = allocation_callbacks;
+			return *this;
+		}
+
 
 		Instance InstanceBuilder::Build()
 		{
@@ -279,7 +285,7 @@ namespace gfx
 
 
 		Instance::Instance(const InstanceBuilder& builder) :
-			VulkanResource{ nullptr, nullptr },
+			VulkanResource{ nullptr, builder.allocation_callbacks },
 			api_version{ builder.api_version },
 			selected_gpu_index{ -1 }
 		{

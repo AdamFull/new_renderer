@@ -31,6 +31,8 @@ namespace gfx
 
 			std::vector<vk::LayerSettingEXT> layer_settings;
 
+			vk::AllocationCallbacks* allocation_callbacks{ nullptr };
+
 			bool headless;
 
 			InstanceBuilder();
@@ -61,6 +63,7 @@ namespace gfx
 			InstanceBuilder& AddLayerSetting(vk::LayerSettingEXT layer_setting);
 
 			InstanceBuilder& SetHeadless(bool headless);
+			InstanceBuilder& SetAllocationCallbacks(vk::AllocationCallbacks* allocation_callbacks);
 
 			Instance Build();
 			std::unique_ptr<Instance> BuildUnique();

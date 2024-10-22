@@ -39,7 +39,7 @@ namespace gfx
 		public:
 			friend class Allocator;
 
-			Allocation(Allocator& allocator, const vma::AllocationCreateInfo& create_info);
+			Allocation(Allocator& allocator);
 
 			Allocation(Allocation const&) = delete;
 			Allocation(Allocation&& other) noexcept;

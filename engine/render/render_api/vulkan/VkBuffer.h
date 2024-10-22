@@ -17,7 +17,7 @@ namespace gfx
 			VulkanBuffer& operator=(const VulkanBuffer&) = delete;
 			VulkanBuffer& operator=(VulkanBuffer&&) = default;
 
-			VulkanBuffer(Allocator& allocator, const vk::BufferCreateInfo& buffer_create_info, const vma::AllocationCreateInfo& allocation_create_info);
+			VulkanBuffer(Allocator& allocator, const BufferCreateInfo& create_info);
 			~VulkanBuffer();
 
 			/**

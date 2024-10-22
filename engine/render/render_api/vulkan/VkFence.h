@@ -12,7 +12,7 @@ namespace gfx
 		class VulkanFence : public Fence, public VulkanResource<vk::Fence>
 		{
 		public:
-			VulkanFence(Device& device, vk::AllocationCallbacks* allocation_callbacks);
+			VulkanFence(Device& device);
 			~VulkanFence();
 
 			void Wait(uint64_t timeout = std::numeric_limits<uint64_t>::max()) override;

@@ -19,6 +19,13 @@ namespace gfx
 {
 	namespace vulkan
 	{
+		template<typename _Ty, typename _KTy>
+		void RemoveHandle(std::vector<_Ty>& handles, _KTy* handle)
+		{
+			auto to_delete = std::remove_if(handles.begin(), handles.end(), [handle](const std::unique_ptr<_Ty>& h) { return h.get() == handle; });
+			handles.erase(to_delete);
+		}
+
 		VkGFXContext::VkGFXContext(const GFXContextCreateInfo& create_info)
 		{
 			// Register dispatcher
@@ -123,7 +130,7 @@ namespace gfx
 			auto& requested_features = physical_device.GetMutableRequestedFeatures();
 			EnablePhysicalDeviceFeatures(requested_features);
 
-			device = std::make_unique<Device>(physical_device, surface, allocation_callbacks, device_extensions);
+			device = std::make_unique<Device>(physical_device, surface, device_extensions);
 
 			// Create debug utils
 			if (instance->IsEnabled(VK_EXT_DEBUG_UTILS_EXTENSION_NAME))
@@ -155,7 +162,7 @@ namespace gfx
 
 		Fence* VkGFXContext::CreateFence()
 		{
-			auto& new_fence = fences.emplace_back(std::make_unique<VulkanFence>(*device, allocation_callbacks));
+			auto& new_fence = fences.emplace_back(std::make_unique<VulkanFence>(*device));
 			return new_fence.get();
 		}
 
@@ -167,7 +174,7 @@ namespace gfx
 
 		Semaphore* VkGFXContext::CreateSemaphore()
 		{
-			auto& new_semaphore = semaphores.emplace_back(std::make_unique<VulkanSemaphore>(*device, allocation_callbacks));
+			auto& new_semaphore = semaphores.emplace_back(std::make_unique<VulkanSemaphore>(*device));
 			return new_semaphore.get();
 		}
 
@@ -232,71 +239,7 @@ namespace gfx
 
 		Buffer* VkGFXContext::CreateBuffer(const BufferCreateInfo& create_info)
 		{
-			uint64_t minimal_alignment{ 1ull };
-			vma::AllocationCreateInfo allocation_create_info{};
-			vk::BufferCreateInfo buffer_create_info{};
-
-			auto& physical = instance->GetBestDevice();
-			auto& properties = physical.GetProperties();
-
-			if (create_info.usage & BufferUsageFlag::eCopy)
-			{
-				buffer_create_info.usage |= vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
-			}
-
-			if (create_info.usage & BufferUsageFlag::eVertex)
-			{
-				buffer_create_info.usage |= vk::BufferUsageFlagBits::eVertexBuffer;
-				minimal_alignment = std::max(minimal_alignment, 16ull);
-			}
-
-			if (create_info.usage & BufferUsageFlag::eIndex)
-			{
-				buffer_create_info.usage |= vk::BufferUsageFlagBits::eIndexBuffer;
-				minimal_alignment = std::max(minimal_alignment, 4ull);
-			}
-
-			if (create_info.usage & BufferUsageFlag::eUniform)
-			{
-				buffer_create_info.usage |= vk::BufferUsageFlagBits::eUniformBuffer;
-				minimal_alignment = std::lcm(properties.limits.minUniformBufferOffsetAlignment, properties.limits.nonCoherentAtomSize);
-			}
-
-			if (create_info.usage & BufferUsageFlag::eStorage)
-			{
-				buffer_create_info.usage |= vk::BufferUsageFlagBits::eStorageBuffer;
-				minimal_alignment = std::max(minimal_alignment, properties.limits.minStorageBufferOffsetAlignment);
-			}
-
-			if (create_info.usage & BufferUsageFlag::eIndirect)
-			{
-				buffer_create_info.usage |= vk::BufferUsageFlagBits::eIndirectBuffer;
-			}
-
-			if (create_info.usage & BufferUsageFlag::eHasDeviceAddress)
-			{
-				buffer_create_info.usage |= vk::BufferUsageFlagBits::eShaderDeviceAddressKHR;
-			}
-
-			if (create_info.usage & BufferUsageFlag::eGpuOnly)
-				allocation_create_info.usage = vma::MemoryUsage::eGpuOnly;
-			else if (create_info.usage & BufferUsageFlag::eCpuToGpu)
-				allocation_create_info.usage = vma::MemoryUsage::eCpuToGpu;
-			else
-				allocation_create_info.usage = vma::MemoryUsage::eCpuOnly;
-
-			buffer_create_info.size = CalculateAlignedSize(create_info.size, minimal_alignment) * create_info.count;
-
-			buffer_create_info.sharingMode = vk::SharingMode::eConcurrent;
-
-			auto family_count = device->GetQueueCount();
-
-			std::array<uint32_t, 8u> queue_families{};
-			std::iota(queue_families.begin(), queue_families.begin() + family_count, 0u);
-			buffer_create_info.queueFamilyIndexCount = family_count;
-			buffer_create_info.pQueueFamilyIndices = &queue_families[0];
-			
-			auto& new_buffer = buffers.emplace_back(std::make_unique<VulkanBuffer>(*allocator, buffer_create_info, allocation_create_info));
+			auto& new_buffer = buffers.emplace_back(std::make_unique<VulkanBuffer>(*allocator, create_info));
 			return new_buffer.get();
 		}
 
@@ -358,11 +301,7 @@ namespace gfx
 
 		PipelineCache* VkGFXContext::CreatePipelineCache(const PipelineCacheCreateInfo& create_info)
 		{
-			vk::PipelineCacheCreateInfo vk_create_info{};
-			vk_create_info.pInitialData = create_info.data.data();
-			vk_create_info.initialDataSize = create_info.data.size();
-
-			auto& new_pipeline_cache = pipeline_caches.emplace_back(std::make_unique<VulkanPipelineCache>(*device, allocation_callbacks, vk_create_info));
+			auto& new_pipeline_cache = pipeline_caches.emplace_back(std::make_unique<VulkanPipelineCache>(*device, create_info));
 			return new_pipeline_cache.get();
 		}
 
@@ -385,26 +324,7 @@ namespace gfx
 
 		Sampler* VkGFXContext::CreateSampler(const SamplerCreateInfo& create_info)
 		{
-			vk::SamplerCreateInfo vk_create_info{};
-			vk_create_info.minFilter = FilterToVk(create_info.min_filter);
-			vk_create_info.magFilter = FilterToVk(create_info.mag_filter);
-			vk_create_info.mipmapMode = MipmapModeToVk(create_info.mip_map_mode);
-			vk_create_info.addressModeU = AddressModeToVk(create_info.address_u);
-			vk_create_info.addressModeV = AddressModeToVk(create_info.address_v);
-			vk_create_info.addressModeW = AddressModeToVk(create_info.address_w);
-			vk_create_info.mipLodBias = create_info.mip_lod_bias;
-			vk_create_info.minLod = create_info.min_lod;
-			vk_create_info.maxLod = create_info.max_lod;
-			vk_create_info.anisotropyEnable = create_info.max_anisotropy > 0.f;
-
-			auto& physical = instance->GetBestDevice();
-			auto& properties = physical.GetProperties();
-			vk_create_info.maxAnisotropy = std::min(create_info.max_anisotropy, properties.limits.maxSamplerAnisotropy);
-
-			vk_create_info.compareEnable = create_info.depth_compare != CompareOp::eNone;
-			vk_create_info.compareOp = CompareOpToVk(create_info.depth_compare);
-
-			auto& new_sampler = samplers.emplace_back(std::make_unique<VulkanSampler>(*device, allocation_callbacks, vk_create_info));
+			auto& new_sampler = samplers.emplace_back(std::make_unique<VulkanSampler>(*device, create_info));
 			return new_sampler.get();
 		}
 
@@ -414,14 +334,16 @@ namespace gfx
 			samplers.erase(to_delete);
 		}
 
-		QueryPool* VkGFXContext::CreateQueryPool()
+		QueryPool* VkGFXContext::CreateQueryPool(const QueryPoolCreateInfo& create_info)
 		{
-			return nullptr;
+			auto& new_query_pool = query_pools.emplace_back(std::make_unique<VulkanQueryPool>(*device, create_info));
+			return new_query_pool.get();
 		}
 
 		void VkGFXContext::DestroyQueryPool(QueryPool* query_pool)
 		{
-			assert(false && "NOT IMPLEMENTED");
+			auto to_delete = std::remove_if(query_pools.begin(), query_pools.end(), [query_pool](const std::unique_ptr<VulkanQueryPool>& h) { return h.get() == query_pool; });
+			query_pools.erase(to_delete);
 		}
 
 		void VkGFXContext::WaitForFences(uint32_t fence_count, Fence** fences_array, uint64_t timeout)
@@ -474,40 +396,44 @@ namespace gfx
 			{
 			case ResourceType::eFence: 
 			{
-				auto* fence = static_cast<VulkanFence*>(resource_handle);
-				debug_utils->SetDebugName(fence->GetHandle(), name);
+				auto* handle = static_cast<VulkanFence*>(resource_handle);
+				debug_utils->SetDebugName(handle->GetHandle(), name);
 			} break;
 			case ResourceType::eSemaphore: 
 			{
-				auto* semaphore = static_cast<VulkanSemaphore*>(resource_handle);
-				debug_utils->SetDebugName(semaphore->GetHandle(), name);
+				auto* handle = static_cast<VulkanSemaphore*>(resource_handle);
+				debug_utils->SetDebugName(handle->GetHandle(), name);
 			} break;
 			case ResourceType::eQueue: 
 			{
-				auto* queue = static_cast<VulkanQueue*>(resource_handle);
-				debug_utils->SetDebugName(queue->GetHandle(), name);
+				auto* handle = static_cast<VulkanQueue*>(resource_handle);
+				debug_utils->SetDebugName(handle->GetHandle(), name);
 			} break;
 			case ResourceType::eSwapchain:
 			{
 			} break;
 			case ResourceType::eBuffer:
 			{
-				auto* buffer = static_cast<VulkanBuffer*>(resource_handle);
-				debug_utils->SetDebugName(buffer->GetHandle(), name);
+				auto* handle = static_cast<VulkanBuffer*>(resource_handle);
+				debug_utils->SetDebugName(handle->GetHandle(), name);
 			} break;
 			case ResourceType::eCommandList:
 			{
+				auto* handle = static_cast<VulkanCommandList*>(resource_handle);
+				debug_utils->SetDebugName(handle->GetHandle(), name);
 			} break;
 			case ResourceType::eCommandPool:
 			{
+				auto* handle = static_cast<VulkanCommandPool*>(resource_handle);
+				debug_utils->SetDebugName(handle->GetHandle(), name);
 			} break;
 			case ResourceType::eTexture:
 			{
 			} break;
 			case ResourceType::eSampler:
 			{
-				auto* sampler = static_cast<VulkanSampler*>(resource_handle);
-				debug_utils->SetDebugName(sampler->GetHandle(), name);
+				auto* handle = static_cast<VulkanSampler*>(resource_handle);
+				debug_utils->SetDebugName(handle->GetHandle(), name);
 			} break;
 			case ResourceType::eShader:
 			{
@@ -520,8 +446,8 @@ namespace gfx
 			} break;
 			case ResourceType::ePipelineCache:
 			{
-				auto* pipeline_cache = static_cast<VulkanPipelineCache*>(resource_handle);
-				debug_utils->SetDebugName(pipeline_cache->GetHandle(), name);
+				auto* handle = static_cast<VulkanPipelineCache*>(resource_handle);
+				debug_utils->SetDebugName(handle->GetHandle(), name);
 			} break;
 			case ResourceType::eDescriptorPool:
 			{
@@ -531,6 +457,8 @@ namespace gfx
 			} break;
 			case ResourceType::eQueryPool:
 			{
+				auto* handle = static_cast<VulkanQueryPool*>(resource_handle);
+				debug_utils->SetDebugName(handle->GetHandle(), name);
 			} break;
 			default:
 				assert(false && "Unknown resource type");

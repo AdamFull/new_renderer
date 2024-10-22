@@ -21,7 +21,7 @@ namespace gfx
 			 * @param debug_utils The debug utils to be associated to this device
 			 * @param requested_extensions (Optional) List of required device extensions and whether support is optional or not
 			 */
-			Device(PhysicalDevice& gpu, vk::SurfaceKHR surface, vk::AllocationCallbacks* allocation_callbacks, std::vector<const char*> requested_extensions = {});
+			Device(PhysicalDevice& gpu, vk::SurfaceKHR surface, std::vector<const char*> requested_extensions = {});
 
 			Device(const Device&) = delete;
 			Device(Device&&) = delete;

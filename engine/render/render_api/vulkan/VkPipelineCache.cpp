@@ -5,11 +5,15 @@ namespace gfx
 {
 	namespace vulkan
 	{
-		VulkanPipelineCache::VulkanPipelineCache(Device& device, vk::AllocationCallbacks* allocation_callbacks, const vk::PipelineCacheCreateInfo& create_info) :
-			VulkanResource{ nullptr, allocation_callbacks },
+		VulkanPipelineCache::VulkanPipelineCache(Device& device, const PipelineCacheCreateInfo& create_info) :
+			VulkanResource{ nullptr, device.GetAllocationCallbacks() },
 			device{ device }
 		{
-			vk::Result result = Handle(device).createPipelineCache(&create_info, allocation_callbacks, &handle);
+			vk::PipelineCacheCreateInfo vk_create_info{};
+			vk_create_info.pInitialData = create_info.data.data();
+			vk_create_info.initialDataSize = create_info.data.size();
+
+			vk::Result result = Handle(device).createPipelineCache(&vk_create_info, allocation_callbacks, &handle);
 		}
 
 		VulkanPipelineCache::~VulkanPipelineCache()

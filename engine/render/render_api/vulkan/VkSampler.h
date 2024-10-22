@@ -12,7 +12,7 @@ namespace gfx
 		class VulkanSampler : public Sampler, public VulkanResource<vk::Sampler>
 		{
 		public:
-			VulkanSampler(Device& device, vk::AllocationCallbacks* allocation_callbacks, const vk::SamplerCreateInfo& create_info);
+			VulkanSampler(Device& device, const SamplerCreateInfo& create_info);
 			~VulkanSampler();
 
 			VulkanSampler(VulkanSampler&) = delete;

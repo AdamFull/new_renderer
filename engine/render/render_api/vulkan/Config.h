@@ -8,7 +8,7 @@ namespace gfx
 	{
 		const char* required_instance_extensions[]
 		{
-			""
+			VK_KHR_SURFACE_EXTENSION_NAME
 		};
 
 		const char* required_device_extensions[] =

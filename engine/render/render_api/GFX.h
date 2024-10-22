@@ -259,8 +259,9 @@ namespace gfx
 			return ResourceType::eQueryPool;
 		}
 
-		virtual void Reset(uint32_t start_query, uint32_t query_count) = 0;
+		virtual void Reset(uint32_t start_query, uint32_t query_count = 0u) = 0;
 		virtual void GetData(uint32_t query_index, void* data) = 0;
+		virtual void GetData(uint64_t first_query, uint32_t query_count, void* data) = 0;
 	};
 
 	// TODO: may be return pointers here and add release function also
@@ -308,7 +309,7 @@ namespace gfx
 		virtual Sampler* CreateSampler(const SamplerCreateInfo& create_info) = 0;
 		virtual void DestroySampler(Sampler* sampler) = 0;
 
-		virtual QueryPool* CreateQueryPool() = 0;
+		virtual QueryPool* CreateQueryPool(const QueryPoolCreateInfo& create_info) = 0;
 		virtual void DestroyQueryPool(QueryPool* query_pool) = 0;
 
 		virtual void WaitForFences(uint32_t fence_count, Fence** fences, uint64_t timeout = std::numeric_limits<uint64_t>::max()) = 0;

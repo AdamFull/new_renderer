@@ -9,8 +9,8 @@ namespace gfx
 {
 	namespace vulkan
 	{
-		Device::Device(PhysicalDevice& gpu, vk::SurfaceKHR surface, vk::AllocationCallbacks* allocation_callbacks, std::vector<const char*> requested_extensions) :
-			VulkanResource{ nullptr, allocation_callbacks },
+		Device::Device(PhysicalDevice& gpu, vk::SurfaceKHR surface, std::vector<const char*> requested_extensions) :
+			VulkanResource{ nullptr, gpu.GetAllocationCallbacks() },
 			gpu(gpu)
 		{
 			// Prepare the device queues

@@ -12,7 +12,7 @@ namespace gfx
 		class VulkanSemaphore : public Semaphore, public VulkanResource<vk::Semaphore>
 		{
 		public:
-			VulkanSemaphore(Device& device, vk::AllocationCallbacks* allocation_callbacks);
+			VulkanSemaphore(Device& device);
 			~VulkanSemaphore();
 
 			VulkanSemaphore(const VulkanSemaphore&) = delete;

@@ -9,7 +9,7 @@ namespace gfx
 	{
 		PhysicalDevice::PhysicalDevice(Instance& instance, vk::PhysicalDevice physical_device) :
 			instance{ instance },
-			VulkanResource{ physical_device, nullptr }
+			VulkanResource{ physical_device, instance.GetAllocationCallbacks() }
 		{
 			features = physical_device.getFeatures();
 			properties = physical_device.getProperties();
