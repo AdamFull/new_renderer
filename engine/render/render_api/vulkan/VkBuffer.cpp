@@ -22,6 +22,31 @@ namespace gfx
 			allocator.DestroyBuffer(*this, handle);
 		}
 
+		uint8_t* VulkanBuffer::Map()
+		{
+			if (!persistent && !IsMapped())
+			{
+				auto result = Handle(allocator).mapMemory(allocation, reinterpret_cast<void**>(&mapped_data));
+				if (result != vk::Result::eSuccess)
+				{
+					//throw VulkanException(result, "Failed to map memory.");
+					throw std::runtime_error("Failed to map memory.");
+				}
+
+				assert(mapped_data);
+			}
+			return mapped_data;
+		}
+
+		void VulkanBuffer::Unmap()
+		{
+			if (!persistent && IsMapped())
+			{
+				Handle(allocator).unmapMemory(allocation);
+				mapped_data = nullptr;
+			}
+		}
+
 		uint64_t VulkanBuffer::Update(const void* data, uint64_t size, uint64_t offset)
 		{
 			if (persistent)

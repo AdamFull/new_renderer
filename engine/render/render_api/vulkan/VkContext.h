@@ -5,6 +5,7 @@
 #include <VkSemaphore.h>
 #include <VkSampler.h>
 #include <VkPipelineCache.h>
+#include <VkCommandPool.h>
 
 #ifdef CreateSemaphore
 #undef CreateSemaphore
@@ -38,7 +39,7 @@ namespace gfx
 			Swapchain* CreateSwapchain(const SwapChainCreateInfo& create_info) override;
 			void DestroySwapchain(Swapchain* swapchain) override;
 
-			CommandPool* CreateCommandPool(Queue* queue) override;
+			CommandPool* CreateCommandPool(Queue* queue, CommandPoolResetMode reset_mode) override;
 			void DestroyCommandPool(CommandPool* command_pool) override;
 
 			Buffer* CreateBuffer(const BufferCreateInfo& create_info) override;
@@ -69,7 +70,7 @@ namespace gfx
 			QueryPool* CreateQueryPool() override;
 			void DestroyQueryPool(QueryPool* query_pool) override;
 
-			void WaitForFences(uint32_t fence_count, Fence** fences) override;
+			void WaitForFences(uint32_t fence_count, Fence** fences, uint64_t timeout = std::numeric_limits<uint64_t>::max()) override;
 
 			void RequestTimestampFrequency(double* frequency) override;
 			void RequestMemoryUsage(uint64_t* total_memory, uint64_t* used_memory) override;
@@ -109,6 +110,7 @@ namespace gfx
 			std::vector<std::unique_ptr<VulkanBuffer>> buffers{};
 			std::vector<std::unique_ptr<VulkanSampler>> samplers{};
 			std::vector<std::unique_ptr<VulkanPipelineCache>> pipeline_caches{};
+			std::vector<std::unique_ptr<VulkanCommandPool>> command_pools{};
 		};
 	}
 }

@@ -42,6 +42,12 @@ namespace gfx
 		eCompute
 	};
 
+	enum class IndexType
+	{
+		eUint16,
+		eUint32
+	};
+
 	enum class QueueTypeFlag
 	{
 		eGraphics = 1 << 0,
@@ -50,6 +56,13 @@ namespace gfx
 		eTransfer = 1 << 3
 	};
 	UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(QueueTypeFlags, QueueTypeFlag);
+
+	enum class CommandPoolResetMode
+	{
+		eResetPool,
+		eResetIndividually,
+		eAlwaysAllocate,
+	};
 
 	enum class StageFlag
 	{

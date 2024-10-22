@@ -11,24 +11,6 @@ namespace gfx
 		class Device;
 		class PhysicalDevice;
 
-		class DeviceBuilder
-		{
-		public:
-			std::vector<const char*> required_extensions;
-			std::vector<const char*> optional_extensions;
-
-			DeviceBuilder& SetRequiredExtensions(std::vector<const char*>&& extensions);
-			DeviceBuilder& AddRequiredExtensions(const std::vector<const char*>& extensions);
-			DeviceBuilder& AddRequiredExtension(const char* extension_name);
-
-			DeviceBuilder& SetOptionalExtensions(std::vector<const char*>&& extensions);
-			DeviceBuilder& AddOptionalExtensions(const std::vector<const char*>& extensions);
-			DeviceBuilder& AddOptionalExtension(const char* extension_name);
-
-			Device Build(PhysicalDevice& gpu, vk::SurfaceKHR& surface) const;
-			std::unique_ptr<Device> BuildUnique(PhysicalDevice& gpu, vk::SurfaceKHR& surface) const;
-		};
-
 		class Device : public VulkanResource<vk::Device>
 		{
 		public:
@@ -39,9 +21,7 @@ namespace gfx
 			 * @param debug_utils The debug utils to be associated to this device
 			 * @param requested_extensions (Optional) List of required device extensions and whether support is optional or not
 			 */
-			Device(PhysicalDevice& gpu, vk::SurfaceKHR surface, std::vector<const char*> requested_extensions = {});
-
-			Device(PhysicalDevice& gpu, vk::SurfaceKHR& surface, const DeviceBuilder& builder);
+			Device(PhysicalDevice& gpu, vk::SurfaceKHR surface, vk::AllocationCallbacks* allocation_callbacks, std::vector<const char*> requested_extensions = {});
 
 			Device(const Device&) = delete;
 			Device(Device&&) = delete;

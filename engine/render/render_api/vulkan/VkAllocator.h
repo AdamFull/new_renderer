@@ -61,17 +61,6 @@ namespace gfx
 			 */
 			bool IsMapped() const;
 
-			/**
-			 * @brief Maps vulkan memory if it isn't already mapped to an host visible address
-			 * @return Pointer to host visible memory
-			 */
-			uint8_t* Map();
-
-			/**
-			 * @brief Unmaps vulkan memory from the host visible address
-			 */
-			void Unmap();
-
 			explicit operator bool() const noexcept
 			{
 				return allocation;

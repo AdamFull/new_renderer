@@ -123,7 +123,7 @@ namespace gfx
 			auto& requested_features = physical_device.GetMutableRequestedFeatures();
 			EnablePhysicalDeviceFeatures(requested_features);
 
-			device = std::make_unique<Device>(physical_device, surface, device_extensions);
+			device = std::make_unique<Device>(physical_device, surface, allocation_callbacks, device_extensions);
 
 			// Create debug utils
 			if (instance->IsEnabled(VK_EXT_DEBUG_UTILS_EXTENSION_NAME))
@@ -217,15 +217,17 @@ namespace gfx
 			assert(false && "NOT IMPLEMENTED");
 		}
 
-		CommandPool* VkGFXContext::CreateCommandPool(Queue* queue)
+		CommandPool* VkGFXContext::CreateCommandPool(Queue* queue, CommandPoolResetMode reset_mode)
 		{
-			assert(false && "NOT IMPLEMENTED");
-			return nullptr;
+			auto* vkqueue = static_cast<VulkanQueue*>(queue);
+			auto& new_command_pool = command_pools.emplace_back(std::make_unique<VulkanCommandPool>(*vkqueue, reset_mode));
+			return new_command_pool.get();
 		}
 
 		void VkGFXContext::DestroyCommandPool(CommandPool* command_pool)
 		{
-			assert(false && "NOT IMPLEMENTED");
+			auto to_delete = std::remove_if(command_pools.begin(), command_pools.end(), [command_pool](const std::unique_ptr<VulkanCommandPool>& p) { return p.get() == command_pool; });
+			command_pools.erase(to_delete);
 		}
 
 		Buffer* VkGFXContext::CreateBuffer(const BufferCreateInfo& create_info)
@@ -422,24 +424,118 @@ namespace gfx
 			assert(false && "NOT IMPLEMENTED");
 		}
 
-		void VkGFXContext::WaitForFences(uint32_t fence_count, Fence** fences)
+		void VkGFXContext::WaitForFences(uint32_t fence_count, Fence** fences_array, uint64_t timeout)
 		{
-			assert(false && "NOT IMPLEMENTED");
+			std::array<vk::Fence, 16ull> wait_fences{};
+
+			for (int32_t i = 0; i < fence_count; ++i)
+			{
+				wait_fences[i] = static_cast<VulkanFence*>(fences_array[i])->GetHandle();
+			}
+
+			vk::Result result = Handle(*device).waitForFences(fence_count, wait_fences.data(), VK_TRUE, timeout);
 		}
 
 		void VkGFXContext::RequestTimestampFrequency(double* frequency)
 		{
-			assert(false && "NOT IMPLEMENTED");
+			auto& physical = instance->GetBestDevice();
+			auto& properties = physical.GetProperties();
+			*frequency = static_cast<double>(properties.limits.timestampPeriod);
 		}
 
 		void VkGFXContext::RequestMemoryUsage(uint64_t* total_memory, uint64_t* used_memory)
 		{
-			assert(false && "NOT IMPLEMENTED");
+			vk::MemoryHeapFlags memory_flags{ vk::MemoryHeapFlagBits::eDeviceLocal };
+			vk::PhysicalDeviceMemoryBudgetPropertiesEXT memory_budget_props{};
+			vk::PhysicalDeviceMemoryProperties2 memory_props{};
+			memory_props.pNext = &memory_budget_props;
+
+			auto& physical_device = instance->GetBestDevice();
+			Handle(physical_device).getMemoryProperties2(&memory_props);
+
+			*total_memory = 0ull;
+			*used_memory = 0ull;
+
+			auto heaps_count = static_cast<u64>(memory_props.memoryProperties.memoryHeapCount);
+			for (int32_t i = 0; i < heaps_count; ++i)
+			{
+				auto heapFlags = memory_props.memoryProperties.memoryHeaps[i].flags;
+				if (heapFlags & memory_flags)
+				{
+					*total_memory += memory_budget_props.heapBudget[i];
+					*used_memory += memory_budget_props.heapUsage[i];
+				}
+			}
 		}
 
 		void VkGFXContext::SetResourceName(GFXResource* resource_handle, const char* name)
 		{
-			assert(false && "NOT IMPLEMENTED");
+			switch (resource_handle->GetResourceType())
+			{
+			case ResourceType::eFence: 
+			{
+				auto* fence = static_cast<VulkanFence*>(resource_handle);
+				debug_utils->SetDebugName(fence->GetHandle(), name);
+			} break;
+			case ResourceType::eSemaphore: 
+			{
+				auto* semaphore = static_cast<VulkanSemaphore*>(resource_handle);
+				debug_utils->SetDebugName(semaphore->GetHandle(), name);
+			} break;
+			case ResourceType::eQueue: 
+			{
+				auto* queue = static_cast<VulkanQueue*>(resource_handle);
+				debug_utils->SetDebugName(queue->GetHandle(), name);
+			} break;
+			case ResourceType::eSwapchain:
+			{
+			} break;
+			case ResourceType::eBuffer:
+			{
+				auto* buffer = static_cast<VulkanBuffer*>(resource_handle);
+				debug_utils->SetDebugName(buffer->GetHandle(), name);
+			} break;
+			case ResourceType::eCommandList:
+			{
+			} break;
+			case ResourceType::eCommandPool:
+			{
+			} break;
+			case ResourceType::eTexture:
+			{
+			} break;
+			case ResourceType::eSampler:
+			{
+				auto* sampler = static_cast<VulkanSampler*>(resource_handle);
+				debug_utils->SetDebugName(sampler->GetHandle(), name);
+			} break;
+			case ResourceType::eShader:
+			{
+			} break;
+			case ResourceType::eRootSignature:
+			{
+			} break;
+			case ResourceType::ePipeline:
+			{
+			} break;
+			case ResourceType::ePipelineCache:
+			{
+				auto* pipeline_cache = static_cast<VulkanPipelineCache*>(resource_handle);
+				debug_utils->SetDebugName(pipeline_cache->GetHandle(), name);
+			} break;
+			case ResourceType::eDescriptorPool:
+			{
+			} break;
+			case ResourceType::eDescriptorSet:
+			{
+			} break;
+			case ResourceType::eQueryPool:
+			{
+			} break;
+			default:
+				assert(false && "Unknown resource type");
+				break;
+			}
 		}
 
 		void VkGFXContext::EnableDeviceFeatures(PhysicalDevice& device)

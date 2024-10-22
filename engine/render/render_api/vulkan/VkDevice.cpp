@@ -9,55 +9,8 @@ namespace gfx
 {
 	namespace vulkan
 	{
-		DeviceBuilder& DeviceBuilder::SetRequiredExtensions(std::vector<const char*>&& extensions)
-		{
-			required_extensions = std::move(extensions);
-			return *this;
-		}
-
-		DeviceBuilder& DeviceBuilder::AddRequiredExtensions(const std::vector<const char*>& extensions)
-		{
-			required_extensions.insert(required_extensions.end(), extensions.begin(), extensions.end());
-			return *this;
-		}
-
-		DeviceBuilder& DeviceBuilder::AddRequiredExtension(const char* extension_name)
-		{
-			required_extensions.push_back(extension_name);
-			return *this;
-		}
-
-		DeviceBuilder& DeviceBuilder::SetOptionalExtensions(std::vector<const char*>&& extensions)
-		{
-			optional_extensions = std::move(extensions);
-			return *this;
-		}
-
-		DeviceBuilder& DeviceBuilder::AddOptionalExtensions(const std::vector<const char*>& extensions)
-		{
-			optional_extensions.insert(optional_extensions.end(), extensions.begin(), extensions.end());
-			return *this;
-		}
-
-		DeviceBuilder& DeviceBuilder::AddOptionalExtension(const char* extension_name)
-		{
-			optional_extensions.push_back(extension_name);
-			return *this;
-		}
-
-		Device DeviceBuilder::Build(PhysicalDevice& gpu, vk::SurfaceKHR& surface) const
-		{
-			return Device(gpu, surface, *this);
-		}
-
-		std::unique_ptr<Device> DeviceBuilder::BuildUnique(PhysicalDevice& gpu, vk::SurfaceKHR& surface) const
-		{
-			return std::make_unique<Device>(gpu, surface, *this);
-		}
-
-
-		Device::Device(PhysicalDevice& gpu, vk::SurfaceKHR surface, std::vector<const char*> requested_extensions) :
-			VulkanResource{ nullptr, nullptr },
+		Device::Device(PhysicalDevice& gpu, vk::SurfaceKHR surface, vk::AllocationCallbacks* allocation_callbacks, std::vector<const char*> requested_extensions) :
+			VulkanResource{ nullptr, allocation_callbacks },
 			gpu(gpu)
 		{
 			// Prepare the device queues
@@ -161,13 +114,6 @@ namespace gfx
 					queues[queue_family_index].emplace_back(*this, queue_family_index, queue_family_property, present_supported, queue_index);
 				}
 			}
-		}
-
-		Device::Device(PhysicalDevice& gpu, vk::SurfaceKHR& surface, const DeviceBuilder& builder) :
-			VulkanResource{ nullptr, nullptr },
-			gpu(gpu)
-		{
-
 		}
 
 		Device::~Device()

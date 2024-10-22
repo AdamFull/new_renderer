@@ -11,7 +11,7 @@ namespace gfx
 	namespace vulkan
 	{
 		VulkanQueue::VulkanQueue(Device& device, uint32_t family_index, vk::QueueFamilyProperties properties, vk::Bool32 can_present, uint32_t index) :
-			VulkanResource{ nullptr, nullptr },
+			VulkanResource{ nullptr, device.GetAllocationCallbacks() },
 			device{ device },
 			family_index{ family_index },
 			index{ index },
@@ -32,6 +32,11 @@ namespace gfx
 		}
 
 		const Device& VulkanQueue::GetDevice() const
+		{
+			return device;
+		}
+
+		Device& VulkanQueue::GetDevice()
 		{
 			return device;
 		}

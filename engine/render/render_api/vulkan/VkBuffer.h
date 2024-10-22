@@ -20,6 +20,17 @@ namespace gfx
 			VulkanBuffer(Allocator& allocator, const vk::BufferCreateInfo& buffer_create_info, const vma::AllocationCreateInfo& allocation_create_info);
 			~VulkanBuffer();
 
+			/**
+			 * @brief Maps vulkan memory if it isn't already mapped to an host visible address
+			 * @return Pointer to host visible memory
+			 */
+			uint8_t* Map() override;
+
+			/**
+			 * @brief Unmaps vulkan memory from the host visible address
+			 */
+			void Unmap() override;
+
 			uint64_t Update(const void* data, uint64_t size, uint64_t offset = 0ull) override;
 
 			uint64_t GetSize() const override;

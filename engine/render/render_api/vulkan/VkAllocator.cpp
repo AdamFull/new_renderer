@@ -100,7 +100,6 @@ namespace gfx
 		{
 			if (buffer && allocation)
 			{
-				allocation.Unmap();
 				handle.destroyBuffer(buffer, allocation.allocation);
 				allocation.Clear();
 			}
@@ -146,7 +145,6 @@ namespace gfx
 		{
 			if (image && allocation)
 			{
-				allocation.Unmap();
 				handle.destroyImage(image, allocation.allocation);
 				allocation.Clear();
 			}
@@ -200,31 +198,6 @@ namespace gfx
 		bool Allocation::IsMapped() const
 		{
 			return mapped_data != nullptr;
-		}
-
-		uint8_t* Allocation::Map()
-		{
-			if (!persistent && !IsMapped())
-			{
-				auto result = Handle(allocator).mapMemory(allocation, reinterpret_cast<void**>(&mapped_data));
-				if (result != vk::Result::eSuccess)
-				{
-					//throw VulkanException(result, "Failed to map memory.");
-					throw std::runtime_error("Failed to map memory.");
-				}
-
-				assert(mapped_data);
-			}
-			return mapped_data;
-		}
-
-		void Allocation::Unmap()
-		{
-			if (!persistent && IsMapped())
-			{
-				Handle(allocator).unmapMemory(allocation);
-				mapped_data = nullptr;
-			}
 		}
 
 		void Allocation::Clear()

@@ -21,6 +21,8 @@ namespace gfx
 			VulkanQueue& operator=(VulkanQueue&&) = delete;
 
 			const Device& GetDevice() const;
+			Device& GetDevice();
+
 			uint32_t GetFamilyIndex() const;
 			uint32_t GetIndex() const;
 

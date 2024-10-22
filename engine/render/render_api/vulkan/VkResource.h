@@ -60,6 +60,11 @@ namespace gfx
 				return handle;
 			}
 
+			vk::AllocationCallbacks* GetAllocationCallbacks()
+			{
+				return allocation_callbacks;
+			}
+
 			uint32_t Hash() const
 			{
 				return HandleHash(handle);
