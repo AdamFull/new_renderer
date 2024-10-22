@@ -63,6 +63,8 @@ namespace gfx
 			return ResourceType::eSwapchain;
 		}
 
+		virtual uint32_t GetImageCount() const = 0;
+		virtual Format GetImageFormat() const = 0;
 		virtual void AcquireNextImage(Semaphore* signal_semaphore, Fence* fence, uint32_t* image_index) = 0;
 	};
 
@@ -159,6 +161,15 @@ namespace gfx
 		{
 			return ResourceType::eTexture;
 		}
+
+		virtual uint32_t GetWidth() const = 0;
+		virtual uint32_t GetHeight() const = 0;
+		virtual uint32_t GetDepth() const = 0;
+
+		virtual uint32_t GetMipLevelCount() const = 0;
+		virtual uint32_t GetArrayLayerCount() const = 0;
+
+		virtual Format GetFormat() const = 0;
 	};
 
 	class Sampler : public GFXResource

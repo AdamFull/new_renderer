@@ -4,6 +4,8 @@
 
 #include <VkSwapchain.h>
 
+#include <VkUtil.h>
+
 namespace gfx
 {
 	namespace vulkan
@@ -50,7 +52,36 @@ namespace gfx
 			srv{ std::exchange(other.srv, {}) },
 			subresources{ std::exchange(other.subresources, {}) }
 		{
+		}
 
+		uint32_t VulkanTexture::GetWidth() const
+		{
+			return image->GetExtent().width;
+		}
+
+		uint32_t VulkanTexture::GetHeight() const
+		{
+			return image->GetExtent().height;
+		}
+
+		uint32_t VulkanTexture::GetDepth() const
+		{
+			return image->GetExtent().depth;
+		}
+
+		uint32_t VulkanTexture::GetMipLevelCount() const
+		{
+			return image->GetMipLevelCount();
+		}
+
+		uint32_t VulkanTexture::GetArrayLayerCount() const
+		{
+			return image->GetArrayLayerCount();
+		}
+
+		Format VulkanTexture::GetFormat() const
+		{
+			return FormatFromVk(static_cast<uint32_t>(image->GetFormat()));
 		}
 	}
 }

@@ -10,6 +10,7 @@
 #include <VkCommandPool.h>
 #include <VkQueryPool.h>
 #include <VkTexture.h>
+#include <VkSwapchain.h>
 
 #ifdef CreateSemaphore
 #undef CreateSemaphore
@@ -118,6 +119,7 @@ namespace gfx
 			std::vector<std::unique_ptr<VulkanCommandPool>> command_pools{};
 			std::vector<std::unique_ptr<VulkanQueryPool>> query_pools{};
 			std::vector<std::unique_ptr<VulkanTexture>> textures{};
+			std::vector<std::unique_ptr<VulkanSwapchain>> swapchains{};
 		};
 	}
 }

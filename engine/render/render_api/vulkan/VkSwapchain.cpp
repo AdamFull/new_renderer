@@ -2,6 +2,9 @@
 #include <VkPhysicalDevice.h>
 #include <VkDevice.h>
 
+#include <VkSemaphore.h>
+#include <VkFence.h>
+
 #include <util/Logger.h>
 
 #include <glm/glm.hpp>
@@ -54,50 +57,6 @@ namespace gfx
 				return request_present_mode;
 			}
 		}
-
-
-
-		//inline vk::SurfaceFormatKHR choice_surface_format(const std::vector<vk::SurfaceFormatKHR>& available_formats)
-		//{
-		//	if (available_formats.size() == 1 && available_formats[0].format == vk::Format::eUndefined)
-		//		return { vk::Format::eB8G8R8A8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear };
-		//
-		//	for (const auto& available_format : available_formats)
-		//	{
-		//		if (available_format.format == vk::Format::eB8G8R8A8Unorm && available_format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
-		//			return available_format;
-		//	}
-		//
-		//	return available_formats[0];
-		//}
-		//
-		//inline vk::PresentModeKHR choice_surface_present_mode(const std::vector<vk::PresentModeKHR>& present_modes)
-		//{
-		//	vk::PresentModeKHR best_mode = vk::PresentModeKHR::eFifo;
-		//
-		//	for (const auto& present_mode : present_modes)
-		//	{
-		//		if (present_mode == vk::PresentModeKHR::eMailbox)
-		//			return present_mode;
-		//		else if (present_mode == vk::PresentModeKHR::eImmediate)
-		//			best_mode = present_mode;
-		//	}
-		//
-		//	return best_mode;
-		//}
-		//
-		//inline vk::Extent2D choice_swapchain_extent(const vk::SurfaceCapabilitiesKHR& capabilities, u32 width, u32 height)
-		//{
-		//	if (capabilities.currentExtent.width != (std::numeric_limits<u32>::max)())
-		//		return capabilities.currentExtent;
-		//
-		//	vk::Extent2D actual_extent = { width, height };
-		//
-		//	actual_extent.width = (std::max)(capabilities.minImageExtent.width, (std::min)(capabilities.maxImageExtent.width, actual_extent.width));
-		//	actual_extent.height = (std::max)(capabilities.minImageExtent.height, (std::min)(capabilities.maxImageExtent.height, actual_extent.height));
-		//
-		//	return actual_extent;
-		//}
 
 		vk::SurfaceFormatKHR ChooseSurfaceFormat(const vk::SurfaceFormatKHR requested_surface_format, const std::vector<vk::SurfaceFormatKHR>& available_surface_formats, const std::vector<vk::SurfaceFormatKHR>& surface_format_priority_list)
 		{
@@ -360,9 +319,23 @@ namespace gfx
 			return device;
 		}
 
-		vk::Result VulkanSwapchain::AcquireNextImage(vk::Semaphore image_acquired_semaphore, vk::Fence fence, uint32_t& image_index) const
+		void VulkanSwapchain::AcquireNextImage(Semaphore* signal_semaphore, Fence* fence, uint32_t* image_index)
 		{
-			return Handle(device).acquireNextImageKHR(handle, std::numeric_limits<uint64_t>::max(), image_acquired_semaphore, fence, &image_index);
+			vk::Semaphore image_acquired_semaphore{ nullptr };
+			if (signal_semaphore)
+			{
+				auto* vk_semaphore = static_cast<VulkanSemaphore*>(signal_semaphore);
+				image_acquired_semaphore = vk_semaphore->GetHandle();
+			}
+
+			vk::Fence wait_fence{ nullptr };
+			if (fence)
+			{
+				auto* vk_fence = static_cast<VulkanFence*>(fence);
+				wait_fence = vk_fence->GetHandle();
+			}
+
+			vk::Result result = Handle(device).acquireNextImageKHR(handle, std::numeric_limits<uint64_t>::max(), image_acquired_semaphore, wait_fence, image_index);
 		}
 
 		const vk::Extent2D& VulkanSwapchain::GetExtent() const
@@ -408,6 +381,11 @@ namespace gfx
 		uint32_t VulkanSwapchain::GetImageCount() const
 		{
 			return create_info.minImageCount;
+		}
+
+		Format VulkanSwapchain::GetImageFormat() const
+		{
+			return FormatFromVk(static_cast<uint32_t>(create_info.imageFormat));
 		}
 	}
 }

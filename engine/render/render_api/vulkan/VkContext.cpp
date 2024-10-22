@@ -215,13 +215,47 @@ namespace gfx
 
 		Swapchain* VkGFXContext::CreateSwapchain(const SwapChainCreateInfo& create_info)
 		{
-			assert(false && "NOT IMPLEMENTED");
-			return nullptr;
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+			vk::PresentModeKHR present_mode = (window->GetProperties().vsync == Window::Vsync::OFF) ? vk::PresentModeKHR::eMailbox : vk::PresentModeKHR::eFifo;
+			std::vector<vk::PresentModeKHR> present_mode_priority_list{ vk::PresentModeKHR::eFifo, vk::PresentModeKHR::eMailbox, vk::PresentModeKHR::eImmediate };
+#else
+			vk::PresentModeKHR present_mode = (create_info.window->GetProperties().vsync == engine::Window::Vsync::ON) ? vk::PresentModeKHR::eFifo : vk::PresentModeKHR::eMailbox;
+			std::vector<vk::PresentModeKHR> present_mode_priority_list{ vk::PresentModeKHR::eMailbox, vk::PresentModeKHR::eFifo, vk::PresentModeKHR::eImmediate };
+#endif
+
+			if (create_info.old_swapchain)
+			{
+				auto* old_swapchain = static_cast<VulkanSwapchain*>(create_info.old_swapchain);
+
+				// Recreate swapchain with changed size
+				if (create_info.width != 1u && create_info.height != 1u)
+				{
+					auto& new_swapchain = swapchains.emplace_back(std::make_unique<VulkanSwapchain>(*old_swapchain, vk::Extent2D{ create_info.width, create_info.height }));
+					return new_swapchain.get();
+				}
+				// Recreate with new amount of images
+				else if (create_info.image_count != 1u && create_info.image_count != old_swapchain->GetImageCount())
+				{
+					auto& new_swapchain = swapchains.emplace_back(std::make_unique<VulkanSwapchain>(*old_swapchain, create_info.image_count));
+					return new_swapchain.get();
+				}
+			}
+
+			auto& new_swapchain = swapchains.emplace_back(std::make_unique<VulkanSwapchain>(*device, 
+				surface, 
+				present_mode, 
+				present_mode_priority_list, 
+				surface_priority_list,
+				vk::Extent2D{ create_info.width, create_info.height },
+				create_info.image_count));
+
+			return new_swapchain.get();
 		}
 
 		void VkGFXContext::DestroySwapchain(Swapchain* swapchain)
 		{
-			assert(false && "NOT IMPLEMENTED");
+			auto to_delete = std::remove_if(swapchains.begin(), swapchains.end(), [swapchain](const std::unique_ptr<VulkanSwapchain>& h) { return h.get() == swapchain; });
+			swapchains.erase(to_delete);
 		}
 
 		CommandPool* VkGFXContext::CreateCommandPool(Queue* queue, CommandPoolResetMode reset_mode)
@@ -233,7 +267,7 @@ namespace gfx
 
 		void VkGFXContext::DestroyCommandPool(CommandPool* command_pool)
 		{
-			auto to_delete = std::remove_if(command_pools.begin(), command_pools.end(), [command_pool](const std::unique_ptr<VulkanCommandPool>& p) { return p.get() == command_pool; });
+			auto to_delete = std::remove_if(command_pools.begin(), command_pools.end(), [command_pool](const std::unique_ptr<VulkanCommandPool>& h) { return h.get() == command_pool; });
 			command_pools.erase(to_delete);
 		}
 

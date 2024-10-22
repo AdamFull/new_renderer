@@ -131,8 +131,7 @@ namespace gfx
 				create_info.arrayLayers = 1u;
 			}
 
-			// TODO: FORMAT
-			create_info.format;
+			create_info.format = static_cast<vk::Format>(FormatToVk(texture_create_info.format));
 
 			if (texture_create_info.usage & TextureUsageFlag::eRenderTarget)
 			{

@@ -64,7 +64,7 @@ namespace gfx
 
 			Device const& GetDevice() const;
 
-			vk::Result AcquireNextImage(vk::Semaphore image_acquired_semaphore, vk::Fence fence, uint32_t& image_index) const;
+			void AcquireNextImage(Semaphore* signal_semaphore, Fence* fence, uint32_t* image_index) override;
 
 			const vk::Extent2D& GetExtent() const;
 
@@ -81,7 +81,9 @@ namespace gfx
 
 			vk::PresentModeKHR GetPresentMode() const;
 
-			uint32_t GetImageCount() const;
+			uint32_t GetImageCount() const override;
+
+			Format GetImageFormat() const override;
 
 		private:
 			Device& device;

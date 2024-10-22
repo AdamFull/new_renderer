@@ -19,6 +19,15 @@ namespace gfx
 
 			VulkanTexture& operator=(const VulkanTexture&) = delete;
 			VulkanTexture& operator=(VulkanTexture&&) = delete;
+
+			uint32_t GetWidth() const override;
+			uint32_t GetHeight() const override;
+			uint32_t GetDepth() const override;
+
+			uint32_t GetMipLevelCount() const override;
+			uint32_t GetArrayLayerCount() const override;
+
+			Format GetFormat() const override;
 		private:
 			Device& device;
 

@@ -105,8 +105,8 @@ namespace gfx
 		uint32_t width{ 1u };
 		uint32_t height{ 1u };
 
-		// TODO: add format and color space selection
-		uint32_t format{};
+		// TODO: add colorspace selection
+		Format format{};
 	};
 
 	struct BufferCreateInfo
@@ -127,6 +127,7 @@ namespace gfx
 		uint32_t layers{ 1u };
 		uint32_t levels{ 1u };
 
+		Format format{};
 	};
 
 	struct SamplerCreateInfo
