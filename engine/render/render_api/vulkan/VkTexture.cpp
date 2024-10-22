@@ -2,6 +2,8 @@
 #include <VkDevice.h>
 #include <VkAllocator.h>
 
+#include <VkSwapchain.h>
+
 namespace gfx
 {
 	namespace vulkan
@@ -25,10 +27,20 @@ namespace gfx
 		VulkanTexture::VulkanTexture(Allocator& allocator, Swapchain* swapchain, uint32_t image_index) :
 			device{ allocator.GetDevice() }
 		{
-			assert(false && "NOT IMPLEMENTED");
-			TextureCreateInfo create_info{};
+			VulkanSwapchain* vkswapchain = static_cast<VulkanSwapchain*>(swapchain);
+			auto& extent = vkswapchain->GetExtent();
 
-			image = std::make_unique<Image>(allocator, create_info);
+			TextureCreateInfo create_info{};
+			create_info.width = extent.width;
+			create_info.height = extent.height;
+			create_info.usage = TextureUsageFlag::eRenderTarget;
+			// TODO: IMAGE FORMAT
+			assert(false && "NOT IMPLEMENTED");
+
+			assert(image_index < vkswapchain->GetImageCount());
+			auto& image_handle = vkswapchain->GetImage(image_index);
+
+			image = std::make_unique<Image>(allocator, create_info, image_handle);
 			srv = std::make_unique<ImageView>(*image, create_info, 0u, 0u, create_info.levels);
 		}
 
