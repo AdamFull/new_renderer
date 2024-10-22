@@ -48,6 +48,7 @@ namespace gfx
 			void DestroyBuffer(Buffer* buffer) override;
 
 			Texture* CreateTexture(const TextureCreateInfo& create_info) override;
+			Texture* CreateSwapchainTexture(Swapchain* swapchain, uint32_t image_index) override;
 			void DestroyTexture(Texture* texture) override;
 
 			Shader* CreateShader(const ShaderCreateInfo& create_info) override;

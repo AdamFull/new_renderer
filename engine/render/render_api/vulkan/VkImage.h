@@ -13,6 +13,7 @@ namespace gfx
 		{
 		public:
 			Image(Allocator& allocator, const TextureCreateInfo& create_info);
+			Image(Allocator& allocator, const TextureCreateInfo& create_info, vk::Image external_handle);
 			Image(Image&& other) noexcept;
 			~Image();
 
@@ -35,11 +36,10 @@ namespace gfx
 			vk::ImageSubresource GetSubresource() const;
 			uint32_t GetMipLevelCount() const;
 			uint32_t GetArrayLayerCount() const;
-
-
-
 		private:
-			bool external_handle{ false };
+			void InitializeCreateInfo(const TextureCreateInfo& texture_create_info);
+		private:
+			bool is_external_handle{ false };
 			vk::ImageCreateInfo create_info;
 			vk::ImageSubresource subresource;
 		};

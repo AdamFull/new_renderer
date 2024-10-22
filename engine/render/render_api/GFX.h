@@ -288,6 +288,7 @@ namespace gfx
 		virtual void DestroyBuffer(Buffer* buffer) = 0;
 
 		virtual Texture* CreateTexture(const TextureCreateInfo& create_info) = 0;
+		virtual Texture* CreateSwapchainTexture(Swapchain* swapchain, uint32_t image_index) = 0;
 		virtual void DestroyTexture(Texture* texture) = 0;
 
 		virtual Shader* CreateShader(const ShaderCreateInfo& create_info) = 0;

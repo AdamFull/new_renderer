@@ -1,15 +1,12 @@
 #pragma once
 
-#include <VkResource.h>
+#include <VkImage.h>
 #include <GFXStructures.h>
 
 namespace gfx
 {
 	namespace vulkan
 	{
-		class Device;
-		class Image;
-
 		class ImageView : public VulkanResource<vk::ImageView>
 		{
 		public:
@@ -32,7 +29,6 @@ namespace gfx
 			vk::ImageSubresourceRange GetSubresourceRange() const;
 		private:
 			Device& device;
-			bool external_handle{ false };
 
 			vk::ImageViewCreateInfo create_info{};
 			vk::ImageLayout layout{};

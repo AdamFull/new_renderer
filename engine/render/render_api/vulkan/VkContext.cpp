@@ -255,6 +255,12 @@ namespace gfx
 			return new_texture.get();
 		}
 
+		Texture* VkGFXContext::CreateSwapchainTexture(Swapchain* swapchain, uint32_t image_index)
+		{
+			auto& new_texture = textures.emplace_back(std::make_unique<VulkanTexture>(*allocator, swapchain, image_index));
+			return new_texture.get();
+		}
+
 		void VkGFXContext::DestroyTexture(Texture* texture)
 		{
 			auto to_delete = std::remove_if(textures.begin(), textures.end(), [texture](const std::unique_ptr<VulkanTexture>& h) { return h.get() == texture; });

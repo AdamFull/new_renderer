@@ -83,10 +83,7 @@ namespace gfx
 
 		ImageView::~ImageView()
 		{
-			if (!external_handle)
-			{
-				Handle(device).destroyImageView(handle, allocation_callbacks);
-			}
+			Handle(device).destroyImageView(handle, allocation_callbacks);
 		}
 
 		void ImageView::SetImageLayout(vk::ImageLayout new_layout)

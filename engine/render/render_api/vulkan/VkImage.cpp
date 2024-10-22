@@ -11,74 +11,30 @@ namespace gfx
 			VulkanResource{ nullptr, allocator.GetAllocationCallbacks() },
 			Allocation{ allocator }
 		{
-			alloc_create_info.usage = vma::MemoryUsage::eUnknown;
-
-			bool is_3d = texture_create_info.depth > 1u;
-			if (is_3d)
-			{
-				create_info.imageType = vk::ImageType::e3D;
-			}
-			else if (texture_create_info.height != 0u || texture_create_info.height != 0u)
-			{
-				create_info.imageType = vk::ImageType::e2D;
-			}
-			else
-			{
-				create_info.imageType = vk::ImageType::e1D;
-			}
-
-			create_info.mipLevels = texture_create_info.levels;
-
-			create_info.arrayLayers = texture_create_info.layers;
-			bool is_array = texture_create_info.layers > 1u;
-			bool is_cubemap = static_cast<bool>(texture_create_info.usage & TextureUsageFlag::eCubemap);
-			if (is_array && is_cubemap)
-			{
-				create_info.arrayLayers = texture_create_info.layers * 6u;
-			}
-			else if (texture_create_info.usage & TextureUsageFlag::eCubemap)
-			{
-				create_info.arrayLayers = 6u;
-			}
-			else
-			{
-				create_info.arrayLayers = 1u;
-			}
-
-			// TODO: FORMAT
-			create_info.format;
-
-			if (texture_create_info.usage & TextureUsageFlag::eRenderTarget)
-			{
-				create_info.usage |= ((IsDepthStencilFormat(create_info.format) || IsDepthOnlyFormat(create_info.format)) ? vk::ImageUsageFlagBits::eDepthStencilAttachment : vk::ImageUsageFlagBits::eColorAttachment);
-			}
-
-			if (texture_create_info.usage & TextureUsageFlag::eTransferable)
-				create_info.usage |= vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst;
-
-			if (texture_create_info.usage & TextureUsageFlag::eSamplable)
-				create_info.usage |= vk::ImageUsageFlagBits::eSampled;
-
-			if (texture_create_info.usage & TextureUsageFlag::eStorage)
-				create_info.usage |= vk::ImageUsageFlagBits::eStorage;
-
-			create_info.sharingMode = vk::SharingMode::eExclusive;
-			create_info.flags = is_cubemap ? vk::ImageCreateFlagBits::eCubeCompatible : vk::ImageCreateFlagBits::eExtendedUsage;
-
+			InitializeCreateInfo(texture_create_info);
 			handle = allocator.CreateImage(*this, create_info);
+		}
+
+		Image::Image(Allocator& allocator, const TextureCreateInfo& texture_create_info, vk::Image external_handle) :
+			VulkanResource{ external_handle, allocator.GetAllocationCallbacks() },
+			Allocation{ allocator },
+			is_external_handle{ true }
+		{
+			InitializeCreateInfo(texture_create_info);
 		}
 
 		Image::Image(Image&& other) noexcept :
 			VulkanResource{ std::move(other) },
 			Allocation{ std::move(other) },
-			create_info(std::exchange(other.create_info, {})),
-			subresource(std::exchange(other.subresource, {}))
+			create_info{ std::exchange(other.create_info, {}) },
+			subresource{ std::exchange(other.subresource, {}) },
+			is_external_handle{ std::exchange(other.is_external_handle, {}) }
 		{
 		}
 
 		Image::~Image()
 		{
-			if (!external_handle)
+			if (!is_external_handle)
 			{
 				allocator.DestroyImage(*this, handle);
 			}
@@ -137,6 +93,63 @@ namespace gfx
 		uint32_t Image::GetArrayLayerCount() const
 		{
 			return create_info.arrayLayers;
+		}
+
+		void Image::InitializeCreateInfo(const TextureCreateInfo& texture_create_info)
+		{
+			alloc_create_info.usage = vma::MemoryUsage::eUnknown;
+
+			bool is_3d = texture_create_info.depth > 1u;
+			if (is_3d)
+			{
+				create_info.imageType = vk::ImageType::e3D;
+			}
+			else if (texture_create_info.height != 0u || texture_create_info.height != 0u)
+			{
+				create_info.imageType = vk::ImageType::e2D;
+			}
+			else
+			{
+				create_info.imageType = vk::ImageType::e1D;
+			}
+
+			create_info.mipLevels = texture_create_info.levels;
+
+			create_info.arrayLayers = texture_create_info.layers;
+			bool is_array = texture_create_info.layers > 1u;
+			bool is_cubemap = static_cast<bool>(texture_create_info.usage & TextureUsageFlag::eCubemap);
+			if (is_array && is_cubemap)
+			{
+				create_info.arrayLayers = texture_create_info.layers * 6u;
+			}
+			else if (texture_create_info.usage & TextureUsageFlag::eCubemap)
+			{
+				create_info.arrayLayers = 6u;
+			}
+			else
+			{
+				create_info.arrayLayers = 1u;
+			}
+
+			// TODO: FORMAT
+			create_info.format;
+
+			if (texture_create_info.usage & TextureUsageFlag::eRenderTarget)
+			{
+				create_info.usage |= ((IsDepthStencilFormat(create_info.format) || IsDepthOnlyFormat(create_info.format)) ? vk::ImageUsageFlagBits::eDepthStencilAttachment : vk::ImageUsageFlagBits::eColorAttachment);
+			}
+
+			if (texture_create_info.usage & TextureUsageFlag::eTransferable)
+				create_info.usage |= vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst;
+
+			if (texture_create_info.usage & TextureUsageFlag::eSamplable)
+				create_info.usage |= vk::ImageUsageFlagBits::eSampled;
+
+			if (texture_create_info.usage & TextureUsageFlag::eStorage)
+				create_info.usage |= vk::ImageUsageFlagBits::eStorage;
+
+			create_info.sharingMode = vk::SharingMode::eExclusive;
+			create_info.flags = is_cubemap ? vk::ImageCreateFlagBits::eCubeCompatible : vk::ImageCreateFlagBits::eExtendedUsage;
 		}
 	}
 }

@@ -1,23 +1,21 @@
 #pragma once
 
 #include <GFX.h>
+#include <VkImageView.h>
 
 namespace gfx
 {
 	namespace vulkan
 	{
-		class Device;
-		class Allocator;
-		class Image;
-		class ImageView;
-
 		class VulkanTexture final : public Texture
 		{
 		public:
 			VulkanTexture(Allocator& allocator, const TextureCreateInfo& create_info);
+			VulkanTexture(Allocator& allocator, Swapchain* swapchain, uint32_t image_index);
+
 			VulkanTexture(const VulkanTexture&) = delete;
 			VulkanTexture(VulkanTexture&& other);
-			~VulkanTexture();
+			~VulkanTexture() = default;
 
 			VulkanTexture& operator=(const VulkanTexture&) = delete;
 			VulkanTexture& operator=(VulkanTexture&&) = delete;
@@ -25,7 +23,9 @@ namespace gfx
 			Device& device;
 
 			std::unique_ptr<Image> image{};
-			std::unique_ptr<ImageView> srv{};
+			std::unique_ptr<ImageView> srv;
+
+			std::vector<std::unique_ptr<ImageView>> subresources{};
 		};
 	}
 }
