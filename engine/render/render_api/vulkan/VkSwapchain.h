@@ -3,7 +3,7 @@
 #include <set>
 
 #include <VkResource.h>
-#include <GFX.h>
+#include <GFXBase.h>
 
 namespace gfx
 {

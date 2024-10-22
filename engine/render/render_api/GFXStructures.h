@@ -3,6 +3,7 @@
 #include <array>
 #include <span>
 #include <GFXEnums.h>
+#include <GFXFormat.h>
 
 namespace engine
 {

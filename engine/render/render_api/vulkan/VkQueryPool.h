@@ -1,7 +1,7 @@
 #pragma once
 
-#include <GFX.h>
 #include <VkResource.h>
+#include <GFXBase.h>
 
 namespace gfx
 {

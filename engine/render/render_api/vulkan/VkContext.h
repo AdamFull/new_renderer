@@ -1,5 +1,7 @@
 #pragma once
 
+#include <GFX.h>
+
 #include <VkBuffer.h>
 #include <VkFence.h>
 #include <VkSemaphore.h>
