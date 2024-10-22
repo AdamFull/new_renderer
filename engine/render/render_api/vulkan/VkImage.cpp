@@ -1,5 +1,6 @@
 #include <VkImage.h>
 
+#include <VkUtil.h>
 #include <util/Logger.h>
 
 namespace gfx
@@ -10,7 +11,61 @@ namespace gfx
 			VulkanResource{ nullptr, allocator.GetAllocationCallbacks() },
 			Allocation{ allocator }
 		{
-			
+			alloc_create_info.usage = vma::MemoryUsage::eUnknown;
+
+			bool is_3d = texture_create_info.depth > 1u;
+			if (is_3d)
+			{
+				create_info.imageType = vk::ImageType::e3D;
+			}
+			else if (texture_create_info.height != 0u || texture_create_info.height != 0u)
+			{
+				create_info.imageType = vk::ImageType::e2D;
+			}
+			else
+			{
+				create_info.imageType = vk::ImageType::e1D;
+			}
+
+			create_info.mipLevels = texture_create_info.levels;
+
+			create_info.arrayLayers = texture_create_info.layers;
+			bool is_array = texture_create_info.layers > 1u;
+			bool is_cubemap = static_cast<bool>(texture_create_info.usage & TextureUsageFlag::eCubemap);
+			if (is_array && is_cubemap)
+			{
+				create_info.arrayLayers = texture_create_info.layers * 6u;
+			}
+			else if (texture_create_info.usage & TextureUsageFlag::eCubemap)
+			{
+				create_info.arrayLayers = 6u;
+			}
+			else
+			{
+				create_info.arrayLayers = 1u;
+			}
+
+			// TODO: FORMAT
+			create_info.format;
+
+			if (texture_create_info.usage & TextureUsageFlag::eRenderTarget)
+			{
+				create_info.usage |= ((IsDepthStencilFormat(create_info.format) || IsDepthOnlyFormat(create_info.format)) ? vk::ImageUsageFlagBits::eDepthStencilAttachment : vk::ImageUsageFlagBits::eColorAttachment);
+			}
+
+			if (texture_create_info.usage & TextureUsageFlag::eTransferable)
+				create_info.usage |= vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst;
+
+			if (texture_create_info.usage & TextureUsageFlag::eSamplable)
+				create_info.usage |= vk::ImageUsageFlagBits::eSampled;
+
+			if (texture_create_info.usage & TextureUsageFlag::eStorage)
+				create_info.usage |= vk::ImageUsageFlagBits::eStorage;
+
+			create_info.sharingMode = vk::SharingMode::eExclusive;
+			create_info.flags = is_cubemap ? vk::ImageCreateFlagBits::eCubeCompatible : vk::ImageCreateFlagBits::eExtendedUsage;
+
+			handle = allocator.CreateImage(*this, create_info);
 		}
 
 		Image::Image(Image&& other) noexcept :

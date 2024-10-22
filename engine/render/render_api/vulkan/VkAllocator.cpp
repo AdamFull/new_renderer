@@ -189,6 +189,16 @@ namespace gfx
 			return alloc_info.deviceMemory;
 		}
 
+		Device const& Allocation::GetDevice() const
+		{
+			return allocator.GetDevice();
+		}
+
+		Device& Allocation::GetDevice()
+		{
+			return allocator.GetDevice();
+		}
+
 		void Allocation::Flush(vk::DeviceSize offset, vk::DeviceSize size)
 		{
 			if (!coherent)

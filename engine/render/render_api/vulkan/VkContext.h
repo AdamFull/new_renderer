@@ -7,6 +7,7 @@
 #include <VkPipelineCache.h>
 #include <VkCommandPool.h>
 #include <VkQueryPool.h>
+#include <VkTexture.h>
 
 #ifdef CreateSemaphore
 #undef CreateSemaphore
@@ -113,6 +114,7 @@ namespace gfx
 			std::vector<std::unique_ptr<VulkanPipelineCache>> pipeline_caches{};
 			std::vector<std::unique_ptr<VulkanCommandPool>> command_pools{};
 			std::vector<std::unique_ptr<VulkanQueryPool>> query_pools{};
+			std::vector<std::unique_ptr<VulkanTexture>> textures{};
 		};
 	}
 }

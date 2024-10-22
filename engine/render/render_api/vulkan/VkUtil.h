@@ -148,5 +148,30 @@ namespace gfx
 
 			return vk::QueryType::eOcclusion;
 		}
+
+
+
+		inline bool IsDepthOnlyFormat(vk::Format format)
+		{
+			return format == vk::Format::eD16Unorm ||
+				format == vk::Format::eD32Sfloat;
+		}
+
+		inline bool IsDepthStencilFormat(vk::Format format)
+		{
+			return format == vk::Format::eD16UnormS8Uint ||
+				format == vk::Format::eD24UnormS8Uint ||
+				format == vk::Format::eD32SfloatS8Uint;
+		}
+
+		inline bool IsDepthFormat(vk::Format format)
+		{
+			return IsDepthOnlyFormat(format) || IsDepthStencilFormat(format);
+		}
+
+		inline bool IsStencilFormat(vk::Format format)
+		{
+			return !IsDepthOnlyFormat(format) || !IsDepthStencilFormat(format);
+		}
 	}
 }

@@ -245,19 +245,20 @@ namespace gfx
 
 		void VkGFXContext::DestroyBuffer(Buffer* buffer)
 		{
-			auto to_delete = std::remove_if(buffers.begin(), buffers.end(), [buffer](const std::unique_ptr<VulkanBuffer>& b) { return b.get() == buffer; });
+			auto to_delete = std::remove_if(buffers.begin(), buffers.end(), [buffer](const std::unique_ptr<VulkanBuffer>& h) { return h.get() == buffer; });
 			buffers.erase(to_delete);
 		}
 
 		Texture* VkGFXContext::CreateTexture(const TextureCreateInfo& create_info)
 		{
-			assert(false && "NOT IMPLEMENTED");
-			return nullptr;
+			auto& new_texture = textures.emplace_back(std::make_unique<VulkanTexture>(*allocator, create_info));
+			return new_texture.get();
 		}
 
 		void VkGFXContext::DestroyTexture(Texture* texture)
 		{
-			assert(false && "NOT IMPLEMENTED");
+			auto to_delete = std::remove_if(textures.begin(), textures.end(), [texture](const std::unique_ptr<VulkanTexture>& h) { return h.get() == texture; });
+			textures.erase(to_delete);
 		}
 
 		Shader* VkGFXContext::CreateShader(const ShaderCreateInfo& create_info)

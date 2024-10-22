@@ -50,6 +50,9 @@ namespace gfx
 			const uint8_t* GetData() const;
 			vk::DeviceMemory GetMemory() const;
 
+			Device const& GetDevice() const;
+			Device& GetDevice();
+
 			/**
 			 * @brief Flushes memory if it is HOST_VISIBLE and not HOST_COHERENT
 			 */
