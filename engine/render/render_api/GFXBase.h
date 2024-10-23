@@ -3,281 +3,284 @@
 #include <memory>
 #include <GFXStructures.h>
 
-namespace gfx
+namespace engine
 {
-	class GFXResource
+	namespace gfx
 	{
-	public:
-		virtual ~GFXResource() = default;
-
-		virtual ResourceType GetResourceType() = 0;
-	};
-
-	class Fence : public GFXResource
-	{
-	public:
-		virtual ~Fence() = default;
-
-		ResourceType GetResourceType() override
+		class GFXResource
 		{
-			return ResourceType::eFence;
-		}
+		public:
+			virtual ~GFXResource() = default;
 
-		virtual void Wait(uint64_t timeout = std::numeric_limits<uint64_t>::max()) = 0;
-		virtual void Reset() = 0;
-	};
+			virtual ResourceType GetResourceType() = 0;
+		};
 
-	class Semaphore : public GFXResource
-	{
-	public:
-		virtual ~Semaphore() = default;
-
-		ResourceType GetResourceType() override
+		class Fence : public GFXResource
 		{
-			return ResourceType::eSemaphore;
-		}
-	};
+		public:
+			virtual ~Fence() = default;
 
-	class Queue : public GFXResource
-	{
-	public:
-		virtual ~Queue() = default;
+			ResourceType GetResourceType() override
+			{
+				return ResourceType::eFence;
+			}
 
-		ResourceType GetResourceType() override
+			virtual void Wait(uint64_t timeout = std::numeric_limits<uint64_t>::max()) = 0;
+			virtual void Reset() = 0;
+		};
+
+		class Semaphore : public GFXResource
 		{
-			return ResourceType::eQueue;
-		}
+		public:
+			virtual ~Semaphore() = default;
 
-		virtual void Submit(const SubmitInfo& submit_info, Fence* fence) = 0;
-		virtual void Present(const PresentInfo& present_info) = 0;
-		virtual void WaitIdle() = 0;
-	};
+			ResourceType GetResourceType() override
+			{
+				return ResourceType::eSemaphore;
+			}
+		};
 
-	class Swapchain : public GFXResource
-	{
-	public:
-		virtual ~Swapchain() = default;
-
-		ResourceType GetResourceType() override
+		class Queue : public GFXResource
 		{
-			return ResourceType::eSwapchain;
-		}
+		public:
+			virtual ~Queue() = default;
 
-		virtual uint32_t GetImageCount() const = 0;
-		virtual Format GetImageFormat() const = 0;
-		virtual void AcquireNextImage(Semaphore* signal_semaphore, Fence* fence, uint32_t* image_index) = 0;
-	};
+			ResourceType GetResourceType() override
+			{
+				return ResourceType::eQueue;
+			}
 
-	class Buffer : public GFXResource
-	{
-	public:
-		virtual ~Buffer() = default;
+			virtual void Submit(const SubmitInfo& submit_info, Fence* fence) = 0;
+			virtual void Present(const PresentInfo& present_info) = 0;
+			virtual void WaitIdle() = 0;
+		};
 
-		ResourceType GetResourceType() override
+		class Swapchain : public GFXResource
 		{
-			return ResourceType::eBuffer;
-		}
+		public:
+			virtual ~Swapchain() = default;
 
-		virtual uint8_t* Map() = 0;
-		virtual void Unmap() = 0;
+			ResourceType GetResourceType() override
+			{
+				return ResourceType::eSwapchain;
+			}
 
-		virtual uint64_t Update(const void* data, uint64_t size, uint64_t offset = 0ull) = 0;
+			virtual uint32_t GetImageCount() const = 0;
+			virtual Format GetImageFormat() const = 0;
+			virtual void AcquireNextImage(Semaphore* signal_semaphore, Fence* fence, uint32_t* image_index) = 0;
+		};
 
-		virtual uint64_t GetSize() const = 0;
-		virtual uint64_t GetAddress() const = 0;
-	};
-
-	class CommandList : public GFXResource
-	{
-	public:
-		virtual ~CommandList() = default;
-
-		ResourceType GetResourceType() override
+		class Buffer : public GFXResource
 		{
-			return ResourceType::eCommandList;
-		}
+		public:
+			virtual ~Buffer() = default;
 
-		virtual void Reset(CommandPoolResetMode reset_mode) = 0;
+			ResourceType GetResourceType() override
+			{
+				return ResourceType::eBuffer;
+			}
 
-		virtual void Begin() = 0;
-		virtual void End() = 0;
+			virtual uint8_t* Map() = 0;
+			virtual void Unmap() = 0;
 
-		// Dynamic states
-		virtual void SetViewport(float x, float y, float width, float height, float min_depth, float max_depth) = 0;
-		virtual void SerScissor(uint32_t x, uint32_t y, uint32_t width, uint32_t height) = 0;
+			virtual uint64_t Update(const void* data, uint64_t size, uint64_t offset = 0ull) = 0;
 
-		virtual void BindPipeline(Pipeline* pipeline) = 0;
-		virtual void BindDescriptorSet() = 0;
-		virtual void BindDescriptorSets() = 0;
-		virtual void PushConstants(RootSignature* root_signature, std::span<const char> constant_data) = 0;
+			virtual uint64_t GetSize() const = 0;
+			virtual uint64_t GetAddress() const = 0;
+		};
 
-		virtual void BindIndexBuffer(Buffer* index_buffer, IndexType index_type, uint64_t offset) = 0;
-		virtual void BindVertexBuffers(uint32_t buffer_count, Buffer** vertex_buffers, const uint32_t* strides, const uint64_t* offsets) = 0;
-
-		virtual void Draw(uint32_t vertex_count, uint32_t first_vertex, uint32_t first_instance, uint32_t instance_count) = 0;
-		virtual void DrawIndexed(uint32_t index_count, uint32_t first_index, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance) = 0;
-		virtual void DrawIndirect() = 0;
-		virtual void DrawIndirectIndexed() = 0;
-		virtual void DrawIndirectIndexedCount() = 0;
-
-		virtual void WriteTimestamp(QueryPool* query_pool, uint32_t pool_index, StageFlag stage_flag) = 0;
-
-		virtual void Dispatch(uint32_t group_x, uint32_t group_y, uint32_t group_z) = 0;
-		virtual void DispatchIndirect() = 0;
-
-		virtual void PipelineBarrier() = 0;
-
-		virtual void BeginQuery(QueryPool* query_pool, uint32_t query) = 0;
-		virtual void EndQuery(QueryPool* query_pool, uint32_t query) = 0;
-
-		virtual void BeginRendering() = 0;
-		virtual void EndRendering() = 0;
-
-		virtual void BeginMarker(const char* name, uint32_t color) = 0;
-		virtual void InsertMarker(const char* name, uint32_t color) = 0;
-		virtual void EndMarker() = 0;
-	};
-
-	class CommandPool : public GFXResource
-	{
-	public:
-		virtual ~CommandPool() = default;
-
-		ResourceType GetResourceType() override
+		class CommandList : public GFXResource
 		{
-			return ResourceType::eCommandPool;
-		}
+		public:
+			virtual ~CommandList() = default;
 
-		virtual CommandList* Allocate(bool secondary = false) = 0;
-		virtual void Reset() = 0;
-	};
+			ResourceType GetResourceType() override
+			{
+				return ResourceType::eCommandList;
+			}
 
-	class Texture : public GFXResource
-	{
-	public:
-		virtual ~Texture() = default;
+			virtual void Reset(CommandPoolResetMode reset_mode) = 0;
 
-		ResourceType GetResourceType() override
+			virtual void Begin() = 0;
+			virtual void End() = 0;
+
+			// Dynamic states
+			virtual void SetViewport(float x, float y, float width, float height, float min_depth, float max_depth) = 0;
+			virtual void SerScissor(uint32_t x, uint32_t y, uint32_t width, uint32_t height) = 0;
+
+			virtual void BindPipeline(Pipeline* pipeline) = 0;
+			virtual void BindDescriptorSet() = 0;
+			virtual void BindDescriptorSets() = 0;
+			virtual void PushConstants(RootSignature* root_signature, std::span<const char> constant_data) = 0;
+
+			virtual void BindIndexBuffer(Buffer* index_buffer, IndexType index_type, uint64_t offset) = 0;
+			virtual void BindVertexBuffers(uint32_t buffer_count, Buffer** vertex_buffers, const uint32_t* strides, const uint64_t* offsets) = 0;
+
+			virtual void Draw(uint32_t vertex_count, uint32_t first_vertex, uint32_t first_instance, uint32_t instance_count) = 0;
+			virtual void DrawIndexed(uint32_t index_count, uint32_t first_index, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance) = 0;
+			virtual void DrawIndirect() = 0;
+			virtual void DrawIndirectIndexed() = 0;
+			virtual void DrawIndirectIndexedCount() = 0;
+
+			virtual void WriteTimestamp(QueryPool* query_pool, uint32_t pool_index, StageFlag stage_flag) = 0;
+
+			virtual void Dispatch(uint32_t group_x, uint32_t group_y, uint32_t group_z) = 0;
+			virtual void DispatchIndirect() = 0;
+
+			virtual void ResourceBarrier(const ResourceBarrierInfo& barrier) = 0;
+
+			virtual void BeginQuery(QueryPool* query_pool, uint32_t query) = 0;
+			virtual void EndQuery(QueryPool* query_pool, uint32_t query) = 0;
+
+			virtual void BeginRendering() = 0;
+			virtual void EndRendering() = 0;
+
+			virtual void BeginMarker(const char* name, uint32_t color) = 0;
+			virtual void InsertMarker(const char* name, uint32_t color) = 0;
+			virtual void EndMarker() = 0;
+		};
+
+		class CommandPool : public GFXResource
 		{
-			return ResourceType::eTexture;
-		}
+		public:
+			virtual ~CommandPool() = default;
 
-		virtual uint32_t GetWidth() const = 0;
-		virtual uint32_t GetHeight() const = 0;
-		virtual uint32_t GetDepth() const = 0;
+			ResourceType GetResourceType() override
+			{
+				return ResourceType::eCommandPool;
+			}
 
-		virtual uint32_t GetMipLevelCount() const = 0;
-		virtual uint32_t GetArrayLayerCount() const = 0;
+			virtual CommandList* Allocate(bool secondary = false) = 0;
+			virtual void Reset() = 0;
+		};
 
-		virtual Format GetFormat() const = 0;
-	};
-
-	class Sampler : public GFXResource
-	{
-	public:
-		virtual ~Sampler() = default;
-
-		ResourceType GetResourceType() override
+		class Texture : public GFXResource
 		{
-			return ResourceType::eSampler;
-		}
-	};
+		public:
+			virtual ~Texture() = default;
 
-	class Shader : public GFXResource
-	{
-	public:
-		virtual ~Shader() = default;
+			ResourceType GetResourceType() override
+			{
+				return ResourceType::eTexture;
+			}
 
-		ResourceType GetResourceType() override
+			virtual uint32_t GetWidth() const = 0;
+			virtual uint32_t GetHeight() const = 0;
+			virtual uint32_t GetDepth() const = 0;
+
+			virtual uint32_t GetMipLevelCount() const = 0;
+			virtual uint32_t GetArrayLayerCount() const = 0;
+
+			virtual Format GetFormat() const = 0;
+		};
+
+		class Sampler : public GFXResource
 		{
-			return ResourceType::eShader;
-		}
+		public:
+			virtual ~Sampler() = default;
 
-		ShaderReflection const& GetReflection() const
+			ResourceType GetResourceType() override
+			{
+				return ResourceType::eSampler;
+			}
+		};
+
+		class Shader : public GFXResource
 		{
-			return reflection;
-		}
+		public:
+			virtual ~Shader() = default;
 
-	protected:
-		ShaderReflection reflection{};
-	};
+			ResourceType GetResourceType() override
+			{
+				return ResourceType::eShader;
+			}
 
-	class RootSignature : public GFXResource
-	{
-	public:
-		virtual ~RootSignature() = default;
+			ShaderReflection const& GetReflection() const
+			{
+				return reflection;
+			}
 
-		ResourceType GetResourceType() override
+		protected:
+			ShaderReflection reflection{};
+		};
+
+		class RootSignature : public GFXResource
 		{
-			return ResourceType::eRootSignature;
-		}
-	};
+		public:
+			virtual ~RootSignature() = default;
 
-	class Pipeline : public GFXResource
-	{
-	public:
-		virtual ~Pipeline() = default;
+			ResourceType GetResourceType() override
+			{
+				return ResourceType::eRootSignature;
+			}
+		};
 
-		ResourceType GetResourceType() override
+		class Pipeline : public GFXResource
 		{
-			return ResourceType::ePipeline;
-		}
+		public:
+			virtual ~Pipeline() = default;
 
-		virtual PipelineType GetType() const = 0;
-	};
+			ResourceType GetResourceType() override
+			{
+				return ResourceType::ePipeline;
+			}
 
-	class PipelineCache : public GFXResource
-	{
-	public:
-		virtual ~PipelineCache() = default;
+			virtual PipelineType GetType() const = 0;
+		};
 
-		ResourceType GetResourceType() override
+		class PipelineCache : public GFXResource
 		{
-			return ResourceType::ePipelineCache;
-		}
+		public:
+			virtual ~PipelineCache() = default;
 
-		virtual void GetData(size_t& data_size, void* data_ptr) = 0;
-	};
+			ResourceType GetResourceType() override
+			{
+				return ResourceType::ePipelineCache;
+			}
 
-	class DescriptorSet : public GFXResource
-	{
-	public:
-		virtual ~DescriptorSet() = default;
+			virtual void GetData(size_t& data_size, void* data_ptr) = 0;
+		};
 
-		ResourceType GetResourceType() override
+		class DescriptorSet : public GFXResource
 		{
-			return ResourceType::eDescriptorSet;
-		}
+		public:
+			virtual ~DescriptorSet() = default;
 
-		virtual void Reset() = 0;
-		virtual void Update() = 0;
-	};
+			ResourceType GetResourceType() override
+			{
+				return ResourceType::eDescriptorSet;
+			}
 
-	class DescriptorPool : public GFXResource
-	{
-	public:
-		virtual ~DescriptorPool() = default;
+			virtual void Reset() = 0;
+			virtual void Update() = 0;
+		};
 
-		ResourceType GetResourceType() override
+		class DescriptorPool : public GFXResource
 		{
-			return ResourceType::eDescriptorPool;
-		}
+		public:
+			virtual ~DescriptorPool() = default;
 
-		virtual DescriptorSet* Allocate() = 0;
-	};
+			ResourceType GetResourceType() override
+			{
+				return ResourceType::eDescriptorPool;
+			}
 
-	class QueryPool : public GFXResource
-	{
-	public:
-		virtual ~QueryPool() = default;
+			virtual DescriptorSet* Allocate() = 0;
+		};
 
-		ResourceType GetResourceType() override
+		class QueryPool : public GFXResource
 		{
-			return ResourceType::eQueryPool;
-		}
+		public:
+			virtual ~QueryPool() = default;
 
-		virtual void Reset(uint32_t start_query, uint32_t query_count = 0u) = 0;
-		virtual void GetData(uint32_t query_index, void* data) = 0;
-		virtual void GetData(uint64_t first_query, uint32_t query_count, void* data) = 0;
-	};
+			ResourceType GetResourceType() override
+			{
+				return ResourceType::eQueryPool;
+			}
+
+			virtual void Reset(uint32_t start_query, uint32_t query_count = 0u) = 0;
+			virtual void GetData(uint32_t query_index, void* data) = 0;
+			virtual void GetData(uint64_t first_query, uint32_t query_count, void* data) = 0;
+		};
+	}
 }

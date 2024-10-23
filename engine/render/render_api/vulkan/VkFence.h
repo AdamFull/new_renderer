@@ -3,27 +3,30 @@
 #include <VkResource.h>
 #include <GFXBase.h>
 
-namespace gfx
+namespace engine
 {
-	namespace vulkan
+	namespace gfx
 	{
-		class Device;
-
-		class VulkanFence : public Fence, public VulkanResource<vk::Fence>
+		namespace vulkan
 		{
-		public:
-			VulkanFence(Device& device);
-			~VulkanFence();
+			class Device;
 
-			void Wait(uint64_t timeout = std::numeric_limits<uint64_t>::max()) override;
-			void Reset() override;
+			class VulkanFence : public Fence, public VulkanResource<vk::Fence>
+			{
+			public:
+				VulkanFence(Device& device);
+				~VulkanFence();
 
-			VulkanFence(const VulkanFence&) = delete;
-			VulkanFence(VulkanFence&& other) = default;
-			VulkanFence& operator=(const VulkanFence&) = delete;
-			VulkanFence& operator=(VulkanFence&&) = default;
-		private:
-			Device& device;
-		};
+				void Wait(uint64_t timeout = std::numeric_limits<uint64_t>::max()) override;
+				void Reset() override;
+
+				VulkanFence(const VulkanFence&) = delete;
+				VulkanFence(VulkanFence&& other) = default;
+				VulkanFence& operator=(const VulkanFence&) = delete;
+				VulkanFence& operator=(VulkanFence&&) = default;
+			private:
+				Device& device;
+			};
+		}
 	}
 }

@@ -6,108 +6,111 @@
 
 #include <VkUtil.h>
 
-namespace gfx
+namespace engine
 {
-	namespace vulkan
+	namespace gfx
 	{
-		VulkanTexture::VulkanTexture(Allocator& allocator, const TextureCreateInfo& create_info) :
-			device{ allocator.GetDevice() }
+		namespace vulkan
 		{
-			// Create image handle
-			image = std::make_unique<Image>(allocator, create_info);
-
-			// Create base shader resource view
-			srv = std::make_unique<ImageView>(*image, create_info, 0u, 0u, create_info.levels);
-
-			subresources.resize(create_info.levels);
-			for (u32 mip_index = 0u; mip_index < create_info.levels; ++mip_index)
+			VulkanTexture::VulkanTexture(Allocator& allocator, const TextureCreateInfo& create_info) :
+				device{ allocator.GetDevice() }
 			{
-				subresources[mip_index] = std::make_unique<ImageView>(*image, create_info, 0u, mip_index, 1u);
+				// Create image handle
+				image = std::make_unique<Image>(allocator, create_info);
+
+				// Create base shader resource view
+				srv = std::make_unique<ImageView>(*image, create_info, 0u, 0u, create_info.levels);
+
+				subresources.resize(create_info.levels);
+				for (u32 mip_index = 0u; mip_index < create_info.levels; ++mip_index)
+				{
+					subresources[mip_index] = std::make_unique<ImageView>(*image, create_info, 0u, mip_index, 1u);
+				}
 			}
-		}
 
-		VulkanTexture::VulkanTexture(Allocator& allocator, Swapchain* swapchain, uint32_t image_index) :
-			device{ allocator.GetDevice() }
-		{
-			VulkanSwapchain* vkswapchain = static_cast<VulkanSwapchain*>(swapchain);
-			auto& extent = vkswapchain->GetExtent();
+			VulkanTexture::VulkanTexture(Allocator& allocator, Swapchain* swapchain, uint32_t image_index) :
+				device{ allocator.GetDevice() }
+			{
+				VulkanSwapchain* vkswapchain = static_cast<VulkanSwapchain*>(swapchain);
+				auto& extent = vkswapchain->GetExtent();
 
-			TextureCreateInfo create_info{};
-			create_info.width = extent.width;
-			create_info.height = extent.height;
-			create_info.usage = TextureUsageFlag::eRenderTarget;
-			// TODO: IMAGE FORMAT
-			assert(false && "NOT IMPLEMENTED");
+				TextureCreateInfo create_info{};
+				create_info.width = extent.width;
+				create_info.height = extent.height;
+				create_info.usage = TextureUsageFlag::eRenderTarget;
+				// TODO: IMAGE FORMAT
+				assert(false && "NOT IMPLEMENTED");
 
-			assert(image_index < vkswapchain->GetImageCount());
-			auto& image_handle = vkswapchain->GetImage(image_index);
+				assert(image_index < vkswapchain->GetImageCount());
+				auto& image_handle = vkswapchain->GetImage(image_index);
 
-			image = std::make_unique<Image>(allocator, create_info, image_handle);
-			srv = std::make_unique<ImageView>(*image, create_info, 0u, 0u, create_info.levels);
-		}
+				image = std::make_unique<Image>(allocator, create_info, image_handle);
+				srv = std::make_unique<ImageView>(*image, create_info, 0u, 0u, create_info.levels);
+			}
 
-		VulkanTexture::VulkanTexture(VulkanTexture&& other) :
-			device{ device },
-			image{ std::exchange(other.image, {}) },
-			srv{ std::exchange(other.srv, {}) },
-			subresources{ std::exchange(other.subresources, {}) }
-		{
-		}
+			VulkanTexture::VulkanTexture(VulkanTexture&& other) :
+				device{ device },
+				image{ std::exchange(other.image, {}) },
+				srv{ std::exchange(other.srv, {}) },
+				subresources{ std::exchange(other.subresources, {}) }
+			{
+			}
 
-		Image& VulkanTexture::GetImage()
-		{
-			return *image;
-		}
+			Image& VulkanTexture::GetImage()
+			{
+				return *image;
+			}
 
-		Image const& VulkanTexture::GetImage() const
-		{
-			return *image;
-		}
+			Image const& VulkanTexture::GetImage() const
+			{
+				return *image;
+			}
 
-		ImageView& VulkanTexture::GetSubresource(uint32_t subresource)
-		{
-			if (subresource == ~0u)
-				return *srv;
+			ImageView& VulkanTexture::GetSubresource(uint32_t subresource)
+			{
+				if (subresource == ~0u)
+					return *srv;
 
-			return *subresources[subresource];
-		}
+				return *subresources[subresource];
+			}
 
-		ImageView const& VulkanTexture::GetSubresource(uint32_t subresource) const
-		{
-			if (subresource == ~0u)
-				return *srv;
+			ImageView const& VulkanTexture::GetSubresource(uint32_t subresource) const
+			{
+				if (subresource == ~0u)
+					return *srv;
 
-			return *subresources[subresource];
-		}
+				return *subresources[subresource];
+			}
 
-		uint32_t VulkanTexture::GetWidth() const
-		{
-			return image->GetExtent().width;
-		}
+			uint32_t VulkanTexture::GetWidth() const
+			{
+				return image->GetExtent().width;
+			}
 
-		uint32_t VulkanTexture::GetHeight() const
-		{
-			return image->GetExtent().height;
-		}
+			uint32_t VulkanTexture::GetHeight() const
+			{
+				return image->GetExtent().height;
+			}
 
-		uint32_t VulkanTexture::GetDepth() const
-		{
-			return image->GetExtent().depth;
-		}
+			uint32_t VulkanTexture::GetDepth() const
+			{
+				return image->GetExtent().depth;
+			}
 
-		uint32_t VulkanTexture::GetMipLevelCount() const
-		{
-			return image->GetMipLevelCount();
-		}
+			uint32_t VulkanTexture::GetMipLevelCount() const
+			{
+				return image->GetMipLevelCount();
+			}
 
-		uint32_t VulkanTexture::GetArrayLayerCount() const
-		{
-			return image->GetArrayLayerCount();
-		}
+			uint32_t VulkanTexture::GetArrayLayerCount() const
+			{
+				return image->GetArrayLayerCount();
+			}
 
-		Format VulkanTexture::GetFormat() const
-		{
-			return FormatFromVk(static_cast<uint32_t>(image->GetFormat()));
+			Format VulkanTexture::GetFormat() const
+			{
+				return FormatFromVk(static_cast<uint32_t>(image->GetFormat()));
+			}
 		}
 	}
 }

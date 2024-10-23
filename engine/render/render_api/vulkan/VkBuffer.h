@@ -5,39 +5,42 @@
 
 #include <GFXBase.h>
 
-namespace gfx
+namespace engine
 {
-	namespace vulkan
+	namespace gfx
 	{
-		class VulkanBuffer final : public Buffer, public Allocation, public VulkanResource<vk::Buffer>
+		namespace vulkan
 		{
-		public:
-			VulkanBuffer(const VulkanBuffer&) = delete;
-			VulkanBuffer(VulkanBuffer&& other) = default;
-			VulkanBuffer& operator=(const VulkanBuffer&) = delete;
-			VulkanBuffer& operator=(VulkanBuffer&&) = default;
+			class VulkanBuffer final : public Buffer, public Allocation, public VulkanResource<vk::Buffer>
+			{
+			public:
+				VulkanBuffer(const VulkanBuffer&) = delete;
+				VulkanBuffer(VulkanBuffer&& other) = default;
+				VulkanBuffer& operator=(const VulkanBuffer&) = delete;
+				VulkanBuffer& operator=(VulkanBuffer&&) = default;
 
-			VulkanBuffer(Allocator& allocator, const BufferCreateInfo& create_info);
-			~VulkanBuffer();
+				VulkanBuffer(Allocator& allocator, const BufferCreateInfo& create_info);
+				~VulkanBuffer();
 
-			/**
-			 * @brief Maps vulkan memory if it isn't already mapped to an host visible address
-			 * @return Pointer to host visible memory
-			 */
-			uint8_t* Map() override;
+				/**
+				 * @brief Maps vulkan memory if it isn't already mapped to an host visible address
+				 * @return Pointer to host visible memory
+				 */
+				uint8_t* Map() override;
 
-			/**
-			 * @brief Unmaps vulkan memory from the host visible address
-			 */
-			void Unmap() override;
+				/**
+				 * @brief Unmaps vulkan memory from the host visible address
+				 */
+				void Unmap() override;
 
-			uint64_t Update(const void* data, uint64_t size, uint64_t offset = 0ull) override;
+				uint64_t Update(const void* data, uint64_t size, uint64_t offset = 0ull) override;
 
-			uint64_t GetSize() const override;
-			uint64_t GetAddress() const override;
-		private:
-			vk::DeviceSize size{ 0ull };
-			vk::DeviceSize suballocation_count{ 0ull };
-		};
+				uint64_t GetSize() const override;
+				uint64_t GetAddress() const override;
+			private:
+				vk::DeviceSize size{ 0ull };
+				vk::DeviceSize suballocation_count{ 0ull };
+			};
+		}
 	}
 }

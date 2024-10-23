@@ -3,44 +3,47 @@
 #include <VkResource.h>
 #include <GFXBase.h>
 
-namespace gfx
+namespace engine
 {
-	namespace vulkan
+	namespace gfx
 	{
-		class Device;
-
-		class VulkanPipeline : public Pipeline, public VulkanResource<vk::Pipeline>
+		namespace vulkan
 		{
-		public:
-			VulkanPipeline(Device& device);
-			VulkanPipeline(VulkanPipeline&& other);
-			virtual ~VulkanPipeline();
+			class Device;
 
-			VulkanPipeline(const VulkanPipeline&) = delete;
-			VulkanPipeline& operator=(const VulkanPipeline&) = delete;
-			VulkanPipeline& operator=(VulkanPipeline&&) = delete;
-		protected:
-			Device& device;
-		};
+			class VulkanPipeline : public Pipeline, public VulkanResource<vk::Pipeline>
+			{
+			public:
+				VulkanPipeline(Device& device);
+				VulkanPipeline(VulkanPipeline&& other);
+				virtual ~VulkanPipeline();
 
-		class VulkanComputePipeline final : public VulkanPipeline
-		{
-		public:
-			VulkanComputePipeline(Device& device, const ComputePipelineCreateInfo& create_info);
-			VulkanComputePipeline(VulkanComputePipeline&& other);
-			~VulkanComputePipeline() = default;
+				VulkanPipeline(const VulkanPipeline&) = delete;
+				VulkanPipeline& operator=(const VulkanPipeline&) = delete;
+				VulkanPipeline& operator=(VulkanPipeline&&) = delete;
+			protected:
+				Device& device;
+			};
 
-			PipelineType GetType() const override;
-		};
+			class VulkanComputePipeline final : public VulkanPipeline
+			{
+			public:
+				VulkanComputePipeline(Device& device, const ComputePipelineCreateInfo& create_info);
+				VulkanComputePipeline(VulkanComputePipeline&& other);
+				~VulkanComputePipeline() = default;
 
-		class VulkanGraphicsPipeline final : public VulkanPipeline
-		{
-		public:
-			VulkanGraphicsPipeline(Device& device, const GraphicsPipelineCreateInfo& create_info);
-			VulkanGraphicsPipeline(VulkanGraphicsPipeline&& other);
-			~VulkanGraphicsPipeline() = default;
+				PipelineType GetType() const override;
+			};
 
-			PipelineType GetType() const override;
-		};
+			class VulkanGraphicsPipeline final : public VulkanPipeline
+			{
+			public:
+				VulkanGraphicsPipeline(Device& device, const GraphicsPipelineCreateInfo& create_info);
+				VulkanGraphicsPipeline(VulkanGraphicsPipeline&& other);
+				~VulkanGraphicsPipeline() = default;
+
+				PipelineType GetType() const override;
+			};
+		}
 	}
 }

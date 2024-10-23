@@ -3,56 +3,59 @@
 #include <GFXBase.h>
 #include <VkDescriptorSetLayout.h>
 
-namespace gfx
+namespace engine
 {
-	namespace vulkan
+	namespace gfx
 	{
-		class Device;
-
-		struct PipelineLayoutCreateInfo
+		namespace vulkan
 		{
-		public:
-			vk::PipelineLayoutCreateInfo create_info{};
+			class Device;
 
-			std::array<vk::DescriptorSetLayout, 8ull> descriptor_set_layouts{};
-			std::array<vk::PushConstantRange, 16ull> push_constant_ranges{};
+			struct PipelineLayoutCreateInfo
+			{
+			public:
+				vk::PipelineLayoutCreateInfo create_info{};
 
-			PipelineLayoutCreateInfo();
+				std::array<vk::DescriptorSetLayout, 8ull> descriptor_set_layouts{};
+				std::array<vk::PushConstantRange, 16ull> push_constant_ranges{};
 
-			void AddDescriptorSetLayout(vk::DescriptorSetLayout layout);
-			vk::PushConstantRange& AddConstantRange();
-		};
+				PipelineLayoutCreateInfo();
 
-		class PipelineLayout final : public VulkanResource<vk::PipelineLayout>
-		{
-		public:
-			PipelineLayout(Device& device, const PipelineLayoutCreateInfo& create_info);
-			~PipelineLayout();
+				void AddDescriptorSetLayout(vk::DescriptorSetLayout layout);
+				vk::PushConstantRange& AddConstantRange();
+			};
 
-			PipelineLayout(PipelineLayout&) = delete;
-			PipelineLayout(PipelineLayout&& other);
+			class PipelineLayout final : public VulkanResource<vk::PipelineLayout>
+			{
+			public:
+				PipelineLayout(Device& device, const PipelineLayoutCreateInfo& create_info);
+				~PipelineLayout();
 
-			PipelineLayout& operator=(const PipelineLayout&) = delete;
-			PipelineLayout& operator=(PipelineLayout&&) = delete;
-		private:
-			Device& device;
-		};
+				PipelineLayout(PipelineLayout&) = delete;
+				PipelineLayout(PipelineLayout&& other);
+
+				PipelineLayout& operator=(const PipelineLayout&) = delete;
+				PipelineLayout& operator=(PipelineLayout&&) = delete;
+			private:
+				Device& device;
+			};
 
 
-		class VulkanRootSignature final : public RootSignature
-		{
-		public:
-			VulkanRootSignature(Device& device, const RootSignatureCreateInfo& create_info);
-			~VulkanRootSignature();
+			class VulkanRootSignature final : public RootSignature
+			{
+			public:
+				VulkanRootSignature(Device& device, const RootSignatureCreateInfo& create_info);
+				~VulkanRootSignature();
 
-			VulkanRootSignature(VulkanRootSignature&) = delete;
-			VulkanRootSignature(VulkanRootSignature&& other);
+				VulkanRootSignature(VulkanRootSignature&) = delete;
+				VulkanRootSignature(VulkanRootSignature&& other);
 
-			VulkanRootSignature& operator=(const VulkanRootSignature&) = delete;
-			VulkanRootSignature& operator=(VulkanRootSignature&&) = delete;
-		private:
-			std::unique_ptr<PipelineLayout> pipeline_layout{};
-			std::array<std::unique_ptr<DescriptorSetLayout>, 8ull> descriptor_set_layouts{};
-		};
+				VulkanRootSignature& operator=(const VulkanRootSignature&) = delete;
+				VulkanRootSignature& operator=(VulkanRootSignature&&) = delete;
+			private:
+				std::unique_ptr<PipelineLayout> pipeline_layout{};
+				std::array<std::unique_ptr<DescriptorSetLayout>, 8ull> descriptor_set_layouts{};
+			};
+		}
 	}
 }

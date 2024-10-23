@@ -3,33 +3,36 @@
 #include <VkResource.h>
 #include <GFXBase.h>
 
-namespace gfx
+namespace engine
 {
-	namespace vulkan
+	namespace gfx
 	{
-		class Device;
-
-		class VulkanQueryPool final : public QueryPool, public VulkanResource<vk::QueryPool>
+		namespace vulkan
 		{
-		public:
-			VulkanQueryPool(Device& device, const QueryPoolCreateInfo& create_info);
-			VulkanQueryPool(VulkanQueryPool&& other);
-			~VulkanQueryPool();
+			class Device;
 
-			VulkanQueryPool(const VulkanQueryPool&) = delete;
-			VulkanQueryPool& operator=(const VulkanQueryPool&) = delete;
-			VulkanQueryPool& operator=(VulkanQueryPool&&) = delete;
+			class VulkanQueryPool final : public QueryPool, public VulkanResource<vk::QueryPool>
+			{
+			public:
+				VulkanQueryPool(Device& device, const QueryPoolCreateInfo& create_info);
+				VulkanQueryPool(VulkanQueryPool&& other);
+				~VulkanQueryPool();
 
-			void Reset(uint32_t start_query, uint32_t query_count) override;
-			void GetData(uint32_t query_index, void* data) override;
-			void GetData(uint64_t first_query, uint32_t query_count, void* data) override;
+				VulkanQueryPool(const VulkanQueryPool&) = delete;
+				VulkanQueryPool& operator=(const VulkanQueryPool&) = delete;
+				VulkanQueryPool& operator=(VulkanQueryPool&&) = delete;
 
-			uint32_t GetQueryCount() const;
-		private:
-			Device& device;
+				void Reset(uint32_t start_query, uint32_t query_count) override;
+				void GetData(uint32_t query_index, void* data) override;
+				void GetData(uint64_t first_query, uint32_t query_count, void* data) override;
 
-			vk::QueryType query_type{};
-			uint32_t max_query_count{ 0u };
-		};
+				uint32_t GetQueryCount() const;
+			private:
+				Device& device;
+
+				vk::QueryType query_type{};
+				uint32_t max_query_count{ 0u };
+			};
+		}
 	}
 }

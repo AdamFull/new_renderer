@@ -2,13 +2,16 @@
 
 #include <GFXBase.h>
 
-namespace gfx
+namespace engine
 {
-	class ExecutionContext
+	namespace gfx
 	{
-	public:
-		virtual ~ExecutionContext() = default;
+		class ExecutionContext
+		{
+		public:
+			virtual ~ExecutionContext() = default;
 
-		virtual CommandList* GetCurrentCommandList() = 0;
-	};
+			virtual CommandList* GetCurrentCommandList() = 0;
+		};
+	}
 }

@@ -4,65 +4,68 @@
 
 #include <VkQueue.h>
 
-namespace gfx
+namespace engine
 {
-	namespace vulkan
+	namespace gfx
 	{
-		class Device;
-		class PhysicalDevice;
-
-		class Device : public VulkanResource<vk::Device>
+		namespace vulkan
 		{
-		public:
-			/**
-			 * @brief Device constructor
-			 * @param gpu A valid Vulkan physical device and the requested gpu features
-			 * @param surface The surface
-			 * @param debug_utils The debug utils to be associated to this device
-			 * @param requested_extensions (Optional) List of required device extensions and whether support is optional or not
-			 */
-			Device(PhysicalDevice& gpu, vk::SurfaceKHR surface, std::vector<const char*> requested_extensions = {});
+			class Device;
+			class PhysicalDevice;
 
-			Device(const Device&) = delete;
-			Device(Device&&) = delete;
+			class Device : public VulkanResource<vk::Device>
+			{
+			public:
+				/**
+				 * @brief Device constructor
+				 * @param gpu A valid Vulkan physical device and the requested gpu features
+				 * @param surface The surface
+				 * @param debug_utils The debug utils to be associated to this device
+				 * @param requested_extensions (Optional) List of required device extensions and whether support is optional or not
+				 */
+				Device(PhysicalDevice& gpu, vk::SurfaceKHR surface, std::vector<const char*> requested_extensions = {});
 
-			~Device();
+				Device(const Device&) = delete;
+				Device(Device&&) = delete;
 
-			Device& operator=(const Device&) = delete;
-			Device& operator=(Device&&) = delete;
+				~Device();
 
-			PhysicalDevice const& GetGpu() const;
+				Device& operator=(const Device&) = delete;
+				Device& operator=(Device&&) = delete;
 
-			VulkanQueue& GetQueue(uint32_t queue_family_index, uint32_t queue_index);
+				PhysicalDevice const& GetGpu() const;
 
-			VulkanQueue& GetQueueByFlags(vk::QueueFlags queue_flags, uint32_t queue_index);
+				VulkanQueue& GetQueue(uint32_t queue_family_index, uint32_t queue_index);
 
-			VulkanQueue& GetQueueByPresent(uint32_t queue_index);
+				VulkanQueue& GetQueueByFlags(vk::QueueFlags queue_flags, uint32_t queue_index);
 
-			size_t GetQueueCount() const;
+				VulkanQueue& GetQueueByPresent(uint32_t queue_index);
 
-			/**
-			 * @brief Finds a suitable graphics queue to submit to
-			 * @return The first present supported queue, otherwise just any graphics queue
-			 */
-			VulkanQueue& GetSuitableGraphicsQueue();
+				size_t GetQueueCount() const;
 
-			bool IsExtensionSupported(const char* extension) const;
+				/**
+				 * @brief Finds a suitable graphics queue to submit to
+				 * @return The first present supported queue, otherwise just any graphics queue
+				 */
+				VulkanQueue& GetSuitableGraphicsQueue();
 
-			bool IsEnabled(std::string const& extension) const;
+				bool IsExtensionSupported(const char* extension) const;
 
-			uint32_t GetQueueFamilyIndex(vk::QueueFlagBits queue_flag) const;
+				bool IsEnabled(std::string const& extension) const;
 
-		private:
-			PhysicalDevice const& gpu;
+				uint32_t GetQueueFamilyIndex(vk::QueueFlagBits queue_flag) const;
 
-			vk::AllocationCallbacks* allocation_callbacks{ nullptr };
+			private:
+				PhysicalDevice const& gpu;
 
-			vk::SurfaceKHR surface{ nullptr };
+				vk::AllocationCallbacks* allocation_callbacks{ nullptr };
 
-			std::vector<const char*> enabled_extensions{};
+				vk::SurfaceKHR surface{ nullptr };
 
-			std::vector<std::vector<VulkanQueue>> queues;
-		};
+				std::vector<const char*> enabled_extensions{};
+
+				std::vector<std::vector<VulkanQueue>> queues;
+			};
+		}
 	}
 }

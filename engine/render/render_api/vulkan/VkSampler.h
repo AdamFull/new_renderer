@@ -3,25 +3,28 @@
 #include <VkResource.h>
 #include <GFXBase.h>
 
-namespace gfx
+namespace engine
 {
-	namespace vulkan
+	namespace gfx
 	{
-		class Device;
-
-		class VulkanSampler : public Sampler, public VulkanResource<vk::Sampler>
+		namespace vulkan
 		{
-		public:
-			VulkanSampler(Device& device, const SamplerCreateInfo& create_info);
-			~VulkanSampler();
+			class Device;
 
-			VulkanSampler(VulkanSampler&) = delete;
-			VulkanSampler(VulkanSampler&& other) noexcept;
+			class VulkanSampler : public Sampler, public VulkanResource<vk::Sampler>
+			{
+			public:
+				VulkanSampler(Device& device, const SamplerCreateInfo& create_info);
+				~VulkanSampler();
 
-			VulkanSampler& operator=(const VulkanSampler&) = delete;
-			VulkanSampler& operator=(VulkanSampler&&) = delete;
-		private:
-			Device& device;
-		};
+				VulkanSampler(VulkanSampler&) = delete;
+				VulkanSampler(VulkanSampler&& other) noexcept;
+
+				VulkanSampler& operator=(const VulkanSampler&) = delete;
+				VulkanSampler& operator=(VulkanSampler&&) = delete;
+			private:
+				Device& device;
+			};
+		}
 	}
 }

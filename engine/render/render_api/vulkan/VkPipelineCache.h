@@ -3,27 +3,30 @@
 #include <VkResource.h>
 #include <GFXBase.h>
 
-namespace gfx
+namespace engine
 {
-	namespace vulkan
+	namespace gfx
 	{
-		class Device;
-
-		class VulkanPipelineCache : public PipelineCache, public VulkanResource<vk::PipelineCache>
+		namespace vulkan
 		{
-		public:
-			VulkanPipelineCache(Device& device, const PipelineCacheCreateInfo& create_info);
-			~VulkanPipelineCache();
+			class Device;
 
-			VulkanPipelineCache(VulkanPipelineCache&) = delete;
-			VulkanPipelineCache(VulkanPipelineCache&& other) noexcept;
+			class VulkanPipelineCache : public PipelineCache, public VulkanResource<vk::PipelineCache>
+			{
+			public:
+				VulkanPipelineCache(Device& device, const PipelineCacheCreateInfo& create_info);
+				~VulkanPipelineCache();
 
-			VulkanPipelineCache& operator=(const VulkanPipelineCache&) = delete;
-			VulkanPipelineCache& operator=(VulkanPipelineCache&&) = delete;
+				VulkanPipelineCache(VulkanPipelineCache&) = delete;
+				VulkanPipelineCache(VulkanPipelineCache&& other) noexcept;
 
-			void GetData(size_t& data_size, void* data_ptr) override;
-		private:
-			Device& device;
-		};
+				VulkanPipelineCache& operator=(const VulkanPipelineCache&) = delete;
+				VulkanPipelineCache& operator=(VulkanPipelineCache&&) = delete;
+
+				void GetData(size_t& data_size, void* data_ptr) override;
+			private:
+				Device& device;
+			};
+		}
 	}
 }

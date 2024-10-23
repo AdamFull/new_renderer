@@ -2,63 +2,66 @@
 
 #include <VkResource.h>
 
-namespace gfx
+namespace engine
 {
-	namespace vulkan
+	namespace gfx
 	{
-		class Device;
-
-		static constexpr uint32_t k_max_pool_sizes_count{ 11u };
-		static constexpr uint32_t k_max_layout_bindings{ 16u };
-
-		using PoolSizes = std::array<int32_t, k_max_pool_sizes_count>;
-
-		struct DescriptorSetLayoutCreateInfo
+		namespace vulkan
 		{
-			DescriptorSetLayoutCreateInfo();
+			class Device;
 
-			vk::DescriptorSetLayoutCreateInfo create_info{};
-			vk::DescriptorSetLayoutBindingFlagsCreateInfoEXT ext_create_info{};
+			static constexpr uint32_t k_max_pool_sizes_count{ 11u };
+			static constexpr uint32_t k_max_layout_bindings{ 16u };
 
-			std::array<vk::DescriptorSetLayoutBinding, k_max_layout_bindings> bindings{};
-			std::array<vk::DescriptorBindingFlagsEXT, k_max_layout_bindings> binding_flags_ext{};
+			using PoolSizes = std::array<int32_t, k_max_pool_sizes_count>;
 
-			vk::DescriptorSetLayoutBinding& AddBinding();
-			vk::DescriptorBindingFlagsEXT& AddBindingFlags();
-		};
-
-		class DescriptorSetLayout final : public VulkanResource<vk::DescriptorSetLayout>
-		{
-		public:
-			struct DescriptorBindingInfo
+			struct DescriptorSetLayoutCreateInfo
 			{
-				vk::DescriptorSetLayoutBinding binding{};
-				vk::DescriptorBindingFlagsEXT flags{};
+				DescriptorSetLayoutCreateInfo();
+
+				vk::DescriptorSetLayoutCreateInfo create_info{};
+				vk::DescriptorSetLayoutBindingFlagsCreateInfoEXT ext_create_info{};
+
+				std::array<vk::DescriptorSetLayoutBinding, k_max_layout_bindings> bindings{};
+				std::array<vk::DescriptorBindingFlagsEXT, k_max_layout_bindings> binding_flags_ext{};
+
+				vk::DescriptorSetLayoutBinding& AddBinding();
+				vk::DescriptorBindingFlagsEXT& AddBindingFlags();
 			};
 
-			using LayoutBindingArray = std::array<DescriptorBindingInfo, k_max_layout_bindings>;
+			class DescriptorSetLayout final : public VulkanResource<vk::DescriptorSetLayout>
+			{
+			public:
+				struct DescriptorBindingInfo
+				{
+					vk::DescriptorSetLayoutBinding binding{};
+					vk::DescriptorBindingFlagsEXT flags{};
+				};
 
-			DescriptorSetLayout(Device& device, const DescriptorSetLayoutCreateInfo& create_info);
-			DescriptorSetLayout(const DescriptorSetLayout&) = delete;
-			DescriptorSetLayout(DescriptorSetLayout&& other);
-			~DescriptorSetLayout();
+				using LayoutBindingArray = std::array<DescriptorBindingInfo, k_max_layout_bindings>;
 
-			DescriptorSetLayout& operator=(const DescriptorSetLayout&) = delete;
-			DescriptorSetLayout& operator=(DescriptorSetLayout&&) = delete;
+				DescriptorSetLayout(Device& device, const DescriptorSetLayoutCreateInfo& create_info);
+				DescriptorSetLayout(const DescriptorSetLayout&) = delete;
+				DescriptorSetLayout(DescriptorSetLayout&& other);
+				~DescriptorSetLayout();
 
-			const LayoutBindingArray& GetBindings() const;
-			uint32_t GetBindingCount() const;
+				DescriptorSetLayout& operator=(const DescriptorSetLayout&) = delete;
+				DescriptorSetLayout& operator=(DescriptorSetLayout&&) = delete;
 
-			vk::DescriptorSetLayoutBinding& GetLayoutBinding(uint32_t binding_index);
-			vk::DescriptorBindingFlagsEXT& GetLayoutBindingFlags(uint32_t binding_index);
+				const LayoutBindingArray& GetBindings() const;
+				uint32_t GetBindingCount() const;
 
-			const PoolSizes& GetRequiredDescriptorCount() const;
-		private:
-			Device& device;
+				vk::DescriptorSetLayoutBinding& GetLayoutBinding(uint32_t binding_index);
+				vk::DescriptorBindingFlagsEXT& GetLayoutBindingFlags(uint32_t binding_index);
 
-			PoolSizes pool_sizes{};
-			LayoutBindingArray layout_bindings{};
-			uint32_t binding_count{ 0u };
-		};
+				const PoolSizes& GetRequiredDescriptorCount() const;
+			private:
+				Device& device;
+
+				PoolSizes pool_sizes{};
+				LayoutBindingArray layout_bindings{};
+				uint32_t binding_count{ 0u };
+			};
+		}
 	}
 }

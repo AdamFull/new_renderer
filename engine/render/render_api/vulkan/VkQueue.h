@@ -3,46 +3,49 @@
 #include <VkResource.h>
 #include <GFXBase.h>
 
-namespace gfx
+namespace engine
 {
-	namespace vulkan
+	namespace gfx
 	{
-		class Device;
-
-		class VulkanQueue : public Queue, public VulkanResource<vk::Queue>
+		namespace vulkan
 		{
-		public:
-			VulkanQueue(Device& device, uint32_t family_index, vk::QueueFamilyProperties properties, vk::Bool32 can_present, uint32_t index);
-			VulkanQueue(VulkanQueue&& other);
-			~VulkanQueue() = default;
+			class Device;
 
-			VulkanQueue(const VulkanQueue&) = default;
-			VulkanQueue& operator=(const VulkanQueue&) = delete;
-			VulkanQueue& operator=(VulkanQueue&&) = delete;
+			class VulkanQueue : public Queue, public VulkanResource<vk::Queue>
+			{
+			public:
+				VulkanQueue(Device& device, uint32_t family_index, vk::QueueFamilyProperties properties, vk::Bool32 can_present, uint32_t index);
+				VulkanQueue(VulkanQueue&& other);
+				~VulkanQueue() = default;
 
-			const Device& GetDevice() const;
-			Device& GetDevice();
+				VulkanQueue(const VulkanQueue&) = default;
+				VulkanQueue& operator=(const VulkanQueue&) = delete;
+				VulkanQueue& operator=(VulkanQueue&&) = delete;
 
-			uint32_t GetFamilyIndex() const;
-			uint32_t GetIndex() const;
+				const Device& GetDevice() const;
+				Device& GetDevice();
 
-			const vk::QueueFamilyProperties& GetProperties() const;
+				uint32_t GetFamilyIndex() const;
+				uint32_t GetIndex() const;
 
-			vk::Bool32 SupportPresent() const;
+				const vk::QueueFamilyProperties& GetProperties() const;
 
-			void Submit(const SubmitInfo& submit_info, Fence* fence) override;
-			void Present(const PresentInfo& present_info) override;
-			void WaitIdle() override;
-		private:
-			Device& device;
+				vk::Bool32 SupportPresent() const;
 
-			uint32_t family_index{ 0 };
+				void Submit(const SubmitInfo& submit_info, Fence* fence) override;
+				void Present(const PresentInfo& present_info) override;
+				void WaitIdle() override;
+			private:
+				Device& device;
 
-			uint32_t index{ 0 };
+				uint32_t family_index{ 0 };
 
-			vk::Bool32 can_present{ false };
+				uint32_t index{ 0 };
 
-			vk::QueueFamilyProperties properties{};
-		};
+				vk::Bool32 can_present{ false };
+
+				vk::QueueFamilyProperties properties{};
+			};
+		}
 	}
 }

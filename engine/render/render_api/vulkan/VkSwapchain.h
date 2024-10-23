@@ -5,101 +5,104 @@
 #include <VkResource.h>
 #include <GFXBase.h>
 
-namespace gfx
+namespace engine
 {
-	namespace vulkan
+	namespace gfx
 	{
-		class Device;
-
-		class VulkanSwapchain : public Swapchain, public VulkanResource<vk::SwapchainKHR>
+		namespace vulkan
 		{
-		public:
-			/**
-			 * @brief Constructor to create a swapchain by changing the extent
-			 *        only and preserving the configuration from the old swapchain.
-			 */
-			VulkanSwapchain(VulkanSwapchain& old_swapchain, const vk::Extent2D& extent);
+			class Device;
 
-			/**
-			 * @brief Constructor to create a swapchain by changing the image count
-			 *        only and preserving the configuration from the old swapchain.
-			 */
-			VulkanSwapchain(VulkanSwapchain& old_swapchain, const uint32_t image_count);
+			class VulkanSwapchain : public Swapchain, public VulkanResource<vk::SwapchainKHR>
+			{
+			public:
+				/**
+				 * @brief Constructor to create a swapchain by changing the extent
+				 *        only and preserving the configuration from the old swapchain.
+				 */
+				VulkanSwapchain(VulkanSwapchain& old_swapchain, const vk::Extent2D& extent);
 
-			/**
-			 * @brief Constructor to create a swapchain by changing the image usage
-			 * only and preserving the configuration from the old swapchain.
-			 */
-			VulkanSwapchain(VulkanSwapchain& old_swapchain, const std::set<vk::ImageUsageFlagBits>& image_usage_flags);
+				/**
+				 * @brief Constructor to create a swapchain by changing the image count
+				 *        only and preserving the configuration from the old swapchain.
+				 */
+				VulkanSwapchain(VulkanSwapchain& old_swapchain, const uint32_t image_count);
 
-			/**
-			 * @brief Constructor to create a swapchain by changing the extent
-			 *        and transform only and preserving the configuration from the old swapchain.
-			 */
-			VulkanSwapchain(VulkanSwapchain& swapchain, const vk::Extent2D& extent, const vk::SurfaceTransformFlagBitsKHR transform);
+				/**
+				 * @brief Constructor to create a swapchain by changing the image usage
+				 * only and preserving the configuration from the old swapchain.
+				 */
+				VulkanSwapchain(VulkanSwapchain& old_swapchain, const std::set<vk::ImageUsageFlagBits>& image_usage_flags);
 
-			/**
-			 * @brief Constructor to create a swapchain.
-			 */
-			VulkanSwapchain(Device& device, vk::SurfaceKHR surface,
-				const vk::PresentModeKHR present_mode,
-				const std::vector<vk::PresentModeKHR>& present_mode_priority_list = { vk::PresentModeKHR::eFifo, vk::PresentModeKHR::eMailbox },
-				const std::vector<vk::SurfaceFormatKHR>& surface_format_priority_list = { {vk::Format::eR8G8B8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear},
-																						 {vk::Format::eB8G8R8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear} },
-				const vk::Extent2D& extent = {}, uint32_t image_count = 1,
-				const vk::SurfaceTransformFlagBitsKHR    transform = vk::SurfaceTransformFlagBitsKHR::eIdentity,
-				const std::set<vk::ImageUsageFlagBits>& image_usage_flags = { vk::ImageUsageFlagBits::eColorAttachment, vk::ImageUsageFlagBits::eTransferSrc },
-				vk::SwapchainKHR                         old_swapchain = nullptr);
+				/**
+				 * @brief Constructor to create a swapchain by changing the extent
+				 *        and transform only and preserving the configuration from the old swapchain.
+				 */
+				VulkanSwapchain(VulkanSwapchain& swapchain, const vk::Extent2D& extent, const vk::SurfaceTransformFlagBitsKHR transform);
 
-			VulkanSwapchain(const VulkanSwapchain&) = delete;
+				/**
+				 * @brief Constructor to create a swapchain.
+				 */
+				VulkanSwapchain(Device& device, vk::SurfaceKHR surface,
+					const vk::PresentModeKHR present_mode,
+					const std::vector<vk::PresentModeKHR>& present_mode_priority_list = { vk::PresentModeKHR::eFifo, vk::PresentModeKHR::eMailbox },
+					const std::vector<vk::SurfaceFormatKHR>& surface_format_priority_list = { {vk::Format::eR8G8B8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear},
+																							 {vk::Format::eB8G8R8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear} },
+					const vk::Extent2D& extent = {}, uint32_t image_count = 1,
+					const vk::SurfaceTransformFlagBitsKHR    transform = vk::SurfaceTransformFlagBitsKHR::eIdentity,
+					const std::set<vk::ImageUsageFlagBits>& image_usage_flags = { vk::ImageUsageFlagBits::eColorAttachment, vk::ImageUsageFlagBits::eTransferSrc },
+					vk::SwapchainKHR                         old_swapchain = nullptr);
 
-			VulkanSwapchain(VulkanSwapchain&& other);
+				VulkanSwapchain(const VulkanSwapchain&) = delete;
 
-			~VulkanSwapchain();
+				VulkanSwapchain(VulkanSwapchain&& other);
 
-			VulkanSwapchain& operator=(const VulkanSwapchain&) = delete;
-			VulkanSwapchain& operator=(VulkanSwapchain&&) = delete;
+				~VulkanSwapchain();
 
-			bool IsValid() const;
+				VulkanSwapchain& operator=(const VulkanSwapchain&) = delete;
+				VulkanSwapchain& operator=(VulkanSwapchain&&) = delete;
 
-			Device const& GetDevice() const;
+				bool IsValid() const;
 
-			void AcquireNextImage(Semaphore* signal_semaphore, Fence* fence, uint32_t* image_index) override;
+				Device const& GetDevice() const;
 
-			const vk::Extent2D& GetExtent() const;
+				void AcquireNextImage(Semaphore* signal_semaphore, Fence* fence, uint32_t* image_index) override;
 
-			vk::Format GetFormat() const;
+				const vk::Extent2D& GetExtent() const;
 
-			vk::Image& GetImage(uint32_t index);
-			const std::vector<vk::Image>& GetImages() const;
+				vk::Format GetFormat() const;
 
-			vk::SurfaceTransformFlagBitsKHR GetTransform() const;
+				vk::Image& GetImage(uint32_t index);
+				const std::vector<vk::Image>& GetImages() const;
 
-			vk::SurfaceKHR GetSurface() const;
+				vk::SurfaceTransformFlagBitsKHR GetTransform() const;
 
-			vk::ImageUsageFlags GetUsage() const;
+				vk::SurfaceKHR GetSurface() const;
 
-			vk::PresentModeKHR GetPresentMode() const;
+				vk::ImageUsageFlags GetUsage() const;
 
-			uint32_t GetImageCount() const override;
+				vk::PresentModeKHR GetPresentMode() const;
 
-			Format GetImageFormat() const override;
+				uint32_t GetImageCount() const override;
 
-		private:
-			Device& device;
+				Format GetImageFormat() const override;
 
-			vk::SurfaceKHR surface;
+			private:
+				Device& device;
 
-			std::vector<vk::Image> images;
-			vk::SwapchainCreateInfoKHR create_info{};
+				vk::SurfaceKHR surface;
 
-			// A list of present modes in order of priority (vector[0] has high priority, vector[size-1] has low priority)
-			std::vector<vk::PresentModeKHR> present_mode_priority_list;
+				std::vector<vk::Image> images;
+				vk::SwapchainCreateInfoKHR create_info{};
 
-			// A list of surface formats in order of priority (vector[0] has high priority, vector[size-1] has low priority)
-			std::vector<vk::SurfaceFormatKHR> surface_format_priority_list;
+				// A list of present modes in order of priority (vector[0] has high priority, vector[size-1] has low priority)
+				std::vector<vk::PresentModeKHR> present_mode_priority_list;
 
-			std::set<vk::ImageUsageFlagBits> image_usage_flags;
-		};
+				// A list of surface formats in order of priority (vector[0] has high priority, vector[size-1] has low priority)
+				std::vector<vk::SurfaceFormatKHR> surface_format_priority_list;
+
+				std::set<vk::ImageUsageFlagBits> image_usage_flags;
+			};
+		}
 	}
 }

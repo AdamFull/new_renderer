@@ -3,47 +3,50 @@
 #include <GFXBase.h>
 #include <VkResource.h>
 
-namespace gfx
+namespace engine
 {
-	namespace vulkan
+	namespace gfx
 	{
-		class Device;
-
-		class ShaderModule final : public VulkanResource<vk::ShaderModule>
+		namespace vulkan
 		{
-		public:
-			ShaderModule(Device& device, const ShaderStageInfo& create_info);
-			~ShaderModule();
+			class Device;
 
-			ShaderModule(ShaderModule&& other) = delete;
-			ShaderModule(const ShaderModule&) = delete;
-			ShaderModule& operator=(const ShaderModule&) = delete;
-			ShaderModule& operator=(ShaderModule&&) = delete;
+			class ShaderModule final : public VulkanResource<vk::ShaderModule>
+			{
+			public:
+				ShaderModule(Device& device, const ShaderStageInfo& create_info);
+				~ShaderModule();
 
-			const vk::PipelineShaderStageCreateInfo& GetStageCreateInfo() const;
-		private:
-			Device& device;
+				ShaderModule(ShaderModule&& other) = delete;
+				ShaderModule(const ShaderModule&) = delete;
+				ShaderModule& operator=(const ShaderModule&) = delete;
+				ShaderModule& operator=(ShaderModule&&) = delete;
 
-			char entry_point_name[255];
-			vk::PipelineShaderStageCreateInfo stage_create_info{};
-		};
+				const vk::PipelineShaderStageCreateInfo& GetStageCreateInfo() const;
+			private:
+				Device& device;
 
-		class VulkanShader final : public Shader
-		{
-		public:
-			VulkanShader(Device& device, const ShaderCreateInfo& create_info);
-			VulkanShader(VulkanShader&& other);
-			~VulkanShader() = default;
+				char entry_point_name[255];
+				vk::PipelineShaderStageCreateInfo stage_create_info{};
+			};
 
-			VulkanShader(const VulkanShader&) = delete;
-			VulkanShader& operator=(const VulkanShader&) = delete;
-			VulkanShader& operator=(VulkanShader&&) = delete;
+			class VulkanShader final : public Shader
+			{
+			public:
+				VulkanShader(Device& device, const ShaderCreateInfo& create_info);
+				VulkanShader(VulkanShader&& other);
+				~VulkanShader() = default;
 
-			const StaticArray<std::unique_ptr<ShaderModule>, 6ull>& GetModules() const;
-		private:
-			void AddReflectionStage(const ShaderStageInfo& create_info);
-		private:
-			StaticArray<std::unique_ptr<ShaderModule>, 6ull> shader_modules{};
-		};
+				VulkanShader(const VulkanShader&) = delete;
+				VulkanShader& operator=(const VulkanShader&) = delete;
+				VulkanShader& operator=(VulkanShader&&) = delete;
+
+				const StaticArray<std::unique_ptr<ShaderModule>, 6ull>& GetModules() const;
+			private:
+				void AddReflectionStage(const ShaderStageInfo& create_info);
+			private:
+				StaticArray<std::unique_ptr<ShaderModule>, 6ull> shader_modules{};
+			};
+		}
 	}
 }

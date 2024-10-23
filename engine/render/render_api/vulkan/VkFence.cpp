@@ -1,33 +1,36 @@
 #include <VkFence.h>
 #include <VkDevice.h>
 
-namespace gfx
+namespace engine
 {
-	namespace vulkan
+	namespace gfx
 	{
-		VulkanFence::VulkanFence(Device& device) :
-			VulkanResource{ nullptr, device.GetAllocationCallbacks() },
-			device{ device }
+		namespace vulkan
 		{
-			vk::FenceCreateInfo create_info{};
-			create_info.flags = vk::FenceCreateFlagBits::eSignaled;
+			VulkanFence::VulkanFence(Device& device) :
+				VulkanResource{ nullptr, device.GetAllocationCallbacks() },
+				device{ device }
+			{
+				vk::FenceCreateInfo create_info{};
+				create_info.flags = vk::FenceCreateFlagBits::eSignaled;
 
-			vk::Result result = Handle(device).createFence(&create_info, allocation_callbacks, &handle);
-		}
+				vk::Result result = Handle(device).createFence(&create_info, allocation_callbacks, &handle);
+			}
 
-		VulkanFence::~VulkanFence()
-		{
-			Handle(device).destroyFence(handle);
-		}
+			VulkanFence::~VulkanFence()
+			{
+				Handle(device).destroyFence(handle);
+			}
 
-		void VulkanFence::Wait(uint64_t timeout)
-		{
-			vk::Result result = Handle(device).waitForFences(1u, &handle, VK_TRUE, timeout);
-		}
+			void VulkanFence::Wait(uint64_t timeout)
+			{
+				vk::Result result = Handle(device).waitForFences(1u, &handle, VK_TRUE, timeout);
+			}
 
-		void VulkanFence::Reset()
-		{
-			vk::Result result = Handle(device).resetFences(1u, &handle);
+			void VulkanFence::Reset()
+			{
+				vk::Result result = Handle(device).resetFences(1u, &handle);
+			}
 		}
 	}
 }

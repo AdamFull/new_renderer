@@ -2,15 +2,18 @@
 
 #include <ResourceStructures.h>
 
-namespace gfx
+namespace engine
 {
-	namespace vulkan
+	namespace gfx
 	{
-		inline vk::DeviceSize CalculateAlignedSize(vk::DeviceSize allocation_size, vk::DeviceSize minimal_alignment)
+		namespace vulkan
 		{
-			if (minimal_alignment > 0ull)
-				return (allocation_size + minimal_alignment - 1ull) & ~(minimal_alignment - 1ull);
-			return allocation_size;
+			inline vk::DeviceSize CalculateAlignedSize(vk::DeviceSize allocation_size, vk::DeviceSize minimal_alignment)
+			{
+				if (minimal_alignment > 0ull)
+					return (allocation_size + minimal_alignment - 1ull) & ~(minimal_alignment - 1ull);
+				return allocation_size;
+			}
 		}
 	}
 }

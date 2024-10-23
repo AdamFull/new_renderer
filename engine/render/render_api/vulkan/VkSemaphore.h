@@ -3,24 +3,27 @@
 #include <VkResource.h>
 #include <GFXBase.h>
 
-namespace gfx
+namespace engine
 {
-	namespace vulkan
+	namespace gfx
 	{
-		class Device;
-
-		class VulkanSemaphore : public Semaphore, public VulkanResource<vk::Semaphore>
+		namespace vulkan
 		{
-		public:
-			VulkanSemaphore(Device& device);
-			~VulkanSemaphore();
+			class Device;
 
-			VulkanSemaphore(const VulkanSemaphore&) = delete;
-			VulkanSemaphore(VulkanSemaphore&& other) = default;
-			VulkanSemaphore& operator=(const VulkanSemaphore&) = delete;
-			VulkanSemaphore& operator=(VulkanSemaphore&&) = default;
-		private:
-			Device& device;
-		};
+			class VulkanSemaphore : public Semaphore, public VulkanResource<vk::Semaphore>
+			{
+			public:
+				VulkanSemaphore(Device& device);
+				~VulkanSemaphore();
+
+				VulkanSemaphore(const VulkanSemaphore&) = delete;
+				VulkanSemaphore(VulkanSemaphore&& other) = default;
+				VulkanSemaphore& operator=(const VulkanSemaphore&) = delete;
+				VulkanSemaphore& operator=(VulkanSemaphore&&) = default;
+			private:
+				Device& device;
+			};
+		}
 	}
 }
