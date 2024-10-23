@@ -62,7 +62,7 @@ namespace engine
 					return handle;
 				}
 
-				vk::AllocationCallbacks* GetAllocationCallbacks()
+				vk::AllocationCallbacks* GetAllocationCallbacks() const
 				{
 					return allocation_callbacks;
 				}

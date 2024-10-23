@@ -26,12 +26,12 @@ namespace engine
 			return hash;
 		}
 
-		std::unique_ptr<GFXContext> CreateGFXContext(const GFXContextCreateInfo& create_info)
+		std::unique_ptr<Context> CreateGFXContext(const ContextCreateInfo& create_info)
 		{
 			switch (create_info.render_api)
 			{
 			case RenderApi::eVulkan:
-				return std::make_unique<vulkan::VkGFXContext>(create_info);
+				return std::make_unique<vulkan::VulkanContext>(create_info);
 				break;
 			default:
 				break;

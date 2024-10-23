@@ -8,7 +8,7 @@ namespace engine
 	{
 		namespace vulkan
 		{
-			VulkanCommandPool::VulkanCommandPool(VulkanQueue& queue, DebugUtils& debug_utils, CommandPoolResetMode reset_mode) :
+			VulkanCommandPool::VulkanCommandPool(const VulkanQueue& queue, DebugUtils& debug_utils, CommandPoolResetMode reset_mode) :
 				VulkanResource{ nullptr, queue.GetAllocationCallbacks() },
 				device{ queue.GetDevice() },
 				debug_utils{ debug_utils },

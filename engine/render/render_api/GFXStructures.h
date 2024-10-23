@@ -29,7 +29,7 @@ namespace engine
 		class DescriptorSet;
 		class QueryPool;
 
-		struct GFXContextCreateInfo
+		struct ContextCreateInfo
 		{
 			RenderApi render_api{ RenderApi::eVulkan };
 			Window* window{ nullptr };

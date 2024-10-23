@@ -12,10 +12,10 @@ namespace engine
 	namespace gfx
 	{
 		// TODO: may be return pointers here and add release function also
-		class GFXContext
+		class Context
 		{
 		public:
-			virtual ~GFXContext() = default;
+			virtual ~Context() = default;
 
 			virtual Fence* CreateFence() = 0;
 			virtual void DestroyFence(Fence* fence) = 0;
@@ -23,12 +23,12 @@ namespace engine
 			virtual Semaphore* CreateSemaphore() = 0;
 			virtual void DestroySemaphore(Semaphore* semaphore) = 0;
 
-			virtual Queue* RequestQueue(QueueTypeFlags queue_type_flags, uint32_t queue_index = 0u) = 0;
+			virtual const Queue* RequestQueue(QueueTypeFlags queue_type_flags, uint32_t queue_index = 0u) = 0;
 
 			virtual Swapchain* CreateSwapchain(const SwapChainCreateInfo& create_info) = 0;
 			virtual void DestroySwapchain(Swapchain* swapchain) = 0;
 
-			virtual CommandPool* CreateCommandPool(Queue* queue, CommandPoolResetMode reset_mode = CommandPoolResetMode::eAlwaysAllocate) = 0;
+			virtual CommandPool* CreateCommandPool(const Queue* queue, CommandPoolResetMode reset_mode = CommandPoolResetMode::eAlwaysAllocate) = 0;
 			virtual void DestroyCommandPool(CommandPool* command_pool) = 0;
 
 			virtual Buffer* CreateBuffer(const BufferCreateInfo& create_info) = 0;
@@ -68,6 +68,6 @@ namespace engine
 			virtual void SetResourceName(GFXResource* resource_handle, const char* name) = 0;
 		};
 
-		std::unique_ptr<GFXContext> CreateGFXContext(const GFXContextCreateInfo& create_info);
+		std::unique_ptr<Context> CreateGFXContext(const ContextCreateInfo& create_info);
 	}
 }

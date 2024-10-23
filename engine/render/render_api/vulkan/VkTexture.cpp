@@ -31,18 +31,17 @@ namespace engine
 			VulkanTexture::VulkanTexture(Allocator& allocator, Swapchain* swapchain, uint32_t image_index) :
 				device{ allocator.GetDevice() }
 			{
-				VulkanSwapchain* vkswapchain = static_cast<VulkanSwapchain*>(swapchain);
-				auto& extent = vkswapchain->GetExtent();
+				VulkanSwapchain* vk_swapchain = static_cast<VulkanSwapchain*>(swapchain);
+				auto& extent = vk_swapchain->GetExtent();
 
 				TextureCreateInfo create_info{};
 				create_info.width = extent.width;
 				create_info.height = extent.height;
 				create_info.usage = TextureUsageFlag::eRenderTarget;
-				// TODO: IMAGE FORMAT
-				assert(false && "NOT IMPLEMENTED");
+				create_info.format = vk_swapchain->GetImageFormat();
 
-				assert(image_index < vkswapchain->GetImageCount());
-				auto& image_handle = vkswapchain->GetImage(image_index);
+				assert(image_index < vk_swapchain->GetImageCount());
+				auto& image_handle = vk_swapchain->GetImage(image_index);
 
 				image = std::make_unique<Image>(allocator, create_info, image_handle);
 				srv = std::make_unique<ImageView>(*image, create_info, 0u, 0u, create_info.levels);

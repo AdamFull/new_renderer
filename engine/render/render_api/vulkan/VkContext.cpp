@@ -46,7 +46,7 @@ namespace engine
 				handles.erase(to_delete);
 			}
 
-			VkGFXContext::VkGFXContext(const GFXContextCreateInfo& create_info)
+			VulkanContext::VulkanContext(const ContextCreateInfo& create_info)
 			{
 				// Register dispatcher
 				PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr = dl.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
@@ -169,7 +169,7 @@ namespace engine
 				allocator = std::make_unique<Allocator>(*device);
 			}
 
-			VkGFXContext::~VkGFXContext()
+			VulkanContext::~VulkanContext()
 			{
 				Handle(*instance).destroySurfaceKHR(surface, allocation_callbacks);
 
@@ -180,29 +180,29 @@ namespace engine
 				}
 			}
 
-			Fence* VkGFXContext::CreateFence()
+			Fence* VulkanContext::CreateFence()
 			{
 				return new VulkanFence(*device);
 			}
 
-			void VkGFXContext::DestroyFence(Fence* handle)
+			void VulkanContext::DestroyFence(Fence* handle)
 			{
 				SAFE_DELETE(handle);
 			}
 
-			Semaphore* VkGFXContext::CreateSemaphore()
+			Semaphore* VulkanContext::CreateSemaphore()
 			{
 				return new VulkanSemaphore(*device);
 			}
 
-			void VkGFXContext::DestroySemaphore(Semaphore* handle)
+			void VulkanContext::DestroySemaphore(Semaphore* handle)
 			{
 				SAFE_DELETE(handle);
 			}
 
-			Queue* VkGFXContext::RequestQueue(QueueTypeFlags queue_type_flags, uint32_t queue_index)
+			const Queue* VulkanContext::RequestQueue(QueueTypeFlags queue_type_flags, uint32_t queue_index)
 			{
-				Queue* requested_queue{ nullptr };
+				const Queue* requested_queue{ nullptr };
 				if (queue_type_flags & QueueTypeFlag::ePresent)
 				{
 					requested_queue = &device->GetQueueByPresent(queue_index);
@@ -229,7 +229,7 @@ namespace engine
 				return requested_queue;
 			}
 
-			Swapchain* VkGFXContext::CreateSwapchain(const SwapChainCreateInfo& create_info)
+			Swapchain* VulkanContext::CreateSwapchain(const SwapChainCreateInfo& create_info)
 			{
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 				vk::PresentModeKHR present_mode = (window->GetProperties().vsync == Window::Vsync::OFF) ? vk::PresentModeKHR::eMailbox : vk::PresentModeKHR::eFifo;
@@ -263,128 +263,128 @@ namespace engine
 					create_info.image_count);
 			}
 
-			void VkGFXContext::DestroySwapchain(Swapchain* handle)
+			void VulkanContext::DestroySwapchain(Swapchain* handle)
 			{
 				SAFE_DELETE(handle);
 			}
 
-			CommandPool* VkGFXContext::CreateCommandPool(Queue* queue, CommandPoolResetMode reset_mode)
+			CommandPool* VulkanContext::CreateCommandPool(const Queue* queue, CommandPoolResetMode reset_mode)
 			{
-				auto* vkqueue = static_cast<VulkanQueue*>(queue);
+				auto* vkqueue = static_cast<const VulkanQueue*>(queue);
 				return new VulkanCommandPool(*vkqueue, *debug_utils, reset_mode);
 			}
 
-			void VkGFXContext::DestroyCommandPool(CommandPool* handle)
+			void VulkanContext::DestroyCommandPool(CommandPool* handle)
 			{
 				SAFE_DELETE(handle);
 			}
 
-			Buffer* VkGFXContext::CreateBuffer(const BufferCreateInfo& create_info)
+			Buffer* VulkanContext::CreateBuffer(const BufferCreateInfo& create_info)
 			{
 				return new VulkanBuffer(*allocator, create_info);
 			}
 
-			void VkGFXContext::DestroyBuffer(Buffer* handle)
+			void VulkanContext::DestroyBuffer(Buffer* handle)
 			{
 				SAFE_DELETE(handle);
 			}
 
-			Texture* VkGFXContext::CreateTexture(const TextureCreateInfo& create_info)
+			Texture* VulkanContext::CreateTexture(const TextureCreateInfo& create_info)
 			{
 				return new VulkanTexture(*allocator, create_info);
 			}
 
-			Texture* VkGFXContext::CreateSwapchainTexture(Swapchain* swapchain, uint32_t image_index)
+			Texture* VulkanContext::CreateSwapchainTexture(Swapchain* swapchain, uint32_t image_index)
 			{
 				return new VulkanTexture(*allocator, swapchain, image_index);
 			}
 
-			void VkGFXContext::DestroyTexture(Texture* handle)
+			void VulkanContext::DestroyTexture(Texture* handle)
 			{
 				SAFE_DELETE(handle);
 			}
 
-			Shader* VkGFXContext::CreateShader(const ShaderCreateInfo& create_info)
+			Shader* VulkanContext::CreateShader(const ShaderCreateInfo& create_info)
 			{
 				return new VulkanShader(*device, create_info);
 			}
 
-			void VkGFXContext::DestroyShader(Shader* handle)
+			void VulkanContext::DestroyShader(Shader* handle)
 			{
 				SAFE_DELETE(handle);
 			}
 
-			RootSignature* VkGFXContext::CreateRootSignature(const RootSignatureCreateInfo& create_info)
+			RootSignature* VulkanContext::CreateRootSignature(const RootSignatureCreateInfo& create_info)
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			void VkGFXContext::DestroyRootSignature(RootSignature* handle)
+			void VulkanContext::DestroyRootSignature(RootSignature* handle)
 			{
 				SAFE_DELETE(handle);
 			}
 
-			Pipeline* VkGFXContext::CreatePipeline(const GraphicsPipelineCreateInfo& create_info)
+			Pipeline* VulkanContext::CreatePipeline(const GraphicsPipelineCreateInfo& create_info)
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			Pipeline* VkGFXContext::CreatePipeline(const ComputePipelineCreateInfo& create_info)
+			Pipeline* VulkanContext::CreatePipeline(const ComputePipelineCreateInfo& create_info)
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			void VkGFXContext::DestroyPipeline(Pipeline* handle)
+			void VulkanContext::DestroyPipeline(Pipeline* handle)
 			{
 				assert(false && "NOT IMPLEMENTED");
 				SAFE_DELETE(handle);
 			}
 
-			PipelineCache* VkGFXContext::CreatePipelineCache(const PipelineCacheCreateInfo& create_info)
+			PipelineCache* VulkanContext::CreatePipelineCache(const PipelineCacheCreateInfo& create_info)
 			{
 				return new VulkanPipelineCache(*device, create_info);
 			}
 
-			void VkGFXContext::DestroyPipelineCache(PipelineCache* handle)
+			void VulkanContext::DestroyPipelineCache(PipelineCache* handle)
 			{
 				SAFE_DELETE(handle);
 			}
 
-			DescriptorPool* VkGFXContext::CreateDescriptorPool()
+			DescriptorPool* VulkanContext::CreateDescriptorPool()
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			void VkGFXContext::DestroyDescriptorPool(DescriptorPool* descriptor_pool)
+			void VulkanContext::DestroyDescriptorPool(DescriptorPool* descriptor_pool)
 			{
 				assert(false && "NOT IMPLEMENTED");
 			}
 
-			Sampler* VkGFXContext::CreateSampler(const SamplerCreateInfo& create_info)
+			Sampler* VulkanContext::CreateSampler(const SamplerCreateInfo& create_info)
 			{
 				return new VulkanSampler(*device, create_info);
 			}
 
-			void VkGFXContext::DestroySampler(Sampler* handle)
+			void VulkanContext::DestroySampler(Sampler* handle)
 			{
 				SAFE_DELETE(handle);
 			}
 
-			QueryPool* VkGFXContext::CreateQueryPool(const QueryPoolCreateInfo& create_info)
+			QueryPool* VulkanContext::CreateQueryPool(const QueryPoolCreateInfo& create_info)
 			{
 				return new VulkanQueryPool(*device, create_info);
 			}
 
-			void VkGFXContext::DestroyQueryPool(QueryPool* handle)
+			void VulkanContext::DestroyQueryPool(QueryPool* handle)
 			{
 				SAFE_DELETE(handle);
 			}
 
-			void VkGFXContext::WaitForFences(uint32_t fence_count, Fence** fences_array, uint64_t timeout)
+			void VulkanContext::WaitForFences(uint32_t fence_count, Fence** fences_array, uint64_t timeout)
 			{
 				std::array<vk::Fence, 16ull> wait_fences{};
 
@@ -396,14 +396,14 @@ namespace engine
 				vk::Result result = Handle(*device).waitForFences(fence_count, wait_fences.data(), VK_TRUE, timeout);
 			}
 
-			void VkGFXContext::RequestTimestampFrequency(double* frequency)
+			void VulkanContext::RequestTimestampFrequency(double* frequency)
 			{
 				auto& physical = instance->GetBestDevice();
 				auto& properties = physical.GetProperties();
 				*frequency = static_cast<double>(properties.limits.timestampPeriod);
 			}
 
-			void VkGFXContext::RequestMemoryUsage(uint64_t* total_memory, uint64_t* used_memory)
+			void VulkanContext::RequestMemoryUsage(uint64_t* total_memory, uint64_t* used_memory)
 			{
 				vk::MemoryHeapFlags memory_flags{ vk::MemoryHeapFlagBits::eDeviceLocal };
 				vk::PhysicalDeviceMemoryBudgetPropertiesEXT memory_budget_props{};
@@ -428,7 +428,7 @@ namespace engine
 				}
 			}
 
-			void VkGFXContext::SetResourceName(GFXResource* resource_handle, const char* name)
+			void VulkanContext::SetResourceName(GFXResource* resource_handle, const char* name)
 			{
 				switch (resource_handle->GetResourceType())
 				{
@@ -532,7 +532,7 @@ namespace engine
 				}
 			}
 
-			void VkGFXContext::EnableDeviceFeatures(PhysicalDevice& device)
+			void VulkanContext::EnableDeviceFeatures(PhysicalDevice& device)
 			{
 				for (auto& extension_name : device_extensions)
 				{

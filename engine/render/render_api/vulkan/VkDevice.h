@@ -35,11 +35,11 @@ namespace engine
 
 				PhysicalDevice const& GetGpu() const;
 
-				VulkanQueue& GetQueue(uint32_t queue_family_index, uint32_t queue_index);
+				VulkanQueue const& GetQueue(uint32_t queue_family_index, uint32_t queue_index) const;
 
-				VulkanQueue& GetQueueByFlags(vk::QueueFlags queue_flags, uint32_t queue_index);
+				VulkanQueue const& GetQueueByFlags(vk::QueueFlags queue_flags, uint32_t queue_index) const;
 
-				VulkanQueue& GetQueueByPresent(uint32_t queue_index);
+				VulkanQueue const& GetQueueByPresent(uint32_t queue_index) const;
 
 				size_t GetQueueCount() const;
 
@@ -47,7 +47,7 @@ namespace engine
 				 * @brief Finds a suitable graphics queue to submit to
 				 * @return The first present supported queue, otherwise just any graphics queue
 				 */
-				VulkanQueue& GetSuitableGraphicsQueue();
+				VulkanQueue const& GetSuitableGraphicsQueue() const;
 
 				bool IsExtensionSupported(const char* extension) const;
 

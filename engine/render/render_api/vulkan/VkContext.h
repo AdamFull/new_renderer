@@ -21,11 +21,11 @@ namespace engine
 			class Allocator;
 			class Allocation;
 
-			class VkGFXContext final : public GFXContext
+			class VulkanContext final : public Context
 			{
 			public:
-				VkGFXContext(const GFXContextCreateInfo& create_info);
-				~VkGFXContext();
+				VulkanContext(const ContextCreateInfo& create_info);
+				~VulkanContext();
 
 				Fence* CreateFence() override;
 				void DestroyFence(Fence* fence) override;
@@ -33,12 +33,12 @@ namespace engine
 				Semaphore* CreateSemaphore() override;
 				void DestroySemaphore(Semaphore* semaphore) override;
 
-				Queue* RequestQueue(QueueTypeFlags queue_type_flags, uint32_t queue_index = 0u) override;
+				const Queue* RequestQueue(QueueTypeFlags queue_type_flags, uint32_t queue_index = 0u) override;
 
 				Swapchain* CreateSwapchain(const SwapChainCreateInfo& create_info) override;
 				void DestroySwapchain(Swapchain* swapchain) override;
 
-				CommandPool* CreateCommandPool(Queue* queue, CommandPoolResetMode reset_mode) override;
+				CommandPool* CreateCommandPool(const Queue* queue, CommandPoolResetMode reset_mode) override;
 				void DestroyCommandPool(CommandPool* command_pool) override;
 
 				Buffer* CreateBuffer(const BufferCreateInfo& create_info) override;

@@ -15,7 +15,7 @@ namespace engine
 			class VulkanCommandPool final : public CommandPool, public VulkanResource<vk::CommandPool>
 			{
 			public:
-				VulkanCommandPool(VulkanQueue& queue, DebugUtils& debug_utils, CommandPoolResetMode reset_mode);
+				VulkanCommandPool(const VulkanQueue& queue, DebugUtils& debug_utils, CommandPoolResetMode reset_mode);
 
 				VulkanCommandPool(const VulkanCommandPool&) = delete;
 				VulkanCommandPool(VulkanCommandPool&& other);
@@ -38,7 +38,7 @@ namespace engine
 				void FreeCommandBuffers();
 				void ResetCommandBuffers();
 			private:
-				Device& device;
+				const Device& device;
 				DebugUtils& debug_utils;
 
 				uint32_t queue_family_index{ 0u };
