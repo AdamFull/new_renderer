@@ -29,20 +29,9 @@
 #undef CreateSemaphore
 #endif
 
-//std::vector<std::unique_ptr<VulkanFence>> fences{};
-//std::vector<std::unique_ptr<VulkanSemaphore>> semaphores{};
-//std::vector<std::unique_ptr<VulkanBuffer>> buffers{};
-//std::vector<std::unique_ptr<VulkanSampler>> samplers{};
-//std::vector<std::unique_ptr<VulkanPipelineCache>> pipeline_caches{};
-//std::vector<std::unique_ptr<VulkanCommandPool>> command_pools{};
-//std::vector<std::unique_ptr<VulkanQueryPool>> query_pools{};
-//std::vector<std::unique_ptr<VulkanTexture>> textures{};
-//std::vector<std::unique_ptr<VulkanSwapchain>> swapchains{};
-//std::vector<std::unique_ptr<VulkanShader>> shaders{};
-
 #define SAFE_DELETE(p) if(p){ delete p; p = nullptr; }
 
-VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
+//VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace engine
 {

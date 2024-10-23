@@ -8,6 +8,11 @@
 
 namespace engine
 {
+	namespace gfx
+	{
+		class GFXContext;
+	}
+
 	namespace render
 	{
 		using resource_container_t = CResourceContainer<IBufferObject, ITextureObject, IShaderObject, IVertexHandler>;
@@ -67,6 +72,8 @@ namespace engine
 			filesystem::IVirtualFileSystemInterface* m_pVFS{ nullptr };
 
 			u32 m_frameCounter{ 0u };
+
+			std::unique_ptr<gfx::GFXContext> gfx_context{};
 
 			std::unique_ptr<FRenderDataPacket> m_pRenderPacket{};
 

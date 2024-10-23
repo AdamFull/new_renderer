@@ -25,6 +25,8 @@
 
 #include <engine/filesystem/vfs_helper.h>
 
+#include <render_api/GFX.h>
+
 using namespace engine;
 using namespace engine::render;
 
@@ -103,7 +105,13 @@ CRenderInterface::~CRenderInterface()
 void CRenderInterface::PreInitialize(const FRenderInterfaceCreateInfo& rhi_ci)
 {
 	m_pResourceLoader->Initialize(m_pVFS);
+	
+	gfx::GFXContextCreateInfo gfx_create_info{};
+	gfx_create_info.app_name = "MyVulkanEngine";
+	gfx_create_info.render_api = gfx::RenderApi::eVulkan;
+	gfx_create_info.window = rhi_ci.window;
 
+	gfx_context = gfx::CreateGFXContext(gfx_create_info);
 	m_pRenderContext = make_render_context(rhi_ci);
 
 	FGlobalUniformCreateInfo global_buffer_ci{};

@@ -8,12 +8,12 @@ namespace engine
 	{
 		namespace vulkan
 		{
-			const char* required_instance_extensions[]
+			static const char* required_instance_extensions[]
 			{
 				VK_KHR_SURFACE_EXTENSION_NAME
 			};
 
-			const char* required_device_extensions[] =
+			static const char* required_device_extensions[] =
 			{
 				VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 				VK_KHR_MAINTENANCE_4_EXTENSION_NAME,
@@ -41,7 +41,7 @@ namespace engine
 				VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME
 			};
 
-			const char* optional_device_extensions[] =
+			static const char* optional_device_extensions[] =
 			{
 				VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME
 			};
@@ -75,12 +75,12 @@ namespace engine
 	{
 		namespace vulkan
 		{
-			const char* required_instance_extensions[]
+			static const char* required_instance_extensions[]
 			{
-				""
+				VK_KHR_SURFACE_EXTENSION_NAME
 			};
 
-			const char* required_device_extensions[] =
+			static const char* required_device_extensions[] =
 			{
 				VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 				VK_KHR_MAINTENANCE_4_EXTENSION_NAME,
@@ -108,7 +108,7 @@ namespace engine
 				VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME
 			};
 
-			const char* optional_device_extensions[] =
+			static const char* optional_device_extensions[] =
 			{
 				VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME
 			};
