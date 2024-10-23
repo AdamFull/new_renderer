@@ -19,6 +19,8 @@ namespace gfx
 			ShaderModule(const ShaderModule&) = delete;
 			ShaderModule& operator=(const ShaderModule&) = delete;
 			ShaderModule& operator=(ShaderModule&&) = delete;
+
+			const vk::PipelineShaderStageCreateInfo& GetStageCreateInfo() const;
 		private:
 			Device& device;
 
@@ -36,11 +38,12 @@ namespace gfx
 			VulkanShader(const VulkanShader&) = delete;
 			VulkanShader& operator=(const VulkanShader&) = delete;
 			VulkanShader& operator=(VulkanShader&&) = delete;
+
+			const StaticArray<std::unique_ptr<ShaderModule>, 6ull>& GetModules() const;
 		private:
 			void AddReflectionStage(const ShaderStageInfo& create_info);
 		private:
-			std::array<std::unique_ptr<ShaderModule>, 6ull> shader_modules{};
-			uint32_t shader_module_count{ 0u };
+			StaticArray<std::unique_ptr<ShaderModule>, 6ull> shader_modules{};
 		};
 	}
 }

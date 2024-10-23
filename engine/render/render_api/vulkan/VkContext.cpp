@@ -453,7 +453,8 @@ namespace gfx
 			} break;
 			case ResourceType::eSwapchain:
 			{
-				assert(false && "NOT IMPLEMENTED");
+				auto* handle = static_cast<VulkanSwapchain*>(resource_handle);
+				debug_utils->SetDebugName(handle->GetHandle(), name);
 			} break;
 			case ResourceType::eBuffer:
 			{
@@ -472,7 +473,19 @@ namespace gfx
 			} break;
 			case ResourceType::eTexture:
 			{
-				assert(false && "NOT IMPLEMENTED");
+				auto* handle = static_cast<VulkanTexture*>(resource_handle);
+
+				auto& image = handle->GetImage();
+				debug_utils->SetDebugName(image.GetHandle(), name);
+
+				auto& srv = handle->GetSubresource();
+				debug_utils->SetDebugName(image.GetHandle(), std::format("{}_base", name));
+
+				for (int32_t i = 0; i < image.GetMipLevelCount(); ++i)
+				{
+					auto& subresource = handle->GetSubresource(i);
+					debug_utils->SetDebugName(subresource.GetHandle(), std::format("{}_{}", name, i));
+				}
 			} break;
 			case ResourceType::eSampler:
 			{
@@ -481,7 +494,15 @@ namespace gfx
 			} break;
 			case ResourceType::eShader:
 			{
-				assert(false && "NOT IMPLEMENTED");
+				auto* handle = static_cast<VulkanShader*>(resource_handle);
+
+				const auto& modules = handle->GetModules();
+				for (auto it = modules.Begin(); it != modules.End(); ++it)
+				{
+					auto& stage_ci = (*it)->GetStageCreateInfo();
+					debug_utils->SetDebugName(stage_ci.module, std::format("{}_{}", name, vk::to_string(stage_ci.stage)));
+				}
+
 			} break;
 			case ResourceType::eRootSignature:
 			{

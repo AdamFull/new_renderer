@@ -20,6 +20,12 @@ namespace gfx
 			VulkanTexture& operator=(const VulkanTexture&) = delete;
 			VulkanTexture& operator=(VulkanTexture&&) = delete;
 
+			Image& GetImage();
+			Image const& GetImage() const;
+
+			ImageView& GetSubresource(uint32_t subresource = ~0u);
+			ImageView const& GetSubresource(uint32_t subresource = ~0u) const;
+
 			uint32_t GetWidth() const override;
 			uint32_t GetHeight() const override;
 			uint32_t GetDepth() const override;

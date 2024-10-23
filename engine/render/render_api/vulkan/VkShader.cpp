@@ -32,73 +32,42 @@ namespace gfx
 			Handle(device).destroyShaderModule(handle, allocation_callbacks);
 		}
 
+		const vk::PipelineShaderStageCreateInfo& ShaderModule::GetStageCreateInfo() const
+		{
+			return stage_create_info;
+		}
+
 
 		VulkanShader::VulkanShader(Device& device, const ShaderCreateInfo& create_info)
 		{
-			if (create_info.stages & ShaderStageFlag::eVertex)
+			static ShaderStageFlag all_stages[] =
 			{
-				auto& stage_create_info = create_info.shader_stages[0];
-				// TODO: Validate that it's correct stage
+				ShaderStageFlag::eVertex, ShaderStageFlag::eTessellationControl, ShaderStageFlag::eTessellationEvaluation,
+				ShaderStageFlag::eGeometry, ShaderStageFlag::eFragment, ShaderStageFlag::eCompute
+			};
 
-				shader_modules[shader_module_count++] = std::make_unique<ShaderModule>(device, stage_create_info);
-				AddReflectionStage(stage_create_info);
+			for (int32_t i = 0; i < std::size(all_stages); ++i)
+			{
+				if (create_info.stages & all_stages[i])
+				{
+					auto& stage_create_info = create_info.shader_stages[i];
+					auto& shader_module = shader_modules.NewElement();
+					shader_module = std::make_unique<ShaderModule>(device, stage_create_info);
+					AddReflectionStage(stage_create_info);
+				}
 			}
 		}
 
 		VulkanShader::VulkanShader(VulkanShader&& other) :
-			shader_modules{ std::exchange(other.shader_modules, {}) },
-			shader_module_count{ std::exchange(other.shader_module_count, {}) }
+			shader_modules{ std::exchange(other.shader_modules, {}) }
 		{
 
 		}
 
-		//void build_uniform_block_reflection(FVkShaderReflectionData& reflection_data, spirv_cross::CompilerGLSL* compiler, const spirv_cross::Resource& res, vk::ShaderStageFlagBits shaderStage, vk::DescriptorType descriptorType)
-		//{
-		//	u64 name_hash = utl::murmur_hash_64(res.name);
-		//	auto it = reflection_data.uniformBlocks.find(name_hash);
-		//	if (it != reflection_data.uniformBlocks.end())
-		//	{
-		//		it->second.stageFlags |= shaderStage;
-		//		return;
-		//	}
-		//
-		//	if (has_substring(res.name, "global"))
-		//		return;
-		//
-		//	const auto& type = compiler->get_type(res.type_id);
-		//	auto& decoration = compiler->get_decoration_bitset(type.self);
-		//	unsigned member_count = type.member_types.size();
-		//
-		//	FVkReflectionUniformBlock uniform_block{};
-		//	uniform_block.set = compiler->get_decoration(res.id, spv::DecorationDescriptorSet);
-		//	uniform_block.binding = compiler->get_decoration(res.id, spv::DecorationBinding);
-		//
-		//	for (u32 i = 0u; i < member_count; ++i)
-		//	{
-		//		u64 array_stride{ 0ull }, matrix_stride{ 0ull };
-		//		auto& member_type = compiler->get_type(type.member_types[i]);
-		//
-		//		FVkReflectionUniform uniform{};
-		//		uniform.size = compiler->get_declared_struct_member_size(type, i);
-		//		uniform.offset = compiler->type_struct_member_offset(type, i);
-		//		if (!member_type.array.empty() && uniform.size == 0)
-		//			array_stride = compiler->type_struct_member_array_stride(type, i);
-		//
-		//		if (member_type.columns > 1)
-		//			matrix_stride = compiler->type_struct_member_matrix_stride(type, i);
-		//
-		//		uniform.stageFlags = shaderStage;
-		//
-		//		u64 member_name_hash = utl::murmur_hash_64(compiler->get_member_name(type.self, i));
-		//		uniform_block.uniforms.emplace(member_name_hash, uniform);
-		//	}
-		//
-		//	uniform_block.descriptorType = descriptorType;
-		//	uniform_block.size = compiler->get_declared_struct_size(type);
-		//	uniform_block.stageFlags = shaderStage;
-		//
-		//	reflection_data.uniformBlocks.emplace(name_hash, uniform_block);
-		//}
+		const StaticArray<std::unique_ptr<ShaderModule>, 6ull>& VulkanShader::GetModules() const
+		{
+			return shader_modules;
+		}
 
 		bool HasSubstring(const std::string& str, const std::string& target)
 		{

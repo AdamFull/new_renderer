@@ -54,6 +54,32 @@ namespace gfx
 		{
 		}
 
+		Image& VulkanTexture::GetImage()
+		{
+			return *image;
+		}
+
+		Image const& VulkanTexture::GetImage() const
+		{
+			return *image;
+		}
+
+		ImageView& VulkanTexture::GetSubresource(uint32_t subresource)
+		{
+			if (subresource == ~0u)
+				return *srv;
+
+			return *subresources[subresource];
+		}
+
+		ImageView const& VulkanTexture::GetSubresource(uint32_t subresource) const
+		{
+			if (subresource == ~0u)
+				return *srv;
+
+			return *subresources[subresource];
+		}
+
 		uint32_t VulkanTexture::GetWidth() const
 		{
 			return image->GetExtent().width;
