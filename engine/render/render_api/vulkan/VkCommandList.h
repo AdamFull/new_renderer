@@ -57,8 +57,8 @@ namespace gfx
 
 			void PipelineBarrier() override;
 
-			void BeginQuery(QueryPool* query_pool) override;
-			void EndQuery(QueryPool* query_pool) override;
+			void BeginQuery(QueryPool* query_pool, uint32_t query) override;
+			void EndQuery(QueryPool* query_pool, uint32_t query) override;
 
 			void BeginRendering() override;
 			void EndRendering() override;

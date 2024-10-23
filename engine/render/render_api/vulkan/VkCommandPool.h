@@ -8,11 +8,12 @@ namespace gfx
 	{
 		class Device;
 		class VulkanQueue;
+		class DebugUtils;
 
 		class VulkanCommandPool final : public CommandPool, public VulkanResource<vk::CommandPool>
 		{
 		public:
-			VulkanCommandPool(VulkanQueue& queue, CommandPoolResetMode reset_mode);
+			VulkanCommandPool(VulkanQueue& queue, DebugUtils& debug_utils, CommandPoolResetMode reset_mode);
 
 			VulkanCommandPool(const VulkanCommandPool&) = delete;
 			VulkanCommandPool(VulkanCommandPool&& other);
@@ -28,11 +29,15 @@ namespace gfx
 			void FreeCommandBuffer(vk::CommandBuffer& command_buffer);
 
 			CommandPoolResetMode GetResetMode() const;
+
+			DebugUtils& GetDebugUtils();
+			DebugUtils const& GetDebugUtils() const;
 		protected:
 			void FreeCommandBuffers();
 			void ResetCommandBuffers();
 		private:
 			Device& device;
+			DebugUtils& debug_utils;
 
 			uint32_t queue_family_index{ 0u };
 			std::vector<std::unique_ptr<VulkanCommandList>> primary_command_buffers;

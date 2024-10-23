@@ -127,8 +127,8 @@ namespace gfx
 
 		virtual void PipelineBarrier() = 0;
 
-		virtual void BeginQuery(QueryPool* query_pool) = 0;
-		virtual void EndQuery(QueryPool* query_pool) = 0;
+		virtual void BeginQuery(QueryPool* query_pool, uint32_t query) = 0;
+		virtual void EndQuery(QueryPool* query_pool, uint32_t query) = 0;
 
 		virtual void BeginRendering() = 0;
 		virtual void EndRendering() = 0;

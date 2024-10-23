@@ -261,7 +261,7 @@ namespace gfx
 		CommandPool* VkGFXContext::CreateCommandPool(Queue* queue, CommandPoolResetMode reset_mode)
 		{
 			auto* vkqueue = static_cast<VulkanQueue*>(queue);
-			auto& new_command_pool = command_pools.emplace_back(std::make_unique<VulkanCommandPool>(*vkqueue, reset_mode));
+			auto& new_command_pool = command_pools.emplace_back(std::make_unique<VulkanCommandPool>(*vkqueue, *debug_utils, reset_mode));
 			return new_command_pool.get();
 		}
 

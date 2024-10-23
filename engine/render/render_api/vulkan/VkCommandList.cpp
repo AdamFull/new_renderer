@@ -1,7 +1,7 @@
 #include <VkCommandPool.h>
 #include <VkDebug.h>
 
-//#include <VkQueryPool.h>
+#include <VkQueryPool.h>
 #include <VkBuffer.h>
 
 namespace gfx
@@ -157,16 +157,16 @@ namespace gfx
 			//handle.pipelineBarrier2KHR(dependency_info);
 		}
 
-		void VulkanCommandList::BeginQuery(QueryPool* query_pool)
+		void VulkanCommandList::BeginQuery(QueryPool* query_pool, uint32_t query)
 		{
-			assert(false && "NOT IMPLEMENTED");
-			//handle.beginQuery();
+			auto* vk_query_pool = static_cast<VulkanQueryPool*>(query_pool);
+			handle.beginQuery(vk_query_pool->GetHandle(), query, {});
 		}
 
-		void VulkanCommandList::EndQuery(QueryPool* query_pool)
+		void VulkanCommandList::EndQuery(QueryPool* query_pool, uint32_t query)
 		{
-			assert(false && "NOT IMPLEMENTED");
-			//handle.endQuery()
+			auto* vk_query_pool = static_cast<VulkanQueryPool*>(query_pool);
+			handle.endQuery(vk_query_pool->GetHandle(), query);
 		}
 
 		void VulkanCommandList::BeginRendering()
@@ -181,17 +181,20 @@ namespace gfx
 
 		void VulkanCommandList::BeginMarker(const char* name, uint32_t color)
 		{
-			assert(false && "NOT IMPLEMENTED");
+			auto& debug_utils = command_pool.GetDebugUtils();
+			debug_utils.BeginLabel(handle, name, color);
 		}
 
 		void VulkanCommandList::InsertMarker(const char* name, uint32_t color)
 		{
-			assert(false && "NOT IMPLEMENTED");
+			auto& debug_utils = command_pool.GetDebugUtils();
+			debug_utils.InsertLabel(handle, name, color);
 		}
 
 		void VulkanCommandList::EndMarker()
 		{
-			assert(false && "NOT IMPLEMENTED");
+			auto& debug_utils = command_pool.GetDebugUtils();
+			debug_utils.EndLabel(handle);
 		}
 	}
 }

@@ -1,13 +1,15 @@
 #include <VkCommandPool.h>
 #include <VkDevice.h>
+#include <VkDebug.h>
 
 namespace gfx
 {
 	namespace vulkan
 	{
-		VulkanCommandPool::VulkanCommandPool(VulkanQueue& queue, CommandPoolResetMode reset_mode) :
+		VulkanCommandPool::VulkanCommandPool(VulkanQueue& queue, DebugUtils& debug_utils, CommandPoolResetMode reset_mode) :
 			VulkanResource{ nullptr, queue.GetAllocationCallbacks() },
 			device{ queue.GetDevice() },
+			debug_utils{ debug_utils },
 			queue_family_index{ queue.GetFamilyIndex() },
 			reset_mode{ reset_mode }
 		{
@@ -32,6 +34,7 @@ namespace gfx
 		VulkanCommandPool::VulkanCommandPool(VulkanCommandPool&& other) :
 			VulkanResource{ std::move(other) },
 			device{ device },
+			debug_utils{ other.debug_utils },
 			queue_family_index{ other.queue_family_index },
 			primary_command_buffers{ std::move(other.primary_command_buffers) },
 			active_primary_command_buffer_count(std::exchange(other.active_primary_command_buffer_count, {})),
@@ -119,6 +122,16 @@ namespace gfx
 		CommandPoolResetMode VulkanCommandPool::GetResetMode() const
 		{
 			return reset_mode;
+		}
+
+		DebugUtils& VulkanCommandPool::GetDebugUtils()
+		{
+			return debug_utils;
+		}
+
+		DebugUtils const& VulkanCommandPool::GetDebugUtils() const
+		{
+			return debug_utils;
 		}
 
 		void VulkanCommandPool::FreeCommandBuffers()
