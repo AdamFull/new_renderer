@@ -136,7 +136,18 @@ namespace gfx
 			return data.begin();
 		}
 
+		auto Begin() const
+		{
+			return data.begin();
+		}
+
 		auto End()
+		{
+			assert(count < element_count);
+			return data.begin() + count;
+		}
+
+		auto End() const
 		{
 			assert(count < element_count);
 			return data.begin() + count;
@@ -196,7 +207,9 @@ namespace gfx
 
 	struct RootSignatureCreateInfo
 	{
-
+		Shader* shader{ nullptr };
+		Sampler** immutable_samplers{ nullptr };
+		uint32_t immutable_sampler_count{};
 	};
 
 	struct GraphicsPipelineCreateInfo

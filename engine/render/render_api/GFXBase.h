@@ -193,6 +193,11 @@ namespace gfx
 			return ResourceType::eShader;
 		}
 
+		ShaderReflection const& GetReflection() const
+		{
+			return reflection;
+		}
+
 	protected:
 		ShaderReflection reflection{};
 	};

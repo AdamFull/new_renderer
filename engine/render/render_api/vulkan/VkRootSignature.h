@@ -1,7 +1,7 @@
 #pragma once
 
 #include <GFXBase.h>
-#include <VkResource.h>
+#include <VkDescriptorSetLayout.h>
 
 namespace gfx
 {
@@ -38,6 +38,7 @@ namespace gfx
 			VulkanRootSignature& operator=(VulkanRootSignature&&) = delete;
 		private:
 			std::unique_ptr<PipelineLayout> pipeline_layout{};
+			std::array<std::unique_ptr<DescriptorSetLayout>, 8ull> descriptor_set_layouts{};
 		};
 	}
 }

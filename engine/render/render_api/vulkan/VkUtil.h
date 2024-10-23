@@ -103,6 +103,34 @@ namespace gfx
 			return vk_flags;
 		}
 
+		inline vk::DescriptorType DescriptorPoolToVk(DescriptorType type)
+		{
+			if (type == DescriptorType::eSampler)
+				return vk::DescriptorType::eSampler;
+			else if (type == DescriptorType::eCombinedImageSampler)
+				return vk::DescriptorType::eCombinedImageSampler;
+			else if (type == DescriptorType::eSampledImage)
+				return vk::DescriptorType::eSampledImage;
+			else if (type == DescriptorType::eStorageImage)
+				return vk::DescriptorType::eStorageImage;
+			else if (type == DescriptorType::eUniformTexelBuffer)
+				return vk::DescriptorType::eUniformTexelBuffer;
+			else if (type == DescriptorType::eStorageTexelBuffer)
+				return vk::DescriptorType::eStorageTexelBuffer;
+			else if (type == DescriptorType::eUniformBuffer)
+				return vk::DescriptorType::eUniformBuffer;
+			else if (type == DescriptorType::eStorageBuffer)
+				return vk::DescriptorType::eStorageBuffer;
+			else if (type == DescriptorType::eUniformBufferDynamic)
+				return vk::DescriptorType::eUniformBufferDynamic;
+			else if (type == DescriptorType::eStorageBufferDynamic)
+				return vk::DescriptorType::eStorageBufferDynamic;
+			else if (type == DescriptorType::eInputAttachment)
+				return vk::DescriptorType::eInputAttachment;
+
+			return vk::DescriptorType::eSampler;
+		}
+
 		inline vk::Filter FilterToVk(Filter filter)
 		{
 			if (filter == Filter::eNearest)
