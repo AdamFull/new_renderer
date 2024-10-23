@@ -69,6 +69,12 @@ namespace gfx
 	{
 		char name[255];
 
+		uint32_t name_hash{};
+
+		uint32_t location{};
+
+		uint32_t vec_size{};
+		uint32_t columns{};
 		uint32_t size{};
 	};
 
@@ -146,6 +152,7 @@ namespace gfx
 			return vertex_inputs.NewElement();
 		}
 
+		// Uniforms/storage blocks/textures/samplers etc.
 		StaticArray<ShaderResource, 64ull> shader_resources{};
 		
 		ShaderResource& AddShaderResource()
@@ -153,12 +160,23 @@ namespace gfx
 			return shader_resources.NewElement();
 		}
 
+		// Variables inside uniforms/push constants
 		StaticArray<ShaderVariable, 128ull> shader_variables{};
 
 		ShaderVariable& AddShaderVariable()
 		{
 			return shader_variables.NewElement();
 		}
+
+		ShaderResource constants{};
+
+		uint32_t invocation_count{};
+
+		uint32_t output_vertex_count{};
+
+		// Thread group sizes
+		std::array<float, 3ull> local_sizes{};
+
 	};
 
 	struct ShaderStageInfo

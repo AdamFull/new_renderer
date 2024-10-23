@@ -114,6 +114,25 @@ namespace gfx
 				});
 		}
 
+		void CollectExecutionModes(ShaderReflection& reflection, spirv_cross::CompilerGLSL* compiler, uint32_t index)
+		{
+			auto mode = utl::cast<spv::ExecutionMode>(index);
+			switch (mode)
+			{
+			case spv::ExecutionMode::ExecutionModeInvocations: 
+				reflection.invocation_count = compiler->get_execution_mode_argument(mode, 0);
+				break;
+			case spv::ExecutionMode::ExecutionModeLocalSize:
+			{
+				for (int32_t dim = 0; dim < 3; ++dim)
+					reflection.local_sizes[dim] = compiler->get_execution_mode_argument(mode, dim);
+			} break;
+			case spv::ExecutionMode::ExecutionModeOutputVertices: 
+				reflection.output_vertex_count = compiler->get_execution_mode_argument(mode, 0); 
+				break;
+			}
+		}
+
 		void CollectUniformBlockReflection(ShaderReflection& reflection, spirv_cross::CompilerGLSL* compiler, const spirv_cross::Resource& res, ShaderStageFlag stage, DescriptorType type)
 		{
 			uint32_t name_hash = utl::murmur_hash(res.name);
@@ -164,6 +183,81 @@ namespace gfx
 			}
 		}
 
+		void CollectUniformReflection(ShaderReflection& reflection, spirv_cross::CompilerGLSL* compiler, const spirv_cross::Resource& res, ShaderStageFlag stage, DescriptorType type)
+		{
+			uint32_t name_hash = utl::murmur_hash(res.name);
+			auto found = FindShaderResourceByNameHash(reflection, name_hash);
+			if (found != reflection.shader_resources.End())
+			{
+				found->stages |= stage;
+				return;
+			}
+
+			if (HasSubstring(res.name, "global"))
+				return;
+
+			ShaderResource& uniform = reflection.AddShaderResource();
+
+			std::strcpy(uniform.name, res.name.c_str());
+			uniform.name_hash = name_hash;
+			uniform.set = compiler->get_decoration(res.id, spv::DecorationDescriptorSet);
+			uniform.binding = compiler->get_decoration(res.id, spv::DecorationBinding);
+			uniform.type = type;
+			uniform.stages = stage;
+		}
+
+		void CollectConstantsReflection(ShaderReflection& reflection, spirv_cross::CompilerGLSL* compiler, const spirv_cross::Resource& res, ShaderStageFlag stage)
+		{
+			const auto& type = compiler->get_type(res.type_id);
+			unsigned member_count = type.member_types.size();
+
+			auto& constants = reflection.constants;
+
+			if (!constants.name_hash)
+			{
+				std::strcpy(constants.name, res.name.c_str());
+				constants.name_hash = utl::murmur_hash(res.name);
+			}
+			
+			constants.size = std::max(constants.size, static_cast<uint32_t>(compiler->get_declared_struct_size(type)));
+			constants.stages |= stage;
+
+			if (member_count > 0)
+			{
+				constants.range_begin = reflection.shader_variables.count;
+
+				for (int32_t i = 0; i < member_count; ++i)
+				{
+					uint64_t array_stride{ 0ull }, matrix_stride{ 0ull };
+
+					auto& member_type = compiler->get_type(type.member_types[i]);
+					ShaderVariable& variable = reflection.AddShaderVariable();
+					variable.size = compiler->get_declared_struct_member_size(type, i);
+					variable.offset = compiler->type_struct_member_offset(type, i);
+
+					auto& variable_name = compiler->get_member_name(type.self, i);
+					std::strcpy(variable.name, variable_name.c_str());
+					variable.name_hash = utl::murmur_hash(variable_name);
+				}
+
+				constants.variable_count = reflection.shader_variables.count;
+			}
+		}
+
+		void CollectVertexInputs(ShaderReflection& reflection, spirv_cross::CompilerGLSL* compiler, const spirv_cross::Resource& res)
+		{
+			VertexInput& vertex_input = reflection.AddVertexInput();
+
+			std::strcpy(vertex_input.name, res.name.c_str());
+			vertex_input.name_hash = utl::murmur_hash(res.name);
+			vertex_input.location = compiler->get_decoration(res.id, spv::DecorationLocation);
+
+			spirv_cross::SPIRType type = compiler->get_type(res.type_id);
+			vertex_input.vec_size = type.vecsize;
+			vertex_input.columns = type.columns;
+			vertex_input.size = 4u * vertex_input.vec_size * vertex_input.columns;
+		}
+
 		void VulkanShader::AddReflectionStage(const ShaderStageInfo& create_info)
 		{
 			const uint32_t* code = reinterpret_cast<const uint32_t*>(create_info.code.data());
@@ -175,16 +269,72 @@ namespace gfx
 			compiler.set_enabled_interface_variables(std::move(active));
 
 			// Parse execution modes
-			//auto& execution_modes = compiler.get_execution_mode_bitset();
-			//execution_modes.for_each_bit([&](u32 i) { parse_execution_mode(reflectionData, &compiler, i); });
+			auto& execution_modes = compiler.get_execution_mode_bitset();
+			execution_modes.for_each_bit([&](u32 i) { CollectExecutionModes(reflection, &compiler, i); });
 
 			// Parse uniform buffers
 			for (const auto& res : resources.uniform_buffers)
+			{
 				CollectUniformBlockReflection(reflection, &compiler, res, create_info.stage, DescriptorType::eUniformBuffer);
+			}
 
 			// Parse storage buffers
 			for (const auto& res : resources.storage_buffers)
+			{
 				CollectUniformBlockReflection(reflection, &compiler, res, create_info.stage, DescriptorType::eStorageBuffer);
+			}
+
+			// Parse push constants blocks
+			for (const auto& res : resources.push_constant_buffers)
+			{
+				CollectConstantsReflection(reflection, &compiler, res, create_info.stage);
+			}
+
+			for (const auto& res : resources.sampled_images)
+			{
+				CollectUniformReflection(reflection, &compiler, res, create_info.stage, DescriptorType::eCombinedImageSampler);
+			}
+
+			for (const auto& res : resources.separate_images)
+			{
+				CollectUniformReflection(reflection, &compiler, res, create_info.stage, DescriptorType::eSampledImage);
+			}
+
+			for (const auto& res : resources.separate_samplers)
+			{
+				CollectUniformReflection(reflection, &compiler, res, create_info.stage, DescriptorType::eSampler);
+			}
+
+			for (const auto& res : resources.storage_images)
+			{
+				CollectUniformReflection(reflection, &compiler, res, create_info.stage, DescriptorType::eStorageImage);
+			}
+
+			for (const auto& res : resources.subpass_inputs)
+			{
+				CollectUniformReflection(reflection, &compiler, res, create_info.stage, DescriptorType::eInputAttachment);
+			}
+
+			if (create_info.stage == ShaderStageFlag::eVertex)
+			{
+				for (const auto& res : resources.stage_inputs)
+				{
+					CollectVertexInputs(reflection, &compiler, res);
+				}
+			}
+
+
+			std::sort(reflection.shader_resources.Begin(), reflection.shader_resources.End(), [](const ShaderResource& a, const ShaderResource& b)
+				{
+					// First compare by set
+					if (a.set != b.set)
+					{
+						return a.set < b.set;
+					}
+
+					// If sets are equal, compare by binding
+					return a.binding < b.binding;
+				});
 		}
 	}
 }
