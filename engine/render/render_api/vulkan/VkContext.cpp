@@ -303,13 +303,14 @@ namespace gfx
 
 		Shader* VkGFXContext::CreateShader(const ShaderCreateInfo& create_info)
 		{
-			assert(false && "NOT IMPLEMENTED");
-			return nullptr;
+			auto& new_shader = shaders.emplace_back(std::make_unique<VulkanShader>(*device, create_info));
+			return new_shader.get();
 		}
 
 		void VkGFXContext::DestroyShader(Shader* shader)
 		{
-			assert(false && "NOT IMPLEMENTED");
+			auto to_delete = std::remove_if(shaders.begin(), shaders.end(), [shader](const std::unique_ptr<VulkanShader>& h) { return h.get() == shader; });
+			shaders.erase(to_delete);
 		}
 
 		RootSignature* VkGFXContext::CreateRootSignature(const RootSignatureCreateInfo& create_info)
@@ -452,6 +453,7 @@ namespace gfx
 			} break;
 			case ResourceType::eSwapchain:
 			{
+				assert(false && "NOT IMPLEMENTED");
 			} break;
 			case ResourceType::eBuffer:
 			{
@@ -470,6 +472,7 @@ namespace gfx
 			} break;
 			case ResourceType::eTexture:
 			{
+				assert(false && "NOT IMPLEMENTED");
 			} break;
 			case ResourceType::eSampler:
 			{
@@ -478,12 +481,15 @@ namespace gfx
 			} break;
 			case ResourceType::eShader:
 			{
+				assert(false && "NOT IMPLEMENTED");
 			} break;
 			case ResourceType::eRootSignature:
 			{
+				assert(false && "NOT IMPLEMENTED");
 			} break;
 			case ResourceType::ePipeline:
 			{
+				assert(false && "NOT IMPLEMENTED");
 			} break;
 			case ResourceType::ePipelineCache:
 			{
@@ -492,9 +498,11 @@ namespace gfx
 			} break;
 			case ResourceType::eDescriptorPool:
 			{
+				assert(false && "NOT IMPLEMENTED");
 			} break;
 			case ResourceType::eDescriptorSet:
 			{
+				assert(false && "NOT IMPLEMENTED");
 			} break;
 			case ResourceType::eQueryPool:
 			{
