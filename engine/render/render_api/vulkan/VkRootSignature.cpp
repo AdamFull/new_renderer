@@ -9,7 +9,24 @@ namespace gfx
 {
 	namespace vulkan
 	{
-		PipelineLayout::PipelineLayout(Device& device) :
+		PipelineLayoutCreateInfo::PipelineLayoutCreateInfo()
+		{
+			create_info.pSetLayouts = descriptor_set_layouts.data();
+			create_info.pPushConstantRanges = push_constant_ranges.data();
+		}
+
+		void PipelineLayoutCreateInfo::AddDescriptorSetLayout(vk::DescriptorSetLayout layout)
+		{
+			descriptor_set_layouts[create_info.setLayoutCount++] = layout;
+		}
+
+		vk::PushConstantRange& PipelineLayoutCreateInfo::AddConstantRange()
+		{
+			return push_constant_ranges[create_info.pushConstantRangeCount++];
+		}
+
+
+		PipelineLayout::PipelineLayout(Device& device, const PipelineLayoutCreateInfo& create_info) :
 			VulkanResource{nullptr, device.GetAllocationCallbacks() },
 			device{ device }
 		{
@@ -39,23 +56,42 @@ namespace gfx
 			{
 				auto& ci = descriptor_set_layout_create_infos[it->set];
 
-				auto& descriptor_binding = ci.bindings[ci.create_info.bindingCount++];
+				auto& descriptor_binding = ci.AddBinding();
 				descriptor_binding.binding = it->binding;
 				descriptor_binding.descriptorType = DescriptorPoolToVk(it->type);
 				descriptor_binding.descriptorCount = 1u;
 				descriptor_binding.stageFlags = ShaderStageFlagsToVk(it->stages);
 
-				auto& flags = ci.binding_flags_ext[ci.ext_create_info.bindingCount++];
+				auto& flags = ci.AddBindingFlags();
 			}
 
+			PipelineLayoutCreateInfo layout_ci{};
+
+			// Get constant ranges from reflection
+			if (reflection.constants.range_begin != ~0u)
+			{
+				for (int32_t i = reflection.constants.range_begin; i < reflection.constants.variable_count; ++i)
+				{
+					auto& variable = reflection.shader_variables.data[i];
+					auto& range = layout_ci.AddConstantRange();
+					range.stageFlags = ShaderStageFlagsToVk(reflection.constants.stages);
+					range.size = variable.size;
+					range.offset = variable.offset;
+				}
+			}
+
+			// Allocate descriptr set layouts
 			for (int32_t set = 0; set < 8ull; ++set)
 			{
 				auto& ci = descriptor_set_layout_create_infos[set];
 				if (ci.create_info.bindingCount > 0)
 				{
 					descriptor_set_layouts[set] = std::make_unique<DescriptorSetLayout>(device, ci);
+					layout_ci.AddDescriptorSetLayout(descriptor_set_layouts[set]->GetHandle());
 				}
 			}
+
+			vk::PipelineLayoutCreateInfo pl_create_info{};
 		}
 
 		VulkanRootSignature::~VulkanRootSignature()

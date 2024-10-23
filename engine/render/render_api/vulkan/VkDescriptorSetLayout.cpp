@@ -13,6 +13,16 @@ namespace gfx
 			create_info.pNext = &ext_create_info;
 		}
 
+		vk::DescriptorSetLayoutBinding& DescriptorSetLayoutCreateInfo::AddBinding()
+		{
+			return bindings[create_info.bindingCount++];
+		}
+
+		vk::DescriptorBindingFlagsEXT& DescriptorSetLayoutCreateInfo::AddBindingFlags()
+		{
+			return binding_flags_ext[ext_create_info.bindingCount++];
+		}
+
 		DescriptorSetLayout::DescriptorSetLayout(Device& render_device, const DescriptorSetLayoutCreateInfo& create_info) :
 			VulkanResource{ nullptr, device.GetAllocationCallbacks() },
 			device{ device }

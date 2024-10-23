@@ -9,10 +9,24 @@ namespace gfx
 	{
 		class Device;
 
+		struct PipelineLayoutCreateInfo
+		{
+		public:
+			vk::PipelineLayoutCreateInfo create_info{};
+
+			std::array<vk::DescriptorSetLayout, 8ull> descriptor_set_layouts{};
+			std::array<vk::PushConstantRange, 16ull> push_constant_ranges{};
+
+			PipelineLayoutCreateInfo();
+
+			void AddDescriptorSetLayout(vk::DescriptorSetLayout layout);
+			vk::PushConstantRange& AddConstantRange();
+		};
+
 		class PipelineLayout final : public VulkanResource<vk::PipelineLayout>
 		{
 		public:
-			PipelineLayout(Device& device);
+			PipelineLayout(Device& device, const PipelineLayoutCreateInfo& create_info);
 			~PipelineLayout();
 
 			PipelineLayout(PipelineLayout&) = delete;

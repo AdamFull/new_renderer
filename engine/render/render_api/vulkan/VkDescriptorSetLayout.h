@@ -22,6 +22,9 @@ namespace gfx
 
 			std::array<vk::DescriptorSetLayoutBinding, k_max_layout_bindings> bindings{};
 			std::array<vk::DescriptorBindingFlagsEXT, k_max_layout_bindings> binding_flags_ext{};
+
+			vk::DescriptorSetLayoutBinding& AddBinding();
+			vk::DescriptorBindingFlagsEXT& AddBindingFlags();
 		};
 
 		class DescriptorSetLayout final : public VulkanResource<vk::DescriptorSetLayout>
