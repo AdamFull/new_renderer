@@ -24,35 +24,17 @@ namespace engine
 
 		RenderFrame::~RenderFrame()
 		{
-			if (backbuffer)
-			{
-				context.DestroyTexture(backbuffer);
-			}
+			context.Destroy(backbuffer);
 
-			if (image_avaliable)
-			{
-				context.DestroySemaphore(image_avaliable);
-			}
-
-			if (render_finished)
-			{
-				context.DestroySemaphore(render_finished);
-			}
-
-			if (upload_avaliable)
-			{
-				context.DestroySemaphore(upload_avaliable);
-			}
-
-			if (frame_fence)
-			{
-				context.DestroyFence(frame_fence);
-			}
+			context.Destroy(image_avaliable);
+			context.Destroy(render_finished);
+			context.Destroy(upload_avaliable);
+			context.Destroy(frame_fence);
 		}
 
 		void RenderFrame::UpdateBackbuffer(gfx::Texture* new_backbuffer)
 		{
-			context.DestroyTexture(backbuffer);
+			context.Destroy(backbuffer);
 			backbuffer = new_backbuffer;
 		}
 

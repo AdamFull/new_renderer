@@ -42,10 +42,7 @@ namespace engine
 				render_frames[i].reset();
 			}
 
-			if (swapchain)
-			{
-				context.DestroySwapchain(swapchain);
-			}
+			context.Destroy(swapchain);
 		}
 
 		//void RenderContext::CreateGlobalDescriptors(const FGlobalUniformCreateInfo& uniform_ci)
@@ -62,7 +59,7 @@ namespace engine
 			new_swapchain_ci.height = height;
 
 			swapchain = context.CreateSwapchain(new_swapchain_ci);
-			context.DestroySwapchain(new_swapchain_ci.old_swapchain);
+			context.Destroy(new_swapchain_ci.old_swapchain);
 			UpdateResources();
 		}
 
@@ -74,7 +71,7 @@ namespace engine
 			new_swapchain_ci.image_count = image_count;
 
 			swapchain = context.CreateSwapchain(new_swapchain_ci);
-			context.DestroySwapchain(new_swapchain_ci.old_swapchain);
+			context.Destroy(new_swapchain_ci.old_swapchain);
 			UpdateResources();
 		}
 

@@ -97,6 +97,46 @@ namespace engine
 			virtual BufferUsageFlags GetUsageFlags() const = 0;
 		};
 
+		class BufferSuballocation final
+		{
+		public:
+			BufferSuballocation(Buffer& buffer, uint64_t offset, uint64_t size) :
+				buffer{ buffer },
+				offset{ offset },
+				size{ size }
+			{
+			}
+
+			~BufferSuballocation() = default;
+
+			BufferSuballocation(const BufferSuballocation&) = delete;
+			BufferSuballocation(BufferSuballocation&& other) :
+				buffer{ other.buffer },
+				size{ std::exchange(other.size, {}) },
+				offset{ std::exchange(other.offset, {}) }
+			{
+
+			}
+
+			BufferSuballocation& operator=(const BufferSuballocation&) = delete;
+			BufferSuballocation& operator=(BufferSuballocation&&) = delete;
+
+			void Update(std::span<const char> data)
+			{
+				Update(data.data(), data.size());
+			}
+
+			void Update(const char* data, uint64_t data_size)
+			{
+				assert(data_size <= size);
+				buffer.Update(data, data_size, offset);
+			}
+		private:
+			Buffer& buffer;
+			uint64_t size{};
+			uint64_t offset{};
+		};
+
 		class CommandList : public GFXResource
 		{
 		public:

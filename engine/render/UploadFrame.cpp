@@ -19,24 +19,13 @@ namespace engine
 		{
 			for (auto& buffer : staging_buffers)
 			{
-				context.DestroyBuffer(buffer);
+				context.Destroy(buffer);
 			}
 			staging_buffers.clear();
 
-			if (command_pool)
-			{
-				context.DestroyCommandPool(command_pool);
-			}
-
-			if (signal_semaphore)
-			{
-				context.DestroySemaphore(signal_semaphore);
-			}
-
-			if (frame_fence)
-			{
-				context.DestroyFence(frame_fence);
-			}
+			context.Destroy(command_pool);
+			context.Destroy(signal_semaphore);
+			context.Destroy(frame_fence);
 		}
 
 		gfx::Buffer& UploadFrame::RequestStagingBuffer(size_t size, size_t* buffer_index)
@@ -105,7 +94,7 @@ namespace engine
 
 			for (auto& buffer : staging_buffers)
 			{
-				context.DestroyBuffer(buffer);
+				context.Destroy(buffer);
 			}
 			staging_buffers.clear();
 

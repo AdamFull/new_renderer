@@ -180,24 +180,19 @@ namespace engine
 				}
 			}
 
+			void VulkanContext::Destroy(GFXResource* handle)
+			{
+				SAFE_DELETE(handle);
+			}
+
 			Fence* VulkanContext::CreateFence()
 			{
 				return new VulkanFence(*device);
 			}
 
-			void VulkanContext::DestroyFence(Fence* handle)
-			{
-				SAFE_DELETE(handle);
-			}
-
 			Semaphore* VulkanContext::CreateSemaphore()
 			{
 				return new VulkanSemaphore(*device);
-			}
-
-			void VulkanContext::DestroySemaphore(Semaphore* handle)
-			{
-				SAFE_DELETE(handle);
 			}
 
 			const Queue* VulkanContext::RequestQueue(QueueTypeFlags queue_type_flags, uint32_t queue_index)
@@ -263,30 +258,15 @@ namespace engine
 					create_info.image_count);
 			}
 
-			void VulkanContext::DestroySwapchain(Swapchain* handle)
-			{
-				SAFE_DELETE(handle);
-			}
-
 			CommandPool* VulkanContext::CreateCommandPool(const Queue* queue, CommandPoolResetMode reset_mode)
 			{
 				auto* vkqueue = static_cast<const VulkanQueue*>(queue);
 				return new VulkanCommandPool(*vkqueue, *debug_utils, reset_mode);
 			}
 
-			void VulkanContext::DestroyCommandPool(CommandPool* handle)
-			{
-				SAFE_DELETE(handle);
-			}
-
 			Buffer* VulkanContext::CreateBuffer(const BufferCreateInfo& create_info)
 			{
 				return new VulkanBuffer(*allocator, create_info);
-			}
-
-			void VulkanContext::DestroyBuffer(Buffer* handle)
-			{
-				SAFE_DELETE(handle);
 			}
 
 			Texture* VulkanContext::CreateTexture(const TextureCreateInfo& create_info)
@@ -299,30 +279,15 @@ namespace engine
 				return new VulkanTexture(*allocator, swapchain, image_index);
 			}
 
-			void VulkanContext::DestroyTexture(Texture* handle)
-			{
-				SAFE_DELETE(handle);
-			}
-
 			Shader* VulkanContext::CreateShader(const ShaderCreateInfo& create_info)
 			{
 				return new VulkanShader(*device, create_info);
-			}
-
-			void VulkanContext::DestroyShader(Shader* handle)
-			{
-				SAFE_DELETE(handle);
 			}
 
 			RootSignature* VulkanContext::CreateRootSignature(const RootSignatureCreateInfo& create_info)
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
-			}
-
-			void VulkanContext::DestroyRootSignature(RootSignature* handle)
-			{
-				SAFE_DELETE(handle);
 			}
 
 			Pipeline* VulkanContext::CreatePipeline(const GraphicsPipelineCreateInfo& create_info)
@@ -337,20 +302,9 @@ namespace engine
 				return nullptr;
 			}
 
-			void VulkanContext::DestroyPipeline(Pipeline* handle)
-			{
-				assert(false && "NOT IMPLEMENTED");
-				SAFE_DELETE(handle);
-			}
-
 			PipelineCache* VulkanContext::CreatePipelineCache(const PipelineCacheCreateInfo& create_info)
 			{
 				return new VulkanPipelineCache(*device, create_info);
-			}
-
-			void VulkanContext::DestroyPipelineCache(PipelineCache* handle)
-			{
-				SAFE_DELETE(handle);
 			}
 
 			DescriptorPool* VulkanContext::CreateDescriptorPool()
@@ -359,29 +313,14 @@ namespace engine
 				return nullptr;
 			}
 
-			void VulkanContext::DestroyDescriptorPool(DescriptorPool* descriptor_pool)
-			{
-				assert(false && "NOT IMPLEMENTED");
-			}
-
 			Sampler* VulkanContext::CreateSampler(const SamplerCreateInfo& create_info)
 			{
 				return new VulkanSampler(*device, create_info);
 			}
 
-			void VulkanContext::DestroySampler(Sampler* handle)
-			{
-				SAFE_DELETE(handle);
-			}
-
 			QueryPool* VulkanContext::CreateQueryPool(const QueryPoolCreateInfo& create_info)
 			{
 				return new VulkanQueryPool(*device, create_info);
-			}
-
-			void VulkanContext::DestroyQueryPool(QueryPool* handle)
-			{
-				SAFE_DELETE(handle);
 			}
 
 			void VulkanContext::WaitForFences(uint32_t fence_count, Fence** fences_array, uint64_t timeout)
@@ -394,6 +333,34 @@ namespace engine
 				}
 
 				vk::Result result = Handle(*device).waitForFences(fence_count, wait_fences.data(), VK_TRUE, timeout);
+			}
+
+			void VulkanContext::RequestMinimalBufferAlignment(BufferUsageFlags usage, uint64_t& alignment)
+			{
+				alignment = 1ull;
+
+				auto& physical = device->GetGpu();
+				auto& properties = physical.GetProperties();
+
+				if (usage & BufferUsageFlag::eVertex)
+				{
+					alignment = std::max(alignment, 16ull);
+				}
+
+				if (usage & BufferUsageFlag::eIndex)
+				{
+					alignment = std::max(alignment, 4ull);
+				}
+
+				if (usage & BufferUsageFlag::eUniform)
+				{
+					alignment = std::lcm(properties.limits.minUniformBufferOffsetAlignment, properties.limits.nonCoherentAtomSize);
+				}
+
+				if (usage & BufferUsageFlag::eStorage)
+				{
+					alignment = std::max(alignment, properties.limits.minStorageBufferOffsetAlignment);
+				}
 			}
 
 			void VulkanContext::RequestTimestampFrequency(double* frequency)
