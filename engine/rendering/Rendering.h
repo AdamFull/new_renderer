@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 namespace engine
 {
 	class Window;
@@ -13,11 +15,20 @@ namespace engine
 
 	namespace render
 	{
+		class RenderContext;
+		class UploadContext;
+
 		class Renderer
 		{
 		public:
 			Renderer(Window* window);
 			~Renderer();
+
+			void Render(float delta_time);
+		private:
+			void BeginFrame();
+			void EndFrame();
+			void UpdateRenderTargets();
 		private:
 			std::unique_ptr<gfx::Context> gfx_context{};
 			std::unique_ptr<RenderContext> render_context{};

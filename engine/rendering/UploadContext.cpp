@@ -1,8 +1,8 @@
-#include <engine/render/UploadContext.h>
+#include <engine/rendering/UploadContext.h>
 
 #include <util/Logger.h>
 
-#include <GFX.h>
+#include <gfx/Context.h>
 
 namespace engine
 {

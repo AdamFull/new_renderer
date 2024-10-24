@@ -1,6 +1,6 @@
 #pragma once
 
-#include <engine/render/UploadFrame.h>
+#include <engine/rendering/UploadFrame.h>
 
 namespace engine
 {

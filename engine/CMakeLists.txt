@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 3.18.0)
 project(application)
 
 add_subdirectory(runtime)
-add_subdirectory(render)
+#add_subdirectory(render)
+add_subdirectory(rendering)
 add_subdirectory(filesystem)
 #add_subdirectory(scripting)
 add_subdirectory(profiler)
@@ -37,7 +38,8 @@ target_link_libraries(${PROJECT_NAME}
 	PUBLIC virtual_filesystem
 	PRIVATE engine_profiler
 	PRIVATE runtime
-	PRIVATE render_interface
+	PRIVATE engine_rendering
+	#PRIVATE render_interface
 	#PRIVATE script_engine
 	PRIVATE engine_world
 	PRIVATE imgui_integration

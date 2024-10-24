@@ -1,9 +1,9 @@
-#include <engine/render/RenderContext.h>
-#include <engine/render/UniformPool.h>
+#include <engine/rendering/RenderContext.h>
+#include <engine/rendering/UniformPool.h>
 
 #include <engine/runtime/Window.h>
 
-#include <engine/render/render_api/GFX.h>
+#include <engine/rendering/gfx/Context.h>
 
 #include <util/Logger.h>
 
@@ -34,6 +34,8 @@ namespace engine
 
 		RenderContext::~RenderContext()
 		{
+			queue->WaitIdle();
+
 			auto image_count = swapchain->GetImageCount();
 			for (int32_t i = 0; i < image_count; ++i)
 			{

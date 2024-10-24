@@ -1,39 +1,22 @@
 cmake_minimum_required(VERSION 3.18.0)
-project(render_interface)
+project(engine_rendering)
 
 find_package(Ktx CONFIG REQUIRED)
-find_package(tinyxml2 CONFIG REQUIRED)
-find_package(XercesC CONFIG REQUIRED)
 
 #find_package(PkgConfig REQUIRED)  
 #pkg_check_modules(LuaJIT REQUIRED IMPORTED_TARGET luajit)
 
 find_package(sol2 CONFIG REQUIRED)
 
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/DebugDraw")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/render_api")
+#add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/DebugDraw")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/gfx")
 
-file(GLOB ENGINE_RENDER_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
-file(GLOB ENGINE_RENDER_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
-
-file(GLOB ENGINE_RENDER_CONFIG_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/render_config/*.cpp")
-file(GLOB ENGINE_RENDER_CONFIG_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/render_config/*.h")
-
-file(GLOB ENGINE_RENDERING_STEPS_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/rendering_steps/*.cpp")
-file(GLOB ENGINE_RENDERING_STEPS_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/rendering_steps/*.h")
-
-file(GLOB_RECURSE ENGINE_RENDER_GRAPH_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/render_graph/*.cpp")
-file(GLOB_RECURSE ENGINE_RENDER_GRAPH_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/render_graph/*.h")
+file(GLOB ENGINE_RENDERING_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
+file(GLOB ENGINE_RENDERING_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 
 set(RENDER_INTERFACE_SOURCES
-    ${ENGINE_RENDER_SOURCES}
-    ${ENGINE_RENDER_HEADERS}
-    ${ENGINE_RENDER_CONFIG_SOURCES}
-    ${ENGINE_RENDER_CONFIG_HEADERS}
-    ${ENGINE_RENDERING_STEPS_SOURCES}
-    ${ENGINE_RENDERING_STEPS_HEADERS}
-    ${ENGINE_RENDER_GRAPH_SOURCES}
-    ${ENGINE_RENDER_GRAPH_HEADERS}
+    ${ENGINE_RENDERING_SOURCES}
+    ${ENGINE_RENDERING_HEADERS}
 )
 
 add_library(${PROJECT_NAME} STATIC ${RENDER_INTERFACE_SOURCES})
@@ -53,13 +36,7 @@ target_include_directories(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
 	PRIVATE gfx
-    PRIVATE ${LUA_LIBRARIES}
-    #PRIVATE PkgConfig::LuaJIT
-    PRIVATE sol2
     PRIVATE KTX::ktx
-    PRIVATE tinyxml2::tinyxml2
-    PRIVATE XercesC::XercesC
-    PRIVATE ImmediateModeDebugDraw
 )
 
 target_compile_definitions(${PROJECT_NAME} 

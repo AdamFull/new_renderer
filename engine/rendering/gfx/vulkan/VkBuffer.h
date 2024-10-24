@@ -1,7 +1,6 @@
 #pragma once
 
 #include <VkAllocator.h>
-#include <ResourceStructures.h>
 
 #include <GFXBase.h>
 

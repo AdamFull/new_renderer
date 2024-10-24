@@ -58,6 +58,6 @@ namespace engine
 			virtual void SetResourceName(GFXResource* resource_handle, const char* name) = 0;
 		};
 
-		std::unique_ptr<Context> CreateGFXContext(const ContextCreateInfo& create_info);
+		std::unique_ptr<Context> CreateContext(const ContextCreateInfo& create_info);
 	}
 }

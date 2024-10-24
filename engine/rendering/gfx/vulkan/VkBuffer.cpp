@@ -2,7 +2,8 @@
 #include <VkPhysicalDevice.h>
 #include <VkDevice.h>
 #include <VkDebug.h>
-#include <VkCommon.h>
+
+#include <memory.hpp>
 
 #include <util/Util.h>
 
@@ -70,7 +71,7 @@ namespace engine
 				else
 					alloc_create_info.usage = vma::MemoryUsage::eCpuOnly;
 
-				buffer_create_info.size = CalculateAlignedSize(create_info.size, minimal_alignment) * create_info.count;
+				buffer_create_info.size = utl::aligned_size(create_info.size, minimal_alignment) * create_info.count;
 				size = buffer_create_info.size;
 
 				buffer_create_info.sharingMode = vk::SharingMode::eConcurrent;

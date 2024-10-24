@@ -1,4 +1,4 @@
-#include <GFX.h>
+#include <Context.h>
 
 #include <vulkan/VkContext.h>
 #include <hash.hpp>
@@ -26,7 +26,7 @@ namespace engine
 			return hash;
 		}
 
-		std::unique_ptr<Context> CreateGFXContext(const ContextCreateInfo& create_info)
+		std::unique_ptr<Context> CreateContext(const ContextCreateInfo& create_info)
 		{
 			switch (create_info.render_api)
 			{

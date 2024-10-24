@@ -19,7 +19,6 @@
 #include <VkSwapchain.h>
 #include <VkShader.h>
 
-#include <VkCommon.h>
 #include <VkUtil.h>
 
 #include <volk.h>
@@ -31,7 +30,7 @@
 
 #define SAFE_DELETE(p) if(p){ delete p; p = nullptr; }
 
-//VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
+VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace engine
 {
