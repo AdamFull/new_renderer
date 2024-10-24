@@ -161,6 +161,7 @@ namespace engine
 		{
 			AccessFlags access{};
 			StageFlags stage{};
+			const Queue* queue{ nullptr };
 		};
 
 		struct BufferRangeInfo
@@ -180,6 +181,10 @@ namespace engine
 		struct TextureBarrier
 		{
 			Texture* texture{ nullptr };
+			uint32_t subresource_index{ ~0u };
+
+			ResourceState src_state{};
+			ResourceState dst_state{};
 		};
 
 		struct MemoryBarrier
@@ -198,6 +203,19 @@ namespace engine
 
 			uint32_t memory_barrier_count{};
 			MemoryBarrier* memory_barriers{ nullptr };
+		};
+
+		struct IndirectDrawCommand
+		{
+			bool indexed_draw{ false };
+
+			Buffer* argument_buffer{ nullptr };
+			uint64_t argument_offset{ 0ull };
+			uint32_t draw_count{};
+			uint32_t command_stride{};
+
+			Buffer* count_buffer{ nullptr };
+			uint64_t count_offset{ 0ull };
 		};
 
 		uint32_t Hash(const SamplerCreateInfo& create_info);

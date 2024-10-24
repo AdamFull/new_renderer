@@ -166,14 +166,12 @@ namespace engine
 
 			virtual void Draw(uint32_t vertex_count, uint32_t first_vertex, uint32_t first_instance, uint32_t instance_count) = 0;
 			virtual void DrawIndexed(uint32_t index_count, uint32_t first_index, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance) = 0;
-			virtual void DrawIndirect() = 0;
-			virtual void DrawIndirectIndexed() = 0;
-			virtual void DrawIndirectIndexedCount() = 0;
+			virtual void DrawIndirect(const IndirectDrawCommand& draw_command) = 0;
 
 			virtual void WriteTimestamp(QueryPool* query_pool, uint32_t pool_index, StageFlag stage_flag) = 0;
 
 			virtual void Dispatch(uint32_t group_x, uint32_t group_y, uint32_t group_z) = 0;
-			virtual void DispatchIndirect() = 0;
+			virtual void DispatchIndirect(Buffer* argument_buffer, uint64_t argument_offset = 0ull) = 0;
 
 			virtual void ResourceBarrier(const ResourceBarrierInfo& barrier) = 0;
 
