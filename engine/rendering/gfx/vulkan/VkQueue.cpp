@@ -4,6 +4,7 @@
 #include <VkFence.h>
 #include <VkSemaphore.h>
 #include <VkSwapchain.h>
+#include <VkCommandList.h>
 
 #include <VkUtil.h>
 
@@ -66,8 +67,6 @@ namespace engine
 
 			void VulkanQueue::Submit(const SubmitInfo& submit_info, Fence* fence) const
 			{
-				assert(false && "NOT IMPLEMENTED");
-
 				std::array<vk::SemaphoreSubmitInfo, 16ull> wait_semaphores{};
 				std::array<vk::SemaphoreSubmitInfo, 16ull> signal_semaphores{};
 				std::array<vk::CommandBufferSubmitInfo, 16ull> command_buffers{};
@@ -95,7 +94,7 @@ namespace engine
 					if (command_list)
 					{
 						auto& submit_info = command_buffers[vk_submit_info.commandBufferInfoCount++];
-						//submit_info.commandBuffer = static_cast<VulkanCommandList*>(command_list)->GetHandle();
+						submit_info.commandBuffer = static_cast<VulkanCommandList*>(command_list)->GetHandle();
 					}
 				}
 
@@ -116,7 +115,6 @@ namespace engine
 
 			void VulkanQueue::Present(const PresentInfo& present_info) const
 			{
-				assert(false && "NOT IMPLEMENTED");
 				std::array<vk::Semaphore, 16ull> wait_semaphores{};
 				std::array<vk::SwapchainKHR, 16ull> swapchains{};
 
