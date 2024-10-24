@@ -30,6 +30,24 @@ namespace engine
 			RenderFrame& operator=(RenderFrame&&) = delete;
 
 			void UpdateBackbuffer(gfx::Texture* new_backbuffer);
+
+			gfx::Texture& GetBackbuffer();
+
+			gfx::CommandList& RequestCommandList(bool secondary = false);
+
+			//DescriptorSet& RequestDescriptorSet(DescriptorSetLayout& layout);
+
+			//BufferSuballocation RequestUniformBlock(vk::DeviceSize requested_size);
+
+			void ResetFence();
+			void WaitFence();
+
+			gfx::Semaphore& GetImageAvaliableSemaphore();
+			gfx::Semaphore& GetRenderFinishedSemaphore();
+			gfx::Semaphore& GetUploadAvaliableSemaphore();
+			gfx::Fence& GetFence();
+
+			void Reset();
 		private:
 			gfx::Context& context;
 

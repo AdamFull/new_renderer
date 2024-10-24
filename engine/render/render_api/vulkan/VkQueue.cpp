@@ -3,6 +3,7 @@
 
 #include <VkFence.h>
 #include <VkSemaphore.h>
+#include <VkSwapchain.h>
 
 #include <VkUtil.h>
 
@@ -63,7 +64,7 @@ namespace engine
 				return can_present;
 			}
 
-			void VulkanQueue::Submit(const SubmitInfo& submit_info, Fence* fence)
+			void VulkanQueue::Submit(const SubmitInfo& submit_info, Fence* fence) const
 			{
 				assert(false && "NOT IMPLEMENTED");
 
@@ -113,7 +114,7 @@ namespace engine
 				handle.submit2KHR(vk_submit_info, fence ? static_cast<VulkanFence*>(fence)->GetHandle() : nullptr);
 			}
 
-			void VulkanQueue::Present(const PresentInfo& present_info)
+			void VulkanQueue::Present(const PresentInfo& present_info) const
 			{
 				assert(false && "NOT IMPLEMENTED");
 				std::array<vk::Semaphore, 16ull> wait_semaphores{};
@@ -138,14 +139,29 @@ namespace engine
 					Swapchain* swapchain = present_info.swapchains[i];
 					if (swapchain)
 					{
-						//swapchains[vk_present_info.swapchainCount++] = static_cast<VulkanSwapchain*>(swapchain)->GetHandle();
+						auto* vk_swapchain = static_cast<VulkanSwapchain*>(swapchain);
+						swapchains[vk_present_info.swapchainCount++] = vk_swapchain->GetHandle();
+
+						if (!vk_present_info.pNext)
+						{
+							auto& surface_extent = vk_swapchain->GetExtent();
+							//auto& window = vk_swapchain->GetWidth
+							//
+							//vk::DisplayPresentInfoKHR disp_present_info;
+							//if (device.IsExtensionSupported(VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME) &&
+							//	window.GetDisplayPresentInfo(reinterpret_cast<VkDisplayPresentInfoKHR*>(&disp_present_info), surface_extent.width, surface_extent.height))
+							//{
+							//	// Add display present info if supported and wanted
+							//	vk_present_info.pNext = &disp_present_info;
+							//}
+						}
 					}
 				}
 
 				handle.presentKHR(vk_present_info);
 			}
 
-			void VulkanQueue::WaitIdle()
+			void VulkanQueue::WaitIdle() const
 			{
 				handle.waitIdle();
 			}

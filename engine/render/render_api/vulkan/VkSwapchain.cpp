@@ -321,7 +321,7 @@ namespace engine
 				return device;
 			}
 
-			void VulkanSwapchain::AcquireNextImage(Semaphore* signal_semaphore, Fence* fence, uint32_t* image_index)
+			bool VulkanSwapchain::AcquireNextImage(Semaphore* signal_semaphore, Fence* fence, uint32_t* image_index)
 			{
 				vk::Semaphore image_acquired_semaphore{ nullptr };
 				if (signal_semaphore)
@@ -337,7 +337,17 @@ namespace engine
 					wait_fence = vk_fence->GetHandle();
 				}
 
-				vk::Result result = Handle(device).acquireNextImageKHR(handle, std::numeric_limits<uint64_t>::max(), image_acquired_semaphore, wait_fence, image_index);
+				vk::Result result;
+				try
+				{
+					result = Handle(device).acquireNextImageKHR(handle, std::numeric_limits<uint64_t>::max(), image_acquired_semaphore, wait_fence, image_index);
+				}
+				catch (vk::OutOfDateKHRError& /*err*/)
+				{
+					result = vk::Result::eErrorOutOfDateKHR;
+				}
+
+				return result == vk::Result::eSuccess;
 			}
 
 			const vk::Extent2D& VulkanSwapchain::GetExtent() const
@@ -388,6 +398,24 @@ namespace engine
 			Format VulkanSwapchain::GetImageFormat() const
 			{
 				return FormatFromVk(static_cast<uint32_t>(create_info.imageFormat));
+			}
+
+			const uint32_t& VulkanSwapchain::GetWidth() const
+			{
+				return create_info.imageExtent.width;
+			}
+
+			const uint32_t& VulkanSwapchain::GetHeight() const
+			{
+				return create_info.imageExtent.height;
+			}
+
+			void VulkanSwapchain::GetSurfaceExtent(uint32_t& width, uint32_t& height)
+			{
+				auto& gpu = device.GetGpu();
+				vk::SurfaceCapabilitiesKHR surface_properties = Handle(gpu).getSurfaceCapabilitiesKHR(surface);
+				width = surface_properties.currentExtent.width;
+				height = surface_properties.currentExtent.height;
 			}
 		}
 	}

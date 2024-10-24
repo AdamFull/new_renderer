@@ -55,6 +55,16 @@ namespace engine
 			{
 			}
 
+			void VulkanTexture::Reset()
+			{
+				srv->SetImageLayout(vk::ImageLayout::eUndefined);
+
+				for (auto& subresource : subresources)
+				{
+					subresource->SetImageLayout(vk::ImageLayout::eUndefined);
+				}
+			}
+
 			Image& VulkanTexture::GetImage()
 			{
 				return *image;

@@ -32,9 +32,9 @@ namespace engine
 
 				vk::Bool32 SupportPresent() const;
 
-				void Submit(const SubmitInfo& submit_info, Fence* fence) override;
-				void Present(const PresentInfo& present_info) override;
-				void WaitIdle() override;
+				void Submit(const SubmitInfo& submit_info, Fence* fence) const override;
+				void Present(const PresentInfo& present_info) const override;
+				void WaitIdle() const override;
 			private:
 				Device& device;
 

@@ -50,9 +50,9 @@ namespace engine
 				return ResourceType::eQueue;
 			}
 
-			virtual void Submit(const SubmitInfo& submit_info, Fence* fence) = 0;
-			virtual void Present(const PresentInfo& present_info) = 0;
-			virtual void WaitIdle() = 0;
+			virtual void Submit(const SubmitInfo& submit_info, Fence* fence) const = 0;
+			virtual void Present(const PresentInfo& present_info) const = 0;
+			virtual void WaitIdle() const = 0;
 		};
 
 		class Swapchain : public GFXResource
@@ -67,7 +67,13 @@ namespace engine
 
 			virtual uint32_t GetImageCount() const = 0;
 			virtual Format GetImageFormat() const = 0;
-			virtual void AcquireNextImage(Semaphore* signal_semaphore, Fence* fence, uint32_t* image_index) = 0;
+
+			virtual const uint32_t& GetWidth() const = 0;
+			virtual const uint32_t& GetHeight() const = 0;
+
+			virtual void GetSurfaceExtent(uint32_t& width, uint32_t& height) = 0;
+
+			virtual bool AcquireNextImage(Semaphore* signal_semaphore, Fence* fence, uint32_t* image_index) = 0;
 		};
 
 		class Buffer : public GFXResource
@@ -158,6 +164,9 @@ namespace engine
 		{
 		public:
 			virtual ~Texture() = default;
+
+			// Reset subresource layouts
+			virtual void Reset() = 0;
 
 			ResourceType GetResourceType() override
 			{

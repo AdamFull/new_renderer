@@ -66,7 +66,7 @@ namespace engine
 
 				Device const& GetDevice() const;
 
-				void AcquireNextImage(Semaphore* signal_semaphore, Fence* fence, uint32_t* image_index) override;
+				bool AcquireNextImage(Semaphore* signal_semaphore, Fence* fence, uint32_t* image_index) override;
 
 				const vk::Extent2D& GetExtent() const;
 
@@ -86,6 +86,11 @@ namespace engine
 				uint32_t GetImageCount() const override;
 
 				Format GetImageFormat() const override;
+
+				const uint32_t& GetWidth() const override;
+				const uint32_t& GetHeight() const override;
+
+				void GetSurfaceExtent(uint32_t& width, uint32_t& height) override;
 
 			private:
 				Device& device;

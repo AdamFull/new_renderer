@@ -103,7 +103,7 @@ namespace engine
 
 		struct SwapChainCreateInfo
 		{
-			Window* window{ nullptr };
+			const Window* window{ nullptr };
 			Swapchain* old_swapchain{ nullptr };
 
 			uint32_t image_count{ 1u };

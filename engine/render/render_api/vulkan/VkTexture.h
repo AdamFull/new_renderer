@@ -22,6 +22,8 @@ namespace engine
 				VulkanTexture& operator=(const VulkanTexture&) = delete;
 				VulkanTexture& operator=(VulkanTexture&&) = delete;
 
+				void Reset();
+
 				Image& GetImage();
 				Image const& GetImage() const;
 
