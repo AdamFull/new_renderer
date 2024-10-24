@@ -47,6 +47,7 @@ namespace engine
 				}
 
 				create_info.format = image.GetFormat();
+				create_info.image = image.GetHandle();
 
 				if (IsDepthFormat(create_info.format))
 				{
