@@ -28,6 +28,7 @@
 #include <render_api/GFX.h>
 
 #include <engine/render/RenderContext.h>
+#include <engine/render/UploadContext.h>
 
 using namespace engine;
 using namespace engine::render;
@@ -116,6 +117,7 @@ void CRenderInterface::PreInitialize(const FRenderInterfaceCreateInfo& rhi_ci)
 	gfx_context = gfx::CreateGFXContext(gfx_create_info);
 
 	render_context = std::make_unique<RenderContext>(*gfx_context, rhi_ci.window);
+	upload_context = std::make_unique<UploadContext>(*gfx_context);
 
 	m_pRenderContext = make_render_context(rhi_ci);
 

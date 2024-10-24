@@ -16,6 +16,7 @@ namespace engine
 	namespace render
 	{
 		class RenderContext;
+		class UploadContext;
 
 		using resource_container_t = CResourceContainer<IBufferObject, ITextureObject, IShaderObject, IVertexHandler>;
 
@@ -77,6 +78,7 @@ namespace engine
 
 			std::unique_ptr<gfx::Context> gfx_context{};
 			std::unique_ptr<RenderContext> render_context{};
+			std::unique_ptr<UploadContext> upload_context{};
 
 			std::unique_ptr<FRenderDataPacket> m_pRenderPacket{};
 
