@@ -38,22 +38,10 @@ void CEngineSystemManager::PostUpdate(f32 dt)
 		system->PostUpdate(dt);
 }
 
-void CEngineSystemManager::PreRender()
-{
-	for (auto& system : m_vSystems)
-		system->PreRender();
-}
-
 void CEngineSystemManager::Render()
 {
 	for (auto& system : m_vSystems)
 		system->Render();
-}
-
-void CEngineSystemManager::PostRender()
-{
-	for (auto& system : m_vSystems)
-		system->PostRender();
 }
 
 void CEngineSystemManager::PreDestroy()

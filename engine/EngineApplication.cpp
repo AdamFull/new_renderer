@@ -114,18 +114,9 @@ namespace engine
 		m_pRenderInterface->PostUpdate(delta_time);
 		// Post update zone EMD
 
-		// Pre render zone BEGIN
-		m_pSystemManager->PreRender();
-		m_pRenderInterface->PreRender();
-		// Pre render zone END
-
 		// Render zone BEGIN
 		m_pSystemManager->Render();
 		m_pRenderInterface->Render();
 		// Render zone END
-
-		// Post render zone BEGIN
-		m_pSystemManager->PostRender();
-		m_pRenderInterface->PostRender();
 	}
 }

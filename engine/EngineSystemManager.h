@@ -21,9 +21,7 @@ namespace engine
 		void Update(f32 dt);
 		void PostUpdate(f32 dt);
 
-		void PreRender();
 		void Render();
-		void PostRender();
 
 		void PreDestroy();
 		void Destroy();

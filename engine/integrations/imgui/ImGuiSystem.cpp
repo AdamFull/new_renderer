@@ -557,10 +557,6 @@ void CImGuiEngineSystem::Update(f32 dt)
 	ImGui::Render();
 }
 
-void CImGuiEngineSystem::PreRender()
-{
-}
-
 void CImGuiEngineSystem::Render()
 {
 

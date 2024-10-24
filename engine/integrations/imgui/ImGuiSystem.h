@@ -17,7 +17,6 @@ namespace engine
 
 		void Update(f32 dt) override;
 
-		void PreRender() override;
 		void Render() override;
 
 		void Destroy() override;
