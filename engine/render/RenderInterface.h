@@ -9,13 +9,6 @@
 
 namespace engine
 {
-	namespace gfx
-	{
-		class Context;
-		class QueryPool;
-		class Sampler;
-	}
-
 	namespace render
 	{
 		class RenderContext;
@@ -76,18 +69,6 @@ namespace engine
 			filesystem::IVirtualFileSystemInterface* m_pVFS{ nullptr };
 
 			u32 m_frameCounter{ 0u };
-
-			std::unique_ptr<gfx::Context> gfx_context{};
-			std::unique_ptr<RenderContext> render_context{};
-			std::unique_ptr<UploadContext> upload_context{};
-
-			gfx::QueryPool* timestamp_query{ nullptr };
-			uint32_t query_index{ 0u };
-
-			gfx::Sampler* default_sampler{ nullptr };
-
-			utl::vector<uint32_t> texture_index_remap{};
-			utl::hash_map<u32, utl::unique_queue<int64_t>> texture_to_update{};
 
 			std::unique_ptr<FRenderDataPacket> m_pRenderPacket{};
 
