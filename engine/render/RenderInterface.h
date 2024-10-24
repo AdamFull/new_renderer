@@ -3,6 +3,7 @@
 #include <engine/interface/filesystem/VirtualFileSystemInterface.h>
 #include <engine/interface/render/RenderInterface.h>
 #include <engine/interface/ResourceContainer.h>
+#include <container/unique_queue.h>
 #include <util/Logger.h>
 #include <memory>
 
@@ -11,6 +12,8 @@ namespace engine
 	namespace gfx
 	{
 		class Context;
+		class QueryPool;
+		class Sampler;
 	}
 
 	namespace render
@@ -34,9 +37,7 @@ namespace engine
 			void Update(f32 dt) override;
 			void PostUpdate(f32 dt) override;
 
-			void PreRender() override;
 			void Render() override;
-			void PostRender() override;
 
 			FRHIHandle CreateTextureObject(const std::string& path) override;
 			FRHIHandle CreateTextureObject(const std::string& name, const FTextureCreateInfo& texture_ci) override;
@@ -79,6 +80,14 @@ namespace engine
 			std::unique_ptr<gfx::Context> gfx_context{};
 			std::unique_ptr<RenderContext> render_context{};
 			std::unique_ptr<UploadContext> upload_context{};
+
+			gfx::QueryPool* timestamp_query{ nullptr };
+			uint32_t query_index{ 0u };
+
+			gfx::Sampler* default_sampler{ nullptr };
+
+			utl::vector<uint32_t> texture_index_remap{};
+			utl::hash_map<u32, utl::unique_queue<int64_t>> texture_to_update{};
 
 			std::unique_ptr<FRenderDataPacket> m_pRenderPacket{};
 

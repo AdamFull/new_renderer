@@ -254,11 +254,12 @@ namespace engine
 					auto& subresource = texture->GetSubresource(texture_barrier.subresource_index);
 					vk_image_barrier.subresourceRange = subresource.GetSubresourceRange();
 
-					// TODO: set layouts
-					// TODO: set subresources
-
+					vk_image_barrier.oldLayout = ImageLayoutToVk(texture_barrier.src_layout);
+					assert(vk_image_barrier.oldLayout == subresource.GetImageLayout() && "Old layout is not correct.");
 					vk_image_barrier.srcAccessMask = AccessFlagsToVk(texture_barrier.src_state.access);
 					vk_image_barrier.srcStageMask = StageFlagsToVk(texture_barrier.src_state.stage);
+
+					vk_image_barrier.newLayout = ImageLayoutToVk(texture_barrier.dst_layout);
 					vk_image_barrier.dstAccessMask = AccessFlagsToVk(texture_barrier.dst_state.access);
 					vk_image_barrier.dstStageMask = StageFlagsToVk(texture_barrier.dst_state.stage);
 

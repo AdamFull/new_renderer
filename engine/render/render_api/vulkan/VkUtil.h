@@ -155,6 +155,48 @@ namespace engine
 				return vk_flags;
 			}
 
+			inline vk::ImageLayout ImageLayoutToVk(ImageLayout layout)
+			{
+				if (layout == ImageLayout::eUndefined)
+					return vk::ImageLayout::eUndefined;
+				else if (layout == ImageLayout::eGeneral)
+					return vk::ImageLayout::eGeneral;
+				else if (layout == ImageLayout::eColorAttachmentOptimal)
+					return vk::ImageLayout::eColorAttachmentOptimal;
+				else if (layout == ImageLayout::eDepthStencilAttachmentOptimal)
+					return vk::ImageLayout::eDepthStencilAttachmentOptimal;
+				else if (layout == ImageLayout::eDepthStencilReadOnlyOptimal)
+					return vk::ImageLayout::eDepthStencilReadOnlyOptimal;
+				else if (layout == ImageLayout::eShaderReadOnlyOptimal)
+					return vk::ImageLayout::eShaderReadOnlyOptimal;
+				else if (layout == ImageLayout::eTransferSrcOptimal)
+					return vk::ImageLayout::eTransferSrcOptimal;
+				else if (layout == ImageLayout::eTransferDstOptimal)
+					return vk::ImageLayout::eTransferDstOptimal;
+				else if (layout == ImageLayout::ePreinitialized)
+					return vk::ImageLayout::ePreinitialized;
+				else if (layout == ImageLayout::eDepthReadOnlyStencilAttachmentOptimal)
+					return vk::ImageLayout::eDepthReadOnlyStencilAttachmentOptimal;
+				else if (layout == ImageLayout::eDepthAttachmentStencilReadOnlyOptimal)
+					return vk::ImageLayout::eDepthAttachmentStencilReadOnlyOptimal;
+				else if (layout == ImageLayout::eDepthAttachmentOptimal)
+					return vk::ImageLayout::eDepthAttachmentOptimal;
+				else if (layout == ImageLayout::eDepthReadOnlyOptimal)
+					return vk::ImageLayout::eDepthReadOnlyOptimal;
+				else if (layout == ImageLayout::eStencilAttachmentOptimal)
+					return vk::ImageLayout::eStencilAttachmentOptimal;
+				else if (layout == ImageLayout::eStencilReadOnlyOptimal)
+					return vk::ImageLayout::eStencilReadOnlyOptimal;
+				else if (layout == ImageLayout::eReadOnlyOptimal)
+					return vk::ImageLayout::eReadOnlyOptimal;
+				else if (layout == ImageLayout::eAttachmentOptimal)
+					return vk::ImageLayout::eAttachmentOptimal;
+				else if (layout == ImageLayout::ePresentSrcKHR)
+					return vk::ImageLayout::ePresentSrcKHR;
+				
+				return vk::ImageLayout::eUndefined;
+			}
+
 			inline vk::DescriptorType DescriptorPoolToVk(DescriptorType type)
 			{
 				if (type == DescriptorType::eSampler)

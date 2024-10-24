@@ -185,7 +185,9 @@ namespace engine
 			Texture* texture{ nullptr };
 			uint32_t subresource_index{ ~0u };
 
+			ImageLayout src_layout{};
 			ResourceState src_state{};
+			ImageLayout dst_layout{};
 			ResourceState dst_state{};
 		};
 

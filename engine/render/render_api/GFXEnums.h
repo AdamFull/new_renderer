@@ -125,6 +125,28 @@ namespace engine
 		};
 		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(AccessFlags, AccessFlag);
 
+		enum class ImageLayout
+		{
+			eUndefined,
+			eGeneral,
+			eColorAttachmentOptimal,
+			eDepthStencilAttachmentOptimal,
+			eDepthStencilReadOnlyOptimal,
+			eShaderReadOnlyOptimal,
+			eTransferSrcOptimal,
+			eTransferDstOptimal,
+			ePreinitialized,
+			eDepthReadOnlyStencilAttachmentOptimal,
+			eDepthAttachmentStencilReadOnlyOptimal,
+			eDepthAttachmentOptimal,
+			eDepthReadOnlyOptimal,
+			eStencilAttachmentOptimal,
+			eStencilReadOnlyOptimal,
+			eReadOnlyOptimal,
+			eAttachmentOptimal,
+			ePresentSrcKHR
+		};
+
 		// For sampler
 		enum class Filter
 		{

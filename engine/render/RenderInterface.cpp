@@ -37,6 +37,8 @@ constexpr const u64 MAX_RENDER_OBJECT_COUNT{ 16384ull };
 constexpr const u64 MAX_PRIMITIVE_COUNT{ 512ull };
 constexpr const u64 MAX_MATERIAL_COUNT{ 512ull };
 
+//#define USE_NEW_RHI
+
 std::unique_ptr<IRenderBackend> make_render_context(const FRenderInterfaceCreateInfo& rhi_ci)
 {
 	FRenderContextCreateInfo context_ci{};
@@ -102,13 +104,17 @@ CRenderInterface::CRenderInterface(filesystem::IVirtualFileSystemInterface* vfs)
 
 CRenderInterface::~CRenderInterface()
 {
-
+#ifdef USE_NEW_RHI
+	gfx_context->Destroy(default_sampler);
+	gfx_context->Destroy(timestamp_query);
+#endif
 }
 
 void CRenderInterface::PreInitialize(const FRenderInterfaceCreateInfo& rhi_ci)
 {
 	m_pResourceLoader->Initialize(m_pVFS);
-	
+
+#ifdef USE_NEW_RHI
 	gfx::ContextCreateInfo gfx_create_info{};
 	gfx_create_info.app_name = "MyVulkanEngine";
 	gfx_create_info.render_api = gfx::RenderApi::eVulkan;
@@ -119,6 +125,22 @@ void CRenderInterface::PreInitialize(const FRenderInterfaceCreateInfo& rhi_ci)
 	render_context = std::make_unique<RenderContext>(*gfx_context, rhi_ci.window);
 	upload_context = std::make_unique<UploadContext>(*gfx_context);
 
+	// Create timestamp query for collecting pass info
+	gfx::QueryPoolCreateInfo query_pool_ci{};
+	query_pool_ci.type = gfx::QueryType::eTimestamp;
+	query_pool_ci.query_count = 256;
+	timestamp_query = gfx_context->CreateQueryPool(query_pool_ci);
+
+	// Create default image sampler
+	gfx::SamplerCreateInfo sampler_ci{};
+	sampler_ci.address_u = sampler_ci.address_v = sampler_ci.address_w = gfx::SamplerAddressMode::eClampToEdge;
+	sampler_ci.min_filter = gfx::Filter::eLinear;
+	sampler_ci.mag_filter = gfx::Filter::eLinear;
+	sampler_ci.mip_map_mode = gfx::SamplerMipmapMode::eLinear;
+
+	default_sampler = gfx_context->CreateSampler(sampler_ci);
+
+#else
 	m_pRenderContext = make_render_context(rhi_ci);
 
 	FGlobalUniformCreateInfo global_buffer_ci{};
@@ -126,7 +148,7 @@ void CRenderInterface::PreInitialize(const FRenderInterfaceCreateInfo& rhi_ci)
 	global_buffer_ci.uniforms[shader_bindings::global_buffer_references] = sizeof(FGlobalBufferReference);
 	global_buffer_ci.uniforms[shader_bindings::global_post_process_data] = sizeof(FGlobalPostProcessingData);
 	m_pRenderContext->CreateGlobalDescriptor(global_buffer_ci);
-
+#endif
 	m_pRenderWorld->Create();
 }
 
@@ -268,21 +290,52 @@ void CRenderInterface::PostUpdate(f32 dt)
 
 }
 
-// Calls after another PreRender
-void CRenderInterface::PreRender()
-{
-	m_pRenderContext->BeginFrame();
-}
-
 // Calls after another Render
 void CRenderInterface::Render()
 {	
-	m_pRenderGraph->Execute();
-}
+#ifdef USE_NEW_RHI
+	bool surface_updated{ false };
+	auto& command_buffer = render_context->Begin(surface_updated);
+	if (surface_updated)
+	{
+		UpdateSurface();
+	}
 
-// Calls before another PreRender
-void CRenderInterface::PostRender()
-{
+	// TODO: here i should run only main command buffer. But for now i getting the last one
+	//Handle(command_buffer).resetQueryPool(timestamp_pool->GetHandle(), 0u, timestamp_pool->GetQueryCount());
+
+	timestamp_query->Reset(0u);
+	query_index = 0u;
+
+	// Update bindless textures
+	auto& textures = render_resources->data<ITextureObject>();
+
+	if (texture_index_remap.empty())
+	{
+		// Resizing remap vector
+		texture_index_remap.resize(textures.size());
+
+		int64_t image_offset{ 0ll };
+		for (int64_t texture_index = 0ll; texture_index < textures.size(); ++texture_index)
+		{
+			auto& texture = textures[texture_index];
+			//if (texture->GetFlags() & ETextureCreateFlagBits::eRenderTarget)
+			//	continue;
+
+			texture_index_remap[texture_index] = image_offset++;
+
+
+			for (u32 frame_index = 0u; frame_index < render_context->GetSwapchain().GetImageCount(); ++frame_index)
+				texture_to_update[frame_index].push(texture_index);
+		}
+	}
+
+#else
+	m_pRenderContext->BeginFrame();
+#endif
+
+	m_pRenderGraph->Execute();
+
 	m_pRenderContext->EndFrame();
 	m_pRenderWorld->End();
 	++m_frameCounter;

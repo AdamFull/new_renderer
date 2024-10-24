@@ -125,8 +125,6 @@ namespace engine
 				std::unique_ptr<RenderDevice> render_device{};
 				std::unique_ptr<vk_resource_container_t> render_resources;
 
-				utl::vector<std::unique_ptr<Buffer>> upload_buffers;
-
 				utl::vector<uint32_t> texture_index_remap{};
 
 				std::queue<FAPIObjectDestroyInfo> resource_destroy_queue{};
