@@ -1,10 +1,9 @@
 #pragma once
 
 #include <engine/render/ExecutionContext.h>
-#include <engine/render/RenderFrame.h>
 #include <span>
 
-#include <GFXStructures.h>
+#include <GFXBase.h>
 
 namespace engine
 {
@@ -12,12 +11,28 @@ namespace engine
 
 	namespace gfx
 	{
-		class Swapchain;
-		class Sampler;
+		class Context;
 	}
 
 	namespace render
 	{
+		class UniformPool;
+
+		struct RenderFrame
+		{
+			gfx::Texture* backbuffer{ nullptr };
+			gfx::CommandPool* command_pool{ nullptr };
+
+			//std::unique_ptr<DescriptorAllocator> descriptor_allocator;
+
+			std::unique_ptr<UniformPool> uniform_pool{};
+
+			gfx::Semaphore* image_avaliable{ nullptr };
+			gfx::Semaphore* render_finished{ nullptr };
+			gfx::Semaphore* upload_avaliable{ nullptr };
+			gfx::Fence* fence{ nullptr };
+		};
+
 		class RenderContext final : ExecutionContext
 		{
 		public:
@@ -43,8 +58,8 @@ namespace engine
 
 			gfx::SemaphoreSubmitInfo GetUploadAvaliableSemaphore();
 
-			gfx::CommandList& GetCurrentCommandList();
-			RenderFrame& GetCurrentFrame();
+			gfx::BufferSuballocation RequestUniformBlock(uint64_t block_size) override;
+			gfx::CommandList& GetCurrentCommandList() override;
 
 			const uint32_t& GetCurrentFrameIndex() const;
 
@@ -60,6 +75,9 @@ namespace engine
 			void UpdateTextureBinding(gfx::Texture& texture, gfx::Sampler& sampler, uint32_t binding_slot);
 			void UpdateDescriptors();
 		protected:
+			RenderFrame CreateRenderFrame(int32_t frame_index);
+			void DestroyRenderFrame(RenderFrame& render_frame);
+			RenderFrame& GetCurrentFrame();
 			void UpdateResources();
 		private:
 			gfx::Context& context;
@@ -71,7 +89,7 @@ namespace engine
 			//vk::SurfaceTransformFlagBitsKHR pre_transform{ vk::SurfaceTransformFlagBitsKHR::eIdentity };
 
 			static constexpr size_t k_max_frames_in_flight{ 8ull };
-			std::array<std::unique_ptr<RenderFrame>, k_max_frames_in_flight> render_frames{};
+			std::array<RenderFrame, k_max_frames_in_flight> render_frames{};
 			uint32_t active_frame_index{ 0u };
 			uint32_t current_frame_index{ 0u };
 			bool frame_active{ false };

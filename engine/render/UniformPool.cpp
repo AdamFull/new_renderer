@@ -2,6 +2,8 @@
 
 #include <GFX.h>
 
+#include <memory.hpp>
+
 namespace engine
 {
 	namespace render
@@ -56,6 +58,54 @@ namespace engine
 			expired_countdown = k_max_frames_idle;
 			size_remain -= requested_size;
 			return suballocation;
+		}
+
+
+		UniformPool::UniformPool(gfx::Context& context, uint64_t frame_size) :
+			context{ context },
+			frame_size{ frame_size }
+		{
+			context.RequestMinimalBufferAlignment(gfx::BufferUsageFlag::eUniformBuffer, minimal_alignment);
+
+			pool_frames.emplace_back(std::make_unique<UniformPoolFrame>(context, frame_size));
+		}
+
+		UniformPool::UniformPool(UniformPool&& other) :
+			context{ other.context },
+			frame_size{ std::exchange(other.frame_size, {}) },
+			pool_frames{ std::exchange(other.pool_frames, {}) }
+		{
+		}
+
+		void UniformPool::Reset()
+		{
+			auto to_delete = std::remove_if(pool_frames.begin(), pool_frames.end(), [](const std::unique_ptr<UniformPoolFrame>& frame)
+				{
+					frame->Reset();
+					return frame->IsExpired();
+				});
+
+			if (to_delete != pool_frames.end())
+			{
+				pool_frames.erase(to_delete);
+			}
+		}
+
+		gfx::BufferSuballocation UniformPool::RequestBlock(uint64_t requested_size)
+		{
+			uint64_t aligned_size = utl::aligned_size(requested_size, minimal_alignment);
+			auto found = std::find_if(pool_frames.begin(), pool_frames.end(), [&aligned_size](const std::unique_ptr<UniformPoolFrame>& frame)
+				{
+					return frame->HasEnoughtSpace(aligned_size);
+				});
+			;
+			if (found != pool_frames.end())
+			{
+				return (*found)->RequestBlock(aligned_size);
+			}
+
+			auto& new_pool = pool_frames.emplace_back(std::make_unique<UniformPoolFrame>(context, frame_size));
+			return new_pool->RequestBlock(aligned_size);
 		}
 	}
 }

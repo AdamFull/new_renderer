@@ -1,5 +1,7 @@
 #pragma once
 
+#include <GFXBase.h>
+
 namespace engine
 {
 	namespace render
@@ -8,6 +10,9 @@ namespace engine
 		{
 		public:
 			virtual ~ExecutionContext() = default;
+
+			virtual gfx::BufferSuballocation RequestUniformBlock(uint64_t block_size) = 0;
+			virtual gfx::CommandList& GetCurrentCommandList() = 0;
 		};
 	}
 }

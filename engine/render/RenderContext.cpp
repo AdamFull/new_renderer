@@ -1,4 +1,5 @@
 #include <engine/render/RenderContext.h>
+#include <engine/render/UniformPool.h>
 
 #include <engine/runtime/Window.h>
 
@@ -27,10 +28,7 @@ namespace engine
 
 			for (int32_t i = 0; i < image_count; ++i)
 			{
-				render_frames[i] = std::make_unique<RenderFrame>(context, *queue);
-
-				gfx::Texture* backbuffer = context.CreateSwapchainTexture(swapchain, i);
-				render_frames[i]->UpdateBackbuffer(backbuffer);
+				render_frames[i] = CreateRenderFrame(i);
 			}
 		}
 
@@ -39,7 +37,7 @@ namespace engine
 			auto image_count = swapchain->GetImageCount();
 			for (int32_t i = 0; i < image_count; ++i)
 			{
-				render_frames[i].reset();
+				DestroyRenderFrame(render_frames[i]);
 			}
 
 			context.Destroy(swapchain);
@@ -126,10 +124,9 @@ namespace engine
 			}
 
 			auto& current_frame = GetCurrentFrame();
-			gfx::CommandList& command_list = current_frame.RequestCommandList();
-			command_list.Begin();
-			current_command_list = &command_list;
-			return command_list;
+			current_command_list = current_frame.command_pool->Allocate();
+			current_command_list->Begin();
+			return *current_command_list;
 		}
 
 		void RenderContext::BeginFrame(bool& surface_updated)
@@ -145,7 +142,7 @@ namespace engine
 
 			// We will use the acquired semaphore in a different frame context,
 			// so we need to hold ownership.
-			acquired_semaphore = &current_frame.GetImageAvaliableSemaphore();
+			acquired_semaphore = current_frame.image_avaliable;
 
 			if (swapchain)
 			{
@@ -161,7 +158,9 @@ namespace engine
 
 					if (!acquire_result)
 					{
-						current_frame.Reset();
+						current_frame.backbuffer->Reset();
+						current_frame.command_pool->Reset();
+						current_frame.uniform_pool->Reset();
 						return;
 					}
 				}
@@ -169,7 +168,9 @@ namespace engine
 
 			// Now the frame is active again
 			frame_active = true;
-			current_frame.Reset();
+			current_frame.backbuffer->Reset();
+			current_frame.command_pool->Reset();
+			current_frame.uniform_pool->Reset();
 		}
 
 		void RenderContext::EndFrame(gfx::SemaphoreSubmitInfo wait_semaphore)
@@ -178,7 +179,7 @@ namespace engine
 			frame_active = false;
 
 			auto& current_frame = GetCurrentFrame();
-			current_frame.ResetFence();
+			current_frame.fence->Reset();
 
 			try
 			{
@@ -195,8 +196,8 @@ namespace engine
 
 
 				gfx::SemaphoreSubmitInfo signal_semaphores[2] = {
-					gfx::SemaphoreSubmitInfo{ &current_frame.GetRenderFinishedSemaphore(), 0ull, gfx::StageFlag::eColorAttachmentOutput },
-					gfx::SemaphoreSubmitInfo{ &current_frame.GetUploadAvaliableSemaphore(), 0ull, gfx::StageFlag::eAllCommands }
+					gfx::SemaphoreSubmitInfo{ current_frame.render_finished, 0ull, gfx::StageFlag::eColorAttachmentOutput },
+					gfx::SemaphoreSubmitInfo{ current_frame.upload_avaliable, 0ull, gfx::StageFlag::eAllCommands }
 				};
 
 				submit_info.signal_semaphore_infos = &signal_semaphores[0];
@@ -205,7 +206,7 @@ namespace engine
 				submit_info.command_lists = &current_command_list;
 				submit_info.command_buffer_count = 1u;
 
-				queue->Submit(submit_info, &current_frame.GetFence());
+				queue->Submit(submit_info, current_frame.fence);
 			}
 			catch (std::exception error)
 			{
@@ -214,7 +215,7 @@ namespace engine
 
 			if (swapchain)
 			{
-				auto* wait_semaphore = &current_frame.GetRenderFinishedSemaphore();
+				auto* wait_semaphore = current_frame.render_finished;
 
 				gfx::PresentInfo present_info = {};
 				present_info.wait_semaphore_count = 1;
@@ -225,12 +226,12 @@ namespace engine
 				present_info.image_indices = &GetCurrentFrameIndex();
 
 				queue->Present(present_info);
-				current_frame.WaitFence();
+				current_frame.fence->Wait();
 
 				current_frame_index = (current_frame_index + 1) % swapchain->GetImageCount();
 			}
 
-			previous_frame_semaphore = &current_frame.GetUploadAvaliableSemaphore();
+			previous_frame_semaphore = current_frame.upload_avaliable;
 			if (acquired_semaphore)
 			{
 				acquired_semaphore = nullptr;
@@ -242,14 +243,15 @@ namespace engine
 			return gfx::SemaphoreSubmitInfo{ previous_frame_semaphore, 0ull, gfx::StageFlag::eAllCommands };
 		}
 
+		gfx::BufferSuballocation RenderContext::RequestUniformBlock(uint64_t block_size)
+		{
+			auto& current_frame = GetCurrentFrame();
+			return current_frame.uniform_pool->RequestBlock(block_size);
+		}
+
 		gfx::CommandList& RenderContext::GetCurrentCommandList()
 		{
 			return *current_command_list;
-		}
-
-		RenderFrame& RenderContext::GetCurrentFrame()
-		{
-			return *render_frames[GetCurrentFrameIndex()];
 		}
 
 		const uint32_t& RenderContext::GetCurrentFrameIndex() const
@@ -289,10 +291,58 @@ namespace engine
 		{
 
 		}
+
+		RenderFrame RenderContext::CreateRenderFrame(int32_t frame_index)
+		{
+			RenderFrame render_frame{};
+
+			render_frame.backbuffer = context.CreateSwapchainTexture(swapchain, frame_index);
+			render_frame.command_pool = context.CreateCommandPool(queue);
+			render_frame.uniform_pool = std::make_unique<UniformPool>(context, 16384ull);
+			render_frame.image_avaliable = context.CreateSemaphore();
+			render_frame.render_finished = context.CreateSemaphore();
+			render_frame.upload_avaliable = context.CreateSemaphore();
+			render_frame.fence = context.CreateFence();
+
+			return render_frame;
+		}
+
+		void RenderContext::DestroyRenderFrame(RenderFrame& render_frame)
+		{
+			context.Destroy(render_frame.backbuffer);
+			context.Destroy(render_frame.command_pool);
+			context.Destroy(render_frame.image_avaliable);
+			context.Destroy(render_frame.render_finished);
+			context.Destroy(render_frame.upload_avaliable);
+			context.Destroy(render_frame.fence);
+			render_frame.uniform_pool.reset();
+		}
+
+		RenderFrame& RenderContext::GetCurrentFrame()
+		{
+			return render_frames[GetCurrentFrameIndex()];
+		}
 	
 		void RenderContext::UpdateResources()
 		{
+			auto image_count = swapchain->GetImageCount();
 
+			auto frame_it = render_frames.begin();
+			for (int32_t i = 0; i < image_count; ++i)
+			{
+				if (frame_it != render_frames.end())
+				{
+					context.Destroy(frame_it->backbuffer);
+					frame_it->backbuffer = context.CreateSwapchainTexture(swapchain, i);
+				}
+				else
+				{
+					// Create a new frame if the new swapchain has more images than current frames
+					render_frames[i] = CreateRenderFrame(i);
+				}
+
+				++frame_it;
+			}
 		}
 	}
 }
