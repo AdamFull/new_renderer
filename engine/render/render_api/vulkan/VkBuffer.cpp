@@ -13,8 +13,9 @@ namespace engine
 		namespace vulkan
 		{
 			VulkanBuffer::VulkanBuffer(Allocator& allocator, const BufferCreateInfo& create_info) :
-				VulkanResource{ nullptr, nullptr },
-				Allocation(allocator)
+				VulkanResource{ nullptr, allocator.GetAllocationCallbacks() },
+				Allocation(allocator),
+				usage_flags{ create_info.usage }
 			{
 				uint64_t minimal_alignment{ 1ull };
 				vk::BufferCreateInfo buffer_create_info{};
@@ -125,6 +126,11 @@ namespace engine
 			{
 				auto& device = allocator.GetDevice();
 				return Handle(device).getBufferAddressKHR(handle);
+			}
+
+			BufferUsageFlags VulkanBuffer::GetUsageFlags() const
+			{
+				return usage_flags;
 			}
 		}
 	}

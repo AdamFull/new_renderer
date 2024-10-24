@@ -26,23 +26,23 @@ namespace engine
 			BeginFrame();
 
 			gfx::Buffer* dst_buffer = update_info.dst_buffer;
-			assert(false && "NOT IMPLEMENTED");
-			//if (dst_buffer->GetUsage() != vma::MemoryUsage::eGpuOnly)
-			//{
-			//	log_warning("This buffer can be updated from the CPU, no additional memory needs to be allocated.");
-			//	update_info.map_info.data = dst_buffer->Map();
-			//	update_info.map_info.avaliable_size = dst_buffer->GetSize();
-			//}
-			//else
-			//{
-			//	vk::DeviceSize allocation_size = update_info.update_size > 0ull ? update_info.update_size : dst_buffer->GetSize();
-			//
-			//	auto& upload_frame = GetActiveFrame();
-			//	auto& src_buffer = upload_frame.RequestStagingBuffer(allocation_size, &update_info.map_info.buffer_index);
-			//
-			//	update_info.map_info.data = src_buffer.Map();
-			//	update_info.map_info.avaliable_size = src_buffer.GetSize();
-			//}
+			
+			if (!(dst_buffer->GetUsageFlags() & gfx::BufferUsageFlag::eGpuOnly))
+			{
+				log_warning("This buffer can be updated from the CPU, no additional memory needs to be allocated.");
+				update_info.map_info.data = dst_buffer->Map();
+				update_info.map_info.avaliable_size = dst_buffer->GetSize();
+			}
+			else
+			{
+				uint32_t allocation_size = update_info.update_size > 0ull ? update_info.update_size : dst_buffer->GetSize();
+			
+				auto& upload_frame = GetActiveFrame();
+				auto& src_buffer = upload_frame.RequestStagingBuffer(allocation_size, &update_info.map_info.buffer_index);
+			
+				update_info.map_info.data = src_buffer.Map();
+				update_info.map_info.avaliable_size = src_buffer.GetSize();
+			}
 		}
 
 		void UploadContext::EndBufferUpdate(BufferUpdateInfo2& update_info)

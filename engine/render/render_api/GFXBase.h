@@ -93,6 +93,8 @@ namespace engine
 
 			virtual uint64_t GetSize() const = 0;
 			virtual uint64_t GetAddress() const = 0;
+
+			virtual BufferUsageFlags GetUsageFlags() const = 0;
 		};
 
 		class CommandList : public GFXResource

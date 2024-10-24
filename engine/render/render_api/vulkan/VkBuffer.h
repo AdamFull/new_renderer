@@ -37,7 +37,10 @@ namespace engine
 
 				uint64_t GetSize() const override;
 				uint64_t GetAddress() const override;
+
+				BufferUsageFlags GetUsageFlags() const override;
 			private:
+				BufferUsageFlags usage_flags{};
 				vk::DeviceSize size{ 0ull };
 				vk::DeviceSize suballocation_count{ 0ull };
 			};
