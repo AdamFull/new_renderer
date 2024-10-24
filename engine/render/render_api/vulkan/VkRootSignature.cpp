@@ -105,6 +105,11 @@ namespace engine
 				pipeline_layout{ std::exchange(other.pipeline_layout, {}) }
 			{
 			}
+
+			PipelineLayout& VulkanRootSignature::GetPipelineLayout()
+			{
+				return *pipeline_layout;
+			}
 		}
 	}
 }

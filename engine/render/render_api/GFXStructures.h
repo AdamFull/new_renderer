@@ -88,12 +88,14 @@ namespace engine
 		{
 			Shader* shader{ nullptr };
 			RootSignature* root_signature{ nullptr };
+			PipelineCache* pipeline_cache{ nullptr };
 		};
 
 		struct ComputePipelineCreateInfo
 		{
 			Shader* shader{ nullptr };
 			RootSignature* root_signature{ nullptr };
+			PipelineCache* pipeline_cache{ nullptr };
 		};
 
 		struct PipelineCacheCreateInfo

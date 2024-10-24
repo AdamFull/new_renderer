@@ -52,6 +52,8 @@ namespace engine
 
 				VulkanRootSignature& operator=(const VulkanRootSignature&) = delete;
 				VulkanRootSignature& operator=(VulkanRootSignature&&) = delete;
+
+				PipelineLayout& GetPipelineLayout();
 			private:
 				std::unique_ptr<PipelineLayout> pipeline_layout{};
 				std::array<std::unique_ptr<DescriptorSetLayout>, 8ull> descriptor_set_layouts{};
