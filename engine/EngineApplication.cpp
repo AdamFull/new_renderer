@@ -11,6 +11,7 @@
 
 #include <util/Logger.h>
 #include <rendering/Rendering.h>
+#include <world/NewScene.h>
 
 namespace engine
 {
@@ -68,6 +69,9 @@ namespace engine
 	bool EngineApplication::Prepare(const ApplicationOptions& options)
 	{
 		renderer = std::make_unique<render::Renderer>(options.window, m_pVirtualFileSystem.get());
+
+		scene = std::make_unique<world::Scene>(m_pVirtualFileSystem.get(), *renderer);
+		scene->Load("/root/meshes/helmet/DamagedHelmet.gltf");
 
 		//render::FRenderInterfaceCreateInfo rhi_ci{};
 		//rhi_ci.render_api = render::ERenderApi::eVulkan11;

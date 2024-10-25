@@ -2,8 +2,8 @@
 
 #include <array>
 #include <span>
-#include <GFXReflection.h>
-#include <GFXFormat.h>
+#include <engine/rendering/gfx/GFXReflection.h>
+#include <engine/rendering/gfx/GFXFormat.h>
 
 namespace engine
 {
@@ -84,6 +84,29 @@ namespace engine
 			uint32_t immutable_sampler_count{};
 		};
 
+		// Vertex input
+		struct VertexAttributeDescription
+		{
+			uint32_t location{};
+			uint32_t binding{};
+			Format format{};
+			uint32_t offset{};
+		};
+
+		struct VertexBindingDescription
+		{
+			uint32_t binding{};
+			uint32_t stride{};
+		};
+
+		struct VertexLayout
+		{
+			std::array<VertexBindingDescription, 16ull> bindings{};
+			uint32_t binding_count{};
+			std::array<VertexAttributeDescription, 16ull> attributes{};
+			uint32_t attribute_count{};
+		};
+
 		struct GraphicsPipelineCreateInfo
 		{
 			Shader* shader{ nullptr };
@@ -141,13 +164,13 @@ namespace engine
 		{
 			Filter min_filter{ Filter::eNearest };
 			Filter mag_filter{ Filter::eNearest };
-			SamplerMipmapMode  mip_map_mode{ SamplerMipmapMode::eNearest };
+			Filter mip_map_mode{ Filter::eNearest };
 			SamplerAddressMode address_u{ SamplerAddressMode::eRepeat };
 			SamplerAddressMode address_v{ SamplerAddressMode::eRepeat };
 			SamplerAddressMode address_w{ SamplerAddressMode::eRepeat };
 			float mip_lod_bias{ 0.f };
 			float min_lod{ 0.f };
-			float max_lod{ 1.f };
+			float max_lod{ 1000.f };
 			float max_anisotropy{ 0.f };
 			CompareOp depth_compare{ CompareOp::eNone };
 		};

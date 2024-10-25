@@ -5,6 +5,8 @@
 #include <engine/rendering/RenderContext.h>
 #include <engine/rendering/UploadContext.h>
 
+#include <engine/rendering/ShaderObject.h>
+
 namespace engine
 {
 	namespace render
@@ -20,7 +22,7 @@ namespace engine
 			gfx_context = gfx::CreateContext(gfx_create_info);
 
 			render_context = std::make_unique<RenderContext>(*gfx_context, window);
-			upload_context = std::make_unique<UploadContext>(*gfx_context, vfs);
+			resource_context = std::make_unique<UploadContext>(*gfx_context, vfs);
 
 			// Create timestamp query for collecting pass info
 			gfx::QueryPoolCreateInfo query_pool_ci{};
@@ -33,7 +35,7 @@ namespace engine
 			sampler_ci.address_u = sampler_ci.address_v = sampler_ci.address_w = gfx::SamplerAddressMode::eClampToEdge;
 			sampler_ci.min_filter = gfx::Filter::eLinear;
 			sampler_ci.mag_filter = gfx::Filter::eLinear;
-			sampler_ci.mip_map_mode = gfx::SamplerMipmapMode::eLinear;
+			sampler_ci.mip_map_mode = gfx::Filter::eLinear;
 
 			default_sampler = gfx_context->CreateSampler(sampler_ci);
 		}
@@ -58,24 +60,52 @@ namespace engine
 			return *gfx_context;
 		}
 
-		RenderContext& Renderer::GetRenderContext()
+		ExecutionContext& Renderer::GetRenderContext()
 		{
 			return *render_context;
 		}
 
-		RenderContext const& Renderer::GetRenderContext() const
+		ExecutionContext const& Renderer::GetRenderContext() const
 		{
 			return *render_context;
 		}
 
-		UploadContext& Renderer::GetUploadContext()
+		gfx::ResourceContext& Renderer::GetResourceContext()
 		{
-			return *upload_context;
+			return *resource_context;
 		}
 
-		UploadContext const& Renderer::GetUploadContext() const
+		gfx::ResourceContext const& Renderer::GetResourceContext() const
 		{
-			return *upload_context;
+			return *resource_context;
+		}
+
+		Handle Renderer::LoadTexture(const std::string& path, gfx::Sampler* sampler)
+		{
+			gfx::Texture* texture = resource_context->LoadTexture(path);
+			return textures.Add(std::make_unique<TextureObject>(texture, sampler ? sampler : default_sampler));
+		}
+
+		Handle Renderer::CreateTexture(const gfx::TextureCreateInfo& create_info, gfx::Sampler* sampler)
+		{
+			gfx::Texture* texture = gfx_context->CreateTexture(create_info);
+			return textures.Add(std::make_unique<TextureObject>(texture, sampler ? sampler : default_sampler));
+		}
+
+		void Renderer::DestroyTexture(const Handle& handle)
+		{
+
+		}
+
+		gfx::Sampler* Renderer::GetOrCreateSampler(const gfx::SamplerCreateInfo& create_info)
+		{
+			uint32_t sampler_hash = gfx::Hash(create_info);
+			if (auto found = sampler_cache.find(sampler_hash); found != sampler_cache.end())
+				return found->second;
+
+			auto* new_sampler = sampler_cache[sampler_hash];
+			new_sampler = gfx_context->CreateSampler(create_info);
+			return new_sampler;
 		}
 
 		void Renderer::BeginFrame()
@@ -96,7 +126,7 @@ namespace engine
 			gfx::SemaphoreSubmitInfo upload_wait_semaphore{};
 			//auto upload_avaliable = render_context->GetUploadAvaliableSemaphore();
 			//upload_wait_semaphore = upload_context->Submit(&upload_avaliable, upload_avaliable.semaphore ? 1 : 0);
-			upload_wait_semaphore = upload_context->Submit(nullptr, 0);
+			upload_wait_semaphore = resource_context->Submit(nullptr, 0);
 
 			render_context->EndFrame(upload_wait_semaphore);
 		}

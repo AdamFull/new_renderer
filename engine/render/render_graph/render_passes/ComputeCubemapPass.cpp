@@ -35,7 +35,6 @@ void CComputeCubemapPass::_Execute()
 {
 	auto& render_backend = m_pRenderInterface->GetRenderBackend();
 	auto& render_graph = m_pRenderInterface->GetRenderGraph();
-	auto& render_packet = m_pRenderInterface->GetRenderPacket();
 
 	auto& write_resources = m_renderResources[ERenderResourceGroupType::eStorageTextureWrite];
 

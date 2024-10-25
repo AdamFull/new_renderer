@@ -216,6 +216,7 @@ namespace engine
 
 				auto* dst_texture = static_cast<VulkanTexture*>(copy_info.dst_texture);
 				auto& dst_image = dst_texture->GetImage();
+				auto& subresource = dst_texture->GetSubresource();
 				vk_copy_info.dstImage = dst_image.GetHandle();
 
 				// TODO: As i think it will be transfer dst in any case
@@ -227,6 +228,7 @@ namespace engine
 					auto& vk_region = regions[vk_copy_info.regionCount++];
 
 					vk_region.bufferOffset = region.buffer_offset;
+					vk_region.imageSubresource.aspectMask = subresource.GetAspectMask();
 					vk_region.imageSubresource.mipLevel = region.level;
 					vk_region.imageSubresource.baseArrayLayer = region.layer;
 					vk_region.imageSubresource.layerCount = region.layer_count;
@@ -324,6 +326,7 @@ namespace engine
 					auto dst_state = GetTextureState(texture_barrier.dst_access);
 
 					vk_image_barrier.newLayout = ImageLayoutToVk(texture_barrier.dst_access);
+					texture->SetImageLayout(vk_image_barrier.newLayout);
 					vk_image_barrier.dstAccessMask = AccessFlagsToVk(dst_state.access);
 					vk_image_barrier.dstStageMask = StageFlagsToVk(dst_state.stage);
 

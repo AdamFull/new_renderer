@@ -30,7 +30,6 @@ void CLightingSystem::__Update(f32 fDt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto& render_packet = m_pRenderInterface->GetRenderPacket();
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
 	auto& world_stats = render_world->GetStats();
 	

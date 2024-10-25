@@ -31,6 +31,7 @@ namespace engine
 
 		gfx::Texture* UploadContext::LoadTexture(const std::string& texture_path)
 		{
+			BeginFrame();
 			using namespace utl;
 
 			auto name = filesystem::fs::get_stem(texture_path);
@@ -213,7 +214,7 @@ namespace engine
 			return texture;
 		}
 
-		void UploadContext::BeginBufferUpdate(BufferUpdateInfo2& update_info)
+		void UploadContext::BeginBufferUpdate(gfx::BufferUpdateInfo& update_info)
 		{
 			BeginFrame();
 
@@ -237,7 +238,33 @@ namespace engine
 			}
 		}
 
-		void UploadContext::EndBufferUpdate(BufferUpdateInfo2& update_info)
+		gfx::Texture* UploadContext::CreateTexture(const gfx::TextureCreateInfo& create_info)
+		{
+			gfx::Texture* texture = context.CreateTexture(create_info);
+			// TODO: add resource registry
+			return texture;
+		}
+
+		gfx::Sampler* UploadContext::CreateSampler(const gfx::SamplerCreateInfo& create_info)
+		{
+			gfx::Sampler* sampler = context.CreateSampler(create_info);
+			// TODO: add resource registry
+			return sampler;
+		}
+
+		gfx::Buffer* UploadContext::CreateBuffer(const gfx::BufferCreateInfo& create_info)
+		{
+			gfx::Buffer* buffer = context.CreateBuffer(create_info);
+			// TODO: add resource registry
+			return buffer;
+		}
+
+		void UploadContext::DestroyResource(gfx::GFXResource* resource)
+		{
+			context.Destroy(resource);
+		}
+
+		void UploadContext::EndBufferUpdate(gfx::BufferUpdateInfo& update_info)
 		{
 			gfx::Buffer* dst_buffer = update_info.dst_buffer;
 
@@ -269,7 +296,9 @@ namespace engine
 				copy_buffer.src_buffer = &src_buffer;
 				copy_buffer.dst_buffer = dst_buffer;
 
-				assert(false && "NOT IMPLAMENTED");
+				copy_buffer.regions = update_info.regions;
+				copy_buffer.region_count = update_info.region_count;
+
 				command_list.CopyBuffer(copy_buffer);
 
 				update_info.map_info.buffer_index = ~0ull;
@@ -298,6 +327,16 @@ namespace engine
 			}
 
 			return {};
+		}
+
+		gfx::Context& UploadContext::GetContext()
+		{
+			return context;
+		}
+
+		gfx::Context const& UploadContext::GetContext() const
+		{
+			return context;
 		}
 
 		UploadFrame& UploadContext::GetActiveFrame()

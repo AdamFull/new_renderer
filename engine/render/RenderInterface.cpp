@@ -87,7 +87,6 @@ CRenderInterface::CRenderInterface(filesystem::IVirtualFileSystemInterface* vfs)
 	m_pVFS = vfs;
 
 	m_pResourceLoader = std::make_unique<CResourceLoader>();
-	m_pRenderPacket = std::make_unique<FRenderDataPacket>();
 
 	render_resources = std::make_unique<resource_container_t>();
 
@@ -450,11 +449,6 @@ const std::unique_ptr<IVertexHandler>& CRenderInterface::GetVertexHandler(FRHIHa
 void CRenderInterface::UpdateSurfaceSize(i32 width, i32 height)
 {
 	//m_pRenderContext->UpdateSurface(width, height);
-}
-
-const std::unique_ptr<FRenderDataPacket>& CRenderInterface::GetRenderPacket()
-{
-	return m_pRenderPacket;
 }
 
 const std::unique_ptr<IRenderGraph>& CRenderInterface::GetRenderGraph()

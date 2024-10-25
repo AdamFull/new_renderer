@@ -19,10 +19,7 @@ namespace engine
 			utl::hash_map<u64, utl::vector<render::FRHIHandle>> vertexHandlers{};
 
 			utl::vector<u64> textures{};
-			u64 lastTexture{ 0ull };
-
 			utl::vector<u64> materials{};
-			u64 lastMaterial{ 0ull };
 		};
 
 		struct FSceneTemporaryResources

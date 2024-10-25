@@ -29,6 +29,7 @@ namespace engine
 				vk::ImageViewType GetType() const;
 				vk::ImageSubresourceLayers GetSubresourceLayers() const;
 				vk::ImageSubresourceRange GetSubresourceRange() const;
+				vk::ImageAspectFlags GetAspectMask() const;
 			private:
 				Device& device;
 

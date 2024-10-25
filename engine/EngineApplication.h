@@ -15,6 +15,11 @@ namespace engine
 		class Renderer;
 	}
 
+	namespace world
+	{
+		class Scene;
+	}
+
 	class EngineApplication : public Application
 	{
 	public:
@@ -41,6 +46,6 @@ namespace engine
 		//std::unique_ptr<CInputMapper> m_pInputMapper{};
 		//std::unique_ptr<render::IRenderInterface> m_pRenderInterface{};
 		std::unique_ptr<filesystem::IVirtualFileSystemInterface> m_pVirtualFileSystem{};
-		//std::unique_ptr<world::CScene> m_pScene{};
+		std::unique_ptr<world::Scene> scene{};
 	};
 }

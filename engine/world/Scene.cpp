@@ -208,12 +208,10 @@ void CScene::LoadGLTF(easygltf::FGLTFRoot& root)
 		auto image_path = fs::path_append(root.rootDirectory, easygltf::url_decode(image.uri));
 		auto new_texture_handle = m_pRenderInterface->CreateTextureObject(image_path);
 		m_resources.textures.emplace_back(m_pRenderInterface->GetTextureObject(new_texture_handle)->Handle().Get());
-		m_resources.lastTexture++;
 	}
 
 	// Load materials
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
-	auto& render_packet = m_pRenderInterface->GetRenderPacket();
 
 	utl::vector<render::FMaterial> materials{};
 	for (u64 idx = 0ull; idx < root.materials.size(); ++idx)
@@ -264,8 +262,6 @@ void CScene::LoadGLTF(easygltf::FGLTFRoot& root)
 
 		material_data.alphaCutoff = utl::cast<f32>(material.alphaCutoff);
 		material_data.doubleSided = material.doubleSided;
-
-		render_packet->stats.materialCount++;
 	}
 
 	render_world->AddMaterials(materials);
@@ -294,8 +290,6 @@ void CScene::LoadGLTF(easygltf::FGLTFRoot& root)
 
 void CScene::LoadNode(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index, f32 global_scale)
 {
-	auto& render_packet = m_pRenderInterface->GetRenderPacket();
-
 	const auto& node = root.nodes[node_index];
 
 	auto new_node = CEntityManager::CreateNode(node.name);
@@ -328,7 +322,6 @@ void CScene::LoadNode(const easygltf::FGLTFRoot& root, const entt::entity parent
 		LoadLightComponent(root, m_temporary.nodeToEntity[node_index], node_index);
 
 	CEntityManager::AttachChild(parent, new_node);
-	render_packet->stats.nodeCount++;
 }
 
 void CScene::LoadMeshComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index)
@@ -338,8 +331,6 @@ void CScene::LoadMeshComponent(const easygltf::FGLTFRoot& root, const entt::enti
 
 	auto& mesh_component = CEntityManager::AddComponent<FMeshComponent>(parent, FMeshComponent{});
 	mesh_component.skin = node.skin;
-
-	auto& render_packet = m_pRenderInterface->GetRenderPacket();
 
 	// Load mesh primitives
 	for (u64 i = 0ull; i < mesh.primitives.size(); ++i)
@@ -434,8 +425,6 @@ void CScene::LoadMeshComponent(const easygltf::FGLTFRoot& root, const entt::enti
 			auto& handler = m_pRenderInterface->GetVertexHandler(handler_id);
 			vertex_handler = handler.get();
 			current_handler_id = handler_id;
-
-			render_packet->stats.vboCount++;
 		}
 
 		// Create mesh primitive
@@ -449,7 +438,6 @@ void CScene::LoadMeshComponent(const easygltf::FGLTFRoot& root, const entt::enti
 			mesh_primitive.materialId = primitive.material;
 
 		mesh_component.primitives.emplace_back(mesh_primitive);
-		render_packet->stats.primitiveCount++;
 	}
 }
 

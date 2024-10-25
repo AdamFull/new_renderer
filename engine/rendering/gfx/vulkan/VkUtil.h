@@ -241,11 +241,11 @@ namespace engine
 				return vk::Filter::eNearest;
 			}
 
-			inline vk::SamplerMipmapMode MipmapModeToVk(SamplerMipmapMode mode)
+			inline vk::SamplerMipmapMode MipmapModeToVk(Filter mode)
 			{
-				if (mode == SamplerMipmapMode::eNearest)
+				if (mode == Filter::eNearest)
 					return vk::SamplerMipmapMode::eNearest;
-				else if (mode == SamplerMipmapMode::eLinear)
+				else if (mode == Filter::eLinear)
 					return vk::SamplerMipmapMode::eLinear;
 
 				return vk::SamplerMipmapMode::eNearest;

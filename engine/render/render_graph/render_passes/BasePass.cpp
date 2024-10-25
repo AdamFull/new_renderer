@@ -158,7 +158,6 @@ FRHIHandle IRenderPass::MakeShader(const std::string& name, FGraphicsShaderCreat
 
 	if (vbo)
 	{
-		auto& render_packet = m_pRenderInterface->GetRenderPacket();
 		shader_ci.vertexDeclaration = vbo->GetVertexDeclaration();
 	}
 

@@ -58,7 +58,6 @@ namespace engine
 
 			FShaderUploadInfo GetShaderNameTag(const std::string& name) override;
 
-			const std::unique_ptr<FRenderDataPacket>& GetRenderPacket() override;
 			const std::unique_ptr<IRenderGraph>& GetRenderGraph() override;
 			const std::unique_ptr<IRenderWorld>& GetRenderWorld() override;
 			const std::unique_ptr<IRenderBackend>& GetRenderBackend() override;
@@ -69,8 +68,6 @@ namespace engine
 			filesystem::IVirtualFileSystemInterface* m_pVFS{ nullptr };
 
 			u32 m_frameCounter{ 0u };
-
-			std::unique_ptr<FRenderDataPacket> m_pRenderPacket{};
 
 			std::unique_ptr<IRenderGraph> m_pRenderGraph{};
 			std::unique_ptr<IRenderWorld> m_pRenderWorld{};

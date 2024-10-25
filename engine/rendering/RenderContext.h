@@ -33,7 +33,7 @@ namespace engine
 			gfx::Fence* fence{ nullptr };
 		};
 
-		class RenderContext final : ExecutionContext
+		class RenderContext final : public ExecutionContext
 		{
 		public:
 			RenderContext(gfx::Context& context, Window* window);

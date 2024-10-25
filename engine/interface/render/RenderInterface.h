@@ -246,14 +246,6 @@ namespace engine
 			virtual const FShaderReflectionData& GetReflection() const = 0;
 		};
 
-		struct FRenderSceneStats
-		{
-			u64 vboCount{ 0ull };
-			u64 primitiveCount{ 0ull };
-			u64 materialCount{ 0ull };
-			u64 nodeCount{ 0ull };
-		};
-
 		struct FCullingInfo
 		{
 			u64 cullerID{};
@@ -266,16 +258,6 @@ namespace engine
 			u64 count{ 0ull };
 			u64 drawCount{ 0ull };
 			u64 cullerID{ 0ull };
-		};
-
-		struct FRenderDataPacket
-		{
-			FRenderDataPacket()
-			{
-				//resources = std::make_unique<CGPUArrayHolder>();
-			}
-
-			FRenderSceneStats stats{};
 		};
 
 		struct FRenderWorldStats
@@ -496,7 +478,6 @@ namespace engine
 
 			virtual void UpdateSurfaceSize(i32 width, i32 height) = 0;
 
-			virtual const std::unique_ptr<FRenderDataPacket>& GetRenderPacket() = 0;
 			virtual const std::unique_ptr<IRenderGraph>& GetRenderGraph() = 0;
 			virtual const std::unique_ptr<IRenderWorld>& GetRenderWorld() = 0;
 			virtual const std::unique_ptr<IRenderBackend>& GetRenderBackend() = 0;

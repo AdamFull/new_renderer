@@ -103,7 +103,6 @@ const std::unique_ptr<IShaderObject>& CComputeGeometryPass::GetShaderByVBO(const
 	{
 		// Generate shader name
 		auto shader_name = m_baseShaderName + vbo->GetDefinitions();
-		auto& render_packet = m_pRenderInterface->GetRenderPacket();
 
 		FComputeShaderCreateInfo shader_ci{};
 		shader = m_pRenderInterface->CreateShaderObject(shader_name, shader_ci);

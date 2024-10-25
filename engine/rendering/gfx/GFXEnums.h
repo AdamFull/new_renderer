@@ -160,12 +160,6 @@ namespace engine
 			eLinear
 		};
 
-		enum class SamplerMipmapMode
-		{
-			eNearest,
-			eLinear
-		};
-
 		enum class SamplerAddressMode
 		{
 			eMirror,

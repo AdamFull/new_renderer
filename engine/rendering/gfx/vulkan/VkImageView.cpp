@@ -121,6 +121,11 @@ namespace engine
 			{
 				return create_info.subresourceRange;
 			}
+
+			vk::ImageAspectFlags ImageView::GetAspectMask() const
+			{
+				return create_info.subresourceRange.aspectMask;
+			}
 		}
 	}
 }

@@ -1,26 +1,14 @@
 #pragma once
 
 #include <engine/interface/filesystem/VirtualFileSystemInterface.h>
+#include <engine/rendering/gfx/ResourceLoader.h>
 #include <engine/rendering/UploadFrame.h>
 
 namespace engine
 {
 	namespace render
 	{
-		struct BufferUpdateInfo2
-		{
-			gfx::Buffer* dst_buffer{ nullptr };
-			uint64_t update_size{ 0ull };
-
-			struct
-			{
-				uint8_t* data{ nullptr };
-				uint64_t avaliable_size{ 0ull };
-				size_t buffer_index{ ~0ull };
-			} map_info;
-		};
-
-		class UploadContext final
+		class UploadContext final : public gfx::ResourceContext
 		{
 		public:
 			UploadContext(gfx::Context& context, filesystem::IVirtualFileSystemInterface* vfs);
@@ -31,17 +19,27 @@ namespace engine
 			UploadContext& operator=(const UploadContext&) = delete;
 			UploadContext& operator=(UploadContext&&) = delete;
 
-			gfx::Texture* LoadTexture(const std::string& texture_path);
+			gfx::Texture* LoadTexture(const std::string& texture_path) override;
+			gfx::Texture* CreateTexture(const gfx::TextureCreateInfo& create_info) override;
+
+			gfx::Sampler* CreateSampler(const gfx::SamplerCreateInfo& create_info) override;
+
+			gfx::Buffer* CreateBuffer(const gfx::BufferCreateInfo& create_info) override;
+
+			void DestroyResource(gfx::GFXResource* resource) override;
 
 			//void UpdateTexture(gfx::Texture* texture_handle, const FTextureUploadInfo& upload_info);
 
 			//void BeginTextureUpdate(VkTextureUpdateInfo& update_info);
 			//void EndTextureUpdate(VkTextureUpdateInfo& update_info);
 
-			void BeginBufferUpdate(BufferUpdateInfo2& update_info);
-			void EndBufferUpdate(BufferUpdateInfo2& update_info);
+			void BeginBufferUpdate(gfx::BufferUpdateInfo& update_info) override;
+			void EndBufferUpdate(gfx::BufferUpdateInfo& update_info) override;
 
-			gfx::SemaphoreSubmitInfo Submit(gfx::SemaphoreSubmitInfo* wait_infos, uint32_t wait_semaphore_count);
+			gfx::SemaphoreSubmitInfo Submit(gfx::SemaphoreSubmitInfo* wait_infos, uint32_t wait_semaphore_count) override;
+
+			gfx::Context& GetContext();
+			gfx::Context const& GetContext() const;
 		private:
 			UploadFrame& GetActiveFrame();
 			void BeginFrame();
