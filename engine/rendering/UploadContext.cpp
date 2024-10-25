@@ -1,5 +1,12 @@
 #include <engine/rendering/UploadContext.h>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb/stb_image.h>
+#include <ktx.h>
+
+#include <engine/rendering/native_format/vk_format.h>
+
+#include <engine/filesystem/vfs_helper.h>
 #include <util/Logger.h>
 
 #include <gfx/Context.h>
@@ -8,8 +15,9 @@ namespace engine
 {
 	namespace render
 	{
-		UploadContext::UploadContext(gfx::Context& context) :
-			context{ context }
+		UploadContext::UploadContext(gfx::Context& context, filesystem::IVirtualFileSystemInterface* vfs) :
+			context{ context },
+			vfs{ vfs }
 		{
 			queue = context.RequestQueue(gfx::QueueTypeFlag::eGraphics, 1u);
 
@@ -19,6 +27,190 @@ namespace engine
 			{
 				upload_frames[i] = std::make_unique<UploadFrame>(context, *queue);
 			}
+		}
+
+		gfx::Texture* UploadContext::LoadTexture(const std::string& texture_path)
+		{
+			using namespace utl;
+
+			auto name = filesystem::fs::get_stem(texture_path);
+			auto ext = filesystem::fs::get_ext(texture_path);
+			auto ext_hash = utl::murmur_hash(ext);
+
+			std::vector<uint8_t> data{};
+			vfs->ReadFile(texture_path, data);
+
+			gfx::TextureCreateInfo create_info{};
+			gfx::CopyTextureInfo copy_texture{};
+
+			create_info.usage |= gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eTransferable;
+
+			auto& upload_frame = GetActiveFrame();
+
+			switch (ext_hash)
+			{
+			case ".jpg"_hash32:
+			case ".jpeg"_hash32:
+			case ".png"_hash32:
+			case ".tga"_hash32:
+			case ".bmp"_hash32:
+			case ".psd"_hash32:
+			case ".gif"_hash32:
+			case ".hdr"_hash32:
+			case ".pic"_hash32:
+			case ".pnm"_hash32:
+			{
+				int32_t width{ 0 }, height{ 0 }, channels{ 0 };
+				uint8_t* rawdata = stbi_load_from_memory(data.data(), data.size(), &width, &height, &channels, STBI_rgb_alpha);
+				uint64_t data_size = width * height * 4ull;
+
+				create_info.width = width;
+				create_info.height = height;
+				create_info.format = gfx::Format::eR8G8B8A8Unorm;
+				
+				// TODO: Add mip level generation
+				create_info.levels = 1; utl::cast<u32>(std::floor(std::log2((std::max)(width, height)))) + 1u;
+
+				// Create staging buffer for uploading
+				auto& src_buffer = upload_frame.RequestStagingBuffer(data_size);
+
+				// Copy image data to staging buffer
+				src_buffer.Update(rawdata, data_size);
+				stbi_image_free(rawdata);
+
+				copy_texture.src_buffer = &src_buffer;
+
+				auto& region = copy_texture.copy_regions[copy_texture.copy_region_count++];
+				region.size_x = width;
+				region.size_y = height;
+			} break;
+			case ".ktx"_hash32:
+			{
+				ktxTexture* kTexture{ nullptr };
+				auto ktxresult = ktxTexture_CreateFromMemory(data.data(), data.size(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &kTexture);
+				assert(ktxresult == KTX_SUCCESS && "FAILED TO OPEN KTX IMAGE");
+				if (ktxresult != KTX_SUCCESS)
+					return nullptr;
+
+				if (kTexture->isCubemap)
+					create_info.usage |= gfx::TextureUsageFlag::eCubemap;
+
+				create_info.width = kTexture->baseWidth;
+				create_info.height = kTexture->baseHeight;
+				create_info.depth = kTexture->baseDepth;
+
+				create_info.levels = kTexture->numLevels;
+				create_info.layers = kTexture->numLayers;
+
+				// Get texture format
+				auto* ktx1 = (ktxTexture1*)kTexture;
+
+				uint32_t vk_format{};
+				vk_format = vkGetFormatFromOpenGLInternalFormat(ktx1->glInternalformat);
+				if (vk_format == 0u)
+					vk_format = vkGetFormatFromOpenGLFormat(ktx1->glFormat, ktx1->glType);
+
+				create_info.format = gfx::FormatFromVk(vk_format);
+
+				// Create staging buffer for uploading
+				auto& src_buffer = upload_frame.RequestStagingBuffer(kTexture->dataSize);
+				src_buffer.Update(kTexture->pData, kTexture->dataSize);
+				
+				// Collect image copy regions
+				auto num_layers = kTexture->isCubemap ? kTexture->numFaces : kTexture->numLayers;
+				for (u32 layer = 0; layer < num_layers; layer++)
+				{
+					for (u32 level = 0u; level < kTexture->numLevels; level++)
+					{
+						auto& region = copy_texture.copy_regions[copy_texture.copy_region_count++];
+						region.layer = layer;
+						region.level = level;
+						region.layer_count = kTexture->numLayers;
+
+						region.size_x = create_info.width >> level;
+						region.size_z = create_info.height >> level;
+
+						ktxresult = ktxTexture_GetImageOffset(kTexture, level, 0, layer, &region.buffer_offset);
+					}
+				}
+
+				ktxTexture_Destroy(kTexture);
+			} break;
+			case ".ktx2"_hash32:
+			{
+				ktxTexture2* kTexture{ nullptr };
+				auto ktxresult = ktxTexture_CreateFromMemory(data.data(), data.size(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, (ktxTexture**)&kTexture);
+				assert(ktxresult == KTX_SUCCESS && "FAILED TO OPEN KTX IMAGE");
+				if (ktxresult != KTX_SUCCESS)
+					return nullptr;
+
+				if (kTexture->isCubemap)
+					create_info.usage |= gfx::TextureUsageFlag::eCubemap;
+
+				create_info.width = kTexture->baseWidth;
+				create_info.height = kTexture->baseHeight;
+				create_info.depth = kTexture->baseDepth;
+
+				create_info.levels = kTexture->numLevels;
+				create_info.layers = kTexture->numLayers;
+
+				if (ktxTexture2_NeedsTranscoding(kTexture))
+					ktxresult = ktxTexture2_TranscodeBasis(kTexture, KTX_TTF_BC7_RGBA, 0);
+
+				create_info.format = gfx::FormatFromVk(kTexture->vkFormat);
+
+				// Create staging buffer for uploading
+				auto& src_buffer = upload_frame.RequestStagingBuffer(kTexture->dataSize);
+				src_buffer.Update(kTexture->pData, kTexture->dataSize);
+
+				// Collect image copy regions
+				auto num_layers = kTexture->isCubemap ? kTexture->numFaces : kTexture->numLayers;
+				for (u32 layer = 0; layer < num_layers; layer++)
+				{
+					for (u32 level = 0u; level < kTexture->numLevels; level++)
+					{
+						auto& region = copy_texture.copy_regions[copy_texture.copy_region_count++];
+						region.layer = layer;
+						region.level = level;
+						region.layer_count = kTexture->numLayers;
+
+						region.size_x = create_info.width >> level;
+						region.size_z = create_info.height >> level;
+
+						ktxresult = ktxTexture_GetImageOffset((ktxTexture*)kTexture, level, 0, layer, &region.buffer_offset);
+					}
+				}
+
+				ktxTexture_Destroy((ktxTexture*)kTexture);
+			} break;
+			}
+
+			gfx::Texture* texture = context.CreateTexture(create_info);
+			copy_texture.dst_texture = texture;
+
+			auto& command_list = upload_frame.AcquireOrGetCommandList();
+
+			gfx::TextureBarrier texture_barrier{};
+			texture_barrier.texture = texture;
+			texture_barrier.src_access = { {}, gfx::TextureLayout::eUndefined };
+			texture_barrier.dst_access = { gfx::AccessTypeFlag::eWrite, gfx::TextureLayout::eTransfer };
+
+			gfx::ResourceBarrierInfo resource_barrier{};
+			resource_barrier.texture_barriers = &texture_barrier;
+			resource_barrier.texture_barrier_count = 1u;
+
+			// Transfer to intermediate layout
+			command_list.ResourceBarrier(resource_barrier);
+
+			// Copy texture regions
+			command_list.CopyTexture(copy_texture);
+
+			// Transfer to final layout
+			texture_barrier.src_access = { gfx::AccessTypeFlag::eWrite, gfx::TextureLayout::eTransfer };
+			texture_barrier.dst_access = { gfx::AccessTypeFlag::eRead, gfx::TextureLayout::eShader };
+			command_list.ResourceBarrier(resource_barrier);
+
+			return texture;
 		}
 
 		void UploadContext::BeginBufferUpdate(BufferUpdateInfo2& update_info)
@@ -56,7 +248,7 @@ namespace engine
 			else
 			{
 				auto& upload_frame = GetActiveFrame();
-				auto& command_buffer = upload_frame.AcquireOrGetCommandList();
+				auto& command_list = upload_frame.AcquireOrGetCommandList();
 				auto& src_buffer = upload_frame.GetStagingBuffer(update_info.map_info.buffer_index);
 
 				// TODO: Add memory barrier befor copy for dst buffer
@@ -71,11 +263,16 @@ namespace engine
 				barrier_info.buffer_barriers = &buffer_barrier;
 				barrier_info.buffer_barrier_count = 1u;
 
-				command_buffer.ResourceBarrier(barrier_info);
+				command_list.ResourceBarrier(barrier_info);
+
+				gfx::CopyBufferInfo copy_buffer{};
+				copy_buffer.src_buffer = &src_buffer;
+				copy_buffer.dst_buffer = dst_buffer;
+
+				assert(false && "NOT IMPLAMENTED");
+				command_list.CopyBuffer(copy_buffer);
 
 				update_info.map_info.buffer_index = ~0ull;
-				assert(false && "NOT IMPLAMENTED");
-				//src_buffer.CopyTo(Handle(command_buffer), *dst_buffer, update_info.copy_regions);
 			}
 
 			update_info.map_info.data = nullptr;
@@ -87,10 +284,10 @@ namespace engine
 			if (writing_commands)
 			{
 				auto& upload_frame = GetActiveFrame();
-				auto& command_buffer = upload_frame.AcquireOrGetCommandList();
+				auto& command_list = upload_frame.AcquireOrGetCommandList();
 
-				command_buffer.EndMarker();
-				command_buffer.End();
+				command_list.EndMarker();
+				command_list.End();
 				writing_commands = false;
 
 				auto signal_semaphore_info = upload_frame.Submit(wait_infos, wait_semaphore_count);
@@ -115,10 +312,10 @@ namespace engine
 				auto& upload_frame = GetActiveFrame();
 				upload_frame.Reset();
 
-				auto& command_buffer = upload_frame.AcquireOrGetCommandList();
+				auto& command_list = upload_frame.AcquireOrGetCommandList();
 
-				command_buffer.Begin();
-				command_buffer.BeginMarker("Upload resources", 0xFFFFFFFF);
+				command_list.Begin();
+				command_list.BeginMarker("Upload resources", 0xFFFFFFFF);
 
 				writing_commands = true;
 			}

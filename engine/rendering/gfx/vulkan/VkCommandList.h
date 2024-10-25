@@ -55,6 +55,9 @@ namespace engine
 				void Dispatch(uint32_t group_x, uint32_t group_y, uint32_t group_z) override;
 				void DispatchIndirect(Buffer* argument_buffer, uint64_t argument_offset = 0ull) override;
 
+				void CopyBuffer(const CopyBufferInfo& copy_info) override;
+				void CopyTexture(const CopyTextureInfo& copy_info) override;
+
 				void ResourceBarrier(const ResourceBarrierInfo& barrier) override;
 
 				void BeginQuery(QueryPool* query_pool, uint32_t query) override;

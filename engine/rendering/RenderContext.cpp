@@ -187,9 +187,7 @@ namespace engine
 
 			texture_barrier.texture = current_frame.backbuffer;
 			texture_barrier.src_access = { {}, gfx::TextureLayout::eUndefined };
-			texture_barrier.src_state = gfx::GetTextureState(texture_barrier.src_access);
 			texture_barrier.dst_access = { gfx::AccessTypeFlag::eRead, gfx::TextureLayout::ePresent };
-			texture_barrier.dst_state = gfx::GetTextureState(texture_barrier.dst_access);
 
 			current_command_list->ResourceBarrier(barrier);
 

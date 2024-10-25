@@ -192,9 +192,9 @@ namespace engine
 			uint32_t subresource_index{ ~0u };
 
 			TextureAccess src_access{};
-			ResourceState src_state{};
+			//ResourceState src_state{};
 			TextureAccess dst_access{};
-			ResourceState dst_state{};
+			//ResourceState dst_state{};
 		};
 
 		struct MemoryBarrier
@@ -226,6 +226,49 @@ namespace engine
 
 			Buffer* count_buffer{ nullptr };
 			uint64_t count_offset{ 0ull };
+		};
+
+		struct BufferCopyRegion
+		{
+			uint64_t src_offset{};
+			uint64_t dst_offset{};
+			uint64_t size{};
+		};
+
+		struct CopyBufferInfo
+		{
+			Buffer* src_buffer{ nullptr };
+			Buffer* dst_buffer{ nullptr };
+
+			uint32_t region_count{ 0u };
+			std::array<BufferCopyRegion, 64ull> regions{};
+		};
+
+		struct TextureCopyRegion
+		{
+			uint64_t buffer_offset{};
+
+			uint32_t offset_x{ 0u };
+			uint32_t offset_y{ 0u };
+			uint32_t offset_z{ 0u };
+
+			uint32_t size_x{ 1u };
+			uint32_t size_y{ 1u };
+			uint32_t size_z{ 1u };
+
+			uint32_t layer{ 0u };
+			uint32_t layer_count{ 1u };
+
+			uint32_t level{ 0u };
+		};
+
+		struct CopyTextureInfo
+		{
+			Buffer* src_buffer{ nullptr };
+			Texture* dst_texture{ nullptr };
+
+			std::array<TextureCopyRegion, 64ull> copy_regions{};
+			uint32_t copy_region_count{};
 		};
 
 		uint32_t Hash(const SamplerCreateInfo& create_info);

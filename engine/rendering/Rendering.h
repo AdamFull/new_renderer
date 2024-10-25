@@ -1,5 +1,6 @@
 #pragma once
 
+#include <engine/interface/filesystem/VirtualFileSystemInterface.h>
 #include <memory>
 
 namespace engine
@@ -21,15 +22,25 @@ namespace engine
 		class Renderer
 		{
 		public:
-			Renderer(Window* window);
+			Renderer(Window* window, filesystem::IVirtualFileSystemInterface* vfs);
 			~Renderer();
 
 			void Render(float delta_time);
+
+			gfx::Context& GetGFXContext();
+
+			RenderContext& GetRenderContext();
+			RenderContext const& GetRenderContext() const;
+
+			UploadContext& GetUploadContext();
+			UploadContext const& GetUploadContext() const;
 		private:
 			void BeginFrame();
 			void EndFrame();
 			void UpdateRenderTargets();
 		private:
+			filesystem::IVirtualFileSystemInterface* vfs{ nullptr };
+
 			std::unique_ptr<gfx::Context> gfx_context{};
 			std::unique_ptr<RenderContext> render_context{};
 			std::unique_ptr<UploadContext> upload_context{};

@@ -173,6 +173,9 @@ namespace engine
 			virtual void Dispatch(uint32_t group_x, uint32_t group_y, uint32_t group_z) = 0;
 			virtual void DispatchIndirect(Buffer* argument_buffer, uint64_t argument_offset = 0ull) = 0;
 
+			virtual void CopyBuffer(const CopyBufferInfo& copy_info) = 0;
+			virtual void CopyTexture(const CopyTextureInfo& copy_info) = 0;
+
 			virtual void ResourceBarrier(const ResourceBarrierInfo& barrier) = 0;
 
 			virtual void BeginQuery(QueryPool* query_pool, uint32_t query) = 0;

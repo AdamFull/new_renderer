@@ -67,7 +67,7 @@ namespace engine
 
 	bool EngineApplication::Prepare(const ApplicationOptions& options)
 	{
-		renderer = std::make_unique<render::Renderer>(options.window);
+		renderer = std::make_unique<render::Renderer>(options.window, m_pVirtualFileSystem.get());
 
 		//render::FRenderInterfaceCreateInfo rhi_ci{};
 		//rhi_ci.render_api = render::ERenderApi::eVulkan11;

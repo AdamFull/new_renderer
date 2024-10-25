@@ -1,5 +1,6 @@
 #pragma once
 
+#include <engine/interface/filesystem/VirtualFileSystemInterface.h>
 #include <engine/rendering/UploadFrame.h>
 
 namespace engine
@@ -22,13 +23,15 @@ namespace engine
 		class UploadContext final
 		{
 		public:
-			UploadContext(gfx::Context& render_device);
+			UploadContext(gfx::Context& context, filesystem::IVirtualFileSystemInterface* vfs);
 			~UploadContext() = default;
 
 			UploadContext(const UploadContext&) = delete;
 			UploadContext(UploadContext&&) = delete;
 			UploadContext& operator=(const UploadContext&) = delete;
 			UploadContext& operator=(UploadContext&&) = delete;
+
+			gfx::Texture* LoadTexture(const std::string& texture_path);
 
 			//void UpdateTexture(gfx::Texture* texture_handle, const FTextureUploadInfo& upload_info);
 
@@ -44,6 +47,7 @@ namespace engine
 			void BeginFrame();
 		private:
 			gfx::Context& context;
+			filesystem::IVirtualFileSystemInterface* vfs{};
 
 			const gfx::Queue* queue{ nullptr };
 

@@ -7,6 +7,7 @@
 #include <VkTexture.h>
 #include <VkPipeline.h>
 
+#include <Util.h>
 #include <VkUtil.h>
 
 namespace engine
@@ -181,6 +182,67 @@ namespace engine
 				handle.dispatchIndirect(vk_buffer->GetHandle(), argument_offset);
 			}
 
+			void VulkanCommandList::CopyBuffer(const CopyBufferInfo& copy_info)
+			{
+				std::array<vk::BufferCopy2KHR, 64ull> regions{};
+				vk::CopyBufferInfo2KHR vk_copy_info{};
+				vk_copy_info.pRegions = regions.data();
+
+				auto* src_buffer = static_cast<VulkanBuffer*>(copy_info.src_buffer);
+				vk_copy_info.srcBuffer = src_buffer->GetHandle();
+				auto* dst_buffer = static_cast<VulkanBuffer*>(copy_info.dst_buffer);
+				vk_copy_info.dstBuffer = dst_buffer->GetHandle();
+
+				for (int32_t i = 0; i < copy_info.region_count; ++i)
+				{
+					auto& region = copy_info.regions[i];
+					auto& vk_region = regions[vk_copy_info.regionCount++];
+					vk_region.srcOffset = region.src_offset;
+					vk_region.dstOffset = region.dst_offset;
+					vk_region.size = region.size;
+				}
+
+				handle.copyBuffer2KHR(vk_copy_info);
+			}
+
+			void VulkanCommandList::CopyTexture(const CopyTextureInfo& copy_info)
+			{
+				std::array<vk::BufferImageCopy2KHR, 64ull> regions{};
+				vk::CopyBufferToImageInfo2KHR vk_copy_info{};
+				vk_copy_info.pRegions = regions.data();
+
+				auto* src_buffer = static_cast<VulkanBuffer*>(copy_info.src_buffer);
+				vk_copy_info.srcBuffer = src_buffer->GetHandle();
+
+				auto* dst_texture = static_cast<VulkanTexture*>(copy_info.dst_texture);
+				auto& dst_image = dst_texture->GetImage();
+				vk_copy_info.dstImage = dst_image.GetHandle();
+
+				// TODO: As i think it will be transfer dst in any case
+				vk_copy_info.dstImageLayout = vk::ImageLayout::eTransferDstOptimal;
+
+				for (int32_t i = 0; i < copy_info.copy_region_count; ++i)
+				{
+					auto& region = copy_info.copy_regions[i];
+					auto& vk_region = regions[vk_copy_info.regionCount++];
+
+					vk_region.bufferOffset = region.buffer_offset;
+					vk_region.imageSubresource.mipLevel = region.level;
+					vk_region.imageSubresource.baseArrayLayer = region.layer;
+					vk_region.imageSubresource.layerCount = region.layer_count;
+
+					vk_region.imageOffset.x = region.offset_x;
+					vk_region.imageOffset.y = region.offset_y;
+					vk_region.imageOffset.z = region.offset_z;
+
+					vk_region.imageExtent.width = region.size_x;
+					vk_region.imageExtent.height = region.size_y;
+					vk_region.imageExtent.depth = region.size_z;
+				}
+
+				handle.copyBufferToImage2KHR(vk_copy_info);
+			}
+
 			void VulkanCommandList::ResourceBarrier(const ResourceBarrierInfo& barrier)
 			{
 				std::array<vk::MemoryBarrier2KHR, 64ll> memory_barriers{};
@@ -252,19 +314,24 @@ namespace engine
 					auto& subresource = texture->GetSubresource(texture_barrier.subresource_index);
 					vk_image_barrier.subresourceRange = subresource.GetSubresourceRange();
 
+					auto src_state = GetTextureState(texture_barrier.src_access);
+
 					vk_image_barrier.oldLayout = ImageLayoutToVk(texture_barrier.src_access);
 					assert(vk_image_barrier.oldLayout == subresource.GetImageLayout() && "Old layout is not correct.");
-					vk_image_barrier.srcAccessMask = AccessFlagsToVk(texture_barrier.src_state.access);
-					vk_image_barrier.srcStageMask = StageFlagsToVk(texture_barrier.src_state.stage);
+					vk_image_barrier.srcAccessMask = AccessFlagsToVk(src_state.access);
+					vk_image_barrier.srcStageMask = StageFlagsToVk(src_state.stage);
+
+					auto dst_state = GetTextureState(texture_barrier.dst_access);
 
 					vk_image_barrier.newLayout = ImageLayoutToVk(texture_barrier.dst_access);
-					vk_image_barrier.dstAccessMask = AccessFlagsToVk(texture_barrier.dst_state.access);
-					vk_image_barrier.dstStageMask = StageFlagsToVk(texture_barrier.dst_state.stage);
+					vk_image_barrier.dstAccessMask = AccessFlagsToVk(dst_state.access);
+					vk_image_barrier.dstStageMask = StageFlagsToVk(dst_state.stage);
 
-					if (texture_barrier.src_state.queue && texture_barrier.dst_state.queue)
+					// TODO: NOT IMPLEMENTED TRANSFER OWNERSHIP
+					if (src_state.queue && dst_state.queue)
 					{
-						const auto* src_queue = static_cast<const VulkanQueue*>(texture_barrier.src_state.queue);
-						const auto* dst_queue = static_cast<const VulkanQueue*>(texture_barrier.dst_state.queue);
+						const auto* src_queue = static_cast<const VulkanQueue*>(src_state.queue);
+						const auto* dst_queue = static_cast<const VulkanQueue*>(dst_state.queue);
 
 						vk_image_barrier.srcQueueFamilyIndex = src_queue->GetFamilyIndex();
 						vk_image_barrier.dstQueueFamilyIndex = dst_queue->GetFamilyIndex();

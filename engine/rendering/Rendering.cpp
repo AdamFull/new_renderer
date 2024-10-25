@@ -9,7 +9,8 @@ namespace engine
 {
 	namespace render
 	{
-		Renderer::Renderer(Window* window)
+		Renderer::Renderer(Window* window, filesystem::IVirtualFileSystemInterface* vfs) :
+			vfs{ vfs }
 		{
 			gfx::ContextCreateInfo gfx_create_info{};
 			gfx_create_info.app_name = "MyVulkanEngine";
@@ -19,7 +20,7 @@ namespace engine
 			gfx_context = gfx::CreateContext(gfx_create_info);
 
 			render_context = std::make_unique<RenderContext>(*gfx_context, window);
-			upload_context = std::make_unique<UploadContext>(*gfx_context);
+			upload_context = std::make_unique<UploadContext>(*gfx_context, vfs);
 
 			// Create timestamp query for collecting pass info
 			gfx::QueryPoolCreateInfo query_pool_ci{};
@@ -50,6 +51,31 @@ namespace engine
 			// DO RENDER
 
 			EndFrame();
+		}
+
+		gfx::Context& Renderer::GetGFXContext()
+		{
+			return *gfx_context;
+		}
+
+		RenderContext& Renderer::GetRenderContext()
+		{
+			return *render_context;
+		}
+
+		RenderContext const& Renderer::GetRenderContext() const
+		{
+			return *render_context;
+		}
+
+		UploadContext& Renderer::GetUploadContext()
+		{
+			return *upload_context;
+		}
+
+		UploadContext const& Renderer::GetUploadContext() const
+		{
+			return *upload_context;
 		}
 
 		void Renderer::BeginFrame()
