@@ -246,8 +246,6 @@ namespace engine
 
 					auto& vk_image_barrier = image_barriers[vk_barrier.imageMemoryBarrierCount++];
 
-					assert(false && "NOT IMPLEMENTED");
-
 					auto& image = texture->GetImage();
 					vk_image_barrier.image = image.GetHandle();
 

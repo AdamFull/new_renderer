@@ -191,7 +191,7 @@ namespace engine
 					return vk::ImageLayout::eReadOnlyOptimal;
 				else if (layout == ImageLayout::eAttachmentOptimal)
 					return vk::ImageLayout::eAttachmentOptimal;
-				else if (layout == ImageLayout::ePresentSrcKHR)
+				else if (layout == ImageLayout::ePresent)
 					return vk::ImageLayout::ePresentSrcKHR;
 				
 				return vk::ImageLayout::eUndefined;

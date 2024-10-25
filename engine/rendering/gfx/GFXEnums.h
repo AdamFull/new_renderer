@@ -144,7 +144,7 @@ namespace engine
 			eStencilReadOnlyOptimal,
 			eReadOnlyOptimal,
 			eAttachmentOptimal,
-			ePresentSrcKHR
+			ePresent
 		};
 
 		// For sampler

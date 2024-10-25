@@ -177,10 +177,26 @@ namespace engine
 
 		void RenderContext::EndFrame(gfx::SemaphoreSubmitInfo wait_semaphore)
 		{
+			auto& current_frame = GetCurrentFrame();
+
+			gfx::TextureBarrier texture_barrier{};
+			gfx::ResourceBarrierInfo barrier{};
+			barrier.texture_barriers = &texture_barrier;
+			barrier.texture_barrier_count = 1;
+
+			texture_barrier.texture = current_frame.backbuffer;
+			texture_barrier.src_layout = gfx::ImageLayout::eUndefined;
+			texture_barrier.src_state.stage = gfx::StageFlag::eAllCommands;
+			texture_barrier.src_state.access = gfx::AccessFlag::eNone;
+			texture_barrier.dst_layout = gfx::ImageLayout::ePresent;
+			texture_barrier.dst_state.stage = gfx::StageFlag::eAllCommands;
+			texture_barrier.dst_state.access = gfx::AccessFlag::eNone;
+
+			current_command_list->ResourceBarrier(barrier);
+
 			current_command_list->End();
 			frame_active = false;
 
-			auto& current_frame = GetCurrentFrame();
 			current_frame.fence->Reset();
 
 			try
