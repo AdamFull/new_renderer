@@ -20,13 +20,6 @@ namespace engine
 			UploadContext& operator=(UploadContext&&) = delete;
 
 			gfx::Texture* LoadTexture(const std::string& texture_path) override;
-			gfx::Texture* CreateTexture(const gfx::TextureCreateInfo& create_info) override;
-
-			gfx::Sampler* CreateSampler(const gfx::SamplerCreateInfo& create_info) override;
-
-			gfx::Buffer* CreateBuffer(const gfx::BufferCreateInfo& create_info) override;
-
-			void DestroyResource(gfx::GFXResource* resource) override;
 
 			//void UpdateTexture(gfx::Texture* texture_handle, const FTextureUploadInfo& upload_info);
 

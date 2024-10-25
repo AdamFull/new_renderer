@@ -29,6 +29,9 @@ namespace engine
 		class DescriptorSet;
 		class QueryPool;
 
+		/**
+		* Base structures
+		*/
 		struct ContextCreateInfo
 		{
 			RenderApi render_api{ RenderApi::eVulkan };
@@ -107,11 +110,82 @@ namespace engine
 			uint32_t attribute_count{};
 		};
 
+		struct RasterizationState
+		{
+			bool depth_clamp{};
+			bool discard_enable{};
+			FillMode fill_mode{};
+			CullModeFlags cull_mode{};
+			FrontFace front_face{};
+		};
+
+		struct MultisampleState
+		{
+			SampleCount sample_count{};
+			bool alpha_to_coverage{};
+			bool alpha_to_one{};
+		};
+
+		struct DepthStencilState
+		{
+			bool depth_test{ false };
+			bool depth_write{ false };
+			CompareOp depth_compare_op{};
+
+			bool stencil_test{};
+			CompareOp stencil_front_compare_op{};
+			StencilOp front_fail{};
+			StencilOp depth_front_fail{};
+			StencilOp front_pass{};
+
+			CompareOp stencil_back_compare_op{};
+			StencilOp back_fail{};
+			StencilOp depth_back_fail{};
+			StencilOp back_pass{};
+		};
+
+		struct ColorBlendAttachment
+		{
+			bool enable{ false };
+			BlendFactor src_color{ BlendFactor::eOne };
+			BlendFactor dst_color{ BlendFactor::eZero };
+			BlendOp color_blend_op{ BlendOp::eAdd };
+			BlendFactor src_alpha{ BlendFactor::eOne };
+			BlendFactor dst_alpha{ BlendFactor::eZero };
+			BlendOp alpha_blend_op{ BlendOp::eAdd };
+			ColorMaskFlags color_mask{ ColorMaskFlag::eAll };
+		};
+
+		struct ColorBlendingState
+		{
+			std::array<ColorBlendAttachment, 8ull> attachments{};
+			uint32_t attachment_count{};
+		};
+
+		struct PipelineState
+		{
+			VertexLayout vertex_layout{};
+			RasterizationState rasterization_state{};
+			MultisampleState multisample_state{};
+			DepthStencilState depth_stencil_state{};
+			ColorBlendingState color_blending_state{};
+
+			std::array<Format, 8ull> color_formats{};
+			uint32_t color_format_count{};
+
+			Format depth_format{};
+			Format stencil_format{};
+
+			PrimitiveTopology primitive_topology{};
+		};
+
 		struct GraphicsPipelineCreateInfo
 		{
 			Shader* shader{ nullptr };
 			RootSignature* root_signature{ nullptr };
 			PipelineCache* pipeline_cache{ nullptr };
+
+			PipelineState pipeline_state{};
 		};
 
 		struct ComputePipelineCreateInfo

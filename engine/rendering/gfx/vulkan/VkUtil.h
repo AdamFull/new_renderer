@@ -152,6 +152,7 @@ namespace engine
 				if (flags & AccessFlag::eShaderStorageWrite)
 					vk_flags |= vk::AccessFlagBits2KHR::eShaderStorageWrite;
 
+				assert(false && "NOT IMPLEMENTED STATE");
 				return vk_flags;
 			}
 
@@ -200,6 +201,7 @@ namespace engine
 				else if (access.layout == TextureLayout::ePresent)
 					return vk::ImageLayout::ePresentSrcKHR;
 				
+				assert(false && "NOT IMPLEMENTED STATE");
 				return vk::ImageLayout::eUndefined;
 			}
 
@@ -228,6 +230,7 @@ namespace engine
 				else if (type == DescriptorType::eInputAttachment)
 					return vk::DescriptorType::eInputAttachment;
 
+				assert(false && "NOT IMPLEMENTED STATE");
 				return vk::DescriptorType::eSampler;
 			}
 
@@ -238,6 +241,7 @@ namespace engine
 				else if (filter == Filter::eLinear)
 					return vk::Filter::eLinear;
 
+				assert(false && "NOT IMPLEMENTED STATE");
 				return vk::Filter::eNearest;
 			}
 
@@ -248,6 +252,7 @@ namespace engine
 				else if (mode == Filter::eLinear)
 					return vk::SamplerMipmapMode::eLinear;
 
+				assert(false && "NOT IMPLEMENTED STATE");
 				return vk::SamplerMipmapMode::eNearest;
 			}
 
@@ -262,6 +267,7 @@ namespace engine
 				else if (mode == SamplerAddressMode::eClampToBorder)
 					return vk::SamplerAddressMode::eClampToBorder;
 
+				assert(false && "NOT IMPLEMENTED STATE");
 				return vk::SamplerAddressMode::eRepeat;
 			}
 
@@ -284,6 +290,7 @@ namespace engine
 				else if (op == CompareOp::eAlways)
 					return vk::CompareOp::eAlways;
 
+				assert(false && "NOT IMPLEMENTED STATE");
 				return vk::CompareOp::eNever;
 			}
 
@@ -296,6 +303,7 @@ namespace engine
 				else if (type == QueryType::ePipelineStatistics)
 					return vk::QueryType::ePipelineStatistics;
 
+				assert(false && "NOT IMPLEMENTED STATE");
 				return vk::QueryType::eOcclusion;
 			}
 
@@ -306,7 +314,164 @@ namespace engine
 				else if (type == PipelineType::eGraphics)
 					return vk::PipelineBindPoint::eGraphics;
 
+				assert(false && "NOT IMPLEMENTED STATE");
 				return vk::PipelineBindPoint::eGraphics;
+			}
+
+			inline vk::PrimitiveTopology PrimitiveTopologyToVk(PrimitiveTopology topology)
+			{
+				if (topology == PrimitiveTopology::ePointList)
+					return vk::PrimitiveTopology::ePointList;
+				else if (topology == PrimitiveTopology::eLineList)
+					return vk::PrimitiveTopology::eLineList;
+				else if (topology == PrimitiveTopology::eLineStrip)
+					return vk::PrimitiveTopology::eLineStrip;
+				else if (topology == PrimitiveTopology::eTriangleList)
+					return vk::PrimitiveTopology::eTriangleList;
+				else if (topology == PrimitiveTopology::eTriangleStrip)
+					return vk::PrimitiveTopology::eTriangleStrip;
+				else if (topology == PrimitiveTopology::ePatchList)
+					return vk::PrimitiveTopology::ePatchList;
+
+				assert(false && "NOT IMPLEMENTED STATE");
+				return vk::PrimitiveTopology::eTriangleList;
+			}
+
+			inline vk::SampleCountFlagBits SampleCountToVk(SampleCount sample_count)
+			{
+				if (sample_count == SampleCount::e1)
+					return vk::SampleCountFlagBits::e1;
+				else if (sample_count == SampleCount::e2)
+					return vk::SampleCountFlagBits::e2;
+				else if (sample_count == SampleCount::e4)
+					return vk::SampleCountFlagBits::e4;
+				else if (sample_count == SampleCount::e8)
+					return vk::SampleCountFlagBits::e8;
+				else if (sample_count == SampleCount::e16)
+					return vk::SampleCountFlagBits::e16;
+
+				return vk::SampleCountFlagBits::e1;
+			}
+
+			inline vk::PolygonMode FillModeToVk(FillMode mode)
+			{
+				if (mode == FillMode::eSolid)
+					return vk::PolygonMode::eFill;
+				else if (mode == FillMode::eWireframe)
+					return vk::PolygonMode::eLine;
+
+				assert(false && "NOT IMPLEMENTED STATE");
+				return vk::PolygonMode::eFill;
+			}
+
+			inline vk::CullModeFlags CullModeToVk(CullModeFlags flags)
+			{
+				vk::CullModeFlags cull_mode{};
+
+				if (flags & CullModeFlag::eFront)
+					cull_mode |= vk::CullModeFlagBits::eFront;
+				if (flags & CullModeFlag::eBack)
+					cull_mode |= vk::CullModeFlagBits::eBack;
+
+				return cull_mode;
+			}
+
+			inline vk::FrontFace FrontFaceToVk(FrontFace ff)
+			{
+				if (ff == FrontFace::eCCW)
+					return vk::FrontFace::eCounterClockwise;
+				else if (ff == FrontFace::eCW)
+					return vk::FrontFace::eClockwise;
+
+				assert(false && "NOT IMPLEMENTED STATE");
+				return vk::FrontFace::eCounterClockwise;
+			}
+
+			inline vk::StencilOp StencilOpToVk(StencilOp op)
+			{
+				if (op == StencilOp::eKeep)
+					return vk::StencilOp::eKeep;
+				else if (op == StencilOp::eZero)
+					return vk::StencilOp::eZero;
+				else if (op == StencilOp::eReplace)
+					return vk::StencilOp::eReplace;
+				else if (op == StencilOp::eIncrementAndClamp)
+					return vk::StencilOp::eIncrementAndClamp;
+				else if (op == StencilOp::eDecrementAndClamp)
+					return vk::StencilOp::eDecrementAndClamp;
+				else if (op == StencilOp::eInvert)
+					return vk::StencilOp::eInvert;
+				else if (op == StencilOp::eIncrementAndWrap)
+					return vk::StencilOp::eIncrementAndWrap;
+				else if (op == StencilOp::eDecrementAndWrap)
+					return vk::StencilOp::eDecrementAndWrap;
+
+				assert(false && "NOT IMPLEMENTED STATE");
+				return vk::StencilOp::eKeep;
+			}
+
+			inline vk::BlendFactor BlendFactorToVk(BlendFactor blend_factor)
+			{
+				if (blend_factor == BlendFactor::eZero)
+					return vk::BlendFactor::eZero;
+				else if (blend_factor == BlendFactor::eOne)
+					return vk::BlendFactor::eOne;
+				else if (blend_factor == BlendFactor::eSrcColor)
+					return vk::BlendFactor::eSrcColor;
+				else if (blend_factor == BlendFactor::eOneMinusSrcColor)
+					return vk::BlendFactor::eOneMinusSrcColor;
+				else if (blend_factor == BlendFactor::eDstColor)
+					return vk::BlendFactor::eDstColor;
+				else if (blend_factor == BlendFactor::eOneMinusDstColor)
+					return vk::BlendFactor::eOneMinusDstColor;
+				else if (blend_factor == BlendFactor::eSrcAlpha)
+					return vk::BlendFactor::eSrcAlpha;
+				else if (blend_factor == BlendFactor::eOneMinusSrcAlpha)
+					return vk::BlendFactor::eOneMinusSrcAlpha;
+				else if (blend_factor == BlendFactor::eDstAlpha)
+					return vk::BlendFactor::eDstAlpha;
+				else if (blend_factor == BlendFactor::eOneMinusDstAlpha)
+					return vk::BlendFactor::eOneMinusDstAlpha;
+				else if (blend_factor == BlendFactor::eConstantAlpha)
+					return vk::BlendFactor::eConstantAlpha;
+				else if (blend_factor == BlendFactor::eOneMinusConstantAlpha)
+					return vk::BlendFactor::eOneMinusConstantAlpha;
+				else if (blend_factor == BlendFactor::eSrcAlphaSaturate)
+					return vk::BlendFactor::eSrcAlphaSaturate;
+				
+				return vk::BlendFactor::eZero;
+			}
+
+			inline vk::BlendOp BlendOpToVk(BlendOp blend_op)
+			{
+				if (blend_op == BlendOp::eAdd)
+					return vk::BlendOp::eAdd;
+				else if (blend_op == BlendOp::eSubtract)
+					return vk::BlendOp::eSubtract;
+				else if (blend_op == BlendOp::eReverseSubtract)
+					return vk::BlendOp::eReverseSubtract;
+				else if (blend_op == BlendOp::eMin)
+					return vk::BlendOp::eMin;
+				else if (blend_op == BlendOp::eMax)
+					return vk::BlendOp::eMax;
+				
+				return vk::BlendOp::eAdd;
+			}
+
+			inline vk::ColorComponentFlags ColorMaskToVk(ColorMaskFlags flags)
+			{
+				vk::ColorComponentFlags vk_flags{};
+
+				if (flags & ColorMaskFlag::eR)
+					vk_flags |= vk::ColorComponentFlagBits::eR;
+				if (flags & ColorMaskFlag::eG)
+					vk_flags |= vk::ColorComponentFlagBits::eG;
+				if (flags & ColorMaskFlag::eB)
+					vk_flags |= vk::ColorComponentFlagBits::eB;
+				if (flags & ColorMaskFlag::eA)
+					vk_flags |= vk::ColorComponentFlagBits::eA;
+
+				return vk_flags;
 			}
 
 

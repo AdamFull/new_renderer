@@ -229,6 +229,93 @@ namespace engine
 			eGraphics
 		};
 
+		enum class PrimitiveTopology
+		{
+			ePointList,
+			eLineList,
+			eLineStrip,
+			eTriangleList,
+			eTriangleStrip,
+			ePatchList
+		};
+
+		enum class SampleCount
+		{
+			e1 = 1,
+			e2 = 2,
+			e4 = 4,
+			e8 = 8,
+			e16 = 16
+		};
+
+		enum class FillMode
+		{
+			eSolid,
+			eWireframe
+		};
+
+		enum class CullModeFlag
+		{
+			eNone = 0,
+			eFront = 1 << 0,
+			eBack = 1 << 1
+		};
+		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(CullModeFlags, CullModeFlag);
+
+		enum class FrontFace
+		{
+			eCCW,
+			eCW
+		};
+
+		enum class StencilOp
+		{
+			eKeep,
+			eZero,
+			eReplace,
+			eIncrementAndClamp,
+			eDecrementAndClamp,
+			eInvert,
+			eIncrementAndWrap,
+			eDecrementAndWrap
+		};
+
+		enum class BlendFactor
+		{
+			eZero,
+			eOne,
+			eSrcColor,
+			eOneMinusSrcColor,
+			eDstColor ,
+			eOneMinusDstColor,
+			eSrcAlpha,
+			eOneMinusSrcAlpha,
+			eDstAlpha,
+			eOneMinusDstAlpha,
+			eConstantAlpha,
+			eOneMinusConstantAlpha,
+			eSrcAlphaSaturate
+		};
+
+		enum class BlendOp
+		{
+			eAdd,
+			eSubtract,
+			eReverseSubtract,
+			eMin,
+			eMax
+		};
+
+		enum class ColorMaskFlag
+		{
+			eR = 1 << 0,
+			eG = 1 << 1,
+			eB = 1 << 2,
+			eA = 1 << 3,
+			eAll = eR | eG | eB | eA
+		};
+		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ColorMaskFlags, ColorMaskFlag);
+
 		enum class DescriptorType
 		{
 			eSampler,

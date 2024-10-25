@@ -238,32 +238,6 @@ namespace engine
 			}
 		}
 
-		gfx::Texture* UploadContext::CreateTexture(const gfx::TextureCreateInfo& create_info)
-		{
-			gfx::Texture* texture = context.CreateTexture(create_info);
-			// TODO: add resource registry
-			return texture;
-		}
-
-		gfx::Sampler* UploadContext::CreateSampler(const gfx::SamplerCreateInfo& create_info)
-		{
-			gfx::Sampler* sampler = context.CreateSampler(create_info);
-			// TODO: add resource registry
-			return sampler;
-		}
-
-		gfx::Buffer* UploadContext::CreateBuffer(const gfx::BufferCreateInfo& create_info)
-		{
-			gfx::Buffer* buffer = context.CreateBuffer(create_info);
-			// TODO: add resource registry
-			return buffer;
-		}
-
-		void UploadContext::DestroyResource(gfx::GFXResource* resource)
-		{
-			context.Destroy(resource);
-		}
-
 		void UploadContext::EndBufferUpdate(gfx::BufferUpdateInfo& update_info)
 		{
 			gfx::Buffer* dst_buffer = update_info.dst_buffer;

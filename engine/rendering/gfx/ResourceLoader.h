@@ -23,19 +23,14 @@ namespace engine
 			} map_info;
 		};
 
+		class Context;
+
 		class ResourceContext
 		{
 		public:
 			~ResourceContext() = default;
 
 			virtual Texture* LoadTexture(const std::string& texture_path) = 0;
-			virtual Texture* CreateTexture(const TextureCreateInfo& create_info) = 0;
-
-			virtual Sampler* CreateSampler(const SamplerCreateInfo& create_info) = 0;
-
-			virtual Buffer* CreateBuffer(const BufferCreateInfo& create_info) = 0;
-
-			virtual void DestroyResource(GFXResource* resource) = 0;
 
 			virtual void BeginBufferUpdate(BufferUpdateInfo& update_info) = 0;
 			virtual void EndBufferUpdate(BufferUpdateInfo& update_info) = 0;
