@@ -1,6 +1,6 @@
 #pragma once
 
-#include <GFXStructures.h>
+#include <Structures.h>
 #include <cassert>
 
 namespace engine

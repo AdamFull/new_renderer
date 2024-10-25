@@ -2,8 +2,8 @@
 
 #include <array>
 #include <span>
-#include <engine/rendering/gfx/GFXReflection.h>
-#include <engine/rendering/gfx/GFXFormat.h>
+#include <engine/rendering/gfx/Reflection.h>
+#include <engine/rendering/gfx/Format.h>
 
 namespace engine
 {

@@ -1,4 +1,4 @@
-#include <GFXFormat.h>
+#include <Format.h>
 
 #include <vulkan/vulkan.h>
 

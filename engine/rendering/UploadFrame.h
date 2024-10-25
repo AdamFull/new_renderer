@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gfx/GFXStructures.h>
+#include <gfx/Structures.h>
 
 namespace engine
 {

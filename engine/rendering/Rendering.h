@@ -1,7 +1,7 @@
 #pragma once
 
 #include <engine/interface/filesystem/VirtualFileSystemInterface.h>
-#include <engine/rendering/gfx/GFXStructures.h>
+#include <engine/rendering/gfx/Structures.h>
 #include <engine/rendering/RenderResourceContainer.h>
 
 #include <engine/rendering/GPUVector.h>

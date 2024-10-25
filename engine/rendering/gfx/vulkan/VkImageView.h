@@ -1,7 +1,7 @@
 #pragma once
 
 #include <VkImage.h>
-#include <GFXStructures.h>
+#include <Structures.h>
 
 namespace engine
 {
