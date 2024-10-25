@@ -166,6 +166,12 @@ namespace engine
 			const Queue* queue{ nullptr };
 		};
 
+		struct TextureAccess
+		{
+			AccessTypeFlags type{};
+			TextureLayout layout{};
+		};
+
 		struct BufferRangeInfo
 		{
 			uint64_t size{};
@@ -185,9 +191,9 @@ namespace engine
 			Texture* texture{ nullptr };
 			uint32_t subresource_index{ ~0u };
 
-			ImageLayout src_layout{};
+			TextureAccess src_access{};
 			ResourceState src_state{};
-			ImageLayout dst_layout{};
+			TextureAccess dst_access{};
 			ResourceState dst_state{};
 		};
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <memory>
-#include <GFXBase.h>
+#include <Base.h>
 
 #ifdef CreateSemaphore
 #undef CreateSemaphore

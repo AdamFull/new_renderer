@@ -4,6 +4,7 @@
 #include <engine/runtime/Window.h>
 
 #include <engine/rendering/gfx/Context.h>
+#include <engine/rendering/gfx/Util.h>
 
 #include <util/Logger.h>
 
@@ -185,12 +186,10 @@ namespace engine
 			barrier.texture_barrier_count = 1;
 
 			texture_barrier.texture = current_frame.backbuffer;
-			texture_barrier.src_layout = gfx::ImageLayout::eUndefined;
-			texture_barrier.src_state.stage = gfx::StageFlag::eAllCommands;
-			texture_barrier.src_state.access = gfx::AccessFlag::eNone;
-			texture_barrier.dst_layout = gfx::ImageLayout::ePresent;
-			texture_barrier.dst_state.stage = gfx::StageFlag::eAllCommands;
-			texture_barrier.dst_state.access = gfx::AccessFlag::eNone;
+			texture_barrier.src_access = { {}, gfx::TextureLayout::eUndefined };
+			texture_barrier.src_state = gfx::GetTextureState(texture_barrier.src_access);
+			texture_barrier.dst_access = { gfx::AccessTypeFlag::eRead, gfx::TextureLayout::ePresent };
+			texture_barrier.dst_state = gfx::GetTextureState(texture_barrier.dst_access);
 
 			current_command_list->ResourceBarrier(barrier);
 

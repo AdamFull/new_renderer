@@ -3,7 +3,7 @@
 #include <engine/rendering/ExecutionContext.h>
 #include <span>
 
-#include <GFXBase.h>
+#include <Base.h>
 
 namespace engine
 {

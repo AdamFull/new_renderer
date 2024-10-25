@@ -125,16 +125,14 @@ namespace engine
 		};
 		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(AccessFlags, AccessFlag);
 
-		enum class ImageLayout
+		enum class TextureLayout
 		{
 			eUndefined,
-			eGeneral,
 			eColorAttachmentOptimal,
 			eDepthStencilAttachmentOptimal,
 			eDepthStencilReadOnlyOptimal,
-			eShaderReadOnlyOptimal,
-			eTransferSrcOptimal,
-			eTransferDstOptimal,
+			eShader,
+			eTransfer,
 			ePreinitialized,
 			eDepthReadOnlyStencilAttachmentOptimal,
 			eDepthAttachmentStencilReadOnlyOptimal,
@@ -146,6 +144,14 @@ namespace engine
 			eAttachmentOptimal,
 			ePresent
 		};
+
+		enum class AccessTypeFlag
+		{
+			eRead = 1 << 0,
+			eWrite = 1 << 1,
+			eRW = eRead | eWrite
+		};
+		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(AccessTypeFlags, AccessTypeFlag);
 
 		// For sampler
 		enum class Filter

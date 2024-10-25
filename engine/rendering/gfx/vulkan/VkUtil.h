@@ -155,43 +155,49 @@ namespace engine
 				return vk_flags;
 			}
 
-			inline vk::ImageLayout ImageLayoutToVk(ImageLayout layout)
+			inline vk::ImageLayout ImageLayoutToVk(TextureAccess access)
 			{
-				if (layout == ImageLayout::eUndefined)
+				if (access.layout == TextureLayout::eUndefined)
 					return vk::ImageLayout::eUndefined;
-				else if (layout == ImageLayout::eGeneral)
-					return vk::ImageLayout::eGeneral;
-				else if (layout == ImageLayout::eColorAttachmentOptimal)
+				else if (access.layout == TextureLayout::eShader)
+				{
+					if (access.type & AccessTypeFlag::eRead)
+						return vk::ImageLayout::eShaderReadOnlyOptimal;
+					else if(access.type & AccessTypeFlag::eWrite)
+						return vk::ImageLayout::eGeneral;
+				}
+				else if (access.layout == TextureLayout::eColorAttachmentOptimal)
 					return vk::ImageLayout::eColorAttachmentOptimal;
-				else if (layout == ImageLayout::eDepthStencilAttachmentOptimal)
+				else if (access.layout == TextureLayout::eDepthStencilAttachmentOptimal)
 					return vk::ImageLayout::eDepthStencilAttachmentOptimal;
-				else if (layout == ImageLayout::eDepthStencilReadOnlyOptimal)
+				else if (access.layout == TextureLayout::eDepthStencilReadOnlyOptimal)
 					return vk::ImageLayout::eDepthStencilReadOnlyOptimal;
-				else if (layout == ImageLayout::eShaderReadOnlyOptimal)
-					return vk::ImageLayout::eShaderReadOnlyOptimal;
-				else if (layout == ImageLayout::eTransferSrcOptimal)
-					return vk::ImageLayout::eTransferSrcOptimal;
-				else if (layout == ImageLayout::eTransferDstOptimal)
-					return vk::ImageLayout::eTransferDstOptimal;
-				else if (layout == ImageLayout::ePreinitialized)
+				else if (access.layout == TextureLayout::eTransfer)
+				{
+					if (access.type & AccessTypeFlag::eRead)
+						return vk::ImageLayout::eTransferSrcOptimal;
+					else if (access.type & AccessTypeFlag::eWrite)
+						return vk::ImageLayout::eTransferDstOptimal;
+				}
+				else if (access.layout == TextureLayout::ePreinitialized)
 					return vk::ImageLayout::ePreinitialized;
-				else if (layout == ImageLayout::eDepthReadOnlyStencilAttachmentOptimal)
+				else if (access.layout == TextureLayout::eDepthReadOnlyStencilAttachmentOptimal)
 					return vk::ImageLayout::eDepthReadOnlyStencilAttachmentOptimal;
-				else if (layout == ImageLayout::eDepthAttachmentStencilReadOnlyOptimal)
+				else if (access.layout == TextureLayout::eDepthAttachmentStencilReadOnlyOptimal)
 					return vk::ImageLayout::eDepthAttachmentStencilReadOnlyOptimal;
-				else if (layout == ImageLayout::eDepthAttachmentOptimal)
+				else if (access.layout == TextureLayout::eDepthAttachmentOptimal)
 					return vk::ImageLayout::eDepthAttachmentOptimal;
-				else if (layout == ImageLayout::eDepthReadOnlyOptimal)
+				else if (access.layout == TextureLayout::eDepthReadOnlyOptimal)
 					return vk::ImageLayout::eDepthReadOnlyOptimal;
-				else if (layout == ImageLayout::eStencilAttachmentOptimal)
+				else if (access.layout == TextureLayout::eStencilAttachmentOptimal)
 					return vk::ImageLayout::eStencilAttachmentOptimal;
-				else if (layout == ImageLayout::eStencilReadOnlyOptimal)
+				else if (access.layout == TextureLayout::eStencilReadOnlyOptimal)
 					return vk::ImageLayout::eStencilReadOnlyOptimal;
-				else if (layout == ImageLayout::eReadOnlyOptimal)
+				else if (access.layout == TextureLayout::eReadOnlyOptimal)
 					return vk::ImageLayout::eReadOnlyOptimal;
-				else if (layout == ImageLayout::eAttachmentOptimal)
+				else if (access.layout == TextureLayout::eAttachmentOptimal)
 					return vk::ImageLayout::eAttachmentOptimal;
-				else if (layout == ImageLayout::ePresent)
+				else if (access.layout == TextureLayout::ePresent)
 					return vk::ImageLayout::ePresentSrcKHR;
 				
 				return vk::ImageLayout::eUndefined;

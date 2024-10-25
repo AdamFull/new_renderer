@@ -3,7 +3,7 @@
 #include <set>
 
 #include <VkResource.h>
-#include <GFXBase.h>
+#include <Base.h>
 
 namespace engine
 {
