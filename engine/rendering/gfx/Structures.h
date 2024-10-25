@@ -5,6 +5,10 @@
 #include <engine/rendering/gfx/Reflection.h>
 #include <engine/rendering/gfx/Format.h>
 
+#ifdef MemoryBarrier
+#undef MemoryBarrier
+#endif
+
 namespace engine
 {
 	class Window;
@@ -193,6 +197,41 @@ namespace engine
 			Shader* shader{ nullptr };
 			RootSignature* root_signature{ nullptr };
 			PipelineCache* pipeline_cache{ nullptr };
+		};
+
+		struct ClearColor
+		{
+			std::array<float, 4ull> color{};
+
+			float depth{ 0.f };
+			uint32_t stencil{ 0u };
+		};
+
+		struct Attachment
+		{
+			Texture* texture{ nullptr };
+
+			LoadOp load_op{};
+			StoreOp store_op{};
+
+			ClearColor clear_color{};
+		};
+
+		struct RenderingInfo
+		{
+			int32_t offset_x{};
+			int32_t offset_y{};
+
+			uint32_t width{ 1u };
+			uint32_t height{ 1u };
+
+			uint32_t layer_count{ 1u };
+
+			std::array<Attachment, 8ull> attachments{};
+			uint32_t attachment_count{};
+
+			Attachment depth_attachment{};
+			Attachment stencil_attachment{};
 		};
 
 		struct PipelineCacheCreateInfo

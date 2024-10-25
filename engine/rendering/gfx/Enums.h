@@ -316,6 +316,20 @@ namespace engine
 		};
 		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ColorMaskFlags, ColorMaskFlag);
 
+		enum class LoadOp
+		{
+			eLoad,
+			eClear,
+			eDontCare
+		};
+
+		enum class StoreOp
+		{
+			eStore,
+			eDontCare,
+			eNone
+		};
+
 		enum class DescriptorType
 		{
 			eSampler,

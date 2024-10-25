@@ -181,7 +181,7 @@ namespace engine
 			virtual void BeginQuery(QueryPool* query_pool, uint32_t query) = 0;
 			virtual void EndQuery(QueryPool* query_pool, uint32_t query) = 0;
 
-			virtual void BeginRendering() = 0;
+			virtual void BeginRendering(const RenderingInfo& rendering_info) = 0;
 			virtual void EndRendering() = 0;
 
 			virtual void BeginMarker(const char* name, uint32_t color) = 0;

@@ -474,6 +474,30 @@ namespace engine
 				return vk_flags;
 			}
 
+			inline vk::AttachmentLoadOp LoadOpToVk(LoadOp op)
+			{
+				if (op == LoadOp::eLoad)
+					return vk::AttachmentLoadOp::eLoad;
+				else if (op == LoadOp::eClear)
+					return vk::AttachmentLoadOp::eClear;
+				else if (op == LoadOp::eDontCare)
+					return vk::AttachmentLoadOp::eDontCare;
+
+				return vk::AttachmentLoadOp::eDontCare;
+			}
+
+			inline vk::AttachmentStoreOp StoreOpToVk(StoreOp op)
+			{
+				if (op == StoreOp::eStore)
+					return vk::AttachmentStoreOp::eStore;
+				else if (op == StoreOp::eDontCare)
+					return vk::AttachmentStoreOp::eDontCare;
+				else if (op == StoreOp::eNone)
+					return vk::AttachmentStoreOp::eNone;
+
+				return vk::AttachmentStoreOp::eDontCare;
+			}
+
 
 			inline bool IsDepthOnlyFormat(vk::Format format)
 			{

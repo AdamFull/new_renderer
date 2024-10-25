@@ -63,7 +63,7 @@ namespace engine
 				void BeginQuery(QueryPool* query_pool, uint32_t query) override;
 				void EndQuery(QueryPool* query_pool, uint32_t query) override;
 
-				void BeginRendering() override;
+				void BeginRendering(const RenderingInfo& rendering_info) override;
 				void EndRendering() override;
 
 				void BeginMarker(const char* name, uint32_t color) override;

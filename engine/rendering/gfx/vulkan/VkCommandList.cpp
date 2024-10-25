@@ -356,9 +356,71 @@ namespace engine
 				handle.endQuery(vk_query_pool->GetHandle(), query);
 			}
 
-			void VulkanCommandList::BeginRendering()
+			void VulkanCommandList::BeginRendering(const RenderingInfo& rendering_info)
 			{
-				assert(false && "NOT IMPLEMENTED");
+				vk::RenderingInfoKHR begin_rendering_info{};
+				begin_rendering_info.renderArea.offset.x = rendering_info.offset_x;
+				begin_rendering_info.renderArea.offset.y = rendering_info.offset_y;
+				begin_rendering_info.renderArea.extent.width = rendering_info.width;
+				begin_rendering_info.renderArea.extent.height = rendering_info.height;
+
+				begin_rendering_info.layerCount = rendering_info.layer_count;
+
+				std::array<vk::RenderingAttachmentInfo, 8ull> color_attachments{};
+				begin_rendering_info.pColorAttachments = color_attachments.data();
+
+				for (int32_t i = 0; i < rendering_info.attachment_count; ++i)
+				{
+					auto& attachment = rendering_info.attachments[i];
+					auto& vk_attachment = color_attachments[begin_rendering_info.colorAttachmentCount++];
+
+					assert(attachment.texture);
+					auto* texture = static_cast<VulkanTexture*>(attachment.texture);
+					auto& subresource = texture->GetSubresource();
+
+					vk_attachment.imageView = subresource.GetHandle();
+					vk_attachment.imageLayout = subresource.GetImageLayout();
+					vk_attachment.loadOp = LoadOpToVk(attachment.load_op);
+					vk_attachment.storeOp = StoreOpToVk(attachment.store_op);
+
+					vk_attachment.clearValue.color = attachment.clear_color.color;
+				}
+
+				vk::RenderingAttachmentInfo depth_attachment{};
+				if (rendering_info.depth_attachment.texture)
+				{
+					auto* texture = static_cast<VulkanTexture*>(rendering_info.depth_attachment.texture);
+					auto& subresource = texture->GetSubresource();
+
+					depth_attachment.imageView = subresource.GetHandle();
+					depth_attachment.imageLayout = subresource.GetImageLayout();
+					depth_attachment.loadOp = LoadOpToVk(rendering_info.depth_attachment.load_op);
+					depth_attachment.storeOp = StoreOpToVk(rendering_info.depth_attachment.store_op);
+
+					depth_attachment.clearValue.depthStencil.depth = rendering_info.depth_attachment.clear_color.depth;
+					depth_attachment.clearValue.depthStencil.stencil = rendering_info.depth_attachment.clear_color.stencil;
+
+					begin_rendering_info.pDepthAttachment = &depth_attachment;
+				}
+
+				vk::RenderingAttachmentInfo stencil_attachment{};
+				if (rendering_info.stencil_attachment.texture)
+				{
+					auto* texture = static_cast<VulkanTexture*>(rendering_info.stencil_attachment.texture);
+					auto& subresource = texture->GetSubresource();
+
+					stencil_attachment.imageView = subresource.GetHandle();
+					stencil_attachment.imageLayout = subresource.GetImageLayout();
+					stencil_attachment.loadOp = LoadOpToVk(rendering_info.stencil_attachment.load_op);
+					stencil_attachment.storeOp = StoreOpToVk(rendering_info.stencil_attachment.store_op);
+
+					stencil_attachment.clearValue.depthStencil.depth = rendering_info.stencil_attachment.clear_color.depth;
+					stencil_attachment.clearValue.depthStencil.stencil = rendering_info.stencil_attachment.clear_color.stencil;
+
+					begin_rendering_info.pStencilAttachment = &stencil_attachment;
+				}
+
+				handle.beginRenderingKHR(begin_rendering_info);
 			}
 
 			void VulkanCommandList::EndRendering()

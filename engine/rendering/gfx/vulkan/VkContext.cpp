@@ -13,6 +13,7 @@
 #include <VkSemaphore.h>
 #include <VkSampler.h>
 #include <VkPipelineCache.h>
+#include <VkPipeline.h>
 #include <VkCommandPool.h>
 #include <VkQueryPool.h>
 #include <VkTexture.h>
@@ -291,14 +292,12 @@ namespace engine
 
 			Pipeline* VulkanContext::CreatePipeline(const GraphicsPipelineCreateInfo& create_info)
 			{
-				assert(false && "NOT IMPLEMENTED");
-				return nullptr;
+				return new VulkanGraphicsPipeline(*device, create_info);
 			}
 
 			Pipeline* VulkanContext::CreatePipeline(const ComputePipelineCreateInfo& create_info)
 			{
-				assert(false && "NOT IMPLEMENTED");
-				return nullptr;
+				return new VulkanComputePipeline(*device, create_info);
 			}
 
 			PipelineCache* VulkanContext::CreatePipelineCache(const PipelineCacheCreateInfo& create_info)
@@ -472,7 +471,8 @@ namespace engine
 				} break;
 				case ResourceType::ePipeline:
 				{
-					assert(false && "NOT IMPLEMENTED");
+					auto* handle = static_cast<VulkanPipeline*>(resource_handle);
+					debug_utils->SetDebugName(handle->GetHandle(), name);
 				} break;
 				case ResourceType::ePipelineCache:
 				{
