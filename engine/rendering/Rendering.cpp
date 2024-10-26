@@ -5,8 +5,6 @@
 #include <engine/rendering/RenderContext.h>
 #include <engine/rendering/UploadContext.h>
 
-#include <engine/rendering/ShaderObject.h>
-
 namespace engine
 {
 	namespace render
@@ -83,18 +81,19 @@ namespace engine
 		Handle Renderer::LoadTexture(const std::string& path, gfx::Sampler* sampler)
 		{
 			gfx::Texture* texture = resource_context->LoadTexture(path);
-			return textures.Add(std::make_unique<TextureObject>(texture, sampler ? sampler : default_sampler));
+			return textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
 		}
 
 		Handle Renderer::CreateTexture(const gfx::TextureCreateInfo& create_info, gfx::Sampler* sampler)
 		{
 			gfx::Texture* texture = gfx_context->CreateTexture(create_info);
-			return textures.Add(std::make_unique<TextureObject>(texture, sampler ? sampler : default_sampler));
+			return render_targets.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
 		}
 
-		void Renderer::DestroyTexture(const Handle& handle)
+		void Renderer::DestroyTexture(Handle handle)
 		{
-
+			// TODO: IMPLEMENT TEXTURE DELETION
+			assert(false && "NOT IMPLEMENTED");
 		}
 
 		gfx::Sampler* Renderer::GetOrCreateSampler(const gfx::SamplerCreateInfo& create_info)

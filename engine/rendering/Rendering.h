@@ -5,6 +5,7 @@
 #include <engine/rendering/RenderResourceContainer.h>
 
 #include <engine/rendering/GPUVector.h>
+#include <engine/rendering/render_graph/ShaderPass.h>
 #include <memory>
 
 namespace engine
@@ -42,7 +43,7 @@ namespace engine
 
 			Handle LoadTexture(const std::string& fath, gfx::Sampler* sampler = nullptr);
 			Handle CreateTexture(const gfx::TextureCreateInfo& create_info, gfx::Sampler* sampler = nullptr);
-			void DestroyTexture(const Handle& handle);
+			void DestroyTexture(Handle handle);
 
 			gfx::Sampler* GetOrCreateSampler(const gfx::SamplerCreateInfo& create_info);
 		private:
@@ -64,18 +65,25 @@ namespace engine
 
 			//GPUVector<FMaterial> materials{};
 
+			// Render object descriptions
 			struct TextureObject
 			{
 				gfx::Texture* texture{ nullptr };
 				gfx::Sampler* sampler{ nullptr };
 			};
 			ResourceContainer<TextureObject> textures{};
+			ResourceContainer<TextureObject> render_targets{};
 
 			struct BufferObject
 			{
 				gfx::Buffer* buffer;
 			};
 			ResourceContainer<BufferObject> buffers{};
+
+			// Shader pass description
+			std::vector<std::unique_ptr<ShaderPass>> shader_passes{};
+
+
 		};
 	}
 }
