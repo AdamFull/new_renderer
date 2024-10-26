@@ -9,6 +9,7 @@ namespace engine
 		class RenderPass : public ShaderPass
 		{
 		public:
+			RenderPass(gfx::Context& context, gfx::Shader* shader);
 			~RenderPass() = default;
 
 		protected:

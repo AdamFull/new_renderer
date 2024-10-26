@@ -4,6 +4,12 @@ namespace engine
 {
 	namespace render
 	{
+		ComputePass::ComputePass(gfx::Context& context, gfx::Shader* shader) :
+			ShaderPass{ context, shader }
+		{
+
+		}
+
 		void ComputePass::_Execute(gfx::CommandList& command_list, float delta_time)
 		{
 

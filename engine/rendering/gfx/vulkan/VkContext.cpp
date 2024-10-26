@@ -19,6 +19,7 @@
 #include <VkTexture.h>
 #include <VkSwapchain.h>
 #include <VkShader.h>
+#include <VkRootSignature.h>
 
 #include <VkUtil.h>
 
@@ -286,8 +287,7 @@ namespace engine
 
 			RootSignature* VulkanContext::CreateRootSignature(const RootSignatureCreateInfo& create_info)
 			{
-				assert(false && "NOT IMPLEMENTED");
-				return nullptr;
+				return new VulkanRootSignature(*device, create_info);
 			}
 
 			Pipeline* VulkanContext::CreatePipeline(const GraphicsPipelineCreateInfo& create_info)

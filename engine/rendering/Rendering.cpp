@@ -5,6 +5,9 @@
 #include <engine/rendering/RenderContext.h>
 #include <engine/rendering/UploadContext.h>
 
+#include <engine/rendering/render_graph/ComputePass.h>
+#include <engine/rendering/render_graph/RenderPass.h>
+
 #include <util/Logger.h>
 
 namespace engine
@@ -54,6 +57,8 @@ namespace engine
 			uint32_t pass_index = shader_passes.size();
 
 			auto* shader = resource_context->LoadShader(shader_name);
+
+			auto& new_pass = shader_passes.emplace_back(std::make_unique<RenderPass>(*gfx_context, shader));
 
 			return pass_index;
 		}

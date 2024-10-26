@@ -25,7 +25,7 @@ namespace engine
 				return binding_flags_ext[ext_create_info.bindingCount++];
 			}
 
-			DescriptorSetLayout::DescriptorSetLayout(Device& render_device, const DescriptorSetLayoutCreateInfo& create_info) :
+			DescriptorSetLayout::DescriptorSetLayout(Device& device, const DescriptorSetLayoutCreateInfo& create_info) :
 				VulkanResource{ nullptr, device.GetAllocationCallbacks() },
 				device{ device }
 			{

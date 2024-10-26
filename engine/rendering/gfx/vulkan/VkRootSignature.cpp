@@ -32,7 +32,7 @@ namespace engine
 				VulkanResource{ nullptr, device.GetAllocationCallbacks() },
 				device{ device }
 			{
-
+				vk::Result result = Handle(device).createPipelineLayout(&create_info.create_info, allocation_callbacks, &handle);
 			}
 
 			PipelineLayout::~PipelineLayout()
@@ -93,7 +93,14 @@ namespace engine
 					}
 				}
 
-				vk::PipelineLayoutCreateInfo pl_create_info{};
+				// Add all immutable samplers
+				// TODO: immutable samplers creation
+				for (int32_t i = 0; i < create_info.immutable_sampler_count; ++i)
+				{
+					assert(false && "NOT IMPLEMENTED");
+				}
+
+				pipeline_layout = std::make_unique<PipelineLayout>(device, layout_ci);
 			}
 
 			VulkanRootSignature::~VulkanRootSignature()
