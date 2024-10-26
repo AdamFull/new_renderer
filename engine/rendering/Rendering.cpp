@@ -5,6 +5,8 @@
 #include <engine/rendering/RenderContext.h>
 #include <engine/rendering/UploadContext.h>
 
+#include <util/Logger.h>
+
 namespace engine
 {
 	namespace render
@@ -36,12 +38,24 @@ namespace engine
 			sampler_ci.mip_map_mode = gfx::Filter::eLinear;
 
 			default_sampler = gfx_context->CreateSampler(sampler_ci);
+
+			// Temporary func to create test render graph
+			BuildGraph();
 		}
 
 		Renderer::~Renderer()
 		{
 			gfx_context->Destroy(default_sampler);
 			gfx_context->Destroy(timestamp_query);
+		}
+
+		uint32_t Renderer::AddShaderPass(const std::string& shader_name)
+		{
+			uint32_t pass_index = shader_passes.size();
+
+			auto* shader = resource_context->LoadShader(shader_name);
+
+			return pass_index;
 		}
 
 		void Renderer::Render(float delta_time)
@@ -105,6 +119,11 @@ namespace engine
 			auto* new_sampler = sampler_cache[sampler_hash];
 			new_sampler = gfx_context->CreateSampler(create_info);
 			return new_sampler;
+		}
+
+		void Renderer::BuildGraph()
+		{
+			uint32_t test_shader_pass = AddShaderPass("testing:screenspace");
 		}
 
 		void Renderer::BeginFrame()

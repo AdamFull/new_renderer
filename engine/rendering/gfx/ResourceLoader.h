@@ -32,6 +32,8 @@ namespace engine
 
 			virtual Texture* LoadTexture(const std::string& texture_path) = 0;
 
+			virtual Shader* LoadShader(const std::string& shader_name) = 0;
+
 			virtual void BeginBufferUpdate(BufferUpdateInfo& update_info) = 0;
 			virtual void EndBufferUpdate(BufferUpdateInfo& update_info) = 0;
 

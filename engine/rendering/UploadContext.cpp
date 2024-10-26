@@ -9,12 +9,77 @@
 #include <engine/filesystem/vfs_helper.h>
 #include <util/Logger.h>
 
+#include <shader_compiler/compiler_util.h>
+
 #include <gfx/Context.h>
 
 namespace engine
 {
 	namespace render
 	{
+		struct FShaderNameInfo
+		{
+			std::string library_name;
+			std::string shader_name;
+			utl::vector<std::string> definitions;
+		};
+
+		FShaderNameInfo GetShaderNameInfo(const std::string& shader_name)
+		{
+			FShaderNameInfo name_info{};
+
+			std::string token;
+			std::stringstream ss(shader_name);
+
+			if (std::getline(ss, token, ':'))
+				name_info.library_name = token;
+
+			if (std::getline(ss, token, ':'))
+				name_info.shader_name = token;
+
+			while (std::getline(ss, token, ':'))
+				name_info.definitions.emplace_back(token);
+
+			return name_info;
+		}
+
+		gfx::ShaderStageFlag GetShaderStageFlag(shader_compiler::EShaderType type)
+		{
+			if (type == shader_compiler::EShaderType::eVertex)
+				return gfx::ShaderStageFlag::eVertex;
+			else if (type == shader_compiler::EShaderType::eControl)
+				return gfx::ShaderStageFlag::eTessellationControl;
+			else if (type == shader_compiler::EShaderType::eEvaluation)
+				return gfx::ShaderStageFlag::eTessellationEvaluation;
+			else if (type == shader_compiler::EShaderType::eGeometry)
+				return gfx::ShaderStageFlag::eGeometry;
+			else if (type == shader_compiler::EShaderType::eFragment)
+				return gfx::ShaderStageFlag::eFragment;
+			else if (type == shader_compiler::EShaderType::eCompute)
+				return gfx::ShaderStageFlag::eCompute;
+
+			return static_cast<gfx::ShaderStageFlag>(0);
+		}
+
+		int32_t GetShaderIndex(shader_compiler::EShaderType type)
+		{
+			if (type == shader_compiler::EShaderType::eVertex)
+				return 0;
+			else if (type == shader_compiler::EShaderType::eControl)
+				return 1;
+			else if (type == shader_compiler::EShaderType::eEvaluation)
+				return 2;
+			else if (type == shader_compiler::EShaderType::eGeometry)
+				return 3;
+			else if (type == shader_compiler::EShaderType::eFragment)
+				return 4;
+			else if (type == shader_compiler::EShaderType::eCompute)
+				return 5;
+
+			return -1;
+		}
+
+
 		UploadContext::UploadContext(gfx::Context& context, filesystem::IVirtualFileSystemInterface* vfs) :
 			context{ context },
 			vfs{ vfs }
@@ -27,6 +92,10 @@ namespace engine
 			{
 				upload_frames[i] = std::make_unique<UploadFrame>(context, *queue);
 			}
+
+			log_info("Loading shader cache...");
+			if (!vfs->ReadBson("/root/embed/rendering/shaders/shader_cache.shc", shader_cache))
+				log_error("Failed to load shader cache. ");
 		}
 
 		gfx::Texture* UploadContext::LoadTexture(const std::string& texture_path)
@@ -212,6 +281,78 @@ namespace engine
 			command_list.ResourceBarrier(resource_barrier);
 
 			return texture;
+		}
+
+		gfx::Shader* UploadContext::LoadShader(const std::string& shader_name)
+		{
+			auto name_info = GetShaderNameInfo(shader_name);
+
+			uint32_t library_id = utl::murmur_hash(name_info.library_name);
+			uint32_t shader_id = shader_compiler::make_module_unique_name(name_info.shader_name, name_info.definitions);
+
+			// Looking for shader library (container with shader code and with shader modules)
+			auto found_library = shader_cache.libraries.find(library_id);
+			if (found_library == shader_cache.libraries.end())
+			{
+				log_error("Failed to find shader library named: {}", name_info.library_name);
+				return nullptr;
+			}
+
+			shader_compiler::FCompiledLibrary& shader_library = found_library->second;
+
+			// Looking for shader module (shader type with shader association links)
+			auto found_shader_module = shader_library.modules.find(shader_id);
+			if (found_shader_module == shader_library.modules.end())
+			{
+				log_error("Failed to find shader with name: \"{}\" in library: {}", name_info.shader_name, name_info.library_name);
+				return nullptr;
+			}
+
+			const utl::vector<shader_compiler::FShaderModule>& shader_modules = found_shader_module->second;
+
+			gfx::ShaderCreateInfo shader_create_info{};
+
+			for (const auto& shader_module : shader_modules)
+			{
+				auto pool_name = shader_compiler::get_shader_type(shader_module.type);
+
+				auto found_shader_pool = shader_library.shaders.find(pool_name);
+				if (found_shader_pool == shader_library.shaders.end())
+				{
+					log_error("Shader pool for module named \"{}\" was not found.", name_info.shader_name);
+					return nullptr;
+				}
+
+				auto& shader_pool = found_shader_pool->second;
+
+				auto found_shader_code = shader_pool.find(shader_module.link);
+				if (found_shader_code == shader_pool.end())
+					continue;
+
+				shader_compiler::FShaderData& shader_data = found_shader_code->second;
+				
+				if (shader_data.data.empty())
+				{
+					auto file_path = filesystem::fs::path_append("/root/embed/rendering/shaders", shader_data.path);
+					if (!vfs->ReadFile(file_path, shader_data.data))
+					{
+						log_error("Failed to load shader: {}.", shader_data.path);
+						return nullptr;
+					}
+				}
+
+				auto shader_stage_flag = GetShaderStageFlag(shader_module.type);
+				auto shader_stage_index = GetShaderIndex(shader_module.type);
+
+				shader_create_info.stages |= shader_stage_flag;
+
+				auto& shader_stage = shader_create_info.shader_stages[shader_stage_index];
+				shader_stage.stage = shader_stage_flag;
+				shader_stage.entry_point = "main";
+				shader_stage.code = std::span<uint8_t>(reinterpret_cast<uint8_t*>(shader_data.data.data()), shader_data.data.size() * sizeof(uint32_t));
+			}
+
+			return context.CreateShader(shader_create_info);
 		}
 
 		void UploadContext::BeginBufferUpdate(gfx::BufferUpdateInfo& update_info)

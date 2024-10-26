@@ -290,7 +290,7 @@ namespace engine
 				else if (op == CompareOp::eAlways)
 					return vk::CompareOp::eAlways;
 
-				assert(false && "NOT IMPLEMENTED STATE");
+				//assert(false && "NOT IMPLEMENTED STATE");
 				return vk::CompareOp::eNever;
 			}
 

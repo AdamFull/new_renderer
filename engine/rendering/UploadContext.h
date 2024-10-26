@@ -4,6 +4,8 @@
 #include <engine/rendering/gfx/ResourceLoader.h>
 #include <engine/rendering/UploadFrame.h>
 
+#include <shader_compiler/shader_library_parse.hpp>
+
 namespace engine
 {
 	namespace render
@@ -20,6 +22,8 @@ namespace engine
 			UploadContext& operator=(UploadContext&&) = delete;
 
 			gfx::Texture* LoadTexture(const std::string& texture_path) override;
+
+			gfx::Shader* LoadShader(const std::string& shader_name) override;
 
 			//void UpdateTexture(gfx::Texture* texture_handle, const FTextureUploadInfo& upload_info);
 
@@ -48,6 +52,9 @@ namespace engine
 			uint32_t active_upload_frame{ 0u };
 
 			bool writing_commands{ false };
+
+			// Shader cache
+			shader_compiler::FShaderCacheData shader_cache{};
 		};
 	}
 }

@@ -31,6 +31,8 @@ namespace engine
 			Renderer(Window* window, filesystem::IVirtualFileSystemInterface* vfs);
 			~Renderer();
 
+			uint32_t AddShaderPass(const std::string& shader_name);
+
 			void Render(float delta_time);
 
 			gfx::Context& GetGFXContext();
@@ -47,6 +49,7 @@ namespace engine
 
 			gfx::Sampler* GetOrCreateSampler(const gfx::SamplerCreateInfo& create_info);
 		private:
+			void BuildGraph();
 			void BeginFrame();
 			void EndFrame();
 			void UpdateRenderTargets();

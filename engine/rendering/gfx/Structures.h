@@ -94,58 +94,58 @@ namespace engine
 		// Vertex input
 		struct VertexAttributeDescription
 		{
-			uint32_t location{};
-			uint32_t binding{};
-			Format format{};
-			uint32_t offset{};
+			uint32_t location{ 0u };
+			uint32_t binding{ 0u };
+			Format format{ Format::eUndefined };
+			uint32_t offset{ 0u };
 		};
 
 		struct VertexBindingDescription
 		{
-			uint32_t binding{};
-			uint32_t stride{};
+			uint32_t binding{ 0u };
+			uint32_t stride{ 0u };
 		};
 
 		struct VertexLayout
 		{
 			std::array<VertexBindingDescription, 16ull> bindings{};
-			uint32_t binding_count{};
+			uint32_t binding_count{ 0u };
 			std::array<VertexAttributeDescription, 16ull> attributes{};
-			uint32_t attribute_count{};
+			uint32_t attribute_count{ 0u };
 		};
 
 		struct RasterizationState
 		{
-			bool depth_clamp{};
-			bool discard_enable{};
-			FillMode fill_mode{};
-			CullModeFlags cull_mode{};
-			FrontFace front_face{};
+			bool depth_clamp{ false };
+			bool discard_enable{ false };
+			FillMode fill_mode{ FillMode::eSolid };
+			CullModeFlags cull_mode{ CullModeFlag::eNone };
+			FrontFace front_face{ FrontFace::eCCW };
 		};
 
 		struct MultisampleState
 		{
-			SampleCount sample_count{};
-			bool alpha_to_coverage{};
-			bool alpha_to_one{};
+			SampleCount sample_count{ SampleCount::e1 };
+			bool alpha_to_coverage{ false };
+			bool alpha_to_one{ false };
 		};
 
 		struct DepthStencilState
 		{
 			bool depth_test{ false };
 			bool depth_write{ false };
-			CompareOp depth_compare_op{};
+			CompareOp depth_compare_op{ CompareOp::eNever };
 
-			bool stencil_test{};
-			CompareOp stencil_front_compare_op{};
-			StencilOp front_fail{};
-			StencilOp depth_front_fail{};
-			StencilOp front_pass{};
+			bool stencil_test{ false };
+			CompareOp stencil_front_compare_op{ CompareOp::eNever };
+			StencilOp front_fail{ StencilOp::eKeep };
+			StencilOp depth_front_fail{ StencilOp::eKeep };
+			StencilOp front_pass{ StencilOp::eKeep };
 
-			CompareOp stencil_back_compare_op{};
-			StencilOp back_fail{};
-			StencilOp depth_back_fail{};
-			StencilOp back_pass{};
+			CompareOp stencil_back_compare_op{ CompareOp::eNever };
+			StencilOp back_fail{ StencilOp::eKeep };
+			StencilOp depth_back_fail{ StencilOp::eKeep };
+			StencilOp back_pass{ StencilOp::eKeep };
 		};
 
 		struct ColorBlendAttachment
@@ -163,7 +163,7 @@ namespace engine
 		struct ColorBlendingState
 		{
 			std::array<ColorBlendAttachment, 8ull> attachments{};
-			uint32_t attachment_count{};
+			uint32_t attachment_count{ 0u };
 		};
 
 		struct PipelineState
@@ -177,10 +177,10 @@ namespace engine
 			std::array<Format, 8ull> color_formats{};
 			uint32_t color_format_count{};
 
-			Format depth_format{};
-			Format stencil_format{};
+			Format depth_format{ Format::eUndefined };
+			Format stencil_format{ Format::eUndefined };
 
-			PrimitiveTopology primitive_topology{};
+			PrimitiveTopology primitive_topology{ PrimitiveTopology::ePointList };
 		};
 
 		struct GraphicsPipelineCreateInfo
@@ -201,7 +201,7 @@ namespace engine
 
 		struct ClearColor
 		{
-			std::array<float, 4ull> color{};
+			std::array<float, 4ull> color{0.f, 0.f, 0.f, 1.f};
 
 			float depth{ 0.f };
 			uint32_t stencil{ 0u };
@@ -211,16 +211,16 @@ namespace engine
 		{
 			Texture* texture{ nullptr };
 
-			LoadOp load_op{};
-			StoreOp store_op{};
+			LoadOp load_op{ LoadOp::eLoad };
+			StoreOp store_op{ StoreOp::eStore };
 
 			ClearColor clear_color{};
 		};
 
 		struct RenderingInfo
 		{
-			int32_t offset_x{};
-			int32_t offset_y{};
+			int32_t offset_x{ 0u };
+			int32_t offset_y{ 0u };
 
 			uint32_t width{ 1u };
 			uint32_t height{ 1u };
@@ -228,7 +228,7 @@ namespace engine
 			uint32_t layer_count{ 1u };
 
 			std::array<Attachment, 8ull> attachments{};
-			uint32_t attachment_count{};
+			uint32_t attachment_count{ 0u };
 
 			Attachment depth_attachment{};
 			Attachment stencil_attachment{};
@@ -249,7 +249,7 @@ namespace engine
 			uint32_t height{ 1u };
 
 			// TODO: add colorspace selection
-			Format format{};
+			Format format{ Format::eUndefined };
 		};
 
 		struct BufferCreateInfo
@@ -270,7 +270,7 @@ namespace engine
 			uint32_t layers{ 1u };
 			uint32_t levels{ 1u };
 
-			Format format{};
+			Format format{ Format::eUndefined };
 		};
 
 		struct SamplerCreateInfo
@@ -291,7 +291,7 @@ namespace engine
 		struct QueryPoolCreateInfo
 		{
 			QueryType type{};
-			uint32_t query_count{};
+			uint32_t query_count{ 0u };
 		};
 
 		// Resource barriers
@@ -310,8 +310,8 @@ namespace engine
 
 		struct BufferRangeInfo
 		{
-			uint64_t size{};
-			uint64_t offset{};
+			uint64_t size{ 0ull };
+			uint64_t offset{ 0ull };
 		};
 
 		struct BufferBarrier
@@ -357,8 +357,8 @@ namespace engine
 
 			Buffer* argument_buffer{ nullptr };
 			uint64_t argument_offset{ 0ull };
-			uint32_t draw_count{};
-			uint32_t command_stride{};
+			uint32_t draw_count{ 0u };
+			uint32_t command_stride{ 0u };
 
 			Buffer* count_buffer{ nullptr };
 			uint64_t count_offset{ 0ull };
@@ -366,9 +366,9 @@ namespace engine
 
 		struct BufferCopyRegion
 		{
-			uint64_t src_offset{};
-			uint64_t dst_offset{};
-			uint64_t size{};
+			uint64_t src_offset{ 0ull };
+			uint64_t dst_offset{ 0ull };
+			uint64_t size{ 0ull };
 		};
 
 		struct CopyBufferInfo
@@ -404,9 +404,20 @@ namespace engine
 			Texture* dst_texture{ nullptr };
 
 			std::array<TextureCopyRegion, 64ull> copy_regions{};
-			uint32_t copy_region_count{};
+			uint32_t copy_region_count{ 0u };
 		};
 
-		uint32_t Hash(const SamplerCreateInfo& create_info);
+		uint32_t Hash(const VertexAttributeDescription& desc, uint32_t hash = 0u);
+		uint32_t Hash(const VertexBindingDescription& desc, uint32_t hash = 0u);
+		uint32_t Hash(const VertexLayout& layout, uint32_t hash = 0u);
+		uint32_t Hash(const RasterizationState& state, uint32_t hash = 0u);
+		uint32_t Hash(const MultisampleState& state, uint32_t hash = 0u);
+		uint32_t Hash(const DepthStencilState& state, uint32_t hash = 0u);
+		uint32_t Hash(const ClearColor& color, uint32_t hash = 0u);
+		uint32_t Hash(const ColorBlendAttachment& attachment, uint32_t hash = 0u);
+		uint32_t Hash(const ColorBlendingState& state, uint32_t hash = 0u);
+		uint32_t Hash(const PipelineState& state, uint32_t hash = 0u);
+
+		uint32_t Hash(const SamplerCreateInfo& create_info, uint32_t hash = 0u);
 	}
 }

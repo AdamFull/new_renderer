@@ -8,7 +8,7 @@
 
 #include <meshoptimizer.h>
 
-#include <engine/rendering/Rendering.h>
+//#include <engine/rendering/Rendering.h>
 #include <engine/rendering/gfx/Structures.h>
 #include <engine/rendering/gfx/Enums.h>
 
@@ -115,8 +115,7 @@ namespace engine
 			return create_info;
 		}
 
-		Scene::Scene(filesystem::IVirtualFileSystemInterface* vfs, render::Renderer& renderer) :
-			renderer{ renderer },
+		Scene::Scene(filesystem::IVirtualFileSystemInterface* vfs) :
 			vfs{ vfs }
 		{
 			CEntityManager::RegisterSystem<ecs::CInputSystem>();
@@ -160,12 +159,12 @@ namespace engine
 				auto& sampler = root.samplers[texture.sampler];
 
 				auto sampler_create_info = GetSamplerCreateInfo(sampler);
-				gfx::Sampler* texture_sampler = renderer.GetOrCreateSampler(sampler_create_info);
+				//gfx::Sampler* texture_sampler = renderer.GetOrCreateSampler(sampler_create_info);
 
 				// TODO: add ability to override format and sampler params
 				// TODO: find format from materials
-				auto image_path = filesystem::fs::path_append(root.rootDirectory, easygltf::url_decode(image.uri));
-				resources.textures.emplace_back(renderer.LoadTexture(image_path, texture_sampler).Get());
+				//auto image_path = filesystem::fs::path_append(root.rootDirectory, easygltf::url_decode(image.uri));
+				//resources.textures.emplace_back(renderer.LoadTexture(image_path, texture_sampler).Get());
 			}
 
 			utl::vector<render::FMaterial> materials{};

@@ -31,7 +31,7 @@ namespace engine
 		class Scene final
 		{
 		public:
-			Scene(filesystem::IVirtualFileSystemInterface* vfs, render::Renderer& renderer);
+			Scene(filesystem::IVirtualFileSystemInterface* vfs);
 			~Scene();
 
 			void Load(const std::string& path);
@@ -47,7 +47,7 @@ namespace engine
 			void LoadAnimations(const easygltf::FGLTFRoot& root);
 			void LoadSkins(const easygltf::FGLTFRoot& root);
 		private:
-			render::Renderer& renderer;
+			//render::Renderer& renderer;
 
 			filesystem::IVirtualFileSystemInterface* vfs{ nullptr };
 
