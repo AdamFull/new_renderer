@@ -17,7 +17,7 @@ namespace engine
 				device{ device }
 			{
 				vk::ShaderModuleCreateInfo vk_create_info{};
-				vk_create_info.codeSize = static_cast<uint32_t>(create_info.code.size() / sizeof(uint32_t));
+				vk_create_info.codeSize = static_cast<uint32_t>(create_info.code.size());
 				vk_create_info.pCode = reinterpret_cast<const uint32_t*>(create_info.code.data());
 
 				vk::Result result = Handle(device).createShaderModule(&vk_create_info, allocation_callbacks, &handle);
