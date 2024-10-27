@@ -33,6 +33,11 @@ namespace engine
 			Renderer(Window* window, filesystem::IVirtualFileSystemInterface* vfs);
 			~Renderer();
 
+			uint32_t AddTextureResource(const std::string& path, gfx::Sampler* sampler = nullptr);
+			uint32_t AddTextureResource(const gfx::TextureCreateInfo& create_info, gfx::Sampler* sampler = nullptr);
+
+			uint32_t AddBufferResource(const gfx::BufferCreateInfo& create_info);
+
 			uint32_t AddShaderPass(const ComputeShaderPassCreateInfo& create_info);
 			uint32_t AddShaderPass(const RenderShaderPassCreateInfo& create_info);
 
@@ -46,7 +51,7 @@ namespace engine
 			gfx::ResourceContext& GetResourceContext();
 			gfx::ResourceContext const& GetResourceContext() const;
 
-			Handle LoadTexture(const std::string& fath, gfx::Sampler* sampler = nullptr);
+			Handle LoadTexture(const std::string& path, gfx::Sampler* sampler = nullptr);
 			Handle CreateTexture(const gfx::TextureCreateInfo& create_info, gfx::Sampler* sampler = nullptr);
 			void DestroyTexture(Handle handle);
 
@@ -99,8 +104,13 @@ namespace engine
 			};
 			ResourceContainer<BufferObject> buffers{};
 
-			// Shader pass description
+			// Render graph resources
 			std::vector<std::unique_ptr<ShaderPass>> shader_passes{};
+			std::vector<RenderGraphPassResourceAccess> per_pass_resouce_access{};
+
+			uint32_t backbuffer_resource{ ~0u };
+			std::vector<RenderGraphResource> graph_resources{};
+
 			std::vector<RenderGraphNodeHeader*> render_graph{};
 
 

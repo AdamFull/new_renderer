@@ -1,6 +1,7 @@
 #include <engine/rendering/render_graph/ShaderPass.h>
 
 #include <engine/rendering/gfx/Context.h>
+#include <util/Logger.h>
 
 #include <hash.hpp>
 
@@ -110,6 +111,22 @@ namespace engine
 		UniformHandle ShaderPass::GetConstantBlock()
 		{
 			return *constant_block;
+		}
+
+		void ShaderPass::BindRenderResource(const RenderResourceBinding& resource_binding)
+		{
+			auto& reflection = shader->GetReflection();
+
+			// Check that we have this binding point
+			auto found = std::find_if(reflection.shader_resources.Begin(), reflection.shader_resources.End(), [&resource_binding](const gfx::ShaderResource& resource) { return resource.name_hash == resource_binding.binding_point; });
+			if (found == reflection.shader_resources.End())
+			{
+				log_warning("Resource binding was not found for this pass.");
+				assert(false && "RESOURCE BINDING NOT FOUND");
+				return;
+			}
+
+			resource_bindings.push_back(resource_binding);
 		}
 	}
 }

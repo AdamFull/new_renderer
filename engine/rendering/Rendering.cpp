@@ -55,6 +55,59 @@ namespace engine
 			gfx_context->Destroy(timestamp_query);
 		}
 
+		uint32_t Renderer::AddTextureResource(const std::string& path, gfx::Sampler* sampler)
+		{
+			auto& new_resource = graph_resources.emplace_back();
+			new_resource.resource_type = RenderResourceTypeFlag::eStaticImage;
+
+			gfx::Texture* texture = resource_context->LoadTexture(path);
+			auto handle = textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
+			new_resource.resource_id = handle.Get();
+
+			return graph_resources.size() - 1ull;
+		}
+
+		uint32_t Renderer::AddTextureResource(const gfx::TextureCreateInfo& create_info, gfx::Sampler* sampler)
+		{
+			auto& new_resource = graph_resources.emplace_back();
+
+			// TODO: What if it's storage target and render target at the same time?
+			if (create_info.usage & gfx::TextureUsageFlag::eStorage)
+				new_resource.resource_type = RenderResourceTypeFlag::eStorageTarget;
+			else if (create_info.usage & gfx::TextureUsageFlag::eRenderTarget)
+				new_resource.resource_type = RenderResourceTypeFlag::eRenderTarget;
+			else
+				new_resource.resource_type = RenderResourceTypeFlag::eStaticImage;
+
+			gfx::Texture* texture = gfx_context->CreateTexture(create_info);
+			if (create_info.usage & gfx::TextureUsageFlag::eRenderTarget)
+			{
+				auto handle = render_targets.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
+				new_resource.resource_id = handle.Get();
+			}
+
+			auto handle = textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
+			new_resource.resource_id = handle.Get();
+
+			return graph_resources.size() - 1ull;
+		}
+
+		uint32_t Renderer::AddBufferResource(const gfx::BufferCreateInfo& create_info)
+		{
+			gfx::Buffer* buffer = gfx_context->CreateBuffer(create_info);
+			auto handle = buffers.Add(BufferObject{ buffer });
+			if (create_info.usage != gfx::BufferUsageFlag::eStagingBuffer && create_info.usage != gfx::BufferUsageFlag::eUniformBuffer)
+			{
+				auto& new_resource = graph_resources.emplace_back();
+				new_resource.resource_type = RenderResourceTypeFlag::eBuffer;
+				new_resource.resource_id = handle.Get();
+
+				return graph_resources.size() - 1ull;
+			}
+
+			return ~0u;
+		}
+
 		uint32_t Renderer::AddShaderPass(const ComputeShaderPassCreateInfo& create_info)
 		{
 			uint32_t pass_index = shader_passes.size();
@@ -125,7 +178,11 @@ namespace engine
 		Handle Renderer::CreateTexture(const gfx::TextureCreateInfo& create_info, gfx::Sampler* sampler)
 		{
 			gfx::Texture* texture = gfx_context->CreateTexture(create_info);
-			return render_targets.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
+
+			if(create_info.usage & gfx::TextureUsageFlag::eRenderTarget)
+				return render_targets.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
+
+			return textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
 		}
 
 		void Renderer::DestroyTexture(Handle handle)
@@ -230,8 +287,12 @@ namespace engine
 			resource_barriers.texture_barriers = texture_barriers.data();
 
 			auto& shader_pass = shader_passes[pass_index];
+			auto& pass_resouces = per_pass_resouce_access[pass_index];
 
+			for (int32_t resource_access_type_i = 0; resource_access_type_i < 3ull; ++resource_access_type_i)
+			{
 
+			}
 
 			// TODO: update attachments for render pass
 			// TODO: execute barriers
@@ -297,6 +358,8 @@ namespace engine
 
 		void Renderer::BuildGraph()
 		{
+			
+
 			RenderShaderPassCreateInfo create_info{};
 			create_info.shader_name = "testing:screenspace";
 
@@ -314,6 +377,12 @@ namespace engine
 
 			timestamp_query->Reset(0u);
 			query_index = 0u;
+
+			// Update texture array
+			for (auto& texture : textures.data())
+			{
+				// TODO: update here
+			}
 		}
 
 		void Renderer::EndFrame()
@@ -324,11 +393,21 @@ namespace engine
 			upload_wait_semaphore = resource_context->Submit(nullptr, 0);
 
 			render_context->EndFrame(upload_wait_semaphore);
+
+			// Reset local render targets states
+			for (auto& target : render_targets.data())
+			{
+				target.texture->Reset();
+			}
 		}
 
 		void Renderer::UpdateRenderTargets()
 		{
+			// Update/resize render targets here if it's needed
+			for (auto& target : render_targets.data())
+			{
 
+			}
 		}
 	}
 }

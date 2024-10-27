@@ -30,6 +30,17 @@ namespace engine
 			gfx::PipelineState state{};
 		};
 
+		struct RenderResourceBinding
+		{
+			uint32_t binding_point{ ~0u };
+			uint32_t subresource{ ~0u };
+
+			gfx::Texture* texture{ nullptr };
+			gfx::Sampler* sampler{ nullptr };
+
+			gfx::Buffer* buffer{ nullptr };
+		};
+
 		class UniformHandle
 		{
 		public:
@@ -131,6 +142,8 @@ namespace engine
 			UniformHandle& GetUniformBlock(const char* name);
 
 			UniformHandle GetConstantBlock();
+
+			void BindRenderResource(const RenderResourceBinding& resource_binding);
 		protected:
 			void PushConstantRanges(gfx::CommandList& command_list);
 			void CollectProfileData();
@@ -151,6 +164,8 @@ namespace engine
 
 			gfx::QueryPool* timestamp_query{ nullptr };
 			uint64_t execution_time{ 0ull };
+
+			std::vector<RenderResourceBinding> resource_bindings{};
 		};
 	}
 }

@@ -7,15 +7,98 @@ namespace engine
 {
 	namespace render
 	{
-		struct ComputeShaderPassCreateInfo
+		enum class RenderResourceTypeFlag : uint16_t
 		{
-			std::string shader_name{};
+			eRenderTarget = 1 << 0,
+			eStorageTarget = 1 << 1,
+			eStaticImage = 1 << 2,
+			eBackbuffer = 1 << 3,
+			eAllImage = eRenderTarget | eStorageTarget | eStaticImage | eBackbuffer,
+			eBuffer = 1 << 4,
+		};
+		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(RenderResourceTypeFlags, RenderResourceTypeFlag);
+
+		enum class RenderResourceGroupFlag : uint16_t
+		{
+			eColor = 1 << 0,
+			eResolve = 1 << 1,
+			eStorageTexture = 1 << 2,
+			eStorage = 1 << 3,
+			eIndirectArgument = 1 << 4,
+			eIndirectCount = 1 << 5,
+			eBackbuffer = 1 << 6
+		};
+		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(RenderResourceGroupFlags, RenderResourceGroupFlag);
+		
+		enum class RenderResourceGroupType : uint32_t
+		{
+			eColorRead,
+			eColorWrite,
+			eResolveWrite,
+			eStorageTextureRead,
+			eStorageTextureWrite,
+			eStorageRead,
+			eStorageWrite,
+			eBackbufferRead,
+			eBackbufferWrite,
+			eIndirectArgumentRead,
+			eIndirectArgumentWrite,
+			eIndirectCountRead,
+			eIndirectCountWrite
 		};
 
-		struct RenderShaderPassCreateInfo
+		enum class RenderGraphResourceAccess
+		{
+			eRead,
+			eWrite,
+			eReadAndWrite
+		};
+
+		struct RenderGraphResourceBinding
+		{
+			RenderResourceGroupFlag resource_group{};
+			// Id of render graph resource
+			uint32_t render_resource_id{ ~0u };
+		};
+
+		using RenderGraphPassResourceAccess = std::array<std::vector<RenderGraphResourceBinding>, 3ull>;
+
+		struct RenderGraphResource
+		{
+			RenderResourceTypeFlag resource_type{};
+			// Id of real resource
+			uint32_t resource_id{ ~0u };
+
+			std::array<std::unordered_set<uint32_t>, 3ull> usages{};
+		};
+
+		struct ShaderPassCreateInfo
 		{
 			std::string shader_name{};
 
+			RenderGraphPassResourceAccess shader_bindings{};
+
+			//void BindWriteResource(uint32_t binding_point, RenderGraphResourceBinding resource_binding) {  }
+			//
+			//void BindWriteResource(const std::string& binding_point, const std::string& resource_name) { resourceBindings[ERenderResourceAccessFlagBits::eWrite].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, ~0u }); }
+			//void BindWriteResource(const std::string& binding_point, const std::string& resource_name, u32 subresource) { resourceBindings[ERenderResourceAccessFlagBits::eWrite].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, subresource }); }
+			//void BindReadResource(const std::string& binding_point, const std::string& resource_name) { resourceBindings[ERenderResourceAccessFlagBits::eRead].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, ~0u }); }
+			//void BindReadResource(const std::string& binding_point, const std::string& resource_name, u32 subresource) { resourceBindings[ERenderResourceAccessFlagBits::eRead].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, subresource }); }
+			//void AddWriteResource(const std::string& resource_name, const glm::vec4 clear_color = glm::vec4(0.f, 0.f, 0.f, 1.f)) { otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(std::make_pair(resource_name, clear_color)); }
+			//void AddReadResource(const std::string& resource_name) { otherResources[ERenderResourceAccessFlagBits::eRead].emplace_back(resource_name, glm::vec4(0.f, 0.f, 0.f, 1.f)); }
+			//
+			//void BindIndirectArgumentBuffer(const std::string& resource_name, u64 offset) { argumentBuffer = resource_name; argumentOffset = offset; }
+			//void BindIndirectCountBuffer(const std::string& resource_name, u64 offset) { countBuffer = resource_name; countOffset = offset; }
+		};
+
+
+		struct ComputeShaderPassCreateInfo : ShaderPassCreateInfo
+		{
+			
+		};
+
+		struct RenderShaderPassCreateInfo : ShaderPassCreateInfo
+		{
 			std::array<gfx::Attachment, 8ull> color_attachments{};
 			uint32_t color_attachment_count{};
 		};
