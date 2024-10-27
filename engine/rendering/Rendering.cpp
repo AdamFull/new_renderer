@@ -547,7 +547,7 @@ namespace engine
 						bool is_change_pipeline_ownership = last_resource_access.pass_type == utl::enum_cast(shader_pass->GetPassType()) && is_write_after_write;
 
 						gfx::Attachment attachment{};
-						attachment.load_op = is_write_after_write ? gfx::LoadOp::eLoad : gfx::LoadOp::eDontCare;
+						attachment.load_op = is_write_after_write ? gfx::LoadOp::eLoad : gfx::LoadOp::eClear;
 						attachment.store_op = !render_resource.usages[utl::enum_cast(RenderGraphResourceAccess::eRead)].empty() || is_backbuffer_resource ? gfx::StoreOp::eStore : gfx::StoreOp::eDontCare;
 						attachment.clear_color = resource_attachment.clear_color;
 
