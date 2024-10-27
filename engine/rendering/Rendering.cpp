@@ -358,8 +358,14 @@ namespace engine
 
 		void Renderer::BuildGraph()
 		{
-			
+			// Register backbuffer resource
 
+			backbuffer_resource = graph_resources.size();
+
+			auto& backbuffer_resource_binding = graph_resources.emplace_back();
+			backbuffer_resource_binding.resource_type = RenderResourceTypeFlag::eBackbuffer;
+
+			// Create shader passes
 			RenderShaderPassCreateInfo create_info{};
 			create_info.shader_name = "testing:screenspace";
 
