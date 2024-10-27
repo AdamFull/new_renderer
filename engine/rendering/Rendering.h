@@ -58,6 +58,14 @@ namespace engine
 			RenderGraphNodeHeader* AllocateGroupNode();
 			RenderGraphNodeHeader* AllocatePassNode();
 
+			static gfx::TextureAccess GetFinalTextureLayout(const RenderGraphResource& graph_resource);
+			static gfx::TextureAccess GetIntermediateTextureLayout(const RenderGraphResource& graph_resource);
+
+			gfx::TextureAccess GetCurrentTextureLayout(const RenderGraphResource& graph_resource);
+			void UpdateTextureLayout(const RenderGraphResource& graph_resource, gfx::TextureAccess new_layout);
+
+			gfx::Texture* GetTextureResource(const RenderGraphResource& graph_resource);
+
 			void CollectRencerResouces(uint32_t pass_index, const ShaderPassCreateInfo& pass_ci);
 
 			void DestroyRenderGraph();
@@ -92,13 +100,16 @@ namespace engine
 			{
 				gfx::Texture* texture{ nullptr };
 				gfx::Sampler* sampler{ nullptr };
+
+				gfx::TextureAccess current_access{ {}, gfx::TextureLayout::eUndefined };
 			};
 			ResourceContainer<TextureObject> textures{};
 			ResourceContainer<TextureObject> render_targets{};
 
 			struct BufferObject
 			{
-				gfx::Buffer* buffer;
+				gfx::Buffer* buffer{ nullptr };
+				gfx::ResourceState resource_state{ gfx::AccessFlag::eNone, gfx::StageFlag::eAllCommands };
 			};
 			ResourceContainer<BufferObject> buffers{};
 
@@ -109,12 +120,11 @@ namespace engine
 
 			utl::hash_map<std::pair<uint32_t, uint32_t>, ConsistentAccessInfo, std_pair_hash> resource_access_map{};
 
+			gfx::TextureAccess backbuffer_layout{};
 			uint32_t backbuffer_resource{ ~0u };
 			std::vector<RenderGraphResource> graph_resources{};
 
 			std::vector<RenderGraphNodeHeader*> render_graph{};
-
-
 		};
 	}
 }

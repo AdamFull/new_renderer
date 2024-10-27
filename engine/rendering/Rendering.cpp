@@ -44,6 +44,20 @@ namespace engine
 			return true;
 		}
 
+		gfx::AccessTypeFlag GetAccessFlagType(RenderGraphResourceAccess type)
+		{
+			gfx::AccessTypeFlag access_flag{};
+			switch (type)
+			{
+			case engine::render::RenderGraphResourceAccess::eRead: access_flag = gfx::AccessTypeFlag::eRead; break;
+			case engine::render::RenderGraphResourceAccess::eWrite: access_flag = gfx::AccessTypeFlag::eWrite; break;
+			case engine::render::RenderGraphResourceAccess::eReadAndWrite: access_flag = gfx::AccessTypeFlag::eRW; break;
+			default: break;
+			}
+
+			return access_flag;
+		}
+
 
 		Renderer::Renderer(Window* window, filesystem::IVirtualFileSystemInterface* vfs) :
 			vfs{ vfs }
@@ -301,6 +315,97 @@ namespace engine
 			return AllocateRenderGraphNode<RenderGraphPassNode>(RenderGraphNodeType::ePassNode);
 		}
 
+		gfx::TextureAccess Renderer::GetFinalTextureLayout(const RenderGraphResource& graph_resource)
+		{
+			if (graph_resource.resource_type & RenderResourceTypeFlag::eBackbuffer)
+			{
+				return { gfx::AccessTypeFlag::eRead, gfx::TextureLayout::ePresent };
+			}
+			else if (graph_resource.resource_type & RenderResourceTypeFlag::eAllImage)
+			{
+				return { gfx::AccessTypeFlag::eRead, gfx::TextureLayout::eShader };
+			}
+			else
+			{
+				assert(false && "RESOURCE TYPE IS NOT IMAGE");
+			}
+
+			return { {}, gfx::TextureLayout::eUndefined };
+		}
+
+		gfx::TextureAccess Renderer::GetIntermediateTextureLayout(const RenderGraphResource& graph_resource)
+		{
+			if (graph_resource.resource_type & RenderResourceTypeFlag::eStaticImage)
+			{
+				return { gfx::AccessTypeFlag::eWrite, gfx::TextureLayout::eShader };
+			}
+			else if(graph_resource.resource_type & RenderResourceTypeFlag::eAllImage)
+			{
+				return { gfx::AccessTypeFlag::eWrite, gfx::TextureLayout::eColorAttachmentOptimal };
+			}
+			else
+			{
+				assert(false && "RESOURCE TYPE IS NOT IMAGE");
+			}
+
+			return { {}, gfx::TextureLayout::eUndefined };
+		}
+
+		gfx::TextureAccess Renderer::GetCurrentTextureLayout(const RenderGraphResource& graph_resource)
+		{
+			if (graph_resource.resource_type & RenderResourceTypeFlag::eBackbuffer)
+			{
+				return backbuffer_layout;
+			}
+			else if (graph_resource.resource_type & RenderResourceTypeFlag::eAllImage)
+			{
+				auto& resource = render_targets.Get(graph_resource.resource_id);
+				return resource.current_access;
+			}
+			else
+			{
+				assert(false && "RESOURCE TYPE IS NOT IMAGE");
+			}
+
+			return { {}, gfx::TextureLayout::eUndefined };
+		}
+
+		void Renderer::UpdateTextureLayout(const RenderGraphResource& graph_resource, gfx::TextureAccess new_layout)
+		{
+			if (graph_resource.resource_type & RenderResourceTypeFlag::eBackbuffer)
+			{
+				backbuffer_layout = new_layout;
+			}
+			else if (graph_resource.resource_type & RenderResourceTypeFlag::eAllImage)
+			{
+				auto& resource = render_targets.Get(graph_resource.resource_id);
+				resource.current_access = new_layout;
+			}
+			else
+			{
+				assert(false && "RESOURCE TYPE IS NOT IMAGE");
+			}
+		}
+
+		gfx::Texture* Renderer::GetTextureResource(const RenderGraphResource& graph_resource)
+		{
+			if (graph_resource.resource_type & RenderResourceTypeFlag::eBackbuffer)
+			{
+				return &render_context->GetBackbuffer();
+			}
+			else if (graph_resource.resource_type & RenderResourceTypeFlag::eAllImage)
+			{
+				auto& resource = render_targets.Get(graph_resource.resource_id);
+				return resource.texture;
+			}
+			else
+			{
+				assert(false && "RESOURCE TYPE IS NOT IMAGE");
+			}
+
+			return nullptr;
+		}
+
 		void Renderer::CollectRencerResouces(uint32_t pass_index, const ShaderPassCreateInfo& pass_ci)
 		{
 			// i here is resource access type
@@ -422,6 +527,7 @@ namespace engine
 						auto& resource = textures.Get(render_resource.resource_id);
 						shader_resource_binding.texture = resource.texture;
 						shader_resource_binding.sampler = resource.sampler;
+						shader_pass->BindResource(shader_resource_binding);
 
 						continue;
 					}
@@ -436,14 +542,7 @@ namespace engine
 
 					auto& last_resource_access = resource_access_map[resource_key];
 
-					gfx::AccessTypeFlag access_flag{};
-					switch (resource_access)
-					{
-					case engine::render::RenderGraphResourceAccess::eRead: access_flag = gfx::AccessTypeFlag::eRead; break;
-					case engine::render::RenderGraphResourceAccess::eWrite: access_flag = gfx::AccessTypeFlag::eWrite; break;
-					case engine::render::RenderGraphResourceAccess::eReadAndWrite: access_flag = gfx::AccessTypeFlag::eRW; break;
-					default: break;
-					}
+					gfx::AccessTypeFlag access_flag = GetAccessFlagType(resource_access);
 
 					// Ignoring read after read barriers
 					if ((last_resource_access.access & access_flag) && access_flag == gfx::AccessTypeFlag::eRead)
@@ -452,37 +551,40 @@ namespace engine
 					bool is_write_after_write = ((last_resource_access.access & access_flag) && access_flag == gfx::AccessTypeFlag::eWrite);
 					bool is_change_pipeline_ownership = last_resource_access.pass_type == utl::enum_cast(shader_pass->GetPassType()) && is_write_after_write;
 
-					
-					RenderResourceBarrierType barrier_type{};
-					if (last_resource_access.access == 0)
+					if (render_resource.resource_type & RenderResourceTypeFlag::eBuffer)
 					{
-						barrier_type = access_flag == gfx::AccessTypeFlag::eRead ? RenderResourceBarrierType::eFinal : RenderResourceBarrierType::eIntermediate;
-					}
-					else if (access_flag != gfx::AccessTypeFlag::eWrite && IsROAccessOnlyRemain(render_resource, pass_index))
-					{
-						barrier_type = RenderResourceBarrierType::eFinal;
-					}
-					else if (is_change_pipeline_ownership)
-					{
-						barrier_type = RenderResourceBarrierType::eIntermediate;
-					}
+						auto& resource = buffers.Get(render_resource.resource_id);
+						auto& barrier = buffer_barriers[resource_barriers.buffer_barrier_count++];
+						barrier.buffer = resource.buffer;
+						barrier.src_state = resource.resource_state;
 
-					// Create resource barriers
-					if (barrier_type == RenderResourceBarrierType::eIntermediate)
-					{
-						
-					}
-					else if (barrier_type == RenderResourceBarrierType::eMemory)
-					{
+						const gfx::AccessFlags read_flags = gfx::AccessFlag::eShaderRead | gfx::AccessFlag::eShaderStorageRead | gfx::AccessFlag::eShaderSampledRead;
+						const gfx::AccessFlags write_flags = gfx::AccessFlag::eShaderWrite | gfx::AccessFlag::eShaderStorageWrite;
 
-					}
-					else if (barrier_type == RenderResourceBarrierType::eFinal)
-					{
+						if (access_flag == gfx::AccessTypeFlag::eRead)
+							barrier.dst_state.access = read_flags | (shader_pass->GetPassType() == ShaderPassType::eCompute ? gfx::AccessFlag::eIndirectCommandRead : gfx::AccessFlag::eNone);
+						else
+							barrier.dst_state.access = write_flags;
 
+						barrier.dst_state.stage = shader_pass->GetPassType() == ShaderPassType::eCompute ? gfx::StageFlag::eComputeShader : gfx::StageFlag::eAllGraphics;
+
+						resource.resource_state = barrier.dst_state;
 					}
 					else
 					{
-						assert(false && "ENKNOWN BARRIER TYPE");
+						auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
+						barrier.src_access = GetCurrentTextureLayout(render_resource);
+						barrier.texture = GetTextureResource(render_resource);
+
+						auto final_layout = GetFinalTextureLayout(render_resource);
+						auto intermediate_layout = GetIntermediateTextureLayout(render_resource);
+
+						if (last_resource_access.access == 0)
+							barrier.dst_access = access_flag == gfx::AccessTypeFlag::eRead ? final_layout : intermediate_layout;
+						else if (access_flag != gfx::AccessTypeFlag::eWrite && IsROAccessOnlyRemain(render_resource, pass_index))
+							barrier.dst_access = final_layout;
+						else if (is_change_pipeline_ownership)
+							barrier.dst_access = intermediate_layout;
 					}
 
 					// Try bind render resource
@@ -521,27 +623,12 @@ namespace engine
 							continue;
 						}
 
-						// Ignore read only resource
-						if (IsXOnlyAccess(render_resource, RenderGraphResourceAccess::eRead))
-							continue;
-
 						// Graph also should support work with subresources
 						auto resource_key = std::make_pair(resource_attachment.render_resource_id, 0u);
 
 						auto& last_resource_access = resource_access_map[resource_key];
 
-						gfx::AccessTypeFlag access_flag{};
-						switch (resource_access)
-						{
-						case engine::render::RenderGraphResourceAccess::eRead: access_flag = gfx::AccessTypeFlag::eRead; break;
-						case engine::render::RenderGraphResourceAccess::eWrite: access_flag = gfx::AccessTypeFlag::eWrite; break;
-						case engine::render::RenderGraphResourceAccess::eReadAndWrite: access_flag = gfx::AccessTypeFlag::eRW; break;
-						default: break;
-						}
-
-						// Ignoring read after read barriers
-						if ((last_resource_access.access & access_flag) && access_flag == gfx::AccessTypeFlag::eRead)
-							continue;
+						gfx::AccessTypeFlag access_flag = GetAccessFlagType(resource_access);
 
 						bool is_backbuffer_resource = resource_attachment.render_resource_id == backbuffer_resource;
 						bool is_write_after_write = ((last_resource_access.access & access_flag) && access_flag == gfx::AccessTypeFlag::eWrite);
@@ -552,60 +639,23 @@ namespace engine
 						attachment.store_op = !render_resource.usages[utl::enum_cast(RenderGraphResourceAccess::eRead)].empty() || is_backbuffer_resource ? gfx::StoreOp::eStore : gfx::StoreOp::eDontCare;
 						attachment.clear_color = resource_attachment.clear_color;
 
-						RenderResourceBarrierType barrier_type{};
-						if (last_resource_access.access == 0)
-						{
-							if (access_flag == gfx::AccessTypeFlag::eRead)
-							{
-								if (render_resource.resource_type & RenderResourceTypeFlag::eAllImage)
-								{
-									auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
-									barrier.src_access = { {}, gfx::TextureLayout::eUndefined };
-									barrier.dst_access = { gfx::AccessTypeFlag::eRead, gfx::TextureLayout::eShader };
-								}
-							}
-							else
-							{
-								auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
-								if (is_backbuffer_resource)
-								{
-									barrier.texture = &render_context->GetBackbuffer();
-								}
-								barrier.src_access = { {}, gfx::TextureLayout::eUndefined };
-								barrier.dst_access = { gfx::AccessTypeFlag::eWrite, gfx::TextureLayout::eColorAttachmentOptimal };
-							}
-						}
-						else if (access_flag != gfx::AccessTypeFlag::eWrite && IsROAccessOnlyRemain(render_resource, pass_index))
-						{
-							if (is_backbuffer_resource)
-							{
-								auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
-								barrier.texture = &render_context->GetBackbuffer();
-								barrier.src_access = { {}, gfx::TextureLayout::eUndefined };
-								barrier.dst_access = { gfx::AccessTypeFlag::eWrite, gfx::TextureLayout::eColorAttachmentOptimal };
-							}
-							else
-							{
-								auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
-								barrier.src_access = { {}, gfx::TextureLayout::eUndefined };
-								barrier.dst_access = { gfx::AccessTypeFlag::eRead, gfx::TextureLayout::eShader };
-							}
-						}
-						else if (is_change_pipeline_ownership)
-						{
-							barrier_type = RenderResourceBarrierType::eIntermediate;
-						}
+						auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
+						barrier.src_access = GetCurrentTextureLayout(render_resource);
+						barrier.texture = GetTextureResource(render_resource);
 
-						// Update 
-						if (is_backbuffer_resource)
-						{
-							attachment.texture = &render_context->GetBackbuffer();
-						}
-						else
-						{
-							auto& resource = render_targets.Get(resource_attachment.render_resource_id);
-							attachment.texture = resource.texture;
-						}
+						auto final_layout = GetFinalTextureLayout(render_resource);
+						auto intermediate_layout = GetIntermediateTextureLayout(render_resource);
+
+						if (last_resource_access.access == 0)
+							barrier.dst_access = access_flag == gfx::AccessTypeFlag::eRead ? final_layout : intermediate_layout;
+						else if (access_flag != gfx::AccessTypeFlag::eWrite && IsROAccessOnlyRemain(render_resource, pass_index))
+							barrier.dst_access = is_backbuffer_resource ? intermediate_layout : final_layout;
+						else if (is_change_pipeline_ownership)
+							barrier.dst_access = intermediate_layout;
+
+						UpdateTextureLayout(render_resource, barrier.dst_access);
+
+						attachment.texture = barrier.texture;
 
 						render_pass->AddColorAttachment(attachment);
 					}
@@ -623,6 +673,8 @@ namespace engine
 
 		void Renderer::EvaluateRenderGraph(float delta_time)
 		{
+			resource_access_map.clear();
+
 			for (auto& node : render_graph)
 			{
 				EvaluateRenderGraphNode(node, delta_time);
@@ -743,7 +795,15 @@ namespace engine
 			// Reset local render targets states
 			for (auto& target : render_targets.data())
 			{
+				target.current_access = { {}, gfx::TextureLayout::eUndefined };
 				target.texture->Reset();
+			}
+
+			backbuffer_layout = { {}, gfx::TextureLayout::eUndefined };
+
+			for (auto& buffer : buffers.data())
+			{
+				buffer.resource_state = { gfx::AccessFlag::eNone, gfx::StageFlag::eAllCommands };
 			}
 		}
 

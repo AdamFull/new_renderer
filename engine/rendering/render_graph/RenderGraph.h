@@ -65,13 +65,6 @@ namespace engine
 			eReadAndWrite
 		};
 
-		enum class RenderResourceBarrierType
-		{
-			eMemory,
-			eIntermediate,
-			eFinal
-		};
-
 		using RenderGraphPassResourceAccess = std::array<std::vector<uint32_t>, 3ull>;
 
 		struct RenderGraphResource
