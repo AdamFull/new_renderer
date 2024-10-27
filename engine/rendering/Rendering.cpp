@@ -48,17 +48,34 @@ namespace engine
 
 		Renderer::~Renderer()
 		{
+			// Destroy render graph including shader passes
+			DestroyRenderGraph();
+
 			gfx_context->Destroy(default_sampler);
 			gfx_context->Destroy(timestamp_query);
 		}
 
-		uint32_t Renderer::AddShaderPass(const std::string& shader_name)
+		uint32_t Renderer::AddShaderPass(const ComputeShaderPassCreateInfo& create_info)
 		{
 			uint32_t pass_index = shader_passes.size();
 
-			auto* shader = resource_context->LoadShader(shader_name);
+			ComputePassCreateInfo pass_ci{};
+			pass_ci.shader = resource_context->LoadShader(create_info.shader_name);
 
-			auto& new_pass = shader_passes.emplace_back(std::make_unique<RenderPass>(*gfx_context, shader));
+			auto& new_pass = shader_passes.emplace_back(std::make_unique<ComputePass>(*gfx_context, pass_ci));
+			new_pass->SetExecutionContext(render_context.get());
+
+			return pass_index;
+		}
+
+		uint32_t Renderer::AddShaderPass(const RenderShaderPassCreateInfo& create_info)
+		{
+			uint32_t pass_index = shader_passes.size();
+
+			RenderPassCreateInfo pass_ci{};
+			pass_ci.shader = resource_context->LoadShader(create_info.shader_name);
+
+			auto& new_pass = shader_passes.emplace_back(std::make_unique<RenderPass>(*gfx_context, pass_ci));
 			new_pass->SetExecutionContext(render_context.get());
 
 			return pass_index;
@@ -68,7 +85,8 @@ namespace engine
 		{
 			BeginFrame();
 
-			// DO RENDER
+			// Execute render graph
+			EvaluateRenderGraph(delta_time);
 
 			EndFrame();
 		}
@@ -127,9 +145,162 @@ namespace engine
 			return new_sampler;
 		}
 
+
+		RenderGraphNodeHeader* Renderer::AllocateStaticConditionNode()
+		{
+			return AllocateRenderGraphNode<RenderGraphStaticConditionNode>(RenderGraphNodeType::eStaticCondition);
+		}
+
+		RenderGraphNodeHeader* Renderer::AllocateDynamicConditionNode()
+		{
+			return AllocateRenderGraphNode<RenderGraphDynamicConditionNode>(RenderGraphNodeType::eDynamicCondition);
+		}
+
+		RenderGraphNodeHeader* Renderer::AllocateGroupNode()
+		{
+			return AllocateRenderGraphNode<RenderGraphGroupNode>(RenderGraphNodeType::eGroupNode);
+		}
+
+		RenderGraphNodeHeader* Renderer::AllocatePassNode()
+		{
+			return AllocateRenderGraphNode<RenderGraphPassNode>(RenderGraphNodeType::ePassNode);
+		}
+
+		void Renderer::DestroyRenderGraph()
+		{
+			for (auto& node : render_graph)
+			{
+				DestoyRenderGraphNode(node);
+			}
+		}
+
+		void Renderer::DestoyRenderGraphNode(RenderGraphNodeHeader* node)
+		{
+			if (node)
+			{
+				switch (node->type)
+				{
+				case RenderGraphNodeType::eStaticCondition:
+				{
+					auto* static_condition_node = CastRenderGraphNode<RenderGraphStaticConditionNode>(node);
+					DestoyRenderGraphNode(static_condition_node->node);
+					DeallocateRenderGraphNode(&static_condition_node->node);
+				} break;
+				case RenderGraphNodeType::eDynamicCondition:
+				{
+					auto* dynamic_condition_node = CastRenderGraphNode<RenderGraphDynamicConditionNode>(node);
+
+					DestoyRenderGraphNode(dynamic_condition_node->pass);
+					DeallocateRenderGraphNode(&dynamic_condition_node->pass);
+
+					DestoyRenderGraphNode(dynamic_condition_node->fail);
+					DeallocateRenderGraphNode(&dynamic_condition_node->fail);
+
+				} break;
+				case RenderGraphNodeType::eGroupNode:
+				{
+					auto* group_node = CastRenderGraphNode<RenderGraphGroupNode>(node);
+
+					for (auto& node : group_node->nodes)
+					{
+						DestoyRenderGraphNode(node);
+						DeallocateRenderGraphNode(&node);
+					}
+
+				} break;
+				case RenderGraphNodeType::ePassNode:
+				{
+					auto* pass_node = CastRenderGraphNode<RenderGraphPassNode>(node);
+
+					// Deallocate shader pass
+					auto& pass = shader_passes[pass_node->pass_index];
+					pass.reset();
+				} break;
+				}
+			}
+		}
+
+		void Renderer::EvaluateShaderPass(uint32_t pass_index)
+		{
+			std::array<gfx::BufferBarrier, 64ull> buffer_barriers{};
+			std::array<gfx::TextureBarrier, 64ull> texture_barriers{};
+
+			gfx::ResourceBarrierInfo resource_barriers{};
+			resource_barriers.buffer_barriers = buffer_barriers.data();
+			resource_barriers.texture_barriers = texture_barriers.data();
+
+			auto& shader_pass = shader_passes[pass_index];
+
+
+
+			// TODO: update attachments for render pass
+			// TODO: execute barriers
+		}
+
+		void Renderer::EvaluateRenderGraph(float delta_time)
+		{
+			for (auto& node : render_graph)
+			{
+				EvaluateRenderGraphNode(node, delta_time);
+			}
+		}
+
+		void Renderer::EvaluateRenderGraphNode(RenderGraphNodeHeader* node, float delta_time)
+		{
+			if (node)
+			{
+				switch (node->type)
+				{
+				case RenderGraphNodeType::eStaticCondition:
+				{
+					auto* static_condition_node = CastRenderGraphNode<RenderGraphStaticConditionNode>(node);
+					EvaluateRenderGraphNode(static_condition_node->node, delta_time);
+				} break;
+				case RenderGraphNodeType::eDynamicCondition:
+				{
+					auto* dynamic_condition_node = CastRenderGraphNode<RenderGraphDynamicConditionNode>(node);
+					if (dynamic_condition_node->condition_fn())
+						EvaluateRenderGraphNode(dynamic_condition_node->pass, delta_time);
+					else
+						EvaluateRenderGraphNode(dynamic_condition_node->fail, delta_time);
+
+				} break;
+				case RenderGraphNodeType::eGroupNode:
+				{
+					auto* group_node = CastRenderGraphNode<RenderGraphGroupNode>(node);
+
+					// TODO: Add execution context selection. Now it always render context
+					auto& command_list = render_context->GetCurrentCommandList();
+					command_list.BeginMarker(group_node->group_name.c_str(), group_node->color);
+
+					for (auto& node : group_node->nodes)
+						EvaluateRenderGraphNode(node, delta_time);
+
+					command_list.EndMarker();
+				} break;
+				case RenderGraphNodeType::ePassNode:
+				{
+					auto* pass_node = CastRenderGraphNode<RenderGraphPassNode>(node);
+
+					auto& pass = shader_passes[pass_node->pass_index];
+					// TODO: Add can execute condition
+					//if (!pass->CanExecute())
+					//	return;
+
+					EvaluateShaderPass(pass_node->pass_index);
+					pass->Execute(delta_time);
+				} break;
+				}
+			}
+		}
+
+
 		void Renderer::BuildGraph()
 		{
-			uint32_t test_shader_pass = AddShaderPass("testing:screenspace");
+			RenderShaderPassCreateInfo create_info{};
+			create_info.shader_name = "testing:screenspace";
+
+			uint32_t test_shader_pass = AddShaderPass(create_info);
 		}
 
 		void Renderer::BeginFrame()

@@ -9,7 +9,7 @@ namespace engine
 		class ComputePass : public ShaderPass
 		{
 		public:
-			ComputePass(gfx::Context& context, gfx::Shader* shader);
+			ComputePass(gfx::Context& context, const ComputePassCreateInfo& create_info);
 			~ComputePass() = default;
 
 		protected:

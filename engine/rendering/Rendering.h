@@ -8,6 +8,7 @@
 
 #include <engine/rendering/GPUVector.h>
 #include <engine/rendering/render_graph/ShaderPass.h>
+#include <engine/rendering/render_graph/RenderGraph.h>
 #include <memory>
 
 namespace engine
@@ -32,7 +33,8 @@ namespace engine
 			Renderer(Window* window, filesystem::IVirtualFileSystemInterface* vfs);
 			~Renderer();
 
-			uint32_t AddShaderPass(const std::string& shader_name);
+			uint32_t AddShaderPass(const ComputeShaderPassCreateInfo& create_info);
+			uint32_t AddShaderPass(const RenderShaderPassCreateInfo& create_info);
 
 			void Render(float delta_time);
 
@@ -50,6 +52,19 @@ namespace engine
 
 			gfx::Sampler* GetOrCreateSampler(const gfx::SamplerCreateInfo& create_info);
 		private:
+			RenderGraphNodeHeader* AllocateStaticConditionNode();
+			RenderGraphNodeHeader* AllocateDynamicConditionNode();
+			RenderGraphNodeHeader* AllocateGroupNode();
+			RenderGraphNodeHeader* AllocatePassNode();
+
+			void DestroyRenderGraph();
+			void DestoyRenderGraphNode(RenderGraphNodeHeader* node);
+
+			void EvaluateShaderPass(uint32_t pass_index);
+
+			void EvaluateRenderGraph(float delta_time);
+			void EvaluateRenderGraphNode(RenderGraphNodeHeader* node, float delta_time);
+
 			void BuildGraph();
 			void BeginFrame();
 			void EndFrame();
@@ -86,6 +101,7 @@ namespace engine
 
 			// Shader pass description
 			std::vector<std::unique_ptr<ShaderPass>> shader_passes{};
+			std::vector<RenderGraphNodeHeader*> render_graph{};
 
 
 		};

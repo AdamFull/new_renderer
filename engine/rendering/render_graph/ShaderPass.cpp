@@ -29,7 +29,7 @@ namespace engine
 			// Create root signature
 			gfx::RootSignatureCreateInfo root_sign_ci{};
 			root_sign_ci.shader = shader;
-			// TODO: also load immutable shaders from pass info or from somewhere another?
+			// TODO: also load immutable samplers from pass info or from somewhere another?
 
 			root_signature = context.CreateRootSignature(root_sign_ci);
 

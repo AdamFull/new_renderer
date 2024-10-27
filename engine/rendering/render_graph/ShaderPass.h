@@ -14,6 +14,22 @@ namespace engine
 
 	namespace render
 	{
+		struct PassCreateInfo
+		{
+			gfx::Shader* shader{ nullptr };
+			gfx::PipelineCache* pipeline_cache{ nullptr };
+		};
+
+		struct ComputePassCreateInfo : PassCreateInfo
+		{
+			
+		};
+
+		struct RenderPassCreateInfo : PassCreateInfo
+		{
+			gfx::PipelineState state{};
+		};
+
 		class UniformHandle
 		{
 		public:
