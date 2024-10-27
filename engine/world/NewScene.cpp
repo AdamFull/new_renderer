@@ -167,6 +167,7 @@ namespace engine
 				//resources.textures.emplace_back(renderer.LoadTexture(image_path, texture_sampler).Get());
 			}
 
+			return;
 			utl::vector<render::FMaterial> materials{};
 			for (u64 idx = 0ull; idx < root.materials.size(); ++idx)
 			{

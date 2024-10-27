@@ -125,6 +125,8 @@ namespace engine
 				// Skipping viewport state because it's dynamic state
 				vk::PipelineViewportStateCreateInfo viewport_state{};
 				pipeline_create_info.pViewportState = &viewport_state;
+				viewport_state.viewportCount = 1u;
+				viewport_state.scissorCount = 1u;
 
 				// Rasterization state
 				vk::PipelineRasterizationStateCreateInfo rasterization_state{};

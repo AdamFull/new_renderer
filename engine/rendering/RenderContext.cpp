@@ -180,17 +180,6 @@ namespace engine
 		{
 			auto& current_frame = GetCurrentFrame();
 
-			gfx::TextureBarrier texture_barrier{};
-			gfx::ResourceBarrierInfo barrier{};
-			barrier.texture_barriers = &texture_barrier;
-			barrier.texture_barrier_count = 1;
-
-			texture_barrier.texture = current_frame.backbuffer;
-			texture_barrier.src_access = { {}, gfx::TextureLayout::eUndefined };
-			texture_barrier.dst_access = { gfx::AccessTypeFlag::eRead, gfx::TextureLayout::ePresent };
-
-			current_command_list->ResourceBarrier(barrier);
-
 			current_command_list->End();
 			frame_active = false;
 

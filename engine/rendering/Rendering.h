@@ -107,6 +107,8 @@ namespace engine
 			std::vector<RenderGraphPassResourceAccess> per_pass_resouce_access{};
 			std::vector<ResourceBindings> per_pass_resource_bindings{};
 
+			utl::hash_map<std::pair<uint32_t, uint32_t>, ConsistentAccessInfo, std_pair_hash> resource_access_map{};
+
 			uint32_t backbuffer_resource{ ~0u };
 			std::vector<RenderGraphResource> graph_resources{};
 

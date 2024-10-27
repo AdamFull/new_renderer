@@ -16,6 +16,7 @@ namespace engine
 	{
 		enum class ShaderPassType
 		{
+			eNone,
 			eCompute,
 			eGraphics
 		};
@@ -172,6 +173,8 @@ namespace engine
 
 			gfx::QueryPool* timestamp_query{ nullptr };
 			uint64_t execution_time{ 0ull };
+			double timestamp_frequency{ 0.0 };
+			double pass_delta_time{ 0.0 };
 
 			std::vector<ShaderResourceBinding> resource_bindings{};
 		};

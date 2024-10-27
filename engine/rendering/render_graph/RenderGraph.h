@@ -3,6 +3,17 @@
 #include <engine/rendering/gfx/Structures.h>
 #include <memory.hpp>
 
+struct std_pair_hash
+{
+	template <class _T1, class _T2>
+	std::size_t operator()(const std::pair<_T1, _T2>& pair) const
+	{
+		std::size_t hash1 = std::hash<_T1>{}(pair.first);
+		std::size_t hash2 = std::hash<_T2>{}(pair.second);
+		return hash1 ^ hash2;
+	}
+};
+
 namespace engine
 {
 	namespace render
@@ -52,6 +63,13 @@ namespace engine
 			eRead,
 			eWrite,
 			eReadAndWrite
+		};
+
+		enum class RenderResourceBarrierType
+		{
+			eMemory,
+			eIntermediate,
+			eFinal
 		};
 
 		using RenderGraphPassResourceAccess = std::array<std::vector<uint32_t>, 3ull>;
@@ -117,7 +135,6 @@ namespace engine
 			void AddReadResource(uint32_t render_resource_id) { resource_attachments[utl::enum_cast(RenderGraphResourceAccess::eRead)].emplace_back(render_resource_id, gfx::ClearColor{}); }
 		};
 
-
 		struct ComputeShaderPassCreateInfo : ShaderPassCreateInfo
 		{
 			
@@ -130,6 +147,15 @@ namespace engine
 
 			void SetDepthAttahment(uint32_t render_resource_id, float depth) { depth_attachment = { render_resource_id, gfx::ClearColor(depth) }; }
 			void SetDepthAttahment(uint32_t render_resource_id, uint32_t stencil) { stencil_attachment = { render_resource_id, gfx::ClearColor(stencil) }; }
+		};
+
+		struct ConsistentAccessInfo
+		{
+			gfx::AccessTypeFlags access{};
+			uint32_t pass_type{ 0u };
+			utl::vector<gfx::AccessTypeFlag> all_time_access{};
+			//EPassType pass_type{};
+			//FResourceBarrierInfo* last_barrier{ nullptr };
 		};
 
 		// Base render graph impl

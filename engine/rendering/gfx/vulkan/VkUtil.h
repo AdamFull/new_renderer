@@ -152,7 +152,6 @@ namespace engine
 				if (flags & AccessFlag::eShaderStorageWrite)
 					vk_flags |= vk::AccessFlagBits2KHR::eShaderStorageWrite;
 
-				assert(false && "NOT IMPLEMENTED STATE");
 				return vk_flags;
 			}
 
