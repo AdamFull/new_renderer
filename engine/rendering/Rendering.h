@@ -4,6 +4,8 @@
 #include <engine/rendering/gfx/Structures.h>
 #include <engine/rendering/RenderResourceContainer.h>
 
+#include <engine/rendering/ExecutionContext.h>
+
 #include <engine/rendering/GPUVector.h>
 #include <engine/rendering/render_graph/ShaderPass.h>
 #include <memory>
@@ -23,7 +25,6 @@ namespace engine
 	namespace render
 	{
 		class RenderContext;
-		class ExecutionContext;
 
 		class Renderer
 		{

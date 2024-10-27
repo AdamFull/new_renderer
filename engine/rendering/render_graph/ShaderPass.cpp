@@ -32,6 +32,13 @@ namespace engine
 			// TODO: also load immutable shaders from pass info or from somewhere another?
 
 			root_signature = context.CreateRootSignature(root_sign_ci);
+
+			// Create timestamp query 
+			gfx::QueryPoolCreateInfo query_pool_ci{};
+			query_pool_ci.query_count = 2u;
+			query_pool_ci.type = gfx::QueryType::eTimestamp;
+
+			timestamp_query = context.CreateQueryPool(query_pool_ci);
 		}
 
 		ShaderPass::~ShaderPass()
@@ -49,13 +56,18 @@ namespace engine
 
 		void ShaderPass::Execute(float delta_time)
 		{
+			// Collect previous frame data
+			CollectProfileData();
+
 			auto& command_list = execution_context->GetCurrentCommandList();
 			command_list.BeginMarker(pass_label.c_str(), 0xFFFF11FF);
 
-			// TODO: Also can add query here?
+			timestamp_query->Reset(0u);
+			command_list.BeginQuery(timestamp_query, 0u);
 
 			_Execute(command_list, delta_time);
 
+			command_list.EndQuery(timestamp_query, 1u);
 			command_list.EndMarker();
 		}
 
@@ -73,6 +85,20 @@ namespace engine
 		UniformHandle& ShaderPass::GetUniformBlock(const char* name)
 		{
 			return GetUniformBlock(utl::murmur_hash(name));
+		}
+
+		void ShaderPass::CollectProfileData()
+		{
+			uint64_t timestamps[2] = {};
+			timestamp_query->GetData(0u, &timestamps[0]);
+
+			uint64_t elapsed_time = timestamps[1] - timestamps[0];
+			if (timestamps[1] <= timestamps[0])
+			{
+				elapsed_time = 0ull;
+			}
+
+			execution_time = elapsed_time;
 		}
 
 		UniformHandle ShaderPass::GetConstantBlock()

@@ -116,6 +116,7 @@ namespace engine
 
 			UniformHandle GetConstantBlock();
 		protected:
+			void CollectProfileData();
 			virtual void _Execute(gfx::CommandList& command_list, float delta_time) = 0;
 		protected:
 			gfx::Context& context;
@@ -130,6 +131,9 @@ namespace engine
 			gfx::Shader* shader{ nullptr };
 			gfx::RootSignature* root_signature{ nullptr };
 			gfx::Pipeline* pipeline{ nullptr };
+
+			gfx::QueryPool* timestamp_query{ nullptr };
+			uint64_t execution_time{ 0ull };
 		};
 	}
 }

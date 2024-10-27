@@ -59,6 +59,7 @@ namespace engine
 			auto* shader = resource_context->LoadShader(shader_name);
 
 			auto& new_pass = shader_passes.emplace_back(std::make_unique<RenderPass>(*gfx_context, shader));
+			new_pass->SetExecutionContext(render_context.get());
 
 			return pass_index;
 		}
