@@ -116,6 +116,7 @@ namespace engine
 
 			UniformHandle GetConstantBlock();
 		protected:
+			void PushConstantRanges(gfx::CommandList& command_list);
 			void CollectProfileData();
 			virtual void _Execute(gfx::CommandList& command_list, float delta_time) = 0;
 		protected:

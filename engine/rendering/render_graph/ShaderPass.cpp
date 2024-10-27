@@ -87,6 +87,12 @@ namespace engine
 			return GetUniformBlock(utl::murmur_hash(name));
 		}
 
+		void ShaderPass::PushConstantRanges(gfx::CommandList& command_list)
+		{
+			auto& constant_data = constant_block->Data();
+			command_list.PushConstants(shader, root_signature, std::span<const char>(constant_data.data(), constant_data.size()));
+		}
+
 		void ShaderPass::CollectProfileData()
 		{
 			uint64_t timestamps[2] = {};

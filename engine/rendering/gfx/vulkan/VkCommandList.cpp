@@ -6,6 +6,7 @@
 #include <VkBuffer.h>
 #include <VkTexture.h>
 #include <VkPipeline.h>
+#include <VkRootSignature.h>
 
 #include <Util.h>
 #include <VkUtil.h>
@@ -85,10 +86,13 @@ namespace engine
 				assert(false && "NOT IMPLEMENTED");
 			}
 
-			void VulkanCommandList::PushConstants(RootSignature* root_signature, std::span<const char> constant_data)
+			void VulkanCommandList::PushConstants(Shader* shader, RootSignature* root_signature, std::span<const char> constant_data)
 			{
-				assert(false && "NOT IMPLEMENTED");
-				//handle.pushConstants(push_info.layout, push_info.stageFlags, push_info.offset, push_info.size, push_info.pValues);
+				auto* vk_root_signature = static_cast<VulkanRootSignature*>(root_signature);
+				auto& pipeline_layout = vk_root_signature->GetPipelineLayout();
+
+				auto& reflection = shader->GetReflection();
+				handle.pushConstants(pipeline_layout.GetHandle(), ShaderStageFlagsToVk(reflection.constants.stages), 0u, constant_data.size(), constant_data.data());
 			}
 
 			void VulkanCommandList::BindIndexBuffer(Buffer* index_buffer, IndexType index_type, uint64_t offset)
@@ -342,6 +346,12 @@ namespace engine
 				}
 
 				handle.pipelineBarrier2KHR(vk_barrier);
+			}
+
+			void VulkanCommandList::ResetQuery(QueryPool* query_pool, uint32_t first_query, uint32_t query_count)
+			{
+				auto* vk_query_pool = static_cast<VulkanQueryPool*>(query_pool);
+				handle.resetQueryPool(vk_query_pool->GetHandle(), first_query, query_count);
 			}
 
 			void VulkanCommandList::BeginQuery(QueryPool* query_pool, uint32_t query)

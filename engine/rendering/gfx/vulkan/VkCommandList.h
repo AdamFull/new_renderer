@@ -41,7 +41,7 @@ namespace engine
 				void BindPipeline(Pipeline* pipeline) override;
 				void BindDescriptorSet() override;
 				void BindDescriptorSets() override;
-				void PushConstants(RootSignature* root_signature, std::span<const char> constant_data) override;
+				void PushConstants(Shader* shader, RootSignature* root_signature, std::span<const char> constant_data) override;
 
 				void BindIndexBuffer(Buffer* index_buffer, IndexType index_type, uint64_t offset) override;
 				void BindVertexBuffers(uint32_t buffer_count, Buffer** vertex_buffers, const uint32_t* strides, const uint64_t* offsets) override;
@@ -60,6 +60,7 @@ namespace engine
 
 				void ResourceBarrier(const ResourceBarrierInfo& barrier) override;
 
+				void ResetQuery(QueryPool* query_pool, uint32_t first_query, uint32_t query_count) override;
 				void BeginQuery(QueryPool* query_pool, uint32_t query) override;
 				void EndQuery(QueryPool* query_pool, uint32_t query) override;
 

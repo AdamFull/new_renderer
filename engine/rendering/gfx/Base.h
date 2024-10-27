@@ -159,7 +159,7 @@ namespace engine
 			virtual void BindPipeline(Pipeline* pipeline) = 0;
 			virtual void BindDescriptorSet() = 0;
 			virtual void BindDescriptorSets() = 0;
-			virtual void PushConstants(RootSignature* root_signature, std::span<const char> constant_data) = 0;
+			virtual void PushConstants(Shader* shader, RootSignature* root_signature, std::span<const char> constant_data) = 0;
 
 			virtual void BindIndexBuffer(Buffer* index_buffer, IndexType index_type, uint64_t offset) = 0;
 			virtual void BindVertexBuffers(uint32_t buffer_count, Buffer** vertex_buffers, const uint32_t* strides, const uint64_t* offsets) = 0;
@@ -178,6 +178,7 @@ namespace engine
 
 			virtual void ResourceBarrier(const ResourceBarrierInfo& barrier) = 0;
 
+			virtual void ResetQuery(QueryPool* query_pool, uint32_t first_query, uint32_t query_count) = 0;
 			virtual void BeginQuery(QueryPool* query_pool, uint32_t query) = 0;
 			virtual void EndQuery(QueryPool* query_pool, uint32_t query) = 0;
 
