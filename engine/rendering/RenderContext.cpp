@@ -6,6 +6,8 @@
 #include <engine/rendering/gfx/Context.h>
 #include <engine/rendering/gfx/Util.h>
 
+#include <format>
+
 #include <util/Logger.h>
 
 namespace engine
@@ -309,8 +311,11 @@ namespace engine
 			render_frame.command_pool = context.CreateCommandPool(queue);
 			render_frame.uniform_pool = std::make_unique<UniformPool>(context, 16384ull);
 			render_frame.image_avaliable = context.CreateSemaphore();
+			context.SetResourceName(render_frame.image_avaliable, std::format("image_avaliable_{}", frame_index).c_str());
 			render_frame.render_finished = context.CreateSemaphore();
+			context.SetResourceName(render_frame.render_finished, std::format("render_finished_{}", frame_index).c_str());
 			render_frame.upload_avaliable = context.CreateSemaphore();
+			context.SetResourceName(render_frame.render_finished, std::format("upload_avaliable_{}", frame_index).c_str());
 			render_frame.fence = context.CreateFence();
 
 			return render_frame;

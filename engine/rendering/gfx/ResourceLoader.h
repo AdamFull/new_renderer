@@ -28,7 +28,7 @@ namespace engine
 		class ResourceContext
 		{
 		public:
-			~ResourceContext() = default;
+			virtual ~ResourceContext() = default;
 
 			virtual Texture* LoadTexture(const std::string& texture_path) = 0;
 

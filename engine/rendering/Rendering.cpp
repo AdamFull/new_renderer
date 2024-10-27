@@ -170,6 +170,7 @@ namespace engine
 			RenderPassCreateInfo pass_ci{};
 			pass_ci.shader = resource_context->LoadShader(create_info.shader_name);
 			pass_ci.state.primitive_topology = gfx::PrimitiveTopology::eTriangleList;
+			//pass_ci.state.rasterization_state.front_face = gfx::FrontFace::eCW;
 
 			// Collect color attachment formats
 			auto& color_attachments = create_info.resource_attachments[utl::enum_cast(RenderGraphResourceAccess::eWrite)];

@@ -19,7 +19,7 @@ namespace engine
 
 			VulkanFence::~VulkanFence()
 			{
-				Handle(device).destroyFence(handle);
+				Handle(device).destroyFence(handle, allocation_callbacks);
 			}
 
 			void VulkanFence::Wait(uint64_t timeout)

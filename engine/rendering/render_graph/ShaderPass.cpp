@@ -50,6 +50,7 @@ namespace engine
 			context.Destroy(pipeline);
 			context.Destroy(root_signature);
 			context.Destroy(shader);
+			context.Destroy(timestamp_query);
 		}
 
 		void ShaderPass::SetExecutionContext(ExecutionContext* exec_context)

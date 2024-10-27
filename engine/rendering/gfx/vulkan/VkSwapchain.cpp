@@ -296,7 +296,7 @@ namespace engine
 
 			VulkanSwapchain::~VulkanSwapchain()
 			{
-				Handle(device).destroySwapchainKHR();
+				Handle(device).destroySwapchainKHR(handle, allocation_callbacks);
 			}
 
 			VulkanSwapchain::VulkanSwapchain(VulkanSwapchain&& other) :

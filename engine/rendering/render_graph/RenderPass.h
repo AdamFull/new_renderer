@@ -10,7 +10,7 @@ namespace engine
 		{
 		public:
 			RenderPass(gfx::Context& context, const RenderPassCreateInfo& create_info);
-			~RenderPass() = default;
+			virtual ~RenderPass() = default;
 
 			void SetRenderResolution(uint32_t width, uint32_t height);
 

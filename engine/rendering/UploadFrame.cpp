@@ -12,7 +12,9 @@ namespace engine
 			command_pool = context.CreateCommandPool(&queue);
 
 			signal_semaphore = context.CreateSemaphore();
+			context.SetResourceName(signal_semaphore, "upload_signal_semaphore");
 			frame_fence = context.CreateFence();
+			context.SetResourceName(frame_fence, "upload_fence");
 		}
 
 		UploadFrame::~UploadFrame()

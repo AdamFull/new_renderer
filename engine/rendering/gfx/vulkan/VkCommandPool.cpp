@@ -54,8 +54,11 @@ namespace engine
 
 				auto& vkdevice = device.GetHandle();
 
-				vkdevice.freeCommandBuffers(handle, free_command_buffer_list.size(), free_command_buffer_list.data());
-				free_command_buffer_list.clear();
+				if (!free_command_buffer_list.empty())
+				{
+					vkdevice.freeCommandBuffers(handle, free_command_buffer_list.size(), free_command_buffer_list.data());
+					free_command_buffer_list.clear();
+				}
 
 				vkdevice.destroyCommandPool(handle, allocation_callbacks);
 			}
