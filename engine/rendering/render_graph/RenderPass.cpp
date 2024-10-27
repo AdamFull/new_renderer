@@ -57,7 +57,7 @@ namespace engine
 			command_list.SetViewport(0.f, 0.f, rendering_info.width, rendering_info.height, 0.f, 1.f);
 			command_list.SerScissor(0u, 0u, rendering_info.width, rendering_info.height);
 
-			command_list.Draw(3u, 0u, 0u, 0u);
+			command_list.Draw(3u, 0u, 0u, 1u);
 
 			command_list.EndRendering();
 
