@@ -201,6 +201,20 @@ namespace engine
 
 		struct ClearColor
 		{
+			ClearColor() = default;
+
+			ClearColor(std::array<float, 4ull>&& clear_color) :
+				color{ std::move(clear_color) }
+			{}
+
+			ClearColor(float depth) :
+				depth{ depth }
+			{}
+
+			ClearColor(uint32_t stencil) :
+				stencil{ stencil }
+			{}
+
 			std::array<float, 4ull> color{0.f, 0.f, 0.f, 1.f};
 
 			float depth{ 0.f };

@@ -10,6 +10,10 @@
 
 #include <util/Logger.h>
 
+#ifdef MemoryBarrier
+#undef MemoryBarrier
+#endif
+
 namespace engine
 {
 	namespace render
@@ -61,8 +65,7 @@ namespace engine
 			new_resource.resource_type = RenderResourceTypeFlag::eStaticImage;
 
 			gfx::Texture* texture = resource_context->LoadTexture(path);
-			auto handle = textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
-			new_resource.resource_id = handle.Get();
+			new_resource.resource_id = textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
 
 			return graph_resources.size() - 1ull;
 		}
@@ -82,12 +85,10 @@ namespace engine
 			gfx::Texture* texture = gfx_context->CreateTexture(create_info);
 			if (create_info.usage & gfx::TextureUsageFlag::eRenderTarget)
 			{
-				auto handle = render_targets.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
-				new_resource.resource_id = handle.Get();
+				new_resource.resource_id = render_targets.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
 			}
 
-			auto handle = textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
-			new_resource.resource_id = handle.Get();
+			new_resource.resource_id = textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
 
 			return graph_resources.size() - 1ull;
 		}
@@ -100,7 +101,7 @@ namespace engine
 			{
 				auto& new_resource = graph_resources.emplace_back();
 				new_resource.resource_type = RenderResourceTypeFlag::eBuffer;
-				new_resource.resource_id = handle.Get();
+				new_resource.resource_id = handle;
 
 				return graph_resources.size() - 1ull;
 			}
@@ -111,6 +112,13 @@ namespace engine
 		uint32_t Renderer::AddShaderPass(const ComputeShaderPassCreateInfo& create_info)
 		{
 			uint32_t pass_index = shader_passes.size();
+
+			// Add per pass resource access container
+			per_pass_resouce_access.emplace_back();
+			per_pass_resource_bindings.emplace_back();
+
+			// Collect render resource usage info
+			CollectRencerResouces(pass_index, create_info);
 
 			ComputePassCreateInfo pass_ci{};
 			pass_ci.shader = resource_context->LoadShader(create_info.shader_name);
@@ -125,8 +133,60 @@ namespace engine
 		{
 			uint32_t pass_index = shader_passes.size();
 
+			// Add per pass resource access container
+			per_pass_resouce_access.emplace_back();
+			per_pass_resource_bindings.emplace_back();
+
+			// Collect render resource usage info
+			CollectRencerResouces(pass_index, create_info);
+
 			RenderPassCreateInfo pass_ci{};
 			pass_ci.shader = resource_context->LoadShader(create_info.shader_name);
+			pass_ci.state.primitive_topology = gfx::PrimitiveTopology::eTriangleList;
+
+			// Collect color attachment formats
+			auto& color_attachments = create_info.resource_attachments[utl::enum_cast(RenderGraphResourceAccess::eWrite)];
+			for (auto& attachment : color_attachments)
+			{
+				auto& render_resource = graph_resources[attachment.render_resource_id];
+
+				// Case for swapchain target
+				if (render_resource.resource_id == ~0u)
+				{
+					auto& render_target = render_context->GetBackbuffer();
+					pass_ci.state.color_formats[pass_ci.state.color_format_count++] = render_target.GetFormat();
+				}
+				else
+				{
+					auto& render_target = render_targets.Get(render_resource.resource_id);
+					pass_ci.state.color_formats[pass_ci.state.color_format_count++] = render_target.texture->GetFormat();
+				}
+
+				// Init default color attachment setting
+				pass_ci.state.color_blending_state.attachment_count++;
+			}
+
+			// Collect depth format
+			if (create_info.depth_attachment.render_resource_id != ~0u)
+			{
+				per_pass_resouce_access[pass_index][utl::enum_cast(RenderGraphResourceAccess::eWrite)].emplace_back(create_info.depth_attachment.render_resource_id);
+				per_pass_resource_bindings[pass_index].depth_attachment = create_info.depth_attachment;
+
+				auto& render_resource = graph_resources[create_info.depth_attachment.render_resource_id];
+				auto& depth_target = render_targets.Get(render_resource.resource_id);
+				pass_ci.state.depth_format = depth_target.texture->GetFormat();
+			}
+
+			// Collect stencil format
+			if (create_info.stencil_attachment.render_resource_id != ~0u)
+			{
+				per_pass_resouce_access[pass_index][utl::enum_cast(RenderGraphResourceAccess::eWrite)].emplace_back(create_info.stencil_attachment.render_resource_id);
+				per_pass_resource_bindings[pass_index].stencil_attachment = create_info.stencil_attachment;
+
+				auto& render_resource = graph_resources[create_info.stencil_attachment.render_resource_id];
+				auto& stencil_target = render_targets.Get(render_resource.resource_id);
+				pass_ci.state.stencil_format = stencil_target.texture->GetFormat();
+			}
 
 			auto& new_pass = shader_passes.emplace_back(std::make_unique<RenderPass>(*gfx_context, pass_ci));
 			new_pass->SetExecutionContext(render_context.get());
@@ -169,28 +229,6 @@ namespace engine
 			return *resource_context;
 		}
 
-		Handle Renderer::LoadTexture(const std::string& path, gfx::Sampler* sampler)
-		{
-			gfx::Texture* texture = resource_context->LoadTexture(path);
-			return textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
-		}
-
-		Handle Renderer::CreateTexture(const gfx::TextureCreateInfo& create_info, gfx::Sampler* sampler)
-		{
-			gfx::Texture* texture = gfx_context->CreateTexture(create_info);
-
-			if(create_info.usage & gfx::TextureUsageFlag::eRenderTarget)
-				return render_targets.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
-
-			return textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
-		}
-
-		void Renderer::DestroyTexture(Handle handle)
-		{
-			// TODO: IMPLEMENT TEXTURE DELETION
-			assert(false && "NOT IMPLEMENTED");
-		}
-
 		gfx::Sampler* Renderer::GetOrCreateSampler(const gfx::SamplerCreateInfo& create_info)
 		{
 			uint32_t sampler_hash = gfx::Hash(create_info);
@@ -221,6 +259,37 @@ namespace engine
 		RenderGraphNodeHeader* Renderer::AllocatePassNode()
 		{
 			return AllocateRenderGraphNode<RenderGraphPassNode>(RenderGraphNodeType::ePassNode);
+		}
+
+		void Renderer::CollectRencerResouces(uint32_t pass_index, const ShaderPassCreateInfo& pass_ci)
+		{
+			// i here is resource access type
+			for (int32_t i = 0; i < 3ull; ++i)
+			{
+				auto& per_pass_access = per_pass_resouce_access[pass_index][i];
+				auto& per_pass_bindings = per_pass_resource_bindings[pass_index];
+
+				// Process bindings
+				for (auto& resource_binding : pass_ci.resource_bindings[i])
+				{
+					// Get graph resource and update that this one was used in concrete pass
+					auto& graph_resource = graph_resources[resource_binding.render_resource_id];
+					graph_resource.usages[i].emplace(pass_index);
+
+					per_pass_access.emplace_back(resource_binding.render_resource_id);
+					per_pass_bindings.bindings[i].emplace_back(resource_binding);
+				}
+
+				// Process attachments
+				for (auto& resource_attachment : pass_ci.resource_attachments[i])
+				{
+					auto& graph_resource = graph_resources[resource_attachment.render_resource_id];
+					graph_resource.usages[i].emplace(pass_index);
+
+					per_pass_access.emplace_back(resource_attachment.render_resource_id);
+					per_pass_bindings.attachments[i].emplace_back(resource_attachment);
+				}
+			}
 		}
 
 		void Renderer::DestroyRenderGraph()
@@ -281,6 +350,7 @@ namespace engine
 		{
 			std::array<gfx::BufferBarrier, 64ull> buffer_barriers{};
 			std::array<gfx::TextureBarrier, 64ull> texture_barriers{};
+			std::array<gfx::MemoryBarrier, 64ull> memory_barriers{};
 
 			gfx::ResourceBarrierInfo resource_barriers{};
 			resource_barriers.buffer_barriers = buffer_barriers.data();
@@ -291,7 +361,8 @@ namespace engine
 
 			for (int32_t resource_access_type_i = 0; resource_access_type_i < 3ull; ++resource_access_type_i)
 			{
-
+				RenderGraphResourceAccess resource_access{ static_cast<RenderGraphResourceAccess>(resource_access_type_i) };
+				auto& per_pass_access = per_pass_resouce_access[pass_index][resource_access_type_i];
 			}
 
 			// TODO: update attachments for render pass
@@ -348,6 +419,66 @@ namespace engine
 					//if (!pass->CanExecute())
 					//	return;
 
+					// Temporary code
+					if (pass->GetPassType() == ShaderPassType::eGraphics)
+					{
+						auto& swapchain = render_context->GetSwapchain();
+
+						uint32_t width, height;
+						swapchain.GetSurfaceExtent(width, height);
+
+						auto* graphics_pass = static_cast<RenderPass*>(pass.get());
+						graphics_pass->SetRenderResolution(width, height);
+
+						auto& pass_resources = per_pass_resource_bindings[pass_node->pass_index];
+
+						// I think that this part can be semi-static.
+						for (auto& attachment : pass_resources.attachments[utl::enum_cast(RenderGraphResourceAccess::eWrite)])
+						{
+							gfx::Attachment gfx_attachment{};
+
+							auto& render_resource = graph_resources[attachment.render_resource_id];
+
+							if (render_resource.resource_id == ~0u)
+							{
+								gfx_attachment.texture = &render_context->GetBackbuffer();
+							}
+							else
+							{
+								auto& render_target = render_targets.Get(render_resource.resource_id);
+								gfx_attachment.texture = render_target.texture;
+							}
+
+							gfx_attachment.clear_color = attachment.clear_color;
+							graphics_pass->AddColorAttachment(gfx_attachment);
+						}
+
+						// Also don't forget about depth and stencil
+						if (pass_resources.depth_attachment.render_resource_id != ~0u)
+						{
+							gfx::Attachment gfx_attachment{};
+
+							auto& render_resource = graph_resources[pass_resources.depth_attachment.render_resource_id];
+							auto& render_target = render_targets.Get(render_resource.resource_id);
+
+							gfx_attachment.texture = render_target.texture;
+							gfx_attachment.clear_color = pass_resources.depth_attachment.clear_color;
+							graphics_pass->SetDepthAttachment(gfx_attachment);
+						}
+
+						if (pass_resources.stencil_attachment.render_resource_id != ~0u)
+						{
+							gfx::Attachment gfx_attachment{};
+
+							auto& render_resource = graph_resources[pass_resources.stencil_attachment.render_resource_id];
+							auto& render_target = render_targets.Get(render_resource.resource_id);
+
+							gfx_attachment.texture = render_target.texture;
+							gfx_attachment.clear_color = pass_resources.stencil_attachment.clear_color;
+							graphics_pass->SetStencilAttachment(gfx_attachment);
+						}
+					}
+
 					EvaluateShaderPass(pass_node->pass_index);
 					pass->Execute(delta_time);
 				} break;
@@ -367,7 +498,8 @@ namespace engine
 
 			// Create shader passes
 			RenderShaderPassCreateInfo create_info{};
-			create_info.shader_name = "testing:screenspace";
+			create_info.shader_name = "testing:draw_uv";
+			create_info.AddWriteResource(backbuffer_resource, { 1.f, 0.5f, 1.f, 1.f });
 
 			uint32_t test_shader_pass = AddShaderPass(create_info);
 		}

@@ -118,7 +118,7 @@ namespace engine
 		class ResourceContainer final
 		{
 		public:
-			Handle Add(_Ty&& object)
+			uint32_t Add(_Ty&& object)
 			{
 				static std::atomic<uint32_t> uid{ 0u };
 
@@ -129,7 +129,7 @@ namespace engine
 
 					objects[current_id] = std::move(object);
 
-					return Handle{ current_id };
+					return current_id;
 				}
 
 				uint32_t current_id = uid.load(std::memory_order_relaxed);
@@ -137,23 +137,23 @@ namespace engine
 
 				objects.emplace_back(std::move(object));
 
-				return Handle{ current_id };
+				return current_id;
 			}
 
-			void Remove(Handle id)
+			void Remove(uint32_t id)
 			{
 				free_ids.push(id);
 				objects[id] = nullptr;
 			}
 
-			const _Ty& Get(Handle id) const
+			const _Ty& Get(uint32_t id) const
 			{
-				return objects[static_cast<Handle::ValueType>(id)];
+				return objects[id];
 			}
 
-			_Ty& Get(Handle id)
+			_Ty& Get(uint32_t id)
 			{
-				return objects[static_cast<Handle::ValueType>(id)];
+				return objects[id];
 			}
 
 			std::vector<_Ty>& data()
@@ -161,7 +161,7 @@ namespace engine
 				return objects;
 			}
 		private:
-			std::queue<Handle::ValueType> free_ids{};
+			std::queue<uint32_t> free_ids{};
 			std::vector<_Ty> objects{};
 		};
 	}

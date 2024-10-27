@@ -51,16 +51,14 @@ namespace engine
 			gfx::ResourceContext& GetResourceContext();
 			gfx::ResourceContext const& GetResourceContext() const;
 
-			Handle LoadTexture(const std::string& path, gfx::Sampler* sampler = nullptr);
-			Handle CreateTexture(const gfx::TextureCreateInfo& create_info, gfx::Sampler* sampler = nullptr);
-			void DestroyTexture(Handle handle);
-
 			gfx::Sampler* GetOrCreateSampler(const gfx::SamplerCreateInfo& create_info);
 		private:
 			RenderGraphNodeHeader* AllocateStaticConditionNode();
 			RenderGraphNodeHeader* AllocateDynamicConditionNode();
 			RenderGraphNodeHeader* AllocateGroupNode();
 			RenderGraphNodeHeader* AllocatePassNode();
+
+			void CollectRencerResouces(uint32_t pass_index, const ShaderPassCreateInfo& pass_ci);
 
 			void DestroyRenderGraph();
 			void DestoyRenderGraphNode(RenderGraphNodeHeader* node);
@@ -107,6 +105,7 @@ namespace engine
 			// Render graph resources
 			std::vector<std::unique_ptr<ShaderPass>> shader_passes{};
 			std::vector<RenderGraphPassResourceAccess> per_pass_resouce_access{};
+			std::vector<ResourceBindings> per_pass_resource_bindings{};
 
 			uint32_t backbuffer_resource{ ~0u };
 			std::vector<RenderGraphResource> graph_resources{};

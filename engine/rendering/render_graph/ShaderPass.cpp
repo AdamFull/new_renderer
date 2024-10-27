@@ -63,13 +63,20 @@ namespace engine
 			auto& command_list = execution_context->GetCurrentCommandList();
 			command_list.BeginMarker(pass_label.c_str(), 0xFFFF11FF);
 
+			// Reset performance counter
 			timestamp_query->Reset(0u);
 			command_list.BeginQuery(timestamp_query, 0u);
+
+			// Bind pipeline
+			command_list.BindPipeline(pipeline);
 
 			_Execute(command_list, delta_time);
 
 			command_list.EndQuery(timestamp_query, 1u);
 			command_list.EndMarker();
+
+			// Reset resource bindings (idk, may be don't needed in future)
+			resource_bindings.clear();
 		}
 
 		UniformHandle& ShaderPass::GetUniformBlock(uint32_t name_hash)
@@ -113,10 +120,10 @@ namespace engine
 			return *constant_block;
 		}
 
-		void ShaderPass::BindRenderResource(const RenderResourceBinding& resource_binding)
+		void ShaderPass::BindResource(const ShaderResourceBinding& resource_binding)
 		{
 			auto& reflection = shader->GetReflection();
-
+			// TODO: may be cache resource dst from recursion for lookup only one time
 			// Check that we have this binding point
 			auto found = std::find_if(reflection.shader_resources.Begin(), reflection.shader_resources.End(), [&resource_binding](const gfx::ShaderResource& resource) { return resource.name_hash == resource_binding.binding_point; });
 			if (found == reflection.shader_resources.End())

@@ -269,6 +269,11 @@ namespace engine
 			return *current_command_list;
 		}
 
+		gfx::Texture& RenderContext::GetBackbuffer()
+		{
+			return *GetCurrentFrame().backbuffer;
+		}
+
 		const uint32_t& RenderContext::GetCurrentFrameIndex() const
 		{
 			return current_frame_index;

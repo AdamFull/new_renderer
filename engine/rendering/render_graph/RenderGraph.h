@@ -54,14 +54,7 @@ namespace engine
 			eReadAndWrite
 		};
 
-		struct RenderGraphResourceBinding
-		{
-			RenderResourceGroupFlag resource_group{};
-			// Id of render graph resource
-			uint32_t render_resource_id{ ~0u };
-		};
-
-		using RenderGraphPassResourceAccess = std::array<std::vector<RenderGraphResourceBinding>, 3ull>;
+		using RenderGraphPassResourceAccess = std::array<std::vector<uint32_t>, 3ull>;
 
 		struct RenderGraphResource
 		{
@@ -72,23 +65,56 @@ namespace engine
 			std::array<std::unordered_set<uint32_t>, 3ull> usages{};
 		};
 
+		// Describes resource binding. For example binding of texture with concrete mip level, or writable/readable buffer.
+		struct RenderResourceBinding
+		{
+			// In this case it's resource name hash from reflection
+			uint32_t bind_point{};
+
+			// Index of render resource
+			uint32_t render_resource_id{ ~0u };
+
+			// Subresource binding if needed
+			uint32_t subresource_index{ ~0u };
+		};
+
+		// Describes out attachment like color or depth/stencil attachment
+		struct RenderResourceAttachment
+		{
+			// Index of render resource
+			uint32_t render_resource_id{ ~0u };
+
+			// Render resource clear color
+			gfx::ClearColor clear_color{};
+		};
+
+		struct ResourceBindings
+		{
+			std::array<std::vector<RenderResourceBinding>, 3ull> bindings{};
+			std::array<std::vector<RenderResourceAttachment>, 3ull> attachments{};
+
+			RenderResourceAttachment depth_attachment{};
+			RenderResourceAttachment stencil_attachment{};
+		};
+
 		struct ShaderPassCreateInfo
 		{
 			std::string shader_name{};
 
-			RenderGraphPassResourceAccess shader_bindings{};
+			// Some explanation 3 is means 3 variant of access: read(0), write(1), both(2).
+			std::array<std::vector<RenderResourceBinding>, 3ull> resource_bindings{};
 
-			//void BindWriteResource(uint32_t binding_point, RenderGraphResourceBinding resource_binding) {  }
-			//
-			//void BindWriteResource(const std::string& binding_point, const std::string& resource_name) { resourceBindings[ERenderResourceAccessFlagBits::eWrite].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, ~0u }); }
-			//void BindWriteResource(const std::string& binding_point, const std::string& resource_name, u32 subresource) { resourceBindings[ERenderResourceAccessFlagBits::eWrite].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, subresource }); }
-			//void BindReadResource(const std::string& binding_point, const std::string& resource_name) { resourceBindings[ERenderResourceAccessFlagBits::eRead].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, ~0u }); }
-			//void BindReadResource(const std::string& binding_point, const std::string& resource_name, u32 subresource) { resourceBindings[ERenderResourceAccessFlagBits::eRead].emplace(binding_point, FRenderConfigResourceBindingDescription{ resource_name, subresource }); }
-			//void AddWriteResource(const std::string& resource_name, const glm::vec4 clear_color = glm::vec4(0.f, 0.f, 0.f, 1.f)) { otherResources[ERenderResourceAccessFlagBits::eWrite].emplace_back(std::make_pair(resource_name, clear_color)); }
-			//void AddReadResource(const std::string& resource_name) { otherResources[ERenderResourceAccessFlagBits::eRead].emplace_back(resource_name, glm::vec4(0.f, 0.f, 0.f, 1.f)); }
-			//
-			//void BindIndirectArgumentBuffer(const std::string& resource_name, u64 offset) { argumentBuffer = resource_name; argumentOffset = offset; }
-			//void BindIndirectCountBuffer(const std::string& resource_name, u64 offset) { countBuffer = resource_name; countOffset = offset; }
+			// This one is for attachments
+			std::array<std::vector<RenderResourceAttachment>, 3ull> resource_attachments{};
+
+			void BindWriteResource(uint32_t binding_point, uint32_t render_resource_id) { resource_bindings[utl::enum_cast(RenderGraphResourceAccess::eWrite)].emplace_back(binding_point, render_resource_id, ~0u); }
+			void BindWriteResource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource) { resource_bindings[utl::enum_cast(RenderGraphResourceAccess::eWrite)].emplace_back(binding_point, render_resource_id, subresource); }
+			
+			void BindReadResource(uint32_t binding_point, uint32_t render_resource_id) { resource_bindings[utl::enum_cast(RenderGraphResourceAccess::eRead)].emplace_back(binding_point, render_resource_id, ~0u); }
+			void BindReadResource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource) { resource_bindings[utl::enum_cast(RenderGraphResourceAccess::eRead)].emplace_back(binding_point, render_resource_id, subresource); }
+
+			void AddWriteResource(uint32_t render_resource_id, std::array<float, 4ull> clear_color = {}) { resource_attachments[utl::enum_cast(RenderGraphResourceAccess::eWrite)].emplace_back(render_resource_id, gfx::ClearColor(std::move(clear_color))); }
+			void AddReadResource(uint32_t render_resource_id) { resource_attachments[utl::enum_cast(RenderGraphResourceAccess::eRead)].emplace_back(render_resource_id, gfx::ClearColor{}); }
 		};
 
 
@@ -99,8 +125,11 @@ namespace engine
 
 		struct RenderShaderPassCreateInfo : ShaderPassCreateInfo
 		{
-			std::array<gfx::Attachment, 8ull> color_attachments{};
-			uint32_t color_attachment_count{};
+			RenderResourceAttachment depth_attachment{};
+			RenderResourceAttachment stencil_attachment{};
+
+			void SetDepthAttahment(uint32_t render_resource_id, float depth) { depth_attachment = { render_resource_id, gfx::ClearColor(depth) }; }
+			void SetDepthAttahment(uint32_t render_resource_id, uint32_t stencil) { stencil_attachment = { render_resource_id, gfx::ClearColor(stencil) }; }
 		};
 
 		// Base render graph impl

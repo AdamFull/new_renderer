@@ -14,6 +14,12 @@ namespace engine
 
 	namespace render
 	{
+		enum class ShaderPassType
+		{
+			eCompute,
+			eGraphics
+		};
+
 		struct PassCreateInfo
 		{
 			gfx::Shader* shader{ nullptr };
@@ -30,7 +36,7 @@ namespace engine
 			gfx::PipelineState state{};
 		};
 
-		struct RenderResourceBinding
+		struct ShaderResourceBinding
 		{
 			uint32_t binding_point{ ~0u };
 			uint32_t subresource{ ~0u };
@@ -143,7 +149,9 @@ namespace engine
 
 			UniformHandle GetConstantBlock();
 
-			void BindRenderResource(const RenderResourceBinding& resource_binding);
+			void BindResource(const ShaderResourceBinding& resource_binding);
+
+			virtual ShaderPassType GetPassType() = 0;
 		protected:
 			void PushConstantRanges(gfx::CommandList& command_list);
 			void CollectProfileData();
@@ -165,7 +173,7 @@ namespace engine
 			gfx::QueryPool* timestamp_query{ nullptr };
 			uint64_t execution_time{ 0ull };
 
-			std::vector<RenderResourceBinding> resource_bindings{};
+			std::vector<ShaderResourceBinding> resource_bindings{};
 		};
 	}
 }

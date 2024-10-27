@@ -61,6 +61,8 @@ namespace engine
 			gfx::BufferSuballocation RequestUniformBlock(uint64_t block_size) override;
 			gfx::CommandList& GetCurrentCommandList() override;
 
+			gfx::Texture& GetBackbuffer();
+
 			const uint32_t& GetCurrentFrameIndex() const;
 
 			gfx::Swapchain& GetSwapchain() const;

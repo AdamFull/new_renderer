@@ -10,6 +10,13 @@
 			];
 		},
 		{
+			name: "draw_uv";
+			sources: [
+				"screenspace_vert",
+				"draw_uv_frag"
+			];
+		},
+		{
 			name: "imgui";
 			sources: [
 				"imgui_vert",
@@ -28,6 +35,10 @@
 	compile: [
 		{ 
 			shader_name: "screenspace";
+			pattern: "default_pattern";
+		},
+		{ 
+			shader_name: "draw_uv";
 			pattern: "default_pattern";
 		},
 		{ 

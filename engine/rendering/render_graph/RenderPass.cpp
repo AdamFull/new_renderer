@@ -18,9 +18,51 @@ namespace engine
 			pipeline = context.CreatePipeline(pipeline_ci);
 		}
 
+		void RenderPass::SetRenderResolution(uint32_t width, uint32_t height)
+		{
+			rendering_info.width = width;
+			rendering_info.height = height;
+		}
+
+		void RenderPass::AddColorAttachment(gfx::Attachment attachment)
+		{
+			rendering_info.attachments[rendering_info.attachment_count++] = attachment;
+		}
+
+		void RenderPass::SetDepthStencilAttachment(gfx::Attachment attachment)
+		{
+			rendering_info.depth_attachment = attachment;
+			rendering_info.stencil_attachment = attachment;
+		}
+
+		void RenderPass::SetDepthAttachment(gfx::Attachment attachment)
+		{
+			rendering_info.depth_attachment = attachment;
+		}
+
+		void RenderPass::SetStencilAttachment(gfx::Attachment attachment)
+		{
+			rendering_info.stencil_attachment = attachment;
+		}
+
+		ShaderPassType RenderPass::GetPassType()
+		{
+			return ShaderPassType::eGraphics;
+		}
+
 		void RenderPass::_Execute(gfx::CommandList& command_list, float delta_time)
 		{
+			command_list.BeginRendering(rendering_info);
 
+			command_list.SetViewport(0.f, 0.f, rendering_info.width, rendering_info.height, 0.f, 1.f);
+			command_list.SerScissor(0u, 0u, rendering_info.width, rendering_info.height);
+
+			command_list.Draw(3u, 0u, 0u, 0u);
+
+			command_list.EndRendering();
+
+			// Clear rendering info
+			rendering_info.attachment_count = 0;
 		}
 	}
 }

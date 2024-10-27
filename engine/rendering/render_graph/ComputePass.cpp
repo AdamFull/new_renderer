@@ -21,5 +21,10 @@ namespace engine
 		{
 
 		}
+
+		ShaderPassType ComputePass::GetPassType()
+		{
+			return ShaderPassType::eCompute;
+		}
 	}
 }

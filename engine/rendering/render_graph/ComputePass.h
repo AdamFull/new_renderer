@@ -12,6 +12,8 @@ namespace engine
 			ComputePass(gfx::Context& context, const ComputePassCreateInfo& create_info);
 			~ComputePass() = default;
 
+			ShaderPassType GetPassType() override;
+
 		protected:
 			void _Execute(gfx::CommandList& command_list, float delta_time) override;
 		};
