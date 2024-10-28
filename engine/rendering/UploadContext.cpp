@@ -185,6 +185,7 @@ namespace engine
 				// Create staging buffer for uploading
 				auto& src_buffer = upload_frame.RequestStagingBuffer(kTexture->dataSize);
 				src_buffer.Update(kTexture->pData, kTexture->dataSize);
+				copy_texture.src_buffer = &src_buffer;
 				
 				// Collect image copy regions
 				auto num_layers = kTexture->isCubemap ? kTexture->numFaces : kTexture->numLayers;
@@ -232,6 +233,7 @@ namespace engine
 				// Create staging buffer for uploading
 				auto& src_buffer = upload_frame.RequestStagingBuffer(kTexture->dataSize);
 				src_buffer.Update(kTexture->pData, kTexture->dataSize);
+				copy_texture.src_buffer = &src_buffer;
 
 				// Collect image copy regions
 				auto num_layers = kTexture->isCubemap ? kTexture->numFaces : kTexture->numLayers;
@@ -245,7 +247,7 @@ namespace engine
 						region.layer_count = kTexture->numLayers;
 
 						region.size_x = create_info.width >> level;
-						region.size_z = create_info.height >> level;
+						region.size_y = create_info.height >> level;
 
 						ktxresult = ktxTexture_GetImageOffset((ktxTexture*)kTexture, level, 0, layer, &region.buffer_offset);
 					}

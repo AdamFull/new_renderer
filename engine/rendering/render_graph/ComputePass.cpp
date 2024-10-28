@@ -7,7 +7,7 @@ namespace engine
 	namespace render
 	{
 		ComputePass::ComputePass(gfx::Context& context, const ComputePassCreateInfo& create_info) :
-			ShaderPass{ context, create_info.shader }
+			ShaderPass{ context, create_info }
 		{
 			gfx::ComputePipelineCreateInfo pipeline_ci{};
 			pipeline_ci.shader = shader;

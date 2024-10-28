@@ -110,7 +110,11 @@ namespace engine
 
 		struct ShaderPassCreateInfo
 		{
+			// Shader name in shader cache
 			std::string shader_name{};
+
+			// Means that this pass will be executed only one time
+			bool one_time{ false };
 
 			// Some explanation 3 is means 3 variant of access: read(0), write(1), both(2).
 			std::array<std::vector<RenderResourceBinding>, 3ull> resource_bindings{};
@@ -130,7 +134,11 @@ namespace engine
 
 		struct ComputeShaderPassCreateInfo : ShaderPassCreateInfo
 		{
-			
+			bool divide_by_local_sizes{ false };
+
+			uint32_t size_by_buffer{ ~0u };
+			uint32_t size_by_texture{ ~0u };
+			uint32_t subresource_index{ ~0u };
 		};
 
 		struct RenderShaderPassCreateInfo : ShaderPassCreateInfo

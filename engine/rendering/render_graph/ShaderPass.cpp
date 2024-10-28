@@ -9,9 +9,11 @@ namespace engine
 {
 	namespace render
 	{
-		ShaderPass::ShaderPass(gfx::Context& context, gfx::Shader* shader) :
+		ShaderPass::ShaderPass(gfx::Context& context, const PassCreateInfo& create_info) :
 			context{ context },
-			shader{ shader }
+			shader{ create_info.shader },
+			debug_name{ create_info.debug_name },
+			one_time{ create_info.one_time }
 		{
 			auto& reflection = shader->GetReflection();
 
@@ -65,7 +67,7 @@ namespace engine
 			CollectProfileData();
 
 			auto& command_list = execution_context->GetCurrentCommandList();
-			command_list.BeginMarker(pass_label.c_str(), 0xFFFF11FF);
+			command_list.BeginMarker(debug_name.c_str(), 0xFFFF11FF);
 
 			// Reset performance counter
 			//timestamp_query->Reset(0u);
@@ -79,6 +81,11 @@ namespace engine
 
 			command_list.EndQuery(timestamp_query, 1u);
 			command_list.EndMarker();
+
+			if (one_time)
+			{
+				can_execute = false;
+			}
 
 			// Reset resource bindings (idk, may be don't needed in future)
 			resource_bindings.clear();
@@ -141,6 +148,11 @@ namespace engine
 			}
 
 			resource_bindings.push_back(resource_binding);
+		}
+
+		bool ShaderPass::CanExecute() const
+		{
+			return can_execute;
 		}
 	}
 }

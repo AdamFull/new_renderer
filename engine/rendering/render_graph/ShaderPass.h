@@ -25,6 +25,9 @@ namespace engine
 		{
 			gfx::Shader* shader{ nullptr };
 			gfx::PipelineCache* pipeline_cache{ nullptr };
+
+			std::string debug_name{};
+			bool one_time{ false };
 		};
 
 		struct ComputePassCreateInfo : PassCreateInfo
@@ -138,7 +141,7 @@ namespace engine
 		class ShaderPass
 		{
 		public:
-			ShaderPass(gfx::Context& context, gfx::Shader* shader);
+			ShaderPass(gfx::Context& context, const PassCreateInfo& create_info);
 			virtual ~ShaderPass();
 
 			void SetExecutionContext(ExecutionContext* exec_context);
@@ -153,6 +156,8 @@ namespace engine
 			void BindResource(const ShaderResourceBinding& resource_binding);
 
 			virtual ShaderPassType GetPassType() = 0;
+
+			bool CanExecute() const;
 		protected:
 			void PushConstantRanges(gfx::CommandList& command_list);
 			void CollectProfileData();
@@ -160,7 +165,9 @@ namespace engine
 		protected:
 			gfx::Context& context;
 
-			std::string pass_label{};
+			std::string debug_name{};
+			bool one_time{ false };
+			bool can_execute{ true };
 
 			ExecutionContext* execution_context{ nullptr };
 

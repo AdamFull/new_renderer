@@ -129,7 +129,7 @@ namespace engine
 				new_resource.resource_type = RenderResourceTypeFlag::eStaticImage;
 
 			gfx::Texture* texture = gfx_context->CreateTexture(create_info);
-			if (create_info.usage & gfx::TextureUsageFlag::eRenderTarget)
+			if ((create_info.usage & gfx::TextureUsageFlag::eRenderTarget) || (create_info.usage & gfx::TextureUsageFlag::eStorage))
 			{
 				new_resource.resource_id = render_targets.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
 			}
@@ -167,6 +167,7 @@ namespace engine
 			CollectRencerResouces(pass_index, create_info);
 
 			ComputePassCreateInfo pass_ci{};
+			pass_ci.debug_name = create_info.shader_name;
 			pass_ci.shader = resource_context->LoadShader(create_info.shader_name);
 
 			auto& new_pass = shader_passes.emplace_back(std::make_unique<ComputePass>(*gfx_context, pass_ci));
@@ -187,6 +188,7 @@ namespace engine
 			CollectRencerResouces(pass_index, create_info);
 
 			RenderPassCreateInfo pass_ci{};
+			pass_ci.debug_name = create_info.shader_name;
 			pass_ci.shader = resource_context->LoadShader(create_info.shader_name);
 			pass_ci.state.primitive_topology = gfx::PrimitiveTopology::eTriangleList;
 			//pass_ci.state.rasterization_state.front_face = gfx::FrontFace::eCW;
@@ -841,9 +843,9 @@ namespace engine
 					auto* pass_node = CastRenderGraphNode<RenderGraphPassNode>(node);
 
 					auto& pass = shader_passes[pass_node->pass_index];
-					// TODO: Add can execute condition
-					//if (!pass->CanExecute())
-					//	return;
+
+					if (!pass->CanExecute())
+						return;
 
 					// Temporary code
 					if (pass->GetPassType() == ShaderPassType::eGraphics)
@@ -873,6 +875,83 @@ namespace engine
 
 			auto& backbuffer_resource_binding = graph_resources.emplace_back();
 			backbuffer_resource_binding.resource_type = RenderResourceTypeFlag::eBackbuffer;
+
+			// Create default samplers
+
+			gfx::Sampler* nearest_sampler{ nullptr };
+			{
+				gfx::SamplerCreateInfo create_info{};
+				create_info.min_filter = gfx::Filter::eNearest;
+				create_info.mag_filter = gfx::Filter::eNearest;
+				create_info.mip_map_mode = gfx::Filter::eNearest;
+
+				nearest_sampler = GetOrCreateSampler(create_info);
+			}
+
+			gfx::Sampler* linear_sampler{ nullptr };
+			{
+				gfx::SamplerCreateInfo create_info{};
+				create_info.min_filter = gfx::Filter::eLinear;
+				create_info.mag_filter = gfx::Filter::eLinear;
+				create_info.mip_map_mode = gfx::Filter::eLinear;
+
+				linear_sampler = GetOrCreateSampler(create_info);
+			}
+
+			// Load some static textures
+			auto casual_day_4k_cube = AddTextureResource("/root/embed/rendering/textures/CasualDay4K.ktx2");
+			auto dirt_mask_texture = AddTextureResource("/root/embed/rendering/textures/DirtMaskTextureExample.png");
+
+			// GI targets
+			uint32_t brdf_lut_target{ ~0u };
+			{
+				// TODO: make it fixed size
+				gfx::TextureCreateInfo create_info{};
+				create_info.width = create_info.height = 1024u;
+				create_info.format = gfx::Format::eR16G16Sfloat;
+				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage;
+
+				brdf_lut_target = AddTextureResource(create_info, nearest_sampler);
+			}
+
+			uint32_t irradiance_cube_target{ ~0u };
+			{
+				gfx::TextureCreateInfo create_info{};
+				create_info.width = create_info.height = 64u;
+				create_info.format = gfx::Format::eR16G16Sfloat;
+				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage | gfx::TextureUsageFlag::eCubemap;
+
+				irradiance_cube_target = AddTextureResource(create_info, linear_sampler);
+			}
+
+			uint32_t prefiltered_cube_target{ ~0u };
+			{
+				gfx::TextureCreateInfo create_info{};
+				create_info.width = create_info.height = 512u;
+				create_info.format = gfx::Format::eR16G16B16A16Sfloat;
+				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage | gfx::TextureUsageFlag::eCubemap;
+				create_info.levels = static_cast<uint32_t>(std::floor(std::log2((std::max)(create_info.width, create_info.height)))) + 1u;
+
+				prefiltered_cube_target = AddTextureResource(create_info, linear_sampler);
+			}
+
+			// Passes
+
+
+			{
+				ComputeShaderPassCreateInfo create_info{};
+				create_info.shader_name = "lighting:brgflut_generator";
+				create_info.one_time = true;
+				create_info.divide_by_local_sizes = true;
+				create_info.size_by_texture = brdf_lut_target;
+				create_info.BindWriteResource(utl::murmur_hash("out_color"), brdf_lut_target);
+
+				//auto* new_node = AllocatePassNode();
+				//auto* pass_node = CastRenderGraphNode<RenderGraphPassNode>(new_node);
+				//pass_node->pass_index = AddShaderPass(create_info);
+				//
+				//render_graph.push_back(new_node);
+			}
 
 			// Create shader passes
 			RenderShaderPassCreateInfo create_info{};
