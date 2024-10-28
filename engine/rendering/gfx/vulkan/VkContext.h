@@ -62,7 +62,7 @@ namespace engine
 				void WaitForFences(uint32_t fence_count, Fence** fences, uint64_t timeout = std::numeric_limits<uint64_t>::max()) override;
 
 				void RequestMinimalBufferAlignment(BufferUsageFlags usage, uint64_t& alignment) override;
-				void RequestTimestampFrequency(double* frequency) override;
+				void RequestTimestampFrequency(float* frequency) override;
 				void RequestMemoryUsage(uint64_t* total_memory, uint64_t* used_memory) override;
 
 				void SetResourceName(GFXResource* resource_handle, const char* name) override;

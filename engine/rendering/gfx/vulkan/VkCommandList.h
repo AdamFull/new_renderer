@@ -50,7 +50,7 @@ namespace engine
 				void DrawIndexed(uint32_t index_count, uint32_t first_index, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance) override;
 				void DrawIndirect(const IndirectDrawCommand& draw_command) override;
 
-				void WriteTimestamp(QueryPool* query_pool, uint32_t pool_index, StageFlag stage_flag) override;
+				//void WriteTimestamp(QueryPool* query_pool, uint32_t pool_index, StageFlag stage_flag) override;
 
 				void Dispatch(uint32_t group_x, uint32_t group_y, uint32_t group_z) override;
 				void DispatchIndirect(Buffer* argument_buffer, uint64_t argument_offset = 0ull) override;

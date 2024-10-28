@@ -27,6 +27,8 @@ namespace engine
 				void GetData(uint64_t first_query, uint32_t query_count, void* data) override;
 
 				uint32_t GetQueryCount() const;
+
+				vk::QueryType GetQueryType() const;
 			private:
 				Device& device;
 

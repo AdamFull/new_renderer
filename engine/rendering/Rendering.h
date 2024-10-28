@@ -88,7 +88,8 @@ namespace engine
 			std::unique_ptr<RenderContext> render_context{};
 
 			gfx::QueryPool* timestamp_query{ nullptr };
-			uint32_t query_index{ 0u };
+			float timestamp_frequency{ 0.f };
+			float gpu_delta_time{ 0.f };
 
 			utl::hash_map<uint32_t, gfx::Sampler*> sampler_cache{};
 			gfx::Sampler* default_sampler{ nullptr };

@@ -361,11 +361,11 @@ namespace engine
 				}
 			}
 
-			void VulkanContext::RequestTimestampFrequency(double* frequency)
+			void VulkanContext::RequestTimestampFrequency(float* frequency)
 			{
 				auto& physical = instance->GetBestDevice();
 				auto& properties = physical.GetProperties();
-				*frequency = static_cast<double>(properties.limits.timestampPeriod);
+				*frequency = properties.limits.timestampPeriod;
 			}
 
 			void VulkanContext::RequestMemoryUsage(uint64_t* total_memory, uint64_t* used_memory)

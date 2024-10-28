@@ -70,14 +70,14 @@ namespace engine
 			// Reset performance counter
 			//timestamp_query->Reset(0u);
 			command_list.ResetQuery(timestamp_query, 0u, 2u);
-			command_list.WriteTimestamp(timestamp_query, 0u, gfx::StageFlag::eTopOfPipe);
+			command_list.BeginQuery(timestamp_query, 0u);
 
 			// Bind pipeline
 			command_list.BindPipeline(pipeline);
 
 			_Execute(command_list, delta_time);
 
-			command_list.WriteTimestamp(timestamp_query, 1u, gfx::StageFlag::eBottomOfPipe);
+			command_list.EndQuery(timestamp_query, 1u);
 			command_list.EndMarker();
 
 			// Reset resource bindings (idk, may be don't needed in future)
@@ -119,7 +119,7 @@ namespace engine
 
 			execution_time = elapsed_time;
 
-			pass_delta_time = static_cast<double>(elapsed_time) * timestamp_frequency / 1000000000.0;
+			pass_delta_time = static_cast<float>(elapsed_time) * timestamp_frequency / 1000000000.f;
 		}
 
 		UniformHandle ShaderPass::GetConstantBlock()

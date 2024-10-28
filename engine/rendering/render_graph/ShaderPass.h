@@ -173,8 +173,8 @@ namespace engine
 
 			gfx::QueryPool* timestamp_query{ nullptr };
 			uint64_t execution_time{ 0ull };
-			double timestamp_frequency{ 0.0 };
-			double pass_delta_time{ 0.0 };
+			float timestamp_frequency{ 0.f };
+			float pass_delta_time{ 0.f };
 
 			std::vector<ShaderResourceBinding> resource_bindings{};
 		};

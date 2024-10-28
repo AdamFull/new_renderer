@@ -85,6 +85,11 @@ namespace engine
 			{
 				return max_query_count;
 			}
+
+			vk::QueryType VulkanQueryPool::GetQueryType() const
+			{
+				return query_type;
+			}
 		}
 	}
 }

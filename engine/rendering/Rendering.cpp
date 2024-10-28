@@ -75,8 +75,11 @@ namespace engine
 			// Create timestamp query for collecting pass info
 			gfx::QueryPoolCreateInfo query_pool_ci{};
 			query_pool_ci.type = gfx::QueryType::eTimestamp;
-			query_pool_ci.query_count = 256;
+			query_pool_ci.query_count = 2u;
 			timestamp_query = gfx_context->CreateQueryPool(query_pool_ci);
+			timestamp_query->Reset(0u);
+
+			gfx_context->RequestTimestampFrequency(&timestamp_frequency);
 
 			// Create default image sampler
 			gfx::SamplerCreateInfo sampler_ci{};
@@ -852,14 +855,19 @@ namespace engine
 				UpdateRenderTargets();
 			}
 
-			timestamp_query->Reset(0u);
-			query_index = 0u;
+			uint64_t timestamps[2] = {};
+			timestamp_query->GetData(0u, &timestamps[0]);
 
-			// Update texture array
-			for (auto& texture : textures.data())
+			uint64_t elapsed_time = timestamps[1] - timestamps[0];
+			if (timestamps[1] <= timestamps[0])
 			{
-				// TODO: update here
+				elapsed_time = 0ull;
 			}
+
+			gpu_delta_time = static_cast<float>(elapsed_time) * timestamp_frequency / 1000000000.f;
+
+			command_buffer.ResetQuery(timestamp_query, 0u, 2u);
+			command_buffer.BeginQuery(timestamp_query, 0u);
 		}
 
 		void Renderer::EndFrame()
@@ -868,6 +876,9 @@ namespace engine
 			//auto upload_avaliable = render_context->GetUploadAvaliableSemaphore();
 			//upload_wait_semaphore = upload_context->Submit(&upload_avaliable, upload_avaliable.semaphore ? 1 : 0);
 			upload_wait_semaphore = resource_context->Submit(nullptr, 0);
+
+			auto& command_list = render_context->GetCurrentCommandList();
+			command_list.EndQuery(timestamp_query, 1u);
 
 			render_context->EndFrame(upload_wait_semaphore);
 

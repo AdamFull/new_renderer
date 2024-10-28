@@ -169,11 +169,11 @@ namespace engine
 				}
 			}
 
-			void VulkanCommandList::WriteTimestamp(QueryPool* query_pool, uint32_t pool_index, StageFlag stage_flag)
-			{
-				auto* pool = static_cast<VulkanQueryPool*>(query_pool);
-				handle.writeTimestamp2KHR(StageFlagsToVk(stage_flag), pool->GetHandle(), pool_index);
-			}
+			//void VulkanCommandList::WriteTimestamp(QueryPool* query_pool, uint32_t pool_index, StageFlag stage_flag)
+			//{
+			//	auto* pool = static_cast<VulkanQueryPool*>(query_pool);
+			//	handle.writeTimestamp2KHR(StageFlagsToVk(stage_flag), pool->GetHandle(), pool_index);
+			//}
 
 			void VulkanCommandList::Dispatch(uint32_t group_x, uint32_t group_y, uint32_t group_z)
 			{
@@ -357,13 +357,45 @@ namespace engine
 			void VulkanCommandList::BeginQuery(QueryPool* query_pool, uint32_t query)
 			{
 				auto* vk_query_pool = static_cast<VulkanQueryPool*>(query_pool);
-				handle.beginQuery(vk_query_pool->GetHandle(), query, {});
+				
+				switch (vk_query_pool->GetQueryType())
+				{
+				case vk::QueryType::eTimestamp: 
+				{
+					handle.writeTimestamp2KHR(vk::PipelineStageFlagBits2KHR::eTopOfPipe, vk_query_pool->GetHandle(), query);
+				} break;
+				case vk::QueryType::eOcclusion:
+				case vk::QueryType::ePipelineStatistics:
+				{
+					handle.beginQuery(vk_query_pool->GetHandle(), query, {});
+				};
+				default:
+				{
+					assert(false && "UNSUPPORTED QUERY TYPE");
+				} break;
+				}
 			}
 
 			void VulkanCommandList::EndQuery(QueryPool* query_pool, uint32_t query)
 			{
 				auto* vk_query_pool = static_cast<VulkanQueryPool*>(query_pool);
-				handle.endQuery(vk_query_pool->GetHandle(), query);
+
+				switch (vk_query_pool->GetQueryType())
+				{
+				case vk::QueryType::eTimestamp:
+				{
+					handle.writeTimestamp2KHR(vk::PipelineStageFlagBits2KHR::eBottomOfPipe, vk_query_pool->GetHandle(), query);
+				} break;
+				case vk::QueryType::eOcclusion:
+				case vk::QueryType::ePipelineStatistics:
+				{
+					handle.endQuery(vk_query_pool->GetHandle(), query);
+				};
+				default:
+				{
+					assert(false && "UNSUPPORTED QUERY TYPE");
+				} break;
+				}
 			}
 
 			void VulkanCommandList::BeginRendering(const RenderingInfo& rendering_info)
