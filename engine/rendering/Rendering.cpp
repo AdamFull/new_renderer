@@ -607,7 +607,7 @@ namespace engine
 					shader_pass->BindResource(shader_resource_binding);
 				}
 
-				// For attachments
+				// For attachments (write only)
 				if (!pass_bindings.attachments[access_idx].empty())
 				{
 					auto* render_pass = static_cast<RenderPass*>(shader_pass.get());
@@ -662,13 +662,92 @@ namespace engine
 				}
 			}
 
+			if (pass_bindings.depth_attachment.render_resource_id != ~0u)
+			{
+				auto& resource_attachment = pass_bindings.depth_attachment;
+				auto& render_resource = graph_resources[resource_attachment.render_resource_id];
+
+				// Graph also should support work with subresources
+				auto resource_key = std::make_pair(resource_attachment.render_resource_id, 0u);
+
+				auto& last_resource_access = resource_access_map[resource_key];
+
+				gfx::AccessTypeFlag access_flag = gfx::AccessTypeFlag::eWrite;
+
+				bool is_write_after_write = ((last_resource_access.access & access_flag) && access_flag == gfx::AccessTypeFlag::eWrite);
+				bool is_change_pipeline_ownership = last_resource_access.pass_type == utl::enum_cast(shader_pass->GetPassType()) && is_write_after_write;
+
+				gfx::Attachment attachment{};
+				attachment.load_op = is_write_after_write ? gfx::LoadOp::eLoad : gfx::LoadOp::eClear;
+				attachment.store_op = !render_resource.usages[utl::enum_cast(RenderGraphResourceAccess::eRead)].empty() ? gfx::StoreOp::eStore : gfx::StoreOp::eDontCare;
+				attachment.clear_color = resource_attachment.clear_color;
+
+				auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
+				barrier.texture = GetTextureResource(render_resource);
+				barrier.src_access = GetCurrentTextureLayout(render_resource);
+
+				auto final_layout = GetFinalTextureLayout(render_resource);
+				auto intermediate_layout = GetIntermediateTextureLayout(render_resource);
+
+				if (last_resource_access.access == 0)
+					barrier.dst_access = access_flag == gfx::AccessTypeFlag::eRead ? final_layout : intermediate_layout;
+				else if (access_flag != gfx::AccessTypeFlag::eWrite && IsROAccessOnlyRemain(render_resource, pass_index))
+					barrier.dst_access = final_layout;
+				else if (is_change_pipeline_ownership)
+					barrier.dst_access = intermediate_layout;
+
+				UpdateTextureLayout(render_resource, barrier.dst_access);
+
+				attachment.texture = barrier.texture;
+
+				auto* render_pass = static_cast<RenderPass*>(shader_pass.get());
+				render_pass->SetDepthAttachment(attachment);
+			}
+
+			if (pass_bindings.stencil_attachment.render_resource_id != ~0u)
+			{
+				auto& resource_attachment = pass_bindings.stencil_attachment;
+				auto& render_resource = graph_resources[resource_attachment.render_resource_id];
+
+				// Graph also should support work with subresources
+				auto resource_key = std::make_pair(resource_attachment.render_resource_id, 0u);
+
+				auto& last_resource_access = resource_access_map[resource_key];
+
+				gfx::AccessTypeFlag access_flag = gfx::AccessTypeFlag::eWrite;
+
+				bool is_write_after_write = ((last_resource_access.access & access_flag) && access_flag == gfx::AccessTypeFlag::eWrite);
+				bool is_change_pipeline_ownership = last_resource_access.pass_type == utl::enum_cast(shader_pass->GetPassType()) && is_write_after_write;
+
+				gfx::Attachment attachment{};
+				attachment.load_op = is_write_after_write ? gfx::LoadOp::eLoad : gfx::LoadOp::eClear;
+				attachment.store_op = !render_resource.usages[utl::enum_cast(RenderGraphResourceAccess::eRead)].empty() ? gfx::StoreOp::eStore : gfx::StoreOp::eDontCare;
+				attachment.clear_color = resource_attachment.clear_color;
+
+				auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
+				barrier.texture = GetTextureResource(render_resource);
+				barrier.src_access = GetCurrentTextureLayout(render_resource);
+
+				auto final_layout = GetFinalTextureLayout(render_resource);
+				auto intermediate_layout = GetIntermediateTextureLayout(render_resource);
+
+				if (last_resource_access.access == 0)
+					barrier.dst_access = access_flag == gfx::AccessTypeFlag::eRead ? final_layout : intermediate_layout;
+				else if (access_flag != gfx::AccessTypeFlag::eWrite && IsROAccessOnlyRemain(render_resource, pass_index))
+					barrier.dst_access = final_layout;
+				else if (is_change_pipeline_ownership)
+					barrier.dst_access = intermediate_layout;
+
+				UpdateTextureLayout(render_resource, barrier.dst_access);
+
+				attachment.texture = barrier.texture;
+
+				auto* render_pass = static_cast<RenderPass*>(shader_pass.get());
+				render_pass->SetStencilAttachment(attachment);
+			}
+
 			auto& command_list = render_context->GetCurrentCommandList();
 			command_list.ResourceBarrier(resource_barriers);
-
-			// Don't formet about depth/stencil
-
-			// TODO: update attachments for render pass
-			// TODO: execute barriers
 		}
 
 		void Renderer::EvaluateRenderGraph(float delta_time)
