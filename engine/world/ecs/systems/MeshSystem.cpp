@@ -21,19 +21,19 @@ void prepare_meshes_to_draw(const std::unique_ptr<IRenderWorld>& render_world, c
 	utl::vector<FMesh> meshes{};
 	for (const auto& primitive : primitives)
 	{
-		const auto& material = render_world->GetMaterial(primitive.materialId);
+		const auto& material = render_world->GetMaterial(primitive.material);
 		if (material.alphaMode != alpha_mode)
 			continue;
 
 		auto& draw_command = draw_commands.emplace_back();
-		draw_command.vboID = primitive.vboId.Get();
+		//draw_command.vboID = primitive.vboId.Get();
 		draw_command.meshID = world_stats.meshCount + meshes.size();
 		draw_command.nodeID = node;
 
 		auto& mesh = meshes.emplace_back();
-		mesh.materialID = primitive.materialId;
-		mesh.lodOffset = primitive.vertexRange.firstLod;
-		mesh.lodCount = primitive.vertexRange.lodCount;
+		mesh.materialID = primitive.material;
+		//mesh.lodOffset = primitive.vertexRange.firstLod;
+		//mesh.lodCount = primitive.vertexRange.lodCount;
 		mesh.bounds.min = primitive.dims.min;
 		mesh.bounds.max = primitive.dims.max;
 	}
@@ -65,7 +65,7 @@ void prepare_draw_commands(const std::unique_ptr<IRenderWorld>& render_world, ut
 
 		for (const auto& primitive : mesh_component.primitives)
 		{
-			const auto& material = render_world->GetMaterial(primitive.materialId);
+			const auto& material = render_world->GetMaterial(primitive.material);
 			if (material.alphaMode != alpha_mode)
 				continue;
 

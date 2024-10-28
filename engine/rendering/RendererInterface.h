@@ -21,7 +21,7 @@ namespace engine
 			virtual gfx::Sampler* GetOrCreateSampler(const gfx::SamplerCreateInfo& create_info) = 0;
 
 			virtual GeometryBuffer& RequestInterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) = 0;
-			virtual GeometryBuffer& RequestDenterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) = 0;
+			virtual GeometryBuffer& RequestDeinterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) = 0;
 		};
 	}
 }

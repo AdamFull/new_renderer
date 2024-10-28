@@ -54,7 +54,7 @@ namespace engine
 			gfx::Sampler* GetOrCreateSampler(const gfx::SamplerCreateInfo& create_info) override;
 
 			GeometryBuffer& RequestInterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) override;
-			GeometryBuffer& RequestDenterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) override;
+			GeometryBuffer& RequestDeinterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) override;
 		private:
 			RenderGraphNodeHeader* AllocateStaticConditionNode();
 			RenderGraphNodeHeader* AllocateDynamicConditionNode();

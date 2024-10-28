@@ -208,6 +208,28 @@ namespace engine
 			return vertex_data.buffer->GetAddress();
 		}
 
+		VertexRange InterleavedGeometryBuffer::AddMesh(const std::array<AttributeStream, k_max_attribure_description>& attributes, const IndexStream& indices)
+		{
+			VertexRange vertex_range{};
+			vertex_range.first_index = index_data.count;
+			vertex_range.index_count = indices.count;
+
+			vertex_range.first_vertex = vertex_data.count;
+			vertex_range.vertex_count = attributes[0].count;
+
+			// TODO: implement vertex merging
+
+			if (!indices.byte_range.empty())
+			{
+				index_data.data.insert(index_data.data.end(), indices.byte_range.begin(), indices.byte_range.end());
+				index_data.count += indices.count;
+			}
+
+			assert(false && "NOT SUPPORTED FOR INTERLEAVED FOR NOW");
+
+			return vertex_range;
+		}
+
 		void InterleavedGeometryBuffer::AddVertexStreamData(const void* data, uint32_t count, uint32_t stride, VertexAttributeFlag flag)
 		{
 			// TODO: assert here when stride is not correct
@@ -282,6 +304,35 @@ namespace engine
 			uint32_t index = GetVertexAttributeLocation(flag);
 			assert(vertex_datas[index].buffer && "BUFFER IS NOT ALLOCATED");
 			return vertex_datas[index].buffer->GetAddress();
+		}
+
+		VertexRange DeinterleavedGeometryBuffer::AddMesh(const std::array<AttributeStream, k_max_attribure_description>& attributes, const IndexStream& indices)
+		{
+			VertexRange vertex_range{};
+			vertex_range.first_index = index_data.count;
+			vertex_range.index_count = indices.count;
+
+			vertex_range.first_vertex = vertex_datas[0].count;
+			vertex_range.vertex_count = attributes[0].count;
+
+			for (auto& attribute : attributes)
+			{
+				if (attribute.byte_range.empty())
+					continue;
+
+				uint32_t index = GetVertexAttributeLocation(attribute.attribute_flag);
+				auto& vert_data = vertex_datas[index];
+				vert_data.data.insert(vert_data.data.end(), attribute.byte_range.begin(), attribute.byte_range.end());
+				vert_data.count += attribute.count;
+			}
+
+			if (!indices.byte_range.empty())
+			{
+				index_data.data.insert(index_data.data.end(), indices.byte_range.begin(), indices.byte_range.end());
+				index_data.count += indices.count;
+			}
+
+			return vertex_range;
 		}
 
 		void DeinterleavedGeometryBuffer::AddVertexStreamData(const void* data, uint32_t count, uint32_t stride, VertexAttributeFlag flag)

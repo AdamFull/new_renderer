@@ -22,6 +22,132 @@ namespace engine
 {
 	namespace world
 	{
+		render::VertexAttributeFlag GetVertexAttributeFlag(const std::string& name)
+		{
+			using namespace engine::render;
+
+			if (name == easygltf::base::enumerators::vertex_attribute_type::position) return render::VertexAttributeFlag::ePosition;
+			else if (name == easygltf::base::enumerators::vertex_attribute_type::color_0) return render::VertexAttributeFlag::eColor;
+			else if (name == easygltf::base::enumerators::vertex_attribute_type::texcoord_0) return render::VertexAttributeFlag::eTexCoord;
+			else if (name == easygltf::base::enumerators::vertex_attribute_type::normal) return render::VertexAttributeFlag::eNormal;
+			else if (name == easygltf::base::enumerators::vertex_attribute_type::tangent) return render::VertexAttributeFlag::eTangent;
+			else if (name == easygltf::base::enumerators::vertex_attribute_type::joints_0) return render::VertexAttributeFlag::eJoint;
+			else if (name == easygltf::base::enumerators::vertex_attribute_type::weights_0) return render::VertexAttributeFlag::eWeight;
+
+			return render::VertexAttributeFlag::ePosition;
+		}
+
+		gfx::Format GetVertexFormat(const easygltf::Accessor& accessor)
+		{
+			if (accessor.type == easygltf::base::enumerators::accessor_type::vec4_type)
+			{
+				switch (accessor.componentType)
+				{
+				case easygltf::base::enumerators::component_type::byte_type: return gfx::Format::eR8G8B8A8Sint; break;
+				case easygltf::base::enumerators::component_type::ubyte_type: return gfx::Format::eR8G8B8A8Unorm; break;
+				case easygltf::base::enumerators::component_type::short_type: return gfx::Format::eR16G16B16A16Sint; break;
+				case easygltf::base::enumerators::component_type::ushort_type: return gfx::Format::eR16G16B16A16Unorm; break;
+				case easygltf::base::enumerators::component_type::int_type: return gfx::Format::eR32G32B32A32Sint; break;
+				case easygltf::base::enumerators::component_type::uint_type: return gfx::Format::eR32G32B32A32Uint; break;
+				case easygltf::base::enumerators::component_type::float_type: return gfx::Format::eR32G32B32A32Sfloat; break;
+				case easygltf::base::enumerators::component_type::double_type: return gfx::Format::eR64G64B64A64Sfloat; break;
+				default:
+					break;
+				}
+			}
+			else if (accessor.type == easygltf::base::enumerators::accessor_type::vec3_type)
+			{
+				switch (accessor.componentType)
+				{
+				case easygltf::base::enumerators::component_type::byte_type: return gfx::Format::eR8G8B8Sint; break;
+				case easygltf::base::enumerators::component_type::ubyte_type: return gfx::Format::eR8G8B8Unorm; break;
+				case easygltf::base::enumerators::component_type::short_type: return gfx::Format::eR16G16B16Sint; break;
+				case easygltf::base::enumerators::component_type::ushort_type: return gfx::Format::eR16G16B16Unorm; break;
+				case easygltf::base::enumerators::component_type::int_type: return gfx::Format::eR32G32B32Sint; break;
+				case easygltf::base::enumerators::component_type::uint_type: return gfx::Format::eR32G32B32Uint; break;
+				case easygltf::base::enumerators::component_type::float_type: return gfx::Format::eR32G32B32Sfloat; break;
+				case easygltf::base::enumerators::component_type::double_type: return gfx::Format::eR64G64B64Sfloat; break;
+				default:
+					break;
+				}
+			}
+			else if (accessor.type == easygltf::base::enumerators::accessor_type::vec2_type)
+			{
+				switch (accessor.componentType)
+				{
+				case easygltf::base::enumerators::component_type::byte_type: return gfx::Format::eR8G8Sint; break;
+				case easygltf::base::enumerators::component_type::ubyte_type: return gfx::Format::eR8G8Unorm; break;
+				case easygltf::base::enumerators::component_type::short_type: return gfx::Format::eR16G16Sint; break;
+				case easygltf::base::enumerators::component_type::ushort_type: return gfx::Format::eR16G16Unorm; break;
+				case easygltf::base::enumerators::component_type::int_type: return gfx::Format::eR32G32Sint; break;
+				case easygltf::base::enumerators::component_type::uint_type: return gfx::Format::eR32G32Uint; break;
+				case easygltf::base::enumerators::component_type::float_type: return gfx::Format::eR32G32Sfloat; break;
+				case easygltf::base::enumerators::component_type::double_type: return gfx::Format::eR64G64Sfloat; break;
+				default:
+					break;
+				}
+			}
+			else if (accessor.type == easygltf::base::enumerators::accessor_type::scalar_type)
+			{
+				switch (accessor.componentType)
+				{
+				case easygltf::base::enumerators::component_type::byte_type: return gfx::Format::eR8Sint; break;
+				case easygltf::base::enumerators::component_type::ubyte_type: return gfx::Format::eR8Unorm; break;
+				case easygltf::base::enumerators::component_type::short_type: return gfx::Format::eR16Sint; break;
+				case easygltf::base::enumerators::component_type::ushort_type: return gfx::Format::eR16Unorm; break;
+				case easygltf::base::enumerators::component_type::int_type: return gfx::Format::eR32Sint; break;
+				case easygltf::base::enumerators::component_type::uint_type: return gfx::Format::eR32Uint; break;
+				case easygltf::base::enumerators::component_type::float_type: return gfx::Format::eR32Sfloat; break;
+				case easygltf::base::enumerators::component_type::double_type: return gfx::Format::eR64Sfloat; break;
+				default:
+					break;
+				}
+			}
+
+			return gfx::Format::eUndefined;
+		}
+
+		gfx::IndexType GetIndexType(const easygltf::Accessor& accessor)
+		{
+			switch (accessor.componentType)
+			{
+			case easygltf::base::enumerators::component_type::ushort_type: return gfx::IndexType::eUint16; break;
+			case easygltf::base::enumerators::component_type::uint_type: return gfx::IndexType::eUint32; break;
+			default:
+				break;
+			}
+
+			return gfx::IndexType::eUint32;
+		}
+
+		render::GeometryBufferCreateInfo GetGeometryBufferCreateInfo(const easygltf::FGLTFRoot& root, const easygltf::Primitive& primitive)
+		{
+			render::GeometryBufferCreateInfo create_info{};
+
+			for (const auto& [name, accessor_index] : primitive.attributes)
+			{
+				// NOT SUPPORTED FOR NOW
+				if (name == "TEXCOORD_1")
+					continue;
+
+				const easygltf::Accessor& accessor = root.accessors[accessor_index];
+
+				auto& new_description = create_info.attribute_descriptions.emplace_back();
+				new_description.attribute_flag = GetVertexAttributeFlag(name);
+				new_description.format = GetVertexFormat(accessor);
+			}
+
+			if (primitive.indices >= 0)
+			{
+				const easygltf::Accessor& accessor = root.accessors[primitive.indices];
+				create_info.index_description.type = GetIndexType(accessor);
+			}
+
+			std::sort(create_info.attribute_descriptions.begin(), create_info.attribute_descriptions.end(), [](const auto& lhs, const auto& rhs) { return utl::enum_cast(lhs.attribute_flag) < utl::enum_cast(rhs.attribute_flag); });
+
+			return create_info;
+		}
+
 		class VFSWrapper : public easygltf::IFilesystemWrapper
 		{
 		public:
@@ -284,103 +410,55 @@ namespace engine
 				glm::vec3 pos_min{}, pos_max{};
 
 				// Load vertices
+				render::GeometryBufferCreateInfo geometry_ci = GetGeometryBufferCreateInfo(root, primitive);
+				auto& geometry_buffer = renderer.RequestDeinterleavedGeometryBuffer(geometry_ci);
 
-				std::hash<u32> attribute_hasher;
-				utl::vector<render::FVertexAttributePointer> attributes{};
-				u64 position_index{ 0ull };
-
-				u64 attributes_hash{ 0ull };
-				for (const auto& [name, accessor_idx] : primitive.attributes)
+				uint32_t stream_count{ 0u };
+				std::array<render::AttributeStream, render::k_max_attribure_description> attribute_streams{};
+				for (const auto& [name, accessor_index] : primitive.attributes)
 				{
+					// NOT SUPPORTED FOR NOW
 					if (name == "TEXCOORD_1")
 						continue;
 
-					const easygltf::Accessor& accessor = root.accessors[accessor_idx];
+					const easygltf::Accessor& accessor = root.accessors[accessor_index];
 					auto stream = root.getStream(accessor);
 
-					auto& attrib = attributes.emplace_back();
-					//attrib.type = get_vertex_attribute_type_by_name(name);
-					attrib.data = stream.data;
-					attrib.stride = stream.stride;
-					attrib.count = stream.count;
+					auto attribute_type = GetVertexAttributeFlag(name);
 
-					if (attrib.type == render::EVertexAttributeType::ePosition)
+					auto& attrib_stream = attribute_streams[stream_count++];
+					attrib_stream.attribute_flag = attribute_type;
+					attrib_stream.byte_range = std::span<const uint8_t>(stream.data, stream.count * stream.stride);
+					attrib_stream.count = stream.count;
+
+					if (attribute_type == render::VertexAttributeFlag::ePosition)
 					{
 						pos_min = !accessor.min.empty() ? glm::vec3(accessor.min[0], accessor.min[1], accessor.min[2]) : glm::vec3(0.f);
 						pos_max = !accessor.max.empty() ? glm::vec3(accessor.max[0], accessor.max[1], accessor.max[2]) : glm::vec3(0.f);
-						position_index = attributes.size() - 1ull;
 					}
-
-					attributes_hash ^= attribute_hasher(utl::cast<u32>(attrib.type) + 1u) << 1;
 				}
 
-				// Attributes should be sorted by value type
-				std::sort(attributes.begin(), attributes.end(), [](const auto& lhs, const auto& rhs) { return utl::cast<u32>(lhs.type) < utl::cast<u32>(rhs.type); });
-
-				// Load indices
-				render::FVertexAttributePointer indices{};
+				render::IndexStream index_stream{};
 				if (primitive.indices >= 0)
 				{
 					const easygltf::Accessor& accessor = root.accessors[primitive.indices];
 					auto stream = root.getStream(accessor);
-					indices.data = stream.data;
-					indices.stride = stream.stride;
-					indices.count = stream.count;
 
-					attributes_hash ^= attribute_hasher(utl::cast<u32>(indices.stride)) << 1;
+					index_stream.byte_range = std::span<const uint8_t>(stream.data, stream.count * stream.stride);
+					index_stream.count = stream.count;
 				}
 
-				// Get or Create vertex buffer
-				//render::IVertexHandler* vertex_handler{ nullptr };
-				//render::FRHIHandle current_handler_id{};
-
-				//if (auto found = m_resources.vertexHandlers.find(attributes_hash); found != m_resources.vertexHandlers.end())
-				//{
-				//	for (const auto& handler_id : found->second)
-				//	{
-				//		auto& handler = m_pRenderInterface->GetVertexHandler(handler_id);
-				//
-				//		vertex_handler = handler.get();
-				//		current_handler_id = handler_id;
-				//	}
-				//}
-
-				//if (!vertex_handler)
-				//{
-				//	render::FVertexHandlerCreateInfo handler_ci{};
-				//	handler_ci.indexSize = indices.stride;
-				//	handler_ci.name = mesh.name;
-				//	handler_ci.flags = render::EVertexHandlerFlagBits::eGenerateMeshlets;
-				//
-				//	for (const auto& attrib : attributes)
-				//	{
-				//		auto& desc = handler_ci.descriptions.emplace_back();
-				//		desc.type = attrib.type;
-				//		desc.size = attrib.stride;
-				//	}
-				//
-				//	auto& handlers = m_resources.vertexHandlers[attributes_hash];
-				//
-				//	auto handler_name = std::format("{}_{}_{}", mesh.name, attributes_hash, handlers.size());
-				//	auto handler_id = m_pRenderInterface->CreateVertexHandler(handler_name, handler_ci);
-				//	handlers.emplace_back(handler_id);
-				//
-				//	auto& handler = m_pRenderInterface->GetVertexHandler(handler_id);
-				//	vertex_handler = handler.get();
-				//	current_handler_id = handler_id;
-				//}
-
 				// Create mesh primitive
-				//ecs::FMeshPrimitive mesh_primitive{};
-				//mesh_primitive.vboId = current_handler_id;
-				//mesh_primitive.setDimensions(pos_min, pos_max);
-				//mesh_primitive.vertexRange = vertex_handler->AddMeshData(attributes, indices);
-				//
-				//// NOTE: Updating material Create info for future shader creation
-				//if (primitive.material >= 0)
-				//	mesh_primitive.materialId = primitive.material;
-				//
-				//mesh_component.primitives.emplace_back(mesh_primitive);
+				ecs::FMeshPrimitive mesh_primitive{};
+				mesh_primitive.vbo = Hash(geometry_ci);
+				mesh_primitive.setDimensions(pos_min, pos_max);
+				mesh_primitive.vertex_range = geometry_buffer.AddMesh(attribute_streams, index_stream);
+
+				// NOTE: Updating material Create info for future shader creation
+				if (primitive.material >= 0)
+					mesh_primitive.material = primitive.material;
+				
+				mesh_component.primitives.emplace_back(mesh_primitive);
 			}
 		}
 

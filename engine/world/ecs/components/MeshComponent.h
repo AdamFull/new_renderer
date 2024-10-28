@@ -1,6 +1,6 @@
 #pragma once
 
-#include <engine/interface/render/VertexStructures.h>
+#include <engine/rendering/GeometryBufferInterface.h>
 #include <embed/shaders/includes/interop/base.h>
 
 #include "Component.h"
@@ -31,15 +31,12 @@ namespace engine
 					dims.radius = glm::distance(min, max) / 2.0f;
 				}
 
-				render::FVertexRange vertexRange{};
+				render::VertexRange vertex_range{};
 
-				size_t materialId{ ~0ull };
-				render::FRHIHandle vboId{};
+				uint32_t material{ ~0u };
+				uint32_t vbo{};
 
-				utl::vector<render::FMeshlet> meshlets{};
-				utl::vector<u32> vertices{};
 				utl::vector<render::FGeometryDrawBounds> bounds{};
-				utl::vector<render::FTriangle> triangles{};
 			};
 
 			struct FMeshComponent

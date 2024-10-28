@@ -429,13 +429,13 @@ void CScene::LoadMeshComponent(const easygltf::FGLTFRoot& root, const entt::enti
 
 		// Create mesh primitive
 		FMeshPrimitive mesh_primitive{};
-		mesh_primitive.vboId = current_handler_id;
+		//mesh_primitive.vboId = current_handler_id;
 		mesh_primitive.setDimensions(pos_min, pos_max);
-		mesh_primitive.vertexRange = vertex_handler->AddMeshData(attributes, indices);
+		//mesh_primitive.vertexRange = vertex_handler->AddMeshData(attributes, indices);
 
 		// NOTE: Updating material Create info for future shader creation
-		if (primitive.material >= 0)
-			mesh_primitive.materialId = primitive.material;
+		//if (primitive.material >= 0)
+			//mesh_primitive.materialId = primitive.material;
 
 		mesh_component.primitives.emplace_back(mesh_primitive);
 	}

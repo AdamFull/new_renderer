@@ -312,7 +312,7 @@ namespace engine
 			return *interleaved_geometry_buffers[hash];
 		}
 
-		GeometryBuffer& Renderer::RequestDenterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info)
+		GeometryBuffer& Renderer::RequestDeinterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info)
 		{
 			uint32_t hash = Hash(create_info);
 
