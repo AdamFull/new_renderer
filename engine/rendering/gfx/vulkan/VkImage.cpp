@@ -138,7 +138,7 @@ namespace engine
 
 				if (texture_create_info.usage & TextureUsageFlag::eRenderTarget)
 				{
-					create_info.usage |= ((IsDepthStencilFormat(create_info.format) || IsDepthOnlyFormat(create_info.format)) ? vk::ImageUsageFlagBits::eDepthStencilAttachment : vk::ImageUsageFlagBits::eColorAttachment);
+					create_info.usage |= ((IsDepthStencilFormat(texture_create_info.format) || IsDepthOnlyFormat(texture_create_info.format)) ? vk::ImageUsageFlagBits::eDepthStencilAttachment : vk::ImageUsageFlagBits::eColorAttachment);
 				}
 
 				if (texture_create_info.usage & TextureUsageFlag::eTransferable)

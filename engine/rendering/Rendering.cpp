@@ -58,29 +58,6 @@ namespace engine
 			return access_flag;
 		}
 
-		inline bool IsDepthOnlyFormat(gfx::Format format)
-		{
-			return format == gfx::Format::eD16Unorm ||
-				format == gfx::Format::eD32Sfloat;
-		}
-
-		inline bool IsDepthStencilFormat(gfx::Format format)
-		{
-			return format == gfx::Format::eD16UnormS8Uint ||
-				format == gfx::Format::eD24UnormS8Uint ||
-				format == gfx::Format::eD32SfloatS8Uint;
-		}
-
-		inline bool IsDepthFormat(gfx::Format format)
-		{
-			return IsDepthOnlyFormat(format) || IsDepthStencilFormat(format);
-		}
-
-		inline bool IsStencilFormat(gfx::Format format)
-		{
-			return !IsDepthOnlyFormat(format) || !IsDepthStencilFormat(format);
-		}
-
 
 		Renderer::Renderer(Window* window, filesystem::IVirtualFileSystemInterface* vfs) :
 			vfs{ vfs }

@@ -251,5 +251,28 @@ namespace engine
 
         uint32_t FormatToVk(Format format);
         Format FormatFromVk(uint32_t format);
+
+        inline bool IsDepthOnlyFormat(Format format)
+        {
+            return format == Format::eD16Unorm ||
+                format == Format::eD32Sfloat;
+        }
+
+        inline bool IsDepthStencilFormat(Format format)
+        {
+            return format == Format::eD16UnormS8Uint ||
+                format == Format::eD24UnormS8Uint ||
+                format == Format::eD32SfloatS8Uint;
+        }
+
+        inline bool IsDepthFormat(Format format)
+        {
+            return IsDepthOnlyFormat(format) || IsDepthStencilFormat(format);
+        }
+
+        inline bool IsStencilFormat(Format format)
+        {
+            return !IsDepthOnlyFormat(format) || !IsDepthStencilFormat(format);
+        }
     }
 }

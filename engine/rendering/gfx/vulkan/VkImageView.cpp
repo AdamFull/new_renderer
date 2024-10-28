@@ -49,12 +49,12 @@ namespace engine
 				create_info.format = image.GetFormat();
 				create_info.image = image.GetHandle();
 
-				if (IsDepthFormat(create_info.format))
+				if (IsDepthFormat(texture_create_info.format))
 				{
 					create_info.subresourceRange.aspectMask |= vk::ImageAspectFlagBits::eDepth;
 				}
 
-				if (IsDepthStencilFormat(create_info.format))
+				if (IsDepthStencilFormat(texture_create_info.format))
 				{
 					create_info.subresourceRange.aspectMask |= vk::ImageAspectFlagBits::eStencil;
 				}
