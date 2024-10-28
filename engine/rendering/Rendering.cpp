@@ -58,6 +58,29 @@ namespace engine
 			return access_flag;
 		}
 
+		inline bool IsDepthOnlyFormat(gfx::Format format)
+		{
+			return format == gfx::Format::eD16Unorm ||
+				format == gfx::Format::eD32Sfloat;
+		}
+
+		inline bool IsDepthStencilFormat(gfx::Format format)
+		{
+			return format == gfx::Format::eD16UnormS8Uint ||
+				format == gfx::Format::eD24UnormS8Uint ||
+				format == gfx::Format::eD32SfloatS8Uint;
+		}
+
+		inline bool IsDepthFormat(gfx::Format format)
+		{
+			return IsDepthOnlyFormat(format) || IsDepthStencilFormat(format);
+		}
+
+		inline bool IsStencilFormat(gfx::Format format)
+		{
+			return !IsDepthOnlyFormat(format) || !IsDepthStencilFormat(format);
+		}
+
 
 		Renderer::Renderer(Window* window, filesystem::IVirtualFileSystemInterface* vfs) :
 			vfs{ vfs }
@@ -326,6 +349,12 @@ namespace engine
 			}
 			else if (graph_resource.resource_type & RenderResourceTypeFlag::eAllImage)
 			{
+				gfx::Texture* texture = GetTextureResource(graph_resource);
+				if (IsDepthStencilFormat(texture->GetFormat()))
+				{
+					return { gfx::AccessTypeFlag::eRead, gfx::TextureLayout::eDepthStencilReadOnlyOptimal };
+				}
+
 				return { gfx::AccessTypeFlag::eRead, gfx::TextureLayout::eShader };
 			}
 			else
@@ -344,6 +373,12 @@ namespace engine
 			}
 			else if(graph_resource.resource_type & RenderResourceTypeFlag::eAllImage)
 			{
+				gfx::Texture* texture = GetTextureResource(graph_resource);
+				if (IsDepthStencilFormat(texture->GetFormat()))
+				{
+					return { gfx::AccessTypeFlag::eWrite, gfx::TextureLayout::eDepthStencilAttachmentOptimal };
+				}
+
 				return { gfx::AccessTypeFlag::eWrite, gfx::TextureLayout::eColorAttachmentOptimal };
 			}
 			else

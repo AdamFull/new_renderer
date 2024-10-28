@@ -58,8 +58,8 @@ namespace engine
 			RenderGraphNodeHeader* AllocateGroupNode();
 			RenderGraphNodeHeader* AllocatePassNode();
 
-			static gfx::TextureAccess GetFinalTextureLayout(const RenderGraphResource& graph_resource);
-			static gfx::TextureAccess GetIntermediateTextureLayout(const RenderGraphResource& graph_resource);
+			gfx::TextureAccess GetFinalTextureLayout(const RenderGraphResource& graph_resource);
+			gfx::TextureAccess GetIntermediateTextureLayout(const RenderGraphResource& graph_resource);
 
 			gfx::TextureAccess GetCurrentTextureLayout(const RenderGraphResource& graph_resource);
 			void UpdateTextureLayout(const RenderGraphResource& graph_resource, gfx::TextureAccess new_layout);
