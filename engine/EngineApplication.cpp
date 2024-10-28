@@ -10,7 +10,7 @@
 //#include <integrations/imgui/DebugSystem.h>
 
 #include <util/Logger.h>
-#include <rendering/Rendering.h>
+#include <engine/rendering/Rendering.h>
 #include <world/NewScene.h>
 
 namespace engine
@@ -70,8 +70,8 @@ namespace engine
 	{
 		renderer = std::make_unique<render::Renderer>(options.window, m_pVirtualFileSystem.get());
 
-		//scene = std::make_unique<world::Scene>(m_pVirtualFileSystem.get(), *renderer);
-		scene = std::make_unique<world::Scene>(m_pVirtualFileSystem.get());
+		scene = std::make_unique<world::Scene>(m_pVirtualFileSystem.get(), *renderer);
+		//scene = std::make_unique<world::Scene>(m_pVirtualFileSystem.get());
 		scene->Load("/root/meshes/helmet/DamagedHelmet.gltf");
 
 		//render::FRenderInterfaceCreateInfo rhi_ci{};

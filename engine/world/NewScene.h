@@ -1,4 +1,5 @@
 #include <engine/interface/filesystem/VirtualFileSystemInterface.h>
+#include <engine/rendering/RendererInterface.h>
 #include <engine/world/ecs/systems/BaseSystem.h>
 
 #include <libraries/easygltf/include/easygltf/easygltf_base.h>
@@ -7,11 +8,6 @@
 
 namespace engine
 {
-	namespace render
-	{
-		class Renderer;
-	}
-
 	namespace world
 	{
 		struct SceneLoadedResources
@@ -22,16 +18,10 @@ namespace engine
 			utl::vector<uint32_t> materials{};
 		};
 
-		struct SceneTemporaryResources
-		{
-			utl::vector<std::string> materialNames{};
-			utl::hash_map<u32, entt::entity> nodeToEntity{};
-		};
-
 		class Scene final
 		{
 		public:
-			Scene(filesystem::IVirtualFileSystemInterface* vfs);
+			Scene(filesystem::IVirtualFileSystemInterface* vfs, render::IRenderer& renderer);
 			~Scene();
 
 			void Load(const std::string& path);
@@ -47,12 +37,12 @@ namespace engine
 			void LoadAnimations(const easygltf::FGLTFRoot& root);
 			void LoadSkins(const easygltf::FGLTFRoot& root);
 		private:
-			//render::Renderer& renderer;
+			render::IRenderer& renderer;
 
 			filesystem::IVirtualFileSystemInterface* vfs{ nullptr };
 
 			SceneLoadedResources resources{};
-			SceneTemporaryResources temporary{};
+			utl::hash_map<u32, entt::entity> node_to_entity{};
 		};
 	}
 }

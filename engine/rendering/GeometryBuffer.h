@@ -23,6 +23,11 @@ namespace engine
 			eWeight
 		};
 
+		struct GeometryBufferDescription
+		{
+
+		};
+
 		struct LodRange
 		{
 			uint32_t lod_start{ 0u };

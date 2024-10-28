@@ -1,7 +1,7 @@
 #pragma once
 
 #include <engine/interface/filesystem/VirtualFileSystemInterface.h>
-#include <engine/rendering/gfx/Structures.h>
+#include <engine/rendering/RendererInterface.h>
 #include <engine/rendering/RenderResourceContainer.h>
 
 #include <engine/rendering/ExecutionContext.h>
@@ -27,21 +27,21 @@ namespace engine
 	{
 		class RenderContext;
 
-		class Renderer
+		class Renderer : public IRenderer
 		{
 		public:
 			Renderer(Window* window, filesystem::IVirtualFileSystemInterface* vfs);
 			~Renderer();
 
-			uint32_t AddTextureResource(const std::string& path, gfx::Sampler* sampler = nullptr);
-			uint32_t AddTextureResource(const gfx::TextureCreateInfo& create_info, gfx::Sampler* sampler = nullptr);
+			uint32_t AddTextureResource(const std::string& path, gfx::Sampler* sampler = nullptr) override;
+			uint32_t AddTextureResource(const gfx::TextureCreateInfo& create_info, gfx::Sampler* sampler = nullptr) override;
 
-			uint32_t AddBufferResource(const gfx::BufferCreateInfo& create_info);
+			uint32_t AddBufferResource(const gfx::BufferCreateInfo& create_info) override;
 
 			uint32_t AddShaderPass(const ComputeShaderPassCreateInfo& create_info);
 			uint32_t AddShaderPass(const RenderShaderPassCreateInfo& create_info);
 
-			void Render(float delta_time);
+			void Render(float delta_time) override;
 
 			gfx::Context& GetGFXContext();
 
@@ -51,7 +51,7 @@ namespace engine
 			gfx::ResourceContext& GetResourceContext();
 			gfx::ResourceContext const& GetResourceContext() const;
 
-			gfx::Sampler* GetOrCreateSampler(const gfx::SamplerCreateInfo& create_info);
+			gfx::Sampler* GetOrCreateSampler(const gfx::SamplerCreateInfo& create_info) override;
 		private:
 			RenderGraphNodeHeader* AllocateStaticConditionNode();
 			RenderGraphNodeHeader* AllocateDynamicConditionNode();

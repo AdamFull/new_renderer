@@ -2,19 +2,13 @@
 
 #include <engine/Application.h>
 #include <engine/interface/filesystem/VirtualFileSystemInterface.h>
-#include <engine/interface/render/RenderInterface.h>
-#include <engine/world/Scene.h>
+#include <engine/rendering/RendererInterface.h>
 
 #include <engine/InputMapper.h>
 #include <engine/EngineSystemManager.h>
 
 namespace engine
 {
-	namespace render
-	{
-		class Renderer;
-	}
-
 	namespace world
 	{
 		class Scene;
@@ -41,7 +35,7 @@ namespace engine
 		 */
 		void Update(float delta_time) override;
 	private:
-		std::unique_ptr<render::Renderer> renderer{};
+		std::unique_ptr<render::IRenderer> renderer{};
 		//std::unique_ptr<CEngineSystemManager> m_pSystemManager{};
 		//std::unique_ptr<CInputMapper> m_pInputMapper{};
 		//std::unique_ptr<render::IRenderInterface> m_pRenderInterface{};
