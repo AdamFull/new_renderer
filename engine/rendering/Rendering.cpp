@@ -8,6 +8,8 @@
 #include <engine/rendering/render_graph/ComputePass.h>
 #include <engine/rendering/render_graph/RenderPass.h>
 
+#include <engine/rendering/GeometryBuffer.h>
+
 #include <util/Logger.h>
 
 #ifdef MemoryBarrier
@@ -295,6 +297,32 @@ namespace engine
 			auto* new_sampler = sampler_cache[sampler_hash];
 			new_sampler = gfx_context->CreateSampler(create_info);
 			return new_sampler;
+		}
+
+		GeometryBuffer& Renderer::RequestInterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info)
+		{
+			uint32_t hash = Hash(create_info);
+
+			if (auto found = interleaved_geometry_buffers.find(hash); found != interleaved_geometry_buffers.end())
+			{
+				return *found->second;
+			}
+
+			interleaved_geometry_buffers[hash] = std::make_unique<InterleavedGeometryBuffer>(*resource_context, create_info);
+			return *interleaved_geometry_buffers[hash];
+		}
+
+		GeometryBuffer& Renderer::RequestDenterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info)
+		{
+			uint32_t hash = Hash(create_info);
+
+			if (auto found = deinterleaved_geometry_buffers.find(hash); found != deinterleaved_geometry_buffers.end())
+			{
+				return *found->second;
+			}
+
+			deinterleaved_geometry_buffers[hash] = std::make_unique<DeinterleavedGeometryBuffer>(*resource_context, create_info);
+			return *deinterleaved_geometry_buffers[hash];
 		}
 
 

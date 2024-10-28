@@ -6,7 +6,7 @@
 
 #include <engine/rendering/ExecutionContext.h>
 
-#include <engine/rendering/GPUVector.h>
+//#include <engine/rendering/GPUVector.h>
 #include <engine/rendering/render_graph/ShaderPass.h>
 #include <engine/rendering/render_graph/RenderGraph.h>
 #include <memory>
@@ -52,6 +52,9 @@ namespace engine
 			gfx::ResourceContext const& GetResourceContext() const;
 
 			gfx::Sampler* GetOrCreateSampler(const gfx::SamplerCreateInfo& create_info) override;
+
+			GeometryBuffer& RequestInterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) override;
+			GeometryBuffer& RequestDenterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) override;
 		private:
 			RenderGraphNodeHeader* AllocateStaticConditionNode();
 			RenderGraphNodeHeader* AllocateDynamicConditionNode();
@@ -113,6 +116,9 @@ namespace engine
 				gfx::ResourceState resource_state{ gfx::AccessFlag::eNone, gfx::StageFlag::eAllCommands };
 			};
 			ResourceContainer<BufferObject> buffers{};
+
+			std::unordered_map<uint32_t, std::unique_ptr<GeometryBuffer>> interleaved_geometry_buffers{};
+			std::unordered_map<uint32_t, std::unique_ptr<GeometryBuffer>> deinterleaved_geometry_buffers{};
 
 			// Render graph resources
 			std::vector<std::unique_ptr<ShaderPass>> shader_passes{};

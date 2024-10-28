@@ -1,6 +1,6 @@
 #pragma once
 
-#include <engine/rendering/gfx/Structures.h>
+#include <engine/rendering/GeometryBufferInterface.h>
 
 namespace engine
 {
@@ -19,6 +19,9 @@ namespace engine
 			virtual uint32_t AddBufferResource(const gfx::BufferCreateInfo& create_info) = 0;
 
 			virtual gfx::Sampler* GetOrCreateSampler(const gfx::SamplerCreateInfo& create_info) = 0;
+
+			virtual GeometryBuffer& RequestInterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) = 0;
+			virtual GeometryBuffer& RequestDenterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) = 0;
 		};
 	}
 }

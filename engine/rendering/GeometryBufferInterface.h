@@ -2,7 +2,7 @@
 
 #include <unordered_map>
 #include <enum.hpp>
-#include <engine/rendering/gfx/Structures.h>
+#include <engine/rendering/gfx/ResourceLoader.h>
 
 namespace engine
 {
@@ -59,69 +59,33 @@ namespace engine
 			std::vector<uint8_t> data{};
 		};
 
-		inline uint32_t GetVertexFormatSizeBytes(gfx::Format format)
-		{
-			switch (format)
-			{
-			case gfx::Format::eR8G8B8A8Unorm: return 4u; break;
-			case gfx::Format::eR32G32Sfloat:
-			case gfx::Format::eR16G16B16A16Unorm: return 8u; break;
-			case gfx::Format::eR32G32B32Sfloat: return 12u; break;
-			case gfx::Format::eR32G32B32A32Sfloat: return 16u; break;
-			default:
-				break;
-			}
+		uint32_t Hash(const AttributeDescription& desc, uint32_t hash = 0u);
+		uint32_t Hash(const IndexDescription& desc, uint32_t hash = 0u);
+		uint32_t Hash(const GeometryBufferCreateInfo& create_info, uint32_t hash = 0u);
 
-			return 1u;
-		}
-
-		inline uint32_t GetVertexAttributeLocation(VertexAttributeFlag flag)
-		{
-			switch (flag)
-			{
-			case engine::render::VertexAttributeFlag::ePosition: return 0u; break;
-			case engine::render::VertexAttributeFlag::eColor: return 1u; break;
-			case engine::render::VertexAttributeFlag::eTexCoord: return 2u; break;
-			case engine::render::VertexAttributeFlag::eNormal: return 3u; break;
-			case engine::render::VertexAttributeFlag::eTangent: return 4u; break;
-			case engine::render::VertexAttributeFlag::eJoint: return 5u; break;
-			case engine::render::VertexAttributeFlag::eWeight: return 6u; break;
-			default:
-				break;
-			}
-
-			return ~0u;
-		}
-
-		class IGeometryBuffer
+		class GeometryBuffer
 		{
 		public:
-			virtual ~IGeometryBuffer() = default;
+			GeometryBuffer(gfx::ResourceContext& resource_context);
+			virtual ~GeometryBuffer();
 
-			virtual void Flush() = 0;
+			virtual void Flush();
 
-			virtual void Bind(gfx::CommandList& command_list) = 0;
+			virtual void Bind(gfx::CommandList& command_list);
 
 			virtual uint64_t GetBufferAddress(VertexAttributeFlag flag = {}) = 0;
 
-			uint64_t GetIndexBufferAddress()
-			{
-				return index_data.buffer->GetAddress();
-			}
+			uint64_t GetIndexBufferAddress();
 
 			virtual void AddVertexStreamData(const void* data, uint32_t count, uint32_t stride, VertexAttributeFlag flag = {}) = 0;
 
-			void AddIndexStreamData(const void* data, uint32_t count, uint32_t stride)
-			{
-				index_data.data.insert(index_data.data.end(), static_cast<const uint8_t*>(data), static_cast<const uint8_t*>(data) + count * stride);
-				index_data.count += count;
-			}
+			void AddIndexStreamData(const void* data, uint32_t count, uint32_t stride);
 
-			gfx::VertexLayout const& GetVertexLayout() const
-			{
-				return vertex_layout;
-			}
+			gfx::VertexLayout const& GetVertexLayout() const;
 		protected:
+			void TryFlushBuffer(gfx::Buffer** buffer_ptr, const std::vector<uint8_t>& data, gfx::BufferUsageFlags usage);
+		protected:
+			gfx::ResourceContext& resource_context;
 			gfx::VertexLayout vertex_layout{};
 			IndexData index_data{};
 		};

@@ -35,8 +35,8 @@ namespace engine
 
 			gfx::SemaphoreSubmitInfo Submit(gfx::SemaphoreSubmitInfo* wait_infos, uint32_t wait_semaphore_count) override;
 
-			gfx::Context& GetContext();
-			gfx::Context const& GetContext() const;
+			gfx::Context& GetContext() override;
+			gfx::Context const& GetContext() const override;
 		private:
 			UploadFrame& GetActiveFrame();
 			void BeginFrame();
