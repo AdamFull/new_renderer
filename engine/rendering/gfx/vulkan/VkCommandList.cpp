@@ -1,15 +1,16 @@
-#include <VkCommandPool.h>
-#include <VkDebug.h>
+#include "VkCommandPool.h"
+#include "VkDebug.h"
 
-#include <VkQueue.h>
-#include <VkQueryPool.h>
-#include <VkBuffer.h>
-#include <VkTexture.h>
-#include <VkPipeline.h>
-#include <VkRootSignature.h>
+#include "VkQueue.h"
+#include "VkQueryPool.h"
+#include "VkBuffer.h"
+#include "VkTexture.h"
+#include "VkPipeline.h"
+#include "VkRootSignature.h"
+#include "VkDescriptorSet.h"
 
 #include <Util.h>
-#include <VkUtil.h>
+#include "VkUtil.h"
 
 namespace engine
 {
@@ -81,9 +82,33 @@ namespace engine
 				assert(false && "NOT IMPLEMENTED");
 			}
 
-			void VulkanCommandList::BindDescriptorSets()
+			void VulkanCommandList::BindDescriptorSets(RootSignature* root_signature)
 			{
-				assert(false && "NOT IMPLEMENTED");
+				auto* vk_root_signature = static_cast<VulkanRootSignature*>(root_signature);
+
+				auto& pipeline_layout = vk_root_signature->GetPipelineLayout();
+
+				int32_t first_set{ -1 };
+				int32_t set_count{ 0 };
+				std::array<vk::DescriptorSet, k_max_descriptor_count> descriptor_sets{};
+
+				for (int32_t i = 0; i < k_max_descriptor_count; ++i)
+				{
+					auto* set = vk_root_signature->descriptor_sets[i];
+					if (set)
+					{
+						if (first_set < 0)
+						{
+							first_set = i;
+						}
+
+						auto* vk_set = static_cast<VulkanDescriptorSet*>(set);
+						descriptor_sets[set_count++] = vk_set->GetHandle();
+					}
+				}
+
+				// TODO: bind point
+				handle.bindDescriptorSets(vk::PipelineBindPoint::eCompute, pipeline_layout.GetHandle(), first_set, set_count, descriptor_sets.data(), 0u, nullptr);
 			}
 
 			void VulkanCommandList::PushConstants(Shader* shader, RootSignature* root_signature, std::span<const char> constant_data)

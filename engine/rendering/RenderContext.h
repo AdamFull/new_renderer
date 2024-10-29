@@ -22,6 +22,7 @@ namespace engine
 		{
 			gfx::Texture* backbuffer{ nullptr };
 			gfx::CommandPool* command_pool{ nullptr };
+			gfx::DescriptorAllocator* descriptor_allocator{ nullptr };
 
 			//std::unique_ptr<DescriptorAllocator> descriptor_allocator;
 
@@ -60,6 +61,7 @@ namespace engine
 
 			gfx::BufferSuballocation RequestUniformBlock(uint64_t block_size) override;
 			gfx::CommandList& GetCurrentCommandList() override;
+			gfx::DescriptorAllocator& GetCurrentDescriptorAllocator() override;
 
 			gfx::Texture& GetBackbuffer();
 

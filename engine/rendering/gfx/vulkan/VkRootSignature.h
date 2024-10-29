@@ -44,6 +44,9 @@ namespace engine
 			class VulkanRootSignature final : public RootSignature
 			{
 			public:
+				friend class VulkanDescriptorAllocator;
+				friend class VulkanCommandList;
+
 				VulkanRootSignature(Device& device, const RootSignatureCreateInfo& create_info);
 				~VulkanRootSignature();
 
@@ -54,9 +57,10 @@ namespace engine
 				VulkanRootSignature& operator=(VulkanRootSignature&&) = delete;
 
 				PipelineLayout& GetPipelineLayout();
+				const std::array<std::unique_ptr<DescriptorSetLayout>, k_max_descriptor_count>& GetDescriptorSetLayouts();
 			private:
 				std::unique_ptr<PipelineLayout> pipeline_layout{};
-				std::array<std::unique_ptr<DescriptorSetLayout>, 8ull> descriptor_set_layouts{};
+				std::array<std::unique_ptr<DescriptorSetLayout>, k_max_descriptor_count> descriptor_set_layouts{};
 			};
 		}
 	}

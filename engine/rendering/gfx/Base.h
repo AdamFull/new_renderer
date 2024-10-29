@@ -158,7 +158,7 @@ namespace engine
 
 			virtual void BindPipeline(Pipeline* pipeline) = 0;
 			virtual void BindDescriptorSet() = 0;
-			virtual void BindDescriptorSets() = 0;
+			virtual void BindDescriptorSets(RootSignature* root_signature) = 0;
 			virtual void PushConstants(Shader* shader, RootSignature* root_signature, std::span<const char> constant_data) = 0;
 
 			virtual void BindIndexBuffer(Buffer* index_buffer, IndexType index_type, uint64_t offset) = 0;
@@ -266,6 +266,9 @@ namespace engine
 			{
 				return ResourceType::eRootSignature;
 			}
+
+		protected:
+			std::array<DescriptorSet*, k_max_descriptor_count> descriptor_sets{};
 		};
 
 		class Pipeline : public GFXResource
@@ -303,22 +306,20 @@ namespace engine
 			{
 				return ResourceType::eDescriptorSet;
 			}
-
-			virtual void Reset() = 0;
-			virtual void Update() = 0;
 		};
 
-		class DescriptorPool : public GFXResource
+		class DescriptorAllocator : public GFXResource
 		{
 		public:
-			virtual ~DescriptorPool() = default;
+			virtual ~DescriptorAllocator() = default;
 
 			ResourceType GetResourceType() override
 			{
-				return ResourceType::eDescriptorPool;
+				return ResourceType::eDescriptorAllocator;
 			}
 
-			virtual DescriptorSet* Allocate() = 0;
+			virtual void Reset() = 0;
+			virtual void AllocateSets(RootSignature* root_signature) = 0;
 		};
 
 		class QueryPool : public GFXResource

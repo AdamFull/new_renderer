@@ -40,7 +40,7 @@ namespace engine
 
 				void BindPipeline(Pipeline* pipeline) override;
 				void BindDescriptorSet() override;
-				void BindDescriptorSets() override;
+				void BindDescriptorSets(RootSignature* root_signature) override;
 				void PushConstants(Shader* shader, RootSignature* root_signature, std::span<const char> constant_data) override;
 
 				void BindIndexBuffer(Buffer* index_buffer, IndexType index_type, uint64_t offset) override;

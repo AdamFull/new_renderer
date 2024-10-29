@@ -117,6 +117,11 @@ namespace engine
 			{
 				return *pipeline_layout;
 			}
+
+			const std::array<std::unique_ptr<DescriptorSetLayout>, k_max_descriptor_count>& VulkanRootSignature::GetDescriptorSetLayouts()
+			{
+				return descriptor_set_layouts;
+			}
 		}
 	}
 }

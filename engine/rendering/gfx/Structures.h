@@ -15,6 +15,10 @@ namespace engine
 
 	namespace gfx
 	{
+		static constexpr uint32_t k_max_descriptor_count{ 8u };
+		
+		static constexpr uint32_t k_max_attachment_count{ 8u };
+
 		class GFXResource;
 		class Fence;
 		class Semaphore;
@@ -29,7 +33,7 @@ namespace engine
 		class RootSignature;
 		class Pipeline;
 		class PipelineCache;
-		class DescriptorPool;
+		class DescriptorAllocator;
 		class DescriptorSet;
 		class QueryPool;
 
@@ -162,7 +166,7 @@ namespace engine
 
 		struct ColorBlendingState
 		{
-			std::array<ColorBlendAttachment, 8ull> attachments{};
+			std::array<ColorBlendAttachment, k_max_attachment_count> attachments{};
 			uint32_t attachment_count{ 0u };
 		};
 
@@ -174,7 +178,7 @@ namespace engine
 			DepthStencilState depth_stencil_state{};
 			ColorBlendingState color_blending_state{};
 
-			std::array<Format, 8ull> color_formats{};
+			std::array<Format, k_max_attachment_count> color_formats{};
 			uint32_t color_format_count{};
 
 			Format depth_format{ Format::eUndefined };
@@ -241,7 +245,7 @@ namespace engine
 
 			uint32_t layer_count{ 1u };
 
-			std::array<Attachment, 8ull> attachments{};
+			std::array<Attachment, k_max_attachment_count> attachments{};
 			uint32_t attachment_count{ 0u };
 
 			Attachment depth_attachment{};

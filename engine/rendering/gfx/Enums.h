@@ -29,8 +29,8 @@ namespace engine
 			eRootSignature,
 			ePipeline,
 			ePipelineCache,
-			eDescriptorPool,
 			eDescriptorSet,
+			eDescriptorAllocator,
 			eQueryPool
 		};
 

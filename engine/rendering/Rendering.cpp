@@ -953,16 +953,17 @@ namespace engine
 				//render_graph.push_back(new_node);
 			}
 
-			// Create shader passes
-			RenderShaderPassCreateInfo create_info{};
-			create_info.shader_name = "testing:draw_uv";
-			create_info.AddWriteResource(backbuffer_resource, { 1.f, 0.5f, 1.f, 1.f });
+			{
+				RenderShaderPassCreateInfo create_info{};
+				create_info.shader_name = "testing:draw_uv";
+				create_info.AddWriteResource(backbuffer_resource, { 1.f, 0.5f, 1.f, 1.f });
 
-			auto* new_node = AllocatePassNode();
-			auto* pass_node = CastRenderGraphNode<RenderGraphPassNode>(new_node);
-			pass_node->pass_index = AddShaderPass(create_info);
+				auto* new_node = AllocatePassNode();
+				auto* pass_node = CastRenderGraphNode<RenderGraphPassNode>(new_node);
+				pass_node->pass_index = AddShaderPass(create_info);
 
-			render_graph.push_back(new_node);
+				render_graph.push_back(new_node);
+			}
 		}
 
 		void Renderer::BeginFrame()

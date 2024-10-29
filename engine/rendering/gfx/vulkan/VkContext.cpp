@@ -1,27 +1,29 @@
-#include <VkContext.h>
-#include <Config.h>
+#include "VkContext.h"
+#include "Config.h"
 
 #include <util/Logger.h>
 #include <engine/runtime/Window.h>
 
-#include <VkPhysicalDevice.h>
-#include <VkDevice.h>
-#include <VkDebug.h>
+#include "VkPhysicalDevice.h"
+#include "VkDevice.h"
+#include "VkDebug.h"
 
-#include <VkBuffer.h>
-#include <VkFence.h>
-#include <VkSemaphore.h>
-#include <VkSampler.h>
-#include <VkPipelineCache.h>
-#include <VkPipeline.h>
-#include <VkCommandPool.h>
-#include <VkQueryPool.h>
-#include <VkTexture.h>
-#include <VkSwapchain.h>
-#include <VkShader.h>
-#include <VkRootSignature.h>
+#include "VkBuffer.h"
+#include "VkFence.h"
+#include "VkSemaphore.h"
+#include "VkSampler.h"
+#include "VkPipelineCache.h"
+#include "VkPipeline.h"
+#include "VkCommandPool.h"
+#include "VkQueryPool.h"
+#include "VkTexture.h"
+#include "VkSwapchain.h"
+#include "VkShader.h"
+#include "VkRootSignature.h"
+#include "VkDescriptorPool.h"
+#include "VkDescriptorAllocator.h"
 
-#include <VkUtil.h>
+#include "VkUtil.h"
 
 #include <volk.h>
 
@@ -305,10 +307,9 @@ namespace engine
 				return new VulkanPipelineCache(*device, create_info);
 			}
 
-			DescriptorPool* VulkanContext::CreateDescriptorPool()
+			DescriptorAllocator* VulkanContext::CreateDescriptorAllocator()
 			{
-				assert(false && "NOT IMPLEMENTED");
-				return nullptr;
+				return new VulkanDescriptorAllocator(*device);
 			}
 
 			Sampler* VulkanContext::CreateSampler(const SamplerCreateInfo& create_info)
@@ -479,7 +480,7 @@ namespace engine
 					auto* handle = static_cast<VulkanPipelineCache*>(resource_handle);
 					debug_utils->SetDebugName(handle->GetHandle(), name);
 				} break;
-				case ResourceType::eDescriptorPool:
+				case ResourceType::eDescriptorAllocator:
 				{
 					assert(false && "NOT IMPLEMENTED");
 				} break;

@@ -174,6 +174,7 @@ namespace engine
 			// Now the frame is active again
 			frame_active = true;
 			current_frame.backbuffer->Reset();
+			current_frame.descriptor_allocator->Reset();
 			current_frame.command_pool->Reset();
 			current_frame.uniform_pool->Reset();
 		}
@@ -260,6 +261,12 @@ namespace engine
 			return *current_command_list;
 		}
 
+		gfx::DescriptorAllocator& RenderContext::GetCurrentDescriptorAllocator()
+		{
+			auto& current_frame = GetCurrentFrame();
+			return *current_frame.descriptor_allocator;
+		}
+
 		gfx::Texture& RenderContext::GetBackbuffer()
 		{
 			return *GetCurrentFrame().backbuffer;
@@ -309,6 +316,7 @@ namespace engine
 
 			render_frame.backbuffer = context.CreateSwapchainTexture(swapchain, frame_index);
 			render_frame.command_pool = context.CreateCommandPool(queue);
+			render_frame.descriptor_allocator = context.CreateDescriptorAllocator();
 			render_frame.uniform_pool = std::make_unique<UniformPool>(context, 16384ull);
 			render_frame.image_avaliable = context.CreateSemaphore();
 			context.SetResourceName(render_frame.image_avaliable, std::format("image_avaliable_{}", frame_index).c_str());
@@ -325,6 +333,7 @@ namespace engine
 		{
 			context.Destroy(render_frame.backbuffer);
 			context.Destroy(render_frame.command_pool);
+			context.Destroy(render_frame.descriptor_allocator);
 			context.Destroy(render_frame.image_avaliable);
 			context.Destroy(render_frame.render_finished);
 			context.Destroy(render_frame.upload_avaliable);

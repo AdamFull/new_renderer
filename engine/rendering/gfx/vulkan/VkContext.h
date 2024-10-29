@@ -53,7 +53,7 @@ namespace engine
 
 				PipelineCache* CreatePipelineCache(const PipelineCacheCreateInfo& create_info) override;
 
-				DescriptorPool* CreateDescriptorPool() override;
+				DescriptorAllocator* CreateDescriptorAllocator() override;
 
 				Sampler* CreateSampler(const SamplerCreateInfo& create_info) override;
 

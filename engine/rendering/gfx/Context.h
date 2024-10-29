@@ -43,7 +43,7 @@ namespace engine
 
 			virtual PipelineCache* CreatePipelineCache(const PipelineCacheCreateInfo& create_info) = 0;
 
-			virtual DescriptorPool* CreateDescriptorPool() = 0;
+			virtual DescriptorAllocator* CreateDescriptorAllocator() = 0;
 
 			virtual Sampler* CreateSampler(const SamplerCreateInfo& create_info) = 0;
 
