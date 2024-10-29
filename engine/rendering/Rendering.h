@@ -108,6 +108,8 @@ namespace engine
 				gfx::Texture* texture{ nullptr };
 				gfx::Sampler* sampler{ nullptr };
 
+				gfx::TextureUsageFlags usage{};
+				bool resizable{ false };
 				gfx::TextureAccess current_access{ {}, gfx::TextureLayout::eUndefined };
 			};
 			ResourceContainer<TextureObject> textures{};

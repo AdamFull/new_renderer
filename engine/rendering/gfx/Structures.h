@@ -290,6 +290,7 @@ namespace engine
 			uint32_t layers{ 1u };
 			uint32_t levels{ 1u };
 
+			bool resizable{ false };
 			Format format{ Format::eUndefined };
 		};
 

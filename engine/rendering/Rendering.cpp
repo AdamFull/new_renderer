@@ -141,11 +141,11 @@ namespace engine
 			gfx::Texture* texture = gfx_context->CreateTexture(create_info);
 			if ((create_info.usage & gfx::TextureUsageFlag::eRenderTarget) || (create_info.usage & gfx::TextureUsageFlag::eStorage))
 			{
-				new_resource.resource_id = render_targets.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
+				new_resource.resource_id = render_targets.Add(TextureObject{ texture, sampler ? sampler : default_sampler, create_info.usage, create_info.resizable });
 			}
 			else
 			{
-				new_resource.resource_id = textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
+				new_resource.resource_id = textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler, create_info.usage, create_info.resizable });
 			}
 
 			return graph_resources.size() - 1ull;
@@ -924,6 +924,7 @@ namespace engine
 				create_info.width = create_info.height = 1024u;
 				create_info.format = gfx::Format::eR16G16Sfloat;
 				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage;
+				create_info.resizable = false;
 
 				brdf_lut_target = AddTextureResource(create_info, nearest_sampler);
 			}
@@ -934,6 +935,7 @@ namespace engine
 				create_info.width = create_info.height = 64u;
 				create_info.format = gfx::Format::eR16G16Sfloat;
 				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage | gfx::TextureUsageFlag::eCubemap;
+				create_info.resizable = false;
 
 				irradiance_cube_target = AddTextureResource(create_info, linear_sampler);
 			}
@@ -945,6 +947,7 @@ namespace engine
 				create_info.format = gfx::Format::eR16G16B16A16Sfloat;
 				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage | gfx::TextureUsageFlag::eCubemap;
 				create_info.levels = static_cast<uint32_t>(std::floor(std::log2((std::max)(create_info.width, create_info.height)))) + 1u;
+				create_info.resizable = false;
 
 				prefiltered_cube_target = AddTextureResource(create_info, linear_sampler);
 			}
@@ -960,11 +963,11 @@ namespace engine
 				create_info.size_by_texture = brdf_lut_target;
 				create_info.BindWriteResource(utl::murmur_hash("out_color"), brdf_lut_target);
 
-				//auto* new_node = AllocatePassNode();
-				//auto* pass_node = CastRenderGraphNode<RenderGraphPassNode>(new_node);
-				//pass_node->pass_index = AddShaderPass(create_info);
-				//
-				//render_graph.push_back(new_node);
+				auto* new_node = AllocatePassNode();
+				auto* pass_node = CastRenderGraphNode<RenderGraphPassNode>(new_node);
+				pass_node->pass_index = AddShaderPass(create_info);
+				
+				render_graph.push_back(new_node);
 			}
 
 			{
@@ -1057,10 +1060,34 @@ namespace engine
 
 		void Renderer::UpdateRenderTargets()
 		{
+			auto& swapchain = render_context->GetSwapchain();
+
+			uint32_t width, height;
+			swapchain.GetSurfaceExtent(width, height);
+
 			// Update/resize render targets here if it's needed
 			for (auto& target : render_targets.data())
 			{
+				// TODO: resize only if texture is able to resize 
+				if (target.resizable)
+					continue;
 
+				// Reset texture layout tracking
+				target.current_access = { {}, gfx::TextureLayout::eUndefined };
+
+				// Save pointer for delete old one
+				auto* old_target = target.texture;
+
+				gfx::TextureCreateInfo create_info{};
+				create_info.usage = target.usage;
+				create_info.width = width;
+				create_info.height = height;
+				create_info.layers = old_target->GetArrayLayerCount();
+				create_info.levels = old_target->GetMipLevelCount();
+				create_info.format = old_target->GetFormat();
+
+				target.texture = gfx_context->CreateTexture(create_info);
+				gfx_context->Destroy(old_target);
 			}
 		}
 	}
