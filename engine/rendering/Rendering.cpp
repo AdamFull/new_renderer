@@ -182,6 +182,34 @@ namespace engine
 			pass_ci.debug_name = create_info.shader_name;
 			pass_ci.shader = resource_context->LoadShader(create_info.shader_name);
 			pass_ci.shared_descriptor = shared_descriptor;
+			pass_ci.divide_by_locals = create_info.divide_by_local_sizes;
+			pass_ci.texture_subresource_index = create_info.subresource_index;
+
+			if (create_info.size_by_texture != ~0u)
+			{
+				auto& resource = graph_resources[create_info.size_by_texture];
+				if (resource.resource_type & RenderResourceTypeFlag::eStaticImage)
+				{
+					auto& texture = textures.Get(resource.resource_id);
+					pass_ci.texture_size_target = texture.texture;
+				}
+				else if (resource.resource_type & RenderResourceTypeFlag::eBackbuffer)
+				{
+					auto& backbuffer = render_context->GetBackbuffer();
+					pass_ci.texture_size_target = &backbuffer;
+				}
+				else if (resource.resource_type & RenderResourceTypeFlag::eAllImage)
+				{
+					auto& texture = render_targets.Get(resource.resource_id);
+					pass_ci.texture_size_target = texture.texture;
+				}
+			}
+			else if (create_info.size_by_buffer != ~0u)
+			{
+				auto& resource = graph_resources[create_info.size_by_texture];
+				auto& buffer = buffers.Get(resource.resource_id);
+				pass_ci.buffer_size_target = buffer.buffer;
+			}
 
 			auto& new_pass = shader_passes.emplace_back(std::make_unique<ComputePass>(*gfx_context, pass_ci));
 			new_pass->SetExecutionContext(render_context.get());
@@ -399,6 +427,12 @@ namespace engine
 				{
 					return { gfx::AccessTypeFlag::eWrite, gfx::TextureLayout::eDepthStencilAttachmentOptimal };
 				}
+
+				if (graph_resource.resource_type & RenderResourceTypeFlag::eStorageTarget)
+				{
+					return { gfx::AccessTypeFlag::eWrite, gfx::TextureLayout::eShader };
+				}
+
 
 				return { gfx::AccessTypeFlag::eWrite, gfx::TextureLayout::eColorAttachmentOptimal };
 			}
