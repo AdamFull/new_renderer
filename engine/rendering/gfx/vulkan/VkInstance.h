@@ -5,7 +5,7 @@
 #include <unordered_map>
 
 #include <util/Result.hpp>
-#include <VkResource.h>
+#include "VkResource.h"
 
 namespace engine
 {

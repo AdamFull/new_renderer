@@ -1,6 +1,6 @@
 #pragma once
 
-#include <engine/rendering/gfx/Base.h>
+#include <Base.h>
 
 namespace engine
 {

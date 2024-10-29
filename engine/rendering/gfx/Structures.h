@@ -92,6 +92,7 @@ namespace engine
 		struct RootSignatureCreateInfo
 		{
 			Shader* shader{ nullptr };
+			SharedDescriptor* shared_descriptor{ nullptr };
 			Sampler** immutable_samplers{ nullptr };
 			uint32_t immutable_sampler_count{};
 		};

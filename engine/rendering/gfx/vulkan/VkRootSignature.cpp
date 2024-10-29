@@ -1,9 +1,9 @@
-#include <VkRootSignature.h>
-#include <VkDevice.h>
+#include "VkRootSignature.h"
+#include "VkDevice.h"
+#include "VkSharedDescriptor.h"
+#include "VkShader.h"
 
-#include <VkShader.h>
-
-#include <VkUtil.h>
+#include "VkUtil.h"
 
 namespace engine
 {
@@ -85,6 +85,18 @@ namespace engine
 				// Allocate descriptr set layouts
 				for (int32_t set = 0; set < 8ull; ++set)
 				{
+					// NOTE: it's very dirty solution i think, but ok for now
+					if (create_info.shared_descriptor)
+					{
+						auto* vk_shared_descriptor = static_cast<VulkanSharedDescriptor*>(create_info.shared_descriptor);
+						auto shared_set = vk_shared_descriptor->GetFirstSet();
+						if (set == shared_set)
+						{
+							auto& shared_layout = vk_shared_descriptor->GetDescriptorSetLayout();
+							layout_ci.AddDescriptorSetLayout(shared_layout.GetHandle());
+						}
+					}
+
 					auto& ci = descriptor_set_layout_create_infos[set];
 					if (ci.create_info.bindingCount > 0)
 					{

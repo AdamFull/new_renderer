@@ -1,7 +1,7 @@
-#include <VkShader.h>
-#include <VkDevice.h>
+#include "VkShader.h"
+#include "VkDevice.h"
 
-#include <VkUtil.h>
+#include "VkUtil.h"
 
 #include <spirv_cross.hpp>
 #include <spirv_glsl.hpp>
@@ -114,8 +114,8 @@ namespace engine
 					return;
 				}
 
-				//if (HasSubstring(res.name, "global"))
-				//	return;
+				if (HasSubstring(res.name, "global"))
+					return;
 
 				const auto& refl_type = compiler->get_type(res.type_id);
 				auto& decoration = compiler->get_decoration_bitset(refl_type.self);
@@ -164,8 +164,8 @@ namespace engine
 					return;
 				}
 
-				//if (HasSubstring(res.name, "global"))
-				//	return;
+				if (HasSubstring(res.name, "global"))
+					return;
 
 				ShaderResource& uniform = reflection.AddShaderResource();
 

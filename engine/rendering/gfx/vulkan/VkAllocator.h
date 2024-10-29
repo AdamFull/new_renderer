@@ -4,7 +4,7 @@
 #include <vector>
 #include <span>
 
-#include <VkResource.h>
+#include "VkResource.h"
 
 #include <vma/vk_mem_alloc.hpp>
 
