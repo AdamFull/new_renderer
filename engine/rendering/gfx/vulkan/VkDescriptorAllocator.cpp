@@ -2,6 +2,7 @@
 #include "VkDevice.h"
 #include "VkDescriptorPool.h"
 #include "VkRootSignature.h"
+#include "VkResourceDescriptor.h"
 
 namespace engine
 {
@@ -24,6 +25,12 @@ namespace engine
 			VulkanDescriptorAllocator::~VulkanDescriptorAllocator()
 			{
 				descriptor_pools.clear();
+
+				for (auto& descriptor : allocated_descriptors)
+				{
+					delete descriptor;
+					descriptor = nullptr;
+				}
 			}
 
 			void VulkanDescriptorAllocator::Reset()
@@ -38,13 +45,23 @@ namespace engine
 				{
 					descriptor_pools.erase(to_delete);
 				}
+
+				for (auto& descriptor : allocated_descriptors)
+				{
+					delete descriptor;
+					descriptor = nullptr;
+				}
+
+				allocated_descriptors.clear();
 			}
 
-			void VulkanDescriptorAllocator::AllocateSets(RootSignature* root_signature)
+			ResourceDescriptor* VulkanDescriptorAllocator::AllocateDescriptors(RootSignature* root_signature)
 			{
 				auto* vk_root_signature = static_cast<VulkanRootSignature*>(root_signature);
 
 				auto& set_layouts = vk_root_signature->GetDescriptorSetLayouts();
+
+				auto& new_resource_descriptor = allocated_descriptors.emplace_back(new VulkanResourceDescriptor(device));
 				for (int32_t i = 0; i < k_max_descriptor_count; ++i)
 				{
 					// TODO: check is uses external set layout (ignore externals)
@@ -52,13 +69,15 @@ namespace engine
 					auto& layout = set_layouts[i];
 					if (layout)
 					{
-						// Update sets
-						vk_root_signature->descriptor_sets[i] = Allocate(*layout);
+						auto& new_descriptor_set = Allocate(*layout);
+						new_resource_descriptor->UpdateDescriptorSet(i, new_descriptor_set);
 					}
 				}
+
+				return new_resource_descriptor;
 			}
 
-			DescriptorSet* VulkanDescriptorAllocator::Allocate(DescriptorSetLayout& layout)
+			DescriptorSet& VulkanDescriptorAllocator::Allocate(DescriptorSetLayout& layout)
 			{
 				// We didn't have any pool for now, needs to allocate new one
 				if (descriptor_pools.empty())

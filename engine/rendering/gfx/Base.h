@@ -131,6 +131,21 @@ namespace engine
 				assert(data_size <= size);
 				buffer.Update(data, data_size, offset);
 			}
+
+			Buffer& GetBuffer()
+			{
+				return buffer;
+			}
+
+			uint64_t GetSize() const
+			{
+				return size;
+			}
+
+			uint64_t GetOffset() const
+			{
+				return offset;
+			}
 		private:
 			Buffer& buffer;
 			uint64_t size{};
@@ -158,7 +173,7 @@ namespace engine
 
 			virtual void BindPipeline(Pipeline* pipeline) = 0;
 			virtual void BindDescriptorSet() = 0;
-			virtual void BindDescriptorSets(RootSignature* root_signature) = 0;
+			virtual void BindDescriptors(PipelineType pipeline_type, RootSignature* root_signature, ResourceDescriptor* descriptor) = 0;
 			virtual void PushConstants(Shader* shader, RootSignature* root_signature, std::span<const char> constant_data) = 0;
 
 			virtual void BindIndexBuffer(Buffer* index_buffer, IndexType index_type, uint64_t offset) = 0;
@@ -266,9 +281,6 @@ namespace engine
 			{
 				return ResourceType::eRootSignature;
 			}
-
-		protected:
-			std::array<DescriptorSet*, k_max_descriptor_count> descriptor_sets{};
 		};
 
 		class Pipeline : public GFXResource
@@ -297,15 +309,20 @@ namespace engine
 			virtual void GetData(size_t& data_size, void* data_ptr) = 0;
 		};
 
-		class DescriptorSet : public GFXResource
+		class ResourceDescriptor : public GFXResource
 		{
 		public:
-			virtual ~DescriptorSet() = default;
+			virtual ~ResourceDescriptor() = default;
 
 			ResourceType GetResourceType() override
 			{
-				return ResourceType::eDescriptorSet;
+				return ResourceType::eResourceDescriptor;
 			}
+
+			virtual void BindTexture(TextureDescriptor& texture_descriptor) = 0;
+			virtual void BindBuffer(BufferDescriptor& buffer_descriptor) = 0;
+
+			virtual void Flush() = 0;
 		};
 
 		class DescriptorAllocator : public GFXResource
@@ -319,7 +336,7 @@ namespace engine
 			}
 
 			virtual void Reset() = 0;
-			virtual void AllocateSets(RootSignature* root_signature) = 0;
+			virtual ResourceDescriptor* AllocateDescriptors(RootSignature* root_signature) = 0;
 		};
 
 		class QueryPool : public GFXResource

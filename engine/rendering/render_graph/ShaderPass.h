@@ -132,6 +132,11 @@ namespace engine
 				return resource.name_hash;
 			}
 
+			const gfx::ShaderResource& GetResource()
+			{
+				return resource;
+			}
+
 		private:
 			const gfx::ShaderReflection& reflection;
 			const gfx::ShaderResource& resource;
@@ -159,6 +164,7 @@ namespace engine
 
 			bool CanExecute() const;
 		protected:
+			void FlushResources();
 			void PushConstantRanges(gfx::CommandList& command_list);
 			void CollectProfileData();
 			virtual void _Execute(gfx::CommandList& command_list, float delta_time) = 0;
@@ -169,6 +175,7 @@ namespace engine
 			bool one_time{ false };
 			bool can_execute{ true };
 
+			gfx::ResourceDescriptor* resource_descriptor{ nullptr };
 			ExecutionContext* execution_context{ nullptr };
 
 			std::vector<UniformHandle> uniform_handles;
@@ -182,8 +189,6 @@ namespace engine
 			uint64_t execution_time{ 0ull };
 			float timestamp_frequency{ 0.f };
 			float pass_delta_time{ 0.f };
-
-			std::vector<ShaderResourceBinding> resource_bindings{};
 		};
 	}
 }

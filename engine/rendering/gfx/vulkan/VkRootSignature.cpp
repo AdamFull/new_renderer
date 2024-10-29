@@ -60,7 +60,7 @@ namespace engine
 
 					auto& descriptor_binding = ci.AddBinding();
 					descriptor_binding.binding = it->binding;
-					descriptor_binding.descriptorType = DescriptorPoolToVk(it->type);
+					descriptor_binding.descriptorType = DescriptorTypeToVk(it->type);
 					descriptor_binding.descriptorCount = 1u;
 					descriptor_binding.stageFlags = ShaderStageFlagsToVk(it->stages);
 

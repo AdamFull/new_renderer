@@ -115,23 +115,11 @@ namespace engine
 			DescriptorPool::~DescriptorPool()
 			{
 				Handle(device).destroyDescriptorPool(handle, allocation_callbacks);
-
-				for (auto& descriptor_set : allocated_descriptors)
-				{
-					delete descriptor_set;
-					descriptor_set = nullptr;
-				}
 			}
 
 			void DescriptorPool::Reset()
 			{
 				Handle(device).resetDescriptorPool(handle);
-
-				for (auto& descriptor_set : allocated_descriptors)
-				{
-					delete descriptor_set;
-					descriptor_set = nullptr;
-				}
 				allocated_descriptors.clear();
 
 				last_allocation_result = CanAllocateResult::Success;
@@ -142,7 +130,7 @@ namespace engine
 				std::copy(initial_sizes.begin(), initial_sizes.end(), avaliable_sizes.begin());
 			}
 
-			VulkanDescriptorSet* DescriptorPool::Allocate(DescriptorSetLayout& layout, const std::string& debug_name)
+			DescriptorSet& DescriptorPool::Allocate(DescriptorSetLayout& layout, const std::string& debug_name)
 			{
 				vk::DescriptorSetAllocateInfo alloc_info{};
 				alloc_info.descriptorPool = handle;
@@ -162,22 +150,22 @@ namespace engine
 				++allocated_count;
 				countdown_count = k_max_frames_unused;
 
-				return allocated_descriptors.emplace_back(new VulkanDescriptorSet(descriptor_set, required_descriptor_count));
+				return allocated_descriptors.emplace_back(descriptor_set, required_descriptor_count);
 			}
 
-			vk::Result DescriptorPool::Free(VulkanDescriptorSet* descriptor_set)
+			vk::Result DescriptorPool::Free(DescriptorSet& descriptor_set)
 			{
-				if (descriptor_set->handle)
+				if (descriptor_set.handle)
 				{
-					Handle(device).freeDescriptorSets(handle, 1u, &descriptor_set->handle);
-					descriptor_set->handle = nullptr;
+					Handle(device).freeDescriptorSets(handle, 1u, &descriptor_set.handle);
+					descriptor_set.handle = nullptr;
 
 					--allocated_count;
 					countdown_count = k_max_frames_unused;
 
 					for (int32_t i = 0; i < k_max_pool_sizes_count; ++i)
 					{
-						avaliable_sizes[i] += descriptor_set->used_sizes[i];
+						avaliable_sizes[i] += descriptor_set.used_sizes[i];
 					}
 
 					return vk::Result::eSuccess;

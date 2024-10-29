@@ -1,7 +1,6 @@
 #pragma once
 
 #include "VkDescriptorSetLayout.h"
-#include <Base.h>
 
 namespace engine
 {
@@ -11,22 +10,22 @@ namespace engine
 		{
 			class Device;
 
-			class VulkanDescriptorSet final : public DescriptorSet, public VulkanResource<vk::DescriptorSet>
+			class DescriptorSet final : public VulkanResource<vk::DescriptorSet>
 			{
 			public:
 				friend class DescriptorPool;
 
-				VulkanDescriptorSet();
-				VulkanDescriptorSet(vk::DescriptorSet handle, const PoolSizes& sizes);
+				DescriptorSet();
+				DescriptorSet(vk::DescriptorSet handle, const PoolSizes& sizes);
 
-				VulkanDescriptorSet(const VulkanDescriptorSet&) = delete;
+				DescriptorSet(const DescriptorSet&) = delete;
 
-				VulkanDescriptorSet(VulkanDescriptorSet&& other);
+				DescriptorSet(DescriptorSet&& other);
 
-				~VulkanDescriptorSet() = default;
+				~DescriptorSet() = default;
 
-				VulkanDescriptorSet& operator=(const VulkanDescriptorSet&) = delete;
-				VulkanDescriptorSet& operator=(VulkanDescriptorSet&&) = delete;
+				DescriptorSet& operator=(const DescriptorSet&) = delete;
+				DescriptorSet& operator=(DescriptorSet&&) = delete;
 			private:
 				PoolSizes used_sizes;
 			};

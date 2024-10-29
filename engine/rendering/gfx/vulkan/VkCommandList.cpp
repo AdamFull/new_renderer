@@ -8,6 +8,7 @@
 #include "VkPipeline.h"
 #include "VkRootSignature.h"
 #include "VkDescriptorSet.h"
+#include "VkResourceDescriptor.h"
 
 #include <Util.h>
 #include "VkUtil.h"
@@ -82,33 +83,17 @@ namespace engine
 				assert(false && "NOT IMPLEMENTED");
 			}
 
-			void VulkanCommandList::BindDescriptorSets(RootSignature* root_signature)
+			void VulkanCommandList::BindDescriptors(PipelineType pipeline_type, RootSignature* root_signature, ResourceDescriptor* descriptor)
 			{
 				auto* vk_root_signature = static_cast<VulkanRootSignature*>(root_signature);
+				auto* vk_resource_descriptor = static_cast<VulkanResourceDescriptor*>(descriptor);
+
+				auto first_set = vk_resource_descriptor->GetFirstSet();
+				auto set_count = vk_resource_descriptor->GetSetCount();
+				auto& descriptor_sets = vk_resource_descriptor->GetDescriptorSets();
 
 				auto& pipeline_layout = vk_root_signature->GetPipelineLayout();
-
-				int32_t first_set{ -1 };
-				int32_t set_count{ 0 };
-				std::array<vk::DescriptorSet, k_max_descriptor_count> descriptor_sets{};
-
-				for (int32_t i = 0; i < k_max_descriptor_count; ++i)
-				{
-					auto* set = vk_root_signature->descriptor_sets[i];
-					if (set)
-					{
-						if (first_set < 0)
-						{
-							first_set = i;
-						}
-
-						auto* vk_set = static_cast<VulkanDescriptorSet*>(set);
-						descriptor_sets[set_count++] = vk_set->GetHandle();
-					}
-				}
-
-				// TODO: bind point
-				handle.bindDescriptorSets(vk::PipelineBindPoint::eCompute, pipeline_layout.GetHandle(), first_set, set_count, descriptor_sets.data(), 0u, nullptr);
+				handle.bindDescriptorSets(PipelineTypeToVk(pipeline_type), pipeline_layout.GetHandle(), first_set, set_count, descriptor_sets.data() + first_set, 0u, nullptr);
 			}
 
 			void VulkanCommandList::PushConstants(Shader* shader, RootSignature* root_signature, std::span<const char> constant_data)

@@ -29,8 +29,8 @@ namespace engine
 				DescriptorPool& operator=(DescriptorPool&&) = delete;
 
 				void Reset();
-				VulkanDescriptorSet* Allocate(DescriptorSetLayout& layout, const std::string& debug_name = "");
-				vk::Result Free(VulkanDescriptorSet* descriptor_set);
+				DescriptorSet& Allocate(DescriptorSetLayout& layout, const std::string& debug_name = "");
+				vk::Result Free(DescriptorSet& descriptor_set);
 
 				bool IsExpired() const;
 				CanAllocateResult CanAllocate(DescriptorSetLayout& layout);
@@ -42,7 +42,7 @@ namespace engine
 
 				// Avaliable number of descriptors
 				PoolSizes avaliable_sizes{};
-				std::vector<VulkanDescriptorSet*> allocated_descriptors;
+				std::vector<DescriptorSet> allocated_descriptors;
 
 				CanAllocateResult last_allocation_result{};
 

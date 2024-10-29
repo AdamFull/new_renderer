@@ -484,7 +484,7 @@ namespace engine
 				{
 					assert(false && "NOT IMPLEMENTED");
 				} break;
-				case ResourceType::eDescriptorSet:
+				case ResourceType::eResourceDescriptor:
 				{
 					assert(false && "NOT IMPLEMENTED");
 				} break;

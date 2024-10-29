@@ -86,9 +86,6 @@ namespace engine
 			{
 				can_execute = false;
 			}
-
-			// Reset resource bindings (idk, may be don't needed in future)
-			resource_bindings.clear();
 		}
 
 		UniformHandle& ShaderPass::GetUniformBlock(uint32_t name_hash)
@@ -105,6 +102,41 @@ namespace engine
 		UniformHandle& ShaderPass::GetUniformBlock(const char* name)
 		{
 			return GetUniformBlock(utl::murmur_hash(name));
+		}
+		
+		void ShaderPass::FlushResources()
+		{
+			if (!resource_descriptor)
+			{
+				auto& descriptor_allocator = execution_context->GetCurrentDescriptorAllocator();
+				resource_descriptor = descriptor_allocator.AllocateDescriptors(root_signature);
+			}
+
+			// Update uniform buffers
+			for (auto& handle : uniform_handles)
+			{
+				const auto& resource = handle.GetResource();
+
+				// Request memory block for this uniform
+				// TODO: may be request it inside uniform handler?
+				auto uniform_block = execution_context->RequestUniformBlock(resource.size);
+				uniform_block.Update(handle.Data());
+
+				gfx::BufferDescriptor descriptor{};
+				descriptor.type = resource.type;
+				descriptor.set = resource.set;
+				descriptor.binding = resource.binding;
+
+				descriptor.buffer = &uniform_block.GetBuffer();
+				descriptor.size = uniform_block.GetSize();
+				descriptor.offset = uniform_block.GetOffset();
+
+				resource_descriptor->BindBuffer(descriptor);
+			}
+
+			// Upload all resources
+			resource_descriptor->Flush();
+			resource_descriptor = nullptr;
 		}
 
 		void ShaderPass::PushConstantRanges(gfx::CommandList& command_list)
@@ -136,18 +168,56 @@ namespace engine
 
 		void ShaderPass::BindResource(const ShaderResourceBinding& resource_binding)
 		{
+			if (!resource_descriptor)
+			{
+				auto& descriptor_allocator = execution_context->GetCurrentDescriptorAllocator();
+				resource_descriptor = descriptor_allocator.AllocateDescriptors(root_signature);
+			}
+
 			auto& reflection = shader->GetReflection();
 			// TODO: may be cache resource dst from recursion for lookup only one time
 			// Check that we have this binding point
 			auto found = std::find_if(reflection.shader_resources.Begin(), reflection.shader_resources.End(), [&resource_binding](const gfx::ShaderResource& resource) { return resource.name_hash == resource_binding.binding_point; });
-			if (found == reflection.shader_resources.End())
+			if (found != reflection.shader_resources.End())
 			{
-				log_warning("Resource binding was not found for this pass.");
-				assert(false && "RESOURCE BINDING NOT FOUND");
+				const gfx::ShaderResource& resource = *found;
+
+				if (resource_binding.buffer)
+				{
+					gfx::BufferDescriptor descriptor{};
+					descriptor.type = resource.type;
+					descriptor.set = resource.set;
+					descriptor.binding = resource.binding;
+
+					descriptor.buffer = resource_binding.buffer;
+					descriptor.size = resource_binding.buffer->GetSize();
+
+					resource_descriptor->BindBuffer(descriptor);
+				}
+				else if (resource_binding.texture)
+				{
+					gfx::TextureDescriptor descriptor{};
+					descriptor.type = resource.type;
+					descriptor.set = resource.set;
+					descriptor.binding = resource.binding;
+
+					descriptor.texture = resource_binding.texture;
+					descriptor.sampler = resource_binding.sampler;
+					descriptor.subresource_index = resource_binding.subresource;
+
+					resource_descriptor->BindTexture(descriptor);
+				}
+				else
+				{
+					log_warning("No resources provided for bind");
+					assert(false && "NO BIND RESOURCE PROVIDED");
+					return;
+				}
 				return;
 			}
 
-			resource_bindings.push_back(resource_binding);
+			log_warning("Resource binding was not found for this pass.");
+			assert(false && "RESOURCE BINDING NOT FOUND");
 		}
 
 		bool ShaderPass::CanExecute() const

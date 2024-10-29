@@ -52,9 +52,6 @@ namespace engine
 
 		void RenderPass::_Execute(gfx::CommandList& command_list, float delta_time)
 		{
-			auto& descriptor_allocator = execution_context->GetCurrentDescriptorAllocator();
-			descriptor_allocator.AllocateSets(root_signature);
-
 			command_list.BeginRendering(rendering_info);
 
 			command_list.SetViewport(0.f, 0.f, rendering_info.width, rendering_info.height, 0.f, 1.f);

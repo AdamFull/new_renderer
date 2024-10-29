@@ -204,7 +204,7 @@ namespace engine
 				return vk::ImageLayout::eUndefined;
 			}
 
-			inline vk::DescriptorType DescriptorPoolToVk(DescriptorType type)
+			inline vk::DescriptorType DescriptorTypeToVk(DescriptorType type)
 			{
 				if (type == DescriptorType::eSampler)
 					return vk::DescriptorType::eSampler;

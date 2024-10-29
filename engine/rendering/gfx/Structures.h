@@ -34,7 +34,7 @@ namespace engine
 		class Pipeline;
 		class PipelineCache;
 		class DescriptorAllocator;
-		class DescriptorSet;
+		class ResourceDescriptor;
 		class QueryPool;
 
 		/**
@@ -423,6 +423,32 @@ namespace engine
 
 			std::array<TextureCopyRegion, 64ull> copy_regions{};
 			uint32_t copy_region_count{ 0u };
+		};
+
+		struct BufferDescriptor
+		{
+			DescriptorType type{};
+
+			Buffer* buffer{ nullptr };
+
+			uint32_t set{ 0u };
+			uint32_t binding{ 0u };
+
+			uint32_t offset{ 0u };
+			uint32_t size{ 0u };
+		};
+
+		struct TextureDescriptor
+		{
+			DescriptorType type{};
+
+			Texture* texture{ nullptr };
+			Sampler* sampler{ nullptr };
+			uint32_t subresource_index{ ~0u };
+
+			uint32_t set{ 0u };
+			uint32_t binding{ 0u };
+			uint32_t array_index{ 0u };
 		};
 
 		uint32_t Hash(const VertexAttributeDescription& desc, uint32_t hash = 0u);

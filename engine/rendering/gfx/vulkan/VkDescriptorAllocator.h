@@ -11,6 +11,8 @@ namespace engine
 			class Device;
 			class DescriptorPool;
 			class DescriptorSetLayout;
+			class DescriptorSet;
+			class VulkanResourceDescriptor;
 
 			class VulkanDescriptorAllocator final : public DescriptorAllocator
 			{
@@ -24,15 +26,16 @@ namespace engine
 				VulkanDescriptorAllocator& operator=(VulkanDescriptorAllocator&&) = delete;
 
 				void Reset() override;
-				void AllocateSets(RootSignature* root_signature) override;
+				ResourceDescriptor* AllocateDescriptors(RootSignature* root_signature) override;
 			private:
-				DescriptorSet* Allocate(DescriptorSetLayout& layout);
+				DescriptorSet& Allocate(DescriptorSetLayout& layout);
 			private:
 				Device& device;
 
 				// TODO: Do i even need to allocate memory here?
 				uint32_t multiplicator{ 2u };
 				std::vector<std::unique_ptr<DescriptorPool>> descriptor_pools{};
+				std::vector<VulkanResourceDescriptor*> allocated_descriptors{};
 			};
 		}
 	}
