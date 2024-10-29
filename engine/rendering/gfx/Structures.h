@@ -35,6 +35,7 @@ namespace engine
 		class PipelineCache;
 		class DescriptorAllocator;
 		class ResourceDescriptor;
+		class SharedDescriptor;
 		class QueryPool;
 
 		/**
@@ -423,6 +424,19 @@ namespace engine
 
 			std::array<TextureCopyRegion, 64ull> copy_regions{};
 			uint32_t copy_region_count{ 0u };
+		};
+
+		struct BindingDescription
+		{
+			DescriptorType type{};
+			uint32_t binding{};
+			uint32_t count{ 1u };
+		};
+
+		struct SharedDescriptorCreateInfo
+		{
+			uint32_t first_set{ 0u };
+			std::vector<BindingDescription> descriptions{};
 		};
 
 		struct BufferDescriptor

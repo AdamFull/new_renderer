@@ -55,6 +55,8 @@ namespace engine
 
 				DescriptorAllocator* CreateDescriptorAllocator() override;
 
+				SharedDescriptor* CreateSharedDescriptor(const SharedDescriptorCreateInfo& create_info) override;
+
 				Sampler* CreateSampler(const SamplerCreateInfo& create_info) override;
 
 				QueryPool* CreateQueryPool(const QueryPoolCreateInfo& create_info) override;

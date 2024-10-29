@@ -339,6 +339,20 @@ namespace engine
 			virtual ResourceDescriptor* AllocateDescriptors(RootSignature* root_signature) = 0;
 		};
 
+		class SharedDescriptor : public GFXResource
+		{
+		public:
+			virtual ~SharedDescriptor() = default;
+
+			ResourceType GetResourceType() override
+			{
+				return ResourceType::eDescriptorAllocator;
+			}
+
+			virtual void Reset() = 0;
+			virtual ResourceDescriptor* RequestDescriptors() = 0;
+		};
+
 		class QueryPool : public GFXResource
 		{
 		public:

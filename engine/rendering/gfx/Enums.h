@@ -31,6 +31,7 @@ namespace engine
 			ePipelineCache,
 			eResourceDescriptor,
 			eDescriptorAllocator,
+			eSharedDescriptor,
 			eQueryPool
 		};
 

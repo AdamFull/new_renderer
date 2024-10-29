@@ -92,6 +92,15 @@ namespace engine
 
 			default_sampler = gfx_context->CreateSampler(sampler_ci);
 
+			// TODO: now it creates just default one
+			gfx::SharedDescriptorCreateInfo shared_descriptor_ci{};
+			shared_descriptor_ci.descriptions.emplace_back(gfx::DescriptorType::eUniformBuffer, 0u, 1u);
+			shared_descriptor_ci.descriptions.emplace_back(gfx::DescriptorType::eUniformBuffer, 1u, 1u);
+			shared_descriptor_ci.descriptions.emplace_back(gfx::DescriptorType::eUniformBuffer, 2u, 1u);
+			shared_descriptor_ci.descriptions.emplace_back(gfx::DescriptorType::eCombinedImageSampler, 3u, 16384u);
+
+			shared_descriptor = gfx_context->CreateSharedDescriptor(shared_descriptor_ci);
+
 			// Temporary func to create test render graph
 			BuildGraph();
 		}
@@ -101,6 +110,7 @@ namespace engine
 			// Destroy render graph including shader passes
 			DestroyRenderGraph();
 
+			gfx_context->Destroy(shared_descriptor);
 			gfx_context->Destroy(default_sampler);
 			gfx_context->Destroy(timestamp_query);
 		}
@@ -133,8 +143,10 @@ namespace engine
 			{
 				new_resource.resource_id = render_targets.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
 			}
-
-			new_resource.resource_id = textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
+			else
+			{
+				new_resource.resource_id = textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
+			}
 
 			return graph_resources.size() - 1ull;
 		}
@@ -968,8 +980,10 @@ namespace engine
 
 		void Renderer::BeginFrame()
 		{
+			shared_descriptor->Reset();
+
 			bool surface_updated{ false };
-			auto& command_buffer = render_context->Begin(surface_updated);
+			auto& command_list = render_context->Begin(surface_updated);
 			if (surface_updated)
 			{
 				UpdateRenderTargets();
@@ -986,8 +1000,29 @@ namespace engine
 
 			gpu_delta_time = static_cast<float>(elapsed_time) * timestamp_frequency / 1000000000.f;
 
-			command_buffer.ResetQuery(timestamp_query, 0u, 2u);
-			command_buffer.BeginQuery(timestamp_query, 0u);
+			command_list.ResetQuery(timestamp_query, 0u, 2u);
+			command_list.BeginQuery(timestamp_query, 0u);
+
+			global_resource_descriptor = shared_descriptor->RequestDescriptors();
+
+			// Update bindless textures
+			for (int32_t i = 0; i < textures.data().size(); ++i)
+			{
+				auto& resource = textures.Get(i);
+
+				gfx::TextureDescriptor descriptor{};
+				descriptor.type = gfx::DescriptorType::eCombinedImageSampler;
+				descriptor.set = 0;
+				descriptor.binding = 3;
+
+				descriptor.array_index = i;
+				descriptor.texture = resource.texture;
+				descriptor.sampler = resource.sampler;
+
+				global_resource_descriptor->BindTexture(descriptor);
+			}
+
+			global_resource_descriptor->Flush();
 		}
 
 		void Renderer::EndFrame()

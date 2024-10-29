@@ -63,6 +63,8 @@ namespace engine
 
 		void ShaderPass::Execute(float delta_time)
 		{
+			assert(execution_context && "CANNOT EXECUTE PASS WITHOUT EXECUTION CONTEXT");
+
 			// Collect previous frame data
 			CollectProfileData();
 
@@ -70,7 +72,6 @@ namespace engine
 			command_list.BeginMarker(debug_name.c_str(), 0xFFFF11FF);
 
 			// Reset performance counter
-			//timestamp_query->Reset(0u);
 			command_list.ResetQuery(timestamp_query, 0u, 2u);
 			command_list.BeginQuery(timestamp_query, 0u);
 
@@ -82,6 +83,7 @@ namespace engine
 			command_list.EndQuery(timestamp_query, 1u);
 			command_list.EndMarker();
 
+			// Update one time flag for single time passes
 			if (one_time)
 			{
 				can_execute = false;

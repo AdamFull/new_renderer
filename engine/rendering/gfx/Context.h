@@ -45,6 +45,8 @@ namespace engine
 
 			virtual DescriptorAllocator* CreateDescriptorAllocator() = 0;
 
+			virtual SharedDescriptor* CreateSharedDescriptor(const SharedDescriptorCreateInfo& create_info) = 0;
+
 			virtual Sampler* CreateSampler(const SamplerCreateInfo& create_info) = 0;
 
 			virtual QueryPool* CreateQueryPool(const QueryPoolCreateInfo& create_info) = 0;

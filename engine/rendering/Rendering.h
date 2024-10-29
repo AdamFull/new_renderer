@@ -99,6 +99,9 @@ namespace engine
 
 			//GPUVector<FMaterial> materials{};
 
+			gfx::SharedDescriptor* shared_descriptor{ nullptr };
+			gfx::ResourceDescriptor* global_resource_descriptor{ nullptr };
+
 			// Render object descriptions
 			struct TextureObject
 			{

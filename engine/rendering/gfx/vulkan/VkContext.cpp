@@ -22,6 +22,7 @@
 #include "VkRootSignature.h"
 #include "VkDescriptorPool.h"
 #include "VkDescriptorAllocator.h"
+#include "VkSharedDescriptor.h"
 
 #include "VkUtil.h"
 
@@ -310,6 +311,11 @@ namespace engine
 			DescriptorAllocator* VulkanContext::CreateDescriptorAllocator()
 			{
 				return new VulkanDescriptorAllocator(*device);
+			}
+
+			SharedDescriptor* VulkanContext::CreateSharedDescriptor(const SharedDescriptorCreateInfo& create_info)
+			{
+				return new VulkanSharedDescriptor(*device, create_info);
 			}
 
 			Sampler* VulkanContext::CreateSampler(const SamplerCreateInfo& create_info)
