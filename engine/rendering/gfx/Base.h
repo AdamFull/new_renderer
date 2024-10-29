@@ -172,8 +172,7 @@ namespace engine
 			virtual void SerScissor(uint32_t x, uint32_t y, uint32_t width, uint32_t height) = 0;
 
 			virtual void BindPipeline(Pipeline* pipeline) = 0;
-			virtual void BindDescriptorSet() = 0;
-			virtual void BindDescriptors(PipelineType pipeline_type, RootSignature* root_signature, ResourceDescriptor* descriptor) = 0;
+			virtual void BindDescriptors(const BindDescriptorsInfo& bind_info) = 0;
 			virtual void PushConstants(Shader* shader, RootSignature* root_signature, std::span<const char> constant_data) = 0;
 
 			virtual void BindIndexBuffer(Buffer* index_buffer, IndexType index_type, uint64_t offset) = 0;
@@ -350,6 +349,7 @@ namespace engine
 			}
 
 			virtual void Reset() = 0;
+			virtual ResourceDescriptor* GetLatestDescriptors() = 0;
 			virtual ResourceDescriptor* RequestDescriptors() = 0;
 		};
 

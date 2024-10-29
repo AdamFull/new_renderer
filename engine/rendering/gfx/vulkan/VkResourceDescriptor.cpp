@@ -97,7 +97,6 @@ namespace engine
 				writes_count = 0u;
 				image_count = 0u;
 				buffer_count = 0u;
-				set_count = 0;
 			}
 
 			const std::array<vk::DescriptorSet, k_max_descriptor_count>& VulkanResourceDescriptor::GetDescriptorSets()

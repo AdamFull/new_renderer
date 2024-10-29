@@ -78,22 +78,41 @@ namespace engine
 				handle.bindPipeline(bind_point, vk_pipeline->GetHandle());
 			}
 
-			void VulkanCommandList::BindDescriptorSet()
+			void VulkanCommandList::BindDescriptors(const BindDescriptorsInfo& bind_info)
 			{
-				assert(false && "NOT IMPLEMENTED");
-			}
+				auto* vk_root_signature = static_cast<VulkanRootSignature*>(bind_info.root_signature);
 
-			void VulkanCommandList::BindDescriptors(PipelineType pipeline_type, RootSignature* root_signature, ResourceDescriptor* descriptor)
-			{
-				auto* vk_root_signature = static_cast<VulkanRootSignature*>(root_signature);
-				auto* vk_resource_descriptor = static_cast<VulkanResourceDescriptor*>(descriptor);
+				uint32_t first_descriptor_set{ ~0u };
+				uint32_t descriptor_set_count{ 0u };
+				std::array<vk::DescriptorSet, k_max_descriptor_count> descriptor_sets{};
+				for (int32_t i = 0; i < bind_info.resource_descriptors_count; ++i)
+				{
+					auto* resource_descriptor = bind_info.resource_descriptors[i];
+					if (resource_descriptor)
+					{
+						auto* vk_resource_descriptor = static_cast<VulkanResourceDescriptor*>(resource_descriptor);
+						auto first_set = vk_resource_descriptor->GetFirstSet();
+						auto set_count = vk_resource_descriptor->GetSetCount();
+						auto& sets = vk_resource_descriptor->GetDescriptorSets();
 
-				auto first_set = vk_resource_descriptor->GetFirstSet();
-				auto set_count = vk_resource_descriptor->GetSetCount();
-				auto& descriptor_sets = vk_resource_descriptor->GetDescriptorSets();
+						// TODO: check that descriptor ranges is not overlapping
+						for (int32_t j = first_set; j < first_set + set_count; ++j)
+						{
+							descriptor_sets[j] = sets[j];
+							first_descriptor_set = std::min(first_descriptor_set, (uint32_t)j);
+							descriptor_set_count++;
+						}
+					}
+				}
 
 				auto& pipeline_layout = vk_root_signature->GetPipelineLayout();
-				handle.bindDescriptorSets(PipelineTypeToVk(pipeline_type), pipeline_layout.GetHandle(), first_set, set_count, descriptor_sets.data() + first_set, 0u, nullptr);
+				handle.bindDescriptorSets(
+					PipelineTypeToVk(bind_info.pipeline_type), 
+					pipeline_layout.GetHandle(), 
+					first_descriptor_set, 
+					descriptor_set_count, 
+					descriptor_sets.data() + first_descriptor_set, 
+					0u, nullptr);
 			}
 
 			void VulkanCommandList::PushConstants(Shader* shader, RootSignature* root_signature, std::span<const char> constant_data)

@@ -13,7 +13,8 @@ namespace engine
 			context{ context },
 			shader{ create_info.shader },
 			debug_name{ create_info.debug_name },
-			one_time{ create_info.one_time }
+			one_time{ create_info.one_time },
+			shared_descriptor{ create_info.shared_descriptor }
 		{
 			auto& reflection = shader->GetReflection();
 
@@ -32,6 +33,7 @@ namespace engine
 			// Create root signature
 			gfx::RootSignatureCreateInfo root_sign_ci{};
 			root_sign_ci.shader = shader;
+			root_sign_ci.shared_descriptor = create_info.shared_descriptor;
 			// TODO: also load immutable samplers from pass info or from somewhere another?
 
 			root_signature = context.CreateRootSignature(root_sign_ci);
@@ -106,7 +108,7 @@ namespace engine
 			return GetUniformBlock(utl::murmur_hash(name));
 		}
 		
-		void ShaderPass::FlushResources()
+		void ShaderPass::FlushResources(gfx::CommandList& command_list)
 		{
 			if (!resource_descriptor)
 			{
@@ -138,6 +140,23 @@ namespace engine
 
 			// Upload all resources
 			resource_descriptor->Flush();
+
+			gfx::ResourceDescriptor* resource_descriptors[]{ resource_descriptor, nullptr };
+			uint32_t resource_descriptor_count{ 1u };
+
+			if (shared_descriptor)
+			{
+				resource_descriptors[resource_descriptor_count++] = shared_descriptor->GetLatestDescriptors();
+			}
+
+			gfx::BindDescriptorsInfo bind_info{};
+			bind_info.pipeline_type = pipeline->GetType();
+			bind_info.resource_descriptors = resource_descriptors;
+			bind_info.resource_descriptors_count = resource_descriptor_count;
+			bind_info.root_signature = root_signature;
+
+			command_list.BindDescriptors(bind_info);
+
 			resource_descriptor = nullptr;
 		}
 

@@ -80,6 +80,11 @@ namespace engine
 				allocated_resource_descriptors.clear();
 			}
 
+			ResourceDescriptor* VulkanSharedDescriptor::GetLatestDescriptors()
+			{
+				return allocated_resource_descriptors.back();
+			}
+
 			ResourceDescriptor* VulkanSharedDescriptor::RequestDescriptors()
 			{
 				auto& new_resource_descriptor = allocated_resource_descriptors.emplace_back(new VulkanResourceDescriptor(device));

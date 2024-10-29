@@ -427,6 +427,15 @@ namespace engine
 			uint32_t copy_region_count{ 0u };
 		};
 
+		struct BindDescriptorsInfo
+		{
+			PipelineType pipeline_type{}; 
+			RootSignature* root_signature{ nullptr };
+
+			ResourceDescriptor** resource_descriptors{ nullptr };
+			uint32_t resource_descriptors_count{ 0u };
+		};
+
 		struct BindingDescription
 		{
 			DescriptorType type{};

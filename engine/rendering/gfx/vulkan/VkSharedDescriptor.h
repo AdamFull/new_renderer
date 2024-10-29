@@ -32,6 +32,7 @@ namespace engine
 				uint32_t GetFirstSet() const;
 
 				void Reset() override;
+				ResourceDescriptor* GetLatestDescriptors() override;
 				ResourceDescriptor* RequestDescriptors() override;
 			private:
 				Device& device;

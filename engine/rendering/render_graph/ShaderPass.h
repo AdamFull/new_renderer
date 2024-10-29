@@ -25,6 +25,7 @@ namespace engine
 		{
 			gfx::Shader* shader{ nullptr };
 			gfx::PipelineCache* pipeline_cache{ nullptr };
+			gfx::SharedDescriptor* shared_descriptor{ nullptr };
 
 			std::string debug_name{};
 			bool one_time{ false };
@@ -164,7 +165,7 @@ namespace engine
 
 			bool CanExecute() const;
 		protected:
-			void FlushResources();
+			void FlushResources(gfx::CommandList& command_list);
 			void PushConstantRanges(gfx::CommandList& command_list);
 			void CollectProfileData();
 			virtual void _Execute(gfx::CommandList& command_list, float delta_time) = 0;
@@ -175,6 +176,7 @@ namespace engine
 			bool one_time{ false };
 			bool can_execute{ true };
 
+			gfx::SharedDescriptor* shared_descriptor{ nullptr };
 			gfx::ResourceDescriptor* resource_descriptor{ nullptr };
 			ExecutionContext* execution_context{ nullptr };
 

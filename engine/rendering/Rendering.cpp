@@ -181,6 +181,7 @@ namespace engine
 			ComputePassCreateInfo pass_ci{};
 			pass_ci.debug_name = create_info.shader_name;
 			pass_ci.shader = resource_context->LoadShader(create_info.shader_name);
+			pass_ci.shared_descriptor = shared_descriptor;
 
 			auto& new_pass = shader_passes.emplace_back(std::make_unique<ComputePass>(*gfx_context, pass_ci));
 			new_pass->SetExecutionContext(render_context.get());
@@ -202,6 +203,7 @@ namespace engine
 			RenderPassCreateInfo pass_ci{};
 			pass_ci.debug_name = create_info.shader_name;
 			pass_ci.shader = resource_context->LoadShader(create_info.shader_name);
+			pass_ci.shared_descriptor = shared_descriptor;
 			pass_ci.state.primitive_topology = gfx::PrimitiveTopology::eTriangleList;
 			//pass_ci.state.rasterization_state.front_face = gfx::FrontFace::eCW;
 
@@ -967,7 +969,8 @@ namespace engine
 
 			{
 				RenderShaderPassCreateInfo create_info{};
-				create_info.shader_name = "testing:draw_uv";
+				create_info.shader_name = "testing:screenspace";
+				create_info.BindReadResource(utl::murmur_hash("input_image"), dirt_mask_texture);
 				create_info.AddWriteResource(backbuffer_resource, { 1.f, 0.5f, 1.f, 1.f });
 
 				auto* new_node = AllocatePassNode();
