@@ -73,6 +73,10 @@ namespace engine
 			// Id of real resource
 			uint32_t resource_id{ ~0u };
 
+			gfx::ResourceStateFlags current_state{ gfx::ResourceStateFlag::eUndefined };
+			gfx::ResourceStateFlags intermediate_state{ gfx::ResourceStateFlag::eUndefined };
+			gfx::ResourceStateFlags final_state{ gfx::ResourceStateFlag::eUndefined };
+
 			std::array<std::unordered_set<uint32_t>, 3ull> usages{};
 		};
 
@@ -154,9 +158,6 @@ namespace engine
 		{
 			gfx::AccessTypeFlags access{};
 			uint32_t pass_type{ 0u };
-			utl::vector<gfx::AccessTypeFlag> all_time_access{};
-			//EPassType pass_type{};
-			//FResourceBarrierInfo* last_barrier{ nullptr };
 		};
 
 		// Base render graph impl

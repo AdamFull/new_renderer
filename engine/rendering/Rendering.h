@@ -61,12 +61,6 @@ namespace engine
 			RenderGraphNodeHeader* AllocateGroupNode();
 			RenderGraphNodeHeader* AllocatePassNode();
 
-			gfx::ResourceStateFlags GetFinalTextureLayout(const RenderGraphResource& graph_resource);
-			gfx::ResourceStateFlags GetIntermediateTextureLayout(const RenderGraphResource& graph_resource);
-
-			gfx::ResourceStateFlags GetCurrentTextureLayout(const RenderGraphResource& graph_resource);
-			void UpdateTextureLayout(const RenderGraphResource& graph_resource, gfx::ResourceStateFlags new_layout);
-
 			gfx::Texture* GetTextureResource(const RenderGraphResource& graph_resource);
 
 			void CollectRencerResouces(uint32_t pass_index, const ShaderPassCreateInfo& pass_ci);
@@ -110,7 +104,6 @@ namespace engine
 
 				gfx::TextureUsageFlags usage{};
 				bool resizable{ false };
-				gfx::ResourceStateFlags current_access{ gfx::ResourceStateFlag::eUndefined };
 			};
 			ResourceContainer<TextureObject> textures{};
 			ResourceContainer<TextureObject> render_targets{};
@@ -118,7 +111,6 @@ namespace engine
 			struct BufferObject
 			{
 				gfx::Buffer* buffer{ nullptr };
-				gfx::ResourceStateFlags resource_state{ gfx::ResourceStateFlag::eUndefined };
 			};
 			ResourceContainer<BufferObject> buffers{};
 
@@ -132,7 +124,6 @@ namespace engine
 
 			utl::hash_map<std::pair<uint32_t, uint32_t>, ConsistentAccessInfo, std_pair_hash> resource_access_map{};
 
-			gfx::ResourceStateFlags backbuffer_layout{ gfx::ResourceStateFlag::eUndefined };
 			uint32_t backbuffer_resource{ ~0u };
 			std::vector<RenderGraphResource> graph_resources{};
 

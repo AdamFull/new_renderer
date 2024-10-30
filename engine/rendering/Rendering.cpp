@@ -46,20 +46,6 @@ namespace engine
 			return true;
 		}
 
-		gfx::AccessTypeFlag GetAccessFlagType(RenderGraphResourceAccess type)
-		{
-			gfx::AccessTypeFlag access_flag{};
-			switch (type)
-			{
-			case engine::render::RenderGraphResourceAccess::eRead: access_flag = gfx::AccessTypeFlag::eRead; break;
-			case engine::render::RenderGraphResourceAccess::eWrite: access_flag = gfx::AccessTypeFlag::eWrite; break;
-			case engine::render::RenderGraphResourceAccess::eReadAndWrite: access_flag = gfx::AccessTypeFlag::eRW; break;
-			default: break;
-			}
-
-			return access_flag;
-		}
-
 
 		Renderer::Renderer(Window* window, filesystem::IVirtualFileSystemInterface* vfs) :
 			vfs{ vfs }
@@ -147,6 +133,8 @@ namespace engine
 			gfx::Texture* texture = resource_context->LoadTexture(path);
 			new_resource.resource_id = textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
 
+			new_resource.current_state = gfx::ResourceStateFlag::eShaderRead;
+
 			return graph_resources.size() - 1ull;
 		}
 
@@ -156,9 +144,17 @@ namespace engine
 
 			// TODO: What if it's storage target and render target at the same time?
 			if (create_info.usage & gfx::TextureUsageFlag::eStorage)
+			{
+				new_resource.intermediate_state = gfx::ResourceStateFlag::eShaderWrite;
+				new_resource.final_state = gfx::ResourceStateFlag::eShaderRead;
 				new_resource.resource_type = RenderResourceTypeFlag::eStorageTarget;
+			}
 			else if (create_info.usage & gfx::TextureUsageFlag::eRenderTarget)
+			{
+				new_resource.intermediate_state = IsDepthStencilFormat(create_info.format) ? gfx::ResourceStateFlag::eDepthStencilAttachmentWrite : gfx::ResourceStateFlag::eColorAttachmentWrite;
+				new_resource.final_state = IsDepthStencilFormat(create_info.format) ?  gfx::ResourceStateFlag::eDepthStencilAttachmentRead : gfx::ResourceStateFlag::eShaderRead;
 				new_resource.resource_type = RenderResourceTypeFlag::eRenderTarget;
+			}
 			else
 				new_resource.resource_type = RenderResourceTypeFlag::eStaticImage;
 
@@ -184,6 +180,10 @@ namespace engine
 				auto& new_resource = graph_resources.emplace_back();
 				new_resource.resource_type = RenderResourceTypeFlag::eBuffer;
 				new_resource.resource_id = handle;
+
+				new_resource.current_state = gfx::ResourceStateFlag::eUndefined;
+				new_resource.intermediate_state = gfx::ResourceStateFlag::eShaderWrite;
+				new_resource.final_state = gfx::ResourceStateFlag::eShaderRead;
 
 				return graph_resources.size() - 1ull;
 			}
@@ -414,90 +414,6 @@ namespace engine
 			return AllocateRenderGraphNode<RenderGraphPassNode>(RenderGraphNodeType::ePassNode);
 		}
 
-		gfx::ResourceStateFlags Renderer::GetFinalTextureLayout(const RenderGraphResource& graph_resource)
-		{
-			if (graph_resource.resource_type & RenderResourceTypeFlag::eBackbuffer)
-			{
-				return gfx::ResourceStateFlag::ePresent;
-			}
-			else if (graph_resource.resource_type & RenderResourceTypeFlag::eAllImage)
-			{
-				gfx::Texture* texture = GetTextureResource(graph_resource);
-				if (IsDepthStencilFormat(texture->GetFormat()))
-				{
-					return gfx::ResourceStateFlag::eDepthStencilAttachmentRead;
-				}
-
-				return gfx::ResourceStateFlag::eShaderRead;
-			}
-			else
-			{
-				assert(false && "RESOURCE TYPE IS NOT IMAGE");
-			}
-
-			return gfx::ResourceStateFlag::eUndefined;
-		}
-
-		gfx::ResourceStateFlags Renderer::GetIntermediateTextureLayout(const RenderGraphResource& graph_resource)
-		{
-			if (graph_resource.resource_type & RenderResourceTypeFlag::eStorageTarget)
-			{
-				return gfx::ResourceStateFlag::eShaderWrite;
-			}
-			else if(graph_resource.resource_type & RenderResourceTypeFlag::eAllImage)
-			{
-				gfx::Texture* texture = GetTextureResource(graph_resource);
-				if (IsDepthStencilFormat(texture->GetFormat()))
-				{
-					return gfx::ResourceStateFlag::eDepthStencilAttachmentWrite;
-				}
-
-				return gfx::ResourceStateFlag::eColorAttachmentWrite;
-			}
-			else
-			{
-				assert(false && "RESOURCE TYPE IS NOT IMAGE");
-			}
-
-			return gfx::ResourceStateFlag::eUndefined;
-		}
-
-		gfx::ResourceStateFlags Renderer::GetCurrentTextureLayout(const RenderGraphResource& graph_resource)
-		{
-			if (graph_resource.resource_type & RenderResourceTypeFlag::eBackbuffer)
-			{
-				return backbuffer_layout;
-			}
-			else if (graph_resource.resource_type & RenderResourceTypeFlag::eAllImage)
-			{
-				auto& resource = render_targets.Get(graph_resource.resource_id);
-				return resource.current_access;
-			}
-			else
-			{
-				assert(false && "RESOURCE TYPE IS NOT IMAGE");
-			}
-
-			return gfx::ResourceStateFlag::eUndefined;
-		}
-
-		void Renderer::UpdateTextureLayout(const RenderGraphResource& graph_resource, gfx::ResourceStateFlags new_layout)
-		{
-			if (graph_resource.resource_type & RenderResourceTypeFlag::eBackbuffer)
-			{
-				backbuffer_layout = new_layout;
-			}
-			else if (graph_resource.resource_type & RenderResourceTypeFlag::eAllImage)
-			{
-				auto& resource = render_targets.Get(graph_resource.resource_id);
-				resource.current_access = new_layout;
-			}
-			else
-			{
-				assert(false && "RESOURCE TYPE IS NOT IMAGE");
-			}
-		}
-
 		gfx::Texture* Renderer::GetTextureResource(const RenderGraphResource& graph_resource)
 		{
 			if (graph_resource.resource_type & RenderResourceTypeFlag::eBackbuffer)
@@ -604,6 +520,8 @@ namespace engine
 
 		void Renderer::EvaluateShaderPass(uint32_t pass_index)
 		{
+			static gfx::AccessTypeFlag access_map[] = { gfx::AccessTypeFlag::eRead, gfx::AccessTypeFlag::eWrite, gfx::AccessTypeFlag::eRW };
+
 			std::array<gfx::BufferBarrier, 64ull> buffer_barriers{};
 			std::array<gfx::TextureBarrier, 64ull> texture_barriers{};
 			std::array<gfx::MemoryBarrier, 64ull> memory_barriers{};
@@ -618,7 +536,7 @@ namespace engine
 
 			for (int32_t access_idx = 0; access_idx < 3ull; ++access_idx)
 			{
-				RenderGraphResourceAccess resource_access{ static_cast<RenderGraphResourceAccess>(access_idx) };
+				gfx::AccessTypeFlag access_flag = access_map[access_idx];
 				const auto& resource_bindings = per_pass_resouce_access[pass_index][access_idx];
 
 				// Start from resource bindings
@@ -642,8 +560,6 @@ namespace engine
 
 					auto& last_resource_access = resource_access_map[resource_key];
 
-					gfx::AccessTypeFlag access_flag = GetAccessFlagType(resource_access);
-
 					// Ignoring read after read barriers
 					if ((last_resource_access.access & access_flag) && access_flag == gfx::AccessTypeFlag::eRead)
 						continue;
@@ -656,31 +572,33 @@ namespace engine
 						auto& resource = buffers.Get(render_resource.resource_id);
 						auto& barrier = buffer_barriers[resource_barriers.buffer_barrier_count++];
 						barrier.buffer = resource.buffer;
-						barrier.src_state = resource.resource_state;
+						barrier.src_state = render_resource.current_state;
 
 						if (access_flag == gfx::AccessTypeFlag::eRead)
-							barrier.dst_state = gfx::ResourceStateFlag::eShaderRead;
+							barrier.dst_state = render_resource.final_state;
 						else
-							barrier.dst_state = gfx::ResourceStateFlag::eShaderWrite;
+							barrier.dst_state = render_resource.intermediate_state;
 
-						resource.resource_state = barrier.dst_state;
+						render_resource.current_state = barrier.dst_state;
 					}
 					else
 					{
 						auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
-						barrier.src_state = GetCurrentTextureLayout(render_resource);
+						barrier.src_state = render_resource.current_state;
 						barrier.texture = GetTextureResource(render_resource);
 
-						auto final_layout = GetFinalTextureLayout(render_resource);
-						auto intermediate_layout = GetIntermediateTextureLayout(render_resource);
-
 						if (last_resource_access.access == 0)
-							barrier.dst_state = access_flag == gfx::AccessTypeFlag::eRead ? final_layout : intermediate_layout;
+							barrier.dst_state = access_flag == gfx::AccessTypeFlag::eRead ? render_resource.final_state : render_resource.intermediate_state;
 						else if (access_flag != gfx::AccessTypeFlag::eWrite && IsROAccessOnlyRemain(render_resource, pass_index))
-							barrier.dst_state = final_layout;
+							barrier.dst_state = render_resource.final_state;
 						else if (is_change_pipeline_ownership)
-							barrier.dst_state = intermediate_layout;
+							barrier.dst_state = render_resource.intermediate_state;
+
+						render_resource.current_state = barrier.dst_state;
 					}
+
+					last_resource_access.access = access_flag;
+					last_resource_access.pass_type = utl::enum_cast(shader_pass->GetPassType());
 				}
 
 				// For attachments (write only)
@@ -704,8 +622,6 @@ namespace engine
 
 						auto& last_resource_access = resource_access_map[resource_key];
 
-						gfx::AccessTypeFlag access_flag = GetAccessFlagType(resource_access);
-
 						bool is_backbuffer_resource = resource_attachment.render_resource_id == backbuffer_resource;
 						bool is_write_after_write = ((last_resource_access.access & access_flag) && access_flag == gfx::AccessTypeFlag::eWrite);
 						bool is_change_pipeline_ownership = last_resource_access.pass_type == utl::enum_cast(shader_pass->GetPassType()) && is_write_after_write;
@@ -716,24 +632,24 @@ namespace engine
 						attachment.clear_color = resource_attachment.clear_color;
 
 						auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
-						barrier.src_state = GetCurrentTextureLayout(render_resource);
+						barrier.src_state = render_resource.current_state;
 						barrier.texture = GetTextureResource(render_resource);
 
-						auto final_layout = GetFinalTextureLayout(render_resource);
-						auto intermediate_layout = GetIntermediateTextureLayout(render_resource);
-
 						if (last_resource_access.access == 0)
-							barrier.dst_state = access_flag == gfx::AccessTypeFlag::eRead ? final_layout : intermediate_layout;
+							barrier.dst_state = access_flag == gfx::AccessTypeFlag::eRead ? render_resource.final_state : render_resource.intermediate_state;
 						else if (access_flag != gfx::AccessTypeFlag::eWrite && IsROAccessOnlyRemain(render_resource, pass_index))
-							barrier.dst_state = is_backbuffer_resource ? intermediate_layout : final_layout;
+							barrier.dst_state = is_backbuffer_resource ? render_resource.intermediate_state : render_resource.final_state;
 						else if (is_change_pipeline_ownership)
-							barrier.dst_state = intermediate_layout;
+							barrier.dst_state = render_resource.intermediate_state;
 
-						UpdateTextureLayout(render_resource, barrier.dst_state);
+						render_resource.current_state = barrier.dst_state;
 
 						attachment.texture = barrier.texture;
 
 						render_pass->AddColorAttachment(attachment);
+
+						last_resource_access.access = access_flag;
+						last_resource_access.pass_type = utl::enum_cast(shader_pass->GetPassType());
 					}
 				}
 			}
@@ -760,24 +676,24 @@ namespace engine
 
 				auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
 				barrier.texture = GetTextureResource(render_resource);
-				barrier.src_state = GetCurrentTextureLayout(render_resource);
-
-				auto final_layout = GetFinalTextureLayout(render_resource);
-				auto intermediate_layout = GetIntermediateTextureLayout(render_resource);
+				barrier.src_state = render_resource.current_state;
 
 				if (last_resource_access.access == 0)
-					barrier.dst_state = access_flag == gfx::AccessTypeFlag::eRead ? final_layout : intermediate_layout;
+					barrier.dst_state = access_flag == gfx::AccessTypeFlag::eRead ? render_resource.final_state : render_resource.intermediate_state;
 				else if (access_flag != gfx::AccessTypeFlag::eWrite && IsROAccessOnlyRemain(render_resource, pass_index))
-					barrier.dst_state = final_layout;
+					barrier.dst_state = render_resource.final_state;
 				else if (is_change_pipeline_ownership)
-					barrier.dst_state = intermediate_layout;
+					barrier.dst_state = render_resource.intermediate_state;
 
-				UpdateTextureLayout(render_resource, barrier.dst_state);
+				render_resource.current_state = barrier.dst_state;
 
 				attachment.texture = barrier.texture;
 
 				auto* render_pass = static_cast<RenderPass*>(shader_pass.get());
 				render_pass->SetDepthAttachment(attachment);
+
+				last_resource_access.access = access_flag;
+				last_resource_access.pass_type = utl::enum_cast(shader_pass->GetPassType());
 			}
 
 			if (pass_bindings.stencil_attachment.render_resource_id != ~0u)
@@ -802,24 +718,24 @@ namespace engine
 
 				auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
 				barrier.texture = GetTextureResource(render_resource);
-				barrier.src_state = GetCurrentTextureLayout(render_resource);
-
-				auto final_layout = GetFinalTextureLayout(render_resource);
-				auto intermediate_layout = GetIntermediateTextureLayout(render_resource);
+				barrier.src_state = render_resource.current_state;
 
 				if (last_resource_access.access == 0)
-					barrier.dst_state = access_flag == gfx::AccessTypeFlag::eRead ? final_layout : intermediate_layout;
+					barrier.dst_state = access_flag == gfx::AccessTypeFlag::eRead ? render_resource.final_state : render_resource.intermediate_state;
 				else if (access_flag != gfx::AccessTypeFlag::eWrite && IsROAccessOnlyRemain(render_resource, pass_index))
-					barrier.dst_state = final_layout;
+					barrier.dst_state = render_resource.final_state;
 				else if (is_change_pipeline_ownership)
-					barrier.dst_state = intermediate_layout;
+					barrier.dst_state = render_resource.intermediate_state;
 
-				UpdateTextureLayout(render_resource, barrier.dst_state);
+				render_resource.current_state = barrier.dst_state;
 
 				attachment.texture = barrier.texture;
 
 				auto* render_pass = static_cast<RenderPass*>(shader_pass.get());
 				render_pass->SetStencilAttachment(attachment);
+
+				last_resource_access.access = access_flag;
+				last_resource_access.pass_type = utl::enum_cast(shader_pass->GetPassType());
 			}
 
 			// Translate textures
@@ -934,6 +850,8 @@ namespace engine
 
 			auto& backbuffer_resource_binding = graph_resources.emplace_back();
 			backbuffer_resource_binding.resource_type = RenderResourceTypeFlag::eBackbuffer;
+			backbuffer_resource_binding.intermediate_state = gfx::ResourceStateFlag::eColorAttachmentWrite;
+			backbuffer_resource_binding.final_state = gfx::ResourceStateFlag::ePresent;
 
 			// Create default samplers
 
@@ -1018,7 +936,7 @@ namespace engine
 			{
 				RenderShaderPassCreateInfo create_info{};
 				create_info.shader_name = "testing:screenspace";
-				create_info.BindReadResource(utl::murmur_hash("input_image"), dirt_mask_texture);
+				create_info.BindReadResource(utl::murmur_hash("input_image"), brdf_lut_target);
 				create_info.AddWriteResource(backbuffer_resource, { 1.f, 0.5f, 1.f, 1.f });
 
 				auto* new_node = AllocatePassNode();
@@ -1088,18 +1006,18 @@ namespace engine
 
 			render_context->EndFrame(upload_wait_semaphore);
 
-			// Reset local render targets states
-			for (auto& target : render_targets.data())
+			for (auto& graph_resource : graph_resources)
 			{
-				target.current_access = gfx::ResourceStateFlag::eUndefined;
-				target.texture->Reset();
-			}
+				if (graph_resource.resource_type & RenderResourceTypeFlag::eStaticImage)
+					continue;
 
-			backbuffer_layout = gfx::ResourceStateFlag::eUndefined;
+				graph_resource.current_state = gfx::ResourceStateFlag::eUndefined;
 
-			for (auto& buffer : buffers.data())
-			{
-				buffer.resource_state = gfx::ResourceStateFlag::eUndefined;
+				if ((graph_resource.resource_type & RenderResourceTypeFlag::eRenderTarget) || (graph_resource.resource_type & RenderResourceTypeFlag::eStorageTarget))
+				{
+					auto& resource = render_targets.Get(graph_resource.resource_id);
+					resource.texture->Reset();
+				}
 			}
 		}
 
@@ -1116,9 +1034,6 @@ namespace engine
 				// TODO: resize only if texture is able to resize 
 				if (target.resizable)
 					continue;
-
-				// Reset texture layout tracking
-				target.current_access = gfx::ResourceStateFlag::eUndefined;
 
 				// Save pointer for delete old one
 				auto* old_target = target.texture;
