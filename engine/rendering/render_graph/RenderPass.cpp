@@ -18,12 +18,6 @@ namespace engine
 			pipeline = context.CreatePipeline(pipeline_ci);
 		}
 
-		void RenderPass::SetRenderResolution(uint32_t width, uint32_t height)
-		{
-			rendering_info.width = width;
-			rendering_info.height = height;
-		}
-
 		void RenderPass::AddColorAttachment(gfx::Attachment attachment)
 		{
 			rendering_info.attachments[rendering_info.attachment_count++] = attachment;
@@ -50,8 +44,40 @@ namespace engine
 			return ShaderPassType::eGraphics;
 		}
 
+		void RenderPass::UpdateRenderResolution()
+		{
+			// Try find render resolution from any attachment
+			for (int32_t i = 0; i < rendering_info.attachment_count; ++i)
+			{
+				auto& attachment = rendering_info.attachments[i];
+				rendering_info.width = attachment.texture->GetWidth();
+				rendering_info.height = attachment.texture->GetHeight();
+				return;
+			}
+
+			// Or from depth attachment
+			if (rendering_info.depth_attachment.texture)
+			{
+				auto& attachment = rendering_info.depth_attachment;
+				rendering_info.width = attachment.texture->GetWidth();
+				rendering_info.height = attachment.texture->GetHeight();
+				return;
+			}
+
+			// Or from stencil one
+			if (rendering_info.stencil_attachment.texture)
+			{
+				auto& attachment = rendering_info.stencil_attachment;
+				rendering_info.width = attachment.texture->GetWidth();
+				rendering_info.height = attachment.texture->GetHeight();
+				return;
+			}
+		}
+
 		void RenderPass::_Execute(gfx::CommandList& command_list, float delta_time)
 		{
+			UpdateRenderResolution();
+
 			command_list.BeginRendering(rendering_info);
 
 			command_list.SetViewport(0.f, 0.f, rendering_info.width, rendering_info.height, 0.f, 1.f);
@@ -65,6 +91,8 @@ namespace engine
 
 			// Clear rendering info
 			rendering_info.attachment_count = 0;
+			rendering_info.depth_attachment = {};
+			rendering_info.stencil_attachment = {};
 		}
 	}
 }

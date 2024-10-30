@@ -120,8 +120,6 @@ namespace engine
 		public:
 			uint32_t Add(_Ty&& object)
 			{
-				static std::atomic<uint32_t> uid{ 0u };
-
 				if (!free_ids.empty())
 				{
 					uint32_t current_id = free_ids.front();
@@ -161,6 +159,7 @@ namespace engine
 				return objects;
 			}
 		private:
+			std::atomic<uint32_t> uid{ 0u };
 			std::queue<uint32_t> free_ids{};
 			std::vector<_Ty> objects{};
 		};

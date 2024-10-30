@@ -110,6 +110,30 @@ namespace engine
 			// Destroy render graph including shader passes
 			DestroyRenderGraph();
 
+			// Free textures
+			for (auto& texture : textures.data())
+			{
+				gfx_context->Destroy(texture.texture);
+			}
+
+			// Free render targets
+			for (auto& texture : render_targets.data())
+			{
+				gfx_context->Destroy(texture.texture);
+			}
+
+			// Free buffers
+			for (auto& buffer : buffers.data())
+			{
+				gfx_context->Destroy(buffer.buffer);
+			}
+
+			// Free samplers
+			for (auto& [hash, sampler] : sampler_cache)
+			{
+				gfx_context->Destroy(sampler);
+			}
+
 			gfx_context->Destroy(shared_descriptor);
 			gfx_context->Destroy(default_sampler);
 			gfx_context->Destroy(timestamp_query);
@@ -181,6 +205,7 @@ namespace engine
 			ComputePassCreateInfo pass_ci{};
 			pass_ci.debug_name = create_info.shader_name;
 			pass_ci.shader = resource_context->LoadShader(create_info.shader_name);
+			pass_ci.one_time = create_info.one_time;
 			pass_ci.shared_descriptor = shared_descriptor;
 			pass_ci.divide_by_locals = create_info.divide_by_local_sizes;
 			pass_ci.texture_subresource_index = create_info.subresource_index;
@@ -338,9 +363,7 @@ namespace engine
 			if (auto found = sampler_cache.find(sampler_hash); found != sampler_cache.end())
 				return found->second;
 
-			auto* new_sampler = sampler_cache[sampler_hash];
-			new_sampler = gfx_context->CreateSampler(create_info);
-			return new_sampler;
+			return sampler_cache[sampler_hash] = gfx_context->CreateSampler(create_info);
 		}
 
 		GeometryBuffer& Renderer::RequestInterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info)
@@ -608,20 +631,9 @@ namespace engine
 				{
 					auto& render_resource = graph_resources[resource_binding.render_resource_id];
 
-					// Bind resource
-					ShaderResourceBinding shader_resource_binding{};
-					shader_resource_binding.binding_point = resource_binding.bind_point;
-					shader_resource_binding.subresource = resource_binding.subresource_index;
-
 					// Do not need to sync static images
 					if (render_resource.resource_type & RenderResourceTypeFlag::eStaticImage)
 					{
-						// Bind texture and continue
-						auto& resource = textures.Get(render_resource.resource_id);
-						shader_resource_binding.texture = resource.texture;
-						shader_resource_binding.sampler = resource.sampler;
-						shader_pass->BindResource(shader_resource_binding);
-
 						continue;
 					}
 
@@ -679,25 +691,6 @@ namespace engine
 						else if (is_change_pipeline_ownership)
 							barrier.dst_access = intermediate_layout;
 					}
-
-					// Try bind render resource
-					if (render_resource.resource_type & RenderResourceTypeFlag::eAllImage)
-					{
-						auto& resource = render_targets.Get(render_resource.resource_id);
-						shader_resource_binding.texture = resource.texture;
-						shader_resource_binding.sampler = resource.sampler;
-					}
-					else if (render_resource.resource_type & RenderResourceTypeFlag::eBuffer)
-					{
-						auto& resource = buffers.Get(render_resource.resource_id);
-						shader_resource_binding.buffer = resource.buffer;
-					}
-					else
-					{
-						assert(false && "UNKNOWN RESOURCE TYPE");
-					}
-
-					shader_pass->BindResource(shader_resource_binding);
 				}
 
 				// For attachments (write only)
@@ -839,8 +832,48 @@ namespace engine
 				render_pass->SetStencilAttachment(attachment);
 			}
 
+			// Translate textures
 			auto& command_list = render_context->GetCurrentCommandList();
 			command_list.ResourceBarrier(resource_barriers);
+
+			// Bind pass resources
+			for (int32_t access_idx = 0; access_idx < 3ull; ++access_idx)
+			{
+				for (const auto& resource_binding : pass_bindings.bindings[access_idx])
+				{
+					auto& render_resource = graph_resources[resource_binding.render_resource_id];
+
+					// Bind resource
+					ShaderResourceBinding shader_resource_binding{};
+					shader_resource_binding.binding_point = resource_binding.bind_point;
+					shader_resource_binding.subresource = resource_binding.subresource_index;
+
+					// Do not need to sync static images
+					if (render_resource.resource_type & RenderResourceTypeFlag::eStaticImage)
+					{
+						auto& resource = textures.Get(render_resource.resource_id);
+						shader_resource_binding.texture = resource.texture;
+						shader_resource_binding.sampler = resource.sampler;
+					}
+					else if ((render_resource.resource_type & RenderResourceTypeFlag::eRenderTarget) || (render_resource.resource_type & RenderResourceTypeFlag::eStorageTarget))
+					{
+						auto& resource = render_targets.Get(render_resource.resource_id);
+						shader_resource_binding.texture = resource.texture;
+						shader_resource_binding.sampler = resource.sampler;
+					}
+					else if (render_resource.resource_type & RenderResourceTypeFlag::eBuffer)
+					{
+						auto& resource = buffers.Get(render_resource.resource_id);
+						shader_resource_binding.buffer = resource.buffer;
+					}
+					else
+					{
+						assert(false && "THIS RESOURCE TYPE IS NOT SUPPORTED FOR BINDING");
+					}
+
+					shader_pass->BindResource(shader_resource_binding);
+				}
+			}
 		}
 
 		void Renderer::EvaluateRenderGraph(float delta_time)
@@ -894,18 +927,6 @@ namespace engine
 
 					if (!pass->CanExecute())
 						return;
-
-					// Temporary code
-					if (pass->GetPassType() == ShaderPassType::eGraphics)
-					{
-						auto& swapchain = render_context->GetSwapchain();
-
-						uint32_t width, height;
-						swapchain.GetSurfaceExtent(width, height);
-
-						auto* graphics_pass = static_cast<RenderPass*>(pass.get());
-						graphics_pass->SetRenderResolution(width, height);
-					}
 
 					EvaluateShaderPass(pass_node->pass_index);
 					pass->Execute(delta_time);
