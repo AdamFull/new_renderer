@@ -61,11 +61,11 @@ namespace engine
 			RenderGraphNodeHeader* AllocateGroupNode();
 			RenderGraphNodeHeader* AllocatePassNode();
 
-			gfx::TextureAccess GetFinalTextureLayout(const RenderGraphResource& graph_resource);
-			gfx::TextureAccess GetIntermediateTextureLayout(const RenderGraphResource& graph_resource);
+			gfx::ResourceStateFlags GetFinalTextureLayout(const RenderGraphResource& graph_resource);
+			gfx::ResourceStateFlags GetIntermediateTextureLayout(const RenderGraphResource& graph_resource);
 
-			gfx::TextureAccess GetCurrentTextureLayout(const RenderGraphResource& graph_resource);
-			void UpdateTextureLayout(const RenderGraphResource& graph_resource, gfx::TextureAccess new_layout);
+			gfx::ResourceStateFlags GetCurrentTextureLayout(const RenderGraphResource& graph_resource);
+			void UpdateTextureLayout(const RenderGraphResource& graph_resource, gfx::ResourceStateFlags new_layout);
 
 			gfx::Texture* GetTextureResource(const RenderGraphResource& graph_resource);
 
@@ -110,7 +110,7 @@ namespace engine
 
 				gfx::TextureUsageFlags usage{};
 				bool resizable{ false };
-				gfx::TextureAccess current_access{ {}, gfx::TextureLayout::eUndefined };
+				gfx::ResourceStateFlags current_access{ gfx::ResourceStateFlag::eUndefined };
 			};
 			ResourceContainer<TextureObject> textures{};
 			ResourceContainer<TextureObject> render_targets{};
@@ -118,7 +118,7 @@ namespace engine
 			struct BufferObject
 			{
 				gfx::Buffer* buffer{ nullptr };
-				gfx::ResourceState resource_state{ gfx::AccessFlag::eNone, gfx::StageFlag::eAllCommands };
+				gfx::ResourceStateFlags resource_state{ gfx::ResourceStateFlag::eUndefined };
 			};
 			ResourceContainer<BufferObject> buffers{};
 
@@ -132,7 +132,7 @@ namespace engine
 
 			utl::hash_map<std::pair<uint32_t, uint32_t>, ConsistentAccessInfo, std_pair_hash> resource_access_map{};
 
-			gfx::TextureAccess backbuffer_layout{};
+			gfx::ResourceStateFlags backbuffer_layout{ gfx::ResourceStateFlag::eUndefined };
 			uint32_t backbuffer_resource{ ~0u };
 			std::vector<RenderGraphResource> graph_resources{};
 

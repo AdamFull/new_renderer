@@ -155,53 +155,89 @@ namespace engine
 				return vk_flags;
 			}
 
-			inline vk::ImageLayout ImageLayoutToVk(TextureAccess access)
+			inline vk::ImageLayout ResourceStateToVkImageLayout(ResourceStateFlags flags)
 			{
-				if (access.layout == TextureLayout::eUndefined)
+				if (flags & ResourceStateFlag::eUndefined)
 					return vk::ImageLayout::eUndefined;
-				else if (access.layout == TextureLayout::eShader)
-				{
-					if (access.type & AccessTypeFlag::eRead)
-						return vk::ImageLayout::eShaderReadOnlyOptimal;
-					else if(access.type & AccessTypeFlag::eWrite)
-						return vk::ImageLayout::eGeneral;
-				}
-				else if (access.layout == TextureLayout::eColorAttachmentOptimal)
+				else if ((flags & ResourceStateFlag::eColorAttachmentRead) || (flags & ResourceStateFlag::eColorAttachmentWrite))
 					return vk::ImageLayout::eColorAttachmentOptimal;
-				else if (access.layout == TextureLayout::eDepthStencilAttachmentOptimal)
-					return vk::ImageLayout::eDepthStencilAttachmentOptimal;
-				else if (access.layout == TextureLayout::eDepthStencilReadOnlyOptimal)
+				else if ((flags & ResourceStateFlag::eDepthAttachmentRead) || (flags & ResourceStateFlag::eStencilAttachmentRead))
 					return vk::ImageLayout::eDepthStencilReadOnlyOptimal;
-				else if (access.layout == TextureLayout::eTransfer)
-				{
-					if (access.type & AccessTypeFlag::eRead)
-						return vk::ImageLayout::eTransferSrcOptimal;
-					else if (access.type & AccessTypeFlag::eWrite)
-						return vk::ImageLayout::eTransferDstOptimal;
-				}
-				else if (access.layout == TextureLayout::ePreinitialized)
-					return vk::ImageLayout::ePreinitialized;
-				else if (access.layout == TextureLayout::eDepthReadOnlyStencilAttachmentOptimal)
+				else if ((flags & ResourceStateFlag::eDepthAttachmentWrite) || (flags & ResourceStateFlag::eStencilAttachmentWrite))
+					return vk::ImageLayout::eDepthStencilAttachmentOptimal;
+				else if (flags & ResourceStateFlag::eDepthAttachmentRead)
 					return vk::ImageLayout::eDepthReadOnlyStencilAttachmentOptimal;
-				else if (access.layout == TextureLayout::eDepthAttachmentStencilReadOnlyOptimal)
-					return vk::ImageLayout::eDepthAttachmentStencilReadOnlyOptimal;
-				else if (access.layout == TextureLayout::eDepthAttachmentOptimal)
+				else if (flags & ResourceStateFlag::eDepthAttachmentWrite)
 					return vk::ImageLayout::eDepthAttachmentOptimal;
-				else if (access.layout == TextureLayout::eDepthReadOnlyOptimal)
-					return vk::ImageLayout::eDepthReadOnlyOptimal;
-				else if (access.layout == TextureLayout::eStencilAttachmentOptimal)
-					return vk::ImageLayout::eStencilAttachmentOptimal;
-				else if (access.layout == TextureLayout::eStencilReadOnlyOptimal)
+				else if (flags & ResourceStateFlag::eStencilAttachmentRead)
 					return vk::ImageLayout::eStencilReadOnlyOptimal;
-				else if (access.layout == TextureLayout::eReadOnlyOptimal)
-					return vk::ImageLayout::eReadOnlyOptimal;
-				else if (access.layout == TextureLayout::eAttachmentOptimal)
-					return vk::ImageLayout::eAttachmentOptimal;
-				else if (access.layout == TextureLayout::ePresent)
+				else if (flags & ResourceStateFlag::eStencilAttachmentWrite)
+					return vk::ImageLayout::eStencilAttachmentOptimal;
+				else if (flags & ResourceStateFlag::eShaderRead)
+					return vk::ImageLayout::eShaderReadOnlyOptimal;
+				else if (flags & ResourceStateFlag::eShaderWrite)
+					return vk::ImageLayout::eGeneral;
+				else if (flags & ResourceStateFlag::eTranfserSource)
+					return vk::ImageLayout::eTransferSrcOptimal;
+				else if (flags & ResourceStateFlag::eTransferDestination)
+					return vk::ImageLayout::eTransferDstOptimal;
+				else if (flags & ResourceStateFlag::ePresent)
 					return vk::ImageLayout::ePresentSrcKHR;
-				
-				assert(false && "NOT IMPLEMENTED STATE");
+
+				assert(false && "UNSUPPORTED STATE");
 				return vk::ImageLayout::eUndefined;
+			}
+
+			inline vk::AccessFlags2KHR ResourceStateToVkAccessFlags(ResourceStateFlags flags)
+			{
+				vk::AccessFlags2KHR access{};
+
+				if ((flags & ResourceStateFlag::eUndefined) || (flags & ResourceStateFlag::ePresent))
+					access |= vk::AccessFlagBits2KHR::eNone;
+				if (flags & ResourceStateFlag::eColorAttachmentRead)
+					access |= vk::AccessFlagBits2KHR::eColorAttachmentRead;
+				if (flags & ResourceStateFlag::eColorAttachmentWrite)
+					access |= vk::AccessFlagBits2KHR::eColorAttachmentWrite;
+				if ((flags & ResourceStateFlag::eDepthAttachmentRead) || (flags & ResourceStateFlag::eStencilAttachmentRead))
+					access |= vk::AccessFlagBits2KHR::eDepthStencilAttachmentRead;
+				if ((flags & ResourceStateFlag::eDepthAttachmentWrite) || (flags & ResourceStateFlag::eStencilAttachmentWrite))
+					access |= vk::AccessFlagBits2KHR::eDepthStencilAttachmentWrite;
+				if (flags & ResourceStateFlag::eShaderRead)
+					access |= vk::AccessFlagBits2KHR::eShaderRead | vk::AccessFlagBits2KHR::eShaderSampledRead | vk::AccessFlagBits2KHR::eShaderStorageRead;
+				if (flags & ResourceStateFlag::eShaderWrite)
+					access |= vk::AccessFlagBits2KHR::eShaderWrite | vk::AccessFlagBits2KHR::eShaderStorageWrite;
+				if (flags & ResourceStateFlag::eTranfserSource)
+					access |= vk::AccessFlagBits2KHR::eTransferRead;
+				if (flags & ResourceStateFlag::eTransferDestination)
+					access |= vk::AccessFlagBits2KHR::eTransferWrite;
+				if (flags & ResourceStateFlag::eIndirect)
+					access |= vk::AccessFlagBits2KHR::eIndirectCommandRead;
+
+				return access;
+			}
+
+			inline vk::PipelineStageFlags2KHR ResourceStateToVkStageFlags(ResourceStateFlags flags)
+			{
+				vk::PipelineStageFlags2KHR stages{};
+
+				if ((flags & ResourceStateFlag::eUndefined) || (flags & ResourceStateFlag::ePresent))
+					stages |= vk::PipelineStageFlagBits2KHR::eAllCommands;
+				if (flags & ResourceStateFlag::eColorAttachmentWrite)
+					stages |= vk::PipelineStageFlagBits2KHR::eColorAttachmentOutput;
+				if ((flags & ResourceStateFlag::eDepthAttachmentRead) || (flags & ResourceStateFlag::eDepthAttachmentWrite))
+					stages |= vk::PipelineStageFlagBits2KHR::eEarlyFragmentTests | vk::PipelineStageFlagBits2KHR::eLateFragmentTests;
+				if ((flags & ResourceStateFlag::eStencilAttachmentRead) || flags & ResourceStateFlag::eStencilAttachmentWrite)
+					stages |= vk::PipelineStageFlagBits2KHR::eEarlyFragmentTests | vk::PipelineStageFlagBits2KHR::eLateFragmentTests;
+				if (flags & ResourceStateFlag::eShaderRead)
+					stages |= vk::PipelineStageFlagBits2KHR::eAllGraphics | vk::PipelineStageFlagBits2KHR::eComputeShader;
+				if (flags & ResourceStateFlag::eShaderWrite)
+					stages |= vk::PipelineStageFlagBits2KHR::eComputeShader;
+				if ((flags & ResourceStateFlag::eTranfserSource) || (flags & ResourceStateFlag::eTransferDestination))
+					stages |= vk::PipelineStageFlagBits2KHR::eTransfer | vk::PipelineStageFlagBits2KHR::eCopy;
+				if (flags & ResourceStateFlag::eIndirect)
+					stages |= vk::PipelineStageFlagBits2KHR::eDrawIndirect;
+
+				return stages;
 			}
 
 			inline vk::DescriptorType DescriptorTypeToVk(DescriptorType type)

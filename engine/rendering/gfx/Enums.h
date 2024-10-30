@@ -126,25 +126,25 @@ namespace engine
 		};
 		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(AccessFlags, AccessFlag);
 
-		enum class TextureLayout
+		enum class ResourceStateFlag
 		{
-			eUndefined,
-			eColorAttachmentOptimal,
-			eDepthStencilAttachmentOptimal,
-			eDepthStencilReadOnlyOptimal,
-			eShader,
-			eTransfer,
-			ePreinitialized,
-			eDepthReadOnlyStencilAttachmentOptimal,
-			eDepthAttachmentStencilReadOnlyOptimal,
-			eDepthAttachmentOptimal,
-			eDepthReadOnlyOptimal,
-			eStencilAttachmentOptimal,
-			eStencilReadOnlyOptimal,
-			eReadOnlyOptimal,
-			eAttachmentOptimal,
-			ePresent
+			eUndefined = 1 << 0,
+			eColorAttachmentRead = 1 << 1,
+			eColorAttachmentWrite = 1 << 2,
+			eDepthAttachmentRead = 1 << 3,
+			eDepthAttachmentWrite = 1 << 4,
+			eStencilAttachmentRead = 1 << 5,
+			eStencilAttachmentWrite = 1 << 6,
+			eDepthStencilAttachmentRead = eDepthAttachmentRead | eStencilAttachmentRead,
+			eDepthStencilAttachmentWrite = eDepthAttachmentWrite | eStencilAttachmentWrite,
+			eShaderRead = 1 << 7,
+			eShaderWrite = 1 << 8,
+			eTranfserSource = 1 << 9,
+			eTransferDestination = 1 << 10,
+			eIndirect = 1 << 11,
+			ePresent = 1 << 12
 		};
+		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ResourceStateFlags, ResourceStateFlag);
 
 		enum class AccessTypeFlag
 		{

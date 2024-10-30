@@ -295,10 +295,10 @@ namespace engine
 					auto& memory_barrier = barrier.memory_barriers[i];
 
 					auto& vk_memory_barrier = memory_barriers[vk_barrier.memoryBarrierCount++];
-					vk_memory_barrier.srcAccessMask = AccessFlagsToVk(memory_barrier.src_state.access);
-					vk_memory_barrier.srcStageMask = StageFlagsToVk(memory_barrier.src_state.stage);
-					vk_memory_barrier.dstAccessMask = AccessFlagsToVk(memory_barrier.dst_state.access);
-					vk_memory_barrier.dstStageMask = StageFlagsToVk(memory_barrier.dst_state.stage);
+					vk_memory_barrier.srcAccessMask = ResourceStateToVkAccessFlags(memory_barrier.src_state);
+					vk_memory_barrier.srcStageMask = ResourceStateToVkStageFlags(memory_barrier.src_state);
+					vk_memory_barrier.dstAccessMask = ResourceStateToVkAccessFlags(memory_barrier.dst_state);
+					vk_memory_barrier.dstStageMask = ResourceStateToVkStageFlags(memory_barrier.dst_state);
 				}
 
 				// Parse buffer barriers
@@ -320,19 +320,20 @@ namespace engine
 						vk_buffer_barrier.size = buffer->GetSize();
 					}
 
-					vk_buffer_barrier.srcAccessMask = AccessFlagsToVk(buffer_barrier.src_state.access);
-					vk_buffer_barrier.srcStageMask = StageFlagsToVk(buffer_barrier.src_state.stage);
-					vk_buffer_barrier.dstAccessMask = AccessFlagsToVk(buffer_barrier.dst_state.access);
-					vk_buffer_barrier.dstStageMask = StageFlagsToVk(buffer_barrier.dst_state.stage);
+					vk_buffer_barrier.srcAccessMask = ResourceStateToVkAccessFlags(buffer_barrier.src_state);
+					vk_buffer_barrier.srcStageMask = ResourceStateToVkStageFlags(buffer_barrier.src_state);
+					vk_buffer_barrier.dstAccessMask = ResourceStateToVkAccessFlags(buffer_barrier.dst_state);
+					vk_buffer_barrier.dstStageMask = ResourceStateToVkStageFlags(buffer_barrier.dst_state);
 
-					if (buffer_barrier.src_state.queue && buffer_barrier.dst_state.queue)
-					{
-						const auto* src_queue = static_cast<const VulkanQueue*>(buffer_barrier.src_state.queue);
-						const auto* dst_queue = static_cast<const VulkanQueue*>(buffer_barrier.dst_state.queue);
-						
-						vk_buffer_barrier.srcQueueFamilyIndex = src_queue->GetFamilyIndex();
-						vk_buffer_barrier.dstQueueFamilyIndex = dst_queue->GetFamilyIndex();
-					}
+					// TODO: NOT IMPLEMENTED TRANSFER OWNERSHIP
+					//if (buffer_barrier.src_state.queue && buffer_barrier.dst_state.queue)
+					//{
+					//	const auto* src_queue = static_cast<const VulkanQueue*>(buffer_barrier.src_state.queue);
+					//	const auto* dst_queue = static_cast<const VulkanQueue*>(buffer_barrier.dst_state.queue);
+					//	
+					//	vk_buffer_barrier.srcQueueFamilyIndex = src_queue->GetFamilyIndex();
+					//	vk_buffer_barrier.dstQueueFamilyIndex = dst_queue->GetFamilyIndex();
+					//}
 				}
 
 				// Parse image barriers
@@ -349,29 +350,25 @@ namespace engine
 					auto& subresource = texture->GetSubresource(texture_barrier.subresource_index);
 					vk_image_barrier.subresourceRange = subresource.GetSubresourceRange();
 
-					auto src_state = GetTextureState(texture_barrier.src_access);
-
-					vk_image_barrier.oldLayout = ImageLayoutToVk(texture_barrier.src_access);
+					vk_image_barrier.oldLayout = ResourceStateToVkImageLayout(texture_barrier.src_state);
 					assert(vk_image_barrier.oldLayout == subresource.GetImageLayout() && "Old layout is not correct.");
-					vk_image_barrier.srcAccessMask = AccessFlagsToVk(src_state.access);
-					vk_image_barrier.srcStageMask = StageFlagsToVk(src_state.stage);
+					vk_image_barrier.srcAccessMask = ResourceStateToVkAccessFlags(texture_barrier.src_state);
+					vk_image_barrier.srcStageMask = ResourceStateToVkStageFlags(texture_barrier.src_state);
 
-					auto dst_state = GetTextureState(texture_barrier.dst_access);
-
-					vk_image_barrier.newLayout = ImageLayoutToVk(texture_barrier.dst_access);
+					vk_image_barrier.newLayout = ResourceStateToVkImageLayout(texture_barrier.dst_state);
 					texture->SetImageLayout(vk_image_barrier.newLayout);
-					vk_image_barrier.dstAccessMask = AccessFlagsToVk(dst_state.access);
-					vk_image_barrier.dstStageMask = StageFlagsToVk(dst_state.stage);
+					vk_image_barrier.dstAccessMask = ResourceStateToVkAccessFlags(texture_barrier.dst_state);
+					vk_image_barrier.dstStageMask = ResourceStateToVkStageFlags(texture_barrier.dst_state);
 
 					// TODO: NOT IMPLEMENTED TRANSFER OWNERSHIP
-					if (src_state.queue && dst_state.queue)
-					{
-						const auto* src_queue = static_cast<const VulkanQueue*>(src_state.queue);
-						const auto* dst_queue = static_cast<const VulkanQueue*>(dst_state.queue);
-
-						vk_image_barrier.srcQueueFamilyIndex = src_queue->GetFamilyIndex();
-						vk_image_barrier.dstQueueFamilyIndex = dst_queue->GetFamilyIndex();
-					}
+					//if (src_state.queue && dst_state.queue)
+					//{
+					//	const auto* src_queue = static_cast<const VulkanQueue*>(src_state.queue);
+					//	const auto* dst_queue = static_cast<const VulkanQueue*>(dst_state.queue);
+					//
+					//	vk_image_barrier.srcQueueFamilyIndex = src_queue->GetFamilyIndex();
+					//	vk_image_barrier.dstQueueFamilyIndex = dst_queue->GetFamilyIndex();
+					//}
 				}
 
 				handle.pipelineBarrier2KHR(vk_barrier);

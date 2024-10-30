@@ -316,19 +316,6 @@ namespace engine
 		};
 
 		// Resource barriers
-		struct ResourceState
-		{
-			AccessFlags access{};
-			StageFlags stage{};
-			const Queue* queue{ nullptr };
-		};
-
-		struct TextureAccess
-		{
-			AccessTypeFlags type{};
-			TextureLayout layout{};
-		};
-
 		struct BufferRangeInfo
 		{
 			uint64_t size{ 0ull };
@@ -338,8 +325,8 @@ namespace engine
 		struct BufferBarrier
 		{
 			Buffer* buffer{ nullptr };
-			ResourceState src_state{};
-			ResourceState dst_state{};
+			ResourceStateFlags src_state{};
+			ResourceStateFlags dst_state{};
 			BufferRangeInfo range{};
 		};
 
@@ -348,16 +335,14 @@ namespace engine
 			Texture* texture{ nullptr };
 			uint32_t subresource_index{ ~0u };
 
-			TextureAccess src_access{};
-			//ResourceState src_state{};
-			TextureAccess dst_access{};
-			//ResourceState dst_state{};
+			ResourceStateFlags src_state{};
+			ResourceStateFlags dst_state{};
 		};
 
 		struct MemoryBarrier
 		{
-			ResourceState src_state{};
-			ResourceState dst_state{};
+			ResourceStateFlags src_state{};
+			ResourceStateFlags dst_state{};
 		};
 
 		struct ResourceBarrierInfo
