@@ -48,12 +48,12 @@ namespace engine
 		class RenderCamera final : public IRenderCamera
 		{
 		public:
-			RenderCamera();
+			RenderCamera() = default;
 			~RenderCamera() = default;
 
 			void Update(const glm::vec3& translation, const glm::quat& rotation) override;
-
 			const glm::mat4& GetMatrix(RenderCameraMatrixType type) const override;
+			void Flush(IRenderer& renderer) override;
 		private:
 			Frustum frustum{};
 

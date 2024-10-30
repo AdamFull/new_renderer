@@ -168,13 +168,6 @@ namespace engine
 		}
 
 
-
-
-		RenderCamera::RenderCamera()
-		{
-
-		}
-
 		void RenderCamera::Update(const glm::vec3& translation, const glm::quat& rotation)
 		{
 			float screen_size_x = 1920.f;
@@ -236,6 +229,11 @@ namespace engine
 		const glm::mat4& RenderCamera::GetMatrix(RenderCameraMatrixType type) const
 		{
 			return matrices[utl::enum_cast(type)];
+		}
+
+		void RenderCamera::Flush(IRenderer& renderer)
+		{
+
 		}
 	}
 }

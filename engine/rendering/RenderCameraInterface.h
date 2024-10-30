@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include "RendererInterface.h"
 
 namespace engine
 {
@@ -35,8 +36,8 @@ namespace engine
 			float GetClipFar() const;
 
 			virtual void Update(const glm::vec3& translation, const glm::quat& rotation) = 0;
-
 			virtual const glm::mat4& GetMatrix(RenderCameraMatrixType type) const = 0;
+			virtual void Flush(IRenderer& renderer) = 0;
 		protected:
 			glm::vec3 forward{};
 			glm::vec3 right{};
