@@ -209,6 +209,10 @@ namespace engine
 		{
 			ClearColor() = default;
 
+			ClearColor(float r, float g, float b, float a) :
+				color{ r, g, b, a }
+			{}
+
 			ClearColor(std::array<float, 4ull>&& clear_color) :
 				color{ std::move(clear_color) }
 			{}

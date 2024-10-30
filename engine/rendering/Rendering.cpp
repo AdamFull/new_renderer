@@ -269,35 +269,30 @@ namespace engine
 				{
 					auto& render_target = render_context->GetBackbuffer();
 					pass_ci.state.color_formats[pass_ci.state.color_format_count++] = render_target.GetFormat();
+
+					// Init default color attachment setting
+					pass_ci.state.color_blending_state.attachment_count++;
 				}
 				else
 				{
 					auto& render_target = render_targets.Get(render_resource.resource_id);
-					pass_ci.state.color_formats[pass_ci.state.color_format_count++] = render_target.texture->GetFormat();
+					auto rt_format = render_target.texture->GetFormat();
+					if (attachment.flags & ResourceAttachmentTypeFlag::eDepth)
+					{
+						pass_ci.state.depth_format = rt_format;
+					}
+					else if (attachment.flags & ResourceAttachmentTypeFlag::eStencil)
+					{
+						pass_ci.state.stencil_format = rt_format;
+					}
+					else
+					{
+						pass_ci.state.color_formats[pass_ci.state.color_format_count++] = rt_format;
+
+						// Init default color attachment setting
+						pass_ci.state.color_blending_state.attachment_count++;
+					}
 				}
-
-				// Init default color attachment setting
-				pass_ci.state.color_blending_state.attachment_count++;
-			}
-
-			// Collect depth format
-			if (create_info.depth_attachment.render_resource_id != ~0u)
-			{
-				per_pass_resource_bindings[pass_index].depth_attachment = create_info.depth_attachment;
-
-				auto& render_resource = graph_resources[create_info.depth_attachment.render_resource_id];
-				auto& depth_target = render_targets.Get(render_resource.resource_id);
-				pass_ci.state.depth_format = depth_target.texture->GetFormat();
-			}
-
-			// Collect stencil format
-			if (create_info.stencil_attachment.render_resource_id != ~0u)
-			{
-				per_pass_resource_bindings[pass_index].stencil_attachment = create_info.stencil_attachment;
-
-				auto& render_resource = graph_resources[create_info.stencil_attachment.render_resource_id];
-				auto& stencil_target = render_targets.Get(render_resource.resource_id);
-				pass_ci.state.stencil_format = stencil_target.texture->GetFormat();
 			}
 
 			auto& new_pass = shader_passes.emplace_back(std::make_unique<RenderPass>(*gfx_context, pass_ci));
@@ -638,96 +633,19 @@ namespace engine
 
 						attachment.texture = barrier.texture;
 
-						render_pass->AddColorAttachment(attachment);
+						if (resource_attachment.flags & ResourceAttachmentTypeFlag::eDepthStencil)
+							render_pass->SetDepthStencilAttachment(attachment);
+						else if (resource_attachment.flags & ResourceAttachmentTypeFlag::eDepth)
+							render_pass->SetDepthAttachment(attachment);
+						else if (resource_attachment.flags & ResourceAttachmentTypeFlag::eStencil)
+							render_pass->SetStencilAttachment(attachment);
+						else
+							render_pass->AddColorAttachment(attachment);
 
 						last_resource_access.access = access_flag;
 						last_resource_access.pass_type = utl::enum_cast(shader_pass->GetPassType());
 					}
 				}
-			}
-
-			if (pass_bindings.depth_attachment.render_resource_id != ~0u)
-			{
-				auto& resource_attachment = pass_bindings.depth_attachment;
-				auto& render_resource = graph_resources[resource_attachment.render_resource_id];
-
-				// Graph also should support work with subresources
-				auto resource_key = std::make_pair(resource_attachment.render_resource_id, 0u);
-
-				auto& last_resource_access = resource_access_map[resource_key];
-
-				gfx::AccessTypeFlag access_flag = gfx::AccessTypeFlag::eWrite;
-
-				bool is_write_after_write = ((last_resource_access.access & access_flag) && access_flag == gfx::AccessTypeFlag::eWrite);
-				bool is_change_pipeline_ownership = last_resource_access.pass_type == utl::enum_cast(shader_pass->GetPassType()) && is_write_after_write;
-
-				gfx::Attachment attachment{};
-				attachment.load_op = is_write_after_write ? gfx::LoadOp::eLoad : gfx::LoadOp::eClear;
-				attachment.store_op = !render_resource.usages[utl::enum_cast(RenderGraphResourceAccess::eRead)].empty() ? gfx::StoreOp::eStore : gfx::StoreOp::eDontCare;
-				attachment.clear_color = resource_attachment.clear_color;
-
-				auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
-				barrier.texture = GetTextureResource(render_resource);
-				barrier.src_state = render_resource.current_state;
-
-				if (last_resource_access.access == 0)
-					barrier.dst_state = access_flag == gfx::AccessTypeFlag::eRead ? render_resource.final_state : render_resource.intermediate_state;
-				else if (access_flag != gfx::AccessTypeFlag::eWrite && IsROAccessOnlyRemain(render_resource, pass_index))
-					barrier.dst_state = render_resource.final_state;
-				else if (is_change_pipeline_ownership)
-					barrier.dst_state = render_resource.intermediate_state;
-
-				render_resource.current_state = barrier.dst_state;
-
-				attachment.texture = barrier.texture;
-
-				auto* render_pass = static_cast<RenderPass*>(shader_pass.get());
-				render_pass->SetDepthAttachment(attachment);
-
-				last_resource_access.access = access_flag;
-				last_resource_access.pass_type = utl::enum_cast(shader_pass->GetPassType());
-			}
-
-			if (pass_bindings.stencil_attachment.render_resource_id != ~0u)
-			{
-				auto& resource_attachment = pass_bindings.stencil_attachment;
-				auto& render_resource = graph_resources[resource_attachment.render_resource_id];
-
-				// Graph also should support work with subresources
-				auto resource_key = std::make_pair(resource_attachment.render_resource_id, 0u);
-
-				auto& last_resource_access = resource_access_map[resource_key];
-
-				gfx::AccessTypeFlag access_flag = gfx::AccessTypeFlag::eWrite;
-
-				bool is_write_after_write = ((last_resource_access.access & access_flag) && access_flag == gfx::AccessTypeFlag::eWrite);
-				bool is_change_pipeline_ownership = last_resource_access.pass_type == utl::enum_cast(shader_pass->GetPassType()) && is_write_after_write;
-
-				gfx::Attachment attachment{};
-				attachment.load_op = is_write_after_write ? gfx::LoadOp::eLoad : gfx::LoadOp::eClear;
-				attachment.store_op = !render_resource.usages[utl::enum_cast(RenderGraphResourceAccess::eRead)].empty() ? gfx::StoreOp::eStore : gfx::StoreOp::eDontCare;
-				attachment.clear_color = resource_attachment.clear_color;
-
-				auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
-				barrier.texture = GetTextureResource(render_resource);
-				barrier.src_state = render_resource.current_state;
-
-				if (last_resource_access.access == 0)
-					barrier.dst_state = access_flag == gfx::AccessTypeFlag::eRead ? render_resource.final_state : render_resource.intermediate_state;
-				else if (access_flag != gfx::AccessTypeFlag::eWrite && IsROAccessOnlyRemain(render_resource, pass_index))
-					barrier.dst_state = render_resource.final_state;
-				else if (is_change_pipeline_ownership)
-					barrier.dst_state = render_resource.intermediate_state;
-
-				render_resource.current_state = barrier.dst_state;
-
-				attachment.texture = barrier.texture;
-
-				auto* render_pass = static_cast<RenderPass*>(shader_pass.get());
-				render_pass->SetStencilAttachment(attachment);
-
-				last_resource_access.access = access_flag;
-				last_resource_access.pass_type = utl::enum_cast(shader_pass->GetPassType());
 			}
 
 			// Translate textures
@@ -929,7 +847,7 @@ namespace engine
 				RenderShaderPassCreateInfo create_info{};
 				create_info.shader_name = "testing:screenspace";
 				create_info.BindReadResource(utl::murmur_hash("input_image"), brdf_lut_target);
-				create_info.AddWriteResource(backbuffer_resource, { 1.f, 0.5f, 1.f, 1.f });
+				create_info.AddWriteAttachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, gfx::ClearColor{ 1.f, 0.5f, 1.f, 1.f });
 
 				auto* new_node = AllocatePassNode();
 				auto* pass_node = CastRenderGraphNode<RenderGraphPassNode>(new_node);

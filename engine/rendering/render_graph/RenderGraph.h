@@ -40,23 +40,6 @@ namespace engine
 			eBackbuffer = 1 << 6
 		};
 		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(RenderResourceGroupFlags, RenderResourceGroupFlag);
-		
-		enum class RenderResourceGroupType : uint32_t
-		{
-			eColorRead,
-			eColorWrite,
-			eResolveWrite,
-			eStorageTextureRead,
-			eStorageTextureWrite,
-			eStorageRead,
-			eStorageWrite,
-			eBackbufferRead,
-			eBackbufferWrite,
-			eIndirectArgumentRead,
-			eIndirectArgumentWrite,
-			eIndirectCountRead,
-			eIndirectCountWrite
-		};
 
 		enum class RenderGraphResourceAccess
 		{
@@ -93,9 +76,20 @@ namespace engine
 			uint32_t subresource_index{ ~0u };
 		};
 
+		enum class ResourceAttachmentTypeFlag
+		{
+			eColor = 1 << 0,
+			eDepth = 1 << 1,
+			eStencil = 1 << 2,
+			eDepthStencil = eDepth | eStencil
+		};
+		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ResourceAttachmentTypeFlags, ResourceAttachmentTypeFlag);
+
 		// Describes out attachment like color or depth/stencil attachment
 		struct RenderResourceAttachment
 		{
+			ResourceAttachmentTypeFlags flags{};
+
 			// Index of render resource
 			uint32_t render_resource_id{ ~0u };
 
@@ -107,9 +101,6 @@ namespace engine
 		{
 			std::array<std::vector<RenderResourceBinding>, 3ull> bindings{};
 			std::array<std::vector<RenderResourceAttachment>, 3ull> attachments{};
-
-			RenderResourceAttachment depth_attachment{};
-			RenderResourceAttachment stencil_attachment{};
 		};
 
 		struct ShaderPassCreateInfo
@@ -131,9 +122,6 @@ namespace engine
 			
 			void BindReadResource(uint32_t binding_point, uint32_t render_resource_id) { resource_bindings[utl::enum_cast(RenderGraphResourceAccess::eRead)].emplace_back(binding_point, render_resource_id, ~0u); }
 			void BindReadResource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource) { resource_bindings[utl::enum_cast(RenderGraphResourceAccess::eRead)].emplace_back(binding_point, render_resource_id, subresource); }
-
-			void AddWriteResource(uint32_t render_resource_id, std::array<float, 4ull> clear_color = {}) { resource_attachments[utl::enum_cast(RenderGraphResourceAccess::eWrite)].emplace_back(render_resource_id, gfx::ClearColor(std::move(clear_color))); }
-			void AddReadResource(uint32_t render_resource_id) { resource_attachments[utl::enum_cast(RenderGraphResourceAccess::eRead)].emplace_back(render_resource_id, gfx::ClearColor{}); }
 		};
 
 		struct ComputeShaderPassCreateInfo : ShaderPassCreateInfo
@@ -147,11 +135,8 @@ namespace engine
 
 		struct RenderShaderPassCreateInfo : ShaderPassCreateInfo
 		{
-			RenderResourceAttachment depth_attachment{};
-			RenderResourceAttachment stencil_attachment{};
-
-			void SetDepthAttahment(uint32_t render_resource_id, float depth) { depth_attachment = { render_resource_id, gfx::ClearColor(depth) }; }
-			void SetDepthAttahment(uint32_t render_resource_id, uint32_t stencil) { stencil_attachment = { render_resource_id, gfx::ClearColor(stencil) }; }
+			void AddWriteAttachment(uint32_t render_resource_id, ResourceAttachmentTypeFlags flags = {}, gfx::ClearColor clear_color = {}) { resource_attachments[utl::enum_cast(RenderGraphResourceAccess::eWrite)].emplace_back(flags, render_resource_id, clear_color); }
+			void AddReadAttachment(uint32_t render_resource_id, ResourceAttachmentTypeFlags flags = {}) { resource_attachments[utl::enum_cast(RenderGraphResourceAccess::eRead)].emplace_back(flags, render_resource_id, gfx::ClearColor{}); }
 		};
 
 		struct ConsistentAccessInfo
