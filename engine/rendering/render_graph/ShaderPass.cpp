@@ -14,7 +14,8 @@ namespace engine
 			shader{ create_info.shader },
 			debug_name{ create_info.debug_name },
 			one_time{ create_info.one_time },
-			shared_descriptor{ create_info.shared_descriptor }
+			shared_descriptor{ create_info.shared_descriptor },
+			draw_callback{ create_info.draw_callback }
 		{
 			auto& reflection = shader->GetReflection();
 
@@ -166,6 +167,14 @@ namespace engine
 			command_list.PushConstants(shader, root_signature, std::span<const char>(constant_data.data(), constant_data.size()));
 		}
 
+		void ShaderPass::DivideWorkgroupByLocalSizes(uint32_t& group_x, uint32_t& group_y, uint32_t& group_z)
+		{
+			auto& reflection = shader->GetReflection();
+			group_x = std::max(static_cast<uint32_t>(std::ceil(static_cast<float>(group_x) / static_cast<float>(reflection.local_sizes[0]))), 1u);
+			group_y = std::max(static_cast<uint32_t>(std::ceil(static_cast<float>(group_y) / static_cast<float>(reflection.local_sizes[1]))), 1u);
+			group_z = std::max(static_cast<uint32_t>(std::ceil(static_cast<float>(group_z) / static_cast<float>(reflection.local_sizes[2]))), 1u);
+		}
+
 		void ShaderPass::CollectProfileData()
 		{
 			uint64_t timestamps[2] = {};
@@ -182,7 +191,7 @@ namespace engine
 			pass_delta_time = static_cast<float>(elapsed_time) * timestamp_frequency / 1000000000.f;
 		}
 
-		UniformHandle ShaderPass::GetConstantBlock()
+		UniformHandle& ShaderPass::GetConstantBlock()
 		{
 			return *constant_block;
 		}

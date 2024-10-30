@@ -125,7 +125,7 @@ namespace engine
 			gfx_context->Destroy(timestamp_query);
 		}
 
-		uint32_t Renderer::AddTextureResource(const std::string& path, gfx::Sampler* sampler)
+		uint32_t Renderer::AddRenderResource(const std::string& path, gfx::Sampler* sampler)
 		{
 			auto& new_resource = graph_resources.emplace_back();
 			new_resource.resource_type = RenderResourceTypeFlag::eStaticImage;
@@ -138,7 +138,7 @@ namespace engine
 			return graph_resources.size() - 1ull;
 		}
 
-		uint32_t Renderer::AddTextureResource(const gfx::TextureCreateInfo& create_info, gfx::Sampler* sampler)
+		uint32_t Renderer::AddRenderResource(const gfx::TextureCreateInfo& create_info, gfx::Sampler* sampler)
 		{
 			auto& new_resource = graph_resources.emplace_back();
 
@@ -168,10 +168,12 @@ namespace engine
 				new_resource.resource_id = textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler, create_info.usage, create_info.resizable });
 			}
 
+			new_resource.subresource_states.fill(gfx::ResourceStateFlag::eUndefined);
+
 			return graph_resources.size() - 1ull;
 		}
 
-		uint32_t Renderer::AddBufferResource(const gfx::BufferCreateInfo& create_info)
+		uint32_t Renderer::AddRenderResource(const gfx::BufferCreateInfo& create_info)
 		{
 			gfx::Buffer* buffer = gfx_context->CreateBuffer(create_info);
 			auto handle = buffers.Add(BufferObject{ buffer });
@@ -206,34 +208,7 @@ namespace engine
 			pass_ci.shader = resource_context->LoadShader(create_info.shader_name);
 			pass_ci.one_time = create_info.one_time;
 			pass_ci.shared_descriptor = shared_descriptor;
-			pass_ci.divide_by_locals = create_info.divide_by_local_sizes;
-			pass_ci.texture_subresource_index = create_info.subresource_index;
-
-			if (create_info.size_by_texture != ~0u)
-			{
-				auto& resource = graph_resources[create_info.size_by_texture];
-				if (resource.resource_type & RenderResourceTypeFlag::eStaticImage)
-				{
-					auto& texture = textures.Get(resource.resource_id);
-					pass_ci.texture_size_target = texture.texture;
-				}
-				else if (resource.resource_type & RenderResourceTypeFlag::eBackbuffer)
-				{
-					auto& backbuffer = render_context->GetBackbuffer();
-					pass_ci.texture_size_target = &backbuffer;
-				}
-				else if (resource.resource_type & RenderResourceTypeFlag::eAllImage)
-				{
-					auto& texture = render_targets.Get(resource.resource_id);
-					pass_ci.texture_size_target = texture.texture;
-				}
-			}
-			else if (create_info.size_by_buffer != ~0u)
-			{
-				auto& resource = graph_resources[create_info.size_by_texture];
-				auto& buffer = buffers.Get(resource.resource_id);
-				pass_ci.buffer_size_target = buffer.buffer;
-			}
+			pass_ci.draw_callback = std::move(create_info.draw_callback);
 
 			auto& new_pass = shader_passes.emplace_back(std::make_unique<ComputePass>(*gfx_context, pass_ci));
 			new_pass->SetExecutionContext(render_context.get());
@@ -256,6 +231,7 @@ namespace engine
 			pass_ci.shader = resource_context->LoadShader(create_info.shader_name);
 			pass_ci.shared_descriptor = shared_descriptor;
 			pass_ci.state.primitive_topology = gfx::PrimitiveTopology::eTriangleList;
+			pass_ci.draw_callback = std::move(create_info.draw_callback);
 			//pass_ci.state.rasterization_state.front_face = gfx::FrontFace::eCW;
 
 			// Collect color attachment formats
@@ -385,6 +361,22 @@ namespace engine
 		}
 
 
+		RenderGraphNodeHeader* Renderer::CreateShaderPassNode(const ComputeShaderPassCreateInfo& create_info)
+		{
+			auto* node = AllocateRenderGraphNode<RenderGraphPassNode>(RenderGraphNodeType::ePassNode);
+			auto* pass_node = CastRenderGraphNode<RenderGraphPassNode>(node);
+			pass_node->pass_index = AddShaderPass(create_info);
+			return node;
+		}
+
+		RenderGraphNodeHeader* Renderer::CreateShaderPassNode(const RenderShaderPassCreateInfo& create_info)
+		{
+			auto* node = AllocateRenderGraphNode<RenderGraphPassNode>(RenderGraphNodeType::ePassNode);
+			auto* pass_node = CastRenderGraphNode<RenderGraphPassNode>(node);
+			pass_node->pass_index = AddShaderPass(create_info);
+			return node;
+		}
+
 		RenderGraphNodeHeader* Renderer::AllocateStaticConditionNode()
 		{
 			return AllocateRenderGraphNode<RenderGraphStaticConditionNode>(RenderGraphNodeType::eStaticCondition);
@@ -398,11 +390,6 @@ namespace engine
 		RenderGraphNodeHeader* Renderer::AllocateGroupNode()
 		{
 			return AllocateRenderGraphNode<RenderGraphGroupNode>(RenderGraphNodeType::eGroupNode);
-		}
-
-		RenderGraphNodeHeader* Renderer::AllocatePassNode()
-		{
-			return AllocateRenderGraphNode<RenderGraphPassNode>(RenderGraphNodeType::ePassNode);
 		}
 
 		gfx::Texture* Renderer::GetTextureResource(const RenderGraphResource& graph_resource)
@@ -559,20 +546,21 @@ namespace engine
 						auto& resource = buffers.Get(render_resource.resource_id);
 						auto& barrier = buffer_barriers[resource_barriers.buffer_barrier_count++];
 						barrier.buffer = resource.buffer;
-						barrier.src_state = render_resource.current_state;
+						barrier.src_state = render_resource.GetState(resource_binding.subresource_index);
 
 						if (access_flag == gfx::AccessTypeFlag::eRead)
 							barrier.dst_state = render_resource.final_state;
 						else
 							barrier.dst_state = render_resource.intermediate_state;
 
-						render_resource.current_state = barrier.dst_state;
+							render_resource.SetState(barrier.dst_state, resource_binding.subresource_index);
 					}
 					else
 					{
 						auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
-						barrier.src_state = render_resource.current_state;
+						barrier.src_state = render_resource.GetState(resource_binding.subresource_index);
 						barrier.texture = GetTextureResource(render_resource);
+						barrier.subresource_index = resource_binding.subresource_index;
 
 						if (last_resource_access.access == 0)
 							barrier.dst_state = access_flag == gfx::AccessTypeFlag::eRead ? render_resource.final_state : render_resource.intermediate_state;
@@ -581,7 +569,7 @@ namespace engine
 						else if (is_change_pipeline_ownership)
 							barrier.dst_state = render_resource.intermediate_state;
 
-						render_resource.current_state = barrier.dst_state;
+						render_resource.SetState(barrier.dst_state, resource_binding.subresource_index);
 					}
 
 					last_resource_access.access = access_flag;
@@ -619,7 +607,7 @@ namespace engine
 						attachment.clear_color = resource_attachment.clear_color;
 
 						auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
-						barrier.src_state = render_resource.current_state;
+						barrier.src_state = render_resource.GetState();
 						barrier.texture = GetTextureResource(render_resource);
 
 						if (last_resource_access.access == 0)
@@ -629,7 +617,7 @@ namespace engine
 						else if (is_change_pipeline_ownership)
 							barrier.dst_state = render_resource.intermediate_state;
 
-						render_resource.current_state = barrier.dst_state;
+						render_resource.SetState(barrier.dst_state);
 
 						attachment.texture = barrier.texture;
 
@@ -754,6 +742,8 @@ namespace engine
 
 		void Renderer::BuildGraph()
 		{
+			using namespace utl;
+
 			// Register backbuffer resource
 
 			backbuffer_resource = graph_resources.size();
@@ -786,8 +776,8 @@ namespace engine
 			}
 
 			// Load some static textures
-			auto casual_day_4k_cube = AddTextureResource("/root/embed/rendering/textures/CasualDay4K.ktx2");
-			auto dirt_mask_texture = AddTextureResource("/root/embed/rendering/textures/DirtMaskTextureExample.png");
+			auto casual_day_4k_cube = AddRenderResource("/root/embed/rendering/textures/CasualDay4K.ktx2");
+			auto dirt_mask_texture = AddRenderResource("/root/embed/rendering/textures/DirtMaskTextureExample.png");
 
 			// GI targets
 			uint32_t brdf_lut_target{ ~0u };
@@ -799,7 +789,7 @@ namespace engine
 				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage;
 				create_info.resizable = false;
 
-				brdf_lut_target = AddTextureResource(create_info, nearest_sampler);
+				brdf_lut_target = AddRenderResource(create_info, nearest_sampler);
 			}
 
 			uint32_t irradiance_cube_target{ ~0u };
@@ -810,7 +800,7 @@ namespace engine
 				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage | gfx::TextureUsageFlag::eCubemap;
 				create_info.resizable = false;
 
-				irradiance_cube_target = AddTextureResource(create_info, linear_sampler);
+				irradiance_cube_target = AddRenderResource(create_info, linear_sampler);
 			}
 
 			uint32_t prefiltered_cube_target{ ~0u };
@@ -822,38 +812,131 @@ namespace engine
 				create_info.levels = static_cast<uint32_t>(std::floor(std::log2((std::max)(create_info.width, create_info.height)))) + 1u;
 				create_info.resizable = false;
 
-				prefiltered_cube_target = AddTextureResource(create_info, linear_sampler);
+				prefiltered_cube_target = AddRenderResource(create_info, linear_sampler);
 			}
-
 			// Passes
-
-
+			// Generate brdflut
 			{
 				ComputeShaderPassCreateInfo create_info{};
 				create_info.shader_name = "lighting:brgflut_generator";
 				create_info.one_time = true;
-				create_info.divide_by_local_sizes = true;
-				create_info.size_by_texture = brdf_lut_target;
-				create_info.BindWriteResource(utl::murmur_hash("out_color"), brdf_lut_target);
+				create_info.BindWriteResource("out_color"_hash32, brdf_lut_target);
 
-				auto* new_node = AllocatePassNode();
-				auto* pass_node = CastRenderGraphNode<RenderGraphPassNode>(new_node);
-				pass_node->pass_index = AddShaderPass(create_info);
-				
-				render_graph.push_back(new_node);
+				create_info.draw_callback = [this, brdf_lut_target](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+					{
+						self.FlushResources(command_list);
+
+						uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
+
+						auto& resource = graph_resources[brdf_lut_target];
+						auto* texture = GetTextureResource(resource);
+
+						group_x = texture->GetWidth();
+						group_y = texture->GetHeight();
+
+						self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
+						command_list.Dispatch(group_x, group_y, group_z);
+					};
+
+				render_graph.emplace_back(CreateShaderPassNode(create_info));
 			}
 
+			// Generate irradiance cubemap
+			{
+				ComputeShaderPassCreateInfo create_info{};
+				create_info.shader_name = "lighting:irradiancecube_generator";
+				create_info.one_time = true;
+				create_info.BindReadResource("sampler_color"_hash32, casual_day_4k_cube);
+				create_info.BindWriteResource("out_color"_hash32, irradiance_cube_target);
+
+				create_info.draw_callback = [this, irradiance_cube_target](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+					{
+						self.FlushResources(command_list);
+
+						uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
+
+						auto& resource = graph_resources[irradiance_cube_target];
+						auto* texture = GetTextureResource(resource);
+
+						group_x = texture->GetWidth();
+						group_y = texture->GetHeight();
+
+						self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
+						command_list.Dispatch(group_x, group_y, group_z);
+					};
+
+				render_graph.emplace_back(CreateShaderPassNode(create_info));
+			}
+
+			// Generate prefiltered cubemap
+			{
+				//auto* group_node = AllocateGroupNode();
+				//auto* group = CastRenderGraphNode<RenderGraphGroupNode>(group_node);
+				//group->group_name = "prefiltered map generator";
+				//group->color = 0x99F9F1FF;
+				//group->nodes = {};
+				//group->nodes.reserve(10);
+
+				auto& resource = graph_resources[prefiltered_cube_target];
+				auto* texture = GetTextureResource(resource);
+
+				for (int32_t mip = 0; mip < texture->GetMipLevelCount(); ++mip)
+				{
+					ComputeShaderPassCreateInfo create_info{};
+					create_info.shader_name = "lighting:prefilteredmap_generator";
+					create_info.one_time = true;
+					create_info.BindWriteResource("out_color"_hash32, prefiltered_cube_target, mip);
+					create_info.BindReadResource("sampler_color"_hash32, casual_day_4k_cube);
+
+					create_info.draw_callback = [this, mip, texture](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+						{
+							self.FlushResources(command_list);
+
+							uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
+
+							float layer_roughness = static_cast<float>(mip) / static_cast<float>(texture->GetMipLevelCount());
+							
+							auto& constants = self.GetConstantBlock();
+							constants.Set("roughness"_hash32, layer_roughness);
+							self.PushConstantRanges(command_list);
+
+							group_x = texture->GetWidth();
+							group_y = texture->GetHeight();
+
+							self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
+							command_list.Dispatch(group_x, group_y, group_z);
+						};
+
+					render_graph.emplace_back(CreateShaderPassNode(create_info));
+					//group->nodes.emplace_back(CreateShaderPassNode(create_info));
+				}
+
+				//render_graph.emplace_back(group_node);
+			}
+
+			// Test output shader
 			{
 				RenderShaderPassCreateInfo create_info{};
 				create_info.shader_name = "testing:screenspace";
-				create_info.BindReadResource(utl::murmur_hash("input_image"), brdf_lut_target);
+				create_info.BindReadResource("input_image"_hash32, brdf_lut_target);
 				create_info.AddWriteAttachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, gfx::ClearColor{ 1.f, 0.5f, 1.f, 1.f });
 
-				auto* new_node = AllocatePassNode();
-				auto* pass_node = CastRenderGraphNode<RenderGraphPassNode>(new_node);
-				pass_node->pass_index = AddShaderPass(create_info);
+				create_info.draw_callback = [this, irradiance_cube_target](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+					{
+						auto& backbuffer = render_context->GetBackbuffer();
 
-				render_graph.push_back(new_node);
+						auto viewport_width = backbuffer.GetWidth();
+						auto viewport_height = backbuffer.GetHeight();
+
+						command_list.SetViewport(0.f, 0.f, viewport_width, viewport_height, 0.f, 1.f);
+						command_list.SerScissor(0u, 0u, viewport_width, viewport_height);
+						
+						self.FlushResources(command_list);
+						
+						command_list.Draw(3u, 0u, 0u, 1u);
+					};
+
+				render_graph.emplace_back(CreateShaderPassNode(create_info));
 			}
 		}
 
@@ -922,6 +1005,10 @@ namespace engine
 					continue;
 
 				graph_resource.current_state = gfx::ResourceStateFlag::eUndefined;
+				for (auto& subresource_state : graph_resource.subresource_states)
+				{
+					subresource_state = gfx::ResourceStateFlag::eUndefined;
+				}
 
 				if ((graph_resource.resource_type & RenderResourceTypeFlag::eRenderTarget) || (graph_resource.resource_type & RenderResourceTypeFlag::eStorageTarget))
 				{

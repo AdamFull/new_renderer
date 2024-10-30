@@ -18,6 +18,8 @@ namespace engine
 {
 	namespace render
 	{
+		class ShaderPass;
+
 		enum class RenderResourceTypeFlag : uint16_t
 		{
 			eRenderTarget = 1 << 0,
@@ -57,10 +59,47 @@ namespace engine
 			uint32_t resource_id{ ~0u };
 
 			gfx::ResourceStateFlags current_state{ gfx::ResourceStateFlag::eUndefined };
+			std::array<gfx::ResourceStateFlags, 16ull> subresource_states{ gfx::ResourceStateFlag::eUndefined };
+
 			gfx::ResourceStateFlags intermediate_state{ gfx::ResourceStateFlag::eUndefined };
 			gfx::ResourceStateFlags final_state{ gfx::ResourceStateFlag::eUndefined };
 
 			std::array<std::unordered_set<uint32_t>, 3ull> usages{};
+
+			gfx::ResourceStateFlags GetState(uint32_t subresource_index = ~0u)
+			{
+				if ((resource_type & RenderResourceTypeFlag::eBuffer) || subresource_index == ~0u)
+				{
+					return current_state;
+				}
+				else
+				{
+					return subresource_states[subresource_index];
+				}
+			}
+
+			void SetState(gfx::ResourceStateFlags new_state, uint32_t subresource_index = ~0u)
+			{
+				if (resource_type & RenderResourceTypeFlag::eBuffer)
+				{
+					current_state = new_state;
+				}
+				else
+				{
+					if (subresource_index == ~0u)
+					{
+						current_state = new_state;
+						for (auto& state : subresource_states)
+						{
+							state = new_state;
+						}
+					}
+					else
+					{
+						subresource_states[subresource_index] = new_state;
+					}
+				}
+			}
 		};
 
 		// Describes resource binding. For example binding of texture with concrete mip level, or writable/readable buffer.
@@ -108,6 +147,8 @@ namespace engine
 			// Shader name in shader cache
 			std::string shader_name{};
 
+			std::function<void(ShaderPass&, gfx::CommandList&, float)> draw_callback{};
+
 			// Means that this pass will be executed only one time
 			bool one_time{ false };
 
@@ -126,11 +167,7 @@ namespace engine
 
 		struct ComputeShaderPassCreateInfo : ShaderPassCreateInfo
 		{
-			bool divide_by_local_sizes{ false };
-
-			uint32_t size_by_buffer{ ~0u };
-			uint32_t size_by_texture{ ~0u };
-			uint32_t subresource_index{ ~0u };
+			
 		};
 
 		struct RenderShaderPassCreateInfo : ShaderPassCreateInfo

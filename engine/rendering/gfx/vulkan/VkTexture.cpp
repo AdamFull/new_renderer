@@ -102,6 +102,10 @@ namespace engine
 						mip->SetImageLayout(image_layout);
 					}
 				}
+				else
+				{
+					subresources[subresource]->SetImageLayout(image_layout);
+				}
 			}
 
 			uint32_t VulkanTexture::GetWidth() const

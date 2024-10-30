@@ -33,10 +33,10 @@ namespace engine
 			Renderer(Window* window, filesystem::IVirtualFileSystemInterface* vfs);
 			~Renderer();
 
-			uint32_t AddTextureResource(const std::string& path, gfx::Sampler* sampler = nullptr) override;
-			uint32_t AddTextureResource(const gfx::TextureCreateInfo& create_info, gfx::Sampler* sampler = nullptr) override;
+			uint32_t AddRenderResource(const std::string& path, gfx::Sampler* sampler = nullptr) override;
+			uint32_t AddRenderResource(const gfx::TextureCreateInfo& create_info, gfx::Sampler* sampler = nullptr) override;
 
-			uint32_t AddBufferResource(const gfx::BufferCreateInfo& create_info) override;
+			uint32_t AddRenderResource(const gfx::BufferCreateInfo& create_info) override;
 
 			uint32_t AddShaderPass(const ComputeShaderPassCreateInfo& create_info);
 			uint32_t AddShaderPass(const RenderShaderPassCreateInfo& create_info);
@@ -56,10 +56,12 @@ namespace engine
 			GeometryBuffer& RequestInterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) override;
 			GeometryBuffer& RequestDeinterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) override;
 		private:
+			RenderGraphNodeHeader* CreateShaderPassNode(const ComputeShaderPassCreateInfo& create_info);
+			RenderGraphNodeHeader* CreateShaderPassNode(const RenderShaderPassCreateInfo& create_info);
+
 			RenderGraphNodeHeader* AllocateStaticConditionNode();
 			RenderGraphNodeHeader* AllocateDynamicConditionNode();
 			RenderGraphNodeHeader* AllocateGroupNode();
-			RenderGraphNodeHeader* AllocatePassNode();
 
 			gfx::Texture* GetTextureResource(const RenderGraphResource& graph_resource);
 

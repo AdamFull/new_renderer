@@ -291,7 +291,7 @@ namespace engine
 				// TODO: add ability to override format and sampler params
 				// TODO: find format from materials
 				auto image_path = filesystem::fs::path_append(root.rootDirectory, easygltf::url_decode(image.uri));
-				resources.textures.push_back(renderer.AddTextureResource(image_path, texture_sampler));
+				resources.textures.push_back(renderer.AddRenderResource(image_path, texture_sampler));
 			}
 
 			utl::vector<render::FMaterial> materials{};

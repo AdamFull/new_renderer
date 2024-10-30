@@ -14,6 +14,8 @@ namespace engine
 
 	namespace render
 	{
+		class ShaderPass;
+
 		enum class ShaderPassType
 		{
 			eNone,
@@ -27,17 +29,15 @@ namespace engine
 			gfx::PipelineCache* pipeline_cache{ nullptr };
 			gfx::SharedDescriptor* shared_descriptor{ nullptr };
 
+			std::function<void(ShaderPass&, gfx::CommandList&, float)> draw_callback{};
+
 			std::string debug_name{};
 			bool one_time{ false };
 		};
 
 		struct ComputePassCreateInfo : PassCreateInfo
 		{
-			bool divide_by_locals{ false };
-			gfx::Texture* texture_size_target{ nullptr };
-			uint32_t texture_subresource_index{ ~0u };
-
-			gfx::Buffer* buffer_size_target{ nullptr };
+			
 		};
 
 		struct RenderPassCreateInfo : PassCreateInfo
@@ -101,7 +101,7 @@ namespace engine
 			
 				auto& variable = *found;
 				if (size == 0ull)
-					size = (std::min)(sizeof(_Ty), variable.size);
+					size = std::min(sizeof(_Ty), static_cast<size_t>(variable.size));
 			
 				std::memcpy(data.data() + variable.offset, &object, size);
 			}
@@ -161,16 +161,18 @@ namespace engine
 			UniformHandle& GetUniformBlock(uint32_t name_hash);
 			UniformHandle& GetUniformBlock(const char* name);
 
-			UniformHandle GetConstantBlock();
+			UniformHandle& GetConstantBlock();
 
 			void BindResource(const ShaderResourceBinding& resource_binding);
 
 			virtual ShaderPassType GetPassType() = 0;
 
 			bool CanExecute() const;
-		protected:
 			void FlushResources(gfx::CommandList& command_list);
 			void PushConstantRanges(gfx::CommandList& command_list);
+			void DivideWorkgroupByLocalSizes(uint32_t& group_x, uint32_t& group_y, uint32_t& group_z);
+
+		protected:
 			void CollectProfileData();
 			virtual void _Execute(gfx::CommandList& command_list, float delta_time) = 0;
 		protected:
@@ -179,6 +181,8 @@ namespace engine
 			std::string debug_name{};
 			bool one_time{ false };
 			bool can_execute{ true };
+
+			std::function<void(ShaderPass&, gfx::CommandList&, float)> draw_callback{};
 
 			gfx::SharedDescriptor* shared_descriptor{ nullptr };
 			gfx::ResourceDescriptor* resource_descriptor{ nullptr };
