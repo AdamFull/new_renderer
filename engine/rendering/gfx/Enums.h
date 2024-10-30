@@ -100,32 +100,6 @@ namespace engine
 		};
 		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(StageFlags, StageFlag);
 
-		enum class AccessFlag
-		{
-			eNone = 1 << 0,
-			eIndirectCommandRead = 1 << 1,
-			eIndexRead = 1 << 2,
-			eVertexAttributeRead = 1 << 3,
-			eUniformRead = 1 << 4,
-			eInputAttachmentRead = 1 << 5,
-			eShaderRead = 1 << 6,
-			eShaderWrite = 1 << 7,
-			eColorAttachmentRead = 1 << 8,
-			eColorAttachmentWrite = 1 << 9,
-			eDepthStencilAttachmentRead = 1 << 10,
-			eDepthStencilAttachmentWrite = 1 << 11,
-			eTransferRead = 1 << 12,
-			eTransferWrite = 1 << 13,
-			eHostRead = 1 << 14,
-			eHostWrite = 1 << 15,
-			eMemoryRead = 1 << 16,
-			eMemoryWrite = 1 << 17,
-			eShaderSampledRead = 1 << 18,
-			eShaderStorageRead = 1 << 19,
-			eShaderStorageWrite = 1 << 20
-		};
-		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(AccessFlags, AccessFlag);
-
 		enum class ResourceStateFlag
 		{
 			eUndefined = 1 << 0,

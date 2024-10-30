@@ -105,56 +105,6 @@ namespace engine
 				return vk_flags;
 			}
 
-			inline vk::AccessFlags2KHR AccessFlagsToVk(AccessFlags flags)
-			{
-				vk::AccessFlags2KHR vk_flags{};
-
-				if (flags & AccessFlag::eNone)
-					vk_flags |= vk::AccessFlagBits2KHR::eNone;
-				if (flags & AccessFlag::eIndirectCommandRead)
-					vk_flags |= vk::AccessFlagBits2KHR::eIndirectCommandRead;
-				if (flags & AccessFlag::eIndexRead)
-					vk_flags |= vk::AccessFlagBits2KHR::eIndexRead;
-				if (flags & AccessFlag::eVertexAttributeRead)
-					vk_flags |= vk::AccessFlagBits2KHR::eVertexAttributeRead;
-				if (flags & AccessFlag::eUniformRead)
-					vk_flags |= vk::AccessFlagBits2KHR::eUniformRead;
-				if (flags & AccessFlag::eInputAttachmentRead)
-					vk_flags |= vk::AccessFlagBits2KHR::eInputAttachmentRead;
-				if (flags & AccessFlag::eShaderRead)
-					vk_flags |= vk::AccessFlagBits2KHR::eShaderRead;
-				if (flags & AccessFlag::eShaderWrite)
-					vk_flags |= vk::AccessFlagBits2KHR::eShaderWrite;
-				if (flags & AccessFlag::eColorAttachmentRead)
-					vk_flags |= vk::AccessFlagBits2KHR::eColorAttachmentRead;
-				if (flags & AccessFlag::eColorAttachmentWrite)
-					vk_flags |= vk::AccessFlagBits2KHR::eColorAttachmentWrite;
-				if (flags & AccessFlag::eDepthStencilAttachmentRead)
-					vk_flags |= vk::AccessFlagBits2KHR::eDepthStencilAttachmentRead;
-				if (flags & AccessFlag::eDepthStencilAttachmentWrite)
-					vk_flags |= vk::AccessFlagBits2KHR::eDepthStencilAttachmentWrite;
-				if (flags & AccessFlag::eTransferRead)
-					vk_flags |= vk::AccessFlagBits2KHR::eTransferRead;
-				if (flags & AccessFlag::eTransferWrite)
-					vk_flags |= vk::AccessFlagBits2KHR::eTransferWrite;
-				if (flags & AccessFlag::eHostRead)
-					vk_flags |= vk::AccessFlagBits2KHR::eHostRead;
-				if (flags & AccessFlag::eHostWrite)
-					vk_flags |= vk::AccessFlagBits2KHR::eHostWrite;
-				if (flags & AccessFlag::eMemoryRead)
-					vk_flags |= vk::AccessFlagBits2KHR::eMemoryRead;
-				if (flags & AccessFlag::eMemoryWrite)
-					vk_flags |= vk::AccessFlagBits2KHR::eMemoryWrite;
-				if (flags & AccessFlag::eShaderSampledRead)
-					vk_flags |= vk::AccessFlagBits2KHR::eShaderSampledRead;
-				if (flags & AccessFlag::eShaderStorageRead)
-					vk_flags |= vk::AccessFlagBits2KHR::eShaderStorageRead;
-				if (flags & AccessFlag::eShaderStorageWrite)
-					vk_flags |= vk::AccessFlagBits2KHR::eShaderStorageWrite;
-
-				return vk_flags;
-			}
-
 			inline vk::ImageLayout ResourceStateToVkImageLayout(ResourceStateFlags flags)
 			{
 				if (flags & ResourceStateFlag::eUndefined)
