@@ -44,13 +44,13 @@ namespace engine
 
 				std::array<vk::DescriptorSet, k_max_descriptor_count> descriptor_sets{};
 
-				std::array<vk::WriteDescriptorSet, 128ull> write_descriptor_sets{};
+				std::array<vk::WriteDescriptorSet, 160ull> write_descriptor_sets{};
 				uint32_t writes_count{ 0u };
 
-				std::array<vk::DescriptorImageInfo, 64ull> image_descriptors{};
+				std::array<vk::DescriptorImageInfo, 128ull> image_descriptors{};
 				uint32_t image_count{ 0u };
 
-				std::array<vk::DescriptorBufferInfo, 64ull> buffer_descriptors{};
+				std::array<vk::DescriptorBufferInfo, 32ull> buffer_descriptors{};
 				uint32_t buffer_count{ 0u };
 			};
 		}

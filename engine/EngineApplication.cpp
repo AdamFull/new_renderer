@@ -72,7 +72,7 @@ namespace engine
 
 		scene = std::make_unique<world::Scene>(m_pVirtualFileSystem.get(), *renderer);
 		//scene = std::make_unique<world::Scene>(m_pVirtualFileSystem.get());
-		scene->Load("/root/meshes/helmet/DamagedHelmet.gltf");
+		scene->Load("/root/meshes/sponza/Sponza.gltf");
 
 		//render::FRenderInterfaceCreateInfo rhi_ci{};
 		//rhi_ci.render_api = render::ERenderApi::eVulkan11;
