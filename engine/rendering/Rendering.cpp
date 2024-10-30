@@ -196,7 +196,6 @@ namespace engine
 			uint32_t pass_index = shader_passes.size();
 
 			// Add per pass resource access container
-			per_pass_resouce_access.emplace_back();
 			per_pass_resource_bindings.emplace_back();
 
 			// Collect render resource usage info
@@ -247,7 +246,6 @@ namespace engine
 			uint32_t pass_index = shader_passes.size();
 
 			// Add per pass resource access container
-			per_pass_resouce_access.emplace_back();
 			per_pass_resource_bindings.emplace_back();
 
 			// Collect render resource usage info
@@ -285,7 +283,6 @@ namespace engine
 			// Collect depth format
 			if (create_info.depth_attachment.render_resource_id != ~0u)
 			{
-				per_pass_resouce_access[pass_index][utl::enum_cast(RenderGraphResourceAccess::eWrite)].emplace_back(create_info.depth_attachment.render_resource_id);
 				per_pass_resource_bindings[pass_index].depth_attachment = create_info.depth_attachment;
 
 				auto& render_resource = graph_resources[create_info.depth_attachment.render_resource_id];
@@ -296,7 +293,6 @@ namespace engine
 			// Collect stencil format
 			if (create_info.stencil_attachment.render_resource_id != ~0u)
 			{
-				per_pass_resouce_access[pass_index][utl::enum_cast(RenderGraphResourceAccess::eWrite)].emplace_back(create_info.stencil_attachment.render_resource_id);
 				per_pass_resource_bindings[pass_index].stencil_attachment = create_info.stencil_attachment;
 
 				auto& render_resource = graph_resources[create_info.stencil_attachment.render_resource_id];
@@ -438,7 +434,6 @@ namespace engine
 			// i here is resource access type
 			for (int32_t i = 0; i < 3ull; ++i)
 			{
-				auto& per_pass_access = per_pass_resouce_access[pass_index][i];
 				auto& per_pass_bindings = per_pass_resource_bindings[pass_index];
 
 				// Process bindings
@@ -448,7 +443,6 @@ namespace engine
 					auto& graph_resource = graph_resources[resource_binding.render_resource_id];
 					graph_resource.usages[i].emplace(pass_index);
 
-					per_pass_access.emplace_back(resource_binding.render_resource_id);
 					per_pass_bindings.bindings[i].emplace_back(resource_binding);
 				}
 
@@ -458,7 +452,6 @@ namespace engine
 					auto& graph_resource = graph_resources[resource_attachment.render_resource_id];
 					graph_resource.usages[i].emplace(pass_index);
 
-					per_pass_access.emplace_back(resource_attachment.render_resource_id);
 					per_pass_bindings.attachments[i].emplace_back(resource_attachment);
 				}
 			}
@@ -537,7 +530,6 @@ namespace engine
 			for (int32_t access_idx = 0; access_idx < 3ull; ++access_idx)
 			{
 				gfx::AccessTypeFlag access_flag = access_map[access_idx];
-				const auto& resource_bindings = per_pass_resouce_access[pass_index][access_idx];
 
 				// Start from resource bindings
 				for (const auto& resource_binding : pass_bindings.bindings[access_idx])

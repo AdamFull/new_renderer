@@ -119,7 +119,6 @@ namespace engine
 
 			// Render graph resources
 			std::vector<std::unique_ptr<ShaderPass>> shader_passes{};
-			std::vector<RenderGraphPassResourceAccess> per_pass_resouce_access{};
 			std::vector<ResourceBindings> per_pass_resource_bindings{};
 
 			utl::hash_map<std::pair<uint32_t, uint32_t>, ConsistentAccessInfo, std_pair_hash> resource_access_map{};
