@@ -1024,7 +1024,7 @@ namespace engine
 			for (auto& target : render_targets.data())
 			{
 				// TODO: resize only if texture is able to resize 
-				if (target.resizable)
+				if (!target.resizable)
 					continue;
 
 				// Save pointer for delete old one
@@ -1034,9 +1034,10 @@ namespace engine
 				create_info.usage = target.usage;
 				create_info.width = width;
 				create_info.height = height;
-				create_info.layers = old_target->GetArrayLayerCount();
+				create_info.layers = (target.usage & gfx::TextureUsageFlag::eCubemap) ? old_target->GetArrayLayerCount() / 6u : old_target->GetArrayLayerCount();
 				create_info.levels = old_target->GetMipLevelCount();
 				create_info.format = old_target->GetFormat();
+				create_info.resizable = target.resizable;
 
 				target.texture = gfx_context->CreateTexture(create_info);
 				gfx_context->Destroy(old_target);
