@@ -654,7 +654,6 @@ namespace engine {
 			FGPUBufferDesc indirectCountBuffer;
 			FGPUBufferDesc indirectTaskCommandBuffer;
 
-			FGPUBufferDesc textureRemapBuffer;
 			FGPUBufferDesc cameraBuffer;
 		};
 

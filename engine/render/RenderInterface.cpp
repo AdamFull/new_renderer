@@ -182,7 +182,6 @@ void CRenderInterface::Update(f32 dt)
 	global_references.indirectCountBuffer = m_pRenderWorld->GetDrawBuffer(ERenderBufferIndices::eCountBuffer)->Buffer()->GetDescription();
 	global_references.indirectTaskCommandBuffer = m_pRenderWorld->GetDrawBuffer(ERenderBufferIndices::eMeshCommandBuffer)->Buffer()->GetDescription();
 
-	global_references.textureRemapBuffer = m_pRenderWorld->GetDrawBuffer(ERenderBufferIndices::eTextureRemapBuffer)->Buffer()->GetDescription();
 	global_references.cameraBuffer = m_pRenderWorld->GetDrawBuffer(ERenderBufferIndices::eCameraBuffer)->Buffer()->GetDescription();
 
 	auto& buffer_ref_uniform = update_info.uniforms[shader_bindings::global_buffer_references];

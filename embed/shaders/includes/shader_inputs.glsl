@@ -51,7 +51,6 @@ vec4 getFrustumSide(uint index) { return GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POI
 FDrawIndexedIndirectData getDrawIndexedCommand(uint index) { return GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(IndirectDrawIndexedComandPtr, indirectCommandBuffer), index); }
 uint32_t getDrawCount(uint index) { return GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(UInt32Ptr, indirectCountBuffer), index); }
 
-uint32_t getTextureRemapIndex(uint index) { return GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(UInt32Ptr, textureRemapBuffer), index); }
 FCamera GetCamera(uint index) { return GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(CameraBuffer, cameraBuffer), index); }
 
 mat4 getMatrixById(uint global_offset, uint local_offset) { return GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(MatrixPtr, matrixBuffer), global_offset + local_offset); }
@@ -68,7 +67,7 @@ mat4 getPrevViewProjectionMatrix(uint global_offset) { return getMatrixById(glob
 mat4 getInvViewProjectionMatrix(uint global_offset) { return getMatrixById(global_offset, inv_view_projection_matrix_offset); }
 mat4 getReprojectionMatrix(uint global_offset) { return getMatrixById(global_offset, reprojection_matrix_offset); }
 
-#define GET_SAMPLER_2D(texture_index, mip_level) globalTextures[getTextureRemapIndex(texture_index) + mip_level]
+#define GET_SAMPLER_2D(texture_index, mip_level) globalTextures[texture_index + mip_level]
 
 vec4 sampleTexture2D(uint32_t texture_index, uint32_t mip_level, vec2 uv)
 {
