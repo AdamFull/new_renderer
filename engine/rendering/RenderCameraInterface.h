@@ -1,12 +1,13 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include "RendererInterface.h"
 
 namespace engine
 {
 	namespace render
 	{
+		class IRenderer;
+
 		enum class RenderCameraMatrixType
 		{
 			eView = 0,

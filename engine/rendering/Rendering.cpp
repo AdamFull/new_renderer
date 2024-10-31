@@ -9,6 +9,8 @@
 #include <engine/rendering/render_graph/RenderPass.h>
 
 #include <engine/rendering/GeometryBuffer.h>
+#include <engine/rendering/RenderCamera.h>
+#include <engine/rendering/DynamicBuffer.h>
 
 #include <util/Logger.h>
 
@@ -86,6 +88,31 @@ namespace engine
 			shared_descriptor_ci.descriptions.emplace_back(gfx::DescriptorType::eCombinedImageSampler, 3u, 16384u);
 
 			shared_descriptor = gfx_context->CreateSharedDescriptor(shared_descriptor_ci);
+
+			// Create buffers
+
+			node_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(FSceneNode), 64ull, gfx::BufferUsageFlag::eStorageBuffer);
+			matrices_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(glm::mat4), 64ull, gfx::BufferUsageFlag::eStorageBuffer);
+			mesh_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(FMesh), 64ull, gfx::BufferUsageFlag::eStorageBuffer);
+
+			material_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(FMaterial), 64ull, gfx::BufferUsageFlag::eStorageBuffer);
+
+			light_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(FLightCommit), 64ull, gfx::BufferUsageFlag::eStorageBuffer);
+
+			cascaded_shadow_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(FCascadedShadowCommit), max_directional_light_shadow_count, gfx::BufferUsageFlag::eStorageBuffer);
+			omni_shadow_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(FOmniShadowCommit), max_point_light_shadow_count, gfx::BufferUsageFlag::eStorageBuffer);
+			spot_shadow_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(FSpotShadowCommit), max_spot_light_shadow_count, gfx::BufferUsageFlag::eStorageBuffer);
+
+			geometry_batches_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(FGeometryBatch), 64ull, gfx::BufferUsageFlag::eStorageBuffer);
+			raw_geometry_batches_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(FGeometryBatch), 64ull, gfx::BufferUsageFlag::eStorageBuffer);
+
+			frustum_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(glm::vec4), 64ull, gfx::BufferUsageFlag::eStorageBuffer);
+
+			//indexed_draw_indirect_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(), 64ull, gfx::BufferUsageFlag::eIndirectBuffer);
+			indirect_count_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(uint32_t), 64ull, gfx::BufferUsageFlag::eIndirectBuffer);
+			mesh_command_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(FDrawMeshIndirectData), 64ull, gfx::BufferUsageFlag::eStorageBuffer);
+
+			camera_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(FCamera), 64ull, gfx::BufferUsageFlag::eStorageBuffer);
 
 			// Temporary func to create test render graph
 			BuildGraph();
@@ -358,6 +385,95 @@ namespace engine
 
 			deinterleaved_geometry_buffers[hash] = std::make_unique<DeinterleavedGeometryBuffer>(*resource_context, create_info);
 			return *deinterleaved_geometry_buffers[hash];
+		}
+
+		uint32_t Renderer::AddRenderCamera()
+		{
+			auto camera_id = render_cameras.size();
+
+			render_cameras.emplace_back(std::make_unique<RenderCamera>());
+
+			return camera_id;
+		}
+
+		IRenderCamera& Renderer::GetRenderCamera(uint32_t camera_id)
+		{
+			return *render_cameras[camera_id];
+		}
+
+		IDynamicBuffer& Renderer::GetNodeBuffer()
+		{
+			return *node_buffer;
+		}
+
+		IDynamicBuffer& Renderer::GetMatrixBuffer()
+		{
+			return *matrices_buffer;
+		}
+
+		IDynamicBuffer& Renderer::GetMeshBuffer()
+		{
+			return *mesh_buffer;
+		}
+
+		IDynamicBuffer& Renderer::GetMaterialBuffer()
+		{
+			return *material_buffer;
+		}
+
+		IDynamicBuffer& Renderer::GetLightBuffer()
+		{
+			return *light_buffer;
+		}
+
+		IDynamicBuffer& Renderer::GetCascadedShadowBuffer()
+		{
+			return *cascaded_shadow_buffer;
+		}
+
+		IDynamicBuffer& Renderer::GetOmniShadowBuffer()
+		{
+			return *omni_shadow_buffer;
+		}
+
+		IDynamicBuffer& Renderer::GetSpotShadowBuffer()
+		{
+			return *spot_shadow_buffer;
+		}
+
+		IDynamicBuffer& Renderer::GetGeobetryBatchBuffer()
+		{
+			return *geometry_batches_buffer;
+		}
+
+		IDynamicBuffer& Renderer::GetRawGeobetryBatchBuffer()
+		{
+			return *raw_geometry_batches_buffer;
+		}
+
+		IDynamicBuffer& Renderer::GetFrustumBuffer()
+		{
+			return *frustum_buffer;
+		}
+
+		IDynamicBuffer& Renderer::GetIndirectDrawBuffer()
+		{
+			return *indexed_draw_indirect_buffer;
+		}
+
+		IDynamicBuffer& Renderer::GetIndirectCountDrawBuffer()
+		{
+			return *indirect_count_buffer;
+		}
+
+		IDynamicBuffer& Renderer::GetMeshCommandBuffer()
+		{
+			return *mesh_command_buffer;
+		}
+
+		IDynamicBuffer& Renderer::GetCameraBuffer()
+		{
+			return *camera_buffer;
 		}
 
 

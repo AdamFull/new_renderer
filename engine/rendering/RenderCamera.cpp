@@ -2,6 +2,8 @@
 
 #include <glm/gtx/quaternion.hpp>
 
+#include "RendererInterface.h"
+
 namespace engine
 {
 	namespace render
@@ -233,7 +235,9 @@ namespace engine
 
 		void RenderCamera::Flush(IRenderer& renderer)
 		{
-
+			auto& matrix_buffer = renderer.GetMaterialBuffer();
+			auto& frustum_buffer = renderer.GetFrustumBuffer();
+			auto& camera_buffer = renderer.GetCameraBuffer();
 		}
 	}
 }
