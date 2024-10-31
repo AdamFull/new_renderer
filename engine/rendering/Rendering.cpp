@@ -649,12 +649,14 @@ namespace engine
 					auto resource_key = std::make_pair(resource_binding.render_resource_id, subresource_key);
 
 					auto& last_resource_access = resource_access_map[resource_key];
+					auto last_access = render_resource.GetAccess(resource_binding.subresource_index);
 
 					// Ignoring read after read barriers
-					if ((last_resource_access.access & access_flag) && access_flag == gfx::AccessTypeFlag::eRead)
+					if ((last_access & access_flag) && access_flag == gfx::AccessTypeFlag::eRead)
 						continue;
 
-					bool is_write_after_write = ((last_resource_access.access & access_flag) && access_flag == gfx::AccessTypeFlag::eWrite);
+					bool is_write_after_write = ((last_access & access_flag) && access_flag == gfx::AccessTypeFlag::eWrite);
+					bool is_read_after_write = (last_access & gfx::AccessTypeFlag::eWrite) && access_flag == gfx::AccessTypeFlag::eRead;
 					bool is_change_pipeline_ownership = last_resource_access.pass_type == utl::enum_cast(shader_pass->GetPassType()) && is_write_after_write;
 
 					if (render_resource.resource_type & RenderResourceTypeFlag::eBuffer)
@@ -678,17 +680,18 @@ namespace engine
 						barrier.texture = GetTextureResource(render_resource);
 						barrier.subresource_index = resource_binding.subresource_index;
 
-						if (last_resource_access.access == 0)
+						if (last_access == 0)
 							barrier.dst_state = access_flag == gfx::AccessTypeFlag::eRead ? render_resource.final_state : render_resource.intermediate_state;
 						else if (access_flag != gfx::AccessTypeFlag::eWrite && IsROAccessOnlyRemain(render_resource, pass_index))
 							barrier.dst_state = render_resource.final_state;
 						else if (is_change_pipeline_ownership)
 							barrier.dst_state = render_resource.intermediate_state;
+						else if(is_read_after_write)
+							barrier.dst_state = render_resource.final_state;
 
 						render_resource.SetState(barrier.dst_state, resource_binding.subresource_index);
 					}
 
-					last_resource_access.access = access_flag;
 					last_resource_access.pass_type = utl::enum_cast(shader_pass->GetPassType());
 				}
 
@@ -712,9 +715,10 @@ namespace engine
 						auto resource_key = std::make_pair(resource_attachment.render_resource_id, 0u);
 
 						auto& last_resource_access = resource_access_map[resource_key];
+						auto last_access = render_resource.GetAccess();
 
 						bool is_backbuffer_resource = resource_attachment.render_resource_id == backbuffer_resource;
-						bool is_write_after_write = ((last_resource_access.access & access_flag) && access_flag == gfx::AccessTypeFlag::eWrite);
+						bool is_write_after_write = ((last_access & access_flag) && access_flag == gfx::AccessTypeFlag::eWrite);
 						bool is_change_pipeline_ownership = last_resource_access.pass_type == utl::enum_cast(shader_pass->GetPassType()) && is_write_after_write;
 
 						gfx::Attachment attachment{};
@@ -726,7 +730,7 @@ namespace engine
 						barrier.src_state = render_resource.GetState();
 						barrier.texture = GetTextureResource(render_resource);
 
-						if (last_resource_access.access == 0)
+						if (last_access == 0)
 							barrier.dst_state = access_flag == gfx::AccessTypeFlag::eRead ? render_resource.final_state : render_resource.intermediate_state;
 						else if (access_flag != gfx::AccessTypeFlag::eWrite && IsROAccessOnlyRemain(render_resource, pass_index))
 							barrier.dst_state = is_backbuffer_resource ? render_resource.intermediate_state : render_resource.final_state;
@@ -746,7 +750,6 @@ namespace engine
 						else
 							render_pass->AddColorAttachment(attachment);
 
-						last_resource_access.access = access_flag;
 						last_resource_access.pass_type = utl::enum_cast(shader_pass->GetPassType());
 					}
 				}
@@ -912,7 +915,7 @@ namespace engine
 			{
 				gfx::TextureCreateInfo create_info{};
 				create_info.width = create_info.height = 64u;
-				create_info.format = gfx::Format::eR16G16Sfloat;
+				create_info.format = gfx::Format::eR32G32B32A32Sfloat;
 				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage | gfx::TextureUsageFlag::eCubemap;
 				create_info.resizable = false;
 
@@ -1002,7 +1005,7 @@ namespace engine
 					create_info.shader_name = "lighting:prefilteredmap_generator";
 					create_info.one_time = true;
 					create_info.BindWriteResource("out_color"_hash32, prefiltered_cube_target, mip);
-					create_info.BindReadResource("sampler_color"_hash32, casual_day_4k_cube);
+					create_info.BindReadResource(mip == 0 ? "sampler_color"_hash32 : "out_color"_hash32, mip == 0 ? casual_day_4k_cube : prefiltered_cube_target, mip == 0 ? ~0u : mip - 1);
 
 					create_info.draw_callback = [this, mip, texture](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 						{
@@ -1016,8 +1019,8 @@ namespace engine
 							constants.Set("roughness"_hash32, layer_roughness);
 							self.PushConstantRanges(command_list);
 
-							group_x = texture->GetWidth();
-							group_y = texture->GetHeight();
+							group_x = texture->GetWidth() >> mip;
+							group_y = texture->GetHeight() >> mip;
 
 							self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
 							command_list.Dispatch(group_x, group_y, group_z);

@@ -66,7 +66,28 @@ namespace engine
 
 			std::array<std::unordered_set<uint32_t>, 3ull> usages{};
 
-			gfx::ResourceStateFlags GetState(uint32_t subresource_index = ~0u)
+			gfx::AccessTypeFlags GetAccess(uint32_t subresource_index = ~0u) const
+			{
+				gfx::ResourceStateFlags state = subresource_index == ~0u ? current_state : subresource_states[subresource_index];
+
+				if ((state & gfx::ResourceStateFlag::eColorAttachmentRead) ||
+					(state & gfx::ResourceStateFlag::eDepthAttachmentRead) ||
+					(state & gfx::ResourceStateFlag::eStencilAttachmentRead) ||
+					(state & gfx::ResourceStateFlag::eShaderRead) ||
+					(state & gfx::ResourceStateFlag::eTranfserSource) ||
+					(state & gfx::ResourceStateFlag::ePresent))
+					return gfx::AccessTypeFlag::eRead;
+				else if ((state & gfx::ResourceStateFlag::eColorAttachmentWrite) ||
+					(state & gfx::ResourceStateFlag::eDepthAttachmentWrite) ||
+					(state & gfx::ResourceStateFlag::eStencilAttachmentWrite) ||
+					(state & gfx::ResourceStateFlag::eShaderWrite) ||
+					(state & gfx::ResourceStateFlag::eTransferDestination))
+					return gfx::AccessTypeFlag::eWrite;
+
+				return {};
+			}
+
+			gfx::ResourceStateFlags GetState(uint32_t subresource_index = ~0u) const
 			{
 				if ((resource_type & RenderResourceTypeFlag::eBuffer) || subresource_index == ~0u)
 				{
@@ -178,7 +199,6 @@ namespace engine
 
 		struct ConsistentAccessInfo
 		{
-			gfx::AccessTypeFlags access{};
 			uint32_t pass_type{ 0u };
 		};
 
