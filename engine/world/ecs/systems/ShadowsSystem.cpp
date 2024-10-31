@@ -62,7 +62,7 @@ void CShadowsSystem::__Update(f32 fDt)
 	TRACY_PROFILE_FUNCTION();
 
 	auto& render_world = m_pRenderInterface->GetRenderWorld();
-	auto& render_graph = m_pRenderInterface->GetRenderGraph();
+	//auto& render_graph = m_pRenderInterface->GetRenderGraph();
 	auto& world_stats = render_world->GetStats();
 
 	auto& camera = render_world->GetDefaultCamera();

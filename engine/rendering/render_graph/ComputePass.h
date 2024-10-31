@@ -9,7 +9,7 @@ namespace engine
 		class ComputePass : public ShaderPass
 		{
 		public:
-			ComputePass(IRenderer& renderer, const ComputePassCreateInfo& create_info);
+			ComputePass(IRenderGraph& graph, const ComputePassCreateInfo& create_info);
 			virtual ~ComputePass() = default;
 
 			ShaderPassType GetPassType() override;

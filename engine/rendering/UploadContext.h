@@ -14,7 +14,7 @@ namespace engine
 		{
 		public:
 			UploadContext(gfx::Context& context, filesystem::IVirtualFileSystemInterface* vfs);
-			~UploadContext() = default;
+			~UploadContext();
 
 			UploadContext(const UploadContext&) = delete;
 			UploadContext(UploadContext&&) = delete;
@@ -24,6 +24,8 @@ namespace engine
 			gfx::Texture* LoadTexture(const std::string& texture_path) override;
 
 			gfx::Shader* LoadShader(const std::string& shader_name) override;
+
+			gfx::Sampler* GetSampler(const gfx::SamplerCreateInfo& create_info) override;
 
 			//void UpdateTexture(gfx::Texture* texture_handle, const FTextureUploadInfo& upload_info);
 
@@ -52,6 +54,8 @@ namespace engine
 			uint32_t active_upload_frame{ 0u };
 
 			bool writing_commands{ false };
+
+			utl::hash_map<uint32_t, gfx::Sampler*> sampler_cache{};
 
 			// Shader cache
 			shader_compiler::FShaderCacheData shader_cache{};

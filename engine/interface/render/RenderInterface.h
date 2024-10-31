@@ -478,7 +478,7 @@ namespace engine
 
 			virtual void UpdateSurfaceSize(i32 width, i32 height) = 0;
 
-			virtual const std::unique_ptr<IRenderGraph>& GetRenderGraph() = 0;
+			//virtual const std::unique_ptr<IRenderGraph>& GetRenderGraph() = 0;
 			virtual const std::unique_ptr<IRenderWorld>& GetRenderWorld() = 0;
 			virtual const std::unique_ptr<IRenderBackend>& GetRenderBackend() = 0;
 			virtual const std::unique_ptr<IResourceLoader>& GetResourceLoader() = 0;

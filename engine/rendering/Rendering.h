@@ -8,7 +8,7 @@
 
 //#include <engine/rendering/GPUVector.h>
 #include <engine/rendering/render_graph/ShaderPass.h>
-#include <engine/rendering/render_graph/RenderGraph.h>
+#include <engine/rendering/render_graph/RenderGraphInterface.h>
 #include <memory>
 
 namespace engine
@@ -25,8 +25,6 @@ namespace engine
 
 	namespace render
 	{
-		class RenderContext;
-
 		class Renderer : public IRenderer
 		{
 		public:
@@ -38,18 +36,10 @@ namespace engine
 
 			uint32_t AddRenderResource(const gfx::BufferCreateInfo& create_info) override;
 
-			uint32_t AddShaderPass(const ComputeShaderPassCreateInfo& create_info);
-			uint32_t AddShaderPass(const RenderShaderPassCreateInfo& create_info);
-
 			void Render(float delta_time) override;
 
-			ExecutionContext& GetRenderContext();
-			ExecutionContext const& GetRenderContext() const;
-
-			gfx::ResourceContext& GetResourceContext();
-			gfx::ResourceContext const& GetResourceContext() const;
-
-			gfx::Sampler* GetOrCreateSampler(const gfx::SamplerCreateInfo& create_info) override;
+			gfx::ResourceContext& GetResourceContext() override;
+			gfx::ResourceContext const& GetResourceContext() const override;
 
 			gfx::Context& GetContext() override;
 
@@ -81,79 +71,20 @@ namespace engine
 
 			IDynamicBuffer& GetCameraBuffer() override;
 		private:
-			RenderGraphNodeHeader* CreateShaderPassNode(const ComputeShaderPassCreateInfo& create_info);
-			RenderGraphNodeHeader* CreateShaderPassNode(const RenderShaderPassCreateInfo& create_info);
-
-			RenderGraphNodeHeader* AllocateStaticConditionNode();
-			RenderGraphNodeHeader* AllocateDynamicConditionNode();
-			RenderGraphNodeHeader* AllocateGroupNode();
-
-			gfx::Texture* GetTextureResource(const RenderGraphResource& graph_resource);
-
-			void CollectRencerResouces(uint32_t pass_index, const ShaderPassCreateInfo& pass_ci);
-
-			void DestroyRenderGraph();
-			void DestoyRenderGraphNode(RenderGraphNodeHeader* node);
-
-			void EvaluateShaderPass(uint32_t pass_index);
-
-			void EvaluateRenderGraph(float delta_time);
-			void EvaluateRenderGraphNode(RenderGraphNodeHeader* node, float delta_time);
-
 			void BuildGraph();
-			void BeginFrame();
-			void EndFrame();
-			void UpdateRenderTargets();
 		private:
 			filesystem::IVirtualFileSystemInterface* vfs{ nullptr };
 
 			std::unique_ptr<gfx::Context> gfx_context{};
 			std::unique_ptr<gfx::ResourceContext> resource_context{};
-			std::unique_ptr<RenderContext> render_context{};
-
-			gfx::QueryPool* timestamp_query{ nullptr };
-			float timestamp_frequency{ 0.f };
-			float gpu_delta_time{ 0.f };
-
-			utl::hash_map<uint32_t, gfx::Sampler*> sampler_cache{};
-			gfx::Sampler* default_sampler{ nullptr };
+			std::unique_ptr<IRenderGraph> render_graph{};
 
 			//GPUVector<FMaterial> materials{};
-
-			gfx::SharedDescriptor* shared_descriptor{ nullptr };
-			gfx::ResourceDescriptor* global_resource_descriptor{ nullptr };
-
-			// Render object descriptions
-			struct TextureObject
-			{
-				gfx::Texture* texture{ nullptr };
-				gfx::Sampler* sampler{ nullptr };
-
-				gfx::TextureUsageFlags usage{};
-				bool resizable{ false };
-			};
-			ResourceContainer<TextureObject> textures{};
-			ResourceContainer<TextureObject> render_targets{};
-
-			struct BufferObject
-			{
-				gfx::Buffer* buffer{ nullptr };
-			};
-			ResourceContainer<BufferObject> buffers{};
 
 			std::unordered_map<uint32_t, std::unique_ptr<GeometryBuffer>> interleaved_geometry_buffers{};
 			std::unordered_map<uint32_t, std::unique_ptr<GeometryBuffer>> deinterleaved_geometry_buffers{};
 
-			// Render graph resources
-			std::vector<std::unique_ptr<ShaderPass>> shader_passes{};
-			std::vector<ResourceBindings> per_pass_resource_bindings{};
-
-			utl::hash_map<std::pair<uint32_t, uint32_t>, ConsistentAccessInfo, std_pair_hash> resource_access_map{};
-
 			uint32_t backbuffer_resource{ ~0u };
-			std::vector<RenderGraphResource> graph_resources{};
-
-			std::vector<RenderGraphNodeHeader*> render_graph{};
 
 			// Gpu scene
 			std::vector<std::unique_ptr<IRenderCamera>> render_cameras{};

@@ -98,6 +98,14 @@ namespace engine
 				log_error("Failed to load shader cache. ");
 		}
 
+		UploadContext::~UploadContext()
+		{
+			for (auto& [hash, sampler] : sampler_cache)
+			{
+				context.Destroy(sampler);
+			}
+		}
+
 		gfx::Texture* UploadContext::LoadTexture(const std::string& texture_path)
 		{
 			BeginFrame();
@@ -355,6 +363,15 @@ namespace engine
 			}
 
 			return context.CreateShader(shader_create_info);
+		}
+
+		gfx::Sampler* UploadContext::GetSampler(const gfx::SamplerCreateInfo& create_info)
+		{
+			uint32_t sampler_hash = gfx::Hash(create_info);
+			if (auto found = sampler_cache.find(sampler_hash); found != sampler_cache.end())
+				return found->second;
+
+			return sampler_cache[sampler_hash] = context.CreateSampler(create_info);
 		}
 
 		void UploadContext::BeginBufferUpdate(gfx::BufferUpdateInfo& update_info)

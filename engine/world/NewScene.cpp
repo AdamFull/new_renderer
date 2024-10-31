@@ -275,6 +275,7 @@ namespace engine
 
 		void Scene::LoadGLTF(easygltf::FGLTFRoot& root)
 		{
+			auto& resource_context = renderer.GetResourceContext();
 			// Load textures
 			for (const auto& texture : root.textures)
 			{
@@ -286,7 +287,7 @@ namespace engine
 				auto& sampler = root.samplers[texture.sampler];
 
 				auto sampler_create_info = GetSamplerCreateInfo(sampler);
-				gfx::Sampler* texture_sampler = renderer.GetOrCreateSampler(sampler_create_info);
+				gfx::Sampler* texture_sampler = resource_context.GetSampler(sampler_create_info);
 
 				// TODO: add ability to override format and sampler params
 				// TODO: find format from materials

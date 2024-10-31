@@ -10,8 +10,9 @@ namespace engine
 {
 	namespace render
 	{
-		ShaderPass::ShaderPass(IRenderer& renderer, const PassCreateInfo& create_info) :
-			renderer{ renderer },
+		ShaderPass::ShaderPass(IRenderGraph& graph, const PassCreateInfo& create_info) :
+			graph{ graph },
+			context{ graph.GetContext() },
 			shader{ create_info.shader },
 			debug_name{ create_info.debug_name },
 			one_time{ create_info.one_time },
@@ -38,7 +39,6 @@ namespace engine
 			root_sign_ci.shared_descriptor = create_info.shared_descriptor;
 			// TODO: also load immutable samplers from pass info or from somewhere another?
 
-			auto& context = renderer.GetContext();
 			root_signature = context.CreateRootSignature(root_sign_ci);
 
 			// Create timestamp query 
@@ -54,7 +54,6 @@ namespace engine
 
 		ShaderPass::~ShaderPass()
 		{
-			auto& context = renderer.GetContext();
 			context.Destroy(pipeline);
 			context.Destroy(root_signature);
 			context.Destroy(shader);
@@ -67,14 +66,13 @@ namespace engine
 		}
 
 
-		void ShaderPass::Execute(float delta_time)
+		void ShaderPass::Evaluate(gfx::CommandList& command_list, float delta_time)
 		{
 			assert(execution_context && "CANNOT EXECUTE PASS WITHOUT EXECUTION CONTEXT");
 
 			// Collect previous frame data
 			CollectProfileData();
 
-			auto& command_list = execution_context->GetCurrentCommandList();
 			command_list.BeginMarker(debug_name.c_str(), 0xFFFF11FF);
 
 			// Reset performance counter

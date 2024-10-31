@@ -1,275 +1,95 @@
 #pragma once
 
-#include <engine/rendering/gfx/Structures.h>
-#include <memory.hpp>
-
-struct std_pair_hash
-{
-	template <class _T1, class _T2>
-	std::size_t operator()(const std::pair<_T1, _T2>& pair) const
-	{
-		std::size_t hash1 = std::hash<_T1>{}(pair.first);
-		std::size_t hash2 = std::hash<_T2>{}(pair.second);
-		return hash1 ^ hash2;
-	}
-};
+#include <engine/rendering/render_graph/RenderGraphInterface.h>
+#include <engine/rendering/RenderResourceContainer.h>
 
 namespace engine
 {
+	namespace gfx
+	{
+		class ResourceContext;
+	}
+
 	namespace render
 	{
-		class ShaderPass;
+		class IRenderer;
+		class RenderContext;
+		class AsyncContext;
 
-		enum class RenderResourceTypeFlag : uint16_t
+		class GroupNode final : public IGraphNode
 		{
-			eRenderTarget = 1 << 0,
-			eStorageTarget = 1 << 1,
-			eStaticImage = 1 << 2,
-			eBackbuffer = 1 << 3,
-			eAllImage = eRenderTarget | eStorageTarget | eStaticImage | eBackbuffer,
-			eBuffer = 1 << 4,
-		};
-		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(RenderResourceTypeFlags, RenderResourceTypeFlag);
+		public:
+			GroupNode(const std::string& name, uint32_t color = 0xFFFFFFFF);
+			~GroupNode() = default;
 
-		struct ResourceAccess
-		{
-			gfx::AccessTypeFlags access_flags{};
-			uint32_t pass_index{};
-		};
+			void AddNode(std::unique_ptr<IGraphNode>&& node);
 
-		struct RenderGraphResource
-		{
-			RenderResourceTypeFlag resource_type{};
-			// Id of real resource
-			uint32_t resource_id{ ~0u };
-
-			gfx::ResourceStateFlags current_state{ gfx::ResourceStateFlag::eUndefined };
-			std::array<gfx::ResourceStateFlags, 16ull> subresource_states{ gfx::ResourceStateFlag::eUndefined };
-
-			gfx::ResourceStateFlags intermediate_state{ gfx::ResourceStateFlag::eUndefined };
-			gfx::ResourceStateFlags final_state{ gfx::ResourceStateFlag::eUndefined };
-
-			//std::unordered_set<ResourceAccess> usages{};
-
-			gfx::AccessTypeFlags GetAccess(uint32_t subresource_index = ~0u) const
-			{
-				gfx::ResourceStateFlags state = subresource_index == ~0u ? current_state : subresource_states[subresource_index];
-
-				if (state & (
-					gfx::ResourceStateFlag::eVertexAndUniformBuffer |
-					gfx::ResourceStateFlag::eIndexBuffer |
-					gfx::ResourceStateFlag::eDepthRead |
-					gfx::ResourceStateFlag::eShaderResource |
-					gfx::ResourceStateFlag::eIndirectArgument |
-					gfx::ResourceStateFlag::eCopySrc |
-					gfx::ResourceStateFlag::eCommon |
-					gfx::ResourceStateFlag::ePresent))
-					return gfx::AccessTypeFlag::eRead;
-				else if (state & (
-					gfx::ResourceStateFlag::eRenderTarget |
-					gfx::ResourceStateFlag::eUnorderedAccess |
-					gfx::ResourceStateFlag::eCopyDst |
-					gfx::ResourceStateFlag::eDepthWrite
-					))
-					return gfx::AccessTypeFlag::eWrite;
-
-				return {};
-			}
-
-			gfx::ResourceStateFlags GetState(uint32_t subresource_index = ~0u) const
-			{
-				if ((resource_type & RenderResourceTypeFlag::eBuffer) || subresource_index == ~0u)
-				{
-					return current_state;
-				}
-				else
-				{
-					return subresource_states[subresource_index];
-				}
-			}
-
-			void SetState(gfx::ResourceStateFlags new_state, uint32_t subresource_index = ~0u)
-			{
-				if (resource_type & RenderResourceTypeFlag::eBuffer)
-				{
-					current_state = new_state;
-				}
-				else
-				{
-					if (subresource_index == ~0u)
-					{
-						current_state = new_state;
-						for (auto& state : subresource_states)
-						{
-							state = new_state;
-						}
-					}
-					else
-					{
-						subresource_states[subresource_index] = new_state;
-					}
-				}
-			}
-		};
-
-		// Describes resource binding. For example binding of texture with concrete mip level, or writable/readable buffer.
-		struct RenderResourceBinding
-		{
-			gfx::AccessTypeFlags access{};
-
-			// In this case it's resource name hash from reflection
-			uint32_t bind_point{};
-
-			// Index of render resource
-			uint32_t render_resource_id{ ~0u };
-
-			// Subresource binding if needed
-			uint32_t subresource_index{ ~0u };
-		};
-
-		enum class ResourceAttachmentTypeFlag
-		{
-			eColor = 1 << 0,
-			eDepth = 1 << 1,
-			eStencil = 1 << 2,
-			eDepthStencil = eDepth | eStencil
-		};
-		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ResourceAttachmentTypeFlags, ResourceAttachmentTypeFlag);
-
-		// Describes out attachment like color or depth/stencil attachment
-		struct RenderResourceAttachment
-		{
-			gfx::AccessTypeFlags access{};
-
-			ResourceAttachmentTypeFlags flags{};
-
-			// Index of render resource
-			uint32_t render_resource_id{ ~0u };
-
-			// Render resource clear color
-			gfx::ClearColor clear_color{};
-		};
-
-		struct ResourceBindings
-		{
-			std::vector<RenderResourceBinding> bindings{};
-			std::vector<RenderResourceAttachment> attachments{};
-		};
-
-		struct ShaderPassCreateInfo
-		{
-			// Shader name in shader cache
-			std::string shader_name{};
-
-			std::function<void(ShaderPass&, gfx::CommandList&, float)> draw_callback{};
-
-			// Means that this pass will be executed only one time
-			bool one_time{ false };
-
-			std::vector<RenderResourceBinding> resource_bindings{};
-			std::vector<RenderResourceAttachment> resource_attachments{};
-
-			void BindWriteResource(uint32_t binding_point, uint32_t render_resource_id) { resource_bindings.emplace_back(gfx::AccessTypeFlag::eWrite, binding_point, render_resource_id, ~0u); }
-			void BindWriteResource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource) { resource_bindings.emplace_back(gfx::AccessTypeFlag::eWrite, binding_point, render_resource_id, subresource); }
-			
-			void BindReadResource(uint32_t binding_point, uint32_t render_resource_id) { resource_bindings.emplace_back(gfx::AccessTypeFlag::eRead, binding_point, render_resource_id, ~0u); }
-			void BindReadResource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource) { resource_bindings.emplace_back(gfx::AccessTypeFlag::eRead, binding_point, render_resource_id, subresource); }
-		};
-
-		struct ComputeShaderPassCreateInfo : ShaderPassCreateInfo
-		{
-			
-		};
-
-		struct RenderShaderPassCreateInfo : ShaderPassCreateInfo
-		{
-			void AddWriteAttachment(uint32_t render_resource_id, ResourceAttachmentTypeFlags flags = {}, gfx::ClearColor clear_color = {}) { resource_attachments.emplace_back(gfx::AccessTypeFlag::eWrite, flags, render_resource_id, clear_color); }
-			void AddReadAttachment(uint32_t render_resource_id, ResourceAttachmentTypeFlags flags = {}) { resource_attachments.emplace_back(gfx::AccessTypeFlag::eRead, flags, render_resource_id, gfx::ClearColor{}); }
-		};
-
-		struct ConsistentAccessInfo
-		{
-			uint32_t pass_type{ 0u };
-		};
-
-		// Base render graph impl
-
-		enum class RenderGraphNodeType
-		{
-			eStaticCondition,
-			eDynamicCondition,
-			eGroupNode,
-			ePassNode
-		};
-
-		// Base render graph node
-		struct RenderGraphNodeHeader
-		{
-			RenderGraphNodeType type;
-			uint32_t data_offset;
-		};
-
-		struct RenderGraphStaticConditionNode
-		{
-			RenderGraphNodeHeader* node{ nullptr };
-		};
-
-		struct RenderGraphDynamicConditionNode
-		{
-			std::function<bool()> condition_fn{};
-			RenderGraphNodeHeader* pass{ nullptr };
-			RenderGraphNodeHeader* fail{ nullptr };
-		};
-
-		struct RenderGraphGroupNode
-		{
+			void Evaluate(gfx::CommandList& command_list, float delta_time) override;
+		private:
 			std::string group_name{};
-			uint32_t color{ 0xFFFFFFFF };
-			std::vector<RenderGraphNodeHeader*> nodes{};
+			uint32_t group_color{ 0xFFFFFFFF };
+
+			std::vector<std::unique_ptr<IGraphNode>> graph_nodes{};
 		};
 
-		struct RenderGraphPassNode
+		class RenderGraph final : public IRenderGraph
 		{
-			uint32_t pass_index{ ~0u };
+		public:
+			RenderGraph(IRenderer& renderer, Window* window);
+			~RenderGraph();
+
+			uint32_t AddResource() override;
+			uint32_t AddResource(const std::string& path, gfx::Sampler* sampler = nullptr) override;
+			uint32_t AddResource(const gfx::TextureCreateInfo& create_info, gfx::Sampler* sampler = nullptr) override;
+			uint32_t AddResource(const gfx::BufferCreateInfo& create_info) override;
+
+			RenderGraphResource& GetResource(uint32_t resource_index) override;
+			RenderGraphResource const& GetResource(uint32_t resource_index) const override;
+
+			std::unique_ptr<IGraphNode> CreateNode(const std::string& group_name, uint32_t group_color = 0xFFFFFFFF) override;
+			std::unique_ptr<IGraphNode> CreateNode(const RenderShaderPassCreateInfo& create_info) override;
+			std::unique_ptr<IGraphNode> CreateNode(const ComputeShaderPassCreateInfo& create_info) override;
+
+			void AddNode(std::unique_ptr<IGraphNode>&& node) override;
+			void Evaluate(float delta_time) override;
+
+			void BeginFrame() override;
+			void EndFrame() override;
+
+			gfx::Context& GetContext() override;
+			gfx::Context const& GetContext() const override;
+
+			gfx::Texture* GetTexture(uint32_t resource_index) override;
+			gfx::Texture* GetTexture(const RenderGraphResource& render_resource) override;
+
+			gfx::Buffer* GetBuffer(uint32_t resource_index) override;
+			gfx::Buffer* GetBuffer(const RenderGraphResource& render_resource) override;
+		private:
+			void UpdateRenderTargets();
+		private:
+			IRenderer& renderer;
+			gfx::Context& context;
+			gfx::ResourceContext& resource_context;
+
+			std::unique_ptr<RenderContext> render_context{};
+
+			std::vector<std::unique_ptr<IGraphNode>> graph_nodes{};
+			std::vector<RenderGraphResource> render_resources{};
+
+			gfx::Sampler* default_sampler{ nullptr };
+
+			// Performance counters
+			gfx::QueryPool* timestamp_query{ nullptr };
+			float timestamp_frequency{ 0.f };
+			float gpu_delta_time{ 0.f };
+
+			// Shared descriptors
+			gfx::SharedDescriptor* shared_descriptor{ nullptr };
+			gfx::ResourceDescriptor* global_resource_descriptor{ nullptr };
+
+			ResourceContainer<TextureObject> static_textures{};
+			ResourceContainer<TextureObject> render_targets{};
+			ResourceContainer<BufferObject> buffers{};
 		};
-
-		// Graph node create functions
-		template<class _HeaderType>
-		inline void RenderGraphNodeAllocateCombinedSpace(RenderGraphNodeType type, void** out, uint64_t size, uint64_t alignment)
-		{
-			uint64_t aligned_header_size = utl::aligned_size(sizeof(_HeaderType), alignment);
-			uint64_t aligned_data_size = utl::aligned_size(size, alignment);
-			(*out) = _aligned_malloc(aligned_header_size + aligned_data_size, alignment);
-
-			_HeaderType* header = reinterpret_cast<_HeaderType*>(*out);
-			header->type = type;
-			header->data_offset = aligned_header_size;
-
-			std::memset(reinterpret_cast<char*>(header) + header->data_offset, 0, aligned_data_size);
-		}
-
-		inline void DeallocateRenderGraphNode(RenderGraphNodeHeader** out)
-		{
-			if ((*out))
-			{
-				_aligned_free((*out));
-				(*out) = nullptr;
-			}
-		}
-
-		template<class _Ty>
-		inline RenderGraphNodeHeader* AllocateRenderGraphNode(RenderGraphNodeType type)
-		{
-			RenderGraphNodeHeader* out{ nullptr };
-			RenderGraphNodeAllocateCombinedSpace<RenderGraphNodeHeader>(type, (void**)&out, sizeof(_Ty), alignof(max_align_t));
-			return out;
-		}
-
-		template<class _Ty>
-		inline _Ty* CastRenderGraphNode(RenderGraphNodeHeader* header)
-		{
-			auto* data = reinterpret_cast<char*>(header) + header->data_offset;
-			return reinterpret_cast<_Ty*>(data);
-		}
 	}
 }

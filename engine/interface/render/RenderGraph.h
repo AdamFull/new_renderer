@@ -551,29 +551,29 @@ namespace engine
 #endif
 		};
 
-		class IRenderGraph
-		{
-		public:
-			virtual ~IRenderGraph() = default;
-
-			virtual void Create(const utl::vector<u8>& config, const utl::vector<u8>& schema) = 0;
-			virtual void PostLoad() = 0;
-
-			virtual void AddRenderResource(const std::string& name, const FRenderResource& resource_desc) = 0;
-			virtual void SetBackbufferResourceName(const std::string& name) = 0;
-
-			virtual const FRenderResource& GetRenderResource(const std::string& name) const = 0;
-			virtual const FRenderResource& GetRenderResource(FGraphHandle resource_id) const = 0;
-
-			virtual u64 AddRenderPass(const std::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci) = 0;
-			virtual u64 AddRenderPass(const std::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci) = 0;
-
-			virtual void AddPassToLayer(const std::string& layer_name, std::unique_ptr<IBasePass>&& pass) = 0;
-
-			virtual void Build() = 0;
-			virtual void Update(f32 dt) = 0;
-			virtual void Execute() = 0;
-		};
+		//class IRenderGraph
+		//{
+		//public:
+		//	virtual ~IRenderGraph() = default;
+		//
+		//	virtual void Create(const utl::vector<u8>& config, const utl::vector<u8>& schema) = 0;
+		//	virtual void PostLoad() = 0;
+		//
+		//	virtual void AddRenderResource(const std::string& name, const FRenderResource& resource_desc) = 0;
+		//	virtual void SetBackbufferResourceName(const std::string& name) = 0;
+		//
+		//	virtual const FRenderResource& GetRenderResource(const std::string& name) const = 0;
+		//	virtual const FRenderResource& GetRenderResource(FGraphHandle resource_id) const = 0;
+		//
+		//	virtual u64 AddRenderPass(const std::string& name, const FRenderConfigRenderCreateInfo& render_pass_ci) = 0;
+		//	virtual u64 AddRenderPass(const std::string& name, const FRenderConfigComputeCreateInfo& compute_pass_ci) = 0;
+		//
+		//	virtual void AddPassToLayer(const std::string& layer_name, std::unique_ptr<IBasePass>&& pass) = 0;
+		//
+		//	virtual void Build() = 0;
+		//	virtual void Update(f32 dt) = 0;
+		//	virtual void Execute() = 0;
+		//};
 	}
 }
 

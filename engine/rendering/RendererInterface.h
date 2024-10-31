@@ -8,6 +8,8 @@ namespace engine
 {
 	namespace render
 	{
+		class ExecutionContext;
+
 		class IRenderer
 		{
 		public:
@@ -15,12 +17,13 @@ namespace engine
 
 			virtual void Render(float delta_time) = 0;
 
+			virtual gfx::ResourceContext& GetResourceContext() = 0;
+			virtual gfx::ResourceContext const& GetResourceContext() const = 0;
+
 			virtual uint32_t AddRenderResource(const std::string& path, gfx::Sampler* sampler = nullptr) = 0;
 			virtual uint32_t AddRenderResource(const gfx::TextureCreateInfo& create_info, gfx::Sampler* sampler = nullptr) = 0;
 
 			virtual uint32_t AddRenderResource(const gfx::BufferCreateInfo& create_info) = 0;
-
-			virtual gfx::Sampler* GetOrCreateSampler(const gfx::SamplerCreateInfo& create_info) = 0;
 
 			virtual gfx::Context& GetContext() = 0;
 

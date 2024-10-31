@@ -7,15 +7,14 @@ namespace engine
 {
 	namespace render
 	{
-		ComputePass::ComputePass(IRenderer& renderer, const ComputePassCreateInfo& create_info) :
-			ShaderPass{ renderer, create_info }
+		ComputePass::ComputePass(IRenderGraph& graph, const ComputePassCreateInfo& create_info) :
+			ShaderPass{ graph, create_info }
 		{
 			gfx::ComputePipelineCreateInfo pipeline_ci{};
 			pipeline_ci.shader = shader;
 			pipeline_ci.root_signature = root_signature;
 			pipeline_ci.pipeline_cache = create_info.pipeline_cache;
 
-			auto& context = renderer.GetContext();
 			pipeline = context.CreatePipeline(pipeline_ci);
 		}
 

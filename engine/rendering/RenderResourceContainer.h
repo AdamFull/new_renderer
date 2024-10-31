@@ -154,7 +154,12 @@ namespace engine
 				return objects[id];
 			}
 
-			std::vector<_Ty>& data()
+			std::vector<_Ty>& Data()
+			{
+				return objects;
+			}
+
+			std::vector<_Ty const>& Data() const
 			{
 				return objects;
 			}

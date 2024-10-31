@@ -34,6 +34,8 @@ namespace engine
 
 			virtual Shader* LoadShader(const std::string& shader_name) = 0;
 
+			virtual gfx::Sampler* GetSampler(const gfx::SamplerCreateInfo& create_info) = 0;
+
 			virtual void BeginBufferUpdate(BufferUpdateInfo& update_info) = 0;
 			virtual void EndBufferUpdate(BufferUpdateInfo& update_info) = 0;
 
