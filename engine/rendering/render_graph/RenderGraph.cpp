@@ -164,56 +164,14 @@ namespace engine
 
 		std::unique_ptr<IGraphNode> RenderGraph::CreateNode(const RenderShaderPassCreateInfo& create_info)
 		{
-			// Add per pass resource access container
-			//per_pass_resource_bindings.emplace_back();
-
-			// Collect render resource usage info
-			//CollectRencerResouces(pass_index, create_info);
-
 			RenderPassCreateInfo pass_ci{};
 			pass_ci.debug_name = create_info.shader_name;
 			pass_ci.shader = resource_context.LoadShader(create_info.shader_name);
 			pass_ci.shared_descriptor = shared_descriptor;
-			pass_ci.state.primitive_topology = gfx::PrimitiveTopology::eTriangleList;
+			pass_ci.primitive_topology = gfx::PrimitiveTopology::eTriangleList;
 			pass_ci.draw_callback = std::move(create_info.draw_callback);
+			pass_ci.resource_attachments = create_info.resource_attachments;
 			//pass_ci.state.rasterization_state.front_face = gfx::FrontFace::eCW;
-
-			// Collect color attachment formats
-			auto& color_attachments = create_info.resource_attachments;
-			for (auto& attachment : color_attachments)
-			{
-				auto& render_resource = render_resources[attachment.render_resource_id];
-
-				// Case for swapchain target
-				if (render_resource.resource_id == ~0u)
-				{
-					auto& render_target = render_context->GetBackbuffer();
-					pass_ci.state.color_formats[pass_ci.state.color_format_count++] = render_target.GetFormat();
-
-					// Init default color attachment setting
-					pass_ci.state.color_blending_state.attachment_count++;
-				}
-				else
-				{
-					auto& render_target = render_targets.Get(render_resource.resource_id);
-					auto rt_format = render_target.texture->GetFormat();
-					if (attachment.flags & ResourceAttachmentTypeFlag::eDepth)
-					{
-						pass_ci.state.depth_format = rt_format;
-					}
-					else if (attachment.flags & ResourceAttachmentTypeFlag::eStencil)
-					{
-						pass_ci.state.stencil_format = rt_format;
-					}
-					else
-					{
-						pass_ci.state.color_formats[pass_ci.state.color_format_count++] = rt_format;
-
-						// Init default color attachment setting
-						pass_ci.state.color_blending_state.attachment_count++;
-					}
-				}
-			}
 
 			auto new_pass = std::make_unique<RenderPass>(*this, pass_ci);
 			new_pass->SetExecutionContext(render_context.get());
@@ -222,12 +180,6 @@ namespace engine
 
 		std::unique_ptr<IGraphNode> RenderGraph::CreateNode(const ComputeShaderPassCreateInfo& create_info)
 		{
-			// Add per pass resource access container
-			//per_pass_resource_bindings.emplace_back();
-
-			// Collect render resource usage info
-			//CollectRencerResouces(pass_index, create_info);
-
 			ComputePassCreateInfo pass_ci{};
 			pass_ci.debug_name = create_info.shader_name;
 			pass_ci.shader = resource_context.LoadShader(create_info.shader_name);

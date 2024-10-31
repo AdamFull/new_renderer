@@ -13,18 +13,17 @@ namespace engine
 			virtual ~RenderPass() = default;
 
 			void AddColorAttachment(gfx::Attachment attachment);
-			void SetDepthStencilAttachment(gfx::Attachment attachment);
-			void SetDepthAttachment(gfx::Attachment attachment);
-			void SetStencilAttachment(gfx::Attachment attachment);
 
 			ShaderPassType GetPassType() override;
 
+			void ProcessResourceBindings() override;
 		protected:
 			void UpdateRenderResolution();
 			void _Execute(gfx::CommandList& command_list, float delta_time) override;
 
 		private:
 			gfx::RenderingInfo rendering_info{};
+			std::vector<RenderResourceAttachment> resource_attachments{};
 		};
 	}
 }

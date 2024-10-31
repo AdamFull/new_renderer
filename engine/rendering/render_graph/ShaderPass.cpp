@@ -50,6 +50,10 @@ namespace engine
 			timestamp_query->Reset(0u);
 
 			context.RequestTimestampFrequency(&timestamp_frequency);
+
+			// Prepare barriers
+			resource_barriers.buffer_barriers = buffer_barriers.data();
+			resource_barriers.texture_barriers = texture_barriers.data();
 		}
 
 		ShaderPass::~ShaderPass()
@@ -160,6 +164,10 @@ namespace engine
 			command_list.BindDescriptors(bind_info);
 
 			resource_descriptor = nullptr;
+
+			resource_barriers.buffer_barrier_count = 0;
+			resource_barriers.texture_barrier_count = 0;
+			resource_barriers.memory_barrier_count = 0;
 		}
 
 		void ShaderPass::PushConstantRanges(gfx::CommandList& command_list)
@@ -174,6 +182,11 @@ namespace engine
 			group_x = std::max(static_cast<uint32_t>(std::ceil(static_cast<float>(group_x) / static_cast<float>(reflection.local_sizes[0]))), 1u);
 			group_y = std::max(static_cast<uint32_t>(std::ceil(static_cast<float>(group_y) / static_cast<float>(reflection.local_sizes[1]))), 1u);
 			group_z = std::max(static_cast<uint32_t>(std::ceil(static_cast<float>(group_z) / static_cast<float>(reflection.local_sizes[2]))), 1u);
+		}
+
+		void ShaderPass::ProcessResourceBindings()
+		{
+
 		}
 
 		void ShaderPass::CollectProfileData()

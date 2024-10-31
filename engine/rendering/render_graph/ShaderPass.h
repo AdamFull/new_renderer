@@ -44,7 +44,9 @@ namespace engine
 
 		struct RenderPassCreateInfo : PassCreateInfo
 		{
-			gfx::PipelineState state{};
+			gfx::PrimitiveTopology primitive_topology{ gfx::PrimitiveTopology::ePointList };
+
+			std::vector<RenderResourceAttachment> resource_attachments{};
 		};
 
 		struct ShaderResourceBinding
@@ -176,6 +178,7 @@ namespace engine
 			void FlushResources(gfx::CommandList& command_list);
 			void PushConstantRanges(gfx::CommandList& command_list);
 			void DivideWorkgroupByLocalSizes(uint32_t& group_x, uint32_t& group_y, uint32_t& group_z);
+			virtual void ProcessResourceBindings();
 
 		protected:
 			void CollectProfileData();
@@ -207,6 +210,13 @@ namespace engine
 			uint64_t execution_time{ 0ull };
 			float timestamp_frequency{ 0.f };
 			float pass_delta_time{ 0.f };
+
+			// Per frame barriers
+
+			std::array<gfx::BufferBarrier, 64ull> buffer_barriers{};
+			std::array<gfx::TextureBarrier, 64ull> texture_barriers{};
+			//std::array<gfx::MemoryBarrier, 64ull> memory_barriers{};
+			gfx::ResourceBarrierInfo resource_barriers{};
 		};
 	}
 }
