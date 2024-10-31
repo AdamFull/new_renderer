@@ -1,19 +1,21 @@
 #include <engine/rendering/render_graph/ComputePass.h>
 
+#include <engine/rendering/RendererInterface.h>
 #include <engine/rendering/gfx/Context.h>
 
 namespace engine
 {
 	namespace render
 	{
-		ComputePass::ComputePass(gfx::Context& context, const ComputePassCreateInfo& create_info) :
-			ShaderPass{ context, create_info }
+		ComputePass::ComputePass(IRenderer& renderer, const ComputePassCreateInfo& create_info) :
+			ShaderPass{ renderer, create_info }
 		{
 			gfx::ComputePipelineCreateInfo pipeline_ci{};
 			pipeline_ci.shader = shader;
 			pipeline_ci.root_signature = root_signature;
 			pipeline_ci.pipeline_cache = create_info.pipeline_cache;
 
+			auto& context = renderer.GetContext();
 			pipeline = context.CreatePipeline(pipeline_ci);
 		}
 

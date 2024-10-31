@@ -100,23 +100,25 @@ namespace engine
 		};
 		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(StageFlags, StageFlag);
 
+		// DX12 like system
 		enum class ResourceStateFlag
 		{
-			eUndefined = 1 << 0,
-			eColorAttachmentRead = 1 << 1,
-			eColorAttachmentWrite = 1 << 2,
-			eDepthAttachmentRead = 1 << 3,
-			eDepthAttachmentWrite = 1 << 4,
-			eStencilAttachmentRead = 1 << 5,
-			eStencilAttachmentWrite = 1 << 6,
-			eDepthStencilAttachmentRead = eDepthAttachmentRead | eStencilAttachmentRead,
-			eDepthStencilAttachmentWrite = eDepthAttachmentWrite | eStencilAttachmentWrite,
-			eShaderRead = 1 << 7,
-			eShaderWrite = 1 << 8,
-			eTranfserSource = 1 << 9,
-			eTransferDestination = 1 << 10,
-			eIndirect = 1 << 11,
-			ePresent = 1 << 12
+			eUndefined = 0,
+			eVertexAndUniformBuffer = 1 << 0,
+			eIndexBuffer = 1 << 1,
+			eRenderTarget = 1 << 2,
+			eUnorderedAccess = 1 << 3,
+			eDepthWrite = 1 << 4,
+			eDepthRead = 1 << 5,
+			eNonPixelShaderResource = 1 << 6,
+			ePixelShaderResource = 1 << 7,
+			eShaderResource = eNonPixelShaderResource | ePixelShaderResource,
+			eIndirectArgument = 1 << 8,
+			eCopyDst = 1 << 9,
+			eCopySrc = 1 << 10,
+			ePresent = 1 << 11,
+			eCommon = 1 << 12,
+			eGenericRead = eVertexAndUniformBuffer | eIndexBuffer | eShaderResource | eIndirectArgument | eCopySrc
 		};
 		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ResourceStateFlags, ResourceStateFlag);
 

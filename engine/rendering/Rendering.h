@@ -43,8 +43,6 @@ namespace engine
 
 			void Render(float delta_time) override;
 
-			gfx::Context& GetGFXContext();
-
 			ExecutionContext& GetRenderContext();
 			ExecutionContext const& GetRenderContext() const;
 
@@ -52,6 +50,8 @@ namespace engine
 			gfx::ResourceContext const& GetResourceContext() const;
 
 			gfx::Sampler* GetOrCreateSampler(const gfx::SamplerCreateInfo& create_info) override;
+
+			gfx::Context& GetContext() override;
 
 			GeometryBuffer& RequestInterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) override;
 			GeometryBuffer& RequestDeinterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) override;

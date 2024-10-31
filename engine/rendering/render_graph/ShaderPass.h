@@ -14,6 +14,7 @@ namespace engine
 
 	namespace render
 	{
+		class IRenderer;
 		class ShaderPass;
 
 		enum class ShaderPassType
@@ -151,7 +152,7 @@ namespace engine
 		class ShaderPass
 		{
 		public:
-			ShaderPass(gfx::Context& context, const PassCreateInfo& create_info);
+			ShaderPass(IRenderer& renderer, const PassCreateInfo& create_info);
 			virtual ~ShaderPass();
 
 			void SetExecutionContext(ExecutionContext* exec_context);
@@ -162,6 +163,9 @@ namespace engine
 			UniformHandle& GetUniformBlock(const char* name);
 
 			UniformHandle& GetConstantBlock();
+
+			void BindReadResource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource_index = ~0u);
+			void BindWriteResource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource_index = ~0u);
 
 			void BindResource(const ShaderResourceBinding& resource_binding);
 
@@ -176,11 +180,13 @@ namespace engine
 			void CollectProfileData();
 			virtual void _Execute(gfx::CommandList& command_list, float delta_time) = 0;
 		protected:
-			gfx::Context& context;
+			IRenderer& renderer;
 
 			std::string debug_name{};
 			bool one_time{ false };
 			bool can_execute{ true };
+
+			//ResourceBindings resource_bindings{};
 
 			std::function<void(ShaderPass&, gfx::CommandList&, float)> draw_callback{};
 

@@ -9,7 +9,7 @@ namespace engine
 		class RenderPass : public ShaderPass
 		{
 		public:
-			RenderPass(gfx::Context& context, const RenderPassCreateInfo& create_info);
+			RenderPass(IRenderer& renderer, const RenderPassCreateInfo& create_info);
 			virtual ~RenderPass() = default;
 
 			void AddColorAttachment(gfx::Attachment attachment);

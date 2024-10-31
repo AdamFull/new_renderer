@@ -1,13 +1,14 @@
 #include <engine/rendering/render_graph/RenderPass.h>
 
+#include <engine/rendering/RendererInterface.h>
 #include <engine/rendering/gfx/Context.h>
 
 namespace engine
 {
 	namespace render
 	{
-		RenderPass::RenderPass(gfx::Context& context, const RenderPassCreateInfo& create_info) :
-			ShaderPass{ context, create_info }
+		RenderPass::RenderPass(IRenderer& renderer, const RenderPassCreateInfo& create_info) :
+			ShaderPass{ renderer, create_info }
 		{
 			gfx::GraphicsPipelineCreateInfo pipeline_ci{};
 			pipeline_ci.shader = shader;
@@ -15,6 +16,7 @@ namespace engine
 			pipeline_ci.pipeline_cache = create_info.pipeline_cache;
 			pipeline_ci.pipeline_state = create_info.state;
 
+			auto& context = renderer.GetContext();
 			pipeline = context.CreatePipeline(pipeline_ci);
 		}
 

@@ -22,28 +22,24 @@ namespace engine
 {
 	namespace render
 	{
-		bool IsXOnlyAccess(const RenderGraphResource& resource, RenderGraphResourceAccess required_access)
+		bool IsXOnlyAccess(const RenderGraphResource& resource, gfx::AccessTypeFlags access_flags)
 		{
-			int32_t access_index = utl::enum_cast(required_access);
-			for (int32_t i = 0; i < 3ull; ++i)
-			{
-				if (i != access_index && !resource.usages[i].empty())
-					return false;
-			}
+			//for (const auto& access : resource.usages)
+			//{
+			//	if (!(access.access_flags & access_flags))
+			//		return false;
+			//}
 
 			return true;
 		}
 
 		bool IsROAccessOnlyRemain(const RenderGraphResource& resource, u64 current_pass)
 		{
-			for (int32_t i = 0; i < 3ull; ++i)
-			{
-				for (const auto& pass_index : resource.usages[i])
-				{
-					if (pass_index > current_pass)
-						return false;
-				}
-			}
+			//for (const auto& access : resource.usages)
+			//{
+			//	if (access.pass_index > current_pass)
+			//		return false;
+			//}
 
 			return true;
 		}
@@ -160,7 +156,7 @@ namespace engine
 			gfx::Texture* texture = resource_context->LoadTexture(path);
 			new_resource.resource_id = textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
 
-			new_resource.current_state = gfx::ResourceStateFlag::eShaderRead;
+			new_resource.current_state = gfx::ResourceStateFlag::eShaderResource;
 
 			return graph_resources.size() - 1ull;
 		}
@@ -172,14 +168,14 @@ namespace engine
 			// TODO: What if it's storage target and render target at the same time?
 			if (create_info.usage & gfx::TextureUsageFlag::eStorage)
 			{
-				new_resource.intermediate_state = gfx::ResourceStateFlag::eShaderWrite;
-				new_resource.final_state = gfx::ResourceStateFlag::eShaderRead;
+				new_resource.intermediate_state = gfx::ResourceStateFlag::eUnorderedAccess;
+				new_resource.final_state = gfx::ResourceStateFlag::eShaderResource;
 				new_resource.resource_type = RenderResourceTypeFlag::eStorageTarget;
 			}
 			else if (create_info.usage & gfx::TextureUsageFlag::eRenderTarget)
 			{
-				new_resource.intermediate_state = IsDepthStencilFormat(create_info.format) ? gfx::ResourceStateFlag::eDepthStencilAttachmentWrite : gfx::ResourceStateFlag::eColorAttachmentWrite;
-				new_resource.final_state = IsDepthStencilFormat(create_info.format) ?  gfx::ResourceStateFlag::eDepthStencilAttachmentRead : gfx::ResourceStateFlag::eShaderRead;
+				new_resource.intermediate_state = IsDepthStencilFormat(create_info.format) ? gfx::ResourceStateFlag::eDepthWrite : gfx::ResourceStateFlag::eRenderTarget;
+				new_resource.final_state = IsDepthStencilFormat(create_info.format) ?  gfx::ResourceStateFlag::eDepthRead : gfx::ResourceStateFlag::eShaderResource;
 				new_resource.resource_type = RenderResourceTypeFlag::eRenderTarget;
 			}
 			else
@@ -211,8 +207,8 @@ namespace engine
 				new_resource.resource_id = handle;
 
 				new_resource.current_state = gfx::ResourceStateFlag::eUndefined;
-				new_resource.intermediate_state = gfx::ResourceStateFlag::eShaderWrite;
-				new_resource.final_state = gfx::ResourceStateFlag::eShaderRead;
+				new_resource.intermediate_state = gfx::ResourceStateFlag::eUnorderedAccess;
+				new_resource.final_state = gfx::ResourceStateFlag::eShaderResource;
 
 				return graph_resources.size() - 1ull;
 			}
@@ -237,7 +233,7 @@ namespace engine
 			pass_ci.shared_descriptor = shared_descriptor;
 			pass_ci.draw_callback = std::move(create_info.draw_callback);
 
-			auto& new_pass = shader_passes.emplace_back(std::make_unique<ComputePass>(*gfx_context, pass_ci));
+			auto& new_pass = shader_passes.emplace_back(std::make_unique<ComputePass>(*this, pass_ci));
 			new_pass->SetExecutionContext(render_context.get());
 
 			return pass_index;
@@ -262,7 +258,7 @@ namespace engine
 			//pass_ci.state.rasterization_state.front_face = gfx::FrontFace::eCW;
 
 			// Collect color attachment formats
-			auto& color_attachments = create_info.resource_attachments[utl::enum_cast(RenderGraphResourceAccess::eWrite)];
+			auto& color_attachments = create_info.resource_attachments;
 			for (auto& attachment : color_attachments)
 			{
 				auto& render_resource = graph_resources[attachment.render_resource_id];
@@ -298,7 +294,7 @@ namespace engine
 				}
 			}
 
-			auto& new_pass = shader_passes.emplace_back(std::make_unique<RenderPass>(*gfx_context, pass_ci));
+			auto& new_pass = shader_passes.emplace_back(std::make_unique<RenderPass>(*this, pass_ci));
 			new_pass->SetExecutionContext(render_context.get());
 
 			return pass_index;
@@ -318,18 +314,13 @@ namespace engine
 
 			texture_barrier.texture = &render_context->GetBackbuffer();
 			// TODO: get current resource state from resource itself
-			texture_barrier.src_state = gfx::ResourceStateFlag::eColorAttachmentWrite;
+			texture_barrier.src_state = gfx::ResourceStateFlag::eRenderTarget;
 			texture_barrier.dst_state = gfx::ResourceStateFlag::ePresent;
 
 			auto& command_list = render_context->GetCurrentCommandList();
 			command_list.ResourceBarrier(resource_barriers);
 
 			EndFrame();
-		}
-
-		gfx::Context& Renderer::GetGFXContext()
-		{
-			return *gfx_context;
 		}
 
 		ExecutionContext& Renderer::GetRenderContext()
@@ -359,6 +350,11 @@ namespace engine
 				return found->second;
 
 			return sampler_cache[sampler_hash] = gfx_context->CreateSampler(create_info);
+		}
+
+		gfx::Context& Renderer::GetContext()
+		{
+			return *gfx_context;
 		}
 
 		GeometryBuffer& Renderer::RequestInterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info)
@@ -530,28 +526,25 @@ namespace engine
 		void Renderer::CollectRencerResouces(uint32_t pass_index, const ShaderPassCreateInfo& pass_ci)
 		{
 			// i here is resource access type
-			for (int32_t i = 0; i < 3ull; ++i)
+			auto& per_pass_bindings = per_pass_resource_bindings[pass_index];
+
+			// Process bindings
+			for (auto& resource_binding : pass_ci.resource_bindings)
 			{
-				auto& per_pass_bindings = per_pass_resource_bindings[pass_index];
+				// Get graph resource and update that this one was used in concrete pass
+				auto& graph_resource = graph_resources[resource_binding.render_resource_id];
+				//graph_resource.usages.emplace(ResourceAccess{ resource_binding.access, pass_index });
 
-				// Process bindings
-				for (auto& resource_binding : pass_ci.resource_bindings[i])
-				{
-					// Get graph resource and update that this one was used in concrete pass
-					auto& graph_resource = graph_resources[resource_binding.render_resource_id];
-					graph_resource.usages[i].emplace(pass_index);
+				per_pass_bindings.bindings.emplace_back(resource_binding);
+			}
 
-					per_pass_bindings.bindings[i].emplace_back(resource_binding);
-				}
+			// Process attachments
+			for (auto& resource_attachment : pass_ci.resource_attachments)
+			{
+				auto& graph_resource = graph_resources[resource_attachment.render_resource_id];
+				//graph_resource.usages.emplace(ResourceAccess{ resource_attachment.access, pass_index });
 
-				// Process attachments
-				for (auto& resource_attachment : pass_ci.resource_attachments[i])
-				{
-					auto& graph_resource = graph_resources[resource_attachment.render_resource_id];
-					graph_resource.usages[i].emplace(pass_index);
-
-					per_pass_bindings.attachments[i].emplace_back(resource_attachment);
-				}
+				per_pass_bindings.attachments.emplace_back(resource_attachment);
 			}
 		}
 
@@ -625,133 +618,133 @@ namespace engine
 			auto& shader_pass = shader_passes[pass_index];
 			auto& pass_bindings = per_pass_resource_bindings[pass_index];
 
-			for (int32_t access_idx = 0; access_idx < 3ull; ++access_idx)
+			// Start from resource bindings
+			for (const auto& resource_binding : pass_bindings.bindings)
 			{
-				gfx::AccessTypeFlag access_flag = access_map[access_idx];
+				auto& render_resource = graph_resources[resource_binding.render_resource_id];
 
-				// Start from resource bindings
-				for (const auto& resource_binding : pass_bindings.bindings[access_idx])
+				// Do not need to sync static images
+				if (render_resource.resource_type & RenderResourceTypeFlag::eStaticImage)
 				{
-					auto& render_resource = graph_resources[resource_binding.render_resource_id];
-
-					// Do not need to sync static images
-					if (render_resource.resource_type & RenderResourceTypeFlag::eStaticImage)
-					{
-						continue;
-					}
-
-					// Ignore read only resource
-					if (IsXOnlyAccess(render_resource, RenderGraphResourceAccess::eRead))
-						continue;
-
-					// Graph also should support work with subresources
-					uint32_t subresource_key = resource_binding.subresource_index == ~0u ? 0u : resource_binding.subresource_index;
-					auto resource_key = std::make_pair(resource_binding.render_resource_id, subresource_key);
-
-					auto& last_resource_access = resource_access_map[resource_key];
-					auto last_access = render_resource.GetAccess(resource_binding.subresource_index);
-
-					// Ignoring read after read barriers
-					if ((last_access & access_flag) && access_flag == gfx::AccessTypeFlag::eRead)
-						continue;
-
-					bool is_write_after_write = ((last_access & access_flag) && access_flag == gfx::AccessTypeFlag::eWrite);
-					bool is_read_after_write = (last_access & gfx::AccessTypeFlag::eWrite) && access_flag == gfx::AccessTypeFlag::eRead;
-					bool is_change_pipeline_ownership = last_resource_access.pass_type == utl::enum_cast(shader_pass->GetPassType()) && is_write_after_write;
-
-					if (render_resource.resource_type & RenderResourceTypeFlag::eBuffer)
-					{
-						auto& resource = buffers.Get(render_resource.resource_id);
-						auto& barrier = buffer_barriers[resource_barriers.buffer_barrier_count++];
-						barrier.buffer = resource.buffer;
-						barrier.src_state = render_resource.GetState(resource_binding.subresource_index);
-
-						if (access_flag == gfx::AccessTypeFlag::eRead)
-							barrier.dst_state = render_resource.final_state;
-						else
-							barrier.dst_state = render_resource.intermediate_state;
-
-							render_resource.SetState(barrier.dst_state, resource_binding.subresource_index);
-					}
-					else
-					{
-						auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
-						barrier.src_state = render_resource.GetState(resource_binding.subresource_index);
-						barrier.texture = GetTextureResource(render_resource);
-						barrier.subresource_index = resource_binding.subresource_index;
-
-						if (last_access == 0)
-							barrier.dst_state = access_flag == gfx::AccessTypeFlag::eRead ? render_resource.final_state : render_resource.intermediate_state;
-						else if (access_flag != gfx::AccessTypeFlag::eWrite && IsROAccessOnlyRemain(render_resource, pass_index))
-							barrier.dst_state = render_resource.final_state;
-						else if (is_change_pipeline_ownership)
-							barrier.dst_state = render_resource.intermediate_state;
-						else if(is_read_after_write)
-							barrier.dst_state = render_resource.final_state;
-
-						render_resource.SetState(barrier.dst_state, resource_binding.subresource_index);
-					}
-
-					last_resource_access.pass_type = utl::enum_cast(shader_pass->GetPassType());
+					continue;
 				}
 
-				// For attachments (write only)
-				if (!pass_bindings.attachments[access_idx].empty())
+				// Ignore read only resource
+				//if (IsXOnlyAccess(render_resource, gfx::AccessTypeFlag::eRead))
+				//	continue;
+
+				// Graph also should support work with subresources
+				uint32_t subresource_key = resource_binding.subresource_index == ~0u ? 0u : resource_binding.subresource_index;
+				auto resource_key = std::make_pair(resource_binding.render_resource_id, subresource_key);
+
+				auto& last_resource_access = resource_access_map[resource_key];
+				auto last_access = render_resource.GetAccess(resource_binding.subresource_index);
+
+				auto access_flag = resource_binding.access;
+
+				// Ignoring read after read barriers
+				if ((last_access & access_flag) && access_flag == gfx::AccessTypeFlag::eRead)
+					continue;
+
+				bool is_write_after_write = ((last_access & access_flag) && access_flag == gfx::AccessTypeFlag::eWrite);
+				bool is_read_after_write = (last_access & gfx::AccessTypeFlag::eWrite) && access_flag == gfx::AccessTypeFlag::eRead;
+				bool is_change_pipeline_ownership = last_resource_access.pass_type == utl::enum_cast(shader_pass->GetPassType()) && is_write_after_write;
+
+				if (render_resource.resource_type & RenderResourceTypeFlag::eBuffer)
 				{
-					auto* render_pass = static_cast<RenderPass*>(shader_pass.get());
-					for (const auto& resource_attachment : pass_bindings.attachments[access_idx])
+					auto& resource = buffers.Get(render_resource.resource_id);
+					auto& barrier = buffer_barriers[resource_barriers.buffer_barrier_count++];
+					barrier.buffer = resource.buffer;
+					barrier.src_state = render_resource.GetState(resource_binding.subresource_index);
+
+					if (access_flag == gfx::AccessTypeFlag::eRead)
+						barrier.dst_state = render_resource.final_state;
+					else
+						barrier.dst_state = render_resource.intermediate_state;
+
+						render_resource.SetState(barrier.dst_state, resource_binding.subresource_index);
+				}
+				else
+				{
+					auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
+					barrier.src_state = render_resource.GetState(resource_binding.subresource_index);
+					barrier.texture = GetTextureResource(render_resource);
+					barrier.subresource_index = resource_binding.subresource_index;
+
+					if (last_access == 0)
+						barrier.dst_state = access_flag == gfx::AccessTypeFlag::eRead ? render_resource.final_state : render_resource.intermediate_state;
+					//else if (access_flag != gfx::AccessTypeFlag::eWrite && IsROAccessOnlyRemain(render_resource, pass_index))
+					//	barrier.dst_state = render_resource.final_state;
+					else if (is_change_pipeline_ownership)
+						barrier.dst_state = render_resource.intermediate_state;
+					else if(is_read_after_write)
+						barrier.dst_state = render_resource.final_state;
+
+					render_resource.SetState(barrier.dst_state, resource_binding.subresource_index);
+				}
+
+				last_resource_access.pass_type = utl::enum_cast(shader_pass->GetPassType());
+			}
+
+			// For attachments (write only)
+			if (!pass_bindings.attachments.empty())
+			{
+				auto* render_pass = static_cast<RenderPass*>(shader_pass.get());
+				for (const auto& resource_attachment : pass_bindings.attachments)
+				{
+					auto& render_resource = graph_resources[resource_attachment.render_resource_id];
+
+					// Wtf? Trying write to static resource????
+					if (render_resource.resource_type & RenderResourceTypeFlag::eStaticImage)
 					{
-						auto& render_resource = graph_resources[resource_attachment.render_resource_id];
-
-						// Wtf? Trying write to static resource????
-						if (render_resource.resource_type & RenderResourceTypeFlag::eStaticImage)
-						{
-							log_error("Trying bind static texture as color attachment!");
-							assert(false && "INCORRECT OUTPUT RESOURCE BINDING!");
-							continue;
-						}
-
-						// Graph also should support work with subresources
-						auto resource_key = std::make_pair(resource_attachment.render_resource_id, 0u);
-
-						auto& last_resource_access = resource_access_map[resource_key];
-						auto last_access = render_resource.GetAccess();
-
-						bool is_backbuffer_resource = resource_attachment.render_resource_id == backbuffer_resource;
-						bool is_write_after_write = ((last_access & access_flag) && access_flag == gfx::AccessTypeFlag::eWrite);
-						bool is_change_pipeline_ownership = last_resource_access.pass_type == utl::enum_cast(shader_pass->GetPassType()) && is_write_after_write;
-
-						gfx::Attachment attachment{};
-						attachment.load_op = is_write_after_write ? gfx::LoadOp::eLoad : gfx::LoadOp::eClear;
-						attachment.store_op = !render_resource.usages[utl::enum_cast(RenderGraphResourceAccess::eRead)].empty() || is_backbuffer_resource ? gfx::StoreOp::eStore : gfx::StoreOp::eDontCare;
-						attachment.clear_color = resource_attachment.clear_color;
-
-						auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
-						barrier.src_state = render_resource.GetState();
-						barrier.texture = GetTextureResource(render_resource);
-
-						if (last_access == 0)
-							barrier.dst_state = access_flag == gfx::AccessTypeFlag::eRead ? render_resource.final_state : render_resource.intermediate_state;
-						else if (access_flag != gfx::AccessTypeFlag::eWrite && IsROAccessOnlyRemain(render_resource, pass_index))
-							barrier.dst_state = is_backbuffer_resource ? render_resource.intermediate_state : render_resource.final_state;
-						else if (is_change_pipeline_ownership)
-							barrier.dst_state = render_resource.intermediate_state;
-
-						render_resource.SetState(barrier.dst_state);
-
-						attachment.texture = barrier.texture;
-
-						if (resource_attachment.flags & ResourceAttachmentTypeFlag::eDepthStencil)
-							render_pass->SetDepthStencilAttachment(attachment);
-						else if (resource_attachment.flags & ResourceAttachmentTypeFlag::eDepth)
-							render_pass->SetDepthAttachment(attachment);
-						else if (resource_attachment.flags & ResourceAttachmentTypeFlag::eStencil)
-							render_pass->SetStencilAttachment(attachment);
-						else
-							render_pass->AddColorAttachment(attachment);
-
-						last_resource_access.pass_type = utl::enum_cast(shader_pass->GetPassType());
+						log_error("Trying bind static texture as color attachment!");
+						assert(false && "INCORRECT OUTPUT RESOURCE BINDING!");
+						continue;
 					}
+
+					// Graph also should support work with subresources
+					auto resource_key = std::make_pair(resource_attachment.render_resource_id, 0u);
+
+					auto& last_resource_access = resource_access_map[resource_key];
+					auto last_access = render_resource.GetAccess();
+
+					auto access_flag = resource_attachment.access;
+
+					bool is_backbuffer_resource = resource_attachment.render_resource_id == backbuffer_resource;
+					bool is_write_after_write = ((last_access & access_flag) && access_flag == gfx::AccessTypeFlag::eWrite);
+					bool is_change_pipeline_ownership = last_resource_access.pass_type == utl::enum_cast(shader_pass->GetPassType()) && is_write_after_write;
+
+					gfx::Attachment attachment{};
+					attachment.load_op = is_write_after_write ? gfx::LoadOp::eLoad : gfx::LoadOp::eClear;
+					//attachment.store_op = !IsXOnlyAccess(render_resource, gfx::AccessTypeFlag::eRead) || is_backbuffer_resource ? gfx::StoreOp::eStore : gfx::StoreOp::eDontCare;
+					attachment.store_op = gfx::StoreOp::eStore;
+					attachment.clear_color = resource_attachment.clear_color;
+
+					auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
+					barrier.src_state = render_resource.GetState();
+					barrier.texture = GetTextureResource(render_resource);
+
+					if (last_access == 0)
+						barrier.dst_state = access_flag == gfx::AccessTypeFlag::eRead ? render_resource.final_state : render_resource.intermediate_state;
+					//else if (access_flag != gfx::AccessTypeFlag::eWrite && IsROAccessOnlyRemain(render_resource, pass_index))
+					//	barrier.dst_state = is_backbuffer_resource ? render_resource.intermediate_state : render_resource.final_state;
+					else if (is_change_pipeline_ownership)
+						barrier.dst_state = render_resource.intermediate_state;
+
+					render_resource.SetState(barrier.dst_state);
+
+					attachment.texture = barrier.texture;
+
+					if (resource_attachment.flags & ResourceAttachmentTypeFlag::eDepthStencil)
+						render_pass->SetDepthStencilAttachment(attachment);
+					else if (resource_attachment.flags & ResourceAttachmentTypeFlag::eDepth)
+						render_pass->SetDepthAttachment(attachment);
+					else if (resource_attachment.flags & ResourceAttachmentTypeFlag::eStencil)
+						render_pass->SetStencilAttachment(attachment);
+					else
+						render_pass->AddColorAttachment(attachment);
+
+					last_resource_access.pass_type = utl::enum_cast(shader_pass->GetPassType());
 				}
 			}
 
@@ -760,42 +753,39 @@ namespace engine
 			command_list.ResourceBarrier(resource_barriers);
 
 			// Bind pass resources
-			for (int32_t access_idx = 0; access_idx < 3ull; ++access_idx)
+			for (const auto& resource_binding : pass_bindings.bindings)
 			{
-				for (const auto& resource_binding : pass_bindings.bindings[access_idx])
+				auto& render_resource = graph_resources[resource_binding.render_resource_id];
+
+				// Bind resource
+				ShaderResourceBinding shader_resource_binding{};
+				shader_resource_binding.binding_point = resource_binding.bind_point;
+				shader_resource_binding.subresource = resource_binding.subresource_index;
+
+				// Do not need to sync static images
+				if (render_resource.resource_type & RenderResourceTypeFlag::eStaticImage)
 				{
-					auto& render_resource = graph_resources[resource_binding.render_resource_id];
-
-					// Bind resource
-					ShaderResourceBinding shader_resource_binding{};
-					shader_resource_binding.binding_point = resource_binding.bind_point;
-					shader_resource_binding.subresource = resource_binding.subresource_index;
-
-					// Do not need to sync static images
-					if (render_resource.resource_type & RenderResourceTypeFlag::eStaticImage)
-					{
-						auto& resource = textures.Get(render_resource.resource_id);
-						shader_resource_binding.texture = resource.texture;
-						shader_resource_binding.sampler = resource.sampler;
-					}
-					else if ((render_resource.resource_type & RenderResourceTypeFlag::eRenderTarget) || (render_resource.resource_type & RenderResourceTypeFlag::eStorageTarget))
-					{
-						auto& resource = render_targets.Get(render_resource.resource_id);
-						shader_resource_binding.texture = resource.texture;
-						shader_resource_binding.sampler = resource.sampler;
-					}
-					else if (render_resource.resource_type & RenderResourceTypeFlag::eBuffer)
-					{
-						auto& resource = buffers.Get(render_resource.resource_id);
-						shader_resource_binding.buffer = resource.buffer;
-					}
-					else
-					{
-						assert(false && "THIS RESOURCE TYPE IS NOT SUPPORTED FOR BINDING");
-					}
-
-					shader_pass->BindResource(shader_resource_binding);
+					auto& resource = textures.Get(render_resource.resource_id);
+					shader_resource_binding.texture = resource.texture;
+					shader_resource_binding.sampler = resource.sampler;
 				}
+				else if ((render_resource.resource_type & RenderResourceTypeFlag::eRenderTarget) || (render_resource.resource_type & RenderResourceTypeFlag::eStorageTarget))
+				{
+					auto& resource = render_targets.Get(render_resource.resource_id);
+					shader_resource_binding.texture = resource.texture;
+					shader_resource_binding.sampler = resource.sampler;
+				}
+				else if (render_resource.resource_type & RenderResourceTypeFlag::eBuffer)
+				{
+					auto& resource = buffers.Get(render_resource.resource_id);
+					shader_resource_binding.buffer = resource.buffer;
+				}
+				else
+				{
+					assert(false && "THIS RESOURCE TYPE IS NOT SUPPORTED FOR BINDING");
+				}
+
+				shader_pass->BindResource(shader_resource_binding);
 			}
 		}
 
@@ -869,7 +859,7 @@ namespace engine
 
 			auto& backbuffer_resource_binding = graph_resources.emplace_back();
 			backbuffer_resource_binding.resource_type = RenderResourceTypeFlag::eBackbuffer;
-			backbuffer_resource_binding.intermediate_state = gfx::ResourceStateFlag::eColorAttachmentWrite;
+			backbuffer_resource_binding.intermediate_state = gfx::ResourceStateFlag::eRenderTarget;
 			backbuffer_resource_binding.final_state = gfx::ResourceStateFlag::ePresent;
 
 			// Create default samplers
@@ -923,15 +913,26 @@ namespace engine
 			}
 
 			uint32_t prefiltered_cube_target{ ~0u };
-			{
-				gfx::TextureCreateInfo create_info{};
+			{gfx::TextureCreateInfo create_info{};
 				create_info.width = create_info.height = 512u;
 				create_info.format = gfx::Format::eR16G16B16A16Sfloat;
 				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage | gfx::TextureUsageFlag::eCubemap;
 				create_info.levels = static_cast<uint32_t>(std::floor(std::log2((std::max)(create_info.width, create_info.height)))) + 1u;
 				create_info.resizable = false;
 
-				prefiltered_cube_target = AddRenderResource(create_info, linear_sampler);
+				gfx::Sampler* special_sampler{ nullptr };
+				{
+					gfx::SamplerCreateInfo create_info_s{};
+					create_info_s.min_filter = gfx::Filter::eLinear;
+					create_info_s.mag_filter = gfx::Filter::eLinear;
+					create_info_s.mip_map_mode = gfx::Filter::eLinear;
+					create_info_s.min_lod = 0.f;
+					create_info_s.max_lod = static_cast<float>(create_info.levels);
+
+					special_sampler = GetOrCreateSampler(create_info_s);
+				}
+
+				prefiltered_cube_target = AddRenderResource(create_info, special_sampler);
 			}
 			// Passes
 			// Generate brdflut
@@ -995,41 +996,42 @@ namespace engine
 				//group->color = 0x99F9F1FF;
 				//group->nodes = {};
 				//group->nodes.reserve(10);
-
+			
 				auto& resource = graph_resources[prefiltered_cube_target];
 				auto* texture = GetTextureResource(resource);
-
+			
 				for (int32_t mip = 0; mip < texture->GetMipLevelCount(); ++mip)
 				{
 					ComputeShaderPassCreateInfo create_info{};
 					create_info.shader_name = "lighting:prefilteredmap_generator";
 					create_info.one_time = true;
 					create_info.BindWriteResource("out_color"_hash32, prefiltered_cube_target, mip);
-					create_info.BindReadResource(mip == 0 ? "sampler_color"_hash32 : "out_color"_hash32, mip == 0 ? casual_day_4k_cube : prefiltered_cube_target, mip == 0 ? ~0u : mip - 1);
-
+					create_info.BindReadResource("sampler_color"_hash32, mip == 0 ? casual_day_4k_cube : prefiltered_cube_target, mip == 0 ? ~0u : mip - 1);
+					//create_info.BindReadResource("sampler_color"_hash32, casual_day_4k_cube);
+			
 					create_info.draw_callback = [this, mip, texture](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 						{
 							self.FlushResources(command_list);
-
+			
 							uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
-
+			
 							float layer_roughness = static_cast<float>(mip) / static_cast<float>(texture->GetMipLevelCount());
 							
 							auto& constants = self.GetConstantBlock();
 							constants.Set("roughness"_hash32, layer_roughness);
 							self.PushConstantRanges(command_list);
-
+			
 							group_x = texture->GetWidth() >> mip;
 							group_y = texture->GetHeight() >> mip;
-
+			
 							self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
 							command_list.Dispatch(group_x, group_y, group_z);
 						};
-
+			
 					render_graph.emplace_back(CreateShaderPassNode(create_info));
 					//group->nodes.emplace_back(CreateShaderPassNode(create_info));
 				}
-
+			
 				//render_graph.emplace_back(group_node);
 			}
 

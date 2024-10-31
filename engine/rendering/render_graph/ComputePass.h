@@ -9,7 +9,7 @@ namespace engine
 		class ComputePass : public ShaderPass
 		{
 		public:
-			ComputePass(gfx::Context& context, const ComputePassCreateInfo& create_info);
+			ComputePass(IRenderer& renderer, const ComputePassCreateInfo& create_info);
 			virtual ~ComputePass() = default;
 
 			ShaderPassType GetPassType() override;

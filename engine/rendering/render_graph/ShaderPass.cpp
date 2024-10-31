@@ -1,5 +1,6 @@
 #include <engine/rendering/render_graph/ShaderPass.h>
 
+#include <engine/rendering/RendererInterface.h>
 #include <engine/rendering/gfx/Context.h>
 #include <util/Logger.h>
 
@@ -9,8 +10,8 @@ namespace engine
 {
 	namespace render
 	{
-		ShaderPass::ShaderPass(gfx::Context& context, const PassCreateInfo& create_info) :
-			context{ context },
+		ShaderPass::ShaderPass(IRenderer& renderer, const PassCreateInfo& create_info) :
+			renderer{ renderer },
 			shader{ create_info.shader },
 			debug_name{ create_info.debug_name },
 			one_time{ create_info.one_time },
@@ -18,7 +19,7 @@ namespace engine
 			draw_callback{ create_info.draw_callback }
 		{
 			auto& reflection = shader->GetReflection();
-
+			
 			// Create uniform block handlers for resources
 			for (auto it = reflection.shader_resources.Begin(); it != reflection.shader_resources.End(); ++it)
 			{
@@ -37,6 +38,7 @@ namespace engine
 			root_sign_ci.shared_descriptor = create_info.shared_descriptor;
 			// TODO: also load immutable samplers from pass info or from somewhere another?
 
+			auto& context = renderer.GetContext();
 			root_signature = context.CreateRootSignature(root_sign_ci);
 
 			// Create timestamp query 
@@ -52,6 +54,7 @@ namespace engine
 
 		ShaderPass::~ShaderPass()
 		{
+			auto& context = renderer.GetContext();
 			context.Destroy(pipeline);
 			context.Destroy(root_signature);
 			context.Destroy(shader);
@@ -194,6 +197,16 @@ namespace engine
 		UniformHandle& ShaderPass::GetConstantBlock()
 		{
 			return *constant_block;
+		}
+
+		void ShaderPass::BindReadResource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource_index)
+		{
+
+		}
+
+		void ShaderPass::BindWriteResource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource_index)
+		{
+
 		}
 
 		void ShaderPass::BindResource(const ShaderResourceBinding& resource_binding)

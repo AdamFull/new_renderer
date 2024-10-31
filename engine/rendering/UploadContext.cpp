@@ -265,7 +265,7 @@ namespace engine
 			gfx::TextureBarrier texture_barrier{};
 			texture_barrier.texture = texture;
 			texture_barrier.src_state = gfx::ResourceStateFlag::eUndefined;
-			texture_barrier.dst_state = gfx::ResourceStateFlag::eTransferDestination;
+			texture_barrier.dst_state = gfx::ResourceStateFlag::eCopyDst;
 
 			gfx::ResourceBarrierInfo resource_barrier{};
 			resource_barrier.texture_barriers = &texture_barrier;
@@ -278,8 +278,8 @@ namespace engine
 			command_list.CopyTexture(copy_texture);
 
 			// Transfer to final layout
-			texture_barrier.src_state = gfx::ResourceStateFlag::eTransferDestination;
-			texture_barrier.dst_state = gfx::ResourceStateFlag::eShaderRead;
+			texture_barrier.src_state = gfx::ResourceStateFlag::eCopyDst;
+			texture_barrier.dst_state = gfx::ResourceStateFlag::eShaderResource;
 			command_list.ResourceBarrier(resource_barrier);
 
 			return texture;
@@ -398,8 +398,8 @@ namespace engine
 				// TODO: Add memory barrier befor copy for dst buffer
 				gfx::BufferBarrier buffer_barrier{};
 				buffer_barrier.buffer = dst_buffer;
-				buffer_barrier.src_state = gfx::ResourceStateFlag::eUndefined | gfx::ResourceStateFlag::eTransferDestination;
-				buffer_barrier.dst_state = gfx::ResourceStateFlag::eTransferDestination;
+				buffer_barrier.src_state = gfx::ResourceStateFlag::eCopyDst | gfx::ResourceStateFlag::eCopySrc;
+				buffer_barrier.dst_state = gfx::ResourceStateFlag::eCopyDst;
 
 				gfx::ResourceBarrierInfo barrier_info{};
 				barrier_info.buffer_barriers = &buffer_barrier;

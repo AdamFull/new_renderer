@@ -31,26 +31,11 @@ namespace engine
 		};
 		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(RenderResourceTypeFlags, RenderResourceTypeFlag);
 
-		enum class RenderResourceGroupFlag : uint16_t
+		struct ResourceAccess
 		{
-			eColor = 1 << 0,
-			eResolve = 1 << 1,
-			eStorageTexture = 1 << 2,
-			eStorage = 1 << 3,
-			eIndirectArgument = 1 << 4,
-			eIndirectCount = 1 << 5,
-			eBackbuffer = 1 << 6
+			gfx::AccessTypeFlags access_flags{};
+			uint32_t pass_index{};
 		};
-		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(RenderResourceGroupFlags, RenderResourceGroupFlag);
-
-		enum class RenderGraphResourceAccess
-		{
-			eRead,
-			eWrite,
-			eReadAndWrite
-		};
-
-		using RenderGraphPassResourceAccess = std::array<std::vector<uint32_t>, 3ull>;
 
 		struct RenderGraphResource
 		{
@@ -64,24 +49,28 @@ namespace engine
 			gfx::ResourceStateFlags intermediate_state{ gfx::ResourceStateFlag::eUndefined };
 			gfx::ResourceStateFlags final_state{ gfx::ResourceStateFlag::eUndefined };
 
-			std::array<std::unordered_set<uint32_t>, 3ull> usages{};
+			//std::unordered_set<ResourceAccess> usages{};
 
 			gfx::AccessTypeFlags GetAccess(uint32_t subresource_index = ~0u) const
 			{
 				gfx::ResourceStateFlags state = subresource_index == ~0u ? current_state : subresource_states[subresource_index];
 
-				if ((state & gfx::ResourceStateFlag::eColorAttachmentRead) ||
-					(state & gfx::ResourceStateFlag::eDepthAttachmentRead) ||
-					(state & gfx::ResourceStateFlag::eStencilAttachmentRead) ||
-					(state & gfx::ResourceStateFlag::eShaderRead) ||
-					(state & gfx::ResourceStateFlag::eTranfserSource) ||
-					(state & gfx::ResourceStateFlag::ePresent))
+				if (state & (
+					gfx::ResourceStateFlag::eVertexAndUniformBuffer |
+					gfx::ResourceStateFlag::eIndexBuffer |
+					gfx::ResourceStateFlag::eDepthRead |
+					gfx::ResourceStateFlag::eShaderResource |
+					gfx::ResourceStateFlag::eIndirectArgument |
+					gfx::ResourceStateFlag::eCopySrc |
+					gfx::ResourceStateFlag::eCommon |
+					gfx::ResourceStateFlag::ePresent))
 					return gfx::AccessTypeFlag::eRead;
-				else if ((state & gfx::ResourceStateFlag::eColorAttachmentWrite) ||
-					(state & gfx::ResourceStateFlag::eDepthAttachmentWrite) ||
-					(state & gfx::ResourceStateFlag::eStencilAttachmentWrite) ||
-					(state & gfx::ResourceStateFlag::eShaderWrite) ||
-					(state & gfx::ResourceStateFlag::eTransferDestination))
+				else if (state & (
+					gfx::ResourceStateFlag::eRenderTarget |
+					gfx::ResourceStateFlag::eUnorderedAccess |
+					gfx::ResourceStateFlag::eCopyDst |
+					gfx::ResourceStateFlag::eDepthWrite
+					))
 					return gfx::AccessTypeFlag::eWrite;
 
 				return {};
@@ -126,6 +115,8 @@ namespace engine
 		// Describes resource binding. For example binding of texture with concrete mip level, or writable/readable buffer.
 		struct RenderResourceBinding
 		{
+			gfx::AccessTypeFlags access{};
+
 			// In this case it's resource name hash from reflection
 			uint32_t bind_point{};
 
@@ -148,6 +139,8 @@ namespace engine
 		// Describes out attachment like color or depth/stencil attachment
 		struct RenderResourceAttachment
 		{
+			gfx::AccessTypeFlags access{};
+
 			ResourceAttachmentTypeFlags flags{};
 
 			// Index of render resource
@@ -159,8 +152,8 @@ namespace engine
 
 		struct ResourceBindings
 		{
-			std::array<std::vector<RenderResourceBinding>, 3ull> bindings{};
-			std::array<std::vector<RenderResourceAttachment>, 3ull> attachments{};
+			std::vector<RenderResourceBinding> bindings{};
+			std::vector<RenderResourceAttachment> attachments{};
 		};
 
 		struct ShaderPassCreateInfo
@@ -173,17 +166,14 @@ namespace engine
 			// Means that this pass will be executed only one time
 			bool one_time{ false };
 
-			// Some explanation 3 is means 3 variant of access: read(0), write(1), both(2).
-			std::array<std::vector<RenderResourceBinding>, 3ull> resource_bindings{};
+			std::vector<RenderResourceBinding> resource_bindings{};
+			std::vector<RenderResourceAttachment> resource_attachments{};
 
-			// This one is for attachments
-			std::array<std::vector<RenderResourceAttachment>, 3ull> resource_attachments{};
-
-			void BindWriteResource(uint32_t binding_point, uint32_t render_resource_id) { resource_bindings[utl::enum_cast(RenderGraphResourceAccess::eWrite)].emplace_back(binding_point, render_resource_id, ~0u); }
-			void BindWriteResource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource) { resource_bindings[utl::enum_cast(RenderGraphResourceAccess::eWrite)].emplace_back(binding_point, render_resource_id, subresource); }
+			void BindWriteResource(uint32_t binding_point, uint32_t render_resource_id) { resource_bindings.emplace_back(gfx::AccessTypeFlag::eWrite, binding_point, render_resource_id, ~0u); }
+			void BindWriteResource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource) { resource_bindings.emplace_back(gfx::AccessTypeFlag::eWrite, binding_point, render_resource_id, subresource); }
 			
-			void BindReadResource(uint32_t binding_point, uint32_t render_resource_id) { resource_bindings[utl::enum_cast(RenderGraphResourceAccess::eRead)].emplace_back(binding_point, render_resource_id, ~0u); }
-			void BindReadResource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource) { resource_bindings[utl::enum_cast(RenderGraphResourceAccess::eRead)].emplace_back(binding_point, render_resource_id, subresource); }
+			void BindReadResource(uint32_t binding_point, uint32_t render_resource_id) { resource_bindings.emplace_back(gfx::AccessTypeFlag::eRead, binding_point, render_resource_id, ~0u); }
+			void BindReadResource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource) { resource_bindings.emplace_back(gfx::AccessTypeFlag::eRead, binding_point, render_resource_id, subresource); }
 		};
 
 		struct ComputeShaderPassCreateInfo : ShaderPassCreateInfo
@@ -193,8 +183,8 @@ namespace engine
 
 		struct RenderShaderPassCreateInfo : ShaderPassCreateInfo
 		{
-			void AddWriteAttachment(uint32_t render_resource_id, ResourceAttachmentTypeFlags flags = {}, gfx::ClearColor clear_color = {}) { resource_attachments[utl::enum_cast(RenderGraphResourceAccess::eWrite)].emplace_back(flags, render_resource_id, clear_color); }
-			void AddReadAttachment(uint32_t render_resource_id, ResourceAttachmentTypeFlags flags = {}) { resource_attachments[utl::enum_cast(RenderGraphResourceAccess::eRead)].emplace_back(flags, render_resource_id, gfx::ClearColor{}); }
+			void AddWriteAttachment(uint32_t render_resource_id, ResourceAttachmentTypeFlags flags = {}, gfx::ClearColor clear_color = {}) { resource_attachments.emplace_back(gfx::AccessTypeFlag::eWrite, flags, render_resource_id, clear_color); }
+			void AddReadAttachment(uint32_t render_resource_id, ResourceAttachmentTypeFlags flags = {}) { resource_attachments.emplace_back(gfx::AccessTypeFlag::eRead, flags, render_resource_id, gfx::ClearColor{}); }
 		};
 
 		struct ConsistentAccessInfo
