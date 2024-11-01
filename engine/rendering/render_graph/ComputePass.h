@@ -14,6 +14,9 @@ namespace engine
 
 			ShaderPassType GetPassType() override;
 
+			void Begin(gfx::CommandList& command_list) override {}
+			void End(gfx::CommandList& command_list) override {}
+
 		protected:
 			void _Execute(gfx::CommandList& command_list, float delta_time) override;
 		};

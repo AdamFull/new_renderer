@@ -49,9 +49,14 @@ namespace engine
 			return ShaderPassType::eGraphics;
 		}
 
-		void RenderPass::ProcessResourceBindings()
+		void RenderPass::Begin(gfx::CommandList& command_list)
 		{
-			ShaderPass::ProcessResourceBindings();
+			command_list.BeginRendering(rendering_info);
+		}
+
+		void RenderPass::End(gfx::CommandList& command_list)
+		{
+			command_list.EndRendering();
 		}
 
 		void RenderPass::UpdateRenderResolution()
@@ -110,35 +115,35 @@ namespace engine
 				{
 					auto& attachment = rendering_info.depth_attachment;
 					attachment.texture = graph.GetTexture(resource_attachment.render_resource_id);
+					attachment.texture_state = barrier.dst_state;
 					attachment.clear_color = resource_attachment.clear_color;
 				}
 				else if (resource_attachment.flags & ResourceAttachmentTypeFlag::eStencil)
 				{
 					auto& attachment = rendering_info.stencil_attachment;
 					attachment.texture = graph.GetTexture(resource_attachment.render_resource_id);
+					attachment.texture_state = barrier.dst_state;
 					attachment.clear_color = resource_attachment.clear_color;
 				}
 				else if (resource_attachment.flags & ResourceAttachmentTypeFlag::eColor)
 				{
 					auto& attachment = rendering_info.attachments[rendering_info.attachment_count++];
 					attachment.texture = graph.GetTexture(resource_attachment.render_resource_id);
+					attachment.texture_state = barrier.dst_state;
 					attachment.clear_color = resource_attachment.clear_color;
 				}
 			}
 
-			command_list.ResourceBarrier(resource_barriers);
-			resource_barriers.texture_barriers = 0;
-
 			UpdateRenderResolution();
 
-			command_list.BeginRendering(rendering_info);
+			//command_list.BeginRendering(rendering_info);
 
 			if (draw_callback)
 			{
 				draw_callback(*this, command_list, delta_time);
 			}
 
-			command_list.EndRendering();
+			//command_list.EndRendering();
 
 			// Clear rendering info
 			rendering_info.attachment_count = 0;

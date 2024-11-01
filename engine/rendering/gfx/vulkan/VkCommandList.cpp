@@ -447,7 +447,7 @@ namespace engine
 					auto& subresource = texture->GetSubresource();
 
 					vk_attachment.imageView = subresource.GetHandle();
-					vk_attachment.imageLayout = subresource.GetImageLayout();
+					vk_attachment.imageLayout = ResourceStateToVkImageLayout(attachment.texture_state);
 					vk_attachment.loadOp = LoadOpToVk(attachment.load_op);
 					vk_attachment.storeOp = StoreOpToVk(attachment.store_op);
 
@@ -461,7 +461,7 @@ namespace engine
 					auto& subresource = texture->GetSubresource();
 
 					depth_attachment.imageView = subresource.GetHandle();
-					depth_attachment.imageLayout = subresource.GetImageLayout();
+					depth_attachment.imageLayout = ResourceStateToVkImageLayout(rendering_info.depth_attachment.texture_state);
 					depth_attachment.loadOp = LoadOpToVk(rendering_info.depth_attachment.load_op);
 					depth_attachment.storeOp = StoreOpToVk(rendering_info.depth_attachment.store_op);
 
@@ -478,7 +478,7 @@ namespace engine
 					auto& subresource = texture->GetSubresource();
 
 					stencil_attachment.imageView = subresource.GetHandle();
-					stencil_attachment.imageLayout = subresource.GetImageLayout();
+					stencil_attachment.imageLayout = ResourceStateToVkImageLayout(rendering_info.stencil_attachment.texture_state);
 					stencil_attachment.loadOp = LoadOpToVk(rendering_info.stencil_attachment.load_op);
 					stencil_attachment.storeOp = StoreOpToVk(rendering_info.stencil_attachment.store_op);
 

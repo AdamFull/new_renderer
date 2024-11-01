@@ -42,14 +42,26 @@ namespace engine
 			uint32_t pass_index{};
 		};
 
+		struct RenderGraphResourceState
+		{
+			gfx::ResourceStateFlags flags{ gfx::ResourceStateFlag::eUndefined };
+			gfx::AccessTypeFlags access{ 0 };
+
+			void Reset()
+			{
+				flags = gfx::ResourceStateFlag::eUndefined;
+				access = 0;
+			}
+		};
+
 		struct RenderGraphResource
 		{
 			RenderResourceTypeFlag resource_type{};
 			// Id of real resource
 			uint32_t resource_id{ ~0u };
 
-			gfx::ResourceStateFlags current_state{ gfx::ResourceStateFlag::eUndefined };
-			std::array<gfx::ResourceStateFlags, 16ull> subresource_states{ gfx::ResourceStateFlag::eUndefined };
+			RenderGraphResourceState current_state{};
+			std::array<RenderGraphResourceState, 16ull> subresource_states{};
 
 			gfx::ResourceStateFlags intermediate_state{ gfx::ResourceStateFlag::eUndefined };
 			gfx::ResourceStateFlags final_state{ gfx::ResourceStateFlag::eUndefined };
@@ -58,38 +70,40 @@ namespace engine
 
 			gfx::AccessTypeFlags GetAccess(uint32_t subresource_index = ~0u) const
 			{
-				gfx::ResourceStateFlags state = subresource_index == ~0u ? current_state : subresource_states[subresource_index];
+				if (subresource_index == ~0u)
+				{
+					return current_state.access;
+				}
 
-				if (state & (
-					gfx::ResourceStateFlag::eVertexAndUniformBuffer |
-					gfx::ResourceStateFlag::eIndexBuffer |
-					gfx::ResourceStateFlag::eDepthRead |
-					gfx::ResourceStateFlag::eShaderResource |
-					gfx::ResourceStateFlag::eIndirectArgument |
-					gfx::ResourceStateFlag::eCopySrc |
-					gfx::ResourceStateFlag::eCommon |
-					gfx::ResourceStateFlag::ePresent))
-					return gfx::AccessTypeFlag::eRead;
-				else if (state & (
-					gfx::ResourceStateFlag::eRenderTarget |
-					gfx::ResourceStateFlag::eUnorderedAccess |
-					gfx::ResourceStateFlag::eCopyDst |
-					gfx::ResourceStateFlag::eDepthWrite
-					))
-					return gfx::AccessTypeFlag::eWrite;
+				return subresource_states[subresource_index].access;
+			}
 
-				return {};
+			void SetAccess(gfx::AccessTypeFlags access, uint32_t subresource_index = ~0u)
+			{
+				if (subresource_index == ~0u)
+				{
+					current_state.access = access;
+
+					for (auto& subresource : subresource_states)
+					{
+						subresource.access = access;
+					}
+				}
+				else
+				{
+					subresource_states[subresource_index].access = access;
+				}
 			}
 
 			gfx::ResourceStateFlags GetState(uint32_t subresource_index = ~0u) const
 			{
 				if ((resource_type & RenderResourceTypeFlag::eBuffer) || subresource_index == ~0u)
 				{
-					return current_state;
+					return current_state.flags;
 				}
 				else
 				{
-					return subresource_states[subresource_index];
+					return subresource_states[subresource_index].flags;
 				}
 			}
 
@@ -97,39 +111,24 @@ namespace engine
 			{
 				if (resource_type & RenderResourceTypeFlag::eBuffer)
 				{
-					current_state = new_state;
+					current_state.flags = new_state;
 				}
 				else
 				{
 					if (subresource_index == ~0u)
 					{
-						current_state = new_state;
+						current_state.flags = new_state;
 						for (auto& state : subresource_states)
 						{
-							state = new_state;
+							state.flags = new_state;
 						}
 					}
 					else
 					{
-						subresource_states[subresource_index] = new_state;
+						subresource_states[subresource_index].flags = new_state;
 					}
 				}
 			}
-		};
-
-		// Describes resource binding. For example binding of texture with concrete mip level, or writable/readable buffer.
-		struct RenderResourceBinding
-		{
-			gfx::AccessTypeFlags access{};
-
-			// In this case it's resource name hash from reflection
-			uint32_t bind_point{};
-
-			// Index of render resource
-			uint32_t render_resource_id{ ~0u };
-
-			// Subresource binding if needed
-			uint32_t subresource_index{ ~0u };
 		};
 
 		enum class ResourceAttachmentTypeFlag
@@ -155,12 +154,6 @@ namespace engine
 			gfx::ClearColor clear_color{};
 		};
 
-		struct ResourceBindings
-		{
-			std::vector<RenderResourceBinding> bindings{};
-			std::vector<RenderResourceAttachment> attachments{};
-		};
-
 		struct ShaderPassCreateInfo
 		{
 			// Shader name in shader cache
@@ -170,15 +163,6 @@ namespace engine
 
 			// Means that this pass will be executed only one time
 			bool one_time{ false };
-
-			std::vector<RenderResourceBinding> resource_bindings{};
-			std::vector<RenderResourceAttachment> resource_attachments{};
-
-			void BindWriteResource(uint32_t binding_point, uint32_t render_resource_id) { resource_bindings.emplace_back(gfx::AccessTypeFlag::eWrite, binding_point, render_resource_id, ~0u); }
-			void BindWriteResource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource) { resource_bindings.emplace_back(gfx::AccessTypeFlag::eWrite, binding_point, render_resource_id, subresource); }
-
-			void BindReadResource(uint32_t binding_point, uint32_t render_resource_id) { resource_bindings.emplace_back(gfx::AccessTypeFlag::eRead, binding_point, render_resource_id, ~0u); }
-			void BindReadResource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource) { resource_bindings.emplace_back(gfx::AccessTypeFlag::eRead, binding_point, render_resource_id, subresource); }
 		};
 
 		struct ComputeShaderPassCreateInfo : ShaderPassCreateInfo
@@ -188,6 +172,8 @@ namespace engine
 
 		struct RenderShaderPassCreateInfo : ShaderPassCreateInfo
 		{
+			std::vector<RenderResourceAttachment> resource_attachments{};
+
 			void AddWriteAttachment(uint32_t render_resource_id, ResourceAttachmentTypeFlags flags = {}, gfx::ClearColor clear_color = {}) { resource_attachments.emplace_back(gfx::AccessTypeFlag::eWrite, flags, render_resource_id, clear_color); }
 			void AddReadAttachment(uint32_t render_resource_id, ResourceAttachmentTypeFlags flags = {}) { resource_attachments.emplace_back(gfx::AccessTypeFlag::eRead, flags, render_resource_id, gfx::ClearColor{}); }
 		};
@@ -242,6 +228,9 @@ namespace engine
 
 			virtual gfx::Texture* GetTexture(uint32_t resource_index) = 0;
 			virtual gfx::Texture* GetTexture(const RenderGraphResource& render_resource) = 0;
+
+			virtual gfx::Sampler* GetSampler(uint32_t resource_index) = 0;
+			virtual gfx::Sampler* GetSampler(const RenderGraphResource& render_resource) = 0;
 
 			virtual gfx::Buffer* GetBuffer(uint32_t resource_index) = 0;
 			virtual gfx::Buffer* GetBuffer(const RenderGraphResource& render_resource) = 0;

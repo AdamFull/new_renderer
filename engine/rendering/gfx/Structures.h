@@ -234,6 +234,7 @@ namespace engine
 		struct Attachment
 		{
 			Texture* texture{ nullptr };
+			ResourceStateFlags texture_state{};
 
 			LoadOp load_op{ LoadOp::eLoad };
 			StoreOp store_op{ StoreOp::eStore };
@@ -459,6 +460,7 @@ namespace engine
 			Texture* texture{ nullptr };
 			Sampler* sampler{ nullptr };
 			uint32_t subresource_index{ ~0u };
+			ResourceStateFlags resource_state{};
 
 			uint32_t set{ 0u };
 			uint32_t binding{ 0u };

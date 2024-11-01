@@ -62,6 +62,9 @@ namespace engine
 			gfx::Texture* GetTexture(uint32_t resource_index) override;
 			gfx::Texture* GetTexture(const RenderGraphResource& render_resource) override;
 
+			gfx::Sampler* GetSampler(uint32_t resource_index) override;
+			gfx::Sampler* GetSampler(const RenderGraphResource& render_resource) override;
+
 			gfx::Buffer* GetBuffer(uint32_t resource_index) override;
 			gfx::Buffer* GetBuffer(const RenderGraphResource& render_resource) override;
 		private:

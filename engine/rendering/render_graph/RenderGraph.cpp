@@ -79,7 +79,7 @@ namespace engine
 		{
 			// Just creates empty resource)
 			auto& new_resource = render_resources.emplace_back();
-			new_resource.subresource_states.fill(gfx::ResourceStateFlag::eUndefined);
+			new_resource.subresource_states.fill({});
 			return render_resources.size() - 1ull;
 		}
 
@@ -91,7 +91,7 @@ namespace engine
 			gfx::Texture* texture = resource_context.LoadTexture(path);
 			new_resource.resource_id = static_textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
 
-			new_resource.current_state = gfx::ResourceStateFlag::eShaderResource;
+			new_resource.current_state.flags = gfx::ResourceStateFlag::eShaderResource;
 
 			return render_resources.size() - 1ull;
 		}
@@ -122,7 +122,7 @@ namespace engine
 			else
 				new_resource.resource_id = static_textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler, create_info.usage, create_info.resizable });
 
-			new_resource.subresource_states.fill(gfx::ResourceStateFlag::eUndefined);
+			new_resource.subresource_states.fill({});
 
 			return render_resources.size() - 1ull;
 		}
@@ -137,7 +137,6 @@ namespace engine
 				new_resource.resource_type = RenderResourceTypeFlag::eBuffer;
 				new_resource.resource_id = handle;
 
-				new_resource.current_state = gfx::ResourceStateFlag::eUndefined;
 				new_resource.intermediate_state = gfx::ResourceStateFlag::eUnorderedAccess;
 				new_resource.final_state = gfx::ResourceStateFlag::eShaderResource;
 
@@ -257,6 +256,7 @@ namespace engine
 				descriptor.array_index = array_index++;
 				descriptor.texture = resource.texture;
 				descriptor.sampler = resource.sampler;
+				descriptor.resource_state = gfx::ResourceStateFlag::eShaderResource;
 			
 				global_resource_descriptor->BindTexture(descriptor);
 			}
@@ -281,10 +281,10 @@ namespace engine
 				if (render_resource.resource_type & RenderResourceTypeFlag::eStaticImage)
 					continue;
 
-				render_resource.current_state = gfx::ResourceStateFlag::eUndefined;
+				render_resource.current_state.Reset();
 				for (auto& subresource_state : render_resource.subresource_states)
 				{
-					subresource_state = gfx::ResourceStateFlag::eUndefined;
+					subresource_state.Reset();
 				}
 
 				if ((render_resource.resource_type & RenderResourceTypeFlag::eRenderTarget) || (render_resource.resource_type & RenderResourceTypeFlag::eStorageTarget))
@@ -361,6 +361,32 @@ namespace engine
 			}
 
 			return nullptr;
+		}
+
+		gfx::Sampler* RenderGraph::GetSampler(uint32_t resource_index)
+		{
+			auto& render_resource = render_resources[resource_index];
+			return GetSampler(render_resource);
+		}
+
+		gfx::Sampler* RenderGraph::GetSampler(const RenderGraphResource& render_resource)
+		{
+			if (render_resource.resource_type & RenderResourceTypeFlag::eBackbuffer)
+			{
+				return default_sampler;
+			}
+			else if (render_resource.resource_type & RenderResourceTypeFlag::eStaticImage)
+			{
+				auto& texture_object = static_textures.Get(render_resource.resource_id);
+				return texture_object.sampler;
+			}
+			else if (render_resource.resource_type & RenderResourceTypeFlag::eAllImage)
+			{
+				auto& texture_object = render_targets.Get(render_resource.resource_id);
+				return texture_object.sampler;
+			}
+
+			return default_sampler;
 		}
 
 		gfx::Buffer* RenderGraph::GetBuffer(uint32_t resource_index)

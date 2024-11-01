@@ -74,6 +74,9 @@ namespace engine
 		{
 			assert(execution_context && "CANNOT EXECUTE PASS WITHOUT EXECUTION CONTEXT");
 
+			if (!can_execute)
+				return;
+
 			// Collect previous frame data
 			CollectProfileData();
 
@@ -165,6 +168,9 @@ namespace engine
 
 			resource_descriptor = nullptr;
 
+
+			// Flush resource barriers
+			command_list.ResourceBarrier(resource_barriers);
 			resource_barriers.buffer_barrier_count = 0;
 			resource_barriers.texture_barrier_count = 0;
 			resource_barriers.memory_barrier_count = 0;
@@ -184,9 +190,114 @@ namespace engine
 			group_z = std::max(static_cast<uint32_t>(std::ceil(static_cast<float>(group_z) / static_cast<float>(reflection.local_sizes[2]))), 1u);
 		}
 
-		void ShaderPass::ProcessResourceBindings()
+		void ShaderPass::BindResource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index, gfx::AccessTypeFlags access)
 		{
+			if (!resource_descriptor)
+			{
+				auto& descriptor_allocator = execution_context->GetCurrentDescriptorAllocator();
+				resource_descriptor = descriptor_allocator.AllocateDescriptors(root_signature);
+			}
 
+			auto& reflection = shader->GetReflection();
+
+			auto found = std::find_if(reflection.shader_resources.Begin(), reflection.shader_resources.End(), [&binding_point](const gfx::ShaderResource& resource) { return resource.name_hash == binding_point; });
+			if (found != reflection.shader_resources.End())
+			{
+				auto& render_resource = graph.GetResource(resource_index);
+
+				bool skip_barriers{ false };
+				if (render_resource.resource_type & RenderResourceTypeFlag::eStaticImage)
+				{
+					skip_barriers = true;
+				}
+
+				auto last_access = render_resource.GetAccess(subresource_index);
+
+
+				if ((last_access & gfx::AccessTypeFlag::eRead) && (access & gfx::AccessTypeFlag::eRead))
+					skip_barriers = true;
+
+				// Generate barriers if needed
+				if (!skip_barriers)
+				{
+					bool is_initial_state = last_access == 0;
+					bool is_read_after_write = (last_access & gfx::AccessTypeFlag::eWrite) && (access & gfx::AccessTypeFlag::eRead);
+					bool is_write_after_write = (last_access & gfx::AccessTypeFlag::eWrite) && (access & gfx::AccessTypeFlag::eWrite);
+					bool is_write_after_read = (last_access & gfx::AccessTypeFlag::eRead) && (access & gfx::AccessTypeFlag::eWrite);
+
+					gfx::ResourceStateFlags new_state{};
+					if (is_initial_state)
+						new_state = (access & gfx::AccessTypeFlag::eRead) ? render_resource.final_state : render_resource.intermediate_state;
+					else if (is_write_after_write || is_write_after_read)
+						new_state = render_resource.intermediate_state;
+					else if (is_read_after_write)
+						new_state = render_resource.final_state;
+					else
+						new_state = render_resource.final_state;
+
+					if (render_resource.resource_type & RenderResourceTypeFlag::eAllImage)
+					{
+						auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
+						barrier.texture = graph.GetTexture(render_resource);
+						barrier.src_state = render_resource.GetState(subresource_index);
+						barrier.dst_state = new_state;
+					}
+					else if (render_resource.resource_type & RenderResourceTypeFlag::eBuffer)
+					{
+						// At first creating resource barrier
+						auto& barrier = buffer_barriers[resource_barriers.buffer_barrier_count++];
+						barrier.buffer = graph.GetBuffer(render_resource);
+						barrier.src_state = render_resource.GetState();
+						barrier.dst_state = new_state;
+					}
+
+					// Update resource state
+					render_resource.SetState(new_state);
+					render_resource.SetAccess(access);
+				}
+
+
+				// Bind resources
+				const gfx::ShaderResource& refl_resource = *found;
+				if (render_resource.resource_type & RenderResourceTypeFlag::eAllImage)
+				{
+					// Create texture descriptor
+					gfx::TextureDescriptor descriptor{};
+					descriptor.type = refl_resource.type;
+					descriptor.set = refl_resource.set;
+					descriptor.binding = refl_resource.binding;
+
+					descriptor.texture = graph.GetTexture(render_resource);
+					descriptor.sampler = graph.GetSampler(render_resource);
+					descriptor.subresource_index = subresource_index;
+					descriptor.resource_state = render_resource.GetState(subresource_index);
+
+					resource_descriptor->BindTexture(descriptor);
+				}
+				else if (render_resource.resource_type & RenderResourceTypeFlag::eBuffer)
+				{
+					// At first creating resource barrier
+					auto& barrier = buffer_barriers[resource_barriers.buffer_barrier_count++];
+					barrier.buffer = graph.GetBuffer(render_resource);
+					barrier.src_state = render_resource.GetState();
+					barrier.dst_state = render_resource.GetState();
+
+					// And also create resource descriptor
+					gfx::BufferDescriptor descriptor{};
+					descriptor.type = refl_resource.type;
+					descriptor.set = refl_resource.set;
+					descriptor.binding = refl_resource.binding;
+
+					descriptor.buffer = barrier.buffer;
+					descriptor.size = descriptor.buffer->GetSize();
+
+					resource_descriptor->BindBuffer(descriptor);
+				}
+				else
+				{
+					assert(false && "UNKNOWN RESOURCE TYPE");
+				}
+			}
 		}
 
 		void ShaderPass::CollectProfileData()
@@ -212,66 +323,12 @@ namespace engine
 
 		void ShaderPass::BindReadResource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource_index)
 		{
-
+			BindResource(binding_point, render_resource_id, subresource_index, gfx::AccessTypeFlag::eRead);
 		}
 
 		void ShaderPass::BindWriteResource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource_index)
 		{
-
-		}
-
-		void ShaderPass::BindResource(const ShaderResourceBinding& resource_binding)
-		{
-			if (!resource_descriptor)
-			{
-				auto& descriptor_allocator = execution_context->GetCurrentDescriptorAllocator();
-				resource_descriptor = descriptor_allocator.AllocateDescriptors(root_signature);
-			}
-
-			auto& reflection = shader->GetReflection();
-			// TODO: may be cache resource dst from recursion for lookup only one time
-			// Check that we have this binding point
-			auto found = std::find_if(reflection.shader_resources.Begin(), reflection.shader_resources.End(), [&resource_binding](const gfx::ShaderResource& resource) { return resource.name_hash == resource_binding.binding_point; });
-			if (found != reflection.shader_resources.End())
-			{
-				const gfx::ShaderResource& resource = *found;
-
-				if (resource_binding.buffer)
-				{
-					gfx::BufferDescriptor descriptor{};
-					descriptor.type = resource.type;
-					descriptor.set = resource.set;
-					descriptor.binding = resource.binding;
-
-					descriptor.buffer = resource_binding.buffer;
-					descriptor.size = resource_binding.buffer->GetSize();
-
-					resource_descriptor->BindBuffer(descriptor);
-				}
-				else if (resource_binding.texture)
-				{
-					gfx::TextureDescriptor descriptor{};
-					descriptor.type = resource.type;
-					descriptor.set = resource.set;
-					descriptor.binding = resource.binding;
-
-					descriptor.texture = resource_binding.texture;
-					descriptor.sampler = resource_binding.sampler;
-					descriptor.subresource_index = resource_binding.subresource;
-
-					resource_descriptor->BindTexture(descriptor);
-				}
-				else
-				{
-					log_warning("No resources provided for bind");
-					assert(false && "NO BIND RESOURCE PROVIDED");
-					return;
-				}
-				return;
-			}
-
-			log_warning("Resource binding was not found for this pass.");
-			assert(false && "RESOURCE BINDING NOT FOUND");
+			BindResource(binding_point, render_resource_id, subresource_index, gfx::AccessTypeFlag::eWrite);
 		}
 
 		bool ShaderPass::CanExecute() const

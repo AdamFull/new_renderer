@@ -58,7 +58,7 @@ namespace engine
 
 				auto& vk_image_descriptor = image_descriptors[image_count++];
 				vk_image_descriptor.imageView = subresource.GetHandle();
-				vk_image_descriptor.imageLayout = subresource.GetImageLayout();
+				vk_image_descriptor.imageLayout = ResourceStateToVkImageLayout(texture_descriptor.resource_state);
 				vk_image_descriptor.sampler = vk_sampelr->GetHandle();
 
 				auto& vk_descriptor_write = write_descriptor_sets[writes_count++];

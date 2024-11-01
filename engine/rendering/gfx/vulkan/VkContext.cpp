@@ -551,6 +551,8 @@ namespace engine
 						device.RequestExtensionFeatures<vk::PhysicalDeviceDiagnosticsConfigFeaturesNV>();
 					else if (strcmp(extension_name, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME) == 0)
 						device.RequestExtensionFeatures<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+					else if (strcmp(extension_name, VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME) == 0)
+						device.RequestExtensionFeatures<vk::PhysicalDeviceShaderTileImageFeaturesEXT>();
 					//else if(strcmp(extension_name, VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME) == 0)
 					//	device.RequestExtensionFeatures(vk::PhysicalDeviceIndirect)
 				}

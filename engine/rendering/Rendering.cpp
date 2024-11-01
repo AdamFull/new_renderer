@@ -524,25 +524,25 @@ namespace engine
 				ComputeShaderPassCreateInfo create_info{};
 				create_info.shader_name = "lighting:brgflut_generator";
 				create_info.one_time = true;
-				create_info.BindWriteResource("out_color"_hash32, brdf_lut_target);
 
-				//create_info.draw_callback = [this, brdf_lut_target](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
-				//	{
-				//		self.FlushResources(command_list);
-				//
-				//		uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
-				//
-				//		auto& resource = render_graph->GetResource(brdf_lut_target);
-				//		auto* texture = GetTextureResource(resource);
-				//
-				//		group_x = texture->GetWidth();
-				//		group_y = texture->GetHeight();
-				//
-				//		self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
-				//		command_list.Dispatch(group_x, group_y, group_z);
-				//	};
+				create_info.draw_callback = [this, brdf_lut_target](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+					{
+						self.BindWriteResource("out_color"_hash32, brdf_lut_target);
 
-				//render_graph->AddNode(render_graph->CreateNode(create_info));
+						self.FlushResources(command_list);
+				
+						uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
+				
+						auto texture = render_graph->GetTexture(brdf_lut_target);
+				
+						group_x = texture->GetWidth();
+						group_y = texture->GetHeight();
+				
+						self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
+						command_list.Dispatch(group_x, group_y, group_z);
+					};
+
+				render_graph->AddNode(render_graph->CreateNode(create_info));
 			}
 
 			// Generate irradiance cubemap
@@ -550,36 +550,64 @@ namespace engine
 				ComputeShaderPassCreateInfo create_info{};
 				create_info.shader_name = "lighting:irradiancecube_generator";
 				create_info.one_time = true;
-				create_info.BindReadResource("sampler_color"_hash32, casual_day_4k_cube);
-				create_info.BindWriteResource("out_color"_hash32, irradiance_cube_target);
 
-				//create_info.draw_callback = [this, irradiance_cube_target](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
-				//	{
-				//		self.FlushResources(command_list);
-				//
-				//		uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
-				//
-				//		auto& resource = graph_resources[irradiance_cube_target];
-				//		auto* texture = GetTextureResource(resource);
-				//
-				//		group_x = texture->GetWidth();
-				//		group_y = texture->GetHeight();
-				//
-				//		self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
-				//		command_list.Dispatch(group_x, group_y, group_z);
-				//	};
+				create_info.draw_callback = [this, irradiance_cube_target, casual_day_4k_cube](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+					{
+						self.BindReadResource("sampler_color"_hash32, casual_day_4k_cube);
+						self.BindWriteResource("out_color"_hash32, irradiance_cube_target);
 
-				//render_graph->AddNode(render_graph->CreateNode(create_info));
+						self.FlushResources(command_list);
+				
+						uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
+				
+						auto texture = render_graph->GetTexture(irradiance_cube_target);
+				
+						group_x = texture->GetWidth();
+						group_y = texture->GetHeight();
+				
+						self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
+						command_list.Dispatch(group_x, group_y, group_z);
+					};
+
+				render_graph->AddNode(render_graph->CreateNode(create_info));
 			}
 
 			// Generate prefiltered cubemap
-			//{
-			//	//auto* group_node = AllocateGroupNode();
-			//	//auto* group = CastRenderGraphNode<RenderGraphGroupNode>(group_node);
-			//	//group->group_name = "prefiltered map generator";
-			//	//group->color = 0x99F9F1FF;
-			//	//group->nodes = {};
-			//	//group->nodes.reserve(10);
+			{
+				auto group_node = render_graph->CreateNode("prefiltered map generator", 0x99F9F1FF);
+
+				ComputeShaderPassCreateInfo create_info{};
+				create_info.shader_name = "lighting:prefilteredmap_generator";
+				create_info.one_time = true;
+
+				create_info.draw_callback = [this, prefiltered_cube_target, casual_day_4k_cube](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+					{
+						auto target = render_graph->GetTexture(prefiltered_cube_target);
+						for (int32_t mip = 0; mip < target->GetMipLevelCount(); ++mip)
+						{
+							self.BindReadResource("sampler_color"_hash32, mip == 0 ? casual_day_4k_cube : prefiltered_cube_target, mip == 0 ? ~0u : mip - 1);
+							self.BindWriteResource("out_color"_hash32, prefiltered_cube_target, mip);
+
+							self.FlushResources(command_list);
+
+							uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
+
+							float layer_roughness = static_cast<float>(mip) / static_cast<float>(target->GetMipLevelCount());
+
+							auto& constants = self.GetConstantBlock();
+							constants.Set("roughness"_hash32, layer_roughness);
+							self.PushConstantRanges(command_list);
+
+							group_x = target->GetWidth() >> mip;
+							group_y = target->GetHeight() >> mip;
+							
+							self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
+							command_list.Dispatch(group_x, group_y, group_z);
+						}
+					};
+
+				static_cast<GroupNode*>(group_node.get())->AddNode(std::move(render_graph->CreateNode(create_info)));
+
 			//
 			//	auto& resource = graph_resources[prefiltered_cube_target];
 			//	auto* texture = GetTextureResource(resource);
@@ -615,18 +643,16 @@ namespace engine
 			//		render_graph->AddNode(render_graph->CreateNode(create_info));
 			//		//group->nodes.emplace_back(CreateShaderPassNode(create_info));
 			//	}
-			//
-			//	//render_graph_nodes.emplace_back(group_node);
-			//}
+				render_graph->AddNode(std::move(group_node));
+			}
 
 			// Test output shader
 			{
 				RenderShaderPassCreateInfo create_info{};
 				create_info.shader_name = "testing:screenspace";
-				create_info.BindReadResource("input_image"_hash32, brdf_lut_target);
 				create_info.AddWriteAttachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, gfx::ClearColor{ 1.f, 0.5f, 1.f, 1.f });
 
-				create_info.draw_callback = [this, irradiance_cube_target](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+				create_info.draw_callback = [this, irradiance_cube_target, brdf_lut_target](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
 						auto* backbuffer = render_graph->GetTexture(backbuffer_resource);
 
@@ -635,10 +661,14 @@ namespace engine
 
 						command_list.SetViewport(0.f, 0.f, viewport_width, viewport_height, 0.f, 1.f);
 						command_list.SerScissor(0u, 0u, viewport_width, viewport_height);
+
+						self.BindReadResource("input_image"_hash32, brdf_lut_target);
 						
 						self.FlushResources(command_list);
 						
+						self.Begin(command_list);
 						command_list.Draw(3u, 0u, 0u, 1u);
+						self.End(command_list);
 					};
 
 				render_graph->AddNode(render_graph->CreateNode(create_info));
