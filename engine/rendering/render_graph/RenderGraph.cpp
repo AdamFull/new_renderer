@@ -103,14 +103,17 @@ namespace engine
 			// TODO: What if it's storage target and render target at the same time?
 			if (create_info.usage & gfx::TextureUsageFlag::eStorage)
 			{
-				new_resource.intermediate_state = gfx::ResourceStateFlag::eUnorderedAccess;
-				new_resource.final_state = gfx::ResourceStateFlag::eShaderResource;
+				new_resource.intermediate_state = gfx::ResourceStateFlag::eComputeWrite;
+				new_resource.final_state_comp = gfx::ResourceStateFlag::eComputeRead;
+				new_resource.final_state_other = gfx::ResourceStateFlag::eShaderResource;
 				new_resource.resource_type = RenderResourceTypeFlag::eStorageTarget;
 			}
 			else if (create_info.usage & gfx::TextureUsageFlag::eRenderTarget)
 			{
-				new_resource.intermediate_state = IsDepthStencilFormat(create_info.format) ? gfx::ResourceStateFlag::eDepthWrite : gfx::ResourceStateFlag::eRenderTarget;
-				new_resource.final_state = IsDepthStencilFormat(create_info.format) ? gfx::ResourceStateFlag::eDepthRead : gfx::ResourceStateFlag::eShaderResource;
+				auto is_depth = IsDepthStencilFormat(create_info.format);
+				new_resource.intermediate_state = is_depth ? gfx::ResourceStateFlag::eDepthWrite : gfx::ResourceStateFlag::eAttachmentWrite;
+				new_resource.final_state_comp = is_depth ? gfx::ResourceStateFlag::eDepthRead : gfx::ResourceStateFlag::eComputeRead;
+				new_resource.final_state_other = is_depth ? gfx::ResourceStateFlag::eDepthRead : gfx::ResourceStateFlag::eShaderResource;
 				new_resource.resource_type = RenderResourceTypeFlag::eRenderTarget;
 			}
 			else
@@ -137,8 +140,9 @@ namespace engine
 				new_resource.resource_type = RenderResourceTypeFlag::eBuffer;
 				new_resource.resource_id = handle;
 
-				new_resource.intermediate_state = gfx::ResourceStateFlag::eUnorderedAccess;
-				new_resource.final_state = gfx::ResourceStateFlag::eShaderResource;
+				new_resource.intermediate_state = gfx::ResourceStateFlag::eComputeWrite;
+				new_resource.final_state_comp = gfx::ResourceStateFlag::eComputeRead;
+				new_resource.final_state_other = gfx::ResourceStateFlag::eShaderResource;
 
 				return render_resources.size() - 1ull;
 			}
@@ -210,7 +214,7 @@ namespace engine
 
 			texture_barrier.texture = &render_context->GetBackbuffer();
 			// TODO: get current resource state from resource itself
-			texture_barrier.src_state = gfx::ResourceStateFlag::eRenderTarget;
+			texture_barrier.src_state = gfx::ResourceStateFlag::eAttachmentWrite;
 			texture_barrier.dst_state = gfx::ResourceStateFlag::ePresent;
 
 			command_list.ResourceBarrier(resource_barriers);

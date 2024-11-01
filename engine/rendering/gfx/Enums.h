@@ -104,21 +104,17 @@ namespace engine
 		enum class ResourceStateFlag
 		{
 			eUndefined = 0,
-			eVertexAndUniformBuffer = 1 << 0,
-			eIndexBuffer = 1 << 1,
-			eRenderTarget = 1 << 2,
-			eUnorderedAccess = 1 << 3,
-			eDepthWrite = 1 << 4,
-			eDepthRead = 1 << 5,
-			eNonPixelShaderResource = 1 << 6,
-			ePixelShaderResource = 1 << 7,
-			eShaderResource = eNonPixelShaderResource | ePixelShaderResource,
-			eIndirectArgument = 1 << 8,
-			eCopyDst = 1 << 9,
-			eCopySrc = 1 << 10,
-			ePresent = 1 << 11,
-			eCommon = 1 << 12,
-			eGenericRead = eVertexAndUniformBuffer | eIndexBuffer | eShaderResource | eIndirectArgument | eCopySrc
+			eComputeRead = 1 << 0,
+			eComputeWrite = 1 << 1,
+			eDepthRead = 1 << 2,
+			eDepthWrite = 1 << 3,
+			eAttachmentRead = 1 << 4,
+			eAttachmentWrite = 1 << 5,
+			eShaderResource = 1 << 6,
+			eIndirectArgument = 1 << 7,
+			eCopyDst = 1 << 8,
+			eCopySrc = 1 << 9,
+			ePresent = 1 << 10
 		};
 		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ResourceStateFlags, ResourceStateFlag);
 

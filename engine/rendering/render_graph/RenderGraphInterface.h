@@ -64,7 +64,9 @@ namespace engine
 			std::array<RenderGraphResourceState, 16ull> subresource_states{};
 
 			gfx::ResourceStateFlags intermediate_state{ gfx::ResourceStateFlag::eUndefined };
-			gfx::ResourceStateFlags final_state{ gfx::ResourceStateFlag::eUndefined };
+
+			gfx::ResourceStateFlags final_state_comp{ gfx::ResourceStateFlag::eUndefined };
+			gfx::ResourceStateFlags final_state_other{ gfx::ResourceStateFlag::eUndefined };
 
 			//std::unordered_set<ResourceAccess> usages{};
 

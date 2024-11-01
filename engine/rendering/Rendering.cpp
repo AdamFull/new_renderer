@@ -24,29 +24,6 @@ namespace engine
 {
 	namespace render
 	{
-		bool IsXOnlyAccess(const RenderGraphResource& resource, gfx::AccessTypeFlags access_flags)
-		{
-			//for (const auto& access : resource.usages)
-			//{
-			//	if (!(access.access_flags & access_flags))
-			//		return false;
-			//}
-
-			return true;
-		}
-
-		bool IsROAccessOnlyRemain(const RenderGraphResource& resource, u64 current_pass)
-		{
-			//for (const auto& access : resource.usages)
-			//{
-			//	if (access.pass_index > current_pass)
-			//		return false;
-			//}
-
-			return true;
-		}
-
-
 		Renderer::Renderer(Window* window, filesystem::IVirtualFileSystemInterface* vfs) :
 			vfs{ vfs }
 		{
@@ -245,197 +222,15 @@ namespace engine
 			return *camera_buffer;
 		}
 
-		//void Renderer::EvaluateShaderPass(uint32_t pass_index)
-		//{
-		//	static gfx::AccessTypeFlag access_map[] = { gfx::AccessTypeFlag::eRead, gfx::AccessTypeFlag::eWrite, gfx::AccessTypeFlag::eRW };
-		//
-		//	std::array<gfx::BufferBarrier, 64ull> buffer_barriers{};
-		//	std::array<gfx::TextureBarrier, 64ull> texture_barriers{};
-		//	std::array<gfx::MemoryBarrier, 64ull> memory_barriers{};
-		//
-		//	gfx::ResourceBarrierInfo resource_barriers{};
-		//	resource_barriers.buffer_barriers = buffer_barriers.data();
-		//	resource_barriers.texture_barriers = texture_barriers.data();
-		//	resource_barriers.memory_barriers = memory_barriers.data();
-		//
-		//	auto& shader_pass = shader_passes[pass_index];
-		//	auto& pass_bindings = per_pass_resource_bindings[pass_index];
-		//
-		//	// Start from resource bindings
-		//	for (const auto& resource_binding : pass_bindings.bindings)
-		//	{
-		//		auto& render_resource = graph_resources[resource_binding.render_resource_id];
-		//
-		//		// Do not need to sync static images
-		//		if (render_resource.resource_type & RenderResourceTypeFlag::eStaticImage)
-		//		{
-		//			continue;
-		//		}
-		//
-		//		// Ignore read only resource
-		//		//if (IsXOnlyAccess(render_resource, gfx::AccessTypeFlag::eRead))
-		//		//	continue;
-		//
-		//		// Graph also should support work with subresources
-		//		uint32_t subresource_key = resource_binding.subresource_index == ~0u ? 0u : resource_binding.subresource_index;
-		//		auto resource_key = std::make_pair(resource_binding.render_resource_id, subresource_key);
-		//
-		//		auto& last_resource_access = resource_access_map[resource_key];
-		//		auto last_access = render_resource.GetAccess(resource_binding.subresource_index);
-		//
-		//		auto access_flag = resource_binding.access;
-		//
-		//		// Ignoring read after read barriers
-		//		if ((last_access & access_flag) && access_flag == gfx::AccessTypeFlag::eRead)
-		//			continue;
-		//
-		//		bool is_write_after_write = ((last_access & access_flag) && access_flag == gfx::AccessTypeFlag::eWrite);
-		//		bool is_read_after_write = (last_access & gfx::AccessTypeFlag::eWrite) && access_flag == gfx::AccessTypeFlag::eRead;
-		//		bool is_change_pipeline_ownership = last_resource_access.pass_type == utl::enum_cast(shader_pass->GetPassType()) && is_write_after_write;
-		//
-		//		if (render_resource.resource_type & RenderResourceTypeFlag::eBuffer)
-		//		{
-		//			auto& resource = buffers.Get(render_resource.resource_id);
-		//			auto& barrier = buffer_barriers[resource_barriers.buffer_barrier_count++];
-		//			barrier.buffer = resource.buffer;
-		//			barrier.src_state = render_resource.GetState(resource_binding.subresource_index);
-		//
-		//			if (access_flag == gfx::AccessTypeFlag::eRead)
-		//				barrier.dst_state = render_resource.final_state;
-		//			else
-		//				barrier.dst_state = render_resource.intermediate_state;
-		//
-		//				render_resource.SetState(barrier.dst_state, resource_binding.subresource_index);
-		//		}
-		//		else
-		//		{
-		//			auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
-		//			barrier.src_state = render_resource.GetState(resource_binding.subresource_index);
-		//			barrier.texture = GetTextureResource(render_resource);
-		//			barrier.subresource_index = resource_binding.subresource_index;
-		//
-		//			if (last_access == 0)
-		//				barrier.dst_state = access_flag == gfx::AccessTypeFlag::eRead ? render_resource.final_state : render_resource.intermediate_state;
-		//			//else if (access_flag != gfx::AccessTypeFlag::eWrite && IsROAccessOnlyRemain(render_resource, pass_index))
-		//			//	barrier.dst_state = render_resource.final_state;
-		//			else if (is_change_pipeline_ownership)
-		//				barrier.dst_state = render_resource.intermediate_state;
-		//			else if(is_read_after_write)
-		//				barrier.dst_state = render_resource.final_state;
-		//
-		//			render_resource.SetState(barrier.dst_state, resource_binding.subresource_index);
-		//		}
-		//
-		//		last_resource_access.pass_type = utl::enum_cast(shader_pass->GetPassType());
-		//	}
-		//
-		//	// For attachments (write only)
-		//	if (!pass_bindings.attachments.empty())
-		//	{
-		//		auto* render_pass = static_cast<RenderPass*>(shader_pass.get());
-		//		for (const auto& resource_attachment : pass_bindings.attachments)
-		//		{
-		//			auto& render_resource = graph_resources[resource_attachment.render_resource_id];
-		//
-		//			// Wtf? Trying write to static resource????
-		//			if (render_resource.resource_type & RenderResourceTypeFlag::eStaticImage)
-		//			{
-		//				log_error("Trying bind static texture as color attachment!");
-		//				assert(false && "INCORRECT OUTPUT RESOURCE BINDING!");
-		//				continue;
-		//			}
-		//
-		//			// Graph also should support work with subresources
-		//			auto resource_key = std::make_pair(resource_attachment.render_resource_id, 0u);
-		//
-		//			auto& last_resource_access = resource_access_map[resource_key];
-		//			auto last_access = render_resource.GetAccess();
-		//
-		//			auto access_flag = resource_attachment.access;
-		//
-		//			bool is_backbuffer_resource = resource_attachment.render_resource_id == backbuffer_resource;
-		//			bool is_write_after_write = ((last_access & access_flag) && access_flag == gfx::AccessTypeFlag::eWrite);
-		//			bool is_change_pipeline_ownership = last_resource_access.pass_type == utl::enum_cast(shader_pass->GetPassType()) && is_write_after_write;
-		//
-		//			gfx::Attachment attachment{};
-		//			attachment.load_op = is_write_after_write ? gfx::LoadOp::eLoad : gfx::LoadOp::eClear;
-		//			//attachment.store_op = !IsXOnlyAccess(render_resource, gfx::AccessTypeFlag::eRead) || is_backbuffer_resource ? gfx::StoreOp::eStore : gfx::StoreOp::eDontCare;
-		//			attachment.store_op = gfx::StoreOp::eStore;
-		//			attachment.clear_color = resource_attachment.clear_color;
-		//
-		//			auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
-		//			barrier.src_state = render_resource.GetState();
-		//			barrier.texture = GetTextureResource(render_resource);
-		//
-		//			if (last_access == 0)
-		//				barrier.dst_state = access_flag == gfx::AccessTypeFlag::eRead ? render_resource.final_state : render_resource.intermediate_state;
-		//			//else if (access_flag != gfx::AccessTypeFlag::eWrite && IsROAccessOnlyRemain(render_resource, pass_index))
-		//			//	barrier.dst_state = is_backbuffer_resource ? render_resource.intermediate_state : render_resource.final_state;
-		//			else if (is_change_pipeline_ownership)
-		//				barrier.dst_state = render_resource.intermediate_state;
-		//
-		//			render_resource.SetState(barrier.dst_state);
-		//
-		//			attachment.texture = barrier.texture;
-		//
-		//			if (resource_attachment.flags & ResourceAttachmentTypeFlag::eDepthStencil)
-		//				render_pass->SetDepthStencilAttachment(attachment);
-		//			else if (resource_attachment.flags & ResourceAttachmentTypeFlag::eDepth)
-		//				render_pass->SetDepthAttachment(attachment);
-		//			else if (resource_attachment.flags & ResourceAttachmentTypeFlag::eStencil)
-		//				render_pass->SetStencilAttachment(attachment);
-		//			else
-		//				render_pass->AddColorAttachment(attachment);
-		//
-		//			last_resource_access.pass_type = utl::enum_cast(shader_pass->GetPassType());
-		//		}
-		//	}
-		//
-		//	// Translate textures
-		//	auto& command_list = render_context->GetCurrentCommandList();
-		//	command_list.ResourceBarrier(resource_barriers);
-		//
-		//	// Bind pass resources
-		//	for (const auto& resource_binding : pass_bindings.bindings)
-		//	{
-		//		auto& render_resource = graph_resources[resource_binding.render_resource_id];
-		//
-		//		// Bind resource
-		//		ShaderResourceBinding shader_resource_binding{};
-		//		shader_resource_binding.binding_point = resource_binding.bind_point;
-		//		shader_resource_binding.subresource = resource_binding.subresource_index;
-		//
-		//		// Do not need to sync static images
-		//		if (render_resource.resource_type & RenderResourceTypeFlag::eStaticImage)
-		//		{
-		//			auto& resource = textures.Get(render_resource.resource_id);
-		//			shader_resource_binding.texture = resource.texture;
-		//			shader_resource_binding.sampler = resource.sampler;
-		//		}
-		//		else if ((render_resource.resource_type & RenderResourceTypeFlag::eRenderTarget) || (render_resource.resource_type & RenderResourceTypeFlag::eStorageTarget))
-		//		{
-		//			auto& resource = render_targets.Get(render_resource.resource_id);
-		//			shader_resource_binding.texture = resource.texture;
-		//			shader_resource_binding.sampler = resource.sampler;
-		//		}
-		//		else if (render_resource.resource_type & RenderResourceTypeFlag::eBuffer)
-		//		{
-		//			auto& resource = buffers.Get(render_resource.resource_id);
-		//			shader_resource_binding.buffer = resource.buffer;
-		//		}
-		//		else
-		//		{
-		//			assert(false && "THIS RESOURCE TYPE IS NOT SUPPORTED FOR BINDING");
-		//		}
-		//
-		//		shader_pass->BindResource(shader_resource_binding);
-		//	}
-		//}
-
 
 		void Renderer::BuildGraph()
 		{
 			using namespace utl;
+
+			// Some binding points 
+			constexpr const uint32_t sampler_color_bnd = "sampler_color"_hash32;
+			constexpr const uint32_t out_color_bnd = "out_color"_hash32;
+			constexpr const uint32_t roughness_bnd = "roughness"_hash32;
 
 			// Register backbuffer resource
 
@@ -443,8 +238,9 @@ namespace engine
 
 			auto& backbuffer_resource_binding = render_graph->GetResource(backbuffer_resource);
 			backbuffer_resource_binding.resource_type = RenderResourceTypeFlag::eBackbuffer;
-			backbuffer_resource_binding.intermediate_state = gfx::ResourceStateFlag::eRenderTarget;
-			backbuffer_resource_binding.final_state = gfx::ResourceStateFlag::ePresent;
+			backbuffer_resource_binding.intermediate_state = gfx::ResourceStateFlag::eAttachmentWrite;
+			backbuffer_resource_binding.final_state_comp = gfx::ResourceStateFlag::eShaderResource;
+			backbuffer_resource_binding.final_state_other = gfx::ResourceStateFlag::ePresent;
 
 			// Create default samplers
 
@@ -525,9 +321,12 @@ namespace engine
 				create_info.shader_name = "lighting:brgflut_generator";
 				create_info.one_time = true;
 
-				create_info.draw_callback = [this, brdf_lut_target](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+				create_info.draw_callback = [this, 
+					brdf_lut_target,
+					out_color_bnd
+				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
-						self.BindWriteResource("out_color"_hash32, brdf_lut_target);
+						self.BindWriteResource(out_color_bnd, brdf_lut_target);
 
 						self.FlushResources(command_list);
 				
@@ -551,10 +350,15 @@ namespace engine
 				create_info.shader_name = "lighting:irradiancecube_generator";
 				create_info.one_time = true;
 
-				create_info.draw_callback = [this, irradiance_cube_target, casual_day_4k_cube](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+				create_info.draw_callback = [this, 
+					irradiance_cube_target, 
+					casual_day_4k_cube,
+					sampler_color_bnd,
+					out_color_bnd
+				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
-						self.BindReadResource("sampler_color"_hash32, casual_day_4k_cube);
-						self.BindWriteResource("out_color"_hash32, irradiance_cube_target);
+						self.BindReadResource(sampler_color_bnd, casual_day_4k_cube);
+						self.BindWriteResource(out_color_bnd, irradiance_cube_target);
 
 						self.FlushResources(command_list);
 				
@@ -580,13 +384,19 @@ namespace engine
 				create_info.shader_name = "lighting:prefilteredmap_generator";
 				create_info.one_time = true;
 
-				create_info.draw_callback = [this, prefiltered_cube_target, casual_day_4k_cube](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+				create_info.draw_callback = [this,
+					prefiltered_cube_target, 
+					casual_day_4k_cube,
+					sampler_color_bnd,
+					out_color_bnd,
+					roughness_bnd
+				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
 						auto target = render_graph->GetTexture(prefiltered_cube_target);
 						for (int32_t mip = 0; mip < target->GetMipLevelCount(); ++mip)
 						{
-							self.BindReadResource("sampler_color"_hash32, mip == 0 ? casual_day_4k_cube : prefiltered_cube_target, mip == 0 ? ~0u : mip - 1);
-							self.BindWriteResource("out_color"_hash32, prefiltered_cube_target, mip);
+							self.BindReadResource(sampler_color_bnd, mip == 0 ? casual_day_4k_cube : prefiltered_cube_target, mip == 0 ? ~0u : mip - 1);
+							self.BindWriteResource(out_color_bnd, prefiltered_cube_target, mip);
 
 							self.FlushResources(command_list);
 
@@ -595,7 +405,7 @@ namespace engine
 							float layer_roughness = static_cast<float>(mip) / static_cast<float>(target->GetMipLevelCount());
 
 							auto& constants = self.GetConstantBlock();
-							constants.Set("roughness"_hash32, layer_roughness);
+							constants.Set(roughness_bnd, layer_roughness);
 							self.PushConstantRanges(command_list);
 
 							group_x = target->GetWidth() >> mip;
@@ -608,41 +418,6 @@ namespace engine
 
 				static_cast<GroupNode*>(group_node.get())->AddNode(std::move(render_graph->CreateNode(create_info)));
 
-			//
-			//	auto& resource = graph_resources[prefiltered_cube_target];
-			//	auto* texture = GetTextureResource(resource);
-			//
-			//	for (int32_t mip = 0; mip < texture->GetMipLevelCount(); ++mip)
-			//	{
-			//		ComputeShaderPassCreateInfo create_info{};
-			//		create_info.shader_name = "lighting:prefilteredmap_generator";
-			//		create_info.one_time = true;
-			//		create_info.BindWriteResource("out_color"_hash32, prefiltered_cube_target, mip);
-			//		create_info.BindReadResource("sampler_color"_hash32, mip == 0 ? casual_day_4k_cube : prefiltered_cube_target, mip == 0 ? ~0u : mip - 1);
-			//		//create_info.BindReadResource("sampler_color"_hash32, casual_day_4k_cube);
-			//
-			//		create_info.draw_callback = [this, mip, texture](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
-			//			{
-			//				self.FlushResources(command_list);
-			//
-			//				uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
-			//
-			//				float layer_roughness = static_cast<float>(mip) / static_cast<float>(texture->GetMipLevelCount());
-			//				
-			//				auto& constants = self.GetConstantBlock();
-			//				constants.Set("roughness"_hash32, layer_roughness);
-			//				self.PushConstantRanges(command_list);
-			//
-			//				group_x = texture->GetWidth() >> mip;
-			//				group_y = texture->GetHeight() >> mip;
-			//
-			//				self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
-			//				command_list.Dispatch(group_x, group_y, group_z);
-			//			};
-			//
-			//		render_graph->AddNode(render_graph->CreateNode(create_info));
-			//		//group->nodes.emplace_back(CreateShaderPassNode(create_info));
-			//	}
 				render_graph->AddNode(std::move(group_node));
 			}
 
@@ -652,7 +427,11 @@ namespace engine
 				create_info.shader_name = "testing:screenspace";
 				create_info.AddWriteAttachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, gfx::ClearColor{ 1.f, 0.5f, 1.f, 1.f });
 
-				create_info.draw_callback = [this, irradiance_cube_target, brdf_lut_target](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+				create_info.draw_callback = [this, 
+					irradiance_cube_target, 
+					brdf_lut_target,
+					input_image_bnd = "input_image"_hash32
+				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
 						auto* backbuffer = render_graph->GetTexture(backbuffer_resource);
 
@@ -662,7 +441,7 @@ namespace engine
 						command_list.SetViewport(0.f, 0.f, viewport_width, viewport_height, 0.f, 1.f);
 						command_list.SerScissor(0u, 0u, viewport_width, viewport_height);
 
-						self.BindReadResource("input_image"_hash32, brdf_lut_target);
+						self.BindReadResource(input_image_bnd, brdf_lut_target);
 						
 						self.FlushResources(command_list);
 						

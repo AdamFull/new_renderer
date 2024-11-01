@@ -6,6 +6,10 @@
 
 #include <algorithm>
 
+#ifdef MemoryBarrier
+#undef MemoryBarrier
+#endif
+
 namespace engine
 {
 	namespace gfx
@@ -214,7 +218,7 @@ namespace engine
 
 			std::array<gfx::BufferBarrier, 64ull> buffer_barriers{};
 			std::array<gfx::TextureBarrier, 64ull> texture_barriers{};
-			//std::array<gfx::MemoryBarrier, 64ull> memory_barriers{};
+			std::array<gfx::MemoryBarrier, 64ull> memory_barriers{};
 			gfx::ResourceBarrierInfo resource_barriers{};
 		};
 	}

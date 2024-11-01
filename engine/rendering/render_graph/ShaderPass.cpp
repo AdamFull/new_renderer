@@ -54,6 +54,7 @@ namespace engine
 			// Prepare barriers
 			resource_barriers.buffer_barriers = buffer_barriers.data();
 			resource_barriers.texture_barriers = texture_barriers.data();
+			resource_barriers.memory_barriers = memory_barriers.data();
 		}
 
 		ShaderPass::~ShaderPass()
@@ -225,15 +226,21 @@ namespace engine
 					bool is_write_after_write = (last_access & gfx::AccessTypeFlag::eWrite) && (access & gfx::AccessTypeFlag::eWrite);
 					bool is_write_after_read = (last_access & gfx::AccessTypeFlag::eRead) && (access & gfx::AccessTypeFlag::eWrite);
 
+					gfx::ResourceStateFlags final_state{};
+					if (GetPassType() == ShaderPassType::eCompute)
+						final_state = render_resource.final_state_comp;
+					else
+						final_state = render_resource.final_state_other;
+
 					gfx::ResourceStateFlags new_state{};
 					if (is_initial_state)
-						new_state = (access & gfx::AccessTypeFlag::eRead) ? render_resource.final_state : render_resource.intermediate_state;
-					else if (is_write_after_write || is_write_after_read)
-						new_state = render_resource.intermediate_state;
+						new_state = (access & gfx::AccessTypeFlag::eRead) ? final_state : render_resource.intermediate_state;
 					else if (is_read_after_write)
-						new_state = render_resource.final_state;
+						new_state = final_state;
+					else if (is_write_after_read)
+						new_state = render_resource.intermediate_state;
 					else
-						new_state = render_resource.final_state;
+						new_state = final_state;
 
 					if (render_resource.resource_type & RenderResourceTypeFlag::eAllImage)
 					{
@@ -253,9 +260,8 @@ namespace engine
 
 					// Update resource state
 					render_resource.SetState(new_state);
-					render_resource.SetAccess(access);
+					render_resource.SetAccess(access, subresource_index);
 				}
-
 
 				// Bind resources
 				const gfx::ShaderResource& refl_resource = *found;
