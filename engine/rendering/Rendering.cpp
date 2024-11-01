@@ -428,6 +428,8 @@ namespace engine
 				RenderShaderPassCreateInfo create_info{};
 				create_info.shader_name = "testing:screenspace";
 				create_info.AddWriteAttachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, gfx::ClearColor{ 1.f, 0.5f, 1.f, 1.f });
+
+				create_info.color_blending_state.attachment_count = 1;
 			
 				create_info.draw_callback = [this, 
 					irradiance_cube_target, 
