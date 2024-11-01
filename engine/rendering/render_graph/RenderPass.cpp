@@ -122,6 +122,7 @@ namespace engine
 
 				attachment->texture = graph.GetTexture(resource_attachment.render_resource_id);
 				attachment->load_op = last_access == 0 ? gfx::LoadOp::eClear : gfx::LoadOp::eLoad;
+				attachment->store_op = gfx::StoreOp::eNone;
 				attachment->texture_state = barrier.dst_state;
 				attachment->clear_color = resource_attachment.clear_color;
 
@@ -130,14 +131,10 @@ namespace engine
 
 			UpdateRenderResolution();
 
-			//command_list.BeginRendering(rendering_info);
-
 			if (draw_callback)
 			{
 				draw_callback(*this, command_list, delta_time);
 			}
-
-			//command_list.EndRendering();
 
 			// Clear rendering info
 			rendering_info.attachment_count = 0;
