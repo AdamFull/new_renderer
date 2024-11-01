@@ -36,32 +36,14 @@ namespace engine
 		};
 		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(RenderResourceTypeFlags, RenderResourceTypeFlag);
 
-		struct ResourceAccess
-		{
-			gfx::AccessTypeFlags access_flags{};
-			uint32_t pass_index{};
-		};
-
-		struct RenderGraphResourceState
-		{
-			gfx::ResourceStateFlags flags{ gfx::ResourceStateFlag::eUndefined };
-			gfx::AccessTypeFlags access{ 0 };
-
-			void Reset()
-			{
-				flags = gfx::ResourceStateFlag::eUndefined;
-				access = 0;
-			}
-		};
-
 		struct RenderGraphResource
 		{
 			RenderResourceTypeFlag resource_type{};
 			// Id of real resource
 			uint32_t resource_id{ ~0u };
 
-			RenderGraphResourceState current_state{};
-			std::array<RenderGraphResourceState, 16ull> subresource_states{};
+			gfx::ResourceStateFlags current_state{};
+			std::array<gfx::ResourceStateFlags, 16ull> subresource_states{};
 
 			gfx::ResourceStateFlags intermediate_state{ gfx::ResourceStateFlag::eUndefined };
 
@@ -72,40 +54,36 @@ namespace engine
 
 			gfx::AccessTypeFlags GetAccess(uint32_t subresource_index = ~0u) const
 			{
-				if (subresource_index == ~0u)
-				{
-					return current_state.access;
-				}
+				gfx::ResourceStateFlags resource_state = GetState(subresource_index);
 
-				return subresource_states[subresource_index].access;
-			}
-
-			void SetAccess(gfx::AccessTypeFlags access, uint32_t subresource_index = ~0u)
-			{
-				if (subresource_index == ~0u)
-				{
-					current_state.access = access;
-
-					for (auto& subresource : subresource_states)
-					{
-						subresource.access = access;
-					}
-				}
-				else
-				{
-					subresource_states[subresource_index].access = access;
-				}
+				if (resource_state & (
+					gfx::ResourceStateFlag::eComputeRead |
+					gfx::ResourceStateFlag::eDepthRead |
+					gfx::ResourceStateFlag::eAttachmentRead |
+					gfx::ResourceStateFlag::eShaderResource |
+					gfx::ResourceStateFlag::eIndirectArgument |
+					gfx::ResourceStateFlag::eCopySrc |
+					gfx::ResourceStateFlag::ePresent))
+					return gfx::AccessTypeFlag::eRead;
+				else if (resource_state & (
+					gfx::ResourceStateFlag::eComputeWrite |
+					gfx::ResourceStateFlag::eDepthWrite |
+					gfx::ResourceStateFlag::eAttachmentWrite |
+					gfx::ResourceStateFlag::eCopyDst))
+					return gfx::AccessTypeFlag::eWrite;
+				
+				return {};
 			}
 
 			gfx::ResourceStateFlags GetState(uint32_t subresource_index = ~0u) const
 			{
 				if ((resource_type & RenderResourceTypeFlag::eBuffer) || subresource_index == ~0u)
 				{
-					return current_state.flags;
+					return current_state;
 				}
 				else
 				{
-					return subresource_states[subresource_index].flags;
+					return subresource_states[subresource_index];
 				}
 			}
 
@@ -113,21 +91,21 @@ namespace engine
 			{
 				if (resource_type & RenderResourceTypeFlag::eBuffer)
 				{
-					current_state.flags = new_state;
+					current_state = new_state;
 				}
 				else
 				{
 					if (subresource_index == ~0u)
 					{
-						current_state.flags = new_state;
+						current_state = new_state;
 						for (auto& state : subresource_states)
 						{
-							state.flags = new_state;
+							state = new_state;
 						}
 					}
 					else
 					{
-						subresource_states[subresource_index].flags = new_state;
+						subresource_states[subresource_index] = new_state;
 					}
 				}
 			}

@@ -79,7 +79,7 @@ namespace engine
 		{
 			// Just creates empty resource)
 			auto& new_resource = render_resources.emplace_back();
-			new_resource.subresource_states.fill({});
+			new_resource.subresource_states.fill(gfx::ResourceStateFlag::eUndefined);
 			return render_resources.size() - 1ull;
 		}
 
@@ -91,7 +91,7 @@ namespace engine
 			gfx::Texture* texture = resource_context.LoadTexture(path);
 			new_resource.resource_id = static_textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
 
-			new_resource.current_state.flags = gfx::ResourceStateFlag::eShaderResource;
+			new_resource.current_state = gfx::ResourceStateFlag::eShaderResource;
 
 			return render_resources.size() - 1ull;
 		}
@@ -125,7 +125,7 @@ namespace engine
 			else
 				new_resource.resource_id = static_textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler, create_info.usage, create_info.resizable });
 
-			new_resource.subresource_states.fill({});
+			new_resource.subresource_states.fill(gfx::ResourceStateFlag::eUndefined);
 
 			return render_resources.size() - 1ull;
 		}
@@ -285,10 +285,10 @@ namespace engine
 				if (render_resource.resource_type & RenderResourceTypeFlag::eStaticImage)
 					continue;
 
-				render_resource.current_state.Reset();
+				render_resource.current_state = gfx::ResourceStateFlag::eUndefined;
 				for (auto& subresource_state : render_resource.subresource_states)
 				{
-					subresource_state.Reset();
+					subresource_state = gfx::ResourceStateFlag::eUndefined;
 				}
 
 				if ((render_resource.resource_type & RenderResourceTypeFlag::eRenderTarget) || (render_resource.resource_type & RenderResourceTypeFlag::eStorageTarget))

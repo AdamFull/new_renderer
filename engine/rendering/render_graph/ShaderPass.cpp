@@ -260,7 +260,6 @@ namespace engine
 
 					// Update resource state
 					render_resource.SetState(new_state);
-					render_resource.SetAccess(access, subresource_index);
 				}
 
 				// Bind resources

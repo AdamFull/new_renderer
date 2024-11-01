@@ -132,6 +132,8 @@ namespace engine
 					attachment.texture_state = barrier.dst_state;
 					attachment.clear_color = resource_attachment.clear_color;
 				}
+
+				render_resource.SetState(barrier.dst_state);
 			}
 
 			UpdateRenderResolution();
