@@ -19,6 +19,8 @@ namespace engine
 			pipeline_ci.pipeline_cache = create_info.pipeline_cache;
 			//pipeline_ci.pipeline_state = create_info.state;
 
+			pipeline_ci.pipeline_state.vertex_layout = create_info.vertex_layout;
+			pipeline_ci.pipeline_state.color_blending_state = create_info.color_blending_state;
 			pipeline_ci.pipeline_state.primitive_topology = create_info.primitive_topology;
 
 			for (auto& attachment : resource_attachments)
@@ -32,7 +34,6 @@ namespace engine
 				else
 				{
 					pipeline_ci.pipeline_state.color_formats[pipeline_ci.pipeline_state.color_format_count++] = rt_format;
-					pipeline_ci.pipeline_state.color_blending_state.attachment_count++;
 				}
 			}
 

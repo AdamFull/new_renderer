@@ -23,6 +23,8 @@ namespace engine
 
 			gfx::Texture* LoadTexture(const std::string& texture_path) override;
 
+			gfx::Texture* LoadTexture(const gfx::TextureCreateInfo& create_info, std::span<uint8_t> texture_data) override;
+
 			gfx::Shader* LoadShader(const std::string& shader_name) override;
 
 			gfx::Sampler* GetSampler(const gfx::SamplerCreateInfo& create_info) override;

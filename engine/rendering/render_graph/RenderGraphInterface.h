@@ -154,6 +154,9 @@ namespace engine
 		{
 			std::vector<RenderResourceAttachment> resource_attachments{};
 
+			gfx::VertexLayout vertex_layout{};
+			gfx::ColorBlendingState color_blending_state{};
+
 			void AddWriteAttachment(uint32_t render_resource_id, ResourceAttachmentTypeFlags flags = {}, gfx::ClearColor clear_color = {}) { resource_attachments.emplace_back(gfx::AccessTypeFlag::eWrite, flags, render_resource_id, clear_color); }
 			void AddReadAttachment(uint32_t render_resource_id, ResourceAttachmentTypeFlags flags = {}) { resource_attachments.emplace_back(gfx::AccessTypeFlag::eRead, flags, render_resource_id, gfx::ClearColor{}); }
 		};
@@ -187,6 +190,7 @@ namespace engine
 
 			virtual uint32_t AddResource() = 0;
 			virtual uint32_t AddResource(const std::string& path, gfx::Sampler* sampler = nullptr) = 0;
+			virtual uint32_t AddResource(const gfx::TextureCreateInfo& create_info, std::span<uint8_t> texture_data) = 0;
 			virtual uint32_t AddResource(const gfx::TextureCreateInfo& create_info, gfx::Sampler* sampler = nullptr) = 0;
 			virtual uint32_t AddResource(const gfx::BufferCreateInfo& create_info) = 0;
 

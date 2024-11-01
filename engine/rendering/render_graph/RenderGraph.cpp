@@ -24,19 +24,19 @@ namespace engine
 		void GroupNode::Evaluate(gfx::CommandList& command_list, float delta_time)
 		{
 			command_list.BeginMarker(group_name.c_str(), group_color);
-			
+
 			for (auto& node : graph_nodes)
 				node->Evaluate(command_list, delta_time);
-			
+
 			command_list.EndMarker();
 		}
 
 
-	
+
 		RenderGraph::RenderGraph(IRenderer& renderer, Window* window) :
 			renderer{ renderer },
 			context{ renderer.GetContext() },
-			resource_context{ renderer .GetResourceContext() }
+			resource_context{ renderer.GetResourceContext() }
 		{
 			render_context = std::make_unique<RenderContext>(context, window);
 
@@ -53,7 +53,7 @@ namespace engine
 			gfx::QueryPoolCreateInfo query_pool_ci{};
 			query_pool_ci.type = gfx::QueryType::eTimestamp;
 			query_pool_ci.query_count = 2u;
-			timestamp_query =context.CreateQueryPool(query_pool_ci);
+			timestamp_query = context.CreateQueryPool(query_pool_ci);
 			timestamp_query->Reset(0u);
 
 			context.RequestTimestampFrequency(&timestamp_frequency);
@@ -90,6 +90,19 @@ namespace engine
 
 			gfx::Texture* texture = resource_context.LoadTexture(path);
 			new_resource.resource_id = static_textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
+
+			new_resource.current_state = gfx::ResourceStateFlag::eShaderResource;
+
+			return render_resources.size() - 1ull;
+		}
+
+		uint32_t RenderGraph::AddResource(const gfx::TextureCreateInfo& create_info, std::span<uint8_t> texture_data)
+		{
+			auto& new_resource = render_resources.emplace_back();
+			new_resource.resource_type = RenderResourceTypeFlag::eStaticImage;
+
+			gfx::Texture* texture = resource_context.LoadTexture(create_info, texture_data);
+			new_resource.resource_id = static_textures.Add(TextureObject{ texture, default_sampler });
 
 			new_resource.current_state = gfx::ResourceStateFlag::eShaderResource;
 
@@ -173,6 +186,9 @@ namespace engine
 			pass_ci.shared_descriptor = shared_descriptor;
 			pass_ci.primitive_topology = gfx::PrimitiveTopology::eTriangleList;
 			pass_ci.draw_callback = std::move(create_info.draw_callback);
+
+			pass_ci.vertex_layout = create_info.vertex_layout;
+			pass_ci.color_blending_state = create_info.color_blending_state;
 			pass_ci.resource_attachments = create_info.resource_attachments;
 			//pass_ci.state.rasterization_state.front_face = gfx::FrontFace::eCW;
 
@@ -207,6 +223,8 @@ namespace engine
 			for (auto& node : graph_nodes)
 				node->Evaluate(command_list, delta_time);
 
+			auto& backbuffer_resource = GetResource(0);
+
 			gfx::TextureBarrier texture_barrier{};
 			gfx::ResourceBarrierInfo resource_barriers{};
 			resource_barriers.texture_barriers = &texture_barrier;
@@ -214,8 +232,8 @@ namespace engine
 
 			texture_barrier.texture = &render_context->GetBackbuffer();
 			// TODO: get current resource state from resource itself
-			texture_barrier.src_state = gfx::ResourceStateFlag::eAttachmentWrite;
-			texture_barrier.dst_state = gfx::ResourceStateFlag::ePresent;
+			texture_barrier.src_state = backbuffer_resource.GetState();
+			texture_barrier.dst_state = backbuffer_resource.final_state_other;
 
 			command_list.ResourceBarrier(resource_barriers);
 		}

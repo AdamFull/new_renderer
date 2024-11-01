@@ -2,6 +2,8 @@
 
 #include <cassert>
 
+#include <imgui.h>
+
 namespace engine
 {
 	bool Application::Prepare(const ApplicationOptions& options)
@@ -21,6 +23,11 @@ namespace engine
 	void Application::Update(float delta_time)
 	{
 
+	}
+
+	void Application::OnGui()
+	{
+		ImGui::ShowDemoWindow();
 	}
 
 	void Application::Finish()

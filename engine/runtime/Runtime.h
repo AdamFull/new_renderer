@@ -3,6 +3,7 @@
 #include <engine/Application.h>
 #include <engine/runtime/Window.h>
 #include <util/Performance.h>
+#include <engine/runtime/EngineUI.h>
 
 #ifdef CreateWindow
 #undef CreateWindow
@@ -91,6 +92,8 @@ namespace engine
 		std::unique_ptr<Window> window{ nullptr };
 
 		std::unique_ptr<Application> app{ nullptr };
+
+		std::unique_ptr<EngineUI> ui{};
 
 		ApplicationCreateInfo* app_create_info{ nullptr };
 

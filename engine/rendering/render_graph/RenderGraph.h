@@ -40,6 +40,7 @@ namespace engine
 
 			uint32_t AddResource() override;
 			uint32_t AddResource(const std::string& path, gfx::Sampler* sampler = nullptr) override;
+			uint32_t AddResource(const gfx::TextureCreateInfo& create_info, std::span<uint8_t> texture_data) override;
 			uint32_t AddResource(const gfx::TextureCreateInfo& create_info, gfx::Sampler* sampler = nullptr) override;
 			uint32_t AddResource(const gfx::BufferCreateInfo& create_info) override;
 

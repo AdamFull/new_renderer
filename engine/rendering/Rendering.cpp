@@ -16,6 +16,8 @@
 
 #include <util/Logger.h>
 
+#include <imgui.h>
+
 #ifdef MemoryBarrier
 #undef MemoryBarrier
 #endif
@@ -426,7 +428,7 @@ namespace engine
 				RenderShaderPassCreateInfo create_info{};
 				create_info.shader_name = "testing:screenspace";
 				create_info.AddWriteAttachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, gfx::ClearColor{ 1.f, 0.5f, 1.f, 1.f });
-
+			
 				create_info.draw_callback = [this, 
 					irradiance_cube_target, 
 					brdf_lut_target,
@@ -434,13 +436,13 @@ namespace engine
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
 						auto* backbuffer = render_graph->GetTexture(backbuffer_resource);
-
+			
 						auto viewport_width = backbuffer->GetWidth();
 						auto viewport_height = backbuffer->GetHeight();
-
+			
 						command_list.SetViewport(0.f, 0.f, viewport_width, viewport_height, 0.f, 1.f);
 						command_list.SerScissor(0u, 0u, viewport_width, viewport_height);
-
+			
 						self.BindReadResource(input_image_bnd, brdf_lut_target);
 						
 						self.FlushResources(command_list);
@@ -449,8 +451,185 @@ namespace engine
 						command_list.Draw(3u, 0u, 0u, 1u);
 						self.End(command_list);
 					};
-
+			
 				render_graph->AddNode(render_graph->CreateNode(create_info));
+			}
+
+			{
+				if (ImGui::GetCurrentContext())
+				{
+					// Create font texture
+					unsigned char* pixels;
+					int width, height;
+
+					ImGuiIO& io = ImGui::GetIO();
+					io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
+					uint64_t upload_size = width * height * 4ull * sizeof(char);
+
+					gfx::TextureCreateInfo font_texture_ci{};
+					font_texture_ci.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eTransferable;
+					font_texture_ci.width = width;
+					font_texture_ci.height = height;
+					font_texture_ci.format = gfx::Format::eR8G8B8A8Unorm;
+
+					uint32_t imgui_font_texture = render_graph->AddResource(font_texture_ci, {pixels, upload_size});
+
+					GeometryBufferCreateInfo geometry_buffer_ci{};
+					geometry_buffer_ci.attribute_descriptions.emplace_back(VertexAttributeFlag::ePosition, gfx::Format::eR32G32Sfloat);
+					geometry_buffer_ci.attribute_descriptions.emplace_back(VertexAttributeFlag::eTexCoord, gfx::Format::eR32G32Sfloat);
+					geometry_buffer_ci.attribute_descriptions.emplace_back(VertexAttributeFlag::eColor, gfx::Format::eR8G8B8A8Unorm);
+					geometry_buffer_ci.index_description.type = gfx::IndexType::eUint16;
+
+					auto& geometry_buffer = RequestInterleavedGeometryBuffer(geometry_buffer_ci);
+
+					RenderShaderPassCreateInfo create_info{};
+					create_info.shader_name = "testing:imgui";
+					create_info.vertex_layout = geometry_buffer.GetVertexLayout();
+					create_info.AddWriteAttachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, gfx::ClearColor{ 0.f, 0.f, 0.f, 1.f });
+
+					create_info.color_blending_state.attachment_count = 1;
+					auto& blending = create_info.color_blending_state.attachments[0];
+					blending.enable = true;
+					blending.src_color = gfx::BlendFactor::eSrcAlpha;
+					blending.dst_color = gfx::BlendFactor::eOneMinusSrcAlpha;
+					blending.src_alpha = gfx::BlendFactor::eOneMinusSrcAlpha;
+					blending.dst_alpha = gfx::BlendFactor::eZero;
+
+					create_info.draw_callback = [this, 
+						&geometry_buffer,
+						imgui_font_texture
+					](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+						{
+							ImGui::Render();
+
+							// Update geometry
+							ImDrawData* draw_data = ImGui::GetDrawData();
+							if (draw_data && (draw_data->TotalVtxCount != 0) && (draw_data->TotalIdxCount != 0))
+							{
+								uint32_t total_vertices{ 0u };
+								uint32_t total_indices{ 0u };
+
+								for (int32_t i = 0; i < draw_data->CmdListsCount; i++)
+								{
+									const ImDrawList* cmd_list = draw_data->CmdLists[i];
+									geometry_buffer.AddVertexStreamData(cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size, sizeof(ImDrawVert));
+									geometry_buffer.AddIndexStreamData(cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size, sizeof(ImDrawIdx));
+
+									total_vertices += cmd_list->VtxBuffer.Size;
+									total_indices += cmd_list->IdxBuffer.Size;
+								}
+
+								// Upload geometry to gpu
+								geometry_buffer.Flush();
+
+								// Bind vertex and index buffers
+								geometry_buffer.Bind(command_list);
+
+								auto* backbuffer = render_graph->GetTexture(backbuffer_resource);
+
+								auto viewport_width = backbuffer->GetWidth();
+								auto viewport_height = backbuffer->GetHeight();
+
+								command_list.SetViewport(0.f, 0.f, viewport_width, viewport_height, 0.f, 1.f);
+
+								// Setup scale and translation:
+								// Our visible imgui space lies from draw_data->DisplayPps (top left) to draw_data->DisplayPos+data_data->DisplaySize (bottom right). DisplayPos is (0,0) for single viewport apps.
+								{
+									auto& constants = self.GetConstantBlock();
+
+									glm::vec2 scale;
+									scale.x = 2.f / draw_data->DisplaySize.x;
+									scale.y = 2.f / draw_data->DisplaySize.y;
+
+									constants.Set("scale"_hash32, scale);
+
+									glm::vec2 translate;
+									translate.x = -1.0f - draw_data->DisplayPos.x * scale.x;
+									translate.y = -1.0f - draw_data->DisplayPos.y * scale.y;
+
+									constants.Set("translate"_hash32, translate);
+
+									self.PushConstantRanges(command_list);
+								}
+
+								// Will project scissor/clipping rectangles into framebuffer space
+								ImVec2 clip_off = draw_data->DisplayPos;         // (0,0) unless using multi-viewports
+								ImVec2 clip_scale = draw_data->FramebufferScale; // (1,1) unless using retina display which are often (2,2)
+
+								self.BindReadResource("font_sampler"_hash32, imgui_font_texture);
+
+								self.FlushResources(command_list);
+
+								self.Begin(command_list);
+
+								// Render command lists
+								// (Because we merged all buffers into a single one, we maintain our own offset into them)
+								i32 global_vtx_offset = 0;
+								i32 global_idx_offset = 0;
+								for (i32 n = 0; n < draw_data->CmdListsCount; n++)
+								{
+									const ImDrawList* cmd_list = draw_data->CmdLists[n];
+									for (i32 cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
+									{
+										const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[cmd_i];
+										if (pcmd->UserCallback != nullptr)
+										{
+											// User callback, registered via ImDrawList::AddCallback()
+											// (ImDrawCallback_ResetRenderState is a special callback value used by the user to request the renderer to reset render state.)
+											//if (pcmd->UserCallback == ImDrawCallback_ResetRenderState)
+											//	ImGui_ImplVulkan_SetupRenderState(draw_data, pipeline, command_buffer, rb, fb_width, fb_height);
+											//else
+											pcmd->UserCallback(cmd_list, pcmd);
+										}
+										else
+										{
+											// Project scissor/clipping rectangles into framebuffer space
+											ImVec2 clip_min((pcmd->ClipRect.x - clip_off.x) * clip_scale.x, (pcmd->ClipRect.y - clip_off.y) * clip_scale.y);
+											ImVec2 clip_max((pcmd->ClipRect.z - clip_off.x) * clip_scale.x, (pcmd->ClipRect.w - clip_off.y) * clip_scale.y);
+
+											// Clamp to viewport as vkCmdSetScissor() won't accept values that are off bounds
+											if (clip_min.x < 0.0f) { clip_min.x = 0.0f; }
+											if (clip_min.y < 0.0f) { clip_min.y = 0.0f; }
+											if (clip_max.x > viewport_width) { clip_max.x = viewport_width; }
+											if (clip_max.y > viewport_height) { clip_max.y = viewport_height; }
+											if (clip_max.x <= clip_min.x || clip_max.y <= clip_min.y)
+												continue;
+
+											// Apply scissor/clipping rectangle
+											command_list.SerScissor((int32_t)(clip_min.x), (int32_t)(clip_min.y), (uint32_t)(clip_max.x - clip_min.x), (uint32_t)(clip_max.y - clip_min.y));
+
+											// Bind DescriptorSet with font or user texture
+											//FRHIHandle attachment{ (u64)pcmd->TextureId };
+											//if (sizeof(ImTextureID) < sizeof(ImU64))
+											//{
+											//	// We don't support texture switches if ImTextureID hasn't been redefined to be 64-bit. Do a flaky check that other textures haven't been used.
+											//	IM_ASSERT(pcmd->TextureId == (ImTextureID)m_fontTexture);
+											//	attachment = m_fontTexture;
+											//}
+											//
+											//if (!pcmd->TextureId)
+											//	attachment = m_fontTexture;
+											//
+											//if (attachment != last_bound_resource)
+											//{
+											//	shader->BindTexture(utl::murmur_hash_64("font_sampler"), m_pRenderInterface->GetTextureObject(attachment)->Handle());
+											//	shader->BindResources(m_queue);
+											//	last_bound_resource = attachment;
+											//}
+
+											command_list.DrawIndexed(pcmd->ElemCount, pcmd->IdxOffset + global_idx_offset, 1u, pcmd->VtxOffset + global_vtx_offset, 0u);
+										}
+									}
+									global_idx_offset += cmd_list->IdxBuffer.Size;
+									global_vtx_offset += cmd_list->VtxBuffer.Size;
+								}
+
+								self.End(command_list);
+							}
+						};
+
+					render_graph->AddNode(render_graph->CreateNode(create_info));
+				}
 			}
 		}
 	}

@@ -31,6 +31,7 @@ namespace engine
 			virtual ~ResourceContext() = default;
 
 			virtual Texture* LoadTexture(const std::string& texture_path) = 0;
+			virtual gfx::Texture* LoadTexture(const gfx::TextureCreateInfo& create_info, std::span<uint8_t> texture_data) = 0;
 
 			virtual Shader* LoadShader(const std::string& shader_name) = 0;
 

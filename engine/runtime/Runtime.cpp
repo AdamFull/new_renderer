@@ -3,7 +3,7 @@
 #include <engine/runtime/RuntimeContext.h>
 #include <util/Logger.h>
 
-#include <engine/runtime/InputManager.h>
+#include "InputManager.h"
 
 #ifdef CreateWindow
 #undef CreateWindow
@@ -13,7 +13,6 @@ namespace engine
 {
 	Runtime::Runtime(const RuntimeContext& context)
 	{
-
 	}
 
 	int32_t Runtime::Initialize()
@@ -25,6 +24,8 @@ namespace engine
 			log_error("Window creation failed!");
 			return ExitCode::FatalError;
 		}
+
+		ui = std::make_unique<EngineUI>(*window);
 
 		return 0;
 	}
@@ -53,8 +54,8 @@ namespace engine
 				}
 
 				// Compensate for load times of the app by rendering the first frame pre-emptively
-				counter.Frame();
-				app->Update(0.01667f);
+				//counter.Frame();
+				//app->Update(0.01667f);
 			}
 
 			if (!app)
@@ -107,6 +108,8 @@ namespace engine
 			}
 
 			// TODO: update debug ui here
+			ui->NewFrame(delta_time);
+			app->OnGui();
 
 			app->Update(delta_time);
 		}
@@ -157,6 +160,7 @@ namespace engine
 		if (process_input_events && app)
 		{
 			InputManager::DispatchInputEvent(input_event);
+			ui->OnAnyInput(input_event);
 			//app->OnInputEvent(input_event);
 		}
 

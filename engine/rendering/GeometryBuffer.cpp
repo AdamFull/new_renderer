@@ -117,31 +117,30 @@ namespace engine
 		{
 			gfx::Context& context = resource_context.GetContext();
 
-			gfx::Buffer* buffer = *buffer_ptr;
-			if (!buffer)
+			if (!*buffer_ptr)
 			{
 				gfx::BufferCreateInfo create_info{};
 				create_info.size = data.size();
 				create_info.count = 1ull;
 				create_info.usage = usage;
 
-				buffer = context.CreateBuffer(create_info);
+				*buffer_ptr = context.CreateBuffer(create_info);
 			}
 
-			if (buffer->GetSize() < data.size())
+			if ((*buffer_ptr)->GetSize() < data.size())
 			{
-				context.Destroy(buffer);
+				context.Destroy(*buffer_ptr);
 
 				gfx::BufferCreateInfo create_info{};
 				create_info.size = data.size();
 				create_info.count = 1ull;
 				create_info.usage = usage;
 
-				buffer = context.CreateBuffer(create_info);
+				*buffer_ptr = context.CreateBuffer(create_info);
 			}
 
 			gfx::BufferUpdateInfo buffer_update_info{};
-			buffer_update_info.dst_buffer = buffer;
+			buffer_update_info.dst_buffer = *buffer_ptr;
 			buffer_update_info.update_size = data.size();
 
 			resource_context.BeginBufferUpdate(buffer_update_info);
@@ -159,7 +158,7 @@ namespace engine
 
 			for (auto& desc : create_info.attribute_descriptions)
 			{
-				auto& attr_desc = vertex_layout.attributes[vertex_layout.attribute_count];
+				auto& attr_desc = vertex_layout.attributes[vertex_layout.attribute_count++];
 				attr_desc.binding = 0;
 				attr_desc.format = desc.format;
 				attr_desc.offset = offset;

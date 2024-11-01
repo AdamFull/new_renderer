@@ -293,6 +293,48 @@ namespace engine
 			return texture;
 		}
 
+		gfx::Texture* UploadContext::LoadTexture(const gfx::TextureCreateInfo& create_info, std::span<uint8_t> texture_data)
+		{
+			gfx::Texture* texture = context.CreateTexture(create_info);
+
+			gfx::CopyTextureInfo copy_texture{};
+			copy_texture.dst_texture = texture;
+
+			auto& upload_frame = GetActiveFrame();
+			auto& src_buffer = upload_frame.RequestStagingBuffer(texture_data.size());
+			src_buffer.Update(texture_data.data(), texture_data.size());
+			copy_texture.src_buffer = &src_buffer;
+
+			auto& copy_region = copy_texture.copy_regions[copy_texture.copy_region_count++];
+			copy_region.size_x = create_info.width;
+			copy_region.size_y = create_info.height;
+			copy_region.size_z = create_info.depth;
+
+			auto& command_list = upload_frame.AcquireOrGetCommandList();
+
+			gfx::TextureBarrier texture_barrier{};
+			texture_barrier.texture = texture;
+			texture_barrier.src_state = gfx::ResourceStateFlag::eUndefined;
+			texture_barrier.dst_state = gfx::ResourceStateFlag::eCopyDst;
+
+			gfx::ResourceBarrierInfo resource_barrier{};
+			resource_barrier.texture_barriers = &texture_barrier;
+			resource_barrier.texture_barrier_count = 1u;
+
+			// Transfer to intermediate layout
+			command_list.ResourceBarrier(resource_barrier);
+
+			// Copy texture regions
+			command_list.CopyTexture(copy_texture);
+
+			// Transfer to final layout
+			texture_barrier.src_state = gfx::ResourceStateFlag::eCopyDst;
+			texture_barrier.dst_state = gfx::ResourceStateFlag::eShaderResource;
+			command_list.ResourceBarrier(resource_barrier);
+
+			return texture;
+		}
+
 		gfx::Shader* UploadContext::LoadShader(const std::string& shader_name)
 		{
 			auto name_info = GetShaderNameInfo(shader_name);

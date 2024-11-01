@@ -70,15 +70,15 @@ namespace engine
 				PipelineLayoutCreateInfo layout_ci{};
 
 				// Get constant ranges from reflection
+				// TODO: Now i can have only one constant range, but in future i think i can have more then one.
 				if (reflection.constants.range_begin != ~0u)
 				{
+					auto& range = layout_ci.AddConstantRange();
 					for (int32_t i = reflection.constants.range_begin; i < reflection.constants.variable_count; ++i)
 					{
 						auto& variable = reflection.shader_variables.data[i];
-						auto& range = layout_ci.AddConstantRange();
 						range.stageFlags = ShaderStageFlagsToVk(reflection.constants.stages);
-						range.size = variable.size;
-						range.offset = variable.offset;
+						range.size += variable.size;
 					}
 				}
 
