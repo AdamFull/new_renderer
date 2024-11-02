@@ -128,10 +128,6 @@ namespace engine
 				{
 					create_info.arrayLayers = 6u;
 				}
-				else
-				{
-					create_info.arrayLayers = 1u;
-				}
 
 				create_info.extent = vk::Extent3D{ texture_create_info.width, texture_create_info.height, texture_create_info.depth };
 				create_info.format = static_cast<vk::Format>(FormatToVk(texture_create_info.format));

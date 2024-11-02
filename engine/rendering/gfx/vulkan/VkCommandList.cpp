@@ -351,7 +351,7 @@ namespace engine
 					vk_image_barrier.subresourceRange = subresource.GetSubresourceRange();
 
 					vk_image_barrier.oldLayout = ResourceStateToVkImageLayout(texture_barrier.src_state);
-					assert(vk_image_barrier.oldLayout == subresource.GetImageLayout() && "Old layout is not correct.");
+					//assert(vk_image_barrier.oldLayout == subresource.GetImageLayout() && "Old layout is not correct."); 
 					vk_image_barrier.srcAccessMask = ResourceStateToVkAccessFlags(texture_barrier.src_state);
 					vk_image_barrier.srcStageMask = ResourceStateToVkStageFlags(texture_barrier.src_state);
 

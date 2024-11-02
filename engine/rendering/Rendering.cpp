@@ -368,7 +368,7 @@ namespace engine
 				omni_shadows_target = render_graph->AddResource(create_info, shadow_sampler);
 			}
 
-			auto* backbuffer_texture = render_graph->GetTexture(backbuffer_resource_binding);
+			auto* backbuffer_texture = render_graph->GetTexture(backbuffer_resource);
 
 			// Visibility buffer targets
 			uint32_t visbuffer_geometry_target{ ~0u };
