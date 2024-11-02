@@ -115,11 +115,12 @@ namespace engine
 
 			if (auto found = interleaved_geometry_buffers.find(hash); found != interleaved_geometry_buffers.end())
 			{
-				return *found->second;
+				return *geometry_buffers[found->second];
 			}
 
-			interleaved_geometry_buffers[hash] = std::make_unique<InterleavedGeometryBuffer>(*resource_context, create_info);
-			return *interleaved_geometry_buffers[hash];
+			auto& new_geometry_buffer = geometry_buffers.emplace_back(std::make_unique<InterleavedGeometryBuffer>(*resource_context, create_info));
+			interleaved_geometry_buffers[hash] = geometry_buffers.size() - 1ull;
+			return *new_geometry_buffer;
 		}
 
 		GeometryBuffer& Renderer::RequestDeinterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info)
@@ -128,11 +129,12 @@ namespace engine
 
 			if (auto found = deinterleaved_geometry_buffers.find(hash); found != deinterleaved_geometry_buffers.end())
 			{
-				return *found->second;
+				return *geometry_buffers[found->second];
 			}
 
-			deinterleaved_geometry_buffers[hash] = std::make_unique<DeinterleavedGeometryBuffer>(*resource_context, create_info);
-			return *deinterleaved_geometry_buffers[hash];
+			auto& new_geometry_buffer = geometry_buffers.emplace_back(std::make_unique<DeinterleavedGeometryBuffer>(*resource_context, create_info));
+			deinterleaved_geometry_buffers[hash] = geometry_buffers.size() - 1ull;
+			return *new_geometry_buffer;
 		}
 
 		uint32_t Renderer::AddRenderCamera()
@@ -266,6 +268,17 @@ namespace engine
 				linear_sampler = resource_context->GetSampler(create_info);
 			}
 
+			gfx::Sampler* shadow_sampler{ nullptr };
+			{
+				gfx::SamplerCreateInfo create_info{};
+				create_info.min_filter = gfx::Filter::eLinear;
+				create_info.mag_filter = gfx::Filter::eLinear;
+				create_info.mip_map_mode = gfx::Filter::eLinear;
+				create_info.depth_compare = gfx::CompareOp::eLess;
+
+				shadow_sampler = resource_context->GetSampler(create_info);
+			}
+
 			// Load some static textures
 			auto casual_day_4k_cube = render_graph->AddResource("/root/embed/rendering/textures/CasualDay4K.ktx2");
 			auto dirt_mask_texture = render_graph->AddResource("/root/embed/rendering/textures/DirtMaskTextureExample.png");
@@ -295,7 +308,8 @@ namespace engine
 			}
 
 			uint32_t prefiltered_cube_target{ ~0u };
-			{gfx::TextureCreateInfo create_info{};
+			{
+				gfx::TextureCreateInfo create_info{};
 				create_info.width = create_info.height = 512u;
 				create_info.format = gfx::Format::eR16G16B16A16Sfloat;
 				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage | gfx::TextureUsageFlag::eCubemap;
@@ -316,6 +330,83 @@ namespace engine
 
 				prefiltered_cube_target = render_graph->AddResource(create_info, special_sampler);
 			}
+
+			// Shadow targets
+			uint32_t cascaded_shadows_target{ ~0u };
+			{
+				gfx::TextureCreateInfo create_info{};
+				create_info.width = create_info.height = cascade_shadow_map_resolution;
+				create_info.layers = cascade_shadow_map_cascade_count * max_directional_light_shadow_count;
+				create_info.format = gfx::Format::eD32Sfloat;
+				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eRenderTarget;
+				create_info.resizable = false;
+				
+				cascaded_shadows_target = render_graph->AddResource(create_info, shadow_sampler);
+			}
+
+			uint32_t directional_shadows_target{ ~0u };
+			{
+				gfx::TextureCreateInfo create_info{};
+				create_info.width = create_info.height = spot_light_shadow_map_resolution;
+				create_info.layers = max_spot_light_shadow_count;
+				create_info.format = gfx::Format::eD16Unorm;
+				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eRenderTarget;
+				create_info.resizable = false;
+
+				directional_shadows_target = render_graph->AddResource(create_info, shadow_sampler);
+			}
+
+			uint32_t omni_shadows_target{ ~0u };
+			{
+				gfx::TextureCreateInfo create_info{};
+				create_info.width = create_info.height = point_light_shadow_map_resolution;
+				create_info.layers = max_point_light_shadow_count;
+				create_info.format = gfx::Format::eD16Unorm;
+				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eRenderTarget | gfx::TextureUsageFlag::eCubemap;
+				create_info.resizable = false;
+
+				omni_shadows_target = render_graph->AddResource(create_info, shadow_sampler);
+			}
+
+			auto* backbuffer_texture = render_graph->GetTexture(backbuffer_resource_binding);
+
+			// Visibility buffer targets
+			uint32_t visbuffer_geometry_target{ ~0u };
+			{
+				gfx::TextureCreateInfo create_info{};
+				create_info.width = backbuffer_texture->GetWidth();
+				create_info.height = backbuffer_texture->GetHeight();
+				create_info.format = gfx::Format::eR8G8B8A8Unorm;
+				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eRenderTarget;
+				create_info.resizable = true;
+
+				visbuffer_geometry_target = render_graph->AddResource(create_info, nearest_sampler);
+			}
+
+			uint32_t visbuffer_vboinst_target{ ~0u };
+			{
+				gfx::TextureCreateInfo create_info{};
+				create_info.width = backbuffer_texture->GetWidth();
+				create_info.height = backbuffer_texture->GetHeight();
+				create_info.format = gfx::Format::eR8G8B8A8Unorm;
+				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eRenderTarget;
+				create_info.resizable = true;
+
+				visbuffer_vboinst_target = render_graph->AddResource(create_info, nearest_sampler);
+			}
+
+			uint32_t zbuffer_depth_target{ ~0u };
+			{
+				gfx::TextureCreateInfo create_info{};
+				create_info.width = backbuffer_texture->GetWidth();
+				create_info.height = backbuffer_texture->GetHeight();
+				create_info.format = gfx::Format::eD32Sfloat;
+				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eRenderTarget;
+				create_info.resizable = true;
+
+				zbuffer_depth_target = render_graph->AddResource(create_info, nearest_sampler);
+			}
+
 			// Passes
 			// Generate brdflut
 			{

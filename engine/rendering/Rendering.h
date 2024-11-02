@@ -81,8 +81,10 @@ namespace engine
 
 			//GPUVector<FMaterial> materials{};
 
-			std::unordered_map<uint32_t, std::unique_ptr<GeometryBuffer>> interleaved_geometry_buffers{};
-			std::unordered_map<uint32_t, std::unique_ptr<GeometryBuffer>> deinterleaved_geometry_buffers{};
+			std::unordered_map<uint32_t, uint32_t> interleaved_geometry_buffers{};
+			std::unordered_map<uint32_t, uint32_t> deinterleaved_geometry_buffers{};
+
+			std::vector<std::unique_ptr<GeometryBuffer>> geometry_buffers{};
 
 			uint32_t backbuffer_resource{ ~0u };
 
