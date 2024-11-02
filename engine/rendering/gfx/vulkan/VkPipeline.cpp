@@ -196,13 +196,13 @@ namespace engine
 				pipeline_create_info.pNext = &dynamic_rendering;
 				dynamic_rendering.pColorAttachmentFormats = color_formats.data();
 
-				for (int32_t i = 0; i < create_info.pipeline_state.color_format_count; ++i)
+				for (int32_t i = 0; i < create_info.color_format_count; ++i)
 				{
-					color_formats[dynamic_rendering.colorAttachmentCount++] = static_cast<vk::Format>(FormatToVk(create_info.pipeline_state.color_formats[i]));
+					color_formats[dynamic_rendering.colorAttachmentCount++] = static_cast<vk::Format>(FormatToVk(create_info.color_formats[i]));
 				}
 
-				dynamic_rendering.depthAttachmentFormat = static_cast<vk::Format>(FormatToVk(create_info.pipeline_state.depth_format));
-				dynamic_rendering.stencilAttachmentFormat = static_cast<vk::Format>(FormatToVk(create_info.pipeline_state.stencil_format));
+				dynamic_rendering.depthAttachmentFormat = static_cast<vk::Format>(FormatToVk(create_info.depth_format));
+				dynamic_rendering.stencilAttachmentFormat = static_cast<vk::Format>(FormatToVk(create_info.stencil_format));
 
 				auto& pipeline_layout = root_signature->GetPipelineLayout();
 				pipeline_create_info.layout = pipeline_layout.GetHandle();

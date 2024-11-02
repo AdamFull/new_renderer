@@ -126,13 +126,13 @@ namespace engine
 			hash = Hash(state.depth_stencil_state, hash);
 			hash = Hash(state.color_blending_state, hash);
 
-			for (int32_t i = 0; i < state.color_format_count; ++i)
-			{
-				hash = utl::murmur_hash(utl::enum_cast(state.color_formats[i]), hash);
-			}
-
-			hash = utl::murmur_hash(utl::enum_cast(state.depth_format), hash);
-			hash = utl::murmur_hash(utl::enum_cast(state.stencil_format), hash);
+			//for (int32_t i = 0; i < state.color_format_count; ++i)
+			//{
+			//	hash = utl::murmur_hash(utl::enum_cast(state.color_formats[i]), hash);
+			//}
+			//
+			//hash = utl::murmur_hash(utl::enum_cast(state.depth_format), hash);
+			//hash = utl::murmur_hash(utl::enum_cast(state.stencil_format), hash);
 
 			hash = utl::murmur_hash(utl::enum_cast(state.primitive_topology), hash);
 

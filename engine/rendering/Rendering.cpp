@@ -447,7 +447,8 @@ namespace engine
 				create_info.shader_name = "testing:screenspace";
 				create_info.AddWriteAttachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, gfx::ClearColor{ 1.f, 0.5f, 1.f, 1.f });
 
-				create_info.color_blending_state.attachment_count = 1;
+				create_info.pipeline_state.primitive_topology = gfx::PrimitiveTopology::eTriangleList;
+				create_info.pipeline_state.color_blending_state.attachment_count = 1;
 			
 				create_info.draw_callback = [this, 
 					irradiance_cube_target, 
@@ -506,11 +507,12 @@ namespace engine
 
 					RenderShaderPassCreateInfo create_info{};
 					create_info.shader_name = "testing:imgui";
-					create_info.vertex_layout = geometry_buffer.GetVertexLayout();
+					create_info.pipeline_state.primitive_topology = gfx::PrimitiveTopology::eTriangleList;
+					create_info.pipeline_state.vertex_layout = geometry_buffer.GetVertexLayout();
 					create_info.AddWriteAttachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, gfx::ClearColor{ 0.f, 0.f, 0.f, 1.f });
 
-					create_info.color_blending_state.attachment_count = 1;
-					auto& blending = create_info.color_blending_state.attachments[0];
+					create_info.pipeline_state.color_blending_state.attachment_count = 1;
+					auto& blending = create_info.pipeline_state.color_blending_state.attachments[0];
 					blending.enable = true;
 					blending.src_color = gfx::BlendFactor::eSrcAlpha;
 					blending.dst_color = gfx::BlendFactor::eOneMinusSrcAlpha;

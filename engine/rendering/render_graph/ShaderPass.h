@@ -48,10 +48,7 @@ namespace engine
 
 		struct RenderPassCreateInfo : PassCreateInfo
 		{
-			gfx::VertexLayout vertex_layout{};
-			gfx::ColorBlendingState color_blending_state{};
-			gfx::PrimitiveTopology primitive_topology{ gfx::PrimitiveTopology::ePointList };
-
+			gfx::PipelineState pipeline_state{};
 			std::vector<RenderResourceAttachment> resource_attachments{};
 		};
 

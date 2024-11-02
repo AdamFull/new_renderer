@@ -184,13 +184,10 @@ namespace engine
 			pass_ci.debug_name = create_info.shader_name;
 			pass_ci.shader = resource_context.LoadShader(create_info.shader_name);
 			pass_ci.shared_descriptor = shared_descriptor;
-			pass_ci.primitive_topology = gfx::PrimitiveTopology::eTriangleList;
+			pass_ci.pipeline_state = create_info.pipeline_state;
 			pass_ci.draw_callback = std::move(create_info.draw_callback);
 
-			pass_ci.vertex_layout = create_info.vertex_layout;
-			pass_ci.color_blending_state = create_info.color_blending_state;
 			pass_ci.resource_attachments = create_info.resource_attachments;
-			//pass_ci.state.rasterization_state.front_face = gfx::FrontFace::eCW;
 
 			auto new_pass = std::make_unique<RenderPass>(*this, pass_ci);
 			new_pass->SetExecutionContext(render_context.get());

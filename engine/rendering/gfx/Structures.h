@@ -180,12 +180,6 @@ namespace engine
 			DepthStencilState depth_stencil_state{};
 			ColorBlendingState color_blending_state{};
 
-			std::array<Format, k_max_attachment_count> color_formats{};
-			uint32_t color_format_count{};
-
-			Format depth_format{ Format::eUndefined };
-			Format stencil_format{ Format::eUndefined };
-
 			PrimitiveTopology primitive_topology{ PrimitiveTopology::ePointList };
 		};
 
@@ -196,6 +190,12 @@ namespace engine
 			PipelineCache* pipeline_cache{ nullptr };
 
 			PipelineState pipeline_state{};
+
+			std::array<Format, k_max_attachment_count> color_formats{};
+			uint32_t color_format_count{};
+
+			Format depth_format{ Format::eUndefined };
+			Format stencil_format{ Format::eUndefined };
 		};
 
 		struct ComputePipelineCreateInfo

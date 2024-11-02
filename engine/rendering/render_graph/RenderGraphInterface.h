@@ -154,8 +154,7 @@ namespace engine
 		{
 			std::vector<RenderResourceAttachment> resource_attachments{};
 
-			gfx::VertexLayout vertex_layout{};
-			gfx::ColorBlendingState color_blending_state{};
+			gfx::PipelineState pipeline_state{};
 
 			void AddWriteAttachment(uint32_t render_resource_id, ResourceAttachmentTypeFlags flags = {}, gfx::ClearColor clear_color = {}) { resource_attachments.emplace_back(gfx::AccessTypeFlag::eWrite, flags, render_resource_id, clear_color); }
 			void AddReadAttachment(uint32_t render_resource_id, ResourceAttachmentTypeFlags flags = {}) { resource_attachments.emplace_back(gfx::AccessTypeFlag::eRead, flags, render_resource_id, gfx::ClearColor{}); }

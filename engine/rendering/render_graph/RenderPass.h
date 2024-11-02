@@ -20,7 +20,6 @@ namespace engine
 			void End(gfx::CommandList& command_list) override;
 
 		protected:
-			void UpdateRenderResolution();
 			void _Execute(gfx::CommandList& command_list, float delta_time) override;
 
 		private:

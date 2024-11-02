@@ -17,23 +17,19 @@ namespace engine
 			pipeline_ci.shader = shader;
 			pipeline_ci.root_signature = root_signature;
 			pipeline_ci.pipeline_cache = create_info.pipeline_cache;
-			//pipeline_ci.pipeline_state = create_info.state;
-
-			pipeline_ci.pipeline_state.vertex_layout = create_info.vertex_layout;
-			pipeline_ci.pipeline_state.color_blending_state = create_info.color_blending_state;
-			pipeline_ci.pipeline_state.primitive_topology = create_info.primitive_topology;
+			pipeline_ci.pipeline_state = create_info.pipeline_state;
 
 			for (auto& attachment : resource_attachments)
 			{
 				auto render_target = graph.GetTexture(attachment.render_resource_id);
 				auto rt_format = render_target->GetFormat();
 				if (attachment.flags & ResourceAttachmentTypeFlag::eDepth)
-					pipeline_ci.pipeline_state.depth_format = rt_format;
+					pipeline_ci.depth_format = rt_format;
 				else if (attachment.flags & ResourceAttachmentTypeFlag::eStencil)
-					pipeline_ci.pipeline_state.stencil_format = rt_format;
+					pipeline_ci.stencil_format = rt_format;
 				else
 				{
-					pipeline_ci.pipeline_state.color_formats[pipeline_ci.pipeline_state.color_format_count++] = rt_format;
+					pipeline_ci.color_formats[pipeline_ci.color_format_count++] = rt_format;
 				}
 			}
 
@@ -58,36 +54,6 @@ namespace engine
 		void RenderPass::End(gfx::CommandList& command_list)
 		{
 			command_list.EndRendering();
-		}
-
-		void RenderPass::UpdateRenderResolution()
-		{
-			// Try find render resolution from any attachment
-			for (int32_t i = 0; i < rendering_info.attachment_count; ++i)
-			{
-				auto& attachment = rendering_info.attachments[i];
-				rendering_info.width = attachment.texture->GetWidth();
-				rendering_info.height = attachment.texture->GetHeight();
-				return;
-			}
-
-			// Or from depth attachment
-			if (rendering_info.depth_attachment.texture)
-			{
-				auto& attachment = rendering_info.depth_attachment;
-				rendering_info.width = attachment.texture->GetWidth();
-				rendering_info.height = attachment.texture->GetHeight();
-				return;
-			}
-
-			// Or from stencil one
-			if (rendering_info.stencil_attachment.texture)
-			{
-				auto& attachment = rendering_info.stencil_attachment;
-				rendering_info.width = attachment.texture->GetWidth();
-				rendering_info.height = attachment.texture->GetHeight();
-				return;
-			}
 		}
 
 		void RenderPass::_Execute(gfx::CommandList& command_list, float delta_time)
@@ -126,10 +92,11 @@ namespace engine
 				attachment->texture_state = barrier.dst_state;
 				attachment->clear_color = resource_attachment.clear_color;
 
+				rendering_info.width = attachment->texture->GetWidth();
+				rendering_info.height = attachment->texture->GetHeight();
+
 				render_resource.SetState(barrier.dst_state);
 			}
-
-			UpdateRenderResolution();
 
 			if (draw_callback)
 			{
