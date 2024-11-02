@@ -173,8 +173,12 @@ namespace engine
 
 			UniformHandle& GetConstantBlock();
 
-			void BindReadResource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource_index = ~0u);
-			void BindWriteResource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource_index = ~0u);
+			void ReadResource(uint32_t render_resource_id, uint32_t subresource_index = ~0u);
+			void WriteResource(uint32_t render_resource_id, uint32_t subresource_index = ~0u);
+
+			void ResolveDependencies(gfx::CommandList& command_list);
+
+			void BindResource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index = ~0u);
 
 			virtual void Begin(gfx::CommandList& command_list) = 0;
 			virtual void End(gfx::CommandList& command_list) = 0;
@@ -182,12 +186,12 @@ namespace engine
 			virtual ShaderPassType GetPassType() = 0;
 
 			bool CanExecute() const;
-			void FlushResources(gfx::CommandList& command_list);
+			void BindResources(gfx::CommandList& command_list);
 			void PushConstantRanges(gfx::CommandList& command_list);
 			void DivideWorkgroupByLocalSizes(uint32_t& group_x, uint32_t& group_y, uint32_t& group_z);
 
 		protected:
-			void BindResource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index, gfx::AccessTypeFlags access);
+			void ResourceDependency(uint32_t render_resource_id, uint32_t subresource_index, gfx::AccessTypeFlags access);
 			void CollectProfileData();
 			virtual void _Execute(gfx::CommandList& command_list, float delta_time) = 0;
 		protected:

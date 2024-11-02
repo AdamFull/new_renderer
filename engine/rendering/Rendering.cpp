@@ -328,9 +328,12 @@ namespace engine
 					out_color_bnd
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
-						self.BindWriteResource(out_color_bnd, brdf_lut_target);
+						self.WriteResource(brdf_lut_target);
+						self.ResolveDependencies(command_list);
 
-						self.FlushResources(command_list);
+						self.BindResource(out_color_bnd, brdf_lut_target);
+
+						self.BindResources(command_list);
 				
 						uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
 				
@@ -359,10 +362,13 @@ namespace engine
 					out_color_bnd
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
-						self.BindReadResource(sampler_color_bnd, casual_day_4k_cube);
-						self.BindWriteResource(out_color_bnd, irradiance_cube_target);
+						self.WriteResource(irradiance_cube_target);
+						self.ResolveDependencies(command_list);
 
-						self.FlushResources(command_list);
+						self.BindResource(sampler_color_bnd, casual_day_4k_cube);
+						self.BindResource(out_color_bnd, irradiance_cube_target);
+
+						self.BindResources(command_list);
 				
 						uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
 				
@@ -397,10 +403,22 @@ namespace engine
 						auto target = render_graph->GetTexture(prefiltered_cube_target);
 						for (int32_t mip = 0; mip < target->GetMipLevelCount(); ++mip)
 						{
-							self.BindReadResource(sampler_color_bnd, mip == 0 ? casual_day_4k_cube : prefiltered_cube_target, mip == 0 ? ~0u : mip - 1);
-							self.BindWriteResource(out_color_bnd, prefiltered_cube_target, mip);
+							self.WriteResource(prefiltered_cube_target, mip);
 
-							self.FlushResources(command_list);
+							if (mip == 0)
+							{
+								self.BindResource(sampler_color_bnd, casual_day_4k_cube);
+							}
+							else
+							{
+								self.ReadResource(prefiltered_cube_target, mip - 1);
+								self.BindResource(sampler_color_bnd, prefiltered_cube_target, mip - 1);
+							}
+
+							self.BindResource(out_color_bnd, prefiltered_cube_target, mip);
+
+							self.ResolveDependencies(command_list);
+							self.BindResources(command_list);
 
 							uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
 
@@ -444,10 +462,12 @@ namespace engine
 			
 						command_list.SetViewport(0.f, 0.f, viewport_width, viewport_height, 0.f, 1.f);
 						command_list.SerScissor(0u, 0u, viewport_width, viewport_height);
+
+						self.ReadResource(brdf_lut_target);
+						self.ResolveDependencies(command_list);
 			
-						self.BindReadResource(input_image_bnd, brdf_lut_target);
-						
-						self.FlushResources(command_list);
+						self.BindResource(input_image_bnd, brdf_lut_target);			
+						self.BindResources(command_list);
 						
 						self.Begin(command_list);
 						command_list.Draw(3u, 0u, 0u, 1u);
@@ -558,9 +578,35 @@ namespace engine
 								ImVec2 clip_off = draw_data->DisplayPos;         // (0,0) unless using multi-viewports
 								ImVec2 clip_scale = draw_data->FramebufferScale; // (1,1) unless using retina display which are often (2,2)
 
-								self.BindReadResource("font_sampler"_hash32, imgui_font_texture);
+								// Collect resource dependencies
+								for (i32 n = 0; n < draw_data->CmdListsCount; n++)
+								{
+									const ImDrawList* cmd_list = draw_data->CmdLists[n];
+									for (i32 cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
+									{
+										const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[cmd_i];
 
-								self.FlushResources(command_list);
+										uint32_t resource_binding{ (uint32_t)pcmd->TextureId };
+										if (sizeof(ImTextureID) < sizeof(ImU64))
+										{
+											// We don't support texture switches if ImTextureID hasn't been redefined to be 64-bit. Do a flaky check that other textures haven't been used.
+											IM_ASSERT(pcmd->TextureId == (ImTextureID)imgui_font_texture);
+											resource_binding = imgui_font_texture;
+										}
+
+										if (!pcmd->TextureId)
+										{
+											resource_binding = imgui_font_texture;
+										}
+
+										self.ReadResource(resource_binding);
+									}
+								}
+
+								self.ResolveDependencies(command_list);
+
+								// Render gui
+								uint32_t last_bound_resource{ ~0u };
 
 								self.Begin(command_list);
 
@@ -601,23 +647,23 @@ namespace engine
 											command_list.SerScissor((int32_t)(clip_min.x), (int32_t)(clip_min.y), (uint32_t)(clip_max.x - clip_min.x), (uint32_t)(clip_max.y - clip_min.y));
 
 											// Bind DescriptorSet with font or user texture
-											//FRHIHandle attachment{ (u64)pcmd->TextureId };
-											//if (sizeof(ImTextureID) < sizeof(ImU64))
-											//{
-											//	// We don't support texture switches if ImTextureID hasn't been redefined to be 64-bit. Do a flaky check that other textures haven't been used.
-											//	IM_ASSERT(pcmd->TextureId == (ImTextureID)m_fontTexture);
-											//	attachment = m_fontTexture;
-											//}
-											//
-											//if (!pcmd->TextureId)
-											//	attachment = m_fontTexture;
-											//
-											//if (attachment != last_bound_resource)
-											//{
-											//	shader->BindTexture(utl::murmur_hash_64("font_sampler"), m_pRenderInterface->GetTextureObject(attachment)->Handle());
-											//	shader->BindResources(m_queue);
-											//	last_bound_resource = attachment;
-											//}
+											uint32_t resource_binding{ (uint32_t)pcmd->TextureId };
+											if (sizeof(ImTextureID) < sizeof(ImU64))
+											{
+												// We don't support texture switches if ImTextureID hasn't been redefined to be 64-bit. Do a flaky check that other textures haven't been used.
+												IM_ASSERT(pcmd->TextureId == (ImTextureID)imgui_font_texture);
+												resource_binding = imgui_font_texture;
+											}
+											
+											if (!pcmd->TextureId)
+												resource_binding = imgui_font_texture;
+											
+											if (resource_binding != last_bound_resource)
+											{
+												self.BindResource("font_sampler"_hash32, resource_binding);
+												self.BindResources(command_list);
+												last_bound_resource = resource_binding;
+											}
 
 											command_list.DrawIndexed(pcmd->ElemCount, pcmd->IdxOffset + global_idx_offset, 1u, pcmd->VtxOffset + global_vtx_offset, 0u);
 										}
