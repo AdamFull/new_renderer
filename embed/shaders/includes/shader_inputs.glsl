@@ -31,6 +31,7 @@
 // Bindless texture
 layout(set = 0, binding = 3) uniform sampler2D globalTextures[];
 
+#define GET_BUFFER_POINTER_RAW(pointer_type, address) pointer_type(address)
 #define GET_BUFFER_POINTER(pointer_type, buffer_desc) pointer_type(buffer_desc.address)
 #define GET_VALUE_PTR_BY_ADDRESS(buffer, index) buffer.data[nonuniformEXT(index)]
 

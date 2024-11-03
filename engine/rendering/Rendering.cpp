@@ -532,6 +532,25 @@ namespace engine
 				render_graph->AddNode(std::move(group_node));
 			}
 
+			// Geometry draw
+			{
+				RenderShaderPassCreateInfo create_info{};
+				create_info.shader_name = "visibilitybuffer:write";
+				create_info.AddWriteAttachment(visbuffer_geometry_target, ResourceAttachmentTypeFlag::eColor, gfx::ClearColor{ 0.f, 0.f, 0.f, 1.f });
+				create_info.AddWriteAttachment(visbuffer_vboinst_target, ResourceAttachmentTypeFlag::eColor, gfx::ClearColor{ 0.f, 0.f, 0.f, 1.f });
+				create_info.AddWriteAttachment(zbuffer_depth_target, ResourceAttachmentTypeFlag::eDepth, gfx::ClearColor{ 1.f });
+
+				create_info.pipeline_state.primitive_topology = gfx::PrimitiveTopology::eTriangleList;
+				create_info.pipeline_state.color_blending_state.attachment_count = 1;
+
+				create_info.draw_callback = [this](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+					{
+
+					};
+
+				//render_graph->AddNode(render_graph->CreateNode(create_info));
+			}
+
 			// Test output shader
 			{
 				RenderShaderPassCreateInfo create_info{};
