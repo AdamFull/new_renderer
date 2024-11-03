@@ -376,55 +376,6 @@ namespace engine
 			virtual void EndDebugLabel(EQueueTypeFlagBits queue_type) = 0;
 		};
 
-		class IRenderWorld
-		{
-		public:
-			virtual ~IRenderWorld() = default;
-
-			virtual void Create() = 0;
-
-			virtual u64 RegisterCamera(ERenderGeometryCullerType type) = 0;
-			virtual void UpdateCamera(u64 camera_id, const glm::mat4& view, const glm::mat4& prev_view, const glm::mat4& projection, const glm::mat4& prev_projection, const glm::vec2& size, float znear = 0.f, float zfar = 1.f) = 0;
-			virtual const FCamera& GetCamera(u64 index) const = 0;
-			virtual const FCamera& GetDefaultCamera() const = 0;
-			virtual const u64 GetCameraID(ERenderGeometryCullerType type) const = 0;
-			virtual const u64 GetDefaultCameraID() const = 0;
-
-			virtual void AddDrawGeometry(const utl::vector<FGeometryBatch>& new_geometry) = 0;
-
-			virtual void Begin(f32 dt) = 0;
-			virtual void End() = 0;
-
-			virtual u64 UpdateLight(const FLightCommit& light) = 0;
-
-			virtual void AddShadow(const FCascadedShadowCommit& commit) = 0;
-			virtual void AddShadow(const FOmniShadowCommit& commit) = 0;
-			virtual void AddShadow(const FSpotShadowCommit& commit) = 0;
-
-			virtual void AddMatrices(const utl::vector<glm::mat4>& matrices) = 0;
-			virtual const glm::mat4& GetMatrix(u64 index) const = 0;
-
-			virtual u64 UpdateNode(u32 node_id, const FSceneNode& node) = 0;
-
-			virtual void AddMaterial(const FMaterial& material) = 0;
-			virtual void AddMaterials(const utl::vector<FMaterial>& materials) = 0;
-			virtual const FMaterial& GetMaterial(u64 index) const = 0;
-
-			virtual void AddMesh(const FMesh& mesh) = 0;
-			virtual void AddMeshes(const utl::vector<FMesh>& meshes) = 0;
-
-			virtual const std::unique_ptr<IGPUVector>& GetDrawBuffer(ERenderBufferIndices buffer_index) const = 0;
-			//virtual const utl::vector<std::unique_ptr<IBufferObject>>& getDrawBuffers() = 0;
-
-			virtual const utl::vector<FGeometryCPUBatch>& GetGeometryBatches() const = 0;
-			virtual const utl::vector<FDrawInfo>& GetDrawCommandByType(ERenderGeometryCullerType type) const = 0;
-
-			virtual FPostProcess& GetPostProcessingData() = 0;
-
-			virtual FRenderWorldStats& GetStats() = 0;
-			virtual const FRenderWorldStats& GetStats() const = 0;
-		};
-
 		class IResourceLoader
 		{
 		public:
@@ -479,7 +430,7 @@ namespace engine
 			virtual void UpdateSurfaceSize(i32 width, i32 height) = 0;
 
 			//virtual const std::unique_ptr<IRenderGraph>& GetRenderGraph() = 0;
-			virtual const std::unique_ptr<IRenderWorld>& GetRenderWorld() = 0;
+			//virtual const std::unique_ptr<IRenderWorld>& GetRenderWorld() = 0;
 			virtual const std::unique_ptr<IRenderBackend>& GetRenderBackend() = 0;
 			virtual const std::unique_ptr<IResourceLoader>& GetResourceLoader() = 0;
 		};

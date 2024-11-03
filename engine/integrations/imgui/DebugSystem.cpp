@@ -90,15 +90,15 @@ void CDebugDrawEngineSystem::PreUpdate(f32 dt)
 	using namespace ImDbg;
 
 	auto& render_backend = m_pRenderInterface->GetRenderBackend();
-	auto& render_world = m_pRenderInterface->GetRenderWorld();
+	//auto& render_world = m_pRenderInterface->GetRenderWorld();
 	auto resolution = render_backend->GetScreenRenderRect();
 
-	const auto& camera = render_world->GetDefaultCamera();
+	//const auto& camera = render_world->GetDefaultCamera();
 
 	auto* io = ImDbg::GetIO();
 	io->screenSize = glm::vec2(resolution.size.x, resolution.size.y);
 	io->deltaTime = dt;
-	io->worldToClip = render_world->GetMatrix(camera.matricesOffset + view_projection_matrix_offset);
+	//io->worldToClip = render_world->GetMatrix(camera.matricesOffset + view_projection_matrix_offset);
 
 	ImDbg::NewFrame();
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <embed/shaders/includes/interop/base.h>
-#include <engine/rendering/RenderCameraInterface.h>
+#include "RenderCameraInterface.h"
 #include <array>
 
 namespace engine

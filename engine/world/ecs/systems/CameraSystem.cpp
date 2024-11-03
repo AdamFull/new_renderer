@@ -21,11 +21,12 @@ void CCameraSystem::__Create()
 	TRACY_PROFILE_FUNCTION();
 
 	auto& registry = CEntityManager::GetRegistry();
-	auto& render_world = m_pRenderInterface->GetRenderWorld();
+	// TODO: RENDER WORLD
+	//auto& render_world = m_pRenderInterface->GetRenderWorld();
 
 	auto view = registry.view<FTransformComponent, FBaseComponent, FCameraComponent>();
-	for (auto [entity, transform, base, camera] : view.each())
-		camera.frustumID = render_world->RegisterCamera(ERenderGeometryCullerType::eScene);
+	//for (auto [entity, transform, base, camera] : view.each())
+	//	camera.frustumID = render_world->RegisterCamera(ERenderGeometryCullerType::eScene);
 }
 
 void CCameraSystem::__Update(f32 fDt)
@@ -33,7 +34,7 @@ void CCameraSystem::__Update(f32 fDt)
 	TRACY_PROFILE_FUNCTION();
 
 	auto& render_backend = m_pRenderInterface->GetRenderBackend();
-	auto& render_world = m_pRenderInterface->GetRenderWorld();
+	//auto& render_world = m_pRenderInterface->GetRenderWorld();
 
 	auto view = CEntityManager::View<FTransformComponent, FBaseComponent, FCameraComponent>();
 	for (auto [entity, transform, base, camera] : view.each())
@@ -53,7 +54,8 @@ void CCameraSystem::__Update(f32 fDt)
 				camera.view = glm::lookAt(transform.gposition, transform.gposition + camera.forward, camera.up);
 				camera.projection = glm::perspective(camera.fieldOfView, screen_size.size.x / screen_size.size.y, camera.nearPlane, camera.farPlane);
 
-				render_world->UpdateCamera(camera.frustumID, camera.view, prev_view, camera.projection, prev_projection, glm::vec2(screen_size.size.x, screen_size.size.y), camera.nearPlane, camera.farPlane);
+				// TODO: RENDER WORLD
+				//render_world->UpdateCamera(camera.frustumID, camera.view, prev_view, camera.projection, prev_projection, glm::vec2(screen_size.size.x, screen_size.size.y), camera.nearPlane, camera.farPlane);
 
 				camera.moved = false;
 			}

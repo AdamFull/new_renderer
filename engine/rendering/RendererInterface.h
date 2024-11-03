@@ -1,7 +1,6 @@
 #pragma once
 
 #include <engine/rendering/GeometryBufferInterface.h>
-#include <engine/rendering/RenderCameraInterface.h>
 #include <engine/rendering/DynamicBufferInterface.h>
 
 namespace engine
@@ -29,9 +28,6 @@ namespace engine
 
 			virtual GeometryBuffer& RequestInterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) = 0;
 			virtual GeometryBuffer& RequestDeinterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) = 0;
-
-			virtual uint32_t AddRenderCamera() = 0;
-			virtual IRenderCamera& GetRenderCamera(uint32_t camera_id) = 0;
 
 			virtual IDynamicBuffer& GetNodeBuffer() = 0;
 			virtual IDynamicBuffer& GetMatrixBuffer() = 0;

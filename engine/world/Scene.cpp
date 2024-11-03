@@ -211,7 +211,8 @@ void CScene::LoadGLTF(easygltf::FGLTFRoot& root)
 	}
 
 	// Load materials
-	auto& render_world = m_pRenderInterface->GetRenderWorld();
+	// TODO: RENDER WORLD
+	//auto& render_world = m_pRenderInterface->GetRenderWorld();
 
 	utl::vector<render::FMaterial> materials{};
 	for (u64 idx = 0ull; idx < root.materials.size(); ++idx)
@@ -264,7 +265,7 @@ void CScene::LoadGLTF(easygltf::FGLTFRoot& root)
 		material_data.doubleSided = material.doubleSided;
 	}
 
-	render_world->AddMaterials(materials);
+	//render_world->AddMaterials(materials);
 
 	// Loading nodes
 	const easygltf::Scene& scene = root.scenes[root.scene > -1 ? root.scene : 0];

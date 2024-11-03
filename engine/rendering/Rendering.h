@@ -46,9 +46,6 @@ namespace engine
 			GeometryBuffer& RequestInterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) override;
 			GeometryBuffer& RequestDeinterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) override;
 
-			uint32_t AddRenderCamera() override;
-			IRenderCamera& GetRenderCamera(uint32_t camera_id) override;
-
 			IDynamicBuffer& GetNodeBuffer() override;
 			IDynamicBuffer& GetMatrixBuffer() override;
 			IDynamicBuffer& GetMeshBuffer() override;
@@ -89,7 +86,6 @@ namespace engine
 			uint32_t backbuffer_resource{ ~0u };
 
 			// Gpu scene
-			std::vector<std::unique_ptr<IRenderCamera>> render_cameras{};
 
 			std::unique_ptr<IDynamicBuffer> node_buffer{};
 			std::unique_ptr<IDynamicBuffer> matrices_buffer{};
