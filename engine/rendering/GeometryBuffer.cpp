@@ -89,12 +89,18 @@ namespace engine
 			index_data.data.clear();
 		}
 
-		void GeometryBuffer::Bind(gfx::CommandList& command_list)
+		void GeometryBuffer::BindIndexBuffer(gfx::CommandList& command_list)
 		{
 			if (index_data.buffer)
 			{
 				command_list.BindIndexBuffer(index_data.buffer, index_data.type, 0ull);
 			}
+		}
+
+		void GeometryBuffer::Bind(gfx::CommandList& command_list)
+		{
+			BindIndexBuffer(command_list);
+			BindVertexBuffers(command_list);
 		}
 
 		uint64_t GeometryBuffer::GetIndexBufferAddress()
@@ -191,10 +197,8 @@ namespace engine
 			}
 		}
 
-		void InterleavedGeometryBuffer::Bind(gfx::CommandList& command_list)
+		void InterleavedGeometryBuffer::BindVertexBuffers(gfx::CommandList& command_list)
 		{
-			GeometryBuffer::Bind(command_list);
-
 			const uint32_t stride{ 0u };
 			uint64_t offset{ 0ull };
 
@@ -278,10 +282,8 @@ namespace engine
 			}
 		}
 
-		void DeinterleavedGeometryBuffer::Bind(gfx::CommandList& command_list)
+		void DeinterleavedGeometryBuffer::BindVertexBuffers(gfx::CommandList& command_list)
 		{
-			GeometryBuffer::Bind(command_list);
-
 			uint32_t buffer_count{ 0u };
 			std::array<gfx::Buffer*, k_max_attribure_description> vertex_buffers{};
 			std::array<uint32_t, k_max_attribure_description> strides{};

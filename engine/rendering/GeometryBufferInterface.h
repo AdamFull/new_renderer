@@ -92,7 +92,11 @@ namespace engine
 
 			virtual void Flush();
 
-			virtual void Bind(gfx::CommandList& command_list);
+			void BindIndexBuffer(gfx::CommandList& command_list);
+
+			virtual void BindVertexBuffers(gfx::CommandList& command_list) = 0;
+
+			void Bind(gfx::CommandList& command_list);
 
 			virtual uint64_t GetBufferAddress(VertexAttributeFlag flag = {}) = 0;
 

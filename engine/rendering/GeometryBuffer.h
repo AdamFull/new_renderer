@@ -21,7 +21,7 @@ namespace engine
 
 			void Flush() override;
 
-			void Bind(gfx::CommandList& command_list) override;
+			void BindVertexBuffers(gfx::CommandList& command_list) override;
 
 			uint64_t GetBufferAddress(VertexAttributeFlag flag = {}) override;
 
@@ -40,7 +40,7 @@ namespace engine
 
 			void Flush() override;
 
-			void Bind(gfx::CommandList& command_list) override;
+			void BindVertexBuffers(gfx::CommandList& command_list) override;
 
 			virtual uint64_t GetBufferAddress(VertexAttributeFlag flag = {}) override;
 
