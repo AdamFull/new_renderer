@@ -41,8 +41,6 @@ namespace engine
 			render_graph = std::make_unique<RenderGraph>(*this, window);
 
 			//// Create buffers
-			//node_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(FSceneNode), 64ull, gfx::BufferUsageFlag::eStorageBuffer);
-			//matrices_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(glm::mat4), 64ull, gfx::BufferUsageFlag::eStorageBuffer);
 			//mesh_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(FMesh), 64ull, gfx::BufferUsageFlag::eStorageBuffer);
 			//
 			//material_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(FMaterial), 64ull, gfx::BufferUsageFlag::eStorageBuffer);
@@ -56,13 +54,9 @@ namespace engine
 			//geometry_batches_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(FGeometryBatch), 64ull, gfx::BufferUsageFlag::eStorageBuffer);
 			//raw_geometry_batches_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(FGeometryBatch), 64ull, gfx::BufferUsageFlag::eStorageBuffer);
 			//
-			//frustum_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(glm::vec4), 64ull, gfx::BufferUsageFlag::eStorageBuffer);
-			//
 			////indexed_draw_indirect_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(), 64ull, gfx::BufferUsageFlag::eIndirectBuffer);
 			//indirect_count_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(uint32_t), 64ull, gfx::BufferUsageFlag::eIndirectBuffer);
 			//mesh_command_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(FDrawMeshIndirectData), 64ull, gfx::BufferUsageFlag::eStorageBuffer);
-			//
-			//camera_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(FCamera), 64ull, gfx::BufferUsageFlag::eStorageBuffer);
 
 			// Temporary func to create test render graph
 			BuildGraph();

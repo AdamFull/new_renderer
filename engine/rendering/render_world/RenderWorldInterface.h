@@ -15,6 +15,8 @@ namespace engine
 			virtual IRenderCamera& GetRenderCamera(uint32_t camera_id) = 0;
 
 			virtual void AddGeometryDraw() = 0;
+
+			virtual void Flush() = 0;
 		};
 	}
 }
