@@ -9,9 +9,9 @@
 #include <engine/rendering/render_graph/RenderPass.h>
 
 #include <engine/rendering/GeometryBuffer.h>
-#include <engine/rendering/DynamicBuffer.h>
 
 #include <engine/rendering/render_graph/RenderGraph.h>
+#include <engine/rendering/render_world/RenderWorld.h>
 
 #include <embed/shaders/includes/interop/base.h>
 
@@ -39,6 +39,7 @@ namespace engine
 
 			resource_context = std::make_unique<UploadContext>(*gfx_context, vfs);
 			render_graph = std::make_unique<RenderGraph>(*this, window);
+			render_world = std::make_unique<RenderWorld>(*this);
 
 			//// Create buffers
 			//mesh_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(FMesh), 64ull, gfx::BufferUsageFlag::eStorageBuffer);
@@ -84,6 +85,8 @@ namespace engine
 
 		void Renderer::Render(float delta_time)
 		{
+			render_world->Flush();
+
 			render_graph->BeginFrame();
 			render_graph->Evaluate(delta_time);
 			render_graph->EndFrame();
@@ -132,79 +135,14 @@ namespace engine
 			return *new_geometry_buffer;
 		}
 
-		IDynamicBuffer& Renderer::GetNodeBuffer()
+		IRenderWorld& Renderer::GetRenderWorld()
 		{
-			return *node_buffer;
+			return *render_world;
 		}
 
-		IDynamicBuffer& Renderer::GetMatrixBuffer()
+		IRenderWorld const& Renderer::GetRenderWorld() const
 		{
-			return *matrices_buffer;
-		}
-
-		IDynamicBuffer& Renderer::GetMeshBuffer()
-		{
-			return *mesh_buffer;
-		}
-
-		IDynamicBuffer& Renderer::GetMaterialBuffer()
-		{
-			return *material_buffer;
-		}
-
-		IDynamicBuffer& Renderer::GetLightBuffer()
-		{
-			return *light_buffer;
-		}
-
-		IDynamicBuffer& Renderer::GetCascadedShadowBuffer()
-		{
-			return *cascaded_shadow_buffer;
-		}
-
-		IDynamicBuffer& Renderer::GetOmniShadowBuffer()
-		{
-			return *omni_shadow_buffer;
-		}
-
-		IDynamicBuffer& Renderer::GetSpotShadowBuffer()
-		{
-			return *spot_shadow_buffer;
-		}
-
-		IDynamicBuffer& Renderer::GetGeobetryBatchBuffer()
-		{
-			return *geometry_batches_buffer;
-		}
-
-		IDynamicBuffer& Renderer::GetRawGeobetryBatchBuffer()
-		{
-			return *raw_geometry_batches_buffer;
-		}
-
-		IDynamicBuffer& Renderer::GetFrustumBuffer()
-		{
-			return *frustum_buffer;
-		}
-
-		IDynamicBuffer& Renderer::GetIndirectDrawBuffer()
-		{
-			return *indexed_draw_indirect_buffer;
-		}
-
-		IDynamicBuffer& Renderer::GetIndirectCountDrawBuffer()
-		{
-			return *indirect_count_buffer;
-		}
-
-		IDynamicBuffer& Renderer::GetMeshCommandBuffer()
-		{
-			return *mesh_command_buffer;
-		}
-
-		IDynamicBuffer& Renderer::GetCameraBuffer()
-		{
-			return *camera_buffer;
+			return *render_world;
 		}
 
 

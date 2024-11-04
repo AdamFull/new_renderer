@@ -25,6 +25,8 @@ namespace engine
 			~Scene();
 
 			void Load(const std::string& path);
+
+			void Update(float delta_time);
 		private:
 			void LoadGLTF(easygltf::FGLTFRoot& root);
 

@@ -26,7 +26,7 @@ void main()
 
 	#ifdef DEBUG_3D
 		FCamera camera = GetCamera(frameData.defaultCameraID);
-		mat4 viewProjection = getViewProjectionMatrix(camera.matricesOffset);
+		mat4 viewProjection = getViewProjectionMatrix(camera.matrices_offset);
 
 		gl_Position = viewProjection * vec4(inPos, 1.0);
 	#else

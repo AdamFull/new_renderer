@@ -74,8 +74,8 @@ void CShadowsSystem::__Update(f32 fDt)
 	//// Calculate cascades shadow data
 	//{
 	//	// Begin calculating cascades
-	//	const auto& near_clip = camera.zNear;
-	//	const auto& far_clip = camera.zFar;
+	//	const auto& near_clip = camera.z_near;
+	//	const auto& far_clip = camera.z_far;
 	//	f32 clip_range = far_clip - near_clip;
 	//
 	//	f32 min_z = near_clip;
@@ -136,7 +136,7 @@ void CShadowsSystem::__Update(f32 fDt)
 	//				// Project frustum corners into world space
 	//				for (auto& corner : frustumCorners)
 	//				{
-	//					glm::vec4 invCorner = render_world->GetMatrix(camera.matricesOffset + render::inv_view_projection_matrix_offset) * corner;
+	//					glm::vec4 invCorner = render_world->GetMatrix(camera.matrices_offset + render::inv_view_projection_matrix_offset) * corner;
 	//					corner = invCorner / invCorner.w;
 	//				}
 	//

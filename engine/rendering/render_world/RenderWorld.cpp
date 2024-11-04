@@ -1,8 +1,7 @@
 #include "RenderWorld.h"
 #include <engine/rendering/Rendering.h>
-#include <engine/rendering/DynamicBuffer.h>
 
-#include "RenderCamera.h"
+#include <glm/gtx/quaternion.hpp>
 
 namespace engine
 {
@@ -13,29 +12,216 @@ namespace engine
 		{
 			auto& resource_context = renderer.GetResourceContext();
 
-			node_buffer = std::make_unique<DynamicBuffer>(resource_context, sizeof(FSceneNode), 64ull, gfx::BufferUsageFlag::eStorageBuffer);
-			matrices_buffer = std::make_unique<DynamicBuffer>(resource_context, sizeof(glm::mat4), 64ull, gfx::BufferUsageFlag::eStorageBuffer);
+			world_cameras = std::make_unique<DynamicBuffer<FCamera>>(resource_context, 8ull, gfx::BufferUsageFlag::eStorageBuffer);
+			world_matrices = std::make_unique<DynamicBuffer<glm::mat4>>(resource_context, 64ull, gfx::BufferUsageFlag::eStorageBuffer);
+			world_frustum = std::make_unique<DynamicBuffer<glm::vec4>>(resource_context, 64ull, gfx::BufferUsageFlag::eStorageBuffer);
 
-			frustum_buffer = std::make_unique<DynamicBuffer>(resource_context, sizeof(glm::vec4), 64ull, gfx::BufferUsageFlag::eStorageBuffer);
-			camera_buffer = std::make_unique<DynamicBuffer>(resource_context, sizeof(FCamera), 64ull, gfx::BufferUsageFlag::eStorageBuffer);
+			indirect_draw_commands = std::make_unique<DynamicBuffer<FDrawIndexedIndirectData>>(resource_context, 64ull, gfx::BufferUsageFlag::eIndirectBuffer);
+			//node_buffer = std::make_unique<DynamicBuffer>(resource_context, sizeof(FSceneNode), 64ull, gfx::BufferUsageFlag::eStorageBuffer);
 		}
 
 		uint32_t RenderWorld::CreateRenderCamera()
 		{
-			render_cameras.emplace_back(std::make_unique<RenderCamera>());
-			return render_cameras.size() - 1ull;
+			auto& world_resource = world_resources.emplace_back();
+			world_resource.type = WorldResourceType::eCamera;
+			world_resource.resource_id = camera_offset++;
+
+			auto& camera = world_cameras->Get(world_resource.resource_id);
+			camera.matrices_offset = matrices_offset;
+			matrices_offset += matrix_offset_count;
+
+			camera.frustum_offset = frustum_offset;
+			frustum_offset += 6ull; // Because 6 frustum sides
+
+			return world_resources.size() - 1ull;
 		}
 
-		IRenderCamera& RenderWorld::GetRenderCamera(uint32_t camera_id)
+		FCamera& RenderWorld::GetRenderCamera(uint32_t camera_id)
 		{
-			return *render_cameras[camera_id];
+			auto& world_resource = world_resources[camera_id];
+			return world_cameras->Get(world_resource.resource_id);
+		}
+
+		glm::mat4 const& RenderWorld::GetCameraMatrix(uint32_t camera_id, uint32_t matrix_index)
+		{
+			auto& world_resource = world_resources[camera_id];
+			auto& camera = world_cameras->Get(world_resource.resource_id);
+
+			auto* matrix_begin = world_matrices->Data(camera.matrices_offset);
+			return *(matrix_begin + matrix_index);
+		}
+
+		void RenderWorld::UpdateRenderCamera(uint32_t camera_id, const glm::vec3& translation, const glm::quat& rotation)
+		{
+			auto& world_resource = world_resources[camera_id];
+			auto& camera = world_cameras->Get(world_resource.resource_id);
+
+			uint32_t camera_hash{ 0u };
+			camera_hash = utl::murmur_hash(reinterpret_cast<const char*>(&translation.x), sizeof(glm::vec3), camera_hash);
+			camera_hash = utl::murmur_hash(reinterpret_cast<const char*>(&rotation.x), sizeof(glm::quat), camera_hash);
+			camera_hash = utl::murmur_hash(camera.fov, camera_hash);
+			camera_hash = utl::murmur_hash(camera.z_near, camera_hash);
+			camera_hash = utl::murmur_hash(camera.z_far, camera_hash);
+			camera_hash = utl::murmur_hash(camera.aspect, camera_hash);
+
+			bool dirty = camera_hash != camera.last_hash;
+			camera.last_hash = camera_hash;
+
+			float screen_size_x = 1920.f;
+			float screen_size_y = 1080.f;
+
+			if (dirty)
+			{
+				camera.aspect = screen_size_x / screen_size_y;
+
+				camera.size = { screen_size_x, screen_size_y };
+				camera.invSize = 1.f / camera.size;
+
+				auto forward = glm::normalize(glm::rotate(rotation, glm::vec3(0.f, 0.f, -1.f)));
+				auto right = glm::normalize(glm::cross(forward, glm::vec3{ 0.f, 1.f, 0.f }));
+				auto up = glm::normalize(glm::cross(right, forward));
+
+				auto* matrices = world_matrices->Data(camera.matrices_offset);
+				world_matrices->MarkDirty(camera.matrices_offset, matrix_offset_count);
+
+				matrices[view_matrix_offset] = glm::lookAt(translation, translation + forward, up);
+				matrices[inv_view_matrix_offset] = glm::inverse(matrices[view_matrix_offset]);
+				matrices[projection_matrix_offset] = glm::perspective(camera.fov, camera.aspect, camera.z_near, camera.z_far);
+				matrices[inv_projection_matrix_offset] = glm::inverse(matrices[projection_matrix_offset]);
+				matrices[prev_view_projection_matrix_offset] = matrices[view_projection_matrix_offset];
+				matrices[view_projection_matrix_offset] = matrices[projection_matrix_offset] * matrices[view_matrix_offset];
+				matrices[inv_view_projection_matrix_offset] = glm::inverse(matrices[view_projection_matrix_offset]);
+
+				// Calculate frustum
+				auto* frustum_begin = world_frustum->Data(camera.frustum_offset);
+				world_frustum->MarkDirty(camera.frustum_offset, 6u);
+
+				auto& clip_matrix = matrices[view_projection_matrix_offset];
+
+				// Lesft
+				auto frustum_left = glm::vec4(
+					clip_matrix[0][3] - clip_matrix[0][0],
+					clip_matrix[1][3] - clip_matrix[1][0],
+					clip_matrix[2][3] - clip_matrix[2][0],
+					clip_matrix[3][3] - clip_matrix[3][0]
+				);
+				frustum_begin[1] = glm::normalize(frustum_left);
+
+				// Rigth
+				auto frustum_right = glm::vec4(
+					clip_matrix[0][3] + clip_matrix[0][0],
+					clip_matrix[1][3] + clip_matrix[1][0],
+					clip_matrix[2][3] + clip_matrix[2][0],
+					clip_matrix[3][3] + clip_matrix[3][0]
+				);
+				frustum_begin[0] = glm::normalize(frustum_right);
+
+				// Top
+				auto frustum_top = glm::vec4(
+					clip_matrix[0][3] - clip_matrix[0][1],
+					clip_matrix[1][3] - clip_matrix[1][1],
+					clip_matrix[2][3] - clip_matrix[2][1],
+					clip_matrix[3][3] - clip_matrix[3][1]
+				);
+				frustum_begin[3] = glm::normalize(frustum_top);
+
+				// Bottom
+				auto frustum_bottom = glm::vec4(
+					clip_matrix[0][3] + clip_matrix[0][1],
+					clip_matrix[1][3] + clip_matrix[1][1],
+					clip_matrix[2][3] + clip_matrix[2][1],
+					clip_matrix[3][3] + clip_matrix[3][1]
+				);
+				frustum_begin[2] = glm::normalize(frustum_bottom);
+
+				// Back
+				auto frustum_back = glm::vec4(
+					clip_matrix[0][3] + clip_matrix[0][2],
+					clip_matrix[1][3] + clip_matrix[1][2],
+					clip_matrix[2][3] + clip_matrix[2][2],
+					clip_matrix[3][3] + clip_matrix[3][2]
+				);
+				frustum_begin[4] = glm::normalize(frustum_back);
+
+				// Front
+				auto frustum_front = glm::vec4(
+					clip_matrix[0][3] - clip_matrix[0][2],
+					clip_matrix[1][3] - clip_matrix[1][2],
+					clip_matrix[2][3] - clip_matrix[2][2],
+					clip_matrix[3][3] - clip_matrix[3][2]
+				);
+				frustum_begin[5] = glm::normalize(frustum_front);
+
+				// Update reprojection
+				auto& camera_reprojection = matrices[reprojection_matrix_offset];
+
+				camera_reprojection = matrices[prev_view_projection_matrix_offset] * matrices[inv_view_projection_matrix_offset];
+
+				float rcp_half_dimx = 2.0f / screen_size_x;
+				float rcp_half_dimy = 2.0f / screen_size_y;
+				float rcp_z_magic = camera.z_near / (camera.z_far - camera.z_near);
+
+				bool linear_z = false;
+
+				// Transform from uv to clip space: texcoord * 2 - 1
+				static glm::mat4 to_clip_space =
+				{
+					rcp_half_dimx, 0.0f, 0.0f, 0.0f,
+					0.0f, -rcp_half_dimy, 0.0f, 0.0f,
+					0.0f, 0.0f, linear_z ? rcp_z_magic : 1.0f, 0.0f,
+					-1.0f, 1.0f, linear_z ? -rcp_z_magic : 0.0f, 1.0f
+				};
+
+				// Transform from clip to uv space: texcoord * 0.5 + 0.5
+				static glm::mat4 to_uv_space =
+				{
+					1.0f / rcp_half_dimx, 0.0f, 0.0f, 0.0f,
+					0.0f, -1.0f / rcp_half_dimy, 0.0f, 0.0f,
+					0.0f, 0.0f, 1.0f, 0.0f,
+					1.0f / rcp_half_dimx, 1.0f / rcp_half_dimy, 0.0f, 1.0f
+				};
+				camera_reprojection = to_clip_space * camera_reprojection * to_uv_space;
+
+				// Mark camera for update
+				world_cameras->MarkDirty(world_resource.resource_id);
+			}
+		}
+
+		void RenderWorld::UpdateNode(uint32_t node_id, const glm::mat4& matrix)
+		{
+			auto& node = world_nodes->Get(node_id);
+			if (node.matrixOffset != 0u)
+			{
+				node.matrixOffset = matrices_offset;
+			}
+
+			auto* matrices = world_matrices->Data(node.matrixOffset);
+			matrices[1ull] = matrices[0ull];
+			matrices[0ull] = matrix;
+
+			world_matrices->MarkDirty(node.matrixOffset, 2ull);
+		}
+
+		void RenderWorld::AddGeometryDraw(DrawCommand& draw_command)
+		{
+			auto& command = indirect_draw_commands->Get(draw_count++);
+
+			command.indexCount = draw_command.index_count;
+			command.instanceCount = 1;
+			command.firstIndex = draw_command.first_index;
+			command.vertexOffset = int(draw_command.first_vertex);
+			command.firstInstance = 0;
+
+			indirect_draw_commands->MarkDirty(draw_count - 1u);
 		}
 
 		void RenderWorld::Flush()
 		{
-			// Update buffers on gpu
-
-
+			world_cameras->Flush();
+			world_matrices->Flush();
+			world_frustum->Flush();
+			indirect_draw_commands->Flush();
+			draw_count = 0;
 		}
 	}
 }

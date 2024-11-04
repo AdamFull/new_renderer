@@ -1,7 +1,7 @@
 #pragma once
 
 #include <engine/rendering/GeometryBufferInterface.h>
-#include <engine/rendering/DynamicBufferInterface.h>
+#include <engine/rendering/render_world/RenderWorldInterface.h>
 
 namespace engine
 {
@@ -29,27 +29,8 @@ namespace engine
 			virtual GeometryBuffer& RequestInterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) = 0;
 			virtual GeometryBuffer& RequestDeinterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) = 0;
 
-			virtual IDynamicBuffer& GetNodeBuffer() = 0;
-			virtual IDynamicBuffer& GetMatrixBuffer() = 0;
-			virtual IDynamicBuffer& GetMeshBuffer() = 0;
-
-			virtual IDynamicBuffer& GetMaterialBuffer() = 0;
-			virtual IDynamicBuffer& GetLightBuffer() = 0;
-
-			virtual IDynamicBuffer& GetCascadedShadowBuffer() = 0;
-			virtual IDynamicBuffer& GetOmniShadowBuffer() = 0;
-			virtual IDynamicBuffer& GetSpotShadowBuffer() = 0;
-
-			virtual IDynamicBuffer& GetGeobetryBatchBuffer() = 0;
-			virtual IDynamicBuffer& GetRawGeobetryBatchBuffer() = 0;
-
-			virtual IDynamicBuffer& GetFrustumBuffer() = 0;
-
-			virtual IDynamicBuffer& GetIndirectDrawBuffer() = 0;
-			virtual IDynamicBuffer& GetIndirectCountDrawBuffer() = 0;
-			virtual IDynamicBuffer& GetMeshCommandBuffer() = 0;
-
-			virtual IDynamicBuffer& GetCameraBuffer() = 0;
+			virtual IRenderWorld& GetRenderWorld() = 0;
+			virtual IRenderWorld const& GetRenderWorld() const = 0;
 		};
 	}
 }

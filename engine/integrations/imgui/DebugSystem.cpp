@@ -98,7 +98,7 @@ void CDebugDrawEngineSystem::PreUpdate(f32 dt)
 	auto* io = ImDbg::GetIO();
 	io->screenSize = glm::vec2(resolution.size.x, resolution.size.y);
 	io->deltaTime = dt;
-	//io->worldToClip = render_world->GetMatrix(camera.matricesOffset + view_projection_matrix_offset);
+	//io->worldToClip = render_world->GetMatrix(camera.matrices_offset + view_projection_matrix_offset);
 
 	ImDbg::NewFrame();
 

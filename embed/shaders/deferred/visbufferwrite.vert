@@ -51,7 +51,7 @@ void main()
 	vec4 localPos = modelMatrix * (vec4(inPosition, 1.0));
 	localPos = vec4(localPos.xyz / localPos.w, 1.0);
 
-	mat4 viewProjection = getViewProjectionMatrix(camera.matricesOffset);
+	mat4 viewProjection = getViewProjectionMatrix(camera.matrices_offset);
 
 	//currentPos = viewProjection * localPos;
 

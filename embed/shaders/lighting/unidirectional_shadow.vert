@@ -48,17 +48,17 @@ void main()
 #if defined(CASCADED_SHADOW)
 	FCascadedShadowCommit shadow = getCascadedShadowCommit(shadowData.shadowIndex);
 	FCamera camera = GetCamera(draw_info.cameraID);
-	viewProj = getViewProjectionMatrix(camera.matricesOffset);
+	viewProj = getViewProjectionMatrix(camera.matrices_offset);
 	gl_Layer = shadowData.shadowIndex * int(cascade_shadow_map_cascade_count) + shadowData.layer;
 #elif defined(OMNI_SHADOW)
 	FOmniShadowCommit shadow = getOmniShadowCommit(shadowData.shadowIndex);
 	FCamera camera = GetCamera(draw_info.cameraID);
-	viewProj = getViewProjectionMatrix(camera.matricesOffset);
+	viewProj = getViewProjectionMatrix(camera.matrices_offset);
 	gl_Layer = shadowData.shadowIndex * 6 + shadowData.layer;
 #else
 	FSpotShadowCommit shadow = getSpotShadowCommit(shadowData.shadowIndex);
 	FCamera camera = GetCamera(draw_info.cameraID);
-	viewProj = getViewProjectionMatrix(camera.matricesOffset);
+	viewProj = getViewProjectionMatrix(camera.matrices_offset);
 	gl_Layer = shadowData.layer;
 #endif
 

@@ -18,11 +18,11 @@ layout(std140, set = 1, binding = 0) uniform GeometryBuffers
 	uint32_t lastVertex;
 };
 
-bool checkObjectInFrustum(in vec3 min_extents, in vec3 max_extents, in uint32_t frustumID)
+bool checkObjectInFrustum(in vec3 min_extents, in vec3 max_extents, in uint32_t frustum_offset)
 {
 	for (uint32_t i = 0; i < 6; i++)
 	{
-		vec4 edge = getFrustumSide(frustumID * 6u + i);
+		vec4 edge = getFrustumSide(frustum_offset + i);
 		if (   edge.x * min_extents.x + edge.y * min_extents.y + edge.z * min_extents.z + edge.w <= 0.0f
 			&& edge.x * max_extents.x + edge.y * min_extents.y + edge.z * min_extents.z + edge.w <= 0.0f
 			&& edge.x * min_extents.x + edge.y * max_extents.y + edge.z * min_extents.z + edge.w <= 0.0f
@@ -59,7 +59,7 @@ void main()
 	max_extents.xyz /= max_extents.w;
 	
 	// Do frustum culling
-	//if(checkObjectInFrustum(min_extents.xyz * 1.1, min_extents.xyz * 1.1, draw_info.cameraID))
+	//if(checkObjectInFrustum(min_extents.xyz * 1.1, min_extents.xyz * 1.1, camera.frustum_offset))
 	{	
 		uint draw_offset = frameData.maxCommandsCount * draw_info.cameraID;
 		uint culler_counter = atomicAdd(GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(UInt32Ptr, indirectCountBuffer), draw_info.cameraID), 1);
@@ -71,7 +71,7 @@ void main()
 		// TODO: In future thing about how to implement instancing here
 
 		FCamera camera = GetCamera(draw_info.cameraID);
-		mat4 view_projection = getViewProjectionMatrix(camera.matricesOffset);
+		mat4 view_projection = getViewProjectionMatrix(camera.matrices_offset);
 		
 		vec4 min_clip = view_projection * min_extents;
 		vec4 max_clip = view_projection * max_extents;

@@ -19,19 +19,35 @@ namespace engine
 			~RenderWorld() = default;
 
 			uint32_t CreateRenderCamera() override;
-			IRenderCamera& GetRenderCamera(uint32_t camera_id) override;
+			FCamera& GetRenderCamera(uint32_t camera_id) override;
+			glm::mat4 const& GetCameraMatrix(uint32_t camera_id, uint32_t matrix_index) override;
+
+			void UpdateRenderCamera(uint32_t camera_id, const glm::vec3& translation, const glm::quat& rotation) override;
+
+			void UpdateNode(uint32_t node_id, const glm::mat4& matrix) override;
+
+			void AddGeometryDraw(DrawCommand& draw_command) override;
 
 			void Flush() override;
 		private:
 			IRenderer& renderer;
 
-			std::vector<std::unique_ptr<IRenderCamera>> render_cameras{};
+			std::vector<WorldResource> world_resources{};
 
-			std::unique_ptr<IDynamicBuffer> node_buffer{};
-			std::unique_ptr<IDynamicBuffer> matrices_buffer{};
+			std::unique_ptr<DynamicBuffer<FSceneNode>> world_nodes{};
+			uint32_t nodes_offset{ 0u };
 
-			std::unique_ptr<IDynamicBuffer> frustum_buffer{};
-			std::unique_ptr<IDynamicBuffer> camera_buffer{};
+			std::unique_ptr<DynamicBuffer<FCamera>> world_cameras{};
+			uint32_t camera_offset{ 0u };
+
+			std::unique_ptr<DynamicBuffer<glm::mat4>> world_matrices{};
+			uint32_t matrices_offset{ 0u };
+
+			std::unique_ptr<DynamicBuffer<glm::vec4>> world_frustum{};
+			uint32_t frustum_offset{ 0u };
+
+			std::unique_ptr<DynamicBuffer<FDrawIndexedIndirectData>> indirect_draw_commands{};
+			uint32_t draw_count{ 0u };
 		};
 	}
 }

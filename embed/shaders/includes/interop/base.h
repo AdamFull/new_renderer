@@ -174,11 +174,15 @@ namespace engine {
 
 		struct FCamera
 		{
-			uint32_t matricesOffset;
 			uint32_t type;
+			uint32_t matrices_offset;
+			uint32_t frustum_offset;
+			uint32_t last_hash;
 			
-			float zNear;
-			float zFar;
+			float fov;
+			float z_near;
+			float z_far;
+			float aspect;
 
 			VECTOR2 size;
 			VECTOR2 invSize;

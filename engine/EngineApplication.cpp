@@ -107,6 +107,8 @@ namespace engine
 
 	void EngineApplication::Update(float delta_time)
 	{
+		scene->Update(delta_time);
+
 		renderer->Render(delta_time);
 		//// Pre update zone BEGIN
 		//m_pSystemManager->PreUpdate(delta_time);

@@ -78,10 +78,9 @@ using namespace engine::world::ecs;
 //	}
 //}
 
-CMeshSystem::CMeshSystem(render::IRenderInterface* render_interface)
+CMeshSystem::CMeshSystem(render::IRenderer& renderer) :
+	render_world{renderer.GetRenderWorld() }
 {
-	m_pRenderInterface = render_interface;
-
 	CEntityManager::RegisterComponent<FMeshComponent>();
 }
 
@@ -93,6 +92,41 @@ void CMeshSystem::__Create()
 void CMeshSystem::__Update(f32 fDt)
 {
 	TRACY_PROFILE_FUNCTION();
+
+	auto root = CEntityManager::GetRoot();
+	auto& root_component = CEntityManager::GetComponent<FRootComponent>(root);
+	
+	auto view = CEntityManager::View<FTransformComponent, FBaseComponent, FMeshComponent>();
+	for (auto [entity, transform, base, mesh_component] : view.each())
+	{
+		if (!base.visible)
+			continue;
+
+		auto node = utl::cast<uint32_t>(entity);
+
+		// Update node
+		render_world.UpdateNode(node, transform.gmodel);
+
+		//if (auto found = root_component.skinRemap.find(utl::cast<u32>(mesh_component.skin)); found != root_component.skinRemap.end())
+		//	scene_node.skeletonID = found->second;
+
+		for (const auto& primitive : mesh_component.primitives)
+		{
+			//const auto& material = render_world->GetMaterial(primitive.material);
+			//if (material.alphaMode != alpha_mode)
+			//	continue;
+		
+			FDrawIndexedIndirectData indirect_command{};
+			indirect_command.indexCount = primitive.vertex_range.index_count;
+			indirect_command.instanceCount = 1;
+			indirect_command.firstIndex = primitive.vertex_range.first_index;
+			indirect_command.vertexOffset = int(primitive.vertex_range.first_vertex);
+			indirect_command.firstInstance = 0;
+
+
+		}
+	}
+
 
 	// TODO: RENDER WORLD
 	//auto& render_world = m_pRenderInterface->GetRenderWorld();

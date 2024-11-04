@@ -250,7 +250,7 @@ namespace engine
 			CEntityManager::RegisterSystem<ecs::CScenegraphSystem>();
 			//CEntityManager::RegisterSystem<ecs::CSkinningSystem>(render_interface);
 
-			//CEntityManager::RegisterSystem<ecs::CCameraSystem>(render_interface);
+			CEntityManager::RegisterSystem<ecs::CCameraSystem>(renderer);
 			//CEntityManager::RegisterSystem<ecs::CShadowsSystem>(render_interface);
 			//CEntityManager::RegisterSystem<ecs::CLightingSystem>(render_interface);
 			//CEntityManager::RegisterSystem<ecs::CMeshSystem>(render_interface);
@@ -271,6 +271,11 @@ namespace engine
 				return;
 
 			LoadGLTF(root);
+		}
+
+		void Scene::Update(float delta_time)
+		{
+			CEntityManager::Update(delta_time);
 		}
 
 		void Scene::LoadGLTF(easygltf::FGLTFRoot& root)

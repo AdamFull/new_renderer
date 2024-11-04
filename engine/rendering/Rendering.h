@@ -9,6 +9,7 @@
 //#include <engine/rendering/GPUVector.h>
 #include <engine/rendering/render_graph/ShaderPass.h>
 #include <engine/rendering/render_graph/RenderGraphInterface.h>
+#include <engine/rendering/render_world/RenderWorldInterface.h>
 #include <memory>
 
 namespace engine
@@ -46,27 +47,8 @@ namespace engine
 			GeometryBuffer& RequestInterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) override;
 			GeometryBuffer& RequestDeinterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) override;
 
-			IDynamicBuffer& GetNodeBuffer() override;
-			IDynamicBuffer& GetMatrixBuffer() override;
-			IDynamicBuffer& GetMeshBuffer() override;
-
-			IDynamicBuffer& GetMaterialBuffer() override;
-			IDynamicBuffer& GetLightBuffer() override;
-
-			IDynamicBuffer& GetCascadedShadowBuffer() override;
-			IDynamicBuffer& GetOmniShadowBuffer() override;
-			IDynamicBuffer& GetSpotShadowBuffer() override;
-
-			IDynamicBuffer& GetGeobetryBatchBuffer() override;
-			IDynamicBuffer& GetRawGeobetryBatchBuffer() override;
-
-			IDynamicBuffer& GetFrustumBuffer() override;
-
-			IDynamicBuffer& GetIndirectDrawBuffer() override;
-			IDynamicBuffer& GetIndirectCountDrawBuffer() override;
-			IDynamicBuffer& GetMeshCommandBuffer() override;
-
-			IDynamicBuffer& GetCameraBuffer() override;
+			IRenderWorld& GetRenderWorld() override;
+			IRenderWorld const& GetRenderWorld() const override;
 		private:
 			void BuildGraph();
 		private:
@@ -75,6 +57,7 @@ namespace engine
 			std::unique_ptr<gfx::Context> gfx_context{};
 			std::unique_ptr<gfx::ResourceContext> resource_context{};
 			std::unique_ptr<IRenderGraph> render_graph{};
+			std::unique_ptr<IRenderWorld> render_world{};
 
 			//GPUVector<FMaterial> materials{};
 
@@ -84,30 +67,6 @@ namespace engine
 			std::vector<std::unique_ptr<GeometryBuffer>> geometry_buffers{};
 
 			uint32_t backbuffer_resource{ ~0u };
-
-			// Gpu scene
-
-			std::unique_ptr<IDynamicBuffer> node_buffer{};
-			std::unique_ptr<IDynamicBuffer> matrices_buffer{};
-			std::unique_ptr<IDynamicBuffer> mesh_buffer{};
-
-			std::unique_ptr<IDynamicBuffer> material_buffer{};
-			std::unique_ptr<IDynamicBuffer> light_buffer{};
-
-			std::unique_ptr<IDynamicBuffer> cascaded_shadow_buffer{};
-			std::unique_ptr<IDynamicBuffer> omni_shadow_buffer{};
-			std::unique_ptr<IDynamicBuffer> spot_shadow_buffer{};
-
-			std::unique_ptr<IDynamicBuffer> geometry_batches_buffer{};
-			std::unique_ptr<IDynamicBuffer> raw_geometry_batches_buffer{};
-
-			std::unique_ptr<IDynamicBuffer> frustum_buffer{};
-
-			std::unique_ptr<IDynamicBuffer> indexed_draw_indirect_buffer{};
-			std::unique_ptr<IDynamicBuffer> indirect_count_buffer{};
-			std::unique_ptr<IDynamicBuffer> mesh_command_buffer{};
-
-			std::unique_ptr<IDynamicBuffer> camera_buffer{};
 		};
 	}
 }

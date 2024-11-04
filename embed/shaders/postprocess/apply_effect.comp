@@ -78,7 +78,7 @@ void main()
 	if(postprocess.enable_dof > 0)
 	{
 		float depth = texture(depth_image, uv).r;
-		float linear_depth = linearizeDepth(depth, camera.zNear, camera.zFar);
+		float linear_depth = linearizeDepth(depth, camera.z_near, camera.z_far);
 
 		vec3 texture_blured = texture(bokeh_color, uv).rgb;
 

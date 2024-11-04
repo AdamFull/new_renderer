@@ -17,8 +17,8 @@ void main()
 		return;
 
 	FCamera camera = GetCamera(frameData.defaultCameraID);
-	mat4 inv_view_projection = getInvViewProjectionMatrix(camera.matricesOffset);
-	mat4 prev_view_projection = getPrevViewProjectionMatrix(camera.matricesOffset);
+	mat4 inv_view_projection = getInvViewProjectionMatrix(camera.matrices_offset);
+	mat4 prev_view_projection = getPrevViewProjectionMatrix(camera.matrices_offset);
 
 	float depth = texture(depth_texture, uv).r;
 

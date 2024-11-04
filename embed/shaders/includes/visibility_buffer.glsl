@@ -208,8 +208,8 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 #endif // HAS_SKIN
 
 	FCamera camera = GetCamera(visbuffer.cameraID);
-	mat4 view = getViewMatrix(camera.matricesOffset);
-	mat4 projection = getProjectionMatrix(camera.matricesOffset);
+	mat4 view = getViewMatrix(camera.matrices_offset);
+	mat4 projection = getProjectionMatrix(camera.matrices_offset);
 
 	// Transform positions to clip space
 	mat4 mvp = projection * view * model;

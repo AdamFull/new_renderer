@@ -120,10 +120,10 @@ CScene::CScene(IVirtualFileSystemInterface* vfs, render::IRenderInterface* rende
 	CEntityManager::RegisterSystem<ecs::CScenegraphSystem>();
 	CEntityManager::RegisterSystem<ecs::CSkinningSystem>(render_interface);
 	
-	CEntityManager::RegisterSystem<ecs::CCameraSystem>(render_interface);
+	//CEntityManager::RegisterSystem<ecs::CCameraSystem>(render_interface);
 	CEntityManager::RegisterSystem<ecs::CShadowsSystem>(render_interface);
 	CEntityManager::RegisterSystem<ecs::CLightingSystem>(render_interface);
-	CEntityManager::RegisterSystem<ecs::CMeshSystem>(render_interface);
+	//CEntityManager::RegisterSystem<ecs::CMeshSystem>(render_interface);
 }
 
 CScene::~CScene()
