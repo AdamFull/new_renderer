@@ -7,7 +7,7 @@ layout(location = 3) out vec2 texCoord;
 //layout(location = 5) smooth out vec4 currentPos;
 //layout(location = 6) smooth out vec4 oldPos;
 
-REGISTER_RO_BUFFER_PTR(PositionBuffer, vec3, 8);
+REGISTER_RO_BUFFER_PTR(PositionBuffer, float, 4);
 #if defined(COLOR_VEC3)
 REGISTER_RO_BUFFER_PTR2(ColorBuffer, vec3);
 #elif defined(COLOR_VEC4)
@@ -80,7 +80,9 @@ void main()
 
 	Index vertex_index = Index(gl_VertexIndex);
 
-	vec3 position = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER_RAW(PositionBuffer, geometry_buffers.position), vertex_index);
+	float position_x = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER_RAW(PositionBuffer, geometry_buffers.position), vertex_index * 3 + 0);
+	float position_y = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER_RAW(PositionBuffer, geometry_buffers.position), vertex_index * 3 + 1);
+	float position_z = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER_RAW(PositionBuffer, geometry_buffers.position), vertex_index * 3 + 2);
 //#ifdef HAS_TEXCOORD
 //	texCoord = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER_RAW(TexcoordBuffer, geometry_buffers.texcoord), vertex_index);
 //#endif
@@ -88,7 +90,7 @@ void main()
 	FCamera camera = GetCamera(0);
 	mat4 view_projection = getViewProjectionMatrix(camera.matrices_offset);
 	
-	vec4 clipSpacePos = view_projection * vec4(position, 1.f);
+	vec4 clipSpacePos = view_projection * vec4(position_x, position_y, position_z, 1.f);
 	//vec4 clipSpacePos = view_projection * vec4(inPosition, 1.f);
 
 	gl_Position = clipSpacePos;
