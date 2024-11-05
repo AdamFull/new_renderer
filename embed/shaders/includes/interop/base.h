@@ -23,6 +23,7 @@
 
 #define REGISTER_RW_BUFFER_PTR(BufferTypeName, DataType, Alignment)
 #define REGISTER_RO_BUFFER_PTR(BufferTypeName, DataType, Alignment)
+#define REGISTER_RO_BUFFER_PTR2(BufferTypeName, DataType)
 #define REGISTER_WO_BUFFER_PTR(BufferTypeName, DataType, Alignment)
 
 #else // __cplusplus
@@ -45,6 +46,7 @@
 
 #define REGISTER_RW_BUFFER_PTR(BufferTypeName, DataType, Alignment) layout(std430, buffer_reference, buffer_reference_align = Alignment) buffer BufferTypeName { DataType data[]; };
 #define REGISTER_RO_BUFFER_PTR(BufferTypeName, DataType, Alignment) layout(std430, buffer_reference, buffer_reference_align = Alignment) readonly buffer BufferTypeName { DataType data[]; };
+#define REGISTER_RO_BUFFER_PTR2(BufferTypeName, DataType) layout(std430, buffer_reference) readonly buffer BufferTypeName { DataType data[]; };
 #define REGISTER_WO_BUFFER_PTR(BufferTypeName, DataType, Alignment) layout(std430, buffer_reference, buffer_reference_align = Alignment) writeonly buffer BufferTypeName { DataType data[]; };
 
 #define REGISTER_RW_STORAGE_BUFFER(Set, Binding, BufferTypeName, DataType, Name) layout(std430, set = Set, binding = Binding) buffer BufferTypeName { DataType data[]; } Name;

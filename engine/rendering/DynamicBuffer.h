@@ -63,6 +63,11 @@ namespace engine
 				return memory.data() + offset;
 			}
 
+			gfx::Buffer* GetBuffer()
+			{
+				return buffer;
+			}
+
 			void Flush()
 			{
 				if (!dirty_ranges.empty())

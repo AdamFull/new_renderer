@@ -8,8 +8,6 @@
 
 //#include <engine/rendering/GPUVector.h>
 #include <engine/rendering/render_graph/ShaderPass.h>
-#include <engine/rendering/render_graph/RenderGraphInterface.h>
-#include <engine/rendering/render_world/RenderWorldInterface.h>
 #include <memory>
 
 namespace engine
@@ -46,6 +44,9 @@ namespace engine
 
 			GeometryBuffer& RequestInterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) override;
 			GeometryBuffer& RequestDeinterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) override;
+
+			IRenderGraph& GetRenderGraph() override;
+			IRenderGraph const& GetRenderGraph() const override;
 
 			IRenderWorld& GetRenderWorld() override;
 			IRenderWorld const& GetRenderWorld() const override;

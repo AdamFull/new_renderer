@@ -115,13 +115,24 @@ void CMeshSystem::__Update(f32 fDt)
 			//const auto& material = render_world->GetMaterial(primitive.material);
 			//if (material.alphaMode != alpha_mode)
 			//	continue;
+
+			DrawCommand draw_command{};
+			draw_command.vertex_buffers = primitive.vbo;
+			draw_command.material_index = primitive.material;
+
+			draw_command.first_index = primitive.vertex_range.first_index;
+			draw_command.index_count = primitive.vertex_range.index_count;
+			draw_command.first_vertex = primitive.vertex_range.first_vertex;
+			draw_command.vertex_count = primitive.vertex_range.vertex_count;
 		
-			FDrawIndexedIndirectData indirect_command{};
-			indirect_command.indexCount = primitive.vertex_range.index_count;
-			indirect_command.instanceCount = 1;
-			indirect_command.firstIndex = primitive.vertex_range.first_index;
-			indirect_command.vertexOffset = int(primitive.vertex_range.first_vertex);
-			indirect_command.firstInstance = 0;
+			render_world.AddGeometryDraw(draw_command);
+
+			//FDrawIndexedIndirectData indirect_command{};
+			//indirect_command.indexCount = primitive.vertex_range.index_count;
+			//indirect_command.instanceCount = 1;
+			//indirect_command.firstIndex = primitive.vertex_range.first_index;
+			//indirect_command.vertexOffset = int(primitive.vertex_range.first_vertex);
+			//indirect_command.firstInstance = 0;
 
 
 		}

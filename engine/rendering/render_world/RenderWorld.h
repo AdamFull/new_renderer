@@ -30,6 +30,8 @@ namespace engine
 
 			void BeginFrame() override;
 			void EndFrame() override;
+
+			gfx::IndirectDrawCommand GetDrawCommand() override;
 		private:
 			IRenderer& renderer;
 

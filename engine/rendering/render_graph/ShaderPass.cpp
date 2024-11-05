@@ -134,7 +134,7 @@ namespace engine
 				// Request memory block for this uniform
 				// TODO: may be request it inside uniform handler?
 				auto uniform_block = execution_context->RequestUniformBlock(resource.size);
-				uniform_block.Update(handle.Data());
+				uniform_block.Update(std::span(handle.Data()));
 
 				gfx::BufferDescriptor descriptor{};
 				descriptor.type = resource.type;

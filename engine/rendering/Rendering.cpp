@@ -41,24 +41,6 @@ namespace engine
 			render_graph = std::make_unique<RenderGraph>(*this, window);
 			render_world = std::make_unique<RenderWorld>(*this);
 
-			//// Create buffers
-			//mesh_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(FMesh), 64ull, gfx::BufferUsageFlag::eStorageBuffer);
-			//
-			//material_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(FMaterial), 64ull, gfx::BufferUsageFlag::eStorageBuffer);
-			//
-			//light_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(FLightCommit), 64ull, gfx::BufferUsageFlag::eStorageBuffer);
-			//
-			//cascaded_shadow_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(FCascadedShadowCommit), max_directional_light_shadow_count, gfx::BufferUsageFlag::eStorageBuffer);
-			//omni_shadow_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(FOmniShadowCommit), max_point_light_shadow_count, gfx::BufferUsageFlag::eStorageBuffer);
-			//spot_shadow_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(FSpotShadowCommit), max_spot_light_shadow_count, gfx::BufferUsageFlag::eStorageBuffer);
-			//
-			//geometry_batches_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(FGeometryBatch), 64ull, gfx::BufferUsageFlag::eStorageBuffer);
-			//raw_geometry_batches_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(FGeometryBatch), 64ull, gfx::BufferUsageFlag::eStorageBuffer);
-			//
-			////indexed_draw_indirect_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(), 64ull, gfx::BufferUsageFlag::eIndirectBuffer);
-			//indirect_count_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(uint32_t), 64ull, gfx::BufferUsageFlag::eIndirectBuffer);
-			//mesh_command_buffer = std::make_unique<DynamicBuffer>(*resource_context, sizeof(FDrawMeshIndirectData), 64ull, gfx::BufferUsageFlag::eStorageBuffer);
-
 			// Temporary func to create test render graph
 			BuildGraph();
 		}
@@ -85,13 +67,19 @@ namespace engine
 
 		void Renderer::Render(float delta_time)
 		{
-			render_world->BeginFrame();
+			// Update geometry buffers
+			for (auto& geometry_buffer : geometry_buffers)
+			{
+				geometry_buffer->Flush();
+			}
 
 			render_graph->BeginFrame();
+			render_world->BeginFrame();
+
 			render_graph->Evaluate(delta_time);
-			render_graph->EndFrame();
 
 			render_world->EndFrame();
+			render_graph->EndFrame();
 		}
 
 		gfx::ResourceContext& Renderer::GetResourceContext()
@@ -135,6 +123,17 @@ namespace engine
 			auto& new_geometry_buffer = geometry_buffers.emplace_back(std::make_unique<DeinterleavedGeometryBuffer>(*resource_context, create_info));
 			deinterleaved_geometry_buffers[hash] = geometry_buffers.size() - 1ull;
 			return *new_geometry_buffer;
+		}
+
+
+		IRenderGraph& Renderer::GetRenderGraph()
+		{
+			return *render_graph;
+		}
+
+		IRenderGraph const& Renderer::GetRenderGraph() const
+		{
+			return *render_graph;
 		}
 
 		IRenderWorld& Renderer::GetRenderWorld()
@@ -456,20 +455,73 @@ namespace engine
 			// Geometry draw
 			{
 				RenderShaderPassCreateInfo create_info{};
-				create_info.shader_name = "visibilitybuffer:write";
-				create_info.AddWriteAttachment(visbuffer_geometry_target, ResourceAttachmentTypeFlag::eColor, gfx::ClearColor{ 0.f, 0.f, 0.f, 1.f });
-				create_info.AddWriteAttachment(visbuffer_vboinst_target, ResourceAttachmentTypeFlag::eColor, gfx::ClearColor{ 0.f, 0.f, 0.f, 1.f });
+				create_info.shader_name = "visibilitybuffer:new_write:HAS_TEXCOORD:HAS_NORMAL:TANGENT_VEC4:INDEX_16BIT";
+				//create_info.pipeline_state.vertex_layout.attributes[0].binding = 0;
+				//create_info.pipeline_state.vertex_layout.attributes[0].location = 0;
+				//create_info.pipeline_state.vertex_layout.attributes[0].format = gfx::Format::eR32G32B32Sfloat;
+				//create_info.pipeline_state.vertex_layout.attributes[1].binding = 1;
+				//create_info.pipeline_state.vertex_layout.attributes[1].location = 2;
+				//create_info.pipeline_state.vertex_layout.attributes[1].format = gfx::Format::eR32G32Sfloat;
+				//create_info.pipeline_state.vertex_layout.attributes[2].binding = 2;
+				//create_info.pipeline_state.vertex_layout.attributes[2].location = 3;
+				//create_info.pipeline_state.vertex_layout.attributes[2].format = gfx::Format::eR32G32B32Sfloat;
+				//create_info.pipeline_state.vertex_layout.attributes[3].binding = 3;
+				//create_info.pipeline_state.vertex_layout.attributes[3].location = 4;
+				//create_info.pipeline_state.vertex_layout.attributes[3].format = gfx::Format::eR32G32B32A32Sfloat;
+				//create_info.pipeline_state.vertex_layout.attribute_count = 4;
+				//
+				//create_info.pipeline_state.vertex_layout.bindings[0].binding = 0;
+				//create_info.pipeline_state.vertex_layout.bindings[0].stride = 12;
+				//create_info.pipeline_state.vertex_layout.bindings[1].binding = 1;
+				//create_info.pipeline_state.vertex_layout.bindings[1].stride = 8;
+				//create_info.pipeline_state.vertex_layout.bindings[2].binding = 2;
+				//create_info.pipeline_state.vertex_layout.bindings[2].stride = 12;
+				//create_info.pipeline_state.vertex_layout.bindings[3].binding = 3;
+				//create_info.pipeline_state.vertex_layout.bindings[3].stride = 16;
+				//create_info.pipeline_state.vertex_layout.binding_count = 4;
+
+
+				create_info.AddWriteAttachment(visbuffer_geometry_target, ResourceAttachmentTypeFlag::eColor, gfx::ClearColor{ 0.f, 0.f, 0.f, 0.f });
+				create_info.AddWriteAttachment(visbuffer_vboinst_target, ResourceAttachmentTypeFlag::eColor, gfx::ClearColor{ 0.f, 0.f, 0.f, 0.f });
 				create_info.AddWriteAttachment(zbuffer_depth_target, ResourceAttachmentTypeFlag::eDepth, gfx::ClearColor{ 1.f });
 
 				create_info.pipeline_state.primitive_topology = gfx::PrimitiveTopology::eTriangleList;
-				create_info.pipeline_state.color_blending_state.attachment_count = 1;
+				create_info.pipeline_state.color_blending_state.attachment_count = 2;
 
 				create_info.draw_callback = [this](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
+						auto* backbuffer = render_graph->GetTexture(backbuffer_resource);
 
+						auto viewport_width = backbuffer->GetWidth();
+						auto viewport_height = backbuffer->GetHeight();
+
+						command_list.SetViewport(0.f, 0.f, viewport_width, viewport_height, 0.f, 1.f);
+						command_list.SerScissor(0u, 0u, viewport_width, viewport_height);
+
+						self.ResolveDependencies(command_list);
+
+						auto& geometry_buffer = *geometry_buffers.back();
+						geometry_buffer.BindIndexBuffer(command_list);
+
+						auto& buffers = self.GetUniformBlock("GeometryBuffers"_hash32);
+						buffers.Set("position"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
+						buffers.Set("texcoord"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTexCoord));
+
+						auto& constants = self.GetConstantBlock();
+						constants.Set("callID"_hash32, 0u);
+
+						self.PushConstantRanges(command_list);
+
+						self.BindResources(command_list);
+
+						auto draw_command = render_world->GetDrawCommand();
+
+						self.Begin(command_list);
+						command_list.DrawIndirect(draw_command);
+						self.End(command_list);
 					};
 
-				//render_graph->AddNode(render_graph->CreateNode(create_info));
+				render_graph->AddNode(render_graph->CreateNode(create_info));
 			}
 
 			// Test output shader
@@ -482,8 +534,7 @@ namespace engine
 				create_info.pipeline_state.color_blending_state.attachment_count = 1;
 			
 				create_info.draw_callback = [this, 
-					irradiance_cube_target, 
-					brdf_lut_target,
+					visbuffer_geometry_target,
 					input_image_bnd = "input_image"_hash32
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
@@ -495,10 +546,10 @@ namespace engine
 						command_list.SetViewport(0.f, 0.f, viewport_width, viewport_height, 0.f, 1.f);
 						command_list.SerScissor(0u, 0u, viewport_width, viewport_height);
 
-						self.ReadResource(brdf_lut_target);
+						self.ReadResource(visbuffer_geometry_target);
 						self.ResolveDependencies(command_list);
 			
-						self.BindResource(input_image_bnd, brdf_lut_target);			
+						self.BindResource(input_image_bnd, visbuffer_geometry_target);
 						self.BindResources(command_list);
 						
 						self.Begin(command_list);

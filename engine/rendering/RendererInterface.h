@@ -1,6 +1,7 @@
 #pragma once
 
 #include <engine/rendering/GeometryBufferInterface.h>
+#include <engine/rendering/render_graph/RenderGraphInterface.h>
 #include <engine/rendering/render_world/RenderWorldInterface.h>
 
 namespace engine
@@ -28,6 +29,9 @@ namespace engine
 
 			virtual GeometryBuffer& RequestInterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) = 0;
 			virtual GeometryBuffer& RequestDeinterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) = 0;
+
+			virtual IRenderGraph& GetRenderGraph() = 0;
+			virtual IRenderGraph const& GetRenderGraph() const = 0;
 
 			virtual IRenderWorld& GetRenderWorld() = 0;
 			virtual IRenderWorld const& GetRenderWorld() const = 0;

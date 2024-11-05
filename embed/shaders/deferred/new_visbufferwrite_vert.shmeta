@@ -10,7 +10,7 @@
 		"GL_EXT_shader_16bit_storage"
 	];
 
-	definitions: ["MESH_DATA", "VERTEX_INPUT"];
+	definitions: ["MESH_DATA"];
 
 	require_extensions: [
 		"GL_EXT_buffer_reference",

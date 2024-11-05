@@ -347,6 +347,7 @@ namespace engine
 			if (found_library == shader_cache.libraries.end())
 			{
 				log_error("Failed to find shader library named: {}", name_info.library_name);
+				assert(false && "FAILED TO FIND SHADER LIBRARY.");
 				return nullptr;
 			}
 
@@ -357,6 +358,7 @@ namespace engine
 			if (found_shader_module == shader_library.modules.end())
 			{
 				log_error("Failed to find shader with name: \"{}\" in library: {}", name_info.shader_name, name_info.library_name);
+				assert(false && "FAILED TO FIND SHADER.");
 				return nullptr;
 			}
 

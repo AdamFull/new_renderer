@@ -121,12 +121,13 @@ namespace engine
 			BufferSuballocation& operator=(const BufferSuballocation&) = delete;
 			BufferSuballocation& operator=(BufferSuballocation&&) = delete;
 
-			void Update(std::span<const char> data)
+			template<typename _Ty>
+			void Update(std::span<_Ty> data)
 			{
-				Update(data.data(), data.size());
+				Update(data.data(), data.size() * sizeof(_Ty));
 			}
 
-			void Update(const char* data, uint64_t data_size)
+			void Update(const void* data, uint64_t data_size)
 			{
 				assert(data_size <= size);
 				buffer.Update(data, data_size, offset);

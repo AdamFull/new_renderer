@@ -3,6 +3,8 @@
 #include <engine/rendering/RenderContext.h>
 #include <engine/rendering/gfx/Context.h>
 
+#include <engine/rendering/UniformPool.h>
+
 #include "RenderPass.h"
 #include "ComputePass.h"
 
@@ -66,6 +68,9 @@ namespace engine
 			shared_descriptor_ci.descriptions.emplace_back(gfx::DescriptorType::eCombinedImageSampler, 3u, 16384u);
 
 			shared_descriptor = context.CreateSharedDescriptor(shared_descriptor_ci);
+
+			// Create uniform pool
+			global_uniform_pool = std::make_unique<UniformPool>(context);
 		}
 
 		RenderGraph::~RenderGraph()
@@ -123,7 +128,7 @@ namespace engine
 			}
 			else if (create_info.usage & gfx::TextureUsageFlag::eRenderTarget)
 			{
-				auto is_depth = IsDepthStencilFormat(create_info.format);
+				auto is_depth = IsDepthFormat(create_info.format);
 				new_resource.intermediate_state = is_depth ? gfx::ResourceStateFlag::eDepthWrite : gfx::ResourceStateFlag::eAttachmentWrite;
 				new_resource.final_state_comp = is_depth ? gfx::ResourceStateFlag::eDepthRead : gfx::ResourceStateFlag::eComputeRead;
 				new_resource.final_state_other = is_depth ? gfx::ResourceStateFlag::eDepthRead : gfx::ResourceStateFlag::eShaderResource;
@@ -235,9 +240,35 @@ namespace engine
 			command_list.ResourceBarrier(resource_barriers);
 		}
 
+		void RenderGraph::UpdateGlobalBinding(uint32_t binding, std::span<const uint8_t> data)
+		{
+			if (!global_resource_descriptor)
+			{
+				global_resource_descriptor = shared_descriptor->RequestDescriptors();
+			}
+
+			auto buffer_block = global_uniform_pool->RequestBlock(data.size());
+			buffer_block.Update(data);
+
+			gfx::BufferDescriptor buffer_descriptor{};
+			buffer_descriptor.type = gfx::DescriptorType::eUniformBuffer;
+			buffer_descriptor.binding = binding;
+			buffer_descriptor.buffer = &buffer_block.GetBuffer();
+			buffer_descriptor.offset = buffer_block.GetOffset();
+			buffer_descriptor.size = buffer_block.GetSize();
+
+			global_resource_descriptor->BindBuffer(buffer_descriptor);
+		}
+
 		void RenderGraph::BeginFrame()
 		{
+			global_uniform_pool->Reset();
+
 			shared_descriptor->Reset();
+			if (!global_resource_descriptor)
+			{
+				global_resource_descriptor = shared_descriptor->RequestDescriptors();
+			}
 
 			bool surface_updated{ false };
 			auto& command_list = render_context->Begin(surface_updated);
@@ -260,9 +291,6 @@ namespace engine
 			command_list.ResetQuery(timestamp_query, 0u, 2u);
 			command_list.BeginQuery(timestamp_query, 0u);
 
-
-			global_resource_descriptor = shared_descriptor->RequestDescriptors();
-
 			// Update bindless textures
 			uint32_t array_index{ 0u };
 			for (auto& resource : static_textures.Data())
@@ -271,20 +299,20 @@ namespace engine
 				descriptor.type = gfx::DescriptorType::eCombinedImageSampler;
 				descriptor.set = 0;
 				descriptor.binding = 3;
-			
+
 				descriptor.array_index = array_index++;
 				descriptor.texture = resource.texture;
 				descriptor.sampler = resource.sampler;
 				descriptor.resource_state = gfx::ResourceStateFlag::eShaderResource;
-			
+
 				global_resource_descriptor->BindTexture(descriptor);
 			}
-			
-			global_resource_descriptor->Flush();
 		}
 
 		void RenderGraph::EndFrame()
 		{
+			global_resource_descriptor->Flush();
+
 			gfx::SemaphoreSubmitInfo upload_wait_semaphore{};
 			//auto upload_avaliable = render_context->GetUploadAvaliableSemaphore();
 			//upload_wait_semaphore = upload_context->Submit(&upload_avaliable, upload_avaliable.semaphore ? 1 : 0);
@@ -312,6 +340,8 @@ namespace engine
 					resource.texture->Reset();
 				}
 			}
+
+			global_resource_descriptor = nullptr;
 		}
 
 		void RenderGraph::UpdateRenderTargets()

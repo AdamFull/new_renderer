@@ -1,5 +1,6 @@
 #pragma once
 
+#include <engine/rendering/gfx/Structures.h>
 #include <embed/shaders/includes/interop/base.h>
 
 #include <hash.hpp>
@@ -48,6 +49,8 @@ namespace engine
 
 			virtual void BeginFrame() = 0;
 			virtual void EndFrame() = 0;
+
+			virtual gfx::IndirectDrawCommand GetDrawCommand() = 0;
 		};
 	}
 }

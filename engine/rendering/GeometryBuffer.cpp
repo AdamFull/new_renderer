@@ -85,8 +85,11 @@ namespace engine
 
 		void GeometryBuffer::Flush()
 		{
-			TryFlushBuffer(&index_data.buffer, index_data.data, gfx::BufferUsageFlag::eIndexBuffer);
-			index_data.data.clear();
+			if (!index_data.data.empty())
+			{
+				TryFlushBuffer(&index_data.buffer, index_data.data, gfx::BufferUsageFlag::eIndexBuffer);
+				index_data.data.clear();
+			}
 		}
 
 		void GeometryBuffer::BindIndexBuffer(gfx::CommandList& command_list)

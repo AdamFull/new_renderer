@@ -12,6 +12,8 @@ namespace engine
 		{
 			auto& resource_context = renderer.GetResourceContext();
 
+			world_nodes = std::make_unique<DynamicBuffer<FSceneNode>>(resource_context, 8ull, gfx::BufferUsageFlag::eStorageBuffer);
+
 			world_cameras = std::make_unique<DynamicBuffer<FCamera>>(resource_context, 8ull, gfx::BufferUsageFlag::eStorageBuffer);
 			world_matrices = std::make_unique<DynamicBuffer<glm::mat4>>(resource_context, 64ull, gfx::BufferUsageFlag::eStorageBuffer);
 			world_frustum = std::make_unique<DynamicBuffer<glm::vec4>>(resource_context, 64ull, gfx::BufferUsageFlag::eStorageBuffer);
@@ -193,6 +195,7 @@ namespace engine
 			if (node.matrixOffset != 0u)
 			{
 				node.matrixOffset = matrices_offset;
+				world_nodes->MarkDirty(node_id);
 			}
 
 			auto* matrices = world_matrices->Data(node.matrixOffset);
@@ -220,16 +223,46 @@ namespace engine
 
 		void RenderWorld::BeginFrame()
 		{
-			world_cameras->Flush();
+			auto& render_graph = renderer.GetRenderGraph();
+
+			// Bind global buffers
+			FGlobalBufferReference buffers{};
+			buffers.nodeBuffer.address = world_nodes->GetBuffer()->GetAddress();
+			world_nodes->Flush();
+
+			buffers.matrixBuffer.address = world_matrices->GetBuffer()->GetAddress();
 			world_matrices->Flush();
+
+			buffers.frustumSidesBuffer.address = world_frustum->GetBuffer()->GetAddress();
 			world_frustum->Flush();
+
+			buffers.cameraBuffer.address = world_cameras->GetBuffer()->GetAddress();
+			world_cameras->Flush();
+
+			buffers.indirectCommandBuffer.address = indirect_draw_commands->GetBuffer()->GetAddress();
 			indirect_draw_commands->Flush();
+
+			const uint8_t* uniform_data = reinterpret_cast<const uint8_t*>(&buffers);
+			uint64_t uniform_size = sizeof(FGlobalBufferReference);
+
+			render_graph.UpdateGlobalBinding(1, std::span(uniform_data, uniform_size));
 		}
 
 		void RenderWorld::EndFrame()
 		{
 			draw_count = 0;
 			draw_commands.clear();
+		}
+
+		gfx::IndirectDrawCommand RenderWorld::GetDrawCommand()
+		{
+			gfx::IndirectDrawCommand draw_command{};
+			draw_command.indexed_draw = true;
+			draw_command.argument_buffer = indirect_draw_commands->GetBuffer();
+			draw_command.draw_count = draw_count;
+			draw_command.command_stride = sizeof(FDrawIndexedIndirectData);
+
+			return draw_command;
 		}
 	}
 }

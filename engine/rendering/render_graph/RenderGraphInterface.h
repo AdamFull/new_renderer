@@ -203,6 +203,8 @@ namespace engine
 			virtual void AddNode(std::unique_ptr<IGraphNode>&& node) = 0;
 			virtual void Evaluate(float delta_time) = 0;
 
+			virtual void UpdateGlobalBinding(uint32_t binding, std::span<const uint8_t> data) = 0;
+
 			virtual void BeginFrame() = 0;
 			virtual void EndFrame() = 0;
 

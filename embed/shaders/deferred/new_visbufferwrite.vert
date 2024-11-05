@@ -7,31 +7,31 @@ layout(location = 3) out vec2 texCoord;
 //layout(location = 5) smooth out vec4 currentPos;
 //layout(location = 6) smooth out vec4 oldPos;
 
-REGISTER_RO_BUFFER_PTR(PositionBuffer, vec3, 8);
+REGISTER_RO_BUFFER_PTR2(PositionBuffer, vec3);
 #if defined(COLOR_VEC3)
-REGISTER_RO_BUFFER_PTR(ColorBuffer, vec3, 8);
+REGISTER_RO_BUFFER_PTR2(ColorBuffer, vec3);
 #elif defined(COLOR_VEC4)
-REGISTER_RO_BUFFER_PTR(ColorBuffer, vec4, 8);
+REGISTER_RO_BUFFER_PTR2(ColorBuffer, vec4);
 #endif // COLOR_VEC4
 #ifdef HAS_TEXCOORD
-REGISTER_RO_BUFFER_PTR(TexcoordBuffer, vec2, 8);
+REGISTER_RO_BUFFER_PTR2(TexcoordBuffer, vec2);
 #endif // HAS_TEXCOORD
 #ifdef HAS_NORMAL
-REGISTER_RO_BUFFER_PTR(NormalBuffer, vec3, 8);
+REGISTER_RO_BUFFER_PTR2(NormalBuffer, vec3);
 #endif // HAS_NORMAL
 #if defined(TANGENT_VEC3)
-REGISTER_RO_BUFFER_PTR(TangentBuffer, vec3, 8);
+REGISTER_RO_BUFFER_PTR2(TangentBuffer, vec3);
 #elif defined(TANGENT_VEC4)
-REGISTER_RO_BUFFER_PTR(TangentBuffer, vec4, 8);
+REGISTER_RO_BUFFER_PTR2(TangentBuffer, vec4);
 #endif // TANGENT_VEC4
 
 #ifdef HAS_SKIN
 #if defined(JOINTS_8BIT)
-REGISTER_RO_BUFFER_PTR(JointBuffer, uint8_t, 8);
+REGISTER_RO_BUFFER_PTR2(JointBuffer, uint8_t);
 #elif defined(JOINTS_16BIT)
-REGISTER_RO_BUFFER_PTR(JointBuffer, uint16_t, 8);
+REGISTER_RO_BUFFER_PTR2(JointBuffer, uint16_t);
 #endif
-REGISTER_RO_BUFFER_PTR(WeightBuffer, vec4, 8);
+REGISTER_RO_BUFFER_PTR2(WeightBuffer, vec4);
 #endif // HAS_SKIN
 
 layout(std140, set = 1, binding = 0) uniform GeometryBuffers
@@ -63,12 +63,21 @@ void main()
 	instanceID = gl_InstanceIndex;
 	//vboID = draw_info.vboID;
 
-	vec3 position = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER_RAW(PositionBuffer, geometry_buffers.position), gl_VertexIndex);
-#ifdef HAS_TEXCOORD
-	texCoord = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER_RAW(TexcoordBuffer, geometry_buffers.texcoord), gl_VertexIndex);
-#endif
+	FDrawIndexedIndirectData draw_command = getDrawIndexedCommand(drawID);
 
-	vec4 clipSpacePos = vec4(position, 1.f);
+	// Get vertex offset
+	uint32_t vertex_index = gl_VertexIndex + draw_command.vertexOffset;
+
+	vec3 position = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER_RAW(PositionBuffer, geometry_buffers.position), vertex_index);
+//#ifdef HAS_TEXCOORD
+//	texCoord = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER_RAW(TexcoordBuffer, geometry_buffers.texcoord), vertex_index);
+//#endif
+
+	FCamera camera = GetCamera(0);
+	mat4 view_projection = getViewProjectionMatrix(camera.matrices_offset);
+	
+	vec4 clipSpacePos = view_projection * vec4(position, 1.f);
+	//vec4 clipSpacePos = view_projection * vec4(inPosition, 1.f);
 
 	gl_Position = clipSpacePos;
 }

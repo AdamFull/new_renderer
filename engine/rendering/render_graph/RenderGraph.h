@@ -2,6 +2,7 @@
 
 #include <engine/rendering/render_graph/RenderGraphInterface.h>
 #include <engine/rendering/RenderResourceContainer.h>
+#include <engine/rendering/UniformPool.h>
 
 namespace engine
 {
@@ -54,6 +55,8 @@ namespace engine
 			void AddNode(std::unique_ptr<IGraphNode>&& node) override;
 			void Evaluate(float delta_time) override;
 
+			void UpdateGlobalBinding(uint32_t binding, std::span<const uint8_t> data);
+
 			void BeginFrame() override;
 			void EndFrame() override;
 
@@ -90,6 +93,7 @@ namespace engine
 			// Shared descriptors
 			gfx::SharedDescriptor* shared_descriptor{ nullptr };
 			gfx::ResourceDescriptor* global_resource_descriptor{ nullptr };
+			std::unique_ptr<UniformPool> global_uniform_pool{};
 
 			ResourceContainer<TextureObject> static_textures{};
 			ResourceContainer<TextureObject> render_targets{};
