@@ -456,6 +456,7 @@ namespace engine
 			{
 				RenderShaderPassCreateInfo create_info{};
 				create_info.shader_name = "visibilitybuffer:new_write:HAS_TEXCOORD:HAS_NORMAL:TANGENT_VEC4:INDEX_16BIT";
+				//create_info.pipeline_state.
 				//create_info.pipeline_state.vertex_layout.attributes[0].binding = 0;
 				//create_info.pipeline_state.vertex_layout.attributes[0].location = 0;
 				//create_info.pipeline_state.vertex_layout.attributes[0].format = gfx::Format::eR32G32B32Sfloat;
@@ -506,6 +507,7 @@ namespace engine
 						auto& buffers = self.GetUniformBlock("GeometryBuffers"_hash32);
 						buffers.Set("position"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
 						buffers.Set("texcoord"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTexCoord));
+						buffers.Set("indices"_hash32, geometry_buffer.GetIndexBufferAddress());
 
 						auto& constants = self.GetConstantBlock();
 						constants.Set("callID"_hash32, 0u);
@@ -540,10 +542,11 @@ namespace engine
 					{
 						auto* backbuffer = render_graph->GetTexture(backbuffer_resource);
 			
-						auto viewport_width = backbuffer->GetWidth();
-						auto viewport_height = backbuffer->GetHeight();
-			
-						command_list.SetViewport(0.f, 0.f, viewport_width, viewport_height, 0.f, 1.f);
+						auto viewport_width = static_cast<float>(backbuffer->GetWidth());
+						auto viewport_height = static_cast<float>(backbuffer->GetHeight());
+
+						// Flip viewport
+						command_list.SetViewport(0.f, viewport_height, viewport_width, -viewport_height, 0.f, 1.f);
 						command_list.SerScissor(0u, 0u, viewport_width, viewport_height);
 
 						self.ReadResource(visbuffer_geometry_target);

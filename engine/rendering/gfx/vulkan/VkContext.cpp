@@ -65,7 +65,7 @@ namespace engine
 
 				auto instance_builder = InstanceBuilder();
 				instance_builder.SetHeadless(headless);
-				instance_builder.SetApiVersion(VK_VERSION_1_1);
+				instance_builder.SetApiVersion(VK_API_VERSION_1_1);
 				instance_builder.SetApplicationName("App");
 				instance_builder.SetEngineName("NewEngineApp");
 

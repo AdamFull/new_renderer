@@ -7,7 +7,7 @@ layout(location = 3) out vec2 texCoord;
 //layout(location = 5) smooth out vec4 currentPos;
 //layout(location = 6) smooth out vec4 oldPos;
 
-REGISTER_RO_BUFFER_PTR2(PositionBuffer, vec3);
+REGISTER_RO_BUFFER_PTR(PositionBuffer, vec3, 8);
 #if defined(COLOR_VEC3)
 REGISTER_RO_BUFFER_PTR2(ColorBuffer, vec3);
 #elif defined(COLOR_VEC4)
@@ -34,6 +34,12 @@ REGISTER_RO_BUFFER_PTR2(JointBuffer, uint16_t);
 REGISTER_RO_BUFFER_PTR2(WeightBuffer, vec4);
 #endif // HAS_SKIN
 
+#if defined(INDEX_16BIT)
+REGISTER_RO_BUFFER_PTR2(IndexBuffer, uint16_t);
+#else
+REGISTER_RO_BUFFER_PTR2(IndexBuffer, uint32_t);
+#endif
+
 layout(std140, set = 1, binding = 0) uniform GeometryBuffers
 {
 	uint64_t position;
@@ -43,6 +49,8 @@ layout(std140, set = 1, binding = 0) uniform GeometryBuffers
 	uint64_t tangent;
 	uint64_t joint;
 	uint64_t weight;
+
+	uint64_t indices;
 } geometry_buffers;
 
 layout(push_constant) uniform UniformMeshData
@@ -66,9 +74,11 @@ void main()
 	FDrawIndexedIndirectData draw_command = getDrawIndexedCommand(drawID);
 
 	// Get vertex offset
-	uint32_t vertex_index = gl_VertexIndex + draw_command.vertexOffset;
+	//uint32_t vertex_index = gl_VertexIndex + draw_command.vertexOffset;
 
-	vec3 position = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER_RAW(PositionBuffer, geometry_buffers.position), vertex_index);
+	Index vertex_index = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER_RAW(IndexBuffer, geometry_buffers.indices), gl_VertexIndex);
+
+	vec3 position = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER_RAW(PositionBuffer, geometry_buffers.position), gl_VertexIndex);
 //#ifdef HAS_TEXCOORD
 //	texCoord = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER_RAW(TexcoordBuffer, geometry_buffers.texcoord), vertex_index);
 //#endif
