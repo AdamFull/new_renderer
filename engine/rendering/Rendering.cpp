@@ -85,11 +85,13 @@ namespace engine
 
 		void Renderer::Render(float delta_time)
 		{
-			render_world->Flush();
+			render_world->BeginFrame();
 
 			render_graph->BeginFrame();
 			render_graph->Evaluate(delta_time);
 			render_graph->EndFrame();
+
+			render_world->EndFrame();
 		}
 
 		gfx::ResourceContext& Renderer::GetResourceContext()

@@ -204,6 +204,9 @@ namespace engine
 
 		void RenderWorld::AddGeometryDraw(DrawCommand& draw_command)
 		{
+			auto& vertex_buffer_commands = draw_commands[draw_command.vertex_buffers];
+			vertex_buffer_commands.emplace_back(draw_command.index_count, 1u, draw_command.first_index, (int32_t)draw_command.first_vertex, 0u);
+
 			auto& command = indirect_draw_commands->Get(draw_count++);
 
 			command.indexCount = draw_command.index_count;
@@ -215,13 +218,18 @@ namespace engine
 			indirect_draw_commands->MarkDirty(draw_count - 1u);
 		}
 
-		void RenderWorld::Flush()
+		void RenderWorld::BeginFrame()
 		{
 			world_cameras->Flush();
 			world_matrices->Flush();
 			world_frustum->Flush();
 			indirect_draw_commands->Flush();
+		}
+
+		void RenderWorld::EndFrame()
+		{
 			draw_count = 0;
+			draw_commands.clear();
 		}
 	}
 }

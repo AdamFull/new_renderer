@@ -46,7 +46,8 @@ namespace engine
 
 			virtual void AddGeometryDraw(DrawCommand& draw_command) = 0;
 
-			virtual void Flush() = 0;
+			virtual void BeginFrame() = 0;
+			virtual void EndFrame() = 0;
 		};
 	}
 }

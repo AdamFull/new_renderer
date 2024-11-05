@@ -28,7 +28,8 @@ namespace engine
 
 			void AddGeometryDraw(DrawCommand& draw_command) override;
 
-			void Flush() override;
+			void BeginFrame() override;
+			void EndFrame() override;
 		private:
 			IRenderer& renderer;
 
@@ -48,6 +49,8 @@ namespace engine
 
 			std::unique_ptr<DynamicBuffer<FDrawIndexedIndirectData>> indirect_draw_commands{};
 			uint32_t draw_count{ 0u };
+
+			std::unordered_map<uint32_t, std::vector<FDrawIndexedIndirectData>> draw_commands{};
 		};
 	}
 }
