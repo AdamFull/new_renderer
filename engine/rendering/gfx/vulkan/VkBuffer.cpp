@@ -33,7 +33,7 @@ namespace engine
 				if (create_info.usage & BufferUsageFlag::eVertex)
 				{
 					buffer_create_info.usage |= vk::BufferUsageFlagBits::eVertexBuffer;
-					minimal_alignment = std::max(minimal_alignment, 16ull);
+					minimal_alignment = std::max(minimal_alignment, 4ull);
 				}
 
 				if (create_info.usage & BufferUsageFlag::eIndex)

@@ -76,9 +76,11 @@ void main()
 	// Get vertex offset
 	//uint32_t vertex_index = gl_VertexIndex + draw_command.vertexOffset;
 
-	Index vertex_index = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER_RAW(IndexBuffer, geometry_buffers.indices), gl_VertexIndex);
+	//Index vertex_index = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER_RAW(IndexBuffer, geometry_buffers.indices), gl_VertexIndex);
 
-	vec3 position = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER_RAW(PositionBuffer, geometry_buffers.position), gl_VertexIndex);
+	Index vertex_index = Index(gl_VertexIndex);
+
+	vec3 position = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER_RAW(PositionBuffer, geometry_buffers.position), vertex_index);
 //#ifdef HAS_TEXCOORD
 //	texCoord = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER_RAW(TexcoordBuffer, geometry_buffers.texcoord), vertex_index);
 //#endif
