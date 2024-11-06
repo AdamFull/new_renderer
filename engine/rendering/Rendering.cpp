@@ -65,6 +65,45 @@ namespace engine
 			return render_graph->AddResource(create_info);
 		}
 
+		void Renderer::AddMaterial(const FMaterial& material)
+		{
+			// "Patch" material before add
+
+			FMaterial new_material{ material };
+
+			if (new_material.baseColorTexture != ~0u)
+			{
+				auto& resource = render_graph->GetResource(new_material.baseColorTexture);
+				new_material.baseColorTexture = resource.resource_id;
+			}
+
+			if (new_material.metallicRoughnessTexture != ~0u)
+			{
+				auto& resource = render_graph->GetResource(new_material.metallicRoughnessTexture);
+				new_material.metallicRoughnessTexture = resource.resource_id;
+			}
+
+			if (new_material.normalTexture != ~0u)
+			{
+				auto& resource = render_graph->GetResource(new_material.normalTexture);
+				new_material.normalTexture = resource.resource_id;
+			}
+
+			if (new_material.occlusionTexture != ~0u)
+			{
+				auto& resource = render_graph->GetResource(new_material.occlusionTexture);
+				new_material.occlusionTexture = resource.resource_id;
+			}
+
+			if (new_material.emissiveTexture != ~0u)
+			{
+				auto& resource = render_graph->GetResource(new_material.emissiveTexture);
+				new_material.emissiveTexture = resource.resource_id;
+			}
+
+			render_world->AddMaterial(new_material);
+		}
+
 		void Renderer::Render(float delta_time)
 		{
 			// Update geometry buffers
@@ -327,6 +366,18 @@ namespace engine
 				zbuffer_depth_target = render_graph->AddResource(create_info, nearest_sampler);
 			}
 
+			uint32_t hdr0{ ~0u };
+			{
+				gfx::TextureCreateInfo create_info{};
+				create_info.width = backbuffer_texture->GetWidth();
+				create_info.height = backbuffer_texture->GetHeight();
+				create_info.format = gfx::Format::eB10G11R11UfloatPack32;
+				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage;
+				create_info.resizable = true;
+
+				hdr0 = render_graph->AddResource(create_info, nearest_sampler);
+			}
+
 			// Passes
 			// Generate brdflut
 			{
@@ -489,6 +540,8 @@ namespace engine
 						auto& buffers = self.GetUniformBlock("GeometryBuffers"_hash32);
 						buffers.Set("position"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
 						buffers.Set("texcoord"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTexCoord));
+						buffers.Set("normal"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eNormal));
+						buffers.Set("tangent"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTangent));
 						buffers.Set("indices"_hash32, geometry_buffer.GetIndexBufferAddress());
 
 						auto& constants = self.GetConstantBlock();
@@ -508,6 +561,72 @@ namespace engine
 				render_graph->AddNode(render_graph->CreateNode(create_info));
 			}
 
+			// Resolve materials
+			{
+				ComputeShaderPassCreateInfo create_info{};
+				create_info.shader_name = "visibilitybuffer:shade:HAS_TEXCOORD:HAS_NORMAL:TANGENT_VEC4:INDEX_16BIT";
+
+				create_info.draw_callback = [this, 
+					hdr0,
+					brdf_lut_target,
+					irradiance_cube_target,
+					prefiltered_cube_target,
+					visbuffer_geometry_target,
+					visbuffer_vboinst_target,
+					zbuffer_depth_target
+				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+					{
+						self.WriteResource(hdr0);
+						self.BindResource("write_color"_hash32, hdr0);
+
+						self.ReadResource(brdf_lut_target);
+						self.BindResource("brdf_lut"_hash32, brdf_lut_target);
+
+						self.ReadResource(irradiance_cube_target);
+						self.BindResource("irradiance_cube"_hash32, irradiance_cube_target);
+
+						self.ReadResource(prefiltered_cube_target);
+						self.BindResource("prefiltered_cube"_hash32, prefiltered_cube_target);
+
+						self.ReadResource(visbuffer_geometry_target);
+						self.BindResource("visbuffer_geometry"_hash32, visbuffer_geometry_target);
+
+						self.ReadResource(visbuffer_vboinst_target);
+						self.BindResource("visbuffer_vboinst"_hash32, visbuffer_vboinst_target);
+
+						self.ReadResource(zbuffer_depth_target);
+						self.BindResource("depth_buffer"_hash32, zbuffer_depth_target);
+
+						self.ResolveDependencies(command_list);
+
+
+						auto& geometry_buffer = *geometry_buffers.back();
+						geometry_buffer.BindIndexBuffer(command_list);
+
+						auto& buffers = self.GetUniformBlock("GeometryBuffers"_hash32);
+						buffers.Set("position"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
+						buffers.Set("texcoord"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTexCoord));
+						buffers.Set("normal"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eNormal));
+						buffers.Set("tangent"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTangent));
+						buffers.Set("indices"_hash32, geometry_buffer.GetIndexBufferAddress());
+
+
+						self.BindResources(command_list);
+
+						uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
+
+						auto texture = render_graph->GetTexture(hdr0);
+
+						group_x = texture->GetWidth();
+						group_y = texture->GetHeight();
+
+						self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
+						command_list.Dispatch(group_x, group_y, group_z);
+					};
+
+				render_graph->AddNode(render_graph->CreateNode(create_info));
+			}
+
 			// Test output shader
 			{
 				RenderShaderPassCreateInfo create_info{};
@@ -518,7 +637,7 @@ namespace engine
 				create_info.pipeline_state.color_blending_state.attachment_count = 1;
 			
 				create_info.draw_callback = [this, 
-					visbuffer_geometry_target,
+					hdr0,
 					input_image_bnd = "input_image"_hash32
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
@@ -531,10 +650,10 @@ namespace engine
 						command_list.SetViewport(0.f, viewport_height, viewport_width, -viewport_height, 0.f, 1.f);
 						command_list.SerScissor(0u, 0u, viewport_width, viewport_height);
 
-						self.ReadResource(visbuffer_geometry_target);
+						self.ReadResource(hdr0);
 						self.ResolveDependencies(command_list);
 			
-						self.BindResource(input_image_bnd, visbuffer_geometry_target);
+						self.BindResource(input_image_bnd, hdr0);
 						self.BindResources(command_list);
 						
 						self.Begin(command_list);

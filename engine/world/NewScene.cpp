@@ -300,54 +300,55 @@ namespace engine
 				resources.textures.push_back(renderer.AddRenderResource(image_path, texture_sampler));
 			}
 
-			utl::vector<render::FMaterial> materials{};
 			for (u64 idx = 0ull; idx < root.materials.size(); ++idx)
 			{
 				auto& material = root.materials[idx];
-				auto& material_data = materials.emplace_back();
+				render::FMaterial render_material{};
 
 				// TODO: add my own ext that will contain shader EXT_material_shader or something. But in my case it will contain name in format {library}:{shader_name} and other helpfull data
 
 				// Attach base color (aka albedo)
 				if (auto& texture = material.pbrMetallicRoughness.baseColorTexture; texture.index >= 0)
-					material_data.baseColorTexture = resources.textures[texture.index];
+					render_material.baseColorTexture = resources.textures[texture.index];
 
 				// Attach metallic roughness texture (metallic = green, roughness = blue)
 				if (auto& texture = material.pbrMetallicRoughness.metallicRoughnessTexture; texture.index >= 0)
-					material_data.metallicRoughnessTexture = resources.textures[texture.index];
+					render_material.metallicRoughnessTexture = resources.textures[texture.index];
 
 				// Attach normal map texture
 				if (auto& texture = material.normalTexture; texture.index >= 0)
 				{
-					material_data.normalScale = utl::cast<f32>(texture.scale);
-					material_data.normalTexture = resources.textures[texture.index];
+					render_material.normalScale = utl::cast<f32>(texture.scale);
+					render_material.normalTexture = resources.textures[texture.index];
 				}
 
 				// Attach baked ambient occlusion texture
 				if (auto& texture = material.occlusionTexture; texture.index >= 0)
 				{
-					material_data.occlusionStrenth = utl::cast<f32>(texture.strength);
-					material_data.occlusionTexture = resources.textures[texture.index];
+					render_material.occlusionStrenth = utl::cast<f32>(texture.strength);
+					render_material.occlusionTexture = resources.textures[texture.index];
 				}
 
 				// Attach emissive texture
 				if (auto& texture = material.emissiveTexture; texture.index >= 0)
-					material_data.emissiveTexture = resources.textures[texture.index];
+					render_material.emissiveTexture = resources.textures[texture.index];
 
-				material_data.emissiveFactor = glm::make_vec3(material.emissiveFactor.data());
-				material_data.roughnessFactor = utl::cast<f32>(material.pbrMetallicRoughness.roughnessFactor);
-				material_data.metallicFactor = utl::cast<f32>(material.pbrMetallicRoughness.metallicFactor);
-				material_data.baseColorFactor = glm::make_vec4(material.pbrMetallicRoughness.baseColorFactor.data());
+				render_material.emissiveFactor = glm::make_vec3(material.emissiveFactor.data());
+				render_material.roughnessFactor = utl::cast<f32>(material.pbrMetallicRoughness.roughnessFactor);
+				render_material.metallicFactor = utl::cast<f32>(material.pbrMetallicRoughness.metallicFactor);
+				render_material.baseColorFactor = glm::make_vec4(material.pbrMetallicRoughness.baseColorFactor.data());
 
 				if (material.alphaMode == easygltf::base::enumerators::alpha_mode::blend)
-					material_data.alphaMode = utl::cast<u32>(render::EAlphaMode::eBlend);
+					render_material.alphaMode = utl::cast<u32>(render::EAlphaMode::eBlend);
 				else if (material.alphaMode == easygltf::base::enumerators::alpha_mode::mask)
-					material_data.alphaMode = utl::cast<u32>(render::EAlphaMode::eMask);
+					render_material.alphaMode = utl::cast<u32>(render::EAlphaMode::eMask);
 				else
-					material_data.alphaMode = utl::cast<u32>(render::EAlphaMode::eOpaque);
+					render_material.alphaMode = utl::cast<u32>(render::EAlphaMode::eOpaque);
 
-				material_data.alphaCutoff = utl::cast<f32>(material.alphaCutoff);
-				material_data.doubleSided = material.doubleSided;
+				render_material.alphaCutoff = utl::cast<f32>(material.alphaCutoff);
+				render_material.doubleSided = material.doubleSided;
+
+				renderer.AddMaterial(render_material);
 			}
 
 			// Loading nodes

@@ -28,6 +28,8 @@ namespace engine
 
 			void AddGeometryDraw(DrawCommand& draw_command) override;
 
+			void AddMaterial(const FMaterial& material) override;
+
 			void BeginFrame() override;
 			void EndFrame() override;
 

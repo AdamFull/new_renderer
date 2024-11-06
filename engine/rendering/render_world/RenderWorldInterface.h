@@ -50,6 +50,8 @@ namespace engine
 
 			virtual void AddGeometryDraw(DrawCommand& draw_command) = 0;
 
+			virtual void AddMaterial(const FMaterial& material) = 0;
+
 			virtual void BeginFrame() = 0;
 			virtual void EndFrame() = 0;
 

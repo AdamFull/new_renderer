@@ -35,6 +35,8 @@ namespace engine
 
 			uint32_t AddRenderResource(const gfx::BufferCreateInfo& create_info) override;
 
+			void AddMaterial(const FMaterial& material) override;
+
 			void Render(float delta_time) override;
 
 			gfx::ResourceContext& GetResourceContext() override;

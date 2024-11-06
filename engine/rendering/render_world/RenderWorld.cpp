@@ -14,6 +14,9 @@ namespace engine
 
 			world_nodes = std::make_unique<DynamicBuffer<FSceneNode>>(resource_context, 8ull, gfx::BufferUsageFlag::eStorageBuffer);
 			draw_descriptions = std::make_unique<DynamicBuffer<DrawDescription>>(resource_context, 16ull, gfx::BufferUsageFlag::eStorageBuffer);
+			world_meshes = std::make_unique<DynamicBuffer<FMesh>>(resource_context, 16ull, gfx::BufferUsageFlag::eStorageBuffer);
+
+			draw_materials = std::make_unique<DynamicBuffer<FMaterial>>(resource_context, 16ull, gfx::BufferUsageFlag::eStorageBuffer);
 
 			world_cameras = std::make_unique<DynamicBuffer<FCamera>>(resource_context, 8ull, gfx::BufferUsageFlag::eStorageBuffer);
 			world_matrices = std::make_unique<DynamicBuffer<glm::mat4>>(resource_context, 64ull, gfx::BufferUsageFlag::eStorageBuffer);
@@ -219,6 +222,8 @@ namespace engine
 			batch_command.meshID = draw_index;
 			batch_command.vboID = draw_command.vertex_buffers;
 
+			auto& mesh = world_meshes->Get(draw_index);
+
 			auto& indirect_command = indirect_draw_commands->Get(draw_index);
 			indirect_draw_commands->MarkDirty(draw_index);
 
@@ -227,6 +232,12 @@ namespace engine
 			indirect_command.firstIndex = draw_command.first_index;
 			indirect_command.vertexOffset = int(draw_command.first_vertex);
 			indirect_command.firstInstance = 0;
+		}
+
+		void RenderWorld::AddMaterial(const FMaterial& material)
+		{
+			auto& new_material = draw_materials->Get(material_count++);
+			new_material = material;
 		}
 
 		void RenderWorld::BeginFrame()
@@ -259,6 +270,14 @@ namespace engine
 			// Update buffer with per draw descriptions
 			buffers.drawInfoBuffer.address = draw_descriptions->GetBuffer()->GetAddress();
 			draw_descriptions->Flush();
+
+			// Update mesh infos
+			buffers.meshBuffer.address = world_meshes->GetBuffer()->GetAddress();
+			world_meshes->Flush();
+
+			// Update materials
+			buffers.materialBuffer.address = draw_materials->GetBuffer()->GetAddress();
+			draw_materials->Flush();
 
 			const uint8_t* uniform_data = reinterpret_cast<const uint8_t*>(&buffers);
 			uint64_t uniform_size = sizeof(FGlobalBufferReference);

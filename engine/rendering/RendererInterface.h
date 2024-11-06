@@ -25,6 +25,8 @@ namespace engine
 
 			virtual uint32_t AddRenderResource(const gfx::BufferCreateInfo& create_info) = 0;
 
+			virtual void AddMaterial(const FMaterial& material) = 0;
+
 			virtual gfx::Context& GetContext() = 0;
 
 			virtual GeometryBuffer& RequestInterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) = 0;
