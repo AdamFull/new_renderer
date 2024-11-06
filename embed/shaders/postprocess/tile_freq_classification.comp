@@ -6,7 +6,7 @@
 
 layout(local_size_x = TILE_SIZE, local_size_y = TILE_SIZE) in;
 
-layout(set = 1, binding = 0) uniform sampler2D sampler_color;
+layout(set = 1, binding = 1) uniform sampler2D sampler_color;
 
 REGISTER_WO_STORAGE_BUFFER(1, 1, indirect_buffer, uint32_t, indirect_cmds);
 REGISTER_WO_STORAGE_BUFFER(1, 2, high_freq, uint32_t, high_freq_tiles);

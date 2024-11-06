@@ -1,39 +1,10 @@
 #ifndef SHADER_INPUTS_GLSL
 #define SHADER_INPUTS_GLSL
 
-#include "interop/base"
-
-	// Vertex inputs
-#ifdef VERTEX_INPUT
-	layout(location = 0) in vec3 inPosition;
-#if defined(COLOR_VEC3)
-	layout(location = 1) in vec3 inColor;
-#elif defined(COLOR_VEC4)
-	layout(location = 1) in vec4 inColor;
-#endif // HAS_COLOR
-#ifdef HAS_TEXCOORD
-	layout(location = 2) in vec2 inTexCoord;
-#endif // HAS_TEXCOORD
-#ifdef HAS_NORMAL
-	layout(location = 3) in vec3 inNormal;
-#endif // HAS_NORMAL
-#if defined(TANGENT_VEC3)
-	layout(location = 4) in vec3 inTangent;
-#elif defined(TANGENT_VEC4)
-	layout(location = 4) in vec4 inTangent;
-#endif // HAS_TANGENT
-#ifdef HAS_SKIN
-	layout(location = 5) in vec4 inJoints;
-	layout(location = 6) in vec4 inWeights;
-#endif // HAS_SKIN
-#endif // VERTEX_INPUT
+#include "geometry"
 
 // Bindless texture
 layout(set = 0, binding = 3) uniform sampler2D globalTextures[];
-
-#define PTRCAST(pointer_type, address) pointer_type(address)
-#define GET_BUFFER_POINTER(pointer_type, buffer_desc) pointer_type(buffer_desc.address)
-#define PTRVAL(buffer, index) buffer.data[nonuniformEXT(index)]
 
 FSceneNode GetSceneNode(uint index) { return PTRVAL(GET_BUFFER_POINTER(NodePtr, nodeBuffer), index); }
 FMesh GetMesh(uint index) { return PTRVAL(GET_BUFFER_POINTER(MeshPtr, meshBuffer), index); }
@@ -79,17 +50,5 @@ vec4 SampleTexture2DGrad(uint32_t texture_index, uint32_t mip_level, vec2 uv, ve
 {
 	return textureGrad(GET_SAMPLER_2D(texture_index, mip_level), uv, uv_dx, uv_dy);
 }
-
-//#if defined(COMPUTE_SHADER)
-//		layout(std140, set = 1, binding = 0) uniform ComputePassCommonData
-//		{
-//			vec2 dispatchGridDim; 
-//		};
-//#elif defined(VERTEX_SHADER) || defined(TESS_CONTROL_SHADER) || defined(TESS_EVAL_SHADER) || defined(GEOMETRY_SHADER) || defined(FRAGMENT_SHADER)
-//		layout(std140, set = 1, binding = 0) uniform GraphicsPassCommonData
-//		{
-//			uint32_t viewportIndex;
-//		};
-//#endif
 
 #endif // SHADER_INPUTS_GLSL

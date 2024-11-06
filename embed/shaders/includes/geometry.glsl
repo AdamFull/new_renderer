@@ -1,11 +1,8 @@
-#include "shader_inputs"
+#ifndef GEOMETRY_GLSL
+#define GEOMETRY_GLSL
 
-layout(location = 0) out flat uint drawID;
-layout(location = 1) out flat uint instanceID;
-layout(location = 2) out flat uint vboID;
-layout(location = 3) out vec2 texCoord;
-//layout(location = 5) smooth out vec4 currentPos;
-//layout(location = 6) smooth out vec4 oldPos;
+#include "interop/base"
+#include "buffer_pointer"
 
 // Define vertex color type dependent on element count
 #if (defined(COLOR_VEC3) || defined(COLOR_VEC4))
@@ -53,6 +50,8 @@ layout(location = 3) out vec2 texCoord;
 #else
 #define INDEX_ALIGN 4
 #endif
+
+#ifdef GEOMETRY_BUFFERS
 
 // Register buffer pointers
 REGISTER_RO_BUFFER_PTR(PositionBuffer, float, 4);
@@ -188,53 +187,20 @@ Index GetIndex(uint32_t offset)
 	return PTRVAL(index_buffer, offset);
 }
 
-layout(push_constant) uniform UniformMeshData
+struct FRawVertex
 {
-	uint32_t callID;
-} meshData;
+	vec3 position;
+	Color color;
 
-out gl_PerVertex
-{
-	vec4 gl_Position;
+	vec2 uv;
+	vec3 normal;
+
+	Tangent tangent;
+	
+	Joints joints;
+	vec4 weights;
 };
 
-void main() 
-{
-	uint32_t draw_index = meshData.callID + gl_DrawIDARB + gl_InstanceIndex;
-	DrawDescription draw_info = GetDrawInfo(draw_index);
+#endif // GEOMETRY_BUFFERS
 
-	FSceneNode node = GetSceneNode(draw_info.nodeID);
-	mat4 model_matrix = GetModelMatrix(node.matrixOffset);
-
-	uint draw_id = meshData.callID + gl_DrawIDARB;
-
-	uint32_t vertex_index = uint32_t(gl_VertexIndex);
-
-	// Calculate skinning matrix
-#ifdef HAS_SKIN
-	Joints joints = GetVertexJoints(vertex_index);
-	vec4 weights = GetVertexWeights(vertex_index);
-
-	mat4 skin_mat = 
-			weights.x * GetMatrixById(node.skeletonID, joints.x) +
-			weights.y * GetMatrixById(node.skeletonID, joints.y) +
-			weights.z * GetMatrixById(node.skeletonID, joints.z) +
-			weights.w * GetMatrixById(node.skeletonID, joints.w);
-	
-		model_matrix = model_matrix * skin_mat;
 #endif
-
-	FCamera camera = GetCamera(draw_info.cameraID);
-	mat4 view_projection = GetViewProjectionMatrix(camera.matrices_offset);
-
-	// Sample vertex position
-	vec3 position = GetVertexPosition(vertex_index);
-	vec4 local_pos = model_matrix * (vec4(position, 1.0));
-	local_pos = vec4(local_pos.xyz / local_pos.w, 1.0);
-
-	drawID = draw_id;
-	instanceID = gl_InstanceIndex;
-	//vboID = draw_info.vboID;
-	texCoord = GetVertexTexcoord(vertex_index);
-	gl_Position = view_projection * local_pos;
-}

@@ -4,20 +4,6 @@
 
 layout(local_size_x = GROUP_SIZE) in;
 
-layout(std140, set = 1, binding = 0) uniform GeometryBuffers
-{
-	FGPUBufferDesc vb;
-	FGPUBufferDesc ib;
-	FGPUBufferDesc mb; 
-	FGPUBufferDesc vrb;
-	FGPUBufferDesc bb;
-	FGPUBufferDesc tb;
-	FGPUBufferDesc lb;
-
-	uint32_t lastIndex;
-	uint32_t lastVertex;
-};
-
 bool checkObjectInFrustum(in vec3 min_extents, in vec3 max_extents, in uint32_t frustum_offset)
 {
 	for (uint32_t i = 0; i < 6; i++)
@@ -38,7 +24,7 @@ bool checkObjectInFrustum(in vec3 min_extents, in vec3 max_extents, in uint32_t 
 
 void main() 
 {
-	uint global_draw_index = gl_GlobalInvocationID.x;
+	/*uint global_draw_index = gl_GlobalInvocationID.x;
 
 	if (global_draw_index >= frameData.rawCommandsCount) 
 		return;
@@ -100,5 +86,5 @@ void main()
 		indirect_command.firstInstance = 0;
 
 		PTRVAL(GET_BUFFER_POINTER(IndirectDrawIndexedComandPtr, indirectCommandBuffer), output_index) = indirect_command;
-	}
+	}*/
 }

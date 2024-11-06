@@ -4,7 +4,7 @@
 layout (location = 0) in vec2 inUV;
 layout (location = 0) out vec4 outFragcolor;
 
-layout(set = 1, binding = 0) uniform sampler2D input_image;
+layout(set = 1, binding = 1) uniform sampler2D input_image;
 
 void main() 
 {

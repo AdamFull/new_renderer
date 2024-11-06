@@ -11,7 +11,7 @@
 		"GL_EXT_control_flow_attributes"
 	];
 
-	definitions: ["MESH_DATA", "LIGHT_DATA", "SHADOW_DATA"];
+	definitions: ["MESH_DATA", "LIGHT_DATA", "SHADOW_DATA", "GEOMETRY_BUFFERS"];
 
 	require_extensions: [
 		"GL_EXT_buffer_reference",

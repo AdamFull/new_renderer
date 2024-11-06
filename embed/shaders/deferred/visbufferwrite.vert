@@ -4,8 +4,6 @@ layout(location = 0) out flat uint drawID;
 layout(location = 1) out flat uint instanceID;
 layout(location = 2) out flat uint vboID;
 layout(location = 3) out vec2 texCoord;
-//layout(location = 5) smooth out vec4 currentPos;
-//layout(location = 6) smooth out vec4 oldPos;
 
 layout(push_constant) uniform UniformMeshData
 {
@@ -22,57 +20,38 @@ void main()
 	uint32_t draw_index = meshData.callID + gl_DrawIDARB + gl_InstanceIndex;
 	DrawDescription draw_info = GetDrawInfo(draw_index);
 
-	// Calculate skinned matrix from weights and joint indices of the current vertex
 	FSceneNode node = GetSceneNode(draw_info.nodeID);
-	mat4 modelMatrix = GetModelMatrix(node.matrixOffset);
-	//mat4 oldModelMatrix = GetOldModelMatrix(node.matrixOffset)
+	mat4 model_matrix = GetModelMatrix(node.matrixOffset);
 
+	uint draw_id = meshData.callID + gl_DrawIDARB;
+
+	uint32_t vertex_index = uint32_t(gl_VertexIndex);
+
+	// Calculate skinning matrix
 #ifdef HAS_SKIN
-	if(node.skeletonID != ~0u)
-	{
-#if defined(JOINTS_8BIT)
-		u8vec4 joints = u8vec4(uint8_t(inJoints.x * 255.0), uint8_t(inJoints.y * 255.0), uint8_t(inJoints.z * 255.0), uint8_t(inJoints.w * 255.0));
-#elif defined(JOINTS_16BIT)
-		u16vec4 joints = u16vec4(uint16_t(inJoints.x * 65535.0), uint16_t(inJoints.y * 65535.0), uint16_t(inJoints.z * 65535.0), uint16_t(inJoints.w * 65535.0));
-#endif
-		mat4 skinMat = 
-			inWeights.x * GetMatrixById(node.skeletonID, joints.x) +
-			inWeights.y * GetMatrixById(node.skeletonID, joints.y) +
-			inWeights.z * GetMatrixById(node.skeletonID, joints.z) +
-			inWeights.w * GetMatrixById(node.skeletonID, joints.w);
+	Joints joints = GetVertexJoints(vertex_index);
+	vec4 weights = GetVertexWeights(vertex_index);
+
+	mat4 skin_mat = 
+			weights.x * GetMatrixById(node.skeletonID, joints.x) +
+			weights.y * GetMatrixById(node.skeletonID, joints.y) +
+			weights.z * GetMatrixById(node.skeletonID, joints.z) +
+			weights.w * GetMatrixById(node.skeletonID, joints.w);
 	
-		modelMatrix = modelMatrix * skinMat;
-		// oldModelMatrix = oldModelMatrix * skinMat; // TODO: should keep skinMat from prev frame
-	}
-#endif // HAS_SKIN
+		model_matrix = model_matrix * skin_mat;
+#endif
 
 	FCamera camera = GetCamera(draw_info.cameraID);
+	mat4 view_projection = GetViewProjectionMatrix(camera.matrices_offset);
 
-	vec4 localPos = modelMatrix * (vec4(inPosition, 1.0));
-	localPos = vec4(localPos.xyz / localPos.w, 1.0);
+	// Sample vertex position
+	vec3 position = GetVertexPosition(vertex_index);
+	vec4 local_pos = model_matrix * (vec4(position, 1.0));
+	local_pos = vec4(local_pos.xyz / local_pos.w, 1.0);
 
-	mat4 viewProjection = GetViewProjectionMatrix(camera.matrices_offset);
-
-	//currentPos = viewProjection * localPos;
-
-	//vec4 oldLocalPos = oldModelMatrix * vec4(inPosition, 1.0);
-	//oldLocalPos = vec4(oldLocalPos.xyz / oldLocalPos.w, 1.0);
-	
-	//oldPos = viewProjection * oldLocalPos;
-
-	uint subsampleIndex = frameData.frameNumber % 2;
-	vec2 texelSize = 0.25f / camera.size;
-
-	vec4 clipSpacePos = viewProjection * localPos;
-
-	//vec4 viewSpace = clipSpacePos / clipSpacePos.w;
-	//viewSpace.x += ((subsampleIndex == 0) ? -texelSize.x : texelSize.x);
-	//clipSpacePos = viewSpace * clipSpacePos.w;
-
-	drawID = meshData.callID + gl_DrawIDARB;
+	drawID = draw_id;
 	instanceID = gl_InstanceIndex;
-	vboID = draw_info.vboID;
-	texCoord = inTexCoord;
-
-	gl_Position = clipSpacePos;
+	//vboID = draw_info.vboID;
+	texCoord = GetVertexTexcoord(vertex_index);
+	gl_Position = view_projection * local_pos;
 }

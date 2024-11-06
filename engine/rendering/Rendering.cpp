@@ -455,7 +455,7 @@ namespace engine
 			// Geometry draw
 			{
 				RenderShaderPassCreateInfo create_info{};
-				create_info.shader_name = "visibilitybuffer:new_write:HAS_TEXCOORD:HAS_NORMAL:TANGENT_VEC4:INDEX_16BIT";
+				create_info.shader_name = "visibilitybuffer:write:HAS_TEXCOORD:HAS_NORMAL:TANGENT_VEC4:INDEX_16BIT";
 				create_info.pipeline_state.rasterization_state.cull_mode = gfx::CullModeFlag::eFront;
 
 				// Depth state

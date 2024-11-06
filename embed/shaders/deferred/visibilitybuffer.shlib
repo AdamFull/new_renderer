@@ -10,13 +10,6 @@
 			];
 		},
 		{
-			name: "new_write";
-			sources: [
-				"new_visbufferwrite_vert",
-				"new_visbufferwrite_frag"
-			];
-		},
-		{
 			name: "shade";
 			sources: [
 				"visbuffershade_comp"
@@ -27,10 +20,6 @@
 	compile: [
 		{ 
 			shader_name: "write";
-			pattern: "geometry_pattern";
-		},
-		{ 
-			shader_name: "new_write";
 			pattern: "geometry_pattern";
 		},
 		{

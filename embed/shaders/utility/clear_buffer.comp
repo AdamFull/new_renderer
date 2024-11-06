@@ -4,7 +4,7 @@
 
 layout(local_size_x = 256) in;
 
-layout(std140, set = 1, binding = 0) uniform bindings
+layout(std140, set = 1, binding = 1) uniform bindings
 {
 	FGPUBufferDesc buffer_desc;
 };

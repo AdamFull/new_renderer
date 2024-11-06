@@ -1,6 +1,6 @@
 //#include "shader_inputs"
 
-layout (set = 1, binding = 0) uniform sampler2D font_sampler;
+layout (set = 1, binding = 1) uniform sampler2D font_sampler;
 
 layout (location = 0) in vec2 inUV;
 layout (location = 1) in vec4 inColor;

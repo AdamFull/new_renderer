@@ -29,17 +29,17 @@ uint packMOID(uint matID, uint objID)
 
 void main() 
 {
-	uint32_t draw_index = drawID + instanceID;
-	DrawDescription draw_info = GetDrawInfo(draw_index);
-	FMesh mesh = GetMesh(draw_info.meshID);
-	FMaterial material = GetMaterial(mesh.materialID);
-	
-	float opacity = material.baseColorFactor.a;
-	if(material.baseColorTexture != INVALID_HANDLE)
-		opacity = SampleTexture2D(material.baseColorTexture, 0, texCoord).a;
-	
-	if(material.alphaMode == 1u && opacity < material.alphaCutoff)
-		discard;
+	//uint32_t draw_index = drawID + instanceID;
+	//DrawDescription draw_info = GetDrawInfo(draw_index);
+	//FMesh mesh = GetMesh(draw_info.meshID);
+	//FMaterial material = GetMaterial(mesh.materialID);
+	//
+	//float opacity = material.baseColorFactor.a;
+	//if(material.baseColorTexture != INVALID_HANDLE)
+	//	opacity = SampleTexture2D(material.baseColorTexture, 0, texCoord).a;
+	//
+	//if(material.alphaMode == 1u && opacity < material.alphaCutoff)
+	//	discard;
 
 	vbid = unpackUnorm4x8(packVBID(true, drawID, gl_PrimitiveID + 1u));
 	vbinst = unpackUnorm4x8(packMOID(vboID, instanceID));

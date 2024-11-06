@@ -7,17 +7,6 @@
 layout(set = 1, binding = 1) uniform sampler2D visbuffer_geometry;
 layout(set = 1, binding = 2) uniform sampler2D visbuffer_vboinst;
 
-layout(std140, set = 1, binding = 4) uniform GeometryBuffers
-{
-	FGPUBufferDesc vb;
-	FGPUBufferDesc ib;
-	FGPUBufferDesc mb; 
-	FGPUBufferDesc vrb;
-	FGPUBufferDesc bb;
-	FGPUBufferDesc tb;
-	FGPUBufferDesc lb;
-};
-
 // Visbuffer structures
 struct VertexAttribute
 {
@@ -85,7 +74,24 @@ bool loadVisBuffer(in vec2 uv, out VisibilityBuffer res)
 	return true;
 }
 
-FRawVertex[3] loadTriangle(in uint drawID, in uint primID)
+FRawVertex LoadVertex(in uint32_t index, in int32_t vertex_offset)
+{
+	FRawVertex vertex;
+
+	uint32_t vertex_index = index + vertex_offset;
+
+	vertex.position = GetVertexPosition(vertex_index);
+	vertex.color = GetVertexColor(vertex_index);
+	vertex.uv = GetVertexTexcoord(vertex_index);
+	vertex.normal = GetVertexNormal(vertex_index);
+	vertex.tangent = GetVertexTangent(vertex_index);
+	vertex.joints = GetVertexJoints(vertex_index);
+	vertex.weights = GetVertexWeights(vertex_index);
+
+	return vertex;
+}
+
+FRawVertex[3] LoadTriangle(in uint drawID, in uint primID)
 {
 	FRawVertex[3] vertices;
 
@@ -100,14 +106,14 @@ FRawVertex[3] loadTriangle(in uint drawID, in uint primID)
 	uint triVert3IndexBufferPosition = (primID * 3 + 2) + startIndex;	
 
 	// Now get vertex index from index buffer (eg, 17, 41, 32)
-	Index triVert0Index = PTRVAL(GET_BUFFER_POINTER(RawIndexPtr, ib), triVert1IndexBufferPosition);
-	Index triVert1Index = PTRVAL(GET_BUFFER_POINTER(RawIndexPtr, ib), triVert2IndexBufferPosition); 
-	Index triVert2Index = PTRVAL(GET_BUFFER_POINTER(RawIndexPtr, ib), triVert3IndexBufferPosition);
+	Index triVert0Index = GetIndex(triVert1IndexBufferPosition);
+	Index triVert1Index = GetIndex(triVert2IndexBufferPosition); 
+	Index triVert2Index = GetIndex(triVert3IndexBufferPosition);
 
 	// Load vertex data of the 3 control points 
-	vertices[0] = PTRVAL(GET_BUFFER_POINTER(RawVertexPtr, vb), draw_command.vertexOffset + triVert0Index);
-	vertices[1] = PTRVAL(GET_BUFFER_POINTER(RawVertexPtr, vb), draw_command.vertexOffset + triVert1Index);
-	vertices[2] = PTRVAL(GET_BUFFER_POINTER(RawVertexPtr, vb), draw_command.vertexOffset + triVert2Index);
+	vertices[0] = LoadVertex(triVert0Index, draw_command.vertexOffset);
+	vertices[1] = LoadVertex(triVert1Index, draw_command.vertexOffset);
+	vertices[2] = LoadVertex(triVert2Index, draw_command.vertexOffset);
 
 	return vertices;
 }
@@ -174,48 +180,65 @@ vec4 interpolate(vec4 a, vec4 b, vec4 c, vec3 barycentrics)
 
 VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 {
-	FRawVertex[3] vertices = loadTriangle(visbuffer.drawID, visbuffer.triangleID);
+	FRawVertex[3] vertices = LoadTriangle(visbuffer.drawID, visbuffer.triangleID);
 
 	// Load vertex data of the 3 vertices
-	vec3 position0 = vec3(vertices[0].px, vertices[0].py, vertices[0].pz);
-	vec3 position1 = vec3(vertices[1].px, vertices[1].py, vertices[1].pz);
-	vec3 position2 = vec3(vertices[2].px, vertices[2].py, vertices[2].pz);
+	vec3 position0 = vertices[0].position;
+	vec3 position1 = vertices[1].position;
+	vec3 position2 = vertices[2].position;
 
 	// Load mesh model matrix
 	FSceneNode node = GetSceneNode(visbuffer.objID);
 	mat4 model = GetModelMatrix(node.matrixOffset);
-			
-#ifdef HAS_SKIN
-	if(node.skeletonID != ~0u)
-	{
-#if defined(JOINTS_8BIT)
-	u8vec4 joints;
-	joints.x = uint8_t(vertices[0].joints_8 & 0xFF);
-	joints.y = uint8_t((vertices[0].joints_8 >> 8) & 0xFF);
-	joints.z = uint8_t((vertices[0].joints_8 >> 16) & 0xFF);
-	joints.w = uint8_t((vertices[0].joints_8 >> 24) & 0xFF);
-#elif defined(JOINTS_16BIT)
-	u16vec4 joints;
-#endif
-		mat4 skinMat = 
-			vertices[0].wx * GetMatrixById(node.skeletonID, joints.x) +
-			vertices[0].wy * GetMatrixById(node.skeletonID, joints.y) +
-			vertices[0].wz * GetMatrixById(node.skeletonID, joints.z) +
-			vertices[0].ww * GetMatrixById(node.skeletonID, joints.w);
-	
-		model = model * skinMat;
-	}
-#endif // HAS_SKIN
 
 	FCamera camera = GetCamera(visbuffer.cameraID);
-	mat4 view = GetViewMatrix(camera.matrices_offset);
-	mat4 projection = GetProjectionMatrix(camera.matrices_offset);
+	mat4 view_projection = GetViewProjectionMatrix(camera.matrices_offset);
+			
+#ifdef HAS_SKIN
+//	if(node.skeletonID != ~0u)
+//	{
+	Joints joints0 = vertices[0].joints;
+	Joints joints1 = vertices[1].joints;
+	Joints joints2 = vertices[2].joints;
+
+	vec4 weights0 = vertices[0].weights;
+	vec4 weights1 = vertices[1].weights;
+	vec4 weights2 = vertices[2].weights;
+
+	mat4 skin_mat0 = 
+		weights0.x * GetMatrixById(node.skeletonID, joints0.x) +
+		weights0.y * GetMatrixById(node.skeletonID, joints0.y) +
+		weights0.z * GetMatrixById(node.skeletonID, joints0.z) +
+		weights0.w * GetMatrixById(node.skeletonID, joints0.w);
+
+	mat4 skin_mat1 = 
+		weights1.x * GetMatrixById(node.skeletonID, joints1.x) +
+		weights1.y * GetMatrixById(node.skeletonID, joints1.y) +
+		weights1.z * GetMatrixById(node.skeletonID, joints1.z) +
+		weights1.w * GetMatrixById(node.skeletonID, joints1.w);
+
+	mat4 skin_mat2 = 
+		weights2.x * GetMatrixById(node.skeletonID, joints2.x) +
+		weights2.y * GetMatrixById(node.skeletonID, joints2.y) +
+		weights2.z * GetMatrixById(node.skeletonID, joints2.z) +
+		weights2.w * GetMatrixById(node.skeletonID, joints2.w);
+
+	mat4 mvp0 = view_projection * model * skin_mat0;
+	mat4 mvp1 = view_projection * model * skin_mat1;
+	mat4 mvp2 = view_projection * model * skin_mat2;
 
 	// Transform positions to clip space
-	mat4 mvp = projection * view * model;
+	vec4 clipPos0 = mvp0 * vec4(position0, 1.0);
+	vec4 clipPos1 = mvp1 * vec4(position1, 1.0);
+	vec4 clipPos2 = mvp2 * vec4(position2, 1.0);
+//	}
+#else
+	// Transform positions to clip space
+	mat4 mvp = view_projection * model;
 	vec4 clipPos0 = mvp * vec4(position0, 1.0);
 	vec4 clipPos1 = mvp * vec4(position1, 1.0);
 	vec4 clipPos2 = mvp * vec4(position2, 1.0);
+#endif // HAS_SKIN
 
 	//uv.y = 1.0 - uv.y;
 	vec2 ndcClip = uv * 2.0 - 1.0;
@@ -225,6 +248,7 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 	VertexAttribute res;
 
 	// INTERPOLATE POSITION
+	// TODO: Skinning. Here i have to multiply to specific matrices
 	position0 = (model * vec4(position0, 1.0)).xyz;
 	position1 = (model * vec4(position1, 1.0)).xyz;
 	position2 = (model * vec4(position2, 1.0)).xyz;
@@ -238,9 +262,9 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 
 	// INTERPOLATE TEXCOORD
 #ifdef HAS_TEXCOORD
-	vec2 uv0 = vec2(vertices[0].u, vertices[0].v);
-	vec2 uv1 = vec2(vertices[1].u, vertices[1].v);
-	vec2 uv2 = vec2(vertices[2].u, vertices[2].v);
+	vec2 uv0 = vertices[0].uv;
+	vec2 uv1 = vertices[1].uv;
+	vec2 uv2 = vertices[2].uv;
 
 	res.uv = interpolate(uv0, uv1, uv2, bary.barycentrics);
 	res.uv_dx = interpolate(uv0, uv1, uv2, bary.ddx);
@@ -249,9 +273,9 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 
 	// INTERPOLATE NORMAL
 #ifdef HAS_NORMAL
-	vec3 normal0 = vec3(vertices[0].nx, vertices[0].ny, vertices[0].nz);
-	vec3 normal1 = vec3(vertices[1].nx, vertices[1].ny, vertices[1].nz);
-	vec3 normal2 = vec3(vertices[2].nx, vertices[2].ny, vertices[2].nz);
+	vec3 normal0 = vertices[0].normal;
+	vec3 normal1 = vertices[1].normal;
+	vec3 normal2 = vertices[2].normal;
 
 	vec3 normal = interpolate(normal0, normal1, normal2, bary.barycentrics);
 	res.normal = normalize(mat3(model) * normal);
@@ -260,18 +284,15 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 #endif // HAS_NORMAL
 
 	// INTERPOLATE TANGENT
-#if defined(TANGENT_VEC3) || defined(TANGENT_VEC4)
-	vec4 tangent0 = vec4(vertices[0].tx, vertices[0].ty, vertices[0].tz, 1.0);
-	vec4 tangent1 = vec4(vertices[1].tx, vertices[1].ty, vertices[1].tz, 1.0);
-	vec4 tangent2 = vec4(vertices[2].tx, vertices[2].ty, vertices[2].tz, 1.0);
-#if defined(TANGENT_VEC4)
-	tangent0.w = vertices[0].tw;
-	tangent1.w = vertices[1].tw;
-	tangent2.w = vertices[2].tw;
-#endif // TANGENT_VEC4
+#if HAS_TANGENT
+	Tangent tangent0 = vertices[0].tangent;
+	Tangent tangent1 = vertices[1].tangent;
+	Tangent tangent2 = vertices[2].tangent;
 
-	vec4 tangent = interpolate(tangent0, tangent1, tangent2, bary.barycentrics);
+	Tangent tangent = interpolate(tangent0, tangent1, tangent2, bary.barycentrics);
+#if defined(TANGENT_VEC4)
 	res.tangent = vec4(normalize(mat3(model) * vec3(tangent)), tangent.w);
+#endif // TANGENT_VEC4
 #else	
 	vec3 tangent = (res.uv_dy.t * res.pos_dx - res.uv_dx.t * res.pos_dy) / (res.uv_dx.s * res.uv_dy.t - res.uv_dy.s * res.uv_dx.t); 
 	tangent = normalize(tangent - res.normal * dot(res.normal, tangent));
@@ -279,16 +300,17 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 #endif // TANGENT
 
 	// INTERPOLATE COLOR
-#if defined(COLOR_VEC3) || defined(COLOR_VEC4)
-	vec4 color0 = vec4(vertices[0].cr, vertices[0].cg, vertices[0].cb, 1.0);
-	vec4 color1 = vec4(vertices[1].cr, vertices[1].cg, vertices[1].cb, 1.0);
-	vec4 color2 = vec4(vertices[2].cr, vertices[2].cg, vertices[2].cb, 1.0);
-#if defined(COLOR_VEC4)
-	color0.a = vertices[0].ca;
-	color1.a = vertices[1].ca;
-	color2.a = vertices[2].ca;
-#endif // COLOR_VEC4
+#if HAS_COLOR
+	Color color0 = vertices[0].color;
+	Color color1 = vertices[1].color;
+	Color color2 = vertices[2].color;
+
+#if defined(COLOR_VEC3)
+	res.color = vec4(interpolate(color0, color1, color2, bary.barycentrics), 1.f);
+#else
 	res.color = interpolate(color0, color1, color2, bary.barycentrics);
+#endif // COLOR_VEC3
+
 #else
 	res.color = vec4(1.0);
 #endif // COLOR

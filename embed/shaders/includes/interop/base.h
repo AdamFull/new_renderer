@@ -118,56 +118,6 @@ namespace engine {
 #define Index uint32_t
 #endif
 
-		struct FRawVertex
-		{
-			float px;
-			float py;
-			float pz;
-
-#if defined(COLOR_VEC3) || defined(COLOR_VEC4)
-			float cr;
-			float cg;
-			float cb;
-#endif // COLOR_VEC3
-#if defined(COLOR_VEC4)
-			float ca;
-#endif // COLOR_VEC4
-
-#ifdef HAS_TEXCOORD
-			float u;
-			float v;
-#endif // HAS_TEXCOORD
-
-#ifdef HAS_NORMAL
-			float nx;
-			float ny;
-			float nz;
-#endif // HAS_NORMAL
-
-#if defined(TANGENT_VEC3) || defined(TANGENT_VEC4)
-			float tx;
-			float ty;
-			float tz;
-#endif // TANGENT_VEC3
-#if defined(TANGENT_VEC4)
-			float tw;
-#endif // TANGENT_VEC4
-
-#ifdef HAS_SKIN
-#if defined(JOINTS_8BIT) || defined(JOINTS_16BIT)
-			uint8_t joints_8;
-#endif // JOINTS_8BIT
-#if defined(JOINTS_16BIT)
-			uint16_t joints_16;
-#endif // JOINTS_16BIT
-
-			float wx;
-			float wy;
-			float wz;
-			float ww;
-#endif // HAS_SKIN
-		};
-
 		struct FGPUBufferDesc
 		{
 			uint64_t address;
@@ -461,8 +411,6 @@ namespace engine {
 		REGISTER_RO_BUFFER_PTR(SpotShadowPtr, FSpotShadowCommit, 8);
 
 		// Vertex buffer specific data
-		REGISTER_RO_BUFFER_PTR(RawVertexPtr, FRawVertex, 8); 
-		REGISTER_RO_BUFFER_PTR(RawIndexPtr, Index, 4);
 		REGISTER_RO_BUFFER_PTR(MeshletPtr, FMeshlet, 8);
 		REGISTER_RO_BUFFER_PTR(MeshletVertexRemapPtr, uint32_t, 4);
 		REGISTER_RO_BUFFER_PTR(MeshletBoundsPtr, FGeometryDrawBounds, 8);
