@@ -30,6 +30,8 @@ namespace engine
 
 			void AddMaterial(const FMaterial& material) override;
 
+			void AddLight(const FLightCommit& light_data) override;
+
 			void BeginFrame() override;
 			void EndFrame() override;
 
@@ -60,6 +62,9 @@ namespace engine
 			
 			std::unique_ptr<DynamicBuffer<FMaterial>> draw_materials{};
 			uint32_t material_count{ 0u };
+
+			std::unique_ptr<DynamicBuffer<FLightCommit>> scene_lights{};
+			uint32_t light_count{ 0u };
 		};
 	}
 }

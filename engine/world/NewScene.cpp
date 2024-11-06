@@ -252,7 +252,7 @@ namespace engine
 
 			CEntityManager::RegisterSystem<ecs::CCameraSystem>(renderer);
 			//CEntityManager::RegisterSystem<ecs::CShadowsSystem>(render_interface);
-			//CEntityManager::RegisterSystem<ecs::CLightingSystem>(render_interface);
+			CEntityManager::RegisterSystem<ecs::CLightingSystem>(renderer);
 			CEntityManager::RegisterSystem<ecs::CMeshSystem>(renderer);
 		}
 

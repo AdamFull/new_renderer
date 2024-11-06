@@ -133,7 +133,7 @@ vec3 calculateDirectionalLight(in FLightCommit light, in VertexAttribute va, in 
 	float shadow_factor = 1.0;
 	if(light.castShadows > 0 && light.shadowIndex > -1)
 	{
-		shadow_factor = getCascadeShadow(cascaded_shadowmap, light, va, ms, dither);
+		//shadow_factor = getCascadeShadow(cascaded_shadowmap, light, va, ms, dither);
 		//shadow_factor = ScreenSpaceShadows(va.pos, light.direction, depth_buffer, 32, 0.02f, dither);
 	}
 
@@ -175,7 +175,7 @@ vec3 calculatePointLight(in FLightCommit light, in VertexAttribute va, in Materi
 	float shadow_factor = 1.0;
 	if(light.castShadows > 0 && light.shadowIndex > -1)
 	{
-		shadow_factor = getOmniShadow(omni_shadowmap, light, va, ms, dither);
+		//shadow_factor = getOmniShadow(omni_shadowmap, light, va, ms, dither);
 		//shadow_factor = ScreenSpaceShadows(va.pos, light.direction, depth_buffer, 32, 0.02f, dither);
 	}
 
@@ -223,7 +223,7 @@ vec3 calculateSpotlight(in FLightCommit light, in VertexAttribute va, in Materia
 	float shadow_factor = 1.0;
 	if(light.castShadows > 0 && light.shadowIndex > -1)
 	{
-		shadow_factor = getDirectionalShadow(direct_shadowmap, light, va, ms, dither);
+		//shadow_factor = getDirectionalShadow(direct_shadowmap, light, va, ms, dither);
 		//shadow_factor = ScreenSpaceShadows(va.pos, light.direction, depth_buffer, 32, 0.02f, dither);
 	}
 
@@ -332,8 +332,7 @@ void main()
 	F0 = mix(F0, ms.albedo, ms.metallic);
 
 	// TODO: finish light calculation
-	//vec3 Lo = calculateLights(va, ms, V, F0, dither);
-	vec3 Lo = vec3(0.f);
+	vec3 Lo = calculateLights(va, ms, V, F0, dither);
 
 	// Reflection vector
 	vec3 R = -normalize(reflect(V, ms.normal));

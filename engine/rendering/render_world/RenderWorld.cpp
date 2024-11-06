@@ -16,6 +16,8 @@ namespace engine
 			draw_descriptions = std::make_unique<DynamicBuffer<DrawDescription>>(resource_context, 16ull, gfx::BufferUsageFlag::eStorageBuffer);
 			world_meshes = std::make_unique<DynamicBuffer<FMesh>>(resource_context, 16ull, gfx::BufferUsageFlag::eStorageBuffer);
 
+			scene_lights = std::make_unique<DynamicBuffer<FLightCommit>>(resource_context, 16ull, gfx::BufferUsageFlag::eStorageBuffer);
+
 			draw_materials = std::make_unique<DynamicBuffer<FMaterial>>(resource_context, 16ull, gfx::BufferUsageFlag::eStorageBuffer);
 
 			world_cameras = std::make_unique<DynamicBuffer<FCamera>>(resource_context, 8ull, gfx::BufferUsageFlag::eStorageBuffer);
@@ -240,54 +242,78 @@ namespace engine
 			new_material = material;
 		}
 
+		void RenderWorld::AddLight(const FLightCommit& light_data)
+		{
+			auto& new_light = scene_lights->Get(light_count++);
+			new_light = light_data;
+		}
+
 		void RenderWorld::BeginFrame()
 		{
 			auto& render_graph = renderer.GetRenderGraph();
 
 			// Bind global buffers
-			FGlobalBufferReference buffers{};
+			{
+				FGlobalBufferReference buffers{};
 
-			// Update nodes buffer
-			buffers.nodeBuffer.address = world_nodes->GetBuffer()->GetAddress();
-			world_nodes->Flush();
+				// Update nodes buffer
+				buffers.nodeBuffer.address = world_nodes->GetBuffer()->GetAddress();
+				world_nodes->Flush();
 
-			// Update world matrices buffer
-			buffers.matrixBuffer.address = world_matrices->GetBuffer()->GetAddress();
-			world_matrices->Flush();
+				// Update world matrices buffer
+				buffers.matrixBuffer.address = world_matrices->GetBuffer()->GetAddress();
+				world_matrices->Flush();
 
-			// Update frustum sides buffer
-			buffers.frustumSidesBuffer.address = world_frustum->GetBuffer()->GetAddress();
-			world_frustum->Flush();
+				// Update frustum sides buffer
+				buffers.frustumSidesBuffer.address = world_frustum->GetBuffer()->GetAddress();
+				world_frustum->Flush();
 
-			// Update buffer with cameras
-			buffers.cameraBuffer.address = world_cameras->GetBuffer()->GetAddress();
-			world_cameras->Flush();
+				// Update buffer with cameras
+				buffers.cameraBuffer.address = world_cameras->GetBuffer()->GetAddress();
+				world_cameras->Flush();
 
-			// Update buffer with indirect draw commands
-			buffers.indirectCommandBuffer.address = indirect_draw_commands->GetBuffer()->GetAddress();
-			indirect_draw_commands->Flush();
+				// Update buffer with indirect draw commands
+				buffers.indirectCommandBuffer.address = indirect_draw_commands->GetBuffer()->GetAddress();
+				indirect_draw_commands->Flush();
 
-			// Update buffer with per draw descriptions
-			buffers.drawInfoBuffer.address = draw_descriptions->GetBuffer()->GetAddress();
-			draw_descriptions->Flush();
+				// Update buffer with per draw descriptions
+				buffers.drawInfoBuffer.address = draw_descriptions->GetBuffer()->GetAddress();
+				draw_descriptions->Flush();
 
-			// Update mesh infos
-			buffers.meshBuffer.address = world_meshes->GetBuffer()->GetAddress();
-			world_meshes->Flush();
+				// Update mesh infos
+				buffers.meshBuffer.address = world_meshes->GetBuffer()->GetAddress();
+				world_meshes->Flush();
 
-			// Update materials
-			buffers.materialBuffer.address = draw_materials->GetBuffer()->GetAddress();
-			draw_materials->Flush();
+				// Update materials
+				buffers.materialBuffer.address = draw_materials->GetBuffer()->GetAddress();
+				draw_materials->Flush();
 
-			const uint8_t* uniform_data = reinterpret_cast<const uint8_t*>(&buffers);
-			uint64_t uniform_size = sizeof(FGlobalBufferReference);
+				// Update lights
+				buffers.lightsBuffer.address = scene_lights->GetBuffer()->GetAddress();
+				scene_lights->Flush();
 
-			render_graph.UpdateGlobalBinding(1, std::span(uniform_data, uniform_size));
+				const uint8_t* uniform_data = reinterpret_cast<const uint8_t*>(&buffers);
+				uint64_t uniform_size = sizeof(FGlobalBufferReference);
+
+				render_graph.UpdateGlobalBinding(1, std::span(uniform_data, uniform_size));
+			}
+			
+			{
+				FGlobalUniformData frame_data{};
+				frame_data.lightCount = light_count;
+				frame_data.cameraCount = camera_offset;
+
+				const uint8_t* uniform_data = reinterpret_cast<const uint8_t*>(&frame_data);
+				uint64_t uniform_size = sizeof(FGlobalUniformData);
+
+				render_graph.UpdateGlobalBinding(0, std::span(uniform_data, uniform_size));
+			}
 		}
 
 		void RenderWorld::EndFrame()
 		{
 			draw_count = 0;
+			light_count = 0;
 		}
 
 		gfx::IndirectDrawCommand RenderWorld::GetDrawCommand()

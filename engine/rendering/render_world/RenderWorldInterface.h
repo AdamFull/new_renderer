@@ -52,6 +52,8 @@ namespace engine
 
 			virtual void AddMaterial(const FMaterial& material) = 0;
 
+			virtual void AddLight(const FLightCommit& light_data) = 0;
+
 			virtual void BeginFrame() = 0;
 			virtual void EndFrame() = 0;
 
