@@ -48,9 +48,8 @@ void CRenderWorld::Create()
 	m_vBuffers[utl::enum_cast(ERenderBufferIndices::eOmniShadowBuffer)]->Create<FOmniShadowCommit>("OmniShadows", max_point_light_shadow_count, EBufferUsageFlagBits::eStorageBuffer);
 	m_vBuffers[utl::enum_cast(ERenderBufferIndices::eSpotShadowBuffer)]->Create<FSpotShadowCommit>("SpotShadows", max_spot_light_shadow_count, EBufferUsageFlagBits::eStorageBuffer);
 
-	m_vBuffers[utl::enum_cast(ERenderBufferIndices::eDrawMeshInfoBuffer)]->Create<FGeometryBatch>("GeometryBatches", 16ull, EBufferUsageFlagBits::eStorageBuffer);
-	m_vBuffers[utl::enum_cast(ERenderBufferIndices::eRawDrawMeshInfoBuffer)]->Create<FGeometryBatch>("RawGeometryBatches", 16ull, EBufferUsageFlagBits::eStorageBuffer);
-	m_vBuffers[utl::enum_cast(ERenderBufferIndices::eClusterInfoBuffer)]->Create<FClusterInfo>("ClusterInfoBuffer", 16ull, EBufferUsageFlagBits::eStorageBuffer);
+	m_vBuffers[utl::enum_cast(ERenderBufferIndices::eDrawMeshInfoBuffer)]->Create<DrawDescription>("GeometryBatches", 16ull, EBufferUsageFlagBits::eStorageBuffer);
+	m_vBuffers[utl::enum_cast(ERenderBufferIndices::eRawDrawMeshInfoBuffer)]->Create<DrawDescription>("RawGeometryBatches", 16ull, EBufferUsageFlagBits::eStorageBuffer);
 
 	m_vBuffers[utl::enum_cast(ERenderBufferIndices::eFrustumBuffer)]->Create<glm::vec4>("FrustumSides", 16ull, EBufferUsageFlagBits::eStorageBuffer);
 	m_vBuffers[utl::enum_cast(ERenderBufferIndices::eDrawCommandBuffer)]->Create<FDrawIndexedIndirectData>("IndexedDrawIndirectBuffer", 16ull, EBufferUsageFlagBits::eIndirectBuffer);
@@ -155,12 +154,12 @@ const u64 CRenderWorld::GetDefaultCameraID() const
 	return m_defaultCameraID;
 }
 
-void CRenderWorld::AddDrawGeometry(const utl::vector<FGeometryBatch>& new_geometry)
+void CRenderWorld::AddDrawGeometry(const utl::vector<DrawDescription>& new_geometry)
 {
 	m_vRawGeometryBatches.insert(m_vRawGeometryBatches.end(), new_geometry.begin(), new_geometry.end());
 
 	// Sort drawings by vbo, material and node
-	std::sort(m_vRawGeometryBatches.begin(), m_vRawGeometryBatches.end(), [](const FGeometryBatch& a, const FGeometryBatch& b) { return a.vboID < b.vboID; });
+	std::sort(m_vRawGeometryBatches.begin(), m_vRawGeometryBatches.end(), [](const DrawDescription& a, const DrawDescription& b) { return a.vboID < b.vboID; });
 }
 
 void CRenderWorld::Begin(f32 dt)
@@ -355,7 +354,7 @@ void CRenderWorld::prepareIndirectCommands()
 	m_perCullerDrawCommands.clear();
 	m_vGeometryBatches.clear();
 	
-	utl::vector<FGeometryBatch> gpu_batches{};
+	utl::vector<DrawDescription> gpu_batches{};
 
 	u64 offset{ 0ull };
 	for (const auto& culler : m_vCullingInfo)
@@ -456,7 +455,6 @@ void CRenderWorld::prepareMeshletCommands()
 	//
 	//utl::vector<FDrawMeshIndirectData> indirect_data{};
 	//utl::vector<FDrawMeshinfo> gpu_batches{};
-	//utl::vector<FClusterInfo> gpu_clusters{};
 	//
 	//utl::hash_map<u64, u64> indirect_command_cache{};
 	//

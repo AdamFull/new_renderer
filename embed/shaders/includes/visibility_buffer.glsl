@@ -75,7 +75,7 @@ bool loadVisBuffer(in vec2 uv, out VisibilityBuffer res)
 	uint instID = vboinstData >> 16;
 
 	uint32_t draw_index = res.drawID + instID;
-	FGeometryBatch draw_info = GetDrawInfo(draw_index);
+	DrawDescription draw_info = GetDrawInfo(draw_index);
 	FMesh mesh = GetMesh(draw_info.meshID);
 	
 	res.objID = draw_info.nodeID;

@@ -52,7 +52,12 @@ namespace engine
 			std::unique_ptr<DynamicBuffer<FDrawIndexedIndirectData>> indirect_draw_commands{};
 			uint32_t draw_count{ 0u };
 
-			std::unordered_map<uint32_t, std::vector<FDrawIndexedIndirectData>> draw_commands{};
+			std::unique_ptr<DynamicBuffer<DrawDescription>> draw_descriptions{};
+
+			std::unique_ptr<DynamicBuffer<FMesh>> world_meshes{};
+			
+			std::unique_ptr<DynamicBuffer<FMaterial>> draw_materials{};
+			uint32_t material_count{ 0u };
 		};
 	}
 }

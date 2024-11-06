@@ -158,7 +158,7 @@ namespace engine
 			const u64 GetCameraID(ERenderGeometryCullerType type) const override;
 			const u64 GetDefaultCameraID() const override;
 
-			void AddDrawGeometry(const utl::vector<FGeometryBatch>& new_geometry) override;
+			void AddDrawGeometry(const utl::vector<DrawDescription>& new_geometry) override;
 
 			void Begin(f32 dt) override;
 			void End() override;
@@ -200,7 +200,7 @@ namespace engine
 
 			utl::hash_map<u32, u64> m_nodeRemap{};
 
-			utl::vector<FGeometryBatch> m_vRawGeometryBatches{};
+			utl::vector<DrawDescription> m_vRawGeometryBatches{};
 			utl::vector<FGeometryCPUBatch> m_vGeometryBatches{};
 
 			utl::vector<glm::mat4> m_vSkins{};

@@ -136,7 +136,6 @@ namespace engine
 			eDrawCommandBuffer,
 			eCountBuffer,
 			eMeshCommandBuffer,
-			eClusterInfoBuffer,
 			// Other
 			eTextureRemapBuffer,
 			eCameraBuffer,

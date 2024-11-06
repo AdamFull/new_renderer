@@ -30,7 +30,7 @@ uint packMOID(uint matID, uint objID)
 void main() 
 {
 	uint32_t draw_index = drawID + instanceID;
-	FGeometryBatch draw_info = GetDrawInfo(draw_index);
+	DrawDescription draw_info = GetDrawInfo(draw_index);
 	FMesh mesh = GetMesh(draw_info.meshID);
 	FMaterial material = GetMaterial(mesh.materialID);
 	

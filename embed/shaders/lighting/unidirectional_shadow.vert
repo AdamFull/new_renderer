@@ -14,7 +14,7 @@ layout(push_constant) uniform ShadowmapData
 void main()
 {
 	uint32_t draw_index = shadowData.callID + gl_DrawIDARB + gl_InstanceIndex;
-	FGeometryBatch draw_info = GetDrawInfo(draw_index);
+	DrawDescription draw_info = GetDrawInfo(draw_index);
 
 	FSceneNode node = GetSceneNode(draw_info.nodeID);
 	mat4 modelMatrix = GetModelMatrix(node.matrixOffset);

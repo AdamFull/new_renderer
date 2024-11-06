@@ -45,9 +45,9 @@ namespace engine
         //    };
 		//}
         //
-        //inline void rebatchGeometry(const utl::vector<FGeometryBatch>& batches, utl::vector<FGeometryBatch>& rebatched, u32 flags = GEOMETRY_BATCHER_ALL_FLAG_BIT)
+        //inline void rebatchGeometry(const utl::vector<DrawDescription>& batches, utl::vector<DrawDescription>& rebatched, u32 flags = GEOMETRY_BATCHER_ALL_FLAG_BIT)
         //{
-        //    std::unordered_map<batcher::BatchKey, FGeometryBatch, batcher::BatchKeyHash> batch_map;
+        //    std::unordered_map<batcher::BatchKey, DrawDescription, batcher::BatchKeyHash> batch_map;
         //
         //    for (const auto& batch : batches)
         //    {
@@ -89,9 +89,9 @@ namespace engine
         //    }
         //}
         //
-		//inline void createGeometryBatches(const utl::vector<FGeometryDrawData>& geometry_list, utl::vector<FGeometryBatch>& batches, u32 flags = GEOMETRY_BATCHER_ALL_FLAG_BIT)
+		//inline void createGeometryBatches(const utl::vector<FGeometryDrawData>& geometry_list, utl::vector<DrawDescription>& batches, u32 flags = GEOMETRY_BATCHER_ALL_FLAG_BIT)
 		//{
-        //    std::unordered_map<batcher::BatchKey, FGeometryBatch, batcher::BatchKeyHash> batch_map;
+        //    std::unordered_map<batcher::BatchKey, DrawDescription, batcher::BatchKeyHash> batch_map;
         //
         //    for (const auto& data : geometry_list)
         //    {
@@ -105,7 +105,7 @@ namespace engine
         //    }
         //
         //    // Apply geometry batches
-        //    utl::vector<FGeometryBatch> uni_batches{};
+        //    utl::vector<DrawDescription> uni_batches{};
         //    for (auto& [key, batch] : batch_map)
         //    {
         //        if (flags & GEOMETRY_BATCHER_MERGE_DRAWCALLS_FLAG_BIT)
@@ -132,7 +132,7 @@ namespace engine
         //    }
         //
         //    // Sort by vbo and material
-        //    std::sort(uni_batches.begin(), uni_batches.end(), [](const FGeometryBatch& a, const FGeometryBatch& b)
+        //    std::sort(uni_batches.begin(), uni_batches.end(), [](const DrawDescription& a, const DrawDescription& b)
         //        { 
         //            if (a.vboID == b.vboID)
         //                return a.materialID < b.materialID;

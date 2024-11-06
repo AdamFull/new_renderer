@@ -77,7 +77,7 @@ layout(std140, set = 1, binding = 0) uniform GeometryBuffers
 	uint64_t indices;
 } geometry_buffers;
 
-vec3 GetVertexPosition(Index vertex_index)
+vec3 GetVertexPosition(uint32_t vertex_index)
 {
 	PositionBuffer position_buffer = PTRCAST(PositionBuffer, geometry_buffers.position);
 
@@ -87,7 +87,7 @@ vec3 GetVertexPosition(Index vertex_index)
 	PTRVAL(position_buffer, vertex_index * 3 + 2));
 }
 
-Color GetVertexColor(Index vertex_index)
+Color GetVertexColor(uint32_t vertex_index)
 {
 #if HAS_COLOR
 	ColorBuffer color_buffer = PTRCAST(ColorBuffer, geometry_buffers.color);
@@ -105,7 +105,7 @@ Color GetVertexColor(Index vertex_index)
 #endif
 }
 
-vec2 GetVertexTexcoord(Index vertex_index)
+vec2 GetVertexTexcoord(uint32_t vertex_index)
 {
 #ifdef HAS_TEXCOORD
 	TexcoordBuffer texcoord_buffer = PTRCAST(TexcoordBuffer, geometry_buffers.texcoord);
@@ -118,7 +118,7 @@ vec2 GetVertexTexcoord(Index vertex_index)
 #endif
 }
 
-vec3 GetVertexNormal(Index vertex_index)
+vec3 GetVertexNormal(uint32_t vertex_index)
 {
 #ifdef HAS_NORMAL
 	NormalBuffer normal_buffer = PTRCAST(NormalBuffer, geometry_buffers.normal);
@@ -132,7 +132,7 @@ vec3 GetVertexNormal(Index vertex_index)
 #endif
 }
 
-Tangent GetVertexTangent(Index vertex_index)
+Tangent GetVertexTangent(uint32_t vertex_index)
 {
 #if HAS_TANGENT
 	TangentBuffer tangent_buffer = PTRCAST(TangentBuffer, geometry_buffers.tangent);
@@ -150,7 +150,7 @@ Tangent GetVertexTangent(Index vertex_index)
 #endif
 }
 
-Joints GetVertexJoints(Index vertex_index)
+Joints GetVertexJoints(uint32_t vertex_index)
 {
 #ifdef HAS_SKIN
 	JointBuffer joint_buffer = PTRCAST(JointBuffer, geometry_buffers.joint);
@@ -166,7 +166,7 @@ Joints GetVertexJoints(Index vertex_index)
 #endif
 }
 
-vec4 GetVertexWeights(Index vertex_index)
+vec4 GetVertexWeights(uint32_t vertex_index)
 {
 #ifdef HAS_SKIN
 	WeightBuffer weight_buffer = PTRCAST(WeightBuffer, geometry_buffers.weight);
@@ -201,21 +201,40 @@ out gl_PerVertex
 void main() 
 {
 	uint32_t draw_index = meshData.callID + gl_DrawIDARB + gl_InstanceIndex;
+	DrawDescription draw_info = GetDrawInfo(draw_index);
+
+	FSceneNode node = GetSceneNode(draw_info.nodeID);
+	mat4 model_matrix = GetModelMatrix(node.matrixOffset);
+
+	uint draw_id = meshData.callID + gl_DrawIDARB;
+
+	uint32_t vertex_index = uint32_t(gl_VertexIndex);
+
+	// Calculate skinning matrix
+#ifdef HAS_SKIN
+	Joints joints = GetVertexJoints(vertex_index);
+	vec4 weights = GetVertexWeights(vertex_index);
+
+	mat4 skin_mat = 
+			weights.x * GetMatrixById(node.skeletonID, joints.x) +
+			weights.y * GetMatrixById(node.skeletonID, joints.y) +
+			weights.z * GetMatrixById(node.skeletonID, joints.z) +
+			weights.w * GetMatrixById(node.skeletonID, joints.w);
 	
-	drawID = meshData.callID + gl_DrawIDARB;
+		model_matrix = model_matrix * skin_mat;
+#endif
+
+	FCamera camera = GetCamera(draw_info.cameraID);
+	mat4 view_projection = GetViewProjectionMatrix(camera.matrices_offset);
+
+	// Sample vertex position
+	vec3 position = GetVertexPosition(vertex_index);
+	vec4 local_pos = model_matrix * (vec4(position, 1.0));
+	local_pos = vec4(local_pos.xyz / local_pos.w, 1.0);
+
+	drawID = draw_id;
 	instanceID = gl_InstanceIndex;
 	//vboID = draw_info.vboID;
-
-	Index vertex_index = Index(gl_VertexIndex);
-
-	vec3 position = GetVertexPosition(vertex_index);
-
 	texCoord = GetVertexTexcoord(vertex_index);
-
-	FCamera camera = GetCamera(0);
-	mat4 view_projection = GetViewProjectionMatrix(camera.matrices_offset);
-	
-	vec4 clipSpacePos = view_projection * vec4(position, 1.f);
-
-	gl_Position = clipSpacePos;
+	gl_Position = view_projection * local_pos;
 }

@@ -265,14 +265,6 @@ namespace engine {
 			uint32_t skeletonID;
 		};
 
-		struct FClusterInfo
-		{
-			uint32_t drawID; // Index of FDrawMeshinfo
-			uint32_t firstMeshlet;
-			uint32_t meshletCount;
-			uint32_t pad;
-		};
-
 		struct FVertexRangeData
 		{
 			uint32_t vertexCount;
@@ -296,7 +288,7 @@ namespace engine {
 			uint32_t firstTask;
 		};
 
-		struct FGeometryBatch
+		struct DrawDescription
 		{
 			uint32_t vboID;
 			uint32_t meshID;
@@ -478,8 +470,7 @@ namespace engine {
 		REGISTER_RO_BUFFER_PTR(MeshLodPtr, FMeshLod, 8);
 
 		// GPU object representation
-		REGISTER_RW_BUFFER_PTR(DrawInfoPtr, FGeometryBatch, 8);
-		REGISTER_RO_BUFFER_PTR(ClusterInfoPtr, FClusterInfo, 8);
+		REGISTER_RW_BUFFER_PTR(DrawInfoPtr, DrawDescription, 8);
 		REGISTER_RO_BUFFER_PTR(FrustumSidesPtr, VECTOR4, 16);
 
 		// Indirect data

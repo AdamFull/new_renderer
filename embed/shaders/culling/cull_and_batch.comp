@@ -44,7 +44,7 @@ void main()
 		return;
 
 	// Sample info about current Draw comand
-	FGeometryBatch draw_info = GetRawDrawInfo(global_draw_index);
+	DrawDescription draw_info = GetRawDrawInfo(global_draw_index);
 	FSceneNode node = GetSceneNode(draw_info.nodeID);
 	FMesh mesh = GetMesh(draw_info.meshID);
 	mat4 model = GetModelMatrix(node.matrixOffset);			

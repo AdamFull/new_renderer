@@ -44,8 +44,8 @@ FCascadedShadowCommit GetCascadedShadowCommit(uint index) { return PTRVAL(GET_BU
 FOmniShadowCommit GetOmniShadowCommit(uint index) { return PTRVAL(GET_BUFFER_POINTER(OmniShadowPtr, omniShadowBuffer), index); }
 FSpotShadowCommit GetSpotShadowCommit(uint index) { return PTRVAL(GET_BUFFER_POINTER(SpotShadowPtr, spotShadowBuffer), index); }
 
-FGeometryBatch GetDrawInfo(uint index) { return PTRVAL(GET_BUFFER_POINTER(DrawInfoPtr, drawInfoBuffer), index); }
-FGeometryBatch GetRawDrawInfo(uint index) { return PTRVAL(GET_BUFFER_POINTER(DrawInfoPtr, rawDrawInfoBuffer), index); }
+DrawDescription GetDrawInfo(uint index) { return PTRVAL(GET_BUFFER_POINTER(DrawInfoPtr, drawInfoBuffer), index); }
+DrawDescription GetRawDrawInfo(uint index) { return PTRVAL(GET_BUFFER_POINTER(DrawInfoPtr, rawDrawInfoBuffer), index); }
 
 vec4 GetFrustumSide(uint index) { return PTRVAL(GET_BUFFER_POINTER(FrustumSidesPtr, frustumSidesBuffer), index); }
 

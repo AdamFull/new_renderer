@@ -13,6 +13,7 @@ namespace engine
 			auto& resource_context = renderer.GetResourceContext();
 
 			world_nodes = std::make_unique<DynamicBuffer<FSceneNode>>(resource_context, 8ull, gfx::BufferUsageFlag::eStorageBuffer);
+			draw_descriptions = std::make_unique<DynamicBuffer<DrawDescription>>(resource_context, 16ull, gfx::BufferUsageFlag::eStorageBuffer);
 
 			world_cameras = std::make_unique<DynamicBuffer<FCamera>>(resource_context, 8ull, gfx::BufferUsageFlag::eStorageBuffer);
 			world_matrices = std::make_unique<DynamicBuffer<glm::mat4>>(resource_context, 64ull, gfx::BufferUsageFlag::eStorageBuffer);
@@ -207,18 +208,25 @@ namespace engine
 
 		void RenderWorld::AddGeometryDraw(DrawCommand& draw_command)
 		{
-			auto& vertex_buffer_commands = draw_commands[draw_command.vertex_buffers];
-			vertex_buffer_commands.emplace_back(draw_command.index_count, 1u, draw_command.first_index, (int32_t)draw_command.first_vertex, 0u);
+			uint32_t draw_index = draw_count++;
 
-			auto& command = indirect_draw_commands->Get(draw_count++);
+			// Describes current draw command resources
+			auto& batch_command = draw_descriptions->Get(draw_index);
+			draw_descriptions->MarkDirty(draw_index);
 
-			command.indexCount = draw_command.index_count;
-			command.instanceCount = 1;
-			command.firstIndex = draw_command.first_index;
-			command.vertexOffset = int(draw_command.first_vertex);
-			command.firstInstance = 0;
+			batch_command.cameraID = draw_command.camera_index;
+			batch_command.nodeID = draw_command.node_index;
+			batch_command.meshID = draw_index;
+			batch_command.vboID = draw_command.vertex_buffers;
 
-			indirect_draw_commands->MarkDirty(draw_count - 1u);
+			auto& indirect_command = indirect_draw_commands->Get(draw_index);
+			indirect_draw_commands->MarkDirty(draw_index);
+
+			indirect_command.indexCount = draw_command.index_count;
+			indirect_command.instanceCount = 1;
+			indirect_command.firstIndex = draw_command.first_index;
+			indirect_command.vertexOffset = int(draw_command.first_vertex);
+			indirect_command.firstInstance = 0;
 		}
 
 		void RenderWorld::BeginFrame()
@@ -227,20 +235,30 @@ namespace engine
 
 			// Bind global buffers
 			FGlobalBufferReference buffers{};
+
+			// Update nodes buffer
 			buffers.nodeBuffer.address = world_nodes->GetBuffer()->GetAddress();
 			world_nodes->Flush();
 
+			// Update world matrices buffer
 			buffers.matrixBuffer.address = world_matrices->GetBuffer()->GetAddress();
 			world_matrices->Flush();
 
+			// Update frustum sides buffer
 			buffers.frustumSidesBuffer.address = world_frustum->GetBuffer()->GetAddress();
 			world_frustum->Flush();
 
+			// Update buffer with cameras
 			buffers.cameraBuffer.address = world_cameras->GetBuffer()->GetAddress();
 			world_cameras->Flush();
 
+			// Update buffer with indirect draw commands
 			buffers.indirectCommandBuffer.address = indirect_draw_commands->GetBuffer()->GetAddress();
 			indirect_draw_commands->Flush();
+
+			// Update buffer with per draw descriptions
+			buffers.drawInfoBuffer.address = draw_descriptions->GetBuffer()->GetAddress();
+			draw_descriptions->Flush();
 
 			const uint8_t* uniform_data = reinterpret_cast<const uint8_t*>(&buffers);
 			uint64_t uniform_size = sizeof(FGlobalBufferReference);
@@ -251,7 +269,6 @@ namespace engine
 		void RenderWorld::EndFrame()
 		{
 			draw_count = 0;
-			draw_commands.clear();
 		}
 
 		gfx::IndirectDrawCommand RenderWorld::GetDrawCommand()

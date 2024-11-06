@@ -15,7 +15,7 @@ using namespace engine::world;
 using namespace engine::world::ecs;
 
 // TODO: RENDER WORLD
-//void prepare_meshes_to_draw(const std::unique_ptr<IRenderWorld>& render_world, const utl::vector<FMeshPrimitive>& primitives, utl::vector<FGeometryBatch>& draw_commands, u32 node, u32 alpha_mode)
+//void prepare_meshes_to_draw(const std::unique_ptr<IRenderWorld>& render_world, const utl::vector<FMeshPrimitive>& primitives, utl::vector<DrawDescription>& draw_commands, u32 node, u32 alpha_mode)
 //{
 //	auto& world_stats = render_world->GetStats();
 //
@@ -42,7 +42,7 @@ using namespace engine::world::ecs;
 //	render_world->AddMeshes(meshes);
 //}
 //
-//void prepare_draw_commands(const std::unique_ptr<IRenderWorld>& render_world, utl::vector<FGeometryBatch>& draw_commands, u32 alpha_mode)
+//void prepare_draw_commands(const std::unique_ptr<IRenderWorld>& render_world, utl::vector<DrawDescription>& draw_commands, u32 alpha_mode)
 //{
 //	auto root = CEntityManager::GetRoot();
 //	auto& root_component = CEntityManager::GetComponent<FRootComponent>(root);
@@ -117,6 +117,9 @@ void CMeshSystem::__Update(f32 fDt)
 			//	continue;
 
 			DrawCommand draw_command{};
+			draw_command.camera_index = 0u;
+			draw_command.node_index = node;
+
 			draw_command.vertex_buffers = primitive.vbo;
 			draw_command.material_index = primitive.material;
 
@@ -142,7 +145,7 @@ void CMeshSystem::__Update(f32 fDt)
 	// TODO: RENDER WORLD
 	//auto& render_world = m_pRenderInterface->GetRenderWorld();
 	//
-	//utl::vector<FGeometryBatch> draw_commands{};
+	//utl::vector<DrawDescription> draw_commands{};
 	//prepare_draw_commands(render_world, draw_commands, utl::enum_cast(EAlphaMode::eOpaque));
 	//prepare_draw_commands(render_world, draw_commands, utl::enum_cast(EAlphaMode::eMask));
 	//prepare_draw_commands(render_world, draw_commands, utl::enum_cast(EAlphaMode::eBlend));
