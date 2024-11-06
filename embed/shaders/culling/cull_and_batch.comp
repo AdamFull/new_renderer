@@ -62,10 +62,10 @@ void main()
 	//if(checkObjectInFrustum(min_extents.xyz * 1.1, min_extents.xyz * 1.1, camera.frustum_offset))
 	{	
 		uint draw_offset = frameData.maxCommandsCount * draw_info.cameraID;
-		uint culler_counter = atomicAdd(GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(UInt32Ptr, indirectCountBuffer), draw_info.cameraID), 1);
+		uint culler_counter = atomicAdd(PTRVAL(GET_BUFFER_POINTER(UInt32Ptr, indirectCountBuffer), draw_info.cameraID), 1);
 
 		uint output_index = draw_offset + culler_counter;
-		GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(DrawInfoPtr, drawInfoBuffer), output_index) = draw_info;
+		PTRVAL(GET_BUFFER_POINTER(DrawInfoPtr, drawInfoBuffer), output_index) = draw_info;
 	
 		// Construct  indirect Draw command
 		// TODO: In future thing about how to implement instancing here
@@ -90,7 +90,7 @@ void main()
 		uint lod_level = uint(log2(max(1.0f, lod_ratio * (mesh.lodCount - 1))));
 		lod_level = clamp(lod_level, 0, mesh.lodCount - 1);
 
-		FMeshLod lod = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(MeshLodPtr, lb), mesh.lodOffset + lod_level);
+		FMeshLod lod = PTRVAL(GET_BUFFER_POINTER(MeshLodPtr, lb), mesh.lodOffset + lod_level);
 		
 		FDrawIndexedIndirectData indirect_command;
 		indirect_command.indexCount = lod.indexCount == 0 ? lastIndex : lod.indexCount;
@@ -99,6 +99,6 @@ void main()
 		indirect_command.vertexOffset = int(lod.firstVertex);
 		indirect_command.firstInstance = 0;
 
-		GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(IndirectDrawIndexedComandPtr, indirectCommandBuffer), output_index) = indirect_command;
+		PTRVAL(GET_BUFFER_POINTER(IndirectDrawIndexedComandPtr, indirectCommandBuffer), output_index) = indirect_command;
 	}
 }

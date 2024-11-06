@@ -456,30 +456,12 @@ namespace engine
 			{
 				RenderShaderPassCreateInfo create_info{};
 				create_info.shader_name = "visibilitybuffer:new_write:HAS_TEXCOORD:HAS_NORMAL:TANGENT_VEC4:INDEX_16BIT";
-				//create_info.pipeline_state.
-				//create_info.pipeline_state.vertex_layout.attributes[0].binding = 0;
-				//create_info.pipeline_state.vertex_layout.attributes[0].location = 0;
-				//create_info.pipeline_state.vertex_layout.attributes[0].format = gfx::Format::eR32G32B32Sfloat;
-				//create_info.pipeline_state.vertex_layout.attributes[1].binding = 1;
-				//create_info.pipeline_state.vertex_layout.attributes[1].location = 2;
-				//create_info.pipeline_state.vertex_layout.attributes[1].format = gfx::Format::eR32G32Sfloat;
-				//create_info.pipeline_state.vertex_layout.attributes[2].binding = 2;
-				//create_info.pipeline_state.vertex_layout.attributes[2].location = 3;
-				//create_info.pipeline_state.vertex_layout.attributes[2].format = gfx::Format::eR32G32B32Sfloat;
-				//create_info.pipeline_state.vertex_layout.attributes[3].binding = 3;
-				//create_info.pipeline_state.vertex_layout.attributes[3].location = 4;
-				//create_info.pipeline_state.vertex_layout.attributes[3].format = gfx::Format::eR32G32B32A32Sfloat;
-				//create_info.pipeline_state.vertex_layout.attribute_count = 4;
-				//
-				//create_info.pipeline_state.vertex_layout.bindings[0].binding = 0;
-				//create_info.pipeline_state.vertex_layout.bindings[0].stride = 12;
-				//create_info.pipeline_state.vertex_layout.bindings[1].binding = 1;
-				//create_info.pipeline_state.vertex_layout.bindings[1].stride = 8;
-				//create_info.pipeline_state.vertex_layout.bindings[2].binding = 2;
-				//create_info.pipeline_state.vertex_layout.bindings[2].stride = 12;
-				//create_info.pipeline_state.vertex_layout.bindings[3].binding = 3;
-				//create_info.pipeline_state.vertex_layout.bindings[3].stride = 16;
-				//create_info.pipeline_state.vertex_layout.binding_count = 4;
+				create_info.pipeline_state.rasterization_state.cull_mode = gfx::CullModeFlag::eFront;
+
+				// Depth state
+				create_info.pipeline_state.depth_stencil_state.depth_test = true;
+				create_info.pipeline_state.depth_stencil_state.depth_write = true;
+				create_info.pipeline_state.depth_stencil_state.depth_compare_op = gfx::CompareOp::eLess;
 
 
 				create_info.AddWriteAttachment(visbuffer_geometry_target, ResourceAttachmentTypeFlag::eColor, gfx::ClearColor{ 0.f, 0.f, 0.f, 0.f });

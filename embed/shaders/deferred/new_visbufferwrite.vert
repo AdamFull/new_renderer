@@ -7,38 +7,62 @@ layout(location = 3) out vec2 texCoord;
 //layout(location = 5) smooth out vec4 currentPos;
 //layout(location = 6) smooth out vec4 oldPos;
 
-REGISTER_RO_BUFFER_PTR(PositionBuffer, float, 4);
-#if defined(COLOR_VEC3)
-REGISTER_RO_BUFFER_PTR2(ColorBuffer, vec3);
-#elif defined(COLOR_VEC4)
-REGISTER_RO_BUFFER_PTR2(ColorBuffer, vec4);
-#endif // COLOR_VEC4
-#ifdef HAS_TEXCOORD
-REGISTER_RO_BUFFER_PTR2(TexcoordBuffer, vec2);
-#endif // HAS_TEXCOORD
-#ifdef HAS_NORMAL
-REGISTER_RO_BUFFER_PTR2(NormalBuffer, vec3);
-#endif // HAS_NORMAL
-#if defined(TANGENT_VEC3)
-REGISTER_RO_BUFFER_PTR2(TangentBuffer, vec3);
-#elif defined(TANGENT_VEC4)
-REGISTER_RO_BUFFER_PTR2(TangentBuffer, vec4);
-#endif // TANGENT_VEC4
-
-#ifdef HAS_SKIN
-#if defined(JOINTS_8BIT)
-REGISTER_RO_BUFFER_PTR2(JointBuffer, uint8_t);
-#elif defined(JOINTS_16BIT)
-REGISTER_RO_BUFFER_PTR2(JointBuffer, uint16_t);
+// Define vertex color type dependent on element count
+#if (defined(COLOR_VEC3) || defined(COLOR_VEC4))
+#define HAS_COLOR 1
+#else
+#define HAS_COLOR 0
 #endif
-REGISTER_RO_BUFFER_PTR2(WeightBuffer, vec4);
-#endif // HAS_SKIN
+
+#if defined(COLOR_VEC4)
+#define Color vec4
+#define VTX_COLOR_ELEM_CNT 4
+#else
+#define Color vec3
+#define VTX_COLOR_ELEM_CNT 3
+#endif
+
+// Define vertex tangent type also dependent on element count
+#if (defined(TANGENT_VEC3) || defined(TANGENT_VEC4))
+#define HAS_TANGENT 1
+#else
+#define HAS_TANGENT 0
+#endif
+
+#if defined(TANGENT_VEC4)
+#define Tangent vec4
+#define VTX_TANGENT_ELEM_CNT 4
+#else // TANGENT_VEC4
+#define Tangent vec3
+#define VTX_TANGENT_ELEM_CNT 3
+#endif // TANGENT_VEC3
+
+// Define joints type
+#if defined(JOINTS_16BIT)
+#define JointIndex uint16_t
+#define Joints u16vec4
+#define JOINT_ALIGN 2
+#else
+#define JointIndex uint8_t
+#define Joints u8vec4
+#define JOINT_ALIGN 1
+#endif
 
 #if defined(INDEX_16BIT)
-REGISTER_RO_BUFFER_PTR2(IndexBuffer, uint16_t);
+#define INDEX_ALIGN 2
 #else
-REGISTER_RO_BUFFER_PTR2(IndexBuffer, uint32_t);
+#define INDEX_ALIGN 4
 #endif
+
+// Register buffer pointers
+REGISTER_RO_BUFFER_PTR(PositionBuffer, float, 4);
+REGISTER_RO_BUFFER_PTR(ColorBuffer, float, 4);
+REGISTER_RO_BUFFER_PTR(TexcoordBuffer, float, 4);
+REGISTER_RO_BUFFER_PTR(NormalBuffer, float, 4);
+REGISTER_RO_BUFFER_PTR(TangentBuffer, float, 4);
+REGISTER_RO_BUFFER_PTR(JointBuffer, JointIndex, JOINT_ALIGN);
+REGISTER_RO_BUFFER_PTR(WeightBuffer, float, 4);
+REGISTER_RO_BUFFER_PTR(IndexBuffer, Index, INDEX_ALIGN);
 
 layout(std140, set = 1, binding = 0) uniform GeometryBuffers
 {
@@ -52,6 +76,117 @@ layout(std140, set = 1, binding = 0) uniform GeometryBuffers
 
 	uint64_t indices;
 } geometry_buffers;
+
+vec3 GetVertexPosition(Index vertex_index)
+{
+	PositionBuffer position_buffer = PTRCAST(PositionBuffer, geometry_buffers.position);
+
+	return vec3(
+	PTRVAL(position_buffer, vertex_index * 3 + 0),
+	PTRVAL(position_buffer, vertex_index * 3 + 1),
+	PTRVAL(position_buffer, vertex_index * 3 + 2));
+}
+
+Color GetVertexColor(Index vertex_index)
+{
+#if HAS_COLOR
+	ColorBuffer color_buffer = PTRCAST(ColorBuffer, geometry_buffers.color);
+
+	return Color(
+	PTRVAL(color_buffer, vertex_index * VTX_COLOR_ELEM_CNT + 0)
+	,PTRVAL(color_buffer, vertex_index * VTX_COLOR_ELEM_CNT + 1)
+	,PTRVAL(color_buffer, vertex_index * VTX_COLOR_ELEM_CNT + 2)
+#if defined(COLOR_VEC4)
+	,PTRVAL(color_buffer, vertex_index * VTX_COLOR_ELEM_CNT + 3)
+#endif
+	);
+#else
+	return Color(0.f);
+#endif
+}
+
+vec2 GetVertexTexcoord(Index vertex_index)
+{
+#ifdef HAS_TEXCOORD
+	TexcoordBuffer texcoord_buffer = PTRCAST(TexcoordBuffer, geometry_buffers.texcoord);
+
+	return vec2(
+	PTRVAL(texcoord_buffer, vertex_index * 2 + 0),
+	PTRVAL(texcoord_buffer, vertex_index * 2 + 1));
+#else
+	return vec2(0.f, 0.f);
+#endif
+}
+
+vec3 GetVertexNormal(Index vertex_index)
+{
+#ifdef HAS_NORMAL
+	NormalBuffer normal_buffer = PTRCAST(NormalBuffer, geometry_buffers.normal);
+
+	return vec3(
+	PTRVAL(normal_buffer, vertex_index * 3 + 0),
+	PTRVAL(normal_buffer, vertex_index * 3 + 1),
+	PTRVAL(normal_buffer, vertex_index * 3 + 2));
+#else
+	return vec3(0.f);
+#endif
+}
+
+Tangent GetVertexTangent(Index vertex_index)
+{
+#if HAS_TANGENT
+	TangentBuffer tangent_buffer = PTRCAST(TangentBuffer, geometry_buffers.tangent);
+
+	return Tangent(
+	PTRVAL(tangent_buffer, vertex_index * VTX_TANGENT_ELEM_CNT + 0)
+	,PTRVAL(tangent_buffer, vertex_index * VTX_TANGENT_ELEM_CNT + 1)
+	,PTRVAL(tangent_buffer, vertex_index * VTX_TANGENT_ELEM_CNT + 2)
+#if defined(TANGENT_VEC4)
+	,PTRVAL(tangent_buffer, vertex_index * VTX_TANGENT_ELEM_CNT + 3)
+#endif
+	);
+#else
+	return Tangent(0.f);
+#endif
+}
+
+Joints GetVertexJoints(Index vertex_index)
+{
+#ifdef HAS_SKIN
+	JointBuffer joint_buffer = PTRCAST(JointBuffer, geometry_buffers.joint);
+
+	return Joints(
+	PTRVAL(joint_buffer, vertex_index * 4 + 0)
+	,PTRVAL(joint_buffer, vertex_index * 4 + 1)
+	,PTRVAL(joint_buffer, vertex_index * 4 + 2)
+	,PTRVAL(joint_buffer, vertex_index * 4 + 3)
+	);
+#else
+	return Joints(0);
+#endif
+}
+
+vec4 GetVertexWeights(Index vertex_index)
+{
+#ifdef HAS_SKIN
+	WeightBuffer weight_buffer = PTRCAST(WeightBuffer, geometry_buffers.weight);
+
+	return vec4(
+	PTRVAL(weight_buffer, vertex_index * 4 + 0)
+	,PTRVAL(weight_buffer, vertex_index * 4 + 1)
+	,PTRVAL(weight_buffer, vertex_index * 4 + 2)
+	,PTRVAL(weight_buffer, vertex_index * 4 + 3)
+	);
+#else
+	return vec4(0.f);
+#endif
+}
+
+Index GetIndex(uint32_t offset)
+{
+	IndexBuffer index_buffer = PTRCAST(IndexBuffer, geometry_buffers.indices);
+	return PTRVAL(index_buffer, offset);
+}
 
 layout(push_constant) uniform UniformMeshData
 {
@@ -71,27 +206,16 @@ void main()
 	instanceID = gl_InstanceIndex;
 	//vboID = draw_info.vboID;
 
-	FDrawIndexedIndirectData draw_command = getDrawIndexedCommand(drawID);
-
-	// Get vertex offset
-	//uint32_t vertex_index = gl_VertexIndex + draw_command.vertexOffset;
-
-	//Index vertex_index = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER_RAW(IndexBuffer, geometry_buffers.indices), gl_VertexIndex);
-
 	Index vertex_index = Index(gl_VertexIndex);
 
-	float position_x = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER_RAW(PositionBuffer, geometry_buffers.position), vertex_index * 3 + 0);
-	float position_y = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER_RAW(PositionBuffer, geometry_buffers.position), vertex_index * 3 + 1);
-	float position_z = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER_RAW(PositionBuffer, geometry_buffers.position), vertex_index * 3 + 2);
-//#ifdef HAS_TEXCOORD
-//	texCoord = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER_RAW(TexcoordBuffer, geometry_buffers.texcoord), vertex_index);
-//#endif
+	vec3 position = GetVertexPosition(vertex_index);
+
+	texCoord = GetVertexTexcoord(vertex_index);
 
 	FCamera camera = GetCamera(0);
 	mat4 view_projection = getViewProjectionMatrix(camera.matrices_offset);
 	
-	vec4 clipSpacePos = view_projection * vec4(position_x, position_y, position_z, 1.f);
-	//vec4 clipSpacePos = view_projection * vec4(inPosition, 1.f);
+	vec4 clipSpacePos = view_projection * vec4(position, 1.f);
 
 	gl_Position = clipSpacePos;
 }

@@ -100,14 +100,14 @@ FRawVertex[3] loadTriangle(in uint drawID, in uint primID)
 	uint triVert3IndexBufferPosition = (primID * 3 + 2) + startIndex;	
 
 	// Now get vertex index from index buffer (eg, 17, 41, 32)
-	Index triVert0Index = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(RawIndexPtr, ib), triVert1IndexBufferPosition);
-	Index triVert1Index = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(RawIndexPtr, ib), triVert2IndexBufferPosition); 
-	Index triVert2Index = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(RawIndexPtr, ib), triVert3IndexBufferPosition);
+	Index triVert0Index = PTRVAL(GET_BUFFER_POINTER(RawIndexPtr, ib), triVert1IndexBufferPosition);
+	Index triVert1Index = PTRVAL(GET_BUFFER_POINTER(RawIndexPtr, ib), triVert2IndexBufferPosition); 
+	Index triVert2Index = PTRVAL(GET_BUFFER_POINTER(RawIndexPtr, ib), triVert3IndexBufferPosition);
 
 	// Load vertex data of the 3 control points 
-	vertices[0] = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(RawVertexPtr, vb), draw_command.vertexOffset + triVert0Index);
-	vertices[1] = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(RawVertexPtr, vb), draw_command.vertexOffset + triVert1Index);
-	vertices[2] = GET_VALUE_PTR_BY_ADDRESS(GET_BUFFER_POINTER(RawVertexPtr, vb), draw_command.vertexOffset + triVert2Index);
+	vertices[0] = PTRVAL(GET_BUFFER_POINTER(RawVertexPtr, vb), draw_command.vertexOffset + triVert0Index);
+	vertices[1] = PTRVAL(GET_BUFFER_POINTER(RawVertexPtr, vb), draw_command.vertexOffset + triVert1Index);
+	vertices[2] = PTRVAL(GET_BUFFER_POINTER(RawVertexPtr, vb), draw_command.vertexOffset + triVert2Index);
 
 	return vertices;
 }
