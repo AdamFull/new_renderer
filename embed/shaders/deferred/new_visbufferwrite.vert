@@ -213,7 +213,7 @@ void main()
 	texCoord = GetVertexTexcoord(vertex_index);
 
 	FCamera camera = GetCamera(0);
-	mat4 view_projection = getViewProjectionMatrix(camera.matrices_offset);
+	mat4 view_projection = GetViewProjectionMatrix(camera.matrices_offset);
 	
 	vec4 clipSpacePos = view_projection * vec4(position, 1.f);
 

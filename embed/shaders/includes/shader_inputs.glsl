@@ -35,47 +35,47 @@ layout(set = 0, binding = 3) uniform sampler2D globalTextures[];
 #define GET_BUFFER_POINTER(pointer_type, buffer_desc) pointer_type(buffer_desc.address)
 #define PTRVAL(buffer, index) buffer.data[nonuniformEXT(index)]
 
-FSceneNode getSceneNode(uint index) { return PTRVAL(GET_BUFFER_POINTER(NodePtr, nodeBuffer), index); }
-FMesh getMesh(uint index) { return PTRVAL(GET_BUFFER_POINTER(MeshPtr, meshBuffer), index); }
+FSceneNode GetSceneNode(uint index) { return PTRVAL(GET_BUFFER_POINTER(NodePtr, nodeBuffer), index); }
+FMesh GetMesh(uint index) { return PTRVAL(GET_BUFFER_POINTER(MeshPtr, meshBuffer), index); }
 FMaterial GetMaterial(uint index) { return PTRVAL(GET_BUFFER_POINTER(MaterialPtr, materialBuffer), index); }
 FLightCommit getLight(uint index) { return PTRVAL(GET_BUFFER_POINTER(LightPtr, lightsBuffer), index); }
 
-FCascadedShadowCommit getCascadedShadowCommit(uint index) { return PTRVAL(GET_BUFFER_POINTER(CascadedShadowPtr, cascadedShadowBuffer), index); }
-FOmniShadowCommit getOmniShadowCommit(uint index) { return PTRVAL(GET_BUFFER_POINTER(OmniShadowPtr, omniShadowBuffer), index); }
-FSpotShadowCommit getSpotShadowCommit(uint index) { return PTRVAL(GET_BUFFER_POINTER(SpotShadowPtr, spotShadowBuffer), index); }
+FCascadedShadowCommit GetCascadedShadowCommit(uint index) { return PTRVAL(GET_BUFFER_POINTER(CascadedShadowPtr, cascadedShadowBuffer), index); }
+FOmniShadowCommit GetOmniShadowCommit(uint index) { return PTRVAL(GET_BUFFER_POINTER(OmniShadowPtr, omniShadowBuffer), index); }
+FSpotShadowCommit GetSpotShadowCommit(uint index) { return PTRVAL(GET_BUFFER_POINTER(SpotShadowPtr, spotShadowBuffer), index); }
 
-FGeometryBatch getDrawInfo(uint index) { return PTRVAL(GET_BUFFER_POINTER(DrawInfoPtr, drawInfoBuffer), index); }
-FGeometryBatch getRawDrawInfo(uint index) { return PTRVAL(GET_BUFFER_POINTER(DrawInfoPtr, rawDrawInfoBuffer), index); }
+FGeometryBatch GetDrawInfo(uint index) { return PTRVAL(GET_BUFFER_POINTER(DrawInfoPtr, drawInfoBuffer), index); }
+FGeometryBatch GetRawDrawInfo(uint index) { return PTRVAL(GET_BUFFER_POINTER(DrawInfoPtr, rawDrawInfoBuffer), index); }
 
-vec4 getFrustumSide(uint index) { return PTRVAL(GET_BUFFER_POINTER(FrustumSidesPtr, frustumSidesBuffer), index); }
+vec4 GetFrustumSide(uint index) { return PTRVAL(GET_BUFFER_POINTER(FrustumSidesPtr, frustumSidesBuffer), index); }
 
-FDrawIndexedIndirectData getDrawIndexedCommand(uint index) { return PTRVAL(GET_BUFFER_POINTER(IndirectDrawIndexedComandPtr, indirectCommandBuffer), index); }
-uint32_t getDrawCount(uint index) { return PTRVAL(GET_BUFFER_POINTER(UInt32Ptr, indirectCountBuffer), index); }
+FDrawIndexedIndirectData GetDrawIndexedCommand(uint index) { return PTRVAL(GET_BUFFER_POINTER(IndirectDrawIndexedComandPtr, indirectCommandBuffer), index); }
+uint32_t GetDrawCount(uint index) { return PTRVAL(GET_BUFFER_POINTER(UInt32Ptr, indirectCountBuffer), index); }
 
 FCamera GetCamera(uint index) { return PTRVAL(GET_BUFFER_POINTER(CameraBuffer, cameraBuffer), index); }
 
-mat4 getMatrixById(uint global_offset, uint local_offset) { return PTRVAL(GET_BUFFER_POINTER(MatrixPtr, matrixBuffer), global_offset + local_offset); }
+mat4 GetMatrixById(uint global_offset, uint local_offset) { return PTRVAL(GET_BUFFER_POINTER(MatrixPtr, matrixBuffer), global_offset + local_offset); }
 
-mat4 getModelMatrix(uint global_offset) { return getMatrixById(global_offset, model_matrix_offset); }
-mat4 getOldModelMatrix(uint global_offset) { return getMatrixById(global_offset, old_model_matrix_offset); }
+mat4 GetModelMatrix(uint global_offset) { return GetMatrixById(global_offset, model_matrix_offset); }
+mat4 GetOldModelMatrix(uint global_offset) { return GetMatrixById(global_offset, old_model_matrix_offset); }
 
-mat4 getViewMatrix(uint global_offset) { return getMatrixById(global_offset, view_matrix_offset); }
-mat4 getInvViewMatrix(uint global_offset) { return getMatrixById(global_offset, inv_view_matrix_offset); }
-mat4 getProjectionMatrix(uint global_offset) { return getMatrixById(global_offset, projection_matrix_offset); }
-mat4 getInvProjectionMatrix(uint global_offset) { return getMatrixById(global_offset, inv_projection_matrix_offset); }
-mat4 getViewProjectionMatrix(uint global_offset) { return getMatrixById(global_offset, view_projection_matrix_offset); }
-mat4 getPrevViewProjectionMatrix(uint global_offset) { return getMatrixById(global_offset, prev_view_projection_matrix_offset); }
-mat4 getInvViewProjectionMatrix(uint global_offset) { return getMatrixById(global_offset, inv_view_projection_matrix_offset); }
-mat4 getReprojectionMatrix(uint global_offset) { return getMatrixById(global_offset, reprojection_matrix_offset); }
+mat4 GetViewMatrix(uint global_offset) { return GetMatrixById(global_offset, view_matrix_offset); }
+mat4 GetInvViewMatrix(uint global_offset) { return GetMatrixById(global_offset, inv_view_matrix_offset); }
+mat4 GetProjectionMatrix(uint global_offset) { return GetMatrixById(global_offset, projection_matrix_offset); }
+mat4 GetInvProjectionMatrix(uint global_offset) { return GetMatrixById(global_offset, inv_projection_matrix_offset); }
+mat4 GetViewProjectionMatrix(uint global_offset) { return GetMatrixById(global_offset, view_projection_matrix_offset); }
+mat4 GetPrevViewProjectionMatrix(uint global_offset) { return GetMatrixById(global_offset, prev_view_projection_matrix_offset); }
+mat4 GetInvViewProjectionMatrix(uint global_offset) { return GetMatrixById(global_offset, inv_view_projection_matrix_offset); }
+mat4 GetReprojectionMatrix(uint global_offset) { return GetMatrixById(global_offset, reprojection_matrix_offset); }
 
 #define GET_SAMPLER_2D(texture_index, mip_level) globalTextures[texture_index + mip_level]
 
-vec4 sampleTexture2D(uint32_t texture_index, uint32_t mip_level, vec2 uv)
+vec4 SampleTexture2D(uint32_t texture_index, uint32_t mip_level, vec2 uv)
 {
 	return texture(GET_SAMPLER_2D(texture_index, mip_level), uv);
 }
 
-vec4 sampleTexture2DGrad(uint32_t texture_index, uint32_t mip_level, vec2 uv, vec2 uv_dx, vec2 uv_dy)
+vec4 SampleTexture2DGrad(uint32_t texture_index, uint32_t mip_level, vec2 uv, vec2 uv_dx, vec2 uv_dy)
 {
 	return textureGrad(GET_SAMPLER_2D(texture_index, mip_level), uv, uv_dx, uv_dy);
 }

@@ -22,7 +22,7 @@ bool checkObjectInFrustum(in vec3 min_extents, in vec3 max_extents, in uint32_t 
 {
 	for (uint32_t i = 0; i < 6; i++)
 	{
-		vec4 edge = getFrustumSide(frustum_offset + i);
+		vec4 edge = GetFrustumSide(frustum_offset + i);
 		if (   edge.x * min_extents.x + edge.y * min_extents.y + edge.z * min_extents.z + edge.w <= 0.0f
 			&& edge.x * max_extents.x + edge.y * min_extents.y + edge.z * min_extents.z + edge.w <= 0.0f
 			&& edge.x * min_extents.x + edge.y * max_extents.y + edge.z * min_extents.z + edge.w <= 0.0f
@@ -44,10 +44,10 @@ void main()
 		return;
 
 	// Sample info about current Draw comand
-	FGeometryBatch draw_info = getRawDrawInfo(global_draw_index);
-	FSceneNode node = getSceneNode(draw_info.nodeID);
-	FMesh mesh = getMesh(draw_info.meshID);
-	mat4 model = getModelMatrix(node.matrixOffset);			
+	FGeometryBatch draw_info = GetRawDrawInfo(global_draw_index);
+	FSceneNode node = GetSceneNode(draw_info.nodeID);
+	FMesh mesh = GetMesh(draw_info.meshID);
+	mat4 model = GetModelMatrix(node.matrixOffset);			
 
 	// output_index = culler_counter + draw_offset;
 	
@@ -71,7 +71,7 @@ void main()
 		// TODO: In future thing about how to implement instancing here
 
 		FCamera camera = GetCamera(draw_info.cameraID);
-		mat4 view_projection = getViewProjectionMatrix(camera.matrices_offset);
+		mat4 view_projection = GetViewProjectionMatrix(camera.matrices_offset);
 		
 		vec4 min_clip = view_projection * min_extents;
 		vec4 max_clip = view_projection * max_extents;

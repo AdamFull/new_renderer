@@ -20,12 +20,12 @@ out gl_PerVertex
 void main() 
 {
 	uint32_t draw_index = meshData.callID + gl_DrawIDARB + gl_InstanceIndex;
-	FGeometryBatch draw_info = getDrawInfo(draw_index);
+	FGeometryBatch draw_info = GetDrawInfo(draw_index);
 
 	// Calculate skinned matrix from weights and joint indices of the current vertex
-	FSceneNode node = getSceneNode(draw_info.nodeID);
-	mat4 modelMatrix = getModelMatrix(node.matrixOffset);
-	//mat4 oldModelMatrix = getOldModelMatrix(node.matrixOffset)
+	FSceneNode node = GetSceneNode(draw_info.nodeID);
+	mat4 modelMatrix = GetModelMatrix(node.matrixOffset);
+	//mat4 oldModelMatrix = GetOldModelMatrix(node.matrixOffset)
 
 #ifdef HAS_SKIN
 	if(node.skeletonID != ~0u)
@@ -36,10 +36,10 @@ void main()
 		u16vec4 joints = u16vec4(uint16_t(inJoints.x * 65535.0), uint16_t(inJoints.y * 65535.0), uint16_t(inJoints.z * 65535.0), uint16_t(inJoints.w * 65535.0));
 #endif
 		mat4 skinMat = 
-			inWeights.x * getMatrixById(node.skeletonID, joints.x) +
-			inWeights.y * getMatrixById(node.skeletonID, joints.y) +
-			inWeights.z * getMatrixById(node.skeletonID, joints.z) +
-			inWeights.w * getMatrixById(node.skeletonID, joints.w);
+			inWeights.x * GetMatrixById(node.skeletonID, joints.x) +
+			inWeights.y * GetMatrixById(node.skeletonID, joints.y) +
+			inWeights.z * GetMatrixById(node.skeletonID, joints.z) +
+			inWeights.w * GetMatrixById(node.skeletonID, joints.w);
 	
 		modelMatrix = modelMatrix * skinMat;
 		// oldModelMatrix = oldModelMatrix * skinMat; // TODO: should keep skinMat from prev frame
@@ -51,7 +51,7 @@ void main()
 	vec4 localPos = modelMatrix * (vec4(inPosition, 1.0));
 	localPos = vec4(localPos.xyz / localPos.w, 1.0);
 
-	mat4 viewProjection = getViewProjectionMatrix(camera.matrices_offset);
+	mat4 viewProjection = GetViewProjectionMatrix(camera.matrices_offset);
 
 	//currentPos = viewProjection * localPos;
 

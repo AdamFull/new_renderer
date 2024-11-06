@@ -75,8 +75,8 @@ bool loadVisBuffer(in vec2 uv, out VisibilityBuffer res)
 	uint instID = vboinstData >> 16;
 
 	uint32_t draw_index = res.drawID + instID;
-	FGeometryBatch draw_info = getDrawInfo(draw_index);
-	FMesh mesh = getMesh(draw_info.meshID);
+	FGeometryBatch draw_info = GetDrawInfo(draw_index);
+	FMesh mesh = GetMesh(draw_info.meshID);
 	
 	res.objID = draw_info.nodeID;
 	res.matID = mesh.materialID;
@@ -89,7 +89,7 @@ FRawVertex[3] loadTriangle(in uint drawID, in uint primID)
 {
 	FRawVertex[3] vertices;
 
-	FDrawIndexedIndirectData draw_command = getDrawIndexedCommand(drawID);
+	FDrawIndexedIndirectData draw_command = GetDrawIndexedCommand(drawID);
 
 	// Index of the first vertex of this Draw call's geometry
 	uint startIndex = draw_command.firstIndex;
@@ -182,8 +182,8 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 	vec3 position2 = vec3(vertices[2].px, vertices[2].py, vertices[2].pz);
 
 	// Load mesh model matrix
-	FSceneNode node = getSceneNode(visbuffer.objID);
-	mat4 model = getModelMatrix(node.matrixOffset);
+	FSceneNode node = GetSceneNode(visbuffer.objID);
+	mat4 model = GetModelMatrix(node.matrixOffset);
 			
 #ifdef HAS_SKIN
 	if(node.skeletonID != ~0u)
@@ -198,18 +198,18 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 	u16vec4 joints;
 #endif
 		mat4 skinMat = 
-			vertices[0].wx * getMatrixById(node.skeletonID, joints.x) +
-			vertices[0].wy * getMatrixById(node.skeletonID, joints.y) +
-			vertices[0].wz * getMatrixById(node.skeletonID, joints.z) +
-			vertices[0].ww * getMatrixById(node.skeletonID, joints.w);
+			vertices[0].wx * GetMatrixById(node.skeletonID, joints.x) +
+			vertices[0].wy * GetMatrixById(node.skeletonID, joints.y) +
+			vertices[0].wz * GetMatrixById(node.skeletonID, joints.z) +
+			vertices[0].ww * GetMatrixById(node.skeletonID, joints.w);
 	
 		model = model * skinMat;
 	}
 #endif // HAS_SKIN
 
 	FCamera camera = GetCamera(visbuffer.cameraID);
-	mat4 view = getViewMatrix(camera.matrices_offset);
-	mat4 projection = getProjectionMatrix(camera.matrices_offset);
+	mat4 view = GetViewMatrix(camera.matrices_offset);
+	mat4 projection = GetProjectionMatrix(camera.matrices_offset);
 
 	// Transform positions to clip space
 	mat4 mvp = projection * view * model;
@@ -321,8 +321,8 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 //		uint instID = vboinstData >> 16;
 //
 //		uint32_t draw_index = vb.drawID + instID;
-//		FDrawMeshinfo draw_info = getDrawInfo(draw_index);
-//		FMesh mesh = getMesh(draw_info.meshID);
+//		FDrawMeshinfo draw_info = GetDrawInfo(draw_index);
+//		FMesh mesh = GetMesh(draw_info.meshID);
 //		
 //		vb.objID = draw_info.nodeID;
 //		vb.matID = mesh.materialID;

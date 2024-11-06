@@ -30,13 +30,13 @@ uint packMOID(uint matID, uint objID)
 void main() 
 {
 	uint32_t draw_index = drawID + instanceID;
-	FGeometryBatch draw_info = getDrawInfo(draw_index);
-	FMesh mesh = getMesh(draw_info.meshID);
+	FGeometryBatch draw_info = GetDrawInfo(draw_index);
+	FMesh mesh = GetMesh(draw_info.meshID);
 	FMaterial material = GetMaterial(mesh.materialID);
 	
 	float opacity = material.baseColorFactor.a;
 	if(material.baseColorTexture != INVALID_HANDLE)
-		opacity = sampleTexture2D(material.baseColorTexture, 0, texCoord).a;
+		opacity = SampleTexture2D(material.baseColorTexture, 0, texCoord).a;
 	
 	if(material.alphaMode == 1u && opacity < material.alphaCutoff)
 		discard;
