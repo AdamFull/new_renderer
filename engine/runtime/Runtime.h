@@ -90,6 +90,7 @@ namespace engine
 		void SetWindowProperties(const Window::OptionalProperties& properties);
 	protected:
 		std::unique_ptr<Window> window{ nullptr };
+		std::unique_ptr<filesystem::IVirtualFileSystemInterface> virtual_filesystem{};
 
 		std::unique_ptr<Application> app{ nullptr };
 

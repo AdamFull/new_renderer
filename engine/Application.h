@@ -5,6 +5,7 @@
 #include <functional>
 #include <memory>
 
+#include <engine/interface/filesystem/VirtualFileSystemInterface.h>
 #include <engine/runtime/InputEvents.h>
 
 namespace engine
@@ -23,6 +24,7 @@ namespace engine
 	{
 		bool benchmark_enabled;
 		Window* window;
+		filesystem::IVirtualFileSystemInterface* virtual_filesystem;
 		InputManager* input_manager;
 	};
 

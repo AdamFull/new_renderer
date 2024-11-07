@@ -1,11 +1,12 @@
 #pragma once
 
 #include <engine/Application.h>
-#include <engine/interface/filesystem/VirtualFileSystemInterface.h>
 #include <engine/rendering/RendererInterface.h>
 
 #include <engine/InputMapper.h>
 #include <engine/EngineSystemManager.h>
+
+#include <engine/ui/windows/EditorWindow.h>
 
 namespace engine
 {
@@ -13,8 +14,6 @@ namespace engine
 	{
 		class Scene;
 	}
-
-	class EngineUISystem;
 
 	class EngineApplication : public Application
 	{
@@ -41,8 +40,9 @@ namespace engine
 		//std::unique_ptr<CEngineSystemManager> m_pSystemManager{};
 		//std::unique_ptr<CInputMapper> m_pInputMapper{};
 		//std::unique_ptr<render::IRenderInterface> m_pRenderInterface{};
-		std::unique_ptr<filesystem::IVirtualFileSystemInterface> vfs{};
 		std::unique_ptr<world::Scene> scene{};
-		std::unique_ptr<EngineUISystem> ui;
+
+		// Engine ui windows (imgui)
+		utl::vector<std::unique_ptr<IEditorWindow>> app_windows{};
 	};
 }

@@ -1,19 +1,13 @@
 #include <engine/EngineApplication.h>
 
-//#include <engine/render/RenderInterface.h>
-
-#include <engine/filesystem/VirtualFileSystemManager.h>
-#include <engine/filesystem/native/NativeFileSystem.h>
-#include <engine/filesystem/vfs_helper.h>
-
-//#include <integrations/imgui/ImGuiSystem.h>
 //#include <integrations/imgui/DebugSystem.h>
 
 #include <util/Logger.h>
 #include <engine/rendering/Rendering.h>
 #include <world/NewScene.h>
 
-#include <engine/ui/EngineUISystem.h>
+#include <engine/ui/windows/HierarchyWindow.h>
+#include <engine/ui/windows/InspectorWindow.h>
 
 namespace engine
 {
@@ -32,22 +26,6 @@ namespace engine
 		spdlog::set_default_logger(logger);
 
 		log_info("Starting app: {}", name);
-
-		//m_pSystemManager = std::make_unique<CEngineSystemManager>();
-
-		vfs = std::make_unique<filesystem::CVirtualFileSystemManager>();
-		vfs->Mount("/root", std::make_unique<filesystem::CNativeFileSystem>("./"));
-
-		ui = std::make_unique<EngineUISystem>();
-
-		//m_pRenderInterface = std::make_unique<render::CRenderInterface>(vfs.get());
-
-		//m_pInputMapper = std::make_unique<CInputMapper>();
-
-		//m_pSystemManager->RegisterSystem<CImGuiEngineSystem>(m_pRenderInterface.get());
-		//m_pSystemManager->RegisterSystem<CDebugDrawEngineSystem>(m_pRenderInterface.get());
-
-		//m_pScene = std::make_unique<world::CScene>(vfs.get(), m_pRenderInterface.get());
 	}
 
 	EngineApplication::~EngineApplication()
@@ -72,14 +50,15 @@ namespace engine
 
 	bool EngineApplication::Prepare(const ApplicationOptions& options)
 	{
-		renderer = std::make_unique<render::Renderer>(options.window, vfs.get());
+		app_windows.emplace_back(std::make_unique<HierarchyWindow>("Hierarchy"));
+		app_windows.emplace_back(std::make_unique<InspectorWindow>("Inspector"));
 
-		scene = std::make_unique<world::Scene>(vfs.get(), *renderer);
+		renderer = std::make_unique<render::Renderer>(options.window, options.virtual_filesystem);
+
+		scene = std::make_unique<world::Scene>(options.virtual_filesystem, *renderer);
 		//scene = std::make_unique<world::Scene>(vfs.get());
 		scene->Load("/root/meshes/sponza/Sponza.gltf");
 		//scene->Load("/root/meshes/helmet/DamagedHelmet.gltf");
-
-		ui->Initialize();
 
 		//render::FRenderInterfaceCreateInfo rhi_ci{};
 		//rhi_ci.render_api = render::ERenderApi::eVulkan11;
@@ -114,7 +93,8 @@ namespace engine
 
 	void EngineApplication::Update(float delta_time)
 	{
-		ui->Update(delta_time);
+		for (auto& window : app_windows)
+			window->Draw(delta_time);
 
 		scene->Update(delta_time);
 

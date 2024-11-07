@@ -1,5 +1,9 @@
 #include <engine/runtime/Runtime.h>
 
+// Filesystem headers
+#include <engine/filesystem/VirtualFileSystemManager.h>
+#include <engine/filesystem/native/NativeFileSystem.h>
+
 #include <engine/runtime/RuntimeContext.h>
 #include <util/Logger.h>
 
@@ -24,6 +28,12 @@ namespace engine
 			log_error("Window creation failed!");
 			return ExitCode::FatalError;
 		}
+
+		// Initialize filesystem
+		virtual_filesystem = std::make_unique<filesystem::CVirtualFileSystemManager>();
+
+		// Mount default engine root filesystem
+		virtual_filesystem->Mount("/root", std::make_unique<filesystem::CNativeFileSystem>("./"));
 
 		ui = std::make_unique<EngineUI>(*window);
 
