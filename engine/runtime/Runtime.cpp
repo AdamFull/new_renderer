@@ -30,10 +30,10 @@ namespace engine
 		}
 
 		// Initialize filesystem
-		virtual_filesystem = std::make_unique<filesystem::CVirtualFileSystemManager>();
+		virtual_filesystem = std::make_unique<filesystem::VirtualFileSystemManager>();
 
 		// Mount default engine root filesystem
-		virtual_filesystem->Mount("/root", std::make_unique<filesystem::CNativeFileSystem>("./"));
+		virtual_filesystem->Mount("/root", std::make_unique<filesystem::NativeFileSystem>("./"));
 
 		ui = std::make_unique<EngineUI>(*window);
 
@@ -245,7 +245,12 @@ namespace engine
 
 		app->SetName(app_ci->name);
 
-		if (!app->Prepare({ false, window.get() }))
+		ApplicationOptions options{};
+		options.benchmark_enabled = false;
+		options.window = window.get();
+		options.virtual_filesystem = virtual_filesystem.get();
+
+		if (!app->Prepare(options))
 		{
 			log_error("Failed to prepare vulkan app.");
 			return false;
