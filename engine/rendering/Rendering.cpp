@@ -462,11 +462,11 @@ namespace engine
 					roughness_bnd
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
+						self.WriteResource(prefiltered_cube_target);
+
 						auto target = render_graph->GetTexture(prefiltered_cube_target);
 						for (int32_t mip = 0; mip < target->GetMipLevelCount(); ++mip)
 						{
-							self.WriteResource(prefiltered_cube_target, mip);
-
 							if (mip == 0)
 							{
 								self.BindResource(sampler_color_bnd, casual_day_4k_cube);
@@ -477,6 +477,7 @@ namespace engine
 								self.BindResource(sampler_color_bnd, prefiltered_cube_target, mip - 1);
 							}
 
+							self.WriteResource(prefiltered_cube_target, mip);
 							self.BindResource(out_color_bnd, prefiltered_cube_target, mip);
 
 							self.ResolveDependencies(command_list);
@@ -496,6 +497,9 @@ namespace engine
 							self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
 							command_list.Dispatch(group_x, group_y, group_z);
 						}
+
+						self.ReadResource(prefiltered_cube_target);
+						self.ResolveDependencies(command_list);
 					};
 
 				static_cast<GroupNode*>(group_node.get())->AddNode(std::move(render_graph->CreateNode(create_info)));

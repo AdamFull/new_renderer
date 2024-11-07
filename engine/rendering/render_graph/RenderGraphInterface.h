@@ -43,7 +43,6 @@ namespace engine
 			uint32_t resource_id{ ~0u };
 
 			gfx::ResourceStateFlags current_state{};
-			std::array<gfx::ResourceStateFlags, 16ull> subresource_states{};
 
 			gfx::ResourceStateFlags intermediate_state{ gfx::ResourceStateFlag::eUndefined };
 
@@ -52,11 +51,9 @@ namespace engine
 
 			//std::unordered_set<ResourceAccess> usages{};
 
-			gfx::AccessTypeFlags GetAccess(uint32_t subresource_index = ~0u) const
+			gfx::AccessTypeFlags GetAccess() const
 			{
-				gfx::ResourceStateFlags resource_state = GetState(subresource_index);
-
-				if (resource_state & (
+				if (current_state & (
 					gfx::ResourceStateFlag::eComputeRead |
 					gfx::ResourceStateFlag::eDepthRead |
 					gfx::ResourceStateFlag::eAttachmentRead |
@@ -65,7 +62,7 @@ namespace engine
 					gfx::ResourceStateFlag::eCopySrc |
 					gfx::ResourceStateFlag::ePresent))
 					return gfx::AccessTypeFlag::eRead;
-				else if (resource_state & (
+				else if (current_state & (
 					gfx::ResourceStateFlag::eComputeWrite |
 					gfx::ResourceStateFlag::eDepthWrite |
 					gfx::ResourceStateFlag::eAttachmentWrite |
@@ -75,39 +72,14 @@ namespace engine
 				return {};
 			}
 
-			gfx::ResourceStateFlags GetState(uint32_t subresource_index = ~0u) const
+			gfx::ResourceStateFlags GetState() const
 			{
-				if ((resource_type & RenderResourceTypeFlag::eBuffer) || subresource_index == ~0u)
-				{
-					return current_state;
-				}
-				else
-				{
-					return subresource_states[subresource_index];
-				}
+				return current_state;
 			}
 
-			void SetState(gfx::ResourceStateFlags new_state, uint32_t subresource_index = ~0u)
+			void SetState(gfx::ResourceStateFlags new_state)
 			{
-				if (resource_type & RenderResourceTypeFlag::eBuffer)
-				{
-					current_state = new_state;
-				}
-				else
-				{
-					if (subresource_index == ~0u)
-					{
-						current_state = new_state;
-						for (auto& state : subresource_states)
-						{
-							state = new_state;
-						}
-					}
-					else
-					{
-						subresource_states[subresource_index] = new_state;
-					}
-				}
+				current_state = new_state;
 			}
 		};
 

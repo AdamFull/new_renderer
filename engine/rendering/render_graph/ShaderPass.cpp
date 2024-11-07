@@ -192,7 +192,7 @@ namespace engine
 			if (render_resource.resource_type & RenderResourceTypeFlag::eStaticImage)
 				return;
 
-			auto last_access = render_resource.GetAccess(subresource_index);
+			auto last_access = render_resource.GetAccess();
 
 			// Skip read after read dependency
 			if ((last_access & gfx::AccessTypeFlag::eRead) && (access & gfx::AccessTypeFlag::eRead))
@@ -223,7 +223,8 @@ namespace engine
 			{
 				auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
 				barrier.texture = graph.GetTexture(render_resource);
-				barrier.src_state = render_resource.GetState(subresource_index);
+				barrier.subresource_index = subresource_index;
+				barrier.src_state = render_resource.GetState();
 				barrier.dst_state = new_state;
 			}
 			else if (render_resource.resource_type & RenderResourceTypeFlag::eBuffer)
@@ -307,7 +308,7 @@ namespace engine
 					descriptor.texture = graph.GetTexture(render_resource);
 					descriptor.sampler = graph.GetSampler(render_resource);
 					descriptor.subresource_index = subresource_index;
-					descriptor.resource_state = render_resource.GetState(subresource_index);
+					descriptor.resource_state = render_resource.GetState();
 
 					resource_descriptor->BindTexture(descriptor);
 				}
