@@ -55,16 +55,6 @@ namespace engine
 			{
 			}
 
-			void VulkanTexture::Reset()
-			{
-				srv->SetImageLayout(vk::ImageLayout::eUndefined);
-
-				for (auto& subresource : subresources)
-				{
-					subresource->SetImageLayout(vk::ImageLayout::eUndefined);
-				}
-			}
-
 			Image& VulkanTexture::GetImage()
 			{
 				return *image;
@@ -89,23 +79,6 @@ namespace engine
 					return *srv;
 
 				return *subresources[subresource];
-			}
-
-			void VulkanTexture::SetImageLayout(vk::ImageLayout image_layout, uint32_t subresource)
-			{
-				if (subresource == ~0u)
-				{
-					srv->SetImageLayout(image_layout);
-
-					for (auto& mip : subresources)
-					{
-						mip->SetImageLayout(image_layout);
-					}
-				}
-				else
-				{
-					subresources[subresource]->SetImageLayout(image_layout);
-				}
 			}
 
 			uint32_t VulkanTexture::GetWidth() const

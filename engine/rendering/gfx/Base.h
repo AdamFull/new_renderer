@@ -224,9 +224,6 @@ namespace engine
 		public:
 			virtual ~Texture() = default;
 
-			// Reset subresource layouts
-			virtual void Reset() = 0;
-
 			ResourceType GetResourceType() override
 			{
 				return ResourceType::eTexture;

@@ -84,7 +84,6 @@ namespace engine
 		{
 			// Just creates empty resource)
 			auto& new_resource = render_resources.emplace_back();
-			new_resource.subresource_states.fill(gfx::ResourceStateFlag::eUndefined);
 			return render_resources.size() - 1ull;
 		}
 
@@ -142,8 +141,6 @@ namespace engine
 				new_resource.resource_id = render_targets.Add(TextureObject{ texture, sampler ? sampler : default_sampler, create_info.usage, create_info.resizable });
 			else
 				new_resource.resource_id = static_textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler, create_info.usage, create_info.resizable });
-
-			new_resource.subresource_states.fill(gfx::ResourceStateFlag::eUndefined);
 
 			return render_resources.size() - 1ull;
 		}
@@ -329,16 +326,6 @@ namespace engine
 					continue;
 
 				render_resource.current_state = gfx::ResourceStateFlag::eUndefined;
-				for (auto& subresource_state : render_resource.subresource_states)
-				{
-					subresource_state = gfx::ResourceStateFlag::eUndefined;
-				}
-
-				if ((render_resource.resource_type & RenderResourceTypeFlag::eRenderTarget) || (render_resource.resource_type & RenderResourceTypeFlag::eStorageTarget))
-				{
-					auto& resource = render_targets.Get(render_resource.resource_id);
-					resource.texture->Reset();
-				}
 			}
 
 			global_resource_descriptor = nullptr;

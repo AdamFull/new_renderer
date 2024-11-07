@@ -12,8 +12,7 @@ namespace engine
 		{
 			ImageView::ImageView(Image& image, const TextureCreateInfo& texture_create_info, uint32_t base_array_layer, uint32_t base_mip_level, uint32_t mip_count) :
 				VulkanResource{ nullptr, image.GetAllocationCallbacks() },
-				device{ image.GetDevice() },
-				layout{ vk::ImageLayout::eUndefined }
+				device{ image.GetDevice() }
 			{
 				bool is_array = texture_create_info.layers > 1u;
 				bool is_cubemap = static_cast<bool>(texture_create_info.usage & TextureUsageFlag::eCubemap);
@@ -79,8 +78,7 @@ namespace engine
 			ImageView::ImageView(ImageView&& other) noexcept :
 				VulkanResource{ std::move(other) },
 				device{ other.device },
-				create_info{ other.create_info },
-				layout{ other.layout }
+				create_info{ other.create_info }
 			{
 			}
 
@@ -89,19 +87,9 @@ namespace engine
 				Handle(device).destroyImageView(handle, allocation_callbacks);
 			}
 
-			void ImageView::SetImageLayout(vk::ImageLayout new_layout)
-			{
-				layout = new_layout;
-			}
-
 			vk::Format ImageView::GetFormat() const
 			{
 				return create_info.format;
-			}
-
-			vk::ImageLayout ImageView::GetImageLayout() const
-			{
-				return layout;
 			}
 
 			vk::ImageViewType ImageView::GetType() const

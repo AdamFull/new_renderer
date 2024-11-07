@@ -22,15 +22,11 @@ namespace engine
 				VulkanTexture& operator=(const VulkanTexture&) = delete;
 				VulkanTexture& operator=(VulkanTexture&&) = delete;
 
-				void Reset() override;
-
 				Image& GetImage();
 				Image const& GetImage() const;
 
 				ImageView& GetSubresource(uint32_t subresource = ~0u);
 				ImageView const& GetSubresource(uint32_t subresource = ~0u) const;
-
-				void SetImageLayout(vk::ImageLayout image_layout, uint32_t subresource = ~0u);
 
 				uint32_t GetWidth() const override;
 				uint32_t GetHeight() const override;

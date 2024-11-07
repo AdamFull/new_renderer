@@ -163,7 +163,6 @@ namespace engine
 
 					if (!acquire_result)
 					{
-						current_frame.backbuffer->Reset();
 						current_frame.command_pool->Reset();
 						current_frame.uniform_pool->Reset();
 						return;
@@ -173,7 +172,6 @@ namespace engine
 
 			// Now the frame is active again
 			frame_active = true;
-			current_frame.backbuffer->Reset();
 			current_frame.descriptor_allocator->Reset();
 			current_frame.command_pool->Reset();
 			current_frame.uniform_pool->Reset();

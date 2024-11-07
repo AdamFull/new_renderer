@@ -356,7 +356,6 @@ namespace engine
 					vk_image_barrier.srcStageMask = ResourceStateToVkStageFlags(texture_barrier.src_state);
 
 					vk_image_barrier.newLayout = ResourceStateToVkImageLayout(texture_barrier.dst_state);
-					texture->SetImageLayout(vk_image_barrier.newLayout, texture_barrier.subresource_index);
 					vk_image_barrier.dstAccessMask = ResourceStateToVkAccessFlags(texture_barrier.dst_state);
 					vk_image_barrier.dstStageMask = ResourceStateToVkStageFlags(texture_barrier.dst_state);
 

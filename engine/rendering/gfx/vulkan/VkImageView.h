@@ -22,10 +22,7 @@ namespace engine
 				ImageView& operator=(const ImageView&) = delete;
 				ImageView& operator=(ImageView&&) = delete;
 
-				void SetImageLayout(vk::ImageLayout new_layout);
-
 				vk::Format GetFormat() const;
-				vk::ImageLayout GetImageLayout() const;
 				vk::ImageViewType GetType() const;
 				vk::ImageSubresourceLayers GetSubresourceLayers() const;
 				vk::ImageSubresourceRange GetSubresourceRange() const;
@@ -34,7 +31,6 @@ namespace engine
 				Device& device;
 
 				vk::ImageViewCreateInfo create_info{};
-				vk::ImageLayout layout{};
 			};
 		}
 	}
