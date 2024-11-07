@@ -18,9 +18,9 @@ layout(set = 2, binding = 3) uniform samplerCube prefiltered_cube;
 layout(set = 2, binding = 4) uniform sampler2D depth_buffer;
 //layout(set = 2, binding = 5) uniform sampler2D prev_frame_color;
 
-layout (set = 2, binding = 6) uniform sampler2DArrayShadow cascaded_shadowmap;
-layout (set = 2, binding = 7) uniform sampler2DArrayShadow direct_shadowmap;
-layout (set = 2, binding = 8) uniform samplerCubeArrayShadow omni_shadowmap;
+//layout (set = 2, binding = 6) uniform sampler2DArrayShadow cascaded_shadowmap;
+//layout (set = 2, binding = 7) uniform sampler2DArrayShadow direct_shadowmap;
+//layout (set = 2, binding = 8) uniform samplerCubeArrayShadow omni_shadowmap;
 
 vec4 sampleTexture(in uint s, in VertexAttribute va)
 {

@@ -225,6 +225,9 @@ namespace engine
 			batch_command.vboID = draw_command.vertex_buffers;
 
 			auto& mesh = world_meshes->Get(draw_index);
+			world_meshes->MarkDirty(draw_index);
+			mesh.materialID = draw_command.material_index;
+
 
 			auto& indirect_command = indirect_draw_commands->Get(draw_index);
 			indirect_draw_commands->MarkDirty(draw_index);
@@ -238,13 +241,17 @@ namespace engine
 
 		void RenderWorld::AddMaterial(const FMaterial& material)
 		{
-			auto& new_material = draw_materials->Get(material_count++);
+			auto material_index = material_count++;
+			auto& new_material = draw_materials->Get(material_index);
+			draw_materials->MarkDirty(material_index);
 			new_material = material;
 		}
 
 		void RenderWorld::AddLight(const FLightCommit& light_data)
 		{
-			auto& new_light = scene_lights->Get(light_count++);
+			auto light_index = light_count++;
+			auto& new_light = scene_lights->Get(light_index);
+			scene_lights->MarkDirty(light_index);
 			new_light = light_data;
 		}
 
