@@ -19,26 +19,26 @@ namespace engine
     namespace filesystem
     {
         /**
-         * @class CNativeFileSystem
+         * @class NativeFileSystem
          * @brief A class for handling native file system operations.
          *
-         * CNativeFileSystem is a derived class from IVFSInterface that provides
+         * NativeFileSystem is a derived class from IVFSInterface that provides
          * a platform-specific implementation for native file system operations.
          */
-        class INCENERATE_VFS_EXPORT CNativeFileSystem final : public IVFSInterface
+        class INCENERATE_VFS_EXPORT NativeFileSystem final : public IVFSInterface
         {
         public:
             /**
-             * @brief Construct a CNativeFileSystem for the specified file system path.
+             * @brief Construct a NativeFileSystem for the specified file system path.
              *
              * @param fspath A string representing the file system path to be used.
              */
-            CNativeFileSystem(const std::string& fspath);
+            NativeFileSystem(const std::string& fspath);
 
             /**
              * @brief Destructor.
              */
-            virtual ~CNativeFileSystem() override = default;
+            virtual ~NativeFileSystem() override = default;
 
             /**
              * @brief Create a new file or directory at the specified path.

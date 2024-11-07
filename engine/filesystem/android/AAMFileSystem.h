@@ -8,26 +8,26 @@ namespace engine
 	namespace filesystem
 	{
 		/**
-		 * @class CAAMFileSystem
+		 * @class AAMFileSystem
 		 * @brief A class for handling android internal file system operations.
 		 *
-		 * CAAMFileSystem is a derived class from IVFSInterface that provides
+		 * AAMFileSystem is a derived class from IVFSInterface that provides
 		 * a implementation for android asset manager file system operations.
 		 */
-		class CAAMFileSystem final : public IVFSInterface
+		class AAMFileSystem final : public IVFSInterface
 		{
 		public:
 			/**
-			 * @brief Construct a CAAMFileSystem for the specified file system path.
+			 * @brief Construct a AAMFileSystem for the specified file system path.
 			 *
 			 * @param assetManager Android asset manager.
 			 */
-			CAAMFileSystem(AAssetManager* assetManager);
+			AAMFileSystem(AAssetManager* assetManager);
 
 			/**
 			 * @brief Destructor.
 			 */
-			virtual ~CAAMFileSystem() override;
+			virtual ~AAMFileSystem() override;
 
 			/**
 			 * @brief Create a new file or directory at the specified path.

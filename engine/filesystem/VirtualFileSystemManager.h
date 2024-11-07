@@ -26,13 +26,13 @@ namespace engine
 		 * CFilesystemWrapper allows mounting different file systems with IVFSInterface implementations,
 		 * and transparently performing operations on them, such as copy, create, delete, etc.
 		 */
-		class INCENERATE_VFS_EXPORT CVirtualFileSystemManager final : public IVirtualFileSystemInterface
+		class INCENERATE_VFS_EXPORT VirtualFileSystemManager final : public IVirtualFileSystemInterface
 		{
 		public:
 			/**
 			 * @brief Destructor.
 			 */
-			~CVirtualFileSystemManager() override;
+			~VirtualFileSystemManager() override;
 
 			/**
 			 * @brief Mounts a filesystem at a specified mount point.
@@ -113,14 +113,14 @@ namespace engine
 			/**
 			 * @brief Creates a new file at the specified path.
 			 * @param path The file path.
-			 * @return A unique_ptr to the created CVFSOutFile object.
+			 * @return A unique_ptr to the created VFSOutFile object.
 			 */
 			std::unique_ptr<IVFSOutputFileInterface> CreateFile(const std::string& path) override;
 
 			/**
 			 * @brief Opens an existing file at the specified path.
 			 * @param path The file path.
-			 * @return A unique_ptr to the opened CVFSInFile object.
+			 * @return A unique_ptr to the opened VFSInFile object.
 			 */
 			std::unique_ptr<IVFSInputFileInterface> OpenFile(const std::string& path) override;
 
@@ -128,7 +128,7 @@ namespace engine
 			 * @brief Walks through the directories and files at the specified path.
 			 * @param path The path to start walking from.
 			 * @param recursive true if the walk should be recursive, false otherwise (default: true).
-			 * @return A unique_ptr to the CDirectoryIterator object.
+			 * @return A unique_ptr to the DirectoryIterator object.
 			 */
 			std::unique_ptr<IDirectoryIteratorInterface> Walk(const std::string& path, bool recursive = true) override;
 

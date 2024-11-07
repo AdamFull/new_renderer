@@ -8,13 +8,13 @@ namespace engine
     namespace filesystem
     {
         /**
-         * @class CAAMDirectoryIterator
+         * @class AAMDirectoryIterator
          * @brief This class provides an iterator for android internal storage.
          *
-         * CAAMDirectoryIterator is a derived class from IDirectoryIterator and implements its
+         * AAMDirectoryIterator is a derived class from IDirectoryIterator and implements its
          * interface for iterating through the files within a android internal storage.
          */
-        class CAAMDirectoryIterator final : public IDirectoryIterator
+        class AAMDirectoryIterator final : public IDirectoryIterator
         {
         public:
             friend class CAAMRecursiveDirectoryIterator;
@@ -22,20 +22,20 @@ namespace engine
             /**
              * @brief Default constructor.
              */
-            CAAMDirectoryIterator() = default;
+            AAMDirectoryIterator() = default;
 
             /**
-             * @brief Construct a CAAMDirectoryIterator with a asset manager and a starting path.
+             * @brief Construct a AAMDirectoryIterator with a asset manager and a starting path.
              *
              * @param handle A pointer to the android asset manager.
              * @param start_path A string representing the starting path within the archive.
              */
-            CAAMDirectoryIterator(AAssetManager* handle, const std::string& start_path);
+            AAMDirectoryIterator(AAssetManager* handle, const std::string& start_path);
 
             /**
              * @brief Virtual destructor.
              */
-            virtual ~CAAMDirectoryIterator() override;
+            virtual ~AAMDirectoryIterator() override;
         protected:
             /**
              * @brief Move to the next item in the archive.
@@ -52,10 +52,10 @@ namespace engine
             /**
              * @brief Compare the directory iterators for inequality.
              *
-             * @param other A pointer to the CDirectoryIterator to compare.
+             * @param other A pointer to the DirectoryIterator to compare.
              * @return True if the iterators are not equal, false otherwise.
              */
-            bool _OperatorNotEqual(const CDirectoryIterator*) const override;
+            bool _OperatorNotEqual(const DirectoryIterator*) const override;
         private:
             std::string m_srCurrentPath{};
             AAssetManager* m_pAssetMgr{ nullptr };
@@ -105,13 +105,13 @@ namespace engine
             /**
              * @brief Compare the directory iterators for inequality.
              *
-             * @param other A pointer to the CDirectoryIterator to compare.
+             * @param other A pointer to the DirectoryIterator to compare.
              * @return True if the iterators are not equal, false otherwise.
              */
-            bool _OperatorNotEqual(const CDirectoryIterator*) const override;
+            bool _OperatorNotEqual(const DirectoryIterator*) const override;
         private:
             AAssetManager* m_pAssetMgr{ nullptr };
-            std::stack<CAAMDirectoryIterator> m_iterStack;
+            std::stack<AAMDirectoryIterator> m_iterStack;
             std::string m_srCurrentPath{};
         };
     }

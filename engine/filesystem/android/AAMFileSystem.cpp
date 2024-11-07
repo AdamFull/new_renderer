@@ -4,23 +4,23 @@
 
 using namespace engine::filesystem;
 
-CAAMFileSystem::CAAMFileSystem(AAssetManager* assetManager) :
+AAMFileSystem::AAMFileSystem(AAssetManager* assetManager) :
 		m_pAssetManager(assetManager)
 {
 
 }
 
-CAAMFileSystem::~CAAMFileSystem()
+AAMFileSystem::~AAMFileSystem()
 {
 
 }
 
-bool CAAMFileSystem::Exists(const std::string& path)
+bool AAMFileSystem::Exists(const std::string& path)
 {
 	return isDirectory(path) || isFile(path);
 }
 
-size_t CAAMFileSystem::FileSize(const std::string& path)
+size_t AAMFileSystem::FileSize(const std::string& path)
 {
 	AAsset* asset = AAssetManager_open(m_pAssetManager, path.c_str(), AASSET_MODE_UNKNOWN);
 	if (asset)
@@ -34,7 +34,7 @@ size_t CAAMFileSystem::FileSize(const std::string& path)
 	return 0ull;
 }
 
-bool CAAMFileSystem::IsDirectory(const std::string& path)
+bool AAMFileSystem::IsDirectory(const std::string& path)
 {
 	AAssetDir* assetDir = AAssetManager_openDir(m_pAssetManager, path.c_str());
 	if (assetDir) 
@@ -46,7 +46,7 @@ bool CAAMFileSystem::IsDirectory(const std::string& path)
 	return false;
 }
 
-bool CAAMFileSystem::IsFile(const std::string& path)
+bool AAMFileSystem::IsFile(const std::string& path)
 {
 	AAsset* asset = AAssetManager_open(m_pAssetManager, path.c_str(), AASSET_MODE_UNKNOWN);
 	if (asset) 
@@ -58,24 +58,24 @@ bool CAAMFileSystem::IsFile(const std::string& path)
 	return false;
 }
 
-std::unique_ptr<IInputFileInterface> CAAMFileSystem::OpenFile(const std::string& path)
+std::unique_ptr<IInputFileInterface> AAMFileSystem::OpenFile(const std::string& path)
 {
-	return std::make_unique<CAAMInputFile>(m_pAssetManager, path);
+	return std::make_unique<AAMInputFile>(m_pAssetManager, path);
 }
 
-std::unique_ptr<IDirectoryIterator> CAAMFileSystem::Walk(const std::string& path, bool recursive)
+std::unique_ptr<IDirectoryIterator> AAMFileSystem::Walk(const std::string& path, bool recursive)
 {
 	std::unique_ptr<IDirectoryIterator> pIterator;
 
 	/*if(recursive)
 		pIterator = std::make_unique<CAAMRecursiveDirectoryIterator>(m_pAssetManager, path);
 	else
-		pIterator = std::make_unique<CAAMDirectoryIterator>(m_pAssetManager, path);*/
+		pIterator = std::make_unique<AAMDirectoryIterator>(m_pAssetManager, path);*/
 
 	return pIterator;
 }
 
-EFilesystemModeFlags CAAMFileSystem::GetFilesystemMode() const
+EFilesystemModeFlags AAMFileSystem::GetFilesystemMode() const
 {
 	return static_cast<uint32_t>(EFilesystemModeFlagBits::eRead);
 }

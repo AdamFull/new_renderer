@@ -78,7 +78,7 @@ namespace engine
             /**
              * @brief Compare the directory iterators for inequality.
              *
-             * @param other A reference to the CDirectoryIterator to compare.
+             * @param other A reference to the DirectoryIterator to compare.
              * @return True if the iterators are not equal, false otherwise.
              */
             virtual bool operator!=(const IDirectoryIteratorInterface& other) const = 0;

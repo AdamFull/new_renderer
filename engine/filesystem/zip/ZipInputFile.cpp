@@ -81,7 +81,7 @@ int32_t lzip_feof(lzip_file_t* zfile)
 
 
 
-CZipInputFile::CZipInputFile(zip_t* handle, const std::string& filename, const std::string& password) :
+ZipInputFile::ZipInputFile(zip_t* handle, const std::string& filename, const std::string& password) :
 	m_srPassword{ password }
 {
 
@@ -94,12 +94,12 @@ CZipInputFile::CZipInputFile(zip_t* handle, const std::string& filename, const s
 		throw std::runtime_error("Failed to open zip file.");
 }
 
-CZipInputFile::~CZipInputFile()
+ZipInputFile::~ZipInputFile()
 {
 	Close();
 }
 
-void CZipInputFile::Close()
+void ZipInputFile::Close()
 {
 	if (m_pFilePtr)
 	{
@@ -108,37 +108,37 @@ void CZipInputFile::Close()
 	}
 }
 
-bool CZipInputFile::IsOpen() const
+bool ZipInputFile::IsOpen() const
 {
 	return m_pFilePtr && m_pFilePtr->file;
 }
 
-int32_t CZipInputFile::Getc()
+int32_t ZipInputFile::Getc()
 {
 	return m_pFilePtr ? lzip_fgetc(m_pFilePtr) : -1;
 }
 
-std::size_t CZipInputFile::Read(void* buffer, std::size_t elemSize, std::size_t elemCount)
+std::size_t ZipInputFile::Read(void* buffer, std::size_t elemSize, std::size_t elemCount)
 {
 	return m_pFilePtr ? lzip_fread(buffer, elemSize, elemCount, m_pFilePtr) : 0ull;
 }
 
-int32_t CZipInputFile::Ungetc(int32_t character)
+int32_t ZipInputFile::Ungetc(int32_t character)
 {
 	return m_pFilePtr ? lzip_ungetc(character, m_pFilePtr) : -1;
 }
 
-long CZipInputFile::Tell()
+long ZipInputFile::Tell()
 {
 	return m_pFilePtr ? lzip_ftell(m_pFilePtr) : -1;
 }
 
-int32_t CZipInputFile::Seek(long offset, int32_t origin)
+int32_t ZipInputFile::Seek(long offset, int32_t origin)
 {
 	return m_pFilePtr ? lzip_fseek(m_pFilePtr, offset, origin) : -1;
 }
 
-int32_t CZipInputFile::Eof() const
+int32_t ZipInputFile::Eof() const
 {
 	return m_pFilePtr ? lzip_feof(m_pFilePtr) : 1;
 }

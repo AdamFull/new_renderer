@@ -112,8 +112,8 @@ namespace engine
 			virtual bool Eof() const = 0;
 
 			/**
-			 * @brief Stream input operator for reading from a CVFSInFile to an output stream.
-			 * @param cfs A reference to the CVFSInFile object.
+			 * @brief Stream input operator for reading from a VFSInFile to an output stream.
+			 * @param cfs A reference to the VFSInFile object.
 			 * @param os A reference to the output stream.
 			 * @return A reference to the output stream.
 			 */

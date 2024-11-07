@@ -13,33 +13,33 @@ namespace engine
     namespace filesystem
     {
         /**
-         * @class CGPakIterator
+         * @class GPakIterator
          * @brief This class provides an iterator for GPak archives.
          *
-         * CGPakIterator is a derived class from IDirectoryIterator and implements its
+         * GPakIterator is a derived class from IDirectoryIterator and implements its
          * interface for iterating through the files within a gpak archive.
          */
-        class INCENERATE_VFS_EXPORT CGPakIterator final : public IDirectoryIterator
+        class INCENERATE_VFS_EXPORT GPakIterator final : public IDirectoryIterator
         {
         public:
             /**
              * @brief Default constructor.
              */
-            CGPakIterator() = default;
+            GPakIterator() = default;
 
             /**
-             * @brief Construct a CGPakIterator with a gpak archive, a starting path, and a recursion flag.
+             * @brief Construct a GPakIterator with a gpak archive, a starting path, and a recursion flag.
              *
              * @param _pak A pointer to the gpak archive.
              * @param start_path A string representing the starting path within the archive.
              * @param recursive A boolean flag indicating if the iterator should recurse into subdirectories.
              */
-            CGPakIterator(gpak* _pak, const std::string& start_path, bool recursive);
+            GPakIterator(gpak* _pak, const std::string& start_path, bool recursive);
 
             /**
              * @brief Virtual destructor.
              */
-            virtual ~CGPakIterator() override;
+            virtual ~GPakIterator() override;
         protected:
             /**
              * @brief Move to the next item in the archive.

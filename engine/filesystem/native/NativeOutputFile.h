@@ -11,26 +11,26 @@ namespace engine
     namespace filesystem
     {
         /**
-         * @class CNativeOutputFile
+         * @class NativeOutputFile
          * @brief This class provides an interface to work with output files using native file I/O.
          *
-         * CNativeOutputFile is a derived class from IOutputFileInterface and provides
+         * NativeOutputFile is a derived class from IOutputFileInterface and provides
          * an implementation for working with output files using native file I/O functions.
          */
-        class INCENERATE_VFS_EXPORT CNativeOutputFile final : public IOutputFileInterface
+        class INCENERATE_VFS_EXPORT NativeOutputFile final : public IOutputFileInterface
         {
         public:
             /**
-             * @brief Construct a CNativeOutputFile and open the file with the given filename.
+             * @brief Construct a NativeOutputFile and open the file with the given filename.
              *
              * @param filename A string representing the filename of the file to be opened.
              */
-            CNativeOutputFile(const std::string& filename);
+            NativeOutputFile(const std::string& filename);
 
             /**
              * @brief Destructor. Closes the file if it is still open.
              */
-            ~CNativeOutputFile() override;
+            ~NativeOutputFile() override;
 
             /**
              * @brief Close the file.

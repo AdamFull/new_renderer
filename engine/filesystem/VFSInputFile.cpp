@@ -2,20 +2,20 @@
 
 using namespace engine::filesystem;
 
-CVFSInFile::CVFSInFile(std::unique_ptr<IInputFileInterface>&& pFile) :
+VFSInFile::VFSInFile(std::unique_ptr<IInputFileInterface>&& pFile) :
 	m_pFileInterface(std::move(pFile))
 {
 	if (!m_pFileInterface)
 		throw std::runtime_error("Failed to open file");
 }
 
-CVFSInFile::~CVFSInFile()
+VFSInFile::~VFSInFile()
 {
 	if (m_pFileInterface)
 		m_pFileInterface->Close();
 }
 
-bool CVFSInFile::IsOpen()
+bool VFSInFile::IsOpen()
 {
 	if (m_pFileInterface)
 		return m_pFileInterface->IsOpen();
@@ -23,7 +23,7 @@ bool CVFSInFile::IsOpen()
 	return false;
 }
 
-int CVFSInFile::Get()
+int VFSInFile::Get()
 {
 	m_gcount = 0ull;
 
@@ -34,7 +34,7 @@ int CVFSInFile::Get()
 	return ch;
 }
 
-std::string CVFSInFile::GetLine()
+std::string VFSInFile::GetLine()
 {
 	m_gcount = 0ull;
 
@@ -53,12 +53,12 @@ std::string CVFSInFile::GetLine()
 	return line;
 }
 
-std::size_t CVFSInFile::Gcount() const
+std::size_t VFSInFile::Gcount() const
 {
 	return m_gcount;
 }
 
-CVFSInFile& CVFSInFile::Ignore(std::size_t count, int delimiter)
+VFSInFile& VFSInFile::Ignore(std::size_t count, int delimiter)
 {
 	if (m_pFileInterface)
 	{
@@ -73,12 +73,12 @@ CVFSInFile& CVFSInFile::Ignore(std::size_t count, int delimiter)
 	return *this;
 }
 
-int CVFSInFile::Peek() const
+int VFSInFile::Peek() const
 {
 	return m_pFileInterface ? m_pFileInterface->Getc() : EOF;
 }
 
-CVFSInFile& CVFSInFile::Read(char* buffer, std::size_t count)
+VFSInFile& VFSInFile::Read(char* buffer, std::size_t count)
 {
 	m_gcount = 0ull;
 
@@ -88,7 +88,7 @@ CVFSInFile& CVFSInFile::Read(char* buffer, std::size_t count)
 	return *this;
 }
 
-CVFSInFile& CVFSInFile::Read(std::string& buffer)
+VFSInFile& VFSInFile::Read(std::string& buffer)
 {
 	Seekg(0, SEEK_END);
 	auto filesize = Tellg();
@@ -100,7 +100,7 @@ CVFSInFile& CVFSInFile::Read(std::string& buffer)
 	return *this;
 }
 
-CVFSInFile& CVFSInFile::Read(utl::vector<uint8_t>& buffer)
+VFSInFile& VFSInFile::Read(utl::vector<uint8_t>& buffer)
 {
 	Seekg(0, SEEK_END);
 	auto filesize = Tellg();
@@ -113,7 +113,7 @@ CVFSInFile& CVFSInFile::Read(utl::vector<uint8_t>& buffer)
 	return *this;
 }
 
-CVFSInFile& CVFSInFile::Read(utl::vector<uint32_t>& buffer)
+VFSInFile& VFSInFile::Read(utl::vector<uint32_t>& buffer)
 {
 	Seekg(0, SEEK_END);
 	auto filesize = Tellg() / sizeof(uint32_t);
@@ -126,7 +126,7 @@ CVFSInFile& CVFSInFile::Read(utl::vector<uint32_t>& buffer)
 	return *this;
 }
 
-CVFSInFile& CVFSInFile::Unget()
+VFSInFile& VFSInFile::Unget()
 {
 	if (m_pFileInterface)
 		m_pFileInterface->Ungetc(Peek());
@@ -134,19 +134,19 @@ CVFSInFile& CVFSInFile::Unget()
 	return *this;
 }
 
-std::streampos CVFSInFile::Tellg()
+std::streampos VFSInFile::Tellg()
 {
 	return m_pFileInterface ? m_pFileInterface->Tell() : -1;
 }
 
-CVFSInFile& CVFSInFile::Seekg(std::streampos pos)
+VFSInFile& VFSInFile::Seekg(std::streampos pos)
 {
 	Seekg(pos, SEEK_SET);
 
 	return *this;
 }
 
-CVFSInFile& CVFSInFile::Seekg(std::streampos pos, int32_t origin)
+VFSInFile& VFSInFile::Seekg(std::streampos pos, int32_t origin)
 {
 	if (m_pFileInterface)
 		m_pFileInterface->Seek(pos, origin);
@@ -154,7 +154,7 @@ CVFSInFile& CVFSInFile::Seekg(std::streampos pos, int32_t origin)
 	return *this;
 }
 
-bool CVFSInFile::Eof() const
+bool VFSInFile::Eof() const
 {
 	if (m_pFileInterface)
 		return m_pFileInterface->Eof();

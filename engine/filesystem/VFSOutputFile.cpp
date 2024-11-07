@@ -2,20 +2,20 @@
 
 using namespace engine::filesystem;
 
-CVFSOutFile::CVFSOutFile(std::unique_ptr<IOutputFileInterface>&& pFile) :
+VFSOutFile::VFSOutFile(std::unique_ptr<IOutputFileInterface>&& pFile) :
 	m_pFileInterface(std::move(pFile))
 {
 	if (!m_pFileInterface)
 		throw std::runtime_error("Failed to create file");
 }
 
-CVFSOutFile::~CVFSOutFile()
+VFSOutFile::~VFSOutFile()
 {
 	if (m_pFileInterface)
 		m_pFileInterface->Close();
 }
 
-bool CVFSOutFile::IsOpen()
+bool VFSOutFile::IsOpen()
 {
 	if (m_pFileInterface)
 		return m_pFileInterface->IsOpen();
@@ -23,7 +23,7 @@ bool CVFSOutFile::IsOpen()
 	return false;
 }
 
-CVFSOutFile& CVFSOutFile::Put(char ch)
+VFSOutFile& VFSOutFile::Put(char ch)
 {
 	if (m_pFileInterface)
 		m_pFileInterface->Putc(ch);
@@ -31,7 +31,7 @@ CVFSOutFile& CVFSOutFile::Put(char ch)
 	return *this;
 }
 
-CVFSOutFile& CVFSOutFile::Write(const std::string& str)
+VFSOutFile& VFSOutFile::Write(const std::string& str)
 {
 	if (m_pFileInterface)
 		m_pFileInterface->Write(str.c_str(), sizeof(char), str.size());
@@ -39,7 +39,7 @@ CVFSOutFile& CVFSOutFile::Write(const std::string& str)
 	return *this;
 }
 
-CVFSOutFile& CVFSOutFile::Write(const utl::vector<uint8_t>& data)
+VFSOutFile& VFSOutFile::Write(const utl::vector<uint8_t>& data)
 {
 	if (m_pFileInterface)
 		m_pFileInterface->Write(data.data(), sizeof(uint8_t), data.size());
@@ -47,7 +47,7 @@ CVFSOutFile& CVFSOutFile::Write(const utl::vector<uint8_t>& data)
 	return *this;
 }
 
-CVFSOutFile& CVFSOutFile::Write(const char* buffer, std::size_t count)
+VFSOutFile& VFSOutFile::Write(const char* buffer, std::size_t count)
 {
 	if (m_pFileInterface)
 		m_pFileInterface->Write(buffer, sizeof(char), count);
@@ -55,12 +55,12 @@ CVFSOutFile& CVFSOutFile::Write(const char* buffer, std::size_t count)
 	return *this;
 }
 
-std::streampos CVFSOutFile::Tellp()
+std::streampos VFSOutFile::Tellp()
 {
 	return m_pFileInterface ? m_pFileInterface->Tell() : -1;
 }
 
-CVFSOutFile& CVFSOutFile::Seekp(std::streampos pos)
+VFSOutFile& VFSOutFile::Seekp(std::streampos pos)
 {
 	if (m_pFileInterface)
 		m_pFileInterface->Seek(pos, SEEK_SET);
@@ -68,7 +68,7 @@ CVFSOutFile& CVFSOutFile::Seekp(std::streampos pos)
 	return *this;
 }
 
-CVFSOutFile& CVFSOutFile::Flush()
+VFSOutFile& VFSOutFile::Flush()
 {
 	if (m_pFileInterface)
 		m_pFileInterface->Flush();

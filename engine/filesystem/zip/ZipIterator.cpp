@@ -34,27 +34,27 @@ void get_entries(zip* archive, utl::vector<std::string>& outresults, const std::
     }
 }
 
-CZipIterator::CZipIterator(zip* archive, const std::string& start_path, bool recursive)
+ZipIterator::ZipIterator(zip* archive, const std::string& start_path, bool recursive)
 {
     archive_ = archive;
     get_entries(archive, entries_, start_path, recursive);
 }
 
-void CZipIterator::_OperatorIncrement()
+void ZipIterator::_OperatorIncrement()
 {
     ++index_;
 }
 
-const std::string& CZipIterator::_OperatorDereferencing() const
+const std::string& ZipIterator::_OperatorDereferencing() const
 {
     return entries_[index_];
 }
 
-bool CZipIterator::_OperatorNotEqual(const IDirectoryIteratorInterface* other) const
+bool ZipIterator::_OperatorNotEqual(const IDirectoryIteratorInterface* other) const
 {
     if (!other->it_)
         return index_ != entries_.size();
  
-    const auto* other_it = dynamic_cast<const CZipIterator*>(other->it_.get());
+    const auto* other_it = dynamic_cast<const ZipIterator*>(other->it_.get());
     return index_ != other_it->index_;
 }

@@ -2,36 +2,36 @@
 
 using namespace engine::filesystem;
 
-CDirectoryIterator::CDirectoryIterator(std::unique_ptr<IDirectoryIterator>&& it, const std::string& mountpoint) :
+DirectoryIterator::DirectoryIterator(std::unique_ptr<IDirectoryIterator>&& it, const std::string& mountpoint) :
     m_srMountPoint(mountpoint)
 {
     it_ = std::move(it);
 }
 
-CDirectoryIterator& CDirectoryIterator::Begin()
+DirectoryIterator& DirectoryIterator::Begin()
 { 
     return *this; 
 }
 
-CDirectoryIterator& CDirectoryIterator::End()
+DirectoryIterator& DirectoryIterator::End()
 {
-    static CDirectoryIterator end_{};
+    static DirectoryIterator end_{};
     return end_;
 }
 
-CDirectoryIterator& CDirectoryIterator::operator++()
+DirectoryIterator& DirectoryIterator::operator++()
 {
     it_->_OperatorIncrement();
     return *this;
 }
 
-const std::string& CDirectoryIterator::operator*()
+const std::string& DirectoryIterator::operator*()
 {
     m_srCurrent = m_srMountPoint + "/" + it_->_OperatorDereferencing();
     return m_srCurrent;
 }
 
-bool CDirectoryIterator::operator!=(const IDirectoryIteratorInterface& other) const
+bool DirectoryIterator::operator!=(const IDirectoryIteratorInterface& other) const
 {
     return it_->_OperatorNotEqual(&other); 
 }

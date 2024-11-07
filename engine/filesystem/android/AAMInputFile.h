@@ -17,28 +17,28 @@ namespace engine
 		} aasset_file_t;
 
 		/**
-		 * @class CAAMInputFile
+		 * @class AAMInputFile
 		 * @brief A class for handling android internal storage input file operations.
 		 *
-		 * CAAMInputFile is a derived class from IInputFileInterface that provides
+		 * AAMInputFile is a derived class from IInputFileInterface that provides
 		 * a implementation for reading from files using the android internal storage
 		 * file handling functions.
 		 */
-		class CAAMInputFile final : public IInputFileInterface
+		class AAMInputFile final : public IInputFileInterface
 		{
 		public:
 			/**
-			 * @brief Construct a CAAMInputFile for the specified file.
+			 * @brief Construct a AAMInputFile for the specified file.
 			 *
 			 * @param handle A pointer to the android asset manager.
 			 * @param filename A string representing the path to the file to be opened.
 			 */
-			CAAMInputFile(AAssetManager* handle, const std::string& filename);
+			AAMInputFile(AAssetManager* handle, const std::string& filename);
 
 			/**
 			 * @brief Destructor that closes the file if it is open.
 			 */
-			~CAAMInputFile() override;
+			~AAMInputFile() override;
 
 			/**
 			 * @brief Close the currently opened file.

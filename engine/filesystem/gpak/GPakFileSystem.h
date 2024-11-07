@@ -11,26 +11,26 @@ namespace engine
 	namespace filesystem
 	{
 		/**
-		 * @class CGPakFileSystem
+		 * @class GPakFileSystem
 		 * @brief A class for handling gpak file system operations.
 		 *
-		 * CGPakFileSystem is a derived class from IVFSInterface that provides
+		 * GPakFileSystem is a derived class from IVFSInterface that provides
 		 * a implementation for gpak file system operations.
 		 */
-		class INCENERATE_VFS_EXPORT CGPakFileSystem final : public IVFSInterface
+		class INCENERATE_VFS_EXPORT GPakFileSystem final : public IVFSInterface
 		{
 		public:
 			/**
-			 * @brief Construct a CGPakFileSystem for the specified file system path.
+			 * @brief Construct a GPakFileSystem for the specified file system path.
 			 *
 			 * @param fspath A string representing the file system path to be used.
 			 */
-			CGPakFileSystem(const std::string& fspath);
+			GPakFileSystem(const std::string& fspath);
 
 			/**
 			 * @brief Destructor.
 			 */
-			virtual ~CGPakFileSystem() override;
+			virtual ~GPakFileSystem() override;
 
 			/**
 			 * @brief Create a new file or directory at the specified path.

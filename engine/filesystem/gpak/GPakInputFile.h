@@ -14,28 +14,28 @@ namespace engine
 	namespace filesystem
 	{
 		/**
-		 * @class CGPakInputFile
+		 * @class GPakInputFile
 		 * @brief A class for handling gpak input file operations.
 		 *
-		 * CGPakInputFile is a derived class from IInputFileInterface that provides
+		 * GPakInputFile is a derived class from IInputFileInterface that provides
 		 * a implementation for reading from files using the gpak
 		 * file handling functions.
 		 */
-		class INCENERATE_VFS_EXPORT CGPakInputFile final : public IInputFileInterface
+		class INCENERATE_VFS_EXPORT GPakInputFile final : public IInputFileInterface
 		{
 		public:
 			/**
-			 * @brief Construct a CGPakInputFile for the specified file.
+			 * @brief Construct a GPakInputFile for the specified file.
 			 *
 			 * @param handle A pointer to the gpak archive.
 			 * @param filename A string representing the path to the file to be opened.
 			 */
-			CGPakInputFile(gpak* handle, const std::string& filename);
+			GPakInputFile(gpak* handle, const std::string& filename);
 
 			/**
 			 * @brief Destructor that closes the file if it is open.
 			 */
-			~CGPakInputFile() override;
+			~GPakInputFile() override;
 
 			/**
 			 * @brief Close the currently opened file.

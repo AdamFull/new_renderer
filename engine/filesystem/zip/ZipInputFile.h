@@ -21,28 +21,28 @@ namespace engine
         } lzip_file_t;
 
         /**
-         * @class CZipInputFile
+         * @class ZipInputFile
          * @brief This class provides an input file interface for files within a ZIP archive.
          *
-         * CZipInputFile is a derived class from IInputFileInterface and implements its
+         * ZipInputFile is a derived class from IInputFileInterface and implements its
          * interface for reading files within a ZIP archive.
          */
-        class INCENERATE_VFS_EXPORT CZipInputFile final : public IInputFileInterface
+        class INCENERATE_VFS_EXPORT ZipInputFile final : public IInputFileInterface
         {
         public:
             /**
-             * @brief Construct a CZipInputFile with a zip handle, a filename, and a password.
+             * @brief Construct a ZipInputFile with a zip handle, a filename, and a password.
              *
              * @param handle A pointer to the zip_t structure.
              * @param filename A string representing the filename within the archive.
              * @param password A string representing the password for encrypted files.
              */
-            CZipInputFile(zip* handle, const std::string& filename, const std::string& password);
+            ZipInputFile(zip* handle, const std::string& filename, const std::string& password);
 
             /**
              * @brief Destructor.
              */
-            ~CZipInputFile() override;
+            ~ZipInputFile() override;
 
             /**
              * @brief Close the current open file.

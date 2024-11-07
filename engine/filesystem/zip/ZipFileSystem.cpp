@@ -6,20 +6,20 @@
 
 using namespace engine::filesystem;
 
-CZipFileSystem::CZipFileSystem(const std::string& fspath, const std::string& password)
+ZipFileSystem::ZipFileSystem(const std::string& fspath, const std::string& password)
 {
 	Create(fspath);
 	m_srPassword = password;
 }
 
-CZipFileSystem::~CZipFileSystem()
+ZipFileSystem::~ZipFileSystem()
 {
 	if(m_pArchive)
 		zip_close(m_pArchive);
 }
 
 
-bool CZipFileSystem::Create(const std::string& fspath)
+bool ZipFileSystem::Create(const std::string& fspath)
 {
 	if (m_pArchive)
 		return false;
@@ -37,7 +37,7 @@ bool CZipFileSystem::Create(const std::string& fspath)
 	return true;
 }
 
-bool CZipFileSystem::Exists(const std::string& path)
+bool ZipFileSystem::Exists(const std::string& path)
 {
 	if (!m_pArchive)
 		return false;
@@ -49,7 +49,7 @@ bool CZipFileSystem::Exists(const std::string& path)
 	return false;
 }
 
-size_t CZipFileSystem::FileSize(const std::string& path)
+size_t ZipFileSystem::FileSize(const std::string& path)
 {
 	if (!m_pArchive)
 		return 0;
@@ -61,7 +61,7 @@ size_t CZipFileSystem::FileSize(const std::string& path)
 	return 0ull;
 }
 
-bool CZipFileSystem::IsDirectory(const std::string& path)
+bool ZipFileSystem::IsDirectory(const std::string& path)
 {
 	if (!m_pArchive)
 		return false;
@@ -73,7 +73,7 @@ bool CZipFileSystem::IsDirectory(const std::string& path)
 	return false;
 }
 
-bool CZipFileSystem::IsFile(const std::string& path)
+bool ZipFileSystem::IsFile(const std::string& path)
 {
 	if (!m_pArchive)
 		return false;
@@ -85,20 +85,20 @@ bool CZipFileSystem::IsFile(const std::string& path)
 	return false;
 }
 
-std::unique_ptr<IInputFileInterface> CZipFileSystem::OpenFile(const std::string& path)
+std::unique_ptr<IInputFileInterface> ZipFileSystem::OpenFile(const std::string& path)
 {
 	if (!IsFile(path))
 		return nullptr;
 
-	return std::make_unique<CZipInputFile>(m_pArchive, path, m_srPassword);
+	return std::make_unique<ZipInputFile>(m_pArchive, path, m_srPassword);
 }
 
-std::unique_ptr<IDirectoryIterator>  CZipFileSystem::Walk(const std::string& path, bool recursive)
+std::unique_ptr<IDirectoryIterator>  ZipFileSystem::Walk(const std::string& path, bool recursive)
  {
-	return std::make_unique<CZipIterator>(m_pArchive, path, recursive);;
+	return std::make_unique<ZipIterator>(m_pArchive, path, recursive);;
  }
 
-EFilesystemModeFlags CZipFileSystem::GetFilesystemMode() const
+EFilesystemModeFlags ZipFileSystem::GetFilesystemMode() const
 {
 	return static_cast<uint32_t>(EFilesystemModeFlagBits::eRead);
 }

@@ -5,7 +5,7 @@
 
 using namespace engine::filesystem;
 
-CGPakIterator::CGPakIterator(gpak* _pak, const std::string& start_path, bool recursive)
+GPakIterator::GPakIterator(gpak* _pak, const std::string& start_path, bool recursive)
 {
 	m_bIsRecursive = recursive;
 
@@ -19,13 +19,13 @@ CGPakIterator::CGPakIterator(gpak* _pak, const std::string& start_path, bool rec
 	}
 }
 
-CGPakIterator::~CGPakIterator()
+GPakIterator::~GPakIterator()
 {
 	if (m_pIterator)
 		filesystem_iterator_free(m_pIterator);
 }
 
-void CGPakIterator::_OperatorIncrement()
+void GPakIterator::_OperatorIncrement()
 {
 	char* pathBuf{ nullptr };
 
@@ -44,16 +44,16 @@ void CGPakIterator::_OperatorIncrement()
 	}
 }
 
-const std::string& CGPakIterator::_OperatorDereferencing() const
+const std::string& GPakIterator::_OperatorDereferencing() const
 {
 	return m_srCurrentPath;
 }
 
-bool CGPakIterator::_OperatorNotEqual(const IDirectoryIteratorInterface* other) const
+bool GPakIterator::_OperatorNotEqual(const IDirectoryIteratorInterface* other) const
 {
 	if (!other->it_)
 		return m_pCurrentDir != nullptr;
 
-	const auto* other_it = dynamic_cast<const CGPakIterator*>(other->it_.get());
+	const auto* other_it = dynamic_cast<const GPakIterator*>(other->it_.get());
 	return m_pCurrentDir != other_it->m_pCurrentDir;
 }

@@ -11,27 +11,27 @@ namespace engine
 	namespace filesystem
 	{
 		/**
-		 * @class CZipFileSystem
+		 * @class ZipFileSystem
 		 * @brief This class provides an interface for virtual file systems within a ZIP archive.
 		 *
-		 * CZipFileSystem is a derived class from IVFSInterface and implements its
+		 * ZipFileSystem is a derived class from IVFSInterface and implements its
 		 * interface for working with files and directories within a ZIP archive.
 		 */
-		class INCENERATE_VFS_EXPORT CZipFileSystem final : public IVFSInterface
+		class INCENERATE_VFS_EXPORT ZipFileSystem final : public IVFSInterface
 		{
 		public:
 			/**
-			 * @brief Construct a CZipFileSystem with a file system path and a password.
+			 * @brief Construct a ZipFileSystem with a file system path and a password.
 			 *
 			 * @param fspath A string representing the file system path of the ZIP archive.
 			 * @param password A string representing the password for encrypted files.
 			 */
-			CZipFileSystem(const std::string& fspath, const std::string& password);
+			ZipFileSystem(const std::string& fspath, const std::string& password);
 
 			/**
 			 * @brief Destructor.
 			 */
-			virtual ~CZipFileSystem() override;
+			virtual ~ZipFileSystem() override;
 
 			/**
 			 * @brief Create a new ZIP archive at the specified file system path.
@@ -42,17 +42,17 @@ namespace engine
 			bool Create(const std::string& fspath) override;
 
 			/**
-			 * @brief This function is not supported by the CZipFileSystem.
+			 * @brief This function is not supported by the ZipFileSystem.
 			 */
 			void Copy(const std::string& from, const std::string& to) override {}
 
 			/**
-			 * @brief This function is not supported by the CZipFileSystem.
+			 * @brief This function is not supported by the ZipFileSystem.
 			 */
 			bool CreateDirectories(const std::string& path) override { return false; }
 
 			/**
-			 * @brief This function is not supported by the CZipFileSystem.
+			 * @brief This function is not supported by the ZipFileSystem.
 			 */
 			bool CreateDirectory(const std::string& path) override { return false; }
 
@@ -89,17 +89,17 @@ namespace engine
 			bool IsFile(const std::string& path) override;
 
 			/**
-			 * @brief This function is not supported by the CZipFileSystem.
+			 * @brief This function is not supported by the ZipFileSystem.
 			 */
 			bool Remove(const std::string& path) override { return false; }
 
 			/**
-			 * @brief This function is not supported by the CZipFileSystem.
+			 * @brief This function is not supported by the ZipFileSystem.
 			 */
 			void Rename(const std::string& original, const std::string& newfile) override { }
 
 			/**
-			 * @brief This function is not supported by the CZipFileSystem.
+			 * @brief This function is not supported by the ZipFileSystem.
 			 */
 			std::unique_ptr<IOutputFileInterface> CreateFile(const std::string& path) override { return nullptr; }
 

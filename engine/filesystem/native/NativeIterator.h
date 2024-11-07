@@ -12,10 +12,10 @@ namespace engine
     namespace filesystem
     {
         /**
-         * @class CNativeIterator
+         * @class NativeIterator
          * @brief A template class providing an interface for native directory iteration.
          
-         * CNativeIterator is a derived class from IDirectoryIterator that provides
+         * NativeIterator is a derived class from IDirectoryIterator that provides
          * a platform-specific implementation for iterating through directories using the
          * native filesystem functions. The class is templated to allow for different types
          * of directory iterators.
@@ -23,21 +23,21 @@ namespace engine
          * @tparam _Ty The type of native directory iterator to be used.
          */
         template<class _Ty>
-        class INCENERATE_VFS_EXPORT CNativeIterator final : public IDirectoryIterator
+        class INCENERATE_VFS_EXPORT NativeIterator final : public IDirectoryIterator
         {
         public:
             /**
              * @brief Default constructor.
              */
-            CNativeIterator() = default;
+            NativeIterator() = default;
 
             /**
-             * @brief Construct a CNativeIterator for the specified path and root.
+             * @brief Construct a NativeIterator for the specified path and root.
              *
              * @param path A string representing the path to the directory to be iterated.
              * @param root A string representing the root directory for relative paths.
              */
-            CNativeIterator(const std::string& path, const std::string& root) : it_(_Ty(path))
+            NativeIterator(const std::string& path, const std::string& root) : it_(_Ty(path))
             {
                 root_ = root;
                 path_ = fs::to_posix_path(std::filesystem::relative(it_->path(), root_).string());
@@ -71,7 +71,7 @@ namespace engine
                 if (!other->it_)
                     return it_ != _Ty();
 
-                const auto* other_it = dynamic_cast<const CNativeIterator<_Ty>*>(other->it_.get());
+                const auto* other_it = dynamic_cast<const NativeIterator<_Ty>*>(other->it_.get());
                 return it_ != other_it->it_;
             }
         private:

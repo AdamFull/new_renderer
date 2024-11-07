@@ -13,33 +13,33 @@ namespace engine
     namespace filesystem
     {
         /**
-         * @class CZipIterator
+         * @class ZipIterator
          * @brief This class provides an iterator for ZIP archives.
          *
-         * CZipIterator is a derived class from IDirectoryIterator and implements its
+         * ZipIterator is a derived class from IDirectoryIterator and implements its
          * interface for iterating through the files within a ZIP archive.
          */
-        class INCENERATE_VFS_EXPORT CZipIterator final : public IDirectoryIterator
+        class INCENERATE_VFS_EXPORT ZipIterator final : public IDirectoryIterator
         {
         public:
             /**
              * @brief Default constructor.
              */
-            CZipIterator() = default;
+            ZipIterator() = default;
 
             /**
-             * @brief Construct a CZipIterator with a zip archive, a starting path, and a recursion flag.
+             * @brief Construct a ZipIterator with a zip archive, a starting path, and a recursion flag.
              *
              * @param archive A pointer to the zip archive.
              * @param start_path A string representing the starting path within the archive.
              * @param recursive A boolean flag indicating if the iterator should recurse into subdirectories.
              */
-            CZipIterator(zip* archive, const std::string& start_path, bool recursive);
+            ZipIterator(zip* archive, const std::string& start_path, bool recursive);
 
             /**
              * @brief Virtual destructor.
              */
-            virtual ~CZipIterator() override = default;
+            virtual ~ZipIterator() override = default;
 
         protected:
             /**
