@@ -1,8 +1,8 @@
 #pragma once
 
 #include <enum.hpp>
-#include <engine/integrations/imgui/Attributes.h>
-#include <engine/integrations/imgui/ImGuiElements.h>
+#include <engine/ui/Attributes.h>
+#include <engine/ui/ImGuiElements.h>
 
 namespace engine
 {
@@ -18,7 +18,7 @@ namespace engine
 	template<>
 	struct ElementCount<glm::quat> { static constexpr std::size_t value = 4; };
 
-	class CInspectorDrawer
+	class InspectorDrawer
 	{
 	public:
 		template<typename _Member, typename _Ty, glm::qualifier _Q, size_t _Count>

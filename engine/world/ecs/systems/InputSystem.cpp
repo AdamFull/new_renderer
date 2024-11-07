@@ -52,7 +52,7 @@ void CInputSystem::__Update(f32 fDt)
 	f32 dY = (curY - oldY) * fDt;
 	oldY = curY;
 
-	auto view = CEntityManager::View<FTransformComponent, FBaseComponent, FCameraComponent>();
+	auto view = EntityManager::View<FTransformComponent, FBaseComponent, FCameraComponent>();
 	for (auto [entity, transform, base, camera] : view.each())
 	{
 		if (base.enabled)

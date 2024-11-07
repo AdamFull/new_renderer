@@ -6,11 +6,11 @@
 
 namespace engine
 {
-	class CHierarchyWindow : public IEditorWindow
+	class HierarchyWindow : public IEditorWindow
 	{
 	public:
-		CHierarchyWindow(const std::string& sname) { m_name = sname; }
-		virtual ~CHierarchyWindow() override = default;
+		HierarchyWindow(const std::string& sname) { m_name = sname; }
+		virtual ~HierarchyWindow() override = default;
 
 		void Create() override {}
 	private:

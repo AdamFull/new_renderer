@@ -44,8 +44,6 @@ namespace engine
 		 */
 		virtual void Update(float delta_time);
 
-		virtual void OnGui();
-
 		/**
 		 * @brief Handles cleaning up the application
 		 */

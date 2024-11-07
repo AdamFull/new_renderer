@@ -4,11 +4,11 @@
 
 namespace engine
 {
-	class CViewportWindow : public IEditorWindow
+	class ViewportWindow : public IEditorWindow
 	{
 	public:
-		CViewportWindow(const std::string& sname) { m_name = sname; }
-		virtual ~CViewportWindow() override = default;
+		ViewportWindow(const std::string& sname) { m_name = sname; }
+		virtual ~ViewportWindow() override = default;
 
 		void Create() override;
 	private:

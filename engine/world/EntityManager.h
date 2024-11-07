@@ -5,7 +5,7 @@
 #include <nlohmann/json.hpp>
 #include <standart_library.h>
 
-#include <engine/integrations/imgui/editor/InspectorDrawer.h>
+#include <engine/ui/InspectorDrawer.h>
 #include <engine/world/ecs/systems/BaseSystem.h>
 #include <engine/world/ecs/components/components.h>
 
@@ -30,12 +30,12 @@ namespace engine
 			std::function<void* (entt::entity)> try_get;
 			std::function<void(entt::entity)> destroy;
 			std::function<bool(entt::entity)> has;
-			std::function<void(CInspectorDrawer&, entt::entity)> edit;
+			std::function<void(InspectorDrawer&, entt::entity)> edit;
 			std::function<void(nlohmann::json& , entt::entity)> serialize;
 			std::function<void(const nlohmann::json& , entt::entity)> deserialize;
 		};
 
-		class CEntityManager
+		class EntityManager
 		{
 		public:
 			template<typename _Ty>
@@ -51,7 +51,7 @@ namespace engine
 				meta.destroy = [&registry = m_registry](entt::entity entity) { registry.remove<_Ty>(entity); };
 				meta.has = [&registry = m_registry](entt::entity entity) { return registry.any_of<_Ty>(entity); };
 
-				meta.edit = [&registry = m_registry](CInspectorDrawer& drawer, entt::entity entity)
+				meta.edit = [&registry = m_registry](InspectorDrawer& drawer, entt::entity entity)
 					{
 						if constexpr (refl::is_reflectable<_Ty>())
 						{

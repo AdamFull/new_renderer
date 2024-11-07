@@ -1,9 +1,9 @@
 #include "InspectorWindow.h"
 
 #include <engine/world/EntityManager.h>
-#include <engine/integrations/imgui/EditorState.h>
-#include <engine/integrations/imgui/EditorTraits.h>
-#include <engine/integrations/imgui/ImGuiElements.h>
+#include <engine/ui/EditorState.h>
+#include <engine/ui/EditorTraits.h>
+#include <engine/ui/ImGuiElements.h>
 
 #include <engine/filesystem/vfs_helper.h>
 #include <imgui.h>
@@ -14,14 +14,14 @@ using namespace engine;
 using namespace engine::filesystem;
 using namespace engine::world;
 
-void CInspectorWindow::Create()
+void InspectorWindow::Create()
 {
 
 }
 
-void CInspectorWindow::__draw(float fDt)
+void InspectorWindow::__draw(float fDt)
 {
-	auto& state = CEditorState::GetInstance();
+	auto& state = EditorState::GetInstance();
 	//auto& imageLoader = graphics->getImageLoader();
 	//auto& debug_draw = graphics->getDebugDraw();
 	auto selected = state->GetSelection();
@@ -29,18 +29,18 @@ void CInspectorWindow::__draw(float fDt)
 	// TODO: add replace component operation
 	if (selected != entt::null)
 	{
-		auto& transform = CEntityManager::GetComponent<ecs::FTransformComponent>(selected);
-		auto& base = CEntityManager::GetComponent<ecs::FBaseComponent>(selected);
-		auto& hierarchy = CEntityManager::GetComponent<ecs::FHierarchyComponent>(selected);
+		auto& transform = EntityManager::GetComponent<ecs::FTransformComponent>(selected);
+		auto& base = EntityManager::GetComponent<ecs::FBaseComponent>(selected);
+		auto& hierarchy = EntityManager::GetComponent<ecs::FHierarchyComponent>(selected);
 
 		if (ImGui::BeginPopup("add_component_popup"))
 		{
-			CEntityManager::IterateRegisteredComponents([entity = selected](const FComponentMeta& meta)
+			EntityManager::IterateRegisteredComponents([entity = selected](const FComponentMeta& meta)
 				{
 					if (!meta.has(entity))
 					{
 						if (ImGui::MenuItem(meta.name))
-							CEntityManager::AddComponent(entity, meta.type);
+							EntityManager::AddComponent(entity, meta.type);
 					}
 				});
 
@@ -52,7 +52,7 @@ void CInspectorWindow::__draw(float fDt)
 		ImGui::GTextInput("Name", &base.name);
 		ImGui::Separator();
 
-		CEntityManager::IterateComponents(selected, [&](void* component, const FComponentMeta& meta)
+		EntityManager::IterateComponents(selected, [&](void* component, const FComponentMeta& meta)
 			{
 				if (meta.name && !(meta.flags & EComponentFlagBits::eHiddenInEditor))
 				{

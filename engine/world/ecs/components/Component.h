@@ -7,12 +7,12 @@
 
 #include <entt/entt.hpp>
 
-#include <engine/integrations/imgui/font/IconsMaterialDesignIcons.h>
-#include <engine/integrations/imgui/ImGuiElements.h>
+#include <engine/runtime/ui/font/IconsMaterialDesignIcons.h>
+#include <engine/ui/ImGuiElements.h>
 
 #include <utility>
 
-#include <engine/integrations/imgui/Attributes.h>
+#include <engine/ui/Attributes.h>
 #include <string.hpp>
 
 #include <enum.hpp>

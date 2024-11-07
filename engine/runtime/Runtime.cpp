@@ -100,16 +100,13 @@ namespace engine
 
 		if (focused || always_render)
 		{
+			ui->NewFrame(delta_time);
 			OnUpdate(delta_time);
 
 			if (fixed_simulation_fps)
 			{
 				delta_time = simulation_frame_time;
 			}
-
-			// TODO: update debug ui here
-			ui->NewFrame(delta_time);
-			app->OnGui();
 
 			app->Update(delta_time);
 		}

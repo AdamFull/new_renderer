@@ -25,7 +25,6 @@ namespace engine
 			world_frustum = std::make_unique<DynamicBuffer<glm::vec4>>(resource_context, 64ull, gfx::BufferUsageFlag::eStorageBuffer);
 
 			indirect_draw_commands = std::make_unique<DynamicBuffer<FDrawIndexedIndirectData>>(resource_context, 64ull, gfx::BufferUsageFlag::eIndirectBuffer);
-			//node_buffer = std::make_unique<DynamicBuffer>(resource_context, sizeof(FSceneNode), 64ull, gfx::BufferUsageFlag::eStorageBuffer);
 		}
 
 		uint32_t RenderWorld::CreateRenderCamera()

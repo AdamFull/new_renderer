@@ -3,7 +3,7 @@
 #include <engine/Application.h>
 #include <engine/runtime/Window.h>
 #include <util/Performance.h>
-#include <engine/runtime/EngineUI.h>
+#include <engine/runtime/ui/EngineUI.h>
 
 #ifdef CreateWindow
 #undef CreateWindow

@@ -86,7 +86,7 @@ void CShadowsSystem::__Update(f32 fDt)
 	//
 	//	auto& culler_group = m_shadowCullers[ERenderGeometryCullerType::eCascadedShadow];
 	//
-	//	auto view = CEntityManager::View<FTransformComponent, FBaseComponent, FDirectionalLightComponent>();
+	//	auto view = EntityManager::View<FTransformComponent, FBaseComponent, FDirectionalLightComponent>();
 	//	for (auto [entity, ltransform, base, light] : view.each())
 	//	{
 	//		// Reset shadow index
@@ -208,7 +208,7 @@ void CShadowsSystem::__Update(f32 fDt)
 	//	std::array<glm::mat4, 6u> matrices{};
 	//	auto& culler_group = m_shadowCullers[ERenderGeometryCullerType::eOmniShadow];
 	//
-	//	auto view = CEntityManager::View<FTransformComponent, FBaseComponent, FPointLightComponent>();
+	//	auto view = EntityManager::View<FTransformComponent, FBaseComponent, FPointLightComponent>();
 	//	for (auto [entity, ltransform, base, light] : view.each())
 	//	{
 	//		light.shadowIndex = -1;
@@ -254,7 +254,7 @@ void CShadowsSystem::__Update(f32 fDt)
 	//{
 	//	auto& culler_group = m_shadowCullers[ERenderGeometryCullerType::eSpotShadow];
 	//
-	//	auto view = CEntityManager::View<FTransformComponent, FBaseComponent, FSpotLightComponent>();
+	//	auto view = EntityManager::View<FTransformComponent, FBaseComponent, FSpotLightComponent>();
 	//	for (auto [entity, ltransform, base, light] : view.each())
 	//	{
 	//		light.shadowIndex = -1;

@@ -4,12 +4,12 @@
 
 using namespace engine;
 
-void CViewportWindow::Create()
+void ViewportWindow::Create()
 {
 
 }
 
-void CViewportWindow::__draw(float fDt)
+void ViewportWindow::__draw(float fDt)
 {
 	auto content_size = ImGui::GetContentRegionAvail();
 
@@ -32,7 +32,7 @@ void CViewportWindow::__draw(float fDt)
 	DrawOverlay(textDrawPos.x, textDrawPos.y, fDt);
 }
 
-void CViewportWindow::DrawViewport()
+void ViewportWindow::DrawViewport()
 {
 	//ImGui::Image(pDescriptorSet->get(), ImVec2{ viewportPanelSizeX, viewportPanelSizeY });
 
@@ -40,15 +40,15 @@ void CViewportWindow::DrawViewport()
 	//	device->setViewportExtent(vk::Extent2D{ (uint32_t)viewportPanelSizeX, (uint32_t)viewportPanelSizeY });
 }
 
-void CViewportWindow::ViewportPicking()
+void ViewportWindow::ViewportPicking()
 {
 
 }
 
-void CViewportWindow::DrawManipulator(float offsetx, float offsety, float sizex, float sizey)
+void ViewportWindow::DrawManipulator(float offsetx, float offsety, float sizex, float sizey)
 {
 }
 
-void CViewportWindow::DrawOverlay(float offsetx, float offsety, float fDt)
+void ViewportWindow::DrawOverlay(float offsetx, float offsety, float fDt)
 {
 }

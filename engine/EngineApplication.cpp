@@ -13,6 +13,8 @@
 #include <engine/rendering/Rendering.h>
 #include <world/NewScene.h>
 
+#include <engine/ui/EngineUISystem.h>
+
 namespace engine
 {
 	EngineApplication::EngineApplication()
@@ -33,17 +35,19 @@ namespace engine
 
 		//m_pSystemManager = std::make_unique<CEngineSystemManager>();
 
-		m_pVirtualFileSystem = std::make_unique<filesystem::CVirtualFileSystemManager>();
-		m_pVirtualFileSystem->Mount("/root", std::make_unique<filesystem::CNativeFileSystem>("./"));
+		vfs = std::make_unique<filesystem::CVirtualFileSystemManager>();
+		vfs->Mount("/root", std::make_unique<filesystem::CNativeFileSystem>("./"));
 
-		//m_pRenderInterface = std::make_unique<render::CRenderInterface>(m_pVirtualFileSystem.get());
+		ui = std::make_unique<EngineUISystem>();
+
+		//m_pRenderInterface = std::make_unique<render::CRenderInterface>(vfs.get());
 
 		//m_pInputMapper = std::make_unique<CInputMapper>();
 
 		//m_pSystemManager->RegisterSystem<CImGuiEngineSystem>(m_pRenderInterface.get());
 		//m_pSystemManager->RegisterSystem<CDebugDrawEngineSystem>(m_pRenderInterface.get());
 
-		//m_pScene = std::make_unique<world::CScene>(m_pVirtualFileSystem.get(), m_pRenderInterface.get());
+		//m_pScene = std::make_unique<world::CScene>(vfs.get(), m_pRenderInterface.get());
 	}
 
 	EngineApplication::~EngineApplication()
@@ -68,12 +72,14 @@ namespace engine
 
 	bool EngineApplication::Prepare(const ApplicationOptions& options)
 	{
-		renderer = std::make_unique<render::Renderer>(options.window, m_pVirtualFileSystem.get());
+		renderer = std::make_unique<render::Renderer>(options.window, vfs.get());
 
-		scene = std::make_unique<world::Scene>(m_pVirtualFileSystem.get(), *renderer);
-		//scene = std::make_unique<world::Scene>(m_pVirtualFileSystem.get());
+		scene = std::make_unique<world::Scene>(vfs.get(), *renderer);
+		//scene = std::make_unique<world::Scene>(vfs.get());
 		scene->Load("/root/meshes/sponza/Sponza.gltf");
 		//scene->Load("/root/meshes/helmet/DamagedHelmet.gltf");
+
+		ui->Initialize();
 
 		//render::FRenderInterfaceCreateInfo rhi_ci{};
 		//rhi_ci.render_api = render::ERenderApi::eVulkan11;
@@ -108,6 +114,8 @@ namespace engine
 
 	void EngineApplication::Update(float delta_time)
 	{
+		ui->Update(delta_time);
+
 		scene->Update(delta_time);
 
 		renderer->Render(delta_time);

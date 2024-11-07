@@ -44,11 +44,11 @@ using namespace engine::world::ecs;
 //
 //void prepare_draw_commands(const std::unique_ptr<IRenderWorld>& render_world, utl::vector<DrawDescription>& draw_commands, u32 alpha_mode)
 //{
-//	auto root = CEntityManager::GetRoot();
-//	auto& root_component = CEntityManager::GetComponent<FRootComponent>(root);
+//	auto root = EntityManager::GetRoot();
+//	auto& root_component = EntityManager::GetComponent<FRootComponent>(root);
 //	auto& world_stats = render_world->GetStats();
 //
-//	auto view = CEntityManager::View<FTransformComponent, FBaseComponent, FMeshComponent>();
+//	auto view = EntityManager::View<FTransformComponent, FBaseComponent, FMeshComponent>();
 //	for (auto [entity, transform, base, mesh_component] : view.each())
 //	{
 //		if (!base.visible)
@@ -81,7 +81,7 @@ using namespace engine::world::ecs;
 CMeshSystem::CMeshSystem(render::IRenderer& renderer) :
 	render_world{renderer.GetRenderWorld() }
 {
-	CEntityManager::RegisterComponent<FMeshComponent>();
+	EntityManager::RegisterComponent<FMeshComponent>();
 }
 
 void CMeshSystem::__Create()
@@ -93,10 +93,10 @@ void CMeshSystem::__Update(f32 fDt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto root = CEntityManager::GetRoot();
-	auto& root_component = CEntityManager::GetComponent<FRootComponent>(root);
+	auto root = EntityManager::GetRoot();
+	auto& root_component = EntityManager::GetComponent<FRootComponent>(root);
 	
-	auto view = CEntityManager::View<FTransformComponent, FBaseComponent, FMeshComponent>();
+	auto view = EntityManager::View<FTransformComponent, FBaseComponent, FMeshComponent>();
 	for (auto [entity, transform, base, mesh_component] : view.each())
 	{
 		if (!base.visible)

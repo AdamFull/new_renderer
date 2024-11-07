@@ -245,15 +245,15 @@ namespace engine
 			vfs{ vfs },
 			renderer{ renderer }
 		{
-			CEntityManager::RegisterSystem<ecs::CInputSystem>();
-			CEntityManager::RegisterSystem<ecs::CAnimationSystem>();
-			CEntityManager::RegisterSystem<ecs::CScenegraphSystem>();
-			//CEntityManager::RegisterSystem<ecs::CSkinningSystem>(render_interface);
+			EntityManager::RegisterSystem<ecs::CInputSystem>();
+			EntityManager::RegisterSystem<ecs::CAnimationSystem>();
+			EntityManager::RegisterSystem<ecs::CScenegraphSystem>();
+			//EntityManager::RegisterSystem<ecs::CSkinningSystem>(render_interface);
 
-			CEntityManager::RegisterSystem<ecs::CCameraSystem>(renderer);
-			//CEntityManager::RegisterSystem<ecs::CShadowsSystem>(render_interface);
-			CEntityManager::RegisterSystem<ecs::CLightingSystem>(renderer);
-			CEntityManager::RegisterSystem<ecs::CMeshSystem>(renderer);
+			EntityManager::RegisterSystem<ecs::CCameraSystem>(renderer);
+			//EntityManager::RegisterSystem<ecs::CShadowsSystem>(render_interface);
+			EntityManager::RegisterSystem<ecs::CLightingSystem>(renderer);
+			EntityManager::RegisterSystem<ecs::CMeshSystem>(renderer);
 		}
 
 		Scene::~Scene()
@@ -275,7 +275,7 @@ namespace engine
 
 		void Scene::Update(float delta_time)
 		{
-			CEntityManager::Update(delta_time);
+			EntityManager::Update(delta_time);
 		}
 
 		void Scene::LoadGLTF(easygltf::FGLTFRoot& root)
@@ -353,7 +353,7 @@ namespace engine
 
 			// Loading nodes
 			const easygltf::Scene& scene = root.scenes[root.scene > -1 ? root.scene : 0];
-			auto scene_root = CEntityManager::CreateRoot(scene.name);
+			auto scene_root = EntityManager::CreateRoot(scene.name);
 
 			for (const auto& node_index : scene.nodes)
 				LoadNode(root, scene_root, node_index);
@@ -361,21 +361,21 @@ namespace engine
 			LoadAnimations(root);
 			LoadSkins(root);
 
-			CEntityManager::Create();
+			EntityManager::Create();
 		}
 
 		void Scene::LoadNode(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index, f32 global_scale)
 		{
 			const auto& node = root.nodes[node_index];
 
-			auto new_node = CEntityManager::CreateNode(node.name);
+			auto new_node = EntityManager::CreateNode(node.name);
 
 			log_info("[Scene] Loadind node: {}:{}.", node.name, node_index);
 
 			node_to_entity[node_index] = new_node;
 
 			// Parse node local transform
-			auto& transform = CEntityManager::GetComponent<ecs::FTransformComponent>(new_node);
+			auto& transform = EntityManager::GetComponent<ecs::FTransformComponent>(new_node);
 			transform.lposition = glm::make_vec3(node.translation.data());
 			transform.lrotation = glm::make_quat(node.rotation.data());
 			transform.lscale = glm::make_vec3(node.scale.data());
@@ -397,7 +397,7 @@ namespace engine
 			if (node.hasExtension<easygltf::extensions::KHR_lights_punctual>())
 				LoadLightComponent(root, node_to_entity[node_index], node_index);
 
-			CEntityManager::AttachChild(parent, new_node);
+			EntityManager::AttachChild(parent, new_node);
 		}
 
 		void Scene::LoadMeshComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index)
@@ -405,7 +405,7 @@ namespace engine
 			const auto& node = root.nodes[node_index];
 			const auto& mesh = root.meshes[node.mesh];
 
-			auto& mesh_component = CEntityManager::AddComponent<ecs::FMeshComponent>(parent, ecs::FMeshComponent{});
+			auto& mesh_component = EntityManager::AddComponent<ecs::FMeshComponent>(parent, ecs::FMeshComponent{});
 			mesh_component.skin = node.skin;
 
 			// Load mesh primitives
@@ -492,7 +492,7 @@ namespace engine
 				camera_component.farPlane = camera.perspective.zfar;
 			}
 
-			CEntityManager::AddComponent<ecs::FCameraComponent>(parent, std::move(camera_component));
+			EntityManager::AddComponent<ecs::FCameraComponent>(parent, std::move(camera_component));
 		}
 
 		void Scene::LoadLightComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index)
@@ -505,7 +505,7 @@ namespace engine
 				ecs::FDirectionalLightComponent light_component;
 				light_component.color = glm::make_vec3(light.color.data());
 				light_component.intencity = light.intensity;
-				CEntityManager::AddComponent<ecs::FDirectionalLightComponent>(parent, std::move(light_component));
+				EntityManager::AddComponent<ecs::FDirectionalLightComponent>(parent, std::move(light_component));
 			}
 			else if (light.type == easygltf::extensions::KHR_lights_punctual::enumerators::light_type::spot)
 			{
@@ -514,7 +514,7 @@ namespace engine
 				light_component.innerAngle = light.spot.innerConeAngle;
 				light_component.outerAngle = light.spot.outerConeAngle;
 				light_component.intencity = light.intensity;
-				CEntityManager::AddComponent<ecs::FSpotLightComponent>(parent, std::move(light_component));
+				EntityManager::AddComponent<ecs::FSpotLightComponent>(parent, std::move(light_component));
 			}
 			else if (light.type == easygltf::extensions::KHR_lights_punctual::enumerators::light_type::point)
 			{
@@ -522,14 +522,14 @@ namespace engine
 				light_component.color = glm::make_vec3(light.color.data());
 				light_component.intencity = light.intensity;
 				light_component.radius = (std::max)(light.range, 1.0);
-				CEntityManager::AddComponent<ecs::FPointLightComponent>(parent, std::move(light_component));
+				EntityManager::AddComponent<ecs::FPointLightComponent>(parent, std::move(light_component));
 			}
 		}
 
 		void Scene::LoadAnimations(const easygltf::FGLTFRoot& root)
 		{
-			auto scene_root = CEntityManager::GetRoot();
-			auto& root_component = CEntityManager::GetComponent<ecs::FRootComponent>(scene_root);
+			auto scene_root = EntityManager::GetRoot();
+			auto& root_component = EntityManager::GetComponent<ecs::FRootComponent>(scene_root);
 
 			for (auto& anim : root.animations)
 			{
@@ -636,8 +636,8 @@ namespace engine
 
 		void Scene::LoadSkins(const easygltf::FGLTFRoot& root)
 		{
-			auto scene_root = CEntityManager::GetRoot();
-			auto& root_component = CEntityManager::GetComponent<ecs::FRootComponent>(scene_root);
+			auto scene_root = EntityManager::GetRoot();
+			auto& root_component = EntityManager::GetComponent<ecs::FRootComponent>(scene_root);
 
 			for (auto& source : root.skins)
 			{

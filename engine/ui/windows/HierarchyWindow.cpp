@@ -3,16 +3,16 @@
 #include <imgui.h>
 #include <engine/world/EntityManager.h>
 
-#include <engine/integrations/imgui/EditorTraits.h>
-#include <engine/integrations/imgui/EditorState.h>
+#include <engine/ui/EditorTraits.h>
+#include <engine/ui/EditorState.h>
 
 using namespace engine;
 using namespace engine::world;
 
-void CHierarchyWindow::__draw(float fDt)
+void HierarchyWindow::__draw(float fDt)
 {
     //auto& actionBuffer = EGEditor->getActionBuffer();
-    auto root = CEntityManager::GetRoot();
+    auto root = EntityManager::GetRoot();
     auto current_size = ImGui::GetWindowSize();
 
     BuildHierarchy(root);
@@ -28,14 +28,14 @@ void CHierarchyWindow::__draw(float fDt)
         if (ImGui::BeginMenu("create"))
         {
             if (ImGui::MenuItem((std::format("{} {}", icon::entity, "GameObject")).c_str()))
-                CEntityManager::CreateNode("Gamebject", m_currentSelection);
+                EntityManager::CreateNode("Gamebject", m_currentSelection);
 
-            CEntityManager::IterateRegisteredComponents([entity = m_currentSelection](const FComponentMeta& meta)
+            EntityManager::IterateRegisteredComponents([entity = m_currentSelection](const FComponentMeta& meta)
                 {
-                    if (!CEntityManager::HasComponent(entity, meta.type))
+                    if (!EntityManager::HasComponent(entity, meta.type))
                     {
                         if (ImGui::MenuItem(meta.name))
-                            CEntityManager::AddComponent(entity, meta.type);
+                            EntityManager::AddComponent(entity, meta.type);
                     }
                 });
 
@@ -54,7 +54,7 @@ void CHierarchyWindow::__draw(float fDt)
         if (ImGui::MenuItem("duplicate"))
         {
             entt::entity attach_to{ root };
-            auto& hierarchy = CEntityManager::GetComponent<ecs::FHierarchyComponent>(m_currentSelection);
+            auto& hierarchy = EntityManager::GetComponent<ecs::FHierarchyComponent>(m_currentSelection);
 
             if (hierarchy.parent != entt::null)
                 attach_to = hierarchy.parent;
@@ -64,7 +64,7 @@ void CHierarchyWindow::__draw(float fDt)
 
         if (ImGui::MenuItem("delete", "DEL"))
         {
-            auto& state = CEditorState::GetInstance();
+            auto& state = EditorState::GetInstance();
             if (state->IsSelected(m_currentSelection))
                 state->SetSelection(root);
             
@@ -80,13 +80,13 @@ void CHierarchyWindow::__draw(float fDt)
     if (ImGui::InvisibleButton("###unselect_all_btn", ImVec2(size_x, size_y)))
     {
         m_currentSelection = root;
-        CEditorState::GetInstance()->DeselectAll();
+        EditorState::GetInstance()->DeselectAll();
     }
 }
 
-void CHierarchyWindow::BuildHierarchy(const entt::entity& entity)
+void HierarchyWindow::BuildHierarchy(const entt::entity& entity)
 {
-    auto& state = CEditorState::GetInstance();
+    auto& state = EditorState::GetInstance();
 
     if (entity != entt::null)
     {
@@ -94,8 +94,8 @@ void CHierarchyWindow::BuildHierarchy(const entt::entity& entity)
 
         uint32_t flags = ImGuiTreeNodeFlags_OpenOnArrow;
 
-        auto& base = CEntityManager::GetComponent<ecs::FBaseComponent>(entity);
-        auto& hierarchy = CEntityManager::GetComponent<ecs::FHierarchyComponent>(entity);
+        auto& base = EntityManager::GetComponent<ecs::FBaseComponent>(entity);
+        auto& hierarchy = EntityManager::GetComponent<ecs::FHierarchyComponent>(entity);
 
         //Is object selected
         auto isSelected = state->IsSelected(entity);

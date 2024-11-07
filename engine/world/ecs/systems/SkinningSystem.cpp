@@ -19,11 +19,11 @@ using namespace engine::world::ecs;
 
 void debug_draw_skeleton(entt::entity node, glm::mat4 parent_matrix = glm::mat4(1.f))
 {
-	if (!CEntityManager::IsValid(node))
+	if (!EntityManager::IsValid(node))
 		return;
 
-	auto& node_transform = CEntityManager::GetComponent<FTransformComponent>(node);
-	auto& node_hierarchy = CEntityManager::GetComponent<FHierarchyComponent>(node);
+	auto& node_transform = EntityManager::GetComponent<FTransformComponent>(node);
+	auto& node_hierarchy = EntityManager::GetComponent<FHierarchyComponent>(node);
 
 	glm::vec3 node_position = glm::vec3(node_transform.gmodel[3]);
 
@@ -52,10 +52,10 @@ void CSkinningSystem::__Update(f32 fDt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto root = CEntityManager::GetRoot();
-	auto& root_component = CEntityManager::GetComponent<FRootComponent>(root);
+	auto root = EntityManager::GetRoot();
+	auto& root_component = EntityManager::GetComponent<FRootComponent>(root);
 
-	auto view = CEntityManager::View<FTransformComponent, FBaseComponent, FMeshComponent>();
+	auto view = EntityManager::View<FTransformComponent, FBaseComponent, FMeshComponent>();
 	for (auto [entity, transform, base, mesh] : view.each())
 	{
 		if (!base.enabled || mesh.skin < 0)
@@ -85,7 +85,7 @@ void CSkinningSystem::__Update(f32 fDt)
 		for (const auto& idx : skin.indices)
 #endif
 		{
-			auto& jtransform = CEntityManager::GetComponent<FTransformComponent>(skin.joints[idx]);
+			auto& jtransform = EntityManager::GetComponent<FTransformComponent>(skin.joints[idx]);
 			skin.jointMatrices[idx] = jtransform.gmodel * skin.inverseBindMatrices[idx];
 			skin.jointMatrices[idx] = inv_transform * skin.jointMatrices[idx];
 		}

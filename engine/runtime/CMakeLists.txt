@@ -4,6 +4,8 @@ project(runtime LANGUAGES CXX)
 find_package(glfw3 REQUIRED)
 
 file(GLOB RUNTIME_SOURCES FILES *.cpp *.h)
+file(GLOB UI_SOURCES FILES ui/*.cpp ui/*.h)
+set(RUNTIME_SOURCES ${RUNTIME_SOURCES} ${UI_SOURCES})
 
 if(WIN32)
     file(GLOB_RECURSE WINDOWS_RUNTIME_SOURCES FILES windows/*.cpp windows/*.h)

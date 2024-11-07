@@ -1,7 +1,5 @@
 #include "components.h"
 
-#include <engine/integrations/imgui/EditorElements.h>
-
 namespace engine
 {
 	namespace world
@@ -12,6 +10,3 @@ namespace engine
 		}
 	}
 }
-
-using namespace engine;
-using namespace engine::world::ecs;

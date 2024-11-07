@@ -25,11 +25,6 @@ namespace engine
 
 	}
 
-	void Application::OnGui()
-	{
-		ImGui::ShowDemoWindow();
-	}
-
 	void Application::Finish()
 	{
 

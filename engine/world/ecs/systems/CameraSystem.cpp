@@ -12,14 +12,14 @@ using namespace engine::world::ecs;
 CCameraSystem::CCameraSystem(render::IRenderer& renderer) :
 	render_world{ renderer.GetRenderWorld() }
 {
-	CEntityManager::RegisterComponent<FCameraComponent>();
+	EntityManager::RegisterComponent<FCameraComponent>();
 }
 
 void CCameraSystem::__Create()
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto& registry = CEntityManager::GetRegistry();
+	auto& registry = EntityManager::GetRegistry();
 
 	auto view = registry.view<FTransformComponent, FBaseComponent, FCameraComponent>();
 	for (auto [entity, transform, base, camera] : view.each())
@@ -30,7 +30,7 @@ void CCameraSystem::__Update(f32 fDt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto view = CEntityManager::View<FTransformComponent, FBaseComponent, FCameraComponent>();
+	auto view = EntityManager::View<FTransformComponent, FBaseComponent, FCameraComponent>();
 	for (auto [entity, transform, base, camera] : view.each())
 	{
 		// TODO: add something like active camera tag

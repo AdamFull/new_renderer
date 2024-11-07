@@ -115,10 +115,10 @@ void CAnimationSystem::__Update(float fDt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto& registry = CEntityManager::GetRegistry();
-	auto root = CEntityManager::GetRoot();
+	auto& registry = EntityManager::GetRegistry();
+	auto root = EntityManager::GetRoot();
 
-	auto& root_component = CEntityManager::GetComponent<FRootComponent>(root);
+	auto& root_component = EntityManager::GetComponent<FRootComponent>(root);
 
 	if (m_animationIndeces.size() != root_component.animations.size())
 	{

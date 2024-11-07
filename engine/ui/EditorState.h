@@ -5,7 +5,7 @@
 
 namespace engine
 {
-	class CEditorState : public utl::pattern::singleton<CEditorState>
+	class EditorState : public utl::pattern::singleton<EditorState>
 	{
 	public:
 		void SetSelection(entt::entity entity);

@@ -8,7 +8,7 @@
 namespace engine
 {
 	using read_file_t = utl::reactive::function<bool(const std::string&, utl::vector<u8>&)>;
-	class CImFontManager : public utl::pattern::singleton<CImFontManager>
+	class ImFontManager : public utl::pattern::singleton<ImFontManager>
 	{
 	public:
 		void AddFont(const char* name, const std::string& path, f32 size, const ImFontConfig* config = nullptr, const ImWchar* glyph_range = nullptr);

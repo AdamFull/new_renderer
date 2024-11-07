@@ -9,6 +9,7 @@ add_subdirectory(filesystem)
 add_subdirectory(profiler)
 add_subdirectory(world)
 add_subdirectory(integrations)
+add_subdirectory(ui)
 
 file(GLOB ENGINE_APP_SOURCES FILES *.cpp *.h)
 
@@ -39,6 +40,7 @@ target_link_libraries(${PROJECT_NAME}
 	PRIVATE engine_profiler
 	PRIVATE runtime
 	PRIVATE engine_rendering
+    PRIVATE engine_ui
 	#PRIVATE render_interface
 	#PRIVATE script_engine
 	PRIVATE engine_world

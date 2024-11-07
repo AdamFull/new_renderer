@@ -5,7 +5,10 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 
-#include "Window.h"
+#include "ImFontManager.h"
+#include "font/IconsMaterialDesignIcons.h"
+
+#include <engine/runtime/Window.h>
 
 namespace engine
 {
@@ -386,6 +389,25 @@ namespace engine
 		}
 	}
 
+	bool ReadFile(const std::string& path, utl::vector<u8>& out)
+	{
+		std::ifstream file(path, std::ios::binary);
+		if (!file.is_open())
+			return false;
+
+		// Seek to the end to determine the file size
+		file.seekg(0, std::ios::end);
+		std::streamsize file_size = file.tellg();
+		file.seekg(0, std::ios::beg);
+
+		out.resize(file_size);
+
+		if (!file.read(reinterpret_cast<char*>(out.data()), file_size))
+			return false;
+
+		return true;
+	}
+
 	EngineUI::EngineUI(Window& window) :
 		window{ window }
 	{
@@ -399,6 +421,37 @@ namespace engine
 		io.BackendRendererName = "vulkan";
 		io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;  // We can honor the ImDrawCmd::VtxOffset field, allowing for large meshes.
 		//io.BackendFlags |= ImGuiBackendFlags_RendererHasViewports;  // We can Create multi-viewports on the Renderer side (optional)
+
+		// Load additional fonts
+		auto& font_manager = ImFontManager::GetInstance();
+		font_manager->SetFileReaderFn([](const std::string& path, utl::vector<u8>& out) { return ReadFile(path, out); });
+
+		auto font_path = std::format("embed/font/{}", FONT_ICON_FILE_NAME_MDI);
+
+		utl::vector<u8> data;
+		ReadFile(font_path, data);
+
+		// Load fonts
+		static const ImWchar icons_ranges[] = { ICON_MIN_MDI, ICON_MAX_MDI, 0 };
+
+		ImFontConfig icons_config;
+		icons_config.MergeMode = true;
+		icons_config.PixelSnapH = true;
+		icons_config.GlyphOffset.y = 1.0f;
+		icons_config.OversampleH = icons_config.OversampleV = 1;
+		icons_config.GlyphMinAdvanceX = 4.0f;
+		icons_config.SizePixels = 12.0f;
+
+		io.Fonts->AddFontDefault();
+		font_manager->AddFont("small_icon", data, 13.f, &icons_config, icons_ranges);
+
+		icons_config.GlyphOffset.y = 15.0f;
+		icons_config.SizePixels = 48.0f;
+		icons_config.GlyphMaxAdvanceX = 48.f;
+
+		//font_manager->AddFont("big_icon", data, 48.f, &icons_config, icons_ranges);
+
+		io.Fonts->Build();
 
 		//ApplyModernStyle();
 		ApplyCinderTheme();

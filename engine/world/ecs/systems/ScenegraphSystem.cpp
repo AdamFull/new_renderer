@@ -13,10 +13,10 @@ using namespace engine::world::ecs;
 
 CScenegraphSystem::CScenegraphSystem()
 {
-	CEntityManager::RegisterComponent<FRootComponent>(EComponentFlagBits::eHiddenInEditor);
-	CEntityManager::RegisterComponent<FBaseComponent>(EComponentFlagBits::eHiddenInEditor);
-	CEntityManager::RegisterComponent<FHierarchyComponent>(EComponentFlagBits::eHiddenInEditor);
-	CEntityManager::RegisterComponent<FTransformComponent>();
+	EntityManager::RegisterComponent<FRootComponent>(EComponentFlagBits::eHiddenInEditor);
+	EntityManager::RegisterComponent<FBaseComponent>(EComponentFlagBits::eHiddenInEditor);
+	EntityManager::RegisterComponent<FHierarchyComponent>(EComponentFlagBits::eHiddenInEditor);
+	EntityManager::RegisterComponent<FTransformComponent>();
 }
 
 void CScenegraphSystem::__Create()
@@ -28,9 +28,9 @@ void CScenegraphSystem::__Update(f32 fDt)
 {
 	TRACY_PROFILE_FUNCTION();
 
-	auto& registry = CEntityManager::GetRegistry();
-	auto root = CEntityManager::GetRoot();
-	if (!CEntityManager::IsValid(root))
+	auto& registry = EntityManager::GetRegistry();
+	auto root = EntityManager::GetRoot();
+	if (!EntityManager::IsValid(root))
 		return;
 
 	buildHierarchy(root);
@@ -38,9 +38,9 @@ void CScenegraphSystem::__Update(f32 fDt)
 
 void CScenegraphSystem::buildHierarchy(entt::entity node)
 {
-	auto& base = CEntityManager::GetComponent<FBaseComponent>(node);
-	auto& transform = CEntityManager::GetComponent<FTransformComponent>(node);
-	auto& hierarchy = CEntityManager::GetComponent<FHierarchyComponent>(node);
+	auto& base = EntityManager::GetComponent<FBaseComponent>(node);
+	auto& transform = EntityManager::GetComponent<FTransformComponent>(node);
+	auto& hierarchy = EntityManager::GetComponent<FHierarchyComponent>(node);
 
 	// Check is update disabled for branch
 	if (!base.enabled)
@@ -50,9 +50,9 @@ void CScenegraphSystem::buildHierarchy(entt::entity node)
 	initMatrix(&transform);
 
 	auto parent = hierarchy.parent;
-	if (CEntityManager::IsValid(parent))
+	if (EntityManager::IsValid(parent))
 	{
-		auto& ptransform = CEntityManager::GetComponent<FTransformComponent>(parent);
+		auto& ptransform = EntityManager::GetComponent<FTransformComponent>(parent);
 		transform.gmodel = ptransform.gmodel * transform.gmodel;
 	}
 

@@ -16,9 +16,9 @@ using namespace engine::world::ecs;
 CLightingSystem::CLightingSystem(render::IRenderer& renderer) :
 	render_world{ renderer.GetRenderWorld() }
 {
-	CEntityManager::RegisterComponent<FDirectionalLightComponent>();
-	CEntityManager::RegisterComponent<FPointLightComponent>();
-	CEntityManager::RegisterComponent<FSpotLightComponent>();
+	EntityManager::RegisterComponent<FDirectionalLightComponent>();
+	EntityManager::RegisterComponent<FPointLightComponent>();
+	EntityManager::RegisterComponent<FSpotLightComponent>();
 }
 
 void CLightingSystem::__Create()
@@ -34,7 +34,7 @@ void CLightingSystem::__Update(f32 fDt)
 	{
 		uint32_t directional_light_count{ 0u };
 	
-		auto view = CEntityManager::View<FTransformComponent, FBaseComponent, FDirectionalLightComponent>();
+		auto view = EntityManager::View<FTransformComponent, FBaseComponent, FDirectionalLightComponent>();
 		for (auto [entity, transform, base, light] : view.each())
 		{
 			if (!base.enabled)
@@ -60,7 +60,7 @@ void CLightingSystem::__Update(f32 fDt)
 	{
 		uint32_t point_light_count{ 0u };
 	
-		auto view = CEntityManager::View<FTransformComponent, FBaseComponent, FPointLightComponent>();
+		auto view = EntityManager::View<FTransformComponent, FBaseComponent, FPointLightComponent>();
 		for (auto [entity, transform, base, light] : view.each())
 		{
 			if (!base.enabled)
@@ -89,7 +89,7 @@ void CLightingSystem::__Update(f32 fDt)
 		uint32_t spot_light_count{ 0u };
 	
 		// TODO: direction as dot product of rotation and some vec
-		auto view = CEntityManager::View<FTransformComponent, FSpotLightComponent>();
+		auto view = EntityManager::View<FTransformComponent, FSpotLightComponent>();
 		for (auto [entity, transform, light] : view.each())
 		{
 			if (spot_light_count > max_spot_light_count)
