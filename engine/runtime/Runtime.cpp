@@ -232,9 +232,6 @@ namespace engine
 			app->Finish();
 		}
 
-		// Reset target environment to default prior to each sample to properly support batch mode
-		//vkb::GLSLCompiler::reset_target_environment();
-
 		app = app_ci->app_allocator();
 
 		if (!app)
