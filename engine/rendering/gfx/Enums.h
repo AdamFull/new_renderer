@@ -118,6 +118,44 @@ namespace engine
 		};
 		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ResourceStateFlags, ResourceStateFlag);
 
+		enum class ResourceStateFlag2
+		{
+			eUndefined = 0,
+			eRead = 1 << 0,
+			eWrite = 1 << 1,
+			eCompute = 1 << 2,
+			eGraphics = 1 << 3,
+			eAttachment = 1 << 4,
+			eDepth = 1 << 5,
+			eStencil = 1 << 6,
+			eSample = 1 << 7,
+			eStorage = 1 << 8,
+			eCopy = 1 << 9,
+			ePresent = 1 << 10,
+
+			// Rendering states
+			eAttachmentRead = eRead | eAttachment,
+			eAttachmentWrite = eWrite | eAttachment,
+
+			// Depth targets
+			eDepthAttachmentRead = eAttachmentRead | eDepth,
+			eDepthAttachmentWrite = eAttachmentWrite | eDepth,
+
+			eStencilAttachmentRead = eAttachmentRead | eStencil,
+			eStencilAttachmentWrite = eAttachmentWrite | eStencil,
+
+			eDepthStencilAttachmentRead = eAttachmentRead | eDepth | eStencil,
+			eDepthStencilAttachmentWrite = eAttachmentWrite | eDepth | eStencil,
+
+			// Copy states
+			eCopyDst = eWrite | eCopy,
+			eCopySrc = eRead | eCopy,
+
+			// Present states
+			ePresentSrc = eRead | ePresent
+		};
+		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ResourceStateFlags2, ResourceStateFlag2);
+
 		enum class AccessTypeFlag
 		{
 			eRead = 1 << 0,

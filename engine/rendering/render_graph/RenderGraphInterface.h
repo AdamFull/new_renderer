@@ -49,6 +49,8 @@ namespace engine
 			gfx::ResourceStateFlags final_state_comp{ gfx::ResourceStateFlag::eUndefined };
 			gfx::ResourceStateFlags final_state_other{ gfx::ResourceStateFlag::eUndefined };
 
+			bool finalized{ false };
+
 			//std::unordered_set<ResourceAccess> usages{};
 
 			gfx::AccessTypeFlags GetAccess() const

@@ -391,10 +391,9 @@ namespace engine
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
 						self.WriteResource(brdf_lut_target);
-						self.ResolveDependencies(command_list);
-
 						self.BindResource(out_color_bnd, brdf_lut_target);
 
+						self.ResolveDependencies(command_list);
 						self.BindResources(command_list);
 				
 						uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
@@ -406,6 +405,12 @@ namespace engine
 				
 						self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
 						command_list.Dispatch(group_x, group_y, group_z);
+
+						self.ReadResource(brdf_lut_target);
+						self.ResolveDependencies(command_list);
+
+						auto& resource = render_graph->GetResource(brdf_lut_target);
+						resource.finalized = true;
 					};
 
 				render_graph->AddNode(render_graph->CreateNode(create_info));
@@ -425,11 +430,11 @@ namespace engine
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
 						self.WriteResource(irradiance_cube_target);
-						self.ResolveDependencies(command_list);
-
-						self.BindResource(sampler_color_bnd, casual_day_4k_cube);
 						self.BindResource(out_color_bnd, irradiance_cube_target);
 
+						self.BindResource(sampler_color_bnd, casual_day_4k_cube);
+						
+						self.ResolveDependencies(command_list);
 						self.BindResources(command_list);
 				
 						uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
@@ -441,6 +446,12 @@ namespace engine
 				
 						self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
 						command_list.Dispatch(group_x, group_y, group_z);
+
+						self.ReadResource(irradiance_cube_target);
+						self.ResolveDependencies(command_list);
+
+						auto& resource = render_graph->GetResource(irradiance_cube_target);
+						resource.finalized = true;
 					};
 
 				render_graph->AddNode(render_graph->CreateNode(create_info));
@@ -467,6 +478,9 @@ namespace engine
 						auto target = render_graph->GetTexture(prefiltered_cube_target);
 						for (int32_t mip = 0; mip < target->GetMipLevelCount(); ++mip)
 						{
+							self.WriteResource(prefiltered_cube_target, mip);
+							self.BindResource(out_color_bnd, prefiltered_cube_target, mip);
+
 							if (mip == 0)
 							{
 								self.BindResource(sampler_color_bnd, casual_day_4k_cube);
@@ -476,9 +490,6 @@ namespace engine
 								self.ReadResource(prefiltered_cube_target, mip - 1);
 								self.BindResource(sampler_color_bnd, prefiltered_cube_target, mip - 1);
 							}
-
-							self.WriteResource(prefiltered_cube_target, mip);
-							self.BindResource(out_color_bnd, prefiltered_cube_target, mip);
 
 							self.ResolveDependencies(command_list);
 							self.BindResources(command_list);
@@ -500,6 +511,9 @@ namespace engine
 
 						self.ReadResource(prefiltered_cube_target);
 						self.ResolveDependencies(command_list);
+
+						auto& resource = render_graph->GetResource(prefiltered_cube_target);
+						resource.finalized = true;
 					};
 
 				static_cast<GroupNode*>(group_node.get())->AddNode(std::move(render_graph->CreateNode(create_info)));
@@ -583,13 +597,13 @@ namespace engine
 						self.WriteResource(hdr0);
 						self.BindResource("write_color"_hash32, hdr0);
 
-						self.ReadResource(brdf_lut_target);
+						//self.ReadResource(brdf_lut_target);
 						self.BindResource("brdf_lut"_hash32, brdf_lut_target);
 
-						self.ReadResource(irradiance_cube_target);
+						//self.ReadResource(irradiance_cube_target);
 						self.BindResource("irradiance_cube"_hash32, irradiance_cube_target);
 
-						self.ReadResource(prefiltered_cube_target);
+						//self.ReadResource(prefiltered_cube_target);
 						self.BindResource("prefiltered_cube"_hash32, prefiltered_cube_target);
 
 						self.ReadResource(visbuffer_geometry_target);

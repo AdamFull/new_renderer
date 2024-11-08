@@ -129,7 +129,7 @@ namespace engine
 			{
 				auto is_depth = IsDepthFormat(create_info.format);
 				new_resource.intermediate_state = is_depth ? gfx::ResourceStateFlag::eDepthWrite : gfx::ResourceStateFlag::eAttachmentWrite;
-				new_resource.final_state_comp = is_depth ? gfx::ResourceStateFlag::eDepthRead : gfx::ResourceStateFlag::eComputeRead;
+				new_resource.final_state_comp = is_depth ? gfx::ResourceStateFlag::eDepthRead : gfx::ResourceStateFlag::eShaderResource;
 				new_resource.final_state_other = is_depth ? gfx::ResourceStateFlag::eDepthRead : gfx::ResourceStateFlag::eShaderResource;
 				new_resource.resource_type = RenderResourceTypeFlag::eRenderTarget;
 			}
@@ -322,7 +322,7 @@ namespace engine
 
 			for (auto& render_resource : render_resources)
 			{
-				if (render_resource.resource_type & RenderResourceTypeFlag::eStaticImage)
+				if (render_resource.resource_type & RenderResourceTypeFlag::eStaticImage || render_resource.finalized)
 					continue;
 
 				render_resource.current_state = gfx::ResourceStateFlag::eUndefined;
