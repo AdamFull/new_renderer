@@ -71,22 +71,30 @@ namespace engine
 					continue;
 				}
 
+				gfx::ResourceStateFlags new_state = gfx::ResourceStateFlag::eAttachmentWrite;
+
 				auto last_access = render_resource.GetAccess();
+
+				gfx::Attachment* attachment{ nullptr };
+				if (resource_attachment.flags & ResourceAttachmentTypeFlag::eDepth)
+				{
+					attachment = &rendering_info.depth_attachment;
+					new_state |= gfx::ResourceStateFlag::eDepth | gfx::ResourceStateFlag::eRead;
+				}
+				else if (resource_attachment.flags & ResourceAttachmentTypeFlag::eStencil)
+				{
+					attachment = &rendering_info.stencil_attachment;
+					new_state |= gfx::ResourceStateFlag::eStencil;
+				}
+				else if (resource_attachment.flags & ResourceAttachmentTypeFlag::eColor)
+					attachment = &rendering_info.attachments[rendering_info.attachment_count++];
 
 				auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
 				barrier.texture = graph.GetTexture(render_resource);
 				barrier.src_state = render_resource.GetState();
-				barrier.dst_state = render_resource.intermediate_state;
+				barrier.dst_state = new_state;
 
-				gfx::Attachment* attachment{ nullptr };
-				if (resource_attachment.flags & ResourceAttachmentTypeFlag::eDepth)
-					attachment = &rendering_info.depth_attachment;
-				else if (resource_attachment.flags & ResourceAttachmentTypeFlag::eStencil)
-					attachment = &rendering_info.stencil_attachment;
-				else if (resource_attachment.flags & ResourceAttachmentTypeFlag::eColor)
-					attachment = &rendering_info.attachments[rendering_info.attachment_count++];
-
-				attachment->texture = graph.GetTexture(resource_attachment.render_resource_id);
+				attachment->texture = barrier.texture;
 				attachment->load_op = last_access == 0 ? gfx::LoadOp::eClear : gfx::LoadOp::eLoad;
 				attachment->store_op = gfx::StoreOp::eNone;
 				attachment->texture_state = barrier.dst_state;

@@ -4,6 +4,8 @@
 #include <engine/rendering/gfx/Context.h>
 #include <util/Logger.h>
 
+#include <engine/rendering/gfx/Util.h>
+
 #include <hash.hpp>
 
 namespace engine
@@ -184,60 +186,47 @@ namespace engine
 			group_z = std::max(static_cast<uint32_t>(std::ceil(static_cast<float>(group_z) / static_cast<float>(reflection.local_sizes[2]))), 1u);
 		}
 
-		void ShaderPass::ResourceDependency(uint32_t render_resource_id, uint32_t subresource_index, gfx::AccessTypeFlags access)
+		void ShaderPass::ResourceDependency(uint32_t binding_point, uint32_t resource_id, uint32_t sebresource_id, gfx::AccessTypeFlags access)
 		{
-			auto& render_resource = graph.GetResource(render_resource_id);
-
-			// Skip static resource dependency
-			if (render_resource.resource_type & RenderResourceTypeFlag::eStaticImage)
-				return;
-
-			auto last_access = render_resource.GetAccess();
-
-			// Skip read after read dependency
-			if ((last_access & gfx::AccessTypeFlag::eRead) && (access & gfx::AccessTypeFlag::eRead))
-				return;
-
-			bool is_initial_state = last_access == 0;
-			bool is_read_after_write = (last_access & gfx::AccessTypeFlag::eWrite) && (access & gfx::AccessTypeFlag::eRead);
-			bool is_write_after_write = (last_access & gfx::AccessTypeFlag::eWrite) && (access & gfx::AccessTypeFlag::eWrite);
-			bool is_write_after_read = (last_access & gfx::AccessTypeFlag::eRead) && (access & gfx::AccessTypeFlag::eWrite);
-
-			gfx::ResourceStateFlags final_state{};
-			if (GetPassType() == ShaderPassType::eCompute)
-				final_state = render_resource.final_state_comp;
-			else
-				final_state = render_resource.final_state_other;
-
-			gfx::ResourceStateFlags new_state{};
-			if (is_initial_state)
-				new_state = (access & gfx::AccessTypeFlag::eRead) ? final_state : render_resource.intermediate_state;
-			else if (is_read_after_write)
-				new_state = final_state;
-			else if (is_write_after_read)
-				new_state = render_resource.intermediate_state;
-			else
-				new_state = final_state;
-
-			if (render_resource.resource_type & RenderResourceTypeFlag::eAllImage)
+			auto& reflection = shader->GetReflection();
+			auto found = std::find_if(reflection.shader_resources.Begin(), reflection.shader_resources.End(), [&binding_point](const gfx::ShaderResource& resource) { return resource.name_hash == binding_point; });
+			if (found != reflection.shader_resources.End())
 			{
-				auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
-				barrier.texture = graph.GetTexture(render_resource);
-				barrier.subresource_index = subresource_index;
-				barrier.src_state = render_resource.GetState();
-				barrier.dst_state = new_state;
-			}
-			else if (render_resource.resource_type & RenderResourceTypeFlag::eBuffer)
-			{
-				// At first creating resource barrier
-				auto& barrier = buffer_barriers[resource_barriers.buffer_barrier_count++];
-				barrier.buffer = graph.GetBuffer(render_resource);
-				barrier.src_state = render_resource.GetState();
-				barrier.dst_state = new_state;
-			}
+				auto& render_resource = graph.GetResource(resource_id);
 
-			// Update resource state
-			render_resource.SetState(new_state);
+				gfx::ResourceStateFlags new_state = gfx::GetAccessState(access);
+
+				auto pass_type = GetPassType();
+				if (pass_type == ShaderPassType::eCompute)
+					new_state |= gfx::ResourceStateFlag::eCompute;
+				else if (pass_type == ShaderPassType::eGraphics)
+					new_state |= gfx::ResourceStateFlag::eGraphics;
+
+				const gfx::ShaderResource& refl_resource = *found;
+				new_state |= gfx::GetStateByDescriptorType(refl_resource.type);
+
+				if (render_resource.resource_type & RenderResourceTypeFlag::eAllImage)
+				{
+					// May be create another tag like unordered resource?
+					if(render_resource.resource_type & RenderResourceTypeFlag::eStorageTarget)
+						new_state |= gfx::ResourceStateFlag::eCompute;
+
+					auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
+					barrier.texture = graph.GetTexture(render_resource);
+					barrier.subresource_index = sebresource_id;
+					barrier.src_state = render_resource.GetState();
+					barrier.dst_state = new_state;
+				}
+				else if (render_resource.resource_type & RenderResourceTypeFlag::eBuffer)
+				{
+					auto& barrier = buffer_barriers[resource_barriers.buffer_barrier_count++];
+					barrier.buffer = graph.GetBuffer(render_resource);
+					barrier.src_state = render_resource.GetState();
+					barrier.dst_state = new_state;
+				}
+
+				render_resource.SetState(new_state);
+			}
 		}
 
 		void ShaderPass::CollectProfileData()
@@ -261,14 +250,14 @@ namespace engine
 			return *constant_block;
 		}
 
-		void ShaderPass::ReadResource(uint32_t render_resource_id, uint32_t subresource_index)
+		void ShaderPass::ReadResource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource_index)
 		{
-			ResourceDependency(render_resource_id, subresource_index, gfx::AccessTypeFlag::eRead);
+			ResourceDependency(binding_point, render_resource_id, subresource_index, gfx::AccessTypeFlag::eRead);
 		}
 
-		void ShaderPass::WriteResource(uint32_t render_resource_id, uint32_t subresource_index)
+		void ShaderPass::WriteResource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource_index)
 		{
-			ResourceDependency(render_resource_id, subresource_index, gfx::AccessTypeFlag::eWrite);
+			ResourceDependency(binding_point, render_resource_id, subresource_index, gfx::AccessTypeFlag::eWrite);
 		}
 
 		void ShaderPass::ResolveDependencies(gfx::CommandList& command_list)
@@ -336,6 +325,18 @@ namespace engine
 					assert(false && "UNKNOWN RESOURCE TYPE");
 				}
 			}
+		}
+
+		void ShaderPass::BindReadResource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index)
+		{
+			ReadResource(binding_point, resource_index, subresource_index);
+			BindResource(binding_point, resource_index, subresource_index);
+		}
+
+		void ShaderPass::BindWriteResource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index)
+		{
+			WriteResource(binding_point, resource_index, subresource_index);
+			BindResource(binding_point, resource_index, subresource_index);
 		}
 
 		bool ShaderPass::CanExecute() const

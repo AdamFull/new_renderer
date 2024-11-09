@@ -100,25 +100,7 @@ namespace engine
 		};
 		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(StageFlags, StageFlag);
 
-		// DX12 like system
 		enum class ResourceStateFlag
-		{
-			eUndefined = 0,
-			eComputeRead = 1 << 0,
-			eComputeWrite = 1 << 1,
-			eDepthRead = 1 << 2,
-			eDepthWrite = 1 << 3,
-			eAttachmentRead = 1 << 4,
-			eAttachmentWrite = 1 << 5,
-			eShaderResource = 1 << 6,
-			eIndirectArgument = 1 << 7,
-			eCopyDst = 1 << 8,
-			eCopySrc = 1 << 9,
-			ePresent = 1 << 10
-		};
-		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ResourceStateFlags, ResourceStateFlag);
-
-		enum class ResourceStateFlag2
 		{
 			eUndefined = 0,
 			eRead = 1 << 0,
@@ -147,6 +129,8 @@ namespace engine
 			eDepthStencilAttachmentRead = eAttachmentRead | eDepth | eStencil,
 			eDepthStencilAttachmentWrite = eAttachmentWrite | eDepth | eStencil,
 
+			eShaderReadOnlyResource = eRead | eCompute | eGraphics | eSample,
+
 			// Copy states
 			eCopyDst = eWrite | eCopy,
 			eCopySrc = eRead | eCopy,
@@ -154,7 +138,7 @@ namespace engine
 			// Present states
 			ePresentSrc = eRead | ePresent
 		};
-		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ResourceStateFlags2, ResourceStateFlag2);
+		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ResourceStateFlags, ResourceStateFlag);
 
 		enum class AccessTypeFlag
 		{

@@ -44,32 +44,17 @@ namespace engine
 
 			gfx::ResourceStateFlags current_state{};
 
-			gfx::ResourceStateFlags intermediate_state{ gfx::ResourceStateFlag::eUndefined };
-
-			gfx::ResourceStateFlags final_state_comp{ gfx::ResourceStateFlag::eUndefined };
-			gfx::ResourceStateFlags final_state_other{ gfx::ResourceStateFlag::eUndefined };
-
 			bool finalized{ false };
 
 			//std::unordered_set<ResourceAccess> usages{};
 
 			gfx::AccessTypeFlags GetAccess() const
 			{
-				if (current_state & (
-					gfx::ResourceStateFlag::eComputeRead |
-					gfx::ResourceStateFlag::eDepthRead |
-					gfx::ResourceStateFlag::eAttachmentRead |
-					gfx::ResourceStateFlag::eShaderResource |
-					gfx::ResourceStateFlag::eIndirectArgument |
-					gfx::ResourceStateFlag::eCopySrc |
-					gfx::ResourceStateFlag::ePresent))
+				if (utl::eq_(current_state, gfx::ResourceStateFlag::eRead))
 					return gfx::AccessTypeFlag::eRead;
-				else if (current_state & (
-					gfx::ResourceStateFlag::eComputeWrite |
-					gfx::ResourceStateFlag::eDepthWrite |
-					gfx::ResourceStateFlag::eAttachmentWrite |
-					gfx::ResourceStateFlag::eCopyDst))
+				else if (utl::eq_(current_state, gfx::ResourceStateFlag::eWrite))
 					return gfx::AccessTypeFlag::eWrite;
+				else if (utl::eq_(current_state, gfx::ResourceStateFlag::eRead | gfx::ResourceStateFlag::eWrite))
 				
 				return {};
 			}

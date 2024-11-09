@@ -201,9 +201,6 @@ namespace engine
 
 			auto& backbuffer_resource_binding = render_graph->GetResource(backbuffer_resource);
 			backbuffer_resource_binding.resource_type = RenderResourceTypeFlag::eBackbuffer;
-			backbuffer_resource_binding.intermediate_state = gfx::ResourceStateFlag::eAttachmentWrite;
-			backbuffer_resource_binding.final_state_comp = gfx::ResourceStateFlag::eShaderResource;
-			backbuffer_resource_binding.final_state_other = gfx::ResourceStateFlag::ePresent;
 
 			// Create default samplers
 
@@ -390,8 +387,7 @@ namespace engine
 					out_color_bnd
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
-						self.WriteResource(brdf_lut_target);
-						self.BindResource(out_color_bnd, brdf_lut_target);
+						self.BindWriteResource(out_color_bnd, brdf_lut_target);
 
 						self.ResolveDependencies(command_list);
 						self.BindResources(command_list);
@@ -405,12 +401,6 @@ namespace engine
 				
 						self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
 						command_list.Dispatch(group_x, group_y, group_z);
-
-						self.ReadResource(brdf_lut_target);
-						self.ResolveDependencies(command_list);
-
-						auto& resource = render_graph->GetResource(brdf_lut_target);
-						resource.finalized = true;
 					};
 
 				render_graph->AddNode(render_graph->CreateNode(create_info));
@@ -429,8 +419,7 @@ namespace engine
 					out_color_bnd
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
-						self.WriteResource(irradiance_cube_target);
-						self.BindResource(out_color_bnd, irradiance_cube_target);
+						self.BindWriteResource(out_color_bnd, irradiance_cube_target);
 
 						self.BindResource(sampler_color_bnd, casual_day_4k_cube);
 						
@@ -446,12 +435,6 @@ namespace engine
 				
 						self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
 						command_list.Dispatch(group_x, group_y, group_z);
-
-						self.ReadResource(irradiance_cube_target);
-						self.ResolveDependencies(command_list);
-
-						auto& resource = render_graph->GetResource(irradiance_cube_target);
-						resource.finalized = true;
 					};
 
 				render_graph->AddNode(render_graph->CreateNode(create_info));
@@ -473,13 +456,12 @@ namespace engine
 					roughness_bnd
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
-						self.WriteResource(prefiltered_cube_target);
+						self.WriteResource(out_color_bnd, prefiltered_cube_target);
 
 						auto target = render_graph->GetTexture(prefiltered_cube_target);
 						for (int32_t mip = 0; mip < target->GetMipLevelCount(); ++mip)
 						{
-							self.WriteResource(prefiltered_cube_target, mip);
-							self.BindResource(out_color_bnd, prefiltered_cube_target, mip);
+							self.BindWriteResource(out_color_bnd, prefiltered_cube_target, mip);
 
 							if (mip == 0)
 							{
@@ -487,8 +469,7 @@ namespace engine
 							}
 							else
 							{
-								self.ReadResource(prefiltered_cube_target, mip - 1);
-								self.BindResource(sampler_color_bnd, prefiltered_cube_target, mip - 1);
+								self.BindReadResource(sampler_color_bnd, prefiltered_cube_target, mip - 1);
 							}
 
 							self.ResolveDependencies(command_list);
@@ -508,12 +489,6 @@ namespace engine
 							self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
 							command_list.Dispatch(group_x, group_y, group_z);
 						}
-
-						self.ReadResource(prefiltered_cube_target);
-						self.ResolveDependencies(command_list);
-
-						auto& resource = render_graph->GetResource(prefiltered_cube_target);
-						resource.finalized = true;
 					};
 
 				static_cast<GroupNode*>(group_node.get())->AddNode(std::move(render_graph->CreateNode(create_info)));
@@ -594,26 +569,14 @@ namespace engine
 					zbuffer_depth_target
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
-						self.WriteResource(hdr0);
-						self.BindResource("write_color"_hash32, hdr0);
+						self.BindWriteResource("write_color"_hash32, hdr0);
+						self.BindReadResource("brdf_lut"_hash32, brdf_lut_target); // binding 1
+						self.BindReadResource("irradiance_cube"_hash32, irradiance_cube_target); // binding 2
+						self.BindReadResource("prefiltered_cube"_hash32, prefiltered_cube_target); // binding 3
 
-						//self.ReadResource(brdf_lut_target);
-						self.BindResource("brdf_lut"_hash32, brdf_lut_target);
-
-						//self.ReadResource(irradiance_cube_target);
-						self.BindResource("irradiance_cube"_hash32, irradiance_cube_target);
-
-						//self.ReadResource(prefiltered_cube_target);
-						self.BindResource("prefiltered_cube"_hash32, prefiltered_cube_target);
-
-						self.ReadResource(visbuffer_geometry_target);
-						self.BindResource("visbuffer_geometry"_hash32, visbuffer_geometry_target);
-
-						self.ReadResource(visbuffer_vboinst_target);
-						self.BindResource("visbuffer_vboinst"_hash32, visbuffer_vboinst_target);
-
-						self.ReadResource(zbuffer_depth_target);
-						self.BindResource("depth_buffer"_hash32, zbuffer_depth_target);
+						self.BindReadResource("visbuffer_geometry"_hash32, visbuffer_geometry_target);
+						self.BindReadResource("visbuffer_vboinst"_hash32, visbuffer_vboinst_target);
+						self.BindReadResource("depth_buffer"_hash32, zbuffer_depth_target);
 
 						self.ResolveDependencies(command_list);
 
@@ -668,10 +631,9 @@ namespace engine
 						command_list.SetViewport(0.f, viewport_height, viewport_width, -viewport_height, 0.f, 1.f);
 						command_list.SerScissor(0u, 0u, viewport_width, viewport_height);
 
-						self.ReadResource(hdr0);
+						self.BindReadResource(input_image_bnd, hdr0);
+
 						self.ResolveDependencies(command_list);
-			
-						self.BindResource(input_image_bnd, hdr0);
 						self.BindResources(command_list);
 						
 						self.Begin(command_list);
@@ -805,7 +767,7 @@ namespace engine
 											resource_binding = imgui_font_texture;
 										}
 
-										self.ReadResource(resource_binding);
+										self.ReadResource("font_sampler"_hash32, resource_binding);
 									}
 								}
 

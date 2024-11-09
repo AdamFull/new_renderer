@@ -95,7 +95,7 @@ namespace engine
 			gfx::Texture* texture = resource_context.LoadTexture(path);
 			new_resource.resource_id = static_textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
 
-			new_resource.current_state = gfx::ResourceStateFlag::eShaderResource;
+			new_resource.current_state = gfx::ResourceStateFlag::eShaderReadOnlyResource;
 
 			return render_resources.size() - 1ull;
 		}
@@ -108,7 +108,7 @@ namespace engine
 			gfx::Texture* texture = resource_context.LoadTexture(create_info, texture_data);
 			new_resource.resource_id = static_textures.Add(TextureObject{ texture, default_sampler });
 
-			new_resource.current_state = gfx::ResourceStateFlag::eShaderResource;
+			new_resource.current_state = gfx::ResourceStateFlag::eShaderReadOnlyResource;
 
 			return render_resources.size() - 1ull;
 		}
@@ -119,20 +119,9 @@ namespace engine
 
 			// TODO: What if it's storage target and render target at the same time?
 			if (create_info.usage & gfx::TextureUsageFlag::eStorage)
-			{
-				new_resource.intermediate_state = gfx::ResourceStateFlag::eComputeWrite;
-				new_resource.final_state_comp = gfx::ResourceStateFlag::eComputeRead;
-				new_resource.final_state_other = gfx::ResourceStateFlag::eShaderResource;
 				new_resource.resource_type = RenderResourceTypeFlag::eStorageTarget;
-			}
 			else if (create_info.usage & gfx::TextureUsageFlag::eRenderTarget)
-			{
-				auto is_depth = IsDepthFormat(create_info.format);
-				new_resource.intermediate_state = is_depth ? gfx::ResourceStateFlag::eDepthWrite : gfx::ResourceStateFlag::eAttachmentWrite;
-				new_resource.final_state_comp = is_depth ? gfx::ResourceStateFlag::eDepthRead : gfx::ResourceStateFlag::eShaderResource;
-				new_resource.final_state_other = is_depth ? gfx::ResourceStateFlag::eDepthRead : gfx::ResourceStateFlag::eShaderResource;
 				new_resource.resource_type = RenderResourceTypeFlag::eRenderTarget;
-			}
 			else
 				new_resource.resource_type = RenderResourceTypeFlag::eStaticImage;
 
@@ -154,10 +143,6 @@ namespace engine
 				auto& new_resource = render_resources.emplace_back();
 				new_resource.resource_type = RenderResourceTypeFlag::eBuffer;
 				new_resource.resource_id = handle;
-
-				new_resource.intermediate_state = gfx::ResourceStateFlag::eComputeWrite;
-				new_resource.final_state_comp = gfx::ResourceStateFlag::eComputeRead;
-				new_resource.final_state_other = gfx::ResourceStateFlag::eShaderResource;
 
 				return render_resources.size() - 1ull;
 			}
@@ -232,7 +217,7 @@ namespace engine
 			texture_barrier.texture = &render_context->GetBackbuffer();
 			// TODO: get current resource state from resource itself
 			texture_barrier.src_state = backbuffer_resource.GetState();
-			texture_barrier.dst_state = backbuffer_resource.final_state_other;
+			texture_barrier.dst_state = gfx::ResourceStateFlag::ePresentSrc;
 
 			command_list.ResourceBarrier(resource_barriers);
 		}
@@ -300,7 +285,7 @@ namespace engine
 				descriptor.array_index = array_index++;
 				descriptor.texture = resource.texture;
 				descriptor.sampler = resource.sampler;
-				descriptor.resource_state = gfx::ResourceStateFlag::eShaderResource;
+				descriptor.resource_state = gfx::ResourceStateFlag::eShaderReadOnlyResource;
 
 				global_resource_descriptor->BindTexture(descriptor);
 			}

@@ -287,7 +287,7 @@ namespace engine
 
 			// Transfer to final layout
 			texture_barrier.src_state = gfx::ResourceStateFlag::eCopyDst;
-			texture_barrier.dst_state = gfx::ResourceStateFlag::eShaderResource;
+			texture_barrier.dst_state = gfx::ResourceStateFlag::eShaderReadOnlyResource;
 			command_list.ResourceBarrier(resource_barrier);
 
 			return texture;
@@ -329,7 +329,7 @@ namespace engine
 
 			// Transfer to final layout
 			texture_barrier.src_state = gfx::ResourceStateFlag::eCopyDst;
-			texture_barrier.dst_state = gfx::ResourceStateFlag::eShaderResource;
+			texture_barrier.dst_state = gfx::ResourceStateFlag::eShaderReadOnlyResource;
 			command_list.ResourceBarrier(resource_barrier);
 
 			return texture;
