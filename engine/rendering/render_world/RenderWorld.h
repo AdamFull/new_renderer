@@ -32,7 +32,7 @@ namespace engine
 
 			void AddLight(const FLightCommit& light_data) override;
 
-			void BeginFrame() override;
+			void BeginFrame(float delta_time) override;
 			void EndFrame() override;
 
 			gfx::IndirectDrawCommand GetDrawCommand() override;

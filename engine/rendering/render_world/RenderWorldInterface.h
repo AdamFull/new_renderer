@@ -54,7 +54,7 @@ namespace engine
 
 			virtual void AddLight(const FLightCommit& light_data) = 0;
 
-			virtual void BeginFrame() = 0;
+			virtual void BeginFrame(float delta_time) = 0;
 			virtual void EndFrame() = 0;
 
 			virtual gfx::IndirectDrawCommand GetDrawCommand() = 0;

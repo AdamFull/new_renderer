@@ -256,9 +256,62 @@ namespace engine
 			new_light = light_data;
 		}
 
-		void RenderWorld::BeginFrame()
+		void RenderWorld::BeginFrame(float delta_time)
 		{
 			auto& render_graph = renderer.GetRenderGraph();
+
+			// Post process data
+			{
+				FGlobalPostProcessingData postprocessing{};
+				// FXAA
+				postprocessing.enable_fxaa = 1;
+				postprocessing.fxaa_quality = 1.f;
+				postprocessing.fxaa_threshold = 0.333f;
+				postprocessing.fxaa_threshold_min = 0.0833f;
+				// Tonemapping
+				postprocessing.enable_tonemap = 0;
+				postprocessing.tm_gamma = 2.2f;
+				postprocessing.tm_exposure = 4.5f;
+				postprocessing.tm_white_point = 4.f;
+				postprocessing.tm_adaptive = 1;
+				// Bloom
+				postprocessing.enable_bloom = 0;
+				postprocessing.b_bloom_strength = 0.3f;
+				postprocessing.b_threshold = 1.f;
+				postprocessing.b_filter_radius = 0.005f;
+				// Dof
+				postprocessing.enable_dof = 0;
+				postprocessing.df_sample_count = 5;
+				postprocessing.df_poly = 8.f;
+				postprocessing.df_focus_point = 8.24f;
+				postprocessing.df_near_field = 0.3f;
+				postprocessing.df_near_transition = 0.125f;
+				postprocessing.df_far_field = 8.f;
+				postprocessing.df_far_transition = 3.f;
+				// Chromatic aberration
+				postprocessing.enable_chromatic_aberration = 0;
+				postprocessing.ca_distortion = 2.2f;
+				postprocessing.ca_iterations = 12;
+				// Film grain
+				postprocessing.enable_film_grain = 0;
+				postprocessing.fg_amount = 0.01f;
+				// Vignette
+				postprocessing.enable_vignette = 0;
+				postprocessing.v_inner_radius = 0.15f;
+				postprocessing.v_outer_radius = 1.35f;
+				postprocessing.v_opacity = 0.85f;
+				// Motion blur
+				postprocessing.enable_motion_blur = 0;
+				postprocessing.mb_scale = (delta_time / 0.01666666f) * 1.f;
+				postprocessing.mb_max_samples = 16;
+				postprocessing.mb_max_velocity = 30.f;
+				postprocessing.mb_threshold = 0.0001f;
+
+				const uint8_t* uniform_data = reinterpret_cast<const uint8_t*>(&postprocessing);
+				uint64_t uniform_size = sizeof(FGlobalPostProcessingData);
+
+				render_graph.UpdateGlobalBinding(2, std::span(uniform_data, uniform_size));
+			}
 
 			// Bind global buffers
 			{

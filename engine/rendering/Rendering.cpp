@@ -23,6 +23,8 @@
 #undef MemoryBarrier
 #endif
 
+#define SWAP_COUNT(in, out) std::swap(in, out); ++pass_count;
+
 namespace engine
 {
 	namespace render
@@ -113,7 +115,7 @@ namespace engine
 			}
 
 			render_graph->BeginFrame();
-			render_world->BeginFrame();
+			render_world->BeginFrame(delta_time);
 
 			render_graph->Evaluate(delta_time);
 
@@ -194,6 +196,9 @@ namespace engine
 			constexpr const uint32_t sampler_color_bnd = "sampler_color"_hash32;
 			constexpr const uint32_t out_color_bnd = "out_color"_hash32;
 			constexpr const uint32_t roughness_bnd = "roughness"_hash32;
+
+			static bool use_low_precision_velocity{ false };
+			static bool enable_fxaa{ true };
 
 			// Register backbuffer resource
 
@@ -363,7 +368,21 @@ namespace engine
 				zbuffer_depth_target = render_graph->AddResource(create_info, nearest_sampler);
 			}
 
+			uint32_t motion_vectors_target{ ~0u };
+			{
+				gfx::TextureCreateInfo create_info{};
+				create_info.width = backbuffer_texture->GetWidth();
+				create_info.height = backbuffer_texture->GetHeight();
+				create_info.format = use_low_precision_velocity ? gfx::Format::eR8G8Unorm : gfx::Format::eR16G16Sfloat;
+				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage;
+				create_info.resizable = true;
+
+				motion_vectors_target = render_graph->AddResource(create_info, nearest_sampler);
+			}
+
 			uint32_t hdr0{ ~0u };
+			uint32_t hdr1{ ~0u };
+			uint32_t hdr0_history{ ~0u };
 			{
 				gfx::TextureCreateInfo create_info{};
 				create_info.width = backbuffer_texture->GetWidth();
@@ -373,6 +392,8 @@ namespace engine
 				create_info.resizable = true;
 
 				hdr0 = render_graph->AddResource(create_info, nearest_sampler);
+				hdr1 = render_graph->AddResource(create_info, nearest_sampler);
+				hdr0_history = render_graph->AddResource(create_info, nearest_sampler);
 			}
 
 			// Passes
@@ -391,16 +412,8 @@ namespace engine
 
 						self.ResolveDependencies(command_list);
 						self.BindResources(command_list);
-				
-						uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
-				
-						auto texture = render_graph->GetTexture(brdf_lut_target);
-				
-						group_x = texture->GetWidth();
-						group_y = texture->GetHeight();
-				
-						self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
-						command_list.Dispatch(group_x, group_y, group_z);
+
+						self.DispatchForTarget(command_list, brdf_lut_target, true);
 					};
 
 				render_graph->AddNode(render_graph->CreateNode(create_info));
@@ -425,16 +438,8 @@ namespace engine
 						
 						self.ResolveDependencies(command_list);
 						self.BindResources(command_list);
-				
-						uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
-				
-						auto texture = render_graph->GetTexture(irradiance_cube_target);
-				
-						group_x = texture->GetWidth();
-						group_y = texture->GetHeight();
-				
-						self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
-						command_list.Dispatch(group_x, group_y, group_z);
+
+						self.DispatchForTarget(command_list, irradiance_cube_target, true);
 					};
 
 				render_graph->AddNode(render_graph->CreateNode(create_info));
@@ -594,19 +599,95 @@ namespace engine
 
 						self.BindResources(command_list);
 
-						uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
-
-						auto texture = render_graph->GetTexture(hdr0);
-
-						group_x = texture->GetWidth();
-						group_y = texture->GetHeight();
-
-						self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
-						command_list.Dispatch(group_x, group_y, group_z);
+						self.DispatchForTarget(command_list, hdr0, true);
 					};
 
 				render_graph->AddNode(render_graph->CreateNode(create_info));
 			}
+
+			// Compute static motion vectors (can be started in another queue)
+			{
+				ComputeShaderPassCreateInfo create_info{};
+				create_info.shader_name = use_low_precision_velocity ? "postprocess:generate_motion_vectors:LOW_PRECISION_VELOCITY" : "postprocess:generate_motion_vectors";
+				create_info.draw_callback = [this,
+					motion_vectors_target,
+					zbuffer_depth_target
+				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+					{
+						self.BindWriteResource("write_color"_hash32, motion_vectors_target);
+						self.BindReadResource("depth_texture"_hash32, zbuffer_depth_target);
+
+						self.ResolveDependencies(command_list);
+						self.BindResources(command_list);
+
+						self.DispatchForTarget(command_list, zbuffer_depth_target, true);
+					};
+
+				render_graph->AddNode(render_graph->CreateNode(create_info));
+			}
+
+			uint32_t input_target = hdr0;
+			uint32_t output_target = hdr1;
+
+			// Copy history
+			{
+				ComputeShaderPassCreateInfo create_info{};
+				create_info.shader_name = "utility:copy_compute";
+
+				create_info.draw_callback = [this,
+					input_target,
+					hdr0_history
+				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+					{
+						self.BindReadResource("sampler_color"_hash32, input_target);
+						self.BindWriteResource("write_color"_hash32, hdr0_history);
+
+						self.ResolveDependencies(command_list);
+						self.BindResources(command_list);
+
+						self.DispatchForTarget(command_list, input_target, true);
+					};
+
+				render_graph->AddNode(render_graph->CreateNode(create_info));
+			}
+
+			uint32_t final_target = input_target;
+
+			// Post processing
+			{
+				u32 pass_count{ 0u };
+
+				// FXAA 
+				{
+					ComputeShaderPassCreateInfo create_info{};
+					create_info.shader_name = "postprocess:apply_effect:FXAA";
+
+					create_info.draw_callback = [this,
+						input_target,
+						output_target
+					](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+						{
+							if (!enable_fxaa)
+								return;
+
+							self.BindReadResource("sampler_color"_hash32, input_target);
+							self.BindWriteResource("write_color"_hash32, output_target);
+
+							self.ResolveDependencies(command_list);
+							self.BindResources(command_list);
+
+							self.DispatchForTarget(command_list, input_target, true);
+						};
+
+					if (enable_fxaa)
+						SWAP_COUNT(input_target, output_target);
+
+					render_graph->AddNode(render_graph->CreateNode(create_info));
+				}
+
+				final_target = pass_count % 2 ? output_target : input_target;
+			}
+
 
 			// Test output shader
 			{
@@ -618,7 +699,7 @@ namespace engine
 				create_info.pipeline_state.color_blending_state.attachment_count = 1;
 			
 				create_info.draw_callback = [this, 
-					hdr0,
+					final_target,
 					input_image_bnd = "input_image"_hash32
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
@@ -631,7 +712,7 @@ namespace engine
 						command_list.SetViewport(0.f, viewport_height, viewport_width, -viewport_height, 0.f, 1.f);
 						command_list.SerScissor(0u, 0u, viewport_width, viewport_height);
 
-						self.BindReadResource(input_image_bnd, hdr0);
+						self.BindReadResource(input_image_bnd, final_target);
 
 						self.ResolveDependencies(command_list);
 						self.BindResources(command_list);

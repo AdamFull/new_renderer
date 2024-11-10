@@ -179,6 +179,8 @@ namespace engine
 			void BindReadResource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index = ~0u);
 			void BindWriteResource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index = ~0u);
 
+			void DispatchForTarget(gfx::CommandList& command_list, uint32_t target_it, bool divide_by_locals);
+
 			virtual void Begin(gfx::CommandList& command_list) = 0;
 			virtual void End(gfx::CommandList& command_list) = 0;
 
