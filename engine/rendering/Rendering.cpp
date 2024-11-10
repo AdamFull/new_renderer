@@ -199,6 +199,11 @@ namespace engine
 
 			static bool use_low_precision_velocity{ false };
 			static bool enable_fxaa{ true };
+			static bool enable_motion_blur{ false };
+			static bool enable_dof{ false };
+			static bool enable_bloom{ false };
+			static bool bloom_use_brightness{ true };
+			static uint32_t bloom_blur_depth = 5;
 			static bool enable_tonemap{ true };
 
 			// Register backbuffer resource
@@ -397,6 +402,33 @@ namespace engine
 				hdr0_history = render_graph->AddResource(create_info, nearest_sampler);
 			}
 
+			uint32_t hdr0_div2{ ~0u };
+			{
+				// TODO: add support for half size targets
+				gfx::TextureCreateInfo create_info{};
+				create_info.width = backbuffer_texture->GetWidth() / 2;
+				create_info.height = backbuffer_texture->GetHeight() / 2;
+				create_info.format = gfx::Format::eB10G11R11UfloatPack32;
+				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage;
+				create_info.resizable = true;
+
+				hdr0_div2 = render_graph->AddResource(create_info, nearest_sampler);
+			}
+
+			uint32_t bloom_target{ ~0u };
+			{
+				// TODO: add support for half size targets
+				gfx::TextureCreateInfo create_info{};
+				create_info.width = backbuffer_texture->GetWidth() / 2;
+				create_info.height = backbuffer_texture->GetHeight() / 2;
+				create_info.levels = bloom_blur_depth;
+				create_info.format = gfx::Format::eB10G11R11UfloatPack32;
+				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage;
+				create_info.resizable = true;
+
+				bloom_target = render_graph->AddResource(create_info, nearest_sampler);
+			}
+
 			// Eye adaptation targets
 			uint32_t avg_brightness_target{ ~0u };
 			{
@@ -519,9 +551,9 @@ namespace engine
 							
 							self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
 							command_list.Dispatch(group_x, group_y, group_z);
-
-							self.FinalizeTarget(command_list, sampler_color_bnd, prefiltered_cube_target);
 						}
+
+						self.FinalizeTarget(command_list, sampler_color_bnd, prefiltered_cube_target);
 					};
 
 				static_cast<GroupNode*>(group_node.get())->AddNode(std::move(render_graph->CreateNode(create_info)));
@@ -713,9 +745,264 @@ namespace engine
 					render_graph->AddNode(render_graph->CreateNode(create_info));
 				}
 
+				// Apply motion blur
+				{
+					ComputeShaderPassCreateInfo create_info{};
+					create_info.shader_name = use_low_precision_velocity ? "postprocess:apply_effect:MOTION_BLUR:LOW_PRECISION_VELOCITY" : "postprocess:apply_effect:MOTION_BLUR";
+
+					create_info.draw_callback = [this,
+						input_target,
+						output_target,
+						motion_vectors_target
+					](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+						{
+							if (!enable_motion_blur)
+								return;
+
+							self.BindReadResource("sampler_color"_hash32, input_target);
+							self.BindReadResource("motion_vectors"_hash32, motion_vectors_target);
+							self.BindWriteResource("write_color"_hash32, output_target);
+
+							self.ResolveDependencies(command_list);
+							self.BindResources(command_list);
+
+							self.DispatchForTarget(command_list, input_target, true);
+						};
+
+					if (enable_motion_blur)
+						SWAP_COUNT(input_target, output_target);
+
+					render_graph->AddNode(render_graph->CreateNode(create_info));
+				}
+
+				// Compute dof
+				{
+					auto group_node = render_graph->CreateNode("DOF", 0xFFFF33FF);
+					auto* node = static_cast<GroupNode*>(group_node.get());
+
+					// Compute bokeh
+					{
+						ComputeShaderPassCreateInfo create_info{};
+						create_info.shader_name = "postprocess:bokeh";
+
+						create_info.draw_callback = [this,
+							input_target,
+							hdr0_div2
+						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+							{
+								if (!enable_dof)
+									return;
+
+								self.BindReadResource("sampler_color"_hash32, input_target);
+								self.BindWriteResource("write_color"_hash32, hdr0_div2);
+								self.ResolveDependencies(command_list);
+								self.BindResources(command_list);
+
+								self.DispatchForTarget(command_list, input_target, true);
+							};
+
+						node->AddNode(std::move(render_graph->CreateNode(create_info)));
+					}
+
+					// Apply dof
+					{
+						ComputeShaderPassCreateInfo create_info{};
+						create_info.shader_name = "postprocess:apply_effect:DOF";
+
+						create_info.draw_callback = [this,
+							input_target,
+							output_target,
+							hdr0_div2,
+							zbuffer_depth_target
+						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+							{
+								if (!enable_dof)
+									return;
+
+								self.BindReadResource("sampler_color"_hash32, input_target);
+								self.BindReadResource("depth_image"_hash32, zbuffer_depth_target);
+								self.BindReadResource("bokeh_color"_hash32, hdr0_div2);
+								self.BindWriteResource("write_color"_hash32, output_target);
+								self.ResolveDependencies(command_list);
+								self.BindResources(command_list);
+
+								self.DispatchForTarget(command_list, input_target, true);
+							};
+
+						node->AddNode(std::move(render_graph->CreateNode(create_info)));
+					}
+
+					if (enable_dof)
+						SWAP_COUNT(input_target, output_target);
+
+					render_graph->AddNode(std::move(group_node));
+				}
+
+				// Compute bloom
+				{
+					auto group_node = render_graph->CreateNode("bloom", 0xFF3333FF);
+					auto* node = static_cast<GroupNode*>(group_node.get());
+
+					// Starting from brightness detection pass
+					{
+						ComputeShaderPassCreateInfo create_info{};
+						create_info.shader_name = bloom_use_brightness ? "postprocess:brightdetect" : "utility:copy_compute";
+
+						create_info.draw_callback = [this,
+							input_target,
+							hdr0_div2
+						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+							{
+								if (!enable_bloom)
+									return;
+
+								self.BindReadResource("sampler_color"_hash32, input_target);
+								self.BindWriteResource("write_color"_hash32, hdr0_div2);
+								self.ResolveDependencies(command_list);
+								self.BindResources(command_list);
+
+								self.DispatchForTarget(command_list, hdr0_div2, true);
+							};
+
+						node->AddNode(std::move(render_graph->CreateNode(create_info)));
+					}
+
+					// Begin downsampling
+					{
+						{
+							ComputeShaderPassCreateInfo create_info{};
+							create_info.shader_name = "postprocess:downsample:FIRST_PASS";
+
+							create_info.draw_callback = [this,
+								hdr0_div2,
+								bloom_target
+							](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+								{
+									if (!enable_bloom)
+										return;
+
+									self.WriteResource("write_color"_hash32, bloom_target);
+
+									self.BindReadResource("sampler_color"_hash32, hdr0_div2);
+									self.BindResource("write_color"_hash32, bloom_target);
+
+									self.ResolveDependencies(command_list);
+									self.BindResources(command_list);
+
+									self.DispatchForTarget(command_list, bloom_target, true);
+								};
+
+							node->AddNode(std::move(render_graph->CreateNode(create_info)));
+						}
+
+						{
+							ComputeShaderPassCreateInfo create_info{};
+							create_info.shader_name = "postprocess:downsample";
+
+							create_info.draw_callback = [this,
+								bloom_target
+							](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+								{
+									if (!enable_bloom)
+										return;
+
+									auto target = render_graph->GetTexture(bloom_target);
+
+									for (int32_t mip = 1; mip < bloom_blur_depth; ++mip)
+									{
+										self.BindReadResource("sampler_color"_hash32, bloom_target, mip - 1);
+										self.BindWriteResource("write_color"_hash32, bloom_target, mip);
+
+										self.ResolveDependencies(command_list);
+										self.BindResources(command_list);
+
+										uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
+
+										group_x = target->GetWidth() >> mip;
+										group_y = target->GetHeight() >> mip;
+
+										self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
+										command_list.Dispatch(group_x, group_y, group_z);
+									}
+								};
+
+							node->AddNode(std::move(render_graph->CreateNode(create_info)));
+						}
+					}
+
+					// Upsample
+					{
+						ComputeShaderPassCreateInfo create_info{};
+						create_info.shader_name = "postprocess:upsample";
+
+						create_info.draw_callback = [this,
+							bloom_target
+						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+							{
+								if (!enable_bloom)
+									return;
+
+								auto target = render_graph->GetTexture(bloom_target);
+
+								for (int32_t mip = bloom_blur_depth - 1; mip > 0; --mip)
+								{
+									self.BindReadResource("sampler_color"_hash32, bloom_target, mip);
+									self.BindWriteResource("write_color"_hash32, bloom_target, mip - 1);
+
+									self.ResolveDependencies(command_list);
+									self.BindResources(command_list);
+
+									uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
+
+									group_x = target->GetWidth() >> (mip - 1);
+									group_y = target->GetHeight() >> (mip - 1);
+
+									self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
+									command_list.Dispatch(group_x, group_y, group_z);
+								}
+							};
+
+						node->AddNode(std::move(render_graph->CreateNode(create_info)));
+					}
+
+					// Apply bloom
+					{
+						ComputeShaderPassCreateInfo create_info{};
+						create_info.shader_name = "postprocess:apply_effect:BLOOM";
+
+						create_info.draw_callback = [this,
+							input_target,
+							output_target,
+							bloom_target,
+							dirt_mask_texture
+						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+							{
+								if (!enable_bloom)
+									return;
+
+								self.BindWriteResource("write_color"_hash32, output_target);
+								self.BindReadResource("sampler_color"_hash32, input_target);
+								self.BindReadResource("bloom_color"_hash32, bloom_target);
+								self.BindResource("dirt_mask"_hash32, dirt_mask_texture);
+
+								self.ResolveDependencies(command_list);
+								self.BindResources(command_list);
+
+								self.DispatchForTarget(command_list, output_target, true);
+							};
+
+						node->AddNode(std::move(render_graph->CreateNode(create_info)));
+					}
+
+					render_graph->AddNode(std::move(group_node));
+
+					if (enable_bloom)
+						SWAP_COUNT(input_target, output_target);
+				}
+
 				// Tonemapping 
 				{
-					auto group_node = render_graph->CreateNode("tonemapping", 0xFFF9F5FF);
+					auto group_node = render_graph->CreateNode("tonemapping", 0xFFF9F51F);
 					auto* node = static_cast<GroupNode*>(group_node.get());
 
 					// Compute histogram
