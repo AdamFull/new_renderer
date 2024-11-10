@@ -197,10 +197,12 @@ namespace engine
 		void RenderWorld::UpdateNode(uint32_t node_id, const glm::mat4& matrix)
 		{
 			auto& node = world_nodes->Get(node_id);
-			if (node.matrixOffset != 0u)
+			world_nodes->MarkDirty(node_id);
+
+			if (node.matrixOffset == 0u)
 			{
 				node.matrixOffset = matrices_offset;
-				world_nodes->MarkDirty(node_id);
+				matrices_offset += 2u;
 			}
 
 			auto* matrices = world_matrices->Data(node.matrixOffset);
