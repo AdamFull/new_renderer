@@ -209,7 +209,7 @@ namespace engine
 				{
 					// May be create another tag like unordered resource?
 					if(render_resource.resource_type & RenderResourceTypeFlag::eStorageTarget)
-						new_state |= gfx::ResourceStateFlag::eCompute;
+						new_state |= gfx::ResourceStateFlag::eGeneral;
 
 					auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
 					barrier.texture = graph.GetTexture(render_resource);

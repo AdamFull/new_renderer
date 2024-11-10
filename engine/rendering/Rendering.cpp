@@ -461,8 +461,6 @@ namespace engine
 						auto target = render_graph->GetTexture(prefiltered_cube_target);
 						for (int32_t mip = 0; mip < target->GetMipLevelCount(); ++mip)
 						{
-							self.BindWriteResource(out_color_bnd, prefiltered_cube_target, mip);
-
 							if (mip == 0)
 							{
 								self.BindResource(sampler_color_bnd, casual_day_4k_cube);
@@ -471,6 +469,8 @@ namespace engine
 							{
 								self.BindReadResource(sampler_color_bnd, prefiltered_cube_target, mip - 1);
 							}
+
+							self.BindWriteResource(out_color_bnd, prefiltered_cube_target, mip);
 
 							self.ResolveDependencies(command_list);
 							self.BindResources(command_list);

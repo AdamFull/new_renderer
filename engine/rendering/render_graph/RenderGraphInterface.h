@@ -55,6 +55,7 @@ namespace engine
 				else if (utl::eq_(current_state, gfx::ResourceStateFlag::eWrite))
 					return gfx::AccessTypeFlag::eWrite;
 				else if (utl::eq_(current_state, gfx::ResourceStateFlag::eRead | gfx::ResourceStateFlag::eWrite))
+					return gfx::AccessTypeFlag::eRead | gfx::AccessTypeFlag::eWrite;
 				
 				return {};
 			}

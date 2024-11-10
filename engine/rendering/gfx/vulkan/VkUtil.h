@@ -109,38 +109,35 @@ namespace engine
 			{
 				if (flags & (ResourceStateFlag::eCompute | ResourceStateFlag::eGraphics))
 				{
-					if(flags & ResourceStateFlag::eStorage)
+					if(flags & ResourceStateFlag::eGeneral)
 						return vk::ImageLayout::eGeneral;
 					if(flags & ResourceStateFlag::eSample)
 						return vk::ImageLayout::eShaderReadOnlyOptimal;
 				}
-				else if (flags & ResourceStateFlag::eAttachment)
+				else if (flags & ResourceStateFlag::eColorAttachment)
 				{
-					if (utl::eq_(flags, ResourceStateFlag::eDepth | ResourceStateFlag::eStencil))
-					{
-						if(utl::eq_(flags, ResourceStateFlag::eRead | ResourceStateFlag::eWrite) || (flags & ResourceStateFlag::eWrite))
-							return vk::ImageLayout::eDepthStencilAttachmentOptimal;
-						else if (flags & ResourceStateFlag::eRead)
-							return vk::ImageLayout::eDepthStencilReadOnlyOptimal;
-					}
-					else if (flags & ResourceStateFlag::eDepth)
-					{
-						if (utl::eq_(flags, ResourceStateFlag::eRead | ResourceStateFlag::eWrite) || (flags & ResourceStateFlag::eWrite))
-							return vk::ImageLayout::eDepthAttachmentOptimal;
-						else if (flags & ResourceStateFlag::eRead)
-							return vk::ImageLayout::eDepthReadOnlyOptimal;
-					}
-					else if (flags & ResourceStateFlag::eStencil)
-					{
-						if (utl::eq_(flags, ResourceStateFlag::eRead | ResourceStateFlag::eWrite) || (flags & ResourceStateFlag::eWrite))
-							return vk::ImageLayout::eStencilAttachmentOptimal;
-						else if (flags & ResourceStateFlag::eRead)
-							return vk::ImageLayout::eStencilReadOnlyOptimal;
-					}
-					else
-					{
-						return vk::ImageLayout::eColorAttachmentOptimal;
-					}
+					return vk::ImageLayout::eColorAttachmentOptimal;
+				}
+				else if (utl::eq_(flags, ResourceStateFlag::eDepthAttachment | ResourceStateFlag::eStencilAttachment))
+				{
+					if (flags & ResourceStateFlag::eWrite)
+						return vk::ImageLayout::eDepthStencilAttachmentOptimal;
+					else if (flags & ResourceStateFlag::eRead)
+						return vk::ImageLayout::eDepthStencilReadOnlyOptimal;
+				}
+				else if (flags & ResourceStateFlag::eDepthAttachment)
+				{
+					if (flags & ResourceStateFlag::eWrite)
+						return vk::ImageLayout::eDepthAttachmentOptimal;
+					else if (flags & ResourceStateFlag::eRead)
+						return vk::ImageLayout::eDepthReadOnlyOptimal;
+				}
+				else if (flags & ResourceStateFlag::eStencilAttachment)
+				{
+					if (flags & ResourceStateFlag::eWrite)
+						return vk::ImageLayout::eStencilAttachmentOptimal;
+					else if (flags & ResourceStateFlag::eRead)
+						return vk::ImageLayout::eStencilReadOnlyOptimal;
 				}
 				else if (flags & ResourceStateFlag::eCopy)
 				{
@@ -182,22 +179,20 @@ namespace engine
 					}
 				}
 
-				if (flags & ResourceStateFlag::eAttachment)
+				if (flags & ResourceStateFlag::eColorAttachment)
 				{
-					if (flags & (ResourceStateFlag::eDepth | ResourceStateFlag::eStencil))
-					{
-						if(flags & ResourceStateFlag::eRead)
-							access |= vk::AccessFlagBits2KHR::eDepthStencilAttachmentRead;
-						if(flags & ResourceStateFlag::eWrite)
-							access |= vk::AccessFlagBits2KHR::eDepthStencilAttachmentWrite;
-					}
-					else
-					{
-						if (flags & ResourceStateFlag::eRead)
-							access |= vk::AccessFlagBits2KHR::eColorAttachmentRead;
-						if (flags & ResourceStateFlag::eWrite)
-							access |= vk::AccessFlagBits2KHR::eColorAttachmentWrite;
-					}
+					if (flags & ResourceStateFlag::eRead)
+						access |= vk::AccessFlagBits2KHR::eColorAttachmentRead;
+					if (flags & ResourceStateFlag::eWrite)
+						access |= vk::AccessFlagBits2KHR::eColorAttachmentWrite;
+				}
+
+				if (flags & (ResourceStateFlag::eDepthAttachment | ResourceStateFlag::eStencilAttachment))
+				{
+					if (flags & ResourceStateFlag::eRead)
+						access |= vk::AccessFlagBits2KHR::eDepthStencilAttachmentRead;
+					if (flags & ResourceStateFlag::eWrite)
+						access |= vk::AccessFlagBits2KHR::eDepthStencilAttachmentWrite;
 				}
 
 				if (flags & ResourceStateFlag::eCopy)
@@ -219,17 +214,14 @@ namespace engine
 					stages |= vk::PipelineStageFlagBits2KHR::eComputeShader;
 				if (flags & ResourceStateFlag::eGraphics)
 					stages |= vk::PipelineStageFlagBits2KHR::eAllGraphics;
-				if (flags & ResourceStateFlag::eAttachment)
+				if (flags & ResourceStateFlag::eColorAttachment)
 				{
-					if (flags & (ResourceStateFlag::eDepth | ResourceStateFlag::eStencil))
-					{
-						if(!(flags & ResourceStateFlag::eSample))
-							stages |= vk::PipelineStageFlagBits2KHR::eEarlyFragmentTests | vk::PipelineStageFlagBits2KHR::eLateFragmentTests;
-					}
-					else
-					{
-						stages |= vk::PipelineStageFlagBits2KHR::eColorAttachmentOutput;
-					}
+					stages |= vk::PipelineStageFlagBits2KHR::eColorAttachmentOutput;
+				}
+				if (flags & (ResourceStateFlag::eDepthAttachment | ResourceStateFlag::eStencilAttachment))
+				{
+					if (!utl::eq_(flags, ResourceStateFlag::eSample))
+						stages |= vk::PipelineStageFlagBits2KHR::eEarlyFragmentTests | vk::PipelineStageFlagBits2KHR::eLateFragmentTests;
 				}
 				if (flags & ResourceStateFlag::eCopy)
 					stages |= vk::PipelineStageFlagBits2KHR::eTransfer;

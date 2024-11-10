@@ -107,27 +107,28 @@ namespace engine
 			eWrite = 1 << 1,
 			eCompute = 1 << 2,
 			eGraphics = 1 << 3,
-			eAttachment = 1 << 4,
-			eDepth = 1 << 5,
-			eStencil = 1 << 6,
+			eColorAttachment = 1 << 4,
+			eDepthAttachment = 1 << 5,
+			eStencilAttachment = 1 << 6,
 			eSample = 1 << 7,
 			eStorage = 1 << 8,
-			eCopy = 1 << 9,
-			ePresent = 1 << 10,
+			eGeneral = 1 << 9,
+			eCopy = 1 << 10,
+			ePresent = 1 << 11,
 
 			// Rendering states
-			eAttachmentRead = eRead | eAttachment,
-			eAttachmentWrite = eWrite | eAttachment,
+			eColorAttachmentRead = eRead | eColorAttachment,
+			eColorAttachmentWrite = eWrite | eColorAttachment,
 
 			// Depth targets
-			eDepthAttachmentRead = eAttachmentRead | eDepth,
-			eDepthAttachmentWrite = eAttachmentWrite | eDepth,
+			eDepthAttachmentRead = eRead | eDepthAttachment,
+			eDepthAttachmentWrite = eWrite | eDepthAttachment,
 
-			eStencilAttachmentRead = eAttachmentRead | eStencil,
-			eStencilAttachmentWrite = eAttachmentWrite | eStencil,
+			eStencilAttachmentRead = eRead | eStencilAttachment,
+			eStencilAttachmentWrite = eWrite | eStencilAttachment,
 
-			eDepthStencilAttachmentRead = eAttachmentRead | eDepth | eStencil,
-			eDepthStencilAttachmentWrite = eAttachmentWrite | eDepth | eStencil,
+			eDepthStencilAttachmentRead = eRead | eDepthAttachment | eStencilAttachment,
+			eDepthStencilAttachmentWrite = eWrite | eDepthAttachment | eStencilAttachment,
 
 			eShaderReadOnlyResource = eRead | eCompute | eGraphics | eSample,
 
