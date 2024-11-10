@@ -199,6 +199,7 @@ namespace engine
 
 			static bool use_low_precision_velocity{ false };
 			static bool enable_fxaa{ true };
+			static bool enable_tonemap{ true };
 
 			// Register backbuffer resource
 
@@ -396,6 +397,28 @@ namespace engine
 				hdr0_history = render_graph->AddResource(create_info, nearest_sampler);
 			}
 
+			// Eye adaptation targets
+			uint32_t avg_brightness_target{ ~0u };
+			{
+				gfx::TextureCreateInfo create_info{};
+				create_info.width = 1u;
+				create_info.height = 1u;
+				create_info.format = gfx::Format::eR32Sfloat;
+				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage;
+				create_info.resizable = false;
+
+				avg_brightness_target = render_graph->AddResource(create_info, nearest_sampler);
+			}
+
+			uint32_t histogram_buffer{ ~0u };
+			{
+				gfx::BufferCreateInfo create_info{};
+				create_info.size = sizeof(uint32_t) * 256u;
+				create_info.usage = gfx::BufferUsageFlag::eStorageBuffer;
+
+				histogram_buffer = render_graph->AddResource(create_info);
+			}
+
 			// Passes
 			// Generate brdflut
 			{
@@ -414,6 +437,7 @@ namespace engine
 						self.BindResources(command_list);
 
 						self.DispatchForTarget(command_list, brdf_lut_target, true);
+						self.FinalizeTarget(command_list, out_color_bnd, brdf_lut_target);
 					};
 
 				render_graph->AddNode(render_graph->CreateNode(create_info));
@@ -440,6 +464,8 @@ namespace engine
 						self.BindResources(command_list);
 
 						self.DispatchForTarget(command_list, irradiance_cube_target, true);
+
+						self.FinalizeTarget(command_list, out_color_bnd, irradiance_cube_target);
 					};
 
 				render_graph->AddNode(render_graph->CreateNode(create_info));
@@ -493,6 +519,8 @@ namespace engine
 							
 							self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
 							command_list.Dispatch(group_x, group_y, group_z);
+
+							self.FinalizeTarget(command_list, sampler_color_bnd, prefiltered_cube_target);
 						}
 					};
 
@@ -575,9 +603,9 @@ namespace engine
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
 						self.BindWriteResource("write_color"_hash32, hdr0);
-						self.BindReadResource("brdf_lut"_hash32, brdf_lut_target); // binding 1
-						self.BindReadResource("irradiance_cube"_hash32, irradiance_cube_target); // binding 2
-						self.BindReadResource("prefiltered_cube"_hash32, prefiltered_cube_target); // binding 3
+						self.BindResource("brdf_lut"_hash32, brdf_lut_target); // binding 1
+						self.BindResource("irradiance_cube"_hash32, irradiance_cube_target); // binding 2
+						self.BindResource("prefiltered_cube"_hash32, prefiltered_cube_target); // binding 3
 
 						self.BindReadResource("visbuffer_geometry"_hash32, visbuffer_geometry_target);
 						self.BindReadResource("visbuffer_vboinst"_hash32, visbuffer_vboinst_target);
@@ -683,6 +711,121 @@ namespace engine
 						SWAP_COUNT(input_target, output_target);
 
 					render_graph->AddNode(render_graph->CreateNode(create_info));
+				}
+
+				// Tonemapping 
+				{
+					auto group_node = render_graph->CreateNode("tonemapping", 0xFFF9F5FF);
+					auto* node = static_cast<GroupNode*>(group_node.get());
+
+					// Compute histogram
+					{
+						ComputeShaderPassCreateInfo create_info{};
+						create_info.shader_name = "postprocess:compute_histogram";
+
+						create_info.draw_callback = [this,
+							input_target,
+							histogram_buffer
+						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+							{
+								if (!enable_tonemap)
+									return;
+
+								self.BindReadResource("sampler_color"_hash32, input_target);
+								self.BindWriteResource("Histogram"_hash32, histogram_buffer);
+								self.ResolveDependencies(command_list);
+
+								float lumMax = 3.f;
+								float lumMin = -5.f;
+								float tau = 1.1f;
+
+								float log_lum_range = lumMax - lumMin;
+
+								auto& uniform = self.GetUniformBlock("FHistogramComputeParams"_hash32);
+								uniform.Set("minLogLum"_hash32, lumMin);
+								uniform.Set("logLumRange"_hash32, log_lum_range);
+
+								self.BindResources(command_list);
+
+								self.DispatchForTarget(command_list, input_target, true);
+							};
+
+						node->AddNode(std::move(render_graph->CreateNode(create_info)));
+					}
+
+					// Compute avg screen space brightness
+					{
+						ComputeShaderPassCreateInfo create_info{};
+						create_info.shader_name = "postprocess:compute_brightness";
+
+						create_info.draw_callback = [this,
+							avg_brightness_target,
+							histogram_buffer,
+							input_target
+						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+							{
+								if (!enable_tonemap)
+									return;
+
+								self.BindReadResource("Histogram"_hash32, histogram_buffer);
+								self.BindWriteResource("target"_hash32, avg_brightness_target);
+								self.ResolveDependencies(command_list);
+
+								float lumMax = 3.f;
+								float lumMin = -5.f;
+								float tau = 1.1f;
+
+								float log_lum_range = lumMax - lumMin;
+								float time_coeff = glm::clamp<f32>(1.0f - glm::exp(-delta_time * tau), 0.0, 1.0);
+
+								auto* texture = render_graph->GetTexture(input_target);
+
+								auto& uniform = self.GetUniformBlock("FHistogramComputeParams"_hash32);
+								uniform.Set("minLogLum"_hash32, lumMin);
+								uniform.Set("logLumRange"_hash32, log_lum_range);
+								uniform.Set("timeCoeff"_hash32, time_coeff);
+								uniform.Set("numPixelsX"_hash32, static_cast<float>(texture->GetWidth()));
+								uniform.Set("numPixelsY"_hash32, static_cast<float>(texture->GetHeight()));
+
+								self.BindResources(command_list);
+
+								command_list.Dispatch(1u, 1u, 1u);
+							};
+
+						node->AddNode(std::move(render_graph->CreateNode(create_info)));
+					}
+
+					// Apply tonemapping
+					{
+						ComputeShaderPassCreateInfo create_info{};
+						create_info.shader_name = "postprocess:apply_effect:TONEMAP";
+
+						create_info.draw_callback = [this,
+							input_target,
+							output_target,
+							avg_brightness_target
+						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+							{
+								if (!enable_tonemap)
+									return;
+
+								self.BindReadResource("avg_luminosity"_hash32, avg_brightness_target);
+								self.BindReadResource("sampler_color"_hash32, input_target);
+								self.BindWriteResource("write_color"_hash32, output_target);
+
+								self.ResolveDependencies(command_list);
+								self.BindResources(command_list);
+
+								self.DispatchForTarget(command_list, input_target, true);
+							};
+
+						if (enable_tonemap)
+							SWAP_COUNT(input_target, output_target);
+
+						node->AddNode(render_graph->CreateNode(create_info));
+					}
+
+					render_graph->AddNode(std::move(group_node));
 				}
 
 				final_target = pass_count % 2 ? output_target : input_target;

@@ -269,7 +269,7 @@ namespace engine
 				postprocessing.fxaa_threshold = 0.333f;
 				postprocessing.fxaa_threshold_min = 0.0833f;
 				// Tonemapping
-				postprocessing.enable_tonemap = 0;
+				postprocessing.enable_tonemap = 1;
 				postprocessing.tm_gamma = 2.2f;
 				postprocessing.tm_exposure = 4.5f;
 				postprocessing.tm_white_point = 4.f;

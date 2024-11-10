@@ -354,6 +354,15 @@ namespace engine
 			command_list.Dispatch(group_x, group_y, group_z);
 		}
 
+		void ShaderPass::FinalizeTarget(gfx::CommandList& command_list, uint32_t binding_point, uint32_t target)
+		{
+			ReadResource(binding_point, target);
+			ResolveDependencies(command_list);
+
+			auto& resource = graph.GetResource(target);
+			resource.finalized = true;
+		}
+
 		bool ShaderPass::CanExecute() const
 		{
 			return can_execute;
