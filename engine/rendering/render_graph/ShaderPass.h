@@ -36,6 +36,7 @@ namespace engine
 			gfx::SharedDescriptor* shared_descriptor{ nullptr };
 
 			std::function<void(ShaderPass&, gfx::CommandList&, float)> draw_callback{};
+			std::function<bool()> enabled_callback{};
 
 			std::string debug_name{};
 			bool one_time{ false };
@@ -205,6 +206,7 @@ namespace engine
 			bool can_execute{ true };
 
 			std::function<void(ShaderPass&, gfx::CommandList&, float)> draw_callback{};
+			std::function<bool()> enabled_callback{};
 
 			gfx::SharedDescriptor* shared_descriptor{ nullptr };
 			gfx::ResourceDescriptor* resource_descriptor{ nullptr };

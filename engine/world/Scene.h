@@ -1,7 +1,5 @@
-#pragma once
-
 #include <engine/interface/filesystem/VirtualFileSystemInterface.h>
-#include <engine/interface/render/RenderInterface.h>
+#include <engine/rendering/RendererInterface.h>
 #include <engine/world/ecs/systems/BaseSystem.h>
 
 #include <libraries/easygltf/include/easygltf/easygltf_base.h>
@@ -12,34 +10,26 @@ namespace engine
 {
 	namespace world
 	{
-		class CSceneGraph;
-
-		struct FSceneLoadedResources
+		struct SceneLoadedResources
 		{
-			utl::hash_map<u64, utl::vector<render::FRHIHandle>> vertexHandlers{};
+			utl::hash_map<uint32_t, utl::vector<uint32_t>> vertexHandlers{};
 
-			utl::vector<u64> textures{};
-			utl::vector<u64> materials{};
+			utl::vector<uint32_t> textures{};
+			utl::vector<uint32_t> materials{};
 		};
 
-		struct FSceneTemporaryResources
-		{
-			utl::vector<std::string> materialNames{};
-			utl::hash_map<u32, entt::entity> nodeToEntity{};
-		};
-
-		class CScene
+		class Scene final
 		{
 		public:
-			CScene(filesystem::IVirtualFileSystemInterface* vfs, render::IRenderInterface* render_interface);
-			~CScene();
+			Scene(filesystem::IVirtualFileSystemInterface* vfs, render::IRenderer& renderer);
+			~Scene();
 
 			void Load(const std::string& path);
-			void MakeGenerateScene(const std::string& path);
 
-			void Update(f32 dt);
-		protected:
+			void Update(float delta_time);
+		private:
 			void LoadGLTF(easygltf::FGLTFRoot& root);
+
 			void LoadNode(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index, f32 global_scale = 1.f);
 
 			void LoadMeshComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index);
@@ -49,11 +39,12 @@ namespace engine
 			void LoadAnimations(const easygltf::FGLTFRoot& root);
 			void LoadSkins(const easygltf::FGLTFRoot& root);
 		private:
-			FSceneLoadedResources m_resources{};
-			FSceneTemporaryResources m_temporary{};
+			render::IRenderer& renderer;
 
-			render::IRenderInterface* m_pRenderInterface{ nullptr };
-			filesystem::IVirtualFileSystemInterface* m_pVFS{ nullptr };
+			filesystem::IVirtualFileSystemInterface* vfs{ nullptr };
+
+			SceneLoadedResources resources{};
+			utl::hash_map<u32, entt::entity> node_to_entity{};
 		};
 	}
 }

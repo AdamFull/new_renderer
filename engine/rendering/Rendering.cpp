@@ -17,6 +17,8 @@
 
 #include <util/Logger.h>
 
+#include "Globals.h"
+
 #include <imgui.h>
 
 #ifdef MemoryBarrier
@@ -29,6 +31,8 @@ namespace engine
 {
 	namespace render
 	{
+		PostProcessData postprocess{};
+
 		Renderer::Renderer(Window* window, filesystem::IVirtualFileSystemInterface* vfs) :
 			vfs{ vfs }
 		{
@@ -198,13 +202,8 @@ namespace engine
 			constexpr const uint32_t roughness_bnd = "roughness"_hash32;
 
 			static bool use_low_precision_velocity{ false };
-			static bool enable_fxaa{ true };
-			static bool enable_motion_blur{ false };
-			static bool enable_dof{ false };
-			static bool enable_bloom{ false };
 			static bool bloom_use_brightness{ true };
 			static uint32_t bloom_blur_depth = 5;
-			static bool enable_tonemap{ true };
 
 			// Register backbuffer resource
 
@@ -722,14 +721,13 @@ namespace engine
 					ComputeShaderPassCreateInfo create_info{};
 					create_info.shader_name = "postprocess:apply_effect:FXAA";
 
+					create_info.enabled_callback = []() -> bool { return postprocess.fxaa.enable; };
 					create_info.draw_callback = [this,
 						input_target,
-						output_target
+						output_target,
+						enabled = &postprocess.fxaa.enable
 					](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 						{
-							if (!enable_fxaa)
-								return;
-
 							self.BindReadResource("sampler_color"_hash32, input_target);
 							self.BindWriteResource("write_color"_hash32, output_target);
 
@@ -739,7 +737,7 @@ namespace engine
 							self.DispatchForTarget(command_list, input_target, true);
 						};
 
-					if (enable_fxaa)
+					if (postprocess.fxaa.enable)
 						SWAP_COUNT(input_target, output_target);
 
 					render_graph->AddNode(render_graph->CreateNode(create_info));
@@ -750,15 +748,13 @@ namespace engine
 					ComputeShaderPassCreateInfo create_info{};
 					create_info.shader_name = use_low_precision_velocity ? "postprocess:apply_effect:MOTION_BLUR:LOW_PRECISION_VELOCITY" : "postprocess:apply_effect:MOTION_BLUR";
 
+					create_info.enabled_callback = []() -> bool { return postprocess.motionblur.enable; };
 					create_info.draw_callback = [this,
 						input_target,
 						output_target,
 						motion_vectors_target
 					](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 						{
-							if (!enable_motion_blur)
-								return;
-
 							self.BindReadResource("sampler_color"_hash32, input_target);
 							self.BindReadResource("motion_vectors"_hash32, motion_vectors_target);
 							self.BindWriteResource("write_color"_hash32, output_target);
@@ -769,7 +765,7 @@ namespace engine
 							self.DispatchForTarget(command_list, input_target, true);
 						};
 
-					if (enable_motion_blur)
+					if (postprocess.motionblur.enable)
 						SWAP_COUNT(input_target, output_target);
 
 					render_graph->AddNode(render_graph->CreateNode(create_info));
@@ -779,6 +775,7 @@ namespace engine
 				{
 					auto group_node = render_graph->CreateNode("DOF", 0xFFFF33FF);
 					auto* node = static_cast<GroupNode*>(group_node.get());
+					node->SetGroupEnabledCallback([]() -> bool { return postprocess.dof.enable; });
 
 					// Compute bokeh
 					{
@@ -790,9 +787,6 @@ namespace engine
 							hdr0_div2
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
-								if (!enable_dof)
-									return;
-
 								self.BindReadResource("sampler_color"_hash32, input_target);
 								self.BindWriteResource("write_color"_hash32, hdr0_div2);
 								self.ResolveDependencies(command_list);
@@ -816,9 +810,6 @@ namespace engine
 							zbuffer_depth_target
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
-								if (!enable_dof)
-									return;
-
 								self.BindReadResource("sampler_color"_hash32, input_target);
 								self.BindReadResource("depth_image"_hash32, zbuffer_depth_target);
 								self.BindReadResource("bokeh_color"_hash32, hdr0_div2);
@@ -832,7 +823,7 @@ namespace engine
 						node->AddNode(std::move(render_graph->CreateNode(create_info)));
 					}
 
-					if (enable_dof)
+					if (postprocess.dof.enable)
 						SWAP_COUNT(input_target, output_target);
 
 					render_graph->AddNode(std::move(group_node));
@@ -842,6 +833,7 @@ namespace engine
 				{
 					auto group_node = render_graph->CreateNode("bloom", 0xFF3333FF);
 					auto* node = static_cast<GroupNode*>(group_node.get());
+					node->SetGroupEnabledCallback([]() -> bool { return postprocess.bloom.enable; });
 
 					// Starting from brightness detection pass
 					{
@@ -853,9 +845,6 @@ namespace engine
 							hdr0_div2
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
-								if (!enable_bloom)
-									return;
-
 								self.BindReadResource("sampler_color"_hash32, input_target);
 								self.BindWriteResource("write_color"_hash32, hdr0_div2);
 								self.ResolveDependencies(command_list);
@@ -878,9 +867,6 @@ namespace engine
 								bloom_target
 							](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 								{
-									if (!enable_bloom)
-										return;
-
 									self.WriteResource("write_color"_hash32, bloom_target);
 
 									self.BindReadResource("sampler_color"_hash32, hdr0_div2);
@@ -903,9 +889,6 @@ namespace engine
 								bloom_target
 							](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 								{
-									if (!enable_bloom)
-										return;
-
 									auto target = render_graph->GetTexture(bloom_target);
 
 									for (int32_t mip = 1; mip < bloom_blur_depth; ++mip)
@@ -939,9 +922,6 @@ namespace engine
 							bloom_target
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
-								if (!enable_bloom)
-									return;
-
 								auto target = render_graph->GetTexture(bloom_target);
 
 								for (int32_t mip = bloom_blur_depth - 1; mip > 0; --mip)
@@ -977,9 +957,6 @@ namespace engine
 							dirt_mask_texture
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
-								if (!enable_bloom)
-									return;
-
 								self.BindWriteResource("write_color"_hash32, output_target);
 								self.BindReadResource("sampler_color"_hash32, input_target);
 								self.BindReadResource("bloom_color"_hash32, bloom_target);
@@ -996,7 +973,7 @@ namespace engine
 
 					render_graph->AddNode(std::move(group_node));
 
-					if (enable_bloom)
+					if (postprocess.bloom.enable)
 						SWAP_COUNT(input_target, output_target);
 				}
 
@@ -1004,6 +981,7 @@ namespace engine
 				{
 					auto group_node = render_graph->CreateNode("tonemapping", 0xFFF9F51F);
 					auto* node = static_cast<GroupNode*>(group_node.get());
+					node->SetGroupEnabledCallback([]() -> bool { return postprocess.tonemap.enable; });
 
 					// Compute histogram
 					{
@@ -1015,21 +993,14 @@ namespace engine
 							histogram_buffer
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
-								if (!enable_tonemap)
-									return;
-
 								self.BindReadResource("sampler_color"_hash32, input_target);
 								self.BindWriteResource("Histogram"_hash32, histogram_buffer);
 								self.ResolveDependencies(command_list);
 
-								float lumMax = 3.f;
-								float lumMin = -5.f;
-								float tau = 1.1f;
-
-								float log_lum_range = lumMax - lumMin;
+								float log_lum_range = postprocess.tonemap.lumMax - postprocess.tonemap.lumMin;
 
 								auto& uniform = self.GetUniformBlock("FHistogramComputeParams"_hash32);
-								uniform.Set("minLogLum"_hash32, lumMin);
+								uniform.Set("minLogLum"_hash32, postprocess.tonemap.lumMin);
 								uniform.Set("logLumRange"_hash32, log_lum_range);
 
 								self.BindResources(command_list);
@@ -1051,24 +1022,17 @@ namespace engine
 							input_target
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
-								if (!enable_tonemap)
-									return;
-
 								self.BindReadResource("Histogram"_hash32, histogram_buffer);
 								self.BindWriteResource("target"_hash32, avg_brightness_target);
 								self.ResolveDependencies(command_list);
 
-								float lumMax = 3.f;
-								float lumMin = -5.f;
-								float tau = 1.1f;
-
-								float log_lum_range = lumMax - lumMin;
-								float time_coeff = glm::clamp<f32>(1.0f - glm::exp(-delta_time * tau), 0.0, 1.0);
+								float log_lum_range = postprocess.tonemap.lumMax - postprocess.tonemap.lumMin;
+								float time_coeff = glm::clamp<f32>(1.0f - glm::exp(-delta_time * postprocess.tonemap.tau), 0.0, 1.0);
 
 								auto* texture = render_graph->GetTexture(input_target);
 
 								auto& uniform = self.GetUniformBlock("FHistogramComputeParams"_hash32);
-								uniform.Set("minLogLum"_hash32, lumMin);
+								uniform.Set("minLogLum"_hash32, postprocess.tonemap.lumMin);
 								uniform.Set("logLumRange"_hash32, log_lum_range);
 								uniform.Set("timeCoeff"_hash32, time_coeff);
 								uniform.Set("numPixelsX"_hash32, static_cast<float>(texture->GetWidth()));
@@ -1093,9 +1057,6 @@ namespace engine
 							avg_brightness_target
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
-								if (!enable_tonemap)
-									return;
-
 								self.BindReadResource("avg_luminosity"_hash32, avg_brightness_target);
 								self.BindReadResource("sampler_color"_hash32, input_target);
 								self.BindWriteResource("write_color"_hash32, output_target);
@@ -1106,7 +1067,7 @@ namespace engine
 								self.DispatchForTarget(command_list, input_target, true);
 							};
 
-						if (enable_tonemap)
+						if (postprocess.tonemap.enable)
 							SWAP_COUNT(input_target, output_target);
 
 						node->AddNode(render_graph->CreateNode(create_info));

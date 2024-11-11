@@ -3,6 +3,8 @@
 
 #include <glm/gtx/quaternion.hpp>
 
+#include "Globals.h"
+
 namespace engine
 {
 	namespace render
@@ -264,48 +266,48 @@ namespace engine
 			{
 				FGlobalPostProcessingData postprocessing{};
 				// FXAA
-				postprocessing.enable_fxaa = 1;
-				postprocessing.fxaa_quality = 1.f;
-				postprocessing.fxaa_threshold = 0.333f;
-				postprocessing.fxaa_threshold_min = 0.0833f;
+				postprocessing.enable_fxaa = static_cast<uint32_t>(postprocess.fxaa.enable);
+				postprocessing.fxaa_quality = fxaa_quality_variant[postprocess.fxaa.quality];
+				postprocessing.fxaa_threshold = fxaa_threshold_variant[postprocess.fxaa.threshold];
+				postprocessing.fxaa_threshold_min = fxaa_threshold_min_variant[postprocess.fxaa.threshold_min];
 				// Tonemapping
-				postprocessing.enable_tonemap = 1;
-				postprocessing.tm_gamma = 2.2f;
-				postprocessing.tm_exposure = 4.5f;
-				postprocessing.tm_white_point = 4.f;
-				postprocessing.tm_adaptive = 1;
+				postprocessing.enable_tonemap = static_cast<uint32_t>(postprocess.tonemap.enable);
+				postprocessing.tm_gamma = postprocess.tonemap.gamma;
+				postprocessing.tm_exposure = postprocess.tonemap.exposure;
+				postprocessing.tm_white_point = postprocess.tonemap.whitePoint;
+				postprocessing.tm_adaptive = postprocess.tonemap.adaptive;
 				// Bloom
-				postprocessing.enable_bloom = 0;
-				postprocessing.b_bloom_strength = 0.3f;
-				postprocessing.b_threshold = 1.f;
-				postprocessing.b_filter_radius = 0.005f;
+				postprocessing.enable_bloom = static_cast<uint32_t>(postprocess.bloom.enable);
+				postprocessing.b_bloom_strength = postprocess.bloom.strength;
+				postprocessing.b_threshold = postprocess.bloom.threshold;
+				postprocessing.b_filter_radius = postprocess.bloom.filter_radius;
 				// Dof
-				postprocessing.enable_dof = 0;
-				postprocessing.df_sample_count = 5;
-				postprocessing.df_poly = 8.f;
-				postprocessing.df_focus_point = 8.24f;
-				postprocessing.df_near_field = 0.3f;
-				postprocessing.df_near_transition = 0.125f;
-				postprocessing.df_far_field = 8.f;
-				postprocessing.df_far_transition = 3.f;
+				postprocessing.enable_dof = static_cast<uint32_t>(postprocess.dof.enable);
+				postprocessing.df_sample_count = postprocess.dof.bokeh_samples;
+				postprocessing.df_poly = postprocess.dof.bokeh_poly;
+				postprocessing.df_focus_point = postprocess.dof.focus_point;
+				postprocessing.df_near_field = postprocess.dof.near_field;
+				postprocessing.df_near_transition = postprocess.dof.near_transition;
+				postprocessing.df_far_field = postprocess.dof.far_field;
+				postprocessing.df_far_transition = postprocess.dof.far_transition;
 				// Chromatic aberration
-				postprocessing.enable_chromatic_aberration = 0;
-				postprocessing.ca_distortion = 2.2f;
-				postprocessing.ca_iterations = 12;
+				postprocessing.enable_chromatic_aberration = static_cast<uint32_t>(postprocess.aberration.enable);
+				postprocessing.ca_distortion = postprocess.aberration.distortion;
+				postprocessing.ca_iterations = postprocess.aberration.iterations;
 				// Film grain
-				postprocessing.enable_film_grain = 0;
-				postprocessing.fg_amount = 0.01f;
+				postprocessing.enable_film_grain = static_cast<uint32_t>(postprocess.filmgrain.enable);
+				postprocessing.fg_amount = postprocess.filmgrain.amount;
 				// Vignette
-				postprocessing.enable_vignette = 0;
-				postprocessing.v_inner_radius = 0.15f;
-				postprocessing.v_outer_radius = 1.35f;
-				postprocessing.v_opacity = 0.85f;
+				postprocessing.enable_vignette = static_cast<uint32_t>(postprocess.vignette.enable);
+				postprocessing.v_inner_radius = postprocess.vignette.inner;
+				postprocessing.v_outer_radius = postprocess.vignette.outer;
+				postprocessing.v_opacity = postprocess.vignette.opacity;
 				// Motion blur
-				postprocessing.enable_motion_blur = 0;
-				postprocessing.mb_scale = (delta_time / 0.01666666f) * 1.f;
-				postprocessing.mb_max_samples = 16;
-				postprocessing.mb_max_velocity = 30.f;
-				postprocessing.mb_threshold = 0.0001f;
+				postprocessing.enable_motion_blur = static_cast<uint32_t>(postprocess.motionblur.enable);
+				postprocessing.mb_scale = (delta_time / 0.01666666f) * postprocess.motionblur.scele;
+				postprocessing.mb_max_samples = postprocess.motionblur.max_samples;
+				postprocessing.mb_max_velocity = postprocess.motionblur.max_velocity;
+				postprocessing.mb_threshold = postprocess.motionblur.threshold;
 
 				const uint8_t* uniform_data = reinterpret_cast<const uint8_t*>(&postprocessing);
 				uint64_t uniform_size = sizeof(FGlobalPostProcessingData);

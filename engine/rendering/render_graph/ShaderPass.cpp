@@ -19,7 +19,8 @@ namespace engine
 			debug_name{ create_info.debug_name },
 			one_time{ create_info.one_time },
 			shared_descriptor{ create_info.shared_descriptor },
-			draw_callback{ create_info.draw_callback }
+			draw_callback{ create_info.draw_callback },
+			enabled_callback{ create_info.enabled_callback }
 		{
 			auto& reflection = shader->GetReflection();
 			
@@ -78,6 +79,9 @@ namespace engine
 			assert(execution_context && "CANNOT EXECUTE PASS WITHOUT EXECUTION CONTEXT");
 
 			if (!can_execute)
+				return;
+
+			if (enabled_callback && !enabled_callback())
 				return;
 
 			// Collect previous frame data

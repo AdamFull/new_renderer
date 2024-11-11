@@ -18,9 +18,9 @@ using namespace engine::world::ecs;
 
 constexpr const f32 cascade_split_lambda = 0.85f;
 
-CShadowsSystem::CShadowsSystem(IRenderInterface* render_interface)
+CShadowsSystem::CShadowsSystem(render::IRenderer& renderer) :
+	render_world{ renderer.GetRenderWorld() }
 {
-	m_pRenderInterface = render_interface;
 }
 
 void CShadowsSystem::__Create()

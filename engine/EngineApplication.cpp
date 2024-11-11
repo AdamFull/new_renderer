@@ -4,10 +4,11 @@
 
 #include <util/Logger.h>
 #include <engine/rendering/Rendering.h>
-#include <world/NewScene.h>
+#include <world/Scene.h>
 
 #include <engine/ui/windows/HierarchyWindow.h>
 #include <engine/ui/windows/InspectorWindow.h>
+#include <engine/ui/windows/PostProcessWindow.h>
 
 namespace engine
 {
@@ -52,6 +53,7 @@ namespace engine
 	{
 		app_windows.emplace_back(std::make_unique<HierarchyWindow>("Hierarchy"));
 		app_windows.emplace_back(std::make_unique<InspectorWindow>("Inspector"));
+		app_windows.emplace_back(std::make_unique<PostProcessWindow>("PostProcess"));
 
 		renderer = std::make_unique<render::Renderer>(options.window, options.virtual_filesystem);
 

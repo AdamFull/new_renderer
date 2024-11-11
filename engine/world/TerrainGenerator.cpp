@@ -1,5 +1,6 @@
 #include "TerrainGenerator.h"
 
+/*
 using namespace engine::world;
 
 struct FTerrainVertex
@@ -112,3 +113,4 @@ bool CTerrainGenerator::generate(utl::vector<FTerrainVertexAttribute>& out_attri
 
 	return true;
 }
+*/

@@ -100,6 +100,7 @@ namespace engine
 			std::string shader_name{};
 
 			std::function<void(ShaderPass&, gfx::CommandList&, float)> draw_callback{};
+			std::function<bool()> enabled_callback{};
 
 			// Means that this pass will be executed only one time
 			bool one_time{ false };

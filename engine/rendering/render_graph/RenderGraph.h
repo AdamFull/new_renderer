@@ -25,11 +25,14 @@ namespace engine
 
 			void AddNode(std::unique_ptr<IGraphNode>&& node);
 
+			void SetGroupEnabledCallback(std::function<bool()>&& callback);
+
 			void Evaluate(gfx::CommandList& command_list, float delta_time) override;
 		private:
 			std::string group_name{};
 			uint32_t group_color{ 0xFFFFFFFF };
 
+			std::function<bool()> enabled_callback{};
 			std::vector<std::unique_ptr<IGraphNode>> graph_nodes{};
 		};
 

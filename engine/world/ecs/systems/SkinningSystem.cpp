@@ -38,9 +38,9 @@ void debug_draw_skeleton(entt::entity node, glm::mat4 parent_matrix = glm::mat4(
 		debug_draw_skeleton(child, node_transform.gmodel);
 }
 
-CSkinningSystem::CSkinningSystem(render::IRenderInterface* render_interface)
+CSkinningSystem::CSkinningSystem(render::IRenderer& renderer) :
+	render_world{ renderer.GetRenderWorld() }
 {
-	m_pRenderInterface = render_interface;
 }
 
 void CSkinningSystem::__Create()

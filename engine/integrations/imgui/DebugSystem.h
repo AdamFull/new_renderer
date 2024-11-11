@@ -1,7 +1,7 @@
 #pragma once
 
 #include <interface/EngineSystem.h>
-#include <interface/render/RenderInterface.h>
+#include <engine/rendering/RendererInterface.h>
 #include <engine/runtime/InputEvents.h>
 
 namespace engine
@@ -9,7 +9,7 @@ namespace engine
 	class CDebugDrawEngineSystem : public IEngineSystem
 	{
 	public:
-		CDebugDrawEngineSystem(render::IRenderInterface* render_interface);
+		CDebugDrawEngineSystem(render::IRenderer& renderer);
 		~CDebugDrawEngineSystem() = default;
 
 		void Initialize() override;
@@ -21,6 +21,6 @@ namespace engine
 
 		void Destroy() override;
 	private:
-		render::IRenderInterface* m_pRenderInterface{ nullptr };
+		render::IRenderWorld& render_world;
 	};
 }
