@@ -21,7 +21,7 @@ namespace engine
 			virtual gfx::ResourceContext const& GetResourceContext() const = 0;
 
 			virtual uint32_t AddRenderResource(const std::string& path, gfx::Sampler* sampler = nullptr) = 0;
-			virtual uint32_t AddRenderResource(const gfx::TextureCreateInfo& create_info, gfx::Sampler* sampler = nullptr) = 0;
+			virtual uint32_t AddRenderResource(const TextureResourceCreateInfo& create_info, gfx::Sampler* sampler = nullptr) = 0;
 
 			virtual uint32_t AddRenderResource(const gfx::BufferCreateInfo& create_info) = 0;
 

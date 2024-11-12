@@ -121,6 +121,24 @@ namespace engine
 			void AddReadAttachment(uint32_t render_resource_id, ResourceAttachmentTypeFlags flags = {}) { resource_attachments.emplace_back(gfx::AccessTypeFlag::eRead, flags, render_resource_id, gfx::ClearColor{}); }
 		};
 
+		struct TextureResourceCreateInfo
+		{
+			gfx::TextureUsageFlags usage{};
+
+			uint32_t width{ 1u };
+			uint32_t height{ 1u };
+			uint32_t depth{ 1u };
+
+			uint32_t layers{ 1u };
+			uint32_t levels{ 1u };
+
+			bool resizable{ false };
+			float scale{ 1.f };
+			uint32_t scale_parent_resource{ ~0u };
+
+			gfx::Format format{ gfx::Format::eUndefined };
+		};
+
 		struct TextureObject
 		{
 			gfx::Texture* texture{ nullptr };
@@ -128,6 +146,8 @@ namespace engine
 
 			gfx::TextureUsageFlags usage{};
 			bool resizable{ false };
+			float scale{ 1.f };
+			uint32_t scale_parent_resource{ ~0u };
 		};
 
 		struct BufferObject
@@ -150,8 +170,8 @@ namespace engine
 
 			virtual uint32_t AddResource() = 0;
 			virtual uint32_t AddResource(const std::string& path, gfx::Sampler* sampler = nullptr) = 0;
-			virtual uint32_t AddResource(const gfx::TextureCreateInfo& create_info, std::span<uint8_t> texture_data) = 0;
-			virtual uint32_t AddResource(const gfx::TextureCreateInfo& create_info, gfx::Sampler* sampler = nullptr) = 0;
+			virtual uint32_t AddResource(const TextureResourceCreateInfo& create_info, std::span<uint8_t> texture_data) = 0;
+			virtual uint32_t AddResource(const TextureResourceCreateInfo& create_info, gfx::Sampler* sampler = nullptr) = 0;
 			virtual uint32_t AddResource(const gfx::BufferCreateInfo& create_info) = 0;
 
 			virtual RenderGraphResource& GetResource(uint32_t resource_index) = 0;

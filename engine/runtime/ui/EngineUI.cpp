@@ -460,6 +460,7 @@ namespace engine
 
 	EngineUI::~EngineUI()
 	{
+		ImGui::EndFrame();
 		ImGui::DestroyContext();
 	}
 

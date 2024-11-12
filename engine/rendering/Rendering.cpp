@@ -61,7 +61,7 @@ namespace engine
 			return render_graph->AddResource(path, sampler);
 		}
 
-		uint32_t Renderer::AddRenderResource(const gfx::TextureCreateInfo& create_info, gfx::Sampler* sampler)
+		uint32_t Renderer::AddRenderResource(const TextureResourceCreateInfo& create_info, gfx::Sampler* sampler)
 		{
 			return render_graph->AddResource(create_info, sampler);
 		}
@@ -253,7 +253,7 @@ namespace engine
 			uint32_t brdf_lut_target{ ~0u };
 			{
 				// TODO: make it fixed size
-				gfx::TextureCreateInfo create_info{};
+				TextureResourceCreateInfo create_info{};
 				create_info.width = create_info.height = 1024u;
 				create_info.format = gfx::Format::eR16G16Sfloat;
 				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage;
@@ -264,7 +264,7 @@ namespace engine
 
 			uint32_t irradiance_cube_target{ ~0u };
 			{
-				gfx::TextureCreateInfo create_info{};
+				TextureResourceCreateInfo create_info{};
 				create_info.width = create_info.height = 64u;
 				create_info.format = gfx::Format::eR32G32B32A32Sfloat;
 				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage | gfx::TextureUsageFlag::eCubemap;
@@ -275,7 +275,7 @@ namespace engine
 
 			uint32_t prefiltered_cube_target{ ~0u };
 			{
-				gfx::TextureCreateInfo create_info{};
+				TextureResourceCreateInfo create_info{};
 				create_info.width = create_info.height = 512u;
 				create_info.format = gfx::Format::eR16G16B16A16Sfloat;
 				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage | gfx::TextureUsageFlag::eCubemap;
@@ -300,7 +300,7 @@ namespace engine
 			// Shadow targets
 			uint32_t cascaded_shadows_target{ ~0u };
 			{
-				gfx::TextureCreateInfo create_info{};
+				TextureResourceCreateInfo create_info{};
 				create_info.width = create_info.height = cascade_shadow_map_resolution;
 				create_info.layers = cascade_shadow_map_cascade_count * max_directional_light_shadow_count;
 				create_info.format = gfx::Format::eD32Sfloat;
@@ -312,7 +312,7 @@ namespace engine
 
 			uint32_t directional_shadows_target{ ~0u };
 			{
-				gfx::TextureCreateInfo create_info{};
+				TextureResourceCreateInfo create_info{};
 				create_info.width = create_info.height = spot_light_shadow_map_resolution;
 				create_info.layers = max_spot_light_shadow_count;
 				create_info.format = gfx::Format::eD16Unorm;
@@ -324,7 +324,7 @@ namespace engine
 
 			uint32_t omni_shadows_target{ ~0u };
 			{
-				gfx::TextureCreateInfo create_info{};
+				TextureResourceCreateInfo create_info{};
 				create_info.width = create_info.height = point_light_shadow_map_resolution;
 				create_info.layers = max_point_light_shadow_count;
 				create_info.format = gfx::Format::eD16Unorm;
@@ -339,7 +339,7 @@ namespace engine
 			// Visibility buffer targets
 			uint32_t visbuffer_geometry_target{ ~0u };
 			{
-				gfx::TextureCreateInfo create_info{};
+				TextureResourceCreateInfo create_info{};
 				create_info.width = backbuffer_texture->GetWidth();
 				create_info.height = backbuffer_texture->GetHeight();
 				create_info.format = gfx::Format::eR8G8B8A8Unorm;
@@ -351,7 +351,7 @@ namespace engine
 
 			uint32_t visbuffer_vboinst_target{ ~0u };
 			{
-				gfx::TextureCreateInfo create_info{};
+				TextureResourceCreateInfo create_info{};
 				create_info.width = backbuffer_texture->GetWidth();
 				create_info.height = backbuffer_texture->GetHeight();
 				create_info.format = gfx::Format::eR8G8B8A8Unorm;
@@ -363,7 +363,7 @@ namespace engine
 
 			uint32_t zbuffer_depth_target{ ~0u };
 			{
-				gfx::TextureCreateInfo create_info{};
+				TextureResourceCreateInfo create_info{};
 				create_info.width = backbuffer_texture->GetWidth();
 				create_info.height = backbuffer_texture->GetHeight();
 				create_info.format = gfx::Format::eD32Sfloat;
@@ -375,7 +375,7 @@ namespace engine
 
 			uint32_t motion_vectors_target{ ~0u };
 			{
-				gfx::TextureCreateInfo create_info{};
+				TextureResourceCreateInfo create_info{};
 				create_info.width = backbuffer_texture->GetWidth();
 				create_info.height = backbuffer_texture->GetHeight();
 				create_info.format = use_low_precision_velocity ? gfx::Format::eR8G8Unorm : gfx::Format::eR16G16Sfloat;
@@ -389,7 +389,7 @@ namespace engine
 			uint32_t hdr1{ ~0u };
 			uint32_t hdr0_history{ ~0u };
 			{
-				gfx::TextureCreateInfo create_info{};
+				TextureResourceCreateInfo create_info{};
 				create_info.width = backbuffer_texture->GetWidth();
 				create_info.height = backbuffer_texture->GetHeight();
 				create_info.format = gfx::Format::eB10G11R11UfloatPack32;
@@ -404,12 +404,13 @@ namespace engine
 			uint32_t hdr0_div2{ ~0u };
 			{
 				// TODO: add support for half size targets
-				gfx::TextureCreateInfo create_info{};
+				TextureResourceCreateInfo create_info{};
 				create_info.width = backbuffer_texture->GetWidth() / 2;
 				create_info.height = backbuffer_texture->GetHeight() / 2;
 				create_info.format = gfx::Format::eB10G11R11UfloatPack32;
 				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage;
 				create_info.resizable = true;
+				create_info.scale = 0.5f;
 
 				hdr0_div2 = render_graph->AddResource(create_info, nearest_sampler);
 			}
@@ -417,13 +418,14 @@ namespace engine
 			uint32_t bloom_target{ ~0u };
 			{
 				// TODO: add support for half size targets
-				gfx::TextureCreateInfo create_info{};
+				TextureResourceCreateInfo create_info{};
 				create_info.width = backbuffer_texture->GetWidth() / 2;
 				create_info.height = backbuffer_texture->GetHeight() / 2;
 				create_info.levels = bloom_blur_depth;
 				create_info.format = gfx::Format::eB10G11R11UfloatPack32;
 				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage;
 				create_info.resizable = true;
+				create_info.scale = 0.5f;
 
 				bloom_target = render_graph->AddResource(create_info, nearest_sampler);
 			}
@@ -431,7 +433,7 @@ namespace engine
 			// Eye adaptation targets
 			uint32_t avg_brightness_target{ ~0u };
 			{
-				gfx::TextureCreateInfo create_info{};
+				TextureResourceCreateInfo create_info{};
 				create_info.width = 1u;
 				create_info.height = 1u;
 				create_info.format = gfx::Format::eR32Sfloat;
@@ -1127,7 +1129,7 @@ namespace engine
 					io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
 					uint64_t upload_size = width * height * 4ull * sizeof(char);
 
-					gfx::TextureCreateInfo font_texture_ci{};
+					TextureResourceCreateInfo font_texture_ci{};
 					font_texture_ci.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eTransferable;
 					font_texture_ci.width = width;
 					font_texture_ci.height = height;

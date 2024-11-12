@@ -86,6 +86,21 @@ namespace engine
 			context.Destroy(default_sampler);
 			context.Destroy(shared_descriptor);
 			context.Destroy(timestamp_query);
+
+			for (auto& texture_object : static_textures.Data())
+			{
+				context.Destroy(texture_object.texture);
+			}
+
+			for (auto& texture_object : render_targets.Data())
+			{
+				context.Destroy(texture_object.texture);
+			}
+
+			for (auto& buffer_object : buffers.Data())
+			{
+				context.Destroy(buffer_object.buffer);
+			}
 		}
 
 		uint32_t RenderGraph::AddResource()
@@ -108,12 +123,21 @@ namespace engine
 			return render_resources.size() - 1ull;
 		}
 
-		uint32_t RenderGraph::AddResource(const gfx::TextureCreateInfo& create_info, std::span<uint8_t> texture_data)
+		uint32_t RenderGraph::AddResource(const TextureResourceCreateInfo& create_info, std::span<uint8_t> texture_data)
 		{
 			auto& new_resource = render_resources.emplace_back();
 			new_resource.resource_type = RenderResourceTypeFlag::eStaticImage;
 
-			gfx::Texture* texture = resource_context.LoadTexture(create_info, texture_data);
+			gfx::TextureCreateInfo texture_create_info{};
+			texture_create_info.usage = create_info.usage;
+			texture_create_info.width = create_info.width;
+			texture_create_info.height = create_info.height;
+			texture_create_info.depth = create_info.depth;
+			texture_create_info.layers = create_info.layers;
+			texture_create_info.levels = create_info.levels;
+			texture_create_info.format = create_info.format;
+
+			gfx::Texture* texture = resource_context.LoadTexture(texture_create_info, texture_data);
 			new_resource.resource_id = static_textures.Add(TextureObject{ texture, default_sampler });
 
 			new_resource.current_state = gfx::ResourceStateFlag::eShaderReadOnlyResource;
@@ -121,7 +145,7 @@ namespace engine
 			return render_resources.size() - 1ull;
 		}
 
-		uint32_t RenderGraph::AddResource(const gfx::TextureCreateInfo& create_info, gfx::Sampler* sampler)
+		uint32_t RenderGraph::AddResource(const TextureResourceCreateInfo& create_info, gfx::Sampler* sampler)
 		{
 			auto& new_resource = render_resources.emplace_back();
 
@@ -133,11 +157,27 @@ namespace engine
 			else
 				new_resource.resource_type = RenderResourceTypeFlag::eStaticImage;
 
-			gfx::Texture* texture = context.CreateTexture(create_info);
+			gfx::TextureCreateInfo texture_create_info{};
+			texture_create_info.usage = create_info.usage;
+			texture_create_info.width = create_info.width;
+			texture_create_info.height = create_info.height;
+			texture_create_info.depth = create_info.depth;
+			texture_create_info.layers = create_info.layers;
+			texture_create_info.levels = create_info.levels;
+			texture_create_info.format = create_info.format;
+
+			TextureObject texture_object{};
+			texture_object.texture = context.CreateTexture(texture_create_info);
+			texture_object.sampler = sampler ? sampler : default_sampler;
+			texture_object.usage = create_info.usage;
+			texture_object.resizable = create_info.resizable;
+			texture_object.scale = create_info.scale;
+			texture_object.scale_parent_resource = create_info.scale_parent_resource;
+
 			if ((create_info.usage & gfx::TextureUsageFlag::eRenderTarget) || (create_info.usage & gfx::TextureUsageFlag::eStorage))
-				new_resource.resource_id = render_targets.Add(TextureObject{ texture, sampler ? sampler : default_sampler, create_info.usage, create_info.resizable });
+				new_resource.resource_id = render_targets.Add(std::move(texture_object));
 			else
-				new_resource.resource_id = static_textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler, create_info.usage, create_info.resizable });
+				new_resource.resource_id = static_textures.Add(std::move(texture_object));
 
 			return render_resources.size() - 1ull;
 		}
@@ -340,20 +380,29 @@ namespace engine
 				if (!target.resizable)
 					continue;
 
-				// Save pointer for delete old one
-				auto* old_target = target.texture;
-
 				gfx::TextureCreateInfo create_info{};
 				create_info.usage = target.usage;
-				create_info.width = width;
-				create_info.height = height;
-				create_info.layers = (target.usage & gfx::TextureUsageFlag::eCubemap) ? old_target->GetArrayLayerCount() / 6u : old_target->GetArrayLayerCount();
-				create_info.levels = old_target->GetMipLevelCount();
-				create_info.format = old_target->GetFormat();
-				create_info.resizable = target.resizable;
+				create_info.layers = (target.usage & gfx::TextureUsageFlag::eCubemap) ? target.texture->GetArrayLayerCount() / 6u : target.texture->GetArrayLayerCount();
+				// TODO: need to recalculate number of mips?
+				create_info.levels = target.texture->GetMipLevelCount();
+				create_info.format = target.texture->GetFormat();
 
+				if (target.scale_parent_resource != ~0u)
+				{
+					gfx::Texture* parent = GetTexture(target.scale_parent_resource);
+
+					create_info.width = parent->GetWidth() * target.scale;
+					create_info.height = parent->GetHeight() * target.scale;
+				}
+				else
+				{
+					create_info.width = width * target.scale;
+					create_info.height = height * target.scale;
+				}
+
+				context.Destroy(target.texture);
 				target.texture = context.CreateTexture(create_info);
-				context.Destroy(old_target);
+				
 			}
 		}
 
