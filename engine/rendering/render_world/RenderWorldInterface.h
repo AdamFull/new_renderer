@@ -44,6 +44,7 @@ namespace engine
 			virtual glm::mat4 const& GetCameraMatrix(uint32_t camera_id, uint32_t matrix_index) = 0;
 
 			virtual void UpdateRenderCamera(uint32_t camera_id, const glm::vec3& translation, const glm::quat& rotation) = 0;
+			virtual void UpdateRenderCamera(uint32_t camera_id, const glm::mat4& view, const glm::mat4& projection, uint32_t width, uint32_t height) = 0;
 
 			virtual void UpdateNode(uint32_t node_id, const glm::mat4& matrix) = 0;
 
@@ -52,6 +53,10 @@ namespace engine
 			virtual void AddMaterial(const FMaterial& material) = 0;
 
 			virtual void AddLight(const FLightCommit& light_data) = 0;
+
+			virtual void AddShadow(const FCascadedShadowCommit& shadow_data) = 0;
+			virtual void AddShadow(const FOmniShadowCommit& shadow_data) = 0;
+			virtual void AddShadow(const FSpotShadowCommit& shadow_data) = 0;
 
 			virtual void BeginFrame(float delta_time) = 0;
 			virtual void EndFrame() = 0;

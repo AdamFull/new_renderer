@@ -251,9 +251,9 @@ namespace engine
 			EntityManager::RegisterSystem<ecs::CScenegraphSystem>();
 			//EntityManager::RegisterSystem<ecs::CSkinningSystem>(render_interface);
 
-			EntityManager::RegisterSystem<ecs::CCameraSystem>(renderer);
-			//EntityManager::RegisterSystem<ecs::CShadowsSystem>(render_interface);
-			EntityManager::RegisterSystem<ecs::CLightingSystem>(renderer);
+			EntityManager::RegisterSystem<ecs::CameraSystem>(renderer);
+			EntityManager::RegisterSystem<ecs::CShadowsSystem>(renderer);
+			EntityManager::RegisterSystem<ecs::LightingSystem>(renderer);
 			EntityManager::RegisterSystem<ecs::CMeshSystem>(renderer);
 		}
 

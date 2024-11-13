@@ -20,6 +20,8 @@ namespace engine
 
 			scene_lights = std::make_unique<DynamicBuffer<FLightCommit>>(resource_context, 16ull, gfx::BufferUsageFlag::eStorageBuffer);
 
+			scene_cascaded_shadows = std::make_unique<DynamicBuffer<FCascadedShadowCommit>>(resource_context, 16ull, gfx::BufferUsageFlag::eStorageBuffer);
+
 			draw_materials = std::make_unique<DynamicBuffer<FMaterial>>(resource_context, 16ull, gfx::BufferUsageFlag::eStorageBuffer);
 
 			world_cameras = std::make_unique<DynamicBuffer<FCamera>>(resource_context, 8ull, gfx::BufferUsageFlag::eStorageBuffer);
@@ -102,68 +104,10 @@ namespace engine
 				matrices[inv_view_projection_matrix_offset] = glm::inverse(matrices[view_projection_matrix_offset]);
 
 				// Calculate frustum
-				auto* frustum_begin = world_frustum->Data(camera.frustum_offset);
-				world_frustum->MarkDirty(camera.frustum_offset, 6u);
-
-				auto& clip_matrix = matrices[view_projection_matrix_offset];
-
-				// Lesft
-				auto frustum_left = glm::vec4(
-					clip_matrix[0][3] - clip_matrix[0][0],
-					clip_matrix[1][3] - clip_matrix[1][0],
-					clip_matrix[2][3] - clip_matrix[2][0],
-					clip_matrix[3][3] - clip_matrix[3][0]
-				);
-				frustum_begin[1] = glm::normalize(frustum_left);
-
-				// Rigth
-				auto frustum_right = glm::vec4(
-					clip_matrix[0][3] + clip_matrix[0][0],
-					clip_matrix[1][3] + clip_matrix[1][0],
-					clip_matrix[2][3] + clip_matrix[2][0],
-					clip_matrix[3][3] + clip_matrix[3][0]
-				);
-				frustum_begin[0] = glm::normalize(frustum_right);
-
-				// Top
-				auto frustum_top = glm::vec4(
-					clip_matrix[0][3] - clip_matrix[0][1],
-					clip_matrix[1][3] - clip_matrix[1][1],
-					clip_matrix[2][3] - clip_matrix[2][1],
-					clip_matrix[3][3] - clip_matrix[3][1]
-				);
-				frustum_begin[3] = glm::normalize(frustum_top);
-
-				// Bottom
-				auto frustum_bottom = glm::vec4(
-					clip_matrix[0][3] + clip_matrix[0][1],
-					clip_matrix[1][3] + clip_matrix[1][1],
-					clip_matrix[2][3] + clip_matrix[2][1],
-					clip_matrix[3][3] + clip_matrix[3][1]
-				);
-				frustum_begin[2] = glm::normalize(frustum_bottom);
-
-				// Back
-				auto frustum_back = glm::vec4(
-					clip_matrix[0][3] + clip_matrix[0][2],
-					clip_matrix[1][3] + clip_matrix[1][2],
-					clip_matrix[2][3] + clip_matrix[2][2],
-					clip_matrix[3][3] + clip_matrix[3][2]
-				);
-				frustum_begin[4] = glm::normalize(frustum_back);
-
-				// Front
-				auto frustum_front = glm::vec4(
-					clip_matrix[0][3] - clip_matrix[0][2],
-					clip_matrix[1][3] - clip_matrix[1][2],
-					clip_matrix[2][3] - clip_matrix[2][2],
-					clip_matrix[3][3] - clip_matrix[3][2]
-				);
-				frustum_begin[5] = glm::normalize(frustum_front);
+				UpdateCameraFrustum(camera_id);
 
 				// Update reprojection
 				auto& camera_reprojection = matrices[reprojection_matrix_offset];
-
 				camera_reprojection = matrices[prev_view_projection_matrix_offset] * matrices[inv_view_projection_matrix_offset];
 
 				float rcp_half_dimx = 2.0f / screen_size_x;
@@ -193,6 +137,40 @@ namespace engine
 
 				// Mark camera for update
 				world_cameras->MarkDirty(world_resource.resource_id);
+			}
+		}
+
+		void RenderWorld::UpdateRenderCamera(uint32_t camera_id, const glm::mat4& view, const glm::mat4& projection, uint32_t width, uint32_t height)
+		{
+			auto& world_resource = world_resources[camera_id];
+			auto& camera = world_cameras->Get(world_resource.resource_id);
+
+			uint32_t camera_hash{ 0u };
+			camera_hash = utl::murmur_hash(reinterpret_cast<const char*>(&view[0]), sizeof(glm::mat4), camera_hash);
+			camera_hash = utl::murmur_hash(reinterpret_cast<const char*>(&projection[0]), sizeof(glm::mat4), camera_hash);
+			camera_hash = utl::murmur_hash(camera.fov, camera_hash);
+			camera_hash = utl::murmur_hash(camera.z_near, camera_hash);
+			camera_hash = utl::murmur_hash(camera.z_far, camera_hash);
+			camera_hash = utl::murmur_hash(camera.aspect, camera_hash);
+
+			bool dirty = camera_hash != camera.last_hash;
+			camera.last_hash = camera_hash;
+
+			if (dirty)
+			{
+				camera.size = { static_cast<float>(width), static_cast<float>(height) };
+				camera.invSize = 1.f / camera.size;
+
+				camera.aspect = camera.size.x / camera.size.y;
+
+				auto* matrices = world_matrices->Data(camera.matrices_offset);
+				world_matrices->MarkDirty(camera.matrices_offset, matrix_offset_count);
+
+				matrices[view_matrix_offset] = view;
+				matrices[projection_matrix_offset] = projection;
+				matrices[view_projection_matrix_offset] = projection * view;
+
+				UpdateCameraFrustum(camera_id);
 			}
 		}
 
@@ -255,6 +233,24 @@ namespace engine
 			auto& new_light = scene_lights->Get(light_index);
 			scene_lights->MarkDirty(light_index);
 			new_light = light_data;
+		}
+
+		void RenderWorld::AddShadow(const FCascadedShadowCommit& shadow_data)
+		{
+			auto shadow_index = cascaded_shadow_count++;
+			auto& new_shadow = scene_cascaded_shadows->Get(shadow_index);
+			scene_cascaded_shadows->MarkDirty(shadow_index);
+			new_shadow = shadow_data;
+		}
+
+		void RenderWorld::AddShadow(const FOmniShadowCommit& shadow_data)
+		{
+			assert(false && "NOT IMPLEMENTED");
+		}
+
+		void RenderWorld::AddShadow(const FSpotShadowCommit& shadow_data)
+		{
+			assert(false && "NOT IMPLEMENTED");
 		}
 
 		void RenderWorld::BeginFrame(float delta_time)
@@ -354,6 +350,9 @@ namespace engine
 				buffers.lightsBuffer.address = scene_lights->GetBuffer()->GetAddress();
 				scene_lights->Flush();
 
+				buffers.cascadedShadowBuffer.address = scene_cascaded_shadows->GetBuffer()->GetAddress();
+				scene_cascaded_shadows->Flush();
+
 				const uint8_t* uniform_data = reinterpret_cast<const uint8_t*>(&buffers);
 				uint64_t uniform_size = sizeof(FGlobalBufferReference);
 
@@ -376,6 +375,7 @@ namespace engine
 		{
 			draw_count = 0;
 			light_count = 0;
+			cascaded_shadow_count = 0;
 		}
 
 		gfx::IndirectDrawCommand RenderWorld::GetDrawCommand()
@@ -387,6 +387,73 @@ namespace engine
 			draw_command.command_stride = sizeof(FDrawIndexedIndirectData);
 
 			return draw_command;
+		}
+
+		void RenderWorld::UpdateCameraFrustum(uint32_t camera_id)
+		{
+			auto& world_resource = world_resources[camera_id];
+			auto& camera = world_cameras->Get(world_resource.resource_id);
+
+			auto* frustum_begin = world_frustum->Data(camera.frustum_offset);
+			world_frustum->MarkDirty(camera.frustum_offset, 6u);
+
+			auto* matrices = world_matrices->Data(camera.matrices_offset);
+
+			auto& clip_matrix = matrices[view_projection_matrix_offset];
+
+			// Lesft
+			auto frustum_left = glm::vec4(
+				clip_matrix[0][3] - clip_matrix[0][0],
+				clip_matrix[1][3] - clip_matrix[1][0],
+				clip_matrix[2][3] - clip_matrix[2][0],
+				clip_matrix[3][3] - clip_matrix[3][0]
+			);
+			frustum_begin[1] = glm::normalize(frustum_left);
+
+			// Rigth
+			auto frustum_right = glm::vec4(
+				clip_matrix[0][3] + clip_matrix[0][0],
+				clip_matrix[1][3] + clip_matrix[1][0],
+				clip_matrix[2][3] + clip_matrix[2][0],
+				clip_matrix[3][3] + clip_matrix[3][0]
+			);
+			frustum_begin[0] = glm::normalize(frustum_right);
+
+			// Top
+			auto frustum_top = glm::vec4(
+				clip_matrix[0][3] - clip_matrix[0][1],
+				clip_matrix[1][3] - clip_matrix[1][1],
+				clip_matrix[2][3] - clip_matrix[2][1],
+				clip_matrix[3][3] - clip_matrix[3][1]
+			);
+			frustum_begin[3] = glm::normalize(frustum_top);
+
+			// Bottom
+			auto frustum_bottom = glm::vec4(
+				clip_matrix[0][3] + clip_matrix[0][1],
+				clip_matrix[1][3] + clip_matrix[1][1],
+				clip_matrix[2][3] + clip_matrix[2][1],
+				clip_matrix[3][3] + clip_matrix[3][1]
+			);
+			frustum_begin[2] = glm::normalize(frustum_bottom);
+
+			// Back
+			auto frustum_back = glm::vec4(
+				clip_matrix[0][3] + clip_matrix[0][2],
+				clip_matrix[1][3] + clip_matrix[1][2],
+				clip_matrix[2][3] + clip_matrix[2][2],
+				clip_matrix[3][3] + clip_matrix[3][2]
+			);
+			frustum_begin[4] = glm::normalize(frustum_back);
+
+			// Front
+			auto frustum_front = glm::vec4(
+				clip_matrix[0][3] - clip_matrix[0][2],
+				clip_matrix[1][3] - clip_matrix[1][2],
+				clip_matrix[2][3] - clip_matrix[2][2],
+				clip_matrix[3][3] - clip_matrix[3][2]
+			);
+			frustum_begin[5] = glm::normalize(frustum_front);
 		}
 	}
 }

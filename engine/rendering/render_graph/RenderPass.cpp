@@ -115,6 +115,8 @@ namespace engine
 				rendering_info.width = attachment->texture->GetWidth();
 				rendering_info.height = attachment->texture->GetHeight();
 
+				rendering_info.layer_count = attachment->texture->GetArrayLayerCount();
+
 				render_resource.SetState(barrier.dst_state);
 			}
 

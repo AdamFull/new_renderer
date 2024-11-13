@@ -20,6 +20,8 @@ namespace engine
 				bool toTarget{ false };
 				int shadowIndex{ -1 };
 				bool castShadows{ true };
+
+				uint32_t shadow_caster{ ~0u };
 			};
 		}
 	}

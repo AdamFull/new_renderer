@@ -18,7 +18,7 @@ layout(set = 2, binding = 3) uniform samplerCube prefiltered_cube;
 layout(set = 2, binding = 4) uniform sampler2D depth_buffer;
 //layout(set = 2, binding = 5) uniform sampler2D prev_frame_color;
 
-//layout (set = 2, binding = 6) uniform sampler2DArrayShadow cascaded_shadowmap;
+layout (set = 2, binding = 6) uniform sampler2DArrayShadow cascaded_shadowmap;
 //layout (set = 2, binding = 7) uniform sampler2DArrayShadow direct_shadowmap;
 //layout (set = 2, binding = 8) uniform samplerCubeArrayShadow omni_shadowmap;
 
@@ -133,7 +133,7 @@ vec3 calculateDirectionalLight(in FLightCommit light, in VertexAttribute va, in 
 	float shadow_factor = 1.0;
 	if(light.castShadows > 0 && light.shadowIndex > -1)
 	{
-		//shadow_factor = getCascadeShadow(cascaded_shadowmap, light, va, ms, dither);
+		shadow_factor = getCascadeShadow(cascaded_shadowmap, light, va, ms, dither);
 		//shadow_factor = ScreenSpaceShadows(va.pos, light.direction, depth_buffer, 32, 0.02f, dither);
 	}
 

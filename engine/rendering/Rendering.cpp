@@ -19,6 +19,8 @@
 
 #include "Globals.h"
 
+#include <engine/world/EntityManager.h>
+
 #include <imgui.h>
 
 #ifdef MemoryBarrier
@@ -562,6 +564,78 @@ namespace engine
 				render_graph->AddNode(std::move(group_node));
 			}
 
+			// draw shadows
+			{
+				RenderShaderPassCreateInfo create_info{};
+				create_info.shader_name = "lighting:unidirectional_shadow:CASCADED_SHADOW:HAS_TEXCOORD:HAS_NORMAL:TANGENT_VEC4:INDEX_16BIT";
+				create_info.pipeline_state.rasterization_state.cull_mode = gfx::CullModeFlag::eFront;
+
+				// Depth state
+				create_info.pipeline_state.depth_stencil_state.depth_test = true;
+				create_info.pipeline_state.depth_stencil_state.depth_write = true;
+				create_info.pipeline_state.depth_stencil_state.depth_compare_op = gfx::CompareOp::eLess;
+
+				create_info.AddWriteAttachment(cascaded_shadows_target, ResourceAttachmentTypeFlag::eDepth, gfx::ClearColor{ 1.f });
+
+				create_info.pipeline_state.primitive_topology = gfx::PrimitiveTopology::eTriangleList;
+
+				create_info.draw_callback = [this,
+					cascaded_shadows_target
+				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+					{
+						auto* shadow_map = render_graph->GetTexture(cascaded_shadows_target);
+
+						auto viewport_width = shadow_map->GetWidth();
+						auto viewport_height = shadow_map->GetHeight();
+
+						command_list.SetViewport(0.f, 0.f, viewport_width, viewport_height, 0.f, 1.f);
+						command_list.SerScissor(0u, 0u, viewport_width, viewport_height);
+
+						self.ResolveDependencies(command_list);
+
+						auto& geometry_buffer = *geometry_buffers.back();
+						geometry_buffer.BindIndexBuffer(command_list);
+
+						auto& buffers = self.GetUniformBlock("GeometryBuffers"_hash32);
+						buffers.Set("position"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
+						buffers.Set("texcoord"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTexCoord));
+						buffers.Set("normal"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eNormal));
+						buffers.Set("tangent"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTangent));
+						buffers.Set("indices"_hash32, geometry_buffer.GetIndexBufferAddress());
+
+						auto& constants = self.GetConstantBlock();
+
+						self.BindResources(command_list);
+
+						auto draw_command = render_world->GetDrawCommand();
+
+						uint32_t draw_call_id{ 0u };
+						self.Begin(command_list);
+
+						auto view = world::EntityManager::View<world::ecs::FDirectionalLightComponent>();
+						for (auto [entity, light] : view.each())
+						{
+							if (!light.castShadows)
+								continue;
+
+							for (int32_t layer = 0; layer < cascade_shadow_map_cascade_count; ++layer)
+							{
+								constants.Set("call_id"_hash32, draw_call_id);
+								constants.Set("shadow_index"_hash32, layer);
+								constants.Set("layer"_hash32, layer);
+
+								self.PushConstantRanges(command_list);
+
+								command_list.DrawIndirect(draw_command);
+							}
+						}
+
+						self.End(command_list);
+					};
+
+				render_graph->AddNode(render_graph->CreateNode(create_info));
+			}
+
 			// Geometry draw
 			{
 				RenderShaderPassCreateInfo create_info{};
@@ -633,7 +707,8 @@ namespace engine
 					prefiltered_cube_target,
 					visbuffer_geometry_target,
 					visbuffer_vboinst_target,
-					zbuffer_depth_target
+					zbuffer_depth_target,
+					cascaded_shadows_target
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
 						self.BindWriteResource("write_color"_hash32, hdr0);
@@ -644,6 +719,8 @@ namespace engine
 						self.BindReadResource("visbuffer_geometry"_hash32, visbuffer_geometry_target);
 						self.BindReadResource("visbuffer_vboinst"_hash32, visbuffer_vboinst_target);
 						self.BindReadResource("depth_buffer"_hash32, zbuffer_depth_target);
+
+						self.BindReadResource("cascaded_shadowmap"_hash32, cascaded_shadows_target);
 
 						self.ResolveDependencies(command_list);
 

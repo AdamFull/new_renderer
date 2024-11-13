@@ -23,6 +23,7 @@ namespace engine
 			glm::mat4 const& GetCameraMatrix(uint32_t camera_id, uint32_t matrix_index) override;
 
 			void UpdateRenderCamera(uint32_t camera_id, const glm::vec3& translation, const glm::quat& rotation) override;
+			void UpdateRenderCamera(uint32_t camera_id, const glm::mat4& view, const glm::mat4& projection, uint32_t width, uint32_t height) override;
 
 			void UpdateNode(uint32_t node_id, const glm::mat4& matrix) override;
 
@@ -32,10 +33,16 @@ namespace engine
 
 			void AddLight(const FLightCommit& light_data) override;
 
+			void AddShadow(const FCascadedShadowCommit& shadow_data) override;
+			void AddShadow(const FOmniShadowCommit& shadow_data) override;
+			void AddShadow(const FSpotShadowCommit& shadow_data) override;
+
 			void BeginFrame(float delta_time) override;
 			void EndFrame() override;
 
 			gfx::IndirectDrawCommand GetDrawCommand() override;
+		private:
+			void UpdateCameraFrustum(uint32_t camera_id);
 		private:
 			IRenderer& renderer;
 
@@ -65,6 +72,9 @@ namespace engine
 
 			std::unique_ptr<DynamicBuffer<FLightCommit>> scene_lights{};
 			uint32_t light_count{ 0u };
+
+			std::unique_ptr<DynamicBuffer<FCascadedShadowCommit>> scene_cascaded_shadows{};
+			uint32_t cascaded_shadow_count{ 0u };
 		};
 	}
 }

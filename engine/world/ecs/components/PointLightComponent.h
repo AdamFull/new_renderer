@@ -17,6 +17,8 @@ namespace engine
 				f32 radius{ 1.f };
 				int shadowIndex{ -1 };
 				bool castShadows{ true };
+
+				std::array<uint32_t, 6u> shadow_casters{};
 			};
 		}
 	}

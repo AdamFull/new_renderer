@@ -16,6 +16,8 @@ namespace engine
 				f32 intencity{ 1.f };
 				int shadowIndex{ -1 };
 				bool castShadows{ true };
+
+				std::vector<uint32_t> shadow_casters{};
 			};
 		}
 	}
