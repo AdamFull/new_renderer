@@ -5,7 +5,6 @@
   "homepage": "https://github.com/AdamFull/new_renderer",
   "builtin-baseline": "63366443439398a62afc9a63b34b9a3ba63b1cae",
   "dependencies": [
-    "pkgconf",
     "libzip",
     "zstd",
     "zlib",
@@ -38,8 +37,6 @@
       ]
     },
     "glfw3",
-    "luajit",
-    "sol2",
     "glm",
     {
       "name": "taskflow",
@@ -63,10 +60,15 @@
     "mimalloc",
     "benchmark",
     "directx-dxc",
-    "tinyxml2",
-    "xerces-c",
     "freetype",
     "spdlog",
-    "volk"
+    "volk",
+
+    "fmt",
+
+    "libvorbis",
+    "libvpx",
+
+    "openal-soft"
   ]
 }
