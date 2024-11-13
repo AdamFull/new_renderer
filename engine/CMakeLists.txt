@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.18.0)
 project(application)
 
 add_subdirectory(runtime)
-#add_subdirectory(render)
+add_subdirectory(media)
 add_subdirectory(rendering)
 add_subdirectory(filesystem)
 #add_subdirectory(scripting)
@@ -41,7 +41,7 @@ target_link_libraries(${PROJECT_NAME}
 	PRIVATE runtime
 	PRIVATE engine_rendering
     PRIVATE engine_ui
-	#PRIVATE render_interface
+	PRIVATE media_engine
 	#PRIVATE script_engine
 	PRIVATE engine_world
 	PRIVATE imgui_integration

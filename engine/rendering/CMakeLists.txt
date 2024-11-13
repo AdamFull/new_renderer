@@ -3,11 +3,6 @@ project(engine_rendering)
 
 find_package(Ktx CONFIG REQUIRED)
 
-#find_package(PkgConfig REQUIRED)  
-#pkg_check_modules(LuaJIT REQUIRED IMPORTED_TARGET luajit)
-
-find_package(sol2 CONFIG REQUIRED)
-
 #add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/DebugDraw")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/gfx")
 

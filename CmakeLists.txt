@@ -59,7 +59,7 @@ add_compile_definitions(
     GLM_EXT_INCLUDED
 )
 
-find_package(Taskflow CONFIG REQUIRED)
+# find_package(Taskflow CONFIG REQUIRED)
 # target_link_libraries(main PRIVATE Taskflow::Taskflow)
 
 # global includes
