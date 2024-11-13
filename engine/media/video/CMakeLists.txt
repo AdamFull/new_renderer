@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.18.0)
 project(media_engine_video)
 
+set(ENABLE_SAMPLE_PROGRAMS OFF CACHE BOOL "Enables building sample programs." FORCE)
+
+add_subdirectory("${MAIN_PROJECT_DIRECTORY_PATH}/libraries/libwebm" libwebm)
 find_package(unofficial-libvpx CONFIG REQUIRED)
 
 file(GLOB_RECURSE MEDIA_ENGINE_VIDEO_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
@@ -20,4 +23,5 @@ target_include_directories(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
     PRIVATE unofficial::libvpx::libvpx
+    PRIVATE webm
 )
