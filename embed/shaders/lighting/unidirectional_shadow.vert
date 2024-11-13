@@ -6,60 +6,59 @@ layout(location = 2) flat out uint materialID;
 
 layout(push_constant) uniform ShadowmapData
 {
-	uint32_t callID;
-	int32_t shadowIndex;
+	uint32_t call_id;
+	int32_t shadow_index;
 	int32_t layer;
-} shadowData;
+} shadow_data;
 
 void main()
 {
-	uint32_t draw_index = shadowData.callID + gl_DrawIDARB + gl_InstanceIndex;
+	uint32_t draw_index = shadow_data.call_id + gl_DrawIDARB + gl_InstanceIndex;
 	DrawDescription draw_info = GetDrawInfo(draw_index);
 
 	FSceneNode node = GetSceneNode(draw_info.nodeID);
-	mat4 modelMatrix = GetModelMatrix(node.matrixOffset);
+	mat4 model_matrix = GetModelMatrix(node.matrixOffset);
 
+	uint32_t vertex_index = uint32_t(gl_VertexIndex);
+
+	// Calculate skinning matrix
 #ifdef HAS_SKIN
-	if(node.skeletonID != ~0u)
-	{
-#if defined(JOINTS_8BIT)
-	u8vec4 joints = u8vec4(uint8_t(inJoints.x * 255.0), uint8_t(inJoints.y * 255.0), uint8_t(inJoints.z * 255.0), uint8_t(inJoints.w * 255.0));
-#elif defined(JOINTS_16BIT)
-	u16vec4 joints = u16vec4(uint16_t(inJoints.x * 65535.0), uint16_t(inJoints.y * 65535.0), uint16_t(inJoints.z * 65535.0), uint16_t(inJoints.w * 65535.0));
+	Joints joints = GetVertexJoints(vertex_index);
+	vec4 weights = GetVertexWeights(vertex_index);
+
+	mat4 skin_mat = 
+			weights.x * GetMatrixById(node.skeletonID, joints.x) +
+			weights.y * GetMatrixById(node.skeletonID, joints.y) +
+			weights.z * GetMatrixById(node.skeletonID, joints.z) +
+			weights.w * GetMatrixById(node.skeletonID, joints.w);
+	
+		model_matrix = model_matrix * skin_mat;
 #endif
-	mat4 skinMat = 
-		inWeights.x * GetMatrixById(node.skeletonID, joints.x) +
-		inWeights.y * GetMatrixById(node.skeletonID, joints.y) +
-		inWeights.z * GetMatrixById(node.skeletonID, joints.z) +
-		inWeights.w * GetMatrixById(node.skeletonID, joints.w);
 		
-		modelMatrix = modelMatrix * skinMat;
-	}
-#endif // HAS_SKIN
-		
-	outPos = modelMatrix * vec4(inPosition, 1.0);
-	outPos = vec4(outPos.xyz / outPos.w, 1.0);
+	vec3 position = GetVertexPosition(vertex_index);
+	vec4 local_pos = model_matrix * (vec4(position, 1.0));
+	outPos = vec4(local_pos.xyz / local_pos.w, 1.0);
 
 #ifdef HAS_TEXCOORD
-	outTexcoord = inTexCoord;
+	outTexcoord = GetVertexTexcoord(vertex_index);
 #endif
 
 	mat4 viewProj;
 #if defined(CASCADED_SHADOW)
-	FCascadedShadowCommit shadow = GetCascadedShadowCommit(shadowData.shadowIndex);
-	FCamera camera = GetCamera(draw_info.cameraID);
+	FCascadedShadowCommit shadow = GetCascadedShadowCommit(shadow_data.shadow_index);
+	FCamera camera = GetCamera(shadow.cameraID);
 	viewProj = GetViewProjectionMatrix(camera.matrices_offset);
-	gl_Layer = shadowData.shadowIndex * int(cascade_shadow_map_cascade_count) + shadowData.layer;
+	gl_Layer = shadow_data.shadow_index * int(cascade_shadow_map_cascade_count) + shadow_data.layer;
 #elif defined(OMNI_SHADOW)
-	FOmniShadowCommit shadow = GetOmniShadowCommit(shadowData.shadowIndex);
-	FCamera camera = GetCamera(draw_info.cameraID);
+	FOmniShadowCommit shadow = GetOmniShadowCommit(shadow_data.shadow_index);
+	FCamera camera = GetCamera(shadow.cameraID);
 	viewProj = GetViewProjectionMatrix(camera.matrices_offset);
-	gl_Layer = shadowData.shadowIndex * 6 + shadowData.layer;
+	gl_Layer = shadow_data.shadow_index * 6 + shadow_data.layer;
 #else
-	FSpotShadowCommit shadow = GetSpotShadowCommit(shadowData.shadowIndex);
-	FCamera camera = GetCamera(draw_info.cameraID);
+	FSpotShadowCommit shadow = GetSpotShadowCommit(shadow_data.shadow_index);
+	FCamera camera = GetCamera(shadow.cameraID);
 	viewProj = GetViewProjectionMatrix(camera.matrices_offset);
-	gl_Layer = shadowData.layer;
+	gl_Layer = shadow_data.layer;
 #endif
 
 	materialID = ~0u;

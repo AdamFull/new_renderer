@@ -222,7 +222,6 @@ namespace engine
 			auto& batch_command = draw_descriptions->Get(draw_index);
 			draw_descriptions->MarkDirty(draw_index);
 
-			batch_command.cameraID = draw_command.camera_index;
 			batch_command.nodeID = draw_command.node_index;
 			batch_command.meshID = draw_index;
 			batch_command.vboID = draw_command.vertex_buffers;

@@ -243,7 +243,6 @@ namespace engine {
 			uint32_t vboID;
 			uint32_t meshID;
 			uint32_t nodeID;
-			uint32_t cameraID;
 		};
 
 		// Lights and shadows

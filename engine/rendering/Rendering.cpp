@@ -604,7 +604,8 @@ namespace engine
 						buffers.Set("indices"_hash32, geometry_buffer.GetIndexBufferAddress());
 
 						auto& constants = self.GetConstantBlock();
-						constants.Set("callID"_hash32, 0u);
+						constants.Set("call_id"_hash32, 0u);
+						constants.Set("camera_id"_hash32, 0u);
 
 						self.PushConstantRanges(command_list);
 
@@ -657,6 +658,11 @@ namespace engine
 						buffers.Set("tangent"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTangent));
 						buffers.Set("indices"_hash32, geometry_buffer.GetIndexBufferAddress());
 
+						auto& constants = self.GetConstantBlock();
+						constants.Set("call_id"_hash32, 0u);
+						constants.Set("camera_id"_hash32, 0u);
+
+						self.PushConstantRanges(command_list);
 
 						self.BindResources(command_list);
 

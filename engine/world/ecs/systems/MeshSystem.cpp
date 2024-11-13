@@ -117,7 +117,6 @@ void CMeshSystem::__Update(f32 fDt)
 			//	continue;
 
 			DrawCommand draw_command{};
-			draw_command.camera_index = 0u;
 			draw_command.node_index = node;
 
 			draw_command.vertex_buffers = primitive.vbo;

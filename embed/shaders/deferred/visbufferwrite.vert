@@ -5,10 +5,11 @@ layout(location = 1) out flat uint instanceID;
 layout(location = 2) out flat uint vboID;
 layout(location = 3) out vec2 texCoord;
 
-layout(push_constant) uniform UniformMeshData
+layout(push_constant) uniform UniformCallData
 {
-	uint32_t callID;
-} meshData;
+	uint32_t call_id;
+	uint32_t camera_id;
+} call_data;
 
 out gl_PerVertex
 {
@@ -17,13 +18,13 @@ out gl_PerVertex
 
 void main() 
 {
-	uint32_t draw_index = meshData.callID + gl_DrawIDARB + gl_InstanceIndex;
+	uint32_t draw_index = call_data.call_id + gl_DrawIDARB + gl_InstanceIndex;
 	DrawDescription draw_info = GetDrawInfo(draw_index);
 
 	FSceneNode node = GetSceneNode(draw_info.nodeID);
 	mat4 model_matrix = GetModelMatrix(node.matrixOffset);
 
-	uint draw_id = meshData.callID + gl_DrawIDARB;
+	uint draw_id = call_data.call_id + gl_DrawIDARB;
 
 	uint32_t vertex_index = uint32_t(gl_VertexIndex);
 
@@ -41,7 +42,7 @@ void main()
 		model_matrix = model_matrix * skin_mat;
 #endif
 
-	FCamera camera = GetCamera(draw_info.cameraID);
+	FCamera camera = GetCamera(call_data.camera_id);
 	mat4 view_projection = GetViewProjectionMatrix(camera.matrices_offset);
 
 	// Sample vertex position

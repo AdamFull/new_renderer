@@ -23,7 +23,6 @@ namespace engine
 
 		struct DrawCommand
 		{
-			uint32_t camera_index{};
 			uint32_t node_index{};
 
 			uint32_t vertex_buffers{};

@@ -7,6 +7,12 @@
 layout(set = 1, binding = 1) uniform sampler2D visbuffer_geometry;
 layout(set = 1, binding = 2) uniform sampler2D visbuffer_vboinst;
 
+layout(push_constant) uniform UniformCallData
+{
+	uint32_t call_id;
+	uint32_t camera_id;
+} call_data;
+
 // Visbuffer structures
 struct VertexAttribute
 {
@@ -44,7 +50,6 @@ struct VisibilityBuffer
 	uint objID;
 
 	uint vboID;
-	uint cameraID;
 };
 
 bool loadVisBuffer(in vec2 uv, out VisibilityBuffer res)
@@ -69,7 +74,6 @@ bool loadVisBuffer(in vec2 uv, out VisibilityBuffer res)
 	
 	res.objID = draw_info.nodeID;
 	res.matID = mesh.materialID;
-	res.cameraID = draw_info.cameraID;
 
 	return true;
 }
@@ -191,7 +195,7 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 	FSceneNode node = GetSceneNode(visbuffer.objID);
 	mat4 model = GetModelMatrix(node.matrixOffset);
 
-	FCamera camera = GetCamera(visbuffer.cameraID);
+	FCamera camera = GetCamera(call_data.camera_id);
 	mat4 view_projection = GetViewProjectionMatrix(camera.matrices_offset);
 			
 #ifdef HAS_SKIN
