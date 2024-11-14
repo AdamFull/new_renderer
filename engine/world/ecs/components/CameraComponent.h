@@ -36,7 +36,7 @@ namespace engine
 
 				f32 fieldOfView{ 45.f };
 				f32 nearPlane{ 0.1f };
-				f32 farPlane{ 1024 };
+				f32 farPlane{ 100.f };
 				f32 aspectRatio{ 1.7777777f };
 
 				f32 xmag{ 0.f };

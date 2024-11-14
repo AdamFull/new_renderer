@@ -41,6 +41,7 @@ namespace engine
 		static void CursorPositionCallback(GLFWwindow* window, double xpos, double ypos);
 		static void MouseButtonCallback(GLFWwindow* window, int button, int action, int /*mods*/);
 		static void MouseScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
+		static void CharacterInputCallback(GLFWwindow* window, uint32_t codepoint);
 
 	private:
 		GLFWwindow* handle{ nullptr };

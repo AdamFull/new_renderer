@@ -29,6 +29,17 @@ namespace engine
         return action;
     }
 
+    CharacterInputEvent::CharacterInputEvent(uint32_t charcode) :
+        InputEvent{ EventSource::Character },
+        character_code{ charcode }
+    {
+    }
+
+    uint32_t CharacterInputEvent::GetCharacterCode() const
+    {
+        return character_code;
+    }
+
     MouseButtonInputEvent::MouseButtonInputEvent(KeyCode button, MouseAction action, float value_x, float value_y, float max_x, float max_y) :
         InputEvent{ EventSource::Mouse },
         button{ button },

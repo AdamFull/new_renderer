@@ -17,6 +17,7 @@ namespace engine
 		void NewFrame(float delta_time);
 	private:
 		void HandleKeyboardInput(const KeyInputEvent& input_event);
+		void HandleCharacterInput(const CharacterInputEvent& input_event);
 		void HandleMouseInput(const MouseButtonInputEvent& input_event);
 		void HandleTouchInput(const TouchInputEvent& input_event);
 

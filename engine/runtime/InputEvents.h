@@ -9,6 +9,7 @@ namespace engine
 	enum class EventSource
 	{
 		Keyboard,
+		Character,
 		Mouse,
 		Touchscreen
 	};
@@ -152,13 +153,21 @@ namespace engine
 		KeyInputEvent(KeyCode code, KeyAction action);
 
 		KeyCode GetCode() const;
-
 		KeyAction GetAction() const;
 
 	private:
 		KeyCode code;
-
 		KeyAction action;
+	};
+
+	class CharacterInputEvent final : public InputEvent
+	{
+	public:
+		CharacterInputEvent(uint32_t charcode);
+
+		uint32_t GetCharacterCode() const;
+	private:
+		uint32_t character_code;
 	};
 
 	enum class MouseAction

@@ -254,6 +254,14 @@ namespace engine
 				0.f, 0.f});
 		}
 	}
+
+	void GlfwWindow::CharacterInputCallback(GLFWwindow* window, uint32_t codepoint)
+	{
+		if (auto runtime = reinterpret_cast<Runtime*>(glfwGetWindowUserPointer(window)))
+		{
+			runtime->OnInputEvent(CharacterInputEvent{ codepoint });
+		}
+	}
 	
 	GlfwWindow::GlfwWindow(Runtime* runtime, const Window::Properties& properties) :
 		Window(properties)
@@ -319,6 +327,7 @@ namespace engine
 		glfwSetCursorPosCallback(handle, &GlfwWindow::CursorPositionCallback);
 		glfwSetMouseButtonCallback(handle, &GlfwWindow::MouseButtonCallback);
 		glfwSetScrollCallback(handle, &GlfwWindow::MouseScrollCallback);
+		glfwSetCharCallback(handle, &GlfwWindow::CharacterInputCallback);
 
 		glfwSetInputMode(handle, GLFW_STICKY_KEYS, 1);
 		glfwSetInputMode(handle, GLFW_STICKY_MOUSE_BUTTONS, 1);

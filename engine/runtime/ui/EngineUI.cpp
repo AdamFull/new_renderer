@@ -485,6 +485,11 @@ namespace engine
 			const auto& key_input = static_cast<const KeyInputEvent&>(input_event);
 			HandleKeyboardInput(key_input);
 		} break;
+		case EventSource::Character:
+		{
+			const auto& char_input = static_cast<const CharacterInputEvent&>(input_event);
+			HandleCharacterInput(char_input);
+		} break;
 		case EventSource::Mouse:
 		{
 			const auto& mouse_input = static_cast<const MouseButtonInputEvent&>(input_event);
@@ -497,7 +502,7 @@ namespace engine
 		} break;
 		}
 	}
-	
+
 	void EngineUI::HandleKeyboardInput(const KeyInputEvent& input_event)
 	{
 		auto action = input_event.GetAction();
@@ -508,6 +513,12 @@ namespace engine
 		ImGuiKey imgui_key = KeyCodeToImGuiKey(input_event.GetCode());
 		io.AddKeyEvent(imgui_key, (action == KeyAction::Down));
 		//io.SetKeyEventNativeData(imgui_key, keycode, scancode);
+	}
+
+	void EngineUI::HandleCharacterInput(const CharacterInputEvent& input_event)
+	{
+		ImGuiIO& io = ImGui::GetIO();
+		io.AddInputCharacter(input_event.GetCharacterCode());
 	}
 
 	void EngineUI::HandleMouseInput(const MouseButtonInputEvent& input_event)
@@ -580,10 +591,5 @@ namespace engine
 //		m_lastMouseY = io.MousePos.y;
 //		io.AddMousePosEvent(-FLT_MAX, -FLT_MAX);
 //	}
-//}
-//void CImGuiEngineSystem::HandleCharInput(u32 character)
-//{
-//	ImGuiIO& io = ImGui::GetIO();
-//	io.AddInputCharacter(character);
 //}
 }
