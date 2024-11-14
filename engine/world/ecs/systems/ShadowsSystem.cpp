@@ -170,86 +170,84 @@ namespace engine
 						++light_count;
 					}
 				}
-				//
-				//
-				//
-				//// Calculate omni shadows
-				//{
-				//	std::array<glm::mat4, 6u> matrices{};
-				//	auto& culler_group = m_shadowCullers[ERenderGeometryCullerType::eOmniShadow];
-				//
-				//	auto view = EntityManager::View<FTransformComponent, FBaseComponent, FPointLightComponent>();
-				//	for (auto [entity, ltransform, base, light] : view.each())
-				//	{
-				//		light.shadowIndex = -1;
-				//
-				//		//light.castShadows = light_count % 2;
-				//		if (light.castShadows && base.enabled && world_stats.omniShadowCount < max_point_light_shadow_count)
-				//		{
-				//			FOmniShadowCommit shadow_commit{};
-				//
-				//			auto& culler_list = culler_group[world_stats.omniShadowCount];
-				//			shadow_commit.cameraID = culler_list.front();
-				//
-				//			glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, light.radius / 2.f);
-				//
-				//			matrices[0] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)); // POSITIVE_X
-				//			matrices[1] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)); // NEGATIVE_X
-				//			matrices[2] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0)); // POSITIVE_Y
-				//			matrices[3] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 0.0, -1.0));	// NEGATIVE_Y
-				//			matrices[4] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0));	// POSITIVE_Z
-				//			matrices[5] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0));	// NEGATIVE_Z
-				//
-				//			shadow_commit.farPlane = light.radius;
-				//			shadow_commit.index = light_count;
-				//
-				//			light.shadowIndex = world_stats.omniShadowCount;
-				//
-				//			for (u64 idx = 0ull; idx < matrices.size(); ++idx)
-				//			{
-				//				auto& view = matrices[idx];
-				//				render_world->UpdateCamera(culler_list[idx], view, glm::mat4(1.f), shadowProj, glm::mat4(1.f), glm::vec2(point_light_shadow_map_resolution, point_light_shadow_map_resolution), 0.f, light.radius / 2.f);
-				//			}
-				//
-				//			render_world->AddShadow(shadow_commit);
-				//		}
-				//
-				//		++light_count;
-				//	}
-				//}
-				//
-				//
-				//
-				//// Calculate spot shadows
-				//{
-				//	auto& culler_group = m_shadowCullers[ERenderGeometryCullerType::eSpotShadow];
-				//
-				//	auto view = EntityManager::View<FTransformComponent, FBaseComponent, FSpotLightComponent>();
-				//	for (auto [entity, ltransform, base, light] : view.each())
-				//	{
-				//		light.shadowIndex = -1;
-				//
-				//		if (light.castShadows && base.enabled && world_stats.spotShadowCount < max_spot_light_count)
-				//		{
-				//			auto& culler_list = culler_group[world_stats.spotShadowCount];
-				//
-				//			FSpotShadowCommit shadow_commit{};
-				//			shadow_commit.cameraID = culler_list.front();
-				//
-				//			auto light_dir = light.toTarget ? light.target : glm::normalize(ltransform.grotation * glm::vec3(0.f, 0.f, -1.f));
-				//			glm::mat4 shadowProj = glm::perspective(light.outerAngle * 2.f, 1.0f, 0.1f, 64.f);
-				//			glm::mat4 shadowView = glm::lookAt(ltransform.gposition, ltransform.gposition + light_dir, glm::vec3(0.0f, 1.0f, 0.0f));
-				//			shadow_commit.index = light_count;
-				//
-				//			light.shadowIndex = world_stats.spotShadowCount;
-				//			render_world->AddShadow(shadow_commit);
-				//			
-				//			render_world->UpdateCamera(shadow_commit.cameraID, shadowView, glm::mat4(1.f), shadowProj, glm::mat4(1.f), glm::vec2(spot_light_shadow_map_resolution, spot_light_shadow_map_resolution), 0.f, 64.f);
-				//		}
-				//
-				//		++light_count;
-				//	}
-				//}
+				
+				
+				
+				// Calculate omni shadows
+				{
+					uint32_t point_light_count{ 0u };
+
+					std::array<glm::mat4, 6u> matrices{};
+				
+					auto view = EntityManager::View<FTransformComponent, FBaseComponent, FPointLightComponent>();
+					for (auto [entity, ltransform, base, light] : view.each())
+					{
+						light.shadowIndex = -1;
+				
+						//light.castShadows = light_count % 2;
+						if (light.castShadows && base.enabled && point_light_count < max_point_light_shadow_count)
+						{
+							FOmniShadowCommit shadow_commit{};
+				
+							shadow_commit.cameraID = light.shadow_casters.front();
+				
+							glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, light.radius / 2.f);
+				
+							matrices[0] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)); // POSITIVE_X
+							matrices[1] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)); // NEGATIVE_X
+							matrices[2] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0)); // POSITIVE_Y
+							matrices[3] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 0.0, -1.0));	// NEGATIVE_Y
+							matrices[4] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0));	// POSITIVE_Z
+							matrices[5] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0));	// NEGATIVE_Z
+				
+							shadow_commit.farPlane = light.radius;
+							shadow_commit.index = light_count;
+				
+							light.shadowIndex = point_light_count++;
+				
+							for (u64 idx = 0ull; idx < matrices.size(); ++idx)
+							{
+								auto& view = matrices[idx];
+								render_world.UpdateRenderCamera(light.shadow_casters[idx], view, shadowProj, point_light_shadow_map_resolution, point_light_shadow_map_resolution);
+							}
+				
+							render_world.AddShadow(shadow_commit);
+						}
+				
+						++light_count;
+					}
+				}
+				
+				
+				
+				// Calculate spot shadows
+				{
+					uint32_t spot_light_count{ 0u };
+				
+					auto view = EntityManager::View<FTransformComponent, FBaseComponent, FSpotLightComponent>();
+					for (auto [entity, ltransform, base, light] : view.each())
+					{
+						light.shadowIndex = -1;
+				
+						if (light.castShadows && base.enabled && spot_light_count < max_spot_light_count)
+						{
+							FSpotShadowCommit shadow_commit{};
+							shadow_commit.cameraID = light.shadow_caster;
+				
+							auto light_dir = light.toTarget ? light.target : glm::normalize(ltransform.grotation * glm::vec3(0.f, 0.f, -1.f));
+							glm::mat4 shadowProj = glm::perspective(light.outerAngle * 2.f, 1.0f, 0.1f, 64.f);
+							glm::mat4 shadowView = glm::lookAt(ltransform.gposition, ltransform.gposition + light_dir, glm::vec3(0.0f, 1.0f, 0.0f));
+							shadow_commit.index = light_count;
+				
+							light.shadowIndex = spot_light_count++;
+							render_world.AddShadow(shadow_commit);
+							
+							render_world.UpdateRenderCamera(shadow_commit.cameraID, shadowView, shadowProj, spot_light_shadow_map_resolution, spot_light_shadow_map_resolution);
+						}
+				
+						++light_count;
+					}
+				}
 			}
 
 		}
