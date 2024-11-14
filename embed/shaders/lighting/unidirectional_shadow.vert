@@ -46,12 +46,12 @@ void main()
 	mat4 viewProj;
 #if defined(CASCADED_SHADOW)
 	FCascadedShadowCommit shadow = GetCascadedShadowCommit(shadow_data.shadow_index);
-	FCamera camera = GetCamera(shadow.cameraID);
+	FCamera camera = GetCamera(shadow.cameraID + shadow_data.layer);
 	viewProj = GetViewProjectionMatrix(camera.matrices_offset);
 	gl_Layer = shadow_data.shadow_index * int(cascade_shadow_map_cascade_count) + shadow_data.layer;
 #elif defined(OMNI_SHADOW)
 	FOmniShadowCommit shadow = GetOmniShadowCommit(shadow_data.shadow_index);
-	FCamera camera = GetCamera(shadow.cameraID);
+	FCamera camera = GetCamera(shadow.cameraID + shadow_data.layer);
 	viewProj = GetViewProjectionMatrix(camera.matrices_offset);
 	gl_Layer = shadow_data.shadow_index * 6 + shadow_data.layer;
 #else

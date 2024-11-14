@@ -612,6 +612,8 @@ namespace engine
 						uint32_t draw_call_id{ 0u };
 						self.Begin(command_list);
 
+						int32_t shadow_index{ 0 };
+
 						auto view = world::EntityManager::View<world::ecs::FDirectionalLightComponent>();
 						for (auto [entity, light] : view.each())
 						{
@@ -621,13 +623,15 @@ namespace engine
 							for (int32_t layer = 0; layer < cascade_shadow_map_cascade_count; ++layer)
 							{
 								constants.Set("call_id"_hash32, draw_call_id);
-								constants.Set("shadow_index"_hash32, layer);
+								constants.Set("shadow_index"_hash32, shadow_index);
 								constants.Set("layer"_hash32, layer);
 
 								self.PushConstantRanges(command_list);
 
 								command_list.DrawIndirect(draw_command);
 							}
+
+							shadow_index++;
 						}
 
 						self.End(command_list);
