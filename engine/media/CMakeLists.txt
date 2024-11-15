@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.18.0)
 project(media_engine)
 
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/audio")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/video")
+#add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/audio")
+#add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/video")
+# Sound library abstraction
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/sfx")
 
 file(GLOB MEDIA_ENGINE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 
@@ -20,6 +22,7 @@ target_include_directories(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-	PRIVATE media_engine_audio
-    PRIVATE media_engine_video
+    PRIVATE sfx
+	#PRIVATE media_engine_audio
+    #PRIVATE media_engine_video
 )

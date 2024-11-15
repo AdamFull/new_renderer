@@ -1,5 +1,7 @@
 #pragma once
 
+#include "AudioSourceInterface.h"
+
 namespace engine
 {
 	namespace media
@@ -8,6 +10,8 @@ namespace engine
 		{
 		public:
 			virtual ~IAudioStream() = default;
+
+			virtual void Update(IAudioSource& source) = 0;
 		};
 	}
 }

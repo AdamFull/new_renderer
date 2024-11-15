@@ -10,6 +10,8 @@ namespace engine
 		{
 		public:
 			~OpenAlAudioStream() = default;
+
+			void Update(IAudioSource& source) override;
 		};
 	}
 }
