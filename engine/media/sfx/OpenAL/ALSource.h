@@ -15,6 +15,7 @@ namespace engine
 				~OpenALSource();
 
 				void Play();
+				void Rewind();
 
 				uint32_t GetHandle() const;
 

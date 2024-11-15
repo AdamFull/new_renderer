@@ -15,6 +15,8 @@ namespace engine
 				~OpenALBuffer();
 
 				uint64_t Update(const void* data, uint64_t size) override;
+
+				uint32_t GetHandle() const;
 			private:
 				uint32_t handle;
 				uint32_t format;
