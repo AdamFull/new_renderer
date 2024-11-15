@@ -48,6 +48,7 @@ namespace engine
 			uint64_t OpenALBuffer::Update(const void* data, uint64_t size)
 			{
 				alCall(alBufferData, handle, format, data, size, sample_rate);
+				return size;
 			}
 
 			uint32_t OpenALBuffer::GetHandle() const
