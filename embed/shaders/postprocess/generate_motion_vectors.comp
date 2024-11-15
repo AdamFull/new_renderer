@@ -4,12 +4,12 @@
 
 layout(local_size_x = 8, local_size_y = 8) in;
 
-layout(set = 1, binding = 1) uniform writeonly image2D write_color;
-layout(set = 1, binding = 2) uniform sampler2D depth_texture;
+layout(set = 1, binding = 1) uniform writeonly image2D write_image0;
+layout(set = 1, binding = 2) uniform sampler2D sample_image0;
 
 void main()
 {
-	uvec2 image_size = imageSize(write_color);
+	uvec2 image_size = imageSize(write_image0);
 
 	uvec2 px = uvec2(gl_GlobalInvocationID.xy);
 	vec2 uv = vec2(px) / vec2(image_size);;
@@ -20,7 +20,7 @@ void main()
 	mat4 inv_view_projection = GetInvViewProjectionMatrix(camera.matrices_offset);
 	mat4 prev_view_projection = GetPrevViewProjectionMatrix(camera.matrices_offset);
 
-	float depth = texture(depth_texture, uv).r;
+	float depth = texture(sample_image0, uv).r;
 
 	vec4 clipSpaceLocation;
 	clipSpaceLocation.xy = uv * 2.0 - 1.0;
@@ -37,5 +37,5 @@ void main()
 	// Encode velocity
 	velocity = encodeVelocity(velocity);
 
-	imageStore(write_color, ivec2(px), vec4(velocity, 1.0, 1.0));
+	imageStore(write_image0, ivec2(px), vec4(velocity, 1.0, 1.0));
 }

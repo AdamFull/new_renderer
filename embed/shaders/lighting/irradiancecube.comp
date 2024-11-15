@@ -3,15 +3,15 @@
 
 layout(local_size_x = 8, local_size_y = 8) in;
 
-layout(set = 1, binding = 1, rgba32f) uniform writeonly imageCube out_color;
-layout(set = 1, binding = 2) uniform samplerCube sampler_color;
+layout(set = 1, binding = 1, rgba32f) uniform writeonly imageCube write_image0;
+layout(set = 1, binding = 2) uniform samplerCube sample_image0;
 
 const float deltaPhi = (2.0f * PI) / 180.0f;
 const float deltaTheta = (0.5f * PI) / 64.0f;
 
 void main() 
 {
-	uvec2 image_size = imageSize(out_color);
+	uvec2 image_size = imageSize(write_image0);
 
 	uvec2 px = uvec2(0, 0);
 	vec2 uv = vec2(0, 0);
@@ -34,11 +34,11 @@ void main()
 			{
 				vec3 tempVec = cos(phi) * right + sin(phi) * up;
 				vec3 sampleVector = cos(theta) * N + sin(theta) * tempVec;
-				colour += texture(sampler_color, sampleVector).rgb * cos(theta) * sin(theta);
+				colour += texture(sample_image0, sampleVector).rgb * cos(theta) * sin(theta);
 				sampleCount++;
 			}
 		}
 
-		imageStore(out_color, ivec3(px, i), vec4(PI * colour / float(sampleCount), 1.0f));
+		imageStore(write_image0, ivec3(px, i), vec4(PI * colour / float(sampleCount), 1.0f));
 	}
 }

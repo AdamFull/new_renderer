@@ -29,6 +29,76 @@
 
 #define SWAP_COUNT(in, out) std::swap(in, out); ++pass_count;
 
+namespace render_label
+{
+	using namespace utl;
+
+	constexpr const uint32_t write_image0 = "write_image0"_hash32;
+	constexpr const uint32_t write_image1 = "write_image1"_hash32;
+	constexpr const uint32_t write_image2 = "write_image2"_hash32;
+	constexpr const uint32_t write_image3 = "write_image3"_hash32;
+	constexpr const uint32_t write_image4 = "write_image4"_hash32;
+	constexpr const uint32_t write_image5 = "write_image5"_hash32;
+	constexpr const uint32_t write_image6 = "write_image6"_hash32;
+	constexpr const uint32_t write_image7 = "write_image7"_hash32;
+
+	constexpr const uint32_t sample_image0 = "sample_image0"_hash32;
+	constexpr const uint32_t sample_image1 = "sample_image1"_hash32;
+	constexpr const uint32_t sample_image2 = "sample_image2"_hash32;
+	constexpr const uint32_t sample_image3 = "sample_image3"_hash32;
+	constexpr const uint32_t sample_image4 = "sample_image4"_hash32;
+	constexpr const uint32_t sample_image5 = "sample_image5"_hash32;
+	constexpr const uint32_t sample_image6 = "sample_image6"_hash32;
+	constexpr const uint32_t sample_image7 = "sample_image7"_hash32;
+	constexpr const uint32_t sample_image8 = "sample_image8"_hash32;
+	constexpr const uint32_t sample_image9 = "sample_image9"_hash32;
+	constexpr const uint32_t sample_image10 = "sample_image10"_hash32;
+	constexpr const uint32_t sample_image11 = "sample_image11"_hash32;
+
+	constexpr const uint32_t bloom_color = "bloom_color"_hash32;
+	constexpr const uint32_t dirt_mask = "dirt_mask"_hash32;
+
+	constexpr const uint32_t roughness = "roughness"_hash32;
+
+	constexpr const uint32_t position = "position"_hash32;
+	constexpr const uint32_t color = "color"_hash32;
+	constexpr const uint32_t texcoord = "texcoord"_hash32;
+	constexpr const uint32_t normal = "normal"_hash32;
+	constexpr const uint32_t tangent = "tangent"_hash32;
+	constexpr const uint32_t joints = "joints"_hash32;
+	constexpr const uint32_t weights = "weights"_hash32;
+
+	constexpr const uint32_t indices = "indices"_hash32;
+
+	constexpr const uint32_t call_id = "call_id"_hash32;
+	constexpr const uint32_t shadow_index = "shadow_index"_hash32;
+	constexpr const uint32_t layer = "layer"_hash32;
+
+	constexpr const uint32_t camera_id = "camera_id"_hash32;
+
+	constexpr const uint32_t geometry_buffers = "GeometryBuffers"_hash32;
+
+	constexpr const uint32_t brdf_lut = "brdf_lut"_hash32;
+	constexpr const uint32_t irradiance_cube = "irradiance_cube"_hash32;
+	constexpr const uint32_t prefiltered_cube = "prefiltered_cube"_hash32;
+	constexpr const uint32_t visbuffer_geometry = "visbuffer_geometry"_hash32;
+	constexpr const uint32_t visbuffer_vboinst = "visbuffer_vboinst"_hash32;
+	constexpr const uint32_t cascaded_shadowmap = "cascaded_shadowmap"_hash32;
+	constexpr const uint32_t direct_shadowmap = "direct_shadowmap"_hash32;
+	constexpr const uint32_t omni_shadowmap = "omni_shadowmap"_hash32;
+
+	constexpr const uint32_t motion_vectors = "motion_vectors"_hash32;
+
+
+	constexpr const uint32_t histogram_buffer = "Histogram"_hash32;
+	constexpr const uint32_t histogram_compute_params = "FHistogramComputeParams"_hash32;
+	constexpr const uint32_t min_log_lum = "minLogLum"_hash32;
+	constexpr const uint32_t log_lum_range = "logLumRange"_hash32;
+	constexpr const uint32_t time_coeff = "logLumRange"_hash32;
+	constexpr const uint32_t num_pixels_x = "numPixelsX"_hash32;
+	constexpr const uint32_t num_pixels_y = "numPixelsY"_hash32;
+}
+
 namespace engine
 {
 	namespace render
@@ -197,11 +267,6 @@ namespace engine
 		void Renderer::BuildGraph()
 		{
 			using namespace utl;
-
-			// Some binding points 
-			constexpr const uint32_t sampler_color_bnd = "sampler_color"_hash32;
-			constexpr const uint32_t out_color_bnd = "out_color"_hash32;
-			constexpr const uint32_t roughness_bnd = "roughness"_hash32;
 
 			static bool use_low_precision_velocity{ false };
 			static bool bloom_use_brightness{ true };
@@ -462,17 +527,16 @@ namespace engine
 				create_info.one_time = true;
 
 				create_info.draw_callback = [this, 
-					brdf_lut_target,
-					out_color_bnd
+					brdf_lut_target
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
-						self.BindWriteResource(out_color_bnd, brdf_lut_target);
+						self.BindWriteResource(render_label::write_image0, brdf_lut_target);
 
 						self.ResolveDependencies(command_list);
 						self.BindResources(command_list);
 
 						self.DispatchForTarget(command_list, brdf_lut_target, true);
-						self.FinalizeTarget(command_list, out_color_bnd, brdf_lut_target);
+						self.FinalizeTarget(command_list, render_label::write_image0, brdf_lut_target);
 					};
 
 				render_graph->AddNode(render_graph->CreateNode(create_info));
@@ -486,21 +550,19 @@ namespace engine
 
 				create_info.draw_callback = [this, 
 					irradiance_cube_target, 
-					casual_day_4k_cube,
-					sampler_color_bnd,
-					out_color_bnd
+					casual_day_4k_cube
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
-						self.BindWriteResource(out_color_bnd, irradiance_cube_target);
+						self.BindWriteResource(render_label::write_image0, irradiance_cube_target);
 
-						self.BindResource(sampler_color_bnd, casual_day_4k_cube);
+						self.BindResource(render_label::sample_image0, casual_day_4k_cube);
 						
 						self.ResolveDependencies(command_list);
 						self.BindResources(command_list);
 
 						self.DispatchForTarget(command_list, irradiance_cube_target, true);
 
-						self.FinalizeTarget(command_list, out_color_bnd, irradiance_cube_target);
+						self.FinalizeTarget(command_list, render_label::write_image0, irradiance_cube_target);
 					};
 
 				render_graph->AddNode(render_graph->CreateNode(create_info));
@@ -516,27 +578,24 @@ namespace engine
 
 				create_info.draw_callback = [this,
 					prefiltered_cube_target, 
-					casual_day_4k_cube,
-					sampler_color_bnd,
-					out_color_bnd,
-					roughness_bnd
+					casual_day_4k_cube
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
-						self.WriteResource(out_color_bnd, prefiltered_cube_target);
+						self.WriteResource(render_label::write_image0, prefiltered_cube_target);
 
 						auto target = render_graph->GetTexture(prefiltered_cube_target);
 						for (int32_t mip = 0; mip < target->GetMipLevelCount(); ++mip)
 						{
 							if (mip == 0)
 							{
-								self.BindResource(sampler_color_bnd, casual_day_4k_cube);
+								self.BindResource(render_label::sample_image0, casual_day_4k_cube);
 							}
 							else
 							{
-								self.BindReadResource(sampler_color_bnd, prefiltered_cube_target, mip - 1);
+								self.BindReadResource(render_label::sample_image0, prefiltered_cube_target, mip - 1);
 							}
 
-							self.BindWriteResource(out_color_bnd, prefiltered_cube_target, mip);
+							self.BindWriteResource(render_label::write_image0, prefiltered_cube_target, mip);
 
 							self.ResolveDependencies(command_list);
 							self.BindResources(command_list);
@@ -546,7 +605,7 @@ namespace engine
 							float layer_roughness = static_cast<float>(mip) / static_cast<float>(target->GetMipLevelCount());
 
 							auto& constants = self.GetConstantBlock();
-							constants.Set(roughness_bnd, layer_roughness);
+							constants.Set(render_label::roughness, layer_roughness);
 							self.PushConstantRanges(command_list);
 
 							group_x = target->GetWidth() >> mip;
@@ -556,7 +615,7 @@ namespace engine
 							command_list.Dispatch(group_x, group_y, group_z);
 						}
 
-						self.FinalizeTarget(command_list, sampler_color_bnd, prefiltered_cube_target);
+						self.FinalizeTarget(command_list, render_label::sample_image0, prefiltered_cube_target);
 					};
 
 				static_cast<GroupNode*>(group_node.get())->AddNode(std::move(render_graph->CreateNode(create_info)));
@@ -596,12 +655,9 @@ namespace engine
 						auto& geometry_buffer = *geometry_buffers.back();
 						geometry_buffer.BindIndexBuffer(command_list);
 
-						auto& buffers = self.GetUniformBlock("GeometryBuffers"_hash32);
-						buffers.Set("position"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
-						buffers.Set("texcoord"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTexCoord));
-						buffers.Set("normal"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eNormal));
-						buffers.Set("tangent"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTangent));
-						buffers.Set("indices"_hash32, geometry_buffer.GetIndexBufferAddress());
+						auto& buffers = self.GetUniformBlock(render_label::geometry_buffers);
+						buffers.Set(render_label::position, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
+						buffers.Set(render_label::texcoord, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTexCoord));
 
 						auto& constants = self.GetConstantBlock();
 
@@ -622,9 +678,9 @@ namespace engine
 
 							for (int32_t layer = 0; layer < cascade_shadow_map_cascade_count; ++layer)
 							{
-								constants.Set("call_id"_hash32, draw_call_id);
-								constants.Set("shadow_index"_hash32, shadow_index);
-								constants.Set("layer"_hash32, layer);
+								constants.Set(render_label::call_id, draw_call_id);
+								constants.Set(render_label::shadow_index, shadow_index);
+								constants.Set(render_label::layer, layer);
 
 								self.PushConstantRanges(command_list);
 
@@ -672,12 +728,9 @@ namespace engine
 						auto& geometry_buffer = *geometry_buffers.back();
 						geometry_buffer.BindIndexBuffer(command_list);
 
-						auto& buffers = self.GetUniformBlock("GeometryBuffers"_hash32);
-						buffers.Set("position"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
-						buffers.Set("texcoord"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTexCoord));
-						buffers.Set("normal"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eNormal));
-						buffers.Set("tangent"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTangent));
-						buffers.Set("indices"_hash32, geometry_buffer.GetIndexBufferAddress());
+						auto& buffers = self.GetUniformBlock(render_label::geometry_buffers);
+						buffers.Set(render_label::position, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
+						buffers.Set(render_label::texcoord, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTexCoord));
 
 						auto& constants = self.GetConstantBlock();
 
@@ -698,9 +751,9 @@ namespace engine
 
 							for (int32_t layer = 0; layer < 6; ++layer)
 							{
-								constants.Set("call_id"_hash32, draw_call_id);
-								constants.Set("shadow_index"_hash32, shadow_index);
-								constants.Set("layer"_hash32, layer);
+								constants.Set(render_label::call_id, draw_call_id);
+								constants.Set(render_label::shadow_index, shadow_index);
+								constants.Set(render_label::layer, layer);
 
 								self.PushConstantRanges(command_list);
 
@@ -748,12 +801,9 @@ namespace engine
 						auto& geometry_buffer = *geometry_buffers.back();
 						geometry_buffer.BindIndexBuffer(command_list);
 
-						auto& buffers = self.GetUniformBlock("GeometryBuffers"_hash32);
-						buffers.Set("position"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
-						buffers.Set("texcoord"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTexCoord));
-						buffers.Set("normal"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eNormal));
-						buffers.Set("tangent"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTangent));
-						buffers.Set("indices"_hash32, geometry_buffer.GetIndexBufferAddress());
+						auto& buffers = self.GetUniformBlock(render_label::geometry_buffers);
+						buffers.Set(render_label::position, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
+						buffers.Set(render_label::texcoord, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTexCoord));
 
 						auto& constants = self.GetConstantBlock();
 
@@ -772,9 +822,9 @@ namespace engine
 							if (!light.castShadows)
 								continue;
 
-							constants.Set("call_id"_hash32, draw_call_id);
-							constants.Set("shadow_index"_hash32, shadow_index);
-							constants.Set("layer"_hash32, shadow_index);
+							constants.Set(render_label::call_id, draw_call_id);
+							constants.Set(render_label::shadow_index, shadow_index);
+							constants.Set(render_label::layer, shadow_index);
 
 							self.PushConstantRanges(command_list);
 
@@ -823,16 +873,13 @@ namespace engine
 						auto& geometry_buffer = *geometry_buffers.back();
 						geometry_buffer.BindIndexBuffer(command_list);
 
-						auto& buffers = self.GetUniformBlock("GeometryBuffers"_hash32);
-						buffers.Set("position"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
-						buffers.Set("texcoord"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTexCoord));
-						buffers.Set("normal"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eNormal));
-						buffers.Set("tangent"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTangent));
-						buffers.Set("indices"_hash32, geometry_buffer.GetIndexBufferAddress());
+						auto& buffers = self.GetUniformBlock(render_label::geometry_buffers);
+						buffers.Set(render_label::position, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
+						buffers.Set(render_label::texcoord, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTexCoord));
 
 						auto& constants = self.GetConstantBlock();
-						constants.Set("call_id"_hash32, 0u);
-						constants.Set("camera_id"_hash32, 0u);
+						constants.Set(render_label::call_id, 0u);
+						constants.Set(render_label::camera_id, 0u);
 
 						self.PushConstantRanges(command_list);
 
@@ -866,18 +913,18 @@ namespace engine
 					omni_shadows_target
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
-						self.BindWriteResource("write_color"_hash32, hdr0);
-						self.BindResource("brdf_lut"_hash32, brdf_lut_target); // binding 1
-						self.BindResource("irradiance_cube"_hash32, irradiance_cube_target); // binding 2
-						self.BindResource("prefiltered_cube"_hash32, prefiltered_cube_target); // binding 3
+						self.BindWriteResource(render_label::write_image0, hdr0);
+						self.BindResource(render_label::brdf_lut, brdf_lut_target); // binding 1
+						self.BindResource(render_label::irradiance_cube, irradiance_cube_target); // binding 2
+						self.BindResource(render_label::prefiltered_cube, prefiltered_cube_target); // binding 3
 
-						self.BindReadResource("visbuffer_geometry"_hash32, visbuffer_geometry_target);
-						self.BindReadResource("visbuffer_vboinst"_hash32, visbuffer_vboinst_target);
-						self.BindReadResource("depth_buffer"_hash32, zbuffer_depth_target);
+						self.BindReadResource(render_label::visbuffer_geometry, visbuffer_geometry_target);
+						self.BindReadResource(render_label::visbuffer_vboinst, visbuffer_vboinst_target);
+						self.BindReadResource(render_label::sample_image5, zbuffer_depth_target);
 
-						self.BindReadResource("cascaded_shadowmap"_hash32, cascaded_shadows_target);
-						self.BindReadResource("direct_shadowmap"_hash32, directional_shadows_target);
-						self.BindReadResource("omni_shadowmap"_hash32, omni_shadows_target);
+						self.BindReadResource(render_label::cascaded_shadowmap, cascaded_shadows_target);
+						self.BindReadResource(render_label::direct_shadowmap, directional_shadows_target);
+						self.BindReadResource(render_label::omni_shadowmap, omni_shadows_target);
 
 						self.ResolveDependencies(command_list);
 
@@ -885,16 +932,16 @@ namespace engine
 						auto& geometry_buffer = *geometry_buffers.back();
 						geometry_buffer.BindIndexBuffer(command_list);
 
-						auto& buffers = self.GetUniformBlock("GeometryBuffers"_hash32);
-						buffers.Set("position"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
-						buffers.Set("texcoord"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTexCoord));
-						buffers.Set("normal"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eNormal));
-						buffers.Set("tangent"_hash32, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTangent));
-						buffers.Set("indices"_hash32, geometry_buffer.GetIndexBufferAddress());
+						auto& buffers = self.GetUniformBlock(render_label::geometry_buffers);
+						buffers.Set(render_label::position, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
+						buffers.Set(render_label::texcoord, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTexCoord));
+						buffers.Set(render_label::normal, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eNormal));
+						buffers.Set(render_label::tangent, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTangent));
+						buffers.Set(render_label::indices, geometry_buffer.GetIndexBufferAddress());
 
 						auto& constants = self.GetConstantBlock();
-						constants.Set("call_id"_hash32, 0u);
-						constants.Set("camera_id"_hash32, 0u);
+						constants.Set(render_label::call_id, 0u);
+						constants.Set(render_label::camera_id, 0u);
 
 						self.PushConstantRanges(command_list);
 
@@ -915,8 +962,8 @@ namespace engine
 					zbuffer_depth_target
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
-						self.BindWriteResource("write_color"_hash32, motion_vectors_target);
-						self.BindReadResource("depth_texture"_hash32, zbuffer_depth_target);
+						self.BindWriteResource(render_label::write_image0, motion_vectors_target);
+						self.BindReadResource(render_label::sample_image0, zbuffer_depth_target);
 
 						self.ResolveDependencies(command_list);
 						self.BindResources(command_list);
@@ -940,8 +987,8 @@ namespace engine
 					hdr0_history
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
-						self.BindReadResource("sampler_color"_hash32, input_target);
-						self.BindWriteResource("write_color"_hash32, hdr0_history);
+						self.BindReadResource(render_label::sample_image0, input_target);
+						self.BindWriteResource(render_label::write_image0, hdr0_history);
 
 						self.ResolveDependencies(command_list);
 						self.BindResources(command_list);
@@ -970,8 +1017,8 @@ namespace engine
 						enabled = &postprocess.fxaa.enable
 					](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 						{
-							self.BindReadResource("sampler_color"_hash32, input_target);
-							self.BindWriteResource("write_color"_hash32, output_target);
+							self.BindReadResource(render_label::sample_image0, input_target);
+							self.BindWriteResource(render_label::write_image0, output_target);
 
 							self.ResolveDependencies(command_list);
 							self.BindResources(command_list);
@@ -997,9 +1044,9 @@ namespace engine
 						motion_vectors_target
 					](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 						{
-							self.BindReadResource("sampler_color"_hash32, input_target);
-							self.BindReadResource("motion_vectors"_hash32, motion_vectors_target);
-							self.BindWriteResource("write_color"_hash32, output_target);
+							self.BindReadResource(render_label::sample_image0, input_target);
+							self.BindReadResource(render_label::motion_vectors, motion_vectors_target);
+							self.BindWriteResource(render_label::write_image0, output_target);
 
 							self.ResolveDependencies(command_list);
 							self.BindResources(command_list);
@@ -1029,8 +1076,8 @@ namespace engine
 							hdr0_div2
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
-								self.BindReadResource("sampler_color"_hash32, input_target);
-								self.BindWriteResource("write_color"_hash32, hdr0_div2);
+								self.BindReadResource(render_label::sample_image0, input_target);
+								self.BindWriteResource(render_label::write_image0, hdr0_div2);
 								self.ResolveDependencies(command_list);
 								self.BindResources(command_list);
 
@@ -1052,10 +1099,10 @@ namespace engine
 							zbuffer_depth_target
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
-								self.BindReadResource("sampler_color"_hash32, input_target);
+								self.BindReadResource(render_label::sample_image0, input_target);
 								self.BindReadResource("depth_image"_hash32, zbuffer_depth_target);
 								self.BindReadResource("bokeh_color"_hash32, hdr0_div2);
-								self.BindWriteResource("write_color"_hash32, output_target);
+								self.BindWriteResource(render_label::write_image0, output_target);
 								self.ResolveDependencies(command_list);
 								self.BindResources(command_list);
 
@@ -1087,8 +1134,8 @@ namespace engine
 							hdr0_div2
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
-								self.BindReadResource("sampler_color"_hash32, input_target);
-								self.BindWriteResource("write_color"_hash32, hdr0_div2);
+								self.BindReadResource(render_label::sample_image0, input_target);
+								self.BindWriteResource(render_label::write_image0, hdr0_div2);
 								self.ResolveDependencies(command_list);
 								self.BindResources(command_list);
 
@@ -1109,10 +1156,10 @@ namespace engine
 								bloom_target
 							](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 								{
-									self.WriteResource("write_color"_hash32, bloom_target);
+									self.WriteResource(render_label::write_image0, bloom_target);
 
-									self.BindReadResource("sampler_color"_hash32, hdr0_div2);
-									self.BindResource("write_color"_hash32, bloom_target);
+									self.BindReadResource(render_label::sample_image0, hdr0_div2);
+									self.BindResource(render_label::write_image0, bloom_target);
 
 									self.ResolveDependencies(command_list);
 									self.BindResources(command_list);
@@ -1135,8 +1182,8 @@ namespace engine
 
 									for (int32_t mip = 1; mip < bloom_blur_depth; ++mip)
 									{
-										self.BindReadResource("sampler_color"_hash32, bloom_target, mip - 1);
-										self.BindWriteResource("write_color"_hash32, bloom_target, mip);
+										self.BindReadResource(render_label::sample_image0, bloom_target, mip - 1);
+										self.BindWriteResource(render_label::write_image0, bloom_target, mip);
 
 										self.ResolveDependencies(command_list);
 										self.BindResources(command_list);
@@ -1168,8 +1215,8 @@ namespace engine
 
 								for (int32_t mip = bloom_blur_depth - 1; mip > 0; --mip)
 								{
-									self.BindReadResource("sampler_color"_hash32, bloom_target, mip);
-									self.BindWriteResource("write_color"_hash32, bloom_target, mip - 1);
+									self.BindReadResource(render_label::sample_image0, bloom_target, mip);
+									self.BindWriteResource(render_label::write_image0, bloom_target, mip - 1);
 
 									self.ResolveDependencies(command_list);
 									self.BindResources(command_list);
@@ -1199,10 +1246,10 @@ namespace engine
 							dirt_mask_texture
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
-								self.BindWriteResource("write_color"_hash32, output_target);
-								self.BindReadResource("sampler_color"_hash32, input_target);
-								self.BindReadResource("bloom_color"_hash32, bloom_target);
-								self.BindResource("dirt_mask"_hash32, dirt_mask_texture);
+								self.BindWriteResource(render_label::write_image0, output_target);
+								self.BindReadResource(render_label::sample_image0, input_target);
+								self.BindReadResource(render_label::bloom_color, bloom_target);
+								self.BindResource(render_label::dirt_mask, dirt_mask_texture);
 
 								self.ResolveDependencies(command_list);
 								self.BindResources(command_list);
@@ -1235,15 +1282,15 @@ namespace engine
 							histogram_buffer
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
-								self.BindReadResource("sampler_color"_hash32, input_target);
-								self.BindWriteResource("Histogram"_hash32, histogram_buffer);
+								self.BindReadResource(render_label::sample_image0, input_target);
+								self.BindWriteResource(render_label::histogram_buffer, histogram_buffer);
 								self.ResolveDependencies(command_list);
 
 								float log_lum_range = postprocess.tonemap.lumMax - postprocess.tonemap.lumMin;
 
-								auto& uniform = self.GetUniformBlock("FHistogramComputeParams"_hash32);
-								uniform.Set("minLogLum"_hash32, postprocess.tonemap.lumMin);
-								uniform.Set("logLumRange"_hash32, log_lum_range);
+								auto& uniform = self.GetUniformBlock(render_label::histogram_compute_params);
+								uniform.Set(render_label::min_log_lum, postprocess.tonemap.lumMin);
+								uniform.Set(render_label::log_lum_range, log_lum_range);
 
 								self.BindResources(command_list);
 
@@ -1264,8 +1311,8 @@ namespace engine
 							input_target
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
-								self.BindReadResource("Histogram"_hash32, histogram_buffer);
-								self.BindWriteResource("target"_hash32, avg_brightness_target);
+								self.BindReadResource(render_label::histogram_buffer, histogram_buffer);
+								self.BindWriteResource(render_label::write_image0, avg_brightness_target);
 								self.ResolveDependencies(command_list);
 
 								float log_lum_range = postprocess.tonemap.lumMax - postprocess.tonemap.lumMin;
@@ -1273,12 +1320,12 @@ namespace engine
 
 								auto* texture = render_graph->GetTexture(input_target);
 
-								auto& uniform = self.GetUniformBlock("FHistogramComputeParams"_hash32);
-								uniform.Set("minLogLum"_hash32, postprocess.tonemap.lumMin);
-								uniform.Set("logLumRange"_hash32, log_lum_range);
-								uniform.Set("timeCoeff"_hash32, time_coeff);
-								uniform.Set("numPixelsX"_hash32, static_cast<float>(texture->GetWidth()));
-								uniform.Set("numPixelsY"_hash32, static_cast<float>(texture->GetHeight()));
+								auto& uniform = self.GetUniformBlock(render_label::histogram_compute_params);
+								uniform.Set(render_label::min_log_lum, postprocess.tonemap.lumMin);
+								uniform.Set(render_label::log_lum_range, log_lum_range);
+								uniform.Set(render_label::time_coeff, time_coeff);
+								uniform.Set(render_label::num_pixels_x, static_cast<float>(texture->GetWidth()));
+								uniform.Set(render_label::num_pixels_y, static_cast<float>(texture->GetHeight()));
 
 								self.BindResources(command_list);
 
@@ -1300,8 +1347,8 @@ namespace engine
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
 								self.BindReadResource("avg_luminosity"_hash32, avg_brightness_target);
-								self.BindReadResource("sampler_color"_hash32, input_target);
-								self.BindWriteResource("write_color"_hash32, output_target);
+								self.BindReadResource(render_label::sample_image0, input_target);
+								self.BindWriteResource(render_label::write_image0, output_target);
 
 								self.ResolveDependencies(command_list);
 								self.BindResources(command_list);

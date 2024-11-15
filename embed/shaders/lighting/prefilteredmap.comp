@@ -3,8 +3,8 @@
 
 layout(local_size_x = 8, local_size_y = 8) in;
 
-layout(set = 1, binding = 1, rgba32f) uniform writeonly imageCube out_color;
-layout(set = 1, binding = 2) uniform samplerCube sampler_color;
+layout(set = 1, binding = 1, rgba32f) uniform writeonly imageCube write_image0;
+layout(set = 1, binding = 2) uniform samplerCube sample_image0;
 
 layout(push_constant) uniform ComputeCubemapData
 {
@@ -54,7 +54,7 @@ vec3 prefilterEnvMap(samplerCube envmap, vec3 R, float roughness)
 
 void main() 
 {
-	uvec2 image_size = imageSize(out_color);
+	uvec2 image_size = imageSize(write_image0);
 
 	uvec2 px = uvec2(0, 0);
 	vec2 uv = vec2(0, 0);
@@ -64,6 +64,6 @@ void main()
 	for (uint i = 0; i != 6; ++i) 
     {
 		vec3 R = normalize(cubeDir(uv, i));
-		imageStore(out_color, ivec3(px, i), vec4(prefilterEnvMap(sampler_color, R, data.roughness), 1.0f));
+		imageStore(write_image0, ivec3(px, i), vec4(prefilterEnvMap(sample_image0, R, data.roughness), 1.0f));
 	}
 }

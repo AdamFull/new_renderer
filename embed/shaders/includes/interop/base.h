@@ -79,13 +79,13 @@ namespace engine {
 
 		// Directional light
 		CONSTANT uint32_t max_directional_light_count = 3u;
-		CONSTANT uint32_t max_directional_light_shadow_count = 1u;
+		CONSTANT uint32_t max_directional_light_shadow_count = 2u;
 		CONSTANT uint32_t cascade_shadow_map_resolution = 2048u;
 		CONSTANT uint32_t cascade_shadow_map_cascade_count = 4u;
 
 		// Spot light
 		CONSTANT uint32_t max_spot_light_count = 64u;
-		CONSTANT uint32_t max_spot_light_shadow_count = 1u;
+		CONSTANT uint32_t max_spot_light_shadow_count = 2u;
 		CONSTANT uint32_t spot_light_shadow_map_resolution = 1024u;
 
 		// Point light

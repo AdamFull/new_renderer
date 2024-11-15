@@ -11,11 +11,11 @@ layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
 #define DISABLE_SHADOWS
 
-layout(set = 2, binding = 0) uniform writeonly image2D write_color;
+layout(set = 2, binding = 0) uniform writeonly image2D write_image0;
 layout(set = 2, binding = 1) uniform sampler2D brdf_lut;
 layout(set = 2, binding = 2) uniform samplerCube irradiance_cube;
 layout(set = 2, binding = 3) uniform samplerCube prefiltered_cube;
-layout(set = 2, binding = 4) uniform sampler2D depth_buffer;
+layout(set = 2, binding = 4) uniform sampler2D sample_image5;
 //layout(set = 2, binding = 5) uniform sampler2D prev_frame_color;
 
 layout (set = 2, binding = 6) uniform sampler2DArrayShadow cascaded_shadowmap;
@@ -134,7 +134,7 @@ vec3 calculateDirectionalLight(in FLightCommit light, in VertexAttribute va, in 
 	if(light.castShadows > 0 && light.shadowIndex > -1)
 	{
 		shadow_factor = getCascadeShadow(cascaded_shadowmap, light, va, ms, dither);
-		//shadow_factor = ScreenSpaceShadows(va.pos, light.direction, depth_buffer, 32, 0.02f, dither);
+		//shadow_factor = ScreenSpaceShadows(va.pos, light.direction, sample_image5, 32, 0.02f, dither);
 	}
 
 	return light.color * light.intencity * color * shadow_factor;
@@ -176,7 +176,7 @@ vec3 calculatePointLight(in FLightCommit light, in VertexAttribute va, in Materi
 	if(light.castShadows > 0 && light.shadowIndex > -1)
 	{
 		shadow_factor = getOmniShadow(omni_shadowmap, light, va, ms, dither);
-		//shadow_factor = ScreenSpaceShadows(va.pos, light.direction, depth_buffer, 32, 0.02f, dither);
+		//shadow_factor = ScreenSpaceShadows(va.pos, light.direction, sample_image5, 32, 0.02f, dither);
 	}
 
 	return light.color * atten * color * light.intencity * shadow_factor;
@@ -224,7 +224,7 @@ vec3 calculateSpotlight(in FLightCommit light, in VertexAttribute va, in Materia
 	if(light.castShadows > 0 && light.shadowIndex > -1)
 	{
 		shadow_factor = getDirectionalShadow(direct_shadowmap, light, va, ms, dither);
-		//shadow_factor = ScreenSpaceShadows(va.pos, light.direction, depth_buffer, 32, 0.02f, dither);
+		//shadow_factor = ScreenSpaceShadows(va.pos, light.direction, sample_image5, 32, 0.02f, dither);
 	}
 
 	return light.color * light.intencity * color * angularAttenuation * shadow_factor;
@@ -271,7 +271,7 @@ vec3 debug_visualize_cascades(in float view_depth, float dither)
 
 void main() 
 {
-	uvec2 image_size = imageSize(write_color);
+	uvec2 image_size = imageSize(write_image0);
 
 	uvec2 px;
 	vec2 uv;
@@ -297,7 +297,7 @@ void main()
 		vec4 dir_world_space = vec4(0.0);
 		const vec3 origin = vec3(0, atmosphere_planet_radius, 0) + camera_pos;
 		
-		float depth = texture(depth_buffer, uv).r;
+		float depth = texture(sample_image5, uv).r;
 		dir_world_space.xyz = getPositionFromDepth(uv, 1.0f, GetInvViewProjectionMatrix(camera.matrices_offset));
 		
 		uint sun_count = 0;
@@ -315,7 +315,7 @@ void main()
 		pixel_color.rgb /= float(sun_count);
 		pixel_color.rgb = 1.0 - exp(-1.0 * pixel_color.rgb);
 
-		imageStore(write_color, ivec2(px), pixel_color);
+		imageStore(write_image0, ivec2(px), pixel_color);
 		return;
 	}
 
@@ -359,9 +359,9 @@ void main()
 	//res *= debug_visualize_cascades(va.linearZ, dither);
 
 	pixel_color = vec4(res, 1.0);
-	//pixel_color.rgb += computeSSR(uv, va.pos, va.normal, ms.metallic, ms.roughness, depth_buffer, prev_frame_color);
+	//pixel_color.rgb += computeSSR(uv, va.pos, va.normal, ms.metallic, ms.roughness, sample_image5, prev_frame_color);
 	float ssr_weight = 0.f;
-	//pixel_color.rgb += ScreenSpaceReflections(va.pos, ms.normal, V, ms.roughness, depth_buffer, prev_frame_color, dither, ssr_weight);
+	//pixel_color.rgb += ScreenSpaceReflections(va.pos, ms.normal, V, ms.roughness, sample_image5, prev_frame_color, dither, ssr_weight);
 
-	imageStore(write_color, ivec2(px), pixel_color);
+	imageStore(write_image0, ivec2(px), pixel_color);
 }

@@ -9,7 +9,7 @@
 
 layout (local_size_x = THREADS_X, local_size_y = THREADS_Y, local_size_z = 1) in;
 
-layout(set = 1, binding = 0) uniform sampler2D sampler_color;
+layout(set = 1, binding = 0) uniform sampler2D sample_image0;
 layout (set = 1, binding = 1) buffer Histogram { uint histogram[GROUP_SIZE]; };
 
 layout (std140, set = 1, binding = 2) uniform FHistogramComputeParams 
@@ -46,12 +46,12 @@ void main()
     histogramShared[gl_LocalInvocationIndex] = 0;
     barrier();
 
-    ivec2 dim = textureSize(sampler_color, 0).xy;
+    ivec2 dim = textureSize(sample_image0, 0).xy;
 
     // Ignore threads that map to areas beyond the bounds of our HDR image
     if (gl_GlobalInvocationID.x < dim.x && gl_GlobalInvocationID.y < dim.y) 
     {
-      vec3 hdrColor = texelFetch(sampler_color, ivec2(gl_GlobalInvocationID.xy) , 0).xyz;
+      vec3 hdrColor = texelFetch(sample_image0, ivec2(gl_GlobalInvocationID.xy) , 0).xyz;
       uint binIndex = colorToBin(hdrColor, minLogLum, 1.0 / logLumRange);
 
       // We use an atomic add to ensure we don't write to the same bin in our

@@ -3,7 +3,7 @@
 
 layout(local_size_x = 8, local_size_y = 8) in;
 
-layout(set = 1, binding = 1, rg16f) uniform writeonly image2D out_color;
+layout(set = 1, binding = 1, rg16f) uniform writeonly image2D write_image0;
 
 const uint NUM_SAMPLES = 1024u;
 
@@ -40,12 +40,12 @@ vec2 BRDF(float NoV, float roughness)
 
 void main() 
 {
-	uvec2 image_size = imageSize(out_color);
+	uvec2 image_size = imageSize(write_image0);
 
 	uvec2 px = uvec2(0, 0);
 	vec2 uv = vec2(0, 0);
 	if(swizzle_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, gl_WorkGroupID.xy, image_size, uv, px))
 		return;
 
-	imageStore(out_color, ivec2(px), vec4(BRDF(uv.x, 1.0f - uv.y), 0.0f, 1.0f));
+	imageStore(write_image0, ivec2(px), vec4(BRDF(uv.x, 1.0f - uv.y), 0.0f, 1.0f));
 }
