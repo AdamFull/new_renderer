@@ -96,6 +96,31 @@ namespace engine
 			log_info("Loading shader cache...");
 			if (!vfs->ReadBson("/root/embed/rendering/shaders/shader_cache.shc", shader_cache))
 				log_error("Failed to load shader cache. ");
+
+			// Prepare mip generation pipeline
+			mg_shader = LoadShader("utility:generate_mips");
+
+			gfx::RootSignatureCreateInfo root_sign_ci{};
+			root_sign_ci.shader = mg_shader;
+
+			mg_root_signature = context.CreateRootSignature(root_sign_ci);
+
+			gfx::ComputePipelineCreateInfo pipeline_ci{};
+			pipeline_ci.shader = mg_shader;
+			pipeline_ci.root_signature = mg_root_signature;
+
+			mg_pipeline = context.CreatePipeline(pipeline_ci);
+
+			gfx::SamplerCreateInfo sampler_ci{};
+			sampler_ci.address_u = sampler_ci.address_v = sampler_ci.address_w = gfx::SamplerAddressMode::eClampToEdge;
+			sampler_ci.min_filter = gfx::Filter::eLinear;
+			sampler_ci.mag_filter = gfx::Filter::eLinear;
+			sampler_ci.mip_map_mode = gfx::Filter::eLinear;
+
+			mg_sampler = context.CreateSampler(sampler_ci);
+
+			// Create descriptor allocator for mip generation
+			mg_descriptor_allocator = context.CreateDescriptorAllocator();
 		}
 
 		UploadContext::~UploadContext()
@@ -104,6 +129,13 @@ namespace engine
 			{
 				context.Destroy(sampler);
 			}
+
+			// Delete mip generation resources
+			context.Destroy(mg_pipeline);
+			context.Destroy(mg_root_signature);
+			context.Destroy(mg_shader);
+
+			context.Destroy(mg_descriptor_allocator);
 		}
 
 		gfx::Texture* UploadContext::LoadTexture(const std::string& texture_path)
@@ -114,6 +146,7 @@ namespace engine
 			auto name = filesystem::fs::get_stem(texture_path);
 			auto ext = filesystem::fs::get_ext(texture_path);
 			auto ext_hash = utl::murmur_hash(ext);
+			bool generate_mips{ false };
 
 			std::vector<uint8_t> data{};
 			vfs->ReadFile(texture_path, data);
@@ -147,7 +180,12 @@ namespace engine
 				create_info.format = gfx::Format::eR8G8B8A8Unorm;
 				
 				// TODO: Add mip level generation
-				create_info.levels = 1; utl::cast<u32>(std::floor(std::log2((std::max)(width, height)))) + 1u;
+				//create_info.levels = 1; utl::cast<u32>(std::floor(std::log2((std::max)(width, height)))) + 1u;
+				create_info.levels = utl::cast<u32>(std::floor(std::log2((std::max)(width, height)))) + 1u;
+				generate_mips = true;
+
+				// For mip generation
+				create_info.usage |= gfx::TextureUsageFlag::eStorage;
 
 				// Create staging buffer for uploading
 				auto& src_buffer = upload_frame.RequestStagingBuffer(data_size);
@@ -285,8 +323,81 @@ namespace engine
 			// Copy texture regions
 			command_list.CopyTexture(copy_texture);
 
+			gfx::ResourceStateFlags current_resource_state{ gfx::ResourceStateFlag::eCopyDst };
+			if (generate_mips)
+			{
+				command_list.BindPipeline(mg_pipeline);
+
+				for (int32_t mip = 1; mip < texture->GetMipLevelCount(); ++mip)
+				{
+					gfx::ResourceDescriptor* descriptor = mg_descriptor_allocator->AllocateDescriptors(mg_root_signature);
+
+					uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
+
+					group_x = texture->GetWidth() >> mip;
+					group_y = texture->GetHeight() >> mip;
+
+					// At first make texture readable
+					texture_barrier.src_state = current_resource_state;
+					texture_barrier.dst_state = gfx::ResourceStateFlag::eRead | gfx::ResourceStateFlag::eCompute | gfx::ResourceStateFlag::eSample | gfx::ResourceStateFlag::eGeneral;
+					command_list.ResourceBarrier(resource_barrier);
+					current_resource_state = texture_barrier.dst_state;
+
+					gfx::TextureDescriptor read_descriptor{};
+					read_descriptor.type = gfx::DescriptorType::eCombinedImageSampler;
+					read_descriptor.set = 0;
+					read_descriptor.binding = 2;
+
+					read_descriptor.texture = texture;
+					read_descriptor.sampler = mg_sampler;
+					read_descriptor.subresource_index = mip - 1;
+					read_descriptor.resource_state = current_resource_state;
+
+					// Bind texture slot
+					descriptor->BindTexture(read_descriptor);
+
+
+					// Make texture writable now
+					texture_barrier.src_state = current_resource_state;
+					texture_barrier.dst_state = gfx::ResourceStateFlag::eWrite | gfx::ResourceStateFlag::eCompute | gfx::ResourceStateFlag::eStorage | gfx::ResourceStateFlag::eGeneral;
+					command_list.ResourceBarrier(resource_barrier);
+					current_resource_state = texture_barrier.dst_state;
+
+					gfx::TextureDescriptor write_descriptor{};
+					write_descriptor.type = gfx::DescriptorType::eStorageImage;
+					write_descriptor.set = 0;
+					write_descriptor.binding = 1;
+
+					write_descriptor.texture = texture;
+					write_descriptor.sampler = mg_sampler;
+					write_descriptor.subresource_index = mip;
+					write_descriptor.resource_state = current_resource_state;
+
+					// Bind texture slot
+					descriptor->BindTexture(write_descriptor);
+
+					// Finally bind descriptor
+					gfx::BindDescriptorsInfo bind_info{};
+					bind_info.pipeline_type = gfx::PipelineType::eCompute;
+					bind_info.resource_descriptors = &descriptor;
+					bind_info.resource_descriptors_count = 1u;
+					bind_info.root_signature = mg_root_signature;
+
+					descriptor->Flush();
+					command_list.BindDescriptors(bind_info);
+
+					// Divide by local group sizes
+					auto& reflection = mg_shader->GetReflection();
+					group_x = std::max(static_cast<uint32_t>(std::ceil(static_cast<float>(group_x) / static_cast<float>(reflection.local_sizes[0]))), 1u);
+					group_y = std::max(static_cast<uint32_t>(std::ceil(static_cast<float>(group_y) / static_cast<float>(reflection.local_sizes[1]))), 1u);
+					group_z = std::max(static_cast<uint32_t>(std::ceil(static_cast<float>(group_z) / static_cast<float>(reflection.local_sizes[2]))), 1u);
+
+					command_list.Dispatch(group_x, group_y, group_z);
+				}
+			}
+
 			// Transfer to final layout
-			texture_barrier.src_state = gfx::ResourceStateFlag::eCopyDst;
+			texture_barrier.src_state = current_resource_state;
 			texture_barrier.dst_state = gfx::ResourceStateFlag::eShaderReadOnlyResource;
 			command_list.ResourceBarrier(resource_barrier);
 
@@ -531,6 +642,8 @@ namespace engine
 
 				command_list.Begin();
 				command_list.BeginMarker("Upload resources", 0xFFFFFFFF);
+
+				mg_descriptor_allocator->Reset();
 
 				writing_commands = true;
 			}

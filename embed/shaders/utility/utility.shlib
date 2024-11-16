@@ -20,6 +20,12 @@
 			sources: [
 				"clear_buffer_comp"
 			];
+		},
+		{
+			name: "generate_mips";
+			sources: [
+				"generate_mips_comp"
+			];
 		}
 	];
 
@@ -34,6 +40,10 @@
 		},
 		{ 
 			shader_name: "clear_buffer";
+			pattern: "default_pattern";
+		},
+		{ 
+			shader_name: "generate_mips";
 			pattern: "default_pattern";
 		}
 	];

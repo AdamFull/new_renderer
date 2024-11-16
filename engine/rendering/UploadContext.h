@@ -61,6 +61,15 @@ namespace engine
 
 			// Shader cache
 			shader_compiler::FShaderCacheData shader_cache{};
+
+			// For mip map generation
+			gfx::Shader* mg_shader{ nullptr };
+			gfx::RootSignature* mg_root_signature{ nullptr };
+			gfx::Pipeline* mg_pipeline{ nullptr };
+
+			gfx::Sampler* mg_sampler{ nullptr };
+
+			gfx::DescriptorAllocator* mg_descriptor_allocator{ nullptr };
 		};
 	}
 }

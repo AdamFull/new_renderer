@@ -1,0 +1,28 @@
+
+
+layout(local_size_x = 8, local_size_y = 8) in;
+
+layout(set = 0, binding = 1) uniform writeonly image2D write_image0;
+layout(set = 0, binding = 2) uniform sampler2D sample_image0;
+
+void main()
+{
+    ivec2 id = ivec2(gl_GlobalInvocationID.xy);
+
+    ivec2 offset0 = ivec2(0, 0);
+    ivec2 offset1 = ivec2(1, 0);
+    ivec2 offset2 = ivec2(0, 1);
+    ivec2 offset3 = ivec2(1, 1);
+
+    // Read four texels from the previous mip level
+    vec4 color0 = texelFetch(sample_image0, 2 * id + offset0, 0);
+    vec4 color1 = texelFetch(sample_image0, 2 * id + offset1, 0);
+    vec4 color2 = texelFetch(sample_image0, 2 * id + offset2, 0);
+    vec4 color3 = texelFetch(sample_image0, 2 * id + offset3, 0);
+
+    // Compute the average color
+    vec4 color = (color0 + color1 + color2 + color3) * 0.25;
+
+    // Write to the next mip level
+    imageStore(write_image0, id, color);
+}
