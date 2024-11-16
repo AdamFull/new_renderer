@@ -4,12 +4,12 @@
 layout (location = 0) in vec2 inUV;
 layout (location = 0) out vec4 outFragcolor;
 
-layout(set = 1, binding = 1) uniform sampler2D input_image;
+layout(set = 1, binding = 1) uniform sampler2D sample_image0;
 
 void main() 
 {
-	vec2 texel_size = 1.0 / vec2(textureSize(input_image, 0));
-	vec4 color = texture(input_image, inUV);
+	vec2 texel_size = 1.0 / vec2(textureSize(sample_image0, 0));
+	vec4 color = texture(sample_image0, inUV);
 
 	//if(postprocess.enable_film_grain > 0)
 	//{

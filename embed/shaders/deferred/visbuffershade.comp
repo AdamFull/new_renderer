@@ -12,15 +12,15 @@ layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 #define DISABLE_SHADOWS
 
 layout(set = 2, binding = 0) uniform writeonly image2D write_image0;
-layout(set = 2, binding = 1) uniform sampler2D brdf_lut;
-layout(set = 2, binding = 2) uniform samplerCube irradiance_cube;
-layout(set = 2, binding = 3) uniform samplerCube prefiltered_cube;
+layout(set = 2, binding = 1) uniform sampler2D sample_image0;
+layout(set = 2, binding = 2) uniform samplerCube sample_image1;
+layout(set = 2, binding = 3) uniform samplerCube sample_image2;
 layout(set = 2, binding = 4) uniform sampler2D sample_image5;
 //layout(set = 2, binding = 5) uniform sampler2D prev_frame_color;
 
-layout (set = 2, binding = 6) uniform sampler2DArrayShadow cascaded_shadowmap;
-layout (set = 2, binding = 7) uniform sampler2DArrayShadow direct_shadowmap;
-layout (set = 2, binding = 8) uniform samplerCubeArrayShadow omni_shadowmap;
+layout (set = 2, binding = 6) uniform sampler2DArrayShadow sample_image6;
+layout (set = 2, binding = 7) uniform sampler2DArrayShadow sample_image7;
+layout (set = 2, binding = 8) uniform samplerCubeArrayShadow sample_image8;
 
 vec4 sampleTexture(in uint s, in VertexAttribute va)
 {
@@ -133,7 +133,7 @@ vec3 calculateDirectionalLight(in FLightCommit light, in VertexAttribute va, in 
 	float shadow_factor = 1.0;
 	if(light.castShadows > 0 && light.shadowIndex > -1)
 	{
-		shadow_factor = getCascadeShadow(cascaded_shadowmap, light, va, ms, dither);
+		shadow_factor = getCascadeShadow(sample_image6, light, va, ms, dither);
 		//shadow_factor = ScreenSpaceShadows(va.pos, light.direction, sample_image5, 32, 0.02f, dither);
 	}
 
@@ -175,7 +175,7 @@ vec3 calculatePointLight(in FLightCommit light, in VertexAttribute va, in Materi
 	float shadow_factor = 1.0;
 	if(light.castShadows > 0 && light.shadowIndex > -1)
 	{
-		shadow_factor = getOmniShadow(omni_shadowmap, light, va, ms, dither);
+		shadow_factor = getOmniShadow(sample_image8, light, va, ms, dither);
 		//shadow_factor = ScreenSpaceShadows(va.pos, light.direction, sample_image5, 32, 0.02f, dither);
 	}
 
@@ -223,7 +223,7 @@ vec3 calculateSpotlight(in FLightCommit light, in VertexAttribute va, in Materia
 	float shadow_factor = 1.0;
 	if(light.castShadows > 0 && light.shadowIndex > -1)
 	{
-		shadow_factor = getDirectionalShadow(direct_shadowmap, light, va, ms, dither);
+		shadow_factor = getDirectionalShadow(sample_image7, light, va, ms, dither);
 		//shadow_factor = ScreenSpaceShadows(va.pos, light.direction, sample_image5, 32, 0.02f, dither);
 	}
 
@@ -338,9 +338,9 @@ void main()
 	vec3 R = -normalize(reflect(V, ms.normal));
 
 	float NdotV = dot(ms.normal, V);
-	vec2 brdf = texture(brdf_lut, vec2(max(NdotV, 0.0f), ms.roughness)).rg;
-	vec3 reflection = prefilteredReflection(R, ms.roughness, prefiltered_cube);
-	vec3 irradiance = texture(irradiance_cube, ms.normal).rgb;
+	vec2 brdf = texture(sample_image0, vec2(max(NdotV, 0.0f), ms.roughness)).rg;
+	vec3 reflection = prefilteredReflection(R, ms.roughness, sample_image2);
+	vec3 irradiance = texture(sample_image1, ms.normal).rgb;
 
 	// Diffuse based on irradiance
 	vec3 diffuse = ms.albedo * irradiance;

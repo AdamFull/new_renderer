@@ -9,15 +9,15 @@ layout(set = 1, binding = 1) uniform writeonly image2D write_image0;
 layout(set = 1, binding = 2) uniform sampler2D sample_image0;
 
 #if defined(MOTION_BLUR)
-layout(set = 1, binding = 3) uniform sampler2D motion_vectors;
+layout(set = 1, binding = 3) uniform sampler2D sample_image1;
 #elif defined(BLOOM)
-layout(set = 1, binding = 3) uniform sampler2D bloom_color;
-layout(set = 1, binding = 4) uniform sampler2D dirt_mask;
+layout(set = 1, binding = 3) uniform sampler2D sample_image1;
+layout(set = 1, binding = 4) uniform sampler2D sample_image2;
 #elif defined(DOF)
-layout(set = 1, binding = 3) uniform sampler2D bokeh_color;
-layout(set = 1, binding = 4) uniform sampler2D depth_image;
+layout(set = 1, binding = 3) uniform sampler2D sample_image1;
+layout(set = 1, binding = 4) uniform sampler2D sample_image2;
 #elif defined(TONEMAP)
-layout(set = 1, binding = 3, r32f) uniform image2D avg_luminosity;
+layout(set = 1, binding = 3, r32f) uniform image2D sample_image1;
 #endif
 
 #if defined(GAUSSIAN_BLUR)
@@ -49,7 +49,7 @@ void main()
 #elif defined(MOTION_BLUR)
 	if(postprocess.enable_motion_blur > 0)
 	{
-		vec2 velocity = texture(motion_vectors, uv).rg;
+		vec2 velocity = texture(sample_image1, uv).rg;
 		velocity = decodeVelocity(velocity) * postprocess.mb_scale;
 		velocity = min(vec2(1.0), velocity);
 
@@ -70,17 +70,17 @@ void main()
 	if(postprocess.enable_bloom > 0)
 	{
 		const float dirtMaskIntensity = 1.0f;
-		vec3 dirt = texture(dirt_mask, vec2(uv.x, 1.f - uv.y)).rgb * dirtMaskIntensity;
-		vec3 bloom = texture(bloom_color, uv).rgb;
+		vec3 dirt = texture(sample_image2, vec2(uv.x, 1.f - uv.y)).rgb * dirtMaskIntensity;
+		vec3 bloom = texture(sample_image1, uv).rgb;
 		color.rgb = mix(color.rgb, bloom + bloom * dirt, vec3(postprocess.b_bloom_strength));
 	}
 #elif defined(DOF)
 	if(postprocess.enable_dof > 0)
 	{
-		float depth = texture(depth_image, uv).r;
+		float depth = texture(sample_image2, uv).r;
 		float linear_depth = linearizeDepth(depth, camera.z_near, camera.z_far);
 
-		vec3 texture_blured = texture(bokeh_color, uv).rgb;
+		vec3 texture_blured = texture(sample_image1, uv).rgb;
 
 		float near_end = postprocess.df_near_field + postprocess.df_near_transition;
 		float far_start = postprocess.df_far_field - postprocess.df_far_transition;
@@ -111,7 +111,7 @@ void main()
 #elif defined(TONEMAP)
 	if(postprocess.enable_tonemap > 0)
 	{
-		float avgLum = imageLoad(avg_luminosity, ivec2(0, 0)).x;
+		float avgLum = imageLoad(sample_image1, ivec2(0, 0)).x;
 	
 		vec3 Yxy = convertRGB2Yxy(color.rgb);
 	

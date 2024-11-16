@@ -1,6 +1,6 @@
 //#include "shader_inputs"
 
-layout (set = 1, binding = 1) uniform sampler2D font_sampler;
+layout (set = 1, binding = 1) uniform sampler2D sample_image0;
 
 layout (location = 0) in vec2 inUV;
 layout (location = 1) in vec4 inColor;
@@ -9,5 +9,5 @@ layout (location = 0) out vec4 outColor;
 
 void main() 
 {
-	outColor = inColor * texture(font_sampler, inUV);
+	outColor = inColor * texture(sample_image0, inUV);
 }

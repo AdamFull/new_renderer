@@ -55,9 +55,6 @@ namespace render_label
 	constexpr const uint32_t sample_image10 = "sample_image10"_hash32;
 	constexpr const uint32_t sample_image11 = "sample_image11"_hash32;
 
-	constexpr const uint32_t bloom_color = "bloom_color"_hash32;
-	constexpr const uint32_t dirt_mask = "dirt_mask"_hash32;
-
 	constexpr const uint32_t roughness = "roughness"_hash32;
 
 	constexpr const uint32_t position = "position"_hash32;
@@ -77,17 +74,6 @@ namespace render_label
 	constexpr const uint32_t camera_id = "camera_id"_hash32;
 
 	constexpr const uint32_t geometry_buffers = "GeometryBuffers"_hash32;
-
-	constexpr const uint32_t brdf_lut = "brdf_lut"_hash32;
-	constexpr const uint32_t irradiance_cube = "irradiance_cube"_hash32;
-	constexpr const uint32_t prefiltered_cube = "prefiltered_cube"_hash32;
-	constexpr const uint32_t visbuffer_geometry = "visbuffer_geometry"_hash32;
-	constexpr const uint32_t visbuffer_vboinst = "visbuffer_vboinst"_hash32;
-	constexpr const uint32_t cascaded_shadowmap = "cascaded_shadowmap"_hash32;
-	constexpr const uint32_t direct_shadowmap = "direct_shadowmap"_hash32;
-	constexpr const uint32_t omni_shadowmap = "omni_shadowmap"_hash32;
-
-	constexpr const uint32_t motion_vectors = "motion_vectors"_hash32;
 
 
 	constexpr const uint32_t histogram_buffer = "Histogram"_hash32;
@@ -914,17 +900,17 @@ namespace engine
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
 						self.BindWriteResource(render_label::write_image0, hdr0);
-						self.BindResource(render_label::brdf_lut, brdf_lut_target); // binding 1
-						self.BindResource(render_label::irradiance_cube, irradiance_cube_target); // binding 2
-						self.BindResource(render_label::prefiltered_cube, prefiltered_cube_target); // binding 3
+						self.BindResource(render_label::sample_image0, brdf_lut_target); // binding 1
+						self.BindResource(render_label::sample_image1, irradiance_cube_target); // binding 2
+						self.BindResource(render_label::sample_image2, prefiltered_cube_target); // binding 3
 
-						self.BindReadResource(render_label::visbuffer_geometry, visbuffer_geometry_target);
-						self.BindReadResource(render_label::visbuffer_vboinst, visbuffer_vboinst_target);
+						self.BindReadResource(render_label::sample_image3, visbuffer_geometry_target);
+						self.BindReadResource(render_label::sample_image4, visbuffer_vboinst_target);
 						self.BindReadResource(render_label::sample_image5, zbuffer_depth_target);
 
-						self.BindReadResource(render_label::cascaded_shadowmap, cascaded_shadows_target);
-						self.BindReadResource(render_label::direct_shadowmap, directional_shadows_target);
-						self.BindReadResource(render_label::omni_shadowmap, omni_shadows_target);
+						self.BindReadResource(render_label::sample_image6, cascaded_shadows_target);
+						self.BindReadResource(render_label::sample_image7, directional_shadows_target);
+						self.BindReadResource(render_label::sample_image8, omni_shadows_target);
 
 						self.ResolveDependencies(command_list);
 
@@ -1045,7 +1031,7 @@ namespace engine
 					](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 						{
 							self.BindReadResource(render_label::sample_image0, input_target);
-							self.BindReadResource(render_label::motion_vectors, motion_vectors_target);
+							self.BindReadResource(render_label::sample_image1, motion_vectors_target);
 							self.BindWriteResource(render_label::write_image0, output_target);
 
 							self.ResolveDependencies(command_list);
@@ -1100,8 +1086,8 @@ namespace engine
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
 								self.BindReadResource(render_label::sample_image0, input_target);
-								self.BindReadResource("depth_image"_hash32, zbuffer_depth_target);
-								self.BindReadResource("bokeh_color"_hash32, hdr0_div2);
+								self.BindReadResource(render_label::sample_image1, hdr0_div2);
+								self.BindReadResource(render_label::sample_image2, zbuffer_depth_target);
 								self.BindWriteResource(render_label::write_image0, output_target);
 								self.ResolveDependencies(command_list);
 								self.BindResources(command_list);
@@ -1248,8 +1234,8 @@ namespace engine
 							{
 								self.BindWriteResource(render_label::write_image0, output_target);
 								self.BindReadResource(render_label::sample_image0, input_target);
-								self.BindReadResource(render_label::bloom_color, bloom_target);
-								self.BindResource(render_label::dirt_mask, dirt_mask_texture);
+								self.BindReadResource(render_label::sample_image1, bloom_target);
+								self.BindResource(render_label::sample_image2, dirt_mask_texture);
 
 								self.ResolveDependencies(command_list);
 								self.BindResources(command_list);
@@ -1346,9 +1332,9 @@ namespace engine
 							avg_brightness_target
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
-								self.BindReadResource("avg_luminosity"_hash32, avg_brightness_target);
-								self.BindReadResource(render_label::sample_image0, input_target);
 								self.BindWriteResource(render_label::write_image0, output_target);
+								self.BindReadResource(render_label::sample_image0, input_target);
+								self.BindReadResource(render_label::sample_image1, avg_brightness_target);
 
 								self.ResolveDependencies(command_list);
 								self.BindResources(command_list);
@@ -1379,8 +1365,7 @@ namespace engine
 				create_info.pipeline_state.color_blending_state.attachment_count = 1;
 			
 				create_info.draw_callback = [this, 
-					final_target,
-					input_image_bnd = "input_image"_hash32
+					final_target
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
 						auto* backbuffer = render_graph->GetTexture(backbuffer_resource);
@@ -1392,7 +1377,7 @@ namespace engine
 						command_list.SetViewport(0.f, viewport_height, viewport_width, -viewport_height, 0.f, 1.f);
 						command_list.SerScissor(0u, 0u, viewport_width, viewport_height);
 
-						self.BindReadResource(input_image_bnd, final_target);
+						self.BindReadResource(render_label::sample_image0, final_target);
 
 						self.ResolveDependencies(command_list);
 						self.BindResources(command_list);
@@ -1528,7 +1513,7 @@ namespace engine
 											resource_binding = imgui_font_texture;
 										}
 
-										self.ReadResource("font_sampler"_hash32, resource_binding);
+										self.ReadResource(render_label::sample_image0, resource_binding);
 									}
 								}
 
@@ -1589,7 +1574,7 @@ namespace engine
 											
 											if (resource_binding != last_bound_resource)
 											{
-												self.BindResource("font_sampler"_hash32, resource_binding);
+												self.BindResource(render_label::sample_image0, resource_binding);
 												self.BindResources(command_list);
 												last_bound_resource = resource_binding;
 											}

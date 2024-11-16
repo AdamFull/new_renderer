@@ -4,8 +4,8 @@
 #include "shader_inputs"
 
 // Input buffers
-layout(set = 1, binding = 1) uniform sampler2D visbuffer_geometry;
-layout(set = 1, binding = 2) uniform sampler2D visbuffer_vboinst;
+layout(set = 1, binding = 1) uniform sampler2D sample_image3;
+layout(set = 1, binding = 2) uniform sampler2D sample_image4;
 
 layout(push_constant) uniform UniformCallData
 {
@@ -54,7 +54,7 @@ struct VisibilityBuffer
 
 bool loadVisBuffer(in vec2 uv, out VisibilityBuffer res)
 {
-	uint geometryData = packUnorm4x8(texture(visbuffer_geometry, uv));
+	uint geometryData = packUnorm4x8(texture(sample_image3, uv));
 
 	res.drawID = (geometryData >> 23) & 0x000000FF;
 	res.triangleID = (geometryData & 0x007FFFFF);
@@ -64,7 +64,7 @@ bool loadVisBuffer(in vec2 uv, out VisibilityBuffer res)
 	if(res.triangleID == 0xFFFFFFFFu)
 		return false;
 
-	uint vboinstData = packUnorm4x8(texture(visbuffer_vboinst, uv));
+	uint vboinstData = packUnorm4x8(texture(sample_image4, uv));
 	res.vboID = vboinstData & 0xFFFF;
 	uint instID = vboinstData >> 16;
 
@@ -326,13 +326,13 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 
 //void resolveVisBuffer(in vec2 uv, out VisibilityBuffer vb)
 //{	
-//	ivec2 dim = textureSize(visbuffer_geometry);
+//	ivec2 dim = textureSize(sample_image3);
 //	ivec2 px = ivec2(uv * dim);
 //
 //	[[unroll]]
 //	for(int i = 0; i < NUM_SAMPLES; i++)
 //	{
-//		vec4 vgeom = texelFetch(visbuffer_geometry, px, i); 
+//		vec4 vgeom = texelFetch(sample_image3, px, i); 
 //
 //		vb.drawID = (geometryData >> 23) & 0x000000FF;
 //		vb.triangleID = (geometryData & 0x007FFFFF);
@@ -342,7 +342,7 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 //		if(vb.triangleID == 0xFFFFFFFFu)
 //			continue;
 //
-//		uint vboinstData = packUnorm4x8(texelFetch(visbuffer_vboinst, px, i));
+//		uint vboinstData = packUnorm4x8(texelFetch(sample_image4, px, i));
 //		vb.vboID = vboinstData & 0xFFFF;
 //		uint instID = vboinstData >> 16;
 //
