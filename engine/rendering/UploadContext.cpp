@@ -218,6 +218,12 @@ namespace engine
 				create_info.levels = kTexture->numLevels;
 				create_info.layers = kTexture->numLayers;
 
+				if (kTexture->generateMipmaps)
+				{
+					generate_mips = true;
+					create_info.levels = utl::cast<u32>(std::floor(std::log2((std::max)(create_info.width, create_info.height)))) + 1u;
+				}
+
 				// Get texture format
 				auto* ktx1 = (ktxTexture1*)kTexture;
 
@@ -270,6 +276,12 @@ namespace engine
 
 				create_info.levels = kTexture->numLevels;
 				create_info.layers = kTexture->numLayers;
+
+				if (kTexture->generateMipmaps)
+				{
+					generate_mips = true;
+					create_info.levels = utl::cast<u32>(std::floor(std::log2((std::max)(create_info.width, create_info.height)))) + 1u;
+				}
 
 				if (ktxTexture2_NeedsTranscoding(kTexture))
 					ktxresult = ktxTexture2_TranscodeBasis(kTexture, KTX_TTF_BC7_RGBA, 0);
