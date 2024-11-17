@@ -98,7 +98,7 @@ namespace engine
 				log_error("Failed to load shader cache. ");
 
 			// Prepare mip generation pipeline
-			mg_shader = LoadShader("utility:generate_mips");
+			mg_shader = LoadShader("utility:generate_mips_4x");
 
 			gfx::RootSignatureCreateInfo root_sign_ci{};
 			root_sign_ci.shader = mg_shader;
@@ -340,14 +340,27 @@ namespace engine
 			{
 				command_list.BindPipeline(mg_pipeline);
 
-				for (int32_t mip = 1; mip < texture->GetMipLevelCount(); ++mip)
+				uint32_t total_mip_count = texture->GetMipLevelCount();
+				for (int32_t mip = 0; mip < total_mip_count;)
 				{
 					gfx::ResourceDescriptor* descriptor = mg_descriptor_allocator->AllocateDescriptors(mg_root_signature);
 
-					uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
+					uint32_t src_width = texture->GetWidth() >> mip;
+					uint32_t src_height = texture->GetHeight() >> mip;
+					uint32_t dst_width = src_width >> 1;
+					uint32_t dst_height = src_height >> 1;
 
-					group_x = texture->GetWidth() >> mip;
-					group_y = texture->GetHeight() >> mip;
+					uint32_t mip_count = 4;
+					if (mip + mip_count > total_mip_count)
+						mip_count = total_mip_count - mip;
+
+					// These are clamped to 1 after computing additional mips because clamped
+					// dimensions should not limit us from downsampling multiple times.  (E.g.
+					// 16x1 -> 8x1 -> 4x1 -> 2x1 -> 1x1.)
+					if (dst_width == 0u)
+						dst_width = 1u;
+					if (dst_height == 0u)
+						dst_height = 1u;
 
 					// At first make texture readable
 					texture_barrier.src_state = current_resource_state;
@@ -355,19 +368,24 @@ namespace engine
 					command_list.ResourceBarrier(resource_barrier);
 					current_resource_state = texture_barrier.dst_state;
 
+					// At first make texture readable
+					texture_barrier.src_state = current_resource_state;
+					texture_barrier.dst_state = gfx::ResourceStateFlag::eRead | gfx::ResourceStateFlag::eCompute | gfx::ResourceStateFlag::eSample | gfx::ResourceStateFlag::eGeneral;
+					command_list.ResourceBarrier(resource_barrier);
+					current_resource_state = texture_barrier.dst_state;
+					
 					gfx::TextureDescriptor read_descriptor{};
 					read_descriptor.type = gfx::DescriptorType::eCombinedImageSampler;
 					read_descriptor.set = 0;
-					read_descriptor.binding = 2;
-
+					read_descriptor.binding = 5;
+					
 					read_descriptor.texture = texture;
 					read_descriptor.sampler = mg_sampler;
-					read_descriptor.subresource_index = mip - 1;
+					read_descriptor.subresource_index = mip;
 					read_descriptor.resource_state = current_resource_state;
 
 					// Bind texture slot
 					descriptor->BindTexture(read_descriptor);
-
 
 					// Make texture writable now
 					texture_barrier.src_state = current_resource_state;
@@ -375,18 +393,72 @@ namespace engine
 					command_list.ResourceBarrier(resource_barrier);
 					current_resource_state = texture_barrier.dst_state;
 
-					gfx::TextureDescriptor write_descriptor{};
-					write_descriptor.type = gfx::DescriptorType::eStorageImage;
-					write_descriptor.set = 0;
-					write_descriptor.binding = 1;
+					if(mip + 1 < total_mip_count)
+					{
+						gfx::TextureDescriptor write_descriptor{};
+						write_descriptor.type = gfx::DescriptorType::eStorageImage;
+						write_descriptor.set = 0;
+						write_descriptor.binding = 1;
 
-					write_descriptor.texture = texture;
-					write_descriptor.sampler = mg_sampler;
-					write_descriptor.subresource_index = mip;
-					write_descriptor.resource_state = current_resource_state;
+						write_descriptor.texture = texture;
+						write_descriptor.sampler = mg_sampler;
+						write_descriptor.subresource_index = mip + 1;
+						write_descriptor.resource_state = current_resource_state;
+						descriptor->BindTexture(write_descriptor);
+					}
 
-					// Bind texture slot
-					descriptor->BindTexture(write_descriptor);
+					if (mip + 2 < total_mip_count)
+					{
+						gfx::TextureDescriptor write_descriptor{};
+						write_descriptor.type = gfx::DescriptorType::eStorageImage;
+						write_descriptor.set = 0;
+						write_descriptor.binding = 2;
+
+						write_descriptor.texture = texture;
+						write_descriptor.sampler = mg_sampler;
+						write_descriptor.subresource_index = mip + 2;
+						write_descriptor.resource_state = current_resource_state;
+						descriptor->BindTexture(write_descriptor);
+					}
+
+					if (mip + 3 < total_mip_count)
+					{
+						gfx::TextureDescriptor write_descriptor{};
+						write_descriptor.type = gfx::DescriptorType::eStorageImage;
+						write_descriptor.set = 0;
+						write_descriptor.binding = 3;
+
+						write_descriptor.texture = texture;
+						write_descriptor.sampler = mg_sampler;
+						write_descriptor.subresource_index = mip + 3;
+						write_descriptor.resource_state = current_resource_state;
+						descriptor->BindTexture(write_descriptor);
+					}
+
+					if (mip + 4 < total_mip_count)
+					{
+						gfx::TextureDescriptor write_descriptor{};
+						write_descriptor.type = gfx::DescriptorType::eStorageImage;
+						write_descriptor.set = 0;
+						write_descriptor.binding = 4;
+
+						write_descriptor.texture = texture;
+						write_descriptor.sampler = mg_sampler;
+						write_descriptor.subresource_index = mip + 4;
+						write_descriptor.resource_state = current_resource_state;
+						//descriptor->BindTexture(write_descriptor);
+					}
+
+					struct PushConstants
+					{
+						uint32_t sourceMip;
+						uint32_t mipCount;
+					} constants;
+
+					constants.sourceMip = mip;
+					constants.mipCount = mip_count;
+
+					command_list.PushConstants(mg_shader, mg_root_signature, std::span<const char>(reinterpret_cast<const char*>(&constants), sizeof(PushConstants)));
 
 					// Finally bind descriptor
 					gfx::BindDescriptorsInfo bind_info{};
@@ -394,9 +466,11 @@ namespace engine
 					bind_info.resource_descriptors = &descriptor;
 					bind_info.resource_descriptors_count = 1u;
 					bind_info.root_signature = mg_root_signature;
-
+					
 					descriptor->Flush();
 					command_list.BindDescriptors(bind_info);
+
+					uint32_t group_x{ dst_width }, group_y{ dst_height }, group_z{ 1u };
 
 					// Divide by local group sizes
 					auto& reflection = mg_shader->GetReflection();
@@ -405,7 +479,76 @@ namespace engine
 					group_z = std::max(static_cast<uint32_t>(std::ceil(static_cast<float>(group_z) / static_cast<float>(reflection.local_sizes[2]))), 1u);
 
 					command_list.Dispatch(group_x, group_y, group_z);
+
+					mip += mip_count;
 				}
+
+				//for (int32_t mip = 1; mip < texture->GetMipLevelCount(); ++mip)
+				//{
+				//	gfx::ResourceDescriptor* descriptor = mg_descriptor_allocator->AllocateDescriptors(mg_root_signature);
+				//
+				//	uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
+				//
+				//	group_x = texture->GetWidth() >> mip;
+				//	group_y = texture->GetHeight() >> mip;
+				//
+				//	// At first make texture readable
+				//	texture_barrier.src_state = current_resource_state;
+				//	texture_barrier.dst_state = gfx::ResourceStateFlag::eRead | gfx::ResourceStateFlag::eCompute | gfx::ResourceStateFlag::eSample | gfx::ResourceStateFlag::eGeneral;
+				//	command_list.ResourceBarrier(resource_barrier);
+				//	current_resource_state = texture_barrier.dst_state;
+				//
+				//	gfx::TextureDescriptor read_descriptor{};
+				//	read_descriptor.type = gfx::DescriptorType::eCombinedImageSampler;
+				//	read_descriptor.set = 0;
+				//	read_descriptor.binding = 2;
+				//
+				//	read_descriptor.texture = texture;
+				//	read_descriptor.sampler = mg_sampler;
+				//	read_descriptor.subresource_index = mip - 1;
+				//	read_descriptor.resource_state = current_resource_state;
+				//
+				//	// Bind texture slot
+				//	descriptor->BindTexture(read_descriptor);
+				//
+				//
+				//	// Make texture writable now
+				//	texture_barrier.src_state = current_resource_state;
+				//	texture_barrier.dst_state = gfx::ResourceStateFlag::eWrite | gfx::ResourceStateFlag::eCompute | gfx::ResourceStateFlag::eStorage | gfx::ResourceStateFlag::eGeneral;
+				//	command_list.ResourceBarrier(resource_barrier);
+				//	current_resource_state = texture_barrier.dst_state;
+				//
+				//	gfx::TextureDescriptor write_descriptor{};
+				//	write_descriptor.type = gfx::DescriptorType::eStorageImage;
+				//	write_descriptor.set = 0;
+				//	write_descriptor.binding = 1;
+				//
+				//	write_descriptor.texture = texture;
+				//	write_descriptor.sampler = mg_sampler;
+				//	write_descriptor.subresource_index = mip;
+				//	write_descriptor.resource_state = current_resource_state;
+				//
+				//	// Bind texture slot
+				//	descriptor->BindTexture(write_descriptor);
+				//
+				//	// Finally bind descriptor
+				//	gfx::BindDescriptorsInfo bind_info{};
+				//	bind_info.pipeline_type = gfx::PipelineType::eCompute;
+				//	bind_info.resource_descriptors = &descriptor;
+				//	bind_info.resource_descriptors_count = 1u;
+				//	bind_info.root_signature = mg_root_signature;
+				//
+				//	descriptor->Flush();
+				//	command_list.BindDescriptors(bind_info);
+				//
+				//	// Divide by local group sizes
+				//	auto& reflection = mg_shader->GetReflection();
+				//	group_x = std::max(static_cast<uint32_t>(std::ceil(static_cast<float>(group_x) / static_cast<float>(reflection.local_sizes[0]))), 1u);
+				//	group_y = std::max(static_cast<uint32_t>(std::ceil(static_cast<float>(group_y) / static_cast<float>(reflection.local_sizes[1]))), 1u);
+				//	group_z = std::max(static_cast<uint32_t>(std::ceil(static_cast<float>(group_z) / static_cast<float>(reflection.local_sizes[2]))), 1u);
+				//
+				//	command_list.Dispatch(group_x, group_y, group_z);
+				//}
 			}
 
 			// Transfer to final layout

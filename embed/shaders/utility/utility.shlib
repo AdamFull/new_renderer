@@ -26,6 +26,12 @@
 			sources: [
 				"generate_mips_comp"
 			];
+		},
+		{
+			name: "generate_mips_4x";
+			sources: [
+				"generate_mips_4x_comp"
+			];
 		}
 	];
 
@@ -44,6 +50,10 @@
 		},
 		{ 
 			shader_name: "generate_mips";
+			pattern: "default_pattern";
+		},
+		{ 
+			shader_name: "generate_mips_4x";
 			pattern: "default_pattern";
 		}
 	];
