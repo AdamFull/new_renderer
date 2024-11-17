@@ -6,10 +6,10 @@ layout(location = 2) flat in uint materialID;
 
 layout(push_constant) uniform ShadowmapData
 {
-	uint32_t callID;
-	int32_t shadowIndex;
+	uint32_t call_id;
+	int32_t shadow_index;
 	int32_t layer;
-} shadowData;
+} shadow_data;
 
 void main() 
 {
@@ -26,7 +26,7 @@ void main()
 	}
 
 #if defined(OMNI_SHADOW)
-	FOmniShadowCommit shadow = GetOmniShadowCommit(shadowData.shadowIndex);
+	FOmniShadowCommit shadow = GetOmniShadowCommit(shadow_data.shadow_index);
 	FLightCommit light = getLight(shadow.index);
 	
 	// get distance between fragment and light source

@@ -21,6 +21,8 @@ namespace engine
 			scene_lights = std::make_unique<DynamicBuffer<FLightCommit>>(resource_context, 16ull, gfx::BufferUsageFlag::eStorageBuffer);
 
 			scene_cascaded_shadows = std::make_unique<DynamicBuffer<FCascadedShadowCommit>>(resource_context, 16ull, gfx::BufferUsageFlag::eStorageBuffer);
+			omni_shadows = std::make_unique<DynamicBuffer<FOmniShadowCommit>>(resource_context, 16ull, gfx::BufferUsageFlag::eStorageBuffer);
+			spot_shadows = std::make_unique<DynamicBuffer<FSpotShadowCommit>>(resource_context, 16ull, gfx::BufferUsageFlag::eStorageBuffer);
 
 			draw_materials = std::make_unique<DynamicBuffer<FMaterial>>(resource_context, 16ull, gfx::BufferUsageFlag::eStorageBuffer);
 
@@ -250,12 +252,18 @@ namespace engine
 
 		void RenderWorld::AddShadow(const FOmniShadowCommit& shadow_data)
 		{
-			assert(false && "NOT IMPLEMENTED");
+			auto shadow_index = omni_shadow_count++;
+			auto& new_shadow = omni_shadows->Get(shadow_index);
+			omni_shadows->MarkDirty(shadow_index);
+			new_shadow = shadow_data;
 		}
 
 		void RenderWorld::AddShadow(const FSpotShadowCommit& shadow_data)
 		{
-			assert(false && "NOT IMPLEMENTED");
+			auto shadow_index = spot_shadow_count++;
+			auto& new_shadow = spot_shadows->Get(shadow_index);
+			spot_shadows->MarkDirty(shadow_index);
+			new_shadow = shadow_data;
 		}
 
 		void RenderWorld::BeginFrame(float delta_time)
@@ -358,6 +366,12 @@ namespace engine
 				buffers.cascadedShadowBuffer.address = scene_cascaded_shadows->GetBuffer()->GetAddress();
 				scene_cascaded_shadows->Flush();
 
+				buffers.omniShadowBuffer.address = omni_shadows->GetBuffer()->GetAddress();
+				omni_shadows->Flush();
+
+				buffers.spotShadowBuffer.address = spot_shadows->GetBuffer()->GetAddress();
+				spot_shadows->Flush();
+
 				const uint8_t* uniform_data = reinterpret_cast<const uint8_t*>(&buffers);
 				uint64_t uniform_size = sizeof(FGlobalBufferReference);
 
@@ -381,6 +395,8 @@ namespace engine
 			draw_count = 0;
 			light_count = 0;
 			cascaded_shadow_count = 0;
+			omni_shadow_count = 0;
+			spot_shadow_count = 0;
 		}
 
 		gfx::IndirectDrawCommand RenderWorld::GetDrawCommand()

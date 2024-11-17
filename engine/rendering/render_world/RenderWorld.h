@@ -76,6 +76,12 @@ namespace engine
 
 			std::unique_ptr<DynamicBuffer<FCascadedShadowCommit>> scene_cascaded_shadows{};
 			uint32_t cascaded_shadow_count{ 0u };
+
+			std::unique_ptr<DynamicBuffer<FOmniShadowCommit>> omni_shadows{};
+			uint32_t omni_shadow_count{ 0u };
+
+			std::unique_ptr<DynamicBuffer<FSpotShadowCommit>> spot_shadows{};
+			uint32_t spot_shadow_count{ 0u };
 		};
 	}
 }
