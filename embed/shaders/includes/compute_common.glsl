@@ -100,4 +100,47 @@ bool swizzle_workgroups_8x8(in uvec2 gid, in uvec2 lid, in uvec2 wid, in uvec2 f
 	return false;
 }
 
+void GroupMemoryBarrierWithGroupSync()
+{
+	groupMemoryBarrier();
+	barrier();
+}
+
+void GroupMemoryBarrier()
+{
+	groupMemoryBarrier();
+}
+
+void DeviceMemoryBarrierWithGroupSync()
+{
+	memoryBarrier();
+	memoryBarrierImage();
+	memoryBarrierImage();
+	barrier();
+}
+
+void DeviceMemoryBarrier()
+{
+	memoryBarrier();
+	memoryBarrierImage();
+	memoryBarrierImage();
+}
+
+void AllMemoryBarrierWithGroupSync()
+{
+	memoryBarrier();
+	memoryBarrierImage();
+	memoryBarrierImage();
+	groupMemoryBarrier();
+	barrier();
+}
+
+void AllMemoryBarrier()
+{
+	memoryBarrier();
+	memoryBarrierImage();
+	memoryBarrierImage();
+	groupMemoryBarrier();
+}
+
 #endif // COMPUTE_COMMON_GLSL
