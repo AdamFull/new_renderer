@@ -367,12 +367,6 @@ namespace engine
 					texture_barrier.dst_state = gfx::ResourceStateFlag::eRead | gfx::ResourceStateFlag::eCompute | gfx::ResourceStateFlag::eSample | gfx::ResourceStateFlag::eGeneral;
 					command_list.ResourceBarrier(resource_barrier);
 					current_resource_state = texture_barrier.dst_state;
-
-					// At first make texture readable
-					texture_barrier.src_state = current_resource_state;
-					texture_barrier.dst_state = gfx::ResourceStateFlag::eRead | gfx::ResourceStateFlag::eCompute | gfx::ResourceStateFlag::eSample | gfx::ResourceStateFlag::eGeneral;
-					command_list.ResourceBarrier(resource_barrier);
-					current_resource_state = texture_barrier.dst_state;
 					
 					gfx::TextureDescriptor read_descriptor{};
 					read_descriptor.type = gfx::DescriptorType::eCombinedImageSampler;
@@ -393,60 +387,21 @@ namespace engine
 					command_list.ResourceBarrier(resource_barrier);
 					current_resource_state = texture_barrier.dst_state;
 
-					if(mip + 1 < total_mip_count)
-					{
-						gfx::TextureDescriptor write_descriptor{};
-						write_descriptor.type = gfx::DescriptorType::eStorageImage;
-						write_descriptor.set = 0;
-						write_descriptor.binding = 1;
+					gfx::TextureDescriptor write_descriptor{};
+					write_descriptor.type = gfx::DescriptorType::eStorageImage;
+					write_descriptor.set = 0;
+					write_descriptor.texture = texture;
+					write_descriptor.sampler = mg_sampler;
+					write_descriptor.resource_state = current_resource_state;
 
-						write_descriptor.texture = texture;
-						write_descriptor.sampler = mg_sampler;
-						write_descriptor.subresource_index = mip + 1;
-						write_descriptor.resource_state = current_resource_state;
+					for (int32_t i = 1; i < mip_count + 1; ++i)
+					{
+						if (mip + i >= total_mip_count)
+							break;
+
+						write_descriptor.binding = i;
+						write_descriptor.subresource_index = mip + i;
 						descriptor->BindTexture(write_descriptor);
-					}
-
-					if (mip + 2 < total_mip_count)
-					{
-						gfx::TextureDescriptor write_descriptor{};
-						write_descriptor.type = gfx::DescriptorType::eStorageImage;
-						write_descriptor.set = 0;
-						write_descriptor.binding = 2;
-
-						write_descriptor.texture = texture;
-						write_descriptor.sampler = mg_sampler;
-						write_descriptor.subresource_index = mip + 2;
-						write_descriptor.resource_state = current_resource_state;
-						descriptor->BindTexture(write_descriptor);
-					}
-
-					if (mip + 3 < total_mip_count)
-					{
-						gfx::TextureDescriptor write_descriptor{};
-						write_descriptor.type = gfx::DescriptorType::eStorageImage;
-						write_descriptor.set = 0;
-						write_descriptor.binding = 3;
-
-						write_descriptor.texture = texture;
-						write_descriptor.sampler = mg_sampler;
-						write_descriptor.subresource_index = mip + 3;
-						write_descriptor.resource_state = current_resource_state;
-						descriptor->BindTexture(write_descriptor);
-					}
-
-					if (mip + 4 < total_mip_count)
-					{
-						gfx::TextureDescriptor write_descriptor{};
-						write_descriptor.type = gfx::DescriptorType::eStorageImage;
-						write_descriptor.set = 0;
-						write_descriptor.binding = 4;
-
-						write_descriptor.texture = texture;
-						write_descriptor.sampler = mg_sampler;
-						write_descriptor.subresource_index = mip + 4;
-						write_descriptor.resource_state = current_resource_state;
-						//descriptor->BindTexture(write_descriptor);
 					}
 
 					struct PushConstants
