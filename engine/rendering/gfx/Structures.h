@@ -19,6 +19,7 @@ namespace engine
 		
 		static constexpr uint32_t k_max_attachment_count{ 8u };
 
+		class Context;
 		class GFXResource;
 		class Fence;
 		class Semaphore;

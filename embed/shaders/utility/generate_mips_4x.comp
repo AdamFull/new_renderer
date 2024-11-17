@@ -13,11 +13,6 @@ shared float color_g[64];
 shared float color_b[64];
 shared float color_a[64];
 
-layout (push_constant) uniform PushConstants {
-	uint32_t sourceMip;
-    uint32_t mipCount;
-} constants;
-
 void StoreColor(uint32_t index, vec4 color)
 {
     color_r[index] = color.r;
@@ -47,10 +42,7 @@ void main()
 
     imageStore(write_image0, id, color0);
 
-    // A scalar (constant) branch can exit all threads coherently.
-    if (constants.mipCount == 1)
-        return;
-
+#ifdef MIP_2
     // Without lane swizzle operations, the only way to share data with other
     // threads is through LDS.
     StoreColor(gl_LocalInvocationIndex, color0);
@@ -72,10 +64,9 @@ void main()
         imageStore(write_image1, id / 2, color0);
         StoreColor(gl_LocalInvocationIndex, color0);
     }
-
-    if (constants.mipCount == 2)
-        return;
-
+#endif
+    
+#ifdef MIP_3
     GroupMemoryBarrierWithGroupSync();
 
     // This bit mask (binary: 011011) checks that X and Y are multiples of four.
@@ -89,10 +80,9 @@ void main()
         imageStore(write_image2, id / 4, color0);
         StoreColor(gl_LocalInvocationIndex, color0);
     }
+#endif
 
-    if (constants.mipCount == 3)
-        return;
-
+#ifdef MIP_4
     GroupMemoryBarrierWithGroupSync();
 
     // This bit mask would be 111111 (X & Y multiples of 8), but only one
@@ -104,6 +94,7 @@ void main()
         vec4 color3 = LoadColor(gl_LocalInvocationIndex + 0x24);
         color0 = 0.25 * (color0 + color1 + color2 + color3);
 
-        imageStore(write_image2, id / 8, color0);
+        imageStore(write_image3, id / 8, color0);
     }
+#endif
 }
