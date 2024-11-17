@@ -394,7 +394,7 @@ namespace engine
 					write_descriptor.sampler = mg_sampler;
 					write_descriptor.resource_state = current_resource_state;
 
-					for (int32_t i = 1; i < mip_count + 1; ++i)
+					for (int32_t i = 1; i < mip_count; ++i)
 					{
 						if (mip + i >= total_mip_count)
 							break;
