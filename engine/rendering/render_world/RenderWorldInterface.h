@@ -51,6 +51,7 @@ namespace engine
 			virtual void AddGeometryDraw(DrawCommand& draw_command) = 0;
 
 			virtual void AddMaterial(const FMaterial& material) = 0;
+			virtual const FMaterial& GetMaterial(uint32_t index) const = 0;
 
 			virtual void AddLight(const FLightCommit& light_data) = 0;
 

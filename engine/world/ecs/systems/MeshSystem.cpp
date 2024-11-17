@@ -93,9 +93,16 @@ void CMeshSystem::__Update(f32 fDt)
 {
 	TRACY_PROFILE_FUNCTION();
 
+	PrepareDrawCommands(2u);
+	PrepareDrawCommands(0u);
+	PrepareDrawCommands(1u);
+}
+
+void CMeshSystem::PrepareDrawCommands(uint32_t alpha_mode)
+{
 	auto root = EntityManager::GetRoot();
 	auto& root_component = EntityManager::GetComponent<FRootComponent>(root);
-	
+
 	auto view = EntityManager::View<FTransformComponent, FBaseComponent, FMeshComponent>();
 	for (auto [entity, transform, base, mesh_component] : view.each())
 	{
@@ -112,9 +119,9 @@ void CMeshSystem::__Update(f32 fDt)
 
 		for (const auto& primitive : mesh_component.primitives)
 		{
-			//const auto& material = render_world->GetMaterial(primitive.material);
-			//if (material.alphaMode != alpha_mode)
-			//	continue;
+			const auto& material = render_world.GetMaterial(primitive.material);
+			if (material.alphaMode != alpha_mode)
+				continue;
 
 			DrawCommand draw_command{};
 			draw_command.node_index = node;
@@ -126,28 +133,8 @@ void CMeshSystem::__Update(f32 fDt)
 			draw_command.index_count = primitive.vertex_range.index_count;
 			draw_command.first_vertex = primitive.vertex_range.first_vertex;
 			draw_command.vertex_count = primitive.vertex_range.vertex_count;
-		
+
 			render_world.AddGeometryDraw(draw_command);
-
-			//FDrawIndexedIndirectData indirect_command{};
-			//indirect_command.indexCount = primitive.vertex_range.index_count;
-			//indirect_command.instanceCount = 1;
-			//indirect_command.firstIndex = primitive.vertex_range.first_index;
-			//indirect_command.vertexOffset = int(primitive.vertex_range.first_vertex);
-			//indirect_command.firstInstance = 0;
-
-
 		}
 	}
-
-
-	// TODO: RENDER WORLD
-	//auto& render_world = m_pRenderInterface->GetRenderWorld();
-	//
-	//utl::vector<DrawDescription> draw_commands{};
-	//prepare_draw_commands(render_world, draw_commands, utl::enum_cast(EAlphaMode::eOpaque));
-	//prepare_draw_commands(render_world, draw_commands, utl::enum_cast(EAlphaMode::eMask));
-	//prepare_draw_commands(render_world, draw_commands, utl::enum_cast(EAlphaMode::eBlend));
-	//
-	//render_world->AddDrawGeometry(draw_commands);
 }

@@ -30,6 +30,7 @@ namespace engine
 			void AddGeometryDraw(DrawCommand& draw_command) override;
 
 			void AddMaterial(const FMaterial& material) override;
+			const FMaterial& GetMaterial(uint32_t index) const override;
 
 			void AddLight(const FLightCommit& light_data) override;
 

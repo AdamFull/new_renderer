@@ -227,6 +227,11 @@ namespace engine
 			new_material = material;
 		}
 
+		const FMaterial& RenderWorld::GetMaterial(uint32_t index) const
+		{
+			return draw_materials->Get(index);
+		}
+
 		void RenderWorld::AddLight(const FLightCommit& light_data)
 		{
 			auto light_index = light_count++;
