@@ -1,6 +1,7 @@
 #include "Context.h"
 
 #include "OpenAL/ALContext.h"
+#include "XAudio2/XA2Context.h"
 
 namespace engine
 {
@@ -12,6 +13,9 @@ namespace engine
 			{
 			case AudioApi::eOpenAl:
 				return std::make_unique<openal::OpenALContext>();
+				break;
+			case AudioApi::eXAudio2:
+				return std::make_unique<xa2::XAudio2Context>();
 				break;
 			default:
 				break;

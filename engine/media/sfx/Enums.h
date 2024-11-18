@@ -9,7 +9,8 @@ namespace engine
 		enum class AudioApi
 		{
 			eAuto,
-			eOpenAl
+			eOpenAl,
+			eXAudio2
 		};
 
 		enum class ResourceType

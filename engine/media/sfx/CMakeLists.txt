@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.18.0)
 project(sfx)
 
 add_subdirectory(OpenAl)
+add_subdirectory(XAudio2)
 
 file(GLOB SFX_SOURCES FILES *.cpp *.h)
 
@@ -20,4 +21,5 @@ target_include_directories(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
 	PUBLIC sfx_openal
+	PUBLIC sfx_xaudio2
 )
