@@ -51,18 +51,27 @@ namespace engine
 
 			void VulkanResourceDescriptor::BindTexture(TextureDescriptor& texture_descriptor)
 			{
-				auto* vk_texture = static_cast<VulkanTexture*>(texture_descriptor.texture);
-				auto* vk_sampelr = static_cast<VulkanSampler*>(texture_descriptor.sampler);
-
-				auto& subresource = vk_texture->GetSubresource(texture_descriptor.subresource_index);
-
 				auto& vk_image_descriptor = image_descriptors[image_count++];
-				vk_image_descriptor.imageView = subresource.GetHandle();
-				vk_image_descriptor.imageLayout = ResourceStateToVkImageLayout(texture_descriptor.resource_state);
-				vk_image_descriptor.sampler = vk_sampelr->GetHandle();
+
+				auto descriptor_type = DescriptorTypeToVk(texture_descriptor.type);
+
+				if (descriptor_type != vk::DescriptorType::eSampler)
+				{
+					auto* vk_texture = static_cast<VulkanTexture*>(texture_descriptor.texture);
+					auto& subresource = vk_texture->GetSubresource(texture_descriptor.subresource_index);
+					vk_image_descriptor.imageView = subresource.GetHandle();
+					vk_image_descriptor.imageLayout = ResourceStateToVkImageLayout(texture_descriptor.resource_state);
+				}
+				
+				if (descriptor_type != vk::DescriptorType::eStorageImage &&
+					descriptor_type != vk::DescriptorType::eSampledImage)
+				{
+					auto* vk_sampelr = static_cast<VulkanSampler*>(texture_descriptor.sampler);
+					vk_image_descriptor.sampler = vk_sampelr->GetHandle();
+				}
 
 				auto& vk_descriptor_write = write_descriptor_sets[writes_count++];
-				vk_descriptor_write.descriptorType = DescriptorTypeToVk(texture_descriptor.type);
+				vk_descriptor_write.descriptorType = descriptor_type;
 				vk_descriptor_write.descriptorCount = 1u;
 				vk_descriptor_write.dstSet = descriptor_sets[texture_descriptor.set];
 				vk_descriptor_write.dstBinding = texture_descriptor.binding;
