@@ -8,7 +8,7 @@
 
 #include <engine/render/DebugDraw/DebugDraw.h>
 
-#include <engine/profiler/Profiler.h>
+#include <tracy/Tracy.hpp>
 
 using namespace engine::render;
 using namespace engine::world;
@@ -22,12 +22,11 @@ CMeshSystem::CMeshSystem(render::IRenderer& renderer) :
 
 void CMeshSystem::__Create()
 {
-	TRACY_PROFILE_FUNCTION();
 }
 
 void CMeshSystem::__Update(f32 fDt)
 {
-	TRACY_PROFILE_FUNCTION();
+	ZoneScoped;
 
 	PrepareDrawCommands(2u);
 	PrepareDrawCommands(0u);
@@ -36,6 +35,8 @@ void CMeshSystem::__Update(f32 fDt)
 
 void CMeshSystem::PrepareDrawCommands(uint32_t alpha_mode)
 {
+	ZoneScoped;
+
 	auto root = EntityManager::GetRoot();
 	auto& root_component = EntityManager::GetComponent<FRootComponent>(root);
 

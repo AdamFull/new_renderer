@@ -39,12 +39,8 @@
     "glfw3",
     "glm",
     {
-      "name": "taskflow",
-      "version>=": "3.6.0"
-    },
-    {
       "name": "tracy",
-      "version>=": "0.9.1#1"
+      "version>=": "0.11.1#1"
     },
     {
       "name": "entt",

@@ -6,6 +6,8 @@
 
 #include <hash.hpp>
 
+#include <tracy/Tracy.hpp>
+
 namespace engine
 {
 	namespace render
@@ -85,6 +87,8 @@ namespace engine
 
 		void GeometryBuffer::Flush()
 		{
+			ZoneScoped;
+
 			if (!index_data.data.empty())
 			{
 				TryFlushBuffer(&index_data.buffer, index_data.data, gfx::BufferUsageFlag::eIndexBuffer);
@@ -124,6 +128,8 @@ namespace engine
 
 		void GeometryBuffer::TryFlushBuffer(gfx::Buffer** buffer_ptr, const std::vector<uint8_t>& data, gfx::BufferUsageFlags usage)
 		{
+			ZoneScoped;
+
 			gfx::Context& context = resource_context.GetContext();
 
 			if (!*buffer_ptr)
@@ -191,6 +197,8 @@ namespace engine
 
 		void InterleavedGeometryBuffer::Flush()
 		{
+			ZoneScoped;
+
 			GeometryBuffer::Flush();
 
 			if (!vertex_data.data.empty())
@@ -273,6 +281,8 @@ namespace engine
 
 		void DeinterleavedGeometryBuffer::Flush()
 		{
+			ZoneScoped;
+
 			GeometryBuffer::Flush();
 
 			for (auto& vertex_data : vertex_datas)

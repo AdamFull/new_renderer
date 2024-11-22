@@ -7,6 +7,8 @@
 #include <engine/runtime/RuntimeContext.h>
 #include <util/Logger.h>
 
+#include <tracy/Tracy.hpp>
+
 #include "InputManager.h"
 
 #ifdef CreateWindow
@@ -53,6 +55,8 @@ namespace engine
 
 	int32_t Runtime::MainLoopFrame()
 	{
+		ZoneScoped;
+
 		try
 		{
 			// Load the requested app
@@ -102,6 +106,8 @@ namespace engine
 
 	void Runtime::Update()
 	{
+		ZoneScoped;
+
 		auto delta_time = counter.GetFrameTime();
 
 		auto new_windows_name = std::format("{} [{:.2f} fps; {:.2f} ms]", app->GetName(), counter.GetFps(), delta_time);
@@ -120,6 +126,8 @@ namespace engine
 
 			app->Update(delta_time);
 		}
+
+		FrameMark;
 	}
 
 	void Runtime::Terminate(int32_t code)

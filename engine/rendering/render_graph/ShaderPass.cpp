@@ -8,6 +8,8 @@
 
 #include <hash.hpp>
 
+#include <tracy/Tracy.hpp>
+
 namespace engine
 {
 	namespace render
@@ -76,6 +78,8 @@ namespace engine
 
 		void ShaderPass::Evaluate(gfx::CommandList& command_list, float delta_time)
 		{
+			ZoneScoped;
+
 			assert(execution_context && "CANNOT EXECUTE PASS WITHOUT EXECUTION CONTEXT");
 
 			if (!can_execute)
@@ -126,6 +130,8 @@ namespace engine
 		
 		void ShaderPass::BindResources(gfx::CommandList& command_list)
 		{
+			ZoneScoped;
+
 			if (!resource_descriptor)
 			{
 				auto& descriptor_allocator = execution_context->GetCurrentDescriptorAllocator();
@@ -192,6 +198,8 @@ namespace engine
 
 		void ShaderPass::ResourceDependency(uint32_t binding_point, uint32_t resource_id, uint32_t sebresource_id, gfx::AccessTypeFlags access)
 		{
+			ZoneScoped;
+
 			auto& reflection = shader->GetReflection();
 			auto found = std::find_if(reflection.shader_resources.Begin(), reflection.shader_resources.End(), [&binding_point](const gfx::ShaderResource& resource) { return resource.name_hash == binding_point; });
 			if (found != reflection.shader_resources.End())
@@ -275,6 +283,8 @@ namespace engine
 
 		void ShaderPass::BindResource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index)
 		{
+			ZoneScoped;
+
 			if (!resource_descriptor)
 			{
 				auto& descriptor_allocator = execution_context->GetCurrentDescriptorAllocator();

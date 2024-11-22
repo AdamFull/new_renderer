@@ -9,6 +9,8 @@
 
 #include <glm/glm.hpp>
 
+#include <tracy/Tracy.hpp>
+
 namespace engine
 {
 	namespace gfx
@@ -323,6 +325,8 @@ namespace engine
 
 			bool VulkanSwapchain::AcquireNextImage(Semaphore* signal_semaphore, Fence* fence, uint32_t* image_index)
 			{
+				ZoneScoped;
+
 				vk::Semaphore image_acquired_semaphore{ nullptr };
 				if (signal_semaphore)
 				{

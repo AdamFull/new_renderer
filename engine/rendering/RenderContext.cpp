@@ -10,6 +10,8 @@
 
 #include <util/Logger.h>
 
+#include <tracy/Tracy.hpp>
+
 namespace engine
 {
 	namespace render
@@ -23,7 +25,7 @@ namespace engine
 			
 			gfx::SwapChainCreateInfo swapchain_ci{};
 			swapchain_ci.window = window;
-			swapchain_ci.image_count = 2u;
+			swapchain_ci.image_count = 3u;
 
 			swapchain = context.CreateSwapchain(swapchain_ci);
 
@@ -80,6 +82,8 @@ namespace engine
 
 		bool RenderContext::HandleSurfaceChange(bool force_update)
 		{
+			ZoneScoped;
+
 			if (!swapchain)
 			{
 				log_warning("Can't handle surface changes in headless mode, skipping.");
@@ -103,6 +107,7 @@ namespace engine
 				surface_height != current_height ||
 				force_update)
 			{
+				ZoneScopedN("Swapchain update");
 				// Recreate swapchain
 				queue->WaitIdle();
 				UpdateSwapchain(surface_width, surface_height);
@@ -118,6 +123,8 @@ namespace engine
 
 		gfx::CommandList& RenderContext::Begin(bool& surface_updated)
 		{
+			ZoneScoped;
+
 			if (!frame_active)
 			{
 				BeginFrame(surface_updated);
@@ -136,6 +143,8 @@ namespace engine
 
 		void RenderContext::BeginFrame(bool& surface_updated)
 		{
+			ZoneScoped;
+
 			if (swapchain)
 			{
 				surface_updated = HandleSurfaceChange();
@@ -179,6 +188,8 @@ namespace engine
 
 		void RenderContext::EndFrame(gfx::SemaphoreSubmitInfo wait_semaphore)
 		{
+			ZoneScoped;
+
 			auto& current_frame = GetCurrentFrame();
 
 			current_command_list->End();
@@ -188,6 +199,8 @@ namespace engine
 
 			try
 			{
+				ZoneScopedN("Submit");
+
 				// TODO: COMMAND BUFFERS
 				gfx::SubmitInfo submit_info{};
 
@@ -220,6 +233,8 @@ namespace engine
 
 			if (swapchain)
 			{
+				ZoneScopedN("Present");
+
 				auto* wait_semaphore = current_frame.render_finished;
 
 				gfx::PresentInfo present_info = {};
@@ -346,6 +361,8 @@ namespace engine
 	
 		void RenderContext::UpdateResources()
 		{
+			ZoneScoped;
+
 			auto image_count = swapchain->GetImageCount();
 
 			auto frame_it = render_frames.begin();

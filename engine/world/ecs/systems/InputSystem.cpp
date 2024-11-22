@@ -6,7 +6,7 @@
 #include <engine/world/ecs/components/TransformComponent.h>
 #include <engine/runtime/InputManager.h>
 
-#include <engine/profiler/Profiler.h>
+#include <tracy/Tracy.hpp>
 
 constexpr const f32 mouse_scale{ 50.f };
 constexpr const f32 movement_scale{ 2.f };
@@ -25,13 +25,12 @@ CInputSystem::CInputSystem()
 
 void CInputSystem::__Create()
 {
-	TRACY_PROFILE_FUNCTION();
 	InputManager::SubscribeInputEvent(this, &CInputSystem::OnAnyInput);
 }
 
 void CInputSystem::__Update(f32 fDt)
 {
-	TRACY_PROFILE_FUNCTION();
+	ZoneScoped;
 
 	m_deltaTime = fDt;
 

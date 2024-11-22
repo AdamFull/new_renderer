@@ -4,6 +4,8 @@
 
 #include <memory.hpp>
 
+#include <tracy/Tracy.hpp>
+
 namespace engine
 {
 	namespace render
@@ -79,6 +81,8 @@ namespace engine
 
 		void UniformPool::Reset()
 		{
+			ZoneScoped;
+
 			auto to_delete = std::remove_if(pool_frames.begin(), pool_frames.end(), [](const std::unique_ptr<UniformPoolFrame>& frame)
 				{
 					frame->Reset();

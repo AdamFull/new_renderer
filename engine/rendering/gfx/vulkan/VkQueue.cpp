@@ -8,6 +8,8 @@
 
 #include "VkUtil.h"
 
+#include <tracy/Tracy.hpp>
+
 namespace engine
 {
 	namespace gfx
@@ -67,6 +69,8 @@ namespace engine
 
 			void VulkanQueue::Submit(const SubmitInfo& submit_info, Fence* fence) const
 			{
+				ZoneScoped;
+
 				std::array<vk::SemaphoreSubmitInfo, 16ull> wait_semaphores{};
 				std::array<vk::SemaphoreSubmitInfo, 16ull> signal_semaphores{};
 				std::array<vk::CommandBufferSubmitInfo, 16ull> command_buffers{};
@@ -115,6 +119,8 @@ namespace engine
 
 			void VulkanQueue::Present(const PresentInfo& present_info) const
 			{
+				ZoneScoped;
+
 				std::array<vk::Semaphore, 16ull> wait_semaphores{};
 				std::array<vk::SwapchainKHR, 16ull> swapchains{};
 
@@ -161,6 +167,8 @@ namespace engine
 
 			void VulkanQueue::WaitIdle() const
 			{
+				ZoneScoped;
+
 				handle.waitIdle();
 			}
 		}

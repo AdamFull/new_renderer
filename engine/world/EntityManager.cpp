@@ -2,6 +2,8 @@
 
 #include <util/Logger.h>
 
+#include <tracy/Tracy.hpp>
+
 using namespace engine::world;
 
 entt::registry EntityManager::m_registry{};
@@ -161,6 +163,7 @@ void EntityManager::Create()
 
 void EntityManager::Update(f32 dt)
 {
+	ZoneScoped;
 	for (auto& system : m_vSystems)
 		system->Update(dt);
 }

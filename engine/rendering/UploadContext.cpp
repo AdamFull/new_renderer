@@ -13,6 +13,8 @@
 
 #include <gfx/Context.h>
 
+#include <tracy/Tracy.hpp>
+
 namespace engine
 {
 	namespace render
@@ -154,6 +156,8 @@ namespace engine
 
 		gfx::Texture* UploadContext::LoadTexture(const std::string& texture_path)
 		{
+			ZoneScoped;
+
 			BeginFrame();
 			using namespace utl;
 
@@ -437,6 +441,8 @@ namespace engine
 
 		gfx::Texture* UploadContext::LoadTexture(const gfx::TextureCreateInfo& create_info, std::span<uint8_t> texture_data)
 		{
+			ZoneScoped;
+
 			gfx::Texture* texture = context.CreateTexture(create_info);
 
 			gfx::CopyTextureInfo copy_texture{};
@@ -479,6 +485,8 @@ namespace engine
 
 		gfx::Shader* UploadContext::LoadShader(const std::string& shader_name)
 		{
+			ZoneScoped;
+
 			auto name_info = GetShaderNameInfo(shader_name);
 
 			uint32_t library_id = utl::murmur_hash(name_info.library_name);
@@ -562,6 +570,8 @@ namespace engine
 
 		void UploadContext::BeginBufferUpdate(gfx::BufferUpdateInfo& update_info)
 		{
+			ZoneScoped;
+
 			BeginFrame();
 
 			gfx::Buffer* dst_buffer = update_info.dst_buffer;
@@ -586,6 +596,8 @@ namespace engine
 
 		void UploadContext::EndBufferUpdate(gfx::BufferUpdateInfo& update_info)
 		{
+			ZoneScoped;
+
 			gfx::Buffer* dst_buffer = update_info.dst_buffer;
 
 			if (update_info.map_info.avaliable_size == ~0ull)
@@ -628,6 +640,8 @@ namespace engine
 
 		gfx::SemaphoreSubmitInfo UploadContext::Submit(gfx::SemaphoreSubmitInfo* wait_infos, uint32_t wait_semaphore_count)
 		{
+			ZoneScoped;
+
 			if (writing_commands)
 			{
 				auto& upload_frame = GetActiveFrame();

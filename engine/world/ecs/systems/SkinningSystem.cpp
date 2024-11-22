@@ -8,7 +8,7 @@
 #include <engine/world/ecs/components/RootComponent.h>
 #include <engine/world/ecs/components/TransformComponent.h>
 
-#include <engine/profiler/Profiler.h>
+#include <tracy/Tracy.hpp>
 
 #include <execution>
 
@@ -45,12 +45,11 @@ CSkinningSystem::CSkinningSystem(render::IRenderer& renderer) :
 
 void CSkinningSystem::__Create()
 {
-	TRACY_PROFILE_FUNCTION();
 }
 
 void CSkinningSystem::__Update(f32 fDt)
 {
-	TRACY_PROFILE_FUNCTION();
+	ZoneScoped;
 
 	auto root = EntityManager::GetRoot();
 	auto& root_component = EntityManager::GetComponent<FRootComponent>(root);

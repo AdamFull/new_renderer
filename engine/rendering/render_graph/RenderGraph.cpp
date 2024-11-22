@@ -5,6 +5,8 @@
 
 #include <engine/rendering/UniformPool.h>
 
+#include <tracy/Tracy.hpp>
+
 #include "RenderPass.h"
 #include "ComputePass.h"
 
@@ -30,6 +32,8 @@ namespace engine
 
 		void GroupNode::Evaluate(gfx::CommandList& command_list, float delta_time)
 		{
+			ZoneScoped;
+
 			if (enabled_callback && !enabled_callback())
 				return;
 
@@ -252,6 +256,8 @@ namespace engine
 
 		void RenderGraph::Evaluate(float delta_time)
 		{
+			ZoneScoped;
+
 			auto& command_list = render_context->GetCurrentCommandList();
 
 			for (auto& node : graph_nodes)
@@ -274,6 +280,8 @@ namespace engine
 
 		void RenderGraph::UpdateGlobalBinding(uint32_t binding, std::span<const uint8_t> data)
 		{
+			ZoneScoped;
+
 			if (!global_resource_descriptor)
 			{
 				global_resource_descriptor = shared_descriptor->RequestDescriptors();
@@ -294,6 +302,8 @@ namespace engine
 
 		void RenderGraph::BeginFrame()
 		{
+			ZoneScoped;
+
 			global_uniform_pool->Reset();
 
 			shared_descriptor->Reset();
@@ -343,6 +353,8 @@ namespace engine
 
 		void RenderGraph::EndFrame()
 		{
+			ZoneScoped;
+
 			global_resource_descriptor->Flush();
 
 			gfx::SemaphoreSubmitInfo upload_wait_semaphore{};
@@ -368,6 +380,8 @@ namespace engine
 
 		void RenderGraph::UpdateRenderTargets()
 		{
+			ZoneScoped;
+
 			auto& swapchain = render_context->GetSwapchain();
 
 			uint32_t width, height;

@@ -1,6 +1,8 @@
 #include "VkFence.h"
 #include "VkDevice.h"
 
+#include <tracy/Tracy.hpp>
+
 namespace engine
 {
 	namespace gfx
@@ -24,11 +26,15 @@ namespace engine
 
 			void VulkanFence::Wait(uint64_t timeout)
 			{
+				ZoneScoped;
+
 				vk::Result result = Handle(device).waitForFences(1u, &handle, VK_TRUE, timeout);
 			}
 
 			void VulkanFence::Reset()
 			{
+				ZoneScoped;
+
 				vk::Result result = Handle(device).resetFences(1u, &handle);
 			}
 		}

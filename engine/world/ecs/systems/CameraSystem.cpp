@@ -5,7 +5,7 @@
 #include <engine/world/ecs/components/CameraComponent.h>
 #include <engine/world/ecs/components/TransformComponent.h>
 
-#include <engine/profiler/Profiler.h>
+#include <tracy/Tracy.hpp>
 
 using namespace engine::world::ecs;
 
@@ -31,7 +31,7 @@ namespace engine
 
 			void CameraSystem::__Update(f32 fDt)
 			{
-				TRACY_PROFILE_FUNCTION();
+				ZoneScoped;
 
 				auto view = EntityManager::View<FTransformComponent, FBaseComponent, FCameraComponent>();
 				for (auto [entity, transform, base, camera] : view.each())

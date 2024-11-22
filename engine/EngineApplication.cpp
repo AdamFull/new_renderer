@@ -10,6 +10,8 @@
 #include <engine/ui/windows/InspectorWindow.h>
 #include <engine/ui/windows/PostProcessWindow.h>
 
+#include <tracy/Tracy.hpp>
+
 namespace engine
 {
 	EngineApplication::EngineApplication()
@@ -95,6 +97,8 @@ namespace engine
 
 	void EngineApplication::Update(float delta_time)
 	{
+		ZoneScoped;
+
 		for (auto& window : app_windows)
 			window->Draw(delta_time);
 

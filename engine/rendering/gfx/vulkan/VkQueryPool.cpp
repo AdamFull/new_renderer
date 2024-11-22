@@ -3,6 +3,8 @@
 
 #include "VkUtil.h"
 
+#include <tracy/Tracy.hpp>
+
 namespace engine
 {
 	namespace gfx
@@ -64,6 +66,8 @@ namespace engine
 
 			void VulkanQueryPool::GetData(uint64_t first_query, uint32_t query_count, void* data)
 			{
+				ZoneScoped;
+
 				switch (query_type)
 				{
 				case vk::QueryType::eOcclusion:

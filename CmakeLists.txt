@@ -47,6 +47,7 @@ if(MSVC)
 endif()
 
 add_compile_definitions(
+    #TRACY_ENABLE
     SPDLOG_FMT_EXTERNAL
     IMGUI_DEFINE_MATH_OPERATORS
     IMGUI_USE_WCHAR32
@@ -73,6 +74,9 @@ include_directories(
 )
 
 add_compile_definitions($<$<CONFIG:DEBUG>:ENGINE_DEBUG>)
+
+# Enable tracy profiler
+#add_definitions(-DTRACY_ENABLE)
 
 add_subdirectory(util)
 add_subdirectory(modules/glm)

@@ -3,10 +3,10 @@ project(gfx_vulkan)
 
 include(GenerateExportHeader)
 
-set(ENABLE_VULKAN_VALIDATION_LAYERS OFF CACHE BOOL "Enable validation layers for every application.")
-set(ENABLE_VULKAN_VALIDATION_LAYERS_GPU_ASSISTED OFF CACHE BOOL "Enable GPU assisted validation layers for every application (implicitly enables VULKAN_VALIDATION_LAYERS).")
-set(ENABLE_VULKAN_VALIDATION_LAYERS_BEST_PRACTICES OFF CACHE BOOL "Enable best practices validation layers for every application (implicitly enables VULKAN_VALIDATION_LAYERS).")
-set(ENABLE_VULKAN_VALIDATION_LAYERS_SYNCHRONIZATION ON CACHE BOOL "Enable synchronization validation layers for every application (implicitly enables VULKAN_VALIDATION_LAYERS).")
+set(ENABLE_VULKAN_VALIDATION_LAYERS ON CACHE BOOL "Enable validation layers for every application.")
+set(ENABLE_VULKAN_VALIDATION_LAYERS_GPU_ASSISTED OFF CACHE BOOL "Enable GPU assisted validation layers for every application.")
+set(ENABLE_VULKAN_VALIDATION_LAYERS_BEST_PRACTICES OFF CACHE BOOL "Enable best practices validation layers for every application.")
+set(ENABLE_VULKAN_VALIDATION_LAYERS_SYNCHRONIZATION ON CACHE BOOL "Enable synchronization validation layers for every application.")
 set(ENABLE_VULKAN_DEBUG ON CACHE BOOL "Enable VK_EXT_debug_utils or VK_EXT_debug_marker if supported.")
 
 find_package(volk CONFIG REQUIRED)
@@ -30,37 +30,34 @@ file(GLOB_RECURSE VULKAN_RENDERER_SOURCES FILES *.cpp *.h)
 
 add_library(${PROJECT_NAME} STATIC ${VULKAN_RENDERER_SOURCES})
 
-# GPU assisted validation layers are not available on macOS.
-if(${ENABLE_VULKAN_VALIDATION_LAYERS_GPU_ASSISTED})
-    if (APPLE)
-        message(WARNING "GPU assisted validation layers are not currently available on macOS.")
-    else()
-        target_compile_definitions(${PROJECT_NAME} PUBLIC VULKAN_VALIDATION_LAYERS)
-        target_compile_definitions(${PROJECT_NAME} PUBLIC VULKAN_VALIDATION_LAYERS_GPU_ASSISTED)
-    endif()
-endif()
-
-if(${ENABLE_VULKAN_VALIDATION_LAYERS_BEST_PRACTICES})
-    target_compile_definitions(${PROJECT_NAME} PUBLIC VULKAN_VALIDATION_LAYERS)
-    target_compile_definitions(${PROJECT_NAME} PUBLIC VULKAN_VALIDATION_LAYERS_BEST_PRACTICES)
-endif()
-
-if(${ENABLE_VULKAN_VALIDATION_LAYERS_SYNCHRONIZATION})
-    target_compile_definitions(${PROJECT_NAME} PUBLIC VULKAN_VALIDATION_LAYERS)
-    target_compile_definitions(${PROJECT_NAME} PUBLIC VULKAN_VALIDATION_LAYERS_SYNCHRONIZATION)
-endif()
-
 if(${ENABLE_VULKAN_DEBUG})
+    if(${ENABLE_VULKAN_VALIDATION_LAYERS})
+        target_compile_definitions(${PROJECT_NAME} PUBLIC VULKAN_VALIDATION_LAYERS)
+
+           # GPU assisted validation layers are not available on macOS.
+        if(${ENABLE_VULKAN_VALIDATION_LAYERS_GPU_ASSISTED})
+            if (APPLE)
+                message(WARNING "GPU assisted validation layers are not currently available on macOS.")
+            else()
+                target_compile_definitions(${PROJECT_NAME} PUBLIC VULKAN_VALIDATION_LAYERS_GPU_ASSISTED)
+            endif()
+        endif()
+        
+        if(${ENABLE_VULKAN_VALIDATION_LAYERS_BEST_PRACTICES})
+            target_compile_definitions(${PROJECT_NAME} PUBLIC VULKAN_VALIDATION_LAYERS_BEST_PRACTICES)
+        endif()
+        
+        if(${ENABLE_VULKAN_VALIDATION_LAYERS_SYNCHRONIZATION})
+            target_compile_definitions(${PROJECT_NAME} PUBLIC VULKAN_VALIDATION_LAYERS_SYNCHRONIZATION)
+        endif()
+    endif()
+
     target_compile_definitions(${PROJECT_NAME} PUBLIC VULKAN_DEBUG)
 endif()
 
 if(${ENABLE_VULKAN_PORTABILITY})
     message(STATUS "Vulkan Portability Enumeration and Portability Subset extensions are enabled")
     target_compile_definitions(${PROJECT_NAME} PUBLIC VULKAN_ENABLE_PORTABILITY)
-endif()
-
-if(${ENABLE_VULKAN_VALIDATION_LAYERS})
-    target_compile_definitions(${PROJECT_NAME} PUBLIC VULKAN_VALIDATION_LAYERS)
 endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES

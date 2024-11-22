@@ -1,6 +1,8 @@
 #include "VkDescriptorPool.h"
 #include "VkDevice.h"
 
+#include <tracy/Tracy.hpp>
+
 namespace engine
 {
 	namespace gfx
@@ -119,6 +121,8 @@ namespace engine
 
 			void DescriptorPool::Reset()
 			{
+				ZoneScoped;
+
 				Handle(device).resetDescriptorPool(handle);
 				allocated_descriptors.clear();
 
@@ -132,6 +136,8 @@ namespace engine
 
 			DescriptorSet& DescriptorPool::Allocate(DescriptorSetLayout& layout, const std::string& debug_name)
 			{
+				ZoneScoped;
+
 				vk::DescriptorSetAllocateInfo alloc_info{};
 				alloc_info.descriptorPool = handle;
 				alloc_info.descriptorSetCount = 1;
@@ -155,6 +161,8 @@ namespace engine
 
 			vk::Result DescriptorPool::Free(DescriptorSet& descriptor_set)
 			{
+				ZoneScoped;
+
 				if (descriptor_set.handle)
 				{
 					Handle(device).freeDescriptorSets(handle, 1u, &descriptor_set.handle);

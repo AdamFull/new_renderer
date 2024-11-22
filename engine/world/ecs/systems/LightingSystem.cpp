@@ -7,7 +7,7 @@
 #include <engine/world/ecs/components/PointLightComponent.h>
 #include <engine/world/ecs/components/SpotLightComponent.h>
 
-#include <engine/profiler/Profiler.h>
+#include <tracy/Tracy.hpp>
 
 using namespace engine::render;
 
@@ -42,7 +42,7 @@ namespace engine
 
 			void LightingSystem::__Update(f32 fDt)
 			{
-				TRACY_PROFILE_FUNCTION();
+				ZoneScoped;
 				// TODO: RENDER WORLD
 
 				// Collecting directional lights

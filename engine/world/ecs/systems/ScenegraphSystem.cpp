@@ -7,7 +7,7 @@
 #include <engine/world/ecs/components/TransformComponent.h>
 #include <engine/world/EntityManager.h>
 
-#include <engine/profiler/Profiler.h>
+#include <tracy/Tracy.hpp>
 
 using namespace engine::world::ecs;
 
@@ -21,12 +21,11 @@ CScenegraphSystem::CScenegraphSystem()
 
 void CScenegraphSystem::__Create()
 {
-	TRACY_PROFILE_FUNCTION();
 }
 
 void CScenegraphSystem::__Update(f32 fDt)
 {
-	TRACY_PROFILE_FUNCTION();
+	ZoneScoped;
 
 	auto& registry = EntityManager::GetRegistry();
 	auto root = EntityManager::GetRoot();

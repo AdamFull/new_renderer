@@ -3,7 +3,7 @@
 #include <engine/world/EntityManager.h>
 #include <engine/world/ecs/components/components.h>
 
-#include <engine/profiler/Profiler.h>
+#include <tracy/Tracy.hpp>
 #include <execution>
 
 using namespace engine::world::ecs;
@@ -108,12 +108,12 @@ CAnimationSystem::CAnimationSystem()
 
 void CAnimationSystem::__Create()
 {
-	TRACY_PROFILE_FUNCTION();
+	
 }
 
 void CAnimationSystem::__Update(float fDt)
 {
-	TRACY_PROFILE_FUNCTION();
+	ZoneScoped;
 
 	auto& registry = EntityManager::GetRegistry();
 	auto root = EntityManager::GetRoot();

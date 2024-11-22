@@ -1,12 +1,13 @@
 cmake_minimum_required(VERSION 3.18.0)
 project(application)
 
+find_package(Tracy CONFIG REQUIRED)
+
 add_subdirectory(runtime)
 add_subdirectory(media)
 add_subdirectory(rendering)
 add_subdirectory(filesystem)
 #add_subdirectory(scripting)
-add_subdirectory(profiler)
 add_subdirectory(world)
 add_subdirectory(integrations)
 add_subdirectory(ui)
@@ -35,9 +36,10 @@ target_include_directories(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
+    PRIVATE Tracy::TracyClient
+
 	PUBLIC glm_module
 	PUBLIC virtual_filesystem
-	PRIVATE engine_profiler
 	PRIVATE runtime
 	PRIVATE engine_rendering
     PRIVATE engine_ui

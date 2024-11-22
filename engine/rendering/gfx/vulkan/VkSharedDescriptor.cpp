@@ -5,6 +5,8 @@
 
 #include "VkUtil.h"
 
+#include <tracy/Tracy.hpp>
+
 namespace engine
 {
 	namespace gfx
@@ -70,6 +72,8 @@ namespace engine
 
 			void VulkanSharedDescriptor::Reset()
 			{
+				ZoneScoped;
+
 				descriptor_pool->Reset();
 
 				for (auto& resource_descriptor : allocated_resource_descriptors)
@@ -87,6 +91,8 @@ namespace engine
 
 			ResourceDescriptor* VulkanSharedDescriptor::RequestDescriptors()
 			{
+				ZoneScoped;
+
 				auto& new_resource_descriptor = allocated_resource_descriptors.emplace_back(new VulkanResourceDescriptor(device));
 
 				auto& descriptor_set = descriptor_pool->Allocate(*descriptor_set_layout);

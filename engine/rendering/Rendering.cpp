@@ -22,6 +22,7 @@
 #include <engine/world/EntityManager.h>
 
 #include <imgui.h>
+#include <tracy/Tracy.hpp>
 
 #ifdef MemoryBarrier
 #undef MemoryBarrier
@@ -170,6 +171,8 @@ namespace engine
 
 		void Renderer::Render(float delta_time)
 		{
+			ZoneScoped;
+
 			// Update geometry buffers
 			for (auto& geometry_buffer : geometry_buffers)
 			{
@@ -516,6 +519,8 @@ namespace engine
 					brdf_lut_target
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
+						ZoneScoped;
+
 						self.BindWriteResource(render_label::write_image0, brdf_lut_target);
 
 						self.ResolveDependencies(command_list);
@@ -539,6 +544,8 @@ namespace engine
 					casual_day_4k_cube
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
+						ZoneScoped;
+
 						self.BindWriteResource(render_label::write_image0, irradiance_cube_target);
 
 						self.BindResource(render_label::sample_image0, casual_day_4k_cube);
@@ -567,6 +574,8 @@ namespace engine
 					casual_day_4k_cube
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
+						ZoneScoped;
+
 						self.WriteResource(render_label::write_image0, prefiltered_cube_target);
 
 						auto target = render_graph->GetTexture(prefiltered_cube_target);
@@ -628,6 +637,8 @@ namespace engine
 					cascaded_shadows_target
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
+						ZoneScoped;
+
 						auto* shadow_map = render_graph->GetTexture(cascaded_shadows_target);
 
 						auto viewport_width = shadow_map->GetWidth();
@@ -701,6 +712,8 @@ namespace engine
 					omni_shadows_target
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
+						ZoneScoped;
+
 						auto* shadow_map = render_graph->GetTexture(omni_shadows_target);
 
 						auto viewport_width = shadow_map->GetWidth();
@@ -774,6 +787,8 @@ namespace engine
 					directional_shadows_target
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
+						ZoneScoped;
+
 						auto* shadow_map = render_graph->GetTexture(directional_shadows_target);
 
 						auto viewport_width = shadow_map->GetWidth();
@@ -846,6 +861,8 @@ namespace engine
 
 				create_info.draw_callback = [this](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
+						ZoneScoped;
+
 						auto* backbuffer = render_graph->GetTexture(backbuffer_resource);
 
 						auto viewport_width = backbuffer->GetWidth();
@@ -899,6 +916,8 @@ namespace engine
 					omni_shadows_target
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
+						ZoneScoped;
+
 						self.BindWriteResource(render_label::write_image0, hdr0);
 						self.BindResource(render_label::sample_image0, brdf_lut_target); // binding 1
 						self.BindResource(render_label::sample_image1, irradiance_cube_target); // binding 2
@@ -948,6 +967,8 @@ namespace engine
 					zbuffer_depth_target
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
+						ZoneScoped;
+
 						self.BindWriteResource(render_label::write_image0, motion_vectors_target);
 						self.BindReadResource(render_label::sample_image0, zbuffer_depth_target);
 
@@ -973,6 +994,8 @@ namespace engine
 					hdr0_history
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
+						ZoneScoped;
+
 						self.BindReadResource(render_label::sample_image0, input_target);
 						self.BindWriteResource(render_label::write_image0, hdr0_history);
 
@@ -1003,6 +1026,8 @@ namespace engine
 						enabled = &postprocess.fxaa.enable
 					](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 						{
+							ZoneScoped;
+
 							self.BindReadResource(render_label::sample_image0, input_target);
 							self.BindWriteResource(render_label::write_image0, output_target);
 
@@ -1030,6 +1055,8 @@ namespace engine
 						motion_vectors_target
 					](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 						{
+							ZoneScoped;
+
 							self.BindReadResource(render_label::sample_image0, input_target);
 							self.BindReadResource(render_label::sample_image1, motion_vectors_target);
 							self.BindWriteResource(render_label::write_image0, output_target);
@@ -1062,6 +1089,8 @@ namespace engine
 							hdr0_div2
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
+								ZoneScoped;
+
 								self.BindReadResource(render_label::sample_image0, input_target);
 								self.BindWriteResource(render_label::write_image0, hdr0_div2);
 								self.ResolveDependencies(command_list);
@@ -1085,6 +1114,8 @@ namespace engine
 							zbuffer_depth_target
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
+								ZoneScoped;
+
 								self.BindReadResource(render_label::sample_image0, input_target);
 								self.BindReadResource(render_label::sample_image1, hdr0_div2);
 								self.BindReadResource(render_label::sample_image2, zbuffer_depth_target);
@@ -1120,6 +1151,8 @@ namespace engine
 							hdr0_div2
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
+								ZoneScoped;
+
 								self.BindReadResource(render_label::sample_image0, input_target);
 								self.BindWriteResource(render_label::write_image0, hdr0_div2);
 								self.ResolveDependencies(command_list);
@@ -1142,6 +1175,8 @@ namespace engine
 								bloom_target
 							](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 								{
+									ZoneScoped;
+
 									self.WriteResource(render_label::write_image0, bloom_target);
 
 									self.BindReadResource(render_label::sample_image0, hdr0_div2);
@@ -1164,6 +1199,8 @@ namespace engine
 								bloom_target
 							](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 								{
+									ZoneScoped;
+
 									auto target = render_graph->GetTexture(bloom_target);
 
 									for (int32_t mip = 1; mip < bloom_blur_depth; ++mip)
@@ -1197,6 +1234,8 @@ namespace engine
 							bloom_target
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
+								ZoneScoped;
+
 								auto target = render_graph->GetTexture(bloom_target);
 
 								for (int32_t mip = bloom_blur_depth - 1; mip > 0; --mip)
@@ -1232,6 +1271,8 @@ namespace engine
 							dirt_mask_texture
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
+								ZoneScoped;
+
 								self.BindWriteResource(render_label::write_image0, output_target);
 								self.BindReadResource(render_label::sample_image0, input_target);
 								self.BindReadResource(render_label::sample_image1, bloom_target);
@@ -1268,6 +1309,8 @@ namespace engine
 							histogram_buffer
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
+								ZoneScoped;
+
 								self.BindReadResource(render_label::sample_image0, input_target);
 								self.BindWriteResource(render_label::histogram_buffer, histogram_buffer);
 								self.ResolveDependencies(command_list);
@@ -1297,6 +1340,8 @@ namespace engine
 							input_target
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
+								ZoneScoped;
+
 								self.BindReadResource(render_label::histogram_buffer, histogram_buffer);
 								self.BindWriteResource(render_label::write_image0, avg_brightness_target);
 								self.ResolveDependencies(command_list);
@@ -1332,6 +1377,8 @@ namespace engine
 							avg_brightness_target
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
+								ZoneScoped;
+
 								self.BindWriteResource(render_label::write_image0, output_target);
 								self.BindReadResource(render_label::sample_image0, input_target);
 								self.BindReadResource(render_label::sample_image1, avg_brightness_target);
@@ -1368,6 +1415,8 @@ namespace engine
 					final_target
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
+						ZoneScoped;
+
 						auto* backbuffer = render_graph->GetTexture(backbuffer_resource);
 			
 						auto viewport_width = static_cast<float>(backbuffer->GetWidth());
@@ -1436,6 +1485,8 @@ namespace engine
 						imgui_font_texture
 					](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 						{
+							ZoneScoped;
+
 							ImGui::Render();
 
 							// Update geometry

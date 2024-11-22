@@ -6,6 +6,8 @@
 
 #include "VkUtil.h"
 
+#include <tracy/Tracy.hpp>
+
 namespace engine
 {
 	namespace gfx
@@ -101,6 +103,8 @@ namespace engine
 
 			void VulkanResourceDescriptor::Flush()
 			{
+				ZoneScoped;
+
 				Handle(device).updateDescriptorSets(writes_count, write_descriptor_sets.data(), 0, nullptr);
 
 				writes_count = 0u;

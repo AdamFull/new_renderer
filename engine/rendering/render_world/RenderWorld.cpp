@@ -3,6 +3,8 @@
 
 #include <glm/gtx/quaternion.hpp>
 
+#include <tracy/Tracy.hpp>
+
 #include "Globals.h"
 
 namespace engine
@@ -66,6 +68,8 @@ namespace engine
 
 		void RenderWorld::UpdateRenderCamera(uint32_t camera_id, const glm::vec3& translation, const glm::quat& rotation)
 		{
+			ZoneScoped;
+
 			auto& world_resource = world_resources[camera_id];
 			auto& camera = world_cameras->Get(world_resource.resource_id);
 
@@ -144,6 +148,8 @@ namespace engine
 
 		void RenderWorld::UpdateRenderCamera(uint32_t camera_id, const glm::mat4& view, const glm::mat4& projection, uint32_t width, uint32_t height)
 		{
+			ZoneScoped;
+
 			auto& world_resource = world_resources[camera_id];
 			auto& camera = world_cameras->Get(world_resource.resource_id);
 
@@ -178,6 +184,8 @@ namespace engine
 
 		void RenderWorld::UpdateNode(uint32_t node_id, const glm::mat4& matrix)
 		{
+			ZoneScoped;
+
 			auto& node = world_nodes->Get(node_id);
 			world_nodes->MarkDirty(node_id);
 
@@ -196,6 +204,8 @@ namespace engine
 
 		void RenderWorld::AddGeometryDraw(DrawCommand& draw_command)
 		{
+			ZoneScoped;
+
 			uint32_t draw_index = draw_count++;
 
 			// Describes current draw command resources
@@ -223,6 +233,8 @@ namespace engine
 
 		void RenderWorld::AddMaterial(const shlib::Material& material)
 		{
+			ZoneScoped;
+
 			auto material_index = material_count++;
 			auto& new_material = draw_materials->Get(material_index);
 			draw_materials->MarkDirty(material_index);
@@ -236,6 +248,8 @@ namespace engine
 
 		void RenderWorld::AddLight(const shlib::LightCommit& light_data)
 		{
+			ZoneScoped;
+
 			auto light_index = light_count++;
 			auto& new_light = scene_lights->Get(light_index);
 			scene_lights->MarkDirty(light_index);
@@ -244,6 +258,8 @@ namespace engine
 
 		void RenderWorld::AddShadow(const shlib::CascadedShadowCommit& shadow_data)
 		{
+			ZoneScoped;
+
 			auto shadow_index = cascaded_shadow_count++;
 			auto& new_shadow = scene_cascaded_shadows->Get(shadow_index);
 			scene_cascaded_shadows->MarkDirty(shadow_index);
@@ -252,6 +268,8 @@ namespace engine
 
 		void RenderWorld::AddShadow(const shlib::OmniShadowCommit& shadow_data)
 		{
+			ZoneScoped;
+
 			auto shadow_index = omni_shadow_count++;
 			auto& new_shadow = omni_shadows->Get(shadow_index);
 			omni_shadows->MarkDirty(shadow_index);
@@ -260,6 +278,8 @@ namespace engine
 
 		void RenderWorld::AddShadow(const shlib::SpotShadowCommit& shadow_data)
 		{
+			ZoneScoped;
+
 			auto shadow_index = spot_shadow_count++;
 			auto& new_shadow = spot_shadows->Get(shadow_index);
 			spot_shadows->MarkDirty(shadow_index);
@@ -268,6 +288,8 @@ namespace engine
 
 		void RenderWorld::BeginFrame(float delta_time)
 		{
+			ZoneScoped;
+
 			auto& render_graph = renderer.GetRenderGraph();
 
 			// Post process data

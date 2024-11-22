@@ -4,6 +4,8 @@
 #include "VkRootSignature.h"
 #include "VkResourceDescriptor.h"
 
+#include <tracy/Tracy.hpp>
+
 namespace engine
 {
 	namespace gfx
@@ -35,6 +37,8 @@ namespace engine
 
 			void VulkanDescriptorAllocator::Reset()
 			{
+				ZoneScoped;
+
 				auto to_delete = std::remove_if(descriptor_pools.begin(), descriptor_pools.end(), [](const std::unique_ptr<DescriptorPool>& pool)
 					{
 						pool->Reset();
@@ -57,6 +61,8 @@ namespace engine
 
 			ResourceDescriptor* VulkanDescriptorAllocator::AllocateDescriptors(RootSignature* root_signature)
 			{
+				ZoneScoped;
+
 				auto* vk_root_signature = static_cast<VulkanRootSignature*>(root_signature);
 
 				auto& set_layouts = vk_root_signature->GetDescriptorSetLayouts();
@@ -79,6 +85,8 @@ namespace engine
 
 			DescriptorSet& VulkanDescriptorAllocator::Allocate(DescriptorSetLayout& layout)
 			{
+				ZoneScoped;
+
 				// We didn't have any pool for now, needs to allocate new one
 				if (descriptor_pools.empty())
 				{

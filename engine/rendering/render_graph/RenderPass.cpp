@@ -5,6 +5,8 @@
 
 #include <util/Logger.h>
 
+#include <tracy/Tracy.hpp>
+
 namespace engine
 {
 	namespace render
@@ -58,6 +60,8 @@ namespace engine
 
 		void RenderPass::_Execute(gfx::CommandList& command_list, float delta_time)
 		{
+			ZoneScoped;
+
 			// TODO: cache it???
 			for (auto& resource_attachment : resource_attachments)
 			{

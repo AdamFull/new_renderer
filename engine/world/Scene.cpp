@@ -17,6 +17,8 @@
 #include <util/Logger.h>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <tracy/Tracy.hpp>
+
 #include "EntityManager.h"
 
 namespace engine
@@ -276,6 +278,7 @@ namespace engine
 
 		void Scene::Update(float delta_time)
 		{
+			ZoneScoped;
 			EntityManager::Update(delta_time);
 		}
 
