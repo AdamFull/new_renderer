@@ -3,6 +3,9 @@
 
 #include <util/Logger.h>
 
+#include <util/TaskSystem.h>
+#include <iostream>
+
 //#include <DbgHelp.h>
 //#include <tlhelp32.h>
 //#include <psapi.h>
