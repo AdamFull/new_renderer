@@ -1,7 +1,6 @@
 #include "library_compiler.h"
 
 #include "glslang_compiler.h"
-#include "dxc_compiler.h"
 
 #include "compiler_util.h"
 #include "compiler_parse.h"
@@ -104,7 +103,7 @@ void CLibraryCompiler::Initialize(ETargetAPIType target_api, EShaderLang shader_
 	{
 	case shader_compiler::EShaderLang::eUnknown: break;
 	case shader_compiler::EShaderLang::eGLSL: { m_pShaderCompiler = std::make_unique<CGLSLANGCompiler>(target_api, build_type); } break;
-	case shader_compiler::EShaderLang::eHLSL: { m_pShaderCompiler = std::make_unique<CDXCCompiler>(target_api, build_type); } break;
+	
 	}
 
 	m_lang = shader_lang;
@@ -202,8 +201,8 @@ std::string CLibraryCompiler::GeneratePreamble(const FShaderMeta& meta)
 
 	if (m_lang == EShaderLang::eGLSL)
 		ss << "#define __glslang" << std::endl;
-	else if (m_lang == EShaderLang::eHLSL)
-		ss << "#define __hlslang" << std::endl;
+	else if (m_lang == EShaderLang::eSLang)
+		ss << "#define __slang" << std::endl;
 
 	return ss.str();
 }

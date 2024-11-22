@@ -34,8 +34,8 @@ namespace shader_compiler
 
 		if (temp == "glsl")
 			value = EShaderLang::eGLSL;
-		else if (temp == "hlsl")
-			value = EShaderLang::eHLSL;
+		else if (temp == "slang")
+			value = EShaderLang::eSLang;
 		else
 			value = EShaderLang::eUnknown;
 	}

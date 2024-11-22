@@ -59,7 +59,6 @@
     "nlohmann-json",
     "mimalloc",
     "benchmark",
-    "directx-dxc",
     "freetype",
     "spdlog",
     "volk",
