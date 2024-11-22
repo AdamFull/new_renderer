@@ -1,5 +1,5 @@
-#include "compute_common"
-#include "interop/base"
+#include "compute_common.glsl"
+#include "shlib.h"
 
 // This shader performs downsampling on a texture,
 // as taken from Call Of Duty method, presented at ACM Siggraph 2014.

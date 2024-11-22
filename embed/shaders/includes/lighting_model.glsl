@@ -1,8 +1,8 @@
 #ifndef LIGHTING_MODEL_GLSL
 #define LIGHTING_MODEL_GLSL
 
-#include "math"
-#include "util"
+#include "math.glsl"
+#include "util.glsl"
 
 // Sampled material data
 struct MaterialSample 

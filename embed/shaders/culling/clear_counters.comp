@@ -1,4 +1,4 @@
-#include "shader_inputs"
+#include "shader_inputs.glsl"
 
 #define GROUP_SIZE 1
 
@@ -11,5 +11,5 @@ void main()
 	if (global_draw_index >= frameData.cullerCount) 
 		return;
 
-	PTRVAL(GET_BUFFER_POINTER(UInt32Ptr, indirectCountBuffer), global_draw_index) = 0;
+	PTRVAL(indirectCountBuffer, global_draw_index) = 0;
 }

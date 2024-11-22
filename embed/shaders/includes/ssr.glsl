@@ -1,7 +1,7 @@
 #ifndef SSR_GLSL
 #define SSR_GLSL
 
-#include "util"
+#include "util.glsl"
 
 const float rayStep = 0.2f;
 const int iterationCount = 100;

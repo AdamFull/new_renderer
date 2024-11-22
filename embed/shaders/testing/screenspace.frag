@@ -1,5 +1,5 @@
-#include "shader_inputs"
-#include "util"
+#include "shader_inputs.glsl"
+#include "util.glsl"
 
 layout (location = 0) in vec2 inUV;
 layout (location = 0) out vec4 outFragcolor;

@@ -1,31 +1,31 @@
 #ifndef SHADER_INPUTS_GLSL
 #define SHADER_INPUTS_GLSL
 
-#include "geometry"
+#include "geometry.glsl"
 
 // Bindless texture
 layout(set = 0, binding = 3) uniform sampler2D globalTextures[];
 
-FSceneNode GetSceneNode(uint index) { return PTRVAL(GET_BUFFER_POINTER(NodePtr, nodeBuffer), index); }
-FMesh GetMesh(uint index) { return PTRVAL(GET_BUFFER_POINTER(MeshPtr, meshBuffer), index); }
-FMaterial GetMaterial(uint index) { return PTRVAL(GET_BUFFER_POINTER(MaterialPtr, materialBuffer), index); }
-FLightCommit getLight(uint index) { return PTRVAL(GET_BUFFER_POINTER(LightPtr, lightsBuffer), index); }
+FSceneNode GetSceneNode(uint index) { return PTRVAL(nodeBuffer, index); }
+FMesh GetMesh(uint index) { return PTRVAL(meshBuffer, index); }
+FMaterial GetMaterial(uint index) { return PTRVAL(materialBuffer, index); }
+FLightCommit getLight(uint index) { return PTRVAL(lightsBuffer, index); }
 
-FCascadedShadowCommit GetCascadedShadowCommit(uint index) { return PTRVAL(GET_BUFFER_POINTER(CascadedShadowPtr, cascadedShadowBuffer), index); }
-FOmniShadowCommit GetOmniShadowCommit(uint index) { return PTRVAL(GET_BUFFER_POINTER(OmniShadowPtr, omniShadowBuffer), index); }
-FSpotShadowCommit GetSpotShadowCommit(uint index) { return PTRVAL(GET_BUFFER_POINTER(SpotShadowPtr, spotShadowBuffer), index); }
+FCascadedShadowCommit GetCascadedShadowCommit(uint index) { return PTRVAL(cascadedShadowBuffer, index); }
+FOmniShadowCommit GetOmniShadowCommit(uint index) { return PTRVAL(omniShadowBuffer, index); }
+FSpotShadowCommit GetSpotShadowCommit(uint index) { return PTRVAL(spotShadowBuffer, index); }
 
-DrawDescription GetDrawInfo(uint index) { return PTRVAL(GET_BUFFER_POINTER(DrawInfoPtr, drawInfoBuffer), index); }
-DrawDescription GetRawDrawInfo(uint index) { return PTRVAL(GET_BUFFER_POINTER(DrawInfoPtr, rawDrawInfoBuffer), index); }
+DrawDescription GetDrawInfo(uint index) { return PTRVAL(drawInfoBuffer, index); }
+DrawDescription GetRawDrawInfo(uint index) { return PTRVAL(rawDrawInfoBuffer, index); }
 
-vec4 GetFrustumSide(uint index) { return PTRVAL(GET_BUFFER_POINTER(FrustumSidesPtr, frustumSidesBuffer), index); }
+vec4 GetFrustumSide(uint index) { return PTRVAL(frustumSidesBuffer, index); }
 
-FDrawIndexedIndirectData GetDrawIndexedCommand(uint index) { return PTRVAL(GET_BUFFER_POINTER(IndirectDrawIndexedComandPtr, indirectCommandBuffer), index); }
-uint32_t GetDrawCount(uint index) { return PTRVAL(GET_BUFFER_POINTER(UInt32Ptr, indirectCountBuffer), index); }
+FDrawIndexedIndirectData GetDrawIndexedCommand(uint index) { return PTRVAL(indirectCommandBuffer, index); }
+uint32_t GetDrawCount(uint index) { return PTRVAL(indirectCountBuffer, index); }
 
-FCamera GetCamera(uint index) { return PTRVAL(GET_BUFFER_POINTER(CameraBuffer, cameraBuffer), index); }
+FCamera GetCamera(uint index) { return PTRVAL(cameraBuffer, index); }
 
-mat4 GetMatrixById(uint global_offset, uint local_offset) { return PTRVAL(GET_BUFFER_POINTER(MatrixPtr, matrixBuffer), global_offset + local_offset); }
+mat4 GetMatrixById(uint global_offset, uint local_offset) { return PTRVAL(matrixBuffer, global_offset + local_offset); }
 
 mat4 GetModelMatrix(uint global_offset) { return GetMatrixById(global_offset, model_matrix_offset); }
 mat4 GetOldModelMatrix(uint global_offset) { return GetMatrixById(global_offset, old_model_matrix_offset); }

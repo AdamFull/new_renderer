@@ -1,7 +1,7 @@
 #pragma once
 
 #include <engine/rendering/gfx/Structures.h>
-#include <embed/shaders/includes/interop/base.h>
+#include <embed/shaders/includes/shlib.h>
 
 #include <hash.hpp>
 
@@ -40,7 +40,7 @@ namespace engine
 			virtual ~IRenderWorld() = default;
 
 			virtual uint32_t CreateRenderCamera() = 0;
-			virtual FCamera& GetRenderCamera(uint32_t camera_id) = 0;
+			virtual shlib::FCamera& GetRenderCamera(uint32_t camera_id) = 0;
 			virtual glm::mat4 const& GetCameraMatrix(uint32_t camera_id, uint32_t matrix_index) = 0;
 
 			virtual void UpdateRenderCamera(uint32_t camera_id, const glm::vec3& translation, const glm::quat& rotation) = 0;
@@ -50,14 +50,14 @@ namespace engine
 
 			virtual void AddGeometryDraw(DrawCommand& draw_command) = 0;
 
-			virtual void AddMaterial(const FMaterial& material) = 0;
-			virtual const FMaterial& GetMaterial(uint32_t index) const = 0;
+			virtual void AddMaterial(const shlib::FMaterial& material) = 0;
+			virtual const shlib::FMaterial& GetMaterial(uint32_t index) const = 0;
 
-			virtual void AddLight(const FLightCommit& light_data) = 0;
+			virtual void AddLight(const shlib::FLightCommit& light_data) = 0;
 
-			virtual void AddShadow(const FCascadedShadowCommit& shadow_data) = 0;
-			virtual void AddShadow(const FOmniShadowCommit& shadow_data) = 0;
-			virtual void AddShadow(const FSpotShadowCommit& shadow_data) = 0;
+			virtual void AddShadow(const shlib::FCascadedShadowCommit& shadow_data) = 0;
+			virtual void AddShadow(const shlib::FOmniShadowCommit& shadow_data) = 0;
+			virtual void AddShadow(const shlib::FSpotShadowCommit& shadow_data) = 0;
 
 			virtual void BeginFrame(float delta_time) = 0;
 			virtual void EndFrame() = 0;

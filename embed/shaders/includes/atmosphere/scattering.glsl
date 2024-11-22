@@ -1,8 +1,8 @@
 #ifndef ATMOSPHERE_SCATTERING_GLSL
 #define ATMOSPHERE_SCATTERING_GLSL
 
-#include "math"
-#include "atmosphere/constants"
+#include "math.glsl"
+#include "atmosphere/constants.glsl"
 
 const float maxScatterDistance = (atmosphere_radius - atmosphere_planet_radius) * 2.0;
 

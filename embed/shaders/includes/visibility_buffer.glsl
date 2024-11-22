@@ -1,7 +1,7 @@
 #ifndef VISIBILITY_BUFFER_GLSL
 #define VISIBILITY_BUFFER_GLSL
 
-#include "shader_inputs"
+#include "shader_inputs.glsl"
 
 // Input buffers
 layout(set = 1, binding = 1) uniform sampler2D sample_image3;

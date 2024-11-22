@@ -13,7 +13,7 @@
 #include <engine/rendering/render_graph/RenderGraph.h>
 #include <engine/rendering/render_world/RenderWorld.h>
 
-#include <embed/shaders/includes/interop/base.h>
+#include <embed/shaders/includes/shlib.h>
 
 #include <util/Logger.h>
 
@@ -129,11 +129,11 @@ namespace engine
 			return render_graph->AddResource(create_info);
 		}
 
-		void Renderer::AddMaterial(const FMaterial& material)
+		void Renderer::AddMaterial(const shlib::FMaterial& material)
 		{
 			// "Patch" material before add
 
-			FMaterial new_material{ material };
+			shlib::FMaterial new_material{ material };
 
 			if (new_material.baseColorTexture != ~0u)
 			{
@@ -354,8 +354,8 @@ namespace engine
 			uint32_t cascaded_shadows_target{ ~0u };
 			{
 				TextureResourceCreateInfo create_info{};
-				create_info.width = create_info.height = cascade_shadow_map_resolution;
-				create_info.layers = cascade_shadow_map_cascade_count * max_directional_light_shadow_count;
+				create_info.width = create_info.height = shlib::cascade_shadow_map_resolution;
+				create_info.layers = shlib::cascade_shadow_map_cascade_count * shlib::max_directional_light_shadow_count;
 				create_info.format = gfx::Format::eD32Sfloat;
 				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eRenderTarget;
 				create_info.resizable = false;
@@ -366,8 +366,8 @@ namespace engine
 			uint32_t directional_shadows_target{ ~0u };
 			{
 				TextureResourceCreateInfo create_info{};
-				create_info.width = create_info.height = spot_light_shadow_map_resolution;
-				create_info.layers = max_spot_light_shadow_count;
+				create_info.width = create_info.height = shlib::spot_light_shadow_map_resolution;
+				create_info.layers = shlib::max_spot_light_shadow_count;
 				create_info.format = gfx::Format::eD16Unorm;
 				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eRenderTarget;
 				create_info.resizable = false;
@@ -378,8 +378,8 @@ namespace engine
 			uint32_t omni_shadows_target{ ~0u };
 			{
 				TextureResourceCreateInfo create_info{};
-				create_info.width = create_info.height = point_light_shadow_map_resolution;
-				create_info.layers = max_point_light_shadow_count;
+				create_info.width = create_info.height = shlib::point_light_shadow_map_resolution;
+				create_info.layers = shlib::max_point_light_shadow_count;
 				create_info.format = gfx::Format::eD16Unorm;
 				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eRenderTarget | gfx::TextureUsageFlag::eCubemap;
 				create_info.resizable = false;
@@ -662,7 +662,7 @@ namespace engine
 							if (!light.castShadows)
 								continue;
 
-							for (int32_t layer = 0; layer < cascade_shadow_map_cascade_count; ++layer)
+							for (int32_t layer = 0; layer < shlib::cascade_shadow_map_cascade_count; ++layer)
 							{
 								constants.Set(render_label::call_id, draw_call_id);
 								constants.Set(render_label::shadow_index, shadow_index);

@@ -1,4 +1,4 @@
-#include "shader_inputs"
+#include "shader_inputs.glsl"
 
 #define GROUP_SIZE 64
 

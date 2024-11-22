@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include <embed/shaders/includes/interop/base.h>
+#include <embed/shaders/includes/shlib.h>
 
 namespace engine
 {

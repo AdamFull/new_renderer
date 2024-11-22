@@ -14,23 +14,23 @@ namespace engine
 		{
 			auto& resource_context = renderer.GetResourceContext();
 
-			world_nodes = std::make_unique<DynamicBuffer<FSceneNode>>(resource_context, 8ull, gfx::BufferUsageFlag::eStorageBuffer);
-			draw_descriptions = std::make_unique<DynamicBuffer<DrawDescription>>(resource_context, 16ull, gfx::BufferUsageFlag::eStorageBuffer);
-			world_meshes = std::make_unique<DynamicBuffer<FMesh>>(resource_context, 16ull, gfx::BufferUsageFlag::eStorageBuffer);
+			world_nodes = std::make_unique<DynamicBuffer<shlib::FSceneNode>>(resource_context, 8ull, gfx::BufferUsageFlag::eStorageBuffer);
+			draw_descriptions = std::make_unique<DynamicBuffer<shlib::DrawDescription>>(resource_context, 16ull, gfx::BufferUsageFlag::eStorageBuffer);
+			world_meshes = std::make_unique<DynamicBuffer<shlib::FMesh>>(resource_context, 16ull, gfx::BufferUsageFlag::eStorageBuffer);
 
-			scene_lights = std::make_unique<DynamicBuffer<FLightCommit>>(resource_context, 16ull, gfx::BufferUsageFlag::eStorageBuffer);
+			scene_lights = std::make_unique<DynamicBuffer<shlib::FLightCommit>>(resource_context, 16ull, gfx::BufferUsageFlag::eStorageBuffer);
 
-			scene_cascaded_shadows = std::make_unique<DynamicBuffer<FCascadedShadowCommit>>(resource_context, 16ull, gfx::BufferUsageFlag::eStorageBuffer);
-			omni_shadows = std::make_unique<DynamicBuffer<FOmniShadowCommit>>(resource_context, 16ull, gfx::BufferUsageFlag::eStorageBuffer);
-			spot_shadows = std::make_unique<DynamicBuffer<FSpotShadowCommit>>(resource_context, 16ull, gfx::BufferUsageFlag::eStorageBuffer);
+			scene_cascaded_shadows = std::make_unique<DynamicBuffer<shlib::FCascadedShadowCommit>>(resource_context, 16ull, gfx::BufferUsageFlag::eStorageBuffer);
+			omni_shadows = std::make_unique<DynamicBuffer<shlib::FOmniShadowCommit>>(resource_context, 16ull, gfx::BufferUsageFlag::eStorageBuffer);
+			spot_shadows = std::make_unique<DynamicBuffer<shlib::FSpotShadowCommit>>(resource_context, 16ull, gfx::BufferUsageFlag::eStorageBuffer);
 
-			draw_materials = std::make_unique<DynamicBuffer<FMaterial>>(resource_context, 16ull, gfx::BufferUsageFlag::eStorageBuffer);
+			draw_materials = std::make_unique<DynamicBuffer<shlib::FMaterial>>(resource_context, 16ull, gfx::BufferUsageFlag::eStorageBuffer);
 
-			world_cameras = std::make_unique<DynamicBuffer<FCamera>>(resource_context, 8ull, gfx::BufferUsageFlag::eStorageBuffer);
+			world_cameras = std::make_unique<DynamicBuffer<shlib::FCamera>>(resource_context, 8ull, gfx::BufferUsageFlag::eStorageBuffer);
 			world_matrices = std::make_unique<DynamicBuffer<glm::mat4>>(resource_context, 64ull, gfx::BufferUsageFlag::eStorageBuffer);
 			world_frustum = std::make_unique<DynamicBuffer<glm::vec4>>(resource_context, 64ull, gfx::BufferUsageFlag::eStorageBuffer);
 
-			indirect_draw_commands = std::make_unique<DynamicBuffer<FDrawIndexedIndirectData>>(resource_context, 64ull, gfx::BufferUsageFlag::eIndirectBuffer);
+			indirect_draw_commands = std::make_unique<DynamicBuffer<shlib::FDrawIndexedIndirectData>>(resource_context, 64ull, gfx::BufferUsageFlag::eIndirectBuffer);
 		}
 
 		uint32_t RenderWorld::CreateRenderCamera()
@@ -41,7 +41,7 @@ namespace engine
 
 			auto& camera = world_cameras->Get(world_resource.resource_id);
 			camera.matrices_offset = matrices_offset;
-			matrices_offset += matrix_offset_count;
+			matrices_offset += shlib::matrix_offset_count;
 
 			camera.frustum_offset = frustum_offset;
 			frustum_offset += 6ull; // Because 6 frustum sides
@@ -49,7 +49,7 @@ namespace engine
 			return world_resources.size() - 1ull;
 		}
 
-		FCamera& RenderWorld::GetRenderCamera(uint32_t camera_id)
+		shlib::FCamera& RenderWorld::GetRenderCamera(uint32_t camera_id)
 		{
 			auto& world_resource = world_resources[camera_id];
 			return world_cameras->Get(world_resource.resource_id);
@@ -95,22 +95,22 @@ namespace engine
 				auto up = glm::normalize(glm::cross(right, forward));
 
 				auto* matrices = world_matrices->Data(camera.matrices_offset);
-				world_matrices->MarkDirty(camera.matrices_offset, matrix_offset_count);
+				world_matrices->MarkDirty(camera.matrices_offset, shlib::matrix_offset_count);
 
-				matrices[view_matrix_offset] = glm::lookAt(translation, translation + forward, up);
-				matrices[inv_view_matrix_offset] = glm::inverse(matrices[view_matrix_offset]);
-				matrices[projection_matrix_offset] = glm::perspective(camera.fov, camera.aspect, camera.z_near, camera.z_far);
-				matrices[inv_projection_matrix_offset] = glm::inverse(matrices[projection_matrix_offset]);
-				matrices[prev_view_projection_matrix_offset] = matrices[view_projection_matrix_offset];
-				matrices[view_projection_matrix_offset] = matrices[projection_matrix_offset] * matrices[view_matrix_offset];
-				matrices[inv_view_projection_matrix_offset] = glm::inverse(matrices[view_projection_matrix_offset]);
+				matrices[shlib::view_matrix_offset] = glm::lookAt(translation, translation + forward, up);
+				matrices[shlib::inv_view_matrix_offset] = glm::inverse(matrices[shlib::view_matrix_offset]);
+				matrices[shlib::projection_matrix_offset] = glm::perspective(camera.fov, camera.aspect, camera.z_near, camera.z_far);
+				matrices[shlib::inv_projection_matrix_offset] = glm::inverse(matrices[shlib::projection_matrix_offset]);
+				matrices[shlib::prev_view_projection_matrix_offset] = matrices[shlib::view_projection_matrix_offset];
+				matrices[shlib::view_projection_matrix_offset] = matrices[shlib::projection_matrix_offset] * matrices[shlib::view_matrix_offset];
+				matrices[shlib::inv_view_projection_matrix_offset] = glm::inverse(matrices[shlib::view_projection_matrix_offset]);
 
 				// Calculate frustum
 				UpdateCameraFrustum(camera_id);
 
 				// Update reprojection
-				auto& camera_reprojection = matrices[reprojection_matrix_offset];
-				camera_reprojection = matrices[prev_view_projection_matrix_offset] * matrices[inv_view_projection_matrix_offset];
+				auto& camera_reprojection = matrices[shlib::reprojection_matrix_offset];
+				camera_reprojection = matrices[shlib::prev_view_projection_matrix_offset] * matrices[shlib::inv_view_projection_matrix_offset];
 
 				float rcp_half_dimx = 2.0f / screen_size_x;
 				float rcp_half_dimy = 2.0f / screen_size_y;
@@ -166,11 +166,11 @@ namespace engine
 				camera.aspect = camera.size.x / camera.size.y;
 
 				auto* matrices = world_matrices->Data(camera.matrices_offset);
-				world_matrices->MarkDirty(camera.matrices_offset, matrix_offset_count);
+				world_matrices->MarkDirty(camera.matrices_offset, shlib::matrix_offset_count);
 
-				matrices[view_matrix_offset] = view;
-				matrices[projection_matrix_offset] = projection;
-				matrices[view_projection_matrix_offset] = projection * view;
+				matrices[shlib::view_matrix_offset] = view;
+				matrices[shlib::projection_matrix_offset] = projection;
+				matrices[shlib::view_projection_matrix_offset] = projection * view;
 
 				UpdateCameraFrustum(camera_id);
 			}
@@ -221,7 +221,7 @@ namespace engine
 			indirect_command.firstInstance = 0;
 		}
 
-		void RenderWorld::AddMaterial(const FMaterial& material)
+		void RenderWorld::AddMaterial(const shlib::FMaterial& material)
 		{
 			auto material_index = material_count++;
 			auto& new_material = draw_materials->Get(material_index);
@@ -229,12 +229,12 @@ namespace engine
 			new_material = material;
 		}
 
-		const FMaterial& RenderWorld::GetMaterial(uint32_t index) const
+		const shlib::FMaterial& RenderWorld::GetMaterial(uint32_t index) const
 		{
 			return draw_materials->Get(index);
 		}
 
-		void RenderWorld::AddLight(const FLightCommit& light_data)
+		void RenderWorld::AddLight(const shlib::FLightCommit& light_data)
 		{
 			auto light_index = light_count++;
 			auto& new_light = scene_lights->Get(light_index);
@@ -242,7 +242,7 @@ namespace engine
 			new_light = light_data;
 		}
 
-		void RenderWorld::AddShadow(const FCascadedShadowCommit& shadow_data)
+		void RenderWorld::AddShadow(const shlib::FCascadedShadowCommit& shadow_data)
 		{
 			auto shadow_index = cascaded_shadow_count++;
 			auto& new_shadow = scene_cascaded_shadows->Get(shadow_index);
@@ -250,7 +250,7 @@ namespace engine
 			new_shadow = shadow_data;
 		}
 
-		void RenderWorld::AddShadow(const FOmniShadowCommit& shadow_data)
+		void RenderWorld::AddShadow(const shlib::FOmniShadowCommit& shadow_data)
 		{
 			auto shadow_index = omni_shadow_count++;
 			auto& new_shadow = omni_shadows->Get(shadow_index);
@@ -258,7 +258,7 @@ namespace engine
 			new_shadow = shadow_data;
 		}
 
-		void RenderWorld::AddShadow(const FSpotShadowCommit& shadow_data)
+		void RenderWorld::AddShadow(const shlib::FSpotShadowCommit& shadow_data)
 		{
 			auto shadow_index = spot_shadow_count++;
 			auto& new_shadow = spot_shadows->Get(shadow_index);
@@ -272,7 +272,7 @@ namespace engine
 
 			// Post process data
 			{
-				FGlobalPostProcessingData postprocessing{};
+				shlib::FGlobalPostProcessingData postprocessing{};
 				// FXAA
 				postprocessing.enable_fxaa = static_cast<uint32_t>(postprocess.fxaa.enable);
 				postprocessing.fxaa_quality = fxaa_quality_variant[postprocess.fxaa.quality];
@@ -318,73 +318,73 @@ namespace engine
 				postprocessing.mb_threshold = postprocess.motionblur.threshold;
 
 				const uint8_t* uniform_data = reinterpret_cast<const uint8_t*>(&postprocessing);
-				uint64_t uniform_size = sizeof(FGlobalPostProcessingData);
+				uint64_t uniform_size = sizeof(shlib::FGlobalPostProcessingData);
 
 				render_graph.UpdateGlobalBinding(2, std::span(uniform_data, uniform_size));
 			}
 
 			// Bind global buffers
 			{
-				FGlobalBufferReference buffers{};
+				shlib::FGlobalBufferReference buffers{};
 
 				// Update nodes buffer
-				buffers.nodeBuffer.address = world_nodes->GetBuffer()->GetAddress();
+				buffers.nodeBuffer = world_nodes->GetBuffer()->GetAddress();
 				world_nodes->Flush();
 
 				// Update world matrices buffer
-				buffers.matrixBuffer.address = world_matrices->GetBuffer()->GetAddress();
+				buffers.matrixBuffer = world_matrices->GetBuffer()->GetAddress();
 				world_matrices->Flush();
 
 				// Update frustum sides buffer
-				buffers.frustumSidesBuffer.address = world_frustum->GetBuffer()->GetAddress();
+				buffers.frustumSidesBuffer = world_frustum->GetBuffer()->GetAddress();
 				world_frustum->Flush();
 
 				// Update buffer with cameras
-				buffers.cameraBuffer.address = world_cameras->GetBuffer()->GetAddress();
+				buffers.cameraBuffer = world_cameras->GetBuffer()->GetAddress();
 				world_cameras->Flush();
 
 				// Update buffer with indirect draw commands
-				buffers.indirectCommandBuffer.address = indirect_draw_commands->GetBuffer()->GetAddress();
+				buffers.indirectCommandBuffer = indirect_draw_commands->GetBuffer()->GetAddress();
 				indirect_draw_commands->Flush();
 
 				// Update buffer with per draw descriptions
-				buffers.drawInfoBuffer.address = draw_descriptions->GetBuffer()->GetAddress();
+				buffers.drawInfoBuffer = draw_descriptions->GetBuffer()->GetAddress();
 				draw_descriptions->Flush();
 
 				// Update mesh infos
-				buffers.meshBuffer.address = world_meshes->GetBuffer()->GetAddress();
+				buffers.meshBuffer = world_meshes->GetBuffer()->GetAddress();
 				world_meshes->Flush();
 
 				// Update materials
-				buffers.materialBuffer.address = draw_materials->GetBuffer()->GetAddress();
+				buffers.materialBuffer = draw_materials->GetBuffer()->GetAddress();
 				draw_materials->Flush();
 
 				// Update lights
-				buffers.lightsBuffer.address = scene_lights->GetBuffer()->GetAddress();
+				buffers.lightsBuffer = scene_lights->GetBuffer()->GetAddress();
 				scene_lights->Flush();
 
-				buffers.cascadedShadowBuffer.address = scene_cascaded_shadows->GetBuffer()->GetAddress();
+				buffers.cascadedShadowBuffer = scene_cascaded_shadows->GetBuffer()->GetAddress();
 				scene_cascaded_shadows->Flush();
 
-				buffers.omniShadowBuffer.address = omni_shadows->GetBuffer()->GetAddress();
+				buffers.omniShadowBuffer = omni_shadows->GetBuffer()->GetAddress();
 				omni_shadows->Flush();
 
-				buffers.spotShadowBuffer.address = spot_shadows->GetBuffer()->GetAddress();
+				buffers.spotShadowBuffer = spot_shadows->GetBuffer()->GetAddress();
 				spot_shadows->Flush();
 
 				const uint8_t* uniform_data = reinterpret_cast<const uint8_t*>(&buffers);
-				uint64_t uniform_size = sizeof(FGlobalBufferReference);
+				uint64_t uniform_size = sizeof(shlib::FGlobalBufferReference);
 
 				render_graph.UpdateGlobalBinding(1, std::span(uniform_data, uniform_size));
 			}
 			
 			{
-				FGlobalUniformData frame_data{};
+				shlib::FGlobalUniformData frame_data{};
 				frame_data.lightCount = light_count;
 				frame_data.cameraCount = camera_offset;
 
 				const uint8_t* uniform_data = reinterpret_cast<const uint8_t*>(&frame_data);
-				uint64_t uniform_size = sizeof(FGlobalUniformData);
+				uint64_t uniform_size = sizeof(shlib::FGlobalUniformData);
 
 				render_graph.UpdateGlobalBinding(0, std::span(uniform_data, uniform_size));
 			}
@@ -405,7 +405,7 @@ namespace engine
 			draw_command.indexed_draw = true;
 			draw_command.argument_buffer = indirect_draw_commands->GetBuffer();
 			draw_command.draw_count = draw_count;
-			draw_command.command_stride = sizeof(FDrawIndexedIndirectData);
+			draw_command.command_stride = sizeof(shlib::FDrawIndexedIndirectData);
 
 			return draw_command;
 		}
@@ -420,7 +420,7 @@ namespace engine
 
 			auto* matrices = world_matrices->Data(camera.matrices_offset);
 
-			auto& clip_matrix = matrices[view_projection_matrix_offset];
+			auto& clip_matrix = matrices[shlib::view_projection_matrix_offset];
 
 			// Lesft
 			auto frustum_left = glm::vec4(

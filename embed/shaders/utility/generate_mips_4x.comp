@@ -1,6 +1,6 @@
 // Based on https://github.com/GameTechDev/TAA/blob/main/MiniEngine/Core/Shaders/GenerateMipsCS.hlsli
 
-#include "compute_common"
+#include "compute_common.glsl"
 
 layout(local_size_x = 8, local_size_y = 8) in;
 

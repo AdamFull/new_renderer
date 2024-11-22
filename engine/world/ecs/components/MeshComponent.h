@@ -1,7 +1,7 @@
 #pragma once
 
 #include <engine/rendering/GeometryBufferInterface.h>
-#include <embed/shaders/includes/interop/base.h>
+#include <embed/shaders/includes/shlib.h>
 
 #include "Component.h"
 
@@ -36,7 +36,7 @@ namespace engine
 				uint32_t material{ ~0u };
 				uint32_t vbo{};
 
-				utl::vector<render::FGeometryDrawBounds> bounds{};
+				utl::vector<shlib::FGeometryDrawBounds> bounds{};
 			};
 
 			struct FMeshComponent

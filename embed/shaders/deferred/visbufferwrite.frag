@@ -1,5 +1,5 @@
-#include "shader_inputs"
-#include "util"
+#include "shader_inputs.glsl"
+#include "util.glsl"
 
 // Force early depth/stencil test
 layout(early_fragment_tests) in;

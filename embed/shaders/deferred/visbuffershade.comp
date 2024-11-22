@@ -1,11 +1,11 @@
-#include "visibility_buffer"
-#include "compute_common"
-#include "lighting_model"
-#include "shadow_sampling"
-#include "util"
-#include "noise"
-#include "atmosphere/scattering"
-#include "ssr"
+#include "visibility_buffer.glsl"
+#include "compute_common.glsl"
+#include "lighting_model.glsl"
+#include "shadow_sampling.glsl"
+#include "util.glsl"
+#include "noise.glsl"
+#include "atmosphere/scattering.glsl"
+#include "ssr.glsl"
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 

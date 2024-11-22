@@ -1,6 +1,6 @@
-#include "math"
-#include "compute_common"
-#include "interop/base"
+#include "math.glsl"
+#include "compute_common.glsl"
+#include "shlib.h"
 
 layout(local_size_x = 8, local_size_y = 8) in;
 

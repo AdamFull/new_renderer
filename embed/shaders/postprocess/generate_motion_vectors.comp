@@ -1,6 +1,6 @@
-#include "shader_inputs"
-#include "compute_common"
-#include "util"
+#include "shader_inputs.glsl"
+#include "compute_common.glsl"
+#include "util.glsl"
 
 layout(local_size_x = 8, local_size_y = 8) in;
 

@@ -1,4 +1,4 @@
-#include "shader_inputs"
+#include "shader_inputs.glsl"
 
 layout(location = 0) out vec2 outTexcoord;
 layout(location = 1) out vec4 outPos;

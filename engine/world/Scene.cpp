@@ -304,7 +304,7 @@ namespace engine
 			for (u64 idx = 0ull; idx < root.materials.size(); ++idx)
 			{
 				auto& material = root.materials[idx];
-				render::FMaterial render_material{};
+				shlib::FMaterial render_material{};
 
 				// TODO: add my own ext that will contain shader EXT_material_shader or something. But in my case it will contain name in format {library}:{shader_name} and other helpfull data
 

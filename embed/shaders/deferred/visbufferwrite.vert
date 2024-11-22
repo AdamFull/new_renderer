@@ -1,4 +1,4 @@
-#include "shader_inputs"
+#include "shader_inputs.glsl"
 
 layout(location = 0) out flat uint drawID;
 layout(location = 1) out flat uint instanceID;

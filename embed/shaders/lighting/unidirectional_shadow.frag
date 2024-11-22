@@ -1,4 +1,4 @@
-#include "shader_inputs"
+#include "shader_inputs.glsl"
 
 layout(location = 0) in vec2 inUV;
 layout(location = 1) in vec4 inPos;

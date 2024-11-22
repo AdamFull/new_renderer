@@ -55,11 +55,11 @@ namespace engine
 						if (!base.enabled)
 							continue;
 
-						if (directional_light_count > max_directional_light_count)
+						if (directional_light_count > shlib::max_directional_light_count)
 							break;
 
-						FLightCommit commit;
-						commit.type = light_type_directional;
+						shlib::FLightCommit commit;
+						commit.type = shlib::light_type_directional;
 						commit.direction = glm::normalize(transform.grotation * glm::vec3(0.f, 0.f, -1.f));
 						commit.color = light.color;
 						commit.intencity = light.intencity;
@@ -81,12 +81,12 @@ namespace engine
 						if (!base.enabled)
 							continue;
 
-						if (point_light_count > max_point_light_count)
+						if (point_light_count > shlib::max_point_light_count)
 							break;
 
 						// Calculate light data
-						FLightCommit commit;
-						commit.type = light_type_point;
+						shlib::FLightCommit commit;
+						commit.type = shlib::light_type_point;
 						commit.position = transform.gposition;
 						commit.color = light.color;
 						commit.intencity = light.intencity;
@@ -107,11 +107,11 @@ namespace engine
 					auto view = EntityManager::View<FTransformComponent, FSpotLightComponent>();
 					for (auto [entity, transform, light] : view.each())
 					{
-						if (spot_light_count > max_spot_light_count)
+						if (spot_light_count > shlib::max_spot_light_count)
 							break;
 
-						FLightCommit commit;
-						commit.type = light_type_spot;
+						shlib::FLightCommit commit;
+						commit.type = shlib::light_type_spot;
 						commit.position = transform.gposition;
 						commit.direction = light.toTarget ? light.target : glm::normalize(transform.grotation * glm::vec3(0.f, 0.f, -1.f));
 						commit.color = light.color;
@@ -132,7 +132,7 @@ namespace engine
 			{
 				auto& light = registry.get<FDirectionalLightComponent>(entity);
 
-				for (int32_t i = 0; i < cascade_shadow_map_cascade_count; ++i)
+				for (int32_t i = 0; i < shlib::cascade_shadow_map_cascade_count; ++i)
 				{
 					light.shadow_casters.emplace_back(render_world.CreateRenderCamera());
 				}
