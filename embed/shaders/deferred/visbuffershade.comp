@@ -27,7 +27,7 @@ vec4 sampleTexture(in uint s, in VertexAttribute va)
 	return SampleTexture2DGrad(s, 0, va.uv, va.uv_dx, va.uv_dy);
 }
 
-MaterialSample sampleMaterial(in FMaterial mat, in VertexAttribute va)
+MaterialSample sampleMaterial(in Material mat, in VertexAttribute va)
 {
 	MaterialSample res;
 
@@ -78,7 +78,7 @@ MaterialSample sampleMaterial(in FMaterial mat, in VertexAttribute va)
 	return res;
 }
 
-uint getScadowCascadeSplit(in FCascadedShadowCommit shadow, in float view_depth, in float dither)
+uint getScadowCascadeSplit(in CascadedShadowCommit shadow, in float view_depth, in float dither)
 {
 	float cascade = 0.0;
 	for(uint i = 0u; i < cascade_shadow_map_cascade_count; ++i)
@@ -104,10 +104,10 @@ uint getScadowCascadeSplit(in FCascadedShadowCommit shadow, in float view_depth,
 	return cascade_index;
 }
 
-float getCascadeShadow(sampler2DArrayShadow shadowmap_tex, in FLightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
+float getCascadeShadow(sampler2DArrayShadow shadowmap_tex, in LightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
 {
-	FCascadedShadowCommit commit = GetCascadedShadowCommit(light.shadowIndex);
-	FCamera camera = GetCamera(commit.cameraID);
+	CascadedShadowCommit commit = GetCascadedShadowCommit(light.shadowIndex);
+	Camera camera = GetCamera(commit.cameraID);
 
 	uint cascadeIndex = getScadowCascadeSplit(commit, va.linearZ, dither);
 
@@ -124,7 +124,7 @@ float getCascadeShadow(sampler2DArrayShadow shadowmap_tex, in FLightCommit light
 	return shadow_sample;
 }
 
-vec3 calculateDirectionalLight(in FLightCommit light, in VertexAttribute va, in MaterialSample ms, in vec3 V, in vec3 F0, in float dither)
+vec3 calculateDirectionalLight(in LightCommit light, in VertexAttribute va, in MaterialSample ms, in vec3 V, in vec3 F0, in float dither)
 {
 	vec3 L = normalize(-light.direction);
 
@@ -143,9 +143,9 @@ vec3 calculateDirectionalLight(in FLightCommit light, in VertexAttribute va, in 
 
 
 
-float getOmniShadow(samplerCubeArrayShadow shadowmap_tex, in FLightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
+float getOmniShadow(samplerCubeArrayShadow shadowmap_tex, in LightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
 {
-	FOmniShadowCommit commit = GetOmniShadowCommit(light.shadowIndex);
+	OmniShadowCommit commit = GetOmniShadowCommit(light.shadowIndex);
 
 	float shadow = 1.0;
 	vec3 shadowClip = va.pos - light.position;
@@ -164,7 +164,7 @@ float getOmniShadow(samplerCubeArrayShadow shadowmap_tex, in FLightCommit light,
 	return shadow;
 }
 
-vec3 calculatePointLight(in FLightCommit light, in VertexAttribute va, in MaterialSample ms, in vec3 V, in vec3 F0, in float dither)
+vec3 calculatePointLight(in LightCommit light, in VertexAttribute va, in MaterialSample ms, in vec3 V, in vec3 F0, in float dither)
 {
 	vec3 L = normalize(light.position - va.pos);
 	float dist = distance(va.pos, light.position);
@@ -183,10 +183,10 @@ vec3 calculatePointLight(in FLightCommit light, in VertexAttribute va, in Materi
 }
 
 
-float getDirectionalShadow(sampler2DArrayShadow shadomwap_tex, in FLightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
+float getDirectionalShadow(sampler2DArrayShadow shadomwap_tex, in LightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
 {
-	FSpotShadowCommit commit = GetSpotShadowCommit(light.shadowIndex);
-	FCamera camera = GetCamera(commit.cameraID);
+	SpotShadowCommit commit = GetSpotShadowCommit(light.shadowIndex);
+	Camera camera = GetCamera(commit.cameraID);
 
     float shadow = 1.0;
 	vec4 shadowClip	= GetViewProjectionMatrix(camera.matrices_offset) * vec4(va.pos, 1.0);
@@ -204,7 +204,7 @@ float getDirectionalShadow(sampler2DArrayShadow shadomwap_tex, in FLightCommit l
 	return shadow;
 }
 
-vec3 calculateSpotlight(in FLightCommit light, in VertexAttribute va, in MaterialSample ms, in vec3 V, in vec3 F0, in float dither)
+vec3 calculateSpotlight(in LightCommit light, in VertexAttribute va, in MaterialSample ms, in vec3 V, in vec3 F0, in float dither)
 {
 	vec3 L = normalize(light.position - va.pos);
 
@@ -236,7 +236,7 @@ vec3 calculateLights(in VertexAttribute va, in MaterialSample ms, in vec3 V, in 
 
 	for(uint i = 0u; i < frameData.lightCount; i++)
 	{
-		FLightCommit light = getLight(i);
+		LightCommit light = getLight(i);
 
 		if(light.type == light_type_directional)
 			Lo += calculateDirectionalLight(light, va, ms, V, F0, dither);
@@ -251,7 +251,7 @@ vec3 calculateLights(in VertexAttribute va, in MaterialSample ms, in vec3 V, in 
 
 vec3 debug_visualize_cascades(in float view_depth, float dither)
 {
-	FCascadedShadowCommit shadow = GetCascadedShadowCommit(0);
+	CascadedShadowCommit shadow = GetCascadedShadowCommit(0);
 	uint cascade_index = getScadowCascadeSplit(shadow, view_depth, dither);
 
 	switch(cascade_index) 
@@ -280,7 +280,7 @@ void main()
 		return;
 
 	// TODO: set camera from another place
-	FCamera camera = GetCamera(0);
+	Camera camera = GetCamera(0);
 	mat4 inv_view = GetInvViewMatrix(camera.matrices_offset);
 
 	vec3 camera_pos = vec3(inv_view[3]);
@@ -303,7 +303,7 @@ void main()
 		uint sun_count = 0;
 		for(uint i = 0u; i < frameData.lightCount; i++)
 		{
-			const FLightCommit light = getLight(i);
+			const LightCommit light = getLight(i);
 			if(light.type == light_type_directional)
 			{
 				const vec3 dir_to_sun = normalize(-light.direction);
@@ -322,7 +322,7 @@ void main()
 	float dither = interleavedGradientNoise(uv);
 
 	VertexAttribute va = getVertexData(uv, visbuffer);
-	FMaterial material = GetMaterial(visbuffer.matID);
+	Material material = GetMaterial(visbuffer.matID);
 	MaterialSample ms = sampleMaterial(material, va);
 
 	// Calculate direction from fragment to viewPosition

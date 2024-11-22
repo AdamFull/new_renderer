@@ -16,7 +16,7 @@ void main()
 
 	if(materialID != ~0u)
 	{
-		FMaterial mat = GetMaterial(materialID);
+		Material mat = GetMaterial(materialID);
 		if(mat.baseColorTexture != ~0u)
 		{
 			float smaple = SampleTexture2D(mat.baseColorTexture, 0, inUV).a;
@@ -26,8 +26,8 @@ void main()
 	}
 
 #if defined(OMNI_SHADOW)
-	FOmniShadowCommit shadow = GetOmniShadowCommit(shadow_data.shadow_index);
-	FLightCommit light = getLight(shadow.index);
+	OmniShadowCommit shadow = GetOmniShadowCommit(shadow_data.shadow_index);
+	LightCommit light = getLight(shadow.index);
 	
 	// get distance between fragment and light source
 	float lightDistance = length(inPos.xyz - light.position);

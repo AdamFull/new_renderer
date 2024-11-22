@@ -19,7 +19,7 @@ namespace engine
 			~RenderWorld() = default;
 
 			uint32_t CreateRenderCamera() override;
-			shlib::FCamera& GetRenderCamera(uint32_t camera_id) override;
+			shlib::Camera& GetRenderCamera(uint32_t camera_id) override;
 			glm::mat4 const& GetCameraMatrix(uint32_t camera_id, uint32_t matrix_index) override;
 
 			void UpdateRenderCamera(uint32_t camera_id, const glm::vec3& translation, const glm::quat& rotation) override;
@@ -29,14 +29,14 @@ namespace engine
 
 			void AddGeometryDraw(DrawCommand& draw_command) override;
 
-			void AddMaterial(const shlib::FMaterial& material) override;
-			const shlib::FMaterial& GetMaterial(uint32_t index) const override;
+			void AddMaterial(const shlib::Material& material) override;
+			const shlib::Material& GetMaterial(uint32_t index) const override;
 
-			void AddLight(const shlib::FLightCommit& light_data) override;
+			void AddLight(const shlib::LightCommit& light_data) override;
 
-			void AddShadow(const shlib::FCascadedShadowCommit& shadow_data) override;
-			void AddShadow(const shlib::FOmniShadowCommit& shadow_data) override;
-			void AddShadow(const shlib::FSpotShadowCommit& shadow_data) override;
+			void AddShadow(const shlib::CascadedShadowCommit& shadow_data) override;
+			void AddShadow(const shlib::OmniShadowCommit& shadow_data) override;
+			void AddShadow(const shlib::SpotShadowCommit& shadow_data) override;
 
 			void BeginFrame(float delta_time) override;
 			void EndFrame() override;
@@ -52,7 +52,7 @@ namespace engine
 			std::unique_ptr<DynamicBuffer<shlib::FSceneNode>> world_nodes{};
 			uint32_t nodes_offset{ 0u };
 
-			std::unique_ptr<DynamicBuffer<shlib::FCamera>> world_cameras{};
+			std::unique_ptr<DynamicBuffer<shlib::Camera>> world_cameras{};
 			uint32_t camera_offset{ 0u };
 
 			std::unique_ptr<DynamicBuffer<glm::mat4>> world_matrices{};
@@ -61,26 +61,26 @@ namespace engine
 			std::unique_ptr<DynamicBuffer<glm::vec4>> world_frustum{};
 			uint32_t frustum_offset{ 0u };
 
-			std::unique_ptr<DynamicBuffer<shlib::FDrawIndexedIndirectData>> indirect_draw_commands{};
+			std::unique_ptr<DynamicBuffer<shlib::DrawIndexedIndirectData>> indirect_draw_commands{};
 			uint32_t draw_count{ 0u };
 
 			std::unique_ptr<DynamicBuffer<shlib::DrawDescription>> draw_descriptions{};
 
-			std::unique_ptr<DynamicBuffer<shlib::FMesh>> world_meshes{};
+			std::unique_ptr<DynamicBuffer<shlib::Mesh>> world_meshes{};
 			
-			std::unique_ptr<DynamicBuffer<shlib::FMaterial>> draw_materials{};
+			std::unique_ptr<DynamicBuffer<shlib::Material>> draw_materials{};
 			uint32_t material_count{ 0u };
 
-			std::unique_ptr<DynamicBuffer<shlib::FLightCommit>> scene_lights{};
+			std::unique_ptr<DynamicBuffer<shlib::LightCommit>> scene_lights{};
 			uint32_t light_count{ 0u };
 
-			std::unique_ptr<DynamicBuffer<shlib::FCascadedShadowCommit>> scene_cascaded_shadows{};
+			std::unique_ptr<DynamicBuffer<shlib::CascadedShadowCommit>> scene_cascaded_shadows{};
 			uint32_t cascaded_shadow_count{ 0u };
 
-			std::unique_ptr<DynamicBuffer<shlib::FOmniShadowCommit>> omni_shadows{};
+			std::unique_ptr<DynamicBuffer<shlib::OmniShadowCommit>> omni_shadows{};
 			uint32_t omni_shadow_count{ 0u };
 
-			std::unique_ptr<DynamicBuffer<shlib::FSpotShadowCommit>> spot_shadows{};
+			std::unique_ptr<DynamicBuffer<shlib::SpotShadowCommit>> spot_shadows{};
 			uint32_t spot_shadow_count{ 0u };
 		};
 	}

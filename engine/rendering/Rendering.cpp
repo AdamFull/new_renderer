@@ -129,11 +129,11 @@ namespace engine
 			return render_graph->AddResource(create_info);
 		}
 
-		void Renderer::AddMaterial(const shlib::FMaterial& material)
+		void Renderer::AddMaterial(const shlib::Material& material)
 		{
 			// "Patch" material before add
 
-			shlib::FMaterial new_material{ material };
+			shlib::Material new_material{ material };
 
 			if (new_material.baseColorTexture != ~0u)
 			{

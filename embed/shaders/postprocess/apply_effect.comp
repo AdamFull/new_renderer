@@ -37,7 +37,7 @@ void main()
 	if(swizzle_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, gl_WorkGroupID.xy, image_size, uv, px))
 		return;
 
-	FCamera camera = GetCamera(frameData.defaultCameraID);
+	Camera camera = GetCamera(frameData.defaultCameraID);
 	
 	vec4 color = texture(sample_image0, uv);
 	vec2 texel_size = 1.0 / vec2(textureSize(sample_image0, 0));

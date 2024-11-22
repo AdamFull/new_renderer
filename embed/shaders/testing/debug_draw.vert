@@ -25,7 +25,7 @@ void main()
 	outColor = inColor;
 
 	#ifdef DEBUG_3D
-		FCamera camera = GetCamera(frameData.defaultCameraID);
+		Camera camera = GetCamera(frameData.defaultCameraID);
 		mat4 viewProjection = GetViewProjectionMatrix(camera.matrices_offset);
 
 		gl_Position = viewProjection * vec4(inPos, 1.0);

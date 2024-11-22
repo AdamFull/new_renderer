@@ -42,7 +42,7 @@ void main()
 		model_matrix = model_matrix * skin_mat;
 #endif
 
-	FCamera camera = GetCamera(call_data.camera_id);
+	Camera camera = GetCamera(call_data.camera_id);
 	mat4 view_projection = GetViewProjectionMatrix(camera.matrices_offset);
 
 	// Sample vertex position

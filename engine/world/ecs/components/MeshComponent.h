@@ -36,7 +36,7 @@ namespace engine
 				uint32_t material{ ~0u };
 				uint32_t vbo{};
 
-				utl::vector<shlib::FGeometryDrawBounds> bounds{};
+				utl::vector<shlib::GeometryDrawBounds> bounds{};
 			};
 
 			struct FMeshComponent

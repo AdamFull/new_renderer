@@ -7,23 +7,23 @@
 layout(set = 0, binding = 3) uniform sampler2D globalTextures[];
 
 FSceneNode GetSceneNode(uint index) { return PTRVAL(nodeBuffer, index); }
-FMesh GetMesh(uint index) { return PTRVAL(meshBuffer, index); }
-FMaterial GetMaterial(uint index) { return PTRVAL(materialBuffer, index); }
-FLightCommit getLight(uint index) { return PTRVAL(lightsBuffer, index); }
+Mesh GetMesh(uint index) { return PTRVAL(meshBuffer, index); }
+Material GetMaterial(uint index) { return PTRVAL(materialBuffer, index); }
+LightCommit getLight(uint index) { return PTRVAL(lightsBuffer, index); }
 
-FCascadedShadowCommit GetCascadedShadowCommit(uint index) { return PTRVAL(cascadedShadowBuffer, index); }
-FOmniShadowCommit GetOmniShadowCommit(uint index) { return PTRVAL(omniShadowBuffer, index); }
-FSpotShadowCommit GetSpotShadowCommit(uint index) { return PTRVAL(spotShadowBuffer, index); }
+CascadedShadowCommit GetCascadedShadowCommit(uint index) { return PTRVAL(cascadedShadowBuffer, index); }
+OmniShadowCommit GetOmniShadowCommit(uint index) { return PTRVAL(omniShadowBuffer, index); }
+SpotShadowCommit GetSpotShadowCommit(uint index) { return PTRVAL(spotShadowBuffer, index); }
 
 DrawDescription GetDrawInfo(uint index) { return PTRVAL(drawInfoBuffer, index); }
 DrawDescription GetRawDrawInfo(uint index) { return PTRVAL(rawDrawInfoBuffer, index); }
 
 vec4 GetFrustumSide(uint index) { return PTRVAL(frustumSidesBuffer, index); }
 
-FDrawIndexedIndirectData GetDrawIndexedCommand(uint index) { return PTRVAL(indirectCommandBuffer, index); }
+DrawIndexedIndirectData GetDrawIndexedCommand(uint index) { return PTRVAL(indirectCommandBuffer, index); }
 uint32_t GetDrawCount(uint index) { return PTRVAL(indirectCountBuffer, index); }
 
-FCamera GetCamera(uint index) { return PTRVAL(cameraBuffer, index); }
+Camera GetCamera(uint index) { return PTRVAL(cameraBuffer, index); }
 
 mat4 GetMatrixById(uint global_offset, uint local_offset) { return PTRVAL(matrixBuffer, global_offset + local_offset); }
 

@@ -58,7 +58,7 @@ namespace engine
 						if (directional_light_count > shlib::max_directional_light_count)
 							break;
 
-						shlib::FLightCommit commit;
+						shlib::LightCommit commit;
 						commit.type = shlib::light_type_directional;
 						commit.direction = glm::normalize(transform.grotation * glm::vec3(0.f, 0.f, -1.f));
 						commit.color = light.color;
@@ -85,7 +85,7 @@ namespace engine
 							break;
 
 						// Calculate light data
-						shlib::FLightCommit commit;
+						shlib::LightCommit commit;
 						commit.type = shlib::light_type_point;
 						commit.position = transform.gposition;
 						commit.color = light.color;
@@ -110,7 +110,7 @@ namespace engine
 						if (spot_light_count > shlib::max_spot_light_count)
 							break;
 
-						shlib::FLightCommit commit;
+						shlib::LightCommit commit;
 						commit.type = shlib::light_type_spot;
 						commit.position = transform.gposition;
 						commit.direction = light.toTarget ? light.target : glm::normalize(transform.grotation * glm::vec3(0.f, 0.f, -1.f));

@@ -70,7 +70,7 @@ bool loadVisBuffer(in vec2 uv, out VisibilityBuffer res)
 
 	uint32_t draw_index = res.drawID + instID;
 	DrawDescription draw_info = GetDrawInfo(draw_index);
-	FMesh mesh = GetMesh(draw_info.meshID);
+	Mesh mesh = GetMesh(draw_info.meshID);
 	
 	res.objID = draw_info.nodeID;
 	res.matID = mesh.materialID;
@@ -99,7 +99,7 @@ FRawVertex[3] LoadTriangle(in uint drawID, in uint primID)
 {
 	FRawVertex[3] vertices;
 
-	FDrawIndexedIndirectData draw_command = GetDrawIndexedCommand(drawID);
+	DrawIndexedIndirectData draw_command = GetDrawIndexedCommand(drawID);
 
 	// Index of the first vertex of this Draw call's geometry
 	uint startIndex = draw_command.firstIndex;
@@ -195,7 +195,7 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 	FSceneNode node = GetSceneNode(visbuffer.objID);
 	mat4 model = GetModelMatrix(node.matrixOffset);
 
-	FCamera camera = GetCamera(call_data.camera_id);
+	Camera camera = GetCamera(call_data.camera_id);
 	mat4 view_projection = GetViewProjectionMatrix(camera.matrices_offset);
 			
 #ifdef HAS_SKIN
@@ -348,7 +348,7 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 //
 //		uint32_t draw_index = vb.drawID + instID;
 //		FDrawMeshinfo draw_info = GetDrawInfo(draw_index);
-//		FMesh mesh = GetMesh(draw_info.meshID);
+//		Mesh mesh = GetMesh(draw_info.meshID);
 //		
 //		vb.objID = draw_info.nodeID;
 //		vb.matID = mesh.materialID;

@@ -35,7 +35,7 @@ namespace engine
 
 			uint32_t AddRenderResource(const gfx::BufferCreateInfo& create_info) override;
 
-			void AddMaterial(const shlib::FMaterial& material) override;
+			void AddMaterial(const shlib::Material& material) override;
 
 			void Render(float delta_time) override;
 
@@ -62,7 +62,7 @@ namespace engine
 			std::unique_ptr<IRenderGraph> render_graph{};
 			std::unique_ptr<IRenderWorld> render_world{};
 
-			//GPUVector<FMaterial> materials{};
+			//GPUVector<Material> materials{};
 
 			std::unordered_map<uint32_t, uint32_t> interleaved_geometry_buffers{};
 			std::unordered_map<uint32_t, uint32_t> deinterleaved_geometry_buffers{};

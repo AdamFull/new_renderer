@@ -7,13 +7,13 @@
 
 SHLIB_NS_BEGIN
 
-struct FGPUBufferDesc
+struct GPUBufferDesc
 {
 	uint64_t address;
 	uint64_t size;
 };
 
-struct FCamera
+struct Camera
 {
 	uint32_t type;
 	uint32_t matrices_offset;
@@ -29,10 +29,10 @@ struct FCamera
 	vec2 invSize;
 };
 
-struct FGeometryDrawBounds
+struct GeometryDrawBounds
 {
 #ifdef __cplusplus
-	FGeometryDrawBounds() : min{ (std::numeric_limits<float>::max)() }, max{ -(std::numeric_limits<float>::max)() } {}
+	GeometryDrawBounds() : min{ (std::numeric_limits<float>::max)() }, max{ -(std::numeric_limits<float>::max)() } {}
 #endif
 	vec3 min;
 	uint32_t pad0;
@@ -40,7 +40,7 @@ struct FGeometryDrawBounds
 	uint32_t pad1;
 };
 
-struct FMeshLod
+struct MeshLod
 {
 	// Meshlet data
 	//uint32_t meshletOffset;
@@ -58,7 +58,7 @@ struct FMeshLod
 	//uint32_t pad[7];
 }; // For lod buffer
 
-struct FMesh
+struct Mesh
 {
 	uint32_t materialID;
 
@@ -67,7 +67,7 @@ struct FMesh
 
 	uint32_t pad;
 
-	FGeometryDrawBounds bounds;
+	GeometryDrawBounds bounds;
 };
 
 struct FMeshlet
@@ -87,7 +87,7 @@ struct FTriangle
 };
 
 // Verticea range
-struct FGeometryDrawRange
+struct GeometryDrawRange
 {
 	uint32_t beginIndex;
 	uint32_t indexCount;
@@ -104,7 +104,7 @@ struct FSceneNode
 	uint32_t skeletonID;
 };
 
-struct FVertexRangeData
+struct VertexRangeData
 {
 	uint32_t vertexCount;
 	uint32_t instanceCount;
@@ -112,19 +112,13 @@ struct FVertexRangeData
 	uint32_t firstInstance;
 };
 
-struct FDrawIndexedIndirectData
+struct DrawIndexedIndirectData
 {
 	uint32_t indexCount;
 	uint32_t instanceCount;
 	uint32_t firstIndex;
 	int32_t  vertexOffset;
 	uint32_t firstInstance;
-};
-
-struct FDrawMeshIndirectData
-{
-	uint32_t taskCount;
-	uint32_t firstTask;
 };
 
 struct DrawDescription
@@ -135,7 +129,7 @@ struct DrawDescription
 };
 
 // Lights and shadows
-struct FCascadedShadowCommit
+struct CascadedShadowCommit
 {
 	ARRAY_OF(splitDepths, float, cascade_shadow_map_cascade_count);
 	uint32_t cameraID;
@@ -144,7 +138,7 @@ struct FCascadedShadowCommit
 	uint32_t pad;
 };
 
-struct FLightCommit
+struct LightCommit
 {
 	ALIGN_AS(16) vec3 position;
 	ALIGN_AS(16) vec3 direction;
@@ -159,7 +153,7 @@ struct FLightCommit
 	int type;
 };
 
-struct FOmniShadowCommit
+struct OmniShadowCommit
 {
 	uint32_t cameraID;
 	float farPlane;
@@ -167,17 +161,17 @@ struct FOmniShadowCommit
 	uint32_t pad;
 };
 
-struct FSpotShadowCommit
+struct SpotShadowCommit
 {
 	uint32_t cameraID;
 	int index;
 };
 
 // Material
-struct FMaterial
+struct Material
 {
 #ifdef __cplusplus
-	FMaterial() :
+	Material() :
 		alphaMode{}, alphaCutoff{ 0.5f },
 		baseColorTexture{ ~0u }, baseColorFactor{ 1.0f },
 		metallicRoughnessTexture{ ~0u }, metallicFactor{ 1.f }, roughnessFactor{ 1.f },
@@ -260,7 +254,7 @@ struct FMaterial
 	ALIGN_AS(16) vec3 attenuationColor;
 };
 
-CB_BEGIN(FGlobalUniformData, 0, 0)
+CB_BEGIN(GlobalUniformData, 0, 0)
 	float dt;
 	uint32_t directionalLightCount;
 	uint32_t pointLightCount;
@@ -276,57 +270,57 @@ CB_END(frameData)
 
 // Base buffers
 REGISTER_ARRAY_PTR(FSceneNode, 8);
-REGISTER_ARRAY_PTR(FMesh, 8);
-REGISTER_ARRAY_PTR(FMaterial, 8);
+REGISTER_ARRAY_PTR(Mesh, 8);
+REGISTER_ARRAY_PTR(Material, 8);
 
 // Light buffers
-REGISTER_ARRAY_PTR(FLightCommit, 8);
+REGISTER_ARRAY_PTR(LightCommit, 8);
 
 // Shadow buffers
-REGISTER_ARRAY_PTR(FCascadedShadowCommit, 8);
-REGISTER_ARRAY_PTR(FOmniShadowCommit, 8);
-REGISTER_ARRAY_PTR(FSpotShadowCommit, 8);
+REGISTER_ARRAY_PTR(CascadedShadowCommit, 8);
+REGISTER_ARRAY_PTR(OmniShadowCommit, 8);
+REGISTER_ARRAY_PTR(SpotShadowCommit, 8);
 
 // Vertex buffer specific data
 REGISTER_ARRAY_PTR(FMeshlet, 8);
-REGISTER_ARRAY_PTR(FGeometryDrawBounds, 8);
+REGISTER_ARRAY_PTR(GeometryDrawBounds, 8);
 REGISTER_ARRAY_PTR(FTriangle, 8);
-REGISTER_ARRAY_PTR(FMeshLod, 8);
+REGISTER_ARRAY_PTR(MeshLod, 8);
 
 // GPU object representation
 REGISTER_ARRAY_PTR(DrawDescription, 8);
 
 // Indirect data
-REGISTER_ARRAY_PTR(FDrawIndexedIndirectData, 8);
+REGISTER_ARRAY_PTR(DrawIndexedIndirectData, 8);
 
-REGISTER_ARRAY_PTR(FCamera, 8);
+REGISTER_ARRAY_PTR(Camera, 8);
 
 
-CB_BEGIN(FGlobalBufferReference, 0, 1)
+CB_BEGIN(GlobalBufferReference, 0, 1)
 	GET_ARR_PTR_T(FSceneNode) nodeBuffer;
 	GET_ARR_PTR_T(mat4) matrixBuffer;
-	GET_ARR_PTR_T(FMesh) meshBuffer;
+	GET_ARR_PTR_T(Mesh) meshBuffer;
 
-	GET_ARR_PTR_T(FMaterial) materialBuffer;
+	GET_ARR_PTR_T(Material) materialBuffer;
 
-	GET_ARR_PTR_T(FLightCommit) lightsBuffer;
+	GET_ARR_PTR_T(LightCommit) lightsBuffer;
 
-	GET_ARR_PTR_T(FCascadedShadowCommit) cascadedShadowBuffer;
-	GET_ARR_PTR_T(FOmniShadowCommit) omniShadowBuffer;
-	GET_ARR_PTR_T(FSpotShadowCommit) spotShadowBuffer;
+	GET_ARR_PTR_T(CascadedShadowCommit) cascadedShadowBuffer;
+	GET_ARR_PTR_T(OmniShadowCommit) omniShadowBuffer;
+	GET_ARR_PTR_T(SpotShadowCommit) spotShadowBuffer;
 
 	GET_ARR_PTR_T(DrawDescription) drawInfoBuffer;
 	GET_ARR_PTR_T(DrawDescription) rawDrawInfoBuffer;
 
 	GET_ARR_PTR_T(vec4) frustumSidesBuffer;
 
-	GET_ARR_PTR_T(FDrawIndexedIndirectData) indirectCommandBuffer;
+	GET_ARR_PTR_T(DrawIndexedIndirectData) indirectCommandBuffer;
 	GET_ARR_PTR_T(uint32_t) indirectCountBuffer;
 
-	GET_ARR_PTR_T(FCamera) cameraBuffer;
+	GET_ARR_PTR_T(Camera) cameraBuffer;
 CB_END_E()
 
-CB_BEGIN(FGlobalPostProcessingData, 0, 2)
+CB_BEGIN(GlobalPostProcessingData, 0, 2)
 	// fxaa
 	int enable_fxaa;
 	float fxaa_quality;

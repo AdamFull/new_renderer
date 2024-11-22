@@ -68,7 +68,7 @@ namespace engine
 						std::array<f32, shlib::cascade_shadow_map_cascade_count> cascadeSplits;
 						if (light.castShadows && base.enabled && dir_light_count < shlib::max_directional_light_shadow_count)
 						{
-							shlib::FCascadedShadowCommit shadow_commit{};
+							shlib::CascadedShadowCommit shadow_commit{};
 							shadow_commit.cameraID = light.shadow_casters.front(); // Adding first camera id
 
 							// Calculate split depths based on view camera frustum
@@ -187,7 +187,7 @@ namespace engine
 						//light.castShadows = light_count % 2;
 						if (light.castShadows && base.enabled && point_light_count < shlib::max_point_light_shadow_count)
 						{
-							shlib::FOmniShadowCommit shadow_commit{};
+							shlib::OmniShadowCommit shadow_commit{};
 				
 							shadow_commit.cameraID = light.shadow_casters.front();
 				
@@ -231,7 +231,7 @@ namespace engine
 				
 						if (light.castShadows && base.enabled && spot_light_count < shlib::max_spot_light_count)
 						{
-							shlib::FSpotShadowCommit shadow_commit{};
+							shlib::SpotShadowCommit shadow_commit{};
 							shadow_commit.cameraID = light.shadow_caster;
 				
 							auto light_dir = light.toTarget ? light.target : glm::normalize(ltransform.grotation * glm::vec3(0.f, 0.f, -1.f));

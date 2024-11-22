@@ -17,7 +17,7 @@ const int isSamplingEnabled = 1;
 
 vec3 generatePositionFromDepth(vec2 texturePos, float depth) 
 {
-	FCamera camera = GetCamera(frameData.defaultCameraID);
+	Camera camera = GetCamera(frameData.defaultCameraID);
 
 	vec4 ndc = vec4((texturePos - 0.5) * 2, depth, 1.f);
 	vec4 inversed = GetInvProjectionMatrix(camera.matrices_offset) * ndc;
@@ -27,7 +27,7 @@ vec3 generatePositionFromDepth(vec2 texturePos, float depth)
 
 vec2 generateProjectedPosition(vec3 pos)
 {
-	FCamera camera = GetCamera(frameData.defaultCameraID);
+	Camera camera = GetCamera(frameData.defaultCameraID);
 
 	vec4 samplePosition = GetProjectionMatrix(camera.matrices_offset) * vec4(pos, 1.f);
 	samplePosition.xy = (samplePosition.xy / samplePosition.w) * 0.5 + 0.5;
@@ -162,7 +162,7 @@ vec3 ViewPositionToUV(vec3 view, mat4 projection)
 
 vec3 ScreenSpaceReflections(in vec3 worldPosition, in vec3 N, in vec3 V, in float R, in sampler2D depthTexture, in sampler2D previousSceneColor, float dither, inout float ssrWeight)
 {
-	FCamera camera = GetCamera(frameData.defaultCameraID);
+	Camera camera = GetCamera(frameData.defaultCameraID);
 	mat4 view = GetViewMatrix(camera.matrices_offset);
 
 	vec3 ssr = vec3(0.0);
@@ -260,7 +260,7 @@ float screen_fade(vec2 uv)
 #if 1
 float ScreenSpaceShadows(vec3 worldPosition, vec3 lightDirection, in sampler2D depthTexture, int stepCount, float rayLength, float ditherOffset)
 {
-	FCamera camera = GetCamera(frameData.defaultCameraID);
+	Camera camera = GetCamera(frameData.defaultCameraID);
 	mat4 projection = GetProjectionMatrix(camera.matrices_offset);
 	mat4 view_projection = GetViewProjectionMatrix(camera.matrices_offset);
 
@@ -314,7 +314,7 @@ bool is_valid_uv(vec2 value) { return (value.x >= 0.0f && value.x <= 1.0f) && (v
 
 float ScreenSpaceShadows(vec3 worldPosition, vec3 lightDirection, in sampler2D depthTexture, int stepCount, float rayLength, float ditherOffset)
 {
-	FCamera camera = GetCamera(frameData.defaultCameraID);
+	Camera camera = GetCamera(frameData.defaultCameraID);
 	mat4 projection = GetProjectionMatrix(camera.matrices_offset);
 	mat4 view = GetViewMatrix(camera.matrices_offset);
 
