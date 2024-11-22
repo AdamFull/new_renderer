@@ -65,7 +65,7 @@ bool CDXCCompiler::initialize()
 	return true;
 }
 
-bool CDXCCompiler::preprocess(std::span<uint8_t> shader_code, const FCompileInfo& info, std::string& preprocessed_code, u32& preprocessed_hash)
+bool CDXCCompiler::preprocess(const std::string& shader_code, const FCompileInfo& info, std::string& preprocessed_code, u32& preprocessed_hash)
 {
 	CComPtr<IDxcBlobEncoding> pSourceBlob;
 	HRESULT hr = m_pLibrary->CreateBlobWithEncodingFromPinned(shader_code.data(), shader_code.size(), CP_UTF8, &pSourceBlob);
@@ -116,7 +116,7 @@ bool CDXCCompiler::preprocess(std::span<uint8_t> shader_code, const FCompileInfo
 	return true;
 }
 
-utl::vector<uint32_t> CDXCCompiler::compile(std::span<char> shader_code, const FCompileInfo& info)
+utl::vector<uint32_t> CDXCCompiler::compile(const std::string& shader_code, const FCompileInfo& info)
 {
 	CComPtr<IDxcBlobEncoding> pSourceBlob;
 	HRESULT hr = m_pLibrary->CreateBlobWithEncodingFromPinned(shader_code.data(), shader_code.size(), CP_UTF8, &pSourceBlob);

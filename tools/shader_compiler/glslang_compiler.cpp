@@ -67,7 +67,6 @@ protected:
 	std::vector<std::string> directoryStack;
 	int externalLocalDirectoryCount;
 	std::set<std::string> includedFiles;
-	std::array<const char*, 2ull> includeVariants{".glsl", ".h"};
 
 	// Search for a valid "local" path based on combining the stack of include
 	// directories and the nominal name of the header.
@@ -82,17 +81,14 @@ protected:
 		// Find a directory that works, using a reverse search of the include stack.
 		for (auto it = directoryStack.rbegin(); it != directoryStack.rend(); ++it) 
 		{
-			for (auto& include_ext : includeVariants)
+			std::string path = *it + '/' + headerName;
+			std::replace(path.begin(), path.end(), '\\', '/');
+			std::ifstream file(path, std::ios_base::binary | std::ios_base::ate);
+			if (file)
 			{
-				std::string path = *it + '/' + headerName + include_ext;
-				std::replace(path.begin(), path.end(), '\\', '/');
-				std::ifstream file(path, std::ios_base::binary | std::ios_base::ate);
-				if (file)
-				{
-					directoryStack.emplace_back(getDirectory(path));
-					includedFiles.insert(path);
-					return newIncludeResult(path, file, (int)file.tellg());
-				}
+				directoryStack.emplace_back(getDirectory(path));
+				includedFiles.insert(path);
+				return newIncludeResult(path, file, (int)file.tellg());
 			}
 		}
 
@@ -381,7 +377,7 @@ bool CGLSLANGCompiler::initialize()
 	return true;
 }
 
-bool CGLSLANGCompiler::preprocess(std::span<uint8_t> shader_code, const FCompileInfo& info, std::string& preprocessed_code, u32& preprocessed_hash)
+bool CGLSLANGCompiler::preprocess(const std::string& shader_code, const FCompileInfo& info, std::string& preprocessed_code, u32& preprocessed_hash)
 {
 	auto language = get_sh_language(info.type);
 	glslang::TShader shader(language);
@@ -397,7 +393,7 @@ bool CGLSLANGCompiler::preprocess(std::span<uint8_t> shader_code, const FCompile
 		shader.setDebugInfo(true);
 	}
 
-	auto shader_source = reinterpret_cast<const char*>(shader_code.data());
+	auto shader_source = shader_code.c_str();
 	auto shader_name = info.name.c_str();
 	shader.setStringsWithLengthsAndNames(&shader_source, nullptr, &shader_name, 1);
 	shader.setPreamble(info.preamble.c_str());
@@ -428,7 +424,7 @@ bool CGLSLANGCompiler::preprocess(std::span<uint8_t> shader_code, const FCompile
 	return true;
 }
 
-utl::vector<u32> CGLSLANGCompiler::compile(std::span<char> shader_code, const FCompileInfo& info)
+utl::vector<u32> CGLSLANGCompiler::compile(const std::string& shader_code, const FCompileInfo& info)
 {
 	std::vector<u32> spirv{};
 
@@ -439,7 +435,7 @@ utl::vector<u32> CGLSLANGCompiler::compile(std::span<char> shader_code, const FC
 
 	auto resources = get_resources();
 
-	auto messages = utl::cast<EShMessages>(EShMsgSpvRules | EShMsgVulkanRules | EShMsgDefault);
+	auto messages = utl::cast<EShMessages>(EShMsgSpvRules | EShMsgVulkanRules | EShMsgDefault | EShMsgCascadingErrors);
 
 	bool building_release = build_type == ETargetBuildType::eRelease;
 	if (!building_release)
@@ -448,7 +444,7 @@ utl::vector<u32> CGLSLANGCompiler::compile(std::span<char> shader_code, const FC
 		//shader.setDebugInfo(true);
 	}
 
-	auto shader_source = shader_code.data();
+	auto shader_source = shader_code.c_str();
 	auto shader_name = info.name.c_str();
 	shader.setStringsWithLengthsAndNames(&shader_source, nullptr, &shader_name, 1);
 

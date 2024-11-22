@@ -21,7 +21,7 @@ namespace shader_compiler
 		void GeneratePermutations(const utl::hash_map<std::string, FPermutationPattern>& permutation_patterns);
 		void Compile(const std::filesystem::path& library_path, FShaderCacheData& shader_cache);
 	protected:
-		bool LoadShader(const std::filesystem::path& library_path, const std::string& meta_name, FShaderMeta& meta, std::vector<uint8_t>& code);
+		bool LoadShader(const std::filesystem::path& library_path, const std::string& meta_name, FShaderMeta& meta, std::vector<char>& code);
 		std::string GeneratePreamble(const FShaderMeta& meta);
 		void CompilePermutations(const std::filesystem::path& parent_path, const std::string& shader_name, const std::string& library_name, const utl::vector<std::string>& sources, const utl::vector<utl::vector<std::string>>& cached_permutations, FCompiledLibrary& compiled_library);
 	private:

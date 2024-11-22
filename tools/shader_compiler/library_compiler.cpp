@@ -208,7 +208,7 @@ std::string CLibraryCompiler::GeneratePreamble(const FShaderMeta& meta)
 	return ss.str();
 }
 
-bool CLibraryCompiler::LoadShader(const std::filesystem::path& library_path, const std::string& meta_name, FShaderMeta& meta, std::vector<uint8_t>& code)
+bool CLibraryCompiler::LoadShader(const std::filesystem::path& library_path, const std::string& meta_name, FShaderMeta& meta, std::vector<char>& code)
 {
 	utl::vector<std::filesystem::path> search_paths{ library_path, m_commonPath };
 	for (auto& path : search_paths)
@@ -218,7 +218,7 @@ bool CLibraryCompiler::LoadShader(const std::filesystem::path& library_path, con
 			continue;
 
 		auto shader_path = path / meta.source;
-		if (!read_file(shader_path, code, "r"))
+		if (!read_file(shader_path, code, "rb"))
 			return false;
 
 		return true;
@@ -239,12 +239,14 @@ void CLibraryCompiler::CompilePermutations(const std::filesystem::path& parent_p
 	{
 		// Load meta information and shader code
 		FShaderMeta shader_meta{};
-		utl::vector<uint8_t> shader_code{};
+		utl::vector<char> shader_code{};
 		if(!LoadShader(parent_path, meta_name, shader_meta, shader_code))
 		{
 			log_error("Failed for open shader. Check that shader in meta file is correct. Required shader name: {}.", meta_name);
 			continue;
 		}
+
+		std::string shader_code_string{ shader_code.begin(), shader_code.end() };
 
 		// Generating base preamble
 		std::string base_preamble = GeneratePreamble(shader_meta);
@@ -289,7 +291,7 @@ void CLibraryCompiler::CompilePermutations(const std::filesystem::path& parent_p
 				// Preprocess generated code (and remove ugly code after preprocessing)
 				std::string preprocessed_code{};
 				u32 preprocessed_hash{ 0ull };
-				m_pShaderCompiler->preprocess(shader_code, compile_info, preprocessed_code, preprocessed_hash);
+				m_pShaderCompiler->preprocess(shader_code_string, compile_info, preprocessed_code, preprocessed_hash);
 
 				if (preprocessed_code.empty())
 				{

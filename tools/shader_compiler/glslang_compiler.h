@@ -13,8 +13,8 @@ namespace shader_compiler
 
 		bool initialize() override;
 
-		bool preprocess(std::span<uint8_t> shader_code, const FCompileInfo& info, std::string& preprocessed_code, u32& preprocessed_hash) override;
-		utl::vector<uint32_t> compile(std::span<char> shader_code, const FCompileInfo& info) override;
+		bool preprocess(const std::string& shader_code, const FCompileInfo& info, std::string& preprocessed_code, u32& preprocessed_hash) override;
+		utl::vector<uint32_t> compile(const std::string& shader_code, const FCompileInfo& info) override;
 	private:
 		ETargetBuildType build_type{ ETargetBuildType::eRelease };
 		ETargetAPIType target_api{ ETargetAPIType::eVK13 };

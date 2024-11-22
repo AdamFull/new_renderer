@@ -177,7 +177,7 @@ namespace shader_compiler
 		return false;
 	}
 
-	inline void make_shader_compiler_fatal_error(const std::string& name, std::span<uint8_t> code, const std::string& error)
+	inline void make_shader_compiler_fatal_error(const std::string& name, const std::string& code, const std::string& error)
 	{
 		auto current_path = std::filesystem::current_path();
 		log_error(error);
