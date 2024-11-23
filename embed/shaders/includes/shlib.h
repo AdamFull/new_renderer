@@ -292,7 +292,7 @@ REGISTER_TYPE_PTR(SpotShadowCommit, 8);
 REGISTER_TYPE_PTR(DrawDescription, 8);
 
 // Indirect data
-REGISTER_TYPE_PTR(DrawIndexedIndirectData, 8);
+REGISTER_ARRAY_PTR(DrawIndexedIndirectData, 8);
 
 REGISTER_TYPE_PTR(Camera, 8);
 
@@ -315,7 +315,7 @@ CB_BEGIN(GlobalBufferReference, 0, 1)
 
 	GET_PTR_T(vec4) frustumSidesBuffer;
 
-	GET_PTR_T(DrawIndexedIndirectData) indirectCommandBuffer;
+	GET_ARR_PTR_T(DrawIndexedIndirectData) indirectCommandBuffer;
 	GET_PTR_T(uint32_t) indirectCountBuffer;
 
 	GET_PTR_T(Camera) cameraBuffer;

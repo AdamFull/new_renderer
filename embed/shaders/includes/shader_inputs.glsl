@@ -20,7 +20,7 @@ DrawDescription GetRawDrawInfo(uint index) { return rawDrawInfoBuffer[index].dat
 
 vec4 GetFrustumSide(uint index) { return frustumSidesBuffer[index].data; }
 
-DrawIndexedIndirectData GetDrawIndexedCommand(uint index) { return indirectCommandBuffer[index].data; }
+DrawIndexedIndirectData GetDrawIndexedCommand(uint index) { return indirectCommandBuffer.data[index]; }
 uint32_t GetDrawCount(uint index) { return indirectCountBuffer[index].data; }
 
 Camera GetCamera(uint index) { return cameraBuffer[index].data; }
