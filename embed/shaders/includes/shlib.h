@@ -126,6 +126,7 @@ struct DrawDescription
 	uint32_t vboID;
 	uint32_t meshID;
 	uint32_t nodeID;
+	uint32_t pad;
 };
 
 // Lights and shadows
@@ -269,55 +270,55 @@ CB_BEGIN(GlobalUniformData, 0, 0)
 CB_END(frameData)
 
 // Base buffers
-REGISTER_ARRAY_PTR(FSceneNode, 8);
-REGISTER_ARRAY_PTR(Mesh, 8);
-REGISTER_ARRAY_PTR(Material, 8);
+REGISTER_TYPE_PTR(FSceneNode, 8);
+REGISTER_TYPE_PTR(Mesh, 8);
+REGISTER_TYPE_PTR(Material, 8);
 
 // Light buffers
-REGISTER_ARRAY_PTR(LightCommit, 8);
+REGISTER_TYPE_PTR(LightCommit, 8);
 
 // Shadow buffers
-REGISTER_ARRAY_PTR(CascadedShadowCommit, 8);
-REGISTER_ARRAY_PTR(OmniShadowCommit, 8);
-REGISTER_ARRAY_PTR(SpotShadowCommit, 8);
+REGISTER_TYPE_PTR(CascadedShadowCommit, 8);
+REGISTER_TYPE_PTR(OmniShadowCommit, 8);
+REGISTER_TYPE_PTR(SpotShadowCommit, 8);
 
 // Vertex buffer specific data
-REGISTER_ARRAY_PTR(FMeshlet, 8);
-REGISTER_ARRAY_PTR(GeometryDrawBounds, 8);
-REGISTER_ARRAY_PTR(FTriangle, 8);
-REGISTER_ARRAY_PTR(MeshLod, 8);
+//REGISTER_ARRAY_PTR(FMeshlet, 8);
+//REGISTER_ARRAY_PTR(GeometryDrawBounds, 8);
+//REGISTER_ARRAY_PTR(FTriangle, 8);
+//REGISTER_ARRAY_PTR(MeshLod, 8);
 
 // GPU object representation
-REGISTER_ARRAY_PTR(DrawDescription, 8);
+REGISTER_TYPE_PTR(DrawDescription, 8);
 
 // Indirect data
-REGISTER_ARRAY_PTR(DrawIndexedIndirectData, 8);
+REGISTER_TYPE_PTR(DrawIndexedIndirectData, 8);
 
-REGISTER_ARRAY_PTR(Camera, 8);
+REGISTER_TYPE_PTR(Camera, 8);
 
 
 CB_BEGIN(GlobalBufferReference, 0, 1)
-	GET_ARR_PTR_T(FSceneNode) nodeBuffer;
-	GET_ARR_PTR_T(mat4) matrixBuffer;
-	GET_ARR_PTR_T(Mesh) meshBuffer;
+	GET_PTR_T(FSceneNode) nodeBuffer;
+	GET_PTR_T(mat4) matrixBuffer;
+	GET_PTR_T(Mesh) meshBuffer;
 
-	GET_ARR_PTR_T(Material) materialBuffer;
+	GET_PTR_T(Material) materialBuffer;
 
-	GET_ARR_PTR_T(LightCommit) lightsBuffer;
+	GET_PTR_T(LightCommit) lightsBuffer;
 
-	GET_ARR_PTR_T(CascadedShadowCommit) cascadedShadowBuffer;
-	GET_ARR_PTR_T(OmniShadowCommit) omniShadowBuffer;
-	GET_ARR_PTR_T(SpotShadowCommit) spotShadowBuffer;
+	GET_PTR_T(CascadedShadowCommit) cascadedShadowBuffer;
+	GET_PTR_T(OmniShadowCommit) omniShadowBuffer;
+	GET_PTR_T(SpotShadowCommit) spotShadowBuffer;
 
-	GET_ARR_PTR_T(DrawDescription) drawInfoBuffer;
-	GET_ARR_PTR_T(DrawDescription) rawDrawInfoBuffer;
+	GET_PTR_T(DrawDescription) drawInfoBuffer;
+	GET_PTR_T(DrawDescription) rawDrawInfoBuffer;
 
-	GET_ARR_PTR_T(vec4) frustumSidesBuffer;
+	GET_PTR_T(vec4) frustumSidesBuffer;
 
-	GET_ARR_PTR_T(DrawIndexedIndirectData) indirectCommandBuffer;
-	GET_ARR_PTR_T(uint32_t) indirectCountBuffer;
+	GET_PTR_T(DrawIndexedIndirectData) indirectCommandBuffer;
+	GET_PTR_T(uint32_t) indirectCountBuffer;
 
-	GET_ARR_PTR_T(Camera) cameraBuffer;
+	GET_PTR_T(Camera) cameraBuffer;
 CB_END_E()
 
 CB_BEGIN(GlobalPostProcessingData, 0, 2)

@@ -11,5 +11,5 @@ void main()
 	if (global_draw_index >= frameData.cullerCount) 
 		return;
 
-	PTRVAL(indirectCountBuffer, global_draw_index) = 0;
+	indirectCountBuffer[global_draw_index].data = 0;
 }

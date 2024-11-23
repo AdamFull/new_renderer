@@ -54,6 +54,7 @@ REGISTER_ARRAY_PTR(mat4, 64);
 #define PTRCAST(pointer_type, address) pointer_type(address)
 #define GET_BUFFER_POINTER(pointer_type, buffer_desc) pointer_type(buffer_desc.address)
 #define PTRVAL(buffer, index) buffer.data[index]
+#define PTRDEREF(buffer, index) buffer[index].data
 
 SHLIB_NS_END
 
