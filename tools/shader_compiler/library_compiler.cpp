@@ -181,18 +181,8 @@ std::string CLibraryCompiler::GeneratePreamble(const FShaderMeta& meta)
 
 	if (m_lang == EShaderLang::eGLSL)
 	{
-		// Apply enabled extensions
-		for (auto& extension_name : meta.enable_extensions)
-			ss << std::format("#extension {} : enable", extension_name) << std::endl;
-		ss << std::endl;
-
 		// Include extention is required by default
 		ss << "#extension GL_GOOGLE_include_directive : require" << std::endl;
-
-		// Apply required extensions
-		for (auto& extension_name : meta.require_extensions)
-			ss << std::format("#extension {} : require", extension_name) << std::endl;
-		ss << std::endl;
 	}
 
 	// Apply definitions (TODO: add definition values)
@@ -277,7 +267,6 @@ void CLibraryCompiler::CompilePermutations(const std::filesystem::path& parent_p
 				m_locks[0].unlock();
 
 				FCompileInfo compile_info{};
-				compile_info.version = shader_meta.version;
 				compile_info.type = shader_meta.type;
 				compile_info.name = shader_meta.source;
 				compile_info.include_directories = m_vIncludeDirs;

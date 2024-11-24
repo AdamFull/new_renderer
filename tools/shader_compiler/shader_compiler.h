@@ -7,7 +7,6 @@ namespace shader_compiler
 {
 	struct FCompileInfo
 	{
-		i32 version;
 		EShaderType type;
 		std::string name;
 		std::string preamble;

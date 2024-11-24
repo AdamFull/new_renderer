@@ -105,10 +105,6 @@ namespace shader_compiler
 
 	struct FShaderMeta
 	{
-		i32 version{ 450 };
-
-		utl::vector<std::string> enable_extensions;
-		utl::vector<std::string> require_extensions;
 		utl::vector<std::string> definitions;
 
 		EShaderType type{ EShaderType::eUnknown };

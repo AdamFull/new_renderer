@@ -397,7 +397,7 @@ bool CGLSLANGCompiler::preprocess(const std::string& shader_code, const FCompile
 	auto shader_name = info.name.c_str();
 	shader.setStringsWithLengthsAndNames(&shader_source, nullptr, &shader_name, 1);
 	shader.setPreamble(info.preamble.c_str());
-	shader.setOverrideVersion(info.version);
+	shader.setOverrideVersion(460);
 
 	auto client_version = get_client_version(target_api);
 	auto compile_client = get_compile_client(target_api);
@@ -457,7 +457,7 @@ utl::vector<u32> CGLSLANGCompiler::compile(const std::string& shader_code, const
 	shader.setEnvInput(glslang::EShSourceGlsl, language, compile_client, 100);
 	shader.setEnvClient(compile_client, client_version);
 	shader.setEnvTarget(glslang::EShTargetSpv, spir_version);
-	shader.setOverrideVersion(info.version);
+	shader.setOverrideVersion(460);
 
 	if (!shader.parse(&resources, client_version, false, messages))
 	{
