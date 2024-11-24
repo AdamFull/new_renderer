@@ -9,7 +9,8 @@
 #extension GL_ARB_shader_viewport_layer_array : require
 
 // Bindless texture
-layout(set = 0, binding = 3) uniform sampler2D globalTextures[];
+layout(set = 0, binding = 3) uniform texture2D globalTextures[MAX_SAMPLED_TEXTURES];
+layout(set = 0, binding = 4) uniform sampler globalSamplers[MAX_SAMPLED_TEXTURES];
 
 FSceneNode GetSceneNode(uint index) { return nodeBuffer[index].data; }
 Mesh GetMesh(uint index) { return meshBuffer[index].data; }
@@ -44,7 +45,7 @@ mat4 GetPrevViewProjectionMatrix(uint global_offset) { return GetMatrixById(glob
 mat4 GetInvViewProjectionMatrix(uint global_offset) { return GetMatrixById(global_offset, inv_view_projection_matrix_offset); }
 mat4 GetReprojectionMatrix(uint global_offset) { return GetMatrixById(global_offset, reprojection_matrix_offset); }
 
-#define GET_SAMPLER_2D(texture_index, mip_level) globalTextures[texture_index + mip_level]
+#define GET_SAMPLER_2D(texture_index, mip_level) sampler2D(globalTextures[texture_index + mip_level], globalSamplers[texture_index + mip_level])
 
 vec4 SampleTexture2D(uint32_t texture_index, uint32_t mip_level, vec2 uv)
 {

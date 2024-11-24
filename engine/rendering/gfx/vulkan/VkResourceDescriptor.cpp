@@ -26,11 +26,8 @@ namespace engine
 				set_count{ std::exchange(other.set_count, {}) },
 				descriptor_sets{ std::exchange(other.descriptor_sets, {}) },
 				write_descriptor_sets{ std::exchange(other.write_descriptor_sets, {}) },
-				writes_count{ std::exchange(other.writes_count, {}) },
 				image_descriptors{ std::exchange(other.image_descriptors, {}) },
-				image_count{ std::exchange(other.image_count, {}) },
-				buffer_descriptors{ std::exchange(other.buffer_descriptors, {}) },
-				buffer_count{ std::exchange(other.buffer_count, {}) }
+				buffer_descriptors{ std::exchange(other.buffer_descriptors, {}) }
 			{
 			}
 
@@ -53,7 +50,7 @@ namespace engine
 
 			void VulkanResourceDescriptor::BindTexture(TextureDescriptor& texture_descriptor)
 			{
-				auto& vk_image_descriptor = image_descriptors[image_count++];
+				auto& vk_image_descriptor = image_descriptors.emplace_back();
 
 				auto descriptor_type = DescriptorTypeToVk(texture_descriptor.type);
 
@@ -72,7 +69,7 @@ namespace engine
 					vk_image_descriptor.sampler = vk_sampelr->GetHandle();
 				}
 
-				auto& vk_descriptor_write = write_descriptor_sets[writes_count++];
+				auto& vk_descriptor_write = write_descriptor_sets.emplace_back();
 				vk_descriptor_write.descriptorType = descriptor_type;
 				vk_descriptor_write.descriptorCount = 1u;
 				vk_descriptor_write.dstSet = descriptor_sets[texture_descriptor.set];
@@ -85,12 +82,12 @@ namespace engine
 			{
 				auto* vk_buffer = static_cast<VulkanBuffer*>(buffer_descriptor.buffer);
 
-				auto& vk_buffer_descriptor = buffer_descriptors[buffer_count++];
+				auto& vk_buffer_descriptor = buffer_descriptors.emplace_back();
 				vk_buffer_descriptor.buffer = vk_buffer->GetHandle();
 				vk_buffer_descriptor.offset = buffer_descriptor.offset;
 				vk_buffer_descriptor.range = buffer_descriptor.size ? buffer_descriptor.size : vk_buffer->GetSize();
 
-				auto& vk_descriptor_write = write_descriptor_sets[writes_count++];
+				auto& vk_descriptor_write = write_descriptor_sets.emplace_back();
 				vk_descriptor_write.descriptorType = DescriptorTypeToVk(buffer_descriptor.type);
 				vk_descriptor_write.descriptorCount = 1u;
 				vk_descriptor_write.dstSet = descriptor_sets[buffer_descriptor.set];
@@ -105,11 +102,7 @@ namespace engine
 			{
 				ZoneScoped;
 
-				Handle(device).updateDescriptorSets(writes_count, write_descriptor_sets.data(), 0, nullptr);
-
-				writes_count = 0u;
-				image_count = 0u;
-				buffer_count = 0u;
+				Handle(device).updateDescriptorSets(write_descriptor_sets.size(), write_descriptor_sets.data(), 0, nullptr);
 			}
 
 			const std::array<vk::DescriptorSet, k_max_descriptor_count>& VulkanResourceDescriptor::GetDescriptorSets()

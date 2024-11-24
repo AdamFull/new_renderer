@@ -5,6 +5,8 @@
 
 SHLIB_NS_BEGIN
 
+CONSTANT uint32_t MAX_SAMPLED_TEXTURES = 2048u;
+
 CONSTANT uint32_t kShaderGroupSize = 32u;
 CONSTANT uint32_t kMaxVerticesPerMeshlet = 64u;
 CONSTANT uint32_t kMaxTrianglesPerMeshlet = 124u;

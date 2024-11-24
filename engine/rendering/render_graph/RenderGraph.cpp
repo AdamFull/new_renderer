@@ -77,7 +77,8 @@ namespace engine
 			shared_descriptor_ci.descriptions.emplace_back(gfx::DescriptorType::eUniformBuffer, 0u, 1u);
 			shared_descriptor_ci.descriptions.emplace_back(gfx::DescriptorType::eUniformBuffer, 1u, 1u);
 			shared_descriptor_ci.descriptions.emplace_back(gfx::DescriptorType::eUniformBuffer, 2u, 1u);
-			shared_descriptor_ci.descriptions.emplace_back(gfx::DescriptorType::eCombinedImageSampler, 3u, 16384u);
+			shared_descriptor_ci.descriptions.emplace_back(gfx::DescriptorType::eSampledImage, 3u, shlib::MAX_SAMPLED_TEXTURES);
+			shared_descriptor_ci.descriptions.emplace_back(gfx::DescriptorType::eSampler, 4u, shlib::MAX_SAMPLED_TEXTURES);
 
 			shared_descriptor = context.CreateSharedDescriptor(shared_descriptor_ci);
 
@@ -337,17 +338,28 @@ namespace engine
 			uint32_t array_index{ 0u };
 			for (auto& resource : static_textures.Data())
 			{
-				gfx::TextureDescriptor descriptor{};
-				descriptor.type = gfx::DescriptorType::eCombinedImageSampler;
-				descriptor.set = 0;
-				descriptor.binding = 3;
+				gfx::TextureDescriptor texture_descriptor{};
+				texture_descriptor.type = gfx::DescriptorType::eSampledImage;
+				texture_descriptor.set = 0;
+				texture_descriptor.binding = 3;
 
-				descriptor.array_index = array_index++;
-				descriptor.texture = resource.texture;
-				descriptor.sampler = resource.sampler;
-				descriptor.resource_state = gfx::ResourceStateFlag::eShaderReadOnlyResource;
+				texture_descriptor.array_index = array_index;
+				texture_descriptor.texture = resource.texture;
+				texture_descriptor.resource_state = gfx::ResourceStateFlag::eShaderReadOnlyResource;
 
-				global_resource_descriptor->BindTexture(descriptor);
+				global_resource_descriptor->BindTexture(texture_descriptor);
+
+				gfx::TextureDescriptor sampler_descriptor{};
+				sampler_descriptor.type = gfx::DescriptorType::eSampler;
+				sampler_descriptor.set = 0;
+				sampler_descriptor.binding = 4;
+
+				sampler_descriptor.array_index = array_index;
+				sampler_descriptor.sampler = resource.sampler;
+
+				global_resource_descriptor->BindTexture(sampler_descriptor);
+
+				++array_index;
 			}
 		}
 
