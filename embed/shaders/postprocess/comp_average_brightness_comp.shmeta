@@ -1,13 +1,4 @@
 {
-	version: 460;
-
-	enable_extensions: [
-		"GL_ARB_compute_shader"
-	];
-
-	definitions: [];
-	require_extensions: [];
-
 	type: "compute";
 	source: "comp_average_brightness.comp";
 }

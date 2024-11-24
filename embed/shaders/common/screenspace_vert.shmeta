@@ -1,9 +1,4 @@
 {
-	enable_extensions: [];
-
-	definitions: [];
-	require_extensions: [];
-
 	type: "vertex";
 	source: "screenspace.vert";
 }

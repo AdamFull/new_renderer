@@ -1,6 +1,11 @@
 #ifndef COMPUTE_COMMON_GLSL
 #define COMPUTE_COMMON_GLSL
 
+#include "base.h"
+
+#extension GL_ARB_compute_shader : enable
+#extension GL_EXT_shader_atomic_float : enable
+
 uint ABfiM(uint src, uint ins, uint bits)
 {
 	uint mask = (1 << bits) - 1;

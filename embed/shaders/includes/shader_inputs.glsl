@@ -3,6 +3,11 @@
 
 #include "geometry.glsl"
 
+#extension GL_ARB_shader_draw_parameters : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+
+#extension GL_ARB_shader_viewport_layer_array : require
+
 // Bindless texture
 layout(set = 0, binding = 3) uniform sampler2D globalTextures[];
 
