@@ -29,7 +29,7 @@ namespace shader_compiler
 	{
 		eUnknown,
 		eGLSL,
-		eSLang
+		eHLSL
 	};
 
 	enum class EShaderType

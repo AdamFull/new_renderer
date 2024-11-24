@@ -26,6 +26,7 @@
         "tools"
       ]
     },
+    "directx-dxc",
     {
       "name": "spirv-cross",
       "version>=": "2021-01-15#2"

@@ -1,15 +1,17 @@
 #pragma once
 
 #include "shader_compiler.h"
-#include <mutex>
+
+#include <atlbase.h>
+#include <dxcapi.h>
 
 namespace shader_compiler
 {
-	class SLangGCompiler : public IShaderCompiler
+	class HLSLCompiler : public IShaderCompiler
 	{
 	public:
-		SLangGCompiler(ETargetAPIType target_api, ETargetBuildType build_type);
-		~SLangGCompiler();
+		HLSLCompiler(ETargetAPIType target_api, ETargetBuildType build_type);
+		~HLSLCompiler();
 
 		bool initialize() override;
 
@@ -18,5 +20,7 @@ namespace shader_compiler
 	private:
 		ETargetBuildType build_type{ ETargetBuildType::eRelease };
 		ETargetAPIType target_api{ ETargetAPIType::eVK13 };
+		CComPtr<IDxcCompiler> m_pCompiler;
+		CComPtr<IDxcLibrary> m_pLibrary;
 	};
 }
