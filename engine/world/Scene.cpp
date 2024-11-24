@@ -241,6 +241,8 @@ namespace engine
 			create_info.address_u = GetSamplerAddressMode(sampler.wrapS);
 			create_info.address_v = GetSamplerAddressMode(sampler.wrapT);
 
+			create_info.max_anisotropy = 16.f;
+
 			return create_info;
 		}
 

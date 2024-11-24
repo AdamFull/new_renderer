@@ -309,7 +309,7 @@ namespace engine
 			SamplerAddressMode address_w{ SamplerAddressMode::eRepeat };
 			float mip_lod_bias{ 0.f };
 			float min_lod{ 0.f };
-			float max_lod{ 1000.f };
+			float max_lod{ 12.f };
 			float max_anisotropy{ 0.f };
 			CompareOp depth_compare{ CompareOp::eNone };
 		};
