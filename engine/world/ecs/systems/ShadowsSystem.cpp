@@ -22,7 +22,7 @@ namespace engine
 	{
 		namespace ecs
 		{
-			constexpr const f32 cascade_split_lambda = 0.85f;
+			constexpr const f32 cascade_split_lambda = 0.7f;
 
 			CShadowsSystem::CShadowsSystem(render::IRenderer& renderer) :
 				render_world{ renderer.GetRenderWorld() }
