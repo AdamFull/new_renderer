@@ -1,6 +1,8 @@
 #ifndef SHADOW_SAMPLING_GLSL
 #define SHADOW_SAMPLING_GLSL
 
+#include "util.glsl"
+
 const bool enableCascadedPCF = true;
 
 const mat4 biasMat = mat4(
@@ -18,25 +20,40 @@ float cascadeShadowProjection(sampler2DArrayShadow shadowmap_tex, vec4 shadowCoo
 float cascadeShadowFilterPCF(sampler2DArrayShadow shadowmap_tex, vec4 sc, uint cascadeIndex, float bias)
 {
 	ivec2 texDim = textureSize(shadowmap_tex, 0).xy;
-	float scale = 0.75;
-	float dx = scale * 1.0 / float(texDim.x);
-	float dy = scale * 1.0 / float(texDim.y);
+	vec2 texelSize = 1.0 / vec2(texDim);
 
 	float shadowFactor = 0.0;
-	int count = 0;
-	const int range = 1;
-	
+
+	const vec2 diskOffsets[16] = {
+        vec2(0.0, 0.0),   vec2(0.382, 0.923),  vec2(-0.382, 0.923), vec2(0.923, 0.382),
+        vec2(-0.923, 0.382), vec2(0.707, 0.707), vec2(-0.707, 0.707), vec2(0.923, -0.382),
+        vec2(-0.923, -0.382), vec2(0.382, -0.923), vec2(-0.382, -0.923), vec2(0.707, -0.707),
+        vec2(-0.707, -0.707), vec2(1.0, 0.0),   vec2(-1.0, 0.0),    vec2(0.0, -1.0)
+    };
+
+	// Random rotation and jitter
+    const float rotationAngle = random(sc.xy) * 6.2831853;
+    const float sinAngle = sin(rotationAngle);
+    const float cosAngle = cos(rotationAngle);
+
+	const float jitter = random(sc.xy + vec2(1.0, 1.0)) * 0.5; // Random jitter scale (0 to 0.5)
+
 	[[unroll]]
-	for (int x = -range; x <= range; x++) 
-	{
-		[[unroll]]
-		for (int y = -range; y <= range; y++) 
-		{
-			shadowFactor += cascadeShadowProjection(shadowmap_tex, sc, vec2(dx*x, dy*y), cascadeIndex, bias);
-			count++;
-		}
-	}
-	return shadowFactor / count;
+	for (int i = 0; i < 16; ++i)
+    {
+        // Rotate the disk pattern
+        const vec2 rotatedOffset = vec2(
+            diskOffsets[i].x * cosAngle - diskOffsets[i].y * sinAngle,
+            diskOffsets[i].x * sinAngle + diskOffsets[i].y * cosAngle
+        );
+
+        // Apply jitter to the offset
+        rotatedOffset += random(sc.xy + vec2(i, i)) * jitter;
+
+        // Scale by texel size
+        shadowFactor += cascadeShadowProjection(shadowmap_tex, sc, rotatedOffset * texelSize * 1.5, cascadeIndex, bias);
+    }
+	return shadowFactor * 0.0625;
 }
 
 // For spotlight source
