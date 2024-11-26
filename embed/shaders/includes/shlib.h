@@ -34,10 +34,8 @@ struct GeometryDrawBounds
 #ifdef __cplusplus
 	GeometryDrawBounds() : min{ (std::numeric_limits<float>::max)() }, max{ -(std::numeric_limits<float>::max)() } {}
 #endif
-	vec3 min;
-	uint32_t pad0;
-	vec3 max;
-	uint32_t pad1;
+	ALIGN_AS(16) vec3 min;
+	ALIGN_AS(16) vec3 max;
 };
 
 struct MeshLod
