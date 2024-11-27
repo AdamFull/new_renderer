@@ -2,7 +2,7 @@
 #define SHLIB_H
 
 #include "constants.h"
-#include "ptr.h"
+#include "scene.h"
 #include "geometry.h"
 
 SHLIB_NS_BEGIN
@@ -11,159 +11,6 @@ struct GPUBufferDesc
 {
 	uint64_t address;
 	uint64_t size;
-};
-
-struct Camera
-{
-	uint32_t type;
-	uint32_t matrices_offset;
-	uint32_t frustum_offset;
-	uint32_t last_hash;
-
-	float fov;
-	float z_near;
-	float z_far;
-	float aspect;
-
-	vec2 size;
-	vec2 invSize;
-};
-
-struct GeometryDrawBounds
-{
-#ifdef __cplusplus
-	GeometryDrawBounds() : min{ (std::numeric_limits<float>::max)() }, max{ -(std::numeric_limits<float>::max)() } {}
-#endif
-	ALIGN_AS(16) vec3 min;
-	ALIGN_AS(16) vec3 max;
-};
-
-struct MeshLod
-{
-	// Meshlet data
-	//uint32_t meshletOffset;
-	//uint32_t meshletVertexOffset;
-	//uint32_t meshletTriangleOffset;
-	//uint32_t meshletBoundsOffset;
-	//uint32_t meshletCount;
-
-	// Default data
-	uint32_t firstIndex;
-	uint32_t indexCount;
-	uint32_t firstVertex;
-	uint32_t vertexCount;
-
-	//uint32_t pad[7];
-}; // For lod buffer
-
-struct Mesh
-{
-	uint32_t materialID;
-
-	uint32_t lodOffset;
-	uint32_t lodCount;
-
-	uint32_t pad;
-
-	GeometryDrawBounds bounds;
-};
-
-struct FMeshlet
-{
-	uint32_t vertexOffset;
-	uint32_t triangleOffset;
-	uint32_t vertexCount;
-	uint32_t triangleCount;
-};
-
-struct FTriangle
-{
-	uint32_t V0;
-	uint32_t V1;
-	uint32_t V2;
-	uint32_t pad;
-};
-
-// Verticea range
-struct GeometryDrawRange
-{
-	uint32_t beginIndex;
-	uint32_t indexCount;
-	uint32_t beginVertex;
-	uint32_t vertexCount;
-
-	uint32_t meshletCount;
-	uint32_t firstMeshlet;
-};
-
-struct FSceneNode
-{
-	uint32_t matrixOffset;
-	uint32_t skeletonID;
-};
-
-struct VertexRangeData
-{
-	uint32_t vertexCount;
-	uint32_t instanceCount;
-	uint32_t firstVertex;
-	uint32_t firstInstance;
-};
-
-struct DrawIndexedIndirectData
-{
-	uint32_t indexCount;
-	uint32_t instanceCount;
-	uint32_t firstIndex;
-	int32_t  vertexOffset;
-	uint32_t firstInstance;
-};
-
-struct DrawDescription
-{
-	uint32_t vboID;
-	uint32_t meshID;
-	uint32_t nodeID;
-	uint32_t pad;
-};
-
-// Lights and shadows
-struct CascadedShadowCommit
-{
-	ARRAY_OF(splitDepths, float, cascade_shadow_map_cascade_count);
-	uint32_t cameraID;
-	float farClip;
-	int index;
-	uint32_t pad;
-};
-
-struct LightCommit
-{
-	ALIGN_AS(16) vec3 position;
-	ALIGN_AS(16) vec3 direction;
-	ALIGN_AS(16) vec3 color;
-	float intencity;
-	float lightAngleScale;
-	float lightAngleOffset;
-	int toTarget;
-	float radius;
-	int shadowIndex;
-	int castShadows;
-	int type;
-};
-
-struct OmniShadowCommit
-{
-	uint32_t cameraID;
-	float farPlane;
-	int index;
-	uint32_t pad;
-};
-
-struct SpotShadowCommit
-{
-	uint32_t cameraID;
-	int index;
 };
 
 // Material
@@ -253,6 +100,8 @@ struct Material
 	ALIGN_AS(16) vec3 attenuationColor;
 };
 
+REGISTER_TYPE_PTR(Material, 16);
+
 CB_BEGIN(GlobalUniformData, 0, 0)
 	float dt;
 	uint32_t directionalLightCount;
@@ -267,36 +116,8 @@ CB_BEGIN(GlobalUniformData, 0, 0)
 	uint32_t frameNumber;
 CB_END(frameData)
 
-// Base buffers
-REGISTER_TYPE_PTR(FSceneNode, 8);
-REGISTER_TYPE_PTR(Mesh, 8);
-REGISTER_TYPE_PTR(Material, 8);
-
-// Light buffers
-REGISTER_TYPE_PTR(LightCommit, 8);
-
-// Shadow buffers
-REGISTER_TYPE_PTR(CascadedShadowCommit, 8);
-REGISTER_TYPE_PTR(OmniShadowCommit, 8);
-REGISTER_TYPE_PTR(SpotShadowCommit, 8);
-
-// Vertex buffer specific data
-//REGISTER_ARRAY_PTR(FMeshlet, 8);
-//REGISTER_ARRAY_PTR(GeometryDrawBounds, 8);
-//REGISTER_ARRAY_PTR(FTriangle, 8);
-//REGISTER_ARRAY_PTR(MeshLod, 8);
-
-// GPU object representation
-REGISTER_TYPE_PTR(DrawDescription, 8);
-
-// Indirect data
-REGISTER_ARRAY_PTR(DrawIndexedIndirectData, 8);
-
-REGISTER_TYPE_PTR(Camera, 8);
-
-
 CB_BEGIN(GlobalBufferReference, 0, 1)
-	GET_PTR_T(FSceneNode) nodeBuffer;
+	GET_PTR_T(SceneNode) nodeBuffer;
 	GET_PTR_T(mat4) matrixBuffer;
 	GET_PTR_T(Mesh) meshBuffer;
 
@@ -308,13 +129,7 @@ CB_BEGIN(GlobalBufferReference, 0, 1)
 	GET_PTR_T(OmniShadowCommit) omniShadowBuffer;
 	GET_PTR_T(SpotShadowCommit) spotShadowBuffer;
 
-	GET_PTR_T(DrawDescription) drawInfoBuffer;
-	GET_PTR_T(DrawDescription) rawDrawInfoBuffer;
-
 	GET_PTR_T(vec4) frustumSidesBuffer;
-
-	GET_ARR_PTR_T(DrawIndexedIndirectData) indirectCommandBuffer;
-	GET_PTR_T(uint32_t) indirectCountBuffer;
 
 	GET_PTR_T(Camera) cameraBuffer;
 CB_END_E()

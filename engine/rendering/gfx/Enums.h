@@ -112,9 +112,10 @@ namespace engine
 			eStencilAttachment = 1 << 6,
 			eSample = 1 << 7,
 			eStorage = 1 << 8,
-			eGeneral = 1 << 9,
-			eCopy = 1 << 10,
-			ePresent = 1 << 11,
+			eIndirect = 1 << 9,
+			eGeneral = 1 << 10,
+			eCopy = 1 << 11,
+			ePresent = 1 << 12,
 
 			// Rendering states
 			eColorAttachmentRead = eRead | eColorAttachment,

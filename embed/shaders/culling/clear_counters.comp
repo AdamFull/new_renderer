@@ -10,6 +10,4 @@ void main()
 
 	if (global_draw_index >= frameData.cullerCount) 
 		return;
-
-	indirectCountBuffer[global_draw_index].data = 0;
 }

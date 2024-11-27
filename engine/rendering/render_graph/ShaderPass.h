@@ -134,6 +134,13 @@ namespace engine
 			
 				return reinterpret_cast<_Ty*>(data.data() + variable.offset);
 			}
+
+			template<typename _Ty>
+			_Ty& As(size_t offset = 0ull)
+			{
+				assert(sizeof(_Ty) + offset > resource.size);
+				return *reinterpret_cast<_Ty*>(&data[offset]);
+			}
 			
 			const std::vector<char>& Data() const
 			{
@@ -171,14 +178,16 @@ namespace engine
 
 			UniformHandle& GetConstantBlock();
 
-			void ReadResource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource_index = ~0u);
-			void WriteResource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource_index = ~0u);
+			void ReadResource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource_index);
+			void ReadResource(uint32_t render_resource_id, uint32_t subresource_index);
+			void WriteResource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource_index);
+			void WriteResource(uint32_t render_resource_id, uint32_t subresource_index);
 
 			void ResolveDependencies(gfx::CommandList& command_list);
 
-			void BindResource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index = ~0u);
-			void BindReadResource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index = ~0u);
-			void BindWriteResource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index = ~0u);
+			void BindResource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index);
+			void BindReadResource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index);
+			void BindWriteResource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index);
 
 			void DispatchForTarget(gfx::CommandList& command_list, uint32_t target_it, bool divide_by_locals);
 			void FinalizeTarget(gfx::CommandList& command_list, uint32_t binding_point, uint32_t target);
@@ -194,6 +203,7 @@ namespace engine
 			void DivideWorkgroupByLocalSizes(uint32_t& group_x, uint32_t& group_y, uint32_t& group_z);
 
 		protected:
+			void ResourceDependency(uint32_t resource_id, uint32_t sebresource_id, gfx::AccessTypeFlags access);
 			void ResourceDependency(uint32_t binding_point, uint32_t resource_id, uint32_t sebresource_id, gfx::AccessTypeFlags access);
 			void CollectProfileData();
 			virtual void _Execute(gfx::CommandList& command_list, float delta_time) = 0;

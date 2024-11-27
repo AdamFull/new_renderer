@@ -194,7 +194,11 @@ namespace engine
 			if (create_info.usage != gfx::BufferUsageFlag::eStagingBuffer && create_info.usage != gfx::BufferUsageFlag::eUniformBuffer)
 			{
 				auto& new_resource = render_resources.emplace_back();
-				new_resource.resource_type = RenderResourceTypeFlag::eBuffer;
+				if (create_info.usage & gfx::BufferUsageFlag::eIndirect)
+					new_resource.resource_type = RenderResourceTypeFlag::eIndirectBuffer;
+				else if(create_info.usage & gfx::BufferUsageFlag::eStorage)
+					new_resource.resource_type = RenderResourceTypeFlag::eStorageBuffer;
+
 				new_resource.resource_id = handle;
 
 				return render_resources.size() - 1ull;
@@ -503,7 +507,7 @@ namespace engine
 
 		gfx::Buffer* RenderGraph::GetBuffer(const RenderGraphResource& render_resource)
 		{
-			if (render_resource.resource_type & RenderResourceTypeFlag::eBuffer)
+			if (render_resource.resource_type & RenderResourceTypeFlag::eAllBuffer)
 			{
 				auto& buffer_object = buffers.Get(render_resource.resource_id);
 				return buffer_object.buffer;

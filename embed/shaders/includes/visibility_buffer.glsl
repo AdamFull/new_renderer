@@ -192,7 +192,7 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 	vec3 position2 = vertices[2].position;
 
 	// Load mesh model matrix
-	FSceneNode node = GetSceneNode(visbuffer.objID);
+	SceneNode node = GetSceneNode(visbuffer.objID);
 	mat4 model = GetModelMatrix(node.matrixOffset);
 
 	Camera camera = GetCamera(call_data.camera_id);

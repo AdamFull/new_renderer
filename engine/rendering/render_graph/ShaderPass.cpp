@@ -196,6 +196,49 @@ namespace engine
 			group_z = std::max(static_cast<uint32_t>(std::ceil(static_cast<float>(group_z) / static_cast<float>(reflection.local_sizes[2]))), 1u);
 		}
 
+		void ShaderPass::ResourceDependency(uint32_t resource_id, uint32_t sebresource_id, gfx::AccessTypeFlags access)
+		{
+			ZoneScoped;
+
+			auto& render_resource = graph.GetResource(resource_id);
+
+			gfx::ResourceStateFlags new_state = gfx::GetAccessState(access);
+
+			auto pass_type = GetPassType();
+			if (pass_type == ShaderPassType::eCompute)
+				new_state |= gfx::ResourceStateFlag::eCompute;
+			else if (pass_type == ShaderPassType::eGraphics)
+				new_state |= gfx::ResourceStateFlag::eGraphics;
+
+			if (render_resource.resource_type & RenderResourceTypeFlag::eAllImage)
+			{
+				// May be create another tag like unordered resource?
+				if (render_resource.resource_type & RenderResourceTypeFlag::eStorageTarget)
+					new_state |= gfx::ResourceStateFlag::eGeneral;
+
+				auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
+				barrier.texture = graph.GetTexture(render_resource);
+				barrier.subresource_index = sebresource_id;
+				barrier.src_state = render_resource.GetState();
+				barrier.dst_state = new_state;
+			}
+			else if (render_resource.resource_type & RenderResourceTypeFlag::eAllBuffer)
+			{
+				if(render_resource.resource_type & RenderResourceTypeFlag::eStorageBuffer)
+					new_state |= gfx::ResourceStateFlag::eStorage;
+				
+				if (render_resource.resource_type & RenderResourceTypeFlag::eIndirectBuffer)
+					new_state |= gfx::ResourceStateFlag::eIndirect;
+
+				auto& barrier = buffer_barriers[resource_barriers.buffer_barrier_count++];
+				barrier.buffer = graph.GetBuffer(render_resource);
+				barrier.src_state = render_resource.GetState();
+				barrier.dst_state = new_state;
+			}
+
+			render_resource.SetState(new_state);
+		}
+
 		void ShaderPass::ResourceDependency(uint32_t binding_point, uint32_t resource_id, uint32_t sebresource_id, gfx::AccessTypeFlags access)
 		{
 			ZoneScoped;
@@ -229,7 +272,7 @@ namespace engine
 					barrier.src_state = render_resource.GetState();
 					barrier.dst_state = new_state;
 				}
-				else if (render_resource.resource_type & RenderResourceTypeFlag::eBuffer)
+				else if (render_resource.resource_type & RenderResourceTypeFlag::eAllBuffer)
 				{
 					auto& barrier = buffer_barriers[resource_barriers.buffer_barrier_count++];
 					barrier.buffer = graph.GetBuffer(render_resource);
@@ -267,9 +310,19 @@ namespace engine
 			ResourceDependency(binding_point, render_resource_id, subresource_index, gfx::AccessTypeFlag::eRead);
 		}
 
+		void ShaderPass::ReadResource(uint32_t render_resource_id, uint32_t subresource_index)
+		{
+			ResourceDependency(render_resource_id, subresource_index, gfx::AccessTypeFlag::eRead);
+		}
+
 		void ShaderPass::WriteResource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource_index)
 		{
 			ResourceDependency(binding_point, render_resource_id, subresource_index, gfx::AccessTypeFlag::eWrite);
+		}
+
+		void ShaderPass::WriteResource(uint32_t render_resource_id, uint32_t subresource_index)
+		{
+			ResourceDependency(render_resource_id, subresource_index, gfx::AccessTypeFlag::eWrite);
 		}
 
 		void ShaderPass::ResolveDependencies(gfx::CommandList& command_list)
@@ -315,7 +368,7 @@ namespace engine
 
 					resource_descriptor->BindTexture(descriptor);
 				}
-				else if (render_resource.resource_type & RenderResourceTypeFlag::eBuffer)
+				else if (render_resource.resource_type & RenderResourceTypeFlag::eAllBuffer)
 				{
 					// At first creating resource barrier
 					auto& barrier = buffer_barriers[resource_barriers.buffer_barrier_count++];

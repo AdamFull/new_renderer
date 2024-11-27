@@ -32,7 +32,9 @@ namespace engine
 			eStaticImage = 1 << 2,
 			eBackbuffer = 1 << 3,
 			eAllImage = eRenderTarget | eStorageTarget | eStaticImage | eBackbuffer,
-			eBuffer = 1 << 4,
+			eStorageBuffer = 1 << 4,
+			eIndirectBuffer = 1 << 5,
+			eAllBuffer = eStorageBuffer | eIndirectBuffer
 		};
 		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(RenderResourceTypeFlags, RenderResourceTypeFlag);
 

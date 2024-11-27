@@ -203,6 +203,12 @@ namespace engine
 						access |= vk::AccessFlagBits2KHR::eTransferWrite;
 				}
 
+				if (flags & ResourceStateFlag::eIndirect)
+				{
+					if (flags & ResourceStateFlag::eRead)
+						access |= vk::AccessFlagBits2KHR::eIndirectCommandRead;
+				}
+
 				return access;
 			}
 

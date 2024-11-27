@@ -62,7 +62,7 @@ namespace engine
 			virtual void BeginFrame(float delta_time) = 0;
 			virtual void EndFrame() = 0;
 
-			virtual gfx::IndirectDrawCommand GetDrawCommand() = 0;
+			virtual uint32_t GetDrawCount() const = 0;
 		};
 	}
 }

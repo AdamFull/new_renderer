@@ -7,7 +7,10 @@
 
 #include <cstdint>
 #include <array>
+#include <hash.hpp>
 #include <glm/glm.hpp>
+
+#define SHLIB_INLINE inline
 
 #define SHLIB_NS_BEGIN namespace shlib {
 #define SHLIB_NS_END }
@@ -17,7 +20,9 @@
 
 #define CONSTANT constexpr const
 
-#define CB_BEGIN(BufferName, BufferSet, BufferBinding) struct BufferName {
+#define CB_BEGIN(BufferName, BufferSet, BufferBinding) \
+constexpr const uint32_t BufferName##_label = utl::murmur_hash(#BufferName); \
+struct BufferName {
 #define CB_END(BufferName) };
 #define CB_END_E() };
 
@@ -31,6 +36,8 @@ using mat4 = glm::mat4;
 SHLIB_NS_END
 
 #else // __glslang
+
+#define SHLIB_INLINE
 
 #define SHLIB_NS_BEGIN
 #define SHLIB_NS_END

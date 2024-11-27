@@ -16,7 +16,7 @@ void main()
 	uint32_t draw_index = shadow_data.call_id + gl_DrawIDARB + gl_InstanceIndex;
 	DrawDescription draw_info = GetDrawInfo(draw_index);
 
-	FSceneNode node = GetSceneNode(draw_info.nodeID);
+	SceneNode node = GetSceneNode(draw_info.nodeID);
 	mat4 model_matrix = GetModelMatrix(node.matrixOffset);
 
 	uint32_t vertex_index = uint32_t(gl_VertexIndex);

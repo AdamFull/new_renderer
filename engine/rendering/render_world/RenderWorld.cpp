@@ -16,7 +16,7 @@ namespace engine
 		{
 			auto& resource_context = renderer.GetResourceContext();
 
-			world_nodes = std::make_unique<DynamicBuffer<shlib::FSceneNode>>(resource_context, 8ull, gfx::BufferUsageFlag::eStorageBuffer);
+			world_nodes = std::make_unique<DynamicBuffer<shlib::SceneNode>>(resource_context, 8ull, gfx::BufferUsageFlag::eStorageBuffer);
 			draw_descriptions = std::make_unique<DynamicBuffer<shlib::DrawDescription>>(resource_context, 16ull, gfx::BufferUsageFlag::eStorageBuffer);
 			world_meshes = std::make_unique<DynamicBuffer<shlib::Mesh>>(resource_context, 16ull, gfx::BufferUsageFlag::eStorageBuffer);
 
@@ -31,8 +31,6 @@ namespace engine
 			world_cameras = std::make_unique<DynamicBuffer<shlib::Camera>>(resource_context, 8ull, gfx::BufferUsageFlag::eStorageBuffer);
 			world_matrices = std::make_unique<DynamicBuffer<glm::mat4>>(resource_context, 64ull, gfx::BufferUsageFlag::eStorageBuffer);
 			world_frustum = std::make_unique<DynamicBuffer<glm::vec4>>(resource_context, 64ull, gfx::BufferUsageFlag::eStorageBuffer);
-
-			indirect_draw_commands = std::make_unique<DynamicBuffer<shlib::DrawIndexedIndirectData>>(resource_context, 64ull, gfx::BufferUsageFlag::eIndirectBuffer);
 		}
 
 		uint32_t RenderWorld::CreateRenderCamera()
@@ -221,14 +219,14 @@ namespace engine
 			mesh.materialID = draw_command.material_index;
 
 
-			auto& indirect_command = indirect_draw_commands->Get(draw_index);
-			indirect_draw_commands->MarkDirty(draw_index);
-
-			indirect_command.indexCount = draw_command.index_count;
-			indirect_command.instanceCount = 1;
-			indirect_command.firstIndex = draw_command.first_index;
-			indirect_command.vertexOffset = int(draw_command.first_vertex);
-			indirect_command.firstInstance = 0;
+			//auto& indirect_command = indirect_draw_commands->Get(draw_index);
+			//indirect_draw_commands->MarkDirty(draw_index);
+			//
+			//indirect_command.indexCount = draw_command.index_count;
+			//indirect_command.instanceCount = 1;
+			//indirect_command.firstIndex = draw_command.first_index;
+			//indirect_command.vertexOffset = int(draw_command.first_vertex);
+			//indirect_command.firstInstance = 0;
 		}
 
 		void RenderWorld::AddMaterial(const shlib::Material& material)
@@ -365,14 +363,6 @@ namespace engine
 				buffers.cameraBuffer = world_cameras->GetBuffer()->GetAddress();
 				world_cameras->Flush();
 
-				// Update buffer with indirect draw commands
-				buffers.indirectCommandBuffer = indirect_draw_commands->GetBuffer()->GetAddress();
-				indirect_draw_commands->Flush();
-
-				// Update buffer with per draw descriptions
-				buffers.drawInfoBuffer = draw_descriptions->GetBuffer()->GetAddress();
-				draw_descriptions->Flush();
-
 				// Update mesh infos
 				buffers.meshBuffer = world_meshes->GetBuffer()->GetAddress();
 				world_meshes->Flush();
@@ -421,15 +411,9 @@ namespace engine
 			spot_shadow_count = 0;
 		}
 
-		gfx::IndirectDrawCommand RenderWorld::GetDrawCommand()
+		uint32_t RenderWorld::GetDrawCount() const
 		{
-			gfx::IndirectDrawCommand draw_command{};
-			draw_command.indexed_draw = true;
-			draw_command.argument_buffer = indirect_draw_commands->GetBuffer();
-			draw_command.draw_count = draw_count;
-			draw_command.command_stride = sizeof(shlib::DrawIndexedIndirectData);
-
-			return draw_command;
+			return draw_count;
 		}
 
 		void RenderWorld::UpdateCameraFrustum(uint32_t camera_id)

@@ -41,7 +41,7 @@ namespace engine
 			void BeginFrame(float delta_time) override;
 			void EndFrame() override;
 
-			gfx::IndirectDrawCommand GetDrawCommand() override;
+			uint32_t GetDrawCount() const;
 		private:
 			void UpdateCameraFrustum(uint32_t camera_id);
 		private:
@@ -49,7 +49,7 @@ namespace engine
 
 			std::vector<WorldResource> world_resources{};
 
-			std::unique_ptr<DynamicBuffer<shlib::FSceneNode>> world_nodes{};
+			std::unique_ptr<DynamicBuffer<shlib::SceneNode>> world_nodes{};
 			uint32_t nodes_offset{ 0u };
 
 			std::unique_ptr<DynamicBuffer<shlib::Camera>> world_cameras{};
@@ -61,7 +61,6 @@ namespace engine
 			std::unique_ptr<DynamicBuffer<glm::vec4>> world_frustum{};
 			uint32_t frustum_offset{ 0u };
 
-			std::unique_ptr<DynamicBuffer<shlib::DrawIndexedIndirectData>> indirect_draw_commands{};
 			uint32_t draw_count{ 0u };
 
 			std::unique_ptr<DynamicBuffer<shlib::DrawDescription>> draw_descriptions{};

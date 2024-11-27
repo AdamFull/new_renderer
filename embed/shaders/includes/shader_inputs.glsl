@@ -12,7 +12,7 @@
 layout(set = 0, binding = 3) uniform texture2D globalTextures[MAX_SAMPLED_TEXTURES];
 layout(set = 0, binding = 4) uniform sampler globalSamplers[MAX_SAMPLED_TEXTURES];
 
-FSceneNode GetSceneNode(uint index) { return nodeBuffer[index].data; }
+SceneNode GetSceneNode(uint index) { return nodeBuffer[index].data; }
 Mesh GetMesh(uint index) { return meshBuffer[index].data; }
 Material GetMaterial(uint index) { return materialBuffer[index].data; }
 LightCommit getLight(uint index) { return lightsBuffer[index].data; }
@@ -21,13 +21,7 @@ CascadedShadowCommit GetCascadedShadowCommit(uint index) { return cascadedShadow
 OmniShadowCommit GetOmniShadowCommit(uint index) { return omniShadowBuffer[index].data; }
 SpotShadowCommit GetSpotShadowCommit(uint index) { return spotShadowBuffer[index].data; }
 
-DrawDescription GetDrawInfo(uint index) { return drawInfoBuffer[index].data; }
-DrawDescription GetRawDrawInfo(uint index) { return rawDrawInfoBuffer[index].data; }
-
 vec4 GetFrustumSide(uint index) { return frustumSidesBuffer[index].data; }
-
-DrawIndexedIndirectData GetDrawIndexedCommand(uint index) { return indirectCommandBuffer.data[index]; }
-uint32_t GetDrawCount(uint index) { return indirectCountBuffer[index].data; }
 
 Camera GetCamera(uint index) { return cameraBuffer[index].data; }
 

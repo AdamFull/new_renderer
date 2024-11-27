@@ -1,4 +1,5 @@
 #include "shader_inputs.glsl"
+#include "culling.h"
 
 #define GROUP_SIZE 64
 
@@ -31,7 +32,7 @@ void main()
 
 	// Sample info about current Draw comand
 	DrawDescription draw_info = GetRawDrawInfo(global_draw_index);
-	FSceneNode node = GetSceneNode(draw_info.nodeID);
+	SceneNode node = GetSceneNode(draw_info.nodeID);
 	Mesh mesh = GetMesh(draw_info.meshID);
 	mat4 model = GetModelMatrix(node.matrixOffset);			
 

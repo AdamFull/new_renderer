@@ -508,6 +508,35 @@ namespace engine
 				histogram_buffer = render_graph->AddResource(create_info);
 			}
 
+			// Buffer that contains alive comands for draw
+			uint32_t alive_commands_buffer{ ~0u };
+			{
+				gfx::BufferCreateInfo create_info{};
+				create_info.size = sizeof(shlib::DrawDescription) * shlib::MAX_DRAW_INSTANCE_COUNT;
+				create_info.usage = gfx::BufferUsageFlag::eStorageBuffer;
+
+				alive_commands_buffer = render_graph->AddResource(create_info);
+			}
+
+			// Buffer contains draw indirect commands
+			uint32_t indirect_draw_commands{ ~0u };
+			{
+				gfx::BufferCreateInfo create_info{};
+				create_info.size = sizeof(shlib::DrawIndexedIndirectData) * shlib::MAX_DRAW_INSTANCE_COUNT;
+				create_info.usage = gfx::BufferUsageFlag::eIndirectBuffer;
+
+				indirect_draw_commands = render_graph->AddResource(create_info);
+			}
+
+			uint32_t indirect_count_buffer{ ~0u };
+			{
+				gfx::BufferCreateInfo create_info{};
+				create_info.size = 1024u;
+				create_info.usage = gfx::BufferUsageFlag::eIndirectBuffer;
+
+				indirect_count_buffer = render_graph->AddResource(create_info);
+			}
+
 			// Passes
 			// Generate brdflut
 			{
@@ -521,7 +550,7 @@ namespace engine
 					{
 						ZoneScoped;
 
-						self.BindWriteResource(render_label::write_image0, brdf_lut_target);
+						self.BindWriteResource(render_label::write_image0, brdf_lut_target, ~0u);
 
 						self.ResolveDependencies(command_list);
 						self.BindResources(command_list);
@@ -546,9 +575,9 @@ namespace engine
 					{
 						ZoneScoped;
 
-						self.BindWriteResource(render_label::write_image0, irradiance_cube_target);
+						self.BindWriteResource(render_label::write_image0, irradiance_cube_target, ~0u);
 
-						self.BindResource(render_label::sample_image0, casual_day_4k_cube);
+						self.BindResource(render_label::sample_image0, casual_day_4k_cube, ~0u);
 						
 						self.ResolveDependencies(command_list);
 						self.BindResources(command_list);
@@ -576,14 +605,14 @@ namespace engine
 					{
 						ZoneScoped;
 
-						self.WriteResource(render_label::write_image0, prefiltered_cube_target);
+						self.WriteResource(render_label::write_image0, prefiltered_cube_target, ~0u);
 
 						auto target = render_graph->GetTexture(prefiltered_cube_target);
 						for (int32_t mip = 0; mip < target->GetMipLevelCount(); ++mip)
 						{
 							if (mip == 0)
 							{
-								self.BindResource(render_label::sample_image0, casual_day_4k_cube);
+								self.BindResource(render_label::sample_image0, casual_day_4k_cube, ~0u);
 							}
 							else
 							{
@@ -634,18 +663,28 @@ namespace engine
 				create_info.pipeline_state.primitive_topology = gfx::PrimitiveTopology::eTriangleList;
 
 				create_info.draw_callback = [this,
-					cascaded_shadows_target
+					cascaded_shadows_target,
+					alive_commands_buffer,
+					indirect_draw_commands,
+					indirect_count_buffer
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
 						ZoneScoped;
 
 						auto* shadow_map = render_graph->GetTexture(cascaded_shadows_target);
+						auto* alive_meshes = render_graph->GetBuffer(alive_commands_buffer);
+						auto* argument_buffer = render_graph->GetBuffer(indirect_draw_commands);
+						auto* count_buffer = render_graph->GetBuffer(indirect_count_buffer);
 
 						auto viewport_width = shadow_map->GetWidth();
 						auto viewport_height = shadow_map->GetHeight();
 
 						command_list.SetViewport(0.f, 0.f, viewport_width, viewport_height, 0.f, 1.f);
 						command_list.SerScissor(0u, 0u, viewport_width, viewport_height);
+
+						self.ReadResource(alive_commands_buffer, ~0u);
+						self.ReadResource(indirect_draw_commands, ~0u);
+						self.ReadResource(indirect_count_buffer, ~0u);
 
 						self.ResolveDependencies(command_list);
 
@@ -656,11 +695,22 @@ namespace engine
 						buffers.Set(render_label::position, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
 						buffers.Set(render_label::texcoord, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTexCoord));
 
+						// Bind buffers that uses in draw
+						auto& draw_data_block = self.GetUniformBlock(shlib::DrawDescriptionBuffers_label);
+						auto& draw_desc_buffers = draw_data_block.As<shlib::DrawDescriptionBuffers>();
+						draw_desc_buffers.draw_descriptions_ptr = alive_meshes->GetAddress();
+						draw_desc_buffers.draw_commands_ptr = argument_buffer->GetAddress();
+
 						auto& constants = self.GetConstantBlock();
 
 						self.BindResources(command_list);
 
-						auto draw_command = render_world->GetDrawCommand();
+						gfx::IndirectDrawCommand draw_command{};
+						draw_command.indexed_draw = true;
+						draw_command.draw_count = render_world->GetDrawCount();
+						draw_command.argument_buffer = argument_buffer;
+						draw_command.command_stride = sizeof(shlib::DrawIndexedIndirectData);
+						draw_command.count_buffer = count_buffer;
 
 						uint32_t draw_call_id{ 0u };
 						self.Begin(command_list);
@@ -680,6 +730,9 @@ namespace engine
 								constants.Set(render_label::layer, layer);
 
 								self.PushConstantRanges(command_list);
+
+								draw_command.argument_offset = light.shadow_casters[layer] * draw_command.command_stride;
+								draw_command.count_offset = light.shadow_casters[layer] * sizeof(uint32_t);
 
 								command_list.DrawIndirect(draw_command);
 							}
@@ -709,18 +762,28 @@ namespace engine
 				create_info.pipeline_state.primitive_topology = gfx::PrimitiveTopology::eTriangleList;
 
 				create_info.draw_callback = [this,
-					omni_shadows_target
+					omni_shadows_target,
+					alive_commands_buffer,
+					indirect_draw_commands,
+					indirect_count_buffer
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
 						ZoneScoped;
 
 						auto* shadow_map = render_graph->GetTexture(omni_shadows_target);
+						auto* alive_meshes = render_graph->GetBuffer(alive_commands_buffer);
+						auto* argument_buffer = render_graph->GetBuffer(indirect_draw_commands);
+						auto* count_buffer = render_graph->GetBuffer(indirect_count_buffer);
 
 						auto viewport_width = shadow_map->GetWidth();
 						auto viewport_height = shadow_map->GetHeight();
 
 						command_list.SetViewport(0.f, 0.f, viewport_width, viewport_height, 0.f, 1.f);
 						command_list.SerScissor(0u, 0u, viewport_width, viewport_height);
+
+						self.ReadResource(alive_commands_buffer, ~0u);
+						self.ReadResource(indirect_draw_commands, ~0u);
+						self.ReadResource(indirect_count_buffer, ~0u);
 
 						self.ResolveDependencies(command_list);
 
@@ -731,11 +794,22 @@ namespace engine
 						buffers.Set(render_label::position, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
 						buffers.Set(render_label::texcoord, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTexCoord));
 
+						// Bind buffers that uses in draw
+						auto& draw_data_block = self.GetUniformBlock(shlib::DrawDescriptionBuffers_label);
+						auto& draw_desc_buffers = draw_data_block.As<shlib::DrawDescriptionBuffers>();
+						draw_desc_buffers.draw_descriptions_ptr = alive_meshes->GetAddress();
+						draw_desc_buffers.draw_commands_ptr = argument_buffer->GetAddress();
+
 						auto& constants = self.GetConstantBlock();
 
 						self.BindResources(command_list);
 
-						auto draw_command = render_world->GetDrawCommand();
+						gfx::IndirectDrawCommand draw_command{};
+						draw_command.indexed_draw = true;
+						draw_command.draw_count = render_world->GetDrawCount();
+						draw_command.argument_buffer = render_graph->GetBuffer(indirect_draw_commands);
+						draw_command.command_stride = sizeof(shlib::DrawIndexedIndirectData);
+						draw_command.count_buffer = render_graph->GetBuffer(indirect_count_buffer);
 
 						uint32_t draw_call_id{ 0u };
 						self.Begin(command_list);
@@ -755,6 +829,9 @@ namespace engine
 								constants.Set(render_label::layer, layer);
 
 								self.PushConstantRanges(command_list);
+
+								draw_command.argument_offset = light.shadow_casters[layer] * draw_command.command_stride;
+								draw_command.count_offset = light.shadow_casters[layer] * sizeof(uint32_t);
 
 								command_list.DrawIndirect(draw_command);
 							}
@@ -784,18 +861,28 @@ namespace engine
 				create_info.pipeline_state.primitive_topology = gfx::PrimitiveTopology::eTriangleList;
 
 				create_info.draw_callback = [this,
-					directional_shadows_target
+					directional_shadows_target,
+					alive_commands_buffer,
+					indirect_draw_commands,
+					indirect_count_buffer
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
 						ZoneScoped;
 
 						auto* shadow_map = render_graph->GetTexture(directional_shadows_target);
+						auto* alive_meshes = render_graph->GetBuffer(alive_commands_buffer);
+						auto* argument_buffer = render_graph->GetBuffer(indirect_draw_commands);
+						auto* count_buffer = render_graph->GetBuffer(indirect_count_buffer);
 
 						auto viewport_width = shadow_map->GetWidth();
 						auto viewport_height = shadow_map->GetHeight();
 
 						command_list.SetViewport(0.f, 0.f, viewport_width, viewport_height, 0.f, 1.f);
 						command_list.SerScissor(0u, 0u, viewport_width, viewport_height);
+
+						self.ReadResource(alive_commands_buffer, ~0u);
+						self.ReadResource(indirect_draw_commands, ~0u);
+						self.ReadResource(indirect_count_buffer, ~0u);
 
 						self.ResolveDependencies(command_list);
 
@@ -806,18 +893,29 @@ namespace engine
 						buffers.Set(render_label::position, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
 						buffers.Set(render_label::texcoord, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTexCoord));
 
+						// Bind buffers that uses in draw
+						auto& draw_data_block = self.GetUniformBlock(shlib::DrawDescriptionBuffers_label);
+						auto& draw_desc_buffers = draw_data_block.As<shlib::DrawDescriptionBuffers>();
+						draw_desc_buffers.draw_descriptions_ptr = alive_meshes->GetAddress();
+						draw_desc_buffers.draw_commands_ptr = argument_buffer->GetAddress();
+
 						auto& constants = self.GetConstantBlock();
 
 						self.BindResources(command_list);
 
-						auto draw_command = render_world->GetDrawCommand();
+						gfx::IndirectDrawCommand draw_command{};
+						draw_command.indexed_draw = true;
+						draw_command.draw_count = render_world->GetDrawCount();
+						draw_command.argument_buffer = render_graph->GetBuffer(indirect_draw_commands);
+						draw_command.command_stride = sizeof(shlib::DrawIndexedIndirectData);
+						draw_command.count_buffer = render_graph->GetBuffer(indirect_count_buffer);
 
 						uint32_t draw_call_id{ 0u };
 						self.Begin(command_list);
 
 						int32_t shadow_index{ 0 };
 
-						auto view = world::EntityManager::View<world::ecs::FPointLightComponent>();
+						auto view = world::EntityManager::View<world::ecs::FSpotLightComponent>();
 						for (auto [entity, light] : view.each())
 						{
 							if (!light.castShadows)
@@ -828,6 +926,9 @@ namespace engine
 							constants.Set(render_label::layer, shadow_index);
 
 							self.PushConstantRanges(command_list);
+
+							draw_command.argument_offset = light.shadow_caster * draw_command.command_stride;
+							draw_command.count_offset = light.shadow_caster * sizeof(uint32_t);
 
 							command_list.DrawIndirect(draw_command);
 
@@ -859,17 +960,28 @@ namespace engine
 				create_info.pipeline_state.primitive_topology = gfx::PrimitiveTopology::eTriangleList;
 				create_info.pipeline_state.color_blending_state.attachment_count = 2;
 
-				create_info.draw_callback = [this](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+				create_info.draw_callback = [this,
+					alive_commands_buffer,
+					indirect_draw_commands,
+					indirect_count_buffer
+				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
 						ZoneScoped;
 
 						auto* backbuffer = render_graph->GetTexture(backbuffer_resource);
+						auto* alive_meshes = render_graph->GetBuffer(alive_commands_buffer);
+						auto* argument_buffer = render_graph->GetBuffer(indirect_draw_commands);
+						auto* count_buffer = render_graph->GetBuffer(indirect_count_buffer);
 
 						auto viewport_width = backbuffer->GetWidth();
 						auto viewport_height = backbuffer->GetHeight();
 
 						command_list.SetViewport(0.f, 0.f, viewport_width, viewport_height, 0.f, 1.f);
 						command_list.SerScissor(0u, 0u, viewport_width, viewport_height);
+
+						self.ReadResource(alive_commands_buffer, ~0u);
+						self.ReadResource(indirect_draw_commands, ~0u);
+						self.ReadResource(indirect_count_buffer, ~0u);
 
 						self.ResolveDependencies(command_list);
 
@@ -880,6 +992,12 @@ namespace engine
 						buffers.Set(render_label::position, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
 						buffers.Set(render_label::texcoord, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTexCoord));
 
+						// Bind buffers that uses in draw
+						auto& draw_data_block = self.GetUniformBlock(shlib::DrawDescriptionBuffers_label);
+						auto& draw_desc_buffers = draw_data_block.As<shlib::DrawDescriptionBuffers>();
+						draw_desc_buffers.draw_descriptions_ptr = alive_meshes->GetAddress();
+						draw_desc_buffers.draw_commands_ptr = argument_buffer->GetAddress();
+
 						auto& constants = self.GetConstantBlock();
 						constants.Set(render_label::call_id, 0u);
 						constants.Set(render_label::camera_id, 0u);
@@ -888,7 +1006,15 @@ namespace engine
 
 						self.BindResources(command_list);
 
-						auto draw_command = render_world->GetDrawCommand();
+						// TODO: USE CURRENT CAMERA HERE FOR CALCULATE OFFSET!!!!
+						gfx::IndirectDrawCommand draw_command{};
+						draw_command.indexed_draw = true;
+						draw_command.draw_count = render_world->GetDrawCount();
+						draw_command.argument_buffer = argument_buffer;
+						draw_command.argument_offset = 0;
+						draw_command.command_stride = sizeof(shlib::DrawIndexedIndirectData);
+						draw_command.count_buffer = count_buffer;
+						draw_command.count_offset = 0;
 
 						self.Begin(command_list);
 						command_list.DrawIndirect(draw_command);
@@ -918,18 +1044,18 @@ namespace engine
 					{
 						ZoneScoped;
 
-						self.BindWriteResource(render_label::write_image0, hdr0);
-						self.BindResource(render_label::sample_image0, brdf_lut_target); // binding 1
-						self.BindResource(render_label::sample_image1, irradiance_cube_target); // binding 2
-						self.BindResource(render_label::sample_image2, prefiltered_cube_target); // binding 3
+						self.BindWriteResource(render_label::write_image0, hdr0, ~0u);
+						self.BindResource(render_label::sample_image0, brdf_lut_target, ~0u); // binding 1
+						self.BindResource(render_label::sample_image1, irradiance_cube_target, ~0u); // binding 2
+						self.BindResource(render_label::sample_image2, prefiltered_cube_target, ~0u); // binding 3
 
-						self.BindReadResource(render_label::sample_image3, visbuffer_geometry_target);
-						self.BindReadResource(render_label::sample_image4, visbuffer_vboinst_target);
-						self.BindReadResource(render_label::sample_image5, zbuffer_depth_target);
+						self.BindReadResource(render_label::sample_image3, visbuffer_geometry_target, ~0u);
+						self.BindReadResource(render_label::sample_image4, visbuffer_vboinst_target, ~0u);
+						self.BindReadResource(render_label::sample_image5, zbuffer_depth_target, ~0u);
 
-						self.BindReadResource(render_label::sample_image6, cascaded_shadows_target);
-						self.BindReadResource(render_label::sample_image7, directional_shadows_target);
-						self.BindReadResource(render_label::sample_image8, omni_shadows_target);
+						self.BindReadResource(render_label::sample_image6, cascaded_shadows_target, ~0u);
+						self.BindReadResource(render_label::sample_image7, directional_shadows_target, ~0u);
+						self.BindReadResource(render_label::sample_image8, omni_shadows_target, ~0u);
 
 						self.ResolveDependencies(command_list);
 
@@ -969,8 +1095,8 @@ namespace engine
 					{
 						ZoneScoped;
 
-						self.BindWriteResource(render_label::write_image0, motion_vectors_target);
-						self.BindReadResource(render_label::sample_image0, zbuffer_depth_target);
+						self.BindWriteResource(render_label::write_image0, motion_vectors_target, ~0u);
+						self.BindReadResource(render_label::sample_image0, zbuffer_depth_target, ~0u);
 
 						self.ResolveDependencies(command_list);
 						self.BindResources(command_list);
@@ -996,8 +1122,8 @@ namespace engine
 					{
 						ZoneScoped;
 
-						self.BindReadResource(render_label::sample_image0, input_target);
-						self.BindWriteResource(render_label::write_image0, hdr0_history);
+						self.BindReadResource(render_label::sample_image0, input_target, ~0u);
+						self.BindWriteResource(render_label::write_image0, hdr0_history, ~0u);
 
 						self.ResolveDependencies(command_list);
 						self.BindResources(command_list);
@@ -1028,8 +1154,8 @@ namespace engine
 						{
 							ZoneScoped;
 
-							self.BindReadResource(render_label::sample_image0, input_target);
-							self.BindWriteResource(render_label::write_image0, output_target);
+							self.BindReadResource(render_label::sample_image0, input_target, ~0u);
+							self.BindWriteResource(render_label::write_image0, output_target, ~0u);
 
 							self.ResolveDependencies(command_list);
 							self.BindResources(command_list);
@@ -1057,9 +1183,9 @@ namespace engine
 						{
 							ZoneScoped;
 
-							self.BindReadResource(render_label::sample_image0, input_target);
-							self.BindReadResource(render_label::sample_image1, motion_vectors_target);
-							self.BindWriteResource(render_label::write_image0, output_target);
+							self.BindReadResource(render_label::sample_image0, input_target, ~0u);
+							self.BindReadResource(render_label::sample_image1, motion_vectors_target, ~0u);
+							self.BindWriteResource(render_label::write_image0, output_target, ~0u);
 
 							self.ResolveDependencies(command_list);
 							self.BindResources(command_list);
@@ -1091,8 +1217,8 @@ namespace engine
 							{
 								ZoneScoped;
 
-								self.BindReadResource(render_label::sample_image0, input_target);
-								self.BindWriteResource(render_label::write_image0, hdr0_div2);
+								self.BindReadResource(render_label::sample_image0, input_target, ~0u);
+								self.BindWriteResource(render_label::write_image0, hdr0_div2, ~0u);
 								self.ResolveDependencies(command_list);
 								self.BindResources(command_list);
 
@@ -1116,10 +1242,10 @@ namespace engine
 							{
 								ZoneScoped;
 
-								self.BindReadResource(render_label::sample_image0, input_target);
-								self.BindReadResource(render_label::sample_image1, hdr0_div2);
-								self.BindReadResource(render_label::sample_image2, zbuffer_depth_target);
-								self.BindWriteResource(render_label::write_image0, output_target);
+								self.BindReadResource(render_label::sample_image0, input_target, ~0u);
+								self.BindReadResource(render_label::sample_image1, hdr0_div2, ~0u);
+								self.BindReadResource(render_label::sample_image2, zbuffer_depth_target, ~0u);
+								self.BindWriteResource(render_label::write_image0, output_target, ~0u);
 								self.ResolveDependencies(command_list);
 								self.BindResources(command_list);
 
@@ -1153,8 +1279,8 @@ namespace engine
 							{
 								ZoneScoped;
 
-								self.BindReadResource(render_label::sample_image0, input_target);
-								self.BindWriteResource(render_label::write_image0, hdr0_div2);
+								self.BindReadResource(render_label::sample_image0, input_target, ~0u);
+								self.BindWriteResource(render_label::write_image0, hdr0_div2, ~0u);
 								self.ResolveDependencies(command_list);
 								self.BindResources(command_list);
 
@@ -1177,10 +1303,10 @@ namespace engine
 								{
 									ZoneScoped;
 
-									self.WriteResource(render_label::write_image0, bloom_target);
+									self.WriteResource(render_label::write_image0, bloom_target, ~0u);
 
-									self.BindReadResource(render_label::sample_image0, hdr0_div2);
-									self.BindResource(render_label::write_image0, bloom_target);
+									self.BindReadResource(render_label::sample_image0, hdr0_div2, ~0u);
+									self.BindResource(render_label::write_image0, bloom_target, ~0u);
 
 									self.ResolveDependencies(command_list);
 									self.BindResources(command_list);
@@ -1273,10 +1399,10 @@ namespace engine
 							{
 								ZoneScoped;
 
-								self.BindWriteResource(render_label::write_image0, output_target);
-								self.BindReadResource(render_label::sample_image0, input_target);
-								self.BindReadResource(render_label::sample_image1, bloom_target);
-								self.BindResource(render_label::sample_image2, dirt_mask_texture);
+								self.BindWriteResource(render_label::write_image0, output_target, ~0u);
+								self.BindReadResource(render_label::sample_image0, input_target, ~0u);
+								self.BindReadResource(render_label::sample_image1, bloom_target, ~0u);
+								self.BindResource(render_label::sample_image2, dirt_mask_texture, ~0u);
 
 								self.ResolveDependencies(command_list);
 								self.BindResources(command_list);
@@ -1311,8 +1437,8 @@ namespace engine
 							{
 								ZoneScoped;
 
-								self.BindReadResource(render_label::sample_image0, input_target);
-								self.BindWriteResource(render_label::histogram_buffer, histogram_buffer);
+								self.BindReadResource(render_label::sample_image0, input_target, ~0u);
+								self.BindWriteResource(render_label::histogram_buffer, histogram_buffer, ~0u);
 								self.ResolveDependencies(command_list);
 
 								float log_lum_range = postprocess.tonemap.lumMax - postprocess.tonemap.lumMin;
@@ -1342,8 +1468,8 @@ namespace engine
 							{
 								ZoneScoped;
 
-								self.BindReadResource(render_label::histogram_buffer, histogram_buffer);
-								self.BindWriteResource(render_label::write_image0, avg_brightness_target);
+								self.BindReadResource(render_label::histogram_buffer, histogram_buffer, ~0u);
+								self.BindWriteResource(render_label::write_image0, avg_brightness_target, ~0u);
 								self.ResolveDependencies(command_list);
 
 								float log_lum_range = postprocess.tonemap.lumMax - postprocess.tonemap.lumMin;
@@ -1379,9 +1505,9 @@ namespace engine
 							{
 								ZoneScoped;
 
-								self.BindWriteResource(render_label::write_image0, output_target);
-								self.BindReadResource(render_label::sample_image0, input_target);
-								self.BindReadResource(render_label::sample_image1, avg_brightness_target);
+								self.BindWriteResource(render_label::write_image0, output_target, ~0u);
+								self.BindReadResource(render_label::sample_image0, input_target, ~0u);
+								self.BindReadResource(render_label::sample_image1, avg_brightness_target, ~0u);
 
 								self.ResolveDependencies(command_list);
 								self.BindResources(command_list);
@@ -1426,7 +1552,7 @@ namespace engine
 						command_list.SetViewport(0.f, viewport_height, viewport_width, -viewport_height, 0.f, 1.f);
 						command_list.SerScissor(0u, 0u, viewport_width, viewport_height);
 
-						self.BindReadResource(render_label::sample_image0, final_target);
+						self.BindReadResource(render_label::sample_image0, final_target, ~0u);
 
 						self.ResolveDependencies(command_list);
 						self.BindResources(command_list);
@@ -1564,7 +1690,7 @@ namespace engine
 											resource_binding = imgui_font_texture;
 										}
 
-										self.ReadResource(render_label::sample_image0, resource_binding);
+										self.ReadResource(render_label::sample_image0, resource_binding, ~0u);
 									}
 								}
 
@@ -1625,7 +1751,7 @@ namespace engine
 											
 											if (resource_binding != last_bound_resource)
 											{
-												self.BindResource(render_label::sample_image0, resource_binding);
+												self.BindResource(render_label::sample_image0, resource_binding, ~0u);
 												self.BindResources(command_list);
 												last_bound_resource = resource_binding;
 											}
