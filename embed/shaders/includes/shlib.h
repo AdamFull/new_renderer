@@ -108,10 +108,8 @@ CB_BEGIN(GlobalUniformData, 0, 0)
 	uint32_t pointLightCount;
 	uint32_t spotLightCount;
 	uint32_t lightCount;
-	uint32_t cullerCount;
-	uint32_t cameraCount;
-	uint32_t maxCommandsCount;
-	uint32_t rawCommandsCount;
+	uint32_t camera_count;
+	uint32_t draw_count;
 	uint32_t defaultCameraID;
 	uint32_t frameNumber;
 CB_END(frameData)

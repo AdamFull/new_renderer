@@ -26,13 +26,14 @@ bool checkObjectInFrustum(in vec3 min_extents, in vec3 max_extents, in uint32_t 
 void main() 
 {
 	uint32_t global_draw_index = gl_GlobalInvocationID.x;
+	uint32_t total_invocation_count = frameData.draw_count * frameData.camera_count;
 
-	if (global_draw_index >= frameData.maxCommandsCount) 
+	if (global_draw_index >= total_invocation_count) 
 		return;
 
-	uint32_t local_desc_index = global_draw_index % frameData.rawCommandsCount;
-	uint32_t local_camera_index = global_draw_index / frameData.rawCommandsCount;
-	uint32_t global_offset = local_camera_index * frameData.rawCommandsCount;
+	uint32_t local_desc_index = global_draw_index % frameData.draw_count;
+	uint32_t local_camera_index = global_draw_index / frameData.draw_count;
+	uint32_t global_offset = local_camera_index * frameData.draw_count;
 
 	DrawDescription draw_info = source_descriptions[local_desc_index].data;
 
@@ -49,7 +50,7 @@ void main()
 	max_extents.xyz /= max_extents.w;
 
 	Camera camera = GetCamera(local_camera_index);
-	if(checkObjectInFrustum(min_extents.xyz, max_extents.xyz, camera.frustum_offset))
+	//if(checkObjectInFrustum(min_extents.xyz, max_extents.xyz, camera.frustum_offset))
 	{
 		DrawIndexedIndirectData indirect_command;
 		indirect_command.indexCount = mesh.index_count;

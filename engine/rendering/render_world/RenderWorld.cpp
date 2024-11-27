@@ -406,10 +406,9 @@ namespace engine
 			{
 				shlib::GlobalUniformData frame_data{};
 				frame_data.lightCount = light_count;
-				frame_data.cameraCount = camera_offset;
+				frame_data.camera_count = camera_offset;
 				frame_data.defaultCameraID = 0;
-				frame_data.maxCommandsCount = camera_offset * draw_count;
-				frame_data.rawCommandsCount = draw_count;
+				frame_data.draw_count = draw_count;
 
 				const uint8_t* uniform_data = reinterpret_cast<const uint8_t*>(&frame_data);
 				uint64_t uniform_size = sizeof(shlib::GlobalUniformData);
