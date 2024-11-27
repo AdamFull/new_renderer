@@ -423,7 +423,7 @@ namespace engine
 
 		void ShaderPass::FinalizeTarget(gfx::CommandList& command_list, uint32_t binding_point, uint32_t target)
 		{
-			ReadResource(binding_point, target);
+			ReadResource(binding_point, target, ~0u);
 			ResolveDependencies(command_list);
 
 			auto& resource = graph.GetResource(target);

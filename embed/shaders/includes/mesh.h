@@ -36,7 +36,7 @@ struct Mesh
 
 	uint32_t first_index;
 	uint32_t index_count;
-	uint32_t first_vertex;
+	int32_t first_vertex;
 	uint32_t vertex_count;
 
 	GeometryDrawBounds bounds;

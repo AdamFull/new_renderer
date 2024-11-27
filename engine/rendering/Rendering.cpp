@@ -19,6 +19,8 @@
 
 #include "Globals.h"
 
+#include <embed/shaders/includes/culling.h>
+
 #include <engine/world/EntityManager.h>
 
 #include <imgui.h>
@@ -653,14 +655,27 @@ namespace engine
 				create_info.shader_name = "culling:clear_counters";
 
 				create_info.draw_callback = [this,
-					alive_commands_buffer,
-					indirect_draw_commands,
 					indirect_count_buffer
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
 						ZoneScoped;
 
-						assert(false && "NOT IPMLEMENTED");
+						auto* count_buffer = render_graph->GetBuffer(indirect_count_buffer);
+
+						self.WriteResource(indirect_count_buffer, ~0u);
+
+						self.ResolveDependencies(command_list);
+
+						auto& draw_data_block = self.GetUniformBlock(shlib::CullingInfo_label);
+						auto& draw_desc_buffers = draw_data_block.As<shlib::CullingInfo>();
+						draw_desc_buffers.draw_counts = count_buffer->GetAddress();
+
+						self.BindResources(command_list);
+
+						uint32_t group_x{ 512u }, group_y{ 1u }, group_z{ 1u };
+
+						self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
+						command_list.Dispatch(group_x, group_y, group_z);
 					};
 
 				render_graph->AddNode(render_graph->CreateNode(create_info));
@@ -679,8 +694,7 @@ namespace engine
 					{
 						ZoneScoped;
 
-						assert(false && "NOT IPMLEMENTED");
-
+						auto* draw_commands = render_world->GetDrawBuffer();
 						auto* alive_meshes = render_graph->GetBuffer(alive_commands_buffer);
 						auto* argument_buffer = render_graph->GetBuffer(indirect_draw_commands);
 						auto* count_buffer = render_graph->GetBuffer(indirect_count_buffer);
@@ -691,10 +705,17 @@ namespace engine
 
 						self.ResolveDependencies(command_list);
 
+						auto& draw_data_block = self.GetUniformBlock(shlib::CullingInfo_label);
+						auto& draw_desc_buffers = draw_data_block.As<shlib::CullingInfo>();
+						draw_desc_buffers.source_descriptions = draw_commands->GetAddress();
+						draw_desc_buffers.alive_descriptions = alive_meshes->GetAddress();
+						draw_desc_buffers.alive_draw_commands = argument_buffer->GetAddress();
+						draw_desc_buffers.draw_counts = count_buffer->GetAddress();
 
 						self.BindResources(command_list);
 
 						uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
+						group_x = render_world->GetDrawCount() * render_world->GetCameraCount();
 
 						self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
 						command_list.Dispatch(group_x, group_y, group_z);
@@ -708,16 +729,16 @@ namespace engine
 				RenderShaderPassCreateInfo create_info{};
 				create_info.shader_name = "lighting:unidirectional_shadow:CASCADED_SHADOW:HAS_TEXCOORD:HAS_NORMAL:TANGENT_VEC4:INDEX_16BIT";
 				create_info.pipeline_state.rasterization_state.cull_mode = gfx::CullModeFlag::eFront;
-
+			
 				// Depth state
 				create_info.pipeline_state.depth_stencil_state.depth_test = true;
 				create_info.pipeline_state.depth_stencil_state.depth_write = true;
 				create_info.pipeline_state.depth_stencil_state.depth_compare_op = gfx::CompareOp::eLess;
-
+			
 				create_info.AddWriteAttachment(cascaded_shadows_target, ResourceAttachmentTypeFlag::eDepth, gfx::ClearColor{ 1.f });
-
+			
 				create_info.pipeline_state.primitive_topology = gfx::PrimitiveTopology::eTriangleList;
-
+			
 				create_info.draw_callback = [this,
 					cascaded_shadows_target,
 					alive_commands_buffer,
@@ -726,97 +747,97 @@ namespace engine
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
 						ZoneScoped;
-
+			
 						auto* shadow_map = render_graph->GetTexture(cascaded_shadows_target);
 						auto* alive_meshes = render_graph->GetBuffer(alive_commands_buffer);
 						auto* argument_buffer = render_graph->GetBuffer(indirect_draw_commands);
 						auto* count_buffer = render_graph->GetBuffer(indirect_count_buffer);
-
+			
 						auto viewport_width = shadow_map->GetWidth();
 						auto viewport_height = shadow_map->GetHeight();
-
+			
 						command_list.SetViewport(0.f, 0.f, viewport_width, viewport_height, 0.f, 1.f);
 						command_list.SerScissor(0u, 0u, viewport_width, viewport_height);
-
+			
 						self.ReadResource(alive_commands_buffer, ~0u);
 						self.ReadResource(indirect_draw_commands, ~0u);
 						self.ReadResource(indirect_count_buffer, ~0u);
-
+			
 						self.ResolveDependencies(command_list);
-
+			
 						auto& geometry_buffer = *geometry_buffers.back();
 						geometry_buffer.BindIndexBuffer(command_list);
-
+			
 						auto& buffers = self.GetUniformBlock(render_label::geometry_buffers);
 						buffers.Set(render_label::position, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
 						buffers.Set(render_label::texcoord, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTexCoord));
-
+			
 						// Bind buffers that uses in draw
 						auto& draw_data_block = self.GetUniformBlock(shlib::DrawDescriptionBuffers_label);
 						auto& draw_desc_buffers = draw_data_block.As<shlib::DrawDescriptionBuffers>();
 						draw_desc_buffers.draw_descriptions_ptr = alive_meshes->GetAddress();
 						draw_desc_buffers.draw_commands_ptr = argument_buffer->GetAddress();
-
+			
 						auto& constants = self.GetConstantBlock();
-
+			
 						self.BindResources(command_list);
-
+			
 						gfx::IndirectDrawCommand draw_command{};
 						draw_command.indexed_draw = true;
 						draw_command.draw_count = render_world->GetDrawCount();
 						draw_command.argument_buffer = argument_buffer;
 						draw_command.command_stride = sizeof(shlib::DrawIndexedIndirectData);
 						draw_command.count_buffer = count_buffer;
-
+			
 						uint32_t draw_call_id{ 0u };
 						self.Begin(command_list);
-
+			
 						int32_t shadow_index{ 0 };
-
+			
 						auto view = world::EntityManager::View<world::ecs::FDirectionalLightComponent>();
 						for (auto [entity, light] : view.each())
 						{
 							if (!light.castShadows)
 								continue;
-
+			
 							for (int32_t layer = 0; layer < shlib::cascade_shadow_map_cascade_count; ++layer)
 							{
 								constants.Set(render_label::call_id, draw_call_id);
 								constants.Set(render_label::shadow_index, shadow_index);
 								constants.Set(render_label::layer, layer);
-
+			
 								self.PushConstantRanges(command_list);
-
+			
 								draw_command.argument_offset = light.shadow_casters[layer] * draw_command.command_stride;
 								draw_command.count_offset = light.shadow_casters[layer] * sizeof(uint32_t);
-
+			
 								command_list.DrawIndirect(draw_command);
 							}
-
+			
 							shadow_index++;
 						}
-
+			
 						self.End(command_list);
 					};
-
+			
 				render_graph->AddNode(render_graph->CreateNode(create_info));
 			}
-
+			
 			// Draw omni shadows
 			{
 				RenderShaderPassCreateInfo create_info{};
 				create_info.shader_name = "lighting:unidirectional_shadow:OMNI_SHADOW:HAS_TEXCOORD:HAS_NORMAL:TANGENT_VEC4:INDEX_16BIT";
 				create_info.pipeline_state.rasterization_state.cull_mode = gfx::CullModeFlag::eFront;
-
+			
 				// Depth state
 				create_info.pipeline_state.depth_stencil_state.depth_test = true;
 				create_info.pipeline_state.depth_stencil_state.depth_write = true;
 				create_info.pipeline_state.depth_stencil_state.depth_compare_op = gfx::CompareOp::eLess;
-
+			
 				create_info.AddWriteAttachment(omni_shadows_target, ResourceAttachmentTypeFlag::eDepth, gfx::ClearColor{ 1.f });
-
+			
 				create_info.pipeline_state.primitive_topology = gfx::PrimitiveTopology::eTriangleList;
-
+			
 				create_info.draw_callback = [this,
 					omni_shadows_target,
 					alive_commands_buffer,
@@ -825,97 +846,97 @@ namespace engine
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
 						ZoneScoped;
-
+			
 						auto* shadow_map = render_graph->GetTexture(omni_shadows_target);
 						auto* alive_meshes = render_graph->GetBuffer(alive_commands_buffer);
 						auto* argument_buffer = render_graph->GetBuffer(indirect_draw_commands);
 						auto* count_buffer = render_graph->GetBuffer(indirect_count_buffer);
-
+			
 						auto viewport_width = shadow_map->GetWidth();
 						auto viewport_height = shadow_map->GetHeight();
-
+			
 						command_list.SetViewport(0.f, 0.f, viewport_width, viewport_height, 0.f, 1.f);
 						command_list.SerScissor(0u, 0u, viewport_width, viewport_height);
-
+			
 						self.ReadResource(alive_commands_buffer, ~0u);
 						self.ReadResource(indirect_draw_commands, ~0u);
 						self.ReadResource(indirect_count_buffer, ~0u);
-
+			
 						self.ResolveDependencies(command_list);
-
+			
 						auto& geometry_buffer = *geometry_buffers.back();
 						geometry_buffer.BindIndexBuffer(command_list);
-
+			
 						auto& buffers = self.GetUniformBlock(render_label::geometry_buffers);
 						buffers.Set(render_label::position, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
 						buffers.Set(render_label::texcoord, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTexCoord));
-
+			
 						// Bind buffers that uses in draw
 						auto& draw_data_block = self.GetUniformBlock(shlib::DrawDescriptionBuffers_label);
 						auto& draw_desc_buffers = draw_data_block.As<shlib::DrawDescriptionBuffers>();
 						draw_desc_buffers.draw_descriptions_ptr = alive_meshes->GetAddress();
 						draw_desc_buffers.draw_commands_ptr = argument_buffer->GetAddress();
-
+			
 						auto& constants = self.GetConstantBlock();
-
+			
 						self.BindResources(command_list);
-
+			
 						gfx::IndirectDrawCommand draw_command{};
 						draw_command.indexed_draw = true;
 						draw_command.draw_count = render_world->GetDrawCount();
 						draw_command.argument_buffer = render_graph->GetBuffer(indirect_draw_commands);
 						draw_command.command_stride = sizeof(shlib::DrawIndexedIndirectData);
 						draw_command.count_buffer = render_graph->GetBuffer(indirect_count_buffer);
-
+			
 						uint32_t draw_call_id{ 0u };
 						self.Begin(command_list);
-
+			
 						int32_t shadow_index{ 0 };
-
+			
 						auto view = world::EntityManager::View<world::ecs::FPointLightComponent>();
 						for (auto [entity, light] : view.each())
 						{
 							if (!light.castShadows)
 								continue;
-
+			
 							for (int32_t layer = 0; layer < 6; ++layer)
 							{
 								constants.Set(render_label::call_id, draw_call_id);
 								constants.Set(render_label::shadow_index, shadow_index);
 								constants.Set(render_label::layer, layer);
-
+			
 								self.PushConstantRanges(command_list);
-
+			
 								draw_command.argument_offset = light.shadow_casters[layer] * draw_command.command_stride;
 								draw_command.count_offset = light.shadow_casters[layer] * sizeof(uint32_t);
-
+			
 								command_list.DrawIndirect(draw_command);
 							}
-
+			
 							shadow_index++;
 						}
-
+			
 						self.End(command_list);
 					};
-
+			
 				render_graph->AddNode(render_graph->CreateNode(create_info));
 			}
-
+			
 			// Draw spot shadows
 			{
 				RenderShaderPassCreateInfo create_info{};
 				create_info.shader_name = "lighting:unidirectional_shadow:HAS_TEXCOORD:HAS_NORMAL:TANGENT_VEC4:INDEX_16BIT";
 				create_info.pipeline_state.rasterization_state.cull_mode = gfx::CullModeFlag::eFront;
-
+			
 				// Depth state
 				create_info.pipeline_state.depth_stencil_state.depth_test = true;
 				create_info.pipeline_state.depth_stencil_state.depth_write = true;
 				create_info.pipeline_state.depth_stencil_state.depth_compare_op = gfx::CompareOp::eLess;
-
+			
 				create_info.AddWriteAttachment(omni_shadows_target, ResourceAttachmentTypeFlag::eDepth, gfx::ClearColor{ 1.f });
-
+			
 				create_info.pipeline_state.primitive_topology = gfx::PrimitiveTopology::eTriangleList;
-
+			
 				create_info.draw_callback = [this,
 					directional_shadows_target,
 					alive_commands_buffer,
@@ -924,98 +945,98 @@ namespace engine
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
 						ZoneScoped;
-
+			
 						auto* shadow_map = render_graph->GetTexture(directional_shadows_target);
 						auto* alive_meshes = render_graph->GetBuffer(alive_commands_buffer);
 						auto* argument_buffer = render_graph->GetBuffer(indirect_draw_commands);
 						auto* count_buffer = render_graph->GetBuffer(indirect_count_buffer);
-
+			
 						auto viewport_width = shadow_map->GetWidth();
 						auto viewport_height = shadow_map->GetHeight();
-
+			
 						command_list.SetViewport(0.f, 0.f, viewport_width, viewport_height, 0.f, 1.f);
 						command_list.SerScissor(0u, 0u, viewport_width, viewport_height);
-
+			
 						self.ReadResource(alive_commands_buffer, ~0u);
 						self.ReadResource(indirect_draw_commands, ~0u);
 						self.ReadResource(indirect_count_buffer, ~0u);
-
+			
 						self.ResolveDependencies(command_list);
-
+			
 						auto& geometry_buffer = *geometry_buffers.back();
 						geometry_buffer.BindIndexBuffer(command_list);
-
+			
 						auto& buffers = self.GetUniformBlock(render_label::geometry_buffers);
 						buffers.Set(render_label::position, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
 						buffers.Set(render_label::texcoord, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTexCoord));
-
+			
 						// Bind buffers that uses in draw
 						auto& draw_data_block = self.GetUniformBlock(shlib::DrawDescriptionBuffers_label);
 						auto& draw_desc_buffers = draw_data_block.As<shlib::DrawDescriptionBuffers>();
 						draw_desc_buffers.draw_descriptions_ptr = alive_meshes->GetAddress();
 						draw_desc_buffers.draw_commands_ptr = argument_buffer->GetAddress();
-
+			
 						auto& constants = self.GetConstantBlock();
-
+			
 						self.BindResources(command_list);
-
+			
 						gfx::IndirectDrawCommand draw_command{};
 						draw_command.indexed_draw = true;
 						draw_command.draw_count = render_world->GetDrawCount();
 						draw_command.argument_buffer = render_graph->GetBuffer(indirect_draw_commands);
 						draw_command.command_stride = sizeof(shlib::DrawIndexedIndirectData);
 						draw_command.count_buffer = render_graph->GetBuffer(indirect_count_buffer);
-
+			
 						uint32_t draw_call_id{ 0u };
 						self.Begin(command_list);
-
+			
 						int32_t shadow_index{ 0 };
-
+			
 						auto view = world::EntityManager::View<world::ecs::FSpotLightComponent>();
 						for (auto [entity, light] : view.each())
 						{
 							if (!light.castShadows)
 								continue;
-
+			
 							constants.Set(render_label::call_id, draw_call_id);
 							constants.Set(render_label::shadow_index, shadow_index);
 							constants.Set(render_label::layer, shadow_index);
-
+			
 							self.PushConstantRanges(command_list);
-
+			
 							draw_command.argument_offset = light.shadow_caster * draw_command.command_stride;
 							draw_command.count_offset = light.shadow_caster * sizeof(uint32_t);
-
+			
 							command_list.DrawIndirect(draw_command);
-
+			
 							shadow_index++;
 						}
-
+			
 						self.End(command_list);
 					};
-
+			
 				render_graph->AddNode(render_graph->CreateNode(create_info));
 			}
-
+			
 			// Geometry draw
 			{
 				RenderShaderPassCreateInfo create_info{};
 				create_info.shader_name = "visibilitybuffer:write:HAS_TEXCOORD:HAS_NORMAL:TANGENT_VEC4:INDEX_16BIT";
 				create_info.pipeline_state.rasterization_state.cull_mode = gfx::CullModeFlag::eFront;
-
+			
 				// Depth state
 				create_info.pipeline_state.depth_stencil_state.depth_test = true;
 				create_info.pipeline_state.depth_stencil_state.depth_write = true;
 				create_info.pipeline_state.depth_stencil_state.depth_compare_op = gfx::CompareOp::eLess;
-
-
+			
+			
 				create_info.AddWriteAttachment(visbuffer_geometry_target, ResourceAttachmentTypeFlag::eColor, gfx::ClearColor{ 0.f, 0.f, 0.f, 0.f });
 				create_info.AddWriteAttachment(visbuffer_vboinst_target, ResourceAttachmentTypeFlag::eColor, gfx::ClearColor{ 0.f, 0.f, 0.f, 0.f });
 				create_info.AddWriteAttachment(zbuffer_depth_target, ResourceAttachmentTypeFlag::eDepth, gfx::ClearColor{ 1.f });
-
+			
 				create_info.pipeline_state.primitive_topology = gfx::PrimitiveTopology::eTriangleList;
 				create_info.pipeline_state.color_blending_state.attachment_count = 2;
-
+			
 				create_info.draw_callback = [this,
 					alive_commands_buffer,
 					indirect_draw_commands,
@@ -1023,45 +1044,45 @@ namespace engine
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
 						ZoneScoped;
-
+			
 						auto* backbuffer = render_graph->GetTexture(backbuffer_resource);
 						auto* alive_meshes = render_graph->GetBuffer(alive_commands_buffer);
 						auto* argument_buffer = render_graph->GetBuffer(indirect_draw_commands);
 						auto* count_buffer = render_graph->GetBuffer(indirect_count_buffer);
-
+			
 						auto viewport_width = backbuffer->GetWidth();
 						auto viewport_height = backbuffer->GetHeight();
-
+			
 						command_list.SetViewport(0.f, 0.f, viewport_width, viewport_height, 0.f, 1.f);
 						command_list.SerScissor(0u, 0u, viewport_width, viewport_height);
-
+			
 						self.ReadResource(alive_commands_buffer, ~0u);
 						self.ReadResource(indirect_draw_commands, ~0u);
 						self.ReadResource(indirect_count_buffer, ~0u);
-
+			
 						self.ResolveDependencies(command_list);
-
+			
 						auto& geometry_buffer = *geometry_buffers.back();
 						geometry_buffer.BindIndexBuffer(command_list);
-
+			
 						auto& buffers = self.GetUniformBlock(render_label::geometry_buffers);
 						buffers.Set(render_label::position, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
 						buffers.Set(render_label::texcoord, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTexCoord));
-
+			
 						// Bind buffers that uses in draw
 						auto& draw_data_block = self.GetUniformBlock(shlib::DrawDescriptionBuffers_label);
 						auto& draw_desc_buffers = draw_data_block.As<shlib::DrawDescriptionBuffers>();
 						draw_desc_buffers.draw_descriptions_ptr = alive_meshes->GetAddress();
 						draw_desc_buffers.draw_commands_ptr = argument_buffer->GetAddress();
-
+			
 						auto& constants = self.GetConstantBlock();
 						constants.Set(render_label::call_id, 0u);
 						constants.Set(render_label::camera_id, 0u);
-
+			
 						self.PushConstantRanges(command_list);
-
+			
 						self.BindResources(command_list);
-
+			
 						// TODO: USE CURRENT CAMERA HERE FOR CALCULATE OFFSET!!!!
 						gfx::IndirectDrawCommand draw_command{};
 						draw_command.indexed_draw = true;
@@ -1071,21 +1092,23 @@ namespace engine
 						draw_command.command_stride = sizeof(shlib::DrawIndexedIndirectData);
 						draw_command.count_buffer = count_buffer;
 						draw_command.count_offset = 0;
-
+			
 						self.Begin(command_list);
 						command_list.DrawIndirect(draw_command);
 						self.End(command_list);
 					};
-
+			
 				render_graph->AddNode(render_graph->CreateNode(create_info));
 			}
-
+			
 			// Resolve materials
 			{
 				ComputeShaderPassCreateInfo create_info{};
 				create_info.shader_name = "visibilitybuffer:shade:HAS_TEXCOORD:HAS_NORMAL:TANGENT_VEC4:INDEX_16BIT";
-
+			
 				create_info.draw_callback = [this, 
+					alive_commands_buffer,
+					indirect_draw_commands,
 					hdr0,
 					brdf_lut_target,
 					irradiance_cube_target,
@@ -1100,25 +1123,31 @@ namespace engine
 					{
 						ZoneScoped;
 
+						auto* alive_meshes = render_graph->GetBuffer(alive_commands_buffer);
+						auto* argument_buffer = render_graph->GetBuffer(indirect_draw_commands);
+
+						// Indirect generated buffers
+						self.ReadResource(alive_commands_buffer, ~0u);
+						self.ReadResource(indirect_draw_commands, ~0u);
+			
 						self.BindWriteResource(render_label::write_image0, hdr0, ~0u);
 						self.BindResource(render_label::sample_image0, brdf_lut_target, ~0u); // binding 1
 						self.BindResource(render_label::sample_image1, irradiance_cube_target, ~0u); // binding 2
 						self.BindResource(render_label::sample_image2, prefiltered_cube_target, ~0u); // binding 3
-
+			
 						self.BindReadResource(render_label::sample_image3, visbuffer_geometry_target, ~0u);
 						self.BindReadResource(render_label::sample_image4, visbuffer_vboinst_target, ~0u);
 						self.BindReadResource(render_label::sample_image5, zbuffer_depth_target, ~0u);
-
+			
 						self.BindReadResource(render_label::sample_image6, cascaded_shadows_target, ~0u);
 						self.BindReadResource(render_label::sample_image7, directional_shadows_target, ~0u);
 						self.BindReadResource(render_label::sample_image8, omni_shadows_target, ~0u);
-
+			
 						self.ResolveDependencies(command_list);
-
-
+			
 						auto& geometry_buffer = *geometry_buffers.back();
 						geometry_buffer.BindIndexBuffer(command_list);
-
+			
 						auto& buffers = self.GetUniformBlock(render_label::geometry_buffers);
 						buffers.Set(render_label::position, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
 						buffers.Set(render_label::texcoord, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTexCoord));
@@ -1126,20 +1155,25 @@ namespace engine
 						buffers.Set(render_label::tangent, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTangent));
 						buffers.Set(render_label::indices, geometry_buffer.GetIndexBufferAddress());
 
+						auto& draw_data_block = self.GetUniformBlock(shlib::DrawDescriptionBuffers_label);
+						auto& draw_desc_buffers = draw_data_block.As<shlib::DrawDescriptionBuffers>();
+						draw_desc_buffers.draw_descriptions_ptr = alive_meshes->GetAddress();
+						draw_desc_buffers.draw_commands_ptr = argument_buffer->GetAddress();
+			
 						auto& constants = self.GetConstantBlock();
 						constants.Set(render_label::call_id, 0u);
 						constants.Set(render_label::camera_id, 0u);
-
+			
 						self.PushConstantRanges(command_list);
-
+			
 						self.BindResources(command_list);
-
+			
 						self.DispatchForTarget(command_list, hdr0, true);
 					};
-
+			
 				render_graph->AddNode(render_graph->CreateNode(create_info));
 			}
-
+			
 			// Compute static motion vectors (can be started in another queue)
 			{
 				ComputeShaderPassCreateInfo create_info{};
@@ -1150,57 +1184,57 @@ namespace engine
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
 						ZoneScoped;
-
+			
 						self.BindWriteResource(render_label::write_image0, motion_vectors_target, ~0u);
 						self.BindReadResource(render_label::sample_image0, zbuffer_depth_target, ~0u);
-
+			
 						self.ResolveDependencies(command_list);
 						self.BindResources(command_list);
-
+			
 						self.DispatchForTarget(command_list, zbuffer_depth_target, true);
 					};
-
+			
 				render_graph->AddNode(render_graph->CreateNode(create_info));
 			}
-
+			
 			uint32_t input_target = hdr0;
 			uint32_t output_target = hdr1;
-
+			
 			// Copy history
 			{
 				ComputeShaderPassCreateInfo create_info{};
 				create_info.shader_name = "utility:copy_compute";
-
+			
 				create_info.draw_callback = [this,
 					input_target,
 					hdr0_history
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
 						ZoneScoped;
-
+			
 						self.BindReadResource(render_label::sample_image0, input_target, ~0u);
 						self.BindWriteResource(render_label::write_image0, hdr0_history, ~0u);
-
+			
 						self.ResolveDependencies(command_list);
 						self.BindResources(command_list);
-
+			
 						self.DispatchForTarget(command_list, input_target, true);
 					};
-
+			
 				render_graph->AddNode(render_graph->CreateNode(create_info));
 			}
-
+			
 			uint32_t final_target = input_target;
-
+			
 			// Post processing
 			{
 				u32 pass_count{ 0u };
-
+			
 				// FXAA 
 				{
 					ComputeShaderPassCreateInfo create_info{};
 					create_info.shader_name = "postprocess:apply_effect:FXAA";
-
+			
 					create_info.enabled_callback = []() -> bool { return postprocess.fxaa.enable; };
 					create_info.draw_callback = [this,
 						input_target,
@@ -1209,27 +1243,27 @@ namespace engine
 					](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 						{
 							ZoneScoped;
-
+			
 							self.BindReadResource(render_label::sample_image0, input_target, ~0u);
 							self.BindWriteResource(render_label::write_image0, output_target, ~0u);
-
+			
 							self.ResolveDependencies(command_list);
 							self.BindResources(command_list);
-
+			
 							self.DispatchForTarget(command_list, input_target, true);
 						};
-
+			
 					if (postprocess.fxaa.enable)
 						SWAP_COUNT(input_target, output_target);
-
+			
 					render_graph->AddNode(render_graph->CreateNode(create_info));
 				}
-
+			
 				// Apply motion blur
 				{
 					ComputeShaderPassCreateInfo create_info{};
 					create_info.shader_name = use_low_precision_velocity ? "postprocess:apply_effect:MOTION_BLUR:LOW_PRECISION_VELOCITY" : "postprocess:apply_effect:MOTION_BLUR";
-
+			
 					create_info.enabled_callback = []() -> bool { return postprocess.motionblur.enable; };
 					create_info.draw_callback = [this,
 						input_target,
@@ -1238,57 +1272,57 @@ namespace engine
 					](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 						{
 							ZoneScoped;
-
+			
 							self.BindReadResource(render_label::sample_image0, input_target, ~0u);
 							self.BindReadResource(render_label::sample_image1, motion_vectors_target, ~0u);
 							self.BindWriteResource(render_label::write_image0, output_target, ~0u);
-
+			
 							self.ResolveDependencies(command_list);
 							self.BindResources(command_list);
-
+			
 							self.DispatchForTarget(command_list, input_target, true);
 						};
-
+			
 					if (postprocess.motionblur.enable)
 						SWAP_COUNT(input_target, output_target);
-
+			
 					render_graph->AddNode(render_graph->CreateNode(create_info));
 				}
-
+			
 				// Compute dof
 				{
 					auto group_node = render_graph->CreateNode("DOF", 0xFFFF33FF);
 					auto* node = static_cast<GroupNode*>(group_node.get());
 					node->SetGroupEnabledCallback([]() -> bool { return postprocess.dof.enable; });
-
+			
 					// Compute bokeh
 					{
 						ComputeShaderPassCreateInfo create_info{};
 						create_info.shader_name = "postprocess:bokeh";
-
+			
 						create_info.draw_callback = [this,
 							input_target,
 							hdr0_div2
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
 								ZoneScoped;
-
+			
 								self.BindReadResource(render_label::sample_image0, input_target, ~0u);
 								self.BindWriteResource(render_label::write_image0, hdr0_div2, ~0u);
 								self.ResolveDependencies(command_list);
 								self.BindResources(command_list);
-
+			
 								self.DispatchForTarget(command_list, input_target, true);
 							};
-
+			
 						node->AddNode(std::move(render_graph->CreateNode(create_info)));
 					}
-
+			
 					// Apply dof
 					{
 						ComputeShaderPassCreateInfo create_info{};
 						create_info.shader_name = "postprocess:apply_effect:DOF";
-
+			
 						create_info.draw_callback = [this,
 							input_target,
 							output_target,
@@ -1297,155 +1331,155 @@ namespace engine
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
 								ZoneScoped;
-
+			
 								self.BindReadResource(render_label::sample_image0, input_target, ~0u);
 								self.BindReadResource(render_label::sample_image1, hdr0_div2, ~0u);
 								self.BindReadResource(render_label::sample_image2, zbuffer_depth_target, ~0u);
 								self.BindWriteResource(render_label::write_image0, output_target, ~0u);
 								self.ResolveDependencies(command_list);
 								self.BindResources(command_list);
-
+			
 								self.DispatchForTarget(command_list, input_target, true);
 							};
-
+			
 						node->AddNode(std::move(render_graph->CreateNode(create_info)));
 					}
-
+			
 					if (postprocess.dof.enable)
 						SWAP_COUNT(input_target, output_target);
-
+			
 					render_graph->AddNode(std::move(group_node));
 				}
-
+			
 				// Compute bloom
 				{
 					auto group_node = render_graph->CreateNode("bloom", 0xFF3333FF);
 					auto* node = static_cast<GroupNode*>(group_node.get());
 					node->SetGroupEnabledCallback([]() -> bool { return postprocess.bloom.enable; });
-
+			
 					// Starting from brightness detection pass
 					{
 						ComputeShaderPassCreateInfo create_info{};
 						create_info.shader_name = bloom_use_brightness ? "postprocess:brightdetect" : "utility:copy_compute";
-
+			
 						create_info.draw_callback = [this,
 							input_target,
 							hdr0_div2
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
 								ZoneScoped;
-
+			
 								self.BindReadResource(render_label::sample_image0, input_target, ~0u);
 								self.BindWriteResource(render_label::write_image0, hdr0_div2, ~0u);
 								self.ResolveDependencies(command_list);
 								self.BindResources(command_list);
-
+			
 								self.DispatchForTarget(command_list, hdr0_div2, true);
 							};
-
+			
 						node->AddNode(std::move(render_graph->CreateNode(create_info)));
 					}
-
+			
 					// Begin downsampling
 					{
 						{
 							ComputeShaderPassCreateInfo create_info{};
 							create_info.shader_name = "postprocess:downsample:FIRST_PASS";
-
+			
 							create_info.draw_callback = [this,
 								hdr0_div2,
 								bloom_target
 							](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 								{
 									ZoneScoped;
-
+			
 									self.WriteResource(render_label::write_image0, bloom_target, ~0u);
-
+			
 									self.BindReadResource(render_label::sample_image0, hdr0_div2, ~0u);
 									self.BindResource(render_label::write_image0, bloom_target, ~0u);
-
+			
 									self.ResolveDependencies(command_list);
 									self.BindResources(command_list);
-
+			
 									self.DispatchForTarget(command_list, bloom_target, true);
 								};
-
+			
 							node->AddNode(std::move(render_graph->CreateNode(create_info)));
 						}
-
+			
 						{
 							ComputeShaderPassCreateInfo create_info{};
 							create_info.shader_name = "postprocess:downsample";
-
+			
 							create_info.draw_callback = [this,
 								bloom_target
 							](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 								{
 									ZoneScoped;
-
+			
 									auto target = render_graph->GetTexture(bloom_target);
-
+			
 									for (int32_t mip = 1; mip < bloom_blur_depth; ++mip)
 									{
 										self.BindReadResource(render_label::sample_image0, bloom_target, mip - 1);
 										self.BindWriteResource(render_label::write_image0, bloom_target, mip);
-
+			
 										self.ResolveDependencies(command_list);
 										self.BindResources(command_list);
-
+			
 										uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
-
+			
 										group_x = target->GetWidth() >> mip;
 										group_y = target->GetHeight() >> mip;
-
+			
 										self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
 										command_list.Dispatch(group_x, group_y, group_z);
 									}
 								};
-
+			
 							node->AddNode(std::move(render_graph->CreateNode(create_info)));
 						}
 					}
-
+			
 					// Upsample
 					{
 						ComputeShaderPassCreateInfo create_info{};
 						create_info.shader_name = "postprocess:upsample";
-
+			
 						create_info.draw_callback = [this,
 							bloom_target
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
 								ZoneScoped;
-
+			
 								auto target = render_graph->GetTexture(bloom_target);
-
+			
 								for (int32_t mip = bloom_blur_depth - 1; mip > 0; --mip)
 								{
 									self.BindReadResource(render_label::sample_image0, bloom_target, mip);
 									self.BindWriteResource(render_label::write_image0, bloom_target, mip - 1);
-
+			
 									self.ResolveDependencies(command_list);
 									self.BindResources(command_list);
-
+			
 									uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
-
+			
 									group_x = target->GetWidth() >> (mip - 1);
 									group_y = target->GetHeight() >> (mip - 1);
-
+			
 									self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
 									command_list.Dispatch(group_x, group_y, group_z);
 								}
 							};
-
+			
 						node->AddNode(std::move(render_graph->CreateNode(create_info)));
 					}
-
+			
 					// Apply bloom
 					{
 						ComputeShaderPassCreateInfo create_info{};
 						create_info.shader_name = "postprocess:apply_effect:BLOOM";
-
+			
 						create_info.draw_callback = [this,
 							input_target,
 							output_target,
@@ -1454,68 +1488,68 @@ namespace engine
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
 								ZoneScoped;
-
+			
 								self.BindWriteResource(render_label::write_image0, output_target, ~0u);
 								self.BindReadResource(render_label::sample_image0, input_target, ~0u);
 								self.BindReadResource(render_label::sample_image1, bloom_target, ~0u);
 								self.BindResource(render_label::sample_image2, dirt_mask_texture, ~0u);
-
+			
 								self.ResolveDependencies(command_list);
 								self.BindResources(command_list);
-
+			
 								self.DispatchForTarget(command_list, output_target, true);
 							};
-
+			
 						node->AddNode(std::move(render_graph->CreateNode(create_info)));
 					}
-
+			
 					render_graph->AddNode(std::move(group_node));
-
+			
 					if (postprocess.bloom.enable)
 						SWAP_COUNT(input_target, output_target);
 				}
-
+			
 				// Tonemapping 
 				{
 					auto group_node = render_graph->CreateNode("tonemapping", 0xFFF9F51F);
 					auto* node = static_cast<GroupNode*>(group_node.get());
 					node->SetGroupEnabledCallback([]() -> bool { return postprocess.tonemap.enable; });
-
+			
 					// Compute histogram
 					{
 						ComputeShaderPassCreateInfo create_info{};
 						create_info.shader_name = "postprocess:compute_histogram";
-
+			
 						create_info.draw_callback = [this,
 							input_target,
 							histogram_buffer
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
 								ZoneScoped;
-
+			
 								self.BindReadResource(render_label::sample_image0, input_target, ~0u);
 								self.BindWriteResource(render_label::histogram_buffer, histogram_buffer, ~0u);
 								self.ResolveDependencies(command_list);
-
+			
 								float log_lum_range = postprocess.tonemap.lumMax - postprocess.tonemap.lumMin;
-
+			
 								auto& uniform = self.GetUniformBlock(render_label::histogram_compute_params);
 								uniform.Set(render_label::min_log_lum, postprocess.tonemap.lumMin);
 								uniform.Set(render_label::log_lum_range, log_lum_range);
-
+			
 								self.BindResources(command_list);
-
+			
 								self.DispatchForTarget(command_list, input_target, true);
 							};
-
+			
 						node->AddNode(std::move(render_graph->CreateNode(create_info)));
 					}
-
+			
 					// Compute avg screen space brightness
 					{
 						ComputeShaderPassCreateInfo create_info{};
 						create_info.shader_name = "postprocess:compute_brightness";
-
+			
 						create_info.draw_callback = [this,
 							avg_brightness_target,
 							histogram_buffer,
@@ -1523,36 +1557,36 @@ namespace engine
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
 								ZoneScoped;
-
+			
 								self.BindReadResource(render_label::histogram_buffer, histogram_buffer, ~0u);
 								self.BindWriteResource(render_label::write_image0, avg_brightness_target, ~0u);
 								self.ResolveDependencies(command_list);
-
+			
 								float log_lum_range = postprocess.tonemap.lumMax - postprocess.tonemap.lumMin;
 								float time_coeff = glm::clamp<f32>(1.0f - glm::exp(-delta_time * postprocess.tonemap.tau), 0.0, 1.0);
-
+			
 								auto* texture = render_graph->GetTexture(input_target);
-
+			
 								auto& uniform = self.GetUniformBlock(render_label::histogram_compute_params);
 								uniform.Set(render_label::min_log_lum, postprocess.tonemap.lumMin);
 								uniform.Set(render_label::log_lum_range, log_lum_range);
 								uniform.Set(render_label::time_coeff, time_coeff);
 								uniform.Set(render_label::num_pixels_x, static_cast<float>(texture->GetWidth()));
 								uniform.Set(render_label::num_pixels_y, static_cast<float>(texture->GetHeight()));
-
+			
 								self.BindResources(command_list);
-
+			
 								command_list.Dispatch(1u, 1u, 1u);
 							};
-
+			
 						node->AddNode(std::move(render_graph->CreateNode(create_info)));
 					}
-
+			
 					// Apply tonemapping
 					{
 						ComputeShaderPassCreateInfo create_info{};
 						create_info.shader_name = "postprocess:apply_effect:TONEMAP";
-
+			
 						create_info.draw_callback = [this,
 							input_target,
 							output_target,
@@ -1560,36 +1594,36 @@ namespace engine
 						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 							{
 								ZoneScoped;
-
+			
 								self.BindWriteResource(render_label::write_image0, output_target, ~0u);
 								self.BindReadResource(render_label::sample_image0, input_target, ~0u);
 								self.BindReadResource(render_label::sample_image1, avg_brightness_target, ~0u);
-
+			
 								self.ResolveDependencies(command_list);
 								self.BindResources(command_list);
-
+			
 								self.DispatchForTarget(command_list, input_target, true);
 							};
-
+			
 						if (postprocess.tonemap.enable)
 							SWAP_COUNT(input_target, output_target);
-
+			
 						node->AddNode(render_graph->CreateNode(create_info));
 					}
-
+			
 					render_graph->AddNode(std::move(group_node));
 				}
-
+			
 				final_target = pass_count % 2 ? output_target : input_target;
 			}
-
-
+			
+			
 			// Test output shader
 			{
 				RenderShaderPassCreateInfo create_info{};
 				create_info.shader_name = "testing:screenspace";
 				create_info.AddWriteAttachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, gfx::ClearColor{ 1.f, 0.5f, 1.f, 1.f });
-
+			
 				create_info.pipeline_state.primitive_topology = gfx::PrimitiveTopology::eTriangleList;
 				create_info.pipeline_state.color_blending_state.attachment_count = 1;
 			
@@ -1598,18 +1632,18 @@ namespace engine
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
 						ZoneScoped;
-
+			
 						auto* backbuffer = render_graph->GetTexture(backbuffer_resource);
 			
 						auto viewport_width = static_cast<float>(backbuffer->GetWidth());
 						auto viewport_height = static_cast<float>(backbuffer->GetHeight());
-
+			
 						// Flip viewport
 						command_list.SetViewport(0.f, viewport_height, viewport_width, -viewport_height, 0.f, 1.f);
 						command_list.SerScissor(0u, 0u, viewport_width, viewport_height);
-
+			
 						self.BindReadResource(render_label::sample_image0, final_target, ~0u);
-
+			
 						self.ResolveDependencies(command_list);
 						self.BindResources(command_list);
 						

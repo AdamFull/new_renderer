@@ -42,6 +42,7 @@ namespace engine
 			virtual uint32_t CreateRenderCamera() = 0;
 			virtual shlib::Camera& GetRenderCamera(uint32_t camera_id) = 0;
 			virtual glm::mat4 const& GetCameraMatrix(uint32_t camera_id, uint32_t matrix_index) = 0;
+			virtual uint32_t GetCameraCount() const = 0;
 
 			virtual void UpdateRenderCamera(uint32_t camera_id, const glm::vec3& translation, const glm::quat& rotation) = 0;
 			virtual void UpdateRenderCamera(uint32_t camera_id, const glm::mat4& view, const glm::mat4& projection, uint32_t width, uint32_t height) = 0;
@@ -65,6 +66,7 @@ namespace engine
 			virtual void BeginFrame(float delta_time) = 0;
 			virtual void EndFrame() = 0;
 
+			virtual gfx::Buffer* GetDrawBuffer() = 0;
 			virtual uint32_t GetDrawCount() const = 0;
 		};
 	}

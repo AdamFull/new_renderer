@@ -19,7 +19,7 @@
 	compile: [
 		{ 
 			shader_name: "cull_and_batch";
-			pattern: "geometry_pattern";
+			pattern: "default_pattern";
 		},
 		{ 
 			shader_name: "clear_counters";

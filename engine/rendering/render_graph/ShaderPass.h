@@ -138,7 +138,7 @@ namespace engine
 			template<typename _Ty>
 			_Ty& As(size_t offset = 0ull)
 			{
-				assert(sizeof(_Ty) + offset > resource.size);
+				assert(sizeof(_Ty) + offset <= resource.size);
 				return *reinterpret_cast<_Ty*>(&data[offset]);
 			}
 			

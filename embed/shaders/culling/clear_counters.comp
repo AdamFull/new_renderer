@@ -1,13 +1,12 @@
 #include "shader_inputs.glsl"
+#include "culling.h"
 
-#define GROUP_SIZE 1
+#define GROUP_SIZE 256
 
 layout(local_size_x = GROUP_SIZE) in;
 
 void main() 
 {
-	uint global_draw_index = gl_GlobalInvocationID.x;
-
-	if (global_draw_index >= frameData.cullerCount) 
-		return;
+	uint idx = gl_GlobalInvocationID.x;
+	draw_counts[idx].data = 0;
 }

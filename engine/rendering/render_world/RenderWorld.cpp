@@ -64,6 +64,11 @@ namespace engine
 			return *(matrix_begin + matrix_index);
 		}
 
+		uint32_t RenderWorld::GetCameraCount() const
+		{
+			return camera_offset;
+		}
+
 		void RenderWorld::UpdateRenderCamera(uint32_t camera_id, const glm::vec3& translation, const glm::quat& rotation)
 		{
 			ZoneScoped;
@@ -239,7 +244,7 @@ namespace engine
 		{
 			auto mesh_index = mesh_count++;
 			auto& new_mesh = world_meshes->Get(mesh_index);
-			draw_materials->MarkDirty(mesh_index);
+			world_meshes->MarkDirty(mesh_index);
 			new_mesh = mesh;
 
 			return mesh_index;
@@ -390,6 +395,8 @@ namespace engine
 				buffers.spotShadowBuffer = spot_shadows->GetBuffer()->GetAddress();
 				spot_shadows->Flush();
 
+				draw_descriptions->Flush();
+
 				const uint8_t* uniform_data = reinterpret_cast<const uint8_t*>(&buffers);
 				uint64_t uniform_size = sizeof(shlib::GlobalBufferReference);
 
@@ -400,6 +407,9 @@ namespace engine
 				shlib::GlobalUniformData frame_data{};
 				frame_data.lightCount = light_count;
 				frame_data.cameraCount = camera_offset;
+				frame_data.defaultCameraID = 0;
+				frame_data.maxCommandsCount = camera_offset * draw_count;
+				frame_data.rawCommandsCount = draw_count;
 
 				const uint8_t* uniform_data = reinterpret_cast<const uint8_t*>(&frame_data);
 				uint64_t uniform_size = sizeof(shlib::GlobalUniformData);
@@ -415,6 +425,11 @@ namespace engine
 			cascaded_shadow_count = 0;
 			omni_shadow_count = 0;
 			spot_shadow_count = 0;
+		}
+
+		gfx::Buffer* RenderWorld::GetDrawBuffer()
+		{
+			return draw_descriptions->GetBuffer();
 		}
 
 		uint32_t RenderWorld::GetDrawCount() const
