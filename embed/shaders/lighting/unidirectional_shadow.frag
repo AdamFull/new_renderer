@@ -2,7 +2,7 @@
 
 layout(location = 0) in vec2 inUV;
 layout(location = 1) in vec4 inPos;
-layout(location = 2) flat in uint materialID;
+layout(location = 2) flat in uint material;
 
 layout(push_constant) uniform ShadowmapData
 {
@@ -14,9 +14,9 @@ layout(push_constant) uniform ShadowmapData
 void main() 
 {
 
-	if(materialID != ~0u)
+	if(material != ~0u)
 	{
-		Material mat = GetMaterial(materialID);
+		Material mat = GetMaterial(material);
 		if(mat.baseColorTexture != ~0u)
 		{
 			float smaple = SampleTexture2D(mat.baseColorTexture, 0, inUV).a;

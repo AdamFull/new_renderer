@@ -2,7 +2,7 @@
 
 layout(location = 0) out vec2 outTexcoord;
 layout(location = 1) out vec4 outPos;
-layout(location = 2) flat out uint materialID;
+layout(location = 2) flat out uint material;
 
 layout(push_constant) uniform ShadowmapData
 {
@@ -61,12 +61,12 @@ void main()
 	gl_Layer = shadow_data.layer;
 #endif
 
-	materialID = ~0u;
+	material = ~0u;
 
 	Mesh mesh = GetMesh(draw_info.meshID);
-	if(mesh.materialID != ~0u)
+	if(mesh.material != ~0u)
 	{
-		materialID = mesh.materialID;
+		material = mesh.material;
 	}
 
 	

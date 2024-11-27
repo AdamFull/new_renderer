@@ -27,10 +27,15 @@ namespace engine
 
 			void UpdateNode(uint32_t node_id, const glm::mat4& matrix) override;
 
-			void AddGeometryDraw(DrawCommand& draw_command) override;
+			void AddGeometryDraw(const shlib::DrawDescription& draw_command) override;
 
-			void AddMaterial(const shlib::Material& material) override;
+			uint32_t AddMaterial(const shlib::Material& material) override;
 			const shlib::Material& GetMaterial(uint32_t index) const override;
+
+			//shlib::Mesh& BeginUpdateMesh(uint32_t index);
+			//void EndUpdateMesh(uint32_t index);
+			uint32_t AddMesh(const shlib::Mesh& mesh) override;
+			const shlib::Mesh& GetMesh(uint32_t index) override;
 
 			void AddLight(const shlib::LightCommit& light_data) override;
 
@@ -66,6 +71,7 @@ namespace engine
 			std::unique_ptr<DynamicBuffer<shlib::DrawDescription>> draw_descriptions{};
 
 			std::unique_ptr<DynamicBuffer<shlib::Mesh>> world_meshes{};
+			uint32_t mesh_count{ 0u };
 			
 			std::unique_ptr<DynamicBuffer<shlib::Material>> draw_materials{};
 			uint32_t material_count{ 0u };

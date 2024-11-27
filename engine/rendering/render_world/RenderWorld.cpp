@@ -200,7 +200,7 @@ namespace engine
 			world_matrices->MarkDirty(node.matrixOffset, 2ull);
 		}
 
-		void RenderWorld::AddGeometryDraw(DrawCommand& draw_command)
+		void RenderWorld::AddGeometryDraw(const shlib::DrawDescription& draw_command)
 		{
 			ZoneScoped;
 
@@ -209,16 +209,7 @@ namespace engine
 			// Describes current draw command resources
 			auto& batch_command = draw_descriptions->Get(draw_index);
 			draw_descriptions->MarkDirty(draw_index);
-
-			batch_command.nodeID = draw_command.node_index;
-			batch_command.meshID = draw_index;
-			batch_command.vboID = draw_command.vertex_buffers;
-
-			auto& mesh = world_meshes->Get(draw_index);
-			world_meshes->MarkDirty(draw_index);
-			mesh.materialID = draw_command.material_index;
-
-
+			batch_command = draw_command;
 			//auto& indirect_command = indirect_draw_commands->Get(draw_index);
 			//indirect_draw_commands->MarkDirty(draw_index);
 			//
@@ -229,19 +220,34 @@ namespace engine
 			//indirect_command.firstInstance = 0;
 		}
 
-		void RenderWorld::AddMaterial(const shlib::Material& material)
+		uint32_t RenderWorld::AddMaterial(const shlib::Material& material)
 		{
-			ZoneScoped;
-
 			auto material_index = material_count++;
 			auto& new_material = draw_materials->Get(material_index);
 			draw_materials->MarkDirty(material_index);
 			new_material = material;
+
+			return material_index;
 		}
 
 		const shlib::Material& RenderWorld::GetMaterial(uint32_t index) const
 		{
 			return draw_materials->Get(index);
+		}
+
+		uint32_t RenderWorld::AddMesh(const shlib::Mesh& mesh)
+		{
+			auto mesh_index = mesh_count++;
+			auto& new_mesh = world_meshes->Get(mesh_index);
+			draw_materials->MarkDirty(mesh_index);
+			new_mesh = mesh;
+
+			return mesh_index;
+		}
+
+		const shlib::Mesh& RenderWorld::GetMesh(uint32_t index)
+		{
+			return world_meshes->Get(index);
 		}
 
 		void RenderWorld::AddLight(const shlib::LightCommit& light_data)

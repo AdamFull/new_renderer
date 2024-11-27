@@ -647,6 +647,62 @@ namespace engine
 				render_graph->AddNode(std::move(group_node));
 			}
 
+			// Crear cull counters
+			{
+				ComputeShaderPassCreateInfo create_info{};
+				create_info.shader_name = "culling:clear_counters";
+
+				create_info.draw_callback = [this,
+					alive_commands_buffer,
+					indirect_draw_commands,
+					indirect_count_buffer
+				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+					{
+						ZoneScoped;
+
+						assert(false && "NOT IPMLEMENTED");
+					};
+
+				render_graph->AddNode(render_graph->CreateNode(create_info));
+			}
+
+			// Cull meshes
+			{
+				ComputeShaderPassCreateInfo create_info{};
+				create_info.shader_name = "culling:cull_and_batch";
+
+				create_info.draw_callback = [this,
+					alive_commands_buffer,
+					indirect_draw_commands,
+					indirect_count_buffer
+				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+					{
+						ZoneScoped;
+
+						assert(false && "NOT IPMLEMENTED");
+
+						auto* alive_meshes = render_graph->GetBuffer(alive_commands_buffer);
+						auto* argument_buffer = render_graph->GetBuffer(indirect_draw_commands);
+						auto* count_buffer = render_graph->GetBuffer(indirect_count_buffer);
+
+						self.WriteResource(alive_commands_buffer, ~0u);
+						self.WriteResource(indirect_draw_commands, ~0u);
+						self.WriteResource(indirect_count_buffer, ~0u);
+
+						self.ResolveDependencies(command_list);
+
+
+						self.BindResources(command_list);
+
+						uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
+
+						self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
+						command_list.Dispatch(group_x, group_y, group_z);
+					};
+
+				render_graph->AddNode(render_graph->CreateNode(create_info));
+			}
+
 			// Draw cascaded shadows
 			{
 				RenderShaderPassCreateInfo create_info{};

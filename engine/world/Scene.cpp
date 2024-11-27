@@ -408,6 +408,8 @@ namespace engine
 
 		void Scene::LoadMeshComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index)
 		{
+			auto& render_world = renderer.GetRenderWorld();
+
 			const auto& node = root.nodes[node_index];
 			const auto& mesh = root.meshes[node.mesh];
 
@@ -461,15 +463,23 @@ namespace engine
 					index_stream.count = stream.count;
 				}
 
+				auto vertex_range = geometry_buffer.AddMesh(attribute_streams, index_stream);
+
+				shlib::Mesh new_mesh{};
+				new_mesh.bounds.min = pos_min;
+				new_mesh.bounds.max = pos_max;
+				new_mesh.first_index = vertex_range.first_index;
+				new_mesh.index_count = vertex_range.index_count;
+				new_mesh.first_vertex = vertex_range.first_vertex;
+				new_mesh.vertex_count = vertex_range.vertex_count;
+
+				// NOTE: Updating material Create info for future shader creation
+				new_mesh.material = primitive.material;
+
 				// Create mesh primitive
 				ecs::FMeshPrimitive mesh_primitive{};
 				mesh_primitive.vbo = Hash(geometry_ci);
-				mesh_primitive.setDimensions(pos_min, pos_max);
-				mesh_primitive.vertex_range = geometry_buffer.AddMesh(attribute_streams, index_stream);
-
-				// NOTE: Updating material Create info for future shader creation
-				if (primitive.material >= 0)
-					mesh_primitive.material = primitive.material;
+				mesh_primitive.mesh = render_world.AddMesh(new_mesh);
 				
 				mesh_component.primitives.emplace_back(mesh_primitive);
 			}

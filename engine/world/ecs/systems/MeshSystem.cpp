@@ -56,20 +56,15 @@ void CMeshSystem::PrepareDrawCommands(uint32_t alpha_mode)
 
 		for (const auto& primitive : mesh_component.primitives)
 		{
-			const auto& material = render_world.GetMaterial(primitive.material);
+			const auto& mesh = render_world.GetMesh(primitive.mesh);
+			const auto& material = render_world.GetMaterial(mesh.material);
 			if (material.alphaMode != alpha_mode)
 				continue;
 
-			DrawCommand draw_command{};
-			draw_command.node_index = node;
-
-			draw_command.vertex_buffers = primitive.vbo;
-			draw_command.material_index = primitive.material;
-
-			draw_command.first_index = primitive.vertex_range.first_index;
-			draw_command.index_count = primitive.vertex_range.index_count;
-			draw_command.first_vertex = primitive.vertex_range.first_vertex;
-			draw_command.vertex_count = primitive.vertex_range.vertex_count;
+			shlib::DrawDescription draw_command{};
+			draw_command.vboID = primitive.vbo;
+			draw_command.nodeID = node;
+			draw_command.meshID = primitive.mesh;
 
 			render_world.AddGeometryDraw(draw_command);
 		}

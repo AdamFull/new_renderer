@@ -48,10 +48,13 @@ namespace engine
 
 			virtual void UpdateNode(uint32_t node_id, const glm::mat4& matrix) = 0;
 
-			virtual void AddGeometryDraw(DrawCommand& draw_command) = 0;
+			virtual void AddGeometryDraw(const shlib::DrawDescription& draw_command) = 0;
 
-			virtual void AddMaterial(const shlib::Material& material) = 0;
+			virtual uint32_t AddMaterial(const shlib::Material& material) = 0;
 			virtual const shlib::Material& GetMaterial(uint32_t index) const = 0;
+
+			virtual uint32_t AddMesh(const shlib::Mesh& mesh)  = 0;
+			virtual const shlib::Mesh& GetMesh(uint32_t index)  = 0;
 
 			virtual void AddLight(const shlib::LightCommit& light_data) = 0;
 

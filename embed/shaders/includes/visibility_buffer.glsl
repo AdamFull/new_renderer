@@ -73,7 +73,7 @@ bool loadVisBuffer(in vec2 uv, out VisibilityBuffer res)
 	Mesh mesh = GetMesh(draw_info.meshID);
 	
 	res.objID = draw_info.nodeID;
-	res.matID = mesh.materialID;
+	res.matID = mesh.material;
 
 	return true;
 }
@@ -351,7 +351,7 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 //		Mesh mesh = GetMesh(draw_info.meshID);
 //		
 //		vb.objID = draw_info.nodeID;
-//		vb.matID = mesh.materialID;
+//		vb.matID = mesh.material;
 //
 //		VertexAttribute va = getVertexData(uv, vb);
 //	}
