@@ -14,6 +14,7 @@ namespace VMA_HPP_NAMESPACE {
   struct AllocationCreateInfo;
   struct PoolCreateInfo;
   struct AllocationInfo;
+  struct AllocationInfo2;
   struct DefragmentationInfo;
   struct DefragmentationMove;
   struct DefragmentationPassMoveInfo;
@@ -195,15 +196,6 @@ namespace VMA_HPP_NAMESPACE {
   VULKAN_HPP_STATIC_ASSERT(sizeof(DefragmentationContext) == sizeof(VmaDefragmentationContext),
                            "handle and wrapper have different size!");
 }
-#ifndef VULKAN_HPP_NO_SMART_HANDLE
-namespace VULKAN_HPP_NAMESPACE {
-  template<> class UniqueHandleTraits<VMA_HPP_NAMESPACE::DefragmentationContext, VMA_HPP_NAMESPACE::Dispatcher> {
-    public:
-    using deleter = VMA_HPP_NAMESPACE::Deleter<VMA_HPP_NAMESPACE::DefragmentationContext, void>;
-  };
-}
-namespace VMA_HPP_NAMESPACE { using UniqueDefragmentationContext = VULKAN_HPP_NAMESPACE::UniqueHandle<DefragmentationContext, Dispatcher>; }
-#endif
 
 namespace VMA_HPP_NAMESPACE {
   class Allocator {
@@ -465,6 +457,12 @@ namespace VMA_HPP_NAMESPACE {
                            AllocationInfo* allocationInfo) const;
 
 #ifndef VULKAN_HPP_DISABLE_ENHANCED_MODE
+    VULKAN_HPP_NODISCARD_WHEN_NO_EXCEPTIONS AllocationInfo2 getAllocationInfo2(Allocation allocation) const;
+#endif
+    void getAllocationInfo2(Allocation allocation,
+                            AllocationInfo2* allocationInfo) const;
+
+#ifndef VULKAN_HPP_DISABLE_ENHANCED_MODE
     void setAllocationUserData(Allocation allocation,
                                void* userData) const;
 #else
@@ -537,6 +535,30 @@ namespace VMA_HPP_NAMESPACE {
                                                                             const Allocation* allocations,
                                                                             const VULKAN_HPP_NAMESPACE::DeviceSize* offsets,
                                                                             const VULKAN_HPP_NAMESPACE::DeviceSize* sizes) const;
+
+#ifndef VULKAN_HPP_DISABLE_ENHANCED_MODE
+    typename VULKAN_HPP_NAMESPACE::ResultValueType<void>::type copyMemoryToAllocation(const void* srcHostPointer,
+                                                                                      Allocation dstAllocation,
+                                                                                      VULKAN_HPP_NAMESPACE::DeviceSize dstAllocationLocalOffset,
+                                                                                      VULKAN_HPP_NAMESPACE::DeviceSize size) const;
+#else
+    VULKAN_HPP_NODISCARD VULKAN_HPP_NAMESPACE::Result copyMemoryToAllocation(const void* srcHostPointer,
+                                                                             Allocation dstAllocation,
+                                                                             VULKAN_HPP_NAMESPACE::DeviceSize dstAllocationLocalOffset,
+                                                                             VULKAN_HPP_NAMESPACE::DeviceSize size) const;
+#endif
+
+#ifndef VULKAN_HPP_DISABLE_ENHANCED_MODE
+    typename VULKAN_HPP_NAMESPACE::ResultValueType<void>::type copyAllocationToMemory(Allocation srcAllocation,
+                                                                                      VULKAN_HPP_NAMESPACE::DeviceSize srcAllocationLocalOffset,
+                                                                                      void* dstHostPointer,
+                                                                                      VULKAN_HPP_NAMESPACE::DeviceSize size) const;
+#else
+    VULKAN_HPP_NODISCARD VULKAN_HPP_NAMESPACE::Result copyAllocationToMemory(Allocation srcAllocation,
+                                                                             VULKAN_HPP_NAMESPACE::DeviceSize srcAllocationLocalOffset,
+                                                                             void* dstHostPointer,
+                                                                             VULKAN_HPP_NAMESPACE::DeviceSize size) const;
+#endif
 
 #ifndef VULKAN_HPP_DISABLE_ENHANCED_MODE
     typename VULKAN_HPP_NAMESPACE::ResultValueType<void>::type checkCorruption(uint32_t memoryTypeBits) const;
@@ -653,6 +675,16 @@ namespace VMA_HPP_NAMESPACE {
                                                                            VULKAN_HPP_NAMESPACE::Buffer* buffer) const;
 
 #ifndef VULKAN_HPP_DISABLE_ENHANCED_MODE
+    VULKAN_HPP_NODISCARD_WHEN_NO_EXCEPTIONS typename VULKAN_HPP_NAMESPACE::ResultValueType<VULKAN_HPP_NAMESPACE::Buffer>::type createAliasingBuffer2(Allocation allocation,
+                                                                                                                                                     VULKAN_HPP_NAMESPACE::DeviceSize allocationLocalOffset,
+                                                                                                                                                     const VULKAN_HPP_NAMESPACE::BufferCreateInfo& bufferCreateInfo) const;
+#endif
+    VULKAN_HPP_NODISCARD VULKAN_HPP_NAMESPACE::Result createAliasingBuffer2(Allocation allocation,
+                                                                            VULKAN_HPP_NAMESPACE::DeviceSize allocationLocalOffset,
+                                                                            const VULKAN_HPP_NAMESPACE::BufferCreateInfo* bufferCreateInfo,
+                                                                            VULKAN_HPP_NAMESPACE::Buffer* buffer) const;
+
+#ifndef VULKAN_HPP_DISABLE_ENHANCED_MODE
     void destroyBuffer(VULKAN_HPP_NAMESPACE::Buffer buffer,
                        Allocation allocation) const;
 #else
@@ -683,6 +715,16 @@ namespace VMA_HPP_NAMESPACE {
     VULKAN_HPP_NODISCARD VULKAN_HPP_NAMESPACE::Result createAliasingImage(Allocation allocation,
                                                                           const VULKAN_HPP_NAMESPACE::ImageCreateInfo* imageCreateInfo,
                                                                           VULKAN_HPP_NAMESPACE::Image* image) const;
+
+#ifndef VULKAN_HPP_DISABLE_ENHANCED_MODE
+    VULKAN_HPP_NODISCARD_WHEN_NO_EXCEPTIONS typename VULKAN_HPP_NAMESPACE::ResultValueType<VULKAN_HPP_NAMESPACE::Image>::type createAliasingImage2(Allocation allocation,
+                                                                                                                                                   VULKAN_HPP_NAMESPACE::DeviceSize allocationLocalOffset,
+                                                                                                                                                   const VULKAN_HPP_NAMESPACE::ImageCreateInfo& imageCreateInfo) const;
+#endif
+    VULKAN_HPP_NODISCARD VULKAN_HPP_NAMESPACE::Result createAliasingImage2(Allocation allocation,
+                                                                           VULKAN_HPP_NAMESPACE::DeviceSize allocationLocalOffset,
+                                                                           const VULKAN_HPP_NAMESPACE::ImageCreateInfo* imageCreateInfo,
+                                                                           VULKAN_HPP_NAMESPACE::Image* image) const;
 
 #ifndef VULKAN_HPP_DISABLE_ENHANCED_MODE
     void destroyImage(VULKAN_HPP_NAMESPACE::Image image,
