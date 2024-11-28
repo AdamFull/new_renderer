@@ -1,6 +1,7 @@
 #include "VkSampler.h"
 #include "VkPhysicalDevice.h"
 #include "VkDevice.h"
+#include "VkDebug.h"
 
 #include "VkUtil.h"
 
@@ -45,6 +46,12 @@ namespace engine
 			VulkanSampler::~VulkanSampler()
 			{
 				Handle(device).destroySampler(handle, allocation_callbacks);
+			}
+
+			void VulkanSampler::SetResourceName(const char* name)
+			{
+				auto& debug_utils = device.GetDebugUtils();
+				debug_utils.SetDebugName(handle, name);
 			}
 		}
 	}

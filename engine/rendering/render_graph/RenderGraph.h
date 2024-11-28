@@ -48,6 +48,8 @@ namespace engine
 			uint32_t AddResource(const TextureResourceCreateInfo& create_info, gfx::Sampler* sampler = nullptr) override;
 			uint32_t AddResource(const gfx::BufferCreateInfo& create_info) override;
 
+			void SetResourceName(uint32_t resource_index, const std::string& name) override;
+
 			RenderGraphResource& GetResource(uint32_t resource_index) override;
 			RenderGraphResource const& GetResource(uint32_t resource_index) const override;
 

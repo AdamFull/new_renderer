@@ -56,8 +56,6 @@ namespace engine
 			virtual void RequestMinimalBufferAlignment(BufferUsageFlags usage, uint64_t& alignment) = 0;
 			virtual void RequestTimestampFrequency(float* frequency) = 0;
 			virtual void RequestMemoryUsage(uint64_t* total_memory, uint64_t* used_memory) = 0;
-
-			virtual void SetResourceName(GFXResource* resource_handle, const char* name) = 0;
 		};
 
 		std::unique_ptr<Context> CreateContext(const ContextCreateInfo& create_info);

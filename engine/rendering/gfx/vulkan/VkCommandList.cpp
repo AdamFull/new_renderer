@@ -1,6 +1,7 @@
 #include "VkCommandPool.h"
 #include "VkDebug.h"
 
+#include "VkDevice.h"
 #include "VkQueue.h"
 #include "VkQueryPool.h"
 #include "VkBuffer.h"
@@ -38,6 +39,13 @@ namespace engine
 			VulkanCommandList::~VulkanCommandList()
 			{
 				command_pool.FreeCommandBuffer(handle);
+			}
+
+			void VulkanCommandList::SetResourceName(const char* name)
+			{
+				auto& device = command_pool.GetDevice();
+				auto& debug_utils = device.GetDebugUtils();
+				debug_utils.SetDebugName(handle, name);
 			}
 
 			void VulkanCommandList::Reset(CommandPoolResetMode reset_mode)
@@ -497,19 +505,22 @@ namespace engine
 
 			void VulkanCommandList::BeginMarker(const char* name, uint32_t color)
 			{
-				auto& debug_utils = command_pool.GetDebugUtils();
+				auto& device = command_pool.GetDevice();
+				auto& debug_utils = device.GetDebugUtils();
 				debug_utils.BeginLabel(handle, name, color);
 			}
 
 			void VulkanCommandList::InsertMarker(const char* name, uint32_t color)
 			{
-				auto& debug_utils = command_pool.GetDebugUtils();
+				auto& device = command_pool.GetDevice();
+				auto& debug_utils = device.GetDebugUtils();
 				debug_utils.InsertLabel(handle, name, color);
 			}
 
 			void VulkanCommandList::EndMarker()
 			{
-				auto& debug_utils = command_pool.GetDebugUtils();
+				auto& device = command_pool.GetDevice();
+				auto& debug_utils = device.GetDebugUtils();
 				debug_utils.EndLabel(handle);
 			}
 		}

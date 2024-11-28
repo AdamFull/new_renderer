@@ -1,5 +1,6 @@
 #include "VkQueue.h"
 #include "VkDevice.h"
+#include "VkDebug.h"
 
 #include "VkFence.h"
 #include "VkSemaphore.h"
@@ -65,6 +66,12 @@ namespace engine
 			vk::Bool32 VulkanQueue::SupportPresent() const
 			{
 				return can_present;
+			}
+
+			void VulkanQueue::SetResourceName(const char* name)
+			{
+				auto& debug_utils = device.GetDebugUtils();
+				debug_utils.SetDebugName(handle, name);
 			}
 
 			void VulkanQueue::Submit(const SubmitInfo& submit_info, Fence* fence) const

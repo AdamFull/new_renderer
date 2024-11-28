@@ -28,6 +28,8 @@ namespace engine
 				ImageView& GetSubresource(uint32_t subresource = ~0u);
 				ImageView const& GetSubresource(uint32_t subresource = ~0u) const;
 
+				void SetResourceName(const char* name) override;
+
 				uint32_t GetWidth() const override;
 				uint32_t GetHeight() const override;
 				uint32_t GetDepth() const override;

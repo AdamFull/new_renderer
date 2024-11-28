@@ -22,6 +22,8 @@ namespace engine
 
 				VulkanSampler& operator=(const VulkanSampler&) = delete;
 				VulkanSampler& operator=(VulkanSampler&&) = delete;
+
+				void SetResourceName(const char* name) override;
 			private:
 				Device& device;
 			};

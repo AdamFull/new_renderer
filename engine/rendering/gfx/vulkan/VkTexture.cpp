@@ -1,5 +1,6 @@
 #include "VkTexture.h"
 #include "VkDevice.h"
+#include "VkDebug.h"
 #include "VkAllocator.h"
 
 #include "VkSwapchain.h"
@@ -71,6 +72,21 @@ namespace engine
 					return *srv;
 
 				return *subresources[subresource];
+			}
+
+			void VulkanTexture::SetResourceName(const char* name)
+			{
+				auto& debug_utils = device.GetDebugUtils();
+
+				debug_utils.SetDebugName(image->GetHandle(), name);
+
+				debug_utils.SetDebugName(srv->GetHandle(), name);
+
+				uint32_t index{ 0u };
+				for (const auto& subresource : subresources)
+				{
+					debug_utils.SetDebugName(subresource->GetHandle(), std::format("{}_{}", name, index++));
+				}
 			}
 
 			ImageView const& VulkanTexture::GetSubresource(uint32_t subresource) const

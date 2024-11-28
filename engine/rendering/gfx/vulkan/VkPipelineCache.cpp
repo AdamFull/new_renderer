@@ -1,5 +1,6 @@
 #include "VkPipelineCache.h"
 #include "VkDevice.h"
+#include "VkDebug.h"
 
 namespace engine
 {
@@ -27,6 +28,12 @@ namespace engine
 				VulkanResource{ std::move(other) },
 				device{ other.device }
 			{
+			}
+
+			void VulkanPipelineCache::SetResourceName(const char* name)
+			{
+				auto& debug_utils = device.GetDebugUtils();
+				debug_utils.SetDebugName(handle, name);
 			}
 
 			void VulkanPipelineCache::GetData(size_t& data_size, void* data_ptr)

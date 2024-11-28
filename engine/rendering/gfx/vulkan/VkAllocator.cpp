@@ -250,6 +250,11 @@ namespace engine
 			{
 				return alloc_create_info.usage;
 			}
+
+			Allocator& Allocation::GetAllocator()
+			{
+				return allocator;
+			}
 		}
 	}
 }

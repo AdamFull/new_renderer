@@ -21,6 +21,8 @@ namespace engine
 				VulkanSemaphore(VulkanSemaphore&& other) = default;
 				VulkanSemaphore& operator=(const VulkanSemaphore&) = delete;
 				VulkanSemaphore& operator=(VulkanSemaphore&&) = default;
+
+				void SetResourceName(const char* name) override;
 			private:
 				Device& device;
 			};

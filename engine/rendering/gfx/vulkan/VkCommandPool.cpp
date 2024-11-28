@@ -8,10 +8,9 @@ namespace engine
 	{
 		namespace vulkan
 		{
-			VulkanCommandPool::VulkanCommandPool(const VulkanQueue& queue, DebugUtils& debug_utils, CommandPoolResetMode reset_mode) :
+			VulkanCommandPool::VulkanCommandPool(const VulkanQueue& queue, CommandPoolResetMode reset_mode) :
 				VulkanResource{ nullptr, queue.GetAllocationCallbacks() },
 				device{ queue.GetDevice() },
-				debug_utils{ debug_utils },
 				queue_family_index{ queue.GetFamilyIndex() },
 				reset_mode{ reset_mode }
 			{
@@ -36,7 +35,6 @@ namespace engine
 			VulkanCommandPool::VulkanCommandPool(VulkanCommandPool&& other) :
 				VulkanResource{ std::move(other) },
 				device{ device },
-				debug_utils{ other.debug_utils },
 				queue_family_index{ other.queue_family_index },
 				primary_command_buffers{ std::move(other.primary_command_buffers) },
 				active_primary_command_buffer_count(std::exchange(other.active_primary_command_buffer_count, {})),
@@ -61,6 +59,12 @@ namespace engine
 				}
 
 				vkdevice.destroyCommandPool(handle, allocation_callbacks);
+			}
+
+			void VulkanCommandPool::SetResourceName(const char* name)
+			{
+				auto& debug_utils = device.GetDebugUtils();
+				debug_utils.SetDebugName(handle, name);
 			}
 
 			VulkanCommandList* VulkanCommandPool::Allocate(bool secondary)
@@ -129,14 +133,9 @@ namespace engine
 				return reset_mode;
 			}
 
-			DebugUtils& VulkanCommandPool::GetDebugUtils()
+			Device const& VulkanCommandPool::GetDevice() const
 			{
-				return debug_utils;
-			}
-
-			DebugUtils const& VulkanCommandPool::GetDebugUtils() const
-			{
-				return debug_utils;
+				return device;
 			}
 
 			void VulkanCommandPool::FreeCommandBuffers()

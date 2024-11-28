@@ -70,6 +70,11 @@ namespace engine
 				return first_set;
 			}
 
+			void VulkanSharedDescriptor::SetResourceName(const char* name)
+			{
+				assert(false && "NOT IMPLEMENTED");
+			}
+
 			void VulkanSharedDescriptor::Reset()
 			{
 				ZoneScoped;

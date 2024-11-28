@@ -1,5 +1,6 @@
 #include "VkQueryPool.h"
 #include "VkDevice.h"
+#include "VkDebug.h"
 
 #include "VkUtil.h"
 
@@ -35,6 +36,12 @@ namespace engine
 			VulkanQueryPool::~VulkanQueryPool()
 			{
 				Handle(device).destroyQueryPool(handle, allocation_callbacks);
+			}
+
+			void VulkanQueryPool::SetResourceName(const char* name)
+			{
+				auto& debug_utils = device.GetDebugUtils();
+				debug_utils.SetDebugName(handle, name);
 			}
 
 			void VulkanQueryPool::Reset(uint32_t start_query, uint32_t query_count)

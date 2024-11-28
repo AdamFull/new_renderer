@@ -66,6 +66,8 @@ namespace engine
 
 				Device const& GetDevice() const;
 
+				void SetResourceName(const char* name) override;
+
 				bool AcquireNextImage(Semaphore* signal_semaphore, Fence* fence, uint32_t* image_index) override;
 
 				const vk::Extent2D& GetExtent() const;

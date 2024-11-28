@@ -9,13 +9,13 @@ namespace engine
 		namespace vulkan
 		{
 			class Device;
-			class VulkanQueue;
 			class DebugUtils;
+			class VulkanQueue;
 
 			class VulkanCommandPool final : public CommandPool, public VulkanResource<vk::CommandPool>
 			{
 			public:
-				VulkanCommandPool(const VulkanQueue& queue, DebugUtils& debug_utils, CommandPoolResetMode reset_mode);
+				VulkanCommandPool(const VulkanQueue& queue, CommandPoolResetMode reset_mode);
 
 				VulkanCommandPool(const VulkanCommandPool&) = delete;
 				VulkanCommandPool(VulkanCommandPool&& other);
@@ -23,6 +23,8 @@ namespace engine
 
 				VulkanCommandPool& operator=(const CommandPool&) = delete;
 				VulkanCommandPool& operator=(CommandPool&&) = delete;
+
+				void SetResourceName(const char* name) override;
 
 				VulkanCommandList* Allocate(bool secondary) override;
 				void Reset() override;
@@ -32,14 +34,12 @@ namespace engine
 
 				CommandPoolResetMode GetResetMode() const;
 
-				DebugUtils& GetDebugUtils();
-				DebugUtils const& GetDebugUtils() const;
+				Device const& GetDevice() const;
 			protected:
 				void FreeCommandBuffers();
 				void ResetCommandBuffers();
 			private:
 				const Device& device;
-				DebugUtils& debug_utils;
 
 				uint32_t queue_family_index{ 0u };
 				std::vector<std::unique_ptr<VulkanCommandList>> primary_command_buffers;

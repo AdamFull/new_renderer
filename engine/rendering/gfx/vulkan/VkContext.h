@@ -66,8 +66,6 @@ namespace engine
 				void RequestMinimalBufferAlignment(BufferUsageFlags usage, uint64_t& alignment) override;
 				void RequestTimestampFrequency(float* frequency) override;
 				void RequestMemoryUsage(uint64_t* total_memory, uint64_t* used_memory) override;
-
-				void SetResourceName(GFXResource* resource_handle, const char* name) override;
 			private:
 				void EnableDeviceFeatures(PhysicalDevice& device);
 			private:

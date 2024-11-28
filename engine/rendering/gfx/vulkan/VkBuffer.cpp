@@ -91,6 +91,13 @@ namespace engine
 				allocator.DestroyBuffer(*this, handle);
 			}
 
+			void VulkanBuffer::SetResourceName(const char* name)
+			{
+				auto& device = allocator.GetDevice();
+				auto& debug_utils = device.GetDebugUtils();
+				debug_utils.SetDebugName(handle, name);
+			}
+
 			uint8_t* VulkanBuffer::Map()
 			{
 				return MapMemory();

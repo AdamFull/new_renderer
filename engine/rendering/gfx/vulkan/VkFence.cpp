@@ -1,5 +1,6 @@
 #include "VkFence.h"
 #include "VkDevice.h"
+#include "VkDebug.h"
 
 #include <tracy/Tracy.hpp>
 
@@ -22,6 +23,12 @@ namespace engine
 			VulkanFence::~VulkanFence()
 			{
 				Handle(device).destroyFence(handle, allocation_callbacks);
+			}
+
+			void VulkanFence::SetResourceName(const char* name)
+			{
+				auto& debug_utils = device.GetDebugUtils();
+				debug_utils.SetDebugName(handle, name);
 			}
 
 			void VulkanFence::Wait(uint64_t timeout)

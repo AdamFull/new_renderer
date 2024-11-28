@@ -11,6 +11,7 @@ namespace engine
 		namespace vulkan
 		{
 			class Device;
+			class DebugUtils;
 			class PhysicalDevice;
 
 			class Device : public VulkanResource<vk::Device>
@@ -55,7 +56,11 @@ namespace engine
 
 				uint32_t GetQueueFamilyIndex(vk::QueueFlagBits queue_flag) const;
 
+				void SetDebugUtils(DebugUtils* debug_utils);
+				DebugUtils const& GetDebugUtils() const;
+
 			private:
+				DebugUtils* debug_utils{ nullptr };
 				PhysicalDevice const& gpu;
 
 				vk::AllocationCallbacks* allocation_callbacks{ nullptr };

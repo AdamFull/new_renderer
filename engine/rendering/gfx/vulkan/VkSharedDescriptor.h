@@ -31,6 +31,8 @@ namespace engine
 
 				uint32_t GetFirstSet() const;
 
+				void SetResourceName(const char* name) override;
+
 				void Reset() override;
 				ResourceDescriptor* GetLatestDescriptors() override;
 				ResourceDescriptor* RequestDescriptors() override;

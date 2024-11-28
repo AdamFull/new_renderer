@@ -1,6 +1,7 @@
 #include "VkSwapchain.h"
 #include "VkPhysicalDevice.h"
 #include "VkDevice.h"
+#include "VkDebug.h"
 
 #include "VkSemaphore.h"
 #include "VkFence.h"
@@ -321,6 +322,12 @@ namespace engine
 			Device const& VulkanSwapchain::GetDevice() const
 			{
 				return device;
+			}
+
+			void VulkanSwapchain::SetResourceName(const char* name)
+			{
+				auto& debug_utils = device.GetDebugUtils();
+				debug_utils.SetDebugName(handle, name);
 			}
 
 			bool VulkanSwapchain::AcquireNextImage(Semaphore* signal_semaphore, Fence* fence, uint32_t* image_index)

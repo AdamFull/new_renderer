@@ -35,6 +35,11 @@ namespace engine
 				}
 			}
 
+			void VulkanDescriptorAllocator::SetResourceName(const char* name)
+			{
+				assert(false && "NOT IMPLEMENTED");
+			}
+
 			void VulkanDescriptorAllocator::Reset()
 			{
 				ZoneScoped;

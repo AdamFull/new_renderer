@@ -318,6 +318,7 @@ namespace engine
 				create_info.resizable = false;
 
 				brdf_lut_target = render_graph->AddResource(create_info, nearest_sampler);
+				render_graph->SetResourceName(brdf_lut_target, "brdf_lut_target");
 			}
 
 			uint32_t irradiance_cube_target{ ~0u };
@@ -329,6 +330,7 @@ namespace engine
 				create_info.resizable = false;
 
 				irradiance_cube_target = render_graph->AddResource(create_info, linear_sampler);
+				render_graph->SetResourceName(irradiance_cube_target, "irradiance_cube_target");
 			}
 
 			uint32_t prefiltered_cube_target{ ~0u };
@@ -353,6 +355,7 @@ namespace engine
 				}
 
 				prefiltered_cube_target = render_graph->AddResource(create_info, special_sampler);
+				render_graph->SetResourceName(prefiltered_cube_target, "prefiltered_cube_target");
 			}
 
 			// Shadow targets
@@ -366,6 +369,7 @@ namespace engine
 				create_info.resizable = false;
 				
 				cascaded_shadows_target = render_graph->AddResource(create_info, shadow_sampler);
+				render_graph->SetResourceName(cascaded_shadows_target, "cascaded_shadows_target");
 			}
 
 			uint32_t directional_shadows_target{ ~0u };
@@ -378,6 +382,7 @@ namespace engine
 				create_info.resizable = false;
 
 				directional_shadows_target = render_graph->AddResource(create_info, shadow_sampler);
+				render_graph->SetResourceName(directional_shadows_target, "directional_shadows_target");
 			}
 
 			uint32_t omni_shadows_target{ ~0u };
@@ -390,6 +395,7 @@ namespace engine
 				create_info.resizable = false;
 
 				omni_shadows_target = render_graph->AddResource(create_info, shadow_sampler);
+				render_graph->SetResourceName(omni_shadows_target, "omni_shadows_target");
 			}
 
 			auto* backbuffer_texture = render_graph->GetTexture(backbuffer_resource);
@@ -405,6 +411,7 @@ namespace engine
 				create_info.resizable = true;
 
 				visbuffer_geometry_target = render_graph->AddResource(create_info, nearest_sampler);
+				render_graph->SetResourceName(visbuffer_geometry_target, "visbuffer_geometry_target");
 			}
 
 			uint32_t visbuffer_vboinst_target{ ~0u };
@@ -417,6 +424,7 @@ namespace engine
 				create_info.resizable = true;
 
 				visbuffer_vboinst_target = render_graph->AddResource(create_info, nearest_sampler);
+				render_graph->SetResourceName(visbuffer_vboinst_target, "visbuffer_vboinst_target");
 			}
 
 			uint32_t zbuffer_depth_target{ ~0u };
@@ -429,6 +437,7 @@ namespace engine
 				create_info.resizable = true;
 
 				zbuffer_depth_target = render_graph->AddResource(create_info, nearest_sampler);
+				render_graph->SetResourceName(zbuffer_depth_target, "zbuffer_depth_target");
 			}
 
 			uint32_t motion_vectors_target{ ~0u };
@@ -441,6 +450,7 @@ namespace engine
 				create_info.resizable = true;
 
 				motion_vectors_target = render_graph->AddResource(create_info, nearest_sampler);
+				render_graph->SetResourceName(motion_vectors_target, "motion_vectors_target");
 			}
 
 			uint32_t hdr0{ ~0u };
@@ -455,8 +465,13 @@ namespace engine
 				create_info.resizable = true;
 
 				hdr0 = render_graph->AddResource(create_info, nearest_sampler);
+				render_graph->SetResourceName(hdr0, "hdr0");
+
 				hdr1 = render_graph->AddResource(create_info, nearest_sampler);
+				render_graph->SetResourceName(hdr1, "hdr1");
+
 				hdr0_history = render_graph->AddResource(create_info, nearest_sampler);
+				render_graph->SetResourceName(hdr0_history, "hdr0_history");
 			}
 
 			uint32_t hdr0_div2{ ~0u };
@@ -471,6 +486,7 @@ namespace engine
 				create_info.scale = 0.5f;
 
 				hdr0_div2 = render_graph->AddResource(create_info, nearest_sampler);
+				render_graph->SetResourceName(hdr0_div2, "hdr0_div2");
 			}
 
 			uint32_t bloom_target{ ~0u };
@@ -486,6 +502,7 @@ namespace engine
 				create_info.scale = 0.5f;
 
 				bloom_target = render_graph->AddResource(create_info, nearest_sampler);
+				render_graph->SetResourceName(bloom_target, "bloom_target");
 			}
 
 			// Eye adaptation targets
@@ -499,6 +516,7 @@ namespace engine
 				create_info.resizable = false;
 
 				avg_brightness_target = render_graph->AddResource(create_info, nearest_sampler);
+				render_graph->SetResourceName(avg_brightness_target, "avg_brightness_target");
 			}
 
 			uint32_t histogram_buffer{ ~0u };
@@ -508,6 +526,7 @@ namespace engine
 				create_info.usage = gfx::BufferUsageFlag::eStorageBuffer;
 
 				histogram_buffer = render_graph->AddResource(create_info);
+				render_graph->SetResourceName(histogram_buffer, "histogram_buffer");
 			}
 
 			// Buffer that contains alive comands for draw
@@ -518,6 +537,7 @@ namespace engine
 				create_info.usage = gfx::BufferUsageFlag::eStorageBuffer;
 
 				alive_commands_buffer = render_graph->AddResource(create_info);
+				render_graph->SetResourceName(alive_commands_buffer, "alive_commands_buffer");
 			}
 
 			// Buffer contains draw indirect commands
@@ -528,6 +548,7 @@ namespace engine
 				create_info.usage = gfx::BufferUsageFlag::eIndirectBuffer;
 
 				indirect_draw_commands = render_graph->AddResource(create_info);
+				render_graph->SetResourceName(indirect_draw_commands, "indirect_draw_commands");
 			}
 
 			uint32_t indirect_count_buffer{ ~0u };
@@ -537,6 +558,7 @@ namespace engine
 				create_info.usage = gfx::BufferUsageFlag::eIndirectBuffer;
 
 				indirect_count_buffer = render_graph->AddResource(create_info);
+				render_graph->SetResourceName(indirect_count_buffer, "indirect_count_buffer");
 			}
 
 			// Passes

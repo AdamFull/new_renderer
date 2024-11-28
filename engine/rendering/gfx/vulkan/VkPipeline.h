@@ -10,6 +10,7 @@ namespace engine
 		namespace vulkan
 		{
 			class Device;
+			class DebugUtils;
 
 			class VulkanPipeline : public Pipeline, public VulkanResource<vk::Pipeline>
 			{
@@ -21,6 +22,8 @@ namespace engine
 				VulkanPipeline(const VulkanPipeline&) = delete;
 				VulkanPipeline& operator=(const VulkanPipeline&) = delete;
 				VulkanPipeline& operator=(VulkanPipeline&&) = delete;
+
+				void SetResourceName(const char* name) override;
 			protected:
 				Device& device;
 			};

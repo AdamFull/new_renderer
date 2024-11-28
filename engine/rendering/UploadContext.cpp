@@ -556,7 +556,9 @@ namespace engine
 				shader_stage.code = std::span<uint8_t>(reinterpret_cast<uint8_t*>(shader_data.data.data()), shader_data.data.size() * sizeof(uint32_t));
 			}
 
-			return context.CreateShader(shader_create_info);
+			auto* loaded_shader = context.CreateShader(shader_create_info);
+			loaded_shader->SetResourceName(shader_name.c_str());
+			return loaded_shader;
 		}
 
 		gfx::Sampler* UploadContext::GetSampler(const gfx::SamplerCreateInfo& create_info)

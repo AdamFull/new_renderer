@@ -1,5 +1,6 @@
 #include "VkShader.h"
 #include "VkDevice.h"
+#include "VkDebug.h"
 
 #include "VkUtil.h"
 
@@ -40,7 +41,8 @@ namespace engine
 			}
 
 
-			VulkanShader::VulkanShader(Device& device, const ShaderCreateInfo& create_info)
+			VulkanShader::VulkanShader(Device& device, const ShaderCreateInfo& create_info) :
+				device{ device }
 			{
 				static ShaderStageFlag all_stages[] =
 				{
@@ -61,9 +63,20 @@ namespace engine
 			}
 
 			VulkanShader::VulkanShader(VulkanShader&& other) :
-				shader_modules{ std::exchange(other.shader_modules, {}) }
+				shader_modules{ std::exchange(other.shader_modules, {}) },
+				device{ other.device }
 			{
 
+			}
+
+			void VulkanShader::SetResourceName(const char* name)
+			{
+				auto& debug_utils = device.GetDebugUtils();
+				for (auto it = shader_modules.Begin(); it != shader_modules.End(); ++it)
+				{
+					auto& stage_ci = (*it)->GetStageCreateInfo();
+					debug_utils.SetDebugName(stage_ci.module, std::format("{}[{}]", name, vk::to_string(stage_ci.stage)));
+				}
 			}
 
 			const StaticArray<std::unique_ptr<ShaderModule>, 6ull>& VulkanShader::GetModules() const

@@ -20,13 +20,13 @@ namespace engine
 				virtual ~DebugUtils() = default;
 
 				template<typename _Ty>
-				void SetDebugName(const _Ty& object, const std::string& name)
+				void SetDebugName(const _Ty& object, const std::string& name) const
 				{
 					SetDebugName(object, name.c_str());
 				}
 
 				template<typename _Ty>
-				void SetDebugName(const _Ty& object, const char* name)
+				void SetDebugName(const _Ty& object, const char* name) const
 				{
 					if (object && name)
 					{

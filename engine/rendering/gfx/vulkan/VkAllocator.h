@@ -88,6 +88,8 @@ namespace engine
 				}
 
 				vma::MemoryUsage GetUsage();
+
+				Allocator& GetAllocator();
 			protected:
 				void Clear();
 			protected:

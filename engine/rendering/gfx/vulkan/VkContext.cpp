@@ -87,6 +87,7 @@ namespace engine
 				instance_builder.AddRequiredExtensions(std::span<const char*>(required_instance_extensions));
 
 #ifdef VULKAN_DEBUG
+				bool VK_EXT_debug_utils_enabled{ false };
 				{
 					std::vector<vk::ExtensionProperties> available_instance_extensions = vk::enumerateInstanceExtensionProperties();
 					auto debugExtensionIt = std::find_if(available_instance_extensions.begin(), available_instance_extensions.end(),
@@ -95,6 +96,7 @@ namespace engine
 					{
 						log_info("Vulkan debug utils enabled ({})", VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 						instance_builder.AddRequiredExtension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+						VK_EXT_debug_utils_enabled = true;
 					}
 				}
 #endif
@@ -134,7 +136,8 @@ namespace engine
 				auto& physical_device = instance->GetBestDevice();
 
 #ifdef VULKAN_DEBUG
-				if (!instance->IsEnabled(VK_EXT_DEBUG_UTILS_EXTENSION_NAME))
+				bool VK_EXT_debug_marker_enabled{ false };
+				if (!VK_EXT_debug_utils_enabled)
 				{
 					std::vector<vk::ExtensionProperties> available_device_extensions = Handle(physical_device).enumerateDeviceExtensionProperties();
 					auto debugExtensionIt = std::find_if(available_device_extensions.begin(), available_device_extensions.end(),
@@ -143,6 +146,7 @@ namespace engine
 					{
 						log_info("Vulkan debug utils enabled ({})", VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
 						device_extensions.emplace_back(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
+						VK_EXT_debug_marker_enabled = true;
 					}
 				}
 #endif
@@ -157,11 +161,11 @@ namespace engine
 				device = std::make_unique<Device>(physical_device, surface, device_extensions);
 
 				// Create debug utils
-				if (instance->IsEnabled(VK_EXT_DEBUG_UTILS_EXTENSION_NAME))
+				if (VK_EXT_debug_utils_enabled)
 				{
 					debug_utils = std::make_unique<DebugUtilsExtDebugUtils>(*device);
 				}
-				else if (device->IsEnabled(VK_EXT_DEBUG_MARKER_EXTENSION_NAME))
+				else if (VK_EXT_debug_marker_enabled)
 				{
 					debug_utils = std::make_unique<DebugMarkerExtDebugUtils>(*device);
 				}
@@ -169,6 +173,8 @@ namespace engine
 				{
 					debug_utils = std::make_unique<DummyDebugUtils>(*device);
 				}
+
+				device->SetDebugUtils(debug_utils.get());
 
 				allocator = std::make_unique<Allocator>(*device);
 			}
@@ -265,7 +271,7 @@ namespace engine
 			CommandPool* VulkanContext::CreateCommandPool(const Queue* queue, CommandPoolResetMode reset_mode)
 			{
 				auto* vkqueue = static_cast<const VulkanQueue*>(queue);
-				return new VulkanCommandPool(*vkqueue, *debug_utils, reset_mode);
+				return new VulkanCommandPool(*vkqueue, reset_mode);
 			}
 
 			Buffer* VulkanContext::CreateBuffer(const BufferCreateInfo& create_info)
@@ -397,111 +403,6 @@ namespace engine
 						*total_memory += memory_budget_props.heapBudget[i];
 						*used_memory += memory_budget_props.heapUsage[i];
 					}
-				}
-			}
-
-			void VulkanContext::SetResourceName(GFXResource* resource_handle, const char* name)
-			{
-				switch (resource_handle->GetResourceType())
-				{
-				case ResourceType::eFence:
-				{
-					auto* handle = static_cast<VulkanFence*>(resource_handle);
-					debug_utils->SetDebugName(handle->GetHandle(), name);
-				} break;
-				case ResourceType::eSemaphore:
-				{
-					auto* handle = static_cast<VulkanSemaphore*>(resource_handle);
-					debug_utils->SetDebugName(handle->GetHandle(), name);
-				} break;
-				case ResourceType::eQueue:
-				{
-					auto* handle = static_cast<VulkanQueue*>(resource_handle);
-					debug_utils->SetDebugName(handle->GetHandle(), name);
-				} break;
-				case ResourceType::eSwapchain:
-				{
-					auto* handle = static_cast<VulkanSwapchain*>(resource_handle);
-					debug_utils->SetDebugName(handle->GetHandle(), name);
-				} break;
-				case ResourceType::eBuffer:
-				{
-					auto* handle = static_cast<VulkanBuffer*>(resource_handle);
-					debug_utils->SetDebugName(handle->GetHandle(), name);
-				} break;
-				case ResourceType::eCommandList:
-				{
-					auto* handle = static_cast<VulkanCommandList*>(resource_handle);
-					debug_utils->SetDebugName(handle->GetHandle(), name);
-				} break;
-				case ResourceType::eCommandPool:
-				{
-					auto* handle = static_cast<VulkanCommandPool*>(resource_handle);
-					debug_utils->SetDebugName(handle->GetHandle(), name);
-				} break;
-				case ResourceType::eTexture:
-				{
-					auto* handle = static_cast<VulkanTexture*>(resource_handle);
-
-					auto& image = handle->GetImage();
-					debug_utils->SetDebugName(image.GetHandle(), name);
-
-					auto& srv = handle->GetSubresource();
-					debug_utils->SetDebugName(image.GetHandle(), std::format("{}_base", name));
-
-					for (int32_t i = 0; i < image.GetMipLevelCount(); ++i)
-					{
-						auto& subresource = handle->GetSubresource(i);
-						debug_utils->SetDebugName(subresource.GetHandle(), std::format("{}_{}", name, i));
-					}
-				} break;
-				case ResourceType::eSampler:
-				{
-					auto* handle = static_cast<VulkanSampler*>(resource_handle);
-					debug_utils->SetDebugName(handle->GetHandle(), name);
-				} break;
-				case ResourceType::eShader:
-				{
-					auto* handle = static_cast<VulkanShader*>(resource_handle);
-
-					const auto& modules = handle->GetModules();
-					for (auto it = modules.Begin(); it != modules.End(); ++it)
-					{
-						auto& stage_ci = (*it)->GetStageCreateInfo();
-						debug_utils->SetDebugName(stage_ci.module, std::format("{}_{}", name, vk::to_string(stage_ci.stage)));
-					}
-
-				} break;
-				case ResourceType::eRootSignature:
-				{
-					assert(false && "NOT IMPLEMENTED");
-				} break;
-				case ResourceType::ePipeline:
-				{
-					auto* handle = static_cast<VulkanPipeline*>(resource_handle);
-					debug_utils->SetDebugName(handle->GetHandle(), name);
-				} break;
-				case ResourceType::ePipelineCache:
-				{
-					auto* handle = static_cast<VulkanPipelineCache*>(resource_handle);
-					debug_utils->SetDebugName(handle->GetHandle(), name);
-				} break;
-				case ResourceType::eDescriptorAllocator:
-				{
-					assert(false && "NOT IMPLEMENTED");
-				} break;
-				case ResourceType::eResourceDescriptor:
-				{
-					assert(false && "NOT IMPLEMENTED");
-				} break;
-				case ResourceType::eQueryPool:
-				{
-					auto* handle = static_cast<VulkanQueryPool*>(resource_handle);
-					debug_utils->SetDebugName(handle->GetHandle(), name);
-				} break;
-				default:
-					assert(false && "Unknown resource type");
-					break;
 				}
 			}
 

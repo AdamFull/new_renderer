@@ -1,5 +1,6 @@
 #include "VkRootSignature.h"
 #include "VkDevice.h"
+#include "VkDebug.h"
 #include "VkSharedDescriptor.h"
 #include "VkShader.h"
 
@@ -47,7 +48,8 @@ namespace engine
 			}
 
 
-			VulkanRootSignature::VulkanRootSignature(Device& device, const RootSignatureCreateInfo& create_info)
+			VulkanRootSignature::VulkanRootSignature(Device& device, const RootSignatureCreateInfo& create_info) :
+				device{ device }
 			{
 				const auto& reflection = create_info.shader->GetReflection();
 
@@ -121,8 +123,15 @@ namespace engine
 			}
 
 			VulkanRootSignature::VulkanRootSignature(VulkanRootSignature&& other) :
-				pipeline_layout{ std::exchange(other.pipeline_layout, {}) }
+				pipeline_layout{ std::exchange(other.pipeline_layout, {}) },
+				device{ other.device }
 			{
+			}
+
+			void VulkanRootSignature::SetResourceName(const char* name)
+			{
+				auto& debug_utils = device.GetDebugUtils();
+				debug_utils.SetDebugName(pipeline_layout->GetHandle(), name);
 			}
 
 			PipelineLayout& VulkanRootSignature::GetPipelineLayout()

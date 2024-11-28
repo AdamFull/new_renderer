@@ -176,6 +176,8 @@ namespace engine
 			virtual uint32_t AddResource(const TextureResourceCreateInfo& create_info, gfx::Sampler* sampler = nullptr) = 0;
 			virtual uint32_t AddResource(const gfx::BufferCreateInfo& create_info) = 0;
 
+			virtual void SetResourceName(uint32_t resource_index, const std::string& name) = 0;
+
 			virtual RenderGraphResource& GetResource(uint32_t resource_index) = 0;
 			virtual RenderGraphResource const& GetResource(uint32_t resource_index) const = 0;
 

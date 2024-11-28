@@ -14,7 +14,7 @@ namespace engine
 			class ShaderModule final : public VulkanResource<vk::ShaderModule>
 			{
 			public:
-				ShaderModule(Device& device, const ShaderStageInfo& create_info);
+				ShaderModule(Device& devices, const ShaderStageInfo& create_info);
 				~ShaderModule();
 
 				ShaderModule(ShaderModule&& other) = delete;
@@ -41,10 +41,13 @@ namespace engine
 				VulkanShader& operator=(const VulkanShader&) = delete;
 				VulkanShader& operator=(VulkanShader&&) = delete;
 
+				void SetResourceName(const char* name) override;
+
 				const StaticArray<std::unique_ptr<ShaderModule>, 6ull>& GetModules() const;
 			private:
 				void AddReflectionStage(const ShaderStageInfo& create_info);
 			private:
+				Device& device;
 				StaticArray<std::unique_ptr<ShaderModule>, 6ull> shader_modules{};
 			};
 		}

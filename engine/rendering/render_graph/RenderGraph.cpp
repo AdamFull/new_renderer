@@ -207,6 +207,34 @@ namespace engine
 			return ~0u;
 		}
 
+		void RenderGraph::SetResourceName(uint32_t resource_index, const std::string& name)
+		{
+			auto& render_resource = render_resources[resource_index];
+
+			gfx::GFXResource* resource{};
+			if (render_resource.resource_type & RenderResourceTypeFlag::eBackbuffer)
+			{
+				resource = &render_context->GetBackbuffer();
+			}
+			else if (render_resource.resource_type & RenderResourceTypeFlag::eStaticImage)
+			{
+				auto& texture_object = static_textures.Get(render_resource.resource_id);
+				resource = texture_object.texture;
+			}
+			else if (render_resource.resource_type & RenderResourceTypeFlag::eAllImage)
+			{
+				auto& texture_object = render_targets.Get(render_resource.resource_id);
+				resource = texture_object.texture;
+			}
+			else if (render_resource.resource_type & RenderResourceTypeFlag::eAllBuffer)
+			{
+				auto& buffer_object = buffers.Get(render_resource.resource_id);
+				resource = buffer_object.buffer;
+			}
+
+			resource->SetResourceName(name.c_str());
+		}
+
 		RenderGraphResource& RenderGraph::GetResource(uint32_t resource_index)
 		{
 			return render_resources[resource_index];

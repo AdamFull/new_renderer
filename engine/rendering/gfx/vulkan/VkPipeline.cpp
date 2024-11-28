@@ -1,5 +1,6 @@
 #include "VkPipeline.h"
 #include "VkDevice.h"
+#include "VkDebug.h"
 
 #include "VkShader.h"
 #include "VkRootSignature.h"
@@ -28,6 +29,12 @@ namespace engine
 			VulkanPipeline::~VulkanPipeline()
 			{
 				Handle(device).destroyPipeline(handle, allocation_callbacks);
+			}
+
+			void VulkanPipeline::SetResourceName(const char* name)
+			{
+				auto& debug_utils = device.GetDebugUtils();
+				debug_utils.SetDebugName(handle, name);
 			}
 
 

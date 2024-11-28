@@ -1,5 +1,6 @@
 #include "VkSemaphore.h"
 #include "VkDevice.h"
+#include "VkDebug.h"
 
 namespace engine
 {
@@ -18,6 +19,12 @@ namespace engine
 			VulkanSemaphore::~VulkanSemaphore()
 			{
 				Handle(device).destroySemaphore(handle, allocation_callbacks);
+			}
+
+			void VulkanSemaphore::SetResourceName(const char* name)
+			{
+				auto& debug_utils = device.GetDebugUtils();
+				debug_utils.SetDebugName(handle, name);
 			}
 		}
 	}

@@ -21,7 +21,7 @@ namespace engine
 			}
 
 			VulkanResourceDescriptor::VulkanResourceDescriptor(VulkanResourceDescriptor&& other) :
-				device{ device }, 
+				device{ other.device }, 
 				first_set{ std::exchange(other.first_set, {}) },
 				set_count{ std::exchange(other.set_count, {}) },
 				descriptor_sets{ std::exchange(other.descriptor_sets, {}) },
@@ -46,6 +46,11 @@ namespace engine
 			uint32_t VulkanResourceDescriptor::GetSetCount() const
 			{
 				return set_count;
+			}
+
+			void VulkanResourceDescriptor::SetResourceName(const char* name)
+			{
+				assert(false && "NOT IMPLEMENTED");
 			}
 
 			void VulkanResourceDescriptor::BindTexture(TextureDescriptor& texture_descriptor)

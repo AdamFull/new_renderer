@@ -17,6 +17,8 @@ namespace engine
 				VulkanFence(Device& device);
 				~VulkanFence();
 
+				void SetResourceName(const char* name) override;
+
 				void Wait(uint64_t timeout = std::numeric_limits<uint64_t>::max()) override;
 				void Reset() override;
 

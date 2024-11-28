@@ -250,6 +250,16 @@ namespace engine
 
 				throw std::runtime_error("Could not find a matching queue family index");
 			}
+
+			void Device::SetDebugUtils(DebugUtils* debug_utils)
+			{
+				this->debug_utils = debug_utils;
+			}
+
+			DebugUtils const& Device::GetDebugUtils() const
+			{
+				return *debug_utils;
+			}
 		}
 	}
 }
