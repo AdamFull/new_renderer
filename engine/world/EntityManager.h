@@ -119,7 +119,7 @@ namespace engine
 					if (auto& set = storage.second; set.contains(entity))
 					{
 						if (auto found = std::find_if(m_meta.begin(), m_meta.end(), [type = storage.first](const FComponentMeta& meta) {return meta.type == type; }); found != m_meta.end())
-							func(set.get(entity), *found);
+							func(*found);
 					}
 				}
 			}

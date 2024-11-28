@@ -3,14 +3,14 @@
   "version-string": "0.0.1",
   "license": "MIT",
   "homepage": "https://github.com/AdamFull/new_renderer",
-  "builtin-baseline": "63366443439398a62afc9a63b34b9a3ba63b1cae",
+  "builtin-baseline": "9d196b217c8f435b90e8608753609c58c24faed1",
   "dependencies": [
     "libzip",
     "zstd",
     "zlib",
     {
       "name": "vulkan-headers",
-      "version>=": "1.3.280.0"
+      "version>=": "1.3.296.0"
     },
     {
       "name": "ktx",
@@ -21,7 +21,7 @@
     },
     {
       "name": "glslang",
-      "version>=": "12.2.0",
+      "version>=": "15.0.0",
       "features": [
         "tools"
       ]
@@ -29,13 +29,7 @@
     "directx-dxc",
     {
       "name": "spirv-cross",
-      "version>=": "2021-01-15#2"
-    },
-    {
-      "name": "sdl2",
-      "features": [
-        "base"
-      ]
+      "version>=": "1.3.296.0"
     },
     "glfw3",
     "glm",
@@ -45,12 +39,9 @@
     },
     {
       "name": "entt",
-      "version>=": "3.11.1"
+      "version>=": "3.14.0"
     },
-    {
-      "name": "backward-cpp",
-      "version>=": "1.6#1"
-    },
+    "backward-cpp",
     "refl-cpp",
     "meshoptimizer",
     "nlohmann-json",
@@ -59,8 +50,6 @@
     "freetype",
     "spdlog",
     "volk",
-
-    "fmt",
 
     "libvorbis",
     "libvpx",

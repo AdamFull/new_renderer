@@ -52,7 +52,7 @@ void InspectorWindow::__draw(float fDt)
 		ImGui::GTextInput("Name", &base.name);
 		ImGui::Separator();
 
-		EntityManager::IterateComponents(selected, [&](void* component, const FComponentMeta& meta)
+		EntityManager::IterateComponents(selected, [&](const FComponentMeta& meta)
 			{
 				if (meta.name && !(meta.flags & EComponentFlagBits::eHiddenInEditor))
 				{

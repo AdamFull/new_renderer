@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.18.0)
 project(utils LANGUAGES CXX)
 
-find_package(fmt CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 
 file(GLOB_RECURSE UTILS_SOURCES FILES *.cpp *.h)
@@ -16,6 +15,5 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 
 # Link libraries
 target_link_libraries(${PROJECT_NAME}
-    PRIVATE fmt::fmt
     PRIVATE spdlog::spdlog
 )

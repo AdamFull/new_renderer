@@ -2,7 +2,7 @@
 
 #define LOGGER_FORMAT "[%Y-%m-%d %H:%M:%S] [%^%l%$] %v"
 
-#include <spdlog/fmt/fmt.h>
+//#include <spdlog/fmt/std.h>
 #include <spdlog/spdlog.h>
 
 #ifdef PLATFORM_ANDROID

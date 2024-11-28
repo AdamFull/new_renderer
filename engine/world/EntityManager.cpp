@@ -125,7 +125,7 @@ nlohmann::json EntityManager::SerializeEntity(entt::entity entity)
 	j["visible"] = base.visible;
 
 	auto& components = j["components"];
-	IterateComponents(entity, [&components, entity](void* component, const FComponentMeta& meta) { meta.serialize(components, entity); });
+	IterateComponents(entity, [&components, entity](const FComponentMeta& meta) { meta.serialize(components, entity); });
 
 	auto& children = j["children"];
 	auto& hierarchy = m_registry.get<ecs::FHierarchyComponent>(entity);
@@ -145,7 +145,7 @@ entt::entity EntityManager::DeserializeEntity(entt::entity parent, const nlohman
 	j.at("visible").get_to(base.visible);
 
 	auto& components = j["components"];
-	IterateComponents(entity, [&components, entity](void* component, const FComponentMeta& meta) { meta.deserialize(components, entity); });
+	IterateComponents(entity, [&components, entity](const FComponentMeta& meta) { meta.deserialize(components, entity); });
 
 	auto& hierarchy = m_registry.get<ecs::FHierarchyComponent>(entity);
 	auto& children = j["children"];

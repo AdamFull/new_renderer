@@ -42,13 +42,15 @@ if(WIN32)
 add_compile_definitions("PLATFORM_WIN32")
 endif()
 
+add_compile_definitions(FMT_UNICODE=0)
+
 if(MSVC)
     add_compile_options(/bigobj)
 endif()
 
 add_compile_definitions(
     #TRACY_ENABLE
-    SPDLOG_FMT_EXTERNAL
+    SPDLOG_USD_STD_FORMAT
     IMGUI_DEFINE_MATH_OPERATORS
     IMGUI_USE_WCHAR32
     NOMINMAX
