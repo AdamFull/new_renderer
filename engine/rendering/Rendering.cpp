@@ -802,6 +802,8 @@ namespace engine
 			
 							for (int32_t layer = 0; layer < shlib::cascade_shadow_map_cascade_count; ++layer)
 							{
+								draw_call_id = light.shadow_casters[layer] * render_world->GetDrawCount();
+
 								constants.Set(render_label::call_id, draw_call_id);
 								constants.Set(render_label::shadow_index, shadow_index);
 								constants.Set(render_label::layer, layer);
@@ -901,6 +903,8 @@ namespace engine
 			
 							for (int32_t layer = 0; layer < 6; ++layer)
 							{
+								draw_call_id = light.shadow_casters[layer] * render_world->GetDrawCount();
+
 								constants.Set(render_label::call_id, draw_call_id);
 								constants.Set(render_label::shadow_index, shadow_index);
 								constants.Set(render_label::layer, layer);
@@ -997,6 +1001,8 @@ namespace engine
 						{
 							if (!light.castShadows)
 								continue;
+
+							draw_call_id = light.shadow_caster * render_world->GetDrawCount();
 			
 							constants.Set(render_label::call_id, draw_call_id);
 							constants.Set(render_label::shadow_index, shadow_index);
