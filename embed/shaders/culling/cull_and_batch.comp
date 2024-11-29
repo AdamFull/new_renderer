@@ -50,7 +50,7 @@ void main()
 	max_extents.xyz /= max_extents.w;
 
 	Camera camera = GetCamera(local_camera_index);
-	//if(checkObjectInFrustum(min_extents.xyz, max_extents.xyz, camera.frustum_offset))
+	if(checkObjectInFrustum(min_extents.xyz, max_extents.xyz, camera.frustum_offset))
 	{
 		DrawIndexedIndirectData indirect_command;
 		indirect_command.indexCount = mesh.index_count;
