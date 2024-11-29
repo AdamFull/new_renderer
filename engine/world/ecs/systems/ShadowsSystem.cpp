@@ -69,7 +69,7 @@ namespace engine
 						if (light.castShadows && base.enabled && dir_light_count < shlib::max_directional_light_shadow_count)
 						{
 							shlib::CascadedShadowCommit shadow_commit{};
-							shadow_commit.cameraID = light.shadow_casters.front(); // Adding first camera id
+							shadow_commit.cameraID = render_world.GetCameraId(light.shadow_casters.front()); // Adding first camera id
 
 							// Calculate split depths based on view camera frustum
 							// Based on method presented in https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch10.html
@@ -189,7 +189,7 @@ namespace engine
 						{
 							shlib::OmniShadowCommit shadow_commit{};
 				
-							shadow_commit.cameraID = light.shadow_casters.front();
+							shadow_commit.cameraID = render_world.GetCameraId(light.shadow_casters.front());
 				
 							glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, light.radius / 2.f);
 				
@@ -232,7 +232,7 @@ namespace engine
 						if (light.castShadows && base.enabled && spot_light_count < shlib::max_spot_light_count)
 						{
 							shlib::SpotShadowCommit shadow_commit{};
-							shadow_commit.cameraID = light.shadow_caster;
+							shadow_commit.cameraID = render_world.GetCameraId(light.shadow_caster);
 				
 							auto light_dir = light.toTarget ? light.target : glm::normalize(ltransform.grotation * glm::vec3(0.f, 0.f, -1.f));
 							glm::mat4 shadowProj = glm::perspective(light.outerAngle * 2.f, 1.0f, 0.1f, 64.f);

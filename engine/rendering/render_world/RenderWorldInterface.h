@@ -43,6 +43,7 @@ namespace engine
 			virtual uint32_t CreateRenderCamera() = 0;
 			virtual shlib::Camera& GetRenderCamera(uint32_t camera_id) = 0;
 			virtual glm::mat4 const& GetCameraMatrix(uint32_t camera_id, uint32_t matrix_index) = 0;
+			virtual uint32_t GetCameraId(uint32_t camera_id) const = 0;
 			virtual uint32_t GetCameraCount() const = 0;
 
 			virtual void UpdateRenderCamera(uint32_t camera_id, const glm::vec3& translation, const glm::quat& rotation) = 0;

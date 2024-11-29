@@ -64,6 +64,12 @@ namespace engine
 			return *(matrix_begin + matrix_index);
 		}
 
+		uint32_t RenderWorld::GetCameraId(uint32_t camera_id) const
+		{
+			auto& world_resource = world_resources[camera_id];
+			return world_resource.resource_id;
+		}
+
 		uint32_t RenderWorld::GetCameraCount() const
 		{
 			return camera_offset;

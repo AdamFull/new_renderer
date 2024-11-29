@@ -824,7 +824,8 @@ namespace engine
 			
 							for (int32_t layer = 0; layer < shlib::cascade_shadow_map_cascade_count; ++layer)
 							{
-								draw_call_id = light.shadow_casters[layer] * render_world->GetDrawCount();
+								auto camera_id = render_world->GetCameraId(light.shadow_casters[layer]);
+								draw_call_id = camera_id * render_world->GetDrawCount();
 
 								constants.Set(render_label::call_id, draw_call_id);
 								constants.Set(render_label::shadow_index, shadow_index);
@@ -832,8 +833,8 @@ namespace engine
 			
 								self.PushConstantRanges(command_list);
 			
-								draw_command.argument_offset = light.shadow_casters[layer] * draw_command.command_stride;
-								draw_command.count_offset = light.shadow_casters[layer] * sizeof(uint32_t);
+								draw_command.argument_offset = camera_id * draw_command.command_stride;
+								draw_command.count_offset = camera_id * sizeof(uint32_t);
 			
 								command_list.DrawIndirect(draw_command);
 							}
@@ -925,7 +926,8 @@ namespace engine
 			
 							for (int32_t layer = 0; layer < 6; ++layer)
 							{
-								draw_call_id = light.shadow_casters[layer] * render_world->GetDrawCount();
+								auto camera_id = render_world->GetCameraId(light.shadow_casters[layer]);
+								draw_call_id = camera_id * render_world->GetDrawCount();
 
 								constants.Set(render_label::call_id, draw_call_id);
 								constants.Set(render_label::shadow_index, shadow_index);
@@ -933,8 +935,8 @@ namespace engine
 			
 								self.PushConstantRanges(command_list);
 			
-								draw_command.argument_offset = light.shadow_casters[layer] * draw_command.command_stride;
-								draw_command.count_offset = light.shadow_casters[layer] * sizeof(uint32_t);
+								draw_command.argument_offset = camera_id * draw_command.command_stride;
+								draw_command.count_offset = camera_id * sizeof(uint32_t);
 			
 								command_list.DrawIndirect(draw_command);
 							}
@@ -1024,7 +1026,8 @@ namespace engine
 							if (!light.castShadows)
 								continue;
 
-							draw_call_id = light.shadow_caster * render_world->GetDrawCount();
+							auto camera_id = render_world->GetCameraId(light.shadow_caster);
+							draw_call_id = camera_id * render_world->GetDrawCount();
 			
 							constants.Set(render_label::call_id, draw_call_id);
 							constants.Set(render_label::shadow_index, shadow_index);
@@ -1032,8 +1035,8 @@ namespace engine
 			
 							self.PushConstantRanges(command_list);
 			
-							draw_command.argument_offset = light.shadow_caster * draw_command.command_stride;
-							draw_command.count_offset = light.shadow_caster * sizeof(uint32_t);
+							draw_command.argument_offset = camera_id * draw_command.command_stride;
+							draw_command.count_offset = camera_id * sizeof(uint32_t);
 			
 							command_list.DrawIndirect(draw_command);
 			

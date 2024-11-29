@@ -21,6 +21,7 @@ namespace engine
 			uint32_t CreateRenderCamera() override;
 			shlib::Camera& GetRenderCamera(uint32_t camera_id) override;
 			glm::mat4 const& GetCameraMatrix(uint32_t camera_id, uint32_t matrix_index) override;
+			uint32_t GetCameraId(uint32_t camera_id) const override;
 			uint32_t GetCameraCount() const override;
 
 			void UpdateRenderCamera(uint32_t camera_id, const glm::vec3& translation, const glm::quat& rotation) override;
