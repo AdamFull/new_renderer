@@ -12,6 +12,7 @@ namespace engine
 		enum class WorldResourceType
 		{
 			eCamera,
+			eNode,
 			eLight
 		};
 
@@ -47,7 +48,13 @@ namespace engine
 			virtual void UpdateRenderCamera(uint32_t camera_id, const glm::vec3& translation, const glm::quat& rotation) = 0;
 			virtual void UpdateRenderCamera(uint32_t camera_id, const glm::mat4& view, const glm::mat4& projection, uint32_t width, uint32_t height) = 0;
 
+			virtual glm::mat4 const& GetMatrix(uint32_t matrix_offset) const = 0;
+
+			virtual uint32_t CreateNode() = 0;
 			virtual void UpdateNode(uint32_t node_id, const glm::mat4& matrix) = 0;
+			virtual glm::mat4 const& GetNodeMatrix(uint32_t node_id, uint32_t matrix_offset) const = 0;
+			virtual const shlib::SceneNode& GetNode(uint32_t node_id) const = 0;
+			virtual uint32_t GetNodeId(uint32_t resource_id) const = 0;
 
 			virtual void AddGeometryDraw(const shlib::DrawDescription& draw_command) = 0;
 

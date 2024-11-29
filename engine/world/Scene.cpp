@@ -252,7 +252,7 @@ namespace engine
 		{
 			EntityManager::RegisterSystem<ecs::CInputSystem>();
 			EntityManager::RegisterSystem<ecs::CAnimationSystem>();
-			EntityManager::RegisterSystem<ecs::CScenegraphSystem>();
+			EntityManager::RegisterSystem<ecs::CScenegraphSystem>(renderer);
 			//EntityManager::RegisterSystem<ecs::CSkinningSystem>(render_interface);
 
 			EntityManager::RegisterSystem<ecs::CameraSystem>(renderer);

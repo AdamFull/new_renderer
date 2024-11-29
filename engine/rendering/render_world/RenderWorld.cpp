@@ -185,24 +185,63 @@ namespace engine
 			}
 		}
 
+		glm::mat4 const& RenderWorld::GetMatrix(uint32_t matrix_offset) const
+		{
+			return world_matrices->Get(matrix_offset);
+		}
+
+		uint32_t RenderWorld::CreateNode()
+		{
+			auto& world_resource = world_resources.emplace_back();
+			world_resource.type = WorldResourceType::eNode;
+			world_resource.resource_id = nodes_offset++;
+
+			auto& node = world_nodes->Get(world_resource.resource_id);
+			world_nodes->MarkDirty(world_resource.resource_id);
+
+			node.matrixOffset = matrices_offset;
+			matrices_offset += 2ull;
+
+			// TODO: skeleton id
+
+			return world_resources.size() - 1ull;
+		}
+
 		void RenderWorld::UpdateNode(uint32_t node_id, const glm::mat4& matrix)
 		{
 			ZoneScoped;
 
-			auto& node = world_nodes->Get(node_id);
-			world_nodes->MarkDirty(node_id);
+			auto& world_resource = world_resources[node_id];
 
-			if (node.matrixOffset == 0u)
-			{
-				node.matrixOffset = matrices_offset;
-				matrices_offset += 2u;
-			}
+			auto& node = world_nodes->Get(world_resource.resource_id);
+			world_nodes->MarkDirty(world_resource.resource_id);
 
 			auto* matrices = world_matrices->Data(node.matrixOffset);
+			world_matrices->MarkDirty(node.matrixOffset, 2ull);
+
 			matrices[1ull] = matrices[0ull];
 			matrices[0ull] = matrix;
+		}
 
-			world_matrices->MarkDirty(node.matrixOffset, 2ull);
+		glm::mat4 const& RenderWorld::GetNodeMatrix(uint32_t node_id, uint32_t matrix_offset) const
+		{
+			auto& world_resource = world_resources[node_id];
+			auto& node = world_nodes->Get(world_resource.resource_id);
+
+			auto* matrix_begin = world_matrices->Data(node.matrixOffset);
+			return *(matrix_begin + matrix_offset);
+		}
+
+		const shlib::SceneNode& RenderWorld::GetNode(uint32_t node_id) const
+		{
+			auto& world_resource = world_resources[node_id];
+			return world_nodes->Get(world_resource.resource_id);
+		}
+
+		uint32_t RenderWorld::GetNodeId(uint32_t resource_id) const
+		{
+			auto& world_resource = world_resources[resource_id];
+			return world_resource.resource_id;
 		}
 
 		void RenderWorld::AddGeometryDraw(const shlib::DrawDescription& draw_command)

@@ -37,8 +37,8 @@ void main()
 
 	DrawDescription draw_info = source_descriptions[local_desc_index].data;
 
-	Mesh mesh = GetMesh(draw_info.meshID);
-	SceneNode node = GetSceneNode(draw_info.nodeID);
+	Mesh mesh = GetMesh(draw_info.mesh_index);
+	SceneNode node = GetSceneNode(draw_info.node_index);
 
 	mat4 model = GetModelMatrix(node.matrixOffset);
 
@@ -67,8 +67,8 @@ void main()
 
 	//// Sample info about current Draw comand
 	//DrawDescription draw_info = GetRawDrawInfo(global_draw_index);
-	//SceneNode node = GetSceneNode(draw_info.nodeID);
-	//Mesh mesh = GetMesh(draw_info.meshID);
+	//SceneNode node = GetSceneNode(draw_info.node_index);
+	//Mesh mesh = GetMesh(draw_info.mesh_index);
 	//mat4 model = GetModelMatrix(node.matrixOffset);			
 	//
 	//// output_index = culler_counter + draw_offset;

@@ -21,7 +21,7 @@ void main()
 	uint32_t draw_index = call_data.call_id + gl_DrawIDARB + gl_InstanceIndex;
 	DrawDescription draw_info = GetDrawInfo(draw_index);
 
-	SceneNode node = GetSceneNode(draw_info.nodeID);
+	SceneNode node = GetSceneNode(draw_info.node_index);
 	mat4 model_matrix = GetModelMatrix(node.matrixOffset);
 
 	uint draw_id = call_data.call_id + gl_DrawIDARB;
@@ -52,7 +52,7 @@ void main()
 
 	drawID = draw_id;
 	instanceID = gl_InstanceIndex;
-	//vboID = draw_info.vboID;
+	//vboID = draw_info.vbo_index;
 	texCoord = GetVertexTexcoord(vertex_index);
 	gl_Position = view_projection * local_pos;
 }

@@ -16,7 +16,7 @@ void main()
 	uint32_t draw_index = shadow_data.call_id + gl_DrawIDARB + gl_InstanceIndex;
 	DrawDescription draw_info = GetDrawInfo(draw_index);
 
-	SceneNode node = GetSceneNode(draw_info.nodeID);
+	SceneNode node = GetSceneNode(draw_info.node_index);
 	mat4 model_matrix = GetModelMatrix(node.matrixOffset);
 
 	uint32_t vertex_index = uint32_t(gl_VertexIndex);
@@ -63,7 +63,7 @@ void main()
 
 	material = ~0u;
 
-	Mesh mesh = GetMesh(draw_info.meshID);
+	Mesh mesh = GetMesh(draw_info.mesh_index);
 	if(mesh.material != ~0u)
 	{
 		material = mesh.material;

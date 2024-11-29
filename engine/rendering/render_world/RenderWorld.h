@@ -26,7 +26,13 @@ namespace engine
 			void UpdateRenderCamera(uint32_t camera_id, const glm::vec3& translation, const glm::quat& rotation) override;
 			void UpdateRenderCamera(uint32_t camera_id, const glm::mat4& view, const glm::mat4& projection, uint32_t width, uint32_t height) override;
 
+			glm::mat4 const& GetMatrix(uint32_t matrix_offset) const override;
+
+			uint32_t CreateNode() override;
 			void UpdateNode(uint32_t node_id, const glm::mat4& matrix) override;
+			glm::mat4 const& GetNodeMatrix(uint32_t node_id, uint32_t matrix_offset) const override;
+			const shlib::SceneNode& GetNode(uint32_t node_id) const override;
+			uint32_t GetNodeId(uint32_t resource_id) const override;
 
 			void AddGeometryDraw(const shlib::DrawDescription& draw_command) override;
 

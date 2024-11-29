@@ -18,10 +18,10 @@ REGISTER_TYPE_PTR(DrawIndexedIndirectData, 4);
 
 struct DrawDescription
 {
-	uint32_t vboID;
-	uint32_t meshID;
-	uint32_t nodeID;
-	uint32_t pad;
+	uint32_t vbo_index;
+	uint32_t mesh_index;
+	uint32_t node_index;
+	uint32_t sorting_order;
 };
 
 REGISTER_TYPE_PTR(DrawDescription, 4);

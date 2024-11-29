@@ -42,9 +42,6 @@ namespace engine
 				f32 xmag{ 0.f };
 				f32 ymag{ 0.f };
 
-				glm::mat4 view{ 1.f };
-				glm::mat4 projection{ 1.f };
-
 				glm::vec3 up{ 0.f };
 				glm::vec3 forward{ 0.f };
 				glm::vec3 right{ 0.f };
