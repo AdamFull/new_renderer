@@ -38,7 +38,7 @@ namespace engine
 				ZoneScoped;
 
 				// TODO: get current player camera?
-				static const uint32_t main_camera_id{ 0u };
+				static const uint32_t main_camera_id{ 2u };
 				auto& camera = render_world.GetRenderCamera(main_camera_id);
 
 				u64 light_count{ 0ull };
@@ -69,7 +69,6 @@ namespace engine
 						if (light.castShadows && base.enabled && dir_light_count < shlib::max_directional_light_shadow_count)
 						{
 							shlib::CascadedShadowCommit shadow_commit{};
-							shadow_commit.cameraID = render_world.GetCameraId(light.shadow_casters.front()); // Adding first camera id
 
 							// Calculate split depths based on view camera frustum
 							// Based on method presented in https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch10.html
@@ -158,6 +157,22 @@ namespace engine
 								lastSplitDist = cascadeSplits[i];
 
 								render_world.UpdateRenderCamera(light.shadow_casters[i], lightViewMatrix, lightProjectionMatrix, shlib::cascade_shadow_map_resolution, shlib::cascade_shadow_map_resolution);
+
+								auto& camera = render_world.GetRenderCamera(light.shadow_casters[i]);
+								shadow_commit.matrix_offsets[i] = camera.matrices_offset;
+
+								// Update meshes
+								auto mview = EntityManager::View<FTransformComponent, FBaseComponent, FMeshComponent>();
+								for (auto [mentity, mtransform, mbase, mesh_component] : mview.each())
+								{
+									if (!base.visible)
+										continue;
+
+									for (const auto& primitive : mesh_component.primitives)
+									{
+										render_world.AddGeometryDraw(light.shadow_casters[i], mtransform.node_index, primitive.mesh);
+									}
+								}
 							}
 
 							shadow_commit.index = light_count;
@@ -189,9 +204,7 @@ namespace engine
 						{
 							shlib::OmniShadowCommit shadow_commit{};
 				
-							shadow_commit.cameraID = render_world.GetCameraId(light.shadow_casters.front());
-				
-							glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, light.radius / 2.f);
+							glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, light.radius);
 				
 							matrices[0] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)); // POSITIVE_X
 							matrices[1] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)); // NEGATIVE_X
@@ -209,6 +222,22 @@ namespace engine
 							{
 								auto& view = matrices[idx];
 								render_world.UpdateRenderCamera(light.shadow_casters[idx], view, shadowProj, shlib::point_light_shadow_map_resolution, shlib::point_light_shadow_map_resolution);
+
+								auto& camera = render_world.GetRenderCamera(light.shadow_casters[idx]);
+								shadow_commit.matrix_offsets[idx] = camera.matrices_offset;
+
+								// Update meshes
+								auto mview = EntityManager::View<FTransformComponent, FBaseComponent, FMeshComponent>();
+								for (auto [mentity, mtransform, mbase, mesh_component] : mview.each())
+								{
+									if (!base.visible)
+										continue;
+
+									for (const auto& primitive : mesh_component.primitives)
+									{
+										render_world.AddGeometryDraw(light.shadow_casters[idx], mtransform.node_index, primitive.mesh);
+									}
+								}
 							}
 				
 							render_world.AddShadow(shadow_commit);
@@ -232,7 +261,9 @@ namespace engine
 						if (light.castShadows && base.enabled && spot_light_count < shlib::max_spot_light_count)
 						{
 							shlib::SpotShadowCommit shadow_commit{};
-							shadow_commit.cameraID = render_world.GetCameraId(light.shadow_caster);
+
+							auto& camera = render_world.GetRenderCamera(light.shadow_caster);
+							shadow_commit.matrix_offset = camera.matrices_offset;
 				
 							auto light_dir = light.toTarget ? light.target : glm::normalize(ltransform.grotation * glm::vec3(0.f, 0.f, -1.f));
 							glm::mat4 shadowProj = glm::perspective(light.outerAngle * 2.f, 1.0f, 0.1f, 64.f);
@@ -242,7 +273,20 @@ namespace engine
 							light.shadowIndex = spot_light_count++;
 							render_world.AddShadow(shadow_commit);
 							
-							render_world.UpdateRenderCamera(shadow_commit.cameraID, shadowView, shadowProj, shlib::spot_light_shadow_map_resolution, shlib::spot_light_shadow_map_resolution);
+							render_world.UpdateRenderCamera(light.shadow_caster, shadowView, shadowProj, shlib::spot_light_shadow_map_resolution, shlib::spot_light_shadow_map_resolution);
+
+							// Update meshes
+							auto mview = EntityManager::View<FTransformComponent, FBaseComponent, FMeshComponent>();
+							for (auto [mentity, mtransform, mbase, mesh_component] : mview.each())
+							{
+								if (!base.visible)
+									continue;
+
+								for (const auto& primitive : mesh_component.primitives)
+								{
+									render_world.AddGeometryDraw(light.shadow_caster, mtransform.node_index, primitive.mesh);
+								}
+							}
 						}
 				
 						++light_count;

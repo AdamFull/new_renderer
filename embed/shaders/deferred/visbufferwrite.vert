@@ -52,7 +52,6 @@ void main()
 
 	drawID = draw_id;
 	instanceID = gl_InstanceIndex;
-	//vboID = draw_info.vbo_index;
 	texCoord = GetVertexTexcoord(vertex_index);
 	gl_Position = view_projection * local_pos;
 }

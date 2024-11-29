@@ -465,6 +465,11 @@ namespace engine
 
 				auto vertex_range = geometry_buffer.AddMesh(attribute_streams, index_stream);
 
+				// Create mesh primitive
+				ecs::FMeshPrimitive mesh_primitive{};
+				mesh_primitive.vbo = Hash(geometry_ci);
+				mesh_primitive.mesh = render_world.CreateMesh();
+
 				shlib::Mesh new_mesh{};
 				new_mesh.bounds.min = pos_min;
 				new_mesh.bounds.max = pos_max;
@@ -472,14 +477,10 @@ namespace engine
 				new_mesh.index_count = vertex_range.index_count;
 				new_mesh.first_vertex = vertex_range.first_vertex;
 				new_mesh.vertex_count = vertex_range.vertex_count;
-
 				// NOTE: Updating material Create info for future shader creation
 				new_mesh.material = primitive.material;
-
-				// Create mesh primitive
-				ecs::FMeshPrimitive mesh_primitive{};
-				mesh_primitive.vbo = Hash(geometry_ci);
-				mesh_primitive.mesh = render_world.AddMesh(new_mesh);
+				
+				render_world.UpdateMesh(mesh_primitive.mesh, new_mesh);
 				
 				mesh_component.primitives.emplace_back(mesh_primitive);
 			}

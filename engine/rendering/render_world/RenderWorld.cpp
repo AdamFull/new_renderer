@@ -49,9 +49,16 @@ namespace engine
 			return world_resources.size() - 1ull;
 		}
 
+		uint32_t RenderWorld::GetResourceId(uint32_t resource_index) const
+		{
+			auto& world_resource = world_resources[resource_index];
+			return world_resource.resource_id;
+		}
+
 		shlib::Camera& RenderWorld::GetRenderCamera(uint32_t camera_id)
 		{
 			auto& world_resource = world_resources[camera_id];
+			assert(world_resource.type == WorldResourceType::eCamera);
 			return world_cameras->Get(world_resource.resource_id);
 		}
 
@@ -64,12 +71,6 @@ namespace engine
 			return *(matrix_begin + matrix_index);
 		}
 
-		uint32_t RenderWorld::GetCameraId(uint32_t camera_id) const
-		{
-			auto& world_resource = world_resources[camera_id];
-			return world_resource.resource_id;
-		}
-
 		uint32_t RenderWorld::GetCameraCount() const
 		{
 			return camera_offset;
@@ -80,6 +81,8 @@ namespace engine
 			ZoneScoped;
 
 			auto& world_resource = world_resources[camera_id];
+			assert(world_resource.type == WorldResourceType::eCamera);
+
 			auto& camera = world_cameras->Get(world_resource.resource_id);
 
 			uint32_t camera_hash{ 0u };
@@ -218,6 +221,7 @@ namespace engine
 			ZoneScoped;
 
 			auto& world_resource = world_resources[node_id];
+			assert(world_resource.type == WorldResourceType::eNode);
 
 			auto& node = world_nodes->Get(world_resource.resource_id);
 			world_nodes->MarkDirty(world_resource.resource_id);
@@ -241,16 +245,11 @@ namespace engine
 		const shlib::SceneNode& RenderWorld::GetNode(uint32_t node_id) const
 		{
 			auto& world_resource = world_resources[node_id];
+			assert(world_resource.type == WorldResourceType::eNode);
 			return world_nodes->Get(world_resource.resource_id);
 		}
 
-		uint32_t RenderWorld::GetNodeId(uint32_t resource_id) const
-		{
-			auto& world_resource = world_resources[resource_id];
-			return world_resource.resource_id;
-		}
-
-		void RenderWorld::AddGeometryDraw(const shlib::DrawDescription& draw_command)
+		void RenderWorld::AddGeometryDraw(uint32_t camera_id, uint32_t node_id, uint32_t mesh_id)
 		{
 			ZoneScoped;
 
@@ -259,15 +258,60 @@ namespace engine
 			// Describes current draw command resources
 			auto& batch_command = draw_descriptions->Get(draw_index);
 			draw_descriptions->MarkDirty(draw_index);
-			batch_command = draw_command;
-			//auto& indirect_command = indirect_draw_commands->Get(draw_index);
-			//indirect_draw_commands->MarkDirty(draw_index);
-			//
-			//indirect_command.indexCount = draw_command.index_count;
-			//indirect_command.instanceCount = 1;
-			//indirect_command.firstIndex = draw_command.first_index;
-			//indirect_command.vertexOffset = int(draw_command.first_vertex);
-			//indirect_command.firstInstance = 0;
+
+			// Lookup for camera
+			glm::mat4* camera_matrices{ nullptr };
+			shlib::Camera* camera{ nullptr };
+			{
+				auto& world_resource = world_resources[camera_id];
+				assert(world_resource.type == WorldResourceType::eCamera);
+				batch_command.camera_index = world_resource.resource_id;
+
+				camera = world_cameras->Data() + world_resource.resource_id;
+				assert(camera && "Invalid camera resource.");
+
+				camera_matrices = world_matrices->Data() + camera->matrices_offset;
+				assert(camera_matrices && "Invalid camera matrices");
+			}
+
+			// Lookup for scene node
+			glm::mat4* node_matrices{ nullptr };
+			shlib::SceneNode* node{ nullptr };
+			{
+				auto& world_resource = world_resources[node_id];
+				assert(world_resource.type == WorldResourceType::eNode);
+				batch_command.node_index = world_resource.resource_id;
+
+				node = world_nodes->Data() + world_resource.resource_id;
+				assert(node && "Invalid node resource.");
+
+				node_matrices = world_matrices->Data() + node->matrixOffset;
+				assert(node_matrices && "Invald node matrices.");
+			}
+
+			// Lookup for mesh
+			{
+				auto& world_resource = world_resources[mesh_id];
+				assert(world_resource.type == WorldResourceType::eMesh);
+				batch_command.mesh_index = world_resource.resource_id;
+			}
+
+			const glm::mat4& world_matrix = node_matrices[0];
+			const auto& view_matrix = camera_matrices[shlib::view_matrix_offset];
+
+			glm::vec4 view_space_pos = view_matrix * glm::vec4(glm::vec3(world_matrix[3]), 1.f);
+
+			float normalized_depth = (view_space_pos.z - camera->z_near) / (camera->z_far - camera->z_near);
+			// Is reverse z
+			if (false)
+			{
+				normalized_depth = 1.0f - normalized_depth;
+			}
+
+			normalized_depth = glm::clamp(glm::abs(normalized_depth), 0.0f, 1.0f);
+
+			// Write depth based sorting order
+			batch_command.sorting_order = static_cast<uint32_t>(normalized_depth * 0xFFFFFFFF);
 		}
 
 		uint32_t RenderWorld::AddMaterial(const shlib::Material& material)
@@ -285,19 +329,35 @@ namespace engine
 			return draw_materials->Get(index);
 		}
 
-		uint32_t RenderWorld::AddMesh(const shlib::Mesh& mesh)
+		uint32_t RenderWorld::CreateMesh()
 		{
-			auto mesh_index = mesh_count++;
-			auto& new_mesh = world_meshes->Get(mesh_index);
-			world_meshes->MarkDirty(mesh_index);
-			new_mesh = mesh;
+			auto& world_resource = world_resources.emplace_back();
+			world_resource.type = WorldResourceType::eMesh;
+			world_resource.resource_id = mesh_count++;
 
-			return mesh_index;
+			auto& mesh = world_meshes->Get(world_resource.resource_id);
+			world_meshes->MarkDirty(world_resource.resource_id);
+
+			// TODO: Reserve skinning matrices if needed
+
+			return world_resources.size() - 1ull;
+		}
+
+		void RenderWorld::UpdateMesh(uint32_t mesh_id, const shlib::Mesh& mesh)
+		{
+			auto& world_resource = world_resources[mesh_id];
+			assert(world_resource.type == WorldResourceType::eMesh);
+
+			world_meshes->Get(world_resource.resource_id) = mesh;
+			world_meshes->MarkDirty(world_resource.resource_id);
 		}
 
 		const shlib::Mesh& RenderWorld::GetMesh(uint32_t index)
 		{
-			return world_meshes->Get(index);
+			auto& world_resource = world_resources[index];
+			assert(world_resource.type == WorldResourceType::eMesh);
+
+			return world_meshes->Get(world_resource.resource_id);
 		}
 
 		void RenderWorld::AddLight(const shlib::LightCommit& light_data)
@@ -454,6 +514,7 @@ namespace engine
 				frame_data.camera_count = camera_offset;
 				frame_data.defaultCameraID = 0;
 				frame_data.draw_count = draw_count;
+				frame_data.mesh_count = mesh_count;
 
 				const uint8_t* uniform_data = reinterpret_cast<const uint8_t*>(&frame_data);
 				uint64_t uniform_size = sizeof(shlib::GlobalUniformData);
@@ -479,6 +540,11 @@ namespace engine
 		uint32_t RenderWorld::GetDrawCount() const
 		{
 			return draw_count;
+		}
+
+		uint32_t RenderWorld::GetMeshCount() const
+		{
+			return mesh_count;
 		}
 
 		void RenderWorld::UpdateCameraFrustum(uint32_t camera_id)

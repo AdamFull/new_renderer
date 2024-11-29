@@ -737,7 +737,7 @@ namespace engine
 						self.BindResources(command_list);
 
 						uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
-						group_x = render_world->GetDrawCount() * render_world->GetCameraCount();
+						group_x = render_world->GetDrawCount();
 
 						self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
 						command_list.Dispatch(group_x, group_y, group_z);
@@ -806,7 +806,7 @@ namespace engine
 			
 						gfx::IndirectDrawCommand draw_command{};
 						draw_command.indexed_draw = true;
-						draw_command.draw_count = render_world->GetDrawCount();
+						draw_command.draw_count = render_world->GetMeshCount();
 						draw_command.argument_buffer = argument_buffer;
 						draw_command.command_stride = sizeof(shlib::DrawIndexedIndirectData);
 						draw_command.count_buffer = count_buffer;
@@ -824,8 +824,8 @@ namespace engine
 			
 							for (int32_t layer = 0; layer < shlib::cascade_shadow_map_cascade_count; ++layer)
 							{
-								auto camera_id = render_world->GetCameraId(light.shadow_casters[layer]);
-								draw_call_id = camera_id * render_world->GetDrawCount();
+								auto camera_id = render_world->GetResourceId(light.shadow_casters[layer]);
+								draw_call_id = camera_id * render_world->GetMeshCount();
 
 								constants.Set(render_label::call_id, draw_call_id);
 								constants.Set(render_label::shadow_index, shadow_index);
@@ -908,7 +908,7 @@ namespace engine
 			
 						gfx::IndirectDrawCommand draw_command{};
 						draw_command.indexed_draw = true;
-						draw_command.draw_count = render_world->GetDrawCount();
+						draw_command.draw_count = render_world->GetMeshCount();
 						draw_command.argument_buffer = render_graph->GetBuffer(indirect_draw_commands);
 						draw_command.command_stride = sizeof(shlib::DrawIndexedIndirectData);
 						draw_command.count_buffer = render_graph->GetBuffer(indirect_count_buffer);
@@ -926,8 +926,8 @@ namespace engine
 			
 							for (int32_t layer = 0; layer < 6; ++layer)
 							{
-								auto camera_id = render_world->GetCameraId(light.shadow_casters[layer]);
-								draw_call_id = camera_id * render_world->GetDrawCount();
+								auto camera_id = render_world->GetResourceId(light.shadow_casters[layer]);
+								draw_call_id = camera_id * render_world->GetMeshCount();
 
 								constants.Set(render_label::call_id, draw_call_id);
 								constants.Set(render_label::shadow_index, shadow_index);
@@ -961,7 +961,7 @@ namespace engine
 				create_info.pipeline_state.depth_stencil_state.depth_write = true;
 				create_info.pipeline_state.depth_stencil_state.depth_compare_op = gfx::CompareOp::eLess;
 			
-				create_info.AddWriteAttachment(omni_shadows_target, ResourceAttachmentTypeFlag::eDepth, gfx::ClearColor{ 1.f });
+				create_info.AddWriteAttachment(directional_shadows_target, ResourceAttachmentTypeFlag::eDepth, gfx::ClearColor{ 1.f });
 			
 				create_info.pipeline_state.primitive_topology = gfx::PrimitiveTopology::eTriangleList;
 			
@@ -1010,7 +1010,7 @@ namespace engine
 			
 						gfx::IndirectDrawCommand draw_command{};
 						draw_command.indexed_draw = true;
-						draw_command.draw_count = render_world->GetDrawCount();
+						draw_command.draw_count = render_world->GetMeshCount();
 						draw_command.argument_buffer = render_graph->GetBuffer(indirect_draw_commands);
 						draw_command.command_stride = sizeof(shlib::DrawIndexedIndirectData);
 						draw_command.count_buffer = render_graph->GetBuffer(indirect_count_buffer);
@@ -1026,8 +1026,8 @@ namespace engine
 							if (!light.castShadows)
 								continue;
 
-							auto camera_id = render_world->GetCameraId(light.shadow_caster);
-							draw_call_id = camera_id * render_world->GetDrawCount();
+							auto camera_id = render_world->GetResourceId(light.shadow_caster);
+							draw_call_id = camera_id * render_world->GetMeshCount();
 			
 							constants.Set(render_label::call_id, draw_call_id);
 							constants.Set(render_label::shadow_index, shadow_index);
@@ -1117,7 +1117,7 @@ namespace engine
 						// TODO: USE CURRENT CAMERA HERE FOR CALCULATE OFFSET!!!!
 						gfx::IndirectDrawCommand draw_command{};
 						draw_command.indexed_draw = true;
-						draw_command.draw_count = render_world->GetDrawCount();
+						draw_command.draw_count = render_world->GetMeshCount();
 						draw_command.argument_buffer = argument_buffer;
 						draw_command.argument_offset = 0;
 						draw_command.command_stride = sizeof(shlib::DrawIndexedIndirectData);

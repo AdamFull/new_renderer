@@ -18,10 +18,11 @@ namespace engine
 			RenderWorld(IRenderer& renderer);
 			~RenderWorld() = default;
 
+			uint32_t GetResourceId(uint32_t resource_index) const;
+
 			uint32_t CreateRenderCamera() override;
 			shlib::Camera& GetRenderCamera(uint32_t camera_id) override;
 			glm::mat4 const& GetCameraMatrix(uint32_t camera_id, uint32_t matrix_index) override;
-			uint32_t GetCameraId(uint32_t camera_id) const override;
 			uint32_t GetCameraCount() const override;
 
 			void UpdateRenderCamera(uint32_t camera_id, const glm::vec3& translation, const glm::quat& rotation) override;
@@ -33,16 +34,16 @@ namespace engine
 			void UpdateNode(uint32_t node_id, const glm::mat4& matrix) override;
 			glm::mat4 const& GetNodeMatrix(uint32_t node_id, uint32_t matrix_offset) const override;
 			const shlib::SceneNode& GetNode(uint32_t node_id) const override;
-			uint32_t GetNodeId(uint32_t resource_id) const override;
 
-			void AddGeometryDraw(const shlib::DrawDescription& draw_command) override;
+			void AddGeometryDraw(uint32_t camera_id, uint32_t node_id, uint32_t mesh_id) override;
 
 			uint32_t AddMaterial(const shlib::Material& material) override;
 			const shlib::Material& GetMaterial(uint32_t index) const override;
 
 			//shlib::Mesh& BeginUpdateMesh(uint32_t index);
 			//void EndUpdateMesh(uint32_t index);
-			uint32_t AddMesh(const shlib::Mesh& mesh) override;
+			uint32_t CreateMesh() override;
+			void UpdateMesh(uint32_t mesh_id, const shlib::Mesh& mesh) override;
 			const shlib::Mesh& GetMesh(uint32_t index) override;
 
 			void AddLight(const shlib::LightCommit& light_data) override;
@@ -56,6 +57,8 @@ namespace engine
 
 			gfx::Buffer* GetDrawBuffer() override;
 			uint32_t GetDrawCount() const override;
+
+			uint32_t GetMeshCount() const override;
 		private:
 			void UpdateCameraFrustum(uint32_t camera_id);
 		private:

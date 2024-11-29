@@ -51,7 +51,7 @@ REGISTER_TYPE_PTR(LightCommit, 16);
 struct CascadedShadowCommit
 {
 	ARRAY_OF(splitDepths, float, cascade_shadow_map_cascade_count);
-	uint32_t cameraID;
+	ARRAY_OF(matrix_offsets, uint32_t, cascade_shadow_map_cascade_count);
 	float farClip;
 	int index;
 	uint32_t pad;
@@ -61,17 +61,16 @@ REGISTER_TYPE_PTR(CascadedShadowCommit, 4);
 
 struct OmniShadowCommit
 {
-	uint32_t cameraID;
+	ARRAY_OF(matrix_offsets, uint32_t, 6);
 	float farPlane;
 	int index;
-	uint32_t pad;
 };
 
 REGISTER_TYPE_PTR(OmniShadowCommit, 4);
 
 struct SpotShadowCommit
 {
-	uint32_t cameraID;
+	uint32_t matrix_offset;
 	int index;
 };
 

@@ -26,16 +26,11 @@ bool checkObjectInFrustum(in vec3 min_extents, in vec3 max_extents, in uint32_t 
 void main() 
 {
 	uint32_t global_draw_index = gl_GlobalInvocationID.x;
-	uint32_t total_invocation_count = frameData.draw_count * frameData.camera_count;
 
-	if (global_draw_index >= total_invocation_count) 
+	if (global_draw_index >= frameData.draw_count) 
 		return;
 
-	uint32_t local_desc_index = global_draw_index % frameData.draw_count;
-	uint32_t local_camera_index = global_draw_index / frameData.draw_count;
-	uint32_t global_offset = local_camera_index * frameData.draw_count;
-
-	DrawDescription draw_info = source_descriptions[local_desc_index].data;
+	DrawDescription draw_info = source_descriptions[global_draw_index].data;
 
 	Mesh mesh = GetMesh(draw_info.mesh_index);
 	SceneNode node = GetSceneNode(draw_info.node_index);
@@ -49,7 +44,7 @@ void main()
 	vec4 max_extents = model * vec4(mesh.bounds.max, 1.f);
 	max_extents.xyz /= max_extents.w;
 
-	Camera camera = GetCamera(local_camera_index);
+	Camera camera = GetCamera(draw_info.camera_index);
 	if(checkObjectInFrustum(min_extents.xyz, max_extents.xyz, camera.frustum_offset))
 	{
 		DrawIndexedIndirectData indirect_command;
@@ -59,7 +54,9 @@ void main()
 		indirect_command.vertexOffset = mesh.first_vertex;
 		indirect_command.firstInstance = 0;
 
-		uint32_t command_index = atomicAdd(draw_counts[local_camera_index].data, 1);
+		uint32_t command_index = atomicAdd(draw_counts[draw_info.camera_index].data, 1);
+		uint32_t global_offset = draw_info.camera_index * frameData.mesh_count;
+
 		alive_draw_commands[global_offset + command_index].data = indirect_command;
 		alive_descriptions[global_offset + command_index].data = draw_info;
 	}

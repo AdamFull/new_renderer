@@ -18,8 +18,6 @@ namespace engine
 				void __Create() override;
 				void __Update(f32 fDt) override;
 			private:
-				void PrepareDrawCommands(uint32_t alpha_type);
-			private:
 				render::IRenderWorld& render_world;
 			};
 		}

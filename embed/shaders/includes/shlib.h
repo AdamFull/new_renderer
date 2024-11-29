@@ -110,6 +110,7 @@ CB_BEGIN(GlobalUniformData, 0, 0)
 	uint32_t lightCount;
 	uint32_t camera_count;
 	uint32_t draw_count;
+	uint32_t mesh_count;
 	uint32_t defaultCameraID;
 	uint32_t frameNumber;
 CB_END(frameData)

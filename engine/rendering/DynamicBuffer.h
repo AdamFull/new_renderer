@@ -45,7 +45,7 @@ namespace engine
 
 			_Ty& Get(uint32_t index)
 			{
-				if (index > memory.size())
+				if (index >= memory.size())
 				{
 					memory.resize(memory.size() + index);
 				}
@@ -55,7 +55,7 @@ namespace engine
 
 			_Ty* Data(uint32_t offset = 0u)
 			{
-				if (offset > memory.size())
+				if (offset >= memory.size())
 				{
 					memory.resize(memory.size() + offset);
 				}
