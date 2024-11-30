@@ -156,7 +156,7 @@ namespace engine
 
 								lastSplitDist = cascadeSplits[i];
 
-								render_world.UpdateRenderCamera(light.shadow_casters[i], lightViewMatrix, lightProjectionMatrix, shlib::cascade_shadow_map_resolution, shlib::cascade_shadow_map_resolution);
+								render_world.UpdateRenderCamera(light.shadow_casters[i], lightViewMatrix, lightProjectionMatrix, false, shlib::cascade_shadow_map_resolution, shlib::cascade_shadow_map_resolution);
 
 								auto& camera = render_world.GetRenderCamera(light.shadow_casters[i]);
 								shadow_commit.matrix_offsets[i] = camera.matrices_offset;
@@ -221,7 +221,7 @@ namespace engine
 							for (u64 idx = 0ull; idx < matrices.size(); ++idx)
 							{
 								auto& view = matrices[idx];
-								render_world.UpdateRenderCamera(light.shadow_casters[idx], view, shadowProj, shlib::point_light_shadow_map_resolution, shlib::point_light_shadow_map_resolution);
+								render_world.UpdateRenderCamera(light.shadow_casters[idx], view, shadowProj, true, shlib::point_light_shadow_map_resolution, shlib::point_light_shadow_map_resolution);
 
 								auto& camera = render_world.GetRenderCamera(light.shadow_casters[idx]);
 								shadow_commit.matrix_offsets[idx] = camera.matrices_offset;
@@ -273,7 +273,7 @@ namespace engine
 							light.shadowIndex = spot_light_count++;
 							render_world.AddShadow(shadow_commit);
 							
-							render_world.UpdateRenderCamera(light.shadow_caster, shadowView, shadowProj, shlib::spot_light_shadow_map_resolution, shlib::spot_light_shadow_map_resolution);
+							render_world.UpdateRenderCamera(light.shadow_caster, shadowView, shadowProj, true, shlib::spot_light_shadow_map_resolution, shlib::spot_light_shadow_map_resolution);
 
 							// Update meshes
 							auto mview = EntityManager::View<FTransformComponent, FBaseComponent, FMeshComponent>();

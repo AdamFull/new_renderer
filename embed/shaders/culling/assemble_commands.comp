@@ -1,0 +1,58 @@
+#include "shader_inputs.glsl"
+#include "culling.h"
+
+#define GROUP_SIZE 256
+
+layout(local_size_x = GROUP_SIZE) in;
+
+shared uint shared_counts[GROUP_SIZE];
+shared uint group_offset;
+
+void main()
+{
+	uint32_t global_index = gl_GlobalInvocationID.x;
+	uint32_t local_index = gl_LocalInvocationID.x;
+	uint32_t work_group_index = gl_WorkGroupID.x;
+    uint32_t group_size = gl_WorkGroupSize.x;
+
+	if (global_index >= frameData.draw_count) 
+		return;
+
+	 // Compute the index of the bit in the bit array
+    uint32_t bit_index = global_index / 32;
+    uint32_t bit_offset = global_index % 32;
+
+	// Extract visibility bit (0 = culled, 1 = visible)
+    uint32_t bit = (alive_bits[bit_index].data >> bit_offset) & 1u;
+
+	// Step 1: Local prefix sum within the work group
+    shared_counts[local_index] = bit;
+    barrier();
+
+	for (uint32_t offset = 1; offset < group_size; offset *= 2) 
+    {
+        uint32_t temp = 0;
+        if (local_index >= offset) 
+        {
+            temp = shared_counts[local_index - offset];
+        }
+
+        barrier();
+        shared_counts[local_index] += temp;
+        barrier();
+    }
+
+    // Step 2: Calculate group offset (last thread writes its total to groupOffset)
+    if (local_index == group_size - 1) 
+    {
+        atomicAdd(group_offset, shared_counts[local_index]);
+    }
+    barrier();
+
+    // Step 3: Calculate global index for the visible command
+    if (bit == 1) 
+    {
+        uint32_t global_position = group_offset + shared_counts[local_index] - 1; // Convert inclusive to exclusive prefix
+        draw_counts[global_index].data = global_position;
+    }
+}

@@ -49,7 +49,7 @@ namespace engine
 			virtual uint32_t GetCameraCount() const = 0;
 
 			virtual void UpdateRenderCamera(uint32_t camera_id, const glm::vec3& translation, const glm::quat& rotation) = 0;
-			virtual void UpdateRenderCamera(uint32_t camera_id, const glm::mat4& view, const glm::mat4& projection, uint32_t width, uint32_t height) = 0;
+			virtual void UpdateRenderCamera(uint32_t camera_id, const glm::mat4& view, const glm::mat4& projection, bool perspective, uint32_t width, uint32_t height) = 0;
 
 			virtual glm::mat4 const& GetMatrix(uint32_t matrix_offset) const = 0;
 

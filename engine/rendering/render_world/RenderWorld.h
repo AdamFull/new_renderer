@@ -26,7 +26,7 @@ namespace engine
 			uint32_t GetCameraCount() const override;
 
 			void UpdateRenderCamera(uint32_t camera_id, const glm::vec3& translation, const glm::quat& rotation) override;
-			void UpdateRenderCamera(uint32_t camera_id, const glm::mat4& view, const glm::mat4& projection, uint32_t width, uint32_t height) override;
+			void UpdateRenderCamera(uint32_t camera_id, const glm::mat4& view, const glm::mat4& projection, bool perspective, uint32_t width, uint32_t height) override;
 
 			glm::mat4 const& GetMatrix(uint32_t matrix_offset) const override;
 

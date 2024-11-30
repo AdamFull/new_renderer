@@ -1,0 +1,4 @@
+{
+	type: "compute";
+	source: "assemble_commands.comp";
+}

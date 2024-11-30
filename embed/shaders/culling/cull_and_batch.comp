@@ -30,6 +30,11 @@ void main()
 	if (global_draw_index >= frameData.draw_count) 
 		return;
 
+	 // Compute the index of the bit in the bit array
+    uint32_t bit_index = global_draw_index / 32;
+    uint32_t bit_offset = global_draw_index % 32;
+	uint32_t bit_mask = 1u << bit_offset;
+
 	DrawDescription draw_info = source_descriptions[global_draw_index].data;
 
 	Mesh mesh = GetMesh(draw_info.mesh_index);
@@ -54,12 +59,21 @@ void main()
 		indirect_command.vertexOffset = mesh.first_vertex;
 		indirect_command.firstInstance = 0;
 
-		uint32_t command_index = atomicAdd(draw_counts[draw_info.camera_index].data, 1);
+		//uint32_t command_index = atomicAdd(draw_counts[draw_info.camera_index].data, 1);
+		uint32_t command_index = 0;
 		uint32_t global_offset = draw_info.camera_index * frameData.mesh_count;
 
 		alive_draw_commands[global_offset + command_index].data = indirect_command;
 		alive_descriptions[global_offset + command_index].data = draw_info;
+
+		// Instance culled
+		atomicOr(alive_bits[bit_index].data, bit_mask);
+
+		return;
 	}
+
+	// Instance skipped
+	atomicAnd(alive_bits[bit_index].data, ~bit_mask);
 
 
 	//// Sample info about current Draw comand

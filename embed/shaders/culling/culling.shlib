@@ -9,6 +9,12 @@
 			];
 		},
 		{
+			name: "assemble_commands";
+			sources: [
+				"assemble_commands_comp"
+			];
+		},
+		{
 			name: "clear_counters";
 			sources: [
 					"clear_counters_comp"
@@ -19,6 +25,10 @@
 	compile: [
 		{ 
 			shader_name: "cull_and_batch";
+			pattern: "default_pattern";
+		},
+		{ 
+			shader_name: "assemble_commands";
 			pattern: "default_pattern";
 		},
 		{ 

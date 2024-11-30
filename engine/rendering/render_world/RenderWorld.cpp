@@ -158,7 +158,7 @@ namespace engine
 			}
 		}
 
-		void RenderWorld::UpdateRenderCamera(uint32_t camera_id, const glm::mat4& view, const glm::mat4& projection, uint32_t width, uint32_t height)
+		void RenderWorld::UpdateRenderCamera(uint32_t camera_id, const glm::mat4& view, const glm::mat4& projection, bool perspective, uint32_t width, uint32_t height)
 		{
 			ZoneScoped;
 
@@ -182,6 +182,20 @@ namespace engine
 				camera.invSize = 1.f / camera.size;
 
 				camera.aspect = camera.size.x / camera.size.y;
+
+				float m33 = projection[2][2];
+				float m43 = projection[3][2];
+
+				if (perspective)
+				{
+					camera.z_near = m43 / (m33 - 1.0f);
+					camera.z_far = m43 / (m33 + 1.0f);
+				}
+				else
+				{
+					camera.z_near = (m43 + 1.0f) / m33;
+					camera.z_far = (m43 - 1.0f) / m33;
+				}
 
 				auto* matrices = world_matrices->Data(camera.matrices_offset);
 				world_matrices->MarkDirty(camera.matrices_offset, shlib::matrix_offset_count);
