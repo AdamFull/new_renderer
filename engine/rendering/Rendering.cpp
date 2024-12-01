@@ -733,9 +733,7 @@ namespace engine
 						auto* count_buffer = render_graph->GetBuffer(indirect_count_buffer);
 						auto* alive_bits = render_graph->GetBuffer(alive_bitset_buffer);
 
-						self.WriteResource(alive_commands_buffer, ~0u);
-						self.WriteResource(indirect_draw_commands, ~0u);
-						//self.WriteResource(indirect_count_buffer, ~0u);
+						self.WriteResource(indirect_count_buffer, ~0u);
 						self.WriteResource(alive_bitset_buffer, ~0u);
 
 						self.ResolveDependencies(command_list);
@@ -780,8 +778,8 @@ namespace engine
 						auto* count_buffer = render_graph->GetBuffer(indirect_count_buffer);
 						auto* alive_bits = render_graph->GetBuffer(alive_bitset_buffer);
 
-						//self.WriteResource(alive_commands_buffer, ~0u);
-						//self.WriteResource(indirect_draw_commands, ~0u);
+						self.WriteResource(alive_commands_buffer, ~0u);
+						self.WriteResource(indirect_draw_commands, ~0u);
 						self.WriteResource(indirect_count_buffer, ~0u);
 						self.ReadResource(alive_bitset_buffer, ~0u);
 

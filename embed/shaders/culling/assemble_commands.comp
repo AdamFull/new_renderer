@@ -25,6 +25,10 @@ void main()
 	// Extract visibility bit (0 = culled, 1 = visible)
     uint32_t bit = (alive_bits[bit_index].data >> bit_offset) & 1u;
 
+    DrawDescription draw_info = source_descriptions[global_index].data;
+
+	Mesh mesh = GetMesh(draw_info.mesh_index);
+
 	// Step 1: Local prefix sum within the work group
     shared_counts[local_index] = bit;
     barrier();
@@ -52,7 +56,17 @@ void main()
     // Step 3: Calculate global index for the visible command
     if (bit == 1) 
     {
+        DrawIndexedIndirectData indirect_command;
+		indirect_command.indexCount = mesh.index_count;
+		indirect_command.instanceCount = 1;
+		indirect_command.firstIndex = mesh.first_index;
+		indirect_command.vertexOffset = mesh.first_vertex;
+		indirect_command.firstInstance = 0;
+
         uint32_t global_position = group_offset + shared_counts[local_index] - 1; // Convert inclusive to exclusive prefix
-        draw_counts[global_index].data = global_position;
+        alive_draw_commands[global_position].data = indirect_command;
+		alive_descriptions[global_position].data = draw_info;
+
+        atomicAdd(draw_counts[draw_info.camera_index].data, 1);
     }
 }

@@ -52,28 +52,16 @@ void main()
 	Camera camera = GetCamera(draw_info.camera_index);
 	if(checkObjectInFrustum(min_extents.xyz, max_extents.xyz, camera.frustum_offset))
 	{
-		DrawIndexedIndirectData indirect_command;
-		indirect_command.indexCount = mesh.index_count;
-		indirect_command.instanceCount = 1;
-		indirect_command.firstIndex = mesh.first_index;
-		indirect_command.vertexOffset = mesh.first_vertex;
-		indirect_command.firstInstance = 0;
-
-		//uint32_t command_index = atomicAdd(draw_counts[draw_info.camera_index].data, 1);
-		uint32_t command_index = 0;
-		uint32_t global_offset = draw_info.camera_index * frameData.mesh_count;
-
-		alive_draw_commands[global_offset + command_index].data = indirect_command;
-		alive_descriptions[global_offset + command_index].data = draw_info;
+		//atomicAdd(draw_counts[draw_info.camera_index].data, 1);
 
 		// Instance culled
 		atomicOr(alive_bits[bit_index].data, bit_mask);
-
-		return;
 	}
-
-	// Instance skipped
-	atomicAnd(alive_bits[bit_index].data, ~bit_mask);
+	else
+	{
+		// Instance skipped
+		atomicAnd(alive_bits[bit_index].data, ~bit_mask);
+	}
 
 
 	//// Sample info about current Draw comand

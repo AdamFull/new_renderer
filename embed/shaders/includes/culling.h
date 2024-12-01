@@ -15,4 +15,4 @@ CB_END_E()
 
 SHLIB_NS_END
 
-#endif // SHLIB_DRAW_H
+#endif // SHLIB_CULLING_H
