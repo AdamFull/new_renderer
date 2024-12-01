@@ -1,0 +1,125 @@
+#include "ptr.h"
+
+#define GROUP_SIZE 256
+
+layout(local_size_x = GROUP_SIZE) in;
+
+layout(push_constant) uniform PushConstant
+{
+	GET_PTR_T(uint32_t) input_buffer;
+    GET_PTR_T(uint32_t) output_buffer;
+
+    uint32_t size;
+} pc;
+
+shared uint32_t s_data[GROUP_SIZE];
+
+void main()
+{
+	uint32_t global_id = gl_GlobalInvocationID.x;
+    uint32_t local_id  = gl_LocalInvocationID.x;
+    uint32_t group_size = gl_WorkGroupSize.x;
+
+    // Compute the next power of two
+    uint num_elements = group_size;
+    if ((group_size & (group_size - 1)) != 0) 
+    {
+        num_elements = 1 << uint(ceil(log2(float(group_size))));
+    }
+
+    // Load input data into shared memory
+    uint32_t val = 0;
+    if (global_id < pc.size) 
+    {
+ #ifdef INPUT_BIT_ARRAY
+            // Handle bit array input
+            uint32_t word_index = global_id >> 5;       // Divide by 32
+            uint32_t bit_index = global_id & 31;       // Modulo 32
+            uint32_t word = pc.input_buffer[word_index].data;
+            val = (word >> bit_index) & 1u;
+#else 
+            // Standard array input
+            val = pc.input_buffer[global_id].data;
+#endif // INPUT_BIT_ARRAY
+    }
+    s_data[local_id] = val;
+    memoryBarrierShared();
+    barrier();
+
+#if 0
+    // Up-sweep (reduce) phase
+    uint offset = 1;
+    for (uint d = group_size >> 1; d > 0; d >>= 1) 
+    {
+        barrier();
+        if (local_id < d) 
+        {
+            uint ai = offset * (2 * local_id + 1) - 1;
+            uint bi = offset * (2 * local_id + 2) - 1;
+            s_data[bi] += s_data[ai];
+        }
+        offset <<= 1;
+    }
+    
+    // Clear the last element
+    if (local_id == 0) 
+    {
+        s_data[group_size - 1] = 0;
+    }
+    
+    // Down-sweep phase
+    for (uint d = 1; d < group_size; d <<= 1) 
+    {
+        offset >>= 1;
+        barrier();
+        if (local_id < d) 
+        {
+            uint ai = offset * (2 * local_id + 1) - 1;
+            uint bi = offset * (2 * local_id + 2) - 1;
+    
+            uint t = s_data[ai];
+            s_data[ai] = s_data[bi];
+            s_data[bi] += t;
+        }
+    }
+    barrier();
+
+#else
+    // Up-sweep (reduce) phase
+    for (uint d = 1; d < num_elements; d <<= 1) 
+    {
+        uint step = d << 1;
+        barrier();
+        if (local_id % step == (step - 1) && local_id < num_elements) 
+        {
+            s_data[local_id] += s_data[local_id - d];
+        }
+    }
+
+    // Clear the last element
+    if (local_id == num_elements - 1) 
+    {
+        s_data[local_id] = 0;
+    }
+
+    // Down-sweep phase
+    for (uint d = num_elements >> 1; d >= 1; d >>= 1) 
+    {
+        uint step = d << 1;
+        barrier();
+        if (local_id % step == (step - 1) && local_id < num_elements) 
+        {
+            uint temp = s_data[local_id - d];
+            s_data[local_id - d] = s_data[local_id];
+            s_data[local_id] += temp;
+        }
+    }
+    barrier();
+#endif
+
+    // Write results to output buffer
+    if (global_id < pc.size) 
+    {
+        pc.output_buffer[global_id].data = s_data[local_id];
+    }
+}

@@ -565,10 +565,20 @@ namespace engine
 			{
 				gfx::BufferCreateInfo create_info{};
 				create_info.size = sizeof(uint32_t) * shlib::MAX_DRAW_COMMAND_COUNT / 32;
-				create_info.usage = gfx::BufferUsageFlag::eIndirectBuffer;
+				create_info.usage = gfx::BufferUsageFlag::eStorageBuffer;
 
 				alive_bitset_buffer = render_graph->AddResource(create_info);
 				render_graph->SetResourceName(alive_bitset_buffer, "alive_bitset_buffer");
+			}
+
+			uint32_t alive_offsets_buffer{ ~0u };
+			{
+				gfx::BufferCreateInfo create_info{};
+				create_info.size = sizeof(uint32_t) * shlib::MAX_DRAW_COMMAND_COUNT;
+				create_info.usage = gfx::BufferUsageFlag::eStorageBuffer;
+
+				alive_offsets_buffer = render_graph->AddResource(create_info);
+				render_graph->SetResourceName(alive_offsets_buffer, "alive_offsets_buffer");
 			}
 
 			// Passes
@@ -758,40 +768,32 @@ namespace engine
 				render_graph->AddNode(render_graph->CreateNode(create_info));
 			}
 
-			// Assemble draw commands
+			// Calculate command offsets
 			{
 				ComputeShaderPassCreateInfo create_info{};
-				create_info.shader_name = "culling:assemble_commands";
+				create_info.shader_name = "culling:scan:INPUT_BIT_ARRAY";
 
 				create_info.draw_callback = [this,
-					alive_commands_buffer,
-					indirect_draw_commands,
-					indirect_count_buffer,
-					alive_bitset_buffer
+					alive_bitset_buffer,
+					alive_offsets_buffer
 				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
 					{
 						ZoneScoped;
 
 						auto* draw_commands = render_world->GetDrawBuffer();
-						auto* alive_meshes = render_graph->GetBuffer(alive_commands_buffer);
-						auto* argument_buffer = render_graph->GetBuffer(indirect_draw_commands);
-						auto* count_buffer = render_graph->GetBuffer(indirect_count_buffer);
 						auto* alive_bits = render_graph->GetBuffer(alive_bitset_buffer);
+						auto* alive_offsets = render_graph->GetBuffer(alive_offsets_buffer);
 
-						self.WriteResource(alive_commands_buffer, ~0u);
-						self.WriteResource(indirect_draw_commands, ~0u);
-						self.WriteResource(indirect_count_buffer, ~0u);
 						self.ReadResource(alive_bitset_buffer, ~0u);
+						self.WriteResource(alive_offsets_buffer, ~0u);
 
 						self.ResolveDependencies(command_list);
 
-						auto& draw_data_block = self.GetUniformBlock(shlib::CullingInfo_label);
-						auto& draw_desc_buffers = draw_data_block.As<shlib::CullingInfo>();
-						draw_desc_buffers.source_descriptions = draw_commands->GetAddress();
-						draw_desc_buffers.alive_descriptions = alive_meshes->GetAddress();
-						draw_desc_buffers.alive_draw_commands = argument_buffer->GetAddress();
-						draw_desc_buffers.draw_counts = count_buffer->GetAddress();
-						draw_desc_buffers.alive_bits = alive_bits->GetAddress();
+						auto& pc = self.GetConstantBlock();
+						pc.Set(utl::murmur_hash("input_buffer"), alive_bits->GetAddress());
+						pc.Set(utl::murmur_hash("output_buffer"), alive_offsets->GetAddress());
+						pc.Set(utl::murmur_hash("size"), render_world->GetDrawCount());
+						self.PushConstantRanges(command_list);
 
 						self.BindResources(command_list);
 
@@ -804,6 +806,53 @@ namespace engine
 
 				render_graph->AddNode(render_graph->CreateNode(create_info));
 			}
+
+			// Assemble draw commands
+			//{
+			//	ComputeShaderPassCreateInfo create_info{};
+			//	create_info.shader_name = "culling:assemble_commands";
+			//
+			//	create_info.draw_callback = [this,
+			//		alive_commands_buffer,
+			//		indirect_draw_commands,
+			//		indirect_count_buffer,
+			//		alive_bitset_buffer
+			//	](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+			//		{
+			//			ZoneScoped;
+			//
+			//			auto* draw_commands = render_world->GetDrawBuffer();
+			//			auto* alive_meshes = render_graph->GetBuffer(alive_commands_buffer);
+			//			auto* argument_buffer = render_graph->GetBuffer(indirect_draw_commands);
+			//			auto* count_buffer = render_graph->GetBuffer(indirect_count_buffer);
+			//			auto* alive_bits = render_graph->GetBuffer(alive_bitset_buffer);
+			//
+			//			self.WriteResource(alive_commands_buffer, ~0u);
+			//			self.WriteResource(indirect_draw_commands, ~0u);
+			//			self.WriteResource(indirect_count_buffer, ~0u);
+			//			self.ReadResource(alive_bitset_buffer, ~0u);
+			//
+			//			self.ResolveDependencies(command_list);
+			//
+			//			auto& draw_data_block = self.GetUniformBlock(shlib::CullingInfo_label);
+			//			auto& draw_desc_buffers = draw_data_block.As<shlib::CullingInfo>();
+			//			draw_desc_buffers.source_descriptions = draw_commands->GetAddress();
+			//			draw_desc_buffers.alive_descriptions = alive_meshes->GetAddress();
+			//			draw_desc_buffers.alive_draw_commands = argument_buffer->GetAddress();
+			//			draw_desc_buffers.draw_counts = count_buffer->GetAddress();
+			//			draw_desc_buffers.alive_bits = alive_bits->GetAddress();
+			//
+			//			self.BindResources(command_list);
+			//
+			//			uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
+			//			group_x = render_world->GetDrawCount();
+			//
+			//			self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
+			//			command_list.Dispatch(group_x, group_y, group_z);
+			//		};
+			//
+			//	render_graph->AddNode(render_graph->CreateNode(create_info));
+			//}
 
 			// Draw cascaded shadows
 			{

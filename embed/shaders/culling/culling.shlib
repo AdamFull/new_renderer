@@ -19,6 +19,12 @@
 			sources: [
 					"clear_counters_comp"
 			];
+		},
+		{
+			name: "scan";
+			sources: [
+					"scan_comp"
+			];
 		}
 	];
 
@@ -34,6 +40,13 @@
 		{ 
 			shader_name: "clear_counters";
 			pattern: "empty_pattern";
+		},
+		{ 
+			shader_name: "scan";
+			permutations: [
+				{ defines: []; },
+				{ defines: ["INPUT_BIT_ARRAY"]; }
+			];
 		}
 	];
 }
