@@ -5,8 +5,6 @@
 
 SHLIB_NS_BEGIN
 
-CONSTANT uint32_t MAX_DRAW_INSTANCE_COUNT = 100000u;
-
 CONSTANT uint32_t MAX_SAMPLED_TEXTURES = 2048u;
 
 CONSTANT uint32_t kShaderGroupSize = 32u;
@@ -48,6 +46,18 @@ CONSTANT uint32_t light_type_directional = 1u;
 CONSTANT uint32_t light_type_point = 2u;
 CONSTANT uint32_t light_type_spot = 3u;
 CONSTANT uint32_t light_type_invalid = 0u;
+
+CONSTANT uint32_t MAX_DRAW_INSTANCE_COUNT = 100000u;
+
+// Camera constants
+CONSTANT uint32_t MAX_PLAYER_CAMERAS = 2u;
+CONSTANT uint32_t MAX_DIRECTIONAL_LIGHT_CAMERAS = max_directional_light_shadow_count * cascade_shadow_map_cascade_count;
+CONSTANT uint32_t MAX_SPOT_LIGHT_CAMERAS = max_spot_light_shadow_count;
+CONSTANT uint32_t MAX_OMNI_LIGHT_CAMERAS = max_point_light_shadow_count * 6u;
+CONSTANT uint32_t MAX_CAMERAS = MAX_PLAYER_CAMERAS + MAX_DIRECTIONAL_LIGHT_CAMERAS + MAX_SPOT_LIGHT_CAMERAS + MAX_OMNI_LIGHT_CAMERAS;
+
+// Draw constants
+CONSTANT uint32_t MAX_DRAW_COMMAND_COUNT = MAX_DRAW_INSTANCE_COUNT * MAX_CAMERAS;
 
 SHLIB_NS_END
 

@@ -533,7 +533,7 @@ namespace engine
 			uint32_t alive_commands_buffer{ ~0u };
 			{
 				gfx::BufferCreateInfo create_info{};
-				create_info.size = sizeof(shlib::DrawDescription) * shlib::MAX_DRAW_INSTANCE_COUNT;
+				create_info.size = sizeof(shlib::DrawDescription) * shlib::MAX_DRAW_COMMAND_COUNT;
 				create_info.usage = gfx::BufferUsageFlag::eStorageBuffer;
 
 				alive_commands_buffer = render_graph->AddResource(create_info);
@@ -544,7 +544,7 @@ namespace engine
 			uint32_t indirect_draw_commands{ ~0u };
 			{
 				gfx::BufferCreateInfo create_info{};
-				create_info.size = sizeof(shlib::DrawIndexedIndirectData) * shlib::MAX_DRAW_INSTANCE_COUNT;
+				create_info.size = sizeof(shlib::DrawIndexedIndirectData) * shlib::MAX_DRAW_COMMAND_COUNT;
 				create_info.usage = gfx::BufferUsageFlag::eIndirectBuffer;
 
 				indirect_draw_commands = render_graph->AddResource(create_info);
@@ -554,7 +554,7 @@ namespace engine
 			uint32_t indirect_count_buffer{ ~0u };
 			{
 				gfx::BufferCreateInfo create_info{};
-				create_info.size = sizeof(uint32_t) * 4096u;
+				create_info.size = sizeof(uint32_t) * shlib::MAX_CAMERAS;
 				create_info.usage = gfx::BufferUsageFlag::eIndirectBuffer;
 
 				indirect_count_buffer = render_graph->AddResource(create_info);
@@ -564,7 +564,7 @@ namespace engine
 			uint32_t alive_bitset_buffer{ ~0u };
 			{
 				gfx::BufferCreateInfo create_info{};
-				create_info.size = sizeof(uint32_t) * 4096u;
+				create_info.size = sizeof(uint32_t) * shlib::MAX_DRAW_COMMAND_COUNT / 32;
 				create_info.usage = gfx::BufferUsageFlag::eIndirectBuffer;
 
 				alive_bitset_buffer = render_graph->AddResource(create_info);
