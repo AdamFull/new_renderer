@@ -6,23 +6,6 @@ namespace engine
 {
 	namespace gfx
 	{
-		// ShaderStageFlags
-		void to_json(nlohmann::json& json, const ShaderStageFlags& type);
-		void from_json(const nlohmann::json& json, ShaderStageFlags& type);
-		
-		// QueueTypeFlags
-		void to_json(nlohmann::json& json, const QueueTypeFlags& type);
-		void from_json(const nlohmann::json& json, QueueTypeFlags& type);
-		
-		// CullModeFlags
-		void to_json(nlohmann::json& json, const CullModeFlags& type);
-		void from_json(const nlohmann::json& json, CullModeFlags& type);
-		
-		// ColorMaskFlags
-		void to_json(nlohmann::json& json, const ColorMaskFlags& type);
-		void from_json(const nlohmann::json& json, ColorMaskFlags& type);
-
-
 		// Structures
 
 		// RasterizationState

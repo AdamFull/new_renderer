@@ -46,7 +46,6 @@ namespace engine
 			eCompute = 1 << 5,
 			eAllGraphics = eVertex | eTessellationControl | eTessellationEvaluation | eGeometry | eFragment
 		};
-		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ShaderStageFlags, ShaderStageFlag);
 
 		enum class IndexType
 		{
@@ -61,7 +60,6 @@ namespace engine
 			eCompute = 1 << 2,
 			eTransfer = 1 << 3
 		};
-		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(QueueTypeFlags, QueueTypeFlag);
 
 		enum class CommandPoolResetMode
 		{
@@ -99,7 +97,6 @@ namespace engine
 			eVertexAttributeInput = 1 << 24,
 			ePreRasterizationShaders = 1 << 25
 		};
-		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(StageFlags, StageFlag);
 
 		enum class ResourceStateFlag
 		{
@@ -141,7 +138,6 @@ namespace engine
 			// Present states
 			ePresentSrc = eRead | ePresent
 		};
-		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ResourceStateFlags, ResourceStateFlag);
 
 		enum class AccessTypeFlag
 		{
@@ -149,7 +145,6 @@ namespace engine
 			eWrite = 1 << 1,
 			eRW = eRead | eWrite
 		};
-		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(AccessTypeFlags, AccessTypeFlag);
 
 		// For sampler
 		enum class Filter
@@ -209,7 +204,6 @@ namespace engine
 			eUniformBuffer = eCopy | eUniform | eCpuToGpu,
 			eIndirectBuffer = eCopy | eStorage | eIndirect | eGpuOnly
 		};
-		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(BufferUsageFlags, BufferUsageFlag);
 
 		enum class TextureUsageFlag
 		{
@@ -219,7 +213,6 @@ namespace engine
 			eStorage = 1 << 3,
 			eRenderTarget = 1 << 4
 		};
-		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(TextureUsageFlags, TextureUsageFlag);
 
 		enum class PipelineType
 		{
@@ -258,7 +251,6 @@ namespace engine
 			eFront = 1 << 0,
 			eBack = 1 << 1
 		};
-		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(CullModeFlags, CullModeFlag);
 
 		enum class FrontFace
 		{
@@ -312,7 +304,6 @@ namespace engine
 			eA = 1 << 3,
 			eAll = eR | eG | eB | eA
 		};
-		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ColorMaskFlags, ColorMaskFlag);
 
 		enum class LoadOp
 		{
@@ -346,13 +337,13 @@ namespace engine
 }
 
 // Meta data registration
-UTL_REGISTER_ENUM_CLASS(engine::gfx::RenderApi,
+UTL_REGISTER_ENUM_CLASS(engine::gfx, RenderApi,
 	UTL_ENUM_META(engine::gfx::RenderApi::eAuto, "Auto"),
 	UTL_ENUM_META(engine::gfx::RenderApi::eVulkan, "Vulkan"),
 	UTL_ENUM_META(engine::gfx::RenderApi::eDirectx12, "Directx12")
 )
 
-UTL_REGISTER_ENUM_CLASS(engine::gfx::ResourceType,
+UTL_REGISTER_ENUM_CLASS(engine::gfx, ResourceType,
 	UTL_ENUM_META(engine::gfx::ResourceType::eUnknown, "Auto"),
 	UTL_ENUM_META(engine::gfx::ResourceType::eFence, "Fence"),
 	UTL_ENUM_META(engine::gfx::ResourceType::eSemaphore, "Semaphore"),
@@ -373,7 +364,7 @@ UTL_REGISTER_ENUM_CLASS(engine::gfx::ResourceType,
 	UTL_ENUM_META(engine::gfx::ResourceType::eQueryPool, "QueryPool")
 )
 
-UTL_REGISTER_ENUM_CLASS(engine::gfx::ShaderStageFlag,
+UTL_REGISTER_ENUM_FLAGS(engine::gfx, ShaderStageFlags, ShaderStageFlag,
 	UTL_ENUM_META(engine::gfx::ShaderStageFlag::eVertex, "Vertex"),
 	UTL_ENUM_META(engine::gfx::ShaderStageFlag::eTessellationControl, "TessellationControl"),
 	UTL_ENUM_META(engine::gfx::ShaderStageFlag::eTessellationEvaluation, "TessellationEvaluation"),
@@ -383,25 +374,25 @@ UTL_REGISTER_ENUM_CLASS(engine::gfx::ShaderStageFlag,
 	UTL_ENUM_META(engine::gfx::ShaderStageFlag::eAllGraphics, "AllGraphics")
 )
 
-UTL_REGISTER_ENUM_CLASS(engine::gfx::IndexType,
+UTL_REGISTER_ENUM_CLASS(engine::gfx, IndexType,
 	UTL_ENUM_META(engine::gfx::IndexType::eUint16, "Uint16"),
 	UTL_ENUM_META(engine::gfx::IndexType::eUint32, "Uint32")
 )
 
-UTL_REGISTER_ENUM_CLASS(engine::gfx::QueueTypeFlag,
+UTL_REGISTER_ENUM_FLAGS(engine::gfx, QueueTypeFlags, QueueTypeFlag,
 	UTL_ENUM_META(engine::gfx::QueueTypeFlag::eGraphics, "Graphics"),
 	UTL_ENUM_META(engine::gfx::QueueTypeFlag::ePresent, "Present"),
 	UTL_ENUM_META(engine::gfx::QueueTypeFlag::eCompute, "Compute"),
 	UTL_ENUM_META(engine::gfx::QueueTypeFlag::eTransfer, "Transfer")
 )
 
-UTL_REGISTER_ENUM_CLASS(engine::gfx::CommandPoolResetMode,
+UTL_REGISTER_ENUM_CLASS(engine::gfx, CommandPoolResetMode,
 	UTL_ENUM_META(engine::gfx::CommandPoolResetMode::eResetPool, "ResetPool"),
 	UTL_ENUM_META(engine::gfx::CommandPoolResetMode::eResetIndividually, "ResetIndividually"),
 	UTL_ENUM_META(engine::gfx::CommandPoolResetMode::eAlwaysAllocate, "AlwaysAllocate")
 )
 
-UTL_REGISTER_ENUM_CLASS(engine::gfx::StageFlag,
+UTL_REGISTER_ENUM_FLAGS(engine::gfx, StageFlags, StageFlag,
 	UTL_ENUM_META(engine::gfx::StageFlag::eNone, "None"),
 	UTL_ENUM_META(engine::gfx::StageFlag::eTopOfPipe, "TopOfPipe"),
 	UTL_ENUM_META(engine::gfx::StageFlag::eDrawIndirect, "DrawIndirect"),
@@ -430,7 +421,7 @@ UTL_REGISTER_ENUM_CLASS(engine::gfx::StageFlag,
 	UTL_ENUM_META(engine::gfx::StageFlag::ePreRasterizationShaders, "PreRasterizationShaders")
 )
 
-UTL_REGISTER_ENUM_CLASS(engine::gfx::ResourceStateFlag,
+UTL_REGISTER_ENUM_FLAGS(engine::gfx, ResourceStateFlags, ResourceStateFlag,
 	UTL_ENUM_META(engine::gfx::ResourceStateFlag::eUndefined, "Undefined"),
 	UTL_ENUM_META(engine::gfx::ResourceStateFlag::eRead, "Read"),
 	UTL_ENUM_META(engine::gfx::ResourceStateFlag::eWrite, "Write"),
@@ -459,25 +450,25 @@ UTL_REGISTER_ENUM_CLASS(engine::gfx::ResourceStateFlag,
 	UTL_ENUM_META(engine::gfx::ResourceStateFlag::ePresentSrc, "PresentSrc")
 )
 
-UTL_REGISTER_ENUM_CLASS(engine::gfx::AccessTypeFlag,
+UTL_REGISTER_ENUM_FLAGS(engine::gfx, AccessTypeFlags, AccessTypeFlag,
 	UTL_ENUM_META(engine::gfx::AccessTypeFlag::eRead, "Read"),
 	UTL_ENUM_META(engine::gfx::AccessTypeFlag::eWrite, "Write"),
 	UTL_ENUM_META(engine::gfx::AccessTypeFlag::eRW, "RW")
 )
 
-UTL_REGISTER_ENUM_CLASS(engine::gfx::Filter,
+UTL_REGISTER_ENUM_CLASS(engine::gfx, Filter,
 	UTL_ENUM_META(engine::gfx::Filter::eNearest, "Nearest"),
 	UTL_ENUM_META(engine::gfx::Filter::eLinear, "Linear")
 )
 
-UTL_REGISTER_ENUM_CLASS(engine::gfx::SamplerAddressMode,
+UTL_REGISTER_ENUM_CLASS(engine::gfx, SamplerAddressMode,
 	UTL_ENUM_META(engine::gfx::SamplerAddressMode::eMirror, "Mirror"),
 	UTL_ENUM_META(engine::gfx::SamplerAddressMode::eRepeat, "Repeat"),
 	UTL_ENUM_META(engine::gfx::SamplerAddressMode::eClampToEdge, "ClampToEdge"),
 	UTL_ENUM_META(engine::gfx::SamplerAddressMode::eClampToBorder, "ClampToBorder")
 )
 
-UTL_REGISTER_ENUM_CLASS(engine::gfx::CompareOp,
+UTL_REGISTER_ENUM_CLASS(engine::gfx, CompareOp,
 	UTL_ENUM_META(engine::gfx::CompareOp::eNone, "None"),
 	UTL_ENUM_META(engine::gfx::CompareOp::eNever, "Never"),
 	UTL_ENUM_META(engine::gfx::CompareOp::eLess, "Less"),
@@ -489,13 +480,13 @@ UTL_REGISTER_ENUM_CLASS(engine::gfx::CompareOp,
 	UTL_ENUM_META(engine::gfx::CompareOp::eAlways, "Always")
 )
 
-UTL_REGISTER_ENUM_CLASS(engine::gfx::QueryType,
+UTL_REGISTER_ENUM_CLASS(engine::gfx, QueryType,
 	UTL_ENUM_META(engine::gfx::QueryType::eTimestamp, "Timestamp"),
 	UTL_ENUM_META(engine::gfx::QueryType::eOcclusion, "Occlusion"),
 	UTL_ENUM_META(engine::gfx::QueryType::ePipelineStatistics, "PipelineStatistics")
 )
 
-UTL_REGISTER_ENUM_CLASS(engine::gfx::BufferUsageFlag,
+UTL_REGISTER_ENUM_FLAGS(engine::gfx, BufferUsageFlags, BufferUsageFlag,
 	UTL_ENUM_META(engine::gfx::BufferUsageFlag::eCopy, "Copy"),
 	UTL_ENUM_META(engine::gfx::BufferUsageFlag::eStorage, "Storage"),
 	UTL_ENUM_META(engine::gfx::BufferUsageFlag::eVertex, "Vertex"),
@@ -514,7 +505,7 @@ UTL_REGISTER_ENUM_CLASS(engine::gfx::BufferUsageFlag,
 	UTL_ENUM_META(engine::gfx::BufferUsageFlag::eIndirectBuffer, "IndirectBuffer")
 )
 
-UTL_REGISTER_ENUM_CLASS(engine::gfx::TextureUsageFlag,
+UTL_REGISTER_ENUM_FLAGS(engine::gfx, TextureUsageFlags, TextureUsageFlag,
 	UTL_ENUM_META(engine::gfx::TextureUsageFlag::eCubemap, "Cubemap"),
 	UTL_ENUM_META(engine::gfx::TextureUsageFlag::eTransferable, "Transferable"),
 	UTL_ENUM_META(engine::gfx::TextureUsageFlag::eSamplable, "Samplable"),
@@ -522,12 +513,12 @@ UTL_REGISTER_ENUM_CLASS(engine::gfx::TextureUsageFlag,
 	UTL_ENUM_META(engine::gfx::TextureUsageFlag::eRenderTarget, "RenderTarget")
 )
 
-UTL_REGISTER_ENUM_CLASS(engine::gfx::PipelineType,
+UTL_REGISTER_ENUM_CLASS(engine::gfx, PipelineType,
 	UTL_ENUM_META(engine::gfx::PipelineType::eCompute, "Compute"),
 	UTL_ENUM_META(engine::gfx::PipelineType::eGraphics, "Graphics")
 )
 
-UTL_REGISTER_ENUM_CLASS(engine::gfx::PrimitiveTopology,
+UTL_REGISTER_ENUM_CLASS(engine::gfx, PrimitiveTopology,
 	UTL_ENUM_META(engine::gfx::PrimitiveTopology::ePointList, "PointList"),
 	UTL_ENUM_META(engine::gfx::PrimitiveTopology::eLineList, "LineList"),
 	UTL_ENUM_META(engine::gfx::PrimitiveTopology::eLineStrip, "LineStrip"),
@@ -536,7 +527,7 @@ UTL_REGISTER_ENUM_CLASS(engine::gfx::PrimitiveTopology,
 	UTL_ENUM_META(engine::gfx::PrimitiveTopology::ePatchList, "PatchList")
 )
 
-UTL_REGISTER_ENUM_CLASS(engine::gfx::SampleCount,
+UTL_REGISTER_ENUM_CLASS(engine::gfx, SampleCount,
 	UTL_ENUM_META(engine::gfx::SampleCount::e1, "1"),
 	UTL_ENUM_META(engine::gfx::SampleCount::e2, "2"),
 	UTL_ENUM_META(engine::gfx::SampleCount::e4, "4"),
@@ -544,23 +535,23 @@ UTL_REGISTER_ENUM_CLASS(engine::gfx::SampleCount,
 	UTL_ENUM_META(engine::gfx::SampleCount::e16, "16")
 )
 
-UTL_REGISTER_ENUM_CLASS(engine::gfx::FillMode,
+UTL_REGISTER_ENUM_CLASS(engine::gfx, FillMode,
 	UTL_ENUM_META(engine::gfx::FillMode::eSolid, "Solid"),
 	UTL_ENUM_META(engine::gfx::FillMode::eWireframe, "Wireframe")
 )
 
-UTL_REGISTER_ENUM_CLASS(engine::gfx::CullModeFlag,
+UTL_REGISTER_ENUM_FLAGS(engine::gfx, CullModeFlags, CullModeFlag,
 	UTL_ENUM_META(engine::gfx::CullModeFlag::eNone, "None"),
 	UTL_ENUM_META(engine::gfx::CullModeFlag::eFront, "Front"),
 	UTL_ENUM_META(engine::gfx::CullModeFlag::eBack, "Back")
 )
 
-UTL_REGISTER_ENUM_CLASS(engine::gfx::FrontFace,
+UTL_REGISTER_ENUM_CLASS(engine::gfx, FrontFace,
 	UTL_ENUM_META(engine::gfx::FrontFace::eCCW, "CCW"),
 	UTL_ENUM_META(engine::gfx::FrontFace::eCW, "CW")
 )
 
-UTL_REGISTER_ENUM_CLASS(engine::gfx::StencilOp,
+UTL_REGISTER_ENUM_CLASS(engine::gfx, StencilOp,
 	UTL_ENUM_META(engine::gfx::StencilOp::eKeep, "Keep"),
 	UTL_ENUM_META(engine::gfx::StencilOp::eZero, "Zero"),
 	UTL_ENUM_META(engine::gfx::StencilOp::eReplace, "Replace"),
@@ -571,7 +562,7 @@ UTL_REGISTER_ENUM_CLASS(engine::gfx::StencilOp,
 	UTL_ENUM_META(engine::gfx::StencilOp::eDecrementAndWrap, "DecrementAndWrap")
 )
 
-UTL_REGISTER_ENUM_CLASS(engine::gfx::BlendFactor,
+UTL_REGISTER_ENUM_CLASS(engine::gfx, BlendFactor,
 	UTL_ENUM_META(engine::gfx::BlendFactor::eZero, "Zero"),
 	UTL_ENUM_META(engine::gfx::BlendFactor::eOne, "One"),
 	UTL_ENUM_META(engine::gfx::BlendFactor::eSrcColor, "SrcColor"),
@@ -588,7 +579,7 @@ UTL_REGISTER_ENUM_CLASS(engine::gfx::BlendFactor,
 	UTL_ENUM_META(engine::gfx::BlendFactor::eSrcAlphaSaturate, "SrcAlphaSaturate")
 )
 
-UTL_REGISTER_ENUM_CLASS(engine::gfx::BlendOp,
+UTL_REGISTER_ENUM_CLASS(engine::gfx, BlendOp,
 	UTL_ENUM_META(engine::gfx::BlendOp::eAdd, "Add"),
 	UTL_ENUM_META(engine::gfx::BlendOp::eSubtract, "Subtract"),
 	UTL_ENUM_META(engine::gfx::BlendOp::eReverseSubtract, "ReverseSubtract"),
@@ -596,7 +587,7 @@ UTL_REGISTER_ENUM_CLASS(engine::gfx::BlendOp,
 	UTL_ENUM_META(engine::gfx::BlendOp::eMax, "Max")
 )
 
-UTL_REGISTER_ENUM_CLASS(engine::gfx::ColorMaskFlag,
+UTL_REGISTER_ENUM_FLAGS(engine::gfx, ColorMaskFlags, ColorMaskFlag,
 	UTL_ENUM_META(engine::gfx::ColorMaskFlag::eR, "R"),
 	UTL_ENUM_META(engine::gfx::ColorMaskFlag::eG, "G"),
 	UTL_ENUM_META(engine::gfx::ColorMaskFlag::eB, "B"),
@@ -604,19 +595,19 @@ UTL_REGISTER_ENUM_CLASS(engine::gfx::ColorMaskFlag,
 	UTL_ENUM_META(engine::gfx::ColorMaskFlag::eAll, "All")
 )
 
-UTL_REGISTER_ENUM_CLASS(engine::gfx::LoadOp,
+UTL_REGISTER_ENUM_CLASS(engine::gfx, LoadOp,
 	UTL_ENUM_META(engine::gfx::LoadOp::eLoad, "Load"),
 	UTL_ENUM_META(engine::gfx::LoadOp::eClear, "Clear"),
 	UTL_ENUM_META(engine::gfx::LoadOp::eDontCare, "DontCare")
 )
 
-UTL_REGISTER_ENUM_CLASS(engine::gfx::StoreOp,
+UTL_REGISTER_ENUM_CLASS(engine::gfx, StoreOp,
 	UTL_ENUM_META(engine::gfx::StoreOp::eStore, "Store"),
 	UTL_ENUM_META(engine::gfx::StoreOp::eDontCare, "DontCare"),
 	UTL_ENUM_META(engine::gfx::StoreOp::eNone, "None")
 )
 
-UTL_REGISTER_ENUM_CLASS(engine::gfx::DescriptorType,
+UTL_REGISTER_ENUM_CLASS(engine::gfx, DescriptorType,
 	UTL_ENUM_META(engine::gfx::DescriptorType::eSampler, "Sampler"),
 	UTL_ENUM_META(engine::gfx::DescriptorType::eCombinedImageSampler, "CombinedImageSampler"),
 	UTL_ENUM_META(engine::gfx::DescriptorType::eSampledImage, "SampledImage"),

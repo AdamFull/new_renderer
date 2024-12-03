@@ -59,7 +59,7 @@ namespace engine
 	}
 }
 
-UTL_REGISTER_ENUM_CLASS(engine::world::ecs::ECameraType,
+UTL_REGISTER_ENUM_CLASS(engine::world::ecs, ECameraType,
 	UTL_ENUM_META(engine::world::ecs::ECameraType::eOrthographic, "Orthographic"),
 	UTL_ENUM_META(engine::world::ecs::ECameraType::ePerspective, "Perspective")
 );
