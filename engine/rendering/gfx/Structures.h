@@ -467,6 +467,52 @@ namespace engine
 			uint32_t array_index{ 0u };
 		};
 
+
+
+		struct ShaderCompilerSourceDesc
+		{
+			std::string source;
+			ShaderStageFlag type;
+			std::vector<std::string> definitions;
+		};
+
+		struct ShaderCompilerSamplerDesc
+		{
+			std::string binding;
+			SamplerAddressMode address_u;
+			SamplerAddressMode address_v;
+			SamplerAddressMode address_w;
+
+			Filter min_filter;
+			Filter mag_filter;
+			Filter mip_filter;
+
+			float mip_lod_bias;
+			float min_lod;
+			float max_lod;
+			float max_anisotropy;
+
+			CompareOp compare_op;
+		};
+
+		struct ShaderCompilerPipelineState
+		{
+			RasterizationState rasterization_state;
+			MultisampleState multisample_state;
+			DepthStencilState depth_stencil_state;
+			ColorBlendingState color_blending_state;
+
+			PrimitiveTopology primitive_topology;
+		};
+
+		struct ShaderCompilerEffectDesc
+		{
+			std::string name;
+			std::vector<ShaderCompilerSourceDesc> shaders;
+			std::vector<ShaderCompilerSamplerDesc> samplers;
+			ShaderCompilerPipelineState pipeline_state;
+		};
+
 		uint32_t Hash(const VertexAttributeDescription& desc, uint32_t hash = 0u);
 		uint32_t Hash(const VertexBindingDescription& desc, uint32_t hash = 0u);
 		uint32_t Hash(const VertexLayout& layout, uint32_t hash = 0u);
