@@ -1,6 +1,7 @@
 #pragma once
 
 #include <enum.hpp>
+#include <nlohmann/json.hpp>
 
 namespace engine
 {
@@ -370,4 +371,261 @@ UTL_REGISTER_ENUM_CLASS(engine::gfx::ResourceType,
 	UTL_ENUM_META(engine::gfx::ResourceType::eDescriptorAllocator, "DescriptorAllocator"),
 	UTL_ENUM_META(engine::gfx::ResourceType::eSharedDescriptor, "SharedDescriptor"),
 	UTL_ENUM_META(engine::gfx::ResourceType::eQueryPool, "QueryPool")
+)
+
+UTL_REGISTER_ENUM_CLASS(engine::gfx::ShaderStageFlag,
+	UTL_ENUM_META(engine::gfx::ShaderStageFlag::eVertex, "Vertex"),
+	UTL_ENUM_META(engine::gfx::ShaderStageFlag::eTessellationControl, "TessellationControl"),
+	UTL_ENUM_META(engine::gfx::ShaderStageFlag::eTessellationEvaluation, "TessellationEvaluation"),
+	UTL_ENUM_META(engine::gfx::ShaderStageFlag::eGeometry, "Geometry"),
+	UTL_ENUM_META(engine::gfx::ShaderStageFlag::eFragment, "Fragment"),
+	UTL_ENUM_META(engine::gfx::ShaderStageFlag::eCompute, "Compute"),
+	UTL_ENUM_META(engine::gfx::ShaderStageFlag::eAllGraphics, "AllGraphics")
+)
+
+UTL_REGISTER_ENUM_CLASS(engine::gfx::IndexType,
+	UTL_ENUM_META(engine::gfx::IndexType::eUint16, "Uint16"),
+	UTL_ENUM_META(engine::gfx::IndexType::eUint32, "Uint32")
+)
+
+UTL_REGISTER_ENUM_CLASS(engine::gfx::QueueTypeFlag,
+	UTL_ENUM_META(engine::gfx::QueueTypeFlag::eGraphics, "Graphics"),
+	UTL_ENUM_META(engine::gfx::QueueTypeFlag::ePresent, "Present"),
+	UTL_ENUM_META(engine::gfx::QueueTypeFlag::eCompute, "Compute"),
+	UTL_ENUM_META(engine::gfx::QueueTypeFlag::eTransfer, "Transfer")
+)
+
+UTL_REGISTER_ENUM_CLASS(engine::gfx::CommandPoolResetMode,
+	UTL_ENUM_META(engine::gfx::CommandPoolResetMode::eResetPool, "ResetPool"),
+	UTL_ENUM_META(engine::gfx::CommandPoolResetMode::eResetIndividually, "ResetIndividually"),
+	UTL_ENUM_META(engine::gfx::CommandPoolResetMode::eAlwaysAllocate, "AlwaysAllocate")
+)
+
+UTL_REGISTER_ENUM_CLASS(engine::gfx::StageFlag,
+	UTL_ENUM_META(engine::gfx::StageFlag::eNone, "None"),
+	UTL_ENUM_META(engine::gfx::StageFlag::eTopOfPipe, "TopOfPipe"),
+	UTL_ENUM_META(engine::gfx::StageFlag::eDrawIndirect, "DrawIndirect"),
+	UTL_ENUM_META(engine::gfx::StageFlag::eVertexInput, "VertexInput"),
+	UTL_ENUM_META(engine::gfx::StageFlag::eVertexShader, "VertexShader"),
+	UTL_ENUM_META(engine::gfx::StageFlag::eTessellationControlShader, "TessellationControlShader"),
+	UTL_ENUM_META(engine::gfx::StageFlag::eTessellationEvaluationShader, "TessellationEvaluationShader"),
+	UTL_ENUM_META(engine::gfx::StageFlag::eGeometryShader, "GeometryShader"),
+	UTL_ENUM_META(engine::gfx::StageFlag::eFragmentShader, "FragmentShader"),
+	UTL_ENUM_META(engine::gfx::StageFlag::eEarlyFragmentTests, "EarlyFragmentTests"),
+	UTL_ENUM_META(engine::gfx::StageFlag::eLateFragmentTests, "LateFragmentTests"),
+	UTL_ENUM_META(engine::gfx::StageFlag::eColorAttachmentOutput, "ColorAttachmentOutput"),
+	UTL_ENUM_META(engine::gfx::StageFlag::eComputeShader, "ComputeShader"),
+	UTL_ENUM_META(engine::gfx::StageFlag::eAllTransfer, "AllTransfer"),
+	UTL_ENUM_META(engine::gfx::StageFlag::eTransfer, "Transfer"),
+	UTL_ENUM_META(engine::gfx::StageFlag::eBottomOfPipe, "BottomOfPipe"),
+	UTL_ENUM_META(engine::gfx::StageFlag::eHost, "Host"),
+	UTL_ENUM_META(engine::gfx::StageFlag::eAllGraphics, "AllGraphics"),
+	UTL_ENUM_META(engine::gfx::StageFlag::eAllCommands, "AllCommands"),
+	UTL_ENUM_META(engine::gfx::StageFlag::eCopy, "Copy"),
+	UTL_ENUM_META(engine::gfx::StageFlag::eResolve, "Resolve"),
+	UTL_ENUM_META(engine::gfx::StageFlag::eBlit, "Blit"),
+	UTL_ENUM_META(engine::gfx::StageFlag::eClear, "Clear"),
+	UTL_ENUM_META(engine::gfx::StageFlag::eIndexInput, "IndexInput"),
+	UTL_ENUM_META(engine::gfx::StageFlag::eVertexAttributeInput, "VertexAttributeInput"),
+	UTL_ENUM_META(engine::gfx::StageFlag::ePreRasterizationShaders, "PreRasterizationShaders")
+)
+
+UTL_REGISTER_ENUM_CLASS(engine::gfx::ResourceStateFlag,
+	UTL_ENUM_META(engine::gfx::ResourceStateFlag::eUndefined, "Undefined"),
+	UTL_ENUM_META(engine::gfx::ResourceStateFlag::eRead, "Read"),
+	UTL_ENUM_META(engine::gfx::ResourceStateFlag::eWrite, "Write"),
+	UTL_ENUM_META(engine::gfx::ResourceStateFlag::eCompute, "Compute"),
+	UTL_ENUM_META(engine::gfx::ResourceStateFlag::eGraphics, "Graphics"),
+	UTL_ENUM_META(engine::gfx::ResourceStateFlag::eColorAttachment, "ColorAttachment"),
+	UTL_ENUM_META(engine::gfx::ResourceStateFlag::eDepthAttachment, "DepthAttachment"),
+	UTL_ENUM_META(engine::gfx::ResourceStateFlag::eStencilAttachment, "StencilAttachment"),
+	UTL_ENUM_META(engine::gfx::ResourceStateFlag::eSample, "Sample"),
+	UTL_ENUM_META(engine::gfx::ResourceStateFlag::eStorage, "Storage"),
+	UTL_ENUM_META(engine::gfx::ResourceStateFlag::eIndirect, "Indirect"),
+	UTL_ENUM_META(engine::gfx::ResourceStateFlag::eGeneral, "General"),
+	UTL_ENUM_META(engine::gfx::ResourceStateFlag::eCopy, "Copy"),
+	UTL_ENUM_META(engine::gfx::ResourceStateFlag::ePresent, "Present"),
+	UTL_ENUM_META(engine::gfx::ResourceStateFlag::eColorAttachmentRead, "ColorAttachmentRead"),
+	UTL_ENUM_META(engine::gfx::ResourceStateFlag::eColorAttachmentWrite, "ColorAttachmentWrite"),
+	UTL_ENUM_META(engine::gfx::ResourceStateFlag::eDepthAttachmentRead, "DepthAttachmentRead"),
+	UTL_ENUM_META(engine::gfx::ResourceStateFlag::eDepthAttachmentWrite, "DepthAttachmentWrite"),
+	UTL_ENUM_META(engine::gfx::ResourceStateFlag::eStencilAttachmentRead, "StencilAttachmentRead"),
+	UTL_ENUM_META(engine::gfx::ResourceStateFlag::eStencilAttachmentWrite, "StencilAttachmentWrite"),
+	UTL_ENUM_META(engine::gfx::ResourceStateFlag::eDepthStencilAttachmentRead, "DepthStencilAttachmentRead"),
+	UTL_ENUM_META(engine::gfx::ResourceStateFlag::eDepthStencilAttachmentWrite, "DepthStencilAttachmentWrite"),
+	UTL_ENUM_META(engine::gfx::ResourceStateFlag::eShaderReadOnlyResource, "ShaderReadOnlyResource"),
+	UTL_ENUM_META(engine::gfx::ResourceStateFlag::eCopyDst, "CopyDst"),
+	UTL_ENUM_META(engine::gfx::ResourceStateFlag::eCopySrc, "CopySrc"),
+	UTL_ENUM_META(engine::gfx::ResourceStateFlag::ePresentSrc, "PresentSrc")
+)
+
+UTL_REGISTER_ENUM_CLASS(engine::gfx::AccessTypeFlag,
+	UTL_ENUM_META(engine::gfx::AccessTypeFlag::eRead, "Read"),
+	UTL_ENUM_META(engine::gfx::AccessTypeFlag::eWrite, "Write"),
+	UTL_ENUM_META(engine::gfx::AccessTypeFlag::eRW, "RW")
+)
+
+UTL_REGISTER_ENUM_CLASS(engine::gfx::Filter,
+	UTL_ENUM_META(engine::gfx::Filter::eNearest, "Nearest"),
+	UTL_ENUM_META(engine::gfx::Filter::eLinear, "Linear")
+)
+
+UTL_REGISTER_ENUM_CLASS(engine::gfx::SamplerAddressMode,
+	UTL_ENUM_META(engine::gfx::SamplerAddressMode::eMirror, "Mirror"),
+	UTL_ENUM_META(engine::gfx::SamplerAddressMode::eRepeat, "Repeat"),
+	UTL_ENUM_META(engine::gfx::SamplerAddressMode::eClampToEdge, "ClampToEdge"),
+	UTL_ENUM_META(engine::gfx::SamplerAddressMode::eClampToBorder, "ClampToBorder")
+)
+
+UTL_REGISTER_ENUM_CLASS(engine::gfx::CompareOp,
+	UTL_ENUM_META(engine::gfx::CompareOp::eNone, "None"),
+	UTL_ENUM_META(engine::gfx::CompareOp::eNever, "Never"),
+	UTL_ENUM_META(engine::gfx::CompareOp::eLess, "Less"),
+	UTL_ENUM_META(engine::gfx::CompareOp::eEqual, "Equal"),
+	UTL_ENUM_META(engine::gfx::CompareOp::eLessOrEqual, "LessOrEqual"),
+	UTL_ENUM_META(engine::gfx::CompareOp::eGreater, "Greater"),
+	UTL_ENUM_META(engine::gfx::CompareOp::eNotEqual, "NotEqual"),
+	UTL_ENUM_META(engine::gfx::CompareOp::eGreaterOrEqual, "GreaterOrEqual"),
+	UTL_ENUM_META(engine::gfx::CompareOp::eAlways, "Always")
+)
+
+UTL_REGISTER_ENUM_CLASS(engine::gfx::QueryType,
+	UTL_ENUM_META(engine::gfx::QueryType::eTimestamp, "Timestamp"),
+	UTL_ENUM_META(engine::gfx::QueryType::eOcclusion, "Occlusion"),
+	UTL_ENUM_META(engine::gfx::QueryType::ePipelineStatistics, "PipelineStatistics")
+)
+
+UTL_REGISTER_ENUM_CLASS(engine::gfx::BufferUsageFlag,
+	UTL_ENUM_META(engine::gfx::BufferUsageFlag::eCopy, "Copy"),
+	UTL_ENUM_META(engine::gfx::BufferUsageFlag::eStorage, "Storage"),
+	UTL_ENUM_META(engine::gfx::BufferUsageFlag::eVertex, "Vertex"),
+	UTL_ENUM_META(engine::gfx::BufferUsageFlag::eIndex, "Index"),
+	UTL_ENUM_META(engine::gfx::BufferUsageFlag::eUniform, "Uniform"),
+	UTL_ENUM_META(engine::gfx::BufferUsageFlag::eIndirect, "Indirect"),
+	UTL_ENUM_META(engine::gfx::BufferUsageFlag::eGpuOnly, "GpuOnly"),
+	UTL_ENUM_META(engine::gfx::BufferUsageFlag::eCpuToGpu, "CpuToGpu"),
+	UTL_ENUM_META(engine::gfx::BufferUsageFlag::eHasDeviceAddress, "HasDeviceAddress"),
+	UTL_ENUM_META(engine::gfx::BufferUsageFlag::eStagingBuffer, "StagingBuffer"),
+	UTL_ENUM_META(engine::gfx::BufferUsageFlag::eStorageBufferCPU, "StorageBufferCPU"),
+	UTL_ENUM_META(engine::gfx::BufferUsageFlag::eStorageBuffer, "StorageBuffer"),
+	UTL_ENUM_META(engine::gfx::BufferUsageFlag::eVertexBuffer, "VertexBuffer"),
+	UTL_ENUM_META(engine::gfx::BufferUsageFlag::eIndexBuffer, "IndexBuffer"),
+	UTL_ENUM_META(engine::gfx::BufferUsageFlag::eUniformBuffer, "UniformBuffer"),
+	UTL_ENUM_META(engine::gfx::BufferUsageFlag::eIndirectBuffer, "IndirectBuffer")
+)
+
+UTL_REGISTER_ENUM_CLASS(engine::gfx::TextureUsageFlag,
+	UTL_ENUM_META(engine::gfx::TextureUsageFlag::eCubemap, "Cubemap"),
+	UTL_ENUM_META(engine::gfx::TextureUsageFlag::eTransferable, "Transferable"),
+	UTL_ENUM_META(engine::gfx::TextureUsageFlag::eSamplable, "Samplable"),
+	UTL_ENUM_META(engine::gfx::TextureUsageFlag::eStorage, "Storage"),
+	UTL_ENUM_META(engine::gfx::TextureUsageFlag::eRenderTarget, "RenderTarget")
+)
+
+UTL_REGISTER_ENUM_CLASS(engine::gfx::PipelineType,
+	UTL_ENUM_META(engine::gfx::PipelineType::eCompute, "Compute"),
+	UTL_ENUM_META(engine::gfx::PipelineType::eGraphics, "Graphics")
+)
+
+UTL_REGISTER_ENUM_CLASS(engine::gfx::PrimitiveTopology,
+	UTL_ENUM_META(engine::gfx::PrimitiveTopology::ePointList, "PointList"),
+	UTL_ENUM_META(engine::gfx::PrimitiveTopology::eLineList, "LineList"),
+	UTL_ENUM_META(engine::gfx::PrimitiveTopology::eLineStrip, "LineStrip"),
+	UTL_ENUM_META(engine::gfx::PrimitiveTopology::eTriangleList, "TriangleList"),
+	UTL_ENUM_META(engine::gfx::PrimitiveTopology::eTriangleStrip, "TriangleStrip"),
+	UTL_ENUM_META(engine::gfx::PrimitiveTopology::ePatchList, "PatchList")
+)
+
+UTL_REGISTER_ENUM_CLASS(engine::gfx::SampleCount,
+	UTL_ENUM_META(engine::gfx::SampleCount::e1, "1"),
+	UTL_ENUM_META(engine::gfx::SampleCount::e2, "2"),
+	UTL_ENUM_META(engine::gfx::SampleCount::e4, "4"),
+	UTL_ENUM_META(engine::gfx::SampleCount::e8, "8"),
+	UTL_ENUM_META(engine::gfx::SampleCount::e16, "16")
+)
+
+UTL_REGISTER_ENUM_CLASS(engine::gfx::FillMode,
+	UTL_ENUM_META(engine::gfx::FillMode::eSolid, "Solid"),
+	UTL_ENUM_META(engine::gfx::FillMode::eWireframe, "Wireframe")
+)
+
+UTL_REGISTER_ENUM_CLASS(engine::gfx::CullModeFlag,
+	UTL_ENUM_META(engine::gfx::CullModeFlag::eNone, "None"),
+	UTL_ENUM_META(engine::gfx::CullModeFlag::eFront, "Front"),
+	UTL_ENUM_META(engine::gfx::CullModeFlag::eBack, "Back")
+)
+
+UTL_REGISTER_ENUM_CLASS(engine::gfx::FrontFace,
+	UTL_ENUM_META(engine::gfx::FrontFace::eCCW, "CCW"),
+	UTL_ENUM_META(engine::gfx::FrontFace::eCW, "CW")
+)
+
+UTL_REGISTER_ENUM_CLASS(engine::gfx::StencilOp,
+	UTL_ENUM_META(engine::gfx::StencilOp::eKeep, "Keep"),
+	UTL_ENUM_META(engine::gfx::StencilOp::eZero, "Zero"),
+	UTL_ENUM_META(engine::gfx::StencilOp::eReplace, "Replace"),
+	UTL_ENUM_META(engine::gfx::StencilOp::eIncrementAndClamp, "IncrementAndClamp"),
+	UTL_ENUM_META(engine::gfx::StencilOp::eDecrementAndClamp, "DecrementAndClamp"),
+	UTL_ENUM_META(engine::gfx::StencilOp::eInvert, "Invert"),
+	UTL_ENUM_META(engine::gfx::StencilOp::eIncrementAndWrap, "IncrementAndWrap"),
+	UTL_ENUM_META(engine::gfx::StencilOp::eDecrementAndWrap, "DecrementAndWrap")
+)
+
+UTL_REGISTER_ENUM_CLASS(engine::gfx::BlendFactor,
+	UTL_ENUM_META(engine::gfx::BlendFactor::eZero, "Zero"),
+	UTL_ENUM_META(engine::gfx::BlendFactor::eOne, "One"),
+	UTL_ENUM_META(engine::gfx::BlendFactor::eSrcColor, "SrcColor"),
+	UTL_ENUM_META(engine::gfx::BlendFactor::eOneMinusSrcColor, "OneMinusSrcColor"),
+	UTL_ENUM_META(engine::gfx::BlendFactor::eDstColor, "DstColor"),
+	UTL_ENUM_META(engine::gfx::BlendFactor::eOneMinusDstColor, "OneMinusDstColor"),
+	UTL_ENUM_META(engine::gfx::BlendFactor::eSrcAlpha, "SrcAlpha"),
+	UTL_ENUM_META(engine::gfx::BlendFactor::eOneMinusSrcAlpha, "OneMinusSrcAlpha"),
+	UTL_ENUM_META(engine::gfx::BlendFactor::eOneMinusSrcAlpha, "OneMinusSrcAlpha"),
+	UTL_ENUM_META(engine::gfx::BlendFactor::eDstAlpha, "DstAlpha"),
+	UTL_ENUM_META(engine::gfx::BlendFactor::eOneMinusDstAlpha, "OneMinusDstAlpha"),
+	UTL_ENUM_META(engine::gfx::BlendFactor::eConstantAlpha, "ConstantAlpha"),
+	UTL_ENUM_META(engine::gfx::BlendFactor::eOneMinusConstantAlpha, "OneMinusConstantAlpha"),
+	UTL_ENUM_META(engine::gfx::BlendFactor::eSrcAlphaSaturate, "SrcAlphaSaturate")
+)
+
+UTL_REGISTER_ENUM_CLASS(engine::gfx::BlendOp,
+	UTL_ENUM_META(engine::gfx::BlendOp::eAdd, "Add"),
+	UTL_ENUM_META(engine::gfx::BlendOp::eSubtract, "Subtract"),
+	UTL_ENUM_META(engine::gfx::BlendOp::eReverseSubtract, "ReverseSubtract"),
+	UTL_ENUM_META(engine::gfx::BlendOp::eMin, "Min"),
+	UTL_ENUM_META(engine::gfx::BlendOp::eMax, "Max")
+)
+
+UTL_REGISTER_ENUM_CLASS(engine::gfx::ColorMaskFlag,
+	UTL_ENUM_META(engine::gfx::ColorMaskFlag::eR, "R"),
+	UTL_ENUM_META(engine::gfx::ColorMaskFlag::eG, "G"),
+	UTL_ENUM_META(engine::gfx::ColorMaskFlag::eB, "B"),
+	UTL_ENUM_META(engine::gfx::ColorMaskFlag::eA, "A"),
+	UTL_ENUM_META(engine::gfx::ColorMaskFlag::eAll, "All")
+)
+
+UTL_REGISTER_ENUM_CLASS(engine::gfx::LoadOp,
+	UTL_ENUM_META(engine::gfx::LoadOp::eLoad, "Load"),
+	UTL_ENUM_META(engine::gfx::LoadOp::eClear, "Clear"),
+	UTL_ENUM_META(engine::gfx::LoadOp::eDontCare, "DontCare")
+)
+
+UTL_REGISTER_ENUM_CLASS(engine::gfx::StoreOp,
+	UTL_ENUM_META(engine::gfx::StoreOp::eStore, "Store"),
+	UTL_ENUM_META(engine::gfx::StoreOp::eDontCare, "DontCare"),
+	UTL_ENUM_META(engine::gfx::StoreOp::eNone, "None")
+)
+
+UTL_REGISTER_ENUM_CLASS(engine::gfx::DescriptorType,
+	UTL_ENUM_META(engine::gfx::DescriptorType::eSampler, "Sampler"),
+	UTL_ENUM_META(engine::gfx::DescriptorType::eCombinedImageSampler, "CombinedImageSampler"),
+	UTL_ENUM_META(engine::gfx::DescriptorType::eSampledImage, "SampledImage"),
+	UTL_ENUM_META(engine::gfx::DescriptorType::eStorageImage, "StorageImage"),
+	UTL_ENUM_META(engine::gfx::DescriptorType::eUniformTexelBuffer, "UniformTexelBuffer"),
+	UTL_ENUM_META(engine::gfx::DescriptorType::eStorageTexelBuffer, "StorageTexelBuffer"),
+	UTL_ENUM_META(engine::gfx::DescriptorType::eUniformBuffer, "UniformBuffer"),
+	UTL_ENUM_META(engine::gfx::DescriptorType::eStorageBuffer, "StorageBuffer"),
+	UTL_ENUM_META(engine::gfx::DescriptorType::eUniformBufferDynamic, "UniformBufferDynamic"),
+	UTL_ENUM_META(engine::gfx::DescriptorType::eStorageBufferDynamic, "StorageBufferDynamic"),
+	UTL_ENUM_META(engine::gfx::DescriptorType::eInputAttachment, "InputAttachment")
 )
