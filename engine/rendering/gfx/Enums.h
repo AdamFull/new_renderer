@@ -283,7 +283,7 @@ namespace engine
 			eOne,
 			eSrcColor,
 			eOneMinusSrcColor,
-			eDstColor ,
+			eDstColor,
 			eOneMinusDstColor,
 			eSrcAlpha,
 			eOneMinusSrcAlpha,
@@ -343,3 +343,31 @@ namespace engine
 		};
 	}
 }
+
+// Meta data registration
+UTL_REGISTER_ENUM_CLASS(engine::gfx::RenderApi,
+	UTL_ENUM_META(engine::gfx::RenderApi::eAuto, "Auto"),
+	UTL_ENUM_META(engine::gfx::RenderApi::eVulkan, "Vulkan"),
+	UTL_ENUM_META(engine::gfx::RenderApi::eDirectx12, "Directx12")
+)
+
+UTL_REGISTER_ENUM_CLASS(engine::gfx::ResourceType,
+	UTL_ENUM_META(engine::gfx::ResourceType::eUnknown, "Auto"),
+	UTL_ENUM_META(engine::gfx::ResourceType::eFence, "Fence"),
+	UTL_ENUM_META(engine::gfx::ResourceType::eSemaphore, "Semaphore"),
+	UTL_ENUM_META(engine::gfx::ResourceType::eQueue, "Queue"),
+	UTL_ENUM_META(engine::gfx::ResourceType::eSwapchain, "Swapchain"),
+	UTL_ENUM_META(engine::gfx::ResourceType::eBuffer, "Buffer"),
+	UTL_ENUM_META(engine::gfx::ResourceType::eCommandList, "CommandList"),
+	UTL_ENUM_META(engine::gfx::ResourceType::eCommandPool, "CommandPool"),
+	UTL_ENUM_META(engine::gfx::ResourceType::eTexture, "Texture"),
+	UTL_ENUM_META(engine::gfx::ResourceType::eSampler, "Sampler"),
+	UTL_ENUM_META(engine::gfx::ResourceType::eShader, "Shader"),
+	UTL_ENUM_META(engine::gfx::ResourceType::eRootSignature, "RootSignature"),
+	UTL_ENUM_META(engine::gfx::ResourceType::ePipeline, "Pipeline"),
+	UTL_ENUM_META(engine::gfx::ResourceType::ePipelineCache, "PipelineCache"),
+	UTL_ENUM_META(engine::gfx::ResourceType::eResourceDescriptor, "ResourceDescriptor"),
+	UTL_ENUM_META(engine::gfx::ResourceType::eDescriptorAllocator, "DescriptorAllocator"),
+	UTL_ENUM_META(engine::gfx::ResourceType::eSharedDescriptor, "SharedDescriptor"),
+	UTL_ENUM_META(engine::gfx::ResourceType::eQueryPool, "QueryPool")
+)

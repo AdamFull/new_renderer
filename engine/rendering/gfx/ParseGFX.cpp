@@ -25,38 +25,58 @@ namespace engine
 		
 
 		// Format
-		void to_json(nlohmann::json& json, const Format& type)
-		{
-            json = to_string(type);
-		}
-
-		void from_json(const nlohmann::json& json, Format& type)
-		{
-			type = from_string(json.get<std::string>());
-		}
+		void to_json(nlohmann::json& json, const Format& type) { json = to_string(type); } 
+		void from_json(const nlohmann::json& json, Format& type) { type = from_string<Format>(json.get<std::string>()); }
 
 
 		// ShaderStageFlag
-		void to_json(nlohmann::json& json, const ShaderStageFlag& type)
-		{
+		void to_json(nlohmann::json& json, const ShaderStageFlag& type) { json = to_string(type); }
+		void from_json(const nlohmann::json& json, ShaderStageFlag& type) { type = from_string<ShaderStageFlag>(json.get<std::string>()); }
 
+		template<typename _FlagT, size_t _MaxFlags>
+		std::vector<std::string> serialize_hr_flags(const utl::flags<_FlagT>& flags, const std::array<_FlagT, _MaxFlags>& all_flags)
+		{
+			std::vector<std::string> flags_vector{ _MaxFlags };
+			for (int32_t i = 0; i < _MaxFlags; ++i)
+			{
+				if (utl::eq_(flags, all_flags[i]))
+				{
+					flags_vector[i] = to_string(all_flags[i]);
+				}
+			}
+			
+			return flags_vector;
 		}
 
-		void from_json(const nlohmann::json& json, ShaderStageFlag& type)
+		template<typename _FlagT>
+		utl::flags<_FlagT> deserialize_hr_flags(const std::vector<std::string>& flags_vector)
 		{
-
+			utl::flags<_FlagT> flags{};
+			for (int32_t i = 0; i < flags_vector.size(); ++i)
+			{
+				flags |= from_string<_FlagT>(flags_vector[i]);
+			}
+			return flags;
 		}
 
-
-		// ShaderStageFlags
+		// ShaderStageFlags human readable
 		void to_json(nlohmann::json& json, const ShaderStageFlags& type)
 		{
+			static std::array<ShaderStageFlag, 6ull> all_flags {
+				ShaderStageFlag::eVertex,
+				ShaderStageFlag::eTessellationControl,
+				ShaderStageFlag::eTessellationEvaluation,
+				ShaderStageFlag::eGeometry,
+				ShaderStageFlag::eFragment,
+				ShaderStageFlag::eCompute,
+			};
 
+			json = serialize_hr_flags(type, all_flags);
 		}
 
 		void from_json(const nlohmann::json& json, ShaderStageFlags& type)
 		{
-
+			type = deserialize_hr_flags<ShaderStageFlag>(json.get<std::vector<std::string>>());
 		}
 
 
