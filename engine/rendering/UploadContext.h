@@ -1,7 +1,7 @@
 #pragma once
 
 #include <engine/interface/filesystem/VirtualFileSystemInterface.h>
-#include <engine/rendering/gfx/ResourceLoader.h>
+#include <engine/rendering/gfx/gfx_resource_loader.h>
 #include <engine/rendering/UploadFrame.h>
 
 #include <shader_compiler/shader_library_parse.hpp>

@@ -1,6 +1,6 @@
 #include <engine/rendering/UploadFrame.h>
 
-#include <gfx/Context.h>
+#include <gfx/gfx_context.h>
 
 namespace engine
 {

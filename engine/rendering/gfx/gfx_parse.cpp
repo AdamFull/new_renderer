@@ -1,5 +1,5 @@
-#include "ParseGFX.h"
-#include "StringGFX.h"
+#include "gfx_parse.h"
+#include "gfx_string.h"
 
 namespace engine
 {

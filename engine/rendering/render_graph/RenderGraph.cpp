@@ -1,7 +1,7 @@
 #include "RenderGraph.h"
 #include <engine/rendering/RendererInterface.h>
 #include <engine/rendering/RenderContext.h>
-#include <engine/rendering/gfx/Context.h>
+#include <engine/rendering/gfx/gfx_context.h>
 
 #include <engine/rendering/UniformPool.h>
 

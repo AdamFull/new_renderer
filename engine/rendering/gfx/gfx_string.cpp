@@ -1,4 +1,4 @@
-#include "StringGFX.h"
+#include "gfx_string.h"
 
 namespace engine
 {

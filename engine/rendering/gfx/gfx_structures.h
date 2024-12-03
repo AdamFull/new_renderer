@@ -2,8 +2,8 @@
 
 #include <array>
 #include <span>
-#include <engine/rendering/gfx/Reflection.h>
-#include <engine/rendering/gfx/Format.h>
+#include <engine/rendering/gfx/gfx_shader_reflection.h>
+#include <engine/rendering/gfx/gfx_format.h>
 
 #ifdef MemoryBarrier
 #undef MemoryBarrier

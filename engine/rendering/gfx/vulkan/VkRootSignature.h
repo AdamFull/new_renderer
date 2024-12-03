@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Base.h>
+#include <gfx_base.h>
 #include "VkDescriptorSetLayout.h"
 
 namespace engine

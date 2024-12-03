@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include <gfx/Structures.h>
+#include <gfx/gfx_structures.h>
 #include <engine/rendering/GeometryBufferInterface.h>
 
 namespace engine

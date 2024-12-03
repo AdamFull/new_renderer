@@ -11,7 +11,7 @@
 
 #include <shader_compiler/compiler_util.h>
 
-#include <gfx/Context.h>
+#include <gfx/gfx_context.h>
 
 #include <tracy/Tracy.hpp>
 

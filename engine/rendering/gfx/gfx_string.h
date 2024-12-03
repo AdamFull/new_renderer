@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Enums.h"
-#include "Format.h"
+#include "gfx_enum.h"
+#include "gfx_format.h"
 
 namespace engine
 {

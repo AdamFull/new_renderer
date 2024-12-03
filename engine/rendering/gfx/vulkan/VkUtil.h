@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Structures.h>
+#include <gfx_structures.h>
 #include <vulkan/vulkan.hpp>
 
 namespace engine

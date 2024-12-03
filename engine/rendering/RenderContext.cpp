@@ -3,8 +3,8 @@
 
 #include <engine/runtime/Window.h>
 
-#include <engine/rendering/gfx/Context.h>
-#include <engine/rendering/gfx/Util.h>
+#include <engine/rendering/gfx/gfx_context.h>
+#include <engine/rendering/gfx/gfx_util.h>
 
 #include <format>
 

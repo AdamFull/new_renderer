@@ -1,6 +1,6 @@
 #include <engine/rendering/UniformPool.h>
 
-#include <Context.h>
+#include <gfx_context.h>
 
 #include <memory.hpp>
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <memory>
-#include <engine/rendering/gfx/Structures.h>
+#include <engine/rendering/gfx/gfx_structures.h>
 
 namespace engine
 {

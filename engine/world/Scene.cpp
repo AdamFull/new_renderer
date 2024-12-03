@@ -9,8 +9,8 @@
 #include <meshoptimizer.h>
 
 #include <engine/rendering/Rendering.h>
-#include <engine/rendering/gfx/Structures.h>
-#include <engine/rendering/gfx/Enums.h>
+#include <engine/rendering/gfx/gfx_structures.h>
+#include <engine/rendering/gfx/gfx_enum.h>
 
 #include <engine/filesystem/vfs_helper.h>
 #include <util/Util.h>

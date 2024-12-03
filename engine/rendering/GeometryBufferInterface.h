@@ -1,9 +1,8 @@
 #pragma once
 
-#include <engine/rendering/gfx/ResourceLoader.h>
+#include <engine/rendering/gfx/gfx_resource_loader.h>
 
 #include <unordered_map>
-#include <enum.hpp>
 
 namespace engine
 {

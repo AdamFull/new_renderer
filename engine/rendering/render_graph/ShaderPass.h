@@ -2,7 +2,7 @@
 
 #include "RenderGraphInterface.h"
 #include <engine/rendering/ExecutionContext.h>
-#include <engine/rendering/gfx/Base.h>
+#include <engine/rendering/gfx/gfx_base.h>
 
 #include <algorithm>
 

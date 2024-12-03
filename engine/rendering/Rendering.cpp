@@ -1,6 +1,6 @@
 #include <engine/rendering/Rendering.h>
 
-#include <engine/rendering/gfx/Context.h>
+#include <engine/rendering/gfx/gfx_context.h>
 
 #include <engine/rendering/RenderContext.h>
 #include <engine/rendering/UploadContext.h>
