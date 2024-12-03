@@ -1,4 +1,5 @@
-#include "Parse.h"
+#include "ParseGFX.h"
+#include "StringGFX.h"
 
 namespace engine
 {
@@ -26,12 +27,12 @@ namespace engine
 		// Format
 		void to_json(nlohmann::json& json, const Format& type)
 		{
-
+            json = to_string(type);
 		}
 
 		void from_json(const nlohmann::json& json, Format& type)
 		{
-
+			type = from_string(json.get<std::string>());
 		}
 
 
