@@ -1,0 +1,14 @@
+{
+	"name": "apply_effect",
+	"group": "postprocess",
+	"shaders": [
+		{
+			"source": "apply_effect.comp",
+			"type": "Compute"
+		}
+	],
+	"compile": {
+		"shader_model": 6,
+		"permutation_pattern": "apply_effect_pattern"
+	}
+}

@@ -1,0 +1,17 @@
+{
+	"name": "downsample",
+	"group": "postprocess",
+	"shaders": [
+		{
+			"source": "downsample.comp",
+			"type": "Compute"
+		}
+	],
+	"compile": {
+		"shader_model": 6,
+		"permutate": [
+			{ "definitions": [] },
+			{ "definitions": [ "FIRST_PASS" ] }
+		]
+	}
+}

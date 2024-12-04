@@ -1,0 +1,13 @@
+{
+	"name": "brightdetect",
+	"group": "postprocess",
+	"shaders": [
+		{
+			"source": "brightdetect.comp",
+			"type": "Compute"
+		}
+	],
+	"compile": {
+		"shader_model": 6
+	}
+}

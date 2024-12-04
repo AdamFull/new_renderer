@@ -1,0 +1,17 @@
+{
+	"name": "blit_image",
+	"group": "utility",
+	"shaders": [
+		{
+			"source": "screenspace.vert",
+			"type": "Vertex"
+		},
+		{
+			"source": "copy.frag",
+			"type": "Fragment"
+		}
+	],
+	"compile": {
+		"shader_model": 6
+	}
+}

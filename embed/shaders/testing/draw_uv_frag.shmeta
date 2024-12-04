@@ -1,4 +1,0 @@
-{
-	type: "fragment";
-	source: "draw_uv.frag";
-}

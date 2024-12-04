@@ -1,0 +1,30 @@
+{
+	"name": "imgui",
+	"group": "testing",
+	"shaders": [
+		{
+			"source": "imgui.vert",
+			"type": "Vertex"
+		},
+		{
+			"source": "imgui.frag",
+			"type": "Fragment"
+		}
+	],
+	"pipeline_state": {
+		"attachment_count": 1,
+		"attachments": [
+			{
+				"enable_blending": true,
+				"src_color": "SrcAlpha",
+				"dst_color": "OneMinusSrcAlpha",
+				"src_alpha": "OneMinusSrcAlpha",
+				"dst_alpha": "Zero"
+			}
+		],
+		"primitive_topology": "TriangleList"
+	},
+	"compile": {
+		"shader_model": 6
+	}
+}

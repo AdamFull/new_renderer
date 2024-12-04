@@ -31,15 +31,12 @@
 	compile: [
 		{ 
 			shader_name: "cull_and_batch";
-			pattern: "default_pattern";
 		},
 		{ 
 			shader_name: "assemble_commands";
-			pattern: "default_pattern";
 		},
 		{ 
 			shader_name: "clear_counters";
-			pattern: "empty_pattern";
 		},
 		{ 
 			shader_name: "scan";

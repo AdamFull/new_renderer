@@ -1,0 +1,13 @@
+{
+	"name": "filmic_smaa_tu2x",
+	"group": "postprocess",
+	"shaders": [
+		{
+			"source": "filmic_smaa_tu2x.comp",
+			"type": "Compute"
+		}
+	],
+	"compile": {
+		"shader_model": 6
+	}
+}

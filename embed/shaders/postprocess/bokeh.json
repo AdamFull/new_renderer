@@ -1,0 +1,13 @@
+{
+	"name": "bokeh",
+	"group": "postprocess",
+	"shaders": [
+		{
+			"source": "bokeh.comp",
+			"type": "Compute"
+		}
+	],
+	"compile": {
+		"shader_model": 6
+	}
+}

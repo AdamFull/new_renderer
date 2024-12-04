@@ -1,0 +1,15 @@
+{
+	"name": "shade",
+	"group": "visibilitybuffer",
+	"shaders": [
+		{
+			"source": "visbuffershade.comp",
+			"type": "Compute",
+			"definitions": [ "MESH_DATA", "LIGHT_DATA", "SHADOW_DATA", "GEOMETRY_BUFFERS" ]
+		}
+	],
+	"compile": {
+		"shader_model": 6,
+		"permutation_pattern": "geometry_pattern"
+	}
+}

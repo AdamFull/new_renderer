@@ -1,0 +1,13 @@
+{
+	"name": "brdflut_generator",
+	"group": "lighting",
+	"shaders": [
+		{
+			"source": "brdflut.comp",
+			"type": "Compute"
+		}
+	],
+	"compile": {
+		"shader_model": 6
+	}
+}

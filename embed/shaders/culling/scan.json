@@ -1,0 +1,13 @@
+{
+	"name": "scan",
+	"group": "culling",
+	"shaders": [
+		{
+			"source": "scan.comp",
+			"type": "Compute"
+		}
+	],
+	"compile": {
+		"shader_model": 6
+	}
+}

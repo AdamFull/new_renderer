@@ -1,0 +1,13 @@
+{
+	"name": "clear_counters",
+	"group": "culling",
+	"shaders": [
+		{
+			"source": "clear_counters.comp",
+			"type": "Compute"
+		}
+	],
+	"compile": {
+		"shader_model": 6
+	}
+}

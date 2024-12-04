@@ -1,0 +1,14 @@
+{
+	"name": "tile_freq_classification",
+	"group": "postprocess",
+	"shaders": [
+		{
+			"source": "tile_freq_classification.comp",
+			"type": "Compute",
+			"definitions": [ "MESH_DATA", "CULLING_DATA" ]
+		}
+	],
+	"compile": {
+		"shader_model": 6
+	}
+}

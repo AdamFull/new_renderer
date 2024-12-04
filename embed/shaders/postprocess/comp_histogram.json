@@ -1,0 +1,13 @@
+{
+	"name": "compute_histogram",
+	"group": "postprocess",
+	"shaders": [
+		{
+			"source": "comp_histogram.comp",
+			"type": "Compute"
+		}
+	],
+	"compile": {
+		"shader_model": 6
+	}
+}

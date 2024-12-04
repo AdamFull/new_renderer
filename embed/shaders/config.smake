@@ -59,66 +59,6 @@
 				];
 			};
 		};
-		default_pattern: {
-			permutation_generator: {
-				rules: [
-					{
-						base: [];
-						variants: [
-							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
-						];
-					}
-				];
-			};
-		};
-		empty_pattern: {
-			permutation_generator: {
-				rules: [
-					{
-						base: [];
-						variants: [
-							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
-						];
-					}
-				];
-			};
-		};
-		downsample_pattern: {
-			permutation_generator: {
-				rules: [
-					{
-						base: [];
-						variants: [
-							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
-						];
-					},
-					{
-						base: ["FIRST_PASS"];
-						variants: [
-							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
-						];
-					}
-				];
-			};
-		};
-		mv_pattern: {
-			permutation_generator: {
-				rules: [
-					{
-						base: [];
-						variants: [
-							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
-						];
-					},
-					{
-						base: ["LOW_PRECISION_VELOCITY"];
-						variants: [
-							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
-						];
-					}
-				];
-			};
-		};
 		apply_effect_pattern: {
 			permutation_generator: {
 				rules: [

@@ -1,0 +1,14 @@
+{
+	"name": "cull_and_batch",
+	"group": "culling",
+	"shaders": [
+		{
+			"source": "cull_and_batch.comp",
+			"type": "Compute",
+			"definitions": [ "MESH_DATA", "CULLING_DATA" ]
+		}
+	],
+	"compile": {
+		"shader_model": 6
+	}
+}

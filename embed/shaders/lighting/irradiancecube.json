@@ -1,0 +1,13 @@
+{
+	"name": "irradiancecube_generator",
+	"group": "lighting",
+	"shaders": [
+		{
+			"source": "irradiancecube.comp",
+			"type": "Compute"
+		}
+	],
+	"compile": {
+		"shader_model": 6
+	}
+}

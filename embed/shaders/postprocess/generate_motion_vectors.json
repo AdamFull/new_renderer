@@ -1,0 +1,17 @@
+{
+	"name": "generate_motion_vectors",
+	"group": "postprocess",
+	"shaders": [
+		{
+			"source": "generate_motion_vectors.comp",
+			"type": "Compute"
+		}
+	],
+	"compile": {
+		"shader_model": 6,
+		"permutate": [
+			{ "definitions": [] },
+			{ "definitions": [ "LOW_PRECISION_VELOCITY" ] }
+		]
+	}
+}

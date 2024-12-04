@@ -32,15 +32,12 @@
 	compile: [
 		{ 
 			shader_name: "brgflut_generator";
-			pattern: "empty_pattern";
 		},
 		{ 
 			shader_name: "irradiancecube_generator";
-			pattern: "empty_pattern";
 		},
 		{ 
 			shader_name: "prefilteredmap_generator";
-			pattern: "empty_pattern";
 		},
 		{ 
 			shader_name: "unidirectional_shadow";

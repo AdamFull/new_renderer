@@ -1,0 +1,13 @@
+{
+	"name": "copy_image",
+	"group": "utility",
+	"shaders": [
+		{
+			"source": "copy.comp",
+			"type": "Compute"
+		}
+	],
+	"compile": {
+		"shader_model": 6
+	}
+}

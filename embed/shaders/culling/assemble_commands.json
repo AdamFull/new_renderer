@@ -1,0 +1,13 @@
+{
+	"name": "assemble_commands",
+	"group": "culling",
+	"shaders": [
+		{
+			"source": "assemble_commands.comp",
+			"type": "Compute"
+		}
+	],
+	"compile": {
+		"shader_model": 6
+	}
+}

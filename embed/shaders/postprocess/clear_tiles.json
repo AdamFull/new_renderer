@@ -1,0 +1,14 @@
+{
+	"name": "clear_tiles",
+	"group": "postprocess",
+	"shaders": [
+		{
+			"source": "clear_tiles.comp",
+			"type": "Compute",
+			"definitions": [ "MESH_DATA", "CULLING_DATA" ]
+		}
+	],
+	"compile": {
+		"shader_model": 6
+	}
+}

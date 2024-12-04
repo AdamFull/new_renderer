@@ -1,0 +1,13 @@
+{
+	"name": "prefilteredmap_generator",
+	"group": "lighting",
+	"shaders": [
+		{
+			"source": "prefilteredmap.comp",
+			"type": "Compute"
+		}
+	],
+	"compile": {
+		"shader_model": 6
+	}
+}

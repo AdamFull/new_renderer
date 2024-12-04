@@ -1,0 +1,13 @@
+{
+	"name": "upsample",
+	"group": "postprocess",
+	"shaders": [
+		{
+			"source": "upsample.comp",
+			"type": "Compute"
+		}
+	],
+	"compile": {
+		"shader_model": 6
+	}
+}

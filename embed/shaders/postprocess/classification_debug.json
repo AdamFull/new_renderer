@@ -1,0 +1,18 @@
+{
+	"name": "classification_debug",
+	"group": "postprocess",
+	"shaders": [
+		{
+			"source": "classification_debug.comp",
+			"type": "Compute",
+			"definitions": [ "MESH_DATA", "CULLING_DATA" ]
+		}
+	],
+	"compile": {
+		"shader_model": 6,
+		"permutate": [
+			{ "definitions": [] },
+			{ "definitions": [ "HIGH_FREQUENCY" ] }
+		]
+	}
+}

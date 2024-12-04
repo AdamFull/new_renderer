@@ -38,19 +38,15 @@
 	compile: [
 		{ 
 			shader_name: "copy";
-			pattern: "default_pattern";
 		},
 		{ 
 			shader_name: "copy_compute";
-			pattern: "default_pattern";
 		},
 		{ 
 			shader_name: "clear_buffer";
-			pattern: "default_pattern";
 		},
 		{ 
 			shader_name: "generate_mips";
-			pattern: "default_pattern";
 		},
 		{ 
 			shader_name: "generate_mips_4x";

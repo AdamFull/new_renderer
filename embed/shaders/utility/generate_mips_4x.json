@@ -1,0 +1,13 @@
+{
+	"name": "generate_mips_4x",
+	"group": "utility",
+	"shaders": [
+		{
+			"source": "generate_mips_4x.comp",
+			"type": "Compute"
+		}
+	],
+	"compile": {
+		"shader_model": 6
+	}
+}

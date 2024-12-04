@@ -85,7 +85,6 @@
 	compile: [
 		{ 
 			shader_name: "ao_blur";
-			pattern: "default_pattern";
 		},
 		{ 
 			shader_name: "apply_effect";
@@ -93,43 +92,41 @@
 		},
 		{ 
 			shader_name: "bokeh";
-			pattern: "default_pattern";
 		},
 		{
 			shader_name: "brightdetect";
-			pattern: "default_pattern";
 		},
 		{ 
 			shader_name: "downsample";
-			pattern: "downsample_pattern";
+			permutations: [
+				{ defines: []; },
+				{ defines: ["FIRST_PASS"]; }
+			];
 		},
 		{
 			shader_name: "filmic_smaa_tu2x";
-			pattern: "default_pattern";
 		},
 		{
 			shader_name: "generate_motion_vectors";
-			pattern: "mv_pattern";
+			permutations: [
+				{ defines: []; },
+				{ defines: ["LOW_PRECISION_VELOCITY"]; }
+			];
 		},
 		{ 
 			shader_name: "compute_histogram";
-			pattern: "default_pattern";
 		},
 		{ 
 			shader_name: "compute_brightness";
-			pattern: "default_pattern";
 		},
 		{ 
 			shader_name: "upsample";
-			pattern: "default_pattern";
 		},
 		{
 			shader_name: "tile_freq_classification";
-			pattern: "default_pattern";
 		},
 		{
 			shader_name: "clear_tiles";
-			pattern: "default_pattern";
 		},
 		{
 			shader_name: "classification_debug";
