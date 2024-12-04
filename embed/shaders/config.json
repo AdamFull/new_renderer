@@ -7,100 +7,166 @@
 
 	"permutation_patterns": {
 		"geometry_pattern": {
-			"permutation_generator": {
-				"rules": [
-					{
-						"base": [ "HAS_TEXCOORD", "HAS_NORMAL" ],
-						"variants": [
-							{
-								"definitions": [ "", "INDEX_16BIT" ],
-								"type": "or"
-							},
-							{
-								"definitions": [ "", "COLOR_VEC3", "COLOR_VEC4" ],
-								"type": "or"
-							},
-							{
-								"definitions": [ "TANGENT_VEC3", "TANGENT_VEC4" ],
-								"type": "or"
-							}
-						]
-					},
-					{
-						"base": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL" ],
-						"variants": [
-							{
-								"definitions": [ "", "INDEX_16BIT" ],
-								"type": "or"
-							},
-							{
-								"definitions": [ "", "COLOR_VEC3", "COLOR_VEC4" ],
-								"type": "or"
-							},
-							{
-								"definitions": [ "TANGENT_VEC3", "TANGENT_VEC4" ],
-								"type": "or"
-							},
-							{
-								"definitions": [ "JOINTS_8BIT", "JOINTS_16BIT" ],
-								"type": "or"
-							}
-						]
-					}
-				]
-			}
+			"permutate": [
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "TANGENT_VEC3" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "TANGENT_VEC4" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "TANGENT_VEC3", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "TANGENT_VEC3", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "TANGENT_VEC4", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "TANGENT_VEC4", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "INDEX_16BIT", "TANGENT_VEC3" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "INDEX_16BIT", "TANGENT_VEC4" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "INDEX_16BIT", "TANGENT_VEC3", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "INDEX_16BIT", "TANGENT_VEC3", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "INDEX_16BIT", "TANGENT_VEC4", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "INDEX_16BIT", "TANGENT_VEC4", "COLOR_VEC4" ] },
+
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "TANGENT_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "TANGENT_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "TANGENT_VEC3", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "TANGENT_VEC3", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "TANGENT_VEC4", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "TANGENT_VEC4", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "INDEX_16BIT", "TANGENT_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "INDEX_16BIT", "TANGENT_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "INDEX_16BIT", "TANGENT_VEC3", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "INDEX_16BIT", "TANGENT_VEC3", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "INDEX_16BIT", "TANGENT_VEC4", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "INDEX_16BIT", "TANGENT_VEC4", "COLOR_VEC4" ] },
+
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_16BIT", "TANGENT_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_16BIT", "TANGENT_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_16BIT", "TANGENT_VEC3", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_16BIT", "TANGENT_VEC3", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_16BIT", "TANGENT_VEC4", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_16BIT", "TANGENT_VEC4", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_16BIT", "INDEX_16BIT", "TANGENT_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_16BIT", "INDEX_16BIT", "TANGENT_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_16BIT", "INDEX_16BIT", "TANGENT_VEC3", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_16BIT", "INDEX_16BIT", "TANGENT_VEC3", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_16BIT", "INDEX_16BIT", "TANGENT_VEC4", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_16BIT", "INDEX_16BIT", "TANGENT_VEC4", "COLOR_VEC4" ] }
+			]
 		},
 		"shadows_pattern": {
-			"permutation_generator": {
-				"rules": [
-					{
-						"base": [ "HAS_TEXCOORD", "HAS_NORMAL" ],
-						"variants": [
-							{
-								"definitions": [ "", "CASCADED_SHADOW", "OMNI_SHADOW" ],
-								"type": "or"
-							},
-							{
-								"definitions": [ "", "INDEX_16BIT" ],
-								"type": "or"
-							},
-							{
-								"definitions": [ "", "COLOR_VEC3", "COLOR_VEC4" ],
-								"type": "or"
-							},
-							{
-								"definitions": [ "TANGENT_VEC3", "TANGENT_VEC4" ],
-								"type": "or"
-							}
-						]
-					},
-					{
-						"base": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL" ],
-						"variants": [
-							{
-								"definitions": [ "", "CASCADED_SHADOW", "OMNI_SHADOW" ],
-								"type": "or"
-							},
-							{
-								"definitions": [ "", "INDEX_16BIT" ],
-								"type": "or"
-							},
-							{
-								"definitions": [ "", "COLOR_VEC3", "COLOR_VEC4" ],
-								"type": "or"
-							},
-							{
-								"definitions": [ "TANGENT_VEC3", "TANGENT_VEC4" ],
-								"type": "or"
-							},
-							{
-								"definitions": [ "JOINTS_8BIT", "JOINTS_16BIT" ],
-								"type": "or"
-							}
-						]
-					}
-				]
-			}
+			"permutate": [
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "TANGENT_VEC3" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "TANGENT_VEC4" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "TANGENT_VEC3", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "TANGENT_VEC3", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "TANGENT_VEC4", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "TANGENT_VEC4", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "INDEX_16BIT", "TANGENT_VEC3" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "INDEX_16BIT", "TANGENT_VEC4" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "INDEX_16BIT", "TANGENT_VEC3", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "INDEX_16BIT", "TANGENT_VEC3", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "INDEX_16BIT", "TANGENT_VEC4", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "INDEX_16BIT", "TANGENT_VEC4", "COLOR_VEC4" ] },
+
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "CASCADED_SHADOW", "TANGENT_VEC3" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "CASCADED_SHADOW", "TANGENT_VEC4" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "CASCADED_SHADOW", "TANGENT_VEC3", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "CASCADED_SHADOW", "TANGENT_VEC3", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "CASCADED_SHADOW", "TANGENT_VEC4", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "CASCADED_SHADOW", "TANGENT_VEC4", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "CASCADED_SHADOW", "INDEX_16BIT", "TANGENT_VEC3" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "CASCADED_SHADOW", "INDEX_16BIT", "TANGENT_VEC4" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "CASCADED_SHADOW", "INDEX_16BIT", "TANGENT_VEC3", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "CASCADED_SHADOW", "INDEX_16BIT", "TANGENT_VEC3", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "CASCADED_SHADOW", "INDEX_16BIT", "TANGENT_VEC4", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "CASCADED_SHADOW", "INDEX_16BIT", "TANGENT_VEC4", "COLOR_VEC4" ] },
+
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "OMNI_SHADOW", "TANGENT_VEC3" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "OMNI_SHADOW", "TANGENT_VEC4" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "OMNI_SHADOW", "TANGENT_VEC3", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "OMNI_SHADOW", "TANGENT_VEC3", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "OMNI_SHADOW", "TANGENT_VEC4", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "OMNI_SHADOW", "TANGENT_VEC4", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "OMNI_SHADOW", "INDEX_16BIT", "TANGENT_VEC3" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "OMNI_SHADOW", "INDEX_16BIT", "TANGENT_VEC4" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "OMNI_SHADOW", "INDEX_16BIT", "TANGENT_VEC3", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "OMNI_SHADOW", "INDEX_16BIT", "TANGENT_VEC3", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "OMNI_SHADOW", "INDEX_16BIT", "TANGENT_VEC4", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_TEXCOORD", "HAS_NORMAL", "OMNI_SHADOW", "INDEX_16BIT", "TANGENT_VEC4", "COLOR_VEC4" ] },
+
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "TANGENT_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "TANGENT_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "TANGENT_VEC3", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "TANGENT_VEC3", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "TANGENT_VEC4", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "TANGENT_VEC4", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "INDEX_16BIT", "TANGENT_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "INDEX_16BIT", "TANGENT_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "INDEX_16BIT", "TANGENT_VEC3", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "INDEX_16BIT", "TANGENT_VEC3", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "INDEX_16BIT", "TANGENT_VEC4", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "INDEX_16BIT", "TANGENT_VEC4", "COLOR_VEC4" ] },
+
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "CASCADED_SHADOW", "TANGENT_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "CASCADED_SHADOW", "TANGENT_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "CASCADED_SHADOW", "TANGENT_VEC3", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "CASCADED_SHADOW", "TANGENT_VEC3", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "CASCADED_SHADOW", "TANGENT_VEC4", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "CASCADED_SHADOW", "TANGENT_VEC4", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "CASCADED_SHADOW", "INDEX_16BIT", "TANGENT_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "CASCADED_SHADOW", "INDEX_16BIT", "TANGENT_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "CASCADED_SHADOW", "INDEX_16BIT", "TANGENT_VEC3", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "CASCADED_SHADOW", "INDEX_16BIT", "TANGENT_VEC3", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "CASCADED_SHADOW", "INDEX_16BIT", "TANGENT_VEC4", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "CASCADED_SHADOW", "INDEX_16BIT", "TANGENT_VEC4", "COLOR_VEC4" ] },
+
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "OMNI_SHADOW", "TANGENT_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "OMNI_SHADOW", "TANGENT_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "OMNI_SHADOW", "TANGENT_VEC3", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "OMNI_SHADOW", "TANGENT_VEC3", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "OMNI_SHADOW", "TANGENT_VEC4", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "OMNI_SHADOW", "TANGENT_VEC4", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "OMNI_SHADOW", "INDEX_16BIT", "TANGENT_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "OMNI_SHADOW", "INDEX_16BIT", "TANGENT_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "OMNI_SHADOW", "INDEX_16BIT", "TANGENT_VEC3", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "OMNI_SHADOW", "INDEX_16BIT", "TANGENT_VEC3", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "OMNI_SHADOW", "INDEX_16BIT", "TANGENT_VEC4", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_8BIT", "OMNI_SHADOW", "INDEX_16BIT", "TANGENT_VEC4", "COLOR_VEC4" ] },
+
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_16BIT", "TANGENT_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_16BIT", "TANGENT_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_16BIT", "TANGENT_VEC3", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_16BIT", "TANGENT_VEC3", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_16BIT", "TANGENT_VEC4", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_16BIT", "TANGENT_VEC4", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_16BIT", "INDEX_16BIT", "TANGENT_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_16BIT", "INDEX_16BIT", "TANGENT_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_16BIT", "INDEX_16BIT", "TANGENT_VEC3", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_16BIT", "INDEX_16BIT", "TANGENT_VEC3", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_16BIT", "INDEX_16BIT", "TANGENT_VEC4", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "JOINTS_16BIT", "INDEX_16BIT", "TANGENT_VEC4", "COLOR_VEC4" ] },
+
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "CASCADED_SHADOW", "JOINTS_16BIT", "TANGENT_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "CASCADED_SHADOW", "JOINTS_16BIT", "TANGENT_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "CASCADED_SHADOW", "JOINTS_16BIT", "TANGENT_VEC3", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "CASCADED_SHADOW", "JOINTS_16BIT", "TANGENT_VEC3", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "CASCADED_SHADOW", "JOINTS_16BIT", "TANGENT_VEC4", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "CASCADED_SHADOW", "JOINTS_16BIT", "TANGENT_VEC4", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "CASCADED_SHADOW", "JOINTS_16BIT", "INDEX_16BIT", "TANGENT_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "CASCADED_SHADOW", "JOINTS_16BIT", "INDEX_16BIT", "TANGENT_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "CASCADED_SHADOW", "JOINTS_16BIT", "INDEX_16BIT", "TANGENT_VEC3", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "CASCADED_SHADOW", "JOINTS_16BIT", "INDEX_16BIT", "TANGENT_VEC3", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "CASCADED_SHADOW", "JOINTS_16BIT", "INDEX_16BIT", "TANGENT_VEC4", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "CASCADED_SHADOW", "JOINTS_16BIT", "INDEX_16BIT", "TANGENT_VEC4", "COLOR_VEC4" ] },
+
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "OMNI_SHADOW", "JOINTS_16BIT", "TANGENT_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "OMNI_SHADOW", "JOINTS_16BIT", "TANGENT_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "OMNI_SHADOW", "JOINTS_16BIT", "TANGENT_VEC3", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "OMNI_SHADOW", "JOINTS_16BIT", "TANGENT_VEC3", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "OMNI_SHADOW", "JOINTS_16BIT", "TANGENT_VEC4", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "OMNI_SHADOW", "JOINTS_16BIT", "TANGENT_VEC4", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "OMNI_SHADOW", "JOINTS_16BIT", "INDEX_16BIT", "TANGENT_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "OMNI_SHADOW", "JOINTS_16BIT", "INDEX_16BIT", "TANGENT_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "OMNI_SHADOW", "JOINTS_16BIT", "INDEX_16BIT", "TANGENT_VEC3", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "OMNI_SHADOW", "JOINTS_16BIT", "INDEX_16BIT", "TANGENT_VEC3", "COLOR_VEC4" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "OMNI_SHADOW", "JOINTS_16BIT", "INDEX_16BIT", "TANGENT_VEC4", "COLOR_VEC3" ] },
+				{ "definitions": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL", "OMNI_SHADOW", "JOINTS_16BIT", "INDEX_16BIT", "TANGENT_VEC4", "COLOR_VEC4" ] }
+			]
 		}
 	},
 	"modules": [
