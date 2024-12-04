@@ -1,6 +1,5 @@
 {
 	"name": "assemble_commands",
-	"group": "culling",
 	"shaders": [
 		{
 			"source": "assemble_commands.comp",

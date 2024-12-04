@@ -1,6 +1,5 @@
 {
 	"name": "bokeh",
-	"group": "postprocess",
 	"shaders": [
 		{
 			"source": "bokeh.comp",

@@ -1,6 +1,5 @@
 {
 	"name": "compute_histogram",
-	"group": "postprocess",
 	"shaders": [
 		{
 			"source": "comp_histogram.comp",

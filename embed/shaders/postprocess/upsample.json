@@ -1,6 +1,5 @@
 {
 	"name": "upsample",
-	"group": "postprocess",
 	"shaders": [
 		{
 			"source": "upsample.comp",

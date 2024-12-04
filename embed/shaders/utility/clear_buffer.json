@@ -1,6 +1,5 @@
 {
 	"name": "clear_buffer",
-	"group": "utility",
 	"shaders": [
 		{
 			"source": "clear_buffer.comp",

@@ -1,6 +1,5 @@
 {
 	"name": "compute_brightness",
-	"group": "postprocess",
 	"shaders": [
 		{
 			"source": "comp_average_brightness.comp",

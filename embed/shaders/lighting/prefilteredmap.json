@@ -1,6 +1,5 @@
 {
 	"name": "prefilteredmap_generator",
-	"group": "lighting",
 	"shaders": [
 		{
 			"source": "prefilteredmap.comp",

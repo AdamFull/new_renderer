@@ -1,6 +1,5 @@
 {
 	"name": "irradiancecube_generator",
-	"group": "lighting",
 	"shaders": [
 		{
 			"source": "irradiancecube.comp",

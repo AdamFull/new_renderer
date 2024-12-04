@@ -1,6 +1,5 @@
 {
 	"name": "clear_counters",
-	"group": "culling",
 	"shaders": [
 		{
 			"source": "clear_counters.comp",

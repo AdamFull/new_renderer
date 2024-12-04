@@ -1,6 +1,5 @@
 {
 	"name": "debug_draw",
-	"group": "testing",
 	"shaders": [
 		{
 			"source": "debug_draw.vert",

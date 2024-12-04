@@ -1,6 +1,5 @@
 {
 	"name": "generate_mips",
-	"group": "utility",
 	"shaders": [
 		{
 			"source": "generate_mips.comp",

@@ -1,6 +1,5 @@
 {
 	"name": "brightdetect",
-	"group": "postprocess",
 	"shaders": [
 		{
 			"source": "brightdetect.comp",

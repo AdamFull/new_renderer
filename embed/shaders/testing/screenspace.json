@@ -1,6 +1,5 @@
 {
 	"name": "screenspace",
-	"group": "testing",
 	"shaders": [
 		{
 			"source": "screenspace.vert",

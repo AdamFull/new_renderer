@@ -1,6 +1,5 @@
 {
 	"name": "classification_debug",
-	"group": "postprocess",
 	"shaders": [
 		{
 			"source": "classification_debug.comp",

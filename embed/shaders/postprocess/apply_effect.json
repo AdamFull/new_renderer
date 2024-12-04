@@ -1,6 +1,5 @@
 {
 	"name": "apply_effect",
-	"group": "postprocess",
 	"shaders": [
 		{
 			"source": "apply_effect.comp",
@@ -9,6 +8,22 @@
 	],
 	"compile": {
 		"shader_model": 6,
-		"permutation_pattern": "apply_effect_pattern"
+		"permutate": [
+			{ "definitions": [] },
+			{ "definitions": [ "FXAA" ] },
+			{ "definitions": [ "BLOOM" ] },
+			{ "definitions": [ "DOF" ] },
+			{ "definitions": [ "CHROMATIC_ABERRATION" ] },
+			{ "definitions": [ "LENS_FLARES" ] },
+			{ "definitions": [ "TONEMAP" ] },
+			{ "definitions": [ "MOTION_BLUR" ] },
+			{ "definitions": [ "MOTION_BLUR", "LOW_PRECISION_VELOCITY" ] },
+			{ "definitions": [ "GAUSSIAN_BLUR", "BLUR_TYPE_5" ] },
+			{ "definitions": [ "GAUSSIAN_BLUR", "BLUR_TYPE_9" ] },
+			{ "definitions": [ "GAUSSIAN_BLUR", "BLUR_TYPE_13" ] },
+			{ "definitions": [ "GAUSSIAN_BLUR", "HORIZONTAL", "BLUR_TYPE_5" ] },
+			{ "definitions": [ "GAUSSIAN_BLUR", "HORIZONTAL", "BLUR_TYPE_9" ] },
+			{ "definitions": [ "GAUSSIAN_BLUR", "HORIZONTAL", "BLUR_TYPE_13" ] }
+		]
 	}
 }

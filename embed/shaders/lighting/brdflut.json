@@ -1,6 +1,5 @@
 {
 	"name": "brdflut_generator",
-	"group": "lighting",
 	"shaders": [
 		{
 			"source": "brdflut.comp",

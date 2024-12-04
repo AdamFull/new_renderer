@@ -1,6 +1,5 @@
 {
 	"name": "scan",
-	"group": "culling",
 	"shaders": [
 		{
 			"source": "scan.comp",

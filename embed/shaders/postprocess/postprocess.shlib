@@ -88,7 +88,23 @@
 		},
 		{ 
 			shader_name: "apply_effect";
-			pattern: "apply_effect_pattern";
+			permutations: [
+				{ defines: []; },
+				{ defines: ["FXAA"]; },
+				{ defines: ["BLOOM"]; },
+				{ defines: ["DOF"]; },
+				{ defines: ["CHROMATIC_ABERRATION"]; },
+				{ defines: ["LENS_FLARES"]; },
+				{ defines: ["TONEMAP"]; },
+				{ defines: ["MOTION_BLUR"]; },
+				{ defines: ["MOTION_BLUR", "LOW_PRECISION_VELOCITY"]; },
+				{ defines: ["GAUSSIAN_BLUR", "BLUR_TYPE_5"]; },
+				{ defines: ["GAUSSIAN_BLUR", "BLUR_TYPE_9"]; },
+				{ defines: ["GAUSSIAN_BLUR", "BLUR_TYPE_13"]; },
+				{ defines: ["GAUSSIAN_BLUR", "HORIZONTAL", "BLUR_TYPE_5"]; },
+				{ defines: ["GAUSSIAN_BLUR", "HORIZONTAL", "BLUR_TYPE_9"]; },
+				{ defines: ["GAUSSIAN_BLUR", "HORIZONTAL", "BLUR_TYPE_13"]; },
+			];
 		},
 		{ 
 			shader_name: "bokeh";

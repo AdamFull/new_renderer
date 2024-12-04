@@ -1,0 +1,144 @@
+{
+	"lang": "glsl",
+	"target_api": "vk11",
+
+	"include_directories": [ "includes" ],
+	"common_directories": [ "common" ],
+
+	"permutation_patterns": {
+		"geometry_pattern": {
+			"permutation_generator": {
+				"rules": [
+					{
+						"base": [ "HAS_TEXCOORD", "HAS_NORMAL" ],
+						"variants": [
+							{
+								"definitions": [ "", "INDEX_16BIT" ],
+								"type": "or"
+							},
+							{
+								"definitions": [ "", "COLOR_VEC3", "COLOR_VEC4" ],
+								"type": "or"
+							},
+							{
+								"definitions": [ "TANGENT_VEC3", "TANGENT_VEC4" ],
+								"type": "or"
+							}
+						]
+					},
+					{
+						"base": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL" ],
+						"variants": [
+							{
+								"definitions": [ "", "INDEX_16BIT" ],
+								"type": "or"
+							},
+							{
+								"definitions": [ "", "COLOR_VEC3", "COLOR_VEC4" ],
+								"type": "or"
+							},
+							{
+								"definitions": [ "TANGENT_VEC3", "TANGENT_VEC4" ],
+								"type": "or"
+							},
+							{
+								"definitions": [ "JOINTS_8BIT", "JOINTS_16BIT" ],
+								"type": "or"
+							}
+						]
+					}
+				]
+			}
+		},
+		"shadows_pattern": {
+			"permutation_generator": {
+				"rules": [
+					{
+						"base": [ "HAS_TEXCOORD", "HAS_NORMAL" ],
+						"variants": [
+							{
+								"definitions": [ "", "CASCADED_SHADOW", "OMNI_SHADOW" ],
+								"type": "or"
+							},
+							{
+								"definitions": [ "", "INDEX_16BIT" ],
+								"type": "or"
+							},
+							{
+								"definitions": [ "", "COLOR_VEC3", "COLOR_VEC4" ],
+								"type": "or"
+							},
+							{
+								"definitions": [ "TANGENT_VEC3", "TANGENT_VEC4" ],
+								"type": "or"
+							}
+						]
+					},
+					{
+						"base": [ "HAS_SKIN", "HAS_TEXCOORD", "HAS_NORMAL" ],
+						"variants": [
+							{
+								"definitions": [ "", "CASCADED_SHADOW", "OMNI_SHADOW" ],
+								"type": "or"
+							},
+							{
+								"definitions": [ "", "INDEX_16BIT" ],
+								"type": "or"
+							},
+							{
+								"definitions": [ "", "COLOR_VEC3", "COLOR_VEC4" ],
+								"type": "or"
+							},
+							{
+								"definitions": [ "TANGENT_VEC3", "TANGENT_VEC4" ],
+								"type": "or"
+							},
+							{
+								"definitions": [ "JOINTS_8BIT", "JOINTS_16BIT" ],
+								"type": "or"
+							}
+						]
+					}
+				]
+			}
+		}
+	},
+	"modules": [
+		{
+			"name": "culling",
+			"path": "culling/",
+			"include": [ "*.json" ]
+		},
+		{
+			"name": "deferred",
+			"path": "deferred/",
+			"include": [ "*.json" ]
+		},
+		{
+			"name": "lighting",
+			"path": "lighting/",
+			"include": [ "*.json" ]
+		},
+		{
+			"name": "postprocess",
+			"path": "postprocess/",
+			"include": [ "*.json" ],
+			"exclude": [
+				"classification_debug.json",
+				"clear_tiles.json",
+				"filmic_smaa_tu2x.json",
+				"tile_freq_classification.json"
+			]
+		},
+		{
+			"name": "testing",
+			"path": "testing/",
+			"include": [ "*.json" ]
+		},
+		{
+			"name": "utility",
+			"path": "utility/",
+			"include": [ "*.json" ]
+		}
+	]
+}

@@ -1,6 +1,5 @@
 {
 	"name": "generate_motion_vectors",
-	"group": "postprocess",
 	"shaders": [
 		{
 			"source": "generate_motion_vectors.comp",

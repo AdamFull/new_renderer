@@ -1,6 +1,5 @@
 {
 	"name": "downsample",
-	"group": "postprocess",
 	"shaders": [
 		{
 			"source": "downsample.comp",

@@ -1,6 +1,5 @@
 {
 	"name": "ao_blur",
-	"group": "postprocess",
 	"shaders": [
 		{
 			"source": "ao_blur.comp",

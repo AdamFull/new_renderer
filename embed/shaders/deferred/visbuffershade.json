@@ -1,6 +1,5 @@
 {
 	"name": "shade",
-	"group": "visibilitybuffer",
 	"shaders": [
 		{
 			"source": "visbuffershade.comp",

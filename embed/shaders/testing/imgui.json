@@ -1,6 +1,5 @@
 {
 	"name": "imgui",
-	"group": "testing",
 	"shaders": [
 		{
 			"source": "imgui.vert",

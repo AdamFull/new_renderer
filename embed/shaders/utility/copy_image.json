@@ -1,6 +1,5 @@
 {
 	"name": "copy_image",
-	"group": "utility",
 	"shaders": [
 		{
 			"source": "copy.comp",

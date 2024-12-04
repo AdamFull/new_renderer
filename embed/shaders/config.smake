@@ -59,69 +59,6 @@
 				];
 			};
 		};
-		apply_effect_pattern: {
-			permutation_generator: {
-				rules: [
-					{
-						base: [];
-						variants: [
-							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
-						];
-					},
-					{
-						base: ["FXAA"];
-						variants: [
-							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
-						];
-					},
-					{
-						base: ["BLOOM"];
-						variants: [
-							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
-						];
-					},
-					{
-						base: ["DOF"];
-						variants: [
-							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
-						];
-					},
-					{
-						base: ["CHROMATIC_ABERRATION"];
-						variants: [
-							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
-						];
-					},
-					{
-						base: ["LENS_FLARES"];
-						variants: [
-							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
-						];
-					},
-					{
-						base: ["TONEMAP"];
-						variants: [
-							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
-						];
-					},
-					{
-						base: ["MOTION_BLUR"];
-						variants: [
-							{ defines: ["", "LOW_PRECISION_VELOCITY"]; type: "or"; },
-							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
-						];
-					},
-					{
-						base: ["MOTION_BLUR"];
-						variants: [
-							{ defines: ["", "HORIZONTAL"]; type: "or"; },
-							{ defines: ["", "BLUR_TYPE_5", "BLUR_TYPE_9", "BLUR_TYPE_13"]; type: "or"; },
-							//{ defines: ["", "VENDOR_AMD", "VENDOR_NVIDIA", "VENDOR_INTEL"]; type: "or"; }
-						];
-					}
-				];
-			};
-		};
 	};
 
 	build_modules: [

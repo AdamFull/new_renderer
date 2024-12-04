@@ -1,6 +1,5 @@
 {
 	"name": "unidirectional_shadow",
-	"group": "lighting",
 	"shaders": [
 		{
 			"source": "unidirectional_shadow.vert",

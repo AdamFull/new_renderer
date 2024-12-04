@@ -1,6 +1,5 @@
 {
 	"name": "tile_freq_classification",
-	"group": "postprocess",
 	"shaders": [
 		{
 			"source": "tile_freq_classification.comp",

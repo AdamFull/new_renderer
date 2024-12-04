@@ -1,6 +1,5 @@
 {
 	"name": "filmic_smaa_tu2x",
-	"group": "postprocess",
 	"shaders": [
 		{
 			"source": "filmic_smaa_tu2x.comp",
