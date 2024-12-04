@@ -3,11 +3,11 @@ project(gfx)
 
 add_subdirectory(directx12)
 add_subdirectory(vulkan)
+add_subdirectory(shader_compiler)
 
 file(GLOB GFX_SOURCES FILES *.cpp *.h)
-file(GLOB GFX_SHADER_COMPILER FILES shader_compiler/*.cpp shader_compiler/*.h)
 
-add_library(${PROJECT_NAME} STATIC ${GFX_SOURCES} ${GFX_SHADER_COMPILER})
+add_library(${PROJECT_NAME} STATIC ${GFX_SOURCES})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     CXX_EXTENSIONS OFF

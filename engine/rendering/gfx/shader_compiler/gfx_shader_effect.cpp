@@ -42,40 +42,41 @@ namespace engine
 			{
 				serialize_to("binding", json, type.binding);
 
-				//serialize_to("address_u", json, type.address_u);
-				//serialize_to("address_v", json, type.address_v);
-				//serialize_to("address_w", json, type.address_w);
-				//
-				//serialize_to("min_filter", json, type.min_filter);
-				//serialize_to("mag_filter", json, type.mag_filter);
-				//serialize_to("mip_filter", json, type.mip_filter);
-				//
-				//serialize_to("mip_lod_bias", json, type.mip_lod_bias);
-				//serialize_to("min_lod", json, type.min_lod);
-				//serialize_to("max_lod", json, type.max_lod);
-				//serialize_to("max_anisotropy", json, type.max_anisotropy);
-				//
-				//serialize_to("compare_op", json, type.compare_op);
+				serialize_to("address_u", json, type.sampler_create_info.address_u);
+				serialize_to("address_v", json, type.sampler_create_info.address_v);
+				serialize_to("address_w", json, type.sampler_create_info.address_w);
+				
+				serialize_to("min_filter", json, type.sampler_create_info.min_filter);
+				serialize_to("mag_filter", json, type.sampler_create_info.mag_filter);
+				serialize_to("mip_filter", json, type.sampler_create_info.mip_map_mode);
+				
+				serialize_to("mip_lod_bias", json, type.sampler_create_info.mip_lod_bias);
+				serialize_to("min_lod", json, type.sampler_create_info.min_lod);
+				serialize_to("max_lod", json, type.sampler_create_info.max_lod);
+				serialize_to("max_anisotropy", json, type.sampler_create_info.max_anisotropy);
+				
+				serialize_to("compare_op", json, type.sampler_create_info.depth_compare);
 
 			}
 
 			void from_json(const nlohmann::json& json, ShaderEffectCompileSamplerDesc& type)
 			{
 				parse_from("binding", json, type.binding, true);
-				//parse_from("address_u", json, type.address_u);
-				//parse_from("address_v", json, type.address_v);
-				//parse_from("address_w", json, type.address_w);
-				//
-				//parse_from("min_filter", json, type.min_filter);
-				//parse_from("mag_filter", json, type.mag_filter);
-				//parse_from("mip_filter", json, type.mip_filter);
-				//
-				//parse_from("mip_lod_bias", json, type.mip_lod_bias);
-				//parse_from("min_lod", json, type.min_lod);
-				//parse_from("max_lod", json, type.max_lod);
-				//parse_from("max_anisotropy", json, type.max_anisotropy);
-				//
-				//parse_from("compare_op", json, type.compare_op);
+				
+				parse_from("address_u", json, type.sampler_create_info.address_u);
+				parse_from("address_v", json, type.sampler_create_info.address_v);
+				parse_from("address_w", json, type.sampler_create_info.address_w);
+
+				parse_from("min_filter", json, type.sampler_create_info.min_filter);
+				parse_from("mag_filter", json, type.sampler_create_info.mag_filter);
+				parse_from("mip_filter", json, type.sampler_create_info.mip_map_mode);
+
+				parse_from("mip_lod_bias", json, type.sampler_create_info.mip_lod_bias);
+				parse_from("min_lod", json, type.sampler_create_info.min_lod);
+				parse_from("max_lod", json, type.sampler_create_info.max_lod);
+				parse_from("max_anisotropy", json, type.sampler_create_info.max_anisotropy);
+
+				parse_from("compare_op", json, type.sampler_create_info.depth_compare);
 			}
 
 
