@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gfx_base.h>
+#include "../gfx_base.h"
 #include "VkResource.h"
 
 namespace engine

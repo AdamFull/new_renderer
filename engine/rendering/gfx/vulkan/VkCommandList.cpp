@@ -11,7 +11,7 @@
 #include "VkDescriptorSet.h"
 #include "VkResourceDescriptor.h"
 
-#include <gfx_util.h>
+#include "../gfx_util.h"
 #include "VkUtil.h"
 
 namespace engine

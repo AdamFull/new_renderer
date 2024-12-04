@@ -1,7 +1,5 @@
 #include "gfx_shader_effect.h"
 
-#include "gfx_parse.h"
-
 template<class _Ty>
 inline void parse_from(const std::string& name, const nlohmann::json& json, _Ty& type, bool required = false)
 {

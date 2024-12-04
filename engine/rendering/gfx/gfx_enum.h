@@ -620,3 +620,30 @@ UTL_REGISTER_ENUM_CLASS(engine::gfx, DescriptorType,
 	UTL_ENUM_META(engine::gfx::DescriptorType::eStorageBufferDynamic, "StorageBufferDynamic"),
 	UTL_ENUM_META(engine::gfx::DescriptorType::eInputAttachment, "InputAttachment")
 )
+
+namespace engine
+{
+	namespace gfx
+	{
+		void to_json(nlohmann::json& json, const ShaderStageFlags& type);
+		void from_json(const nlohmann::json& json, ShaderStageFlags& type);
+
+		void to_json(nlohmann::json& json, const QueueTypeFlags& type);
+		void from_json(const nlohmann::json& json, QueueTypeFlags& type);
+
+		void to_json(nlohmann::json& json, const AccessTypeFlags& type);
+		void from_json(const nlohmann::json& json, AccessTypeFlags& type);
+
+		void to_json(nlohmann::json& json, const BufferUsageFlags& type);
+		void from_json(const nlohmann::json& json, BufferUsageFlags& type);
+
+		void to_json(nlohmann::json& json, const TextureUsageFlags& type);
+		void from_json(const nlohmann::json& json, TextureUsageFlags& type);
+
+		void to_json(nlohmann::json& json, const CullModeFlags& type);
+		void from_json(const nlohmann::json& json, CullModeFlags& type);
+
+		void to_json(nlohmann::json& json, const ColorMaskFlags& type);
+		void from_json(const nlohmann::json& json, ColorMaskFlags& type);
+	}
+}

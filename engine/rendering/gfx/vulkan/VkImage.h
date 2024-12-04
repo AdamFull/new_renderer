@@ -3,7 +3,7 @@
 #include <memory>
 #include "VkAllocator.h"
 
-#include <gfx_structures.h>
+#include "../gfx_structures.h"
 
 namespace engine
 {

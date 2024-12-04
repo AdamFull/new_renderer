@@ -46,7 +46,7 @@ void main()
     memoryBarrierShared();
     barrier();
 
-#if 0
+#if 1
     // Up-sweep (reduce) phase
     uint offset = 1;
     for (uint d = group_size >> 1; d > 0; d >>= 1) 

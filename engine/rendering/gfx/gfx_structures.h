@@ -2,8 +2,8 @@
 
 #include <array>
 #include <span>
-#include <engine/rendering/gfx/gfx_shader_reflection.h>
-#include <engine/rendering/gfx/gfx_format.h>
+#include "gfx_shader_reflection.h"
+#include "gfx_format.h"
 
 #ifdef MemoryBarrier
 #undef MemoryBarrier
@@ -107,11 +107,17 @@ namespace engine
 			uint32_t offset{ 0u };
 		};
 
+		void to_json(nlohmann::json& json, const VertexAttributeDescription& type);
+		void from_json(const nlohmann::json& json, VertexAttributeDescription& type);
+
 		struct VertexBindingDescription
 		{
 			uint32_t binding{ 0u };
 			uint32_t stride{ 0u };
 		};
+
+		void to_json(nlohmann::json& json, const VertexBindingDescription& type);
+		void from_json(const nlohmann::json& json, VertexBindingDescription& type);
 
 		struct VertexLayout
 		{
@@ -120,6 +126,9 @@ namespace engine
 			std::array<VertexAttributeDescription, 16ull> attributes{};
 			uint32_t attribute_count{ 0u };
 		};
+
+		void to_json(nlohmann::json& json, const VertexLayout& type);
+		void from_json(const nlohmann::json& json, VertexLayout& type);
 
 		struct RasterizationState
 		{
@@ -130,12 +139,18 @@ namespace engine
 			FrontFace front_face{ FrontFace::eCCW };
 		};
 
+		void to_json(nlohmann::json& json, const RasterizationState& type);
+		void from_json(const nlohmann::json& json, RasterizationState& type);
+
 		struct MultisampleState
 		{
 			SampleCount sample_count{ SampleCount::e1 };
 			bool alpha_to_coverage{ false };
 			bool alpha_to_one{ false };
 		};
+
+		void to_json(nlohmann::json& json, const MultisampleState& type);
+		void from_json(const nlohmann::json& json, MultisampleState& type);
 
 		struct DepthStencilState
 		{
@@ -155,6 +170,9 @@ namespace engine
 			StencilOp back_pass{ StencilOp::eKeep };
 		};
 
+		void to_json(nlohmann::json& json, const DepthStencilState& type);
+		void from_json(const nlohmann::json& json, DepthStencilState& type);
+
 		struct ColorBlendAttachment
 		{
 			bool enable{ false };
@@ -167,11 +185,17 @@ namespace engine
 			ColorMaskFlags color_mask{ ColorMaskFlag::eAll };
 		};
 
+		void to_json(nlohmann::json& json, const ColorBlendAttachment& type);
+		void from_json(const nlohmann::json& json, ColorBlendAttachment& type);
+
 		struct ColorBlendingState
 		{
 			std::array<ColorBlendAttachment, k_max_attachment_count> attachments{};
 			uint32_t attachment_count{ 0u };
 		};
+
+		void to_json(nlohmann::json& json, const ColorBlendingState& type);
+		void from_json(const nlohmann::json& json, ColorBlendingState& type);
 
 		struct PipelineState
 		{
@@ -183,6 +207,9 @@ namespace engine
 
 			PrimitiveTopology primitive_topology{ PrimitiveTopology::ePointList };
 		};
+
+		void to_json(nlohmann::json& json, const PipelineState& type);
+		void from_json(const nlohmann::json& json, PipelineState& type);
 
 		struct GraphicsPipelineCreateInfo
 		{
@@ -285,6 +312,9 @@ namespace engine
 			size_t count{ 1ull };
 		};
 
+		void to_json(nlohmann::json& json, const BufferCreateInfo& type);
+		void from_json(const nlohmann::json& json, BufferCreateInfo& type);
+
 		struct TextureCreateInfo
 		{
 			TextureUsageFlags usage{};
@@ -298,6 +328,9 @@ namespace engine
 
 			Format format{ Format::eUndefined };
 		};
+
+		void to_json(nlohmann::json& json, const TextureCreateInfo& type);
+		void from_json(const nlohmann::json& json, TextureCreateInfo& type);
 
 		struct SamplerCreateInfo
 		{
@@ -313,6 +346,9 @@ namespace engine
 			float max_anisotropy{ 0.f };
 			CompareOp depth_compare{ CompareOp::eNone };
 		};
+
+		void to_json(nlohmann::json& json, const SamplerCreateInfo& type);
+		void from_json(const nlohmann::json& json, SamplerCreateInfo& type);
 
 		struct QueryPoolCreateInfo
 		{
