@@ -1,21 +1,6 @@
 #include "gfx_shader_effect.h"
 
-template<class _Ty>
-inline void parse_from(const std::string& name, const nlohmann::json& json, _Ty& type, bool required = false)
-{
-	if (auto obj = json.find(name); obj != json.end())
-		type = obj->get<_Ty>();
-	else
-		if (required)
-			throw std::runtime_error("Required argument was not found");
-}
-
-template<class _Ty>
-inline void serialize_to(const std::string& name, nlohmann::json& json, const _Ty& type, bool condition = true)
-{
-	if (condition)
-		json[name] = type;
-}
+#include <serialization.hpp>
 
 namespace engine
 {
@@ -25,92 +10,92 @@ namespace engine
 		{
 			void to_json(nlohmann::json& json, const ShaderEffectCompileSourceDesc& type)
 			{
-				serialize_to("source", json, type.source);
-				serialize_to("type", json, type.type);
-				serialize_to("definitions", json, type.definitions);
+				utl::serialize_to("source", json, type.source);
+				utl::serialize_to("type", json, type.type);
+				utl::serialize_to("definitions", json, type.definitions);
 			}
 
 			void from_json(const nlohmann::json& json, ShaderEffectCompileSourceDesc& type)
 			{
-				parse_from("source", json, type.source, true);
-				parse_from("type", json, type.type, true);
-				parse_from("definitions", json, type.definitions);
+				utl::parse_from("source", json, type.source, true);
+				utl::parse_from("type", json, type.type, true);
+				utl::parse_from("definitions", json, type.definitions);
 			}
 
 
 			void to_json(nlohmann::json& json, const ShaderEffectCompileSamplerDesc& type)
 			{
-				serialize_to("binding", json, type.binding);
+				utl::serialize_to("binding", json, type.binding);
 
-				serialize_to("address_u", json, type.sampler_create_info.address_u);
-				serialize_to("address_v", json, type.sampler_create_info.address_v);
-				serialize_to("address_w", json, type.sampler_create_info.address_w);
+				utl::serialize_to("address_u", json, type.sampler_create_info.address_u);
+				utl::serialize_to("address_v", json, type.sampler_create_info.address_v);
+				utl::serialize_to("address_w", json, type.sampler_create_info.address_w);
 				
-				serialize_to("min_filter", json, type.sampler_create_info.min_filter);
-				serialize_to("mag_filter", json, type.sampler_create_info.mag_filter);
-				serialize_to("mip_filter", json, type.sampler_create_info.mip_map_mode);
+				utl::serialize_to("min_filter", json, type.sampler_create_info.min_filter);
+				utl::serialize_to("mag_filter", json, type.sampler_create_info.mag_filter);
+				utl::serialize_to("mip_filter", json, type.sampler_create_info.mip_map_mode);
 				
-				serialize_to("mip_lod_bias", json, type.sampler_create_info.mip_lod_bias);
-				serialize_to("min_lod", json, type.sampler_create_info.min_lod);
-				serialize_to("max_lod", json, type.sampler_create_info.max_lod);
-				serialize_to("max_anisotropy", json, type.sampler_create_info.max_anisotropy);
+				utl::serialize_to("mip_lod_bias", json, type.sampler_create_info.mip_lod_bias);
+				utl::serialize_to("min_lod", json, type.sampler_create_info.min_lod);
+				utl::serialize_to("max_lod", json, type.sampler_create_info.max_lod);
+				utl::serialize_to("max_anisotropy", json, type.sampler_create_info.max_anisotropy);
 				
-				serialize_to("compare_op", json, type.sampler_create_info.depth_compare);
+				utl::serialize_to("compare_op", json, type.sampler_create_info.depth_compare);
 
 			}
 
 			void from_json(const nlohmann::json& json, ShaderEffectCompileSamplerDesc& type)
 			{
-				parse_from("binding", json, type.binding, true);
+				utl::parse_from("binding", json, type.binding, true);
 				
-				parse_from("address_u", json, type.sampler_create_info.address_u);
-				parse_from("address_v", json, type.sampler_create_info.address_v);
-				parse_from("address_w", json, type.sampler_create_info.address_w);
+				utl::parse_from("address_u", json, type.sampler_create_info.address_u);
+				utl::parse_from("address_v", json, type.sampler_create_info.address_v);
+				utl::parse_from("address_w", json, type.sampler_create_info.address_w);
 
-				parse_from("min_filter", json, type.sampler_create_info.min_filter);
-				parse_from("mag_filter", json, type.sampler_create_info.mag_filter);
-				parse_from("mip_filter", json, type.sampler_create_info.mip_map_mode);
+				utl::parse_from("min_filter", json, type.sampler_create_info.min_filter);
+				utl::parse_from("mag_filter", json, type.sampler_create_info.mag_filter);
+				utl::parse_from("mip_filter", json, type.sampler_create_info.mip_map_mode);
 
-				parse_from("mip_lod_bias", json, type.sampler_create_info.mip_lod_bias);
-				parse_from("min_lod", json, type.sampler_create_info.min_lod);
-				parse_from("max_lod", json, type.sampler_create_info.max_lod);
-				parse_from("max_anisotropy", json, type.sampler_create_info.max_anisotropy);
+				utl::parse_from("mip_lod_bias", json, type.sampler_create_info.mip_lod_bias);
+				utl::parse_from("min_lod", json, type.sampler_create_info.min_lod);
+				utl::parse_from("max_lod", json, type.sampler_create_info.max_lod);
+				utl::parse_from("max_anisotropy", json, type.sampler_create_info.max_anisotropy);
 
-				parse_from("compare_op", json, type.sampler_create_info.depth_compare);
+				utl::parse_from("compare_op", json, type.sampler_create_info.depth_compare);
 			}
 
 
 			void to_json(nlohmann::json& json, const ShaderEffectCompilePipelineState& type)
 			{
-				serialize_to("rasterization_state", json, type.rasterization_state);
-				serialize_to("multisample_state", json, type.multisample_state);
-				serialize_to("depth_stencil_state", json, type.depth_stencil_state);
-				serialize_to("color_blending_state", json, type.color_blending_state);
+				utl::serialize_to("rasterization_state", json, type.rasterization_state);
+				utl::serialize_to("multisample_state", json, type.multisample_state);
+				utl::serialize_to("depth_stencil_state", json, type.depth_stencil_state);
+				utl::serialize_to("color_blending_state", json, type.color_blending_state);
 			}
 
 			void from_json(const nlohmann::json& json, ShaderEffectCompilePipelineState& type)
 			{
-				parse_from("rasterization_state", json, type.rasterization_state);
-				parse_from("multisample_state", json, type.multisample_state);
-				parse_from("depth_stencil_state", json, type.depth_stencil_state);
-				parse_from("color_blending_state", json, type.color_blending_state);
+				utl::parse_from("rasterization_state", json, type.rasterization_state);
+				utl::parse_from("multisample_state", json, type.multisample_state);
+				utl::parse_from("depth_stencil_state", json, type.depth_stencil_state);
+				utl::parse_from("color_blending_state", json, type.color_blending_state);
 			}
 
 
 			void to_json(nlohmann::json& json, const ShaderEffectCompileDesc& type)
 			{
-				serialize_to("name", json, type.name);
-				serialize_to("shaders", json, type.shaders);
-				serialize_to("samplers", json, type.samplers);
-				serialize_to("pipeline_state", json, type.pipeline_state);
+				utl::serialize_to("name", json, type.name);
+				utl::serialize_to("shaders", json, type.shaders);
+				utl::serialize_to("samplers", json, type.samplers);
+				utl::serialize_to("pipeline_state", json, type.pipeline_state);
 			}
 
 			void from_json(const nlohmann::json& json, ShaderEffectCompileDesc& type)
 			{
-				parse_from("name", json, type.name);
-				parse_from("shaders", json, type.shaders);
-				parse_from("samplers", json, type.samplers);
-				parse_from("pipeline_state", json, type.pipeline_state);
+				utl::parse_from("name", json, type.name);
+				utl::parse_from("shaders", json, type.shaders);
+				utl::parse_from("samplers", json, type.samplers);
+				utl::parse_from("pipeline_state", json, type.pipeline_state);
 			}
 
 

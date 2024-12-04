@@ -35,7 +35,7 @@ using mat3 = glm::mat3;
 using mat4 = glm::mat4;
 SHLIB_NS_END
 
-#else // __glslang
+#else
 
 #define SHLIB_INLINE
 
