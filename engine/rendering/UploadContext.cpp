@@ -1,6 +1,6 @@
 #include <engine/rendering/UploadContext.h>
 
-#define STB_IMAGE_IMPLEMENTATION
+//#define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 #include <ktx.h>
 
@@ -161,7 +161,6 @@ namespace engine
 			BeginFrame();
 			using namespace utl;
 
-			auto name = filesystem::fs::get_stem(texture_path);
 			auto ext = filesystem::fs::get_ext(texture_path);
 			auto ext_hash = utl::murmur_hash(ext);
 			bool generate_mips{ false };

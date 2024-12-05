@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.18.0)
 project(engine_rendering)
 
-find_package(Ktx CONFIG REQUIRED)
-
 #add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/DebugDraw")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/gfx")
 
@@ -43,7 +41,6 @@ target_include_directories(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
 	PRIVATE gfx
-    PRIVATE KTX::ktx
 )
 
 target_compile_definitions(${PROJECT_NAME} 

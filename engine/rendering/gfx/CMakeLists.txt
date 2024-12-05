@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.18.0)
 project(gfx)
 
+find_package(Ktx CONFIG REQUIRED)
+
 add_subdirectory(directx12)
 add_subdirectory(vulkan)
 add_subdirectory(shader_compiler)
@@ -22,4 +24,6 @@ target_include_directories(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
 	PUBLIC gfx_vulkan
+    PRIVATE gfx_shader_compiler
+    PRIVATE KTX::ktx
 )
