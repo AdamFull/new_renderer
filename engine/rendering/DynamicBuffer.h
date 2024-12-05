@@ -1,7 +1,7 @@
 #pragma once
 
 #include <engine/rendering/gfx/gfx_context.h>
-#include <engine/rendering/gfx/gfx_resource_loader.h>
+#include <engine/rendering/gfx/gfx_resource_context.h>
 
 #include <util/Util.h>
 

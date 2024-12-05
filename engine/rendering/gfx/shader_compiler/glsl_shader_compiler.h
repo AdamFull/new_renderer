@@ -12,7 +12,7 @@ namespace engine
 			{
 			public:
 				GLSLShaderCompiler();
-				~GLSLShaderCompiler() = default;
+				~GLSLShaderCompiler();
 
 				bool Preprocess(const CompileShaderInfo& compile_info) override;
 
