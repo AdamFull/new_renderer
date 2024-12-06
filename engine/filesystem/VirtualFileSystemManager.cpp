@@ -51,8 +51,7 @@ namespace engine
 			auto fromPath = fsh::get_local_path(from);
 			if (pFromFilesystem->IsDirectory(fromPath))
 			{
-				const auto mp = std::string(fromMountPoint);
-				auto iterator = std::make_unique<DirectoryIterator>(pFromFilesystem->Walk(fromPath, true), mp);
+				auto iterator = std::make_unique<DirectoryIterator>(pFromFilesystem->Walk(fromPath, true), fromMountPoint);
 
 				for (auto& it = iterator->Begin(); it != iterator->End(); ++it)
 					ProcessCopyFile(pFromFilesystem, pToFilesystem, fsh::get_local_path(*it));
@@ -186,8 +185,7 @@ namespace engine
 			if (!pFilesystem)
 				return nullptr;
 
-			auto mp = fsh::get_mount_point(path);
-			return std::make_unique<DirectoryIterator>(pFilesystem->Walk(fsh::get_local_path(path), recursive), std::string(mp));
+			return std::make_unique<DirectoryIterator>(pFilesystem->Walk(fsh::get_local_path(path), recursive), fsh::get_mount_point(path));
 		}
 
 		bool VirtualFileSystemManager::ReadFile(std::string_view path, char* data, size_t size)

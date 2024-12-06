@@ -23,6 +23,8 @@
 
 #include <engine/world/EntityManager.h>
 
+#include <regex>
+
 #include <imgui.h>
 #include <tracy/Tracy.hpp>
 
@@ -94,7 +96,7 @@ namespace engine
 	{
 		PostProcessData postprocess{};
 
-		class VFSWrapper : public gfx::FilesystemWrapper
+		class VFSWrapper final : public gfx::FilesystemWrapper
 		{
 		public:
 			VFSWrapper(filesystem::IVirtualFileSystemInterface& vfs) :
@@ -122,6 +124,66 @@ namespace engine
 				return vfs.FileSize(path);
 			}
 
+			std::vector<std::string> ListDir(std::string_view path, std::span<const std::string> include_rules, std::span<const std::string> exclude_rules) override
+			{
+				std::vector<std::string> list_files{};
+
+				auto iterator = vfs.Walk(path, true);
+				for (auto& it = iterator->Begin(); it != iterator->End(); ++it)
+				{
+					const auto& entry = *it;
+
+					// Skip files that do not match the include rules
+					if (!include_rules.empty() && !MatchesPattern(entry, include_rules))
+						continue; 
+
+					// Skip files that match the exclude rules
+					if (!exclude_rules.empty() && MatchesPattern(entry, exclude_rules))
+						continue; 
+
+					list_files.emplace_back(entry);
+				}
+
+				return list_files;
+			}
+
+		private:
+			// Helper function to convert wildcard pattern to regex pattern
+			std::string WildcardToRegex(const std::string& pattern) 
+			{
+				std::string regex_pattern;
+				regex_pattern.reserve(pattern.size() * 2);
+
+				for (char ch : pattern) 
+				{
+					switch (ch) {
+					case '*':
+						regex_pattern += ".*"; // Match zero or more characters
+						break;
+					case '?':
+						regex_pattern += "."; // Match exactly one character
+						break;
+					case '.':
+						regex_pattern += "\\."; // Escape dot
+						break;
+					default:
+						regex_pattern += ch; // Add character as is
+						break;
+					}
+				}
+				return regex_pattern;
+			}
+
+			bool MatchesPattern(const std::string& file_name, const std::span<const std::string>& patterns)
+			{
+				for (const auto& pattern : patterns) 
+				{
+					std::regex regex(WildcardToRegex(pattern), std::regex_constants::icase);
+					if (std::regex_match(file_name, regex))
+						return true;
+				}
+				return false;
+			}
 		private:
 			filesystem::IVirtualFileSystemInterface& vfs;
 		};
