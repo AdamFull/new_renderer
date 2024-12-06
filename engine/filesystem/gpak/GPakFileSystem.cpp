@@ -7,7 +7,7 @@
 
 using namespace engine::filesystem;
 
-GPakFileSystem::GPakFileSystem(const std::string& fspath)
+GPakFileSystem::GPakFileSystem(const char* fspath)
 {
 	Create(fspath);
 }
@@ -18,53 +18,53 @@ GPakFileSystem::~GPakFileSystem()
 		gpak_close(m_pHandle);
 }
 
-bool GPakFileSystem::Create(const std::string& fspath)
+bool GPakFileSystem::Create(const char* fspath)
 {
-	m_pHandle = gpak_open(fspath.c_str(), GPAK_MODE_READ_ONLY);
+	m_pHandle = gpak_open(fspath, GPAK_MODE_READ_ONLY);
 
 	return m_pHandle;
 }
 
-bool GPakFileSystem::Exists(const std::string& path)
+bool GPakFileSystem::Exists(const char* path)
 {
 	if (auto* _entry = gpak_get_root(m_pHandle))
 	{
-		auto* _found_dir = filesystem_tree_find_directory(_entry, path.c_str());
-		auto* _found_file = filesystem_tree_find_file(_entry, path.c_str());
+		auto* _found_dir = filesystem_tree_find_directory(_entry, path);
+		auto* _found_file = filesystem_tree_find_file(_entry, path);
 		return _found_dir || _found_file;
 	}
 
 	return false;
 }
 
-size_t GPakFileSystem::FileSize(const std::string& path)
+size_t GPakFileSystem::FileSize(const char* path)
 {
 	if (auto* _entry = gpak_get_root(m_pHandle))
 	{
-		if (auto* _file = filesystem_tree_find_file(_entry, path.c_str()))
+		if (auto* _file = filesystem_tree_find_file(_entry, path))
 			return _file->entry_.uncompressed_size_;
 	}
 
 	return 0ull;
 }
 
-bool GPakFileSystem::IsDirectory(const std::string& path)
+bool GPakFileSystem::IsDirectory(const char* path)
 {
 	if (auto* _entry = gpak_get_root(m_pHandle))
-		return filesystem_tree_find_directory(_entry, path.c_str());
+		return filesystem_tree_find_directory(_entry, path);
 
 	return false;
 }
 
-bool GPakFileSystem::IsFile(const std::string& path)
+bool GPakFileSystem::IsFile(const char* path)
 {
 	if (auto* _entry = gpak_get_root(m_pHandle))
-		return filesystem_tree_find_file(_entry, path.c_str());
+		return filesystem_tree_find_file(_entry, path);
 
 	return false;
 }
 
-std::unique_ptr<IInputFileInterface> GPakFileSystem::OpenFile(const std::string& path)
+std::unique_ptr<IInputFileInterface> GPakFileSystem::OpenFile(const char* path)
 {
 	if (!IsFile(path))
 		return nullptr;
@@ -72,7 +72,7 @@ std::unique_ptr<IInputFileInterface> GPakFileSystem::OpenFile(const std::string&
 	return std::make_unique<GPakInputFile>(m_pHandle, path);
 }
 
-std::unique_ptr<IDirectoryIterator> GPakFileSystem::Walk(const std::string& path, bool recursive)
+std::unique_ptr<IDirectoryIterator> GPakFileSystem::Walk(const char* path, bool recursive)
 {
 	return std::make_unique<GPakIterator>(m_pHandle, path, recursive);
 }

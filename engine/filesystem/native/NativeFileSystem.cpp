@@ -5,21 +5,21 @@
 
 using namespace engine::filesystem;
 
-NativeFileSystem::NativeFileSystem(const std::string& fspath)
+NativeFileSystem::NativeFileSystem(const char* fspath)
 {
 	Create(fspath);
 }
 
-bool NativeFileSystem::Create(const std::string& fspath)
+bool NativeFileSystem::Create(const char* fspath)
 {
-	if (fspath.empty())
+	if (!fspath)
 		throw std::runtime_error("Invalid path for native fs.");
 
 	m_fsRoot = std::filesystem::weakly_canonical(std::filesystem::path(fspath));
 	return true;
 }
 
-void NativeFileSystem::Copy(const std::string& from, const std::string& to)
+void NativeFileSystem::Copy(const char* from, const char* to)
 {
 	auto fromp = std::filesystem::weakly_canonical(m_fsRoot / from);
 	auto top = std::filesystem::weakly_canonical(m_fsRoot / to);
@@ -27,72 +27,72 @@ void NativeFileSystem::Copy(const std::string& from, const std::string& to)
 	std::filesystem::copy(fromp, top);
 }
 
-bool NativeFileSystem::CreateDirectories(const std::string& path)
+bool NativeFileSystem::CreateDirectories(const char* path)
 {
 	auto pathp = std::filesystem::weakly_canonical(m_fsRoot / path);
 	return std::filesystem::create_directories(pathp);
 }
 
-bool NativeFileSystem::CreateDirectory(const std::string& path)
+bool NativeFileSystem::CreateDirectory(const char* path)
 {
 	auto pathp = std::filesystem::weakly_canonical(m_fsRoot / path);
 	return std::filesystem::create_directory(pathp);
 }
 
-bool NativeFileSystem::Exists(const std::string& path)
+bool NativeFileSystem::Exists(const char* path)
 {
 	auto pathp = std::filesystem::weakly_canonical(m_fsRoot / path);
 	return std::filesystem::exists(pathp);
 }
 
-size_t NativeFileSystem::FileSize(const std::string& path)
+size_t NativeFileSystem::FileSize(const char* path)
 {
 	auto pathp = std::filesystem::weakly_canonical(m_fsRoot / path);
 	return std::filesystem::file_size(pathp);
 }
 
-bool NativeFileSystem::IsDirectory(const std::string& path)
+bool NativeFileSystem::IsDirectory(const char* path)
 {
 	auto pathp = std::filesystem::weakly_canonical(m_fsRoot / path);
 	return std::filesystem::is_directory(pathp);
 }
 
-bool NativeFileSystem::IsFile(const std::string& path)
+bool NativeFileSystem::IsFile(const char* path)
 {
 	auto pathp = std::filesystem::weakly_canonical(m_fsRoot / path);
 	return std::filesystem::is_regular_file(pathp);
 }
 
-bool NativeFileSystem::Remove(const std::string& path)
+bool NativeFileSystem::Remove(const char* path)
 {
 	auto pathp = std::filesystem::weakly_canonical(m_fsRoot / path);
 	return std::filesystem::remove(pathp);
 }
 
-void NativeFileSystem::Rename(const std::string& original, const std::string& newfile)
+void NativeFileSystem::Rename(const char* original, const char* newfile)
 {
 	auto fromp = std::filesystem::weakly_canonical(m_fsRoot / original);
 	auto top = std::filesystem::weakly_canonical(m_fsRoot / newfile);
 	std::filesystem::rename(fromp, top);
 }
 
-std::unique_ptr<IOutputFileInterface> NativeFileSystem::CreateFile(const std::string& path)
+std::unique_ptr<IOutputFileInterface> NativeFileSystem::CreateFile(const char* path)
 {
 	auto pathp = std::filesystem::weakly_canonical(m_fsRoot / path);
 	return std::make_unique<NativeOutputFile>(pathp.string());
 }
 
-std::unique_ptr<IInputFileInterface> NativeFileSystem::OpenFile(const std::string& path)
+std::unique_ptr<IInputFileInterface> NativeFileSystem::OpenFile(const char* path)
 {
 	auto pathp = std::filesystem::weakly_canonical(m_fsRoot / path);
 
-	if (!IsFile(pathp.string()))
+	if (!IsFile(pathp.string().c_str()))
 		return nullptr;
 
 	return std::make_unique<CNativeInputFile>(pathp.string());
 }
 
-std::unique_ptr<IDirectoryIterator> NativeFileSystem::Walk(const std::string& path, bool recursive)
+std::unique_ptr<IDirectoryIterator> NativeFileSystem::Walk(const char* path, bool recursive)
 {
 	std::unique_ptr<IDirectoryIterator> iterator{ nullptr };
 

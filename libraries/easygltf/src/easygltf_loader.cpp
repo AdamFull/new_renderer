@@ -65,17 +65,17 @@ class DefaultFilesystemWrapper : public IFilesystemWrapper
 public:
 	~DefaultFilesystemWrapper() override = default;
 
-	bool exists(const std::string& path) override
+	bool exists(const char* path) override
 	{
 		return std::filesystem::exists(path);
 	}
 
-	std::string expandFilePath(const std::string& path) override
+	std::string expandFilePath(const char* path) override
 	{
 		return std::filesystem::weakly_canonical(path).string();
 	}
 
-	bool readFile(const std::string& path, utl::vector<uint8_t>& data) override
+	bool readFile(const char* path, utl::vector<uint8_t>& data) override
 	{
 		std::ifstream instream(path, std::ios::in | std::ios::binary);
 		std::copy(std::istreambuf_iterator<char>(instream), std::istreambuf_iterator<char>(), std::back_inserter(data));
@@ -83,14 +83,14 @@ public:
 		return instream.is_open() && !data.empty();
 	}
 
-	bool writeFile(const std::string& path, const utl::vector<uint8_t>& data) override
+	bool writeFile(const char* path, const utl::vector<uint8_t>& data) override
 	{
 		std::ofstream outstream(path, std::ios::out | std::ios::binary);
 		outstream.write(reinterpret_cast<const char*>(data.data()), data.size());
 		return outstream.is_open() && outstream.good();
 	}
 
-	size_t fileSize(const std::string& path) override
+	size_t fileSize(const char* path) override
 	{
 		return std::filesystem::file_size(path);
 	}
@@ -151,14 +151,14 @@ bool CGLTFLoader::load(const std::string& fsPath, FGLTFRoot& root)
 
 bool CGLTFLoader::_load(const std::string& fsPath, FGLTFRoot& root)
 {
-	if (!m_pFS->exists(fsPath))
+	if (!m_pFS->exists(fsPath.c_str()))
 	{
 		m_pMessenger->message(DebugMessageType::error, std::format("Failed to open file {}", fsPath));
 		return false;
 	}
 
 	utl::vector<uint8_t> rdata{};
-	if (!m_pFS->readFile(fsPath, rdata))
+	if (!m_pFS->readFile(fsPath.c_str(), rdata))
 	{
 		m_pMessenger->message(DebugMessageType::error, std::format("Failed to read file {}", fsPath));
 		return false;
@@ -189,7 +189,7 @@ bool CGLTFLoader::_LoadGLTFFromMemory(const utl::vector<uint8_t>& data, FGLTFRoo
 		auto& buffer = root.buffers[buffer_id];
 
 		auto buffer_path = path_helper::path_append(root.rootDirectory, url_decode(buffer.uri));
-		if (!m_pFS->readFile(buffer_path, buffer.data))
+		if (!m_pFS->readFile(buffer_path.c_str(), buffer.data))
 		{
 			m_pMessenger->message(DebugMessageType::error, std::format("Failed to read file {}", buffer_path));
 			return false;

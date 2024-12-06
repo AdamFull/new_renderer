@@ -6,7 +6,7 @@
 
 using namespace engine::filesystem;
 
-ZipFileSystem::ZipFileSystem(const std::string& fspath, const std::string& password)
+ZipFileSystem::ZipFileSystem(const char* fspath, const char* password)
 {
 	Create(fspath);
 	m_srPassword = password;
@@ -19,13 +19,13 @@ ZipFileSystem::~ZipFileSystem()
 }
 
 
-bool ZipFileSystem::Create(const std::string& fspath)
+bool ZipFileSystem::Create(const char* fspath)
 {
 	if (m_pArchive)
 		return false;
 
 	int error_code = 0;
-	m_pArchive = zip_open(fspath.c_str(), ZIP_RDONLY, &error_code);
+	m_pArchive = zip_open(fspath, ZIP_RDONLY, &error_code);
 
 	if (!m_pArchive) 
 	{
@@ -37,55 +37,55 @@ bool ZipFileSystem::Create(const std::string& fspath)
 	return true;
 }
 
-bool ZipFileSystem::Exists(const std::string& path)
+bool ZipFileSystem::Exists(const char* path)
 {
 	if (!m_pArchive)
 		return false;
 
 	zip_stat_t stat_info;
-	if (zip_stat(m_pArchive, path.c_str(), ZIP_FL_NOCASE, &stat_info) == 0)
+	if (zip_stat(m_pArchive, path, ZIP_FL_NOCASE, &stat_info) == 0)
 		return stat_info.valid & ZIP_STAT_NAME;
 
 	return false;
 }
 
-size_t ZipFileSystem::FileSize(const std::string& path)
+size_t ZipFileSystem::FileSize(const char* path)
 {
 	if (!m_pArchive)
 		return 0;
 
 	zip_stat_t stat_info;
-	if (zip_stat(m_pArchive, path.c_str(), 0, &stat_info) == 0)
+	if (zip_stat(m_pArchive, path, 0, &stat_info) == 0)
 		return static_cast<size_t>(stat_info.size);
 
 	return 0ull;
 }
 
-bool ZipFileSystem::IsDirectory(const std::string& path)
+bool ZipFileSystem::IsDirectory(const char* path)
 {
 	if (!m_pArchive)
 		return false;
 
 	zip_stat_t stat_info;
-	if (zip_stat(m_pArchive, path.c_str(), ZIP_FL_NOCASE, &stat_info) == 0)
+	if (zip_stat(m_pArchive, path, ZIP_FL_NOCASE, &stat_info) == 0)
 		return (stat_info.valid & ZIP_STAT_NAME) && (stat_info.name[strlen(stat_info.name) - 1] == '/');
 
 	return false;
 }
 
-bool ZipFileSystem::IsFile(const std::string& path)
+bool ZipFileSystem::IsFile(const char* path)
 {
 	if (!m_pArchive)
 		return false;
 
 	zip_stat_t stat_info;
-	if (zip_stat(m_pArchive, path.c_str(), ZIP_FL_NOCASE, &stat_info) == 0)
+	if (zip_stat(m_pArchive, path, ZIP_FL_NOCASE, &stat_info) == 0)
 		return (stat_info.valid & ZIP_STAT_NAME) && (stat_info.name[strlen(stat_info.name) - 1] != '/');
 
 	return false;
 }
 
-std::unique_ptr<IInputFileInterface> ZipFileSystem::OpenFile(const std::string& path)
+std::unique_ptr<IInputFileInterface> ZipFileSystem::OpenFile(const char* path)
 {
 	if (!IsFile(path))
 		return nullptr;
@@ -93,7 +93,7 @@ std::unique_ptr<IInputFileInterface> ZipFileSystem::OpenFile(const std::string& 
 	return std::make_unique<ZipInputFile>(m_pArchive, path, m_srPassword);
 }
 
-std::unique_ptr<IDirectoryIterator>  ZipFileSystem::Walk(const std::string& path, bool recursive)
+std::unique_ptr<IDirectoryIterator>  ZipFileSystem::Walk(const char* path, bool recursive)
  {
 	return std::make_unique<ZipIterator>(m_pArchive, path, recursive);;
  }

@@ -1,11 +1,11 @@
 #pragma once
 
 #include <engine/interface/filesystem/VirtualFileSystemInterface.h>
-#include <engine/rendering/gfx/gfx_resource_context.h>
+#include <engine/rendering/gfx/gfx_resource_loader.h>
 #include <engine/rendering/UploadFrame.h>
 
 #include <shader_compiler/shader_library_parse.hpp>
-
+/*
 namespace engine
 {
 	namespace render
@@ -17,7 +17,7 @@ namespace engine
 			gfx::Pipeline* pipeline{ nullptr };
 		};
 
-		class UploadContext final : public gfx::ResourceContext
+		class UploadContext final : public gfx::ResourceLoader
 		{
 		public:
 			UploadContext(gfx::Context& context, filesystem::IVirtualFileSystemInterface* vfs);
@@ -77,3 +77,5 @@ namespace engine
 		};
 	}
 }
+
+*/

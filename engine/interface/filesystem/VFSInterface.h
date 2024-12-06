@@ -54,84 +54,84 @@ namespace engine
 			 * @param fspath The file system path.
 			 * @return true if the file system is initialized successfully, false otherwise.
 			 */
-			virtual bool Create(const std::string& fspath) = 0;
+			virtual bool Create(const char* fspath) = 0;
 
 			/**
 			 * @brief Copies a file or directory from the source to the destination path.
 			 * @param src The source path.
 			 * @param dst The destination path.
 			 */
-			virtual void Copy(const std::string& src, const std::string& dst) = 0;
+			virtual void Copy(const char* src, const char* dst) = 0;
 
 			/**
 			 * @brief Creates directories recursively at the specified path, if they do not exist.
 			 * @param path The directory path to be created.
 			 * @return true if the directories were created or already exist, false otherwise.
 			 */
-			virtual bool CreateDirectories(const std::string& path) = 0;
+			virtual bool CreateDirectories(const char* path) = 0;
 
 			/**
 			 * @brief Creates a single directory at the specified path, if it does not exist.
 			 * @param path The directory path to be created.
 			 * @return true if the directory was created or already exists, false otherwise.
 			 */
-			virtual bool CreateDirectory(const std::string& path) = 0;
+			virtual bool CreateDirectory(const char* path) = 0;
 
 			/**
 			 * @brief Checks whether the specified path exists.
 			 * @param path The path to be checked.
 			 * @return true if the path exists, false otherwise.
 			 */
-			virtual bool Exists(const std::string& path) = 0;
+			virtual bool Exists(const char* path) = 0;
 
 			/**
 			 * @brief Retrieves the size of a file at the specified path.
 			 * @param path The file path.
 			 * @return The size of the file in bytes.
 			 */
-			virtual size_t FileSize(const std::string& path) = 0;
+			virtual size_t FileSize(const char* path) = 0;
 
 			/**
 			 * @brief Checks whether the specified path is a directory.
 			 * @param path The path to be checked.
 			 * @return true if the path is a directory, false otherwise.
 			 */
-			virtual bool IsDirectory(const std::string& path) = 0;
+			virtual bool IsDirectory(const char* path) = 0;
 
 			/**
 			 * @brief Checks whether the specified path is a file.
 			 * @param path The path to be checked.
 			 * @return true if the path is a file, false otherwise.
 			 */
-			virtual bool IsFile(const std::string& path) = 0;
+			virtual bool IsFile(const char* path) = 0;
 
 			/**
 			 * @brief Removes a file or an empty directory at the specified path.
 			 * @param path The path to be removed.
 			 * @return true if the path was successfully removed, false otherwise.
 			 */
-			virtual bool Remove(const std::string& path) = 0;
+			virtual bool Remove(const char* path) = 0;
 
 			/**
 			 * @brief Renames a file or a directory at the specified original path to a new path.
 			 * @param original The original file or directory path.
 			 * @param newfile The new file or directory path.
 			 */
-			virtual void Rename(const std::string& original, const std::string& newfile) = 0;
+			virtual void Rename(const char* original, const char* newfile) = 0;
 
 			/**
 			 * @brief Creates a new file with write mode (wb) at the specified path.
 			 * @param path The file path.
 			 * @return A unique_ptr to the IOutputFileInterface object representing the created file.
 			 */
-			virtual std::unique_ptr<IOutputFileInterface> CreateFile(const std::string& path) = 0;
+			virtual std::unique_ptr<IOutputFileInterface> CreateFile(const char* path) = 0;
 
 			/**
 			 * @brief Opens an existing file with read mode (rb) at the specified path.
 			 * @param path The file path.
 			 * @return A unique_ptr to the IInputFileInterface object representing the opened file.
 			 */
-			virtual std::unique_ptr<IInputFileInterface> OpenFile(const std::string& path) = 0;
+			virtual std::unique_ptr<IInputFileInterface> OpenFile(const char* path) = 0;
 
 			/**
 			 * @brief Creates a recursive directory iterator for the specified path.
@@ -139,7 +139,7 @@ namespace engine
 			 * @param recursive true if the iteration should be recursive, false otherwise.
 			 * @return A unique_ptr to the IDirectory
 			 */
-			virtual std::unique_ptr<IDirectoryIterator> Walk(const std::string& path, bool recursive) = 0;
+			virtual std::unique_ptr<IDirectoryIterator> Walk(const char* path, bool recursive) = 0;
 
 			/**
 			 * @brief Gets the file system mode flags.

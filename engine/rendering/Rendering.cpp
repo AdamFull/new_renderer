@@ -94,8 +94,39 @@ namespace engine
 	{
 		PostProcessData postprocess{};
 
-		Renderer::Renderer(Window* window, filesystem::IVirtualFileSystemInterface* vfs) :
-			vfs{ vfs }
+		class VFSWrapper : public gfx::FilesystemWrapper
+		{
+		public:
+			VFSWrapper(filesystem::IVirtualFileSystemInterface& vfx) :
+				vfs{ vfs }
+			{
+			}
+
+			bool Exists(const char* path) override
+			{
+				return vfs.Exists(path);
+			}
+
+			bool ReadFile(const char* path, std::vector<uint8_t>& data) override
+			{
+				return vfs.ReadFile(path, data);
+			}
+
+			bool WriteFile(const char* path, const std::vector<uint8_t>& data) override
+			{
+				return vfs.WriteFile(path, data);
+			}
+
+			size_t FileSize(const char* path) override
+			{
+				return vfs.FileSize(path);
+			}
+
+		private:
+			filesystem::IVirtualFileSystemInterface& vfs;
+		};
+
+		Renderer::Renderer(Window* window, filesystem::IVirtualFileSystemInterface* vfs)
 		{
 			gfx::ContextCreateInfo gfx_create_info{};
 			gfx_create_info.app_name = "MyVulkanEngine";
@@ -104,7 +135,15 @@ namespace engine
 
 			gfx_context = gfx::CreateContext(gfx_create_info);
 
-			resource_context = std::make_unique<UploadContext>(*gfx_context, vfs);
+			// Create filesystem wrapper
+			fs = std::make_unique<VFSWrapper>(*vfs);
+
+			gfx::ResourceLoaderCreateInfo loader_create_info{};
+			loader_create_info.context = gfx_context.get();
+			loader_create_info.filesystem_wrapper = fs.get();
+
+			resource_loader = gfx::CreateResourceLoader(loader_create_info);
+
 			render_graph = std::make_unique<RenderGraph>(*this, window);
 			render_world = std::make_unique<RenderWorld>(*this);
 
@@ -190,14 +229,14 @@ namespace engine
 			render_graph->EndFrame();
 		}
 
-		gfx::ResourceContext& Renderer::GetResourceContext()
+		gfx::ResourceLoader& Renderer::GetResourceLoader()
 		{
-			return *resource_context;
+			return *resource_loader;
 		}
 
-		gfx::ResourceContext const& Renderer::GetResourceContext() const
+		gfx::ResourceLoader const& Renderer::GetResourceLoader() const
 		{
-			return *resource_context;
+			return *resource_loader;
 		}
 
 		gfx::Context& Renderer::GetContext()
@@ -214,7 +253,7 @@ namespace engine
 				return *geometry_buffers[found->second];
 			}
 
-			auto& new_geometry_buffer = geometry_buffers.emplace_back(std::make_unique<InterleavedGeometryBuffer>(*resource_context, create_info));
+			auto& new_geometry_buffer = geometry_buffers.emplace_back(std::make_unique<InterleavedGeometryBuffer>(*resource_loader, create_info));
 			interleaved_geometry_buffers[hash] = geometry_buffers.size() - 1ull;
 			return *new_geometry_buffer;
 		}
@@ -228,7 +267,7 @@ namespace engine
 				return *geometry_buffers[found->second];
 			}
 
-			auto& new_geometry_buffer = geometry_buffers.emplace_back(std::make_unique<DeinterleavedGeometryBuffer>(*resource_context, create_info));
+			auto& new_geometry_buffer = geometry_buffers.emplace_back(std::make_unique<DeinterleavedGeometryBuffer>(*resource_loader, create_info));
 			deinterleaved_geometry_buffers[hash] = geometry_buffers.size() - 1ull;
 			return *new_geometry_buffer;
 		}
@@ -279,7 +318,7 @@ namespace engine
 				create_info.mag_filter = gfx::Filter::eNearest;
 				create_info.mip_map_mode = gfx::Filter::eNearest;
 
-				nearest_sampler = resource_context->GetSampler(create_info);
+				nearest_sampler = resource_loader->GetSampler(create_info);
 			}
 
 			gfx::Sampler* linear_sampler{ nullptr };
@@ -289,7 +328,7 @@ namespace engine
 				create_info.mag_filter = gfx::Filter::eLinear;
 				create_info.mip_map_mode = gfx::Filter::eLinear;
 
-				linear_sampler = resource_context->GetSampler(create_info);
+				linear_sampler = resource_loader->GetSampler(create_info);
 			}
 
 			gfx::Sampler* shadow_sampler{ nullptr };
@@ -300,7 +339,7 @@ namespace engine
 				create_info.mip_map_mode = gfx::Filter::eLinear;
 				create_info.depth_compare = gfx::CompareOp::eLess;
 
-				shadow_sampler = resource_context->GetSampler(create_info);
+				shadow_sampler = resource_loader->GetSampler(create_info);
 			}
 
 			// Load some static textures
@@ -351,7 +390,7 @@ namespace engine
 					create_info_s.min_lod = 0.f;
 					create_info_s.max_lod = static_cast<float>(create_info.levels);
 
-					special_sampler = resource_context->GetSampler(create_info_s);
+					special_sampler = resource_loader->GetSampler(create_info_s);
 				}
 
 				prefiltered_cube_target = render_graph->AddResource(create_info, special_sampler);

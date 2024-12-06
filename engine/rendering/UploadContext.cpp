@@ -1,4 +1,4 @@
-#include <engine/rendering/UploadContext.h>
+/*#include <engine/rendering/UploadContext.h>
 
 //#define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
@@ -695,4 +695,4 @@ namespace engine
 			}
 		}
 	}
-}
+}*/

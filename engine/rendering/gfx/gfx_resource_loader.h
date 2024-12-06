@@ -26,6 +26,8 @@ namespace engine
 			virtual Texture* LoadTexture(const char* texture_path) = 0;
 			virtual Texture* LoadTexture(const TextureCreateInfo& create_info, std::span<uint8_t> texture_data) = 0;
 
+			virtual Sampler* GetSampler(const SamplerCreateInfo& create_info) = 0;
+
 			virtual Shader* LoadShader(const char* shader_name) = 0;
 
 			virtual void BeginBufferUpdate(BufferUpdateInfo& update_info) = 0;

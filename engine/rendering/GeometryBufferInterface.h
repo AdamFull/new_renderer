@@ -1,6 +1,6 @@
 #pragma once
 
-#include <engine/rendering/gfx/gfx_resource_context.h>
+#include <engine/rendering/gfx/gfx_resource_loader.h>
 
 #include <unordered_map>
 
@@ -87,7 +87,7 @@ namespace engine
 		class GeometryBuffer
 		{
 		public:
-			GeometryBuffer(gfx::ResourceContext& resource_context);
+			GeometryBuffer(gfx::ResourceLoader& resource_loader);
 			virtual ~GeometryBuffer();
 
 			virtual void Flush();
@@ -112,7 +112,7 @@ namespace engine
 		protected:
 			void TryFlushBuffer(gfx::Buffer** buffer_ptr, const std::vector<uint8_t>& data, gfx::BufferUsageFlags usage);
 		protected:
-			gfx::ResourceContext& resource_context;
+			gfx::ResourceLoader& resource_loader;
 			gfx::VertexLayout vertex_layout{};
 			IndexData index_data{};
 		};

@@ -1524,11 +1524,11 @@ namespace easygltf
 	public:
 		virtual ~IFilesystemWrapper() = default;
 
-		virtual bool exists(const std::string& path) = 0;
-		virtual std::string expandFilePath(const std::string& path) = 0;
-		virtual bool readFile(const std::string& path, utl::vector<uint8_t>& data) = 0;
-		virtual bool writeFile(const std::string& path, const utl::vector<uint8_t>& data) = 0;
-		virtual size_t fileSize(const std::string& path) = 0;
+		virtual bool exists(const char* path) = 0;
+		virtual std::string expandFilePath(const char* path) = 0;
+		virtual bool readFile(const char* path, utl::vector<uint8_t>& data) = 0;
+		virtual bool writeFile(const char* path, const utl::vector<uint8_t>& data) = 0;
+		virtual size_t fileSize(const char* path) = 0;
 	};
 
 	class IDebugMessenger

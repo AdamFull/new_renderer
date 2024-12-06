@@ -8,7 +8,7 @@ namespace engine
 {
 	namespace gfx
 	{
-		class ResourceContext;
+		class ResourceLoader;
 	}
 
 	namespace render
@@ -81,7 +81,7 @@ namespace engine
 		private:
 			IRenderer& renderer;
 			gfx::Context& context;
-			gfx::ResourceContext& resource_context;
+			gfx::ResourceLoader& resource_loader;
 
 			std::unique_ptr<RenderContext> render_context{};
 

@@ -50,7 +50,7 @@ namespace engine
 		RenderGraph::RenderGraph(IRenderer& renderer, Window* window) :
 			renderer{ renderer },
 			context{ renderer.GetContext() },
-			resource_context{ renderer.GetResourceContext() }
+			resource_loader{ renderer.GetResourceLoader() }
 		{
 			render_context = std::make_unique<RenderContext>(context, window);
 
@@ -120,7 +120,7 @@ namespace engine
 			auto& new_resource = render_resources.emplace_back();
 			new_resource.resource_type = RenderResourceTypeFlag::eStaticImage;
 
-			gfx::Texture* texture = resource_context.LoadTexture(path);
+			gfx::Texture* texture = resource_loader.LoadTexture(path.c_str());
 			new_resource.resource_id = static_textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
 
 			new_resource.current_state = gfx::ResourceStateFlag::eShaderReadOnlyResource;
@@ -142,7 +142,7 @@ namespace engine
 			texture_create_info.levels = create_info.levels;
 			texture_create_info.format = create_info.format;
 
-			gfx::Texture* texture = resource_context.LoadTexture(texture_create_info, texture_data);
+			gfx::Texture* texture = resource_loader.LoadTexture(texture_create_info, texture_data);
 			new_resource.resource_id = static_textures.Add(TextureObject{ texture, default_sampler });
 
 			new_resource.current_state = gfx::ResourceStateFlag::eShaderReadOnlyResource;
@@ -254,7 +254,7 @@ namespace engine
 		{
 			RenderPassCreateInfo pass_ci{};
 			pass_ci.debug_name = create_info.shader_name;
-			pass_ci.shader = resource_context.LoadShader(create_info.shader_name);
+			pass_ci.shader = resource_loader.LoadShader(create_info.shader_name.c_str());
 			pass_ci.shared_descriptor = shared_descriptor;
 			pass_ci.pipeline_state = create_info.pipeline_state;
 			pass_ci.draw_callback = std::move(create_info.draw_callback);
@@ -271,7 +271,7 @@ namespace engine
 		{
 			ComputePassCreateInfo pass_ci{};
 			pass_ci.debug_name = create_info.shader_name;
-			pass_ci.shader = resource_context.LoadShader(create_info.shader_name);
+			pass_ci.shader = resource_loader.LoadShader(create_info.shader_name.c_str());
 			pass_ci.one_time = create_info.one_time;
 			pass_ci.shared_descriptor = shared_descriptor;
 			pass_ci.draw_callback = std::move(create_info.draw_callback);
@@ -404,7 +404,7 @@ namespace engine
 			gfx::SemaphoreSubmitInfo upload_wait_semaphore{};
 			//auto upload_avaliable = render_context->GetUploadAvaliableSemaphore();
 			//upload_wait_semaphore = upload_context->Submit(&upload_avaliable, upload_avaliable.semaphore ? 1 : 0);
-			upload_wait_semaphore = resource_context.Submit(nullptr, 0);
+			upload_wait_semaphore = resource_loader.Submit(nullptr, 0);
 
 			auto& command_list = render_context->GetCurrentCommandList();
 			command_list.EndQuery(timestamp_query, 1u);

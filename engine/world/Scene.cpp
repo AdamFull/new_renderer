@@ -157,27 +157,27 @@ namespace engine
 			VFSWrapper(filesystem::IVirtualFileSystemInterface* vfs) : vfs(vfs) {}
 			~VFSWrapper() override = default;
 
-			bool exists(const std::string& path) override
+			bool exists(const char* path) override
 			{
 				return vfs->Exists(path);
 			}
 
-			std::string expandFilePath(const std::string& path) override
+			std::string expandFilePath(const char* path) override
 			{
 				return filesystem::fs::normalize(filesystem::fs::to_posix_path(path));
 			}
 
-			bool readFile(const std::string& path, utl::vector<uint8_t>& data) override
+			bool readFile(const char* path, utl::vector<uint8_t>& data) override
 			{
 				return vfs->ReadFile(path, data);
 			}
 
-			bool writeFile(const std::string& path, const utl::vector<uint8_t>& data) override
+			bool writeFile(const char* path, const utl::vector<uint8_t>& data) override
 			{
 				return vfs->WriteFile(path, data);
 			}
 
-			u64 fileSize(const std::string& path) override
+			u64 fileSize(const char* path) override
 			{
 				return vfs->FileSize(path);
 			}
@@ -286,7 +286,7 @@ namespace engine
 
 		void Scene::LoadGLTF(easygltf::FGLTFRoot& root)
 		{
-			auto& resource_context = renderer.GetResourceContext();
+			auto& resource_loader = renderer.GetResourceLoader();
 			// Load textures
 			for (const auto& texture : root.textures)
 			{
@@ -298,7 +298,7 @@ namespace engine
 				auto& sampler = root.samplers[texture.sampler];
 
 				auto sampler_create_info = GetSamplerCreateInfo(sampler);
-				gfx::Sampler* texture_sampler = resource_context.GetSampler(sampler_create_info);
+				gfx::Sampler* texture_sampler = resource_loader.GetSampler(sampler_create_info);
 
 				// TODO: add ability to override format and sampler params
 				// TODO: find format from materials

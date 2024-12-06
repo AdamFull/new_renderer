@@ -602,8 +602,15 @@ namespace engine
 				return texture;
 			}
 
+			Sampler* GetSampler(const SamplerCreateInfo& create_info)
+			{
+				assert(false && "NOT IMPLEMENTED");
+				return nullptr;
+			}
+
 			Shader* LoadShader(const char* shader_name) override
 			{
+				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 

@@ -19,7 +19,7 @@ namespace engine
 		class Context;
 		class QueryPool;
 		class Sampler;
-		class ResourceContext;
+		class ResourceLoader;
 	}
 
 	namespace render
@@ -39,8 +39,8 @@ namespace engine
 
 			void Render(float delta_time) override;
 
-			gfx::ResourceContext& GetResourceContext() override;
-			gfx::ResourceContext const& GetResourceContext() const override;
+			gfx::ResourceLoader& GetResourceLoader() override;
+			gfx::ResourceLoader const& GetResourceLoader() const override;
 
 			gfx::Context& GetContext() override;
 
@@ -55,10 +55,10 @@ namespace engine
 		private:
 			void BuildGraph();
 		private:
-			filesystem::IVirtualFileSystemInterface* vfs{ nullptr };
+			std::unique_ptr<gfx::FilesystemWrapper> fs;
 
 			std::unique_ptr<gfx::Context> gfx_context{};
-			std::unique_ptr<gfx::ResourceContext> resource_context{};
+			std::unique_ptr<gfx::ResourceLoader> resource_loader{};
 			std::unique_ptr<IRenderGraph> render_graph{};
 			std::unique_ptr<IRenderWorld> render_world{};
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <engine/rendering/gfx/gfx_context.h>
-#include <engine/rendering/gfx/gfx_resource_context.h>
+#include <engine/rendering/gfx/gfx_resource_loader.h>
 
 #include <util/Util.h>
 
@@ -19,9 +19,9 @@ namespace engine
 				uint32_t count;
 			};
 
-			DynamicBuffer(gfx::ResourceContext& resource_context, uint64_t capacity = 64u, gfx::BufferUsageFlags flags = {}) :
-				resource_context{ resource_context },
-				context{ resource_context.GetContext() },
+			DynamicBuffer(gfx::ResourceLoader& resource_loader, uint64_t capacity = 64u, gfx::BufferUsageFlags flags = {}) :
+				resource_loader{ resource_loader },
+				context{ resource_loader.GetContext() },
 				usage_flags{ flags }
 			{
 				gfx::BufferCreateInfo create_info{};
@@ -105,7 +105,7 @@ namespace engine
 					gfx::BufferUpdateInfo update_info{};
 					update_info.dst_buffer = buffer;
 					update_info.update_size = std::accumulate(merged_ranges.begin(), merged_ranges.end(), 0, [](uint64_t acc, const DirtyRange& item) { return acc + item.count * sizeof(_Ty); });
-					resource_context.BeginBufferUpdate(update_info);
+					resource_loader.BeginBufferUpdate(update_info);
 
 					uint64_t src_offset{ 0ull };
 					for (const auto& range : merged_ranges)
@@ -124,13 +124,13 @@ namespace engine
 						src_offset += range_size;
 					}
 					
-					resource_context.EndBufferUpdate(update_info);
+					resource_loader.EndBufferUpdate(update_info);
 					dirty_ranges.clear();
 				}
 			}
 		private:
 			gfx::Context& context;
-			gfx::ResourceContext& resource_context;
+			gfx::ResourceLoader& resource_loader;
 
 			gfx::BufferUsageFlags usage_flags{};
 

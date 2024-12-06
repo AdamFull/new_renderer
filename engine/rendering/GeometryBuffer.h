@@ -16,7 +16,7 @@ namespace engine
 		class InterleavedGeometryBuffer final : public GeometryBuffer
 		{
 		public:
-			InterleavedGeometryBuffer(gfx::ResourceContext& context, const GeometryBufferCreateInfo& create_info);
+			InterleavedGeometryBuffer(gfx::ResourceLoader& loader, const GeometryBufferCreateInfo& create_info);
 			~InterleavedGeometryBuffer();
 
 			void Flush() override;
@@ -35,7 +35,7 @@ namespace engine
 		class DeinterleavedGeometryBuffer final : public GeometryBuffer
 		{
 		public:
-			DeinterleavedGeometryBuffer(gfx::ResourceContext& context, const GeometryBufferCreateInfo& create_info);
+			DeinterleavedGeometryBuffer(gfx::ResourceLoader& loader, const GeometryBufferCreateInfo& create_info);
 			~DeinterleavedGeometryBuffer();
 
 			void Flush() override;

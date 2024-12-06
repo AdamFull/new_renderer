@@ -74,14 +74,14 @@ namespace engine
 
 
 
-		GeometryBuffer::GeometryBuffer(gfx::ResourceContext& resource_context) :
-			resource_context{ resource_context }
+		GeometryBuffer::GeometryBuffer(gfx::ResourceLoader& resource_loader) :
+			resource_loader{ resource_loader }
 		{
 		}
 
 		GeometryBuffer::~GeometryBuffer()
 		{
-			auto& context = resource_context.GetContext();
+			auto& context = resource_loader.GetContext();
 			context.Destroy(index_data.buffer);
 		}
 
@@ -130,7 +130,7 @@ namespace engine
 		{
 			ZoneScoped;
 
-			gfx::Context& context = resource_context.GetContext();
+			gfx::Context& context = resource_loader.GetContext();
 
 			if (!*buffer_ptr)
 			{
@@ -158,16 +158,16 @@ namespace engine
 			buffer_update_info.dst_buffer = *buffer_ptr;
 			buffer_update_info.update_size = data.size();
 
-			resource_context.BeginBufferUpdate(buffer_update_info);
+			resource_loader.BeginBufferUpdate(buffer_update_info);
 			util::Copy(buffer_update_info.map_info.data, data.data(), data.size(), std::execution::par);
 			buffer_update_info.regions[buffer_update_info.region_count++] = { 0ull, 0ull, data.size() };
-			resource_context.EndBufferUpdate(buffer_update_info);
+			resource_loader.EndBufferUpdate(buffer_update_info);
 		}
 
 
 
-		InterleavedGeometryBuffer::InterleavedGeometryBuffer(gfx::ResourceContext& resource_context, const GeometryBufferCreateInfo& create_info) :
-			GeometryBuffer{ resource_context }
+		InterleavedGeometryBuffer::InterleavedGeometryBuffer(gfx::ResourceLoader& resource_loader, const GeometryBufferCreateInfo& create_info) :
+			GeometryBuffer{ resource_loader }
 		{
 			uint32_t offset{ 0u };
 
@@ -191,7 +191,7 @@ namespace engine
 
 		InterleavedGeometryBuffer::~InterleavedGeometryBuffer()
 		{
-			auto& context = resource_context.GetContext();
+			auto& context = resource_loader.GetContext();
 			context.Destroy(vertex_data.buffer);
 		}
 
@@ -252,8 +252,8 @@ namespace engine
 		}
 
 
-		DeinterleavedGeometryBuffer::DeinterleavedGeometryBuffer(gfx::ResourceContext& resource_context, const GeometryBufferCreateInfo& create_info) :
-			GeometryBuffer{ resource_context }
+		DeinterleavedGeometryBuffer::DeinterleavedGeometryBuffer(gfx::ResourceLoader& resource_loader, const GeometryBufferCreateInfo& create_info) :
+			GeometryBuffer{ resource_loader }
 		{
 			for (auto& desc : create_info.attribute_descriptions)
 			{
@@ -272,7 +272,7 @@ namespace engine
 
 		DeinterleavedGeometryBuffer::~DeinterleavedGeometryBuffer()
 		{
-			auto& context = resource_context.GetContext();
+			auto& context = resource_loader.GetContext();
 			for (auto& vert_data : vertex_datas)
 			{
 				context.Destroy(vert_data.buffer);
