@@ -107,11 +107,13 @@ namespace engine
 					return;
 				}
 
+				std::array<char, 1024ull> str_buf{};
+
 				for (const auto& compile_module : config.modules)
 				{
 					log_info("Building module: {}", compile_module.name);
 
-					//auto module_dir = 
+					auto module_dir = fsh::path_append(base_path, compile_module.path, str_buf);
 				}
 			}
 

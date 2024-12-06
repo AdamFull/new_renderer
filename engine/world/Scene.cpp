@@ -164,8 +164,8 @@ namespace engine
 
 			std::string expandFilePath(std::string_view path) override
 			{
-				std::array<char, 1024ull> buffer{};
-				return std::string(fsh::normalize(fsh::to_posix_path(path, std::span(buffer))));
+				std::array<char, 1024ull> buffer{}, buffer2{};
+				return std::string(fsh::normalize(fsh::to_posix_path(path, buffer), buffer2));
 			}
 
 			bool readFile(std::string_view path, utl::vector<uint8_t>& data) override

@@ -66,6 +66,12 @@ namespace engine
             return std::string_view(buffer.data());
         }
 
+        template<size_t _Size>
+        inline constexpr std::string_view to_posix_path(std::string_view path, std::array<char, _Size> buffer)
+        {
+            return to_posix_path(path, std::span(buffer));
+        }
+
         inline constexpr std::string_view get_local_path(std::string_view path) 
         {
             auto mount_point = get_mount_point(path);
@@ -105,18 +111,24 @@ namespace engine
             return (separator_pos == std::string_view::npos) ? std::string_view{} : path.substr(0, separator_pos);
         }
 
-        inline constexpr std::string_view normalize(std::string_view path) 
+        template<size_t _Size>
+        inline constexpr std::string_view normalize(std::string_view path, std::span<char, _Size> buffer) 
         {
-            std::array<char, 1024> buffer{};
             size_t index = 0;
 
             for (size_t i = 0; i < path.size(); ++i) 
             {
+                if (index >= buffer.size() - 1) break;
+
                 if (path[i] == '/' && (index == 0 || buffer[index - 1] == '/'))
+                {
+                    if (i >= buffer.size() - 1) break;
                     continue; // Skip duplicate '/'
+                }
 
                 if (path[i] == '.' && (i + 1 < path.size() && path[i + 1] == '/')) 
                 {
+                    if (i >= buffer.size() - 1) break;
                     ++i; // Skip "./"
                     continue;
                 }
@@ -124,6 +136,12 @@ namespace engine
             }
 
             return std::string_view(buffer.data(), index);
+        }
+
+        template<size_t _Size>
+        inline constexpr std::string_view normalize(std::string_view path, std::array<char, _Size> buffer)
+        {
+            return normalize(path, std::span(buffer));;
         }
 
         template<size_t _Size>
@@ -160,6 +178,12 @@ namespace engine
                 buffer[index] = '\0';
 
             return std::string_view(buffer.data(), index);
+        }
+
+        template<size_t _Size>
+        inline constexpr std::string_view path_append(std::string_view base_path, std::string_view relative_path, std::array<char, _Size> buffer)
+        {
+            return path_append(base_path, relative_path, std::span(buffer));
         }
 
         //inline constexpr bool is_image_format(std::string_view path)

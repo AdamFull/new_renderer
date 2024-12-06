@@ -43,7 +43,7 @@ namespace engine
                 root_ = root;
 
                 std::array<char, 1024ull> buffer{};
-                path_ = fsh::to_posix_path(std::filesystem::relative(it_->path(), root_).string(), std::span(buffer));
+                path_ = fsh::to_posix_path(std::filesystem::relative(it_->path(), root_).string(), buffer);
             }
         protected:
             /**
@@ -58,7 +58,7 @@ namespace engine
                     auto decoded = convert.to_bytes(std::filesystem::relative(it_->path(), root_).u16string());
 
                     std::array<char, 1024ull> buffer{};
-                    path_ = fsh::to_posix_path(decoded, std::span(buffer));
+                    path_ = fsh::to_posix_path(decoded, buffer);
                 }
             }
 
