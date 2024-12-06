@@ -22,7 +22,7 @@ namespace engine
 				VulkanQueryPool& operator=(const VulkanQueryPool&) = delete;
 				VulkanQueryPool& operator=(VulkanQueryPool&&) = delete;
 
-				void SetResourceName(const char* name) override;
+				void SetResourceName(std::string_view name) override;
 
 				void Reset(uint32_t start_query, uint32_t query_count) override;
 				void GetData(uint32_t query_index, void* data) override;

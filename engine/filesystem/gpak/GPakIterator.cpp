@@ -5,13 +5,13 @@
 
 using namespace engine::filesystem;
 
-GPakIterator::GPakIterator(gpak* _pak, const std::string& start_path, bool recursive)
+GPakIterator::GPakIterator(gpak* _pak, std::string_view start_path, bool recursive)
 {
 	m_bIsRecursive = recursive;
 
 	if (auto* _root = gpak_get_root(_pak))
 	{
-		if (auto* _start_dir = filesystem_tree_find_directory(_root, start_path.c_str()))
+		if (auto* _start_dir = filesystem_tree_find_directory(_root, start_path.data()))
 		{
 			m_pIterator = filesystem_iterator_create(_start_dir);
 			m_pCurrentDir = _start_dir;

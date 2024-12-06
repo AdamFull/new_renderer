@@ -68,7 +68,7 @@ namespace engine
 				return can_present;
 			}
 
-			void VulkanQueue::SetResourceName(const char* name)
+			void VulkanQueue::SetResourceName(std::string_view name)
 			{
 				auto& debug_utils = device.GetDebugUtils();
 				debug_utils.SetDebugName(handle, name);

@@ -128,7 +128,7 @@ namespace engine
 			{
 			}
 
-			void VulkanRootSignature::SetResourceName(const char* name)
+			void VulkanRootSignature::SetResourceName(std::string_view name)
 			{
 				auto& debug_utils = device.GetDebugUtils();
 				debug_utils.SetDebugName(pipeline_layout->GetHandle(), name);

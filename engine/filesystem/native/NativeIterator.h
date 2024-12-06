@@ -2,8 +2,9 @@
 
 #include <ie_vfs_exports.h>
 
+#include <util/FilesystemHelper.h>
+
 #include <engine/interface/filesystem/DirectoryIteratorInterface.h>
-#include <engine/filesystem/vfs_helper.h>
 
 #include <string>
 
@@ -37,10 +38,12 @@ namespace engine
              * @param path A string representing the path to the directory to be iterated.
              * @param root A string representing the root directory for relative paths.
              */
-            NativeIterator(const std::string& path, const std::string& root) : it_(_Ty(path))
+            NativeIterator(std::string_view path, const std::string& root) : it_(_Ty(path))
             {
                 root_ = root;
-                path_ = fs::to_posix_path(std::filesystem::relative(it_->path(), root_).string());
+
+                std::array<char, 1024ull> buffer{};
+                path_ = fsh::to_posix_path(std::filesystem::relative(it_->path(), root_).string(), std::span(buffer));
             }
         protected:
             /**
@@ -50,7 +53,13 @@ namespace engine
             {
                 ++it_;
                 if (it_ != _Ty())
-                    path_ = fs::to_posix_path(fs::from_unicode(std::filesystem::relative(it_->path(), root_).u16string()));
+                {
+                    std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
+                    auto decoded = convert.to_bytes(std::filesystem::relative(it_->path(), root_).u16string());
+
+                    std::array<char, 1024ull> buffer{};
+                    path_ = fsh::to_posix_path(decoded, std::span(buffer));
+                }
             }
 
             /**

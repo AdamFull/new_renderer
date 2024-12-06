@@ -34,7 +34,7 @@ namespace engine
              * @param start_path A string representing the starting path within the archive.
              * @param recursive A boolean flag indicating if the iterator should recurse into subdirectories.
              */
-            GPakIterator(gpak* _pak, const std::string& start_path, bool recursive);
+            GPakIterator(gpak* _pak, std::string_view start_path, bool recursive);
 
             /**
              * @brief Virtual destructor.

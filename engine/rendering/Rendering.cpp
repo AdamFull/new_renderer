@@ -102,22 +102,22 @@ namespace engine
 			{
 			}
 
-			bool Exists(const char* path) override
+			bool Exists(std::string_view path) override
 			{
 				return vfs.Exists(path);
 			}
 
-			bool ReadFile(const char* path, std::vector<uint8_t>& data) override
+			bool ReadFile(std::string_view path, std::vector<uint8_t>& data) override
 			{
 				return vfs.ReadFile(path, data);
 			}
 
-			bool WriteFile(const char* path, const std::vector<uint8_t>& data) override
+			bool WriteFile(std::string_view path, const std::vector<uint8_t>& data) override
 			{
 				return vfs.WriteFile(path, data);
 			}
 
-			size_t FileSize(const char* path) override
+			size_t FileSize(std::string_view path) override
 			{
 				return vfs.FileSize(path);
 			}
@@ -158,7 +158,7 @@ namespace engine
 			
 		}
 
-		uint32_t Renderer::AddRenderResource(const std::string& path, gfx::Sampler* sampler)
+		uint32_t Renderer::AddRenderResource(std::string_view path, gfx::Sampler* sampler)
 		{
 			return render_graph->AddResource(path, sampler);
 		}

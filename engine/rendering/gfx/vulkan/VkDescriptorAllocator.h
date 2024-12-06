@@ -25,7 +25,7 @@ namespace engine
 				VulkanDescriptorAllocator& operator=(const VulkanDescriptorAllocator&) = delete;
 				VulkanDescriptorAllocator& operator=(VulkanDescriptorAllocator&&) = delete;
 
-				void SetResourceName(const char* name) override;
+				void SetResourceName(std::string_view name) override;
 
 				void Reset() override;
 				ResourceDescriptor* AllocateDescriptors(RootSignature* root_signature) override;

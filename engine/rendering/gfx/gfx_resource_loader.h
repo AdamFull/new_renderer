@@ -14,8 +14,8 @@ namespace engine
 			Context* context{ nullptr };
 			FilesystemWrapper* filesystem_wrapper{ nullptr };
 
-			const char* shader_compile_config_path{ nullptr };
-			const char* shader_cache_patch{ nullptr };
+			std::string_view shader_compile_config_path{ "" };
+			std::string_view shader_cache_patch{ "" };
 		};
 
 		class ResourceLoader
@@ -23,12 +23,12 @@ namespace engine
 		public:
 			virtual ~ResourceLoader() = default;
 
-			virtual Texture* LoadTexture(const char* texture_path) = 0;
+			virtual Texture* LoadTexture(std::string_view texture_path) = 0;
 			virtual Texture* LoadTexture(const TextureCreateInfo& create_info, std::span<uint8_t> texture_data) = 0;
 
 			virtual Sampler* GetSampler(const SamplerCreateInfo& create_info) = 0;
 
-			virtual Shader* LoadShader(const char* shader_name) = 0;
+			virtual Shader* LoadShader(std::string_view shader_name) = 0;
 
 			virtual void BeginBufferUpdate(BufferUpdateInfo& update_info) = 0;
 			virtual void EndBufferUpdate(BufferUpdateInfo& update_info) = 0;

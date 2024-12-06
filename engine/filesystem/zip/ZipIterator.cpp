@@ -6,7 +6,7 @@
 
 using namespace engine::filesystem;
 
-void get_entries(zip* archive, utl::vector<std::string>& outresults, const std::string& start_path, bool recurse)
+void get_entries(zip* archive, utl::vector<std::string>& outresults, std::string_view start_path, bool recurse)
 {
     for (zip_int64_t i = 0; i < zip_get_num_entries(archive, 0); ++i)
     {
@@ -34,7 +34,7 @@ void get_entries(zip* archive, utl::vector<std::string>& outresults, const std::
     }
 }
 
-ZipIterator::ZipIterator(zip* archive, const std::string& start_path, bool recursive)
+ZipIterator::ZipIterator(zip* archive, std::string_view start_path, bool recursive)
 {
     archive_ = archive;
     get_entries(archive, entries_, start_path, recursive);

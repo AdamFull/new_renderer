@@ -30,7 +30,7 @@ namespace engine
 			{
 			}
 
-			void VulkanPipelineCache::SetResourceName(const char* name)
+			void VulkanPipelineCache::SetResourceName(std::string_view name)
 			{
 				auto& debug_utils = device.GetDebugUtils();
 				debug_utils.SetDebugName(handle, name);

@@ -21,7 +21,7 @@ namespace engine
 				VulkanBuffer(Allocator& allocator, const BufferCreateInfo& create_info);
 				~VulkanBuffer();
 
-				void SetResourceName(const char* name) override;
+				void SetResourceName(std::string_view name) override;
 
 				/**
 				 * @brief Maps vulkan memory if it isn't already mapped to an host visible address

@@ -23,7 +23,7 @@ namespace engine
 				VulkanPipelineCache& operator=(const VulkanPipelineCache&) = delete;
 				VulkanPipelineCache& operator=(VulkanPipelineCache&&) = delete;
 
-				void SetResourceName(const char* name) override;
+				void SetResourceName(std::string_view name) override;
 
 				void GetData(size_t& data_size, void* data_ptr) override;
 			private:

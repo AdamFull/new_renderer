@@ -2,7 +2,7 @@
 
 using namespace engine::filesystem;
 
-DirectoryIterator::DirectoryIterator(std::unique_ptr<IDirectoryIterator>&& it, const std::string& mountpoint) :
+DirectoryIterator::DirectoryIterator(std::unique_ptr<IDirectoryIterator>&& it, std::string_view mountpoint) :
     m_srMountPoint(mountpoint)
 {
     it_ = std::move(it);

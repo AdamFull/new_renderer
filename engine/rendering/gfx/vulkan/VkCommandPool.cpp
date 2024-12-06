@@ -61,7 +61,7 @@ namespace engine
 				vkdevice.destroyCommandPool(handle, allocation_callbacks);
 			}
 
-			void VulkanCommandPool::SetResourceName(const char* name)
+			void VulkanCommandPool::SetResourceName(std::string_view name)
 			{
 				auto& debug_utils = device.GetDebugUtils();
 				debug_utils.SetDebugName(handle, name);

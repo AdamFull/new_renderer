@@ -41,7 +41,7 @@ namespace engine
 				command_pool.FreeCommandBuffer(handle);
 			}
 
-			void VulkanCommandList::SetResourceName(const char* name)
+			void VulkanCommandList::SetResourceName(std::string_view name)
 			{
 				auto& device = command_pool.GetDevice();
 				auto& debug_utils = device.GetDebugUtils();

@@ -34,7 +34,7 @@ namespace engine
              * @param start_path A string representing the starting path within the archive.
              * @param recursive A boolean flag indicating if the iterator should recurse into subdirectories.
              */
-            ZipIterator(zip* archive, const std::string& start_path, bool recursive);
+            ZipIterator(zip* archive, std::string_view start_path, bool recursive);
 
             /**
              * @brief Virtual destructor.

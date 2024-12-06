@@ -29,7 +29,7 @@ namespace engine
 				uint32_t GetFirstSet() const;
 				uint32_t GetSetCount() const;
 
-				void SetResourceName(const char* name) override;
+				void SetResourceName(std::string_view name) override;
 
 				void BindTexture(TextureDescriptor& texture_descriptor) override;
 				void BindBuffer(BufferDescriptor& buffer_descriptor) override;

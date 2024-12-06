@@ -29,7 +29,7 @@ namespace engine
 				VulkanCommandList& operator=(const VulkanCommandList&) = delete;
 				VulkanCommandList& operator=(VulkanCommandList&&) = delete;
 
-				void SetResourceName(const char* name) override;
+				void SetResourceName(std::string_view name) override;
 
 				void Reset(CommandPoolResetMode reset_mode) override;
 

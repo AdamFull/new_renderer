@@ -48,7 +48,7 @@ namespace engine
 				return set_count;
 			}
 
-			void VulkanResourceDescriptor::SetResourceName(const char* name)
+			void VulkanResourceDescriptor::SetResourceName(std::string_view name)
 			{
 				assert(false && "NOT IMPLEMENTED");
 			}

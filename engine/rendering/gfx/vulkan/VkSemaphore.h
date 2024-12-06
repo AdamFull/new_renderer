@@ -22,7 +22,7 @@ namespace engine
 				VulkanSemaphore& operator=(const VulkanSemaphore&) = delete;
 				VulkanSemaphore& operator=(VulkanSemaphore&&) = default;
 
-				void SetResourceName(const char* name) override;
+				void SetResourceName(std::string_view name) override;
 			private:
 				Device& device;
 			};

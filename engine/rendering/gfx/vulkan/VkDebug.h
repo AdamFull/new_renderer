@@ -20,20 +20,14 @@ namespace engine
 				virtual ~DebugUtils() = default;
 
 				template<typename _Ty>
-				void SetDebugName(const _Ty& object, const std::string& name) const
+				void SetDebugName(const _Ty& object, std::string_view name) const
 				{
-					SetDebugName(object, name.c_str());
-				}
-
-				template<typename _Ty>
-				void SetDebugName(const _Ty& object, const char* name) const
-				{
-					if (object && name)
+					if (object && !name.empty())
 					{
 						auto object_id = reinterpret_cast<uint64_t>(static_cast<_Ty::CType>(object));
 						auto formatted_debug_object_name = std::format("{}:{} | {:x}", vk::to_string(object.objectType), name, object_id);
 
-						SetDebugName(object.objectType, object_id, name);
+						SetDebugName(object.objectType, object_id, name.data());
 					}
 				}
 

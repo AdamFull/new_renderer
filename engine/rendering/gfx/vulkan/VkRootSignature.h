@@ -56,7 +56,7 @@ namespace engine
 				VulkanRootSignature& operator=(const VulkanRootSignature&) = delete;
 				VulkanRootSignature& operator=(VulkanRootSignature&&) = delete;
 
-				void SetResourceName(const char* name) override;
+				void SetResourceName(std::string_view name) override;
 
 				PipelineLayout& GetPipelineLayout();
 				const std::array<std::unique_ptr<DescriptorSetLayout>, k_max_descriptor_count>& GetDescriptorSetLayouts();

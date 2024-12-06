@@ -5,13 +5,11 @@
 #include <engine/ui/EditorTraits.h>
 #include <engine/ui/ImGuiElements.h>
 
-#include <engine/filesystem/vfs_helper.h>
 #include <imgui.h>
 
 #include <glm/gtc/type_ptr.hpp>
 
 using namespace engine;
-using namespace engine::filesystem;
 using namespace engine::world;
 
 void InspectorWindow::Create()
@@ -77,12 +75,12 @@ void InspectorWindow::__draw(float fDt)
 				const char* path = (const char*)payload->Data;
 				auto source = std::string(path);
 
-				if (fs::is_audio_format(source))
-				{
-				}
-				else if (fs::is_script_format(source))
-				{
-				}
+				//if (fs::is_audio_format(source))
+				//{
+				//}
+				//else if (fs::is_script_format(source))
+				//{
+				//}
 			}
 			ImGui::EndDragDropTarget();
 		}

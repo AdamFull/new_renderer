@@ -20,7 +20,7 @@ namespace engine
 		class GroupNode final : public IGraphNode
 		{
 		public:
-			GroupNode(const std::string& name, uint32_t color = 0xFFFFFFFF);
+			GroupNode(std::string_view name, uint32_t color = 0xFFFFFFFF);
 			~GroupNode() = default;
 
 			void AddNode(std::unique_ptr<IGraphNode>&& node);
@@ -43,17 +43,17 @@ namespace engine
 			~RenderGraph();
 
 			uint32_t AddResource() override;
-			uint32_t AddResource(const std::string& path, gfx::Sampler* sampler = nullptr) override;
+			uint32_t AddResource(std::string_view path, gfx::Sampler* sampler = nullptr) override;
 			uint32_t AddResource(const TextureResourceCreateInfo& create_info, std::span<uint8_t> texture_data) override;
 			uint32_t AddResource(const TextureResourceCreateInfo& create_info, gfx::Sampler* sampler = nullptr) override;
 			uint32_t AddResource(const gfx::BufferCreateInfo& create_info) override;
 
-			void SetResourceName(uint32_t resource_index, const std::string& name) override;
+			void SetResourceName(uint32_t resource_index, std::string_view name) override;
 
 			RenderGraphResource& GetResource(uint32_t resource_index) override;
 			RenderGraphResource const& GetResource(uint32_t resource_index) const override;
 
-			std::unique_ptr<IGraphNode> CreateNode(const std::string& group_name, uint32_t group_color = 0xFFFFFFFF) override;
+			std::unique_ptr<IGraphNode> CreateNode(std::string_view group_name, uint32_t group_color = 0xFFFFFFFF) override;
 			std::unique_ptr<IGraphNode> CreateNode(const RenderShaderPassCreateInfo& create_info) override;
 			std::unique_ptr<IGraphNode> CreateNode(const ComputeShaderPassCreateInfo& create_info) override;
 

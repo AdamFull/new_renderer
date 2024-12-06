@@ -91,7 +91,7 @@ namespace engine
 				allocator.DestroyBuffer(*this, handle);
 			}
 
-			void VulkanBuffer::SetResourceName(const char* name)
+			void VulkanBuffer::SetResourceName(std::string_view name)
 			{
 				auto& device = allocator.GetDevice();
 				auto& debug_utils = device.GetDebugUtils();

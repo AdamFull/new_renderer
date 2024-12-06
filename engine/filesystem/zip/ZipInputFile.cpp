@@ -81,14 +81,14 @@ int32_t lzip_feof(lzip_file_t* zfile)
 
 
 
-ZipInputFile::ZipInputFile(zip_t* handle, const std::string& filename, const std::string& password) :
+ZipInputFile::ZipInputFile(zip_t* handle, std::string_view filename, const std::string& password) :
 	m_srPassword{ password }
 {
 
 	if (!handle)
 		return;
 
-	m_pFilePtr = lzip_fopen(handle, filename.c_str(), m_srPassword.empty() ? NULL : m_srPassword.c_str());
+	m_pFilePtr = lzip_fopen(handle, filename.data(), m_srPassword.empty() ? NULL : m_srPassword.c_str());
 
 	if (!m_pFilePtr)
 		throw std::runtime_error("Failed to open zip file.");

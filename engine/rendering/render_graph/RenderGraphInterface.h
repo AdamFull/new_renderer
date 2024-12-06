@@ -171,17 +171,17 @@ namespace engine
 			virtual ~IRenderGraph() = default;
 
 			virtual uint32_t AddResource() = 0;
-			virtual uint32_t AddResource(const std::string& path, gfx::Sampler* sampler = nullptr) = 0;
+			virtual uint32_t AddResource(std::string_view path, gfx::Sampler* sampler = nullptr) = 0;
 			virtual uint32_t AddResource(const TextureResourceCreateInfo& create_info, std::span<uint8_t> texture_data) = 0;
 			virtual uint32_t AddResource(const TextureResourceCreateInfo& create_info, gfx::Sampler* sampler = nullptr) = 0;
 			virtual uint32_t AddResource(const gfx::BufferCreateInfo& create_info) = 0;
 
-			virtual void SetResourceName(uint32_t resource_index, const std::string& name) = 0;
+			virtual void SetResourceName(uint32_t resource_index, std::string_view name) = 0;
 
 			virtual RenderGraphResource& GetResource(uint32_t resource_index) = 0;
 			virtual RenderGraphResource const& GetResource(uint32_t resource_index) const = 0;
 
-			virtual std::unique_ptr<IGraphNode> CreateNode(const std::string& group_name, uint32_t group_color = 0xFFFFFFFF) = 0;
+			virtual std::unique_ptr<IGraphNode> CreateNode(std::string_view group_name, uint32_t group_color = 0xFFFFFFFF) = 0;
 			virtual std::unique_ptr<IGraphNode> CreateNode(const RenderShaderPassCreateInfo& create_info) = 0;
 			virtual std::unique_ptr<IGraphNode> CreateNode(const ComputeShaderPassCreateInfo& create_info) = 0;
 

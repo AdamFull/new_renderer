@@ -69,7 +69,7 @@ namespace engine
 
 			}
 
-			void VulkanShader::SetResourceName(const char* name)
+			void VulkanShader::SetResourceName(std::string_view name)
 			{
 				auto& debug_utils = device.GetDebugUtils();
 				for (auto it = shader_modules.Begin(); it != shader_modules.End(); ++it)

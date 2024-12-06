@@ -8,7 +8,6 @@
 
 #include <meshoptimizer.h>
 
-#include <engine/filesystem/vfs_helper.h>
 #include <util/Logger.h>
 #include <glm/gtc/type_ptr.hpp>
 

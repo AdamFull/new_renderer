@@ -74,7 +74,7 @@ namespace engine
 				return *subresources[subresource];
 			}
 
-			void VulkanTexture::SetResourceName(const char* name)
+			void VulkanTexture::SetResourceName(std::string_view name)
 			{
 				auto& debug_utils = device.GetDebugUtils();
 

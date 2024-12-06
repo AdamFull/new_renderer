@@ -41,7 +41,7 @@ namespace engine
 				VulkanShader& operator=(const VulkanShader&) = delete;
 				VulkanShader& operator=(VulkanShader&&) = delete;
 
-				void SetResourceName(const char* name) override;
+				void SetResourceName(std::string_view name) override;
 
 				const StaticArray<std::unique_ptr<ShaderModule>, 6ull>& GetModules() const;
 			private:

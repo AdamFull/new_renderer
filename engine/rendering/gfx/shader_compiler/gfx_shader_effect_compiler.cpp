@@ -3,6 +3,7 @@
 
 #include "glsl_shader_compiler.h"
 
+#include <util/FilesystemHelper.h>
 #include <util/Logger.h>
 
 namespace engine
@@ -63,7 +64,7 @@ namespace engine
 			{
 				// Load compiler config
 				std::vector<uint8_t> filedata{};
-				if (create_info.shader_compile_config_path &&
+				if (!create_info.shader_compile_config_path.empty() &&
 					fs.Exists(create_info.shader_compile_config_path) && 
 					fs.ReadFile(create_info.shader_compile_config_path, filedata))
 				{
@@ -72,6 +73,7 @@ namespace engine
 					json.get_to(config);
 
 					is_config_loaded = true;
+					base_path = fsh::parent_path(create_info.shader_compile_config_path);
 
 					switch (config.lang)
 					{
@@ -84,7 +86,7 @@ namespace engine
 				}
 
 				// Load compiler cache
-				if (create_info.shader_cache_patch &&
+				if (!create_info.shader_cache_patch.empty() &&
 					fs.Exists(create_info.shader_cache_patch) && 
 					fs.ReadFile(create_info.shader_cache_patch, filedata))
 				{
@@ -107,7 +109,9 @@ namespace engine
 
 				for (const auto& compile_module : config.modules)
 				{
+					log_info("Building module: {}", compile_module.name);
 
+					//auto module_dir = 
 				}
 			}
 

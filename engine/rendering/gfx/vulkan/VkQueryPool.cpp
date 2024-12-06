@@ -38,7 +38,7 @@ namespace engine
 				Handle(device).destroyQueryPool(handle, allocation_callbacks);
 			}
 
-			void VulkanQueryPool::SetResourceName(const char* name)
+			void VulkanQueryPool::SetResourceName(std::string_view name)
 			{
 				auto& debug_utils = device.GetDebugUtils();
 				debug_utils.SetDebugName(handle, name);

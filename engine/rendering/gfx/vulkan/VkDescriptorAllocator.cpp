@@ -35,7 +35,7 @@ namespace engine
 				}
 			}
 
-			void VulkanDescriptorAllocator::SetResourceName(const char* name)
+			void VulkanDescriptorAllocator::SetResourceName(std::string_view name)
 			{
 				assert(false && "NOT IMPLEMENTED");
 			}

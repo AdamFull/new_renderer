@@ -6,12 +6,12 @@
 
 using namespace engine::filesystem;
 
-GPakInputFile::GPakInputFile(gpak* handle, const std::string& filename)
+GPakInputFile::GPakInputFile(gpak* handle, std::string_view filename)
 {
 	if (!handle)
 		return;
 
-	m_pFilePtr = gpak_fopen(handle, filename.c_str());
+	m_pFilePtr = gpak_fopen(handle, filename.data());
 
 	if (!m_pFilePtr)
 		throw std::runtime_error("Failed to open gpak file.");

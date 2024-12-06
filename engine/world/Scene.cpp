@@ -12,8 +12,8 @@
 #include <engine/rendering/gfx/gfx_structures.h>
 #include <engine/rendering/gfx/gfx_enum.h>
 
-#include <engine/filesystem/vfs_helper.h>
 #include <util/Util.h>
+#include <util/FilesystemHelper.h>
 #include <util/Logger.h>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -157,27 +157,28 @@ namespace engine
 			VFSWrapper(filesystem::IVirtualFileSystemInterface* vfs) : vfs(vfs) {}
 			~VFSWrapper() override = default;
 
-			bool exists(const char* path) override
+			bool exists(std::string_view path) override
 			{
 				return vfs->Exists(path);
 			}
 
-			std::string expandFilePath(const char* path) override
+			std::string expandFilePath(std::string_view path) override
 			{
-				return filesystem::fs::normalize(filesystem::fs::to_posix_path(path));
+				std::array<char, 1024ull> buffer{};
+				return std::string(fsh::normalize(fsh::to_posix_path(path, std::span(buffer))));
 			}
 
-			bool readFile(const char* path, utl::vector<uint8_t>& data) override
+			bool readFile(std::string_view path, utl::vector<uint8_t>& data) override
 			{
 				return vfs->ReadFile(path, data);
 			}
 
-			bool writeFile(const char* path, const utl::vector<uint8_t>& data) override
+			bool writeFile(std::string_view path, const utl::vector<uint8_t>& data) override
 			{
 				return vfs->WriteFile(path, data);
 			}
 
-			u64 fileSize(const char* path) override
+			u64 fileSize(std::string_view path) override
 			{
 				return vfs->FileSize(path);
 			}
@@ -302,7 +303,7 @@ namespace engine
 
 				// TODO: add ability to override format and sampler params
 				// TODO: find format from materials
-				auto image_path = filesystem::fs::path_append(root.rootDirectory, easygltf::url_decode(image.uri));
+				auto image_path = fsh::path_append(root.rootDirectory, easygltf::url_decode(image.uri));
 				resources.textures.push_back(renderer.AddRenderResource(image_path, texture_sampler));
 			}
 

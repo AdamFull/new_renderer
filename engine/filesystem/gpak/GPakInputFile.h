@@ -30,7 +30,7 @@ namespace engine
 			 * @param handle A pointer to the gpak archive.
 			 * @param filename A string representing the path to the file to be opened.
 			 */
-			GPakInputFile(gpak* handle, const std::string& filename);
+			GPakInputFile(gpak* handle, std::string_view filename);
 
 			/**
 			 * @brief Destructor that closes the file if it is open.

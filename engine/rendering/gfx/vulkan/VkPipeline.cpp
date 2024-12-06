@@ -31,7 +31,7 @@ namespace engine
 				Handle(device).destroyPipeline(handle, allocation_callbacks);
 			}
 
-			void VulkanPipeline::SetResourceName(const char* name)
+			void VulkanPipeline::SetResourceName(std::string_view name)
 			{
 				auto& debug_utils = device.GetDebugUtils();
 				debug_utils.SetDebugName(handle, name);

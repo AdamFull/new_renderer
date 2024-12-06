@@ -31,7 +31,7 @@ namespace engine
 
 				uint32_t GetFirstSet() const;
 
-				void SetResourceName(const char* name) override;
+				void SetResourceName(std::string_view name) override;
 
 				void Reset() override;
 				ResourceDescriptor* GetLatestDescriptors() override;

@@ -324,7 +324,7 @@ namespace engine
 				return device;
 			}
 
-			void VulkanSwapchain::SetResourceName(const char* name)
+			void VulkanSwapchain::SetResourceName(std::string_view name)
 			{
 				auto& debug_utils = device.GetDebugUtils();
 				debug_utils.SetDebugName(handle, name);

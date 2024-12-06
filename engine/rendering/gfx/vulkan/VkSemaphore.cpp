@@ -21,7 +21,7 @@ namespace engine
 				Handle(device).destroySemaphore(handle, allocation_callbacks);
 			}
 
-			void VulkanSemaphore::SetResourceName(const char* name)
+			void VulkanSemaphore::SetResourceName(std::string_view name)
 			{
 				auto& debug_utils = device.GetDebugUtils();
 				debug_utils.SetDebugName(handle, name);

@@ -23,7 +23,7 @@ namespace engine
 				VulkanPipeline& operator=(const VulkanPipeline&) = delete;
 				VulkanPipeline& operator=(VulkanPipeline&&) = delete;
 
-				void SetResourceName(const char* name) override;
+				void SetResourceName(std::string_view name) override;
 			protected:
 				Device& device;
 			};

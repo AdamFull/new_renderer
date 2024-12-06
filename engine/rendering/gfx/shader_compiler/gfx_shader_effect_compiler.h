@@ -35,8 +35,8 @@ namespace engine
 			{
 				ShaderCompilerBuildType build_type{ ShaderCompilerBuildType::eDebug };
 				FilesystemWrapper* filesystem_wrapper{ nullptr };
-				const char* shader_compile_config_path{ nullptr };
-				const char* shader_cache_patch{ nullptr };
+				std::string_view shader_compile_config_path{ "" };
+				std::string_view shader_cache_patch{ "" };
 			};
 
 			class ShaderEffectCompiler
@@ -55,6 +55,7 @@ namespace engine
 
 				ShaderEffectCompilerConfig config;
 				bool is_config_loaded{ false };
+				std::string base_path;
 
 				std::unique_ptr<ShaderCompiler> shader_compiler;
 			};

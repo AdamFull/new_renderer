@@ -26,7 +26,7 @@ namespace engine
              * @param it A unique_ptr to an IDirectoryIterator.
              * @param mountpoint A string representing the mountpoint.
              */
-            DirectoryIterator(std::unique_ptr<IDirectoryIterator>&& it, const std::string& mountpoint);
+            DirectoryIterator(std::unique_ptr<IDirectoryIterator>&& it, std::string_view mountpoint);
 
             /**
              * @brief Destructor.

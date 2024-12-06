@@ -14,7 +14,7 @@ namespace engine
 {
 	namespace render
 	{
-		GroupNode::GroupNode(const std::string& name, uint32_t color) :
+		GroupNode::GroupNode(std::string_view name, uint32_t color) :
 			group_name{ name },
 			group_color{ color }
 		{
@@ -115,12 +115,12 @@ namespace engine
 			return render_resources.size() - 1ull;
 		}
 
-		uint32_t RenderGraph::AddResource(const std::string& path, gfx::Sampler* sampler)
+		uint32_t RenderGraph::AddResource(std::string_view path, gfx::Sampler* sampler)
 		{
 			auto& new_resource = render_resources.emplace_back();
 			new_resource.resource_type = RenderResourceTypeFlag::eStaticImage;
 
-			gfx::Texture* texture = resource_loader.LoadTexture(path.c_str());
+			gfx::Texture* texture = resource_loader.LoadTexture(path);
 			new_resource.resource_id = static_textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
 
 			new_resource.current_state = gfx::ResourceStateFlag::eShaderReadOnlyResource;
@@ -207,7 +207,7 @@ namespace engine
 			return ~0u;
 		}
 
-		void RenderGraph::SetResourceName(uint32_t resource_index, const std::string& name)
+		void RenderGraph::SetResourceName(uint32_t resource_index, std::string_view name)
 		{
 			auto& render_resource = render_resources[resource_index];
 
@@ -232,7 +232,7 @@ namespace engine
 				resource = buffer_object.buffer;
 			}
 
-			resource->SetResourceName(name.c_str());
+			resource->SetResourceName(name);
 		}
 
 		RenderGraphResource& RenderGraph::GetResource(uint32_t resource_index)
@@ -245,7 +245,7 @@ namespace engine
 			return render_resources[resource_index];
 		}
 
-		std::unique_ptr<IGraphNode> RenderGraph::CreateNode(const std::string& group_name, uint32_t group_color)
+		std::unique_ptr<IGraphNode> RenderGraph::CreateNode(std::string_view group_name, uint32_t group_color)
 		{
 			return std::make_unique<GroupNode>(group_name, group_color);
 		}

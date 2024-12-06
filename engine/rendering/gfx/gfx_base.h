@@ -12,7 +12,7 @@ namespace engine
 		public:
 			virtual ~GFXResource() = default;
 
-			virtual void SetResourceName(const char* name) = 0;
+			virtual void SetResourceName(std::string_view name) = 0;
 
 			virtual ResourceType GetResourceType() = 0;
 		};

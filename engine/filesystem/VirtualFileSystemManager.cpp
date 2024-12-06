@@ -2,290 +2,297 @@
 #include "VFSInputFile.h"
 #include "VFSOutputFile.h"
 #include "DirectoryIterator.h"
-#include "vfs_helper.h"
 
-using namespace engine::filesystem;
+#include <util/FilesystemHelper.h>
 
-bool is_read_only(const std::unique_ptr<IVFSInterface>& pFS)
+namespace engine
 {
-	return pFS && !(pFS->GetFilesystemMode() & static_cast<uint32_t>(EFilesystemModeFlagBits::eWrite));
-}
-
-
-VirtualFileSystemManager::~VirtualFileSystemManager()
-{
-}
-
-void VirtualFileSystemManager::Mount(const char* mountpoint, std::unique_ptr<IVFSInterface>&& vfsptr)
-{
-	m_vMountedFS.emplace(mountpoint, std::move(vfsptr));
-}
-
-void VirtualFileSystemManager::Unmount(const char* mountpoint)
-{
-	auto found = m_vMountedFS.find(mountpoint);
-	if (found != m_vMountedFS.end())
-		m_vMountedFS.erase(found);
-}
-
-void VirtualFileSystemManager::Copy(const char* from, const char* to)
-{
-	auto& pFromFilesystem = GetFilesystem(from);
-	auto& pToFilesystem = GetFilesystem(to);
-
-	if (is_read_only(pToFilesystem))
-		throw std::runtime_error("Failed. You trying to copy file to read only filesystem.");
-
-	const auto& fromMountPoint = fs::get_mount_point(from);
-	const auto& toMountPoint = fs::get_mount_point(to);
-	
-	if (fromMountPoint == toMountPoint)
+	namespace filesystem
 	{
-		pFromFilesystem->Copy(fs::get_local_path(from).c_str(), fs::get_local_path(to).c_str());
-		return;
-	}
-		
-	auto fromPath = fs::get_local_path(from);
-	if (pFromFilesystem->IsDirectory(fromPath.c_str()))
-	{
-		auto iterator = std::make_unique<DirectoryIterator>(pFromFilesystem->Walk(fromPath.c_str(), true), fromMountPoint);
+		bool is_read_only(const std::unique_ptr<IVFSInterface>& pFS)
+		{
+			return pFS && !(pFS->GetFilesystemMode() & static_cast<uint32_t>(EFilesystemModeFlagBits::eWrite));
+		}
 
-		for (auto& it = iterator->Begin(); it != iterator->End() ; ++it)
-			ProcessCopyFile(pFromFilesystem, pToFilesystem, fs::get_local_path(*it).c_str());
-	}
-	else
-		ProcessCopyFile(pFromFilesystem, pToFilesystem, fromPath.c_str());
-}
 
-bool VirtualFileSystemManager::CreateDirectories(const char* path)
-{
-	auto& pFilesystem = GetFilesystem(path);
+		VirtualFileSystemManager::~VirtualFileSystemManager()
+		{
+		}
 
-	if (!pFilesystem)
-		return false;
+		void VirtualFileSystemManager::Mount(std::string_view mountpoint, std::unique_ptr<IVFSInterface>&& vfsptr)
+		{
+			m_vMountedFS.emplace(mountpoint, std::move(vfsptr));
+		}
 
-	if (is_read_only(pFilesystem))
-		throw std::runtime_error("Failed. You trying to Create directories in read only filesystem.");
+		void VirtualFileSystemManager::Unmount(std::string_view mountpoint)
+		{
+			auto found = m_vMountedFS.find(std::string(mountpoint));
+			if (found != m_vMountedFS.end())
+				m_vMountedFS.erase(found);
+		}
 
-	return pFilesystem->CreateDirectories(fs::get_local_path(path).c_str());
-}
+		void VirtualFileSystemManager::Copy(std::string_view from, std::string_view to)
+		{
+			auto& pFromFilesystem = GetFilesystem(from);
+			auto& pToFilesystem = GetFilesystem(to);
 
-bool VirtualFileSystemManager::CreateDirectory(const char* path)
-{
-	auto& pFilesystem = GetFilesystem(path);
+			if (is_read_only(pToFilesystem))
+				throw std::runtime_error("Failed. You trying to copy file to read only filesystem.");
 
-	if (!pFilesystem)
-		return false;
+			const auto fromMountPoint = fsh::get_mount_point(from);
+			const auto toMountPoint = fsh::get_mount_point(to);
 
-	if (is_read_only(pFilesystem))
-		throw std::runtime_error("Failed. You trying to Create directories in read only filesystem.");
+			if (fromMountPoint == toMountPoint)
+			{
+				pFromFilesystem->Copy(fsh::get_local_path(from), fsh::get_local_path(to));
+				return;
+			}
 
-	return pFilesystem->CreateDirectory(fs::get_local_path(path).c_str());
-}
+			auto fromPath = fsh::get_local_path(from);
+			if (pFromFilesystem->IsDirectory(fromPath))
+			{
+				const auto mp = std::string(fromMountPoint);
+				auto iterator = std::make_unique<DirectoryIterator>(pFromFilesystem->Walk(fromPath, true), mp);
 
-bool VirtualFileSystemManager::Exists(const char* path)
-{
-	auto& pFilesystem = GetFilesystem(path);
+				for (auto& it = iterator->Begin(); it != iterator->End(); ++it)
+					ProcessCopyFile(pFromFilesystem, pToFilesystem, fsh::get_local_path(*it));
+			}
+			else
+				ProcessCopyFile(pFromFilesystem, pToFilesystem, fromPath);
+		}
 
-	if (!pFilesystem)
-		return false;
+		bool VirtualFileSystemManager::CreateDirectories(std::string_view path)
+		{
+			auto& pFilesystem = GetFilesystem(path);
 
-	return pFilesystem->Exists(fs::get_local_path(path).c_str());
-}
+			if (!pFilesystem)
+				return false;
 
-size_t VirtualFileSystemManager::FileSize(const char* path)
-{
-	auto& pFilesystem = GetFilesystem(path);
+			if (is_read_only(pFilesystem))
+				throw std::runtime_error("Failed. You trying to Create directories in read only filesystem.");
 
-	if (!pFilesystem)
-		return 0ull;
+			return pFilesystem->CreateDirectories(fsh::get_local_path(path));
+		}
 
-	return pFilesystem->FileSize(fs::get_local_path(path).c_str());
-}
+		bool VirtualFileSystemManager::CreateDirectory(std::string_view path)
+		{
+			auto& pFilesystem = GetFilesystem(path);
 
-bool VirtualFileSystemManager::IsDirectory(const char* path)
-{
-	auto& pFilesystem = GetFilesystem(path);
+			if (!pFilesystem)
+				return false;
 
-	if (!pFilesystem)
-		return false;
+			if (is_read_only(pFilesystem))
+				throw std::runtime_error("Failed. You trying to Create directories in read only filesystem.");
 
-	return pFilesystem->IsDirectory(fs::get_local_path(path).c_str());
-}
+			return pFilesystem->CreateDirectory(fsh::get_local_path(path));
+		}
 
-bool VirtualFileSystemManager::IsFile(const char* path)
-{
-	auto& pFilesystem = GetFilesystem(path);
+		bool VirtualFileSystemManager::Exists(std::string_view path)
+		{
+			auto& pFilesystem = GetFilesystem(path);
 
-	if (!pFilesystem)
-		return false;
+			if (!pFilesystem)
+				return false;
 
-	return pFilesystem->IsFile(fs::get_local_path(path).c_str());
-}
+			return pFilesystem->Exists(fsh::get_local_path(path));
+		}
 
-bool VirtualFileSystemManager::Remove(const char* path)
-{
-	auto& pFilesystem = GetFilesystem(path);
+		size_t VirtualFileSystemManager::FileSize(std::string_view path)
+		{
+			auto& pFilesystem = GetFilesystem(path);
 
-	if (!pFilesystem)
-		return false;
+			if (!pFilesystem)
+				return 0ull;
 
-	return pFilesystem->Remove(fs::get_local_path(path).c_str());
-}
+			return pFilesystem->FileSize(fsh::get_local_path(path));
+		}
 
-void VirtualFileSystemManager::Rename(const char* original, const char* newfile)
-{
-	if (fs::get_mount_point(original) != fs::get_mount_point(newfile))
-		return;
+		bool VirtualFileSystemManager::IsDirectory(std::string_view path)
+		{
+			auto& pFilesystem = GetFilesystem(path);
 
-	auto& pFilesystem = GetFilesystem(original);
+			if (!pFilesystem)
+				return false;
 
-	if (!pFilesystem)
-		return;
+			return pFilesystem->IsDirectory(fsh::get_local_path(path));
+		}
 
-	pFilesystem->Rename(fs::get_local_path(original).c_str(), fs::get_local_path(newfile).c_str());
-}
+		bool VirtualFileSystemManager::IsFile(std::string_view path)
+		{
+			auto& pFilesystem = GetFilesystem(path);
 
-std::unique_ptr<IVFSOutputFileInterface> VirtualFileSystemManager::CreateFile(const char* path)
-{
-	const std::lock_guard<std::mutex> lock(m_SynchronizationMutex);
+			if (!pFilesystem)
+				return false;
 
-	auto& pFilesystem = GetFilesystem(path);
-	if (!pFilesystem)
-		return nullptr;
+			return pFilesystem->IsFile(fsh::get_local_path(path));
+		}
 
-	if (is_read_only(pFilesystem))
-		throw std::runtime_error("Failed. You trying to Create file in read only filesystem.");
+		bool VirtualFileSystemManager::Remove(std::string_view path)
+		{
+			auto& pFilesystem = GetFilesystem(path);
 
-	return std::make_unique<VFSOutFile>(pFilesystem->CreateFile(fs::get_local_path(path).c_str()));
-}
+			if (!pFilesystem)
+				return false;
 
-std::unique_ptr<IVFSInputFileInterface> VirtualFileSystemManager::OpenFile(const char* path)
-{
-	const std::lock_guard<std::mutex> lock(m_SynchronizationMutex);
+			return pFilesystem->Remove(fsh::get_local_path(path));
+		}
 
-	auto& pFilesystem = GetFilesystem(path);
-	if (!pFilesystem)
-		return nullptr;
+		void VirtualFileSystemManager::Rename(std::string_view original, std::string_view newfile)
+		{
+			if (fsh::get_mount_point(original) != fsh::get_mount_point(newfile))
+				return;
 
-	auto local_path = fs::get_local_path(path);
+			auto& pFilesystem = GetFilesystem(original);
 
-	if (pFilesystem->IsDirectory(local_path.c_str()))
-		return nullptr;
+			if (!pFilesystem)
+				return;
 
-	return std::make_unique<VFSInFile>(pFilesystem->OpenFile(local_path.c_str()));
-}
+			pFilesystem->Rename(fsh::get_local_path(original), fsh::get_local_path(newfile));
+		}
 
-std::unique_ptr<IDirectoryIteratorInterface> VirtualFileSystemManager::Walk(const char* path, bool recursive)
-{
-	auto& pFilesystem = GetFilesystem(path);
-	if (!pFilesystem)
-		return nullptr;
+		std::unique_ptr<IVFSOutputFileInterface> VirtualFileSystemManager::CreateFile(std::string_view path)
+		{
+			const std::lock_guard<std::mutex> lock(m_SynchronizationMutex);
 
-	return std::make_unique<DirectoryIterator>(pFilesystem->Walk(fs::get_local_path(path).c_str(), recursive), fs::get_mount_point(path));
-}
+			auto& pFilesystem = GetFilesystem(path);
+			if (!pFilesystem)
+				return nullptr;
 
-bool VirtualFileSystemManager::ReadFile(const char* path, char* data, size_t size)
-{
-	auto pFile = OpenFile(path);
-	if (pFile && pFile->IsOpen())
-	{
-		pFile->Read(data, size);
-		return true;
-	}
+			if (is_read_only(pFilesystem))
+				throw std::runtime_error("Failed. You trying to Create file in read only filesystem.");
 
-	return false;
-}
+			return std::make_unique<VFSOutFile>(pFilesystem->CreateFile(fsh::get_local_path(path)));
+		}
 
-bool VirtualFileSystemManager::ReadFile(const char* path, std::string& data)
-{
-	auto pFile = OpenFile(path);
-	if (pFile && pFile->IsOpen())
-	{
-		pFile->Read(data);
-		return true;
-	}
+		std::unique_ptr<IVFSInputFileInterface> VirtualFileSystemManager::OpenFile(std::string_view path)
+		{
+			const std::lock_guard<std::mutex> lock(m_SynchronizationMutex);
 
-	return false;
-}
+			auto& pFilesystem = GetFilesystem(path);
+			if (!pFilesystem)
+				return nullptr;
 
-bool VirtualFileSystemManager::ReadFile(const char* path, utl::vector<uint8_t>& data)
-{
-	auto pFile = OpenFile(path);
-	if (pFile && pFile->IsOpen())
-	{
-		pFile->Read(data);
-		return true;
-	}
+			auto local_path = fsh::get_local_path(path);
 
-	return false;
-}
+			if (pFilesystem->IsDirectory(local_path))
+				return nullptr;
 
-bool VirtualFileSystemManager::ReadFile(const char* path, utl::vector<uint32_t>& data)
-{
-	auto pFile = OpenFile(path);
-	if (pFile && pFile->IsOpen())
-	{
-		pFile->Read(data);
-		return true;
-	}
+			return std::make_unique<VFSInFile>(pFilesystem->OpenFile(local_path));
+		}
 
-	return false;
-}
+		std::unique_ptr<IDirectoryIteratorInterface> VirtualFileSystemManager::Walk(std::string_view path, bool recursive)
+		{
+			auto& pFilesystem = GetFilesystem(path);
+			if (!pFilesystem)
+				return nullptr;
 
-bool VirtualFileSystemManager::WriteFile(const char* path, const std::string& data)
-{
-	auto pFile = CreateFile(path);
-	if (pFile && pFile->IsOpen())
-	{
-		pFile->Write(data);
-		return true;
-	}
+			auto mp = fsh::get_mount_point(path);
+			return std::make_unique<DirectoryIterator>(pFilesystem->Walk(fsh::get_local_path(path), recursive), std::string(mp));
+		}
 
-	return false;
-}
+		bool VirtualFileSystemManager::ReadFile(std::string_view path, char* data, size_t size)
+		{
+			auto pFile = OpenFile(path);
+			if (pFile && pFile->IsOpen())
+			{
+				pFile->Read(data, size);
+				return true;
+			}
 
-bool VirtualFileSystemManager::WriteFile(const char* path, const utl::vector<uint8_t>& binary)
-{
-	auto pFile = CreateFile(path);
-	if (pFile && pFile->IsOpen())
-	{
-		pFile->Write(binary);
-		return true;
-	}
+			return false;
+		}
 
-	return false;
-}
+		bool VirtualFileSystemManager::ReadFile(std::string_view path, std::string& data)
+		{
+			auto pFile = OpenFile(path);
+			if (pFile && pFile->IsOpen())
+			{
+				pFile->Read(data);
+				return true;
+			}
 
-const std::unique_ptr<IVFSInterface>& VirtualFileSystemManager::GetFilesystem(const char* path)
-{
-	static std::unique_ptr<IVFSInterface> pEmpty{ nullptr };
+			return false;
+		}
 
-	auto fs_prefix = fs::get_mount_point(path);
-	auto found = m_vMountedFS.find(fs_prefix);
-	if (found != m_vMountedFS.end())
-		return found->second;
+		bool VirtualFileSystemManager::ReadFile(std::string_view path, utl::vector<uint8_t>& data)
+		{
+			auto pFile = OpenFile(path);
+			if (pFile && pFile->IsOpen())
+			{
+				pFile->Read(data);
+				return true;
+			}
 
-	return pEmpty;
-}
+			return false;
+		}
 
-void VirtualFileSystemManager::ProcessCopyFile(const std::unique_ptr<IVFSInterface>& pFSFrom, const std::unique_ptr<IVFSInterface>& pFSTo, const char* path)
-{
-	if (pFSFrom->IsDirectory(path))
-	{
-		pFSTo->CreateDirectories(path);
-		return;
-	}
-	
+		bool VirtualFileSystemManager::ReadFile(std::string_view path, utl::vector<uint32_t>& data)
+		{
+			auto pFile = OpenFile(path);
+			if (pFile && pFile->IsOpen())
+			{
+				pFile->Read(data);
+				return true;
+			}
 
-	auto pInFile = std::make_unique<VFSInFile>(pFSFrom->OpenFile(path));
-	auto pOutFile = std::make_unique<VFSOutFile>(pFSTo->CreateFile(path));
+			return false;
+		}
 
-	std::string buffer(4096, '\0');
+		bool VirtualFileSystemManager::WriteFile(std::string_view path, const std::string& data)
+		{
+			auto pFile = CreateFile(path);
+			if (pFile && pFile->IsOpen())
+			{
+				pFile->Write(data);
+				return true;
+			}
 
-	while (!pInFile->Eof())
-	{
-		pInFile->Read(buffer.data(), buffer.size());
-		pOutFile->Write(buffer.data(), pInFile->Gcount());
+			return false;
+		}
+
+		bool VirtualFileSystemManager::WriteFile(std::string_view path, const utl::vector<uint8_t>& binary)
+		{
+			auto pFile = CreateFile(path);
+			if (pFile && pFile->IsOpen())
+			{
+				pFile->Write(binary);
+				return true;
+			}
+
+			return false;
+		}
+
+		const std::unique_ptr<IVFSInterface>& VirtualFileSystemManager::GetFilesystem(std::string_view path)
+		{
+			static std::unique_ptr<IVFSInterface> pEmpty{ nullptr };
+
+			auto fs_prefix = fsh::get_mount_point(path);
+			auto found = m_vMountedFS.find(std::string(fs_prefix));
+			if (found != m_vMountedFS.end())
+				return found->second;
+
+			return pEmpty;
+		}
+
+		void VirtualFileSystemManager::ProcessCopyFile(const std::unique_ptr<IVFSInterface>& pFSFrom, const std::unique_ptr<IVFSInterface>& pFSTo, std::string_view path)
+		{
+			if (pFSFrom->IsDirectory(path))
+			{
+				pFSTo->CreateDirectories(path);
+				return;
+			}
+
+
+			auto pInFile = std::make_unique<VFSInFile>(pFSFrom->OpenFile(path));
+			auto pOutFile = std::make_unique<VFSOutFile>(pFSTo->CreateFile(path));
+
+			std::string buffer(4096, '\0');
+
+			while (!pInFile->Eof())
+			{
+				pInFile->Read(buffer.data(), buffer.size());
+				pOutFile->Write(buffer.data(), pInFile->Gcount());
+			}
+		}
 	}
 }

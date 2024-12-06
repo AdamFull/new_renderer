@@ -70,7 +70,7 @@ namespace engine
 				return first_set;
 			}
 
-			void VulkanSharedDescriptor::SetResourceName(const char* name)
+			void VulkanSharedDescriptor::SetResourceName(std::string_view name)
 			{
 				assert(false && "NOT IMPLEMENTED");
 			}

@@ -65,32 +65,32 @@ class DefaultFilesystemWrapper : public IFilesystemWrapper
 public:
 	~DefaultFilesystemWrapper() override = default;
 
-	bool exists(const char* path) override
+	bool exists(std::string_view path) override
 	{
 		return std::filesystem::exists(path);
 	}
 
-	std::string expandFilePath(const char* path) override
+	std::string expandFilePath(std::string_view path) override
 	{
 		return std::filesystem::weakly_canonical(path).string();
 	}
 
-	bool readFile(const char* path, utl::vector<uint8_t>& data) override
+	bool readFile(std::string_view path, utl::vector<uint8_t>& data) override
 	{
-		std::ifstream instream(path, std::ios::in | std::ios::binary);
+		std::ifstream instream(path.data(), std::ios::in | std::ios::binary);
 		std::copy(std::istreambuf_iterator<char>(instream), std::istreambuf_iterator<char>(), std::back_inserter(data));
 
 		return instream.is_open() && !data.empty();
 	}
 
-	bool writeFile(const char* path, const utl::vector<uint8_t>& data) override
+	bool writeFile(std::string_view path, const utl::vector<uint8_t>& data) override
 	{
-		std::ofstream outstream(path, std::ios::out | std::ios::binary);
+		std::ofstream outstream(path.data(), std::ios::out | std::ios::binary);
 		outstream.write(reinterpret_cast<const char*>(data.data()), data.size());
 		return outstream.is_open() && outstream.good();
 	}
 
-	size_t fileSize(const char* path) override
+	size_t fileSize(std::string_view path) override
 	{
 		return std::filesystem::file_size(path);
 	}

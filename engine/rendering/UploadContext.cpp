@@ -6,7 +6,6 @@
 
 #include <engine/rendering/native_format/vk_format.h>
 
-#include <engine/filesystem/vfs_helper.h>
 #include <util/Logger.h>
 
 #include <shader_compiler/compiler_util.h>

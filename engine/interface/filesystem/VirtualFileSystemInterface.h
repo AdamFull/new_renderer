@@ -15,39 +15,39 @@ namespace engine
         public:
             virtual ~IVirtualFileSystemInterface() = default;
 
-            virtual void Mount(const char* mountpoint, std::unique_ptr<IVFSInterface>&& vfsptr) = 0;
-            virtual void Unmount(const char* mountpoint) = 0;
+            virtual void Mount(std::string_view mountpoint, std::unique_ptr<IVFSInterface>&& vfsptr) = 0;
+            virtual void Unmount(std::string_view mountpoint) = 0;
 
-            virtual void Copy(const char* from, const char* to) = 0;
+            virtual void Copy(std::string_view from, std::string_view to) = 0;
 
-            virtual bool CreateDirectories(const char* path) = 0;
-            virtual bool CreateDirectory(const char* path) = 0;
+            virtual bool CreateDirectories(std::string_view path) = 0;
+            virtual bool CreateDirectory(std::string_view path) = 0;
 
-            virtual bool Exists(const char* path) = 0;
+            virtual bool Exists(std::string_view path) = 0;
 
-            virtual size_t FileSize(const char* path) = 0;
+            virtual size_t FileSize(std::string_view path) = 0;
 
-            virtual bool IsDirectory(const char* path) = 0;
-            virtual bool IsFile(const char* path) = 0;
+            virtual bool IsDirectory(std::string_view path) = 0;
+            virtual bool IsFile(std::string_view path) = 0;
 
-            virtual bool Remove(const char* path) = 0;
-            virtual void Rename(const char* original, const char* newfile) = 0;
+            virtual bool Remove(std::string_view path) = 0;
+            virtual void Rename(std::string_view original, std::string_view newfile) = 0;
 
-            virtual std::unique_ptr<IVFSOutputFileInterface> CreateFile(const char* path) = 0;
-            virtual std::unique_ptr<IVFSInputFileInterface> OpenFile(const char* path) = 0;
+            virtual std::unique_ptr<IVFSOutputFileInterface> CreateFile(std::string_view path) = 0;
+            virtual std::unique_ptr<IVFSInputFileInterface> OpenFile(std::string_view path) = 0;
 
-            virtual std::unique_ptr<IDirectoryIteratorInterface> Walk(const char* path, bool recursive) = 0;
+            virtual std::unique_ptr<IDirectoryIteratorInterface> Walk(std::string_view path, bool recursive) = 0;
 
-            virtual bool ReadFile(const char* path, char* data, size_t size) = 0;
-            virtual bool ReadFile(const char* path, std::string& data) = 0;
-            virtual bool ReadFile(const char* path, utl::vector<uint8_t>& data) = 0;
-            virtual bool ReadFile(const char* path, utl::vector<uint32_t>& data) = 0;
+            virtual bool ReadFile(std::string_view path, char* data, size_t size) = 0;
+            virtual bool ReadFile(std::string_view path, std::string& data) = 0;
+            virtual bool ReadFile(std::string_view path, utl::vector<uint8_t>& data) = 0;
+            virtual bool ReadFile(std::string_view path, utl::vector<uint32_t>& data) = 0;
 
-            virtual bool WriteFile(const char* path, const std::string& data) = 0;
-            virtual bool WriteFile(const char* path, const utl::vector<uint8_t>& binary) = 0;
+            virtual bool WriteFile(std::string_view path, const std::string& data) = 0;
+            virtual bool WriteFile(std::string_view path, const utl::vector<uint8_t>& binary) = 0;
 
             template<class _Ty>
-            bool ReadJson(const char* path, _Ty& type)
+            bool ReadJson(std::string_view path, _Ty& type)
             {
                 std::string data{};
                 if (ReadFile(path, data))
@@ -67,7 +67,7 @@ namespace engine
             }
 
             template<class _Ty>
-            bool WriteJson(const char* path, const _Ty& type, int32_t indent = -1)
+            bool WriteJson(std::string_view path, const _Ty& type, int32_t indent = -1)
             {
                 auto json = nlohmann::json(type);
                 if (!json.empty())
@@ -81,7 +81,7 @@ namespace engine
             }
 
             template<class _Ty>
-            bool ReadBson(const char* path, _Ty& type)
+            bool ReadBson(std::string_view path, _Ty& type)
             {
                 std::string data{};
                 if (ReadFile(path, data))
@@ -98,7 +98,7 @@ namespace engine
             }
 
             template<class _Ty>
-            bool WriteBson(const char* path, const _Ty& type)
+            bool WriteBson(std::string_view path, const _Ty& type)
             {
                 auto json = nlohmann::json(type);
                 if (!json.empty())

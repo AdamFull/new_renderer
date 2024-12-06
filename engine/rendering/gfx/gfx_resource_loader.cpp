@@ -4,12 +4,10 @@
 #include <stb/stb_image.h>
 #include <ktx.h>
 
-#include <hash.hpp>
+#include <util/FilesystemHelper.h>
 #include <util/Logger.h>
 
 #include <tracy/Tracy.hpp>
-
-#include <filesystem>
 
 #include "native_format/vk_format.h"
 
@@ -344,218 +342,214 @@ namespace engine
 
 			}
 
-			Texture* LoadTexture(const char* texture_path) override
+			Texture* LoadTexture(std::string_view texture_path) override
 			{
+				ZoneScoped;
+
+				BeginCommands();
+				using namespace utl;
+
+				auto ext = fsh::get_ext(texture_path);
+				auto ext_hash = utl::murmur_hash(ext.data(), ext.size(), 0);
+				bool generate_mips{ false };
+
+				std::vector<uint8_t> data{};
+				fs.ReadFile(texture_path.data(), data);
+
+				gfx::TextureCreateInfo create_info{};
+				gfx::CopyTextureInfo copy_texture{};
+
+				create_info.usage |= gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eTransferable;
+
+				auto& uploader = GetActiveUploader();
+
+				switch (ext_hash)
 				{
-					ZoneScoped;
+				case fsh::format::jpg:
+				case fsh::format::jpeg:
+				case fsh::format::png:
+				case fsh::format::tga:
+				case fsh::format::bmp:
+				case fsh::format::psd:
+				case fsh::format::gif:
+				case fsh::format::hdr:
+				case fsh::format::pic:
+				case fsh::format::pnm:
+				{
+					int32_t width{ 0 }, height{ 0 }, channels{ 0 };
+					uint8_t* rawdata = stbi_load_from_memory(data.data(), data.size(), &width, &height, &channels, STBI_rgb_alpha);
+					uint64_t data_size = width * height * 4ull;
 
-					BeginCommands();
-					using namespace utl;
+					create_info.width = width;
+					create_info.height = height;
+					create_info.format = gfx::Format::eR8G8B8A8Unorm;
 
-					std::filesystem::path tex_path{ texture_path };
+					// TODO: Add mip level generation
+					//create_info.levels = 1; utl::cast<u32>(std::floor(std::log2((std::max)(width, height)))) + 1u;
+					create_info.levels = utl::cast<u32>(std::floor(std::log2((std::max)(width, height)))) + 1u;
+					generate_mips = true;
 
-					auto ext = tex_path.extension();
-					auto ext_hash = utl::murmur_hash(ext.string());
-					bool generate_mips{ false };
+					// For mip generation
+					create_info.usage |= gfx::TextureUsageFlag::eStorage;
 
-					std::vector<uint8_t> data{};
-					fs.ReadFile(texture_path, data);
+					// Create staging buffer for uploading
+					auto& src_buffer = uploader.RequestBuffer(data_size);
 
-					gfx::TextureCreateInfo create_info{};
-					gfx::CopyTextureInfo copy_texture{};
+					// Copy image data to staging buffer
+					src_buffer.Update(rawdata, data_size);
+					stbi_image_free(rawdata);
 
-					create_info.usage |= gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eTransferable;
+					copy_texture.src_buffer = &src_buffer;
 
-					auto& uploader = GetActiveUploader();
+					auto& region = copy_texture.copy_regions[copy_texture.copy_region_count++];
+					region.size_x = width;
+					region.size_y = height;
+				} break;
+				case fsh::format::ktx:
+				{
+					ktxTexture* kTexture{ nullptr };
+					auto ktxresult = ktxTexture_CreateFromMemory(data.data(), data.size(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &kTexture);
+					assert(ktxresult == KTX_SUCCESS && "FAILED TO OPEN KTX IMAGE");
+					if (ktxresult != KTX_SUCCESS)
+						return nullptr;
 
-					switch (ext_hash)
+					if (kTexture->isCubemap)
+						create_info.usage |= gfx::TextureUsageFlag::eCubemap;
+
+					create_info.width = kTexture->baseWidth;
+					create_info.height = kTexture->baseHeight;
+					create_info.depth = kTexture->baseDepth;
+
+					create_info.levels = kTexture->numLevels;
+					create_info.layers = kTexture->numLayers;
+
+					if (kTexture->generateMipmaps)
 					{
-					case ".jpg"_hash32:
-					case ".jpeg"_hash32:
-					case ".png"_hash32:
-					case ".tga"_hash32:
-					case ".bmp"_hash32:
-					case ".psd"_hash32:
-					case ".gif"_hash32:
-					case ".hdr"_hash32:
-					case ".pic"_hash32:
-					case ".pnm"_hash32:
-					{
-						int32_t width{ 0 }, height{ 0 }, channels{ 0 };
-						uint8_t* rawdata = stbi_load_from_memory(data.data(), data.size(), &width, &height, &channels, STBI_rgb_alpha);
-						uint64_t data_size = width * height * 4ull;
-
-						create_info.width = width;
-						create_info.height = height;
-						create_info.format = gfx::Format::eR8G8B8A8Unorm;
-
-						// TODO: Add mip level generation
-						//create_info.levels = 1; utl::cast<u32>(std::floor(std::log2((std::max)(width, height)))) + 1u;
-						create_info.levels = utl::cast<u32>(std::floor(std::log2((std::max)(width, height)))) + 1u;
 						generate_mips = true;
-
-						// For mip generation
-						create_info.usage |= gfx::TextureUsageFlag::eStorage;
-
-						// Create staging buffer for uploading
-						auto& src_buffer = uploader.RequestBuffer(data_size);
-
-						// Copy image data to staging buffer
-						src_buffer.Update(rawdata, data_size);
-						stbi_image_free(rawdata);
-
-						copy_texture.src_buffer = &src_buffer;
-
-						auto& region = copy_texture.copy_regions[copy_texture.copy_region_count++];
-						region.size_x = width;
-						region.size_y = height;
-					} break;
-					case ".ktx"_hash32:
-					{
-						ktxTexture* kTexture{ nullptr };
-						auto ktxresult = ktxTexture_CreateFromMemory(data.data(), data.size(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &kTexture);
-						assert(ktxresult == KTX_SUCCESS && "FAILED TO OPEN KTX IMAGE");
-						if (ktxresult != KTX_SUCCESS)
-							return nullptr;
-
-						if (kTexture->isCubemap)
-							create_info.usage |= gfx::TextureUsageFlag::eCubemap;
-
-						create_info.width = kTexture->baseWidth;
-						create_info.height = kTexture->baseHeight;
-						create_info.depth = kTexture->baseDepth;
-
-						create_info.levels = kTexture->numLevels;
-						create_info.layers = kTexture->numLayers;
-
-						if (kTexture->generateMipmaps)
-						{
-							generate_mips = true;
-							create_info.levels = utl::cast<u32>(std::floor(std::log2((std::max)(create_info.width, create_info.height)))) + 1u;
-						}
-
-						// Get texture format
-						auto* ktx1 = (ktxTexture1*)kTexture;
-
-						uint32_t vk_format{};
-						vk_format = vkGetFormatFromOpenGLInternalFormat(ktx1->glInternalformat);
-						if (vk_format == 0u)
-							vk_format = vkGetFormatFromOpenGLFormat(ktx1->glFormat, ktx1->glType);
-
-						create_info.format = gfx::FormatFromVk(vk_format);
-
-						// Create staging buffer for uploading
-						auto& src_buffer = uploader.RequestBuffer(kTexture->dataSize);
-						src_buffer.Update(kTexture->pData, kTexture->dataSize);
-						copy_texture.src_buffer = &src_buffer;
-
-						// Collect image copy regions
-						auto num_layers = kTexture->isCubemap ? kTexture->numFaces : kTexture->numLayers;
-						for (int32_t layer = 0; layer < num_layers; layer++)
-						{
-							for (int32_t level = 0u; level < kTexture->numLevels; level++)
-							{
-								auto& region = copy_texture.copy_regions[copy_texture.copy_region_count++];
-								region.layer = layer;
-								region.level = level;
-								region.layer_count = kTexture->numLayers;
-
-								region.size_x = create_info.width >> level;
-								region.size_z = create_info.height >> level;
-
-								ktxresult = ktxTexture_GetImageOffset(kTexture, level, 0, layer, &region.buffer_offset);
-							}
-						}
-
-						ktxTexture_Destroy(kTexture);
-					} break;
-					case ".ktx2"_hash32:
-					{
-						ktxTexture2* kTexture{ nullptr };
-						auto ktxresult = ktxTexture_CreateFromMemory(data.data(), data.size(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, (ktxTexture**)&kTexture);
-						assert(ktxresult == KTX_SUCCESS && "FAILED TO OPEN KTX IMAGE");
-						if (ktxresult != KTX_SUCCESS)
-							return nullptr;
-
-						if (kTexture->isCubemap)
-							create_info.usage |= gfx::TextureUsageFlag::eCubemap;
-
-						create_info.width = kTexture->baseWidth;
-						create_info.height = kTexture->baseHeight;
-						create_info.depth = kTexture->baseDepth;
-
-						create_info.levels = kTexture->numLevels;
-						create_info.layers = kTexture->numLayers;
-
-						if (kTexture->generateMipmaps)
-						{
-							generate_mips = true;
-							create_info.levels = utl::cast<u32>(std::floor(std::log2((std::max)(create_info.width, create_info.height)))) + 1u;
-						}
-
-						if (ktxTexture2_NeedsTranscoding(kTexture))
-							ktxresult = ktxTexture2_TranscodeBasis(kTexture, KTX_TTF_BC7_RGBA, 0);
-
-						create_info.format = gfx::FormatFromVk(kTexture->vkFormat);
-
-						// Create staging buffer for uploading
-						auto& src_buffer = uploader.RequestBuffer(kTexture->dataSize);
-						src_buffer.Update(kTexture->pData, kTexture->dataSize);
-						copy_texture.src_buffer = &src_buffer;
-
-						// Collect image copy regions
-						auto num_layers = kTexture->isCubemap ? kTexture->numFaces : kTexture->numLayers;
-						for (int32_t layer = 0; layer < num_layers; layer++)
-						{
-							for (int32_t level = 0; level < kTexture->numLevels; level++)
-							{
-								auto& region = copy_texture.copy_regions[copy_texture.copy_region_count++];
-								region.layer = layer;
-								region.level = level;
-								region.layer_count = kTexture->numLayers;
-
-								region.size_x = create_info.width >> level;
-								region.size_y = create_info.height >> level;
-
-								ktxresult = ktxTexture_GetImageOffset((ktxTexture*)kTexture, level, 0, layer, &region.buffer_offset);
-							}
-						}
-
-						ktxTexture_Destroy((ktxTexture*)kTexture);
-					} break;
+						create_info.levels = utl::cast<u32>(std::floor(std::log2((std::max)(create_info.width, create_info.height)))) + 1u;
 					}
 
-					Texture* texture = context.CreateTexture(create_info);
-					copy_texture.dst_texture = texture;
+					// Get texture format
+					auto* ktx1 = (ktxTexture1*)kTexture;
 
-					auto& command_list = uploader.RequestCommandList();
+					uint32_t vk_format{};
+					vk_format = vkGetFormatFromOpenGLInternalFormat(ktx1->glInternalformat);
+					if (vk_format == 0u)
+						vk_format = vkGetFormatFromOpenGLFormat(ktx1->glFormat, ktx1->glType);
 
-					TextureBarrier texture_barrier{};
-					texture_barrier.texture = texture;
-					texture_barrier.src_state = ResourceStateFlag::eUndefined;
-					texture_barrier.dst_state = ResourceStateFlag::eCopyDst;
+					create_info.format = gfx::FormatFromVk(vk_format);
 
-					ResourceBarrierInfo resource_barrier{};
-					resource_barrier.texture_barriers = &texture_barrier;
-					resource_barrier.texture_barrier_count = 1u;
+					// Create staging buffer for uploading
+					auto& src_buffer = uploader.RequestBuffer(kTexture->dataSize);
+					src_buffer.Update(kTexture->pData, kTexture->dataSize);
+					copy_texture.src_buffer = &src_buffer;
 
-					// Transfer to intermediate layout
-					command_list.ResourceBarrier(resource_barrier);
+					// Collect image copy regions
+					auto num_layers = kTexture->isCubemap ? kTexture->numFaces : kTexture->numLayers;
+					for (int32_t layer = 0; layer < num_layers; layer++)
+					{
+						for (int32_t level = 0u; level < kTexture->numLevels; level++)
+						{
+							auto& region = copy_texture.copy_regions[copy_texture.copy_region_count++];
+							region.layer = layer;
+							region.level = level;
+							region.layer_count = kTexture->numLayers;
 
-					// Copy texture regions
-					command_list.CopyTexture(copy_texture);
+							region.size_x = create_info.width >> level;
+							region.size_z = create_info.height >> level;
 
-					if (generate_mips)
-						texture_barrier.src_state = mip_generator->WriteCommands(command_list, *texture);
-					else
-						texture_barrier.src_state = ResourceStateFlag::eCopyDst;
+							ktxresult = ktxTexture_GetImageOffset(kTexture, level, 0, layer, &region.buffer_offset);
+						}
+					}
 
-					// Transfer to final layout
-					texture_barrier.dst_state = ResourceStateFlag::eShaderReadOnlyResource;
-					command_list.ResourceBarrier(resource_barrier);
+					ktxTexture_Destroy(kTexture);
+				} break;
+				case fsh::format::ktx2:
+				{
+					ktxTexture2* kTexture{ nullptr };
+					auto ktxresult = ktxTexture_CreateFromMemory(data.data(), data.size(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, (ktxTexture**)&kTexture);
+					assert(ktxresult == KTX_SUCCESS && "FAILED TO OPEN KTX IMAGE");
+					if (ktxresult != KTX_SUCCESS)
+						return nullptr;
 
-					return texture;
+					if (kTexture->isCubemap)
+						create_info.usage |= gfx::TextureUsageFlag::eCubemap;
+
+					create_info.width = kTexture->baseWidth;
+					create_info.height = kTexture->baseHeight;
+					create_info.depth = kTexture->baseDepth;
+
+					create_info.levels = kTexture->numLevels;
+					create_info.layers = kTexture->numLayers;
+
+					if (kTexture->generateMipmaps)
+					{
+						generate_mips = true;
+						create_info.levels = utl::cast<u32>(std::floor(std::log2((std::max)(create_info.width, create_info.height)))) + 1u;
+					}
+
+					if (ktxTexture2_NeedsTranscoding(kTexture))
+						ktxresult = ktxTexture2_TranscodeBasis(kTexture, KTX_TTF_BC7_RGBA, 0);
+
+					create_info.format = gfx::FormatFromVk(kTexture->vkFormat);
+
+					// Create staging buffer for uploading
+					auto& src_buffer = uploader.RequestBuffer(kTexture->dataSize);
+					src_buffer.Update(kTexture->pData, kTexture->dataSize);
+					copy_texture.src_buffer = &src_buffer;
+
+					// Collect image copy regions
+					auto num_layers = kTexture->isCubemap ? kTexture->numFaces : kTexture->numLayers;
+					for (int32_t layer = 0; layer < num_layers; layer++)
+					{
+						for (int32_t level = 0; level < kTexture->numLevels; level++)
+						{
+							auto& region = copy_texture.copy_regions[copy_texture.copy_region_count++];
+							region.layer = layer;
+							region.level = level;
+							region.layer_count = kTexture->numLayers;
+
+							region.size_x = create_info.width >> level;
+							region.size_y = create_info.height >> level;
+
+							ktxresult = ktxTexture_GetImageOffset((ktxTexture*)kTexture, level, 0, layer, &region.buffer_offset);
+						}
+					}
+
+					ktxTexture_Destroy((ktxTexture*)kTexture);
+				} break;
 				}
+
+				Texture* texture = context.CreateTexture(create_info);
+				copy_texture.dst_texture = texture;
+
+				auto& command_list = uploader.RequestCommandList();
+
+				TextureBarrier texture_barrier{};
+				texture_barrier.texture = texture;
+				texture_barrier.src_state = ResourceStateFlag::eUndefined;
+				texture_barrier.dst_state = ResourceStateFlag::eCopyDst;
+
+				ResourceBarrierInfo resource_barrier{};
+				resource_barrier.texture_barriers = &texture_barrier;
+				resource_barrier.texture_barrier_count = 1u;
+
+				// Transfer to intermediate layout
+				command_list.ResourceBarrier(resource_barrier);
+
+				// Copy texture regions
+				command_list.CopyTexture(copy_texture);
+
+				if (generate_mips)
+					texture_barrier.src_state = mip_generator->WriteCommands(command_list, *texture);
+				else
+					texture_barrier.src_state = ResourceStateFlag::eCopyDst;
+
+				// Transfer to final layout
+				texture_barrier.dst_state = ResourceStateFlag::eShaderReadOnlyResource;
+				command_list.ResourceBarrier(resource_barrier);
+
+				return texture;
 			}
 
 			Texture* LoadTexture(const TextureCreateInfo& create_info, std::span<uint8_t> texture_data) override
@@ -608,7 +602,7 @@ namespace engine
 				return nullptr;
 			}
 
-			Shader* LoadShader(const char* shader_name) override
+			Shader* LoadShader(std::string_view shader_name) override
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;

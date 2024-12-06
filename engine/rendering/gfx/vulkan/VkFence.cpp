@@ -25,7 +25,7 @@ namespace engine
 				Handle(device).destroyFence(handle, allocation_callbacks);
 			}
 
-			void VulkanFence::SetResourceName(const char* name)
+			void VulkanFence::SetResourceName(std::string_view name)
 			{
 				auto& debug_utils = device.GetDebugUtils();
 				debug_utils.SetDebugName(handle, name);

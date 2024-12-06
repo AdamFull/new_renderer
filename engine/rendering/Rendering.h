@@ -30,7 +30,7 @@ namespace engine
 			Renderer(Window* window, filesystem::IVirtualFileSystemInterface* vfs);
 			~Renderer();
 
-			uint32_t AddRenderResource(const std::string& path, gfx::Sampler* sampler = nullptr) override;
+			uint32_t AddRenderResource(std::string_view path, gfx::Sampler* sampler = nullptr) override;
 			uint32_t AddRenderResource(const TextureResourceCreateInfo& create_info, gfx::Sampler* sampler = nullptr) override;
 
 			uint32_t AddRenderResource(const gfx::BufferCreateInfo& create_info) override;

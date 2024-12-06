@@ -66,7 +66,7 @@ namespace engine
 
 				Device const& GetDevice() const;
 
-				void SetResourceName(const char* name) override;
+				void SetResourceName(std::string_view name) override;
 
 				bool AcquireNextImage(Semaphore* signal_semaphore, Fence* fence, uint32_t* image_index) override;
 
