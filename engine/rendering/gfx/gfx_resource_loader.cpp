@@ -14,6 +14,7 @@
 #include "native_format/vk_format.h"
 
 #include "gfx_context.h"
+#include "shader_compiler/gfx_shader_effect_compiler.h"
 
 namespace engine
 {
@@ -285,6 +286,11 @@ namespace engine
 				}
 
 				return resource_state;
+			}
+
+			void Reset()
+			{
+				descriptor_allocator->Reset();
 			}
 		private:
 			Context& context;
@@ -713,7 +719,7 @@ namespace engine
 					command_list.Begin();
 					command_list.BeginMarker("Upload resources", 0xFFFFFFFF);
 
-					//mg_descriptor_allocator->Reset();
+					mip_generator->Reset();
 
 					is_writing_commands = true;
 				}
@@ -729,6 +735,8 @@ namespace engine
 			uint32_t active_uploader{ 0u };
 
 			bool is_writing_commands{ false };
+
+			std::unique_ptr<shc::ShaderEffectCompiler> effect_compiler;
 
 			std::unique_ptr<MipGeneratorImpl> mip_generator;
 		};
