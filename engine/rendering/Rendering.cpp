@@ -97,7 +97,7 @@ namespace engine
 		class VFSWrapper : public gfx::FilesystemWrapper
 		{
 		public:
-			VFSWrapper(filesystem::IVirtualFileSystemInterface& vfx) :
+			VFSWrapper(filesystem::IVirtualFileSystemInterface& vfs) :
 				vfs{ vfs }
 			{
 			}
@@ -141,6 +141,8 @@ namespace engine
 			gfx::ResourceLoaderCreateInfo loader_create_info{};
 			loader_create_info.context = gfx_context.get();
 			loader_create_info.filesystem_wrapper = fs.get();
+			loader_create_info.shader_cache_patch = "/root/embed/rendering/shaders/shader_cache.shc";
+			loader_create_info.shader_compile_config_path = "/source/embed/shaders/config.json";
 
 			resource_loader = gfx::CreateResourceLoader(loader_create_info);
 

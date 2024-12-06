@@ -1,6 +1,5 @@
 {
-	"lang": "glsl",
-	"target_api": "vk11",
+	"lang": "GLSL",
 
 	"include_directories": [ "includes" ],
 	"common_directories": [ "common" ],

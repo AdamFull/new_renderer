@@ -36,6 +36,7 @@ namespace engine
 
 		// Mount default engine root filesystem
 		virtual_filesystem->Mount("/root", std::make_unique<filesystem::NativeFileSystem>("./"));
+		virtual_filesystem->Mount("/source", std::make_unique<filesystem::NativeFileSystem>("./../../../"));
 
 		ui = std::make_unique<EngineUI>(*window);
 
