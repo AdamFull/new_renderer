@@ -303,7 +303,9 @@ namespace engine
 
 				// TODO: add ability to override format and sampler params
 				// TODO: find format from materials
-				auto image_path = fsh::path_append(root.rootDirectory, easygltf::url_decode(image.uri));
+
+				std::array<char, 1024ull> buffer{};
+				auto image_path = fsh::path_append(root.rootDirectory, easygltf::url_decode(image.uri), std::span(buffer));
 				resources.textures.push_back(renderer.AddRenderResource(image_path, texture_sampler));
 			}
 

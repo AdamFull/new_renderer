@@ -126,25 +126,38 @@ namespace engine
             return std::string_view(buffer.data(), index);
         }
 
-        inline constexpr std::string_view path_append(std::string_view base_path, std::string_view relative_path) 
+        template<size_t _Size>
+        inline constexpr std::string_view path_append(std::string_view base_path, std::string_view relative_path, std::span<char, _Size> buffer)
         {
-            std::array<char, 1024> buffer{};
             size_t index = 0;
 
             // Copy base_path to the buffer
             for (char ch : base_path) 
+            {
+                if (index >= buffer.size() - 1) break;
                 buffer[index++] = ch;
+            }
 
             // Add a separator if needed
-            if (!base_path.empty() && base_path.back() != '/' && base_path.back() != '\\')
-                buffer[index++] = '/';
+            if (!base_path.empty() && base_path.back() != '/' && base_path.back() != '\\') 
+            {
+                if (index < buffer.size() - 1)
+                    buffer[index++] = '/';
+            }
 
             // Skip leading separator in relative_path if present
             size_t rel_start = (relative_path.front() == '/' || relative_path.front() == '\\') ? 1 : 0;
 
             // Copy relative_path to the buffer
-            for (size_t i = rel_start; i < relative_path.size(); ++i)
+            for (size_t i = rel_start; i < relative_path.size(); ++i) 
+            {
+                if (index >= buffer.size() - 1) break;
                 buffer[index++] = relative_path[i];
+            }
+
+            // Null-terminate
+            if (index < buffer.size())
+                buffer[index] = '\0';
 
             return std::string_view(buffer.data(), index);
         }
