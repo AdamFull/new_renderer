@@ -8,50 +8,26 @@ namespace engine
 	namespace gfx
 	{
 		class Context;
-	
+
 		class ResourceLoader
 		{
 		public:
-			ResourceLoader(Context& context, FilesystemWrapper& filesystem_wrapper);
-			~ResourceLoader();
+			virtual ~ResourceLoader() = default;
 
-			ResourceLoader(const ResourceLoader&) = delete;
-			ResourceLoader(ResourceLoader&&) = delete;
-			ResourceLoader& operator=(const ResourceLoader&) = delete;
-			ResourceLoader& operator=(ResourceLoader&&) = delete;
+			virtual Texture* LoadTexture(const char* texture_path) = 0;
+			virtual Texture* LoadTexture(const TextureCreateInfo& create_info, std::span<uint8_t> texture_data) = 0;
 
-			Texture* LoadTexture(const char* texture_path);
+			virtual Shader* LoadShader(const char* shader_name) = 0;
 
-			Texture* LoadTexture(const TextureCreateInfo& create_info, std::span<uint8_t> texture_data);
+			virtual void BeginBufferUpdate(BufferUpdateInfo& update_info) = 0;
+			virtual void EndBufferUpdate(BufferUpdateInfo& update_info) = 0;
 
-			Shader* LoadShader(const char* shader_name);
+			virtual SemaphoreSubmitInfo Submit(SemaphoreSubmitInfo* wait_infos, uint32_t wait_semaphore_count) = 0;
 
-			void BeginBufferUpdate(BufferUpdateInfo& update_info);
-			void EndBufferUpdate(BufferUpdateInfo& update_info);
-
-			SemaphoreSubmitInfo Submit(SemaphoreSubmitInfo* wait_infos, uint32_t wait_semaphore_count);
-
-			Context& GetContext();
-			Context const& GetContext() const;
-		private:
-			class ResourceUploaderImpl;
-			class MipGeneratorImpl;
-
-			ResourceUploaderImpl& GetActiveUploader();
-			void BeginCommands();
-		private:
-			Context& context;
-			FilesystemWrapper& fs;
-
-			const gfx::Queue* queue{ nullptr };
-
-			std::array<std::unique_ptr<ResourceUploaderImpl>, 8ull> uploaders{};
-			uint32_t uploader_count{ 1u };
-			uint32_t active_uploader{ 0u };
-
-			bool is_writing_commands{ false };
-
-			std::unique_ptr<MipGeneratorImpl> mip_generator;
+			virtual Context& GetContext() = 0;
+			virtual Context const& GetContext() const = 0;
 		};
+
+		std::unique_ptr<ResourceLoader> CreateResourceLoader(Context& context, FilesystemWrapper& filesystem_wrapper);
 	}
 }
