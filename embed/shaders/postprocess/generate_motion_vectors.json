@@ -9,8 +9,8 @@
 	"compile": {
 		"shader_model": 6,
 		"permutate": [
-			{ "definitions": [] },
-			{ "definitions": [ "LOW_PRECISION_VELOCITY" ] }
+			[],
+			[ "LOW_PRECISION_VELOCITY" ]
 		]
 	}
 }

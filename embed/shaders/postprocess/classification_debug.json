@@ -10,8 +10,8 @@
 	"compile": {
 		"shader_model": 6,
 		"permutate": [
-			{ "definitions": [] },
-			{ "definitions": [ "HIGH_FREQUENCY" ] }
+			[],
+			[ "HIGH_FREQUENCY" ]
 		]
 	}
 }

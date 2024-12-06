@@ -13,8 +13,8 @@
 	"compile": {
 		"shader_model": 6,
 		"permutate": [
-			{ "definitions": [] },
-			{ "definitions": [ "DEBUG_3D" ] }
+			[],
+			[ "DEBUG_3D" ]
 		]
 	}
 }

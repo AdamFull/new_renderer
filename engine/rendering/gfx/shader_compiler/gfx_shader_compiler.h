@@ -28,6 +28,7 @@ namespace engine
 				ShaderStageFlag type;
 				std::string name;
 				std::string code;
+				std::string base_path;
 				std::vector<std::string> definitions;
 				std::vector<std::string> include_directories;
 			};
@@ -37,9 +38,9 @@ namespace engine
 			public:
 				virtual ~ShaderCompiler() = default;
 
-				virtual bool Preprocess(const CompileShaderInfo& compile_info) = 0;
+				virtual bool Preprocess(const CompileShaderInfo& compile_info, uint32_t& hash) = 0;
 
-				virtual bool Compile(const CompileShaderInfo& compile_info) = 0;
+				virtual bool Compile(const CompileShaderInfo& compile_info, std::vector<uint8_t>& code) = 0;
 			};
 		}
 	}

@@ -58,7 +58,7 @@ namespace engine
 	{
 		ZoneScoped;
 
-		try
+		//try
 		{
 			// Load the requested app
 			if (AppRequested())
@@ -91,16 +91,16 @@ namespace engine
 
 			counter.Frame();
 		}
-		catch (std::exception& e)
-		{
-			log_error("Error Message: {}", e.what());
-			log_error("Failed when running application {}", app->GetName());
-
-			OnAppError(app->GetName());
-
-			SetLastError(e.what());
-			return 4;
-		}
+		//catch (std::exception& e)
+		//{
+		//	log_error("Error Message: {}", e.what());
+		//	log_error("Failed when running application {}", app->GetName());
+		//
+		//	OnAppError(app->GetName());
+		//
+		//	SetLastError(e.what());
+		//	return 4;
+		//}
 
 		return 0;
 	}

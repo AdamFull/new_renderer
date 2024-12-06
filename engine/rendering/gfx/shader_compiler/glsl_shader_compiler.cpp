@@ -4,8 +4,12 @@
 #include <glslang/Public/ShaderLang.h>
 #include <glslang/build_info.h>
 
+#include <util/FilesystemHelper.h>
 #include <util/Logger.h>
 
+#include <hash.hpp>
+
+#include <execution>
 #include <format>
 
 namespace engine
@@ -18,7 +22,12 @@ namespace engine
 			class shader_includer : public glslang::TShader::Includer
 			{
 			public:
-				shader_includer() = default;
+				shader_includer(FilesystemWrapper& fs, std::string base_path) :
+					fs{ fs },
+					base_path{ base_path }
+				{
+
+				}
 
 				virtual IncludeResult* includeLocal(const char* headerName,
 					const char* includerName,
@@ -42,14 +51,15 @@ namespace engine
 				//  - Makes its own copy of the path.
 				virtual void pushExternalLocalDirectory(const std::string& dir)
 				{
-					directoryStack.emplace_back(dir);
+					directoryStack.emplace_back(base_path + '/' + dir);
 					externalLocalDirectoryCount = (int)directoryStack.size();
 				}
 
 				virtual void releaseInclude(IncludeResult* result) override
 				{
-					if (result != nullptr) {
-						delete[] static_cast<tUserDataElement*>(result->userData);
+					if (result != nullptr) 
+					{
+						delete static_cast<std::vector<uint8_t>*>(result->userData);
 						delete result;
 					}
 				}
@@ -61,10 +71,11 @@ namespace engine
 
 				virtual ~shader_includer() override { }
 			protected:
-				typedef char tUserDataElement;
 				std::vector<std::string> directoryStack;
 				int externalLocalDirectoryCount;
 				std::set<std::string> includedFiles;
+				FilesystemWrapper& fs;
+				std::string base_path;
 
 				// Search for a valid "local" path based on combining the stack of include
 				// directories and the nominal name of the header.
@@ -76,18 +87,24 @@ namespace engine
 					if (depth == 1)
 						directoryStack.back() = getDirectory(includerName);
 
+					std::array<char, 1024ull> buffer{};
+
 					// Find a directory that works, using a reverse search of the include stack.
 					for (auto it = directoryStack.rbegin(); it != directoryStack.rend(); ++it)
 					{
 						std::string path = *it + '/' + headerName;
 						std::replace(path.begin(), path.end(), '\\', '/');
-						std::ifstream file(path, std::ios_base::binary | std::ios_base::ate);
-						if (file)
+
+						std::vector<uint8_t>* file_data = new std::vector<uint8_t>;
+						if (fs.Exists(path) && fs.ReadFile(path, *file_data))
 						{
 							directoryStack.emplace_back(getDirectory(path));
 							includedFiles.insert(path);
-							return newIncludeResult(path, file, (int)file.tellg());
+
+							return new IncludeResult(path, reinterpret_cast<const char*>(file_data->data()), file_data->size(), file_data);
 						}
+
+						delete file_data;
 					}
 
 					return nullptr;
@@ -100,21 +117,12 @@ namespace engine
 					return nullptr;
 				}
 
-				// Do actual reading of the file, filling in a new include result.
-				virtual IncludeResult* newIncludeResult(const std::string& path, std::ifstream& file, int length) const
-				{
-					char* content = new tUserDataElement[length];
-					file.seekg(0, file.beg);
-					file.read(content, length);
-					return new IncludeResult(path, content, length, content);
-				}
-
 				// If no path markers, return current working directory.
 				// Otherwise, strip file name and return path leading up to it.
 				virtual std::string getDirectory(const std::string path) const
 				{
 					size_t last = path.find_last_of("/\\");
-					return last == std::string::npos ? "." : path.substr(0, last);
+					return last == std::string::npos ? base_path : path.substr(0, last);
 				}
 			};
 
@@ -251,6 +259,11 @@ namespace engine
 				return resources;
 			}
 
+			glslang::EShTargetClientVersion k_client_version{ glslang::EShTargetVulkan_1_1 };
+			glslang::EShClient k_client{ glslang::EShClientVulkan };
+			glslang::EShTargetLanguageVersion k_language_version{ glslang::EShTargetSpv_1_4 };
+			EShMessages k_messages{ EShMsgSpvRules | EShMsgVulkanRules | EShMsgDefault | EShMsgCascadingErrors };
+
 			std::string GeneratePreamble(const CompileShaderInfo& info)
 			{
 				std::stringstream ss;
@@ -265,8 +278,29 @@ namespace engine
 				return ss.str();
 			}
 
+			glslang::TShader CreateShader(const CompileShaderInfo& compile_info, EShMessages& messages)
+			{
+				auto language = GetShaderLanguage(compile_info.type);
 
-			GLSLShaderCompiler::GLSLShaderCompiler()
+				glslang::TShader shader(language);
+
+				bool building_release = compile_info.build_type == ShaderCompilerBuildType::eRelease;
+				if (!building_release)
+				{
+					messages = utl::cast<EShMessages>(messages | EShMsgDebugInfo);
+					//shader.setDebugInfo(true);
+				}
+
+				shader.setOverrideVersion(460);
+				shader.setEnvInput(glslang::EShSourceGlsl, language, k_client, 110);
+				shader.setEnvClient(k_client, k_client_version);
+				shader.setEnvTarget(glslang::EShTargetSpv, k_language_version);
+
+				return shader;
+			}
+
+			GLSLShaderCompiler::GLSLShaderCompiler(FilesystemWrapper& fs) :
+				fs{ fs }
 			{
 				if (!glslang::InitializeProcess())
 				{
@@ -279,59 +313,129 @@ namespace engine
 				glslang::FinalizeProcess();
 			}
 
-			bool GLSLShaderCompiler::Preprocess(const CompileShaderInfo& compile_info)
+			bool GLSLShaderCompiler::Preprocess(const CompileShaderInfo& compile_info, uint32_t& hash)
 			{
-				auto language = GetShaderLanguage(compile_info.type);
-				glslang::TShader shader(language);
+				EShMessages messages{ k_messages };
 
-				auto resources = GetResources();
-
-				auto messages = utl::cast<EShMessages>(EShMsgSpvRules | EShMsgVulkanRules | EShMsgDefault);
-
-				bool building_release = compile_info.build_type == ShaderCompilerBuildType::eRelease;
-				if (!building_release)
-				{
-					messages = utl::cast<EShMessages>(messages | EShMsgDebugInfo);
-					shader.setDebugInfo(true);
-				}
-
-				auto preamble = GeneratePreamble(compile_info);
-
+				auto shader = CreateShader(compile_info, messages);
 
 				auto shader_source = compile_info.code.c_str();
 				auto shader_name = compile_info.name.c_str();
 				shader.setStringsWithLengthsAndNames(&shader_source, nullptr, &shader_name, 1);
-				shader.setPreamble(preamble.c_str());
-				shader.setOverrideVersion(460);
 
-				auto client_version = glslang::EShTargetVulkan_1_1;
-				auto compile_client = glslang::EShClientVulkan;
-				auto spir_version = glslang::EShTargetSpv_1_4;
-				shader.setEnvInput(glslang::EShSourceGlsl, language, compile_client, 110);
-				shader.setEnvClient(compile_client, client_version);
-				shader.setEnvTarget(glslang::EShTargetSpv, spir_version);
+				std::string preamble = GeneratePreamble(compile_info);
+				shader.setPreamble(preamble.c_str());
 
 				// Create includer and push include dirs to it
-				shader_includer includer;
+				shader_includer includer{ fs, compile_info.base_path };
 				for (auto& dir : compile_info.include_directories)
 					includer.pushExternalLocalDirectory(dir);
 
-				//if (!shader.preprocess(&resources, client_version, ENoProfile, false, false, messages, &preprocessed_code, includer))
-				//{
-				//	//std::lock_guard<std::mutex> lock(m_terminationLock);
-				//	//make_shader_compiler_fatal_error(info.name, shader_code, std::format("Preprocessing error: In shader \"{}\" \n{}\n{}\n", info.name, shader.getInfoLog(), shader.getInfoDebugLog()));
-				//	return false;
-				//}
+				std::string preprocessed_code{};
+				auto resources = GetResources();
+				if (!shader.preprocess(&resources, k_client_version, ENoProfile, false, false, messages, &preprocessed_code, includer))
+				{
+					log_error("\Preprocess error: In shader \"{}\" \n{}\n{}\n", compile_info.name, shader.getInfoLog(), shader.getInfoDebugLog());
+					return false;
+				}
 
-				//preprocessed_code = clean_code(preprocessed_code);
-				//preprocessed_hash = utl::murmur_hash(preprocessed_code);
+				hash = utl::murmur_hash(preprocessed_code);
 
-				return false;
+				return true;
 			}
 
-			bool GLSLShaderCompiler::Compile(const CompileShaderInfo& compile_info)
+			bool GLSLShaderCompiler::Compile(const CompileShaderInfo& compile_info, std::vector<uint8_t>& code)
 			{
-				return false;
+				EShMessages messages{ k_messages };
+
+				auto shader = CreateShader(compile_info, messages);
+
+				auto shader_source = compile_info.code.c_str();
+				auto shader_name = compile_info.name.c_str();
+				shader.setStringsWithLengthsAndNames(&shader_source, nullptr, &shader_name, 1);
+
+				std::string preamble = GeneratePreamble(compile_info);
+				shader.setPreamble(preamble.c_str());
+
+				// Create includer and push include dirs to it
+				shader_includer includer{ fs, compile_info.base_path };
+				for (auto& dir : compile_info.include_directories)
+					includer.pushExternalLocalDirectory(dir);
+
+				auto resources = GetResources();
+
+				std::string preprocessed_code{};
+				if (!shader.preprocess(&resources, k_client_version, ENoProfile, false, false, messages, &preprocessed_code, includer))
+				{
+					log_error("\Preprocess error: In shader \"{}\" \n{}\n{}\n", compile_info.name, shader.getInfoLog(), shader.getInfoDebugLog());
+					return false;
+				}
+
+				shader_source = preprocessed_code.c_str();
+				shader.setStringsWithLengthsAndNames(&shader_source, nullptr, &shader_name, 1);
+
+				if (!shader.parse(&resources, k_client_version, false, messages))
+				{
+					log_error("\nParsing error: In shader \"{}\" \n{}\n{}\n", compile_info.name, shader.getInfoLog(), shader.getInfoDebugLog());
+					return false;
+				}
+
+				glslang::TProgram program;
+				program.addShader(&shader);
+
+				if (!program.link(messages) || !program.mapIO())
+				{
+					log_error("\nLinking error: In shader \"{}\" \n{}\n{}\n", compile_info.name, program.getInfoLog(), program.getInfoDebugLog());
+					return false;
+				}
+
+				auto stage = shader.getStage();
+				glslang::TIntermediate* intermediate = program.getIntermediate(stage);
+
+				// Failed to translate to spirv
+				if (!intermediate)
+				{
+					log_error("Failed translating to spirv.");
+					return false;
+				}
+
+				bool building_release = compile_info.build_type == ShaderCompilerBuildType::eRelease;
+
+				glslang::SpvOptions spvOptions;
+				spvOptions.generateDebugInfo = !building_release;
+				spvOptions.disableOptimizer = !building_release;
+				//spvOptions.emitNonSemanticShaderDebugInfo = !building_release;
+				//spvOptions.emitNonSemanticShaderDebugSource = !building_release;
+				spvOptions.optimizeSize = building_release;
+
+				spv::SpvBuildLogger logger;
+
+				std::vector<uint32_t> spirv_code{};
+				GlslangToSpv(*intermediate, spirv_code, &logger, &spvOptions);
+
+				std::string error{};
+				logger.error(error);
+				if (!error.empty())
+				{
+					log_error("\nSPIRV generation error: In shader \"{}\" \n{}", compile_info.name, error);
+					return false;
+				}
+
+				std::string warning;
+				logger.warning(warning);
+				if (!warning.empty())
+				{
+					log_warning("SPIRV generation warnings: In shader \"{}\" \n{}\n", compile_info.name, warning);
+				}
+
+				code.resize(spirv_code.size() * sizeof(uint32_t));
+
+				uint8_t* begin = reinterpret_cast<uint8_t*>(&spirv_code[0]);
+				uint8_t* end = begin + spirv_code.size();
+
+				std::copy(std::execution::par_unseq, begin, end, code.begin());
+
+				return true;
 			}
 		}
 	}

@@ -8,6 +8,8 @@
 #include <util/FilesystemHelper.h>
 #include <util/Logger.h>
 
+#include <execution>
+
 namespace engine
 {
 	namespace gfx
@@ -108,12 +110,34 @@ namespace engine
 				utl::parse_from("color_blending_state", json, type.color_blending_state);
 			}
 
+			struct ShaderEffectCompileRules
+			{
+				uint32_t shader_model{ 6u };
+				std::string permutation_pattern{};
+				std::vector<std::vector<std::string>> permutate{};
+			};
+
+			void to_json(nlohmann::json& json, const ShaderEffectCompileRules& type)
+			{
+				utl::serialize_to("shader_model", json, type.shader_model);
+				utl::serialize_to("permutation_pattern", json, type.permutation_pattern);
+				utl::serialize_to("permutate", json, type.permutate);
+			}
+
+			void from_json(const nlohmann::json& json, ShaderEffectCompileRules& type)
+			{
+				utl::parse_from("shader_model", json, type.shader_model);
+				utl::parse_from("permutation_pattern", json, type.permutation_pattern);
+				utl::parse_from("permutate", json, type.permutate);
+			}
+
 			struct ShaderEffectCompileDesc
 			{
 				std::string name;
 				std::vector<ShaderEffectCompileSourceDesc> shaders{};
 				std::vector<ShaderEffectCompileSamplerDesc> samplers{};
 				ShaderEffectCompilePipelineState pipeline_state{};
+				ShaderEffectCompileRules compile{};
 			};
 
 			void to_json(nlohmann::json& json, const ShaderEffectCompileDesc& type)
@@ -122,6 +146,7 @@ namespace engine
 				utl::serialize_to("shaders", json, type.shaders);
 				utl::serialize_to("samplers", json, type.samplers);
 				utl::serialize_to("pipeline_state", json, type.pipeline_state);
+				utl::serialize_to("compile", json, type.compile);
 			}
 
 			void from_json(const nlohmann::json& json, ShaderEffectCompileDesc& type)
@@ -130,19 +155,8 @@ namespace engine
 				utl::parse_from("shaders", json, type.shaders);
 				utl::parse_from("samplers", json, type.samplers);
 				utl::parse_from("pipeline_state", json, type.pipeline_state);
+				utl::parse_from("compile", json, type.compile);
 			}
-
-
-			void to_json(nlohmann::json& json, const ShaderEffectCompilerPermutation& type)
-			{
-				utl::serialize_to("definitions", json, type.definitions);
-			}
-
-			void from_json(const nlohmann::json& json, ShaderEffectCompilerPermutation& type)
-			{
-				utl::parse_from("definitions", json, type.definitions);
-			}
-
 
 			void to_json(nlohmann::json& json, const ShaderEffectCompilerModule& type)
 			{
@@ -199,7 +213,7 @@ namespace engine
 					switch (config.lang)
 					{
 					case ShaderLang::eAuto: { assert(false && "NOT IMPLEMENTED"); } break;
-					case ShaderLang::eGLSL: { shader_compiler = std::make_unique<GLSLShaderCompiler>(); } break;
+					case ShaderLang::eGLSL: { shader_compiler = std::make_unique<GLSLShaderCompiler>(fs); } break;
 					case ShaderLang::eHLSL: { assert(false && "NOT IMPLEMENTED"); } break;
 					}
 
@@ -232,10 +246,6 @@ namespace engine
 
 				std::array<char, 1024ull> str_buf{};
 
-				CompileShaderInfo compile_info{};
-				compile_info.build_type = build_type;
-				compile_info.include_directories = config.include_directories;
-
 				for (const auto& compile_module : config.modules)
 				{
 					log_info("Building module: {}", compile_module.name);
@@ -252,12 +262,12 @@ namespace engine
 						std::vector<uint8_t> file_data{};
 						if (fs.ReadFile(effect_path, file_data))
 						{
-							file_data.clear();
-
 							ShaderEffectCompileDesc desc;
 
 							auto json = nlohmann::json::parse(file_data);
 							json.get_to(desc);
+
+							file_data.clear();
 
 							std::array<char, 1024ull> path_buffer{};
 
@@ -268,7 +278,48 @@ namespace engine
 								auto shader_path = fsh::path_append(module_path, shader_source.source, path_buffer);
 								if (fs.ReadFile(shader_path, file_data))
 								{
+									CompileShaderInfo compile_info{};
+									compile_info.build_type = build_type;
+									compile_info.include_directories = config.include_directories;
 
+									compile_info.name = shader_source.source;
+									compile_info.type = shader_source.type;
+									compile_info.base_path = base_path;
+									compile_info.code.resize(file_data.size());
+
+									const char* begin = reinterpret_cast<const char*>(&file_data[0]);
+									const char* end = begin + file_data.size();
+									std::copy(std::execution::par_unseq, begin, end, &compile_info.code[0]);
+
+									if (!desc.compile.permutation_pattern.empty())
+									{
+										if (auto found = config.permutation_patterns.find(desc.compile.permutation_pattern); found != config.permutation_patterns.end())
+										{
+											for (const auto& permutation : found->second)
+											{
+												compile_info.definitions.clear();
+												compile_info.definitions.insert(compile_info.definitions.end(), shader_source.definitions.begin(), shader_source.definitions.end());
+												compile_info.definitions.insert(compile_info.definitions.end(), permutation.begin(), permutation.end());
+												CompilePermutation(compile_info);
+											}
+										}
+									}
+
+									if (!desc.compile.permutate.empty())
+									{
+										for (const auto& permutation : desc.compile.permutate)
+										{
+											compile_info.definitions.clear();
+											compile_info.definitions.insert(compile_info.definitions.end(), shader_source.definitions.begin(), shader_source.definitions.end());
+											compile_info.definitions.insert(compile_info.definitions.end(), permutation.begin(), permutation.end());
+										}
+									}
+
+									if (desc.compile.permutation_pattern.empty() && desc.compile.permutate.empty())
+									{
+										compile_info.definitions.insert(compile_info.definitions.end(), shader_source.definitions.begin(), shader_source.definitions.end());
+										CompilePermutation(compile_info);
+									}
 								}
 							}
 
@@ -285,6 +336,19 @@ namespace engine
 					log_error("Compiler config was not loaded. Unable to compile shaders.");
 					return;
 				}
+			}
+
+			void ShaderEffectCompiler::CompilePermutation(const CompileShaderInfo& compile_info)
+			{
+				uint32_t shader_hash{ 0u };
+				if (!shader_compiler->Preprocess(compile_info, shader_hash))
+					return;
+
+				// Check that need to compile/recompile
+
+				std::vector<uint8_t> shader_code{};
+				if (!shader_compiler->Compile(compile_info, shader_code))
+					return;
 			}
 		}
 	}

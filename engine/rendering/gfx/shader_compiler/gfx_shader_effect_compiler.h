@@ -9,11 +9,6 @@ namespace engine
 	{
 		namespace shc
 		{
-			struct ShaderEffectCompilerPermutation
-			{
-				std::vector<std::string> definitions;
-			};
-
 			struct ShaderEffectCompilerModule
 			{
 				std::string name;
@@ -27,7 +22,7 @@ namespace engine
 				ShaderLang lang;
 				std::vector<std::string> include_directories;
 				std::vector<std::string> common_directories;
-				std::unordered_map<std::string, std::unordered_map<std::string, std::vector<ShaderEffectCompilerPermutation>>> permutation_patterns;
+				std::unordered_map<std::string, std::vector<std::vector<std::string>>> permutation_patterns;
 				std::vector<ShaderEffectCompilerModule> modules;
 			};
 
@@ -48,7 +43,8 @@ namespace engine
 				void CompileModules();
 
 				void CompileOne(const char* shader_name);
-
+			private:
+				void CompilePermutation(const CompileShaderInfo& compile_info);
 			private:
 				FilesystemWrapper& fs;
 				ShaderCompilerBuildType build_type;
