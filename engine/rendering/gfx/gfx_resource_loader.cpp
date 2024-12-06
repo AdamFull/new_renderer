@@ -314,9 +314,9 @@ namespace engine
 		class ResourceLoaderImpl : public ResourceLoader
 		{
 		public:
-			ResourceLoaderImpl(Context& context, FilesystemWrapper& filesystem_wrapper) :
-				context{ context },
-				fs{ filesystem_wrapper }
+			ResourceLoaderImpl(const ResourceLoaderCreateInfo& create_info) :
+				context{ *create_info.context },
+				fs{ *create_info.filesystem_wrapper }
 			{
 				queue = context.RequestQueue(QueueTypeFlag::eGraphics, 1u);
 
@@ -326,6 +326,14 @@ namespace engine
 				{
 					uploaders[i] = std::make_unique<ResourceUploaderImpl>(context, *queue);
 				}
+
+				// Create shader compiler
+				shc::ShaderEffectCompilerCreateInfo shader_compiler_ci{};
+				shader_compiler_ci.filesystem_wrapper = create_info.filesystem_wrapper;
+				shader_compiler_ci.shader_compile_config_path = create_info.shader_compile_config_path;
+				shader_compiler_ci.shader_cache_patch = create_info.shader_cache_patch;
+
+				effect_compiler = std::make_unique<shc::ShaderEffectCompiler>(shader_compiler_ci);
 
 				// Create mip generator
 				mip_generator = std::make_unique<MipGeneratorImpl>(*this);
@@ -741,9 +749,9 @@ namespace engine
 			std::unique_ptr<MipGeneratorImpl> mip_generator;
 		};
 
-		std::unique_ptr<ResourceLoader> CreateResourceLoader(Context& context, FilesystemWrapper& filesystem_wrapper)
+		std::unique_ptr<ResourceLoader> CreateResourceLoader(const ResourceLoaderCreateInfo& create_info)
 		{
-			return std::make_unique<ResourceLoaderImpl>(context, filesystem_wrapper);
+			return std::make_unique<ResourceLoaderImpl>(create_info);
 		}
 	}
 }

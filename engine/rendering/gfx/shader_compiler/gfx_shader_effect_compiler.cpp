@@ -3,6 +3,8 @@
 
 #include "glsl_shader_compiler.h"
 
+#include <util/Logger.h>
+
 namespace engine
 {
 	namespace gfx
@@ -55,25 +57,21 @@ namespace engine
 				utl::parse_from("modules", json, type.modules);
 			}
 
-			ShaderEffectCompiler::ShaderEffectCompiler(FilesystemWrapper* filesystem_wrapper) :
-				fs{ *filesystem_wrapper }
+			ShaderEffectCompiler::ShaderEffectCompiler(const ShaderEffectCompilerCreateInfo& create_info) :
+				fs{ *create_info.filesystem_wrapper },
+				build_type{ create_info.build_type }
 			{
-
-			}
-
-			ShaderEffectCompiler::~ShaderEffectCompiler()
-			{
-
-			}
-
-			void ShaderEffectCompiler::Initialize(const char* path)
-			{
+				// Load compiler config
 				std::vector<uint8_t> filedata{};
-				if (fs.Exists(path) && fs.ReadFile(path, filedata))
+				if (create_info.shader_compile_config_path &&
+					fs.Exists(create_info.shader_compile_config_path) && 
+					fs.ReadFile(create_info.shader_compile_config_path, filedata))
 				{
 					// Load configuration
 					auto json = nlohmann::json::parse(filedata);
 					json.get_to(config);
+
+					is_config_loaded = true;
 
 					switch (config.lang)
 					{
@@ -82,7 +80,43 @@ namespace engine
 					case ShaderLang::eHLSL: { assert(false && "NOT IMPLEMENTED"); } break;
 					}
 
+					filedata.clear();
+				}
 
+				// Load compiler cache
+				if (create_info.shader_cache_patch &&
+					fs.Exists(create_info.shader_cache_patch) && 
+					fs.ReadFile(create_info.shader_cache_patch, filedata))
+				{
+
+				}
+			}
+
+			ShaderEffectCompiler::~ShaderEffectCompiler()
+			{
+
+			}
+
+			void ShaderEffectCompiler::CompileModules()
+			{
+				if (!is_config_loaded)
+				{
+					log_error("Compiler config was not loaded. Unable to compile modules.");
+					return;
+				}
+
+				for (const auto& compile_module : config.modules)
+				{
+
+				}
+			}
+
+			void ShaderEffectCompiler::CompileOne(const char* shader_name)
+			{
+				if (!is_config_loaded)
+				{
+					log_error("Compiler config was not loaded. Unable to compile shaders.");
+					return;
 				}
 			}
 		}

@@ -9,6 +9,15 @@ namespace engine
 	{
 		class Context;
 
+		struct ResourceLoaderCreateInfo
+		{
+			Context* context{ nullptr };
+			FilesystemWrapper* filesystem_wrapper{ nullptr };
+
+			const char* shader_compile_config_path{ nullptr };
+			const char* shader_cache_patch{ nullptr };
+		};
+
 		class ResourceLoader
 		{
 		public:
@@ -28,6 +37,6 @@ namespace engine
 			virtual Context const& GetContext() const = 0;
 		};
 
-		std::unique_ptr<ResourceLoader> CreateResourceLoader(Context& context, FilesystemWrapper& filesystem_wrapper);
+		std::unique_ptr<ResourceLoader> CreateResourceLoader(const ResourceLoaderCreateInfo& create_info);
 	}
 }

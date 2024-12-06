@@ -31,17 +31,31 @@ namespace engine
 				std::vector<ShaderEffectCompilerModule> modules;
 			};
 
+			struct ShaderEffectCompilerCreateInfo
+			{
+				ShaderCompilerBuildType build_type{ ShaderCompilerBuildType::eDebug };
+				FilesystemWrapper* filesystem_wrapper{ nullptr };
+				const char* shader_compile_config_path{ nullptr };
+				const char* shader_cache_patch{ nullptr };
+			};
+
 			class ShaderEffectCompiler
 			{
 			public:
-				ShaderEffectCompiler(FilesystemWrapper* filesystem_wrapper);
+				ShaderEffectCompiler(const ShaderEffectCompilerCreateInfo& create_info);
 				~ShaderEffectCompiler();
 
-				void Initialize(const char* path);
+				void CompileModules();
+
+				void CompileOne(const char* shader_name);
 
 			private:
 				FilesystemWrapper& fs;
+				ShaderCompilerBuildType build_type;
+
 				ShaderEffectCompilerConfig config;
+				bool is_config_loaded{ false };
+
 				std::unique_ptr<ShaderCompiler> shader_compiler;
 			};
 		}
