@@ -2,10 +2,10 @@
 
 #include <glm/gtx/matrix_decompose.hpp>
 
-#include <engine/world/ecs/components/BaseComponent.h>
-#include <engine/world/ecs/components/HierarchyComponent.h>
-#include <engine/world/ecs/components/TransformComponent.h>
-#include <engine/world/EntityManager.h>
+#include "../components/BaseComponent.h"
+#include "../components/HierarchyComponent.h"
+#include "../components/TransformComponent.h"
+#include "../../EntityManager.h"
 
 #include <tracy/Tracy.hpp>
 

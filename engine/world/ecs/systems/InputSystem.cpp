@@ -1,9 +1,9 @@
 #include "InputSystem.h"
 
-#include <engine/world/EntityManager.h>
-#include <engine/world/ecs/components/BaseComponent.h>
-#include <engine/world/ecs/components/CameraComponent.h>
-#include <engine/world/ecs/components/TransformComponent.h>
+#include "../../EntityManager.h"
+#include "../components/BaseComponent.h"
+#include "../components/CameraComponent.h"
+#include "../components/TransformComponent.h"
 #include <engine/runtime/InputManager.h>
 
 #include <tracy/Tracy.hpp>

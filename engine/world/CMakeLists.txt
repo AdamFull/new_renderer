@@ -20,7 +20,6 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 )
 
 target_include_directories(${PROJECT_NAME} 
-	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/"
     PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/engine"
     PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/easygltf/include"
 )

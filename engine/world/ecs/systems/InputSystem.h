@@ -1,7 +1,7 @@
 #pragma once
 
 #include <engine/runtime/InputEvents.h>
-#include <engine/world/ecs/systems/BaseSystem.h>
+#include "BaseSystem.h"
 
 #include <reactive/function.h>
 

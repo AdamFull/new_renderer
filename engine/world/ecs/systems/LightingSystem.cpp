@@ -1,11 +1,11 @@
 #include "LightingSystem.h"
 
-#include <engine/world/EntityManager.h>
-#include <engine/world/ecs/components/BaseComponent.h>
-#include <engine/world/ecs/components/TransformComponent.h>
-#include <engine/world/ecs/components/DirectionalLightComponent.h>
-#include <engine/world/ecs/components/PointLightComponent.h>
-#include <engine/world/ecs/components/SpotLightComponent.h>
+#include "../../EntityManager.h"
+#include "../components/BaseComponent.h"
+#include "../components/TransformComponent.h"
+#include "../components/DirectionalLightComponent.h"
+#include "../components/PointLightComponent.h"
+#include "../components/SpotLightComponent.h"
 
 #include <tracy/Tracy.hpp>
 

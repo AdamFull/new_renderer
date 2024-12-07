@@ -1,6 +1,6 @@
 #include <engine/interface/filesystem/VirtualFileSystemInterface.h>
 #include <engine/rendering/RendererInterface.h>
-#include <engine/world/ecs/systems/BaseSystem.h>
+#include "ecs/systems/BaseSystem.h"
 
 #include <libraries/easygltf/include/easygltf/easygltf_base.h>
 

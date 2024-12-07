@@ -3,18 +3,16 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
 
-#include <standart_library.h>
-
 #include <entt/entt.hpp>
 
 #include <engine/runtime/ui/font/IconsMaterialDesignIcons.h>
 #include <engine/ui/ImGuiElements.h>
+#include <engine/ui/Attributes.h>
 
 #include <utility>
 
-#include <engine/ui/Attributes.h>
+#include <standart_library.h>
 #include <string.hpp>
-
 #include <enum.hpp>
 
 namespace icon

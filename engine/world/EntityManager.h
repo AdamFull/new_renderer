@@ -5,9 +5,10 @@
 #include <nlohmann/json.hpp>
 #include <standart_library.h>
 
-#include <engine/ui/InspectorDrawer.h>
-#include <engine/world/ecs/systems/BaseSystem.h>
-#include <engine/world/ecs/components/components.h>
+#include "../ui/InspectorDrawer.h"
+
+#include "ecs/systems/BaseSystem.h"
+#include "ecs/components/components.h"
 
 namespace engine
 {

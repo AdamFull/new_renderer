@@ -1,10 +1,10 @@
 #include "MeshSystem.h"
 
-#include <engine/world/EntityManager.h>
-#include <engine/world/ecs/components/BaseComponent.h>
-#include <engine/world/ecs/components/MeshComponent.h>
-#include <engine/world/ecs/components/RootComponent.h>
-#include <engine/world/ecs/components/TransformComponent.h>
+#include "../../EntityManager.h"
+#include "../components/BaseComponent.h"
+#include "../components/MeshComponent.h"
+#include "../components/RootComponent.h"
+#include "../components/TransformComponent.h"
 
 #include <engine/render/DebugDraw/DebugDraw.h>
 

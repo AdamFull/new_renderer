@@ -1,7 +1,7 @@
 #include "AnimationSystem.h"
 
-#include <engine/world/EntityManager.h>
-#include <engine/world/ecs/components/components.h>
+#include "../../EntityManager.h"
+#include "../components/components.h"
 
 #include <tracy/Tracy.hpp>
 #include <execution>

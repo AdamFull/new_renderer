@@ -1,16 +1,16 @@
-#include <engine/world/Scene.h>
+#include "Scene.h"
 
-#include <engine/world/ecs/components/components.h>
-#include <engine/world/ecs/systems/systems.h>
+#include "ecs/components/components.h"
+#include "ecs/systems/systems.h"
 
-#include<easygltf/easygltf_loader.h>
-#include<easygltf/easygltf_helpers.h>
+#include <easygltf/easygltf_loader.h>
+#include <easygltf/easygltf_helpers.h>
 
 #include <meshoptimizer.h>
 
-#include <engine/rendering/Rendering.h>
-#include <engine/rendering/gfx/gfx_structures.h>
-#include <engine/rendering/gfx/gfx_enum.h>
+#include "../rendering/Rendering.h"
+#include "../rendering/gfx/gfx_structures.h"
+#include "../rendering/gfx/gfx_enum.h"
 
 #include <util/Util.h>
 #include <util/FilesystemHelper.h>

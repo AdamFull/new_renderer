@@ -5,7 +5,7 @@
 
 #include <tracy/Tracy.hpp>
 
-#include "Globals.h"
+#include "../Globals.h"
 
 namespace engine
 {

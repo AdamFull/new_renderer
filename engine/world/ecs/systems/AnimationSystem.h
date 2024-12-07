@@ -1,6 +1,6 @@
 #pragma once
 
-#include <engine/world/ecs/systems/BaseSystem.h>
+#include "BaseSystem.h"
 
 namespace engine
 {
