@@ -339,7 +339,10 @@ namespace engine
 
 			~ResourceLoaderImpl()
 			{
-
+				for (auto& [hash, sampler] : sampler_cache)
+				{
+					context.Destroy(sampler);
+				}
 			}
 
 			Texture* LoadTexture(std::string_view texture_path) override
@@ -598,8 +601,11 @@ namespace engine
 
 			Sampler* GetSampler(const SamplerCreateInfo& create_info)
 			{
-				assert(false && "NOT IMPLEMENTED");
-				return nullptr;
+				uint32_t sampler_hash = Hash(create_info);
+				if (auto found = sampler_cache.find(sampler_hash); found != sampler_cache.end())
+					return found->second;
+
+				return sampler_cache[sampler_hash] = context.CreateSampler(create_info);
 			}
 
 			Shader* LoadShader(std::string_view shader_name) override
@@ -746,6 +752,8 @@ namespace engine
 			bool is_writing_commands{ false };
 
 			std::unique_ptr<shc::ShaderEffectCompiler> effect_compiler;
+
+			std::unordered_map<uint32_t, Sampler*> sampler_cache{};
 
 			std::unique_ptr<MipGeneratorImpl> mip_generator;
 		};
