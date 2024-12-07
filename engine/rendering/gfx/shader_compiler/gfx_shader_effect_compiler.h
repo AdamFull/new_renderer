@@ -34,12 +34,25 @@ namespace engine
 				std::string_view shader_cache_patch{ "" };
 			};
 
+			struct CachedShaderDesc
+			{
+				ShaderStageFlag stage{};
+				uint32_t shader_key;
+			};
+
+			struct ShaderEffectDesc
+			{
+				std::vector<CachedShaderDesc> shader_descriptions;
+				//std::vector<SamplerCreateInfo
+				// ...
+			};
+
 			struct ShaderCache
 			{
 				// key - shader_group (ShaderStageFlag). key - shader hash, code
 				std::unordered_map<uint32_t, std::unordered_map<uint32_t, std::string>> shaders{};
-				// key - module name hash, key - shader unique name, (shader group, shader hash)
-				std::unordered_map<uint32_t, std::unordered_map<uint32_t, std::pair<uint32_t, uint32_t>>> modules{};
+				// key - module name hash, key - shader effect unique name, (shader group, shader hash)
+				std::unordered_map<uint32_t, std::unordered_map<uint32_t, ShaderEffectDesc>> modules{};
 			};
 
 			class ShaderEffectCompiler
@@ -59,7 +72,9 @@ namespace engine
 
 				ShaderEffectCompilerConfig config;
 				bool is_config_loaded{ false };
+
 				std::string base_path;
+				std::string output_path;
 
 				ShaderCache shader_cache{};
 

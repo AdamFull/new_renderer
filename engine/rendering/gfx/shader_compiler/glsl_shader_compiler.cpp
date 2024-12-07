@@ -22,7 +22,7 @@ namespace engine
 			class shader_includer : public glslang::TShader::Includer
 			{
 			public:
-				shader_includer(FilesystemWrapper& fs, std::string base_path) :
+				shader_includer(FilesystemWrapper& fs, std::string_view base_path) :
 					fs{ fs },
 					base_path{ base_path }
 				{
@@ -271,6 +271,10 @@ namespace engine
 				// Include extention is required by default
 				ss << "#extension GL_GOOGLE_include_directive : require" << std::endl;
 
+				// Apply base definitions
+				for (auto& definition : info.base_definitions)
+					ss << std::format("#define {}", definition) << std::endl;
+
 				// Apply definitions (TODO: add definition values)
 				for (auto& definition : info.definitions)
 					ss << std::format("#define {}", definition) << std::endl;
@@ -280,7 +284,7 @@ namespace engine
 
 			glslang::TShader CreateShader(const CompileShaderInfo& compile_info, EShMessages& messages)
 			{
-				auto language = GetShaderLanguage(compile_info.type);
+				auto language = GetShaderLanguage(compile_info.stage);
 
 				glslang::TShader shader(language);
 
@@ -319,8 +323,8 @@ namespace engine
 
 				auto shader = CreateShader(compile_info, messages);
 
-				auto shader_source = compile_info.code.c_str();
-				auto shader_name = compile_info.name.c_str();
+				auto shader_source = compile_info.code.data();
+				auto shader_name = compile_info.name.data();
 				shader.setStringsWithLengthsAndNames(&shader_source, nullptr, &shader_name, 1);
 
 				std::string preamble = GeneratePreamble(compile_info);
@@ -350,8 +354,8 @@ namespace engine
 
 				auto shader = CreateShader(compile_info, messages);
 
-				auto shader_source = compile_info.code.c_str();
-				auto shader_name = compile_info.name.c_str();
+				auto shader_source = compile_info.code.data();
+				auto shader_name = compile_info.name.data();
 				shader.setStringsWithLengthsAndNames(&shader_source, nullptr, &shader_name, 1);
 
 				std::string preamble = GeneratePreamble(compile_info);

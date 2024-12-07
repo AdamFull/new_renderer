@@ -25,12 +25,23 @@ namespace engine
 			struct CompileShaderInfo
 			{
 				ShaderCompilerBuildType build_type;
-				ShaderStageFlag type;
-				std::string name;
-				std::string code;
-				std::string base_path;
-				std::vector<std::string> definitions;
-				std::vector<std::string> include_directories;
+
+				ShaderStageFlag stage;
+				uint32_t stage_hash;
+
+				std::string_view base_path;
+
+				std::string_view module_name;
+				uint32_t module_name_hash;
+
+				std::string_view name;
+				uint32_t name_hash;
+
+				std::string_view code;
+				std::span<const std::string> base_definitions;
+				std::span<const std::string> definitions;
+
+				std::span<const std::string> include_directories;
 			};
 
 			class ShaderCompiler

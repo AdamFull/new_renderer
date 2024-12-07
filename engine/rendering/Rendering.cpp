@@ -108,7 +108,17 @@ namespace engine
 				return vfs.Exists(path);
 			}
 
+			bool Mkdir(std::string_view path) override
+			{
+				return vfs.CreateDirectories(path);
+			}
+
 			bool ReadFile(std::string_view path, std::vector<uint8_t>& data) override
+			{
+				return vfs.ReadFile(path, data);
+			}
+
+			bool ReadFile(std::string_view path, std::string& data) override
 			{
 				return vfs.ReadFile(path, data);
 			}

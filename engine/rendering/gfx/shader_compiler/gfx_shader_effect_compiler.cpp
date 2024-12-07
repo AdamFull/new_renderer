@@ -194,6 +194,31 @@ namespace engine
 				utl::parse_from("modules", json, type.modules);
 			}
 
+
+			void to_json(nlohmann::json& json, const CachedShaderDesc& type)
+			{
+				utl::serialize_to("stage", json, type.stage);
+				utl::serialize_to("shader_key", json, type.shader_key);
+			}
+
+			void from_json(const nlohmann::json& json, CachedShaderDesc& type)
+			{
+				utl::parse_from("stage", json, type.stage);
+				utl::parse_from("shader_key", json, type.shader_key, true);
+			}
+
+
+			void to_json(nlohmann::json& json, const ShaderEffectDesc& type)
+			{
+				utl::serialize_to("shader_descriptions", json, type.shader_descriptions);
+			}
+
+			void from_json(const nlohmann::json& json, ShaderEffectDesc& type)
+			{
+				utl::parse_from("shader_descriptions", json, type.shader_descriptions);
+			}
+
+
 			void to_json(nlohmann::json& json, const ShaderCache& type)
 			{
 				utl::serialize_to("shaders", json, type.shaders);
@@ -223,6 +248,7 @@ namespace engine
 
 					is_config_loaded = true;
 					base_path = fsh::parent_path(create_info.shader_compile_config_path);
+					output_path = fsh::parent_path(create_info.shader_cache_patch);
 
 					switch (config.lang)
 					{
@@ -259,11 +285,17 @@ namespace engine
 					return;
 				}
 
-				std::array<char, 1024ull> str_buf{};
+				std::array<char, 256ull> str_buf{};
 
 				for (const auto& compile_module : config.modules)
 				{
 					log_info("Building module: {}", compile_module.name);
+
+					auto out_module_path = output_path + '/' + compile_module.name;
+					if (!fs.Exists(out_module_path))
+					{
+						fs.Mkdir(out_module_path);
+					}
 
 					uint32_t module_name_hash = utl::murmur_hash(compile_module.name);
 
@@ -275,72 +307,96 @@ namespace engine
 					{
 						// Read shader effect description file
 						std::vector<uint8_t> file_data{};
-						if (fs.ReadFile(effect_path, file_data))
+						if (!fs.ReadFile(effect_path, file_data))
+							continue;
+
+						auto json = nlohmann::json::parse(file_data);
+						file_data.clear();
+
+						ShaderEffectCompileDesc desc;
+						json.get_to(desc);
+
+						uint32_t shader_effect_name_hash = utl::murmur_hash(desc.name);
+
+
+						// Iterate each shader description
+						for (const auto& shader_source : desc.shaders)
 						{
-							ShaderEffectCompileDesc desc;
+							std::string shader_code{};
 
-							auto json = nlohmann::json::parse(file_data);
-							json.get_to(desc);
-
-							file_data.clear();
-
-							std::array<char, 1024ull> path_buffer{};
-
-							// Iterate each shader description
-							for (const auto& shader_source : desc.shaders)
+							// TODO: check in shader cache
+							std::array<char, 256ull> path_buffer{};
+							auto shader_path = fsh::path_append(module_path, shader_source.source, path_buffer);
+							if (!fs.Exists(shader_path))
 							{
-								// TODO: check in shader cache
-								auto shader_path = fsh::path_append(module_path, shader_source.source, path_buffer);
-								if (fs.ReadFile(shader_path, file_data))
+								// Try to find in common
+								for (const auto& common_dir : config.common_directories)
 								{
-									CompileShaderInfo compile_info{};
-									compile_info.build_type = build_type;
-									compile_info.include_directories = config.include_directories;
-
-									compile_info.name = shader_source.source;
-									compile_info.type = shader_source.type;
-									compile_info.base_path = base_path;
-									compile_info.code.resize(file_data.size());
-
-									const char* begin = reinterpret_cast<const char*>(&file_data[0]);
-									const char* end = begin + file_data.size();
-									std::copy(std::execution::par_unseq, begin, end, &compile_info.code[0]);
-
-									if (!desc.compile.permutation_pattern.empty())
-									{
-										if (auto found = config.permutation_patterns.find(desc.compile.permutation_pattern); found != config.permutation_patterns.end())
-										{
-											for (const auto& permutation : found->second)
-											{
-												compile_info.definitions.clear();
-												compile_info.definitions.insert(compile_info.definitions.end(), shader_source.definitions.begin(), shader_source.definitions.end());
-												compile_info.definitions.insert(compile_info.definitions.end(), permutation.begin(), permutation.end());
-												CompilePermutation(compile_info);
-											}
-										}
-									}
-
-									if (!desc.compile.permutate.empty())
-									{
-										for (const auto& permutation : desc.compile.permutate)
-										{
-											compile_info.definitions.clear();
-											compile_info.definitions.insert(compile_info.definitions.end(), shader_source.definitions.begin(), shader_source.definitions.end());
-											compile_info.definitions.insert(compile_info.definitions.end(), permutation.begin(), permutation.end());
-										}
-									}
-
-									if (desc.compile.permutation_pattern.empty() && desc.compile.permutate.empty())
-									{
-										compile_info.definitions.insert(compile_info.definitions.end(), shader_source.definitions.begin(), shader_source.definitions.end());
-										CompilePermutation(compile_info);
-									}
+									shader_path = fsh::path_append(base_path, common_dir, path_buffer);
+									shader_path = fsh::path_append(shader_path, shader_source.source, path_buffer);
+									if (fs.Exists(shader_path))
+										break;
 								}
 							}
 
-							continue;
+							if (fs.ReadFile(shader_path, shader_code))
+							{
+								CompileShaderInfo compile_info{};
+								compile_info.build_type = build_type;
+
+								compile_info.base_path = base_path;
+
+								compile_info.module_name = compile_module.name;
+								compile_info.module_name_hash = module_name_hash;
+
+								compile_info.name = desc.name;
+								compile_info.name_hash = shader_effect_name_hash;
+
+								compile_info.stage = shader_source.type;
+								compile_info.stage_hash = Hash(shader_source.type);
+
+								compile_info.code = shader_code;
+								compile_info.base_definitions = shader_source.definitions;
+
+								compile_info.include_directories = config.include_directories;
+
+								if (!desc.compile.permutation_pattern.empty())
+								{
+									if (auto found = config.permutation_patterns.find(desc.compile.permutation_pattern); found != config.permutation_patterns.end())
+									{
+										for (const auto& permutation : found->second)
+										{
+											compile_info.definitions = permutation;
+											CompilePermutation(compile_info);
+										}
+									}
+								}
+
+								if (!desc.compile.permutate.empty())
+								{
+									for (const auto& permutation : desc.compile.permutate)
+									{
+										compile_info.definitions = permutation;
+										CompilePermutation(compile_info);
+									}
+								}
+
+								if (desc.compile.permutation_pattern.empty() && desc.compile.permutate.empty())
+								{
+									CompilePermutation(compile_info);
+								}
+							}
 						}
+
+						continue;
 					}
+				}
+
+				auto json = nlohmann::json(shader_cache);
+				std::vector<uint8_t> data = nlohmann::json::to_bson(json);
+				if (!fs.WriteFile(output_path + "/shader_cache.shc", data))
+				{
+					log_error("Failed to save shader cache!");
 				}
 			}
 
@@ -353,22 +409,103 @@ namespace engine
 				}
 			}
 
+			uint32_t GenerateUniqueModuleHashName(const CompileShaderInfo& compile_info)
+			{
+				uint32_t hash{ compile_info.module_name_hash };
+				hash = (hash + compile_info.name_hash) % std::numeric_limits<uint32_t>::max();
+
+				for (const auto& definition : compile_info.definitions)
+					hash = (hash + utl::murmur_hash(definition)) % std::numeric_limits<uint32_t>::max();
+
+				return hash;
+			}
+
 			void ShaderEffectCompiler::CompilePermutation(const CompileShaderInfo& compile_info)
 			{
-				uint32_t stage_hash = Hash(compile_info.type);
+				bool is_first_time_compile{ false };
+				uint32_t unique_shader_permutation_name_hash = GenerateUniqueModuleHashName(compile_info);
 
 				// Get shader stabge bank
-				auto& shader_bank = shader_cache.shaders[stage_hash];
+				auto& shader_bank = shader_cache.shaders[compile_info.stage_hash];
+				auto& shader_module = shader_cache.modules[compile_info.module_name_hash];
 
-				uint32_t shader_hash{ 0u };
-				if (!shader_compiler->Preprocess(compile_info, shader_hash))
+				auto& effect_desc = shader_module[unique_shader_permutation_name_hash];
+
+				uint32_t shader_permutation_hash{ 0u };
+				if (!shader_compiler->Preprocess(compile_info, shader_permutation_hash))
+				{
+					log_error("Failed to preprocess shader: {}", compile_info.name);
 					return;
+				}
 
-				// Check that need to compile/recompile
+				if (effect_desc.shader_descriptions.empty())
+				{
+					effect_desc.shader_descriptions.emplace_back(compile_info.stage, 0u);
+					is_first_time_compile = true;
+				}
 
-				std::vector<uint8_t> shader_code{};
-				if (!shader_compiler->Compile(compile_info, shader_code))
-					return;
+				auto& current_desc = effect_desc.shader_descriptions.back();
+
+				bool is_code_outdated = current_desc.shader_key != shader_permutation_hash;
+				bool is_type_missmatch = current_desc.stage != compile_info.stage;
+
+				if (is_type_missmatch)
+				{
+					//log_warning("Type mismatch for shader module named: \"{}\". Previous type: \"{}\" new type: \"{}\". Old shaders will be removed.",
+					//	unique_module_name, get_shader_type_str(current_module.type), get_shader_type_str(shader_meta.type));
+
+					// Removing old shaders
+					for (auto& shmodule : effect_desc.shader_descriptions)
+						shader_bank.erase(shmodule.shader_key);
+
+					// Cleaning links
+					effect_desc.shader_descriptions.clear();
+					current_desc = effect_desc.shader_descriptions.emplace_back(compile_info.stage, 0u);
+				}
+
+				// Compile shader if we need
+				if (is_code_outdated || is_type_missmatch || is_first_time_compile)
+				{
+					auto& compiled_shader_path = shader_bank[shader_permutation_hash];
+
+					std::vector<uint8_t> compiled_spirv{};
+					if (!shader_compiler->Compile(compile_info, compiled_spirv))
+						return;
+
+					// Inform that shader is compiled
+					{
+						std::stringstream ss{};
+						ss << compile_info.name;
+						for (auto& definition : compile_info.definitions)
+							ss << ":" << definition;
+
+						log_info("{} shader {}[{}] was {}.", unique_shader_permutation_name_hash, ss.str(), shader_permutation_hash, is_first_time_compile ? "compiled" : "recompiled");
+					}
+
+					// Generate name
+					{
+						std::stringstream ss;
+						ss << compile_info.module_name << "/" << compile_info.name << "." << compile_info.stage_hash << "." << unique_shader_permutation_name_hash << ".spv";
+						compiled_shader_path = ss.str();
+					}
+
+					// Save compiled shader
+					{
+						std::stringstream ss;
+						ss << output_path << '/' << compiled_shader_path;
+						if (!fs.WriteFile(ss.str(), compiled_spirv))
+						{
+							log_error("Failed to comile shader: {}.", compiled_shader_path);
+							return;
+						}
+					}
+				}
+
+				// Removing old shader data
+				if ((is_code_outdated || is_type_missmatch) && !is_first_time_compile)
+					shader_bank.erase(current_desc.shader_key);
+
+				current_desc.shader_key = shader_permutation_hash;
 			}
 		}
 	}
