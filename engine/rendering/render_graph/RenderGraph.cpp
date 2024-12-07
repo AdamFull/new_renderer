@@ -1,9 +1,9 @@
 #include "RenderGraph.h"
-#include <engine/rendering/RendererInterface.h>
-#include <engine/rendering/RenderContext.h>
-#include <engine/rendering/gfx/gfx_context.h>
+#include "../RendererInterface.h"
+#include "../RenderContext.h"
+#include "../gfx/gfx_context.h"
 
-#include <engine/rendering/UniformPool.h>
+#include "../UniformPool.h"
 
 #include <tracy/Tracy.hpp>
 

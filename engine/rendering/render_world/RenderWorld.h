@@ -1,7 +1,7 @@
 #pragma once
 
-#include <engine/rendering/render_world/RenderWorldInterface.h>
-#include <engine/rendering/DynamicBuffer.h>
+#include "RenderWorldInterface.h"
+#include "../DynamicBuffer.h"
 
 #include <memory>
 #include <vector>

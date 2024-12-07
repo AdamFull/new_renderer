@@ -1,8 +1,8 @@
 #pragma once
 
-#include <engine/rendering/render_graph/RenderGraphInterface.h>
-#include <engine/rendering/RenderResourceContainer.h>
-#include <engine/rendering/UniformPool.h>
+#include "RenderGraphInterface.h"
+#include "../RenderResourceContainer.h"
+#include "../UniformPool.h"
 
 namespace engine
 {

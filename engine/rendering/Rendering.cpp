@@ -1,25 +1,24 @@
-#include <engine/rendering/Rendering.h>
+#include "Rendering.h"
 
-#include <engine/rendering/gfx/gfx_context.h>
+#include "gfx/gfx_context.h"
 
-#include <engine/rendering/RenderContext.h>
-#include <engine/rendering/UploadContext.h>
+#include "RenderContext.h"
+#include "UploadContext.h"
 
-#include <engine/rendering/render_graph/ComputePass.h>
-#include <engine/rendering/render_graph/RenderPass.h>
+#include "render_graph/ComputePass.h"
+#include "render_graph/RenderPass.h"
+#include "render_graph/RenderGraph.h"
 
-#include <engine/rendering/GeometryBuffer.h>
+#include "render_world/RenderWorld.h"
 
-#include <engine/rendering/render_graph/RenderGraph.h>
-#include <engine/rendering/render_world/RenderWorld.h>
+#include "GeometryBuffer.h"
 
 #include <embed/shaders/includes/shlib.h>
+#include <embed/shaders/includes/culling.h>
 
 #include <util/Logger.h>
 
 #include "Globals.h"
-
-#include <embed/shaders/includes/culling.h>
 
 #include <engine/world/EntityManager.h>
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <engine/rendering/gfx/gfx_resource_loader.h>
+#include "gfx/gfx_resource_loader.h"
 
 #include <unordered_map>
 

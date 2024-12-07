@@ -1,13 +1,11 @@
 #pragma once
 
 #include <engine/interface/filesystem/VirtualFileSystemInterface.h>
-#include <engine/rendering/RendererInterface.h>
-#include <engine/rendering/RenderResourceContainer.h>
+#include "RendererInterface.h"
+#include "RenderResourceContainer.h"
+#include "ExecutionContext.h"
 
-#include <engine/rendering/ExecutionContext.h>
-
-//#include <engine/rendering/GPUVector.h>
-#include <engine/rendering/render_graph/ShaderPass.h>
+#include "render_graph/ShaderPass.h"
 #include <memory>
 
 namespace engine

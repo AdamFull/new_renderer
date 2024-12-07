@@ -1,7 +1,7 @@
-#include <engine/rendering/render_graph/RenderPass.h>
+#include "RenderPass.h"
 
-#include <engine/rendering/RendererInterface.h>
-#include <engine/rendering/gfx/gfx_context.h>
+#include "../RendererInterface.h"
+#include "../gfx/gfx_context.h"
 
 #include <util/Logger.h>
 

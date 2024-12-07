@@ -1,8 +1,7 @@
 #pragma once
 
 #include "RenderGraphInterface.h"
-#include <engine/rendering/ExecutionContext.h>
-#include <engine/rendering/gfx/gfx_base.h>
+#include "../ExecutionContext.h"
 
 #include <algorithm>
 

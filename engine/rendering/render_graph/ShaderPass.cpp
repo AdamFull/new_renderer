@@ -1,10 +1,10 @@
-#include <engine/rendering/render_graph/ShaderPass.h>
+#include "ShaderPass.h"
 
-#include <engine/rendering/RendererInterface.h>
-#include <engine/rendering/gfx/gfx_context.h>
+#include "../RendererInterface.h"
+#include "../gfx/gfx_context.h"
+#include "../gfx/gfx_util.h"
+
 #include <util/Logger.h>
-
-#include <engine/rendering/gfx/gfx_util.h>
 
 #include <hash.hpp>
 

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <engine/rendering/GeometryBufferInterface.h>
-#include <engine/rendering/render_graph/RenderGraphInterface.h>
-#include <engine/rendering/render_world/RenderWorldInterface.h>
+#include "GeometryBufferInterface.h"
+#include "render_graph/RenderGraphInterface.h"
+#include "render_world/RenderWorldInterface.h"
 
 namespace engine
 {

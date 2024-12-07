@@ -1,5 +1,5 @@
 #include "RenderWorld.h"
-#include <engine/rendering/Rendering.h>
+#include "../Rendering.h"
 
 #include <glm/gtx/quaternion.hpp>
 

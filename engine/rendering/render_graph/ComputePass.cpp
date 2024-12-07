@@ -1,7 +1,7 @@
-#include <engine/rendering/render_graph/ComputePass.h>
+#include "ComputePass.h"
 
-#include <engine/rendering/RendererInterface.h>
-#include <engine/rendering/gfx/gfx_context.h>
+#include "../RendererInterface.h"
+#include "../gfx/gfx_context.h"
 
 namespace engine
 {

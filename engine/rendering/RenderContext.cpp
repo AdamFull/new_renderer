@@ -1,10 +1,10 @@
-#include <engine/rendering/RenderContext.h>
-#include <engine/rendering/UniformPool.h>
+#include "RenderContext.h"
+#include "UniformPool.h"
 
 #include <engine/runtime/Window.h>
 
-#include <engine/rendering/gfx/gfx_context.h>
-#include <engine/rendering/gfx/gfx_util.h>
+#include "gfx/gfx_context.h"
+#include "gfx/gfx_util.h"
 
 #include <format>
 

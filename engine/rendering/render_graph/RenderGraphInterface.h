@@ -1,6 +1,6 @@
 #pragma once
 
-#include <engine/rendering/gfx/gfx_structures.h>
+#include "../gfx/gfx_structures.h"
 #include <memory.hpp>
 
 struct std_pair_hash

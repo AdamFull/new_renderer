@@ -1,6 +1,6 @@
-#include <engine/rendering/GeometryBuffer.h>
+#include "GeometryBuffer.h"
 
-#include <engine/rendering/gfx/gfx_context.h>
+#include "gfx/gfx_context.h"
 
 #include <util/Util.h>
 

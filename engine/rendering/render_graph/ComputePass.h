@@ -1,6 +1,6 @@
 #pragma once
 
-#include <engine/rendering/render_graph/ShaderPass.h>
+#include "ShaderPass.h"
 
 namespace engine
 {
