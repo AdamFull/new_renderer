@@ -1,10 +1,10 @@
-#include <engine/runtime/Runtime.h>
+#include "Runtime.h"
 
 // Filesystem headers
 #include <engine/filesystem/VirtualFileSystemManager.h>
 #include <engine/filesystem/native/NativeFileSystem.h>
 
-#include <engine/runtime/RuntimeContext.h>
+#include "RuntimeContext.h"
 #include <util/Logger.h>
 
 #include <tracy/Tracy.hpp>

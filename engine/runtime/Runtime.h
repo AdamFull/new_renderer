@@ -1,9 +1,9 @@
 #pragma once
 
 #include <engine/Application.h>
-#include <engine/runtime/Window.h>
+#include "Window.h"
 #include <util/Performance.h>
-#include <engine/runtime/ui/EngineUI.h>
+#include "ui/EngineUI.h"
 
 #ifdef CreateWindow
 #undef CreateWindow

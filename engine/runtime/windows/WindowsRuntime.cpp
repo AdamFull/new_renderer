@@ -1,9 +1,9 @@
-#include <engine/runtime/windows/WindowsRuntime.h>
+#include "WindowsRuntime.h"
 
-#include <engine/runtime/GlfwWindow.h>
-#include <engine/runtime/HeadlessWIndow.h>
+#include "../GlfwWindow.h"
+#include "../HeadlessWIndow.h"
 
-#include <engine/runtime/windows/WindowsRuntimeContext.h>
+#include "WindowsRuntimeContext.h"
 
 namespace engine
 {

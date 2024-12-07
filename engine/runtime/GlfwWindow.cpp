@@ -1,4 +1,4 @@
-#include <engine/runtime/GlfwWindow.h>
+#include "GlfwWindow.h"
 
 #include <unordered_map>
 
@@ -7,7 +7,7 @@
 #include <GLFW/glfw3native.h>
 
 #include <util/Logger.h>
-#include <engine/runtime/Runtime.h>
+#include "Runtime.h"
 
 namespace engine
 {
