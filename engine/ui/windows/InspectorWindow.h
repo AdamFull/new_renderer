@@ -1,7 +1,7 @@
 #pragma once
 
 #include "EditorWindow.h"
-#include <engine/ui/InspectorDrawer.h>
+#include "../InspectorDrawer.h"
 #include <engine/world/ecs/components/components.h>
 
 namespace engine

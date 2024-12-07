@@ -1,8 +1,8 @@
 #pragma once
 
 #include <enum.hpp>
-#include <engine/ui/Attributes.h>
-#include <engine/ui/ImGuiElements.h>
+#include "Attributes.h"
+#include "ImGuiElements.h"
 
 namespace engine
 {

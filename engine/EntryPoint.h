@@ -2,13 +2,13 @@
 
 #include <memory>
 
-#include <engine/runtime/RuntimeContext.h>
+#include "runtime/RuntimeContext.h"
 
 int RuntimeMain(const engine::RuntimeContext&);
 
 #if defined(PLATFORM_WINDOWS)
-#include <engine/runtime/windows/WindowsRuntimeContext.h>
-#include <engine/runtime/windows/WindowsRuntime.h>
+#include "runtime/windows/WindowsRuntimeContext.h"
+#include "runtime/windows/WindowsRuntime.h"
 
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, INT nCmdShow)
 {

@@ -1,9 +1,9 @@
 #include "InspectorWindow.h"
 
 #include <engine/world/EntityManager.h>
-#include <engine/ui/EditorState.h>
-#include <engine/ui/EditorTraits.h>
-#include <engine/ui/ImGuiElements.h>
+#include "../EditorState.h"
+#include "../EditorTraits.h"
+#include "../ImGuiElements.h"
 
 #include <imgui.h>
 

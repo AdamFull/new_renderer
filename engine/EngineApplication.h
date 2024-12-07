@@ -1,12 +1,12 @@
 #pragma once
 
-#include <engine/Application.h>
-#include <engine/rendering/RendererInterface.h>
+#include "Application.h"
+#include "rendering/RendererInterface.h"
 
-#include <engine/InputMapper.h>
-#include <engine/EngineSystemManager.h>
+#include "InputMapper.h"
+#include "EngineSystemManager.h"
 
-#include <engine/ui/windows/EditorWindow.h>
+#include "ui/windows/EditorWindow.h"
 
 namespace engine
 {

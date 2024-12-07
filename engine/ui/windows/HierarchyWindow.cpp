@@ -3,8 +3,8 @@
 #include <imgui.h>
 #include <engine/world/EntityManager.h>
 
-#include <engine/ui/EditorTraits.h>
-#include <engine/ui/EditorState.h>
+#include "../EditorTraits.h"
+#include "../EditorState.h"
 
 using namespace engine;
 using namespace engine::world;
