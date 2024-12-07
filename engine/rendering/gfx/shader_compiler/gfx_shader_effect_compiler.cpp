@@ -4,6 +4,7 @@
 #include "gfx_shader_effect.h"
 
 #include "glsl_shader_compiler.h"
+#include "../gfx_util.h"
 
 #include <util/FilesystemHelper.h>
 #include <util/Logger.h>
@@ -193,6 +194,19 @@ namespace engine
 				utl::parse_from("modules", json, type.modules);
 			}
 
+			void to_json(nlohmann::json& json, const ShaderCache& type)
+			{
+				utl::serialize_to("shaders", json, type.shaders);
+				utl::serialize_to("modules", json, type.modules);
+			}
+
+			void from_json(const nlohmann::json& json, ShaderCache& type)
+			{
+				utl::parse_from("shaders", json, type.shaders);
+				utl::parse_from("modules", json, type.modules);
+			}
+
+
 			ShaderEffectCompiler::ShaderEffectCompiler(const ShaderEffectCompilerCreateInfo& create_info) :
 				fs{ *create_info.filesystem_wrapper },
 				build_type{ create_info.build_type }
@@ -225,7 +239,8 @@ namespace engine
 					fs.Exists(create_info.shader_cache_patch) && 
 					fs.ReadFile(create_info.shader_cache_patch, filedata))
 				{
-
+					auto json = nlohmann::json::from_bson(filedata.begin(), filedata.end());
+					json.get_to(shader_cache);
 				}
 
 				CompileModules();
@@ -340,6 +355,11 @@ namespace engine
 
 			void ShaderEffectCompiler::CompilePermutation(const CompileShaderInfo& compile_info)
 			{
+				uint32_t stage_hash = Hash(compile_info.type);
+
+				// Get shader stabge bank
+				auto& shader_bank = shader_cache.shaders[stage_hash];
+
 				uint32_t shader_hash{ 0u };
 				if (!shader_compiler->Preprocess(compile_info, shader_hash))
 					return;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gfx_structures.h"
+#include <hash.hpp>
 #include <cassert>
 
 namespace engine
@@ -42,6 +43,12 @@ namespace engine
 			}
 
 			return ResourceStateFlag::eUndefined;
+		}
+
+		inline constexpr uint32_t Hash(ShaderStageFlag flag, uint32_t hash = 0u)
+		{
+			std::string_view enum_string = utl::enum_to_string(flag);
+			return utl::murmur_hash(enum_string, hash);
 		}
 	}
 }
