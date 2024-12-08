@@ -411,7 +411,7 @@ namespace engine
 					std::string_view substring = input.substr(start, (end == std::string_view::npos) ? input.size() - start : end - start);
 
 					// Combine the hash of the substring into the total hash
-					hash = utl::murmur_hash(substring, hash);
+					hash += utl::murmur_hash(substring);
 
 					// Move to the next substring
 					if (end == std::string_view::npos) break;
@@ -467,10 +467,10 @@ namespace engine
 			uint32_t GenerateUniqueModuleHashName(const CompileShaderInfo& compile_info)
 			{
 				uint32_t hash = utl::murmur_hash(compile_info.module_name);
-				hash = utl::murmur_hash(compile_info.name, hash);
+				hash += utl::murmur_hash(compile_info.name);
 
 				for (const auto& definition : compile_info.definitions)
-					hash = utl::murmur_hash(definition, hash);
+					hash += utl::murmur_hash(definition);
 
 				return hash;
 			}
