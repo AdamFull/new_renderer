@@ -65,7 +65,7 @@ namespace engine
 
 				void CompileOne(const char* shader_name);
 			private:
-				void CompilePermutation(const CompileShaderInfo& compile_info);
+				bool CompilePermutation(const CompileShaderInfo& compile_info);
 			private:
 				FilesystemWrapper& fs;
 				ShaderCompilerBuildType build_type;

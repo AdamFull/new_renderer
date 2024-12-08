@@ -42,6 +42,8 @@ namespace engine
 				std::span<const std::string> definitions;
 
 				std::span<const std::string> include_directories;
+
+				uint32_t shader_index{ 0u };
 			};
 
 			class ShaderCompiler
