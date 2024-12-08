@@ -204,6 +204,7 @@ namespace engine
 				ResourceStateFlags resource_state{ ResourceStateFlag::eCopyDst };
 
 				TextureBarrier texture_barrier{};
+				texture_barrier.texture = &texture;
 
 				ResourceBarrierInfo resource_barrier{};
 				resource_barrier.texture_barriers = &texture_barrier;

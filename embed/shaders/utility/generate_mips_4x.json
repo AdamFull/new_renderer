@@ -7,6 +7,12 @@
 		}
 	],
 	"compile": {
-		"shader_model": 6
+		"shader_model": 6,
+		"permutate": [
+			[],
+			[ "MIP_2" ],
+			[ "MIP_2", "MIP_3" ],
+			[ "MIP_2", "MIP_3", "MIP_4" ]
+		]
 	}
 }

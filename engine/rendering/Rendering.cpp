@@ -697,7 +697,7 @@ namespace engine
 			// Generate brdflut
 			{
 				ComputeShaderPassCreateInfo create_info{};
-				create_info.shader_name = "lighting:brgflut_generator";
+				create_info.shader_name = "lighting:brdflut_generator";
 				create_info.one_time = true;
 
 				create_info.draw_callback = [this, 

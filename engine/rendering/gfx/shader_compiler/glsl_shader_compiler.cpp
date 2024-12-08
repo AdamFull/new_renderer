@@ -423,7 +423,7 @@ namespace engine
 				code.resize(spirv_code.size() * sizeof(uint32_t));
 
 				uint8_t* begin = reinterpret_cast<uint8_t*>(&spirv_code[0]);
-				uint8_t* end = begin + spirv_code.size();
+				uint8_t* end = begin + code.size();
 
 				std::copy(std::execution::par_unseq, begin, end, code.begin());
 

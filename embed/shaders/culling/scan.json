@@ -7,6 +7,10 @@
 		}
 	],
 	"compile": {
-		"shader_model": 6
+		"shader_model": 6,
+		"permutate": [
+			[],
+			[ "INPUT_BIT_ARRAY" ]
+		]
 	}
 }
