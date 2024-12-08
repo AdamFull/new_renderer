@@ -317,13 +317,13 @@ namespace engine
 				glslang::FinalizeProcess();
 			}
 
-			bool GLSLShaderCompiler::Preprocess(const CompileShaderInfo& compile_info, uint32_t& hash)
+			bool GLSLShaderCompiler::Preprocess(const CompileShaderInfo& compile_info, std::string_view source_code, std::string& preprocessed_code, uint32_t& hash)
 			{
 				EShMessages messages{ k_messages };
 
 				auto shader = CreateShader(compile_info, messages);
 
-				auto shader_source = compile_info.code.data();
+				auto shader_source = source_code.data();
 				auto shader_name = compile_info.name.data();
 				shader.setStringsWithLengthsAndNames(&shader_source, nullptr, &shader_name, 1);
 
@@ -335,7 +335,6 @@ namespace engine
 				for (auto& dir : compile_info.include_directories)
 					includer.pushExternalLocalDirectory(dir);
 
-				std::string preprocessed_code{};
 				auto resources = GetResources();
 				if (!shader.preprocess(&resources, k_client_version, ENoProfile, false, false, messages, &preprocessed_code, includer))
 				{
@@ -348,13 +347,13 @@ namespace engine
 				return true;
 			}
 
-			bool GLSLShaderCompiler::Compile(const CompileShaderInfo& compile_info, std::vector<uint8_t>& code)
+			bool GLSLShaderCompiler::Compile(const CompileShaderInfo& compile_info, std::string_view source_code, std::vector<uint8_t>& code)
 			{
 				EShMessages messages{ k_messages };
 
 				auto shader = CreateShader(compile_info, messages);
 
-				auto shader_source = compile_info.code.data();
+				auto shader_source = source_code.data();
 				auto shader_name = compile_info.name.data();
 				shader.setStringsWithLengthsAndNames(&shader_source, nullptr, &shader_name, 1);
 
@@ -367,17 +366,6 @@ namespace engine
 					includer.pushExternalLocalDirectory(dir);
 
 				auto resources = GetResources();
-
-				std::string preprocessed_code{};
-				if (!shader.preprocess(&resources, k_client_version, ENoProfile, false, false, messages, &preprocessed_code, includer))
-				{
-					log_error("\Preprocess error: In shader \"{}\" \n{}\n{}\n", compile_info.name, shader.getInfoLog(), shader.getInfoDebugLog());
-					return false;
-				}
-
-				shader_source = preprocessed_code.c_str();
-				shader.setStringsWithLengthsAndNames(&shader_source, nullptr, &shader_name, 1);
-
 				if (!shader.parse(&resources, k_client_version, false, messages))
 				{
 					log_error("\nParsing error: In shader \"{}\" \n{}\n{}\n", compile_info.name, shader.getInfoLog(), shader.getInfoDebugLog());

@@ -79,7 +79,7 @@ namespace engine
 		{
 			ShaderStageFlag stage{};
 			const char* entry_point{ "main" };
-			std::span<uint8_t> code{};
+			std::span<const uint8_t> code{};
 		};
 
 		struct ShaderCreateInfo

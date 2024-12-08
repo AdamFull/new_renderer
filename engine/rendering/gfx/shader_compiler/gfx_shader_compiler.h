@@ -27,17 +27,12 @@ namespace engine
 				ShaderCompilerBuildType build_type;
 
 				ShaderStageFlag stage;
-				uint32_t stage_hash;
 
 				std::string_view base_path;
 
 				std::string_view module_name;
-				uint32_t module_name_hash;
-
 				std::string_view name;
-				uint32_t name_hash;
 
-				std::string_view code;
 				std::span<const std::string> base_definitions;
 				std::span<const std::string> definitions;
 
@@ -51,9 +46,9 @@ namespace engine
 			public:
 				virtual ~ShaderCompiler() = default;
 
-				virtual bool Preprocess(const CompileShaderInfo& compile_info, uint32_t& hash) = 0;
+				virtual bool Preprocess(const CompileShaderInfo& compile_info, std::string_view source_code, std::string& preprocessed_code, uint32_t& hash) = 0;
 
-				virtual bool Compile(const CompileShaderInfo& compile_info, std::vector<uint8_t>& code) = 0;
+				virtual bool Compile(const CompileShaderInfo& compile_info, std::string_view source_code, std::vector<uint8_t>& code) = 0;
 			};
 		}
 	}

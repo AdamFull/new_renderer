@@ -298,8 +298,6 @@ namespace engine
 						fs.Mkdir(out_module_path);
 					}
 
-					uint32_t module_name_hash = utl::murmur_hash(compile_module.name);
-
 					auto module_path = fsh::path_append(base_path, compile_module.path, str_buf);
 
 					// This one can run parallel?
@@ -316,8 +314,6 @@ namespace engine
 
 						ShaderEffectCompileDesc desc;
 						json.get_to(desc);
-
-						uint32_t shader_effect_name_hash = utl::murmur_hash(desc.name);
 
 						uint32_t shader_souece_index{ 0u };
 
@@ -351,15 +347,10 @@ namespace engine
 							compile_info.base_path = base_path;
 
 							compile_info.module_name = compile_module.name;
-							compile_info.module_name_hash = module_name_hash;
-
 							compile_info.name = desc.name;
-							compile_info.name_hash = shader_effect_name_hash;
 
 							compile_info.stage = shader_source.type;
-							compile_info.stage_hash = Hash(shader_source.type);
 
-							compile_info.code = shader_code;
 							compile_info.base_definitions = shader_source.definitions;
 
 							compile_info.include_directories = config.include_directories;
@@ -371,7 +362,7 @@ namespace engine
 									for (const auto& permutation : found->second)
 									{
 										compile_info.definitions = permutation;
-										is_compiled_something = CompilePermutation(compile_info) || is_compiled_something;
+										is_compiled_something = CompilePermutation(compile_info, shader_code) || is_compiled_something;
 									}
 								}
 							}
@@ -381,13 +372,13 @@ namespace engine
 								for (const auto& permutation : desc.compile.permutate)
 								{
 									compile_info.definitions = permutation;
-									is_compiled_something = CompilePermutation(compile_info) || is_compiled_something;
+									is_compiled_something = CompilePermutation(compile_info, shader_code) || is_compiled_something;
 								}
 							}
 
 							if (desc.compile.permutation_pattern.empty() && desc.compile.permutate.empty())
 							{
-								is_compiled_something = CompilePermutation(compile_info) || is_compiled_something;
+								is_compiled_something = CompilePermutation(compile_info, shader_code) || is_compiled_something;
 							}
 						}
 					}
@@ -405,6 +396,65 @@ namespace engine
 				}
 			}
 
+			uint32_t GetUniqueHashName(std::string_view input)
+			{
+				uint32_t hash{ 0u };
+
+				// Current substring start index
+				size_t start = 0;
+				while (start < input.size())
+				{
+					// Find the next ':' separator or the end of the string
+					size_t end = input.find(':', start);
+
+					// Extract the current substring as a view
+					std::string_view substring = input.substr(start, (end == std::string_view::npos) ? input.size() - start : end - start);
+
+					// Combine the hash of the substring into the total hash
+					hash = utl::murmur_hash(substring, hash);
+
+					// Move to the next substring
+					if (end == std::string_view::npos) break;
+					start = end + 1;
+				}
+
+				return hash;
+			}
+
+			ShaderEffectCreateInfo ShaderEffectCompiler::GetEffect(std::string_view shader_name)
+			{
+				std::array<char, 256ull> buffer{};
+
+				ShaderEffectCreateInfo effect_create_info{};
+
+				// Lookup for shaders
+				auto unique_name_hash = GetUniqueHashName(shader_name);
+				auto found_effect = shader_cache.modules.find(unique_name_hash);
+				if (found_effect == shader_cache.modules.end())
+					return effect_create_info;
+				
+				auto& shader_effect = found_effect->second;
+
+				// Now we can find all needed shaders
+				for (const auto& shader_desc : shader_effect.shader_descriptions)
+				{
+					auto found_shader = shader_cache.shaders.find(shader_desc.shader_key);
+					if (found_shader == shader_cache.shaders.end())
+						continue;
+
+					auto& new_shader_stage = effect_create_info.shader_stages.emplace_back();
+					new_shader_stage.stage = shader_desc.stage;
+
+					auto shader_path = fsh::path_append(output_path, found_shader->second, buffer);
+
+					// Read shader code
+					if (!fs.ReadFile(shader_path, new_shader_stage.code))
+						continue;
+				}
+				
+				return effect_create_info;
+			}
+
 			void ShaderEffectCompiler::CompileOne(const char* shader_name)
 			{
 				if (!is_config_loaded)
@@ -416,40 +466,38 @@ namespace engine
 
 			uint32_t GenerateUniqueModuleHashName(const CompileShaderInfo& compile_info)
 			{
-				uint32_t hash{ compile_info.module_name_hash };
-				hash = (hash + compile_info.name_hash) % std::numeric_limits<uint32_t>::max();
+				uint32_t hash = utl::murmur_hash(compile_info.module_name);
+				hash = utl::murmur_hash(compile_info.name, hash);
 
 				for (const auto& definition : compile_info.definitions)
-					hash = (hash + utl::murmur_hash(definition)) % std::numeric_limits<uint32_t>::max();
+					hash = utl::murmur_hash(definition, hash);
 
 				return hash;
 			}
 
-			bool ShaderEffectCompiler::CompilePermutation(const CompileShaderInfo& compile_info)
+			bool ShaderEffectCompiler::CompilePermutation(const CompileShaderInfo& compile_info, std::string_view shader_code)
 			{
 				bool is_first_time_compile{ false };
 				uint32_t unique_shader_permutation_name_hash = GenerateUniqueModuleHashName(compile_info);
 
 				// Get shader stabge bank
-				auto& shader_bank = shader_cache.shaders[compile_info.stage_hash];
-				auto& shader_module = shader_cache.modules[compile_info.module_name_hash];
-
-				auto& effect_desc = shader_module[unique_shader_permutation_name_hash];
+				auto& shader_module = shader_cache.modules[unique_shader_permutation_name_hash];
 
 				uint32_t shader_permutation_hash{ 0u };
-				if (!shader_compiler->Preprocess(compile_info, shader_permutation_hash))
+				std::string preprocessed_code{};
+				if (!shader_compiler->Preprocess(compile_info, shader_code, preprocessed_code, shader_permutation_hash))
 				{
 					log_error("Failed to preprocess shader: {}", compile_info.name);
 					return false;
 				}
 
-				if (effect_desc.shader_descriptions.empty() || (effect_desc.shader_descriptions.size() <= compile_info.shader_index))
+				if (shader_module.shader_descriptions.empty() || (shader_module.shader_descriptions.size() <= compile_info.shader_index))
 				{
-					effect_desc.shader_descriptions.emplace_back(compile_info.stage, 0u);
+					shader_module.shader_descriptions.emplace_back(compile_info.stage, 0u);
 					is_first_time_compile = true;
 				}
 
-				auto& current_desc = effect_desc.shader_descriptions[compile_info.shader_index];
+				auto& current_desc = shader_module.shader_descriptions[compile_info.shader_index];
 
 				bool is_code_outdated = current_desc.shader_key != shader_permutation_hash;
 				bool is_type_missmatch = current_desc.stage != compile_info.stage;
@@ -460,21 +508,21 @@ namespace engine
 					//	unique_module_name, get_shader_type_str(current_module.type), get_shader_type_str(shader_meta.type));
 
 					// Removing old shaders
-					for (auto& shmodule : effect_desc.shader_descriptions)
-						shader_bank.erase(shmodule.shader_key);
+					for (auto& shmodule : shader_module.shader_descriptions)
+						shader_cache.shaders.erase(shmodule.shader_key);
 
 					// Cleaning links
-					effect_desc.shader_descriptions.clear();
-					current_desc = effect_desc.shader_descriptions.emplace_back(compile_info.stage, 0u);
+					shader_module.shader_descriptions.clear();
+					current_desc = shader_module.shader_descriptions.emplace_back(compile_info.stage, 0u);
 				}
 
 				// Compile shader if we need
 				if (is_code_outdated || is_type_missmatch || is_first_time_compile)
 				{
-					auto& compiled_shader_path = shader_bank[shader_permutation_hash];
+					auto& compiled_shader_path = shader_cache.shaders[shader_permutation_hash];
 
 					std::vector<uint8_t> compiled_spirv{};
-					if (!shader_compiler->Compile(compile_info, compiled_spirv))
+					if (!shader_compiler->Compile(compile_info, preprocessed_code, compiled_spirv))
 						return false;
 
 					// Inform that shader is compiled
@@ -490,7 +538,7 @@ namespace engine
 					// Generate name
 					{
 						std::stringstream ss;
-						ss << compile_info.module_name << "/" << compile_info.name << "." << compile_info.stage_hash << "." << unique_shader_permutation_name_hash << ".spv";
+						ss << compile_info.module_name << "/" << compile_info.name << "." << utl::enum_to_string(compile_info.stage) << "." << unique_shader_permutation_name_hash << ".spv";
 						compiled_shader_path = ss.str();
 					}
 
@@ -508,7 +556,7 @@ namespace engine
 
 				// Removing old shader data
 				if ((is_code_outdated || is_type_missmatch) && !is_first_time_compile)
-					shader_bank.erase(current_desc.shader_key);
+					shader_cache.shaders.erase(current_desc.shader_key);
 
 				current_desc.shader_key = shader_permutation_hash;
 

@@ -608,10 +608,53 @@ namespace engine
 				return sampler_cache[sampler_hash] = context.CreateSampler(create_info);
 			}
 
+			int32_t GetShaderIndex(ShaderStageFlag stage)
+			{
+				if (stage == ShaderStageFlag::eVertex)
+					return 0;
+				else if (stage == ShaderStageFlag::eTessellationControl)
+					return 1;
+				else if (stage == ShaderStageFlag::eTessellationEvaluation)
+					return 2;
+				else if (stage == ShaderStageFlag::eGeometry)
+					return 3;
+				else if (stage == ShaderStageFlag::eFragment)
+					return 4;
+				else if (stage == ShaderStageFlag::eCompute)
+					return 5;
+
+				return -1;
+			}
+
 			Shader* LoadShader(std::string_view shader_name) override
 			{
-				assert(false && "NOT IMPLEMENTED");
-				return nullptr;
+				auto shader_key = shc::GetUniqueHashName(shader_name);
+				auto found_shader = shader_cache.find(shader_key);
+				if (found_shader == shader_cache.end())
+				{
+					// Try to create it
+					auto effect_create_info = effect_compiler->GetEffect(shader_name);
+					if (effect_create_info.shader_stages.empty())
+						return nullptr;
+
+					ShaderCreateInfo shader_create_info{};
+
+					for (const auto& shader_stage : effect_create_info.shader_stages)
+					{
+						shader_create_info.stages |= shader_stage.stage;
+
+						auto stage_index = GetShaderIndex(shader_stage.stage);
+						auto& stage_ci = shader_create_info.shader_stages[stage_index];
+						stage_ci.stage = shader_stage.stage;
+						stage_ci.code = shader_stage.code;
+					}
+
+					auto* new_shader = context.CreateShader(shader_create_info);
+					shader_cache[shader_key] = new_shader;
+					return new_shader;
+				}
+				
+				return found_shader->second;
 			}
 
 			void BeginBufferUpdate(BufferUpdateInfo& update_info) override
@@ -754,6 +797,7 @@ namespace engine
 			std::unique_ptr<shc::ShaderEffectCompiler> effect_compiler;
 
 			std::unordered_map<uint32_t, Sampler*> sampler_cache{};
+			std::unordered_map<uint32_t, Shader*> shader_cache{};
 
 			std::unique_ptr<MipGeneratorImpl> mip_generator;
 		};
