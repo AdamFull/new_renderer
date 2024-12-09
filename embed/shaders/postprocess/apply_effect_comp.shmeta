@@ -1,4 +1,0 @@
-{
-	type: "compute";
-	source: "apply_effect.comp";
-}

@@ -1,4 +1,0 @@
-{
-	type: "compute";
-	source: "generate_mips_4x.comp";
-}

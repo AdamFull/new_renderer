@@ -1,6 +1,0 @@
-{
-	definitions: ["MESH_DATA", "SHADOW_DATA", "GEOMETRY_BUFFERS"];
-
-	type: "vertex";
-	source: "unidirectional_shadow.vert";
-}

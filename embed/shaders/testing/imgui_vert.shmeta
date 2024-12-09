@@ -1,4 +1,0 @@
-{
-	type: "vertex";
-	source: "imgui.vert";
-}

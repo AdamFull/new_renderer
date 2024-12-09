@@ -1,6 +1,0 @@
-{
-	definitions: ["MESH_DATA", "GEOMETRY_BUFFERS"];
-
-	type: "vertex";
-	source: "visbufferwrite.vert";
-}

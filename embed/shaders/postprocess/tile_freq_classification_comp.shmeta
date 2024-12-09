@@ -1,6 +1,0 @@
-{
-	definitions: ["MESH_DATA", "CULLING_DATA"];
-
-	type: "compute";
-	source: "tile_freq_classification.comp";
-}

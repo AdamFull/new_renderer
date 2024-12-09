@@ -1,4 +1,0 @@
-{	
-	type: "compute";
-	source: "filmic_smaa_tu2x.comp";
-}
