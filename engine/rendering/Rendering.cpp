@@ -1454,7 +1454,7 @@ namespace engine
 			// Copy history
 			{
 				ComputeShaderPassCreateInfo create_info{};
-				create_info.shader_name = "utility:copy_compute";
+				create_info.shader_name = "utility:copy_image";
 			
 				create_info.draw_callback = [this,
 					input_target,
