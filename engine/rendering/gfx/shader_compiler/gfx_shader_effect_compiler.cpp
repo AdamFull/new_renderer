@@ -411,7 +411,7 @@ namespace engine
 					std::string_view substring = input.substr(start, (end == std::string_view::npos) ? input.size() - start : end - start);
 
 					// Combine the hash of the substring into the total hash
-					hash += utl::murmur_hash(substring);
+					hash ^= utl::murmur_hash(substring);
 
 					// Move to the next substring
 					if (end == std::string_view::npos) break;
@@ -464,21 +464,22 @@ namespace engine
 				}
 			}
 
-			uint32_t GenerateUniqueModuleHashName(const CompileShaderInfo& compile_info)
+			std::string GenerateUniqueModuleName(const CompileShaderInfo& compile_info)
 			{
-				uint32_t hash = utl::murmur_hash(compile_info.module_name);
-				hash += utl::murmur_hash(compile_info.name);
+				std::stringstream ss{};
+				ss << compile_info.module_name << ":" << compile_info.name;
 
-				for (const auto& definition : compile_info.definitions)
-					hash += utl::murmur_hash(definition);
+				for (auto& definition : compile_info.definitions)
+					ss << ":" << definition;
 
-				return hash;
+				return ss.str();
 			}
 
 			bool ShaderEffectCompiler::CompilePermutation(const CompileShaderInfo& compile_info, std::string_view shader_code)
 			{
 				bool is_first_time_compile{ false };
-				uint32_t unique_shader_permutation_name_hash = GenerateUniqueModuleHashName(compile_info);
+				std::string unique_shader_permutation_name = GenerateUniqueModuleName(compile_info);
+				uint32_t unique_shader_permutation_name_hash = GetUniqueHashName(unique_shader_permutation_name);
 
 				// Get shader stabge bank
 				auto& shader_module = shader_cache.modules[unique_shader_permutation_name_hash];
@@ -527,12 +528,7 @@ namespace engine
 
 					// Inform that shader is compiled
 					{
-						std::stringstream ss{};
-						ss << compile_info.name;
-						for (auto& definition : compile_info.definitions)
-							ss << ":" << definition;
-
-						log_info("{} shader {}[{}] was {}.", unique_shader_permutation_name_hash, ss.str(), shader_permutation_hash, is_first_time_compile ? "compiled" : "recompiled");
+						log_info("{} shader {}[{}] was {}.", unique_shader_permutation_name_hash, unique_shader_permutation_name, shader_permutation_hash, is_first_time_compile ? "compiled" : "recompiled");
 					}
 
 					// Generate name
