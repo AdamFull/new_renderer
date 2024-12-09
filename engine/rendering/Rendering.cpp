@@ -16,7 +16,7 @@
 #include <embed/shaders/includes/shlib.h>
 #include <embed/shaders/includes/culling.h>
 
-#include <util/Logger.h>
+#include <logger.hpp>
 
 #include "Globals.h"
 

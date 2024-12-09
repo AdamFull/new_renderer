@@ -4,7 +4,7 @@
 #include "../gfx/gfx_context.h"
 #include "../gfx/gfx_util.h"
 
-#include <util/Logger.h>
+#include <logger.hpp>
 
 #include <hash.hpp>
 

@@ -2,7 +2,7 @@
 
 #include <xaudio2.h>
 
-#include <util/Logger.h>
+#include <logger.hpp>
 
 namespace engine
 {

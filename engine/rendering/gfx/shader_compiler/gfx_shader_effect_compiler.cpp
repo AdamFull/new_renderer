@@ -7,7 +7,7 @@
 #include "../gfx_util.h"
 
 #include <util/FilesystemHelper.h>
-#include <util/Logger.h>
+#include <logger.hpp>
 
 #include <execution>
 

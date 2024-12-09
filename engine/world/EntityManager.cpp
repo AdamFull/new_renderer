@@ -1,6 +1,6 @@
 #include "EntityManager.h"
 
-#include <util/Logger.h>
+#include <logger.hpp>
 
 #include <tracy/Tracy.hpp>
 

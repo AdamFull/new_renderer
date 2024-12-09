@@ -2,7 +2,7 @@
 #include "VkPhysicalDevice.h"
 #include "VkDevice.h"
 
-#include <util/Logger.h>
+#include <logger.hpp>
 #include <util/Util.h>
 
 #include <volk.h>

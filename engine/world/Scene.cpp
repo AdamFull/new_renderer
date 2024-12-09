@@ -14,7 +14,7 @@
 
 #include <util/Util.h>
 #include <util/FilesystemHelper.h>
-#include <util/Logger.h>
+#include <logger.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 #include <tracy/Tracy.hpp>

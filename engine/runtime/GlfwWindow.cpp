@@ -6,7 +6,7 @@
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 
-#include <util/Logger.h>
+#include <logger.hpp>
 #include "Runtime.h"
 
 namespace engine

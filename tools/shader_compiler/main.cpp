@@ -4,7 +4,7 @@
 #include <sstream>
 #include <regex>
 
-#include <util/Logger.h>
+#include <logger.hpp>
 #include <utils/stopwatch.h>
 #include <parsing/argparse.h>
 

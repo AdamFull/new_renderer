@@ -2,7 +2,7 @@
 
 //#include <integrations/imgui/DebugSystem.h>
 
-#include <util/Logger.h>
+#include <logger.hpp>
 #include "rendering/Rendering.h"
 #include "world/Scene.h"
 

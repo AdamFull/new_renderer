@@ -5,7 +5,7 @@
 #include <ktx.h>
 
 #include <util/FilesystemHelper.h>
-#include <util/Logger.h>
+#include <logger.hpp>
 
 #include <tracy/Tracy.hpp>
 

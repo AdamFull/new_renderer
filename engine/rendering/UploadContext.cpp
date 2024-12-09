@@ -6,7 +6,7 @@
 
 #include <engine/rendering/native_format/vk_format.h>
 
-#include <util/Logger.h>
+#include <logger.hpp>
 
 #include <shader_compiler/compiler_util.h>
 

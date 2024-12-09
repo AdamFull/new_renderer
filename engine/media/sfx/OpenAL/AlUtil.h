@@ -3,7 +3,7 @@
 #include <AL/al.h>
 #include <AL/alc.h>
 
-#include <util/Logger.h>
+#include <logger.hpp>
 
 namespace al
 {

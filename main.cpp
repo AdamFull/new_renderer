@@ -1,7 +1,7 @@
 #include <engine/EntryPoint.h>
 #include <engine/EngineApplication.h>
 
-#include <util/Logger.h>
+#include <logger.hpp>
 
 #include <util/TaskSystem.h>
 #include <iostream>

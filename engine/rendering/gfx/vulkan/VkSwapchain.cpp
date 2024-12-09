@@ -6,7 +6,7 @@
 #include "VkSemaphore.h"
 #include "VkFence.h"
 
-#include <util/Logger.h>
+#include <logger.hpp>
 
 #include <glm/glm.hpp>
 

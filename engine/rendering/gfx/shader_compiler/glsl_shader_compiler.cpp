@@ -5,7 +5,7 @@
 #include <glslang/build_info.h>
 
 #include <util/FilesystemHelper.h>
-#include <util/Logger.h>
+#include <logger.hpp>
 
 #include <hash.hpp>
 

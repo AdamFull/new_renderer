@@ -1,6 +1,6 @@
 #include "VkPhysicalDevice.h"
 
-#include <util/Logger.h>
+#include <logger.hpp>
 #include <vulkan/vulkan_to_string.hpp>
 
 namespace engine

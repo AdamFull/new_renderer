@@ -1,6 +1,6 @@
 #include "VkPhysicalDevice.h"
 
-#include <util/Logger.h>
+#include <logger.hpp>
 #include <volk.h>
 
 #include <functional>

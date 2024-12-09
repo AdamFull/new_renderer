@@ -1,7 +1,7 @@
 #include "VkImage.h"
 
 #include "VkUtil.h"
-#include <util/Logger.h>
+#include <logger.hpp>
 
 namespace engine
 {

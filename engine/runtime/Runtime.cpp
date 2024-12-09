@@ -5,7 +5,7 @@
 #include <engine/filesystem/native/NativeFileSystem.h>
 
 #include "RuntimeContext.h"
-#include <util/Logger.h>
+#include <logger.hpp>
 
 #include <tracy/Tracy.hpp>
 

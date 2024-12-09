@@ -7,7 +7,7 @@
 #include "compiler_structures.h"
 #include <parsing/sjson_parser.h>
 
-#include <util/Logger.h>
+#include <logger.hpp>
 
 namespace shader_compiler
 {

@@ -3,7 +3,7 @@
 #include "../RendererInterface.h"
 #include "../gfx/gfx_context.h"
 
-#include <util/Logger.h>
+#include <logger.hpp>
 
 #include <tracy/Tracy.hpp>
 

@@ -7,7 +7,7 @@
 #include <windows.h>
 #include <dxcapi.h>
 
-#include <util/Logger.h>
+#include <logger.hpp>
 
 namespace shader_compiler
 {
