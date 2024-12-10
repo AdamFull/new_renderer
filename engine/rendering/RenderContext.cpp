@@ -270,8 +270,7 @@ namespace engine
 			gfx::GFXResource* resource{};
 			if (render_resource.resource_type & RenderResourceTypeFlag::eBackbuffer)
 			{
-				auto& current_frame = GetCurrentFrame();
-				resource = current_frame.backbuffer;
+				resource = current_frame->backbuffer;
 			}
 			else if (render_resource.resource_type & RenderResourceTypeFlag::eStaticImage)
 			{
@@ -346,7 +345,6 @@ namespace engine
 		{
 			ZoneScoped;
 
-			auto& current_frame = GetCurrentFrame();
 			auto& command_list = *current_command_list;
 
 			for (auto& node : graph_nodes)
@@ -359,7 +357,7 @@ namespace engine
 			resource_barriers.texture_barriers = &texture_barrier;
 			resource_barriers.texture_barrier_count = 1;
 
-			texture_barrier.texture = current_frame.backbuffer;
+			texture_barrier.texture = current_frame->backbuffer;
 			// TODO: get current resource state from resource itself
 			texture_barrier.src_state = backbuffer_resource.GetState();
 			texture_barrier.dst_state = gfx::ResourceStateFlag::ePresentSrc;
@@ -538,8 +536,7 @@ namespace engine
 		{
 			if (render_resource.resource_type & RenderResourceTypeFlag::eBackbuffer)
 			{
-				auto& current_frame = GetCurrentFrame();
-				return current_frame.backbuffer;
+				return current_frame->backbuffer;
 			}
 			else if (render_resource.resource_type & RenderResourceTypeFlag::eStaticImage)
 			{
@@ -678,8 +675,7 @@ namespace engine
 				throw std::runtime_error("Couldn't begin frame");
 			}
 
-			auto& current_frame = GetCurrentFrame();
-			current_command_list = current_frame.command_pool->Allocate();
+			current_command_list = current_frame->command_pool->Allocate();
 			current_command_list->Begin();
 			return *current_command_list;
 		}
@@ -695,11 +691,11 @@ namespace engine
 
 			assert(!frame_active && "Frame is still active, please call end_frame");
 
-			auto& current_frame = GetCurrentFrame();
+			current_frame = render_frames[current_frame_index].get();
 
 			// We will use the acquired semaphore in a different frame context,
 			// so we need to hold ownership.
-			acquired_semaphore = current_frame.image_avaliable;
+			acquired_semaphore = current_frame->image_avaliable;
 
 			if (swapchain)
 			{
@@ -715,7 +711,7 @@ namespace engine
 
 					if (!acquire_result)
 					{
-						current_frame.Reset();
+						current_frame->Reset();
 						return;
 					}
 				}
@@ -723,19 +719,17 @@ namespace engine
 
 			// Now the frame is active again
 			frame_active = true;
-			current_frame.Reset();
+			current_frame->Reset();
 		}
 
 		void RenderContext::EndFrame(gfx::SemaphoreSubmitInfo wait_semaphore)
 		{
 			ZoneScoped;
 
-			auto& current_frame = GetCurrentFrame();
-
 			current_command_list->End();
 			frame_active = false;
 
-			current_frame.fence->Reset();
+			current_frame->fence->Reset();
 
 			try
 			{
@@ -754,8 +748,8 @@ namespace engine
 
 
 				gfx::SemaphoreSubmitInfo signal_semaphores[2] = {
-					gfx::SemaphoreSubmitInfo{ current_frame.render_finished, 0ull, gfx::StageFlag::eColorAttachmentOutput },
-					gfx::SemaphoreSubmitInfo{ current_frame.upload_avaliable, 0ull, gfx::StageFlag::eAllCommands }
+					gfx::SemaphoreSubmitInfo{ current_frame->render_finished, 0ull, gfx::StageFlag::eColorAttachmentOutput },
+					gfx::SemaphoreSubmitInfo{ current_frame->upload_avaliable, 0ull, gfx::StageFlag::eAllCommands }
 				};
 
 				submit_info.signal_semaphore_infos = &signal_semaphores[0];
@@ -764,7 +758,7 @@ namespace engine
 				submit_info.command_lists = &current_command_list;
 				submit_info.command_buffer_count = 1u;
 
-				queue->Submit(submit_info, current_frame.fence);
+				queue->Submit(submit_info, current_frame->fence);
 			}
 			catch (std::exception error)
 			{
@@ -775,7 +769,7 @@ namespace engine
 			{
 				ZoneScopedN("Present");
 
-				auto* wait_semaphore = current_frame.render_finished;
+				auto* wait_semaphore = current_frame->render_finished;
 
 				gfx::PresentInfo present_info = {};
 				present_info.wait_semaphore_count = 1;
@@ -786,12 +780,12 @@ namespace engine
 				present_info.image_indices = &GetCurrentFrameIndex();
 
 				queue->Present(present_info);
-				current_frame.fence->Wait();
+				current_frame->fence->Wait();
 
 				current_frame_index = (current_frame_index + 1) % swapchain->GetImageCount();
 			}
 
-			previous_frame_semaphore = current_frame.upload_avaliable;
+			previous_frame_semaphore = current_frame->upload_avaliable;
 			if (acquired_semaphore)
 			{
 				acquired_semaphore = nullptr;
@@ -805,8 +799,7 @@ namespace engine
 
 		gfx::BufferSuballocation RenderContext::RequestUniformBlock(uint64_t block_size)
 		{
-			auto& current_frame = GetCurrentFrame();
-			return current_frame.uniform_pool->RequestBlock(block_size);
+			return current_frame->uniform_pool->RequestBlock(block_size);
 		}
 
 		gfx::CommandList& RenderContext::GetCurrentCommandList()
@@ -816,18 +809,12 @@ namespace engine
 
 		gfx::DescriptorAllocator& RenderContext::GetCurrentDescriptorAllocator()
 		{
-			auto& current_frame = GetCurrentFrame();
-			return *current_frame.descriptor_allocator;
+			return *current_frame->descriptor_allocator;
 		}
 
 		const uint32_t& RenderContext::GetCurrentFrameIndex() const
 		{
 			return current_frame_index;
-		}
-
-		RenderContext::RenderFrame& RenderContext::GetCurrentFrame()
-		{
-			return *render_frames[GetCurrentFrameIndex()];
 		}
 	
 		void RenderContext::UpdateResources()

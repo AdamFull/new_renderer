@@ -87,7 +87,6 @@ namespace engine
 			const uint32_t& GetCurrentFrameIndex() const;
 
 			class RenderFrame;
-			RenderFrame& GetCurrentFrame();
 			void UpdateRenderTargets();
 			void UpdateResources();
 		private:
@@ -99,6 +98,8 @@ namespace engine
 
 			gfx::Swapchain* swapchain{ nullptr };
 			//vk::SurfaceTransformFlagBitsKHR pre_transform{ vk::SurfaceTransformFlagBitsKHR::eIdentity };
+
+			RenderFrame* current_frame{ nullptr };
 
 			static constexpr size_t k_max_frames_in_flight{ 8ull };
 			std::array<std::unique_ptr<RenderFrame>, k_max_frames_in_flight> render_frames{};
