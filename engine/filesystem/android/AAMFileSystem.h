@@ -35,7 +35,7 @@ namespace engine
 			 * @param fspath A string representing the path to create the new file or directory.
 			 * @return True on success, false on failure.
 			 */
-			bool Create(const std::string& fspath) override { return true; }
+			bool Create(std::string_view fspath) override { return true; }
 
 			/**
 			 * @brief Copy a file from one path to another.
@@ -43,7 +43,7 @@ namespace engine
 			 * @param from A string representing the source file path.
 			 * @param to A string representing the destination file path.
 			 */
-			void Copy(const std::string& from, const std::string& to) override {}
+			void Copy(std::string_view from, std::string_view to) override {}
 
 			/**
 			 * @brief Create a directory hierarchy at the specified path.
@@ -51,7 +51,7 @@ namespace engine
 			 * @param path A string representing the directory hierarchy to create.
 			 * @return True on success, false on failure.
 			 */
-			bool CreateDirectories(const std::string& path) override { return false; }
+			bool CreateDirectories(std::string_view path) override { return false; }
 
 			/**
 			 * @brief Create a directory at the specified path.
@@ -59,7 +59,7 @@ namespace engine
 			 * @param path A string representing the directory to create.
 			 * @return True on success, false on failure.
 			 */
-			bool CreateDirectory(const std::string& path) override { return false; }
+			bool CreateDirectory(std::string_view path) override { return false; }
 
 			/**
 			 * @brief Check if a file or directory exists at the specified path.
@@ -67,7 +67,7 @@ namespace engine
 			 * @param path A string representing the path to check for existence.
 			 * @return True if the path exists, false otherwise.
 			 */
-			bool Exists(const std::string& path) override;
+			bool Exists(std::string_view path) override;
 
 			/**
 			 * @brief Get the size of a file at the specified path.
@@ -75,7 +75,7 @@ namespace engine
 			 * @param path A string representing the path to the file.
 			 * @return The size of the file in bytes.
 			 */
-			size_t FileSize(const std::string& path) override;
+			size_t FileSize(std::string_view path) override;
 
 			/**
 			 * @brief Check if a path points to a directory.
@@ -83,7 +83,7 @@ namespace engine
 			 * @param path A string representing the path to check.
 			 * @return True if the path points to a directory, false otherwise.
 			 */
-			bool IsDirectory(const std::string& path) override;
+			bool IsDirectory(std::string_view path) override;
 
 			/**
 			 * @brief Check if a path points to a file.
@@ -91,7 +91,7 @@ namespace engine
 			 * @param path A string representing the path to check.
 			 * @return True if the path points to a file, false otherwise.
 			 */
-			bool IsFile(const std::string& path) override;
+			bool IsFile(std::string_view path) override;
 
 			/**
 			 * @brief Remove a file or directory at the specified path.
@@ -99,7 +99,7 @@ namespace engine
 			 * @param path A string representing the path to remove.
 			 * @return True on success, false on failure.
 			 */
-			bool Remove(const std::string& path) override { return false; }
+			bool Remove(std::string_view path) override { return false; }
 
 			/**
 			 * @brief Rename a file or directory.
@@ -108,7 +108,7 @@ namespace engine
 			 * @param original A string representing the original path of the file or directory.
 			 * @param newfile A string representing the new path for the file or directory.
 			 */
-			void Rename(const std::string& original, const std::string& newfile) override {}
+			void Rename(std::string_view original, std::string_view newfile) override {}
 
 			/**
 			 * @brief Create a new file at the specified path.
@@ -116,7 +116,7 @@ namespace engine
 			 * @param path A string representing the path to create the new file.
 			 * @return A unique_ptr to an IOutputFileInterface object on success, nullptr on failure.
 			 */
-			std::unique_ptr<IOutputFileInterface> CreateFile(const std::string& path) override { return nullptr; }
+			std::unique_ptr<IOutputFileInterface> CreateFile(std::string_view path) override { return nullptr; }
 
 			/**
 			 * @brief Open a file at the specified path for reading.
@@ -124,7 +124,7 @@ namespace engine
 			 * @param path A string representing the path to the file to open.
 			 * @return A unique_ptr to an IInputFileInterface object on success, nullptr on failure.
 			*/
-			std::unique_ptr<IInputFileInterface> OpenFile(const std::string& path) override;
+			std::unique_ptr<IInputFileInterface> OpenFile(std::string_view path) override;
 
 			/**
 			* @brief Create a directory iterator for walking the file system.
@@ -133,7 +133,7 @@ namespace engine
 			* @param recursive A boolean flag indicating whether the iterator should recurse into subdirectories.
 			* @return A unique_ptr to an IDirectoryIterator object on success, nullptr on failure.
 			*/
-			std::unique_ptr<IDirectoryIterator> Walk(const std::string& path, bool recursive) override;
+			std::unique_ptr<IDirectoryIterator> Walk(std::string_view path, bool recursive) override;
 
 		protected:
 			/**

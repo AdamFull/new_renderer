@@ -26,7 +26,7 @@ void ApplyPropertyChange(_Ty& vold, _Ty* vnew)
 }
 
 template<class _Ty, class _Func>
-bool SimpleValueEdit(const char* label, _Ty* value, _Func&& function)
+bool SimpleValueEdit(std::string_view label, _Ty* value, _Func&& function)
 {
     static _Ty oldValue{};
     bool bValueChanged{ false };
@@ -58,15 +58,15 @@ bool combo_std_list_pred(void* data, int idx, const char** out_text)
     return true;
 }
 
-bool ImGui::SpartialRoundedButtonEx(const char* label, const ImVec2& size, ImGuiButtonRoundingFlags rounding_flags)
+bool ImGui::SpartialRoundedButtonEx(std::string_view label, const ImVec2& size, ImGuiButtonRoundingFlags rounding_flags)
 {
     ImGuiWindow* window = GetCurrentWindow();
     if (window->SkipItems)
         return false;
 
     ImGuiContext& g = *GetCurrentContext();
-    const ImGuiID id = window->GetID(label);
-    const ImVec2 label_size = CalcTextSize(label, NULL, true);
+    const ImGuiID id = window->GetID(label.data());
+    const ImVec2 label_size = CalcTextSize(label.data(), NULL, true);
 
     ImVec2 pos = window->DC.CursorPos;
     ImVec2 size_arg = CalcItemSize(size, label_size.x + g.Style.FramePadding.x * 2.0f, label_size.y + g.Style.FramePadding.y * 2.0f);
@@ -131,33 +131,33 @@ bool ImGui::SpartialRoundedButtonEx(const char* label, const ImVec2& size, ImGui
 
     if (g.LogEnabled)
         LogSetNextTextDecoration("[", "]");
-    RenderTextClipped(bb.Min + g.Style.FramePadding, bb.Max - g.Style.FramePadding, label, NULL, &label_size, g.Style.ButtonTextAlign, &bb);
+    RenderTextClipped(bb.Min + g.Style.FramePadding, bb.Max - g.Style.FramePadding, label.data(), NULL, &label_size, g.Style.ButtonTextAlign, &bb);
     
     IMGUI_TEST_ENGINE_ITEM_INFO(id, label, g.LastItemData.StatusFlags);
     return pressed;
 }
 
-bool ImGui::GButtonLR(const char* label, const ImVec2& size)
+bool ImGui::GButtonLR(std::string_view label, const ImVec2& size)
 {
     return SpartialRoundedButtonEx(label, size, ImGuiButtonRounding_ConcaveTopLeft | ImGuiButtonRounding_ConcaveBottomLeft | ImGuiButtonRounding_ConcaveTopRight | ImGuiButtonRounding_ConcaveBottomRight);
 }
 
-bool ImGui::GButtonRR(const char* label, const ImVec2& size)
+bool ImGui::GButtonRR(std::string_view label, const ImVec2& size)
 {
     return SpartialRoundedButtonEx(label, size, ImDrawFlags_RoundCornersTopRight | ImDrawFlags_RoundCornersBottomRight);
 }
 
-bool ImGui::GButtonTR(const char* label, const ImVec2& size)
+bool ImGui::GButtonTR(std::string_view label, const ImVec2& size)
 {
     return SpartialRoundedButtonEx(label, size, ImDrawFlags_RoundCornersTopLeft | ImDrawFlags_RoundCornersTopRight);
 }
 
-bool ImGui::GButtonBR(const char* label, const ImVec2& size)
+bool ImGui::GButtonBR(std::string_view label, const ImVec2& size)
 {
     return SpartialRoundedButtonEx(label, size, ImDrawFlags_RoundCornersBottomLeft | ImDrawFlags_RoundCornersBottomRight);
 }
 
-void ImGui::GText(const char* label, const char* fmt, ...)
+void ImGui::GText(std::string_view label, const char* fmt, ...)
 {
     if (GBeginTable(label))
     {
@@ -170,25 +170,25 @@ void ImGui::GText(const char* label, const char* fmt, ...)
     }
 }
 
-bool ImGui::GTextInput(const char* label, std::string* value, bool enabled)
+bool ImGui::GTextInput(std::string_view label, std::string* value, bool enabled)
 {
     return SimpleValueEdit(label, value,
-        [](const char* label, std::string* value)
+        [](std::string_view label, std::string* value)
         {
-            return InputText(label, value);
+            return InputText(label.data(), value);
         });
 }
 
-bool ImGui::GCheckbox(const char* label, bool* value)
+bool ImGui::GCheckbox(std::string_view label, bool* value)
 {
     return SimpleValueEdit(label, value,
-        [](const char* label, bool* value)
+        [](std::string_view label, bool* value)
         {
-            return Checkbox(label, value);
+            return Checkbox(label.data(), value);
         });
 }
 
-bool ImGui::GColorEdit3(const char* label, float* value)
+bool ImGui::GColorEdit3(std::string_view label, float* value)
 {
     static glm::vec3 oldValue{ 0.f };
 
@@ -208,7 +208,7 @@ bool ImGui::GColorEdit3(const char* label, float* value)
     return bValueChanged;
 }
 
-bool ImGui::GColorEdit4(const char* label, float* value)
+bool ImGui::GColorEdit4(std::string_view label, float* value)
 {
     static glm::vec4 oldValue{ 0.f };
 
@@ -226,7 +226,7 @@ bool ImGui::GColorEdit4(const char* label, float* value)
     return bValueChanged;
 }
 
-bool ImGui::GAssetHolder(const char* label, const std::string& source)
+bool ImGui::GAssetHolder(std::string_view label, const std::string& source)
 {
     bool result{ false };
 
@@ -242,9 +242,9 @@ bool ImGui::GAssetHolder(const char* label, const std::string& source)
     return result;
 }
 
-bool ImGui::GBeginTable(const char* label)
+bool ImGui::GBeginTable(std::string_view label)
 {
-    PushID(label);
+    PushID(label.data());
 
     if (BeginTable("data_table", 2, ImGuiTableFlags_SizingFixedFit))
     {
@@ -252,7 +252,7 @@ bool ImGui::GBeginTable(const char* label)
         TableSetupColumn("Controls", ImGuiTableColumnFlags_WidthStretch);
 
         TableNextColumn();
-        Text(label);
+        Text(label.data());
 
         TableNextColumn();
 
@@ -268,7 +268,7 @@ void ImGui::GEndTable()
     PopID();
 }
 
-bool ImGui::GCombo(const char* label, int* current_item, const char* const items[], int item_count, int height_in_items)
+bool ImGui::GCombo(std::string_view label, int* current_item, const char* const items[], int item_count, int height_in_items)
 {
     static int oldValue{ 0 };
     bool result{ false };

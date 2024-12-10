@@ -1536,6 +1536,6 @@ namespace easygltf
 	public:
 		virtual ~IDebugMessenger() = default;
 
-		virtual void message(DebugMessageType type, const std::string& data) = 0;
+		virtual void message(DebugMessageType type, std::string_view data) = 0;
 	};
 }

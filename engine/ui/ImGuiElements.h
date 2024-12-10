@@ -33,26 +33,26 @@ namespace ImGui
     constexpr const ImVec4 axis_button_hovered_colors[4]{ ImVec4{ 0.9f, 0.2f, 0.2f, 1.0f }, ImVec4{ 0.3f, 0.8f, 0.3f, 1.0f }, ImVec4{ 0.2f, 0.35f, 0.9f, 1.0f }, ImVec4{ 0.6f, 0.6f, 0.6f, 1.0f } };
     constexpr const ImVec4 axis_button_active_colors[4]{ ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f }, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f }, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f }, ImVec4{ 0.5f, 0.5f, 0.5f, 1.0f } };
 
-    bool SpartialRoundedButtonEx(const char* label, const ImVec2& size, ImGuiButtonRoundingFlags rounding);
-    bool GButtonLR(const char* label, const ImVec2& size = ImVec2(0, 0));
-    bool GButtonRR(const char* label, const ImVec2& size = ImVec2(0, 0));
-    bool GButtonTR(const char* label, const ImVec2& size = ImVec2(0, 0));
-    bool GButtonBR(const char* label, const ImVec2& size = ImVec2(0, 0));
+    bool SpartialRoundedButtonEx(std::string_view label, const ImVec2& size, ImGuiButtonRoundingFlags rounding);
+    bool GButtonLR(std::string_view label, const ImVec2& size = ImVec2(0, 0));
+    bool GButtonRR(std::string_view label, const ImVec2& size = ImVec2(0, 0));
+    bool GButtonTR(std::string_view label, const ImVec2& size = ImVec2(0, 0));
+    bool GButtonBR(std::string_view label, const ImVec2& size = ImVec2(0, 0));
 
-    void GText(const char* label, const char* fmt, ...);
-    bool GTextInput(const char* label, std::string* value, bool enabled = true);
-    bool GCheckbox(const char* label, bool* value);
-    bool GColorEdit3(const char* label, float* value);
-    bool GColorEdit4(const char* label, float* value);
+    void GText(std::string_view label, const char* fmt, ...);
+    bool GTextInput(std::string_view label, std::string* value, bool enabled = true);
+    bool GCheckbox(std::string_view label, bool* value);
+    bool GColorEdit3(std::string_view label, float* value);
+    bool GColorEdit4(std::string_view label, float* value);
 
-    bool GAssetHolder(const char* label, const std::string& source);
-    bool GBeginTable(const char* label);
+    bool GAssetHolder(std::string_view label, const std::string& source);
+    bool GBeginTable(std::string_view label);
     void GEndTable();
-    bool GCombo(const char* label, int* current_item, const char* const items[], int item_count, int height_in_items = -1);
+    bool GCombo(std::string_view label, int* current_item, const char* const items[], int item_count, int height_in_items = -1);
 
 
     template<typename _Ty, size_t _Count, typename _Func>
-    bool UniversalEdit(const char* label, _Ty* value, _Func&& function)
+    bool UniversalEdit(std::string_view label, _Ty* value, _Func&& function)
     {
         static _Ty old[_Count]{ (_Ty)0 };
 
@@ -60,7 +60,7 @@ namespace ImGui
         ImGuiIO& io = GetIO();
         auto bold_font = io.Fonts->Fonts[0];
 
-        if (GBeginTable(label))
+        if (GBeginTable(label.data()))
         {
             PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 0, 0 });
 
@@ -110,87 +110,87 @@ namespace ImGui
     }
 
     template<typename _Ty, size_t _Count = 1>
-    bool Drag(const char* label, _Ty* value, _Ty min, _Ty max, float speed)
+    bool Drag(std::string_view label, _Ty* value, _Ty min, _Ty max, float speed)
     {
         return UniversalEdit<_Ty, _Count>(label, value,
-            [min, max, speed](const char* label, _Ty* value)
+            [min, max, speed](std::string_view label, _Ty* value)
             {
-                return DragScalar(label, DataTypeByType_v<_Ty>, value, speed, &min, &max, FormatByType_v<_Ty>);
+                return DragScalar(label.data(), DataTypeByType_v<_Ty>, value, speed, &min, &max, FormatByType_v<_Ty>);
             });
     }
 
     template<typename _Ty, size_t _Count = 1>
-    bool Slider(const char* label, _Ty* value, _Ty min, _Ty max)
+    bool Slider(std::string_view label, _Ty* value, _Ty min, _Ty max)
     {
         return UniversalEdit<_Ty, _Count>(label, value,
-            [min, max](const char* label, _Ty* value)
+            [min, max](std::string_view label, _Ty* value)
             {
-                return SliderScalar(label, DataTypeByType_v<_Ty>, value, &min, &max, FormatByType_v<_Ty>);
+                return SliderScalar(label.data(), DataTypeByType_v<_Ty>, value, &min, &max, FormatByType_v<_Ty>);
             });
     }
 
     template<typename _Ty, size_t _Count = 1>
-    bool Input(const char* label, _Ty* value, _Ty step, _Ty fast_step)
+    bool Input(std::string_view label, _Ty* value, _Ty step, _Ty fast_step)
     {
         return UniversalEdit<_Ty, _Count>(label, value,
-            [step, fast_step](const char* label, _Ty* value)
+            [step, fast_step](std::string_view label, _Ty* value)
             {
-                return InputScalar(label, DataTypeByType_v<_Ty>, value, &step, &fast_step, FormatByType_v<_Ty>);
+                return InputScalar(label.data(), DataTypeByType_v<_Ty>, value, &step, &fast_step, FormatByType_v<_Ty>);
             });
     }
 
     template<size_t _Count>
-    bool GDragInt(const char* label, int* value, float speed = 1.f, int min = 0, int max = 0)
+    bool GDragInt(std::string_view label, int* value, float speed = 1.f, int min = 0, int max = 0)
     {
         return Drag<int, _Count>(label, value, min, max, speed);
     }
 
     template<size_t _Count>
-    bool GDragFloat(const char* label, float* value, float speed = 1.f, float min = 0.f, float max = 0.f)
+    bool GDragFloat(std::string_view label, float* value, float speed = 1.f, float min = 0.f, float max = 0.f)
     {
         return Drag<float, _Count>(label, value, min, max, speed);
     }
 
     template<size_t _Count>
-    bool GDragDouble(const char* label, double* value, float speed = 1.f, double min = 0.0, double max = 0.0)
+    bool GDragDouble(std::string_view label, double* value, float speed = 1.f, double min = 0.0, double max = 0.0)
     {
         return Drag<double, _Count>(label, value, min, max, speed);
     }
 
 
     template<size_t _Count>
-    bool GSliderInt(const char* label, int* value, int min, int max)
+    bool GSliderInt(std::string_view label, int* value, int min, int max)
     {
         return Slider<int, _Count>(label, value, min, max);
     }
 
     template<size_t _Count>
-    bool GSliderFloat(const char* label, float* value, float min, float max)
+    bool GSliderFloat(std::string_view label, float* value, float min, float max)
     {
         return Slider<float, _Count>(label, value, min, max);
     }
 
     template<size_t _Count>
-    bool GSliderDouble(const char* label, double* value, double min, double max)
+    bool GSliderDouble(std::string_view label, double* value, double min, double max)
     {
         return Slider<double, _Count>(label, value, min, max);
     }
 
 
     template<size_t _Count>
-    bool GInputInt(const char* label, int* value, int step, int fast_step)
+    bool GInputInt(std::string_view label, int* value, int step, int fast_step)
     {
         return Input<int, _Count>(label, value, step, fast_step);
     }
 
     template<size_t _Count>
-    bool GInputFloat(const char* label, float* value, float step, float fast_step)
+    bool GInputFloat(std::string_view label, float* value, float step, float fast_step)
     {
         return Input<float, _Count>(label, value, step, fast_step);
     }
 
     template<size_t _Count>
-    bool GInputDouble(const char* label, double* value, double step, double fast_step)
+    bool GInputDouble(std::string_view label, double* value, double step, double fast_step)
     {
         return Input<double, _Count>(label, value, step, fast_step);
     }

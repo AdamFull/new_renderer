@@ -37,7 +37,7 @@ namespace engine
              * @param filename A string representing the filename within the archive.
              * @param password A string representing the password for encrypted files.
              */
-            ZipInputFile(zip* handle, std::string_view filename, const std::string& password);
+            ZipInputFile(zip* handle, std::string_view filename, std::string_view password);
 
             /**
              * @brief Destructor.

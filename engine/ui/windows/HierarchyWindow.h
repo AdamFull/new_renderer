@@ -9,7 +9,7 @@ namespace engine
 	class HierarchyWindow : public IEditorWindow
 	{
 	public:
-		HierarchyWindow(const std::string& sname) { m_name = sname; }
+		HierarchyWindow(std::string_view sname) { m_name = sname; }
 		virtual ~HierarchyWindow() override = default;
 
 		void Create() override {}

@@ -9,7 +9,7 @@ namespace engine
 	class InspectorWindow : public IEditorWindow
 	{
 	public:
-		InspectorWindow(const std::string& sname) { m_name = sname; }
+		InspectorWindow(std::string_view sname) { m_name = sname; }
 		virtual ~InspectorWindow() override = default;
 
 		void Create() override;

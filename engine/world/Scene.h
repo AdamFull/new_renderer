@@ -24,7 +24,7 @@ namespace engine
 			Scene(filesystem::IVirtualFileSystemInterface* vfs, render::IRenderer& renderer);
 			~Scene();
 
-			void Load(const std::string& path);
+			void Load(std::string_view path);
 
 			void Update(float delta_time);
 		private:

@@ -18,7 +18,7 @@ namespace parsing
     }
 
     template<class _Namespace, class _Ty>
-    void parse_extension(const std::string& name, const nlohmann::json& json, _Ty& type)
+    void parse_extension(std::string_view name, const nlohmann::json& json, _Ty& type)
     {
         if (name == _Namespace::name)
             type = json.get<_Ty>();

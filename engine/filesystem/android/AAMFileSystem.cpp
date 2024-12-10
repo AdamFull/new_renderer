@@ -15,12 +15,12 @@ AAMFileSystem::~AAMFileSystem()
 
 }
 
-bool AAMFileSystem::Exists(const std::string& path)
+bool AAMFileSystem::Exists(std::string_view path)
 {
 	return isDirectory(path) || isFile(path);
 }
 
-size_t AAMFileSystem::FileSize(const std::string& path)
+size_t AAMFileSystem::FileSize(std::string_view path)
 {
 	AAsset* asset = AAssetManager_open(m_pAssetManager, path.c_str(), AASSET_MODE_UNKNOWN);
 	if (asset)
@@ -34,7 +34,7 @@ size_t AAMFileSystem::FileSize(const std::string& path)
 	return 0ull;
 }
 
-bool AAMFileSystem::IsDirectory(const std::string& path)
+bool AAMFileSystem::IsDirectory(std::string_view path)
 {
 	AAssetDir* assetDir = AAssetManager_openDir(m_pAssetManager, path.c_str());
 	if (assetDir) 
@@ -46,7 +46,7 @@ bool AAMFileSystem::IsDirectory(const std::string& path)
 	return false;
 }
 
-bool AAMFileSystem::IsFile(const std::string& path)
+bool AAMFileSystem::IsFile(std::string_view path)
 {
 	AAsset* asset = AAssetManager_open(m_pAssetManager, path.c_str(), AASSET_MODE_UNKNOWN);
 	if (asset) 
@@ -58,12 +58,12 @@ bool AAMFileSystem::IsFile(const std::string& path)
 	return false;
 }
 
-std::unique_ptr<IInputFileInterface> AAMFileSystem::OpenFile(const std::string& path)
+std::unique_ptr<IInputFileInterface> AAMFileSystem::OpenFile(std::string_view path)
 {
 	return std::make_unique<AAMInputFile>(m_pAssetManager, path);
 }
 
-std::unique_ptr<IDirectoryIterator> AAMFileSystem::Walk(const std::string& path, bool recursive)
+std::unique_ptr<IDirectoryIterator> AAMFileSystem::Walk(std::string_view path, bool recursive)
 {
 	std::unique_ptr<IDirectoryIterator> pIterator;
 

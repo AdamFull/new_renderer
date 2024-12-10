@@ -202,8 +202,8 @@ namespace engine
 			virtual void BeginRendering(const RenderingInfo& rendering_info) = 0;
 			virtual void EndRendering() = 0;
 
-			virtual void BeginMarker(const char* name, uint32_t color) = 0;
-			virtual void InsertMarker(const char* name, uint32_t color) = 0;
+			virtual void BeginMarker(std::string_view name, uint32_t color) = 0;
+			virtual void InsertMarker(std::string_view name, uint32_t color) = 0;
 			virtual void EndMarker() = 0;
 		};
 

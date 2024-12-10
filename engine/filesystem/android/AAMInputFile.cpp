@@ -99,9 +99,9 @@ int32_t aasset_feof(aasset_file_t* asset_ptr)
 }
 
 
-AAMInputFile::AAMInputFile(AAssetManager* handle, const std::string& filename)
+AAMInputFile::AAMInputFile(AAssetManager* handle, std::string_view filename)
 {
-	m_pFilePtr = aasset_fopen(handle, filename.c_str());
+	m_pFilePtr = aasset_fopen(handle, filename.data());
 
 	if (!m_pFilePtr)
 		throw std::runtime_error("Failed to open aasset file.");

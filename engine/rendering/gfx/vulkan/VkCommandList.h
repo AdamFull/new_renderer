@@ -68,8 +68,8 @@ namespace engine
 				void BeginRendering(const RenderingInfo& rendering_info) override;
 				void EndRendering() override;
 
-				void BeginMarker(const char* name, uint32_t color) override;
-				void InsertMarker(const char* name, uint32_t color) override;
+				void BeginMarker(std::string_view name, uint32_t color) override;
+				void InsertMarker(std::string_view name, uint32_t color) override;
 				void EndMarker() override;
 			private:
 				VulkanCommandPool& command_pool;

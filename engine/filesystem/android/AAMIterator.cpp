@@ -2,7 +2,7 @@
 
 using namespace engine::filesystem;
 
-AAMDirectoryIterator::AAMDirectoryIterator(AAssetManager* handle, const std::string& start_path) :
+AAMDirectoryIterator::AAMDirectoryIterator(AAssetManager* handle, std::string_view start_path) :
 	m_pAssetMgr(handle)
 {
 	m_pCurrentDir = AAssetManager_openDir(handle, start_path.c_str());
@@ -43,7 +43,7 @@ bool AAMDirectoryIterator::_OperatorNotEqual(const DirectoryIterator* other) con
 }
 
 
-CAAMRecursiveDirectoryIterator::CAAMRecursiveDirectoryIterator(AAssetManager* handle, const std::string& start_path) :
+CAAMRecursiveDirectoryIterator::CAAMRecursiveDirectoryIterator(AAssetManager* handle, std::string_view start_path) :
 	m_pAssetMgr(handle)
 {
 	//m_iterStack.emplace(AAMDirectoryIterator(handle, start_path));

@@ -25,7 +25,7 @@ namespace engine
              *
              * @param filename A string representing the filename of the file to be opened.
              */
-            NativeOutputFile(const std::string& filename);
+            NativeOutputFile(std::string_view filename);
 
             /**
              * @brief Destructor. Closes the file if it is still open.

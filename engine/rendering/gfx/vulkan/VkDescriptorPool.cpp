@@ -134,7 +134,7 @@ namespace engine
 				std::copy(initial_sizes.begin(), initial_sizes.end(), avaliable_sizes.begin());
 			}
 
-			DescriptorSet& DescriptorPool::Allocate(DescriptorSetLayout& layout, const std::string& debug_name)
+			DescriptorSet& DescriptorPool::Allocate(DescriptorSetLayout& layout, std::string_view debug_name)
 			{
 				ZoneScoped;
 

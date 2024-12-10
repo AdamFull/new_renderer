@@ -29,7 +29,7 @@ namespace engine
 				DescriptorPool& operator=(DescriptorPool&&) = delete;
 
 				void Reset();
-				DescriptorSet& Allocate(DescriptorSetLayout& layout, const std::string& debug_name = "");
+				DescriptorSet& Allocate(DescriptorSetLayout& layout, std::string_view debug_name = "");
 				vk::Result Free(DescriptorSet& descriptor_set);
 
 				bool IsExpired() const;

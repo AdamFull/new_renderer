@@ -22,7 +22,7 @@ namespace engine
 
 		float GetDpiFactor() const override;
 
-		void SetTitle(const std::string& new_title) override;
+		void SetTitle(std::string_view new_title) override;
 
 		std::vector<const char*> GetRequiredSurfaceExtensions() const override;
 

@@ -4,7 +4,7 @@
 
 namespace easygltf
 {
-	inline std::string url_decode(const std::string& str)
+	inline std::string url_decode(std::string_view str)
 	{
 		std::string ret;
 		char ch;
@@ -21,7 +21,7 @@ namespace easygltf
 			}
 			else
 			{
-				sscanf(str.substr(i + 1, 2).c_str(), "%x", &ii);
+				sscanf(str.substr(i + 1, 2).data(), "%x", &ii);
 				ch = static_cast<char>(ii);
 				ret += ch;
 				i = i + 2;

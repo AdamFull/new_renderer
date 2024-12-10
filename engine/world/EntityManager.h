@@ -89,8 +89,8 @@ namespace engine
 				m_vSystems.emplace_back(std::make_unique<_Ty>(std::forward<_Args>(args)...));
 			}
 
-			static entt::entity CreateRoot(const std::string& name);
-			static entt::entity CreateNode(const std::string& name = "", entt::entity parent = entt::null);
+			static entt::entity CreateRoot(std::string_view name);
+			static entt::entity CreateNode(std::string_view name = "", entt::entity parent = entt::null);
 			static void DestroyNode(entt::entity node);
 			static void AttachChild(entt::entity parent, entt::entity child);
 			static void DetachChild(entt::entity parent, entt::entity child);

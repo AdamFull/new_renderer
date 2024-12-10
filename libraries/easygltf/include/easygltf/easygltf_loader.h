@@ -13,9 +13,9 @@ namespace easygltf
 		void useDefaultDebugMessenger();
 		void setDebugMessenger(std::unique_ptr<IDebugMessenger>&& messenger);
 
-		bool load(const std::string& fsPath, FGLTFRoot& root);
+		bool load(std::string_view fsPath, FGLTFRoot& root);
 	protected:
-		bool _load(const std::string& fsPath, FGLTFRoot& root);
+		bool _load(std::string_view fsPath, FGLTFRoot& root);
 		bool _LoadGLTFFromMemory(const utl::vector<uint8_t>& data, FGLTFRoot& root);
 		bool _loadGLBFromMemory(const utl::vector<uint8_t>& data, FGLTFRoot& root);
 	private:

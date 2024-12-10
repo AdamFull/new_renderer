@@ -28,7 +28,7 @@ namespace engine
 		return 1.0f;
 	}
 
-	void HeadlessWindow::SetTitle(const std::string& new_title)
+	void HeadlessWindow::SetTitle(std::string_view new_title)
 	{
 
 	}

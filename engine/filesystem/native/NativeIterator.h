@@ -38,7 +38,7 @@ namespace engine
              * @param path A string representing the path to the directory to be iterated.
              * @param root A string representing the root directory for relative paths.
              */
-            NativeIterator(std::string_view path, const std::string& root) : it_(_Ty(path))
+            NativeIterator(std::string_view path, std::string_view root) : it_(_Ty(path))
             {
                 root_ = root;
 

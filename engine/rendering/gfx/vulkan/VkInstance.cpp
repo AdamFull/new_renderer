@@ -149,7 +149,7 @@ namespace engine
 			{
 			}
 
-			InstanceBuilder& InstanceBuilder::SetApplicationName(const std::string& name)
+			InstanceBuilder& InstanceBuilder::SetApplicationName(std::string_view name)
 			{
 				application_name = name;
 				return *this;
@@ -161,7 +161,7 @@ namespace engine
 				return *this;
 			}
 
-			InstanceBuilder& InstanceBuilder::SetEngineName(const std::string& name)
+			InstanceBuilder& InstanceBuilder::SetEngineName(std::string_view name)
 			{
 				engine_name = name;
 				return *this;

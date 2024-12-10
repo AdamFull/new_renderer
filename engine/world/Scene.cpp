@@ -25,7 +25,7 @@ namespace engine
 {
 	namespace world
 	{
-		render::VertexAttributeFlag GetVertexAttributeFlag(const std::string& name)
+		render::VertexAttributeFlag GetVertexAttributeFlag(std::string_view name)
 		{
 			using namespace engine::render;
 
@@ -267,7 +267,7 @@ namespace engine
 
 		}
 
-		void Scene::Load(const std::string& path)
+		void Scene::Load(std::string_view path)
 		{
 			easygltf::CGLTFLoader loader{};
 			loader.setFilesystemWrapper(std::make_unique<VFSWrapper>(vfs));

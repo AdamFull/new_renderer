@@ -26,7 +26,7 @@ namespace engine
              *
              * @param filename A string representing the path to the file to be opened.
              */
-            CNativeInputFile(const std::string& filename);
+            CNativeInputFile(std::string_view filename);
 
             /**
              * @brief Destructor that closes the file if it is open.

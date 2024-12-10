@@ -28,9 +28,9 @@ namespace engine
 			{
 			}
 
-			void DebugUtilsExtDebugUtils::SetDebugName(vk::ObjectType object_type, uint64_t object_handle, const char* name) const
+			void DebugUtilsExtDebugUtils::SetDebugName(vk::ObjectType object_type, uint64_t object_handle, std::string_view name) const
 			{
-				vk::DebugUtilsObjectNameInfoEXT name_info(object_type, object_handle, name);
+				vk::DebugUtilsObjectNameInfoEXT name_info(object_type, object_handle, name.data());
 				Handle(device).setDebugUtilsObjectNameEXT(name_info);
 			}
 
@@ -40,9 +40,9 @@ namespace engine
 				Handle(device).setDebugUtilsObjectTagEXT(tag_info);
 			}
 
-			void DebugUtilsExtDebugUtils::BeginLabel(vk::CommandBuffer command_buffer, const char* name, uint32_t color) const
+			void DebugUtilsExtDebugUtils::BeginLabel(vk::CommandBuffer command_buffer, std::string_view name, uint32_t color) const
 			{
-				vk::DebugUtilsLabelEXT label_info(name, MakeColor(color));
+				vk::DebugUtilsLabelEXT label_info(name.data(), MakeColor(color));
 				command_buffer.beginDebugUtilsLabelEXT(label_info);
 			}
 
@@ -51,9 +51,9 @@ namespace engine
 				command_buffer.endDebugUtilsLabelEXT();
 			}
 
-			void DebugUtilsExtDebugUtils::InsertLabel(vk::CommandBuffer command_buffer, const char* name, uint32_t color) const
+			void DebugUtilsExtDebugUtils::InsertLabel(vk::CommandBuffer command_buffer, std::string_view name, uint32_t color) const
 			{
-				vk::DebugUtilsLabelEXT label_info(name, MakeColor(color));
+				vk::DebugUtilsLabelEXT label_info(name.data(), MakeColor(color));
 				command_buffer.insertDebugUtilsLabelEXT(label_info);
 			}
 
@@ -63,9 +63,9 @@ namespace engine
 			{
 			}
 
-			void DebugMarkerExtDebugUtils::SetDebugName(vk::ObjectType object_type, uint64_t object_handle, const char* name) const
+			void DebugMarkerExtDebugUtils::SetDebugName(vk::ObjectType object_type, uint64_t object_handle, std::string_view name) const
 			{
-				vk::DebugMarkerObjectNameInfoEXT name_info(vk::debugReportObjectType(object_type), object_handle, name);
+				vk::DebugMarkerObjectNameInfoEXT name_info(vk::debugReportObjectType(object_type), object_handle, name.data());
 				Handle(device).debugMarkerSetObjectNameEXT(name_info);
 			}
 
@@ -75,9 +75,9 @@ namespace engine
 				Handle(device).debugMarkerSetObjectTagEXT(tag_info);
 			}
 
-			void DebugMarkerExtDebugUtils::BeginLabel(vk::CommandBuffer command_buffer, const char* name, uint32_t color) const
+			void DebugMarkerExtDebugUtils::BeginLabel(vk::CommandBuffer command_buffer, std::string_view name, uint32_t color) const
 			{
-				vk::DebugMarkerMarkerInfoEXT marker_info(name, MakeColor(color));
+				vk::DebugMarkerMarkerInfoEXT marker_info(name.data(), MakeColor(color));
 				command_buffer.debugMarkerBeginEXT(marker_info);
 			}
 
@@ -86,9 +86,9 @@ namespace engine
 				command_buffer.debugMarkerEndEXT();
 			}
 
-			void DebugMarkerExtDebugUtils::InsertLabel(vk::CommandBuffer command_buffer, const char* name, uint32_t color) const
+			void DebugMarkerExtDebugUtils::InsertLabel(vk::CommandBuffer command_buffer, std::string_view name, uint32_t color) const
 			{
-				vk::DebugMarkerMarkerInfoEXT marker_info(name, MakeColor(color));
+				vk::DebugMarkerMarkerInfoEXT marker_info(name.data(), MakeColor(color));
 				command_buffer.debugMarkerInsertEXT(marker_info);
 			}
 

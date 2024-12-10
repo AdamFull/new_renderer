@@ -7,7 +7,7 @@ namespace engine
 	class ViewportWindow : public IEditorWindow
 	{
 	public:
-		ViewportWindow(const std::string& sname) { m_name = sname; }
+		ViewportWindow(std::string_view sname) { m_name = sname; }
 		virtual ~ViewportWindow() override = default;
 
 		void Create() override;

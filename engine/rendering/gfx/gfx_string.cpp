@@ -492,32 +492,5 @@ namespace engine
 
 			return Format::eUndefined;
 		}
-
-		std::string to_string(const ShaderStageFlag& flag)
-		{
-			if(flag == ShaderStageFlag::eVertex) return "Vertex";
-			if(flag == ShaderStageFlag::eTessellationControl) return "TessellationControl";
-			if(flag == ShaderStageFlag::eTessellationEvaluation) return "TessellationEvaluation";
-			if(flag == ShaderStageFlag::eGeometry) return "Geometry";
-			if(flag == ShaderStageFlag::eFragment) return "Fragment";
-			if(flag == ShaderStageFlag::eCompute) return "Compute";
-			if (flag == ShaderStageFlag::eAllGraphics) return "AllGraphics";
-
-			return "";
-		}
-
-		template<>
-		ShaderStageFlag from_string<ShaderStageFlag>(const std::string& str)
-		{
-			if (strcmp(str.c_str(), "Vertex") == 0) return ShaderStageFlag::eVertex;
-			if (strcmp(str.c_str(), "TessellationControl") == 0) return ShaderStageFlag::eTessellationControl;
-			if (strcmp(str.c_str(), "TessellationEvaluation") == 0) return ShaderStageFlag::eTessellationEvaluation;
-			if (strcmp(str.c_str(), "Geometry") == 0) return ShaderStageFlag::eGeometry;
-			if (strcmp(str.c_str(), "Fragment") == 0) return ShaderStageFlag::eFragment;
-			if (strcmp(str.c_str(), "Compute") == 0) return ShaderStageFlag::eCompute;
-			if (strcmp(str.c_str(), "AllGraphics") == 0) return ShaderStageFlag::eAllGraphics;
-
-			return static_cast<ShaderStageFlag>(0);
-		}
 	}
 }

@@ -7,7 +7,7 @@ namespace engine
 	class PostProcessWindow : public IEditorWindow
 	{
 	public:
-		PostProcessWindow(const std::string& sname) { m_name = sname; }
+		PostProcessWindow(std::string_view sname) { m_name = sname; }
 		virtual ~PostProcessWindow() override = default;
 
 		void Create() override;

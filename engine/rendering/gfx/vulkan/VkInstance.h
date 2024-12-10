@@ -39,10 +39,10 @@ namespace engine
 
 				InstanceBuilder();
 
-				InstanceBuilder& SetApplicationName(const std::string& name);
+				InstanceBuilder& SetApplicationName(std::string_view name);
 				InstanceBuilder& SetApplicationVersion(uint32_t version);
 
-				InstanceBuilder& SetEngineName(const std::string& name);
+				InstanceBuilder& SetEngineName(std::string_view name);
 				InstanceBuilder& SetEngineVersion(uint32_t version);
 
 				InstanceBuilder& SetApiVersion(uint32_t version);

@@ -33,7 +33,7 @@ namespace engine
 			 * @param handle A pointer to the android asset manager.
 			 * @param filename A string representing the path to the file to be opened.
 			 */
-			AAMInputFile(AAssetManager* handle, const std::string& filename);
+			AAMInputFile(AAssetManager* handle, std::string_view filename);
 
 			/**
 			 * @brief Destructor that closes the file if it is open.

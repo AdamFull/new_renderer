@@ -390,9 +390,9 @@ namespace engine
 		return dpi_factor;
 	}
 
-	void GlfwWindow::SetTitle(const std::string& new_title)
+	void GlfwWindow::SetTitle(std::string_view new_title)
 	{
-		glfwSetWindowTitle(handle, new_title.c_str());
+		glfwSetWindowTitle(handle, new_title.data());
 	}
 
 	float GlfwWindow::GetContentScaleFactor() const

@@ -40,7 +40,7 @@ namespace engine
 
 	}
 
-	void Application::SetName(const std::string& _name)
+	void Application::SetName(std::string_view _name)
 	{
 		name = _name;
 	}

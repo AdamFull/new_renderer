@@ -67,7 +67,7 @@ namespace engine
 			requested_close = true;
 		}
 
-		void SetName(const std::string& name);
+		void SetName(std::string_view name);
 		const std::string& GetName() const;
 
 	protected:

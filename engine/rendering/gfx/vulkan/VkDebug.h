@@ -27,14 +27,14 @@ namespace engine
 						auto object_id = reinterpret_cast<uint64_t>(static_cast<_Ty::CType>(object));
 						auto formatted_debug_object_name = std::format("{}:{} | {:x}", vk::to_string(object.objectType), name, object_id);
 
-						SetDebugName(object.objectType, object_id, name.data());
+						SetDebugName(object.objectType, object_id, name);
 					}
 				}
 
 				/**
 				 * @brief Sets the debug name for a Vulkan object.
 				 */
-				virtual void SetDebugName(vk::ObjectType object_type, uint64_t object_handle, const char* name) const = 0;
+				virtual void SetDebugName(vk::ObjectType object_type, uint64_t object_handle, std::string_view name) const = 0;
 
 				/**
 				 * @brief Tags the given Vulkan object with some data.
@@ -44,7 +44,7 @@ namespace engine
 				/**
 				 * @brief Inserts a command to begin a new debug label/marker scope.
 				 */
-				virtual void BeginLabel(vk::CommandBuffer command_buffer, const char* name, uint32_t color) const = 0;
+				virtual void BeginLabel(vk::CommandBuffer command_buffer, std::string_view name, uint32_t color) const = 0;
 
 				/**
 				 * @brief Inserts a command to end the current debug label/marker scope.
@@ -54,7 +54,7 @@ namespace engine
 				/**
 				 * @brief Inserts a (non-scoped) debug label/marker in the command buffer.
 				 */
-				virtual void InsertLabel(vk::CommandBuffer command_buffer, const char* name, uint32_t color) const = 0;
+				virtual void InsertLabel(vk::CommandBuffer command_buffer, std::string_view name, uint32_t color) const = 0;
 			protected:
 				Device& device;
 			};
@@ -68,11 +68,11 @@ namespace engine
 				DebugUtilsExtDebugUtils(Device& device);
 				~DebugUtilsExtDebugUtils() override = default;
 
-				void SetDebugName(vk::ObjectType object_type, uint64_t object_handle, const char* name) const override;
+				void SetDebugName(vk::ObjectType object_type, uint64_t object_handle, std::string_view name) const override;
 				void SetDebugTag(vk::ObjectType object_type, uint64_t object_handle, uint64_t tag_name, const void* tag_data, size_t tag_data_size) const override;
-				void BeginLabel(vk::CommandBuffer command_buffer, const char* name, uint32_t color) const override;
+				void BeginLabel(vk::CommandBuffer command_buffer, std::string_view name, uint32_t color) const override;
 				void EndLabel(vk::CommandBuffer command_buffer) const override;
-				void InsertLabel(vk::CommandBuffer command_buffer, const char* name, uint32_t color) const override;
+				void InsertLabel(vk::CommandBuffer command_buffer, std::string_view name, uint32_t color) const override;
 			};
 
 			/**
@@ -84,11 +84,11 @@ namespace engine
 				DebugMarkerExtDebugUtils(Device& device);
 				~DebugMarkerExtDebugUtils() override = default;
 
-				void SetDebugName(vk::ObjectType object_type, uint64_t object_handle, const char* name) const override;
+				void SetDebugName(vk::ObjectType object_type, uint64_t object_handle, std::string_view name) const override;
 				void SetDebugTag(vk::ObjectType object_type, uint64_t object_handle, uint64_t tag_name, const void* tag_data, size_t tag_data_size) const override;
-				void BeginLabel(vk::CommandBuffer command_buffer, const char* name, uint32_t color) const override;
+				void BeginLabel(vk::CommandBuffer command_buffer, std::string_view name, uint32_t color) const override;
 				void EndLabel(vk::CommandBuffer command_buffer) const override;
-				void InsertLabel(vk::CommandBuffer command_buffer, const char* name, uint32_t color) const override;
+				void InsertLabel(vk::CommandBuffer command_buffer, std::string_view name, uint32_t color) const override;
 			};
 
 			/**
@@ -100,11 +100,11 @@ namespace engine
 				DummyDebugUtils(Device& device);
 				~DummyDebugUtils() override = default;
 
-				inline void SetDebugName(vk::ObjectType, uint64_t, const char*) const override {}
+				inline void SetDebugName(vk::ObjectType, uint64_t, std::string_view) const override {}
 				inline void SetDebugTag(vk::ObjectType, uint64_t, uint64_t, const void*, size_t) const override {}
-				inline void BeginLabel(vk::CommandBuffer, const char*, uint32_t) const override {}
+				inline void BeginLabel(vk::CommandBuffer, std::string_view, uint32_t) const override {}
 				inline void EndLabel(vk::CommandBuffer) const override {}
-				inline void InsertLabel(vk::CommandBuffer, const char*, uint32_t) const override {}
+				inline void InsertLabel(vk::CommandBuffer, std::string_view, uint32_t) const override {}
 			};
 		}
 	}

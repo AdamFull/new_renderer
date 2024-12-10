@@ -28,7 +28,7 @@ namespace engine
 
 		float GetDpiFactor() const override;
 
-		void SetTitle(const std::string& new_title) override;
+		void SetTitle(const std::string_view new_title) override;
 
 		float GetContentScaleFactor() const override;
 

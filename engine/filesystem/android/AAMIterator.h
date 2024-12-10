@@ -30,7 +30,7 @@ namespace engine
              * @param handle A pointer to the android asset manager.
              * @param start_path A string representing the starting path within the archive.
              */
-            AAMDirectoryIterator(AAssetManager* handle, const std::string& start_path);
+            AAMDirectoryIterator(AAssetManager* handle, std::string_view start_path);
 
             /**
              * @brief Virtual destructor.
@@ -83,7 +83,7 @@ namespace engine
              * @param handle A pointer to the android asset manager.
              * @param start_path A string representing the starting path within the archive.
              */
-            CAAMRecursiveDirectoryIterator(AAssetManager* handle, const std::string& start_path);
+            CAAMRecursiveDirectoryIterator(AAssetManager* handle, std::string_view start_path);
 
             /**
              * @brief Virtual destructor.

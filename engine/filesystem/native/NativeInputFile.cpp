@@ -4,9 +4,9 @@
 
 using namespace engine::filesystem;
 
-CNativeInputFile::CNativeInputFile(const std::string& filename)
+CNativeInputFile::CNativeInputFile(std::string_view filename)
 {
-	m_pFilePtr = std::fopen(filename.c_str(), "rb");
+	m_pFilePtr = std::fopen(filename.data(), "rb");
 
 	if (!m_pFilePtr)
 		throw std::runtime_error("Failed to open native file.");

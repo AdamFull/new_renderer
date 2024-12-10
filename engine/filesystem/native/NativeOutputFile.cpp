@@ -4,9 +4,9 @@
 
 using namespace engine::filesystem;
 
-NativeOutputFile::NativeOutputFile(const std::string& filename)
+NativeOutputFile::NativeOutputFile(std::string_view filename)
 {
-	m_pFilePtr = std::fopen(filename.c_str(), "wb");
+	m_pFilePtr = std::fopen(filename.data(), "wb");
 
 	if (!m_pFilePtr)
 		throw std::runtime_error("Failed to open native file.");

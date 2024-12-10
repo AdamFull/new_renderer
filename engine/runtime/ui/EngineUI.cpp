@@ -389,9 +389,9 @@ namespace engine
 		}
 	}
 
-	bool ReadFile(const std::string& path, utl::vector<u8>& out)
+	bool ReadFile(std::string_view path, utl::vector<u8>& out)
 	{
-		std::ifstream file(path, std::ios::binary);
+		std::ifstream file(path.data(), std::ios::binary);
 		if (!file.is_open())
 			return false;
 
@@ -424,7 +424,7 @@ namespace engine
 
 		// Load additional fonts
 		auto& font_manager = ImFontManager::GetInstance();
-		font_manager->SetFileReaderFn([](const std::string& path, utl::vector<u8>& out) { return ReadFile(path, out); });
+		font_manager->SetFileReaderFn([](std::string_view path, utl::vector<u8>& out) { return ReadFile(path, out); });
 
 		auto font_path = std::format("embed/font/{}", FONT_ICON_FILE_NAME_MDI);
 

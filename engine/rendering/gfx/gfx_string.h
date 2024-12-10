@@ -13,9 +13,5 @@ namespace engine
 		// Format
 		std::string to_string(const Format& format);
 		template<> Format from_string<Format>(const std::string& str);
-
-		// ShaderStageFlag
-		std::string to_string(const ShaderStageFlag& flag);
-		template<> ShaderStageFlag from_string<ShaderStageFlag>(const std::string& str);
 	}
 }

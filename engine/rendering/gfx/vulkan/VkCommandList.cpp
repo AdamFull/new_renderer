@@ -503,14 +503,14 @@ namespace engine
 				handle.endRenderingKHR();
 			}
 
-			void VulkanCommandList::BeginMarker(const char* name, uint32_t color)
+			void VulkanCommandList::BeginMarker(std::string_view name, uint32_t color)
 			{
 				auto& device = command_pool.GetDevice();
 				auto& debug_utils = device.GetDebugUtils();
 				debug_utils.BeginLabel(handle, name, color);
 			}
 
-			void VulkanCommandList::InsertMarker(const char* name, uint32_t color)
+			void VulkanCommandList::InsertMarker(std::string_view name, uint32_t color)
 			{
 				auto& device = command_pool.GetDevice();
 				auto& debug_utils = device.GetDebugUtils();

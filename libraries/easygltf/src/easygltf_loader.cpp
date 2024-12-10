@@ -101,7 +101,7 @@ class DefaultDebugMessenger : public IDebugMessenger
 public:
 	~DefaultDebugMessenger() override = default;
 
-	void message(DebugMessageType type, const std::string& data) override
+	void message(DebugMessageType type, std::string_view data) override
 	{
 		std::string severity{};
 		switch (type)
@@ -136,7 +136,7 @@ void CGLTFLoader::setDebugMessenger(std::unique_ptr<IDebugMessenger>&& messenger
 	m_pMessenger = std::move(messenger);
 }
 
-bool CGLTFLoader::load(const std::string& fsPath, FGLTFRoot& root)
+bool CGLTFLoader::load(std::string_view fsPath, FGLTFRoot& root)
 {
 	if (!m_pFS)
 		useDefaultFilesystemWrapper();
@@ -144,21 +144,21 @@ bool CGLTFLoader::load(const std::string& fsPath, FGLTFRoot& root)
 	if (!m_pMessenger)
 		useDefaultDebugMessenger();
 
-	root.rootDirectory = path_helper::parent_path(fsPath);
+	root.rootDirectory = path_helper::parent_path(fsPath.data());
 
 	return _load(fsPath, root);
 }
 
-bool CGLTFLoader::_load(const std::string& fsPath, FGLTFRoot& root)
+bool CGLTFLoader::_load(std::string_view fsPath, FGLTFRoot& root)
 {
-	if (!m_pFS->exists(fsPath.c_str()))
+	if (!m_pFS->exists(fsPath))
 	{
 		m_pMessenger->message(DebugMessageType::error, std::format("Failed to open file {}", fsPath));
 		return false;
 	}
 
 	utl::vector<uint8_t> rdata{};
-	if (!m_pFS->readFile(fsPath.c_str(), rdata))
+	if (!m_pFS->readFile(fsPath, rdata))
 	{
 		m_pMessenger->message(DebugMessageType::error, std::format("Failed to read file {}", fsPath));
 		return false;
@@ -170,7 +170,7 @@ bool CGLTFLoader::_load(const std::string& fsPath, FGLTFRoot& root)
 		return false;
 	}
 
-	auto ext = path_helper::get_ext(fsPath);
+	auto ext = path_helper::get_ext(fsPath.data());
 
 	if (ext == ".glb")
 		return _loadGLBFromMemory(rdata, root);

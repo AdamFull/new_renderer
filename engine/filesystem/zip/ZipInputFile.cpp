@@ -81,7 +81,7 @@ int32_t lzip_feof(lzip_file_t* zfile)
 
 
 
-ZipInputFile::ZipInputFile(zip_t* handle, std::string_view filename, const std::string& password) :
+ZipInputFile::ZipInputFile(zip_t* handle, std::string_view filename, std::string_view password) :
 	m_srPassword{ password }
 {
 

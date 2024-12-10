@@ -11,7 +11,7 @@ entt::entity EntityManager::m_root{};
 utl::vector<std::unique_ptr<ecs::ISystem>> EntityManager::m_vSystems;
 utl::vector<FComponentMeta> EntityManager::m_meta;
 
-entt::entity EntityManager::CreateRoot(const std::string& name)
+entt::entity EntityManager::CreateRoot(std::string_view name)
 {
 	if (m_registry.valid(m_root))
 		return m_root;
@@ -21,7 +21,7 @@ entt::entity EntityManager::CreateRoot(const std::string& name)
 	return m_root;
 }
 
-entt::entity EntityManager::CreateNode(const std::string& name, entt::entity parent)
+entt::entity EntityManager::CreateNode(std::string_view name, entt::entity parent)
 {
 	entt::entity entity = m_registry.create();
 	m_registry.emplace<ecs::FBaseComponent>(entity, ecs::FBaseComponent{ name });

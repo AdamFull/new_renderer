@@ -13,7 +13,7 @@ namespace engine
 				DECLARE_COMPONENT(FBaseComponent, icon::entity, "Base")
 
 				FBaseComponent() = default;
-				FBaseComponent(const std::string& name) : name(name) {}
+				FBaseComponent(std::string_view name) : name(name) {}
 				std::string name{};
 				bool enabled{ true };
 				bool visible{ true };

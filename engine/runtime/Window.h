@@ -105,7 +105,7 @@ namespace engine
 		 * @brief Windows title setter
 		 * @param new_title New window title
 		 */
-		virtual void SetTitle(const std::string& new_title) = 0;
+		virtual void SetTitle(std::string_view new_title) = 0;
 
 		/**
 		 * @brief Attempt to Resize the window - not guaranteed to change
