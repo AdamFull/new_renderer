@@ -130,6 +130,8 @@ namespace engine
 
 			// Create uniform pool
 			global_uniform_pool = std::make_unique<UniformPool>(context);
+
+			current_frame = render_frames[current_frame_index].get();
 		}
 
 		RenderContext::~RenderContext()
