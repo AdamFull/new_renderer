@@ -11,8 +11,8 @@ namespace engine
 {
 	namespace render
 	{
-		RenderPass::RenderPass(IRenderGraph& graph, const RenderPassCreateInfo& create_info) :
-			ShaderPass{ graph, create_info },
+		RenderPass::RenderPass(ExecutionContext& execution_context, const RenderPassCreateInfo& create_info) :
+			ShaderPass{ execution_context, create_info },
 			resource_attachments{ create_info.resource_attachments }
 		{
 			gfx::GraphicsPipelineCreateInfo pipeline_ci{};
@@ -23,7 +23,7 @@ namespace engine
 
 			for (auto& attachment : resource_attachments)
 			{
-				auto render_target = graph.GetTexture(attachment.render_resource_id);
+				auto render_target = execution_context.GetTexture(attachment.render_resource_id);
 				auto rt_format = render_target->GetFormat();
 				if (attachment.flags & ResourceAttachmentTypeFlag::eDepth)
 					pipeline_ci.depth_format = rt_format;
@@ -65,7 +65,7 @@ namespace engine
 			// TODO: cache it???
 			for (auto& resource_attachment : resource_attachments)
 			{
-				auto& render_resource = graph.GetResource(resource_attachment.render_resource_id);
+				auto& render_resource = execution_context.GetResource(resource_attachment.render_resource_id);
 
 				// Wtf? Trying write to static resource????
 				if (render_resource.resource_type & RenderResourceTypeFlag::eStaticImage)
@@ -97,7 +97,7 @@ namespace engine
 				}
 
 				auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
-				barrier.texture = graph.GetTexture(render_resource);
+				barrier.texture = execution_context.GetTexture(render_resource);
 				barrier.src_state = render_resource.GetState();
 				barrier.dst_state = new_state;
 

@@ -418,7 +418,7 @@ namespace engine
 		{
 			ZoneScoped;
 
-			auto& render_graph = renderer.GetRenderGraph();
+			auto& render_context = renderer.GetRenderContext();
 
 			// Post process data
 			{
@@ -470,7 +470,7 @@ namespace engine
 				const uint8_t* uniform_data = reinterpret_cast<const uint8_t*>(&postprocessing);
 				uint64_t uniform_size = sizeof(shlib::GlobalPostProcessingData);
 
-				render_graph.UpdateGlobalBinding(2, std::span(uniform_data, uniform_size));
+				render_context.UpdateGlobalBinding(2, std::span(uniform_data, uniform_size));
 			}
 
 			// Bind global buffers
@@ -519,7 +519,7 @@ namespace engine
 				const uint8_t* uniform_data = reinterpret_cast<const uint8_t*>(&buffers);
 				uint64_t uniform_size = sizeof(shlib::GlobalBufferReference);
 
-				render_graph.UpdateGlobalBinding(1, std::span(uniform_data, uniform_size));
+				render_context.UpdateGlobalBinding(1, std::span(uniform_data, uniform_size));
 			}
 			
 			{
@@ -533,7 +533,7 @@ namespace engine
 				const uint8_t* uniform_data = reinterpret_cast<const uint8_t*>(&frame_data);
 				uint64_t uniform_size = sizeof(shlib::GlobalUniformData);
 
-				render_graph.UpdateGlobalBinding(0, std::span(uniform_data, uniform_size));
+				render_context.UpdateGlobalBinding(0, std::span(uniform_data, uniform_size));
 			}
 		}
 

@@ -7,8 +7,8 @@ namespace engine
 {
 	namespace render
 	{
-		ComputePass::ComputePass(IRenderGraph& graph, const ComputePassCreateInfo& create_info) :
-			ShaderPass{ graph, create_info }
+		ComputePass::ComputePass(ExecutionContext& execution_context, const ComputePassCreateInfo& create_info) :
+			ShaderPass{ execution_context, create_info }
 		{
 			gfx::ComputePipelineCreateInfo pipeline_ci{};
 			pipeline_ci.shader = shader;

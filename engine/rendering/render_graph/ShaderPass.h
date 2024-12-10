@@ -1,6 +1,5 @@
 #pragma once
 
-#include "RenderGraphInterface.h"
 #include "../ExecutionContext.h"
 
 #include <algorithm>
@@ -162,15 +161,13 @@ namespace engine
 			utl::vector<char> data{};
 		};
 
-		class ShaderPass : public IGraphNode
+		class ShaderPass : public ExecutionNode
 		{
 		public:
-			ShaderPass(IRenderGraph& graph, const PassCreateInfo& create_info);
+			ShaderPass(ExecutionContext& execution_context, const PassCreateInfo& create_info);
 			virtual ~ShaderPass();
 
-			void SetExecutionContext(ExecutionContext* exec_context);
-
-			void Evaluate(gfx::CommandList& command_list, float delta_time) override;
+			void Execute(gfx::CommandList& command_list, float delta_time) override;
 
 			UniformHandle& GetUniformBlock(uint32_t name_hash);
 			UniformHandle& GetUniformBlock(const char* name);
@@ -207,7 +204,7 @@ namespace engine
 			void CollectProfileData();
 			virtual void _Execute(gfx::CommandList& command_list, float delta_time) = 0;
 		protected:
-			IRenderGraph& graph;
+			ExecutionContext& execution_context;
 			gfx::Context& context;
 
 			std::string debug_name{};
@@ -219,7 +216,6 @@ namespace engine
 
 			gfx::SharedDescriptor* shared_descriptor{ nullptr };
 			gfx::ResourceDescriptor* resource_descriptor{ nullptr };
-			ExecutionContext* execution_context{ nullptr };
 
 			std::vector<UniformHandle> uniform_handles;
 			std::unique_ptr<UniformHandle> constant_block;

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "RenderResourceContainer.h"
+
 #include "ExecutionContext.h"
 #include <span>
 
@@ -12,32 +14,18 @@ namespace engine
 	namespace gfx
 	{
 		class Context;
+		class ResourceLoader;
 	}
 
 	namespace render
 	{
+		class IRenderer;
 		class UniformPool;
-
-		struct RenderFrame
-		{
-			gfx::Texture* backbuffer{ nullptr };
-			gfx::CommandPool* command_pool{ nullptr };
-			gfx::DescriptorAllocator* descriptor_allocator{ nullptr };
-
-			//std::unique_ptr<DescriptorAllocator> descriptor_allocator;
-
-			std::unique_ptr<UniformPool> uniform_pool{};
-
-			gfx::Semaphore* image_avaliable{ nullptr };
-			gfx::Semaphore* render_finished{ nullptr };
-			gfx::Semaphore* upload_avaliable{ nullptr };
-			gfx::Fence* fence{ nullptr };
-		};
 
 		class RenderContext final : public ExecutionContext
 		{
 		public:
-			RenderContext(gfx::Context& context, Window* window);
+			RenderContext(IRenderer& renderer, Window* window);
 			~RenderContext();
 
 			RenderContext(const RenderContext&) = delete;
@@ -45,46 +33,66 @@ namespace engine
 			RenderContext& operator=(const RenderContext&) = delete;
 			RenderContext& operator=(RenderContext&&) = delete;
 
-			//void CreateGlobalDescriptors(const FGlobalUniformCreateInfo& uniform_ci);
+			uint32_t AddResource() override;
+			uint32_t AddResource(std::string_view path, gfx::Sampler* sampler = nullptr) override;
+			uint32_t AddResource(const TextureResourceCreateInfo& create_info, std::span<uint8_t> texture_data) override;
+			uint32_t AddResource(const TextureResourceCreateInfo& create_info, gfx::Sampler* sampler = nullptr) override;
+			uint32_t AddResource(const gfx::BufferCreateInfo& create_info) override;
+
+			void SetResourceName(uint32_t resource_index, std::string_view name) override;
+
+			RenderResource& GetResource(uint32_t resource_index) override;
+			RenderResource const& GetResource(uint32_t resource_index) const override;
+
+			std::unique_ptr<ExecutionNode> CreateNode(std::string_view group_name, uint32_t group_color = 0xFFFFFFFF) override;
+			std::unique_ptr<ExecutionNode> CreateNode(const RenderShaderPassCreateInfo& create_info) override;
+			std::unique_ptr<ExecutionNode> CreateNode(const ComputeShaderPassCreateInfo& create_info) override;
+
+			void AddNode(std::unique_ptr<ExecutionNode>&& node) override;
+			void Execute(float delta_time) override;
+
+			void UpdateGlobalBinding(uint32_t binding, std::span<const uint8_t> data);
+
+			void Begin() override;
+			void End() override;
 
 			void UpdateSwapchain(uint32_t width, uint32_t height);
 			void UpdateSwapchain(uint32_t image_count);
 
 			bool HandleSurfaceChange(bool force_update = false);
 
-			gfx::CommandList& Begin(bool& surface_updated);
+			gfx::CommandList& BeginCommands(bool& surface_updated);
 
 			void BeginFrame(bool& surface_updated);
 			void EndFrame(gfx::SemaphoreSubmitInfo wait_semaphore);
 
 			gfx::SemaphoreSubmitInfo GetUploadAvaliableSemaphore();
 
+			gfx::Context& GetContext() override;
+			gfx::Context const& GetContext() const override;
+
+			gfx::Texture* GetTexture(uint32_t resource_index) override;
+			gfx::Texture* GetTexture(const RenderResource& render_resource) override;
+
+			gfx::Sampler* GetSampler(uint32_t resource_index) override;
+			gfx::Sampler* GetSampler(const RenderResource& render_resource) override;
+
+			gfx::Buffer* GetBuffer(uint32_t resource_index) override;
+			gfx::Buffer* GetBuffer(const RenderResource& render_resource) override;
+
 			gfx::BufferSuballocation RequestUniformBlock(uint64_t block_size) override;
 			gfx::CommandList& GetCurrentCommandList() override;
 			gfx::DescriptorAllocator& GetCurrentDescriptorAllocator() override;
-
-			gfx::Texture& GetBackbuffer();
-
+		protected:
 			const uint32_t& GetCurrentFrameIndex() const;
 
-			gfx::Swapchain& GetSwapchain() const;
-
-			//DescriptorSetLayout& GetGlobalDescriptorSetLayout() const;
-			//gfx::DescriptorSet& GetCurrentGlobalDescriptorSet() const;
-
-			bool CanUpdateUniform() const;
-			bool CanUpdateTextureBinding() const;
-
-			void UpdateUniform(uint32_t binding, std::span<const char> data);
-			void UpdateTextureBinding(gfx::Texture& texture, gfx::Sampler& sampler, uint32_t binding_slot);
-			void UpdateDescriptors();
-		protected:
-			RenderFrame CreateRenderFrame(int32_t frame_index);
-			void DestroyRenderFrame(RenderFrame& render_frame);
+			class RenderFrame;
 			RenderFrame& GetCurrentFrame();
+			void UpdateRenderTargets();
 			void UpdateResources();
 		private:
 			gfx::Context& context;
+			gfx::ResourceLoader& resource_loader;
 
 			const Window& window;
 			const gfx::Queue* queue;
@@ -93,7 +101,7 @@ namespace engine
 			//vk::SurfaceTransformFlagBitsKHR pre_transform{ vk::SurfaceTransformFlagBitsKHR::eIdentity };
 
 			static constexpr size_t k_max_frames_in_flight{ 8ull };
-			std::array<RenderFrame, k_max_frames_in_flight> render_frames{};
+			std::array<std::unique_ptr<RenderFrame>, k_max_frames_in_flight> render_frames{};
 			uint32_t active_frame_index{ 0u };
 			uint32_t current_frame_index{ 0u };
 			bool frame_active{ false };
@@ -102,12 +110,24 @@ namespace engine
 			gfx::Semaphore* previous_frame_semaphore{ nullptr };
 			gfx::CommandList* current_command_list{ nullptr };
 
-			// Global descriptor
-			//std::unique_ptr<DescriptorAllocator> descriptor_allocator{};
-			//std::unique_ptr<DescriptorSetLayout> descriptor_set_layout{};
-			//std::vector<vk::DescriptorSet> descriptor_sets;
-			//std::unique_ptr<UniformPool> uniform_pool{};
-			//DescriptorUpdate descriptor_update{};
+			std::vector<std::unique_ptr<ExecutionNode>> graph_nodes{};
+			std::vector<RenderResource> render_resources{};
+
+			gfx::Sampler* default_sampler{ nullptr };
+
+			// Performance counters
+			gfx::QueryPool* timestamp_query{ nullptr };
+			float timestamp_frequency{ 0.f };
+			float gpu_delta_time{ 0.f };
+
+			// Shared descriptors
+			gfx::SharedDescriptor* shared_descriptor{ nullptr };
+			gfx::ResourceDescriptor* global_resource_descriptor{ nullptr };
+			std::unique_ptr<UniformPool> global_uniform_pool{};
+
+			ResourceContainer<TextureObject> static_textures{};
+			ResourceContainer<TextureObject> render_targets{};
+			ResourceContainer<BufferObject> buffers{};
 		};
 	}
 }

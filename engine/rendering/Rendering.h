@@ -3,7 +3,6 @@
 #include <engine/interface/filesystem/VirtualFileSystemInterface.h>
 #include "RendererInterface.h"
 #include "RenderResourceContainer.h"
-#include "ExecutionContext.h"
 
 #include "render_graph/ShaderPass.h"
 #include <memory>
@@ -45,8 +44,8 @@ namespace engine
 			GeometryBuffer& RequestInterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) override;
 			GeometryBuffer& RequestDeinterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) override;
 
-			IRenderGraph& GetRenderGraph() override;
-			IRenderGraph const& GetRenderGraph() const override;
+			ExecutionContext& GetRenderContext() override;
+			ExecutionContext const& GetRenderContext() const override;
 
 			IRenderWorld& GetRenderWorld() override;
 			IRenderWorld const& GetRenderWorld() const override;
@@ -57,7 +56,7 @@ namespace engine
 
 			std::unique_ptr<gfx::Context> gfx_context{};
 			std::unique_ptr<gfx::ResourceLoader> resource_loader{};
-			std::unique_ptr<IRenderGraph> render_graph{};
+			std::unique_ptr<ExecutionContext> render_context{};
 			std::unique_ptr<IRenderWorld> render_world{};
 
 			//GPUVector<Material> materials{};

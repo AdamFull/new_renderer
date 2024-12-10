@@ -14,9 +14,9 @@ namespace engine
 {
 	namespace render
 	{
-		ShaderPass::ShaderPass(IRenderGraph& graph, const PassCreateInfo& create_info) :
-			graph{ graph },
-			context{ graph.GetContext() },
+		ShaderPass::ShaderPass(ExecutionContext& execution_context, const PassCreateInfo& create_info) :
+			execution_context{ execution_context },
+			context{ execution_context.GetContext() },
 			shader{ create_info.shader },
 			debug_name{ create_info.debug_name },
 			one_time{ create_info.one_time },
@@ -70,17 +70,10 @@ namespace engine
 			context.Destroy(timestamp_query);
 		}
 
-		void ShaderPass::SetExecutionContext(ExecutionContext* exec_context)
-		{
-			execution_context = exec_context;
-		}
 
-
-		void ShaderPass::Evaluate(gfx::CommandList& command_list, float delta_time)
+		void ShaderPass::Execute(gfx::CommandList& command_list, float delta_time)
 		{
 			ZoneScoped;
-
-			assert(execution_context && "CANNOT EXECUTE PASS WITHOUT EXECUTION CONTEXT");
 
 			if (!can_execute)
 				return;
@@ -134,7 +127,7 @@ namespace engine
 
 			if (!resource_descriptor)
 			{
-				auto& descriptor_allocator = execution_context->GetCurrentDescriptorAllocator();
+				auto& descriptor_allocator = execution_context.GetCurrentDescriptorAllocator();
 				resource_descriptor = descriptor_allocator.AllocateDescriptors(root_signature);
 			}
 
@@ -145,7 +138,7 @@ namespace engine
 
 				// Request memory block for this uniform
 				// TODO: may be request it inside uniform handler?
-				auto uniform_block = execution_context->RequestUniformBlock(resource.size);
+				auto uniform_block = execution_context.RequestUniformBlock(resource.size);
 				uniform_block.Update(std::span(handle.Data()));
 
 				gfx::BufferDescriptor descriptor{};
@@ -200,7 +193,7 @@ namespace engine
 		{
 			ZoneScoped;
 
-			auto& render_resource = graph.GetResource(resource_id);
+			auto& render_resource = execution_context.GetResource(resource_id);
 
 			gfx::ResourceStateFlags new_state = gfx::GetAccessState(access);
 
@@ -217,7 +210,7 @@ namespace engine
 					new_state |= gfx::ResourceStateFlag::eGeneral;
 
 				auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
-				barrier.texture = graph.GetTexture(render_resource);
+				barrier.texture = execution_context.GetTexture(render_resource);
 				barrier.subresource_index = sebresource_id;
 				barrier.src_state = render_resource.GetState();
 				barrier.dst_state = new_state;
@@ -231,7 +224,7 @@ namespace engine
 					new_state |= gfx::ResourceStateFlag::eIndirect;
 
 				auto& barrier = buffer_barriers[resource_barriers.buffer_barrier_count++];
-				barrier.buffer = graph.GetBuffer(render_resource);
+				barrier.buffer = execution_context.GetBuffer(render_resource);
 				barrier.src_state = render_resource.GetState();
 				barrier.dst_state = new_state;
 			}
@@ -247,7 +240,7 @@ namespace engine
 			auto found = std::find_if(reflection.shader_resources.Begin(), reflection.shader_resources.End(), [&binding_point](const gfx::ShaderResource& resource) { return resource.name_hash == binding_point; });
 			if (found != reflection.shader_resources.End())
 			{
-				auto& render_resource = graph.GetResource(resource_id);
+				auto& render_resource = execution_context.GetResource(resource_id);
 
 				gfx::ResourceStateFlags new_state = gfx::GetAccessState(access);
 
@@ -267,7 +260,7 @@ namespace engine
 						new_state |= gfx::ResourceStateFlag::eGeneral;
 
 					auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
-					barrier.texture = graph.GetTexture(render_resource);
+					barrier.texture = execution_context.GetTexture(render_resource);
 					barrier.subresource_index = sebresource_id;
 					barrier.src_state = render_resource.GetState();
 					barrier.dst_state = new_state;
@@ -275,7 +268,7 @@ namespace engine
 				else if (render_resource.resource_type & RenderResourceTypeFlag::eAllBuffer)
 				{
 					auto& barrier = buffer_barriers[resource_barriers.buffer_barrier_count++];
-					barrier.buffer = graph.GetBuffer(render_resource);
+					barrier.buffer = execution_context.GetBuffer(render_resource);
 					barrier.src_state = render_resource.GetState();
 					barrier.dst_state = new_state;
 				}
@@ -340,7 +333,7 @@ namespace engine
 
 			if (!resource_descriptor)
 			{
-				auto& descriptor_allocator = execution_context->GetCurrentDescriptorAllocator();
+				auto& descriptor_allocator = execution_context.GetCurrentDescriptorAllocator();
 				resource_descriptor = descriptor_allocator.AllocateDescriptors(root_signature);
 			}
 
@@ -349,7 +342,7 @@ namespace engine
 			auto found = std::find_if(reflection.shader_resources.Begin(), reflection.shader_resources.End(), [&binding_point](const gfx::ShaderResource& resource) { return resource.name_hash == binding_point; });
 			if (found != reflection.shader_resources.End())
 			{
-				auto& render_resource = graph.GetResource(resource_index);
+				auto& render_resource = execution_context.GetResource(resource_index);
 
 				// Bind resources
 				const gfx::ShaderResource& refl_resource = *found;
@@ -361,8 +354,8 @@ namespace engine
 					descriptor.set = refl_resource.set;
 					descriptor.binding = refl_resource.binding;
 
-					descriptor.texture = graph.GetTexture(render_resource);
-					descriptor.sampler = graph.GetSampler(render_resource);
+					descriptor.texture = execution_context.GetTexture(render_resource);
+					descriptor.sampler = execution_context.GetSampler(render_resource);
 					descriptor.subresource_index = subresource_index;
 					descriptor.resource_state = render_resource.GetState();
 
@@ -372,7 +365,7 @@ namespace engine
 				{
 					// At first creating resource barrier
 					auto& barrier = buffer_barriers[resource_barriers.buffer_barrier_count++];
-					barrier.buffer = graph.GetBuffer(render_resource);
+					barrier.buffer = execution_context.GetBuffer(render_resource);
 					barrier.src_state = render_resource.GetState();
 					barrier.dst_state = render_resource.GetState();
 
@@ -410,7 +403,7 @@ namespace engine
 		{
 			uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
 
-			auto texture = graph.GetTexture(target_it);
+			auto texture = execution_context.GetTexture(target_it);
 
 			group_x = texture->GetWidth();
 			group_y = texture->GetHeight();
@@ -426,7 +419,7 @@ namespace engine
 			ReadResource(binding_point, target, ~0u);
 			ResolveDependencies(command_list);
 
-			auto& resource = graph.GetResource(target);
+			auto& resource = execution_context.GetResource(target);
 			resource.finalized = true;
 		}
 

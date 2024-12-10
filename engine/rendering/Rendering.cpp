@@ -7,7 +7,8 @@
 
 #include "render_graph/ComputePass.h"
 #include "render_graph/RenderPass.h"
-#include "render_graph/RenderGraph.h"
+#include "RenderContext.h"
+#include "GroupExecutionNode.h"
 
 #include "render_world/RenderWorld.h"
 
@@ -217,7 +218,8 @@ namespace engine
 
 			resource_loader = gfx::CreateResourceLoader(loader_create_info);
 
-			render_graph = std::make_unique<RenderGraph>(*this, window);
+			render_context = std::make_unique<RenderContext>(*this, window);
+
 			render_world = std::make_unique<RenderWorld>(*this);
 
 			// Temporary func to create test render graph
@@ -231,17 +233,17 @@ namespace engine
 
 		uint32_t Renderer::AddRenderResource(std::string_view path, gfx::Sampler* sampler)
 		{
-			return render_graph->AddResource(path, sampler);
+			return render_context->AddResource(path, sampler);
 		}
 
 		uint32_t Renderer::AddRenderResource(const TextureResourceCreateInfo& create_info, gfx::Sampler* sampler)
 		{
-			return render_graph->AddResource(create_info, sampler);
+			return render_context->AddResource(create_info, sampler);
 		}
 
 		uint32_t Renderer::AddRenderResource(const gfx::BufferCreateInfo& create_info)
 		{
-			return render_graph->AddResource(create_info);
+			return render_context->AddResource(create_info);
 		}
 
 		void Renderer::AddMaterial(const shlib::Material& material)
@@ -252,31 +254,31 @@ namespace engine
 
 			if (new_material.baseColorTexture != ~0u)
 			{
-				auto& resource = render_graph->GetResource(new_material.baseColorTexture);
+				auto& resource = render_context->GetResource(new_material.baseColorTexture);
 				new_material.baseColorTexture = resource.resource_id;
 			}
 
 			if (new_material.metallicRoughnessTexture != ~0u)
 			{
-				auto& resource = render_graph->GetResource(new_material.metallicRoughnessTexture);
+				auto& resource = render_context->GetResource(new_material.metallicRoughnessTexture);
 				new_material.metallicRoughnessTexture = resource.resource_id;
 			}
 
 			if (new_material.normalTexture != ~0u)
 			{
-				auto& resource = render_graph->GetResource(new_material.normalTexture);
+				auto& resource = render_context->GetResource(new_material.normalTexture);
 				new_material.normalTexture = resource.resource_id;
 			}
 
 			if (new_material.occlusionTexture != ~0u)
 			{
-				auto& resource = render_graph->GetResource(new_material.occlusionTexture);
+				auto& resource = render_context->GetResource(new_material.occlusionTexture);
 				new_material.occlusionTexture = resource.resource_id;
 			}
 
 			if (new_material.emissiveTexture != ~0u)
 			{
-				auto& resource = render_graph->GetResource(new_material.emissiveTexture);
+				auto& resource = render_context->GetResource(new_material.emissiveTexture);
 				new_material.emissiveTexture = resource.resource_id;
 			}
 
@@ -293,13 +295,13 @@ namespace engine
 				geometry_buffer->Flush();
 			}
 
-			render_graph->BeginFrame();
+			render_context->Begin();
 			render_world->BeginFrame(delta_time);
 
-			render_graph->Evaluate(delta_time);
+			render_context->Execute(delta_time);
 
 			render_world->EndFrame();
-			render_graph->EndFrame();
+			render_context->End();
 		}
 
 		gfx::ResourceLoader& Renderer::GetResourceLoader()
@@ -345,15 +347,14 @@ namespace engine
 			return *new_geometry_buffer;
 		}
 
-
-		IRenderGraph& Renderer::GetRenderGraph()
+		ExecutionContext& Renderer::GetRenderContext()
 		{
-			return *render_graph;
+			return *render_context;
 		}
 
-		IRenderGraph const& Renderer::GetRenderGraph() const
+		ExecutionContext const& Renderer::GetRenderContext() const
 		{
-			return *render_graph;
+			return *render_context;
 		}
 
 		IRenderWorld& Renderer::GetRenderWorld()
@@ -377,9 +378,9 @@ namespace engine
 
 			// Register backbuffer resource
 
-			backbuffer_resource = render_graph->AddResource();
+			backbuffer_resource = render_context->AddResource();
 
-			auto& backbuffer_resource_binding = render_graph->GetResource(backbuffer_resource);
+			auto& backbuffer_resource_binding = render_context->GetResource(backbuffer_resource);
 			backbuffer_resource_binding.resource_type = RenderResourceTypeFlag::eBackbuffer;
 
 			// Create default samplers
@@ -416,8 +417,8 @@ namespace engine
 			}
 
 			// Load some static textures
-			auto casual_day_4k_cube = render_graph->AddResource("/root/embed/rendering/textures/CasualDay4K.ktx2");
-			auto dirt_mask_texture = render_graph->AddResource("/root/embed/rendering/textures/DirtMaskTextureExample.png");
+			auto casual_day_4k_cube = render_context->AddResource("/root/embed/rendering/textures/CasualDay4K.ktx2");
+			auto dirt_mask_texture = render_context->AddResource("/root/embed/rendering/textures/DirtMaskTextureExample.png");
 
 			// GI targets
 			uint32_t brdf_lut_target{ ~0u };
@@ -429,8 +430,8 @@ namespace engine
 				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage;
 				create_info.resizable = false;
 
-				brdf_lut_target = render_graph->AddResource(create_info, nearest_sampler);
-				render_graph->SetResourceName(brdf_lut_target, "brdf_lut_target");
+				brdf_lut_target = render_context->AddResource(create_info, nearest_sampler);
+				render_context->SetResourceName(brdf_lut_target, "brdf_lut_target");
 			}
 
 			uint32_t irradiance_cube_target{ ~0u };
@@ -441,8 +442,8 @@ namespace engine
 				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage | gfx::TextureUsageFlag::eCubemap;
 				create_info.resizable = false;
 
-				irradiance_cube_target = render_graph->AddResource(create_info, linear_sampler);
-				render_graph->SetResourceName(irradiance_cube_target, "irradiance_cube_target");
+				irradiance_cube_target = render_context->AddResource(create_info, linear_sampler);
+				render_context->SetResourceName(irradiance_cube_target, "irradiance_cube_target");
 			}
 
 			uint32_t prefiltered_cube_target{ ~0u };
@@ -466,8 +467,8 @@ namespace engine
 					special_sampler = resource_loader->GetSampler(create_info_s);
 				}
 
-				prefiltered_cube_target = render_graph->AddResource(create_info, special_sampler);
-				render_graph->SetResourceName(prefiltered_cube_target, "prefiltered_cube_target");
+				prefiltered_cube_target = render_context->AddResource(create_info, special_sampler);
+				render_context->SetResourceName(prefiltered_cube_target, "prefiltered_cube_target");
 			}
 
 			// Shadow targets
@@ -480,8 +481,8 @@ namespace engine
 				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eRenderTarget;
 				create_info.resizable = false;
 				
-				cascaded_shadows_target = render_graph->AddResource(create_info, shadow_sampler);
-				render_graph->SetResourceName(cascaded_shadows_target, "cascaded_shadows_target");
+				cascaded_shadows_target = render_context->AddResource(create_info, shadow_sampler);
+				render_context->SetResourceName(cascaded_shadows_target, "cascaded_shadows_target");
 			}
 
 			uint32_t directional_shadows_target{ ~0u };
@@ -493,8 +494,8 @@ namespace engine
 				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eRenderTarget;
 				create_info.resizable = false;
 
-				directional_shadows_target = render_graph->AddResource(create_info, shadow_sampler);
-				render_graph->SetResourceName(directional_shadows_target, "directional_shadows_target");
+				directional_shadows_target = render_context->AddResource(create_info, shadow_sampler);
+				render_context->SetResourceName(directional_shadows_target, "directional_shadows_target");
 			}
 
 			uint32_t omni_shadows_target{ ~0u };
@@ -506,11 +507,11 @@ namespace engine
 				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eRenderTarget | gfx::TextureUsageFlag::eCubemap;
 				create_info.resizable = false;
 
-				omni_shadows_target = render_graph->AddResource(create_info, shadow_sampler);
-				render_graph->SetResourceName(omni_shadows_target, "omni_shadows_target");
+				omni_shadows_target = render_context->AddResource(create_info, shadow_sampler);
+				render_context->SetResourceName(omni_shadows_target, "omni_shadows_target");
 			}
 
-			auto* backbuffer_texture = render_graph->GetTexture(backbuffer_resource);
+			auto* backbuffer_texture = render_context->GetTexture(backbuffer_resource);
 
 			// Visibility buffer targets
 			uint32_t visbuffer_geometry_target{ ~0u };
@@ -522,8 +523,8 @@ namespace engine
 				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eRenderTarget;
 				create_info.resizable = true;
 
-				visbuffer_geometry_target = render_graph->AddResource(create_info, nearest_sampler);
-				render_graph->SetResourceName(visbuffer_geometry_target, "visbuffer_geometry_target");
+				visbuffer_geometry_target = render_context->AddResource(create_info, nearest_sampler);
+				render_context->SetResourceName(visbuffer_geometry_target, "visbuffer_geometry_target");
 			}
 
 			uint32_t visbuffer_vboinst_target{ ~0u };
@@ -535,8 +536,8 @@ namespace engine
 				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eRenderTarget;
 				create_info.resizable = true;
 
-				visbuffer_vboinst_target = render_graph->AddResource(create_info, nearest_sampler);
-				render_graph->SetResourceName(visbuffer_vboinst_target, "visbuffer_vboinst_target");
+				visbuffer_vboinst_target = render_context->AddResource(create_info, nearest_sampler);
+				render_context->SetResourceName(visbuffer_vboinst_target, "visbuffer_vboinst_target");
 			}
 
 			uint32_t zbuffer_depth_target{ ~0u };
@@ -548,8 +549,8 @@ namespace engine
 				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eRenderTarget;
 				create_info.resizable = true;
 
-				zbuffer_depth_target = render_graph->AddResource(create_info, nearest_sampler);
-				render_graph->SetResourceName(zbuffer_depth_target, "zbuffer_depth_target");
+				zbuffer_depth_target = render_context->AddResource(create_info, nearest_sampler);
+				render_context->SetResourceName(zbuffer_depth_target, "zbuffer_depth_target");
 			}
 
 			uint32_t motion_vectors_target{ ~0u };
@@ -561,8 +562,8 @@ namespace engine
 				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage;
 				create_info.resizable = true;
 
-				motion_vectors_target = render_graph->AddResource(create_info, nearest_sampler);
-				render_graph->SetResourceName(motion_vectors_target, "motion_vectors_target");
+				motion_vectors_target = render_context->AddResource(create_info, nearest_sampler);
+				render_context->SetResourceName(motion_vectors_target, "motion_vectors_target");
 			}
 
 			uint32_t hdr0{ ~0u };
@@ -576,14 +577,14 @@ namespace engine
 				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage;
 				create_info.resizable = true;
 
-				hdr0 = render_graph->AddResource(create_info, nearest_sampler);
-				render_graph->SetResourceName(hdr0, "hdr0");
+				hdr0 = render_context->AddResource(create_info, nearest_sampler);
+				render_context->SetResourceName(hdr0, "hdr0");
 
-				hdr1 = render_graph->AddResource(create_info, nearest_sampler);
-				render_graph->SetResourceName(hdr1, "hdr1");
+				hdr1 = render_context->AddResource(create_info, nearest_sampler);
+				render_context->SetResourceName(hdr1, "hdr1");
 
-				hdr0_history = render_graph->AddResource(create_info, nearest_sampler);
-				render_graph->SetResourceName(hdr0_history, "hdr0_history");
+				hdr0_history = render_context->AddResource(create_info, nearest_sampler);
+				render_context->SetResourceName(hdr0_history, "hdr0_history");
 			}
 
 			uint32_t hdr0_div2{ ~0u };
@@ -597,8 +598,8 @@ namespace engine
 				create_info.resizable = true;
 				create_info.scale = 0.5f;
 
-				hdr0_div2 = render_graph->AddResource(create_info, nearest_sampler);
-				render_graph->SetResourceName(hdr0_div2, "hdr0_div2");
+				hdr0_div2 = render_context->AddResource(create_info, nearest_sampler);
+				render_context->SetResourceName(hdr0_div2, "hdr0_div2");
 			}
 
 			uint32_t bloom_target{ ~0u };
@@ -613,8 +614,8 @@ namespace engine
 				create_info.resizable = true;
 				create_info.scale = 0.5f;
 
-				bloom_target = render_graph->AddResource(create_info, nearest_sampler);
-				render_graph->SetResourceName(bloom_target, "bloom_target");
+				bloom_target = render_context->AddResource(create_info, nearest_sampler);
+				render_context->SetResourceName(bloom_target, "bloom_target");
 			}
 
 			// Eye adaptation targets
@@ -627,8 +628,8 @@ namespace engine
 				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage;
 				create_info.resizable = false;
 
-				avg_brightness_target = render_graph->AddResource(create_info, nearest_sampler);
-				render_graph->SetResourceName(avg_brightness_target, "avg_brightness_target");
+				avg_brightness_target = render_context->AddResource(create_info, nearest_sampler);
+				render_context->SetResourceName(avg_brightness_target, "avg_brightness_target");
 			}
 
 			uint32_t histogram_buffer{ ~0u };
@@ -637,8 +638,8 @@ namespace engine
 				create_info.size = sizeof(uint32_t) * 256u;
 				create_info.usage = gfx::BufferUsageFlag::eStorageBuffer;
 
-				histogram_buffer = render_graph->AddResource(create_info);
-				render_graph->SetResourceName(histogram_buffer, "histogram_buffer");
+				histogram_buffer = render_context->AddResource(create_info);
+				render_context->SetResourceName(histogram_buffer, "histogram_buffer");
 			}
 
 			// Buffer that contains alive comands for draw
@@ -648,8 +649,8 @@ namespace engine
 				create_info.size = sizeof(shlib::DrawDescription) * shlib::MAX_DRAW_COMMAND_COUNT;
 				create_info.usage = gfx::BufferUsageFlag::eStorageBuffer;
 
-				alive_commands_buffer = render_graph->AddResource(create_info);
-				render_graph->SetResourceName(alive_commands_buffer, "alive_commands_buffer");
+				alive_commands_buffer = render_context->AddResource(create_info);
+				render_context->SetResourceName(alive_commands_buffer, "alive_commands_buffer");
 			}
 
 			// Buffer contains draw indirect commands
@@ -659,8 +660,8 @@ namespace engine
 				create_info.size = sizeof(shlib::DrawIndexedIndirectData) * shlib::MAX_DRAW_COMMAND_COUNT;
 				create_info.usage = gfx::BufferUsageFlag::eIndirectBuffer;
 
-				indirect_draw_commands = render_graph->AddResource(create_info);
-				render_graph->SetResourceName(indirect_draw_commands, "indirect_draw_commands");
+				indirect_draw_commands = render_context->AddResource(create_info);
+				render_context->SetResourceName(indirect_draw_commands, "indirect_draw_commands");
 			}
 
 			uint32_t indirect_count_buffer{ ~0u };
@@ -669,8 +670,8 @@ namespace engine
 				create_info.size = sizeof(uint32_t) * shlib::MAX_CAMERAS;
 				create_info.usage = gfx::BufferUsageFlag::eIndirectBuffer;
 
-				indirect_count_buffer = render_graph->AddResource(create_info);
-				render_graph->SetResourceName(indirect_count_buffer, "indirect_count_buffer");
+				indirect_count_buffer = render_context->AddResource(create_info);
+				render_context->SetResourceName(indirect_count_buffer, "indirect_count_buffer");
 			}
 
 			uint32_t alive_bitset_buffer{ ~0u };
@@ -679,8 +680,8 @@ namespace engine
 				create_info.size = sizeof(uint32_t) * shlib::MAX_DRAW_COMMAND_COUNT / 32;
 				create_info.usage = gfx::BufferUsageFlag::eStorageBuffer;
 
-				alive_bitset_buffer = render_graph->AddResource(create_info);
-				render_graph->SetResourceName(alive_bitset_buffer, "alive_bitset_buffer");
+				alive_bitset_buffer = render_context->AddResource(create_info);
+				render_context->SetResourceName(alive_bitset_buffer, "alive_bitset_buffer");
 			}
 
 			uint32_t alive_offsets_buffer{ ~0u };
@@ -689,8 +690,8 @@ namespace engine
 				create_info.size = sizeof(uint32_t) * shlib::MAX_DRAW_COMMAND_COUNT;
 				create_info.usage = gfx::BufferUsageFlag::eStorageBuffer;
 
-				alive_offsets_buffer = render_graph->AddResource(create_info);
-				render_graph->SetResourceName(alive_offsets_buffer, "alive_offsets_buffer");
+				alive_offsets_buffer = render_context->AddResource(create_info);
+				render_context->SetResourceName(alive_offsets_buffer, "alive_offsets_buffer");
 			}
 
 			// Passes
@@ -715,7 +716,7 @@ namespace engine
 						self.FinalizeTarget(command_list, render_label::write_image0, brdf_lut_target);
 					};
 
-				render_graph->AddNode(render_graph->CreateNode(create_info));
+				render_context->AddNode(render_context->CreateNode(create_info));
 			}
 
 			// Generate irradiance cubemap
@@ -743,12 +744,12 @@ namespace engine
 						self.FinalizeTarget(command_list, render_label::write_image0, irradiance_cube_target);
 					};
 
-				render_graph->AddNode(render_graph->CreateNode(create_info));
+				render_context->AddNode(render_context->CreateNode(create_info));
 			}
 
 			// Generate prefiltered cubemap
 			{
-				auto group_node = render_graph->CreateNode("prefiltered map generator", 0x99F9F1FF);
+				auto group_node = render_context->CreateNode("prefiltered map generator", 0x99F9F1FF);
 
 				ComputeShaderPassCreateInfo create_info{};
 				create_info.shader_name = "lighting:prefilteredmap_generator";
@@ -763,7 +764,7 @@ namespace engine
 
 						self.WriteResource(render_label::write_image0, prefiltered_cube_target, ~0u);
 
-						auto target = render_graph->GetTexture(prefiltered_cube_target);
+						auto target = render_context->GetTexture(prefiltered_cube_target);
 						for (int32_t mip = 0; mip < target->GetMipLevelCount(); ++mip)
 						{
 							if (mip == 0)
@@ -798,9 +799,9 @@ namespace engine
 						self.FinalizeTarget(command_list, render_label::sample_image0, prefiltered_cube_target);
 					};
 
-				static_cast<GroupNode*>(group_node.get())->AddNode(std::move(render_graph->CreateNode(create_info)));
+				static_cast<GroupNode*>(group_node.get())->AddNode(std::move(render_context->CreateNode(create_info)));
 
-				render_graph->AddNode(std::move(group_node));
+				render_context->AddNode(std::move(group_node));
 			}
 
 			// Crear cull counters
@@ -814,7 +815,7 @@ namespace engine
 					{
 						ZoneScoped;
 
-						auto* count_buffer = render_graph->GetBuffer(indirect_count_buffer);
+						auto* count_buffer = render_context->GetBuffer(indirect_count_buffer);
 
 						self.WriteResource(indirect_count_buffer, ~0u);
 
@@ -832,7 +833,7 @@ namespace engine
 						command_list.Dispatch(group_x, group_y, group_z);
 					};
 
-				render_graph->AddNode(render_graph->CreateNode(create_info));
+				render_context->AddNode(render_context->CreateNode(create_info));
 			}
 
 			// Cull meshes
@@ -850,10 +851,10 @@ namespace engine
 						ZoneScoped;
 
 						auto* draw_commands = render_world->GetDrawBuffer();
-						auto* alive_meshes = render_graph->GetBuffer(alive_commands_buffer);
-						auto* argument_buffer = render_graph->GetBuffer(indirect_draw_commands);
-						auto* count_buffer = render_graph->GetBuffer(indirect_count_buffer);
-						auto* alive_bits = render_graph->GetBuffer(alive_bitset_buffer);
+						auto* alive_meshes = render_context->GetBuffer(alive_commands_buffer);
+						auto* argument_buffer = render_context->GetBuffer(indirect_draw_commands);
+						auto* count_buffer = render_context->GetBuffer(indirect_count_buffer);
+						auto* alive_bits = render_context->GetBuffer(alive_bitset_buffer);
 
 						self.WriteResource(indirect_count_buffer, ~0u);
 						self.WriteResource(alive_bitset_buffer, ~0u);
@@ -877,7 +878,7 @@ namespace engine
 						command_list.Dispatch(group_x, group_y, group_z);
 					};
 
-				render_graph->AddNode(render_graph->CreateNode(create_info));
+				render_context->AddNode(render_context->CreateNode(create_info));
 			}
 
 			// Calculate command offsets
@@ -893,8 +894,8 @@ namespace engine
 						ZoneScoped;
 
 						auto* draw_commands = render_world->GetDrawBuffer();
-						auto* alive_bits = render_graph->GetBuffer(alive_bitset_buffer);
-						auto* alive_offsets = render_graph->GetBuffer(alive_offsets_buffer);
+						auto* alive_bits = render_context->GetBuffer(alive_bitset_buffer);
+						auto* alive_offsets = render_context->GetBuffer(alive_offsets_buffer);
 
 						self.ReadResource(alive_bitset_buffer, ~0u);
 						self.WriteResource(alive_offsets_buffer, ~0u);
@@ -916,7 +917,7 @@ namespace engine
 						command_list.Dispatch(group_x, group_y, group_z);
 					};
 
-				render_graph->AddNode(render_graph->CreateNode(create_info));
+				render_context->AddNode(render_context->CreateNode(create_info));
 			}
 
 			// Assemble draw commands
@@ -934,10 +935,10 @@ namespace engine
 			//			ZoneScoped;
 			//
 			//			auto* draw_commands = render_world->GetDrawBuffer();
-			//			auto* alive_meshes = render_graph->GetBuffer(alive_commands_buffer);
-			//			auto* argument_buffer = render_graph->GetBuffer(indirect_draw_commands);
-			//			auto* count_buffer = render_graph->GetBuffer(indirect_count_buffer);
-			//			auto* alive_bits = render_graph->GetBuffer(alive_bitset_buffer);
+			//			auto* alive_meshes = render_context->GetBuffer(alive_commands_buffer);
+			//			auto* argument_buffer = render_context->GetBuffer(indirect_draw_commands);
+			//			auto* count_buffer = render_context->GetBuffer(indirect_count_buffer);
+			//			auto* alive_bits = render_context->GetBuffer(alive_bitset_buffer);
 			//
 			//			self.WriteResource(alive_commands_buffer, ~0u);
 			//			self.WriteResource(indirect_draw_commands, ~0u);
@@ -963,7 +964,7 @@ namespace engine
 			//			command_list.Dispatch(group_x, group_y, group_z);
 			//		};
 			//
-			//	render_graph->AddNode(render_graph->CreateNode(create_info));
+			//	render_context->AddNode(render_context->CreateNode(create_info));
 			//}
 
 			// Draw cascaded shadows
@@ -990,10 +991,10 @@ namespace engine
 					{
 						ZoneScoped;
 			
-						auto* shadow_map = render_graph->GetTexture(cascaded_shadows_target);
-						auto* alive_meshes = render_graph->GetBuffer(alive_commands_buffer);
-						auto* argument_buffer = render_graph->GetBuffer(indirect_draw_commands);
-						auto* count_buffer = render_graph->GetBuffer(indirect_count_buffer);
+						auto* shadow_map = render_context->GetTexture(cascaded_shadows_target);
+						auto* alive_meshes = render_context->GetBuffer(alive_commands_buffer);
+						auto* argument_buffer = render_context->GetBuffer(indirect_draw_commands);
+						auto* count_buffer = render_context->GetBuffer(indirect_count_buffer);
 			
 						auto viewport_width = shadow_map->GetWidth();
 						auto viewport_height = shadow_map->GetHeight();
@@ -1065,7 +1066,7 @@ namespace engine
 						self.End(command_list);
 					};
 			
-				render_graph->AddNode(render_graph->CreateNode(create_info));
+				render_context->AddNode(render_context->CreateNode(create_info));
 			}
 			
 			// Draw omni shadows
@@ -1092,10 +1093,10 @@ namespace engine
 					{
 						ZoneScoped;
 			
-						auto* shadow_map = render_graph->GetTexture(omni_shadows_target);
-						auto* alive_meshes = render_graph->GetBuffer(alive_commands_buffer);
-						auto* argument_buffer = render_graph->GetBuffer(indirect_draw_commands);
-						auto* count_buffer = render_graph->GetBuffer(indirect_count_buffer);
+						auto* shadow_map = render_context->GetTexture(omni_shadows_target);
+						auto* alive_meshes = render_context->GetBuffer(alive_commands_buffer);
+						auto* argument_buffer = render_context->GetBuffer(indirect_draw_commands);
+						auto* count_buffer = render_context->GetBuffer(indirect_count_buffer);
 			
 						auto viewport_width = shadow_map->GetWidth();
 						auto viewport_height = shadow_map->GetHeight();
@@ -1129,9 +1130,9 @@ namespace engine
 						gfx::IndirectDrawCommand draw_command{};
 						draw_command.indexed_draw = true;
 						draw_command.draw_count = render_world->GetMeshCount();
-						draw_command.argument_buffer = render_graph->GetBuffer(indirect_draw_commands);
+						draw_command.argument_buffer = render_context->GetBuffer(indirect_draw_commands);
 						draw_command.command_stride = sizeof(shlib::DrawIndexedIndirectData);
-						draw_command.count_buffer = render_graph->GetBuffer(indirect_count_buffer);
+						draw_command.count_buffer = render_context->GetBuffer(indirect_count_buffer);
 			
 						uint32_t draw_call_id{ 0u };
 						self.Begin(command_list);
@@ -1167,7 +1168,7 @@ namespace engine
 						self.End(command_list);
 					};
 			
-				render_graph->AddNode(render_graph->CreateNode(create_info));
+				render_context->AddNode(render_context->CreateNode(create_info));
 			}
 			
 			// Draw spot shadows
@@ -1194,10 +1195,10 @@ namespace engine
 					{
 						ZoneScoped;
 			
-						auto* shadow_map = render_graph->GetTexture(directional_shadows_target);
-						auto* alive_meshes = render_graph->GetBuffer(alive_commands_buffer);
-						auto* argument_buffer = render_graph->GetBuffer(indirect_draw_commands);
-						auto* count_buffer = render_graph->GetBuffer(indirect_count_buffer);
+						auto* shadow_map = render_context->GetTexture(directional_shadows_target);
+						auto* alive_meshes = render_context->GetBuffer(alive_commands_buffer);
+						auto* argument_buffer = render_context->GetBuffer(indirect_draw_commands);
+						auto* count_buffer = render_context->GetBuffer(indirect_count_buffer);
 			
 						auto viewport_width = shadow_map->GetWidth();
 						auto viewport_height = shadow_map->GetHeight();
@@ -1231,9 +1232,9 @@ namespace engine
 						gfx::IndirectDrawCommand draw_command{};
 						draw_command.indexed_draw = true;
 						draw_command.draw_count = render_world->GetMeshCount();
-						draw_command.argument_buffer = render_graph->GetBuffer(indirect_draw_commands);
+						draw_command.argument_buffer = render_context->GetBuffer(indirect_draw_commands);
 						draw_command.command_stride = sizeof(shlib::DrawIndexedIndirectData);
-						draw_command.count_buffer = render_graph->GetBuffer(indirect_count_buffer);
+						draw_command.count_buffer = render_context->GetBuffer(indirect_count_buffer);
 			
 						uint32_t draw_call_id{ 0u };
 						self.Begin(command_list);
@@ -1266,7 +1267,7 @@ namespace engine
 						self.End(command_list);
 					};
 			
-				render_graph->AddNode(render_graph->CreateNode(create_info));
+				render_context->AddNode(render_context->CreateNode(create_info));
 			}
 			
 			// Geometry draw
@@ -1296,10 +1297,10 @@ namespace engine
 					{
 						ZoneScoped;
 			
-						auto* backbuffer = render_graph->GetTexture(backbuffer_resource);
-						auto* alive_meshes = render_graph->GetBuffer(alive_commands_buffer);
-						auto* argument_buffer = render_graph->GetBuffer(indirect_draw_commands);
-						auto* count_buffer = render_graph->GetBuffer(indirect_count_buffer);
+						auto* backbuffer = render_context->GetTexture(backbuffer_resource);
+						auto* alive_meshes = render_context->GetBuffer(alive_commands_buffer);
+						auto* argument_buffer = render_context->GetBuffer(indirect_draw_commands);
+						auto* count_buffer = render_context->GetBuffer(indirect_count_buffer);
 			
 						auto viewport_width = backbuffer->GetWidth();
 						auto viewport_height = backbuffer->GetHeight();
@@ -1349,7 +1350,7 @@ namespace engine
 						self.End(command_list);
 					};
 			
-				render_graph->AddNode(render_graph->CreateNode(create_info));
+				render_context->AddNode(render_context->CreateNode(create_info));
 			}
 			
 			// Resolve materials
@@ -1374,8 +1375,8 @@ namespace engine
 					{
 						ZoneScoped;
 
-						auto* alive_meshes = render_graph->GetBuffer(alive_commands_buffer);
-						auto* argument_buffer = render_graph->GetBuffer(indirect_draw_commands);
+						auto* alive_meshes = render_context->GetBuffer(alive_commands_buffer);
+						auto* argument_buffer = render_context->GetBuffer(indirect_draw_commands);
 
 						// Indirect generated buffers
 						self.ReadResource(alive_commands_buffer, ~0u);
@@ -1422,7 +1423,7 @@ namespace engine
 						self.DispatchForTarget(command_list, hdr0, true);
 					};
 			
-				render_graph->AddNode(render_graph->CreateNode(create_info));
+				render_context->AddNode(render_context->CreateNode(create_info));
 			}
 			
 			// Compute static motion vectors (can be started in another queue)
@@ -1445,7 +1446,7 @@ namespace engine
 						self.DispatchForTarget(command_list, zbuffer_depth_target, true);
 					};
 			
-				render_graph->AddNode(render_graph->CreateNode(create_info));
+				render_context->AddNode(render_context->CreateNode(create_info));
 			}
 			
 			uint32_t input_target = hdr0;
@@ -1472,7 +1473,7 @@ namespace engine
 						self.DispatchForTarget(command_list, input_target, true);
 					};
 			
-				render_graph->AddNode(render_graph->CreateNode(create_info));
+				render_context->AddNode(render_context->CreateNode(create_info));
 			}
 			
 			uint32_t final_target = input_target;
@@ -1507,7 +1508,7 @@ namespace engine
 					if (postprocess.fxaa.enable)
 						SWAP_COUNT(input_target, output_target);
 			
-					render_graph->AddNode(render_graph->CreateNode(create_info));
+					render_context->AddNode(render_context->CreateNode(create_info));
 				}
 			
 				// Apply motion blur
@@ -1537,12 +1538,12 @@ namespace engine
 					if (postprocess.motionblur.enable)
 						SWAP_COUNT(input_target, output_target);
 			
-					render_graph->AddNode(render_graph->CreateNode(create_info));
+					render_context->AddNode(render_context->CreateNode(create_info));
 				}
 			
 				// Compute dof
 				{
-					auto group_node = render_graph->CreateNode("DOF", 0xFFFF33FF);
+					auto group_node = render_context->CreateNode("DOF", 0xFFFF33FF);
 					auto* node = static_cast<GroupNode*>(group_node.get());
 					node->SetGroupEnabledCallback([]() -> bool { return postprocess.dof.enable; });
 			
@@ -1566,7 +1567,7 @@ namespace engine
 								self.DispatchForTarget(command_list, input_target, true);
 							};
 			
-						node->AddNode(std::move(render_graph->CreateNode(create_info)));
+						node->AddNode(std::move(render_context->CreateNode(create_info)));
 					}
 			
 					// Apply dof
@@ -1593,18 +1594,18 @@ namespace engine
 								self.DispatchForTarget(command_list, input_target, true);
 							};
 			
-						node->AddNode(std::move(render_graph->CreateNode(create_info)));
+						node->AddNode(std::move(render_context->CreateNode(create_info)));
 					}
 			
 					if (postprocess.dof.enable)
 						SWAP_COUNT(input_target, output_target);
 			
-					render_graph->AddNode(std::move(group_node));
+					render_context->AddNode(std::move(group_node));
 				}
 			
 				// Compute bloom
 				{
-					auto group_node = render_graph->CreateNode("bloom", 0xFF3333FF);
+					auto group_node = render_context->CreateNode("bloom", 0xFF3333FF);
 					auto* node = static_cast<GroupNode*>(group_node.get());
 					node->SetGroupEnabledCallback([]() -> bool { return postprocess.bloom.enable; });
 			
@@ -1628,7 +1629,7 @@ namespace engine
 								self.DispatchForTarget(command_list, hdr0_div2, true);
 							};
 			
-						node->AddNode(std::move(render_graph->CreateNode(create_info)));
+						node->AddNode(std::move(render_context->CreateNode(create_info)));
 					}
 			
 					// Begin downsampling
@@ -1655,7 +1656,7 @@ namespace engine
 									self.DispatchForTarget(command_list, bloom_target, true);
 								};
 			
-							node->AddNode(std::move(render_graph->CreateNode(create_info)));
+							node->AddNode(std::move(render_context->CreateNode(create_info)));
 						}
 			
 						{
@@ -1668,7 +1669,7 @@ namespace engine
 								{
 									ZoneScoped;
 			
-									auto target = render_graph->GetTexture(bloom_target);
+									auto target = render_context->GetTexture(bloom_target);
 			
 									for (int32_t mip = 1; mip < bloom_blur_depth; ++mip)
 									{
@@ -1688,7 +1689,7 @@ namespace engine
 									}
 								};
 			
-							node->AddNode(std::move(render_graph->CreateNode(create_info)));
+							node->AddNode(std::move(render_context->CreateNode(create_info)));
 						}
 					}
 			
@@ -1703,7 +1704,7 @@ namespace engine
 							{
 								ZoneScoped;
 			
-								auto target = render_graph->GetTexture(bloom_target);
+								auto target = render_context->GetTexture(bloom_target);
 			
 								for (int32_t mip = bloom_blur_depth - 1; mip > 0; --mip)
 								{
@@ -1723,7 +1724,7 @@ namespace engine
 								}
 							};
 			
-						node->AddNode(std::move(render_graph->CreateNode(create_info)));
+						node->AddNode(std::move(render_context->CreateNode(create_info)));
 					}
 			
 					// Apply bloom
@@ -1751,10 +1752,10 @@ namespace engine
 								self.DispatchForTarget(command_list, output_target, true);
 							};
 			
-						node->AddNode(std::move(render_graph->CreateNode(create_info)));
+						node->AddNode(std::move(render_context->CreateNode(create_info)));
 					}
 			
-					render_graph->AddNode(std::move(group_node));
+					render_context->AddNode(std::move(group_node));
 			
 					if (postprocess.bloom.enable)
 						SWAP_COUNT(input_target, output_target);
@@ -1762,7 +1763,7 @@ namespace engine
 			
 				// Tonemapping 
 				{
-					auto group_node = render_graph->CreateNode("tonemapping", 0xFFF9F51F);
+					auto group_node = render_context->CreateNode("tonemapping", 0xFFF9F51F);
 					auto* node = static_cast<GroupNode*>(group_node.get());
 					node->SetGroupEnabledCallback([]() -> bool { return postprocess.tonemap.enable; });
 			
@@ -1793,7 +1794,7 @@ namespace engine
 								self.DispatchForTarget(command_list, input_target, true);
 							};
 			
-						node->AddNode(std::move(render_graph->CreateNode(create_info)));
+						node->AddNode(std::move(render_context->CreateNode(create_info)));
 					}
 			
 					// Compute avg screen space brightness
@@ -1816,7 +1817,7 @@ namespace engine
 								float log_lum_range = postprocess.tonemap.lumMax - postprocess.tonemap.lumMin;
 								float time_coeff = glm::clamp<f32>(1.0f - glm::exp(-delta_time * postprocess.tonemap.tau), 0.0, 1.0);
 			
-								auto* texture = render_graph->GetTexture(input_target);
+								auto* texture = render_context->GetTexture(input_target);
 			
 								auto& uniform = self.GetUniformBlock(render_label::histogram_compute_params);
 								uniform.Set(render_label::min_log_lum, postprocess.tonemap.lumMin);
@@ -1830,7 +1831,7 @@ namespace engine
 								command_list.Dispatch(1u, 1u, 1u);
 							};
 			
-						node->AddNode(std::move(render_graph->CreateNode(create_info)));
+						node->AddNode(std::move(render_context->CreateNode(create_info)));
 					}
 			
 					// Apply tonemapping
@@ -1859,10 +1860,10 @@ namespace engine
 						if (postprocess.tonemap.enable)
 							SWAP_COUNT(input_target, output_target);
 			
-						node->AddNode(render_graph->CreateNode(create_info));
+						node->AddNode(render_context->CreateNode(create_info));
 					}
 			
-					render_graph->AddNode(std::move(group_node));
+					render_context->AddNode(std::move(group_node));
 				}
 			
 				final_target = pass_count % 2 ? output_target : input_target;
@@ -1884,7 +1885,7 @@ namespace engine
 					{
 						ZoneScoped;
 			
-						auto* backbuffer = render_graph->GetTexture(backbuffer_resource);
+						auto* backbuffer = render_context->GetTexture(backbuffer_resource);
 			
 						auto viewport_width = static_cast<float>(backbuffer->GetWidth());
 						auto viewport_height = static_cast<float>(backbuffer->GetHeight());
@@ -1903,7 +1904,7 @@ namespace engine
 						self.End(command_list);
 					};
 			
-				render_graph->AddNode(render_graph->CreateNode(create_info));
+				render_context->AddNode(render_context->CreateNode(create_info));
 			}
 
 			{
@@ -1923,7 +1924,7 @@ namespace engine
 					font_texture_ci.height = height;
 					font_texture_ci.format = gfx::Format::eR8G8B8A8Unorm;
 
-					uint32_t imgui_font_texture = render_graph->AddResource(font_texture_ci, {pixels, upload_size});
+					uint32_t imgui_font_texture = render_context->AddResource(font_texture_ci, {pixels, upload_size});
 
 					GeometryBufferCreateInfo geometry_buffer_ci{};
 					geometry_buffer_ci.attribute_descriptions.emplace_back(VertexAttributeFlag::ePosition, gfx::Format::eR32G32Sfloat);
@@ -1979,7 +1980,7 @@ namespace engine
 								// Bind vertex and index buffers
 								geometry_buffer.Bind(command_list);
 
-								auto* backbuffer = render_graph->GetTexture(backbuffer_resource);
+								auto* backbuffer = render_context->GetTexture(backbuffer_resource);
 
 								auto viewport_width = backbuffer->GetWidth();
 								auto viewport_height = backbuffer->GetHeight();
@@ -2108,7 +2109,7 @@ namespace engine
 							}
 						};
 
-					render_graph->AddNode(render_graph->CreateNode(create_info));
+					render_context->AddNode(render_context->CreateNode(create_info));
 				}
 			}
 		}

@@ -2,6 +2,10 @@
 
 #include "Common.h"
 
+#include <vector>
+#include <queue>
+#include <atomic>
+
 namespace engine
 {
 	namespace render
