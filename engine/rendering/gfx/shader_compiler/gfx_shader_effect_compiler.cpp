@@ -6,7 +6,7 @@
 #include "glsl_shader_compiler.h"
 #include "../gfx_util.h"
 
-#include <util/FilesystemHelper.h>
+#include <util/fs_helper.h>
 #include <logger.hpp>
 
 #include <execution>

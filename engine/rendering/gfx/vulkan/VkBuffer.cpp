@@ -5,7 +5,7 @@
 
 #include <memory.hpp>
 
-#include <util/Util.h>
+#include <util/util.h>
 
 namespace engine
 {

@@ -12,8 +12,8 @@
 #include "../rendering/gfx/gfx_structures.h"
 #include "../rendering/gfx/gfx_enum.h"
 
-#include <util/Util.h>
-#include <util/FilesystemHelper.h>
+#include <util/util.h>
+#include <util/fs_helper.h>
 #include <logger.hpp>
 #include <glm/gtc/type_ptr.hpp>
 

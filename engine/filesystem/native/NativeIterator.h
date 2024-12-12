@@ -2,7 +2,7 @@
 
 #include <ie_vfs_exports.h>
 
-#include <util/FilesystemHelper.h>
+#include <util/fs_helper.h>
 
 #include <engine/interface/filesystem/DirectoryIteratorInterface.h>
 

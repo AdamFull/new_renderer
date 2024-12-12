@@ -4,7 +4,7 @@
 #include <stb/stb_image.h>
 #include <ktx.h>
 
-#include <util/FilesystemHelper.h>
+#include <util/fs_helper.h>
 #include <logger.hpp>
 
 #include <tracy/Tracy.hpp>

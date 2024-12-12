@@ -3,7 +3,7 @@
 #include "VkDevice.h"
 
 #include <logger.hpp>
-#include <util/Util.h>
+#include <util/util.h>
 
 #include <volk.h>
 

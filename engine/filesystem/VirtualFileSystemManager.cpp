@@ -3,7 +3,7 @@
 #include "VFSOutputFile.h"
 #include "DirectoryIterator.h"
 
-#include <util/FilesystemHelper.h>
+#include <util/fs_helper.h>
 
 namespace engine
 {

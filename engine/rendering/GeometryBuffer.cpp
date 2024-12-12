@@ -2,7 +2,7 @@
 
 #include "gfx/gfx_context.h"
 
-#include <util/Util.h>
+#include <util/util.h>
 
 #include <hash.hpp>
 

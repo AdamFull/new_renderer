@@ -3,7 +3,7 @@
 #include "gfx/gfx_context.h"
 #include "gfx/gfx_resource_loader.h"
 
-#include <util/Util.h>
+#include <util/util.h>
 
 namespace engine
 {
