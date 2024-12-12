@@ -73,7 +73,6 @@ include_directories(
 
 add_subdirectory(libraries/imgui)
 add_subdirectory(libraries/utllib)
-add_subdirectory(tools/shader_compiler)
 add_subdirectory(tools/scene_compiler)
 
 add_subdirectory(engine)

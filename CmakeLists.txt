@@ -72,6 +72,7 @@ include_directories(
     "${CMAKE_CURRENT_SOURCE_DIR}/libraries/utllib/other"
     "${CMAKE_CURRENT_SOURCE_DIR}/libraries/utllib/source"
     "${CMAKE_CURRENT_SOURCE_DIR}/libraries/imgui"
+    "${CMAKE_CURRENT_SOURCE_DIR}/libraries/edge_framework"
     "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include"
 )
 
@@ -80,12 +81,11 @@ add_compile_definitions($<$<CONFIG:DEBUG>:ENGINE_DEBUG>)
 # Enable tracy profiler
 #add_definitions(-DTRACY_ENABLE)
 
-add_subdirectory(util)
 add_subdirectory(modules/glm)
 add_subdirectory(modules/imgui)
 add_subdirectory(libraries/imgui)
 add_subdirectory(libraries/utllib)
-add_subdirectory(tools/shader_compiler)
+add_subdirectory(libraries/edge_framework)
 add_subdirectory(tools/scene_compiler)
 
 add_subdirectory(engine)
@@ -113,7 +113,7 @@ else()
 endif()
 
 target_link_libraries(${PROJECT_NAME} 
-    PUBLIC utils
+    PRIVATE edge_framework
     PUBLIC imgui
     PUBLIC utility_lib
 	PRIVATE application

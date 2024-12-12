@@ -25,7 +25,6 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 target_link_libraries(${PROJECT_NAME} 
 	PRIVATE easygltf
     PRIVATE utility_lib
-    PRIVATE utils
 )
 target_include_directories(${PROJECT_NAME} 
     PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/easygltf/include"
