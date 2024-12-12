@@ -51,22 +51,8 @@ namespace engine
 			void AddNode(std::unique_ptr<ExecutionNode>&& node) override;
 			void Execute(float delta_time) override;
 
-			void UpdateGlobalBinding(uint32_t binding, std::span<const uint8_t> data);
-
 			void Begin() override;
 			void End() override;
-
-			void UpdateSwapchain(uint32_t width, uint32_t height);
-			void UpdateSwapchain(uint32_t image_count);
-
-			bool HandleSurfaceChange(bool force_update = false);
-
-			gfx::CommandList& BeginCommands(bool& surface_updated);
-
-			void BeginFrame(bool& surface_updated);
-			void EndFrame(gfx::SemaphoreSubmitInfo wait_semaphore);
-
-			gfx::SemaphoreSubmitInfo GetUploadAvaliableSemaphore();
 
 			gfx::Context& GetContext() override;
 			gfx::Context const& GetContext() const override;
@@ -84,7 +70,19 @@ namespace engine
 			gfx::CommandList& GetCurrentCommandList() override;
 			gfx::DescriptorAllocator& GetCurrentDescriptorAllocator() override;
 		protected:
+			void UpdateGlobalBinding(uint32_t binding, std::span<const uint8_t> data);
+
 			const uint32_t& GetCurrentFrameIndex() const;
+
+			gfx::CommandList& BeginCommands(bool& surface_updated);
+
+			void BeginFrame(bool& surface_updated);
+			void EndFrame(gfx::SemaphoreSubmitInfo wait_semaphore);
+
+			void UpdateSwapchain(uint32_t width, uint32_t height);
+			void UpdateSwapchain(uint32_t image_count);
+
+			bool HandleSurfaceChange(bool force_update = false);
 
 			class RenderFrame;
 			void UpdateRenderTargets();

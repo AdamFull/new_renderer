@@ -367,28 +367,6 @@ namespace engine
 			command_list.ResourceBarrier(resource_barriers);
 		}
 
-		void RenderContext::UpdateGlobalBinding(uint32_t binding, std::span<const uint8_t> data)
-		{
-			ZoneScoped;
-
-			if (!global_resource_descriptor)
-			{
-				global_resource_descriptor = shared_descriptor->RequestDescriptors();
-			}
-
-			auto buffer_block = global_uniform_pool->RequestBlock(data.size());
-			buffer_block.Update(data);
-
-			gfx::BufferDescriptor buffer_descriptor{};
-			buffer_descriptor.type = gfx::DescriptorType::eUniformBuffer;
-			buffer_descriptor.binding = binding;
-			buffer_descriptor.buffer = &buffer_block.GetBuffer();
-			buffer_descriptor.offset = buffer_block.GetOffset();
-			buffer_descriptor.size = buffer_block.GetSize();
-
-			global_resource_descriptor->BindBuffer(buffer_descriptor);
-		}
-
 		void RenderContext::Begin()
 		{
 			ZoneScoped;
@@ -465,6 +443,7 @@ namespace engine
 			auto& command_list = *current_command_list;
 			command_list.EndQuery(timestamp_query, 1u);
 
+			// Submit commands
 			EndFrame(upload_wait_semaphore);
 
 			for (auto& render_resource : render_resources)
@@ -476,46 +455,6 @@ namespace engine
 			}
 
 			global_resource_descriptor = nullptr;
-		}
-
-		void RenderContext::UpdateRenderTargets()
-		{
-			ZoneScoped;
-
-			uint32_t width, height;
-			swapchain->GetSurfaceExtent(width, height);
-
-			// Update/resize render targets here if it's needed
-			for (auto& target : render_targets.Data())
-			{
-				// TODO: resize only if texture is able to resize 
-				if (!target.resizable)
-					continue;
-
-				gfx::TextureCreateInfo create_info{};
-				create_info.usage = target.usage;
-				create_info.layers = (target.usage & gfx::TextureUsageFlag::eCubemap) ? target.texture->GetArrayLayerCount() / 6u : target.texture->GetArrayLayerCount();
-				// TODO: need to recalculate number of mips?
-				create_info.levels = target.texture->GetMipLevelCount();
-				create_info.format = target.texture->GetFormat();
-
-				if (target.scale_parent_resource != ~0u)
-				{
-					gfx::Texture* parent = GetTexture(target.scale_parent_resource);
-
-					create_info.width = parent->GetWidth() * target.scale;
-					create_info.height = parent->GetHeight() * target.scale;
-				}
-				else
-				{
-					create_info.width = width * target.scale;
-					create_info.height = height * target.scale;
-				}
-
-				context.Destroy(target.texture);
-				target.texture = context.CreateTexture(create_info);
-
-			}
 		}
 
 		gfx::Context& RenderContext::GetContext()
@@ -597,70 +536,51 @@ namespace engine
 			return nullptr;
 		}
 
-		void RenderContext::UpdateSwapchain(uint32_t width, uint32_t height)
-		{
-			gfx::SwapChainCreateInfo new_swapchain_ci{};
-			new_swapchain_ci.window = &window;
-			new_swapchain_ci.old_swapchain = swapchain;
-			new_swapchain_ci.width = width;
-			new_swapchain_ci.height = height;
+		//gfx::SemaphoreSubmitInfo RenderContext::GetUploadAvaliableSemaphore()
+		//{
+		//	return gfx::SemaphoreSubmitInfo{ previous_frame_semaphore, 0ull, gfx::StageFlag::eAllCommands };
+		//}
 
-			swapchain = context.CreateSwapchain(new_swapchain_ci);
-			context.Destroy(new_swapchain_ci.old_swapchain);
-			UpdateResources();
+		gfx::BufferSuballocation RenderContext::RequestUniformBlock(uint64_t block_size)
+		{
+			return current_frame->uniform_pool->RequestBlock(block_size);
 		}
 
-		void RenderContext::UpdateSwapchain(uint32_t image_count)
+		gfx::CommandList& RenderContext::GetCurrentCommandList()
 		{
-			gfx::SwapChainCreateInfo new_swapchain_ci{};
-			new_swapchain_ci.window = &window;
-			new_swapchain_ci.old_swapchain = swapchain;
-			new_swapchain_ci.image_count = image_count;
-
-			swapchain = context.CreateSwapchain(new_swapchain_ci);
-			context.Destroy(new_swapchain_ci.old_swapchain);
-			UpdateResources();
+			return *current_command_list;
 		}
 
-		bool RenderContext::HandleSurfaceChange(bool force_update)
+		gfx::DescriptorAllocator& RenderContext::GetCurrentDescriptorAllocator()
+		{
+			return *current_frame->descriptor_allocator;
+		}
+
+		void RenderContext::UpdateGlobalBinding(uint32_t binding, std::span<const uint8_t> data)
 		{
 			ZoneScoped;
 
-			if (!swapchain)
+			if (!global_resource_descriptor)
 			{
-				log_warning("Can't handle surface changes in headless mode, skipping.");
-				return false;
+				global_resource_descriptor = shared_descriptor->RequestDescriptors();
 			}
 
-			uint32_t surface_width, surface_height;
-			swapchain->GetSurfaceExtent(surface_width, surface_height);
-			if (surface_width == 0xFFFFFFFFu)
-			{
-				return false;
-			}
+			auto buffer_block = global_uniform_pool->RequestBlock(data.size());
+			buffer_block.Update(data);
 
-			auto& current_width = swapchain->GetWidth();
-			auto& current_height = swapchain->GetHeight();
+			gfx::BufferDescriptor buffer_descriptor{};
+			buffer_descriptor.type = gfx::DescriptorType::eUniformBuffer;
+			buffer_descriptor.binding = binding;
+			buffer_descriptor.buffer = &buffer_block.GetBuffer();
+			buffer_descriptor.offset = buffer_block.GetOffset();
+			buffer_descriptor.size = buffer_block.GetSize();
 
-			// Only recreate the swapchain if the dimensions have changed;
-			// handle_surface_changes() is called on VK_SUBOPTIMAL_KHR,
-			// which might not be due to a surface resize
-			if (surface_width != current_width ||
-				surface_height != current_height ||
-				force_update)
-			{
-				ZoneScopedN("Swapchain update");
-				// Recreate swapchain
-				queue->WaitIdle();
-				UpdateSwapchain(surface_width, surface_height);
+			global_resource_descriptor->BindBuffer(buffer_descriptor);
+		}
 
-				active_frame_index = 0u;
-				current_frame_index = 0u;
-
-				return true;
-			}
-
-			return false;
+		const uint32_t& RenderContext::GetCurrentFrameIndex() const
+		{
+			return current_frame_index;
 		}
 
 		gfx::CommandList& RenderContext::BeginCommands(bool& surface_updated)
@@ -794,29 +714,110 @@ namespace engine
 			}
 		}
 
-		gfx::SemaphoreSubmitInfo RenderContext::GetUploadAvaliableSemaphore()
+		void RenderContext::UpdateSwapchain(uint32_t width, uint32_t height)
 		{
-			return gfx::SemaphoreSubmitInfo{ previous_frame_semaphore, 0ull, gfx::StageFlag::eAllCommands };
+			gfx::SwapChainCreateInfo new_swapchain_ci{};
+			new_swapchain_ci.window = &window;
+			new_swapchain_ci.old_swapchain = swapchain;
+			new_swapchain_ci.width = width;
+			new_swapchain_ci.height = height;
+
+			swapchain = context.CreateSwapchain(new_swapchain_ci);
+			context.Destroy(new_swapchain_ci.old_swapchain);
+			UpdateResources();
 		}
 
-		gfx::BufferSuballocation RenderContext::RequestUniformBlock(uint64_t block_size)
+		void RenderContext::UpdateSwapchain(uint32_t image_count)
 		{
-			return current_frame->uniform_pool->RequestBlock(block_size);
+			gfx::SwapChainCreateInfo new_swapchain_ci{};
+			new_swapchain_ci.window = &window;
+			new_swapchain_ci.old_swapchain = swapchain;
+			new_swapchain_ci.image_count = image_count;
+
+			swapchain = context.CreateSwapchain(new_swapchain_ci);
+			context.Destroy(new_swapchain_ci.old_swapchain);
+			UpdateResources();
 		}
 
-		gfx::CommandList& RenderContext::GetCurrentCommandList()
+		bool RenderContext::HandleSurfaceChange(bool force_update)
 		{
-			return *current_command_list;
+			ZoneScoped;
+
+			if (!swapchain)
+			{
+				log_warning("Can't handle surface changes in headless mode, skipping.");
+				return false;
+			}
+
+			uint32_t surface_width, surface_height;
+			swapchain->GetSurfaceExtent(surface_width, surface_height);
+			if (surface_width == 0xFFFFFFFFu)
+			{
+				return false;
+			}
+
+			auto& current_width = swapchain->GetWidth();
+			auto& current_height = swapchain->GetHeight();
+
+			// Only recreate the swapchain if the dimensions have changed;
+			// handle_surface_changes() is called on VK_SUBOPTIMAL_KHR,
+			// which might not be due to a surface resize
+			if (surface_width != current_width ||
+				surface_height != current_height ||
+				force_update)
+			{
+				ZoneScopedN("Swapchain update");
+				// Recreate swapchain
+				queue->WaitIdle();
+				UpdateSwapchain(surface_width, surface_height);
+
+				active_frame_index = 0u;
+				current_frame_index = 0u;
+
+				return true;
+			}
+
+			return false;
 		}
 
-		gfx::DescriptorAllocator& RenderContext::GetCurrentDescriptorAllocator()
+		void RenderContext::UpdateRenderTargets()
 		{
-			return *current_frame->descriptor_allocator;
-		}
+			ZoneScoped;
 
-		const uint32_t& RenderContext::GetCurrentFrameIndex() const
-		{
-			return current_frame_index;
+			uint32_t width, height;
+			swapchain->GetSurfaceExtent(width, height);
+
+			// Update/resize render targets here if it's needed
+			for (auto& target : render_targets.Data())
+			{
+				// TODO: resize only if texture is able to resize 
+				if (!target.resizable)
+					continue;
+
+				gfx::TextureCreateInfo create_info{};
+				create_info.usage = target.usage;
+				create_info.layers = (target.usage & gfx::TextureUsageFlag::eCubemap) ? target.texture->GetArrayLayerCount() / 6u : target.texture->GetArrayLayerCount();
+				// TODO: need to recalculate number of mips?
+				create_info.levels = target.texture->GetMipLevelCount();
+				create_info.format = target.texture->GetFormat();
+
+				if (target.scale_parent_resource != ~0u)
+				{
+					gfx::Texture* parent = GetTexture(target.scale_parent_resource);
+
+					create_info.width = parent->GetWidth() * target.scale;
+					create_info.height = parent->GetHeight() * target.scale;
+				}
+				else
+				{
+					create_info.width = width * target.scale;
+					create_info.height = height * target.scale;
+				}
+
+				context.Destroy(target.texture);
+				target.texture = context.CreateTexture(create_info);
+
+			}
 		}
 	
 		void RenderContext::UpdateResources()
