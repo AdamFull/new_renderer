@@ -1,6 +1,6 @@
 #include "UniformPool.h"
 
-#include "gfx/gfx_context.h"
+#include <edge/gfx/gfx_context.h>
 
 #include <memory.hpp>
 
@@ -12,12 +12,12 @@ namespace engine
 	{
 		constexpr int32_t k_max_frames_idle{ 300 };
 
-		UniformPoolFrame::UniformPoolFrame(gfx::Context& context, uint64_t whole_size) :
+		UniformPoolFrame::UniformPoolFrame(edge::gfx::Context& context, uint64_t whole_size) :
 			context{ context },
 			expired_countdown{ k_max_frames_idle }
 		{
-			gfx::BufferCreateInfo create_info{};
-			create_info.usage = gfx::BufferUsageFlag::eUniformBuffer;
+			edge::gfx::BufferCreateInfo create_info{};
+			create_info.usage = edge::gfx::BufferUsageFlag::eUniformBuffer;
 			create_info.size = whole_size;
 
 			buffer = context.CreateBuffer(create_info);
@@ -54,20 +54,20 @@ namespace engine
 			return static_cast<int64_t>(size_remain) - static_cast<int64_t>(requested_size) > 0;
 		}
 
-		gfx::BufferSuballocation UniformPoolFrame::RequestBlock(uint64_t requested_size)
+		edge::gfx::BufferSuballocation UniformPoolFrame::RequestBlock(uint64_t requested_size)
 		{
-			gfx::BufferSuballocation suballocation{ *buffer, buffer->GetSize() - size_remain, requested_size };
+			edge::gfx::BufferSuballocation suballocation{ *buffer, buffer->GetSize() - size_remain, requested_size };
 			expired_countdown = k_max_frames_idle;
 			size_remain -= requested_size;
 			return suballocation;
 		}
 
 
-		UniformPool::UniformPool(gfx::Context& context, uint64_t frame_size) :
+		UniformPool::UniformPool(edge::gfx::Context& context, uint64_t frame_size) :
 			context{ context },
 			frame_size{ frame_size }
 		{
-			context.RequestMinimalBufferAlignment(gfx::BufferUsageFlag::eUniformBuffer, minimal_alignment);
+			context.RequestMinimalBufferAlignment(edge::gfx::BufferUsageFlag::eUniformBuffer, minimal_alignment);
 
 			pool_frames.emplace_back(std::make_unique<UniformPoolFrame>(context, frame_size));
 		}
@@ -95,7 +95,7 @@ namespace engine
 			}
 		}
 
-		gfx::BufferSuballocation UniformPool::RequestBlock(uint64_t requested_size)
+		edge::gfx::BufferSuballocation UniformPool::RequestBlock(uint64_t requested_size)
 		{
 			uint64_t aligned_size = utl::aligned_size(requested_size, minimal_alignment);
 			auto found = std::find_if(pool_frames.begin(), pool_frames.end(), [&aligned_size](const std::unique_ptr<UniformPoolFrame>& frame)

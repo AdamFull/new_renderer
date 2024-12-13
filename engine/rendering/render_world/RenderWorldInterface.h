@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../gfx/gfx_structures.h"
+#include <edge/gfx/gfx_structures.h>
 #include <embed/shaders/includes/shlib.h>
 
 #include <hash.hpp>
@@ -76,7 +76,7 @@ namespace engine
 			virtual void BeginFrame(float delta_time) = 0;
 			virtual void EndFrame() = 0;
 
-			virtual gfx::Buffer* GetDrawBuffer() = 0;
+			virtual edge::gfx::Buffer* GetDrawBuffer() = 0;
 			virtual uint32_t GetDrawCount() const = 0;
 
 			virtual uint32_t GetMeshCount() const = 0;

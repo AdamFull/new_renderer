@@ -4,19 +4,18 @@
 
 #include "GroupExecutionNode.h"
 
+#include <tracy/Tracy.hpp>
+
+#include <format>
+#include <logger.hpp>
+
 #include "render_graph/RenderPass.h"
 #include "render_graph/ComputePass.h"
 
-#include <engine/runtime/Window.h>
+#include <edge/runtime/Window.h>
 
-#include "gfx/gfx_context.h"
-#include "gfx/gfx_util.h"
-
-#include <format>
-
-#include <logger.hpp>
-
-#include <tracy/Tracy.hpp>
+#include <edge/gfx/gfx_util.h>
+#include <edge/gfx/gfx_context.h>
 
 namespace engine
 {
@@ -25,7 +24,7 @@ namespace engine
 		class RenderContext::RenderFrame
 		{
 		public:
-			RenderFrame(gfx::Context& context, gfx::Swapchain* swapchain, const gfx::Queue* queue, uint32_t frame_index) :
+			RenderFrame(edge::gfx::Context& context, edge::gfx::Swapchain* swapchain, const edge::gfx::Queue* queue, uint32_t frame_index) :
 				context{ context }
 			{
 				backbuffer = context.CreateSwapchainTexture(swapchain, frame_index);
@@ -53,7 +52,7 @@ namespace engine
 				uniform_pool.reset();
 			}
 
-			void UpdateBackbuffer(gfx::Swapchain* swapchain, uint32_t frame_index)
+			void UpdateBackbuffer(edge::gfx::Swapchain* swapchain, uint32_t frame_index)
 			{
 				context.Destroy(backbuffer);
 				context.CreateSwapchainTexture(swapchain, frame_index);
@@ -66,28 +65,28 @@ namespace engine
 				uniform_pool->Reset();
 			}
 
-			gfx::Texture* backbuffer{ nullptr };
-			gfx::CommandPool* command_pool{ nullptr };
-			gfx::DescriptorAllocator* descriptor_allocator{ nullptr };
+			edge::gfx::Texture* backbuffer{ nullptr };
+			edge::gfx::CommandPool* command_pool{ nullptr };
+			edge::gfx::DescriptorAllocator* descriptor_allocator{ nullptr };
 			std::unique_ptr<UniformPool> uniform_pool{};
-			gfx::Semaphore* image_avaliable{ nullptr };
-			gfx::Semaphore* render_finished{ nullptr };
-			gfx::Semaphore* upload_avaliable{ nullptr };
-			gfx::Fence* fence{ nullptr };
+			edge::gfx::Semaphore* image_avaliable{ nullptr };
+			edge::gfx::Semaphore* render_finished{ nullptr };
+			edge::gfx::Semaphore* upload_avaliable{ nullptr };
+			edge::gfx::Fence* fence{ nullptr };
 
 		private:
-			gfx::Context& context;
+			edge::gfx::Context& context;
 		};
 
-		RenderContext::RenderContext(IRenderer& renderer, Window* window) :
+		RenderContext::RenderContext(IRenderer& renderer, edge::Window* window) :
 			context{ renderer.GetContext() },
 			resource_loader{ renderer.GetResourceLoader() },
 			window{ *window }
 		{
 			// Select queue that can present
-			queue = context.RequestQueue(gfx::QueueTypeFlag::ePresent);
+			queue = context.RequestQueue(edge::gfx::QueueTypeFlag::ePresent);
 			
-			gfx::SwapChainCreateInfo swapchain_ci{};
+			edge::gfx::SwapChainCreateInfo swapchain_ci{};
 			swapchain_ci.window = window;
 			swapchain_ci.image_count = 3u;
 
@@ -101,17 +100,17 @@ namespace engine
 			}
 
 			// Create default image sampler
-			gfx::SamplerCreateInfo sampler_ci{};
-			sampler_ci.address_u = sampler_ci.address_v = sampler_ci.address_w = gfx::SamplerAddressMode::eClampToEdge;
-			sampler_ci.min_filter = gfx::Filter::eLinear;
-			sampler_ci.mag_filter = gfx::Filter::eLinear;
-			sampler_ci.mip_map_mode = gfx::Filter::eLinear;
+			edge::gfx::SamplerCreateInfo sampler_ci{};
+			sampler_ci.address_u = sampler_ci.address_v = sampler_ci.address_w = edge::gfx::SamplerAddressMode::eClampToEdge;
+			sampler_ci.min_filter = edge::gfx::Filter::eLinear;
+			sampler_ci.mag_filter = edge::gfx::Filter::eLinear;
+			sampler_ci.mip_map_mode = edge::gfx::Filter::eLinear;
 
 			default_sampler = context.CreateSampler(sampler_ci);
 
 			// Create timestamp query for collecting pass info
-			gfx::QueryPoolCreateInfo query_pool_ci{};
-			query_pool_ci.type = gfx::QueryType::eTimestamp;
+			edge::gfx::QueryPoolCreateInfo query_pool_ci{};
+			query_pool_ci.type = edge::gfx::QueryType::eTimestamp;
 			query_pool_ci.query_count = 2u;
 			timestamp_query = context.CreateQueryPool(query_pool_ci);
 			timestamp_query->Reset(0u);
@@ -119,12 +118,12 @@ namespace engine
 			context.RequestTimestampFrequency(&timestamp_frequency);
 
 			// TODO: now it creates just default one
-			gfx::SharedDescriptorCreateInfo shared_descriptor_ci{};
-			shared_descriptor_ci.descriptions.emplace_back(gfx::DescriptorType::eUniformBuffer, 0u, 1u);
-			shared_descriptor_ci.descriptions.emplace_back(gfx::DescriptorType::eUniformBuffer, 1u, 1u);
-			shared_descriptor_ci.descriptions.emplace_back(gfx::DescriptorType::eUniformBuffer, 2u, 1u);
-			shared_descriptor_ci.descriptions.emplace_back(gfx::DescriptorType::eSampledImage, 3u, shlib::MAX_SAMPLED_TEXTURES);
-			shared_descriptor_ci.descriptions.emplace_back(gfx::DescriptorType::eSampler, 4u, shlib::MAX_SAMPLED_TEXTURES);
+			edge::gfx::SharedDescriptorCreateInfo shared_descriptor_ci{};
+			shared_descriptor_ci.descriptions.emplace_back(edge::gfx::DescriptorType::eUniformBuffer, 0u, 1u);
+			shared_descriptor_ci.descriptions.emplace_back(edge::gfx::DescriptorType::eUniformBuffer, 1u, 1u);
+			shared_descriptor_ci.descriptions.emplace_back(edge::gfx::DescriptorType::eUniformBuffer, 2u, 1u);
+			shared_descriptor_ci.descriptions.emplace_back(edge::gfx::DescriptorType::eSampledImage, 3u, shlib::MAX_SAMPLED_TEXTURES);
+			shared_descriptor_ci.descriptions.emplace_back(edge::gfx::DescriptorType::eSampler, 4u, shlib::MAX_SAMPLED_TEXTURES);
 
 			shared_descriptor = context.CreateSharedDescriptor(shared_descriptor_ci);
 
@@ -173,15 +172,15 @@ namespace engine
 			return render_resources.size() - 1ull;
 		}
 
-		uint32_t RenderContext::AddResource(std::string_view path, gfx::Sampler* sampler)
+		uint32_t RenderContext::AddResource(std::string_view path, edge::gfx::Sampler* sampler)
 		{
 			auto& new_resource = render_resources.emplace_back();
 			new_resource.resource_type = RenderResourceTypeFlag::eStaticImage;
 
-			gfx::Texture* texture = resource_loader.LoadTexture(path);
+			edge::gfx::Texture* texture = resource_loader.LoadTexture(path);
 			new_resource.resource_id = static_textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
 
-			new_resource.current_state = gfx::ResourceStateFlag::eShaderReadOnlyResource;
+			new_resource.current_state = edge::gfx::ResourceStateFlag::eShaderReadOnlyResource;
 
 			return render_resources.size() - 1ull;
 		}
@@ -191,7 +190,7 @@ namespace engine
 			auto& new_resource = render_resources.emplace_back();
 			new_resource.resource_type = RenderResourceTypeFlag::eStaticImage;
 
-			gfx::TextureCreateInfo texture_create_info{};
+			edge::gfx::TextureCreateInfo texture_create_info{};
 			texture_create_info.usage = create_info.usage;
 			texture_create_info.width = create_info.width;
 			texture_create_info.height = create_info.height;
@@ -200,27 +199,27 @@ namespace engine
 			texture_create_info.levels = create_info.levels;
 			texture_create_info.format = create_info.format;
 
-			gfx::Texture* texture = resource_loader.LoadTexture(texture_create_info, texture_data);
+			edge::gfx::Texture* texture = resource_loader.LoadTexture(texture_create_info, texture_data);
 			new_resource.resource_id = static_textures.Add(TextureObject{ texture, default_sampler });
 
-			new_resource.current_state = gfx::ResourceStateFlag::eShaderReadOnlyResource;
+			new_resource.current_state = edge::gfx::ResourceStateFlag::eShaderReadOnlyResource;
 
 			return render_resources.size() - 1ull;
 		}
 
-		uint32_t RenderContext::AddResource(const TextureResourceCreateInfo& create_info, gfx::Sampler* sampler)
+		uint32_t RenderContext::AddResource(const TextureResourceCreateInfo& create_info, edge::gfx::Sampler* sampler)
 		{
 			auto& new_resource = render_resources.emplace_back();
 
 			// TODO: What if it's storage target and render target at the same time?
-			if (create_info.usage & gfx::TextureUsageFlag::eStorage)
+			if (create_info.usage & edge::gfx::TextureUsageFlag::eStorage)
 				new_resource.resource_type = RenderResourceTypeFlag::eStorageTarget;
-			else if (create_info.usage & gfx::TextureUsageFlag::eRenderTarget)
+			else if (create_info.usage & edge::gfx::TextureUsageFlag::eRenderTarget)
 				new_resource.resource_type = RenderResourceTypeFlag::eRenderTarget;
 			else
 				new_resource.resource_type = RenderResourceTypeFlag::eStaticImage;
 
-			gfx::TextureCreateInfo texture_create_info{};
+			edge::gfx::TextureCreateInfo texture_create_info{};
 			texture_create_info.usage = create_info.usage;
 			texture_create_info.width = create_info.width;
 			texture_create_info.height = create_info.height;
@@ -237,7 +236,7 @@ namespace engine
 			texture_object.scale = create_info.scale;
 			texture_object.scale_parent_resource = create_info.scale_parent_resource;
 
-			if ((create_info.usage & gfx::TextureUsageFlag::eRenderTarget) || (create_info.usage & gfx::TextureUsageFlag::eStorage))
+			if ((create_info.usage & edge::gfx::TextureUsageFlag::eRenderTarget) || (create_info.usage & edge::gfx::TextureUsageFlag::eStorage))
 				new_resource.resource_id = render_targets.Add(std::move(texture_object));
 			else
 				new_resource.resource_id = static_textures.Add(std::move(texture_object));
@@ -245,16 +244,16 @@ namespace engine
 			return render_resources.size() - 1ull;
 		}
 
-		uint32_t RenderContext::AddResource(const gfx::BufferCreateInfo& create_info)
+		uint32_t RenderContext::AddResource(const edge::gfx::BufferCreateInfo& create_info)
 		{
-			gfx::Buffer* buffer = context.CreateBuffer(create_info);
+			edge::gfx::Buffer* buffer = context.CreateBuffer(create_info);
 			auto handle = buffers.Add(BufferObject{ buffer });
-			if (create_info.usage != gfx::BufferUsageFlag::eStagingBuffer && create_info.usage != gfx::BufferUsageFlag::eUniformBuffer)
+			if (create_info.usage != edge::gfx::BufferUsageFlag::eStagingBuffer && create_info.usage != edge::gfx::BufferUsageFlag::eUniformBuffer)
 			{
 				auto& new_resource = render_resources.emplace_back();
-				if (create_info.usage & gfx::BufferUsageFlag::eIndirect)
+				if (create_info.usage & edge::gfx::BufferUsageFlag::eIndirect)
 					new_resource.resource_type = RenderResourceTypeFlag::eIndirectBuffer;
-				else if (create_info.usage & gfx::BufferUsageFlag::eStorage)
+				else if (create_info.usage & edge::gfx::BufferUsageFlag::eStorage)
 					new_resource.resource_type = RenderResourceTypeFlag::eStorageBuffer;
 
 				new_resource.resource_id = handle;
@@ -269,7 +268,7 @@ namespace engine
 		{
 			auto& render_resource = render_resources[resource_index];
 
-			gfx::GFXResource* resource{};
+			edge::gfx::GFXResource* resource{};
 			if (render_resource.resource_type & RenderResourceTypeFlag::eBackbuffer)
 			{
 				resource = current_frame->backbuffer;
@@ -354,15 +353,15 @@ namespace engine
 
 			auto& backbuffer_resource = GetResource(0);
 
-			gfx::TextureBarrier texture_barrier{};
-			gfx::ResourceBarrierInfo resource_barriers{};
+			edge::gfx::TextureBarrier texture_barrier{};
+			edge::gfx::ResourceBarrierInfo resource_barriers{};
 			resource_barriers.texture_barriers = &texture_barrier;
 			resource_barriers.texture_barrier_count = 1;
 
 			texture_barrier.texture = current_frame->backbuffer;
 			// TODO: get current resource state from resource itself
 			texture_barrier.src_state = backbuffer_resource.GetState();
-			texture_barrier.dst_state = gfx::ResourceStateFlag::ePresentSrc;
+			texture_barrier.dst_state = edge::gfx::ResourceStateFlag::ePresentSrc;
 
 			command_list.ResourceBarrier(resource_barriers);
 		}
@@ -404,19 +403,19 @@ namespace engine
 			uint32_t array_index{ 0u };
 			for (auto& resource : static_textures.Data())
 			{
-				gfx::TextureDescriptor texture_descriptor{};
-				texture_descriptor.type = gfx::DescriptorType::eSampledImage;
+				edge::gfx::TextureDescriptor texture_descriptor{};
+				texture_descriptor.type = edge::gfx::DescriptorType::eSampledImage;
 				texture_descriptor.set = 0;
 				texture_descriptor.binding = 3;
 
 				texture_descriptor.array_index = array_index;
 				texture_descriptor.texture = resource.texture;
-				texture_descriptor.resource_state = gfx::ResourceStateFlag::eShaderReadOnlyResource;
+				texture_descriptor.resource_state = edge::gfx::ResourceStateFlag::eShaderReadOnlyResource;
 
 				global_resource_descriptor->BindTexture(texture_descriptor);
 
-				gfx::TextureDescriptor sampler_descriptor{};
-				sampler_descriptor.type = gfx::DescriptorType::eSampler;
+				edge::gfx::TextureDescriptor sampler_descriptor{};
+				sampler_descriptor.type = edge::gfx::DescriptorType::eSampler;
 				sampler_descriptor.set = 0;
 				sampler_descriptor.binding = 4;
 
@@ -435,7 +434,7 @@ namespace engine
 
 			global_resource_descriptor->Flush();
 
-			gfx::SemaphoreSubmitInfo upload_wait_semaphore{};
+			edge::gfx::SemaphoreSubmitInfo upload_wait_semaphore{};
 			//auto upload_avaliable = GetUploadAvaliableSemaphore();
 			//upload_wait_semaphore = Submit(&upload_avaliable, upload_avaliable.semaphore ? 1 : 0);
 			upload_wait_semaphore = resource_loader.Submit(nullptr, 0);
@@ -451,29 +450,29 @@ namespace engine
 				if (render_resource.resource_type & RenderResourceTypeFlag::eStaticImage || render_resource.finalized)
 					continue;
 
-				render_resource.current_state = gfx::ResourceStateFlag::eUndefined;
+				render_resource.current_state = edge::gfx::ResourceStateFlag::eUndefined;
 			}
 
 			global_resource_descriptor = nullptr;
 		}
 
-		gfx::Context& RenderContext::GetContext()
+		edge::gfx::Context& RenderContext::GetContext()
 		{
 			return context;
 		}
 
-		gfx::Context const& RenderContext::GetContext() const
+		edge::gfx::Context const& RenderContext::GetContext() const
 		{
 			return context;
 		}
 
-		gfx::Texture* RenderContext::GetTexture(uint32_t resource_index)
+		edge::gfx::Texture* RenderContext::GetTexture(uint32_t resource_index)
 		{
 			auto& render_resource = render_resources[resource_index];
 			return GetTexture(render_resource);
 		}
 
-		gfx::Texture* RenderContext::GetTexture(const RenderResource& render_resource)
+		edge::gfx::Texture* RenderContext::GetTexture(const RenderResource& render_resource)
 		{
 			if (render_resource.resource_type & RenderResourceTypeFlag::eBackbuffer)
 			{
@@ -493,13 +492,13 @@ namespace engine
 			return nullptr;
 		}
 
-		gfx::Sampler* RenderContext::GetSampler(uint32_t resource_index)
+		edge::gfx::Sampler* RenderContext::GetSampler(uint32_t resource_index)
 		{
 			auto& render_resource = render_resources[resource_index];
 			return GetSampler(render_resource);
 		}
 
-		gfx::Sampler* RenderContext::GetSampler(const RenderResource& render_resource)
+		edge::gfx::Sampler* RenderContext::GetSampler(const RenderResource& render_resource)
 		{
 			if (render_resource.resource_type & RenderResourceTypeFlag::eBackbuffer)
 			{
@@ -519,13 +518,13 @@ namespace engine
 			return default_sampler;
 		}
 
-		gfx::Buffer* RenderContext::GetBuffer(uint32_t resource_index)
+		edge::gfx::Buffer* RenderContext::GetBuffer(uint32_t resource_index)
 		{
 			auto& render_resource = render_resources[resource_index];
 			return GetBuffer(render_resource);
 		}
 
-		gfx::Buffer* RenderContext::GetBuffer(const RenderResource& render_resource)
+		edge::gfx::Buffer* RenderContext::GetBuffer(const RenderResource& render_resource)
 		{
 			if (render_resource.resource_type & RenderResourceTypeFlag::eAllBuffer)
 			{
@@ -536,22 +535,22 @@ namespace engine
 			return nullptr;
 		}
 
-		//gfx::SemaphoreSubmitInfo RenderContext::GetUploadAvaliableSemaphore()
+		//edge::gfx::SemaphoreSubmitInfo RenderContext::GetUploadAvaliableSemaphore()
 		//{
-		//	return gfx::SemaphoreSubmitInfo{ previous_frame_semaphore, 0ull, gfx::StageFlag::eAllCommands };
+		//	return edge::gfx::SemaphoreSubmitInfo{ previous_frame_semaphore, 0ull, edge::gfx::StageFlag::eAllCommands };
 		//}
 
-		gfx::BufferSuballocation RenderContext::RequestUniformBlock(uint64_t block_size)
+		edge::gfx::BufferSuballocation RenderContext::RequestUniformBlock(uint64_t block_size)
 		{
 			return current_frame->uniform_pool->RequestBlock(block_size);
 		}
 
-		gfx::CommandList& RenderContext::GetCurrentCommandList()
+		edge::gfx::CommandList& RenderContext::GetCurrentCommandList()
 		{
 			return *current_command_list;
 		}
 
-		gfx::DescriptorAllocator& RenderContext::GetCurrentDescriptorAllocator()
+		edge::gfx::DescriptorAllocator& RenderContext::GetCurrentDescriptorAllocator()
 		{
 			return *current_frame->descriptor_allocator;
 		}
@@ -568,8 +567,8 @@ namespace engine
 			auto buffer_block = global_uniform_pool->RequestBlock(data.size());
 			buffer_block.Update(data);
 
-			gfx::BufferDescriptor buffer_descriptor{};
-			buffer_descriptor.type = gfx::DescriptorType::eUniformBuffer;
+			edge::gfx::BufferDescriptor buffer_descriptor{};
+			buffer_descriptor.type = edge::gfx::DescriptorType::eUniformBuffer;
 			buffer_descriptor.binding = binding;
 			buffer_descriptor.buffer = &buffer_block.GetBuffer();
 			buffer_descriptor.offset = buffer_block.GetOffset();
@@ -583,7 +582,7 @@ namespace engine
 			return current_frame_index;
 		}
 
-		gfx::CommandList& RenderContext::BeginCommands(bool& surface_updated)
+		edge::gfx::CommandList& RenderContext::BeginCommands(bool& surface_updated)
 		{
 			ZoneScoped;
 
@@ -644,7 +643,7 @@ namespace engine
 			current_frame->Reset();
 		}
 
-		void RenderContext::EndFrame(gfx::SemaphoreSubmitInfo wait_semaphore)
+		void RenderContext::EndFrame(edge::gfx::SemaphoreSubmitInfo wait_semaphore)
 		{
 			ZoneScoped;
 
@@ -658,10 +657,10 @@ namespace engine
 				ZoneScopedN("Submit");
 
 				// TODO: COMMAND BUFFERS
-				gfx::SubmitInfo submit_info{};
+				edge::gfx::SubmitInfo submit_info{};
 
-				gfx::SemaphoreSubmitInfo wait_semaphores[2] = {
-					gfx::SemaphoreSubmitInfo{ acquired_semaphore, 0ull, gfx::StageFlag::eColorAttachmentOutput },
+				edge::gfx::SemaphoreSubmitInfo wait_semaphores[2] = {
+					edge::gfx::SemaphoreSubmitInfo{ acquired_semaphore, 0ull, edge::gfx::StageFlag::eColorAttachmentOutput },
 					wait_semaphore
 				};
 
@@ -669,9 +668,9 @@ namespace engine
 				submit_info.wait_semaphore_count = wait_semaphore.semaphore ? 2 : 1;
 
 
-				gfx::SemaphoreSubmitInfo signal_semaphores[2] = {
-					gfx::SemaphoreSubmitInfo{ current_frame->render_finished, 0ull, gfx::StageFlag::eColorAttachmentOutput },
-					gfx::SemaphoreSubmitInfo{ current_frame->upload_avaliable, 0ull, gfx::StageFlag::eAllCommands }
+				edge::gfx::SemaphoreSubmitInfo signal_semaphores[2] = {
+					edge::gfx::SemaphoreSubmitInfo{ current_frame->render_finished, 0ull, edge::gfx::StageFlag::eColorAttachmentOutput },
+					edge::gfx::SemaphoreSubmitInfo{ current_frame->upload_avaliable, 0ull, edge::gfx::StageFlag::eAllCommands }
 				};
 
 				submit_info.signal_semaphore_infos = &signal_semaphores[0];
@@ -693,7 +692,7 @@ namespace engine
 
 				auto* wait_semaphore = current_frame->render_finished;
 
-				gfx::PresentInfo present_info = {};
+				edge::gfx::PresentInfo present_info = {};
 				present_info.wait_semaphore_count = 1;
 				present_info.wait_semaphores = &wait_semaphore;
 
@@ -716,7 +715,7 @@ namespace engine
 
 		void RenderContext::UpdateSwapchain(uint32_t width, uint32_t height)
 		{
-			gfx::SwapChainCreateInfo new_swapchain_ci{};
+			edge::gfx::SwapChainCreateInfo new_swapchain_ci{};
 			new_swapchain_ci.window = &window;
 			new_swapchain_ci.old_swapchain = swapchain;
 			new_swapchain_ci.width = width;
@@ -729,7 +728,7 @@ namespace engine
 
 		void RenderContext::UpdateSwapchain(uint32_t image_count)
 		{
-			gfx::SwapChainCreateInfo new_swapchain_ci{};
+			edge::gfx::SwapChainCreateInfo new_swapchain_ci{};
 			new_swapchain_ci.window = &window;
 			new_swapchain_ci.old_swapchain = swapchain;
 			new_swapchain_ci.image_count = image_count;
@@ -794,16 +793,16 @@ namespace engine
 				if (!target.resizable)
 					continue;
 
-				gfx::TextureCreateInfo create_info{};
+				edge::gfx::TextureCreateInfo create_info{};
 				create_info.usage = target.usage;
-				create_info.layers = (target.usage & gfx::TextureUsageFlag::eCubemap) ? target.texture->GetArrayLayerCount() / 6u : target.texture->GetArrayLayerCount();
+				create_info.layers = (target.usage & edge::gfx::TextureUsageFlag::eCubemap) ? target.texture->GetArrayLayerCount() / 6u : target.texture->GetArrayLayerCount();
 				// TODO: need to recalculate number of mips?
 				create_info.levels = target.texture->GetMipLevelCount();
 				create_info.format = target.texture->GetFormat();
 
 				if (target.scale_parent_resource != ~0u)
 				{
-					gfx::Texture* parent = GetTexture(target.scale_parent_resource);
+					edge::gfx::Texture* parent = GetTexture(target.scale_parent_resource);
 
 					create_info.width = parent->GetWidth() * target.scale;
 					create_info.height = parent->GetHeight() * target.scale;

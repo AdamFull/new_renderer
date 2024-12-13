@@ -1,4 +1,4 @@
-#include <engine/EntryPoint.h>
+#include "EntryPoint.h"
 #include <engine/EngineApplication.h>
 
 #include <logger.hpp>
@@ -285,22 +285,22 @@ private:
 
 };
 
-int RuntimeMain(const engine::RuntimeContext& context)
+int RuntimeMain(const edge::RuntimeContext& context)
 {
 #if defined(PLATFORM_WINDOWS)
-    engine::win32::WindowsRuntime runtime{ context };
+    edge::win32::WindowsRuntime runtime{ context };
 #else
 #	error "Platform not supported"
 #endif
 
-    engine::ApplicationCreateInfo app_ci{};
+    edge::ApplicationCreateInfo app_ci{};
     app_ci.name = "MyApp";
     app_ci.app_allocator = []() { return std::make_unique<MyApp>(); };
     
     runtime.RequestApplication(&app_ci);
     
     auto code = runtime.Initialize();
-    if (code == engine::ExitCode::Success)
+    if (code == edge::ExitCode::Success)
     {
     	code = runtime.MainLoop();
     }

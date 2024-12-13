@@ -10,6 +10,8 @@
 #include "ui/windows/InspectorWindow.h"
 #include "ui/windows/PostProcessWindow.h"
 
+#include "InputManager.h"
+
 #include <tracy/Tracy.hpp>
 
 namespace engine
@@ -36,9 +38,9 @@ namespace engine
 
 	}
 
-	void EngineApplication::OnInputEvent(const InputEvent& input_event)
+	void EngineApplication::OnInputEvent(const edge::InputEvent& input_event)
 	{
-		//m_pInputMapper->OnInputEvent(input_event);
+		InputManager::DispatchInputEvent(input_event);
 	}
 
 	void EngineApplication::Finish()
@@ -51,15 +53,17 @@ namespace engine
 		return true;
 	}
 
-	bool EngineApplication::Prepare(const ApplicationOptions& options)
+	bool EngineApplication::Prepare(const edge::ApplicationOptions& options)
 	{
+		ui = std::make_unique<EngineUI>(*options.window);
+
 		app_windows.emplace_back(std::make_unique<HierarchyWindow>("Hierarchy"));
 		app_windows.emplace_back(std::make_unique<InspectorWindow>("Inspector"));
 		app_windows.emplace_back(std::make_unique<PostProcessWindow>("PostProcess"));
 
-		renderer = std::make_unique<render::Renderer>(options.window, options.virtual_filesystem);
+		renderer = std::make_unique<render::Renderer>(options.window, options.filesystem);
 
-		scene = std::make_unique<world::Scene>(options.virtual_filesystem, *renderer);
+		scene = std::make_unique<world::Scene>(options.filesystem, *renderer);
 		//scene = std::make_unique<world::Scene>(vfs.get());
 		scene->Load("/root/meshes/sponza/Sponza.gltf");
 		//scene->Load("/root/meshes/helmet/DamagedHelmet.gltf");
@@ -98,6 +102,8 @@ namespace engine
 	void EngineApplication::Update(float delta_time)
 	{
 		ZoneScoped;
+
+		ui->NewFrame(delta_time);
 
 		for (auto& window : app_windows)
 			window->Draw(delta_time);

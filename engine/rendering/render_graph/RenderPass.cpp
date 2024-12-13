@@ -1,7 +1,7 @@
 #include "RenderPass.h"
 
 #include "../RendererInterface.h"
-#include "../gfx/gfx_context.h"
+#include <edge/gfx/gfx_context.h>
 
 #include <logger.hpp>
 
@@ -15,7 +15,7 @@ namespace engine
 			ShaderPass{ execution_context, create_info },
 			resource_attachments{ create_info.resource_attachments }
 		{
-			gfx::GraphicsPipelineCreateInfo pipeline_ci{};
+			edge::gfx::GraphicsPipelineCreateInfo pipeline_ci{};
 			pipeline_ci.shader = shader;
 			pipeline_ci.root_signature = root_signature;
 			pipeline_ci.pipeline_cache = create_info.pipeline_cache;
@@ -38,7 +38,7 @@ namespace engine
 			pipeline = context.CreatePipeline(pipeline_ci);
 		}
 
-		void RenderPass::AddColorAttachment(gfx::Attachment attachment)
+		void RenderPass::AddColorAttachment(edge::gfx::Attachment attachment)
 		{
 			rendering_info.attachments[rendering_info.attachment_count++] = attachment;
 		}
@@ -48,17 +48,17 @@ namespace engine
 			return ShaderPassType::eGraphics;
 		}
 
-		void RenderPass::Begin(gfx::CommandList& command_list)
+		void RenderPass::Begin(edge::gfx::CommandList& command_list)
 		{
 			command_list.BeginRendering(rendering_info);
 		}
 
-		void RenderPass::End(gfx::CommandList& command_list)
+		void RenderPass::End(edge::gfx::CommandList& command_list)
 		{
 			command_list.EndRendering();
 		}
 
-		void RenderPass::_Execute(gfx::CommandList& command_list, float delta_time)
+		void RenderPass::_Execute(edge::gfx::CommandList& command_list, float delta_time)
 		{
 			ZoneScoped;
 
@@ -75,24 +75,24 @@ namespace engine
 					continue;
 				}
 
-				gfx::ResourceStateFlags new_state{ gfx::ResourceStateFlag::eWrite };
+				edge::gfx::ResourceStateFlags new_state{ edge::gfx::ResourceStateFlag::eWrite };
 
 				auto last_access = render_resource.GetAccess();
 
-				gfx::Attachment* attachment{ nullptr };
+				edge::gfx::Attachment* attachment{ nullptr };
 				if (resource_attachment.flags & ResourceAttachmentTypeFlag::eDepth)
 				{
 					attachment = &rendering_info.depth_attachment;
-					new_state |= gfx::ResourceStateFlag::eDepthAttachment;
+					new_state |= edge::gfx::ResourceStateFlag::eDepthAttachment;
 				}
 				else if (resource_attachment.flags & ResourceAttachmentTypeFlag::eStencil)
 				{
 					attachment = &rendering_info.stencil_attachment;
-					new_state |= gfx::ResourceStateFlag::eStencilAttachment;
+					new_state |= edge::gfx::ResourceStateFlag::eStencilAttachment;
 				}
 				else if (resource_attachment.flags & ResourceAttachmentTypeFlag::eColor)
 				{
-					new_state |= gfx::ResourceStateFlag::eColorAttachment;
+					new_state |= edge::gfx::ResourceStateFlag::eColorAttachment;
 					attachment = &rendering_info.attachments[rendering_info.attachment_count++];
 				}
 
@@ -103,16 +103,16 @@ namespace engine
 
 				if (last_access == 0)
 				{
-					attachment->load_op = gfx::LoadOp::eClear;
+					attachment->load_op = edge::gfx::LoadOp::eClear;
 				}
 				else
 				{
-					attachment->load_op = gfx::LoadOp::eLoad;
-					new_state |= gfx::ResourceStateFlag::eRead;
+					attachment->load_op = edge::gfx::LoadOp::eLoad;
+					new_state |= edge::gfx::ResourceStateFlag::eRead;
 				}
 
 				attachment->texture = barrier.texture;
-				attachment->store_op = gfx::StoreOp::eNone;
+				attachment->store_op = edge::gfx::StoreOp::eNone;
 				attachment->texture_state = barrier.dst_state;
 				attachment->clear_color = resource_attachment.clear_color;
 

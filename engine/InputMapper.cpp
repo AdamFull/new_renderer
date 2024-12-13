@@ -100,7 +100,7 @@ void CInputMapper::Update(float dt)
 	}
 }
 
-void CInputMapper::OnInputEvent(const InputEvent& input_event)
+void CInputMapper::OnInputEvent(const edge::InputEvent& input_event)
 {
 
 }

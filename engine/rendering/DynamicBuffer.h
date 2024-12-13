@@ -1,9 +1,9 @@
 #pragma once
 
-#include "gfx/gfx_context.h"
-#include "gfx/gfx_resource_loader.h"
+#include <edge/gfx/gfx_context.h>
+#include <edge/gfx/gfx_resource_loader.h>
 
-#include <util/util.h>
+#include <edge/util/util.h>
 
 namespace engine
 {
@@ -19,12 +19,12 @@ namespace engine
 				uint32_t count;
 			};
 
-			DynamicBuffer(gfx::ResourceLoader& resource_loader, uint64_t capacity = 64u, gfx::BufferUsageFlags flags = {}) :
+			DynamicBuffer(edge::gfx::ResourceLoader& resource_loader, uint64_t capacity = 64u, edge::gfx::BufferUsageFlags flags = {}) :
 				resource_loader{ resource_loader },
 				context{ resource_loader.GetContext() },
 				usage_flags{ flags }
 			{
-				gfx::BufferCreateInfo create_info{};
+				edge::gfx::BufferCreateInfo create_info{};
 				create_info.size = sizeof(_Ty) * capacity;
 				create_info.usage = flags;
 
@@ -63,7 +63,7 @@ namespace engine
 				return memory.data() + offset;
 			}
 
-			gfx::Buffer* GetBuffer()
+			edge::gfx::Buffer* GetBuffer()
 			{
 				return buffer;
 			}
@@ -76,7 +76,7 @@ namespace engine
 					if (buffer->GetSize() < whole_size)
 					{
 						// Update buffer size
-						gfx::BufferCreateInfo create_info{};
+						edge::gfx::BufferCreateInfo create_info{};
 						create_info.size = whole_size;
 						create_info.usage = usage_flags;
 
@@ -102,7 +102,7 @@ namespace engine
 							merged_ranges.emplace_back(dirty_ranges[i]);
 					}
 
-					gfx::BufferUpdateInfo update_info{};
+					edge::gfx::BufferUpdateInfo update_info{};
 					update_info.dst_buffer = buffer;
 					update_info.update_size = std::accumulate(merged_ranges.begin(), merged_ranges.end(), 0, [](uint64_t acc, const DirtyRange& item) { return acc + item.count * sizeof(_Ty); });
 					resource_loader.BeginBufferUpdate(update_info);
@@ -129,12 +129,12 @@ namespace engine
 				}
 			}
 		private:
-			gfx::Context& context;
-			gfx::ResourceLoader& resource_loader;
+			edge::gfx::Context& context;
+			edge::gfx::ResourceLoader& resource_loader;
 
-			gfx::BufferUsageFlags usage_flags{};
+			edge::gfx::BufferUsageFlags usage_flags{};
 
-			gfx::Buffer* buffer{ nullptr };
+			edge::gfx::Buffer* buffer{ nullptr };
 			std::vector<_Ty> memory{};
 
 			std::vector<DirtyRange> dirty_ranges{};

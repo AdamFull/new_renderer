@@ -1,6 +1,6 @@
 #pragma once
 
-#include <engine/runtime/ui/font/IconsMaterialDesignIcons.h>
+#include <engine/ui/font/IconsMaterialDesignIcons.h>
 #include <engine/world/ecs/components/components.h>
 
 namespace engine

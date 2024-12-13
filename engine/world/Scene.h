@@ -1,4 +1,4 @@
-#include <engine/interface/filesystem/VirtualFileSystemInterface.h>
+#include <edge/filesystem/VirtualFileSystemInterface.h>
 #include <engine/rendering/RendererInterface.h>
 #include "ecs/systems/BaseSystem.h"
 
@@ -21,7 +21,7 @@ namespace engine
 		class Scene final
 		{
 		public:
-			Scene(filesystem::IVirtualFileSystemInterface* vfs, render::IRenderer& renderer);
+			Scene(edge::filesystem::IVirtualFileSystemInterface* vfs, render::IRenderer& renderer);
 			~Scene();
 
 			void Load(std::string_view path);
@@ -41,7 +41,7 @@ namespace engine
 		private:
 			render::IRenderer& renderer;
 
-			filesystem::IVirtualFileSystemInterface* vfs{ nullptr };
+			edge::filesystem::IVirtualFileSystemInterface* vfs{ nullptr };
 
 			SceneLoadedResources resources{};
 			utl::hash_map<u32, entt::entity> node_to_entity{};

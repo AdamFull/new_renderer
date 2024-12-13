@@ -1,6 +1,6 @@
 #pragma once
 
-#include <engine/runtime/InputEvents.h>
+#include <edge/runtime/InputEvents.h>
 #include "BaseSystem.h"
 
 #include <reactive/function.h>
@@ -26,12 +26,12 @@ namespace engine
 				void __Update(f32 fDt) override;
 
 			protected:
-				void OnAnyInput(const InputEvent& input_event);
-				void HandleKeyboardInput(const KeyInputEvent& input_event);
-				void HandleMouseInput(const MouseButtonInputEvent& input_event);
-				void HandleTouchInput(const TouchInputEvent& input_event);
+				void OnAnyInput(const edge::InputEvent& input_event);
+				void HandleKeyboardInput(const edge::KeyInputEvent& input_event);
+				void HandleMouseInput(const edge::MouseButtonInputEvent& input_event);
+				void HandleTouchInput(const edge::TouchInputEvent& input_event);
 			private:
-				CKeyDecoder key_decoder{};
+				edge::CKeyDecoder key_decoder{};
 				f32 m_deltaTime{ 0.f };
 				f32 oldX{ 0.f }, oldY{ 0.f }, curX{ 0.f }, curY{ 0.f };
 

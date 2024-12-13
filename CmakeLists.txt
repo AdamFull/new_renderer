@@ -85,7 +85,7 @@ add_subdirectory(modules/glm)
 add_subdirectory(modules/imgui)
 add_subdirectory(libraries/imgui)
 add_subdirectory(libraries/utllib)
-add_subdirectory(libraries/edge_framework)
+add_subdirectory(libraries/edge_framework/edge)
 add_subdirectory(tools/scene_compiler)
 
 add_subdirectory(engine)

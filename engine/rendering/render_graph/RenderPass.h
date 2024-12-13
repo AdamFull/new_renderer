@@ -12,18 +12,18 @@ namespace engine
 			RenderPass(ExecutionContext& execution_context, const RenderPassCreateInfo& create_info);
 			virtual ~RenderPass() = default;
 
-			void AddColorAttachment(gfx::Attachment attachment);
+			void AddColorAttachment(edge::gfx::Attachment attachment);
 
 			ShaderPassType GetPassType() override;
 
-			void Begin(gfx::CommandList& command_list) override;
-			void End(gfx::CommandList& command_list) override;
+			void Begin(edge::gfx::CommandList& command_list) override;
+			void End(edge::gfx::CommandList& command_list) override;
 
 		protected:
-			void _Execute(gfx::CommandList& command_list, float delta_time) override;
+			void _Execute(edge::gfx::CommandList& command_list, float delta_time) override;
 
 		private:
-			gfx::RenderingInfo rendering_info{};
+			edge::gfx::RenderingInfo rendering_info{};
 			std::vector<RenderResourceAttachment> resource_attachments{};
 		};
 	}

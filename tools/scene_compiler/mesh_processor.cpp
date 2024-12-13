@@ -7,7 +7,7 @@
 
 #include <hash.hpp>
 
-#include <util/util.h>
+#include <edge/util/util.h>
 
 using namespace mesh_compiler;
 

@@ -22,7 +22,7 @@ namespace engine
 			enabled_callback = std::move(callback);
 		}
 
-		void GroupNode::Execute(gfx::CommandList& command_list, float delta_time)
+		void GroupNode::Execute(edge::gfx::CommandList& command_list, float delta_time)
 		{
 			ZoneScoped;
 

@@ -16,7 +16,7 @@ namespace engine
 
 			void SetGroupEnabledCallback(std::function<bool()>&& callback);
 
-			void Execute(gfx::CommandList& command_list, float delta_time) override;
+			void Execute(edge::gfx::CommandList& command_list, float delta_time) override;
 		private:
 			std::string group_name{};
 			uint32_t group_color{ 0xFFFFFFFF };

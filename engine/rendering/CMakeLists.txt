@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.18.0)
 project(engine_rendering)
 
 #add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/DebugDraw")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/gfx")
 
 file(GLOB ENGINE_RENDERING_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 file(GLOB ENGINE_RENDERING_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
@@ -36,12 +35,4 @@ target_include_directories(${PROJECT_NAME}
     PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/tools"
     PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/engine"
     PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/vma/include"
-)
-
-target_link_libraries(${PROJECT_NAME}
-	PRIVATE gfx
-)
-
-target_compile_definitions(${PROJECT_NAME} 
-	PUBLIC "VK_NO_PROTOTYPES"
 )

@@ -4,7 +4,8 @@
 #include "../components/BaseComponent.h"
 #include "../components/CameraComponent.h"
 #include "../components/TransformComponent.h"
-#include <engine/runtime/InputManager.h>
+
+#include <engine/InputManager.h>
 
 #include <tracy/Tracy.hpp>
 
@@ -37,13 +38,13 @@ void CInputSystem::__Update(f32 fDt)
 	glm::vec3 orbitCenter{ 0.0f, 0.0f, 0.0f };
 	f32 orbitDistance{ 10.0f };
 
-	if (key_decoder.Test(KeyCode::W)) movF = 1.f;
-	if (key_decoder.Test(KeyCode::S)) movF = -1.f;
-	if (key_decoder.Test(KeyCode::A)) movR = -1.f;
-	if (key_decoder.Test(KeyCode::D)) movR = 1.f;
-	if (key_decoder.Test(KeyCode::Space)) movU = 1.f;
-	if (key_decoder.Test(KeyCode::LeftControl)) movU = -1.f;
-	if (key_decoder.Test(KeyCode::MouseMiddle))
+	if (key_decoder.Test(edge::KeyCode::W)) movF = 1.f;
+	if (key_decoder.Test(edge::KeyCode::S)) movF = -1.f;
+	if (key_decoder.Test(edge::KeyCode::A)) movR = -1.f;
+	if (key_decoder.Test(edge::KeyCode::D)) movR = 1.f;
+	if (key_decoder.Test(edge::KeyCode::Space)) movU = 1.f;
+	if (key_decoder.Test(edge::KeyCode::LeftControl)) movU = -1.f;
+	if (key_decoder.Test(edge::KeyCode::MouseMiddle))
 		allowRotation = true;
 
 	f32 dX = (curX - oldX) * fDt;
@@ -100,48 +101,48 @@ void CInputSystem::__Update(f32 fDt)
 	}
 }
 
-void CInputSystem::OnAnyInput(const InputEvent& input_event)
+void CInputSystem::OnAnyInput(const edge::InputEvent& input_event)
 {
 	switch (input_event.GetSource())
 	{
-	case EventSource::Keyboard:
+	case edge::EventSource::Keyboard:
 	{
-		const auto& key_input = static_cast<const KeyInputEvent&>(input_event);
+		const auto& key_input = static_cast<const edge::KeyInputEvent&>(input_event);
 		HandleKeyboardInput(key_input);
 	} break;
-	case EventSource::Mouse:
+	case edge::EventSource::Mouse:
 	{
-		const auto& mouse_input = static_cast<const MouseButtonInputEvent&>(input_event);
+		const auto& mouse_input = static_cast<const edge::MouseButtonInputEvent&>(input_event);
 		HandleMouseInput(mouse_input);
 	} break;
-	case EventSource::Touchscreen:
+	case edge::EventSource::Touchscreen:
 	{
-		const auto& touch_input = static_cast<const TouchInputEvent&>(input_event);
+		const auto& touch_input = static_cast<const edge::TouchInputEvent&>(input_event);
 		HandleTouchInput(touch_input);
 	} break;
 	}
 }
 
-void CInputSystem::HandleKeyboardInput(const KeyInputEvent& input_event)
+void CInputSystem::HandleKeyboardInput(const edge::KeyInputEvent& input_event)
 {
-	key_decoder.Update(input_event.GetCode(), input_event.GetAction() == KeyAction::Down || input_event.GetAction() == KeyAction::Repeat);
+	key_decoder.Update(input_event.GetCode(), input_event.GetAction() == edge::KeyAction::Down || input_event.GetAction() == edge::KeyAction::Repeat);
 }
 
-void CInputSystem::HandleMouseInput(const MouseButtonInputEvent& input_event)
+void CInputSystem::HandleMouseInput(const edge::MouseButtonInputEvent& input_event)
 {
 	switch (input_event.GetAction())
 	{
-	case MouseAction::Down:
-	case MouseAction::Up:
+	case edge::MouseAction::Down:
+	case edge::MouseAction::Up:
 	{
-		key_decoder.Update(input_event.GetButton(), input_event.GetAction() == MouseAction::Down);
+		key_decoder.Update(input_event.GetButton(), input_event.GetAction() == edge::MouseAction::Down);
 	} break;
-	case MouseAction::Move:
+	case edge::MouseAction::Move:
 	{
 		curX = remap(input_event.GetValueX(), 0.f, input_event.GetMaxX(), -1.f, 1.f);
 		curY = remap(input_event.GetValueY(), 0.f, input_event.GetMaxY(), -1.f, 1.f);
 	} break;
-	case MouseAction::Scroll:
+	case edge::MouseAction::Scroll:
 	{
 
 	} break;
@@ -150,7 +151,7 @@ void CInputSystem::HandleMouseInput(const MouseButtonInputEvent& input_event)
 	}
 }
 
-void CInputSystem::HandleTouchInput(const TouchInputEvent& input_event)
+void CInputSystem::HandleTouchInput(const edge::TouchInputEvent& input_event)
 {
 
 }

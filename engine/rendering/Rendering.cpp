@@ -1,6 +1,6 @@
 #include "Rendering.h"
 
-#include "gfx/gfx_context.h"
+#include <edge/gfx/gfx_context.h>
 
 #include "RenderContext.h"
 #include "UploadContext.h"
@@ -96,10 +96,10 @@ namespace engine
 	{
 		PostProcessData postprocess{};
 
-		class VFSWrapper final : public gfx::FilesystemWrapper
+		class VFSWrapper final : public edge::gfx::FilesystemWrapper
 		{
 		public:
-			VFSWrapper(filesystem::IVirtualFileSystemInterface& vfs) :
+			VFSWrapper(edge::filesystem::IVirtualFileSystemInterface& vfs) :
 				vfs{ vfs }
 			{
 			}
@@ -195,28 +195,28 @@ namespace engine
 				return false;
 			}
 		private:
-			filesystem::IVirtualFileSystemInterface& vfs;
+			edge::filesystem::IVirtualFileSystemInterface& vfs;
 		};
 
-		Renderer::Renderer(Window* window, filesystem::IVirtualFileSystemInterface* vfs)
+		Renderer::Renderer(edge::Window* window, edge::filesystem::IVirtualFileSystemInterface* vfs)
 		{
-			gfx::ContextCreateInfo gfx_create_info{};
+			edge::gfx::ContextCreateInfo gfx_create_info{};
 			gfx_create_info.app_name = "MyVulkanEngine";
-			gfx_create_info.render_api = gfx::RenderApi::eVulkan;
+			gfx_create_info.render_api = edge::gfx::RenderApi::eVulkan;
 			gfx_create_info.window = window;
 
-			gfx_context = gfx::CreateContext(gfx_create_info);
+			gfx_context = edge::gfx::CreateContext(gfx_create_info);
 
 			// Create filesystem wrapper
 			fs = std::make_unique<VFSWrapper>(*vfs);
 
-			gfx::ResourceLoaderCreateInfo loader_create_info{};
+			edge::gfx::ResourceLoaderCreateInfo loader_create_info{};
 			loader_create_info.context = gfx_context.get();
 			loader_create_info.filesystem_wrapper = fs.get();
 			loader_create_info.shader_cache_patch = "/root/embed/rendering/shaders/shader_cache.shc";
 			loader_create_info.shader_compile_config_path = "/source/embed/shaders/config.json";
 
-			resource_loader = gfx::CreateResourceLoader(loader_create_info);
+			resource_loader = edge::gfx::CreateResourceLoader(loader_create_info);
 
 			render_context = std::make_unique<RenderContext>(*this, window);
 
@@ -231,17 +231,17 @@ namespace engine
 			
 		}
 
-		uint32_t Renderer::AddRenderResource(std::string_view path, gfx::Sampler* sampler)
+		uint32_t Renderer::AddRenderResource(std::string_view path, edge::gfx::Sampler* sampler)
 		{
 			return render_context->AddResource(path, sampler);
 		}
 
-		uint32_t Renderer::AddRenderResource(const TextureResourceCreateInfo& create_info, gfx::Sampler* sampler)
+		uint32_t Renderer::AddRenderResource(const TextureResourceCreateInfo& create_info, edge::gfx::Sampler* sampler)
 		{
 			return render_context->AddResource(create_info, sampler);
 		}
 
-		uint32_t Renderer::AddRenderResource(const gfx::BufferCreateInfo& create_info)
+		uint32_t Renderer::AddRenderResource(const edge::gfx::BufferCreateInfo& create_info)
 		{
 			return render_context->AddResource(create_info);
 		}
@@ -304,17 +304,17 @@ namespace engine
 			render_context->End();
 		}
 
-		gfx::ResourceLoader& Renderer::GetResourceLoader()
+		edge::gfx::ResourceLoader& Renderer::GetResourceLoader()
 		{
 			return *resource_loader;
 		}
 
-		gfx::ResourceLoader const& Renderer::GetResourceLoader() const
+		edge::gfx::ResourceLoader const& Renderer::GetResourceLoader() const
 		{
 			return *resource_loader;
 		}
 
-		gfx::Context& Renderer::GetContext()
+		edge::gfx::Context& Renderer::GetContext()
 		{
 			return *gfx_context;
 		}
@@ -385,33 +385,33 @@ namespace engine
 
 			// Create default samplers
 
-			gfx::Sampler* nearest_sampler{ nullptr };
+			edge::gfx::Sampler* nearest_sampler{ nullptr };
 			{
-				gfx::SamplerCreateInfo create_info{};
-				create_info.min_filter = gfx::Filter::eNearest;
-				create_info.mag_filter = gfx::Filter::eNearest;
-				create_info.mip_map_mode = gfx::Filter::eNearest;
+				edge::gfx::SamplerCreateInfo create_info{};
+				create_info.min_filter = edge::gfx::Filter::eNearest;
+				create_info.mag_filter = edge::gfx::Filter::eNearest;
+				create_info.mip_map_mode = edge::gfx::Filter::eNearest;
 
 				nearest_sampler = resource_loader->GetSampler(create_info);
 			}
 
-			gfx::Sampler* linear_sampler{ nullptr };
+			edge::gfx::Sampler* linear_sampler{ nullptr };
 			{
-				gfx::SamplerCreateInfo create_info{};
-				create_info.min_filter = gfx::Filter::eLinear;
-				create_info.mag_filter = gfx::Filter::eLinear;
-				create_info.mip_map_mode = gfx::Filter::eLinear;
+				edge::gfx::SamplerCreateInfo create_info{};
+				create_info.min_filter = edge::gfx::Filter::eLinear;
+				create_info.mag_filter = edge::gfx::Filter::eLinear;
+				create_info.mip_map_mode = edge::gfx::Filter::eLinear;
 
 				linear_sampler = resource_loader->GetSampler(create_info);
 			}
 
-			gfx::Sampler* shadow_sampler{ nullptr };
+			edge::gfx::Sampler* shadow_sampler{ nullptr };
 			{
-				gfx::SamplerCreateInfo create_info{};
-				create_info.min_filter = gfx::Filter::eLinear;
-				create_info.mag_filter = gfx::Filter::eLinear;
-				create_info.mip_map_mode = gfx::Filter::eLinear;
-				create_info.depth_compare = gfx::CompareOp::eLess;
+				edge::gfx::SamplerCreateInfo create_info{};
+				create_info.min_filter = edge::gfx::Filter::eLinear;
+				create_info.mag_filter = edge::gfx::Filter::eLinear;
+				create_info.mip_map_mode = edge::gfx::Filter::eLinear;
+				create_info.depth_compare = edge::gfx::CompareOp::eLess;
 
 				shadow_sampler = resource_loader->GetSampler(create_info);
 			}
@@ -426,8 +426,8 @@ namespace engine
 				// TODO: make it fixed size
 				TextureResourceCreateInfo create_info{};
 				create_info.width = create_info.height = 1024u;
-				create_info.format = gfx::Format::eR16G16Sfloat;
-				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage;
+				create_info.format = edge::gfx::Format::eR16G16Sfloat;
+				create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage;
 				create_info.resizable = false;
 
 				brdf_lut_target = render_context->AddResource(create_info, nearest_sampler);
@@ -438,8 +438,8 @@ namespace engine
 			{
 				TextureResourceCreateInfo create_info{};
 				create_info.width = create_info.height = 64u;
-				create_info.format = gfx::Format::eR32G32B32A32Sfloat;
-				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage | gfx::TextureUsageFlag::eCubemap;
+				create_info.format = edge::gfx::Format::eR32G32B32A32Sfloat;
+				create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage | edge::gfx::TextureUsageFlag::eCubemap;
 				create_info.resizable = false;
 
 				irradiance_cube_target = render_context->AddResource(create_info, linear_sampler);
@@ -450,17 +450,17 @@ namespace engine
 			{
 				TextureResourceCreateInfo create_info{};
 				create_info.width = create_info.height = 512u;
-				create_info.format = gfx::Format::eR16G16B16A16Sfloat;
-				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage | gfx::TextureUsageFlag::eCubemap;
+				create_info.format = edge::gfx::Format::eR16G16B16A16Sfloat;
+				create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage | edge::gfx::TextureUsageFlag::eCubemap;
 				create_info.levels = static_cast<uint32_t>(std::floor(std::log2((std::max)(create_info.width, create_info.height)))) + 1u;
 				create_info.resizable = false;
 
-				gfx::Sampler* special_sampler{ nullptr };
+				edge::gfx::Sampler* special_sampler{ nullptr };
 				{
-					gfx::SamplerCreateInfo create_info_s{};
-					create_info_s.min_filter = gfx::Filter::eLinear;
-					create_info_s.mag_filter = gfx::Filter::eLinear;
-					create_info_s.mip_map_mode = gfx::Filter::eLinear;
+					edge::gfx::SamplerCreateInfo create_info_s{};
+					create_info_s.min_filter = edge::gfx::Filter::eLinear;
+					create_info_s.mag_filter = edge::gfx::Filter::eLinear;
+					create_info_s.mip_map_mode = edge::gfx::Filter::eLinear;
 					create_info_s.min_lod = 0.f;
 					create_info_s.max_lod = static_cast<float>(create_info.levels);
 
@@ -477,8 +477,8 @@ namespace engine
 				TextureResourceCreateInfo create_info{};
 				create_info.width = create_info.height = shlib::cascade_shadow_map_resolution;
 				create_info.layers = shlib::cascade_shadow_map_cascade_count * shlib::max_directional_light_shadow_count;
-				create_info.format = gfx::Format::eD32Sfloat;
-				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eRenderTarget;
+				create_info.format = edge::gfx::Format::eD32Sfloat;
+				create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eRenderTarget;
 				create_info.resizable = false;
 				
 				cascaded_shadows_target = render_context->AddResource(create_info, shadow_sampler);
@@ -490,8 +490,8 @@ namespace engine
 				TextureResourceCreateInfo create_info{};
 				create_info.width = create_info.height = shlib::spot_light_shadow_map_resolution;
 				create_info.layers = shlib::max_spot_light_shadow_count;
-				create_info.format = gfx::Format::eD16Unorm;
-				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eRenderTarget;
+				create_info.format = edge::gfx::Format::eD16Unorm;
+				create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eRenderTarget;
 				create_info.resizable = false;
 
 				directional_shadows_target = render_context->AddResource(create_info, shadow_sampler);
@@ -503,8 +503,8 @@ namespace engine
 				TextureResourceCreateInfo create_info{};
 				create_info.width = create_info.height = shlib::point_light_shadow_map_resolution;
 				create_info.layers = shlib::max_point_light_shadow_count;
-				create_info.format = gfx::Format::eD16Unorm;
-				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eRenderTarget | gfx::TextureUsageFlag::eCubemap;
+				create_info.format = edge::gfx::Format::eD16Unorm;
+				create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eRenderTarget | edge::gfx::TextureUsageFlag::eCubemap;
 				create_info.resizable = false;
 
 				omni_shadows_target = render_context->AddResource(create_info, shadow_sampler);
@@ -519,8 +519,8 @@ namespace engine
 				TextureResourceCreateInfo create_info{};
 				create_info.width = backbuffer_texture->GetWidth();
 				create_info.height = backbuffer_texture->GetHeight();
-				create_info.format = gfx::Format::eR8G8B8A8Unorm;
-				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eRenderTarget;
+				create_info.format = edge::gfx::Format::eR8G8B8A8Unorm;
+				create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eRenderTarget;
 				create_info.resizable = true;
 
 				visbuffer_geometry_target = render_context->AddResource(create_info, nearest_sampler);
@@ -532,8 +532,8 @@ namespace engine
 				TextureResourceCreateInfo create_info{};
 				create_info.width = backbuffer_texture->GetWidth();
 				create_info.height = backbuffer_texture->GetHeight();
-				create_info.format = gfx::Format::eR8G8B8A8Unorm;
-				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eRenderTarget;
+				create_info.format = edge::gfx::Format::eR8G8B8A8Unorm;
+				create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eRenderTarget;
 				create_info.resizable = true;
 
 				visbuffer_vboinst_target = render_context->AddResource(create_info, nearest_sampler);
@@ -545,8 +545,8 @@ namespace engine
 				TextureResourceCreateInfo create_info{};
 				create_info.width = backbuffer_texture->GetWidth();
 				create_info.height = backbuffer_texture->GetHeight();
-				create_info.format = gfx::Format::eD32Sfloat;
-				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eRenderTarget;
+				create_info.format = edge::gfx::Format::eD32Sfloat;
+				create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eRenderTarget;
 				create_info.resizable = true;
 
 				zbuffer_depth_target = render_context->AddResource(create_info, nearest_sampler);
@@ -558,8 +558,8 @@ namespace engine
 				TextureResourceCreateInfo create_info{};
 				create_info.width = backbuffer_texture->GetWidth();
 				create_info.height = backbuffer_texture->GetHeight();
-				create_info.format = use_low_precision_velocity ? gfx::Format::eR8G8Unorm : gfx::Format::eR16G16Sfloat;
-				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage;
+				create_info.format = use_low_precision_velocity ? edge::gfx::Format::eR8G8Unorm : edge::gfx::Format::eR16G16Sfloat;
+				create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage;
 				create_info.resizable = true;
 
 				motion_vectors_target = render_context->AddResource(create_info, nearest_sampler);
@@ -573,8 +573,8 @@ namespace engine
 				TextureResourceCreateInfo create_info{};
 				create_info.width = backbuffer_texture->GetWidth();
 				create_info.height = backbuffer_texture->GetHeight();
-				create_info.format = gfx::Format::eB10G11R11UfloatPack32;
-				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage;
+				create_info.format = edge::gfx::Format::eB10G11R11UfloatPack32;
+				create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage;
 				create_info.resizable = true;
 
 				hdr0 = render_context->AddResource(create_info, nearest_sampler);
@@ -593,8 +593,8 @@ namespace engine
 				TextureResourceCreateInfo create_info{};
 				create_info.width = backbuffer_texture->GetWidth() / 2;
 				create_info.height = backbuffer_texture->GetHeight() / 2;
-				create_info.format = gfx::Format::eB10G11R11UfloatPack32;
-				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage;
+				create_info.format = edge::gfx::Format::eB10G11R11UfloatPack32;
+				create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage;
 				create_info.resizable = true;
 				create_info.scale = 0.5f;
 
@@ -609,8 +609,8 @@ namespace engine
 				create_info.width = backbuffer_texture->GetWidth() / 2;
 				create_info.height = backbuffer_texture->GetHeight() / 2;
 				create_info.levels = bloom_blur_depth;
-				create_info.format = gfx::Format::eB10G11R11UfloatPack32;
-				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage;
+				create_info.format = edge::gfx::Format::eB10G11R11UfloatPack32;
+				create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage;
 				create_info.resizable = true;
 				create_info.scale = 0.5f;
 
@@ -624,8 +624,8 @@ namespace engine
 				TextureResourceCreateInfo create_info{};
 				create_info.width = 1u;
 				create_info.height = 1u;
-				create_info.format = gfx::Format::eR32Sfloat;
-				create_info.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage;
+				create_info.format = edge::gfx::Format::eR32Sfloat;
+				create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage;
 				create_info.resizable = false;
 
 				avg_brightness_target = render_context->AddResource(create_info, nearest_sampler);
@@ -634,9 +634,9 @@ namespace engine
 
 			uint32_t histogram_buffer{ ~0u };
 			{
-				gfx::BufferCreateInfo create_info{};
+				edge::gfx::BufferCreateInfo create_info{};
 				create_info.size = sizeof(uint32_t) * 256u;
-				create_info.usage = gfx::BufferUsageFlag::eStorageBuffer;
+				create_info.usage = edge::gfx::BufferUsageFlag::eStorageBuffer;
 
 				histogram_buffer = render_context->AddResource(create_info);
 				render_context->SetResourceName(histogram_buffer, "histogram_buffer");
@@ -645,9 +645,9 @@ namespace engine
 			// Buffer that contains alive comands for draw
 			uint32_t alive_commands_buffer{ ~0u };
 			{
-				gfx::BufferCreateInfo create_info{};
+				edge::gfx::BufferCreateInfo create_info{};
 				create_info.size = sizeof(shlib::DrawDescription) * shlib::MAX_DRAW_COMMAND_COUNT;
-				create_info.usage = gfx::BufferUsageFlag::eStorageBuffer;
+				create_info.usage = edge::gfx::BufferUsageFlag::eStorageBuffer;
 
 				alive_commands_buffer = render_context->AddResource(create_info);
 				render_context->SetResourceName(alive_commands_buffer, "alive_commands_buffer");
@@ -656,9 +656,9 @@ namespace engine
 			// Buffer contains draw indirect commands
 			uint32_t indirect_draw_commands{ ~0u };
 			{
-				gfx::BufferCreateInfo create_info{};
+				edge::gfx::BufferCreateInfo create_info{};
 				create_info.size = sizeof(shlib::DrawIndexedIndirectData) * shlib::MAX_DRAW_COMMAND_COUNT;
-				create_info.usage = gfx::BufferUsageFlag::eIndirectBuffer;
+				create_info.usage = edge::gfx::BufferUsageFlag::eIndirectBuffer;
 
 				indirect_draw_commands = render_context->AddResource(create_info);
 				render_context->SetResourceName(indirect_draw_commands, "indirect_draw_commands");
@@ -666,9 +666,9 @@ namespace engine
 
 			uint32_t indirect_count_buffer{ ~0u };
 			{
-				gfx::BufferCreateInfo create_info{};
+				edge::gfx::BufferCreateInfo create_info{};
 				create_info.size = sizeof(uint32_t) * shlib::MAX_CAMERAS;
-				create_info.usage = gfx::BufferUsageFlag::eIndirectBuffer;
+				create_info.usage = edge::gfx::BufferUsageFlag::eIndirectBuffer;
 
 				indirect_count_buffer = render_context->AddResource(create_info);
 				render_context->SetResourceName(indirect_count_buffer, "indirect_count_buffer");
@@ -676,9 +676,9 @@ namespace engine
 
 			uint32_t alive_bitset_buffer{ ~0u };
 			{
-				gfx::BufferCreateInfo create_info{};
+				edge::gfx::BufferCreateInfo create_info{};
 				create_info.size = sizeof(uint32_t) * shlib::MAX_DRAW_COMMAND_COUNT / 32;
-				create_info.usage = gfx::BufferUsageFlag::eStorageBuffer;
+				create_info.usage = edge::gfx::BufferUsageFlag::eStorageBuffer;
 
 				alive_bitset_buffer = render_context->AddResource(create_info);
 				render_context->SetResourceName(alive_bitset_buffer, "alive_bitset_buffer");
@@ -686,9 +686,9 @@ namespace engine
 
 			uint32_t alive_offsets_buffer{ ~0u };
 			{
-				gfx::BufferCreateInfo create_info{};
+				edge::gfx::BufferCreateInfo create_info{};
 				create_info.size = sizeof(uint32_t) * shlib::MAX_DRAW_COMMAND_COUNT;
-				create_info.usage = gfx::BufferUsageFlag::eStorageBuffer;
+				create_info.usage = edge::gfx::BufferUsageFlag::eStorageBuffer;
 
 				alive_offsets_buffer = render_context->AddResource(create_info);
 				render_context->SetResourceName(alive_offsets_buffer, "alive_offsets_buffer");
@@ -703,7 +703,7 @@ namespace engine
 
 				create_info.draw_callback = [this, 
 					brdf_lut_target
-				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 					{
 						ZoneScoped;
 
@@ -728,7 +728,7 @@ namespace engine
 				create_info.draw_callback = [this, 
 					irradiance_cube_target, 
 					casual_day_4k_cube
-				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 					{
 						ZoneScoped;
 
@@ -758,7 +758,7 @@ namespace engine
 				create_info.draw_callback = [this,
 					prefiltered_cube_target, 
 					casual_day_4k_cube
-				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 					{
 						ZoneScoped;
 
@@ -811,7 +811,7 @@ namespace engine
 
 				create_info.draw_callback = [this,
 					indirect_count_buffer
-				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 					{
 						ZoneScoped;
 
@@ -846,7 +846,7 @@ namespace engine
 					indirect_draw_commands,
 					indirect_count_buffer,
 					alive_bitset_buffer
-				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 					{
 						ZoneScoped;
 
@@ -889,7 +889,7 @@ namespace engine
 				create_info.draw_callback = [this,
 					alive_bitset_buffer,
 					alive_offsets_buffer
-				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 					{
 						ZoneScoped;
 
@@ -930,7 +930,7 @@ namespace engine
 			//		indirect_draw_commands,
 			//		indirect_count_buffer,
 			//		alive_bitset_buffer
-			//	](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+			//	](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 			//		{
 			//			ZoneScoped;
 			//
@@ -971,23 +971,23 @@ namespace engine
 			{
 				RenderShaderPassCreateInfo create_info{};
 				create_info.shader_name = "lighting:unidirectional_shadow:CASCADED_SHADOW:HAS_TEXCOORD:HAS_NORMAL:TANGENT_VEC4:INDEX_16BIT";
-				create_info.pipeline_state.rasterization_state.cull_mode = gfx::CullModeFlag::eFront;
+				create_info.pipeline_state.rasterization_state.cull_mode = edge::gfx::CullModeFlag::eFront;
 			
 				// Depth state
 				create_info.pipeline_state.depth_stencil_state.depth_test = true;
 				create_info.pipeline_state.depth_stencil_state.depth_write = true;
-				create_info.pipeline_state.depth_stencil_state.depth_compare_op = gfx::CompareOp::eLess;
+				create_info.pipeline_state.depth_stencil_state.depth_compare_op = edge::gfx::CompareOp::eLess;
 			
-				create_info.AddWriteAttachment(cascaded_shadows_target, ResourceAttachmentTypeFlag::eDepth, gfx::ClearColor{ 1.f });
+				create_info.AddWriteAttachment(cascaded_shadows_target, ResourceAttachmentTypeFlag::eDepth, edge::gfx::ClearColor{ 1.f });
 			
-				create_info.pipeline_state.primitive_topology = gfx::PrimitiveTopology::eTriangleList;
+				create_info.pipeline_state.primitive_topology = edge::gfx::PrimitiveTopology::eTriangleList;
 			
 				create_info.draw_callback = [this,
 					cascaded_shadows_target,
 					alive_commands_buffer,
 					indirect_draw_commands,
 					indirect_count_buffer
-				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 					{
 						ZoneScoped;
 			
@@ -1025,7 +1025,7 @@ namespace engine
 			
 						self.BindResources(command_list);
 			
-						gfx::IndirectDrawCommand draw_command{};
+						edge::gfx::IndirectDrawCommand draw_command{};
 						draw_command.indexed_draw = true;
 						draw_command.draw_count = render_world->GetMeshCount();
 						draw_command.argument_buffer = argument_buffer;
@@ -1073,23 +1073,23 @@ namespace engine
 			{
 				RenderShaderPassCreateInfo create_info{};
 				create_info.shader_name = "lighting:unidirectional_shadow:OMNI_SHADOW:HAS_TEXCOORD:HAS_NORMAL:TANGENT_VEC4:INDEX_16BIT";
-				create_info.pipeline_state.rasterization_state.cull_mode = gfx::CullModeFlag::eFront;
+				create_info.pipeline_state.rasterization_state.cull_mode = edge::gfx::CullModeFlag::eFront;
 			
 				// Depth state
 				create_info.pipeline_state.depth_stencil_state.depth_test = true;
 				create_info.pipeline_state.depth_stencil_state.depth_write = true;
-				create_info.pipeline_state.depth_stencil_state.depth_compare_op = gfx::CompareOp::eLess;
+				create_info.pipeline_state.depth_stencil_state.depth_compare_op = edge::gfx::CompareOp::eLess;
 			
-				create_info.AddWriteAttachment(omni_shadows_target, ResourceAttachmentTypeFlag::eDepth, gfx::ClearColor{ 1.f });
+				create_info.AddWriteAttachment(omni_shadows_target, ResourceAttachmentTypeFlag::eDepth, edge::gfx::ClearColor{ 1.f });
 			
-				create_info.pipeline_state.primitive_topology = gfx::PrimitiveTopology::eTriangleList;
+				create_info.pipeline_state.primitive_topology = edge::gfx::PrimitiveTopology::eTriangleList;
 			
 				create_info.draw_callback = [this,
 					omni_shadows_target,
 					alive_commands_buffer,
 					indirect_draw_commands,
 					indirect_count_buffer
-				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 					{
 						ZoneScoped;
 			
@@ -1127,7 +1127,7 @@ namespace engine
 			
 						self.BindResources(command_list);
 			
-						gfx::IndirectDrawCommand draw_command{};
+						edge::gfx::IndirectDrawCommand draw_command{};
 						draw_command.indexed_draw = true;
 						draw_command.draw_count = render_world->GetMeshCount();
 						draw_command.argument_buffer = render_context->GetBuffer(indirect_draw_commands);
@@ -1175,23 +1175,23 @@ namespace engine
 			{
 				RenderShaderPassCreateInfo create_info{};
 				create_info.shader_name = "lighting:unidirectional_shadow:HAS_TEXCOORD:HAS_NORMAL:TANGENT_VEC4:INDEX_16BIT";
-				create_info.pipeline_state.rasterization_state.cull_mode = gfx::CullModeFlag::eFront;
+				create_info.pipeline_state.rasterization_state.cull_mode = edge::gfx::CullModeFlag::eFront;
 			
 				// Depth state
 				create_info.pipeline_state.depth_stencil_state.depth_test = true;
 				create_info.pipeline_state.depth_stencil_state.depth_write = true;
-				create_info.pipeline_state.depth_stencil_state.depth_compare_op = gfx::CompareOp::eLess;
+				create_info.pipeline_state.depth_stencil_state.depth_compare_op = edge::gfx::CompareOp::eLess;
 			
-				create_info.AddWriteAttachment(directional_shadows_target, ResourceAttachmentTypeFlag::eDepth, gfx::ClearColor{ 1.f });
+				create_info.AddWriteAttachment(directional_shadows_target, ResourceAttachmentTypeFlag::eDepth, edge::gfx::ClearColor{ 1.f });
 			
-				create_info.pipeline_state.primitive_topology = gfx::PrimitiveTopology::eTriangleList;
+				create_info.pipeline_state.primitive_topology = edge::gfx::PrimitiveTopology::eTriangleList;
 			
 				create_info.draw_callback = [this,
 					directional_shadows_target,
 					alive_commands_buffer,
 					indirect_draw_commands,
 					indirect_count_buffer
-				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 					{
 						ZoneScoped;
 			
@@ -1229,7 +1229,7 @@ namespace engine
 			
 						self.BindResources(command_list);
 			
-						gfx::IndirectDrawCommand draw_command{};
+						edge::gfx::IndirectDrawCommand draw_command{};
 						draw_command.indexed_draw = true;
 						draw_command.draw_count = render_world->GetMeshCount();
 						draw_command.argument_buffer = render_context->GetBuffer(indirect_draw_commands);
@@ -1274,26 +1274,26 @@ namespace engine
 			{
 				RenderShaderPassCreateInfo create_info{};
 				create_info.shader_name = "visibilitybuffer:write:HAS_TEXCOORD:HAS_NORMAL:TANGENT_VEC4:INDEX_16BIT";
-				create_info.pipeline_state.rasterization_state.cull_mode = gfx::CullModeFlag::eFront;
+				create_info.pipeline_state.rasterization_state.cull_mode = edge::gfx::CullModeFlag::eFront;
 			
 				// Depth state
 				create_info.pipeline_state.depth_stencil_state.depth_test = true;
 				create_info.pipeline_state.depth_stencil_state.depth_write = true;
-				create_info.pipeline_state.depth_stencil_state.depth_compare_op = gfx::CompareOp::eLess;
+				create_info.pipeline_state.depth_stencil_state.depth_compare_op = edge::gfx::CompareOp::eLess;
 			
 			
-				create_info.AddWriteAttachment(visbuffer_geometry_target, ResourceAttachmentTypeFlag::eColor, gfx::ClearColor{ 0.f, 0.f, 0.f, 0.f });
-				create_info.AddWriteAttachment(visbuffer_vboinst_target, ResourceAttachmentTypeFlag::eColor, gfx::ClearColor{ 0.f, 0.f, 0.f, 0.f });
-				create_info.AddWriteAttachment(zbuffer_depth_target, ResourceAttachmentTypeFlag::eDepth, gfx::ClearColor{ 1.f });
+				create_info.AddWriteAttachment(visbuffer_geometry_target, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 0.f, 0.f, 0.f, 0.f });
+				create_info.AddWriteAttachment(visbuffer_vboinst_target, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 0.f, 0.f, 0.f, 0.f });
+				create_info.AddWriteAttachment(zbuffer_depth_target, ResourceAttachmentTypeFlag::eDepth, edge::gfx::ClearColor{ 1.f });
 			
-				create_info.pipeline_state.primitive_topology = gfx::PrimitiveTopology::eTriangleList;
+				create_info.pipeline_state.primitive_topology = edge::gfx::PrimitiveTopology::eTriangleList;
 				create_info.pipeline_state.color_blending_state.attachment_count = 2;
 			
 				create_info.draw_callback = [this,
 					alive_commands_buffer,
 					indirect_draw_commands,
 					indirect_count_buffer
-				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 					{
 						ZoneScoped;
 			
@@ -1336,7 +1336,7 @@ namespace engine
 						self.BindResources(command_list);
 			
 						// TODO: USE CURRENT CAMERA HERE FOR CALCULATE OFFSET!!!!
-						gfx::IndirectDrawCommand draw_command{};
+						edge::gfx::IndirectDrawCommand draw_command{};
 						draw_command.indexed_draw = true;
 						draw_command.draw_count = render_world->GetMeshCount();
 						draw_command.argument_buffer = argument_buffer;
@@ -1371,7 +1371,7 @@ namespace engine
 					cascaded_shadows_target,
 					directional_shadows_target,
 					omni_shadows_target
-				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 					{
 						ZoneScoped;
 
@@ -1433,7 +1433,7 @@ namespace engine
 				create_info.draw_callback = [this,
 					motion_vectors_target,
 					zbuffer_depth_target
-				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 					{
 						ZoneScoped;
 			
@@ -1460,7 +1460,7 @@ namespace engine
 				create_info.draw_callback = [this,
 					input_target,
 					hdr0_history
-				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 					{
 						ZoneScoped;
 			
@@ -1492,7 +1492,7 @@ namespace engine
 						input_target,
 						output_target,
 						enabled = &postprocess.fxaa.enable
-					](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+					](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 						{
 							ZoneScoped;
 			
@@ -1521,7 +1521,7 @@ namespace engine
 						input_target,
 						output_target,
 						motion_vectors_target
-					](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+					](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 						{
 							ZoneScoped;
 			
@@ -1555,7 +1555,7 @@ namespace engine
 						create_info.draw_callback = [this,
 							input_target,
 							hdr0_div2
-						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+						](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 							{
 								ZoneScoped;
 			
@@ -1580,7 +1580,7 @@ namespace engine
 							output_target,
 							hdr0_div2,
 							zbuffer_depth_target
-						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+						](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 							{
 								ZoneScoped;
 			
@@ -1617,7 +1617,7 @@ namespace engine
 						create_info.draw_callback = [this,
 							input_target,
 							hdr0_div2
-						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+						](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 							{
 								ZoneScoped;
 			
@@ -1641,7 +1641,7 @@ namespace engine
 							create_info.draw_callback = [this,
 								hdr0_div2,
 								bloom_target
-							](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+							](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 								{
 									ZoneScoped;
 			
@@ -1665,7 +1665,7 @@ namespace engine
 			
 							create_info.draw_callback = [this,
 								bloom_target
-							](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+							](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 								{
 									ZoneScoped;
 			
@@ -1700,7 +1700,7 @@ namespace engine
 			
 						create_info.draw_callback = [this,
 							bloom_target
-						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+						](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 							{
 								ZoneScoped;
 			
@@ -1737,7 +1737,7 @@ namespace engine
 							output_target,
 							bloom_target,
 							dirt_mask_texture
-						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+						](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 							{
 								ZoneScoped;
 			
@@ -1775,7 +1775,7 @@ namespace engine
 						create_info.draw_callback = [this,
 							input_target,
 							histogram_buffer
-						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+						](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 							{
 								ZoneScoped;
 			
@@ -1806,7 +1806,7 @@ namespace engine
 							avg_brightness_target,
 							histogram_buffer,
 							input_target
-						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+						](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 							{
 								ZoneScoped;
 			
@@ -1843,7 +1843,7 @@ namespace engine
 							input_target,
 							output_target,
 							avg_brightness_target
-						](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+						](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 							{
 								ZoneScoped;
 			
@@ -1874,14 +1874,14 @@ namespace engine
 			{
 				RenderShaderPassCreateInfo create_info{};
 				create_info.shader_name = "testing:screenspace";
-				create_info.AddWriteAttachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, gfx::ClearColor{ 1.f, 0.5f, 1.f, 1.f });
+				create_info.AddWriteAttachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 1.f, 0.5f, 1.f, 1.f });
 			
-				create_info.pipeline_state.primitive_topology = gfx::PrimitiveTopology::eTriangleList;
+				create_info.pipeline_state.primitive_topology = edge::gfx::PrimitiveTopology::eTriangleList;
 				create_info.pipeline_state.color_blending_state.attachment_count = 1;
 			
 				create_info.draw_callback = [this, 
 					final_target
-				](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 					{
 						ZoneScoped;
 			
@@ -1919,39 +1919,39 @@ namespace engine
 					uint64_t upload_size = width * height * 4ull * sizeof(char);
 
 					TextureResourceCreateInfo font_texture_ci{};
-					font_texture_ci.usage = gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eTransferable;
+					font_texture_ci.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eTransferable;
 					font_texture_ci.width = width;
 					font_texture_ci.height = height;
-					font_texture_ci.format = gfx::Format::eR8G8B8A8Unorm;
+					font_texture_ci.format = edge::gfx::Format::eR8G8B8A8Unorm;
 
 					uint32_t imgui_font_texture = render_context->AddResource(font_texture_ci, {pixels, upload_size});
 
 					GeometryBufferCreateInfo geometry_buffer_ci{};
-					geometry_buffer_ci.attribute_descriptions.emplace_back(VertexAttributeFlag::ePosition, gfx::Format::eR32G32Sfloat);
-					geometry_buffer_ci.attribute_descriptions.emplace_back(VertexAttributeFlag::eTexCoord, gfx::Format::eR32G32Sfloat);
-					geometry_buffer_ci.attribute_descriptions.emplace_back(VertexAttributeFlag::eColor, gfx::Format::eR8G8B8A8Unorm);
-					geometry_buffer_ci.index_description.type = gfx::IndexType::eUint16;
+					geometry_buffer_ci.attribute_descriptions.emplace_back(VertexAttributeFlag::ePosition, edge::gfx::Format::eR32G32Sfloat);
+					geometry_buffer_ci.attribute_descriptions.emplace_back(VertexAttributeFlag::eTexCoord, edge::gfx::Format::eR32G32Sfloat);
+					geometry_buffer_ci.attribute_descriptions.emplace_back(VertexAttributeFlag::eColor, edge::gfx::Format::eR8G8B8A8Unorm);
+					geometry_buffer_ci.index_description.type = edge::gfx::IndexType::eUint16;
 
 					auto& geometry_buffer = RequestInterleavedGeometryBuffer(geometry_buffer_ci);
 
 					RenderShaderPassCreateInfo create_info{};
 					create_info.shader_name = "testing:imgui";
-					create_info.pipeline_state.primitive_topology = gfx::PrimitiveTopology::eTriangleList;
+					create_info.pipeline_state.primitive_topology = edge::gfx::PrimitiveTopology::eTriangleList;
 					create_info.pipeline_state.vertex_layout = geometry_buffer.GetVertexLayout();
-					create_info.AddWriteAttachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, gfx::ClearColor{ 0.f, 0.f, 0.f, 1.f });
+					create_info.AddWriteAttachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 0.f, 0.f, 0.f, 1.f });
 
 					create_info.pipeline_state.color_blending_state.attachment_count = 1;
 					auto& blending = create_info.pipeline_state.color_blending_state.attachments[0];
 					blending.enable = true;
-					blending.src_color = gfx::BlendFactor::eSrcAlpha;
-					blending.dst_color = gfx::BlendFactor::eOneMinusSrcAlpha;
-					blending.src_alpha = gfx::BlendFactor::eOneMinusSrcAlpha;
-					blending.dst_alpha = gfx::BlendFactor::eZero;
+					blending.src_color = edge::gfx::BlendFactor::eSrcAlpha;
+					blending.dst_color = edge::gfx::BlendFactor::eOneMinusSrcAlpha;
+					blending.src_alpha = edge::gfx::BlendFactor::eOneMinusSrcAlpha;
+					blending.dst_alpha = edge::gfx::BlendFactor::eZero;
 
 					create_info.draw_callback = [this, 
 						&geometry_buffer,
 						imgui_font_texture
-					](ShaderPass& self, gfx::CommandList& command_list, float delta_time)
+					](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 						{
 							ZoneScoped;
 

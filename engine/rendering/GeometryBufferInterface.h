@@ -1,16 +1,11 @@
 #pragma once
 
-#include "gfx/gfx_resource_loader.h"
+#include <edge/gfx/gfx_resource_loader.h>
 
 #include <unordered_map>
 
 namespace engine
 {
-	namespace gfx
-	{
-		class Context;
-	}
-
 	namespace render
 	{
 		static constexpr uint32_t k_max_attribure_description{ 7u };
@@ -30,12 +25,12 @@ namespace engine
 		struct AttributeDescription
 		{
 			VertexAttributeFlag attribute_flag{};
-			gfx::Format format{};
+			edge::gfx::Format format{};
 		};
 
 		struct IndexDescription
 		{
-			gfx::IndexType type{ gfx::IndexType::eUint16 };
+			edge::gfx::IndexType type{ edge::gfx::IndexType::eUint16 };
 		};
 
 		struct GeometryBufferCreateInfo
@@ -47,15 +42,15 @@ namespace engine
 		struct VertexData
 		{
 			uint32_t count{ 0u };
-			gfx::Buffer* buffer{ nullptr };
+			edge::gfx::Buffer* buffer{ nullptr };
 			std::vector<uint8_t> data{};
 		};
 
 		struct IndexData
 		{
 			uint32_t count{ 0u };
-			gfx::Buffer* buffer{ nullptr };
-			gfx::IndexType type{};
+			edge::gfx::Buffer* buffer{ nullptr };
+			edge::gfx::IndexType type{};
 			std::vector<uint8_t> data{};
 		};
 
@@ -87,16 +82,16 @@ namespace engine
 		class GeometryBuffer
 		{
 		public:
-			GeometryBuffer(gfx::ResourceLoader& resource_loader);
+			GeometryBuffer(edge::gfx::ResourceLoader& resource_loader);
 			virtual ~GeometryBuffer();
 
 			virtual void Flush();
 
-			void BindIndexBuffer(gfx::CommandList& command_list);
+			void BindIndexBuffer(edge::gfx::CommandList& command_list);
 
-			virtual void BindVertexBuffers(gfx::CommandList& command_list) = 0;
+			virtual void BindVertexBuffers(edge::gfx::CommandList& command_list) = 0;
 
-			void Bind(gfx::CommandList& command_list);
+			void Bind(edge::gfx::CommandList& command_list);
 
 			virtual uint64_t GetBufferAddress(VertexAttributeFlag flag = {}) = 0;
 
@@ -108,12 +103,12 @@ namespace engine
 
 			void AddIndexStreamData(const void* data, uint32_t count, uint32_t stride);
 
-			gfx::VertexLayout const& GetVertexLayout() const;
+			edge::gfx::VertexLayout const& GetVertexLayout() const;
 		protected:
-			void TryFlushBuffer(gfx::Buffer** buffer_ptr, const std::vector<uint8_t>& data, gfx::BufferUsageFlags usage);
+			void TryFlushBuffer(edge::gfx::Buffer** buffer_ptr, const std::vector<uint8_t>& data, edge::gfx::BufferUsageFlags usage);
 		protected:
-			gfx::ResourceLoader& resource_loader;
-			gfx::VertexLayout vertex_layout{};
+			edge::gfx::ResourceLoader& resource_loader;
+			edge::gfx::VertexLayout vertex_layout{};
 			IndexData index_data{};
 		};
 	}

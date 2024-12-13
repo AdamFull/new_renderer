@@ -1,8 +1,8 @@
 #include "ShaderPass.h"
 
 #include "../RendererInterface.h"
-#include "../gfx/gfx_context.h"
-#include "../gfx/gfx_util.h"
+#include <edge/gfx/gfx_context.h>
+#include <edge/gfx/gfx_util.h>
 
 #include <logger.hpp>
 
@@ -29,7 +29,7 @@ namespace engine
 			// Create uniform block handlers for resources
 			for (auto it = reflection.shader_resources.Begin(); it != reflection.shader_resources.End(); ++it)
 			{
-				if (it->type == gfx::DescriptorType::eUniformBuffer)
+				if (it->type == edge::gfx::DescriptorType::eUniformBuffer)
 				{
 					uniform_handles.emplace_back(reflection, (*it));
 				}
@@ -39,7 +39,7 @@ namespace engine
 			constant_block = std::make_unique<UniformHandle>(reflection, reflection.constants);
 
 			// Create root signature
-			gfx::RootSignatureCreateInfo root_sign_ci{};
+			edge::gfx::RootSignatureCreateInfo root_sign_ci{};
 			root_sign_ci.shader = shader;
 			root_sign_ci.shared_descriptor = create_info.shared_descriptor;
 			// TODO: also load immutable samplers from pass info or from somewhere another?
@@ -47,9 +47,9 @@ namespace engine
 			root_signature = context.CreateRootSignature(root_sign_ci);
 
 			// Create timestamp query 
-			gfx::QueryPoolCreateInfo query_pool_ci{};
+			edge::gfx::QueryPoolCreateInfo query_pool_ci{};
 			query_pool_ci.query_count = 2u;
-			query_pool_ci.type = gfx::QueryType::eTimestamp;
+			query_pool_ci.type = edge::gfx::QueryType::eTimestamp;
 
 			timestamp_query = context.CreateQueryPool(query_pool_ci);
 			timestamp_query->Reset(0u);
@@ -71,7 +71,7 @@ namespace engine
 		}
 
 
-		void ShaderPass::Execute(gfx::CommandList& command_list, float delta_time)
+		void ShaderPass::Execute(edge::gfx::CommandList& command_list, float delta_time)
 		{
 			ZoneScoped;
 
@@ -121,7 +121,7 @@ namespace engine
 			return GetUniformBlock(utl::murmur_hash(name));
 		}
 		
-		void ShaderPass::BindResources(gfx::CommandList& command_list)
+		void ShaderPass::BindResources(edge::gfx::CommandList& command_list)
 		{
 			ZoneScoped;
 
@@ -141,7 +141,7 @@ namespace engine
 				auto uniform_block = execution_context.RequestUniformBlock(resource.size);
 				uniform_block.Update(std::span(handle.Data()));
 
-				gfx::BufferDescriptor descriptor{};
+				edge::gfx::BufferDescriptor descriptor{};
 				descriptor.type = resource.type;
 				descriptor.set = resource.set;
 				descriptor.binding = resource.binding;
@@ -156,7 +156,7 @@ namespace engine
 			// Upload all resources
 			resource_descriptor->Flush();
 
-			gfx::ResourceDescriptor* resource_descriptors[]{ resource_descriptor, nullptr };
+			edge::gfx::ResourceDescriptor* resource_descriptors[]{ resource_descriptor, nullptr };
 			uint32_t resource_descriptor_count{ 1u };
 
 			if (shared_descriptor)
@@ -164,7 +164,7 @@ namespace engine
 				resource_descriptors[resource_descriptor_count++] = shared_descriptor->GetLatestDescriptors();
 			}
 
-			gfx::BindDescriptorsInfo bind_info{};
+			edge::gfx::BindDescriptorsInfo bind_info{};
 			bind_info.pipeline_type = pipeline->GetType();
 			bind_info.resource_descriptors = resource_descriptors;
 			bind_info.resource_descriptors_count = resource_descriptor_count;
@@ -175,7 +175,7 @@ namespace engine
 			resource_descriptor = nullptr;
 		}
 
-		void ShaderPass::PushConstantRanges(gfx::CommandList& command_list)
+		void ShaderPass::PushConstantRanges(edge::gfx::CommandList& command_list)
 		{
 			auto& constant_data = constant_block->Data();
 			command_list.PushConstants(shader, root_signature, std::span<const char>(constant_data.data(), constant_data.size()));
@@ -189,25 +189,25 @@ namespace engine
 			group_z = std::max(static_cast<uint32_t>(std::ceil(static_cast<float>(group_z) / static_cast<float>(reflection.local_sizes[2]))), 1u);
 		}
 
-		void ShaderPass::ResourceDependency(uint32_t resource_id, uint32_t sebresource_id, gfx::AccessTypeFlags access)
+		void ShaderPass::ResourceDependency(uint32_t resource_id, uint32_t sebresource_id, edge::gfx::AccessTypeFlags access)
 		{
 			ZoneScoped;
 
 			auto& render_resource = execution_context.GetResource(resource_id);
 
-			gfx::ResourceStateFlags new_state = gfx::GetAccessState(access);
+			edge::gfx::ResourceStateFlags new_state = edge::gfx::GetAccessState(access);
 
 			auto pass_type = GetPassType();
 			if (pass_type == ShaderPassType::eCompute)
-				new_state |= gfx::ResourceStateFlag::eCompute;
+				new_state |= edge::gfx::ResourceStateFlag::eCompute;
 			else if (pass_type == ShaderPassType::eGraphics)
-				new_state |= gfx::ResourceStateFlag::eGraphics;
+				new_state |= edge::gfx::ResourceStateFlag::eGraphics;
 
 			if (render_resource.resource_type & RenderResourceTypeFlag::eAllImage)
 			{
 				// May be create another tag like unordered resource?
 				if (render_resource.resource_type & RenderResourceTypeFlag::eStorageTarget)
-					new_state |= gfx::ResourceStateFlag::eGeneral;
+					new_state |= edge::gfx::ResourceStateFlag::eGeneral;
 
 				auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
 				barrier.texture = execution_context.GetTexture(render_resource);
@@ -218,10 +218,10 @@ namespace engine
 			else if (render_resource.resource_type & RenderResourceTypeFlag::eAllBuffer)
 			{
 				if(render_resource.resource_type & RenderResourceTypeFlag::eStorageBuffer)
-					new_state |= gfx::ResourceStateFlag::eStorage;
+					new_state |= edge::gfx::ResourceStateFlag::eStorage;
 				
 				if (render_resource.resource_type & RenderResourceTypeFlag::eIndirectBuffer)
-					new_state |= gfx::ResourceStateFlag::eIndirect;
+					new_state |= edge::gfx::ResourceStateFlag::eIndirect;
 
 				auto& barrier = buffer_barriers[resource_barriers.buffer_barrier_count++];
 				barrier.buffer = execution_context.GetBuffer(render_resource);
@@ -232,32 +232,32 @@ namespace engine
 			render_resource.SetState(new_state);
 		}
 
-		void ShaderPass::ResourceDependency(uint32_t binding_point, uint32_t resource_id, uint32_t sebresource_id, gfx::AccessTypeFlags access)
+		void ShaderPass::ResourceDependency(uint32_t binding_point, uint32_t resource_id, uint32_t sebresource_id, edge::gfx::AccessTypeFlags access)
 		{
 			ZoneScoped;
 
 			auto& reflection = shader->GetReflection();
-			auto found = std::find_if(reflection.shader_resources.Begin(), reflection.shader_resources.End(), [&binding_point](const gfx::ShaderResource& resource) { return resource.name_hash == binding_point; });
+			auto found = std::find_if(reflection.shader_resources.Begin(), reflection.shader_resources.End(), [&binding_point](const edge::gfx::ShaderResource& resource) { return resource.name_hash == binding_point; });
 			if (found != reflection.shader_resources.End())
 			{
 				auto& render_resource = execution_context.GetResource(resource_id);
 
-				gfx::ResourceStateFlags new_state = gfx::GetAccessState(access);
+				edge::gfx::ResourceStateFlags new_state = edge::gfx::GetAccessState(access);
 
 				auto pass_type = GetPassType();
 				if (pass_type == ShaderPassType::eCompute)
-					new_state |= gfx::ResourceStateFlag::eCompute;
+					new_state |= edge::gfx::ResourceStateFlag::eCompute;
 				else if (pass_type == ShaderPassType::eGraphics)
-					new_state |= gfx::ResourceStateFlag::eGraphics;
+					new_state |= edge::gfx::ResourceStateFlag::eGraphics;
 
-				const gfx::ShaderResource& refl_resource = *found;
-				new_state |= gfx::GetStateByDescriptorType(refl_resource.type);
+				const edge::gfx::ShaderResource& refl_resource = *found;
+				new_state |= edge::gfx::GetStateByDescriptorType(refl_resource.type);
 
 				if (render_resource.resource_type & RenderResourceTypeFlag::eAllImage)
 				{
 					// May be create another tag like unordered resource?
 					if(render_resource.resource_type & RenderResourceTypeFlag::eStorageTarget)
-						new_state |= gfx::ResourceStateFlag::eGeneral;
+						new_state |= edge::gfx::ResourceStateFlag::eGeneral;
 
 					auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
 					barrier.texture = execution_context.GetTexture(render_resource);
@@ -300,25 +300,25 @@ namespace engine
 
 		void ShaderPass::ReadResource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource_index)
 		{
-			ResourceDependency(binding_point, render_resource_id, subresource_index, gfx::AccessTypeFlag::eRead);
+			ResourceDependency(binding_point, render_resource_id, subresource_index, edge::gfx::AccessTypeFlag::eRead);
 		}
 
 		void ShaderPass::ReadResource(uint32_t render_resource_id, uint32_t subresource_index)
 		{
-			ResourceDependency(render_resource_id, subresource_index, gfx::AccessTypeFlag::eRead);
+			ResourceDependency(render_resource_id, subresource_index, edge::gfx::AccessTypeFlag::eRead);
 		}
 
 		void ShaderPass::WriteResource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource_index)
 		{
-			ResourceDependency(binding_point, render_resource_id, subresource_index, gfx::AccessTypeFlag::eWrite);
+			ResourceDependency(binding_point, render_resource_id, subresource_index, edge::gfx::AccessTypeFlag::eWrite);
 		}
 
 		void ShaderPass::WriteResource(uint32_t render_resource_id, uint32_t subresource_index)
 		{
-			ResourceDependency(render_resource_id, subresource_index, gfx::AccessTypeFlag::eWrite);
+			ResourceDependency(render_resource_id, subresource_index, edge::gfx::AccessTypeFlag::eWrite);
 		}
 
-		void ShaderPass::ResolveDependencies(gfx::CommandList& command_list)
+		void ShaderPass::ResolveDependencies(edge::gfx::CommandList& command_list)
 		{
 			// Flush resource barriers
 			command_list.ResourceBarrier(resource_barriers);
@@ -339,17 +339,17 @@ namespace engine
 
 			auto& reflection = shader->GetReflection();
 
-			auto found = std::find_if(reflection.shader_resources.Begin(), reflection.shader_resources.End(), [&binding_point](const gfx::ShaderResource& resource) { return resource.name_hash == binding_point; });
+			auto found = std::find_if(reflection.shader_resources.Begin(), reflection.shader_resources.End(), [&binding_point](const edge::gfx::ShaderResource& resource) { return resource.name_hash == binding_point; });
 			if (found != reflection.shader_resources.End())
 			{
 				auto& render_resource = execution_context.GetResource(resource_index);
 
 				// Bind resources
-				const gfx::ShaderResource& refl_resource = *found;
+				const edge::gfx::ShaderResource& refl_resource = *found;
 				if (render_resource.resource_type & RenderResourceTypeFlag::eAllImage)
 				{
 					// Create texture descriptor
-					gfx::TextureDescriptor descriptor{};
+					edge::gfx::TextureDescriptor descriptor{};
 					descriptor.type = refl_resource.type;
 					descriptor.set = refl_resource.set;
 					descriptor.binding = refl_resource.binding;
@@ -370,7 +370,7 @@ namespace engine
 					barrier.dst_state = render_resource.GetState();
 
 					// And also create resource descriptor
-					gfx::BufferDescriptor descriptor{};
+					edge::gfx::BufferDescriptor descriptor{};
 					descriptor.type = refl_resource.type;
 					descriptor.set = refl_resource.set;
 					descriptor.binding = refl_resource.binding;
@@ -399,7 +399,7 @@ namespace engine
 			BindResource(binding_point, resource_index, subresource_index);
 		}
 
-		void ShaderPass::DispatchForTarget(gfx::CommandList& command_list, uint32_t target_it, bool divide_by_locals)
+		void ShaderPass::DispatchForTarget(edge::gfx::CommandList& command_list, uint32_t target_it, bool divide_by_locals)
 		{
 			uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
 
@@ -414,7 +414,7 @@ namespace engine
 			command_list.Dispatch(group_x, group_y, group_z);
 		}
 
-		void ShaderPass::FinalizeTarget(gfx::CommandList& command_list, uint32_t binding_point, uint32_t target)
+		void ShaderPass::FinalizeTarget(edge::gfx::CommandList& command_list, uint32_t binding_point, uint32_t target)
 		{
 			ReadResource(binding_point, target, ~0u);
 			ResolveDependencies(command_list);

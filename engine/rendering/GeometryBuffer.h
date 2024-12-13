@@ -2,27 +2,22 @@
 
 #include <vector>
 
-#include "gfx/gfx_structures.h"
+#include <edge/gfx/gfx_structures.h>
 #include "GeometryBufferInterface.h"
 
 namespace engine
 {
-	namespace gfx
-	{
-		class Context;
-	}
-
 	namespace render
 	{
 		class InterleavedGeometryBuffer final : public GeometryBuffer
 		{
 		public:
-			InterleavedGeometryBuffer(gfx::ResourceLoader& loader, const GeometryBufferCreateInfo& create_info);
+			InterleavedGeometryBuffer(edge::gfx::ResourceLoader& loader, const GeometryBufferCreateInfo& create_info);
 			~InterleavedGeometryBuffer();
 
 			void Flush() override;
 
-			void BindVertexBuffers(gfx::CommandList& command_list) override;
+			void BindVertexBuffers(edge::gfx::CommandList& command_list) override;
 
 			uint64_t GetBufferAddress(VertexAttributeFlag flag = {}) override;
 
@@ -36,12 +31,12 @@ namespace engine
 		class DeinterleavedGeometryBuffer final : public GeometryBuffer
 		{
 		public:
-			DeinterleavedGeometryBuffer(gfx::ResourceLoader& loader, const GeometryBufferCreateInfo& create_info);
+			DeinterleavedGeometryBuffer(edge::gfx::ResourceLoader& loader, const GeometryBufferCreateInfo& create_info);
 			~DeinterleavedGeometryBuffer();
 
 			void Flush() override;
 
-			void BindVertexBuffers(gfx::CommandList& command_list) override;
+			void BindVertexBuffers(edge::gfx::CommandList& command_list) override;
 
 			virtual uint64_t GetBufferAddress(VertexAttributeFlag flag = {}) override;
 

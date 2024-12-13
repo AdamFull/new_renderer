@@ -3,7 +3,7 @@
 #include <reactive/function.h>
 #include <hash.hpp>
 #include <container/hash_map.h>
-#include "runtime/InputEvents.h"
+#include <edge/runtime/InputEvents.h>
 
 namespace engine
 {
@@ -23,13 +23,13 @@ namespace engine
 	struct FInputAxis
 	{
 		EAxisType type{};
-		utl::hash_map<KeyCode, f32> keyValue{};
+		utl::hash_map<edge::KeyCode, f32> keyValue{};
 		utl::vector<utl::reactive::function<void(f32)>> callbacks{};
 	};
 
 	struct FInputAction
 	{
-		utl::vector<KeyCode> keys{};
+		utl::vector<edge::KeyCode> keys{};
 		//KeyState state{ KeyState::eReleased };
 		//utl::vector<utl::reactive::function<void(KeyState)>> callbacks{};
 	};
@@ -40,12 +40,12 @@ namespace engine
 		void Create();
 		void Update(f32 dt);
 
-		void OnInputEvent(const InputEvent& input_event);
+		void OnInputEvent(const edge::InputEvent& input_event);
 
 		template<class... _Args>
 		void RegisterAction(const char* action_name, _Args&& ...args)
 		{
-			std::array<KeyCode, sizeof...(_Args)> keys{ {args...} };
+			std::array<edge::KeyCode, sizeof...(_Args)> keys{ {args...} };
 			
 			auto& action = m_inputActions[utl::murmur_hash_64(action_name)];
 			action.keys.insert(action.keys.end(), keys.begin(), keys.end());
@@ -89,19 +89,19 @@ namespace engine
 		//void HandleKeyInput(KeyCode code, EKeyState state);
 		//void HandleAxisInput(f32 x, f32 y, f32 xmax, f32 ymax);
 
-		void UnpackAxisValues(utl::hash_map<KeyCode, f32>& map) {}
+		void UnpackAxisValues(utl::hash_map<edge::KeyCode, f32>& map) {}
 
 		template<class... _Args>
-		void UnpackAxisValues(utl::hash_map<KeyCode, f32>& map, KeyCode key, f32 value, _Args&&... args) 
+		void UnpackAxisValues(utl::hash_map<edge::KeyCode, f32>& map, edge::KeyCode key, f32 value, _Args&&... args)
 		{ 
 			map[key] = value; 
 			UnpackAxisValues(map, std::forward<_Args>(args)...);
 		}
 
 		template<class... _Args>
-		void UnpackAxisValues(utl::hash_map<KeyCode, f32>& map, _Args&&... args) { static_assert(true, "Incorrect argument types. Should be EKeyCode:f32."); }
+		void UnpackAxisValues(utl::hash_map<edge::KeyCode, f32>& map, _Args&&... args) { static_assert(true, "Incorrect argument types. Should be EKeyCode:f32."); }
 	private:
-		CKeyDecoder m_keyDecoder{};
+		edge::CKeyDecoder m_keyDecoder{};
 
 		utl::hash_map<u64, FInputAction> m_inputActions{};
 		utl::hash_map<u64, FInputAxis> m_inputAxis{};

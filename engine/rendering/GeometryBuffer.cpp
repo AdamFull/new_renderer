@@ -1,8 +1,8 @@
 #include "GeometryBuffer.h"
 
-#include "gfx/gfx_context.h"
+#include <edge/gfx/gfx_context.h>
 
-#include <util/util.h>
+#include <edge/util/util.h>
 
 #include <hash.hpp>
 
@@ -12,15 +12,15 @@ namespace engine
 {
 	namespace render
 	{
-		inline uint32_t GetVertexFormatSizeBytes(gfx::Format format)
+		inline uint32_t GetVertexFormatSizeBytes(edge::gfx::Format format)
 		{
 			switch (format)
 			{
-			case gfx::Format::eR8G8B8A8Unorm: return 4u; break;
-			case gfx::Format::eR32G32Sfloat:
-			case gfx::Format::eR16G16B16A16Unorm: return 8u; break;
-			case gfx::Format::eR32G32B32Sfloat: return 12u; break;
-			case gfx::Format::eR32G32B32A32Sfloat: return 16u; break;
+			case edge::gfx::Format::eR8G8B8A8Unorm: return 4u; break;
+			case edge::gfx::Format::eR32G32Sfloat:
+			case edge::gfx::Format::eR16G16B16A16Unorm: return 8u; break;
+			case edge::gfx::Format::eR32G32B32Sfloat: return 12u; break;
+			case edge::gfx::Format::eR32G32B32A32Sfloat: return 16u; break;
 			default:
 				break;
 			}
@@ -74,7 +74,7 @@ namespace engine
 
 
 
-		GeometryBuffer::GeometryBuffer(gfx::ResourceLoader& resource_loader) :
+		GeometryBuffer::GeometryBuffer(edge::gfx::ResourceLoader& resource_loader) :
 			resource_loader{ resource_loader }
 		{
 		}
@@ -91,12 +91,12 @@ namespace engine
 
 			if (!index_data.data.empty())
 			{
-				TryFlushBuffer(&index_data.buffer, index_data.data, gfx::BufferUsageFlag::eIndexBuffer);
+				TryFlushBuffer(&index_data.buffer, index_data.data, edge::gfx::BufferUsageFlag::eIndexBuffer);
 				index_data.data.clear();
 			}
 		}
 
-		void GeometryBuffer::BindIndexBuffer(gfx::CommandList& command_list)
+		void GeometryBuffer::BindIndexBuffer(edge::gfx::CommandList& command_list)
 		{
 			if (index_data.buffer)
 			{
@@ -104,7 +104,7 @@ namespace engine
 			}
 		}
 
-		void GeometryBuffer::Bind(gfx::CommandList& command_list)
+		void GeometryBuffer::Bind(edge::gfx::CommandList& command_list)
 		{
 			BindIndexBuffer(command_list);
 			BindVertexBuffers(command_list);
@@ -121,20 +121,20 @@ namespace engine
 			index_data.count += count;
 		}
 
-		gfx::VertexLayout const& GeometryBuffer::GetVertexLayout() const
+		edge::gfx::VertexLayout const& GeometryBuffer::GetVertexLayout() const
 		{
 			return vertex_layout;
 		}
 
-		void GeometryBuffer::TryFlushBuffer(gfx::Buffer** buffer_ptr, const std::vector<uint8_t>& data, gfx::BufferUsageFlags usage)
+		void GeometryBuffer::TryFlushBuffer(edge::gfx::Buffer** buffer_ptr, const std::vector<uint8_t>& data, edge::gfx::BufferUsageFlags usage)
 		{
 			ZoneScoped;
 
-			gfx::Context& context = resource_loader.GetContext();
+			edge::gfx::Context& context = resource_loader.GetContext();
 
 			if (!*buffer_ptr)
 			{
-				gfx::BufferCreateInfo create_info{};
+				edge::gfx::BufferCreateInfo create_info{};
 				create_info.size = data.size();
 				create_info.count = 1ull;
 				create_info.usage = usage;
@@ -146,7 +146,7 @@ namespace engine
 			{
 				context.Destroy(*buffer_ptr);
 
-				gfx::BufferCreateInfo create_info{};
+				edge::gfx::BufferCreateInfo create_info{};
 				create_info.size = data.size();
 				create_info.count = 1ull;
 				create_info.usage = usage;
@@ -154,7 +154,7 @@ namespace engine
 				*buffer_ptr = context.CreateBuffer(create_info);
 			}
 
-			gfx::BufferUpdateInfo buffer_update_info{};
+			edge::gfx::BufferUpdateInfo buffer_update_info{};
 			buffer_update_info.dst_buffer = *buffer_ptr;
 			buffer_update_info.update_size = data.size();
 
@@ -166,7 +166,7 @@ namespace engine
 
 
 
-		InterleavedGeometryBuffer::InterleavedGeometryBuffer(gfx::ResourceLoader& resource_loader, const GeometryBufferCreateInfo& create_info) :
+		InterleavedGeometryBuffer::InterleavedGeometryBuffer(edge::gfx::ResourceLoader& resource_loader, const GeometryBufferCreateInfo& create_info) :
 			GeometryBuffer{ resource_loader }
 		{
 			uint32_t offset{ 0u };
@@ -203,12 +203,12 @@ namespace engine
 
 			if (!vertex_data.data.empty())
 			{
-				TryFlushBuffer(&vertex_data.buffer, vertex_data.data, gfx::BufferUsageFlag::eVertexBuffer);
+				TryFlushBuffer(&vertex_data.buffer, vertex_data.data, edge::gfx::BufferUsageFlag::eVertexBuffer);
 				vertex_data.data.clear();
 			}
 		}
 
-		void InterleavedGeometryBuffer::BindVertexBuffers(gfx::CommandList& command_list)
+		void InterleavedGeometryBuffer::BindVertexBuffers(edge::gfx::CommandList& command_list)
 		{
 			const uint32_t stride{ 0u };
 			uint64_t offset{ 0ull };
@@ -252,7 +252,7 @@ namespace engine
 		}
 
 
-		DeinterleavedGeometryBuffer::DeinterleavedGeometryBuffer(gfx::ResourceLoader& resource_loader, const GeometryBufferCreateInfo& create_info) :
+		DeinterleavedGeometryBuffer::DeinterleavedGeometryBuffer(edge::gfx::ResourceLoader& resource_loader, const GeometryBufferCreateInfo& create_info) :
 			GeometryBuffer{ resource_loader }
 		{
 			for (auto& desc : create_info.attribute_descriptions)
@@ -289,16 +289,16 @@ namespace engine
 			{
 				if (!vertex_data.data.empty())
 				{
-					TryFlushBuffer(&vertex_data.buffer, vertex_data.data, gfx::BufferUsageFlag::eVertexBuffer);
+					TryFlushBuffer(&vertex_data.buffer, vertex_data.data, edge::gfx::BufferUsageFlag::eVertexBuffer);
 					vertex_data.data.clear();
 				}
 			}
 		}
 
-		void DeinterleavedGeometryBuffer::BindVertexBuffers(gfx::CommandList& command_list)
+		void DeinterleavedGeometryBuffer::BindVertexBuffers(edge::gfx::CommandList& command_list)
 		{
 			uint32_t buffer_count{ 0u };
-			std::array<gfx::Buffer*, k_max_attribure_description> vertex_buffers{};
+			std::array<edge::gfx::Buffer*, k_max_attribure_description> vertex_buffers{};
 			std::array<uint32_t, k_max_attribure_description> strides{};
 			std::array<uint64_t, k_max_attribure_description> offsets{};
 

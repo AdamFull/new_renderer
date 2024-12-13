@@ -1,45 +1,40 @@
 #pragma once
 
-#include <engine/interface/filesystem/VirtualFileSystemInterface.h>
+#include <edge/filesystem/VirtualFileSystemInterface.h>
 #include "RendererInterface.h"
 #include "RenderResourceContainer.h"
 
 #include "render_graph/ShaderPass.h"
 #include <memory>
 
-namespace engine
+namespace edge
 {
 	class Window;
+}
 
-	namespace gfx
-	{
-		class Context;
-		class QueryPool;
-		class Sampler;
-		class ResourceLoader;
-	}
-
+namespace engine
+{
 	namespace render
 	{
 		class Renderer : public IRenderer
 		{
 		public:
-			Renderer(Window* window, filesystem::IVirtualFileSystemInterface* vfs);
+			Renderer(edge::Window* window, edge::filesystem::IVirtualFileSystemInterface* vfs);
 			~Renderer();
 
-			uint32_t AddRenderResource(std::string_view path, gfx::Sampler* sampler = nullptr) override;
-			uint32_t AddRenderResource(const TextureResourceCreateInfo& create_info, gfx::Sampler* sampler = nullptr) override;
+			uint32_t AddRenderResource(std::string_view path, edge::gfx::Sampler* sampler = nullptr) override;
+			uint32_t AddRenderResource(const TextureResourceCreateInfo& create_info, edge::gfx::Sampler* sampler = nullptr) override;
 
-			uint32_t AddRenderResource(const gfx::BufferCreateInfo& create_info) override;
+			uint32_t AddRenderResource(const edge::gfx::BufferCreateInfo& create_info) override;
 
 			void AddMaterial(const shlib::Material& material) override;
 
 			void Render(float delta_time) override;
 
-			gfx::ResourceLoader& GetResourceLoader() override;
-			gfx::ResourceLoader const& GetResourceLoader() const override;
+			edge::gfx::ResourceLoader& GetResourceLoader() override;
+			edge::gfx::ResourceLoader const& GetResourceLoader() const override;
 
-			gfx::Context& GetContext() override;
+			edge::gfx::Context& GetContext() override;
 
 			GeometryBuffer& RequestInterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) override;
 			GeometryBuffer& RequestDeinterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) override;
@@ -52,10 +47,10 @@ namespace engine
 		private:
 			void BuildGraph();
 		private:
-			std::unique_ptr<gfx::FilesystemWrapper> fs;
+			std::unique_ptr<edge::gfx::FilesystemWrapper> fs;
 
-			std::unique_ptr<gfx::Context> gfx_context{};
-			std::unique_ptr<gfx::ResourceLoader> resource_loader{};
+			std::unique_ptr<edge::gfx::Context> gfx_context{};
+			std::unique_ptr<edge::gfx::ResourceLoader> resource_loader{};
 			std::unique_ptr<ExecutionContext> render_context{};
 			std::unique_ptr<IRenderWorld> render_world{};
 

@@ -3,10 +3,8 @@ project(application)
 
 find_package(Tracy CONFIG REQUIRED)
 
-add_subdirectory(runtime)
 add_subdirectory(media)
 add_subdirectory(rendering)
-add_subdirectory(filesystem)
 #add_subdirectory(scripting)
 add_subdirectory(world)
 add_subdirectory(integrations)
@@ -39,8 +37,6 @@ target_link_libraries(${PROJECT_NAME}
     PRIVATE Tracy::TracyClient
 
 	PUBLIC glm_module
-	PUBLIC virtual_filesystem
-	PRIVATE runtime
 	PRIVATE engine_rendering
     PRIVATE engine_ui
 	PRIVATE media_engine

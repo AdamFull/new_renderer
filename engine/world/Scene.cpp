@@ -9,11 +9,11 @@
 #include <meshoptimizer.h>
 
 #include "../rendering/Rendering.h"
-#include "../rendering/gfx/gfx_structures.h"
-#include "../rendering/gfx/gfx_enum.h"
+#include <edge/gfx/gfx_structures.h>
+#include <edge/gfx/gfx_enum.h>
 
-#include <util/util.h>
-#include <util/fs_helper.h>
+#include <edge/util/util.h>
+#include <edge/util/fs_helper.h>
 #include <logger.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -40,20 +40,20 @@ namespace engine
 			return render::VertexAttributeFlag::ePosition;
 		}
 
-		gfx::Format GetVertexFormat(const easygltf::Accessor& accessor)
+		edge::gfx::Format GetVertexFormat(const easygltf::Accessor& accessor)
 		{
 			if (accessor.type == easygltf::base::enumerators::accessor_type::vec4_type)
 			{
 				switch (accessor.componentType)
 				{
-				case easygltf::base::enumerators::component_type::byte_type: return gfx::Format::eR8G8B8A8Sint; break;
-				case easygltf::base::enumerators::component_type::ubyte_type: return gfx::Format::eR8G8B8A8Unorm; break;
-				case easygltf::base::enumerators::component_type::short_type: return gfx::Format::eR16G16B16A16Sint; break;
-				case easygltf::base::enumerators::component_type::ushort_type: return gfx::Format::eR16G16B16A16Unorm; break;
-				case easygltf::base::enumerators::component_type::int_type: return gfx::Format::eR32G32B32A32Sint; break;
-				case easygltf::base::enumerators::component_type::uint_type: return gfx::Format::eR32G32B32A32Uint; break;
-				case easygltf::base::enumerators::component_type::float_type: return gfx::Format::eR32G32B32A32Sfloat; break;
-				case easygltf::base::enumerators::component_type::double_type: return gfx::Format::eR64G64B64A64Sfloat; break;
+				case easygltf::base::enumerators::component_type::byte_type: return edge::gfx::Format::eR8G8B8A8Sint; break;
+				case easygltf::base::enumerators::component_type::ubyte_type: return edge::gfx::Format::eR8G8B8A8Unorm; break;
+				case easygltf::base::enumerators::component_type::short_type: return edge::gfx::Format::eR16G16B16A16Sint; break;
+				case easygltf::base::enumerators::component_type::ushort_type: return edge::gfx::Format::eR16G16B16A16Unorm; break;
+				case easygltf::base::enumerators::component_type::int_type: return edge::gfx::Format::eR32G32B32A32Sint; break;
+				case easygltf::base::enumerators::component_type::uint_type: return edge::gfx::Format::eR32G32B32A32Uint; break;
+				case easygltf::base::enumerators::component_type::float_type: return edge::gfx::Format::eR32G32B32A32Sfloat; break;
+				case easygltf::base::enumerators::component_type::double_type: return edge::gfx::Format::eR64G64B64A64Sfloat; break;
 				default:
 					break;
 				}
@@ -62,14 +62,14 @@ namespace engine
 			{
 				switch (accessor.componentType)
 				{
-				case easygltf::base::enumerators::component_type::byte_type: return gfx::Format::eR8G8B8Sint; break;
-				case easygltf::base::enumerators::component_type::ubyte_type: return gfx::Format::eR8G8B8Unorm; break;
-				case easygltf::base::enumerators::component_type::short_type: return gfx::Format::eR16G16B16Sint; break;
-				case easygltf::base::enumerators::component_type::ushort_type: return gfx::Format::eR16G16B16Unorm; break;
-				case easygltf::base::enumerators::component_type::int_type: return gfx::Format::eR32G32B32Sint; break;
-				case easygltf::base::enumerators::component_type::uint_type: return gfx::Format::eR32G32B32Uint; break;
-				case easygltf::base::enumerators::component_type::float_type: return gfx::Format::eR32G32B32Sfloat; break;
-				case easygltf::base::enumerators::component_type::double_type: return gfx::Format::eR64G64B64Sfloat; break;
+				case easygltf::base::enumerators::component_type::byte_type: return edge::gfx::Format::eR8G8B8Sint; break;
+				case easygltf::base::enumerators::component_type::ubyte_type: return edge::gfx::Format::eR8G8B8Unorm; break;
+				case easygltf::base::enumerators::component_type::short_type: return edge::gfx::Format::eR16G16B16Sint; break;
+				case easygltf::base::enumerators::component_type::ushort_type: return edge::gfx::Format::eR16G16B16Unorm; break;
+				case easygltf::base::enumerators::component_type::int_type: return edge::gfx::Format::eR32G32B32Sint; break;
+				case easygltf::base::enumerators::component_type::uint_type: return edge::gfx::Format::eR32G32B32Uint; break;
+				case easygltf::base::enumerators::component_type::float_type: return edge::gfx::Format::eR32G32B32Sfloat; break;
+				case easygltf::base::enumerators::component_type::double_type: return edge::gfx::Format::eR64G64B64Sfloat; break;
 				default:
 					break;
 				}
@@ -78,14 +78,14 @@ namespace engine
 			{
 				switch (accessor.componentType)
 				{
-				case easygltf::base::enumerators::component_type::byte_type: return gfx::Format::eR8G8Sint; break;
-				case easygltf::base::enumerators::component_type::ubyte_type: return gfx::Format::eR8G8Unorm; break;
-				case easygltf::base::enumerators::component_type::short_type: return gfx::Format::eR16G16Sint; break;
-				case easygltf::base::enumerators::component_type::ushort_type: return gfx::Format::eR16G16Unorm; break;
-				case easygltf::base::enumerators::component_type::int_type: return gfx::Format::eR32G32Sint; break;
-				case easygltf::base::enumerators::component_type::uint_type: return gfx::Format::eR32G32Uint; break;
-				case easygltf::base::enumerators::component_type::float_type: return gfx::Format::eR32G32Sfloat; break;
-				case easygltf::base::enumerators::component_type::double_type: return gfx::Format::eR64G64Sfloat; break;
+				case easygltf::base::enumerators::component_type::byte_type: return edge::gfx::Format::eR8G8Sint; break;
+				case easygltf::base::enumerators::component_type::ubyte_type: return edge::gfx::Format::eR8G8Unorm; break;
+				case easygltf::base::enumerators::component_type::short_type: return edge::gfx::Format::eR16G16Sint; break;
+				case easygltf::base::enumerators::component_type::ushort_type: return edge::gfx::Format::eR16G16Unorm; break;
+				case easygltf::base::enumerators::component_type::int_type: return edge::gfx::Format::eR32G32Sint; break;
+				case easygltf::base::enumerators::component_type::uint_type: return edge::gfx::Format::eR32G32Uint; break;
+				case easygltf::base::enumerators::component_type::float_type: return edge::gfx::Format::eR32G32Sfloat; break;
+				case easygltf::base::enumerators::component_type::double_type: return edge::gfx::Format::eR64G64Sfloat; break;
 				default:
 					break;
 				}
@@ -94,33 +94,33 @@ namespace engine
 			{
 				switch (accessor.componentType)
 				{
-				case easygltf::base::enumerators::component_type::byte_type: return gfx::Format::eR8Sint; break;
-				case easygltf::base::enumerators::component_type::ubyte_type: return gfx::Format::eR8Unorm; break;
-				case easygltf::base::enumerators::component_type::short_type: return gfx::Format::eR16Sint; break;
-				case easygltf::base::enumerators::component_type::ushort_type: return gfx::Format::eR16Unorm; break;
-				case easygltf::base::enumerators::component_type::int_type: return gfx::Format::eR32Sint; break;
-				case easygltf::base::enumerators::component_type::uint_type: return gfx::Format::eR32Uint; break;
-				case easygltf::base::enumerators::component_type::float_type: return gfx::Format::eR32Sfloat; break;
-				case easygltf::base::enumerators::component_type::double_type: return gfx::Format::eR64Sfloat; break;
+				case easygltf::base::enumerators::component_type::byte_type: return edge::gfx::Format::eR8Sint; break;
+				case easygltf::base::enumerators::component_type::ubyte_type: return edge::gfx::Format::eR8Unorm; break;
+				case easygltf::base::enumerators::component_type::short_type: return edge::gfx::Format::eR16Sint; break;
+				case easygltf::base::enumerators::component_type::ushort_type: return edge::gfx::Format::eR16Unorm; break;
+				case easygltf::base::enumerators::component_type::int_type: return edge::gfx::Format::eR32Sint; break;
+				case easygltf::base::enumerators::component_type::uint_type: return edge::gfx::Format::eR32Uint; break;
+				case easygltf::base::enumerators::component_type::float_type: return edge::gfx::Format::eR32Sfloat; break;
+				case easygltf::base::enumerators::component_type::double_type: return edge::gfx::Format::eR64Sfloat; break;
 				default:
 					break;
 				}
 			}
 
-			return gfx::Format::eUndefined;
+			return edge::gfx::Format::eUndefined;
 		}
 
-		gfx::IndexType GetIndexType(const easygltf::Accessor& accessor)
+		edge::gfx::IndexType GetIndexType(const easygltf::Accessor& accessor)
 		{
 			switch (accessor.componentType)
 			{
-			case easygltf::base::enumerators::component_type::ushort_type: return gfx::IndexType::eUint16; break;
-			case easygltf::base::enumerators::component_type::uint_type: return gfx::IndexType::eUint32; break;
+			case easygltf::base::enumerators::component_type::ushort_type: return edge::gfx::IndexType::eUint16; break;
+			case easygltf::base::enumerators::component_type::uint_type: return edge::gfx::IndexType::eUint32; break;
 			default:
 				break;
 			}
 
-			return gfx::IndexType::eUint32;
+			return edge::gfx::IndexType::eUint32;
 		}
 
 		render::GeometryBufferCreateInfo GetGeometryBufferCreateInfo(const easygltf::FGLTFRoot& root, const easygltf::Primitive& primitive)
@@ -154,7 +154,7 @@ namespace engine
 		class VFSWrapper : public easygltf::IFilesystemWrapper
 		{
 		public:
-			VFSWrapper(filesystem::IVirtualFileSystemInterface* vfs) : vfs(vfs) {}
+			VFSWrapper(edge::filesystem::IVirtualFileSystemInterface* vfs) : vfs(vfs) {}
 			~VFSWrapper() override = default;
 
 			bool exists(std::string_view path) override
@@ -165,7 +165,7 @@ namespace engine
 			std::string expandFilePath(std::string_view path) override
 			{
 				std::array<char, 1024ull> buffer{}, buffer2{};
-				return std::string(fsh::normalize(fsh::to_posix_path(path, buffer), buffer2));
+				return std::string(edge::fsh::normalize(edge::fsh::to_posix_path(path, buffer), buffer2));
 			}
 
 			bool readFile(std::string_view path, utl::vector<uint8_t>& data) override
@@ -183,24 +183,24 @@ namespace engine
 				return vfs->FileSize(path);
 			}
 		private:
-			filesystem::IVirtualFileSystemInterface* vfs{ nullptr };
+			edge::filesystem::IVirtualFileSystemInterface* vfs{ nullptr };
 		};
 
-		gfx::Filter GetSamplerFilter(int32_t filter)
+		edge::gfx::Filter GetSamplerFilter(int32_t filter)
 		{
-			gfx::Filter gfx_filter{ gfx::Filter::eNearest };
+			edge::gfx::Filter gfx_filter{ edge::gfx::Filter::eNearest };
 
 			switch (filter)
 			{
 			case easygltf::base::enumerators::texture_filter::nearest: 
 			case easygltf::base::enumerators::texture_filter::nearest_mipmap_nearest:
 			case easygltf::base::enumerators::texture_filter::nearest_mipmap_linear:
-				gfx_filter = gfx::Filter::eNearest;
+				gfx_filter = edge::gfx::Filter::eNearest;
 				break;
 			case easygltf::base::enumerators::texture_filter::linear:
 			case easygltf::base::enumerators::texture_filter::linear_mipmap_nearest:
 			case easygltf::base::enumerators::texture_filter::linear_mipmap_linear:
-				gfx_filter = gfx::Filter::eLinear;
+				gfx_filter = edge::gfx::Filter::eLinear;
 				break;
 			default:
 				break;
@@ -209,20 +209,20 @@ namespace engine
 			return gfx_filter;
 		}
 
-		gfx::SamplerAddressMode GetSamplerAddressMode(int32_t address_mode)
+		edge::gfx::SamplerAddressMode GetSamplerAddressMode(int32_t address_mode)
 		{
-			gfx::SamplerAddressMode gfx_address_mode{};
+			edge::gfx::SamplerAddressMode gfx_address_mode{};
 
 			switch (address_mode)
 			{
 			case easygltf::base::enumerators::texture_wrap::repeat:
-				gfx_address_mode = gfx::SamplerAddressMode::eRepeat;
+				gfx_address_mode = edge::gfx::SamplerAddressMode::eRepeat;
 				break;
 			case easygltf::base::enumerators::texture_wrap::clamp_to_edge:
-				gfx_address_mode = gfx::SamplerAddressMode::eClampToEdge;
+				gfx_address_mode = edge::gfx::SamplerAddressMode::eClampToEdge;
 				break;
 			case easygltf::base::enumerators::texture_wrap::mirrored_repeat:
-				gfx_address_mode = gfx::SamplerAddressMode::eMirror;
+				gfx_address_mode = edge::gfx::SamplerAddressMode::eMirror;
 				break;
 			default:
 				break;
@@ -231,9 +231,9 @@ namespace engine
 			return gfx_address_mode;
 		}
 
-		gfx::SamplerCreateInfo GetSamplerCreateInfo(const easygltf::Sampler& sampler)
+		edge::gfx::SamplerCreateInfo GetSamplerCreateInfo(const easygltf::Sampler& sampler)
 		{
-			gfx::SamplerCreateInfo create_info{};
+			edge::gfx::SamplerCreateInfo create_info{};
 
 			create_info.min_filter = GetSamplerFilter(sampler.minFilter);
 			create_info.mag_filter = GetSamplerFilter(sampler.magFilter);
@@ -247,7 +247,7 @@ namespace engine
 			return create_info;
 		}
 
-		Scene::Scene(filesystem::IVirtualFileSystemInterface* vfs, render::IRenderer& renderer) :
+		Scene::Scene(edge::filesystem::IVirtualFileSystemInterface* vfs, render::IRenderer& renderer) :
 			vfs{ vfs },
 			renderer{ renderer }
 		{
@@ -299,13 +299,13 @@ namespace engine
 				auto& sampler = root.samplers[texture.sampler];
 
 				auto sampler_create_info = GetSamplerCreateInfo(sampler);
-				gfx::Sampler* texture_sampler = resource_loader.GetSampler(sampler_create_info);
+				edge::gfx::Sampler* texture_sampler = resource_loader.GetSampler(sampler_create_info);
 
 				// TODO: add ability to override format and sampler params
 				// TODO: find format from materials
 
 				std::array<char, 1024ull> buffer{};
-				auto image_path = fsh::path_append(root.rootDirectory, easygltf::url_decode(image.uri), std::span(buffer));
+				auto image_path = edge::fsh::path_append(root.rootDirectory, easygltf::url_decode(image.uri), std::span(buffer));
 				resources.textures.push_back(renderer.AddRenderResource(image_path, texture_sampler));
 			}
 

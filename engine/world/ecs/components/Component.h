@@ -5,7 +5,7 @@
 
 #include <entt/entt.hpp>
 
-#include <engine/runtime/ui/font/IconsMaterialDesignIcons.h>
+#include <engine/ui/font/IconsMaterialDesignIcons.h>
 #include <engine/ui/ImGuiElements.h>
 #include <engine/ui/Attributes.h>
 

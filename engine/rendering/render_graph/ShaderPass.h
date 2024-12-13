@@ -10,11 +10,6 @@
 
 namespace engine
 {
-	namespace gfx
-	{
-		class Context;
-	}
-
 	namespace render
 	{
 		class IRenderer;
@@ -29,11 +24,11 @@ namespace engine
 
 		struct PassCreateInfo
 		{
-			gfx::Shader* shader{ nullptr };
-			gfx::PipelineCache* pipeline_cache{ nullptr };
-			gfx::SharedDescriptor* shared_descriptor{ nullptr };
+			edge::gfx::Shader* shader{ nullptr };
+			edge::gfx::PipelineCache* pipeline_cache{ nullptr };
+			edge::gfx::SharedDescriptor* shared_descriptor{ nullptr };
 
-			std::function<void(ShaderPass&, gfx::CommandList&, float)> draw_callback{};
+			std::function<void(ShaderPass&, edge::gfx::CommandList&, float)> draw_callback{};
 			std::function<bool()> enabled_callback{};
 
 			std::string debug_name{};
@@ -47,7 +42,7 @@ namespace engine
 
 		struct RenderPassCreateInfo : PassCreateInfo
 		{
-			gfx::PipelineState pipeline_state{};
+			edge::gfx::PipelineState pipeline_state{};
 			std::vector<RenderResourceAttachment> resource_attachments{};
 		};
 
@@ -56,16 +51,16 @@ namespace engine
 			uint32_t binding_point{ ~0u };
 			uint32_t subresource{ ~0u };
 
-			gfx::Texture* texture{ nullptr };
-			gfx::Sampler* sampler{ nullptr };
+			edge::gfx::Texture* texture{ nullptr };
+			edge::gfx::Sampler* sampler{ nullptr };
 
-			gfx::Buffer* buffer{ nullptr };
+			edge::gfx::Buffer* buffer{ nullptr };
 		};
 
 		class UniformHandle
 		{
 		public:
-			UniformHandle(const gfx::ShaderReflection& reflection, const gfx::ShaderResource& resource) :
+			UniformHandle(const edge::gfx::ShaderReflection& reflection, const edge::gfx::ShaderResource& resource) :
 				reflection{ reflection },
 				resource{ resource }
 			{
@@ -78,7 +73,7 @@ namespace engine
 				auto var_begin = reflection.shader_variables.Begin() + resource.range_begin;
 				auto var_end = reflection.shader_variables.Begin() + resource.variable_count;
 
-				auto found = std::find_if(var_begin, var_end, [&name](const gfx::ShaderVariable& variable) { return variable.name_hash == name; });
+				auto found = std::find_if(var_begin, var_end, [&name](const edge::gfx::ShaderVariable& variable) { return variable.name_hash == name; });
 				if (found == var_end)
 				{
 					assert(false && "Uniform variable is not found.");
@@ -98,7 +93,7 @@ namespace engine
 				auto var_begin = reflection.shader_variables.Begin() + resource.range_begin;
 				auto var_end = reflection.shader_variables.Begin() + resource.variable_count;
 
-				auto found = std::find_if(var_begin, var_end, [&name](const gfx::ShaderVariable& variable) { return variable.name_hash == name; });
+				auto found = std::find_if(var_begin, var_end, [&name](const edge::gfx::ShaderVariable& variable) { return variable.name_hash == name; });
 				if (found == var_end)
 				{
 					assert(false && "Uniform variable is not found.");
@@ -118,7 +113,7 @@ namespace engine
 				auto var_begin = reflection.shader_variables.Begin() + resource.range_begin;
 				auto var_end = reflection.shader_variables.Begin() + resource.variable_count;
 
-				auto found = std::find_if(var_begin, var_end, [&name](const gfx::ShaderVariable& variable) { return variable.name_hash == name; });
+				auto found = std::find_if(var_begin, var_end, [&name](const edge::gfx::ShaderVariable& variable) { return variable.name_hash == name; });
 				if (found == var_end)
 				{
 					assert(false && "Uniform variable is not found.");
@@ -150,14 +145,14 @@ namespace engine
 				return resource.name_hash;
 			}
 
-			const gfx::ShaderResource& GetResource()
+			const edge::gfx::ShaderResource& GetResource()
 			{
 				return resource;
 			}
 
 		private:
-			const gfx::ShaderReflection& reflection;
-			const gfx::ShaderResource& resource;
+			const edge::gfx::ShaderReflection& reflection;
+			const edge::gfx::ShaderResource& resource;
 			utl::vector<char> data{};
 		};
 
@@ -167,7 +162,7 @@ namespace engine
 			ShaderPass(ExecutionContext& execution_context, const PassCreateInfo& create_info);
 			virtual ~ShaderPass();
 
-			void Execute(gfx::CommandList& command_list, float delta_time) override;
+			void Execute(edge::gfx::CommandList& command_list, float delta_time) override;
 
 			UniformHandle& GetUniformBlock(uint32_t name_hash);
 			UniformHandle& GetUniformBlock(const char* name);
@@ -179,62 +174,62 @@ namespace engine
 			void WriteResource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource_index);
 			void WriteResource(uint32_t render_resource_id, uint32_t subresource_index);
 
-			void ResolveDependencies(gfx::CommandList& command_list);
+			void ResolveDependencies(edge::gfx::CommandList& command_list);
 
 			void BindResource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index);
 			void BindReadResource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index);
 			void BindWriteResource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index);
 
-			void DispatchForTarget(gfx::CommandList& command_list, uint32_t target_it, bool divide_by_locals);
-			void FinalizeTarget(gfx::CommandList& command_list, uint32_t binding_point, uint32_t target);
+			void DispatchForTarget(edge::gfx::CommandList& command_list, uint32_t target_it, bool divide_by_locals);
+			void FinalizeTarget(edge::gfx::CommandList& command_list, uint32_t binding_point, uint32_t target);
 
-			virtual void Begin(gfx::CommandList& command_list) = 0;
-			virtual void End(gfx::CommandList& command_list) = 0;
+			virtual void Begin(edge::gfx::CommandList& command_list) = 0;
+			virtual void End(edge::gfx::CommandList& command_list) = 0;
 
 			virtual ShaderPassType GetPassType() = 0;
 
 			bool CanExecute() const;
-			void BindResources(gfx::CommandList& command_list);
-			void PushConstantRanges(gfx::CommandList& command_list);
+			void BindResources(edge::gfx::CommandList& command_list);
+			void PushConstantRanges(edge::gfx::CommandList& command_list);
 			void DivideWorkgroupByLocalSizes(uint32_t& group_x, uint32_t& group_y, uint32_t& group_z);
 
 		protected:
-			void ResourceDependency(uint32_t resource_id, uint32_t sebresource_id, gfx::AccessTypeFlags access);
-			void ResourceDependency(uint32_t binding_point, uint32_t resource_id, uint32_t sebresource_id, gfx::AccessTypeFlags access);
+			void ResourceDependency(uint32_t resource_id, uint32_t sebresource_id, edge::gfx::AccessTypeFlags access);
+			void ResourceDependency(uint32_t binding_point, uint32_t resource_id, uint32_t sebresource_id, edge::gfx::AccessTypeFlags access);
 			void CollectProfileData();
-			virtual void _Execute(gfx::CommandList& command_list, float delta_time) = 0;
+			virtual void _Execute(edge::gfx::CommandList& command_list, float delta_time) = 0;
 		protected:
 			ExecutionContext& execution_context;
-			gfx::Context& context;
+			edge::gfx::Context& context;
 
 			std::string debug_name{};
 			bool one_time{ false };
 			bool can_execute{ true };
 
-			std::function<void(ShaderPass&, gfx::CommandList&, float)> draw_callback{};
+			std::function<void(ShaderPass&, edge::gfx::CommandList&, float)> draw_callback{};
 			std::function<bool()> enabled_callback{};
 
-			gfx::SharedDescriptor* shared_descriptor{ nullptr };
-			gfx::ResourceDescriptor* resource_descriptor{ nullptr };
+			edge::gfx::SharedDescriptor* shared_descriptor{ nullptr };
+			edge::gfx::ResourceDescriptor* resource_descriptor{ nullptr };
 
 			std::vector<UniformHandle> uniform_handles;
 			std::unique_ptr<UniformHandle> constant_block;
 
-			gfx::Shader* shader{ nullptr };
-			gfx::RootSignature* root_signature{ nullptr };
-			gfx::Pipeline* pipeline{ nullptr };
+			edge::gfx::Shader* shader{ nullptr };
+			edge::gfx::RootSignature* root_signature{ nullptr };
+			edge::gfx::Pipeline* pipeline{ nullptr };
 
-			gfx::QueryPool* timestamp_query{ nullptr };
+			edge::gfx::QueryPool* timestamp_query{ nullptr };
 			uint64_t execution_time{ 0ull };
 			float timestamp_frequency{ 0.f };
 			float pass_delta_time{ 0.f };
 
 			// Per frame barriers
 
-			std::array<gfx::BufferBarrier, 64ull> buffer_barriers{};
-			std::array<gfx::TextureBarrier, 64ull> texture_barriers{};
-			std::array<gfx::MemoryBarrier, 64ull> memory_barriers{};
-			gfx::ResourceBarrierInfo resource_barriers{};
+			std::array<edge::gfx::BufferBarrier, 64ull> buffer_barriers{};
+			std::array<edge::gfx::TextureBarrier, 64ull> texture_barriers{};
+			std::array<edge::gfx::MemoryBarrier, 64ull> memory_barriers{};
+			edge::gfx::ResourceBarrierInfo resource_barriers{};
 		};
 	}
 }
