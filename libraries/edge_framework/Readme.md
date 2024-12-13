@@ -1,6 +1,6 @@
 # Edge Game Engine Framework
 
-![Edge Logo](attachment:docs/images/logo.webp)
+![Edge Logo](attachment:docs/images/logo.png)
 
 ## About Edge
 Edge is a powerful game engine framework focused on **speed of application deployment** and a **flexible graphical interface** that allows the implementation of almost any modern rendering technology.
