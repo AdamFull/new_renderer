@@ -6,7 +6,7 @@
 
 #include "VkUtil.h"
 
-#include <tracy/Tracy.hpp>
+#include <edge/util/Profiler.h>
 
 namespace edge
 {
@@ -105,7 +105,7 @@ namespace edge
 
 			void VulkanResourceDescriptor::Flush()
 			{
-				ZoneScoped;
+				EDGE_PROFILE_ZONE_SCOPED;
 
 				Handle(device).updateDescriptorSets(write_descriptor_sets.size(), write_descriptor_sets.data(), 0, nullptr);
 			}

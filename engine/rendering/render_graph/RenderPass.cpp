@@ -3,9 +3,9 @@
 #include "../RendererInterface.h"
 #include <edge/gfx/gfx_context.h>
 
-#include <logger.hpp>
+#include <edge/util/Logger.h>
 
-#include <tracy/Tracy.hpp>
+#include <edge/util/Profiler.h>
 
 namespace engine
 {
@@ -60,7 +60,7 @@ namespace engine
 
 		void RenderPass::_Execute(edge::gfx::CommandList& command_list, float delta_time)
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			// TODO: cache it???
 			for (auto& resource_attachment : resource_attachments)
@@ -70,7 +70,7 @@ namespace engine
 				// Wtf? Trying write to static resource????
 				if (render_resource.resource_type & RenderResourceTypeFlag::eStaticImage)
 				{
-					log_error("Trying bind static texture as color attachment!");
+					EDGE_LOGE("Trying bind static texture as color attachment!");
 					assert(false && "INCORRECT OUTPUT RESOURCE BINDING!");
 					continue;
 				}

@@ -5,7 +5,7 @@
 #include "../gfx_util.h"
 
 #include <edge/util/fs_helper.h>
-#include <logger.hpp>
+#include <edge/util/Logger.h>
 
 #include <execution>
 
@@ -280,7 +280,7 @@ namespace edge
 				bool is_compiled_something{ false };
 				if (!is_config_loaded)
 				{
-					log_error("Compiler config was not loaded. Unable to compile modules.");
+					EDGE_LOGE("Compiler config was not loaded. Unable to compile modules.");
 					return;
 				}
 
@@ -288,7 +288,7 @@ namespace edge
 
 				for (const auto& compile_module : config.modules)
 				{
-					log_info("Building module: {}", compile_module.name);
+					EDGE_LOGI("Building module: {}", compile_module.name);
 
 					auto out_module_path = output_path + '/' + compile_module.name;
 					if (!fs.Exists(out_module_path))
@@ -389,7 +389,7 @@ namespace edge
 					std::vector<uint8_t> data = nlohmann::json::to_bson(json);
 					if (!fs.WriteFile(output_path + "/shader_cache.shc", data))
 					{
-						log_error("Failed to save shader cache!");
+						EDGE_LOGE("Failed to save shader cache!");
 					}
 				}
 			}
@@ -457,7 +457,7 @@ namespace edge
 			{
 				if (!is_config_loaded)
 				{
-					log_error("Compiler config was not loaded. Unable to compile shaders.");
+					EDGE_LOGE("Compiler config was not loaded. Unable to compile shaders.");
 					return;
 				}
 			}
@@ -486,7 +486,7 @@ namespace edge
 				std::string preprocessed_code{};
 				if (!shader_compiler->Preprocess(compile_info, shader_code, preprocessed_code, shader_permutation_hash))
 				{
-					log_error("Failed to preprocess shader: {}", compile_info.name);
+					EDGE_LOGE("Failed to preprocess shader: {}", compile_info.name);
 					return false;
 				}
 
@@ -503,7 +503,7 @@ namespace edge
 
 				if (is_type_missmatch)
 				{
-					//log_warning("Type mismatch for shader module named: \"{}\". Previous type: \"{}\" new type: \"{}\". Old shaders will be removed.",
+					//EDGE_LOGW("Type mismatch for shader module named: \"{}\". Previous type: \"{}\" new type: \"{}\". Old shaders will be removed.",
 					//	unique_module_name, get_shader_type_str(current_module.type), get_shader_type_str(shader_meta.type));
 
 					// Removing old shaders
@@ -526,7 +526,7 @@ namespace edge
 
 					// Inform that shader is compiled
 					{
-						log_info("{} shader {}[{}] was {}.", unique_shader_permutation_name_hash, unique_shader_permutation_name, shader_permutation_hash, is_first_time_compile ? "compiled" : "recompiled");
+						EDGE_LOGI("{} shader {}[{}] was {}.", unique_shader_permutation_name_hash, unique_shader_permutation_name, shader_permutation_hash, is_first_time_compile ? "compiled" : "recompiled");
 					}
 
 					// Generate name
@@ -542,7 +542,7 @@ namespace edge
 						ss << output_path << '/' << compiled_shader_path;
 						if (!fs.WriteFile(ss.str(), compiled_spirv))
 						{
-							log_error("Failed to comile shader: {}.", compiled_shader_path);
+							EDGE_LOGE("Failed to comile shader: {}.", compiled_shader_path);
 							return false;
 						}
 					}

@@ -3,7 +3,7 @@
 #include <AL/al.h>
 #include <AL/alc.h>
 
-#include <logger.hpp>
+#include <edge/util/Logger.h>
 
 namespace al
 {
@@ -15,22 +15,22 @@ namespace al
             switch (error)
             {
             case AL_INVALID_NAME:
-                log_error("AL_INVALID_NAME: a bad name (ID) was passed to an OpenAL function");
+                EDGE_LOGE("AL_INVALID_NAME: a bad name (ID) was passed to an OpenAL function");
                 break;
             case AL_INVALID_ENUM:
-                log_error("AL_INVALID_ENUM: an invalid enum value was passed to an OpenAL function");
+                EDGE_LOGE("AL_INVALID_ENUM: an invalid enum value was passed to an OpenAL function");
                 break;
             case AL_INVALID_VALUE:
-                log_error("AL_INVALID_VALUE: an invalid value was passed to an OpenAL function");
+                EDGE_LOGE("AL_INVALID_VALUE: an invalid value was passed to an OpenAL function");
                 break;
             case AL_INVALID_OPERATION:
-                log_error("AL_INVALID_OPERATION: the requested operation is not valid");
+                EDGE_LOGE("AL_INVALID_OPERATION: the requested operation is not valid");
                 break;
             case AL_OUT_OF_MEMORY:
-                log_error("AL_OUT_OF_MEMORY: the requested operation resulted in OpenAL running out of memory");
+                EDGE_LOGE("AL_OUT_OF_MEMORY: the requested operation resulted in OpenAL running out of memory");
                 break;
             default:
-                log_error("UNKNOWN AL ERROR: {}", error);
+                EDGE_LOGE("UNKNOWN AL ERROR: {}", error);
             }
             return false;
         }
@@ -65,22 +65,22 @@ namespace alc
             switch (error)
             {
             case ALC_INVALID_VALUE:
-                log_error("ALC_INVALID_VALUE: an invalid value was passed to an OpenAL function");
+                EDGE_LOGE("ALC_INVALID_VALUE: an invalid value was passed to an OpenAL function");
                 break;
             case ALC_INVALID_DEVICE:
-                log_error("ALC_INVALID_DEVICE: a bad device was passed to an OpenAL function");
+                EDGE_LOGE("ALC_INVALID_DEVICE: a bad device was passed to an OpenAL function");
                 break;
             case ALC_INVALID_CONTEXT:
-                log_error("ALC_INVALID_CONTEXT: a bad context was passed to an OpenAL function");
+                EDGE_LOGE("ALC_INVALID_CONTEXT: a bad context was passed to an OpenAL function");
                 break;
             case ALC_INVALID_ENUM:
-                log_error("ALC_INVALID_ENUM: an unknown enum value was passed to an OpenAL function");
+                EDGE_LOGE("ALC_INVALID_ENUM: an unknown enum value was passed to an OpenAL function");
                 break;
             case ALC_OUT_OF_MEMORY:
-                log_error("ALC_OUT_OF_MEMORY: an unknown enum value was passed to an OpenAL function");
+                EDGE_LOGE("ALC_OUT_OF_MEMORY: an unknown enum value was passed to an OpenAL function");
                 break;
             default:
-                log_error("UNKNOWN ALC ERROR:{} ", error);
+                EDGE_LOGE("UNKNOWN ALC ERROR:{} ", error);
             }
             __debugbreak();
             return false;

@@ -2,7 +2,7 @@
 
 #include <xaudio2.h>
 
-#include <logger.hpp>
+#include <edge/util/Logger.h>
 
 namespace engine
 {
@@ -14,13 +14,13 @@ namespace engine
 			{
 				if (FAILED(::XAudio2Create(&context, 0, XAUDIO2_DEFAULT_PROCESSOR)))
 				{
-					log_error("Failed to initialize xaudio2.");
+					EDGE_LOGE("Failed to initialize xaudio2.");
 					return;
 				}
 
 				if (FAILED(context->CreateMasteringVoice(&mastering_voice)))
 				{
-					log_error("Failed to initialize xaudio2 mastering voice.");
+					EDGE_LOGE("Failed to initialize xaudio2 mastering voice.");
 					return;
 				}
 			}

@@ -6,11 +6,11 @@
 #include "VkSemaphore.h"
 #include "VkFence.h"
 
-#include <logger.hpp>
+#include <edge/util/Logger.h>
 
 #include <glm/glm.hpp>
 
-#include <tracy/Tracy.hpp>
+#include <edge/util/Profiler.h>
 
 namespace edge
 {
@@ -27,7 +27,7 @@ namespace edge
 
 				if (request_extent.width < 1 || request_extent.height < 1)
 				{
-					log_warning("(Swapchain) Image extent ({}, {}) not supported. Selecting ({}, {}).",
+					EDGE_LOGW("(Swapchain) Image extent ({}, {}) not supported. Selecting ({}, {}).",
 						request_extent.width, request_extent.height,
 						current_extent.width, current_extent.height);
 					return current_extent;
@@ -53,12 +53,12 @@ namespace edge
 					// If nothing found, always default to FIFO
 					vk::PresentModeKHR const chosen_present_mode = (chosen_present_mode_it != present_mode_priority_list.end()) ? *chosen_present_mode_it : vk::PresentModeKHR::eFifo;
 
-					log_warning("(Swapchain) Present mode '{}' not supported. Selecting '{}'.", vk::to_string(request_present_mode), vk::to_string(chosen_present_mode));
+					EDGE_LOGW("(Swapchain) Present mode '{}' not supported. Selecting '{}'.", vk::to_string(request_present_mode), vk::to_string(chosen_present_mode));
 					return chosen_present_mode;
 				}
 				else
 				{
-					log_info("(Swapchain) Present mode selected: {}", to_string(request_present_mode));
+					EDGE_LOGI("(Swapchain) Present mode selected: {}", to_string(request_present_mode));
 					return request_present_mode;
 				}
 			}
@@ -78,14 +78,14 @@ namespace edge
 					// If nothing found, default to the first available format
 					vk::SurfaceFormatKHR const& chosen_surface_format = (chosen_surface_format_it != surface_format_priority_list.end()) ? *chosen_surface_format_it : available_surface_formats[0];
 
-					log_warning("(Swapchain) Surface format ({}) not supported. Selecting ({}).",
+					EDGE_LOGW("(Swapchain) Surface format ({}) not supported. Selecting ({}).",
 						vk::to_string(requested_surface_format.format) + ", " + vk::to_string(requested_surface_format.colorSpace),
 						vk::to_string(chosen_surface_format.format) + ", " + vk::to_string(chosen_surface_format.colorSpace));
 					return chosen_surface_format;
 				}
 				else
 				{
-					log_info("(Swapchain) Surface format selected: {}", vk::to_string(requested_surface_format.format) + ", " + vk::to_string(requested_surface_format.colorSpace));
+					EDGE_LOGI("(Swapchain) Surface format selected: {}", vk::to_string(requested_surface_format.format) + ", " + vk::to_string(requested_surface_format.colorSpace));
 					return requested_surface_format;
 				}
 			}
@@ -97,7 +97,7 @@ namespace edge
 					return request_transform;
 				}
 
-				log_warning("(Swapchain) Surface transform '{}' not supported. Selecting '{}'.", vk::to_string(request_transform), vk::to_string(current_transform));
+				EDGE_LOGW("(Swapchain) Surface transform '{}' not supported. Selecting '{}'.", vk::to_string(request_transform), vk::to_string(current_transform));
 				return current_transform;
 			}
 
@@ -120,7 +120,7 @@ namespace edge
 				}
 				else
 				{
-					log_warning("(Swapchain) Composite alpha '{}' not supported. Selecting '{}.", vk::to_string(request_composite_alpha), vk::to_string(*chosen_composite_alpha_it));
+					EDGE_LOGW("(Swapchain) Composite alpha '{}' not supported. Selecting '{}.", vk::to_string(request_composite_alpha), vk::to_string(*chosen_composite_alpha_it));
 					return *chosen_composite_alpha_it;
 				}
 			}
@@ -141,7 +141,7 @@ namespace edge
 					}
 					else
 					{
-						log_warning("(Swapchain) Image usage ({}) requested but not supported.", vk::to_string(flag));
+						EDGE_LOGW("(Swapchain) Image usage ({}) requested but not supported.", vk::to_string(flag));
 					}
 				}
 
@@ -170,7 +170,7 @@ namespace edge
 					{
 						usage_list += to_string(image_usage) + " ";
 					}
-					log_info("(Swapchain) Image usage flags: {}", usage_list);
+					EDGE_LOGI("(Swapchain) Image usage flags: {}", usage_list);
 				}
 
 				return validated_image_usage_flags;
@@ -254,17 +254,17 @@ namespace edge
 				auto& physical_device = device.GetGpu();
 
 				std::vector<vk::SurfaceFormatKHR> surface_formats = Handle(physical_device).getSurfaceFormatsKHR(surface);
-				log_info("Surface supports the following surface formats:");
+				EDGE_LOGI("Surface supports the following surface formats:");
 				for (auto& surface_format : surface_formats)
 				{
-					log_info("  \t{}", vk::to_string(surface_format.format) + ", " + vk::to_string(surface_format.colorSpace));
+					EDGE_LOGI("  \t{}", vk::to_string(surface_format.format) + ", " + vk::to_string(surface_format.colorSpace));
 				}
 
 				std::vector<vk::PresentModeKHR> present_modes = Handle(physical_device).getSurfacePresentModesKHR(surface);
-				log_info("Surface supports the following present modes:");
+				EDGE_LOGI("Surface supports the following present modes:");
 				for (auto& present_mode : present_modes)
 				{
-					log_info("  \t{}", to_string(present_mode));
+					EDGE_LOGI("  \t{}", to_string(present_mode));
 				}
 
 				// Choose best properties based on surface capabilities
@@ -332,7 +332,7 @@ namespace edge
 
 			bool VulkanSwapchain::AcquireNextImage(Semaphore* signal_semaphore, Fence* fence, uint32_t* image_index)
 			{
-				ZoneScoped;
+				EDGE_PROFILE_ZONE_SCOPED;
 
 				vk::Semaphore image_acquired_semaphore{ nullptr };
 				if (signal_semaphore)

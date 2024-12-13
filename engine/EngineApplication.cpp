@@ -2,7 +2,8 @@
 
 //#include <integrations/imgui/DebugSystem.h>
 
-#include <logger.hpp>
+#include <edge/util/Logger.h>
+
 #include "rendering/Rendering.h"
 #include "world/Scene.h"
 
@@ -12,25 +13,17 @@
 
 #include "InputManager.h"
 
-#include <tracy/Tracy.hpp>
+#include <edge/util/Profiler.h>
 
 namespace engine
 {
 	EngineApplication::EngineApplication()
 	{
-#ifdef PLATFORM_ANDROID
-		auto logger = spdlog::android_logger_mt(name.c_str(), name.c_str());
-#else
-		auto logger = spdlog::stdout_color_mt("vulkan_app");
-#endif
+		edge::LoggerCreateInfo logger_create_info{};
+		logger_create_info.logger_name = "Vulkan app";
+		edge::CreateLogger(logger_create_info);
 
-		logger->set_pattern(LOGGER_FORMAT);
-		logger->set_level(spdlog::level::trace);
-
-		//spdlog::register_logger(logger);
-		spdlog::set_default_logger(logger);
-
-		log_info("Starting app: {}", name);
+		EDGE_LOGI("Starting app: {}", name);
 	}
 
 	EngineApplication::~EngineApplication()
@@ -101,7 +94,7 @@ namespace engine
 
 	void EngineApplication::Update(float delta_time)
 	{
-		ZoneScoped;
+		EDGE_PROFILE_ZONE_SCOPED;
 
 		ui->NewFrame(delta_time);
 

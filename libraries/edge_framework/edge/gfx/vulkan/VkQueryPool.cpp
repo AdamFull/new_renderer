@@ -4,7 +4,7 @@
 
 #include "VkUtil.h"
 
-#include <tracy/Tracy.hpp>
+#include <edge/util/Profiler.h>
 
 namespace edge
 {
@@ -73,7 +73,7 @@ namespace edge
 
 			void VulkanQueryPool::GetData(uint64_t first_query, uint32_t query_count, void* data)
 			{
-				ZoneScoped;
+				EDGE_PROFILE_ZONE_SCOPED;
 
 				switch (query_type)
 				{

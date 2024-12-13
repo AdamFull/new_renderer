@@ -5,9 +5,9 @@
 #include <ktx.h>
 
 #include <edge/util/fs_helper.h>
-#include <logger.hpp>
+#include <edge/util/Logger.h>
 
-#include <tracy/Tracy.hpp>
+#include <edge/util/Profiler.h>
 
 #include "native_format/vk_format.h"
 
@@ -348,7 +348,7 @@ namespace edge
 
 			Texture* LoadTexture(std::string_view texture_path) override
 			{
-				ZoneScoped;
+				EDGE_PROFILE_ZONE_SCOPED;
 
 				BeginCommands();
 				using namespace utl;
@@ -558,7 +558,7 @@ namespace edge
 
 			Texture* LoadTexture(const TextureCreateInfo& create_info, std::span<uint8_t> texture_data) override
 			{
-				ZoneScoped;
+				EDGE_PROFILE_ZONE_SCOPED;
 
 				Texture* texture = context.CreateTexture(create_info);
 
@@ -660,7 +660,7 @@ namespace edge
 
 			void BeginBufferUpdate(BufferUpdateInfo& update_info) override
 			{
-				ZoneScoped;
+				EDGE_PROFILE_ZONE_SCOPED;
 
 				BeginCommands();
 
@@ -668,7 +668,7 @@ namespace edge
 
 				if (!(dst_buffer->GetUsageFlags() & BufferUsageFlag::eGpuOnly))
 				{
-					log_warning("This buffer can be updated from the CPU, no additional memory needs to be allocated.");
+					EDGE_LOGW("This buffer can be updated from the CPU, no additional memory needs to be allocated.");
 					update_info.map_info.data = dst_buffer->Map();
 					update_info.map_info.avaliable_size = dst_buffer->GetSize();
 				}
@@ -686,7 +686,7 @@ namespace edge
 
 			void EndBufferUpdate(BufferUpdateInfo& update_info) override
 			{
-				ZoneScoped;
+				EDGE_PROFILE_ZONE_SCOPED;
 
 				Buffer* dst_buffer = update_info.dst_buffer;
 
@@ -730,7 +730,7 @@ namespace edge
 
 			SemaphoreSubmitInfo Submit(SemaphoreSubmitInfo* wait_infos, uint32_t wait_semaphore_count) override
 			{
-				ZoneScoped;
+				EDGE_PROFILE_ZONE_SCOPED;
 
 				if (is_writing_commands)
 				{

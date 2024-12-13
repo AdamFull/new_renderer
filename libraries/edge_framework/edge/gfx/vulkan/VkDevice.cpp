@@ -1,7 +1,7 @@
 #include "VkDevice.h"
 #include "VkPhysicalDevice.h"
 
-#include <logger.hpp>
+#include <edge/util/Logger.h>
 
 #include <volk.h>
 
@@ -62,7 +62,7 @@ namespace edge
 					enabled_extensions.emplace_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
 					enabled_extensions.emplace_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
 
-					log_info("Dedicated Allocation enabled");
+					EDGE_LOGI("Dedicated Allocation enabled");
 				}
 
 				// For performance queries, we also use host query reset since queryPool resets cannot
@@ -76,7 +76,7 @@ namespace edge
 					{
 						enabled_extensions.emplace_back(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
 						enabled_extensions.emplace_back(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
-						log_info("Performance query enabled");
+						EDGE_LOGI("Performance query enabled");
 					}
 				}
 
@@ -84,10 +84,10 @@ namespace edge
 
 				if (enabled_extensions.size() > 0)
 				{
-					log_info("Device supports the following requested extensions:");
+					EDGE_LOGI("Device supports the following requested extensions:");
 					for (auto& extension : enabled_extensions)
 					{
-						log_info("  \t{}", extension);
+						EDGE_LOGI("  \t{}", extension);
 					}
 				}
 

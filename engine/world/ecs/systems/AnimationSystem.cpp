@@ -3,7 +3,7 @@
 #include "../../EntityManager.h"
 #include "../components/components.h"
 
-#include <tracy/Tracy.hpp>
+#include <edge/util/Profiler.h>
 #include <execution>
 
 using namespace engine::world::ecs;
@@ -113,7 +113,7 @@ void CAnimationSystem::__Create()
 
 void CAnimationSystem::__Update(float fDt)
 {
-	ZoneScoped;
+	EDGE_PROFILE_ZONE_SCOPED;
 
 	auto& registry = EntityManager::GetRegistry();
 	auto root = EntityManager::GetRoot();

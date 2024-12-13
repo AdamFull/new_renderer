@@ -17,7 +17,7 @@
 #include <embed/shaders/includes/shlib.h>
 #include <embed/shaders/includes/culling.h>
 
-#include <logger.hpp>
+#include <edge/util/Logger.h>
 
 #include "Globals.h"
 
@@ -26,7 +26,7 @@
 #include <regex>
 
 #include <imgui.h>
-#include <tracy/Tracy.hpp>
+#include <edge/util/Profiler.h>
 
 #ifdef MemoryBarrier
 #undef MemoryBarrier
@@ -287,7 +287,7 @@ namespace engine
 
 		void Renderer::Render(float delta_time)
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			// Update geometry buffers
 			for (auto& geometry_buffer : geometry_buffers)
@@ -705,7 +705,7 @@ namespace engine
 					brdf_lut_target
 				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 					{
-						ZoneScoped;
+						EDGE_PROFILE_ZONE_SCOPED;
 
 						self.BindWriteResource(render_label::write_image0, brdf_lut_target, ~0u);
 
@@ -730,7 +730,7 @@ namespace engine
 					casual_day_4k_cube
 				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 					{
-						ZoneScoped;
+						EDGE_PROFILE_ZONE_SCOPED;
 
 						self.BindWriteResource(render_label::write_image0, irradiance_cube_target, ~0u);
 
@@ -760,7 +760,7 @@ namespace engine
 					casual_day_4k_cube
 				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 					{
-						ZoneScoped;
+						EDGE_PROFILE_ZONE_SCOPED;
 
 						self.WriteResource(render_label::write_image0, prefiltered_cube_target, ~0u);
 
@@ -813,7 +813,7 @@ namespace engine
 					indirect_count_buffer
 				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 					{
-						ZoneScoped;
+						EDGE_PROFILE_ZONE_SCOPED;
 
 						auto* count_buffer = render_context->GetBuffer(indirect_count_buffer);
 
@@ -848,7 +848,7 @@ namespace engine
 					alive_bitset_buffer
 				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 					{
-						ZoneScoped;
+						EDGE_PROFILE_ZONE_SCOPED;
 
 						auto* draw_commands = render_world->GetDrawBuffer();
 						auto* alive_meshes = render_context->GetBuffer(alive_commands_buffer);
@@ -891,7 +891,7 @@ namespace engine
 					alive_offsets_buffer
 				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 					{
-						ZoneScoped;
+						EDGE_PROFILE_ZONE_SCOPED;
 
 						auto* draw_commands = render_world->GetDrawBuffer();
 						auto* alive_bits = render_context->GetBuffer(alive_bitset_buffer);
@@ -932,7 +932,7 @@ namespace engine
 			//		alive_bitset_buffer
 			//	](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 			//		{
-			//			ZoneScoped;
+			//			EDGE_PROFILE_ZONE_SCOPED;
 			//
 			//			auto* draw_commands = render_world->GetDrawBuffer();
 			//			auto* alive_meshes = render_context->GetBuffer(alive_commands_buffer);
@@ -989,7 +989,7 @@ namespace engine
 					indirect_count_buffer
 				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 					{
-						ZoneScoped;
+						EDGE_PROFILE_ZONE_SCOPED;
 			
 						auto* shadow_map = render_context->GetTexture(cascaded_shadows_target);
 						auto* alive_meshes = render_context->GetBuffer(alive_commands_buffer);
@@ -1091,7 +1091,7 @@ namespace engine
 					indirect_count_buffer
 				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 					{
-						ZoneScoped;
+						EDGE_PROFILE_ZONE_SCOPED;
 			
 						auto* shadow_map = render_context->GetTexture(omni_shadows_target);
 						auto* alive_meshes = render_context->GetBuffer(alive_commands_buffer);
@@ -1193,7 +1193,7 @@ namespace engine
 					indirect_count_buffer
 				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 					{
-						ZoneScoped;
+						EDGE_PROFILE_ZONE_SCOPED;
 			
 						auto* shadow_map = render_context->GetTexture(directional_shadows_target);
 						auto* alive_meshes = render_context->GetBuffer(alive_commands_buffer);
@@ -1295,7 +1295,7 @@ namespace engine
 					indirect_count_buffer
 				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 					{
-						ZoneScoped;
+						EDGE_PROFILE_ZONE_SCOPED;
 			
 						auto* backbuffer = render_context->GetTexture(backbuffer_resource);
 						auto* alive_meshes = render_context->GetBuffer(alive_commands_buffer);
@@ -1373,7 +1373,7 @@ namespace engine
 					omni_shadows_target
 				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 					{
-						ZoneScoped;
+						EDGE_PROFILE_ZONE_SCOPED;
 
 						auto* alive_meshes = render_context->GetBuffer(alive_commands_buffer);
 						auto* argument_buffer = render_context->GetBuffer(indirect_draw_commands);
@@ -1435,7 +1435,7 @@ namespace engine
 					zbuffer_depth_target
 				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 					{
-						ZoneScoped;
+						EDGE_PROFILE_ZONE_SCOPED;
 			
 						self.BindWriteResource(render_label::write_image0, motion_vectors_target, ~0u);
 						self.BindReadResource(render_label::sample_image0, zbuffer_depth_target, ~0u);
@@ -1462,7 +1462,7 @@ namespace engine
 					hdr0_history
 				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 					{
-						ZoneScoped;
+						EDGE_PROFILE_ZONE_SCOPED;
 			
 						self.BindReadResource(render_label::sample_image0, input_target, ~0u);
 						self.BindWriteResource(render_label::write_image0, hdr0_history, ~0u);
@@ -1494,7 +1494,7 @@ namespace engine
 						enabled = &postprocess.fxaa.enable
 					](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 						{
-							ZoneScoped;
+							EDGE_PROFILE_ZONE_SCOPED;
 			
 							self.BindReadResource(render_label::sample_image0, input_target, ~0u);
 							self.BindWriteResource(render_label::write_image0, output_target, ~0u);
@@ -1523,7 +1523,7 @@ namespace engine
 						motion_vectors_target
 					](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 						{
-							ZoneScoped;
+							EDGE_PROFILE_ZONE_SCOPED;
 			
 							self.BindReadResource(render_label::sample_image0, input_target, ~0u);
 							self.BindReadResource(render_label::sample_image1, motion_vectors_target, ~0u);
@@ -1557,7 +1557,7 @@ namespace engine
 							hdr0_div2
 						](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 							{
-								ZoneScoped;
+								EDGE_PROFILE_ZONE_SCOPED;
 			
 								self.BindReadResource(render_label::sample_image0, input_target, ~0u);
 								self.BindWriteResource(render_label::write_image0, hdr0_div2, ~0u);
@@ -1582,7 +1582,7 @@ namespace engine
 							zbuffer_depth_target
 						](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 							{
-								ZoneScoped;
+								EDGE_PROFILE_ZONE_SCOPED;
 			
 								self.BindReadResource(render_label::sample_image0, input_target, ~0u);
 								self.BindReadResource(render_label::sample_image1, hdr0_div2, ~0u);
@@ -1619,7 +1619,7 @@ namespace engine
 							hdr0_div2
 						](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 							{
-								ZoneScoped;
+								EDGE_PROFILE_ZONE_SCOPED;
 			
 								self.BindReadResource(render_label::sample_image0, input_target, ~0u);
 								self.BindWriteResource(render_label::write_image0, hdr0_div2, ~0u);
@@ -1643,7 +1643,7 @@ namespace engine
 								bloom_target
 							](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 								{
-									ZoneScoped;
+									EDGE_PROFILE_ZONE_SCOPED;
 			
 									self.WriteResource(render_label::write_image0, bloom_target, ~0u);
 			
@@ -1667,7 +1667,7 @@ namespace engine
 								bloom_target
 							](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 								{
-									ZoneScoped;
+									EDGE_PROFILE_ZONE_SCOPED;
 			
 									auto target = render_context->GetTexture(bloom_target);
 			
@@ -1702,7 +1702,7 @@ namespace engine
 							bloom_target
 						](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 							{
-								ZoneScoped;
+								EDGE_PROFILE_ZONE_SCOPED;
 			
 								auto target = render_context->GetTexture(bloom_target);
 			
@@ -1739,7 +1739,7 @@ namespace engine
 							dirt_mask_texture
 						](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 							{
-								ZoneScoped;
+								EDGE_PROFILE_ZONE_SCOPED;
 			
 								self.BindWriteResource(render_label::write_image0, output_target, ~0u);
 								self.BindReadResource(render_label::sample_image0, input_target, ~0u);
@@ -1777,7 +1777,7 @@ namespace engine
 							histogram_buffer
 						](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 							{
-								ZoneScoped;
+								EDGE_PROFILE_ZONE_SCOPED;
 			
 								self.BindReadResource(render_label::sample_image0, input_target, ~0u);
 								self.BindWriteResource(render_label::histogram_buffer, histogram_buffer, ~0u);
@@ -1808,7 +1808,7 @@ namespace engine
 							input_target
 						](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 							{
-								ZoneScoped;
+								EDGE_PROFILE_ZONE_SCOPED;
 			
 								self.BindReadResource(render_label::histogram_buffer, histogram_buffer, ~0u);
 								self.BindWriteResource(render_label::write_image0, avg_brightness_target, ~0u);
@@ -1845,7 +1845,7 @@ namespace engine
 							avg_brightness_target
 						](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 							{
-								ZoneScoped;
+								EDGE_PROFILE_ZONE_SCOPED;
 			
 								self.BindWriteResource(render_label::write_image0, output_target, ~0u);
 								self.BindReadResource(render_label::sample_image0, input_target, ~0u);
@@ -1883,7 +1883,7 @@ namespace engine
 					final_target
 				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 					{
-						ZoneScoped;
+						EDGE_PROFILE_ZONE_SCOPED;
 			
 						auto* backbuffer = render_context->GetTexture(backbuffer_resource);
 			
@@ -1953,7 +1953,7 @@ namespace engine
 						imgui_font_texture
 					](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 						{
-							ZoneScoped;
+							EDGE_PROFILE_ZONE_SCOPED;
 
 							ImGui::Render();
 

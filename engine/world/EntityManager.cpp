@@ -1,8 +1,8 @@
 #include "EntityManager.h"
 
-#include <logger.hpp>
+#include <edge/util/Logger.h>
 
-#include <tracy/Tracy.hpp>
+#include <edge/util/Profiler.h>
 
 using namespace engine::world;
 
@@ -31,7 +31,7 @@ entt::entity EntityManager::CreateNode(std::string_view name, entt::entity paren
 	if(parent != entt::null)
 		AttachChild(parent, entity);
 	
-	log_debug("[Scene Graph] Entity with id {} was created", static_cast<uint32_t>(entity));
+	EDGE_LOGD("[Scene Graph] Entity with id {} was created", static_cast<uint32_t>(entity));
 
 	return entity;
 }
@@ -40,14 +40,14 @@ void EntityManager::DestroyNode(entt::entity node)
 {
 	DetachChild(node);
 	m_registry.destroy(node);
-	log_debug("[Scene Graph] Entity with id {} was destroyed", static_cast<uint32_t>(node));
+	EDGE_LOGD("[Scene Graph] Entity with id {} was destroyed", static_cast<uint32_t>(node));
 }
 
 void EntityManager::AttachChild(entt::entity parent, entt::entity child)
 {
 	if (parent == child)
 	{
-		log_warning("[Scene Graph] Trying to add parent to parent. Parent entity {}, child entity {}.", static_cast<uint32_t>(parent), static_cast<uint32_t>(child));
+		EDGE_LOGW("[Scene Graph] Trying to add parent to parent. Parent entity {}, child entity {}.", static_cast<uint32_t>(parent), static_cast<uint32_t>(child));
 		return;
 	}
 
@@ -69,7 +69,7 @@ void EntityManager::DetachChild(entt::entity parent, entt::entity child)
 	if (cit != phierarchy.children.end())
 		phierarchy.children.erase(cit);
 	else
-		log_error("[Scene Graph] Entity with is {} is not child of {}", static_cast<uint32_t>(child), static_cast<uint32_t>(parent));
+		EDGE_LOGE("[Scene Graph] Entity with is {} is not child of {}", static_cast<uint32_t>(child), static_cast<uint32_t>(parent));
 
 	auto& chierarchy = m_registry.get<ecs::FHierarchyComponent>(child);
 	chierarchy.parent = entt::null;
@@ -163,7 +163,7 @@ void EntityManager::Create()
 
 void EntityManager::Update(f32 dt)
 {
-	ZoneScoped;
+	EDGE_PROFILE_ZONE_SCOPED;
 	for (auto& system : m_vSystems)
 		system->Update(dt);
 }

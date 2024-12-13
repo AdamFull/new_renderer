@@ -2,7 +2,7 @@
 #include "VkDevice.h"
 #include "VkDebug.h"
 
-#include <tracy/Tracy.hpp>
+#include <edge/util/Profiler.h>
 
 namespace edge
 {
@@ -33,14 +33,14 @@ namespace edge
 
 			void VulkanFence::Wait(uint64_t timeout)
 			{
-				ZoneScoped;
+				EDGE_PROFILE_ZONE_SCOPED;
 
 				vk::Result result = Handle(device).waitForFences(1u, &handle, VK_TRUE, timeout);
 			}
 
 			void VulkanFence::Reset()
 			{
-				ZoneScoped;
+				EDGE_PROFILE_ZONE_SCOPED;
 
 				vk::Result result = Handle(device).resetFences(1u, &handle);
 			}

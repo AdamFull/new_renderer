@@ -1,7 +1,7 @@
 #include "VkImage.h"
 
 #include "VkUtil.h"
-#include <logger.hpp>
+#include <edge/util/Logger.h>
 
 namespace edge
 {
@@ -46,7 +46,7 @@ namespace edge
 			{
 				if (create_info.tiling != vk::ImageTiling::eLinear)
 				{
-					log_warning("Mapping image memory that is not linear");
+					EDGE_LOGW("Mapping image memory that is not linear");
 				}
 
 				return MapMemory();

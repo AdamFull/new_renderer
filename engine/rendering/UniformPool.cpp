@@ -4,7 +4,7 @@
 
 #include <memory.hpp>
 
-#include <tracy/Tracy.hpp>
+#include <edge/util/Profiler.h>
 
 namespace engine
 {
@@ -81,7 +81,7 @@ namespace engine
 
 		void UniformPool::Reset()
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			auto to_delete = std::remove_if(pool_frames.begin(), pool_frames.end(), [](const std::unique_ptr<UniformPoolFrame>& frame)
 				{

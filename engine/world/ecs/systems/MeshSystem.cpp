@@ -8,7 +8,7 @@
 
 #include <engine/render/DebugDraw/DebugDraw.h>
 
-#include <tracy/Tracy.hpp>
+#include <edge/util/Profiler.h>
 
 namespace engine
 {
@@ -28,7 +28,7 @@ namespace engine
 
 			void CMeshSystem::__Update(f32 fDt)
 			{
-				ZoneScoped;
+				EDGE_PROFILE_ZONE_SCOPED;
 
 				auto root = EntityManager::GetRoot();
 				auto& root_component = EntityManager::GetComponent<FRootComponent>(root);

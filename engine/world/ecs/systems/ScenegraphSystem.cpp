@@ -7,7 +7,7 @@
 #include "../components/TransformComponent.h"
 #include "../../EntityManager.h"
 
-#include <tracy/Tracy.hpp>
+#include <edge/util/Profiler.h>
 
 namespace engine
 {
@@ -35,7 +35,7 @@ namespace engine
 
 			void CScenegraphSystem::__Update(f32 fDt)
 			{
-				ZoneScoped;
+				EDGE_PROFILE_ZONE_SCOPED;
 
 				auto& registry = EntityManager::GetRegistry();
 				auto root = EntityManager::GetRoot();

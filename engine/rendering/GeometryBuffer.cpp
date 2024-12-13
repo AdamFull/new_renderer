@@ -6,7 +6,7 @@
 
 #include <hash.hpp>
 
-#include <tracy/Tracy.hpp>
+#include <edge/util/Profiler.h>
 
 namespace engine
 {
@@ -87,7 +87,7 @@ namespace engine
 
 		void GeometryBuffer::Flush()
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			if (!index_data.data.empty())
 			{
@@ -128,7 +128,7 @@ namespace engine
 
 		void GeometryBuffer::TryFlushBuffer(edge::gfx::Buffer** buffer_ptr, const std::vector<uint8_t>& data, edge::gfx::BufferUsageFlags usage)
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			edge::gfx::Context& context = resource_loader.GetContext();
 
@@ -197,7 +197,7 @@ namespace engine
 
 		void InterleavedGeometryBuffer::Flush()
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			GeometryBuffer::Flush();
 
@@ -281,7 +281,7 @@ namespace engine
 
 		void DeinterleavedGeometryBuffer::Flush()
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			GeometryBuffer::Flush();
 

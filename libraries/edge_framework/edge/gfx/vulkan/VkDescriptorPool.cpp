@@ -1,7 +1,7 @@
 #include "VkDescriptorPool.h"
 #include "VkDevice.h"
 
-#include <tracy/Tracy.hpp>
+#include <edge/util/Profiler.h>
 
 namespace edge
 {
@@ -121,7 +121,7 @@ namespace edge
 
 			void DescriptorPool::Reset()
 			{
-				ZoneScoped;
+				EDGE_PROFILE_ZONE_SCOPED;
 
 				Handle(device).resetDescriptorPool(handle);
 				allocated_descriptors.clear();
@@ -136,7 +136,7 @@ namespace edge
 
 			DescriptorSet& DescriptorPool::Allocate(DescriptorSetLayout& layout, std::string_view debug_name)
 			{
-				ZoneScoped;
+				EDGE_PROFILE_ZONE_SCOPED;
 
 				vk::DescriptorSetAllocateInfo alloc_info{};
 				alloc_info.descriptorPool = handle;
@@ -161,7 +161,7 @@ namespace edge
 
 			vk::Result DescriptorPool::Free(DescriptorSet& descriptor_set)
 			{
-				ZoneScoped;
+				EDGE_PROFILE_ZONE_SCOPED;
 
 				if (descriptor_set.handle)
 				{

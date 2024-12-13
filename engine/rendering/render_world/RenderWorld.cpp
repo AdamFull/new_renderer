@@ -3,7 +3,7 @@
 
 #include <glm/gtx/quaternion.hpp>
 
-#include <tracy/Tracy.hpp>
+#include <edge/util/Profiler.h>
 
 #include "../Globals.h"
 
@@ -78,7 +78,7 @@ namespace engine
 
 		void RenderWorld::UpdateRenderCamera(uint32_t camera_id, const glm::vec3& translation, const glm::quat& rotation)
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			auto& world_resource = world_resources[camera_id];
 			assert(world_resource.type == WorldResourceType::eCamera);
@@ -160,7 +160,7 @@ namespace engine
 
 		void RenderWorld::UpdateRenderCamera(uint32_t camera_id, const glm::mat4& view, const glm::mat4& projection, bool perspective, uint32_t width, uint32_t height)
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			auto& world_resource = world_resources[camera_id];
 			auto& camera = world_cameras->Get(world_resource.resource_id);
@@ -232,7 +232,7 @@ namespace engine
 
 		void RenderWorld::UpdateNode(uint32_t node_id, const glm::mat4& matrix)
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			auto& world_resource = world_resources[node_id];
 			assert(world_resource.type == WorldResourceType::eNode);
@@ -265,7 +265,7 @@ namespace engine
 
 		void RenderWorld::AddGeometryDraw(uint32_t camera_id, uint32_t node_id, uint32_t mesh_id)
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			uint32_t draw_index = draw_count++;
 
@@ -376,7 +376,7 @@ namespace engine
 
 		void RenderWorld::AddLight(const shlib::LightCommit& light_data)
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			auto light_index = light_count++;
 			auto& new_light = scene_lights->Get(light_index);
@@ -386,7 +386,7 @@ namespace engine
 
 		void RenderWorld::AddShadow(const shlib::CascadedShadowCommit& shadow_data)
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			auto shadow_index = cascaded_shadow_count++;
 			auto& new_shadow = scene_cascaded_shadows->Get(shadow_index);
@@ -396,7 +396,7 @@ namespace engine
 
 		void RenderWorld::AddShadow(const shlib::OmniShadowCommit& shadow_data)
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			auto shadow_index = omni_shadow_count++;
 			auto& new_shadow = omni_shadows->Get(shadow_index);
@@ -406,7 +406,7 @@ namespace engine
 
 		void RenderWorld::AddShadow(const shlib::SpotShadowCommit& shadow_data)
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			auto shadow_index = spot_shadow_count++;
 			auto& new_shadow = spot_shadows->Get(shadow_index);
@@ -416,7 +416,7 @@ namespace engine
 
 		void RenderWorld::BeginFrame(float delta_time)
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			auto& render_context = renderer.GetRenderContext();
 

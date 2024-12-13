@@ -6,13 +6,13 @@
 
 #include <engine/rendering/native_format/vk_format.h>
 
-#include <logger.hpp>
+#include <edge/util/Logger.h>
 
 #include <shader_compiler/compiler_util.h>
 
 #include <gfx/gfx_context.h>
 
-#include <tracy/Tracy.hpp>
+#include <edge/util/Profiler.h>
 
 namespace engine
 {
@@ -94,9 +94,9 @@ namespace engine
 				upload_frames[i] = std::make_unique<UploadFrame>(context, *queue);
 			}
 
-			log_info("Loading shader cache...");
+			EDGE_LOGI("Loading shader cache...");
 			if (!vfs->ReadBson("/root/embed/rendering/shaders/shader_cache.shc", shader_cache))
-				log_error("Failed to load shader cache. ");
+				EDGE_LOGE("Failed to load shader cache. ");
 
 			const char* mip_generate_shaders[] = { 
 				"utility:generate_mips_4x", 
@@ -155,7 +155,7 @@ namespace engine
 
 		gfx::Texture* UploadContext::LoadTexture(const std::string& texture_path)
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			BeginFrame();
 			using namespace utl;
@@ -439,7 +439,7 @@ namespace engine
 
 		gfx::Texture* UploadContext::LoadTexture(const gfx::TextureCreateInfo& create_info, std::span<uint8_t> texture_data)
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			gfx::Texture* texture = context.CreateTexture(create_info);
 
@@ -483,7 +483,7 @@ namespace engine
 
 		gfx::Shader* UploadContext::LoadShader(const std::string& shader_name)
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			auto name_info = GetShaderNameInfo(shader_name);
 
@@ -494,7 +494,7 @@ namespace engine
 			auto found_library = shader_cache.libraries.find(library_id);
 			if (found_library == shader_cache.libraries.end())
 			{
-				log_error("Failed to find shader library named: {}", name_info.library_name);
+				EDGE_LOGE("Failed to find shader library named: {}", name_info.library_name);
 				assert(false && "FAILED TO FIND SHADER LIBRARY.");
 				return nullptr;
 			}
@@ -505,7 +505,7 @@ namespace engine
 			auto found_shader_module = shader_library.modules.find(shader_id);
 			if (found_shader_module == shader_library.modules.end())
 			{
-				log_error("Failed to find shader with name: \"{}\" in library: {}", name_info.shader_name, name_info.library_name);
+				EDGE_LOGE("Failed to find shader with name: \"{}\" in library: {}", name_info.shader_name, name_info.library_name);
 				assert(false && "FAILED TO FIND SHADER.");
 				return nullptr;
 			}
@@ -521,7 +521,7 @@ namespace engine
 				auto found_shader_pool = shader_library.shaders.find(pool_name);
 				if (found_shader_pool == shader_library.shaders.end())
 				{
-					log_error("Shader pool for module named \"{}\" was not found.", name_info.shader_name);
+					EDGE_LOGE("Shader pool for module named \"{}\" was not found.", name_info.shader_name);
 					return nullptr;
 				}
 
@@ -538,7 +538,7 @@ namespace engine
 					auto file_path = filesystem::fs::path_append("/root/embed/rendering/shaders", shader_data.path);
 					if (!vfs->ReadFile(file_path, shader_data.data))
 					{
-						log_error("Failed to load shader: {}.", shader_data.path);
+						EDGE_LOGE("Failed to load shader: {}.", shader_data.path);
 						return nullptr;
 					}
 				}
@@ -570,7 +570,7 @@ namespace engine
 
 		void UploadContext::BeginBufferUpdate(gfx::BufferUpdateInfo& update_info)
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			BeginFrame();
 
@@ -578,7 +578,7 @@ namespace engine
 			
 			if (!(dst_buffer->GetUsageFlags() & gfx::BufferUsageFlag::eGpuOnly))
 			{
-				log_warning("This buffer can be updated from the CPU, no additional memory needs to be allocated.");
+				EDGE_LOGW("This buffer can be updated from the CPU, no additional memory needs to be allocated.");
 				update_info.map_info.data = dst_buffer->Map();
 				update_info.map_info.avaliable_size = dst_buffer->GetSize();
 			}
@@ -596,7 +596,7 @@ namespace engine
 
 		void UploadContext::EndBufferUpdate(gfx::BufferUpdateInfo& update_info)
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			gfx::Buffer* dst_buffer = update_info.dst_buffer;
 
@@ -640,7 +640,7 @@ namespace engine
 
 		gfx::SemaphoreSubmitInfo UploadContext::Submit(gfx::SemaphoreSubmitInfo* wait_infos, uint32_t wait_semaphore_count)
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			if (writing_commands)
 			{

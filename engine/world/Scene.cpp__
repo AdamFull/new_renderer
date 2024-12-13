@@ -8,7 +8,7 @@
 
 #include <meshoptimizer.h>
 
-#include <logger.hpp>
+#include <edge/util/Logger.h>
 #include <glm/gtc/type_ptr.hpp>
 
 #include <engine/profiler/Profiler.h>
@@ -152,7 +152,7 @@ void CScene::MakeGenerateScene(const std::string& path)
 
 	if (root.meshes.empty())
 	{
-		log_error("[Scene] No meshes to duplicate found.");
+		EDGE_LOGE("[Scene] No meshes to duplicate found.");
 		return;
 	}
 
@@ -294,7 +294,7 @@ void CScene::LoadNode(const easygltf::FGLTFRoot& root, const entt::entity parent
 
 	auto new_node = EntityManager::CreateNode(node.name);
 
-	log_info("[Scene] Loadind node: {}:{}.", node.name, node_index);
+	EDGE_LOGI("[Scene] Loadind node: {}:{}.", node.name, node_index);
 
 	m_temporary.nodeToEntity[node_index] = new_node;
 
@@ -586,7 +586,7 @@ void CScene::LoadAnimations(const easygltf::FGLTFRoot& root)
 				channel.path = EPathType::eScale;
 
 			if (source.target.path == "weights") {
-				log_warning("[Scene] Weights channel is not yet supported. Skipping.");
+				EDGE_LOGW("[Scene] Weights channel is not yet supported. Skipping.");
 				continue;
 			}
 			channel.samplerIndex = source.sampler;
@@ -603,7 +603,7 @@ void CScene::LoadAnimations(const easygltf::FGLTFRoot& root)
 		root_component.animations.emplace_back(animation);
 	}
 
-	log_info("[Scene] Loaded {} animations.", root_component.animations.size());
+	EDGE_LOGI("[Scene] Loaded {} animations.", root_component.animations.size());
 }
 
 void CScene::LoadSkins(const easygltf::FGLTFRoot& root)
@@ -644,5 +644,5 @@ void CScene::LoadSkins(const easygltf::FGLTFRoot& root)
 		root_component.skins.emplace_back(skin);
 	}
 
-	log_info("[Scene] Loaded {} skins (skeletons).", root_component.skins.size());
+	EDGE_LOGI("[Scene] Loaded {} skins (skeletons).", root_component.skins.size());
 }

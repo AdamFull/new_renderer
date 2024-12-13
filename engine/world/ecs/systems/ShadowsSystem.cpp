@@ -9,7 +9,7 @@
 #include "../components/SpotLightComponent.h"
 #include "../components/MeshComponent.h"
 
-#include <tracy/Tracy.hpp>
+#include <edge/util/Profiler.h>
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -35,7 +35,7 @@ namespace engine
 
 			void CShadowsSystem::__Update(f32 fDt)
 			{
-				ZoneScoped;
+				EDGE_PROFILE_ZONE_SCOPED;
 
 				// TODO: get current player camera?
 				static const uint32_t main_camera_id{ 2u };

@@ -7,7 +7,7 @@
 
 #include <engine/InputManager.h>
 
-#include <tracy/Tracy.hpp>
+#include <edge/util/Profiler.h>
 
 constexpr const f32 mouse_scale{ 50.f };
 constexpr const f32 movement_scale{ 2.f };
@@ -31,7 +31,7 @@ void CInputSystem::__Create()
 
 void CInputSystem::__Update(f32 fDt)
 {
-	ZoneScoped;
+	EDGE_PROFILE_ZONE_SCOPED;
 
 	m_deltaTime = fDt;
 

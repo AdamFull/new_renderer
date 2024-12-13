@@ -1,6 +1,6 @@
 #include "VkPhysicalDevice.h"
 
-#include <logger.hpp>
+#include <edge/util/Logger.h>
 #include <vulkan/vulkan_to_string.hpp>
 
 namespace edge
@@ -21,13 +21,13 @@ namespace edge
 				for (uint8_t byte : properties.pipelineCacheUUID)
 					uuid_ss << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(byte);
 
-				log_info("Found GPU: {}", properties.deviceName.data());
-				log_debug("  \tDevice ID: {}", properties.deviceID);
-				log_debug("  \tVendor ID: {}", properties.vendorID);
-				log_debug("  \tDriver Version: {}", properties.driverVersion);
-				log_debug("  \tAPI Version: {}", properties.apiVersion);
-				log_debug("  \tDevice Type: {}", vk::to_string(properties.deviceType));
-				log_debug("  \tPipeline Cache UUID: {}", uuid_ss.str());
+				EDGE_LOGI("Found GPU: {}", properties.deviceName.data());
+				EDGE_LOGD("  \tDevice ID: {}", properties.deviceID);
+				EDGE_LOGD("  \tVendor ID: {}", properties.vendorID);
+				EDGE_LOGD("  \tDriver Version: {}", properties.driverVersion);
+				EDGE_LOGD("  \tAPI Version: {}", properties.apiVersion);
+				EDGE_LOGD("  \tDevice Type: {}", vk::to_string(properties.deviceType));
+				EDGE_LOGD("  \tPipeline Cache UUID: {}", uuid_ss.str());
 
 				queue_family_properties = physical_device.getQueueFamilyProperties();
 
@@ -36,10 +36,10 @@ namespace edge
 				// Display supported extensions
 				if (device_extensions.size() > 0)
 				{
-					log_debug("Device supports the following extensions:");
+					EDGE_LOGD("Device supports the following extensions:");
 					for (auto& extension : device_extensions)
 					{
-						log_debug("  \t{}", extension.extensionName.data());
+						EDGE_LOGD("  \t{}", extension.extensionName.data());
 					}
 				}
 			}

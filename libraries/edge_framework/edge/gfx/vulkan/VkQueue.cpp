@@ -9,7 +9,7 @@
 
 #include "VkUtil.h"
 
-#include <tracy/Tracy.hpp>
+#include <edge/util/Profiler.h>
 
 namespace edge
 {
@@ -76,7 +76,7 @@ namespace edge
 
 			void VulkanQueue::Submit(const SubmitInfo& submit_info, Fence* fence) const
 			{
-				ZoneScoped;
+				EDGE_PROFILE_ZONE_SCOPED;
 
 				std::array<vk::SemaphoreSubmitInfo, 16ull> wait_semaphores{};
 				std::array<vk::SemaphoreSubmitInfo, 16ull> signal_semaphores{};
@@ -126,7 +126,7 @@ namespace edge
 
 			void VulkanQueue::Present(const PresentInfo& present_info) const
 			{
-				ZoneScoped;
+				EDGE_PROFILE_ZONE_SCOPED;
 
 				std::array<vk::Semaphore, 16ull> wait_semaphores{};
 				std::array<vk::SwapchainKHR, 16ull> swapchains{};
@@ -174,7 +174,7 @@ namespace edge
 
 			void VulkanQueue::WaitIdle() const
 			{
-				ZoneScoped;
+				EDGE_PROFILE_ZONE_SCOPED;
 
 				handle.waitIdle();
 			}

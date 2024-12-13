@@ -1,6 +1,6 @@
 #include "VkPhysicalDevice.h"
 
-#include <logger.hpp>
+#include <edge/util/Logger.h>
 #include <volk.h>
 
 #include <functional>
@@ -27,19 +27,19 @@ namespace edge
 					// Log debug message
 					if (message_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
 					{
-						log_info("{} - {}: {}", callback_data->messageIdNumber, callback_data->pMessageIdName, callback_data->pMessage);
+						EDGE_LOGI("{} - {}: {}", callback_data->messageIdNumber, callback_data->pMessageIdName, callback_data->pMessage);
 					}
 					else if (message_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
 					{
-						log_info("{} - {}: {}", callback_data->messageIdNumber, callback_data->pMessageIdName, callback_data->pMessage);
+						EDGE_LOGI("{} - {}: {}", callback_data->messageIdNumber, callback_data->pMessageIdName, callback_data->pMessage);
 					}
 					else if (message_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
 					{
-						log_warning("{} - {}: {}", callback_data->messageIdNumber, callback_data->pMessageIdName, callback_data->pMessage);
+						EDGE_LOGW("{} - {}: {}", callback_data->messageIdNumber, callback_data->pMessageIdName, callback_data->pMessage);
 					}
 					else if (message_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
 					{
-						log_error("{} - {}: {}", callback_data->messageIdNumber, callback_data->pMessageIdName, callback_data->pMessage);
+						EDGE_LOGE("{} - {}: {}", callback_data->messageIdNumber, callback_data->pMessageIdName, callback_data->pMessage);
 					}
 					return VK_FALSE;
 				}
@@ -50,23 +50,23 @@ namespace edge
 				{
 					if (flags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
 					{
-						log_error("{}: {}", layer_prefix, message);
+						EDGE_LOGE("{}: {}", layer_prefix, message);
 					}
 					else if (flags & VK_DEBUG_REPORT_WARNING_BIT_EXT)
 					{
-						log_warning("{}: {}", layer_prefix, message);
+						EDGE_LOGW("{}: {}", layer_prefix, message);
 					}
 					else if (flags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT)
 					{
-						log_warning("{}: {}", layer_prefix, message);
+						EDGE_LOGW("{}: {}", layer_prefix, message);
 					}
 					else if (flags & VK_DEBUG_REPORT_DEBUG_BIT_EXT)
 					{
-						log_debug("{}: {}", layer_prefix, message);
+						EDGE_LOGD("{}: {}", layer_prefix, message);
 					}
 					else
 					{
-						log_info("{}: {}", layer_prefix, message);
+						EDGE_LOGI("{}: {}", layer_prefix, message);
 					}
 					return VK_FALSE;
 				}
@@ -89,7 +89,7 @@ namespace edge
 
 					if (!found)
 					{
-						log_error("Validation Layer {} not found", layer);
+						EDGE_LOGE("Validation Layer {} not found", layer);
 						return false;
 					}
 				}
@@ -127,7 +127,7 @@ namespace edge
 						return validation_layers;
 					}
 
-					log_warning("Couldn't enable validation layers (see log for error) - falling back");
+					EDGE_LOGW("Couldn't enable validation layers (see log for error) - falling back");
 				}
 
 				// Else return nothing
@@ -303,7 +303,7 @@ namespace edge
 					has_debug_report = EnableExtension(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
 					if (!has_debug_report)
 					{
-						log_warning("Neither of {} or {} are available; disabling debug reporting", VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+						EDGE_LOGW("Neither of {} or {} are available; disabling debug reporting", VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
 					}
 				}
 #endif
@@ -322,7 +322,7 @@ namespace edge
 						if (strcmp(available_extension.extensionName, VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME) == 0)
 						{
 							validation_features = true;
-							log_info("{} is available, enabling it", VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
+							EDGE_LOGI("{} is available, enabling it", VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
 							EnableExtension(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
 						}
 					}
@@ -335,7 +335,7 @@ namespace edge
 					const bool has_headless_surface = EnableExtension(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
 					if (!has_headless_surface)
 					{
-						log_warning("{} is not available, disabling swapchain creation", VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
+						EDGE_LOGW("{} is not available, disabling swapchain creation", VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
 					}
 				}
 				else
@@ -352,7 +352,7 @@ namespace edge
 				{
 					if (!EnableExtension(extension_name))
 					{
-						log_error("Required instance extension {} not available, cannot run", extension_name);
+						EDGE_LOGE("Required instance extension {} not available, cannot run", extension_name);
 						extension_error = true;
 					}
 				}
@@ -361,7 +361,7 @@ namespace edge
 				{
 					if (!EnableExtension(extension_name))
 					{
-						log_error("Optional instance extension {} not available", extension_name);
+						EDGE_LOGE("Optional instance extension {} not available", extension_name);
 					}
 				}
 
@@ -386,10 +386,10 @@ namespace edge
 
 				if (ValidateLayers(requested_validation_layers, supported_validation_layers))
 				{
-					log_info("Enabled Validation Layers:");
+					EDGE_LOGI("Enabled Validation Layers:");
 					for (const auto& layer : requested_validation_layers)
 					{
-						log_info("	\t{}", layer);
+						EDGE_LOGI("	\t{}", layer);
 					}
 				}
 				else
@@ -569,7 +569,7 @@ namespace edge
 
 				if (selected_gpu_index >= 0)
 				{
-					log_info("Explicitly selecting GPU {}", selected_gpu_index);
+					EDGE_LOGI("Explicitly selecting GPU {}", selected_gpu_index);
 					if (selected_gpu_index > gpus.size() - 1)
 					{
 						throw std::runtime_error("Selected GPU index is not within no. of available GPUs");
@@ -585,7 +585,7 @@ namespace edge
 
 					if (properties.apiVersion < api_version)
 					{
-						log_warning("Device is not supported. Required API version: {}, but device supporting {}.", api_version, properties.apiVersion);
+						EDGE_LOGW("Device is not supported. Required API version: {}, but device supporting {}.", api_version, properties.apiVersion);
 						continue;
 					}
 
@@ -594,7 +594,7 @@ namespace edge
 					{
 						if (!device->IsExtensionSupported(extension_name))
 						{
-							log_info("Device {} is not supporting required extension: {}.", properties.deviceName.data(), extension_name);
+							EDGE_LOGI("Device {} is not supporting required extension: {}.", properties.deviceName.data(), extension_name);
 						}
 					}
 
@@ -631,7 +631,7 @@ namespace edge
 				{
 					if (fallback_device_index < 0)
 					{
-						log_error("Couldn't find a physical device.");
+						EDGE_LOGE("Couldn't find a physical device.");
 						throw std::runtime_error("Couldn't find a physical device.");
 					}
 
@@ -660,14 +660,14 @@ namespace edge
 						}
 						else
 						{
-							log_info("Extension {} found, enabling it", extension_name);
+							EDGE_LOGI("Extension {} found, enabling it", extension_name);
 							enabled_extensions.emplace_back(extension_name);
 						}
 						return true;
 					}
 				}
 
-				log_info("Extension {} not found", extension_name);
+				EDGE_LOGI("Extension {} not found", extension_name);
 				return false;
 			}
 		}

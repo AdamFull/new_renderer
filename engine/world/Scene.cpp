@@ -14,10 +14,10 @@
 
 #include <edge/util/util.h>
 #include <edge/util/fs_helper.h>
-#include <logger.hpp>
+#include <edge/util/Logger.h>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <tracy/Tracy.hpp>
+#include <edge/util/Profiler.h>
 
 #include "EntityManager.h"
 
@@ -281,7 +281,7 @@ namespace engine
 
 		void Scene::Update(float delta_time)
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 			EntityManager::Update(delta_time);
 		}
 
@@ -379,7 +379,7 @@ namespace engine
 
 			auto new_node = EntityManager::CreateNode(node.name);
 
-			log_info("[Scene] Loadind node: {}:{}.", node.name, node_index);
+			EDGE_LOGI("[Scene] Loadind node: {}:{}.", node.name, node_index);
 
 			node_to_entity[node_index] = new_node;
 
@@ -634,7 +634,7 @@ namespace engine
 						channel.path = ecs::EPathType::eScale;
 
 					if (source.target.path == "weights") {
-						log_warning("[Scene] Weights channel is not yet supported. Skipping.");
+						EDGE_LOGW("[Scene] Weights channel is not yet supported. Skipping.");
 						continue;
 					}
 					channel.samplerIndex = source.sampler;
@@ -651,7 +651,7 @@ namespace engine
 				root_component.animations.emplace_back(animation);
 			}
 
-			log_info("[Scene] Loaded {} animations.", root_component.animations.size());
+			EDGE_LOGI("[Scene] Loaded {} animations.", root_component.animations.size());
 		}
 
 		void Scene::LoadSkins(const easygltf::FGLTFRoot& root)
@@ -692,7 +692,7 @@ namespace engine
 				root_component.skins.emplace_back(skin);
 			}
 
-			log_info("[Scene] Loaded {} skins (skeletons).", root_component.skins.size());
+			EDGE_LOGI("[Scene] Loaded {} skins (skeletons).", root_component.skins.size());
 		}
 	}
 }

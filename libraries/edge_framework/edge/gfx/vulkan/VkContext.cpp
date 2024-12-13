@@ -1,7 +1,7 @@
 #include "VkContext.h"
 #include "Config.h"
 
-#include <logger.hpp>
+#include <edge/util/Logger.h>
 #include <edge/runtime/Window.h>
 
 #include "VkPhysicalDevice.h"
@@ -94,7 +94,7 @@ namespace edge
 						[](vk::ExtensionProperties const& ep) { return strcmp(ep.extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME) == 0; });
 					if (debugExtensionIt != available_instance_extensions.end())
 					{
-						log_info("Vulkan debug utils enabled ({})", VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+						EDGE_LOGI("Vulkan debug utils enabled ({})", VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 						instance_builder.AddRequiredExtension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 						VK_EXT_debug_utils_enabled = true;
 					}
@@ -144,7 +144,7 @@ namespace edge
 						[](vk::ExtensionProperties const& ep) { return strcmp(ep.extensionName, VK_EXT_DEBUG_MARKER_EXTENSION_NAME) == 0; });
 					if (debugExtensionIt != available_device_extensions.end())
 					{
-						log_info("Vulkan debug utils enabled ({})", VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
+						EDGE_LOGI("Vulkan debug utils enabled ({})", VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
 						device_extensions.emplace_back(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
 						VK_EXT_debug_marker_enabled = true;
 					}

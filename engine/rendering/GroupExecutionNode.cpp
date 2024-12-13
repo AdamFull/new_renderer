@@ -1,6 +1,6 @@
 #include "GroupExecutionNode.h"
 
-#include <tracy/Tracy.hpp>
+#include <edge/util/Profiler.h>
 
 namespace engine
 {
@@ -24,7 +24,7 @@ namespace engine
 
 		void GroupNode::Execute(edge::gfx::CommandList& command_list, float delta_time)
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			if (enabled_callback && !enabled_callback())
 				return;

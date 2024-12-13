@@ -4,11 +4,11 @@
 #include <edge/gfx/gfx_context.h>
 #include <edge/gfx/gfx_util.h>
 
-#include <logger.hpp>
+#include <edge/util/Logger.h>
 
 #include <hash.hpp>
 
-#include <tracy/Tracy.hpp>
+#include <edge/util/Profiler.h>
 
 namespace engine
 {
@@ -73,7 +73,7 @@ namespace engine
 
 		void ShaderPass::Execute(edge::gfx::CommandList& command_list, float delta_time)
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			if (!can_execute)
 				return;
@@ -123,7 +123,7 @@ namespace engine
 		
 		void ShaderPass::BindResources(edge::gfx::CommandList& command_list)
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			if (!resource_descriptor)
 			{
@@ -191,7 +191,7 @@ namespace engine
 
 		void ShaderPass::ResourceDependency(uint32_t resource_id, uint32_t sebresource_id, edge::gfx::AccessTypeFlags access)
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			auto& render_resource = execution_context.GetResource(resource_id);
 
@@ -234,7 +234,7 @@ namespace engine
 
 		void ShaderPass::ResourceDependency(uint32_t binding_point, uint32_t resource_id, uint32_t sebresource_id, edge::gfx::AccessTypeFlags access)
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			auto& reflection = shader->GetReflection();
 			auto found = std::find_if(reflection.shader_resources.Begin(), reflection.shader_resources.End(), [&binding_point](const edge::gfx::ShaderResource& resource) { return resource.name_hash == binding_point; });
@@ -329,7 +329,7 @@ namespace engine
 
 		void ShaderPass::BindResource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index)
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			if (!resource_descriptor)
 			{

@@ -6,7 +6,7 @@
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 
-#include <logger.hpp>
+#include <edge/util/Logger.h>
 #include "Runtime.h"
 
 namespace edge
@@ -15,7 +15,7 @@ namespace edge
 	{
 		void ErrorCallback(int error, const char* description)
 		{
-			log_error("GLFW Error (code {}): {}", error, description);
+			EDGE_LOGE("GLFW Error (code {}): {}", error, description);
 		}
 
 		inline KeyCode TranslateKeyCode(int key)

@@ -5,7 +5,7 @@
 
 #include "VkUtil.h"
 
-#include <tracy/Tracy.hpp>
+#include <edge/util/Profiler.h>
 
 namespace edge
 {
@@ -77,7 +77,7 @@ namespace edge
 
 			void VulkanSharedDescriptor::Reset()
 			{
-				ZoneScoped;
+				EDGE_PROFILE_ZONE_SCOPED;
 
 				descriptor_pool->Reset();
 
@@ -96,7 +96,7 @@ namespace edge
 
 			ResourceDescriptor* VulkanSharedDescriptor::RequestDescriptors()
 			{
-				ZoneScoped;
+				EDGE_PROFILE_ZONE_SCOPED;
 
 				auto& new_resource_descriptor = allocated_resource_descriptors.emplace_back(new VulkanResourceDescriptor(device));
 

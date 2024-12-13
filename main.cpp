@@ -1,9 +1,8 @@
-#include "EntryPoint.h"
+#include <edge/EntryPoint.h>
 #include <engine/EngineApplication.h>
 
-#include <logger.hpp>
+#include <edge/util/Logger.h>
 
-#include <util/TaskSystem.h>
 #include <iostream>
 
 //#include <DbgHelp.h>

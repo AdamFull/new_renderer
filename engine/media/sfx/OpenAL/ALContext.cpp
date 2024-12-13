@@ -18,19 +18,19 @@ namespace engine
 
 				if (!alcCall(alcCreateContext, context, device, device, nullptr) || !context)
 				{
-					log_error("Failed to create audio context.");
+					EDGE_LOGE("Failed to create audio context.");
 					return;
 				}
 
 				if (!alcCall(alcMakeContextCurrent, current_context, device, context) || current_context != ALC_TRUE)
 				{
-					log_error("Failed to make created audio context as current.");
+					EDGE_LOGE("Failed to make created audio context as current.");
 					return;
 				}
 
 				if (!alCall(alDistanceModel, AL_INVERSE_DISTANCE_CLAMPED))
 				{
-					log_error("Failed to set distance model as inverse clamped. Using default one.");
+					EDGE_LOGE("Failed to set distance model as inverse clamped. Using default one.");
 				}
 			}
 			
@@ -38,12 +38,12 @@ namespace engine
 			{
 				if (!alcCall(alcMakeContextCurrent, current_context, device, nullptr))
 				{
-					log_error("Failed to reset context.");
+					EDGE_LOGE("Failed to reset context.");
 				}
 
 				if (!alcCall(alcDestroyContext, device, context))
 				{
-					log_error("Failed to destroy context.");
+					EDGE_LOGE("Failed to destroy context.");
 					return;
 				}
 

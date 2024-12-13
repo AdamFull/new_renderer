@@ -5,7 +5,7 @@
 #include <glslang/build_info.h>
 
 #include <edge/util/fs_helper.h>
-#include <logger.hpp>
+#include <edge/util/Logger.h>
 
 #include <hash.hpp>
 
@@ -308,7 +308,7 @@ namespace edge
 			{
 				if (!glslang::InitializeProcess())
 				{
-					log_error("Failed to initialize glslang process.");
+					EDGE_LOGE("Failed to initialize glslang process.");
 				}
 			}
 
@@ -338,7 +338,7 @@ namespace edge
 				auto resources = GetResources();
 				if (!shader.preprocess(&resources, k_client_version, ENoProfile, false, false, messages, &preprocessed_code, includer))
 				{
-					log_error("\Preprocess error: In shader \"{}\" \n{}\n{}\n", compile_info.name, shader.getInfoLog(), shader.getInfoDebugLog());
+					EDGE_LOGE("\Preprocess error: In shader \"{}\" \n{}\n{}\n", compile_info.name, shader.getInfoLog(), shader.getInfoDebugLog());
 					return false;
 				}
 
@@ -368,7 +368,7 @@ namespace edge
 				auto resources = GetResources();
 				if (!shader.parse(&resources, k_client_version, false, messages))
 				{
-					log_error("\nParsing error: In shader \"{}\" \n{}\n{}\n", compile_info.name, shader.getInfoLog(), shader.getInfoDebugLog());
+					EDGE_LOGE("\nParsing error: In shader \"{}\" \n{}\n{}\n", compile_info.name, shader.getInfoLog(), shader.getInfoDebugLog());
 					return false;
 				}
 
@@ -377,7 +377,7 @@ namespace edge
 
 				if (!program.link(messages) || !program.mapIO())
 				{
-					log_error("\nLinking error: In shader \"{}\" \n{}\n{}\n", compile_info.name, program.getInfoLog(), program.getInfoDebugLog());
+					EDGE_LOGE("\nLinking error: In shader \"{}\" \n{}\n{}\n", compile_info.name, program.getInfoLog(), program.getInfoDebugLog());
 					return false;
 				}
 
@@ -387,7 +387,7 @@ namespace edge
 				// Failed to translate to spirv
 				if (!intermediate)
 				{
-					log_error("Failed translating to spirv.");
+					EDGE_LOGE("Failed translating to spirv.");
 					return false;
 				}
 
@@ -409,7 +409,7 @@ namespace edge
 				logger.error(error);
 				if (!error.empty())
 				{
-					log_error("\nSPIRV generation error: In shader \"{}\" \n{}", compile_info.name, error);
+					EDGE_LOGE("\nSPIRV generation error: In shader \"{}\" \n{}", compile_info.name, error);
 					return false;
 				}
 
@@ -417,7 +417,7 @@ namespace edge
 				logger.warning(warning);
 				if (!warning.empty())
 				{
-					log_warning("SPIRV generation warnings: In shader \"{}\" \n{}\n", compile_info.name, warning);
+					EDGE_LOGW("SPIRV generation warnings: In shader \"{}\" \n{}\n", compile_info.name, warning);
 				}
 
 				code.resize(spirv_code.size() * sizeof(uint32_t));

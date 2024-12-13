@@ -5,9 +5,9 @@
 #include "../filesystem/native/NativeFileSystem.h"
 
 #include "RuntimeContext.h"
-#include <logger.hpp>
+#include <edge/util/Logger.h>
 
-#include <tracy/Tracy.hpp>
+#include <edge/util/Profiler.h>
 
 #ifdef CreateWindow
 #undef CreateWindow
@@ -25,7 +25,7 @@ namespace edge
 
 		if (!window)
 		{
-			log_error("Window creation failed!");
+			EDGE_LOGE("Window creation failed!");
 			return ExitCode::FatalError;
 		}
 
@@ -52,7 +52,7 @@ namespace edge
 
 	int32_t Runtime::MainLoopFrame()
 	{
-		ZoneScoped;
+		EDGE_PROFILE_ZONE_SCOPED;
 
 		//try
 		{
@@ -89,8 +89,8 @@ namespace edge
 		}
 		//catch (std::exception& e)
 		//{
-		//	log_error("Error Message: {}", e.what());
-		//	log_error("Failed when running application {}", app->GetName());
+		//	EDGE_LOGE("Error Message: {}", e.what());
+		//	EDGE_LOGE("Failed when running application {}", app->GetName());
 		//
 		//	OnAppError(app->GetName());
 		//
@@ -103,7 +103,7 @@ namespace edge
 
 	void Runtime::Update()
 	{
-		ZoneScoped;
+		EDGE_PROFILE_ZONE_SCOPED;
 
 		auto delta_time = counter.GetFrameTime();
 
@@ -124,7 +124,7 @@ namespace edge
 			app->Update(delta_time);
 		}
 
-		FrameMark;
+		EDGE_PROFILE_FRAME_MARK;
 	}
 
 	void Runtime::Terminate(int32_t code)
@@ -228,7 +228,7 @@ namespace edge
 		if (app)
 		{
 			auto execution_time = counter.ElapsedSeconds();
-			log_info("Closing App (Runtime: {:.1f})", execution_time);
+			EDGE_LOGI("Closing App (Runtime: {:.1f})", execution_time);
 
 			auto app_id = app->GetName();
 
@@ -239,7 +239,7 @@ namespace edge
 
 		if (!app)
 		{
-			log_error("Failed to create a valid vulkan app.");
+			EDGE_LOGE("Failed to create a valid vulkan app.");
 			return false;
 		}
 
@@ -252,7 +252,7 @@ namespace edge
 
 		if (!app->Prepare(options))
 		{
-			log_error("Failed to prepare vulkan app.");
+			EDGE_LOGE("Failed to prepare vulkan app.");
 			return false;
 		}
 

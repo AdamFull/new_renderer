@@ -4,10 +4,10 @@
 
 #include "GroupExecutionNode.h"
 
-#include <tracy/Tracy.hpp>
+#include <edge/util/Profiler.h>
 
 #include <format>
-#include <logger.hpp>
+#include <edge/util/Logger.h>
 
 #include "render_graph/RenderPass.h"
 #include "render_graph/ComputePass.h"
@@ -344,7 +344,7 @@ namespace engine
 
 		void RenderContext::Execute(float delta_time)
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			auto& command_list = *current_command_list;
 
@@ -368,7 +368,7 @@ namespace engine
 
 		void RenderContext::Begin()
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			global_uniform_pool->Reset();
 
@@ -430,7 +430,7 @@ namespace engine
 
 		void RenderContext::End()
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			global_resource_descriptor->Flush();
 
@@ -557,7 +557,7 @@ namespace engine
 
 		void RenderContext::UpdateGlobalBinding(uint32_t binding, std::span<const uint8_t> data)
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			if (!global_resource_descriptor)
 			{
@@ -584,7 +584,7 @@ namespace engine
 
 		edge::gfx::CommandList& RenderContext::BeginCommands(bool& surface_updated)
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			if (!frame_active)
 			{
@@ -603,7 +603,7 @@ namespace engine
 
 		void RenderContext::BeginFrame(bool& surface_updated)
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			if (swapchain)
 			{
@@ -645,7 +645,7 @@ namespace engine
 
 		void RenderContext::EndFrame(edge::gfx::SemaphoreSubmitInfo wait_semaphore)
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			current_command_list->End();
 			frame_active = false;
@@ -654,7 +654,7 @@ namespace engine
 
 			try
 			{
-				ZoneScopedN("Submit");
+				EDGE_PROFILE_ZONE_SCOPED_NAMED("Submit");
 
 				// TODO: COMMAND BUFFERS
 				edge::gfx::SubmitInfo submit_info{};
@@ -683,12 +683,12 @@ namespace engine
 			}
 			catch (std::exception error)
 			{
-				log_error("failed to submit Draw command buffer!");
+				EDGE_LOGE("failed to submit Draw command buffer!");
 			}
 
 			if (swapchain)
 			{
-				ZoneScopedN("Present");
+				EDGE_PROFILE_ZONE_SCOPED_NAMED("Present");
 
 				auto* wait_semaphore = current_frame->render_finished;
 
@@ -740,11 +740,11 @@ namespace engine
 
 		bool RenderContext::HandleSurfaceChange(bool force_update)
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			if (!swapchain)
 			{
-				log_warning("Can't handle surface changes in headless mode, skipping.");
+				EDGE_LOGW("Can't handle surface changes in headless mode, skipping.");
 				return false;
 			}
 
@@ -765,7 +765,7 @@ namespace engine
 				surface_height != current_height ||
 				force_update)
 			{
-				ZoneScopedN("Swapchain update");
+				EDGE_PROFILE_ZONE_SCOPED_NAMED("Swapchain update");
 				// Recreate swapchain
 				queue->WaitIdle();
 				UpdateSwapchain(surface_width, surface_height);
@@ -781,7 +781,7 @@ namespace engine
 
 		void RenderContext::UpdateRenderTargets()
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			uint32_t width, height;
 			swapchain->GetSurfaceExtent(width, height);
@@ -821,7 +821,7 @@ namespace engine
 	
 		void RenderContext::UpdateResources()
 		{
-			ZoneScoped;
+			EDGE_PROFILE_ZONE_SCOPED;
 
 			auto image_count = swapchain->GetImageCount();
 

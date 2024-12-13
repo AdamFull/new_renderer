@@ -8,7 +8,7 @@
 #include "../components/RootComponent.h"
 #include "../components/TransformComponent.h"
 
-#include <tracy/Tracy.hpp>
+#include <edge/util/Profiler.h>
 
 #include <execution>
 
@@ -49,7 +49,7 @@ void CSkinningSystem::__Create()
 
 void CSkinningSystem::__Update(f32 fDt)
 {
-	ZoneScoped;
+	EDGE_PROFILE_ZONE_SCOPED;
 
 	auto root = EntityManager::GetRoot();
 	auto& root_component = EntityManager::GetComponent<FRootComponent>(root);

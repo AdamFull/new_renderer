@@ -2,7 +2,7 @@
 #include "VkPhysicalDevice.h"
 #include "VkDevice.h"
 
-#include <logger.hpp>
+#include <edge/util/Logger.h>
 #include <edge/util/util.h>
 
 #include <volk.h>
@@ -76,7 +76,7 @@ namespace edge
 				{
 					vma::TotalStatistics stats;
 					handle.calculateStatistics(&stats);
-					log_info("Total device memory leaked: {} bytes.", stats.total.statistics.allocationBytes);
+					EDGE_LOGI("Total device memory leaked: {} bytes.", stats.total.statistics.allocationBytes);
 					handle.destroy();
 					handle = nullptr;
 				}
