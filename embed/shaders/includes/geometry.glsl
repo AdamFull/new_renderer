@@ -8,7 +8,7 @@
 layout(std140, set = 1, binding = 0) uniform GeometryBuffers
 {
 	GET_PTR_T(float) position;
-	GET_PTR_T(float) color;
+	GET_PTR_T(uint8_t) color;
 	GET_PTR_T(float) texcoord;
 	GET_PTR_T(uint16_t) normal;
 	GET_PTR_T(uint16_t) tangent;
