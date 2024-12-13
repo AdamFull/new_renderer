@@ -17,6 +17,12 @@ file(GLOB EDGE_FRAMEWORK_UTILS_SOURCES FILES *.cpp *.h)
 
 add_library(${PROJECT_NAME} STATIC ${EDGE_FRAMEWORK_UTILS_SOURCES})
 
+add_compile_definitions(
+    #TRACY_ENABLE
+    SPDLOG_USD_STD_FORMAT
+)
+    
+
 set_target_properties(${PROJECT_NAME} PROPERTIES
     CXX_EXTENSIONS OFF
     CXX_STANDARD 20
