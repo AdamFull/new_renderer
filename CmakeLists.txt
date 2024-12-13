@@ -86,7 +86,7 @@ endif()
 target_link_libraries(${PROJECT_NAME} 
     PUBLIC imgui
     PUBLIC utility_lib
-	PRIVATE application
+	PUBLIC application
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES

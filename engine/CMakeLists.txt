@@ -32,7 +32,7 @@ target_include_directories(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-    PRIVATE edge_framework
+    PUBLIC edge_framework
     PUBLIC glm_module
 	PRIVATE engine_rendering
     PRIVATE engine_ui

@@ -11,13 +11,13 @@ file(GLOB EDGE_FRAMEWORK_SOURCES FILES *.cpp *.h)
 add_library(${PROJECT_NAME} STATIC ${EDGE_FRAMEWORK_SOURCES})
 
 if(ANDROID)
-    add_compile_definitions(PLATFORM_ANDROID)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC PLATFORM_ANDROID)
 elseif(WIN32)
-    add_compile_definitions(PLATFORM_WINDOWS)
+    add_compile_definitions(${PROJECT_NAME} PUBLIC PLATFORM_WINDOWS)
 elseif(APPLE)
-    add_compile_definitions(PLATFORM_MACOS)
+    add_compile_definitions(${PROJECT_NAME} PUBLIC PLATFORM_MACOS)
 elseif(UNIX)
-    add_compile_definitions(PLATFORM_LINUX)
+    add_compile_definitions(${PROJECT_NAME} PUBLIC PLATFORM_LINUX)
 endif()
 
 target_include_directories(${PROJECT_NAME} 
