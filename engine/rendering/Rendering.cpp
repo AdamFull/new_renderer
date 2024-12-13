@@ -972,7 +972,7 @@ namespace engine
 			// Draw cascaded shadows
 			{
 				RenderShaderPassCreateInfo create_info{};
-				create_info.shader_name = "lighting:unidirectional_shadow:CASCADED_SHADOW:HAS_TEXCOORD:HAS_NORMAL:TANGENT_VEC4:INDEX_16BIT";
+				create_info.shader_name = "lighting:unidirectional_shadow:CASCADED_SHADOW:HAS_TEXCOORD:HAS_NORMAL:HAS_TANGENT:INDEX_16BIT";
 				create_info.pipeline_state.rasterization_state.cull_mode = edge::gfx::CullModeFlag::eFront;
 			
 				// Depth state
@@ -1074,7 +1074,7 @@ namespace engine
 			// Draw omni shadows
 			{
 				RenderShaderPassCreateInfo create_info{};
-				create_info.shader_name = "lighting:unidirectional_shadow:OMNI_SHADOW:HAS_TEXCOORD:HAS_NORMAL:TANGENT_VEC4:INDEX_16BIT";
+				create_info.shader_name = "lighting:unidirectional_shadow:OMNI_SHADOW:HAS_TEXCOORD:HAS_NORMAL:HAS_TANGENT:INDEX_16BIT";
 				create_info.pipeline_state.rasterization_state.cull_mode = edge::gfx::CullModeFlag::eFront;
 			
 				// Depth state
@@ -1176,7 +1176,7 @@ namespace engine
 			// Draw spot shadows
 			{
 				RenderShaderPassCreateInfo create_info{};
-				create_info.shader_name = "lighting:unidirectional_shadow:HAS_TEXCOORD:HAS_NORMAL:TANGENT_VEC4:INDEX_16BIT";
+				create_info.shader_name = "lighting:unidirectional_shadow:HAS_TEXCOORD:HAS_NORMAL:HAS_TANGENT:INDEX_16BIT";
 				create_info.pipeline_state.rasterization_state.cull_mode = edge::gfx::CullModeFlag::eFront;
 			
 				// Depth state
@@ -1275,7 +1275,7 @@ namespace engine
 			// Geometry draw
 			{
 				RenderShaderPassCreateInfo create_info{};
-				create_info.shader_name = "visibilitybuffer:write:HAS_TEXCOORD:HAS_NORMAL:TANGENT_VEC4:INDEX_16BIT";
+				create_info.shader_name = "visibilitybuffer:write:HAS_TEXCOORD:HAS_NORMAL:HAS_TANGENT:INDEX_16BIT";
 				create_info.pipeline_state.rasterization_state.cull_mode = edge::gfx::CullModeFlag::eFront;
 			
 				// Depth state
@@ -1348,7 +1348,7 @@ namespace engine
 						draw_command.command_stride = sizeof(shlib::DrawIndexedIndirectData);
 						draw_command.argument_offset = draw_call_id * draw_command.command_stride;
 						//draw_command.count_buffer = count_buffer;
-						draw_command.count_offset = 0;
+						draw_command.count_offset = draw_call_id * sizeof(uint32_t);
 			
 						self.Begin(command_list);
 						command_list.DrawIndirect(draw_command);
@@ -1361,7 +1361,7 @@ namespace engine
 			// Resolve materials
 			{
 				ComputeShaderPassCreateInfo create_info{};
-				create_info.shader_name = "visibilitybuffer:shade:HAS_TEXCOORD:HAS_NORMAL:TANGENT_VEC4:INDEX_16BIT";
+				create_info.shader_name = "visibilitybuffer:shade:HAS_TEXCOORD:HAS_NORMAL:HAS_TANGENT:INDEX_16BIT";
 			
 				create_info.draw_callback = [this, 
 					alive_commands_buffer,

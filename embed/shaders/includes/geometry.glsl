@@ -11,7 +11,7 @@ layout(std140, set = 1, binding = 0) uniform GeometryBuffers
 	GET_PTR_T(float) color;
 	GET_PTR_T(float) texcoord;
 	GET_PTR_T(uint16_t) normal;
-	GET_PTR_T(float) tangent;
+	GET_PTR_T(uint16_t) tangent;
 #if defined(JOINTS_16BIT)
 	GET_PTR_T(uint16_t) joint;
 #else
@@ -74,19 +74,16 @@ vec3 GetVertexNormal(uint32_t vertex_index)
 #endif
 }
 
-Tangent GetVertexTangent(uint32_t vertex_index)
+vec4 GetVertexTangent(uint32_t vertex_index)
 {
-#if HAS_TANGENT
-	return Tangent(
-	geometry_buffers.tangent[vertex_index * VTX_TANGENT_ELEM_CNT + 0].data,
-	geometry_buffers.tangent[vertex_index * VTX_TANGENT_ELEM_CNT + 1].data,
-	geometry_buffers.tangent[vertex_index * VTX_TANGENT_ELEM_CNT + 2].data
-#if defined(TANGENT_VEC4)
-	,geometry_buffers.tangent[vertex_index * VTX_TANGENT_ELEM_CNT + 3].data
-#endif
-	);
+#ifdef HAS_TANGENT
+	u16vec2 encoded_tangent = u16vec2(
+		geometry_buffers.tangent[vertex_index * 2 + 0].data,
+		geometry_buffers.tangent[vertex_index * 2 + 1].data);
+
+	return DecodeTangent(encoded_tangent);
 #else
-	return Tangent(0.f);
+	return vec4(0.f);
 #endif
 }
 
@@ -131,7 +128,7 @@ struct FRawVertex
 	vec2 uv;
 	vec3 normal;
 
-	Tangent tangent;
+	vec4 tangent;
 	
 	Joints joints;
 	vec4 weights;

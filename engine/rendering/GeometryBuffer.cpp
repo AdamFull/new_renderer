@@ -354,6 +354,20 @@ namespace engine
 					
 					vert_data.data.insert(vert_data.data.end(), enc_begin, enc_end);
 				}
+				else if (attribute.attribute_flag & VertexAttributeFlag::eTangent)
+				{
+					auto* begin = reinterpret_cast<const glm::vec4*>(attribute.byte_range.data());
+					auto* end = begin + attribute.count;
+
+					std::vector<glm::u16vec2> encoded{};
+					for (auto it = begin; it != end; ++it)
+						encoded.emplace_back(shlib::EncodeTangent(*it));
+
+					auto* enc_begin = reinterpret_cast<const uint8_t*>(encoded.data());
+					auto* enc_end = enc_begin + attribute.count * sizeof(glm::u16vec2);
+
+					vert_data.data.insert(vert_data.data.end(), enc_begin, enc_end);
+				}
 				else
 				{
 					vert_data.data.insert(vert_data.data.end(), attribute.byte_range.begin(), attribute.byte_range.end());

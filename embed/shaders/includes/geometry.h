@@ -20,21 +20,6 @@ SHLIB_NS_BEGIN
 #define VTX_COLOR_ELEM_CNT 3
 #endif
 
-// Define vertex tangent type also dependent on element count
-#if (defined(TANGENT_VEC3) || defined(TANGENT_VEC4))
-#define HAS_TANGENT 1
-#else
-#define HAS_TANGENT 0
-#endif
-
-#if defined(TANGENT_VEC4)
-#define Tangent vec4
-#define VTX_TANGENT_ELEM_CNT 4
-#else // TANGENT_VEC4
-#define Tangent vec3
-#define VTX_TANGENT_ELEM_CNT 3
-#endif // TANGENT_VEC3
-
 // Define joints type
 #if defined(JOINTS_16BIT)
 #define JointIndex uint16_t
@@ -77,6 +62,20 @@ SHLIB_INLINE vec3 DecodeNormal(u16vec2 n)
 	float z = 1.0f - abs(xy.x) - abs(xy.y);
 	xy = z >= 0.0f ? xy : OctWrap(xy);
 	return normalize(vec3(xy, z));
+}
+
+SHLIB_INLINE u16vec2 EncodeTangent(vec4 t)
+{
+	u16vec2 q = EncodeNormal(vec3(t.x, t.y, t.z));
+	q.y = uint16_t((t.w == 1.0f) ? q.y | 1u : q.y & ~1u);
+	return q;
+}
+
+SHLIB_INLINE vec4 DecodeTangent(u16vec2 t)
+{
+	vec3 tangent = DecodeNormal(t);
+	float sign = bool(t.y & 1u) ? 1.0f : -1.0f;
+	return vec4(tangent, sign);
 }
 
 SHLIB_NS_END

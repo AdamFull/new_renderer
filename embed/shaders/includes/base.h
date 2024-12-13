@@ -8,7 +8,9 @@
 #include <cstdint>
 #include <array>
 #include <hash.hpp>
+
 #include <glm/glm.hpp>
+#include <glm/packing.hpp>
 
 #define SHLIB_INLINE inline
 

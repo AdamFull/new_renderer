@@ -288,15 +288,13 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 #endif // HAS_NORMAL
 
 	// INTERPOLATE TANGENT
-#if HAS_TANGENT
-	Tangent tangent0 = vertices[0].tangent;
-	Tangent tangent1 = vertices[1].tangent;
-	Tangent tangent2 = vertices[2].tangent;
+#ifdef HAS_TANGENT
+	vec4 tangent0 = vertices[0].tangent;
+	vec4 tangent1 = vertices[1].tangent;
+	vec4 tangent2 = vertices[2].tangent;
 
-	Tangent tangent = interpolate(tangent0, tangent1, tangent2, bary.barycentrics);
-#if defined(TANGENT_VEC4)
+	vec4 tangent = interpolate(tangent0, tangent1, tangent2, bary.barycentrics);
 	res.tangent = vec4(normalize(mat3(model) * vec3(tangent)), tangent.w);
-#endif // TANGENT_VEC4
 #else	
 	vec3 tangent = (res.uv_dy.t * res.pos_dx - res.uv_dx.t * res.pos_dy) / (res.uv_dx.s * res.uv_dy.t - res.uv_dy.s * res.uv_dx.t); 
 	tangent = normalize(tangent - res.normal * dot(res.normal, tangent));
