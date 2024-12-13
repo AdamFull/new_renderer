@@ -21,6 +21,8 @@
 
 #include "EntityManager.h"
 
+#include <engine/rendering/Globals.h>
+
 namespace engine
 {
 	namespace world
@@ -513,6 +515,9 @@ namespace engine
 			}
 
 			EntityManager::AddComponent<ecs::FCameraComponent>(parent, std::move(camera_component));
+			auto& nw_camera_component = EntityManager::GetComponent<ecs::FCameraComponent>(parent);
+
+			engine::render::main_camera_index = nw_camera_component.frustumID;
 		}
 
 		void Scene::LoadLightComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index)

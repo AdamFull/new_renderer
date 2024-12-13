@@ -94,6 +94,7 @@ namespace engine
 {
 	namespace render
 	{
+		uint32_t main_camera_index{ ~0u };
 		PostProcessData postprocess{};
 
 		class VFSWrapper final : public edge::gfx::FilesystemWrapper
@@ -856,8 +857,9 @@ namespace engine
 						auto* count_buffer = render_context->GetBuffer(indirect_count_buffer);
 						auto* alive_bits = render_context->GetBuffer(alive_bitset_buffer);
 
+						self.WriteResource(alive_commands_buffer, ~0u);
+						self.WriteResource(indirect_draw_commands, ~0u);
 						self.WriteResource(indirect_count_buffer, ~0u);
-						self.WriteResource(alive_bitset_buffer, ~0u);
 
 						self.ResolveDependencies(command_list);
 
@@ -882,43 +884,43 @@ namespace engine
 			}
 
 			// Calculate command offsets
-			{
-				ComputeShaderPassCreateInfo create_info{};
-				create_info.shader_name = "culling:scan:INPUT_BIT_ARRAY";
-
-				create_info.draw_callback = [this,
-					alive_bitset_buffer,
-					alive_offsets_buffer
-				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
-					{
-						EDGE_PROFILE_ZONE_SCOPED;
-
-						auto* draw_commands = render_world->GetDrawBuffer();
-						auto* alive_bits = render_context->GetBuffer(alive_bitset_buffer);
-						auto* alive_offsets = render_context->GetBuffer(alive_offsets_buffer);
-
-						self.ReadResource(alive_bitset_buffer, ~0u);
-						self.WriteResource(alive_offsets_buffer, ~0u);
-
-						self.ResolveDependencies(command_list);
-
-						auto& pc = self.GetConstantBlock();
-						pc.Set(utl::murmur_hash("input_buffer"), alive_bits->GetAddress());
-						pc.Set(utl::murmur_hash("output_buffer"), alive_offsets->GetAddress());
-						pc.Set(utl::murmur_hash("size"), render_world->GetDrawCount());
-						self.PushConstantRanges(command_list);
-
-						self.BindResources(command_list);
-
-						uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
-						group_x = render_world->GetDrawCount();
-
-						self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
-						command_list.Dispatch(group_x, group_y, group_z);
-					};
-
-				render_context->AddNode(render_context->CreateNode(create_info));
-			}
+			//{
+			//	ComputeShaderPassCreateInfo create_info{};
+			//	create_info.shader_name = "culling:scan:INPUT_BIT_ARRAY";
+			//
+			//	create_info.draw_callback = [this,
+			//		alive_bitset_buffer,
+			//		alive_offsets_buffer
+			//	](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+			//		{
+			//			EDGE_PROFILE_ZONE_SCOPED;
+			//
+			//			auto* draw_commands = render_world->GetDrawBuffer();
+			//			auto* alive_bits = render_context->GetBuffer(alive_bitset_buffer);
+			//			auto* alive_offsets = render_context->GetBuffer(alive_offsets_buffer);
+			//
+			//			self.ReadResource(alive_bitset_buffer, ~0u);
+			//			self.WriteResource(alive_offsets_buffer, ~0u);
+			//
+			//			self.ResolveDependencies(command_list);
+			//
+			//			auto& pc = self.GetConstantBlock();
+			//			pc.Set(utl::murmur_hash("input_buffer"), alive_bits->GetAddress());
+			//			pc.Set(utl::murmur_hash("output_buffer"), alive_offsets->GetAddress());
+			//			pc.Set(utl::murmur_hash("size"), render_world->GetDrawCount());
+			//			self.PushConstantRanges(command_list);
+			//
+			//			self.BindResources(command_list);
+			//
+			//			uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
+			//			group_x = render_world->GetDrawCount();
+			//
+			//			self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
+			//			command_list.Dispatch(group_x, group_y, group_z);
+			//		};
+			//
+			//	render_context->AddNode(render_context->CreateNode(create_info));
+			//}
 
 			// Assemble draw commands
 			//{
@@ -1030,7 +1032,7 @@ namespace engine
 						draw_command.draw_count = render_world->GetMeshCount();
 						draw_command.argument_buffer = argument_buffer;
 						draw_command.command_stride = sizeof(shlib::DrawIndexedIndirectData);
-						draw_command.count_buffer = count_buffer;
+						//draw_command.count_buffer = count_buffer;
 			
 						uint32_t draw_call_id{ 0u };
 						self.Begin(command_list);
@@ -1132,7 +1134,7 @@ namespace engine
 						draw_command.draw_count = render_world->GetMeshCount();
 						draw_command.argument_buffer = render_context->GetBuffer(indirect_draw_commands);
 						draw_command.command_stride = sizeof(shlib::DrawIndexedIndirectData);
-						draw_command.count_buffer = render_context->GetBuffer(indirect_count_buffer);
+						//draw_command.count_buffer = render_context->GetBuffer(indirect_count_buffer);
 			
 						uint32_t draw_call_id{ 0u };
 						self.Begin(command_list);
@@ -1234,7 +1236,7 @@ namespace engine
 						draw_command.draw_count = render_world->GetMeshCount();
 						draw_command.argument_buffer = render_context->GetBuffer(indirect_draw_commands);
 						draw_command.command_stride = sizeof(shlib::DrawIndexedIndirectData);
-						draw_command.count_buffer = render_context->GetBuffer(indirect_count_buffer);
+						//draw_command.count_buffer = render_context->GetBuffer(indirect_count_buffer);
 			
 						uint32_t draw_call_id{ 0u };
 						self.Begin(command_list);
@@ -1327,9 +1329,12 @@ namespace engine
 						draw_desc_buffers.draw_descriptions_ptr = alive_meshes->GetAddress();
 						draw_desc_buffers.draw_commands_ptr = argument_buffer->GetAddress();
 			
+						auto camera_id = render_world->GetResourceId(main_camera_index);
+						auto draw_call_id = camera_id * render_world->GetMeshCount();
+
 						auto& constants = self.GetConstantBlock();
-						constants.Set(render_label::call_id, 0u);
-						constants.Set(render_label::camera_id, 0u);
+						constants.Set(render_label::call_id, draw_call_id);
+						constants.Set(render_label::camera_id, camera_id);
 			
 						self.PushConstantRanges(command_list);
 			
@@ -1340,9 +1345,9 @@ namespace engine
 						draw_command.indexed_draw = true;
 						draw_command.draw_count = render_world->GetMeshCount();
 						draw_command.argument_buffer = argument_buffer;
-						draw_command.argument_offset = 0;
 						draw_command.command_stride = sizeof(shlib::DrawIndexedIndirectData);
-						draw_command.count_buffer = count_buffer;
+						draw_command.argument_offset = draw_call_id * draw_command.command_stride;
+						//draw_command.count_buffer = count_buffer;
 						draw_command.count_offset = 0;
 			
 						self.Begin(command_list);

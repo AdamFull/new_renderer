@@ -10,6 +10,8 @@
 
 #include <edge/util/Profiler.h>
 
+#include <engine/rendering/Globals.h>
+
 namespace engine
 {
 	namespace world
@@ -44,7 +46,7 @@ namespace engine
 
 					for (const auto& primitive : mesh_component.primitives)
 					{
-						render_world.AddGeometryDraw(2u, transform.node_index, primitive.mesh);
+						render_world.AddGeometryDraw(render::main_camera_index, transform.node_index, primitive.mesh);
 					}
 				}
 			}
