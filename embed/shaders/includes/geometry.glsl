@@ -10,7 +10,7 @@ layout(std140, set = 1, binding = 0) uniform GeometryBuffers
 	GET_PTR_T(float) position;
 	GET_PTR_T(float) color;
 	GET_PTR_T(float) texcoord;
-	GET_PTR_T(float) normal;
+	GET_PTR_T(uint16_t) normal;
 	GET_PTR_T(float) tangent;
 #if defined(JOINTS_16BIT)
 	GET_PTR_T(uint16_t) joint;
@@ -64,10 +64,11 @@ vec2 GetVertexTexcoord(uint32_t vertex_index)
 vec3 GetVertexNormal(uint32_t vertex_index)
 {
 #ifdef HAS_NORMAL
-	return vec3(
-	geometry_buffers.normal[vertex_index * 3 + 0].data,
-	geometry_buffers.normal[vertex_index * 3 + 1].data,
-	geometry_buffers.normal[vertex_index * 3 + 2].data);
+	u16vec2 encoded_normal = u16vec2(
+		geometry_buffers.normal[vertex_index * 2 + 0].data,
+		geometry_buffers.normal[vertex_index * 2 + 1].data);
+
+	return DecodeNormal(encoded_normal);
 #else
 	return vec3(0.f);
 #endif
