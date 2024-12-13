@@ -34,19 +34,19 @@ vec3 GetVertexPosition(uint32_t vertex_index)
 	geometry_buffers.position[vertex_index * 3 + 2].data);
 }
 
-Color GetVertexColor(uint32_t vertex_index)
+vec4 GetVertexColor(uint32_t vertex_index)
 {
-#if HAS_COLOR
-	return Color(
-	geometry_buffers.color[vertex_index * VTX_COLOR_ELEM_CNT + 0].data,
-	geometry_buffers.color[vertex_index * VTX_COLOR_ELEM_CNT + 1].data,
-	geometry_buffers.color[vertex_index * VTX_COLOR_ELEM_CNT + 2].data
-#if defined(COLOR_VEC4)
-	,geometry_buffers.color[vertex_index * VTX_COLOR_ELEM_CNT + 3].data
-#endif
+#ifdef HAS_COLOR
+	u8vec4 encoded_color = u8vec4(
+		geometry_buffers.color[vertex_index * 4 + 0].data,
+		geometry_buffers.color[vertex_index * 4 + 1].data,
+		geometry_buffers.color[vertex_index * 4 + 2].data,
+		geometry_buffers.color[vertex_index * 4 + 3].data
 	);
+
+	return DecodeColor(encoded_color);
 #else
-	return Color(0.f);
+	return vec4(0.f);
 #endif
 }
 
@@ -123,7 +123,7 @@ Index GetIndex(uint32_t offset)
 struct FRawVertex
 {
 	vec3 position;
-	Color color;
+	vec4 color;
 
 	vec2 uv;
 	vec3 normal;

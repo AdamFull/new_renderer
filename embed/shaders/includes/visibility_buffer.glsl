@@ -302,16 +302,12 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 #endif // TANGENT
 
 	// INTERPOLATE COLOR
-#if HAS_COLOR
-	Color color0 = vertices[0].color;
-	Color color1 = vertices[1].color;
-	Color color2 = vertices[2].color;
+#ifdef HAS_COLOR
+	vec4 color0 = vertices[0].color;
+	vec4 color1 = vertices[1].color;
+	vec4 color2 = vertices[2].color;
 
-#if defined(COLOR_VEC3)
-	res.color = vec4(interpolate(color0, color1, color2, bary.barycentrics), 1.f);
-#else
 	res.color = interpolate(color0, color1, color2, bary.barycentrics);
-#endif // COLOR_VEC3
 
 #else
 	res.color = vec4(1.0);

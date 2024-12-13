@@ -5,21 +5,6 @@
 
 SHLIB_NS_BEGIN
 
-// Define vertex color type dependent on element count
-#if (defined(COLOR_VEC3) || defined(COLOR_VEC4))
-#define HAS_COLOR 1
-#else
-#define HAS_COLOR 0
-#endif
-
-#if defined(COLOR_VEC4)
-#define Color vec4
-#define VTX_COLOR_ELEM_CNT 4
-#else
-#define Color vec3
-#define VTX_COLOR_ELEM_CNT 3
-#endif
-
 // Define joints type
 #if defined(JOINTS_16BIT)
 #define JointIndex uint16_t
@@ -76,6 +61,16 @@ SHLIB_INLINE vec4 DecodeTangent(u16vec2 t)
 	vec3 tangent = DecodeNormal(t);
 	float sign = bool(t.y & 1u) ? 1.0f : -1.0f;
 	return vec4(tangent, sign);
+}
+
+SHLIB_INLINE u8vec4 EncodeColor(vec4 c)
+{
+	return u8vec4(clamp(round(c * 255.0f), 0.0f, 255.0f));
+}
+
+SHLIB_INLINE vec4 DecodeColor(u8vec4 c)
+{
+	return vec4(c) / 255.0f;
 }
 
 SHLIB_NS_END
