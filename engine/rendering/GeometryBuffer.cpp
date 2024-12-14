@@ -382,6 +382,21 @@ namespace engine
 
 					vert_data.data.insert(vert_data.data.end(), enc_begin, enc_end);
 				}
+				else if (attribute.attribute_flag & VertexAttributeFlag::eWeight)
+				{
+					auto* begin = reinterpret_cast<const glm::vec4*>(attribute.byte_range.data());
+					auto* end = begin + attribute.count;
+
+					// Not needed to store 4 floats, because w = 1.0 - x - y - z
+					std::vector<glm::vec3> encoded{};
+					for (auto it = begin; it != end; ++it)
+						encoded.emplace_back(glm::vec3(*it));
+
+					auto* enc_begin = reinterpret_cast<const uint8_t*>(encoded.data());
+					auto* enc_end = enc_begin + attribute.count * sizeof(glm::vec3);
+
+					vert_data.data.insert(vert_data.data.end(), enc_begin, enc_end);
+				}
 				//else if (attribute.attribute_flag & VertexAttributeFlag::eTexCoord)
 				//{
 				//	auto* begin = reinterpret_cast<const glm::vec2*>(attribute.byte_range.data());
