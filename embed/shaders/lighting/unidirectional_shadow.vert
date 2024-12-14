@@ -37,6 +37,7 @@ void main()
 
 	Mesh mesh = GetMesh(draw_info.mesh_index);
 
+	// Sample vertex position
 	vec3 position = GetVertexPosition(vertex_index, mesh.bounds_enc);
 	vec4 local_pos = model_matrix * (vec4(position, 1.0));
 	outPos = vec4(local_pos.xyz / local_pos.w, 1.0);

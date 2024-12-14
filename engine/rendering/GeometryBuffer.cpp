@@ -322,6 +322,22 @@ namespace engine
 			return vertex_datas[index].buffer->GetAddress();
 		}
 
+		template<typename _From, typename _To, typename _Pred>
+		void Transform(VertexData& vdat, const AttributeStream& attr, _Pred&& pred)
+		{
+			auto* begin = reinterpret_cast<const _From*>(attr.byte_range.data());
+			auto* end = begin + attr.count;
+
+			std::vector<_To> encoded{};
+			for (auto it = begin; it != end; ++it)
+				encoded.emplace_back(pred(*it));
+
+			auto* enc_begin = reinterpret_cast<const uint8_t*>(encoded.data());
+			auto* enc_end = enc_begin + attr.count * sizeof(_To);
+
+			vdat.data.insert(vdat.data.end(), enc_begin, enc_end);
+		}
+
 		VertexRange DeinterleavedGeometryBuffer::AddMesh(const std::array<AttributeStream, k_max_attribure_description>& attributes, const IndexStream& indices, shlib::Mesh& mesh)
 		{
 			VertexRange vertex_range{};
@@ -343,7 +359,7 @@ namespace engine
 				auto& vert_data = vertex_datas[index];
 
 				// Maximum vertex size
-				// position: vec3 - 12 bytes
+				// position: vec3 - 12 bytes -> i16vec2 - 6 bytes
 				// texcoord: vec2 - 8 bytes -> u16vec2 - 4 bytes
 				// normal: vec3 - 12 bytes -> u16vec2 - 4 bytes
 				// tangent: vec4 - 16 bytes -> u16vec2 - 4 bytes
@@ -351,99 +367,49 @@ namespace engine
 				// joints: u16vec4/u8vec4 - 8 bytes/4 bytes
 				// weights: vec4 - 16 bytes -> vec3 - 12 bytes
 				// Total(before): 12 + 8 + 12 + 16 + 16 + 8|4 + 16 = 84|88
-				// Total(after): 12 + 4 + 4 + 4 + 4 + 8|4 + 12 = 44|48
+				// Total(after): 12 + 4 + 4 + 4 + 4 + 8|4 + 12 = 38|42
 
 				// TODO: Move it in to mesh compiler
 				if (attribute.attribute_flag & VertexAttributeFlag::ePosition)
 				{
-					//auto* begin = reinterpret_cast<const glm::vec3*>(attribute.byte_range.data());
-					//auto* end = begin + attribute.count;
-					//
-					//std::vector<glm::i16vec3> encoded{};
-					//for (auto it = begin; it != end; ++it)
-					//	encoded.emplace_back(shlib::EncodePosition(*it, mesh.bounds_enc));
-					//
-					//auto* enc_begin = reinterpret_cast<const uint8_t*>(encoded.data());
-					//auto* enc_end = enc_begin + attribute.count * sizeof(glm::i16vec3);
-					//
-					//vert_data.data.insert(vert_data.data.end(), enc_begin, enc_end);
-					vert_data.data.insert(vert_data.data.end(), attribute.byte_range.begin(), attribute.byte_range.end());
+					Transform<glm::vec3, glm::i16vec3>(vert_data, attribute, 
+						[&mesh](const glm::vec3& in)
+						{  return shlib::EncodePosition(in, mesh.bounds_enc); });
+					//vert_data.data.insert(vert_data.data.end(), attribute.byte_range.begin(), attribute.byte_range.end());
 				}
 				else if (attribute.attribute_flag & VertexAttributeFlag::eNormal)
 				{
-					auto* begin = reinterpret_cast<const glm::vec3*>(attribute.byte_range.data());
-					auto* end = begin + attribute.count;
-
-					std::vector<glm::u16vec2> encoded{};
-					for (auto it = begin; it != end; ++it)
-						encoded.emplace_back(shlib::EncodeNormal(*it));
-						//encoded.emplace_back(shlib::EncodeNormal(glm::normalize(normal_encode_mat * (*it))));
-
-					auto* enc_begin = reinterpret_cast<const uint8_t*>(encoded.data());
-					auto* enc_end = enc_begin + attribute.count * sizeof(glm::u16vec2);
-					
-					vert_data.data.insert(vert_data.data.end(), enc_begin, enc_end);
+					Transform<glm::vec3, glm::u16vec2>(vert_data, attribute,
+						[](const glm::vec3& in)
+						{
+							// shlib::EncodeNormal(glm::normalize(normal_encode_mat * (*it)))
+							return shlib::EncodeNormal(in);
+						});
 				}
 				else if (attribute.attribute_flag & VertexAttributeFlag::eTangent)
 				{
-					auto* begin = reinterpret_cast<const glm::vec4*>(attribute.byte_range.data());
-					auto* end = begin + attribute.count;
-
-					std::vector<glm::u16vec2> encoded{};
-					for (auto it = begin; it != end; ++it)
-					{
-						//auto tan_enc = glm::normalize(position_encode_mat * (*it));
-						//encoded.emplace_back(shlib::EncodeTangent(glm::vec4(tan_enc, it->w)));
-						encoded.emplace_back(shlib::EncodeTangent(*it));
-					}
-
-					auto* enc_begin = reinterpret_cast<const uint8_t*>(encoded.data());
-					auto* enc_end = enc_begin + attribute.count * sizeof(glm::u16vec2);
-
-					vert_data.data.insert(vert_data.data.end(), enc_begin, enc_end);
+					Transform<glm::vec4, glm::u16vec2>(vert_data, attribute,
+						[](const glm::vec4& in)
+						{
+							//auto tan_enc = glm::normalize(position_encode_mat * (*it));
+							//encoded.emplace_back(shlib::EncodeTangent(glm::vec4(tan_enc, it->w)));
+							return shlib::EncodeTangent(in);
+						});
 				}
 				else if (attribute.attribute_flag & VertexAttributeFlag::eColor)
 				{
-					auto* begin = reinterpret_cast<const glm::vec4*>(attribute.byte_range.data());
-					auto* end = begin + attribute.count;
-
-					std::vector<glm::u8vec4> encoded{};
-					for (auto it = begin; it != end; ++it)
-						encoded.emplace_back(shlib::EncodeColor(*it));
-
-					auto* enc_begin = reinterpret_cast<const uint8_t*>(encoded.data());
-					auto* enc_end = enc_begin + attribute.count * sizeof(glm::u8vec4);
-
-					vert_data.data.insert(vert_data.data.end(), enc_begin, enc_end);
+					Transform<glm::vec4, glm::u8vec4>(vert_data, attribute,
+						[](const glm::vec4& in) { return shlib::EncodeColor(in); });
 				}
 				else if (attribute.attribute_flag & VertexAttributeFlag::eWeight)
 				{
-					auto* begin = reinterpret_cast<const glm::vec4*>(attribute.byte_range.data());
-					auto* end = begin + attribute.count;
-
-					// Not needed to store 4 floats, because w3 = 1.0f – w0 – w1 – w2
-					std::vector<glm::vec3> encoded{};
-					for (auto it = begin; it != end; ++it)
-						encoded.emplace_back(glm::vec3(*it));
-
-					auto* enc_begin = reinterpret_cast<const uint8_t*>(encoded.data());
-					auto* enc_end = enc_begin + attribute.count * sizeof(glm::vec3);
-
-					vert_data.data.insert(vert_data.data.end(), enc_begin, enc_end);
+					Transform<glm::vec4, glm::vec3>(vert_data, attribute,
+						[](const glm::vec4& in) { return glm::vec3(in); });
 				}
 				else if (attribute.attribute_flag & VertexAttributeFlag::eTexCoord)
 				{
-					auto* begin = reinterpret_cast<const glm::vec2*>(attribute.byte_range.data());
-					auto* end = begin + attribute.count;
-				
-					std::vector<glm::u16vec2> encoded{};
-					for (auto it = begin; it != end; ++it)
-						encoded.emplace_back(shlib::EncodeTexcoord(*it, mesh.uv_enc));
-				
-					auto* enc_begin = reinterpret_cast<const uint8_t*>(encoded.data());
-					auto* enc_end = enc_begin + attribute.count * sizeof(glm::u16vec2);
-				
-					vert_data.data.insert(vert_data.data.end(), enc_begin, enc_end);
+					Transform<glm::vec2, glm::u16vec2>(vert_data, attribute,
+						[&mesh](const glm::vec2& in) { return shlib::EncodeTexcoord(in, mesh.uv_enc); });
 				}
 				else
 				{
