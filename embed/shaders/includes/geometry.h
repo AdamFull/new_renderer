@@ -24,6 +24,36 @@ struct TexcoordBounds
 	vec2 max;
 };
 
+SHLIB_INLINE mat4 MakeEncodePositionMatrix(vec3 bb)
+{
+	vec3 scale = float(1 << 15) / bb;
+	mat4 m = mat4(1.0f);
+	m[0][0] = scale.x;
+	m[1][1] = scale.y;
+	m[2][2] = scale.z;
+	return m;
+}
+
+SHLIB_INLINE mat4 MakeDecodePositionMatrix(vec3 bb)
+{
+	vec3 scale = bb / float(1 << 15);
+	mat4 m = mat4(1.0f);
+	m[0][0] = scale.x;
+	m[1][1] = scale.y;
+	m[2][2] = scale.z;
+	return m;
+}
+
+SHLIB_INLINE i16vec3 EncodePosition(vec3 p, vec3 bb)
+{
+	vec3 scale = float(1 << 15) / bb;
+	return i16vec3(min(ivec3(round(p * scale)), (1 << 15) - 1));
+}
+
+SHLIB_INLINE vec3 DecodePosition(i16vec3 p)
+{
+	return vec3(p);
+}
 
 // Based on https://knarkowicz.wordpress.com/2014/04/16/octahedron-normal-vector-encoding/
 SHLIB_INLINE vec2 OctWrap(vec2 v)

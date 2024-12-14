@@ -34,12 +34,14 @@ void main()
 	
 		model_matrix = model_matrix * skin_mat;
 #endif
+
+	Mesh mesh = GetMesh(draw_info.mesh_index);
+
+	//model_matrix = model_matrix * MakeDecodePositionMatrix(mesh.bounds_enc);
 		
 	vec3 position = GetVertexPosition(vertex_index);
 	vec4 local_pos = model_matrix * (vec4(position, 1.0));
 	outPos = vec4(local_pos.xyz / local_pos.w, 1.0);
-
-	Mesh mesh = GetMesh(draw_info.mesh_index);
 
 #ifdef HAS_TEXCOORD
 	outTexcoord = GetVertexTexcoord(vertex_index, mesh.uv_bounds);

@@ -339,8 +339,48 @@ namespace engine
 				uint32_t index = GetVertexAttributeLocation(attribute.attribute_flag);
 				auto& vert_data = vertex_datas[index];
 
+				// Maximum vertex size
+				// position: vec3 - 12 bytes
+				// texcoord: vec2 - 8 bytes
+				// normal: vec3 - 12 bytes -> u16vec2 - 4 bytes
+				// tangent: vec4 - 16 bytes -> u16vec2 - 4 bytes
+				// color: vec4 - 16 bytes -> u8vec4 - 4 bytes
+				// joints: u16vec4/u8vec4 - 8 bytes/4 bytes
+				// weights: vec4 - 16 bytes -> vec3 - 12 bytes
+				// Total(before): 12 + 8 + 12 + 16 + 16 + 8|4 + 16 = 84|88
+				// Total(after): 12 + 8 + 4 + 4 + 4 + 8|4 + 12 = 48|52
+
 				// TODO: Move it in to mesh compiler
-				if (attribute.attribute_flag & VertexAttributeFlag::eNormal)
+				if (attribute.attribute_flag & VertexAttributeFlag::ePosition)
+				{
+					mesh.bounds.min = glm::vec3(std::numeric_limits<float>::infinity());
+					mesh.bounds.max = -glm::vec3(std::numeric_limits<float>::infinity());
+
+					mesh.bounds_enc = glm::vec3(1.0f);
+
+					auto* begin = reinterpret_cast<const glm::vec3*>(attribute.byte_range.data());
+					auto* end = begin + attribute.count;
+
+					for (auto it = begin; it != end; ++it)
+					{
+						mesh.bounds_enc = glm::max(mesh.bounds_enc, glm::abs(*it));
+						mesh.bounds.min = glm::min(mesh.bounds.min, *it);
+						mesh.bounds.max = glm::max(mesh.bounds.max, *it);
+					}
+
+					mesh.bounds_enc = glm::exp2(glm::ceil(glm::log2(mesh.bounds_enc)));
+
+					//std::vector<glm::i16vec3> encoded{};
+					//for (auto it = begin; it != end; ++it)
+					//	encoded.emplace_back(shlib::EncodePosition(*it, mesh.bounds_enc));
+					//
+					//auto* enc_begin = reinterpret_cast<const uint8_t*>(encoded.data());
+					//auto* enc_end = enc_begin + attribute.count * sizeof(glm::i16vec3);
+					//
+					//vert_data.data.insert(vert_data.data.end(), enc_begin, enc_end);
+					vert_data.data.insert(vert_data.data.end(), attribute.byte_range.begin(), attribute.byte_range.end());
+				}
+				else if (attribute.attribute_flag & VertexAttributeFlag::eNormal)
 				{
 					auto* begin = reinterpret_cast<const glm::vec3*>(attribute.byte_range.data());
 					auto* end = begin + attribute.count;
@@ -387,7 +427,7 @@ namespace engine
 					auto* begin = reinterpret_cast<const glm::vec4*>(attribute.byte_range.data());
 					auto* end = begin + attribute.count;
 
-					// Not needed to store 4 floats, because w = 1.0 - x - y - z
+					// Not needed to store 4 floats, because w3 = 1.0f – w0 – w1 – w2
 					std::vector<glm::vec3> encoded{};
 					for (auto it = begin; it != end; ++it)
 						encoded.emplace_back(glm::vec3(*it));

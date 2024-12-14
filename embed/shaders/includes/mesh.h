@@ -40,6 +40,7 @@ struct Mesh
 	int32_t first_vertex;
 	uint32_t vertex_count;
 
+	ALIGN_AS(16) vec3 bounds_enc;
 	GeometryDrawBounds bounds;
 	TexcoordBounds uv_bounds;
 };

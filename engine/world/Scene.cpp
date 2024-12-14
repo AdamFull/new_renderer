@@ -424,10 +424,9 @@ namespace engine
 			// Load mesh primitives
 			for (u64 i = 0ull; i < mesh.primitives.size(); ++i)
 			{
-				const auto& primitive = mesh.primitives[i];
+				shlib::Mesh new_mesh{};
 
-				// TODO: add min max
-				glm::vec3 pos_min{}, pos_max{};
+				const auto& primitive = mesh.primitives[i];
 
 				// Load vertices
 				render::GeometryBufferCreateInfo geometry_ci = GetGeometryBufferCreateInfo(root, primitive);
@@ -451,11 +450,11 @@ namespace engine
 					attrib_stream.byte_range = std::span<const uint8_t>(stream.data, stream.count * stream.stride);
 					attrib_stream.count = stream.count;
 
-					if (attribute_type == render::VertexAttributeFlag::ePosition)
-					{
-						pos_min = !accessor.min.empty() ? glm::vec3(accessor.min[0], accessor.min[1], accessor.min[2]) : glm::vec3(0.f);
-						pos_max = !accessor.max.empty() ? glm::vec3(accessor.max[0], accessor.max[1], accessor.max[2]) : glm::vec3(0.f);
-					}
+					//if (attribute_type == render::VertexAttributeFlag::ePosition)
+					//{
+					//	new_mesh.bounds.min = !accessor.min.empty() ? glm::vec3(accessor.min[0], accessor.min[1], accessor.min[2]) : glm::vec3(0.f);
+					//	new_mesh.bounds.max = !accessor.max.empty() ? glm::vec3(accessor.max[0], accessor.max[1], accessor.max[2]) : glm::vec3(0.f);
+					//}
 				}
 
 				render::IndexStream index_stream{};
@@ -468,9 +467,6 @@ namespace engine
 					index_stream.count = stream.count;
 				}
 
-				shlib::Mesh new_mesh{};
-				new_mesh.bounds.min = pos_min;
-				new_mesh.bounds.max = pos_max;
 				// NOTE: Updating material Create info for future shader creation
 				new_mesh.material = primitive.material;
 

@@ -45,12 +45,14 @@ void main()
 	Camera camera = GetCamera(call_data.camera_id);
 	mat4 view_projection = GetViewProjectionMatrix(camera.matrices_offset);
 
+	Mesh mesh = GetMesh(draw_info.mesh_index);
+
+	//model_matrix = model_matrix * MakeDecodePositionMatrix(mesh.bounds_enc);
+
 	// Sample vertex position
 	vec3 position = GetVertexPosition(vertex_index);
 	vec4 local_pos = model_matrix * (vec4(position, 1.0));
 	local_pos = vec4(local_pos.xyz / local_pos.w, 1.0);
-
-	Mesh mesh = GetMesh(draw_info.mesh_index);
 
 	drawID = draw_id;
 	instanceID = gl_InstanceIndex;

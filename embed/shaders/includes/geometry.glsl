@@ -7,6 +7,7 @@
 
 layout(std140, set = 1, binding = 0) uniform GeometryBuffers
 {
+	//GET_PTR_T(i16vec3) position;
 	GET_PTR_T(vec3) position;
 	GET_PTR_T(u8vec4) color;
 	GET_PTR_T(vec2) texcoord;
@@ -28,6 +29,7 @@ layout(std140, set = 1, binding = 0) uniform GeometryBuffers
 
 vec3 GetVertexPosition(uint32_t vertex_index)
 {
+	//return DecodePosition(geometry_buffers.position[vertex_index].data);
 	return geometry_buffers.position[vertex_index].data;
 }
 

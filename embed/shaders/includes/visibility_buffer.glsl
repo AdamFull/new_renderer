@@ -197,6 +197,9 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 	SceneNode node = GetSceneNode(visbuffer.objID);
 	mat4 model = GetModelMatrix(node.matrixOffset);
 
+	Mesh mesh = GetMesh(visbuffer.drawID);
+	//model = model * MakeDecodePositionMatrix(mesh.bounds_enc);
+
 	Camera camera = GetCamera(call_data.camera_id);
 	mat4 view_projection = GetViewProjectionMatrix(camera.matrices_offset);
 			
