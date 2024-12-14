@@ -10,7 +10,7 @@ layout(std140, set = 1, binding = 0) uniform GeometryBuffers
 	//GET_PTR_T(i16vec3) position;
 	GET_PTR_T(vec3) position;
 	GET_PTR_T(u8vec4) color;
-	GET_PTR_T(vec2) texcoord;
+	GET_PTR_T(u16vec2) texcoord;
 	GET_PTR_T(u16vec2) normal;
 	GET_PTR_T(u16vec2) tangent;
 #if defined(JOINTS_16BIT)
@@ -27,9 +27,9 @@ layout(std140, set = 1, binding = 0) uniform GeometryBuffers
 #endif
 } geometry_buffers;
 
-vec3 GetVertexPosition(uint32_t vertex_index)
+vec3 GetVertexPosition(uint32_t vertex_index, vec3 bb)
 {
-	//return DecodePosition(geometry_buffers.position[vertex_index].data);
+	//return DecodePosition(geometry_buffers.position[vertex_index].data, bb);
 	return geometry_buffers.position[vertex_index].data;
 }
 
@@ -45,12 +45,7 @@ vec4 GetVertexColor(uint32_t vertex_index)
 vec2 GetVertexTexcoord(uint32_t vertex_index, TexcoordBounds bounds)
 {
 #ifdef HAS_TEXCOORD
-	//u16vec2 encoded_texcoord = u16vec2(
-	//	geometry_buffers.texcoord[vertex_index * 2 + 0].data,
-	//	geometry_buffers.texcoord[vertex_index * 2 + 1].data
-	//);
-	//
-	//return DecodeTexcoord(encoded_texcoord, bounds);
+	return DecodeTexcoord(geometry_buffers.texcoord[vertex_index].data, bounds);
 	return geometry_buffers.texcoord[vertex_index].data;
 #else
 	return vec2(0.f, 0.f);

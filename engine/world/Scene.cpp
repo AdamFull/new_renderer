@@ -424,9 +424,14 @@ namespace engine
 			// Load mesh primitives
 			for (u64 i = 0ull; i < mesh.primitives.size(); ++i)
 			{
-				shlib::Mesh new_mesh{};
-
 				const auto& primitive = mesh.primitives[i];
+
+				shlib::Mesh new_mesh{};
+				new_mesh.bounds.min = glm::vec3(std::numeric_limits<float>::infinity());
+				new_mesh.bounds.max = -glm::vec3(std::numeric_limits<float>::infinity());
+				new_mesh.bounds_enc = glm::vec3(1.0f);
+				// NOTE: Updating material Create info for future shader creation
+				new_mesh.material = primitive.material;
 
 				// Load vertices
 				render::GeometryBufferCreateInfo geometry_ci = GetGeometryBufferCreateInfo(root, primitive);
@@ -467,8 +472,48 @@ namespace engine
 					index_stream.count = stream.count;
 				}
 
-				// NOTE: Updating material Create info for future shader creation
-				new_mesh.material = primitive.material;
+				// Calculate bounds
+				for (auto& attribute : attribute_streams)
+				{
+					if (attribute.byte_range.empty())
+						continue;
+
+					if (attribute.attribute_flag & render::VertexAttributeFlag::ePosition)
+					{
+						auto* begin = reinterpret_cast<const glm::vec3*>(attribute.byte_range.data());
+						auto* end = begin + attribute.count;
+
+						for (auto it = begin; it != end; ++it)
+						{
+							new_mesh.bounds_enc = glm::max(new_mesh.bounds_enc, glm::abs(*it));
+							new_mesh.bounds.min = glm::min(new_mesh.bounds.min, *it);
+							new_mesh.bounds.max = glm::max(new_mesh.bounds.max, *it);
+						}
+
+						new_mesh.bounds_enc = glm::exp2(glm::ceil(glm::log2(new_mesh.bounds_enc)));
+					}
+					else if (attribute.attribute_flag & render::VertexAttributeFlag::eTexCoord)
+					{
+						auto* begin = reinterpret_cast<const glm::vec2*>(attribute.byte_range.data());
+						auto* end = begin + attribute.count;
+
+						for (auto it = begin; it != end; ++it)
+						{
+							new_mesh.uv_enc.min = glm::min(new_mesh.uv_enc.min, *it);
+							new_mesh.uv_enc.max = glm::max(new_mesh.uv_enc.max, *it);
+						}
+
+						// Round off the minimum and the maximum of the bounding square to the next
+						// power of 2 if they are not equal to 0
+						{
+							// Select a relatively big default square size to avoid log2 NaN
+							glm::vec2 p = glm::log2(glm::max(glm::max(-new_mesh.uv_enc.min, new_mesh.uv_enc.max), 1.0f));
+							glm::vec2 bs = glm::exp2(glm::ceil(p));
+							new_mesh.uv_enc.min = glm::mix(glm::vec2(0.0f), -bs, glm::notEqual(new_mesh.uv_enc.min, glm::vec2(0.0f)));
+							new_mesh.uv_enc.max = glm::mix(glm::vec2(0.0f), bs, glm::notEqual(new_mesh.uv_enc.max, glm::vec2(0.0f)));
+						}
+					}
+				}
 
 				auto vertex_range = geometry_buffer.AddMesh(attribute_streams, index_stream, new_mesh);
 

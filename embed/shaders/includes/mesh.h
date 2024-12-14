@@ -42,7 +42,7 @@ struct Mesh
 
 	ALIGN_AS(16) vec3 bounds_enc;
 	GeometryDrawBounds bounds;
-	TexcoordBounds uv_bounds;
+	TexcoordBounds uv_enc;
 };
 
 REGISTER_TYPE_PTR(Mesh, 16);

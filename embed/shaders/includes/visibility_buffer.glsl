@@ -82,13 +82,14 @@ FRawVertex LoadVertex(in uint32_t index, in int32_t vertex_offset, in uint drawI
 {
 	FRawVertex vertex;
 
-	Mesh mesh = GetMesh(drawID);
+	DrawDescription draw_info = GetDrawInfo(drawID);
+	Mesh mesh = GetMesh(draw_info.mesh_index);
 
 	uint32_t vertex_index = index + vertex_offset;
 
-	vertex.position = GetVertexPosition(vertex_index);
+	vertex.position = GetVertexPosition(vertex_index, mesh.bounds_enc);
 	vertex.color = GetVertexColor(vertex_index);
-	vertex.uv = GetVertexTexcoord(vertex_index, mesh.uv_bounds);
+	vertex.uv = GetVertexTexcoord(vertex_index, mesh.uv_enc);
 	vertex.normal = GetVertexNormal(vertex_index);
 	vertex.tangent = GetVertexTangent(vertex_index);
 	vertex.joints = GetVertexJoints(vertex_index);
@@ -198,7 +199,6 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 	mat4 model = GetModelMatrix(node.matrixOffset);
 
 	Mesh mesh = GetMesh(visbuffer.drawID);
-	//model = model * MakeDecodePositionMatrix(mesh.bounds_enc);
 
 	Camera camera = GetCamera(call_data.camera_id);
 	mat4 view_projection = GetViewProjectionMatrix(camera.matrices_offset);

@@ -47,15 +47,13 @@ void main()
 
 	Mesh mesh = GetMesh(draw_info.mesh_index);
 
-	//model_matrix = model_matrix * MakeDecodePositionMatrix(mesh.bounds_enc);
-
 	// Sample vertex position
-	vec3 position = GetVertexPosition(vertex_index);
+	vec3 position = GetVertexPosition(vertex_index, mesh.bounds_enc);
 	vec4 local_pos = model_matrix * (vec4(position, 1.0));
 	local_pos = vec4(local_pos.xyz / local_pos.w, 1.0);
 
 	drawID = draw_id;
 	instanceID = gl_InstanceIndex;
-	texCoord = GetVertexTexcoord(vertex_index, mesh.uv_bounds);
+	texCoord = GetVertexTexcoord(vertex_index, mesh.uv_enc);
 	gl_Position = view_projection * local_pos;
 }

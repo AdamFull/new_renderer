@@ -331,6 +331,9 @@ namespace engine
 			vertex_range.first_vertex = vertex_datas[0].count;
 			vertex_range.vertex_count = attributes[0].count;
 
+			glm::mat3 position_encode_mat = shlib::MakeEncodePositionMatrix(mesh.bounds_enc);
+			glm::mat3 normal_encode_mat = glm::inverse(glm::transpose(position_encode_mat));
+
 			for (auto& attribute : attributes)
 			{
 				if (attribute.byte_range.empty())
@@ -341,35 +344,21 @@ namespace engine
 
 				// Maximum vertex size
 				// position: vec3 - 12 bytes
-				// texcoord: vec2 - 8 bytes
+				// texcoord: vec2 - 8 bytes -> u16vec2 - 4 bytes
 				// normal: vec3 - 12 bytes -> u16vec2 - 4 bytes
 				// tangent: vec4 - 16 bytes -> u16vec2 - 4 bytes
 				// color: vec4 - 16 bytes -> u8vec4 - 4 bytes
 				// joints: u16vec4/u8vec4 - 8 bytes/4 bytes
 				// weights: vec4 - 16 bytes -> vec3 - 12 bytes
 				// Total(before): 12 + 8 + 12 + 16 + 16 + 8|4 + 16 = 84|88
-				// Total(after): 12 + 8 + 4 + 4 + 4 + 8|4 + 12 = 48|52
+				// Total(after): 12 + 4 + 4 + 4 + 4 + 8|4 + 12 = 44|48
 
 				// TODO: Move it in to mesh compiler
 				if (attribute.attribute_flag & VertexAttributeFlag::ePosition)
 				{
-					mesh.bounds.min = glm::vec3(std::numeric_limits<float>::infinity());
-					mesh.bounds.max = -glm::vec3(std::numeric_limits<float>::infinity());
-
-					mesh.bounds_enc = glm::vec3(1.0f);
-
-					auto* begin = reinterpret_cast<const glm::vec3*>(attribute.byte_range.data());
-					auto* end = begin + attribute.count;
-
-					for (auto it = begin; it != end; ++it)
-					{
-						mesh.bounds_enc = glm::max(mesh.bounds_enc, glm::abs(*it));
-						mesh.bounds.min = glm::min(mesh.bounds.min, *it);
-						mesh.bounds.max = glm::max(mesh.bounds.max, *it);
-					}
-
-					mesh.bounds_enc = glm::exp2(glm::ceil(glm::log2(mesh.bounds_enc)));
-
+					//auto* begin = reinterpret_cast<const glm::vec3*>(attribute.byte_range.data());
+					//auto* end = begin + attribute.count;
+					//
 					//std::vector<glm::i16vec3> encoded{};
 					//for (auto it = begin; it != end; ++it)
 					//	encoded.emplace_back(shlib::EncodePosition(*it, mesh.bounds_enc));
@@ -388,6 +377,7 @@ namespace engine
 					std::vector<glm::u16vec2> encoded{};
 					for (auto it = begin; it != end; ++it)
 						encoded.emplace_back(shlib::EncodeNormal(*it));
+						//encoded.emplace_back(shlib::EncodeNormal(glm::normalize(normal_encode_mat * (*it))));
 
 					auto* enc_begin = reinterpret_cast<const uint8_t*>(encoded.data());
 					auto* enc_end = enc_begin + attribute.count * sizeof(glm::u16vec2);
@@ -401,7 +391,11 @@ namespace engine
 
 					std::vector<glm::u16vec2> encoded{};
 					for (auto it = begin; it != end; ++it)
+					{
+						//auto tan_enc = glm::normalize(position_encode_mat * (*it));
+						//encoded.emplace_back(shlib::EncodeTangent(glm::vec4(tan_enc, it->w)));
 						encoded.emplace_back(shlib::EncodeTangent(*it));
+					}
 
 					auto* enc_begin = reinterpret_cast<const uint8_t*>(encoded.data());
 					auto* enc_end = enc_begin + attribute.count * sizeof(glm::u16vec2);
@@ -437,36 +431,20 @@ namespace engine
 
 					vert_data.data.insert(vert_data.data.end(), enc_begin, enc_end);
 				}
-				//else if (attribute.attribute_flag & VertexAttributeFlag::eTexCoord)
-				//{
-				//	auto* begin = reinterpret_cast<const glm::vec2*>(attribute.byte_range.data());
-				//	auto* end = begin + attribute.count;
-				//
-				//	for (auto it = begin; it != end; ++it)
-				//	{
-				//		mesh.uv_bounds.min = glm::min(mesh.uv_bounds.min, *it);
-				//		mesh.uv_bounds.max = glm::max(mesh.uv_bounds.max, *it);
-				//	}
-				//
-				//	// Round off the minimum and the maximum of the bounding square to the next
-				//	// power of 2 if they are not equal to 0
-				//	{
-				//		// Select a relatively big default square size to avoid log2 NaN
-				//		glm::vec2 p = glm::log2(glm::max(glm::max(-mesh.uv_bounds.min, mesh.uv_bounds.max), 1.0f));
-				//		glm::vec2 bs = glm::exp2(glm::ceil(p));
-				//		mesh.uv_bounds.min = glm::mix(glm::vec2(0.0f), -bs, glm::notEqual(mesh.uv_bounds.min, glm::vec2(0.0f)));
-				//		mesh.uv_bounds.max = glm::mix(glm::vec2(0.0f), bs, glm::notEqual(mesh.uv_bounds.max, glm::vec2(0.0f)));
-				//	}
-				//
-				//	std::vector<glm::u16vec2> encoded{};
-				//	for (auto it = begin; it != end; ++it)
-				//		encoded.emplace_back(shlib::EncodeTexcoord(*it, mesh.uv_bounds));
-				//
-				//	auto* enc_begin = reinterpret_cast<const uint8_t*>(encoded.data());
-				//	auto* enc_end = enc_begin + attribute.count * sizeof(glm::u16vec2);
-				//
-				//	vert_data.data.insert(vert_data.data.end(), enc_begin, enc_end);
-				//}
+				else if (attribute.attribute_flag & VertexAttributeFlag::eTexCoord)
+				{
+					auto* begin = reinterpret_cast<const glm::vec2*>(attribute.byte_range.data());
+					auto* end = begin + attribute.count;
+				
+					std::vector<glm::u16vec2> encoded{};
+					for (auto it = begin; it != end; ++it)
+						encoded.emplace_back(shlib::EncodeTexcoord(*it, mesh.uv_enc));
+				
+					auto* enc_begin = reinterpret_cast<const uint8_t*>(encoded.data());
+					auto* enc_end = enc_begin + attribute.count * sizeof(glm::u16vec2);
+				
+					vert_data.data.insert(vert_data.data.end(), enc_begin, enc_end);
+				}
 				else
 				{
 					vert_data.data.insert(vert_data.data.end(), attribute.byte_range.begin(), attribute.byte_range.end());

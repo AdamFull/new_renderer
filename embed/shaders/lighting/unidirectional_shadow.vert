@@ -37,14 +37,12 @@ void main()
 
 	Mesh mesh = GetMesh(draw_info.mesh_index);
 
-	//model_matrix = model_matrix * MakeDecodePositionMatrix(mesh.bounds_enc);
-		
-	vec3 position = GetVertexPosition(vertex_index);
+	vec3 position = GetVertexPosition(vertex_index, mesh.bounds_enc);
 	vec4 local_pos = model_matrix * (vec4(position, 1.0));
 	outPos = vec4(local_pos.xyz / local_pos.w, 1.0);
 
 #ifdef HAS_TEXCOORD
-	outTexcoord = GetVertexTexcoord(vertex_index, mesh.uv_bounds);
+	outTexcoord = GetVertexTexcoord(vertex_index, mesh.uv_enc);
 #endif
 
 	mat4 viewProj;
