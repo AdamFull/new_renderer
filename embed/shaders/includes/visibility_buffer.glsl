@@ -78,15 +78,17 @@ bool loadVisBuffer(in vec2 uv, out VisibilityBuffer res)
 	return true;
 }
 
-FRawVertex LoadVertex(in uint32_t index, in int32_t vertex_offset)
+FRawVertex LoadVertex(in uint32_t index, in int32_t vertex_offset, in uint drawID)
 {
 	FRawVertex vertex;
+
+	Mesh mesh = GetMesh(drawID);
 
 	uint32_t vertex_index = index + vertex_offset;
 
 	vertex.position = GetVertexPosition(vertex_index);
 	vertex.color = GetVertexColor(vertex_index);
-	vertex.uv = GetVertexTexcoord(vertex_index);
+	vertex.uv = GetVertexTexcoord(vertex_index, mesh.uv_bounds);
 	vertex.normal = GetVertexNormal(vertex_index);
 	vertex.tangent = GetVertexTangent(vertex_index);
 	vertex.joints = GetVertexJoints(vertex_index);
@@ -115,9 +117,9 @@ FRawVertex[3] LoadTriangle(in uint drawID, in uint primID)
 	Index triVert2Index = GetIndex(triVert3IndexBufferPosition);
 
 	// Load vertex data of the 3 control points 
-	vertices[0] = LoadVertex(triVert0Index, draw_command.vertexOffset);
-	vertices[1] = LoadVertex(triVert1Index, draw_command.vertexOffset);
-	vertices[2] = LoadVertex(triVert2Index, draw_command.vertexOffset);
+	vertices[0] = LoadVertex(triVert0Index, draw_command.vertexOffset, drawID);
+	vertices[1] = LoadVertex(triVert1Index, draw_command.vertexOffset, drawID);
+	vertices[2] = LoadVertex(triVert2Index, draw_command.vertexOffset, drawID);
 
 	return vertices;
 }

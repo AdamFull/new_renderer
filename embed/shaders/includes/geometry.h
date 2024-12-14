@@ -7,22 +7,22 @@ SHLIB_NS_BEGIN
 
 // Define joints type
 #if defined(JOINTS_16BIT)
-#define JointIndex uint16_t
 #define Joints u16vec4
-#define JOINT_ALIGN 2
 #else
-#define JointIndex uint8_t
 #define Joints u8vec4
-#define JOINT_ALIGN 1
 #endif
 
 #if defined(INDEX_16BIT)
 #define Index uint16_t
-#define INDEX_ALIGN 2
 #else
 #define Index uint32_t
-#define INDEX_ALIGN 4
 #endif
+
+struct TexcoordBounds
+{
+	vec2 min;
+	vec2 max;
+};
 
 
 // Based on https://knarkowicz.wordpress.com/2014/04/16/octahedron-normal-vector-encoding/
@@ -61,6 +61,18 @@ SHLIB_INLINE vec4 DecodeTangent(u16vec2 t)
 	vec3 tangent = DecodeNormal(t);
 	float sign = bool(t.y & 1u) ? 1.0f : -1.0f;
 	return vec4(tangent, sign);
+}
+
+SHLIB_INLINE u16vec2 EncodeTexcoord(vec2 uv, TexcoordBounds bounds)
+{
+	vec2 fuv = float(1 << 16) * (uv - bounds.min) / (bounds.max - bounds.min);
+	fuv = clamp(round(fuv), 0.0f, float((1 << 16) - 1));
+	return  u16vec2(fuv);
+}
+
+SHLIB_INLINE vec2 DecodeTexcoord(u16vec2 uv, TexcoordBounds bounds)
+{
+	return mix(bounds.min, bounds.max, vec2(uv) / float(1 << 16));
 }
 
 SHLIB_INLINE u8vec4 EncodeColor(vec4 c)

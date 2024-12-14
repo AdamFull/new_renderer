@@ -39,8 +39,10 @@ void main()
 	vec4 local_pos = model_matrix * (vec4(position, 1.0));
 	outPos = vec4(local_pos.xyz / local_pos.w, 1.0);
 
+	Mesh mesh = GetMesh(draw_info.mesh_index);
+
 #ifdef HAS_TEXCOORD
-	outTexcoord = GetVertexTexcoord(vertex_index);
+	outTexcoord = GetVertexTexcoord(vertex_index, mesh.uv_bounds);
 #endif
 
 	mat4 viewProj;
@@ -60,7 +62,6 @@ void main()
 
 	material = ~0u;
 
-	Mesh mesh = GetMesh(draw_info.mesh_index);
 	if(mesh.material != ~0u)
 	{
 		material = mesh.material;

@@ -50,8 +50,10 @@ void main()
 	vec4 local_pos = model_matrix * (vec4(position, 1.0));
 	local_pos = vec4(local_pos.xyz / local_pos.w, 1.0);
 
+	Mesh mesh = GetMesh(draw_info.mesh_index);
+
 	drawID = draw_id;
 	instanceID = gl_InstanceIndex;
-	texCoord = GetVertexTexcoord(vertex_index);
+	texCoord = GetVertexTexcoord(vertex_index, mesh.uv_bounds);
 	gl_Position = view_projection * local_pos;
 }

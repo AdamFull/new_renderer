@@ -2,6 +2,7 @@
 #define SHLIB_MESH_H
 
 #include "draw.h"
+#include "geometry.h"
 
 SHLIB_NS_BEGIN
 
@@ -40,6 +41,7 @@ struct Mesh
 	uint32_t vertex_count;
 
 	GeometryDrawBounds bounds;
+	TexcoordBounds uv_bounds;
 };
 
 REGISTER_TYPE_PTR(Mesh, 16);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <edge/gfx/gfx_resource_loader.h>
+#include <embed/shaders/includes/mesh.h>
 
 #include <unordered_map>
 
@@ -97,7 +98,7 @@ namespace engine
 
 			uint64_t GetIndexBufferAddress();
 
-			virtual VertexRange AddMesh(const std::array<AttributeStream, k_max_attribure_description>& attributes, const IndexStream& indices) = 0;
+			virtual VertexRange AddMesh(const std::array<AttributeStream, k_max_attribure_description>& attributes, const IndexStream& indices, shlib::Mesh& mesh) = 0;
 
 			virtual void AddVertexStreamData(const void* data, uint32_t count, uint32_t stride, VertexAttributeFlag flag = {}) = 0;
 

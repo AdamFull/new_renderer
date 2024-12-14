@@ -224,7 +224,7 @@ namespace engine
 			return vertex_data.buffer->GetAddress();
 		}
 
-		VertexRange InterleavedGeometryBuffer::AddMesh(const std::array<AttributeStream, k_max_attribure_description>& attributes, const IndexStream& indices)
+		VertexRange InterleavedGeometryBuffer::AddMesh(const std::array<AttributeStream, k_max_attribure_description>& attributes, const IndexStream& indices, shlib::Mesh& mesh)
 		{
 			VertexRange vertex_range{};
 			vertex_range.first_index = index_data.count;
@@ -322,7 +322,7 @@ namespace engine
 			return vertex_datas[index].buffer->GetAddress();
 		}
 
-		VertexRange DeinterleavedGeometryBuffer::AddMesh(const std::array<AttributeStream, k_max_attribure_description>& attributes, const IndexStream& indices)
+		VertexRange DeinterleavedGeometryBuffer::AddMesh(const std::array<AttributeStream, k_max_attribure_description>& attributes, const IndexStream& indices, shlib::Mesh& mesh)
 		{
 			VertexRange vertex_range{};
 			vertex_range.first_index = index_data.count;
@@ -382,6 +382,36 @@ namespace engine
 
 					vert_data.data.insert(vert_data.data.end(), enc_begin, enc_end);
 				}
+				//else if (attribute.attribute_flag & VertexAttributeFlag::eTexCoord)
+				//{
+				//	auto* begin = reinterpret_cast<const glm::vec2*>(attribute.byte_range.data());
+				//	auto* end = begin + attribute.count;
+				//
+				//	for (auto it = begin; it != end; ++it)
+				//	{
+				//		mesh.uv_bounds.min = glm::min(mesh.uv_bounds.min, *it);
+				//		mesh.uv_bounds.max = glm::max(mesh.uv_bounds.max, *it);
+				//	}
+				//
+				//	// Round off the minimum and the maximum of the bounding square to the next
+				//	// power of 2 if they are not equal to 0
+				//	{
+				//		// Select a relatively big default square size to avoid log2 NaN
+				//		glm::vec2 p = glm::log2(glm::max(glm::max(-mesh.uv_bounds.min, mesh.uv_bounds.max), 1.0f));
+				//		glm::vec2 bs = glm::exp2(glm::ceil(p));
+				//		mesh.uv_bounds.min = glm::mix(glm::vec2(0.0f), -bs, glm::notEqual(mesh.uv_bounds.min, glm::vec2(0.0f)));
+				//		mesh.uv_bounds.max = glm::mix(glm::vec2(0.0f), bs, glm::notEqual(mesh.uv_bounds.max, glm::vec2(0.0f)));
+				//	}
+				//
+				//	std::vector<glm::u16vec2> encoded{};
+				//	for (auto it = begin; it != end; ++it)
+				//		encoded.emplace_back(shlib::EncodeTexcoord(*it, mesh.uv_bounds));
+				//
+				//	auto* enc_begin = reinterpret_cast<const uint8_t*>(encoded.data());
+				//	auto* enc_end = enc_begin + attribute.count * sizeof(glm::u16vec2);
+				//
+				//	vert_data.data.insert(vert_data.data.end(), enc_begin, enc_end);
+				//}
 				else
 				{
 					vert_data.data.insert(vert_data.data.end(), attribute.byte_range.begin(), attribute.byte_range.end());
