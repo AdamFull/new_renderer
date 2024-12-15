@@ -414,8 +414,7 @@ namespace engine
 		// Calculate whole mesh bounds and encoders
 		void ComputeMeshBounds(const easygltf::FGLTFRoot& root, const easygltf::Mesh& gltf_mesh, shlib::Mesh& mesh)
 		{
-			mesh.bb.min = glm::vec3(std::numeric_limits<float>::infinity());
-			mesh.bb.max = -glm::vec3(std::numeric_limits<float>::infinity());
+			shlib::BoundingBox bb{};
 			mesh.bb_enc = glm::vec3(1.0f);
 
 			for (const auto& gltf_primitive : gltf_mesh.primitives)
@@ -439,8 +438,8 @@ namespace engine
 						for (auto it = begin; it != end; ++it)
 						{
 							mesh.bb_enc = glm::max(mesh.bb_enc, glm::abs(*it));
-							mesh.bb.min = glm::min(mesh.bb.min, *it);
-							mesh.bb.max = glm::max(mesh.bb.max, *it);
+							bb.min = glm::min(bb.min, *it);
+							bb.max = glm::max(bb.max, *it);
 						}
 					}
 					else if (attribute_type & render::VertexAttributeFlag::eTexCoord)
@@ -470,6 +469,8 @@ namespace engine
 				mesh.uv_enc.min = glm::mix(glm::vec2(0.0f), -bs, glm::notEqual(mesh.uv_enc.min, glm::vec2(0.0f)));
 				mesh.uv_enc.max = glm::mix(glm::vec2(0.0f), bs, glm::notEqual(mesh.uv_enc.max, glm::vec2(0.0f)));
 			}
+
+			mesh.ebb = shlib::EncodeBoundingBox(bb, mesh.bb_enc);
 		}
 
 		// Maximum vertex size
@@ -541,6 +542,7 @@ namespace engine
 				render::GeometryBufferCreateInfo geometry_ci = GetGeometryBufferCreateInfo(root, primitive);
 				auto& geometry_buffer = renderer.RequestDeinterleavedGeometryBuffer(geometry_ci);
 
+				shlib::BoundingBox bb{};
 				VertexData vertex_data{};
 
 				uint32_t stream_count{ 0u };
@@ -564,6 +566,17 @@ namespace engine
 						attrib_stream.byte_range = Transform<glm::vec3, glm::i16vec3>(root, accessor, vertex_data.positions,
 							[&mesh](const glm::vec3& in)
 							{  return shlib::EncodePosition(in, mesh.bb_enc); });
+
+						// Calculate bounding box for this mesh primitive
+						auto stream = root.getStream(accessor);
+						auto* begin = reinterpret_cast<const glm::vec3*>(stream.data);
+						auto* end = begin + stream.count;
+
+						for (auto it = begin; it != end; ++it)
+						{
+							bb.min = glm::min(bb.min, *it);
+							bb.max = glm::max(bb.max, *it);
+						}
 					}
 					else if (attribute_type & render::VertexAttributeFlag::eColor)
 					{
@@ -622,6 +635,7 @@ namespace engine
 				submesh.first_vertex = vertex_range.first_vertex;
 				submesh.vertex_count = vertex_range.vertex_count;
 				submesh.material = primitive.material;
+				//submesh.ebb = shlib::EncodeBoundingBox(bb, mesh.bb_enc);
 
 				render_world.AttachSubmesh(mesh_id, submesh);
 			}

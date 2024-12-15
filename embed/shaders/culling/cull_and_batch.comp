@@ -41,14 +41,10 @@ void main()
 	mat4 model = GetModelMatrix(mesh.matrix_offset);
 
 	// Calculate bounding box
-	vec4 min_extents = model * vec4(mesh.bb.min, 1.f);
-	min_extents.xyz /= min_extents.w;
-	
-	vec4 max_extents = model * vec4(mesh.bb.max, 1.f);
-	max_extents.xyz /= max_extents.w;
+	BoundingBox bb = DecodeBoundingBox(mesh.ebb, model);
 
 	Camera camera = GetCamera(draw_info.camera_index);
-	if(checkObjectInFrustum(min_extents.xyz, max_extents.xyz, camera.frustum_offset))
+	if(checkObjectInFrustum(bb.min, bb.max, camera.frustum_offset))
 	{
 		// Instance culled
 		atomicOr(alive_bits[bit_index].data, bit_mask);

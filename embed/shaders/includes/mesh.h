@@ -6,14 +6,36 @@
 
 SHLIB_NS_BEGIN
 
-struct GeometryDrawBounds
+struct BoundingBox
 {
 #ifdef __cplusplus
-	GeometryDrawBounds() : min{ (std::numeric_limits<float>::max)() }, max{ -(std::numeric_limits<float>::max)() } {}
+	BoundingBox() : min{ (std::numeric_limits<float>::max)() }, max{ -(std::numeric_limits<float>::max)() } {}
 #endif
 	ALIGN_AS(16) vec3 min;
 	ALIGN_AS(16) vec3 max;
 };
+
+struct ALIGN_AS(4) BoundingBoxEnc
+{
+	i16vec3 min;
+	i16vec3 max;
+};
+
+SHLIB_INLINE BoundingBoxEnc EncodeBoundingBox(BoundingBox bb, vec3 enc)
+{
+	BoundingBoxEnc ebb;
+	ebb.min = EncodePosition(bb.min, enc);
+	ebb.max = EncodePosition(bb.max, enc);
+	return ebb;
+}
+
+SHLIB_INLINE BoundingBox DecodeBoundingBox(BoundingBoxEnc bb, mat4 dec)
+{
+	BoundingBox dbb;
+	dbb.min = vec3(dec * vec4(DecodePosition(bb.min), 1.0f));
+	dbb.max = vec3(dec * vec4(DecodePosition(bb.max), 1.0f));
+	return dbb;
+}
 
 struct MeshLod
 {
@@ -34,6 +56,8 @@ struct SubMesh
 	uint32_t index_count;
 	int32_t first_vertex;
 	uint32_t vertex_count;
+
+	//ALIGN_AS(4) BoundingBoxEnc ebb;
 };
 
 REGISTER_TYPE_PTR(SubMesh, 4);
@@ -47,7 +71,7 @@ struct Mesh
 
 	TexcoordBounds uv_enc;
 	ALIGN_AS(16) vec3 bb_enc;
-	GeometryDrawBounds bb;
+	ALIGN_AS(16) BoundingBoxEnc ebb;
 };
 
 REGISTER_TYPE_PTR(Mesh, 16);
