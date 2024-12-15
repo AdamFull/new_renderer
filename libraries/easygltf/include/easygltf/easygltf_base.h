@@ -160,8 +160,8 @@ namespace easygltf
 				constexpr const char* color_0{ "COLOR_0" };
 				constexpr const char* color_1{ "COLOR_1" };
 				constexpr const char* tangent{ "TANGENT" };
-				constexpr const char* joints_0{ "JOINTS_0 " };
-				constexpr const char* weights_0{ "WEIGHTS_0 " };
+				constexpr const char* joints_0{ "JOINTS_0" };
+				constexpr const char* weights_0{ "WEIGHTS_0" };
 				constexpr const char* custom{ "CUSTOM" };
 			}
 

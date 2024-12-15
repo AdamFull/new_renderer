@@ -13,11 +13,11 @@ layout(std140, set = 1, binding = 0) uniform GeometryBuffers
 	GET_PTR_T(u16vec2) normal;
 	GET_PTR_T(u16vec2) tangent;
 #if defined(JOINTS_16BIT)
-	GET_PTR_T(u16vec4) joint;
+	GET_PTR_T(u16vec4) joints;
 #else
-	GET_PTR_T(u8vec4) joint;
+	GET_PTR_T(u8vec4) joints;
 #endif
-	GET_PTR_T(vec3) weight;
+	GET_PTR_T(vec3) weights;
 
 #if defined(INDEX_16BIT)
 	GET_PTR_T(uint16_t) indices;
@@ -71,7 +71,7 @@ vec4 GetVertexTangent(uint32_t vertex_index)
 Joints GetVertexJoints(uint32_t vertex_index)
 {
 #ifdef HAS_SKIN
-	return geometry_buffers.joint[vertex_index].data;
+	return geometry_buffers.joints[vertex_index].data;
 #else
 	return Joints(0);
 #endif
@@ -80,7 +80,7 @@ Joints GetVertexJoints(uint32_t vertex_index)
 vec4 GetVertexWeights(uint32_t vertex_index)
 {
 #ifdef HAS_SKIN
-	vec3 weight = geometry_buffers.weight[vertex_index].data;
+	vec3 weight = geometry_buffers.weights[vertex_index].data;
 	return vec4(weight, 1.0f - weight.x - weight.y - weight.z);
 #else
 	return vec4(0.f);

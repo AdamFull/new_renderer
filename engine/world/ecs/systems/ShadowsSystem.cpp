@@ -13,6 +13,8 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <engine/rendering/Globals.h>
+
 using namespace engine::render;
 using namespace engine::world::ecs;
 
@@ -38,8 +40,7 @@ namespace engine
 				EDGE_PROFILE_ZONE_SCOPED;
 
 				// TODO: get current player camera?
-				static const uint32_t main_camera_id{ 2u };
-				auto& camera = render_world.GetRenderCamera(main_camera_id);
+				auto& camera = render_world.GetRenderCamera(render::main_camera_index);
 
 				u64 light_count{ 0ull };
 
@@ -105,7 +106,7 @@ namespace engine
 								// Project frustum corners into world space
 								for (auto& corner : frustumCorners)
 								{
-									glm::vec4 invCorner = render_world.GetCameraMatrix(main_camera_id, shlib::inv_view_projection_matrix_offset) * corner;
+									glm::vec4 invCorner = render_world.GetCameraMatrix(render::main_camera_index, shlib::inv_view_projection_matrix_offset) * corner;
 									corner = invCorner / invCorner.w;
 								}
 

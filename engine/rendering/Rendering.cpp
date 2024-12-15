@@ -32,6 +32,8 @@
 #undef MemoryBarrier
 #endif
 
+//#define SKINNING_TEST 1
+
 #define SWAP_COUNT(in, out) std::swap(in, out); ++pass_count;
 
 namespace render_label
@@ -972,7 +974,11 @@ namespace engine
 			// Draw cascaded shadows
 			{
 				RenderShaderPassCreateInfo create_info{};
+#if SKINNING_TEST
+				create_info.shader_name = "lighting:unidirectional_shadow:HAS_SKIN:CASCADED_SHADOW:HAS_TEXCOORD:HAS_NORMAL:HAS_TANGENT:INDEX_16BIT";
+#else
 				create_info.shader_name = "lighting:unidirectional_shadow:CASCADED_SHADOW:HAS_TEXCOORD:HAS_NORMAL:HAS_TANGENT:INDEX_16BIT";
+#endif
 				create_info.pipeline_state.rasterization_state.cull_mode = edge::gfx::CullModeFlag::eFront;
 			
 				// Depth state
@@ -1016,6 +1022,10 @@ namespace engine
 						auto& buffers = self.GetUniformBlock(render_label::geometry_buffers);
 						buffers.Set(render_label::position, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
 						buffers.Set(render_label::texcoord, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTexCoord));
+#if SKINNING_TEST
+						buffers.Set(render_label::joints, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eJoint));
+						buffers.Set(render_label::weights, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eWeight));
+#endif
 			
 						// Bind buffers that uses in draw
 						auto& draw_data_block = self.GetUniformBlock(shlib::DrawDescriptionBuffers_label);
@@ -1074,7 +1084,12 @@ namespace engine
 			// Draw omni shadows
 			{
 				RenderShaderPassCreateInfo create_info{};
+#if SKINNING_TEST
+				create_info.shader_name = "lighting:unidirectional_shadow:HAS_SKIN:OMNI_SHADOW:HAS_TEXCOORD:HAS_NORMAL:HAS_TANGENT:INDEX_16BIT";
+#else
 				create_info.shader_name = "lighting:unidirectional_shadow:OMNI_SHADOW:HAS_TEXCOORD:HAS_NORMAL:HAS_TANGENT:INDEX_16BIT";
+#endif
+
 				create_info.pipeline_state.rasterization_state.cull_mode = edge::gfx::CullModeFlag::eFront;
 			
 				// Depth state
@@ -1118,6 +1133,10 @@ namespace engine
 						auto& buffers = self.GetUniformBlock(render_label::geometry_buffers);
 						buffers.Set(render_label::position, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
 						buffers.Set(render_label::texcoord, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTexCoord));
+#if SKINNING_TEST
+						buffers.Set(render_label::joints, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eJoint));
+						buffers.Set(render_label::weights, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eWeight));
+#endif
 			
 						// Bind buffers that uses in draw
 						auto& draw_data_block = self.GetUniformBlock(shlib::DrawDescriptionBuffers_label);
@@ -1176,7 +1195,12 @@ namespace engine
 			// Draw spot shadows
 			{
 				RenderShaderPassCreateInfo create_info{};
+#if SKINNING_TEST
+				create_info.shader_name = "lighting:unidirectional_shadow:HAS_SKIN:HAS_TEXCOORD:HAS_NORMAL:HAS_TANGENT:INDEX_16BIT";
+#else
 				create_info.shader_name = "lighting:unidirectional_shadow:HAS_TEXCOORD:HAS_NORMAL:HAS_TANGENT:INDEX_16BIT";
+#endif
+
 				create_info.pipeline_state.rasterization_state.cull_mode = edge::gfx::CullModeFlag::eFront;
 			
 				// Depth state
@@ -1220,6 +1244,10 @@ namespace engine
 						auto& buffers = self.GetUniformBlock(render_label::geometry_buffers);
 						buffers.Set(render_label::position, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
 						buffers.Set(render_label::texcoord, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTexCoord));
+#if SKINNING_TEST
+						buffers.Set(render_label::joints, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eJoint));
+						buffers.Set(render_label::weights, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eWeight));
+#endif
 			
 						// Bind buffers that uses in draw
 						auto& draw_data_block = self.GetUniformBlock(shlib::DrawDescriptionBuffers_label);
@@ -1275,7 +1303,11 @@ namespace engine
 			// Geometry draw
 			{
 				RenderShaderPassCreateInfo create_info{};
+#if SKINNING_TEST
+				create_info.shader_name = "visibilitybuffer:write:HAS_SKIN:HAS_TEXCOORD:HAS_NORMAL:HAS_TANGENT:INDEX_16BIT";
+#else
 				create_info.shader_name = "visibilitybuffer:write:HAS_TEXCOORD:HAS_NORMAL:HAS_TANGENT:INDEX_16BIT";
+#endif
 				create_info.pipeline_state.rasterization_state.cull_mode = edge::gfx::CullModeFlag::eFront;
 			
 				// Depth state
@@ -1322,6 +1354,10 @@ namespace engine
 						auto& buffers = self.GetUniformBlock(render_label::geometry_buffers);
 						buffers.Set(render_label::position, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
 						buffers.Set(render_label::texcoord, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTexCoord));
+#if SKINNING_TEST
+						buffers.Set(render_label::joints, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eJoint));
+						buffers.Set(render_label::weights, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eWeight));
+#endif
 			
 						// Bind buffers that uses in draw
 						auto& draw_data_block = self.GetUniformBlock(shlib::DrawDescriptionBuffers_label);
@@ -1361,7 +1397,11 @@ namespace engine
 			// Resolve materials
 			{
 				ComputeShaderPassCreateInfo create_info{};
+#if SKINNING_TEST
+				create_info.shader_name = "visibilitybuffer:shade:HAS_SKIN:HAS_TEXCOORD:HAS_NORMAL:HAS_TANGENT:INDEX_16BIT";
+#else
 				create_info.shader_name = "visibilitybuffer:shade:HAS_TEXCOORD:HAS_NORMAL:HAS_TANGENT:INDEX_16BIT";
+#endif
 			
 				create_info.draw_callback = [this, 
 					alive_commands_buffer,
@@ -1410,6 +1450,10 @@ namespace engine
 						buffers.Set(render_label::texcoord, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTexCoord));
 						buffers.Set(render_label::normal, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eNormal));
 						buffers.Set(render_label::tangent, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTangent));
+#if SKINNING_TEST
+						buffers.Set(render_label::joints, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eJoint));
+						buffers.Set(render_label::weights, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eWeight));
+#endif
 						buffers.Set(render_label::indices, geometry_buffer.GetIndexBufferAddress());
 
 						auto& draw_data_block = self.GetUniformBlock(shlib::DrawDescriptionBuffers_label);

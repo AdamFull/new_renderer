@@ -59,36 +59,8 @@ namespace engine
 		scene = std::make_unique<world::Scene>(options.filesystem, *renderer);
 		//scene = std::make_unique<world::Scene>(vfs.get());
 		scene->Load("/root/meshes/sponza/Sponza.gltf");
-		//scene->Load("/root/meshes/helmet/DamagedHelmet.gltf");
-
-		//render::FRenderInterfaceCreateInfo rhi_ci{};
-		//rhi_ci.render_api = render::ERenderApi::eVulkan11;
-		//rhi_ci.window = options.window;
-		//
-		//m_pRenderInterface->PreInitialize(rhi_ci);
-		//m_pInputMapper->Create();
-		//m_pSystemManager->PreInitialize();
-		//// Pre initialization zone END
-		//
-		//// Initialization zone BEGIN
-		//m_pSystemManager->Initialize();
-		//m_pRenderInterface->Initialize();
-		//// Initialization zone END
-		//
-		////m_pScene->load("/root/reflections/reflections.gltf");
-		////m_pScene->load("/root/helmet/DamagedHelmet.gltf");
-		//m_pScene->Load("/root/meshes/sponza/Sponza.gltf");
-		////m_pScene->load("/root/meshes/san_miguel/low_poly.gltf");
-		////m_pScene->MakeGenerateScene("/root/meshes/cube/cube.gltf");
-		////m_pScene->makeTestScene();
-		////m_pScene->load("/root/chess/chess.gltf");
-		////m_pScene->load("/root/toadman/round1.gltf");
-		////m_pScene->load("/root/Landscape/landscape.gltf");
-		//
-		//// Post initialization zone BEGIN
-		//m_pRenderInterface->PostInitialize();
-		//m_pSystemManager->PostInitialize();
-
+		//scene->Load("/root/meshes/CesiumMan/CesiumMan.gltf");
+		
 		return true;
 	}
 
