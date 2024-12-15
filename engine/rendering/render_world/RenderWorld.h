@@ -20,7 +20,7 @@ namespace engine
 
 			uint32_t GetResourceId(uint32_t resource_index) const;
 
-			uint32_t CreateRenderCamera() override;
+			std::tuple<uint32_t, shlib::Camera&> CreateCamera() override;
 			shlib::Camera& GetRenderCamera(uint32_t camera_id) override;
 			glm::mat4 const& GetCameraMatrix(uint32_t camera_id, uint32_t matrix_index) override;
 			uint32_t GetCameraCount() const override;
@@ -30,7 +30,7 @@ namespace engine
 
 			glm::mat4 const& GetMatrix(uint32_t matrix_offset) const override;
 
-			uint32_t CreateNode() override;
+			std::tuple<uint32_t, shlib::SceneNode&> CreateNode() override;
 			void UpdateNode(uint32_t node_id, const glm::mat4& matrix) override;
 			glm::mat4 const& GetNodeMatrix(uint32_t node_id, uint32_t matrix_offset) const override;
 			const shlib::SceneNode& GetNode(uint32_t node_id) const override;
@@ -42,7 +42,8 @@ namespace engine
 
 			//shlib::Mesh& BeginUpdateMesh(uint32_t index);
 			//void EndUpdateMesh(uint32_t index);
-			uint32_t CreateMesh() override;
+			std::tuple<uint32_t, shlib::Mesh&> CreateMesh() override;
+			void UpdateMeshMatrices(uint32_t mesh_id, const glm::mat4& matrix) override;
 			void UpdateMesh(uint32_t mesh_id, const shlib::Mesh& mesh) override;
 			const shlib::Mesh& GetMesh(uint32_t index) override;
 

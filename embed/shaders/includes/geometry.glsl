@@ -26,9 +26,9 @@ layout(std140, set = 1, binding = 0) uniform GeometryBuffers
 #endif
 } geometry_buffers;
 
-vec3 GetVertexPosition(uint32_t vertex_index, vec3 bb)
+vec3 GetVertexPosition(uint32_t vertex_index)
 {
-	return DecodePosition(geometry_buffers.position[vertex_index].data, bb);
+	return DecodePosition(geometry_buffers.position[vertex_index].data);
 }
 
 vec4 GetVertexColor(uint32_t vertex_index)

@@ -134,7 +134,8 @@ namespace engine
 
 				for (int32_t i = 0; i < shlib::cascade_shadow_map_cascade_count; ++i)
 				{
-					light.shadow_casters.emplace_back(render_world.CreateRenderCamera());
+					auto [camera_id, render_camera] = render_world.CreateCamera();
+					light.shadow_casters.emplace_back(camera_id);
 				}
 			}
 
@@ -151,7 +152,8 @@ namespace engine
 
 				for (int32_t i = 0; i < light.shadow_casters.size(); ++i)
 				{
-					light.shadow_casters[i] = render_world.CreateRenderCamera();
+					auto [camera_id, render_camera] = render_world.CreateCamera();
+					light.shadow_casters[i] = camera_id;
 				}
 			}
 
@@ -166,7 +168,8 @@ namespace engine
 			{
 				auto& light = registry.get<FSpotLightComponent>(entity);
 
-				light.shadow_caster = render_world.CreateRenderCamera();
+				auto [camera_id, render_camera] = render_world.CreateCamera();
+				light.shadow_caster = camera_id;
 			}
 
 			void LightingSystem::OnDestructSpotLight(entt::registry& registry, entt::entity entity)

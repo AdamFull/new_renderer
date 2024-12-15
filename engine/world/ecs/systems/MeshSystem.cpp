@@ -46,6 +46,7 @@ namespace engine
 
 					for (const auto& primitive : mesh_component.primitives)
 					{
+						render_world.UpdateMeshMatrices(primitive.mesh, transform.gmodel);
 						render_world.AddGeometryDraw(render::main_camera_index, transform.node_index, primitive.mesh);
 					}
 				}

@@ -33,7 +33,7 @@ struct Mesh
 	uint32_t lodOffset;
 	uint32_t lodCount;
 
-	uint32_t pad;
+	uint32_t matrix_offset;
 
 	uint32_t first_index;
 	uint32_t index_count;

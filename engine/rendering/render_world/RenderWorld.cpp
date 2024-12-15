@@ -33,7 +33,7 @@ namespace engine
 			world_frustum = std::make_unique<DynamicBuffer<glm::vec4>>(resource_loader, 64ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
 		}
 
-		uint32_t RenderWorld::CreateRenderCamera()
+		std::tuple<uint32_t, shlib::Camera&> RenderWorld::CreateCamera()
 		{
 			auto& world_resource = world_resources.emplace_back();
 			world_resource.type = WorldResourceType::eCamera;
@@ -46,7 +46,7 @@ namespace engine
 			camera.frustum_offset = frustum_offset;
 			frustum_offset += 6ull; // Because 6 frustum sides
 
-			return world_resources.size() - 1ull;
+			return { world_resources.size() - 1ull, camera };
 		}
 
 		uint32_t RenderWorld::GetResourceId(uint32_t resource_index) const
@@ -213,7 +213,7 @@ namespace engine
 			return world_matrices->Get(matrix_offset);
 		}
 
-		uint32_t RenderWorld::CreateNode()
+		std::tuple<uint32_t, shlib::SceneNode&> RenderWorld::CreateNode()
 		{
 			auto& world_resource = world_resources.emplace_back();
 			world_resource.type = WorldResourceType::eNode;
@@ -227,7 +227,7 @@ namespace engine
 
 			// TODO: skeleton id
 
-			return world_resources.size() - 1ull;
+			return { world_resources.size() - 1ull, node };
 		}
 
 		void RenderWorld::UpdateNode(uint32_t node_id, const glm::mat4& matrix)
@@ -343,27 +343,48 @@ namespace engine
 			return draw_materials->Get(index);
 		}
 
-		uint32_t RenderWorld::CreateMesh()
+		std::tuple<uint32_t, shlib::Mesh&> RenderWorld::CreateMesh()
 		{
 			auto& world_resource = world_resources.emplace_back();
 			world_resource.type = WorldResourceType::eMesh;
 			world_resource.resource_id = mesh_count++;
 
-			auto& mesh = world_meshes->Get(world_resource.resource_id);
+			shlib::Mesh& mesh = world_meshes->Get(world_resource.resource_id);
 			world_meshes->MarkDirty(world_resource.resource_id);
+
+			// Register slots for model matrix, old model matrix and normal matrix
+			mesh.matrix_offset = matrices_offset;
+			matrices_offset += 3ull;
 
 			// TODO: Reserve skinning matrices if needed
 
-			return world_resources.size() - 1ull;
+			return { world_resources.size() - 1ull, mesh };
 		}
 
-		void RenderWorld::UpdateMesh(uint32_t mesh_id, const shlib::Mesh& mesh)
+		void RenderWorld::UpdateMeshMatrices(uint32_t mesh_id, const glm::mat4& matrix)
 		{
 			auto& world_resource = world_resources[mesh_id];
 			assert(world_resource.type == WorldResourceType::eMesh);
 
-			world_meshes->Get(world_resource.resource_id) = mesh;
+			auto& mesh = world_meshes->Get(world_resource.resource_id);
+
+			auto* matrices = world_matrices->Data(mesh.matrix_offset);
+			world_matrices->MarkDirty(mesh.matrix_offset, 3ull);
+
+			matrices[shlib::old_model_matrix_offset]	= matrices[shlib::model_matrix_offset];
+			matrices[shlib::model_matrix_offset]		= matrix * shlib::MakeDecodePositionMatrix(mesh.bounds_enc);
+			matrices[shlib::normal_matrix_offset]		= glm::inverse(glm::transpose(matrices[shlib::model_matrix_offset]));
+		}
+
+		void RenderWorld::UpdateMesh(uint32_t mesh_id, const shlib::Mesh& new_mesh)
+		{
+			auto& world_resource = world_resources[mesh_id];
+			assert(world_resource.type == WorldResourceType::eMesh);
+
+			auto& mesh = world_meshes->Get(world_resource.resource_id);
 			world_meshes->MarkDirty(world_resource.resource_id);
+
+			mesh.material = new_mesh.material;
 		}
 
 		const shlib::Mesh& RenderWorld::GetMesh(uint32_t index)

@@ -87,7 +87,7 @@ FRawVertex LoadVertex(in uint32_t index, in int32_t vertex_offset, in uint drawI
 
 	uint32_t vertex_index = index + vertex_offset;
 
-	vertex.position = GetVertexPosition(vertex_index, mesh.bounds_enc);
+	vertex.position = GetVertexPosition(vertex_index);
 	vertex.color = GetVertexColor(vertex_index);
 	vertex.uv = GetVertexTexcoord(vertex_index, mesh.uv_enc);
 	vertex.normal = GetVertexNormal(vertex_index);
@@ -196,9 +196,11 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 
 	// Load mesh model matrix
 	SceneNode node = GetSceneNode(visbuffer.objID);
-	mat4 model = GetModelMatrix(node.matrixOffset);
+	DrawDescription draw_info = GetDrawInfo(visbuffer.drawID);
+	Mesh mesh = GetMesh(draw_info.mesh_index);
 
-	Mesh mesh = GetMesh(visbuffer.drawID);
+	mat4 model = GetModelMatrix(mesh.matrix_offset);
+	mat3 normal_matrix = mat3(GetModelMatrix(mesh.matrix_offset));
 
 	Camera camera = GetCamera(call_data.camera_id);
 	mat4 view_projection = GetViewProjectionMatrix(camera.matrices_offset);
@@ -282,9 +284,9 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 
 	// INTERPOLATE NORMAL
 #ifdef HAS_NORMAL
-	vec3 normal0 = vertices[0].normal;
-	vec3 normal1 = vertices[1].normal;
-	vec3 normal2 = vertices[2].normal;
+	vec3 normal0 = normalize(normal_matrix * vertices[0].normal);
+	vec3 normal1 = normalize(normal_matrix * vertices[1].normal);
+	vec3 normal2 = normalize(normal_matrix * vertices[2].normal);
 
 	vec3 normal = interpolate(normal0, normal1, normal2, bary.barycentrics);
 	res.normal = normalize(mat3(model) * normal);
@@ -297,6 +299,10 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 	vec4 tangent0 = vertices[0].tangent;
 	vec4 tangent1 = vertices[1].tangent;
 	vec4 tangent2 = vertices[2].tangent;
+
+	tangent0.xyz = normalize(model * vec4(tangent0.xyz, 0.0f)).xyz;
+	tangent1.xyz = normalize(model * vec4(tangent1.xyz, 0.0f)).xyz;
+	tangent2.xyz = normalize(model * vec4(tangent2.xyz, 0.0f)).xyz;
 
 	vec4 tangent = interpolate(tangent0, tangent1, tangent2, bary.barycentrics);
 	res.tangent = vec4(normalize(mat3(model) * vec3(tangent)), tangent.w);

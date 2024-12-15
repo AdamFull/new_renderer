@@ -38,9 +38,8 @@ void main()
 	DrawDescription draw_info = source_descriptions[global_draw_index].data;
 
 	Mesh mesh = GetMesh(draw_info.mesh_index);
-	SceneNode node = GetSceneNode(draw_info.node_index);
 
-	mat4 model = GetModelMatrix(node.matrixOffset);
+	mat4 model = GetModelMatrix(mesh.matrix_offset);
 
 	// Calculate bounding box
 	vec4 min_extents = model * vec4(mesh.bounds.min, 1.f);
@@ -72,64 +71,4 @@ void main()
 
     alive_draw_commands[global_draw_index].data = indirect_command;
 	alive_descriptions[global_draw_index].data = draw_info;
-
-
-	//// Sample info about current Draw comand
-	//DrawDescription draw_info = GetRawDrawInfo(global_draw_index);
-	//SceneNode node = GetSceneNode(draw_info.node_index);
-	//Mesh mesh = GetMesh(draw_info.mesh_index);
-	//mat4 model = GetModelMatrix(node.matrixOffset);			
-	//
-	//// output_index = culler_counter + draw_offset;
-	//
-	//// Calculate bounding box
-	//vec4 min_extents = model * vec4(mesh.bounds.min, 1.f);
-	//min_extents.xyz /= min_extents.w;
-	//
-	//vec4 max_extents = model * vec4(mesh.bounds.max, 1.f);
-	//max_extents.xyz /= max_extents.w;
-	//
-	//// Do frustum culling
-	////if(checkObjectInFrustum(min_extents.xyz * 1.1, min_extents.xyz * 1.1, camera.frustum_offset))
-	//{	
-	//	uint draw_offset = frameData.maxCommandsCount * draw_info.cameraID;
-	//	uint culler_counter = atomicAdd(PTRVAL(GET_BUFFER_POINTER(UInt32Ptr, indirectCountBuffer), draw_info.cameraID), 1);
-	//
-	//	uint output_index = draw_offset + culler_counter;
-	//	PTRVAL(GET_BUFFER_POINTER(DrawInfoPtr, drawInfoBuffer), output_index) = draw_info;
-	//
-	//	// Construct  indirect Draw command
-	//	// TODO: In future thing about how to implement instancing here
-	//
-	//	Camera camera = GetCamera(draw_info.cameraID);
-	//	mat4 view_projection = GetViewProjectionMatrix(camera.matrices_offset);
-	//	
-	//	vec4 min_clip = view_projection * min_extents;
-	//	vec4 max_clip = view_projection * max_extents;
-	//	
-	//	vec3 ndc_min = (min_clip.xyz / min_clip.w + 1.0f) * 0.5f;
-	//	vec3 ndc_max = (max_clip.xyz / max_clip.w + 1.0f) * 0.5f;
-	//	
-	//	vec2 min_pos = ndc_min.xy * camera.size;
-	//	vec2 max_pos = ndc_max.xy * camera.size;
-	//	
-	//	vec2 quad_size = abs(max_pos - min_pos);
-	//	
-	//	float quad_area = quad_size.x * quad_size.y;
-	//	float screen_area = camera.size.x * camera.size.y;
-	//	float lod_ratio = sqrt(screen_area / quad_area);
-	//	uint lod_level = uint(log2(max(1.0f, lod_ratio * (mesh.lodCount - 1))));
-	//	lod_level = clamp(lod_level, 0, mesh.lodCount - 1);
-	//
-	//	MeshLod lod = PTRVAL(GET_BUFFER_POINTER(MeshLodPtr, lb), mesh.lodOffset + lod_level);
-	//	
-	//	DrawIndexedIndirectData indirect_command;
-	//	indirect_command.indexCount = lod.indexCount == 0 ? lastIndex : lod.indexCount;
-	//	indirect_command.instanceCount = 1;
-	//	indirect_command.firstIndex = lod.firstIndex;
-	//	indirect_command.vertexOffset = int(lod.firstVertex);
-	//	indirect_command.firstInstance = 0;
-	//
-	//	PTRVAL(GET_BUFFER_POINTER(IndirectDrawIndexedComandPtr, indirectCommandBuffer), output_index) = indirect_command;
-	//}
 }

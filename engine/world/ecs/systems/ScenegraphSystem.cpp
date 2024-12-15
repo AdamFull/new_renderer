@@ -56,9 +56,10 @@ namespace engine
 
 			void CScenegraphSystem::OnConstruct(entt::registry& registry, entt::entity entity)
 			{
-				auto& transform = registry.get<FTransformComponent>(entity);
+				auto [node_id, scene_node] = render_world.CreateNode();
 
-				transform.node_index = render_world.CreateNode();
+				auto& transform = registry.get<FTransformComponent>(entity);
+				transform.node_index = node_id;
 			}
 
 			void CScenegraphSystem::OnDestruct(entt::registry& registry, entt::entity entity)

@@ -426,16 +426,22 @@ namespace engine
 			{
 				const auto& primitive = mesh.primitives[i];
 
-				shlib::Mesh new_mesh{};
+				// Load vertices
+				render::GeometryBufferCreateInfo geometry_ci = GetGeometryBufferCreateInfo(root, primitive);
+				auto& geometry_buffer = renderer.RequestDeinterleavedGeometryBuffer(geometry_ci);
+
+				// Create mesh primitive
+				ecs::FMeshPrimitive mesh_primitive{};
+				mesh_primitive.vbo = Hash(geometry_ci);
+
+				auto [mesh_id, new_mesh] = render_world.CreateMesh();
+				mesh_primitive.mesh = mesh_id;
+
 				new_mesh.bounds.min = glm::vec3(std::numeric_limits<float>::infinity());
 				new_mesh.bounds.max = -glm::vec3(std::numeric_limits<float>::infinity());
 				new_mesh.bounds_enc = glm::vec3(1.0f);
 				// NOTE: Updating material Create info for future shader creation
 				new_mesh.material = primitive.material;
-
-				// Load vertices
-				render::GeometryBufferCreateInfo geometry_ci = GetGeometryBufferCreateInfo(root, primitive);
-				auto& geometry_buffer = renderer.RequestDeinterleavedGeometryBuffer(geometry_ci);
 
 				uint32_t stream_count{ 0u };
 				std::array<render::AttributeStream, render::k_max_attribure_description> attribute_streams{};
@@ -522,12 +528,7 @@ namespace engine
 				new_mesh.first_vertex = vertex_range.first_vertex;
 				new_mesh.vertex_count = vertex_range.vertex_count;
 
-				// Create mesh primitive
-				ecs::FMeshPrimitive mesh_primitive{};
-				mesh_primitive.vbo = Hash(geometry_ci);
-				mesh_primitive.mesh = render_world.CreateMesh();
-
-				render_world.UpdateMesh(mesh_primitive.mesh, new_mesh);
+				//render_world.UpdateMesh(mesh_primitive.mesh, new_mesh);
 				
 				mesh_component.primitives.emplace_back(mesh_primitive);
 			}

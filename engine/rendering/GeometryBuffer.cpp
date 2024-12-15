@@ -348,7 +348,7 @@ namespace engine
 			vertex_range.vertex_count = attributes[0].count;
 
 			glm::mat3 position_encode_mat = shlib::MakeEncodePositionMatrix(mesh.bounds_enc);
-			glm::mat3 normal_encode_mat = glm::inverse(glm::transpose(position_encode_mat));
+			glm::mat3 normal_encode_mat = glm::transpose(glm::inverse(position_encode_mat));
 
 			for (auto& attribute : attributes)
 			{
@@ -380,20 +380,20 @@ namespace engine
 				else if (attribute.attribute_flag & VertexAttributeFlag::eNormal)
 				{
 					Transform<glm::vec3, glm::u16vec2>(vert_data, attribute,
-						[](const glm::vec3& in)
+						[&normal_encode_mat](const glm::vec3& in)
 						{
-							// shlib::EncodeNormal(glm::normalize(normal_encode_mat * (*it)))
-							return shlib::EncodeNormal(in);
+							return shlib::EncodeNormal(glm::normalize(normal_encode_mat * in));
+							//return shlib::EncodeNormal(in);
 						});
 				}
 				else if (attribute.attribute_flag & VertexAttributeFlag::eTangent)
 				{
 					Transform<glm::vec4, glm::u16vec2>(vert_data, attribute,
-						[](const glm::vec4& in)
+						[&position_encode_mat](const glm::vec4& in)
 						{
-							//auto tan_enc = glm::normalize(position_encode_mat * (*it));
-							//encoded.emplace_back(shlib::EncodeTangent(glm::vec4(tan_enc, it->w)));
-							return shlib::EncodeTangent(in);
+							auto tan_enc = glm::normalize(position_encode_mat * in);
+							return shlib::EncodeTangent(glm::vec4(tan_enc, in.w));
+							//return shlib::EncodeTangent(in);
 						});
 				}
 				else if (attribute.attribute_flag & VertexAttributeFlag::eColor)

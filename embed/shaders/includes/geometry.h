@@ -50,10 +50,9 @@ SHLIB_INLINE i16vec3 EncodePosition(vec3 p, vec3 bb)
 	return i16vec3(min(ivec3(round(p * scale)), (1 << 15) - 1));
 }
 
-SHLIB_INLINE vec3 DecodePosition(i16vec3 p, vec3 bb)
+SHLIB_INLINE vec3 DecodePosition(i16vec3 p)
 {
-	mat4 scale = MakeDecodePositionMatrix(bb);
-	return vec3(scale * vec4(p, 1));
+	return vec3(p);
 }
 
 // Based on https://knarkowicz.wordpress.com/2014/04/16/octahedron-normal-vector-encoding/

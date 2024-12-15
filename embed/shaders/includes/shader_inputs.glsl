@@ -29,6 +29,7 @@ mat4 GetMatrixById(uint global_offset, uint local_offset) { return matrixBuffer[
 
 mat4 GetModelMatrix(uint global_offset) { return GetMatrixById(global_offset, model_matrix_offset); }
 mat4 GetOldModelMatrix(uint global_offset) { return GetMatrixById(global_offset, old_model_matrix_offset); }
+mat4 GetNormalMatrix(uint global_offset) { return GetMatrixById(global_offset, normal_matrix_offset); }
 
 mat4 GetViewMatrix(uint global_offset) { return GetMatrixById(global_offset, view_matrix_offset); }
 mat4 GetInvViewMatrix(uint global_offset) { return GetMatrixById(global_offset, inv_view_matrix_offset); }

@@ -56,9 +56,10 @@ namespace engine
 
 			void CameraSystem::OnConstruct(entt::registry& registry, entt::entity entity)
 			{
-				auto& camera = registry.get<FCameraComponent>(entity);
+				auto [camera_id, render_camera] = render_world.CreateCamera();
 
-				camera.frustumID = render_world.CreateRenderCamera();
+				auto& camera = registry.get<FCameraComponent>(entity);
+				camera.frustumID = camera_id;
 			}
 
 			void CameraSystem::OnDestruct(entt::registry& registry, entt::entity entity)

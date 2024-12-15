@@ -30,6 +30,7 @@ CONSTANT uint32_t point_light_shadow_map_resolution = 512u;
 
 CONSTANT uint32_t model_matrix_offset = 0u;
 CONSTANT uint32_t old_model_matrix_offset = 1u;
+CONSTANT uint32_t normal_matrix_offset = 2u;
 
 CONSTANT uint32_t view_matrix_offset = 0u;
 CONSTANT uint32_t inv_view_matrix_offset = 1u;

@@ -17,7 +17,9 @@ void main()
 	DrawDescription draw_info = GetDrawInfo(draw_index);
 
 	SceneNode node = GetSceneNode(draw_info.node_index);
-	mat4 model_matrix = GetModelMatrix(node.matrixOffset);
+	Mesh mesh = GetMesh(draw_info.mesh_index);
+
+	mat4 model_matrix = GetModelMatrix(mesh.matrix_offset);
 
 	uint32_t vertex_index = uint32_t(gl_VertexIndex);
 
@@ -35,10 +37,8 @@ void main()
 		model_matrix = model_matrix * skin_mat;
 #endif
 
-	Mesh mesh = GetMesh(draw_info.mesh_index);
-
 	// Sample vertex position
-	vec3 position = GetVertexPosition(vertex_index, mesh.bounds_enc);
+	vec3 position = GetVertexPosition(vertex_index);
 	vec4 local_pos = model_matrix * (vec4(position, 1.0));
 	outPos = vec4(local_pos.xyz / local_pos.w, 1.0);
 
