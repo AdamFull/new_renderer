@@ -200,7 +200,7 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 	Mesh mesh = GetMesh(draw_info.mesh_index);
 
 	mat4 model = GetModelMatrix(mesh.matrix_offset);
-	mat3 normal_matrix = mat3(GetModelMatrix(mesh.matrix_offset));
+	mat3 normal_matrix = mat3(GetNormalMatrix(mesh.matrix_offset));
 
 	Camera camera = GetCamera(call_data.camera_id);
 	mat4 view_projection = GetViewProjectionMatrix(camera.matrices_offset);
@@ -284,12 +284,12 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 
 	// INTERPOLATE NORMAL
 #ifdef HAS_NORMAL
-	vec3 normal0 = normalize(normal_matrix * vertices[0].normal);
-	vec3 normal1 = normalize(normal_matrix * vertices[1].normal);
-	vec3 normal2 = normalize(normal_matrix * vertices[2].normal);
+	vec3 normal0 = vertices[0].normal;
+	vec3 normal1 = vertices[1].normal;
+	vec3 normal2 = vertices[2].normal;
 
 	vec3 normal = interpolate(normal0, normal1, normal2, bary.barycentrics);
-	res.normal = normalize(mat3(model) * normal);
+	res.normal = normalize(normal_matrix * normal);
 #else
 	res.normal = cross(res.pos_dx, res.pos_dy);
 #endif // HAS_NORMAL
@@ -300,12 +300,8 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 	vec4 tangent1 = vertices[1].tangent;
 	vec4 tangent2 = vertices[2].tangent;
 
-	tangent0.xyz = normalize(model * vec4(tangent0.xyz, 0.0f)).xyz;
-	tangent1.xyz = normalize(model * vec4(tangent1.xyz, 0.0f)).xyz;
-	tangent2.xyz = normalize(model * vec4(tangent2.xyz, 0.0f)).xyz;
-
 	vec4 tangent = interpolate(tangent0, tangent1, tangent2, bary.barycentrics);
-	res.tangent = vec4(normalize(mat3(model) * vec3(tangent)), tangent.w);
+	res.tangent = vec4(normalize(mat3(model) * tangent.xyz), tangent.w);
 #else	
 	vec3 tangent = (res.uv_dy.t * res.pos_dx - res.uv_dx.t * res.pos_dy) / (res.uv_dx.s * res.uv_dy.t - res.uv_dy.s * res.uv_dx.t); 
 	tangent = normalize(tangent - res.normal * dot(res.normal, tangent));

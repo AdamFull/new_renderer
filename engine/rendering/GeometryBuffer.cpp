@@ -383,7 +383,6 @@ namespace engine
 						[&normal_encode_mat](const glm::vec3& in)
 						{
 							return shlib::EncodeNormal(glm::normalize(normal_encode_mat * in));
-							//return shlib::EncodeNormal(in);
 						});
 				}
 				else if (attribute.attribute_flag & VertexAttributeFlag::eTangent)
@@ -393,7 +392,6 @@ namespace engine
 						{
 							auto tan_enc = glm::normalize(position_encode_mat * in);
 							return shlib::EncodeTangent(glm::vec4(tan_enc, in.w));
-							//return shlib::EncodeTangent(in);
 						});
 				}
 				else if (attribute.attribute_flag & VertexAttributeFlag::eColor)
