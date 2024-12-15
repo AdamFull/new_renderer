@@ -4,12 +4,12 @@
 		{
 			"source": "unidirectional_shadow.vert",
 			"type": "Vertex",
-			"definitions": [ "MESH_DATA", "SHADOW_DATA", "GEOMETRY_BUFFERS" ]
+			"definitions": [ "SHADOW_DATA", "GEOMETRY_BUFFERS" ]
 		},
 		{
 			"source": "unidirectional_shadow.frag",
 			"type": "Fragment",
-			"definitions": [ "MESH_DATA" ]
+			"definitions": []
 		}
 	],
 	"compile": {

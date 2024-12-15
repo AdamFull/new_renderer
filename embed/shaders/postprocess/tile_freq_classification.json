@@ -4,7 +4,7 @@
 		{
 			"source": "tile_freq_classification.comp",
 			"type": "Compute",
-			"definitions": [ "MESH_DATA", "CULLING_DATA" ]
+			"definitions": [ "CULLING_DATA" ]
 		}
 	],
 	"compile": {

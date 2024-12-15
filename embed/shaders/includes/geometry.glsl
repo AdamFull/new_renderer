@@ -26,6 +26,22 @@ layout(std140, set = 1, binding = 0) uniform GeometryBuffers
 #endif
 } geometry_buffers;
 
+layout(std140, set = 1, binding = 16) uniform DrawDescriptionBuffers
+{
+	GET_PTR_T(DrawDescription) draw_descriptions_ptr;
+	GET_PTR_T(DrawIndexedIndirectData) draw_commands_ptr;
+};
+
+DrawDescription GetDrawInfo(uint32_t index)
+{
+	return draw_descriptions_ptr[index].data;
+}
+
+DrawIndexedIndirectData GetDrawIndexedCommand(uint32_t index)
+{
+	return draw_commands_ptr[index].data;
+}
+
 vec3 GetVertexPosition(uint32_t vertex_index)
 {
 	return DecodePosition(geometry_buffers.position[vertex_index].data);

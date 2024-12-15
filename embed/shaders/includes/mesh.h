@@ -1,7 +1,6 @@
 #ifndef SHLIB_MESH_H
 #define SHLIB_MESH_H
 
-#include "draw.h"
 #include "geometry.h"
 
 SHLIB_NS_BEGIN

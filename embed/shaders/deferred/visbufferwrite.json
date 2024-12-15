@@ -4,11 +4,12 @@
 		{
 			"source": "visbufferwrite.vert",
 			"type": "Vertex",
-			"definitions": [ "MESH_DATA", "GEOMETRY_BUFFERS" ]
+			"definitions": [ "GEOMETRY_BUFFERS" ]
 		},
 		{
 			"source": "visbufferwrite.frag",
-			"type": "Fragment"
+			"type": "Fragment",
+			"definitions": [ "GEOMETRY_BUFFERS" ]
 		}
 	],
 	"pipeline_state": {

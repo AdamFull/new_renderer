@@ -4,7 +4,7 @@
 		{
 			"source": "classification_debug.comp",
 			"type": "Compute",
-			"definitions": [ "MESH_DATA", "CULLING_DATA" ]
+			"definitions": [ "CULLING_DATA" ]
 		}
 	],
 	"compile": {

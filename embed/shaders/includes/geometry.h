@@ -1,7 +1,7 @@
 #ifndef SHLIB_GEOMETRY_H
 #define SHLIB_GEOMETRY_H
 
-#include "base.h"
+#include "ptr.h"
 
 SHLIB_NS_BEGIN
 
@@ -17,6 +17,27 @@ SHLIB_NS_BEGIN
 #else
 #define Index uint32_t
 #endif
+
+struct DrawIndexedIndirectData
+{
+	uint32_t indexCount;
+	uint32_t instanceCount;
+	uint32_t firstIndex;
+	int32_t  vertexOffset;
+	uint32_t firstInstance;
+};
+
+REGISTER_TYPE_PTR(DrawIndexedIndirectData, 4);
+
+struct DrawDescription
+{
+	uint32_t camera_index;
+	uint32_t mesh_index;
+	uint32_t submesh_index;
+	uint32_t sorting_order;
+};
+
+REGISTER_TYPE_PTR(DrawDescription, 4);
 
 struct TexcoordBounds
 {

@@ -28,6 +28,11 @@ struct BufferName {
 #define CB_END(BufferName) };
 #define CB_END_E() };
 
+#define BEGIN_STRUCT_REGISTER(BufferName) \
+constexpr const uint32_t BufferName##_label = utl::murmur_hash(#BufferName); \
+struct BufferName {
+#define END_STRUCT_REGISTER() };
+
 SHLIB_NS_BEGIN
 using namespace glm;
 SHLIB_NS_END

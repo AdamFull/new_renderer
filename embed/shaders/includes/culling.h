@@ -1,7 +1,7 @@
 #ifndef SHLIB_CULLING_H
 #define SHLIB_CULLING_H
 
-#include "draw.h"
+#include "geometry.h"
 
 SHLIB_NS_BEGIN
 

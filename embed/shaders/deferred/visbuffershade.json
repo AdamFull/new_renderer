@@ -4,7 +4,7 @@
 		{
 			"source": "visbuffershade.comp",
 			"type": "Compute",
-			"definitions": [ "MESH_DATA", "LIGHT_DATA", "SHADOW_DATA", "GEOMETRY_BUFFERS" ]
+			"definitions": [ "LIGHT_DATA", "SHADOW_DATA", "GEOMETRY_BUFFERS" ]
 		}
 	],
 	"compile": {
