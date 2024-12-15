@@ -482,7 +482,7 @@ namespace engine
 		// joints: u16vec4/u8vec4 - 8 bytes/4 bytes
 		// weights: vec4 - 16 bytes -> vec3 - 12 bytes -> u16vec3 - 6 bytes
 		// Total(before): 12 + 8 + 12 + 16 + 16 + 8|4 + 16 = 84|88
-		// Total(after): 12 + 4 + 4 + 4 + 4 + 8|4 + 12 = 32|36
+		// Total(after): 12 + 4 + 4 + 4 + 4 + 8|4 + 6 = 32|36
 
 		struct VertexData
 		{
