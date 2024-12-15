@@ -32,7 +32,8 @@ void main()
 	uint32_t draw_index = drawID + instanceID;
 	DrawDescription draw_info = GetDrawInfo(draw_index);
 	Mesh mesh = GetMesh(draw_info.mesh_index);
-	Material material = GetMaterial(mesh.material);
+	SubMesh submesh = GetSubMesh(mesh.submesh_offset + draw_info.submesh_index);
+	Material material = GetMaterial(submesh.material);
 	
 	float opacity = material.baseColorFactor.a;
 	if(material.baseColorTexture != INVALID_HANDLE)

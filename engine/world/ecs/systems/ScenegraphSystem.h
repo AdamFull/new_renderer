@@ -21,9 +21,6 @@ namespace engine
 			private:
 				render::IRenderWorld& render_world;
 			private:
-				void OnConstruct(entt::registry& registry, entt::entity entity);
-				void OnDestruct(entt::registry& registry, entt::entity entity);
-
 				static void buildHierarchy(entt::entity node);
 				static void initMatrix(FTransformComponent* transform);
 				static void initMatrices(entt::registry* registry, entt::entity node);

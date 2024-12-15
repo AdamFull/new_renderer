@@ -116,9 +116,9 @@ CB_BEGIN(GlobalUniformData, 0, 0)
 CB_END(frameData)
 
 CB_BEGIN(GlobalBufferReference, 0, 1)
-	GET_PTR_T(SceneNode) nodeBuffer;
 	GET_PTR_T(mat4) matrixBuffer;
 	GET_PTR_T(Mesh) meshBuffer;
+	GET_PTR_T(SubMesh) submeshBuffer;
 
 	GET_PTR_T(Material) materialBuffer;
 

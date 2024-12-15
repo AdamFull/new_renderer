@@ -53,19 +53,14 @@ namespace engine
 
 			virtual glm::mat4 const& GetMatrix(uint32_t matrix_offset) const = 0;
 
-			virtual std::tuple<uint32_t, shlib::SceneNode&> CreateNode() = 0;
-			virtual void UpdateNode(uint32_t node_id, const glm::mat4& matrix) = 0;
-			virtual glm::mat4 const& GetNodeMatrix(uint32_t node_id, uint32_t matrix_offset) const = 0;
-			virtual const shlib::SceneNode& GetNode(uint32_t node_id) const = 0;
-
-			virtual void AddGeometryDraw(uint32_t camera_id, uint32_t node_id, uint32_t mesh_id) = 0;
+			virtual void AddGeometryDraw(uint32_t camera_id, uint32_t mesh_id) = 0;
 
 			virtual uint32_t AddMaterial(const shlib::Material& material) = 0;
 			virtual const shlib::Material& GetMaterial(uint32_t index) const = 0;
 
 			virtual std::tuple<uint32_t, shlib::Mesh&> CreateMesh() = 0;
 			virtual void UpdateMeshMatrices(uint32_t mesh_id, const glm::mat4& matrix) = 0;
-			virtual void UpdateMesh(uint32_t mesh_id, const shlib::Mesh& mesh)  = 0;
+			virtual void AttachSubmesh(uint32_t mesh_id, const shlib::SubMesh& submesh) = 0;
 			virtual const shlib::Mesh& GetMesh(uint32_t index)  = 0;
 
 			virtual void AddLight(const shlib::LightCommit& light_data) = 0;

@@ -20,7 +20,7 @@ struct DrawDescription
 {
 	uint32_t camera_index;
 	uint32_t mesh_index;
-	uint32_t node_index;
+	uint32_t submesh_index;
 	uint32_t sorting_order;
 };
 

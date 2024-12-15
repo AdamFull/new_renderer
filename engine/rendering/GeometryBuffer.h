@@ -21,7 +21,7 @@ namespace engine
 
 			uint64_t GetBufferAddress(VertexAttributeFlag flag = {}) override;
 
-			VertexRange AddMesh(const std::array<AttributeStream, k_max_attribure_description>& attributes, const IndexStream& indices, shlib::Mesh& mesh) override;
+			VertexRange AddMesh(const std::array<AttributeStream, k_max_attribure_description>& attributes, const IndexStream& indices) override;
 
 			void AddVertexStreamData(const void* data, uint32_t count, uint32_t stride, VertexAttributeFlag flag = {}) override;
 		private:
@@ -40,7 +40,7 @@ namespace engine
 
 			virtual uint64_t GetBufferAddress(VertexAttributeFlag flag = {}) override;
 
-			VertexRange AddMesh(const std::array<AttributeStream, k_max_attribure_description>& attributes, const IndexStream& indices, shlib::Mesh& mesh) override;
+			VertexRange AddMesh(const std::array<AttributeStream, k_max_attribure_description>& attributes, const IndexStream& indices) override;
 
 			void AddVertexStreamData(const void* data, uint32_t count, uint32_t stride, VertexAttributeFlag flags = {}) override;
 		private:

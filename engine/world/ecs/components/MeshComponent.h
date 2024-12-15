@@ -11,17 +11,11 @@ namespace engine
 	{
 		namespace ecs
 		{
-			struct FMeshPrimitive
-			{
-				uint32_t mesh{ ~0u };
-				uint32_t vbo{};
-			};
-
 			struct FMeshComponent
 			{
 				DECLARE_COMPONENT(FMeshComponent, icon::shape, "Mesh renderer")
 
-				utl::vector<FMeshPrimitive> primitives{};
+				uint32_t mesh{ ~0u };
 				int32_t skin{ -1 };
 				bool castShadows{ true };
 			};

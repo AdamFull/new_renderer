@@ -26,23 +26,28 @@ struct MeshLod
 
 REGISTER_TYPE_PTR(MeshLod, 4);
 
-struct Mesh
+struct SubMesh
 {
 	uint32_t material;
-
-	uint32_t lodOffset;
-	uint32_t lodCount;
-
-	uint32_t matrix_offset;
 
 	uint32_t first_index;
 	uint32_t index_count;
 	int32_t first_vertex;
 	uint32_t vertex_count;
+};
 
-	ALIGN_AS(16) vec3 bounds_enc;
-	GeometryDrawBounds bounds;
+REGISTER_TYPE_PTR(SubMesh, 4);
+
+struct Mesh
+{
+	uint32_t matrix_offset;
+	uint32_t submesh_offset;
+	uint32_t submesh_count;
+	uint32_t skin_offset;
+
 	TexcoordBounds uv_enc;
+	ALIGN_AS(16) vec3 bb_enc;
+	GeometryDrawBounds bb;
 };
 
 REGISTER_TYPE_PTR(Mesh, 16);

@@ -16,26 +16,24 @@ void main()
 	uint32_t draw_index = shadow_data.call_id + gl_DrawIDARB + gl_InstanceIndex;
 	DrawDescription draw_info = GetDrawInfo(draw_index);
 
-	SceneNode node = GetSceneNode(draw_info.node_index);
 	Mesh mesh = GetMesh(draw_info.mesh_index);
-
 	mat4 model_matrix = GetModelMatrix(mesh.matrix_offset);
 
 	uint32_t vertex_index = uint32_t(gl_VertexIndex);
 
 	// Calculate skinning matrix
-#ifdef HAS_SKIN
-	Joints joints = GetVertexJoints(vertex_index);
-	vec4 weights = GetVertexWeights(vertex_index);
-
-	mat4 skin_mat = 
-			weights.x * GetMatrixById(node.skeletonID, joints.x) +
-			weights.y * GetMatrixById(node.skeletonID, joints.y) +
-			weights.z * GetMatrixById(node.skeletonID, joints.z) +
-			weights.w * GetMatrixById(node.skeletonID, joints.w);
-	
-		model_matrix = model_matrix * skin_mat;
-#endif
+//#ifdef HAS_SKIN
+//	Joints joints = GetVertexJoints(vertex_index);
+//	vec4 weights = GetVertexWeights(vertex_index);
+//
+//	mat4 skin_mat = 
+//			weights.x * GetMatrixById(node.skeletonID, joints.x) +
+//			weights.y * GetMatrixById(node.skeletonID, joints.y) +
+//			weights.z * GetMatrixById(node.skeletonID, joints.z) +
+//			weights.w * GetMatrixById(node.skeletonID, joints.w);
+//	
+//		model_matrix = model_matrix * skin_mat;
+//#endif
 
 	// Sample vertex position
 	vec3 position = GetVertexPosition(vertex_index);
@@ -63,9 +61,10 @@ void main()
 
 	material = ~0u;
 
-	if(mesh.material != ~0u)
+	SubMesh submesh = GetSubMesh(mesh.submesh_offset + draw_info.submesh_index);
+	if(submesh.material != ~0u)
 	{
-		material = mesh.material;
+		material = submesh.material;
 	}
 
 	

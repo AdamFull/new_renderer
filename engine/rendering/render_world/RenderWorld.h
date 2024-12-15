@@ -30,12 +30,7 @@ namespace engine
 
 			glm::mat4 const& GetMatrix(uint32_t matrix_offset) const override;
 
-			std::tuple<uint32_t, shlib::SceneNode&> CreateNode() override;
-			void UpdateNode(uint32_t node_id, const glm::mat4& matrix) override;
-			glm::mat4 const& GetNodeMatrix(uint32_t node_id, uint32_t matrix_offset) const override;
-			const shlib::SceneNode& GetNode(uint32_t node_id) const override;
-
-			void AddGeometryDraw(uint32_t camera_id, uint32_t node_id, uint32_t mesh_id) override;
+			void AddGeometryDraw(uint32_t camera_id, uint32_t mesh_id) override;
 
 			uint32_t AddMaterial(const shlib::Material& material) override;
 			const shlib::Material& GetMaterial(uint32_t index) const override;
@@ -44,7 +39,7 @@ namespace engine
 			//void EndUpdateMesh(uint32_t index);
 			std::tuple<uint32_t, shlib::Mesh&> CreateMesh() override;
 			void UpdateMeshMatrices(uint32_t mesh_id, const glm::mat4& matrix) override;
-			void UpdateMesh(uint32_t mesh_id, const shlib::Mesh& mesh) override;
+			void AttachSubmesh(uint32_t mesh_id, const shlib::SubMesh& submesh) override;
 			const shlib::Mesh& GetMesh(uint32_t index) override;
 
 			void AddLight(const shlib::LightCommit& light_data) override;
@@ -67,9 +62,6 @@ namespace engine
 
 			std::vector<WorldResource> world_resources{};
 
-			std::unique_ptr<DynamicBuffer<shlib::SceneNode>> world_nodes{};
-			uint32_t nodes_offset{ 0u };
-
 			std::unique_ptr<DynamicBuffer<shlib::Camera>> world_cameras{};
 			uint32_t camera_offset{ 0u };
 
@@ -85,6 +77,9 @@ namespace engine
 
 			std::unique_ptr<DynamicBuffer<shlib::Mesh>> world_meshes{};
 			uint32_t mesh_count{ 0u };
+
+			std::unique_ptr<DynamicBuffer<shlib::SubMesh>> world_submeshes{};
+			uint32_t submesh_count{ 0u };
 			
 			std::unique_ptr<DynamicBuffer<shlib::Material>> draw_materials{};
 			uint32_t material_count{ 0u };

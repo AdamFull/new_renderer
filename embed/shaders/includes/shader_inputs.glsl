@@ -12,8 +12,8 @@
 layout(set = 0, binding = 3) uniform texture2D globalTextures[MAX_SAMPLED_TEXTURES];
 layout(set = 0, binding = 4) uniform sampler globalSamplers[MAX_SAMPLED_TEXTURES];
 
-SceneNode GetSceneNode(uint index) { return nodeBuffer[index].data; }
 Mesh GetMesh(uint index) { return meshBuffer[index].data; }
+SubMesh GetSubMesh(uint index) { return submeshBuffer[index].data; }
 Material GetMaterial(uint index) { return materialBuffer[index].data; }
 LightCommit getLight(uint index) { return lightsBuffer[index].data; }
 

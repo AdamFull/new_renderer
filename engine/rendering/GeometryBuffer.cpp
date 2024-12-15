@@ -224,7 +224,7 @@ namespace engine
 			return vertex_data.buffer->GetAddress();
 		}
 
-		VertexRange InterleavedGeometryBuffer::AddMesh(const std::array<AttributeStream, k_max_attribure_description>& attributes, const IndexStream& indices, shlib::Mesh& mesh)
+		VertexRange InterleavedGeometryBuffer::AddMesh(const std::array<AttributeStream, k_max_attribure_description>& attributes, const IndexStream& indices)
 		{
 			VertexRange vertex_range{};
 			vertex_range.first_index = index_data.count;
@@ -338,7 +338,7 @@ namespace engine
 			vdat.data.insert(vdat.data.end(), enc_begin, enc_end);
 		}
 
-		VertexRange DeinterleavedGeometryBuffer::AddMesh(const std::array<AttributeStream, k_max_attribure_description>& attributes, const IndexStream& indices, shlib::Mesh& mesh)
+		VertexRange DeinterleavedGeometryBuffer::AddMesh(const std::array<AttributeStream, k_max_attribure_description>& attributes, const IndexStream& indices)
 		{
 			VertexRange vertex_range{};
 			vertex_range.first_index = index_data.count;
@@ -347,9 +347,6 @@ namespace engine
 			vertex_range.first_vertex = vertex_datas[0].count;
 			vertex_range.vertex_count = attributes[0].count;
 
-			glm::mat3 position_encode_mat = shlib::MakeEncodePositionMatrix(mesh.bounds_enc);
-			glm::mat3 normal_encode_mat = glm::transpose(glm::inverse(position_encode_mat));
-
 			for (auto& attribute : attributes)
 			{
 				if (attribute.byte_range.empty())
@@ -357,63 +354,7 @@ namespace engine
 
 				uint32_t index = GetVertexAttributeLocation(attribute.attribute_flag);
 				auto& vert_data = vertex_datas[index];
-
-				// Maximum vertex size
-				// position: vec3 - 12 bytes -> i16vec2 - 6 bytes
-				// texcoord: vec2 - 8 bytes -> u16vec2 - 4 bytes
-				// normal: vec3 - 12 bytes -> u16vec2 - 4 bytes
-				// tangent: vec4 - 16 bytes -> u16vec2 - 4 bytes
-				// color: vec4 - 16 bytes -> u8vec4 - 4 bytes
-				// joints: u16vec4/u8vec4 - 8 bytes/4 bytes
-				// weights: vec4 - 16 bytes -> vec3 - 12 bytes
-				// Total(before): 12 + 8 + 12 + 16 + 16 + 8|4 + 16 = 84|88
-				// Total(after): 12 + 4 + 4 + 4 + 4 + 8|4 + 12 = 38|42
-
-				// TODO: Move it in to mesh compiler
-				if (attribute.attribute_flag & VertexAttributeFlag::ePosition)
-				{
-					Transform<glm::vec3, glm::i16vec3>(vert_data, attribute, 
-						[&mesh](const glm::vec3& in)
-						{  return shlib::EncodePosition(in, mesh.bounds_enc); });
-					//vert_data.data.insert(vert_data.data.end(), attribute.byte_range.begin(), attribute.byte_range.end());
-				}
-				else if (attribute.attribute_flag & VertexAttributeFlag::eNormal)
-				{
-					Transform<glm::vec3, glm::u16vec2>(vert_data, attribute,
-						[&normal_encode_mat](const glm::vec3& in)
-						{
-							return shlib::EncodeNormal(glm::normalize(normal_encode_mat * in));
-						});
-				}
-				else if (attribute.attribute_flag & VertexAttributeFlag::eTangent)
-				{
-					Transform<glm::vec4, glm::u16vec2>(vert_data, attribute,
-						[&position_encode_mat](const glm::vec4& in)
-						{
-							auto tan_enc = glm::normalize(position_encode_mat * in);
-							return shlib::EncodeTangent(glm::vec4(tan_enc, in.w));
-						});
-				}
-				else if (attribute.attribute_flag & VertexAttributeFlag::eColor)
-				{
-					Transform<glm::vec4, glm::u8vec4>(vert_data, attribute,
-						[](const glm::vec4& in) { return shlib::EncodeColor(in); });
-				}
-				else if (attribute.attribute_flag & VertexAttributeFlag::eWeight)
-				{
-					Transform<glm::vec4, glm::vec3>(vert_data, attribute,
-						[](const glm::vec4& in) { return glm::vec3(in); });
-				}
-				else if (attribute.attribute_flag & VertexAttributeFlag::eTexCoord)
-				{
-					Transform<glm::vec2, glm::u16vec2>(vert_data, attribute,
-						[&mesh](const glm::vec2& in) { return shlib::EncodeTexcoord(in, mesh.uv_enc); });
-				}
-				else
-				{
-					vert_data.data.insert(vert_data.data.end(), attribute.byte_range.begin(), attribute.byte_range.end());
-				}
-
+				vert_data.data.insert(vert_data.data.end(), attribute.byte_range.begin(), attribute.byte_range.end());
 				vert_data.count += attribute.count;
 			}
 

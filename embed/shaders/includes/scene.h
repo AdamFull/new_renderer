@@ -5,14 +5,6 @@
 
 SHLIB_NS_BEGIN
 
-struct SceneNode
-{
-	uint32_t matrixOffset;
-	uint32_t skeletonID;
-};
-
-REGISTER_TYPE_PTR(SceneNode, 4);
-
 struct Camera
 {
 	uint32_t type;

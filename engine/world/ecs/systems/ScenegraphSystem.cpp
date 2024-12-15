@@ -24,9 +24,6 @@ namespace engine
 				EntityManager::RegisterComponent<FTransformComponent>();
 
 				auto& registry = EntityManager::GetRegistry();
-
-				registry.on_construct<FTransformComponent>().connect<&CScenegraphSystem::OnConstruct>(*this);
-				registry.on_destroy<FTransformComponent>().connect<&CScenegraphSystem::OnDestruct>(*this);
 			}
 
 			void CScenegraphSystem::__Create()
@@ -43,30 +40,6 @@ namespace engine
 					return;
 
 				buildHierarchy(root);
-
-				auto view = EntityManager::View<FTransformComponent, FBaseComponent>();
-				for (auto [entity, transform, base] : view.each())
-				{
-					if (!base.visible)
-						continue;
-
-					render_world.UpdateNode(transform.node_index, transform.gmodel);
-				}
-			}
-
-			void CScenegraphSystem::OnConstruct(entt::registry& registry, entt::entity entity)
-			{
-				auto [node_id, scene_node] = render_world.CreateNode();
-
-				auto& transform = registry.get<FTransformComponent>(entity);
-				transform.node_index = node_id;
-			}
-
-			void CScenegraphSystem::OnDestruct(entt::registry& registry, entt::entity entity)
-			{
-				auto& transform = registry.get<FTransformComponent>(entity);
-
-				// TODO: free node
 			}
 
 			void CScenegraphSystem::buildHierarchy(entt::entity node)

@@ -26,8 +26,6 @@ namespace engine
 				glm::mat4 lmodel{ 1.f };
 				glm::mat4 oldmodel{ 1.f };
 				glm::mat4 normal{ 1.f };
-
-				uint32_t node_index{};
 			};
 		}
 	}

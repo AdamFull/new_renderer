@@ -411,37 +411,137 @@ namespace engine
 			EntityManager::AttachChild(parent, new_node);
 		}
 
+		// Calculate whole mesh bounds and encoders
+		void ComputeMeshBounds(const easygltf::FGLTFRoot& root, const easygltf::Mesh& gltf_mesh, shlib::Mesh& mesh)
+		{
+			mesh.bb.min = glm::vec3(std::numeric_limits<float>::infinity());
+			mesh.bb.max = -glm::vec3(std::numeric_limits<float>::infinity());
+			mesh.bb_enc = glm::vec3(1.0f);
+
+			for (const auto& gltf_primitive : gltf_mesh.primitives)
+			{
+				// Iterate whole all accessors
+				for (const auto& [name, accessor_index] : gltf_primitive.attributes)
+				{
+					// NOT SUPPORTED FOR NOW
+					if (name == "TEXCOORD_1")
+						continue;
+
+					const easygltf::Accessor& accessor = root.accessors[accessor_index];
+					auto stream = root.getStream(accessor);
+
+					auto attribute_type = GetVertexAttributeFlag(name);
+					if (attribute_type & render::VertexAttributeFlag::ePosition)
+					{
+						const glm::vec3* begin = reinterpret_cast<const glm::vec3*>(stream.data);
+						const glm::vec3* end = begin + stream.count;
+
+						for (auto it = begin; it != end; ++it)
+						{
+							mesh.bb_enc = glm::max(mesh.bb_enc, glm::abs(*it));
+							mesh.bb.min = glm::min(mesh.bb.min, *it);
+							mesh.bb.max = glm::max(mesh.bb.max, *it);
+						}
+					}
+					else if (attribute_type & render::VertexAttributeFlag::eTexCoord)
+					{
+						const glm::vec2* begin = reinterpret_cast<const glm::vec2*>(stream.data);
+						const glm::vec2* end = begin + stream.count;
+
+						for (auto it = begin; it != end; ++it)
+						{
+							mesh.uv_enc.min = glm::min(mesh.uv_enc.min, *it);
+							mesh.uv_enc.max = glm::max(mesh.uv_enc.max, *it);
+						}
+					}
+					else
+						continue;
+				}
+			}
+
+			mesh.bb_enc = glm::exp2(glm::ceil(glm::log2(mesh.bb_enc)));
+
+			// Round off the minimum and the maximum of the bounding square to the next
+			// power of 2 if they are not equal to 0
+			{
+				// Select a relatively big default square size to avoid log2 NaN
+				glm::vec2 p = glm::log2(glm::max(glm::max(-mesh.uv_enc.min, mesh.uv_enc.max), 1.0f));
+				glm::vec2 bs = glm::exp2(glm::ceil(p));
+				mesh.uv_enc.min = glm::mix(glm::vec2(0.0f), -bs, glm::notEqual(mesh.uv_enc.min, glm::vec2(0.0f)));
+				mesh.uv_enc.max = glm::mix(glm::vec2(0.0f), bs, glm::notEqual(mesh.uv_enc.max, glm::vec2(0.0f)));
+			}
+		}
+
+		// Maximum vertex size
+		// position: vec3 - 12 bytes -> i16vec2 - 6 bytes
+		// texcoord: vec2 - 8 bytes -> u16vec2 - 4 bytes
+		// normal: vec3 - 12 bytes -> u16vec2 - 4 bytes
+		// tangent: vec4 - 16 bytes -> u16vec2 - 4 bytes
+		// color: vec4 - 16 bytes -> u8vec4 - 4 bytes
+		// joints: u16vec4/u8vec4 - 8 bytes/4 bytes
+		// weights: vec4 - 16 bytes -> vec3 - 12 bytes
+		// Total(before): 12 + 8 + 12 + 16 + 16 + 8|4 + 16 = 84|88
+		// Total(after): 12 + 4 + 4 + 4 + 4 + 8|4 + 12 = 38|42
+
+		struct VertexData
+		{
+			std::vector<glm::i16vec3> positions;
+			std::vector<glm::u8vec4> colors;
+			std::vector<glm::u16vec2> texcoords;
+			std::vector<glm::u16vec2> normals;
+			std::vector<glm::u16vec2> tangents;
+			// TODO: i can use u16 for joints by default
+			std::vector<uint8_t> joints;
+			std::vector<glm::vec3> weights;
+		};
+
+		template<typename _From, typename _To, typename _Pred>
+		std::span<const uint8_t> Transform(const easygltf::FGLTFRoot& root, const easygltf::Accessor& accessor, std::vector<_To>& out, _Pred&& pred)
+		{
+			auto stream = root.getStream(accessor);
+			assert(stream.stride == sizeof(_From) && "Incorrect _From data type size.");
+
+			auto* begin = reinterpret_cast<const _From*>(stream.data);
+			auto* end = begin + stream.count;
+
+			for (auto it = begin; it != end; ++it)
+				out.emplace_back(pred(*it));
+
+			auto* bytes_begin = reinterpret_cast<const uint8_t*>(out.data());
+			size_t bytes_count = out.size() * sizeof(_To);
+
+			return std::span<const uint8_t>(bytes_begin, bytes_count);
+		}
+
 		void Scene::LoadMeshComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index)
 		{
 			auto& render_world = renderer.GetRenderWorld();
 
-			const auto& node = root.nodes[node_index];
-			const auto& mesh = root.meshes[node.mesh];
+			const auto& gltf_node = root.nodes[node_index];
+			const auto& gltf_mesh = root.meshes[gltf_node.mesh];
+
+			// Create gpu mesh instance 
+			auto [mesh_id, mesh] = render_world.CreateMesh();
+			ComputeMeshBounds(root, gltf_mesh, mesh);
 
 			auto& mesh_component = EntityManager::AddComponent<ecs::FMeshComponent>(parent, ecs::FMeshComponent{});
-			mesh_component.skin = node.skin;
+			mesh_component.mesh = mesh_id;
+			mesh_component.skin = gltf_node.skin;
+
+			// Create encode matrices for mesh
+			glm::mat3 position_encode_mat = shlib::MakeEncodePositionMatrix(mesh.bb_enc);
+			glm::mat3 normal_encode_mat = glm::transpose(glm::inverse(position_encode_mat));
 
 			// Load mesh primitives
-			for (u64 i = 0ull; i < mesh.primitives.size(); ++i)
+			for (u64 i = 0ull; i < gltf_mesh.primitives.size(); ++i)
 			{
-				const auto& primitive = mesh.primitives[i];
+				const auto& primitive = gltf_mesh.primitives[i];
 
 				// Load vertices
 				render::GeometryBufferCreateInfo geometry_ci = GetGeometryBufferCreateInfo(root, primitive);
 				auto& geometry_buffer = renderer.RequestDeinterleavedGeometryBuffer(geometry_ci);
 
-				// Create mesh primitive
-				ecs::FMeshPrimitive mesh_primitive{};
-				mesh_primitive.vbo = Hash(geometry_ci);
-
-				auto [mesh_id, new_mesh] = render_world.CreateMesh();
-				mesh_primitive.mesh = mesh_id;
-
-				new_mesh.bounds.min = glm::vec3(std::numeric_limits<float>::infinity());
-				new_mesh.bounds.max = -glm::vec3(std::numeric_limits<float>::infinity());
-				new_mesh.bounds_enc = glm::vec3(1.0f);
-				// NOTE: Updating material Create info for future shader creation
-				new_mesh.material = primitive.material;
+				VertexData vertex_data{};
 
 				uint32_t stream_count{ 0u };
 				std::array<render::AttributeStream, render::k_max_attribure_description> attribute_streams{};
@@ -452,20 +552,56 @@ namespace engine
 						continue;
 
 					const easygltf::Accessor& accessor = root.accessors[accessor_index];
-					auto stream = root.getStream(accessor);
-
 					auto attribute_type = GetVertexAttributeFlag(name);
 
+					// Create new data stream
 					auto& attrib_stream = attribute_streams[stream_count++];
 					attrib_stream.attribute_flag = attribute_type;
-					attrib_stream.byte_range = std::span<const uint8_t>(stream.data, stream.count * stream.stride);
-					attrib_stream.count = stream.count;
+					attrib_stream.count = accessor.count;
 
-					//if (attribute_type == render::VertexAttributeFlag::ePosition)
-					//{
-					//	new_mesh.bounds.min = !accessor.min.empty() ? glm::vec3(accessor.min[0], accessor.min[1], accessor.min[2]) : glm::vec3(0.f);
-					//	new_mesh.bounds.max = !accessor.max.empty() ? glm::vec3(accessor.max[0], accessor.max[1], accessor.max[2]) : glm::vec3(0.f);
-					//}
+					if (attribute_type & render::VertexAttributeFlag::ePosition)
+					{
+						attrib_stream.byte_range = Transform<glm::vec3, glm::i16vec3>(root, accessor, vertex_data.positions,
+							[&mesh](const glm::vec3& in)
+							{  return shlib::EncodePosition(in, mesh.bb_enc); });
+					}
+					else if (attribute_type & render::VertexAttributeFlag::eColor)
+					{
+						attrib_stream.byte_range = Transform<glm::vec4, glm::u8vec4>(root, accessor, vertex_data.colors,
+							[](const glm::vec4& in) { return shlib::EncodeColor(in); });
+					}
+					else if (attribute_type & render::VertexAttributeFlag::eTexCoord)
+					{
+						attrib_stream.byte_range = Transform<glm::vec2, glm::u16vec2>(root, accessor, vertex_data.texcoords,
+							[&mesh](const glm::vec2& in) { return shlib::EncodeTexcoord(in, mesh.uv_enc); });
+					}
+					else if (attribute_type & render::VertexAttributeFlag::eNormal)
+					{
+						attrib_stream.byte_range = Transform<glm::vec3, glm::u16vec2>(root, accessor, vertex_data.normals,
+							[&normal_encode_mat](const glm::vec3& in)
+							{ return shlib::EncodeNormal(glm::normalize(normal_encode_mat * in)); });
+					}
+					else if (attribute_type & render::VertexAttributeFlag::eTangent)
+					{
+						attrib_stream.byte_range = Transform<glm::vec4, glm::u16vec2>(root, accessor, vertex_data.tangents,
+							[&position_encode_mat](const glm::vec4& in)
+							{
+								return shlib::EncodeTangent(glm::vec4(glm::normalize(position_encode_mat * in), in.w));
+							});
+					}
+					// TODO: can be compressed with using u16vec3
+					else if (attribute_type & render::VertexAttributeFlag::eWeight)
+					{
+						attrib_stream.byte_range = Transform<glm::vec4, glm::vec3>(root, accessor, vertex_data.weights,
+							[](const glm::vec4& in) { return glm::vec3(in); });
+					}
+					else
+					{
+						// Just copy, transcoding not supported yet
+						auto stream = root.getStream(accessor);
+						attrib_stream.byte_range = std::span<const uint8_t>(stream.data, stream.count * stream.stride);
+						attrib_stream.count = stream.count;
+					}
 				}
 
 				render::IndexStream index_stream{};
@@ -478,59 +614,16 @@ namespace engine
 					index_stream.count = stream.count;
 				}
 
-				// Calculate bounds
-				for (auto& attribute : attribute_streams)
-				{
-					if (attribute.byte_range.empty())
-						continue;
+				auto vertex_range = geometry_buffer.AddMesh(attribute_streams, index_stream);
 
-					if (attribute.attribute_flag & render::VertexAttributeFlag::ePosition)
-					{
-						auto* begin = reinterpret_cast<const glm::vec3*>(attribute.byte_range.data());
-						auto* end = begin + attribute.count;
+				shlib::SubMesh submesh{};
+				submesh.first_index = vertex_range.first_index;
+				submesh.index_count = vertex_range.index_count;
+				submesh.first_vertex = vertex_range.first_vertex;
+				submesh.vertex_count = vertex_range.vertex_count;
+				submesh.material = primitive.material;
 
-						for (auto it = begin; it != end; ++it)
-						{
-							new_mesh.bounds_enc = glm::max(new_mesh.bounds_enc, glm::abs(*it));
-							new_mesh.bounds.min = glm::min(new_mesh.bounds.min, *it);
-							new_mesh.bounds.max = glm::max(new_mesh.bounds.max, *it);
-						}
-
-						new_mesh.bounds_enc = glm::exp2(glm::ceil(glm::log2(new_mesh.bounds_enc)));
-					}
-					else if (attribute.attribute_flag & render::VertexAttributeFlag::eTexCoord)
-					{
-						auto* begin = reinterpret_cast<const glm::vec2*>(attribute.byte_range.data());
-						auto* end = begin + attribute.count;
-
-						for (auto it = begin; it != end; ++it)
-						{
-							new_mesh.uv_enc.min = glm::min(new_mesh.uv_enc.min, *it);
-							new_mesh.uv_enc.max = glm::max(new_mesh.uv_enc.max, *it);
-						}
-
-						// Round off the minimum and the maximum of the bounding square to the next
-						// power of 2 if they are not equal to 0
-						{
-							// Select a relatively big default square size to avoid log2 NaN
-							glm::vec2 p = glm::log2(glm::max(glm::max(-new_mesh.uv_enc.min, new_mesh.uv_enc.max), 1.0f));
-							glm::vec2 bs = glm::exp2(glm::ceil(p));
-							new_mesh.uv_enc.min = glm::mix(glm::vec2(0.0f), -bs, glm::notEqual(new_mesh.uv_enc.min, glm::vec2(0.0f)));
-							new_mesh.uv_enc.max = glm::mix(glm::vec2(0.0f), bs, glm::notEqual(new_mesh.uv_enc.max, glm::vec2(0.0f)));
-						}
-					}
-				}
-
-				auto vertex_range = geometry_buffer.AddMesh(attribute_streams, index_stream, new_mesh);
-
-				new_mesh.first_index = vertex_range.first_index;
-				new_mesh.index_count = vertex_range.index_count;
-				new_mesh.first_vertex = vertex_range.first_vertex;
-				new_mesh.vertex_count = vertex_range.vertex_count;
-
-				//render_world.UpdateMesh(mesh_primitive.mesh, new_mesh);
-				
-				mesh_component.primitives.emplace_back(mesh_primitive);
+				render_world.AttachSubmesh(mesh_id, submesh);
 			}
 		}
 

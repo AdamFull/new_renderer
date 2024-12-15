@@ -47,8 +47,6 @@ struct VisibilityBuffer
 	uint transparent;
 
 	uint matID;
-	uint objID;
-
 	uint vboID;
 };
 
@@ -71,9 +69,9 @@ bool loadVisBuffer(in vec2 uv, out VisibilityBuffer res)
 	uint32_t draw_index = res.drawID + instID;
 	DrawDescription draw_info = GetDrawInfo(draw_index);
 	Mesh mesh = GetMesh(draw_info.mesh_index);
+	SubMesh submesh = GetSubMesh(mesh.submesh_offset + draw_info.submesh_index);
 	
-	res.objID = draw_info.node_index;
-	res.matID = mesh.material;
+	res.matID = submesh.material;
 
 	return true;
 }
@@ -195,7 +193,6 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 	vec3 position2 = vertices[2].position;
 
 	// Load mesh model matrix
-	SceneNode node = GetSceneNode(visbuffer.objID);
 	DrawDescription draw_info = GetDrawInfo(visbuffer.drawID);
 	Mesh mesh = GetMesh(draw_info.mesh_index);
 
@@ -205,51 +202,51 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 	Camera camera = GetCamera(call_data.camera_id);
 	mat4 view_projection = GetViewProjectionMatrix(camera.matrices_offset);
 			
-#ifdef HAS_SKIN
+//#ifdef HAS_SKIN
 //	if(node.skeletonID != ~0u)
 //	{
-	Joints joints0 = vertices[0].joints;
-	Joints joints1 = vertices[1].joints;
-	Joints joints2 = vertices[2].joints;
-
-	vec4 weights0 = vertices[0].weights;
-	vec4 weights1 = vertices[1].weights;
-	vec4 weights2 = vertices[2].weights;
-
-	mat4 skin_mat0 = 
-		weights0.x * GetMatrixById(node.skeletonID, joints0.x) +
-		weights0.y * GetMatrixById(node.skeletonID, joints0.y) +
-		weights0.z * GetMatrixById(node.skeletonID, joints0.z) +
-		weights0.w * GetMatrixById(node.skeletonID, joints0.w);
-
-	mat4 skin_mat1 = 
-		weights1.x * GetMatrixById(node.skeletonID, joints1.x) +
-		weights1.y * GetMatrixById(node.skeletonID, joints1.y) +
-		weights1.z * GetMatrixById(node.skeletonID, joints1.z) +
-		weights1.w * GetMatrixById(node.skeletonID, joints1.w);
-
-	mat4 skin_mat2 = 
-		weights2.x * GetMatrixById(node.skeletonID, joints2.x) +
-		weights2.y * GetMatrixById(node.skeletonID, joints2.y) +
-		weights2.z * GetMatrixById(node.skeletonID, joints2.z) +
-		weights2.w * GetMatrixById(node.skeletonID, joints2.w);
-
-	mat4 mvp0 = view_projection * model * skin_mat0;
-	mat4 mvp1 = view_projection * model * skin_mat1;
-	mat4 mvp2 = view_projection * model * skin_mat2;
-
-	// Transform positions to clip space
-	vec4 clipPos0 = mvp0 * vec4(position0, 1.0);
-	vec4 clipPos1 = mvp1 * vec4(position1, 1.0);
-	vec4 clipPos2 = mvp2 * vec4(position2, 1.0);
+//	Joints joints0 = vertices[0].joints;
+//	Joints joints1 = vertices[1].joints;
+//	Joints joints2 = vertices[2].joints;
+//
+//	vec4 weights0 = vertices[0].weights;
+//	vec4 weights1 = vertices[1].weights;
+//	vec4 weights2 = vertices[2].weights;
+//
+//	mat4 skin_mat0 = 
+//		weights0.x * GetMatrixById(node.skeletonID, joints0.x) +
+//		weights0.y * GetMatrixById(node.skeletonID, joints0.y) +
+//		weights0.z * GetMatrixById(node.skeletonID, joints0.z) +
+//		weights0.w * GetMatrixById(node.skeletonID, joints0.w);
+//
+//	mat4 skin_mat1 = 
+//		weights1.x * GetMatrixById(node.skeletonID, joints1.x) +
+//		weights1.y * GetMatrixById(node.skeletonID, joints1.y) +
+//		weights1.z * GetMatrixById(node.skeletonID, joints1.z) +
+//		weights1.w * GetMatrixById(node.skeletonID, joints1.w);
+//
+//	mat4 skin_mat2 = 
+//		weights2.x * GetMatrixById(node.skeletonID, joints2.x) +
+//		weights2.y * GetMatrixById(node.skeletonID, joints2.y) +
+//		weights2.z * GetMatrixById(node.skeletonID, joints2.z) +
+//		weights2.w * GetMatrixById(node.skeletonID, joints2.w);
+//
+//	mat4 mvp0 = view_projection * model * skin_mat0;
+//	mat4 mvp1 = view_projection * model * skin_mat1;
+//	mat4 mvp2 = view_projection * model * skin_mat2;
+//
+//	// Transform positions to clip space
+//	vec4 clipPos0 = mvp0 * vec4(position0, 1.0);
+//	vec4 clipPos1 = mvp1 * vec4(position1, 1.0);
+//	vec4 clipPos2 = mvp2 * vec4(position2, 1.0);
 //	}
-#else
+//#else
 	// Transform positions to clip space
 	mat4 mvp = view_projection * model;
 	vec4 clipPos0 = mvp * vec4(position0, 1.0);
 	vec4 clipPos1 = mvp * vec4(position1, 1.0);
 	vec4 clipPos2 = mvp * vec4(position2, 1.0);
-#endif // HAS_SKIN
+//#endif // HAS_SKIN
 
 	//uv.y = 1.0 - uv.y;
 	vec2 ndcClip = uv * 2.0 - 1.0;
@@ -351,7 +348,6 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 //		FDrawMeshinfo draw_info = GetDrawInfo(draw_index);
 //		Mesh mesh = GetMesh(draw_info.mesh_index);
 //		
-//		vb.objID = draw_info.node_index;
 //		vb.matID = mesh.material;
 //
 //		VertexAttribute va = getVertexData(uv, vb);

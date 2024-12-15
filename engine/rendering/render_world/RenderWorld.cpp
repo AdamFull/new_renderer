@@ -16,9 +16,9 @@ namespace engine
 		{
 			auto& resource_loader = renderer.GetResourceLoader();
 
-			world_nodes = std::make_unique<DynamicBuffer<shlib::SceneNode>>(resource_loader, 8ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
 			draw_descriptions = std::make_unique<DynamicBuffer<shlib::DrawDescription>>(resource_loader, 16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
 			world_meshes = std::make_unique<DynamicBuffer<shlib::Mesh>>(resource_loader, 16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
+			world_submeshes = std::make_unique<DynamicBuffer<shlib::SubMesh>>(resource_loader, 16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
 
 			scene_lights = std::make_unique<DynamicBuffer<shlib::LightCommit>>(resource_loader, 16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
 
@@ -213,119 +213,40 @@ namespace engine
 			return world_matrices->Get(matrix_offset);
 		}
 
-		std::tuple<uint32_t, shlib::SceneNode&> RenderWorld::CreateNode()
-		{
-			auto& world_resource = world_resources.emplace_back();
-			world_resource.type = WorldResourceType::eNode;
-			world_resource.resource_id = nodes_offset++;
-
-			auto& node = world_nodes->Get(world_resource.resource_id);
-			world_nodes->MarkDirty(world_resource.resource_id);
-
-			node.matrixOffset = matrices_offset;
-			matrices_offset += 2ull;
-
-			// TODO: skeleton id
-
-			return { world_resources.size() - 1ull, node };
-		}
-
-		void RenderWorld::UpdateNode(uint32_t node_id, const glm::mat4& matrix)
+		void RenderWorld::AddGeometryDraw(uint32_t camera_id, uint32_t mesh_id)
 		{
 			EDGE_PROFILE_ZONE_SCOPED;
-
-			auto& world_resource = world_resources[node_id];
-			assert(world_resource.type == WorldResourceType::eNode);
-
-			auto& node = world_nodes->Get(world_resource.resource_id);
-			world_nodes->MarkDirty(world_resource.resource_id);
-
-			auto* matrices = world_matrices->Data(node.matrixOffset);
-			world_matrices->MarkDirty(node.matrixOffset, 2ull);
-
-			matrices[1ull] = matrices[0ull];
-			matrices[0ull] = matrix;
-		}
-
-		glm::mat4 const& RenderWorld::GetNodeMatrix(uint32_t node_id, uint32_t matrix_offset) const
-		{
-			auto& world_resource = world_resources[node_id];
-			auto& node = world_nodes->Get(world_resource.resource_id);
-
-			auto* matrix_begin = world_matrices->Data(node.matrixOffset);
-			return *(matrix_begin + matrix_offset);
-		}
-
-		const shlib::SceneNode& RenderWorld::GetNode(uint32_t node_id) const
-		{
-			auto& world_resource = world_resources[node_id];
-			assert(world_resource.type == WorldResourceType::eNode);
-			return world_nodes->Get(world_resource.resource_id);
-		}
-
-		void RenderWorld::AddGeometryDraw(uint32_t camera_id, uint32_t node_id, uint32_t mesh_id)
-		{
-			EDGE_PROFILE_ZONE_SCOPED;
-
-			uint32_t draw_index = draw_count++;
-
-			// Describes current draw command resources
-			auto& batch_command = draw_descriptions->Get(draw_index);
-			draw_descriptions->MarkDirty(draw_index);
 
 			// Lookup for camera
-			glm::mat4* camera_matrices{ nullptr };
-			shlib::Camera* camera{ nullptr };
+			uint32_t camera_index{ ~0u };
 			{
 				auto& world_resource = world_resources[camera_id];
 				assert(world_resource.type == WorldResourceType::eCamera);
-				batch_command.camera_index = world_resource.resource_id;
-
-				camera = world_cameras->Data() + world_resource.resource_id;
-				assert(camera && "Invalid camera resource.");
-
-				camera_matrices = world_matrices->Data() + camera->matrices_offset;
-				assert(camera_matrices && "Invalid camera matrices");
-			}
-
-			// Lookup for scene node
-			glm::mat4* node_matrices{ nullptr };
-			shlib::SceneNode* node{ nullptr };
-			{
-				auto& world_resource = world_resources[node_id];
-				assert(world_resource.type == WorldResourceType::eNode);
-				batch_command.node_index = world_resource.resource_id;
-
-				node = world_nodes->Data() + world_resource.resource_id;
-				assert(node && "Invalid node resource.");
-
-				node_matrices = world_matrices->Data() + node->matrixOffset;
-				assert(node_matrices && "Invald node matrices.");
+				camera_index = world_resource.resource_id;
 			}
 
 			// Lookup for mesh
+			uint32_t mesh_index{ ~0u };
+			uint32_t submesh_count{ 0u };
 			{
 				auto& world_resource = world_resources[mesh_id];
 				assert(world_resource.type == WorldResourceType::eMesh);
-				batch_command.mesh_index = world_resource.resource_id;
+				mesh_index = world_resource.resource_id;
+
+				auto& mesh = world_meshes->Get(mesh_index);
+				submesh_count = mesh.submesh_count;
 			}
 
-			const glm::mat4& world_matrix = node_matrices[0];
-			const auto& view_matrix = camera_matrices[shlib::view_matrix_offset];
-
-			glm::vec4 view_space_pos = view_matrix * glm::vec4(glm::vec3(world_matrix[3]), 1.f);
-
-			float normalized_depth = (view_space_pos.z - camera->z_near) / (camera->z_far - camera->z_near);
-			// Is reverse z
-			if (false)
+			for (int32_t idx = 0; idx < submesh_count; ++idx)
 			{
-				normalized_depth = 1.0f - normalized_depth;
+				auto& batch_command = draw_descriptions->Get(draw_count + idx);
+				batch_command.camera_index = camera_index;
+				batch_command.mesh_index = mesh_index;
+				batch_command.submesh_index = idx;
 			}
 
-			normalized_depth = glm::clamp(glm::abs(normalized_depth), 0.0f, 1.0f);
-
-			// Write depth based sorting order
-			batch_command.sorting_order = static_cast<uint32_t>(normalized_depth * 0xFFFFFFFF);
+			draw_descriptions->MarkDirty(draw_count, submesh_count);
+			draw_count += submesh_count;
 		}
 
 		uint32_t RenderWorld::AddMaterial(const shlib::Material& material)
@@ -356,6 +277,8 @@ namespace engine
 			mesh.matrix_offset = matrices_offset;
 			matrices_offset += 3ull;
 
+			mesh.submesh_offset = submesh_count;
+
 			// TODO: Reserve skinning matrices if needed
 
 			return { world_resources.size() - 1ull, mesh };
@@ -372,19 +295,21 @@ namespace engine
 			world_matrices->MarkDirty(mesh.matrix_offset, 3ull);
 
 			matrices[shlib::old_model_matrix_offset]	= matrices[shlib::model_matrix_offset];
-			matrices[shlib::model_matrix_offset]		= matrix * shlib::MakeDecodePositionMatrix(mesh.bounds_enc);
+			matrices[shlib::model_matrix_offset]		= matrix * shlib::MakeDecodePositionMatrix(mesh.bb_enc);
 			matrices[shlib::normal_matrix_offset]		= glm::inverse(glm::transpose(matrices[shlib::model_matrix_offset]));
 		}
 
-		void RenderWorld::UpdateMesh(uint32_t mesh_id, const shlib::Mesh& new_mesh)
+		void RenderWorld::AttachSubmesh(uint32_t mesh_id, const shlib::SubMesh& submesh)
 		{
 			auto& world_resource = world_resources[mesh_id];
 			assert(world_resource.type == WorldResourceType::eMesh);
 
 			auto& mesh = world_meshes->Get(world_resource.resource_id);
-			world_meshes->MarkDirty(world_resource.resource_id);
+			mesh.submesh_count++;
 
-			mesh.material = new_mesh.material;
+			uint32_t submesh_index = submesh_count++;
+			world_submeshes->Get(submesh_index) = submesh;
+			world_submeshes->MarkDirty(submesh_index);
 		}
 
 		const shlib::Mesh& RenderWorld::GetMesh(uint32_t index)
@@ -498,10 +423,6 @@ namespace engine
 			{
 				shlib::GlobalBufferReference buffers{};
 
-				// Update nodes buffer
-				buffers.nodeBuffer = world_nodes->GetBuffer()->GetAddress();
-				world_nodes->Flush();
-
 				// Update world matrices buffer
 				buffers.matrixBuffer = world_matrices->GetBuffer()->GetAddress();
 				world_matrices->Flush();
@@ -517,6 +438,9 @@ namespace engine
 				// Update mesh infos
 				buffers.meshBuffer = world_meshes->GetBuffer()->GetAddress();
 				world_meshes->Flush();
+
+				buffers.submeshBuffer = world_submeshes->GetBuffer()->GetAddress();
+				world_submeshes->Flush();
 
 				// Update materials
 				buffers.materialBuffer = draw_materials->GetBuffer()->GetAddress();
@@ -579,7 +503,7 @@ namespace engine
 
 		uint32_t RenderWorld::GetMeshCount() const
 		{
-			return mesh_count;
+			return submesh_count;
 		}
 
 		void RenderWorld::UpdateCameraFrustum(uint32_t camera_id)

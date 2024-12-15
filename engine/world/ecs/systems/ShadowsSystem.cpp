@@ -169,10 +169,7 @@ namespace engine
 									if (!base.visible)
 										continue;
 
-									for (const auto& primitive : mesh_component.primitives)
-									{
-										render_world.AddGeometryDraw(light.shadow_casters[i], mtransform.node_index, primitive.mesh);
-									}
+									render_world.AddGeometryDraw(light.shadow_casters[i], mesh_component.mesh);
 								}
 							}
 
@@ -234,10 +231,7 @@ namespace engine
 									if (!base.visible)
 										continue;
 
-									for (const auto& primitive : mesh_component.primitives)
-									{
-										render_world.AddGeometryDraw(light.shadow_casters[idx], mtransform.node_index, primitive.mesh);
-									}
+									render_world.AddGeometryDraw(light.shadow_casters[idx], mesh_component.mesh);
 								}
 							}
 				
@@ -283,10 +277,7 @@ namespace engine
 								if (!base.visible)
 									continue;
 
-								for (const auto& primitive : mesh_component.primitives)
-								{
-									render_world.AddGeometryDraw(light.shadow_caster, mtransform.node_index, primitive.mesh);
-								}
+								render_world.AddGeometryDraw(light.shadow_caster, mesh_component.mesh);
 							}
 						}
 				
