@@ -115,6 +115,29 @@ SHLIB_INLINE vec4 DecodeColor(u8vec4 c)
 	return vec4(c) / 255.0f;
 }
 
+SHLIB_INLINE u16vec3 EncodeWeights(vec3 w)
+{
+	uint16_t w0_u16 = uint16_t(w.x * 65535.0f + 0.5f);
+	uint16_t w1_u16 = uint16_t(w.y * 65535.0f + 0.5f);
+	uint16_t w2_u16 = uint16_t(w.z * 65535.0f + 0.5f);
+
+	return u16vec3(w0_u16, w1_u16, w2_u16);
+}
+
+SHLIB_INLINE vec4 DecodeWeights(u16vec3 w)
+{
+	vec4 weights;
+
+	weights.x = float(w.x) / 65535.0;
+	weights.y = float(w.y) / 65535.0;
+	weights.z = float(w.z) / 65535.0;
+
+	// Compute w.w so that sum equals 1.0
+	weights.w = 1.0 - (weights.x + weights.y + weights.z);
+
+	return weights;
+}
+
 SHLIB_NS_END
 
 #endif // SHLIB_GEOMETRY_H

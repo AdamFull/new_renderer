@@ -17,7 +17,7 @@ layout(std140, set = 1, binding = 0) uniform GeometryBuffers
 #else
 	GET_PTR_T(u8vec4) joints;
 #endif
-	GET_PTR_T(vec3) weights;
+	GET_PTR_T(u16vec3) weights;
 
 #if defined(INDEX_16BIT)
 	GET_PTR_T(uint16_t) indices;
@@ -80,8 +80,7 @@ Joints GetVertexJoints(uint32_t vertex_index)
 vec4 GetVertexWeights(uint32_t vertex_index)
 {
 #ifdef HAS_SKIN
-	vec3 weight = geometry_buffers.weights[vertex_index].data;
-	return vec4(weight, 1.0f - weight.x - weight.y - weight.z);
+	return DecodeWeights(geometry_buffers.weights[vertex_index].data);
 #else
 	return vec4(0.f);
 #endif

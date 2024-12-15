@@ -480,9 +480,9 @@ namespace engine
 		// tangent: vec4 - 16 bytes -> u16vec2 - 4 bytes
 		// color: vec4 - 16 bytes -> u8vec4 - 4 bytes
 		// joints: u16vec4/u8vec4 - 8 bytes/4 bytes
-		// weights: vec4 - 16 bytes -> vec3 - 12 bytes
+		// weights: vec4 - 16 bytes -> vec3 - 12 bytes -> u16vec3 - 6 bytes
 		// Total(before): 12 + 8 + 12 + 16 + 16 + 8|4 + 16 = 84|88
-		// Total(after): 12 + 4 + 4 + 4 + 4 + 8|4 + 12 = 38|42
+		// Total(after): 12 + 4 + 4 + 4 + 4 + 8|4 + 12 = 32|36
 
 		struct VertexData
 		{
@@ -493,7 +493,7 @@ namespace engine
 			std::vector<glm::u16vec2> tangents;
 			// TODO: i can use u16 for joints by default
 			std::vector<uint8_t> joints;
-			std::vector<glm::vec3> weights;
+			std::vector<glm::u16vec3> weights;
 		};
 
 		template<typename _From, typename _To, typename _Pred>
@@ -612,8 +612,8 @@ namespace engine
 					// TODO: can be compressed with using u16vec3
 					else if (attribute_type & render::VertexAttributeFlag::eWeight)
 					{
-						attrib_stream.byte_range = Transform<glm::vec4, glm::vec3>(root, accessor, vertex_data.weights,
-							[](const glm::vec4& in) { return glm::vec3(in); });
+						attrib_stream.byte_range = Transform<glm::vec4, glm::u16vec3>(root, accessor, vertex_data.weights,
+							[](const glm::vec4& in) { return shlib::EncodeWeights(in); });
 					}
 					else
 					{
