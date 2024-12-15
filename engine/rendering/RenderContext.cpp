@@ -55,7 +55,7 @@ namespace engine
 			void UpdateBackbuffer(edge::gfx::Swapchain* swapchain, uint32_t frame_index)
 			{
 				context.Destroy(backbuffer);
-				context.CreateSwapchainTexture(swapchain, frame_index);
+				backbuffer = context.CreateSwapchainTexture(swapchain, frame_index);
 			}
 
 			void Reset()
