@@ -521,8 +521,15 @@ namespace engine
 			const auto& gltf_node = root.nodes[node_index];
 			const auto& gltf_mesh = root.meshes[gltf_node.mesh];
 
+			uint32_t joint_count{ 0u };
+			if (gltf_node.skin != -1)
+			{
+				const auto& skin = root.skins[gltf_node.skin];
+				joint_count = skin.joints.size();
+			}
+
 			// Create gpu mesh instance 
-			auto [mesh_id, mesh] = render_world.CreateMesh();
+			auto [mesh_id, mesh] = render_world.CreateMesh(joint_count);
 			ComputeMeshBounds(root, gltf_mesh, mesh);
 
 			auto& mesh_component = EntityManager::AddComponent<ecs::FMeshComponent>(parent, ecs::FMeshComponent{});

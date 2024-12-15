@@ -264,7 +264,7 @@ namespace engine
 			return draw_materials->Get(index);
 		}
 
-		std::tuple<uint32_t, shlib::Mesh&> RenderWorld::CreateMesh()
+		std::tuple<uint32_t, shlib::Mesh&> RenderWorld::CreateMesh(uint32_t joint_count)
 		{
 			auto& world_resource = world_resources.emplace_back();
 			world_resource.type = WorldResourceType::eMesh;
@@ -276,6 +276,9 @@ namespace engine
 			// Register slots for model matrix, old model matrix and normal matrix
 			mesh.matrix_offset = matrices_offset;
 			matrices_offset += 3ull;
+
+			mesh.skin_offset = (joint_count == 0u ? ~0u : matrices_offset);
+			matrices_offset += joint_count;
 
 			mesh.submesh_offset = submesh_count;
 
@@ -296,7 +299,21 @@ namespace engine
 
 			matrices[shlib::old_model_matrix_offset]	= matrices[shlib::model_matrix_offset];
 			matrices[shlib::model_matrix_offset]		= matrix * shlib::MakeDecodePositionMatrix(mesh.bb_enc);
+			// TODO: can be calculated in shader: (https://github.com/graphitemaster/normals_revisited)
 			matrices[shlib::normal_matrix_offset]		= glm::inverse(glm::transpose(matrices[shlib::model_matrix_offset]));
+		}
+
+		void RenderWorld::UpdateJointMatrices(uint32_t mesh_id, std::span<const glm::mat4> joints)
+		{
+			auto& world_resource = world_resources[mesh_id];
+			assert(world_resource.type == WorldResourceType::eMesh);
+
+			auto& mesh = world_meshes->Get(world_resource.resource_id);
+
+			auto* matrices = world_matrices->Data(mesh.skin_offset);
+			world_matrices->MarkDirty(mesh.skin_offset, joints.size());
+
+			std::memcpy(static_cast<void*>(matrices), joints.data(), joints.size() * sizeof(glm::mat4));
 		}
 
 		void RenderWorld::AttachSubmesh(uint32_t mesh_id, const shlib::SubMesh& submesh)

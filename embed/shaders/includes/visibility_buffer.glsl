@@ -201,52 +201,56 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 
 	Camera camera = GetCamera(call_data.camera_id);
 	mat4 view_projection = GetViewProjectionMatrix(camera.matrices_offset);
+
+	vec4 clipPos0;
+	vec4 clipPos1;
+	vec4 clipPos2;
 			
-//#ifdef HAS_SKIN
-//	if(node.skeletonID != ~0u)
-//	{
-//	Joints joints0 = vertices[0].joints;
-//	Joints joints1 = vertices[1].joints;
-//	Joints joints2 = vertices[2].joints;
-//
-//	vec4 weights0 = vertices[0].weights;
-//	vec4 weights1 = vertices[1].weights;
-//	vec4 weights2 = vertices[2].weights;
-//
-//	mat4 skin_mat0 = 
-//		weights0.x * GetMatrixById(node.skeletonID, joints0.x) +
-//		weights0.y * GetMatrixById(node.skeletonID, joints0.y) +
-//		weights0.z * GetMatrixById(node.skeletonID, joints0.z) +
-//		weights0.w * GetMatrixById(node.skeletonID, joints0.w);
-//
-//	mat4 skin_mat1 = 
-//		weights1.x * GetMatrixById(node.skeletonID, joints1.x) +
-//		weights1.y * GetMatrixById(node.skeletonID, joints1.y) +
-//		weights1.z * GetMatrixById(node.skeletonID, joints1.z) +
-//		weights1.w * GetMatrixById(node.skeletonID, joints1.w);
-//
-//	mat4 skin_mat2 = 
-//		weights2.x * GetMatrixById(node.skeletonID, joints2.x) +
-//		weights2.y * GetMatrixById(node.skeletonID, joints2.y) +
-//		weights2.z * GetMatrixById(node.skeletonID, joints2.z) +
-//		weights2.w * GetMatrixById(node.skeletonID, joints2.w);
-//
-//	mat4 mvp0 = view_projection * model * skin_mat0;
-//	mat4 mvp1 = view_projection * model * skin_mat1;
-//	mat4 mvp2 = view_projection * model * skin_mat2;
-//
-//	// Transform positions to clip space
-//	vec4 clipPos0 = mvp0 * vec4(position0, 1.0);
-//	vec4 clipPos1 = mvp1 * vec4(position1, 1.0);
-//	vec4 clipPos2 = mvp2 * vec4(position2, 1.0);
-//	}
-//#else
+#ifdef HAS_SKIN
+	if(mesh.skin_offset != ~0u)
+	{
+		Joints joints0 = vertices[0].joints;
+		Joints joints1 = vertices[1].joints;
+		Joints joints2 = vertices[2].joints;
+
+		vec4 weights0 = vertices[0].weights;
+		vec4 weights1 = vertices[1].weights;
+		vec4 weights2 = vertices[2].weights;
+
+		mat4 skin_mat0 = 
+			weights0.x * GetMatrixById(mesh.skin_offset, joints0.x) +
+			weights0.y * GetMatrixById(mesh.skin_offset, joints0.y) +
+			weights0.z * GetMatrixById(mesh.skin_offset, joints0.z) +
+			weights0.w * GetMatrixById(mesh.skin_offset, joints0.w);
+
+		mat4 skin_mat1 = 
+			weights1.x * GetMatrixById(mesh.skin_offset, joints1.x) +
+			weights1.y * GetMatrixById(mesh.skin_offset, joints1.y) +
+			weights1.z * GetMatrixById(mesh.skin_offset, joints1.z) +
+			weights1.w * GetMatrixById(mesh.skin_offset, joints1.w);
+
+		mat4 skin_mat2 = 
+			weights2.x * GetMatrixById(mesh.skin_offset, joints2.x) +
+			weights2.y * GetMatrixById(mesh.skin_offset, joints2.y) +
+			weights2.z * GetMatrixById(mesh.skin_offset, joints2.z) +
+			weights2.w * GetMatrixById(mesh.skin_offset, joints2.w);
+
+		mat4 mvp0 = view_projection * model * skin_mat0;
+		mat4 mvp1 = view_projection * model * skin_mat1;
+		mat4 mvp2 = view_projection * model * skin_mat2;
+
+		// Transform positions to clip space
+		clipPos0 = mvp0 * vec4(position0, 1.0);
+		clipPos1 = mvp1 * vec4(position1, 1.0);
+		clipPos2 = mvp2 * vec4(position2, 1.0);
+	}
+#else
 	// Transform positions to clip space
 	mat4 mvp = view_projection * model;
-	vec4 clipPos0 = mvp * vec4(position0, 1.0);
-	vec4 clipPos1 = mvp * vec4(position1, 1.0);
-	vec4 clipPos2 = mvp * vec4(position2, 1.0);
-//#endif // HAS_SKIN
+	clipPos0 = mvp * vec4(position0, 1.0);
+	clipPos1 = mvp * vec4(position1, 1.0);
+	clipPos2 = mvp * vec4(position2, 1.0);
+#endif // HAS_SKIN
 
 	//uv.y = 1.0 - uv.y;
 	vec2 ndcClip = uv * 2.0 - 1.0;

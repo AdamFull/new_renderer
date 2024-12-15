@@ -44,6 +44,12 @@ namespace engine
 					//if (auto found = root_component.skinRemap.find(utl::cast<u32>(mesh_component.skin)); found != root_component.skinRemap.end())
 					//	scene_node.skeletonID = found->second;
 
+					if (mesh_component.skin != -1)
+					{
+						const auto& skin = root_component.skins[mesh_component.skin];
+						render_world.UpdateJointMatrices(mesh_component.mesh, skin.jointMatrices);
+					}
+
 					render_world.UpdateMeshMatrices(mesh_component.mesh, transform.gmodel);
 					render_world.AddGeometryDraw(render::main_camera_index, mesh_component.mesh);
 				}

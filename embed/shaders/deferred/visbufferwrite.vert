@@ -31,18 +31,21 @@ void main()
 	uint32_t vertex_index = uint32_t(gl_VertexIndex);
 
 	// Calculate skinning matrix
-//#ifdef HAS_SKIN
-//	Joints joints = GetVertexJoints(vertex_index);
-//	vec4 weights = GetVertexWeights(vertex_index);
-//
-//	mat4 skin_mat = 
-//			weights.x * GetMatrixById(node.skeletonID, joints.x) +
-//			weights.y * GetMatrixById(node.skeletonID, joints.y) +
-//			weights.z * GetMatrixById(node.skeletonID, joints.z) +
-//			weights.w * GetMatrixById(node.skeletonID, joints.w);
-//	
-//		model_matrix = model_matrix * skin_mat;
-//#endif
+#ifdef HAS_SKIN
+	if(mesh.skin_offset != ~0u)
+	{
+		Joints joints = GetVertexJoints(vertex_index);
+		vec4 weights = GetVertexWeights(vertex_index);
+
+		mat4 skin_mat = 
+				weights.x * GetMatrixById(mesh.skin_offset, joints.x) +
+				weights.y * GetMatrixById(mesh.skin_offset, joints.y) +
+				weights.z * GetMatrixById(mesh.skin_offset, joints.z) +
+				weights.w * GetMatrixById(mesh.skin_offset, joints.w);
+		
+		model_matrix = model_matrix * skin_mat;
+	}
+#endif
 
 	Camera camera = GetCamera(call_data.camera_id);
 	mat4 view_projection = GetViewProjectionMatrix(camera.matrices_offset);

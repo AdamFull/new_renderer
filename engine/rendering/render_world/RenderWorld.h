@@ -37,8 +37,9 @@ namespace engine
 
 			//shlib::Mesh& BeginUpdateMesh(uint32_t index);
 			//void EndUpdateMesh(uint32_t index);
-			std::tuple<uint32_t, shlib::Mesh&> CreateMesh() override;
+			std::tuple<uint32_t, shlib::Mesh&> CreateMesh(uint32_t joint_count) override;
 			void UpdateMeshMatrices(uint32_t mesh_id, const glm::mat4& matrix) override;
+			void UpdateJointMatrices(uint32_t mesh_id, std::span<const glm::mat4> joints) override;
 			void AttachSubmesh(uint32_t mesh_id, const shlib::SubMesh& submesh) override;
 			const shlib::Mesh& GetMesh(uint32_t index) override;
 

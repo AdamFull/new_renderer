@@ -58,8 +58,9 @@ namespace engine
 			virtual uint32_t AddMaterial(const shlib::Material& material) = 0;
 			virtual const shlib::Material& GetMaterial(uint32_t index) const = 0;
 
-			virtual std::tuple<uint32_t, shlib::Mesh&> CreateMesh() = 0;
+			virtual std::tuple<uint32_t, shlib::Mesh&> CreateMesh(uint32_t joint_count = 0u) = 0;
 			virtual void UpdateMeshMatrices(uint32_t mesh_id, const glm::mat4& matrix) = 0;
+			virtual void UpdateJointMatrices(uint32_t mesh_id, std::span<const glm::mat4> joints) = 0;
 			virtual void AttachSubmesh(uint32_t mesh_id, const shlib::SubMesh& submesh) = 0;
 			virtual const shlib::Mesh& GetMesh(uint32_t index)  = 0;
 
