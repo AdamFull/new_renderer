@@ -886,43 +886,43 @@ namespace engine
 			}
 
 			// Calculate command offsets
-			//{
-			//	ComputeShaderPassCreateInfo create_info{};
-			//	create_info.shader_name = "culling:scan:INPUT_BIT_ARRAY";
-			//
-			//	create_info.draw_callback = [this,
-			//		alive_bitset_buffer,
-			//		alive_offsets_buffer
-			//	](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
-			//		{
-			//			EDGE_PROFILE_ZONE_SCOPED;
-			//
-			//			auto* draw_commands = render_world->GetDrawBuffer();
-			//			auto* alive_bits = render_context->GetBuffer(alive_bitset_buffer);
-			//			auto* alive_offsets = render_context->GetBuffer(alive_offsets_buffer);
-			//
-			//			self.ReadResource(alive_bitset_buffer, ~0u);
-			//			self.WriteResource(alive_offsets_buffer, ~0u);
-			//
-			//			self.ResolveDependencies(command_list);
-			//
-			//			auto& pc = self.GetConstantBlock();
-			//			pc.Set(utl::murmur_hash("input_buffer"), alive_bits->GetAddress());
-			//			pc.Set(utl::murmur_hash("output_buffer"), alive_offsets->GetAddress());
-			//			pc.Set(utl::murmur_hash("size"), render_world->GetDrawCount());
-			//			self.PushConstantRanges(command_list);
-			//
-			//			self.BindResources(command_list);
-			//
-			//			uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
-			//			group_x = render_world->GetDrawCount();
-			//
-			//			self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
-			//			command_list.Dispatch(group_x, group_y, group_z);
-			//		};
-			//
-			//	render_context->AddNode(render_context->CreateNode(create_info));
-			//}
+			{
+				ComputeShaderPassCreateInfo create_info{};
+				create_info.shader_name = "culling:scan:INPUT_BIT_ARRAY";
+			
+				create_info.draw_callback = [this,
+					alive_bitset_buffer,
+					alive_offsets_buffer
+				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+					{
+						EDGE_PROFILE_ZONE_SCOPED;
+			
+						auto* draw_commands = render_world->GetDrawBuffer();
+						auto* alive_bits = render_context->GetBuffer(alive_bitset_buffer);
+						auto* alive_offsets = render_context->GetBuffer(alive_offsets_buffer);
+			
+						self.ReadResource(alive_bitset_buffer, ~0u);
+						self.WriteResource(alive_offsets_buffer, ~0u);
+			
+						self.ResolveDependencies(command_list);
+			
+						auto& pc = self.GetConstantBlock();
+						pc.Set(utl::murmur_hash("input_buffer"), alive_bits->GetAddress());
+						pc.Set(utl::murmur_hash("output_buffer"), alive_offsets->GetAddress());
+						pc.Set(utl::murmur_hash("size"), render_world->GetDrawCount());
+						self.PushConstantRanges(command_list);
+			
+						self.BindResources(command_list);
+			
+						uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
+						group_x = render_world->GetDrawCount();
+			
+						self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
+						command_list.Dispatch(group_x, group_y, group_z);
+					};
+			
+				render_context->AddNode(render_context->CreateNode(create_info));
+			}
 
 			// Assemble draw commands
 			//{
@@ -1028,10 +1028,9 @@ namespace engine
 #endif
 			
 						// Bind buffers that uses in draw
-						auto& draw_data_block = self.GetUniformBlock(shlib::DrawDescriptionBuffers_label);
-						auto& draw_desc_buffers = draw_data_block.As<shlib::DrawDescriptionBuffers>();
-						draw_desc_buffers.draw_descriptions_ptr = alive_meshes->GetAddress();
-						draw_desc_buffers.draw_commands_ptr = argument_buffer->GetAddress();
+						auto& draw_data_block = self.GetUniformBlock(utl::murmur_hash("DrawDescriptionBuffers"));
+						draw_data_block.Set(utl::murmur_hash("draw_descriptions_ptr"), alive_meshes->GetAddress());
+						draw_data_block.Set(utl::murmur_hash("draw_commands_ptr"), argument_buffer->GetAddress());
 			
 						auto& constants = self.GetConstantBlock();
 			
@@ -1139,10 +1138,9 @@ namespace engine
 #endif
 			
 						// Bind buffers that uses in draw
-						auto& draw_data_block = self.GetUniformBlock(shlib::DrawDescriptionBuffers_label);
-						auto& draw_desc_buffers = draw_data_block.As<shlib::DrawDescriptionBuffers>();
-						draw_desc_buffers.draw_descriptions_ptr = alive_meshes->GetAddress();
-						draw_desc_buffers.draw_commands_ptr = argument_buffer->GetAddress();
+						auto& draw_data_block = self.GetUniformBlock(utl::murmur_hash("DrawDescriptionBuffers"));
+						draw_data_block.Set(utl::murmur_hash("draw_descriptions_ptr"), alive_meshes->GetAddress());
+						draw_data_block.Set(utl::murmur_hash("draw_commands_ptr"), argument_buffer->GetAddress());
 			
 						auto& constants = self.GetConstantBlock();
 			
@@ -1250,10 +1248,9 @@ namespace engine
 #endif
 			
 						// Bind buffers that uses in draw
-						auto& draw_data_block = self.GetUniformBlock(shlib::DrawDescriptionBuffers_label);
-						auto& draw_desc_buffers = draw_data_block.As<shlib::DrawDescriptionBuffers>();
-						draw_desc_buffers.draw_descriptions_ptr = alive_meshes->GetAddress();
-						draw_desc_buffers.draw_commands_ptr = argument_buffer->GetAddress();
+						auto& draw_data_block = self.GetUniformBlock(utl::murmur_hash("DrawDescriptionBuffers"));
+						draw_data_block.Set(utl::murmur_hash("draw_descriptions_ptr"), alive_meshes->GetAddress());
+						draw_data_block.Set(utl::murmur_hash("draw_commands_ptr"), argument_buffer->GetAddress());
 			
 						auto& constants = self.GetConstantBlock();
 			
@@ -1360,10 +1357,9 @@ namespace engine
 #endif
 			
 						// Bind buffers that uses in draw
-						auto& draw_data_block = self.GetUniformBlock(shlib::DrawDescriptionBuffers_label);
-						auto& draw_desc_buffers = draw_data_block.As<shlib::DrawDescriptionBuffers>();
-						draw_desc_buffers.draw_descriptions_ptr = alive_meshes->GetAddress();
-						draw_desc_buffers.draw_commands_ptr = argument_buffer->GetAddress();
+						auto& draw_data_block = self.GetUniformBlock(utl::murmur_hash("DrawDescriptionBuffers"));
+						draw_data_block.Set(utl::murmur_hash("draw_descriptions_ptr"), alive_meshes->GetAddress());
+						draw_data_block.Set(utl::murmur_hash("draw_commands_ptr"), argument_buffer->GetAddress());
 			
 						auto camera_id = render_world->GetResourceId(main_camera_index);
 						auto draw_call_id = camera_id * render_world->GetMeshCount();
@@ -1456,10 +1452,9 @@ namespace engine
 #endif
 						buffers.Set(render_label::indices, geometry_buffer.GetIndexBufferAddress());
 
-						auto& draw_data_block = self.GetUniformBlock(shlib::DrawDescriptionBuffers_label);
-						auto& draw_desc_buffers = draw_data_block.As<shlib::DrawDescriptionBuffers>();
-						draw_desc_buffers.draw_descriptions_ptr = alive_meshes->GetAddress();
-						draw_desc_buffers.draw_commands_ptr = argument_buffer->GetAddress();
+						auto& draw_data_block = self.GetUniformBlock(utl::murmur_hash("DrawDescriptionBuffers"));
+						draw_data_block.Set(utl::murmur_hash("draw_descriptions_ptr"), alive_meshes->GetAddress());
+						draw_data_block.Set(utl::murmur_hash("draw_commands_ptr"), argument_buffer->GetAddress());
 			
 						auto& constants = self.GetConstantBlock();
 						constants.Set(render_label::call_id, 0u);
