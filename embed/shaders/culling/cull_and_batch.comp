@@ -36,29 +36,32 @@ void main()
 		return;
 
 	// Compute the index of the bit in the bit array
-	uint32_t bit_index = global_draw_index >> 5;       // Divide by 32
-	uint32_t bit_offset = global_draw_index & 31;       // Modulo 32
-	uint32_t bit_mask = 1u << bit_offset;
+	uint32_t word_index = global_draw_index >> 5;       // Divide by 32
+	uint32_t bit_index = global_draw_index & 31;       // Modulo 32
+	uint32_t bit_mask = 1u << bit_index;
 
 	DrawDescription draw_info = pc.source_descriptions[global_draw_index].data;
 
 	Mesh mesh = GetMesh(draw_info.mesh_index);
+	SubMesh submesh = GetSubMesh(mesh.submesh_offset + draw_info.submesh_index);
+
 	mat4 model = GetModelMatrix(mesh.matrix_offset);
 
 	// Calculate bounding box
 	BoundingBox bb = DecodeBoundingBox(mesh.ebb, model);
+	BoundingBox submesh_bb = DecodeBoundingBox(submesh.ebb, model);
 
 	Camera camera = GetCamera(draw_info.camera_index);
-	//if(checkObjectInFrustum(bb.min, bb.max, camera.frustum_offset))
+	if(checkObjectInFrustum(submesh_bb.min, submesh_bb.max, camera.frustum_offset))
 	{
 		// Instance culled
-		atomicOr(pc.alive_bits[bit_index].data, bit_mask);
+		atomicOr(pc.alive_bits[word_index].data, bit_mask);
 	}
-	//else
-	//{
-	//	// Instance skipped
-	//	atomicAnd(pc.alive_bits[bit_index].data, ~bit_mask);
-	//}
+	else
+	{
+		// Instance skipped
+		atomicAnd(pc.alive_bits[word_index].data, ~bit_mask);
+	}
 
 	//atomicAdd(pc.draw_counts[draw_info.camera_index].data, 1);
 	//

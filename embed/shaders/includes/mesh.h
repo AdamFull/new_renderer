@@ -14,10 +14,12 @@ struct BoundingBox
 	ALIGN_AS(16) vec3 max;
 };
 
-struct ALIGN_AS(4) BoundingBoxEnc
+struct BoundingBoxEnc
 {
 	i16vec3 min;
+	uint16_t pad0;
 	i16vec3 max;
+	uint16_t pad1;
 };
 
 SHLIB_INLINE BoundingBoxEnc EncodeBoundingBox(BoundingBox bb, vec3 enc)
@@ -55,8 +57,9 @@ struct SubMesh
 	uint32_t index_count;
 	int32_t first_vertex;
 	uint32_t vertex_count;
+	uint32_t pad;
 
-	//ALIGN_AS(4) BoundingBoxEnc ebb;
+	BoundingBoxEnc ebb;
 };
 
 REGISTER_TYPE_PTR(SubMesh, 4);

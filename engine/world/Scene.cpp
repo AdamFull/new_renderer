@@ -642,7 +642,7 @@ namespace engine
 				submesh.first_vertex = vertex_range.first_vertex;
 				submesh.vertex_count = vertex_range.vertex_count;
 				submesh.material = primitive.material;
-				//submesh.ebb = shlib::EncodeBoundingBox(bb, mesh.bb_enc);
+				submesh.ebb = shlib::EncodeBoundingBox(bb, mesh.bb_enc);
 
 				render_world.AttachSubmesh(mesh_id, submesh);
 			}

@@ -35,11 +35,9 @@ void main()
 
     DrawDescription draw_info = pc.source_descriptions[global_index].data;
 
-	Mesh mesh = GetMesh(draw_info.mesh_index);
-
-    // Step 3: Calculate global index for the visible command
     if (bit == 1) 
     {
+		Mesh mesh = GetMesh(draw_info.mesh_index);
         SubMesh submesh = GetSubMesh(mesh.submesh_offset + draw_info.submesh_index);
 
         DrawIndexedIndirectData indirect_command;
@@ -50,6 +48,7 @@ void main()
 		indirect_command.firstInstance = 0;
 
 		uint32_t inplace_offset = pc.alive_offsets[global_index].data;
+		// inplece_offset should be converted in to camera space index
 
         pc.alive_draw_commands[inplace_offset].data = indirect_command;
 		pc.alive_descriptions[inplace_offset].data = draw_info;
