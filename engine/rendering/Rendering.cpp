@@ -31,6 +31,7 @@
 #undef MemoryBarrier
 #endif
 
+#define DISABLE_SHADOWS 1
 //#define SKINNING_TEST 1
 
 #define SWAP_COUNT(in, out) std::swap(in, out); ++pass_count;
@@ -962,8 +963,9 @@ namespace engine
 				render_context->AddNode(render_context->CreateNode(create_info));
 			}
 
+#if !DISABLE_SHADOWS
 			// Draw cascaded shadows
-			{
+			{B
 				RenderShaderPassCreateInfo create_info{};
 #if SKINNING_TEST
 				create_info.shader_name = "lighting:unidirectional_shadow:HAS_SKIN:CASCADED_SHADOW:HAS_TEXCOORD:HAS_NORMAL:HAS_TANGENT:INDEX_16BIT";
@@ -1284,6 +1286,7 @@ namespace engine
 			
 				render_context->AddNode(render_context->CreateNode(create_info));
 			}
+#endif
 			
 			// Geometry draw
 			{
