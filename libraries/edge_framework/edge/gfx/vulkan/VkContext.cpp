@@ -454,6 +454,11 @@ namespace edge
 						device.RequestExtensionFeatures<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>();
 					else if (strcmp(extension_name, VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME) == 0)
 						device.RequestExtensionFeatures<vk::PhysicalDeviceShaderTileImageFeaturesEXT>();
+					else if (strcmp(extension_name, VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME) == 0)
+					{
+						auto& ext = device.RequestExtensionFeatures<vk::PhysicalDeviceVulkanMemoryModelFeatures>();
+						ext.vulkanMemoryModelAvailabilityVisibilityChains = VK_FALSE;
+					}
 					//else if(strcmp(extension_name, VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME) == 0)
 					//	device.RequestExtensionFeatures(vk::PhysicalDeviceIndirect)
 				}
