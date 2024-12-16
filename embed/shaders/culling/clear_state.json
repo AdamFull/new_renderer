@@ -1,0 +1,12 @@
+{
+	"name": "clear_state",
+	"shaders": [
+		{
+			"source": "clear_state.comp",
+			"type": "Compute"
+		}
+	],
+	"compile": {
+		"shader_model": 6
+	}
+}

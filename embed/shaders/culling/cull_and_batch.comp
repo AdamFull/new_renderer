@@ -1,9 +1,14 @@
 #include "shader_inputs.glsl"
-#include "culling.h"
 
 #define GROUP_SIZE 64
 
 layout(local_size_x = GROUP_SIZE) in;
+
+layout(push_constant) uniform PushConstant
+{
+	GET_PTR_T(DrawDescription) source_descriptions;
+	GET_PTR_T(uint32_t) alive_bits;
+} pc;
 
 bool checkObjectInFrustum(in vec3 min_extents, in vec3 max_extents, in uint32_t frustum_offset)
 {
@@ -30,14 +35,12 @@ void main()
 	if (global_draw_index >= frameData.draw_count) 
 		return;
 
-	 // Compute the index of the bit in the bit array
-	 uint32_t bit_index = global_draw_index >> 5;       // Divide by 32
-	 uint32_t bit_offset = global_draw_index & 31;       // Modulo 32
-    //uint32_t bit_index = global_draw_index / 32;
-    //uint32_t bit_offset = global_draw_index % 32;
+	// Compute the index of the bit in the bit array
+	uint32_t bit_index = global_draw_index >> 5;       // Divide by 32
+	uint32_t bit_offset = global_draw_index & 31;       // Modulo 32
 	uint32_t bit_mask = 1u << bit_offset;
 
-	DrawDescription draw_info = source_descriptions[global_draw_index].data;
+	DrawDescription draw_info = pc.source_descriptions[global_draw_index].data;
 
 	Mesh mesh = GetMesh(draw_info.mesh_index);
 	mat4 model = GetModelMatrix(mesh.matrix_offset);
@@ -46,28 +49,28 @@ void main()
 	BoundingBox bb = DecodeBoundingBox(mesh.ebb, model);
 
 	Camera camera = GetCamera(draw_info.camera_index);
-	if(checkObjectInFrustum(bb.min, bb.max, camera.frustum_offset))
+	//if(checkObjectInFrustum(bb.min, bb.max, camera.frustum_offset))
 	{
 		// Instance culled
-		atomicOr(alive_bits[bit_index].data, bit_mask);
+		atomicOr(pc.alive_bits[bit_index].data, bit_mask);
 	}
-	else
-	{
-		// Instance skipped
-		atomicAnd(alive_bits[bit_index].data, ~bit_mask);
-	}
+	//else
+	//{
+	//	// Instance skipped
+	//	atomicAnd(pc.alive_bits[bit_index].data, ~bit_mask);
+	//}
 
-	//atomicAdd(draw_counts[draw_info.camera_index].data, 1);
-
-	SubMesh submesh = GetSubMesh(mesh.submesh_offset + draw_info.submesh_index);
-
-	DrawIndexedIndirectData indirect_command;
-	indirect_command.indexCount = submesh.index_count;
-	indirect_command.instanceCount = 1;
-	indirect_command.firstIndex = submesh.first_index;
-	indirect_command.vertexOffset = submesh.first_vertex;
-	indirect_command.firstInstance = 0;
-
-    alive_draw_commands[global_draw_index].data = indirect_command;
-	alive_descriptions[global_draw_index].data = draw_info;
+	//atomicAdd(pc.draw_counts[draw_info.camera_index].data, 1);
+	//
+	//SubMesh submesh = GetSubMesh(mesh.submesh_offset + draw_info.submesh_index);
+	//
+	//DrawIndexedIndirectData indirect_command;
+	//indirect_command.indexCount = submesh.index_count;
+	//indirect_command.instanceCount = 1;
+	//indirect_command.firstIndex = submesh.first_index;
+	//indirect_command.vertexOffset = submesh.first_vertex;
+	//indirect_command.firstInstance = 0;
+	//
+    //pc.alive_draw_commands[global_draw_index].data = indirect_command;
+	//pc.alive_descriptions[global_draw_index].data = draw_info;
 }

@@ -15,7 +15,6 @@
 #include "GeometryBuffer.h"
 
 #include <embed/shaders/includes/shlib.h>
-#include <embed/shaders/includes/culling.h>
 
 #include <edge/util/Logger.h>
 
@@ -697,19 +696,6 @@ namespace engine
 				render_context->SetResourceName(alive_offsets_buffer, "alive_offsets_buffer");
 			}
 
-			constexpr const uint32_t WG_SIZE = 512;
-			constexpr const uint32_t N_ROWS = 16;
-			constexpr const uint32_t ELEMENTS_PER_WG = WG_SIZE * N_ROWS;
-			uint32_t scan_status_buffer{ ~0u };
-			{
-				edge::gfx::BufferCreateInfo create_info{};
-				create_info.size = 4 + 12 * ELEMENTS_PER_WG;
-				create_info.usage = edge::gfx::BufferUsageFlag::eStorageBuffer;
-
-				scan_status_buffer = render_context->AddResource(create_info);
-				render_context->SetResourceName(scan_status_buffer, "scan_status_buffer");
-			}
-
 			// Passes
 			// Generate brdflut
 			{
@@ -834,12 +820,11 @@ namespace engine
 						auto* count_buffer = render_context->GetBuffer(indirect_count_buffer);
 
 						self.WriteResource(indirect_count_buffer, ~0u);
-
 						self.ResolveDependencies(command_list);
 
-						auto& draw_data_block = self.GetUniformBlock(shlib::CullingInfo_label);
-						auto& draw_desc_buffers = draw_data_block.As<shlib::CullingInfo>();
-						draw_desc_buffers.draw_counts = count_buffer->GetAddress();
+						auto& pc = self.GetConstantBlock();
+						pc.Set(utl::murmur_hash("draw_counts"), count_buffer->GetAddress());
+						self.PushConstantRanges(command_list);
 
 						self.BindResources(command_list);
 
@@ -858,33 +843,22 @@ namespace engine
 				create_info.shader_name = "culling:cull_and_batch";
 
 				create_info.draw_callback = [this,
-					alive_commands_buffer,
-					indirect_draw_commands,
-					indirect_count_buffer,
 					alive_bitset_buffer
 				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 					{
 						EDGE_PROFILE_ZONE_SCOPED;
 
 						auto* draw_commands = render_world->GetDrawBuffer();
-						auto* alive_meshes = render_context->GetBuffer(alive_commands_buffer);
-						auto* argument_buffer = render_context->GetBuffer(indirect_draw_commands);
-						auto* count_buffer = render_context->GetBuffer(indirect_count_buffer);
 						auto* alive_bits = render_context->GetBuffer(alive_bitset_buffer);
 
-						self.WriteResource(alive_commands_buffer, ~0u);
-						self.WriteResource(indirect_draw_commands, ~0u);
-						self.WriteResource(indirect_count_buffer, ~0u);
+						self.WriteResource(alive_bitset_buffer, ~0u);
 
 						self.ResolveDependencies(command_list);
 
-						auto& draw_data_block = self.GetUniformBlock(shlib::CullingInfo_label);
-						auto& draw_desc_buffers = draw_data_block.As<shlib::CullingInfo>();
-						draw_desc_buffers.source_descriptions = draw_commands->GetAddress();
-						draw_desc_buffers.alive_descriptions = alive_meshes->GetAddress();
-						draw_desc_buffers.alive_draw_commands = argument_buffer->GetAddress();
-						draw_desc_buffers.draw_counts = count_buffer->GetAddress();
-						draw_desc_buffers.alive_bits = alive_bits->GetAddress();
+						auto& pc = self.GetConstantBlock();
+						pc.Set(utl::murmur_hash("source_descriptions"), draw_commands->GetAddress());
+						pc.Set(utl::murmur_hash("alive_bits"), alive_bits->GetAddress());
+						self.PushConstantRanges(command_list);
 
 						self.BindResources(command_list);
 
@@ -898,11 +872,6 @@ namespace engine
 				render_context->AddNode(render_context->CreateNode(create_info));
 			}
 
-			// Clear state buffer
-			{
-
-			}
-
 			// Calculate command offsets
 			{
 				ComputeShaderPassCreateInfo create_info{};
@@ -910,8 +879,7 @@ namespace engine
 			
 				create_info.draw_callback = [this,
 					alive_bitset_buffer,
-					alive_offsets_buffer,
-					scan_status_buffer
+					alive_offsets_buffer
 				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 					{
 						EDGE_PROFILE_ZONE_SCOPED;
@@ -919,11 +887,9 @@ namespace engine
 						auto* draw_commands = render_world->GetDrawBuffer();
 						auto* alive_bits = render_context->GetBuffer(alive_bitset_buffer);
 						auto* alive_offsets = render_context->GetBuffer(alive_offsets_buffer);
-						auto* scan_status = render_context->GetBuffer(scan_status_buffer);
 			
 						self.ReadResource(alive_bitset_buffer, ~0u);
 						self.WriteResource(alive_offsets_buffer, ~0u);
-						self.WriteResource(scan_status_buffer, ~0u);
 			
 						self.ResolveDependencies(command_list);
 			
@@ -932,16 +898,13 @@ namespace engine
 						pc.Set(utl::murmur_hash("output_buffer"), alive_offsets->GetAddress());
 						pc.Set(utl::murmur_hash("size"), render_world->GetDrawCount());
 						self.PushConstantRanges(command_list);
-
-						self.BindResource(utl::murmur_hash("StateBufer"), scan_status_buffer, ~0u);
 			
 						self.BindResources(command_list);
 			
 						uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
 						group_x = render_world->GetDrawCount();
-						group_x = (group_x + ELEMENTS_PER_WG - 1) / ELEMENTS_PER_WG;
 			
-						//self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
+						self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
 						command_list.Dispatch(group_x, group_y, group_z);
 					};
 			
@@ -949,51 +912,55 @@ namespace engine
 			}
 
 			// Assemble draw commands
-			//{
-			//	ComputeShaderPassCreateInfo create_info{};
-			//	create_info.shader_name = "culling:assemble_commands";
-			//
-			//	create_info.draw_callback = [this,
-			//		alive_commands_buffer,
-			//		indirect_draw_commands,
-			//		indirect_count_buffer,
-			//		alive_bitset_buffer
-			//	](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
-			//		{
-			//			EDGE_PROFILE_ZONE_SCOPED;
-			//
-			//			auto* draw_commands = render_world->GetDrawBuffer();
-			//			auto* alive_meshes = render_context->GetBuffer(alive_commands_buffer);
-			//			auto* argument_buffer = render_context->GetBuffer(indirect_draw_commands);
-			//			auto* count_buffer = render_context->GetBuffer(indirect_count_buffer);
-			//			auto* alive_bits = render_context->GetBuffer(alive_bitset_buffer);
-			//
-			//			self.WriteResource(alive_commands_buffer, ~0u);
-			//			self.WriteResource(indirect_draw_commands, ~0u);
-			//			self.WriteResource(indirect_count_buffer, ~0u);
-			//			self.ReadResource(alive_bitset_buffer, ~0u);
-			//
-			//			self.ResolveDependencies(command_list);
-			//
-			//			auto& draw_data_block = self.GetUniformBlock(shlib::CullingInfo_label);
-			//			auto& draw_desc_buffers = draw_data_block.As<shlib::CullingInfo>();
-			//			draw_desc_buffers.source_descriptions = draw_commands->GetAddress();
-			//			draw_desc_buffers.alive_descriptions = alive_meshes->GetAddress();
-			//			draw_desc_buffers.alive_draw_commands = argument_buffer->GetAddress();
-			//			draw_desc_buffers.draw_counts = count_buffer->GetAddress();
-			//			draw_desc_buffers.alive_bits = alive_bits->GetAddress();
-			//
-			//			self.BindResources(command_list);
-			//
-			//			uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
-			//			group_x = render_world->GetDrawCount();
-			//
-			//			self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
-			//			command_list.Dispatch(group_x, group_y, group_z);
-			//		};
-			//
-			//	render_context->AddNode(render_context->CreateNode(create_info));
-			//}
+			{
+				ComputeShaderPassCreateInfo create_info{};
+				create_info.shader_name = "culling:assemble_commands";
+			
+				create_info.draw_callback = [this,
+					alive_commands_buffer,
+					indirect_draw_commands,
+					indirect_count_buffer,
+					alive_bitset_buffer,
+					alive_offsets_buffer
+				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+					{
+						EDGE_PROFILE_ZONE_SCOPED;
+			
+						auto* draw_commands = render_world->GetDrawBuffer();
+						auto* alive_meshes = render_context->GetBuffer(alive_commands_buffer);
+						auto* argument_buffer = render_context->GetBuffer(indirect_draw_commands);
+						auto* alive_bits = render_context->GetBuffer(alive_bitset_buffer);
+						auto* alive_offsets = render_context->GetBuffer(alive_offsets_buffer);
+						auto* count_buffer = render_context->GetBuffer(indirect_count_buffer);
+			
+						self.WriteResource(alive_commands_buffer, ~0u);
+						self.WriteResource(indirect_draw_commands, ~0u);
+						self.WriteResource(indirect_count_buffer, ~0u);
+						self.ReadResource(alive_offsets_buffer, ~0u);
+						self.ReadResource(alive_bitset_buffer, ~0u);
+			
+						self.ResolveDependencies(command_list);
+
+						auto& pc = self.GetConstantBlock();
+						pc.Set(utl::murmur_hash("source_descriptions"), draw_commands->GetAddress());
+						pc.Set(utl::murmur_hash("alive_descriptions"), alive_meshes->GetAddress());
+						pc.Set(utl::murmur_hash("alive_draw_commands"), argument_buffer->GetAddress());
+						pc.Set(utl::murmur_hash("alive_bits"), alive_bits->GetAddress());
+						pc.Set(utl::murmur_hash("alive_offsets"), alive_offsets->GetAddress());
+						pc.Set(utl::murmur_hash("draw_counts"), count_buffer->GetAddress());
+						self.PushConstantRanges(command_list);
+			
+						self.BindResources(command_list);
+			
+						uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
+						group_x = render_world->GetDrawCount();
+			
+						self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
+						command_list.Dispatch(group_x, group_y, group_z);
+					};
+			
+				render_context->AddNode(render_context->CreateNode(create_info));
+			}
 
 			// Draw cascaded shadows
 			{
@@ -1026,7 +993,6 @@ namespace engine
 						auto* shadow_map = render_context->GetTexture(cascaded_shadows_target);
 						auto* alive_meshes = render_context->GetBuffer(alive_commands_buffer);
 						auto* argument_buffer = render_context->GetBuffer(indirect_draw_commands);
-						auto* count_buffer = render_context->GetBuffer(indirect_count_buffer);
 			
 						auto viewport_width = shadow_map->GetWidth();
 						auto viewport_height = shadow_map->GetHeight();
@@ -1065,7 +1031,7 @@ namespace engine
 						draw_command.draw_count = render_world->GetMeshCount();
 						draw_command.argument_buffer = argument_buffer;
 						draw_command.command_stride = sizeof(shlib::DrawIndexedIndirectData);
-						//draw_command.count_buffer = count_buffer;
+						draw_command.count_buffer = render_context->GetBuffer(indirect_count_buffer);
 			
 						uint32_t draw_call_id{ 0u };
 						self.Begin(command_list);
@@ -1136,7 +1102,6 @@ namespace engine
 						auto* shadow_map = render_context->GetTexture(omni_shadows_target);
 						auto* alive_meshes = render_context->GetBuffer(alive_commands_buffer);
 						auto* argument_buffer = render_context->GetBuffer(indirect_draw_commands);
-						auto* count_buffer = render_context->GetBuffer(indirect_count_buffer);
 			
 						auto viewport_width = shadow_map->GetWidth();
 						auto viewport_height = shadow_map->GetHeight();
@@ -1173,9 +1138,9 @@ namespace engine
 						edge::gfx::IndirectDrawCommand draw_command{};
 						draw_command.indexed_draw = true;
 						draw_command.draw_count = render_world->GetMeshCount();
-						draw_command.argument_buffer = render_context->GetBuffer(indirect_draw_commands);
+						draw_command.argument_buffer = argument_buffer;
 						draw_command.command_stride = sizeof(shlib::DrawIndexedIndirectData);
-						//draw_command.count_buffer = render_context->GetBuffer(indirect_count_buffer);
+						draw_command.count_buffer = render_context->GetBuffer(indirect_count_buffer);
 			
 						uint32_t draw_call_id{ 0u };
 						self.Begin(command_list);
@@ -1246,7 +1211,6 @@ namespace engine
 						auto* shadow_map = render_context->GetTexture(directional_shadows_target);
 						auto* alive_meshes = render_context->GetBuffer(alive_commands_buffer);
 						auto* argument_buffer = render_context->GetBuffer(indirect_draw_commands);
-						auto* count_buffer = render_context->GetBuffer(indirect_count_buffer);
 			
 						auto viewport_width = shadow_map->GetWidth();
 						auto viewport_height = shadow_map->GetHeight();
@@ -1285,7 +1249,7 @@ namespace engine
 						draw_command.draw_count = render_world->GetMeshCount();
 						draw_command.argument_buffer = render_context->GetBuffer(indirect_draw_commands);
 						draw_command.command_stride = sizeof(shlib::DrawIndexedIndirectData);
-						//draw_command.count_buffer = render_context->GetBuffer(indirect_count_buffer);
+						draw_command.count_buffer = render_context->GetBuffer(indirect_count_buffer);
 			
 						uint32_t draw_call_id{ 0u };
 						self.Begin(command_list);
@@ -1355,7 +1319,6 @@ namespace engine
 						auto* backbuffer = render_context->GetTexture(backbuffer_resource);
 						auto* alive_meshes = render_context->GetBuffer(alive_commands_buffer);
 						auto* argument_buffer = render_context->GetBuffer(indirect_draw_commands);
-						auto* count_buffer = render_context->GetBuffer(indirect_count_buffer);
 			
 						auto viewport_width = backbuffer->GetWidth();
 						auto viewport_height = backbuffer->GetHeight();
@@ -1403,7 +1366,7 @@ namespace engine
 						draw_command.argument_buffer = argument_buffer;
 						draw_command.command_stride = sizeof(shlib::DrawIndexedIndirectData);
 						draw_command.argument_offset = draw_call_id * draw_command.command_stride;
-						//draw_command.count_buffer = count_buffer;
+						draw_command.count_buffer = render_context->GetBuffer(indirect_count_buffer);
 						draw_command.count_offset = draw_call_id * sizeof(uint32_t);
 			
 						self.Begin(command_list);

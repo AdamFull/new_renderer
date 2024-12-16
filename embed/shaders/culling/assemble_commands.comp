@@ -1,57 +1,41 @@
 #include "shader_inputs.glsl"
-#include "culling.h"
 
 #define GROUP_SIZE 256
 
 layout(local_size_x = GROUP_SIZE) in;
 
-shared uint shared_counts[GROUP_SIZE];
-shared uint group_offset;
+layout(push_constant) uniform PushConstant
+{
+	GET_PTR_T(DrawDescription) source_descriptions;
+	GET_PTR_T(DrawDescription) alive_descriptions;
+	GET_PTR_T(DrawIndexedIndirectData) alive_draw_commands;
+	GET_PTR_T(uint32_t) alive_bits;
+	GET_PTR_T(uint32_t) alive_offsets;
+	GET_PTR_T(uint32_t) draw_counts;
+} pc;
+
+uint32_t SampleBit(uint32_t global_id)
+{
+    // Handle bit array input
+     uint32_t word_index = global_id >> 5;       // Divide by 32
+     uint32_t bit_index = global_id & 31;       // Modulo 32
+     uint32_t word = pc.alive_bits[word_index].data;
+     return (word >> bit_index) & 1u;
+}
 
 void main()
 {
 	uint32_t global_index = gl_GlobalInvocationID.x;
-	uint32_t local_index = gl_LocalInvocationID.x;
-	uint32_t work_group_index = gl_WorkGroupID.x;
-    uint32_t group_size = gl_WorkGroupSize.x;
 
 	if (global_index >= frameData.draw_count) 
 		return;
 
-	 // Compute the index of the bit in the bit array
-    uint32_t bit_index = global_index / 32;
-    uint32_t bit_offset = global_index % 32;
-
 	// Extract visibility bit (0 = culled, 1 = visible)
-    uint32_t bit = (alive_bits[bit_index].data >> bit_offset) & 1u;
+    uint32_t bit = SampleBit(global_index);
 
-    DrawDescription draw_info = source_descriptions[global_index].data;
+    DrawDescription draw_info = pc.source_descriptions[global_index].data;
 
 	Mesh mesh = GetMesh(draw_info.mesh_index);
-
-	// Step 1: Local prefix sum within the work group
-    shared_counts[local_index] = bit;
-    barrier();
-
-	for (uint32_t offset = 1; offset < group_size; offset *= 2) 
-    {
-        uint32_t temp = 0;
-        if (local_index >= offset) 
-        {
-            temp = shared_counts[local_index - offset];
-        }
-
-        barrier();
-        shared_counts[local_index] += temp;
-        barrier();
-    }
-
-    // Step 2: Calculate group offset (last thread writes its total to groupOffset)
-    if (local_index == group_size - 1) 
-    {
-        atomicAdd(group_offset, shared_counts[local_index]);
-    }
-    barrier();
 
     // Step 3: Calculate global index for the visible command
     if (bit == 1) 
@@ -65,10 +49,11 @@ void main()
 		indirect_command.vertexOffset = submesh.first_vertex;
 		indirect_command.firstInstance = 0;
 
-        uint32_t global_position = group_offset + shared_counts[local_index] - 1; // Convert inclusive to exclusive prefix
-        alive_draw_commands[global_position].data = indirect_command;
-		alive_descriptions[global_position].data = draw_info;
+		uint32_t inplace_offset = pc.alive_offsets[global_index].data;
 
-        atomicAdd(draw_counts[draw_info.camera_index].data, 1);
+        pc.alive_draw_commands[inplace_offset].data = indirect_command;
+		pc.alive_descriptions[inplace_offset].data = draw_info;
+
+        atomicAdd(pc.draw_counts[draw_info.camera_index].data, 1);
     }
 }

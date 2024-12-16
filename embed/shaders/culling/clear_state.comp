@@ -1,0 +1,35 @@
+
+#define N_ROWS 16
+#define LG_WG_SIZE 9
+#define WG_SIZE (1 << LG_WG_SIZE)
+#define PARTITION_SIZE (WG_SIZE * N_ROWS)
+
+layout(local_size_x = WG_SIZE) in;
+
+struct State
+{
+    uint flag;
+    uint aggregate;
+    uint prefix;
+};
+
+layout(set = 1, binding = 0) volatile buffer StateBufer
+{
+    uint part_counter;
+    State[] state;
+};
+
+void main()
+{
+    if(gl_GlobalInvocationID.x == 0)
+    {
+        part_counter = 0;
+    }
+
+    if(gl_GlobalInvocationID.x >= PARTITION_SIZE)
+        return;
+
+    state[gl_GlobalInvocationID.x].flag = 0;
+    state[gl_GlobalInvocationID.x].aggregate = 0;
+    state[gl_GlobalInvocationID.x].prefix = 0;
+}
