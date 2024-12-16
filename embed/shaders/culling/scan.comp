@@ -1,8 +1,16 @@
 #include "ptr.h"
 
-#define GROUP_SIZE 256
+#extension GL_KHR_memory_scope_semantics : enable
+#pragma use_vulkan_memory_model
+#define ACQUIRE gl_StorageSemanticsBuffer, gl_SemanticsAcquire
+#define RELEASE gl_StorageSemanticsBuffer, gl_SemanticsRelease
 
-layout(local_size_x = GROUP_SIZE) in;
+#define N_ROWS 16
+#define LG_WG_SIZE 9
+#define WG_SIZE (1 << LG_WG_SIZE)
+#define PARTITION_SIZE (WG_SIZE * N_ROWS)
+
+layout(local_size_x = WG_SIZE) in;
 
 layout(push_constant) uniform PushConstant
 {
@@ -12,114 +20,265 @@ layout(push_constant) uniform PushConstant
     uint32_t size;
 } pc;
 
-shared uint32_t s_data[GROUP_SIZE];
+struct State
+{
+    uint32_t flag;
+    uint32_t aggregate;
+    uint32_t prefix;
+};
+
+// Perhaps this should be "nonprivate" with VKMM
+layout(set = 1, binding = 0) volatile buffer StateBufer
+{
+    uint32_t part_counter;
+    State[] state;
+};
+
+#define FLAG_NOT_READY 0u
+#define FLAG_AGGREGATE_READY 1u
+#define FLAG_PREFIX_READY 2u
+
+shared uint32_t sh_scratch[WG_SIZE];
+shared uint32_t sh_part_ix;
+shared uint32_t sh_prefix;
+shared uint32_t sh_flag;
+
+uint32_t SampleBit(uint32_t global_id)
+{
+    // Handle bit array input
+     uint32_t word_index = global_id >> 5;       // Divide by 32
+     uint32_t bit_index = global_id & 31;       // Modulo 32
+     uint32_t word = pc.input_buffer[word_index].data;
+     return (word >> bit_index) & 1u;
+}
 
 void main()
 {
-	uint32_t global_id = gl_GlobalInvocationID.x;
-    uint32_t local_id  = gl_LocalInvocationID.x;
-    uint32_t group_size = gl_WorkGroupSize.x;
+    uint32_t local[N_ROWS];
 
-    // Compute the next power of two
-    uint num_elements = group_size;
-    if ((group_size & (group_size - 1)) != 0) 
+    // Determine partition to process by atomic counter (described in Section
+    // 4.4 of prefix sum paper).
+    if (gl_LocalInvocationID.x == 0) 
     {
-        num_elements = 1 << uint(ceil(log2(float(group_size))));
-    }
-
-    // Load input data into shared memory
-    uint32_t val = 0;
-    if (global_id < pc.size) 
-    {
- #ifdef INPUT_BIT_ARRAY
-            // Handle bit array input
-            uint32_t word_index = global_id >> 5;       // Divide by 32
-            uint32_t bit_index = global_id & 31;       // Modulo 32
-            uint32_t word = pc.input_buffer[word_index].data;
-            val = (word >> bit_index) & 1u;
-#else 
-            // Standard array input
-            val = pc.input_buffer[global_id].data;
-#endif // INPUT_BIT_ARRAY
-    }
-    s_data[local_id] = val;
-    memoryBarrierShared();
-    barrier();
-
-#if 1
-    // Up-sweep (reduce) phase
-    uint offset = 1;
-    for (uint d = group_size >> 1; d > 0; d >>= 1) 
-    {
-        barrier();
-        if (local_id < d) 
-        {
-            uint ai = offset * (2 * local_id + 1) - 1;
-            uint bi = offset * (2 * local_id + 2) - 1;
-            s_data[bi] += s_data[ai];
-        }
-        offset <<= 1;
-    }
-    
-    // Clear the last element
-    if (local_id == 0) 
-    {
-        s_data[group_size - 1] = 0;
-    }
-    
-    // Down-sweep phase
-    for (uint d = 1; d < group_size; d <<= 1) 
-    {
-        offset >>= 1;
-        barrier();
-        if (local_id < d) 
-        {
-            uint ai = offset * (2 * local_id + 1) - 1;
-            uint bi = offset * (2 * local_id + 2) - 1;
-    
-            uint t = s_data[ai];
-            s_data[ai] = s_data[bi];
-            s_data[bi] += t;
-        }
+        sh_part_ix = atomicAdd(part_counter, 1);
     }
     barrier();
+    uint32_t part_ix = sh_part_ix;
 
-#else
-    // Up-sweep (reduce) phase
-    for (uint d = 1; d < num_elements; d <<= 1) 
+    uint32_t ix = part_ix * PARTITION_SIZE + gl_LocalInvocationID.x * N_ROWS;
+
+    // TODO: gate buffer read? (evaluate whether shader check or
+    // CPU-side padding is better)
+    local[0] = SampleBit(ix);
+    for (uint i = 1; i < N_ROWS; i++) 
     {
-        uint step = d << 1;
+        local[i] = local[i - 1] + SampleBit(ix + i);
+    }
+
+    uint32_t agg = local[N_ROWS - 1];
+    sh_scratch[gl_LocalInvocationID.x] = agg;
+    for (uint32_t i = 0; i < LG_WG_SIZE; i++) 
+    {
         barrier();
-        if (local_id % step == (step - 1) && local_id < num_elements) 
+        if (gl_LocalInvocationID.x >= (1u << i)) 
         {
-            s_data[local_id] += s_data[local_id - d];
+            uint32_t other = sh_scratch[gl_LocalInvocationID.x - (1u << i)];
+            agg = other + agg;
+        }
+        barrier();
+        sh_scratch[gl_LocalInvocationID.x] = agg;
+    }
+
+    // Publish aggregate for this partition
+    if (gl_LocalInvocationID.x == WG_SIZE - 1) 
+    {
+        state[part_ix].aggregate = agg;
+        if (part_ix == 0) 
+        {
+            state[0].prefix = agg;
         }
     }
 
-    // Clear the last element
-    if (local_id == num_elements - 1) 
+    if (gl_LocalInvocationID.x == WG_SIZE - 1) 
     {
-        s_data[local_id] = 0;
+        uint flag = FLAG_AGGREGATE_READY;
+        if (part_ix == 0) 
+        {
+            flag = FLAG_PREFIX_READY;
+        }
+
+        atomicStore(state[part_ix].flag, flag, gl_ScopeDevice, RELEASE);
     }
 
-    // Down-sweep phase
-    for (uint d = num_elements >> 1; d >= 1; d >>= 1) 
+    uint32_t exclusive = 0u;
+    if (part_ix != 0) 
     {
-        uint step = d << 1;
-        barrier();
-        if (local_id % step == (step - 1) && local_id < num_elements) 
+        // step 4 of paper: decoupled lookback
+        uint32_t look_back_ix = part_ix - 1;
+
+        uint32_t their_agg;
+        uint32_t their_ix = 0;
+        while (true) 
         {
-            uint temp = s_data[local_id - d];
-            s_data[local_id - d] = s_data[local_id];
-            s_data[local_id] += temp;
+            // Read flag with acquire semantics.
+            if (gl_LocalInvocationID.x == WG_SIZE - 1) 
+            {
+                sh_flag = atomicLoad(state[look_back_ix].flag, gl_ScopeDevice, ACQUIRE);
+            }
+            // The flag load is done only in the last thread. However, because the
+            // translation of memoryBarrierBuffer to Metal requires uniform control
+            // flow, we broadcast it to all threads.
+            barrier();
+            uint32_t flag = sh_flag;
+            barrier();
+
+            if (flag == FLAG_PREFIX_READY) 
+            {
+                if (gl_LocalInvocationID.x == WG_SIZE - 1) 
+                {
+                    uint32_t their_prefix = state[look_back_ix].prefix;
+                    exclusive = their_prefix + exclusive;
+                }
+                break;
+            } 
+            else if (flag == FLAG_AGGREGATE_READY) 
+            {
+                if (gl_LocalInvocationID.x == WG_SIZE - 1) 
+                {
+                    their_agg = state[look_back_ix].aggregate;
+                    exclusive = their_agg + exclusive;
+                }
+                look_back_ix--;
+                their_ix = 0;
+                continue;
+            }
+            // else spin
+
+            if (gl_LocalInvocationID.x == WG_SIZE - 1) 
+            {
+                // Unfortunately there's no guarantee of forward progress of other
+                // workgroups, so compute a bit of the aggregate before trying again.
+                // In the worst case, spinning stops when the aggregate is complete.
+                uint32_t m = SampleBit(look_back_ix * PARTITION_SIZE + their_ix);
+                if (their_ix == 0) 
+                {
+                    their_agg = m;
+                } else 
+                {
+                    their_agg = their_agg + m;
+                }
+                their_ix++;
+                if (their_ix == PARTITION_SIZE) 
+                {
+                    exclusive = their_agg + exclusive;
+                    if (look_back_ix == 0) 
+                    {
+                        sh_flag = FLAG_PREFIX_READY;
+                    } 
+                    else 
+                    {
+                        look_back_ix--;
+                        their_ix = 0;
+                    }
+                }
+            }
+            barrier();
+            flag = sh_flag;
+            barrier();
+            if (flag == FLAG_PREFIX_READY) 
+            {
+                break;
+            }
+        }
+        // step 5 of paper: compute inclusive prefix
+        if (gl_LocalInvocationID.x == WG_SIZE - 1) 
+        {
+            uint32_t inclusive_prefix = exclusive + agg;
+            sh_prefix = exclusive;
+            state[part_ix].prefix = inclusive_prefix;
+        }
+
+        if (gl_LocalInvocationID.x == WG_SIZE - 1) 
+        {
+            atomicStore(state[part_ix].flag, FLAG_PREFIX_READY, gl_ScopeDevice, RELEASE);
         }
     }
     barrier();
-#endif
-
-    // Write results to output buffer
-    if (global_id < pc.size) 
+    if (part_ix != 0) 
     {
-        pc.output_buffer[global_id].data = s_data[local_id];
+        exclusive = sh_prefix;
     }
+
+    uint32_t row = exclusive;
+    if (gl_LocalInvocationID.x > 0) 
+    {
+        uint32_t other = sh_scratch[gl_LocalInvocationID.x - 1];
+        row = row + other;
+    }
+    for (uint32_t i = 0; i < N_ROWS; i++) 
+    {
+        uint32_t m = row + local[i];
+        // Make sure buffer allocation is padded appropriately.
+        pc.output_buffer[ix + i].data =  m;
+    }
+
+//    uint32_t thid = gl_LocalInvocationID.x;
+//    uint32_t n = gl_WorkGroupSize.x * 2;  // n = 2 * local_size_x
+//
+//    // Compute global indices. 
+//    // If each workgroup handles n elements, the global index for the data:
+//    uint32_t globalIndex = gl_GlobalInvocationID.x * 2;
+//
+//    // Load input into shared memory:
+//    // Note: the original CUDA code shows temp[2*thid+1] commented out, but presumably it should be loaded as well.
+//#ifdef INPUT_BIT_ARRAY
+//    temp[2 * thid] = SampleBit(globalIndex);
+//    temp[2 * thid + 1] = SampleBit(globalIndex + 1);
+//#else
+//    temp[2 * thid] = pc.input_buffer[globalIndex].data;
+//    temp[2 * thid + 1] = pc.input_buffer[globalIndex + 1].data;
+//#endif
+//
+//
+//    int offset = 1;
+//
+//    // Build sum in place up the tree
+//    for (int d = int(n >> 1); d > 0; d >>= 1) 
+//    {
+//        barrier(); // sync threads
+//        if (int(thid) < d) 
+//        {
+//            int ai = offset * (2 * int(thid) + 1) - 1;
+//            int bi = offset * (2 * int(thid) + 2) - 1;
+//            temp[bi] += temp[ai];
+//        }
+//        offset *= 2;
+//    }
+//
+//    // Clear the last element
+//    if (thid == 0) 
+//    {
+//        temp[n - 1] = 0u;
+//    }
+//
+//    // Traverse down tree and build scan
+//    for (int d = 1; d < int(n); d *= 2) 
+//    {
+//        offset >>= 1;
+//        barrier(); // sync threads
+//        if (int(thid) < d) 
+//        {
+//            int ai = offset * (2 * int(thid) + 1) - 1;
+//            int bi = offset * (2 * int(thid) + 2) - 1;
+//            uint32_t t = temp[ai];
+//            temp[ai] = temp[bi];
+//            temp[bi] += t;
+//        }
+//    }
+//
+//    barrier(); // ensure all data is ready
+//
+//    // Write results to global memory
+//    pc.output_buffer[globalIndex].data = temp[2 * thid];
+//    pc.output_buffer[globalIndex + 1].data = temp[2 * thid + 1];
 }

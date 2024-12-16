@@ -31,8 +31,10 @@ void main()
 		return;
 
 	 // Compute the index of the bit in the bit array
-    uint32_t bit_index = global_draw_index / 32;
-    uint32_t bit_offset = global_draw_index % 32;
+	 uint32_t bit_index = global_draw_index >> 5;       // Divide by 32
+	 uint32_t bit_offset = global_draw_index & 31;       // Modulo 32
+    //uint32_t bit_index = global_draw_index / 32;
+    //uint32_t bit_offset = global_draw_index % 32;
 	uint32_t bit_mask = 1u << bit_offset;
 
 	DrawDescription draw_info = source_descriptions[global_draw_index].data;

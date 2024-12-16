@@ -697,6 +697,19 @@ namespace engine
 				render_context->SetResourceName(alive_offsets_buffer, "alive_offsets_buffer");
 			}
 
+			constexpr const uint32_t WG_SIZE = 512;
+			constexpr const uint32_t N_ROWS = 16;
+			constexpr const uint32_t ELEMENTS_PER_WG = WG_SIZE * N_ROWS;
+			uint32_t scan_status_buffer{ ~0u };
+			{
+				edge::gfx::BufferCreateInfo create_info{};
+				create_info.size = 4 + 12 * ELEMENTS_PER_WG;
+				create_info.usage = edge::gfx::BufferUsageFlag::eStorageBuffer;
+
+				scan_status_buffer = render_context->AddResource(create_info);
+				render_context->SetResourceName(scan_status_buffer, "scan_status_buffer");
+			}
+
 			// Passes
 			// Generate brdflut
 			{
@@ -885,6 +898,11 @@ namespace engine
 				render_context->AddNode(render_context->CreateNode(create_info));
 			}
 
+			// Clear state buffer
+			{
+
+			}
+
 			// Calculate command offsets
 			{
 				ComputeShaderPassCreateInfo create_info{};
@@ -892,7 +910,8 @@ namespace engine
 			
 				create_info.draw_callback = [this,
 					alive_bitset_buffer,
-					alive_offsets_buffer
+					alive_offsets_buffer,
+					scan_status_buffer
 				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
 					{
 						EDGE_PROFILE_ZONE_SCOPED;
@@ -900,9 +919,11 @@ namespace engine
 						auto* draw_commands = render_world->GetDrawBuffer();
 						auto* alive_bits = render_context->GetBuffer(alive_bitset_buffer);
 						auto* alive_offsets = render_context->GetBuffer(alive_offsets_buffer);
+						auto* scan_status = render_context->GetBuffer(scan_status_buffer);
 			
 						self.ReadResource(alive_bitset_buffer, ~0u);
 						self.WriteResource(alive_offsets_buffer, ~0u);
+						self.WriteResource(scan_status_buffer, ~0u);
 			
 						self.ResolveDependencies(command_list);
 			
@@ -911,13 +932,16 @@ namespace engine
 						pc.Set(utl::murmur_hash("output_buffer"), alive_offsets->GetAddress());
 						pc.Set(utl::murmur_hash("size"), render_world->GetDrawCount());
 						self.PushConstantRanges(command_list);
+
+						self.BindResource(utl::murmur_hash("StateBufer"), scan_status_buffer, ~0u);
 			
 						self.BindResources(command_list);
 			
 						uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
 						group_x = render_world->GetDrawCount();
+						group_x = (group_x + ELEMENTS_PER_WG - 1) / ELEMENTS_PER_WG;
 			
-						self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
+						//self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
 						command_list.Dispatch(group_x, group_y, group_z);
 					};
 			
