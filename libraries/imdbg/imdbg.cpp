@@ -13,17 +13,53 @@ namespace ImDbg
 	public:
 		virtual ~DrawCommand() = default;
 
-		virtual void Draw(std::vector<ImDbgVertex>& vertices, std::vector<ImDbgIndex>& indices) = 0;
+		virtual void Draw(std::vector<Vertex>& vertices, std::vector<Index>& indices) = 0;
 	};
 
 	class DrawLine2DCommand : public DrawCommand
 	{
 	public:
-		void Draw(std::vector<ImDbgVertex>& vertices, std::vector<ImDbgIndex>& indices) override
+		DrawLine2DCommand(Vec2 from, Vec2 to, Color color, float thickness = 1.0f) :
+			pos_from{ from.x, from.y, 0, 0 }, 
+			pos_to{ to.x, to.y, 0, 0 }, 
+			color{ color }, thickness{ thickness }
 		{
-
 		}
+
+		~DrawLine2DCommand() = default;
+
+		void Draw(std::vector<Vertex>& vertices, std::vector<Index>& indices) override
+		{
+			auto min = Min(pos_from, pos_to);
+			auto range = Max(pos_from, pos_to) - min;
+
+			vertices.emplace_back(Vertex{ pos_from, {}, color });
+			vertices.emplace_back(Vertex{ pos_to, {}, color });
+			indices.emplace_back(0);
+			indices.emplace_back(1);
+		}
+	private:
+		Vec4 pos_from;
+		Vec4 pos_to;
+		Color color; 
+		float thickness;
 	};
+
+	class DrawPolygon2DCommand : public DrawCommand
+	{
+	public:
+		DrawPolygon2DCommand();
+		~DrawPolygon2DCommand() = default;
+
+		void Draw(std::vector<Vertex>& vertices, std::vector<Index>& indices) override
+		{
+			assert(points.size() > 2 && "Incorrect points count for draw polygon.");
+		}
+	private:
+		std::span<const Vec2> points{};
+	};
+
+
 
 	struct IndexedDrawData
 	{
@@ -77,8 +113,8 @@ namespace ImDbg
 			indexed_draw_data.clear();
 		}
 	private:
-		std::vector<ImDbgVertex> vertices{};
-		std::vector<ImDbgIndex> indices{};
+		std::vector<Vertex> vertices{};
+		std::vector<Index> indices{};
 
 		std::vector<DrawCommand*> command_list{};
 		std::vector<IndexedDrawData> indexed_draw_data{};
@@ -111,12 +147,14 @@ namespace ImDbg
 		imdbg_context->Execute();
 	}
 
-	void DrawPoint2D(ImDbgVec2 position, ImDbgColor color, float size)
+	void DrawPoint2D(Vec2 position, Color color, float size)
 	{
 		assert(imdbg_context && "ImDbg context is not initialized.");
+
+
 	}
 
-	void DrawLine2D(ImDbgVec2 from, ImDbgVec2 to, ImDbgColor color, float thickness)
+	void DrawLine2D(Vec2 from, Vec2 to, Color color, float thickness)
 	{
 		assert(imdbg_context && "ImDbg context is not initialized.");
 	}

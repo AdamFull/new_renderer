@@ -6,18 +6,18 @@
 
 #include "imdbg_math.h"
 
-using ImDbgIndex = uint16_t;
-using ImDbgColor = uint32_t;
-
-struct ImDbgVertex
-{
-	ImDbgVec4 position;
-	ImDbgUVec2 uv;
-	ImDbgColor color;
-};
-
 namespace ImDbg
 {
+	using Index = uint16_t;
+	using Color = uint32_t;
+
+	struct Vertex
+	{
+		Vec4 position;
+		UVec2 uv;
+		Color color;
+	};
+
 	enum class CommandType
 	{
 		Point2D,
@@ -33,21 +33,21 @@ namespace ImDbg
 	void NewFrame();
 	void EndFrame();
 
-	void DrawPoint2D(ImDbgVec2 position, ImDbgColor color, float size = 1.f);
-	void DrawLine2D(ImDbgVec2 from, ImDbgVec2 to, ImDbgColor color, float thickness = 1.f);
-	void DrawRect2D(ImDbgVec2 min, ImDbgVec2 max, ImDbgColor color, float thickness = 1.f);
-	void DrawFillRect2D(ImDbgVec2 min, ImDbgVec2 max, ImDbgColor color);
-	void DrawArc2D(ImDbgVec2 center, float radius, float start_angle, float end_angle, ImDbgColor color, int32_t segments = 36, float thickness = 1.0f);
-	void DrawPie2D(ImDbgVec2 center, float radius, float start_angle, float end_angle, ImDbgColor color, int32_t segments = 36);
-	void DrawRingArc2D(ImDbgVec2 center, float inner_radius, float outer_radius, float start_angle, float end_angle, ImDbgColor color, int segments = 36);
-	void DrawRing2D(ImDbgVec2 center, float inner_radius, float outer_radius, ImDbgColor color, int32_t segments = 36);
-	void DrawCircle2D(ImDbgVec2 center, float radius, ImDbgColor color, float thickness = 1.0f);
-	void DrawFillCircle2D(ImDbgVec2 center, float radius, ImDbgColor color);
-	void DrawTriangle2D(ImDbgVec2 p1, ImDbgVec2 p2, ImDbgVec2 p3, ImDbgColor color, float thickness = 1.0f);
-	void DrawFillTriangle2D(ImDbgVec2 p1, ImDbgVec2 p2, ImDbgVec2 p3, ImDbgColor color);
-	void DrawPolygon2D(std::span<const ImDbgVec2> points, ImDbgColor color, float thickness = 1.0f);
-	void DrawFillPolygon2D(std::span<const ImDbgVec2> points, ImDbgColor color);
-	void DrawRoundedRect2D(ImDbgVec2 min, ImDbgVec2 max, float radius, ImDbgColor color, float thickness = 1.0f);
-	void DrawFillRoundedRect2D(ImDbgVec2 min, ImDbgVec2 max, float radius, ImDbgColor color);
-	void DrawText2D(ImDbgVec2 position, std::string_view text, ImDbgColor color);
+	void DrawPoint2D(Vec2 position, Color color, float size = 1.f);
+	void DrawLine2D(Vec2 from, Vec2 to, Color color, float thickness = 1.f);
+	void DrawRect2D(Vec2 min, Vec2 max, Color color, float thickness = 1.f);
+	void DrawFillRect2D(Vec2 min, Vec2 max, Color color);
+	void DrawArc2D(Vec2 center, float radius, float start_angle, float end_angle, Color color, int32_t segments = 36, float thickness = 1.0f);
+	void DrawPie2D(Vec2 center, float radius, float start_angle, float end_angle, Color color, int32_t segments = 36);
+	void DrawRingArc2D(Vec2 center, float inner_radius, float outer_radius, float start_angle, float end_angle, Color color, int segments = 36);
+	void DrawRing2D(Vec2 center, float inner_radius, float outer_radius, Color color, int32_t segments = 36);
+	void DrawCircle2D(Vec2 center, float radius, Color color, float thickness = 1.0f);
+	void DrawFillCircle2D(Vec2 center, float radius, Color color);
+	void DrawTriangle2D(Vec2 p1, Vec2 p2, Vec2 p3, Color color, float thickness = 1.0f);
+	void DrawFillTriangle2D(Vec2 p1, Vec2 p2, Vec2 p3, Color color);
+	void DrawPolygon2D(std::span<const Vec2> points, Color color, float thickness = 1.0f);
+	void DrawFillPolygon2D(std::span<const Vec2> points, Color color);
+	void DrawRoundedRect2D(Vec2 min, Vec2 max, float radius, Color color, float thickness = 1.0f);
+	void DrawFillRoundedRect2D(Vec2 min, Vec2 max, float radius, Color color);
+	void DrawText2D(Vec2 position, std::string_view text, Color color);
 }
