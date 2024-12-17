@@ -13,6 +13,8 @@
 
 #include "InputManager.h"
 
+#include <imdbg.h>
+
 #include <edge/util/Profiler.h>
 
 namespace engine
@@ -38,6 +40,7 @@ namespace engine
 
 	void EngineApplication::Finish()
 	{
+		ImDbg::DestroyContext();
 	}
 
 	bool EngineApplication::OnResize(uint32_t width, uint32_t height)
@@ -48,6 +51,8 @@ namespace engine
 
 	bool EngineApplication::Prepare(const edge::ApplicationOptions& options)
 	{
+		ImDbg::CreateContext();
+
 		ui = std::make_unique<EngineUI>(*options.window);
 
 		app_windows.emplace_back(std::make_unique<HierarchyWindow>("Hierarchy"));
@@ -68,6 +73,8 @@ namespace engine
 	{
 		EDGE_PROFILE_ZONE_SCOPED;
 
+		ImDbg::NewFrame();
+
 		ui->NewFrame(delta_time);
 
 		for (auto& window : app_windows)
@@ -75,7 +82,12 @@ namespace engine
 
 		scene->Update(delta_time);
 
+		ImDbg::EndFrame();
+
+
+
 		renderer->Render(delta_time);
+
 		//// Pre update zone BEGIN
 		//m_pSystemManager->PreUpdate(delta_time);
 		//m_pRenderInterface->PreUpdate(delta_time);

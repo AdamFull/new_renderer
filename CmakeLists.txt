@@ -86,6 +86,7 @@ else()
 endif()
 
 target_link_libraries(${PROJECT_NAME} 
+    PUBLIC imdbg
     PUBLIC imgui
     PUBLIC utility_lib
 	PUBLIC application

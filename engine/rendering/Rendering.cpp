@@ -25,6 +25,7 @@
 #include <regex>
 
 #include <imgui.h>
+#include <imdbg.h>
 #include <edge/util/Profiler.h>
 
 #ifdef MemoryBarrier
@@ -1941,6 +1942,27 @@ namespace engine
 				render_context->AddNode(render_context->CreateNode(create_info));
 			}
 
+			// ImDbg renderer
+			{
+				if (ImDbg::GetCurrentContext())
+				{
+					GeometryBufferCreateInfo geometry_buffer_ci{};
+					geometry_buffer_ci.attribute_descriptions.emplace_back(VertexAttributeFlag::ePosition, edge::gfx::Format::eR16G16B16A16Sint);
+					geometry_buffer_ci.attribute_descriptions.emplace_back(VertexAttributeFlag::eTexCoord, edge::gfx::Format::eR16G16Unorm);
+					geometry_buffer_ci.attribute_descriptions.emplace_back(VertexAttributeFlag::eColor, edge::gfx::Format::eR8G8B8A8Unorm);
+					geometry_buffer_ci.index_description.type = edge::gfx::IndexType::eUint16;
+
+					auto& geometry_buffer = RequestInterleavedGeometryBuffer(geometry_buffer_ci);
+
+					RenderShaderPassCreateInfo create_info{};
+					create_info.shader_name = "testing:debug_draw";
+					create_info.pipeline_state.primitive_topology = edge::gfx::PrimitiveTopology::eTriangleList;
+					create_info.pipeline_state.vertex_layout = geometry_buffer.GetVertexLayout();
+					create_info.AddWriteAttachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 0.f, 0.f, 0.f, 1.f });
+				}
+			}
+
+			// ImGui renderer
 			{
 				if (ImGui::GetCurrentContext())
 				{

@@ -19,7 +19,7 @@ namespace ImDbg
 	class DrawLine2DCommand : public DrawCommand
 	{
 	public:
-		DrawLine2DCommand(Vec2 from, Vec2 to, Color color, float thickness = 1.0f) :
+		DrawLine2DCommand(IVec2 from, IVec2 to, Color color, float thickness = 1.0f) :
 			pos_from{ from.x, from.y, 0, 0 }, 
 			pos_to{ to.x, to.y, 0, 0 }, 
 			color{ color }, thickness{ thickness }
@@ -39,8 +39,8 @@ namespace ImDbg
 			indices.emplace_back(1);
 		}
 	private:
-		Vec4 pos_from;
-		Vec4 pos_to;
+		IVec4 pos_from;
+		IVec4 pos_to;
 		Color color; 
 		float thickness;
 	};
@@ -48,15 +48,42 @@ namespace ImDbg
 	class DrawPolygon2DCommand : public DrawCommand
 	{
 	public:
-		DrawPolygon2DCommand();
+		DrawPolygon2DCommand(std::span<const IVec2> points, Color color, float thickness = 1.0f) :
+			points{ points }, color{ color }, thickness{ thickness }
+		{
+		}
+
 		~DrawPolygon2DCommand() = default;
 
 		void Draw(std::vector<Vertex>& vertices, std::vector<Index>& indices) override
 		{
 			assert(points.size() > 2 && "Incorrect points count for draw polygon.");
+
+			// Calculate polygon aabb
+			IVec2 min{ points[0] }, max{ points[0] };
+			for (int32_t i = 1; i < points.size(); ++i)
+			{
+				min = Min(min, points[i]);
+				max = Max(max, points[i]);
+			}
+
+			IVec2 range = max - min;
+
+			for (const auto& point : points)
+			{
+				vertices.emplace_back(Vertex{ {point.x, point.y, 0, 0 }, {}, color });
+			}
+
+			for (int32_t i = 0; i < points.size(); ++i)
+			{
+				indices.emplace_back(i);
+				indices.emplace_back(((i + 1) % points.size()));
+			}
 		}
 	private:
-		std::span<const Vec2> points{};
+		std::span<const IVec2> points;
+		Color color;
+		float thickness;
 	};
 
 
@@ -69,7 +96,7 @@ namespace ImDbg
 		uint32_t vertex_count;
 	};
 
-	class Context
+	class Context : public IContext
 	{
 	public:
 		Context()
@@ -80,7 +107,13 @@ namespace ImDbg
 			command_list.reserve(k_startup_command_count);
 		}
 
-		void Execute()
+		template<typename _Ty, typename... _Args>
+		void PushCommand(_Args&&... args)
+		{
+			command_list.emplace_back(new _Ty(std::forward<_Args>(args)...));
+		}
+
+		void Execute() override
 		{
 			// Execute command lists
 			for (DrawCommand* command : command_list)
@@ -98,7 +131,7 @@ namespace ImDbg
 			}
 		}
 
-		void Reset()
+		void Reset() override
 		{
 			// Clear vertices
 			vertices.clear();
@@ -120,7 +153,7 @@ namespace ImDbg
 		std::vector<IndexedDrawData> indexed_draw_data{};
 	};
 
-	extern Context* imdbg_context{ nullptr };
+	extern IContext* imdbg_context{ nullptr };
 
 	void CreateContext()
 	{
@@ -135,6 +168,11 @@ namespace ImDbg
 		imdbg_context = nullptr;
 	}
 
+	IContext* GetCurrentContext()
+	{
+		return imdbg_context;
+	}
+
 	void NewFrame()
 	{
 		assert(imdbg_context && "ImDbg context is not initialized.");
@@ -147,15 +185,17 @@ namespace ImDbg
 		imdbg_context->Execute();
 	}
 
-	void DrawPoint2D(Vec2 position, Color color, float size)
+	void DrawPoint2D(IVec2 position, Color color, float size)
 	{
 		assert(imdbg_context && "ImDbg context is not initialized.");
-
-
+		assert(false && "NOT IMPLEMENTED");
 	}
 
-	void DrawLine2D(Vec2 from, Vec2 to, Color color, float thickness)
+	void DrawLine2D(IVec2 from, IVec2 to, Color color, float thickness)
 	{
 		assert(imdbg_context && "ImDbg context is not initialized.");
+		
+		auto* ctx = static_cast<Context*>(imdbg_context);
+		ctx->PushCommand<DrawLine2DCommand>(from, to, thickness);
 	}
 }
