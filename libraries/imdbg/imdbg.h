@@ -4,16 +4,10 @@
 #include <string_view>
 #include <span>
 
+#include "imdbg_math.h"
+
 using ImDbgIndex = uint16_t;
 using ImDbgColor = uint32_t;
-
-struct ImDbgVec2 { int16_t x, y; };
-struct ImDbgVec3 { int16_t x, y, z; };
-struct ImDbgVec4 { int16_t x, y, z, w; };
-
-struct ImDbgUVec2 { uint16_t x, y; };
-struct ImDbgUVec3 { uint16_t x, y, z; };
-struct ImDbgUVec4 { uint16_t x, y, z, w; };
 
 struct ImDbgVertex
 {
@@ -33,16 +27,6 @@ namespace ImDbg
 		Line3D
 	};
 
-	struct Command
-	{
-		CommandType type;
-	};
-
-	struct CommandList
-	{
-		std::vector<Command> commands;
-	};
-
 	void CreateContext();
 	void DestroyContext();
 
@@ -56,7 +40,7 @@ namespace ImDbg
 	void DrawArc2D(ImDbgVec2 center, float radius, float start_angle, float end_angle, ImDbgColor color, int32_t segments = 36, float thickness = 1.0f);
 	void DrawPie2D(ImDbgVec2 center, float radius, float start_angle, float end_angle, ImDbgColor color, int32_t segments = 36);
 	void DrawRingArc2D(ImDbgVec2 center, float inner_radius, float outer_radius, float start_angle, float end_angle, ImDbgColor color, int segments = 36);
-	void DrawRing2D(ImDbgVec2 center, float inner_radius, float outer_radius, ImDbgColor color, i32 segments = 36);
+	void DrawRing2D(ImDbgVec2 center, float inner_radius, float outer_radius, ImDbgColor color, int32_t segments = 36);
 	void DrawCircle2D(ImDbgVec2 center, float radius, ImDbgColor color, float thickness = 1.0f);
 	void DrawFillCircle2D(ImDbgVec2 center, float radius, ImDbgColor color);
 	void DrawTriangle2D(ImDbgVec2 p1, ImDbgVec2 p2, ImDbgVec2 p3, ImDbgColor color, float thickness = 1.0f);

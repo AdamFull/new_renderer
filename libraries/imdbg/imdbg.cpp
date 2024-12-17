@@ -1,6 +1,6 @@
 #include "imdbg.h"
 
-extern class Context* imdbg_context{ nullptr };
+#include <cassert>
 
 constexpr size_t k_startup_vertex_count{ 65535ull };
 constexpr size_t k_startup_index_count{ k_startup_vertex_count * 3ull };
@@ -8,27 +8,15 @@ constexpr size_t k_startup_command_count{ 256ull };
 
 namespace ImDbg
 {
-	template<typename _Ty>
-	_Ty min(const _Ty& val)
-	{
-
-	}
-
-	template<>
-	ImDbgVec2 min<ImDbgVec2>(const ImDbgVec2& val)
-	{
-
-	}
-
 	class DrawCommand
 	{
 	public:
-		virtual ~Command() = default;
+		virtual ~DrawCommand() = default;
 
 		virtual void Draw(std::vector<ImDbgVertex>& vertices, std::vector<ImDbgIndex>& indices) = 0;
 	};
 
-	class DrawLine2DCommand : public Command
+	class DrawLine2DCommand : public DrawCommand
 	{
 	public:
 		void Draw(std::vector<ImDbgVertex>& vertices, std::vector<ImDbgIndex>& indices) override
@@ -95,6 +83,8 @@ namespace ImDbg
 		std::vector<DrawCommand*> command_list{};
 		std::vector<IndexedDrawData> indexed_draw_data{};
 	};
+
+	extern Context* imdbg_context{ nullptr };
 
 	void CreateContext()
 	{
