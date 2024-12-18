@@ -1,26 +1,25 @@
 cmake_minimum_required(VERSION 3.18.0)
 project(edge_runtime LANGUAGES CXX)
 
-find_package(glfw3 REQUIRED)
-
 file(GLOB EDGE_RUNTIME_SOURCES FILES *.cpp *.h)
 
-if(WIN32)
-    file(GLOB_RECURSE EDGE_WIN64_RUNTIME_SOURCES FILES win64/*.cpp win64/*.h)
-    set(EDGE_RUNTIME_SOURCES ${EDGE_RUNTIME_SOURCES} ${EDGE_WIN64_RUNTIME_SOURCES})
-elseif(ANDROID)
-    file(GLOB_RECURSE EDGE_ANDROID_RUNTIME_SOURCES FILES android/*.cpp android/*.h)
-    set(EDGE_RUNTIME_SOURCES ${EDGE_RUNTIME_SOURCES} ${EDGE_ANDROID_RUNTIME_SOURCES})
-endif()
-
 add_library(${PROJECT_NAME} STATIC ${EDGE_RUNTIME_SOURCES})
+
+if(WIN32)
+    add_subdirectory(common)
+    add_subdirectory(win64)
+
+    target_link_libraries(${PROJECT_NAME} 
+    PRIVATE edge_runtime_common
+    PRIVATE edge_runtime_windows
+    )
+elseif(ANDROID)
+    add_subdirectory(android)
+    target_link_libraries(${PROJECT_NAME} PRIVATE edge_runtime_android)
+endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     CXX_EXTENSIONS OFF
     CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON
-)
-
-target_link_libraries(${PROJECT_NAME}
-    PRIVATE glfw
 )

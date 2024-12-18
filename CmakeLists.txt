@@ -53,7 +53,7 @@ include_directories(
 add_compile_definitions($<$<CONFIG:DEBUG>:ENGINE_DEBUG>)
 
 add_subdirectory(libraries/imdbg)
-add_subdirectory(libraries/edge_framework/edge)
+add_subdirectory(libraries/edge_framework)
 
 add_subdirectory(modules/glm)
 add_subdirectory(modules/imgui)

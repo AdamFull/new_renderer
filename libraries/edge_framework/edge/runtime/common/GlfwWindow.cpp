@@ -7,7 +7,7 @@
 #include <GLFW/glfw3native.h>
 
 #include <edge/util/Logger.h>
-#include "Runtime.h"
+#include "../Runtime.h"
 
 namespace edge
 {

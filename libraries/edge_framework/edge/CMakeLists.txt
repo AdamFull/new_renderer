@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.28.0)
+cmake_minimum_required(VERSION 3.22.1)
 project(edge_framework)
 
 add_subdirectory("util")

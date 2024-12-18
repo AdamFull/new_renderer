@@ -1,6 +1,6 @@
 #include "WindowsRuntime.h"
 
-#include "../GlfwWindow.h"
+#include "../common/GlfwWindow.h"
 #include "../HeadlessWIndow.h"
 
 #include "WindowsRuntimeContext.h"
