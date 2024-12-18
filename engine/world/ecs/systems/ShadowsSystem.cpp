@@ -38,6 +38,8 @@ namespace engine
 			void CShadowsSystem::__Update(f32 fDt)
 			{
 				EDGE_PROFILE_ZONE_SCOPED;
+				// TODO: Now i have to disable shadow update because i need to finish rendering
+				return;
 
 				// TODO: get current player camera?
 				auto& camera = render_world.GetRenderCamera(render::main_camera_index);
