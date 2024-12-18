@@ -17,9 +17,9 @@ struct BoundingBox
 struct BoundingBoxEnc
 {
 	i16vec3 min;
-	uint16_t pad0;
+	uint16_t _pad0;
 	i16vec3 max;
-	uint16_t pad1;
+	uint16_t _pad1;
 };
 
 SHLIB_INLINE BoundingBoxEnc EncodeBoundingBox(BoundingBox bb, vec3 enc)
@@ -33,8 +33,12 @@ SHLIB_INLINE BoundingBoxEnc EncodeBoundingBox(BoundingBox bb, vec3 enc)
 SHLIB_INLINE BoundingBox DecodeBoundingBox(BoundingBoxEnc bb, mat4 dec)
 {
 	BoundingBox dbb;
-	dbb.min = vec3(dec * vec4(DecodePosition(bb.min), 1.0f));
-	dbb.max = vec3(dec * vec4(DecodePosition(bb.max), 1.0f));
+
+	vec4 mn = dec * vec4(DecodePosition(bb.min), 1.0f);
+	dbb.min = vec3(mn) / mn.w;
+	vec4 mx = dec * vec4(DecodePosition(bb.max), 1.0f);
+	dbb.max = vec3(mx) / mx.w;
+
 	return dbb;
 }
 
@@ -57,7 +61,7 @@ struct SubMesh
 	uint32_t index_count;
 	int32_t first_vertex;
 	uint32_t vertex_count;
-	uint32_t pad;
+	uint32_t _pad0;
 
 	BoundingBoxEnc ebb;
 };

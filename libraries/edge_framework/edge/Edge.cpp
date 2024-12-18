@@ -9,6 +9,16 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLin
 	auto context = std::make_unique<edge::win32::WindowsRuntimeContext>(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
 	return RuntimeMain(*context);
 }
+#elif defined(PLATFORM_ANDROID)
+#include "runtime/android/AndroidRuntimeContext.h"
+#include "runtime/android/AndroidRuntime.h"
+
+void android_main(android_app* state)
+{
+	auto context = std::make_unique<edge::android::AndroidRuntimeContext>(state);
+	RuntimeMain(*context);
+}
+
 #else
 # include <stdexcept>
 #error "Platform not supported"
@@ -25,6 +35,8 @@ namespace edge
 	{
 #if defined(PLATFORM_WINDOWS)
 		return std::make_unique<win32::WindowsRuntime>(context);
+#elif defined(PLATFORM_ANDROID)
+		return std::make_unique<android::AndroidRuntime>(context);
 #else
 #	error "Platform not supported"
 		return nullptr;
